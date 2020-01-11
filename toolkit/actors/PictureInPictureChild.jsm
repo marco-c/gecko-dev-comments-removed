@@ -16,6 +16,20 @@ ChromeUtils.defineModuleGetter(
   "Services",
   "resource://gre/modules/Services.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "TOGGLE_POLICIES",
+  "resource://gre/modules/PictureInPictureTogglePolicy.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "TOGGLE_POLICY_STRINGS",
+  "resource://gre/modules/PictureInPictureTogglePolicy.jsm"
+);
+
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 const TOGGLE_ENABLED_PREF =
   "media.videocontrols.picture-in-picture.video-toggle.enabled";
@@ -34,6 +48,14 @@ var gWeakPlayerContent = null;
 
 
 var gWeakIntersectingVideosForTesting = new WeakSet();
+
+
+
+
+
+XPCOMUtils.defineLazyGetter(this, "gToggleOverrides", () => {
+  return PictureInPictureToggleChild.getToggleOverrides();
+});
 
 
 
@@ -120,6 +142,8 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
         
         
         isTrackingVideos: false,
+        togglePolicy: TOGGLE_POLICIES.DEFAULT,
+        hasCheckedPolicy: false,
       };
       this.weakDocStates.set(this.document, state);
     }
@@ -659,8 +683,38 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
       return;
     }
 
+    let state = this.docState;
     let toggle = shadowRoot.getElementById("pictureInPictureToggleButton");
     let controlsOverlay = shadowRoot.querySelector(".controlsOverlay");
+
+    if (!state.hasCheckedPolicy) {
+      
+      
+      let toggleOverrides = this.toggleTesting
+        ? PictureInPictureToggleChild.getToggleOverrides()
+        : gToggleOverrides;
+
+      
+      for (let [override, policy] of toggleOverrides) {
+        if (override.matches(this.document.documentURI)) {
+          state.togglePolicy = policy;
+          break;
+        }
+      }
+
+      state.hasCheckedPolicy = true;
+    }
+
+    
+    
+    
+    if (
+      state.togglePolicy != TOGGLE_POLICIES.DEFAULT &&
+      !(state.togglePolicy == TOGGLE_POLICIES.BOTTOM && video.controls)
+    ) {
+      toggle.setAttribute("policy", TOGGLE_POLICY_STRINGS[state.togglePolicy]);
+    }
+
     controlsOverlay.removeAttribute("hidetoggle");
 
     
@@ -670,7 +724,6 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
     
     
     
-    let state = this.docState;
     if (!state.hideToggleDeferredTask && !this.toggleTesting) {
       state.hideToggleDeferredTask = new DeferredTask(() => {
         controlsOverlay.setAttribute("hidetoggle", true);
@@ -803,6 +856,27 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
 
   static isTracking(video) {
     return gWeakIntersectingVideosForTesting.has(video);
+  }
+
+  
+
+
+
+
+
+
+
+
+  static getToggleOverrides() {
+    let result = [];
+    let patterns = Services.cpmm.sharedData.get(
+      "PictureInPicture:ToggleOverrides"
+    );
+    for (let pattern in patterns) {
+      let matcher = new MatchPattern(pattern);
+      result.push([matcher, patterns[pattern]]);
+    }
+    return result;
   }
 }
 

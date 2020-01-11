@@ -12,6 +12,7 @@ const TEST_ROOT_2 = getRootDirectory(gTestPath).replace(
   "http://example.org"
 );
 const TEST_PAGE = TEST_ROOT + "test-page.html";
+const TEST_PAGE_2 = TEST_ROOT_2 + "test-page.html";
 const TEST_PAGE_WITH_IFRAME = TEST_ROOT_2 + "test-page-with-iframe.html";
 const WINDOW_TYPE = "Toolkit:PictureInPicture";
 const TOGGLE_ID = "pictureInPictureToggleButton";
@@ -129,6 +130,7 @@ async function toggleOpacityReachesThreshold(
   let args = { videoID, TOGGLE_ID, opacityThreshold };
   await SpecialPowers.spawn(browser, [args], async args => {
     let { videoID, TOGGLE_ID, opacityThreshold } = args;
+
     let video = content.document.getElementById(videoID);
     let shadowRoot = video.openOrClosedShadowRoot;
     let toggle = shadowRoot.getElementById(TOGGLE_ID);
@@ -144,6 +146,54 @@ async function toggleOpacityReachesThreshold(
     );
 
     ok(true, "Toggle reached target opacity.");
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function assertTogglePolicy(browser, videoID, policy) {
+  let args = { videoID, TOGGLE_ID, policy };
+  await SpecialPowers.spawn(browser, [args], async args => {
+    let { videoID, TOGGLE_ID, policy } = args;
+
+    let video = content.document.getElementById(videoID);
+    let shadowRoot = video.openOrClosedShadowRoot;
+    let controlsOverlay = shadowRoot.querySelector(".controlsOverlay");
+    let toggle = shadowRoot.getElementById(TOGGLE_ID);
+
+    await ContentTaskUtils.waitForCondition(() => {
+      return controlsOverlay.classList.contains("hovering");
+    }, "Waiting for the hovering state to be set on the video.");
+
+    if (policy) {
+      const { TOGGLE_POLICY_STRINGS } = ChromeUtils.import(
+        "resource://gre/modules/PictureInPictureTogglePolicy.jsm"
+      );
+      let policyAttr = toggle.getAttribute("policy");
+      Assert.equal(
+        policyAttr,
+        TOGGLE_POLICY_STRINGS[policy],
+        "The correct toggle policy is set."
+      );
+    } else {
+      Assert.ok(
+        !toggle.hasAttribute("policy"),
+        "No toggle policy should be set."
+      );
+    }
   });
 }
 
@@ -208,23 +258,15 @@ async function assertSawMouseEvents(
 
 
 
-
-
-
-
-
-
-
 async function prepareForToggleClick(browser, videoID) {
   
   
-  let args = { videoID, TOGGLE_ID };
+  let args = { videoID };
   return SpecialPowers.spawn(browser, [args], async args => {
-    let { videoID, TOGGLE_ID } = args;
+    let { videoID } = args;
+
     let video = content.document.getElementById(videoID);
     video.scrollIntoView({ behaviour: "instant" });
-    let shadowRoot = video.openOrClosedShadowRoot;
-    let toggle = shadowRoot.getElementById(TOGGLE_ID);
 
     if (!video.controls) {
       
@@ -244,18 +286,56 @@ async function prepareForToggleClick(browser, videoID) {
         100
       );
     }
-    let rect = toggle.getBoundingClientRect();
+
     return {
-      toggleClientRect: {
-        top: rect.top,
-        right: rect.right,
-        left: rect.left,
-        bottom: rect.bottom,
-      },
       controls: video.controls,
     };
   });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function getToggleClientRect(browser, videoID) {
+  let args = { videoID, TOGGLE_ID };
+  return ContentTask.spawn(browser, args, async args => {
+    let { videoID, TOGGLE_ID } = args;
+    let video = content.document.getElementById(videoID);
+    let shadowRoot = video.openOrClosedShadowRoot;
+    let toggle = shadowRoot.getElementById(TOGGLE_ID);
+    let rect = toggle.getBoundingClientRect();
+
+    if (!rect.width && !rect.height) {
+      rect = video.getBoundingClientRect();
+    }
+
+    return {
+      top: rect.top,
+      right: rect.right,
+      left: rect.left,
+      bottom: rect.bottom,
+    };
+  });
+}
+
+
+
+
+
 
 
 
@@ -289,11 +369,13 @@ async function testToggle(testURL, expectations, prepFn = async () => {}) {
       await prepFn(browser);
       await ensureVideosReady(browser);
 
-      for (let [videoID, { canToggle }] of Object.entries(expectations)) {
+      for (let [videoID, { canToggle, policy }] of Object.entries(
+        expectations
+      )) {
         await SimpleTest.promiseFocus(browser);
         info(`Testing video with id: ${videoID}`);
 
-        await testToggleHelper(browser, videoID, canToggle);
+        await testToggleHelper(browser, videoID, canToggle, policy);
       }
     }
   );
@@ -312,11 +394,10 @@ async function testToggle(testURL, expectations, prepFn = async () => {}) {
 
 
 
-async function testToggleHelper(browser, videoID, canToggle) {
-  let { toggleClientRect, controls } = await prepareForToggleClick(
-    browser,
-    videoID
-  );
+
+
+async function testToggleHelper(browser, videoID, canToggle, policy) {
+  let { controls } = await prepareForToggleClick(browser, videoID);
 
   
   await BrowserTestUtils.synthesizeMouseAtCenter(
@@ -334,10 +415,20 @@ async function testToggleHelper(browser, videoID, canToggle) {
     browser
   );
 
+  info("Checking toggle policy");
+  await assertTogglePolicy(browser, videoID, policy);
+
   if (canToggle) {
     info("Waiting for toggle to become visible");
-    await toggleOpacityReachesThreshold(browser, videoID, HOVER_VIDEO_OPACITY);
+    await toggleOpacityReachesThreshold(
+      browser,
+      videoID,
+      HOVER_VIDEO_OPACITY,
+      policy
+    );
   }
+
+  let toggleClientRect = await getToggleClientRect(browser, videoID);
 
   info("Hovering the toggle rect now.");
   
@@ -364,7 +455,12 @@ async function testToggleHelper(browser, videoID, canToggle) {
 
   if (canToggle) {
     info("Waiting for toggle to reach full opacity");
-    await toggleOpacityReachesThreshold(browser, videoID, HOVER_TOGGLE_OPACITY);
+    await toggleOpacityReachesThreshold(
+      browser,
+      videoID,
+      HOVER_TOGGLE_OPACITY,
+      policy
+    );
   }
 
   
@@ -377,16 +473,13 @@ async function testToggleHelper(browser, videoID, canToggle) {
     browser
   );
 
-  if (canToggle) {
-    
-    
-    
-    await assertSawMouseEvents(browser, !controls, false);
-  } else {
-    
-    
-    await assertSawMouseEvents(browser, true, false);
-  }
+  
+  
+  
+  
+  
+  
+  await assertSawMouseEvents(browser, !controls, false);
 
   
   
@@ -432,7 +525,7 @@ async function testToggleHelper(browser, videoID, canToggle) {
     );
 
     
-    await assertSawMouseEvents(browser, true);
+    await assertSawMouseEvents(browser, !controls);
 
     
     

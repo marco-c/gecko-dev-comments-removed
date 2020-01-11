@@ -21,7 +21,7 @@ add_task(async () => {
       await ensureVideosReady(browser);
       let videoID = "no-controls";
 
-      let { toggleClientRect } = await prepareForToggleClick(browser, videoID);
+      await prepareForToggleClick(browser, videoID);
 
       
       
@@ -46,6 +46,8 @@ add_task(async () => {
         videoID,
         HOVER_VIDEO_OPACITY
       );
+
+      let toggleClientRect = await getToggleClientRect(browser, videoID);
 
       
       
