@@ -598,7 +598,7 @@ void nsContainerFrame::SyncWindowProperties(nsPresContext* aPresContext,
     
     nsTransparencyMode mode =
         nsLayoutUtils::GetFrameTransparency(aFrame, rootFrame);
-    int32_t shadow = rootFrame->StyleUIReset()->mWindowShadow;
+    StyleWindowShadow shadow = rootFrame->StyleUIReset()->mWindowShadow;
     nsCOMPtr<nsIWidget> viewWidget = aView->GetWidget();
     viewWidget->SetTransparencyMode(mode);
     windowWidget->SetWindowShadowStyle(shadow);
