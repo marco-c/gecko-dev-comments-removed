@@ -226,12 +226,12 @@
 
 
 
-        set_permission: function(name, state, one_realm) {
+
+
+        set_permission: function(descriptor, state, one_realm) {
             let permission_params = {
-              descriptor: {
-                name: name
-              },
-              state: state,
+              descriptor,
+              state,
               oneRealm: one_realm,
             };
             return window.test_driver_internal.set_permission(permission_params);
