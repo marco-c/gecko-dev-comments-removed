@@ -3985,6 +3985,20 @@ static void TriggerPollJSSamplingOnMainThread() {
   }
 }
 
+#ifdef MOZ_BASE_PROFILER
+static bool HasMinimumLength(const char* aString, size_t aMinimumLength) {
+  if (!aString) {
+    return false;
+  }
+  for (size_t i = 0; i < aMinimumLength; ++i) {
+    if (aString[i] == '\0') {
+      return false;
+    }
+  }
+  return true;
+}
+#endif  
+
 static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
                                   double aInterval, uint32_t aFeatures,
                                   const char** aFilters, uint32_t aFilterCount,
@@ -4052,7 +4066,9 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
     
     baseprofiler::profiler_stop();
 
-    if (baseprofile && baseprofile.get()[0] != '\0') {
+    
+    
+    if (HasMinimumLength(baseprofile.get(), 2)) {
       
       
       
