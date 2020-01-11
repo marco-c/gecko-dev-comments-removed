@@ -541,9 +541,6 @@ class nsDocShell final : public nsDocLoader,
 
   
   
-  static bool CanAccessItem(nsIDocShellTreeItem* aTargetItem,
-                            nsIDocShellTreeItem* aAccessingItem,
-                            bool aConsiderOpener = true);
   static bool ValidateOrigin(nsIDocShellTreeItem* aOriginTreeItem,
                              nsIDocShellTreeItem* aTargetTreeItem);
 

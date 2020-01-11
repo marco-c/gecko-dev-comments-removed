@@ -2823,29 +2823,6 @@ nsDocShell::GetSameTypeRootTreeItemIgnoreBrowserBoundaries(
   return NS_OK;
 }
 
-
-bool nsDocShell::CanAccessItem(nsIDocShellTreeItem* aTargetItem,
-                               nsIDocShellTreeItem* aAccessingItem,
-                               bool aConsiderOpener) {
-  MOZ_ASSERT(aTargetItem, "Must have target item!");
-
-  if (!aAccessingItem) {
-    
-    return true;
-  }
-
-  nsCOMPtr<nsIDocShell> targetDS = do_QueryInterface(aTargetItem);
-  nsCOMPtr<nsIDocShell> accessingDS = do_QueryInterface(aAccessingItem);
-  if (!targetDS || !accessingDS) {
-    
-    return false;
-  }
-
-  return Cast(accessingDS)
-      ->mBrowsingContext->CanAccess(Cast(targetDS)->mBrowsingContext,
-                                    aConsiderOpener);
-}
-
 void nsDocShell::AssertOriginAttributesMatchPrivateBrowsing() {
   
   
