@@ -1502,6 +1502,7 @@ bool IPDLParamTraits<dom::BrowsingContext*>::Read(
 
   RefPtr<dom::BrowsingContext> browsingContext = dom::BrowsingContext::Get(id);
   if (!browsingContext) {
+#ifndef FUZZING
     
     
     
@@ -1509,6 +1510,7 @@ bool IPDLParamTraits<dom::BrowsingContext*>::Read(
     
     
     MOZ_CRASH("Attempt to deserialize absent BrowsingContext");
+#endif
     *aResult = nullptr;
     return false;
   }
