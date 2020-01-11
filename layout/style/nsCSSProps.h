@@ -100,7 +100,7 @@ class nsCSSProps {
 
   
   
-  static bool IsCustomPropertyName(const nsAString& aProperty);
+  static bool IsCustomPropertyName(const nsACString& aProperty);
 
   static bool IsShorthand(nsCSSPropertyID aProperty) {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT,
@@ -109,7 +109,7 @@ class nsCSSProps {
   }
 
   
-  static nsCSSFontDesc LookupFontDesc(const nsAString& aProperty);
+  static nsCSSFontDesc LookupFontDesc(const nsACString& aProperty);
 
   
   static mozilla::UseCounter UseCounterFor(nsCSSPropertyID aProperty) {

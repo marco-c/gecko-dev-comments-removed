@@ -179,7 +179,7 @@ nsresult nsDOMCSSAttributeDeclaration::SetSMILValue(
 }
 
 nsresult nsDOMCSSAttributeDeclaration::SetPropertyValue(
-    const nsCSSPropertyID aPropID, const nsAString& aValue,
+    const nsCSSPropertyID aPropID, const nsACString& aValue,
     nsIPrincipal* aSubjectPrincipal) {
   
   

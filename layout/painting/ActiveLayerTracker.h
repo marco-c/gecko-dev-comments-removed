@@ -59,7 +59,7 @@ class ActiveLayerTracker {
 
 
   static void NotifyAnimated(nsIFrame* aFrame, nsCSSPropertyID aProperty,
-                             const nsAString& aNewValue,
+                             const nsACString& aNewValue,
                              nsDOMCSSDeclaration* aDOMCSSDecl);
   
 
@@ -78,7 +78,7 @@ class ActiveLayerTracker {
 
   static void NotifyInlineStyleRuleModified(nsIFrame* aFrame,
                                             nsCSSPropertyID aProperty,
-                                            const nsAString& aNewValue,
+                                            const nsACString& aNewValue,
                                             nsDOMCSSDeclaration* aDOMCSSDecl);
   
 

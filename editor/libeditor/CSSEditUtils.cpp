@@ -454,8 +454,10 @@ nsresult CSSEditUtils::GetCSSInlinePropertyBase(nsINode* aNode,
     NS_ENSURE_STATE(cssDecl);
 
     
+    
+    
     MOZ_ALWAYS_SUCCEEDS(
-        cssDecl->GetPropertyValue(nsDependentAtomString(aProperty), aValue));
+        cssDecl->GetPropertyValue(nsAtomCString(aProperty), aValue));
 
     return NS_OK;
   }
@@ -1174,7 +1176,7 @@ bool CSSEditUtils::ElementsSameStyle(Element* aFirstElement,
     return true;
   }
 
-  nsAutoString propertyNameString;
+  nsAutoCString propertyNameString;
   nsAutoString firstValue, secondValue;
   for (uint32_t i = 0; i < firstLength; i++) {
     firstCSSDecl->Item(i, propertyNameString);
