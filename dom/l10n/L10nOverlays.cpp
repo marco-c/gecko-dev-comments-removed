@@ -452,7 +452,15 @@ void L10nOverlays::TranslateElement(Element& aElement,
                                     nsTArray<L10nOverlaysError>& aErrors,
                                     ErrorResult& aRv) {
   if (!aTranslation.mValue.IsVoid()) {
-    if (!ContainsMarkup(aTranslation.mValue)) {
+    NodeInfo* nodeInfo = aElement.NodeInfo();
+    if (nodeInfo->NameAtom() == nsGkAtoms::title &&
+        nodeInfo->NamespaceID() == kNameSpaceID_XHTML) {
+      
+      aElement.SetTextContent(aTranslation.mValue, aRv);
+      if (NS_WARN_IF(aRv.Failed())) {
+        return;
+      }
+    } else if (!ContainsMarkup(aTranslation.mValue)) {
       
       aElement.SetTextContent(aTranslation.mValue, aRv);
       if (NS_WARN_IF(aRv.Failed())) {
