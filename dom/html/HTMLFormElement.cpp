@@ -119,7 +119,8 @@ HTMLFormElement::HTMLFormElement(
       mNotifiedObservers(false),
       mNotifiedObserversResult(false),
       mEverTriedInvalidSubmit(false),
-      mIsConstructingEntryList(false) {
+      mIsConstructingEntryList(false),
+      mIsFiringSubmissionEvents(false) {
   
   AddStatesSilently(NS_EVENT_STATE_VALID);
 }
@@ -235,6 +236,15 @@ void HTMLFormElement::MaybeSubmit(Element* aSubmitter) {
       (doc->GetSandboxFlags() & SANDBOXED_FORMS)) {
     return;
   }
+
+  
+  if (mIsFiringSubmissionEvents) {
+    return;
+  }
+
+  
+  AutoRestore<bool> resetFiringSubmissionEventsFlag(mIsFiringSubmissionEvents);
+  mIsFiringSubmissionEvents = true;
 
   
   
