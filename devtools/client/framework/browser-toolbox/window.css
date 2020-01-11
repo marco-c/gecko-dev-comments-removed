@@ -12,10 +12,9 @@ body {
 
 
 
-#toolbox-iframe {
+.devtools-toolbox-browsertoolbox-iframe {
   border: 0;
   width: 100%;
-  flex: 1;
 }
 
 
