@@ -518,8 +518,10 @@ nsScriptSecurityManager::CheckLoadURIFromScript(JSContext* cx, nsIURI* aURI) {
   
   MOZ_ASSERT(cx == nsContentUtils::GetCurrentJSContext());
   nsIPrincipal* principal = nsContentUtils::SubjectPrincipal();
-  nsresult rv = CheckLoadURIWithPrincipal(principal, aURI,
-                                          nsIScriptSecurityManager::STANDARD);
+  nsresult rv = CheckLoadURIWithPrincipal(
+      
+      
+      principal, aURI, nsIScriptSecurityManager::STANDARD, 0);
   if (NS_SUCCEEDED(rv)) {
     
     return NS_OK;
@@ -584,7 +586,8 @@ static bool EqualOrSubdomain(nsIURI* aProbeArg, nsIURI* aBase) {
 NS_IMETHODIMP
 nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
                                                    nsIURI* aTargetURI,
-                                                   uint32_t aFlags) {
+                                                   uint32_t aFlags,
+                                                   uint64_t aInnerWindowID) {
   MOZ_ASSERT(aPrincipal, "CheckLoadURIWithPrincipal must have a principal");
 
   
@@ -622,7 +625,8 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
     if (basePrin->Is<ExpandedPrincipal>()) {
       auto expanded = basePrin->As<ExpandedPrincipal>();
       for (auto& prin : expanded->AllowList()) {
-        nsresult rv = CheckLoadURIWithPrincipal(prin, aTargetURI, aFlags);
+        nsresult rv =
+            CheckLoadURIWithPrincipal(prin, aTargetURI, aFlags, aInnerWindowID);
         if (NS_SUCCEEDED(rv)) {
           
           return NS_OK;
@@ -673,11 +677,15 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
     
     rv = CheckLoadURIFlags(
         sourceURI, aTargetURI, sourceBaseURI, targetBaseURI, aFlags,
-        aPrincipal->OriginAttributesRef().mPrivateBrowsingId > 0);
+        aPrincipal->OriginAttributesRef().mPrivateBrowsingId > 0,
+        aInnerWindowID);
     NS_ENSURE_SUCCESS(rv, rv);
     
-    
-    return aPrincipal->CheckMayLoadWithReporting(targetBaseURI, false, 0);
+    if (aFlags & nsIScriptSecurityManager::DONT_REPORT_ERRORS) {
+      return aPrincipal->CheckMayLoad(targetBaseURI, false);
+    }
+    return aPrincipal->CheckMayLoadWithReporting(targetBaseURI, false,
+                                                 aInnerWindowID);
   }
 
   
@@ -794,7 +802,8 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
     if (!schemesMatch || (denySameSchemeLinks && !isSamePage)) {
       return CheckLoadURIFlags(
           currentURI, currentOtherURI, sourceBaseURI, targetBaseURI, aFlags,
-          aPrincipal->OriginAttributesRef().mPrivateBrowsingId > 0);
+          aPrincipal->OriginAttributesRef().mPrivateBrowsingId > 0,
+          aInnerWindowID);
     }
     
     nsCOMPtr<nsINestedURI> nestedURI = do_QueryInterface(currentURI);
@@ -828,7 +837,8 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
 
 nsresult nsScriptSecurityManager::CheckLoadURIFlags(
     nsIURI* aSourceURI, nsIURI* aTargetURI, nsIURI* aSourceBaseURI,
-    nsIURI* aTargetBaseURI, uint32_t aFlags, bool aFromPrivateWindow) {
+    nsIURI* aTargetBaseURI, uint32_t aFlags, bool aFromPrivateWindow,
+    uint64_t aInnerWindowID) {
   
   
   bool reportErrors = !(aFlags & nsIScriptSecurityManager::DONT_REPORT_ERRORS);
@@ -844,7 +854,8 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
   if (NS_FAILED(rv)) {
     
     if (reportErrors) {
-      ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow);
+      ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow,
+                  aInnerWindowID);
     }
     return rv;
   }
@@ -856,7 +867,8 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
         aTargetURI, nsIProtocolHandler::URI_DISALLOW_IN_PRIVATE_CONTEXT);
     if (NS_FAILED(rv)) {
       if (reportErrors) {
-        ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow);
+        ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow,
+                    aInnerWindowID);
       }
       return rv;
     }
@@ -923,7 +935,8 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
     }
 
     if (reportErrors) {
-      ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow);
+      ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow,
+                  aInnerWindowID);
     }
     return NS_ERROR_DOM_BAD_URI;
   }
@@ -948,7 +961,8 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
 
     
     if (reportErrors) {
-      ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow);
+      ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow,
+                  aInnerWindowID);
     }
     return NS_ERROR_DOM_BAD_URI;
   }
@@ -1050,7 +1064,7 @@ nsScriptSecurityManager::CheckLoadURIStrWithPrincipal(
   rv = NS_NewURI(getter_AddRefs(target), aTargetURIStr);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = CheckLoadURIWithPrincipal(aPrincipal, target, aFlags);
+  rv = CheckLoadURIWithPrincipal(aPrincipal, target, aFlags, 0);
   if (rv == NS_ERROR_DOM_BAD_URI) {
     
     
@@ -1082,7 +1096,7 @@ nsScriptSecurityManager::CheckLoadURIStrWithPrincipal(
                                getter_AddRefs(target));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = CheckLoadURIWithPrincipal(aPrincipal, target, aFlags);
+    rv = CheckLoadURIWithPrincipal(aPrincipal, target, aFlags, 0);
     if (rv == NS_ERROR_DOM_BAD_URI) {
       
       
