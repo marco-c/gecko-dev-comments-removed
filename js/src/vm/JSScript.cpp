@@ -508,12 +508,15 @@ static XDRResult XDRInnerObject(XDRState<mode>* xdr,
 
 template <XDRMode mode>
 static XDRResult XDRScope(XDRState<mode>* xdr, js::PrivateScriptData* data,
-                          HandleScope scriptEnclosingScope, HandleFunction fun,
-                          bool isFirstScope, MutableHandleScope scope) {
+                          HandleScope scriptEnclosingScope,
+                          HandleObject funOrMod, bool isFirstScope,
+                          MutableHandleScope scope) {
   JSContext* cx = xdr->cx();
 
   ScopeKind scopeKind;
   RootedScope enclosing(cx);
+  RootedFunction fun(cx);
+  RootedModuleObject module(cx);
   uint32_t enclosingIndex = 0;
 
   
@@ -538,6 +541,12 @@ static XDRResult XDRScope(XDRState<mode>* xdr, js::PrivateScriptData* data,
       enclosing = scriptEnclosingScope;
     } else {
       enclosing = &data->gcthings()[enclosingIndex].as<Scope>();
+    }
+
+    if (funOrMod && funOrMod->is<ModuleObject>()) {
+      module.set(funOrMod.as<ModuleObject>());
+    } else if (funOrMod && funOrMod->is<JSFunction>()) {
+      fun.set(funOrMod.as<JSFunction>());
     }
   }
 
@@ -569,6 +578,8 @@ static XDRResult XDRScope(XDRState<mode>* xdr, js::PrivateScriptData* data,
       MOZ_TRY(GlobalScope::XDR(xdr, scopeKind, scope));
       break;
     case ScopeKind::Module:
+      MOZ_TRY(ModuleScope::XDR(xdr, module, enclosing, scope));
+      break;
     case ScopeKind::WasmInstance:
       MOZ_CRASH("NYI");
       break;
@@ -588,7 +599,7 @@ template <XDRMode mode>
 static XDRResult XDRScriptGCThing(XDRState<mode>* xdr, PrivateScriptData* data,
                                   HandleScriptSourceObject sourceObject,
                                   HandleScope scriptEnclosingScope,
-                                  HandleFunction fun, bool* isFirstScope,
+                                  HandleObject funOrMod, bool* isFirstScope,
                                   JS::GCCellPtr* thingp) {
   JSContext* cx = xdr->cx();
 
@@ -628,7 +639,7 @@ static XDRResult XDRScriptGCThing(XDRState<mode>* xdr, PrivateScriptData* data,
       if (mode == XDR_ENCODE) {
         scope = &thing.as<Scope>();
       }
-      MOZ_TRY(XDRScope(xdr, data, scriptEnclosingScope, fun, *isFirstScope,
+      MOZ_TRY(XDRScope(xdr, data, scriptEnclosingScope, funOrMod, *isFirstScope,
                        &scope));
       if (mode == XDR_DECODE) {
         *thingp = JS::GCCellPtr(scope.get());
@@ -693,7 +704,7 @@ template <XDRMode mode>
 XDRResult js::PrivateScriptData::XDR(XDRState<mode>* xdr, HandleScript script,
                                      HandleScriptSourceObject sourceObject,
                                      HandleScope scriptEnclosingScope,
-                                     HandleFunction fun) {
+                                     HandleObject funOrMod) {
   uint32_t ngcthings = 0;
 
   JSContext* cx = xdr->cx();
@@ -717,8 +728,8 @@ XDRResult js::PrivateScriptData::XDR(XDRState<mode>* xdr, HandleScript script,
 
   bool isFirstScope = true;
   for (JS::GCCellPtr& gcThing : data->gcthings()) {
-    MOZ_TRY(XDRScriptGCThing(xdr, data, sourceObject, scriptEnclosingScope, fun,
-                             &isFirstScope, &gcThing));
+    MOZ_TRY(XDRScriptGCThing(xdr, data, sourceObject, scriptEnclosingScope,
+                             funOrMod, &isFirstScope, &gcThing));
   }
 
   
@@ -1044,7 +1055,7 @@ template
 template <XDRMode mode>
 XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
                         HandleScriptSourceObject sourceObjectArg,
-                        HandleFunction fun, MutableHandleScript scriptp) {
+                        HandleObject funOrMod, MutableHandleScript scriptp) {
   using ImmutableFlags = JSScript::ImmutableFlags;
 
   
@@ -1072,6 +1083,7 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
 
   JSContext* cx = xdr->cx();
   RootedScript script(cx);
+  bool isInnerFunction = funOrMod && funOrMod->is<JSFunction>();
 
   
   
@@ -1084,7 +1096,12 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
 
   if (mode == XDR_ENCODE) {
     script = scriptp.get();
-    MOZ_ASSERT(script->function() == fun);
+
+    RootedFunction fun(cx);
+    if (isInnerFunction) {
+      MOZ_ASSERT(script->function() == funOrMod);
+      fun.set(&funOrMod->as<JSFunction>());
+    }
 
     if (!fun && script->treatAsRunOnce() && script->hasRunOnce()) {
       
@@ -1197,9 +1214,10 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
   }
 
   if (mode == XDR_DECODE) {
-    RootedObject functionOrGlobal(cx,
-                                  fun ? static_cast<JSObject*>(fun)
-                                      : static_cast<JSObject*>(cx->global()));
+    RootedObject functionOrGlobal(
+        cx, isInnerFunction ? static_cast<JSObject*>(funOrMod)
+                            : static_cast<JSObject*>(cx->global()));
+
     script = JSScript::Create(cx, functionOrGlobal, *options, sourceObject,
                               sourceStart, sourceEnd, toStringStart,
                               toStringEnd, lineno, column);
@@ -1218,8 +1236,8 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
 
     
     
-    if (fun) {
-      fun->initScript(script);
+    if (isInnerFunction) {
+      funOrMod->as<JSFunction>().initScript(script);
     }
   }
 
@@ -1235,8 +1253,13 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
 
   
   MOZ_TRY(PrivateScriptData::XDR<mode>(xdr, script, sourceObject,
-                                       scriptEnclosingScope, fun));
+                                       scriptEnclosingScope, funOrMod));
   MOZ_TRY(RuntimeScriptData::XDR<mode>(xdr, script));
+
+  RootedFunction fun(cx);
+  if (isInnerFunction) {
+    fun.set(&funOrMod->as<JSFunction>());
+  }
 
   if (mode == XDR_DECODE) {
     if (!script->shareScriptData(cx)) {
@@ -1277,11 +1300,11 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
 }
 
 template XDRResult js::XDRScript(XDRState<XDR_ENCODE>*, HandleScope,
-                                 HandleScriptSourceObject, HandleFunction,
+                                 HandleScriptSourceObject, HandleObject,
                                  MutableHandleScript);
 
 template XDRResult js::XDRScript(XDRState<XDR_DECODE>*, HandleScope,
-                                 HandleScriptSourceObject, HandleFunction,
+                                 HandleScriptSourceObject, HandleObject,
                                  MutableHandleScript);
 
 template <XDRMode mode>

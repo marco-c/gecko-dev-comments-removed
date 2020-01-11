@@ -78,6 +78,10 @@ extern JSAtom* ToAtom(JSContext* cx,
 
 
 
+
+
+
+
 extern JS::Handle<PropertyName*> ClassName(JSProtoKey key, JSContext* cx);
 
 #ifdef DEBUG

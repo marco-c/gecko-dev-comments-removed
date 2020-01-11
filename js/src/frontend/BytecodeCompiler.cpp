@@ -615,13 +615,9 @@ ModuleObject* frontend::ModuleCompiler<Unit>::compile(
     return nullptr;
   }
 
-  RootedModuleEnvironmentObject env(
-      cx, ModuleEnvironmentObject::create(cx, module));
-  if (!env) {
+  if (!ModuleObject::createEnvironment(cx, module)) {
     return nullptr;
   }
-
-  module->setInitialEnvironment(env);
 
   
   if (!info.scriptSource->tryCompressOffThread(cx)) {
