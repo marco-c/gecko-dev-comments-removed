@@ -17,6 +17,9 @@
 
 namespace js {
 
+class AsyncFunctionGeneratorObject;
+class AsyncGeneratorObject;
+
 enum PromiseSlots {
   
   PromiseSlot_Flags = 0,
@@ -83,6 +86,7 @@ enum PromiseSlots {
 #define PROMISE_FLAG_HAD_USER_INTERACTION_UPON_CREATION 0x40
 
 class AutoSetNewObjectMetadata;
+struct PromiseReactionRecordBuilder;
 
 class PromiseObject : public NativeObject {
  public:
@@ -152,6 +156,22 @@ class PromiseObject : public NativeObject {
 
   
   uint64_t getID();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_MUST_USE bool forEachReactionRecord(
+      JSContext* cx, PromiseReactionRecordBuilder& builder);
 
   bool isUnhandled() {
     MOZ_ASSERT(state() == JS::PromiseState::Rejected);
@@ -593,6 +613,53 @@ class OffThreadPromiseRuntimeState {
 
   
   void shutdown(JSContext* cx);
+};
+
+
+
+struct PromiseReactionRecordBuilder {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual MOZ_MUST_USE bool then(JSContext* cx, HandleObject resolve,
+                                 HandleObject reject, HandleObject result) = 0;
+
+  
+  
+  
+  
+  
+  
+  virtual MOZ_MUST_USE bool direct(JSContext* cx,
+                                   Handle<PromiseObject*> unwrappedPromise) = 0;
+
+  
+  
+  
+  
+  
+  
+  virtual MOZ_MUST_USE bool asyncFunction(
+      JSContext* cx,
+      Handle<AsyncFunctionGeneratorObject*> unwrappedGenerator) = 0;
+
+  
+  
+  
+  
+  
+  
+  virtual MOZ_MUST_USE bool asyncGenerator(
+      JSContext* cx, Handle<AsyncGeneratorObject*> unwrappedGenerator) = 0;
 };
 
 }  
