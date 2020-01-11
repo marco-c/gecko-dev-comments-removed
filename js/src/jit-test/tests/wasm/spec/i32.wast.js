@@ -84,6 +84,9 @@ assert_trap(() => call($1, "div_s", [0, 0]));
 assert_trap(() => call($1, "div_s", [-2_147_483_648, -1]));
 
 
+assert_trap(() => call($1, "div_s", [-2_147_483_648, 0]));
+
+
 assert_return(() => call($1, "div_s", [1, 1]), 1);
 
 
