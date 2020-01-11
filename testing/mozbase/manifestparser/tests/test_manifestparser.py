@@ -71,7 +71,7 @@ class TestManifestParser(unittest.TestCase):
                           ('flowers', 'foo.ini')])
 
         
-        self.assertTrue(all([t['ancestor_manifest'] == 'include-example.ini'
+        self.assertTrue(all([t['ancestor-manifest'] == include_example
                              for t in parser.tests if t['name'] != 'fleem']))
 
         
@@ -249,8 +249,9 @@ yellow = submarine
         included_foo = os.path.join(here, 'include', 'foo.ini')
         manifest_default_key = (include_example, included_foo)
 
-        self.assertFalse('ancestor_manifest' in isolated_test)
-        self.assertEqual(included_test['ancestor_manifest'], 'include-example.ini')
+        self.assertFalse('ancestor-manifest' in isolated_test)
+        self.assertEqual(included_test['ancestor-manifest'],
+                         os.path.join(here, 'include-example.ini'))
 
         self.assertTrue(include_example in parser.manifest_defaults)
         self.assertTrue(included_foo in parser.manifest_defaults)

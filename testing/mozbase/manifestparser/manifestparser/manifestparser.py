@@ -81,7 +81,7 @@ class ManifestParser(object):
         self.source_files = set()
         self.strict = strict
         self.rootdir = rootdir
-        self._root = None
+        self.relativeRoot = None
         self.finder = finder
         self._handle_defaults = handle_defaults
         if manifests:
@@ -91,34 +91,6 @@ class ManifestParser(object):
         if self.finder:
             return self.finder.get(path) is not None
         return os.path.exists(path)
-
-    @property
-    def root(self):
-        if not self._root:
-            if self.rootdir is None:
-                self._root = ""
-            else:
-                assert os.path.isabs(self.rootdir)
-                self._root = self.rootdir + os.path.sep
-        return self._root
-
-    def relative_to_root(self, path):
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if path.startswith(self.root):
-            return path[len(self.root):]
-        else:
-            return relpath(path, self.root)
 
     
 
@@ -167,6 +139,14 @@ class ManifestParser(object):
             fp = filename
             filename = here = None
         defaults['here'] = here
+
+        
+        
+        if self.rootdir is None:
+            rootdir = ""
+        else:
+            assert os.path.isabs(self.rootdir)
+            rootdir = self.rootdir + os.path.sep
 
         
         sections = read_ini(fp=fp, variables=defaults, strict=self.strict,
@@ -221,11 +201,29 @@ class ManifestParser(object):
             test = data
             test['name'] = section
 
+            def relative_to_root(path):
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                if path.startswith(rootdir):
+                    return path[len(rootdir):]
+                else:
+                    return relpath(path, rootdir)
+
             
             test['manifest'] = filename
             test['manifest_relpath'] = None
             if test['manifest']:
-                test['manifest_relpath'] = self.relative_to_root(normalize_path(test['manifest']))
+                test['manifest_relpath'] = relative_to_root(normalize_path(test['manifest']))
 
             
             path = test.get('path', section)
@@ -240,7 +238,7 @@ class ManifestParser(object):
                     path = os.path.join(here, path)
                     if '..' in path:
                         path = os.path.normpath(path)
-                _relpath = self.relative_to_root(path)
+                _relpath = relative_to_root(path)
 
             test['path'] = path
             test['relpath'] = _relpath
@@ -250,7 +248,7 @@ class ManifestParser(object):
                 
                 
                 
-                test['ancestor_manifest'] = self.relative_to_root(parentmanifest)
+                test['ancestor-manifest'] = parentmanifest
 
             
             self.tests.append(test)
@@ -507,7 +505,7 @@ class ManifestParser(object):
                 'manifest',
                 'manifest_relpath',
                 'relpath',
-                'ancestor_manifest'
+                'ancestor-manifest'
             ]
             for key in sorted(test.keys()):
                 if key in reserved:
