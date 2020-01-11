@@ -9,6 +9,9 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { DeferredTask } = ChromeUtils.import(
   "resource://gre/modules/DeferredTask.jsm"
 );
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 
 const AUDIO_TOGGLE_ENABLED_PREF =
   "media.videocontrols.picture-in-picture.audio-toggle.enabled";
@@ -144,6 +147,8 @@ let Player = {
       screenX: window.screenX.toString(),
       screenY: window.screenY.toString(),
     });
+
+    this.computeAndSetMinimumSize(window.outerWidth, window.outerHeight);
   },
 
   uninit() {
@@ -322,5 +327,47 @@ let Player = {
         this.controls.removeAttribute("showing");
       }, CONTROLS_FADE_TIMEOUT_MS);
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  computeAndSetMinimumSize(width, height) {
+    if (!AppConstants.MOZ_WIDGET_GTK) {
+      return;
+    }
+
+    
+    
+    const MIN_WIDTH = 120;
+    const MIN_HEIGHT = 80;
+
+    let resultWidth = width;
+    let resultHeight = height;
+    let aspectRatio = width / height;
+
+    
+    
+    
+    if (width < height) {
+      resultWidth = MIN_WIDTH;
+      resultHeight = Math.round(MIN_WIDTH / aspectRatio);
+    } else {
+      resultHeight = MIN_HEIGHT;
+      resultWidth = Math.round(MIN_HEIGHT * aspectRatio);
+    }
+
+    document.documentElement.style.minWidth = resultWidth + "px";
+    document.documentElement.style.minHeight = resultHeight + "px";
   },
 };
