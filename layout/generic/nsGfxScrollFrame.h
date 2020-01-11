@@ -54,6 +54,7 @@ class ScrollFrameHelper : public nsIReflowCallback {
   typedef mozilla::layers::Layer Layer;
   typedef mozilla::layers::LayerManager LayerManager;
   typedef mozilla::layout::ScrollAnchorContainer ScrollAnchorContainer;
+  using Element = mozilla::dom::Element;
 
   class AsyncScroll;
   class AsyncSmoothMSDScroll;
@@ -122,18 +123,17 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
 
 
-  void FinishReflowForScrollbar(mozilla::dom::Element* aElement, nscoord aMinXY,
+  void FinishReflowForScrollbar(Element* aElement, nscoord aMinXY,
                                 nscoord aMaxXY, nscoord aCurPosXY,
                                 nscoord aPageIncrement, nscoord aIncrement);
   
 
 
-  void SetScrollbarEnabled(mozilla::dom::Element* aElement, nscoord aMaxPos);
+  void SetScrollbarEnabled(Element* aElement, nscoord aMaxPos);
   
 
 
-  void SetCoordAttribute(mozilla::dom::Element* aElement, nsAtom* aAtom,
-                         nscoord aSize);
+  void SetCoordAttribute(Element* aElement, nsAtom* aAtom, nscoord aSize);
 
   nscoord GetCoordAttribute(nsIFrame* aFrame, nsAtom* aAtom,
                             nscoord aDefaultValue, nscoord* aRangeStart,
@@ -521,10 +521,10 @@ class ScrollFrameHelper : public nsIReflowCallback {
                                           AnonymousContentKey& aKey);
 
   
-  nsCOMPtr<mozilla::dom::Element> mHScrollbarContent;
-  nsCOMPtr<mozilla::dom::Element> mVScrollbarContent;
-  nsCOMPtr<mozilla::dom::Element> mScrollCornerContent;
-  nsCOMPtr<mozilla::dom::Element> mResizerContent;
+  nsCOMPtr<Element> mHScrollbarContent;
+  nsCOMPtr<Element> mVScrollbarContent;
+  nsCOMPtr<Element> mScrollCornerContent;
+  nsCOMPtr<Element> mResizerContent;
 
   class ScrollEvent;
   class ScrollEndEvent;

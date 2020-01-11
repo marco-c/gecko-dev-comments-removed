@@ -250,7 +250,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
-  void RecomputeMouseEnterStateForRemoteFrame(Element& aElement);
+  void RecomputeMouseEnterStateForRemoteFrame(dom::Element& aElement);
 
   nsPresContext* GetPresContext() { return mPresContext; }
 

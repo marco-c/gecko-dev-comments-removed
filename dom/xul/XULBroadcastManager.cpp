@@ -18,7 +18,7 @@ struct BroadcastListener {
 };
 
 struct BroadcasterMapEntry : public PLDHashEntryHdr {
-  Element* mBroadcaster;  
+  mozilla::dom::Element* mBroadcaster;  
   nsTArray<BroadcastListener*>
       mListeners;  
 };

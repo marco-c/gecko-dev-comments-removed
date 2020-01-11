@@ -483,7 +483,7 @@ void nsResizerFrame::RestoreOriginalSize(nsIContent* aContent) {
 
 
 nsResizerFrame::Direction nsResizerFrame::GetDirection() {
-  static const Element::AttrValuesArray strings[] = {
+  static const mozilla::dom::Element::AttrValuesArray strings[] = {
       
      nsGkAtoms::topleft,    nsGkAtoms::top,    nsGkAtoms::topright,
      nsGkAtoms::left,                          nsGkAtoms::right,

@@ -747,8 +747,7 @@ void Accessible::TakeFocus() const {
   if (fm) {
     dom::AutoHandlingUserInputStatePusher inputStatePusher(true);
     
-    RefPtr<Element> element =
-        focusContent->IsElement() ? focusContent->AsElement() : nullptr;
+    RefPtr<dom::Element> element = dom::Element::FromNodeOrNull(focusContent);
     fm->SetFocus(element, 0);
   }
 }
