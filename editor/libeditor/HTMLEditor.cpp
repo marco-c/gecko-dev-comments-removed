@@ -764,6 +764,9 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
 
 
 bool HTMLEditor::NodeIsBlockStatic(const nsINode& aElement) {
+  if (!aElement.IsElement()) {
+    return false;
+  }
   
   
   if (aElement.IsAnyOfHTMLElements(
