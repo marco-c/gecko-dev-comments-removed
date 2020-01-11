@@ -36,7 +36,7 @@ class IO extends Domain {
 
 
 
-  async close(options) {
+  async close(options = {}) {
     const { handle } = options;
 
     if (typeof handle != "string") {

@@ -306,7 +306,7 @@ class Page extends Domain {
 
 
 
-  async printToPDF(options) {
+  async printToPDF(options = {}) {
     const {
       displayHeaderFooter = false,
       
