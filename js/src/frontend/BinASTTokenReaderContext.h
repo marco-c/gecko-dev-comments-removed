@@ -12,13 +12,13 @@
 #include "mozilla/Attributes.h"    
 #include "mozilla/IntegerRange.h"  
 #include "mozilla/Maybe.h"         
+#include "mozilla/Span.h"          
 #include "mozilla/Variant.h"       
 
 #include <stddef.h>  
 #include <stdint.h>  
 
 #include "jstypes.h"                        
-#include "ds/FixedLengthVector.h"           
 #include "frontend/BinASTRuntimeSupport.h"  
 #include "frontend/BinASTToken.h"  
 #include "frontend/BinASTTokenReaderBase.h"  
@@ -267,6 +267,8 @@ enum class Nullable {
   NonNull,
 };
 
+class TemporaryStorage;
+
 
 class SingleEntryHuffmanTable {
  public:
@@ -314,10 +316,10 @@ class TwoEntriesHuffmanTable {
   
   
   
-  JS::Result<Ok> initStart(JSContext* cx, size_t numberOfSymbols,
-                           uint8_t maxBitLength);
+  JS::Result<Ok> initStart(JSContext* cx, TemporaryStorage* tempStorage,
+                           size_t numberOfSymbols, uint8_t maxBitLength);
 
-  JS::Result<Ok> initComplete(JSContext* cx);
+  JS::Result<Ok> initComplete(JSContext* cx, TemporaryStorage* tempStorage);
 
   
   
@@ -472,10 +474,10 @@ class SingleLookupHuffmanTable {
   
   
   
-  JS::Result<Ok> initStart(JSContext* cx, size_t numberOfSymbols,
-                           uint8_t maxBitLength);
+  JS::Result<Ok> initStart(JSContext* cx, TemporaryStorage* tempStorage,
+                           size_t numberOfSymbols, uint8_t maxBitLength);
 
-  JS::Result<Ok> initComplete(JSContext* cx);
+  JS::Result<Ok> initComplete(JSContext* cx, TemporaryStorage* tempStorage);
 
   
   
@@ -498,7 +500,7 @@ class SingleLookupHuffmanTable {
   HuffmanLookupResult lookup(HuffmanLookup key) const;
 
   
-  size_t length() const { return values_.length(); }
+  size_t length() const { return values_.size(); }
 
   
   struct Iterator {
@@ -512,8 +514,8 @@ class SingleLookupHuffmanTable {
    private:
     const HuffmanEntry* position_;
   };
-  Iterator begin() const { return Iterator(values_.begin()); }
-  Iterator end() const { return Iterator(values_.end()); }
+  Iterator begin() const { return Iterator(&values_[0]); }
+  Iterator end() const { return Iterator(&values_[0] + values_.size()); }
 
  private:
   
@@ -521,14 +523,14 @@ class SingleLookupHuffmanTable {
   
   
   
-  FixedLengthVector<HuffmanEntry> values_;
+  mozilla::Span<HuffmanEntry> values_;
 
   
   
   
   
   
-  FixedLengthVector<InternalIndex> saturated_;
+  mozilla::Span<InternalIndex> saturated_;
 
   
   
@@ -693,10 +695,10 @@ class MultiLookupHuffmanTable {
   
   
   
-  JS::Result<Ok> initStart(JSContext* cx, size_t numberOfSymbols,
-                           uint8_t largestBitLength);
+  JS::Result<Ok> initStart(JSContext* cx, TemporaryStorage* tempStorage,
+                           size_t numberOfSymbols, uint8_t largestBitLength);
 
-  JS::Result<Ok> initComplete(JSContext* cx);
+  JS::Result<Ok> initComplete(JSContext* cx, TemporaryStorage* tempStorage);
 
   
   
@@ -719,7 +721,7 @@ class MultiLookupHuffmanTable {
   HuffmanLookupResult lookup(HuffmanLookup key) const;
 
   
-  size_t length() const { return values_.length(); }
+  size_t length() const { return values_.size(); }
 
   
   struct Iterator {
@@ -733,8 +735,8 @@ class MultiLookupHuffmanTable {
    private:
     const HuffmanEntry* position_;
   };
-  Iterator begin() const { return Iterator(values_.begin()); }
-  Iterator end() const { return Iterator(values_.end()); }
+  Iterator begin() const { return Iterator(&values_[0]); }
+  Iterator end() const { return Iterator(&values_[0] + values_.size()); }
 
  public:
   
@@ -755,7 +757,7 @@ class MultiLookupHuffmanTable {
   
   
   
-  FixedLengthVector<HuffmanEntry> values_;
+  mozilla::Span<HuffmanEntry> values_;
 
   
   
@@ -764,7 +766,7 @@ class MultiLookupHuffmanTable {
   
   
   
-  FixedLengthVector<Subtable> suffixTables_;
+  mozilla::Span<Subtable> suffixTables_;
 
   
   
@@ -800,15 +802,15 @@ struct GenericHuffmanTable {
   
   
   
-  JS::Result<Ok> initStart(JSContext* cx, size_t numberOfSymbols,
-                           uint8_t maxBitLength);
+  JS::Result<Ok> initStart(JSContext* cx, TemporaryStorage* tempStorage,
+                           size_t numberOfSymbols, uint8_t maxBitLength);
 
   
   
   JS::Result<Ok> addSymbol(size_t index, uint32_t bits, uint8_t bitLength,
                            const BinASTSymbol& value);
 
-  JS::Result<Ok> initComplete(JSContext* cx);
+  JS::Result<Ok> initComplete(JSContext* cx, TemporaryStorage* tempStorage);
 
   
   size_t length() const;
@@ -874,6 +876,83 @@ struct GenericHuffmanTable {
                    SingleLookupHuffmanTable, TwoLookupsHuffmanTable,
                    ThreeLookupsHuffmanTable, TableImplementationUninitialized>
       implementation_;
+};
+
+
+
+
+
+
+
+
+template <typename T>
+class TemporaryStorageItem {
+  class Chunk {
+   public:
+    
+    static const size_t DefaultSize = 1024;
+
+    
+    Chunk* next_ = nullptr;
+
+    
+    size_t used_ = 0;
+
+    
+    
+    
+    size_t size_ = 0;
+
+    
+    
+    T entries_[1];
+
+    Chunk() {}
+  };
+
+  
+  size_t total_ = 0;
+
+  
+  Chunk* head_ = nullptr;
+
+ public:
+  TemporaryStorageItem() {}
+
+  ~TemporaryStorageItem() {
+    Chunk* chunk = head_;
+    while (chunk) {
+      Chunk* next = chunk->next_;
+      js_free(chunk);
+      chunk = next;
+    }
+  }
+
+  
+  
+  T* alloc(JSContext* cx, size_t count);
+};
+
+
+
+
+
+
+class TemporaryStorage {
+  using InternalIndex = uint8_t;
+
+  TemporaryStorageItem<HuffmanEntry> huffmanEntries_;
+  TemporaryStorageItem<InternalIndex> internalIndices_;
+  TemporaryStorageItem<SingleLookupHuffmanTable> singleTables_;
+  TemporaryStorageItem<TwoLookupsHuffmanTable> twoTables_;
+
+ public:
+  TemporaryStorage() {}
+
+  
+  
+  template <typename T>
+  JS::Result<mozilla::Span<T>> alloc(JSContext* cx, size_t count);
 };
 
 
@@ -1354,6 +1433,10 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
   BinASTSourceMetadataContext* metadata_;
 
   class HuffmanDictionary dictionary_;
+
+  
+  
+  TemporaryStorage tempStorage_;
 
   const uint8_t* posBeforeTree_;
 
