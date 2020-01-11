@@ -70,7 +70,18 @@ class GeckoViewSelectionActionChild extends GeckoViewChildModule {
       },
       {
         id: "org.mozilla.geckoview.SELECT_ALL",
-        predicate: e => e.reason !== "longpressonemptycontent",
+        predicate: e => {
+          if (e.reason === "longpressonemptycontent") {
+            return false;
+          }
+          if (e.target && e.target.activeElement) {
+            const value = e.target.activeElement.value;
+            
+            
+            return value !== "" && value !== e.selectedTextContent;
+          }
+          return true;
+        },
         perform: e => docShell.doCommand("cmd_selectAll"),
       },
     ];
