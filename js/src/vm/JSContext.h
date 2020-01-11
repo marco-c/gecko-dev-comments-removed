@@ -823,15 +823,6 @@ struct JSContext : public JS::RootingContext,
 
   inline js::RuntimeCaches& caches();
 
- private:
-  
-
-
-
-
-
-  JS_FRIEND_API void checkMallocGCPressure(void* p);
-
  public:
   using InterruptCallbackVector =
       js::Vector<JSInterruptCallback, 2, js::SystemAllocPolicy>;
