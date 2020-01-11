@@ -17,27 +17,6 @@ async function clickToReportAndAwaitReportTabLoad() {
   });
 
   
-  await new Promise(resolve => {
-    const progressListener = {
-      onLocationChange(browser) {
-        
-        if (browser != tab.linkedBrowser) {
-          return;
-        }
-
-        
-        if (browser.currentURI.spec === "about:blank") {
-          return;
-        }
-
-        gBrowser.removeTabsProgressListener(progressListener);
-        TestUtils.executeSoon(() => resolve());
-      },
-    };
-    gBrowser.addTabsProgressListener(progressListener);
-  });
-
-  
   await BrowserTestUtils.waitForContentEvent(
     gBrowser.selectedBrowser,
     "ScreenshotReceived",
