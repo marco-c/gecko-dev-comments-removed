@@ -843,12 +843,6 @@ void Chunk::init(GCRuntime* gc) {
 
 
 
-  bitmap.clear();
-
-  
-
-
-
   decommitAllArenas();
 
   
