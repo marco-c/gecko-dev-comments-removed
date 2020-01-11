@@ -208,5 +208,15 @@ ResizeObserverController::~ResizeObserverController() {
   mResizeObserverNotificationHelper->DetachFromOwner();
 }
 
+void ResizeObserverController::AddSizeOfIncludingThis(
+    nsWindowSizes& aSizes) const {
+  MallocSizeOf mallocSizeOf = aSizes.mState.mMallocSizeOf;
+  size_t size = mallocSizeOf(this);
+  size += mResizeObservers.ShallowSizeOfExcludingThis(mallocSizeOf);
+  
+  
+  aSizes.mDOMResizeObserverControllerSize += size;
+}
+
 }  
 }  
