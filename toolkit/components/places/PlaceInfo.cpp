@@ -8,6 +8,7 @@
 #include "nsServiceManagerUtils.h"
 #include "nsIXPConnect.h"
 #include "jsapi.h"
+#include "js/Array.h"  
 
 namespace mozilla {
 namespace places {
@@ -86,7 +87,7 @@ PlaceInfo::GetVisits(JSContext* aContext,
 
   
   
-  JS::Rooted<JSObject*> visits(aContext, JS_NewArrayObject(aContext, 0));
+  JS::Rooted<JSObject*> visits(aContext, JS::NewArrayObject(aContext, 0));
   NS_ENSURE_TRUE(visits, NS_ERROR_OUT_OF_MEMORY);
 
   JS::Rooted<JSObject*> global(aContext, JS::CurrentGlobalOrNull(aContext));

@@ -7,6 +7,7 @@
 #include "nsXULAppAPI.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
+#include "js/Array.h"  
 #include "js/CharacterEncoding.h"
 #include "js/CompilationAndEvaluation.h"  
 #include "js/ContextOptions.h"
@@ -931,7 +932,7 @@ static bool ProcessArgs(AutoJSAPI& jsapi, char** argv, int argc,
 
 
 
-  argsObj = JS_NewArrayObject(cx, 0);
+  argsObj = JS::NewArrayObject(cx, 0);
   if (!argsObj) {
     return 1;
   }

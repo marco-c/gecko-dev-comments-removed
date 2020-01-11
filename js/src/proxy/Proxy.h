@@ -9,6 +9,7 @@
 
 #include "NamespaceImports.h"
 
+#include "js/Array.h"  
 #include "js/Class.h"
 
 namespace js {

@@ -2,6 +2,7 @@
 
 
 
+#include "js/Array.h"  
 #include "js/JSON.h"
 #include "jsapi.h"
 #include "mozilla/PresShell.h"
@@ -903,13 +904,13 @@ static void SetElementAsObject(JSContext* aCx, Element* aElement,
 
     
     bool isArray = false;
-    JS_IsArrayObject(aCx, aObject, &isArray);
+    JS::IsArrayObject(aCx, aObject, &isArray);
     if (!isArray) {
       return;
     }
     JS::Rooted<JSObject*> arrayObj(aCx, &aObject.toObject());
     uint32_t arrayLength = 0;
-    if (!JS_GetArrayLength(aCx, arrayObj, &arrayLength)) {
+    if (!JS::GetArrayLength(aCx, arrayObj, &arrayLength)) {
       JS_ClearPendingException(aCx);
       return;
     }

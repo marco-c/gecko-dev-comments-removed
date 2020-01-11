@@ -43,38 +43,6 @@ namespace JS {
 
 
 
-enum class IsArrayAnswer { Array, NotArray, RevokedProxy };
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool IsArray(JSContext* cx, HandleObject obj,
-                                  bool* isArray);
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool IsArray(JSContext* cx, HandleObject obj,
-                                  IsArrayAnswer* answer);
-
-
-
-
-
 
 
 

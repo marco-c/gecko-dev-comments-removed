@@ -1138,11 +1138,14 @@ class CGHeaders(CGWrapper):
             
             
             
+            
+            
             unrolled = t
             while True:
                 if unrolled.nullable():
                     headerSet.add("mozilla/dom/Nullable.h")
                 elif unrolled.isSequence():
+                    bindingHeaders.add("js/Array.h")
                     bindingHeaders.add("js/ForOfIterator.h")
                 else:
                     break
@@ -6861,7 +6864,7 @@ def getWrapTemplateForType(type, descriptorProvider, result, successCode,
             """
 
             uint32_t length = ${result}.Length();
-            JS::Rooted<JSObject*> returnArray(cx, JS_NewArrayObject(cx, length));
+            JS::Rooted<JSObject*> returnArray(cx, JS::NewArrayObject(cx, length));
             if (!returnArray) {
               $*{exceptionCode}
             }

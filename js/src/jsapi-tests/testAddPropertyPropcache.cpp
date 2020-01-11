@@ -5,6 +5,7 @@
 
 
 
+#include "js/Array.h"  
 #include "jsapi-tests/tests.h"
 
 static int callCount = 0;
@@ -33,7 +34,7 @@ BEGIN_TEST(testAddPropertyHook) {
   JS_InitClass(cx, global, obj, &AddPropertyClass, nullptr, 0, nullptr, nullptr,
                nullptr, nullptr);
 
-  obj = JS_NewArrayObject(cx, 0);
+  obj = JS::NewArrayObject(cx, 0);
   CHECK(obj);
   JS::RootedValue arr(cx, JS::ObjectValue(*obj));
 

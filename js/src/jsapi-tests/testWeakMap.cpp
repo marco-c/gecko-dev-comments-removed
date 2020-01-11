@@ -6,6 +6,7 @@
 
 
 #include "gc/Zone.h"
+#include "js/Array.h"  
 #include "jsapi-tests/tests.h"
 #include "vm/Realm.h"
 
@@ -53,7 +54,7 @@ bool checkSize(JS::HandleObject map, uint32_t expected) {
   CHECK(JS_NondeterministicGetWeakMapKeys(cx, map, &keys));
 
   uint32_t length;
-  CHECK(JS_GetArrayLength(cx, keys, &length));
+  CHECK(JS::GetArrayLength(cx, keys, &length));
   CHECK(length == expected);
 
   return true;
@@ -235,7 +236,7 @@ bool checkSize(JS::HandleObject map, uint32_t expected) {
   CHECK(JS_NondeterministicGetWeakMapKeys(cx, map, &keys));
 
   uint32_t length;
-  CHECK(JS_GetArrayLength(cx, keys, &length));
+  CHECK(JS::GetArrayLength(cx, keys, &length));
   CHECK(length == expected);
 
   return true;

@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <stdint.h>  
 #include "IndexedDatabaseManager.h"
+#include "js/Array.h"        
 #include "js/ArrayBuffer.h"  
 #include "js/Date.h"
 #include "js/MemoryFunctions.h"
@@ -392,7 +393,7 @@ nsresult Key::DecodeJSValInternal(const EncodedDataType*& aPos,
   }
 
   if (*aPos - aTypeOffset >= eArray) {
-    JS::Rooted<JSObject*> array(aCx, JS_NewArrayObject(aCx, 0));
+    JS::Rooted<JSObject*> array(aCx, JS::NewArrayObject(aCx, 0));
     if (!array) {
       NS_WARNING("Failed to make array!");
       IDB_REPORT_INTERNAL_ERR();

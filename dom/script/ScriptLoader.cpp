@@ -14,6 +14,7 @@
 #include "prsystem.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
+#include "js/Array.h"  
 #include "js/CompilationAndEvaluation.h"
 #include "js/MemoryFunctions.h"
 #include "js/Modules.h"  
@@ -670,7 +671,7 @@ static nsresult ResolveRequestedModules(ModuleLoadRequest* aRequest,
   MOZ_ASSERT(requestedModules);
 
   uint32_t length;
-  if (!JS_GetArrayLength(cx, requestedModules, &length)) {
+  if (!JS::GetArrayLength(cx, requestedModules, &length)) {
     return NS_ERROR_FAILURE;
   }
 

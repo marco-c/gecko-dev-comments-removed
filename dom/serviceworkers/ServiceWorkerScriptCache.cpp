@@ -5,6 +5,8 @@
 
 
 #include "ServiceWorkerScriptCache.h"
+
+#include "js/Array.h"  
 #include "mozilla/SystemGroup.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/CacheBinding.h"
@@ -390,7 +392,7 @@ class CompareManager final : public PromiseNativeHandler {
     }
 
     uint32_t len = 0;
-    if (!JS_GetArrayLength(aCx, obj, &len)) {
+    if (!JS::GetArrayLength(aCx, obj, &len)) {
       return;
     }
 

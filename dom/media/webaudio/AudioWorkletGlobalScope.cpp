@@ -10,6 +10,7 @@
 #include "AudioNodeTrack.h"
 #include "AudioWorkletImpl.h"
 #include "jsapi.h"
+#include "js/Array.h"  
 #include "mozilla/dom/AudioWorkletGlobalScopeBinding.h"
 #include "mozilla/dom/AudioWorkletProcessor.h"
 #include "mozilla/dom/MessagePort.h"
@@ -153,7 +154,7 @@ void AudioWorkletGlobalScope::RegisterProcessor(
 
 
   bool isArray = false;
-  if (!JS_IsArrayObject(aCx, descriptors, &isArray)) {
+  if (!JS::IsArrayObject(aCx, descriptors, &isArray)) {
     
     
     isArray = false;
@@ -233,7 +234,7 @@ AudioParamDescriptorMap AudioWorkletGlobalScope::DescriptorsFromJS(
 
   JS::Rooted<JSObject*> aDescriptorsArray(aCx, &aDescriptors.toObject());
   uint32_t length = 0;
-  if (!JS_GetArrayLength(aCx, aDescriptorsArray, &length)) {
+  if (!JS::GetArrayLength(aCx, aDescriptorsArray, &length)) {
     aRv.NoteJSContextException(aCx);
     return AudioParamDescriptorMap();
   }
