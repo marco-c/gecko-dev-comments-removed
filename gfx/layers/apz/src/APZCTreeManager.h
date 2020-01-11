@@ -792,6 +792,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   bool mUsingAsyncZoomContainer;
 
   
+
   mutable mozilla::Mutex mMapLock;
   
 
@@ -841,6 +842,32 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
   std::vector<ScrollThumbInfo> mScrollThumbInfo;
+
+  
+
+
+
+  struct FixedPositionInfo {
+    uint64_t mFixedPositionAnimationId;
+    SideBits mFixedPosSides;
+
+    FixedPositionInfo(const uint64_t& aFixedPositionAnimationId,
+                      const SideBits aFixedPosSides)
+        : mFixedPositionAnimationId(aFixedPositionAnimationId),
+          mFixedPosSides(aFixedPosSides) {}
+  };
+  
+
+
+
+
+
+
+
+
+
+
+  std::vector<FixedPositionInfo> mFixedPositionInfo;
 
   
 
