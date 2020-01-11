@@ -7,15 +7,11 @@ use api::units::{DeviceRect, DeviceIntSize, DeviceIntRect, DeviceIntPoint, World
 use crate::gpu_types::{ZBufferId, ZBufferIdGenerator};
 use crate::picture::{ResolvedSurfaceTexture};
 use std::{ops, u64};
-use std::sync::atomic::{AtomicU64, Ordering};
 
 
 
 
 
-
-
-static NEXT_NATIVE_SURFACE_ID: AtomicU64 = AtomicU64::new(0);
 
 
 #[derive(Debug, Clone)]
@@ -159,9 +155,6 @@ pub struct CompositeState {
     
     pub dirty_rects_are_valid: bool,
     
-    
-    pub native_surface_updates: Vec<NativeSurfaceOperation>,
-    
     pub compositor_kind: CompositorKind,
     
     pub picture_caching_is_enabled: bool,
@@ -195,48 +188,11 @@ impl CompositeState {
             clear_tiles: Vec::new(),
             z_generator: ZBufferIdGenerator::new(0),
             dirty_rects_are_valid: true,
-            native_surface_updates: Vec::new(),
             compositor_kind,
             picture_caching_is_enabled,
             global_device_pixel_scale,
             occluders: Vec::new(),
         }
-    }
-
-    
-    
-    pub fn create_surface(
-        &mut self,
-        size: DeviceIntSize,
-        is_opaque: bool,
-    ) -> NativeSurfaceId {
-        let id = NativeSurfaceId(NEXT_NATIVE_SURFACE_ID.fetch_add(1, Ordering::Relaxed));
-
-        self.native_surface_updates.push(
-            NativeSurfaceOperation {
-                id,
-                details: NativeSurfaceOperationDetails::CreateSurface {
-                    size,
-                    is_opaque,
-                }
-            }
-        );
-
-        id
-    }
-
-    
-    
-    pub fn destroy_surface(
-        &mut self,
-        id: NativeSurfaceId,
-    ) {
-        self.native_surface_updates.push(
-            NativeSurfaceOperation {
-                id,
-                details: NativeSurfaceOperationDetails::DestroySurface,
-            }
-        );
     }
 
     

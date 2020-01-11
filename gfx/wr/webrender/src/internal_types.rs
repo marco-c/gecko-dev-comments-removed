@@ -6,6 +6,7 @@ use api::{ColorF, DebugCommand, DocumentId, ExternalImageData, ExternalImageId, 
 use api::{ImageFormat, ItemTag, NotificationRequest, Shadow, FilterOp, MAX_BLUR_RADIUS};
 use api::units::*;
 use api;
+use crate::composite::NativeSurfaceOperation;
 use crate::device::TextureFilter;
 use crate::renderer::PipelineInfo;
 use crate::gpu_cache::GpuCacheUpdateList;
@@ -508,6 +509,23 @@ impl TextureUpdateList {
 }
 
 
+
+pub struct ResourceUpdateList {
+    
+    pub native_surface_updates: Vec<NativeSurfaceOperation>,
+
+    
+    pub texture_updates: TextureUpdateList,
+}
+
+impl ResourceUpdateList {
+    
+    pub fn is_nop(&self) -> bool {
+        self.texture_updates.is_nop() && self.native_surface_updates.is_empty()
+    }
+}
+
+
 pub struct RenderedDocument {
     pub frame: Frame,
     pub is_new_scene: bool,
@@ -529,14 +547,14 @@ pub enum ResultMsg {
     RefreshShader(PathBuf),
     UpdateGpuCache(GpuCacheUpdateList),
     UpdateResources {
-        updates: TextureUpdateList,
+        resource_updates: ResourceUpdateList,
         memory_pressure: bool,
     },
     PublishPipelineInfo(PipelineInfo),
     PublishDocument(
         DocumentId,
         RenderedDocument,
-        TextureUpdateList,
+        ResourceUpdateList,
         BackendProfileCounters,
     ),
     AppendNotificationRequests(Vec<NotificationRequest>),

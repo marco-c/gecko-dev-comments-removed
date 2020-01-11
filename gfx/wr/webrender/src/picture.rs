@@ -364,7 +364,7 @@ struct TilePostUpdateContext<'a> {
 
 struct TilePostUpdateState<'a> {
     
-    resource_cache: &'a ResourceCache,
+    resource_cache: &'a mut ResourceCache,
 
     
     composite_state: &'a mut CompositeState,
@@ -973,7 +973,7 @@ impl Tile {
                             
                             
                             if let Some(id) = id.take() {
-                                state.composite_state.destroy_surface(id);
+                                state.resource_cache.destroy_compositor_surface(id);
                             }
                         }
                     }
@@ -1687,6 +1687,7 @@ impl TileCacheInstance {
                 
                 frame_state.composite_state.destroy_native_surfaces(
                     self.tiles.values(),
+                    frame_state.resource_cache,
                 );
                 self.tiles.clear();
                 self.current_tile_size = desired_tile_size;
@@ -1863,6 +1864,7 @@ impl TileCacheInstance {
         
         frame_state.composite_state.destroy_native_surfaces(
             old_tiles.values(),
+            frame_state.resource_cache,
         );
 
         world_culling_rect
@@ -3552,7 +3554,7 @@ impl PicturePrimitive {
 
                                 if let TileSurface::Texture { descriptor: SurfaceTextureDescriptor::NativeSurface { id, .. }, .. } = surface {
                                     if let Some(id) = id.take() {
-                                        frame_state.composite_state.destroy_surface(id);
+                                        frame_state.resource_cache.destroy_compositor_surface(id);
                                     }
                                 }
 
@@ -3636,7 +3638,7 @@ impl PicturePrimitive {
                                     }
                                     SurfaceTextureDescriptor::NativeSurface { id, size } => {
                                         if id.is_none() {
-                                            *id = Some(frame_state.composite_state.create_surface(
+                                            *id = Some(frame_state.resource_cache.create_compositor_surface(
                                                 *size,
                                                 tile.is_opaque,
                                             ));
@@ -5132,6 +5134,7 @@ impl CompositeState {
     pub fn destroy_native_surfaces<'a, I: Iterator<Item = &'a Tile>>(
         &mut self,
         tiles_iter: I,
+        resource_cache: &mut ResourceCache,
     ) {
         
         
@@ -5144,7 +5147,7 @@ impl CompositeState {
                 
                 if let Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::NativeSurface { id, .. }, .. }) = tile.surface {
                     if let Some(id) = id {
-                        self.destroy_surface(id);
+                        resource_cache.destroy_compositor_surface(id);
                     }
                 }
             }
