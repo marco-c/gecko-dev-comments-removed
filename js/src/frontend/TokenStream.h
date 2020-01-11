@@ -533,6 +533,8 @@ enum class InvalidEscapeType {
 
 class TokenStreamAnyChars : public TokenStreamShared {
  private:
+  
+
   JSContext* const cx;
 
   
@@ -549,6 +551,8 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
   
 
+  
+
 
 
 
@@ -559,6 +563,49 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
 
   mutable HashMap<uint32_t, Vector<ChunkInfo>> longLineColumnInfo_;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+
+
+
+  mutable uint32_t lineOfLastColumnComputation_ = UINT32_MAX;
+
+  
+
+
+
+  mutable Vector<ChunkInfo>* lastChunkVectorForLine_ = nullptr;
+
+  
+
+
+
+  mutable uint32_t lastOffsetOfComputedColumn_ = UINT32_MAX;
+
+  
+
+
+
+  mutable uint32_t lastComputedColumn_ = 0;
+
+  
 
   
 
@@ -594,27 +641,6 @@ class TokenStreamAnyChars : public TokenStreamShared {
   UniqueTwoByteChars displayURL_ =
       nullptr;  
   UniqueTwoByteChars sourceMapURL_ = nullptr;  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  mutable uint32_t lineOfLastColumnComputation_ = UINT32_MAX;
-  mutable Vector<ChunkInfo>* lastChunkVectorForLine_ = nullptr;
-  mutable uint32_t lastOffsetOfComputedColumn_ = UINT32_MAX;
-  mutable uint32_t lastComputedColumn_ = 0;
 
   
 
