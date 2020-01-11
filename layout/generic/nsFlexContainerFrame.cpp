@@ -926,15 +926,7 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
 
 class nsFlexContainerFrame::FlexLine : public LinkedListElement<FlexLine> {
  public:
-  explicit FlexLine(nscoord aMainGapSize)
-      : mNumItems(0),
-        mNumFrozenItems(0),
-        mTotalItemMBP(0),
-        mTotalOuterHypotheticalMainSize(0),
-        mLineCrossSize(0),
-        mFirstBaselineOffset(nscoord_MIN),
-        mLastBaselineOffset(nscoord_MIN),
-        mMainGapSize(aMainGapSize) {}
+  explicit FlexLine(nscoord aMainGapSize) : mMainGapSize(aMainGapSize) {}
 
   nscoord GetSumOfGaps() const {
     return mNumItems > 0 ? (mNumItems - 1) * mMainGapSize : 0;
@@ -1101,32 +1093,32 @@ class nsFlexContainerFrame::FlexLine : public LinkedListElement<FlexLine> {
 
   AutoCleanLinkedList<FlexItem> mItems;  
 
-  uint32_t mNumItems;  
-                       
-                       
-                       
-                       
+  
+  
+  
+  
+  uint32_t mNumItems = 0;
 
   
   
   
-  uint32_t mNumFrozenItems;
+  uint32_t mNumFrozenItems = 0;
 
   
-  nscoord mTotalItemMBP;
+  nscoord mTotalItemMBP = 0;
 
   
   
   
   
-  nscoord mTotalOuterHypotheticalMainSize;
+  nscoord mTotalOuterHypotheticalMainSize = 0;
 
-  nscoord mLineCrossSize;
-  nscoord mFirstBaselineOffset;
-  nscoord mLastBaselineOffset;
+  nscoord mLineCrossSize = 0;
+  nscoord mFirstBaselineOffset = nscoord_MIN;
+  nscoord mLastBaselineOffset = nscoord_MIN;
 
   
-  nscoord mMainGapSize;
+  nscoord mMainGapSize = 0;
 };
 
 
