@@ -34,7 +34,23 @@ class VRSession {
   virtual ~VRSession() = default;
 #endif
 
-  virtual bool Initialize(mozilla::gfx::VRSystemState& aSystemState) = 0;
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual bool Initialize(mozilla::gfx::VRSystemState& aSystemState,
+                          bool aDetectRuntimesOnly) = 0;
   virtual void Shutdown() = 0;
   virtual void ProcessEvents(mozilla::gfx::VRSystemState& aSystemState) = 0;
   virtual void StartFrame(mozilla::gfx::VRSystemState& aSystemState) = 0;
