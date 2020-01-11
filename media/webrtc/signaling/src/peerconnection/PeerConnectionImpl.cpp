@@ -2231,6 +2231,17 @@ void PeerConnectionImpl::SetSignalingState_m(RTCSignalingState aSignalingState,
     return;
   }
 
+  
+  
+  
+  
+  
+  if ((aSignalingState == RTCSignalingState::Have_local_offer ||
+       aSignalingState == RTCSignalingState::Have_remote_offer) &&
+      !rollback && mJsepSession->IsIceRestarting()) {
+    mMedia->ResetStunAddrsForIceRestart();
+  }
+
   if (aSignalingState == RTCSignalingState::Have_local_offer ||
       (aSignalingState == RTCSignalingState::Stable &&
        mSignalingState == RTCSignalingState::Have_remote_offer && !rollback)) {

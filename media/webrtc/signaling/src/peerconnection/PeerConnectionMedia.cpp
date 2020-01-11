@@ -69,7 +69,7 @@ void PeerConnectionMedia::StunAddrsHandler::OnStunAddrsAvailable(
              (int)addrs.Length());
   if (pcm_) {
     pcm_->mStunAddrs = addrs;
-    pcm_->mLocalAddrsCompleted = true;
+    pcm_->mLocalAddrsRequestState = STUN_ADDR_REQUEST_COMPLETE;
     pcm_->FlushIceCtxOperationQueueIfReady();
     
     
@@ -88,7 +88,7 @@ PeerConnectionMedia::PeerConnectionMedia(PeerConnectionImpl* parent)
       mSTSThread(mParent->GetSTSThread()),
       mForceProxy(false),
       mStunAddrsRequest(nullptr),
-      mLocalAddrsCompleted(false),
+      mLocalAddrsRequestState(STUN_ADDR_REQUEST_NONE),
       mTargetForDefaultLocalAddressLookupIsSet(false),
       mDestroyed(false) {
   if (XRE_IsContentProcess()) {
@@ -107,10 +107,14 @@ PeerConnectionMedia::~PeerConnectionMedia() {
 }
 
 void PeerConnectionMedia::InitLocalAddrs() {
+  if (mLocalAddrsRequestState == STUN_ADDR_REQUEST_PENDING) {
+    return;
+  }
   if (mStunAddrsRequest) {
+    mLocalAddrsRequestState = STUN_ADDR_REQUEST_PENDING;
     mStunAddrsRequest->SendGetStunAddrs();
   } else {
-    mLocalAddrsCompleted = true;
+    mLocalAddrsRequestState = STUN_ADDR_REQUEST_COMPLETE;
   }
 }
 
@@ -497,6 +501,14 @@ void PeerConnectionMedia::PerformOrEnqueueIceCtxOperation(
 
 void PeerConnectionMedia::GatherIfReady() {
   ASSERT_ON_THREAD(mMainThread);
+
+  
+  
+  
+  
+  if (!mStunAddrs.Length()) {
+    InitLocalAddrs();
+  }
 
   
   mQueuedIceCtxOperations.clear();

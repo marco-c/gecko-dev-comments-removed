@@ -62,6 +62,8 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   nsresult UpdateTransports(const JsepSession& aSession,
                             const bool forceIceTcp);
 
+  void ResetStunAddrsForIceRestart() { mStunAddrs.Clear(); }
+
   
   void StartIceChecks(const JsepSession& session);
 
@@ -191,7 +193,9 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   void OnCandidateFound_m(const std::string& aTransportId,
                           const CandidateInfo& aCandidateInfo);
 
-  bool IsIceCtxReady() const { return mLocalAddrsCompleted; }
+  bool IsIceCtxReady() const {
+    return mLocalAddrsRequestState == STUN_ADDR_REQUEST_COMPLETE;
+  }
 
   
   PeerConnectionImpl* mParent;
@@ -219,8 +223,13 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   
   RefPtr<net::StunAddrsRequestChild> mStunAddrsRequest;
 
+  enum StunAddrRequestState {
+    STUN_ADDR_REQUEST_NONE,
+    STUN_ADDR_REQUEST_PENDING,
+    STUN_ADDR_REQUEST_COMPLETE
+  };
   
-  bool mLocalAddrsCompleted;
+  StunAddrRequestState mLocalAddrsRequestState;
 
   
   nsTArray<NrIceStunAddr> mStunAddrs;
