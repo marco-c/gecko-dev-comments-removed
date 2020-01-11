@@ -292,4 +292,8 @@ bool Post(const string& url, const string& payload) {
   return curl.Post(url, payload);
 }
 
+void ChangeCurrentWorkingDirectory(const string& pingPath) {
+  
+}
+
 }  

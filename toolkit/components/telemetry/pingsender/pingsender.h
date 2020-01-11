@@ -14,6 +14,12 @@
 namespace PingSender {
 
 
+
+
+
+void ChangeCurrentWorkingDirectory(const std::string& pingPath);
+
+
 bool Post(const std::string& url, const std::string& payload);
 
 bool IsValidDestination(char* aUriEndingInHost);
