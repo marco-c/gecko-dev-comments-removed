@@ -81,7 +81,8 @@ if (window.location.protocol === "chrome:" && url.search.length > 1) {
       const target = await targetFromURL(url);
 
       
-      await target.activeConsole.startListeners(["NetworkActivity"]);
+      const consoleFront = await target.getFront("console");
+      await consoleFront.startListeners(["NetworkActivity"]);
 
       
       const toolbox = {
