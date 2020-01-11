@@ -4,7 +4,9 @@
 
 "use strict";
 
-const { getFormatStr } = require("./l10n");
+const {
+  getFormatStr,
+} = require("devtools/client/inspector/animation/utils/l10n");
 
 
 

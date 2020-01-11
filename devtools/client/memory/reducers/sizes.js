@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { actions } = require("../constants");
+const { actions } = require("devtools/client/memory/constants");
 const { immutableUpdate } = require("devtools/shared/DevToolsUtils");
 
 const handlers = Object.create(null);

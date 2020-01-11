@@ -4,7 +4,7 @@
 
 "use strict";
 
-const constants = require("../constants");
+const constants = require("devtools/client/dom/content/constants");
 
 
 

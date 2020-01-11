@@ -3,8 +3,8 @@
 
 "use strict";
 
-const parsePropertiesFile = require("./node-properties/node-properties");
-const { sprintf } = require("./sprintfjs/sprintf");
+const parsePropertiesFile = require("devtools/shared/node-properties/node-properties");
+const { sprintf } = require("devtools/shared/sprintfjs/sprintf");
 
 const propertiesMap = {};
 

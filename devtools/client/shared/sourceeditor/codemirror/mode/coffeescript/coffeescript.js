@@ -7,7 +7,7 @@
 
 (function(mod) {
   if (typeof exports == "object" && typeof module == "object") 
-    mod(require("../../lib/codemirror"));
+    mod(require("devtools/client/shared/sourceeditor/codemirror/lib/codemirror"));
   else if (typeof define == "function" && define.amd) 
     define(["../../lib/codemirror"], mod);
   else 

@@ -3,8 +3,8 @@
 
 "use strict";
 
-const { actions } = require("../constants");
-const { refresh } = require("./refresh");
+const { actions } = require("devtools/client/memory/constants");
+const { refresh } = require("devtools/client/memory/actions/refresh");
 
 const setFilterString = (exports.setFilterString = function(filterString) {
   return {

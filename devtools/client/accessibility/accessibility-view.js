@@ -16,18 +16,23 @@ const ReactDOM = require("devtools/client/shared/vendor/react-dom");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
 
 
-const MainFrame = createFactory(require("./components/MainFrame"));
+const MainFrame = createFactory(
+  require("devtools/client/accessibility/components/MainFrame")
+);
 
 
 const createStore = require("devtools/client/shared/redux/create-store");
 
 
-const { reducers } = require("./reducers/index");
+const { reducers } = require("devtools/client/accessibility/reducers/index");
 const store = createStore(reducers);
 
 
-const { reset } = require("./actions/ui");
-const { select, highlight } = require("./actions/accessibles");
+const { reset } = require("devtools/client/accessibility/actions/ui");
+const {
+  select,
+  highlight,
+} = require("devtools/client/accessibility/actions/accessibles");
 
 
 

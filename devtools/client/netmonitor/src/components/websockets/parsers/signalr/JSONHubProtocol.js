@@ -13,8 +13,8 @@
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-const IHubProtocol = require("./IHubProtocol");
-const TextMessageFormat = require("./TextMessageFormat");
+const IHubProtocol = require("devtools/client/netmonitor/src/components/websockets/parsers/signalr/IHubProtocol");
+const TextMessageFormat = require("devtools/client/netmonitor/src/components/websockets/parsers/signalr/TextMessageFormat");
 
 class JsonHubProtocol {
   

@@ -1318,7 +1318,7 @@ Editor.prototype = {
     
     
     if (!this.initializeAutoCompletion) {
-      this.extend(require("./autocomplete"));
+      this.extend(require("devtools/client/shared/sourceeditor/autocomplete"));
     }
 
     if (this.config.autocomplete && Services.prefs.getBoolPref(AUTOCOMPLETE)) {

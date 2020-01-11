@@ -8,7 +8,7 @@ const {
   SELECT,
   HIGHLIGHT,
   UNHIGHLIGHT,
-} = require("../constants");
+} = require("devtools/client/accessibility/constants");
 
 
 

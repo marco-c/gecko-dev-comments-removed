@@ -4,7 +4,10 @@
 
 "use strict";
 
-const { PORTRAIT_PRIMARY, LANDSCAPE_PRIMARY } = require("../constants");
+const {
+  PORTRAIT_PRIMARY,
+  LANDSCAPE_PRIMARY,
+} = require("devtools/client/responsive/constants");
 
 
 

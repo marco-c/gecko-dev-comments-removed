@@ -3,7 +3,10 @@
 
 "use strict";
 
-const { actions, ALLOCATION_RECORDING_OPTIONS } = require("../constants");
+const {
+  actions,
+  ALLOCATION_RECORDING_OPTIONS,
+} = require("devtools/client/memory/constants");
 
 exports.toggleRecordingAllocationStacks = function(front) {
   return async function(dispatch, getState) {

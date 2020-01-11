@@ -9,12 +9,14 @@ const ReactDOM = require("devtools/client/shared/vendor/react-dom");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
 
 
-const MainFrame = React.createFactory(require("./components/MainFrame"));
+const MainFrame = React.createFactory(
+  require("devtools/client/dom/content/components/MainFrame")
+);
 
 
 const createStore = require("devtools/client/shared/redux/create-store");
 
-const { reducers } = require("./reducers/index");
+const { reducers } = require("devtools/client/dom/content/reducers/index");
 const store = createStore(reducers);
 
 
