@@ -711,11 +711,11 @@ class MediaPipelineTransmit::PipelineListener
         ->SendVideoFrame(aVideoFrame);
   }
 
-  void SetTrackEnabled(MediaStreamTrack* aTrack, bool aEnabled);
-
   
   void NotifyQueuedChanges(MediaTrackGraph* aGraph, TrackTime aOffset,
                            const MediaSegment& aQueuedMedia) override;
+  void NotifyEnabledStateChanged(MediaTrackGraph* aGraph,
+                                 bool aEnabled) override;
 
   
   void NotifyRealtimeTrackData(MediaTrackGraph* aGraph, TrackTime aOffset,
@@ -738,29 +738,6 @@ class MediaPipelineTransmit::PipelineListener
 
   
   bool mDirectConnect;
-};
-
-
-
-class MediaPipelineTransmit::PipelineListenerTrackConsumer
-    : public MediaStreamTrackConsumer {
-  virtual ~PipelineListenerTrackConsumer() { MOZ_ASSERT(NS_IsMainThread()); }
-
-  const RefPtr<PipelineListener> mListener;
-
- public:
-  NS_INLINE_DECL_REFCOUNTING(PipelineListenerTrackConsumer)
-
-  explicit PipelineListenerTrackConsumer(RefPtr<PipelineListener> aListener)
-      : mListener(std::move(aListener)) {
-    MOZ_ASSERT(NS_IsMainThread());
-  }
-
-  
-  void NotifyEnabledChanged(MediaStreamTrack* aTrack, bool aEnabled) override {
-    MOZ_ASSERT(NS_IsMainThread());
-    mListener->SetTrackEnabled(aTrack, aEnabled);
-  }
 };
 
 
@@ -809,10 +786,6 @@ MediaPipelineTransmit::MediaPipelineTransmit(
                     std::move(aConduit)),
       mIsVideo(aIsVideo),
       mListener(new PipelineListener(mConduit)),
-      mTrackConsumer(
-          MakeAndAddRef<nsMainThreadPtrHolder<PipelineListenerTrackConsumer>>(
-              "MediaPipelineTransmit::mTrackConsumer",
-              MakeAndAddRef<PipelineListenerTrackConsumer>(mListener))),
       mFeeder(aIsVideo ? MakeAndAddRef<VideoFrameFeeder>(mListener)
                        : nullptr),  
                                     
@@ -870,22 +843,23 @@ void MediaPipelineTransmit::SetDescription() {
 void MediaPipelineTransmit::Stop() {
   ASSERT_ON_THREAD(mMainThread);
 
-  if (!mTransmitting) {
-    return;
-  }
-
-  if (!mSendTrack) {
+  if (!mDomTrack || !mTransmitting) {
     return;
   }
 
   mTransmitting = false;
-  mConduit->StopTransmitting();
 
-  mSendTrack->Suspend();
-  if (mSendTrack->mType == MediaSegment::VIDEO) {
-    mSendTrack->RemoveDirectListener(mListener);
+  if (mDomTrack->AsAudioStreamTrack()) {
+    mDomTrack->RemoveDirectListener(mListener);
+    mDomTrack->RemoveListener(mListener);
+  } else if (mDomTrack->AsVideoStreamTrack()) {
+    mDomTrack->RemoveDirectListener(mListener);
+    mDomTrack->RemoveListener(mListener);
+  } else {
+    MOZ_ASSERT(false, "Unknown track type");
   }
-  mSendTrack->RemoveListener(mListener);
+
+  mConduit->StopTransmitting();
 }
 
 bool MediaPipelineTransmit::Transmitting() const {
@@ -897,15 +871,12 @@ bool MediaPipelineTransmit::Transmitting() const {
 void MediaPipelineTransmit::Start() {
   ASSERT_ON_THREAD(mMainThread);
 
-  if (mTransmitting) {
-    return;
-  }
-
-  if (!mSendTrack) {
+  if (!mDomTrack || mTransmitting) {
     return;
   }
 
   mTransmitting = true;
+
   mConduit->StartTransmitting();
 
   
@@ -914,12 +885,30 @@ void MediaPipelineTransmit::Start() {
       ("Attaching pipeline to track %p conduit type=%s", this,
        (mConduit->type() == MediaSessionConduit::AUDIO ? "audio" : "video")));
 
-  mSendTrack->Resume();
+#if !defined(MOZILLA_EXTERNAL_LINKAGE)
+  
+  
+  const bool enableDirectListener =
+      !Preferences::GetBool("media.navigator.audio.full_duplex", false);
+#else
+  const bool enableDirectListener = true;
+#endif
 
-  if (mSendTrack->mType == MediaSegment::VIDEO) {
-    mSendTrack->AddDirectListener(mListener);
+  if (mDomTrack->AsAudioStreamTrack()) {
+    if (enableDirectListener) {
+      
+      
+      
+      
+      mDomTrack->AddDirectListener(mListener);
+    }
+    mDomTrack->AddListener(mListener);
+  } else if (mDomTrack->AsVideoStreamTrack()) {
+    mDomTrack->AddDirectListener(mListener);
+    mDomTrack->AddListener(mListener);
+  } else {
+    MOZ_ASSERT(false, "Unknown track type");
   }
-  mSendTrack->AddListener(mListener);
 }
 
 bool MediaPipelineTransmit::IsVideo() const { return mIsVideo; }
@@ -958,19 +947,7 @@ void MediaPipelineTransmit::UpdateSinkIdentity_m(
 
 void MediaPipelineTransmit::DetachMedia() {
   ASSERT_ON_THREAD(mMainThread);
-  MOZ_ASSERT(!mTransmitting);
-  if (mDomTrack) {
-    mDomTrack->RemoveConsumer(mTrackConsumer);
-    mDomTrack = nullptr;
-  }
-  if (mSendPort) {
-    mSendPort->Destroy();
-    mSendPort = nullptr;
-  }
-  if (mSendTrack) {
-    mSendTrack->Destroy();
-    mSendTrack = nullptr;
-  }
+  mDomTrack = nullptr;
   
 }
 
@@ -982,8 +959,7 @@ void MediaPipelineTransmit::TransportReady_s() {
 }
 
 nsresult MediaPipelineTransmit::SetTrack(RefPtr<MediaStreamTrack> aDomTrack) {
-  MOZ_ASSERT(NS_IsMainThread());
-
+  
   if (aDomTrack) {
     nsString nsTrackId;
     aDomTrack->GetId(nsTrackId);
@@ -995,35 +971,15 @@ nsresult MediaPipelineTransmit::SetTrack(RefPtr<MediaStreamTrack> aDomTrack) {
          (mConduit->type() == MediaSessionConduit::AUDIO ? "audio" : "video")));
   }
 
-  if (mDomTrack) {
-    mDomTrack->RemoveConsumer(mTrackConsumer);
-  }
-  if (mSendPort) {
-    mSendPort->Destroy();
-    mSendPort = nullptr;
-  }
-
+  RefPtr<dom::MediaStreamTrack> oldTrack = mDomTrack;
+  bool wasTransmitting = oldTrack && mTransmitting;
+  Stop();
   mDomTrack = std::move(aDomTrack);
   SetDescription();
 
-  if (mDomTrack) {
-    if (!mDomTrack->Ended()) {
-      if (!mSendTrack) {
-        
-        MOZ_ASSERT(!mTransmitting);
-        mSendTrack = mDomTrack->Graph()->CreateForwardedInputTrack(
-            mDomTrack->GetTrack()->mType);
-        mSendTrack->QueueSetAutoend(false);
-        mSendTrack->Suspend();  
-      }
-      mSendPort = mSendTrack->AllocateInputPort(mDomTrack->GetTrack());
-    }
-    mDomTrack->AddConsumer(mTrackConsumer);
-    if (mConverter) {
-      mConverter->SetTrackEnabled(mDomTrack->Enabled());
-    }
+  if (wasTransmitting) {
+    Start();
   }
-
   return NS_OK;
 }
 
@@ -1142,13 +1098,11 @@ void MediaPipelineTransmit::PipelineListener::NotifyQueuedChanges(
   NewData(aQueuedMedia, rate);
 }
 
-void MediaPipelineTransmit::PipelineListener::SetTrackEnabled(
-    MediaStreamTrack* aTrack, bool aEnabled) {
-  MOZ_ASSERT(NS_IsMainThread());
+void MediaPipelineTransmit::PipelineListener::NotifyEnabledStateChanged(
+    MediaTrackGraph* aGraph, bool aEnabled) {
   if (mConduit->type() != MediaSessionConduit::VIDEO) {
     return;
   }
-
   MOZ_ASSERT(mConverter);
   mConverter->SetTrackEnabled(aEnabled);
 }

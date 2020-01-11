@@ -1929,21 +1929,13 @@ PeerConnectionImpl::ReplaceTrackNoRenegotiation(TransceiverImpl& aTransceiver,
     PrincipalChanged(aWithTrack);
   }
 
-  if (aTransceiver.IsVideo()) {
-    
-    
-    MediaSourceEnum oldSource = oldSendTrack
-                                    ? oldSendTrack->GetSource().GetMediaSource()
-                                    : MediaSourceEnum::Camera;
-    MediaSourceEnum newSource = aWithTrack
-                                    ? aWithTrack->GetSource().GetMediaSource()
-                                    : MediaSourceEnum::Camera;
-    if (oldSource != newSource) {
-      if (NS_WARN_IF(NS_FAILED(rv = aTransceiver.UpdateConduit()))) {
-        CSFLogError(LOGTAG, "Error Updating VideoConduit");
-        return rv;
-      }
-    }
+  
+  
+  
+
+  if (NS_FAILED((rv = mMedia->UpdateMediaPipelines()))) {
+    CSFLogError(LOGTAG, "Error Updating MediaPipelines");
+    return rv;
   }
 
   return NS_OK;
