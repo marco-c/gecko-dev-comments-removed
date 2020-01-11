@@ -288,24 +288,25 @@ function prompt(
   
   
   
+  const permDelegateHandler = aContentWindow.document.permDelegateHandler.QueryInterface(
+    Ci.nsIPermissionDelegateHandler
+  );
+
   const shouldDelegatePermission =
-    Services.prefs.getBoolPref("permissions.delegation.enabled", false) &&
-    Services.prefs.getBoolPref("dom.security.featurePolicy.enabled", false);
+    permDelegateHandler.permissionDelegateFPEnabled;
 
   const origin = shouldDelegatePermission
     ? aContentWindow.top.document.nodePrincipal.origin
     : aContentWindow.document.nodePrincipal.origin;
 
   let secondOrigin = undefined;
-  if (shouldDelegatePermission) {
-    const permDelegateHandler = aContentWindow.document.permDelegateHandler.QueryInterface(
-      Ci.nsIPermissionDelegateHandler
-    );
-    if (permDelegateHandler.maybeUnsafePermissionDelegate(requestTypes)) {
-      
-      
-      secondOrigin = aContentWindow.document.nodePrincipal.origin;
-    }
+  if (
+    shouldDelegatePermission &&
+    permDelegateHandler.maybeUnsafePermissionDelegate(requestTypes)
+  ) {
+    
+    
+    secondOrigin = aContentWindow.document.nodePrincipal.origin;
   }
 
   let request = {
