@@ -3,11 +3,13 @@
 
 
 
-const dom = require("react-dom-factories");
-const PropTypes = require("prop-types");
+const {
+  button,
+  span,
+} = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { wrapRender } = require("./rep-utils");
 const { MODE } = require("./constants");
-const { span } = dom;
 
 
 
@@ -37,7 +39,7 @@ function Accessor(props) {
   }
 
   if (hasGetter(object) && onInvokeGetterButtonClick) {
-    return dom.button({
+    return button({
       className: "invoke-getter",
       title: "Invoke getter",
       onClick: event => {

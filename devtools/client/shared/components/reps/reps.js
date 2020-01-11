@@ -1235,7 +1235,11 @@ exports.default = _default;
 
 
 
-const PropTypes = __webpack_require__(0); 
+const PropTypes = __webpack_require__(0);
+
+const {
+  span
+} = __webpack_require__(1); 
 
 
 const {
@@ -1250,11 +1254,6 @@ const {
   MODE
 } = __webpack_require__(4);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 
 
 
@@ -2773,6 +2772,10 @@ module.exports = {
 
 
 
+const {
+  span
+} = __webpack_require__(1);
+
 const PropTypes = __webpack_require__(0);
 
 const {
@@ -2780,11 +2783,6 @@ const {
   wrapRender
 } = __webpack_require__(2);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 
 
 
@@ -2821,7 +2819,12 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(0); 
+const PropTypes = __webpack_require__(0);
+
+const {
+  button,
+  span
+} = __webpack_require__(1); 
 
 
 const {
@@ -2835,11 +2838,6 @@ const {
   MODE
 } = __webpack_require__(4);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 const IGNORED_SOURCE_URLS = ["debugger eval code"];
 
 
@@ -2862,7 +2860,7 @@ function FunctionRep(props) {
   let jumpToDefinitionButton;
 
   if (onViewSourceInDebugger && grip.location && grip.location.url && !IGNORED_SOURCE_URLS.includes(grip.location.url)) {
-    jumpToDefinitionButton = dom.button({
+    jumpToDefinitionButton = button({
       className: "jump-definition",
       draggable: false,
       title: "Jump to definition",
@@ -3069,7 +3067,11 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(0); 
+const PropTypes = __webpack_require__(0);
+
+const {
+  span
+} = __webpack_require__(1); 
 
 
 const {
@@ -3090,11 +3092,6 @@ const {
   MODE
 } = __webpack_require__(4);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 const IGNORED_SOURCE_URLS = ["debugger eval code"];
 
 
@@ -3320,6 +3317,10 @@ module.exports = {
 const PropTypes = __webpack_require__(0);
 
 const {
+  span
+} = __webpack_require__(1);
+
+const {
   lengthBubble
 } = __webpack_require__(193);
 
@@ -3334,12 +3335,6 @@ const {
 const {
   MODE
 } = __webpack_require__(4);
-
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 
 const {
   ModePropType
@@ -3630,11 +3625,15 @@ module.exports = {
 
 
 
+const PropTypes = __webpack_require__(0);
+
+const {
+  span
+} = __webpack_require__(1);
+
 const {
   lengthBubble
 } = __webpack_require__(193);
-
-const PropTypes = __webpack_require__(0);
 
 const {
   interleave,
@@ -3652,10 +3651,6 @@ const {
 const {
   ModePropType
 } = __webpack_require__(38);
-
-const {
-  span
-} = __webpack_require__(1);
 
 
 
@@ -3840,14 +3835,12 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(0); 
-
-
-const dom = __webpack_require__(1);
+const PropTypes = __webpack_require__(0);
 
 const {
   span
-} = dom;
+} = __webpack_require__(1); 
+
 
 const {
   wrapRender
@@ -4878,6 +4871,11 @@ module.exports = {
 
 
 
+const {
+  a,
+  span
+} = __webpack_require__(1);
+
 const PropTypes = __webpack_require__(0);
 
 const {
@@ -4893,12 +4891,6 @@ const {
   urlRegex
 } = __webpack_require__(2);
 
-const dom = __webpack_require__(1);
-
-const {
-  a,
-  span
-} = dom;
 
 
 
@@ -5235,7 +5227,9 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_37__;
 
 
 
-const dom = __webpack_require__(1);
+const {
+  span
+} = __webpack_require__(1);
 
 const PropTypes = __webpack_require__(0);
 
@@ -5247,9 +5241,6 @@ const {
   MODE
 } = __webpack_require__(4);
 
-const {
-  span
-} = dom;
 const ModePropType = PropTypes.oneOf( 
 Object.keys(MODE).map(key => MODE[key]));
 
@@ -5400,6 +5391,10 @@ module.exports = {
 const PropTypes = __webpack_require__(0);
 
 const {
+  span
+} = __webpack_require__(1);
+
+const {
   maybeEscapePropertyName,
   wrapRender
 } = __webpack_require__(2);
@@ -5407,10 +5402,6 @@ const {
 const {
   MODE
 } = __webpack_require__(4);
-
-const {
-  span
-} = __webpack_require__(1);
 
 
 
@@ -5561,15 +5552,14 @@ module.exports = {
 
 
 const {
+  span
+} = __webpack_require__(1);
+
+const {
   getGripType,
   wrapRender
 } = __webpack_require__(2);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 
 
 
@@ -5604,14 +5594,13 @@ module.exports = {
 
 
 const {
+  span
+} = __webpack_require__(1);
+
+const {
   wrapRender
 } = __webpack_require__(2);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 
 
 
@@ -5652,15 +5641,14 @@ module.exports = {
 const PropTypes = __webpack_require__(0);
 
 const {
+  span
+} = __webpack_require__(1);
+
+const {
   getGripType,
   wrapRender
 } = __webpack_require__(2);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 
 
 
@@ -5703,6 +5691,10 @@ module.exports = {
 const PropTypes = __webpack_require__(0);
 
 const {
+  span
+} = __webpack_require__(1);
+
+const {
   wrapRender,
   ellipsisElement
 } = __webpack_require__(2);
@@ -5713,11 +5705,6 @@ const {
   MODE
 } = __webpack_require__(4);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 const DEFAULT_TITLE = "Object";
 
 
@@ -5890,19 +5877,18 @@ module.exports = {
 const PropTypes = __webpack_require__(0);
 
 const {
+  span
+} = __webpack_require__(1);
+
+const {
   getGripType,
   wrapRender
 } = __webpack_require__(2);
-
-const dom = __webpack_require__(1);
 
 const {
   rep: StringRep
 } = __webpack_require__(25);
 
-const {
-  span
-} = dom;
 const MAX_STRING_LENGTH = 50;
 
 
@@ -5959,15 +5945,14 @@ module.exports = {
 const PropTypes = __webpack_require__(0);
 
 const {
+  span
+} = __webpack_require__(1);
+
+const {
   getGripType,
   wrapRender
 } = __webpack_require__(2);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 
 
 
@@ -6006,15 +5991,14 @@ module.exports = {
 
 
 const {
+  span
+} = __webpack_require__(1);
+
+const {
   getGripType,
   wrapRender
 } = __webpack_require__(2);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 
 
 
@@ -6044,7 +6028,10 @@ module.exports = {
 
 
 
-const dom = __webpack_require__(1);
+const {
+  button,
+  span
+} = __webpack_require__(1);
 
 const PropTypes = __webpack_require__(0);
 
@@ -6056,9 +6043,6 @@ const {
   MODE
 } = __webpack_require__(4);
 
-const {
-  span
-} = dom;
 
 
 
@@ -6092,7 +6076,7 @@ function Accessor(props) {
   }
 
   if (hasGetter(object) && onInvokeGetterButtonClick) {
-    return dom.button({
+    return button({
       className: "invoke-getter",
       title: "Invoke getter",
       onClick: event => {
@@ -6288,11 +6272,10 @@ module.exports = {
 
 const PropTypes = __webpack_require__(0);
 
-const dom = __webpack_require__(1);
-
 const {
   span
-} = dom; 
+} = __webpack_require__(1); 
+
 
 const {
   getGripType,
@@ -6358,7 +6341,11 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(0); 
+const PropTypes = __webpack_require__(0);
+
+const {
+  span
+} = __webpack_require__(1); 
 
 
 const {
@@ -6367,11 +6354,6 @@ const {
   wrapRender
 } = __webpack_require__(2);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 
 
 
@@ -6434,7 +6416,11 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(0); 
+const PropTypes = __webpack_require__(0);
+
+const {
+  span
+} = __webpack_require__(1); 
 
 
 const {
@@ -6444,11 +6430,6 @@ const {
   wrapRender
 } = __webpack_require__(2);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 
 
 
@@ -6504,7 +6485,11 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(0); 
+const PropTypes = __webpack_require__(0);
+
+const {
+  span
+} = __webpack_require__(1); 
 
 
 const {
@@ -6513,11 +6498,6 @@ const {
   wrapRender
 } = __webpack_require__(2);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 
 
 
@@ -6679,7 +6659,11 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(0); 
+const PropTypes = __webpack_require__(0);
+
+const {
+  span
+} = __webpack_require__(1); 
 
 
 const {
@@ -6694,11 +6678,6 @@ const {
   MODE
 } = __webpack_require__(4);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 
 
 
@@ -6799,7 +6778,11 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(0); 
+const PropTypes = __webpack_require__(0);
+
+const {
+  span
+} = __webpack_require__(1); 
 
 
 const {
@@ -6808,11 +6791,6 @@ const {
   wrapRender
 } = __webpack_require__(2);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 
 
 
@@ -6859,7 +6837,11 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(0); 
+const PropTypes = __webpack_require__(0);
+
+const {
+  span
+} = __webpack_require__(1); 
 
 
 const {
@@ -6869,11 +6851,6 @@ const {
   wrapRender
 } = __webpack_require__(2);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 
 
 
@@ -6932,6 +6909,10 @@ module.exports = {
 const PropTypes = __webpack_require__(0);
 
 const {
+  span
+} = __webpack_require__(1);
+
+const {
   isGrip,
   cropString,
   cropMultipleLines,
@@ -6944,11 +6925,6 @@ const {
 
 const nodeConstants = __webpack_require__(190);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 
 
 
@@ -7004,6 +6980,11 @@ module.exports = {
 
 
 
+const {
+  button,
+  span
+} = __webpack_require__(1);
+
 const PropTypes = __webpack_require__(0); 
 
 
@@ -7021,13 +7002,8 @@ const {
   MODE
 } = __webpack_require__(4);
 
-const nodeConstants = __webpack_require__(190);
+const nodeConstants = __webpack_require__(522);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 const MAX_ATTRIBUTE_LENGTH = 50;
 
 
@@ -7083,7 +7059,7 @@ function ElementNode(props) {
     }
 
     if (onInspectIconClick) {
-      inspectIcon = dom.button({
+      inspectIcon = button({
         className: "open-inspector",
         
         title: inspectIconTitle || "Click to select the node in the inspector",
@@ -7210,6 +7186,11 @@ module.exports = {
 
 
 
+const {
+  button,
+  span
+} = __webpack_require__(1);
+
 const PropTypes = __webpack_require__(0); 
 
 
@@ -7223,11 +7204,6 @@ const {
   MODE
 } = __webpack_require__(4);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 
 
 
@@ -7270,7 +7246,7 @@ function TextNode(props) {
     }
 
     if (onInspectIconClick) {
-      inspectIcon = dom.button({
+      inspectIcon = button({
         className: "open-inspector",
         draggable: false,
         
@@ -7322,7 +7298,11 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(0); 
+const PropTypes = __webpack_require__(0);
+
+const {
+  span
+} = __webpack_require__(1); 
 
 
 const {
@@ -7336,11 +7316,6 @@ const {
   MODE
 } = __webpack_require__(4);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 
 
 
@@ -7410,7 +7385,11 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(0); 
+const PropTypes = __webpack_require__(0);
+
+const {
+  span
+} = __webpack_require__(1); 
 
 
 const {
@@ -7420,11 +7399,6 @@ const {
 
 const String = __webpack_require__(25).rep;
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 
 
 
@@ -7475,7 +7449,11 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(0); 
+const PropTypes = __webpack_require__(0);
+
+const {
+  span
+} = __webpack_require__(1); 
 
 
 const {
@@ -7484,11 +7462,6 @@ const {
   wrapRender
 } = __webpack_require__(2);
 
-const dom = __webpack_require__(1);
-
-const {
-  span
-} = dom;
 
 
 
@@ -8463,6 +8436,39 @@ function documentHasSelection(doc = document) {
 
 module.exports = {
   documentHasSelection
+};
+
+ }),
+
+ 522:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+
+
+
+module.exports = {
+  ELEMENT_NODE: 1,
+  ATTRIBUTE_NODE: 2,
+  TEXT_NODE: 3,
+  CDATA_SECTION_NODE: 4,
+  ENTITY_REFERENCE_NODE: 5,
+  ENTITY_NODE: 6,
+  PROCESSING_INSTRUCTION_NODE: 7,
+  COMMENT_NODE: 8,
+  DOCUMENT_NODE: 9,
+  DOCUMENT_TYPE_NODE: 10,
+  DOCUMENT_FRAGMENT_NODE: 11,
+  NOTATION_NODE: 12,
+  
+  DOCUMENT_POSITION_DISCONNECTED: 0x01,
+  DOCUMENT_POSITION_PRECEDING: 0x02,
+  DOCUMENT_POSITION_FOLLOWING: 0x04,
+  DOCUMENT_POSITION_CONTAINS: 0x08,
+  DOCUMENT_POSITION_CONTAINED_BY: 0x10,
+  DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC: 0x20
 };
 
  }),

@@ -3,9 +3,8 @@
 
 
 
+const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 const { wrapRender } = require("./rep-utils");
-const dom = require("react-dom-factories");
-const { span } = dom;
 
 
 

@@ -3,13 +3,12 @@
 
 
 
-const PropTypes = require("prop-types");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 
 const { getGripType, wrapRender } = require("./rep-utils");
 
-const dom = require("react-dom-factories");
 const { rep: StringRep } = require("./string");
-const { span } = dom;
 
 const MAX_STRING_LENGTH = 50;
 

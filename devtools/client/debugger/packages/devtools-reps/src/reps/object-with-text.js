@@ -3,15 +3,13 @@
 
 
 
-const PropTypes = require("prop-types");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 
 
 const { isGrip, wrapRender } = require("./rep-utils");
 
 const String = require("./string").rep;
-
-const dom = require("react-dom-factories");
-const { span } = dom;
 
 
 

@@ -3,11 +3,11 @@
 
 
 
-const PropTypes = require("prop-types");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+
 const { maybeEscapePropertyName, wrapRender } = require("./rep-utils");
 const { MODE } = require("./constants");
-
-const { span } = require("react-dom-factories");
 
 
 

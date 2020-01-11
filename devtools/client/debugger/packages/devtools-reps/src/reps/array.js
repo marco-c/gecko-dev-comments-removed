@@ -3,11 +3,10 @@
 
 
 
-const dom = require("react-dom-factories");
-const PropTypes = require("prop-types");
+const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { wrapRender } = require("./rep-utils");
 const { MODE } = require("./constants");
-const { span } = dom;
 
 const ModePropType = PropTypes.oneOf(
   

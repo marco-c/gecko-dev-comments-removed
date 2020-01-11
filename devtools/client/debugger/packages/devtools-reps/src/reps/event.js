@@ -3,7 +3,7 @@
 
 
 
-const PropTypes = require("prop-types");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 
 const { isGrip, wrapRender } = require("./rep-utils");

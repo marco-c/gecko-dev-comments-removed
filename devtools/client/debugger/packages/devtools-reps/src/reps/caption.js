@@ -3,9 +3,8 @@
 
 
 
-const PropTypes = require("prop-types");
-const dom = require("react-dom-factories");
-const { span } = dom;
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 
 const { wrapRender } = require("./rep-utils");
 
