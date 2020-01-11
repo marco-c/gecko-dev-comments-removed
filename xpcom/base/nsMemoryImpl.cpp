@@ -74,8 +74,6 @@ nsresult nsMemoryImpl::Create(nsISupports* aOuter, const nsIID& aIID,
 }
 
 nsresult nsMemoryImpl::FlushMemory(const char16_t* aReason, bool aImmediate) {
-  nsresult rv = NS_OK;
-
   if (aImmediate) {
     
     
@@ -95,8 +93,9 @@ nsresult nsMemoryImpl::FlushMemory(const char16_t* aReason, bool aImmediate) {
 
   
   
+  nsresult rv = NS_OK;
   if (aImmediate) {
-    rv = RunFlushers(aReason);
+    RunFlushers(aReason);
   } else {
     
     if (PR_IntervalToMicroseconds(now - sLastFlushTime) > 1000) {
@@ -109,7 +108,7 @@ nsresult nsMemoryImpl::FlushMemory(const char16_t* aReason, bool aImmediate) {
   return rv;
 }
 
-nsresult nsMemoryImpl::RunFlushers(const char16_t* aReason) {
+void nsMemoryImpl::RunFlushers(const char16_t* aReason) {
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
   if (os) {
     
@@ -139,7 +138,6 @@ nsresult nsMemoryImpl::RunFlushers(const char16_t* aReason) {
   }
 
   sIsFlushing = false;
-  return NS_OK;
 }
 
 
