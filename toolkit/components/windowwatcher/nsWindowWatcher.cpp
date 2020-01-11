@@ -1235,10 +1235,11 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
   
   
-  if (!aForceNoOpener && subjectPrincipal && parentDocShell) {
-    nsCOMPtr<nsIDOMStorageManager> parentStorageManager =
-        do_QueryInterface(parentDocShell);
-    nsCOMPtr<nsIDOMStorageManager> newStorageManager(newDocShell);
+  if (!aForceNoOpener && subjectPrincipal && parentDocShell && newDocShell) {
+    const RefPtr<SessionStorageManager> parentStorageManager =
+        parentDocShell->GetBrowsingContext()->GetSessionStorageManager();
+    const RefPtr<SessionStorageManager> newStorageManager =
+        newDocShell->GetBrowsingContext()->GetSessionStorageManager();
 
     if (parentStorageManager && newStorageManager) {
       RefPtr<Storage> storage;
