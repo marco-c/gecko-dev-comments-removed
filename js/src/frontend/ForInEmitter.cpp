@@ -43,8 +43,7 @@ bool ForInEmitter::emitInitialize() {
 
   loopInfo_.emplace(bce_, StatementKind::ForInLoop);
 
-  
-  if (!bce_->newSrcNote(SRC_FOR_IN, &noteIndex_)) {
+  if (!bce_->newSrcNote(SRC_FOR_IN)) {
     return false;
   }
 
@@ -141,12 +140,6 @@ bool ForInEmitter::emitEnd(const Maybe<uint32_t>& forPos) {
   }
   if (!loopInfo_->emitLoopEnd(bce_, JSOP_GOTO)) {
     
-    return false;
-  }
-
-  
-  if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::Loop::BackJumpOffset,
-                              loopInfo_->loopEndOffsetFromLoopHead())) {
     return false;
   }
 

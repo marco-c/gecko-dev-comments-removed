@@ -5178,11 +5178,7 @@ bool BytecodeEmitter::emitAsyncIterator() {
 bool BytecodeEmitter::emitSpread(bool allowSelfHosted) {
   LoopControl loopInfo(this, StatementKind::Spread);
 
-  
-  
-  
-  unsigned noteIndex;
-  if (!newSrcNote(SRC_FOR_OF, &noteIndex)) {
+  if (!newSrcNote(SRC_FOR_OF)) {
     return false;
   }
 
@@ -5242,12 +5238,6 @@ bool BytecodeEmitter::emitSpread(bool allowSelfHosted) {
   
   
   bytecodeSection().setStackDepth(bytecodeSection().stackDepth() + 1);
-
-  
-  if (!setSrcNoteOffset(noteIndex, SrcNote::Loop::BackJumpOffset,
-                        loopInfo.loopEndOffsetFromLoopHead())) {
-    return false;
-  }
 
   
   MOZ_ASSERT(!loopInfo.continues.offset.valid());

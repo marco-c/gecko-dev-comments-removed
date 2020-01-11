@@ -140,11 +140,6 @@ class LoopControl : public BreakableControl {
   BytecodeOffset breakTargetOffset() const { return breakTarget_.offset; }
   BytecodeOffset continueTargetOffset() const { return continueTarget_.offset; }
 
-  
-  BytecodeOffsetDiff loopEndOffsetFromLoopHead() const {
-    return loopEndOffset_ - head_.offset;
-  }
-
   MOZ_MUST_USE bool emitContinueTarget(BytecodeEmitter* bce);
 
   

@@ -80,9 +80,6 @@ class MOZ_STACK_CLASS CForEmitter {
   BytecodeEmitter* bce_;
 
   
-  unsigned noteIndex_ = 0;
-
-  
   Cond cond_ = Cond::Missing;
   Update update_ = Update::Missing;
 

@@ -39,17 +39,6 @@ namespace js {
 class SrcNote {
  public:
   
-  
-  class Loop {
-   public:
-    enum Fields {
-      
-      
-      BackJumpOffset,
-      Count,
-    };
-  };
-  
   class Try {
    public:
     enum Fields {
@@ -83,11 +72,11 @@ class SrcNote {
 
 #define FOR_EACH_SRC_NOTE_TYPE(M)                                                                  \
     M(SRC_NULL,         "null",        0)  /* Terminates a note vector. */                         \
-    M(SRC_FOR,          "for",         SrcNote::Loop::Count) \
-    M(SRC_WHILE,        "while",       SrcNote::Loop::Count) \
-    M(SRC_DO_WHILE,     "do-while",    SrcNote::Loop::Count) \
-    M(SRC_FOR_IN,       "for-in",      SrcNote::Loop::Count) \
-    M(SRC_FOR_OF,       "for-of",      SrcNote::Loop::Count) \
+    M(SRC_FOR,          "for",         0)  /* JSOP_LOOPHEAD is for C-style for-loop. */            \
+    M(SRC_WHILE,        "while",       0)  /* JSOP_LOOPHEAD is for while loop. */                  \
+    M(SRC_DO_WHILE,     "do-while",    0)  /* JSOP_LOOPHEAD is for do-while loop. */               \
+    M(SRC_FOR_IN,       "for-in",      0)  /* JSOP_LOOPHEAD is for for-in loop. */                 \
+    M(SRC_FOR_OF,       "for-of",      0)  /* JSOP_LOOPHEAD is for for-of loop. */                 \
     M(SRC_ASSIGNOP,     "assignop",    0)  /* += or another assign-op follows. */                  \
     M(SRC_CLASS_SPAN,   "class",       2)  /* The starting and ending offsets for the class, used  \
                                               for toString correctness for default ctors. */       \

@@ -41,9 +41,6 @@ class EmitterScope;
 class MOZ_STACK_CLASS ForOfEmitter {
   BytecodeEmitter* bce_;
 
-  
-  unsigned noteIndex_ = 0;
-
 #ifdef DEBUG
   
   int32_t loopDepth_ = 0;

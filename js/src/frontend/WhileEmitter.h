@@ -37,9 +37,6 @@ struct BytecodeEmitter;
 class MOZ_STACK_CLASS WhileEmitter {
   BytecodeEmitter* bce_;
 
-  
-  unsigned noteIndex_ = 0;
-
   mozilla::Maybe<LoopControl> loopInfo_;
 
   
