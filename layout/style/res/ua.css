@@ -260,9 +260,6 @@
   text-overflow: inherit;
   
   display: block;
-  
-
-  max-block-size: 100%;
 }
 
 *|*::-moz-column-set {
