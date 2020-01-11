@@ -155,6 +155,7 @@ MediaResult RemoteVideoDecoderChild::ProcessOutput(
       
       
       
+      data.sd().get_SurfaceDescriptorGPUVideo().source() = Some(GetManager()->GetSource());
       image = new GPUVideoImage(GetManager(), data.sd(), data.frameSize());
     }
 
