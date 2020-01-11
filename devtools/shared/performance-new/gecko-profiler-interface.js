@@ -244,6 +244,24 @@ class ActorReadyGeckoProfilerInterface {
     }
     return Services.profiler.GetFeatures();
   }
+
+  
+
+
+
+  on(type, listener) {
+    
+    
+  }
+
+  
+
+
+
+  off(type, listener) {
+    
+    
+  }
 }
 
 exports.ActorReadyGeckoProfilerInterface = ActorReadyGeckoProfilerInterface;

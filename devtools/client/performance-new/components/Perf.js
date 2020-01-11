@@ -1,6 +1,40 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 "use strict";
 
 const {
@@ -12,7 +46,6 @@ const {
   div,
   button,
 } = require("devtools/client/shared/vendor/react-dom-factories");
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const RecordingButton = createFactory(
   require("devtools/client/performance-new/components/RecordingButton.js")
 );
@@ -39,22 +72,10 @@ const {
 
 
 
+
+
 class Perf extends PureComponent {
-  static get propTypes() {
-    return {
-      
-      perfFront: PropTypes.object.isRequired,
-      recordingState: PropTypes.string.isRequired,
-      isSupportedPlatform: PropTypes.bool,
-      isPopup: PropTypes.bool,
-      promptEnvRestart: PropTypes.string,
-
-      
-      changeRecordingState: PropTypes.func.isRequired,
-      reportProfilerReady: PropTypes.func.isRequired,
-    };
-  }
-
+  
   constructor(props) {
     super(props);
     this.handleProfilerStarting = this.handleProfilerStarting.bind(this);
@@ -103,8 +124,12 @@ class Perf extends PureComponent {
       
       
       
-      if (window.gReportReady) {
-        window.gReportReady();
+      
+      const anyWindow = window;
+      
+      const { gReportReady } = anyWindow;
+      if (gReportReady) {
+        gReportReady();
       }
     });
 
@@ -302,6 +327,10 @@ class Perf extends PureComponent {
   }
 }
 
+
+
+
+
 function mapStateToProps(state) {
   return {
     perfFront: selectors.getPerfFront(state),
@@ -311,6 +340,7 @@ function mapStateToProps(state) {
     promptEnvRestart: selectors.getPromptEnvRestart(state),
   };
 }
+
 
 const mapDispatchToProps = {
   changeRecordingState: actions.changeRecordingState,
