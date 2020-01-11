@@ -426,6 +426,9 @@ function setupEnvironment() {
 
   var defaultMochitestPrefs = {
     set: [
+      
+      
+      ["media.navigator.mediadatadecoder_h264_enabled", false],
       ["media.peerconnection.enabled", true],
       ["media.peerconnection.identity.enabled", true],
       ["media.peerconnection.identity.timeout", 120000],
@@ -451,13 +454,6 @@ function setupEnvironment() {
       ["media.navigator.video.default_height", 240],
       ["media.navigator.video.max_fr", 10],
       ["media.autoplay.default", Ci.nsIAutoplay.ALLOWED]
-    );
-  } else {
-    
-    
-    
-    defaultMochitestPrefs.set.push(
-      ["media.navigator.mediadatadecoder_h264_enabled", false]
     );
   }
 
