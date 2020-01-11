@@ -356,7 +356,12 @@ class gfxFontEntry {
 
   
   
-  bool HasGraphiteSpaceContextuals();
+  
+  
+  
+  
+  
+  tainted_boolean_hint HasGraphiteSpaceContextuals();
 
   
   void DisconnectSVG();
