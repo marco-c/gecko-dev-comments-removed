@@ -671,8 +671,15 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
 #if defined(_M_X64)
     
     
+    
+    
+    
+    
+    
+    
     if ((aOriginalFn[0] == 0x48) && (aOriginalFn[1] == 0xB8) &&
-        (aOriginalFn[10] == 0xFF) && (aOriginalFn[11] == 0xE0)) {
+        ((aOriginalFn[10] == 0xFF && aOriginalFn[11] == 0xE0) ||
+         (aOriginalFn[10] == 0x50 && aOriginalFn[11] == 0xC3))) {
       uintptr_t originalTarget =
           (aOriginalFn + 2).template ChasePointer<uintptr_t>();
 

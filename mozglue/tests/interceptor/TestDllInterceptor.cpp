@@ -11,6 +11,7 @@
 #include <schnlsp.h>
 #include <winternl.h>
 
+#include "AssemblyPayloads.h"
 #include "mozilla/DynamicallyLinkedFunctionPtr.h"
 #include "mozilla/TypeTraits.h"
 #include "mozilla/UniquePtr.h"
@@ -691,6 +692,75 @@ bool TestShortDetour() {
 #endif
 }
 
+template <typename InterceptorType>
+bool TestAssemblyFunctions() {
+  constexpr uintptr_t NoStubAddressCheck = 0;
+  struct TestCase {
+    const char* functionName;
+    uintptr_t expectedStub;
+    explicit TestCase(const char* aFunctionName, uintptr_t aExpectedStub)
+        : functionName(aFunctionName), expectedStub(aExpectedStub) {}
+  } testCases[] = {
+#if defined(__clang__)
+#  if defined(_M_X64)
+    
+    
+    TestCase("MovPushRet", JumpDestination),
+    TestCase("MovRaxJump", JumpDestination),
+#  elif defined(_M_IX86)
+    
+    TestCase("PushRet", NoStubAddressCheck),
+    TestCase("MovEaxJump", NoStubAddressCheck),
+#  endif
+#endif
+  };
+
+  static const auto patchedFunction = []() { patched_func_called = true; };
+
+  InterceptorType interceptor;
+  interceptor.Init("TestDllInterceptor.exe");
+
+  for (const auto& testCase : testCases) {
+    typename InterceptorType::template FuncHookType<void (*)()> hook;
+    bool result = hook.Set(interceptor, testCase.functionName, patchedFunction);
+    if (!result) {
+      printf(
+          "TEST-FAILED | WindowsDllInterceptor | "
+          "Failed to detour %s.\n",
+          testCase.functionName);
+      return false;
+    }
+
+    const auto actualStub = reinterpret_cast<uintptr_t>(hook.GetStub());
+    if (testCase.expectedStub != NoStubAddressCheck &&
+        actualStub != testCase.expectedStub) {
+      printf(
+          "TEST-FAILED | WindowsDllInterceptor | "
+          "Wrong stub was backed up for %s: %zx\n",
+          testCase.functionName, actualStub);
+      return false;
+    }
+
+    patched_func_called = false;
+
+    auto originalFunction = reinterpret_cast<void (*)()>(
+        GetProcAddress(GetModuleHandle(nullptr), testCase.functionName));
+    originalFunction();
+
+    if (!patched_func_called) {
+      printf(
+          "TEST-FAILED | WindowsDllInterceptor | "
+          "Hook from %s was not called\n",
+          testCase.functionName);
+      return false;
+    }
+
+    printf("TEST-PASS | WindowsDllInterceptor | %s\n", testCase.functionName);
+  }
+
+  return true;
+}
+
 extern "C" int wmain(int argc, wchar_t* argv[]) {
   LARGE_INTEGER start;
   QueryPerformanceCounter(&start);
@@ -787,6 +857,12 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
   
   
   if (TestShortDetour() &&
+  
+  
+#if defined(_M_X64)
+      TestAssemblyFunctions<ShortInterceptor>() &&
+#endif
+      TestAssemblyFunctions<WindowsDllInterceptor>() &&
 #ifdef _M_IX86
       
       TEST_HOOK("ntdll.dll", NtFlushBuffersFile, NotEquals, 0) &&
@@ -814,7 +890,7 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
       
       TEST_HOOK("kernel32.dll", SetUnhandledExceptionFilter, Ignore, nullptr) &&
 #  endif
-#endif  
+#endif
 #ifdef _M_IX86
       TEST_HOOK_FOR_INVALID_HANDLE_VALUE("kernel32.dll", CreateFileW) &&
 #endif
