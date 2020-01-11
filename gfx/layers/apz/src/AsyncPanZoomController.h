@@ -1049,6 +1049,8 @@ class AsyncPanZoomController {
   ExternalPoint mStartTouch;
 
   Maybe<CompositionPayload> mCompositedScrollPayload;
+
+  
   Maybe<CompositionPayload> mScrollPayload;
 
   friend class Axis;
