@@ -116,10 +116,6 @@ class LoopControl : public BreakableControl {
   JumpTarget breakTarget_;
 
   
-  
-  JumpTarget continueTarget_;
-
-  
   int32_t stackDepth_;
 
   
@@ -138,7 +134,6 @@ class LoopControl : public BreakableControl {
   BytecodeOffset headOffset() const { return head_.offset; }
   BytecodeOffset loopEndOffset() const { return loopEndOffset_; }
   BytecodeOffset breakTargetOffset() const { return breakTarget_.offset; }
-  BytecodeOffset continueTargetOffset() const { return continueTarget_.offset; }
 
   MOZ_MUST_USE bool emitContinueTarget(BytecodeEmitter* bce);
 
@@ -152,7 +147,6 @@ class LoopControl : public BreakableControl {
                                  const mozilla::Maybe<uint32_t>& nextPos);
 
   MOZ_MUST_USE bool emitLoopEnd(BytecodeEmitter* bce, JSOp op);
-  MOZ_MUST_USE bool patchBreaksAndContinues(BytecodeEmitter* bce);
 };
 template <>
 inline bool NestableControl::is<LoopControl>() const {

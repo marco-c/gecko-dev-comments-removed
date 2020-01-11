@@ -49,9 +49,15 @@ assertOffsetColumns(
 
 
 assertOffsetColumns(
+  "function f(n) { do { print(n); if (n === 3) { break; } } while(false); }",
+  "                ^    ^    ^        ^          ^                ^       ^",
+  "0 1 2 3 4 6"
+);
+
+
+assertOffsetColumns(
   "function f(n) { do { print(n); break; } while(false); }",
-  "                ^    ^    ^    ^              ^       ^",
-  "0 1 2 3 5"
+  "                ^    ^    ^    ^                      ^",
 );
 
 
