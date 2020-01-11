@@ -2,6 +2,11 @@
 
 
 
+async function checkWorkerThreads(dbg, count) {
+  await waitUntil(() => dbg.selectors.getThreads().length == count);
+  ok(true, `Have ${count} threads`);
+}
+
 
 
 add_task(async function() {
@@ -14,30 +19,20 @@ add_task(async function() {
 
   invokeInTab("registerWorker");
 
-  await waitForSource(dbg, "service-worker.js");
-  const workerSource = findSource(dbg, "service-worker.js");
+  await waitForSource(dbg, "service-worker.sjs");
+  const workerSource = findSource(dbg, "service-worker.sjs");
 
-  await addBreakpoint(dbg, "service-worker.js", 14);
+  await addBreakpoint(dbg, "service-worker.sjs", 13);
 
   invokeInTab("fetchFromWorker");
 
   await waitForPaused(dbg);
-  assertPausedAtSourceAndLine(dbg, workerSource.id, 14);
+  assertPausedAtSourceAndLine(dbg, workerSource.id, 13);
 
-  await dbg.actions.removeAllBreakpoints(getContext(dbg));
-
+  
   await resume(dbg);
-
-  
-
-  
-  
+  await removeTab(gBrowser.selectedTab);
 });
-
-async function checkWorkerThreads(dbg, count) {
-  await waitUntil(() => dbg.selectors.getThreads().length == count);
-  ok(true, `Have ${count} threads`);
-}
 
 
 add_task(async function() {
@@ -46,23 +41,21 @@ add_task(async function() {
 
   await checkWorkerThreads(dbg, 1);
 
+  
   await reload(dbg);
 
-  await waitForSource(dbg, "service-worker.js");
-  const workerSource = findSource(dbg, "service-worker.js");
-
-  await addBreakpoint(dbg, "service-worker.js", 14);
-
-  invokeInTab("fetchFromWorker");
+  await waitForSource(dbg, "service-worker.sjs");
+  const workerSource = findSource(dbg, "service-worker.sjs");
 
   await waitForPaused(dbg);
-  assertPausedAtSourceAndLine(dbg, workerSource.id, 14);
+  assertPausedAtSourceAndLine(dbg, workerSource.id, 13);
   await checkWorkerThreads(dbg, 1);
 
   await resume(dbg);
+  await dbg.actions.removeAllBreakpoints(getContext(dbg));
 
   invokeInTab("unregisterWorker");
 
-  await dbg.actions.removeAllBreakpoints(getContext(dbg));
   await checkWorkerThreads(dbg, 0);
+  await removeTab(gBrowser.selectedTab);
 });
