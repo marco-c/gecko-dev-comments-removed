@@ -40,7 +40,6 @@ const extraDefinitions = [
   
   { name: "XPCOMUtils", writable: false },
   { name: "Task", writable: false },
-  { name: "windowGlobalChild", writable: false },
 ];
 
 
