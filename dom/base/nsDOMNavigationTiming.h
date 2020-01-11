@@ -20,6 +20,18 @@ class nsIURI;
 typedef unsigned long long DOMTimeMilliSec;
 typedef double DOMHighResTimeStamp;
 
+class PickleIterator;
+namespace IPC {
+class Message;
+}  
+namespace mozilla {
+namespace ipc {
+class IProtocol;
+template <typename>
+struct IPDLParamTraits;
+}  
+}  
+
 class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
  public:
   enum Type {
@@ -173,6 +185,8 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
 
   bool IsTopLevelContentDocumentInContentProcess() const;
 
+
+
   mozilla::WeakPtr<nsDocShell> mDocShell;
 
   nsCOMPtr<nsIURI> mUnloadedURI;
@@ -200,7 +214,26 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
 
   mozilla::TimeStamp mTTFI;
 
-  bool mDocShellHasBeenActiveSinceNavigationStart : 1;
+  bool mDocShellHasBeenActiveSinceNavigationStart;
+
+  friend struct mozilla::ipc::IPDLParamTraits<nsDOMNavigationTiming*>;
 };
+
+
+
+
+
+namespace mozilla {
+namespace ipc {
+template <>
+struct IPDLParamTraits<nsDOMNavigationTiming*> {
+  static void Write(IPC::Message* aMsg, IProtocol* aActor,
+                    nsDOMNavigationTiming* aParam);
+  static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
+                   IProtocol* aActor, RefPtr<nsDOMNavigationTiming>* aResult);
+};
+
+}  
+}  
 
 #endif 
