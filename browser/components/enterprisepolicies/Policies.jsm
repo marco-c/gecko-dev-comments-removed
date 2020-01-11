@@ -780,6 +780,11 @@ var Policies = {
           
           setAndLockPref("extensions.getAddons.showPane", false);
           
+          setAndLockPref(
+            "extensions.htmlaboutaddons.recommendations.enable",
+            false
+          );
+          
           blockAboutPage(manager, "about:debugging");
         }
       }
