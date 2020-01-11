@@ -188,7 +188,10 @@ class InactivePropertyHelper {
       
       {
         invalidProperties: ["max-width", "min-width", "width"],
-        when: () => this.nonReplacedInlineBox || this.tableRow || this.rowGroup,
+        when: () =>
+          this.nonReplacedInlineBox ||
+          this.horizontalTableTrack ||
+          this.horizontalTableTrackGroup,
         fixId: "inactive-css-non-replaced-inline-or-table-row-or-row-group-fix",
         msgId: "inactive-css-property-because-of-display",
         numFixProps: 2,
@@ -197,7 +200,9 @@ class InactivePropertyHelper {
       {
         invalidProperties: ["max-height", "min-height", "height"],
         when: () =>
-          this.nonReplacedInlineBox || this.tableColumn || this.columnGroup,
+          this.nonReplacedInlineBox ||
+          this.verticalTableTrack ||
+          this.verticalTableTrackGroup,
         fixId:
           "inactive-css-non-replaced-inline-or-table-column-or-column-group-fix",
         msgId: "inactive-css-property-because-of-display",
@@ -495,18 +500,6 @@ class InactivePropertyHelper {
   
 
 
-  get rowGroup() {
-    return (
-      this.style &&
-      (this.style.display === "table-row-group" ||
-        this.style.display === "table-header-group" ||
-        this.style.display === "table-footer-group")
-    );
-  }
-
-  
-
-
   get tableColumn() {
     return this.style && this.style.display === "table-column";
   }
@@ -514,8 +507,85 @@ class InactivePropertyHelper {
   
 
 
+
+
+  get horizontalTableTrack() {
+    if (!this.tableRow && !this.tableColumn) {
+      return false;
+    }
+
+    const wm = this.getTableTrackParentWritingMode();
+    const isVertical = wm.includes("vertical") || wm.includes("sideways");
+
+    return isVertical ? this.tableColumn : this.tableRow;
+  }
+
+  
+
+
+
+
+  get verticalTableTrack() {
+    if (!this.tableRow && !this.tableColumn) {
+      return false;
+    }
+
+    const wm = this.getTableTrackParentWritingMode();
+    const isVertical = wm.includes("vertical") || wm.includes("sideways");
+
+    return isVertical ? this.tableRow : this.tableColumn;
+  }
+
+  
+
+
+  get rowGroup() {
+    return this.isRowGroup(this.node);
+  }
+
+  
+
+
   get columnGroup() {
-    return this.style && this.style.display === "table-column-group";
+    return this.isColumnGroup(this.node);
+  }
+
+  
+
+
+
+
+  get horizontalTableTrackGroup() {
+    if (!this.rowGroup && !this.columnGroup) {
+      return false;
+    }
+
+    const wm = this.getTableTrackParentWritingMode(true);
+    const isVertical = wm.includes("vertical") || wm.includes("sideways");
+
+    const isHorizontalRowGroup = this.rowGroup && !isVertical;
+    const isHorizontalColumnGroup = this.columnGroup && isVertical;
+
+    return isHorizontalRowGroup || isHorizontalColumnGroup;
+  }
+
+  
+
+
+
+
+  get verticalTableTrackGroup() {
+    if (!this.rowGroup && !this.columnGroup) {
+      return false;
+    }
+
+    const wm = this.getTableTrackParentWritingMode(true);
+    const isVertical = wm.includes("vertical") || wm.includes("sideways");
+
+    const isVerticalRowGroup = this.rowGroup && isVertical;
+    const isVerticalColumnGroup = this.columnGroup && !isVertical;
+
+    return isVerticalRowGroup || isVerticalColumnGroup;
   }
 
   
@@ -766,7 +836,7 @@ class InactivePropertyHelper {
         return p;
       }
 
-      const style = node.ownerGlobal.getComputedStyle(p);
+      const style = computedStyle(p, node.ownerGlobal);
       const display = style.display;
 
       if (display !== "contents") {
@@ -775,6 +845,55 @@ class InactivePropertyHelper {
       
     }
     return null;
+  }
+
+  isRowGroup(node) {
+    const style = node === this.node ? this.style : computedStyle(node);
+
+    return (
+      style &&
+      (style.display === "table-row-group" ||
+        style.display === "table-header-group" ||
+        style.display === "table-footer-group")
+    );
+  }
+
+  isColumnGroup(node) {
+    const style = node === this.node ? this.style : computedStyle(node);
+
+    return style && style.display === "table-column-group";
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  getTableTrackParentWritingMode(isGroup) {
+    let current = this.node.parentNode;
+
+    
+    while (computedStyle(current).display === "contents") {
+      current = current.parentNode;
+    }
+
+    
+    if (!isGroup && (this.isRowGroup(current) || this.isColumnGroup(current))) {
+      current = current.parentNode;
+    }
+
+    
+    while (computedStyle(current).display === "contents") {
+      current = current.parentNode;
+    }
+
+    return computedStyle(current).writingMode;
   }
 }
 
@@ -798,4 +917,17 @@ function allCssPropertiesExcept(propertiesToIgnore) {
   }
 
   return [...properties];
+}
+
+
+
+
+
+
+
+
+
+
+function computedStyle(node, window = node.ownerGlobal) {
+  return window.getComputedStyle(node);
 }
