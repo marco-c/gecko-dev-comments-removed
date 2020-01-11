@@ -85,6 +85,11 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
   
 
 
+  bool mOnlyConditionalCSS;
+
+  
+
+
   class AtomsTable : public nsTHashtable<nsPtrHashKey<const nsStaticAtom>> {
    public:
     explicit AtomsTable(uint32_t aLength)
