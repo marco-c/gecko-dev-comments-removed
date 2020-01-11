@@ -21,7 +21,7 @@ function getSelectDialogDoc() {
       var childDoc = childDocShell.contentViewer.DOMDocument;
 
       if (
-        childDoc.location.href == "chrome://global/content/selectDialog.xul"
+        childDoc.location.href == "chrome://global/content/selectDialog.xhtml"
       ) {
         return childDoc;
       }

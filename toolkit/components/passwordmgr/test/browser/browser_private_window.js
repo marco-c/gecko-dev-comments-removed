@@ -34,8 +34,9 @@ function getDialogDoc() {
       }
       var childDoc = childDocShell.contentViewer.DOMDocument;
       if (
-        childDoc.location.href != "chrome://global/content/commonDialog.xul" &&
-        childDoc.location.href != "chrome://global/content/selectDialog.xul"
+        childDoc.location.href !=
+          "chrome://global/content/commonDialog.xhtml" &&
+        childDoc.location.href != "chrome://global/content/selectDialog.xhtml"
       ) {
         continue;
       }
