@@ -562,9 +562,6 @@ class DesktopInstance(GeckoInstance):
         "browser.shell.checkDefaultBrowser": False,
 
         
-        "browser.tabs.remote.autostart": False,
-
-        
         "browser.startup.homepage_override.mstone": "ignore",
         
         "browser.startup.page": 0,
