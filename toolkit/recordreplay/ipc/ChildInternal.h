@@ -50,6 +50,7 @@ void ReportUnhandledDivergence();
 
 
 size_t GetId();
+size_t GetForkId();
 
 
 extern Monitor* gMonitor;

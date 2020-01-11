@@ -168,7 +168,6 @@ void Channel::SendRaw(const char* aData, size_t aSize) {
       
       
       
-      MOZ_RELEASE_ASSERT(errno == EPIPE);
       return;
     }
     aData += rv;
@@ -204,7 +203,7 @@ Message::UniquePtr Channel::WaitForMessage() {
       continue;
     }
 
-    if (nbytes == 0 || (nbytes < 0 && errno == ECONNRESET)) {
+    if (nbytes <= 0) {
       
       if (ExitProcessOnDisconnect()) {
         PrintSpew("Channel disconnected, exiting...\n");
@@ -216,7 +215,6 @@ Message::UniquePtr Channel::WaitForMessage() {
       }
     }
 
-    MOZ_RELEASE_ASSERT(nbytes > 0);
     mMessageBytes += nbytes;
   }
 

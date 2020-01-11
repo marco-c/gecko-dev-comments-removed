@@ -108,7 +108,7 @@ const gChildren = new Map();
 const gUnpausedChildren = new Set();
 
 
-function ChildProcess(rootId, forkId, recording, recordingLength) {
+function ChildProcess(rootId, forkId, recording, recordingLength, startPoint) {
   
   this.rootId = rootId;
 
@@ -125,6 +125,9 @@ function ChildProcess(rootId, forkId, recording, recordingLength) {
 
   
   this.recordingLength = recordingLength;
+
+  
+  this.startPoint = startPoint;
 
   
   this.paused = false;
@@ -147,7 +150,7 @@ function ChildProcess(rootId, forkId, recording, recordingLength) {
   
   this.manifests = [
     {
-      manifest: {},
+      manifest: { kind: "initial" },
       onFinished: ({ point }) => {
         if (this == gMainChild) {
           getCheckpointInfo(FirstCheckpointId).point = point;
@@ -158,6 +161,9 @@ function ChildProcess(rootId, forkId, recording, recordingLength) {
       },
     },
   ];
+
+  
+  this.processedManifests = [];
 }
 
 const PingIntervalSeconds = 2;
@@ -171,6 +177,29 @@ ChildProcess.prototype = {
     gUnpausedChildren.delete(this);
     RecordReplayControl.terminate(this.rootId, this.forkId);
     this.terminated = true;
+  },
+
+  
+  transplantFrom(newChild) {
+    assert(this.terminated && !this.paused);
+    assert(!newChild.terminated && !newChild.paused);
+    this.terminated = false;
+    newChild.terminated = true;
+    gUnpausedChildren.delete(newChild);
+    gUnpausedChildren.add(this);
+
+    this.rootId = newChild.rootId;
+    this.forkId = newChild.forkId;
+    this.id = newChild.id;
+    gChildren.set(this.id, this);
+
+    this.recordingLength = newChild.recordingLength;
+    this.startPoint = newChild.startPoint;
+    this.lastPausePoint = newChild.lastPausePoint;
+    this.lastPingTime = Date.now();
+    this.pings = [];
+    this.manifests = newChild.manifests;
+    this.processedManifests = newChild.processedManifests;
   },
 
   
@@ -217,7 +246,7 @@ ChildProcess.prototype = {
     assert(!this.paused);
     this.paused = true;
     gUnpausedChildren.delete(this);
-    const { onFinished } = this.manifests.shift();
+    const { manifest, onFinished } = this.manifests.shift();
 
     if (response) {
       if (response.point) {
@@ -229,6 +258,7 @@ ChildProcess.prototype = {
     }
     onFinished(response);
 
+    this.processedManifests.push(manifest);
     this._startNextManifest();
   },
 
@@ -322,6 +352,9 @@ ChildProcess.prototype = {
     if (this.isHanged()) {
       
       RecordReplayControl.crashHangedChild(this.rootId, this.forkId);
+
+      
+      ChildCrashed(this.rootId, this.forkId);
     } else {
       const id = gNextPingId++;
       RecordReplayControl.ping(this.rootId, this.forkId, id);
@@ -338,13 +371,14 @@ ChildProcess.prototype = {
     }
   },
 
-  updateRecording() {
+  updateRecording(length) {
     RecordReplayControl.updateRecording(
       this.rootId,
       this.forkId,
-      this.recordingLength
+      this.recordingLength,
+      length
     );
-    this.recordingLength = RecordReplayControl.recordingLength();
+    this.recordingLength = length;
   },
 };
 
@@ -399,13 +433,14 @@ const gBranchChildren = [];
 let gNextForkId = 1;
 
 
-function forkChild(child) {
+function forkChild(child, point) {
   const forkId = gNextForkId++;
   const newChild = new ChildProcess(
     child.rootId,
     forkId,
     false,
-    child.recordingLength
+    child.recordingLength,
+    point
   );
 
   dumpv(`Forking ${child.id} -> ${newChild.id}`);
@@ -430,7 +465,7 @@ function newLeafChild(endpoint, onFinished = () => {}) {
     }
   }
 
-  const child = forkChild(entry.child);
+  const child = forkChild(entry.child, entry.point);
   if (pointEquals(endpoint, entry.point)) {
     onFinished(child);
   } else {
@@ -507,7 +542,10 @@ function spawnTrunkChild() {
     RecordReplayControl.recordingLength()
   );
 
-  gTrunkChild = forkChild(gRootChild);
+  gTrunkChild = forkChild(
+    gRootChild,
+    checkpointExecutionPoint(FirstCheckpointId)
+  );
 
   
   
@@ -523,10 +561,12 @@ function forkBranchChild(lastSavedCheckpoint, nextSavedCheckpoint) {
   
   
   
-  gTrunkChild.updateRecording();
+  gTrunkChild.updateRecording(RecordReplayControl.recordingLength());
 
-  const child = forkChild(gTrunkChild);
   const point = checkpointExecutionPoint(lastSavedCheckpoint);
+  const child = forkChild(gTrunkChild, point);
+
+  dumpv(`AddBranchChild Checkpoint ${lastSavedCheckpoint} Child ${child.id}`);
   gBranchChildren.push({ child, point });
 
   const endpoint = checkpointExecutionPoint(nextSavedCheckpoint);
@@ -538,6 +578,58 @@ function forkBranchChild(lastSavedCheckpoint, nextSavedCheckpoint) {
     
     flushExternalCalls: true,
   });
+}
+
+function respawnCrashedChild(child) {
+  const { startPoint, recordingLength, manifests, processedManifests } = child;
+
+  
+  let entry;
+  for (let i = gBranchChildren.length - 1; i >= 0; i--) {
+    const branch = gBranchChildren[i];
+    if (
+      !pointPrecedes(child.startPoint, branch.point) &&
+      !branch.child.terminated
+    ) {
+      entry = branch;
+      break;
+    }
+  }
+  if (!entry) {
+    entry = {
+      child: gRootChild,
+      point: checkpointExecutionPoint(FirstCheckpointId),
+    };
+  }
+
+  const newChild = forkChild(entry.child, entry.point);
+
+  dumpv(`Transplanting Child: ${child.id} from ${newChild.id}`);
+  child.transplantFrom(newChild);
+
+  if (recordingLength > child.recordingLength) {
+    child.updateRecording(recordingLength);
+  }
+
+  if (!pointEquals(startPoint, child.startPoint)) {
+    assert(pointPrecedes(child.startPoint, startPoint));
+    child.sendManifest({ kind: "runToPoint", endpoint: startPoint });
+  }
+
+  for (const manifest of processedManifests) {
+    if (manifest.kind != "initial" && manifest.kind != "fork") {
+      child.sendManifest(manifest);
+    }
+  }
+
+  for (const { manifest, onFinished } of manifests) {
+    if (
+      manifest.kind != "initial" &&
+      (manifest.kind != "fork" || manifest != manifests[0].manifest)
+    ) {
+      child.sendManifest(manifest, onFinished);
+    }
+  }
 }
 
 
@@ -1193,23 +1285,25 @@ function ChildCrashed(rootId, forkId) {
   const id = processId(rootId, forkId);
   dumpv(`Child Crashed: ${id}`);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   const child = gChildren.get(id);
-  if (
-    !child ||
-    !child.manifest ||
-    (child == gActiveChild && gPauseMode == PauseModes.PAUSED)
-  ) {
-    ThrowError("Cannot recover from crashed child");
+  if (!child) {
+    return;
+  }
+
+  
+  if (child.recording) {
+    ThrowError("Child is recording");
+  }
+
+  
+  
+  if (!forkId) {
+    ThrowError("Child is replaying root");
+  }
+
+  
+  if (child.paused) {
+    ThrowError("Child is paused");
   }
 
   if (++gNumCrashes > MaxCrashes) {
@@ -1219,7 +1313,14 @@ function ChildCrashed(rootId, forkId) {
   child.terminate();
 
   
-  ThrowError("Fork based crash recovery NYI");
+  
+  
+  const { manifest } = child.manifests[0];
+  if (manifest.kind == "fork") {
+    ChildCrashed(rootId, manifest.id);
+  }
+
+  respawnCrashedChild(child);
 }
 
 
