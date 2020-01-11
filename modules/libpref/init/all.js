@@ -4179,15 +4179,6 @@ pref("dom.push.http2.maxRetries", 2);
 pref("dom.push.http2.retryInterval", 5000);
 
 
-
-
-#if defined(XP_MACOSX)
-  pref("dom.w3c_touch_events.enabled", 0);
-#else
-  pref("dom.w3c_touch_events.enabled", 2);
-#endif
-
-
 pref("dom.w3c_pointer_events.implicit_capture", false);
 
 
