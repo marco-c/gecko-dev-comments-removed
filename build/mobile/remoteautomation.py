@@ -248,8 +248,6 @@ class RemoteAutomation(Automation):
         Fetch the full remote log file, log any new content and return True if new
         content processed.
         """
-        if not self.device.is_file(self.remoteLog):
-            return False
         try:
             newLogContent = self.device.get_file(self.remoteLog, offset=self.stdoutlen)
         except ADBTimeoutError:
@@ -333,6 +331,13 @@ class RemoteAutomation(Automation):
         top = self.procName
         slowLog = False
         endTime = datetime.datetime.now() + datetime.timedelta(seconds=timeout)
+        
+        retries = 0
+        while retries < 20 and not self.device.is_file(self.remoteLog):
+            retries += 1
+            time.sleep(1)
+        if not self.device.is_file(self.remoteLog):
+            print("Failed wait for remote log: %s missing?" % self.remoteLog)
         while top == self.procName:
             
             
