@@ -10,41 +10,42 @@ registerCleanupFunction(() => {
 });
 
 add_task(
-  threadFrontTest(async ({ threadFront, debuggee, client }) => {
-    return new Promise(resolve => {
-      threadFront.once("paused", async function(packet) {
-        const [grip] = packet.frame.arguments;
+  threadFrontTest(async ({ threadFront, debuggee }) => {
+    const packet = await executeOnNextTickAndWaitForPause(
+      eval_code,
+      threadFront
+    );
+    const [grip] = packet.frame.arguments;
 
-        
-        check_preview(grip);
+    
+    check_preview(grip);
 
-        const objClient = threadFront.pauseGrip(grip);
-        const response = await objClient.getPrototypeAndProperties();
-        
-        check_prototype_and_properties(response);
+    const objClient = threadFront.pauseGrip(grip);
+    const response = await objClient.getPrototypeAndProperties();
+    
+    check_prototype_and_properties(response);
 
-        await threadFront.resume();
-        resolve();
-      });
+    await threadFront.resume();
 
+    function eval_code() {
       debuggee.eval(
         function stopMe(arg1) {
           debugger;
         }.toString()
       );
       debuggee.eval(`
-      stopMe({
-        [Symbol()]: "first unnamed symbol",
-        [Symbol()]: "second unnamed symbol",
-        [Symbol("named")] : "named symbol",
-        [Symbol.iterator] : function* () {
-          yield 1;
-          yield 2;
-        },
-        x: 10,
-      });
-    `);
-    });
+        stopMe({
+          [Symbol()]: "first unnamed symbol",
+          [Symbol()]: "second unnamed symbol",
+          [Symbol("named")] : "named symbol",
+          [Symbol.iterator] : function* () {
+            yield 1;
+            yield 2;
+          },
+          x: 10,
+        });
+      `);
+    }
 
     function check_preview(grip) {
       Assert.equal(grip.class, "Object");

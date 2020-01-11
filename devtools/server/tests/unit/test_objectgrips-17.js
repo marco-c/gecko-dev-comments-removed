@@ -49,79 +49,71 @@ async function testPrincipal(options, globalPrincipal, debuggeeHasXrays) {
   }
 }
 
-function test({ threadFront, debuggee }, testOptions) {
+async function test({ threadFront, debuggee }, testOptions) {
   const { global } = testOptions;
-  return new Promise(function(resolve) {
-    threadFront.once("paused", async function(packet) {
-      
-      const [
-        proxyGrip,
-        inheritsProxyGrip,
-        inheritsProxy2Grip,
-      ] = packet.frame.arguments;
+  const packet = await executeOnNextTickAndWaitForPause(eval_code, threadFront);
+  
+  const [
+    proxyGrip,
+    inheritsProxyGrip,
+    inheritsProxy2Grip,
+  ] = packet.frame.arguments;
 
-      
-      check_proxy_grip(debuggee, testOptions, proxyGrip);
+  
+  check_proxy_grip(debuggee, testOptions, proxyGrip);
 
-      
-      const proxyClient = threadFront.pauseGrip(proxyGrip);
-      const proxySlots = await proxyClient.getProxySlots();
-      check_proxy_slots(debuggee, testOptions, proxyGrip, proxySlots);
+  
+  const proxyClient = threadFront.pauseGrip(proxyGrip);
+  const proxySlots = await proxyClient.getProxySlots();
+  check_proxy_slots(debuggee, testOptions, proxyGrip, proxySlots);
 
-      
-      const proxyResponse = await proxyClient.getPrototypeAndProperties();
-      check_properties(testOptions, proxyResponse.ownProperties, true, false);
-      check_prototype(
-        debuggee,
-        testOptions,
-        proxyResponse.prototype,
-        true,
-        false
-      );
+  
+  const proxyResponse = await proxyClient.getPrototypeAndProperties();
+  check_properties(testOptions, proxyResponse.ownProperties, true, false);
+  check_prototype(debuggee, testOptions, proxyResponse.prototype, true, false);
 
-      
-      const inheritsProxyClient = threadFront.pauseGrip(inheritsProxyGrip);
-      const inheritsProxyResponse = await inheritsProxyClient.getPrototypeAndProperties();
-      check_properties(
-        testOptions,
-        inheritsProxyResponse.ownProperties,
-        false,
-        false
-      );
-      check_prototype(
-        debuggee,
-        testOptions,
-        inheritsProxyResponse.prototype,
-        false,
-        false
-      );
+  
+  const inheritsProxyClient = threadFront.pauseGrip(inheritsProxyGrip);
+  const inheritsProxyResponse = await inheritsProxyClient.getPrototypeAndProperties();
+  check_properties(
+    testOptions,
+    inheritsProxyResponse.ownProperties,
+    false,
+    false
+  );
+  check_prototype(
+    debuggee,
+    testOptions,
+    inheritsProxyResponse.prototype,
+    false,
+    false
+  );
 
-      
-      
-      const inheritsProxy2Client = threadFront.pauseGrip(inheritsProxy2Grip);
-      const inheritsProxy2Response = await inheritsProxy2Client.getPrototypeAndProperties();
-      check_properties(
-        testOptions,
-        inheritsProxy2Response.ownProperties,
-        false,
-        true
-      );
-      check_prototype(
-        debuggee,
-        testOptions,
-        inheritsProxy2Response.prototype,
-        false,
-        true
-      );
+  
+  
+  const inheritsProxy2Client = threadFront.pauseGrip(inheritsProxy2Grip);
+  const inheritsProxy2Response = await inheritsProxy2Client.getPrototypeAndProperties();
+  check_properties(
+    testOptions,
+    inheritsProxy2Response.ownProperties,
+    false,
+    true
+  );
+  check_prototype(
+    debuggee,
+    testOptions,
+    inheritsProxy2Response.prototype,
+    false,
+    true
+  );
 
-      
-      strictEqual(global.trapDidRun, false, "No proxy trap did run.");
+  
+  strictEqual(global.trapDidRun, false, "No proxy trap did run.");
 
-      
-      await threadFront.resume();
-      resolve();
-    });
+  
+  await threadFront.resume();
 
+  function eval_code() {
     
     
     
@@ -142,7 +134,7 @@ function test({ threadFront, debuggee }, testOptions) {
       var inheritsProxy2 = Object.create(data.proxy, {x:{value:1}});
       stopMe(data.proxy, data.inheritsProxy, inheritsProxy2);
     `);
-  });
+  }
 }
 
 function check_proxy_grip(debuggee, testOptions, grip) {

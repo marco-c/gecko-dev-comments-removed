@@ -241,13 +241,13 @@ async function test_object_grip(
     expectedNonIndexedProperties,
   } = testData;
 
-  return new Promise((resolve, reject) => {
-    threadFront.once("paused", async function(packet) {
-      const [grip] = packet.frame.arguments;
+  const packet = await executeOnNextTickAndWaitForPause(eval_code, threadFront);
 
-      const objClient = threadFront.pauseGrip(grip);
+  const [grip] = packet.frame.arguments;
 
-      info(`
+  const objClient = threadFront.pauseGrip(grip);
+
+  info(`
         Check enumProperties response for
         ${
           typeof evaledObject === "string"
@@ -256,21 +256,20 @@ async function test_object_grip(
         }
       `);
 
-      
-      let response = await objClient.enumProperties({
-        ignoreNonIndexedProperties: true,
-      });
-      await check_enum_properties(response, expectedIndexedProperties);
+  
+  let response = await objClient.enumProperties({
+    ignoreNonIndexedProperties: true,
+  });
+  await check_enum_properties(response, expectedIndexedProperties);
 
-      response = await objClient.enumProperties({
-        ignoreIndexedProperties: true,
-      });
-      await check_enum_properties(response, expectedNonIndexedProperties);
+  response = await objClient.enumProperties({
+    ignoreIndexedProperties: true,
+  });
+  await check_enum_properties(response, expectedNonIndexedProperties);
 
-      await threadFront.resume();
-      resolve();
-    });
+  await threadFront.resume();
 
+  function eval_code() {
     
     
     
@@ -283,7 +282,7 @@ async function test_object_grip(
         });
       `);
     });
-  });
+  }
 }
 
 async function check_enum_properties(iterator, expected = []) {

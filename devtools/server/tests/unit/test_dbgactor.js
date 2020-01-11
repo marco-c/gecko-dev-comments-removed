@@ -8,36 +8,39 @@ const xpcInspector = Cc["@mozilla.org/jsinspector;1"].getService(
 );
 
 add_task(
-  threadFrontTest(async ({ threadFront, debuggee, targetFront }) => {
+  threadFrontTest(async ({ threadFront, debuggee }) => {
     Assert.equal(xpcInspector.eventLoopNestLevel, 0);
 
-    await new Promise(resolve => {
-      threadFront.on("paused", function(packet) {
-        Assert.equal(false, "error" in packet);
-        Assert.ok("actor" in packet);
-        Assert.ok("why" in packet);
-        Assert.equal(packet.why.type, "debuggerStatement");
+    const packet = await executeOnNextTickAndWaitForPause(
+      () => evalCode(debuggee),
+      threadFront
+    );
 
-        
-        
-        Assert.ok(debuggee.a);
-        Assert.ok(!debuggee.b);
+    Assert.equal(false, "error" in packet);
+    Assert.ok("actor" in packet);
+    Assert.ok("why" in packet);
+    Assert.equal(packet.why.type, "debuggerStatement");
 
-        Assert.equal(xpcInspector.eventLoopNestLevel, 1);
+    
+    
+    Assert.ok(debuggee.a);
+    Assert.ok(!debuggee.b);
 
-        
-        threadFront.resume().then(resolve);
-      });
+    Assert.equal(xpcInspector.eventLoopNestLevel, 1);
 
-      
-      Cu.evalInSandbox(
-        "var a = true; var b = false; debugger; var b = true;",
-        debuggee
-      );
-      
-      Assert.ok(debuggee.b);
-    });
+    
+    await threadFront.resume();
+
+    
+    Assert.ok(debuggee.b);
 
     Assert.equal(xpcInspector.eventLoopNestLevel, 0);
   })
 );
+
+function evalCode(debuggee) {
+  Cu.evalInSandbox(
+    "var a = true; var b = false; debugger; var b = true;",
+    debuggee
+  );
+}
