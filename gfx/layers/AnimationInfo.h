@@ -11,20 +11,23 @@
 #include "nsCSSPropertyIDSet.h"
 #include "nsDisplayItemTypes.h"
 #include "mozilla/Array.h"
-#include "mozilla/MotionPathUtils.h"
 
 struct RawServoAnimationValue;
 class nsIContent;
 class nsIFrame;
 
 namespace mozilla {
+namespace gfx{
+class Path;
+}  
+
 namespace layers {
 
 class Animation;
 class CompositorAnimations;
 class Layer;
 class LayerManager;
-class TransformData;
+struct CompositorAnimationData;
 struct PropertyAnimationGroup;
 
 class AnimationInfo final {
@@ -71,7 +74,7 @@ class AnimationInfo final {
   nsTArray<PropertyAnimationGroup>& GetPropertyAnimationGroups() {
     return mPropertyAnimationGroups;
   }
-  const TransformData* GetTransformLikeMetaData() const {
+  const CompositorAnimationData* GetTransformLikeMetaData() const {
     return mTransformLikeMetaData.get();
   }
   bool ApplyPendingUpdatesForThisTransaction();
@@ -119,7 +122,7 @@ class AnimationInfo final {
   
   
   nsTArray<PropertyAnimationGroup> mPropertyAnimationGroups;
-  UniquePtr<TransformData> mTransformLikeMetaData;
+  UniquePtr<CompositorAnimationData> mTransformLikeMetaData;
   
   RefPtr<gfx::Path> mCachedMotionPath;
   

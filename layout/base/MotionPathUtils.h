@@ -19,8 +19,8 @@ namespace mozilla {
 using RayFunction = StyleRayFunction<StyleAngle>;
 
 namespace layers {
+class MotionPathData;
 class PathCommand;
-class TransformData;
 }  
 
 struct MotionPathData {
@@ -159,7 +159,7 @@ class MotionPathUtils final {
 
 
 
-  static Maybe<MotionPathData> ResolveMotionPath(
+  static Maybe<mozilla::MotionPathData> ResolveMotionPath(
       const OffsetPathData& aPath, const LengthPercentage& aDistance,
       const StyleOffsetRotate& aRotate, const StylePositionOrAuto& aAnchor,
       const CSSPoint& aTransformOrigin, const CSSSize& aFrameSize,
@@ -169,17 +169,19 @@ class MotionPathUtils final {
 
 
 
-  static Maybe<MotionPathData> ResolveMotionPath(const nsIFrame* aFrame);
+  static Maybe<mozilla::MotionPathData> ResolveMotionPath(
+      const nsIFrame* aFrame);
 
   
 
 
 
-  static Maybe<MotionPathData> ResolveMotionPath(
+
+  static Maybe<mozilla::MotionPathData> ResolveMotionPath(
       const StyleOffsetPath* aPath, const StyleLengthPercentage* aDistance,
       const StyleOffsetRotate* aRotate, const StylePositionOrAuto* aAnchor,
-      const layers::TransformData& aTransformData,
-      gfx::Path* aCachedMotionPath);
+      const Maybe<layers::MotionPathData>& aMotionPathData,
+      const CSSSize& aFrameSize, gfx::Path* aCachedMotionPath);
 
   
 
