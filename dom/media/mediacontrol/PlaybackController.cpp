@@ -5,8 +5,7 @@
 #include "PlaybackController.h"
 
 #include "nsIAudioChannelAgent.h"
-
-extern mozilla::LazyLogModule gMediaControlLog;
+#include "MediaControlUtils.h"
 
 
 #undef LOG
