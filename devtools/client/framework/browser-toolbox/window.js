@@ -74,6 +74,16 @@ var connect = async function() {
   const env = Cc["@mozilla.org/process/environment;1"].getService(
     Ci.nsIEnvironment
   );
+
+  
+  
+  
+  
+  Services.prefs.setBoolPref(
+    "devtools.browsertoolbox.fission",
+    env.get("MOZ_BROWSER_TOOLBOX_FISSION_PREF") === "1"
+  );
+
   const port = env.get("MOZ_BROWSER_TOOLBOX_PORT");
 
   
@@ -198,6 +208,7 @@ async function openToolbox(target) {
     Toolbox.HostType.CUSTOM,
     toolboxOptions
   );
+  toolbox.setBrowserToolbox(true);
   await onNewToolbox(toolbox);
 }
 

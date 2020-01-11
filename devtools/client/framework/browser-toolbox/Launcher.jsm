@@ -250,7 +250,14 @@ BrowserToolboxLauncher.prototype = {
       BROWSER_TOOLBOX_WINDOW_URL,
     ];
 
+    const isBrowserToolboxFission = Services.prefs.getBoolPref(
+      "devtools.browsertoolbox.fission",
+      false
+    );
     const environment = {
+      
+      
+      MOZ_BROWSER_TOOLBOX_FISSION_PREF: isBrowserToolboxFission ? "1" : "0",
       
       
       MOZ_DISABLE_SAFE_MODE_KEY: "1",

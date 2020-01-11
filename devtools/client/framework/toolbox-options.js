@@ -99,7 +99,7 @@ OptionsPanel.prototype = {
     this.setupToolsList();
     this.setupToolbarButtonsList();
     this.setupThemeList();
-    this.setupNightlyOptions();
+    this.setupAdditionalOptions();
     await this.populatePreferences();
     this.isReady = true;
     this.emit("ready");
@@ -441,35 +441,59 @@ OptionsPanel.prototype = {
   
 
 
-  setupNightlyOptions: function() {
-    const isNightly = AppConstants.NIGHTLY_BUILD;
-    if (!isNightly) {
-      return;
-    }
+  setupAdditionalOptions: function() {
+    const prefDefinitions = [];
 
-    
-    
-    const prefDefinitions = [
-      {
+    const isNightly = AppConstants.NIGHTLY_BUILD;
+    if (isNightly) {
+      
+      prefDefinitions.push({
         pref: "devtools.performance.new-panel-enabled",
         label: "Enable new performance recorder (then re-open DevTools)",
         id: "devtools-new-performance",
         parentId: "context-options",
-      },
-    ];
+      });
+    }
 
-    
-    
     if (this.target.isParentProcess) {
+      
+      
+      
       prefDefinitions.push({
         pref: "devtools.browsertoolbox.fission",
         label: L10N.getStr("options.enableMultiProcessToolbox"),
         id: "devtools-browsertoolbox-fission",
         parentId: "context-options",
+        
+        
+        
+        
+        onChange: async checked => {
+          if (!this.toolbox.isBrowserToolbox()) {
+            
+            
+            
+            
+            return;
+          }
+
+          
+          
+          
+          
+          
+          
+          const { mainRoot } = this.target.client;
+          const preferenceFront = await mainRoot.getFront("preference");
+          preferenceFront.setBoolPref(
+            "devtools.browsertoolbox.fission",
+            checked
+          );
+        },
       });
     }
 
-    const createPreferenceOption = ({ pref, label, id }) => {
+    const createPreferenceOption = ({ pref, label, id, onChange }) => {
       const inputLabel = this.panelDoc.createElement("label");
       const checkbox = this.panelDoc.createElement("input");
       checkbox.setAttribute("type", "checkbox");
@@ -479,6 +503,9 @@ OptionsPanel.prototype = {
       checkbox.setAttribute("id", id);
       checkbox.addEventListener("change", e => {
         SetPref(pref, e.target.checked);
+        if (onChange) {
+          onChange(e.target.checked);
+        }
       });
 
       const inputSpanLabel = this.panelDoc.createElement("span");
