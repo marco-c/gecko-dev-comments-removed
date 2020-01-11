@@ -32,23 +32,17 @@ extern mozilla::LazyLogModule gMediaTrackGraphLog;
 namespace mozilla {
 
 GraphDriver::GraphDriver(MediaTrackGraphImpl* aGraphImpl)
-    : mIterationStart(0),
-      mIterationEnd(0),
-      mGraphImpl(aGraphImpl),
-      mPreviousDriver(nullptr),
-      mNextDriver(nullptr) {}
+    : mGraphImpl(aGraphImpl) {}
 
-void GraphDriver::SetGraphTime(GraphDriver* aPreviousDriver,
-                               GraphTime aLastSwitchNextIterationStart,
-                               GraphTime aLastSwitchNextIterationEnd) {
+void GraphDriver::SetState(GraphDriver* aPreviousDriver,
+                           GraphTime aIterationStart, GraphTime aIterationEnd,
+                           GraphTime aStateComputedTime) {
   MOZ_ASSERT(OnGraphThread() || !ThreadRunning());
   GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
-  
-  
-  
-  
-  mIterationStart = aLastSwitchNextIterationStart;
-  mIterationEnd = aLastSwitchNextIterationEnd;
+
+  mIterationStart = aIterationStart;
+  mIterationEnd = aIterationEnd;
+  mStateComputedTime = aStateComputedTime;
 
   MOZ_ASSERT(!PreviousDriver());
   MOZ_ASSERT(aPreviousDriver);
@@ -81,10 +75,6 @@ void GraphDriver::SwitchAtNextIteration(GraphDriver* aNextDriver) {
   SetNextDriver(aNextDriver);
 }
 
-GraphTime GraphDriver::StateComputedTime() const {
-  return GraphImpl()->mStateComputedTime;
-}
-
 #ifdef DEBUG
 bool GraphDriver::OnGraphThread() {
   return GraphImpl()->RunByGraphDriver(this);
@@ -102,7 +92,8 @@ void GraphDriver::SwitchToNextDriver() {
   GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
   MOZ_ASSERT(NextDriver());
 
-  NextDriver()->SetGraphTime(this, mIterationStart, mIterationEnd);
+  NextDriver()->SetState(this, mIterationStart, mIterationEnd,
+                         mStateComputedTime);
   GraphImpl()->SetCurrentDriver(NextDriver());
   NextDriver()->Start();
   SetNextDriver(nullptr);
@@ -259,10 +250,9 @@ void ThreadedDriver::RunThread() {
     mIterationStart = IterationEnd();
     mIterationEnd += GetIntervalForIteration();
 
-    GraphTime stateComputedTime = StateComputedTime();
-    if (stateComputedTime < mIterationEnd) {
+    if (mStateComputedTime < mIterationEnd) {
       LOG(LogLevel::Warning, ("%p: Global underrun detected", GraphImpl()));
-      mIterationEnd = stateComputedTime;
+      mIterationEnd = mStateComputedTime;
     }
 
     if (mIterationStart >= mIterationEnd) {
@@ -274,7 +264,7 @@ void ThreadedDriver::RunThread() {
 
     GraphTime nextStateComputedTime = GraphImpl()->RoundUpToEndOfAudioBlock(
         mIterationEnd + GraphImpl()->MillisecondsToMediaTime(AUDIO_TARGET_MS));
-    if (nextStateComputedTime < stateComputedTime) {
+    if (nextStateComputedTime < mStateComputedTime) {
       
       
       LOG(LogLevel::Warning,
@@ -282,12 +272,12 @@ void ThreadedDriver::RunThread() {
            "state[%ld; "
            "%ld]",
            GraphImpl(), (long)mIterationStart, (long)mIterationEnd,
-           (long)stateComputedTime, (long)nextStateComputedTime));
-      nextStateComputedTime = stateComputedTime;
+           (long)mStateComputedTime, (long)nextStateComputedTime));
+      nextStateComputedTime = mStateComputedTime;
     }
     LOG(LogLevel::Verbose,
         ("%p: interval[%ld; %ld] state[%ld; %ld]", GraphImpl(),
-         (long)mIterationStart, (long)mIterationEnd, (long)stateComputedTime,
+         (long)mIterationStart, (long)mIterationEnd, (long)mStateComputedTime,
          (long)nextStateComputedTime));
 
     bool stillProcessing = GraphImpl()->OneIteration(nextStateComputedTime);
@@ -299,6 +289,7 @@ void ThreadedDriver::RunThread() {
       GraphImpl()->SignalMainThreadCleanup();
       break;
     }
+    mStateComputedTime = nextStateComputedTime;
     MonitorAutoLock lock(GraphImpl()->GetMonitor());
     WaitForNextIteration();
     if (NextDriver()) {
@@ -322,7 +313,7 @@ MediaTime SystemClockDriver::GetIntervalForIteration() {
       ("%p: Updating current time to %f (real %f, StateComputedTime() %f)",
        GraphImpl(), GraphImpl()->MediaTimeToSeconds(IterationEnd() + interval),
        (now - mInitialTimeStamp).ToSeconds(),
-       GraphImpl()->MediaTimeToSeconds(StateComputedTime())));
+       GraphImpl()->MediaTimeToSeconds(mStateComputedTime)));
 
   return interval;
 }
@@ -795,8 +786,7 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
   
   AddMixerCallback();
 
-  GraphTime stateComputedTime = StateComputedTime();
-  if (stateComputedTime == 0) {
+  if (mStateComputedTime == 0) {
     MonitorAutoLock mon(GraphImpl()->GetMonitor());
     
     
@@ -829,13 +819,13 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
   
   
   GraphTime nextStateComputedTime = GraphImpl()->RoundUpToEndOfAudioBlock(
-      stateComputedTime + mBuffer.Available());
+      mStateComputedTime + mBuffer.Available());
 
   mIterationStart = mIterationEnd;
   
   
   
-  GraphTime inGraph = stateComputedTime - mIterationStart;
+  GraphTime inGraph = mStateComputedTime - mIterationStart;
   
   
   
@@ -848,15 +838,15 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
       ("%p: interval[%ld; %ld] state[%ld; %ld] (frames: %ld) (durationMS: %u) "
        "(duration ticks: %ld)",
        GraphImpl(), (long)mIterationStart, (long)mIterationEnd,
-       (long)stateComputedTime, (long)nextStateComputedTime, (long)aFrames,
+       (long)mStateComputedTime, (long)nextStateComputedTime, (long)aFrames,
        (uint32_t)durationMS,
-       (long)(nextStateComputedTime - stateComputedTime)));
+       (long)(nextStateComputedTime - mStateComputedTime)));
 
-  if (stateComputedTime < mIterationEnd) {
+  if (mStateComputedTime < mIterationEnd) {
     LOG(LogLevel::Error,
         ("%p: Media graph global underrun detected", GraphImpl()));
     MOZ_ASSERT_UNREACHABLE("We should not underrun in full duplex");
-    mIterationEnd = stateComputedTime;
+    mIterationEnd = mStateComputedTime;
   }
 
   
@@ -870,6 +860,9 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
     
     
     stillProcessing = GraphImpl()->OneIteration(nextStateComputedTime);
+    if (stillProcessing) {
+      mStateComputedTime = nextStateComputedTime;
+    }
   } else {
     LOG(LogLevel::Verbose,
         ("%p: DataCallback buffer filled entirely from scratch "

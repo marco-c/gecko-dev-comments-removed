@@ -165,9 +165,8 @@ class GraphDriver {
 
 
 
-  void SetGraphTime(GraphDriver* aPreviousDriver,
-                    GraphTime aLastSwitchNextIterationStart,
-                    GraphTime aLastSwitchNextIterationEnd);
+  void SetState(GraphDriver* aPreviousDriver, GraphTime aIterationStart,
+                GraphTime aIterationEnd, GraphTime aStateComputedTime);
 
   MediaTrackGraphImpl* GraphImpl() const { return mGraphImpl; }
 
@@ -181,16 +180,17 @@ class GraphDriver {
   virtual bool ThreadRunning() = 0;
 
  protected:
-  GraphTime StateComputedTime() const;
   
   void SetNextDriver(GraphDriver* aNextDriver);
 
   
   
-  GraphTime mIterationStart;
+  GraphTime mIterationStart = 0;
   
   
-  GraphTime mIterationEnd;
+  GraphTime mIterationEnd = 0;
+  
+  GraphTime mStateComputedTime = 0;
   
   const RefPtr<MediaTrackGraphImpl> mGraphImpl;
 
@@ -208,7 +208,7 @@ class GraphDriver {
   
   
   RefPtr<GraphDriver> mNextDriver;
-  virtual ~GraphDriver() {}
+  virtual ~GraphDriver() = default;
 };
 
 class MediaTrackGraphInitThreadRunnable;
