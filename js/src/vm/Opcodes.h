@@ -1655,9 +1655,13 @@
 
 
 
+
+
  \
     MACRO(JSOP_CLASSCONSTRUCTOR, "classconstructor", NULL, 13, 0, 1, JOF_CLASS_CTOR) \
     
+
+
 
 
 
@@ -1752,6 +1756,8 @@
  \
     MACRO(JSOP_OPTIMIZE_SPREADCALL, "optimize-spreadcall", NULL, 1, 1, 2, JOF_BYTE) \
     
+
+
 
 
 
@@ -1981,6 +1987,7 @@
  \
     MACRO(JSOP_INITIALYIELD, "initialyield", NULL, 4, 1, 3, JOF_RESUMEINDEX) \
     
+
 
 
 
