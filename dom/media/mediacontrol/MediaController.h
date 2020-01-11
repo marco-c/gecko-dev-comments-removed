@@ -7,6 +7,7 @@
 #ifndef DOM_MEDIA_MEDIACONTROL_MEDIACONTROLLER_H_
 #define DOM_MEDIA_MEDIACONTROL_MEDIACONTROLLER_H_
 
+#include "MediaControlKeysEvent.h"
 #include "nsDataHashtable.h"
 #include "nsISupportsImpl.h"
 
@@ -14,14 +15,6 @@ namespace mozilla {
 namespace dom {
 
 class BrowsingContext;
-
-enum class MediaControlActions : uint32_t {
-  ePlay,
-  ePause,
-  eStop,
-  
-  eActionsNum,
-};
 
 
 
@@ -71,7 +64,8 @@ class MediaController final {
  private:
   ~MediaController();
 
-  void UpdateMediaActionToContentMediaIfNeeded(MediaControlActions aAction);
+  void UpdateMediaControlKeysEventToContentMediaIfNeeded(
+      MediaControlKeysEvent aEvent);
   void IncreaseControlledMediaNum();
   void DecreaseControlledMediaNum();
 

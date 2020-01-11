@@ -24,6 +24,8 @@ enum class MediaControlKeysEvent : uint32_t {
   eNextTrack,
   eSeekBackward,
   eSeekForward,
+  
+  
   eStop,
 };
 
