@@ -1236,7 +1236,8 @@ bool Module::makeStructTypeDescrs(
         
         
         
-        if (v.isRef()) {
+        if (v.isTypeIndex()) {
+          
           sf.isMutable = false;
           allowConstruct = false;
         }

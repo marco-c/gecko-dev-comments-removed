@@ -11489,16 +11489,13 @@ bool BaseCompiler::emitStructNarrow() {
 
   
 
-  MOZ_ASSERT(inputType.refTypeKind() == RefType::Any ||
-             inputType.refTypeKind() == RefType::TypeIndex);
-  MOZ_ASSERT(outputType.refTypeKind() == RefType::Any ||
-             outputType.refTypeKind() == RefType::TypeIndex);
-  MOZ_ASSERT_IF(outputType.refTypeKind() == RefType::Any,
-                inputType.refTypeKind() == RefType::Any);
+  MOZ_ASSERT(inputType.isAnyRef() || env_.isStructType(inputType));
+  MOZ_ASSERT(outputType.isAnyRef() || env_.isStructType(outputType));
+  MOZ_ASSERT_IF(outputType.isAnyRef(), inputType.isAnyRef());
 
   
 
-  if (inputType == RefType::any() && outputType == RefType::any()) {
+  if (inputType.isAnyRef() && outputType.isAnyRef()) {
     return true;
   }
 
@@ -11506,7 +11503,7 @@ bool BaseCompiler::emitStructNarrow() {
 
   
 
-  bool mustUnboxAnyref = inputType == RefType::any();
+  bool mustUnboxAnyref = inputType.isAnyRef();
 
   
   const StructType& outputStruct =

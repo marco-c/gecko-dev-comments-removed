@@ -133,7 +133,12 @@ class AstValType {
     if (which_ == IsAstRef) {
       return true;
     }
-    return type_ == RefType::any() || type_.isRef();
+    
+    
+    
+    
+    
+    return type_.isAnyRef() || type_.isTypeIndex();
   }
 #endif
 
