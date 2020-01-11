@@ -77,6 +77,41 @@ function uuid() {
 const sharedDataKey = id => `SiteSpecificBrowserBase:${id}`;
 const storeKey = id => SSB_STORE_PREFIX + id;
 
+
+
+
+function buildIconList(icons) {
+  let iconList = [];
+
+  for (let icon of icons) {
+    for (let sizeSpec of icon.sizes) {
+      let size =
+        sizeSpec == "any" ? Number.MAX_SAFE_INTEGER : parseInt(sizeSpec);
+
+      iconList.push({
+        icon,
+        size,
+      });
+    }
+  }
+
+  iconList.sort((a, b) => {
+    
+    
+    
+    if (a.size < b.size) {
+      return -1;
+    }
+
+    if (a.size > b.size) {
+      return 1;
+    }
+
+    return 0;
+  });
+  return iconList;
+}
+
 const IS_MAIN_PROCESS =
   Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT;
 
@@ -559,8 +594,38 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
 
 
 
+
+
+
+
+
+  getIcon(size) {
+    if (!this._iconSizes) {
+      this._iconSizes = buildIconList(this._manifest.icons);
+    }
+
+    if (!this._iconSizes.length) {
+      return null;
+    }
+
+    let i = 0;
+    while (i < this._iconSizes.length && this._iconSizes[i].size < size) {
+      i++;
+    }
+
+    return i < this._iconSizes.length
+      ? this._iconSizes[i].icon
+      : this._iconSizes[this._iconSizes.length - 1].icon;
+  }
+
+  
+
+
+
+
   async updateFromManifest(manifest) {
     this._manifest = manifest;
+    this._iconSizes = null;
     this._scope = Services.io.newURI(this._manifest.scope);
     this._config.needsUpdate = false;
 
@@ -600,13 +665,17 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
       sa.appendElement(uristr);
     }
 
-    Services.ww.openWindow(
+    let win = Services.ww.openWindow(
       null,
       "chrome://browser/content/ssb/ssb.html",
       "_blank",
       "chrome,dialog=no,all",
       sa
     );
+
+    if (Services.appinfo.OS == "WINNT") {
+      WindowsSupport.applyOSIntegration(this, win);
+    }
   }
 }
 
