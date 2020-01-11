@@ -4495,7 +4495,7 @@ bool JSScript::fullyInitFromEmitter(JSContext* cx, HandleScript script,
     if (fun->isInterpretedLazy()) {
       fun->setUnlazifiedScript(script);
     } else {
-      MOZ_ASSERT(fun->hasUncompletedScript());
+      MOZ_ASSERT(fun->isIncomplete());
       fun->initScript(script);
     }
   }
@@ -5131,8 +5131,9 @@ JSScript* js::CloneGlobalScript(JSContext* cx, ScopeKind scopeKind,
 JSScript* js::CloneScriptIntoFunction(
     JSContext* cx, HandleScope enclosingScope, HandleFunction fun,
     HandleScript src, Handle<ScriptSourceObject*> sourceObject) {
-  MOZ_ASSERT(fun->isInterpreted());
-  MOZ_ASSERT(!fun->hasScript() || fun->hasUncompletedScript());
+  
+  
+  MOZ_ASSERT(fun->isIncomplete() || fun->hasSelfHostedLazyScript());
 
   
   Rooted<GCVector<Scope*>> scopes(cx, GCVector<Scope*>(cx));

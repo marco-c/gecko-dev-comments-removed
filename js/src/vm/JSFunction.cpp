@@ -765,7 +765,9 @@ inline void JSFunction::trace(JSTracer* trc) {
     
     
     
-    if (hasScript() && !hasUncompletedScript()) {
+    if (isIncomplete()) {
+      MOZ_ASSERT(u.scripted.s.script_ == nullptr);
+    } else if (hasScript()) {
       JSScript* script = static_cast<JSScript*>(u.scripted.s.script_);
       TraceManuallyBarrieredEdge(trc, &script, "script");
       u.scripted.s.script_ = script;
@@ -1693,7 +1695,7 @@ void JSFunction::maybeRelazify(JSRuntime* rt) {
   
   
   
-  if (!hasScript() || hasUncompletedScript()) {
+  if (isIncomplete()) {
     return;
   }
 

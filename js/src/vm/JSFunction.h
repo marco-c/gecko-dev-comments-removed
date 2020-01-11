@@ -721,10 +721,7 @@ class JSFunction : public js::NativeObject {
   
   
   
-  bool hasUncompletedScript() const {
-    MOZ_ASSERT(hasScript());
-    return !u.scripted.s.script_;
-  }
+  bool isIncomplete() const { return isInterpreted() && !u.scripted.s.script_; }
 
   JSScript* nonLazyScript() const {
     MOZ_ASSERT(hasScript());
