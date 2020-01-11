@@ -46,8 +46,6 @@
 
 
 
-
-
 class nsMainThreadSourceSurfaceRef;
 
 template <>
@@ -80,11 +78,7 @@ class nsAutoRefTraits<nsMainThreadSourceSurfaceRef> {
     nsCOMPtr<nsIRunnable> runnable = new SurfaceReleaser(aRawRef);
     NS_DispatchToMainThread(runnable);
   }
-  static void AddRef(RawRef aRawRef) {
-    NS_ASSERTION(NS_IsMainThread(),
-                 "Can only add a reference on the main thread");
-    aRawRef->AddRef();
-  }
+  static void AddRef(RawRef aRawRef) { aRawRef->AddRef(); }
 };
 
 class nsOwningThreadSourceSurfaceRef;
