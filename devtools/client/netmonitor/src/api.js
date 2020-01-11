@@ -20,8 +20,6 @@ const {
   getSortedRequests,
 } = require("./selectors/index");
 
-loader.lazyRequireGetter(this, "flags", "devtools/shared/flags");
-
 
 
 
@@ -229,16 +227,6 @@ NetMonitorAPI.prototype = {
     
     
     this.store.dispatch(Actions.sendCustomRequest(this.connector, requestId));
-  },
-
-  
-
-
-
-  emitForTests(type, data) {
-    if (flags.testing) {
-      this.emit(type, data);
-    }
   },
 };
 
