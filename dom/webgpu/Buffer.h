@@ -6,11 +6,15 @@
 #ifndef GPU_BUFFER_H_
 #define GPU_BUFFER_H_
 
+#include "js/RootingAPI.h"
 #include "mozilla/dom/Nullable.h"
-#include "mozilla/dom/TypedArray.h"
+#include "mozilla/webgpu/WebGPUTypes.h"
 #include "ObjectModel.h"
 
 namespace mozilla {
+namespace ipc {
+class Shmem;
+}  
 namespace webgpu {
 
 class Device;
@@ -20,11 +24,30 @@ class Buffer final : public ObjectBase, public ChildOf<Device> {
   GPU_DECL_CYCLE_COLLECTION(Buffer)
   GPU_DECL_JS_WRAP(Buffer)
 
+  struct Mapping final {
+    UniquePtr<ipc::Shmem> mShmem;
+    JS::Heap<JSObject*> mArrayBuffer;
+
+    Mapping(ipc::Shmem&& aShmem, JSObject* aArrayBuffer);
+  };
+
+  Buffer(Device* const aParent, RawId aId, BufferAddress aSize);
+  void InitMapping(ipc::Shmem&& aShmem, JSObject* aArrayBuffer);
+
  private:
-  explicit Buffer(Device* parent);
   virtual ~Buffer();
 
+  const RawId mId;
+  
+  
+  
+  const BufferAddress mSize;
+  nsString mLabel;
+  Maybe<Mapping> mMapping;
+
  public:
+  already_AddRefed<dom::Promise> MapReadAsync(ErrorResult& aRv);
+  void Unmap(JSContext* aCx, ErrorResult& aRv);
 };
 
 }  
