@@ -154,11 +154,6 @@ var global = this;
       .getInterface(Ci.nsIWebProgress);
     webProgress.removeProgressListener(WebProgressListener);
     docShell.deviceSizeIsPageSize = gDeviceSizeWasPageSize;
-    
-    
-    
-    
-    restoreScreenOrientation();
     restoreScrollbars();
     setDocumentInRDMPane(false);
     stopOnResize();
@@ -206,13 +201,6 @@ var global = this;
       } catch (e) {}
     }
     flushStyle();
-  }
-
-  function restoreScreenOrientation() {
-    docShell.contentViewer.DOMDocument.setRDMPaneOrientation(
-      "landscape-primary",
-      0
-    );
   }
 
   function setDocumentInRDMPane(inRDMPane) {
