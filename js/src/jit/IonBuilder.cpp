@@ -1523,6 +1523,101 @@ AbortReasonOr<Ok> IonBuilder::maybeAddOsrTypeBarriers() {
   return Ok();
 }
 
+#ifdef DEBUG
+
+
+
+
+
+
+
+
+
+class MOZ_RAII PoppedValueUseChecker {
+  Vector<MDefinition*, 4, SystemAllocPolicy> popped_;
+  Vector<size_t, 4, SystemAllocPolicy> poppedUses_;
+  MBasicBlock* current_;
+  jsbytecode* pc_;
+
+ public:
+  PoppedValueUseChecker(MBasicBlock* current, jsbytecode* pc)
+      : current_(current), pc_(pc) {}
+
+  MOZ_MUST_USE bool init() {
+    unsigned nuses = GetUseCount(pc_);
+
+    for (unsigned i = 0; i < nuses; i++) {
+      MDefinition* def = current_->peek(-int32_t(i + 1));
+      if (!popped_.append(def) || !poppedUses_.append(def->defUseCount())) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  void checkAfterOp() {
+    JSOp op = JSOp(*pc_);
+
+    
+    switch (op) {
+      case JSOP_POP:
+      case JSOP_POPN:
+      case JSOP_DUPAT:
+      case JSOP_DUP:
+      case JSOP_DUP2:
+      case JSOP_PICK:
+      case JSOP_UNPICK:
+      case JSOP_SWAP:
+      case JSOP_SETARG:
+      case JSOP_SETLOCAL:
+      case JSOP_INITLEXICAL:
+      case JSOP_SETRVAL:
+      case JSOP_VOID:
+        
+        return;
+
+      case JSOP_CASE:
+      case JSOP_DEFAULT:
+        
+        
+        return;
+
+      default:
+        break;
+    }
+
+    for (size_t i = 0; i < popped_.length(); i++) {
+      switch (op) {
+        case JSOP_POS:
+        case JSOP_TONUMERIC:
+        case JSOP_TOID:
+        case JSOP_TOSTRING:
+          
+          
+          
+          
+          MOZ_ASSERT(i == 0);
+          if (current_->peek(-1) == popped_[0]) {
+            break;
+          }
+          MOZ_FALLTHROUGH;
+
+        default:
+          MOZ_ASSERT(popped_[i]->isImplicitlyUsed() ||
+                     
+                     
+                     
+                     
+                     popped_[i]->isNewDerivedTypedObject() ||
+                     popped_[i]->defUseCount() > poppedUses_[i]);
+          break;
+      }
+    }
+  }
+};
+#endif
+
 
 
 
@@ -1574,24 +1669,9 @@ AbortReasonOr<Ok> IonBuilder::traverseBytecode() {
     }
 
 #ifdef DEBUG
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    Vector<MDefinition*, 4, JitAllocPolicy> popped(alloc());
-    Vector<size_t, 4, JitAllocPolicy> poppedUses(alloc());
-    unsigned nuses = GetUseCount(pc);
-
-    for (unsigned i = 0; i < nuses; i++) {
-      MDefinition* def = current->peek(-int32_t(i + 1));
-      if (!popped.append(def) || !poppedUses.append(def->defUseCount())) {
-        return abort(AbortReason::Alloc);
-      }
+    PoppedValueUseChecker useChecker(current, pc);
+    if (!useChecker.init()) {
+      return abort(AbortReason::Alloc);
     }
 #endif
 
@@ -1604,52 +1684,8 @@ AbortReasonOr<Ok> IonBuilder::traverseBytecode() {
     MOZ_TRY(inspectOpcode(op, &restarted));
 
 #ifdef DEBUG
-    for (size_t i = 0; i < popped.length(); i++) {
-      switch (op) {
-        case JSOP_POP:
-        case JSOP_POPN:
-        case JSOP_DUPAT:
-        case JSOP_DUP:
-        case JSOP_DUP2:
-        case JSOP_PICK:
-        case JSOP_UNPICK:
-        case JSOP_SWAP:
-        case JSOP_SETARG:
-        case JSOP_SETLOCAL:
-        case JSOP_INITLEXICAL:
-        case JSOP_SETRVAL:
-        case JSOP_VOID:
-        case JSOP_CASE:
-        case JSOP_DEFAULT:
-          
-          break;
-
-        case JSOP_POS:
-        case JSOP_TONUMERIC:
-        case JSOP_TOID:
-        case JSOP_TOSTRING:
-          
-          
-          
-          
-          MOZ_ASSERT(i == 0);
-          if (current->peek(-1) == popped[0]) {
-            break;
-          }
-          MOZ_FALLTHROUGH;
-
-        default:
-          MOZ_ASSERT(restarted || popped[i]->isImplicitlyUsed() ||
-
-                     
-                     
-                     
-                     
-                     popped[i]->isNewDerivedTypedObject() ||
-
-                     popped[i]->defUseCount() > poppedUses[i]);
-          break;
-      }
+    if (!restarted) {
+      useChecker.checkAfterOp();
     }
 #endif
 
