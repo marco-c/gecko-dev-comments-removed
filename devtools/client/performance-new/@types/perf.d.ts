@@ -96,6 +96,11 @@ export type RecordingState =
   
   | "locked-by-private-browsing";
 
+
+
+
+export type PageContext = "popup" | "devtools" | "aboutprofiling";
+
 export interface State {
   recordingState: RecordingState;
   recordingUnexpectedlyStopped: boolean;
@@ -206,8 +211,7 @@ export interface InitializedValues {
   
   setRecordingPreferences: SetRecordingPreferences;
   
-  
-  isPopup: boolean;
+  pageContext: PageContext;
   
   getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
   
@@ -260,7 +264,7 @@ export type Action =
       perfFront: PerfFront;
       receiveProfile: ReceiveProfile;
       setRecordingPreferences: SetRecordingPreferences;
-      isPopup: boolean;
+      pageContext: PageContext;
       recordingSettingsFromPreferences: RecordingStateFromPreferences;
       getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
       supportedFeatures: string[] | null;
@@ -270,7 +274,7 @@ export interface InitializeStoreValues {
   perfFront: PerfFront;
   receiveProfile: ReceiveProfile;
   setRecordingPreferences: SetRecordingPreferences;
-  isPopup: boolean;
+  pageContext: PageContext;
   recordingPreferences: RecordingStateFromPreferences;
   supportedFeatures: string[] | null;
   getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;

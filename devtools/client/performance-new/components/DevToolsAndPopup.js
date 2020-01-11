@@ -21,6 +21,7 @@
 
 
 
+
 "use strict";
 
 const {
@@ -72,17 +73,15 @@ class DevToolsAndPopup extends PureComponent {
   }
 
   render() {
-    const { isSupportedPlatform, isPopup, promptEnvRestart } = this.props;
+    const { isSupportedPlatform, pageContext, promptEnvRestart } = this.props;
 
     if (isSupportedPlatform === null) {
       
       return null;
     }
 
-    const additionalClassName = isPopup ? "perf-popup" : "perf-devtools";
-
     return div(
-      { className: `perf ${additionalClassName}` },
+      { className: `perf perf-${pageContext}` },
       promptEnvRestart
         ? div(
             { className: "perf-env-restart" },
@@ -106,7 +105,7 @@ class DevToolsAndPopup extends PureComponent {
         : null,
       RecordingButton(),
       Settings(),
-      isPopup ? null : Description()
+      pageContext === "devtools" ? Description() : null
     );
   }
 }
@@ -118,7 +117,7 @@ class DevToolsAndPopup extends PureComponent {
 function mapStateToProps(state) {
   return {
     isSupportedPlatform: selectors.getIsSupportedPlatform(state),
-    isPopup: selectors.getIsPopup(state),
+    pageContext: selectors.getPageContext(state),
     promptEnvRestart: selectors.getPromptEnvRestart(state),
   };
 }

@@ -31,6 +31,7 @@
 
 
 
+
 "use strict";
 
 const { PureComponent } = require("devtools/client/shared/vendor/react");
@@ -79,12 +80,12 @@ class RecordingButton extends PureComponent {
       onClick,
       additionalMessage,
       isPrimary,
-      isPopup,
+      pageContext,
       additionalButton,
     } = buttonSettings;
 
     const nbsp = "\u00A0";
-    const showAdditionalMessage = isPopup && additionalMessage;
+    const showAdditionalMessage = pageContext === "popup" && additionalMessage;
     const buttonClass = isPrimary ? "primary" : "default";
 
     return div(
@@ -223,7 +224,7 @@ function mapStateToProps(state) {
     recordingUnexpectedlyStopped: selectors.getRecordingUnexpectedlyStopped(
       state
     ),
-    isPopup: selectors.getIsPopup(state),
+    pageContext: selectors.getPageContext(state),
   };
 }
 

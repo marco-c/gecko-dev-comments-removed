@@ -107,7 +107,7 @@ exports.changeEntries = entries =>
 exports.changeFeatures = features => {
   return (dispatch, getState) => {
     let promptEnvRestart = null;
-    if (selectors.getIsPopup(getState())) {
+    if (selectors.getPageContext(getState()) === "popup") {
       
       
       if (
