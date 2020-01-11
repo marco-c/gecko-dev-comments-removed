@@ -1257,9 +1257,6 @@ pref("prompts.tab_modal.enabled", true);
 pref("browser.newtab.preload", true);
 
 
-pref("browser.newtabpage.enabled", true);
-
-
 #ifndef RELEASE_OR_BETA
   pref("browser.newtabpage.activity-stream.debug", false);
 #endif
