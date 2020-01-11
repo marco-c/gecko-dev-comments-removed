@@ -1407,7 +1407,7 @@ class Connection final {
   class CachedStatement;
 
  private:
-  class InitOriginHelper;
+  class InitStorageAndOriginHelper;
 
   class FlushOp;
   class CloseOp;
@@ -1562,7 +1562,7 @@ class Connection::CachedStatement final {
 
 
 
-class Connection::InitOriginHelper final : public Runnable {
+class Connection::InitStorageAndOriginHelper final : public Runnable {
   mozilla::Monitor mMonitor;
   const nsCString mSuffix;
   const nsCString mGroup;
@@ -1572,10 +1572,11 @@ class Connection::InitOriginHelper final : public Runnable {
   bool mWaiting;
 
  public:
-  InitOriginHelper(const nsACString& aSuffix, const nsACString& aGroup,
-                   const nsACString& aOrigin)
-      : Runnable("dom::localstorage::Connection::InitOriginHelper"),
-        mMonitor("InitOriginHelper::mMonitor"),
+  InitStorageAndOriginHelper(const nsACString& aSuffix,
+                             const nsACString& aGroup,
+                             const nsACString& aOrigin)
+      : Runnable("dom::localstorage::Connection::InitStorageAndOriginHelper"),
+        mMonitor("InitStorageAndOriginHelper::mMonitor"),
         mSuffix(aSuffix),
         mGroup(aGroup),
         mOrigin(aOrigin),
@@ -1587,7 +1588,7 @@ class Connection::InitOriginHelper final : public Runnable {
   nsresult BlockAndReturnOriginDirectoryPath(nsAString& aOriginDirectoryPath);
 
  private:
-  ~InitOriginHelper() {}
+  ~InitStorageAndOriginHelper() {}
 
   nsresult RunOnIOThread();
 
@@ -4265,8 +4266,8 @@ nsresult Connection::EnsureStorageConnection() {
     return NS_OK;
   }
 
-  RefPtr<InitOriginHelper> helper =
-      new InitOriginHelper(mSuffix, mGroup, mOrigin);
+  RefPtr<InitStorageAndOriginHelper> helper =
+      new InitStorageAndOriginHelper(mSuffix, mGroup, mOrigin);
 
   nsString originDirectoryPath;
   rv = helper->BlockAndReturnOriginDirectoryPath(originDirectoryPath);
@@ -4552,7 +4553,8 @@ void Connection::CachedStatement::Assign(
   }
 }
 
-nsresult Connection::InitOriginHelper::BlockAndReturnOriginDirectoryPath(
+nsresult
+Connection::InitStorageAndOriginHelper::BlockAndReturnOriginDirectoryPath(
     nsAString& aOriginDirectoryPath) {
   AssertIsOnConnectionThread();
 
@@ -4575,16 +4577,16 @@ nsresult Connection::InitOriginHelper::BlockAndReturnOriginDirectoryPath(
   return NS_OK;
 }
 
-nsresult Connection::InitOriginHelper::RunOnIOThread() {
+nsresult Connection::InitStorageAndOriginHelper::RunOnIOThread() {
   AssertIsOnIOThread();
 
   QuotaManager* quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
 
   nsCOMPtr<nsIFile> directoryEntry;
-  nsresult rv = quotaManager->EnsureOriginIsInitialized(
+  nsresult rv = quotaManager->EnsureStorageAndOriginIsInitialized(
       PERSISTENCE_TYPE_DEFAULT, mSuffix, mGroup, mOrigin,
-      getter_AddRefs(directoryEntry));
+      mozilla::dom::quota::Client::LS, getter_AddRefs(directoryEntry));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -4598,7 +4600,7 @@ nsresult Connection::InitOriginHelper::RunOnIOThread() {
 }
 
 NS_IMETHODIMP
-Connection::InitOriginHelper::Run() {
+Connection::InitStorageAndOriginHelper::Run() {
   AssertIsOnIOThread();
 
   nsresult rv = RunOnIOThread();
@@ -7298,9 +7300,9 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
   
   nsCOMPtr<nsIFile> directoryEntry;
   if (hasDataForMigration) {
-    rv = quotaManager->EnsureOriginIsInitialized(
+    rv = quotaManager->EnsureStorageAndOriginIsInitialized(
         PERSISTENCE_TYPE_DEFAULT, mSuffix, mGroup, mOrigin,
-        getter_AddRefs(directoryEntry));
+        mozilla::dom::quota::Client::LS, getter_AddRefs(directoryEntry));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }

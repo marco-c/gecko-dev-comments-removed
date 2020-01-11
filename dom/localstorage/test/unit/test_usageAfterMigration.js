@@ -1,7 +1,7 @@
-
-
-
-
+/**
+ * Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
 
 async function testSteps() {
   const principal = getPrincipal("http://example.com");
@@ -31,22 +31,22 @@ async function testSteps() {
 
     info("Installing package");
 
-    
-    
-    
-    
+    // The profile contains storage.sqlite and webappsstore.sqlite. The file
+    // create_db.js in the package was run locally, specifically it was
+    // temporarily added to xpcshell.ini and then executed:
+    // mach xpcshell-test --interactive dom/localstorage/test/unit/create_db.js
     installPackage("usageAfterMigration_profile");
 
     if (createUsageDir) {
       info("Initializing origin");
 
-      
-      request = initOrigin(principal, "default");
+      // Origin must be initialized before the usage dir is created.
+      request = initStorageAndOrigin(principal, "default");
       await requestFinished(request);
 
       info("Creating usage as a directory");
 
-      
+      // This will cause a failure during migration.
       usageFile.create(Ci.nsIFile.DIRECTORY_TYPE, parseInt("0755", 8));
     }
   }
@@ -58,7 +58,7 @@ async function testSteps() {
   async function verifyUsage(success) {
     info("Verifying usage in memory");
 
-    let request = getOriginUsage(principal,  true);
+    let request = getOriginUsage(principal, /* fromMemory */ true);
     await requestFinished(request);
 
     if (success) {
@@ -86,7 +86,7 @@ async function testSteps() {
 
   info("Stage 1 - Testing usage after successful data migration");
 
-  await createStorageForMigration( false);
+  await createStorageForMigration(/* createUsageDir */ false);
 
   info("Getting storage");
 
@@ -98,11 +98,11 @@ async function testSteps() {
 
   verifyData();
 
-  await verifyUsage( true);
+  await verifyUsage(/* success */ true);
 
   info("Stage 2 - Testing usage after unsuccessful data migration");
 
-  await createStorageForMigration( true);
+  await createStorageForMigration(/* createUsageDir */ true);
 
   info("Getting storage");
 
@@ -119,11 +119,11 @@ async function testSteps() {
 
   verifyData();
 
-  await verifyUsage( false);
+  await verifyUsage(/* success */ false);
 
   info("Stage 3 - Testing usage after unsuccessful/successful data migration");
 
-  await createStorageForMigration( true);
+  await createStorageForMigration(/* createUsageDir */ true);
 
   info("Getting storage");
 
@@ -146,5 +146,5 @@ async function testSteps() {
 
   verifyData();
 
-  await verifyUsage( true);
+  await verifyUsage(/* success */ true);
 }
