@@ -688,6 +688,10 @@ class OutlineTypedObject : public TypedObject {
                                            Handle<TypedObject*> typedContents,
                                            uint32_t offset);
 
+  static OutlineTypedObject* createOpaque(JSContext* cx, HandleTypeDescr descr,
+                                          Handle<TypedObject*> target,
+                                          uint32_t offset);
+
   
   void attach(JSContext* cx, ArrayBufferObject& buffer, uint32_t offset);
 
@@ -774,6 +778,8 @@ class InlineOpaqueTypedObject : public InlineTypedObject {
 
 
 
+
+
 MOZ_MUST_USE bool NewOpaqueTypedObject(JSContext* cx, unsigned argc, Value* vp);
 
 
@@ -783,14 +789,6 @@ MOZ_MUST_USE bool NewOpaqueTypedObject(JSContext* cx, unsigned argc, Value* vp);
 
 MOZ_MUST_USE bool NewDerivedTypedObject(JSContext* cx, unsigned argc,
                                         Value* vp);
-
-
-
-
-
-
-
-MOZ_MUST_USE bool AttachTypedObject(JSContext* cx, unsigned argc, Value* vp);
 
 
 
