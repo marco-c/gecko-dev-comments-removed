@@ -3,12 +3,10 @@
 
 
 use crate::{
+    binding_model::BindGroup,
     hub::GfxBackend,
-    BindGroup,
-    BindGroupId,
-    BindGroupLayoutId,
+    id::{BindGroupId, BindGroupLayoutId, PipelineLayoutId},
     BufferAddress,
-    PipelineLayoutId,
     Stored,
 };
 
