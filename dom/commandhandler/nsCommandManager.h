@@ -40,7 +40,7 @@ class nsCommandManager final : public nsICommandManager,
 
 
 
-  nsresult CommandStatusChanged(const char* aCommandName);
+  void CommandStatusChanged(const char* aCommandName);
 
   bool IsCommandEnabled(const nsCString& aCommandName,
                         mozIDOMWindowProxy* aTargetWindow);
