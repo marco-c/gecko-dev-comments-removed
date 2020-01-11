@@ -1512,14 +1512,17 @@ static_assert(sizeof(ScriptWarmUpData) == sizeof(uintptr_t),
               "JIT code depends on ScriptWarmUpData being pointer-sized");
 
 struct FieldInitializers {
-#ifdef DEBUG
-  bool valid;
-#endif
-  
-  
-  size_t numFieldInitializers;
+  static constexpr uint32_t MaxInitializers = INT32_MAX;
 
-  explicit FieldInitializers(size_t numFieldInitializers)
+#ifdef DEBUG
+  bool valid = false;
+#endif
+
+  
+  
+  uint32_t numFieldInitializers = 0;
+
+  explicit FieldInitializers(uint32_t numFieldInitializers)
       :
 #ifdef DEBUG
         valid(true),
@@ -1530,13 +1533,7 @@ struct FieldInitializers {
   static FieldInitializers Invalid() { return FieldInitializers(); }
 
  private:
-  FieldInitializers()
-      :
-#ifdef DEBUG
-        valid(false),
-#endif
-        numFieldInitializers(0) {
-  }
+  FieldInitializers() = default;
 };
 
 
