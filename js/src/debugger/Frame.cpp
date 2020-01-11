@@ -861,7 +861,12 @@ static bool EvaluateInEnv(JSContext* cx, Handle<Env*> env,
   options.setIsRunOnce(true)
       .setNoScriptRval(false)
       .setFileAndLine(filename, lineno)
-      .setIntroductionType("debugger eval");
+      .setIntroductionType("debugger eval")
+      
+
+
+
+      .setSkipFilenameValidation(true);
 
   if (frame && frame.hasScript() && frame.script()->strict()) {
     options.setForceStrictMode();
