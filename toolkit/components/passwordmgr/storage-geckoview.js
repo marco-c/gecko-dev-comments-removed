@@ -120,16 +120,18 @@ class LoginManagerStorage_geckoview extends LoginManagerStorage_json {
       throw new Error("searchLoginsAsync: An `origin` is required");
     }
 
+    let originURI = Services.io.newURI(realMatchData.origin);
+
     let baseHostname;
     try {
-      baseHostname = Services.eTLD.getBaseDomain(
-        Services.io.newURI(realMatchData.origin)
-      );
+      baseHostname = Services.eTLD.getBaseDomain(originURI);
     } catch (ex) {
       if (ex.result == Cr.NS_ERROR_HOST_IS_IP_ADDRESS) {
         
         
         baseHostname = new URL(realMatchData.origin).hostname;
+      } else if (ex.result == Cr.NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS) {
+        baseHostname = originURI.asciiHost;
       } else {
         throw ex;
       }
@@ -139,13 +141,22 @@ class LoginManagerStorage_geckoview extends LoginManagerStorage_json {
     
     
     
-    let candidateLogins = (await GeckoViewLoginStorage.fetchLogins(
+    let candidateLogins = await GeckoViewLoginStorage.fetchLogins(
       baseHostname
-    )).map(this._vanillaLoginToStorageLogin);
-    let [logins, ids] = this._searchLogins(
+    ).catch(_ => {
+      
+    });
+
+    if (!candidateLogins) {
+      
+      
+      return [];
+    }
+
+    const [logins, ids] = this._searchLogins(
       realMatchData,
       options,
-      candidateLogins
+      candidateLogins.map(this._vanillaLoginToStorageLogin)
     );
     return logins;
   }
