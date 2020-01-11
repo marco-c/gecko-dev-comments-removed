@@ -59,7 +59,7 @@ parentProcessTargetPrototype.initialize = function(connection, window) {
   });
 
   
-  this.listenForNewDocShells = true;
+  this.watchNewDocShells = true;
 
   
   if (!window) {
