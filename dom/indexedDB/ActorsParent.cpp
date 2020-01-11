@@ -6463,7 +6463,7 @@ class VersionChangeTransaction final
   RefPtr<OpenDatabaseOp> mOpenDatabaseOp;
   RefPtr<FullDatabaseMetadata> mOldMetadata;
 
-  bool mActorWasAlive;
+  FlippedOnce<false> mActorWasAlive;
 
  private:
   
@@ -14646,8 +14646,7 @@ VersionChangeTransaction::VersionChangeTransaction(
     OpenDatabaseOp* aOpenDatabaseOp)
     : TransactionBase(aOpenDatabaseOp->mDatabase,
                       IDBTransaction::Mode::VersionChange),
-      mOpenDatabaseOp(aOpenDatabaseOp),
-      mActorWasAlive(false) {
+      mOpenDatabaseOp(aOpenDatabaseOp) {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aOpenDatabaseOp);
 }
@@ -14671,10 +14670,9 @@ bool VersionChangeTransaction::IsSameProcessActor() {
 
 void VersionChangeTransaction::SetActorAlive() {
   AssertIsOnBackgroundThread();
-  MOZ_ASSERT(!mActorWasAlive);
   MOZ_ASSERT(!IsActorDestroyed());
 
-  mActorWasAlive = true;
+  mActorWasAlive.Flip();
 
   
   
