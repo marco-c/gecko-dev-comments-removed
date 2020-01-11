@@ -12,6 +12,7 @@
 #include "jsapi.h"
 #include "mozilla/dom/AudioWorkletGlobalScopeBinding.h"
 #include "mozilla/dom/AudioWorkletProcessor.h"
+#include "mozilla/dom/MessagePort.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
 #include "mozilla/dom/WorkletPrincipals.h"
 #include "mozilla/dom/AudioParamDescriptorBinding.h"
@@ -296,6 +297,7 @@ AudioParamDescriptorMap AudioWorkletGlobalScope::DescriptorsFromJS(
 
 bool AudioWorkletGlobalScope::ConstructProcessor(
     const nsAString& aName, NotNull<StructuredCloneHolder*> aSerializedOptions,
+    UniqueMessagePortId& aPortIdentifier,
     JS::MutableHandle<JSObject*> aRetProcessor) {
   
 
@@ -311,6 +313,11 @@ bool AudioWorkletGlobalScope::ConstructProcessor(
 
 
 
+  RefPtr<MessagePort> deserializedPort =
+      MessagePort::Create(this, aPortIdentifier, rv);
+  if (NS_WARN_IF(rv.MaybeSetPendingException(cx))) {
+    return false;
+  }
   
 
 
@@ -335,6 +342,9 @@ bool AudioWorkletGlobalScope::ConstructProcessor(
 
 
   
+  
+  mPortForProcessor = std::move(deserializedPort);
+  
 
 
 
@@ -344,6 +354,8 @@ bool AudioWorkletGlobalScope::ConstructProcessor(
   RefPtr<AudioWorkletProcessor> processor = processorCtor->Construct(
       options, rv, "AudioWorkletProcessor construction",
       CallbackFunction::eReportExceptions);
+  
+  mPortForProcessor = nullptr;
   if (rv.Failed()) {
     rv.SuppressException();  
     return false;
