@@ -89,8 +89,7 @@ class TestMemoryUsage(AwsyTestCase):
         
         self._extra_opts = ["tp6"]
 
-        if self.marionette.get_pref('fission.autostart') or \
-                self.marionette.get_pref('"fission.autostart"'):
+        if self.marionette.get_pref('fission.autostart'):
             self._extra_opts.append("fission-enabled")
 
         
