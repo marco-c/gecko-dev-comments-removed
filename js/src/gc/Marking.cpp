@@ -1098,7 +1098,7 @@ bool js::GCMarker::mark(T* thing) {
 
 void BaseScript::traceChildren(JSTracer* trc) {
   TraceEdge(trc, &functionOrGlobal_, "function");
-  TraceNullableEdge(trc, &sourceObject_, "sourceObject");
+  TraceEdge(trc, &sourceObject_, "sourceObject");
 
   warmUpData_.trace(trc);
 
@@ -1109,10 +1109,20 @@ void BaseScript::traceChildren(JSTracer* trc) {
   if (sharedData_) {
     sharedData_->traceChildren(trc);
   }
+
+  
+  
+  
+  if (hasBytecode()) {
+    JSScript* script = static_cast<JSScript*>(this);
+
+    if (hasDebugScript()) {
+      DebugAPI::traceDebugScript(trc, script);
+    }
+  }
 }
 
 void LazyScript::traceChildren(JSTracer* trc) {
-  
   BaseScript::traceChildren(trc);
 
   if (trc->traceWeakEdges()) {
@@ -1125,10 +1135,7 @@ void LazyScript::traceChildren(JSTracer* trc) {
 }
 inline void js::GCMarker::eagerlyMarkChildren(LazyScript* thing) {
   traverseEdge(thing, static_cast<JSObject*>(thing->functionOrGlobal_));
-
-  if (thing->sourceObject_) {
-    traverseEdge(thing, static_cast<JSObject*>(thing->sourceObject_));
-  }
+  traverseEdge(thing, static_cast<JSObject*>(thing->sourceObject_));
 
   thing->warmUpData_.trace(this);
 
