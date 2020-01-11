@@ -612,7 +612,19 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
     
     
     
-    return parentBrowsingContext.getChildren();
+    return (
+      parentBrowsingContext
+        .getChildren()
+        
+        
+        .filter(browsingContext => {
+          return (
+            !browsingContext.parent ||
+            browsingContext.currentWindowGlobal.osPid !=
+              browsingContext.parent.currentWindowGlobal.osPid
+          );
+        })
+    );
   },
 
   async listRemoteFrames(id) {

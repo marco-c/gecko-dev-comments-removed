@@ -5,11 +5,14 @@
 
 
 
-
 "use strict";
 
+const TEST_URL = MAIN_DOMAIN + "doc_iframe.html";
+const IFRAME_URL =
+  "http://example.com/browser/devtools/server/tests/browser/doc_iframe_content.html";
+
 add_task(async function() {
-  const tabTarget = await addTabTarget(MAIN_DOMAIN + "doc_iframe.html");
+  const tabTarget = await addTabTarget(TEST_URL);
   await testLocalListFrames(tabTarget);
   await testBrowserListFrames(tabTarget);
 });
@@ -20,27 +23,21 @@ async function testLocalListFrames(tabTarget) {
   
   
   const { frames } = await tabTarget.listRemoteFrames();
-  is(frames.length, 3, "Got three frames");
 
-  info("Check that we can connect to the remote targets");
-  const frameTargets = [];
-  for (const frame of frames) {
+  if (Services.prefs.getBoolPref("fission.autostart")) {
+    
+    is(frames.length, 1, "Got one remote frame with fission");
+
+    info("Check that we can connect to the remote target");
+    const frame = frames[0];
     const frameTarget = await frame.getTarget();
     ok(frameTarget && frameTarget.actor, "Valid frame target retrieved");
-    frameTargets.push(frameTarget);
-  }
 
-  
-  const expectedUrls = [
-    "data:text/html,<iframe src='data:text/html,foo'></iframe>",
-    "data:text/html,foo",
-    "http://example.com/browser/devtools/server/tests/browser/doc_iframe_content.html",
-  ];
-  for (const url of expectedUrls) {
-    ok(
-      frameTargets.find(target => target.url === url),
-      "Found a frame target for the expected url " + url
-    );
+    is(frameTarget.url, IFRAME_URL, "The target is for the remote frame");
+  } else {
+    
+    
+    is(frames.length, 0, "Got no frame from the tab target");
   }
 }
 async function testBrowserListFrames(tabTarget) {
