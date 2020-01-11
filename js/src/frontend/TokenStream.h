@@ -553,6 +553,19 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
 
 
+
+
+
+
+
+  mutable HashMap<uint32_t, Vector<ChunkInfo>> longLineColumnInfo_;
+
+  
+
+
+
+
+
   uint32_t invalidTemplateEscapeOffset = 0;
 
   
@@ -565,19 +578,6 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
  public:
   SourceCoords srcCoords;
-
-  static constexpr uint32_t ColumnChunkLength = 128;
-
-  
-
-
-
-
-
-
-
-
-  mutable HashMap<uint32_t, Vector<ChunkInfo>> longLineColumnInfo_;
 
  protected:
   Token tokens[ntokens] = {};  
