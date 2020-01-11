@@ -817,8 +817,8 @@ IonBuilder::InliningResult IonBuilder::inlineArray(CallInfo& callInfo,
       MConstant* id = MConstant::New(alloc(), Int32Value(i));
       current->add(id);
 
-      MOZ_TRY(initializeArrayElement(array, id, value,
-                                      false));
+      MOZ_TRY(initArrayElementFastPath(array, id, value,
+                                        false));
     }
 
     MInstruction* setLength = setInitializedLength(array, initLength);
