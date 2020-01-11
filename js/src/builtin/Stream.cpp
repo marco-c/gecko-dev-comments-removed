@@ -10,6 +10,7 @@
 
 #include <stdint.h>  
 
+#include "builtin/Promise.h"                          
 #include "builtin/streams/ClassSpecMacro.h"           
 #include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/PullIntoDescriptor.h"       
@@ -315,8 +316,9 @@ MOZ_MUST_USE bool js::SetUpExternalReadableByteStreamController(
   
   
   
-  RootedObject startPromise(
-      cx, PromiseObject::unforgeableResolve(cx, UndefinedHandleValue));
+  Rooted<PromiseObject*> startPromise(
+      cx, PromiseObject::unforgeableResolveWithNonPromise(
+              cx, UndefinedHandleValue));
   if (!startPromise) {
     return false;
   }

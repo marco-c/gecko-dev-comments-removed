@@ -86,7 +86,7 @@ MOZ_MUST_USE bool js::ReadableStreamReaderGenericInitialize(
   
 
   
-  Rooted<JSObject*> promise(cx);
+  Rooted<PromiseObject*> promise(cx);
   if (unwrappedStream->readable()) {
     
     promise = PromiseObject::createSkippingExecutor(cx);
@@ -94,7 +94,8 @@ MOZ_MUST_USE bool js::ReadableStreamReaderGenericInitialize(
     
     
     
-    promise = PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
+    promise = PromiseObject::unforgeableResolveWithNonPromise(
+        cx, UndefinedHandleValue);
   } else {
     
     
@@ -112,7 +113,7 @@ MOZ_MUST_USE bool js::ReadableStreamReaderGenericInitialize(
     }
 
     
-    SetSettledPromiseIsHandled(cx, promise.as<PromiseObject>());
+    SetSettledPromiseIsHandled(cx, promise);
   }
 
   if (!promise) {

@@ -99,8 +99,22 @@ class PromiseObject : public NativeObject {
 
   static PromiseObject* createSkippingExecutor(JSContext* cx);
 
+  
+  
+  static PromiseObject* unforgeableReject(JSContext* cx, HandleValue value);
+
+  
+  
+  
+  
+  
+  
   static JSObject* unforgeableResolve(JSContext* cx, HandleValue value);
-  static JSObject* unforgeableReject(JSContext* cx, HandleValue value);
+
+  
+  
+  static PromiseObject* unforgeableResolveWithNonPromise(JSContext* cx,
+                                                         HandleValue value);
 
   int32_t flags() { return getFixedSlot(PromiseSlot_Flags).toInt32(); }
   void setHandled() {

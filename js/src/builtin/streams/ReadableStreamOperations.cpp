@@ -38,6 +38,7 @@
 using js::IsCallable;
 using js::NewHandler;
 using js::NewObjectWithClassProto;
+using js::PromiseObject;
 using js::ReadableStream;
 using js::ReadableStreamDefaultController;
 using js::ReadableStreamDefaultControllerEnqueue;
@@ -293,7 +294,7 @@ static bool TeeReaderReadHandler(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-MOZ_MUST_USE JSObject* js::ReadableStreamTee_Pull(
+MOZ_MUST_USE PromiseObject* js::ReadableStreamTee_Pull(
     JSContext* cx, JS::Handle<TeeState*> unwrappedTeeState) {
   
   
@@ -365,7 +366,8 @@ MOZ_MUST_USE JSObject* js::ReadableStreamTee_Pull(
 
   
   
-  return PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
+  return PromiseObject::unforgeableResolveWithNonPromise(cx,
+                                                         UndefinedHandleValue);
 }
 
 

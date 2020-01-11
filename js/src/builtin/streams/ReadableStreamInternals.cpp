@@ -127,7 +127,8 @@ MOZ_MUST_USE JSObject* js::ReadableStreamCancel(
   
   
   if (unwrappedStream->closed()) {
-    return PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
+    return PromiseObject::unforgeableResolveWithNonPromise(
+        cx, UndefinedHandleValue);
   }
 
   
