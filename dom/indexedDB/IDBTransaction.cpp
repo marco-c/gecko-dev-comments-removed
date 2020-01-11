@@ -343,7 +343,7 @@ void IDBTransaction::OnNewRequest() {
 void IDBTransaction::OnRequestFinished(
     const bool aRequestCompletedSuccessfully) {
   AssertIsOnOwningThread();
-  MOZ_ASSERT(mReadyState == ReadyState::Active ||
+  MOZ_ASSERT(mReadyState == ReadyState::Inactive ||
              mReadyState == ReadyState::Finished);
   MOZ_ASSERT_IF(mReadyState == ReadyState::Finished, !NS_SUCCEEDED(mAbortCode));
   MOZ_ASSERT(mPendingRequestCount);
@@ -351,7 +351,7 @@ void IDBTransaction::OnRequestFinished(
   --mPendingRequestCount;
 
   if (!mPendingRequestCount) {
-    if (mReadyState == ReadyState::Active) {
+    if (mReadyState == ReadyState::Inactive) {
       mReadyState = ReadyState::Committing;
     }
 
@@ -444,6 +444,18 @@ bool IDBTransaction::CanAcceptRequests() const {
   
   return mReadyState == ReadyState::Active &&
          (!mStarted || mCreating || GetCurrent() == this);
+}
+
+IDBTransaction::AutoRestoreState<IDBTransaction::ReadyState::Inactive,
+                                 IDBTransaction::ReadyState::Active>
+IDBTransaction::TemporarilyTransitionToActive() {
+  return AutoRestoreState<ReadyState::Inactive, ReadyState::Active>{*this};
+}
+
+IDBTransaction::AutoRestoreState<IDBTransaction::ReadyState::Active,
+                                 IDBTransaction::ReadyState::Inactive>
+IDBTransaction::TemporarilyTransitionToInactive() {
+  return AutoRestoreState<ReadyState::Active, ReadyState::Inactive>{*this};
 }
 
 void IDBTransaction::GetCallerLocation(nsAString& aFilename,
@@ -584,7 +596,7 @@ void IDBTransaction::AbortInternal(const nsresult aAbortCode,
   MOZ_ASSERT(!IsCommittingOrFinished());
 
   const bool isVersionChange = mMode == Mode::VersionChange;
-  const bool needToSendAbort = mReadyState == ReadyState::Active && !mStarted;
+  const bool needToSendAbort = mReadyState == ReadyState::Inactive && !mStarted;
 
   mAbortCode = aAbortCode;
   mReadyState = ReadyState::Finished;
@@ -682,6 +694,7 @@ void IDBTransaction::Abort(const nsresult aErrorCode) {
   AbortInternal(aErrorCode, DOMException::Create(aErrorCode));
 }
 
+
 void IDBTransaction::Abort(ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
@@ -689,6 +702,8 @@ void IDBTransaction::Abort(ErrorResult& aRv) {
     aRv = NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR;
     return;
   }
+
+  mReadyState = ReadyState::Inactive;
 
   AbortInternal(NS_ERROR_DOM_INDEXEDDB_ABORT_ERR, nullptr);
 
@@ -944,8 +959,12 @@ IDBTransaction::Run() {
   
   mCreating = false;
 
+  MOZ_ASSERT_IF(mReadyState == ReadyState::Finished, IsAborted());
+
   
-  if (mReadyState == ReadyState::Active && !mStarted) {
+  if (!mStarted && mReadyState != ReadyState::Finished) {
+    MOZ_ASSERT(mReadyState == ReadyState::Inactive ||
+               mReadyState == ReadyState::Active);
     mReadyState = ReadyState::Finished;
 
     SendCommit();
