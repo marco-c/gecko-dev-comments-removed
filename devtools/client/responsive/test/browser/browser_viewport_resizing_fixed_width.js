@@ -10,11 +10,6 @@ const TEST_URL =
   '<head><meta name="viewport" content="width=300"/></head>' +
   "<body>meta viewport width 300</body>";
 addRDMTask(TEST_URL, async function({ ui, manager }) {
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["devtools.responsive.metaViewport.enabled", true]],
-  });
-
   const store = ui.toolWindow.store;
 
   

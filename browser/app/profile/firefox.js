@@ -2238,14 +2238,7 @@ pref("devtools.responsive.reloadNotification.enabled", true);
 pref("devtools.responsive.touchSimulation.enabled", false);
 
 
-
-
-
-#if defined(EARLY_BETA_OR_EARLIER) || defined(MOZ_DEV_EDITION)
-  pref("devtools.responsive.metaViewport.enabled", true);
-#else
-  pref("devtools.responsive.metaViewport.enabled", false);
-#endif
+pref("devtools.responsive.metaViewport.enabled", true);
 
 pref("devtools.responsive.userAgent", "");
 

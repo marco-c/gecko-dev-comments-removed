@@ -12,11 +12,6 @@ const TEST_URL =
   '<div style="width:100%;background-color:green">test</div>' +
   "</body>";
 addRDMTask(TEST_URL, async function({ ui, manager }) {
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["devtools.responsive.metaViewport.enabled", true]],
-  });
-
   const store = ui.toolWindow.store;
 
   
