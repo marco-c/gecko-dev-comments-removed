@@ -142,10 +142,6 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
 
   NS_IMETHOD OnStartRequest(nsIRequest* request) override {
     LOG(("ParentProcessDocumentOpenInfo OnStartRequest [this=%p]", this));
-    nsCOMPtr<nsIMultiPartChannel> multiPartChannel = do_QueryInterface(request);
-    if (multiPartChannel) {
-      mExpectingOnAfterLastPart = true;
-    }
 
     nsresult rv = nsDocumentOpenInfo::OnStartRequest(request);
 
@@ -163,37 +159,22 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
           ("ParentProcessDocumentOpenInfo targeted to non-default listener "
            "[this=%p]",
            this));
-    }
-    return rv;
-  }
-
-  NS_IMETHOD OnStopRequest(nsIRequest* request, nsresult aStatus) override {
-    LOG(("ParentProcessDocumentOpenInfo OnStoptRequest [this=%p]", this));
-    
-    
-    
-    
-    
-    bool needToNotifyListener = false;
-    if (!mExpectingOnAfterLastPart && m_targetStreamListener != mListener &&
-        !mCloned) {
-      needToNotifyListener = true;
-    }
-
-    nsresult rv = nsDocumentOpenInfo::OnStopRequest(request, aStatus);
-
-    if (needToNotifyListener) {
-      LOG((
-          "ParentProcessDocumentOpenInfo manually notifying listener [this=%p]",
-          this));
       
       
       
       
-      RefPtr<DocumentLoadListener> doc = do_GetInterface(ToSupports(mListener));
-      MOZ_ASSERT(doc);
-      doc->DisconnectChildListeners(NS_BINDING_RETARGETED, NS_OK);
-      mListener->SetListenerAfterRedirect(nullptr);
+      
+      
+      
+      
+      
+      
+      
+      nsCOMPtr<nsIMultiPartChannel> multiPartChannel =
+          do_QueryInterface(request);
+      if (!multiPartChannel && !mCloned) {
+        DisconnectChildListeners();
+      }
     }
     return rv;
   }
@@ -208,16 +189,20 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
     LOG(("ParentProcessDocumentOpenInfo dtor [this=%p]", this));
   }
 
+  void DisconnectChildListeners() {
+    
+    
+    
+    
+    RefPtr<DocumentLoadListener> doc = do_GetInterface(ToSupports(mListener));
+    MOZ_ASSERT(doc);
+    doc->DisconnectChildListeners(NS_BINDING_RETARGETED, NS_OK);
+    mListener->SetListenerAfterRedirect(nullptr);
+  }
+
   RefPtr<mozilla::dom::BrowsingContext> mBrowsingContext;
   RefPtr<ParentChannelListener> mListener;
   bool mPluginsAllowed;
-
-  
-
-
-
-
-  bool mExpectingOnAfterLastPart = false;
 
   
 
