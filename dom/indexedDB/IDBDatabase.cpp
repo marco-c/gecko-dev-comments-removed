@@ -1072,9 +1072,6 @@ void IDBDatabase::LastRelease() {
 
   CloseInternal();
 
-  
-  
-  
   ExpireFileActors( true);
 
   if (mBackgroundActor) {
