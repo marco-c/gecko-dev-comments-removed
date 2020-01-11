@@ -47,17 +47,20 @@ class DocumentOrShadowRoot {
   };
 
  public:
-  explicit DocumentOrShadowRoot(Document&);
-  explicit DocumentOrShadowRoot(ShadowRoot&);
+  
+  
+  
+  explicit DocumentOrShadowRoot(Document*);
+  explicit DocumentOrShadowRoot(ShadowRoot*);
 
   
   static void Traverse(DocumentOrShadowRoot* tmp,
                        nsCycleCollectionTraversalCallback& cb);
   static void Unlink(DocumentOrShadowRoot* tmp);
 
-  nsINode& AsNode() { return mAsNode; }
+  nsINode& AsNode() { return *mAsNode; }
 
-  const nsINode& AsNode() const { return mAsNode; }
+  const nsINode& AsNode() const { return *mAsNode; }
 
   StyleSheet* SheetAt(size_t aIndex) const {
     return mStyleSheets.SafeElementAt(aIndex);
@@ -235,7 +238,9 @@ class DocumentOrShadowRoot {
 
   nsClassHashtable<nsStringHashKey, nsRadioGroupStruct> mRadioGroups;
 
-  nsINode& mAsNode;
+  
+  
+  nsINode* mAsNode;
   const Kind mKind;
 };
 
