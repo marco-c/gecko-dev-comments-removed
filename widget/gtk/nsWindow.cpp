@@ -4573,9 +4573,12 @@ void nsWindow::SetTransparencyMode(nsTransparencyMode aMode) {
 
   mIsTransparent = isTransparent;
 
-  
-  
-  CleanLayerManagerRecursive();
+  if (!mHasAlphaVisual) {
+    
+    
+    
+    CleanLayerManagerRecursive();
+  }
 }
 
 nsTransparencyMode nsWindow::GetTransparencyMode() {
