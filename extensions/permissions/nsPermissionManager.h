@@ -78,12 +78,11 @@ class nsPermissionManager final : public nsIPermissionManager,
   class PermissionKey {
    public:
     static PermissionKey* CreateFromPrincipal(nsIPrincipal* aPrincipal,
-                                              bool aForceStripOA,
                                               nsresult& aResult);
     static PermissionKey* CreateFromURI(nsIURI* aURI, nsresult& aResult);
     static PermissionKey* CreateFromURIAndOriginAttributes(
         nsIURI* aURI, const mozilla::OriginAttributes* aOriginAttributes,
-        bool aForceStripOA, nsresult& aResult);
+        nsresult& aResult);
 
     explicit PermissionKey(const nsACString& aOrigin)
         : mOrigin(aOrigin), mHashCode(mozilla::HashString(aOrigin)) {}
@@ -226,10 +225,8 @@ class nsPermissionManager final : public nsIPermissionManager,
 
 
 
-
-
-  static void GetKeyForPrincipal(nsIPrincipal* aPrincipal, bool aForceStripOA,
-                                 nsACString& aKey);
+  static void GetKeyForPrincipal(nsIPrincipal* aPrincipal,
+                                 nsACString& aPermissionKey);
 
   
 
@@ -246,10 +243,8 @@ class nsPermissionManager final : public nsIPermissionManager,
 
 
 
-
-
-  static void GetKeyForOrigin(const nsACString& aOrigin, bool aForceStripOA,
-                              nsACString& aKey);
+  static void GetKeyForOrigin(const nsACString& aOrigin,
+                              nsACString& aPermissionKey);
 
   
 
@@ -365,16 +360,6 @@ class nsPermissionManager final : public nsIPermissionManager,
 
  private:
   virtual ~nsPermissionManager();
-
-  
-
-
-
-
-
-
-  nsresult GetStripPermsForPrincipal(nsIPrincipal* aPrincipal,
-                                     nsTArray<PermissionEntry>& aResult);
 
   
   
