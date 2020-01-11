@@ -55,6 +55,11 @@ namespace exceptions {
 already_AddRefed<nsIStackFrame> CreateStack(JSContext* aCx,
                                             JS::StackCapture&& aCaptureMode);
 
+
+
+already_AddRefed<nsIStackFrame> CreateStack(JSContext* aCx,
+                                            JS::Handle<JSObject*> aStack);
+
 }  
 }  
 }  

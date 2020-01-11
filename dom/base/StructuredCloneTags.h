@@ -139,6 +139,8 @@ enum StructuredCloneTags {
 
   SCTAG_DOM_BROWSING_CONTEXT,
 
+  SCTAG_DOM_CLONED_ERROR_OBJECT,
+
   
   
 };
