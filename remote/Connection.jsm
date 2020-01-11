@@ -102,16 +102,18 @@ class Connection {
     
     
     if (sessionId) {
-      this.sendEvent("Target.receivedMessageFromTarget", {
-        sessionId,
-        
-        
-        
-        message: JSON.stringify({
-          id,
-          result,
-        }),
-      });
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
     }
   }
 
@@ -146,13 +148,15 @@ class Connection {
     
     
     if (sessionId) {
-      this.sendEvent("Target.receivedMessageFromTarget", {
-        sessionId,
-        message: JSON.stringify({
-          method,
-          params,
-        }),
-      });
+      
+      
+      
+      
+      
+      
+      
+      
+      
     }
   }
 
