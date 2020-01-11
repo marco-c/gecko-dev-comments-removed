@@ -102,6 +102,18 @@ class DebugAPI {
 
 
 
+  static inline void traceGeneratorFrame(JSTracer* tracer,
+                                         AbstractGeneratorObject* generator);
+
+  
+
+
+
+
+
+
+
+
 
 
 
@@ -398,6 +410,8 @@ class DebugAPI {
   static void slowPathOnPromiseSettled(JSContext* cx,
                                        Handle<PromiseObject*> promise);
   static bool inFrameMaps(AbstractFramePtr frame);
+  static void slowPathTraceGeneratorFrame(JSTracer* tracer,
+                                          AbstractGeneratorObject* generator);
 };
 
 

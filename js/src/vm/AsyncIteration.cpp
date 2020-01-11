@@ -150,7 +150,24 @@ static bool AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 const JSClass AsyncGeneratorObject::class_ = {
-    "AsyncGenerator", JSCLASS_HAS_RESERVED_SLOTS(AsyncGeneratorObject::Slots)};
+    "AsyncGenerator",
+    JSCLASS_HAS_RESERVED_SLOTS(AsyncGeneratorObject::Slots),
+    &classOps_,
+};
+
+const JSClassOps AsyncGeneratorObject::classOps_ = {
+    nullptr,                                  
+    nullptr,                                  
+    nullptr,                                  
+    nullptr,                                  
+    nullptr,                                  
+    nullptr,                                  
+    nullptr,                                  
+    nullptr,                                  
+    nullptr,                                  
+    nullptr,                                  
+    CallTraceMethod<AbstractGeneratorObject>, 
+};
 
 
 

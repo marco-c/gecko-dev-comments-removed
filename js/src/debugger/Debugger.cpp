@@ -688,16 +688,6 @@ bool Debugger::hasAnyLiveHooks(JSRuntime* rt) const {
     return true;
   }
 
-  
-  for (GeneratorWeakMap::Range r = generatorFrames.all(); !r.empty();
-       r.popFront()) {
-    JSObject* key = r.front().key();
-    DebuggerFrame& frameObj = r.front().value()->as<DebuggerFrame>();
-    if (IsMarkedUnbarriered(rt, &key) && frameObj.hasAnyHooks()) {
-      return true;
-    }
-  }
-
   return false;
 }
 
@@ -3678,6 +3668,46 @@ void DebugAPI::traceFramesWithLiveHooks(JSTracer* tracer) {
       MOZ_ASSERT(frameobj->isLiveMaybeForwarded());
       if (frameobj->hasAnyHooks()) {
         TraceEdge(tracer, &frameobj, "Debugger.Frame with live hooks");
+      }
+    }
+  }
+}
+
+void DebugAPI::slowPathTraceGeneratorFrame(JSTracer* tracer,
+                                           AbstractGeneratorObject* generator) {
+  MOZ_ASSERT(generator->realm()->isDebuggee());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (tracer->isCallbackTracer()) {
+    return;
+  }
+
+  Realm::DebuggerVector& debuggers = generator->realm()->getDebuggers();
+  for (js::WeakHeapPtr<Debugger*>& dbgWeak : debuggers) {
+    Debugger* dbg = dbgWeak.unbarrieredGet();
+
+    if (Debugger::GeneratorWeakMap::Ptr entry =
+            dbg->generatorFrames.lookupUnbarriered(generator)) {
+      HeapPtr<DebuggerFrame*>& frameObj = entry->value();
+      if (frameObj->hasAnyHooks()) {
+        
+        
+        
+        TraceCrossCompartmentEdge(tracer, generator, &frameObj,
+                                  "Debugger.Frame with hooks for generator");
       }
     }
   }
