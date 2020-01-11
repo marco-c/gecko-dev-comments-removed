@@ -7,9 +7,9 @@
 #ifndef frontend_Stencil_h
 #define frontend_Stencil_h
 
-#include "frontend/ParseNode.h"
 #include "gc/AllocKind.h"
 #include "gc/Rooting.h"
+#include "js/RegExpFlags.h"
 #include "vm/JSFunction.h"
 #include "vm/JSScript.h"
 
@@ -24,6 +24,8 @@ namespace frontend {
 
 
 
+
+enum class FunctionSyntaxKind : uint8_t;
 
 
 struct LazyScriptCreationData {
@@ -93,7 +95,7 @@ struct FunctionCreationData {
 
   
   JSAtom* atom = nullptr;
-  FunctionSyntaxKind kind = FunctionSyntaxKind::Expression;
+  FunctionSyntaxKind kind;  
   GeneratorKind generatorKind = GeneratorKind::NotGenerator;
   FunctionAsyncKind asyncKind = FunctionAsyncKind::SyncFunction;
 
@@ -109,6 +111,30 @@ struct FunctionCreationData {
   void trace(JSTracer* trc) {
     TraceNullableRoot(trc, &atom, "FunctionCreationData atom");
   }
+};
+
+
+
+class RegExpCreationData {
+  UniquePtr<char16_t[], JS::FreePolicy> buf_;
+  size_t length_ = 0;
+  JS::RegExpFlags flags_;
+
+ public:
+  RegExpCreationData() = default;
+
+  MOZ_MUST_USE bool init(JSContext* cx, mozilla::Range<const char16_t> range,
+                         JS::RegExpFlags flags) {
+    length_ = range.length();
+    buf_ = js::DuplicateString(cx, range.begin().get(), range.length());
+    if (!buf_) {
+      return false;
+    }
+    flags_ = flags;
+    return true;
+  }
+
+  RegExpObject* createRegExp(JSContext* cx) const;
 };
 
 } 

@@ -10,6 +10,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Variant.h"
 
+#include "frontend/Stencil.h"
 #include "frontend/Token.h"
 #include "util/Text.h"
 #include "vm/BigIntType.h"
@@ -586,7 +587,7 @@ inline bool IsTypeofKind(ParseNodeKind kind) {
 FOR_EACH_PARSENODE_SUBCLASS(DECLARE_CLASS)
 #undef DECLARE_CLASS
 
-enum class FunctionSyntaxKind {
+enum class FunctionSyntaxKind : uint8_t {
   
   Expression,
 
@@ -1890,30 +1891,6 @@ class BooleanLiteral : public NullaryNode {
     MOZ_ASSERT_IF(match, node.is<NullaryNode>());
     return match;
   }
-};
-
-
-
-class RegExpCreationData {
-  UniquePtr<char16_t[], JS::FreePolicy> buf_;
-  size_t length_ = 0;
-  JS::RegExpFlags flags_;
-
- public:
-  RegExpCreationData() = default;
-
-  MOZ_MUST_USE bool init(JSContext* cx, mozilla::Range<const char16_t> range,
-                         JS::RegExpFlags flags) {
-    length_ = range.length();
-    buf_ = js::DuplicateString(cx, range.begin().get(), range.length());
-    if (!buf_) {
-      return false;
-    }
-    flags_ = flags;
-    return true;
-  }
-
-  RegExpObject* createRegExp(JSContext* cx) const;
 };
 
 class RegExpLiteral : public ParseNode {
