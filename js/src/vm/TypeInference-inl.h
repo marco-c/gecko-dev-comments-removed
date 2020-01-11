@@ -626,6 +626,11 @@ inline void MarkObjectStateChange(JSContext* cx, JSObject* obj) {
  inline void jit::JitScript::MonitorBytecodeType(
     JSContext* cx, JSScript* script, jsbytecode* pc, StackTypeSet* types,
     const js::Value& rval) {
+  if (MOZ_UNLIKELY(rval.isMagic())) {
+    MonitorMagicValueBytecodeType(cx, script, pc, rval);
+    return;
+  }
+
   TypeSet::Type type = TypeSet::GetValueType(rval);
   if (!types->hasType(type)) {
     MonitorBytecodeTypeSlow(cx, script, pc, types, type);
@@ -684,6 +689,15 @@ inline void MarkObjectStateChange(JSContext* cx, JSObject* obj) {
 
  inline void jit::JitScript::MonitorThisType(
     JSContext* cx, JSScript* script, const js::Value& value) {
+  
+  
+  if (MOZ_UNLIKELY(value.isMagic())) {
+    MOZ_ASSERT(value.whyMagic() == JS_UNINITIALIZED_LEXICAL);
+    MOZ_ASSERT(script->function());
+    MonitorThisType(cx, script, TypeSet::UnknownType());
+    return;
+  }
+
   MonitorThisType(cx, script, TypeSet::GetValueType(value));
 }
 

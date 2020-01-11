@@ -876,35 +876,6 @@ bool ICMonitoredFallbackStub::initMonitoringChain(JSContext* cx,
   return true;
 }
 
-static void TypeMonitorMagicValue(JSContext* cx, ICTypeMonitor_Fallback* stub,
-                                  JSScript* script, jsbytecode* pc,
-                                  HandleValue value) {
-  MOZ_ASSERT(value.isMagic());
-
-  
-  
-  
-  
-
-  if (value.whyMagic() == JS_OPTIMIZED_OUT) {
-    MOZ_ASSERT(!stub->monitorsThis());
-    return;
-  }
-
-  
-  
-  MOZ_ASSERT(value.whyMagic() == JS_UNINITIALIZED_LEXICAL);
-  MOZ_ASSERT(script->function() || script->isForEval());
-  MOZ_ASSERT(stub->monitorsThis() || *GetNextPc(pc) == JSOP_CHECKTHIS ||
-             *GetNextPc(pc) == JSOP_CHECKTHISREINIT ||
-             *GetNextPc(pc) == JSOP_CHECKRETURN);
-  if (stub->monitorsThis()) {
-    JitScript::MonitorThisType(cx, script, TypeSet::UnknownType());
-  } else {
-    JitScript::MonitorBytecodeType(cx, script, pc, TypeSet::UnknownType());
-  }
-}
-
 bool TypeMonitorResult(JSContext* cx, ICMonitoredFallbackStub* stub,
                        BaselineFrame* frame, HandleScript script,
                        jsbytecode* pc, HandleValue val) {
@@ -912,11 +883,6 @@ bool TypeMonitorResult(JSContext* cx, ICMonitoredFallbackStub* stub,
       stub->getFallbackMonitorStub(cx, script);
   if (!typeMonitorFallback) {
     return false;
-  }
-
-  if (MOZ_UNLIKELY(val.isMagic())) {
-    TypeMonitorMagicValue(cx, typeMonitorFallback, script, pc, val);
-    return true;
   }
 
   AutoSweepJitScript sweep(script);
@@ -1097,7 +1063,10 @@ bool ICTypeMonitor_Fallback::addMonitorStubForValue(JSContext* cx,
                                                     StackTypeSet* types,
                                                     HandleValue val) {
   MOZ_ASSERT(types);
-  MOZ_ASSERT(!val.isMagic());
+
+  if (MOZ_UNLIKELY(val.isMagic())) {
+    return true;
+  }
 
   
   
@@ -1274,11 +1243,6 @@ bool DoTypeMonitorFallback(JSContext* cx, BaselineFrame* frame,
 
   
   res.set(value);
-
-  if (MOZ_UNLIKELY(value.isMagic())) {
-    TypeMonitorMagicValue(cx, stub, script, pc, value);
-    return true;
-  }
 
   JitScript* jitScript = script->jitScript();
   AutoSweepJitScript sweep(script);
