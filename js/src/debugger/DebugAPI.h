@@ -323,12 +323,6 @@ class DebugAPI {
   
 
   
-  
-  
-  static void propagateForcedReturn(JSContext* cx, AbstractFramePtr frame,
-                                    HandleValue rval);
-
-  
   static inline MOZ_MUST_USE bool checkNoExecute(JSContext* cx,
                                                  HandleScript script);
 

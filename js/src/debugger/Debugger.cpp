@@ -231,6 +231,21 @@ static inline void NukeDebuggerWrapper(NativeObject* wrapper) {
   wrapper->setPrivate(nullptr);
 }
 
+static void PropagateForcedReturn(JSContext* cx, AbstractFramePtr frame,
+                                  HandleValue rval) {
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(!cx->isExceptionPending());
+  cx->setPropagatingForcedReturn();
+  frame.setReturnValue(rval);
+}
+
 bool js::ValueToStableChars(JSContext* cx, const char* fnname,
                             HandleValue value,
                             AutoStableStringChars& stableChars) {
@@ -738,7 +753,7 @@ bool DebugAPI::slowPathOnEnterFrame(JSContext* cx, AbstractFramePtr frame) {
       return false;
 
     case ResumeMode::Return:
-      DebugAPI::propagateForcedReturn(cx, frame, rval);
+      PropagateForcedReturn(cx, frame, rval);
       return false;
 
     default:
@@ -1056,7 +1071,7 @@ bool DebugAPI::slowPathOnDebuggerStatement(JSContext* cx,
       return false;
 
     case ResumeMode::Return:
-      DebugAPI::propagateForcedReturn(cx, frame, rval);
+      PropagateForcedReturn(cx, frame, rval);
       return false;
 
     case ResumeMode::Throw:
@@ -1108,7 +1123,7 @@ bool DebugAPI::slowPathOnExceptionUnwind(JSContext* cx,
 
     case ResumeMode::Return:
       cx->clearPendingException();
-      DebugAPI::propagateForcedReturn(cx, frame, rval);
+      PropagateForcedReturn(cx, frame, rval);
       return false;
 
     default:
@@ -2485,7 +2500,7 @@ bool DebugAPI::onTrap(JSContext* cx) {
           savedExc.drop();
 
           if (resumeMode == ResumeMode::Return) {
-            DebugAPI::propagateForcedReturn(cx, iter.abstractFramePtr(), rval);
+            PropagateForcedReturn(cx, iter.abstractFramePtr(), rval);
           } else if (resumeMode == ResumeMode::Throw) {
             cx->setPendingExceptionAndCaptureStack(rval);
           } else {
@@ -2616,7 +2631,7 @@ bool DebugAPI::onSingleStep(JSContext* cx) {
         savedExc.drop();
 
         if (resumeMode == ResumeMode::Return) {
-          DebugAPI::propagateForcedReturn(cx, iter.abstractFramePtr(), rval);
+          PropagateForcedReturn(cx, iter.abstractFramePtr(), rval);
         } else if (resumeMode == ResumeMode::Throw) {
           cx->setPendingExceptionAndCaptureStack(rval);
         } else {
@@ -6502,22 +6517,6 @@ void DebugAPI::handleUnrecoverableIonBailoutError(
   
   
   Debugger::removeFromFrameMapsAndClearBreakpointsIn(cx, frame);
-}
-
-
-void DebugAPI::propagateForcedReturn(JSContext* cx, AbstractFramePtr frame,
-                                     HandleValue rval) {
-  
-  
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(!cx->isExceptionPending());
-  cx->setPropagatingForcedReturn();
-  frame.setReturnValue(rval);
 }
 
 
