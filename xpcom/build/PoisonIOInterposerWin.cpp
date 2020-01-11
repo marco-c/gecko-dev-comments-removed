@@ -27,8 +27,6 @@
 #  include "replace_malloc_bridge.h"
 #endif
 
-using namespace mozilla;
-
 namespace {
 
 
@@ -111,13 +109,13 @@ typedef NTSTATUS(NTAPI* NtQueryFullAttributesFileFn)(
 
 
 
-class WinIOAutoObservation : public IOInterposeObserver::Observation {
+class WinIOAutoObservation : public mozilla::IOInterposeObserver::Observation {
  public:
-  WinIOAutoObservation(IOInterposeObserver::Operation aOp, HANDLE aFileHandle,
-                       const LARGE_INTEGER* aOffset)
-      : IOInterposeObserver::Observation(
+  WinIOAutoObservation(mozilla::IOInterposeObserver::Operation aOp,
+                       HANDLE aFileHandle, const LARGE_INTEGER* aOffset)
+      : mozilla::IOInterposeObserver::Observation(
             aOp, sReference,
-            !IsDebugFile(reinterpret_cast<intptr_t>(aFileHandle))),
+            !mozilla::IsDebugFile(reinterpret_cast<intptr_t>(aFileHandle))),
         mFileHandle(aFileHandle),
         mHasQueriedFilename(false) {
     if (mShouldReport) {
@@ -125,13 +123,14 @@ class WinIOAutoObservation : public IOInterposeObserver::Observation {
     }
   }
 
-  WinIOAutoObservation(IOInterposeObserver::Operation aOp, nsAString& aFilename)
-      : IOInterposeObserver::Observation(aOp, sReference),
+  WinIOAutoObservation(mozilla::IOInterposeObserver::Operation aOp,
+                       nsAString& aFilename)
+      : mozilla::IOInterposeObserver::Observation(aOp, sReference),
         mFileHandle(nullptr),
         mHasQueriedFilename(false) {
     if (mShouldReport) {
       nsAutoString dosPath;
-      if (NtPathToDosPath(aFilename, dosPath)) {
+      if (mozilla::NtPathToDosPath(aFilename, dosPath)) {
         mFilename = dosPath;
       } else {
         
@@ -142,6 +141,7 @@ class WinIOAutoObservation : public IOInterposeObserver::Observation {
     }
   }
 
+  
   
   void Filename(nsAString& aFilename) override;
 
@@ -167,7 +167,8 @@ void WinIOAutoObservation::Filename(nsAString& aFilename) {
   }
 
   nsAutoString filename;
-  if (mFileHandle && HandleToFilename(mFileHandle, mOffset, filename)) {
+  if (mFileHandle &&
+      mozilla::HandleToFilename(mFileHandle, mOffset, filename)) {
     mFilename = filename;
   }
   mHasQueriedFilename = true;
@@ -178,17 +179,19 @@ void WinIOAutoObservation::Filename(nsAString& aFilename) {
 
 
 
-static WindowsDllInterceptor::FuncHookType<NtCreateFileFn>
+static mozilla::WindowsDllInterceptor::FuncHookType<NtCreateFileFn>
     gOriginalNtCreateFile;
-static WindowsDllInterceptor::FuncHookType<NtReadFileFn> gOriginalNtReadFile;
-static WindowsDllInterceptor::FuncHookType<NtReadFileScatterFn>
+static mozilla::WindowsDllInterceptor::FuncHookType<NtReadFileFn>
+    gOriginalNtReadFile;
+static mozilla::WindowsDllInterceptor::FuncHookType<NtReadFileScatterFn>
     gOriginalNtReadFileScatter;
-static WindowsDllInterceptor::FuncHookType<NtWriteFileFn> gOriginalNtWriteFile;
-static WindowsDllInterceptor::FuncHookType<NtWriteFileGatherFn>
+static mozilla::WindowsDllInterceptor::FuncHookType<NtWriteFileFn>
+    gOriginalNtWriteFile;
+static mozilla::WindowsDllInterceptor::FuncHookType<NtWriteFileGatherFn>
     gOriginalNtWriteFileGather;
-static WindowsDllInterceptor::FuncHookType<NtFlushBuffersFileFn>
+static mozilla::WindowsDllInterceptor::FuncHookType<NtFlushBuffersFileFn>
     gOriginalNtFlushBuffersFile;
-static WindowsDllInterceptor::FuncHookType<NtQueryFullAttributesFileFn>
+static mozilla::WindowsDllInterceptor::FuncHookType<NtQueryFullAttributesFileFn>
     gOriginalNtQueryFullAttributesFile;
 
 static NTSTATUS NTAPI InterposedNtCreateFile(
@@ -204,7 +207,8 @@ static NTSTATUS NTAPI InterposedNtCreateFile(
                      ? aObjectAttributes->ObjectName->Length / sizeof(WCHAR)
                      : 0;
   nsDependentSubstring filename(buf, len);
-  WinIOAutoObservation timer(IOInterposeObserver::OpCreateOrOpen, filename);
+  WinIOAutoObservation timer(mozilla::IOInterposeObserver::OpCreateOrOpen,
+                             filename);
 
   
   MOZ_ASSERT(gOriginalNtCreateFile);
@@ -223,7 +227,8 @@ static NTSTATUS NTAPI InterposedNtReadFile(HANDLE aFileHandle, HANDLE aEvent,
                                            PLARGE_INTEGER aOffset,
                                            PULONG aKey) {
   
-  WinIOAutoObservation timer(IOInterposeObserver::OpRead, aFileHandle, aOffset);
+  WinIOAutoObservation timer(mozilla::IOInterposeObserver::OpRead, aFileHandle,
+                             aOffset);
 
   
   MOZ_ASSERT(gOriginalNtReadFile);
@@ -238,7 +243,8 @@ static NTSTATUS NTAPI InterposedNtReadFileScatter(
     PIO_STATUS_BLOCK aIoStatus, FILE_SEGMENT_ELEMENT* aSegments, ULONG aLength,
     PLARGE_INTEGER aOffset, PULONG aKey) {
   
-  WinIOAutoObservation timer(IOInterposeObserver::OpRead, aFileHandle, aOffset);
+  WinIOAutoObservation timer(mozilla::IOInterposeObserver::OpRead, aFileHandle,
+                             aOffset);
 
   
   MOZ_ASSERT(gOriginalNtReadFileScatter);
@@ -257,7 +263,7 @@ static NTSTATUS NTAPI InterposedNtWriteFile(HANDLE aFileHandle, HANDLE aEvent,
                                             PLARGE_INTEGER aOffset,
                                             PULONG aKey) {
   
-  WinIOAutoObservation timer(IOInterposeObserver::OpWrite, aFileHandle,
+  WinIOAutoObservation timer(mozilla::IOInterposeObserver::OpWrite, aFileHandle,
                              aOffset);
 
   
@@ -274,7 +280,7 @@ static NTSTATUS NTAPI InterposedNtWriteFileGather(
     PIO_STATUS_BLOCK aIoStatus, FILE_SEGMENT_ELEMENT* aSegments, ULONG aLength,
     PLARGE_INTEGER aOffset, PULONG aKey) {
   
-  WinIOAutoObservation timer(IOInterposeObserver::OpWrite, aFileHandle,
+  WinIOAutoObservation timer(mozilla::IOInterposeObserver::OpWrite, aFileHandle,
                              aOffset);
 
   
@@ -289,7 +295,7 @@ static NTSTATUS NTAPI InterposedNtWriteFileGather(
 static NTSTATUS NTAPI InterposedNtFlushBuffersFile(
     HANDLE aFileHandle, PIO_STATUS_BLOCK aIoStatusBlock) {
   
-  WinIOAutoObservation timer(IOInterposeObserver::OpFSync, aFileHandle,
+  WinIOAutoObservation timer(mozilla::IOInterposeObserver::OpFSync, aFileHandle,
                              nullptr);
 
   
@@ -309,7 +315,7 @@ static NTSTATUS NTAPI InterposedNtQueryFullAttributesFile(
                      ? aObjectAttributes->ObjectName->Length / sizeof(WCHAR)
                      : 0;
   nsDependentSubstring filename(buf, len);
-  WinIOAutoObservation timer(IOInterposeObserver::OpStat, filename);
+  WinIOAutoObservation timer(mozilla::IOInterposeObserver::OpStat, filename);
 
   
   MOZ_ASSERT(gOriginalNtQueryFullAttributesFile);
@@ -324,7 +330,7 @@ static NTSTATUS NTAPI InterposedNtQueryFullAttributesFile(
 
 
 
-static WindowsDllInterceptor sNtDllInterceptor;
+static mozilla::WindowsDllInterceptor sNtDllInterceptor;
 
 namespace mozilla {
 

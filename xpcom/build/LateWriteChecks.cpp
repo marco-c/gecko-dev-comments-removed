@@ -36,8 +36,6 @@
 
 #include "LateWriteChecks.h"
 
-using namespace mozilla;
-
 
 
 
@@ -56,9 +54,9 @@ class SHA1Stream {
     str.AppendPrintf(aFormat, list);
     va_end(list);
     mSHA1.update(str.get(), str.Length());
-    Unused << fwrite(str.get(), 1, str.Length(), mFile);
+    mozilla::Unused << fwrite(str.get(), 1, str.Length(), mFile);
   }
-  void Finish(SHA1Sum::Hash& aHash) {
+  void Finish(mozilla::SHA1Sum::Hash& aHash) {
     int fd = fileno(mFile);
     fflush(mFile);
     MozillaUnRegisterDebugFD(fd);
@@ -69,7 +67,7 @@ class SHA1Stream {
 
  private:
   FILE* mFile;
-  SHA1Sum mSHA1;
+  mozilla::SHA1Sum mSHA1;
 };
 
 static void RecordStackWalker(uint32_t aFrameNumber, void* aPC, void* aSP,
@@ -85,8 +83,8 @@ static void RecordStackWalker(uint32_t aFrameNumber, void* aPC, void* aSP,
 
 
 
-class LateWriteObserver final : public IOInterposeObserver {
-  using char_type = filesystem::Path::value_type;
+class LateWriteObserver final : public mozilla::IOInterposeObserver {
+  using char_type = mozilla::filesystem::Path::value_type;
 
  public:
   explicit LateWriteObserver(const char_type* aProfileDirectory)
@@ -96,20 +94,23 @@ class LateWriteObserver final : public IOInterposeObserver {
     mProfileDirectory = nullptr;
   }
 
-  void Observe(IOInterposeObserver::Observation& aObservation) override;
+  void Observe(
+      mozilla::IOInterposeObserver::Observation& aObservation) override;
 
  private:
   char_type* mProfileDirectory;
 };
 
-void LateWriteObserver::Observe(IOInterposeObserver::Observation& aOb) {
+void LateWriteObserver::Observe(
+    mozilla::IOInterposeObserver::Observation& aOb) {
   
-  if (gShutdownChecks == SCM_CRASH) {
+  if (mozilla::gShutdownChecks == mozilla::SCM_CRASH) {
     MOZ_CRASH();
   }
 
   
-  if (gShutdownChecks == SCM_NOTHING || !Telemetry::CanRecordExtended()) {
+  if (mozilla::gShutdownChecks == mozilla::SCM_NOTHING ||
+      !mozilla::Telemetry::CanRecordExtended()) {
     return;
   }
 
@@ -119,7 +120,8 @@ void LateWriteObserver::Observe(IOInterposeObserver::Observation& aOb) {
 
   MozStackWalk(RecordStackWalker,  0,  0,
                &rawStack);
-  Telemetry::ProcessedStack stack = Telemetry::GetStackAndModules(rawStack);
+  mozilla::Telemetry::ProcessedStack stack =
+      mozilla::Telemetry::GetStackAndModules(rawStack);
 
   nsTAutoString<char_type> nameAux(mProfileDirectory);
   nameAux.AppendLiteral(NS_SLASH "Telemetry.LateWriteTmpXXXXXX");
@@ -161,7 +163,7 @@ void LateWriteObserver::Observe(IOInterposeObserver::Observation& aOb) {
   size_t numModules = stack.GetNumModules();
   sha1Stream.Printf("%u\n", (unsigned)numModules);
   for (size_t i = 0; i < numModules; ++i) {
-    Telemetry::ProcessedStack::Module module = stack.GetModule(i);
+    mozilla::Telemetry::ProcessedStack::Module module = stack.GetModule(i);
     sha1Stream.Printf("%s %s\n", module.mBreakpadId.get(),
                       NS_ConvertUTF16toUTF8(module.mName).get());
   }
@@ -169,7 +171,7 @@ void LateWriteObserver::Observe(IOInterposeObserver::Observation& aOb) {
   size_t numFrames = stack.GetStackSize();
   sha1Stream.Printf("%u\n", (unsigned)numFrames);
   for (size_t i = 0; i < numFrames; ++i) {
-    const Telemetry::ProcessedStack::Frame& frame = stack.GetFrame(i);
+    const mozilla::Telemetry::ProcessedStack::Frame& frame = stack.GetFrame(i);
     
     
     
@@ -182,7 +184,7 @@ void LateWriteObserver::Observe(IOInterposeObserver::Observation& aOb) {
     sha1Stream.Printf("%d %x\n", frame.mModIndex, (unsigned)frame.mOffset);
   }
 
-  SHA1Sum::Hash sha1;
+  mozilla::SHA1Sum::Hash sha1;
   sha1Stream.Finish(sha1);
 
   
@@ -202,7 +204,7 @@ void LateWriteObserver::Observe(IOInterposeObserver::Observation& aOb) {
 
 
 
-static StaticAutoPtr<LateWriteObserver> sLateWriteObserver;
+static mozilla::StaticAutoPtr<LateWriteObserver> sLateWriteObserver;
 
 namespace mozilla {
 
