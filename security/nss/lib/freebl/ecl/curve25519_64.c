@@ -3,12 +3,12 @@
 
 
 #include "ecl-priv.h"
-#include "../verified/Hacl_Curve25519.h"
+#include "../verified/Hacl_Curve25519_51.h"
 
 SECStatus
 ec_Curve25519_mul(uint8_t *mypublic, const uint8_t *secret, const uint8_t *basepoint)
 {
     
-    Hacl_Curve25519_crypto_scalarmult(mypublic, (uint8_t *)secret, (uint8_t *)basepoint);
+    Hacl_Curve25519_51_ecdh(mypublic, (uint8_t *)secret, (uint8_t *)basepoint);
     return 0;
 }
