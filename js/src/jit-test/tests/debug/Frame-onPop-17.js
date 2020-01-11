@@ -6,7 +6,7 @@ var dbg = new Debugger(g);
 
 
 function test(badValue) {
-    print("store " + uneval(badValue) + " in Debugger.Frame.prototype.onPop");
+    print("store " + JSON.stringify(badValue) + " in Debugger.Frame.prototype.onPop");
 
     var log;
     dbg.onDebuggerStatement = function handleDebugger(frame) {

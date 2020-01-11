@@ -90,7 +90,7 @@ assertEq(dbg.removeDebuggee(dwg1), undefined); assertDebuggees();
 
 
 function combo(addAs, designateAs, direct) {
-  print("combo(" + uneval(addAs) + ", " + uneval(designateAs) + ")");
+  print("combo(" + JSON.stringify(addAs) + ", " + JSON.stringify(designateAs) + ")");
   assertDebuggees();
   assertEq(dbg.addDebuggee(addAs), direct);
   assertDebuggees(direct);
