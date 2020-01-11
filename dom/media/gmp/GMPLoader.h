@@ -23,12 +23,6 @@ class SandboxStarter {
  public:
   virtual ~SandboxStarter() {}
   virtual bool Start(const char* aLibPath) = 0;
-#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
-  
-  
-  
-  virtual void SetSandboxInfo(MacSandboxInfo* aSandboxInfo) = 0;
-#endif
 };
 
 
@@ -68,13 +62,6 @@ class GMPLoader {
   
   
   void Shutdown();
-
-#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
-  
-  
-  
-  void SetSandboxInfo(MacSandboxInfo* aSandboxInfo);
-#endif
 
   bool CanSandbox() const;
 

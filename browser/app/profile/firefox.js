@@ -1047,8 +1047,6 @@ pref("dom.ipc.shims.enabledWarnings", false);
   
   
   pref("security.sandbox.content.mac.earlyinit", true);
-  
-  pref("security.sandbox.gmp.mac.earlyinit", true);
 
   
   
