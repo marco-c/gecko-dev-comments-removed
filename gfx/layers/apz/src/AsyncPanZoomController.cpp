@@ -5296,10 +5296,10 @@ void AsyncPanZoomController::ScrollSnapToDestination() {
   ParentLayerPoint predictedDelta;
   
   
-  if (velocity.x != 0.0f) {
+  if (velocity.x != 0.0f && friction != 0.0f) {
     predictedDelta.x = -velocity.x / log(1.0 - friction);
   }
-  if (velocity.y != 0.0f) {
+  if (velocity.y != 0.0f && friction != 0.0f) {
     predictedDelta.y = -velocity.y / log(1.0 - friction);
   }
 
