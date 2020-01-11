@@ -719,9 +719,6 @@ class UrlbarInput {
     this._resultForCurrentValue = result;
 
     
-    this.window.gBrowser.userTypedValue = this.value;
-
-    
     
     if (result) {
       switch (result.type) {
@@ -1089,9 +1086,6 @@ class UrlbarInput {
     this.inputField.value = val;
     this.formatValue();
     this.removeAttribute("actiontype");
-    if (!this.view.isOpen) {
-      this.view.clear();
-    }
 
     
     let event = this.document.createEvent("Events");
@@ -1674,13 +1668,13 @@ class UrlbarInput {
     this.removeAttribute("focused");
     this.endLayoutExtend();
 
+    if (this._autofillPlaceholder && this.window.gBrowser.userTypedValue) {
+      
+      this.value = this.window.gBrowser.userTypedValue;
+    }
+
     this.formatValue();
     this._resetSearchState();
-
-    
-    if (this.document.activeElement != this.inputField) {
-      this.selectionStart = this.selectionEnd = 0;
-    }
 
     
     
@@ -1789,6 +1783,12 @@ class UrlbarInput {
           break;
         }
 
+        
+        
+        if (this._focusedViaMousedown) {
+          this.selectionStart = this.selectionEnd = 0;
+        }
+
         if (event.detail == 2 && UrlbarPrefs.get("doubleClickSelectsAll")) {
           this.editor.selectAll();
           event.preventDefault();
@@ -1861,9 +1861,11 @@ class UrlbarInput {
     }
     this.removeAttribute("actiontype");
 
-    if (!value && this.view.isOpen) {
-      this.view.close();
+    if (!this.view.isOpen || !value) {
       this.view.clear();
+    }
+    if (this.view.isOpen && !value) {
+      this.view.close();
       return;
     }
 
