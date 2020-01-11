@@ -960,6 +960,28 @@ class TemporaryStorage {
 
 
 
+class TableIdentity {
+  size_t index_;
+
+  static const size_t ListIdentityBase = BINAST_INTERFACE_AND_FIELD_LIMIT;
+
+ public:
+  
+  static const size_t Limit = ListIdentityBase + BINAST_NUMBER_OF_LIST_TYPES;
+
+  explicit TableIdentity(NormalizedInterfaceAndField index)
+      : index_(static_cast<size_t>(index.identity_)) {}
+  explicit TableIdentity(BinASTList list)
+      : index_(static_cast<size_t>(list) + ListIdentityBase) {}
+
+  size_t toIndex() const { return index_; }
+};
+
+
+
+
+
+
 class HuffmanDictionary {
   
   
@@ -974,25 +996,6 @@ class HuffmanDictionary {
  public:
   HuffmanDictionary() {}
   ~HuffmanDictionary();
-
-  
-  
-  class TableIdentity {
-    size_t index_;
-
-    static const size_t ListIdentityBase = BINAST_INTERFACE_AND_FIELD_LIMIT;
-
-   public:
-    
-    static const size_t Limit = ListIdentityBase + BINAST_NUMBER_OF_LIST_TYPES;
-
-    explicit TableIdentity(NormalizedInterfaceAndField index)
-        : index_(static_cast<size_t>(index.identity_)) {}
-    explicit TableIdentity(BinASTList list)
-        : index_(static_cast<size_t>(list) + ListIdentityBase) {}
-
-    size_t toIndex() const { return index_; }
-  };
 
   bool isUnreachable(TableIdentity i) const {
     return status_[i.toIndex()] == TableStatus::Unreachable;
@@ -1047,9 +1050,6 @@ class HuffmanDictionary {
   
   TableStatus status_[TableIdentity::Limit] = {TableStatus::Unreachable};
 
-  
-  
-  
   
   uint16_t tableIndices_[TableIdentity::Limit] = {0};
 

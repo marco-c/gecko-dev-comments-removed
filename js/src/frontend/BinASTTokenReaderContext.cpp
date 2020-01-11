@@ -474,7 +474,7 @@ class HuffmanPreludeReader {
   
   MOZ_MUST_USE JS::Result<Ok> pushValue(NormalizedInterfaceAndField identity,
                                         const List& list) {
-    const auto tableId = HuffmanDictionary::TableIdentity(list.contents_);
+    const auto tableId = TableIdentity(list.contents_);
     if (dictionary_.isUnreachable(tableId)) {
       
       
@@ -525,7 +525,7 @@ class HuffmanPreludeReader {
 
   MOZ_MUST_USE JS::Result<Ok> pushValue(NormalizedInterfaceAndField identity,
                                         const Interface& interface) {
-    const auto tableId = HuffmanDictionary::TableIdentity(identity);
+    const auto tableId = TableIdentity(identity);
     if (dictionary_.isUnreachable(tableId)) {
       
       auto& table = dictionary_.createTable(tableId);
@@ -546,7 +546,7 @@ class HuffmanPreludeReader {
                                         const Entry& entry) {
     
     
-    const auto tableId = HuffmanDictionary::TableIdentity(identity);
+    const auto tableId = TableIdentity(identity);
     if (!dictionary_.isUnreachable(tableId)) {
       
       return Ok();
@@ -823,7 +823,7 @@ class HuffmanPreludeReader {
   
   template <typename Entry>
   MOZ_MUST_USE JS::Result<Ok> readTable(Entry entry) {
-    const auto tableId = HuffmanDictionary::TableIdentity(entry.identity_);
+    const auto tableId = TableIdentity(entry.identity_);
     if (MOZ_UNLIKELY(!dictionary_.isInitializing(tableId))) {
       
       
@@ -837,8 +837,7 @@ class HuffmanPreludeReader {
   
   
   template <typename Entry>
-  MOZ_MUST_USE JS::Result<Ok> readTable(
-      HuffmanDictionary::TableIdentity tableId, Entry entry) {
+  MOZ_MUST_USE JS::Result<Ok> readTable(TableIdentity tableId, Entry entry) {
     uint8_t headerByte;
     MOZ_TRY_VAR(headerByte, reader_.readByte<Compression::No>());
     switch (headerByte) {
@@ -918,7 +917,7 @@ class HuffmanPreludeReader {
       
       
       
-      const auto tableId = HuffmanDictionary::TableIdentity(entry.identity_);
+      const auto tableId = TableIdentity(entry.identity_);
       if (owner.dictionary_.isUnreachable(tableId)) {
         return Ok();
       }
@@ -940,7 +939,7 @@ class HuffmanPreludeReader {
       
       
 
-      const auto tableId = HuffmanDictionary::TableIdentity(entry.identity_);
+      const auto tableId = TableIdentity(entry.identity_);
       if (owner.dictionary_.isInitializing(tableId)) {
         return Ok();
       }
@@ -963,7 +962,7 @@ class HuffmanPreludeReader {
       
       
       
-      const auto tableId = HuffmanDictionary::TableIdentity(entry.identity_);
+      const auto tableId = TableIdentity(entry.identity_);
       if (owner.dictionary_.isUnreachable(tableId)) {
         return Ok();
       }
@@ -1328,8 +1327,7 @@ struct ExtractBinASTInterfaceAndFieldMatcher {
 JS::Result<BinASTKind> BinASTTokenReaderContext::readTagFromTable(
     const BinASTInterfaceAndField& identity) {
   
-  const auto tableId =
-      HuffmanDictionary::TableIdentity(NormalizedInterfaceAndField(identity));
+  const auto tableId = TableIdentity(NormalizedInterfaceAndField(identity));
   const auto& table = dictionary_.getTable(tableId);
   BINJS_MOZ_TRY_DECL(bits_,
                      (bitBuffer.getHuffmanLookup<Compression::No>(*this)));
@@ -1345,8 +1343,7 @@ JS::Result<BinASTKind> BinASTTokenReaderContext::readTagFromTable(
 
 JS::Result<BinASTSymbol> BinASTTokenReaderContext::readFieldFromTable(
     const BinASTInterfaceAndField& identity) {
-  const auto tableId =
-      HuffmanDictionary::TableIdentity(NormalizedInterfaceAndField(identity));
+  const auto tableId = TableIdentity(NormalizedInterfaceAndField(identity));
   if (!dictionary_.isReady(tableId)) {
     return raiseNotInPrelude();
   }
@@ -1490,7 +1487,7 @@ JS::Result<Ok> BinASTTokenReaderContext::enterSum(BinASTKind& tag,
 
 JS::Result<Ok> BinASTTokenReaderContext::enterList(uint32_t& items,
                                                    const ListContext& context) {
-  const auto tableId = HuffmanDictionary::TableIdentity(context.content_);
+  const auto tableId = TableIdentity(context.content_);
   const auto& table = dictionary_.getTable(tableId);
   BINJS_MOZ_TRY_DECL(bits_, bitBuffer.getHuffmanLookup<Compression::No>(*this));
   const auto result = table.lookup(bits_);
