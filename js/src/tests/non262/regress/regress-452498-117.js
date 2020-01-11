@@ -43,10 +43,6 @@ function test()
 
 
 
-  uneval(function(){arguments = ({ get y(){} }); for(var [arguments] in y ) (x);});
-
-
-
   try
   {
     eval('(function(){{for(c in (function (){ for(x in (x1))window} )()) {const x = undefined;} }})();');
