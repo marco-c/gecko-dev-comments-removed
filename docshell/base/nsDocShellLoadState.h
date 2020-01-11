@@ -7,6 +7,8 @@
 #ifndef nsDocShellLoadState_h__
 #define nsDocShellLoadState_h__
 
+#include "mozilla/dom/BrowsingContext.h"
+
 
 #include "nsCOMPtr.h"
 #include "nsString.h"
@@ -183,7 +185,8 @@ class nsDocShellLoadState final {
   
   
   nsresult SetupInheritingPrincipal(
-      uint32_t aItemType, const mozilla::OriginAttributes& aOriginAttributes);
+      mozilla::dom::BrowsingContext::Type aType,
+      const mozilla::OriginAttributes& aOriginAttributes);
 
   
   
