@@ -24,7 +24,7 @@ var T = TypedObject;
 var ST = new T.StructType({x:T.int32});
 
 function check(v) {
-    return v.toSource();
+    return v.equivalent(T.int32);
 }
 
 function test() {

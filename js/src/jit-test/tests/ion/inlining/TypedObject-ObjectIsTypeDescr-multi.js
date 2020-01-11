@@ -25,7 +25,7 @@ var ST1 = new T.StructType({x:T.int32});
 var ST2 = new T.StructType({x:T.float64});
 
 function check(v) {
-    return v.toSource();
+    return v.equivalent(T.int32);
 }
 
 function test() {

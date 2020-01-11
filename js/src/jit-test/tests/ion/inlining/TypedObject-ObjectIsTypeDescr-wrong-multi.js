@@ -24,12 +24,12 @@ var T = TypedObject;
 var ST = new T.StructType({x:T.int32});
 
 function check(v) {
-    return v.toSource();
+    return v.equivalent(T.int32);
 }
 
 function test() {
-    var fake1 = { toSource: ST.toSource };
-    var fake2 = [];  fake2.toSource = ST.toSource;
+    var fake1 = { equivalent: ST.equivalent };
+    var fake2 = [];  fake2.equivalent = ST.equivalent;
     var a = [ fake1, fake2 ];
     for ( var i=0 ; i < 1000 ; i++ )
 	try { check(a[i%2]); } catch (e) {}
