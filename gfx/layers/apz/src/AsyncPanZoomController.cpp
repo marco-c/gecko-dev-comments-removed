@@ -1471,8 +1471,7 @@ nsEventStatus AsyncPanZoomController::OnTouchEnd(
     case TOUCHING:
       
       
-      mX.SetVelocity(0);
-      mY.SetVelocity(0);
+      SetVelocityVector(ParentLayerPoint(0, 0));
       MOZ_ASSERT(GetCurrentTouchBlock());
       APZC_LOG("%p still has %u touch points active\n", this,
                GetCurrentTouchBlock()->GetActiveTouchCount());
@@ -1568,8 +1567,7 @@ nsEventStatus AsyncPanZoomController::OnScaleBegin(
   }
 
   SetState(PINCHING);
-  mX.SetVelocity(0);
-  mY.SetVelocity(0);
+  SetVelocityVector(ParentLayerPoint(0, 0));
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   mLastZoomFocus =
       aEvent.mLocalFocusPoint - Metrics().GetCompositionBounds().TopLeft();
@@ -1821,8 +1819,7 @@ nsEventStatus AsyncPanZoomController::HandleEndOfPan() {
   
   
   
-  mX.SetVelocity(0);
-  mY.SetVelocity(0);
+  SetVelocityVector(ParentLayerPoint(0, 0));
   
   
   
@@ -2646,13 +2643,16 @@ nsEventStatus AsyncPanZoomController::OnPanEnd(const PanGestureInput& aEvent) {
   MOZ_ASSERT(GetCurrentPanGestureBlock());
   RefPtr<const OverscrollHandoffChain> overscrollHandoffChain =
       GetCurrentPanGestureBlock()->GetOverscrollHandoffChain();
-  if (!overscrollHandoffChain->CanScrollInDirection(
-          this, ScrollDirection::eHorizontal)) {
-    mX.SetVelocity(0);
-  }
-  if (!overscrollHandoffChain->CanScrollInDirection(
-          this, ScrollDirection::eVertical)) {
-    mY.SetVelocity(0);
+  {
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    if (!overscrollHandoffChain->CanScrollInDirection(
+            this, ScrollDirection::eHorizontal)) {
+      mX.SetVelocity(0);
+    }
+    if (!overscrollHandoffChain->CanScrollInDirection(
+            this, ScrollDirection::eVertical)) {
+      mY.SetVelocity(0);
+    }
   }
 
   SetState(NOTHING);
@@ -2902,11 +2902,13 @@ ParentLayerPoint AsyncPanZoomController::PanStart() const {
 }
 
 const ParentLayerPoint AsyncPanZoomController::GetVelocityVector() const {
+  RecursiveMutexAutoLock lock(mRecursiveMutex);
   return ParentLayerPoint(mX.GetVelocity(), mY.GetVelocity());
 }
 
 void AsyncPanZoomController::SetVelocityVector(
     const ParentLayerPoint& aVelocityVector) {
+  RecursiveMutexAutoLock lock(mRecursiveMutex);
   mX.SetVelocity(aVelocityVector.x);
   mY.SetVelocity(aVelocityVector.y);
 }
