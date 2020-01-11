@@ -54,6 +54,10 @@ class AudioWorkletGlobalScope final : public WorkletGlobalScope {
                           UniqueMessagePortId& aPortIdentifier,
                           JS::MutableHandle<JSObject*> aRetProcessor);
 
+  
+  
+  RefPtr<MessagePort> TakePortForProcessorCtor();
+
  private:
   ~AudioWorkletGlobalScope() = default;
 
