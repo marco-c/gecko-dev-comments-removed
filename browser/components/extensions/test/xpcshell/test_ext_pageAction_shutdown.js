@@ -2,9 +2,13 @@
 
 "use strict";
 
-const { PageActions } = ChromeUtils.import(
+
+ChromeUtils.defineModuleGetter(
+  this,
+  "PageActions",
   "resource:///modules/PageActions.jsm"
 );
+
 const { AddonTestUtils } = ChromeUtils.import(
   "resource://testing-common/AddonTestUtils.jsm"
 );
