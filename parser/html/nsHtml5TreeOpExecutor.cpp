@@ -450,6 +450,16 @@ void nsHtml5TreeOpExecutor::RunFlushLoop() {
       
       
       nsresult rv = GetParser()->ParseUntilBlocked();
+
+      
+      
+      
+      
+      
+      
+      
+      FlushSpeculativeLoads();
+
       if (NS_FAILED(rv)) {
         MarkAsBroken(rv);
         return;
