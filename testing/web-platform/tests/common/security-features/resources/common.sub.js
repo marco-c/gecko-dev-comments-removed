@@ -322,19 +322,6 @@ function createRequestViaElement(tagName, attrs, parentNode) {
   return createElement(tagName, attrs, parentNode, true).eventPromise;
 }
 
-
-
-
-
-
-
-function createHelperIframe(name, doBindEvents) {
-  return createElement("iframe",
-                       {"name": name, "id": name},
-                       document.body,
-                       doBindEvents);
-}
-
 function wrapResult(server_data) {
   if (typeof(server_data) === "string") {
     throw server_data;
@@ -598,11 +585,22 @@ function requestViaWorklet(type, url) {
 
 
 
-function requestViaNavigable(navigableElement, url) {
-  var iframe = createHelperIframe(guid(), false);
-  setAttributes(navigableElement,
-                {"href": url,
-                 "target": iframe.name});
+
+
+
+
+
+function requestViaNavigable(navigableElementName, additionalAttributes,
+                             parentNode, trigger) {
+  const name = guid();
+
+  const iframe =
+    createElement("iframe", {"name": name, "id": name}, parentNode, false);
+
+  const navigable = createElement(
+      navigableElementName,
+      Object.assign({"target": name}, additionalAttributes),
+      parentNode, false);
 
   const promise =
     bindEvents2(window, "message", iframe, "error", window, "error")
@@ -611,7 +609,7 @@ function requestViaNavigable(navigableElement, url) {
             return Promise.reject(new Error('Unexpected event.source'));
           return event.data;
         });
-  navigableElement.click();
+  trigger(navigable);
   return promise;
 }
 
@@ -622,12 +620,11 @@ function requestViaNavigable(navigableElement, url) {
 
 
 function requestViaAnchor(url, additionalAttributes) {
-  var a = createElement(
+  return requestViaNavigable(
       "a",
-      Object.assign({"innerHTML": "Link to resource"}, additionalAttributes),
-      document.body);
-
-  return requestViaNavigable(a, url);
+      Object.assign({"href": url, "innerHTML": "Link to resource"},
+                    additionalAttributes),
+      document.body, a => a.click());
 }
 
 
@@ -637,13 +634,11 @@ function requestViaAnchor(url, additionalAttributes) {
 
 
 function requestViaArea(url, additionalAttributes) {
-  var area = createElement(
-      "area",
-      Object.assign({}, additionalAttributes),
-      document.body);
-
   
-  return requestViaNavigable(area, url);
+  return requestViaNavigable(
+      "area",
+      Object.assign({"href": url}, additionalAttributes),
+      document.body, area => area.click());
 }
 
 
@@ -669,17 +664,11 @@ function requestViaScript(url, additionalAttributes) {
 
 
 
-function requestViaForm(url) {
-  var iframe = createHelperIframe(guid());
-  var form = createElement("form",
-                           {"action": url,
-                            "method": "POST",
-                            "target": iframe.name},
-                           document.body);
-  bindEvents(iframe);
-  form.submit();
-
-  return iframe.eventPromise;
+function requestViaForm(url, additionalAttributes) {
+  return requestViaNavigable(
+      "form",
+      Object.assign({"action": url, "method": "POST"}, additionalAttributes),
+      document.body, form => form.submit());
 }
 
 
@@ -874,7 +863,7 @@ const subresourceMap = {
     invoker: requestViaFetch,
   },
   "form-tag": {
-    path: "/common/security-features/subresource/empty.py",
+    path: "/common/security-features/subresource/document.py",
     invoker: requestViaForm,
   },
   "iframe-tag": {
