@@ -125,8 +125,6 @@ class MIRGenerator {
   void setNeedsStaticStackAlignment() { needsStaticStackAlignment_ = true; }
   bool needsStaticStackAlignment() const { return needsStaticStackAlignment_; }
 
-  bool modifiesFrameArguments() const { return modifiesFrameArguments_; }
-
   typedef Vector<ObjectGroup*, 0, JitAllocPolicy> ObjectGroupVector;
 
   
@@ -153,11 +151,6 @@ class MIRGenerator {
   uint32_t wasmMaxStackArgBytes_;
   bool needsOverrecursedCheck_;
   bool needsStaticStackAlignment_;
-
-  
-  
-  
-  bool modifiesFrameArguments_;
 
   bool instrumentedProfiling_;
   bool instrumentedProfilingIsCached_;
