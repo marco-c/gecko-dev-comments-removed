@@ -53,6 +53,10 @@ struct LazyScriptCreationData {
 
 
 struct FunctionCreationData {
+  FunctionCreationData(HandleAtom atom, FunctionSyntaxKind kind,
+                       GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
+                       bool isSelfHosting = false, bool inFunctionBox = false);
+
   
   JSAtom* atom = nullptr;
   FunctionSyntaxKind kind = FunctionSyntaxKind::Expression;
