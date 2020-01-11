@@ -19,7 +19,7 @@ class nsIInputStream;
 class nsISHEntry;
 class nsIURI;
 class nsIDocShell;
-class nsIChannel;
+class nsIChildChannel;
 class nsIReferrerInfo;
 class OriginAttibutes;
 namespace mozilla {
@@ -40,7 +40,7 @@ class nsDocShellLoadState final {
   explicit nsDocShellLoadState(
       const mozilla::dom::DocShellLoadStateInit& aLoadState);
 
-  static nsresult CreateFromPendingChannel(nsIChannel* aPendingChannel,
+  static nsresult CreateFromPendingChannel(nsIChildChannel* aPendingChannel,
                                            nsDocShellLoadState** aResult);
 
   static nsresult CreateFromLoadURIOptions(
@@ -200,7 +200,7 @@ class nsDocShellLoadState final {
     return mIsFromProcessingFrameAttributes;
   }
 
-  nsIChannel* GetPendingRedirectedChannel() {
+  nsIChildChannel* GetPendingRedirectedChannel() {
     return mPendingRedirectedChannel;
   }
 
@@ -365,7 +365,7 @@ class nsDocShellLoadState final {
 
   
   
-  nsCOMPtr<nsIChannel> mPendingRedirectedChannel;
+  nsCOMPtr<nsIChildChannel> mPendingRedirectedChannel;
 
   
   
