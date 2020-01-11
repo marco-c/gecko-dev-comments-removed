@@ -881,20 +881,18 @@ impl Tile {
         self.update_content_validity(ctx, state);
 
         
-        
-        
-        
-        
-        
-        match state.composite_state.compositor_kind {
-            CompositorKind::Draw { .. } => {
-                
-                if self.current_descriptor.prims.is_empty() {
-                    return false;
+        if self.current_descriptor.prims.is_empty() {
+            
+            
+            
+            
+            if let Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::Native { mut id, .. }, .. }) = self.surface.take() {
+                if let Some(id) = id.take() {
+                    state.resource_cache.destroy_compositor_tile(id);
                 }
             }
-            CompositorKind::Native { .. } => {
-            }
+
+            return false;
         }
 
         
