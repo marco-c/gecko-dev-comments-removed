@@ -1794,7 +1794,7 @@ class Document : public nsINode,
 
 
 
-  nsresult SetEditingState(EditingState aState);
+  void SetEditingState(EditingState aState) { mEditingState = aState; }
 
   
 
