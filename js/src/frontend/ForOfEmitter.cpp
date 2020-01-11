@@ -58,16 +58,10 @@ bool ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos) {
     }
   }
 
+  
+  
+
   int32_t iterDepth = bce_->bytecodeSection().stackDepth();
-
-  
-  
-  
-  if (!bce_->emit1(JSOP_UNDEFINED)) {
-    
-    return false;
-  }
-
   loopInfo_.emplace(bce_, iterDepth, allowSelfHostedIter_, iterKind_);
 
   if (!loopInfo_->emitLoopHead(bce_, Nothing())) {
@@ -111,10 +105,6 @@ bool ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos) {
     }
   }
 
-  if (!bce_->emit1(JSOP_POP)) {
-    
-    return false;
-  }
   if (!bce_->emit1(JSOP_DUP2)) {
     
     return false;
@@ -134,31 +124,10 @@ bool ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos) {
     return false;
   }
 
-  InternalIfEmitter ifDone(bce_);
-
-  if (!ifDone.emitThen()) {
-    
-    return false;
-  }
-
   
-  if (!bce_->emit1(JSOP_POP)) {
-    
-    return false;
-  }
-  if (!bce_->emit1(JSOP_UNDEFINED)) {
-    
-    return false;
-  }
-
-  
-  
-  if (!loopInfo_->emitSpecialBreakForDone(bce_)) {
-    
-    return false;
-  }
-
-  if (!ifDone.emitEnd()) {
+  MOZ_ASSERT(bce_->innermostNestableControl == loopInfo_.ptr(),
+             "must be at the top-level of the loop");
+  if (!bce_->emitJump(JSOP_IFNE, &loopInfo_->breaks)) {
     
     return false;
   }
@@ -185,19 +154,9 @@ bool ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos) {
 bool ForOfEmitter::emitBody() {
   MOZ_ASSERT(state_ == State::Initialize);
 
-  MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == loopDepth_,
+  MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == loopDepth_ + 1,
              "the stack must be balanced around the initializing "
              "operation");
-
-  
-  if (!bce_->emit1(JSOP_POP)) {
-    
-    return false;
-  }
-  if (!bce_->emit1(JSOP_UNDEFINED)) {
-    
-    return false;
-  }
 
 #ifdef DEBUG
   state_ = State::Body;
@@ -208,14 +167,16 @@ bool ForOfEmitter::emitBody() {
 bool ForOfEmitter::emitEnd(const Maybe<uint32_t>& iteratedPos) {
   MOZ_ASSERT(state_ == State::Body);
 
-  MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == loopDepth_,
+  MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == loopDepth_ + 1,
              "the stack must be balanced around the for-of body");
 
   if (!loopInfo_->emitEndCodeNeedingIteratorClose(bce_)) {
+    
     return false;
   }
 
   if (!loopInfo_->emitContinueTarget(bce_)) {
+    
     return false;
   }
 
@@ -229,12 +190,20 @@ bool ForOfEmitter::emitEnd(const Maybe<uint32_t>& iteratedPos) {
     }
   }
 
+  if (!bce_->emit1(JSOP_POP)) {
+    
+    return false;
+  }
+
   if (!loopInfo_->emitLoopEnd(bce_, JSOP_GOTO, JSTRY_FOR_OF)) {
     
     return false;
   }
 
+  
   MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == loopDepth_);
+  bce_->bytecodeSection().setStackDepth(bce_->bytecodeSection().stackDepth() +
+                                        1);
 
   if (!bce_->emitPopN(3)) {
     

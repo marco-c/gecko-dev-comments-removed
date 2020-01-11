@@ -126,9 +126,6 @@ class LoopControl : public BreakableControl {
   MOZ_MUST_USE bool emitContinueTarget(BytecodeEmitter* bce);
 
   
-  MOZ_MUST_USE bool emitSpecialBreakForDone(BytecodeEmitter* bce);
-
-  
   
   
   MOZ_MUST_USE bool emitLoopHead(BytecodeEmitter* bce,
