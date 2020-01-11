@@ -1514,6 +1514,9 @@ class NumericLiteral : public ParseNode {
   void setValue(double v) { value_ = v; }
 
   void setDecimalPoint(DecimalPoint d) { decimalPoint_ = d; }
+
+  
+  JSAtom* toAtom(JSContext* cx) const;
 };
 
 class BigIntLiteral : public ParseNode {
@@ -1562,6 +1565,9 @@ class BigIntLiteral : public ParseNode {
   
   
   BigInt* getOrCreate(JSContext* cx);
+
+  
+  JSAtom* toAtom(JSContext* cx);
 
   bool isZero();
 };
