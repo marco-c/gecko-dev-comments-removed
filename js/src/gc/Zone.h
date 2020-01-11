@@ -624,13 +624,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   void deleteEmptyCompartment(JS::Compartment* comp);
 
-  
-  
-  
-  
-  
-  uint32_t detachedTypedObjects = 0;
-
   void finishRoots();
 
  private:

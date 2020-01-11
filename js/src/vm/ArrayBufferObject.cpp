@@ -469,26 +469,7 @@ void ArrayBufferObject::detach(JSContext* cx,
                                Handle<ArrayBufferObject*> buffer) {
   cx->check(buffer);
   MOZ_ASSERT(!buffer->isPreparedForAsmJS());
-
-  
-  
-  
-
-  
-  
-  
-  
-  if (buffer->hasTypedObjectViews()) {
-    
-    
-    AutoEnterOOMUnsafeRegion oomUnsafe;
-    if (!JSObject::getGroup(cx, cx->global())) {
-      oomUnsafe.crash("ArrayBufferObject::detach");
-    }
-    MarkObjectGroupFlags(cx, cx->global(),
-                         OBJECT_FLAG_TYPED_OBJECT_HAS_DETACHED_BUFFER);
-    cx->zone()->detachedTypedObjects = 1;
-  }
+  MOZ_ASSERT(!buffer->hasTypedObjectViews());
 
   auto NoteViewBufferWasDetached = [&cx](ArrayBufferViewObject* view) {
     MOZ_ASSERT(!view->isSharedMemory());
@@ -1022,6 +1003,8 @@ static void CheckStealPreconditions(Handle<ArrayBufferObject*> buffer,
   MOZ_ASSERT(!buffer->isDetached(), "can't steal from a detached buffer");
   MOZ_ASSERT(!buffer->isPreparedForAsmJS(),
              "asm.js-prepared buffers don't have detachable/stealable data");
+  MOZ_ASSERT(!buffer->hasTypedObjectViews(),
+             "buffers for typed objects don't have detachable/stealable data");
 }
 
 

@@ -188,10 +188,6 @@ enum : uint32_t {
 
   
 
-
-
-  OBJECT_FLAG_TYPED_OBJECT_HAS_DETACHED_BUFFER = 0x00400000,
-
   
 
 
