@@ -45,7 +45,7 @@ const NEWPROFILE_PING_DEFAULT_DELAY = 30 * 60 * 1000;
 
 
 const PING_TYPE_MAIN = "main";
-const PING_TYPE_OPTOUT = "optout";
+const PING_TYPE_DELETION_REQUEST = "deletion-request";
 
 
 const REASON_GATHER_PAYLOAD = "gather-payload";
@@ -176,11 +176,20 @@ var TelemetryController = Object.freeze({
   
 
 
+  testPromiseDeletionRequestPingSubmitted() {
+    return Promise.resolve(Impl._deletionRequestPingSubmittedPromise);
+  },
+
+  
+
+
   observe(aSubject, aTopic, aData) {
     return Impl.observe(aSubject, aTopic, aData);
   },
 
   
+
+
 
 
 
@@ -221,6 +230,8 @@ var TelemetryController = Object.freeze({
   },
 
   
+
+
 
 
 
@@ -317,6 +328,8 @@ var Impl = {
   _delayedNewPingTask: null,
   
   _probeRegistrationPromise: null,
+  
+  _deletionRequestPingSubmittedPromise: null,
 
   get _log() {
     if (!this._logger) {
@@ -382,6 +395,8 @@ var Impl = {
 
 
 
+
+
   assemblePing: function assemblePing(aType, aPayload, aOptions = {}) {
     this._log.trace(
       "assemblePing - Type " + aType + ", aOptions " + JSON.stringify(aOptions)
@@ -402,8 +417,8 @@ var Impl = {
       payload,
     };
 
-    if (aOptions.addClientId) {
-      pingData.clientId = this._clientID;
+    if (aOptions.addClientId || aOptions.overrideClientId) {
+      pingData.clientId = aOptions.overrideClientId || this._clientID;
     }
 
     if (aOptions.addEnvironment) {
@@ -449,11 +464,14 @@ var Impl = {
 
 
 
+
+
   async _submitPingLogic(aType, aPayload, aOptions) {
     
     
     
-    if (!this._clientID && aOptions.addClientId) {
+    if (!this._clientID && aOptions.addClientId && !aOptions.overrideClientId) {
+      this._log.trace("_submitPingLogic - Waiting on client id");
       Telemetry.getHistogramById(
         "TELEMETRY_PING_SUBMISSION_WAITING_CLIENTID"
       ).add();
@@ -486,6 +504,8 @@ var Impl = {
   },
 
   
+
+
 
 
 
@@ -548,6 +568,8 @@ var Impl = {
   },
 
   
+
+
 
 
 
@@ -1053,16 +1075,23 @@ var Impl = {
         TelemetrySession.resetSubsessionCounter();
 
         
+        let oldClientId = this._clientID;
         this._clientID = await ClientID.setClientID(
           TelemetryUtils.knownClientID
         );
 
         
-        this._log.trace("_onUploadPrefChange - Sending optout ping.");
-        this.submitExternalPing(PING_TYPE_OPTOUT, {}, { addClientId: false });
+        this._log.trace("_onUploadPrefChange - Sending deletion-request ping.");
+        this.submitExternalPing(
+          PING_TYPE_DELETION_REQUEST,
+          {},
+          { overrideClientId: oldClientId }
+        );
+        this._deletionRequestPingSubmittedPromise = null;
       }
     })();
 
+    this._deletionRequestPingSubmittedPromise = p;
     this._shutdownBarrier.client.addBlocker(
       "TelemetryController: removing pending pings after data upload was disabled",
       p
