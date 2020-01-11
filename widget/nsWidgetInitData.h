@@ -112,7 +112,8 @@ struct nsWidgetInitData {
         mMouseTransparent(false),
         mHasRemoteContent(false),
         mAlwaysOnTop(false),
-        mPIPWindow(false) {}
+        mPIPWindow(false),
+        mFissionWindow(false) {}
 
   nsWindowType mWindowType;
   nsBorderStyle mBorderStyle;
@@ -140,6 +141,8 @@ struct nsWidgetInitData {
   bool mAlwaysOnTop;
   
   bool mPIPWindow;
+  
+  bool mFissionWindow;
 };
 
 #endif  
