@@ -1797,12 +1797,13 @@ class _ASRouter {
 
 
 
-  
   async forceAttribution(data) {
     
-    const { source, campaign, content } = data;
+    const attributionData = AttributionCode.allowedCodeKeys
+      .map(key => `${key}=${encodeURIComponent(data[key] || "")}`)
+      .join("&");
     if (AppConstants.platform === "win") {
-      const attributionData = `source=${source}&campaign=${campaign}&content=${content}`;
+      
       this._writeAttributionFile(encodeURIComponent(attributionData));
     } else if (AppConstants.platform === "macosx") {
       let appPath = Services.dirsvc.get("GreD", Ci.nsIFile).parent.parent.path;
@@ -1810,9 +1811,8 @@ class _ASRouter {
         Ci.nsIMacAttributionService
       );
 
-      let referrer = `https://www.mozilla.org/anything/?utm_campaign=${campaign}&utm_source=${source}&utm_content=${encodeURIComponent(
-        content
-      )}`;
+      
+      let referrer = `https://www.mozilla.org/anything/?${attributionData}`;
 
       
       attributionSvc.setReferrerUrl(appPath, referrer, true);
