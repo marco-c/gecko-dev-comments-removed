@@ -1362,10 +1362,6 @@ void nsPresContext::SysColorChangedInternal() {
   
   
   PreferenceSheet::Refresh();
-
-  
-  
-  RebuildAllStyleData(nsChangeHint(0), RestyleHint{0});
 }
 
 void nsPresContext::RefreshSystemMetrics() {
