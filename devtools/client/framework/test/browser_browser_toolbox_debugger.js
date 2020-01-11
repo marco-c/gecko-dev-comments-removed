@@ -4,7 +4,10 @@
 
 
 
-
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/framework/test/helpers.js",
+  this
+);
 
 
 
@@ -23,11 +26,8 @@ const debuggerHeadURL =
 const helpersURL = CHROME_URL_ROOT + "../../debugger/test/mochitest/helpers.js";
 const helpersContextURL =
   CHROME_URL_ROOT + "../../debugger/test/mochitest/helpers/context.js";
-const testScriptURL = CHROME_URL_ROOT + "test_browser_toolbox_debugger.js";
 
 add_task(async function runTest() {
-  await setupPreferencesForBrowserToolbox();
-
   const s = Cu.Sandbox("http://mozilla.org");
 
   
@@ -57,80 +57,6 @@ add_task(async function runTest() {
   
   const interval = setInterval(s.plop, 1000);
 
-  
-  
-  const env = Cc["@mozilla.org/process/environment;1"].getService(
-    Ci.nsIEnvironment
-  );
-  
-  
-  
-  const testHead = function() {
-    const info = msg => dump(msg + "\n");
-    const is = (a, b, description) => {
-      let msg =
-        "'" + JSON.stringify(a) + "' is equal to '" + JSON.stringify(b) + "'";
-      if (description) {
-        msg += " - " + description;
-      }
-      if (a !== b) {
-        msg = "FAILURE: " + msg;
-        dump(msg + "\n");
-        throw new Error(msg);
-      } else {
-        msg = "SUCCESS: " + msg;
-        dump(msg + "\n");
-      }
-    };
-    const ok = (a, description) => {
-      let msg = "'" + JSON.stringify(a) + "' is true";
-      if (description) {
-        msg += " - " + description;
-      }
-      if (!a) {
-        msg = "FAILURE: " + msg;
-        dump(msg + "\n");
-        throw new Error(msg);
-      } else {
-        msg = "SUCCESS: " + msg;
-        dump(msg + "\n");
-      }
-    };
-
-    const registerCleanupFunction = () => {};
-
-    const { require } = ChromeUtils.import(
-      "resource://devtools/shared/Loader.jsm"
-    );
-    const { Services } = ChromeUtils.import(
-      "resource://gre/modules/Services.jsm"
-    );
-
-    
-    
-    
-    const { setTimeout } = ChromeUtils.import(
-      "resource://gre/modules/Timer.jsm"
-    );
-    function waitUntil(predicate, interval = 10) {
-      if (predicate()) {
-        return Promise.resolve(true);
-      }
-      return new Promise(resolve => {
-        
-        
-        setTimeout(function() {
-          waitUntil(predicate, interval).then(() => resolve(true));
-        }, interval);
-      });
-    }
-  }
-    .toSource()
-    .replace(/^\(function\(\) \{|\}\)$/g, "");
-  
-  
-  
-  
   let { content: debuggerHead } = await fetch(debuggerHeadURL);
 
   
@@ -145,42 +71,99 @@ add_task(async function runTest() {
     /Services.scriptloader.loadSubScript[^\)]*\);/g,
     ""
   );
-
-  
-  
-  const testScript = (await fetch(testScriptURL)).content;
-  const source =
-    'try { let testUrl = "' +
-    testUrl +
-    '";' +
-    testHead +
-    debuggerHead +
-    testScript +
-    "} catch (e) {" +
-    "  dump('Exception: '+ e + ' at ' + e.fileName + ':' + " +
-    "       e.lineNumber + '\\nStack: ' + e.stack + '\\n');" +
-    "}";
-  env.set("MOZ_TOOLBOX_TEST_SCRIPT", source);
-  registerCleanupFunction(() => {
-    env.set("MOZ_TOOLBOX_TEST_SCRIPT", "");
+  const ToolboxTask = await initBrowserToolboxTask();
+  await ToolboxTask.importScript(debuggerHead);
+  await ToolboxTask.importFunctions({
+    info: msg => dump(msg + "\n"),
+    is: (a, b, description) => {
+      let msg =
+        "'" + JSON.stringify(a) + "' is equal to '" + JSON.stringify(b) + "'";
+      if (description) {
+        msg += " - " + description;
+      }
+      if (a !== b) {
+        msg = "FAILURE: " + msg;
+        dump(msg + "\n");
+        throw new Error(msg);
+      } else {
+        msg = "SUCCESS: " + msg;
+        dump(msg + "\n");
+      }
+    },
+    ok: (a, description) => {
+      let msg = "'" + JSON.stringify(a) + "' is true";
+      if (description) {
+        msg += " - " + description;
+      }
+      if (!a) {
+        msg = "FAILURE: " + msg;
+        dump(msg + "\n");
+        throw new Error(msg);
+      } else {
+        msg = "SUCCESS: " + msg;
+        dump(msg + "\n");
+      }
+    },
+    waitUntil,
   });
 
-  const { BrowserToolboxProcess } = ChromeUtils.import(
-    "resource://devtools/client/framework/ToolboxProcess.jsm"
-  );
-  
-  
-  let closePromise;
-  await new Promise(onRun => {
-    closePromise = new Promise(onClose => {
-      info("Opening the browser toolbox\n");
-      BrowserToolboxProcess.init(onClose, onRun);
+  await ToolboxTask.spawn(`"${testUrl}"`, async _testUrl => {
+    
+
+
+    const { Services } = ChromeUtils.import(
+      "resource://gre/modules/Services.jsm"
+    );
+
+    Services.prefs.clearUserPref("devtools.debugger.tabs");
+    Services.prefs.clearUserPref("devtools.debugger.pending-selected-location");
+
+    info("Waiting for debugger load");
+    
+    await gToolbox.selectTool("jsdebugger");
+    const dbg = createDebuggerContext(gToolbox);
+    const window = dbg.win;
+    const document = window.document;
+
+    await waitForSources(dbg, _testUrl);
+
+    info("Loaded, selecting the test script to debug");
+    
+    const domain = [...document.querySelectorAll(".tree-node")].find(node => {
+      return node.querySelector(".label").textContent.trim() == "mozilla.org";
     });
-  });
-  ok(true, "Browser toolbox started\n");
+    const arrow = domain.querySelector(".arrow");
+    arrow.click();
 
-  await closePromise;
-  ok(true, "Browser toolbox process just closed");
+    const fileName = _testUrl.match(/browser-toolbox-test.*\.js/)[0];
+
+    let script = [...document.querySelectorAll(".tree-node")].find(node => {
+      return node.textContent.includes(fileName);
+    });
+    script = script.querySelector(".node");
+    script.click();
+
+    const onPaused = waitForPaused(dbg);
+    await selectSource(dbg, fileName);
+    await addBreakpoint(dbg, fileName, 2);
+
+    await onPaused;
+
+    assertPausedLocation(dbg, fileName, 2);
+
+    await stepIn(dbg);
+
+    assertPausedLocation(dbg, fileName, 3);
+
+    
+    
+    const source = findSource(dbg, fileName);
+    await removeBreakpoint(dbg, source.id, 2);
+
+    await resume(dbg);
+  });
 
   clearInterval(interval);
+
+  await ToolboxTask.destroy();
 });
