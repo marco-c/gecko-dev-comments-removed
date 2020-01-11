@@ -10,6 +10,8 @@ import sys
 
 from datetime import datetime
 
+from recommonmark.transform import AutoStructify
+
 
 OUR_DIR = os.path.dirname(__file__)
 topsrcdir = os.path.normpath(os.path.join(OUR_DIR, '..', '..'))
@@ -104,3 +106,13 @@ htmlhelp_basename = 'MozillaTreeDocs'
 moz_project_name = 'main'
 
 html_show_copyright = False
+
+
+def setup(app):
+    app.add_config_value('recommonmark_config', {
+        
+        'enable_inline_math': False,
+        
+        'enable_eval_rst': True,
+            }, True)
+    app.add_transform(AutoStructify)
