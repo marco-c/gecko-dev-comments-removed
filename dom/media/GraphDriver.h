@@ -528,6 +528,7 @@ class AudioCallbackDriver : public GraphDriver,
 #endif
 {
   using IterationResult = GraphInterface::IterationResult;
+  enum class FallbackDriverState;
   class FallbackWrapper;
 
  public:
@@ -608,7 +609,9 @@ class AudioCallbackDriver : public GraphDriver,
 
   
 
-  bool ThreadRunning() override { return mAudioThreadRunning; }
+  bool ThreadRunning() override {
+    return mAudioStreamState == AudioStreamState::Running;
+  }
 
   
 
@@ -641,8 +644,14 @@ class AudioCallbackDriver : public GraphDriver,
 
 
 
+
   void FallbackDriverStopped(GraphTime aIterationStart, GraphTime aIterationEnd,
-                             GraphTime aStateComputedTime);
+                             GraphTime aStateComputedTime,
+                             FallbackDriverState aState);
+
+  
+
+  void MaybeStartAudioStream();
 
   
   bool OnCubebOperationThread() {
@@ -689,7 +698,6 @@ class AudioCallbackDriver : public GraphDriver,
 
 
 
-
   Atomic<bool> mStarted;
 
   struct AutoInCallback {
@@ -710,8 +718,28 @@ class AudioCallbackDriver : public GraphDriver,
 
   std::atomic<std::thread::id> mAudioThreadId;
   
+  enum class AudioStreamState {
+    
+    None,
+    
+    Pending,
+    
+    Running,
+    
+    Stopping
+  };
+  Atomic<AudioStreamState> mAudioStreamState;
+  
+  enum class FallbackDriverState {
+    
+    None,
+    
+    Running,
+    
 
-  Atomic<bool> mAudioThreadRunning;
+    Stopped,
+  };
+  Atomic<FallbackDriverState> mFallbackDriverState;
   
 
   DataMutex<RefPtr<FallbackWrapper>> mFallback;
