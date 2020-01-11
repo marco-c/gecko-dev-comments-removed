@@ -123,24 +123,24 @@ return  (function(modules) {
 "use strict";
 
 
-var pdfjsVersion = '2.4.163';
-var pdfjsBuild = '514b500a';
+var pdfjsVersion = '2.4.176';
+var pdfjsBuild = 'af4ba75f';
 
 var pdfjsSharedUtil = __w_pdfjs_require__(1);
 
-var pdfjsDisplayAPI = __w_pdfjs_require__(5);
+var pdfjsDisplayAPI = __w_pdfjs_require__(4);
 
-var pdfjsDisplayTextLayer = __w_pdfjs_require__(17);
+var pdfjsDisplayTextLayer = __w_pdfjs_require__(16);
 
-var pdfjsDisplayAnnotationLayer = __w_pdfjs_require__(18);
+var pdfjsDisplayAnnotationLayer = __w_pdfjs_require__(17);
 
-var pdfjsDisplayDisplayUtils = __w_pdfjs_require__(6);
+var pdfjsDisplayDisplayUtils = __w_pdfjs_require__(5);
 
-var pdfjsDisplaySVG = __w_pdfjs_require__(19);
+var pdfjsDisplaySVG = __w_pdfjs_require__(18);
 
-let pdfjsDisplayWorkerOptions = __w_pdfjs_require__(11);
+let pdfjsDisplayWorkerOptions = __w_pdfjs_require__(10);
 
-let pdfjsDisplayAPICompatibility = __w_pdfjs_require__(8);
+let pdfjsDisplayAPICompatibility = __w_pdfjs_require__(7);
 
 ;
 exports.build = pdfjsDisplayAPI.build;
@@ -230,7 +230,7 @@ exports.createObjectURL = exports.FormatError = exports.Util = exports.UnknownEr
 
 __w_pdfjs_require__(2);
 
-var _streams_polyfill = __w_pdfjs_require__(4);
+var _streams_polyfill = __w_pdfjs_require__(3);
 
 const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 exports.IDENTITY_MATRIX = IDENTITY_MATRIX;
@@ -1031,25 +1031,7 @@ exports.createObjectURL = createObjectURL;
 "use strict";
 
 
-const {
-  globalScope
-} = __w_pdfjs_require__(3);
-
 ;
-
- }),
-
- (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.globalScope = void 0;
-const globalScope = typeof window !== 'undefined' && window.Math === Math ? window : typeof global !== 'undefined' && global.Math === Math ? global : typeof self !== 'undefined' && self.Math === Math ? self : {};
-exports.globalScope = globalScope;
 
  }),
 
@@ -1082,25 +1064,23 @@ exports.build = exports.version = exports.PDFPageProxy = exports.PDFDocumentProx
 
 var _util = __w_pdfjs_require__(1);
 
-var _display_utils = __w_pdfjs_require__(6);
+var _display_utils = __w_pdfjs_require__(5);
 
-var _font_loader = __w_pdfjs_require__(7);
+var _font_loader = __w_pdfjs_require__(6);
 
-var _api_compatibility = __w_pdfjs_require__(8);
+var _api_compatibility = __w_pdfjs_require__(7);
 
-var _canvas = __w_pdfjs_require__(9);
+var _canvas = __w_pdfjs_require__(8);
 
-var _global_scope = __w_pdfjs_require__(3);
+var _worker_options = __w_pdfjs_require__(10);
 
-var _worker_options = __w_pdfjs_require__(11);
+var _message_handler = __w_pdfjs_require__(11);
 
-var _message_handler = __w_pdfjs_require__(12);
+var _metadata = __w_pdfjs_require__(12);
 
-var _metadata = __w_pdfjs_require__(13);
+var _transport_stream = __w_pdfjs_require__(14);
 
-var _transport_stream = __w_pdfjs_require__(15);
-
-var _webgl = __w_pdfjs_require__(16);
+var _webgl = __w_pdfjs_require__(15);
 
 const DEFAULT_RANGE_CHUNK_SIZE = 65536;
 const RENDERING_CANCELLED_TIMEOUT = 100;
@@ -1280,7 +1260,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
 
   return worker.messageHandler.sendWithPromise('GetDocRequest', {
     docId,
-    apiVersion: '2.4.163',
+    apiVersion: '2.4.176',
     source: {
       data: source.data,
       url: source.url,
@@ -2125,13 +2105,13 @@ const PDFWorker = function PDFWorkerClosure() {
   }
 
   function getMainThreadWorkerMessageHandler() {
+    let mainWorkerMessageHandler;
+
     try {
-      if (typeof window !== 'undefined') {
-        return window.pdfjsWorker && window.pdfjsWorker.WorkerMessageHandler;
-      }
+      mainWorkerMessageHandler = globalThis.pdfjsWorker && globalThis.pdfjsWorker.WorkerMessageHandler;
     } catch (ex) {}
 
-    return null;
+    return mainWorkerMessageHandler || null;
   }
 
   function setupFakeWorkerGlobal() {
@@ -2633,10 +2613,10 @@ class WorkerTransport {
 
           let fontRegistry = null;
 
-          if (params.pdfBug && _global_scope.globalScope.FontInspector && _global_scope.globalScope.FontInspector.enabled) {
+          if (params.pdfBug && globalThis.FontInspector && globalThis.FontInspector.enabled) {
             fontRegistry = {
               registerFont(font, url) {
-                _global_scope.globalScope['FontInspector'].fontAdded(font, url);
+                globalThis.FontInspector.fontAdded(font, url);
               }
 
             };
@@ -3100,8 +3080,8 @@ const InternalRenderTask = function InternalRenderTaskClosure() {
         canvasInRendering.add(this._canvas);
       }
 
-      if (this._pdfBug && _global_scope.globalScope.StepperManager && _global_scope.globalScope.StepperManager.enabled) {
-        this.stepper = _global_scope.globalScope.StepperManager.create(this.pageNumber - 1);
+      if (this._pdfBug && globalThis.StepperManager && globalThis.StepperManager.enabled) {
+        this.stepper = globalThis.StepperManager.create(this.pageNumber - 1);
         this.stepper.init(this.operatorList);
         this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
       }
@@ -3214,9 +3194,9 @@ const InternalRenderTask = function InternalRenderTaskClosure() {
   return InternalRenderTask;
 }();
 
-const version = '2.4.163';
+const version = '2.4.176';
 exports.version = version;
-const build = '514b500a';
+const build = 'af4ba75f';
 exports.build = build;
 
  }),
@@ -3972,7 +3952,7 @@ exports.CanvasGraphics = void 0;
 
 var _util = __w_pdfjs_require__(1);
 
-var _pattern_helper = __w_pdfjs_require__(10);
+var _pattern_helper = __w_pdfjs_require__(9);
 
 var MIN_FONT_SIZE = 16;
 var MAX_FONT_SIZE = 100;
@@ -6996,7 +6976,7 @@ exports.Metadata = void 0;
 
 var _util = __w_pdfjs_require__(1);
 
-var _xml_parser = __w_pdfjs_require__(14);
+var _xml_parser = __w_pdfjs_require__(13);
 
 class Metadata {
   constructor(data) {
@@ -8366,8 +8346,6 @@ exports.renderTextLayer = void 0;
 
 var _util = __w_pdfjs_require__(1);
 
-var _global_scope = __w_pdfjs_require__(3);
-
 var renderTextLayer = function renderTextLayerClosure() {
   var MAX_TEXT_DIVS_TO_RENDER = 100000;
   var NonWhitespaceRegexp = /\S/;
@@ -8794,7 +8772,7 @@ var renderTextLayer = function renderTextLayerClosure() {
     this._textDivs = textDivs || [];
     this._textContentItemsStr = textContentItemsStr || [];
     this._enhanceTextSelection = !!enhanceTextSelection;
-    this._fontInspectorEnabled = !!(_global_scope.globalScope.FontInspector && _global_scope.globalScope.FontInspector.enabled);
+    this._fontInspectorEnabled = !!(globalThis.FontInspector && globalThis.FontInspector.enabled);
     this._reader = null;
     this._layoutTextLastFontSize = null;
     this._layoutTextLastFontFamily = null;
@@ -9054,7 +9032,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.AnnotationLayer = void 0;
 
-var _display_utils = __w_pdfjs_require__(6);
+var _display_utils = __w_pdfjs_require__(5);
 
 var _util = __w_pdfjs_require__(1);
 
@@ -10065,9 +10043,9 @@ exports.SVGGraphics = void 0;
 
 var _util = __w_pdfjs_require__(1);
 
-var _display_utils = __w_pdfjs_require__(6);
+var _display_utils = __w_pdfjs_require__(5);
 
-var _is_node = __w_pdfjs_require__(20);
+var _is_node = __w_pdfjs_require__(19);
 
 let SVGGraphics = function () {
   throw new Error('Not implemented: SVGGraphics');
