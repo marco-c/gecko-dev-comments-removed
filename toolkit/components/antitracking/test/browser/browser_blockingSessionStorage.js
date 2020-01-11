@@ -1,6 +1,6 @@
 
 
-requestLongerTimeout(2);
+requestLongerTimeout(4);
 
 AntiTracking.runTestInNormalAndPrivateMode(
   "sessionStorage",
