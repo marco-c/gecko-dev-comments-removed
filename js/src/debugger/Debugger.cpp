@@ -559,14 +559,13 @@ bool Debugger::getFrame(JSContext* cx, const FrameIter& iter,
     
     
     Rooted<AbstractGeneratorObject*> genObj(cx);
-    GeneratorWeakMap::AddPtr gp;
     if (referent.isGeneratorFrame()) {
       {
         AutoRealm ar(cx, referent.callee());
         genObj = GetGeneratorObjectForFrame(cx, referent);
       }
       if (genObj) {
-        gp = generatorFrames.lookupForAdd(genObj);
+        GeneratorWeakMap::Ptr gp = generatorFrames.lookup(genObj);
         if (gp) {
           frame = &gp->value()->as<DebuggerFrame>();
           MOZ_ASSERT(&frame->unwrappedGenerator() == genObj);
