@@ -4,7 +4,7 @@
 
 
 
-#![deny(warnings)]
+#![cfg_attr(feature = "deny-warnings", deny(warnings))]
 
 pub mod decoder;
 pub mod encoder;

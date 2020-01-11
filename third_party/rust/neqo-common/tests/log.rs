@@ -4,7 +4,7 @@
 
 
 
-#![deny(warnings)]
+#![cfg_attr(feature = "deny-warnings", deny(warnings))]
 
 use neqo_common::{qdebug, qerror, qinfo, qtrace, qwarn};
 

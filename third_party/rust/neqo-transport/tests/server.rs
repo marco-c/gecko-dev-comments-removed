@@ -4,7 +4,7 @@
 
 
 
-#![deny(warnings)]
+#![cfg_attr(feature = "deny-warnings", deny(warnings))]
 
 use neqo_common::{hex, qdebug, qtrace, Datagram, Decoder, Encoder};
 use neqo_crypto::{

@@ -55,7 +55,7 @@ enum class SpdyVersion {
 };
 
 extern const nsCString kHttp3Version;
-const char kHttp3VersionHEX[] = "ff00000017";  
+const char kHttp3VersionHEX[] = "ff00000018";  
 
 
 

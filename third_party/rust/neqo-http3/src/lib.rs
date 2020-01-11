@@ -4,7 +4,7 @@
 
 
 
-#![deny(warnings)]
+#![cfg_attr(feature = "deny-warnings", deny(warnings))]
 
 mod client_events;
 mod connection;

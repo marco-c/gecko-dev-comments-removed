@@ -4,7 +4,7 @@
 
 
 
-#![deny(warnings)]
+#![cfg_attr(feature = "deny-warnings", deny(warnings))]
 
 use neqo_common::qinfo;
 use neqo_crypto;
@@ -31,9 +31,10 @@ pub use self::connection::{
 pub use self::events::{ConnectionEvent, ConnectionEvents};
 pub use self::frame::CloseError;
 pub use self::frame::StreamType;
+pub use self::tparams::{tp_constants, TransportParameter};
 
 
-pub const QUIC_VERSION: u32 = 0xff00_0017;
+pub const QUIC_VERSION: u32 = 0xff00_0018;
 
 type TransportError = u64;
 
