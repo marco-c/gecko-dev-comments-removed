@@ -715,7 +715,10 @@ static bool PrepareForSetTargetAPZCNotification(
       &(guid.mScrollableLayerGuid.mScrollId));
   aTargets->AppendElement(guid);
 
-  if (!guidIsValid || nsLayoutUtils::HasDisplayPort(dpElement)) {
+  if (!guidIsValid) {
+    return false;
+  }
+  if (nsLayoutUtils::HasDisplayPort(dpElement)) {
     
     
     
