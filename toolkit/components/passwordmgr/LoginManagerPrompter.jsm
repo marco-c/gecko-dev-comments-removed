@@ -316,12 +316,17 @@ class LoginManagerPrompter {
         loginToRemove = logins.shift();
       }
       if (logins.length) {
-        log.debug(
-          "multiple logins, loginToRemove:",
+        log.warn(
+          logins.length,
+          "other updatable logins!",
+          logins.map(l => l.guid),
+          "loginToUpdate:",
+          loginToUpdate && loginToUpdate.guid,
+          "loginToRemove:",
           loginToRemove && loginToRemove.guid
         );
-        Cu.reportError("Unexpected match of multiple logins.");
-        return;
+        
+        
       }
 
       if (!loginToUpdate) {

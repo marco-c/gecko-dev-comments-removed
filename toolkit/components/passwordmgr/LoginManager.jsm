@@ -370,7 +370,7 @@ LoginManager.prototype = {
 
 
   removeLogin(login) {
-    log.debug("Removing login");
+    log.debug("Removing login", login.QueryInterface(Ci.nsILoginMetaInfo).guid);
     return this._storage.removeLogin(login);
   },
 
@@ -378,7 +378,10 @@ LoginManager.prototype = {
 
 
   modifyLogin(oldLogin, newLogin) {
-    log.debug("Modifying login");
+    log.debug(
+      "Modifying login",
+      oldLogin.QueryInterface(Ci.nsILoginMetaInfo).guid
+    );
     return this._storage.modifyLogin(oldLogin, newLogin);
   },
 
