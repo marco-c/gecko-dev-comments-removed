@@ -39,7 +39,6 @@ def executor_kwargs(test_type, server_config, cache_manager, run_info_data,
     executor_kwargs["supports_eager_pageload"] = False
 
     capabilities = {
-        "acceptInsecureCerts": True,
         "goog:chromeOptions": {
             "prefs": {
                 "profile": {
@@ -62,7 +61,9 @@ def executor_kwargs(test_type, server_config, cache_manager, run_info_data,
         chrome_options["binary"] = kwargs["binary"]
 
     
-    chrome_options["args"] = []
+    
+    
+    chrome_options["args"] = ["--ignore-certificate-errors"]
     
     chrome_options["args"].append("--autoplay-policy=no-user-gesture-required")
     
