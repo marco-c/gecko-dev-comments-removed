@@ -1,6 +1,11 @@
 
 
 
+
+
+
+
+
 var gNameRulesFileURL = "markuprules.xml";
 
 var gRuleDoc = null;

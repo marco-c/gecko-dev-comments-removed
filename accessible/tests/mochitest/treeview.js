@@ -1,6 +1,9 @@
 
 
 
+
+
+
 function loadXULTreeAndDoTest(aDoTestFunc, aTreeID, aTreeView) {
   var doTestFunc = aDoTestFunc ? aDoTestFunc : gXULTreeLoadContext.doTestFunc;
   var treeID = aTreeID ? aTreeID : gXULTreeLoadContext.treeID;

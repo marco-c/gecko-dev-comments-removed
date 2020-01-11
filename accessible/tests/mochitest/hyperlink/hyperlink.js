@@ -5,6 +5,10 @@
 
 
 
+
+
+
+
 function focusLink(aID, aSelectedAfter) {
   this.node = getNode(aID);
   this.accessible = getAccessible(this.node);

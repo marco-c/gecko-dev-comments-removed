@@ -4,6 +4,10 @@
 
 
 
+
+
+
+
 const EVENT_ALERT = nsIAccessibleEvent.EVENT_ALERT;
 const EVENT_ANNOUNCEMENT = nsIAccessibleEvent.EVENT_ANNOUNCEMENT;
 const EVENT_DESCRIPTION_CHANGE = nsIAccessibleEvent.EVENT_DESCRIPTION_CHANGE;

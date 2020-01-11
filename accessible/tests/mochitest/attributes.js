@@ -10,6 +10,8 @@
 
 
 
+
+
 function testAttrs(aAccOrElmOrID, aAttrs, aSkipUnexpectedAttrs) {
   testAttrsInternal(aAccOrElmOrID, aAttrs, aSkipUnexpectedAttrs);
 }
@@ -268,6 +270,8 @@ function testTextAttrsWrongOffset(aID, aOffset) {
   try {
     var s = {},
       e = {};
+    
+    
     var acc = getAccessible(ID, [nsIAccessibleText]);
     acc.getTextAttributes(false, 157, s, e);
   } catch (ex) {

@@ -8,6 +8,8 @@
 
 
 
+
+
 function testChildAtPoint(aID, aX, aY, aChildID, aGrandChildID) {
   var child = getChildAtPoint(aID, aX, aY, false);
   var expectedChild = getAccessible(aChildID);

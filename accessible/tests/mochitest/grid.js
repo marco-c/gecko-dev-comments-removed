@@ -1,6 +1,8 @@
 
 
 
+
+
 function grid(aTableIdentifier) {
   this.getRowCount = function getRowCount() {
     return this.table.rows.length - (this.table.tHead ? 1 : 0);

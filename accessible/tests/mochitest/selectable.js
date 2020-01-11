@@ -4,6 +4,9 @@
 
 
 
+
+
+
 function testSelectableSelection(aIdentifier, aSelectedChildren, aMsg) {
   var acc = getAccessible(aIdentifier, [nsIAccessibleSelectable]);
   if (!acc) {

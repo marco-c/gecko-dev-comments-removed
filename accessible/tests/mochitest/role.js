@@ -1,6 +1,8 @@
 
 
 
+
+
 const ROLE_ALERT = nsIAccessibleRole.ROLE_ALERT;
 const ROLE_ARTICLE = nsIAccessibleRole.ROLE_ARTICLE;
 const ROLE_ANIMATION = nsIAccessibleRole.ROLE_ANIMATION;

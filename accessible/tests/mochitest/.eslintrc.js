@@ -6,6 +6,15 @@ module.exports = {
     
     
     "no-nested-ternary": "off",
-    "no-undef": "off",
-  }
+  },
+
+  "overrides": [{
+    "files": [
+      "*.xhtml",
+      "*.html",
+    ],
+    "rules": {
+      "no-undef": "off",
+    }
+  }]
 };
