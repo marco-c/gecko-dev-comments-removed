@@ -563,11 +563,11 @@ LexicalScope* LexicalScope::create(JSContext* cx, ScopeKind kind,
   return createWithData(cx, kind, &copy, firstFrameSlot, enclosing);
 }
 
-
-LexicalScope* LexicalScope::createWithData(JSContext* cx, ScopeKind kind,
-                                           MutableHandle<UniquePtr<Data>> data,
+bool LexicalScope::prepareForScopeCreation(JSContext* cx, ScopeKind kind,
                                            uint32_t firstFrameSlot,
-                                           HandleScope enclosing) {
+                                           HandleScope enclosing,
+                                           MutableHandle<UniquePtr<Data>> data,
+                                           MutableHandleShape envShape) {
   bool isNamedLambda =
       kind == ScopeKind::NamedLambda || kind == ScopeKind::StrictNamedLambda;
 
@@ -575,11 +575,23 @@ LexicalScope* LexicalScope::createWithData(JSContext* cx, ScopeKind kind,
                 firstFrameSlot == nextFrameSlot(enclosing));
   MOZ_ASSERT_IF(isNamedLambda, firstFrameSlot == LOCALNO_LIMIT);
 
-  RootedShape envShape(cx);
   BindingIter bi(*data, firstFrameSlot, isNamedLambda);
   if (!PrepareScopeData<LexicalScope>(
           cx, bi, data, &LexicalEnvironmentObject::class_,
-          BaseShape::NOT_EXTENSIBLE | BaseShape::DELEGATE, &envShape)) {
+          BaseShape::NOT_EXTENSIBLE | BaseShape::DELEGATE, envShape)) {
+    return false;
+  }
+  return true;
+}
+
+
+LexicalScope* LexicalScope::createWithData(JSContext* cx, ScopeKind kind,
+                                           MutableHandle<UniquePtr<Data>> data,
+                                           uint32_t firstFrameSlot,
+                                           HandleScope enclosing) {
+  RootedShape envShape(cx);
+  if (!prepareForScopeCreation(cx, kind, firstFrameSlot, enclosing, data,
+                               &envShape)) {
     return nullptr;
   }
 
@@ -680,24 +692,15 @@ FunctionScope* FunctionScope::create(JSContext* cx, Handle<Data*> dataArg,
       needsEnvironment, fun, enclosing);
 }
 
-
-FunctionScope* FunctionScope::createWithData(
+bool FunctionScope::prepareForScopeCreation(
     JSContext* cx, MutableHandle<UniquePtr<Data>> data, bool hasParameterExprs,
     IsFieldInitializer isFieldInitializer, bool needsEnvironment,
-    HandleFunction fun, HandleScope enclosing) {
-  MOZ_ASSERT(data);
-  MOZ_ASSERT(fun->isTenured());
-
-  
-  
-
-  RootedShape envShape(cx);
-
+    HandleFunction fun, MutableHandleShape envShape) {
   BindingIter bi(*data, hasParameterExprs);
   uint32_t shapeFlags = FunctionScopeEnvShapeFlags(hasParameterExprs);
   if (!PrepareScopeData<FunctionScope>(cx, bi, data, &CallObject::class_,
-                                       shapeFlags, &envShape)) {
-    return nullptr;
+                                       shapeFlags, envShape)) {
+    return false;
   }
 
   data->isFieldInitializer = isFieldInitializer;
@@ -711,10 +714,30 @@ FunctionScope* FunctionScope::createWithData(
   
   
   if (!envShape && needsEnvironment) {
-    envShape = getEmptyEnvironmentShape(cx, hasParameterExprs);
+    envShape.set(getEmptyEnvironmentShape(cx, hasParameterExprs));
     if (!envShape) {
-      return nullptr;
+      return false;
     }
+  }
+
+  return true;
+}
+
+
+FunctionScope* FunctionScope::createWithData(
+    JSContext* cx, MutableHandle<UniquePtr<Data>> data, bool hasParameterExprs,
+    IsFieldInitializer isFieldInitializer, bool needsEnvironment,
+    HandleFunction fun, HandleScope enclosing) {
+  MOZ_ASSERT(data);
+  MOZ_ASSERT(fun->isTenured());
+
+  
+  
+  RootedShape envShape(cx);
+
+  if (!prepareForScopeCreation(cx, data, hasParameterExprs, isFieldInitializer,
+                               needsEnvironment, fun, &envShape)) {
+    return nullptr;
   }
 
   return Scope::create<FunctionScope>(cx, ScopeKind::Function, enclosing,
@@ -867,6 +890,30 @@ VarScope* VarScope::create(JSContext* cx, ScopeKind kind, Handle<Data*> dataArg,
                         enclosing);
 }
 
+bool VarScope::prepareForScopeCreation(JSContext* cx, ScopeKind kind,
+                                       MutableHandle<UniquePtr<Data>> data,
+                                       uint32_t firstFrameSlot,
+                                       bool needsEnvironment,
+                                       MutableHandleShape envShape) {
+  BindingIter bi(*data, firstFrameSlot);
+  if (!PrepareScopeData<VarScope>(cx, bi, data, &VarEnvironmentObject::class_,
+                                  VarScopeEnvShapeFlags, envShape)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  if (!envShape && needsEnvironment) {
+    envShape.set(getEmptyEnvironmentShape(cx));
+    if (!envShape) {
+      return false;
+    }
+  }
+  return true;
+}
+
 
 VarScope* VarScope::createWithData(JSContext* cx, ScopeKind kind,
                                    MutableHandle<UniquePtr<Data>> data,
@@ -876,21 +923,9 @@ VarScope* VarScope::createWithData(JSContext* cx, ScopeKind kind,
   MOZ_ASSERT(data);
 
   RootedShape envShape(cx);
-  BindingIter bi(*data, firstFrameSlot);
-  if (!PrepareScopeData<VarScope>(cx, bi, data, &VarEnvironmentObject::class_,
-                                  VarScopeEnvShapeFlags, &envShape)) {
+  if (!prepareForScopeCreation(cx, kind, data, firstFrameSlot, needsEnvironment,
+                               &envShape)) {
     return nullptr;
-  }
-
-  
-  
-  
-  
-  if (!envShape && needsEnvironment) {
-    envShape = getEmptyEnvironmentShape(cx);
-    if (!envShape) {
-      return nullptr;
-    }
   }
 
   return Scope::create<VarScope>(cx, kind, enclosing, envShape, data);
@@ -1107,6 +1142,29 @@ EvalScope* EvalScope::create(JSContext* cx, ScopeKind scopeKind,
   return createWithData(cx, scopeKind, &data, enclosing);
 }
 
+bool EvalScope::prepareForScopeCreation(JSContext* cx, ScopeKind scopeKind,
+                                        MutableHandle<UniquePtr<Data>> data,
+                                        MutableHandleShape envShape) {
+  if (scopeKind == ScopeKind::StrictEval) {
+    BindingIter bi(*data, true);
+    if (!PrepareScopeData<EvalScope>(cx, bi, data,
+                                     &VarEnvironmentObject::class_,
+                                     EvalScopeEnvShapeFlags, envShape)) {
+      return false;
+    }
+  }
+
+  
+  
+  if (!envShape && scopeKind == ScopeKind::StrictEval) {
+    envShape.set(getEmptyEnvironmentShape(cx));
+    if (!envShape) {
+      return false;
+    }
+  }
+  return true;
+}
+
 
 EvalScope* EvalScope::createWithData(JSContext* cx, ScopeKind scopeKind,
                                      MutableHandle<UniquePtr<Data>> data,
@@ -1114,22 +1172,8 @@ EvalScope* EvalScope::createWithData(JSContext* cx, ScopeKind scopeKind,
   MOZ_ASSERT(data);
 
   RootedShape envShape(cx);
-  if (scopeKind == ScopeKind::StrictEval) {
-    BindingIter bi(*data, true);
-    if (!PrepareScopeData<EvalScope>(cx, bi, data,
-                                     &VarEnvironmentObject::class_,
-                                     EvalScopeEnvShapeFlags, &envShape)) {
-      return nullptr;
-    }
-  }
-
-  
-  
-  if (!envShape && scopeKind == ScopeKind::StrictEval) {
-    envShape = getEmptyEnvironmentShape(cx);
-    if (!envShape) {
-      return nullptr;
-    }
+  if (!prepareForScopeCreation(cx, scopeKind, data, &envShape)) {
+    return nullptr;
   }
 
   return Scope::create<EvalScope>(cx, scopeKind, enclosing, envShape, data);
@@ -1213,6 +1257,11 @@ Zone* ModuleScope::Data::zone() const {
 ModuleScope* ModuleScope::create(JSContext* cx, Handle<Data*> dataArg,
                                  HandleModuleObject module,
                                  HandleScope enclosing) {
+  
+  
+
+  
+  
   Rooted<UniquePtr<Data>> data(cx, dataArg
                                        ? CopyScopeData<ModuleScope>(cx, dataArg)
                                        : NewEmptyScopeData<ModuleScope>(cx));
@@ -1224,6 +1273,30 @@ ModuleScope* ModuleScope::create(JSContext* cx, Handle<Data*> dataArg,
 }
 
 
+bool ModuleScope::prepareForScopeCreation(JSContext* cx,
+                                          MutableHandle<UniquePtr<Data>> data,
+                                          HandleModuleObject module,
+                                          MutableHandleShape envShape) {
+  BindingIter bi(*data);
+  if (!PrepareScopeData<ModuleScope>(cx, bi, data,
+                                     &ModuleEnvironmentObject::class_,
+                                     ModuleScopeEnvShapeFlags, envShape)) {
+    return false;
+  }
+
+  
+  if (!envShape) {
+    envShape.set(getEmptyEnvironmentShape(cx));
+    if (!envShape) {
+      return false;
+    }
+  }
+
+  data->module.init(module);
+  return true;
+}
+
+
 ModuleScope* ModuleScope::createWithData(JSContext* cx,
                                          MutableHandle<UniquePtr<Data>> data,
                                          HandleModuleObject module,
@@ -1231,28 +1304,10 @@ ModuleScope* ModuleScope::createWithData(JSContext* cx,
   MOZ_ASSERT(data);
   MOZ_ASSERT(enclosing->is<GlobalScope>());
 
-  
-  
-
-  
-  
   RootedShape envShape(cx);
-  BindingIter bi(*data);
-  if (!PrepareScopeData<ModuleScope>(cx, bi, data,
-                                     &ModuleEnvironmentObject::class_,
-                                     ModuleScopeEnvShapeFlags, &envShape)) {
+  if (!prepareForScopeCreation(cx, data, module, &envShape)) {
     return nullptr;
   }
-
-  
-  if (!envShape) {
-    envShape = getEmptyEnvironmentShape(cx);
-    if (!envShape) {
-      return nullptr;
-    }
-  }
-
-  data->module.init(module);
 
   return Scope::create<ModuleScope>(cx, ScopeKind::Module, enclosing, envShape,
                                     data);
