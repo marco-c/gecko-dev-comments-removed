@@ -174,6 +174,10 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
     return duration.ToMilliseconds();
   }
 
+  
+  
+  void Anonymize(nsIURI* aFinalURI);
+
  private:
   friend class nsDocShell;
   nsDOMNavigationTiming(nsDocShell* aDocShell, nsDOMNavigationTiming* aOther);
