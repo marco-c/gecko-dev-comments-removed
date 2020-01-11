@@ -222,6 +222,14 @@ var whitelist = [
   { file: "chrome://browser/content/aboutlogins/aboutLoginsUtils.js" },
 ];
 
+if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {
+  
+  
+  
+  
+  whitelist.push({ file: "chrome://fxr/content/fxrui.html" });
+}
+
 whitelist = new Set(
   whitelist
     .filter(
