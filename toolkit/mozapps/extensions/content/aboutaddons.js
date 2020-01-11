@@ -84,21 +84,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 const PLUGIN_ICON_URL = "chrome://global/skin/plugins/pluginGeneric.svg";
 const EXTENSION_ICON_URL =
   "chrome://mozapps/skin/extensions/extensionGeneric.svg";
-const BUILTIN_THEME_PREVIEWS = new Map([
-  [
-    "default-theme@mozilla.org",
-    "chrome://mozapps/content/extensions/default-theme.svg",
-  ],
-  [
-    "firefox-compact-light@mozilla.org",
-    "chrome://mozapps/content/extensions/firefox-compact-light.svg",
-  ],
-  [
-    "firefox-compact-dark@mozilla.org",
-    "chrome://mozapps/content/extensions/firefox-compact-dark.svg",
-  ],
-]);
-
 const PERMISSION_MASKS = {
   "ask-to-activate": AddonManager.PERM_CAN_ASK_TO_ACTIVATE,
   enable: AddonManager.PERM_CAN_ENABLE,
@@ -121,13 +106,6 @@ const PRIVATE_BROWSING_PERMS = {
   permissions: [PRIVATE_BROWSING_PERM_NAME],
   origins: [],
 };
-
-function shouldSkipAnimations() {
-  return (
-    document.body.hasAttribute("skip-animations") ||
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
-}
 
 const AddonCardListenerHandler = {
   ADDON_EVENTS: new Set([
@@ -441,10 +419,6 @@ function nl2br(text) {
 
 
 function getScreenshotUrlForAddon(addon) {
-  if (BUILTIN_THEME_PREVIEWS.has(addon.id)) {
-    return BUILTIN_THEME_PREVIEWS.get(addon.id);
-  }
-
   let { screenshots } = addon;
   if (!screenshots || !screenshots.length) {
     return null;
@@ -1646,6 +1620,12 @@ class AddonOptions extends HTMLElement {
       case "report":
         el.hidden = !isAbuseReportSupported(addon);
         break;
+      case "toggle-disabled": {
+        let toggleDisabledAction = addon.userDisabled ? "enable" : "disable";
+        document.l10n.setAttributes(el, `${toggleDisabledAction}-addon-button`);
+        el.hidden = !hasPermission(addon, toggleDisabledAction);
+        break;
+      }
       case "install-update":
         el.hidden = !updateInstall;
         break;
@@ -2437,8 +2417,6 @@ class AddonCard extends HTMLElement {
       switch (action) {
         case "toggle-disabled":
           this.recordActionEvent(addon.userDisabled ? "enable" : "disable");
-          
-          e.target.checked = !addon.userDisabled;
           if (addon.userDisabled) {
             if (shouldShowPermissionsPrompt(addon)) {
               await showPermissionsPrompt(addon);
@@ -2447,6 +2425,10 @@ class AddonCard extends HTMLElement {
             }
           } else {
             await addon.disable();
+          }
+          if (e.mozInputSource == MouseEvent.MOZ_SOURCE_KEYBOARD) {
+            
+            this.querySelector('[action="more-options"]').focus();
           }
           break;
         case "ask-to-activate":
@@ -2697,24 +2679,24 @@ class AddonCard extends HTMLElement {
     card.setAttribute("active", addon.isActive);
 
     
-    let iconEl = card.querySelector(".addon-icon");
+    let icon;
+    if (addon.type == "plugin") {
+      icon = PLUGIN_ICON_URL;
+    } else {
+      icon =
+        AddonManager.getPreferredIconURL(addon, 32, window) ||
+        EXTENSION_ICON_URL;
+    }
+    card.querySelector(".addon-icon").src = icon;
+
+    
     let preview = card.querySelector(".card-heading-image");
+    preview.hidden = true;
     if (addon.type == "theme") {
-      iconEl.hidden = true;
       let screenshotUrl = getScreenshotUrlForAddon(addon);
       if (screenshotUrl) {
         preview.src = screenshotUrl;
-      }
-      preview.hidden = !screenshotUrl;
-    } else {
-      preview.hidden = true;
-      iconEl.hidden = false;
-      if (addon.type == "plugin") {
-        iconEl.src = PLUGIN_ICON_URL;
-      } else {
-        iconEl.src =
-          AddonManager.getPreferredIconURL(addon, 32, window) ||
-          EXTENSION_ICON_URL;
+        preview.hidden = false;
       }
     }
 
@@ -2729,25 +2711,6 @@ class AddonCard extends HTMLElement {
       });
     }
     name.title = `${addon.name} ${addon.version}`;
-
-    let toggleDisabledAction = addon.userDisabled ? "enable" : "disable";
-    let canToggleDisabled = hasPermission(addon, toggleDisabledAction);
-    let toggleDisabledButton = card.querySelector('[action="toggle-disabled"]');
-    if (toggleDisabledButton) {
-      toggleDisabledButton.hidden = !canToggleDisabled;
-      if (addon.type === "theme") {
-        document.l10n.setAttributes(
-          toggleDisabledButton,
-          `${toggleDisabledAction}-addon-button`
-        );
-      } else if (addon.type === "extension") {
-        toggleDisabledButton.checked = !addon.userDisabled;
-        document.l10n.setAttributes(
-          toggleDisabledButton,
-          `${toggleDisabledAction}-addon-button-label`
-        );
-      }
-    }
 
     
     this.options.update(this, addon, this.updateInstall);
@@ -2842,14 +2805,6 @@ class AddonCard extends HTMLElement {
 
     this.card = importTemplate("card").firstElementChild;
 
-    
-    if (addon.type != "theme") {
-      this.card.querySelector(".theme-enable-button").remove();
-    }
-    if (addon.type != "extension") {
-      this.card.querySelector(".extension-enable-button").remove();
-    }
-
     let nameContainer = this.card.querySelector(".addon-name-container");
     let headingLevel = this.expanded ? "h1" : "h3";
     let nameHeading = document.createElement(headingLevel);
@@ -2868,7 +2823,7 @@ class AddonCard extends HTMLElement {
     let panelType = addon.type == "plugin" ? "plugin-options" : "addon-options";
     this.options = document.createElement(panelType);
     this.options.render();
-    this.card.appendChild(this.options);
+    this.card.querySelector(".more-options-menu").appendChild(this.options);
     this.optionsButton = this.card.querySelector(".more-options-button");
 
     
@@ -2941,6 +2896,7 @@ class RecommendedAddonCard extends HTMLElement {
     let heading = card.querySelector(".addon-name-container");
     heading.textContent = "";
     heading.append(importTemplate("addon-name-container-in-disco-card"));
+    card.querySelector(".more-options-menu").remove();
 
     this.setCardContent(card, addon);
     if (addon.type != "theme") {
@@ -2979,14 +2935,13 @@ class RecommendedAddonCard extends HTMLElement {
 
     
     let preview = card.querySelector(".card-heading-image");
+    preview.hidden = true;
     if (addon.type == "theme") {
       let screenshotUrl = getScreenshotUrlForAddon(addon);
       if (screenshotUrl) {
         preview.src = screenshotUrl;
         preview.hidden = false;
       }
-    } else {
-      preview.hidden = true;
     }
 
     
@@ -3134,8 +3089,6 @@ class AddonList extends HTMLElement {
     super();
     this.sections = [];
     this.pendingUninstallAddons = new Set();
-    this._addonsToUpdate = new Set();
-    this._userFocusListenersAdded = false;
   }
 
   async connectedCallback() {
@@ -3328,7 +3281,9 @@ class AddonList extends HTMLElement {
       return;
     }
 
-    let insertSection = this._addonSectionIndex(addon);
+    let insertSection = this.sections.findIndex(({ filterFn }) =>
+      filterFn(addon)
+    );
 
     
     if (insertSection == -1) {
@@ -3357,144 +3312,24 @@ class AddonList extends HTMLElement {
   }
 
   updateAddon(addon) {
-    if (!this.getCard(addon)) {
-      
-      this.addAddon(addon);
-    } else if (this._addonSectionIndex(addon) == -1) {
-      
-      this._updateAddon(addon);
-    } else if (this.isUserFocused) {
-      
-      this.updateLater(addon);
-    } else {
-      
-      this.withCardAnimation(() => this._updateAddon(addon));
-    }
-  }
-
-  updateLater(addon) {
-    this._addonsToUpdate.add(addon);
-    this._addUserFocusListeners();
-  }
-
-  _addUserFocusListeners() {
-    if (this._userFocusListenersAdded) {
-      return;
-    }
-
-    this._userFocusListenersAdded = true;
-    this.addEventListener("mouseleave", this);
-    this.addEventListener("hidden", this, true);
-    this.addEventListener("focusout", this);
-  }
-
-  _removeUserFocusListeners() {
-    if (!this._userFocusListenersAdded) {
-      return;
-    }
-
-    this.removeEventListener("mouseleave", this);
-    this.removeEventListener("hidden", this, true);
-    this.removeEventListener("focusout", this);
-    this._userFocusListenersAdded = false;
-  }
-
-  get hasMenuOpen() {
-    return !!this.querySelector("panel-list[open]");
-  }
-
-  get isUserFocused() {
-    return this.matches(":hover, :focus-within") || this.hasMenuOpen;
-  }
-
-  update() {
-    if (this._addonsToUpdate.size) {
-      this.withCardAnimation(() => {
-        for (let addon of this._addonsToUpdate) {
-          this._updateAddon(addon);
-        }
-        this._addonsToUpdate = new Set();
-      });
-    }
-  }
-
-  _getChildCoords() {
-    let results = new Map();
-    for (let child of this.querySelectorAll("addon-card")) {
-      results.set(child, child.getBoundingClientRect());
-    }
-    return results;
-  }
-
-  withCardAnimation(changeFn) {
-    if (shouldSkipAnimations()) {
-      changeFn();
-      return;
-    }
-
-    let origChildCoords = this._getChildCoords();
-
-    changeFn();
-
-    let newChildCoords = this._getChildCoords();
-    let cards = this.querySelectorAll("addon-card");
-    let transitionCards = [];
-    for (let card of cards) {
-      let orig = origChildCoords.get(card);
-      let moved = newChildCoords.get(card);
-      let changeY = moved.y - (orig || moved).y;
-      let cardEl = card.firstElementChild;
-
-      if (changeY != 0) {
-        cardEl.style.transform = `translateY(${changeY * -1}px)`;
-        transitionCards.push(card);
-      }
-    }
-    requestAnimationFrame(() => {
-      for (let card of transitionCards) {
-        card.firstElementChild.style.transition = "transform 125ms";
-      }
-
-      requestAnimationFrame(() => {
-        for (let card of transitionCards) {
-          let cardEl = card.firstElementChild;
-          cardEl.style.transform = "";
-          cardEl.addEventListener("transitionend", function handler(e) {
-            if (e.target == cardEl && e.propertyName == "transform") {
-              cardEl.style.transition = "";
-              cardEl.removeEventListener("transitionend", handler);
-            }
-          });
-        }
-      });
-    });
-  }
-
-  _addonSectionIndex(addon) {
-    return this.sections.findIndex(s => s.filterFn(addon));
-  }
-
-  _updateAddon(addon) {
     let card = this.getCard(addon);
     if (card) {
-      let sectionIndex = this._addonSectionIndex(addon);
+      let sectionIndex = this.sections.findIndex(s => s.filterFn(addon));
       if (sectionIndex != -1) {
         
         
         if (card.parentNode.getAttribute("section") != sectionIndex) {
-          let { activeElement } = document;
-          let refocus = card.contains(activeElement);
           let oldSection = card.parentNode;
           this.insertCardInto(card, sectionIndex);
           this.updateSectionIfEmpty(oldSection);
-          if (refocus) {
-            activeElement.focus();
-          }
           this.sendEvent("move", { id: addon.id });
         }
       } else {
         this.removeAddon(addon);
       }
+    } else {
+      
+      this.addAddon(addon);
     }
   }
 
@@ -3592,13 +3427,6 @@ class AddonList extends HTMLElement {
     this.pendingUninstallAddons.delete(addon);
     this.removePendingUninstallBar(addon);
     this.removeAddon(addon);
-  }
-
-  handleEvent(e) {
-    if (!this.isUserFocused || (e.type == "mouseleave" && !this.hasMenuOpen)) {
-      this._removeUserFocusListeners();
-      this.update();
-    }
   }
 }
 customElements.define("addon-list", AddonList);
