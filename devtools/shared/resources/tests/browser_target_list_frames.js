@@ -12,6 +12,7 @@ const FISSION_TEST_URL = URL_ROOT + "/fission_document.html";
 add_task(async function() {
   
   await pushPref("devtools.browsertoolbox.fission", true);
+  await pushPref("devtools.contenttoolbox.fission", true);
   
   
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
@@ -21,7 +22,10 @@ add_task(async function() {
   const client = await createLocalClient();
   const mainRoot = client.mainRoot;
 
+  
   await testBrowserFrames(mainRoot);
+
+  
   await testTabFrames(mainRoot);
 
   await client.close();
@@ -102,7 +106,6 @@ async function testBrowserFrames(mainRoot) {
   targetList.stopListening();
 }
 
-
 async function testTabFrames(mainRoot) {
   info("Test TargetList against frames via a tab target");
 
@@ -116,16 +119,7 @@ async function testTabFrames(mainRoot) {
 
   
   const frames = await targetList.getAllTargets(TargetList.TYPES.FRAME);
-  is(
-    frames.length,
-    1,
-    "retrieved the top level document and the remoted frame"
-  );
-  is(
-    frames[0].url,
-    FISSION_TEST_URL,
-    "The first frame is the top level document"
-  );
+  is(frames.length, 1, "retrieved only the top level document");
 
   
   const targets = [];

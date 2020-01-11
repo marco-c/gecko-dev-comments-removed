@@ -22,7 +22,12 @@ add_task(async function() {
 
   
   await pushPref("devtools.browsertoolbox.fission", false);
+  await pushPref("devtools.contenttoolbox.fission", false);
+
+  
   await testPreffedOffMainProcess(mainRoot, mainProcess);
+
+  
   await testPreffedOffTab(mainRoot);
 
   await client.close();

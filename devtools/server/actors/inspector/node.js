@@ -518,7 +518,26 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     }
     
     const global = Cu.getGlobalForObject(customElement);
+
     const dbg = this.parent().targetActor.makeDebugger();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (Cu.getObjectPrincipal(global) == Cu.getObjectPrincipal(dbg)) {
+      dump("Ignored system principal in getEmbedderElement!\n");
+      return undefined;
+    }
+
     const globalDO = dbg.addDebuggee(global);
     const customElementDO = globalDO.makeDebuggeeValue(customElement);
 
