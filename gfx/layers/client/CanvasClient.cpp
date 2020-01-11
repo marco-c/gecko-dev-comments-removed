@@ -20,10 +20,12 @@
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/CompositorBridgeChild.h"  
 #include "mozilla/layers/LayersTypes.h"
+#include "mozilla/layers/OOPCanvasRenderer.h"
 #include "mozilla/layers/TextureClient.h"  
 #include "mozilla/layers/TextureClientOGL.h"
 #include "mozilla/layers/TextureClientRecycleAllocator.h"
-#include "nsDebug.h"      
+#include "nsDebug.h"  
+#include "nsICanvasRenderingContextInternal.h"
 #include "nsXULAppAPI.h"  
 #include "TextureClientSharedSurface.h"
 
@@ -42,6 +44,8 @@ already_AddRefed<CanvasClient> CanvasClient::CreateCanvasClient(
       return MakeAndAddRef<CanvasClientSharedSurface>(aForwarder, aFlags);
     case CanvasClientAsync:
       return MakeAndAddRef<CanvasClientBridge>(aForwarder, aFlags);
+    case CanvasClientTypeOOP:
+      return MakeAndAddRef<CanvasClientOOP>(aForwarder, aFlags);
     default:
       return MakeAndAddRef<CanvasClient2D>(aForwarder, aFlags);
       break;
@@ -516,6 +520,51 @@ void CanvasClientSharedSurface::ClearSurfaces() {
   mNewFront = nullptr;
   mShSurfClient = nullptr;
   mReadbackClient = nullptr;
+}
+
+
+
+CanvasClientOOP::CanvasClientOOP(CompositableForwarder* aLayerForwarder,
+                                 TextureFlags aFlags)
+    : CanvasClient(aLayerForwarder, aFlags) {}
+
+CanvasClientOOP::~CanvasClientOOP() {}
+
+void CanvasClientOOP::SetLayer(ShadowableLayer* aLayer,
+                               OOPCanvasRenderer* aRenderer) {
+  mLayer = aLayer;
+  mCanvasContext = aRenderer->mContext;
+  MOZ_ASSERT(mCanvasContext);
+  Connect();
+  aRenderer->mCanvasClient = this;
+}
+
+void CanvasClientOOP::Update(gfx::IntSize aSize,
+                             ShareableCanvasRenderer* aRenderer,
+                             wr::RenderRoot aRenderRoot) {
+  
+  if (!GetForwarder() || !mLayer || !mCanvasContext || !aRenderer) {
+    return;
+  }
+
+  
+  CompositableHandle handle = GetIPCHandle();
+  if (!handle || mHandle == handle) {
+    return;
+  }
+
+  MOZ_ASSERT(GetForwarder() && GetForwarder()->AsLayerForwarder() &&
+             GetForwarder()->AsLayerForwarder()->GetShadowManager());
+
+  static_cast<ShadowLayerForwarder*>(GetForwarder())->Attach(this, mLayer);
+  LayerTransactionChild* ltc =
+      GetForwarder()->AsLayerForwarder()->GetShadowManager();
+  bool success = mCanvasContext->UpdateCompositableHandle(ltc, handle);
+  if (!success) {
+    return;
+  }
+
+  mHandle = handle;
 }
 
 }  

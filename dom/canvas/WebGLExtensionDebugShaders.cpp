@@ -19,20 +19,17 @@ WebGLExtensionDebugShaders::~WebGLExtensionDebugShaders() {}
 
 
 
-void WebGLExtensionDebugShaders::GetTranslatedShaderSource(
-    const WebGLShader& shader, nsAString& retval) const {
-  retval.SetIsVoid(true);
-  if (mIsLost || !mContext) return;
+nsString WebGLExtensionDebugShaders::GetTranslatedShaderSource(
+    const WebGLShader& shader) const {
+  if (mIsLost) return {};
 
   const WebGLContext::FuncScope funcScope(*mContext,
                                           "getShaderTranslatedSource");
   MOZ_ASSERT(!mContext->IsContextLost());
 
-  if (!mContext->ValidateObject("shader", shader)) return;
+  if (!mContext->ValidateObject("shader", shader)) return EmptyString();
 
-  shader.GetShaderTranslatedSource(&retval);
+  return shader.GetShaderTranslatedSource();
 }
-
-IMPL_WEBGL_EXTENSION_GOOP(WebGLExtensionDebugShaders, WEBGL_debug_shaders)
 
 }  

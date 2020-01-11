@@ -25,6 +25,7 @@ namespace layers {
 class AsyncCanvasRenderer;
 class ClientCanvasRenderer;
 class CopyableCanvasRenderer;
+class OOPCanvasRenderer;
 class PersistentBufferProvider;
 class WebRenderCanvasRendererAsync;
 
@@ -37,6 +38,7 @@ struct CanvasInitializeData final {
       mBufferProvider;  
   RefPtr<mozilla::gl::GLContext> mGLContext;  
   RefPtr<AsyncCanvasRenderer> mRenderer;      
+  RefPtr<OOPCanvasRenderer> mOOPRenderer;  
 
   typedef void (*TransactionCallback)(void* closureData);
   TransactionCallback mPreTransCallback = nullptr;

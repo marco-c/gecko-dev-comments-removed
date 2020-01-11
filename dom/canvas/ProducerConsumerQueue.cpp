@@ -1,0 +1,14 @@
+
+
+
+
+
+#include "ProducerConsumerQueue.h"
+
+namespace mozilla {
+namespace webgl {
+
+mozilla::LazyLogModule gPCQLog("pcq");
+
+}  
+}  
