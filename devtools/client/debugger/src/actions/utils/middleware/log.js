@@ -74,8 +74,16 @@ function serializeAction(action) {
       action = formatPause(action);
     }
 
+    const serializer = function(key, value) {
+      
+      if (value && value.getGrip) {
+        return value.getGrip();
+      }
+      return value;
+    };
+
     
-    return JSON.stringify(action);
+    return JSON.stringify(action, serializer);
   } catch (e) {
     console.error(e);
     return "";
