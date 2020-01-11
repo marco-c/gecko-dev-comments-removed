@@ -66,6 +66,14 @@ function waitForTransitionEnd(...els) {
   );
 }
 
+add_task(async function setup() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.prefersReducedMotion", 0]],
+  });
+});
+
 add_task(async function testReordering() {
   let addonIds = [
     "one@mochi.test",
