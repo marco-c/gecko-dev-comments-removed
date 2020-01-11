@@ -38,6 +38,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/AppUnits.h"
 #include "mozilla/MediaEmulationData.h"
+#include "mozilla/PresShellForwards.h"
 #include "prclist.h"
 #include "nsThreadUtils.h"
 #include "nsIMessageManager.h"
@@ -396,6 +397,15 @@ class nsPresContext : public nsISupports,
 
 
   void UpdateDynamicToolbarOffset(mozilla::ScreenIntCoord aOffset);
+  mozilla::ScreenIntCoord GetDynamicToolbarHeight() const {
+    MOZ_ASSERT(IsRootContentDocumentCrossProcess());
+    return mDynamicToolbarHeight;
+  }
+
+  
+
+
+  mozilla::DynamicToolbarState GetDynamicToolbarState() const;
 
   
 
@@ -1195,6 +1205,7 @@ class nsPresContext : public nsISupports,
   nsSize mSizeForViewportUnits;
   
   mozilla::ScreenIntCoord mDynamicToolbarMaxHeight;
+  mozilla::ScreenIntCoord mDynamicToolbarHeight;
   nsSize mPageSize;
   float mPageScale;
   float mPPScale;

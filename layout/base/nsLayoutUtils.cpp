@@ -9033,6 +9033,21 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
         viewport.SizeTo(nsLayoutUtils::ExpandHeightForViewportUnits(
             presContext, viewport.Size()));
         metrics.SetLayoutViewport(viewport);
+
+        
+        
+        
+        
+        
+        
+        if (presContext->GetDynamicToolbarState() ==
+            DynamicToolbarState::Collapsed) {
+          metrics.SetFixedLayerMargins(
+              ScreenMargin(0, 0,
+                           presContext->GetDynamicToolbarHeight() -
+                               presContext->GetDynamicToolbarMaxHeight(),
+                           0));
+        }
       }
     }
 

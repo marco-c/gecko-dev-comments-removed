@@ -387,9 +387,15 @@ nsSize ViewportFrame::AdjustViewportSizeForFixedPosition(
   
   
   
-  if (presShell->IsVisualViewportSizeSet() &&
-      result < presShell->GetVisualViewportSize()) {
-    result = presShell->GetVisualViewportSize();
+  if (presShell->IsVisualViewportSizeSet()) {
+    if (presShell->GetDynamicToolbarState() == DynamicToolbarState::Collapsed &&
+        result < presShell->GetVisualViewportSizeUpdatedByDynamicToolbar()) {
+      
+      
+      result = presShell->GetVisualViewportSizeUpdatedByDynamicToolbar();
+    } else if (result < presShell->GetVisualViewportSize()) {
+      result = presShell->GetVisualViewportSize();
+    }
   }
   
   const nsSize layoutViewportSize = presShell->GetLayoutViewportSize();

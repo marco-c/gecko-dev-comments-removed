@@ -1501,6 +1501,18 @@ class PresShell final : public nsStubDocumentObserver,
   nsPoint GetVisualViewportOffsetRelativeToLayoutViewport() const;
 
   
+  DynamicToolbarState GetDynamicToolbarState() const {
+    if (!mPresContext) {
+      return DynamicToolbarState::None;
+    }
+
+    return mPresContext->GetDynamicToolbarState();
+  }
+  
+  
+  nsSize GetVisualViewportSizeUpdatedByDynamicToolbar() const;
+
+  
 
 
   

@@ -71,7 +71,12 @@ CSSSize VisualViewport::VisualViewportSize() const {
   
   if (PresShell* presShell = GetPresShell()) {
     if (presShell->IsVisualViewportSizeSet()) {
-      size = CSSRect::FromAppUnits(presShell->GetVisualViewportSize());
+      DynamicToolbarState state = presShell->GetDynamicToolbarState();
+      size = CSSRect::FromAppUnits(
+          (state == DynamicToolbarState::InTransition ||
+           state == DynamicToolbarState::Collapsed)
+              ? presShell->GetVisualViewportSizeUpdatedByDynamicToolbar()
+              : presShell->GetVisualViewportSize());
     } else {
       nsIScrollableFrame* sf = presShell->GetRootScrollFrameAsScrollable();
       if (sf) {

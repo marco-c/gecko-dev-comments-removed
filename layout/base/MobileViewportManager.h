@@ -87,6 +87,20 @@ class MobileViewportManager final : public nsIDOMEventListener,
   void ShrinkToDisplaySizeIfNeeded(nsViewportInfo& aViewportInfo,
                                    const mozilla::ScreenIntSize& aDisplaySize);
 
+  
+
+
+
+
+
+
+  void UpdateVisualViewportSizeByDynamicToolbar(
+      mozilla::ScreenIntCoord aToolbarHeight);
+
+  nsSize GetVisualViewportSizeUpdatedByDynamicToolbar() const {
+    return mVisualViewportSizeUpdatedByDynamicToolbar;
+  }
+
  private:
   ~MobileViewportManager();
 
@@ -145,6 +159,8 @@ class MobileViewportManager final : public nsIDOMEventListener,
   mozilla::ScreenIntSize GetCompositionSize(
       const mozilla::ScreenIntSize& aDisplaySize) const;
 
+  mozilla::CSSToScreenScale GetZoom() const;
+
   RefPtr<mozilla::MVMContext> mContext;
   bool mIsFirstPaint;
   bool mPainted;
@@ -152,6 +168,14 @@ class MobileViewportManager final : public nsIDOMEventListener,
   mozilla::CSSSize mMobileViewportSize;
   mozilla::Maybe<float> mRestoreResolution;
   mozilla::Maybe<mozilla::ScreenIntSize> mRestoreDisplaySize;
+  
+
+
+
+
+
+
+  nsSize mVisualViewportSizeUpdatedByDynamicToolbar;
 };
 
 #endif

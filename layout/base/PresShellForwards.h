@@ -218,6 +218,15 @@ enum class RenderingStateFlags : uint8_t {
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(RenderingStateFlags)
 
+
+enum class DynamicToolbarState {
+  None,          
+                 
+  Expanded,      
+  InTransition,  
+  Collapsed,     
+};
+
 #ifdef DEBUG
 
 enum class VerifyReflowFlags {
