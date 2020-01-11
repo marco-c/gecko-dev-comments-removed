@@ -40,9 +40,8 @@ nsresult nsMIMEInfoWin::LaunchDefaultWithFile(nsIFile* aFile) {
   return aFile->Launch();
 }
 
-
-static nsresult ShellExecuteWithIFile(const nsCOMPtr<nsIFile>& aExecutable,
-                                      const nsString& aArgs) {
+nsresult nsMIMEInfoWin::ShellExecuteWithIFile(nsIFile* aExecutable,
+                                              const nsString& aArgs) {
   nsresult rv;
 
   nsAutoString execPath;
@@ -69,10 +68,15 @@ static nsresult ShellExecuteWithIFile(const nsCOMPtr<nsIFile>& aExecutable,
   
   
   
+  
+  
+  
   mozilla::LauncherVoidResult shellExecuteOk = mozilla::ShellExecuteByExplorer(
       execPathBStr, assembledArgs.get(), verbDefault, workingDir, showCmd);
   if (shellExecuteOk.isErr()) {
-    return NS_ERROR_FILE_EXECUTION_FAILED;
+    
+    
+    return LaunchWithIProcess(aExecutable, aArgs);
   }
 
   return NS_OK;
