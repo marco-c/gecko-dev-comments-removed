@@ -43,11 +43,6 @@ use num_cpus;
 use euclid::SideOffsets2D;
 use nsstring::nsAString;
 
-#[cfg(target_os = "linux")]
-use libc::{
-    pthread_self, pthread_setschedparam, sched_param,
-    cpu_set_t, CPU_SET, pthread_setaffinity_np
-};
 
 #[cfg(target_os = "macos")]
 use core_foundation::string::CFString;
@@ -1071,47 +1066,25 @@ pub unsafe extern "C" fn wr_thread_pool_new(low_priority: bool) -> *mut WrThread
 
     let priority_tag = if low_priority { "LP" } else { "" };
 
-    
-    
-    
-    
-    
-    #[cfg(target_os = "windows")]
-    fn set_thread_priority_and_affinity(low_priority:bool, thread_index: usize) {
-        unsafe {
-            SetThreadPriority(
-                GetCurrentThread(),
-                if low_priority {
-                    -1 
-                } else {
-                    0 
-                });
-            SetThreadAffinityMask(GetCurrentThread(), 1usize << thread_index);
-        }
-    }
-    #[cfg(target_os = "linux")]
-    fn set_thread_priority_and_affinity(low_priority:bool, thread_index: usize) {
-        unsafe {
-            let thread_id = pthread_self();
-            if low_priority {
-                let params = sched_param {
-                    sched_priority: 0
-                };
-                pthread_setschedparam(thread_id, 3 , &params);
-            }
-            let mut cpu_set = mem::zeroed::<cpu_set_t>();
-            CPU_SET(thread_index, &mut cpu_set);
-            pthread_setaffinity_np(thread_id, mem::size_of::<cpu_set_t>(), &cpu_set);
-        }
-    }
-    #[cfg(not(any(target_os = "windows", target_os = "linux" )))]
-    fn set_thread_priority_and_affinity(_low_priority:bool, _thread_index: usize) { }
-
     let worker = rayon::ThreadPoolBuilder::new()
         .thread_name(move |idx|{ format!("WRWorker{}#{}", priority_tag, idx) })
         .num_threads(num_threads)
         .start_handler(move |idx| {
-            set_thread_priority_and_affinity(low_priority, idx);
+            #[cfg(target_os = "windows")]
+            {
+                SetThreadPriority(
+                    GetCurrentThread(),
+                    if low_priority {
+                        -1 
+                    } else {
+                        0 
+                    });
+                SetThreadAffinityMask(GetCurrentThread(), 1usize << idx);
+            }
+            
+
+
+
             wr_register_thread_local_arena();
             let name = format!("WRWorker{}#{}",priority_tag, idx);
             register_thread_with_profiler(name.clone());
