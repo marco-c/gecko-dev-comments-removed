@@ -235,6 +235,26 @@ class MarkStackIter {
 
 } 
 
+enum MarkingState : uint8_t {
+  
+  NotActive,
+
+  
+  
+  
+  RegularMarking,
+
+  
+  
+  
+  
+  WeakMarking,
+
+  
+  
+  IterativeMarking
+};
+
 class GCMarker : public JSTracer {
  public:
   explicit GCMarker(JSRuntime* rt);
@@ -288,7 +308,7 @@ class GCMarker : public JSTracer {
   void leaveWeakMarkingMode();
   void abortLinearWeakMarking() {
     leaveWeakMarkingMode();
-    linearWeakMarkingDisabled_ = true;
+    state = MarkingState::IterativeMarking;
   }
 
   void delayMarkingChildren(gc::Cell* cell);
@@ -329,6 +349,8 @@ class GCMarker : public JSTracer {
 
   template <typename T>
   void markImplicitEdges(T* oldThing);
+
+  bool isWeakMarking() const { return state == MarkingState::WeakMarking; }
 
  private:
 #ifdef DEBUG
@@ -437,13 +459,10 @@ class GCMarker : public JSTracer {
   MainThreadOrGCTaskData<bool> delayedMarkingWorkAdded;
 
   
-
-
-
-  MainThreadOrGCTaskData<bool> linearWeakMarkingDisabled_;
+  size_t markCount;
 
   
-  size_t markCount;
+  MainThreadOrGCTaskData<MarkingState> state;
 
 #ifdef DEBUG
   
