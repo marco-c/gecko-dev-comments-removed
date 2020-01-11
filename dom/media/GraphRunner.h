@@ -19,15 +19,14 @@ namespace mozilla {
 class GraphDriver;
 class MediaTrackGraphImpl;
 
-class GraphRunner {
+class GraphRunner final : public Runnable {
  public:
-  explicit GraphRunner(MediaTrackGraphImpl* aGraph);
-  ~GraphRunner();
+  static already_AddRefed<GraphRunner> Create(MediaTrackGraphImpl* aGraph);
 
   
 
 
-  void Shutdown();
+  MOZ_CAN_RUN_SCRIPT void Shutdown();
 
   
 
@@ -38,7 +37,7 @@ class GraphRunner {
   
 
 
-  void Run();
+  NS_IMETHOD Run();
 
   
 
@@ -54,6 +53,10 @@ class GraphRunner {
 #endif
 
  private:
+  explicit GraphRunner(MediaTrackGraphImpl* aGraph,
+                       already_AddRefed<nsIThread> aThread);
+  ~GraphRunner();
+
   
   
   Monitor mMonitor;
@@ -80,7 +83,7 @@ class GraphRunner {
 
   
   
-  PRThread* mThread;
+  const nsCOMPtr<nsIThread> mThread;
 
 #ifdef DEBUG
   
