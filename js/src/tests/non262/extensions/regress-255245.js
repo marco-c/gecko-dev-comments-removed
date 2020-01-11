@@ -4,6 +4,8 @@
 
 
 
+
+
 var BUGNUMBER = 255245;
 var summary = 'Function.prototype.toSource/.toString show "setrval" instead of "return"';
 var actual = '';
@@ -21,10 +23,7 @@ function f() {
   }
 }
 
-if (typeof f.toSource != 'undefined')
-{
-  expect = -1;
-  actual = f.toSource().indexOf('setrval');
+expect = -1;
+actual = f.toSource().indexOf('setrval');
 
-  reportCompare(expect, actual, summary);
-}
+reportCompare(expect, actual, summary);

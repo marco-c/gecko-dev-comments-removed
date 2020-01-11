@@ -4,6 +4,8 @@
 
 
 
+
+
 var BUGNUMBER = 619283;
 var summary =
   "ECMAScript built-in methods that immediately throw when |this| is " +

@@ -3,6 +3,8 @@
 
 
 
+
+
 assertEq(raisesException(TypeError)('Boolean.prototype.toSource.call(42)'), true);
 assertEq(raisesException(TypeError)('Boolean.prototype.toSource.call("")'), true);
 assertEq(raisesException(TypeError)('Boolean.prototype.toSource.call({})'), true);

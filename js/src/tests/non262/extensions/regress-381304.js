@@ -4,6 +4,8 @@
 
 
 
+
+
 var BUGNUMBER = 381304;
 var summary = 'getter/setter with keywords';
 var actual = '';

@@ -4,6 +4,8 @@
 
 
 
+
+
 var BUGNUMBER = 351973;
 var summary = 'GC hazard with unrooted ids in Object.toSource';
 var actual = 'No Crash';

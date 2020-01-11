@@ -3,6 +3,8 @@
 
 
 
+
+
 assertEq(raisesException(TypeError)('String.prototype.toSource.call(42)'), true);
 assertEq(raisesException(TypeError)('String.prototype.toSource.call(true)'), true);
 assertEq(raisesException(TypeError)('String.prototype.toSource.call({})'), true);

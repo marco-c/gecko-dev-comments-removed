@@ -1,6 +1,8 @@
 
 
 
+
+
 var obj = {};
 obj[Symbol.iterator] = 1;
 assertEq(obj.toSource(), "({[Symbol.iterator]:1})");

@@ -1,3 +1,5 @@
+
+
 var BUGNUMBER = 1317400;
 var summary = "Function string representation in Object.prototype.toSource";
 
