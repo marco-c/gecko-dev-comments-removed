@@ -1938,67 +1938,7 @@ nsresult nsHttpChannel::ProcessFailedProxyConnect(uint32_t httpStatus) {
 
   MOZ_ASSERT(mConnectionInfo->UsingConnect(),
              "proxy connect failed but not using CONNECT?");
-  nsresult rv;
-  switch (httpStatus) {
-    case 300:
-    case 301:
-    case 302:
-    case 303:
-    case 307:
-    case 308:
-      
-      
-      
-      
-      rv = NS_ERROR_CONNECTION_REFUSED;
-      break;
-    case 403:  
-    case 501:  
-      
-      rv = NS_ERROR_PROXY_CONNECTION_REFUSED;
-      break;
-    case 407:  
-      rv = NS_ERROR_PROXY_AUTHENTICATION_FAILED;
-      break;
-    case 429:
-      rv = NS_ERROR_TOO_MANY_REQUESTS;
-      break;
-      
-    case 404:  
-               
-               
-               
-    case 400:  
-    case 500:  
-      
-
-
-      rv = NS_ERROR_UNKNOWN_HOST;
-      break;
-    case 502:  
-      rv = NS_ERROR_PROXY_BAD_GATEWAY;
-      break;
-    case 503:  
-      
-      
-
-
-
-
-      rv = NS_ERROR_CONNECTION_REFUSED;
-      break;
-    
-    
-    case 504:  
-      
-      
-      rv = NS_ERROR_PROXY_GATEWAY_TIMEOUT;
-      break;
-    
-    default:
-      rv = NS_ERROR_PROXY_CONNECTION_REFUSED;
-      break;
-  }
+  nsresult rv = HttpProxyResponseToErrorCode(httpStatus);
   LOG(("Cancelling failed proxy CONNECT [this=%p httpStatus=%u]\n", this,
        httpStatus));
 

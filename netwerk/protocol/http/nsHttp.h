@@ -336,6 +336,11 @@ class ParsedHeaderValueListList {
 
 void LogHeaders(const char* lineStart);
 
+
+
+
+nsresult HttpProxyResponseToErrorCode(uint32_t aStatusCode);
+
 }  
 }  
 
