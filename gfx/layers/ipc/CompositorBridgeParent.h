@@ -106,7 +106,7 @@ struct ScopedLayerTreeRegistration {
 
 class CompositorBridgeParentBase : public PCompositorBridgeParent,
                                    public HostIPCAllocator,
-                                   public mozilla::ipc::IShmemAllocator,
+                                   public ShmemAllocator,
                                    public MetricsSharingController {
   friend class PCompositorBridgeParent;
 
@@ -149,7 +149,7 @@ class CompositorBridgeParentBase : public PCompositorBridgeParent,
   virtual void RegisterPayloads(LayerTransactionParent* aLayerTree,
                                 const nsTArray<CompositionPayload>& aPayload) {}
 
-  IShmemAllocator* AsShmemAllocator() override { return this; }
+  ShmemAllocator* AsShmemAllocator() override { return this; }
 
   CompositorBridgeParentBase* AsCompositorBridgeParentBase() override {
     return this;
@@ -177,7 +177,7 @@ class CompositorBridgeParentBase : public PCompositorBridgeParent,
   bool AllocUnsafeShmem(size_t aSize,
                         mozilla::ipc::SharedMemory::SharedMemoryType aType,
                         mozilla::ipc::Shmem* aShmem) override;
-  bool DeallocShmem(mozilla::ipc::Shmem& aShmem) override;
+  void DeallocShmem(mozilla::ipc::Shmem& aShmem) override;
 
   
   NS_IMETHOD_(MozExternalRefCountType) AddRef() override {
