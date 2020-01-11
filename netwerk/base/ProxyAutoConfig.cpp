@@ -728,7 +728,6 @@ nsresult ProxyAutoConfig::SetupJS() {
 
   auto CompilePACScript = [this](JSContext* cx) -> JSScript* {
     JS::CompileOptions options(cx);
-    options.setSkipFilenameValidation(true);
     options.setFileAndLine(this->mPACURI.get(), 1);
 
     

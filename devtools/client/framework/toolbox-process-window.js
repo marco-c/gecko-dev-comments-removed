@@ -232,14 +232,7 @@ function evaluateTestScript(script, toolbox) {
   sandbox.window = window;
   sandbox.toolbox = toolbox;
   sandbox.ChromeUtils = ChromeUtils;
-  Cu.evalInSandbox(
-    script,
-    sandbox,
-     undefined,
-     undefined,
-     1,
-     false
-  );
+  Cu.evalInSandbox(script, sandbox);
 }
 
 function installTestingServer(toolbox) {
