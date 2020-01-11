@@ -530,8 +530,7 @@ static const dom::ConstantSpec gLibcProperties[] = {
     
     {"OSFILE_SIZEOF_DIRENT", JS::Int32Value(sizeof(dirent))},
 
-
-#  if defined(XP_UNIX)
+    
     {"OSFILE_SIZEOF_FLOCK", JS::Int32Value(sizeof(struct flock))},
     {"OSFILE_OFFSETOF_FLOCK_L_START",
      JS::Int32Value(offsetof(struct flock, l_start))},
@@ -543,7 +542,7 @@ static const dom::ConstantSpec gLibcProperties[] = {
      JS::Int32Value(offsetof(struct flock, l_type))},
     {"OSFILE_OFFSETOF_FLOCK_L_WHENCE",
      JS::Int32Value(offsetof(struct flock, l_whence))},
-#  endif  
+
     
     {"OSFILE_OFFSETOF_DIRENT_D_NAME",
      JS::Int32Value(offsetof(struct dirent, d_name))},
