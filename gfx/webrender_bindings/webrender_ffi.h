@@ -91,7 +91,13 @@ void apz_sample_transforms(mozilla::wr::WrWindowId aWindowId,
 void apz_deregister_sampler(mozilla::wr::WrWindowId aWindowId);
 }  
 
+
+#pragma push_macro("TRANSPARENT")
+#undef TRANSPARENT
+
 #include "webrender_ffi_generated.h"
+
+#pragma pop_macro("TRANSPARENT")
 
 
 
