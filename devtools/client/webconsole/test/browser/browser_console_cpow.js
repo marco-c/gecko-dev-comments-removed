@@ -12,6 +12,9 @@ const {
 } = require("devtools/client/framework/devtools-browser");
 
 add_task(async function() {
+  
+  await pushPref("security.allow_parent_unrestricted_js_loads", true);
+
   await addTab("about:blank");
 
   const hud = await BrowserConsoleManager.openBrowserConsoleOrFocus();

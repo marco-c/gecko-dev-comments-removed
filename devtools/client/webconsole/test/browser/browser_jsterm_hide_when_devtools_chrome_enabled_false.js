@@ -27,6 +27,9 @@ add_task(async function() {
   let browserConsole, webConsole, objInspector;
 
   
+  await pushPref("security.allow_parent_unrestricted_js_loads", true);
+
+  
   
   Services.prefs.setBoolPref("devtools.chrome.enabled", true);
 
