@@ -42,7 +42,7 @@ add_task(async function() {
   );
   
   
-  hostWindow.moveTo(0, 0);
+  await moveWindowTo(hostWindow, 0, 0);
 
   
   
@@ -50,8 +50,6 @@ add_task(async function() {
   hostWindow.resizeTo(400, hostWindow.outerHeight);
   await waitUntil(() => {
     return (
-      hostWindow.screen.top === 0 &&
-      hostWindow.screen.left === 0 &&
       hostWindow.outerWidth === 400 &&
       toolbox.doc.getElementById("tools-chevron-menu-button") &&
       inspector.panelDoc.querySelector(".all-tabs-menu") &&

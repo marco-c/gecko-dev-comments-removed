@@ -782,3 +782,23 @@ async function registerActorInContentProcess(url, options) {
     ActorRegistry.registerModule(args.url, args.options);
   });
 }
+
+
+
+
+
+async function moveWindowTo(win, left, top) {
+  
+  left = Math.max(win.screen.availLeft, left);
+  left = Math.min(win.screen.width, left);
+  top = Math.max(win.screen.availTop, top);
+  top = Math.min(win.screen.height, top);
+
+  info(`Moving window to {${left}, ${top}}`);
+  win.moveTo(left, top);
+
+  
+  
+  info("Wait for window screenLeft and screenTop to be updated");
+  return waitUntil(() => win.screenLeft === left && win.screenTop === top);
+}
