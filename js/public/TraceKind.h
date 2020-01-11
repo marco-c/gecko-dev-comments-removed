@@ -40,11 +40,9 @@ enum class TraceKind {
   
   
   Object = 0x00,
+  BigInt = 0x01,
   String = 0x02,
   Symbol = 0x03,
-
-  
-  Script = 0x01,
 
   
   Shape = 0x04,
@@ -59,10 +57,10 @@ enum class TraceKind {
   
   BaseShape = 0x0F,
   JitCode = 0x1F,
-  LazyScript = 0x2F,
-  Scope = 0x3F,
-  RegExpShared = 0x4F,
-  BigInt = 0x5F
+  Script = 0x2F,
+  LazyScript = 0x3F,
+  Scope = 0x4F,
+  RegExpShared = 0x5F
 };
 const static uintptr_t OutOfLineTraceKindMask = 0x07;
 
