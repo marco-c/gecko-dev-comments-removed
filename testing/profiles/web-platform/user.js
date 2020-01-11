@@ -38,6 +38,8 @@ user_pref("dom.disable_beforeunload", true);
 
 user_pref("dom.animations-api.implicit-keyframes.enabled", true);
 
+user_pref("layout.css.devPixelsPerPx", "1.0")
+
 
 user_pref("media.block-autoplay-until-in-foreground", false);
 
