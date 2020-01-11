@@ -146,13 +146,13 @@ IDBResult<void, IDBSpecialValue::Invalid> Key::ToLocaleAwareKey(
   aTarget.mBuffer.Truncate();
 
   auto* it = BufferStart();
-  auto* end = BufferEnd();
+  auto* const end = BufferEnd();
 
   
   
   bool canShareBuffers = true;
   while (it < end) {
-    auto type = *it % eMaxType;
+    const auto type = *it % eMaxType;
     if (type == eTerminator) {
       it++;
     } else if (type == eFloat || type == eDate) {
@@ -160,7 +160,7 @@ IDBResult<void, IDBSpecialValue::Invalid> Key::ToLocaleAwareKey(
       it += std::min(sizeof(uint64_t), size_t(end - it));
     } else if (type == eBinary) {
       
-      auto binaryLength = LengthOfEncodedBinary(it, end);
+      const auto binaryLength = LengthOfEncodedBinary(it, end);
       it++;
       it += binaryLength;
     } else {
@@ -179,7 +179,7 @@ IDBResult<void, IDBSpecialValue::Invalid> Key::ToLocaleAwareKey(
   aTarget.mBuffer.SetCapacity(mBuffer.Length());
 
   
-  auto* start = BufferStart();
+  auto* const start = BufferStart();
   if (it > start) {
     char* buffer;
     if (!aTarget.mBuffer.GetMutableData(&buffer, it - start)) {
@@ -193,12 +193,12 @@ IDBResult<void, IDBSpecialValue::Invalid> Key::ToLocaleAwareKey(
   
   while (it < end) {
     char* buffer;
-    uint32_t oldLen = aTarget.mBuffer.Length();
-    auto type = *it % eMaxType;
+    const uint32_t oldLen = aTarget.mBuffer.Length();
+    const auto type = *it % eMaxType;
 
     
     
-    auto updateBufferAndIter = [&](size_t byteCount) -> bool {
+    const auto updateBufferAndIter = [&](size_t byteCount) -> bool {
       if (!aTarget.mBuffer.GetMutableData(&buffer, oldLen + 1 + byteCount)) {
         return false;
       }
@@ -226,7 +226,7 @@ IDBResult<void, IDBSpecialValue::Invalid> Key::ToLocaleAwareKey(
       }
     } else if (type == eBinary) {
       
-      auto binaryLength = LengthOfEncodedBinary(it, end);
+      const auto binaryLength = LengthOfEncodedBinary(it, end);
 
       if (!updateBufferAndIter(binaryLength)) {
         aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
@@ -234,7 +234,7 @@ IDBResult<void, IDBSpecialValue::Invalid> Key::ToLocaleAwareKey(
       }
     } else {
       
-      uint8_t typeOffset = *it - eString;
+      const uint8_t typeOffset = *it - eString;
       MOZ_ASSERT((typeOffset % eArray == 0) && (typeOffset / eArray <= 2));
 
       nsDependentString str;
