@@ -106,7 +106,7 @@ async function gInit() {
       
       
       getSymbolTableGetter: () => getSymbolsFromThisBrowser,
-      isPopup: true,
+      pageContext: "popup",
     })
   );
 

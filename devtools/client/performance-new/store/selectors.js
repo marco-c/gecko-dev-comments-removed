@@ -21,6 +21,7 @@
 
 
 
+
 const getRecordingState = state => state.recordingState;
 
 
@@ -86,7 +87,7 @@ const getSetRecordingPreferencesFn = state =>
   getInitializedValues(state).setRecordingPreferences;
 
 
-const getIsPopup = state => getInitializedValues(state).isPopup;
+const getPageContext = state => getInitializedValues(state).pageContext;
 
 
 const getSymbolTableGetter = state =>
@@ -114,7 +115,7 @@ module.exports = {
   getPerfFront,
   getReceiveProfileFn,
   getSetRecordingPreferencesFn,
-  getIsPopup,
+  getPageContext,
   getSymbolTableGetter,
   getPromptEnvRestart,
   getSupportedFeatures,

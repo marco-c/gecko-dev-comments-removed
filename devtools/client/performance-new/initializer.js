@@ -91,7 +91,7 @@ async function gInit(perfFront, preferenceFront) {
       receiveProfile,
       recordingPreferences,
       supportedFeatures,
-      isPopup: false,
+      pageContext: "devtools",
 
       
       
