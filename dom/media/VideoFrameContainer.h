@@ -65,7 +65,7 @@ class VideoFrameContainer {
   void ClearCurrentFrame();
   
   
-  void ClearFutureFrames();
+  void ClearFutureFrames(TimeStamp aNow = TimeStamp::Now());
   
   
   

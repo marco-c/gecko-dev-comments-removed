@@ -632,18 +632,19 @@ void VideoSink::MaybeResolveEndPromise() {
       }
     }
 
-    
-    
-    
-    
-    
-    mContainer->ClearFutureFrames();
-    if (mSecondaryContainer) {
-      mSecondaryContainer->ClearFutureFrames();
-    }
-
     TimeStamp nowTime;
     const auto clockTime = mAudioSink->GetPosition(&nowTime);
+
+    
+    
+    
+    
+    
+    mContainer->ClearFutureFrames(nowTime);
+    if (mSecondaryContainer) {
+      mSecondaryContainer->ClearFutureFrames(nowTime);
+    }
+
     if (clockTime < mVideoFrameEndTime) {
       VSINK_LOG_V(
           "Not reach video end time yet, reschedule timer to resolve "
