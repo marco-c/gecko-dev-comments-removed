@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#ifndef _SDP_LOG_H_
+#define _SDP_LOG_H_
+
+#include "mozilla/Logging.h"
+
+namespace mozilla {
+extern mozilla::LazyLogModule SdpLog;
+}  
+
+#endif
