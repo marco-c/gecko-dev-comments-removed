@@ -227,7 +227,7 @@ function LoginAutoCompleteResult(
 
     
     
-    if (isPasswordField && aSearchString) {
+    if (isPasswordField && aSearchString && !generatedPassword) {
       log.debug("Hiding footer: non-empty password field");
       return false;
     }
@@ -409,6 +409,7 @@ LoginAutoComplete.prototype = {
       
       return;
     }
+
     
     let isSecure = !isNullPrincipal;
     
@@ -470,7 +471,12 @@ LoginAutoComplete.prototype = {
       return;
     }
 
-    if (isPasswordField && aSearchString) {
+    if (
+      isPasswordField &&
+      aSearchString &&
+      !loginManagerActor.isPasswordGenerationForcedOn(aElement)
+    ) {
+      
       
       let acLookupPromise = (this._autoCompleteLookupPromise = Promise.resolve({
         logins: [],
