@@ -2,14 +2,14 @@
 
 
 add_task(async function setup() {
-  await useTestEngines("simple-engines");
+  await useTestEngines("data", "search-extensions");
   await AddonTestUtils.promiseStartupManager();
 });
 
 add_task(async function ignore_cache_files_without_engines() {
   let commitPromise = promiseAfterCache();
   let engineCount = (await Services.search.getEngines()).length;
-  Assert.equal(engineCount, 2);
+  Assert.equal(engineCount, 1);
 
   
   await commitPromise;

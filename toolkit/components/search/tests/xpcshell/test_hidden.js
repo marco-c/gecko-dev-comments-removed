@@ -4,7 +4,7 @@
 const kUrlPref = "geoSpecificDefaults.url";
 
 add_task(async function setup() {
-  await useTestEngines("simple-engines");
+  await useTestEngines("data", "search-extensions");
 
   
   Services.prefs.setCharPref(
@@ -39,10 +39,7 @@ add_task(async function async_init() {
   Assert.equal(engines.length, 1);
 
   
-  let engine = Services.search.getEngineByName("basic");
-  Assert.equal(engine, null);
-
-  engine = Services.search.getEngineByName("Simple Engine");
+  let engine = Services.search.getEngineByName("bug645970");
   Assert.equal(engine, null);
 
   
@@ -77,13 +74,10 @@ add_task(async function invalid_engine() {
   await asyncReInit({ waitForRegionFetch: true });
 
   let engines = await Services.search.getEngines();
-  Assert.equal(engines.length, 2);
+  Assert.equal(engines.length, 1);
 
   
-  let engine = Services.search.getEngineByName("basic");
-  Assert.notEqual(engine, null);
-
-  engine = Services.search.getEngineByName("basic");
+  let engine = Services.search.getEngineByName("bug645970");
   Assert.notEqual(engine, null);
 
   

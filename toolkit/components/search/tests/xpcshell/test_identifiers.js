@@ -10,45 +10,30 @@
 const SEARCH_APP_DIR = 1;
 
 add_task(async function setup() {
-  await useTestEngines("simple-engines");
+  await useTestEngines("data", "search-extensions");
   await AddonTestUtils.promiseStartupManager();
-
-  const result = await Services.search.init();
-  Assert.ok(
-    Components.isSuccessCode(result),
-    "Should have initialized the service"
-  );
-
-  await installTestEngine();
 });
 
-function checkIdentifier(engineName, expectedIdentifier) {
-  let profileEngine = Services.search.getEngineByName(engineName);
-  Assert.ok(
-    profileEngine instanceof Ci.nsISearchEngine,
-    "Should be derived from nsISearchEngine"
-  );
+add_test(function test_identifier() {
+  Services.search.init().then(async function initComplete(aResult) {
+    info("init'd search service");
+    Assert.ok(Components.isSuccessCode(aResult));
 
-  Assert.equal(
-    profileEngine.identifier,
-    expectedIdentifier,
-    "Should have the correct identifier"
-  );
-}
+    await installTestEngine();
+    let profileEngine = Services.search.getEngineByName(kTestEngineName);
+    let jarEngine = Services.search.getEngineByName("bug645970");
 
-add_task(async function test_identifier_from_profile() {
-  
-  
-  checkIdentifier(kTestEngineName, null);
-});
+    Assert.ok(profileEngine instanceof Ci.nsISearchEngine);
+    Assert.ok(jarEngine instanceof Ci.nsISearchEngine);
 
-add_task(async function test_identifier_from_webextension_id() {
-  
-  checkIdentifier("basic", gModernConfig ? "telemetry" : "basic");
-});
+    
+    
+    Assert.equal(profileEngine.identifier, null);
 
-add_task(async function test_identifier_from_telemetry_id() {
-  
-  
-  checkIdentifier("Simple Engine", "simple");
+    
+    
+    Assert.equal(jarEngine.identifier, "bug645970");
+
+    run_next_test();
+  });
 });
