@@ -322,6 +322,7 @@ inline TimeDelta TimeDelta::FromMicroseconds(int64_t us) {
 class TimeTicks {
  public:
   TimeTicks() : ticks_(0) {}
+  TimeTicks(const TimeTicks&) = default;
 
   
   

@@ -94,8 +94,8 @@ class nsTDependentSubstring : public nsTSubstring<T> {
 
  private:
   
-  void operator=(
-      const self_type&);  
+  void operator=(const self_type&) =
+      delete;  
 };
 
 extern template class nsTDependentSubstring<char>;
