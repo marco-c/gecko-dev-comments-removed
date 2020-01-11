@@ -494,7 +494,7 @@ JSObject* js::ReadableStreamDefaultControllerPullSteps(
 
   
   
-  Rooted<JSObject*> pendingPromise(
+  Rooted<PromiseObject*> pendingPromise(
       cx, ReadableStreamAddReadOrReadIntoRequest(cx, unwrappedStream));
   if (!pendingPromise) {
     return nullptr;

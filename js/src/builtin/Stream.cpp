@@ -556,7 +556,7 @@ static MOZ_MUST_USE JSObject* ReadableByteStreamControllerPullSteps(
 
   
   
-  RootedObject promise(
+  Rooted<PromiseObject*> promise(
       cx, ReadableStreamAddReadOrReadIntoRequest(cx, unwrappedStream));
   if (!promise) {
     return nullptr;

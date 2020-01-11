@@ -64,7 +64,7 @@ using JS::Value;
 
 
 
-MOZ_MUST_USE JSObject* js::ReadableStreamAddReadOrReadIntoRequest(
+MOZ_MUST_USE js::PromiseObject* js::ReadableStreamAddReadOrReadIntoRequest(
     JSContext* cx, Handle<ReadableStream*> unwrappedStream) {
   
   
@@ -83,7 +83,7 @@ MOZ_MUST_USE JSObject* js::ReadableStreamAddReadOrReadIntoRequest(
                 unwrappedStream->readable());
 
   
-  Rooted<JSObject*> promise(cx, PromiseObject::createSkippingExecutor(cx));
+  Rooted<PromiseObject*> promise(cx, PromiseObject::createSkippingExecutor(cx));
   if (!promise) {
     return nullptr;
   }
