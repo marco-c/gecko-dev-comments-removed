@@ -6685,11 +6685,20 @@ uint32_t ScrollFrameHelper::GetAvailableScrollingDirectionsForUserInputEvents()
   scrollRange.width = std::max(scrolledRect.width - scrollPort.width, 0);
   scrollRange.height = std::max(scrolledRect.height - scrollPort.height, 0);
 
+  
+  
+  
+  
+  
+  
+  float halfScreenPixel =
+      GetScrolledFrame()->PresContext()->AppUnitsPerDevPixel() /
+      (mOuter->PresShell()->GetCumulativeResolution() * 2.f);
   uint32_t directions = 0;
-  if (scrollRange.width > 0) {
+  if (scrollRange.width >= halfScreenPixel) {
     directions |= nsIScrollableFrame::HORIZONTAL;
   }
-  if (scrollRange.height > 0) {
+  if (scrollRange.height >= halfScreenPixel) {
     directions |= nsIScrollableFrame::VERTICAL;
   }
   return directions;
