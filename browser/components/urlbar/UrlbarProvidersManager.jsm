@@ -170,9 +170,8 @@ class ProvidersManager {
 
     
     
-    
-    queryContext.acceptableSources = getAcceptableMatchSources(queryContext);
-    logger.debug(`Acceptable sources ${queryContext.acceptableSources}`);
+    updateSourcesIfEmpty(queryContext);
+    logger.debug(`Context sources ${queryContext.sources}`);
 
     let query = new Query(queryContext, controller, muxer, providers);
     this.queries.set(queryContext, query);
@@ -269,7 +268,7 @@ class Query {
 
     
     
-    this.acceptableSources = queryContext.acceptableSources.slice();
+    this.acceptableSources = queryContext.sources.slice();
   }
 
   
@@ -434,8 +433,10 @@ class Query {
 
 
 
-
-function getAcceptableMatchSources(context) {
+function updateSourcesIfEmpty(context) {
+  if (context.sources && context.sources.length) {
+    return;
+  }
   let acceptedSources = [];
   
   let restrictToken = context.tokens.find(t =>
@@ -506,5 +507,5 @@ function getAcceptableMatchSources(context) {
         break;
     }
   }
-  return acceptedSources;
+  context.sources = acceptedSources;
 }

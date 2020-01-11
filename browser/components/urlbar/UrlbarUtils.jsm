@@ -543,6 +543,8 @@ class UrlbarQueryContext {
 
 
 
+
+
   constructor(options = {}) {
     this._checkRequiredOptions(options, [
       "allowAutofill",
