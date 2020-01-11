@@ -108,8 +108,9 @@ void ResizeObservation::UpdateLastReportedSize(const nsSize& aSize) {
 }
 
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(ResizeObserver, mOwner, mCallback,
-                                      mActiveTargets, mObservationMap)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(ResizeObserver, mOwner, mDocument,
+                                      mCallback, mActiveTargets,
+                                      mObservationMap)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(ResizeObserver)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(ResizeObserver)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ResizeObserver)
@@ -122,31 +123,37 @@ already_AddRefed<ResizeObserver> ResizeObserver::Constructor(
     ErrorResult& aRv) {
   nsCOMPtr<nsPIDOMWindowInner> window =
       do_QueryInterface(aGlobal.GetAsSupports());
-
   if (!window) {
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
   }
 
-  Document* document = window->GetExtantDoc();
-
-  if (!document) {
+  Document* doc = window->GetExtantDoc();
+  if (!doc) {
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
   }
 
-  RefPtr<ResizeObserver> observer = new ResizeObserver(window.forget(), aCb);
-  document->AddResizeObserver(observer);
-
-  return observer.forget();
+  return do_AddRef(new ResizeObserver(window.forget(), doc, aCb));
 }
 
 void ResizeObserver::Observe(Element& aTarget,
                              const ResizeObserverOptions& aOptions,
                              ErrorResult& aRv) {
-  RefPtr<ResizeObservation> observation;
+  
+  
+  
+  if (mObservationList.isEmpty()) {
+    MOZ_ASSERT(mObservationMap.IsEmpty());
+    if (MOZ_UNLIKELY(!mDocument)) {
+      return aRv.Throw(NS_ERROR_FAILURE);
+    }
+    mDocument->AddResizeObserver(*this);
+  }
 
-  if (mObservationMap.Get(&aTarget, getter_AddRefs(observation))) {
+  RefPtr<ResizeObservation>& observation =
+    mObservationMap.LookupForAdd(&aTarget).OrInsert([] { return nullptr; });
+  if (observation) {
     if (observation->BoxOptions() == aOptions.mBox) {
       
       
@@ -157,14 +164,17 @@ void ResizeObserver::Observe(Element& aTarget,
       
       return;
     }
-    Unobserve(aTarget, aRv);
+    
+    
+    observation->remove();
+    observation = nullptr;
   }
 
+  
+  
   nsIFrame* frame = aTarget.GetPrimaryFrame();
   observation = new ResizeObservation(
       aTarget, aOptions.mBox, frame ? frame->GetWritingMode() : WritingMode());
-
-  mObservationMap.Put(&aTarget, observation);
   mObservationList.insertBack(observation);
 
   
@@ -183,6 +193,11 @@ void ResizeObserver::Unobserve(Element& aTarget, ErrorResult& aRv) {
              "If ResizeObservation found for an element, observation list "
              "must be not empty.");
   observation->remove();
+  if (mObservationList.isEmpty()) {
+    if (MOZ_LIKELY(mDocument)) {
+      mDocument->RemoveResizeObserver(*this);
+    }
+  }
 }
 
 void ResizeObserver::Disconnect() {
@@ -195,7 +210,7 @@ void ResizeObserver::GatherActiveObservations(uint32_t aDepth) {
   mActiveTargets.Clear();
   mHasSkippedTargets = false;
 
-  for (auto observation : mObservationList) {
+  for (auto* observation : mObservationList) {
     if (!observation->IsActive()) {
       continue;
     }

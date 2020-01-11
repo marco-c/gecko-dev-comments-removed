@@ -3965,7 +3965,8 @@ class Document : public nsINode,
   FlashClassification DocumentFlashClassification();
 
   
-  void AddResizeObserver(ResizeObserver* aResizeObserver);
+  void AddResizeObserver(ResizeObserver&);
+  void RemoveResizeObserver(ResizeObserver&);
   void ScheduleResizeObserversNotification() const;
 
   

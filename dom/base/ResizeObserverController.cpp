@@ -82,13 +82,6 @@ void ResizeObserverController::Traverse(
 
 void ResizeObserverController::Unlink() { mResizeObservers.Clear(); }
 
-void ResizeObserverController::AddResizeObserver(ResizeObserver* aObserver) {
-  MOZ_ASSERT(aObserver,
-             "AddResizeObserver() should never be called with a null "
-             "parameter");
-  mResizeObservers.AppendElement(aObserver);
-}
-
 void ResizeObserverController::ShellDetachedFromDocument() {
   mResizeObserverNotificationHelper->Unregister();
 }
@@ -165,10 +158,8 @@ void ResizeObserverController::Notify() {
 }
 
 void ResizeObserverController::GatherAllActiveObservations(uint32_t aDepth) {
-  nsTObserverArray<RefPtr<ResizeObserver>>::ForwardIterator iter(
-      mResizeObservers);
-  while (iter.HasMore()) {
-    iter.GetNext()->GatherActiveObservations(aDepth);
+  for (ResizeObserver* observer : mResizeObservers) {
+    observer->GatherActiveObservations(aDepth);
   }
 }
 
@@ -177,14 +168,9 @@ uint32_t ResizeObserverController::BroadcastAllActiveObservations() {
 
   
   
-  
-  nsTObserverArray<RefPtr<ResizeObserver>>::EndLimitedIterator iter(
-      mResizeObservers);
-  while (iter.HasMore()) {
-    RefPtr<ResizeObserver>& observer = iter.GetNext();
-
+  nsTArray<RefPtr<ResizeObserver>> observers(mResizeObservers);
+  for (auto& observer : observers) {
     uint32_t targetDepth = observer->BroadcastActiveObservations();
-
     if (targetDepth < shallowestTargetDepth) {
       shallowestTargetDepth = targetDepth;
     }
@@ -194,10 +180,8 @@ uint32_t ResizeObserverController::BroadcastAllActiveObservations() {
 }
 
 bool ResizeObserverController::HasAnyActiveObservations() const {
-  nsTObserverArray<RefPtr<ResizeObserver>>::ForwardIterator iter(
-      mResizeObservers);
-  while (iter.HasMore()) {
-    if (iter.GetNext()->HasActiveObservations()) {
+  for (auto& observer : mResizeObservers) {
+    if (observer->HasActiveObservations()) {
       return true;
     }
   }
@@ -205,10 +189,8 @@ bool ResizeObserverController::HasAnyActiveObservations() const {
 }
 
 bool ResizeObserverController::HasAnySkippedObservations() const {
-  nsTObserverArray<RefPtr<ResizeObserver>>::ForwardIterator iter(
-      mResizeObservers);
-  while (iter.HasMore()) {
-    if (iter.GetNext()->HasSkippedObservations()) {
+  for (auto& observer : mResizeObservers) {
+    if (observer->HasSkippedObservations()) {
       return true;
     }
   }
