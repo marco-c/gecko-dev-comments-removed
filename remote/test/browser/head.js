@@ -3,6 +3,8 @@
 
 "use strict";
 
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+
 const { RemoteAgentError } = ChromeUtils.import(
   "chrome://remote/content/Error.jsm"
 );
@@ -189,4 +191,53 @@ function timeoutPromise(ms) {
 
 function fail(message) {
   ok(false, message);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function createFile(contents, options = {}) {
+  let { path = null, remove = true } = options;
+
+  if (!path) {
+    const basePath = OS.Path.join(OS.Constants.Path.tmpDir, "remote-agent.txt");
+    const { file, path: tmpPath } = await OS.File.openUnique(basePath, {
+      humanReadable: true,
+    });
+    await file.close();
+    path = tmpPath;
+  }
+
+  let encoder = new TextEncoder();
+  let array = encoder.encode(contents);
+
+  const count = await OS.File.writeAtomic(path, array, {
+    encoding: "utf-8",
+    tmpPath: path + ".tmp",
+  });
+  is(count, contents.length, "All data has been written to file");
+
+  const file = await OS.File.open(path);
+
+  
+  if (remove) {
+    registerCleanupFunction(async () => {
+      await file.close();
+      await OS.File.remove(path, { ignoreAbsent: true });
+    });
+  }
+
+  return { file, path };
 }
