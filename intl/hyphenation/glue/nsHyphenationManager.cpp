@@ -18,6 +18,7 @@
 #include "mozilla/Preferences.h"
 #include "nsZipArchive.h"
 #include "mozilla/Services.h"
+#include "mozilla/Telemetry.h"
 #include "nsIObserverService.h"
 #include "nsCRT.h"
 #include "nsAppDirectoryServiceDefs.h"
@@ -28,6 +29,13 @@ using namespace mozilla;
 
 static const char kIntlHyphenationAliasPrefix[] = "intl.hyphenation-alias.";
 static const char kMemoryPressureNotification[] = "memory-pressure";
+
+
+
+
+
+static const char kParentShuttingDownNotification[] = "profile-before-change";
+static const char kChildShuttingDownNotification[] = "content-child-shutdown";
 
 class HyphenReporter final : public nsIMemoryReporter {
  private:
@@ -69,7 +77,15 @@ NS_IMETHODIMP
 nsHyphenationManager::Observe(nsISupports* aSubject, const char* aTopic,
                               const char16_t* aData) {
   if (!nsCRT::strcmp(aTopic, kMemoryPressureNotification)) {
+    
+    
+    Telemetry::Accumulate(Telemetry::HYPHENATION_MEMORY,
+                          HyphenReporter::MemoryAllocatedInKB());
     nsHyphenationManager::sInstance->mHyphenators.Clear();
+  } else if (!nsCRT::strcmp(aTopic, kParentShuttingDownNotification) ||
+             !nsCRT::strcmp(aTopic, kChildShuttingDownNotification)) {
+    Telemetry::Accumulate(Telemetry::HYPHENATION_MEMORY,
+                          HyphenReporter::MemoryAllocatedInKB());
   }
   return NS_OK;
 }
@@ -81,6 +97,10 @@ nsHyphenationManager* nsHyphenationManager::Instance() {
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
     if (obs) {
       obs->AddObserver(sInstance, kMemoryPressureNotification, false);
+      obs->AddObserver(sInstance,
+                       XRE_IsParentProcess() ? kParentShuttingDownNotification
+                                             : kChildShuttingDownNotification,
+                       false);
     }
 
     RegisterStrongMemoryReporter(new HyphenReporter());
@@ -93,6 +113,9 @@ void nsHyphenationManager::Shutdown() {
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
     if (obs) {
       obs->RemoveObserver(sInstance, kMemoryPressureNotification);
+      obs->RemoveObserver(sInstance, XRE_IsParentProcess()
+                                         ? kParentShuttingDownNotification
+                                         : kChildShuttingDownNotification);
     }
     delete sInstance;
     sInstance = nullptr;
