@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import re
 import sys
 import os
@@ -22,8 +20,7 @@ DYLIB_NAME = 'libclang_rt.asan_osx_dynamic.dylib'
 
 
 def resolve_rpath(filename):
-    otoolOut = subprocess.check_output([substs['OTOOL'], '-l', filename],
-                                       universal_newlines=True)
+    otoolOut = subprocess.check_output([substs['OTOOL'], '-l', filename])
     currentCmd = None
 
     
@@ -65,7 +62,7 @@ def scan_directory(path):
 
             try:
                 otoolOut = subprocess.check_output(
-                    [substs['OTOOL'], '-L', filename], universal_newlines=True)
+                    [substs['OTOOL'], '-L', filename])
             except Exception:
                 
                 continue
