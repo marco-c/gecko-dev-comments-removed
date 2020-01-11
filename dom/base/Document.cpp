@@ -9793,7 +9793,7 @@ void Document::FlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
   
   
   if (StyleOrLayoutObservablyDependsOnParentDocumentLayout() &&
-      IsSafeToFlush()) {
+      mParentDocument->MayStartLayout() && IsSafeToFlush()) {
     mozilla::ChangesToFlush parentFlush = aFlush;
     if (flushType >= FlushType::Style) {
       parentFlush.mFlushType = std::max(FlushType::Layout, flushType);
