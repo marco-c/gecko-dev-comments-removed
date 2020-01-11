@@ -1578,6 +1578,114 @@ class TestAttributesOnTypes : public nsISupports, public nsWrapperCache {
   void ArgWithAttr(uint8_t arg1, const Optional<uint8_t>& arg2);
 };
 
+class TestPrefConstructorForInterface : public nsISupports,
+                                        public nsWrapperCache {
+ public:
+  NS_DECL_ISUPPORTS
+  virtual nsISupports* GetParentObject();
+
+  
+  
+  static already_AddRefed<TestPrefConstructorForInterface> Constructor(
+      const GlobalObject&);
+};
+
+class TestConstructorForPrefInterface : public nsISupports,
+                                        public nsWrapperCache {
+ public:
+  NS_DECL_ISUPPORTS
+  virtual nsISupports* GetParentObject();
+
+  
+  
+  static already_AddRefed<TestConstructorForPrefInterface> Constructor(
+      const GlobalObject&);
+};
+
+class TestPrefConstructorForDifferentPrefInterface : public nsISupports,
+                                                     public nsWrapperCache {
+ public:
+  NS_DECL_ISUPPORTS
+  virtual nsISupports* GetParentObject();
+
+  
+  
+  static already_AddRefed<TestPrefConstructorForDifferentPrefInterface>
+  Constructor(const GlobalObject&);
+};
+
+class TestConstructorForSCInterface : public nsISupports,
+                                      public nsWrapperCache {
+ public:
+  NS_DECL_ISUPPORTS
+  virtual nsISupports* GetParentObject();
+
+  
+  
+  static already_AddRefed<TestConstructorForSCInterface> Constructor(
+      const GlobalObject&);
+};
+
+class TestSCConstructorForInterface : public nsISupports,
+                                      public nsWrapperCache {
+ public:
+  NS_DECL_ISUPPORTS
+  virtual nsISupports* GetParentObject();
+
+  
+  
+  static already_AddRefed<TestSCConstructorForInterface> Constructor(
+      const GlobalObject&);
+};
+
+class TestConstructorForFuncInterface : public nsISupports,
+                                        public nsWrapperCache {
+ public:
+  NS_DECL_ISUPPORTS
+  virtual nsISupports* GetParentObject();
+
+  
+  
+  static already_AddRefed<TestConstructorForFuncInterface> Constructor(
+      const GlobalObject&);
+};
+
+class TestFuncConstructorForInterface : public nsISupports,
+                                        public nsWrapperCache {
+ public:
+  NS_DECL_ISUPPORTS
+  virtual nsISupports* GetParentObject();
+
+  
+  
+  static already_AddRefed<TestFuncConstructorForInterface> Constructor(
+      const GlobalObject&);
+};
+
+class TestFuncConstructorForDifferentFuncInterface : public nsISupports,
+                                                     public nsWrapperCache {
+ public:
+  NS_DECL_ISUPPORTS
+  virtual nsISupports* GetParentObject();
+
+  
+  
+  static already_AddRefed<TestFuncConstructorForDifferentFuncInterface>
+  Constructor(const GlobalObject&);
+};
+
+class TestPrefChromeOnlySCFuncConstructorForInterface : public nsISupports,
+                                                        public nsWrapperCache {
+ public:
+  NS_DECL_ISUPPORTS
+  virtual nsISupports* GetParentObject();
+
+  
+  
+  static already_AddRefed<TestPrefChromeOnlySCFuncConstructorForInterface>
+  Constructor(const GlobalObject&);
+};
+
 }  
 }  
 
