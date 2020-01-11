@@ -331,7 +331,7 @@ where
 }
 
 
-pub trait TShadowRoot: Sized + Copy + Clone + PartialEq {
+pub trait TShadowRoot: Sized + Copy + Clone + Debug + PartialEq {
     
     type ConcreteNode: TNode<ConcreteShadowRoot = Self>;
 
