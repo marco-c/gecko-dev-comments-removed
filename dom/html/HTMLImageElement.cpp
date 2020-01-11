@@ -75,7 +75,7 @@ namespace dom {
 
 
 
-class ImageLoadTask : public MicroTaskRunnable {
+class ImageLoadTask final : public MicroTaskRunnable {
  public:
   ImageLoadTask(HTMLImageElement* aElement, bool aAlwaysLoad,
                 bool aUseUrgentStartForChannel)
@@ -87,7 +87,7 @@ class ImageLoadTask : public MicroTaskRunnable {
     mDocument->BlockOnload();
   }
 
-  virtual void Run(AutoSlowOperation& aAso) override {
+  void Run(AutoSlowOperation& aAso) override {
     if (mElement->mPendingImageLoadTask == this) {
       mElement->mPendingImageLoadTask = nullptr;
       mElement->mUseUrgentStartForChannel = mUseUrgentStartForChannel;
@@ -96,7 +96,7 @@ class ImageLoadTask : public MicroTaskRunnable {
     mDocument->UnblockOnload(false);
   }
 
-  virtual bool Suppressed() override {
+  bool Suppressed() override {
     nsIGlobalObject* global = mElement->GetOwnerGlobal();
     return global && global->IsInSyncOperation();
   }
@@ -782,7 +782,7 @@ void HTMLImageElement::ClearForm(bool aRemoveFromForm) {
 void HTMLImageElement::QueueImageLoadTask(bool aAlwaysLoad) {
   
   
-  if (!LoadingEnabled() || !this->OwnerDoc()->ShouldLoadImages()) {
+  if (!LoadingEnabled() || !OwnerDoc()->ShouldLoadImages()) {
     return;
   }
 
