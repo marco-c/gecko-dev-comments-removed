@@ -118,7 +118,7 @@ class NativeLayerCA : public NativeLayer {
   
   
   
-  CFTypeRefPtr<IOSurfaceRef> NextSurface(const MutexAutoLock&);
+  bool NextSurface(const MutexAutoLock&);
 
   
   CALayer* UnderlyingCALayer() { return mWrappingCALayer; }
@@ -133,6 +133,16 @@ class NativeLayerCA : public NativeLayer {
   GLuint GetOrCreateFramebufferForSurface(const MutexAutoLock&,
                                           CFTypeRefPtr<IOSurfaceRef> aSurface,
                                           bool aNeedsDepth);
+
+  
+  
+  
+  
+  
+  
+  template <typename F>
+  void HandlePartialUpdate(const MutexAutoLock&,
+                           const gfx::IntRegion& aUpdateRegion, F&& aCopyFn);
 
   struct SurfaceWithInvalidRegion {
     CFTypeRefPtr<IOSurfaceRef> mSurface;
