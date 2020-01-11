@@ -7,6 +7,7 @@
 
 
 
+#include "mozilla/DynamicallyLinkedFunctionPtr.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/TimeStamp.h"
 
@@ -507,21 +508,21 @@ MFBT_API TimeStamp TimeStamp::NowUnfuzzed(bool aHighResolution) {
 
 
 MFBT_API uint64_t TimeStamp::ComputeProcessUptime() {
-  SYSTEMTIME nowSys;
-  GetSystemTime(&nowSys);
-
-  FILETIME now;
-  bool success = SystemTimeToFileTime(&nowSys, &now);
-
+  FILETIME start, foo, bar, baz;
+  bool success = GetProcessTimes(GetCurrentProcess(), &start, &foo, &bar, &baz);
   if (!success) {
     return 0;
   }
 
-  FILETIME start, foo, bar, baz;
-  success = GetProcessTimes(GetCurrentProcess(), &start, &foo, &bar, &baz);
+  static const StaticDynamicallyLinkedFunctionPtr<void(WINAPI*)(LPFILETIME)>
+      pGetSystemTimePreciseAsFileTime(L"kernel32.dll",
+                                      "GetSystemTimePreciseAsFileTime");
 
-  if (!success) {
-    return 0;
+  FILETIME now;
+  if (pGetSystemTimePreciseAsFileTime) {
+    pGetSystemTimePreciseAsFileTime(&now);
+  } else {
+    GetSystemTimeAsFileTime(&now);
   }
 
   ULARGE_INTEGER startUsec = {{start.dwLowDateTime, start.dwHighDateTime}};

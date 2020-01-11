@@ -9,6 +9,7 @@
 #include <windows.h>
 
 #include "mozilla/CmdLineAndEnvUtils.h"
+#include "mozilla/DynamicallyLinkedFunctionPtr.h"
 #include "mozilla/FileUtilsWin.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MathAlgorithms.h"
@@ -229,22 +230,25 @@ ProcessedModuleLoadEvent::ComputeQPCTimeStampForProcessCreation() {
   
 
   
-  LARGE_INTEGER nowQPC;
-  ::QueryPerformanceCounter(&nowQPC);
-
-  SYSTEMTIME nowSys;
-  ::GetSystemTime(&nowSys);
-
-  FILETIME nowFile;
-  if (!::SystemTimeToFileTime(&nowSys, &nowFile)) {
-    return Nothing();
-  }
-
-  
   FILETIME creationTime, exitTime, kernelTime, userTime;
   if (!::GetProcessTimes(::GetCurrentProcess(), &creationTime, &exitTime,
                          &kernelTime, &userTime)) {
     return Nothing();
+  }
+
+  
+  LARGE_INTEGER nowQPC;
+  ::QueryPerformanceCounter(&nowQPC);
+
+  static const StaticDynamicallyLinkedFunctionPtr<void(WINAPI*)(LPFILETIME)>
+      pGetSystemTimePreciseAsFileTime(L"kernel32.dll",
+                                      "GetSystemTimePreciseAsFileTime");
+
+  FILETIME nowFile;
+  if (pGetSystemTimePreciseAsFileTime) {
+    pGetSystemTimePreciseAsFileTime(&nowFile);
+  } else {
+    ::GetSystemTimeAsFileTime(&nowFile);
   }
 
   
