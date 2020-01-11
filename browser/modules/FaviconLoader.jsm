@@ -244,18 +244,21 @@ class FaviconLoad {
       }
     }
 
-    let canStoreIcon = true;
     
-    try {
-      if (
-        this.channel instanceof Ci.nsIHttpChannel &&
-        this.channel.isNoStoreResponse()
-      ) {
-        canStoreIcon = false;
-      }
-    } catch (ex) {
-      if (ex.result != Cr.NS_ERROR_NOT_AVAILABLE) {
-        throw ex;
+    let canStoreIcon = this.icon.beforePageShow;
+    if (canStoreIcon) {
+      
+      try {
+        if (
+          this.channel instanceof Ci.nsIHttpChannel &&
+          this.channel.isNoStoreResponse()
+        ) {
+          canStoreIcon = false;
+        }
+      } catch (ex) {
+        if (ex.result != Cr.NS_ERROR_NOT_AVAILABLE) {
+          throw ex;
+        }
       }
     }
 
@@ -602,6 +605,12 @@ class FaviconLoader {
 
     
     
+    
+    
+    this.beforePageShow = true;
+
+    
+    
     this.richIconLoader = new IconLoader(actor);
     this.tabIconLoader = new IconLoader(actor);
 
@@ -637,6 +646,7 @@ class FaviconLoader {
   addIconFromLink(aLink, aIsRichIcon) {
     let iconInfo = makeFaviconFromLink(aLink, aIsRichIcon);
     if (iconInfo) {
+      iconInfo.beforePageShow = this.beforePageShow;
       this.iconInfos.push(iconInfo);
       this.iconTask.arm();
       return true;
@@ -657,6 +667,7 @@ class FaviconLoader {
       isRichIcon: false,
       type: TYPE_ICO,
       node: this.actor.document,
+      beforePageShow: this.beforePageShow,
     });
     this.iconTask.arm();
   }
@@ -667,6 +678,7 @@ class FaviconLoader {
       this.iconTask.disarm();
       this.loadIcons();
     }
+    this.beforePageShow = false;
   }
 
   onPageHide() {
