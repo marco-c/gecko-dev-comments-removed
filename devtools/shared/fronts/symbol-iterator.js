@@ -9,51 +9,44 @@ const {
   registerFront,
 } = require("devtools/shared/protocol");
 const { symbolIteratorSpec } = require("devtools/shared/specs/symbol-iterator");
-
-
-
-
-
-
+const {
+  getAdHocFrontOrPrimitiveGrip,
+} = require("devtools/shared/fronts/object");
 
 
 
 
 
 class SymbolIteratorFront extends FrontClassWithSpec(symbolIteratorSpec) {
-  constructor(client, targetFront, parentFront) {
-    super(client, targetFront, parentFront);
-    this._client = client;
+  form(data) {
+    this.actorID = data.actor;
+    this.count = data.count;
   }
 
-  get actor() {
-    return this._grip.actor;
+  async slice(start, count) {
+    const result = await super.slice({ start, count });
+    return this._onResult(result);
   }
 
-  
-
-
-  get count() {
-    return this._grip.count;
+  async all() {
+    const result = await super.all();
+    return this._onResult(result);
   }
 
-  
+  _onResult(result) {
+    if (!result.ownSymbols) {
+      return result;
+    }
 
-
-
-
-
-
-
-
-
-  slice(start, count) {
-    const argumentObject = { start, count };
-    return super.slice(argumentObject);
-  }
-
-  form(form) {
-    this._grip = form;
+    result.ownSymbols.forEach((item, i) => {
+      if (item && item.descriptor) {
+        result.ownSymbols[i].descriptor.value = getAdHocFrontOrPrimitiveGrip(
+          item.descriptor.value,
+          this
+        );
+      }
+    });
+    return result;
   }
 }
 

@@ -11,6 +11,9 @@ const {
 const {
   propertyIteratorSpec,
 } = require("devtools/shared/specs/property-iterator");
+const {
+  getAdHocFrontOrPrimitiveGrip,
+} = require("devtools/shared/fronts/object");
 
 
 
@@ -20,47 +23,43 @@ const {
 
 
 class PropertyIteratorFront extends FrontClassWithSpec(propertyIteratorSpec) {
-  constructor(client, targetFront, parentFront) {
-    super(client, targetFront, parentFront);
-    this._client = client;
+  form(data) {
+    this.actorID = data.actor;
+    this.count = data.count;
   }
 
-  get actor() {
-    return this._grip.actor;
+  async slice(start, count) {
+    const result = await super.slice({ start, count });
+    return this._onResult(result);
   }
 
-  
-
-
-  get count() {
-    return this._grip.count;
+  async all() {
+    const result = await super.all();
+    return this._onResult(result);
   }
 
-  
+  _onResult(result) {
+    if (!result.ownProperties) {
+      return result;
+    }
 
+    
+    
+    const gripKeys = ["value", "getterValue", "get", "set"];
 
-
-
-
-
-  names(indexes) {
-    return super.names({ indexes });
-  }
-
-  
-
-
-
-
-
-
-
-  slice(start, count) {
-    return super.slice({ start, count });
-  }
-
-  form(form) {
-    this._grip = form;
+    Object.entries(result.ownProperties).forEach(([key, descriptor]) => {
+      if (descriptor) {
+        for (const gripKey of gripKeys) {
+          if (descriptor.hasOwnProperty(gripKey)) {
+            result.ownProperties[key][gripKey] = getAdHocFrontOrPrimitiveGrip(
+              descriptor[gripKey],
+              this
+            );
+          }
+        }
+      }
+    });
+    return result;
   }
 }
 

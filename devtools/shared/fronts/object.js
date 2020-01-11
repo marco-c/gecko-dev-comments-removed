@@ -9,32 +9,29 @@ const {
   FrontClassWithSpec,
   registerFront,
 } = require("devtools/shared/protocol");
-
-
-
-
+const { LongStringFront } = require("devtools/shared/fronts/string");
 
 
 
 
 
 class ObjectFront extends FrontClassWithSpec(objectSpec) {
-  constructor(client, grip) {
-    super(client);
-    this._grip = grip;
-    this._client = client;
-    this.valid = true;
+  constructor(conn = null, targetFront = null, parentFront = null, data) {
+    if (!parentFront) {
+      throw new Error("ObjectFront require a parent front");
+    }
+
+    super(conn, targetFront, parentFront);
+
+    this._grip = data;
     this.actorID = this._grip.actor;
+    this.valid = true;
 
-    this.manage(this);
+    parentFront.manage(this);
   }
 
-  get actor() {
-    return this.actorID;
-  }
-
-  get _transport() {
-    return this._client._transport;
+  getGrip() {
+    return this._grip;
   }
 
   get isFrozen() {
@@ -79,8 +76,62 @@ class ObjectFront extends FrontClassWithSpec(objectSpec) {
   
 
 
-  getPrototypeAndProperties() {
-    return super.prototypeAndProperties();
+  async getPrototypeAndProperties() {
+    const result = await super.prototypeAndProperties();
+
+    if (result.prototype) {
+      result.prototype = getAdHocFrontOrPrimitiveGrip(result.prototype, this);
+    }
+
+    
+    
+    const gripKeys = ["value", "getterValue", "get", "set"];
+
+    if (result.ownProperties) {
+      Object.entries(result.ownProperties).forEach(([key, descriptor]) => {
+        if (descriptor) {
+          for (const gripKey of gripKeys) {
+            if (descriptor.hasOwnProperty(gripKey)) {
+              result.ownProperties[key][gripKey] = getAdHocFrontOrPrimitiveGrip(
+                descriptor[gripKey],
+                this
+              );
+            }
+          }
+        }
+      });
+    }
+
+    if (result.safeGetterValues) {
+      Object.entries(result.safeGetterValues).forEach(([key, descriptor]) => {
+        if (descriptor) {
+          for (const gripKey of gripKeys) {
+            if (descriptor.hasOwnProperty(gripKey)) {
+              result.safeGetterValues[key][
+                gripKey
+              ] = getAdHocFrontOrPrimitiveGrip(descriptor[gripKey], this);
+            }
+          }
+        }
+      });
+    }
+
+    if (result.ownSymbols) {
+      result.ownSymbols.forEach((descriptor, i, arr) => {
+        if (descriptor) {
+          for (const gripKey of gripKeys) {
+            if (descriptor.hasOwnProperty(gripKey)) {
+              arr[i][gripKey] = getAdHocFrontOrPrimitiveGrip(
+                descriptor[gripKey],
+                this
+              );
+            }
+          }
+        }
+      });
+    }
+
+    return result;
   }
 
   
@@ -148,15 +199,38 @@ class ObjectFront extends FrontClassWithSpec(objectSpec) {
 
 
 
-  getPropertyValue(name, receiverId) {
-    return super.propertyValue(name, receiverId);
+  async getPropertyValue(name, receiverId) {
+    const response = await super.propertyValue(name, receiverId);
+
+    if (response.value) {
+      const { value } = response;
+      if (value.return) {
+        response.value.return = getAdHocFrontOrPrimitiveGrip(
+          value.return,
+          this
+        );
+      }
+
+      if (value.throw) {
+        response.value.throw = getAdHocFrontOrPrimitiveGrip(value.throw, this);
+      }
+    }
+    return response;
   }
 
   
 
 
-  getPrototype() {
-    return super.prototype();
+  async getPrototype() {
+    const result = await super.prototype();
+
+    if (!result.prototype) {
+      return result;
+    }
+
+    result.prototype = getAdHocFrontOrPrimitiveGrip(result.prototype, this);
+
+    return result;
   }
 
   
@@ -180,23 +254,149 @@ class ObjectFront extends FrontClassWithSpec(objectSpec) {
   
 
 
-  getProxySlots() {
+  async getProxySlots() {
     if (this._grip.class !== "Proxy") {
       console.error("getProxySlots is only valid for proxy grips.");
       return null;
     }
 
-    const response = super.proxySlots();
-    
-    
-    if (response.error === "unrecognizedPacketType") {
-      const { proxyTarget, proxyHandler } = this._grip;
-      return { proxyTarget, proxyHandler };
+    const response = await super.proxySlots();
+    const { proxyHandler, proxyTarget } = response;
+
+    if (proxyHandler) {
+      response.proxyHandler = getAdHocFrontOrPrimitiveGrip(proxyHandler, this);
+    }
+
+    if (proxyTarget) {
+      response.proxyTarget = getAdHocFrontOrPrimitiveGrip(proxyTarget, this);
     }
 
     return response;
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getAdHocFrontOrPrimitiveGrip(packet, parentFront) {
+  
+  
+  
+  
+  const isPacketAnObject = packet && typeof packet === "object";
+  if (
+    !isPacketAnObject ||
+    packet.type == "symbol" ||
+    (packet.type !== "mapEntry" && !packet.actor)
+  ) {
+    return packet;
+  }
+
+  const { conn, targetFront } = parentFront;
+  const { type } = packet;
+
+  if (type === "longString") {
+    const longStringFront = new LongStringFront(conn, targetFront, parentFront);
+    longStringFront.form(packet);
+    parentFront.manage(longStringFront);
+    return longStringFront;
+  }
+
+  if (type === "mapEntry" && packet.preview) {
+    const { key, value } = packet.preview;
+    packet.preview.key = getAdHocFrontOrPrimitiveGrip(key, parentFront);
+    packet.preview.value = getAdHocFrontOrPrimitiveGrip(value, parentFront);
+    return packet;
+  }
+
+  const objectFront = new ObjectFront(conn, targetFront, parentFront, packet);
+  createChildFronts(objectFront, packet);
+  return objectFront;
+}
+
+
+
+
+
+
+
+
+
+function createChildFronts(objectFront, packet) {
+  
+  if (
+    packet.class == "Promise" &&
+    packet.promiseState &&
+    packet.promiseState.state == "fulfilled" &&
+    packet.promiseState.value
+  ) {
+    packet.promiseState.value = getAdHocFrontOrPrimitiveGrip(
+      packet.promiseState.value,
+      objectFront
+    );
+  }
+
+  if (packet.preview) {
+    const { message, entries } = packet.preview;
+
+    
+    if (packet.preview.message) {
+      packet.preview.message = getAdHocFrontOrPrimitiveGrip(
+        message,
+        objectFront
+      );
+    }
+
+    
+    
+    if (entries && Array.isArray(entries)) {
+      packet.preview.entries = entries.map(([key, value]) => [
+        getAdHocFrontOrPrimitiveGrip(key, objectFront),
+        getAdHocFrontOrPrimitiveGrip(value, objectFront),
+      ]);
+    }
+  }
+
+  if (packet && typeof packet.ownProperties === "object") {
+    for (const [name, descriptor] of Object.entries(packet.ownProperties)) {
+      
+      
+      const gripKeys = ["value", "getterValue", "get", "set"];
+      for (const key of gripKeys) {
+        if (
+          descriptor &&
+          typeof descriptor === "object" &&
+          descriptor.hasOwnProperty(key)
+        ) {
+          packet.ownProperties[name][key] = getAdHocFrontOrPrimitiveGrip(
+            descriptor[key],
+            objectFront
+          );
+        }
+      }
+    }
+  }
+}
+
 registerFront(ObjectFront);
+
 exports.ObjectFront = ObjectFront;
+exports.getAdHocFrontOrPrimitiveGrip = getAdHocFrontOrPrimitiveGrip;

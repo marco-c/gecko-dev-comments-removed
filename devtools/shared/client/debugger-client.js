@@ -812,8 +812,8 @@ DebuggerClient.prototype = {
 
 
 
-  createObjectFront(grip) {
-    return new ObjectFront(this, grip);
+  createObjectFront(grip, threadFront) {
+    return new ObjectFront(this, threadFront.targetFront, threadFront, grip);
   },
 
   get transport() {
