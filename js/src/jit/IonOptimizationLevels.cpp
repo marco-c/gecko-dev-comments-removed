@@ -80,7 +80,7 @@ void OptimizationInfo::initWasmOptimizationInfo() {
 uint32_t OptimizationInfo::compilerWarmUpThreshold(JSScript* script,
                                                    jsbytecode* pc) const {
   MOZ_ASSERT(pc == nullptr || pc == script->code() ||
-             JSOp(*pc) == JSOP_LOOPENTRY);
+             JSOp(*pc) == JSOP_LOOPHEAD);
 
   if (pc == script->code()) {
     pc = nullptr;
@@ -111,17 +111,17 @@ uint32_t OptimizationInfo::compilerWarmUpThreshold(JSScript* script,
   
   
   
-  uint32_t loopDepth = LoopEntryDepthHint(pc);
+  uint32_t loopDepth = LoopHeadDepthHint(pc);
   MOZ_ASSERT(loopDepth > 0);
   return warmUpThreshold + loopDepth * (baseCompilerWarmUpThreshold() / 10);
 }
 
 uint32_t OptimizationInfo::recompileWarmUpThreshold(JSScript* script,
                                                     jsbytecode* pc) const {
-  MOZ_ASSERT(pc == script->code() || *pc == JSOP_LOOPENTRY);
+  MOZ_ASSERT(pc == script->code() || *pc == JSOP_LOOPHEAD);
 
   uint32_t threshold = compilerWarmUpThreshold(script, pc);
-  if (*pc != JSOP_LOOPENTRY || JitOptions.eagerIonCompilation()) {
+  if (*pc != JSOP_LOOPHEAD || JitOptions.eagerIonCompilation()) {
     return threshold;
   }
 
@@ -131,7 +131,7 @@ uint32_t OptimizationInfo::recompileWarmUpThreshold(JSScript* script,
   
   
 
-  uint32_t loopDepth = LoopEntryDepthHint(pc);
+  uint32_t loopDepth = LoopHeadDepthHint(pc);
   MOZ_ASSERT(loopDepth > 0);
   return threshold + loopDepth * (baseCompilerWarmUpThreshold() / 10);
 }

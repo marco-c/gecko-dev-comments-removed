@@ -1119,8 +1119,13 @@
 
 
 
+
+
+
+
+
  \
-    MACRO(JSOP_LOOPHEAD, 109, "loophead", NULL, 5, 0, 0, JOF_ICINDEX) \
+    MACRO(JSOP_LOOPHEAD, 109, "loophead", NULL, 6, 0, 0, JOF_LOOPHEAD) \
     
 
 
@@ -2406,19 +2411,8 @@
  \
     MACRO(JSOP_IMPLICITTHIS, 226, "implicitthis", "", 5, 0, 1, JOF_ATOM) \
     
-
-
-
-
-
-
-
-
-
-
-
  \
-    MACRO(JSOP_LOOPENTRY, 227, "loopentry", NULL, 6, 0, 0, JOF_LOOPENTRY) \
+    MACRO(JSOP_UNUSED227, 227, "unused", NULL, 1, 0, 0, JOF_BYTE) \
     
 
 

@@ -40,28 +40,28 @@ enum JSOp : uint8_t {
 
 
 enum {
-  JOF_BYTE = 0,         
-  JOF_UINT8 = 1,        
-  JOF_UINT16 = 2,       
-  JOF_UINT24 = 3,       
-  JOF_UINT32 = 4,       
-  JOF_INT8 = 5,         
-  JOF_INT32 = 6,        
-  JOF_JUMP = 7,         
-  JOF_TABLESWITCH = 8,  
-  JOF_ENVCOORD = 9,     
-  JOF_ARGC = 10,        
-  JOF_QARG = 11,        
-  JOF_LOCAL = 12,       
-  JOF_RESUMEINDEX = 13, 
-  JOF_ATOM = 14,        
-  JOF_OBJECT = 15,      
-  JOF_REGEXP = 16,      
-  JOF_DOUBLE = 17,      
-  JOF_SCOPE = 18,       
-  JOF_ICINDEX = 19,     
-  JOF_LOOPENTRY = 20,   
-  JOF_BIGINT = 21,      
+  JOF_BYTE = 0,          
+  JOF_UINT8 = 1,         
+  JOF_UINT16 = 2,        
+  JOF_UINT24 = 3,        
+  JOF_UINT32 = 4,        
+  JOF_INT8 = 5,          
+  JOF_INT32 = 6,         
+  JOF_JUMP = 7,          
+  JOF_TABLESWITCH = 8,   
+  JOF_ENVCOORD = 9,      
+  JOF_ARGC = 10,         
+  JOF_QARG = 11,         
+  JOF_LOCAL = 12,        
+  JOF_RESUMEINDEX = 13,  
+  JOF_ATOM = 14,         
+  JOF_OBJECT = 15,       
+  JOF_REGEXP = 16,       
+  JOF_DOUBLE = 17,       
+  JOF_SCOPE = 18,        
+  JOF_ICINDEX = 19,      
+  JOF_LOOPHEAD = 20,     
+  JOF_BIGINT = 21,       
   JOF_TYPEMASK = 0x001f, 
 
   JOF_NAME = 1 << 5,     
@@ -252,20 +252,20 @@ static inline void SET_ICINDEX(jsbytecode* pc, uint32_t icIndex) {
   SET_UINT32(pc, icIndex);
 }
 
-static inline unsigned LoopEntryDepthHint(jsbytecode* pc) {
-  MOZ_ASSERT(*pc == JSOP_LOOPENTRY);
+static inline unsigned LoopHeadDepthHint(jsbytecode* pc) {
+  MOZ_ASSERT(*pc == JSOP_LOOPHEAD);
   return GET_UINT8(pc + 4) & 0x7f;
 }
 
-static inline bool LoopEntryCanIonOsr(jsbytecode* pc) {
-  MOZ_ASSERT(*pc == JSOP_LOOPENTRY);
+static inline bool LoopHeadCanIonOsr(jsbytecode* pc) {
+  MOZ_ASSERT(*pc == JSOP_LOOPHEAD);
   return GET_UINT8(pc + 4) & 0x80;
 }
 
-static inline void SetLoopEntryDepthHintAndFlags(jsbytecode* pc,
-                                                 unsigned loopDepth,
-                                                 bool canIonOsr) {
-  MOZ_ASSERT(*pc == JSOP_LOOPENTRY);
+static inline void SetLoopHeadDepthHintAndFlags(jsbytecode* pc,
+                                                unsigned loopDepth,
+                                                bool canIonOsr) {
+  MOZ_ASSERT(*pc == JSOP_LOOPHEAD);
   uint8_t data = std::min(loopDepth, unsigned(0x7f)) | (canIonOsr ? 0x80 : 0);
   SET_UINT8(pc + 4, data);
 }
@@ -350,7 +350,6 @@ static inline bool BytecodeIsJumpTarget(JSOp op) {
   switch (op) {
     case JSOP_JUMPTARGET:
     case JSOP_LOOPHEAD:
-    case JSOP_LOOPENTRY:
     case JSOP_AFTERYIELD:
       return true;
     default:

@@ -963,7 +963,7 @@ AbortReasonOr<Ok> IonBuilder::build() {
   }
 #endif
 
-  insertRecompileCheck();
+  insertRecompileCheck(pc);
 
   auto clearLastPriorResumePoint = mozilla::MakeScopeExit([&] {
     
@@ -1141,7 +1141,7 @@ AbortReasonOr<Ok> IonBuilder::buildInline(IonBuilder* callerBuilder,
   }
 #endif
 
-  insertRecompileCheck();
+  insertRecompileCheck(pc);
 
   
   
@@ -1657,10 +1657,8 @@ AbortReasonOr<Ok> IonBuilder::traverseBytecode() {
 
     
     
-    
-    
     if (hasTerminatedBlock()) {
-      while (!BytecodeIsJumpTarget(JSOp(*pc)) || *pc == JSOP_LOOPENTRY) {
+      while (!BytecodeIsJumpTarget(JSOp(*pc))) {
         pc = GetNextPc(pc);
         if (pc == codeEnd) {
           return Ok();
@@ -1790,7 +1788,6 @@ AbortReasonOr<Ok> IonBuilder::jsop_loophead() {
   
   
   
-  
 
   MOZ_ASSERT(*pc == JSOP_LOOPHEAD);
 
@@ -1805,9 +1802,6 @@ AbortReasonOr<Ok> IonBuilder::jsop_loophead() {
   MOZ_ASSERT(backjump > pc);
   MOZ_ASSERT(JSOp(*backjump) == JSOP_IFNE || JSOp(*backjump) == JSOP_IFEQ ||
              JSOp(*backjump) == JSOP_GOTO);
-
-  jsbytecode* loopEntry = GetNextPc(pc);
-  MOZ_ASSERT(JSOp(*loopEntry) == JSOP_LOOPENTRY);
 
   if (hasTerminatedBlock()) {
     
@@ -1830,21 +1824,21 @@ AbortReasonOr<Ok> IonBuilder::jsop_loophead() {
       MOZ_CRASH("Unexpected source note");
   }
 
-  bool canOsr = LoopEntryCanIonOsr(loopEntry);
-  bool osr = loopEntry == info().osrPc();
+  bool canOsr = LoopHeadCanIonOsr(pc);
+  bool osr = pc == info().osrPc();
   if (osr) {
     MOZ_ASSERT(canOsr);
 
     MBasicBlock* preheader;
-    MOZ_TRY_VAR(preheader, newOsrPreheader(current, loopEntry));
+    MOZ_TRY_VAR(preheader, newOsrPreheader(current, pc));
     current->end(MGoto::New(alloc(), preheader));
     MOZ_TRY(setCurrentAndSpecializePhis(preheader));
   }
 
   loopDepth_++;
   MBasicBlock* header;
-  MOZ_TRY_VAR(header, newPendingLoopHeader(current, loopEntry, osr, canOsr,
-                                           stackPhiCount));
+  MOZ_TRY_VAR(header,
+              newPendingLoopHeader(current, pc, osr, canOsr, stackPhiCount));
   current->end(MGoto::New(alloc(), header));
 
   if (!loopStack_.emplaceBack(header, GetNextPc(backjump))) {
@@ -1853,7 +1847,8 @@ AbortReasonOr<Ok> IonBuilder::jsop_loophead() {
 
   MOZ_TRY(analyzeNewLoopTypes(header, pc, pc, backjump));
 
-  return startTraversingBlock(header);
+  MOZ_TRY(startTraversingBlock(header));
+  return emitLoopHeadInstructions(pc);
 }
 
 AbortReasonOr<Ok> IonBuilder::visitBackEdge(bool* restarted) {
@@ -1887,10 +1882,12 @@ AbortReasonOr<Ok> IonBuilder::visitBackEdge(bool* restarted) {
   }
 }
 
-AbortReasonOr<Ok> IonBuilder::jsop_loopentry(bool* restarted) {
+AbortReasonOr<Ok> IonBuilder::emitLoopHeadInstructions(jsbytecode* pc) {
+  MOZ_ASSERT(JSOp(*pc) == JSOP_LOOPHEAD);
+
   MInterruptCheck* check = MInterruptCheck::New(alloc());
   current->add(check);
-  insertRecompileCheck();
+  insertRecompileCheck(pc);
 
   if (script()->trackRecordReplayProgress()) {
     check->setTrackRecordReplayProgress();
@@ -2509,9 +2506,6 @@ AbortReasonOr<Ok> IonBuilder::inspectOpcode(JSOp op, bool* restarted) {
     case JSOP_DYNAMIC_IMPORT:
       return jsop_dynamic_import();
 
-    case JSOP_LOOPENTRY:
-      return jsop_loopentry(restarted);
-
     case JSOP_INSTRUMENTATION_ACTIVE:
       return jsop_instrumentation_active();
 
@@ -2600,6 +2594,7 @@ AbortReasonOr<Ok> IonBuilder::inspectOpcode(JSOp op, bool* restarted) {
     case JSOP_UNUSED106:
     case JSOP_UNUSED120:
     case JSOP_UNUSED149:
+    case JSOP_UNUSED227:
     case JSOP_LIMIT:
       break;
   }
@@ -2662,8 +2657,15 @@ AbortReasonOr<Ok> IonBuilder::restartLoop(MBasicBlock* header) {
   
   
   setCurrent(header);
-  nextpc = header->pc();
   graph().addBlock(current);
+
+  jsbytecode* loopHead = header->pc();
+  MOZ_ASSERT(JSOp(*loopHead) == JSOP_LOOPHEAD);
+
+  
+  
+  MOZ_TRY(emitLoopHeadInstructions(loopHead));
+  nextpc = GetNextPc(loopHead);
 
   
   for (PendingEdgesMap::Range r = pendingEdges_->all(); !r.empty();
@@ -7597,18 +7599,18 @@ AbortReasonOr<MBasicBlock*> IonBuilder::newBlockAfter(
 }
 
 AbortReasonOr<MBasicBlock*> IonBuilder::newOsrPreheader(
-    MBasicBlock* predecessor, jsbytecode* loopEntry) {
-  MOZ_ASSERT(JSOp(*loopEntry) == JSOP_LOOPENTRY);
-  MOZ_ASSERT(loopEntry == info().osrPc());
+    MBasicBlock* predecessor, jsbytecode* loopHead) {
+  MOZ_ASSERT(JSOp(*loopHead) == JSOP_LOOPHEAD);
+  MOZ_ASSERT(loopHead == info().osrPc());
 
   
   
   
   MBasicBlock* osrBlock;
   MOZ_TRY_VAR(osrBlock, newBlockAfter(*graph().begin(),
-                                      predecessor->stackDepth(), loopEntry));
+                                      predecessor->stackDepth(), loopHead));
   MBasicBlock* preheader;
-  MOZ_TRY_VAR(preheader, newBlock(predecessor, loopEntry));
+  MOZ_TRY_VAR(preheader, newBlock(predecessor, loopHead));
 
   graph().addBlock(preheader);
 
@@ -7737,7 +7739,7 @@ AbortReasonOr<MBasicBlock*> IonBuilder::newOsrPreheader(
 
   
   
-  MOZ_TRY(resumeAt(start, loopEntry));
+  MOZ_TRY(resumeAt(start, loopHead));
 
   
   
@@ -7972,8 +7974,8 @@ static bool ObjectHasExtraOwnProperty(CompileRealm* realm,
   return ClassMayResolveId(realm->runtime()->names(), clasp, id, singleton);
 }
 
-void IonBuilder::insertRecompileCheck() {
-  MOZ_ASSERT(pc == script()->code() || *pc == JSOP_LOOPENTRY);
+void IonBuilder::insertRecompileCheck(jsbytecode* pc) {
+  MOZ_ASSERT(pc == script()->code() || *pc == JSOP_LOOPHEAD);
 
   
   
@@ -7988,7 +7990,7 @@ void IonBuilder::insertRecompileCheck() {
   
 
   MRecompileCheck::RecompileCheckType type;
-  if (*pc == JSOP_LOOPENTRY) {
+  if (*pc == JSOP_LOOPHEAD) {
     type = MRecompileCheck::RecompileCheckType::OptimizationLevelOSR;
   } else if (this != outermostBuilder()) {
     type = MRecompileCheck::RecompileCheckType::OptimizationLevelInlined;
