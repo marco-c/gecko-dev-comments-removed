@@ -3600,6 +3600,7 @@ public class GeckoSession implements Parcelable {
 
 
 
+
         @UiThread
         default @Nullable GeckoResult<AllowOrDeny> onLoadRequest(@NonNull GeckoSession session,
                                                                  @NonNull LoadRequest request) {
