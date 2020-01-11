@@ -10,7 +10,6 @@ module.exports = {
 
   "overrides": [{
     "files": [
-      "*.xhtml",
       
       
       "attributes/test_listbox.html",
