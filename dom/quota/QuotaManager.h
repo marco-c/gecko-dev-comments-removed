@@ -614,13 +614,16 @@ class QuotaManager final : public BackgroundThreadObject {
   
   nsDataHashtable<nsCStringHashKey, bool> mValidOrigins;
 
+  struct OriginInitializationInfo {
+    bool mPersistentOriginAttempted : 1;
+    bool mTemporaryOriginAttempted : 1;
+  };
+
   
   
   
-  
-  
-  
-  nsDataHashtable<nsCStringHashKey, uint8_t> mOriginInitializationsAttempted;
+  nsDataHashtable<nsCStringHashKey, OriginInitializationInfo>
+      mOriginInitializationInfos;
 
   
   
