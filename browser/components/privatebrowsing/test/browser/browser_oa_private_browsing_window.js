@@ -30,6 +30,7 @@ add_task(
       await SpecialPowers.spawn(
         privateWin.gBrowser.selectedBrowser,
         [{ DUMMY_PAGE, TEST_PAGE }],
+        
         async function({ DUMMY_PAGE, TEST_PAGE }) {
           
 
