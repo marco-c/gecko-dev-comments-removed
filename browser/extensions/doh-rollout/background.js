@@ -543,7 +543,7 @@ const setup = {
     );
     const runAddonPreviousTRRMode = await rollout.getSetting(
       DOH_PREVIOUS_TRR_MODE_PREF,
-      0
+      -1
     );
 
     if (isAddonDisabled) {
@@ -567,14 +567,19 @@ const setup = {
       rollout.init();
     } else {
       log(
-        "Init not ran on startup. Watching `doh-rollout.enabled` pref for change event"
+        "Disabled, aborting! Watching `doh-rollout.enabled` pref for change event"
+      );
+      
+      
+      browser.experiments.preferences.onPrefChanged.addListener(
+        function listener() {
+          browser.experiments.preferences.onPrefChanged.removeListener(
+            listener
+          );
+          setup.start();
+        }
       );
     }
-
-    
-    browser.experiments.preferences.onPrefChanged.addListener(() =>
-      this.start()
-    );
   },
 };
 
