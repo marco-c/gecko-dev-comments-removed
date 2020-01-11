@@ -180,6 +180,15 @@ var AddonStudies = {
   },
 
   
+  async onTelemetryDisabled() {
+    const studies = await this.getAll();
+    for (const study of studies) {
+      study.enrollmentId = TelemetryEvents.NO_ENROLLMENT_ID_MARKER;
+    }
+    await this.updateMany(studies);
+  },
+
+  
 
 
 

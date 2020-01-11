@@ -41,6 +41,10 @@ ChromeUtils.defineModuleGetter(
 
 
 
+
+
+
+
 var EXPORTED_SYMBOLS = ["AddonRollouts"];
 const DB_NAME = "normandy-addon-rollout";
 const STORE_NAME = "addon-rollouts";
@@ -97,6 +101,15 @@ const AddonRollouts = {
         type: "normandy-addonrollout",
       });
     }
+  },
+
+  
+  async onTelemetryDisabled() {
+    const rollouts = await this.getAll();
+    for (const rollout of rollouts) {
+      rollout.enrollmentId = TelemetryEvents.NO_ENROLLMENT_ID_MARKER;
+    }
+    await this.updateMany(rollouts);
   },
 
   

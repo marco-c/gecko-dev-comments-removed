@@ -184,6 +184,15 @@ var PreferenceRollouts = {
   },
 
   
+  async onTelemetryDisabled() {
+    const rollouts = await this.getAll();
+    for (const rollout of rollouts) {
+      rollout.enrollmentId = TelemetryEvents.NO_ENROLLMENT_ID_MARKER;
+    }
+    await this.updateMany(rollouts);
+  },
+
+  
 
 
 
