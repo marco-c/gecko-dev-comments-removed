@@ -102,18 +102,21 @@ class Layer;
 namespace mozilla {
 
 struct DisplayPortPropertyData {
-  DisplayPortPropertyData(const nsRect& aRect, uint32_t aPriority)
-      : mRect(aRect), mPriority(aPriority) {}
+  DisplayPortPropertyData(const nsRect& aRect, uint32_t aPriority,
+                          bool aPainted)
+      : mRect(aRect), mPriority(aPriority), mPainted(aPainted) {}
   nsRect mRect;
   uint32_t mPriority;
+  bool mPainted;
 };
 
 struct DisplayPortMarginsPropertyData {
   DisplayPortMarginsPropertyData(const ScreenMargin& aMargins,
-                                 uint32_t aPriority)
-      : mMargins(aMargins), mPriority(aPriority) {}
+                                 uint32_t aPriority, bool aPainted)
+      : mMargins(aMargins), mPriority(aPriority), mPainted(aPainted) {}
   ScreenMargin mMargins;
   uint32_t mPriority;
+  bool mPainted;
 };
 
 }  
@@ -212,12 +215,25 @@ class nsLayoutUtils {
 
 
   static bool GetDisplayPort(nsIContent* aContent, nsRect* aResult,
-                             RelativeTo aRelativeTo = RelativeTo::ScrollPort);
+                             RelativeTo aRelativeTo = RelativeTo::ScrollPort,
+                             bool* aOutPainted = nullptr);
 
   
 
 
   static bool HasDisplayPort(nsIContent* aContent);
+
+  
+
+
+
+  static bool HasPaintedDisplayPort(nsIContent* aContent);
+
+  
+
+
+
+  static void MarkDisplayPortAsPainted(nsIContent* aContent);
 
   
 
@@ -296,7 +312,8 @@ class nsLayoutUtils {
   
 
 
-  static bool GetCriticalDisplayPort(nsIContent* aContent, nsRect* aResult);
+  static bool GetCriticalDisplayPort(nsIContent* aContent, nsRect* aResult,
+                                     bool* aOutPainted = nullptr);
 
   
 
@@ -308,7 +325,8 @@ class nsLayoutUtils {
 
 
   static bool GetHighResolutionDisplayPort(nsIContent* aContent,
-                                           nsRect* aResult);
+                                           nsRect* aResult,
+                                           bool* aOutPainted = nullptr);
 
   
 

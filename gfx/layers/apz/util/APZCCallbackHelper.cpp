@@ -662,6 +662,9 @@ using FrameForPointOption = nsLayoutUtils::FrameForPointOption;
 
 
 
+
+
+
 static bool PrepareForSetTargetAPZCNotification(
     nsIWidget* aWidget, const LayersId& aLayersId, nsIFrame* aRootFrame,
     const LayoutDeviceIntPoint& aRefPoint,
@@ -713,7 +716,10 @@ static bool PrepareForSetTargetAPZCNotification(
   aTargets->AppendElement(guid);
 
   if (!guidIsValid || nsLayoutUtils::HasDisplayPort(dpElement)) {
-    return false;
+    
+    
+    
+    return !nsLayoutUtils::HasPaintedDisplayPort(dpElement);
   }
 
   if (!scrollAncestor) {
