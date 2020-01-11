@@ -16,6 +16,13 @@ loader.lazyRequireGetter(
   true
 );
 
+loader.lazyRequireGetter(
+  this,
+  "PrivateBrowsingUtils",
+  "resource://gre/modules/PrivateBrowsingUtils.jsm",
+  true
+);
+
 
 
 
@@ -234,9 +241,9 @@ class RightHost extends SidebarHost {
 
 
 
-function WindowHost() {
+function WindowHost(hostTab) {
   this._boundUnload = this._boundUnload.bind(this);
-
+  this.hostTab = hostTab;
   EventEmitter.decorate(this);
 }
 
@@ -250,7 +257,19 @@ WindowHost.prototype = {
 
   create: function() {
     return new Promise(resolve => {
-      const flags = "chrome,centerscreen,resizable,dialog=no";
+      let flags = "chrome,centerscreen,resizable,dialog=no";
+
+      
+      
+      
+      
+      if (
+        this.hostTab &&
+        PrivateBrowsingUtils.isWindowPrivate(this.hostTab.ownerGlobal)
+      ) {
+        flags += ",private";
+      }
+
       const win = Services.ww.openWindow(
         null,
         this.WINDOW_URL,
