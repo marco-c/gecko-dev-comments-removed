@@ -582,7 +582,7 @@ void HttpChannelChild::DoOnStartRequest(nsIRequest* aRequest,
   LOG(("HttpChannelChild::DoOnStartRequest [this=%p]\n", this));
 
   
-  MOZ_ASSERT(mListener);
+  MOZ_ASSERT(mListener || mOnStartRequestCalled);
   if (!mListener) {
     Cancel(NS_ERROR_FAILURE);
     return;
@@ -1091,10 +1091,15 @@ void HttpChannelChild::DoOnStopRequest(nsIRequest* aRequest,
   };
   checkForBlockedContent();
 
+  
+  
+  MOZ_ASSERT(mListener || !mWasOpened);
+  if (!mListener) {
+    return;
+  }
+
   MOZ_ASSERT(!mOnStopRequestCalled, "We should not call OnStopRequest twice");
 
-  
-  MOZ_ASSERT(mListener);
   if (mListener) {
     nsCOMPtr<nsIStreamListener> listener(mListener);
     mOnStopRequestCalled = true;
@@ -1620,8 +1625,40 @@ void HttpChannelChild::OverrideSecurityInfoForNonIPCRedirect(
 
 mozilla::ipc::IPCResult HttpChannelChild::RecvRedirect3Complete() {
   LOG(("HttpChannelChild::RecvRedirect3Complete [this=%p]\n", this));
+  nsCOMPtr<nsIChannel> redirectChannel =
+      do_QueryInterface(mRedirectChannelChild);
+  MOZ_ASSERT(redirectChannel);
   mEventQ->RunOrEnqueue(new NeckoTargetChannelFunctionEvent(
-      this, [self = UnsafePtr<HttpChannelChild>(this)]() {
+      this, [self = UnsafePtr<HttpChannelChild>(this), redirectChannel]() {
+        nsresult rv = NS_OK;
+        Unused << self->GetStatus(&rv);
+        if (NS_FAILED(rv)) {
+          
+          
+          
+          
+          
+          
+          self->HandleAsyncAbort();
+
+          nsCOMPtr<nsIHttpChannelChild> chan =
+              do_QueryInterface(redirectChannel);
+          RefPtr<HttpChannelChild> httpChannelChild =
+              static_cast<HttpChannelChild*>(chan.get());
+          if (httpChannelChild) {
+            
+            
+            Unused << httpChannelChild->Cancel(rv);
+
+            
+            
+            
+            
+            httpChannelChild->DoNotifyListener();
+          }
+          return;
+        }
+
         self->Redirect3Complete(nullptr);
       }));
   return IPC_OK();
