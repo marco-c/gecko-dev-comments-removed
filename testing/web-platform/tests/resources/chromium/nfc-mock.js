@@ -154,14 +154,13 @@ var WebNFCTest = (() => {
 
       this.hw_status_ = NFCHWStatus.ENABLED;
       this.pushed_message_ = null;
-      this.push_options_ = null;
+      this.pending_push_options_ = null;
       this.pending_promise_func_ = null;
       this.push_completed_ = true;
       this.client_ = null;
       this.watchers_ = [];
       this.reading_messages_ = [];
       this.operations_suspended_ = false;
-      this.is_ndef_tech_ = true;
       this.is_formatted_tag_ = false;
     }
 
@@ -176,18 +175,11 @@ var WebNFCTest = (() => {
       }
 
       this.pushed_message_ = message;
-      this.push_options_ = options;
-
+      this.pending_push_options_ = options;
       return new Promise(resolve => {
-        this.pending_promise_func_ = resolve;
-        if (this.operations_suspended_) {
+        if (this.operations_suspended_ || !this.push_completed_) {
           
-        } else if (!this.push_completed_) {
-          
-        } else if (!this.is_ndef_tech_) {
-          
-          
-          resolve(createNDEFError(device.mojom.NDEFErrorType.NOT_SUPPORTED));
+          this.pending_promise_func_ = resolve;
         } else if (this.is_formatted_tag_ && !options.overwrite) {
           
           
@@ -199,8 +191,9 @@ var WebNFCTest = (() => {
     }
 
     async cancelPush(target) {
-      if (this.push_options_ && ((target === device.mojom.NDEFPushTarget.ANY) ||
-          (this.push_options_.target === target))) {
+      if (this.pending_push_options_ &&
+          ((target === device.mojom.NDEFPushTarget.ANY) ||
+           (this.pending_push_options_.target === target))) {
         this.cancelPendingPushOperation();
       }
 
@@ -221,7 +214,7 @@ var WebNFCTest = (() => {
       this.watchers_.push({id: id, options: options});
       
       
-      if(!this.operations_suspended_ && this.is_ndef_tech_) {
+      if (!this.operations_suspended_) {
         
         for (let message of this.reading_messages_) {
           if (matchesWatchOptions(message, options)) {
@@ -270,7 +263,7 @@ var WebNFCTest = (() => {
     }
 
     pushOptions() {
-      return this.push_options_;
+      return this.pending_push_options_;
     }
 
     watchOptions() {
@@ -288,7 +281,6 @@ var WebNFCTest = (() => {
       this.reading_messages_ = [];
       this.operations_suspended_ = false;
       this.cancelPendingPushOperation();
-      this.is_ndef_tech_ = true;
       this.is_formatted_tag_ = false;
     }
 
@@ -296,11 +288,11 @@ var WebNFCTest = (() => {
       if (this.pending_promise_func_) {
         this.pending_promise_func_(
             createNDEFError(device.mojom.NDEFErrorType.OPERATION_CANCELLED));
+        this.pending_promise_func_ = null;
       }
 
       this.pushed_message_ = null;
-      this.push_options_ = null;
-      this.pending_promise_func_ = null;
+      this.pending_push_options_ = null;
       this.push_completed_ = true;
     }
 
@@ -308,11 +300,9 @@ var WebNFCTest = (() => {
     setReadingMessage(message) {
       this.reading_messages_.push(message);
       
-      if(!this.is_ndef_tech_) return;
-      
       if(this.operations_suspended_) return;
       
-      if(this.push_options_ && this.push_options_.ignoreRead)
+      if (this.pending_push_options_ && this.pending_push_options_.ignoreRead)
         return;
       
       for (let watcher of this.watchers_) {
@@ -336,7 +326,7 @@ var WebNFCTest = (() => {
       
       for (let watcher of this.watchers_) {
         for (let message of this.reading_messages_) {
-          if (matchesWatchOptions(message, watcher.options) && this.is_ndef_tech_) {
+          if (matchesWatchOptions(message, watcher.options)) {
             this.client_.onWatch(
                 [watcher.id], fake_tag_serial_number,
                 toMojoNDEFMessage(message));
@@ -344,15 +334,23 @@ var WebNFCTest = (() => {
         }
       }
       
-      if (this.pending_promise_func_) {
+      if (this.pending_promise_func_ && this.push_completed_) {
         this.pending_promise_func_(createNDEFError(null));
+        this.pending_promise_func_ = null;
       }
     }
 
-    setIsNDEFTech(isNdef) {
-      this.is_ndef_tech_ = isNdef;
-      if (!isNdef && this.watchers_.length != 0) {
+    
+    simulateNonNDEFTagDiscovered() {
+      
+      if (this.watchers_.length != 0) {
         this.client_.onError(device.mojom.NDEFErrorType.NOT_SUPPORTED);
+      }
+      
+      if (this.pending_promise_func_) {
+        this.pending_promise_func_(
+            createNDEFError(device.mojom.NDEFErrorType.NOT_SUPPORTED));
+        this.pending_promise_func_ = null;
       }
     }
 
