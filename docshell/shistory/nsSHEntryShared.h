@@ -72,6 +72,9 @@ class SHEntrySharedParentState {
   nsCOMPtr<nsIPrincipal> mPrincipalToInherit;
   nsCOMPtr<nsIPrincipal> mStoragePrincipalToInherit;
   nsCOMPtr<nsIContentSecurityPolicy> mCsp;
+  
+  
+  nsCOMPtr<nsILayoutHistoryState> mLayoutHistoryState;
   nsCString mContentType;
 
   nsIntRect mViewerBounds;
@@ -90,6 +93,8 @@ class SHEntrySharedParentState {
 
   
   bool mExpired;
+
+  bool mSaveLayoutState;
 };
 
 
@@ -125,6 +130,9 @@ class SHEntrySharedChildState {
 
 }  
 }  
+
+
+
 
 
 
