@@ -10,6 +10,7 @@
 #include "mozilla/dom/AudioWorkletNodeBinding.h"
 #include "mozilla/dom/MessageChannel.h"
 #include "mozilla/dom/MessagePort.h"
+#include "PlayingRefChangeHandler.h"
 
 namespace mozilla {
 namespace dom {
@@ -48,6 +49,8 @@ class WorkletNodeEngine final : public AudioNodeEngine {
 
   void NotifyForcedShutdown() override { ReleaseJSResources(); }
 
+  bool IsActive() const override { return mKeepEngineActive; }
+
   
   
   
@@ -68,8 +71,9 @@ class WorkletNodeEngine final : public AudioNodeEngine {
 
  private:
   void SendProcessorError();
-  bool CallProcess(JSContext* aCx, JS::Handle<JS::Value> aCallable,
-                   bool* aActiveRet);
+  bool CallProcess(AudioNodeTrack* aTrack, JSContext* aCx,
+                   JS::Handle<JS::Value> aCallable);
+  void ProduceSilence(AudioNodeTrack* aTrack, Span<AudioBlock> aOutput);
 
   void ReleaseJSResources() {
     mInputs.mPorts.clearAndFree();
@@ -102,6 +106,17 @@ class WorkletNodeEngine final : public AudioNodeEngine {
 
   RefPtr<AudioWorkletGlobalScope> mGlobal;
   JS::PersistentRooted<JSObject*> mProcessor;
+
+  
+  
+  
+  bool mProcessorIsActive = true;
+  
+  
+  
+  
+  
+  bool mKeepEngineActive = true;
 };
 
 void WorkletNodeEngine::SendProcessorError() {
@@ -246,9 +261,8 @@ static bool PrepareBufferArrays(JSContext* aCx, Span<const AudioBlock> aBlocks,
 
 
 
-bool WorkletNodeEngine::CallProcess(JSContext* aCx,
-                                    JS::Handle<JS::Value> aCallable,
-                                    bool* aActiveRet) {
+bool WorkletNodeEngine::CallProcess(AudioNodeTrack* aTrack, JSContext* aCx,
+                                    JS::Handle<JS::Value> aCallable) {
   JS::RootedVector<JS::Value> argv(aCx);
   if (NS_WARN_IF(!argv.resize(3))) {
     return false;
@@ -261,11 +275,30 @@ bool WorkletNodeEngine::CallProcess(JSContext* aCx,
     return false;
   }
 
-  *aActiveRet = JS::ToBoolean(rval);
+  mProcessorIsActive = JS::ToBoolean(rval);
+  
+  
+  
+  
+  
+  if (mProcessorIsActive && !mKeepEngineActive) {
+    mKeepEngineActive = true;
+    RefPtr<PlayingRefChangeHandler> refchanged =
+        new PlayingRefChangeHandler(aTrack, PlayingRefChangeHandler::ADDREF);
+    aTrack->Graph()->DispatchToMainThreadStableState(refchanged.forget());
+  }
   return true;
 }
 
-static void ProduceSilence(Span<AudioBlock> aOutput) {
+void WorkletNodeEngine::ProduceSilence(AudioNodeTrack* aTrack,
+                                       Span<AudioBlock> aOutput) {
+  if (mKeepEngineActive) {
+    mKeepEngineActive = false;
+    aTrack->ScheduleCheckForInactive();
+    RefPtr<PlayingRefChangeHandler> refchanged =
+        new PlayingRefChangeHandler(aTrack, PlayingRefChangeHandler::RELEASE);
+    aTrack->Graph()->DispatchToMainThreadStableState(refchanged.forget());
+  }
   for (AudioBlock& output : aOutput) {
     output.SetNull(WEBAUDIO_BLOCK_SIZE);
   }
@@ -278,8 +311,22 @@ void WorkletNodeEngine::ProcessBlocksOnPorts(AudioNodeTrack* aTrack,
   MOZ_ASSERT(aInput.Length() == InputCount());
   MOZ_ASSERT(aOutput.Length() == OutputCount());
 
-  if (!mProcessor) {
-    ProduceSilence(aOutput);
+  bool isSilent = true;
+  if (mProcessor) {
+    if (mProcessorIsActive) {
+      isSilent = false;  
+    } else {             
+      
+      for (const AudioBlock& input : aInput) {
+        if (!input.IsNull()) {
+          isSilent = false;
+          break;
+        }
+      }
+    }
+  }
+  if (isSilent) {
+    ProduceSilence(aTrack, aOutput);
     return;
   }
 
@@ -306,7 +353,7 @@ void WorkletNodeEngine::ProcessBlocksOnPorts(AudioNodeTrack* aTrack,
       !PrepareBufferArrays(cx, aOutput, &mOutputs, ArrayElementInit::Zero)) {
     
     SendProcessorError();
-    ProduceSilence(aOutput);
+    ProduceSilence(aTrack, aOutput);
     return;
   }
 
@@ -331,8 +378,7 @@ void WorkletNodeEngine::ProcessBlocksOnPorts(AudioNodeTrack* aTrack,
     }
   }
 
-  bool active;
-  if (!CallProcess(cx, process, &active)) {
+  if (!CallProcess(aTrack, cx, process)) {
     
     SendProcessorError();
     
@@ -340,10 +386,9 @@ void WorkletNodeEngine::ProcessBlocksOnPorts(AudioNodeTrack* aTrack,
 
 
 
-    ProduceSilence(aOutput);
+    ProduceSilence(aTrack, aOutput);
     return;
   }
-  
 
   
   for (size_t o = 0; o < aOutput.Length(); ++o) {
@@ -511,6 +556,10 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
             engine->ConstructProcessor(workletImpl, name,
                                        WrapNotNull(options.get()), portId);
           }));
+
+  
+  
+  audioWorkletNode->MarkActive();
 
   return audioWorkletNode.forget();
 }
