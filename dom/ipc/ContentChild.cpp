@@ -997,6 +997,11 @@ nsresult ContentChild::ProvideWindowCommon(
   RefPtr<BrowsingContext> browsingContext = BrowsingContext::Create(
       nullptr, openerBC, aName, BrowsingContext::Type::Content);
 
+  browsingContext->SetPendingInitialization(true);
+  auto unsetPending = MakeScopeExit([browsingContext]() {
+    browsingContext->SetPendingInitialization(false);
+  });
+
   TabContext newTabContext = aTabOpener ? *aTabOpener : TabContext();
 
   
@@ -1069,7 +1074,6 @@ nsresult ContentChild::ProvideWindowCommon(
     rv = info.rv();
     *aWindowIsNew = info.windowOpened();
     nsTArray<FrameScriptInfo> frameScripts(info.frameScripts());
-    nsCString urlToLoad = info.urlToLoad();
     uint32_t maxTouchPoints = info.maxTouchPoints();
     DimensionInfo dimensionInfo = info.dimensions();
     bool hasSiblings = info.hasSiblings();
@@ -1213,6 +1217,7 @@ nsresult ContentChild::ProvideWindowCommon(
   
   
 
+  
   
   
   
