@@ -667,9 +667,6 @@ class JS::Realm : public JS::shadow::Realm {
 
   bool isSystem() const { return isSystem_; }
 
-  
-  bool isProbablySystemCode() const { return isSystem_; }
-
   static const size_t IterResultObjectValueSlot = 0;
   static const size_t IterResultObjectDoneSlot = 1;
   js::NativeObject* getOrCreateIterResultTemplateObject(JSContext* cx);
@@ -836,13 +833,6 @@ class JS::Realm : public JS::shadow::Realm {
   }
   static constexpr uint32_t debugModeIsDebuggeeBit() { return IsDebuggee; }
 
-  
-  
-  static constexpr size_t offsetOfActiveGlobal() {
-    static_assert(sizeof(global_) == sizeof(uintptr_t),
-                  "JIT code assumes field is pointer-sized");
-    return offsetof(JS::Realm, global_);
-  }
   static constexpr size_t offsetOfActiveLexicalEnvironment() {
     static_assert(sizeof(lexicalEnv_) == sizeof(uintptr_t),
                   "JIT code assumes field is pointer-sized");
