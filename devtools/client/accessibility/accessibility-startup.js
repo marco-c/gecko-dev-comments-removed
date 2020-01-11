@@ -47,10 +47,13 @@ class AccessibilityStartup {
     try {
       this._walker = await this._accessibility.getWalker();
       this._supports = {};
-      [this._supports.simulation] = await Promise.all([
-        
-        this.target.actorHasMethod("accessibility", "getSimulator"),
-      ]);
+      
+      
+      
+      
+      
+      
+      
 
       await this._accessibility.bootstrap();
 
