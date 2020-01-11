@@ -17,10 +17,10 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "jstypes.h"               
-#include "ds/FixedLengthVector.h"  
+#include "jstypes.h"                        
+#include "ds/FixedLengthVector.h"           
 #include "frontend/BinASTRuntimeSupport.h"  
-#include "frontend/BinASTToken.h"
+#include "frontend/BinASTToken.h"  
 #include "frontend/BinASTTokenReaderBase.h"  
 #include "js/AllocPolicy.h"                  
 #include "js/HashTable.h"                    
@@ -1351,7 +1351,7 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
  private:
   enum class MetadataOwnership { Owned, Unowned };
   MetadataOwnership metadataOwned_ = MetadataOwnership::Owned;
-  BinASTSourceMetadata* metadata_;
+  BinASTSourceMetadataContext* metadata_;
 
   class HuffmanDictionary dictionary_;
 
