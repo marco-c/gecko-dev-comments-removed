@@ -921,14 +921,28 @@ stan_GetCERTCertificate(NSSCertificate *c, PRBool forceUpdate)
     }
     if (!cc->nssCertificate || forceUpdate) {
         fill_CERTCertificateFields(c, cc, forceUpdate);
-    } else if (CERT_GetCertTrust(cc, &certTrust) != SECSuccess &&
-               !c->object.cryptoContext) {
-        
+    } else if (CERT_GetCertTrust(cc, &certTrust) != SECSuccess) {
+        CERTCertTrust *trust;
+        if (!c->object.cryptoContext) {
+            
+
+
+            trust = nssTrust_GetCERTCertTrustForCert(c, cc);
+        } else {
+            
 
 
 
-        CERTCertTrust *trust = NULL;
-        trust = nssTrust_GetCERTCertTrustForCert(c, cc);
+            NSSTrust *t = nssTrustDomain_FindTrustForCertificate(c->object.cryptoContext->td, c);
+            if (!t) {
+                goto loser;
+            }
+            trust = cert_trust_from_stan_trust(t, cc->arena);
+            nssTrust_Destroy(t);
+            if (!trust) {
+                goto loser;
+            }
+        }
 
         CERT_LockCertTrust(cc);
         cc->trust = trust;
