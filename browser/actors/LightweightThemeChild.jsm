@@ -6,9 +6,6 @@
 
 var EXPORTED_SYMBOLS = ["LightweightThemeChild"];
 
-const { ActorChild } = ChromeUtils.import(
-  "resource://gre/modules/ActorChild.jsm"
-);
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
@@ -16,46 +13,24 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
-class LightweightThemeChild extends ActorChild {
-  constructor(dispatcher) {
-    if (dispatcher.mm) {
-      
-      super(dispatcher);
-    } else {
-      
-      let fakeDispatcher = {
-        mm: dispatcher,
-        window: dispatcher.content,
-        addEventListener: dispatcher.content.addEventListener,
-      };
-      super(fakeDispatcher);
-    }
 
-    this.init();
-  }
-
-  
-
-
-
-
-
-
-
-
-  init() {
+class LightweightThemeChild extends JSWindowActorChild {
+  constructor() {
+    super();
     Services.cpmm.sharedData.addEventListener("change", this);
-    this.update(this.mm.chromeOuterWindowID, this.content);
   }
 
-  
-
-
-
-
-
-  cleanup() {
+  didDestroy() {
     Services.cpmm.sharedData.removeEventListener("change", this);
+  }
+
+  _getChromeOuterWindowID() {
+    if (this.docShell.messageManager) {
+      return this.docShell.messageManager.chromeOuterWindowID;
+    }
+    
+    
+    return this.contentWindow.top.windowUtils.outerWindowID;
   }
 
   
@@ -63,29 +38,38 @@ class LightweightThemeChild extends ActorChild {
 
 
   handleEvent(event) {
-    if (event.type === "change") {
-      if (event.changedKeys.includes(`theme/${this.mm.chromeOuterWindowID}`)) {
-        this.update(this.mm.chromeOuterWindowID, this.content);
-      }
+    switch (event.type) {
+      
+      case "pageshow":
+        this.update();
+        break;
+
+      case "change":
+        if (
+          event.changedKeys.includes(`theme/${this._getChromeOuterWindowID()}`)
+        ) {
+          this.update();
+        }
+        break;
     }
   }
 
   
 
 
-
-
-  update(outerWindowID, content) {
+  update() {
     const event = Cu.cloneInto(
       {
         detail: {
-          data: Services.cpmm.sharedData.get(`theme/${outerWindowID}`),
+          data: Services.cpmm.sharedData.get(
+            `theme/${this._getChromeOuterWindowID()}`
+          ),
         },
       },
-      content
+      this.contentWindow
     );
-    content.dispatchEvent(
-      new content.CustomEvent("LightweightTheme:Set", event)
+    this.contentWindow.dispatchEvent(
+      new this.contentWindow.CustomEvent("LightweightTheme:Set", event)
     );
   }
 }

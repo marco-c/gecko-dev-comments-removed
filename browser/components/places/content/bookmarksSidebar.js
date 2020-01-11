@@ -9,7 +9,6 @@ var { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
-  LightweightThemeChild: "resource:///actors/LightweightThemeChild.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   PlacesUIUtils: "resource:///modules/PlacesUIUtils.jsm",
   PlacesTransactions: "resource://gre/modules/PlacesTransactions.jsm",
@@ -33,19 +32,21 @@ function init() {
     document.documentElement.setAttribute("uidensity", uidensity);
   }
 
-  
-  let themeListener = new LightweightThemeChild({
-    content: window,
-    chromeOuterWindowID: window.top.windowUtils.outerWindowID,
-    docShell: window.docShell,
-  });
-
-  window.addEventListener("unload", () => {
-    themeListener.cleanup();
-  });
-
   document.getElementById("bookmarks-view").place =
     "place:type=" + Ci.nsINavHistoryQueryOptions.RESULTS_AS_ROOTS_QUERY;
+
+  
+  
+  window.addEventListener(
+    "pageshow",
+    e => {
+      window
+        .getWindowGlobalChild()
+        .getActor("LightweightTheme")
+        .handleEvent(e);
+    },
+    { once: true }
+  );
 }
 
 function searchBookmarks(aSearchString) {
