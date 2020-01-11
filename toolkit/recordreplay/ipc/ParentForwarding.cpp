@@ -159,6 +159,28 @@ static bool AlwaysForwardMessage(const IPC::Message& aMessage) {
   return type == dom::PBrowser::Msg_Destroy__ID;
 }
 
+static bool gMainThreadIsWaitingForIPDLReply = false;
+
+bool MainThreadIsWaitingForIPDLReply() {
+  return gMainThreadIsWaitingForIPDLReply;
+}
+
+
+
+
+struct MOZ_RAII AutoMarkMainThreadWaitingForIPDLReply {
+  AutoMarkMainThreadWaitingForIPDLReply() {
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
+    MOZ_RELEASE_ASSERT(!gMainThreadIsWaitingForIPDLReply);
+    ResumeBeforeWaitingForIPDLReply();
+    gMainThreadIsWaitingForIPDLReply = true;
+  }
+
+  ~AutoMarkMainThreadWaitingForIPDLReply() {
+    gMainThreadIsWaitingForIPDLReply = false;
+  }
+};
+
 static void BeginShutdown() {
   
   
@@ -279,7 +301,10 @@ class MiddlemanProtocol : public ipc::IToplevelProtocol {
         "StaticMaybeSendSyncMessage", StaticMaybeSendSyncMessage, this));
 
     if (mSide == ipc::ChildSide) {
-      MOZ_CRASH("NYI");
+      AutoMarkMainThreadWaitingForIPDLReply blocked;
+      while (!mSyncMessageReply) {
+        MOZ_CRASH("NYI");
+      }
     } else {
       MonitorAutoLock lock(*gMonitor);
 

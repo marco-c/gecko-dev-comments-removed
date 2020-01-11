@@ -72,10 +72,10 @@ enum class ThreadEvent : uint32_t {
 
 const char* ThreadEventName(ThreadEvent aEvent);
 
-class Recording;
+class File;
 
 
-extern Recording* gRecording;
+extern File* gRecordingFile;
 
 
 extern bool gInitialized;
@@ -105,9 +105,6 @@ size_t RecordingEndpoint();
 
 bool IsMainChild();
 void SetMainChild();
-
-
-bool ReplayingInCloud();
 
 
 
@@ -207,9 +204,6 @@ MOZ_MakeRecordReplayPrinter(Print, false)
     int GetRecordingPid();
 
 
-void ResetPid();
-
-
 
 
 
@@ -248,14 +242,112 @@ void DumpTimers();
 
 
 
+
+
+enum class MemoryKind {
+  
+  Tracked,
+
+  
+
+  
+  Generic,
+
+  
+  ThreadSnapshot,
+
+  
+  TrackedRegions,
+  FreeRegions,
+  DirtyPageSet,
+  SortedDirtyPageSet,
+  PageCopy,
+
+  
+  ScriptHits,
+
+  Count
+};
+
+
+
+void* AllocateMemory(size_t aSize, MemoryKind aKind);
+void DeallocateMemory(void* aAddress, size_t aSize, MemoryKind aKind);
+
+
+template <MemoryKind Kind>
+class AllocPolicy {
+ public:
+  template <typename T>
+  T* maybe_pod_calloc(size_t aNumElems) {
+    if (aNumElems & tl::MulOverflowMask<sizeof(T)>::value) {
+      MOZ_CRASH();
+    }
+    
+    return static_cast<T*>(AllocateMemory(aNumElems * sizeof(T), Kind));
+  }
+
+  template <typename T>
+  void free_(T* aPtr, size_t aSize) {
+    DeallocateMemory(aPtr, aSize * sizeof(T), Kind);
+  }
+
+  template <typename T>
+  T* maybe_pod_realloc(T* aPtr, size_t aOldSize, size_t aNewSize) {
+    T* res = maybe_pod_calloc<T>(aNewSize);
+    memcpy(res, aPtr, aOldSize * sizeof(T));
+    free_<T>(aPtr, aOldSize);
+    return res;
+  }
+
+  template <typename T>
+  T* maybe_pod_malloc(size_t aNumElems) {
+    return maybe_pod_calloc<T>(aNumElems);
+  }
+
+  template <typename T>
+  T* pod_malloc(size_t aNumElems) {
+    return maybe_pod_malloc<T>(aNumElems);
+  }
+
+  template <typename T>
+  T* pod_calloc(size_t aNumElems) {
+    return maybe_pod_calloc<T>(aNumElems);
+  }
+
+  template <typename T>
+  T* pod_realloc(T* aPtr, size_t aOldSize, size_t aNewSize) {
+    return maybe_pod_realloc<T>(aPtr, aOldSize, aNewSize);
+  }
+
+  void reportAllocOverflow() const {}
+
+  MOZ_MUST_USE bool checkSimulatedOOM() const { return true; }
+};
+
+
+
+
+
+
+
+
+
+
+
 typedef size_t FileHandle;
 
 
-void* DirectAllocateMemory(size_t aSize);
+void* DirectAllocateMemory(void* aAddress, size_t aSize);
 void DirectDeallocateMemory(void* aAddress, size_t aSize);
 
 
-void DirectMakeInaccessible(void* aAddress, size_t aSize);
+void DirectWriteProtectMemory(void* aAddress, size_t aSize, bool aExecutable,
+                              bool aIgnoreFailures = false);
+
+
+void DirectUnprotectMemory(void* aAddress, size_t aSize, bool aExecutable,
+                           bool aIgnoreFailures = false);
 
 
 
@@ -280,19 +372,8 @@ size_t DirectRead(FileHandle aFd, void* aData, size_t aSize);
 
 void DirectCreatePipe(FileHandle* aWriteFd, FileHandle* aReadFd);
 
-typedef pthread_t NativeThreadId;
 
-
-NativeThreadId DirectSpawnThread(void (*aFunction)(void*), void* aArgument,
-                                 void* aStackBase, size_t aStackSize);
-
-
-NativeThreadId DirectCurrentThread();
-
-typedef pthread_mutex_t NativeLock;
-
-void DirectLockMutex(NativeLock* aLock, bool aPassThroughEvents = true);
-void DirectUnlockMutex(NativeLock* aLock, bool aPassThroughEvents = true);
+void DirectSpawnThread(void (*aFunction)(void*), void* aArgument);
 
 }  
 }  

@@ -1982,11 +1982,6 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateReplayingProcess(
     return IPC_FAIL_NO_REASON(this);
   }
 
-  if (recordreplay::parent::UseCloudForReplayingProcesses()) {
-    recordreplay::parent::CreateReplayingCloudProcess(Pid(), aChannelId);
-    return IPC_OK();
-  }
-
   while (aChannelId >= mReplayingChildren.length()) {
     if (!mReplayingChildren.append(nullptr)) {
       return IPC_FAIL_NO_REASON(this);
@@ -2001,22 +1996,12 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateReplayingProcess(
       Pid(), aChannelId, NS_ConvertUTF16toUTF8(mRecordingFile).get(),
        false, extraArgs);
 
-  GeckoChildProcessHost* child =
+  mReplayingChildren[aChannelId] =
       new GeckoChildProcessHost(GeckoProcessType_Content);
-  mReplayingChildren[aChannelId] = child;
-  if (!child->LaunchAndWaitForProcessHandle(extraArgs)) {
+  if (!mReplayingChildren[aChannelId]->LaunchAndWaitForProcessHandle(
+          extraArgs)) {
     return IPC_FAIL_NO_REASON(this);
   }
-
-  
-  
-  
-  
-  
-  
-  
-  ProcessId pid = base::GetProcId(child->GetChildProcessHandle());
-  CrashReporter::DeregisterChildCrashAnnotationFileDescriptor(pid);
 
   return IPC_OK();
 }

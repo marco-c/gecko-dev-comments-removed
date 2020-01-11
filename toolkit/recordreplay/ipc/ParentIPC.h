@@ -69,15 +69,6 @@ void GetArgumentsForChildProcess(base::ProcessId aMiddlemanPid,
 
 bool DebuggerRunsInMiddleman();
 
-
-bool UseCloudForReplayingProcesses();
-
-
-
-
-void CreateReplayingCloudProcess(base::ProcessId aProcessId,
-                                 uint32_t aChannelId);
-
 }  
 }  
 }  

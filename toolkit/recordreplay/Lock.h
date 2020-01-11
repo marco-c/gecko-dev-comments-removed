@@ -10,7 +10,7 @@
 #include "mozilla/PodOperations.h"
 #include "mozilla/Types.h"
 
-#include "Recording.h"
+#include "File.h"
 
 namespace mozilla {
 namespace recordreplay {
@@ -29,8 +29,11 @@ class Lock {
   
   size_t mId;
 
+  
+  Atomic<size_t, SequentiallyConsistent, Behavior::DontPreserve> mOwner;
+
  public:
-  explicit Lock(size_t aId) : mId(aId) { MOZ_ASSERT(aId); }
+  explicit Lock(size_t aId) : mId(aId), mOwner(0) { MOZ_ASSERT(aId); }
 
   size_t Id() { return mId; }
 
@@ -38,26 +41,26 @@ class Lock {
   
   
   
-  void Enter(NativeLock* aNativeLock);
+  void Enter();
 
   
   
-  void Exit(NativeLock* aNativeLock);
+  void Exit();
 
   
-  static void New(NativeLock* aNativeLock);
+  static void New(void* aNativeLock);
 
   
-  static void Destroy(NativeLock* aNativeLock);
+  static void Destroy(void* aNativeLock);
 
   
-  static Lock* Find(NativeLock* aNativeLock);
+  static Lock* Find(void* aNativeLock);
 
   
   static void InitializeLocks();
 
   
-  static void LockAcquiresUpdated(size_t aLockId);
+  static void LockAquiresUpdated(size_t aLockId);
 };
 
 }  

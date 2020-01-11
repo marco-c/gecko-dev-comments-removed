@@ -9,7 +9,6 @@
 
 #include "jsapi.h"
 
-#include "Channel.h"
 #include "InfallibleVector.h"
 #include "ProcessRewind.h"
 
@@ -60,11 +59,7 @@ void SetupMiddlemanControl(const Maybe<size_t>& aRecordingChildId);
 
 
 void ForwardManifestFinished(parent::ChildProcessInfo* aChild,
-                             const ManifestFinishedMessage& aMsg);
-void ForwardUnhandledDivergence(parent::ChildProcessInfo* aChild,
-                                const UnhandledDivergenceMessage& aMsg);
-void ForwardPingResponse(parent::ChildProcessInfo* aChild,
-                         const PingResponseMessage& aMsg);
+                             const Message& aMsg);
 
 
 void BeforeSaveRecording();
@@ -77,7 +72,7 @@ void AfterSaveRecording();
 void HitCheckpoint(size_t aCheckpoint);
 
 
-bool RecoverFromCrash(size_t aRootId, size_t aForkId);
+bool RecoverFromCrash(parent::ChildProcessInfo* aChild);
 
 
 

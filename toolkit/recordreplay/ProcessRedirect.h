@@ -73,21 +73,11 @@ namespace recordreplay {
 
 
 
+struct CallArguments;
 
 
 
-
-
-
-
-
-
-
-
-struct CallArguments {
-  
-  static const size_t NumStackArguments = 64;
-
+struct CallRegisterArguments {
  protected:
   size_t arg0;        
   size_t arg1;        
@@ -102,6 +92,30 @@ struct CallArguments {
   size_t rval1;       
   double floatrval0;  
   double floatrval1;  
+                      
+
+ public:
+  void CopyFrom(const CallRegisterArguments* aArguments);
+  void CopyTo(CallRegisterArguments* aArguments) const;
+  void CopyRvalFrom(const CallRegisterArguments* aArguments);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+struct CallArguments : public CallRegisterArguments {
+  
+  static const size_t NumStackArguments = 64;
+
+ protected:
   size_t stack[NumStackArguments];  
                                     
 
@@ -109,7 +123,7 @@ struct CallArguments {
   template <typename T>
   T& Arg(size_t aIndex) {
     static_assert(sizeof(T) == sizeof(size_t), "Size must match");
-    static_assert(IsFloatingPoint<T>::value == false, "Use FloatArg");
+    static_assert(IsFloatingPoint<T>::value == false, "FloatArg NYI");
     MOZ_RELEASE_ASSERT(aIndex < 70);
     switch (aIndex) {
       case 0:
@@ -132,19 +146,6 @@ struct CallArguments {
   template <size_t Index, typename T>
   T& Arg() {
     return Arg<T>(Index);
-  }
-
-  template <size_t Index>
-  double& FloatArg() {
-    static_assert(Index < 3, "Bad index");
-    switch (Index) {
-      case 0:
-        return floatarg0;
-      case 1:
-        return floatarg1;
-      case 2:
-        return floatarg2;
-    }
   }
 
   template <size_t Offset>
@@ -177,6 +178,24 @@ struct CallArguments {
     }
   }
 };
+
+inline void CallRegisterArguments::CopyFrom(
+    const CallRegisterArguments* aArguments) {
+  memcpy(this, aArguments, sizeof(CallRegisterArguments));
+}
+
+inline void CallRegisterArguments::CopyTo(
+    CallRegisterArguments* aArguments) const {
+  memcpy(aArguments, this, sizeof(CallRegisterArguments));
+}
+
+inline void CallRegisterArguments::CopyRvalFrom(
+    const CallRegisterArguments* aArguments) {
+  rval0 = aArguments->rval0;
+  rval1 = aArguments->rval1;
+  floatrval0 = aArguments->floatrval0;
+  floatrval1 = aArguments->floatrval1;
+}
 
 
 typedef ssize_t ErrorType;
@@ -214,8 +233,8 @@ typedef PreambleResult (*PreambleFn)(CallArguments* aArguments);
 
 
 
-struct ExternalCallContext;
-typedef void (*ExternalCallFn)(ExternalCallContext& aCx);
+struct MiddlemanCallContext;
+typedef void (*MiddlemanCallFn)(MiddlemanCallContext& aCx);
 
 
 struct Redirection {
@@ -243,11 +262,11 @@ struct Redirection {
 
   
   
-  ExternalCallFn mExternalCall;
+  MiddlemanCallFn mMiddlemanCall;
 
   
   
-  PreambleFn mExternalPreamble;
+  PreambleFn mMiddlemanPreamble;
 };
 
 
@@ -381,21 +400,6 @@ static inline void RR_CStringRval(Stream& aEvents, CallArguments* aArguments,
 }
 
 
-template <size_t ByteCount>
-static inline void RR_RvalBuffer(Stream& aEvents, CallArguments* aArguments,
-                                 ErrorType* aError) {
-  auto& rval = aArguments->Rval<void*>();
-  bool hasRval = IsRecording() && rval;
-  aEvents.RecordOrReplayValue(&hasRval);
-  if (IsReplaying()) {
-    rval = hasRval ? NewLeakyArray<char>(ByteCount) : nullptr;
-  }
-  if (hasRval) {
-    aEvents.RecordOrReplayBytes(rval, ByteCount);
-  }
-}
-
-
 template <size_t Argument>
 static inline void RR_RvalIsArgument(Stream& aEvents, CallArguments* aArguments,
                                      ErrorType* aError) {
@@ -505,14 +509,6 @@ static inline void RR_WriteOptionalBufferFixedSize(Stream& aEvents,
 }
 
 
-template <size_t Arg, typename Type>
-static inline void RR_OutParam(Stream& aEvents, CallArguments* aArguments,
-                               ErrorType* aError) {
-  RR_WriteOptionalBufferFixedSize<Arg, sizeof(Type)>(aEvents, aArguments,
-                                                     aError);
-}
-
-
 
 
 
@@ -590,14 +586,6 @@ static inline PreambleResult Preamble_WaitForever(CallArguments* aArguments) {
   Thread::WaitForever();
   Unreachable();
   return PreambleResult::PassThrough;
-}
-
-static inline PreambleResult Preamble_NYI(CallArguments* aArguments) {
-  if (AreThreadEventsPassedThrough()) {
-    return PreambleResult::PassThrough;
-  }
-  MOZ_CRASH("Redirection NYI");
-  return PreambleResult::Veto;
 }
 
 

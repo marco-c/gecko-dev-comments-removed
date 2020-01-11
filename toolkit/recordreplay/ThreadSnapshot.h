@@ -7,6 +7,7 @@
 #ifndef mozilla_recordreplay_ThreadSnapshot_h
 #define mozilla_recordreplay_ThreadSnapshot_h
 
+#include "File.h"
 #include "ProcessRewind.h"
 #include "Thread.h"
 
@@ -17,16 +18,90 @@ namespace recordreplay {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 bool SaveThreadState(size_t aId, int* aStackSeparator);
 
 
-void SaveThreadStack(size_t aId);
+struct SavedThreadStack {
+  
+  void* mStackPointer;
+
+  
+  uint8_t* mStack;
+  size_t mStackBytes;
+
+  
+  jmp_buf mRegisters;
+
+  SavedThreadStack() { PodZero(this); }
+
+  void ReleaseContents() {
+    if (mStackBytes) {
+      DeallocateMemory(mStack, mStackBytes, MemoryKind::ThreadSnapshot);
+    }
+  }
+};
+
+struct AllSavedThreadStacks {
+  SavedThreadStack mStacks[MaxRecordedThreadId];
+
+  void ReleaseContents() {
+    for (SavedThreadStack& stack : mStacks) {
+      stack.ReleaseContents();
+    }
+  }
+};
 
 
+
+
+
+bool SaveAllThreads(AllSavedThreadStacks& aSaved);
+
+
+
+void RestoreAllThreads(const AllSavedThreadStacks& aSaved);
+
+
+
+
+void WaitForIdleThreadsToRestoreTheirStacks();
+
+bool ShouldRestoreThreadStack(size_t aId);
 void RestoreThreadStack(size_t aId);
 
 
-void InitializeThreadSnapshots();
+void InitializeThreadSnapshots(size_t aNumThreads);
 
 }  
 }  

@@ -8,11 +8,12 @@
 #define mozilla_recordreplay_Thread_h
 
 #include "mozilla/Atomics.h"
-#include "Recording.h"
+#include "File.h"
 #include "Lock.h"
 #include "Monitor.h"
 
 #include <pthread.h>
+#include <setjmp.h>
 
 namespace mozilla {
 namespace recordreplay {
@@ -56,28 +57,27 @@ namespace recordreplay {
 
 
 
+
+
 static const size_t MainThreadId = 1;
 
 
-static const size_t MaxThreadId = 70;
+static const size_t MaxRecordedThreadId = 70;
+
+
+
+static const size_t MaxNumNonRecordedThreads = 12;
+
+static const size_t MaxThreadId =
+    MaxRecordedThreadId + MaxNumNonRecordedThreads;
+
+typedef pthread_t NativeThreadId;
 
 
 class Thread {
  public:
   
   typedef void (*Callback)(void*);
-
-  
-  enum OwnedLockState {
-    
-    None,
-
-    
-    NeedRelease,
-
-    
-    NeedAcquire,
-  };
 
  private:
   
@@ -117,12 +117,6 @@ class Thread {
   NativeThreadId mNativeId;
 
   
-  
-  
-  
-  uintptr_t mMachId;
-
-  
   Stream* mEvents;
 
   
@@ -142,10 +136,6 @@ class Thread {
   Atomic<bool, SequentiallyConsistent, Behavior::DontPreserve> mIdle;
 
   
-  Atomic<OwnedLockState, SequentiallyConsistent, Behavior::DontPreserve>
-      mOwnedLockState;
-
-  
   
   
   std::function<void()> mUnrecordedWaitCallback;
@@ -154,31 +144,7 @@ class Thread {
   
   Maybe<size_t> mAtomicLockId;
 
-  
-  InfallibleVector<NativeLock*> mOwnedLocks;
-
-  
-  
-  
-  
-  struct StorageEntry {
-    uintptr_t mKey;
-    void* mData;
-    StorageEntry* mNext;
-  };
-  StorageEntry* mStorageEntries;
-  uint8_t* mStorageCursor;
-  uint8_t* mStorageLimit;
-
-  uint8_t* AllocateStorage(size_t aSize);
-
  public:
-
-  
-  
-  uintptr_t mRedirectionValue;
-  InfallibleVector<char> mRedirectionData;
-
   
   
   
@@ -191,6 +157,10 @@ class Thread {
   size_t StackSize() { return mStackSize; }
 
   inline bool IsMainThread() const { return mId == MainThreadId; }
+  inline bool IsRecordedThread() const { return mId <= MaxRecordedThreadId; }
+  inline bool IsNonMainRecordedThread() const {
+    return IsRecordedThread() && !IsMainThread();
+  }
 
   
   void SetPassThrough(bool aPassThrough) {
@@ -236,11 +206,6 @@ class Thread {
   }
 
   
-  uintptr_t GetMachId() const {
-    return mMachId;
-  }
-
-  
   
   static void ThreadMain(void* aArgument);
 
@@ -260,20 +225,19 @@ class Thread {
   
   static Thread* GetById(size_t aId);
   static Thread* GetByNativeId(NativeThreadId aNativeId);
+  static Thread* GetByStackPointer(void* aSp);
 
   
   static void SpawnAllThreads();
 
   
-  
-  
-  static void RespawnAllThreadsAfterFork();
+  static void SpawnThread(Thread* aThread);
 
   
-  static NativeThreadId SpawnThread(Thread* aThread);
+  static Thread* SpawnNonRecordedThread(Callback aStart, void* aArgument);
 
   
-  static void SpawnNonRecordedThread(Callback aStart, void* aArgument);
+  static void WaitUntilInitialized(Thread* aThread);
 
   
   
@@ -286,18 +250,6 @@ class Thread {
 
   
   Maybe<size_t>& AtomicLockId() { return mAtomicLockId; }
-
-  
-  void AddOwnedLock(NativeLock* aLock);
-  void RemoveOwnedLock(NativeLock* aLock);
-
-  
-  
-  void ReleaseOrAcquireOwnedLocks(OwnedLockState aState);
-
-  
-  
-  void** GetOrCreateStorage(uintptr_t aKey);
 
   
   
@@ -339,7 +291,7 @@ class Thread {
   
   
   void NotifyUnrecordedWait(const std::function<void()>& aNotifyCallback);
-  bool MaybeWaitForFork(const std::function<void()>& aReleaseCallback);
+  bool MaybeWaitForSnapshot(const std::function<void()>& aReleaseCallback);
 
   
   
@@ -347,11 +299,10 @@ class Thread {
 
   
   
-  static void OperateOnIdleThreadLocks(OwnedLockState aState);
+  static void ResumeIdleThreads();
 
   
-  
-  static void ResumeIdleThreads();
+  static void ResumeSingleIdleThread(size_t aId);
 
   
   
@@ -360,6 +311,28 @@ class Thread {
   
   
   static size_t TotalEventProgress();
+};
+
+
+
+class AutoEnsurePassThroughThreadEventsUseStackPointer {
+  Thread* mThread;
+  bool mPassedThrough;
+
+ public:
+  AutoEnsurePassThroughThreadEventsUseStackPointer()
+      : mThread(Thread::GetByStackPointer(this)),
+        mPassedThrough(!mThread || mThread->PassThroughEvents()) {
+    if (!mPassedThrough) {
+      mThread->SetPassThrough(true);
+    }
+  }
+
+  ~AutoEnsurePassThroughThreadEventsUseStackPointer() {
+    if (!mPassedThrough) {
+      mThread->SetPassThrough(false);
+    }
+  }
 };
 
 
@@ -385,7 +358,7 @@ class MOZ_RAII RecordingEventSection {
     }
     if (IsRecording()) {
       MOZ_RELEASE_ASSERT(!aThread->Events().mInRecordingEventSection);
-      aThread->Events().mRecording->mStreamLock.ReadLock();
+      aThread->Events().mFile->mStreamLock.ReadLock();
       aThread->Events().mInRecordingEventSection = true;
     } else {
       while (!aThread->MaybeDivergeFromRecording() &&
@@ -400,7 +373,7 @@ class MOZ_RAII RecordingEventSection {
       return;
     }
     if (IsRecording()) {
-      mThread->Events().mRecording->mStreamLock.ReadUnlock();
+      mThread->Events().mFile->mStreamLock.ReadUnlock();
       mThread->Events().mInRecordingEventSection = false;
     }
   }

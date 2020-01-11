@@ -7,7 +7,7 @@
 #include "ProcessRedirect.h"
 
 #include "InfallibleVector.h"
-#include "ExternalCall.h"
+#include "MiddlemanCall.h"
 #include "ipc/ChildInternal.h"
 #include "ipc/ParentInternal.h"
 #include "mozilla/Sprintf.h"
@@ -97,8 +97,8 @@ __attribute__((used)) int RecordReplayInterceptCall(int aCallId,
     
     
     
-    if (redirection.mExternalPreamble) {
-      if (CallPreambleHook(redirection.mExternalPreamble, aCallId,
+    if (redirection.mMiddlemanPreamble) {
+      if (CallPreambleHook(redirection.mMiddlemanPreamble, aCallId,
                            aArguments)) {
         return 0;
       }
@@ -106,8 +106,9 @@ __attribute__((used)) int RecordReplayInterceptCall(int aCallId,
 
     
     
-    if (redirection.mExternalCall) {
-      if (OnExternalCall(aCallId, aArguments,  true)) {
+    if (redirection.mMiddlemanCall) {
+      if (SendCallToMiddleman(aCallId, aArguments,
+                               true)) {
         return 0;
       }
     }
@@ -115,13 +116,14 @@ __attribute__((used)) int RecordReplayInterceptCall(int aCallId,
     if (child::CurrentRepaintCannotFail()) {
       
       
-      child::ReportFatalError("Could not perform external call: %s\n",
+      child::ReportFatalError(Nothing(),
+                              "Could not perform middleman call: %s\n",
                               redirection.mName);
     }
 
     
     
-    EnsureNotDivergedFromRecording(Some(aCallId));
+    EnsureNotDivergedFromRecording();
     Unreachable();
   }
 
@@ -150,8 +152,8 @@ __attribute__((used)) int RecordReplayInterceptCall(int aCallId,
   
   
   
-  if (IsReplaying() && redirection.mExternalCall) {
-    (void)OnExternalCall(aCallId, aArguments,  false);
+  if (IsReplaying() && redirection.mMiddlemanCall) {
+    (void)SendCallToMiddleman(aCallId, aArguments,  false);
   }
 
   RestoreError(error);
@@ -169,12 +171,7 @@ __asm(
     "_RecordReplayRedirectCall:"
 
     
-    "pushq %rbp;"
-    "movq %rsp, %rbp;"
-
-    
-    
-    "subq $624, %rsp;"
+    "subq $616, %rsp;"
 
     
     "movq %rdi, 0(%rsp);"
@@ -197,7 +194,7 @@ __asm(
     
     "_RecordReplayRedirectCall_Loop:"
     "subq $1, %rsi;"
-    "movq 640(%rsp, %rsi, 8), %rdx;"  
+    "movq 624(%rsp, %rsi, 8), %rdx;"  
     "movq %rdx, 104(%rsp, %rsi, 8);"
     "testq %rsi, %rsi;"
     "jne _RecordReplayRedirectCall_Loop;"
@@ -226,8 +223,7 @@ __asm(
     "movsd 56(%rsp), %xmm1;"
     "movsd 64(%rsp), %xmm2;"
     "movq 72(%rsp), %rax;"
-    "addq $624, %rsp;"
-    "popq %rbp;"
+    "addq $616, %rsp;"
     "jmpq *%rax;"
 
     
@@ -239,10 +235,9 @@ __asm(
     "movsd 96(%rsp), %xmm1;"
 
     
-    "addq $624, %rsp;"
+    "addq $616, %rsp;"
 
     
-    "popq %rbp;"
     "ret;");
 
 
@@ -252,14 +247,9 @@ __asm(
     "_RecordReplayInvokeCallRaw:"
 
     
-    "pushq %rbp;"
-    "movq %rsp, %rbp;"
-
-    
     "movq %rsi, %rax;"
 
     
-    "push %rdi;"
     "push %rdi;"
 
     
@@ -296,13 +286,11 @@ __asm(
 
     
     "pop %rdi;"
-    "pop %rdi;"
     "movq %rax, 72(%rdi);"
     "movq %rdx, 80(%rdi);"
     "movsd %xmm0, 88(%rdi);"
     "movsd %xmm1, 96(%rdi);"
 
-    "popq %rbp;"
     "ret;");
 
 }  
@@ -480,9 +468,7 @@ static uint8_t* MaybeInternalJumpTarget(uint8_t* aIpStart, uint8_t* aIpEnd) {
         
         
         strstr(startName, "__workq_kernreturn") ||
-        strstr(startName, "kevent64") ||
-        
-        strstr(startName, "CGAffineTransformMakeScale")) {
+        strstr(startName, "kevent64")) {
       PrintRedirectSpew("Failed [%p]: Vetoed by annotation\n", aIpEnd - 1);
       return aIpEnd - 1;
     }
@@ -512,8 +498,7 @@ static void UnknownInstruction(const char* aName, uint8_t* aIp,
   for (size_t i = 0; i < aNbytes; i++) {
     byteData.AppendPrintf(" %d", (int)aIp[i]);
   }
-  RedirectFailure("Unknown instruction in %s [%p]:%s", aName, aIp,
-                  byteData.get());
+  RedirectFailure("Unknown instruction in %s:%s", aName, byteData.get());
 }
 
 
@@ -556,21 +541,14 @@ static bool CopySpecialInstruction(uint8_t* aIp, ud_t* aUd, size_t aNbytes,
       }
       return true;
     }
-    if (op->type == UD_OP_MEM && !op->index) {
-      if (op->base == UD_R_RIP) {
-        if (op->offset == 32) {
-          
-          uint8_t* addr = aIp + aNbytes + op->lval.sdword;
-          aAssembler.MoveImmediateToRax(addr);
-          aAssembler.LoadRax(8);
-          aAssembler.JumpToRax();
-          return true;
-        }
-      } else {
-        
-        aAssembler.CopyInstruction(aIp, aNbytes);
-        return true;
-      }
+    if (op->type == UD_OP_MEM && op->base == UD_R_RIP && !op->index &&
+        op->offset == 32) {
+      
+      uint8_t* addr = aIp + aNbytes + op->lval.sdword;
+      aAssembler.MoveImmediateToRax(addr);
+      aAssembler.LoadRax(8);
+      aAssembler.JumpToRax();
+      return true;
     }
   }
 
@@ -650,24 +628,6 @@ static bool CopySpecialInstruction(uint8_t* aIp, ud_t* aUd, size_t aNbytes,
       aAssembler.MoveImmediateToRax(addr);
       aAssembler.LoadRax(8);
       aAssembler.CompareRaxWithTopOfStack();
-      aAssembler.PopRax();
-      aAssembler.PopRax();
-      return true;
-    }
-    if (dst->type == UD_OP_MEM && src->type == UD_OP_REG &&
-        dst->base == UD_R_RIP && !dst->index && dst->offset == 32) {
-      
-      int reg = Assembler::NormalizeRegister(src->base);
-      if (!reg) {
-        return false;
-      }
-      uint8_t* addr = aIp + aNbytes + dst->lval.sdword;
-      aAssembler.PushRax();
-      aAssembler.MoveRegisterToRax(reg);
-      aAssembler.PushRax();
-      aAssembler.MoveImmediateToRax(addr);
-      aAssembler.LoadRax(8);
-      aAssembler.CompareTopOfStackWithRax();
       aAssembler.PopRax();
       aAssembler.PopRax();
       return true;
@@ -771,37 +731,11 @@ static uint8_t* CopyInstructions(const char* aName, uint8_t* aIpStart,
   return ip;
 }
 
-static bool PreserveCallerSaveRegisters(const char* aName) {
-  
-  
-  
-  return !strcmp(aName, "tlv_get_addr");
-}
-
 
 static uint8_t* GenerateRedirectStub(Assembler& aAssembler, size_t aCallId) {
   uint8_t* newFunction = aAssembler.Current();
-  if (PreserveCallerSaveRegisters(GetRedirection(aCallId).mName)) {
-    static int registers[] = {
-      UD_R_RDI, UD_R_RDI , UD_R_RSI, UD_R_RDX, UD_R_RCX,
-      UD_R_R8, UD_R_R9, UD_R_R10, UD_R_R11,
-    };
-    for (size_t i = 0; i < ArrayLength(registers); i++) {
-      aAssembler.MoveRegisterToRax(registers[i]);
-      aAssembler.PushRax();
-    }
-    aAssembler.MoveImmediateToRax((void*)aCallId);
-    uint8_t* after = aAssembler.Current() + PushImmediateBytes + JumpBytes;
-    aAssembler.PushImmediate(after);
-    aAssembler.Jump(BitwiseCast<void*>(RecordReplayRedirectCall));
-    for (int i = ArrayLength(registers) - 1; i >= 0; i--) {
-      aAssembler.PopRegister(registers[i]);
-    }
-    aAssembler.Return();
-  } else {
-    aAssembler.MoveImmediateToRax((void*)aCallId);
-    aAssembler.Jump(BitwiseCast<void*>(RecordReplayRedirectCall));
-  }
+  aAssembler.MoveImmediateToRax((void*)aCallId);
+  aAssembler.Jump(BitwiseCast<void*>(RecordReplayRedirectCall));
   return newFunction;
 }
 
@@ -821,8 +755,8 @@ static void Redirect(size_t aCallId, Redirection& aRedirection,
 
   if (!functionStart) {
     if (aFirstPass) {
-      PrintRedirectSpew("Could not find symbol %s for redirecting.\n",
-                        aRedirection.mName);
+      PrintSpew("Could not find symbol %s for redirecting.\n",
+                aRedirection.mName);
     }
     return;
   }
