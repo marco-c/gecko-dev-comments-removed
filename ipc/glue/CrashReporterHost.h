@@ -94,17 +94,19 @@ class CrashReporterHost {
     return mExtraAnnotations[CrashReporter::Annotation::additional_minidumps];
   }
 
- private:
-  static void AsyncAddCrash(int32_t aProcessType, int32_t aCrashType,
-                            const nsString& aChildDumpID);
+  
+  
+  
+  
+  static void RecordCrash(GeckoProcessType aProcessType, int32_t aCrashType,
+                          const nsString& aChildDumpID);
 
+ private:
   
   int32_t GetCrashType();
 
-  
-  
-  
-  
+  static void RecordCrashWithTelemetry(GeckoProcessType aProcessType,
+                                       int32_t aCrashType);
   static void NotifyCrashService(GeckoProcessType aProcessType,
                                  int32_t aCrashType,
                                  const nsString& aChildDumpID);

@@ -183,7 +183,9 @@ bool TakeMinidumpForChild(uint32_t childPid, nsIFile** dump,
 
 
 
-bool FinalizeOrphanedMinidump(uint32_t aChildPid, GeckoProcessType aType);
+
+bool FinalizeOrphanedMinidump(uint32_t aChildPid, GeckoProcessType aType,
+                              nsString* aDumpId = nullptr);
 
 #if defined(XP_WIN)
 typedef HANDLE ProcessHandle;
