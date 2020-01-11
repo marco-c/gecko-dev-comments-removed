@@ -62,20 +62,6 @@ struct TokenPos {
 
 enum DecimalPoint { NoDecimal = false, HasDecimal = true };
 
-enum class InvalidEscapeType {
-  
-  None,
-  
-  Hexadecimal,
-  
-  Unicode,
-  
-  
-  UnicodeOverflow,
-  
-  Octal
-};
-
 
 enum class IdentifierEscapes { None, SawUnicodeEscape };
 
