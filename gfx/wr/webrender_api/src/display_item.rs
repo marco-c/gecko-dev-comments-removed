@@ -1302,12 +1302,14 @@ impl BorderRadius {
         }
     }
 
+    
+    
     pub fn is_zero(&self) -> bool {
-        if let Some(radius) = self.is_uniform() {
-            radius == 0.0
-        } else {
-            false
-        }
+        let corner_is_zero = |corner: &LayoutSize| corner.width == 0.0 || corner.height == 0.0;
+        corner_is_zero(&self.top_left) &&
+        corner_is_zero(&self.top_right) &&
+        corner_is_zero(&self.bottom_right) &&
+        corner_is_zero(&self.bottom_left)
     }
 }
 
