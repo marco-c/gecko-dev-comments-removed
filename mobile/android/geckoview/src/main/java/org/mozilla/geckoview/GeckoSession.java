@@ -792,8 +792,6 @@ public class GeckoSession implements Parcelable {
                         type = PermissionDelegate.PERMISSION_DESKTOP_NOTIFICATION;
                     } else if ("persistent-storage".equals(typeString)) {
                         type = PermissionDelegate.PERMISSION_PERSISTENT_STORAGE;
-                    } else if ("xr".equals(typeString)) {
-                        type = PermissionDelegate.PERMISSION_XR;
                     } else if ("midi".equals(typeString)) {
                         
                         
@@ -4964,12 +4962,6 @@ public class GeckoSession implements Parcelable {
         
 
 
-
-        int PERMISSION_XR = 3;
-
-        
-
-
         interface Callback {
             
 
@@ -5005,7 +4997,6 @@ public class GeckoSession implements Parcelable {
         }
 
         
-
 
 
 
@@ -5216,8 +5207,7 @@ public class GeckoSession implements Parcelable {
 
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({PermissionDelegate.PERMISSION_GEOLOCATION,
-            PermissionDelegate.PERMISSION_DESKTOP_NOTIFICATION,
-            PermissionDelegate.PERMISSION_XR})
+            PermissionDelegate.PERMISSION_DESKTOP_NOTIFICATION})
      @interface Permission {}
 
     
