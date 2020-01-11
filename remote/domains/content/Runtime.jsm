@@ -188,7 +188,7 @@ class Runtime extends ContentProcessDomain {
 
   getContextByFrameId(frameId) {
     for (const ctx of this.contexts.values()) {
-      if (ctx.frameId === frameId) {
+      if (ctx.frameId == frameId) {
         return ctx;
       }
     }

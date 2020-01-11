@@ -48,7 +48,7 @@ class ExecutionContext {
     
     const { windowUtils } = debuggee;
     this.id = windowUtils.currentInnerWindowID;
-    this.frameId = windowUtils.outerWindowID;
+    this.frameId = windowUtils.outerWindowID.toString();
 
     this._remoteObjects = new Map();
   }
