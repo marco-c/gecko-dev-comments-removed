@@ -6,6 +6,7 @@
 #ifndef nsHttpConnectionMgr_h__
 #define nsHttpConnectionMgr_h__
 
+#include "HttpConnectionMgrShell.h"
 #include "nsHttpConnection.h"
 #include "nsHttpTransaction.h"
 #include "nsTArray.h"
@@ -46,44 +47,18 @@ struct HttpRetParams;
 class nsHttpConnectionMgr;
 typedef void (nsHttpConnectionMgr::*nsConnEventHandler)(int32_t, ARefBase*);
 
-class nsHttpConnectionMgr final : public nsIObserver {
+class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
+                                  public nsIObserver {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_HTTPCONNECTIONMGRSHELL
   NS_DECL_NSIOBSERVER
-
-  
-  enum nsParamName {
-    MAX_URGENT_START_Q,
-    MAX_CONNECTIONS,
-    MAX_PERSISTENT_CONNECTIONS_PER_HOST,
-    MAX_PERSISTENT_CONNECTIONS_PER_PROXY,
-    MAX_REQUEST_DELAY,
-    THROTTLING_ENABLED,
-    THROTTLING_SUSPEND_FOR,
-    THROTTLING_RESUME_FOR,
-    THROTTLING_READ_LIMIT,
-    THROTTLING_READ_INTERVAL,
-    THROTTLING_HOLD_TIME,
-    THROTTLING_MAX_TIME,
-    PROXY_BE_CONSERVATIVE
-  };
 
   
   
   
 
   nsHttpConnectionMgr();
-
-  MOZ_MUST_USE nsresult
-  Init(uint16_t maxUrgentExcessiveConns, uint16_t maxConnections,
-       uint16_t maxPersistentConnectionsPerHost,
-       uint16_t maxPersistentConnectionsPerProxy, uint16_t maxRequestDelay,
-       bool throttleEnabled, uint32_t throttleVersion,
-       uint32_t throttleSuspendFor, uint32_t throttleResumeFor,
-       uint32_t throttleReadLimit, uint32_t throttleReadInterval,
-       uint32_t throttleHoldTime, uint32_t throttleMaxTime,
-       bool beConservativeForProxy);
-  MOZ_MUST_USE nsresult Shutdown();
 
   
   
@@ -94,9 +69,6 @@ class nsHttpConnectionMgr final : public nsIObserver {
   void PruneDeadConnectionsAfter(uint32_t time);
 
   
-  void AbortAndCloseAllConnections(int32_t, ARefBase*);
-
-  
   
   void ConditionallyStopPruneDeadConnectionsTimer();
 
@@ -104,64 +76,11 @@ class nsHttpConnectionMgr final : public nsIObserver {
   
   void ConditionallyStopTimeoutTick();
 
-  
-  MOZ_MUST_USE nsresult AddTransaction(nsHttpTransaction*, int32_t priority);
-
-  
-  MOZ_MUST_USE nsresult
-  AddTransactionWithStickyConn(nsHttpTransaction* trans, int32_t priority,
-                               nsHttpTransaction* transWithStickyConn);
-
-  
-  
-  MOZ_MUST_USE nsresult RescheduleTransaction(nsHttpTransaction*,
-                                              int32_t priority);
-
-  
-  void UpdateClassOfServiceOnTransaction(nsHttpTransaction*,
-                                         uint32_t classOfService);
-
-  
-  MOZ_MUST_USE nsresult CancelTransaction(nsHttpTransaction*, nsresult reason);
   MOZ_MUST_USE nsresult CancelTransactions(nsHttpConnectionInfo*,
                                            nsresult reason);
 
   
-  
-  MOZ_MUST_USE nsresult PruneDeadConnections();
-
-  
   MOZ_MUST_USE nsresult PruneNoTraffic();
-
-  
-  
-  
-  MOZ_MUST_USE nsresult VerifyTraffic();
-
-  
-  
-  
-  MOZ_MUST_USE nsresult DoShiftReloadConnectionCleanup(nsHttpConnectionInfo*);
-
-  
-  
-  MOZ_MUST_USE nsresult GetSocketThreadTarget(nsIEventTarget**);
-
-  
-  
-  
-  
-  
-  
-  MOZ_MUST_USE nsresult SpeculativeConnect(nsHttpConnectionInfo*,
-                                           nsIInterfaceRequestor*,
-                                           uint32_t caps = 0,
-                                           NullHttpTransaction* = nullptr);
-
-  
-  
-  
-  MOZ_MUST_USE nsresult ReclaimConnection(nsHttpConnection* conn);
 
   
   
@@ -172,22 +91,7 @@ class nsHttpConnectionMgr final : public nsIObserver {
   MOZ_MUST_USE nsresult CompleteUpgrade(
       HttpTransactionShell* aTrans, nsIHttpUpgradeListener* aUpgradeListener);
 
-  
-  
-  MOZ_MUST_USE nsresult UpdateParam(nsParamName name, uint16_t value);
-
-  
-  
-  MOZ_MUST_USE nsresult UpdateRequestTokenBucket(EventTokenBucket* aBucket);
-
-  
-  void ClearConnectionHistory();
-
   void ReportFailedToProcess(nsIURI* uri);
-
-  
-  
-  void PrintDiagnostics();
 
   
   
@@ -199,13 +103,7 @@ class nsHttpConnectionMgr final : public nsIObserver {
                                nsHttpConnectionInfo* wildcardCI,
                                nsHttpConnection* conn);
 
-  
-  
-  MOZ_MUST_USE nsresult ProcessPendingQ(nsHttpConnectionInfo*);
   MOZ_MUST_USE bool ProcessPendingQForEntry(nsHttpConnectionInfo*);
-
-  
-  MOZ_MUST_USE nsresult ProcessPendingQ();
 
   
   
@@ -226,8 +124,6 @@ class nsHttpConnectionMgr final : public nsIObserver {
 
   
   void ActivateTimeoutTick();
-
-  nsresult UpdateCurrentTopLevelOuterContentWindowId(uint64_t aWindowId);
 
   
   void AddActiveTransaction(nsHttpTransaction* aTrans);
@@ -257,8 +153,6 @@ class nsHttpConnectionMgr final : public nsIObserver {
   uint64_t CurrentTopLevelOuterContentWindowId() {
     return mCurrentTopLevelOuterContentWindowId;
   }
-
-  void BlacklistSpdy(const nsHttpConnectionInfo* ci);
 
  private:
   virtual ~nsHttpConnectionMgr();
@@ -694,6 +588,7 @@ class nsHttpConnectionMgr final : public nsIObserver {
   void OnMsgVerifyTraffic(int32_t, ARefBase*);
   void OnMsgPruneNoTraffic(int32_t, ARefBase*);
   void OnMsgUpdateCurrentTopLevelOuterContentWindowId(int32_t, ARefBase*);
+  void OnMsgClearConnectionHistory(int32_t, ARefBase*);
 
   
   
