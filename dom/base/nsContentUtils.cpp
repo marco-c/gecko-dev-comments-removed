@@ -3161,8 +3161,7 @@ bool nsContentUtils::CanLoadImage(nsIURI* aURI, nsINode* aNode,
     
     
     rv = sSecurityManager->CheckLoadURIWithPrincipal(
-        aLoadingPrincipal, aURI, nsIScriptSecurityManager::ALLOW_CHROME,
-        aLoadingDocument->InnerWindowID());
+        aLoadingPrincipal, aURI, nsIScriptSecurityManager::ALLOW_CHROME);
     if (NS_FAILED(rv)) {
       return false;
     }
@@ -5102,8 +5101,7 @@ void nsContentUtils::TriggerLink(nsIContent* aContent, nsIURI* aLinkURI,
   if (sSecurityManager) {
     uint32_t flag = static_cast<uint32_t>(nsIScriptSecurityManager::STANDARD);
     proceed = sSecurityManager->CheckLoadURIWithPrincipal(
-        aContent->NodePrincipal(), aLinkURI, flag,
-        aContent->OwnerDoc()->InnerWindowID());
+        aContent->NodePrincipal(), aLinkURI, flag);
   }
 
   
@@ -5120,7 +5118,8 @@ void nsContentUtils::TriggerLink(nsIContent* aContent, nsIURI* aLinkURI,
          !aContent->IsSVGElement(nsGkAtoms::a)) ||
         !aContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::download,
                                         fileName) ||
-        NS_FAILED(aContent->NodePrincipal()->CheckMayLoad(aLinkURI, true))) {
+        NS_FAILED(
+            aContent->NodePrincipal()->CheckMayLoad(aLinkURI, false, true))) {
       fileName.SetIsVoid(true);  
     }
 
@@ -5667,9 +5666,9 @@ nsresult nsContentUtils::CheckSameOrigin(nsIChannel* aOldChannel,
 
   NS_ENSURE_STATE(oldPrincipal && newURI && newOriginalURI);
 
-  nsresult rv = oldPrincipal->CheckMayLoad(newURI, false);
+  nsresult rv = oldPrincipal->CheckMayLoad(newURI, false, false);
   if (NS_SUCCEEDED(rv) && newOriginalURI != newURI) {
-    rv = oldPrincipal->CheckMayLoad(newOriginalURI, false);
+    rv = oldPrincipal->CheckMayLoad(newOriginalURI, false, false);
   }
 
   return rv;
@@ -5816,7 +5815,7 @@ bool nsContentUtils::CheckMayLoad(nsIPrincipal* aPrincipal,
   NS_ENSURE_SUCCESS(rv, false);
 
   return NS_SUCCEEDED(
-      aPrincipal->CheckMayLoad(channelURI, aAllowIfInheritsPrincipal));
+      aPrincipal->CheckMayLoad(channelURI, false, aAllowIfInheritsPrincipal));
 }
 
 
@@ -6424,7 +6423,7 @@ bool nsContentUtils::ChannelShouldInheritPrincipal(
         
         
         (URIIsLocalFile(aURI) &&
-         NS_SUCCEEDED(aLoadingPrincipal->CheckMayLoad(aURI, false)) &&
+         NS_SUCCEEDED(aLoadingPrincipal->CheckMayLoad(aURI, false, false)) &&
          
          
          !aLoadingPrincipal->IsSystemPrincipal());

@@ -693,8 +693,7 @@ nsresult nsFrameLoader::CheckURILoad(nsIURI* aURI,
 
   
   nsresult rv = secMan->CheckLoadURIWithPrincipal(
-      principal, aURI, nsIScriptSecurityManager::STANDARD,
-      mOwnerContent->OwnerDoc()->InnerWindowID());
+      principal, aURI, nsIScriptSecurityManager::STANDARD);
   if (NS_FAILED(rv)) {
     return rv;  
   }

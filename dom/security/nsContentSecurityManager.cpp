@@ -309,8 +309,7 @@ static nsresult DoCheckLoadURIChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
   
   
   return nsContentUtils::GetSecurityManager()->CheckLoadURIWithPrincipal(
-      aLoadInfo->TriggeringPrincipal(), aURI, aLoadInfo->CheckLoadURIFlags(),
-      aLoadInfo->GetInnerWindowID());
+      aLoadInfo->TriggeringPrincipal(), aURI, aLoadInfo->CheckLoadURIFlags());
 }
 
 static bool URIHasFlags(nsIURI* aURI, uint32_t aURIFlags) {
@@ -956,7 +955,7 @@ nsContentSecurityManager::AsyncOnChannelRedirect(
       nsIScriptSecurityManager::LOAD_IS_AUTOMATIC_DOCUMENT_REPLACEMENT |
       nsIScriptSecurityManager::DISALLOW_SCRIPT;
   rv = nsContentUtils::GetSecurityManager()->CheckLoadURIWithPrincipal(
-      oldPrincipal, newURI, flags, loadInfo->GetInnerWindowID());
+      oldPrincipal, newURI, flags);
   NS_ENSURE_SUCCESS(rv, rv);
 
   aCb->OnRedirectVerifyCallback(NS_OK);
@@ -990,7 +989,7 @@ nsresult nsContentSecurityManager::CheckChannel(nsIChannel* aChannel) {
 
     
     
-    rv = loadingPrincipal->CheckMayLoad(uri, false);
+    rv = loadingPrincipal->CheckMayLoad(uri, false, false);
     if (NS_FAILED(rv)) {
       AddLoadFlags(aChannel, nsIRequest::LOAD_ANONYMOUS);
     }

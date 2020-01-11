@@ -1058,8 +1058,7 @@ void nsContentSink::ProcessOfflineManifest(const nsAString& aManifestSpec) {
     }
 
     
-    rv = mDocument->NodePrincipal()->CheckMayLoadWithReporting(
-        manifestURI, false, mDocument->InnerWindowID());
+    rv = mDocument->NodePrincipal()->CheckMayLoad(manifestURI, true, false);
     if (NS_FAILED(rv)) {
       action = CACHE_SELECTION_RESELECT_WITHOUT_MANIFEST;
     } else {
