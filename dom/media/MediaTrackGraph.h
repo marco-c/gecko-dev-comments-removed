@@ -653,8 +653,15 @@ class SourceMediaTrack : public MediaTrack {
 
 
 
-  virtual TrackTime AppendData(MediaSegment* aSegment,
-                               MediaSegment* aRawSegment = nullptr);
+  TrackTime AppendData(MediaSegment* aSegment,
+                       MediaSegment* aRawSegment = nullptr);
+
+  
+
+
+
+  TrackTime ClearFutureData();
+
   
 
 
