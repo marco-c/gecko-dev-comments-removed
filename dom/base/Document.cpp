@@ -8787,35 +8787,6 @@ void Document::Close(ErrorResult& rv) {
   rv = (static_cast<nsHtml5Parser*>(mParser.get()))
            ->Parse(EmptyString(), nullptr, true);
   --mWriteLevel;
-
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (GetPresShell()) {
-    FlushPendingNotifications(FlushType::Layout);
-  }
 }
 
 void Document::WriteCommon(const Sequence<nsString>& aText,
