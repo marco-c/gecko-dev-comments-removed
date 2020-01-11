@@ -28,10 +28,6 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIIDNService"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
-});
-
 var IdentityHandler = {
   
   
@@ -274,11 +270,6 @@ class GeckoViewProgress extends GeckoViewModule {
       };
 
       this.eventDispatcher.sendRequest(message);
-
-      BrowserUtils.recordSiteOriginTelemetry(
-        Services.wm.getEnumerator("navigator:geckoview"),
-        true
-      );
     }
   }
 
