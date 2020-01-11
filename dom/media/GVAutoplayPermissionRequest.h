@@ -25,19 +25,59 @@ class GVAutoplayPermissionRequest : public ContentPermissionRequestBase {
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(GVAutoplayPermissionRequest,
                                            ContentPermissionRequestBase)
 
-  static already_AddRefed<GVAutoplayPermissionRequest> CreateRequest(
-      nsGlobalWindowInner* aWindow, GVAutoplayRequestType aType);
-
   
   NS_IMETHOD Cancel(void) override;
   NS_IMETHOD Allow(JS::HandleValue choices) override;
 
  private:
+  
+  friend class GVAutoplayPermissionRequestor;
+  static void CreateRequest(nsGlobalWindowInner* aWindow,
+                            BrowsingContext* aContext,
+                            GVAutoplayRequestType aType);
+
   GVAutoplayPermissionRequest(nsGlobalWindowInner* aWindow,
+                              BrowsingContext* aContext,
                               GVAutoplayRequestType aType);
   ~GVAutoplayPermissionRequest();
 
+  void SetRequestStatus(GVAutoplayRequestStatus aStatus);
+
   GVAutoplayRequestType mType;
+  RefPtr<BrowsingContext> mContext;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class GVAutoplayPermissionRequestor final {
+ public:
+  static void AskForPermissionIfNeeded(nsPIDOMWindowInner* aWindow);
+
+ private:
+  static bool HasEverAskForRequest(BrowsingContext* aContext,
+                                   GVAutoplayRequestType aType);
+  static void CreateAsyncRequest(nsPIDOMWindowInner* aWindow,
+                                 BrowsingContext* aContext,
+                                 GVAutoplayRequestType aType);
 };
 
 }  
