@@ -2978,7 +2978,7 @@ var SessionStoreInternal = {
     
     
     let uriObj = aTab.linkedBrowser.currentURI;
-    if (!uriObj || (uriObj && !aWindow.gBrowser.isLocalAboutURI(uriObj))) {
+    if (!uriObj || (uriObj && !uriObj.schemeIs("about"))) {
       newTab.setAttribute("busy", "true");
     }
 
@@ -3662,7 +3662,7 @@ var SessionStoreInternal = {
     
     
     
-    if (!uriObj || (uriObj && !window.gBrowser.isLocalAboutURI(uriObj))) {
+    if (!uriObj || (uriObj && !uriObj.schemeIs("about"))) {
       tab.setAttribute("busy", "true");
     }
 
