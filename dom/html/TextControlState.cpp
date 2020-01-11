@@ -1516,6 +1516,9 @@ nsFrameSelection* TextControlState::GetConstFrameSelection() {
 }
 
 TextEditor* TextControlState::GetTextEditor() {
+  
+  
+  
   if (!mTextEditor && NS_WARN_IF(NS_FAILED(PrepareEditor()))) {
     return nullptr;
   }
@@ -1950,7 +1953,9 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
     mSelectionCached = false;
   }
 
-  return rv;
+  return preparingEditor.IsTextControlStateDestroyed()
+             ? NS_ERROR_NOT_INITIALIZED
+             : rv;
 }
 
 void TextControlState::FinishedRestoringSelection() {
