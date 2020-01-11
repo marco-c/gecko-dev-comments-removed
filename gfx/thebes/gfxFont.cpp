@@ -2344,13 +2344,25 @@ bool gfxFont::RenderColorGlyph(DrawTarget* aDrawTarget, gfxContext* aContext,
   }
 
   
-  bool hasTransparency = 0.f < defaultColor.a && defaultColor.a < 1.f;
-  if (aTextDrawer && hasTransparency && layerGlyphs.Length() > 1) {
+  float alpha = 1.0;
+  if (aTextDrawer) {
+    
+    bool hasComplexTransparency = 0.f < defaultColor.a && defaultColor.a < 1.f;
+    if (hasComplexTransparency && layerGlyphs.Length() > 1) {
+      
+      
+      
+      aTextDrawer->FoundUnsupportedFeature();
+      return true;
+    }
+
     
     
     
-    aTextDrawer->FoundUnsupportedFeature();
-    return true;
+    
+    
+    
+    alpha = defaultColor.a;
   }
 
   for (uint32_t layerIndex = 0; layerIndex < layerGlyphs.Length();
@@ -2363,8 +2375,9 @@ bool gfxFont::RenderColorGlyph(DrawTarget* aDrawTarget, gfxContext* aContext,
     buffer.mGlyphs = &glyph;
     buffer.mNumGlyphs = 1;
 
-    aDrawTarget->FillGlyphs(scaledFont, buffer,
-                            ColorPattern(layerColors[layerIndex]),
+    mozilla::gfx::Color layerColor = layerColors[layerIndex];
+    layerColor.a *= alpha;
+    aDrawTarget->FillGlyphs(scaledFont, buffer, ColorPattern(layerColor),
                             aDrawOptions);
   }
   return true;
