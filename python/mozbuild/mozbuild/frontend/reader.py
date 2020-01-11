@@ -852,7 +852,7 @@ class BuildReader(object):
 
         
         
-        for path, f in self._relevant_mozbuild_finder.find('**/config.status'):
+        for path, f in self._relevant_mozbuild_finder.find('*/config.status'):
             self._relevant_mozbuild_finder.ignore.add(os.path.dirname(path))
 
         max_workers = cpu_count()
