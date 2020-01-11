@@ -66,8 +66,7 @@ bool LoopControl::emitSpecialBreakForDone(BytecodeEmitter* bce) {
 }
 
 bool LoopControl::emitLoopHead(BytecodeEmitter* bce,
-                               const Maybe<uint32_t>& nextPos,
-                               SrcNoteType type) {
+                               const Maybe<uint32_t>& nextPos) {
   
   
   
@@ -88,9 +87,6 @@ bool LoopControl::emitLoopHead(BytecodeEmitter* bce,
   head_ = {bce->bytecodeSection().offset()};
 
   BytecodeOffset off;
-  if (!bce->newSrcNote(type)) {
-    return false;
-  }
   if (!bce->emitJumpTargetOp(JSOP_LOOPHEAD, &off)) {
     return false;
   }
