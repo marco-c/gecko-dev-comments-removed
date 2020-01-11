@@ -4848,13 +4848,19 @@ pref("marionette.prefs.recommended", true);
 
 pref("marionette.contentListener", false);
 
+#if defined(ENABLE_REMOTE_AGENT)
+  
+  
+  #if defined(NIGHTLY_BUILD)
+    pref("remote.enabled", true);
+  #else
+    pref("remote.enabled", false);
+  #endif
 
-
-pref("remote.enabled", false);
-
-
-
-pref("remote.force-local", true);
+  
+  
+  pref("remote.force-local", true);
+#endif
 
 
 
