@@ -157,8 +157,16 @@ class Page extends ContentProcessDomain {
     });
   }
 
+  emitLifecycleEvent(frameId, loaderId, name, timestamp) {
+    if (this.lifecycleEnabled) {
+      this.emit("Page.lifecycleEvent", { frameId, loaderId, name, timestamp });
+    }
+  }
+
   handleEvent({ type, target }) {
-    if (target.defaultView != this.content) {
+    const isFrame = target.defaultView != this.content;
+
+    if (isFrame) {
       
       return;
     }
@@ -170,18 +178,44 @@ class Page extends ContentProcessDomain {
     switch (type) {
       case "DOMContentLoaded":
         this.emit("Page.domContentEventFired", { timestamp });
+        if (!isFrame) {
+          this.emitLifecycleEvent(
+            frameId,
+             null,
+            "DOMContentLoaded",
+            timestamp
+          );
+        }
         break;
 
       case "pagehide":
         
         this.emit("Page.frameStartedLoading", { frameId });
+        if (!isFrame) {
+          this.emitLifecycleEvent(
+            frameId,
+             null,
+            "init",
+            timestamp
+          );
+        }
         break;
 
       case "pageshow":
         this.emit("Page.loadEventFired", { timestamp });
+        if (!isFrame) {
+          this.emitLifecycleEvent(
+            frameId,
+             null,
+            "load",
+            timestamp
+          );
+        }
+
         
         this.emit("Page.navigatedWithinDocument", { frameId, url });
         this.emit("Page.frameStoppedLoading", { frameId });
+
         break;
     }
   }

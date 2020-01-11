@@ -178,3 +178,12 @@ function getContentProperty(prop) {
     _prop => content[_prop]
   );
 }
+
+
+
+
+function timeoutPromise(ms) {
+  return new Promise(resolve => {
+    window.setTimeout(resolve, ms);
+  });
+}
