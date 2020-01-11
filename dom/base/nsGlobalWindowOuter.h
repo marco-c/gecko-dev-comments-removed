@@ -902,10 +902,22 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   
   
   
+  
   int32_t DevToCSSIntPixels(int32_t px);
-  int32_t CSSToDevIntPixels(int32_t px);
   nsIntSize DevToCSSIntPixels(nsIntSize px);
-  nsIntSize CSSToDevIntPixels(nsIntSize px);
+
+  
+  
+  
+  
+  int32_t DevToCSSIntPixelsForBaseWindow(int32_t aDevicePixels,
+                                         nsIBaseWindow* aWindow);
+  nsIntSize DevToCSSIntPixelsForBaseWindow(nsIntSize aDeviceSize,
+                                           nsIBaseWindow* aWindow);
+  int32_t CSSToDevIntPixelsForBaseWindow(int32_t aCSSPixels,
+                                         nsIBaseWindow* aWindow);
+  nsIntSize CSSToDevIntPixelsForBaseWindow(nsIntSize aCSSSize,
+                                           nsIBaseWindow* aWindow);
 
   virtual void SetFocusedElement(mozilla::dom::Element* aElement,
                                  uint32_t aFocusMethod = 0,
