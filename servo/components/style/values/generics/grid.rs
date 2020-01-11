@@ -543,7 +543,10 @@ impl<L, I> TrackListValue<L, I> {
 
     
     pub fn is_initial(&self) -> bool {
-        matches!(*self, TrackListValue::TrackSize(TrackSize::Breadth(TrackBreadth::Auto))) 
+        matches!(
+            *self,
+            TrackListValue::TrackSize(TrackSize::Breadth(TrackBreadth::Auto))
+        ) 
     }
 }
 
