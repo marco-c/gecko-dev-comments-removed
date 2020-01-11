@@ -137,15 +137,14 @@ class FlattenedChildIterator : public ExplicitChildIterator {
   FlattenedChildIterator(FlattenedChildIterator&& aOther)
       : ExplicitChildIterator(std::move(aOther)),
         mOriginalContent(aOther.mOriginalContent),
-        mXBLInvolved(aOther.mXBLInvolved) {}
+        mShadowDOMInvolved(aOther.mShadowDOMInvolved) {}
 
   FlattenedChildIterator(const FlattenedChildIterator& aOther)
       : ExplicitChildIterator(aOther),
         mOriginalContent(aOther.mOriginalContent),
-        mXBLInvolved(aOther.mXBLInvolved) {}
+        mShadowDOMInvolved(aOther.mShadowDOMInvolved) {}
 
-  
-  bool XBLInvolved() { return mXBLInvolved; }
+  bool ShadowDOMInvolved() { return mShadowDOMInvolved; }
 
   const nsIContent* Parent() const { return mOriginalContent; }
 
@@ -170,7 +169,7 @@ class FlattenedChildIterator : public ExplicitChildIterator {
  private:
   
   
-  bool mXBLInvolved = false;
+  bool mShadowDOMInvolved = false;
 };
 
 
