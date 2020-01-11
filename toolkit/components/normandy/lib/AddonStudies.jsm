@@ -162,14 +162,20 @@ var AddonStudies = {
   },
 
   async init() {
-    
-    
-    const activeStudies = (await this.getAll()).filter(study => study.active);
-    for (const study of activeStudies) {
+    for (const study of await this.getAllActive()) {
+      
       const addon = await AddonManager.getAddonByID(study.addonId);
       if (!addon) {
         await this.markAsEnded(study, "uninstalled-sideload");
+        continue;
       }
+
+      
+      TelemetryEnvironment.setExperimentActive(study.slug, study.branch, {
+        type: "normandy-addonstudy",
+        enrollmentId:
+          study.enrollmentId || TelemetryEvents.NO_ENROLLMENT_ID_MARKER,
+      });
     }
 
     
