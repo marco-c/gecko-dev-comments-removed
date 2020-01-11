@@ -20,6 +20,13 @@ class ChangesFront extends FrontClassWithSpec(changesSpec) {
     
     this.formAttributeName = "changesActor";
   }
+
+  async initialize() {
+    
+    
+    
+    await super.start();
+  }
 }
 
 exports.ChangesFront = ChangesFront;
