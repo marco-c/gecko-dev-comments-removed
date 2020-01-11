@@ -11,11 +11,7 @@
 add_task(async function setup() {
   
   
-  let url = "resource://test/data/";
-  let resProt = Services.io
-    .getProtocolHandler("resource")
-    .QueryInterface(Ci.nsIResProtocolHandler);
-  resProt.setSubstitution("search-extensions", Services.io.newURI(url));
+  await useTestEngines();
 
   await AddonTestUtils.promiseStartupManager();
   await Services.search.init();
