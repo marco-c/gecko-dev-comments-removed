@@ -348,9 +348,6 @@ const rollout = {
     results.evaluateReason = event;
 
     
-    await this.setSetting(DOH_SKIP_HEURISTICS_PREF, false);
-
-    
     
     
 
@@ -363,6 +360,7 @@ const rollout = {
       );
 
       browser.experiments.preferences.clearUserPref(DOH_SELF_ENABLED_PREF);
+      await this.setSetting(DOH_SKIP_HEURISTICS_PREF, true);
       await stateManager.rememberDisableHeuristics();
     }
   },
@@ -371,7 +369,14 @@ const rollout = {
     results.evaluateReason = event;
 
     
-    await this.setSetting(DOH_SKIP_HEURISTICS_PREF, false);
+    let skipHeuristicsCheck = await rollout.getSetting(
+      DOH_SKIP_HEURISTICS_PREF,
+      false
+    );
+
+    if (skipHeuristicsCheck) {
+      return;
+    }
 
     
     let policyEnableDoH = await browser.experiments.heuristics.checkEnterprisePolicies();
