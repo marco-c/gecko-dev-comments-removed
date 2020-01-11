@@ -1347,6 +1347,12 @@ bool MediaTrackGraphImpl::OneIterationImpl(GraphTime aStateEnd) {
   
   RunMessagesInQueue();
 
+  
+  
+  if (mGraphRunner || !mRealtime) {
+    NS_ProcessPendingEvents(nullptr);
+  }
+
   GraphTime stateEnd = std::min(aStateEnd, GraphTime(mEndTime));
   UpdateGraph(stateEnd);
 
