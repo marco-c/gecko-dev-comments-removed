@@ -1342,6 +1342,13 @@ class UrlbarView {
         delete result.payload.originalEngine;
       }
       let item = this._rows.children[i];
+      
+      
+      if (result.heuristic && engine && !this.selectedElement) {
+        item.setAttribute("show-action-text", "true");
+      } else {
+        item.removeAttribute("show-action-text");
+      }
       if (!result.payload.inPrivateWindow) {
         let action = item.querySelector(".urlbarView-action");
         action.textContent = UrlbarUtils.strings.formatStringFromName(

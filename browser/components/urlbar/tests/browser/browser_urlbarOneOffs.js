@@ -72,6 +72,7 @@ add_task(async function() {
   let typedValue = "browser_urlbarOneOffs";
   await promiseAutocompleteResultPopup(typedValue, window, true);
   await waitForAutocompleteResultAt(gMaxResults - 1);
+  let heuristicResult = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
   assertState(0, -1, typedValue);
 
   
@@ -86,6 +87,10 @@ add_task(async function() {
       -1,
       "example.com/browser_urlbarOneOffs.js/?" + (gMaxResults - i - 1)
     );
+    Assert.ok(
+      !BrowserTestUtils.is_visible(heuristicResult.element.action),
+      "The heuristic action should not be visible"
+    );
   }
 
   
@@ -93,17 +98,35 @@ add_task(async function() {
   for (let i = 0; i < numButtons; i++) {
     EventUtils.synthesizeKey("KEY_ArrowDown");
     assertState(-1, i, typedValue);
+    Assert.equal(
+      BrowserTestUtils.is_visible(heuristicResult.element.action),
+      !oneOffSearchButtons.selectedButton.classList.contains(
+        "search-setting-button-compact"
+      ),
+      "The heuristic action should be visible when a one-off button is selected"
+    );
   }
 
   
   EventUtils.synthesizeKey("KEY_ArrowDown");
   assertState(0, -1, typedValue);
+  Assert.ok(
+    BrowserTestUtils.is_visible(heuristicResult.element.action),
+    "The heuristic action should be visible"
+  );
 
   
   
   for (let i = numButtons - 1; i >= 0; i--) {
     EventUtils.synthesizeKey("KEY_ArrowUp");
     assertState(-1, i, typedValue);
+    Assert.equal(
+      BrowserTestUtils.is_visible(heuristicResult.element.action),
+      !oneOffSearchButtons.selectedButton.classList.contains(
+        "search-setting-button-compact"
+      ),
+      "The heuristic action should be visible when a one-off button is selected"
+    );
   }
 
   
@@ -114,11 +137,19 @@ add_task(async function() {
       -1,
       "example.com/browser_urlbarOneOffs.js/?" + (gMaxResults - i - 1)
     );
+    Assert.ok(
+      !BrowserTestUtils.is_visible(heuristicResult.element.action),
+      "The heuristic action should not be visible"
+    );
   }
 
   
   EventUtils.synthesizeKey("KEY_ArrowUp");
   assertState(0, -1, typedValue);
+  Assert.ok(
+    BrowserTestUtils.is_visible(heuristicResult.element.action),
+    "The heuristic action should be visible"
+  );
 
   await hidePopup();
 });
