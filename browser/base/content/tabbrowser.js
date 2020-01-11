@@ -2654,6 +2654,13 @@
             pinned,
             bulkOrderedOpen,
           });
+        } else {
+          
+          
+          
+          
+          
+          t._tPos = this.tabs.length;
         }
 
         
