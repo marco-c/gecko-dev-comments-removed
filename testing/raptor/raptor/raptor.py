@@ -300,7 +300,7 @@ either Raptor or browsertime."""
         self.check_for_crashes()
 
         
-        if self.config['gecko_profile'] is True:
+        if self.config['gecko_profile']:
             self.gecko_profiler.symbolicate()
             
             LOG.info("cleaning up after gecko profiling")
@@ -408,6 +408,16 @@ either Raptor or browsertime."""
         self.playback.start()
 
         self.log_recording_dates(test)
+
+    def _init_gecko_profiling(self, test):
+        LOG.info("initializing gecko profiler")
+        upload_dir = os.getenv('MOZ_UPLOAD_DIR')
+        if not upload_dir:
+            LOG.critical("Profiling ignored because MOZ_UPLOAD_DIR was not set")
+        else:
+            self.gecko_profiler = GeckoProfile(upload_dir,
+                                               self.config,
+                                               test)
 
 
 class PerftestDesktop(Perftest):
@@ -589,6 +599,7 @@ class Browsertime(Perftest):
 
         super(Browsertime, self).__init__(app, binary, results_handler_class=klass, **kwargs)
         LOG.info("cwd: '{}'".format(os.getcwd()))
+        self.config['browsertime'] = True
 
         
         for k in ("browsertime_node",
@@ -704,24 +715,41 @@ class Browsertime(Perftest):
         browsertime_script.extend(["--browsertime.post_startup_delay",
                                    str(self.post_startup_delay)])
 
+        browsertime_options = ['--firefox.profileTemplate', str(self.profile.profile),
+                               '--skipHar',
+                               '--video', self.browsertime_video and 'true' or 'false',
+                               '--visualMetrics', 'false',
+                               
+                               '--timeouts.pageLoad', str(timeout),
+                               
+                               '--timeouts.script', str(timeout * int(test.get("page_cycles", 1))),
+                               '-vv',
+                               '--resultDir', self.results_handler.result_dir_for_test(test)]
+
         if self.config['with_conditioned_profile']:
             self.profile.profile = self.conditioned_profile_dir
+
+        if self.config['gecko_profile']:
+            self.config['browsertime_result_dir'] = self.results_handler.result_dir_for_test(test)
+            self._init_gecko_profiling(test)
+            browsertime_options.append('--firefox.geckoProfiler')
+
+            for option, browser_time_option in (('gecko_profile_interval',
+                                                 '--firefox.geckoProfilerParams.interval'),
+                                                ('gecko_profile_entries',
+                                                 '--firefox.geckoProfilerParams.bufferSize')):
+                value = self.config.get(option)
+                if value is None:
+                    value = test.get(option)
+                if value is not None:
+                    browsertime_options.extend([browser_time_option, str(value)])
 
         return ([self.browsertime_node, self.browsertime_browsertimejs] +
                 self.driver_paths +
                 browsertime_script +
-                ['--firefox.profileTemplate', str(self.profile.profile),
-                 '--skipHar',
-                 '--video', self.browsertime_video and 'true' or 'false',
-                 '--visualMetrics', 'false',
-                 
-                 '--timeouts.pageLoad', str(timeout),
-                 
-                 '--timeouts.script', str(timeout * int(test.get("page_cycles", 1))),
-                 '-vv',
-                 '--resultDir', self.results_handler.result_dir_for_test(test),
-                 
-                 '-n', str(test.get('browser_cycles', 1))])
+                
+                browsertime_options +
+                ['-n', str(test.get('browser_cycles', 1))])
 
     def _compute_process_timeout(self, test, timeout):
         
@@ -1012,16 +1040,6 @@ class Raptor(Perftest):
         chrome_apps = CHROMIUM_DISTROS + ["chrome-android", "chromium-android"]
         if self.config['app'] in chrome_apps:
             self.profile.addons.remove(self.raptor_webext)
-
-    def _init_gecko_profiling(self, test):
-        LOG.info("initializing gecko profiler")
-        upload_dir = os.getenv('MOZ_UPLOAD_DIR')
-        if not upload_dir:
-            LOG.critical("Profiling ignored because MOZ_UPLOAD_DIR was not set")
-        else:
-            self.gecko_profiler = GeckoProfile(upload_dir,
-                                               self.config,
-                                               test)
 
     def clean_up(self):
         super(Raptor, self).clean_up()
