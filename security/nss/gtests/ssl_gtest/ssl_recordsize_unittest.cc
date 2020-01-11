@@ -20,6 +20,7 @@ namespace nss_test {
 
 
 
+
 class TlsRecordMaximum : public TlsRecordFilter {
  public:
   TlsRecordMaximum(const std::shared_ptr<TlsAgent>& a)
@@ -34,7 +35,7 @@ class TlsRecordMaximum : public TlsRecordFilter {
                                     DataBuffer* output) override {
     std::cerr << "max: " << record << std::endl;
     
-    if (header.content_type() != ssl_ct_application_data) {
+    if (!header.is_protected()) {
       return KEEP;
     }
 
@@ -195,9 +196,23 @@ class TlsRecordExpander : public TlsRecordFilter {
   virtual PacketFilter::Action FilterRecord(const TlsRecordHeader& header,
                                             const DataBuffer& data,
                                             DataBuffer* changed) {
-    if (header.content_type() != ssl_ct_application_data) {
-      return KEEP;
+    if (!header.is_protected()) {
+      
+      
+      if (!decrypting()) {
+        
+        
+        return KEEP;
+      }
+      if (header.content_type() != ssl_ct_application_data) {
+        
+        
+        
+        return KEEP;
+      }
+      
     }
+
     changed->Allocate(data.len() + expansion_);
     changed->Write(0, data.data(), data.len());
     return CHANGE;
@@ -261,30 +276,31 @@ class TlsRecordPadder : public TlsRecordFilter {
   PacketFilter::Action FilterRecord(const TlsRecordHeader& header,
                                     const DataBuffer& record, size_t* offset,
                                     DataBuffer* output) override {
-    if (header.content_type() != ssl_ct_application_data) {
+    if (!header.is_protected()) {
       return KEEP;
     }
 
     uint16_t protection_epoch;
     uint8_t inner_content_type;
     DataBuffer plaintext;
+    TlsRecordHeader out_header;
     if (!Unprotect(header, record, &protection_epoch, &inner_content_type,
-                   &plaintext)) {
+                   &plaintext, &out_header)) {
       return KEEP;
     }
 
-    if (inner_content_type != ssl_ct_application_data) {
+    if (decrypting() && inner_content_type != ssl_ct_application_data) {
       return KEEP;
     }
 
     DataBuffer ciphertext;
-    bool ok = Protect(spec(protection_epoch), header, inner_content_type,
-                      plaintext, &ciphertext, padding_);
+    bool ok = Protect(spec(protection_epoch), out_header, inner_content_type,
+                      plaintext, &ciphertext, &out_header, padding_);
     EXPECT_TRUE(ok);
     if (!ok) {
       return KEEP;
     }
-    *offset = header.Write(output, *offset, ciphertext);
+    *offset = out_header.Write(output, *offset, ciphertext);
     return CHANGE;
   }
 

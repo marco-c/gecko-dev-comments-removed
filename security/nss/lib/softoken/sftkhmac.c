@@ -11,8 +11,8 @@
 
 
 
-static HASH_HashType
-HMACMechanismToHash(CK_MECHANISM_TYPE mech)
+HASH_HashType
+sftk_HMACMechanismToHash(CK_MECHANISM_TYPE mech)
 {
     switch (mech) {
         case CKM_MD2_HMAC:
@@ -50,7 +50,7 @@ SetupMAC(CK_MECHANISM_PTR mech, SFTKObject *key)
         return NULL;
     }
 
-    alg = HMACMechanismToHash(params->macAlg);
+    alg = sftk_HMACMechanismToHash(params->macAlg);
     if (alg == HASH_AlgNULL) {
         return NULL;
     }
@@ -261,7 +261,7 @@ sftk_MAC_InitRaw(sftk_MACCtx *ctx, CK_MECHANISM_TYPE mech, const unsigned char *
         case CKM_SHA256_HMAC:
         case CKM_SHA384_HMAC:
         case CKM_SHA512_HMAC:
-            hashObj = HASH_GetRawHashObject(HMACMechanismToHash(mech));
+            hashObj = HASH_GetRawHashObject(sftk_HMACMechanismToHash(mech));
 
             
 

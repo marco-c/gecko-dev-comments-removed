@@ -169,6 +169,9 @@ struct ssl3CipherSpecStr {
 
 
     PRUint16 recordSizeLimit;
+
+    
+    SSLMaskingContext *maskContext;
 };
 
 typedef void (*sslCipherSpecChangedFunc)(void *arg,

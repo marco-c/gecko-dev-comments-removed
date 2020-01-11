@@ -1335,6 +1335,14 @@ dtls_IsLongHeader(SSL3ProtocolVersion version, PRUint8 firstOctet)
 #endif
 }
 
+PRBool
+dtls_IsDtls13Ciphertext(SSL3ProtocolVersion version, PRUint8 firstOctet)
+{
+    
+    return (version == 0 || version >= SSL_LIBRARY_VERSION_TLS_1_3) &&
+           (firstOctet & 0xe0) == 0x20;
+}
+
 DTLSEpoch
 dtls_ReadEpoch(const ssl3CipherSpec *crSpec, const PRUint8 *hdr)
 {
@@ -1350,12 +1358,11 @@ dtls_ReadEpoch(const ssl3CipherSpec *crSpec, const PRUint8 *hdr)
 
 
 
-    if ((hdr[0] & 0xe0) == 0x20) {
+
+    if (dtls_IsDtls13Ciphertext(crSpec->version, hdr[0])) {
         
-        if (((hdr[0] >> 4) & 1) == (crSpec->epoch & 1)) {
-            return crSpec->epoch;
-        }
-        return crSpec->epoch - 1;
+        
+        return crSpec->epoch - ((hdr[0] ^ crSpec->epoch) & 0x3);
     }
 
     
@@ -1398,20 +1405,15 @@ dtls_ReadSequenceNumber(const ssl3CipherSpec *spec, const PRUint8 *hdr)
 
 
 
-    if ((hdr[0] & 0xe0) == 0x20) {
-        
-        cap = spec->nextSeqNum + (1ULL << 11);
-        partial = (((sslSequenceNumber)hdr[0] & 0xf) << 8) |
-                  (sslSequenceNumber)hdr[1];
-        mask = (1ULL << 12) - 1;
+    if (hdr[0] & 0x08) {
+        cap = spec->nextSeqNum + (1ULL << 15);
+        partial = (((sslSequenceNumber)hdr[1]) << 8) |
+                  (sslSequenceNumber)hdr[2];
+        mask = (1ULL << 16) - 1;
     } else {
-        
-        cap = spec->nextSeqNum + (1ULL << 29);
-        partial = (((sslSequenceNumber)hdr[1] & 0x3f) << 24) |
-                  ((sslSequenceNumber)hdr[2] << 16) |
-                  ((sslSequenceNumber)hdr[3] << 8) |
-                  (sslSequenceNumber)hdr[4];
-        mask = (1ULL << 30) - 1;
+        cap = spec->nextSeqNum + (1ULL << 7);
+        partial = (sslSequenceNumber)hdr[1];
+        mask = (1ULL << 8) - 1;
     }
     seqNum = (cap & ~mask) | partial;
     

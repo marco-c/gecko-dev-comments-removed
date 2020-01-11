@@ -619,55 +619,6 @@ TEST_P(TlsDropDatagram13, ReorderServerEE) {
 
 
 
-class TlsSendCipherSpecCapturer {
- public:
-  TlsSendCipherSpecCapturer(const std::shared_ptr<TlsAgent>& agent)
-      : agent_(agent), send_cipher_specs_() {
-    EXPECT_EQ(SECSuccess,
-              SSL_SecretCallback(agent_->ssl_fd(), SecretCallback, this));
-  }
-
-  std::shared_ptr<TlsCipherSpec> spec(size_t i) {
-    if (i >= send_cipher_specs_.size()) {
-      return nullptr;
-    }
-    return send_cipher_specs_[i];
-  }
-
- private:
-  static void SecretCallback(PRFileDesc* fd, PRUint16 epoch,
-                             SSLSecretDirection dir, PK11SymKey* secret,
-                             void* arg) {
-    auto self = static_cast<TlsSendCipherSpecCapturer*>(arg);
-    std::cerr << self->agent_->role_str() << ": capture " << dir
-              << " secret for epoch " << epoch << std::endl;
-
-    if (dir == ssl_secret_read) {
-      return;
-    }
-
-    SSLPreliminaryChannelInfo preinfo;
-    EXPECT_EQ(SECSuccess,
-              SSL_GetPreliminaryChannelInfo(self->agent_->ssl_fd(), &preinfo,
-                                            sizeof(preinfo)));
-    EXPECT_EQ(sizeof(preinfo), preinfo.length);
-    EXPECT_TRUE(preinfo.valuesSet & ssl_preinfo_cipher_suite);
-
-    SSLCipherSuiteInfo cipherinfo;
-    EXPECT_EQ(SECSuccess,
-              SSL_GetCipherSuiteInfo(preinfo.cipherSuite, &cipherinfo,
-                                     sizeof(cipherinfo)));
-    EXPECT_EQ(sizeof(cipherinfo), cipherinfo.length);
-
-    auto spec = std::make_shared<TlsCipherSpec>(true, epoch);
-    EXPECT_TRUE(spec->SetKeys(&cipherinfo, secret));
-    self->send_cipher_specs_.push_back(spec);
-  }
-
-  std::shared_ptr<TlsAgent> agent_;
-  std::vector<std::shared_ptr<TlsCipherSpec>> send_cipher_specs_;
-};
-
 TEST_F(TlsConnectDatagram13, SendOutOfOrderAppWithHandshakeKey) {
   StartConnect();
   
@@ -684,8 +635,10 @@ TEST_F(TlsConnectDatagram13, SendOutOfOrderAppWithHandshakeKey) {
   auto spec = capturer.spec(0);
   ASSERT_NE(nullptr, spec.get());
   ASSERT_EQ(2, spec->epoch());
-  ASSERT_TRUE(client_->SendEncryptedRecord(spec, 0x0002000000000002,
-                                           ssl_ct_application_data,
+
+  uint8_t dtls13_ct = kCtDtlsCiphertext | kCtDtlsCiphertext16bSeqno |
+                      kCtDtlsCiphertextLengthPresent;
+  ASSERT_TRUE(client_->SendEncryptedRecord(spec, 0x0002000000000002, dtls13_ct,
                                            DataBuffer(buf, sizeof(buf))));
 
   
@@ -844,7 +797,7 @@ static void GetCipherAndLimit(uint16_t version, uint16_t* cipher,
     
     *cipher = TLS_CHACHA20_POLY1305_SHA256;
     
-    *limit = (1ULL << 29) - 1;
+    *limit = (1ULL << 15) - 1;
   }
 }
 
@@ -873,7 +826,7 @@ TEST_F(TlsConnectDatagram13, UnderflowSequenceNumber) {
   
   client_->SetOption(SSL_ENABLE_DTLS_SHORT_HEADER, PR_FALSE);
   EXPECT_EQ(SECSuccess,
-            SSLInt_AdvanceWriteSeqNum(client_->ssl_fd(), (1ULL << 30) - 3));
+            SSLInt_AdvanceWriteSeqNum(client_->ssl_fd(), (1ULL << 16) - 3));
   SendReceive();
 }
 
@@ -918,9 +871,13 @@ class TlsReplaceFirstRecordWithJunk : public TlsRecordFilter {
       return KEEP;
     }
     replaced_ = true;
-    TlsRecordHeader out_header(header.variant(), header.version(),
-                               ssl_ct_application_data,
-                               header.sequence_number());
+
+    uint8_t dtls13_ct = kCtDtlsCiphertext | kCtDtlsCiphertext16bSeqno |
+                        kCtDtlsCiphertextLengthPresent;
+    TlsRecordHeader out_header(
+        header.variant(), header.version(),
+        is_dtls13() ? dtls13_ct : ssl_ct_application_data,
+        header.sequence_number());
 
     static const uint8_t junk[] = {1, 2, 3, 4};
     *offset = out_header.Write(output, *offset, DataBuffer(junk, sizeof(junk)));
