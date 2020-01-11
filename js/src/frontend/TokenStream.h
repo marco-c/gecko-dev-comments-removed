@@ -323,141 +323,11 @@ template <typename Unit>
 class SourceUnits;
 
 class TokenStreamAnyChars : public TokenStreamShared {
- public:
-  TokenStreamAnyChars(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
-                      StrictModeGetter* smg);
-
-  template <typename Unit, class AnyCharsAccess>
-  friend class GeneralTokenStreamChars;
-  template <typename Unit, class AnyCharsAccess>
-  friend class TokenStreamChars;
-  template <typename Unit, class AnyCharsAccess>
-  friend class TokenStreamSpecific;
-
-  template <typename Unit>
-  friend class TokenStreamPosition;
-
-  
-  unsigned cursor() const { return cursor_; }
-  unsigned nextCursor() const { return (cursor_ + 1) & ntokensMask; }
-  unsigned aheadCursor(unsigned steps) const {
-    return (cursor_ + steps) & ntokensMask;
-  }
-
-  const Token& currentToken() const { return tokens[cursor()]; }
-  bool isCurrentTokenType(TokenKind type) const {
-    return currentToken().type == type;
-  }
-
-  MOZ_MUST_USE bool checkOptions();
-
  private:
-  PropertyName* reservedWordToPropertyName(TokenKind tt) const;
-
- public:
-  PropertyName* currentName() const {
-    if (isCurrentTokenType(TokenKind::Name) ||
-        isCurrentTokenType(TokenKind::PrivateName)) {
-      return currentToken().name();
-    }
-
-    MOZ_ASSERT(TokenKindIsPossibleIdentifierName(currentToken().type));
-    return reservedWordToPropertyName(currentToken().type);
-  }
-
-  bool currentNameHasEscapes() const {
-    if (isCurrentTokenType(TokenKind::Name) ||
-        isCurrentTokenType(TokenKind::PrivateName)) {
-      TokenPos pos = currentToken().pos;
-      return (pos.end - pos.begin) != currentToken().name()->length();
-    }
-
-    MOZ_ASSERT(TokenKindIsPossibleIdentifierName(currentToken().type));
-    return false;
-  }
-
-  bool isCurrentTokenAssignment() const {
-    return TokenKindIsAssignment(currentToken().type);
-  }
-
-  
-  bool isEOF() const { return flags.isEOF; }
-  bool sawOctalEscape() const { return flags.sawOctalEscape; }
-  bool hadError() const { return flags.hadError; }
-  void clearSawOctalEscape() { flags.sawOctalEscape = false; }
-
-  bool hasInvalidTemplateEscape() const {
-    return invalidTemplateEscapeType != InvalidEscapeType::None;
-  }
-  void clearInvalidTemplateEscape() {
-    invalidTemplateEscapeType = InvalidEscapeType::None;
-  }
-
- private:
-  
-  
-  bool strictMode() const {
-    return strictModeGetter && strictModeGetter->strictMode();
-  }
-
-  void setInvalidTemplateEscape(uint32_t offset, InvalidEscapeType type) {
-    MOZ_ASSERT(type != InvalidEscapeType::None);
-    if (invalidTemplateEscapeType != InvalidEscapeType::None) {
-      return;
-    }
-    invalidTemplateEscapeOffset = offset;
-    invalidTemplateEscapeType = type;
-  }
-
   uint32_t invalidTemplateEscapeOffset = 0;
   InvalidEscapeType invalidTemplateEscapeType = InvalidEscapeType::None;
 
  public:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void allowGettingNextTokenWithSlashIsRegExp() {
-#ifdef DEBUG
-    
-    
-    MOZ_ASSERT(hasLookahead());
-    const Token& next = nextToken();
-    MOZ_ASSERT(next.modifier == SlashIsDiv);
-    MOZ_ASSERT(next.type != TokenKind::Div);
-    tokens[nextCursor()].modifier = SlashIsRegExp;
-#endif
-  }
-
-#ifdef DEBUG
-  inline bool debugHasNoLookahead() const { return lookahead == 0; }
-#endif
-
-  bool hasDisplayURL() const { return displayURL_ != nullptr; }
-
-  char16_t* displayURL() { return displayURL_.get(); }
-
-  bool hasSourceMapURL() const { return sourceMapURL_ != nullptr; }
-
-  char16_t* sourceMapURL() { return sourceMapURL_.get(); }
-
   
   
   
@@ -603,9 +473,257 @@ class TokenStreamAnyChars : public TokenStreamShared {
                  "recorded line-start information must be available");
       return lineStartOffsets_[lineToken.index];
     }
+  } srcCoords;
+
+  static constexpr uint32_t ColumnChunkLength = 128;
+
+  enum class UnitsType : unsigned char {
+    PossiblyMultiUnit = 0,
+    GuaranteedSingleUnit = 1,
   };
 
-  SourceCoords srcCoords;
+  class ChunkInfo {
+   private:
+    
+    unsigned char column_[sizeof(uint32_t)];
+    unsigned char unitsType_;
+
+   public:
+    ChunkInfo(uint32_t col, UnitsType type)
+        : unitsType_(static_cast<unsigned char>(type)) {
+      memcpy(column_, &col, sizeof(col));
+    }
+
+    uint32_t column() const {
+      uint32_t col;
+      memcpy(&col, column_, sizeof(uint32_t));
+      return col;
+    }
+
+    UnitsType unitsType() const {
+      MOZ_ASSERT(unitsType_ <= 1, "unitsType_ must be 0 or 1");
+      return static_cast<UnitsType>(unitsType_);
+    }
+
+    void guaranteeSingleUnits() {
+      MOZ_ASSERT(unitsType() == UnitsType::PossiblyMultiUnit,
+                 "should only be setting to possibly optimize from the "
+                 "pessimistic case");
+      unitsType_ = static_cast<unsigned char>(UnitsType::GuaranteedSingleUnit);
+    }
+  };
+
+  
+
+
+
+
+
+
+
+
+  mutable HashMap<uint32_t, Vector<ChunkInfo>> longLineColumnInfo_;
+
+ protected:
+  
+  const JS::ReadOnlyCompileOptions& options_;
+
+  Token tokens[ntokens];  
+
+ private:
+  unsigned cursor_;  
+ protected:
+  unsigned lookahead;      
+  unsigned lineno;         
+  TokenStreamFlags flags;  
+  size_t linebase;         
+  size_t
+      prevLinebase;  
+  const char* filename_;             
+  UniqueTwoByteChars displayURL_;    
+  UniqueTwoByteChars sourceMapURL_;  
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bool isExprEnding[size_t(TokenKind::Limit)] = {};  
+
+  JSContext* const cx;
+  bool mutedErrors;
+  StrictModeGetter* strictModeGetter;  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mutable uint32_t lineOfLastColumnComputation_ = UINT32_MAX;
+  mutable Vector<ChunkInfo>* lastChunkVectorForLine_ = nullptr;
+  mutable uint32_t lastOffsetOfComputedColumn_ = UINT32_MAX;
+  mutable uint32_t lastComputedColumn_ = 0;
+
+  
+
+ public:
+  TokenStreamAnyChars(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
+                      StrictModeGetter* smg);
+
+  template <typename Unit, class AnyCharsAccess>
+  friend class GeneralTokenStreamChars;
+  template <typename Unit, class AnyCharsAccess>
+  friend class TokenStreamChars;
+  template <typename Unit, class AnyCharsAccess>
+  friend class TokenStreamSpecific;
+
+  template <typename Unit>
+  friend class TokenStreamPosition;
+
+  
+  unsigned cursor() const { return cursor_; }
+  unsigned nextCursor() const { return (cursor_ + 1) & ntokensMask; }
+  unsigned aheadCursor(unsigned steps) const {
+    return (cursor_ + steps) & ntokensMask;
+  }
+
+  const Token& currentToken() const { return tokens[cursor()]; }
+  bool isCurrentTokenType(TokenKind type) const {
+    return currentToken().type == type;
+  }
+
+  MOZ_MUST_USE bool checkOptions();
+
+ private:
+  PropertyName* reservedWordToPropertyName(TokenKind tt) const;
+
+ public:
+  PropertyName* currentName() const {
+    if (isCurrentTokenType(TokenKind::Name) ||
+        isCurrentTokenType(TokenKind::PrivateName)) {
+      return currentToken().name();
+    }
+
+    MOZ_ASSERT(TokenKindIsPossibleIdentifierName(currentToken().type));
+    return reservedWordToPropertyName(currentToken().type);
+  }
+
+  bool currentNameHasEscapes() const {
+    if (isCurrentTokenType(TokenKind::Name) ||
+        isCurrentTokenType(TokenKind::PrivateName)) {
+      TokenPos pos = currentToken().pos;
+      return (pos.end - pos.begin) != currentToken().name()->length();
+    }
+
+    MOZ_ASSERT(TokenKindIsPossibleIdentifierName(currentToken().type));
+    return false;
+  }
+
+  bool isCurrentTokenAssignment() const {
+    return TokenKindIsAssignment(currentToken().type);
+  }
+
+  
+  bool isEOF() const { return flags.isEOF; }
+  bool sawOctalEscape() const { return flags.sawOctalEscape; }
+  bool hadError() const { return flags.hadError; }
+  void clearSawOctalEscape() { flags.sawOctalEscape = false; }
+
+  bool hasInvalidTemplateEscape() const {
+    return invalidTemplateEscapeType != InvalidEscapeType::None;
+  }
+  void clearInvalidTemplateEscape() {
+    invalidTemplateEscapeType = InvalidEscapeType::None;
+  }
+
+ private:
+  
+  
+  bool strictMode() const {
+    return strictModeGetter && strictModeGetter->strictMode();
+  }
+
+  void setInvalidTemplateEscape(uint32_t offset, InvalidEscapeType type) {
+    MOZ_ASSERT(type != InvalidEscapeType::None);
+    if (invalidTemplateEscapeType != InvalidEscapeType::None) {
+      return;
+    }
+    invalidTemplateEscapeOffset = offset;
+    invalidTemplateEscapeType = type;
+  }
+
+ public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void allowGettingNextTokenWithSlashIsRegExp() {
+#ifdef DEBUG
+    
+    
+    MOZ_ASSERT(hasLookahead());
+    const Token& next = nextToken();
+    MOZ_ASSERT(next.modifier == SlashIsDiv);
+    MOZ_ASSERT(next.type != TokenKind::Div);
+    tokens[nextCursor()].modifier = SlashIsRegExp;
+#endif
+  }
+
+#ifdef DEBUG
+  inline bool debugHasNoLookahead() const { return lookahead == 0; }
+#endif
+
+  bool hasDisplayURL() const { return displayURL_ != nullptr; }
+
+  char16_t* displayURL() { return displayURL_.get(); }
+
+  bool hasSourceMapURL() const { return sourceMapURL_ != nullptr; }
+
+  char16_t* sourceMapURL() { return sourceMapURL_.get(); }
 
   JSContext* context() const { return cx; }
 
@@ -741,122 +859,6 @@ class TokenStreamAnyChars : public TokenStreamShared {
   const JS::ReadOnlyCompileOptions& options() const { return options_; }
 
   const char* getFilename() const { return filename_; }
-
- private:
-  static constexpr uint32_t ColumnChunkLength = 128;
-
-  enum class UnitsType : unsigned char{
-      PossiblyMultiUnit = 0,
-      GuaranteedSingleUnit = 1,
-  };
-
-  class ChunkInfo {
-   public:
-    ChunkInfo(uint32_t col, UnitsType type)
-        : unitsType_(static_cast<unsigned char>(type)) {
-      memcpy(column_, &col, sizeof(col));
-    }
-
-    uint32_t column() const {
-      uint32_t col;
-      memcpy(&col, column_, sizeof(uint32_t));
-      return col;
-    }
-
-    UnitsType unitsType() const {
-      MOZ_ASSERT(unitsType_ <= 1, "unitsType_ must be 0 or 1");
-      return static_cast<UnitsType>(unitsType_);
-    }
-
-    void guaranteeSingleUnits() {
-      MOZ_ASSERT(unitsType() == UnitsType::PossiblyMultiUnit,
-                 "should only be setting to possibly optimize from the "
-                 "pessimistic case");
-      unitsType_ = static_cast<unsigned char>(UnitsType::GuaranteedSingleUnit);
-    }
-
-   private:
-    
-    unsigned char column_[sizeof(uint32_t)];
-    unsigned char unitsType_;
-  };
-
-  
-
-
-
-
-
-
-
-
-  mutable HashMap<uint32_t, Vector<ChunkInfo>> longLineColumnInfo_;
-
- protected:
-  
-  const JS::ReadOnlyCompileOptions& options_;
-
-  Token tokens[ntokens];  
- private:
-  unsigned cursor_;  
- protected:
-  unsigned lookahead;      
-  unsigned lineno;         
-  TokenStreamFlags flags;  
-  size_t linebase;         
-  size_t
-      prevLinebase;  
-  const char* filename_;             
-  UniqueTwoByteChars displayURL_;    
-  UniqueTwoByteChars sourceMapURL_;  
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  bool isExprEnding[size_t(TokenKind::Limit)] = {};  
-
-  JSContext* const cx;
-  bool mutedErrors;
-  StrictModeGetter* strictModeGetter;  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  mutable uint32_t lineOfLastColumnComputation_ = UINT32_MAX;
-  mutable Vector<ChunkInfo>* lastChunkVectorForLine_ = nullptr;
-  mutable uint32_t lastOffsetOfComputedColumn_ = UINT32_MAX;
-  mutable uint32_t lastComputedColumn_ = 0;
 };
 
 constexpr char16_t CodeUnitValue(char16_t unit) { return unit; }
