@@ -1832,6 +1832,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
+  
   bool mIsBlessed = false;
 
   
