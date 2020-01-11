@@ -2328,7 +2328,7 @@ CallState nsGlobalWindowInner::ShouldReportForServiceWorkerScopeInternal(
 
   
   
-  return CallOnChildren(
+  return CallOnInProcessChildren(
       &nsGlobalWindowInner::ShouldReportForServiceWorkerScopeInternal, aScope,
       aResultOut);
 }
@@ -2464,7 +2464,6 @@ void nsPIDOMWindowInner::TryToCacheTopInnerWindow() {
     mTopInnerWindow = topOutter->GetCurrentInnerWindow();
   }
 }
-
 
 void nsPIDOMWindowInner::UpdateActiveIndexedDBDatabaseCount(int32_t aDelta) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -5114,7 +5113,7 @@ void nsGlobalWindowInner::Suspend() {
 
   
   
-  CallOnChildren(&nsGlobalWindowInner::Suspend);
+  CallOnInProcessChildren(&nsGlobalWindowInner::Suspend);
 
   mSuspendDepth += 1;
   if (mSuspendDepth != 1) {
@@ -5162,7 +5161,7 @@ void nsGlobalWindowInner::Resume() {
 
   
   
-  CallOnChildren(&nsGlobalWindowInner::Resume);
+  CallOnInProcessChildren(&nsGlobalWindowInner::Resume);
 
   MOZ_ASSERT(mSuspendDepth != 0);
   mSuspendDepth -= 1;
@@ -5219,7 +5218,7 @@ void nsGlobalWindowInner::FreezeInternal() {
   MOZ_DIAGNOSTIC_ASSERT(IsCurrentInnerWindow());
   MOZ_DIAGNOSTIC_ASSERT(IsSuspended());
 
-  CallOnChildren(&nsGlobalWindowInner::FreezeInternal);
+  CallOnInProcessChildren(&nsGlobalWindowInner::FreezeInternal);
 
   mFreezeDepth += 1;
   MOZ_ASSERT(mSuspendDepth >= mFreezeDepth);
@@ -5254,7 +5253,7 @@ void nsGlobalWindowInner::ThawInternal() {
   MOZ_DIAGNOSTIC_ASSERT(IsCurrentInnerWindow());
   MOZ_DIAGNOSTIC_ASSERT(IsSuspended());
 
-  CallOnChildren(&nsGlobalWindowInner::ThawInternal);
+  CallOnInProcessChildren(&nsGlobalWindowInner::ThawInternal);
 
   MOZ_ASSERT(mFreezeDepth != 0);
   mFreezeDepth -= 1;
@@ -5330,7 +5329,8 @@ void nsGlobalWindowInner::SyncStateFromParentWindow() {
 }
 
 template <typename Method, typename... Args>
-CallState nsGlobalWindowInner::CallOnChildren(Method aMethod, Args&... aArgs) {
+CallState nsGlobalWindowInner::CallOnInProcessChildren(Method aMethod,
+                                                       Args&... aArgs) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(IsCurrentInnerWindow());
 
@@ -7181,7 +7181,7 @@ void nsGlobalWindowInner::ClearActiveStoragePrincipal() {
     doc->ClearActiveStoragePrincipal();
   }
 
-  CallOnChildren(&nsGlobalWindowInner::ClearActiveStoragePrincipal);
+  CallOnInProcessChildren(&nsGlobalWindowInner::ClearActiveStoragePrincipal);
 }
 
 bool nsPIDOMWindowInner::HasStorageAccessGranted(

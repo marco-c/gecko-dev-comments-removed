@@ -1038,7 +1038,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   
   template <typename Method, typename... Args>
-  mozilla::CallState CallOnChildren(Method aMethod, Args&... aArgs);
+  mozilla::CallState CallOnInProcessChildren(Method aMethod, Args&... aArgs);
 
   
   
