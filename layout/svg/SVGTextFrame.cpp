@@ -4649,6 +4649,12 @@ void SVGTextFrame::DoTextPathLayout() {
       
       uint32_t i = it.TextElementCharIndex();
 
+      
+      
+      
+      
+      uint32_t j = i + 1;
+
       MOZ_ASSERT(!mPositions[i].mClusterOrLigatureGroupMiddle);
 
       gfxFloat sign = it.TextRun()->IsRightToLeft() ? -1.0 : 1.0;
@@ -4660,6 +4666,13 @@ void SVGTextFrame::DoTextPathLayout() {
       gfxFloat partialAdvance = it.GetAdvance(context);
       partialAdvances.AppendElement(partialAdvance);
       while (it.Next()) {
+        
+        
+        MOZ_ASSERT(j <= it.TextElementCharIndex());
+        while (j < it.TextElementCharIndex()) {
+          partialAdvances.AppendElement(partialAdvance);
+          ++j;
+        }
         
         
         
@@ -4675,7 +4688,11 @@ void SVGTextFrame::DoTextPathLayout() {
       }
 
       
-      uint32_t j = it.TextElementCharIndex();
+      MOZ_ASSERT(j <= it.TextElementCharIndex());
+      while (j < it.TextElementCharIndex()) {
+        partialAdvances.AppendElement(partialAdvance);
+        ++j;
+      }
 
       gfxFloat halfAdvance =
           partialAdvances.LastElement() / mFontSizeScaleFactor / 2.0;
