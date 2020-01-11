@@ -546,6 +546,8 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   uint8_t mRedirectionLimit;
 
+  bool mBeConservativeForProxy;
+
   
   
   
