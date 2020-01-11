@@ -613,7 +613,7 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
 
 NS_IMETHODIMP
 DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
-  nsCOMPtr<nsHttpChannel> channel = do_QueryInterface(aRequest);
+  RefPtr<nsHttpChannel> httpChannel = do_QueryObject(aRequest);
   mChannel = do_QueryInterface(aRequest);
   MOZ_DIAGNOSTIC_ASSERT(mChannel);
 
@@ -643,19 +643,22 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   
   
   
-  if (channel) {
-    Unused << channel->GetApplyConversion(&mOldApplyConversion);
-    channel->SetApplyConversion(false);
+  if (httpChannel) {
+    Unused << httpChannel->GetApplyConversion(&mOldApplyConversion);
+    httpChannel->SetApplyConversion(false);
+  }
 
-    
-    
-    
-    
-    gHttpHandler->OnMayChangeProcess(this);
-    if (mRedirectContentProcessIdPromise) {
-      TriggerCrossProcessSwitch();
-      return NS_OK;
-    }
+  
+  
+  
+  
+  nsCOMPtr<nsIObserverService> obsService = services::GetObserverService();
+  obsService->NotifyObservers(ToSupports(this), "channel-on-may-change-process",
+                              nullptr);
+
+  if (mRedirectContentProcessIdPromise) {
+    TriggerCrossProcessSwitch();
+    return NS_OK;
   }
 
   TriggerRedirectToRealChannel();
