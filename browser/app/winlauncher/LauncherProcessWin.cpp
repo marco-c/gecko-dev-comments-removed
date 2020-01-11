@@ -44,7 +44,9 @@ static mozilla::LauncherVoidResult PostCreationSetup(
     const wchar_t* aFullImagePath, HANDLE aChildProcess,
     HANDLE aChildMainThread, const bool aIsSafeMode) {
   
-#if defined(_M_ARM64)
+  
+  
+#if defined(MOZ_ASAN) || defined(_M_ARM64)
   return mozilla::Ok();
 #else
   return mozilla::InitializeDllBlocklistOOP(aFullImagePath, aChildProcess);

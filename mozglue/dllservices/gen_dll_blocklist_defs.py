@@ -358,8 +358,7 @@ GENERATED_BLOCKLIST_FILES = [
     
     
     
-    BlocklistDescriptor('Launcher', ALL_DEFINITION_LISTS, flagspec={
-                        'CHILD_PROCESSES': {CHILD_PROCESSES_ONLY}}),
+    BlocklistDescriptor('Launcher', ['ALL_PROCESSES', 'BROWSER_PROCESS']),
     BlocklistDescriptor('Legacy', ALL_DEFINITION_LISTS, flagspec={
                         'CHILD_PROCESSES': {CHILD_PROCESSES_ONLY}}),
     

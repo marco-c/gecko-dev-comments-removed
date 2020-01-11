@@ -92,15 +92,6 @@ class NS_NO_VTABLE LoaderAPI {
 
 
   virtual AllocatedUnicodeString GetSectionName(void* aSectionAddr) = 0;
-
-  using InitDllBlocklistOOPFnPtr =
-      LauncherVoidResultWithLineInfo (*)(const wchar_t*, HANDLE);
-
-  
-
-
-
-  virtual InitDllBlocklistOOPFnPtr GetDllBlocklistInitFn() = 0;
 };
 
 }  
