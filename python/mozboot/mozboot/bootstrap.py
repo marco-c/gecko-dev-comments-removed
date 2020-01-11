@@ -472,7 +472,7 @@ class Bootstrapper(object):
         
         
         if not self.vcs:
-            if checkout_type and False:
+            if checkout_type:
                 vcs = checkout_type
             elif self.instance.no_interactive:
                 vcs = "hg"
