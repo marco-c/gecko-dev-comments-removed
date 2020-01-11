@@ -559,15 +559,16 @@ bool Debugger::getFrame(JSContext* cx, const FrameIter& iter,
     
     
     Rooted<AbstractGeneratorObject*> genObj(cx);
+    GeneratorWeakMap::AddPtr gp;
     if (referent.isGeneratorFrame()) {
       {
         AutoRealm ar(cx, referent.callee());
         genObj = GetGeneratorObjectForFrame(cx, referent);
       }
       if (genObj) {
-        GeneratorWeakMap::Ptr gp = generatorFrames.lookup(genObj);
+        gp = generatorFrames.lookupForAdd(genObj);
         if (gp) {
-          frame = gp->value();
+          frame = &gp->value()->as<DebuggerFrame>();
           MOZ_ASSERT(&frame->unwrappedGenerator() == genObj);
 
           
@@ -593,13 +594,19 @@ bool Debugger::getFrame(JSContext* cx, const FrameIter& iter,
           cx, &object->getReservedSlot(JSSLOT_DEBUG_FRAME_PROTO).toObject());
       RootedNativeObject debugger(cx, object);
 
-      frame = DebuggerFrame::create(cx, proto, debugger, &iter, genObj);
+      frame = DebuggerFrame::create(cx, proto, iter, debugger);
       if (!frame) {
         return false;
       }
 
       if (!ensureExecutionObservabilityOfFrame(cx, referent)) {
         return false;
+      }
+
+      if (genObj) {
+        if (!frame->setGenerator(cx, genObj)) {
+          return false;
+        }
       }
     }
 
@@ -611,37 +618,7 @@ bool Debugger::getFrame(JSContext* cx, const FrameIter& iter,
     }
   }
 
-  result.set(p->value());
-  return true;
-}
-
-bool Debugger::getFrame(JSContext* cx, Handle<AbstractGeneratorObject*> genObj,
-                        MutableHandleDebuggerFrame result) {
-  
-  
-  
-  
-  
-  MOZ_ASSERT(!genObj->isRunning());
-
-  
-  GeneratorWeakMap::Ptr gp = generatorFrames.lookup(genObj);
-  if (gp) {
-    MOZ_ASSERT(&gp->value()->unwrappedGenerator() == genObj);
-    result.set(gp->value());
-    return true;
-  }
-
-  
-  RootedObject proto(
-      cx, &object->getReservedSlot(JSSLOT_DEBUG_FRAME_PROTO).toObject());
-  RootedNativeObject debugger(cx, object);
-
-  result.set(DebuggerFrame::create(cx, proto, debugger, nullptr, genObj));
-  if (!result) {
-    return false;
-  }
-
+  result.set(&p->value()->as<DebuggerFrame>());
   return true;
 }
 
@@ -769,7 +746,7 @@ ResumeMode DebugAPI::slowPathOnResumeFrame(JSContext* cx,
     Debugger* dbg = entry.dbg;
     if (Debugger::GeneratorWeakMap::Ptr generatorEntry =
             dbg->generatorFrames.lookup(genObj)) {
-      DebuggerFrame* frameObj = generatorEntry->value();
+      DebuggerFrame* frameObj = &generatorEntry->value()->as<DebuggerFrame>();
       MOZ_ASSERT(&frameObj->unwrappedGenerator() == genObj);
       if (!dbg->frames.putNew(frame, frameObj)) {
         ReportOutOfMemory(cx);
@@ -2546,8 +2523,9 @@ ResumeMode DebugAPI::onSingleStep(JSContext* cx, MutableHandleValue vp) {
       
       for (Debugger::GeneratorWeakMap::Range r = dbg->generatorFrames.all();
            !r.empty(); r.popFront()) {
-        AbstractGeneratorObject& genObj = *r.front().key();
-        DebuggerFrame& frameObj = *r.front().value();
+        AbstractGeneratorObject& genObj =
+            r.front().key()->as<AbstractGeneratorObject>();
+        DebuggerFrame& frameObj = r.front().value()->as<DebuggerFrame>();
         MOZ_ASSERT(&frameObj.unwrappedGenerator() == &genObj);
 
         
@@ -3845,7 +3823,7 @@ void DebugAPI::sweepAll(JSFreeOp* fop) {
     if (dbg->zone()->isGCSweeping()) {
       for (Debugger::GeneratorWeakMap::Enum e(dbg->generatorFrames); !e.empty();
            e.popFront()) {
-        DebuggerFrame* frameObj = e.front().value();
+        DebuggerFrame* frameObj = &e.front().value()->as<DebuggerFrame>();
         if (IsAboutToBeFinalizedUnbarriered(&frameObj)) {
           frameObj->clearGenerator(fop, dbg, &e);
         }
@@ -4739,8 +4717,8 @@ void Debugger::removeDebuggeeGlobal(JSFreeOp* fop, GlobalObject* global,
   
   if (fromSweep == FromSweep::No) {
     for (GeneratorWeakMap::Enum e(generatorFrames); !e.empty(); e.popFront()) {
-      AbstractGeneratorObject& genObj = *e.front().key();
-      DebuggerFrame& frameObj = *e.front().value();
+      auto& genObj = e.front().key()->as<AbstractGeneratorObject>();
+      auto& frameObj = e.front().value()->as<DebuggerFrame>();
       if (genObj.isClosed() || &genObj.callee().global() == global) {
         frameObj.clearGenerator(fop, this, &e);
       }
