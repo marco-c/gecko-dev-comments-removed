@@ -81,15 +81,7 @@ var PermissionPrompts = {
       selectors: ["#notification-popup", "#identity-box"],
       async applyConfig() {
         await closeLastTab();
-        
-        await clickOn("#login-capture", function beforeContentFn() {
-          E10SUtils.wrapHandlingUserInput(content, true, function() {
-            let element = content.document.querySelector(
-              "input[type=password]"
-            );
-            element.setUserInput("123456");
-          });
-        });
+        await clickOn("#login-capture");
       },
     },
 
@@ -148,7 +140,7 @@ async function closeLastTab() {
   lastTab = null;
 }
 
-async function clickOn(selector, beforeContentFn) {
+async function clickOn(selector) {
   let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
 
   
@@ -156,10 +148,6 @@ async function clickOn(selector, beforeContentFn) {
     browserWindow.gBrowser,
     URL
   );
-
-  if (beforeContentFn) {
-    await ContentTask.spawn(lastTab.linkedBrowser, null, beforeContentFn);
-  }
 
   await ContentTask.spawn(lastTab.linkedBrowser, selector, async function(arg) {
     E10SUtils.wrapHandlingUserInput(content, true, function() {
