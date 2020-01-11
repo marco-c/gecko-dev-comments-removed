@@ -3790,6 +3790,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       
       
       
+      
       if (mWindowType == eWindowType_toplevel &&
           (mHasAlphaVisual || mTransparencyBitmapForTitlebar)) {
         mIsTransparent = true;
@@ -4562,7 +4563,13 @@ void nsWindow::SetTransparencyMode(nsTransparencyMode aMode) {
   LOG(("nsWindow::SetTransparencyMode [%p] mode %d\n", this, (int)aMode));
 
   if (mWindowType != eWindowType_popup) {
-    NS_WARNING("Cannot set transparency mode on non-popup windows.");
+    
+    
+    
+    
+    if (isTransparent) {
+      NS_WARNING("Transparent mode not supported on non-popup windows.");
+    }
     return;
   }
 
