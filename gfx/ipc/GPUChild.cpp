@@ -233,7 +233,7 @@ void GPUChild::ActorDestroy(ActorDestroyReason aWhy) {
 
     Telemetry::Accumulate(
         Telemetry::SUBPROCESS_ABNORMAL_ABORT,
-        nsDependentCString(XRE_ChildProcessTypeToString(GeckoProcessType_GPU)),
+        nsDependentCString(XRE_GeckoProcessTypeToString(GeckoProcessType_GPU)),
         1);
 
     
