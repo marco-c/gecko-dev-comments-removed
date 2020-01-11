@@ -12,16 +12,21 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticMutex.h"
-#include "DirtyMemoryHandler.h"
 #include "Lock.h"
-#include "MemorySnapshot.h"
 #include "ProcessRedirect.h"
 #include "ProcessRewind.h"
 #include "ValueIndex.h"
 #include "pratom.h"
 
+#include <dlfcn.h>
 #include <fcntl.h>
 #include <unistd.h>
+
+#include <mach/exc.h>
+#include <mach/mach.h>
+#include <mach/mach_vm.h>
+#include <mach/ndr.h>
+#include <sys/time.h>
 
 namespace mozilla {
 namespace recordreplay {
@@ -36,9 +41,7 @@ MOZ_NEVER_INLINE void BusyWait() {
 
 
 
-File* gRecordingFile;
-const char* gSnapshotMemoryPrefix;
-const char* gSnapshotStackPrefix;
+Recording* gRecording;
 
 char* gInitializationFailureMessage;
 
@@ -58,6 +61,11 @@ static bool gSpewEnabled;
 
 static bool gMainChild;
 
+
+static bool gReplayingInCloud;
+
+static void InitializeCrashDetector();
+
 extern "C" {
 
 MOZ_EXPORT void RecordReplayInterface_Initialize(int aArgc, char* aArgv[]) {
@@ -74,10 +82,12 @@ MOZ_EXPORT void RecordReplayInterface_Initialize(int aArgc, char* aArgv[]) {
       recordingFile.emplace(aArgv[i + 1]);
     }
   }
-  MOZ_RELEASE_ASSERT(processKind.isSome() && recordingFile.isSome());
+  MOZ_RELEASE_ASSERT(processKind.isSome());
 
   gProcessKind = processKind.ref();
-  gRecordingFilename = strdup(recordingFile.ref());
+  if (recordingFile.isSome()) {
+    gRecordingFilename = strdup(recordingFile.ref());
+  }
 
   switch (processKind.ref()) {
     case ProcessKind::Recording:
@@ -117,22 +127,15 @@ MOZ_EXPORT void RecordReplayInterface_Initialize(int aArgc, char* aArgv[]) {
   EarlyInitializeRedirections();
 
   if (!IsRecordingOrReplaying()) {
-    InitializeMiddlemanCalls();
+    InitializeExternalCalls();
     return;
   }
 
-  gSnapshotMemoryPrefix = mktemp(strdup("/tmp/SnapshotMemoryXXXXXX"));
-  gSnapshotStackPrefix = mktemp(strdup("/tmp/SnapshotStackXXXXXX"));
-
   InitializeCurrentTime();
 
-  gRecordingFile = new File();
-  if (gRecordingFile->Open(recordingFile.ref(),
-                           IsRecording() ? File::WRITE : File::READ)) {
-    InitializeRedirections();
-  } else {
-    gInitializationFailureMessage = strdup("Bad recording file");
-  }
+  gRecording = new Recording();
+
+  InitializeRedirections();
 
   if (gInitializationFailureMessage) {
     fprintf(stderr, "Initialization Failure: %s\n",
@@ -145,18 +148,26 @@ MOZ_EXPORT void RecordReplayInterface_Initialize(int aArgc, char* aArgv[]) {
   Thread* thread = Thread::GetById(MainThreadId);
   MOZ_ASSERT(thread->Id() == MainThreadId);
 
-  thread->BindToCurrent();
   thread->SetPassThrough(true);
 
-  InitializeMemorySnapshots();
+  
+  
+  gReplayingInCloud = !!dlsym(RTLD_DEFAULT, "RecordReplay_ReplayingInCloud");
+
   Thread::SpawnAllThreads();
-  InitializeCountdownThread();
-  SetupDirtyMemoryHandler();
-  InitializeMiddlemanCalls();
+  InitializeExternalCalls();
+  if (!gReplayingInCloud) {
+    
+    
+    
+    InitializeCrashDetector();
+  }
   Lock::InitializeLocks();
 
   
   putenv((char*)"STYLO_THREADS=1");
+
+  child::SetupRecordReplayChannel(aArgc, aArgv);
 
   thread->SetPassThrough(false);
 
@@ -197,15 +208,45 @@ MOZ_EXPORT void RecordReplayInterface_InternalRecordReplayBytes(void* aData,
 MOZ_EXPORT void RecordReplayInterface_InternalInvalidateRecording(
     const char* aWhy) {
   if (IsRecording()) {
-    child::ReportFatalError(Nothing(), "Recording invalidated: %s", aWhy);
+    child::ReportFatalError("Recording invalidated: %s", aWhy);
   } else {
-    child::ReportFatalError(Nothing(),
-                            "Recording invalidated while replaying: %s", aWhy);
+    child::ReportFatalError("Recording invalidated while replaying: %s", aWhy);
   }
   Unreachable();
 }
 
+MOZ_EXPORT void RecordReplayInterface_InternalBeginPassThroughThreadEventsWithLocalReplay() {
+  if (IsReplaying() && !gReplayingInCloud) {
+    BeginPassThroughThreadEvents();
+  }
+}
+
+MOZ_EXPORT void RecordReplayInterface_InternalEndPassThroughThreadEventsWithLocalReplay() {
+  
+  
+  
+  MOZ_RELEASE_ASSERT(Thread::CurrentIsMainThread());
+  Stream* localReplayStream = gRecording->OpenStream(StreamName::LocalReplaySkip, 0);
+  Stream& events = Thread::Current()->Events();
+
+  size_t position = IsRecording() ? events.StreamPosition() : 0;
+  localReplayStream->RecordOrReplayScalar(&position);
+
+  if (IsReplaying() && !ReplayingInCloud()) {
+    EndPassThroughThreadEvents();
+    MOZ_RELEASE_ASSERT(events.StreamPosition() <= position);
+    size_t nbytes = position - events.StreamPosition();
+    void* buf = malloc(nbytes);
+    events.ReadBytes(buf, nbytes);
+    free(buf);
+    MOZ_RELEASE_ASSERT(events.StreamPosition() == position);
+  }
+}
+
 }  
+
+
+size_t gRecordingDataSentToMiddleman;
 
 void FlushRecording() {
   MOZ_RELEASE_ASSERT(IsRecording());
@@ -214,35 +255,19 @@ void FlushRecording() {
   
   
   size_t endpoint = GetLastCheckpoint();
-  Stream* endpointStream = gRecordingFile->OpenStream(StreamName::Main, 0);
+  Stream* endpointStream = gRecording->OpenStream(StreamName::Endpoint, 0);
   endpointStream->WriteScalar(endpoint);
 
-  gRecordingFile->PreventStreamWrites();
-  gRecordingFile->Flush();
-  gRecordingFile->AllowStreamWrites();
-}
+  gRecording->PreventStreamWrites();
+  gRecording->Flush();
+  gRecording->AllowStreamWrites();
 
-
-static bool LoadNextRecordingIndex() {
-  Thread::WaitForIdleThreads();
-
-  InfallibleVector<Stream*> updatedStreams;
-  File::ReadIndexResult result = gRecordingFile->ReadNextIndex(&updatedStreams);
-  if (result == File::ReadIndexResult::InvalidFile) {
-    MOZ_CRASH("Bad recording file");
+  if (gRecording->Size() > gRecordingDataSentToMiddleman) {
+    child::SendRecordingData(gRecordingDataSentToMiddleman,
+                             gRecording->Data() + gRecordingDataSentToMiddleman,
+                             gRecording->Size() - gRecordingDataSentToMiddleman);
+    gRecordingDataSentToMiddleman = gRecording->Size();
   }
-
-  bool found = result == File::ReadIndexResult::FoundIndex;
-  if (found) {
-    for (Stream* stream : updatedStreams) {
-      if (stream->Name() == StreamName::Lock) {
-        Lock::LockAquiresUpdated(stream->NameIndex());
-      }
-    }
-  }
-
-  Thread::ResumeIdleThreads();
-  return found;
 }
 
 void HitEndOfRecording() {
@@ -252,10 +277,8 @@ void HitEndOfRecording() {
   if (Thread::CurrentIsMainThread()) {
     
     
-    bool found = LoadNextRecordingIndex();
-    MOZ_RELEASE_ASSERT(found);
+    child::AddPendingRecordingData();
   } else {
-    
     
     Thread::Wait();
   }
@@ -268,7 +291,7 @@ size_t RecordingEndpoint() {
   MOZ_RELEASE_ASSERT(IsReplaying());
   MOZ_RELEASE_ASSERT(!AreThreadEventsPassedThrough());
 
-  Stream* endpointStream = gRecordingFile->OpenStream(StreamName::Main, 0);
+  Stream* endpointStream = gRecording->OpenStream(StreamName::Endpoint, 0);
   while (!endpointStream->AtEnd()) {
     gRecordingEndpoint = endpointStream->ReadScalar();
   }
@@ -301,8 +324,11 @@ const char* ThreadEventName(ThreadEvent aEvent) {
 
 int GetRecordingPid() { return gRecordingPid; }
 
+void ResetPid() { gPid = getpid(); }
+
 bool IsMainChild() { return gMainChild; }
 void SetMainChild() { gMainChild = true; }
+bool ReplayingInCloud() { return gReplayingInCloud; }
 
 
 
@@ -324,7 +350,7 @@ MOZ_EXPORT void RecordReplayInterface_InternalRecordReplayAssert(
 
   
   
-  thread->Events().RecordOrReplayThreadEvent(ThreadEvent::Assert);
+  thread->Events().RecordOrReplayThreadEvent(ThreadEvent::Assert, text);
   thread->Events().CheckInput(text);
 }
 
@@ -398,6 +424,97 @@ MOZ_EXPORT void RecordReplayInterface_InternalHoldJSObject(void* aJSObj) {
 }
 
 }  
+
+static mach_port_t gCrashDetectorExceptionPort;
+
+
+static const mach_msg_id_t sExceptionId = 2405;
+
+
+
+#pragma pack(4)
+typedef struct {
+  mach_msg_header_t Head;
+  
+  mach_msg_body_t msgh_body;
+  mach_msg_port_descriptor_t thread;
+  mach_msg_port_descriptor_t task;
+  
+  NDR_record_t NDR;
+  exception_type_t exception;
+  mach_msg_type_number_t codeCnt;
+  int64_t code[2];
+} Request__mach_exception_raise_t;
+#pragma pack()
+
+typedef struct {
+  Request__mach_exception_raise_t body;
+  mach_msg_trailer_t trailer;
+} ExceptionRequest;
+
+static void CrashDetectorThread(void*) {
+  kern_return_t kret;
+
+  while (true) {
+    ExceptionRequest request;
+    kret = mach_msg(&request.body.Head, MACH_RCV_MSG, 0, sizeof(request),
+                    gCrashDetectorExceptionPort, MACH_MSG_TIMEOUT_NONE,
+                    MACH_PORT_NULL);
+    Print("Crashing: %s\n", gMozCrashReason);
+
+    kern_return_t replyCode = KERN_FAILURE;
+    if (kret == KERN_SUCCESS && request.body.Head.msgh_id == sExceptionId &&
+        request.body.exception == EXC_BAD_ACCESS && request.body.codeCnt == 2) {
+      uint8_t* faultingAddress = (uint8_t*)request.body.code[1];
+      child::MinidumpInfo info(request.body.exception, request.body.code[0],
+                               request.body.code[1],
+                               request.body.thread.name,
+                               request.body.task.name);
+      child::ReportCrash(info, faultingAddress);
+    } else {
+      child::ReportFatalError("CrashDetectorThread mach_msg "
+                              "returned unexpected data");
+    }
+
+    __Reply__exception_raise_t reply;
+    reply.Head.msgh_bits =
+        MACH_MSGH_BITS(MACH_MSGH_BITS_REMOTE(request.body.Head.msgh_bits), 0);
+    reply.Head.msgh_size = sizeof(reply);
+    reply.Head.msgh_remote_port = request.body.Head.msgh_remote_port;
+    reply.Head.msgh_local_port = MACH_PORT_NULL;
+    reply.Head.msgh_id = request.body.Head.msgh_id + 100;
+    reply.NDR = NDR_record;
+    reply.RetCode = replyCode;
+    mach_msg(&reply.Head, MACH_SEND_MSG, sizeof(reply), 0, MACH_PORT_NULL,
+             MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
+  }
+}
+
+static void InitializeCrashDetector() {
+  MOZ_RELEASE_ASSERT(AreThreadEventsPassedThrough());
+  kern_return_t kret;
+
+  
+  kret = mach_port_allocate(mach_task_self(), MACH_PORT_RIGHT_RECEIVE,
+                            &gCrashDetectorExceptionPort);
+  MOZ_RELEASE_ASSERT(kret == KERN_SUCCESS);
+
+  kret = mach_port_insert_right(mach_task_self(), gCrashDetectorExceptionPort,
+                                gCrashDetectorExceptionPort,
+                                MACH_MSG_TYPE_MAKE_SEND);
+  MOZ_RELEASE_ASSERT(kret == KERN_SUCCESS);
+
+  
+  Thread::SpawnNonRecordedThread(CrashDetectorThread, nullptr);
+
+  
+  
+  
+  kret = task_set_exception_ports(
+      mach_task_self(), EXC_MASK_BAD_ACCESS, gCrashDetectorExceptionPort,
+      EXCEPTION_DEFAULT | MACH_EXCEPTION_CODES, THREAD_STATE_NONE);
+  MOZ_RELEASE_ASSERT(kret == KERN_SUCCESS);
+}
 
 }  
 }  

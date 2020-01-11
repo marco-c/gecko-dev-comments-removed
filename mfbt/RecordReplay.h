@@ -149,6 +149,28 @@ struct MOZ_RAII AutoEnsurePassThroughThreadEvents {
 
 
 
+
+
+
+
+
+
+static inline void BeginPassThroughThreadEventsWithLocalReplay();
+static inline void EndPassThroughThreadEventsWithLocalReplay();
+
+
+
+struct MOZ_RAII AutoPassThroughThreadEventsWithLocalReplay {
+  AutoPassThroughThreadEventsWithLocalReplay() {
+    BeginPassThroughThreadEventsWithLocalReplay();
+  }
+  ~AutoPassThroughThreadEventsWithLocalReplay() {
+    EndPassThroughThreadEventsWithLocalReplay();
+  }
+};
+
+
+
 static inline void BeginDisallowThreadEvents();
 static inline void EndDisallowThreadEvents();
 
@@ -356,6 +378,10 @@ MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(BeginPassThroughThreadEvents, (), ())
 MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(EndPassThroughThreadEvents, (), ())
 MOZ_MAKE_RECORD_REPLAY_WRAPPER(AreThreadEventsPassedThrough, bool, false, (),
                                ())
+MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(BeginPassThroughThreadEventsWithLocalReplay,
+                                    (), ())
+MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(EndPassThroughThreadEventsWithLocalReplay,
+                                    (), ())
 MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(BeginDisallowThreadEvents, (), ())
 MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(EndDisallowThreadEvents, (), ())
 MOZ_MAKE_RECORD_REPLAY_WRAPPER(AreThreadEventsDisallowed, bool, false, (), ())

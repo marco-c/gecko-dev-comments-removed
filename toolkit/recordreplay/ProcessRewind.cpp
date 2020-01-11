@@ -6,32 +6,19 @@
 
 #include "ProcessRewind.h"
 
-#include "nsString.h"
 #include "ipc/ChildInternal.h"
 #include "ipc/ParentInternal.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/StaticMutex.h"
 #include "InfallibleVector.h"
-#include "MemorySnapshot.h"
 #include "Monitor.h"
 #include "ProcessRecordReplay.h"
-#include "ThreadSnapshot.h"
 
 namespace mozilla {
 namespace recordreplay {
 
 
 static size_t gLastCheckpoint = InvalidCheckpointId;
-
-
-
-struct RewindInfo {
-  
-  InfallibleVector<AllSavedThreadStacks, 1024, AllocPolicy<MemoryKind::Generic>>
-      mSnapshots;
-};
-
-static RewindInfo* gRewindInfo;
 
 
 static Monitor* gMainThreadCallbackMonitor;
@@ -41,92 +28,7 @@ static Monitor* gMainThreadCallbackMonitor;
 static StaticInfallibleVector<std::function<void()>> gMainThreadCallbacks;
 
 void InitializeRewindState() {
-  MOZ_RELEASE_ASSERT(gRewindInfo == nullptr);
-  void* memory = AllocateMemory(sizeof(RewindInfo), MemoryKind::Generic);
-  gRewindInfo = new (memory) RewindInfo();
-
   gMainThreadCallbackMonitor = new Monitor();
-}
-
-void RestoreSnapshotAndResume(size_t aNumSnapshots) {
-  MOZ_RELEASE_ASSERT(IsReplaying());
-  MOZ_RELEASE_ASSERT(Thread::CurrentIsMainThread());
-  MOZ_RELEASE_ASSERT(!AreThreadEventsPassedThrough());
-  MOZ_RELEASE_ASSERT(aNumSnapshots < gRewindInfo->mSnapshots.length());
-
-  
-  {
-    MonitorAutoLock lock(*gMainThreadCallbackMonitor);
-    MOZ_RELEASE_ASSERT(gMainThreadCallbacks.empty());
-  }
-
-  Thread::WaitForIdleThreads();
-
-  double start = CurrentTime();
-
-  {
-    
-    AutoDisallowMemoryChanges disallow;
-    RestoreMemoryToLastSnapshot();
-    for (size_t i = 0; i < aNumSnapshots; i++) {
-      gRewindInfo->mSnapshots.back().ReleaseContents();
-      gRewindInfo->mSnapshots.popBack();
-      RestoreMemoryToLastDiffSnapshot();
-    }
-  }
-
-  FixupFreeRegionsAfterRewind();
-
-  double end = CurrentTime();
-  PrintSpew("Restore %.2fs\n", (end - start) / 1000000.0);
-
-  
-  
-  RestoreAllThreads(gRewindInfo->mSnapshots.back());
-  Unreachable();
-}
-
-bool NewSnapshot() {
-  if (IsRecording()) {
-    return true;
-  }
-
-  Thread::WaitForIdleThreads();
-
-  PrintSpew("Saving snapshot...\n");
-
-  double start = CurrentTime();
-
-  
-  if (gRewindInfo->mSnapshots.empty()) {
-    TakeFirstMemorySnapshot();
-  } else {
-    TakeDiffMemorySnapshot();
-  }
-  gRewindInfo->mSnapshots.emplaceBack();
-
-  double end = CurrentTime();
-
-  bool reached = true;
-
-  
-  
-  if (SaveAllThreads(gRewindInfo->mSnapshots.back())) {
-    PrintSpew("Saved snapshot %.2fs\n", (end - start) / 1000000.0);
-  } else {
-    PrintSpew("Restored snapshot\n");
-
-    reached = false;
-
-    
-    
-    
-    WaitForIdleThreadsToRestoreTheirStacks();
-  }
-
-  Thread::ResumeIdleThreads();
-
-  return reached;
 }
 
 void NewCheckpoint() {
@@ -147,21 +49,18 @@ void DivergeFromRecording() {
   Thread* thread = Thread::Current();
   MOZ_RELEASE_ASSERT(thread->IsMainThread());
 
-  if (!thread->HasDivergedFromRecording()) {
-    
-    child::SendResetMiddlemanCalls();
+  gUnhandledDivergeAllowed = true;
 
+  if (!thread->HasDivergedFromRecording()) {
     thread->DivergeFromRecording();
 
     
     Thread::WaitForIdleThreads();
-    for (size_t i = MainThreadId + 1; i <= MaxRecordedThreadId; i++) {
+    for (size_t i = MainThreadId + 1; i <= MaxThreadId; i++) {
       Thread::GetById(i)->SetShouldDivergeFromRecording();
     }
     Thread::ResumeIdleThreads();
   }
-
-  gUnhandledDivergeAllowed = true;
 }
 
 extern "C" {
@@ -178,27 +77,17 @@ void DisallowUnhandledDivergeFromRecording() {
   gUnhandledDivergeAllowed = false;
 }
 
-void EnsureNotDivergedFromRecording() {
-  
-  
+void EnsureNotDivergedFromRecording(const Maybe<int>& aCallId) {
   AssertEventsAreNotPassedThrough();
   if (HasDivergedFromRecording()) {
     MOZ_RELEASE_ASSERT(gUnhandledDivergeAllowed);
 
-    
-    
-    if (child::CurrentRepaintCannotFail()) {
-      MOZ_CRASH("Recording divergence while repainting");
-    }
+    PrintSpew("Unhandled recording divergence: %s\n",
+              aCallId.isSome() ? GetRedirection(aCallId.ref()).mName : "");
 
-    PrintSpew("Unhandled recording divergence, restoring snapshot...\n");
-    RestoreSnapshotAndResume(0);
+    child::ReportUnhandledDivergence();
     Unreachable();
   }
-}
-
-size_t NumSnapshots() {
-  return gRewindInfo ? gRewindInfo->mSnapshots.length() : 0;
 }
 
 size_t GetLastCheckpoint() { return gLastCheckpoint; }
@@ -239,10 +128,8 @@ void PauseMainThreadAndServiceCallbacks() {
   }
 
   
-  
   MOZ_RELEASE_ASSERT(gMainThreadCallbacks.empty());
 
-  
   
   MOZ_RELEASE_ASSERT(!HasDivergedFromRecording());
 
@@ -266,6 +153,38 @@ void ResumeExecution() {
   MonitorAutoLock lock(*gMainThreadCallbackMonitor);
   gMainThreadShouldPause = false;
   gMainThreadCallbackMonitor->Notify();
+}
+
+bool ForkProcess() {
+  MOZ_RELEASE_ASSERT(IsReplaying());
+
+  Thread::WaitForIdleThreads();
+
+  
+  
+  
+  Thread::OperateOnIdleThreadLocks(Thread::OwnedLockState::NeedRelease);
+
+  AutoEnsurePassThroughThreadEvents pt;
+  pid_t pid = fork();
+
+  if (pid > 0) {
+    Thread::OperateOnIdleThreadLocks(Thread::OwnedLockState::NeedAcquire);
+    Thread::ResumeIdleThreads();
+    return true;
+  }
+
+  Print("FORKED %d\n", getpid());
+
+  if (TestEnv("MOZ_REPLAYING_WAIT_AT_FORK")) {
+    BusyWait();
+  }
+
+  ResetPid();
+
+  Thread::RespawnAllThreadsAfterFork();
+  Thread::ResumeIdleThreads();
+  return false;
 }
 
 }  

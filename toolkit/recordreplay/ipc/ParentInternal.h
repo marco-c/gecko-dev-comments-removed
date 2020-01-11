@@ -38,18 +38,10 @@ ChildProcessInfo* GetActiveChild();
 ChildProcessInfo* GetChildProcess(size_t aId);
 
 
-size_t SpawnReplayingChild();
+void SpawnReplayingChild(size_t aId);
 
 
 void SetActiveChild(ChildProcessInfo* aChild);
-
-
-
-bool MainThreadIsWaitingForIPDLReply();
-
-
-
-void ResumeBeforeWaitingForIPDLReply();
 
 
 
@@ -64,8 +56,11 @@ void InitializeForwarding();
 void Shutdown();
 
 
+extern StaticInfallibleVector<char> gRecordingContents;
 
-static Monitor* gMonitor;
+
+
+extern Monitor* gMonitor;
 
 
 
@@ -156,67 +151,29 @@ class ChildProcessInfo {
   
   bool mRecording = false;
 
-  
-  bool mPaused = false;
-
-  
-  
-  bool mHasBegunFatalError = false;
-  bool mHasFatalError = false;
-
-  
-  bool mMightRewind = false;
-
-  
-  
-  bool mSentTerminateMessage = false;
-
-  
-  TimeStamp mLastPingTime;
-
-  struct PingInfo {
-    uint32_t mId;
-    uint64_t mProgress;
-
-    explicit PingInfo(uint32_t aId) : mId(aId), mProgress(0) {}
-  };
-
-  
-  InfallibleVector<PingInfo> mPings;
-
   void OnIncomingMessage(const Message& aMsg);
 
   static void MaybeProcessPendingMessageRunnable();
-  void ReceiveChildMessageOnMainThread(Message::UniquePtr aMsg);
+  static void ReceiveChildMessageOnMainThread(size_t aChildId,
+                                              Message::UniquePtr aMsg);
 
-  bool IsHanged();
-  void OnPingResponse(const PingResponseMessage& aMsg);
-  void OnCrash(const char* aWhy);
+  void OnCrash(size_t aForkId, const char* aWhy);
   void LaunchSubprocess(
-      const Maybe<RecordingProcessData>& aRecordingProcessData);
+      size_t aId, const Maybe<RecordingProcessData>& aRecordingProcessData);
 
  public:
   explicit ChildProcessInfo(
-      const Maybe<RecordingProcessData>& aRecordingProcessData);
+      size_t aId, const Maybe<RecordingProcessData>& aRecordingProcessData);
   ~ChildProcessInfo();
 
   size_t GetId() { return mChannel->GetId(); }
   bool IsRecording() { return mRecording; }
-  bool IsPaused() { return mPaused; }
-  bool HasCrashed() { return mHasFatalError; }
 
   
   void SendMessage(Message&& aMessage);
 
-  
-  
-  
-  void WaitUntilPaused();
-
   static void SetIntroductionMessage(IntroductionMessage* aMessage);
-
-  void ResetPings(bool aMightRewind);
-  void MaybePing();
+  static void MaybeProcessNextMessage();
 };
 
 }  

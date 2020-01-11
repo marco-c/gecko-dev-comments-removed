@@ -45,6 +45,15 @@ class Assembler {
   void Jump(void* aTarget);
 
   
+  void PushImmediate(void* aValue);
+
+  
+  void Return();
+
+  
+  void Breakpoint();
+
+  
   
   
   void ConditionalJump(uint8_t aCode, void* aTarget);
@@ -69,8 +78,13 @@ class Assembler {
   void CompareRaxWithTopOfStack();
 
   
+  void CompareTopOfStackWithRax();
+
+  
   void PushRbx();
   void PopRbx();
+
+  void PopRegister( int aRegister);
 
   
   void StoreRbxToRax(size_t aWidth);
@@ -173,6 +187,11 @@ static const size_t ShortJumpBytes = 2;
 
 
 static const size_t JumpBytesClobberRax = 12;
+
+
+static const size_t JumpBytes = 17;
+
+static const size_t PushImmediateBytes = 16;
 
 
 static const size_t MaximumInstructionLength = 15;

@@ -17,8 +17,6 @@
 
 
 
-
-
 "use strict";
 
 const CC = Components.Constructor;
@@ -45,7 +43,6 @@ const {
   CSSRule,
   pointPrecedes,
   pointEquals,
-  pointArrayIncludes,
   findClosestPoint,
 } = sandbox;
 
@@ -172,26 +169,6 @@ function scriptFrameForIndex(index) {
 function isNonNullObject(obj) {
   return obj && (typeof obj == "object" || typeof obj == "function");
 }
-
-function getMemoryUsage() {
-  const memoryKinds = {
-    Generic: [1],
-    Snapshots: [2, 3, 4, 5, 6, 7],
-    ScriptHits: [8],
-  };
-
-  const rv = {};
-  for (const [name, kinds] of Object.entries(memoryKinds)) {
-    let total = 0;
-    kinds.forEach(kind => {
-      total += RecordReplayControl.memoryUsage(kind);
-    });
-    rv[name] = total;
-  }
-  return rv;
-}
-
-
 
 
 
@@ -957,16 +934,11 @@ const gNewDebuggerStatements = [];
 
 let gPauseOnDebuggerStatement = false;
 
-function ensureRunToPointPositionHandlers({ endpoint, snapshotPoints }) {
+function ensureRunToPointPositionHandlers({ endpoint }) {
   if (gLastCheckpoint == endpoint.checkpoint) {
     assert(endpoint.position);
     ensurePositionHandler(endpoint.position);
   }
-  snapshotPoints.forEach(snapshot => {
-    if (gLastCheckpoint == snapshot.checkpoint && snapshot.position) {
-      ensurePositionHandler(snapshot.position);
-    }
-  });
 }
 
 
@@ -980,9 +952,10 @@ const gManifestStartHandlers = {
     dbg.onDebuggerStatement = debuggerStatementHit;
   },
 
-  restoreSnapshot({ numSnapshots }) {
-    RecordReplayControl.restoreSnapshot(numSnapshots);
-    throwError("Unreachable!");
+  fork({ id }) {
+    const point = currentScriptedExecutionPoint() || currentExecutionPoint();
+    RecordReplayControl.fork(id);
+    RecordReplayControl.manifestFinished({ point });
   },
 
   runToPoint(manifest) {
@@ -1117,7 +1090,7 @@ function currentExecutionPoint(position) {
 function currentScriptedExecutionPoint() {
   const numFrames = countScriptFrames();
   if (!numFrames) {
-    return null;
+    return undefined;
   }
 
   const index = numFrames - 1;
@@ -1152,9 +1125,6 @@ const gManifestFinishedAfterCheckpointHandlers = {
     
     
     assert(point.checkpoint == FirstCheckpointId);
-    if (!newSnapshot(point)) {
-      return;
-    }
     RecordReplayControl.manifestFinished({ point });
   },
 
@@ -1163,29 +1133,22 @@ const gManifestFinishedAfterCheckpointHandlers = {
     finishResume(point);
   },
 
-  runToPoint({ endpoint, snapshotPoints }, point) {
+  runToPoint({ endpoint, flushExternalCalls }, point) {
     assert(endpoint.checkpoint >= point.checkpoint);
-    if (pointArrayIncludes(snapshotPoints, point) && !newSnapshot(point)) {
-      return;
-    }
     if (!endpoint.position && point.checkpoint == endpoint.checkpoint) {
+      if (flushExternalCalls) {
+        RecordReplayControl.flushExternalCalls();
+      }
       RecordReplayControl.manifestFinished({ point });
     }
   },
 
-  scanRecording({ endpoint, snapshotPoints }, point) {
+  scanRecording({ endpoint }, point) {
     stopScanningAllScripts();
-    if (pointArrayIncludes(snapshotPoints, point) && !newSnapshot(point)) {
-      return;
-    }
     if (point.checkpoint == endpoint.checkpoint) {
       const duration =
         RecordReplayControl.currentExecutionTime() - gManifestStartTime;
-      RecordReplayControl.manifestFinished({
-        point,
-        duration,
-        memoryUsage: getMemoryUsage(),
-      });
+      RecordReplayControl.manifestFinished({ point, duration });
     }
   },
 };
@@ -1205,7 +1168,7 @@ const gManifestPrepareAfterCheckpointHandlers = {
   },
 };
 
-function processManifestAfterCheckpoint(point, restoredSnapshot) {
+function processManifestAfterCheckpoint(point) {
   if (gManifestFinishedAfterCheckpointHandlers[gManifest.kind]) {
     gManifestFinishedAfterCheckpointHandlers[gManifest.kind](gManifest, point);
   }
@@ -1244,15 +1207,10 @@ const gManifestPositionHandlers = {
     finishResume(point);
   },
 
-  runToPoint({ endpoint, snapshotPoints }, point) {
-    if (pointArrayIncludes(snapshotPoints, point)) {
-      clearPositionHandlers();
-      if (newSnapshot(point)) {
-        ensureRunToPointPositionHandlers({ endpoint, snapshotPoints });
-      }
-    }
+  runToPoint({ endpoint, flushExternalCalls }, point) {
     if (pointEquals(point, endpoint)) {
       clearPositionHandlers();
+      assert(!flushExternalCalls);
       RecordReplayControl.manifestFinished({ point });
     }
   },
@@ -1277,18 +1235,6 @@ function debuggerStatementHit() {
     clearPositionHandlers();
     finishResume(point);
   }
-}
-
-function newSnapshot(point) {
-  if (RecordReplayControl.newSnapshot()) {
-    return true;
-  }
-
-  
-  
-  RecordReplayControl.manifestFinished({ restoredSnapshot: true, point });
-
-  return false;
 }
 
 

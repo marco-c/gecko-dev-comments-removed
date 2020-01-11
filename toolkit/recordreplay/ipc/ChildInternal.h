@@ -10,7 +10,7 @@
 #include "Channel.h"
 #include "ChildIPC.h"
 #include "JSControl.h"
-#include "MiddlemanCall.h"
+#include "ExternalCall.h"
 #include "Monitor.h"
 
 
@@ -20,6 +20,7 @@ namespace mozilla {
 namespace recordreplay {
 namespace child {
 
+void SetupRecordReplayChannel(int aArgc, char* aArgv[]);
 
 
 struct MinidumpInfo {
@@ -27,17 +28,25 @@ struct MinidumpInfo {
   int mCode;
   int mSubcode;
   mach_port_t mThread;
+  mach_port_t mTask;
 
-  MinidumpInfo(int aExceptionType, int aCode, int aSubcode, mach_port_t aThread)
+  MinidumpInfo(int aExceptionType, int aCode, int aSubcode, mach_port_t aThread,
+               mach_port_t aTask)
       : mExceptionType(aExceptionType),
         mCode(aCode),
         mSubcode(aSubcode),
-        mThread(aThread) {}
+        mThread(aThread),
+        mTask(aTask) {}
 };
 
+void ReportCrash(const MinidumpInfo& aMinidumpInfo, void* aFaultingAddress);
 
-void ReportFatalError(const Maybe<MinidumpInfo>& aMinidumpInfo,
-                      const char* aFormat, ...);
+
+void ReportFatalError(const char* aFormat, ...);
+
+
+
+void ReportUnhandledDivergence();
 
 
 size_t GetId();
@@ -52,9 +61,14 @@ bool DebuggerRunsInMiddleman();
 void ManifestFinished(const js::CharBuffer& aResponse);
 
 
-void SendMiddlemanCallRequest(const char* aInputData, size_t aInputSize,
-                              InfallibleVector<char>* aOutputData);
-void SendResetMiddlemanCalls();
+void SendExternalCallRequest(ExternalCallId aId,
+                             const char* aInputData, size_t aInputSize,
+                             InfallibleVector<char>* aOutputData);
+
+
+
+void SendExternalCallOutput(ExternalCallId aId,
+                            const char* aOutputData, size_t aOutputSize);
 
 
 
@@ -62,7 +76,15 @@ bool CurrentRepaintCannotFail();
 
 
 
-bool Repaint(nsAString& aData);
+bool Repaint(nsACString& aData);
+
+
+void RegisterFork(size_t aForkId);
+
+
+void SendRecordingData(size_t aStart, const uint8_t* aData, size_t aSize);
+
+void AddPendingRecordingData();
 
 }  
 }  
