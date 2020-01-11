@@ -33,7 +33,9 @@ function runTests() {
     assertEq(A.length, 10);
     assertEq(A.elementType, uint8);
     assertEq(A.byteLength, 10);
-    assertEq(A.toSource(), "new ArrayType(uint8, 10)");
+    if (Object.prototype.toSource) {
+        assertEq(A.toSource(), "new ArrayType(uint8, 10)");
+    }
 
     
 
