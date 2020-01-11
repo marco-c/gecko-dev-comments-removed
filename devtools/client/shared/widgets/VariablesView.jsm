@@ -200,6 +200,11 @@ VariablesView.prototype = {
   
 
 
+  controller: null,
+
+  
+
+
   lazyEmptyDelay: LAZY_EMPTY_DELAY,
 
   
@@ -535,6 +540,25 @@ VariablesView.prototype = {
 
 
   _doSearch: function(aToken) {
+    if (this.controller && this.controller.supportsSearch()) {
+      
+      const scope = this._store[0]._store.get(undefined);
+      if (!aToken) {
+        
+        
+        
+        for (const property of scope._store.values()) {
+          property.remove();
+        }
+      }
+      
+      this.controller.performSearch(scope, aToken);
+      
+      if (aToken) {
+        scope._performSearch(aToken.toLowerCase());
+      }
+      return;
+    }
     for (const scope of this._store) {
       switch (aToken) {
         case "":
