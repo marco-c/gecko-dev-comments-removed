@@ -386,11 +386,18 @@ var WebNFCTest = (() => {
       if (testInternal.initialized)
         throw new Error('Call reset() before initialize().');
 
+      if (window.testRunner) {
+        
+        window.testRunner.setPermission('nfc', 'granted',
+                                        location.origin, location.origin);
+      }
+
       if (testInternal.mockNFC == null) {
         testInternal.mockNFC = new MockNFC();
       }
       testInternal.initialized = true;
     }
+
     
     async reset() {
       if (!testInternal.initialized)
