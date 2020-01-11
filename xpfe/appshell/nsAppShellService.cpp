@@ -196,7 +196,7 @@ nsAppShellService::CreateTopLevelWindow(
 
 
 
-class WebBrowserChrome2Stub final : public nsIWebBrowserChrome2,
+class WebBrowserChrome2Stub final : public nsIWebBrowserChrome,
                                     public nsIEmbeddingSiteWindow,
                                     public nsIInterfaceRequestor,
                                     public nsSupportsWeakReference {
@@ -209,7 +209,6 @@ class WebBrowserChrome2Stub final : public nsIWebBrowserChrome2,
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIWEBBROWSERCHROME
-  NS_DECL_NSIWEBBROWSERCHROME2
   NS_DECL_NSIINTERFACEREQUESTOR
   NS_DECL_NSIEMBEDDINGSITEWINDOW
 };
@@ -217,7 +216,6 @@ class WebBrowserChrome2Stub final : public nsIWebBrowserChrome2,
 NS_INTERFACE_MAP_BEGIN(WebBrowserChrome2Stub)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIWebBrowserChrome)
   NS_INTERFACE_MAP_ENTRY(nsIWebBrowserChrome)
-  NS_INTERFACE_MAP_ENTRY(nsIWebBrowserChrome2)
   NS_INTERFACE_MAP_ENTRY(nsIInterfaceRequestor)
   NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
   NS_INTERFACE_MAP_ENTRY(nsIEmbeddingSiteWindow)
@@ -225,12 +223,6 @@ NS_INTERFACE_MAP_END
 
 NS_IMPL_ADDREF(WebBrowserChrome2Stub)
 NS_IMPL_RELEASE(WebBrowserChrome2Stub)
-
-NS_IMETHODIMP
-WebBrowserChrome2Stub::SetStatus(uint32_t aStatusType,
-                                 const char16_t* aStatus) {
-  return NS_OK;
-}
 
 NS_IMETHODIMP
 WebBrowserChrome2Stub::GetChromeFlags(uint32_t* aChromeFlags) {
@@ -259,9 +251,7 @@ WebBrowserChrome2Stub::IsWindowModal(bool* aResult) {
 }
 
 NS_IMETHODIMP
-WebBrowserChrome2Stub::SetStatusWithContext(uint32_t aStatusType,
-                                            const nsAString& aStatusText,
-                                            nsISupports* aStatusContext) {
+WebBrowserChrome2Stub::SetStatusLink(const nsAString& aStatusText) {
   return NS_OK;
 }
 
@@ -476,7 +466,7 @@ nsAppShellService::CreateWindowlessBrowser(bool aIsChrome,
   
   stub->SetBrowser(browser);
 
-  nsISupports* isstub = NS_ISUPPORTS_CAST(nsIWebBrowserChrome2*, stub);
+  nsISupports* isstub = NS_ISUPPORTS_CAST(nsIWebBrowserChrome*, stub);
   RefPtr<nsIWindowlessBrowser> result = new WindowlessBrowser(browser, isstub);
   nsCOMPtr<nsIDocShell> docshell = do_GetInterface(result);
   docshell->SetInvisible(true);
