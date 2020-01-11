@@ -2109,19 +2109,6 @@ var gBrowserInit = {
       this._firstBrowserPaintDeferred.resolve = resolve;
     });
 
-    let mm = window.messageManager;
-    let initialBrowser = gBrowser.selectedBrowser;
-    mm.addMessageListener(
-      "Browser:FirstNonBlankPaint",
-      function onFirstNonBlankPaint() {
-        mm.removeMessageListener(
-          "Browser:FirstNonBlankPaint",
-          onFirstNonBlankPaint
-        );
-        initialBrowser.removeAttribute("blank");
-      }
-    );
-
     
     
     
