@@ -47,7 +47,7 @@ using CallTargets = Vector<JSFunction*, 6, JitAllocPolicy>;
 
 
 
-class PendingBlock {
+class PendingEdge {
  public:
   enum class Kind : uint8_t {
     
@@ -68,21 +68,21 @@ class PendingBlock {
   Kind kind_;
   JSOp testOp_ = JSOP_LIMIT;
 
-  PendingBlock(MBasicBlock* block, Kind kind, JSOp testOp = JSOP_LIMIT)
+  PendingEdge(MBasicBlock* block, Kind kind, JSOp testOp = JSOP_LIMIT)
       : block_(block), kind_(kind), testOp_(testOp) {}
 
  public:
-  static PendingBlock NewTestTrue(MBasicBlock* block, JSOp op) {
-    return PendingBlock(block, Kind::TestTrue, op);
+  static PendingEdge NewTestTrue(MBasicBlock* block, JSOp op) {
+    return PendingEdge(block, Kind::TestTrue, op);
   }
-  static PendingBlock NewTestFalse(MBasicBlock* block, JSOp op) {
-    return PendingBlock(block, Kind::TestFalse, op);
+  static PendingEdge NewTestFalse(MBasicBlock* block, JSOp op) {
+    return PendingEdge(block, Kind::TestFalse, op);
   }
-  static PendingBlock NewGoto(MBasicBlock* block) {
-    return PendingBlock(block, Kind::Goto);
+  static PendingEdge NewGoto(MBasicBlock* block) {
+    return PendingEdge(block, Kind::Goto);
   }
-  static PendingBlock NewGotoWithFake(MBasicBlock* block) {
-    return PendingBlock(block, Kind::GotoWithFake);
+  static PendingEdge NewGotoWithFake(MBasicBlock* block) {
+    return PendingEdge(block, Kind::GotoWithFake);
   }
 
   MBasicBlock* block() const { return block_; }
@@ -98,9 +98,9 @@ class PendingBlock {
 
 
 
-using PendingBlocks = Vector<PendingBlock, 2, SystemAllocPolicy>;
-using PendingBlocksMap =
-    InlineMap<jsbytecode*, PendingBlocks, 8, PointerHasher<jsbytecode*>,
+using PendingEdges = Vector<PendingEdge, 2, SystemAllocPolicy>;
+using PendingEdgesMap =
+    InlineMap<jsbytecode*, PendingEdges, 8, PointerHasher<jsbytecode*>,
               SystemAllocPolicy>;
 
 
@@ -222,8 +222,7 @@ class IonBuilder : public MIRGenerator,
     return newBlock(predecessor->stackDepth(), pc, predecessor);
   }
 
-  AbortReasonOr<Ok> addPendingBlock(const PendingBlock& block,
-                                    jsbytecode* target);
+  AbortReasonOr<Ok> addPendingEdge(const PendingEdge& edge, jsbytecode* target);
 
   AbortReasonOr<Ok> startLoop(LoopState::State initState,
                               jsbytecode* beforeLoopEntry,
@@ -1183,7 +1182,7 @@ class IonBuilder : public MIRGenerator,
   MBasicBlock* current;
   uint32_t loopDepth_;
 
-  PendingBlocksMap pendingBlocks_;
+  PendingEdgesMap pendingEdges_;
   LoopStateStack loopStack_;
 
   Vector<BytecodeSite*, 0, JitAllocPolicy> trackedOptimizationSites_;
@@ -1366,7 +1365,7 @@ class IonBuilder : public MIRGenerator,
   void trackInlineSuccessUnchecked(InliningStatus status);
 
  public:
-  const PendingBlocksMap& pendingBlocks() const { return pendingBlocks_; }
+  const PendingEdgesMap& pendingEdges() const { return pendingEdges_; }
 
   
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
