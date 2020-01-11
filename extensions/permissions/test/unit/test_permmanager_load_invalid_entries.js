@@ -225,7 +225,7 @@ function run_test() {
 
   
   
-  Assert.equal(connection.schemaVersion, 11);
+  Assert.equal(connection.schemaVersion, 10);
 
   let select = connection.createStatement(
     "SELECT modificationTime FROM moz_perms"
