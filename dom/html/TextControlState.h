@@ -469,7 +469,10 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
 
 
 
-  static TextControlState* sReleasedInstance;
+
+  static const size_t kMaxCountOfCacheToReuse = 25;
+  static AutoTArray<TextControlState*, kMaxCountOfCacheToReuse>*
+      sReleasedInstances;
   static bool sHasShutDown;
 
   friend class AutoTextControlHandlingState;
