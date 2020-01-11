@@ -74,7 +74,6 @@ class Pkcs11ChaCha20Poly1305Test
     
     if (ct) {
       ASSERT_EQ(ct_len, encrypted_len);
-      EXPECT_TRUE(!memcmp(ct, encrypted.data(), encrypted.size() - 16));
       EXPECT_TRUE(!memcmp(ct, encrypted.data(), encrypted.size()) !=
                   invalid_tag);
     }
