@@ -261,6 +261,8 @@ class Runtime extends ContentProcessDomain {
 
 
 
+
+
   _onContextCreated(name, options = {}) {
     const {
       windowId,
@@ -279,7 +281,7 @@ class Runtime extends ContentProcessDomain {
     if (isDefault && this.contextsByWindow.has(windowId)) {
       for (const ctx of this.contextsByWindow.get(windowId)) {
         if (ctx.isDefault) {
-          return;
+          return null;
         }
       }
     }
@@ -307,6 +309,8 @@ class Runtime extends ContentProcessDomain {
         },
       });
     }
+
+    return context.id;
   }
 
   
