@@ -36,12 +36,12 @@ HarCollector.prototype = {
   
 
   start: function() {
-    this.debuggerClient.on("serverNetworkEvent", this.onNetworkEvent);
+    this.webConsoleFront.on("networkEvent", this.onNetworkEvent);
     this.debuggerClient.on("networkEventUpdate", this.onNetworkEventUpdate);
   },
 
   stop: function() {
-    this.debuggerClient.off("serverNetworkEvent", this.onNetworkEvent);
+    this.webConsoleFront.off("networkEvent", this.onNetworkEvent);
     this.debuggerClient.off("networkEventUpdate", this.onNetworkEventUpdate);
   },
 
@@ -157,14 +157,14 @@ HarCollector.prototype = {
   
 
   onNetworkEvent: function(packet) {
-    
-    if (packet.from != this.webConsoleFront.actor) {
-      return;
-    }
+    trace.log("HarCollector.onNetworkEvent; ", packet);
 
-    trace.log("HarCollector.onNetworkEvent; " + packet.type, packet);
-
-    const { actor, startedDateTime, method, url, isXHR } = packet.eventActor;
+    const {
+      actor,
+      startedDateTime,
+      request: { method, url },
+      isXHR,
+    } = packet;
     const startTime = Date.parse(startedDateTime);
 
     if (this.firstRequestStart == -1) {
@@ -184,6 +184,7 @@ HarCollector.prototype = {
     }
 
     file = {
+      id: actor,
       startedDeltaMs: startTime - this.firstRequestStart,
       startedMs: startTime,
       method: method,

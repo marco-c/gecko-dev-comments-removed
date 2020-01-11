@@ -156,11 +156,15 @@ HarAutomation.prototype = {
 
 
 
-  executeExport: function(data) {
+  executeExport: async function(data) {
     const items = this.collector.getItems();
     const { title } = this.toolbox.target;
 
+    const netMonitor = await this.toolbox.getNetMonitorAPI();
+    const connector = await netMonitor.getHarExportConnector();
+
     const options = {
+      connector,
       requestData: null,
       getTimingMarker: null,
       getString: this.getString.bind(this),
@@ -179,17 +183,17 @@ HarAutomation.prototype = {
 
     trace.log("HarAutomation.executeExport; " + data.fileName, options);
 
-    return HarExporter.fetchHarData(options).then(jsonString => {
-      
-      if (jsonString && options.defaultFileName) {
-        const file = getDefaultTargetFile(options);
-        if (file) {
-          HarUtils.saveToFile(file, jsonString, options.compress);
-        }
-      }
+    const jsonString = await HarExporter.fetchHarData(options);
 
-      return jsonString;
-    });
+    
+    if (jsonString && options.defaultFileName) {
+      const file = getDefaultTargetFile(options);
+      if (file) {
+        HarUtils.saveToFile(file, jsonString, options.compress);
+      }
+    }
+
+    return jsonString;
   },
 
   
@@ -206,15 +210,16 @@ function TabWatcher(toolbox, listener) {
   this.target = toolbox.target;
   this.listener = listener;
 
-  this.onTabNavigated = this.onTabNavigated.bind(this);
+  this.onNavigate = this.onNavigate.bind(this);
+  this.onWillNavigate = this.onWillNavigate.bind(this);
 }
 
 TabWatcher.prototype = {
   
 
   connect: function() {
-    this.target.on("navigate", this.onTabNavigated);
-    this.target.on("will-navigate", this.onTabNavigated);
+    this.target.on("navigate", this.onNavigate);
+    this.target.on("will-navigate", this.onWillNavigate);
   },
 
   disconnect: function() {
@@ -222,31 +227,18 @@ TabWatcher.prototype = {
       return;
     }
 
-    this.target.off("navigate", this.onTabNavigated);
-    this.target.off("will-navigate", this.onTabNavigated);
+    this.target.off("navigate", this.onNavigate);
+    this.target.off("will-navigate", this.onWillNavigate);
   },
 
   
 
-  
+  onNavigate: function(packet) {
+    this.listener.pageLoadDone(packet);
+  },
 
-
-
-
-
-
-
-  onTabNavigated: function(type, packet) {
-    switch (type) {
-      case "will-navigate": {
-        this.listener.pageLoadBegin(packet);
-        break;
-      }
-      case "navigate": {
-        this.listener.pageLoadDone(packet);
-        break;
-      }
-    }
+  onWillNavigate: function(packet) {
+    this.listener.pageLoadBegin(packet);
   },
 };
 
@@ -260,10 +252,14 @@ function getDefaultTargetFile(options) {
     options.defaultLogDir ||
     Services.prefs.getCharPref("devtools.netmonitor.har.defaultLogDir");
   const folder = HarUtils.getLocalDirectory(path);
+
+  const tabTarget = options.connector.getTabTarget();
+  const host = new URL(tabTarget.url);
   const fileName = HarUtils.getHarFileName(
     options.defaultFileName,
     options.jsonp,
-    options.compress
+    options.compress,
+    host.hostname
   );
 
   folder.append(fileName);
