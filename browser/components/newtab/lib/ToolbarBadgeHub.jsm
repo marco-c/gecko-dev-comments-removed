@@ -308,6 +308,9 @@ class _ToolbarBadgeHub {
     
     if (options.force) {
       this.removeAllNotifications();
+      
+      this.registerBadgeToAllWindows(message);
+      return;
     }
 
     if (message.content.delay) {
