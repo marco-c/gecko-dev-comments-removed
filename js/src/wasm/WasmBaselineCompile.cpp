@@ -11488,8 +11488,13 @@ bool BaseCompiler::emitStructNarrow() {
   }
 
   
-  MOZ_ASSERT(inputType != RefType::func());
-  MOZ_ASSERT(outputType != RefType::func());
+
+  MOZ_ASSERT(inputType.refTypeKind() == RefType::Any ||
+             inputType.refTypeKind() == RefType::TypeIndex);
+  MOZ_ASSERT(outputType.refTypeKind() == RefType::Any ||
+             outputType.refTypeKind() == RefType::TypeIndex);
+  MOZ_ASSERT_IF(outputType.refTypeKind() == RefType::Any,
+                inputType.refTypeKind() == RefType::Any);
 
   
 

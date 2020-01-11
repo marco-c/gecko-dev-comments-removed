@@ -211,6 +211,7 @@ typedef RefPtr<const ShareableBytes> SharedBytes;
 
 
 
+
 enum class PackedTypeCode : uint32_t {};
 
 static_assert(std::is_pod<PackedTypeCode>::value,
@@ -1024,8 +1025,7 @@ class FuncType {
       }
     }
     for (ValType result : results()) {
-      if (result.isReference() && result != RefType::any() &&
-          result != RefType::func() && result != RefType::null()) {
+      if (result.isRef()) {
         return true;
       }
     }
@@ -1040,8 +1040,7 @@ class FuncType {
       }
     }
     for (ValType result : results()) {
-      if (result.isReference() && result != RefType::any() &&
-          result != RefType::func() && result != RefType::null()) {
+      if (result.isRef()) {
         return true;
       }
     }
@@ -1051,8 +1050,7 @@ class FuncType {
   
   bool temporarilyUnsupportedReftypeForExit() const {
     for (ValType arg : args()) {
-      if (arg.isReference() && arg != RefType::any() &&
-          arg != RefType::func() && arg != RefType::null()) {
+      if (arg.isRef()) {
         return true;
       }
     }
@@ -2235,7 +2233,8 @@ struct Limits {
 
 
 
-enum class TableKind { AnyRef, FuncRef, NullRef, AsmJS };
+
+enum class TableKind { AnyRef, NullRef, FuncRef, AsmJS };
 
 static inline ValType ToElemValType(TableKind tk) {
   switch (tk) {
