@@ -136,9 +136,6 @@ nsHttpConnectionMgr::nsHttpConnectionMgr()
       mPruningNoTraffic(false),
       mTimeoutTickArmed(false),
       mTimeoutTickNext(1),
-#ifdef DEBUG
-      mParamUpdateFlags(0),
-#endif
       mCurrentTopLevelOuterContentWindowId(0),
       mThrottlingInhibitsReading(false),
       mActiveTabTransactionsExist(false),
@@ -2971,10 +2968,6 @@ void nsHttpConnectionMgr::OnMsgUpdateParam(int32_t inParam, ARefBase*) {
   uint16_t name = ((param)&0xFFFF0000) >> 16;
   uint16_t value = param & 0x0000FFFF;
 
-  LOG(("nsHttpConnectionMgr::OnMsgUpdateParam param=%" PRIu32 ", name=%" PRIu16
-       ", value=%" PRIu16,
-       param, name, value));
-
   switch (name) {
     case MAX_CONNECTIONS:
       mMaxConns = value;
@@ -3018,11 +3011,6 @@ void nsHttpConnectionMgr::OnMsgUpdateParam(int32_t inParam, ARefBase*) {
     default:
       MOZ_ASSERT_UNREACHABLE("unexpected parameter name");
   }
-
-#ifdef DEBUG
-  
-  mParamUpdateFlags |= (1 << name);
-#endif
 }
 
 
@@ -4034,15 +4022,11 @@ nsHttpConnectionMgr::nsHalfOpenSocket::~nsHalfOpenSocket() {
 
 bool nsHttpConnectionMgr::BeConservativeIfProxied(nsIProxyInfo* proxy) {
   if (mBeConservativeForProxy) {
-    LOG(
-        ("nsHttpConnectionMgr::BeConservativeIfProxied, "
-         "mBeConservativeForProxy == true"));
     
     return true;
   }
 
   if (!proxy) {
-    LOG(("nsHttpConnectionMgr::BeConservativeIfProxied, There is no proxy"));
     
     return true;
   }
@@ -4051,10 +4035,6 @@ bool nsHttpConnectionMgr::BeConservativeIfProxied(nsIProxyInfo* proxy) {
   
   nsAutoCString proxyHost;
   proxy->GetHost(proxyHost);
-
-  LOG((
-      "nsHttpConnectionMgr::BeConservativeIfProxied, proxyHost.IsEmpty() == %d",
-      proxyHost.IsEmpty()));
   return proxyHost.IsEmpty();
 }
 
