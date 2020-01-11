@@ -11,10 +11,6 @@
 #include "base/process_util.h"
 #include "mozilla/ipc/SharedMemory.h"
 
-#ifdef XP_WIN
-#include <windows.h>
-#endif
-
 namespace mozilla {
 
 
@@ -107,40 +103,6 @@ TEST(IPCSharedMemory, Reprotect)
   
   EXPECT_TRUE(ipc::SharedMemory::SystemProtectFallible(
       mem, 1, ipc::SharedMemory::RightsReadWrite));
-}
-#endif
-
-#ifdef XP_WIN
-
-
-
-TEST(IPCSharedMemory, WinUnfreeze)
-{
-  base::SharedMemory shm;
-
-  
-  ASSERT_TRUE(shm.CreateFreezeable(1));
-  ASSERT_TRUE(shm.Map(1));
-  auto mem = reinterpret_cast<char*>(shm.memory());
-  ASSERT_TRUE(mem);
-  *mem = 'A';
-
-  
-  ASSERT_TRUE(shm.Freeze());
-  ASSERT_FALSE(shm.memory());
-
-  
-  auto handle = base::SharedMemory::NULLHandle();
-  ASSERT_TRUE(shm.GiveToProcess(base::GetCurrentProcId(), &handle));
-  ASSERT_TRUE(shm.IsHandleValid(handle));
-  ASSERT_FALSE(shm.IsValid());
-
-  
-  bool unfroze = ::DuplicateHandle(GetCurrentProcess(), handle,
-                                   GetCurrentProcess(), &handle,
-                                   FILE_MAP_ALL_ACCESS, false,
-                                   DUPLICATE_CLOSE_SOURCE);
-  ASSERT_FALSE(unfroze);
 }
 #endif
 

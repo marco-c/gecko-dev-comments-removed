@@ -111,10 +111,6 @@ bool SharedMemory::CreateInternal(size_t size, bool freezeable) {
   DCHECK(mapped_file_ == NULL);
   read_only_ = false;
 
-  
-  
-  
-  
   SECURITY_ATTRIBUTES sa, *psa = nullptr;
   SECURITY_DESCRIPTOR sd;
   ACL dacl;
@@ -133,8 +129,6 @@ bool SharedMemory::CreateInternal(size_t size, bool freezeable) {
       return false;
     }
 
-    
-    
     if (!mozilla::IsWin8Point1OrLater()) {
       name.AssignLiteral("MozSharedMem_");
       for (size_t i = 0; i < 4; ++i) {
