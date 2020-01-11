@@ -1056,7 +1056,10 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
             masm.jump(&oolCall);
             break;
           }
-          default: {
+          case RefType::Func:
+          case RefType::Null:
+          case RefType::TypeIndex: {
+            
             MOZ_CRASH("unexpected argument type when calling from the jit");
           }
         }
@@ -1214,15 +1217,16 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
         switch (results[0].refTypeKind()) {
           case RefType::Func:
             
-          case RefType::Any: {
+          case RefType::Null:
+            
+          case RefType::Any:
             
             
             GenerateJitEntryLoadTls(masm,  0);
             UnboxAnyrefIntoValueReg(masm, WasmTlsReg, ReturnReg,
                                     JSReturnOperand, WasmJitEntryReturnScratch);
             break;
-          }
-          default:
+          case RefType::TypeIndex:
             MOZ_CRASH("returning reference in jitentry NYI");
         }
         break;
@@ -1489,13 +1493,15 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
         switch (results[0].refTypeKind()) {
           case wasm::RefType::Func:
             
+          case wasm::RefType::Null:
+            
           case wasm::RefType::Any:
             
             
             UnboxAnyrefIntoValueReg(masm, WasmTlsReg, ReturnReg,
                                     JSReturnOperand, WasmJitEntryReturnScratch);
             break;
-          default:
+          case wasm::RefType::TypeIndex:
             MOZ_CRASH("unexpected return type when calling from ion to wasm");
         }
         break;
@@ -1978,7 +1984,16 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
                       funcImportIndex);
             GenPrintPtr(DebugChannel::Import, masm, ReturnReg);
             break;
-          default:
+          case RefType::Null:
+            masm.call(SymbolicAddress::CallImport_NullRef);
+            masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg,
+                              throwLabel);
+            masm.loadPtr(argv, ReturnReg);
+            GenPrintf(DebugChannel::Import, masm, "wasm-import[%u]; returns ",
+                      funcImportIndex);
+            GenPrintPtr(DebugChannel::Import, masm, ReturnReg);
+            break;
+          case RefType::TypeIndex:
             MOZ_CRASH("No Ref support here yet");
         }
         break;
@@ -2207,7 +2222,9 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
             BoxValueIntoAnyref(masm, JSReturnOperand, ReturnReg, &oolConvert);
             GenPrintPtr(DebugChannel::Import, masm, ReturnReg);
             break;
-          default:
+          case RefType::Func:
+          case RefType::Null:
+          case RefType::TypeIndex:
             MOZ_CRASH("typed reference returned by import (jit exit) NYI");
         }
         break;
@@ -2311,7 +2328,9 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
               masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg,
                                 throwLabel);
               break;
-            default:
+            case RefType::Func:
+            case RefType::Null:
+            case RefType::TypeIndex:
               MOZ_CRASH("Unsupported convert type");
           }
           break;
