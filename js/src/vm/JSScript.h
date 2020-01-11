@@ -2439,8 +2439,6 @@ class alignas(uint32_t) ImmutableScriptData final {
   ImmutableScriptData& operator=(const ImmutableScriptData&) = delete;
 };
 
-struct RuntimeScriptDataHasher;
-
 
 class RuntimeScriptData final {
   
@@ -2458,8 +2456,6 @@ class RuntimeScriptData final {
   
 
   friend class ::JSScript;
-  friend class js::ImmutableScriptData;
-  friend struct js::RuntimeScriptDataHasher;
 
  private:
   
@@ -2475,6 +2471,9 @@ class RuntimeScriptData final {
   explicit RuntimeScriptData(uint32_t natoms);
 
  public:
+  
+  struct Hasher;
+
   static RuntimeScriptData* new_(JSContext* cx, uint32_t natoms);
 
   uint32_t refCount() const { return refCount_; }
@@ -2531,7 +2530,7 @@ class RuntimeScriptData final {
 
 
 
-struct RuntimeScriptDataHasher {
+struct RuntimeScriptData::Hasher {
   using Lookup = RefPtr<RuntimeScriptData>;
 
   static HashNumber hash(const Lookup& l) {
@@ -2549,10 +2548,8 @@ struct RuntimeScriptDataHasher {
   }
 };
 
-class AutoLockScriptData;
-
 using RuntimeScriptDataTable =
-    HashSet<RuntimeScriptData*, RuntimeScriptDataHasher, SystemAllocPolicy>;
+    HashSet<RuntimeScriptData*, RuntimeScriptData::Hasher, SystemAllocPolicy>;
 
 extern void SweepScriptData(JSRuntime* rt);
 

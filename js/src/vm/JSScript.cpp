@@ -4166,7 +4166,7 @@ bool JSScript::shareScriptData(JSContext* cx) {
 
   
   
-  RuntimeScriptDataHasher::Lookup lookup(rsd);
+  RuntimeScriptData::Hasher::Lookup lookup(rsd);
 
   AutoLockScriptData lock(cx->runtime());
 
