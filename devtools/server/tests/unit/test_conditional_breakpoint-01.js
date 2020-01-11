@@ -8,56 +8,49 @@
 
 
 
-var gDebuggee;
-var gThreadFront;
-
 add_task(
-  threadFrontTest(
-    async ({ threadFront, debuggee }) => {
-      gThreadFront = threadFront;
-      gDebuggee = debuggee;
-      test_simple_breakpoint();
-    },
-    { waitForFinish: true }
-  )
-);
+  threadFrontTest(async ({ threadFront, debuggee }) => {
+    let hitBreakpoint = false;
 
-function test_simple_breakpoint() {
-  let hitBreakpoint = false;
+    const packet1 = await executeOnNextTickAndWaitForPause(
+      () => evalCode(debuggee),
+      threadFront
+    );
 
-  gThreadFront.once("paused", async function(packet) {
-    const source = await getSourceById(gThreadFront, packet.frame.where.actor);
+    const source = await getSourceById(threadFront, packet1.frame.where.actor);
     const location = { sourceUrl: source.url, line: 3 };
-    gThreadFront.setBreakpoint(location, { condition: "a === 1" });
-    gThreadFront.once("paused", function(packet) {
-      Assert.equal(hitBreakpoint, false);
-      hitBreakpoint = true;
-
-      
-      Assert.equal(packet.why.type, "breakpoint");
-      Assert.equal(packet.frame.where.line, 3);
-
-      
-      gThreadFront.removeBreakpoint(location);
-
-      gThreadFront.resume().then(function() {
-        threadFrontTestFinished();
-      });
-    });
+    threadFront.setBreakpoint(location, { condition: "a === 1" });
 
     
-    gThreadFront.resume();
-  });
+    threadFront.resume();
+    const packet2 = await waitForPause(threadFront);
 
-  
-  Cu.evalInSandbox("debugger;\n" +   
-                   "var a = 1;\n" +  
-                   "var b = 2;\n",  
-                   gDebuggee,
-                   "1.8",
-                   "test.js",
-                   1);
-  
+    Assert.equal(hitBreakpoint, false);
+    hitBreakpoint = true;
 
-  Assert.equal(hitBreakpoint, true);
+    
+    Assert.equal(packet2.why.type, "breakpoint");
+    Assert.equal(packet2.frame.where.line, 3);
+
+    
+    await threadFront.removeBreakpoint(location);
+
+    threadFront.resume();
+
+    Assert.equal(hitBreakpoint, true);
+  })
+);
+
+function evalCode(debuggee) {
+  
+  Cu.evalInSandbox(
+    "debugger;\n" + 
+    "var a = 1;\n" + 
+      "var b = 2;\n", 
+    debuggee,
+    "1.8",
+    "test.js",
+    1
+  );
+  
 }

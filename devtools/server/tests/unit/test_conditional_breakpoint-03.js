@@ -9,59 +9,52 @@
 
 
 
-var gDebuggee;
-var gThreadFront;
-
 add_task(
-  threadFrontTest(
-    async ({ threadFront, debuggee }) => {
-      gThreadFront = threadFront;
-      gDebuggee = debuggee;
-      test_simple_breakpoint();
-    },
-    { waitForFinish: true }
-  )
-);
+  threadFrontTest(async ({ threadFront, debuggee }) => {
+    const packet1 = await executeOnNextTickAndWaitForPause(
+      () => evalCode(debuggee),
+      threadFront
+    );
 
-function test_simple_breakpoint() {
-  gThreadFront.once("paused", async function(packet) {
-    const source = await getSourceById(gThreadFront, packet.frame.where.actor);
+    const source = await getSourceById(threadFront, packet1.frame.where.actor);
 
-    gThreadFront.pauseOnExceptions(true, false);
+    threadFront.pauseOnExceptions(true, false);
     const location = { sourceUrl: source.url, line: 3 };
-    gThreadFront.setBreakpoint(location, { condition: "throw new Error()" });
-    gThreadFront.once("paused", async function(packet) {
-      
-      Assert.equal(packet.why.type, "exception");
-      Assert.equal(packet.frame.where.line, 1);
-
-      
-      await stepOver(gThreadFront);
-      packet = await stepOver(gThreadFront);
-
-      
-      Assert.equal(packet.why.type, "breakpointConditionThrown");
-      Assert.equal(packet.frame.where.line, 3);
-
-      
-      gThreadFront.removeBreakpoint(location);
-
-      gThreadFront.resume().then(function() {
-        threadFrontTestFinished();
-      });
-    });
+    threadFront.setBreakpoint(location, { condition: "throw new Error()" });
 
     
-    gThreadFront.resume();
-  });
+    threadFront.resume();
 
+    const packet2 = await waitForPause(threadFront);
+
+    
+    Assert.equal(packet2.why.type, "exception");
+    Assert.equal(packet2.frame.where.line, 1);
+
+    
+    await stepOver(threadFront);
+    const packet3 = await stepOver(threadFront);
+
+    
+    Assert.equal(packet3.why.type, "breakpointConditionThrown");
+    Assert.equal(packet3.frame.where.line, 3);
+
+    
+    await threadFront.removeBreakpoint(location);
+    threadFront.resume();
+  })
+);
+
+function evalCode(debuggee) {
   
-  Cu.evalInSandbox("debugger;\n" +   
-                   "var a = 1;\n" +  
-                   "var b = 2;\n",  
-                   gDebuggee,
-                   "1.8",
-                   "test.js",
-                   1);
+  Cu.evalInSandbox(
+    "debugger;\n" + 
+    "var a = 1;\n" + 
+      "var b = 2;\n", 
+    debuggee,
+    "1.8",
+    "test.js",
+    1
+  );
   
 }

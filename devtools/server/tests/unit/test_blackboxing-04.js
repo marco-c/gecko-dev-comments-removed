@@ -8,68 +8,20 @@
 
 
 
-var gDebuggee;
-var gThreadFront;
-
 add_task(
-  threadFrontTest(
-    async ({ threadFront, debuggee }) => {
-      gThreadFront = threadFront;
-      gDebuggee = debuggee;
-      test_black_box();
-    },
-    { waitForFinish: true }
-  )
-);
+  threadFrontTest(async ({ threadFront, debuggee }) => {
+    
+    await executeOnNextTickAndWaitForPause(
+      () => evalCode(debuggee),
+      threadFront
+    );
 
-const BLACK_BOXED_URL = "http://example.com/blackboxme.js";
-const SOURCE_URL = "http://example.com/source.js";
+    threadFront.setBreakpoint({ sourceUrl: BLACK_BOXED_URL, line: 2 }, {});
 
-function test_black_box() {
-  gThreadFront.once("paused", function(packet) {
-    gThreadFront.setBreakpoint({ sourceUrl: BLACK_BOXED_URL, line: 2 }, {});
-    test_black_box_paused();
-  });
-
-  
-  Cu.evalInSandbox(
-    "" +
-      function doStuff(k) {
-        
-        debugger; 
-        k(100); 
-      }, 
-    gDebuggee,
-    "1.8",
-    BLACK_BOXED_URL,
-    1
-  );
-
-  Cu.evalInSandbox(
-    "" +
-    function runTest() {
-      
-      doStuff(
-        
-        function(n) {
-          
-          return n; 
-        } 
-      ); 
-    } + 
-      "\n runTest();", 
-    gDebuggee,
-    "1.8",
-    SOURCE_URL,
-    1
-  );
-  
-}
-
-function test_black_box_paused() {
-  gThreadFront.getSources().then(async function({ error, sources }) {
+    
+    const { error, sources } = await threadFront.getSources();
     Assert.ok(!error, "Should not get an error: " + error);
-    const sourceFront = gThreadFront.source(
+    const sourceFront = threadFront.source(
       sources.filter(s => s.url == BLACK_BOXED_URL)[0]
     );
 
@@ -78,7 +30,42 @@ function test_black_box_paused() {
       pausedInSource,
       "We should be notified that we are currently paused in this source"
     );
-    await gThreadFront.resume();
-    threadFrontTestFinished();
-  });
+    await threadFront.resume();
+  })
+);
+
+const BLACK_BOXED_URL = "http://example.com/blackboxme.js";
+const SOURCE_URL = "http://example.com/source.js";
+
+function evalCode(debuggee) {
+  
+  
+  Cu.evalInSandbox(
+    "" +
+      function doStuff(k) { 
+        debugger;           
+        k(100);             
+      },                    
+    debuggee,
+    "1.8",
+    BLACK_BOXED_URL,
+    1
+  );
+  
+  Cu.evalInSandbox(
+    "" +
+    function runTest() { 
+      doStuff(           
+        function(n) {    
+          return n;      
+        }                
+      );                 
+    } +                  
+      "\n runTest();",   
+    debuggee,
+    "1.8",
+    SOURCE_URL,
+    1
+  );
+  
 }

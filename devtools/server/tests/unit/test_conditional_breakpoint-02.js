@@ -8,53 +8,47 @@
 
 
 
-var gDebuggee;
-var gThreadFront;
-
 add_task(
-  threadFrontTest(
-    async ({ threadFront, debuggee }) => {
-      gThreadFront = threadFront;
-      gDebuggee = debuggee;
-      test_simple_breakpoint();
-    },
-    { waitForFinish: true }
-  )
-);
+  threadFrontTest(async ({ threadFront, debuggee }) => {
+    const packet1 = await executeOnNextTickAndWaitForPause(
+      () => evalCode(debuggee),
+      threadFront
+    );
 
-function test_simple_breakpoint() {
-  gThreadFront.once("paused", async function(packet) {
-    const source = await getSourceById(gThreadFront, packet.frame.where.actor);
+    const source = await getSourceById(threadFront, packet1.frame.where.actor);
     const location1 = { sourceUrl: source.url, line: 3 };
-    gThreadFront.setBreakpoint(location1, { condition: "a === 2" });
+    threadFront.setBreakpoint(location1, { condition: "a === 2" });
+
     const location2 = { sourceUrl: source.url, line: 4 };
-    gThreadFront.setBreakpoint(location2, { condition: "a === 1" });
-    gThreadFront.once("paused", function(packet) {
-      
-      Assert.equal(packet.why.type, "breakpoint");
-      Assert.equal(packet.frame.where.line, 4);
-
-      
-      gThreadFront.removeBreakpoint(location2);
-
-      gThreadFront.resume().then(function() {
-        threadFrontTestFinished();
-      });
-    });
+    threadFront.setBreakpoint(location2, { condition: "a === 1" });
 
     
-    gThreadFront.resume();
-  });
+    threadFront.resume();
+    const packet2 = await waitForPause(threadFront);
 
+    
+    Assert.equal(packet2.why.type, "breakpoint");
+    Assert.equal(packet2.frame.where.line, 4);
+
+    
+    await threadFront.removeBreakpoint(location2);
+
+    threadFront.resume();
+  })
+);
+
+function evalCode(debuggee) {
   
-  Cu.evalInSandbox("debugger;\n" +   
-                   "var a = 1;\n" +  
-                   "var b = 2;\n" +  
-                   "b++;" +          
-                   "debugger;",      
-                   gDebuggee,
-                   "1.8",
-                   "test.js",
-                   1);
+  Cu.evalInSandbox(
+    "debugger;\n" + 
+    "var a = 1;\n" + 
+    "var b = 2;\n" + 
+    "b++;" + 
+      "debugger;", 
+    debuggee,
+    "1.8",
+    "test.js",
+    1
+  );
   
 }

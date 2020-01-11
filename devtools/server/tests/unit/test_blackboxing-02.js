@@ -11,37 +11,69 @@
 
 
 
-var gDebuggee;
-var gThreadFront;
-
-add_task(
-  threadFrontTest(
-    async ({ threadFront, debuggee }) => {
-      gThreadFront = threadFront;
-      gDebuggee = debuggee;
-      test_black_box();
-    },
-    { waitForFinish: true }
-  )
-);
-
 const BLACK_BOXED_URL = "http://example.com/blackboxme.js";
 const SOURCE_URL = "http://example.com/source.js";
 
-function test_black_box() {
-  gThreadFront.once("paused", async function(packet) {
-    gThreadFront.setBreakpoint({ sourceUrl: BLACK_BOXED_URL, line: 2 }, {});
-    gThreadFront.resume().then(test_black_box_breakpoint);
-  });
+add_task(
+  threadFrontTest(async ({ threadFront, debuggee }) => {
+    
+    await executeOnNextTickAndWaitForPause(
+      () => evalCode(debuggee),
+      threadFront
+    );
 
+    threadFront.setBreakpoint({ sourceUrl: BLACK_BOXED_URL, line: 2 }, {});
+    threadFront.resume();
+
+    
+    const { error, sources } = await threadFront.getSources();
+    Assert.ok(!error, "Should not get an error: " + error);
+    const sourceFront = threadFront.source(
+      sources.filter(s => s.url == BLACK_BOXED_URL)[0]
+    );
+
+    await blackBox(sourceFront);
+
+    const packet1 = await executeOnNextTickAndWaitForPause(
+      debuggee.runTest,
+      threadFront
+    );
+
+    Assert.equal(
+      packet1.why.type,
+      "debuggerStatement",
+      "We should pass over the breakpoint since the source is black boxed."
+    );
+
+    threadFront.resume();
+
+    
+    await unBlackBox(sourceFront);
+
+    const packet2 = await executeOnNextTickAndWaitForPause(
+      debuggee.runTest,
+      threadFront
+    );
+
+    Assert.equal(
+      packet2.why.type,
+      "breakpoint",
+      "We should hit the breakpoint again"
+    );
+
+    await threadFront.resume();
+  })
+);
+
+function evalCode(debuggee) {
   
   
   Cu.evalInSandbox(
     "" + function doStuff(k) { 
-      const arg = 15;            
+      const arg = 15;          
       k(arg);                  
     },                         
-    gDebuggee,
+    debuggee,
     "1.8",
     BLACK_BOXED_URL,
     1
@@ -50,59 +82,16 @@ function test_black_box() {
   Cu.evalInSandbox(
     "" + function runTest() { 
       doStuff(                
-        function(n) {        
+        function(n) {         
           debugger;           
         }                     
       );                      
     }                         
     + "\n debugger;",         
-    gDebuggee,
+    debuggee,
     "1.8",
     SOURCE_URL,
     1
   );
   
-}
-
-function test_black_box_breakpoint() {
-  gThreadFront.getSources().then(async function({ error, sources }) {
-    Assert.ok(!error, "Should not get an error: " + error);
-    const sourceFront = gThreadFront.source(
-      sources.filter(s => s.url == BLACK_BOXED_URL)[0]
-    );
-
-    await blackBox(sourceFront);
-
-    gThreadFront.once("paused", function(packet) {
-      Assert.equal(
-        packet.why.type,
-        "debuggerStatement",
-        "We should pass over the breakpoint since the source is black boxed."
-      );
-      gThreadFront
-        .resume()
-        .then(test_unblack_box_breakpoint.bind(null, sourceFront));
-    });
-    gDebuggee.runTest();
-  });
-}
-
-async function test_unblack_box_breakpoint(sourceFront) {
-  await unBlackBox(sourceFront);
-  gThreadFront.once("paused", async function(packet) {
-    Assert.equal(
-      packet.why.type,
-      "breakpoint",
-      "We should hit the breakpoint again"
-    );
-
-    
-    
-    gThreadFront.once("paused", async () => {
-      await gThreadFront.resume();
-      threadFrontTestFinished();
-    });
-    await gThreadFront.resume();
-  });
-  gDebuggee.runTest();
 }
