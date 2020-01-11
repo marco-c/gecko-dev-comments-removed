@@ -6228,82 +6228,85 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     
     return false;
   }
-
-  int32_t savedDepthTemp;
-  int32_t startDepth = bytecodeSection().stackDepth();
-  MOZ_ASSERT(startDepth >= 3);
-
-  TryEmitter tryCatch(this, TryEmitter::Kind::TryCatchFinally,
-                      TryEmitter::ControlKind::NonSyntactic);
-  if (!tryCatch.emitJumpOverCatchAndFinally()) {
+  if (!emitPushResumeKind(GeneratorResumeKind::Next)) {
     
     return false;
   }
 
-  LoopControl loopInfo(this, StatementKind::YieldStar);
+  const int32_t startDepth = bytecodeSection().stackDepth();
+  MOZ_ASSERT(startDepth >= 4);
 
+  
+  LoopControl loopInfo(this, StatementKind::YieldStar);
   if (!loopInfo.emitLoopHead(this, Nothing())) {
     
     return false;
   }
 
-  if (iterKind == IteratorKind::Async) {
+  
+  if (!emit1(JSOP_DUP)) {
     
+    return false;
+  }
+  if (!emitPushResumeKind(GeneratorResumeKind::Next)) {
     
+    return false;
+  }
+  if (!emit1(JSOP_STRICTEQ)) {
     
+    return false;
+  }
+
+  InternalIfEmitter ifKind(this);
+  if (!ifKind.emitThenElse()) {
     
-    if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) {
+    return false;
+  }
+  {
+    if (!emit1(JSOP_POP)) {
       
       return false;
     }
-  }
 
-  if (!tryCatch.emitTry()) {
     
-    return false;
-  }
-
-  MOZ_ASSERT(bytecodeSection().stackDepth() == startDepth);
-
-  
-  
-  
-  
-  if (iterKind == IteratorKind::Async) {
-    if (!emitAwaitInInnermostScope()) {
+    
+    if (!emit2(JSOP_UNPICK, 2)) {
       
       return false;
     }
-  }
+    if (!emit1(JSOP_DUP2)) {
+      
+      return false;
+    }
+    if (!emit2(JSOP_PICK, 4)) {
+      
+      return false;
+    }
+    if (!emitCall(JSOP_CALL, 1, iter)) {
+      
+      return false;
+    }
 
-  
-  
-  
-  
-  if (!emitGetDotGeneratorInInnermostScope()) {
     
-    return false;
+    if (iterKind == IteratorKind::Async) {
+      if (!emitAwaitInInnermostScope()) {
+        
+        return false;
+      }
+    }
+
+    
+    if (!emitCheckIsObj(CheckIsObjectKind::IteratorNext)) {
+      
+      return false;
+    }
+
+    
+    
   }
 
   
-  if (!emitYieldOp(JSOP_YIELD)) {
-    
-    return false;
-  }
-  if (!emit1(JSOP_CHECK_RESUMEKIND)) {
-    
-    return false;
-  }
-
-  if (!tryCatch.emitCatch()) {
-    
-    return false;
-  }
-
-  
-  MOZ_ASSERT(bytecodeSection().stackDepth() == startDepth + 1);
-
-  if (!emitDupAt(2)) {
+  if (!ifKind.emitElseIf(Nothing())) {
     
     return false;
   }
@@ -6311,214 +6314,157 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     
     return false;
   }
-  if (!emitAtomOp(cx->names().throw_, JSOP_CALLPROP)) {
+  if (!emitPushResumeKind(GeneratorResumeKind::Throw)) {
     
     return false;
   }
-
-  savedDepthTemp = bytecodeSection().stackDepth();
-  InternalIfEmitter ifThrowMethodIsNotDefined(this);
-  if (!emitPushNotUndefinedOrNull()) {
-    
+  if (!emit1(JSOP_STRICTEQ)) {
     
     return false;
   }
-
-  if (!ifThrowMethodIsNotDefined.emitThenElse()) {
+  if (!ifKind.emitThenElse()) {
     
     return false;
   }
-
-  
-
-  
-  
-  if (!emit1(JSOP_SWAP)) {
-    
-    return false;
-  }
-  if (!emit2(JSOP_PICK, 2)) {
-    
-    return false;
-  }
-  if (!emitCall(JSOP_CALL, 1, iter)) {
-    
-    return false;
-  }
-
-  
-  if (iterKind == IteratorKind::Async) {
-    if (!emitAwaitInInnermostScope()) {
+  {
+    if (!emit1(JSOP_POP)) {
       
+      return false;
+    }
+    
+    if (!emitDupAt(1)) {
+      
+      return false;
+    }
+    if (!emit1(JSOP_DUP)) {
+      
+      return false;
+    }
+    if (!emitAtomOp(cx->names().throw_, JSOP_CALLPROP)) {
+      
+      return false;
+    }
+
+    
+    InternalIfEmitter ifThrowMethodIsNotDefined(this);
+    if (!emitPushNotUndefinedOrNull()) {
+      
+      
+      return false;
+    }
+
+    if (!ifThrowMethodIsNotDefined.emitThenElse()) {
+      
+      return false;
+    }
+
+    
+    
+    if (!emit1(JSOP_SWAP)) {
+      
+      return false;
+    }
+    if (!emit2(JSOP_PICK, 2)) {
+      
+      return false;
+    }
+    if (!emitCall(JSOP_CALL, 1, iter)) {
+      
+      return false;
+    }
+
+    
+    if (iterKind == IteratorKind::Async) {
+      if (!emitAwaitInInnermostScope()) {
+        
+        return false;
+      }
+    }
+
+    
+    if (!emitCheckIsObj(CheckIsObjectKind::IteratorThrow)) {
+      
+      return false;
+    }
+
+    
+    
+
+    
+    if (!ifThrowMethodIsNotDefined.emitElse()) {
+      
+      return false;
+    }
+    if (!emit1(JSOP_POP)) {
+      
+      return false;
+    }
+
+    
+    
+    
+    
+    if (!emitIteratorCloseInInnermostScope(iterKind)) {
+      
+      return false;
+    }
+    
+    if (!emitUint16Operand(JSOP_THROWMSG, JSMSG_ITERATOR_NO_THROW)) {
+      
+      
+      return false;
+    }
+
+    if (!ifThrowMethodIsNotDefined.emitEnd()) {
       return false;
     }
   }
 
   
-  if (!emitCheckIsObj(CheckIsObjectKind::IteratorThrow)) {
+  if (!ifKind.emitElse()) {
     
     return false;
   }
-  if (!emit1(JSOP_SWAP)) {
-    
-    return false;
-  }
-  if (!emit1(JSOP_POP)) {
-    
-    return false;
-  }
-  MOZ_ASSERT(bytecodeSection().stackDepth() == startDepth);
-
-  JumpList checkResult;
-  
-  
-  if (!emitJump(JSOP_GOTO, &checkResult)) {
-    
-    
-    return false;
-  }
-
-  bytecodeSection().setStackDepth(savedDepthTemp);
-  if (!ifThrowMethodIsNotDefined.emitElse()) {
-    
-    return false;
-  }
-
-  if (!emit1(JSOP_POP)) {
-    
-    return false;
-  }
-  
-  
-  
-  
-  if (!emitIteratorCloseInInnermostScope(iterKind)) {
-    
-    return false;
-  }
-  
-  if (!emitUint16Operand(JSOP_THROWMSG, JSMSG_ITERATOR_NO_THROW)) {
-    
-    
-    return false;
-  }
-
-  bytecodeSection().setStackDepth(savedDepthTemp);
-  if (!ifThrowMethodIsNotDefined.emitEnd()) {
-    return false;
-  }
-
-  bytecodeSection().setStackDepth(startDepth);
-  if (!tryCatch.emitFinally()) {
-    return false;
-  }
-
-  
-  
-  
-  
-
-  InternalIfEmitter ifGeneratorClosing(this);
-  if (!emit1(JSOP_ISGENCLOSING)) {
-    
-    return false;
-  }
-  if (!ifGeneratorClosing.emitThen()) {
-    
-    return false;
-  }
-
-  
-  
-  
-  if (!emitDupAt(3)) {
-    
-    return false;
-  }
-  if (!emit1(JSOP_DUP)) {
-    
-    return false;
-  }
-  if (!emitAtomOp(cx->names().return_, JSOP_CALLPROP)) {
-    
-    return false;
-  }
-
-  
-  
-  
-  InternalIfEmitter ifReturnMethodIsDefined(this);
-  if (!emitPushNotUndefinedOrNull()) {
-    
-    
-    return false;
-  }
-
-  
-  
-  
-  
-  if (!ifReturnMethodIsDefined.emitThenElse()) {
-    
-    return false;
-  }
-  if (!emit1(JSOP_SWAP)) {
-    
-    return false;
-  }
-  if (!emit1(JSOP_GETRVAL)) {
-    
-    return false;
-  }
-  if (needsIteratorResult) {
-    if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) {
-      
+  {
+    if (!emit1(JSOP_POP)) {
       
       return false;
     }
-  }
-  if (!emitCall(JSOP_CALL, 1)) {
-    
-    return false;
-  }
 
-  
-  if (iterKind == IteratorKind::Async) {
-    if (!emitAwaitInInnermostScope()) {
+    
+    
+    
+    
+
+    
+    
+    
+    if (!emitDupAt(1)) {
       
       return false;
     }
-  }
+    if (!emit1(JSOP_DUP)) {
+      
+      return false;
+    }
+    if (!emitAtomOp(cx->names().return_, JSOP_CALLPROP)) {
+      
+      return false;
+    }
 
-  
-  if (!emitCheckIsObj(CheckIsObjectKind::IteratorReturn)) {
     
-    return false;
-  }
+    
+    
+    InternalIfEmitter ifReturnMethodIsDefined(this);
+    if (!emitPushNotUndefinedOrNull()) {
+      
+      return false;
+    }
 
-  
-  
-  
-  
-  InternalIfEmitter ifReturnDone(this);
-  if (!emit1(JSOP_DUP)) {
     
-    return false;
-  }
-  if (!emitAtomOp(cx->names().done, JSOP_GETPROP)) {
     
-    return false;
-  }
-  if (!ifReturnDone.emitThenElse()) {
     
-    return false;
-  }
-  if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) {
-    
-    return false;
-  }
-  if (needsIteratorResult) {
-    if (!emitPrepareIteratorResult()) {
+    if (!ifReturnMethodIsDefined.emitThenElse()) {
       
       return false;
     }
@@ -6526,118 +6472,138 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
       
       return false;
     }
-    if (!emitFinishIteratorResult(true)) {
+    if (!emit2(JSOP_PICK, 2)) {
+      
+      return false;
+    }
+    if (needsIteratorResult) {
+      if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) {
+        
+        return false;
+      }
+    }
+    if (!emitCall(JSOP_CALL, 1)) {
+      
+      return false;
+    }
+
+    
+    if (iterKind == IteratorKind::Async) {
+      if (!emitAwaitInInnermostScope()) {
+        
+        return false;
+      }
+    }
+
+    
+    if (!emitCheckIsObj(CheckIsObjectKind::IteratorReturn)) {
+      
+      return false;
+    }
+
+    
+    
+
+    
+    InternalIfEmitter ifReturnDone(this);
+    if (!emit1(JSOP_DUP)) {
+      
+      return false;
+    }
+    if (!emitAtomOp(cx->names().done, JSOP_GETPROP)) {
+      
+      return false;
+    }
+    if (!ifReturnDone.emitThenElse()) {
+      
+      return false;
+    }
+
+    
+    if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) {
+      
+      return false;
+    }
+    if (needsIteratorResult) {
+      if (!emitPrepareIteratorResult()) {
+        
+        return false;
+      }
+      if (!emit1(JSOP_SWAP)) {
+        
+        return false;
+      }
+      if (!emitFinishIteratorResult(true)) {
+        
+        return false;
+      }
+    }
+
+    if (!ifReturnDone.emitElse()) {
+      
+      return false;
+    }
+
+    
+    if (!emitJump(JSOP_GOTO, &loopInfo.continues)) {
+      
+      return false;
+    }
+
+    if (!ifReturnDone.emitEnd()) {
+      
+      return false;
+    }
+
+    
+    if (!ifReturnMethodIsDefined.emitElse()) {
+      
+      return false;
+    }
+    if (!emitPopN(2)) {
+      
+      return false;
+    }
+    if (iterKind == IteratorKind::Async) {
+      
+      if (!emitAwaitInInnermostScope()) {
+        
+        return false;
+      }
+    }
+    if (!ifReturnMethodIsDefined.emitEnd()) {
+      
+      return false;
+    }
+
+    
+    
+    
+    
+    if (!emitGetDotGeneratorInInnermostScope()) {
+      
+      return false;
+    }
+    if (!emitPushResumeKind(GeneratorResumeKind::Return)) {
+      
+      return false;
+    }
+    if (!emit1(JSOP_CHECK_RESUMEKIND)) {
       
       return false;
     }
   }
-  if (!emit1(JSOP_SETRVAL)) {
-    
-    return false;
-  }
-  savedDepthTemp = bytecodeSection().stackDepth();
-  if (!ifReturnDone.emitElse()) {
-    
-    return false;
-  }
-  if (!emit2(JSOP_UNPICK, 3)) {
-    
-    return false;
-  }
-  if (!emitPopN(3)) {
-    
-    return false;
-  }
-  if (!emitJump(JSOP_GOTO, &loopInfo.continues)) {
-    
-    return false;
-  }
 
-  bytecodeSection().setStackDepth(savedDepthTemp);
-  if (!ifReturnDone.emitEnd()) {
-    return false;
-  }
-
-  if (!ifReturnMethodIsDefined.emitElse()) {
-    
-    return false;
-  }
-  if (!emitPopN(2)) {
-    
-    return false;
-  }
-  if (iterKind == IteratorKind::Async) {
-    
-    if (!emit1(JSOP_GETRVAL)) {
-      
-      return false;
-    }
-    if (!emitAwaitInInnermostScope()) {
-      
-      return false;
-    }
-    if (!emit1(JSOP_SETRVAL)) {
-      
-      return false;
-    }
-  }
-  if (!ifReturnMethodIsDefined.emitEnd()) {
-    return false;
-  }
-
-  if (!ifGeneratorClosing.emitEnd()) {
-    return false;
-  }
-
-  if (!tryCatch.emitEnd()) {
-    return false;
-  }
-
-  
-
-  
-  
-  
-  if (!emit2(JSOP_UNPICK, 2)) {
-    
-    return false;
-  }
-  if (!emit1(JSOP_DUP2)) {
-    
-    return false;
-  }
-  if (!emit2(JSOP_PICK, 4)) {
-    
-    return false;
-  }
-  if (!emitCall(JSOP_CALL, 1, iter)) {
+  if (!ifKind.emitEnd()) {
     
     return false;
   }
 
   
-  if (iterKind == IteratorKind::Async) {
-    if (!emitAwaitInInnermostScope()) {
-      
-      return false;
-    }
-  }
-
-  
-  if (!emitCheckIsObj(CheckIsObjectKind::IteratorNext)) {
-    
-    return false;
-  }
-  MOZ_ASSERT(bytecodeSection().stackDepth() == startDepth);
-
   
   
-  if (!emitJumpTargetAndPatch(checkResult)) {
-    
-    
-    return false;
-  }
-
+  
+  
   
 
   
@@ -6654,16 +6620,53 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     return false;
   }
 
+  
+  
+  
   if (!loopInfo.emitContinueTarget(this)) {
     
     return false;
   }
-
+  if (iterKind == IteratorKind::Async) {
+    if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) {
+      
+      return false;
+    }
+    if (!emitAwaitInInnermostScope()) {
+      
+      return false;
+    }
+  }
+  if (!emitGetDotGeneratorInInnermostScope()) {
+    
+    return false;
+  }
+  if (!emitYieldOp(JSOP_YIELD)) {
+    
+    return false;
+  }
+  if (!emit1(JSOP_SWAP)) {
+    
+    return false;
+  }
+  if (!emit1(JSOP_POP)) {
+    
+    return false;
+  }
   if (!loopInfo.emitLoopEnd(this, JSOP_GOTO, JSTRY_LOOP)) {
     
     return false;
   }
 
+  
+  MOZ_ASSERT(bytecodeSection().stackDepth() == startDepth);
+  bytecodeSection().setStackDepth(startDepth - 1);
+
+  
+
+  
+  
+  
   
   if (!emit2(JSOP_UNPICK, 2)) {
     
@@ -6678,7 +6681,7 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     return false;
   }
 
-  MOZ_ASSERT(bytecodeSection().stackDepth() == startDepth - 2);
+  MOZ_ASSERT(bytecodeSection().stackDepth() == startDepth - 3);
 
   return true;
 }
