@@ -14,6 +14,7 @@
 
 class nsDNSService;
 class nsIPrefBranch;
+class nsINetworkLinkService;
 
 namespace mozilla {
 namespace net {
@@ -76,6 +77,9 @@ class TRRService : public nsIObserver,
                            bool aPrivateBrowsing);
   bool IsExcludedFromTRR_unlocked(const nsACString& aHost);
 
+  void RebuildSuffixList(nsINetworkLinkService* aLinkService);
+  void CheckVPNStatus(nsINetworkLinkService* aLinkService);
+
   bool mInitialized;
   Atomic<uint32_t, Relaxed> mMode;
   Atomic<uint32_t, Relaxed> mTRRBlacklistExpireTime;
@@ -101,6 +105,7 @@ class TRRService : public nsIObserver,
   Atomic<bool, Relaxed> mDisableECS;  
   Atomic<uint32_t, Relaxed>
       mDisableAfterFails;  
+  Atomic<bool, Relaxed> mVPNDetected;
 
   
   
