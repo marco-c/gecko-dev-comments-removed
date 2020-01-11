@@ -53,8 +53,8 @@
 #include "mozilla/dom/CharacterData.h"   
 #include "mozilla/dom/DataTransfer.h"    
 #include "mozilla/InternalMutationEvent.h"  
-#include "mozilla/dom/Element.h"      
-#include "mozilla/dom/EventTarget.h"  
+#include "mozilla/dom/Element.h"         
+#include "mozilla/dom/EventTarget.h"     
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/Selection.h"  
@@ -2396,17 +2396,17 @@ nsresult EditorBase::GetPreferredIMEState(IMEState* aState) {
   NS_ENSURE_TRUE(frame, NS_ERROR_FAILURE);
 
   switch (frame->StyleUIReset()->mIMEMode) {
-    case StyleImeMode::Auto:
+    case NS_STYLE_IME_MODE_AUTO:
       if (IsPasswordEditor()) aState->mEnabled = IMEState::PASSWORD;
       break;
-    case StyleImeMode::Disabled:
+    case NS_STYLE_IME_MODE_DISABLED:
       
       aState->mEnabled = IMEState::PASSWORD;
       break;
-    case StyleImeMode::Active:
+    case NS_STYLE_IME_MODE_ACTIVE:
       aState->mOpen = IMEState::OPEN;
       break;
-    case StyleImeMode::Inactive:
+    case NS_STYLE_IME_MODE_INACTIVE:
       aState->mOpen = IMEState::CLOSED;
       break;
   }

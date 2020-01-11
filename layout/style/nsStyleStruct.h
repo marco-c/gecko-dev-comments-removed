@@ -2074,7 +2074,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset {
   mozilla::StyleUserSelect mUserSelect;  
   mozilla::StyleScrollbarWidth mScrollbarWidth;
   uint8_t mForceBrokenImageIcon;  
-  mozilla::StyleImeMode mIMEMode;
+  uint8_t mIMEMode;
   mozilla::StyleWindowDragging mWindowDragging;
   uint8_t mWindowShadow;
   float mWindowOpacity;
