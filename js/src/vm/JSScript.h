@@ -2822,17 +2822,34 @@ class JSScript : public js::BaseScript {
 
   void updateJitCodeRaw(JSRuntime* rt);
 
-  
-  
-  
-  bool isRelazifiableIgnoringJitCode() const {
-    return (selfHosted() || lazyScript) && !hasInnerFunctions() &&
-           !isGenerator() && !isAsync() && !isDefaultClassConstructor() &&
-           !doNotRelazify() && !hasCallSiteObj();
-  }
   bool isRelazifiable() const {
-    return isRelazifiableIgnoringJitCode() && !hasJitScript();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return !hasInnerFunctions() && !hasDirectEval() && !isGenerator() &&
+           !isAsync() && !hasCallSiteObj();
   }
+  bool canRelazify() const {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool lazyAvailable = selfHosted() || lazyScript;
+    return isRelazifiable() && lazyAvailable && !hasJitScript() &&
+           !doNotRelazify();
+  }
+
   void setLazyScript(js::LazyScript* lazy) { lazyScript = lazy; }
   js::LazyScript* maybeLazyScript() { return lazyScript; }
 
@@ -3376,15 +3393,6 @@ class LazyScript : public BaseScript {
   static XDRResult XDRScriptData(XDRState<mode>* xdr,
                                  HandleScriptSourceObject sourceObject,
                                  Handle<LazyScript*> lazy);
-
-  bool canRelazify() const {
-    
-    
-    
-    
-    
-    return !hasInnerFunctions() && !hasDirectEval();
-  }
 
   void initScript(JSScript* script);
 
