@@ -18,7 +18,6 @@
 #include "nsMemoryPressure.h"
 #include "nsThreadManager.h"
 #include "nsIClassInfoImpl.h"
-#include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "nsQueryObject.h"
 #include "pratom.h"
@@ -258,6 +257,12 @@ struct nsThreadShutdownContext {
   bool mIsMainThreadJoining;
 };
 
+bool nsThread::ShutdownContextsComp::Equals(
+    const ShutdownContexts::elem_type& a,
+    const ShutdownContexts::elem_type::Pointer b) const {
+  return a.get() == b;
+}
+
 
 
 
@@ -452,11 +457,10 @@ void nsThread::ThreadFunc(void* aArg) {
 
   {
     
-    nsAutoPtr<MessageLoop> loop(
-        new MessageLoop(MessageLoop::TYPE_MOZILLA_NONMAINTHREAD, self));
+    MessageLoop loop(MessageLoop::TYPE_MOZILLA_NONMAINTHREAD, self);
 
     
-    loop->Run();
+    loop.Run();
 
     BackgroundChild::CloseForCurrentThread();
 
@@ -653,7 +657,7 @@ nsThread::~nsThread() {
   
   
   for (size_t i = 0; i < mRequestedShutdownContexts.Length(); ++i) {
-    Unused << mRequestedShutdownContexts[i].forget();
+    Unused << mRequestedShutdownContexts[i].release();
   }
 #endif
 }
@@ -843,15 +847,15 @@ nsThreadShutdownContext* nsThread::ShutdownInternal(bool aSync) {
   MOZ_DIAGNOSTIC_ASSERT(currentThread->EventQueue(),
                         "Shutdown() may only be called from an XPCOM thread");
 
-  nsAutoPtr<nsThreadShutdownContext>& context =
-      *currentThread->mRequestedShutdownContexts.AppendElement();
-  context =
+  
+  auto context =
       new nsThreadShutdownContext(WrapNotNull(this), currentThread, aSync);
+  Unused << *currentThread->mRequestedShutdownContexts.EmplaceBack(context);
 
   
   
   nsCOMPtr<nsIRunnable> event =
-      new nsThreadShutdownEvent(WrapNotNull(this), WrapNotNull(context.get()));
+      new nsThreadShutdownEvent(WrapNotNull(this), WrapNotNull(context));
   
   mEvents->PutEvent(event.forget(), EventQueuePriority::Normal);
 
@@ -887,7 +891,8 @@ void nsThread::ShutdownComplete(NotNull<nsThreadShutdownContext*> aContext) {
   
   
   
-  aContext->mJoiningThread->mRequestedShutdownContexts.RemoveElement(aContext);
+  aContext->mJoiningThread->mRequestedShutdownContexts.RemoveElement(
+      aContext, ShutdownContextsComp{});
 }
 
 void nsThread::WaitForAllAsynchronousShutdowns() {

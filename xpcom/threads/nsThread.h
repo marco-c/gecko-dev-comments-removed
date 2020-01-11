@@ -20,7 +20,6 @@
 #include "mozilla/SynchronizedEventQueue.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/TimeStamp.h"
-#include "nsAutoPtr.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Array.h"
@@ -207,7 +206,15 @@ class nsThread : public nsIThreadInternal,
   RefPtr<mozilla::ThreadEventTarget> mEventTarget;
 
   
-  using ShutdownContexts = nsTArray<nsAutoPtr<struct nsThreadShutdownContext>>;
+  using ShutdownContexts =
+      nsTArray<mozilla::UniquePtr<struct nsThreadShutdownContext>>;
+
+  
+  struct ShutdownContextsComp {
+    bool Equals(const ShutdownContexts::elem_type& a,
+                const ShutdownContexts::elem_type::Pointer b) const;
+  };
+
   ShutdownContexts mRequestedShutdownContexts;
   
   struct nsThreadShutdownContext* mShutdownContext;

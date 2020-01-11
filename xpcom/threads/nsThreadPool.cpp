@@ -473,17 +473,18 @@ nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
   
   
   
+  static const nsThread::ShutdownContextsComp comparator{};
   for (int32_t i = 0; i < threads.Count(); ++i) {
     nsThread* thread = static_cast<nsThread*>(threads[i]);
     
     
     if (thread->mThread && contexts[i]) {
-      auto index =
-          currentThread->mRequestedShutdownContexts.IndexOf(contexts[i]);
+      auto index = currentThread->mRequestedShutdownContexts.IndexOf(
+          contexts[i], 0, comparator);
       if (index != nsThread::ShutdownContexts::NoIndex) {
         
         
-        currentThread->mRequestedShutdownContexts[index].forget();
+        Unused << currentThread->mRequestedShutdownContexts[index].release();
         currentThread->mRequestedShutdownContexts.RemoveElementsAt(index, 1);
       }
     }
