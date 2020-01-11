@@ -70,3 +70,6 @@ pref("ui.android.mouse_as_touch", 2);
 
 
 pref("security.webauth.webauthn_enable_android_fido2", false);
+
+
+pref("media.geckoview.autoplay.request", true);

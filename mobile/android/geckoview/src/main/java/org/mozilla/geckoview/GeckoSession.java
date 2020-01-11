@@ -774,7 +774,6 @@ public class GeckoSession implements Parcelable {
                                       final String event,
                                       final GeckoBundle message,
                                       final EventCallback callback) {
-
                 if (delegate == null) {
                     callback.sendSuccess( false);
                     return;
@@ -799,6 +798,10 @@ public class GeckoSession implements Parcelable {
                         
                         callback.sendError("Unsupported");
                         return;
+                    } else if ("autoplay-media-inaudible".equals(typeString)) {
+                        type = PermissionDelegate.PERMISSION_AUTOPLAY_INAUDIBLE;
+                    } else if ("autoplay-media-audible".equals(typeString)) {
+                        type = PermissionDelegate.PERMISSION_AUTOPLAY_AUDIBLE;
                     } else {
                         throw new IllegalArgumentException("Unknown permission request: " + typeString);
                     }
@@ -4969,6 +4972,16 @@ public class GeckoSession implements Parcelable {
         
 
 
+        int PERMISSION_AUTOPLAY_INAUDIBLE = 4;
+
+        
+
+
+        int PERMISSION_AUTOPLAY_AUDIBLE = 5;
+
+        
+
+
         interface Callback {
             
 
@@ -5216,7 +5229,10 @@ public class GeckoSession implements Parcelable {
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({PermissionDelegate.PERMISSION_GEOLOCATION,
             PermissionDelegate.PERMISSION_DESKTOP_NOTIFICATION,
-            PermissionDelegate.PERMISSION_XR})
+            PermissionDelegate.PERMISSION_PERSISTENT_STORAGE,
+            PermissionDelegate.PERMISSION_XR,
+            PermissionDelegate.PERMISSION_AUTOPLAY_INAUDIBLE,
+            PermissionDelegate.PERMISSION_AUTOPLAY_AUDIBLE})
      @interface Permission {}
 
     
