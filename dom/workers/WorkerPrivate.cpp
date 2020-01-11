@@ -4767,8 +4767,8 @@ void WorkerPrivate::EndCTypesCall() {
   SetGCTimerMode(PeriodicTimer);
 }
 
-bool WorkerPrivate::ConnectMessagePort(JSContext* aCx,
-                                       UniqueMessagePortId& aIdentifier) {
+bool WorkerPrivate::ConnectMessagePort(
+    JSContext* aCx, const MessagePortIdentifier& aIdentifier) {
   AssertIsOnWorkerThread();
 
   WorkerGlobalScope* globalScope = GlobalScope();
