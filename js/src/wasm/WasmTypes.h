@@ -448,7 +448,9 @@ class ValType {
   
   
   
-  bool isEncodedAsJSValueOnEscape() const { return code() == Code::AnyRef; }
+  bool isEncodedAsJSValueOnEscape() const {
+    return code() == Code::AnyRef || code() == Code::FuncRef;
+  }
 
   bool operator==(const ValType& that) const { return tc_ == that.tc_; }
   bool operator!=(const ValType& that) const { return tc_ != that.tc_; }
@@ -972,22 +974,7 @@ class FuncType {
     }
     return false;
   }
-  bool hasReferenceArg() const {
-    for (ValType arg : args()) {
-      if (arg.isReference()) {
-        return true;
-      }
-    }
-    return false;
-  }
-  bool hasReferenceReturn() const {
-    for (ValType result : results()) {
-      if (result.isReference()) {
-        return true;
-      }
-    }
-    return false;
-  }
+  
   
   bool temporarilyUnsupportedReftypeForEntry() const {
     for (ValType arg : args()) {
@@ -996,7 +983,8 @@ class FuncType {
       }
     }
     for (ValType result : results()) {
-      if (result.isReference() && result.code() != ValType::AnyRef) {
+      if (result.isReference() && result.code() != ValType::AnyRef &&
+          result.code() != ValType::FuncRef) {
         return true;
       }
     }
@@ -1011,16 +999,19 @@ class FuncType {
       }
     }
     for (ValType result : results()) {
-      if (result.isReference() && result.code() != ValType::AnyRef) {
+      if (result.isReference() && result.code() != ValType::AnyRef &&
+          result.code() != ValType::FuncRef) {
         return true;
       }
     }
     return false;
   }
   
+  
   bool temporarilyUnsupportedReftypeForExit() const {
     for (ValType arg : args()) {
-      if (arg.isReference() && arg.code() != ValType::AnyRef) {
+      if (arg.isReference() && arg.code() != ValType::AnyRef &&
+          arg.code() != ValType::FuncRef) {
         return true;
       }
     }
