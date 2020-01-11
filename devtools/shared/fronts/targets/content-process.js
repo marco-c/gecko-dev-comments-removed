@@ -28,8 +28,7 @@ class ContentProcessTargetFront extends TargetMixin(
     
     this.targetForm = json;
     
-    
-    this._threadActor = json.threadActor || json.chromeDebugger;
+    this._threadActor = json.threadActor;
     this.targetForm.contextActor = this._threadActor;
   }
 

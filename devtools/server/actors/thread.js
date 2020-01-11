@@ -2289,34 +2289,6 @@ PauseActor.prototype = {
 
 
 
-function ChromeDebuggerActor(connection, parent) {
-  ThreadActor.prototype.initialize.call(this, parent);
-}
-
-ChromeDebuggerActor.prototype = Object.create(ThreadActor.prototype);
-
-Object.assign(ChromeDebuggerActor.prototype, {
-  constructor: ChromeDebuggerActor,
-
-  
-  actorPrefix: "chromeDebugger",
-});
-
-exports.ChromeDebuggerActor = ChromeDebuggerActor;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 exports.unwrapDebuggerObjectGlobal = wrappedGlobal => {
   try {
     
