@@ -115,6 +115,11 @@
 
 - (void)touchBarAction:(id)aSender;
 
+
+
+
+- (void)loadIconForInput:(TouchBarInput*)aInput forItem:(NSTouchBarItem*)aItem;
+
 - (NSArray*)itemsForSharingServicePickerTouchBarItem:
     (NSSharingServicePickerTouchBarItem*)aPickerTouchBarItem;
 

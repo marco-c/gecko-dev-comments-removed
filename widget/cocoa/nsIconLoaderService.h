@@ -35,9 +35,13 @@ class nsIconLoaderService : public imgINotificationObserver {
 
   
   
-  nsresult LoadIcon(nsIURI* aIconURI);
+  
+  
+  nsresult LoadIcon(nsIURI* aIconURI, bool aIsInternalIcon);
 
   NSImage* GetNativeIconImage();
+
+  void ReleaseJSObjects() { mContent = nil; }
 
   void Destroy();
 
