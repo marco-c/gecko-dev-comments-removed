@@ -2163,9 +2163,9 @@ var gPrivacyPane = {
 
 
   showDataDeletion() {
-    let url = Services.urlFormatter.formatURLPref(
-      "datareporting.healthreport.infoURL"
-    );
+    let url =
+      Services.urlFormatter.formatURLPref("app.support.baseURL") +
+      "telemetry-clientid";
     window.open(url, "_blank");
   },
 
