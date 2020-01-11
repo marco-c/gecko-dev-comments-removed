@@ -7,6 +7,7 @@
 
 #include "mozilla/TypeTraits.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Unused.h"
 
 #include "gc/GCRuntime.h"
 #include "js/ArrayBuffer.h"  
@@ -58,6 +59,7 @@ JSObject* CreateNurseryGCThing(JSContext* cx) {
     return nullptr;
   }
   JS_DefineProperty(cx, obj, "x", 42, 0);
+  MOZ_ASSERT(IsInsideNursery(obj));
   return obj;
 }
 
@@ -68,6 +70,38 @@ JSFunction* CreateNurseryGCThing(JSContext* cx) {
 
 
   return static_cast<JSFunction*>(CreateNurseryGCThing<JSObject>(cx));
+}
+
+template <typename T>
+static T* CreateTenuredGCThing(JSContext* cx) {
+  MOZ_CRASH();
+  return nullptr;
+}
+
+template <>
+JSObject* CreateTenuredGCThing(JSContext* cx) {
+  
+  
+  
+  
+  JSObject* obj = JS::NewArrayBuffer(cx, 20);
+  MOZ_ASSERT(!IsInsideNursery(obj));
+  MOZ_ASSERT(obj->getClass()->hasFinalize() &&
+             !(obj->getClass()->flags & JSCLASS_SKIP_NURSERY_FINALIZE));
+  return obj;
+}
+
+static void MakeWhite(JSObject* obj) {
+  gc::TenuredCell* cell = &obj->asTenured();
+  cell->unmark();
+  MOZ_ASSERT(!obj->isMarkedAny());
+}
+
+static void MakeGray(JSObject* obj) {
+  gc::TenuredCell* cell = &obj->asTenured();
+  cell->unmark();
+  cell->markIfUnmarked(gc::MarkColor::Gray);
+  MOZ_ASSERT(obj->isMarkedGray());
 }
 
 
@@ -300,57 +334,61 @@ END_TEST(testGCHeapPostBarriers)
 
 
 
-BEGIN_TEST(testGCHeapBarrierComparisons) {
+
+
+
+
+
+BEGIN_TEST(testGCHeapReadBarriers) {
 #ifdef JS_GC_ZEAL
   AutoLeaveZeal nozeal(cx);
 #endif 
 
-  
-  
-  JS::RootedObject obj(cx, JS::NewArrayBuffer(cx, 20));
-  JS::RootedObject obj2(cx, JS::NewArrayBuffer(cx, 30));
-  cx->runtime()->gc.evictNursery();  
+  CHECK((TestWrapperType<JS::Heap<JSObject*>, JSObject*>()));
+  CHECK((TestWrapperType<JS::TenuredHeap<JSObject*>, JSObject*>()));
+  CHECK((TestWrapperType<WeakHeapPtr<JSObject*>, JSObject*>()));
 
-  
-  
-  using namespace js::gc;
-  TenuredCell* cell = &obj->asTenured();
-  TenuredCell* cell2 = &obj2->asTenured();
-  cell->markIfUnmarked(MarkColor::Gray);
-  cell2->markIfUnmarked(MarkColor::Gray);
-  MOZ_ASSERT(cell->isMarkedGray());
-  MOZ_ASSERT(cell2->isMarkedGray());
+  return true;
+}
 
-  CHECK((TestWrapperType<JS::Heap<JSObject*>, JSObject*>(obj, obj2)));
-  CHECK((TestWrapperType<JS::TenuredHeap<JSObject*>, JSObject*>(obj, obj2)));
-
+template <typename WrapperT, typename ObjectT>
+bool TestWrapperType() {
   
   {
-    JS::Heap<JSObject*> heap(obj);
-    JS::TenuredHeap<JSObject*> heap2(obj2);
-    heap.get();
-    heap2.getPtr();
-    CHECK(cell->isMarkedBlack());
-    CHECK(cell2->isMarkedBlack());
+    Rooted<ObjectT> obj0(cx, CreateTenuredGCThing<JSObject>(cx));
+    WrapperT wrapper0(obj0);
+    MakeGray(obj0);
+    mozilla::Unused << *wrapper0;
+    CHECK(obj0->isMarkedBlack());
   }
 
-  return true;
-}
+  
+  
+  Rooted<ObjectT> obj1(cx, CreateTenuredGCThing<JSObject>(cx));
+  Rooted<ObjectT> obj2(cx, CreateTenuredGCThing<JSObject>(cx));
+  MakeGray(obj1);
+  MakeGray(obj2);
 
-template <typename WrapperT, typename ObjectT>
-bool TestWrapperType(ObjectT obj, ObjectT obj2) {
-  WrapperT wrapper(obj);
+  WrapperT wrapper1(obj1);
   WrapperT wrapper2(obj2);
-  const ObjectT constobj = obj;
+  const ObjectT constobj1 = obj1;
   const ObjectT constobj2 = obj2;
-  CHECK(TestWrapper(obj, obj2, wrapper, wrapper2));
-  CHECK(TestWrapper(constobj, constobj2, wrapper, wrapper2));
+  CHECK((TestUnbarrieredOperations<WrapperT, ObjectT>(obj1, obj2, wrapper1,
+                                                      wrapper2)));
+  CHECK((TestUnbarrieredOperations<WrapperT, ObjectT>(constobj1, constobj2,
+                                                      wrapper1, wrapper2)));
+
   return true;
 }
 
 template <typename WrapperT, typename ObjectT>
-bool TestWrapper(ObjectT obj, ObjectT obj2, WrapperT& wrapper,
-                 WrapperT& wrapper2) {
+bool TestUnbarrieredOperations(ObjectT obj, ObjectT obj2, WrapperT& wrapper,
+                               WrapperT& wrapper2) {
+  mozilla::Unused << bool(wrapper);
+  mozilla::Unused << bool(wrapper2);
+  CHECK(obj->isMarkedGray());
+  CHECK(obj2->isMarkedGray());
+
   int x = 0;
 
   CHECK(obj->isMarkedGray());
@@ -388,7 +426,7 @@ bool TestWrapper(ObjectT obj, ObjectT obj2, WrapperT& wrapper,
   return true;
 }
 
-END_TEST(testGCHeapBarrierComparisons)
+END_TEST(testGCHeapReadBarriers)
 
 
 
@@ -403,8 +441,8 @@ BEGIN_TEST(testGCHeapPreBarriers) {
   uint32_t oldMode = JS_GetGCParameter(cx, JSGC_MODE);
   JS_SetGCParameter(cx, JSGC_MODE, JSGC_MODE_ZONE_INCREMENTAL);
 
-  RootedObject obj1(cx, JS_NewPlainObject(cx));
-  RootedObject obj2(cx, JS_NewPlainObject(cx));
+  RootedObject obj1(cx, CreateTenuredGCThing<JSObject>(cx));
+  RootedObject obj2(cx, CreateTenuredGCThing<JSObject>(cx));
   CHECK(obj1);
   CHECK(obj2);
 
@@ -576,19 +614,4 @@ bool TestGCPtrAssignment(HandleObject obj1, HandleObject obj2) {
   return true;
 }
 
-void MakeWhite(JSObject* obj) {
-  gc::TenuredCell* cell = &obj->asTenured();
-  cell->unmark();
-  MOZ_ASSERT(!obj->isMarkedAny());
-}
-
-void MakeGray(JSObject* obj) {
-  gc::TenuredCell* cell = &obj->asTenured();
-  cell->unmark();
-  cell->markIfUnmarked(gc::MarkColor::Gray);
-  MOZ_ASSERT(obj->isMarkedGray());
-}
-
 END_TEST(testGCHeapPreBarriers)
-
-
