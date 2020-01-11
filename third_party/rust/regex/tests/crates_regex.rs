@@ -2,18 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 consistent!(autoshutdown_0, r"\s*(\d+)(\w)\s*");
 
 
@@ -197,7 +185,10 @@ consistent!(generic_dns_update_0, r"((?:(?:0|1[\d]{0,2}|2(?:[0-4]\d?|5[0-5]?|[6-
 consistent!(generic_dns_update_1, r"((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((\d((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\d)\.){3}(\d((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\d))|(([0-9A-Fa-f]{1,4}:){0,5}:((\d((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\d)\.){3}(\d((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\d))|(::([0-9A-Fa-f]{1,4}:){0,5}((\d((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\d)\.){3}(\d((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\d))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))");
 
 
-consistent!(generic_dns_update_2, r"<value><string>([0-9.]*)</string></value>");
+consistent!(
+    generic_dns_update_2,
+    r"<value><string>([0-9.]*)</string></value>"
+);
 
 
 consistent!(generic_dns_update_3, r"<int>([0-9]+)</int>");
@@ -221,7 +212,10 @@ consistent!(genact_0, r"arch/([a-z0-9_])+/");
 consistent!(genact_1, r"arch/([a-z0-9_])+/");
 
 
-consistent!(cron_rs_0, r"^\s*((\*(/\d+)?)|[0-9-,/]+)(\s+((\*(/\d+)?)|[0-9-,/]+)){4,5}\s*$");
+consistent!(
+    cron_rs_0,
+    r"^\s*((\*(/\d+)?)|[0-9-,/]+)(\s+((\*(/\d+)?)|[0-9-,/]+)){4,5}\s*$"
+);
 
 
 consistent!(systemfd_0, r"^([a-zA-Z]+)::(.+)$");
@@ -362,7 +356,10 @@ consistent!(deb_version_0, "^(?:(?:(?:\\d+:).+)|(?:[^:]+))$");
 consistent!(debcargo_0, r"^(?i)(a|an|the)\s+");
 
 
-consistent!(debcargo_1, r"^(?i)(rust\s+)?(implementation|library|tool|crate)\s+(of|to|for)\s+");
+consistent!(
+    debcargo_1,
+    r"^(?i)(rust\s+)?(implementation|library|tool|crate)\s+(of|to|for)\s+"
+);
 
 
 consistent!(feaders_0, r"^.*\.h$");
@@ -383,7 +380,10 @@ consistent!(feaders_4, r"^.*\.cpp$");
 consistent!(hyperscan_0, r"CPtr\(\w+\)");
 
 
-consistent!(hyperscan_1, r"^Version:\s(\d\.\d\.\d)\sFeatures:\s+(\w+)?\sMode:\s(\w+)$");
+consistent!(
+    hyperscan_1,
+    r"^Version:\s(\d\.\d\.\d)\sFeatures:\s+(\w+)?\sMode:\s(\w+)$"
+);
 
 
 consistent!(hyperscan_2, r"RawDatabase<Block>\{db: \w+\}");
@@ -425,7 +425,10 @@ consistent!(tin_summer_0, r"(\.git|\.pijul|_darcs|\.hg)$");
 consistent!(tin_drummer_0, r".*?\.(a|la|lo|o|ll|keter|bc|dyn_o|d|rlib|crate|min\.js|hi|dyn_hi|S|jsexe|webapp|js\.externs|ibc|toc|aux|fdb_latexmk|fls|egg-info|whl|js_a|js_hi|jld|ji|js_o|so.*|dump-.*|vmb|crx|orig|elmo|elmi|pyc|mod|p_hi|p_o|prof|tix)$");
 
 
-consistent!(tin_drummer_1, r".*?\.(stats|conf|h|out|cache.*|dat|pc|info|\.js)$");
+consistent!(
+    tin_drummer_1,
+    r".*?\.(stats|conf|h|out|cache.*|dat|pc|info|\.js)$"
+);
 
 
 consistent!(tin_drummer_2, r".*?\.(exe|a|la|o|ll|keter|bc|dyn_o|d|rlib|crate|min\.js|hi|dyn_hi|jsexe|webapp|js\.externs|ibc|toc|aux|fdb_latexmk|fls|egg-info|whl|js_a|js_hi|jld|ji|js_o|so.*|dump-.*|vmb|crx|orig|elmo|elmi|pyc|mod|p_hi|p_o|prof|tix)$");
@@ -437,7 +440,10 @@ consistent!(tin_drummer_3, r".*?\.(stats|conf|h|out|cache.*|\.js)$");
 consistent!(tin_drummer_4, r"(\.git|\.pijul|_darcs|\.hg)$");
 
 
-consistent!(tin_drummer_5, r".*?\.(dyn_o|out|d|hi|dyn_hi|dump-.*|p_hi|p_o|prof|tix)$");
+consistent!(
+    tin_drummer_5,
+    r".*?\.(dyn_o|out|d|hi|dyn_hi|dump-.*|p_hi|p_o|prof|tix)$"
+);
 
 
 consistent!(tin_drummer_6, r".*?\.(ibc)$");
@@ -452,7 +458,10 @@ consistent!(timmy_0, r"_NET_WM_PID\(CARDINAL\) = (\d+)");
 consistent!(timmy_1, r"today|yesterday|now");
 
 
-consistent!(timmy_2, r"(?P<day>\d{1,2})/(?P<month>\d{1,2})(/(?P<year>\d{4}|\d{2}))?");
+consistent!(
+    timmy_2,
+    r"(?P<day>\d{1,2})/(?P<month>\d{1,2})(/(?P<year>\d{4}|\d{2}))?"
+);
 
 
 consistent!(timmy_3, r"(?P<n>\d+) (days?|ds?)(?P<ago>( ago)?)");
@@ -461,7 +470,10 @@ consistent!(timmy_3, r"(?P<n>\d+) (days?|ds?)(?P<ago>( ago)?)");
 consistent!(timmy_4, r"(?P<hr>\d{2}):(?P<mins>\d{2})");
 
 
-consistent!(tinfo_0, r"^(\d+): \d+ windows \(.*\) \[\d+x\d+\]( \(attached\))?");
+consistent!(
+    tinfo_0,
+    r"^(\d+): \d+ windows \(.*\) \[\d+x\d+\]( \(attached\))?"
+);
 
 
 consistent!(tinfo_1, r"^(\d+):(\d+): (.*) \((\d+) panes\) \[(\d+)x(\d+)\]");
@@ -503,7 +515,10 @@ consistent!(yaml_2, r"^([-+]?)0x([0-9a-fA-F_]+)$");
 consistent!(yaml_3, r"^([-+]?)0b([0-1_]+)$");
 
 
-consistent!(yaml_4, r"^([-+]?)(\.[0-9]+|[0-9]+(\.[0-9]*)?([eE][-+]?[0-9]+)?)$");
+consistent!(
+    yaml_4,
+    r"^([-+]?)(\.[0-9]+|[0-9]+(\.[0-9]*)?([eE][-+]?[0-9]+)?)$"
+);
 
 
 consistent!(yaml_5, r"^[+]?(\.inf|\.Inf|\.INF)$");
@@ -674,7 +689,10 @@ consistent!(linux_ip_3, r"^([0-9a-fA-F\.:/]+|default)\s+via\s+([a-z0-9\.:]+)\s+d
 consistent!(linux_ip_4, r"^(blackhole)\s+([0-9a-fA-F\.:/]+)$");
 
 
-consistent!(linux_ip_5, r"^(unreachable)\s+([0-9a-fA-F\.:/]+)\s+dev\s+([a-z0-9\.]+)\s+(.*)$");
+consistent!(
+    linux_ip_5,
+    r"^(unreachable)\s+([0-9a-fA-F\.:/]+)\s+dev\s+([a-z0-9\.]+)\s+(.*)$"
+);
 
 
 consistent!(linux_ip_6, r"\s*[\n\r]+\s*");
@@ -716,19 +734,28 @@ consistent!(protocol_ftp_client_2, "(\\w+) [Tt]ype: (\\w+)");
 consistent!(protocol_ftp_client_3, "(?m:^(\\d{3})-.+\r$)");
 
 
-consistent!(protocol_ftp_client_4, "Entering Passive Mode \\((\\d+),(\\d+),(\\d+),(\\d+),(\\d+),(\\d+)\\)");
+consistent!(
+    protocol_ftp_client_4,
+    "Entering Passive Mode \\((\\d+),(\\d+),(\\d+),(\\d+),(\\d+),(\\d+)\\)"
+);
 
 
 consistent!(protocol_ftp_client_5, "(?m:^(.+)\r$)");
 
 
-consistent!(protocol_ftp_client_6, "^([d-])(?:[rwx-]{3}){3} +\\d+ +\\w+ +\\w+ +(\\d+) +(.+) +(.+)$");
+consistent!(
+    protocol_ftp_client_6,
+    "^([d-])(?:[rwx-]{3}){3} +\\d+ +\\w+ +\\w+ +(\\d+) +(.+) +(.+)$"
+);
 
 
 consistent!(article_date_extractor_0, r"([\./\-_]{0,1}(19|20)\d{2})[\./\-_]{0,1}(([0-3]{0,1}[0-9][\./\-_])|(\w{3,5}[\./\-_]))([0-3]{0,1}[0-9][\./\-]{0,1})");
 
 
-consistent!(article_date_extractor_1, r"(?i)publishdate|pubdate|timestamp|article_date|articledate|date");
+consistent!(
+    article_date_extractor_1,
+    r"(?i)publishdate|pubdate|timestamp|article_date|articledate|date"
+);
 
 
 consistent!(arthas_plugin_0, r"type\((.*)\)");
@@ -809,7 +836,10 @@ consistent!(wikibase_0, r"(?P<user_agent>[a-zA-Z0-9-_]+/[0-9\.]+)");
 consistent!(wifiscanner_0, r"Cell [0-9]{2,} - Address:");
 
 
-consistent!(wifiscanner_1, r"([0-9a-zA-Z]{1}[0-9a-zA-Z]{1}[:]{1}){5}[0-9a-zA-Z]{1}[0-9a-zA-Z]{1}");
+consistent!(
+    wifiscanner_1,
+    r"([0-9a-zA-Z]{1}[0-9a-zA-Z]{1}[:]{1}){5}[0-9a-zA-Z]{1}[0-9a-zA-Z]{1}"
+);
 
 
 consistent!(wifiscanner_2, r"Signal level=(\d+)/100");
@@ -1160,7 +1190,10 @@ consistent!(assembunny_plus_0, r"[^0-9a-zA-Z_]");
 consistent!(assembunny_plus_1, r"[0-9]");
 
 
-consistent!(salt_compressor_0, r"(?m)^Minion (\S*) did not respond\. No job will be sent\.$");
+consistent!(
+    salt_compressor_0,
+    r"(?m)^Minion (\S*) did not respond\. No job will be sent\.$"
+);
 
 
 consistent!(sabisabi_0, r"</?[^>]+?>");
@@ -1295,25 +1328,37 @@ consistent!(woothee_34, r"BB10(?:.+)Version/([.0-9]+) ");
 consistent!(woothee_35, r"BlackBerry(?:\d+)/([.0-9]+) ");
 
 
-consistent!(woothee_36, r"; CPU(?: iPhone)? OS (\d+_\d+(?:_\d+)?) like Mac OS X");
+consistent!(
+    woothee_36,
+    r"; CPU(?: iPhone)? OS (\d+_\d+(?:_\d+)?) like Mac OS X"
+);
 
 
 consistent!(woothee_37, r"Mac OS X (10[._]\d+(?:[._]\d+)?)(?:\)|;)");
 
 
-consistent!(woothee_38, r"^(?:Apache-HttpClient/|Jakarta Commons-HttpClient/|Java/)");
+consistent!(
+    woothee_38,
+    r"^(?:Apache-HttpClient/|Jakarta Commons-HttpClient/|Java/)"
+);
 
 
 consistent!(woothee_39, r"[- ]HttpClient(/|$)");
 
 
-consistent!(woothee_40, r"^(?:PHP|WordPress|CakePHP|PukiWiki|PECL::HTTP)(?:/| |$)");
+consistent!(
+    woothee_40,
+    r"^(?:PHP|WordPress|CakePHP|PukiWiki|PECL::HTTP)(?:/| |$)"
+);
 
 
 consistent!(woothee_41, r"(?:PEAR HTTP_Request|HTTP_Request)(?: class|2)");
 
 
-consistent!(woothee_42, r"(?:Rome Client |UnwindFetchor/|ia_archiver |Summify |PostRank/)");
+consistent!(
+    woothee_42,
+    r"(?:Rome Client |UnwindFetchor/|ia_archiver |Summify |PostRank/)"
+);
 
 
 consistent!(woothee_43, r"Sleipnir/([.0-9]+)");
@@ -1334,19 +1379,31 @@ consistent!(emote_0, r":[a-zA-Z_]+?:");
 consistent!(emojicons_0, r":([a-zA-Z0-9_+-]+):");
 
 
-consistent!(git2_codecommit_0, r"git-codecommit\.([a-z0-9-]+)\.amazonaws\.com");
+consistent!(
+    git2_codecommit_0,
+    r"git-codecommit\.([a-z0-9-]+)\.amazonaws\.com"
+);
 
 
-consistent!(git_workarea_0, r"^submodule\.(?P<name>.*)\.(?P<key>[^=]*)=(?P<value>.*)$");
+consistent!(
+    git_workarea_0,
+    r"^submodule\.(?P<name>.*)\.(?P<key>[^=]*)=(?P<value>.*)$"
+);
 
 
-consistent!(git_shell_enforce_directory_0, r"^(?P<command>git-(?:receive|upload)-pack) '(?P<path>.+)'$");
+consistent!(
+    git_shell_enforce_directory_0,
+    r"^(?P<command>git-(?:receive|upload)-pack) '(?P<path>.+)'$"
+);
 
 
 consistent!(git_journal_0, r"[ \n]:(.*?):");
 
 
-consistent!(git_find_0, r"^git@(?P<host>[[:alnum:]\._-]+):(?P<path>[[:alnum:]\._\-/]+).git$");
+consistent!(
+    git_find_0,
+    r"^git@(?P<host>[[:alnum:]\._-]+):(?P<path>[[:alnum:]\._\-/]+).git$"
+);
 
 
 consistent!(gitlab_api_0, r"private_token=\w{20}");
@@ -1556,7 +1613,10 @@ consistent!(sgf_2, r"\r\n|\n\r|\n|\r");
 consistent!(sgf_3, r"([\]\\:])");
 
 
-consistent!(dok_0, "^Bearer realm=\"(.+?)\",service=\"(.+?)\",scope=\"(.+?)\"$");
+consistent!(
+    dok_0,
+    "^Bearer realm=\"(.+?)\",service=\"(.+?)\",scope=\"(.+?)\"$"
+);
 
 
 consistent!(d20_0, r"([+-]?\s*\d+[dD]\d+|[+-]?\s*\d+)");
@@ -1574,7 +1634,10 @@ consistent!(dvb_2, "^S");
 consistent!(ger_0, r"Change-Id: (I[a-f0-9]{40})$");
 
 
-consistent!(ger_1, r"(refs|ref|fix|fixes|close|closes)\s+([A-Z]{2,5}-[0-9]{1,5})$");
+consistent!(
+    ger_1,
+    r"(refs|ref|fix|fixes|close|closes)\s+([A-Z]{2,5}-[0-9]{1,5})$"
+);
 
 
 consistent!(n5_0, r"(\d+)(\.(\d+))?(\.(\d+))?(.*)");
@@ -1655,16 +1718,25 @@ consistent!(cargo_wix_2, r"<(.*?)>");
 consistent!(cargo_wix_3, r"<(.*?)>");
 
 
-consistent!(cargo_incremental_0, r"(?m)^incremental: re-using (\d+) out of (\d+) modules$");
+consistent!(
+    cargo_incremental_0,
+    r"(?m)^incremental: re-using (\d+) out of (\d+) modules$"
+);
 
 
-consistent!(cargo_incremental_1, "(?m)(warning|error): (.*)\n  --> ([^:]:\\d+:\\d+)$");
+consistent!(
+    cargo_incremental_1,
+    "(?m)(warning|error): (.*)\n  --> ([^:]:\\d+:\\d+)$"
+);
 
 
 consistent!(cargo_incremental_2, r"(?m)^test (.*) \.\.\. (\w+)");
 
 
-consistent!(cargo_incremental_3, r"(?m)(\d+) passed; (\d+) failed; (\d+) ignored; \d+ measured");
+consistent!(
+    cargo_incremental_3,
+    r"(?m)(\d+) passed; (\d+) failed; (\d+) ignored; \d+ measured"
+);
 
 
 consistent!(cargo_testjs_0, r"^[^-]+-[0-9a-f]+\.js$");
@@ -1694,10 +1766,16 @@ consistent!(cargo_release_0, "^\\[.+\\]");
 consistent!(cargo_release_1, "^\\[\\[.+\\]\\]");
 
 
-consistent!(cargo_edit_0, r"^https://github.com/([-_0-9a-zA-Z]+)/([-_0-9a-zA-Z]+)(/|.git)?$");
+consistent!(
+    cargo_edit_0,
+    r"^https://github.com/([-_0-9a-zA-Z]+)/([-_0-9a-zA-Z]+)(/|.git)?$"
+);
 
 
-consistent!(cargo_edit_1, r"^https://gitlab.com/([-_0-9a-zA-Z]+)/([-_0-9a-zA-Z]+)(/|.git)?$");
+consistent!(
+    cargo_edit_1,
+    r"^https://gitlab.com/([-_0-9a-zA-Z]+)/([-_0-9a-zA-Z]+)(/|.git)?$"
+);
 
 
 consistent!(cargo_disassemble_0, ".*");
@@ -1730,7 +1808,10 @@ consistent!(cargo_script_4, r"^#![^\[].*?(\r\n|\n)");
 consistent!(cargo_update_0, r"cargo-install-update\.exe-v.+");
 
 
-consistent!(canteen_0, r"^<(?:(int|uint|str|float|path):)?([\w_][a-zA-Z0-9_]*)>$");
+consistent!(
+    canteen_0,
+    r"^<(?:(int|uint|str|float|path):)?([\w_][a-zA-Z0-9_]*)>$"
+);
 
 
 consistent!(thruster_cli_0, r"(.)([A-Z])");
@@ -1856,7 +1937,10 @@ consistent!(media_filename_1, "([0-9]{3,4}p|[0-9]{3,4}x[0-9]{3,4})");
 consistent!(media_filename_2, "(?:^\\[([^]]+)\\]|- ?([^-]+)$)");
 
 
-consistent!(media_filename_3, "(?:[eE]([0-9]{2,3})|[^0-9A-Za-z]([0-9]{2,3})(?:v[0-9])?[^0-9A-Za-z])");
+consistent!(
+    media_filename_3,
+    "(?:[eE]([0-9]{2,3})|[^0-9A-Za-z]([0-9]{2,3})(?:v[0-9])?[^0-9A-Za-z])"
+);
 
 
 consistent!(media_filename_4, "[sS]([0-9]{1,2})");
@@ -1955,10 +2039,16 @@ consistent!(actix_web_0, "//+");
 consistent!(actix_web_1, "//+");
 
 
-consistent!(althea_kernel_interface_0, r"(\S*) .* (\S*) (REACHABLE|STALE|DELAY)");
+consistent!(
+    althea_kernel_interface_0,
+    r"(\S*) .* (\S*) (REACHABLE|STALE|DELAY)"
+);
 
 
-consistent!(althea_kernel_interface_1, r"-s (.*) --ip6-dst (.*)/.* bcnt = (.*)");
+consistent!(
+    althea_kernel_interface_1,
+    r"-s (.*) --ip6-dst (.*)/.* bcnt = (.*)"
+);
 
 
 consistent!(alcibiades_0, r"\buci(?:\s|$)");
@@ -1973,7 +2063,10 @@ consistent!(rusqbin_0, r"/rusqbins/((?i)[A-F0-9]{8}\-[A-F0-9]{4}\-4[A-F0-9]{3}\-
 consistent!(rusqbin_1, r"/rusqbins/((?i)[A-F0-9]{8}\-[A-F0-9]{4}\-4[A-F0-9]{3}\-[89AB][A-F0-9]{3}\-[A-F0-9]{12})/requests/?$");
 
 
-consistent!(rust_install_0, r"^(nightly|beta|stable)(?:-(\d{4}-\d{2}-\d{2}))?$");
+consistent!(
+    rust_install_0,
+    r"^(nightly|beta|stable)(?:-(\d{4}-\d{2}-\d{2}))?$"
+);
 
 
 consistent!(rust_inbox_0, "^+(.*)\r\n");
@@ -2033,13 +2126,19 @@ consistent!(rustfmt_core_3, r"\s;");
 consistent!(rust_enum_derive_0, r"^(0x)?([:digit:]+)$");
 
 
-consistent!(rust_enum_derive_1, r"^([:digit:]+)[:space:]*<<[:space:]*([:digit:]+)$");
+consistent!(
+    rust_enum_derive_1,
+    r"^([:digit:]+)[:space:]*<<[:space:]*([:digit:]+)$"
+);
 
 
 consistent!(rust_enum_derive_2, r"^[:space:]*([[:alnum:]_]+)([:space:]*=[:space:]*([:graph:]+))?[:space:]*,");
 
 
-consistent!(rust_enum_derive_3, r"^#define[:space:]+([:graph:]+)[:space:]+([:graph:]+)");
+consistent!(
+    rust_enum_derive_3,
+    r"^#define[:space:]+([:graph:]+)[:space:]+([:graph:]+)"
+);
 
 
 consistent!(rustsourcebundler_0, r"^\s*pub mod (.+);$");
@@ -2084,7 +2183,10 @@ consistent!(rumblebars_0, "([:blank:]*)$");
 consistent!(rumblebars_1, "(\r?\n)[:blank:]*(\\{\\{~?[#!/](?:\\}?[^}])*\\}\\})[:blank:]*(:?\r?\n)?\\z");
 
 
-consistent!(rumblebars_2, "(\r?\n[:blank:]*)(\\{\\{~?>(?:\\}?[^}])*\\}\\})[:blank:]*(:?\r?\n)?\\z");
+consistent!(
+    rumblebars_2,
+    "(\r?\n[:blank:]*)(\\{\\{~?>(?:\\}?[^}])*\\}\\})[:blank:]*(:?\r?\n)?\\z"
+);
 
 
 consistent!(rumblebars_3, "((?:[:blank:]|\r?\n)*)(\r?\n)[:blank:]*$");
@@ -2159,7 +2261,10 @@ consistent!(ultrastar_txt_1, "^-\\s?(-?[0-9]+)\\s*$");
 consistent!(ultrastar_txt_2, "^-\\s?(-?[0-9]+)\\s+(-?[0-9]+)");
 
 
-consistent!(ultrastar_txt_3, "^(.)\\s*(-?[0-9]+)\\s+(-?[0-9]+)\\s+(-?[0-9]+)\\s?(.*)");
+consistent!(
+    ultrastar_txt_3,
+    "^(.)\\s*(-?[0-9]+)\\s+(-?[0-9]+)\\s+(-?[0-9]+)\\s?(.*)"
+);
 
 
 consistent!(ultrastar_txt_4, "^P\\s?(-?[0-9]+)");
@@ -2183,7 +2288,10 @@ consistent!(strukt_0, "\"([<>]?)([xcbB\\?hHiIlLqQfdspP]*)\"");
 consistent!(steamid_ng_0, r"^STEAM_([0-4]):([0-1]):([0-9]{1,10})$");
 
 
-consistent!(steamid_ng_1, r"^\[([AGMPCgcLTIUai]):([0-4]):([0-9]{1,10})(:([0-9]+))?\]$");
+consistent!(
+    steamid_ng_1,
+    r"^\[([AGMPCgcLTIUai]):([0-4]):([0-9]{1,10})(:([0-9]+))?\]$"
+);
 
 
 consistent!(strscan_0, r"^\w+");
@@ -2240,7 +2348,10 @@ consistent!(rargs_1, r"^\{[[:space:]]*(?P<name>[[:word:]]*)[[:space:]]*\}$");
 consistent!(rargs_2, r"^\{[[:space:]]*(?P<num>-?\d+)[[:space:]]*\}$");
 
 
-consistent!(rargs_3, r"^\{(?P<left>-?\d*)?\.\.(?P<right>-?\d*)?(?::(?P<sep>.*))?\}$");
+consistent!(
+    rargs_3,
+    r"^\{(?P<left>-?\d*)?\.\.(?P<right>-?\d*)?(?::(?P<sep>.*))?\}$"
+);
 
 
 consistent!(rargs_4, r"(.*?)[[:space:]]+|(.*?)$");
@@ -2270,10 +2381,16 @@ consistent!(pact_matching_1, "application/json.*");
 consistent!(pact_matching_2, "application/.*xml");
 
 
-consistent!(pangu_0, "([\"'\\(\\[\\{{<\u{201c}])(\\s*)(.+?)(\\s*)([\"'\\)\\]\\}}>\u{201d}])");
+consistent!(
+    pangu_0,
+    "([\"'\\(\\[\\{{<\u{201c}])(\\s*)(.+?)(\\s*)([\"'\\)\\]\\}}>\u{201d}])"
+);
 
 
-consistent!(pangu_1, "([\\(\\[\\{{<\u{201c}]+)(\\s*)(.+?)(\\s*)([\\)\\]\\}}>\u{201d}]+)");
+consistent!(
+    pangu_1,
+    "([\\(\\[\\{{<\u{201c}]+)(\\s*)(.+?)(\\s*)([\\)\\]\\}}>\u{201d}]+)"
+);
 
 
 consistent!(parser_haskell_0, r"\{-[\s\S]*?-\}");
@@ -2312,10 +2429,16 @@ consistent!(ovpnfile_1, r"^<(\S+)>");
 consistent!(ovpnfile_2, r"^</(\S+)>");
 
 
-consistent!(screenruster_saver_fractal_0, r"#([:xdigit:]{2})([:xdigit:]{2})([:xdigit:]{2})");
+consistent!(
+    screenruster_saver_fractal_0,
+    r"#([:xdigit:]{2})([:xdigit:]{2})([:xdigit:]{2})"
+);
 
 
-consistent!(scarlet_0, r"rgb\((?: *(\d{1,3}),)(?: *(\d{1,3}),)(?: *(\d{1,3}))\)");
+consistent!(
+    scarlet_0,
+    r"rgb\((?: *(\d{1,3}),)(?: *(\d{1,3}),)(?: *(\d{1,3}))\)"
+);
 
 
 consistent!(cpp_to_rust_generator_0, r"^([\w:]+)<(.+)>$");
@@ -2354,7 +2477,10 @@ consistent!(cpp_to_rust_4, r"(slots|Q_SLOTS)\s*:");
 consistent!(cpp_to_rust_5, r"(public|protected|private)\s*:");
 
 
-consistent!(fritzbox_logs_0, "(\\d{2}\\.\\d{2}\\.\\d{2}) (\\d{2}:\\d{2}:\\d{2}) (.*)");
+consistent!(
+    fritzbox_logs_0,
+    "(\\d{2}\\.\\d{2}\\.\\d{2}) (\\d{2}:\\d{2}:\\d{2}) (.*)"
+);
 
 
 consistent!(fractal_matrix_api_0, r"mxc://(?P<server>[^/]+)/(?P<media>.+)");
@@ -2402,7 +2528,10 @@ consistent!(bakervm_9, r"^\$vi\((\d+)\)$");
 consistent!(bakervm_10, r"^\$key\((\d+)\)$");
 
 
-consistent!(banana_0, "(?P<type>[A-Z^']+) (?P<route>[^']+) HTTP/(?P<http>[^']+)");
+consistent!(
+    banana_0,
+    "(?P<type>[A-Z^']+) (?P<route>[^']+) HTTP/(?P<http>[^']+)"
+);
 
 
 consistent!(serial_key_0, r"[A-F0-9]{8}");
@@ -2474,10 +2603,16 @@ consistent!(bobbin_cli_3, r"xargo (.*)\n");
 consistent!(bobbin_cli_4, r"Open On-Chip Debugger (.*)");
 
 
-consistent!(bobbin_cli_5, r"arm-none-eabi-gcc \(GNU Tools for ARM Embedded Processors[^\)]*\) (.*)");
+consistent!(
+    bobbin_cli_5,
+    r"arm-none-eabi-gcc \(GNU Tools for ARM Embedded Processors[^\)]*\) (.*)"
+);
 
 
-consistent!(bobbin_cli_6, r"(?m).*\nBasic Open Source SAM-BA Application \(BOSSA\) Version (.*)\n");
+consistent!(
+    bobbin_cli_6,
+    r"(?m).*\nBasic Open Source SAM-BA Application \(BOSSA\) Version (.*)\n"
+);
 
 
 consistent!(bobbin_cli_7, r"(?m)SEGGER J-Link Commander (.*)\n");
@@ -2618,10 +2753,16 @@ consistent!(edmunge_0, "^#!.*\n");
 consistent!(unicode_names2_macros_0, r"\\N\{(.*?)(?:\}|$)");
 
 
-consistent!(unidiff_0, r"^--- (?P<filename>[^\t\n]+)(?:\t(?P<timestamp>[^\n]+))?");
+consistent!(
+    unidiff_0,
+    r"^--- (?P<filename>[^\t\n]+)(?:\t(?P<timestamp>[^\n]+))?"
+);
 
 
-consistent!(unidiff_1, r"^\+\+\+ (?P<filename>[^\t\n]+)(?:\t(?P<timestamp>[^\n]+))?");
+consistent!(
+    unidiff_1,
+    r"^\+\+\+ (?P<filename>[^\t\n]+)(?:\t(?P<timestamp>[^\n]+))?"
+);
 
 
 consistent!(unidiff_2, r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@[ ]?(.*)");
@@ -2711,22 +2852,34 @@ consistent!(extrahop_0, r"^-\d+(?:ms|s|m|h|d|w|y)?$");
 consistent!(pippin_0, "^((?:.*)-)?ss(0|[1-9][0-9]*)\\.pip$");
 
 
-consistent!(pippin_1, "^((?:.*)-)?ss(0|[1-9][0-9]*)-cl(0|[1-9][0-9]*)\\.piplog$");
+consistent!(
+    pippin_1,
+    "^((?:.*)-)?ss(0|[1-9][0-9]*)-cl(0|[1-9][0-9]*)\\.piplog$"
+);
 
 
 consistent!(pippin_2, "^((?:.*)-)?ss(0|[1-9][0-9]*)\\.pip$");
 
 
-consistent!(pippin_3, "^((?:.*)-)?ss(0|[1-9][0-9]*)-cl(0|[1-9][0-9]*)\\.piplog$");
+consistent!(
+    pippin_3,
+    "^((?:.*)-)?ss(0|[1-9][0-9]*)-cl(0|[1-9][0-9]*)\\.piplog$"
+);
 
 
 consistent!(pippin_4, "^.*pn(0|[1-9][0-9]*)(-ss(0|[1-9][0-9]*)(\\.pip|-cl(0|[1-9][0-9]*)\\.piplog))?$");
 
 
-consistent!(pippin_5, "^(.*)-ss(?:0|[1-9][0-9]*)(?:\\.pip|-cl(?:0|[1-9][0-9]*)\\.piplog)$");
+consistent!(
+    pippin_5,
+    "^(.*)-ss(?:0|[1-9][0-9]*)(?:\\.pip|-cl(?:0|[1-9][0-9]*)\\.piplog)$"
+);
 
 
-consistent!(pinyin_0, r"(?i)[āáǎàēéěèōóǒòīíǐìūúǔùüǘǚǜńň]");
+consistent!(
+    pinyin_0,
+    r"(?i)[āáǎàēéěèōóǒòīíǐìūúǔùüǘǚǜńň]"
+);
 
 
 consistent!(pinyin_1, r"([aeoiuvnm])([0-4])$");
@@ -2750,7 +2903,10 @@ consistent!(rtag_1, r"^http://www\.emusic\.com");
 consistent!(rtag_2, r"^[A-Z][A-Z0-9]{2,}");
 
 
-consistent!(rtag_3, r"(^[\x{0}|\x{feff}|\x{fffe}]*|[\x{0}|\x{feff}|\x{fffe}]*$)");
+consistent!(
+    rtag_3,
+    r"(^[\x{0}|\x{feff}|\x{fffe}]*|[\x{0}|\x{feff}|\x{fffe}]*$)"
+);
 
 
 consistent!(rtow_0, r"(\d+)[xX](\d+)");
@@ -3125,5 +3281,7 @@ consistent!(isbnid_0, r"^(\d(-| )?){9}(x|X|\d|(\d(-| )?){3}\d)$");
 consistent!(isbnid_1, r"[^0-9X]");
 
 
-consistent!(ispc_0, r"Intel\(r\) SPMD Program Compiler \(ispc\), (\d+\.\d+\.\d+)");
-
+consistent!(
+    ispc_0,
+    r"Intel\(r\) SPMD Program Compiler \(ispc\), (\d+\.\d+\.\d+)"
+);

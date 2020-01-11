@@ -90,23 +90,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 use std::fmt::{self, Debug};
 use std::io;
 use std::mem;
@@ -118,6 +101,9 @@ use serde::ser::Serialize;
 use error::Error;
 pub use map::Map;
 pub use number::Number;
+
+#[cfg(feature = "raw_value")]
+pub use raw::RawValue;
 
 pub use self::index::Index;
 
@@ -135,14 +121,8 @@ pub enum Value {
     
     
     
-    
-    
-    
     Null,
 
-    
-    
-    
     
     
     
@@ -159,14 +139,8 @@ pub enum Value {
     
     
     
-    
-    
-    
     Number(Number),
 
-    
-    
-    
     
     
     
@@ -183,14 +157,8 @@ pub enum Value {
     
     
     
-    
-    
-    
     Array(Vec<Value>),
 
-    
-    
-    
     
     
     
@@ -242,9 +210,6 @@ impl<'a, 'b> io::Write for WriterFormatter<'a, 'b> {
 }
 
 impl fmt::Display for Value {
-    
-    
-    
     
     
     
@@ -328,19 +293,10 @@ impl Value {
     
     
     
-    
-    
-    
-    
-    
-    
     pub fn get<I: Index>(&self, index: I) -> Option<&Value> {
         index.index_into(self)
     }
 
-    
-    
-    
     
     
     
@@ -380,16 +336,10 @@ impl Value {
     
     
     
-    
-    
-    
     pub fn is_object(&self) -> bool {
         self.as_object().is_some()
     }
 
-    
-    
-    
     
     
     
@@ -411,10 +361,6 @@ impl Value {
         }
     }
 
-    
-    
-    
-    
     
     
     
@@ -449,16 +395,10 @@ impl Value {
     
     
     
-    
-    
-    
     pub fn is_array(&self) -> bool {
         self.as_array().is_some()
     }
 
-    
-    
-    
     
     
     
@@ -491,9 +431,6 @@ impl Value {
     
     
     
-    
-    
-    
     pub fn as_array_mut(&mut self) -> Option<&mut Vec<Value>> {
         match *self {
             Value::Array(ref mut list) => Some(list),
@@ -501,9 +438,6 @@ impl Value {
         }
     }
 
-    
-    
-    
     
     
     
@@ -546,9 +480,6 @@ impl Value {
     
     
     
-    
-    
-    
     pub fn as_str(&self) -> Option<&str> {
         match *self {
             Value::String(ref s) => Some(s),
@@ -568,9 +499,6 @@ impl Value {
     
     
     
-    
-    
-    
     pub fn is_number(&self) -> bool {
         match *self {
             Value::Number(_) => true,
@@ -578,9 +506,6 @@ impl Value {
         }
     }
 
-    
-    
-    
     
     
     
@@ -626,9 +551,6 @@ impl Value {
     
     
     
-    
-    
-    
     pub fn is_u64(&self) -> bool {
         match *self {
             Value::Number(ref n) => n.is_u64(),
@@ -636,9 +558,6 @@ impl Value {
         }
     }
 
-    
-    
-    
     
     
     
@@ -678,9 +597,6 @@ impl Value {
     
     
     
-    
-    
-    
     pub fn as_i64(&self) -> Option<i64> {
         match *self {
             Value::Number(ref n) => n.as_i64(),
@@ -700,9 +616,6 @@ impl Value {
     
     
     
-    
-    
-    
     pub fn as_u64(&self) -> Option<u64> {
         match *self {
             Value::Number(ref n) => n.as_u64(),
@@ -710,9 +623,6 @@ impl Value {
         }
     }
 
-    
-    
-    
     
     
     
@@ -747,16 +657,10 @@ impl Value {
     
     
     
-    
-    
-    
     pub fn is_boolean(&self) -> bool {
         self.as_bool().is_some()
     }
 
-    
-    
-    
     
     
     
@@ -792,16 +696,10 @@ impl Value {
     
     
     
-    
-    
-    
     pub fn is_null(&self) -> bool {
         self.as_null().is_some()
     }
 
-    
-    
-    
     
     
     
@@ -821,9 +719,6 @@ impl Value {
         }
     }
 
-    
-    
-    
     
     
     
@@ -913,8 +808,6 @@ impl Value {
     
     
     
-    
-    
     pub fn pointer_mut<'a>(&'a mut self, pointer: &str) -> Option<&'a mut Value> {
         if pointer == "" {
             return Some(self);
@@ -957,19 +850,10 @@ impl Value {
     
     
     
-    
-    
-    
     pub fn take(&mut self) -> Value {
         mem::replace(self, Value::Null)
     }
 }
-
-
-
-
-
-
 
 
 
@@ -1068,20 +952,12 @@ mod ser;
 
 
 
-
-
-
-
-
-
-
 pub fn to_value<T>(value: T) -> Result<Value, Error>
 where
     T: Serialize,
 {
     value.serialize(Serializer)
 }
-
 
 
 

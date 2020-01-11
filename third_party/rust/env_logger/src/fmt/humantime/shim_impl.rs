@@ -2,6 +2,4 @@
 
 
 
-pub(in ::fmt) mod glob {
-    
-}
+pub(in crate::fmt) mod glob {}
