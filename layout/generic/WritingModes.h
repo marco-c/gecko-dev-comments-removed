@@ -196,7 +196,7 @@ class WritingMode {
 
 
   BidiDir GetBidiDir() const {
-    return BidiDir((mWritingMode & StyleWritingMode_RTL).bits);
+    return BidiDir((mWritingMode & StyleWritingMode::RTL).bits);
   }
 
   
@@ -206,7 +206,7 @@ class WritingMode {
 
 
   bool IsInlineReversed() const {
-    return !!(mWritingMode & StyleWritingMode_INLINE_REVERSED);
+    return !!(mWritingMode & StyleWritingMode::INLINE_REVERSED);
   }
 
   
@@ -248,7 +248,7 @@ class WritingMode {
 
 
   bool IsVertical() const {
-    return !!(mWritingMode & StyleWritingMode_VERTICAL);
+    return !!(mWritingMode & StyleWritingMode::VERTICAL);
   }
 
   
@@ -256,7 +256,7 @@ class WritingMode {
 
 
   bool IsLineInverted() const {
-    return !!(mWritingMode & StyleWritingMode_LINE_INVERTED);
+    return !!(mWritingMode & StyleWritingMode::LINE_INVERTED);
   }
 
   
@@ -274,7 +274,7 @@ class WritingMode {
 
 
   bool IsVerticalSideways() const {
-    return !!(mWritingMode & StyleWritingMode_VERTICAL_SIDEWAYS);
+    return !!(mWritingMode & StyleWritingMode::VERTICAL_SIDEWAYS);
   }
 
   
@@ -297,17 +297,18 @@ class WritingMode {
 
 
   bool IsSideways() const {
-    return !!(mWritingMode & (StyleWritingMode_VERTICAL_SIDEWAYS |
-                              StyleWritingMode_TEXT_SIDEWAYS));
+    return !!(mWritingMode & (StyleWritingMode::VERTICAL_SIDEWAYS |
+                              StyleWritingMode::TEXT_SIDEWAYS));
   }
 
 #ifdef DEBUG
   
   
+  
   WritingMode IgnoreSideways() const {
     return WritingMode(
         mWritingMode.bits &
-        ~(StyleWritingMode_VERTICAL_SIDEWAYS | StyleWritingMode_TEXT_SIDEWAYS)
+        ~(StyleWritingMode::VERTICAL_SIDEWAYS | StyleWritingMode::TEXT_SIDEWAYS)
              .bits);
   }
 #endif
@@ -345,7 +346,7 @@ class WritingMode {
     
     
     
-    const auto wm = (mWritingMode & StyleWritingMode_VERTICAL).bits;
+    const auto wm = (mWritingMode & StyleWritingMode::VERTICAL).bits;
     return PhysicalAxisForLogicalAxis(wm, aAxis);
   }
 
@@ -406,10 +407,10 @@ class WritingMode {
     
     
     
-    MOZ_ASSERT(StyleWritingMode_VERTICAL.bits == 0x01 &&
-                   StyleWritingMode_INLINE_REVERSED.bits == 0x02 &&
-                   StyleWritingMode_VERTICAL_LR.bits == 0x04 &&
-                   StyleWritingMode_LINE_INVERTED.bits == 0x08,
+    MOZ_ASSERT(StyleWritingMode::VERTICAL.bits == 0x01 &&
+                   StyleWritingMode::INLINE_REVERSED.bits == 0x02 &&
+                   StyleWritingMode::VERTICAL_LR.bits == 0x04 &&
+                   StyleWritingMode::LINE_INVERTED.bits == 0x08,
                "unexpected mask values");
     int index = mWritingMode.bits & 0x0F;
     return kLogicalInlineSides[index][aEdge];
@@ -421,12 +422,12 @@ class WritingMode {
 
   mozilla::Side PhysicalSide(LogicalSide aSide) const {
     if (IsBlock(aSide)) {
-      MOZ_ASSERT(StyleWritingMode_VERTICAL.bits == 0x01 &&
-                     StyleWritingMode_VERTICAL_LR.bits == 0x04,
+      MOZ_ASSERT(StyleWritingMode::VERTICAL.bits == 0x01 &&
+                     StyleWritingMode::VERTICAL_LR.bits == 0x04,
                  "unexpected mask values");
       const auto wm = static_cast<uint8_t>(
-          ((mWritingMode & StyleWritingMode_VERTICAL_LR).bits >> 1) |
-          (mWritingMode & StyleWritingMode_VERTICAL).bits);
+          ((mWritingMode & StyleWritingMode::VERTICAL_LR).bits >> 1) |
+          (mWritingMode & StyleWritingMode::VERTICAL).bits);
       return PhysicalSideForBlockAxis(wm, GetEdge(aSide));
     }
 
@@ -483,10 +484,10 @@ class WritingMode {
     };
     
 
-    MOZ_ASSERT(StyleWritingMode_VERTICAL.bits == 0x01 &&
-                   StyleWritingMode_INLINE_REVERSED.bits == 0x02 &&
-                   StyleWritingMode_VERTICAL_LR.bits == 0x04 &&
-                   StyleWritingMode_LINE_INVERTED.bits == 0x08,
+    MOZ_ASSERT(StyleWritingMode::VERTICAL.bits == 0x01 &&
+                   StyleWritingMode::INLINE_REVERSED.bits == 0x02 &&
+                   StyleWritingMode::VERTICAL_LR.bits == 0x04 &&
+                   StyleWritingMode::LINE_INVERTED.bits == 0x08,
                "unexpected mask values");
     int index = mWritingMode.bits & 0x0F;
     return kPhysicalToLogicalSides[index][aSide];
@@ -539,7 +540,7 @@ class WritingMode {
 
   void SetDirectionFromBidiLevel(uint8_t level) {
     if (IS_LEVEL_RTL(level) == IsBidiLTR()) {
-      mWritingMode ^= StyleWritingMode_RTL | StyleWritingMode_INLINE_REVERSED;
+      mWritingMode ^= StyleWritingMode::RTL | StyleWritingMode::INLINE_REVERSED;
     }
   }
 

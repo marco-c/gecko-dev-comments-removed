@@ -598,7 +598,7 @@ struct nsCSSRendering {
     
     
     mozilla::StyleTextDecorationLine decoration =
-        mozilla::StyleTextDecorationLine_UNDERLINE;
+        mozilla::StyleTextDecorationLine::UNDERLINE;
     
     
     uint8_t style = NS_STYLE_TEXT_DECORATION_STYLE_NONE;

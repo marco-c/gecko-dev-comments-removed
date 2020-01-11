@@ -17,17 +17,17 @@ namespace layers {
 static void UpdateAllowedBehavior(StyleTouchAction aTouchActionValue,
                                   bool aConsiderPanning,
                                   TouchBehaviorFlags& aOutBehavior) {
-  if (aTouchActionValue != StyleTouchAction_AUTO) {
+  if (aTouchActionValue != StyleTouchAction::AUTO) {
     
     aOutBehavior &= ~AllowedTouchBehavior::DOUBLE_TAP_ZOOM;
-    if (aTouchActionValue != StyleTouchAction_MANIPULATION) {
+    if (aTouchActionValue != StyleTouchAction::MANIPULATION) {
       
       aOutBehavior &= ~AllowedTouchBehavior::PINCH_ZOOM;
     }
   }
 
   if (aConsiderPanning) {
-    if (aTouchActionValue == StyleTouchAction_NONE) {
+    if (aTouchActionValue == StyleTouchAction::NONE) {
       aOutBehavior &= ~AllowedTouchBehavior::VERTICAL_PAN;
       aOutBehavior &= ~AllowedTouchBehavior::HORIZONTAL_PAN;
     }
@@ -35,11 +35,11 @@ static void UpdateAllowedBehavior(StyleTouchAction aTouchActionValue,
     
     
     
-    if ((aTouchActionValue & StyleTouchAction_PAN_X) &&
-        !(aTouchActionValue & StyleTouchAction_PAN_Y)) {
+    if ((aTouchActionValue & StyleTouchAction::PAN_X) &&
+        !(aTouchActionValue & StyleTouchAction::PAN_Y)) {
       aOutBehavior &= ~AllowedTouchBehavior::VERTICAL_PAN;
-    } else if ((aTouchActionValue & StyleTouchAction_PAN_Y) &&
-               !(aTouchActionValue & StyleTouchAction_PAN_X)) {
+    } else if ((aTouchActionValue & StyleTouchAction::PAN_Y) &&
+               !(aTouchActionValue & StyleTouchAction::PAN_X)) {
       aOutBehavior &= ~AllowedTouchBehavior::HORIZONTAL_PAN;
     }
   }

@@ -707,11 +707,11 @@ bool nsCaseTransformTextRunFactory::TransformString(
 
       if (!aCaseTransformsOnly) {
         if (!forceNonFullWidth &&
-            (style.other_ & StyleTextTransformOther_FULL_WIDTH)) {
+            (style.other_ & StyleTextTransformOther::FULL_WIDTH)) {
           ch = mozilla::unicode::GetFullWidth(ch);
         }
 
-        if (style.other_ & StyleTextTransformOther_FULL_SIZE_KANA) {
+        if (style.other_ & StyleTextTransformOther::FULL_SIZE_KANA) {
           
           static const uint16_t kSmallKanas[] = {
               

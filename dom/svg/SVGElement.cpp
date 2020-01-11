@@ -126,7 +126,7 @@ void SVGElement::DidAnimateClass() {
   
   
   if (presShell) {
-    presShell->RestyleForAnimation(this, StyleRestyleHint_RESTYLE_SELF);
+    presShell->RestyleForAnimation(this, RestyleHint::RESTYLE_SELF);
   }
 }
 
