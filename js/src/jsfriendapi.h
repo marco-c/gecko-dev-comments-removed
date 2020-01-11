@@ -2479,8 +2479,6 @@ extern JS_FRIEND_API JSObject* GetJSMEnvironmentOfScriptedCaller(JSContext* cx);
 
 extern JS_FRIEND_API bool IsJSMEnvironment(JSObject* obj);
 
-extern JS_FRIEND_API bool IsSavedFrame(JSObject* obj);
-
 
 #if defined(XP_WIN)
 
