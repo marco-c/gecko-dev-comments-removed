@@ -1697,7 +1697,6 @@ nsDocumentViewer::Close(nsISHEntry* aSHEntry) {
 
 static void DetachContainerRecurse(nsIDocShell* aShell) {
   
-  aShell->SynchronizeLayoutHistoryState();
   nsCOMPtr<nsIContentViewer> viewer;
   aShell->GetContentViewer(getter_AddRefs(viewer));
   if (viewer) {
@@ -1825,7 +1824,6 @@ nsDocumentViewer::Destroy() {
     
     
     shEntry->SyncPresentationState();
-    shEntry->SynchronizeLayoutHistoryState();
 
     
 #ifdef ACCESSIBILITY
