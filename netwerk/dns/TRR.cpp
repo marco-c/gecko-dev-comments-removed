@@ -314,6 +314,13 @@ nsresult TRR::SendHTTPRequest() {
   }
 
   
+  if (!StaticPrefs::network_trr_send_user_agent_headers()) {
+    rv = httpChannel->SetRequestHeader(NS_LITERAL_CSTRING("User-Agent"),
+                                       EmptyCString(), false);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  
   if (NS_FAILED(httpChannel->SetContentType(
           NS_LITERAL_CSTRING("application/dns-message")))) {
     LOG(("TRR::SendHTTPRequest: couldn't set content-type!\n"));

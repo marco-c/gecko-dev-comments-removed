@@ -673,7 +673,7 @@ function handleRequest(req, res) {
         });
       }
 
-      if (req.headers["accept-language"]) {
+      if (req.headers["accept-language"] || req.headers["user-agent"]) {
         
         
         
