@@ -99,6 +99,14 @@ class RenderCompositor {
   
   virtual bool SurfaceOriginIsTopLeft() { return false; }
 
+  
+  
+  virtual bool MaybeReadback(const gfx::IntSize& aReadbackSize,
+                             const wr::ImageFormat& aReadbackFormat,
+                             const Range<uint8_t>& aReadbackBuffer) {
+    return false;
+  }
+
  protected:
   
   RenderedFrameId mLatestRenderFrameId = RenderedFrameId{2};
