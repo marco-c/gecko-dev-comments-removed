@@ -30,7 +30,6 @@ import re
 
 
 gSubtrees = [
-    os.path.join("css-namespaces"),
     os.path.join("css-conditional"),
     os.path.join("css-values"),
     os.path.join("css-writing-modes"),
