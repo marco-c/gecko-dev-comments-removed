@@ -4,11 +4,11 @@
   <link rel="stylesheet" type="text/css" href="ahem.css" />
     <title>Reference: Text in a native select object that overlaps a background image should be backplated.</title>
     <style>
-    body {
+    body, select {
       font: 20px Ahem;
     }
     .std {
-      background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8%2F9hAAAABGdBTUEAALGPC%2FxhBQAAABh0RVh0U29mdHdhcmUAUGFpbnQuTkVUIHYzLjAxHK4kRQAAABpJREFUOMtjZBCu%2F89AAWAcNWDUgFEDhosBAObLGSGp9PphAAAAAElFTkSuQmCC");
+      background-image: linear-gradient(blue, blue);
       height: 500px;
     }
     .fake-backplate {
@@ -19,13 +19,15 @@
 </head>
 <body>
     <div class="std">
-    <div class="fake-backplate">
-    XXXXX
-    <select>
-      <option>XXXXX</option>
+    <span class="fake-backplate">
+ppppp
+<span class="fake-backplate">
+<select>
+      <option>ppppp</option>
     </select>
-    XXXXX
-    </div>
+</span>
+ppppp
+</span>
     </div>
 </body>
 </html>
