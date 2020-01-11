@@ -2919,21 +2919,17 @@ class nsIFrame : public nsQueryFrame {
     eXULBox = 1 << 10,
     eCanContainOverflowContainers = 1 << 11,
     eTablePart = 1 << 12,
-    
-    
-    
-    eExcludesIgnorableWhitespace = 1 << 13,
-    eSupportsCSSTransforms = 1 << 14,
+    eSupportsCSSTransforms = 1 << 13,
 
     
     
     
-    eReplacedSizing = 1 << 15,
+    eReplacedSizing = 1 << 14,
 
     
     
     
-    eSupportsContainLayoutAndPaint = 1 << 16,
+    eSupportsContainLayoutAndPaint = 1 << 15,
 
     
     

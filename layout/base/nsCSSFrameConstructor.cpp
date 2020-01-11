@@ -2072,7 +2072,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructTableCell(
 }
 
 static inline bool NeedFrameFor(const nsFrameConstructorState& aState,
-                                nsIFrame* aParentFrame,
+                                nsContainerFrame* aParentFrame,
                                 nsIContent* aChildContent) {
   
   
@@ -2093,9 +2093,11 @@ static inline bool NeedFrameFor(const nsFrameConstructorState& aState,
   
   
   
-  
-  if (!aParentFrame ||
-      !aParentFrame->IsFrameOfType(nsIFrame::eExcludesIgnorableWhitespace) ||
+  auto excludesIgnorableWhitespace = [](nsIFrame* aParentFrame) {
+    return aParentFrame->IsFrameOfType(nsIFrame::eXULBox) ||
+           aParentFrame->IsFrameOfType(nsIFrame::eMathML);
+  };
+  if (!aParentFrame || !excludesIgnorableWhitespace(aParentFrame) ||
       aParentFrame->IsGeneratedContentFrame() || !aChildContent->IsText()) {
     return true;
   }
