@@ -216,32 +216,42 @@ const observer = {
       return;
     }
 
-    let window = aEvent.target.ownerDocument.defaultView;
+    let ownerDocument = aEvent.target.ownerDocument;
+    let window = ownerDocument.defaultView;
+    let docState = LoginManagerChild.forWindow(window).stateForDocument(
+      ownerDocument
+    );
 
     switch (aEvent.type) {
       
       case "blur": {
-        let unmask = false;
-        LoginManagerChild.forWindow(window)._togglePasswordFieldMasking(
-          aEvent.target,
-          unmask
-        );
+        if (docState.generatedPasswordFields.has(aEvent.target)) {
+          let unmask = false;
+          LoginManagerChild.forWindow(window)._togglePasswordFieldMasking(
+            aEvent.target,
+            unmask
+          );
+        }
         break;
       }
 
       
       case "change": {
-        LoginManagerChild.forWindow(window)._generatedPasswordFilledOrEdited(
-          aEvent.target
-        );
+        if (docState.generatedPasswordFields.has(aEvent.target)) {
+          LoginManagerChild.forWindow(window)._generatedPasswordFilledOrEdited(
+            aEvent.target
+          );
+        }
         break;
       }
 
       
       case "input": {
-        LoginManagerChild.forWindow(
-          window
-        )._maybeStopTreatingAsGeneratedPasswordField(aEvent);
+        if (docState.generatedPasswordFields.has(aEvent.target)) {
+          LoginManagerChild.forWindow(
+            window
+          )._maybeStopTreatingAsGeneratedPasswordField(aEvent);
+        }
         break;
       }
 
@@ -258,7 +268,10 @@ const observer = {
       }
 
       case "focus": {
-        if (aEvent.target.type == "password") {
+        if (
+          aEvent.target.type == "password" &&
+          docState.generatedPasswordFields.has(aEvent.target)
+        ) {
           
           let unmask = true;
           LoginManagerChild.forWindow(window)._togglePasswordFieldMasking(
@@ -874,6 +887,10 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
 
         fillsByRootElement: new WeakMap(),
+        
+
+
+        generatedPasswordFields: new WeakSet(),
         
 
 
@@ -1575,6 +1592,10 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
   _stopTreatingAsGeneratedPasswordField(passwordField) {
     log("_stopTreatingAsGeneratedPasswordField");
 
+    let fields = this.stateForDocument(passwordField.ownerDocument)
+      .generatedPasswordFields;
+    fields.delete(passwordField);
+
     
     for (let eventType of ["blur", "change", "focus", "input"]) {
       passwordField.removeEventListener(eventType, observer, {
@@ -1603,6 +1624,8 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
     let win = passwordField.ownerGlobal;
     let formLikeRoot = FormLikeFactory.findRootForField(passwordField);
+    let docState = this.stateForDocument(passwordField.ownerDocument);
+    docState.generatedPasswordFields.add(passwordField);
 
     this._highlightFilledField(passwordField);
 
