@@ -182,9 +182,8 @@ DomPanel.prototype = {
   getRootGrip: async function() {
     
     
-    const { result } = await this.target.activeConsole.evaluateJSAsync(
-      "window"
-    );
+    const consoleFront = await this.target.getFront("console");
+    const { result } = await consoleFront.evaluateJSAsync("window");
     return result;
   },
 
