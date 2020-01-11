@@ -125,7 +125,15 @@ function logAllStoreChanges(hud) {
         return { id, type, parameters, messageText };
       }
     );
-    info("messages : " + JSON.stringify(debugMessages));
+    info(
+      "messages : " +
+        JSON.stringify(debugMessages, function(key, value) {
+          if (value && value.getGrip) {
+            return value.getGrip();
+          }
+          return value;
+        })
+    );
   });
 }
 
@@ -1583,8 +1591,16 @@ async function waitForLazyRequests(toolbox) {
 
 
 
+
 async function clearOutput(hud, { keepStorage = false } = {}) {
-  const onMessagesCleared = hud.ui.once("messages-cleared");
-  hud.ui.clearOutput(!keepStorage);
-  await onMessagesCleared;
+  const { ui } = hud;
+  const promises = [ui.once("messages-cleared")];
+
+  
+  if (ui.outputNode.querySelector(".object-inspector")) {
+    promises.push(ui.once("fronts-released"));
+  }
+
+  ui.clearOutput(!keepStorage);
+  await Promise.all(promises);
 }

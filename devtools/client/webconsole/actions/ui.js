@@ -143,12 +143,12 @@ function setEditorWidth(width) {
 
 
 
-function showMessageObjectInSidebar(actor, messageId) {
+function showMessageObjectInSidebar(actorID, messageId) {
   return ({ dispatch, getState }) => {
     const { parameters } = getMessage(getState(), messageId);
     if (Array.isArray(parameters)) {
       for (const parameter of parameters) {
-        if (parameter.actor === actor) {
+        if (parameter && parameter.actorID === actorID) {
           dispatch(showObjectInSidebar(parameter));
           return;
         }
@@ -157,10 +157,10 @@ function showMessageObjectInSidebar(actor, messageId) {
   };
 }
 
-function showObjectInSidebar(grip) {
+function showObjectInSidebar(front) {
   return {
     type: SHOW_OBJECT_IN_SIDEBAR,
-    grip,
+    front,
   };
 }
 

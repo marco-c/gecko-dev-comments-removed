@@ -3,9 +3,7 @@
 "use strict";
 
 const {
-  clonePacket,
   getFirstMessage,
-  getWebConsoleUiMock,
   setupActions,
   setupStore,
 } = require("devtools/client/webconsole/test/node/helpers");
@@ -26,39 +24,40 @@ describe("Release actor enhancer:", () => {
     it("releases backend actors when limit reached adding a single message", () => {
       const logLimit = 100;
       const releasedActors = [];
+      const mockFrontRelease = function() {
+        releasedActors.push(this.actorID);
+      };
+
       const { dispatch, getState } = setupStore([], {
         storeOptions: { logLimit },
-        webConsoleUI: getWebConsoleUiMock(null, {
-          releaseActor: actor => {
-            releasedActors.push(actor);
-          },
-        }),
       });
 
       
-      dispatch(
-        actions.messagesAdd([
-          stubPackets.get("console.log('myarray', ['red', 'green', 'blue'])"),
-        ])
+      const packet = stubPackets.get(
+        "console.log('myarray', ['red', 'green', 'blue'])"
       );
+      packet.message.arguments[1].release = mockFrontRelease;
+      dispatch(actions.messagesAdd([packet]));
 
       const firstMessage = getFirstMessage(getState());
-      const firstMessageActor = firstMessage.parameters[1].actor;
+      const firstMessageActor = firstMessage.parameters[1].actorID;
 
       
       const evaluationResultPacket = stubPackets.get("new Date(0)");
+      evaluationResultPacket.result.release = mockFrontRelease;
       dispatch(actions.messagesAdd([evaluationResultPacket]));
-      const secondMessageActor = evaluationResultPacket.result.actor;
+      const secondMessageActor = evaluationResultPacket.result.actorID;
 
       const logCount = logLimit + 1;
-      const packet = clonePacket(
-        stubPackets.get("console.assert(false, {message: 'foobar'})")
+      const assertPacket = stubPackets.get(
+        "console.assert(false, {message: 'foobar'})"
       );
-      const thirdMessageActor = packet.message.arguments[0].actor;
+      assertPacket.message.arguments[0].release = mockFrontRelease;
+      const thirdMessageActor = assertPacket.message.arguments[0].actorID;
 
       for (let i = 1; i <= logCount; i++) {
-        packet.message.arguments.push(`message num ${i}`);
-        dispatch(actions.messagesAdd([packet]));
+        assertPacket.message.arguments.push(`message num ${i}`);
+        dispatch(actions.messagesAdd([assertPacket]));
       }
 
       expect(releasedActors.length).toBe(3);
@@ -72,34 +71,35 @@ describe("Release actor enhancer:", () => {
       const releasedActors = [];
       const { dispatch, getState } = setupStore([], {
         storeOptions: { logLimit },
-        webConsoleUI: getWebConsoleUiMock(null, {
-          releaseActor: actor => {
-            releasedActors.push(actor);
-          },
-        }),
       });
 
+      const mockFrontRelease = function() {
+        releasedActors.push(this.actorID);
+      };
+
       
-      dispatch(
-        actions.messagesAdd([
-          stubPackets.get("console.log('myarray', ['red', 'green', 'blue'])"),
-        ])
+      const logPacket = stubPackets.get(
+        "console.log('myarray', ['red', 'green', 'blue'])"
       );
+      logPacket.message.arguments[1].release = mockFrontRelease;
+      dispatch(actions.messagesAdd([logPacket]));
 
       const firstMessage = getFirstMessage(getState());
-      const firstMessageActor = firstMessage.parameters[1].actor;
+      const firstMessageActor = firstMessage.parameters[1].actorID;
 
       
       const evaluationResultPacket = stubPackets.get("new Date(0)");
+      evaluationResultPacket.result.release = mockFrontRelease;
       dispatch(actions.messagesAdd([evaluationResultPacket]));
-      const secondMessageActor = evaluationResultPacket.result.actor;
+      const secondMessageActor = evaluationResultPacket.result.actorID;
 
       
       const assertPacket = stubPackets.get(
         "console.assert(false, {message: 'foobar'})"
       );
+      assertPacket.message.arguments[0].release = mockFrontRelease;
       dispatch(actions.messagesAdd([assertPacket]));
-      const thirdMessageActor = assertPacket.message.arguments[0].actor;
+      const thirdMessageActor = assertPacket.message.arguments[0].actorID;
 
       
       const packets = [];
@@ -122,39 +122,42 @@ describe("Release actor enhancer:", () => {
 
     it("properly releases backend actors after clear", () => {
       const releasedActors = [];
-      const { dispatch, getState } = setupStore([], {
-        webConsoleUI: getWebConsoleUiMock(null, {
-          releaseActor: actor => {
-            releasedActors.push(actor);
-          },
-        }),
-      });
+      const { dispatch, getState } = setupStore([]);
+
+      const mockFrontRelease = function() {
+        releasedActors.push(this.actorID);
+      };
 
       
-      dispatch(
-        actions.messagesAdd([
-          stubPackets.get("console.log('myarray', ['red', 'green', 'blue'])"),
-        ])
+      const logPacket = stubPackets.get(
+        "console.log('myarray', ['red', 'green', 'blue'])"
       );
+      logPacket.message.arguments[1].release = mockFrontRelease;
+      dispatch(actions.messagesAdd([logPacket]));
 
       const firstMessage = getFirstMessage(getState());
-      const firstMessageActor = firstMessage.parameters[1].actor;
+      const firstMessageActor = firstMessage.parameters[1].actorID;
 
-      const packet = clonePacket(
-        stubPackets.get("console.assert(false, {message: 'foobar'})")
+      
+      const assertPacket = stubPackets.get(
+        "console.assert(false, {message: 'foobar'})"
       );
-      const secondMessageActor = packet.message.arguments[0].actor;
-      dispatch(actions.messagesAdd([packet]));
+      assertPacket.message.arguments[0].release = mockFrontRelease;
+      dispatch(actions.messagesAdd([assertPacket]));
+      const secondMessageActor = assertPacket.message.arguments[0].actorID;
 
       
       const evaluationResultPacket = stubPackets.get("new Date(0)");
+      evaluationResultPacket.result.release = mockFrontRelease;
       dispatch(actions.messagesAdd([evaluationResultPacket]));
-      const thirdMessageActor = evaluationResultPacket.result.actor;
+      const thirdMessageActor = evaluationResultPacket.result.actorID;
 
       
       const longStringPacket = stubPackets.get("TypeError longString message");
+      longStringPacket.pageError.errorMessage.release = mockFrontRelease;
       dispatch(actions.messagesAdd([longStringPacket]));
-      const fourthMessageActor = longStringPacket.pageError.errorMessage.actor;
+      const fourthMessageActor =
+        longStringPacket.pageError.errorMessage.actorID;
 
       
       dispatch(actions.messagesClear());

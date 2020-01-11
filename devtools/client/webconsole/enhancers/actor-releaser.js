@@ -9,7 +9,7 @@ const {
   MESSAGES_CLEAR,
   PRIVATE_MESSAGES_CLEAR,
   MESSAGES_CLEAR_LOGPOINT,
-  REMOVED_ACTORS_CLEAR,
+  FRONTS_TO_RELEASE_CLEAR,
 } = require("devtools/client/webconsole/constants");
 
 
@@ -32,13 +32,26 @@ function enableActorReleaser(webConsoleUI) {
           MESSAGES_CLEAR_LOGPOINT,
         ].includes(type)
       ) {
-        state.messages.removedActors.forEach(actor =>
-          webConsoleUI.releaseActor(actor)
-        );
+        const promises = [];
+        state.messages.frontsToRelease.forEach(front => {
+          
+          
+          if (
+            front &&
+            typeof front.release === "function" &&
+            (!state.ui.frontInSidebar ||
+              state.ui.frontInSidebar.actorID !== front.actorID)
+          ) {
+            promises.push(front.release());
+          }
+        });
+
+        
+        Promise.all(promises).then(() => webConsoleUI.emit("fronts-released"));
 
         
         state = reducer(state, {
-          type: REMOVED_ACTORS_CLEAR,
+          type: FRONTS_TO_RELEASE_CLEAR,
         });
       }
 
