@@ -9212,40 +9212,6 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
         break;
       }
       
-      
-      
-      
-      
-      nsCOMPtr<nsIWebNavigation> parent(do_QueryInterface(mParent));
-      if (parent) {
-        nsCOMPtr<nsIURI> parentURL;
-        parent->GetCurrentURI(getter_AddRefs(parentURL));
-        if (parentURL &&
-            parentURL->GetSpecOrDefault().EqualsLiteral("about:addons") &&
-            (!Preferences::GetBool("extensions.htmlaboutaddons.enabled",
-                                   true) ||
-             !Preferences::GetBool(
-                 "extensions.htmlaboutaddons.discover.enabled", true))) {
-          nsCString discoveryURLString;
-          Preferences::GetCString("extensions.webservice.discoverURL",
-                                  discoveryURLString);
-          nsCOMPtr<nsIURI> discoveryURL;
-          NS_NewURI(getter_AddRefs(discoveryURL), discoveryURLString);
-
-          nsAutoCString discoveryPrePath;
-          if (discoveryURL) {
-            discoveryURL->GetPrePath(discoveryPrePath);
-          }
-
-          nsAutoCString requestedPrePath;
-          uri->GetPrePath(requestedPrePath);
-          
-          if (discoveryPrePath.Equals(requestedPrePath)) {
-            break;
-          }
-        }
-      }
-      
       if (xpc::IsInAutomation() &&
           Preferences::GetBool("security.allow_unsafe_parent_loads", false)) {
         break;
