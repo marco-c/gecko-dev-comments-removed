@@ -1436,12 +1436,16 @@ pub struct TileCacheInstance {
     
     pub tiles: FastHashMap<TileOffset, Tile>,
     
+    old_tiles: FastHashMap<TileOffset, Tile>,
+    
     map_local_to_surface: SpaceMapper<LayoutPixel, PicturePixel>,
     
     map_child_pic_to_surface: SpaceMapper<PicturePixel, PicturePixel>,
     
     
     opacity_bindings: FastHashMap<PropertyBindingId, OpacityBindingInfo>,
+    
+    old_opacity_bindings: FastHashMap<PropertyBindingId, OpacityBindingInfo>,
     
     
     spatial_nodes: FastHashMap<SpatialNodeIndex, SpatialNodeDependency>,
@@ -1507,6 +1511,7 @@ impl TileCacheInstance {
             slice,
             spatial_node_index,
             tiles: FastHashMap::default(),
+            old_tiles: FastHashMap::default(),
             map_local_to_surface: SpaceMapper::new(
                 ROOT_SPATIAL_NODE_INDEX,
                 PictureRect::zero(),
@@ -1516,6 +1521,7 @@ impl TileCacheInstance {
                 PictureRect::zero(),
             ),
             opacity_bindings: FastHashMap::default(),
+            old_opacity_bindings: FastHashMap::default(),
             spatial_nodes: FastHashMap::default(),
             used_spatial_nodes: FastHashSet::default(),
             dirty_region: DirtyRegion::new(),
@@ -1732,10 +1738,11 @@ impl TileCacheInstance {
         
         
         let current_properties = frame_context.scene_properties.float_properties();
-        let old_properties = mem::replace(&mut self.opacity_bindings, FastHashMap::default());
+        mem::swap(&mut self.opacity_bindings, &mut self.old_opacity_bindings);
 
+        self.opacity_bindings.clear();
         for (id, value) in current_properties {
-            let changed = match old_properties.get(id) {
+            let changed = match self.old_opacity_bindings.get(id) {
                 Some(old_property) => !old_property.value.approx_eq(value),
                 None => true,
             };
@@ -1795,10 +1802,7 @@ impl TileCacheInstance {
 
         let mut world_culling_rect = WorldRect::zero();
 
-        let mut old_tiles = mem::replace(
-            &mut self.tiles,
-            FastHashMap::default(),
-        );
+        mem::swap(&mut self.tiles, &mut self.old_tiles);
 
         let ctx = TilePreUpdateContext {
             local_rect: self.local_rect,
@@ -1809,11 +1813,12 @@ impl TileCacheInstance {
             global_screen_world_rect: frame_context.global_screen_world_rect,
         };
 
+        self.tiles.clear();
         for y in y0 .. y1 {
             for x in x0 .. x1 {
                 let key = TileOffset::new(x, y);
 
-                let mut tile = old_tiles
+                let mut tile = self.old_tiles
                     .remove(&key)
                     .unwrap_or_else(|| {
                         let next_id = TileId(NEXT_TILE_ID.fetch_add(1, Ordering::Relaxed));
@@ -1861,7 +1866,7 @@ impl TileCacheInstance {
         
         
         frame_state.composite_state.destroy_native_surfaces(
-            old_tiles.values(),
+            self.old_tiles.values(),
             frame_state.resource_cache,
         );
 
