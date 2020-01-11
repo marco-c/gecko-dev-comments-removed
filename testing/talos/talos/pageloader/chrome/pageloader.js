@@ -49,6 +49,7 @@ var scrollTest = false;
 var profilingInfo = false;
 var baseVsRef = false;
 var useBrowserChrome = false;
+var useA11y = false;
 
 var isIdleCallbackPending = false;
 
@@ -146,6 +147,7 @@ function plInit() {
     loadNoCache = Services.prefs.getBoolPref("talos.tploadnocache", false);
     scrollTest = Services.prefs.getBoolPref("talos.tpscrolltest", false);
     useBrowserChrome = Services.prefs.getBoolPref("talos.tpchrome", false);
+    useA11y = Services.prefs.getBoolPref("talos.a11y", false);
 
     
     
@@ -304,6 +306,13 @@ function plInit() {
           false,
           true
         );
+        if (useA11y) {
+          content.selectedBrowser.messageManager.loadFrameScript(
+            "chrome://pageloader/content/a11y.js",
+            false,
+            true
+          );
+        }
 
         
         
