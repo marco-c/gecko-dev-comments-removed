@@ -18,6 +18,12 @@ const { LoginManagerStorage_json } = ChromeUtils.import(
 
 ChromeUtils.defineModuleGetter(
   this,
+  "GeckoViewLoginStorage",
+  "resource://gre/modules/GeckoViewLoginStorage.jsm"
+);
+
+ChromeUtils.defineModuleGetter(
+  this,
   "LoginHelper",
   "resource://gre/modules/LoginHelper.jsm"
 );
@@ -93,8 +99,6 @@ class LoginManagerStorage_geckoview extends LoginManagerStorage_json {
   async searchLoginsAsync(matchData) {
     this.log("searchLoginsAsync:", matchData);
 
-    await Promise.resolve();
-
     let realMatchData = {};
     let options = {};
     for (let [name, value] of Object.entries(matchData)) {
@@ -112,14 +116,58 @@ class LoginManagerStorage_geckoview extends LoginManagerStorage_json {
       }
     }
 
+    if (!realMatchData.origin) {
+      throw new Error("searchLoginsAsync: An `origin` is required");
+    }
+
+    let baseHostname;
+    try {
+      baseHostname = Services.eTLD.getBaseDomain(
+        Services.io.newURI(realMatchData.origin)
+      );
+    } catch (ex) {
+      if (ex.result == Cr.NS_ERROR_HOST_IS_IP_ADDRESS) {
+        
+        
+        baseHostname = new URL(realMatchData.origin).hostname;
+      } else {
+        throw ex;
+      }
+    }
+
     
-    let candidateLogins = [];
+    
+    
+    
+    let candidateLogins = (await GeckoViewLoginStorage.fetchLogins(
+      baseHostname
+    )).map(this._vanillaLoginToStorageLogin);
     let [logins, ids] = this._searchLogins(
       realMatchData,
       options,
       candidateLogins
     );
     return logins;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  _vanillaLoginToStorageLogin(vanillaLogin) {
+    return {
+      ...vanillaLogin,
+      hostname: vanillaLogin.origin,
+      formSubmitURL: vanillaLogin.formActionOrigin,
+      encryptedUsername: vanillaLogin.username,
+      encryptedPassword: vanillaLogin.password,
+    };
   }
 
   
@@ -152,6 +200,7 @@ class LoginManagerStorage_geckoview extends LoginManagerStorage_json {
   }
 
   
+
 
 
 
