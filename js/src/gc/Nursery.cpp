@@ -666,17 +666,16 @@ void js::Nursery::forwardBufferPointer(HeapSlot** pSlotsElems) {
 
   
   
-  do {
-    if (ForwardedBufferMap::Ptr p = forwardedBuffers.lookup(old)) {
-      *pSlotsElems = reinterpret_cast<HeapSlot*>(p->value());
-      break;
-    }
-
+  if (ForwardedBufferMap::Ptr p = forwardedBuffers.lookup(old)) {
+    *pSlotsElems = reinterpret_cast<HeapSlot*>(p->value());
+    
+    
+  } else {
     *pSlotsElems = *reinterpret_cast<HeapSlot**>(old);
-  } while (false);
+    MOZ_ASSERT(IsWriteableAddress(*pSlotsElems));
+  }
 
   MOZ_ASSERT(!isInside(*pSlotsElems));
-  MOZ_ASSERT(IsWriteableAddress(*pSlotsElems));
 }
 
 js::TenuringTracer::TenuringTracer(JSRuntime* rt, Nursery* nursery)
