@@ -277,6 +277,7 @@ ForkServer::RunForkServer(int* aArgc, char*** aArgv) {
             
             
             MOZ_LOG(gForkServiceLog, LogLevel::Verbose, ("Terminate the fork server"));
+            NS_LogTerm();
             return true;
         }
         
