@@ -416,9 +416,18 @@ class WindowsDllInterceptor final
     if (!mDetourPatcher.Initialized()) {
       DetourFlags flags = DetourFlags::eDefault;
 #if defined(_M_X64)
-      if (mModule == ::GetModuleHandleW(L"ntdll.dll")) {
-        
-        
+      
+      
+      bool needs10BytePatch = (mModule == ::GetModuleHandleW(L"ntdll.dll"));
+
+      
+      bool isWin8Or81 = IsWin8OrLater() && (!IsWin10OrLater());
+      needs10BytePatch |= isWin8Or81 &&
+                          (mModule == ::GetModuleHandleW(L"kernel32.dll")) &&
+                          (reinterpret_cast<void*>(aProc) ==
+                           reinterpret_cast<void*>(&CloseHandle));
+
+      if (needs10BytePatch) {
         flags |= DetourFlags::eEnable10BytePatch;
       }
 #endif  
