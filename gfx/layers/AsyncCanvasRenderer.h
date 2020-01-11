@@ -8,7 +8,6 @@
 #define MOZILLA_LAYERS_ASYNCCANVASRENDERER_H_
 
 #include "LayersTypes.h"
-#include "mozilla/dom/CanvasRenderingContextHelper.h"
 #include "mozilla/gfx/Point.h"  
 #include "mozilla/Mutex.h"
 #include "nsCOMPtr.h"  
@@ -35,7 +34,6 @@ namespace layers {
 
 class CanvasClient;
 class TextureClient;
-class ImageContainer;
 
 
 
@@ -104,11 +102,6 @@ class AsyncCanvasRenderer final {
 
   already_AddRefed<nsISerialEventTarget> GetActiveEventTarget();
 
-  ImageContainer* GetImageContainer();
-
-  dom::CanvasContextType GetContextType();
-  void SetContextType(dom::CanvasContextType aContextType);
-
   
   
   dom::HTMLCanvasElement* mHTMLCanvasElement;
@@ -151,12 +144,6 @@ class AsyncCanvasRenderer final {
 
   
   nsCOMPtr<nsISerialEventTarget> mActiveEventTarget;
-
-  
-  RefPtr<ImageContainer> mImageContainer;
-
-  
-  dom::CanvasContextType mContextType;
 };
 
 }  
