@@ -856,6 +856,38 @@
     
 
 
+    isLocalAboutURI(aURI, aResolvedURI) {
+      if (!aURI.schemeIs("about")) {
+        return false;
+      }
+
+      
+      if (aURI.pathQueryRef === "blank") {
+        return true;
+      }
+
+      try {
+        
+        const resolvedURI =
+          aResolvedURI ||
+          Services.io.newChannelFromURI(
+            aURI,
+            null, 
+            Services.scriptSecurityManager.getSystemPrincipal(), 
+            null, 
+            Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL, 
+            Ci.nsIContentPolicy.TYPE_OTHER 
+          ).URI;
+        return resolvedURI.schemeIs("jar") || resolvedURI.schemeIs("file");
+      } catch (ex) {
+        
+        return false;
+      }
+    },
+
+    
+
+
     setDefaultIcon(aTab, aURI) {
       if (aURI && aURI.spec in FAVICON_DEFAULTS) {
         this.setIcon(aTab, FAVICON_DEFAULTS[aURI.spec]);
@@ -5535,7 +5567,7 @@
       
       if (
         aRequest instanceof Ci.nsIChannel &&
-        aRequest.originalURI.schemeIs("about")
+        gBrowser.isLocalAboutURI(aRequest.originalURI, aRequest.URI)
       ) {
         return false;
       }

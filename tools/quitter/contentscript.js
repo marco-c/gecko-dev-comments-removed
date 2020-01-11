@@ -7,12 +7,8 @@
 
 
 const Quitter = {
-  async quit() {
-    
-    
-    browser.runtime.sendMessage("quit").catch(() => {
-      setTimeout(this.quit, 100);
-    });
+  quit() {
+    browser.runtime.sendMessage("quit");
   },
 };
 
