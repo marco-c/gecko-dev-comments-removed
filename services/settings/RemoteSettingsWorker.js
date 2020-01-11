@@ -86,14 +86,25 @@ const Agent = {
       
       return false;
     }
+    const buffer = await resp.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    return this.checkContentHash(bytes, size, hash);
+  },
+
+  
+
+
+
+
+
+
+  async checkContentHash(buffer, size, hash) {
+    const bytes = new Uint8Array(buffer);
     
-    const fileSize = parseInt(resp.headers.get("Content-Length"), 10);
-    if (fileSize !== size) {
+    if (bytes.length !== size) {
       return false;
     }
     
-    const buffer = await resp.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
     const hashBuffer = await crypto.subtle.digest("SHA-256", bytes);
     const hashBytes = new Uint8Array(hashBuffer);
     const toHex = b => b.toString(16).padStart(2, "0");
