@@ -91,6 +91,7 @@ CertVerifier::CertVerifier(OcspDownloadConfig odc, OcspStrictConfig osc,
                            NetscapeStepUpPolicy netscapeStepUpPolicy,
                            CertificateTransparencyMode ctMode,
                            DistrustedCAPolicy distrustedCAPolicy,
+                           CRLiteMode crliteMode,
                            const Vector<EnterpriseCert>& thirdPartyCerts)
     : mOCSPDownloadConfig(odc),
       mOCSPStrict(osc == ocspStrict),
@@ -102,7 +103,8 @@ CertVerifier::CertVerifier(OcspDownloadConfig odc, OcspStrictConfig osc,
       mNameMatchingMode(nameMatchingMode),
       mNetscapeStepUpPolicy(netscapeStepUpPolicy),
       mCTMode(ctMode),
-      mDistrustedCAPolicy(distrustedCAPolicy) {
+      mDistrustedCAPolicy(distrustedCAPolicy),
+      mCRLiteMode(crliteMode) {
   LoadKnownCTLogs();
   for (const auto& root : thirdPartyCerts) {
     EnterpriseCert rootCopy;
@@ -484,7 +486,8 @@ Result CertVerifier::VerifyCert(
      KeySizeStatus* keySizeStatus,
      SHA1ModeResult* sha1ModeResult,
      PinningTelemetryInfo* pinningTelemetryInfo,
-     CertificateTransparencyInfo* ctInfo) {
+     CertificateTransparencyInfo* ctInfo,
+     CRLiteTelemetryInfo* crliteInfo) {
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug, ("Top of VerifyCert\n"));
 
   MOZ_ASSERT(cert);
@@ -572,9 +575,9 @@ Result CertVerifier::VerifyCert(
           mOCSPTimeoutHard, mCertShortLifetimeInDays, pinningDisabled,
           MIN_RSA_BITS_WEAK, ValidityCheckingMode::CheckingOff,
           SHA1Mode::Allowed, NetscapeStepUpPolicy::NeverMatch,
-          mDistrustedCAPolicy, originAttributes, mThirdPartyRootInputs,
-          mThirdPartyIntermediateInputs, extraCertificates, builtChain, nullptr,
-          nullptr);
+          mDistrustedCAPolicy, mCRLiteMode, originAttributes,
+          mThirdPartyRootInputs, mThirdPartyIntermediateInputs,
+          extraCertificates, builtChain, nullptr, nullptr);
       rv = BuildCertChain(
           trustDomain, certDER, time, EndEntityOrCA::MustBeEndEntity,
           KeyUsage::digitalSignature, KeyPurposeId::id_kp_clientAuth,
@@ -640,15 +643,19 @@ Result CertVerifier::VerifyCert(
         if (pinningTelemetryInfo) {
           pinningTelemetryInfo->Reset();
         }
+        if (crliteInfo) {
+          *crliteInfo = CRLiteTelemetryInfo::NeverChecked;
+        }
 
         NSSCertDBTrustDomain trustDomain(
             trustSSL, evOCSPFetching, mOCSPCache, pinArg, mOCSPTimeoutSoft,
             mOCSPTimeoutHard, mCertShortLifetimeInDays, mPinningMode,
             MIN_RSA_BITS, ValidityCheckingMode::CheckForEV,
             sha1ModeConfigurations[i], mNetscapeStepUpPolicy,
-            mDistrustedCAPolicy, originAttributes, mThirdPartyRootInputs,
-            mThirdPartyIntermediateInputs, extraCertificates, builtChain,
-            pinningTelemetryInfo, hostname);
+            mDistrustedCAPolicy, mCRLiteMode, originAttributes,
+            mThirdPartyRootInputs, mThirdPartyIntermediateInputs,
+            extraCertificates, builtChain, pinningTelemetryInfo, crliteInfo,
+            hostname);
         rv = BuildCertChainForOneKeyUsage(
             trustDomain, certDER, time,
             KeyUsage::digitalSignature,  
@@ -722,15 +729,19 @@ Result CertVerifier::VerifyCert(
           if (pinningTelemetryInfo) {
             pinningTelemetryInfo->Reset();
           }
+          if (crliteInfo) {
+            *crliteInfo = CRLiteTelemetryInfo::NeverChecked;
+          }
 
           NSSCertDBTrustDomain trustDomain(
               trustSSL, defaultOCSPFetching, mOCSPCache, pinArg,
               mOCSPTimeoutSoft, mOCSPTimeoutHard, mCertShortLifetimeInDays,
               mPinningMode, keySizeOptions[i],
               ValidityCheckingMode::CheckingOff, sha1ModeConfigurations[j],
-              mNetscapeStepUpPolicy, mDistrustedCAPolicy, originAttributes,
-              mThirdPartyRootInputs, mThirdPartyIntermediateInputs,
-              extraCertificates, builtChain, pinningTelemetryInfo, hostname);
+              mNetscapeStepUpPolicy, mDistrustedCAPolicy, mCRLiteMode,
+              originAttributes, mThirdPartyRootInputs,
+              mThirdPartyIntermediateInputs, extraCertificates, builtChain,
+              pinningTelemetryInfo, crliteInfo, hostname);
           rv = BuildCertChainForOneKeyUsage(
               trustDomain, certDER, time,
               KeyUsage::digitalSignature,  
@@ -798,7 +809,7 @@ Result CertVerifier::VerifyCert(
           mOCSPTimeoutHard, mCertShortLifetimeInDays, pinningDisabled,
           MIN_RSA_BITS_WEAK, ValidityCheckingMode::CheckingOff,
           SHA1Mode::Allowed, mNetscapeStepUpPolicy, mDistrustedCAPolicy,
-          originAttributes, mThirdPartyRootInputs,
+          mCRLiteMode, originAttributes, mThirdPartyRootInputs,
           mThirdPartyIntermediateInputs, extraCertificates, builtChain, nullptr,
           nullptr);
       rv = BuildCertChain(trustDomain, certDER, time, EndEntityOrCA::MustBeCA,
@@ -813,9 +824,9 @@ Result CertVerifier::VerifyCert(
           mOCSPTimeoutHard, mCertShortLifetimeInDays, pinningDisabled,
           MIN_RSA_BITS_WEAK, ValidityCheckingMode::CheckingOff,
           SHA1Mode::Allowed, NetscapeStepUpPolicy::NeverMatch,
-          mDistrustedCAPolicy, originAttributes, mThirdPartyRootInputs,
-          mThirdPartyIntermediateInputs, extraCertificates, builtChain, nullptr,
-          nullptr);
+          mDistrustedCAPolicy, mCRLiteMode, originAttributes,
+          mThirdPartyRootInputs, mThirdPartyIntermediateInputs,
+          extraCertificates, builtChain, nullptr, nullptr);
       rv = BuildCertChain(
           trustDomain, certDER, time, EndEntityOrCA::MustBeEndEntity,
           KeyUsage::digitalSignature, KeyPurposeId::id_kp_emailProtection,
@@ -838,9 +849,9 @@ Result CertVerifier::VerifyCert(
           mOCSPTimeoutHard, mCertShortLifetimeInDays, pinningDisabled,
           MIN_RSA_BITS_WEAK, ValidityCheckingMode::CheckingOff,
           SHA1Mode::Allowed, NetscapeStepUpPolicy::NeverMatch,
-          mDistrustedCAPolicy, originAttributes, mThirdPartyRootInputs,
-          mThirdPartyIntermediateInputs, extraCertificates, builtChain, nullptr,
-          nullptr);
+          mDistrustedCAPolicy, mCRLiteMode, originAttributes,
+          mThirdPartyRootInputs, mThirdPartyIntermediateInputs,
+          extraCertificates, builtChain, nullptr, nullptr);
       rv = BuildCertChain(trustDomain, certDER, time,
                           EndEntityOrCA::MustBeEndEntity,
                           KeyUsage::keyEncipherment,  
@@ -900,7 +911,8 @@ Result CertVerifier::VerifySSLServerCert(
      KeySizeStatus* keySizeStatus,
      SHA1ModeResult* sha1ModeResult,
      PinningTelemetryInfo* pinningTelemetryInfo,
-     CertificateTransparencyInfo* ctInfo) {
+     CertificateTransparencyInfo* ctInfo,
+     CRLiteTelemetryInfo* crliteInfo) {
   MOZ_ASSERT(peerCert);
   
   MOZ_ASSERT(!hostname.IsEmpty());
@@ -917,12 +929,12 @@ Result CertVerifier::VerifySSLServerCert(
 
   
   
-  Result rv =
-      VerifyCert(peerCert.get(), certificateUsageSSLServer, time, pinarg,
-                 PromiseFlatCString(hostname).get(), builtChain, flags,
-                 extraCertificates, stapledOCSPResponse, sctsFromTLS,
-                 originAttributes, &evPolicyOidTag, ocspStaplingStatus,
-                 keySizeStatus, sha1ModeResult, pinningTelemetryInfo, ctInfo);
+  Result rv = VerifyCert(peerCert.get(), certificateUsageSSLServer, time,
+                         pinarg, PromiseFlatCString(hostname).get(), builtChain,
+                         flags, extraCertificates, stapledOCSPResponse,
+                         sctsFromTLS, originAttributes, &evPolicyOidTag,
+                         ocspStaplingStatus, keySizeStatus, sha1ModeResult,
+                         pinningTelemetryInfo, ctInfo, crliteInfo);
   if (rv != Success) {
     if (rv == Result::ERROR_UNKNOWN_ISSUER &&
         CertIsSelfSigned(peerCert, pinarg)) {

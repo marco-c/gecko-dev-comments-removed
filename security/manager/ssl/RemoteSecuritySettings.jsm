@@ -415,9 +415,6 @@ class IntermediatePreloads {
   }
 
   async updatePreloadedIntermediates() {
-    
-    
-
     if (!Services.prefs.getBoolPref(INTERMEDIATES_ENABLED_PREF, true)) {
       log.debug("Intermediate Preloading is disabled");
       Services.obs.notifyObservers(
@@ -769,12 +766,16 @@ class IntermediatePreloads {
   }
 }
 
+function filterToDate(filter) {
+  return new Date(filter.details.name.replace(/-(full|diff)$/, ""));
+}
+
 
 
 
 function compareFilters(filterA, filterB) {
-  let timeA = new Date(filterA.details.name.replace(/-(full|diff)$/, ""));
-  let timeB = new Date(filterB.details.name.replace(/-(full|diff)$/, ""));
+  let timeA = filterToDate(filterA);
+  let timeB = filterToDate(filterB);
   
   
   if (timeA < timeB) {
@@ -853,9 +854,26 @@ class CRLiteFilters {
         let buffer = await (await fetch(localURI)).arrayBuffer();
         let bytes = new Uint8Array(buffer);
         log.debug(`Downloaded ${filter.details.name}: ${bytes.length} bytes`);
-        
         filtersDownloaded.push(filter.details.name);
+        if (filter.details.name.endsWith("-full")) {
+          let timestamp = filterToDate(filter).getTime() / 1000;
+          log.debug(`setting CRLite filter timestamp to ${timestamp}`);
+          const certList = Cc["@mozilla.org/security/certstorage;1"].getService(
+            Ci.nsICertStorage
+          );
+          await new Promise(resolve => {
+            certList.setFullCRLiteFilter(bytes, timestamp, rv => {
+              log.debug(`setFullCRLiteFilter: ${rv}`);
+              resolve();
+            });
+          });
+        } else {
+          log.debug(
+            "downloaded filter diff, but we don't support consuming them yet."
+          );
+        }
       } catch (e) {
+        log.debug(e);
         Cu.reportError("failed to download CRLite filter", e);
       }
     }

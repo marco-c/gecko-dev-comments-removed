@@ -22,6 +22,8 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+const { X509 } = ChromeUtils.import("resource://gre/modules/psm/X509.jsm");
+
 const isDebugBuild = Cc["@mozilla.org/xpcom/debug;1"].getService(Ci.nsIDebug2)
   .isDebugBuild;
 
@@ -115,6 +117,10 @@ const allCertificateUsages = {
 };
 
 const NO_FLAGS = 0;
+
+const CRLiteModeDisabledPrefValue = 0;
+const CRLiteModeTelemetryOnlyPrefValue = 1;
+const CRLiteModeEnforcePrefValue = 2;
 
 
 
@@ -262,7 +268,8 @@ function checkCertErrorGenericAtTime(
   usage,
   time,
    isEVExpected,
-   hostname
+   hostname,
+   flags = NO_FLAGS
 ) {
   return new Promise((resolve, reject) => {
     let result = new CertVerificationExpectedErrorResult(
@@ -271,7 +278,7 @@ function checkCertErrorGenericAtTime(
       isEVExpected,
       resolve
     );
-    certdb.asyncVerifyCertAtTime(cert, usage, NO_FLAGS, hostname, time, result);
+    certdb.asyncVerifyCertAtTime(cert, usage, flags, hostname, time, result);
   });
 }
 
@@ -1162,4 +1169,16 @@ function checkPKCS11ModuleExists(moduleName, libraryName) {
   );
 
   return testModule;
+}
+
+
+
+function getSubjectAndSPKIHash(nsCert) {
+  let certBytes = nsCert.getRawDER();
+  let cert = new X509.Certificate();
+  cert.parse(certBytes);
+  let subject = cert.tbsCertificate.subject._der._bytes;
+  let subjectString = arrayToString(subject);
+  let spkiHashString = nsCert.sha256SubjectPublicKeyInfoDigest;
+  return { subjectString, spkiHashString };
 }

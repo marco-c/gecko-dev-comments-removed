@@ -174,6 +174,11 @@ pref("security.pki.distrust_ca_policy", 2);
 
 
 
+pref("security.pki.crlite_mode", 1);
+
+
+
+
 pref("security.pki.mitm_canary_issuer", "");
 
 pref("security.pki.mitm_canary_issuer.enabled", true);
