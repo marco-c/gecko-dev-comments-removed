@@ -223,13 +223,10 @@ struct Redirection {
   const char* mName;
 
   
-  
-  
-  uint8_t* mBaseFunction;
+  uint8_t* mOriginalFunction;
 
   
-  
-  uint8_t* mOriginalFunction;
+  uint8_t* mRedirectedFunction;
 
   
   
@@ -257,15 +254,15 @@ Redirection& GetRedirection(size_t aCallId);
 
 
 
-void EarlyInitializeRedirections();
+void InitializeRedirections();
 
 
 
-bool InitializeRedirections();
+void ApplyInitialLibraryRedirections();
 
 
-
-void LateInitializeRedirections();
+uint8_t* GenerateRedirectStub(Assembler& aAssembler, size_t aCallId,
+                              bool aPreserveCallerSaveRegisters);
 
 
 static inline ErrorType SaveError() { return errno; }

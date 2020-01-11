@@ -15,23 +15,16 @@ namespace mozilla {
 namespace recordreplay {
 
 
+enum class Register {
+  RAX, RCX, RDX, RBX, RSP, RBP, RSI, RDI, R8, R9, R10, R11, R12, R13, R14, R15,
+};
+
+
 
 
 class Assembler {
  public:
-  
-  
-  Assembler();
-
-  
-  
   Assembler(uint8_t* aStorage, size_t aSize);
-
-  ~Assembler();
-
-  
-  
-  void NoteOriginalInstruction(uint8_t* aIp);
 
   
   uint8_t* Current();
@@ -45,7 +38,13 @@ class Assembler {
   void Jump(void* aTarget);
 
   
+  static const size_t JumpBytes = 17;
+
+  
   void PushImmediate(void* aValue);
+
+  
+  static const size_t PushImmediateBytes = 16;
 
   
   void Return();
@@ -54,92 +53,26 @@ class Assembler {
   void Breakpoint();
 
   
-  
-  
-  void ConditionalJump(uint8_t aCode, void* aTarget);
-
-  
-  void CopyInstruction(uint8_t* aIp, size_t aSize);
-
-  
   void PushRax();
   void PopRax();
 
-  
-  void JumpToRax();
-
-  
-  void CallRax();
-
-  
-  void LoadRax(size_t aWidth);
-
-  
-  void CompareRaxWithTopOfStack();
-
-  
-  void CompareTopOfStackWithRax();
-
-  
-  void PushRbx();
-  void PopRbx();
-
-  void PopRegister( int aRegister);
-
-  
-  void StoreRbxToRax(size_t aWidth);
-
-  
-  void CompareValueWithRax(uint8_t aValue, size_t aWidth);
+  void PopRegister(Register aRegister);
 
   
   void MoveImmediateToRax(void* aValue);
 
   
-  void MoveRaxToRegister( int aRegister);
+  void MoveRaxToRegister(Register aRegister);
 
   
-  void MoveRegisterToRax( int aRegister);
-
-  
-  void ExchangeByteRegisterWithAddressAtRbx( int aRegister);
-
-  
-  void ExchangeByteRbxWithAddressAtRax();
-
-  
-  
-  static  int NormalizeRegister( int aRegister);
-
-  
-  
-  
-
-  
-  static bool CanPatchShortJump(uint8_t* aIp, void* aTarget);
-
-  
-  static void PatchShortJump(uint8_t* aIp, void* aTarget);
-
-  
-  static void PatchJumpClobberRax(uint8_t* aIp, void* aTarget);
-
-  
-  static void PatchMoveImmediateToRax(uint8_t* aIp, void* aValue);
-
-  
-  static void PatchClobber(uint8_t* aIp);
+  void MoveRegisterToRax(Register aRegister);
 
  private:
-  
-  static void PatchJump(uint8_t* aIp, void* aTarget);
-
   
   void Advance(size_t aSize);
 
   
-  
-  static const size_t MaximumAdvance = 20;
+  void Push16(uint16_t aValue);
 
   inline size_t CountBytes() { return 0; }
 
@@ -160,7 +93,6 @@ class Assembler {
   template <typename... ByteList>
   inline void NewInstruction(ByteList... aBytes) {
     size_t numBytes = CountBytes(aBytes...);
-    MOZ_RELEASE_ASSERT(numBytes <= MaximumAdvance);
     uint8_t* ip = Current();
     CopyBytes(ip, aBytes...);
     Advance(numBytes);
@@ -169,32 +101,7 @@ class Assembler {
   
   uint8_t* mCursor;
   uint8_t* mCursorEnd;
-  bool mCanAllocateStorage;
-
-  
-  
-  InfallibleVector<std::pair<uint8_t*, uint8_t*>> mCopiedInstructions;
-
-  
-  
-  
-  
-  InfallibleVector<std::pair<uint8_t*, uint8_t*>> mJumps;
 };
-
-
-static const size_t ShortJumpBytes = 2;
-
-
-static const size_t JumpBytesClobberRax = 12;
-
-
-static const size_t JumpBytes = 17;
-
-static const size_t PushImmediateBytes = 16;
-
-
-static const size_t MaximumInstructionLength = 15;
 
 
 void UnprotectExecutableMemory(uint8_t* aAddress, size_t aSize);
