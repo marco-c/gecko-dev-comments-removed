@@ -330,6 +330,7 @@ class Runtime extends ContentProcessDomain {
 
 
 
+
   _onContextDestroyed(name, { id, frameId, windowId }) {
     let contexts;
     if ([id, frameId, windowId].filter(id => !!id).length > 1) {
@@ -355,6 +356,7 @@ class Runtime extends ContentProcessDomain {
       }
       if (this.contextsByWindow.get(ctx.windowId).size == 0) {
         this.contextsByWindow.delete(ctx.windowId);
+        this.emit("Runtime.executionContextsCleared");
       }
     }
   }
