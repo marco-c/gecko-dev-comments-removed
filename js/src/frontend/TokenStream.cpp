@@ -374,9 +374,8 @@ PropertyName* TokenStreamAnyChars::reservedWordToPropertyName(
   return nullptr;
 }
 
-TokenStreamAnyChars::SourceCoords::SourceCoords(JSContext* cx,
-                                                uint32_t initialLineNumber,
-                                                uint32_t initialOffset)
+SourceCoords::SourceCoords(JSContext* cx, uint32_t initialLineNumber,
+                           uint32_t initialOffset)
     : lineStartOffsets_(cx), initialLineNum_(initialLineNumber), lastIndex_(0) {
   
   
@@ -396,8 +395,8 @@ TokenStreamAnyChars::SourceCoords::SourceCoords(JSContext* cx,
   lineStartOffsets_.infallibleAppend(maxPtr);
 }
 
-MOZ_ALWAYS_INLINE bool TokenStreamAnyChars::SourceCoords::add(
-    uint32_t lineNum, uint32_t lineStartOffset) {
+MOZ_ALWAYS_INLINE bool SourceCoords::add(uint32_t lineNum,
+                                         uint32_t lineStartOffset) {
   uint32_t index = indexFromLineNumber(lineNum);
   uint32_t sentinelIndex = lineStartOffsets_.length() - 1;
 
@@ -428,8 +427,7 @@ MOZ_ALWAYS_INLINE bool TokenStreamAnyChars::SourceCoords::add(
   return true;
 }
 
-MOZ_ALWAYS_INLINE bool TokenStreamAnyChars::SourceCoords::fill(
-    const TokenStreamAnyChars::SourceCoords& other) {
+MOZ_ALWAYS_INLINE bool SourceCoords::fill(const SourceCoords& other) {
   MOZ_ASSERT(lineStartOffsets_[0] == other.lineStartOffsets_[0]);
   MOZ_ASSERT(lineStartOffsets_.back() == MAX_PTR);
   MOZ_ASSERT(other.lineStartOffsets_.back() == MAX_PTR);
@@ -451,7 +449,7 @@ MOZ_ALWAYS_INLINE bool TokenStreamAnyChars::SourceCoords::fill(
 }
 
 MOZ_ALWAYS_INLINE uint32_t
-TokenStreamAnyChars::SourceCoords::indexFromOffset(uint32_t offset) const {
+SourceCoords::indexFromOffset(uint32_t offset) const {
   uint32_t iMin, iMax, iMid;
 
   if (lineStartOffsets_[lastIndex_] <= offset) {
@@ -507,8 +505,7 @@ TokenStreamAnyChars::SourceCoords::indexFromOffset(uint32_t offset) const {
   return iMin;
 }
 
-TokenStreamAnyChars::SourceCoords::LineToken
-TokenStreamAnyChars::SourceCoords::lineToken(uint32_t offset) const {
+SourceCoords::LineToken SourceCoords::lineToken(uint32_t offset) const {
   return LineToken(indexFromOffset(offset), offset);
 }
 

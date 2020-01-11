@@ -322,6 +322,165 @@ class MOZ_STACK_CLASS TokenStreamPosition final {
 template <typename Unit>
 class SourceUnits;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class SourceCoords {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Vector<uint32_t, 128> lineStartOffsets_;
+
+  
+  uint32_t initialLineNum_;
+
+  
+
+
+
+
+
+
+
+
+  mutable uint32_t lastIndex_;
+
+  uint32_t indexFromOffset(uint32_t offset) const;
+
+  static const uint32_t MAX_PTR = UINT32_MAX;
+
+  uint32_t lineNumberFromIndex(uint32_t index) const {
+    return index + initialLineNum_;
+  }
+
+  uint32_t indexFromLineNumber(uint32_t lineNum) const {
+    return lineNum - initialLineNum_;
+  }
+
+ public:
+  SourceCoords(JSContext* cx, uint32_t initialLineNumber,
+               uint32_t initialOffset);
+
+  MOZ_MUST_USE bool add(uint32_t lineNum, uint32_t lineStartOffset);
+  MOZ_MUST_USE bool fill(const SourceCoords& other);
+
+  bool isOnThisLine(uint32_t offset, uint32_t lineNum, bool* onThisLine) const {
+    uint32_t index = indexFromLineNumber(lineNum);
+    if (index + 1 >= lineStartOffsets_.length()) {  
+      return false;
+    }
+    *onThisLine = lineStartOffsets_[index] <= offset &&
+                  offset < lineStartOffsets_[index + 1];
+    return true;
+  }
+
+  
+
+
+
+
+
+
+
+
+  class LineToken {
+    uint32_t index;
+#ifdef DEBUG
+    uint32_t offset_;  
+#endif
+
+    friend class SourceCoords;
+
+   public:
+    LineToken(uint32_t index, uint32_t offset)
+        : index(index)
+#ifdef DEBUG
+          ,
+          offset_(offset)
+#endif
+    {
+    }
+
+    bool isFirstLine() const { return index == 0; }
+
+    bool isSameLine(LineToken other) const { return index == other.index; }
+
+    void assertConsistentOffset(uint32_t offset) const {
+      MOZ_ASSERT(offset_ == offset);
+    }
+  };
+
+  
+
+
+
+
+
+
+
+
+
+  LineToken lineToken(uint32_t offset) const;
+
+  
+  uint32_t lineNumber(LineToken lineToken) const {
+    return lineNumberFromIndex(lineToken.index);
+  }
+
+  
+  uint32_t lineStart(LineToken lineToken) const {
+    MOZ_ASSERT(lineToken.index + 1 < lineStartOffsets_.length(),
+               "recorded line-start information must be available");
+    return lineStartOffsets_[lineToken.index];
+  }
+};
+
 enum class InvalidEscapeType {
   
   None,
@@ -369,152 +528,7 @@ class TokenStreamAnyChars : public TokenStreamShared {
   InvalidEscapeType invalidTemplateEscapeType = InvalidEscapeType::None;
 
  public:
-  
-  
-  
-  
-  
-  
-  
-  class SourceCoords {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    Vector<uint32_t, 128> lineStartOffsets_;
-
-    
-    uint32_t initialLineNum_;
-
-    
-
-
-
-
-
-
-
-
-    mutable uint32_t lastIndex_;
-
-    uint32_t indexFromOffset(uint32_t offset) const;
-
-    static const uint32_t MAX_PTR = UINT32_MAX;
-
-    uint32_t lineNumberFromIndex(uint32_t index) const {
-      return index + initialLineNum_;
-    }
-
-    uint32_t indexFromLineNumber(uint32_t lineNum) const {
-      return lineNum - initialLineNum_;
-    }
-
-   public:
-    SourceCoords(JSContext* cx, uint32_t initialLineNumber,
-                 uint32_t initialOffset);
-
-    MOZ_MUST_USE bool add(uint32_t lineNum, uint32_t lineStartOffset);
-    MOZ_MUST_USE bool fill(const SourceCoords& other);
-
-    bool isOnThisLine(uint32_t offset, uint32_t lineNum,
-                      bool* onThisLine) const {
-      uint32_t index = indexFromLineNumber(lineNum);
-      if (index + 1 >= lineStartOffsets_.length()) {  
-        return false;
-      }
-      *onThisLine = lineStartOffsets_[index] <= offset &&
-                    offset < lineStartOffsets_[index + 1];
-      return true;
-    }
-
-    
-
-
-
-
-
-
-
-
-    class LineToken {
-      uint32_t index;
-#ifdef DEBUG
-      uint32_t offset_;  
-#endif
-
-      friend class SourceCoords;
-
-     public:
-      explicit LineToken(uint32_t index, uint32_t offset)
-          : index(index)
-#ifdef DEBUG
-            ,
-            offset_(offset)
-#endif
-      {
-      }
-
-      bool isFirstLine() const { return index == 0; }
-
-      bool isSameLine(LineToken other) const { return index == other.index; }
-
-      void assertConsistentOffset(uint32_t offset) const {
-        MOZ_ASSERT(offset_ == offset);
-      }
-    };
-
-    
-
-
-
-
-
-
-
-
-
-    LineToken lineToken(uint32_t offset) const;
-
-    
-    uint32_t lineNumber(LineToken lineToken) const {
-      return lineNumberFromIndex(lineToken.index);
-    }
-
-    
-    uint32_t lineStart(LineToken lineToken) const {
-      MOZ_ASSERT(lineToken.index + 1 < lineStartOffsets_.length(),
-                 "recorded line-start information must be available");
-      return lineStartOffsets_[lineToken.index];
-    }
-  } srcCoords;
+  SourceCoords srcCoords;
 
   static constexpr uint32_t ColumnChunkLength = 128;
 
