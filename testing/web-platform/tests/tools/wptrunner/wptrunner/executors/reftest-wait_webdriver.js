@@ -1,21 +1,20 @@
 var callback = arguments[arguments.length - 1];
+var observer = null;
+var root = document.documentElement;
 
-function root_wait() {
-  if (!root.classList.contains("reftest-wait")) {
-    observer.disconnect();
-
-    if (Document.prototype.hasOwnProperty("fonts")) {
-      document.fonts.ready.then(ready_for_screenshot);
-    } else {
-      
-      
-      
-      ready_for_screenshot();
-    }
+function wait_load() {
+  if (Document.prototype.hasOwnProperty("fonts")) {
+    document.fonts.ready.then(wait_paints);
+  } else {
+    
+    
+    
+    wait_paints();
   }
 }
 
-function ready_for_screenshot() {
+
+function wait_paints() {
   
   
   
@@ -27,18 +26,29 @@ function ready_for_screenshot() {
 
   requestAnimationFrame(function() {
     requestAnimationFrame(function() {
-      callback();
+      screenshot_if_ready();
     });
   });
 }
 
-var root = document.documentElement;
-var observer = new MutationObserver(root_wait);
+function screenshot_if_ready() {
+  if (root.classList.contains("reftest-wait") &&
+      observer === null) {
+    observer = new MutationObserver(wait_paints);
+    observer.observe(root, {attributes: true});
+    var event = new Event("TestRendered", {bubbles: true});
+    root.dispatchEvent(event);
+    return;
+  }
+  if (observer !== null) {
+    observer.disconnect();
+  }
+  callback();
+}
 
-observer.observe(root, {attributes: true});
 
 if (document.readyState != "complete") {
-    addEventListener('load', root_wait);
+  addEventListener('load', wait_load);
 } else {
-    root_wait();
+  wait_load();
 }
