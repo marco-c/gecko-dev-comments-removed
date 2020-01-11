@@ -75,7 +75,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde/1.0.88")]
+#![doc(html_root_url = "https://docs.rs/serde/1.0.102")]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -83,7 +83,7 @@
 
 
 #![cfg_attr(feature = "unstable", feature(specialization, never_type))]
-#![cfg_attr(feature = "alloc", feature(alloc))]
+#![allow(unknown_lints, bare_trait_objects, deprecated)]
 #![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
 #![cfg_attr(feature = "cargo-clippy", deny(clippy, clippy_pedantic))]
 
@@ -91,13 +91,13 @@
     feature = "cargo-clippy",
     allow(
         
-        const_static_lifetime,
+        checked_conversions,
         empty_enum,
         redundant_field_names,
+        redundant_static_lifetimes,
         
         cast_possible_truncation,
         cast_possible_wrap,
-        cast_precision_loss,
         cast_sign_loss,
         
         cast_lossless,
@@ -109,8 +109,13 @@
         
         needless_pass_by_value,
         similar_names,
+        too_many_lines,
         
         doc_markdown,
+        
+        needless_doctest_main,
+        
+        must_use_candidate,
     )
 )]
 
@@ -155,7 +160,7 @@ mod lib {
     #[cfg(all(feature = "alloc", not(feature = "std")))]
     pub use alloc::string::{String, ToString};
     #[cfg(feature = "std")]
-    pub use std::string::String;
+    pub use std::string::{String, ToString};
 
     #[cfg(all(feature = "alloc", not(feature = "std")))]
     pub use alloc::vec::Vec;
@@ -202,17 +207,28 @@ mod lib {
     #[cfg(feature = "std")]
     pub use std::time::{SystemTime, UNIX_EPOCH};
 
-    #[cfg(any(core_duration, feature = "std"))]
-    pub use self::core::time::Duration;
+    #[cfg(all(feature = "std", collections_bound))]
+    pub use std::collections::Bound;
+
+    #[cfg(core_reverse)]
+    pub use self::core::cmp::Reverse;
+
+    #[cfg(ops_bound)]
+    pub use self::core::ops::Bound;
 
     #[cfg(range_inclusive)]
     pub use self::core::ops::RangeInclusive;
 
-    #[cfg(all(feature = "std", collections_bound))]
-    pub use std::collections::Bound;
+    #[cfg(all(feature = "std", std_atomic))]
+    pub use std::sync::atomic::{
+        AtomicBool, AtomicI16, AtomicI32, AtomicI8, AtomicIsize, AtomicU16, AtomicU32, AtomicU8,
+        AtomicUsize, Ordering,
+    };
+    #[cfg(all(feature = "std", std_atomic64))]
+    pub use std::sync::atomic::{AtomicI64, AtomicU64};
 
-    #[cfg(ops_bound)]
-    pub use self::core::ops::Bound;
+    #[cfg(any(core_duration, feature = "std"))]
+    pub use self::core::time::Duration;
 }
 
 
@@ -238,6 +254,9 @@ pub mod export;
 
 #[doc(hidden)]
 pub mod private;
+
+#[cfg(not(feature = "std"))]
+mod std_error;
 
 
 

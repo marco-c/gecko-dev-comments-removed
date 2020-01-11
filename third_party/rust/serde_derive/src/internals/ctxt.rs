@@ -39,6 +39,11 @@ impl Ctxt {
     }
 
     
+    pub fn syn_error(&self, err: syn::Error) {
+        self.errors.borrow_mut().as_mut().unwrap().push(err);
+    }
+
+    
     pub fn check(self) -> Result<(), Vec<syn::Error>> {
         let errors = self.errors.borrow_mut().take().unwrap();
         match errors.len() {

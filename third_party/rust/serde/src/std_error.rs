@@ -1,0 +1,48 @@
+use lib::{Debug, Display};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub trait Error: Debug + Display {
+    
+    fn source(&self) -> Option<&(Error + 'static)> {
+        None
+    }
+}
