@@ -452,32 +452,26 @@ void IDBDatabase::DeleteObjectStore(const nsAString& aName, ErrorResult& aRv) {
     return;
   }
 
-  nsTArray<ObjectStoreSpec>& specArray = mSpec->objectStores();
+  auto& specArray = mSpec->objectStores();
+  const auto end = specArray.end();
+  const auto foundIt =
+      std::find_if(specArray.begin(), end, [&aName](const auto& objectStore) {
+        const ObjectStoreMetadata& metadata = objectStore.metadata();
+        MOZ_ASSERT(metadata.id());
 
-  int64_t objectStoreId = 0;
+        return aName == metadata.name();
+      });
 
-  for (uint32_t specCount = specArray.Length(), specIndex = 0;
-       specIndex < specCount; specIndex++) {
-    const ObjectStoreMetadata& metadata = specArray[specIndex].metadata();
-    MOZ_ASSERT(metadata.id());
-
-    if (aName == metadata.name()) {
-      objectStoreId = metadata.id();
-
-      
-      transaction->DeleteObjectStore(objectStoreId);
-
-      specArray.RemoveElementAt(specIndex);
-
-      RefreshSpec( false);
-      break;
-    }
-  }
-
-  if (!objectStoreId) {
+  if (foundIt == end) {
     aRv.Throw(NS_ERROR_DOM_INDEXEDDB_NOT_FOUND_ERR);
     return;
   }
+
+  
+  transaction->DeleteObjectStore(foundIt->metadata().id());
+
+  specArray.RemoveElementAt(foundIt);
+  RefreshSpec( false);
 
   
   
