@@ -5,6 +5,7 @@ from __future__ import absolute_import
 
 import json
 import os
+import re
 
 from six.moves.urllib.parse import parse_qs, urlsplit, urlunsplit, urlencode, unquote
 
@@ -115,7 +116,12 @@ def validate_test_ini(test_details):
 
         
         
+        
         test_details['alert_on'] = [_item.strip() for _item in test_details['alert_on'].split(',')]
+
+        
+        
+        valid_alerts = []
 
         
         if test_details.get('measure') is None \
@@ -123,12 +129,27 @@ def validate_test_ini(test_details):
             test_details['measure'] = YOUTUBE_PLAYBACK_MEASURE
 
         
+        measure_as_string = ' '.join(test_details['measure'])
+
+        
         for alert_on_value in test_details['alert_on']:
-            if alert_on_value not in test_details['measure']:
+            
+            alert_on_value_pattern = alert_on_value.replace('*', '[a-zA-Z0-9.@_%]*')
+            
+            matches = re.findall(alert_on_value_pattern, measure_as_string)
+
+            if len(matches) == 0:
                 LOG.error("The 'alert_on' value of '%s' is not valid because "
                           "it doesn't exist in the 'measure' test setting!"
                           % alert_on_value)
                 valid_settings = False
+            else:
+                
+                valid_alerts.extend(matches)
+
+        
+        
+        test_details['alert_on'] = sorted(set(valid_alerts))
 
     return valid_settings
 
