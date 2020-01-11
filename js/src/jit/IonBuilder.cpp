@@ -545,11 +545,9 @@ IonBuilder::InliningDecision IonBuilder::canInlineTarget(JSFunction* target,
 }
 
 AbortReasonOr<Ok> IonBuilder::analyzeNewLoopTypes(MBasicBlock* entry,
-                                                  jsbytecode* loopHeadPc,
-                                                  jsbytecode* loopStartPc,
                                                   jsbytecode* loopStopPc) {
   MOZ_ASSERT(!entry->isDead());
-  MOZ_ASSERT(JSOp(*loopHeadPc) == JSOP_LOOPHEAD);
+  MOZ_ASSERT(JSOp(*pc) == JSOP_LOOPHEAD);
 
   
   
@@ -571,7 +569,7 @@ AbortReasonOr<Ok> IonBuilder::analyzeNewLoopTypes(MBasicBlock* entry,
   
   bool foundEntry = false;
   for (size_t i = 0; i < loopHeaders_.length(); i++) {
-    if (loopHeaders_[i].pc == loopHeadPc) {
+    if (loopHeaders_[i].pc == pc) {
       MBasicBlock* oldEntry = loopHeaders_[i].header;
 
       
@@ -607,14 +605,13 @@ AbortReasonOr<Ok> IonBuilder::analyzeNewLoopTypes(MBasicBlock* entry,
     }
   }
   if (!foundEntry) {
-    if (!loopHeaders_.append(LoopHeader(loopHeadPc, entry))) {
+    if (!loopHeaders_.append(LoopHeader(pc, entry))) {
       return abort(AbortReason::Alloc);
     }
   }
 
   
-  BytecodeLocation start(script_, loopStartPc);
-  start = start.next();
+  BytecodeLocation start(script_, pc);
   BytecodeLocation end(script_, loopStopPc);
 
   
@@ -1845,7 +1842,7 @@ AbortReasonOr<Ok> IonBuilder::jsop_loophead() {
     return abort(AbortReason::Alloc);
   }
 
-  MOZ_TRY(analyzeNewLoopTypes(header, pc, pc, backjump));
+  MOZ_TRY(analyzeNewLoopTypes(header, backjump));
 
   MOZ_TRY(startTraversingBlock(header));
   return emitLoopHeadInstructions(pc);
