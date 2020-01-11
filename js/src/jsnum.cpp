@@ -1329,16 +1329,16 @@ bool js::InitRuntimeNumberState(JSRuntime* rt) {
   return true;
 }
 
-#if !ENABLE_INTL_API
 void js::FinishRuntimeNumberState(JSRuntime* rt) {
+#if !ENABLE_INTL_API
   
 
 
 
   char* storage = const_cast<char*>(rt->thousandsSeparator.ref());
   js_free(storage);
+#endif  
 }
-#endif
 
 JSObject* NumberObject::createPrototype(JSContext* cx, JSProtoKey key) {
   NumberObject* numberProto =
