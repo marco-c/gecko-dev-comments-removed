@@ -3444,7 +3444,14 @@ nsresult nsFocusManager::GetNextTabbableContent(
             return NS_OK;
           }
         }
+        
+        
+        
+        continue;
       }
+
+      MOZ_ASSERT(!GetTopLevelScopeOwner(currentContent),
+                 "currentContent should be in top-level-scope at this point");
 
       
       
