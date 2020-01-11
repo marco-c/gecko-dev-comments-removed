@@ -4025,6 +4025,33 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
 
   MOZ_RELEASE_ASSERT(CorePS::Exists() && !ActivePS::Exists(aLock));
 
+#ifdef MOZ_BASE_PROFILER
+  UniquePtr<char[]> baseprofile;
+  if (baseprofiler::profiler_is_active()) {
+    
+    
+    
+    
+    baseprofile = baseprofiler::profiler_get_profile(
+         0,  false,
+         true);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    baseprofiler::profiler_stop();
+  }
+#endif
+
 #if defined(GP_PLAT_amd64_windows)
   InitializeWin64ProfilerHooks();
 #endif
@@ -4049,31 +4076,13 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
   MOZ_ASSERT(ActivePS::Exists(aLock));
 
 #ifdef MOZ_BASE_PROFILER
-  if (baseprofiler::profiler_is_active()) {
+  
+  
+  if (HasMinimumLength(baseprofile.get(), 2)) {
     
     
     
-    
-    UniquePtr<char[]> baseprofile = baseprofiler::profiler_get_profile(
-         0,  false,
-         true);
-
-    
-    
-    
-    
-    
-    
-    baseprofiler::profiler_stop();
-
-    
-    
-    if (HasMinimumLength(baseprofile.get(), 2)) {
-      
-      
-      
-      ActivePS::AddBaseProfileThreads(aLock, std::move(baseprofile));
-    }
+    ActivePS::AddBaseProfileThreads(aLock, std::move(baseprofile));
   }
 #endif
 
