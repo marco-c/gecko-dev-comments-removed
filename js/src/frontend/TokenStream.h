@@ -1543,6 +1543,14 @@ inline mozilla::Span<const char> ToCharSpan(
 template <typename Unit>
 class TokenStreamCharsBase : public TokenStreamCharsShared {
  protected:
+  using SourceUnits = frontend::SourceUnits<Unit>;
+
+  
+  SourceUnits sourceUnits;
+
+  
+
+ protected:
   TokenStreamCharsBase(JSContext* cx, const Unit* units, size_t length,
                        size_t startOffset);
 
@@ -1562,8 +1570,6 @@ class TokenStreamCharsBase : public TokenStreamCharsShared {
 
   static MOZ_ALWAYS_INLINE JSAtom* atomizeSourceChars(
       JSContext* cx, mozilla::Span<const Unit> units);
-
-  using SourceUnits = frontend::SourceUnits<Unit>;
 
   
 
@@ -1628,10 +1634,6 @@ class TokenStreamCharsBase : public TokenStreamCharsShared {
 
 
   MOZ_MUST_USE bool addLineOfContext(ErrorMetadata* err, uint32_t offset);
-
- protected:
-  
-  SourceUnits sourceUnits;
 };
 
 template <>
