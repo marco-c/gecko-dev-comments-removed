@@ -21,6 +21,7 @@
 #include "util/Poison.h"
 #include "vm/BytecodeUtil.h"
 #include "vm/JSObject.h"
+#include "vm/ScopeKind.h"
 #include "vm/Xdr.h"
 
 namespace js {
@@ -44,43 +45,6 @@ enum class BindingKind : uint8_t {
 static inline bool BindingKindIsLexical(BindingKind kind) {
   return kind == BindingKind::Let || kind == BindingKind::Const;
 }
-
-enum class ScopeKind : uint8_t {
-  
-  Function,
-
-  
-  FunctionBodyVar,
-  ParameterExpressionVar,
-
-  
-  Lexical,
-  SimpleCatch,
-  Catch,
-  NamedLambda,
-  StrictNamedLambda,
-  FunctionLexical,
-
-  
-  With,
-
-  
-  Eval,
-  StrictEval,
-
-  
-  Global,
-  NonSyntactic,
-
-  
-  Module,
-
-  
-  WasmInstance,
-
-  
-  WasmFunction
-};
 
 enum class IsFieldInitializer : bool { No, Yes };
 
