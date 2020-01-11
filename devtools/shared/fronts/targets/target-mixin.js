@@ -42,6 +42,12 @@ function TargetMixin(parentClass) {
 
       
       
+      this.onThreadAttached = new Promise(
+        r => (this._resolveOnThreadAttached = r)
+      );
+
+      
+      
       
       
       this.shouldCloseClient = this.isLocalTab;
@@ -366,6 +372,10 @@ function TargetMixin(parentClass) {
       const result = await this.threadFront.attach(options);
 
       this.threadFront.on("newSource", this._onNewSource);
+
+      
+      
+      this._resolveOnThreadAttached();
 
       return [result, this.threadFront];
     }

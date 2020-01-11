@@ -184,6 +184,7 @@ export type TabPayload = {
 
 
 export type Target = {
+  off: (string, Function) => void,
   on: (string, Function) => void,
   emit: (string, any) => void,
   getFront: string => Promise<ConsoleFront>,

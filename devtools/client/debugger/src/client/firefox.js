@@ -10,66 +10,102 @@ import {
   clientCommands,
 } from "./firefox/commands";
 import {
+  removeEventsTopTarget,
   setupEvents,
   setupEventsTopTarget,
   clientEvents,
 } from "./firefox/events";
 import { features, prefs } from "../utils/prefs";
 
-export async function onConnect(connection: any, actions: Object) {
+let actions;
+
+export async function onConnect(connection: any, _actions: Object) {
   const { debuggerClient, targetList } = connection;
+  actions = _actions;
+
   setupCommands({ debuggerClient });
   setupEvents({ actions, debuggerClient });
-
-  const currentTarget = targetList.targetFront;
-  const threadFront = currentTarget.threadFront;
-
-  if (!currentTarget || !threadFront || !debuggerClient) {
-    return;
-  }
-  setupCommandsTopTarget(currentTarget);
-  setupEventsTopTarget(currentTarget);
-  currentTarget.on("will-navigate", actions.willNavigate);
-  currentTarget.on("navigate", actions.navigated);
-
-  const wasmBinarySource =
-    features.wasm && !!debuggerClient.mainRoot.traits.wasmBinarySource;
-
-  await threadFront.reconfigure({
-    observeAsmJS: true,
-    pauseWorkersUntilAttach: true,
-    wasmBinarySource,
-    skipBreakpoints: prefs.skipPausing,
-    logEventBreakpoints: prefs.logEventBreakpoints,
-  });
-
-  
-  actions.getEventListenerBreakpointTypes().catch(e => console.error(e));
-
-  
-  
-  actions.addEventListenerBreakpoints([]).catch(e => console.error(e));
-
-  const { traits } = currentTarget;
-  await actions.connect(
-    currentTarget.url,
-    threadFront.actor,
-    traits,
-    currentTarget.isWebExtension
+  await targetList.watchTargets(
+    targetList.ALL_TYPES,
+    onTargetAvailable,
+    onTargetDestroyed
   );
+}
 
-  
-  
-  
-  
-  
-  
-  
-  
-  const sources = await clientCommands.fetchSources();
-  await actions.newGeneratedSources(sources);
+async function onTargetAvailable({
+  targetFront,
+  isTopLevel,
+  isTargetSwitching,
+}) {
+  if (isTopLevel) {
+    if (isTargetSwitching) {
+      
+      
+      
+      
+      actions.willNavigate({ url: targetFront.url });
+    }
 
-  await clientCommands.checkIfAlreadyPaused();
+    
+    await targetFront.onThreadAttached;
+
+    const threadFront = targetFront.threadFront;
+    if (!threadFront) {
+      return;
+    }
+
+    setupCommandsTopTarget(targetFront);
+    setupEventsTopTarget(targetFront);
+    targetFront.on("will-navigate", actions.willNavigate);
+    targetFront.on("navigate", actions.navigated);
+
+    const wasmBinarySource =
+      features.wasm && !!targetFront.client.mainRoot.traits.wasmBinarySource;
+
+    await threadFront.reconfigure({
+      observeAsmJS: true,
+      pauseWorkersUntilAttach: true,
+      wasmBinarySource,
+      skipBreakpoints: prefs.skipPausing,
+      logEventBreakpoints: prefs.logEventBreakpoints,
+    });
+
+    
+    actions.getEventListenerBreakpointTypes().catch(e => console.error(e));
+
+    
+    
+    actions.addEventListenerBreakpoints([]).catch(e => console.error(e));
+
+    const { traits } = targetFront;
+    await actions.connect(
+      targetFront.url,
+      threadFront.actor,
+      traits,
+      targetFront.isWebExtension
+    );
+
+    
+    
+    
+    
+    
+    
+    
+    
+    const sources = await clientCommands.fetchSources();
+    await actions.newGeneratedSources(sources);
+
+    await clientCommands.checkIfAlreadyPaused();
+  }
+}
+
+function onTargetDestroyed({ targetFront, isTopLevel }) {
+  if (isTopLevel) {
+    targetFront.off("will-navigate", actions.willNavigate);
+    targetFront.off("navigate", actions.navigated);
+    removeEventsTopTarget(targetFront);
+  }
 }
 
 export { clientCommands, clientEvents };
