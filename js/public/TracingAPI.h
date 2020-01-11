@@ -71,24 +71,13 @@ class JS_PUBLIC_API JSTracer {
 
     
     
-    
-    
-    WeakMarking,
-
-    
-    
     Tenuring,
 
     
     
     Callback
   };
-  bool isMarkingTracer() const {
-    return tag_ == TracerKindTag::Marking || tag_ == TracerKindTag::WeakMarking;
-  }
-  bool isWeakMarkingTracer() const {
-    return tag_ == TracerKindTag::WeakMarking;
-  }
+  bool isMarkingTracer() const { return tag_ == TracerKindTag::Marking; }
   bool isTenuringTracer() const { return tag_ == TracerKindTag::Tenuring; }
   bool isCallbackTracer() const { return tag_ == TracerKindTag::Callback; }
   inline JS::CallbackTracer* asCallbackTracer();
@@ -130,7 +119,7 @@ class JS_PUBLIC_API JSTracer {
 #endif
 
  protected:
-  TracerKindTag tag_;
+  const TracerKindTag tag_;
   bool traceWeakEdges_;
   bool canSkipJsids_;
 };
