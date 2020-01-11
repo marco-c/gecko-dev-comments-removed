@@ -84,7 +84,7 @@ add_task(async function(client) {
 async function testRuntimeEnable({ Runtime }) {
   
   await Runtime.enable();
-  ok(true, "Runtime domain has been enabled");
+  info("Runtime domain has been enabled");
 
   
   const { context } = await Runtime.executionContextCreated();
