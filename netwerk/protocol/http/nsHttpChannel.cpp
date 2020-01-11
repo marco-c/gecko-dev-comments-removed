@@ -7715,6 +7715,7 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
   
   rv = NS_OK;
   if (!mCanceled) {
+    
     rv = ComputeCrossOriginOpenerPolicyMismatch();
 
     if (rv == NS_ERROR_BLOCKED_BY_POLICY) {

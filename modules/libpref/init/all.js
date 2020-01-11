@@ -2707,10 +2707,6 @@ pref("browser.tabs.remote.separateFileUriProcess", true);
 
 
 
-pref("browser.tabs.remote.dataUriInDefaultWebProcess", false);
-
-
-
 
 
 

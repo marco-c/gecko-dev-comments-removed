@@ -25,12 +25,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
-  "useSeparateDataUriProcess",
-  "browser.tabs.remote.dataUriInDefaultWebProcess",
-  false
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
   "allowLinkedWebInFileUriProcess",
   "browser.tabs.remote.allowLinkedWebInFileUriProcess",
   false
@@ -540,16 +534,10 @@ var E10SUtils = {
     }
 
     
-    
-    
     if (aPrincipal.isNullPrincipal) {
-      if (
-        (aRemoteSubframes && useSeparateDataUriProcess) ||
-        aPreferredRemoteType == NOT_REMOTE
-      ) {
-        return WEB_REMOTE_TYPE;
-      }
-      return aPreferredRemoteType;
+      return aPreferredRemoteType == NOT_REMOTE
+        ? DEFAULT_REMOTE_TYPE
+        : aPreferredRemoteType;
     }
 
     
@@ -769,9 +757,7 @@ var E10SUtils = {
     
     if (
       (useRemoteSubframes || useHttpResponseProcessSelection) &&
-      (aURI.scheme == "http" ||
-        aURI.scheme == "https" ||
-        aURI.scheme == "data") &&
+      (aURI.scheme == "http" || aURI.scheme == "https") &&
       Services.appinfo.remoteType != NOT_REMOTE
     ) {
       return true;
