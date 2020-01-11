@@ -38,7 +38,7 @@ add_task(async function test() {
 
   await loadedPromise;
 
-  await SpecialPowers.spawn(browser, [], function({}) {
+  await SpecialPowers.spawn(browser, [], function() {
     
     
     is(
@@ -56,7 +56,7 @@ add_task(async function test() {
   await promiseTabRestored(tab);
   browser = tab.linkedBrowser;
 
-  await SpecialPowers.spawn(browser, [], function({}) {
+  await SpecialPowers.spawn(browser, [], function() {
     
     
     
