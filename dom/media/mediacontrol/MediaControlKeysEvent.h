@@ -11,7 +11,21 @@
 namespace mozilla {
 namespace dom {
 
-enum class MediaControlKeysEvent { ePlayPause, ePrev, eNext };
+
+
+
+
+
+enum class MediaControlKeysEvent : uint32_t {
+  ePlay,
+  ePause,
+  ePlayPause,
+  ePrevTrack,
+  eNextTrack,
+  eSeekBackward,
+  eSeekForward,
+  eStop,
+};
 
 
 
