@@ -198,7 +198,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
   get threadLifetimePool() {
     if (!this._threadLifetimePool) {
-      this._threadLifetimePool = new ActorPool(this.conn);
+      this._threadLifetimePool = new ActorPool(this.conn, "thread");
       this.conn.addActorPool(this._threadLifetimePool);
       this._threadLifetimePool.objectActors = new WeakMap();
     }
@@ -1499,7 +1499,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     assert(!this._pausePool, "No pause pool should exist yet");
-    this._pausePool = new ActorPool(this.conn);
+    this._pausePool = new ActorPool(this.conn, "pause");
     this.conn.addActorPool(this._pausePool);
 
     
@@ -1591,12 +1591,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     const popped = [];
 
     
-    const framePool = new ActorPool(this.conn);
+    const framesPool = new ActorPool(this.conn, "frames");
     const frameList = [];
 
     for (const frameActor of this._frameActors) {
       if (frameActor.frame.live) {
-        framePool.addActor(frameActor);
+        framesPool.addActor(frameActor);
         frameList.push(frameActor);
       } else {
         popped.push(frameActor.actorID);
@@ -1605,13 +1605,13 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     
     
-    if (this._framePool) {
-      this.conn.removeActorPool(this._framePool);
+    if (this._framesPool) {
+      this.conn.removeActorPool(this._framesPool);
     }
 
     this._frameActors = frameList;
-    this._framePool = framePool;
-    this.conn.addActorPool(framePool);
+    this._framesPool = framesPool;
+    this.conn.addActorPool(framesPool);
 
     return popped;
   },
@@ -1623,7 +1623,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     const actor = new FrameActor(frame, this, depth);
     this._frameActors.push(actor);
-    this._framePool.addActor(actor);
+    this._framesPool.addActor(actor);
     frame.actor = actor;
 
     return actor;
@@ -1726,9 +1726,21 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   threadObjectGrip: function(actor) {
     
     
-    actor.registeredPool.objectActors.delete(actor.obj);
+    actor.originalRegisteredPool = actor.registeredPool;
+
     this.threadLifetimePool.addActor(actor);
     this.threadLifetimePool.objectActors.set(actor.obj, actor);
+  },
+
+  demoteObjectGrip: function(actor) {
+    
+    
+    actor.registeredPool.objectActors.delete(actor.obj);
+
+    actor.originalRegisteredPool.addActor(actor);
+    actor.originalRegisteredPool.objectActors.set(actor.obj, actor);
+
+    delete actor.originalRegisteredPool;
   },
 
   _onWindowReady: function({ isTopLevel, isBFCache, window }) {
