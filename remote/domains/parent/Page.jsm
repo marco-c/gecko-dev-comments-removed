@@ -72,31 +72,37 @@ class Page extends Domain {
     const { browsingContext, window } = this.session.target;
     const scale = window.devicePixelRatio;
 
-    const rect = await this.executeInChild("_viewportRect");
+    const rect = await this.executeInChild("_layoutViewport");
 
-    let canvasWidth = rect.width * scale;
-    let canvasHeight = rect.height * scale;
+    let canvasWidth = rect.clientWidth * scale;
+    let canvasHeight = rect.clientHeight * scale;
 
     
     
     
     
     if (canvasWidth > MAX_CANVAS_DIMENSION) {
-      rect.width = Math.floor(MAX_CANVAS_DIMENSION / scale);
-      canvasWidth = rect.width * scale;
+      rect.clientWidth = Math.floor(MAX_CANVAS_DIMENSION / scale);
+      canvasWidth = rect.clientWidth * scale;
     }
     if (canvasHeight > MAX_CANVAS_DIMENSION) {
-      rect.height = Math.floor(MAX_CANVAS_DIMENSION / scale);
-      canvasHeight = rect.height * scale;
+      rect.clientHeight = Math.floor(MAX_CANVAS_DIMENSION / scale);
+      canvasHeight = rect.clientHeight * scale;
     }
     
     if (canvasWidth * canvasHeight > MAX_CANVAS_AREA) {
-      rect.height = Math.floor(MAX_CANVAS_AREA / (canvasWidth * scale));
-      canvasHeight = rect.height * scale;
+      rect.clientHeight = Math.floor(MAX_CANVAS_AREA / (canvasWidth * scale));
+      canvasHeight = rect.clientHeight * scale;
     }
 
+    const captureRect = new DOMRect(
+      rect.pageX,
+      rect.pageY,
+      rect.clientWidth,
+      rect.clientHeight
+    );
     const snapshot = await browsingContext.currentWindowGlobal.drawSnapshot(
-      rect,
+      captureRect,
       scale,
       "rgb(255,255,255)"
     );
@@ -163,6 +169,59 @@ class Page extends Domain {
     
     await WindowManager.focus(window);
     TabManager.selectTab(tab);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async getLayoutMetrics() {
+    return {
+      layoutViewport: await this.executeInChild("_layoutViewport"),
+      contentSize: await this.executeInChild("_contentSize"),
+    };
   }
 
   
