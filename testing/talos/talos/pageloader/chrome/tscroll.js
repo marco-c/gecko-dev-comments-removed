@@ -104,7 +104,7 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps) {
   function FP_wait(ms) {
     return function() {
       return new Promise(function(resolve) {
-        setTimeout(resolve, ms);
+        content.setTimeout(resolve, ms);
       });
     };
   }
@@ -273,7 +273,7 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps) {
       });
 
       
-      setTimeout(function() {
+      content.setTimeout(function() {
         stopFrameTimeRecording(handle, function(intervals) {
           function average(arr) {
             var sum = 0;
