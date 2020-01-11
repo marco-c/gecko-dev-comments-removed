@@ -3361,17 +3361,10 @@ ModuleObject* js::GetModuleObjectForScript(JSScript* script) {
   return nullptr;
 }
 
-bool js::GetThisValueForDebuggerMaybeOptimizedOut(JSContext* cx,
-                                                  AbstractFramePtr frame,
-                                                  jsbytecode* pc,
-                                                  MutableHandleValue res) {
-  RootedObject scopeChain(cx);
-  RootedScope scope(cx);
-  if (!GetFrameEnvironmentAndScope(cx, frame, pc, &scopeChain, &scope)) {
-    return false;
-  }
-
-  for (EnvironmentIter ei(cx, scopeChain, scope, frame); ei; ei++) {
+static bool GetThisValueForDebuggerEnvironmentIterMaybeOptimizedOut(
+    JSContext* cx, const EnvironmentIter& originalIter, HandleObject scopeChain,
+    const jsbytecode* pc, MutableHandleValue res) {
+  for (EnvironmentIter ei(cx, originalIter); ei; ei++) {
     if (ei.scope().kind() == ScopeKind::Module) {
       res.setUndefined();
       return true;
@@ -3384,40 +3377,45 @@ bool js::GetThisValueForDebuggerMaybeOptimizedOut(JSContext* cx,
 
     RootedScript script(cx, ei.scope().as<FunctionScope>().script());
 
-    
-    bool executedInitThisOp = false;
-    if (script->functionHasThisBinding()) {
-      for (jsbytecode* it = script->code(); it < script->codeEnd();
-           it = GetNextPc(it)) {
-        if (*it == JSOP_FUNCTIONTHIS) {
-          
-          executedInitThisOp = pc > GetNextPc(it);
-          break;
+    if (ei.withinInitialFrame()) {
+      MOZ_ASSERT(pc, "must have PC if there is an initial frame");
+
+      
+      bool executedInitThisOp = false;
+      if (script->functionHasThisBinding()) {
+        for (jsbytecode* it = script->code(); it < script->codeEnd();
+             it = GetNextPc(it)) {
+          if (*it == JSOP_FUNCTIONTHIS) {
+            
+            executedInitThisOp = pc > GetNextPc(it);
+            break;
+          }
         }
       }
-    }
 
-    if (ei.withinInitialFrame() && !executedInitThisOp) {
-      
-      
-      
+      if (!executedInitThisOp) {
+        AbstractFramePtr initialFrame = ei.initialFrame();
+        
+        
+        
 
-      
-      
-      if (frame.thisArgument().isObject() || script->strict()) {
-        res.set(frame.thisArgument());
+        
+        
+        if (initialFrame.thisArgument().isObject() || script->strict()) {
+          res.set(initialFrame.thisArgument());
+          return true;
+        }
+
+        
+        
+        
+        
+        if (!GetFunctionThis(cx, initialFrame, res)) {
+          return false;
+        }
+        initialFrame.thisArgument() = res;
         return true;
       }
-
-      
-      
-      
-      
-      if (!GetFunctionThis(cx, frame, res)) {
-        return false;
-      }
-      frame.thisArgument() = res;
-      return true;
     }
 
     if (!script->functionHasThisBinding()) {
@@ -3439,7 +3437,7 @@ bool js::GetThisValueForDebuggerMaybeOptimizedOut(JSContext* cx,
 
       if (loc.kind() == BindingLocation::Kind::Frame &&
           ei.withinInitialFrame()) {
-        res.set(frame.unaliasedLocal(loc.slot()));
+        res.set(ei.initialFrame().unaliasedLocal(loc.slot()));
       } else {
         res.setMagic(JS_OPTIMIZED_OUT);
       }
@@ -3452,6 +3450,33 @@ bool js::GetThisValueForDebuggerMaybeOptimizedOut(JSContext* cx,
 
   GetNonSyntacticGlobalThis(cx, scopeChain, res);
   return true;
+}
+
+bool js::GetThisValueForDebuggerFrameMaybeOptimizedOut(JSContext* cx,
+                                                       AbstractFramePtr frame,
+                                                       jsbytecode* pc,
+                                                       MutableHandleValue res) {
+  RootedObject scopeChain(cx);
+  RootedScope scope(cx);
+  if (!GetFrameEnvironmentAndScope(cx, frame, pc, &scopeChain, &scope)) {
+    return false;
+  }
+
+  EnvironmentIter ei(cx, scopeChain, scope, frame);
+  return GetThisValueForDebuggerEnvironmentIterMaybeOptimizedOut(
+      cx, ei, scopeChain, pc, res);
+}
+
+bool js::GetThisValueForDebuggerSuspendedGeneratorMaybeOptimizedOut(
+    JSContext* cx, AbstractGeneratorObject& genObj, JSScript* script,
+    MutableHandleValue res) {
+  RootedObject scopeChain(cx);
+  RootedScope scope(cx);
+  GetSuspendedGeneratorEnvironmentAndScope(genObj, script, &scopeChain, &scope);
+
+  EnvironmentIter ei(cx, scopeChain, scope);
+  return GetThisValueForDebuggerEnvironmentIterMaybeOptimizedOut(
+      cx, ei, scopeChain, nullptr, res);
 }
 
 bool js::CheckLexicalNameConflict(JSContext* cx,
