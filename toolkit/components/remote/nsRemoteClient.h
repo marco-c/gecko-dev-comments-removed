@@ -5,8 +5,8 @@
 
 
 
-#ifndef nsRemoteClient_h__
-#define nsRemoteClient_h__
+#ifndef TOOLKIT_COMPONENTS_REMOTE_NSREMOTECLIENT_H_
+#define TOOLKIT_COMPONENTS_REMOTE_NSREMOTECLIENT_H_
 
 #include "nscore.h"
 

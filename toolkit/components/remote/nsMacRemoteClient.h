@@ -5,15 +5,17 @@
 
 
 
-#ifndef nsWinRemoteClient_h__
-#define nsWinRemoteClient_h__
+#ifndef TOOLKIT_COMPONENTS_REMOTE_NSMACREMOTECLIENT_H_
+#define TOOLKIT_COMPONENTS_REMOTE_NSMACREMOTECLIENT_H_
+
+#import <CoreFoundation/CoreFoundation.h>
 
 #include "nscore.h"
 #include "nsRemoteClient.h"
 
-class nsWinRemoteClient : public nsRemoteClient {
+class nsMacRemoteClient : public nsRemoteClient {
  public:
-  virtual ~nsWinRemoteClient() = default;
+  virtual ~nsMacRemoteClient() = default;
 
   nsresult Init() override;
 

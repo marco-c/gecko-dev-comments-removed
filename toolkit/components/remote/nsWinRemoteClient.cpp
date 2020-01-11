@@ -6,9 +6,8 @@
 
 
 #include "nsWinRemoteClient.h"
-#include "nsWinRemoteUtils.h"
-
 #include <windows.h>
+#include "RemoteUtils.h"
 
 using namespace mozilla;
 
