@@ -47,8 +47,8 @@ namespace gfx {
 
 
 
-#define SHMEM_VERSION "0.0.5"
-static const int32_t kVRExternalVersion = 12;
+#define SHMEM_VERSION "0.0.6"
+static const int32_t kVRExternalVersion = 13;
 
 
 
@@ -370,7 +370,7 @@ struct VRControllerState {
   
   
   
-  uint64_t squeezeActionEndFrameId;
+  uint64_t squeezeActionStopFrameId;
 
   uint32_t numButtons;
   uint32_t numAxes;
