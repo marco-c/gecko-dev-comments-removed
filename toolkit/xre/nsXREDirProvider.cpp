@@ -614,7 +614,6 @@ static const char* GetProcessTempBaseDirKey() {
 #  endif
 }
 
-#  if defined(MOZ_SANDBOX)
 
 
 
@@ -652,7 +651,6 @@ nsresult nsXREDirProvider::LoadContentProcessTempDir() {
 
   return NS_OK;
 }
-#  endif
 
 
 
