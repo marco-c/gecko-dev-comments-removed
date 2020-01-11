@@ -217,6 +217,13 @@ add_task(
     skip_if: () => !AppConstants.MOZ_NEW_CERT_STORAGE,
   },
   async function test_preload_invalid_hash() {
+    
+    
+    Services.prefs.setBoolPref(
+      "toolkit.telemetry.testing.overrideProductsCheck",
+      true
+    );
+
     Services.prefs.setBoolPref(INTERMEDIATES_ENABLED_PREF, true);
     const invalidHash =
       "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d";
