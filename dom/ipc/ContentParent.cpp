@@ -1996,12 +1996,22 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateReplayingProcess(
       Pid(), aChannelId, NS_ConvertUTF16toUTF8(mRecordingFile).get(),
        false, extraArgs);
 
-  mReplayingChildren[aChannelId] =
+  GeckoChildProcessHost* child =
       new GeckoChildProcessHost(GeckoProcessType_Content);
-  if (!mReplayingChildren[aChannelId]->LaunchAndWaitForProcessHandle(
-          extraArgs)) {
+  mReplayingChildren[aChannelId] = child;
+  if (!child->LaunchAndWaitForProcessHandle(extraArgs)) {
     return IPC_FAIL_NO_REASON(this);
   }
+
+  
+  
+  
+  
+  
+  
+  
+  ProcessId pid = base::GetProcId(child->GetChildProcessHandle());
+  CrashReporter::DeregisterChildCrashAnnotationFileDescriptor(pid);
 
   return IPC_OK();
 }
