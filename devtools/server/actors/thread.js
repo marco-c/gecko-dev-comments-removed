@@ -1331,15 +1331,59 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     
     let frame = this.youngestFrame;
+
+    const walkToParentFrame = () => {
+      if (!frame) {
+        return;
+      }
+
+      const currentFrame = frame;
+      frame = null;
+
+      if (currentFrame.older) {
+        frame = currentFrame.older;
+      } else if (
+        this._options.shouldIncludeAsyncLiveFrames &&
+        currentFrame.asyncPromise
+      ) {
+        
+        
+        
+        let reactions = currentFrame.asyncPromise.getPromiseReactions();
+        while (true) {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          if (!(reactions[0] instanceof Debugger.Object)) {
+            break;
+          }
+
+          reactions = reactions[0].getPromiseReactions();
+        }
+
+        if (reactions[0] instanceof Debugger.Frame) {
+          frame = reactions[0];
+        }
+      }
+    };
+
     let i = 0;
     while (frame && i < start) {
-      frame = frame.older;
+      walkToParentFrame();
       i++;
     }
 
     
     const frames = [];
-    for (; frame && (!count || i < start + count); i++, frame = frame.older) {
+    for (; frame && (!count || i < start + count); i++, walkToParentFrame()) {
       const sourceActor = this.sources.createSourceActor(frame.script.source);
       if (!sourceActor) {
         continue;
