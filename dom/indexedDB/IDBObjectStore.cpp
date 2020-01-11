@@ -2149,43 +2149,39 @@ void IDBObjectStore::DeleteIndex(const nsAString& aName, ErrorResult& aRv) {
 
   auto& metadataArray = const_cast<nsTArray<IndexMetadata>&>(mSpec->indexes());
 
-  int64_t foundId = 0;
+  const auto endMetadata = metadataArray.cend();
+  const auto foundMetadataIt = std::find_if(
+      metadataArray.cbegin(), endMetadata,
+      [&aName](const auto& metadata) { return aName == metadata.name(); });
 
-  for (uint32_t metadataCount = metadataArray.Length(), metadataIndex = 0;
-       metadataIndex < metadataCount; metadataIndex++) {
-    const IndexMetadata& metadata = metadataArray[metadataIndex];
-    MOZ_ASSERT(metadata.id());
-
-    if (aName == metadata.name()) {
-      foundId = metadata.id();
-
-      
-      for (uint32_t indexCount = mIndexes.Length(), indexIndex = 0;
-           indexIndex < indexCount; indexIndex++) {
-        RefPtr<IDBIndex>& index = mIndexes[indexIndex];
-
-        if (index->Id() == foundId) {
-          index->NoteDeletion();
-
-          RefPtr<IDBIndex>* deletedIndex = mDeletedIndexes.AppendElement();
-          deletedIndex->swap(mIndexes[indexIndex]);
-
-          mIndexes.RemoveElementAt(indexIndex);
-          break;
-        }
-      }
-
-      metadataArray.RemoveElementAt(metadataIndex);
-
-      RefreshSpec( false);
-      break;
-    }
-  }
-
-  if (!foundId) {
+  if (foundMetadataIt == endMetadata) {
     aRv.Throw(NS_ERROR_DOM_INDEXEDDB_NOT_FOUND_ERR);
     return;
   }
+
+  const auto foundId = foundMetadataIt->id();
+  MOZ_ASSERT(foundId);
+
+  
+  {
+    const auto end = mIndexes.end();
+    const auto foundIt = std::find_if(
+        mIndexes.begin(), end,
+        [foundId](const auto& index) { return index->Id() == foundId; });
+    
+    if (foundIt != end) {
+      auto& index = *foundIt;
+
+      index->NoteDeletion();
+
+      mDeletedIndexes.EmplaceBack(std::move(index));
+      mIndexes.RemoveElementAt(foundIt.GetIndex());
+    }
+  }
+
+  metadataArray.RemoveElementAt(foundMetadataIt.GetIndex());
+
+  RefreshSpec( false);
 
   
   
