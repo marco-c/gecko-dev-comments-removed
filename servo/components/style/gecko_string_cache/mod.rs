@@ -53,6 +53,11 @@ macro_rules! local_name {
 
 
 
+
+
+
+
+
 #[derive(Eq, PartialEq)]
 #[repr(C)]
 pub struct Atom(NonZeroUsize);
@@ -87,7 +92,7 @@ fn static_atoms() -> &'static [nsStaticAtom; STATIC_ATOM_COUNT] {
 fn valid_static_atom_addr(addr: usize) -> bool {
     unsafe {
         let atoms = static_atoms();
-        let start = atoms.get_unchecked(0) as *const _;
+        let start = atoms.as_ptr();
         let end = atoms.get_unchecked(STATIC_ATOM_COUNT) as *const _;
         let in_range = addr >= start as usize && addr < end as usize;
         let aligned = addr % mem::align_of::<nsStaticAtom>() == 0;
@@ -381,15 +386,15 @@ impl Atom {
     
     
     #[inline]
-    pub unsafe fn from_index(index: u16) -> Self {
-        let ptr = static_atoms().get_unchecked(index as usize) as *const _;
-        let handle = make_static_handle(ptr);
-        let atom = Atom(handle);
-        debug_assert!(valid_static_atom_addr(ptr as usize));
-        debug_assert!(atom.is_static());
-        debug_assert!((*atom).is_static());
-        debug_assert!(handle == make_handle(atom.as_ptr()));
-        atom
+    pub const unsafe fn from_index_unchecked(index: u16) -> Self {
+        
+        
+        
+        
+        
+        let offset =
+            (index as usize) * std::mem::size_of::<nsStaticAtom>() + kGkAtomsArrayOffset as usize;
+        Atom(NonZeroUsize::new_unchecked((offset << 1) | 1))
     }
 
     

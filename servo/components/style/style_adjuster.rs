@@ -63,43 +63,38 @@ where
 {
     use crate::Atom;
 
-    
-    lazy_static! {
-        static ref SPECIAL_HTML_ELEMENTS: [Atom; 16] = [
-            atom!("br"),
-            atom!("wbr"),
-            atom!("meter"),
-            atom!("progress"),
-            atom!("canvas"),
-            atom!("embed"),
-            atom!("object"),
-            atom!("audio"),
-            atom!("iframe"),
-            atom!("img"),
-            atom!("video"),
-            atom!("frame"),
-            atom!("frameset"),
-            atom!("input"),
-            atom!("textarea"),
-            atom!("select"),
-        ];
-    }
+    const SPECIAL_HTML_ELEMENTS: [Atom; 16] = [
+        atom!("br"),
+        atom!("wbr"),
+        atom!("meter"),
+        atom!("progress"),
+        atom!("canvas"),
+        atom!("embed"),
+        atom!("object"),
+        atom!("audio"),
+        atom!("iframe"),
+        atom!("img"),
+        atom!("video"),
+        atom!("frame"),
+        atom!("frameset"),
+        atom!("input"),
+        atom!("textarea"),
+        atom!("select"),
+    ];
 
     
     
     
     
     
-    lazy_static! {
-        static ref SPECIAL_SVG_ELEMENTS: [Atom; 6] = [
-            atom!("svg"),
-            atom!("a"),
-            atom!("g"),
-            atom!("use"),
-            atom!("tspan"),
-            atom!("textPath"),
-        ];
-    }
+    const SPECIAL_SVG_ELEMENTS: [Atom; 6] = [
+        atom!("svg"),
+        atom!("a"),
+        atom!("g"),
+        atom!("use"),
+        atom!("tspan"),
+        atom!("textPath"),
+    ];
 
     
     if element.is_html_element() {
