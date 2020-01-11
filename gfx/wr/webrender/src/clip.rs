@@ -97,7 +97,7 @@ use api::{BoxShadowClipMode, ImageKey, ImageRendering};
 use api::units::*;
 use crate::border::{ensure_no_corner_overlap, BorderRadiusAu};
 use crate::box_shadow::{BLUR_SAMPLE_SCALE, BoxShadowClipSource, BoxShadowCacheKey};
-use crate::clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, ClipScrollTree, SpatialNodeIndex};
+use crate::clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, CoordinateSystemId, ClipScrollTree, SpatialNodeIndex};
 use crate::ellipse::Ellipse;
 use crate::gpu_cache::{GpuCache, GpuCacheHandle, ToGpuBlocks};
 use crate::gpu_types::{BoxShadowStretchMode};
@@ -356,12 +356,13 @@ impl ClipNodeInfo {
         
         
         
-        let is_raster_2d =
-            flags.contains(ClipNodeFlags::SAME_COORD_SYSTEM) ||
-            clip_scroll_tree
-                .get_world_viewport_transform(node.item.spatial_node_index)
-                .is_2d_axis_aligned();
-        if is_raster_2d && node.item.kind.supports_fast_path_rendering() {
+        
+        
+        
+        let clip_spatial_node = &clip_scroll_tree.spatial_nodes[node.item.spatial_node_index.0 as usize];
+        if clip_spatial_node.coordinate_system_id == CoordinateSystemId::root() &&
+           flags.contains(ClipNodeFlags::SAME_COORD_SYSTEM) &&
+           node.item.kind.supports_fast_path_rendering() {
             flags |= ClipNodeFlags::USE_FAST_PATH;
         }
 
@@ -1266,8 +1267,6 @@ impl ClipItemKind {
         ClipItemKind::BoxShadow { source }
     }
 
-    
-    
     
     
     fn supports_fast_path_rendering(&self) -> bool {
