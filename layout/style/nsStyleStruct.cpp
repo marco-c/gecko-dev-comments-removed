@@ -3033,11 +3033,7 @@ nsChangeHint nsStyleDisplay::CalcDifference(
   
   
   
-  
-  
-  auto willChangeBitsChanged =
-      StyleWillChangeBits{static_cast<decltype(StyleWillChangeBits::bits)>(
-          mWillChange.bits.bits ^ aNewData.mWillChange.bits.bits)};
+  auto willChangeBitsChanged = mWillChange.bits ^ aNewData.mWillChange.bits;
 
   if (willChangeBitsChanged &
       (StyleWillChangeBits::STACKING_CONTEXT | StyleWillChangeBits::SCROLL |
