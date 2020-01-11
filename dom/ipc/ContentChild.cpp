@@ -1059,15 +1059,6 @@ nsresult ContentChild::ProvideWindowCommon(
     return NS_ERROR_ABORT;
   }
 
-  nsCOMPtr<nsPIDOMWindowInner> parentTopInnerWindow;
-  if (aParent) {
-    nsCOMPtr<nsPIDOMWindowOuter> parentTopWindow =
-        nsPIDOMWindowOuter::From(aParent)->GetInProcessTop();
-    if (parentTopWindow) {
-      parentTopInnerWindow = parentTopWindow->GetCurrentInnerWindow();
-    }
-  }
-
   
   bool ready = false;
 
@@ -1236,12 +1227,15 @@ nsresult ContentChild::ProvideWindowCommon(
     }
   });
 
-  
-  if (parentTopInnerWindow) {
-    parentTopInnerWindow->Suspend();
-  }
-
   {
+    
+    
+    
+    
+    
+    
+    AutoSuppressEventHandlingAndSuspend seh(browsingContext->Group());
+
     AutoNoJSAPI nojsapi;
 
     
@@ -1252,10 +1246,6 @@ nsresult ContentChild::ProvideWindowCommon(
     MOZ_RELEASE_ASSERT(ready,
                        "We are on the main thread, so we should not exit this "
                        "loop without ready being true.");
-  }
-
-  if (parentTopInnerWindow) {
-    parentTopInnerWindow->Resume();
   }
 
   
