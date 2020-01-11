@@ -33,7 +33,7 @@ impl PingType {
     
     
     
-    pub fn submit(&self) -> bool {
-        crate::submit_ping(self)
+    pub fn send(&self) -> bool {
+        crate::send_ping(self)
     }
 }
