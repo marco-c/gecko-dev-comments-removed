@@ -40,7 +40,6 @@ using mozilla::ArrayLength;
 
 typedef Vector<jit::MIRType, 8, SystemAllocPolicy> MIRTypeVector;
 typedef jit::ABIArgIter<MIRTypeVector> ABIArgMIRTypeIter;
-typedef jit::ABIArgIter<ValTypeVector> ABIArgValTypeIter;
 
 
 
@@ -280,6 +279,11 @@ static unsigned StackArgBytes(const VectorT& args) {
   return iter.stackBytesConsumedSoFar();
 }
 
+static unsigned StackArgBytes(const FuncType& funcType) {
+  ArgTypeVector args(funcType);
+  return StackArgBytes(args);
+}
+
 static void Move64(MacroAssembler& masm, const Address& src,
                    const Address& dest, Register scratch) {
 #if JS_BITS_PER_WORD == 32
@@ -298,7 +302,8 @@ static void SetupABIArguments(MacroAssembler& masm, const FuncExport& fe,
                               Register argv, Register scratch) {
   
   
-  for (ABIArgValTypeIter iter(fe.funcType().args()); !iter.done(); iter++) {
+  ArgTypeVector args(fe.funcType());
+  for (ABIArgIter iter(args); !iter.done(); iter++) {
     unsigned argOffset = iter.index() * sizeof(ExportArg);
     Address src(argv, argOffset);
     MIRType type = iter.mirType();
@@ -310,6 +315,9 @@ static void SetupABIArguments(MacroAssembler& masm, const FuncExport& fe,
           masm.load64(src, iter->gpr64());
         } else if (type == MIRType::RefOrNull) {
           masm.loadPtr(src, iter->gpr());
+        } else if (type == MIRType::Pointer) {
+          MOZ_ASSERT(args.isSyntheticStackResultPointerArg(iter.index()));
+          MOZ_CRASH("multiple function results not yet implemented");
         } else {
           MOZ_CRASH("unknown GPR type");
         }
@@ -368,6 +376,11 @@ static void SetupABIArguments(MacroAssembler& masm, const FuncExport& fe,
             masm.loadFloat32(src, fpscratch);
             masm.storeFloat32(fpscratch, Address(masm.getStackPointer(),
                                                  iter->offsetFromArgBase()));
+            break;
+          }
+          case MIRType::Pointer: {
+            MOZ_ASSERT(args.isSyntheticStackResultPointerArg(iter.index()));
+            MOZ_CRASH("multiple function results not yet implemented");
             break;
           }
           default:
@@ -689,9 +702,8 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
 #endif
 
   
-  unsigned argDecrement =
-      StackDecrementForCall(WasmStackAlignment, masm.framePushed(),
-                            StackArgBytes(fe.funcType().args()));
+  unsigned argDecrement = StackDecrementForCall(
+      WasmStackAlignment, masm.framePushed(), StackArgBytes(fe.funcType()));
   masm.reserveStack(argDecrement);
 
   
@@ -884,7 +896,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   
   
 
-  unsigned normalBytesNeeded = StackArgBytes(fe.funcType().args());
+  unsigned normalBytesNeeded = StackArgBytes(fe.funcType());
 
   MIRTypeVector coerceArgTypes;
   MOZ_ALWAYS_TRUE(coerceArgTypes.append(MIRType::Int32));
@@ -1077,7 +1089,8 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   masm.bind(&rejoinBeforeCall);
 
   
-  for (ABIArgValTypeIter iter(fe.funcType().args()); !iter.done(); iter++) {
+  ArgTypeVector args(fe.funcType());
+  for (ABIArgIter iter(args); !iter.done(); iter++) {
     unsigned jitArgOffset =
         frameSize + JitFrameLayout::offsetOfActualArg(iter.index());
     Address argv(sp, jitArgOffset);
@@ -1338,7 +1351,7 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
   masm.orPtr(Imm32(ExitOrJitEntryFPTag), FramePointer);
 
   
-  unsigned bytesNeeded = StackArgBytes(fe.funcType().args());
+  unsigned bytesNeeded = StackArgBytes(fe.funcType());
   bytesNeeded = StackDecrementForCall(WasmStackAlignment, masm.framePushed(),
                                       bytesNeeded);
   if (bytesNeeded) {
@@ -1348,7 +1361,8 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
   GenPrintf(DebugChannel::Function, masm, "wasm-function[%d]; arguments ",
             fe.funcIndex());
 
-  for (ABIArgValTypeIter iter(fe.funcType().args()); !iter.done(); iter++) {
+  ArgTypeVector args(fe.funcType());
+  for (ABIArgIter iter(args); !iter.done(); iter++) {
     MOZ_ASSERT_IF(iter->kind() == ABIArg::GPR, iter->gpr() != scratch);
     MOZ_ASSERT_IF(iter->kind() == ABIArg::GPR, iter->gpr() != FramePointer);
     if (iter->kind() != ABIArg::Stack) {
@@ -1363,6 +1377,10 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
           GenPrintF64(DebugChannel::Function, masm, iter->fpu());
           break;
         case MIRType::RefOrNull:
+          GenPrintPtr(DebugChannel::Function, masm, iter->gpr());
+          break;
+        case MIRType::Pointer:
+          MOZ_ASSERT(args.isSyntheticStackResultPointerArg(iter.index()));
           GenPrintPtr(DebugChannel::Function, masm, iter->gpr());
           break;
         default:
@@ -1430,6 +1448,9 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
             GenPrintPtr(DebugChannel::Function, masm, scratch);
             masm.storePtr(scratch, dst);
             break;
+          }
+          case MIRType::Pointer: {
+            MOZ_CRASH("multi-value in ion to wasm fast path unimplemented");
           }
           default: {
             MOZ_CRASH("unexpected MIR type for a stack slot in wasm fast call");
@@ -1570,7 +1591,7 @@ typedef bool ToValue;
 
 static void FillArgumentArrayForExit(
     MacroAssembler& masm, Register tls, unsigned funcImportIndex,
-    const ValTypeVector& args, unsigned argOffset,
+    const FuncType& funcType, unsigned argOffset,
     unsigned offsetToCallerStackArgs, Register scratch, Register scratch2,
     Register scratch3, ToValue toValue, Label* throwLabel) {
   MOZ_ASSERT(scratch != scratch2);
@@ -1583,7 +1604,12 @@ static void FillArgumentArrayForExit(
   GenPrintf(DebugChannel::Import, masm, "wasm-import[%u]; arguments ",
             funcImportIndex);
 
-  for (ABIArgValTypeIter i(args); !i.done(); i++) {
+  ArgTypeVector args(funcType);
+  for (ABIArgIter i(args); !i.done(); i++) {
+    if (args.isSyntheticStackResultPointerArg(i.index())) {
+      MOZ_CRASH("Exit to function returning multiple values unimplemented");
+    }
+
     Address dst(masm.getStackPointer(), argOffset + i.index() * sizeof(Value));
 
     MIRType type = i.mirType();
@@ -1756,7 +1782,7 @@ static bool GenerateImportFunction(jit::MacroAssembler& masm,
   unsigned framePushed =
       StackDecrementForCall(WasmStackAlignment,
                             sizeof(Frame),  
-                            StackArgBytes(fi.funcType().args()));
+                            StackArgBytes(fi.funcType()));
   masm.wasmReserveStackChecked(framePushed, BytecodeOffset(0));
   MOZ_ASSERT(masm.framePushed() == framePushed);
 
@@ -1766,8 +1792,8 @@ static bool GenerateImportFunction(jit::MacroAssembler& masm,
 
   
   unsigned offsetToCallerStackArgs = sizeof(Frame) + masm.framePushed();
-  ABIArgValTypeIter i(fi.funcType().args());
-  for (; !i.done(); i++) {
+  ArgTypeVector args(fi.funcType());
+  for (ABIArgIter i(args); !i.done(); i++) {
     if (i->kind() != ABIArg::Stack) {
       continue;
     }
@@ -1869,10 +1895,9 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
   
   
   Register scratch3 = ABINonVolatileReg;
-  FillArgumentArrayForExit(masm, WasmTlsReg, funcImportIndex,
-                           fi.funcType().args(), argOffset,
-                           offsetToCallerStackArgs, scratch, scratch2, scratch3,
-                           ToValue(false), throwLabel);
+  FillArgumentArrayForExit(masm, WasmTlsReg, funcImportIndex, fi.funcType(),
+                           argOffset, offsetToCallerStackArgs, scratch,
+                           scratch2, scratch3, ToValue(false), throwLabel);
 
   
   ABIArgMIRTypeIter i(invokeArgTypes);
@@ -2087,10 +2112,9 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   
   
   Register scratch3 = ABINonVolatileReg;
-  FillArgumentArrayForExit(masm, WasmTlsReg, funcImportIndex,
-                           fi.funcType().args(), argOffset,
-                           offsetToCallerStackArgs, scratch, scratch2, scratch3,
-                           ToValue(true), throwLabel);
+  FillArgumentArrayForExit(masm, WasmTlsReg, funcImportIndex, fi.funcType(),
+                           argOffset, offsetToCallerStackArgs, scratch,
+                           scratch2, scratch3, ToValue(true), throwLabel);
   argOffset += fi.funcType().args().length() * sizeof(Value);
   MOZ_ASSERT(argOffset == sizeOfThisAndArgs + sizeOfPreFrame + frameAlignExtra);
 
