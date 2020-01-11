@@ -131,7 +131,14 @@ class RC<T, AtomicRefCount, Recording> {
       
       
       
+#ifdef MOZ_TSAN
+      
+      
+      
+      mValue.load(std::memory_order_acquire);
+#else
       std::atomic_thread_fence(std::memory_order_acquire);
+#endif
     }
     return result;
   }
