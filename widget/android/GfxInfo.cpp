@@ -562,9 +562,10 @@ nsresult GfxInfo::GetFeatureStatusImpl(
 
     if (aFeature == FEATURE_WEBRENDER) {
       NS_LossyConvertUTF16toASCII model(mModel);
-      bool isBlocked =
-          !model.Equals("Pixel 2", nsCaseInsensitiveCStringComparator()) &&
-          !model.Equals("Pixel 2 XL", nsCaseInsensitiveCStringComparator());
+      bool isBlocked = model.Find("Pixel 2",  true) <
+                           0 &&  
+                       model.Find("Pixel 3",  true) <
+                           0;  
 
       if (isBlocked) {
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
