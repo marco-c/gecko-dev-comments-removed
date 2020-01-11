@@ -21,6 +21,7 @@
 
 #include "js/Value.h"
 #include "new-regexp/util/vector.h"
+#include "new-regexp/util/zone.h"
 #include "vm/NativeObject.h"
 
 
@@ -178,6 +179,23 @@ class AllStatic {
  public:
   AllStatic() = delete;
 #endif
+};
+
+
+
+
+
+class Malloced {
+ public:
+  static void* operator new(size_t size) {
+    js::AutoEnterOOMUnsafeRegion oomUnsafe;
+    void* result = js_malloc(size);
+    if (!result) {
+      oomUnsafe.crash("Irregexp Malloced shim");
+    }
+    return result;
+  }
+  static void operator delete(void* p) { js_free(p); }
 };
 
 constexpr int32_t KB = 1024;
