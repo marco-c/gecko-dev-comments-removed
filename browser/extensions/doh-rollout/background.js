@@ -5,13 +5,11 @@
 "use strict";
 
 
-
-
-let showConsoleLogs;
+let DEBUG;
 
 async function log() {
   
-  if (showConsoleLogs) {
+  if (DEBUG) {
     
     console.log(...arguments);
   }
@@ -121,6 +119,7 @@ const stateManager = {
   async shouldRunHeuristics() {
     
     let disableHeuristics = await rollout.getSetting(DOH_DISABLED_PREF, false);
+
     if (disableHeuristics) {
       
       log("disableHeuristics has been enabled.");
@@ -128,6 +127,7 @@ const stateManager = {
     }
 
     let prevMode = await rollout.getSetting(DOH_PREVIOUS_TRR_MODE_PREF, 0);
+
     let curMode = await browser.experiments.preferences.getIntPref(
       TRR_MODE_PREF,
       0
@@ -144,32 +144,30 @@ const stateManager = {
     
     
 
-    
-
-    if (prevMode !== curMode) {
-      log("Mismatched, curMode: ", curMode);
-      
-      let results = await runHeuristics();
-      results.evaluateReason = "userModified";
-      if (curMode === 0 || curMode === 5) {
-        
-        browser.experiments.heuristics.sendHeuristicsPing(
-          "disable_doh",
-          results
-        );
-        browser.experiments.preferences.clearUserPref(DOH_SELF_ENABLED_PREF);
-        await stateManager.rememberDisableHeuristics();
-      } else {
-        
-        await rollout.trrModePrefHasUserValue(
-          "shouldRunHeuristics_mismatch",
-          results
-        );
-      }
-      return false;
+    if (prevMode === curMode) {
+      return true;
     }
 
-    return true;
+    
+    log("Mismatched, curMode: ", curMode);
+
+    
+    let results = await runHeuristics();
+    results.evaluateReason = "userModified";
+    if (curMode === 0 || curMode === 5) {
+      
+      browser.experiments.heuristics.sendHeuristicsPing("disable_doh", results);
+      browser.experiments.preferences.clearUserPref(DOH_SELF_ENABLED_PREF);
+      await stateManager.rememberDisableHeuristics();
+    } else {
+      
+      await rollout.trrModePrefHasUserValue(
+        "shouldRunHeuristics_mismatch",
+        results
+      );
+    }
+
+    return false;
   },
 
   async shouldShowDoorhanger() {
@@ -178,6 +176,7 @@ const stateManager = {
       false
     );
     log("Should show doorhanger:", !doorhangerShown);
+
     return !doorhangerShown;
   },
 
@@ -185,9 +184,11 @@ const stateManager = {
     browser.experiments.doorhanger.onDoorhangerAccept.addListener(
       rollout.doorhangerAcceptListener
     );
+
     browser.experiments.doorhanger.onDoorhangerDecline.addListener(
       rollout.doorhangerDeclineListener
     );
+
     await browser.experiments.doorhanger.show({
       name: browser.i18n.getMessage("doorhangerName"),
       text: "<> " + browser.i18n.getMessage("doorhangerBody"),
@@ -205,9 +206,10 @@ const stateManager = {
   },
 };
 
-let notificationTime = new Date().getTime() / 1000;
-
 const rollout = {
+  
+  lastNetworkChangeTime: 0,
+
   async doorhangerAcceptListener(tabId) {
     log("Doorhanger accepted on tab", tabId);
     await stateManager.setState("UIOk");
@@ -229,12 +231,13 @@ const rollout = {
   async netChangeListener() {
     
     let curTime = new Date().getTime() / 1000;
-    let timePassed = curTime - notificationTime;
+    let timePassed = curTime - this.lastNetworkChangeTime;
     log("Time passed since last network change:", timePassed);
     if (timePassed < 30) {
       return;
     }
-    notificationTime = curTime;
+
+    this.lastNetworkChangeTime = curTime;
 
     
     let decision = await rollout.heuristics("netChange");
@@ -250,58 +253,41 @@ const rollout = {
     let results = await runHeuristics();
 
     
-    let disablingDoh = Object.values(results).some(
-      item => item === "disable_doh"
-    );
-    let decision;
-    if (disablingDoh) {
-      decision = "disable_doh";
-    } else {
-      decision = "enable_doh";
-    }
-    log("Heuristics decision on " + evaluateReason + ": " + decision);
+    let disableDoh = Object.values(results).includes("disable_doh")
+      ? "disable_doh"
+      : "enable_doh";
+
+    log("Heuristics decision on " + evaluateReason + ": " + disableDoh);
 
     
     results.evaluateReason = evaluateReason;
-    browser.experiments.heuristics.sendHeuristicsPing(decision, results);
-    return decision;
+    browser.experiments.heuristics.sendHeuristicsPing(disableDoh, results);
+
+    return disableDoh;
   },
 
   async getSetting(name, defaultValue) {
+    let value;
+
     switch (typeof defaultValue) {
       case "boolean":
-        log({
-          context: "getSetting",
-          type: "boolean",
+        value = await browser.experiments.preferences.getBoolPref(
           name,
-          value: await browser.experiments.preferences.getBoolPref(
-            name,
-            defaultValue
-          ),
-        });
-        return browser.experiments.preferences.getBoolPref(name, defaultValue);
+          defaultValue
+        );
+        break;
       case "number":
-        log({
-          context: "getSetting",
-          type: "number",
+        value = await browser.experiments.preferences.getIntPref(
           name,
-          value: await browser.experiments.preferences.getIntPref(
-            name,
-            defaultValue
-          ),
-        });
-        return browser.experiments.preferences.getIntPref(name, defaultValue);
+          defaultValue
+        );
+        break;
       case "string":
-        log({
-          context: "getSetting",
-          type: "string",
+        value = await browser.experiments.preferences.getCharPref(
           name,
-          value: await browser.experiments.preferences.getCharPref(
-            name,
-            defaultValue
-          ),
-        });
-        return browser.experiments.preferences.getCharPref(name, defaultValue);
+          defaultValue
+        );
+        break;
       default:
         throw new Error(
           `Invalid defaultValue argument when trying to fetch pref: ${JSON.stringify(
@@ -309,6 +295,15 @@ const rollout = {
           )}`
         );
     }
+
+    log({
+      context: "getSetting",
+      type: typeof defaultValue,
+      name,
+      value,
+    });
+
+    return value;
   },
 
   
@@ -333,6 +328,13 @@ const rollout = {
       default:
         throw new Error("setSetting typeof value unknown!");
     }
+
+    log({
+      context: "setSetting",
+      type: typeof value,
+      name,
+      value,
+    });
   },
 
   async trrModePrefHasUserValue(event, results) {
@@ -352,6 +354,7 @@ const rollout = {
         "prefHasUserValue",
         results
       );
+
       browser.experiments.preferences.clearUserPref(DOH_SELF_ENABLED_PREF);
       await stateManager.rememberDisableHeuristics();
     }
@@ -366,40 +369,24 @@ const rollout = {
     
     let policyEnableDoH = await browser.experiments.heuristics.checkEnterprisePolicies();
 
-    switch (policyEnableDoH) {
-      case "enable_doh":
-        log("Policy requires DoH enabled.");
-        browser.experiments.heuristics.sendHeuristicsPing(
-          policyEnableDoH,
-          results
-        );
-        break;
-      case "policy_without_doh":
-        log("Policy does not mention DoH.");
-        await stateManager.setState("disabled");
-        browser.experiments.heuristics.sendHeuristicsPing(
-          policyEnableDoH,
-          results
-        );
-        break;
-      case "disable_doh":
-        log("Policy requires DoH to be disabled.");
-        browser.experiments.heuristics.sendHeuristicsPing(
-          policyEnableDoH,
-          results
-        );
-        break;
-      case "no_policy_set":
-    }
+    log("Enterprise Policy Check:", policyEnableDoH);
 
     
+
     if (policyEnableDoH === "no_policy_set") {
       
       await rollout.setSetting(DOH_SKIP_HEURISTICS_PREF, false);
-    } else {
-      
-      await rollout.setSetting(DOH_SKIP_HEURISTICS_PREF, true);
+      return;
     }
+
+    if (policyEnableDoH === "policy_without_doh") {
+      await stateManager.setState("disabled");
+    }
+
+    
+    await rollout.setSetting(DOH_SKIP_HEURISTICS_PREF, true);
+
+    browser.experiments.heuristics.sendHeuristicsPing(policyEnableDoH, results);
   },
 
   async migrateLocalStoragePrefs() {
@@ -410,7 +397,7 @@ const rollout = {
     );
 
     if (isMigrated) {
-      log("User has been migrated.");
+      log("User has already been migrated.");
       return;
     }
 
@@ -448,7 +435,8 @@ const rollout = {
       DOH_BALROG_MIGRATION_PREF,
       true
     );
-    log("Remembering that this user has been migrated.");
+
+    log("User successfully migrated.");
   },
 
   async init() {
@@ -479,6 +467,7 @@ const rollout = {
       DOH_SKIP_HEURISTICS_PREF,
       false
     );
+
     log("skipHeuristicsCheck: ", skipHeuristicsCheck);
 
     if (!skipHeuristicsCheck) {
@@ -495,17 +484,24 @@ const rollout = {
       let shouldRunHeuristics = await stateManager.shouldRunHeuristics();
       let shouldShowDoorhanger = await stateManager.shouldShowDoorhanger();
 
-      if (shouldRunHeuristics) {
-        const netChangeDecision = await rollout.heuristics("netChange");
-        if (netChangeDecision === "disable_doh") {
-          await stateManager.setState("disabled");
-        } else if (shouldShowDoorhanger) {
-          await stateManager.showDoorHangerAndEnableDoH();
-        } else {
-          await stateManager.setState("enabled");
-        }
+      if (!shouldRunHeuristics) {
+        return;
+      }
+
+      const netChangeDecision = await rollout.heuristics("netChange");
+
+      if (netChangeDecision === "disable_doh") {
+        await stateManager.setState("disabled");
+      } else if (shouldShowDoorhanger) {
+        await stateManager.showDoorHangerAndEnableDoH();
+      } else {
+        await stateManager.setState("enabled");
       }
     });
+  },
+
+  isCaptive(state) {
+    return !["unlocked_portal", "not_captive"].includes(state);
   },
 
   async main() {
@@ -514,10 +510,10 @@ const rollout = {
 
     
     
-    let captiveState = await browser.captivePortal.getState();
-    log("Captive state:", captiveState);
-    if (captiveState === "unlocked_portal" || captiveState === "not_captive") {
-      await rollout.onReady({ state: captiveState });
+    let state = await browser.captivePortal.getState();
+    log("Captive state:", state);
+    if (!this.isCaptive(state)) {
+      await rollout.onReady({ state });
     }
   },
 
@@ -526,10 +522,7 @@ const rollout = {
     browser.captivePortal.onStateChanged.removeListener(rollout.onReady);
 
     
-    if (
-      details.state !== "unlocked_portal" &&
-      details.state !== "not_captive"
-    ) {
+    if (this.isCaptive(details.state)) {
       return;
     }
 
@@ -552,7 +545,7 @@ const rollout = {
 
 const setup = {
   async start() {
-    showConsoleLogs = await browser.experiments.preferences.getBoolPref(
+    DEBUG = await browser.experiments.preferences.getBoolPref(
       DOH_DEBUG_PREF,
       false
     );
