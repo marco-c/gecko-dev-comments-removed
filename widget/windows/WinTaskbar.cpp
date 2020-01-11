@@ -27,6 +27,8 @@
 #include "nsPIDOMWindow.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "mozilla/Preferences.h"
+#include "nsAppRunner.h"
+#include "nsXREDirProvider.h"
 #include <io.h>
 #include <propvarutil.h>
 #include <propkey.h>
@@ -203,6 +205,13 @@ WinTaskbar::~WinTaskbar() {
 
 bool WinTaskbar::GetAppUserModelID(nsAString& aDefaultGroupId) {
   
+  PWSTR id;
+  if (SUCCEEDED(GetCurrentProcessExplicitAppUserModelID(&id))) {
+    aDefaultGroupId.Assign(id);
+    CoTaskMemFree(id);
+  }
+
+  
   
   bool useProfile = Preferences::GetBool("taskbar.grouping.useprofile", false);
   if (useProfile) {
@@ -230,40 +239,40 @@ bool WinTaskbar::GetAppUserModelID(nsAString& aDefaultGroupId) {
   
   nsCOMPtr<nsIXULAppInfo> appInfo =
       do_GetService("@mozilla.org/xre/app-info;1");
-  if (!appInfo) return false;
-
   nsCString appName;
-  if (NS_FAILED(appInfo->GetName(appName))) {
-    
-    return false;
-  }
+  if (appInfo && NS_SUCCEEDED(appInfo->GetName(appName))) {
+    nsAutoString regKey;
+    regKey.AssignLiteral("Software\\Mozilla\\");
+    AppendASCIItoUTF16(appName, regKey);
+    regKey.AppendLiteral("\\TaskBarIDs");
 
-  nsAutoString regKey;
-  regKey.AssignLiteral("Software\\Mozilla\\");
-  AppendASCIItoUTF16(appName, regKey);
-  regKey.AppendLiteral("\\TaskBarIDs");
+    WCHAR path[MAX_PATH];
+    if (GetModuleFileNameW(nullptr, path, MAX_PATH)) {
+      wchar_t* slash = wcsrchr(path, '\\');
+      if (!slash) return false;
+      *slash = '\0';  
 
-  WCHAR path[MAX_PATH];
-  if (GetModuleFileNameW(nullptr, path, MAX_PATH)) {
-    wchar_t* slash = wcsrchr(path, '\\');
-    if (!slash) return false;
-    *slash = '\0';  
-
-    
-    
-    wchar_t buf[256];
-    if (WinUtils::GetRegistryKey(HKEY_LOCAL_MACHINE, regKey.get(), path, buf,
-                                 sizeof buf)) {
-      aDefaultGroupId.Assign(buf);
-    } else if (WinUtils::GetRegistryKey(HKEY_CURRENT_USER, regKey.get(), path,
-                                        buf, sizeof buf)) {
-      aDefaultGroupId.Assign(buf);
+      
+      
+      wchar_t buf[256];
+      if (WinUtils::GetRegistryKey(HKEY_LOCAL_MACHINE, regKey.get(), path, buf,
+                                   sizeof buf)) {
+        aDefaultGroupId.Assign(buf);
+      } else if (WinUtils::GetRegistryKey(HKEY_CURRENT_USER, regKey.get(), path,
+                                          buf, sizeof buf)) {
+        aDefaultGroupId.Assign(buf);
+      }
     }
   }
 
-  return !aDefaultGroupId.IsEmpty();
+  
+  
+  
+  if (aDefaultGroupId.IsEmpty() && gDirServiceProvider) {
+    gDirServiceProvider->GetInstallHash(aDefaultGroupId);
+  }
 
-  return true;
+  return !aDefaultGroupId.IsEmpty();
 }
 
 NS_IMETHODIMP
