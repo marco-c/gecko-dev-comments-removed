@@ -2889,81 +2889,6 @@ AbortReasonOr<Ok> IonBuilder::replaceTypeSet(MDefinition* subject,
   return Ok();
 }
 
-bool IonBuilder::detectAndOrStructure(MPhi* ins, bool* branchIsAnd) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  if (ins->numOperands() != 2) {
-    return false;
-  }
-
-  MBasicBlock* testBlock = ins->block();
-  MOZ_ASSERT(testBlock->numPredecessors() == 2);
-
-  MBasicBlock* initialBlock;
-  MBasicBlock* branchBlock;
-  if (testBlock->getPredecessor(0)->lastIns()->isTest()) {
-    initialBlock = testBlock->getPredecessor(0);
-    branchBlock = testBlock->getPredecessor(1);
-  } else if (testBlock->getPredecessor(1)->lastIns()->isTest()) {
-    initialBlock = testBlock->getPredecessor(1);
-    branchBlock = testBlock->getPredecessor(0);
-  } else {
-    return false;
-  }
-
-  if (branchBlock->numSuccessors() != 1) {
-    return false;
-  }
-
-  if (branchBlock->numPredecessors() != 1 ||
-      branchBlock->getPredecessor(0) != initialBlock) {
-    return false;
-  }
-
-  if (initialBlock->numSuccessors() != 2) {
-    return false;
-  }
-
-  MDefinition* branchResult =
-      ins->getOperand(testBlock->indexForPredecessor(branchBlock));
-  MDefinition* initialResult =
-      ins->getOperand(testBlock->indexForPredecessor(initialBlock));
-
-  if (branchBlock->stackDepth() != initialBlock->stackDepth()) {
-    return false;
-  }
-  if (branchBlock->stackDepth() != testBlock->stackDepth() + 1) {
-    return false;
-  }
-  if (branchResult != branchBlock->peek(-1) ||
-      initialResult != initialBlock->peek(-1)) {
-    return false;
-  }
-
-  MTest* initialTest = initialBlock->lastIns()->toTest();
-  bool branchIsTrue = branchBlock == initialTest->ifTrue();
-  if (initialTest->input() == ins->getOperand(0)) {
-    *branchIsAnd =
-        branchIsTrue != (testBlock->getPredecessor(0) == branchBlock);
-  } else if (initialTest->input() == ins->getOperand(1)) {
-    *branchIsAnd =
-        branchIsTrue != (testBlock->getPredecessor(1) == branchBlock);
-  } else {
-    return false;
-  }
-
-  return true;
-}
-
 AbortReasonOr<Ok> IonBuilder::improveTypesAtCompare(MCompare* ins,
                                                     bool trueBranch,
                                                     MTest* test) {
@@ -3209,43 +3134,6 @@ AbortReasonOr<Ok> IonBuilder::improveTypesAtTest(MDefinition* ins,
       }
 
       return replaceTypeSet(subject, type, test);
-    }
-    case MDefinition::Opcode::Phi: {
-      bool branchIsAnd = true;
-      if (!detectAndOrStructure(ins->toPhi(), &branchIsAnd)) {
-        
-        break;
-      }
-
-      
-      
-      if (branchIsAnd) {
-        if (trueBranch) {
-          MOZ_TRY(improveTypesAtTest(ins->toPhi()->getOperand(0), true, test));
-          MOZ_TRY(improveTypesAtTest(ins->toPhi()->getOperand(1), true, test));
-        }
-      } else {
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        if (!trueBranch) {
-          MOZ_TRY(improveTypesAtTest(ins->toPhi()->getOperand(0), false, test));
-          MOZ_TRY(improveTypesAtTest(ins->toPhi()->getOperand(1), false, test));
-        }
-      }
-      return Ok();
     }
 
     case MDefinition::Opcode::Compare:

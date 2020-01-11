@@ -364,8 +364,6 @@ class IonBuilder : public MIRGenerator,
   AbortReasonOr<Ok> improveTypesAtTypeOfCompare(MCompare* ins, bool trueBranch,
                                                 MTest* test);
 
-  
-  bool detectAndOrStructure(MPhi* ins, bool* branchIsTrue);
   AbortReasonOr<Ok> replaceTypeSet(MDefinition* subject, TemporaryTypeSet* type,
                                    MTest* test);
 
