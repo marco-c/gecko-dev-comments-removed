@@ -387,7 +387,13 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  TrackTime PlayAudio(MediaTrack* aTrack);
+
+  struct TrackKeyAndVolume {
+    MediaTrack* mTrack;
+    void* mKey;
+    float mVolume;
+  };
+  TrackTime PlayAudio(const TrackKeyAndVolume& aTkv);
   
 
 
@@ -407,6 +413,14 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   virtual void CloseAudioInput(Maybe<CubebUtils::AudioDeviceID>& aID,
                                AudioDataListener* aListener) override;
+
+  
+
+  void RegisterAudioOutput(MediaTrack* aTrack, void* aKey);
+  void UnregisterAudioOutput(MediaTrack* aTrack, void* aKey);
+  void UnregisterAllAudioOutputs(MediaTrack* aTrack);
+  void SetAudioOutputVolume(MediaTrack* aTrack, void* aKey, float aVolume);
+
   
 
 
@@ -468,7 +482,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
     mTrackOrderDirty = true;
   }
 
-  uint32_t AudioOutputChannelCount() const { return mOutputChannels; }
+  uint32_t AudioOutputChannelCount() const;
 
   double AudioOutputLatency();
 
@@ -956,11 +970,11 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   nsTArray<WindowAndTrack> mWindowCaptureTracks;
-
   
 
 
-  const uint32_t mOutputChannels;
+
+  nsTArray<TrackKeyAndVolume> mAudioOutputs;
 
   
 

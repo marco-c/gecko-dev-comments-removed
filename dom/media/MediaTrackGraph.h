@@ -303,12 +303,6 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   void SetGraphImpl(MediaTrackGraph* aGraph);
 
   
-  
-  
-  
-  
-  
-  
   virtual void AddAudioOutput(void* aKey);
   virtual void SetAudioOutputVolume(void* aKey, float aVolume);
   virtual void RemoveAudioOutput(void* aKey);
@@ -557,12 +551,6 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   bool mNotifiedEnded;
 
   
-  struct AudioOutput {
-    explicit AudioOutput(void* aKey) : mKey(aKey), mVolume(1.0f) {}
-    void* mKey;
-    float mVolume;
-  };
-  nsTArray<AudioOutput> mAudioOutputs;
   nsTArray<RefPtr<MediaTrackListener>> mTrackListeners;
   nsTArray<MainThreadMediaTrackListener*> mMainThreadListeners;
   
@@ -577,20 +565,6 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
 
   
   nsTArray<MediaInputPort*> mConsumers;
-
-  
-  
-  struct AudioOutputStream {
-    
-    
-    GraphTime mAudioPlaybackStartTime;
-    
-    
-    MediaTime mBlockedAudioTime;
-    
-    TrackTime mLastTickWritten;
-  };
-  UniquePtr<AudioOutputStream> mAudioOutputStream;
 
   
 
@@ -1052,6 +1026,7 @@ class MediaTrackGraph {
                                   AudioDataListener* aListener) = 0;
   virtual void CloseAudioInput(Maybe<CubebUtils::AudioDeviceID>& aID,
                                AudioDataListener* aListener) = 0;
+
   
   
 
