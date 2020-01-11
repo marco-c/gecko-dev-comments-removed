@@ -94,17 +94,7 @@ void StreamSamplesAndMarkers(const char* aName, int aThreadId,
       "processType",
       "(unknown)" );
 
-  {
-    std::string name = aName;
-    
-    
-    
-    
-    
-    
-    name += " (pre-xul)";
-    aWriter.StringProperty("name", name.c_str());
-  }
+  aWriter.StringProperty("name", aName);
 
   
   if (!aProcessName.empty()) {

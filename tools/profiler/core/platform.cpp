@@ -1051,26 +1051,7 @@ class ActivePS {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (sInstance->mBaseProfileThreads &&
-        sInstance->mGeckoIndexWhenBaseProfileAdded <
-            CorePS::CoreBlocksRingBuffer().GetState().mRangeStart) {
-      DEBUG_LOG("ClearExpiredExitProfiles() - Discarding base profile %p",
-                sInstance->mBaseProfileThreads.get());
+    if (bufferRangeStart > 1 && sInstance->mBaseProfileThreads) {
       sInstance->mBaseProfileThreads.reset();
     }
 #endif
@@ -1084,10 +1065,7 @@ class ActivePS {
   static void AddBaseProfileThreads(PSLockRef aLock,
                                     UniquePtr<char[]> aBaseProfileThreads) {
     MOZ_ASSERT(sInstance);
-    DEBUG_LOG("AddBaseProfileThreads(%p)", aBaseProfileThreads.get());
     sInstance->mBaseProfileThreads = std::move(aBaseProfileThreads);
-    sInstance->mGeckoIndexWhenBaseProfileAdded =
-        CorePS::CoreBlocksRingBuffer().GetState().mRangeEnd;
   }
 
   static UniquePtr<char[]> MoveBaseProfileThreads(PSLockRef aLock) {
@@ -1095,8 +1073,6 @@ class ActivePS {
 
     ClearExpiredExitProfiles(aLock);
 
-    DEBUG_LOG("MoveBaseProfileThreads() - Consuming base profile %p",
-              sInstance->mBaseProfileThreads.get());
     return std::move(sInstance->mBaseProfileThreads);
   }
 #endif
@@ -1201,7 +1177,6 @@ class ActivePS {
 #ifdef MOZ_BASE_PROFILER
   
   UniquePtr<char[]> mBaseProfileThreads;
-  BlocksRingBuffer::BlockIndex mGeckoIndexWhenBaseProfileAdded;
 #endif
 
   struct ExitProfile {
@@ -4010,20 +3985,6 @@ static void TriggerPollJSSamplingOnMainThread() {
   }
 }
 
-#ifdef MOZ_BASE_PROFILER
-static bool HasMinimumLength(const char* aString, size_t aMinimumLength) {
-  if (!aString) {
-    return false;
-  }
-  for (size_t i = 0; i < aMinimumLength; ++i) {
-    if (aString[i] == '\0') {
-      return false;
-    }
-  }
-  return true;
-}
-#endif  
-
 static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
                                   double aInterval, uint32_t aFeatures,
                                   const char** aFilters, uint32_t aFilterCount,
@@ -4050,33 +4011,6 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
 
   MOZ_RELEASE_ASSERT(CorePS::Exists() && !ActivePS::Exists(aLock));
 
-#ifdef MOZ_BASE_PROFILER
-  UniquePtr<char[]> baseprofile;
-  if (baseprofiler::profiler_is_active()) {
-    
-    
-    
-    
-    baseprofile = baseprofiler::profiler_get_profile(
-         0,  false,
-         true);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    baseprofiler::profiler_stop();
-  }
-#endif
-
 #if defined(GP_PLAT_amd64_windows)
   InitializeWin64ProfilerHooks();
 #endif
@@ -4101,13 +4035,29 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
   MOZ_ASSERT(ActivePS::Exists(aLock));
 
 #ifdef MOZ_BASE_PROFILER
-  
-  
-  if (HasMinimumLength(baseprofile.get(), 2)) {
+  if (baseprofiler::profiler_is_active()) {
     
     
     
-    ActivePS::AddBaseProfileThreads(aLock, std::move(baseprofile));
+    
+    UniquePtr<char[]> baseprofile = baseprofiler::profiler_get_profile(
+         0,  false,
+         true);
+
+    
+    
+    
+    
+    
+    
+    baseprofiler::profiler_stop();
+
+    if (baseprofile && baseprofile.get()[0] != '\0') {
+      
+      
+      
+      ActivePS::AddBaseProfileThreads(aLock, std::move(baseprofile));
+    }
   }
 #endif
 
