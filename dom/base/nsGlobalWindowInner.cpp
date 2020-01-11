@@ -1577,16 +1577,6 @@ void nsGlobalWindowInner::InnerSetNewDocument(JSContext* aCx,
     GetBrowsingContext()->NotifyResetUserGestureActivation();
   }
 
-#if defined(MOZ_WIDGET_ANDROID)
-  
-  
-  
-  if (mWindowGlobalChild && GetBrowsingContext() &&
-      !GetBrowsingContext()->GetParent()) {
-    GetBrowsingContext()->ResetGVAutoplayRequestStatus();
-  }
-#endif
-
 #ifdef DEBUG
   mLastOpenedURI = aDocument->GetDocumentURI();
 #endif

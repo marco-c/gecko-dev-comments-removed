@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_BrowsingContext_h
 #define mozilla_dom_BrowsingContext_h
 
-#include "GVAutoplayRequestUtils.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Tuple.h"
@@ -392,8 +391,6 @@ class BrowsingContext : public nsISupports,
 
   void StartDelayedAutoplayMediaComponents();
 
-  void ResetGVAutoplayRequestStatus();
-
   
 
 
@@ -555,9 +552,6 @@ class BrowsingContext : public nsISupports,
   bool MaySetIsPopupSpam(const bool& aValue, ContentParent* aSource);
 
   void DidSetIsPopupSpam();
-
-  void DidSetGVAudibleAutoplayRequestStatus();
-  void DidSetGVInaudibleAutoplayRequestStatus();
 
   
   const Type mType;
