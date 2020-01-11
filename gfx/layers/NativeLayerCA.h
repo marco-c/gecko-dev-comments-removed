@@ -34,7 +34,20 @@ class MozFramebuffer;
 
 namespace layers {
 
+class NativeLayerRootSnapshotterCA;
 class SurfacePoolHandleCA;
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -65,6 +78,10 @@ class NativeLayerRootCA : public NativeLayerRoot {
   
   bool CommitToScreen() override;
 
+  void CommitOffscreen();
+  void OnNativeLayerRootSnapshotterDestroyed(
+      NativeLayerRootSnapshotterCA* aNativeLayerRootSnapshotter);
+
   
   
   void SuspendOffMainThreadCommits();
@@ -85,6 +102,7 @@ class NativeLayerRootCA : public NativeLayerRoot {
   void AppendLayer(NativeLayer* aLayer) override;
   void RemoveLayer(NativeLayer* aLayer) override;
   void SetLayers(const nsTArray<RefPtr<NativeLayer>>& aLayers) override;
+  UniquePtr<NativeLayerRootSnapshotter> CreateSnapshotter() override;
 
   void SetBackingScale(float aBackingScale);
   float BackingScale();
@@ -108,6 +126,7 @@ class NativeLayerRootCA : public NativeLayerRoot {
   Mutex mMutex;  
   Representation mOnscreenRepresentation;
   Representation mOffscreenRepresentation;
+  NativeLayerRootSnapshotterCA* mWeakSnapshotter = nullptr;
   nsTArray<RefPtr<NativeLayerCA>> mSublayers;  
   float mBackingScale = 1.0f;
   bool mMutated = false;
@@ -123,6 +142,28 @@ class NativeLayerRootCA : public NativeLayerRoot {
   
   
   bool mCommitPending = false;
+};
+
+class NativeLayerRootSnapshotterCA final : public NativeLayerRootSnapshotter {
+ public:
+  static UniquePtr<NativeLayerRootSnapshotterCA> Create(
+      NativeLayerRootCA* aLayerRoot, CALayer* aRootCALayer);
+  virtual ~NativeLayerRootSnapshotterCA();
+
+  bool ReadbackPixels(const gfx::IntSize& aReadbackSize,
+                      gfx::SurfaceFormat aReadbackFormat,
+                      const Range<uint8_t>& aReadbackBuffer) override;
+
+ protected:
+  NativeLayerRootSnapshotterCA(NativeLayerRootCA* aLayerRoot,
+                               RefPtr<gl::GLContext>&& aGL,
+                               CALayer* aRootCALayer);
+
+  RefPtr<NativeLayerRootCA> mLayerRoot;
+  RefPtr<gl::GLContext> mGL;
+  UniquePtr<gl::MozFramebuffer>
+      mFB;  
+  CARenderer* mRenderer = nullptr;  
 };
 
 

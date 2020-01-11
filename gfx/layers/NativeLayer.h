@@ -7,6 +7,8 @@
 #define mozilla_layers_NativeLayer_h
 
 #include "mozilla/Maybe.h"
+#include "mozilla/Range.h"
+#include "mozilla/UniquePtr.h"
 
 #include "GLTypes.h"
 #include "nsISupportsImpl.h"
@@ -22,6 +24,7 @@ namespace layers {
 
 class NativeLayer;
 class NativeLayerCA;
+class NativeLayerRootSnapshotter;
 class SurfacePoolHandle;
 
 
@@ -45,8 +48,41 @@ class NativeLayerRoot {
   
   virtual bool CommitToScreen() = 0;
 
+  
+  
+  
+  
+  
+  
+  virtual UniquePtr<NativeLayerRootSnapshotter> CreateSnapshotter() {
+    return nullptr;
+  }
+
  protected:
   virtual ~NativeLayerRoot() {}
+};
+
+
+
+
+
+
+class NativeLayerRootSnapshotter {
+ public:
+  virtual ~NativeLayerRootSnapshotter() {}
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual bool ReadbackPixels(const gfx::IntSize& aReadbackSize,
+                              gfx::SurfaceFormat aReadbackFormat,
+                              const Range<uint8_t>& aReadbackBuffer) = 0;
 };
 
 
