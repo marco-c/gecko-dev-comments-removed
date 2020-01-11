@@ -13,17 +13,13 @@
 
 
 
-#ifdef MOZ_PHOENIX
-
-#  define IDI_APPICON 1
-#  define IDI_DOCUMENT 2
-#  define IDI_NEWWINDOW 3
-#  define IDI_NEWTAB 4
-#  define IDI_PBMODE 5
-#  ifndef IDI_APPLICATION
-#    define IDI_APPLICATION 32512
-#  endif
-
+#define IDI_APPICON 1
+#define IDI_DOCUMENT 2
+#define IDI_NEWWINDOW 3
+#define IDI_NEWTAB 4
+#define IDI_PBMODE 5
+#ifndef IDI_APPLICATION
+#  define IDI_APPLICATION 32512
 #endif
 
 
