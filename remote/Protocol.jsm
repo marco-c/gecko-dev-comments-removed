@@ -9,6 +9,19 @@ var EXPORTED_SYMBOLS = ["Protocol"];
 
 
 
+
+
+
+function sanitize(key, value) {
+  if (value === null || (typeof value == "string" && value.length == 0)) {
+    return undefined;
+  }
+  return value;
+}
+
+
+
+
 const Description = {
     "domains": [
         {
@@ -17357,4 +17370,4 @@ const Description = {
     }
 };
 
-const Protocol = {Description};
+const Protocol = {Description, sanitize};
