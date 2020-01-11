@@ -58,6 +58,31 @@ struct FunctionCreationData {
                        bool isSelfHosting = false, bool inFunctionBox = false);
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  FunctionCreationData(const FunctionCreationData& data)
+      : atom(data.atom),
+        kind(data.kind),
+        generatorKind(data.generatorKind),
+        asyncKind(data.asyncKind),
+        allocKind(data.allocKind),
+        flags(data.flags),
+        isSelfHosting(data.isSelfHosting),
+        lazyScriptData(mozilla::Nothing()) {
+    MOZ_RELEASE_ASSERT(!data.lazyScriptData);
+  }
+
+  FunctionCreationData(FunctionCreationData&& data) = default;
+
+  
   JSAtom* atom = nullptr;
   FunctionSyntaxKind kind = FunctionSyntaxKind::Expression;
   GeneratorKind generatorKind = GeneratorKind::NotGenerator;
@@ -67,6 +92,8 @@ struct FunctionCreationData {
   FunctionFlags flags = {};
 
   bool isSelfHosting = false;
+
+  mozilla::Maybe<LazyScriptCreationData> lazyScriptData;
 
   HandleAtom getAtom(JSContext* cx) const;
 
