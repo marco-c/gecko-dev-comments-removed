@@ -245,6 +245,14 @@ struct ClipChainPairInfo {
     clip_chain_id: ClipChainId,
 }
 
+bitflags! {
+    /// Slice flags
+    pub struct SliceFlags : u8 {
+        /// Slice created by a cluster that has ClusterFlags::SCROLLBAR_CONTAINER
+        const IS_SCROLLBAR = 1;
+    }
+}
+
 
 struct Slice {
     
@@ -256,6 +264,8 @@ struct Slice {
     
     
     shared_clips: Option<Vec<ClipDataHandle>>,
+    
+    pub flags: SliceFlags,
 }
 
 impl Slice {
@@ -539,10 +549,16 @@ impl<'a> SceneBuilder<'a> {
                     prev_slice.pop_clip_instances(&clip_chain_instance_stack);
                 }
 
+                let slice_flags = if cluster.flags.contains(ClusterFlags::SCROLLBAR_CONTAINER) {
+                    SliceFlags::IS_SCROLLBAR
+                } else {
+                    SliceFlags::empty()
+                };
                 let mut slice = Slice {
                     cache_scroll_root: cluster.cache_scroll_root,
                     prim_list: PrimitiveList::empty(),
                     shared_clips: None,
+                    flags: slice_flags
                 };
 
                 
@@ -656,6 +672,7 @@ impl<'a> SceneBuilder<'a> {
 
             let instance = create_tile_cache(
                 slice_index,
+                slice.flags,
                 scroll_root,
                 slice.prim_list,
                 background_color,
@@ -3952,6 +3969,7 @@ fn process_repeat_size(
 
 fn create_tile_cache(
     slice: usize,
+    slice_flags: SliceFlags,
     scroll_root: SpatialNodeIndex,
     prim_list: PrimitiveList,
     background_color: Option<ColorF>,
@@ -4006,6 +4024,7 @@ fn create_tile_cache(
 
     let tile_cache = Box::new(TileCacheInstance::new(
         slice,
+        slice_flags,
         scroll_root,
         background_color,
         shared_clips,
