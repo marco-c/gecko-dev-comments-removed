@@ -9,13 +9,25 @@
 
 
 
-
-
-const { Observers } = ChromeUtils.import(
-  "resource://services-common/observers.js"
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+XPCOMUtils.defineLazyModuleGetters(this, {
+  log: "resource://gre/modules/FxAccountsCommon.js",
+  
+  
+  Observers: "resource://services-common/observers.js",
+  Services: "resource://gre/modules/Services.jsm",
+});
+
 class FxAccountsTelemetry {
+  constructor(fxai) {
+    this._fxai = fxai;
+    Services.telemetry.setEventRecordingEnabled("fxa", true);
+  }
+
+  
   recordEvent(object, method, value, extra = undefined) {
     
     ChromeUtils.import("resource://services-sync/telemetry.js");
@@ -49,6 +61,81 @@ class FxAccountsTelemetry {
       
     }
     return null;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  async recordConnection(services, how = null) {
+    try {
+      let extra = {};
+      
+      if (!(await this._fxai.getUserAccountData())) {
+        extra.fxa = "true";
+      }
+      
+      if (services.includes("sync")) {
+        extra.sync = "true";
+      }
+      Services.telemetry.recordEvent("fxa", "connect", "account", how, extra);
+    } catch (ex) {
+      log.error("Failed to record connection telemetry", ex);
+      console.error("Failed to record connection telemetry", ex);
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  async recordDisconnection(service = null, how = null) {
+    try {
+      let extra = {};
+      if (!service) {
+        extra.fxa = "true";
+        
+        
+        if (Services.prefs.prefHasUserValue("services.sync.username")) {
+          extra.sync = "true";
+        }
+      } else if (service == "sync") {
+        extra[service] = "true";
+      } else {
+        
+        log.warn(
+          `recordDisconnection has invalid value for service: ${service}`
+        );
+      }
+      Services.telemetry.recordEvent(
+        "fxa",
+        "disconnect",
+        "account",
+        how,
+        extra
+      );
+    } catch (ex) {
+      log.error("Failed to record disconnection telemetry", ex);
+      console.error("Failed to record disconnection telemetry", ex);
+    }
   }
 }
 

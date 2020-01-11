@@ -434,6 +434,11 @@ this.FxAccountsWebChannelHelpers.prototype = {
     
     this.setPreviousAccountNameHashPref(accountData.email);
 
+    await this._fxAccounts.telemetry.recordConnection(
+      Object.keys(requestedServices || {}),
+      "webchannel"
+    );
+
     
     
     
@@ -479,17 +484,15 @@ this.FxAccountsWebChannelHelpers.prototype = {
 
 
 
-  logout(uid) {
-    return this._fxAccounts._internal
-      .getUserAccountData(["uid"])
-      .then(userData => {
-        if (userData && userData.uid === uid) {
-          
-          
-          return fxAccounts.signOut(true);
-        }
-        return null;
-      });
+  async logout(uid) {
+    let fxa = this._fxAccounts;
+    let userData = await fxa._internal.getUserAccountData(["uid"]);
+    if (userData && userData.uid === uid) {
+      await fxa.telemetry.recordDisconnection(null, "webchannel");
+      
+      
+      await fxa.signOut(true);
+    }
   },
 
   
