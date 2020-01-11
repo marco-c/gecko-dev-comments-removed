@@ -52,9 +52,6 @@ mozilla::LazyLogModule nsURILoader::mLog("URILoader");
   MOZ_LOG(nsURILoader::mLog, mozilla::LogLevel::Error, args)
 #define LOG_ENABLED() MOZ_LOG_TEST(nsURILoader::mLog, mozilla::LogLevel::Debug)
 
-#define NS_PREF_DISABLE_BACKGROUND_HANDLING \
-  "security.exthelperapp.disable_background_handling"
-
 static uint32_t sConvertDataLimit = 20;
 
 static bool InitPreferences() {
@@ -538,36 +535,6 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request,
   
   
   
-
-  
-  
-  
-  
-  if (mozilla::Preferences::GetBool(NS_PREF_DISABLE_BACKGROUND_HANDLING,
-                                    false)) {
-    
-    
-    
-    nsCOMPtr<nsIDocShell> docShell(do_GetInterface(m_originalContext));
-    if (!docShell) {
-      
-      
-      LOG(
-          ("Failed to get DocShell to ensure it is active before anding off to "
-           "helper app service. Aborting."));
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    bool isActive = false;
-    docShell->GetIsActive(&isActive);
-    if (!isActive) {
-      LOG(
-          ("  Check for active DocShell returned false. Aborting hand off to "
-           "helper app service."));
-      return NS_ERROR_DOM_SECURITY_ERR;
-    }
-  }
 
   nsCOMPtr<nsIExternalHelperAppService> helperAppService =
       do_GetService(NS_EXTERNALHELPERAPPSERVICE_CONTRACTID, &rv);
