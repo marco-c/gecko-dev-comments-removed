@@ -514,16 +514,15 @@ class VirtualenvManager(object):
         If vendored is True, no package index will be used and no dependencies
         will be installed.
         """
-        from pip.req import InstallRequirement
+        from pip._internal.req.constructors import install_req_from_line
 
-        req = InstallRequirement.from_line(package)
-        req.check_if_exists()
+        req = install_req_from_line(package)
+        req.check_if_exists(use_user_site=False)
         if req.satisfied_by is not None:
             return
 
         args = [
             'install',
-            '--use-wheel',
             package,
         ]
 
@@ -531,6 +530,16 @@ class VirtualenvManager(object):
             args.extend([
                 '--no-deps',
                 '--no-index',
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                '--no-build-isolation',
             ])
 
         return self._run_pip(args)
@@ -591,7 +600,7 @@ class VirtualenvManager(object):
         indicates the version of Python for pipenv to use.
         """
         pipenv = os.path.join(self.bin_path, 'pipenv')
-        env = os.environ.copy()
+        env = ensure_subprocess_env(os.environ.copy())
         env.update(ensure_subprocess_env({
             'PIPENV_IGNORE_VIRTUALENVS': '1',
             'WORKON_HOME': str(os.path.normpath(os.path.join(self.topobjdir, '_virtualenvs')))
