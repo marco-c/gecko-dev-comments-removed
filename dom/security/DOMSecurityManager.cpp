@@ -9,6 +9,7 @@
 #include "nsContentSecurityUtils.h"
 #include "mozilla/dom/FramingChecker.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/StaticPrefs_fission.h"
 
 #include "nsIMultiPartChannel.h"
 #include "nsIObserverService.h"
@@ -84,19 +85,29 @@ DOMSecurityManager::Observe(nsISupports* aSubject, const char* aTopic,
     return NS_OK;
   }
 
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  nsresult rv =
-      ParseCSPAndEnforceFrameAncestorCheck(channel, getter_AddRefs(csp));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
   
   
   
-  rv = EnforeXFrameOptionsCheck(channel, csp);
-  if (NS_FAILED(rv)) {
-    return rv;
+  
+  
+  
+  
+  
+  bool fissionEnabled = StaticPrefs::fission_autostart();
+  if (fissionEnabled) {
+    nsCOMPtr<nsIContentSecurityPolicy> csp;
+    nsresult rv =
+        ParseCSPAndEnforceFrameAncestorCheck(channel, getter_AddRefs(csp));
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+    
+    
+    
+    rv = EnforeXFrameOptionsCheck(channel, csp);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
   }
 
   return NS_OK;

@@ -97,13 +97,20 @@ void FramingChecker::ReportError(const char* aMessageTag,
   nsCOMPtr<nsIURI> parentURI;
   if (aParentContext) {
     BrowsingContext* topContext = aParentContext->Top();
-    WindowGlobalParent* window =
-        topContext->Canonical()->GetCurrentWindowGlobal();
-    if (window) {
-      parentURI = window->GetDocumentURI();
+    
+    
+    
+    if (XRE_IsParentProcess()) {
+      WindowGlobalParent* window =
+          topContext->Canonical()->GetCurrentWindowGlobal();
+      if (window) {
+        parentURI = window->GetDocumentURI();
+      }
+    } else if (nsPIDOMWindowOuter* windowOuter = topContext->GetDOMWindow()) {
+      parentURI = windowOuter->GetDocumentURI();
     }
+    ReportError(aMessageTag, parentURI, aChildURI, aPolicy, aInnerWindowID);
   }
-  ReportError(aMessageTag, parentURI, aChildURI, aPolicy, aInnerWindowID);
 }
 
 
@@ -131,26 +138,36 @@ bool FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
   nsCOMPtr<nsIURI> topUri;
 
   while (ctx) {
-    WindowGlobalParent* window = ctx->Canonical()->GetCurrentWindowGlobal();
-    if (window) {
-      if (window->DocumentPrincipal()->IsSystemPrincipal()) {
-        return true;
-      }
-      
-      
-      
-      nsCOMPtr<nsIPrincipal> principal = window->DocumentPrincipal();
-      principal->GetURI(getter_AddRefs(topUri));
-
-      if (checkSameOrigin) {
-        bool isPrivateWin =
-            principal->OriginAttributesRef().mPrivateBrowsingId > 0;
-        nsresult rv = ssm->CheckSameOriginURI(uri, topUri, true, isPrivateWin);
+    nsCOMPtr<nsIPrincipal> principal;
+    
+    
+    
+    if (XRE_IsParentProcess()) {
+      WindowGlobalParent* window = ctx->Canonical()->GetCurrentWindowGlobal();
+      if (window) {
         
-        if (NS_FAILED(rv)) {
-          ReportError("XFOSameOrigin", topUri, uri, aPolicy, innerWindowID);
-          return false;
-        }
+        
+        
+        principal = window->DocumentPrincipal();
+        principal->GetURI(getter_AddRefs(topUri));
+      }
+    } else if (nsPIDOMWindowOuter* windowOuter = ctx->GetDOMWindow()) {
+      principal = nsGlobalWindowOuter::Cast(windowOuter)->GetPrincipal();
+      principal->GetURI(getter_AddRefs(topUri));
+    }
+
+    if (principal && principal->IsSystemPrincipal()) {
+      return true;
+    }
+
+    if (checkSameOrigin) {
+      bool isPrivateWin =
+          principal && principal->OriginAttributesRef().mPrivateBrowsingId > 0;
+      nsresult rv = ssm->CheckSameOriginURI(uri, topUri, true, isPrivateWin);
+      
+      if (NS_FAILED(rv)) {
+        ReportError("XFOSameOrigin", topUri, uri, aPolicy, innerWindowID);
+        return false;
       }
     }
     ctx = ctx->GetParent();
@@ -173,7 +190,9 @@ bool FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
 static bool ShouldIgnoreFrameOptions(nsIChannel* aChannel,
                                      nsIContentSecurityPolicy* aCSP) {
   NS_ENSURE_TRUE(aChannel, false);
-  NS_ENSURE_TRUE(aCSP, false);
+  if (!aCSP) {
+    return false;
+  }
 
   bool enforcesFrameAncestors = false;
   aCSP->GetEnforcesFrameAncestors(&enforcesFrameAncestors);
@@ -205,10 +224,9 @@ static bool ShouldIgnoreFrameOptions(nsIChannel* aChannel,
 
 
 
+
 bool FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
                                        nsIContentSecurityPolicy* aCsp) {
-  MOZ_ASSERT(XRE_IsParentProcess(), "x-frame-options check only in parent");
-
   if (!aChannel) {
     return true;
   }
@@ -233,6 +251,22 @@ bool FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
   
   if (loadInfo->TriggeringPrincipal()->GetIsAddonOrExpandedAddonPrincipal()) {
     return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (XRE_IsParentProcess()) {
+    
+    
+    nsAutoCString type;
+    aChannel->GetContentType(type);
+    if (type.LowerCaseEqualsLiteral("application/octet-stream")) {
+      return true;
+    }
   }
 
   nsCOMPtr<nsIHttpChannel> httpChannel;
