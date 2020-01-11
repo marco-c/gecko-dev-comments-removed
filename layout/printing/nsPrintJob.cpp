@@ -574,7 +574,6 @@ void nsPrintJob::Destroy() {
 
 #ifdef NS_PRINT_PREVIEW
   mPrtPreview = nullptr;
-  mOldPrtPreview = nullptr;
 #endif
   mDocViewerPrint = nullptr;
 }
@@ -748,10 +747,6 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     nsCOMPtr<nsIPrintingPromptService> pps(
         do_QueryInterface(aWebProgressListener));
     mProgressDialogIsShown = pps != nullptr;
-
-    if (mIsDoingPrintPreview) {
-      mOldPrtPreview = std::move(mPrtPreview);
-    }
   } else {
     mProgressDialogIsShown = false;
   }
@@ -776,6 +771,11 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   printData->mPrintSettings->GetShrinkToFit(&printData->mShrinkToFit);
 
   if (aIsPrintPreview) {
+    
+    
+    
+    mPrtPreview = nullptr;
+
     mIsCreatingPrintPreview = true;
     SetIsPrintPreview(true);
     nsCOMPtr<nsIContentViewer> viewer = do_QueryInterface(mDocViewerPrint);
@@ -2992,10 +2992,6 @@ nsresult nsPrintJob::FinishPrintPreview() {
 
   
   
-
-  if (mIsDoingPrintPreview && mOldPrtPreview) {
-    mOldPrtPreview = nullptr;
-  }
 
   printData->OnEndPrinting();
   
