@@ -10,6 +10,8 @@
 
 #include "mozilla/gfx/2D.h"
 
+#include "ThebesRLBoxTypes.h"
+
 struct gr_face;
 struct gr_font;
 struct gr_segment;
@@ -29,13 +31,29 @@ class gfxGraphiteShaper : public gfxFontShaper {
  protected:
   nsresult SetGlyphsFromSegment(gfxShapedText* aShapedText, uint32_t aOffset,
                                 uint32_t aLength, const char16_t* aText,
-                                gr_segment* aSegment, RoundingFlags aRounding);
+                                tainted_opaque_gr<char16_t*> t_aText,
+                                tainted_opaque_gr<gr_segment*> aSegment,
+                                RoundingFlags aRounding);
 
-  static float GrGetAdvance(const void* appFontHandle, uint16_t glyphid);
+  
+  
+  
+  friend class gfxFontEntry;
+  static tainted_opaque_gr<float> GrGetAdvance(
+      rlbox_sandbox_gr& sandbox, tainted_opaque_gr<const void*> appFontHandle,
+      tainted_opaque_gr<uint16_t> glyphid);
 
-  gr_face* mGrFace;  
-                     
-  gr_font* mGrFont;  
+  tainted_opaque_gr<gr_face*>
+      mGrFace;  
+                
+  tainted_opaque_gr<gr_font*> mGrFont;  
+
+  
+  rlbox_sandbox_gr* mSandbox;
+
+  
+  
+  sandbox_callback_gr<float (*)(const void*, uint16_t)>* mCallback;
 
   struct CallbackData {
     
@@ -44,6 +62,8 @@ class gfxGraphiteShaper : public gfxFontShaper {
   };
 
   CallbackData mCallbackData;
+  static thread_local CallbackData* tl_GrGetAdvanceData;
+
   bool mFallbackToSmallCaps;  
 
   
