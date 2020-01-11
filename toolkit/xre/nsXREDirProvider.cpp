@@ -639,7 +639,7 @@ nsresult nsXREDirProvider::LoadContentProcessTempDir() {
     }
   }
 
-#    if defined(XP_WIN)
+#  if defined(XP_WIN)
   
   
   
@@ -647,7 +647,7 @@ nsresult nsXREDirProvider::LoadContentProcessTempDir() {
           mContentTempDir)) {
     NS_WARNING("Failed to resolve Content Temp Dir.");
   }
-#    endif
+#  endif
 
   return NS_OK;
 }
@@ -737,11 +737,9 @@ static already_AddRefed<nsIFile> GetProcessSandboxTempDir(
 
 static already_AddRefed<nsIFile> CreateProcessSandboxTempDir(
     GeckoProcessType procType) {
-#  if defined(MOZ_SANDBOX)
   if ((procType == GeckoProcessType_Content) && IsContentSandboxDisabled()) {
     return nullptr;
   }
-#  endif
 
   MOZ_ASSERT((procType == GeckoProcessType_Content) ||
              (procType == GeckoProcessType_Plugin));
