@@ -1750,10 +1750,8 @@ class Document : public nsINode,
 
 
 
-
-
-  nsresult ChangeContentEditableCount(nsIContent* aElement, int32_t aChange);
-  void DeferredContentEditableCountChange(nsIContent* aElement);
+  void ChangeContentEditableCount(Element*, int32_t aChange);
+  void DeferredContentEditableCountChange(Element*);
 
   enum class EditingState : int8_t {
     eTearingDown = -2,
