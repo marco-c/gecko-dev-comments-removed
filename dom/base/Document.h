@@ -1994,10 +1994,6 @@ class Document : public nsINode,
 
 
 
-  StyleSheetList* StyleSheets() {
-    return &DocumentOrShadowRoot::EnsureDOMStyleSheets();
-  }
-
   void InsertSheetAt(size_t aIndex, StyleSheet&);
 
   

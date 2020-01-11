@@ -80,10 +80,6 @@ class ShadowRoot final : public DocumentFragment,
   void SheetCloned(StyleSheet&);
   void StyleSheetApplicableStateChanged(StyleSheet&, bool aApplicable);
 
-  StyleSheetList* StyleSheets() {
-    return &DocumentOrShadowRoot::EnsureDOMStyleSheets();
-  }
-
   
 
 
