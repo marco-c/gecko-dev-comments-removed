@@ -247,12 +247,19 @@ PreviewController.prototype = {
     
   },
 
-  updateTitleAndTooltip() {
-    let title = this.win.tabbrowser.getWindowTitleForBrowser(
+  async updateTitleAndTooltip() {
+    let { id, args } = this.win.tabbrowser.getWindowTitleForBrowser(
       this.linkedBrowser
     );
-    this.preview.title = title;
-    this.preview.tooltip = title;
+    let title = await this.win.tabbrowser.ownerDocument.l10n.formatValue(
+      id,
+      args
+    );
+    
+    if (this.preview) {
+      this.preview.title = title;
+      this.preview.tooltip = title;
+    }
   },
 
   
