@@ -841,7 +841,7 @@ bool nsCSPKeywordSrc::allows(enum CSPKeyword aKeyword,
     
     
     
-    MOZ_ASSERT(mKeyword == CSP_UNSAFE_INLINE,
+    MOZ_ASSERT(mKeyword == CSP_UNSAFE_INLINE || mKeyword == CSP_REPORT_SAMPLE,
                "should only invalidate unsafe-inline");
     return false;
   }
