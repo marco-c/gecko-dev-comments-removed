@@ -39,6 +39,7 @@ import { TestWorker } from './helper/test_worker.js';
           }
 
           this.step(() => {
+            
             if (r.status === 'fail') {
               throw (r.logs || []).join('\n');
             }

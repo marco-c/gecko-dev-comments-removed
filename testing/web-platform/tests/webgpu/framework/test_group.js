@@ -136,18 +136,16 @@ class RunCaseSpecific {
 
     try {
       const inst = new this.fixture(rec, this.params || {});
-      await inst.init();
 
       try {
+        await inst.init();
         await this.fn(inst);
-      } catch (ex) {
+      } finally {
         
-        rec.threw(ex);
-      } 
-
-
-      await inst.finalize();
+        await inst.finalize();
+      }
     } catch (ex) {
+      
       
       
       rec.threw(ex);

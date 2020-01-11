@@ -3,15 +3,12 @@
 
 
 export const description = ``;
-import { TestGroup } from '../../../framework/index.js';
-import { GPUTest } from '../gpu_test.js'; 
-
-export const g = new TestGroup(GPUTest);
-g.test('getContext returns GPUCanvasContext', async t => {
+import { Fixture, TestGroup } from '../../../framework/index.js';
+export const g = new TestGroup(Fixture);
+g.test('canvas element getContext returns GPUCanvasContext', async t => {
   if (typeof document === 'undefined') {
     
-    
-    return;
+    t.skip('DOM is not available to create canvas element');
   }
 
   const canvas = document.createElement('canvas');

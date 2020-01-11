@@ -4,6 +4,7 @@
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
+export class SkipTestCase extends Error {} 
 
 
 
@@ -31,6 +32,10 @@ export class Fixture {
 
   log(msg) {
     this.rec.log(msg);
+  }
+
+  skip(msg) {
+    throw new SkipTestCase(msg);
   }
 
   async finalize() {
@@ -64,14 +69,14 @@ export class Fixture {
 
   expectErrorValue(expectedName, ex, m) {
     if (!(ex instanceof Error)) {
-      this.fail('THREW NON-ERROR');
+      this.fail('THREW non-error value, of type ' + typeof ex);
       return;
     }
 
     const actualName = ex.name;
 
     if (actualName !== expectedName) {
-      this.fail(`THREW ${actualName} INSTEAD OF ${expectedName}${m}`);
+      this.fail(`THREW ${actualName}, instead of ${expectedName}${m}`);
     } else {
       this.debug(`OK: threw ${actualName}${m}`);
     }
