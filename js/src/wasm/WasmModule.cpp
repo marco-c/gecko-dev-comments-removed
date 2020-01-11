@@ -522,7 +522,7 @@ bool Module::initSegments(JSContext* cx, HandleWasmInstanceObject instanceObj,
   
   
 #ifdef ENABLE_WASM_BULKMEM_OPS
-  const bool eagerBoundsCheck = cx->options().wasmCranelift();
+  const bool eagerBoundsCheck = false;
 #else
   
   const bool eagerBoundsCheck =
