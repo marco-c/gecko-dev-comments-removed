@@ -10452,6 +10452,19 @@ nsresult PresShell::SetIsActive(bool aIsActive) {
       presContext->UpdateDynamicToolbarOffset(0);
     }
   }
+
+  
+  
+  
+  
+  if (aIsActive) {
+    if (nsIFrame* root = GetRootFrame()) {
+      FrameLayerBuilder::InvalidateAllLayersForFrame(
+          nsLayoutUtils::GetDisplayRootFrame(root));
+      root->SchedulePaint();
+    }
+  }
+
 #endif
 
   return rv;
