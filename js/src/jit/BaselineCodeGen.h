@@ -654,11 +654,11 @@ class BaselineInterpreterHandler {
 
   
   
-  Label interpretOp_;
+  NonAssertingLabel interpretOp_;
 
   
   
-  Label interpretOpWithPCReg_;
+  NonAssertingLabel interpretOpWithPCReg_;
 
   
   using CodeOffsetVector = Vector<uint32_t, 0, SystemAllocPolicy>;
@@ -666,8 +666,8 @@ class BaselineInterpreterHandler {
 
   
   CodeOffsetVector codeCoverageOffsets_;
-  Label codeCoverageAtPrologueLabel_;
-  Label codeCoverageAtPCLabel_;
+  NonAssertingLabel codeCoverageAtPrologueLabel_;
+  NonAssertingLabel codeCoverageAtPCLabel_;
 
   
   BaselineInterpreter::ICReturnOffsetVector icReturnOffsets_;
@@ -728,9 +728,8 @@ class BaselineInterpreterHandler {
     return false;
   }
 
-  MOZ_MUST_USE bool addDebugInstrumentationOffset(CodeOffset offset) {
-    return debugInstrumentationOffsets_.append(offset.offset());
-  }
+  MOZ_MUST_USE bool addDebugInstrumentationOffset(JSContext* cx,
+                                                  CodeOffset offset);
 
   const BaselineInterpreter::CallVMOffsets& callVMOffsets() const {
     return callVMOffsets_;
