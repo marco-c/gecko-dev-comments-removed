@@ -3359,10 +3359,8 @@ nsresult nsFocusManager::GetNextTabbableContent(
       
       nsIContent* currentContent = frame->GetContent();
       nsIContent* oldTopLevelScopeOwner = currentTopLevelScopeOwner;
-      if (!aForward || oldTopLevelScopeOwner != currentContent) {
+      if (!aForward || currentTopLevelScopeOwner != currentContent) {
         currentTopLevelScopeOwner = GetTopLevelScopeOwner(currentContent);
-      } else {
-        currentTopLevelScopeOwner = currentContent;
       }
       if (currentTopLevelScopeOwner &&
           currentTopLevelScopeOwner == oldTopLevelScopeOwner) {
@@ -3429,7 +3427,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
       
       
       
-      if (IsHostOrSlot(currentTopLevelScopeOwner)) {
+      if (currentTopLevelScopeOwner) {
         bool focusableHostSlot;
         int32_t tabIndex = HostOrSlotTabIndexValue(currentTopLevelScopeOwner,
                                                    &focusableHostSlot);
