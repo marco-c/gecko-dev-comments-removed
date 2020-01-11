@@ -1,24 +1,25 @@
 
 function checkElementInternal(entry, expectedUrl, expectedIdentifier, expectedID, beforeRender,
     expectedElement) {
-  assert_equals(entry.entryType, 'element');
-  assert_equals(entry.url, expectedUrl);
-  assert_equals(entry.identifier, expectedIdentifier);
+  assert_equals(entry.entryType, 'element', 'entryType does not match');
+  assert_equals(entry.url, expectedUrl, 'url does not match');
+  assert_equals(entry.identifier, expectedIdentifier, 'identifier does not match');
   if (beforeRender != 0) {
     
-    assert_equals(entry.startTime, entry.renderTime);
+    assert_equals(entry.startTime, entry.renderTime, 'startTime should equal renderTime');
   } else {
     
-    assert_equals(entry.startTime, entry.loadTime);
+    assert_equals(entry.startTime, entry.loadTime, 'startTime should equal loadTime');
   }
-  assert_equals(entry.duration, 0);
-  assert_equals(entry.id, expectedID);
-  assert_greater_than_equal(entry.renderTime, beforeRender);
-  assert_greater_than_equal(performance.now(), entry.renderTime);
+  assert_equals(entry.duration, 0, 'duration should be 0');
+  assert_equals(entry.id, expectedID, 'id does not match');
+  assert_greater_than_equal(entry.renderTime, beforeRender, 'renderTime greater than beforeRender');
+  assert_greater_than_equal(performance.now(), entry.renderTime, 'renderTime bounded by now()');
   if (expectedElement !== null) {
-    assert_equals(entry.element, expectedElement);
-    assert_equals(entry.identifier, expectedElement.elementTiming);
-    assert_equals(entry.id, expectedElement.id);
+    assert_equals(entry.element, expectedElement, 'element does not match');
+    assert_equals(entry.identifier, expectedElement.elementTiming,
+        'identifier must be the elementtiming of the element');
+    assert_equals(entry.id, expectedElement.id, 'id must be the id of the element');
   }
 }
 
