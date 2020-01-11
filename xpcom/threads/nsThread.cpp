@@ -816,20 +816,13 @@ NS_IMETHODIMP
 nsThread::AsyncShutdown() {
   LOG(("THRD(%p) async shutdown\n", this));
 
-  
-  
-  
-  if (!mThread) {
-    return NS_OK;
-  }
-
-  return !!ShutdownInternal( false) ? NS_OK : NS_ERROR_UNEXPECTED;
+  ShutdownInternal( false);
+  return NS_OK;
 }
 
 nsThreadShutdownContext* nsThread::ShutdownInternal(bool aSync) {
   MOZ_ASSERT(mEvents);
   MOZ_ASSERT(mEventTarget);
-  MOZ_ASSERT(mThread);
   MOZ_ASSERT(mThread != PR_GetCurrentThread());
   if (NS_WARN_IF(mThread == PR_GetCurrentThread())) {
     return nullptr;
@@ -839,6 +832,7 @@ nsThreadShutdownContext* nsThread::ShutdownInternal(bool aSync) {
   if (!mShutdownRequired.compareExchange(true, false)) {
     return nullptr;
   }
+  MOZ_ASSERT(mThread);
 
   MaybeRemoveFromThreadList();
 
@@ -906,15 +900,10 @@ NS_IMETHODIMP
 nsThread::Shutdown() {
   LOG(("THRD(%p) sync shutdown\n", this));
 
-  
-  
-  
-  if (!mThread) {
-    return NS_OK;
-  }
-
   nsThreadShutdownContext* maybeContext = ShutdownInternal( true);
-  if (!maybeContext) return NS_ERROR_UNEXPECTED;
+  if (!maybeContext) {
+    return NS_OK;  
+  }
 
   NotNull<nsThreadShutdownContext*> context = WrapNotNull(maybeContext);
 
