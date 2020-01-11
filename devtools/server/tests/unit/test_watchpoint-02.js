@@ -32,7 +32,7 @@ async function testBreakpointAndSetWatchpoint({ threadFront, debuggee }) {
       stopMe({a: 1})`,
       debuggee,
       "1.8",
-      "test_watchpoint-02.js",
+      "test_watchpoint-02.js"
     );
     
   }
@@ -60,10 +60,7 @@ async function testBreakpointAndSetWatchpoint({ threadFront, debuggee }) {
     line: 4,
   };
 
-  threadFront.setBreakpoint(
-    location,
-    {},
-  );
+  threadFront.setBreakpoint(location, {});
 
   info("Test that pause occurs on breakpoint.");
   const packet2 = await resumeAndWaitForPause(threadFront);
@@ -77,10 +74,7 @@ async function testBreakpointAndSetWatchpoint({ threadFront, debuggee }) {
   Assert.equal(packet3.why.type, "debuggerStatement");
 
   info("Remove breakpoint and finish.");
-   threadFront.removeBreakpoint(
-    location,
-    {}
-  );
+  threadFront.removeBreakpoint(location, {});
 
   await resume(threadFront);
 }
@@ -100,7 +94,7 @@ async function testBreakpointAndGetWatchpoint({ threadFront, debuggee }) {
       stopMe({a: 1})`,
       debuggee,
       "1.8",
-      "test_watchpoint-02.js",
+      "test_watchpoint-02.js"
     );
     
   }
@@ -127,10 +121,7 @@ async function testBreakpointAndGetWatchpoint({ threadFront, debuggee }) {
     line: 4,
   };
 
-  threadFront.setBreakpoint(
-    location,
-    {},
-  );
+  threadFront.setBreakpoint(location, {});
 
   info("Test that pause occurs on breakpoint.");
   const packet2 = await resumeAndWaitForPause(threadFront);
@@ -144,10 +135,7 @@ async function testBreakpointAndGetWatchpoint({ threadFront, debuggee }) {
   Assert.equal(packet3.why.type, "debuggerStatement");
 
   info("Remove breakpoint and finish.");
-  threadFront.removeBreakpoint(
-    location,
-    {}
-  );
+  threadFront.removeBreakpoint(location, {});
 
   await resume(threadFront);
 }
@@ -179,7 +167,7 @@ async function testLoops({ threadFront, debuggee, targetFront }) {
       stopMe({a: 1})`,
       debuggee,
       "1.8",
-      "test_watchpoint-02.js",
+      "test_watchpoint-02.js"
     );
     
   }
@@ -203,14 +191,14 @@ async function testLoops({ threadFront, debuggee, targetFront }) {
   const packet2 = await resumeAndWaitForPause(threadFront);
   Assert.equal(packet2.frame.where.line, 6);
   Assert.equal(packet2.why.type, "setWatchpoint");
-  let result =  await evaluateJS("obj.a");
+  let result = await evaluateJS("obj.a");
   Assert.equal(result, 1);
 
   info("Test that watchpoint triggers pause on set (2nd time).");
   const packet3 = await resumeAndWaitForPause(threadFront);
   Assert.equal(packet3.frame.where.line, 6);
   Assert.equal(packet3.why.type, "setWatchpoint");
-  let result2 =  await evaluateJS("obj.a");
+  let result2 = await evaluateJS("obj.a");
   Assert.equal(result2, 2);
 
   info("Test that we pause on second debugger statement.");
@@ -220,4 +208,3 @@ async function testLoops({ threadFront, debuggee, targetFront }) {
 
   await resume(threadFront);
 }
-

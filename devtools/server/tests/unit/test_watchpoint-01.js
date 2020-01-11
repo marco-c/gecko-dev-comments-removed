@@ -9,11 +9,13 @@
 
 
 
+
 add_task(
   threadFrontTest(async args => {
     await testSetWatchpoint(args);
     await testGetWatchpoint(args);
     await testRemoveWatchpoint(args);
+    await testRemoveWatchpoints(args);
   })
 );
 
@@ -122,6 +124,7 @@ async function testRemoveWatchpoint({ threadFront, debuggee }) {
         obj.a = 2;                        // 4
         debugger;                         // 5
       }                                   //
+
       stopMe({a: 1})`,
       debuggee,
       "1.8",
@@ -144,6 +147,47 @@ async function testRemoveWatchpoint({ threadFront, debuggee }) {
   const objClient = threadFront.pauseGrip(obj);
   await objClient.addWatchpoint("a", "obj.a", "set");
   await objClient.removeWatchpoint("a");
+
+  
+
+  const packet2 = await resumeAndWaitForPause(threadFront);
+  Assert.equal(packet2.frame.where.line, 5);
+
+  await resume(threadFront);
+}
+
+async function testRemoveWatchpoints({ threadFront, debuggee }) {
+  function evaluateTestCode(debuggee) {
+    
+    Cu.evalInSandbox(
+      `                                   // 1
+      function stopMe(obj) {              // 2
+        debugger;                         // 3
+        obj.a = 2;                        // 4
+        debugger;                         // 5
+      }                                   //
+      stopMe({a: 1})`,
+      debuggee,
+      "1.8",
+      "test_watchpoint-01.js"
+    );
+    
+  }
+
+  const packet = await executeOnNextTickAndWaitForPause(
+    () => evaluateTestCode(debuggee),
+    threadFront
+  );
+
+  
+  Assert.equal(packet.frame.where.line, 3);
+
+  
+  const args = packet.frame.arguments;
+  const obj = args[0];
+  const objClient = threadFront.pauseGrip(obj);
+  await objClient.addWatchpoint("a", "obj.a", "set");
+  await objClient.removeWatchpoints();
 
   
   const packet2 = await resumeAndWaitForPause(threadFront);
