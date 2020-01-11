@@ -1,8 +1,6 @@
 "use strict";
 
 add_task(async function testUserInterference() {
-  await waitForBalrogMigration();
-
   
   setPassingHeuristics();
   let promise = waitForDoorhanger();

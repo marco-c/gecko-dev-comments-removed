@@ -1,8 +1,6 @@
 "use strict";
 
 add_task(async function testDirtyEnable() {
-  await waitForBalrogMigration();
-
   
   
   setFailingHeuristics();

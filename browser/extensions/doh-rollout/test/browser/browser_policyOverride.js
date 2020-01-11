@@ -6,8 +6,6 @@ const { EnterprisePolicyTesting } = ChromeUtils.import(
 );
 
 add_task(async function testPolicyOverride() {
-  await waitForBalrogMigration();
-
   
   
   await EnterprisePolicyTesting.setupPolicyEngineWithJson({
