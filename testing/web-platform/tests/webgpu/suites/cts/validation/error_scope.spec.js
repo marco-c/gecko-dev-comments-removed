@@ -31,7 +31,7 @@ class F extends Fixture {
 
     }); 
 
-    this.device.getQueue().submit([]);
+    this.device.defaultQueue.submit([]);
   } 
   
 
