@@ -71,11 +71,6 @@ class ArrayBufferViewObject : public NativeObject {
 
   void notifyBufferDetached();
 
-  
-  
-  uint8_t* dataPointerUnshared(const JS::AutoRequireNoGC&);
-  void setDataPointerUnshared(uint8_t* data);
-
   void initDataPointer(SharedMem<uint8_t*> viewData) {
     
     
