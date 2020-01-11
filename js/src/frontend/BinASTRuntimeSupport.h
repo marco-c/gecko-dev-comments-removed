@@ -116,7 +116,13 @@ class BinASTSourceMetadata {
  public:
   BinASTSourceMetadata() = delete;
   explicit BinASTSourceMetadata(Type type) : type_(type) {}
+#ifdef JS_BUILD_BINAST
   ~BinASTSourceMetadata();
+#else
+  
+  
+  ~BinASTSourceMetadata() {}
+#endif  
 
   Type type() const { return type_; }
 
