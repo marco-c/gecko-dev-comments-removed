@@ -157,6 +157,41 @@ bool RenderCompositorANGLE::Initialize() {
     return false;
   }
 
+  
+  if (gfx::gfxVars::UseWebRenderDCompWin()) {
+    HWND compositorHwnd = mWidget->AsWindows()->GetCompositorHwnd();
+    if (compositorHwnd) {
+      mDCLayerTree =
+          DCLayerTree::Create(gl, mEGLConfig, mDevice, compositorHwnd);
+    } else {
+      gfxCriticalNote << "Compositor window was not created";
+    }
+  }
+
+  
+  if (!UseCompositor()) {
+    if (!CreateSwapChain()) {
+      
+      return false;
+    }
+  }
+
+  
+  mSyncObject = layers::SyncObjectHost::CreateSyncObjectHost(mDevice);
+  if (!mSyncObject->Init()) {
+    
+    
+    return false;
+  }
+
+  InitializeUsePartialPresent();
+
+  return true;
+}
+
+bool RenderCompositorANGLE::CreateSwapChain() {
+  MOZ_ASSERT(!UseCompositor());
+
   HWND hwnd = mWidget->AsWindows()->GetHwnd();
 
   RefPtr<IDXGIDevice> dxgiDevice;
@@ -252,28 +287,16 @@ bool RenderCompositorANGLE::Initialize() {
   
   dxgiFactory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_WINDOW_CHANGES);
 
-  
-  mSyncObject = layers::SyncObjectHost::CreateSyncObjectHost(mDevice);
-  if (!mSyncObject->Init()) {
-    
-    
+  if (!ResizeBufferIfNeeded()) {
     return false;
   }
-
-  if (!UseCompositor()) {
-    if (!ResizeBufferIfNeeded()) {
-      return false;
-    }
-  }
-
-  InitializeUsePartialPresent();
 
   return true;
 }
 
 void RenderCompositorANGLE::CreateSwapChainForDCompIfPossible(
     IDXGIFactory2* aDXGIFactory2) {
-  if (!aDXGIFactory2) {
+  if (!aDXGIFactory2 || !mDCLayerTree) {
     return;
   }
 
@@ -288,10 +311,6 @@ void RenderCompositorANGLE::CreateSwapChainForDCompIfPossible(
     return;
   }
 
-  mDCLayerTree = DCLayerTree::Create(gl(), mEGLConfig, mDevice, hwnd);
-  if (!mDCLayerTree) {
-    return;
-  }
   MOZ_ASSERT(XRE_IsGPUProcess());
 
   
