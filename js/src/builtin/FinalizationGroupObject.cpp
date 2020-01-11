@@ -593,7 +593,7 @@ bool FinalizationGroupObject::cleanupQueuedHoldings(
 
   
   size_t index = iterator->index();
-  MOZ_ASSERT(index <= initialLength);
+  MOZ_ASSERT(index <= holdings->length());
   MOZ_ASSERT(initialLength <= holdings->length());
   if (index > 0) {
     holdings->erase(holdings->begin(), holdings->begin() + index);
