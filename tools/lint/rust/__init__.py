@@ -129,6 +129,11 @@ def lint(paths, config, fix=None, **lintargs):
     log = lintargs['log']
     paths = list(expand_exclusions(paths, config, lintargs['root']))
 
+    
+    
+    if not paths:
+        return []
+
     binary = get_rustfmt_binary()
 
     if is_old_rustfmt(binary):
