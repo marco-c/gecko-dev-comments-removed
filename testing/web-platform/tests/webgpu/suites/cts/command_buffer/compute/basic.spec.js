@@ -85,5 +85,5 @@ g.test('memcpy', async t => {
   pass.dispatch(1, 1, 1);
   pass.endPass();
   t.device.getQueue().submit([encoder.finish()]);
-  await t.expectContents(dst, data);
+  t.expectContents(dst, data);
 });

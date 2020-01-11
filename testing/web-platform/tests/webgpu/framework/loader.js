@@ -38,9 +38,7 @@ export class TestLoader {
 
 
   async loadTestsFromCmdLine(filters) {
-    
-    
-    return this.loadTests(filters.map(f => decodeURIComponent(f.replace(/\+/g, '%20'))));
+    return this.loadTests(filters);
   }
 
   async loadTests(filters) {

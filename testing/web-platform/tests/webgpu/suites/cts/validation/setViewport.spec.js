@@ -45,15 +45,15 @@ g.test('use of setViewport', async t => {
     height,
     minDepth,
     maxDepth,
-    success
+    _success
   } = t.params;
   const commandEncoder = t.device.createCommandEncoder();
   const renderPass = t.beginRenderPass(commandEncoder);
   renderPass.setViewport(x, y, width, height, minDepth, maxDepth);
   renderPass.endPass();
-  await t.expectValidationError(() => {
+  t.expectValidationError(() => {
     commandEncoder.finish();
-  }, !success);
+  }, !_success);
 }).params([{
   x: 0,
   y: 0,
@@ -61,7 +61,7 @@ g.test('use of setViewport', async t => {
   height: 1,
   minDepth: 0,
   maxDepth: 1,
-  success: true
+  _success: true
 }, 
 {
   x: 0,
@@ -70,7 +70,7 @@ g.test('use of setViewport', async t => {
   height: 1,
   minDepth: 0,
   maxDepth: 1,
-  success: false
+  _success: false
 }, 
 {
   x: 0,
@@ -79,7 +79,7 @@ g.test('use of setViewport', async t => {
   height: 0,
   minDepth: 0,
   maxDepth: 1,
-  success: false
+  _success: false
 }, 
 {
   x: 0,
@@ -88,7 +88,7 @@ g.test('use of setViewport', async t => {
   height: 0,
   minDepth: 0,
   maxDepth: 1,
-  success: false
+  _success: false
 }, 
 {
   x: -1,
@@ -97,7 +97,7 @@ g.test('use of setViewport', async t => {
   height: 1,
   minDepth: 0,
   maxDepth: 1,
-  success: true
+  _success: true
 }, 
 {
   x: 0,
@@ -106,7 +106,7 @@ g.test('use of setViewport', async t => {
   height: 1,
   minDepth: 0,
   maxDepth: 1,
-  success: true
+  _success: true
 }, 
 {
   x: 0,
@@ -115,7 +115,7 @@ g.test('use of setViewport', async t => {
   height: 1,
   minDepth: 0,
   maxDepth: 1,
-  success: false
+  _success: false
 }, 
 {
   x: 0,
@@ -124,7 +124,7 @@ g.test('use of setViewport', async t => {
   height: -1,
   minDepth: 0,
   maxDepth: 1,
-  success: false
+  _success: false
 }, 
 {
   x: 0,
@@ -133,7 +133,7 @@ g.test('use of setViewport', async t => {
   height: 1,
   minDepth: -1,
   maxDepth: 1,
-  success: false
+  _success: false
 }, 
 {
   x: 0,
@@ -142,7 +142,7 @@ g.test('use of setViewport', async t => {
   height: 1,
   minDepth: 0,
   maxDepth: -1,
-  success: false
+  _success: false
 }, 
 {
   x: 0,
@@ -151,7 +151,7 @@ g.test('use of setViewport', async t => {
   height: 1,
   minDepth: 10,
   maxDepth: 1,
-  success: false
+  _success: false
 }, 
 {
   x: 0,
@@ -160,7 +160,7 @@ g.test('use of setViewport', async t => {
   height: 1,
   minDepth: 0,
   maxDepth: 10,
-  success: false
+  _success: false
 }, 
 {
   x: 0,
@@ -169,7 +169,7 @@ g.test('use of setViewport', async t => {
   height: 1,
   minDepth: 0.5,
   maxDepth: 0.5,
-  success: true
+  _success: true
 }, 
 {
   x: 0,
@@ -178,7 +178,7 @@ g.test('use of setViewport', async t => {
   height: 1,
   minDepth: 0.8,
   maxDepth: 0.5,
-  success: true
+  _success: true
 }, 
 {
   x: 0,
@@ -187,6 +187,6 @@ g.test('use of setViewport', async t => {
   height: TEXTURE_HEIGHT + 1,
   minDepth: 0,
   maxDepth: 1,
-  success: true
+  _success: true
 } 
 ]);

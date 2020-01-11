@@ -6,6 +6,7 @@ export const description = `
 createRenderPipeline validation tests.
 `;
 import { TestGroup } from '../../../framework/index.js';
+import { textureFormatInfo, textureFormatParams } from '../format_info.js';
 import { ValidationTest } from './validation_test.js';
 
 class F extends ValidationTest {
@@ -120,187 +121,76 @@ g.test('at least one color state is required', async t => {
   const badDescriptor = t.getDescriptor({
     colorStates: []
   });
-  await t.expectValidationError(() => {
+  t.expectValidationError(() => {
     t.device.createRenderPipeline(badDescriptor);
   });
 });
 g.test('color formats must be renderable', async t => {
   const {
-    format,
-    success
+    format
   } = t.params;
+  const info = textureFormatInfo[format];
   const descriptor = t.getDescriptor({
     colorStates: [{
       format
     }]
   });
 
-  if (success) {
+  if (info.renderable && info.color) {
     
     t.device.createRenderPipeline(descriptor);
   } else {
     
-    await t.expectValidationError(() => {
+    t.expectValidationError(() => {
       t.device.createRenderPipeline(descriptor);
     });
   }
-}).params([
-{
-  format: 'r8unorm',
-  success: true
-}, {
-  format: 'r8snorm',
-  success: false
-}, {
-  format: 'r8uint',
-  success: true
-}, {
-  format: 'r8sint',
-  success: true
-}, 
-{
-  format: 'r16uint',
-  success: true
-}, {
-  format: 'r16sint',
-  success: true
-}, {
-  format: 'r16float',
-  success: true
-}, {
-  format: 'rg8unorm',
-  success: true
-}, {
-  format: 'rg8snorm',
-  success: false
-}, {
-  format: 'rg8uint',
-  success: true
-}, {
-  format: 'rg8sint',
-  success: true
-}, 
-{
-  format: 'r32uint',
-  success: true
-}, {
-  format: 'r32sint',
-  success: true
-}, {
-  format: 'r32float',
-  success: true
-}, {
-  format: 'rg16uint',
-  success: true
-}, {
-  format: 'rg16sint',
-  success: true
-}, {
-  format: 'rg16float',
-  success: true
-}, {
-  format: 'rgba8unorm',
-  success: true
-}, {
-  format: 'rgba8unorm-srgb',
-  success: true
-}, {
-  format: 'rgba8snorm',
-  success: false
-}, {
-  format: 'rgba8uint',
-  success: true
-}, {
-  format: 'rgba8sint',
-  success: true
-}, {
-  format: 'bgra8unorm',
-  success: true
-}, {
-  format: 'bgra8unorm-srgb',
-  success: true
-}, 
-{
-  format: 'rgb10a2unorm',
-  success: true
-}, {
-  format: 'rg11b10float',
-  success: false
-}, 
-{
-  format: 'rg32uint',
-  success: true
-}, {
-  format: 'rg32sint',
-  success: true
-}, {
-  format: 'rg32float',
-  success: true
-}, {
-  format: 'rgba16uint',
-  success: true
-}, {
-  format: 'rgba16sint',
-  success: true
-}, {
-  format: 'rgba16float',
-  success: true
-}, 
-{
-  format: 'rgba32uint',
-  success: true
-}, {
-  format: 'rgba32sint',
-  success: true
-}, {
-  format: 'rgba32float',
-  success: true
-}]);
+}).params(textureFormatParams);
 g.test('sample count must be valid', async t => {
   const {
     sampleCount,
-    success
+    _success
   } = t.params;
   const descriptor = t.getDescriptor({
     sampleCount
   });
 
-  if (success) {
+  if (_success) {
     
     t.device.createRenderPipeline(descriptor);
   } else {
     
-    await t.expectValidationError(() => {
+    t.expectValidationError(() => {
       t.device.createRenderPipeline(descriptor);
     });
   }
 }).params([{
   sampleCount: 0,
-  success: false
+  _success: false
 }, {
   sampleCount: 1,
-  success: true
+  _success: true
 }, {
   sampleCount: 2,
-  success: false
+  _success: false
 }, {
   sampleCount: 3,
-  success: false
+  _success: false
 }, {
   sampleCount: 4,
-  success: true
+  _success: true
 }, {
   sampleCount: 8,
-  success: false
+  _success: false
 }, {
   sampleCount: 16,
-  success: false
+  _success: false
 }]);
 g.test('sample count must be equal to the one of every attachment in the render pass', async t => {
   const {
     attachmentSamples,
     pipelineSamples,
-    success
+    _success
   } = t.params;
   const colorTexture = t.createTexture({
     format: 'rgba8unorm',
@@ -356,23 +246,23 @@ g.test('sample count must be equal to the one of every attachment in the render 
     const renderPass = commandEncoder.beginRenderPass(renderPassDescriptor);
     renderPass.setPipeline(pipeline);
     renderPass.endPass();
-    await t.expectValidationError(() => {
+    t.expectValidationError(() => {
       commandEncoder.finish();
-    }, !success);
+    }, !_success);
   }
 }).params([{
   attachmentSamples: 4,
   pipelineSamples: 4,
-  success: true
+  _success: true
 }, 
 {
   attachmentSamples: 4,
   pipelineSamples: 1,
-  success: false
+  _success: false
 }, 
 {
   attachmentSamples: 1,
   pipelineSamples: 4,
-  success: false
+  _success: false
 } 
 ]);

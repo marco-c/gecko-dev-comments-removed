@@ -43,48 +43,48 @@ g.test('use of setScissorRect', async t => {
     y,
     width,
     height,
-    success
+    _success
   } = t.params;
   const commandEncoder = t.device.createCommandEncoder();
   const renderPass = t.beginRenderPass(commandEncoder);
   renderPass.setScissorRect(x, y, width, height);
   renderPass.endPass();
-  await t.expectValidationError(() => {
+  t.expectValidationError(() => {
     commandEncoder.finish();
-  }, !success);
+  }, !_success);
 }).params([{
   x: 0,
   y: 0,
   width: 1,
   height: 1,
-  success: true
+  _success: true
 }, 
 {
   x: 0,
   y: 0,
   width: 0,
   height: 1,
-  success: false
+  _success: false
 }, 
 {
   x: 0,
   y: 0,
   width: 1,
   height: 0,
-  success: false
+  _success: false
 }, 
 {
   x: 0,
   y: 0,
   width: 0,
   height: 0,
-  success: false
+  _success: false
 }, 
 {
   x: 0,
   y: 0,
   width: TEXTURE_WIDTH + 1,
   height: TEXTURE_HEIGHT + 1,
-  success: true
+  _success: true
 } 
 ]);

@@ -3,4 +3,4 @@
 
 
 
-export const allowedTestNameCharacters = 'a-zA-Z0-9/_ ';
+export const allowedTestNameCharacters = 'a-zA-Z0-9/_';

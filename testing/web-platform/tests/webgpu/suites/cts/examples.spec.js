@@ -4,6 +4,8 @@
 
 export const description = `
 Examples of writing CTS tests with various features.
+
+Start here when looking for examples of basic framework usage.
 `;
 import { TestGroup } from '../../framework/index.js';
 import { GPUTest } from './gpu_test.js'; 
@@ -16,7 +18,9 @@ import { GPUTest } from './gpu_test.js';
 
 
 
-export const g = new TestGroup(GPUTest);
+export const g = new TestGroup(GPUTest); 
+
+g.test('test name', t => {});
 g.test('basic', t => {
   t.expect(true);
   t.expect(true, 'true should be true');
@@ -29,26 +33,34 @@ g.test('basic', t => {
 });
 g.test('basic/async', async t => {
   
-  await t.shouldReject( 
+  t.shouldReject( 
   'TypeError', 
   Promise.reject(new TypeError()), 
   'Promise.reject should reject'); 
 
-  await t.shouldReject('TypeError', (async () => {
+  t.shouldReject('TypeError', (async () => {
     throw new TypeError();
   })(), 'Promise.reject should reject');
-});
+}); 
+
+
+
+
+
+
+
+
 g.test('basic/params', t => {
-  t.expect(t.params.x + t.params.y === t.params.result);
+  t.expect(t.params.x + t.params.y === t.params._result);
 }).params([{
   x: 2,
   y: 4,
-  result: 6
+  _result: 6
 }, 
 {
   x: -10,
   y: 18,
-  result: 8
+  _result: 8
 }]); 
 
 g.test('gpu/async', async t => {
@@ -67,5 +79,5 @@ g.test('gpu/buffers', async t => {
   src.unmap(); 
   
 
-  await t.expectContents(src, data);
+  t.expectContents(src, data);
 });

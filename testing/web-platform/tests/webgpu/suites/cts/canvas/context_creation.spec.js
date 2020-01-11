@@ -8,6 +8,12 @@ import { GPUTest } from '../gpu_test.js';
 
 export const g = new TestGroup(GPUTest);
 g.test('getContext returns GPUCanvasContext', async t => {
+  if (typeof document === 'undefined') {
+    
+    
+    return;
+  }
+
   const canvas = document.createElement('canvas');
   canvas.width = 10;
   canvas.height = 10; 

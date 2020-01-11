@@ -32,10 +32,12 @@ class F extends Fixture {
     }); 
 
     this.device.getQueue().submit([]);
-  }
+  } 
+  
+
 
   async expectUncapturedError(fn) {
-    return this.asyncExpectation(() => {
+    return this.immediateAsyncExpectation(() => {
       
       const TIMEOUT_IN_MS = 1000;
       const promise = new Promise(resolve => {
@@ -100,7 +102,7 @@ g.test('if no error scope handles an error it fires an uncapturederror event', a
 g.test('push/popping sibling error scopes must be balanced', async t => {
   {
     const promise = t.device.popErrorScope();
-    await t.shouldReject('OperationError', promise);
+    t.shouldReject('OperationError', promise);
   }
   const promises = [];
 
@@ -113,13 +115,13 @@ g.test('push/popping sibling error scopes must be balanced', async t => {
   t.expect(errors.every(e => e === null));
   {
     const promise = t.device.popErrorScope();
-    await t.shouldReject('OperationError', promise);
+    t.shouldReject('OperationError', promise);
   }
 });
 g.test('push/popping nested error scopes must be balanced', async t => {
   {
     const promise = t.device.popErrorScope();
-    await t.shouldReject('OperationError', promise);
+    t.shouldReject('OperationError', promise);
   }
   const promises = [];
 
@@ -135,6 +137,6 @@ g.test('push/popping nested error scopes must be balanced', async t => {
   t.expect(errors.every(e => e === null));
   {
     const promise = t.device.popErrorScope();
-    await t.shouldReject('OperationError', promise);
+    t.shouldReject('OperationError', promise);
   }
 });

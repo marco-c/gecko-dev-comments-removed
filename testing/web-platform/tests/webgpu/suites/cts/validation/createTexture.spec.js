@@ -6,6 +6,7 @@ export const description = `
 createTexture validation tests.
 `;
 import { TestGroup } from '../../../framework/index.js';
+import { textureFormatInfo, textureFormatParams } from '../format_info.js';
 import { ValidationTest } from './validation_test.js';
 
 class F extends ValidationTest {
@@ -41,53 +42,53 @@ g.test('validation of sampleCount', async t => {
     sampleCount,
     mipLevelCount,
     arrayLayerCount,
-    success
+    _success
   } = t.params;
   const descriptor = t.getDescriptor({
     sampleCount,
     mipLevelCount,
     arrayLayerCount
   });
-  await t.expectValidationError(() => {
+  t.expectValidationError(() => {
     t.device.createTexture(descriptor);
-  }, !success);
+  }, !_success);
 }).params([{
   sampleCount: 0,
-  success: false
+  _success: false
 }, 
 {
   sampleCount: 1,
-  success: true
+  _success: true
 }, 
 {
   sampleCount: 2,
-  success: false
+  _success: false
 }, 
 {
   sampleCount: 3,
-  success: false
+  _success: false
 }, 
 {
   sampleCount: 4,
-  success: true
+  _success: true
 }, 
 {
   sampleCount: 8,
-  success: false
+  _success: false
 }, 
 {
   sampleCount: 16,
-  success: false
+  _success: false
 }, 
 {
   sampleCount: 4,
   mipLevelCount: 2,
-  success: false
+  _success: false
 }, 
 {
   sampleCount: 4,
   arrayLayerCount: 2,
-  success: true
+  _success: true
 } 
 ]);
 g.test('validation of mipLevelCount', async t => {
@@ -95,57 +96,57 @@ g.test('validation of mipLevelCount', async t => {
     width,
     height,
     mipLevelCount,
-    success
+    _success
   } = t.params;
   const descriptor = t.getDescriptor({
     width,
     height,
     mipLevelCount
   });
-  await t.expectValidationError(() => {
+  t.expectValidationError(() => {
     t.device.createTexture(descriptor);
-  }, !success);
+  }, !_success);
 }).params([{
   width: 32,
   height: 32,
   mipLevelCount: 1,
-  success: true
+  _success: true
 }, 
 {
   width: 32,
   height: 32,
   mipLevelCount: 0,
-  success: false
+  _success: false
 }, 
 {
   width: 32,
   height: 32,
   mipLevelCount: 6,
-  success: true
+  _success: true
 }, 
 {
   width: 31,
   height: 32,
   mipLevelCount: 7,
-  success: false
+  _success: false
 }, 
 {
   width: 32,
   height: 31,
   mipLevelCount: 7,
-  success: false
+  _success: false
 }, 
 {
   width: 32,
   height: 32,
   mipLevelCount: 100,
-  success: false
+  _success: false
 }, 
 {
   width: 32,
   height: 8,
   mipLevelCount: 6,
-  success: true
+  _success: true
 } 
 ]);
 g.test('it is valid to destroy a texture', t => {
@@ -163,7 +164,7 @@ g.test('it is invalid to submit a destroyed texture before and after encode', as
   const {
     destroyBeforeEncode,
     destroyAfterEncode,
-    success
+    _success
   } = t.params;
   const descriptor = t.getDescriptor();
   const texture = t.device.createTexture(descriptor);
@@ -192,144 +193,33 @@ g.test('it is invalid to submit a destroyed texture before and after encode', as
     texture.destroy();
   }
 
-  await t.expectValidationError(() => {
+  t.expectValidationError(() => {
     t.queue.submit([commandBuffer]);
-  }, !success);
+  }, !_success);
 }).params([{
   destroyBeforeEncode: false,
   destroyAfterEncode: false,
-  success: true
+  _success: true
 }, {
   destroyBeforeEncode: true,
   destroyAfterEncode: false,
-  success: false
+  _success: false
 }, {
   destroyBeforeEncode: false,
   destroyAfterEncode: true,
-  success: false
+  _success: false
 }]);
 g.test('it is invalid to have an output attachment texture with non renderable format', async t => {
   const {
-    format,
-    success
+    format
   } = t.params;
+  const info = textureFormatInfo[format];
   const descriptor = t.getDescriptor({
     width: 1,
     height: 1,
     format
   });
-  await t.expectValidationError(() => {
+  t.expectValidationError(() => {
     t.device.createTexture(descriptor);
-  }, !success);
-}).params([
-{
-  format: 'r8unorm',
-  success: true
-}, {
-  format: 'r8snorm',
-  success: false
-}, {
-  format: 'r8uint',
-  success: true
-}, {
-  format: 'r8sint',
-  success: true
-}, 
-{
-  format: 'r16uint',
-  success: true
-}, {
-  format: 'r16sint',
-  success: true
-}, {
-  format: 'r16float',
-  success: true
-}, {
-  format: 'rg8unorm',
-  success: true
-}, {
-  format: 'rg8snorm',
-  success: false
-}, {
-  format: 'rg8uint',
-  success: true
-}, {
-  format: 'rg8sint',
-  success: true
-}, 
-{
-  format: 'r32uint',
-  success: true
-}, {
-  format: 'r32sint',
-  success: true
-}, {
-  format: 'r32float',
-  success: true
-}, {
-  format: 'rg16uint',
-  success: true
-}, {
-  format: 'rg16sint',
-  success: true
-}, {
-  format: 'rg16float',
-  success: true
-}, {
-  format: 'rgba8unorm',
-  success: true
-}, {
-  format: 'rgba8unorm-srgb',
-  success: true
-}, {
-  format: 'rgba8snorm',
-  success: false
-}, {
-  format: 'rgba8uint',
-  success: true
-}, {
-  format: 'rgba8sint',
-  success: true
-}, {
-  format: 'bgra8unorm',
-  success: true
-}, {
-  format: 'bgra8unorm-srgb',
-  success: true
-}, 
-{
-  format: 'rgb10a2unorm',
-  success: true
-}, {
-  format: 'rg11b10float',
-  success: false
-}, 
-{
-  format: 'rg32uint',
-  success: true
-}, {
-  format: 'rg32sint',
-  success: true
-}, {
-  format: 'rg32float',
-  success: true
-}, {
-  format: 'rgba16uint',
-  success: true
-}, {
-  format: 'rgba16sint',
-  success: true
-}, {
-  format: 'rgba16float',
-  success: true
-}, 
-{
-  format: 'rgba32uint',
-  success: true
-}, {
-  format: 'rgba32sint',
-  success: true
-}, {
-  format: 'rgba32float',
-  success: true
-}]); 
+  }, !info.renderable);
+}).params(textureFormatParams); 

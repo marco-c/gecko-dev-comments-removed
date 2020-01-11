@@ -63,7 +63,7 @@ g.test('creating texture view on a 2D non array texture', async t => {
     arrayLayerCount,
     mipLevelCount,
     baseMipLevel,
-    success
+    _success
   } = t.params;
   const texture = t.createTexture({
     arrayLayerCount: 1
@@ -74,75 +74,75 @@ g.test('creating texture view on a 2D non array texture', async t => {
     mipLevelCount,
     baseMipLevel
   });
-  await t.expectValidationError(() => {
+  t.expectValidationError(() => {
     texture.createView(descriptor);
-  }, !success);
+  }, !_success);
 }).params([{
-  success: true
+  _success: true
 }, 
 {
   arrayLayerCount: 1,
-  success: true
+  _success: true
 }, 
 {
   arrayLayerCount: 2,
-  success: false
+  _success: false
 }, 
 {
   dimension: '2d-array',
   arrayLayerCount: 1,
-  success: true
+  _success: true
 }, 
 
 {
   mipLevelCount: 1,
   baseMipLevel: MIP_LEVEL_COUNT - 1,
-  success: true
+  _success: true
 }, {
   mipLevelCount: 2,
   baseMipLevel: MIP_LEVEL_COUNT - 2,
-  success: true
+  _success: true
 }, 
 {
   mipLevelCount: 0,
   baseMipLevel: 0,
-  success: true
+  _success: true
 }, {
   mipLevelCount: 0,
   baseMipLevel: 1,
-  success: true
+  _success: true
 }, {
   mipLevelCount: 0,
   baseMipLevel: MIP_LEVEL_COUNT - 1,
-  success: true
+  _success: true
 }, {
   mipLevelCount: 0,
   baseMipLevel: MIP_LEVEL_COUNT,
-  success: false
+  _success: false
 }, 
 {
   mipLevelCount: MIP_LEVEL_COUNT + 1,
   baseMipLevel: 0,
-  success: false
+  _success: false
 }, {
   mipLevelCount: MIP_LEVEL_COUNT,
   baseMipLevel: 1,
-  success: false
+  _success: false
 }, {
   mipLevelCount: 2,
   baseMipLevel: MIP_LEVEL_COUNT - 1,
-  success: false
+  _success: false
 }, {
   mipLevelCount: 1,
   baseMipLevel: MIP_LEVEL_COUNT,
-  success: false
+  _success: false
 }]);
 g.test('creating texture view on a 2D array texture', async t => {
   const {
     dimension = '2d-array',
     arrayLayerCount,
     baseArrayLayer,
-    success
+    _success
   } = t.params;
   const texture = t.createTexture({
     arrayLayerCount: ARRAY_LAYER_COUNT_2D
@@ -152,55 +152,55 @@ g.test('creating texture view on a 2D array texture', async t => {
     arrayLayerCount,
     baseArrayLayer
   });
-  await t.expectValidationError(() => {
+  t.expectValidationError(() => {
     texture.createView(descriptor);
-  }, !success);
+  }, !_success);
 }).params([{
-  success: true
+  _success: true
 }, 
 {
   dimension: '2d',
   arrayLayerCount: 1,
-  success: true
+  _success: true
 }, 
 {
   arrayLayerCount: ARRAY_LAYER_COUNT_2D,
-  success: true
+  _success: true
 }, 
 
 {
   arrayLayerCount: 0,
   baseArrayLayer: 0,
-  success: true
+  _success: true
 }, {
   arrayLayerCount: 0,
   baseArrayLayer: 1,
-  success: true
+  _success: true
 }, {
   arrayLayerCount: 0,
   baseArrayLayer: ARRAY_LAYER_COUNT_2D - 1,
-  success: true
+  _success: true
 }, {
   arrayLayerCount: 0,
   baseArrayLayer: ARRAY_LAYER_COUNT_2D,
-  success: false
+  _success: false
 }, 
 {
   arrayLayerCount: ARRAY_LAYER_COUNT_2D + 1,
   baseArrayLayer: 0,
-  success: false
+  _success: false
 }, {
   arrayLayerCount: ARRAY_LAYER_COUNT_2D,
   baseArrayLayer: 1,
-  success: false
+  _success: false
 }, {
   arrayLayerCount: 2,
   baseArrayLayer: ARRAY_LAYER_COUNT_2D - 1,
-  success: false
+  _success: false
 }, {
   arrayLayerCount: 1,
   baseArrayLayer: ARRAY_LAYER_COUNT_2D,
-  success: false
+  _success: false
 }]);
 g.test('Using defaults validates the same as setting values for more than 1 array layer', async t => {
   const {
@@ -208,7 +208,7 @@ g.test('Using defaults validates the same as setting values for more than 1 arra
     dimension,
     arrayLayerCount,
     mipLevelCount,
-    success
+    _success
   } = t.params;
   const texture = t.createTexture({
     arrayLayerCount: ARRAY_LAYER_COUNT_2D
@@ -219,36 +219,36 @@ g.test('Using defaults validates the same as setting values for more than 1 arra
     arrayLayerCount,
     mipLevelCount
   };
-  await t.expectValidationError(() => {
+  t.expectValidationError(() => {
     texture.createView(descriptor);
-  }, !success);
+  }, !_success);
 }).params([{
-  success: true
+  _success: true
 }, {
   format: 'rgba8unorm',
-  success: true
+  _success: true
 }, {
   format: 'r8unorm',
-  success: false
+  _success: false
 }, {
   dimension: '2d-array',
-  success: true
+  _success: true
 }, {
   dimension: '2d',
-  success: false
+  _success: false
 }, {
   arrayLayerCount: ARRAY_LAYER_COUNT_2D,
-  success: false
+  _success: false
 }, 
 {
   arrayLayerCount: ARRAY_LAYER_COUNT_2D,
   dimension: '2d-array',
-  success: true
+  _success: true
 }, {
   arrayLayerCount: ARRAY_LAYER_COUNT_2D,
   dimension: '2d-array',
   mipLevelCount: MIP_LEVEL_COUNT,
-  success: true
+  _success: true
 }]);
 g.test('Using defaults validates the same as setting values for only 1 array layer', async t => {
   const {
@@ -256,7 +256,7 @@ g.test('Using defaults validates the same as setting values for only 1 array lay
     dimension,
     arrayLayerCount,
     mipLevelCount,
-    success
+    _success
   } = t.params;
   const texture = t.createTexture({
     arrayLayerCount: 1
@@ -267,44 +267,44 @@ g.test('Using defaults validates the same as setting values for only 1 array lay
     arrayLayerCount,
     mipLevelCount
   };
-  await t.expectValidationError(() => {
+  t.expectValidationError(() => {
     texture.createView(descriptor);
-  }, !success);
+  }, !_success);
 }).params([{
-  success: true
+  _success: true
 }, {
   format: 'rgba8unorm',
-  success: true
+  _success: true
 }, {
   format: 'r8unorm',
-  success: false
+  _success: false
 }, {
   dimension: '2d-array',
-  success: true
+  _success: true
 }, {
   dimension: '2d',
-  success: true
+  _success: true
 }, {
   arrayLayerCount: 0,
-  success: true
+  _success: true
 }, {
   arrayLayerCount: 1,
-  success: true
+  _success: true
 }, {
   arrayLayerCount: 2,
-  success: false
+  _success: false
 }, {
   mipLevelCount: MIP_LEVEL_COUNT,
-  success: true
+  _success: true
 }, {
   mipLevelCount: 1,
-  success: true
+  _success: true
 }]);
 g.test('creating cube map texture view', async t => {
   const {
     dimension = '2d-array',
     arrayLayerCount,
-    success
+    _success
   } = t.params;
   const texture = t.createTexture({
     arrayLayerCount: 16
@@ -313,44 +313,44 @@ g.test('creating cube map texture view', async t => {
     dimension,
     arrayLayerCount
   });
-  await t.expectValidationError(() => {
+  t.expectValidationError(() => {
     texture.createView(descriptor);
-  }, !success);
+  }, !_success);
 }).params([{
   dimension: 'cube',
   arrayLayerCount: 6,
-  success: true
+  _success: true
 }, 
 
 {
   dimension: 'cube',
   arrayLayerCount: 3,
-  success: false
+  _success: false
 }, {
   dimension: 'cube',
   arrayLayerCount: 7,
-  success: false
+  _success: false
 }, {
   dimension: 'cube',
   arrayLayerCount: 12,
-  success: false
+  _success: false
 }, {
   dimension: 'cube',
-  success: false
+  _success: false
 }, {
   dimension: 'cube-array',
   arrayLayerCount: 12,
-  success: true
+  _success: true
 }, 
 
 {
   dimension: 'cube-array',
   arrayLayerCount: 11,
-  success: false
+  _success: false
 }, {
   dimension: 'cube-array',
   arrayLayerCount: 13,
-  success: false
+  _success: false
 }]);
 g.test('creating cube map texture view with a non square texture', async t => {
   const {
@@ -367,7 +367,7 @@ g.test('creating cube map texture view with a non square texture', async t => {
     dimension,
     arrayLayerCount
   });
-  await t.expectValidationError(() => {
+  t.expectValidationError(() => {
     nonSquareTexture.createView(descriptor);
   });
 }).params([{
@@ -388,7 +388,7 @@ g.test('test the format compatibility rules when creating a texture view', async
     format: 'depth24plus-stencil8'
   }); 
 
-  await t.expectValidationError(() => {
+  t.expectValidationError(() => {
     texture.createView(descriptor);
   });
 });
@@ -410,7 +410,7 @@ g.test('it is invalid to use a texture view created from a destroyed texture', a
     }]
   });
   renderPass.endPass();
-  await t.expectValidationError(() => {
+  t.expectValidationError(() => {
     commandEncoder.finish();
   });
 }); 
