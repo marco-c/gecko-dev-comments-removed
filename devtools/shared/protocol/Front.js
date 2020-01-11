@@ -266,8 +266,6 @@ class Front extends Pool {
     callFunctionWithAsyncStack(
       () => {
         if (packet.error) {
-          
-          
           let message;
           if (packet.error && packet.message) {
             message =
@@ -275,7 +273,8 @@ class Front extends Pool {
           } else {
             message = packet.error;
           }
-          deferred.reject(message);
+          const packetError = new Error(message);
+          deferred.reject(packetError);
         } else {
           deferred.resolve(packet);
         }
