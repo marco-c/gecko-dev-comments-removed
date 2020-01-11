@@ -306,6 +306,7 @@ nsresult TRRService::ReadPrefs(const char* name) {
   if (!name || !strcmp(name, TRR_PREF("excluded-domains")) ||
       !strcmp(name, TRR_PREF("builtin-excluded-domains")) ||
       !strcmp(name, kCaptivedetectCanonicalURL)) {
+    MutexAutoLock lock(mLock);
     mExcludedDomains.Clear();
 
     auto parseExcludedDomains = [this](const char* aPrefName) {
@@ -532,18 +533,19 @@ bool TRRService::IsDomainBlacklisted(const nsACString& aHost,
                                      const nsACString& aOriginSuffix,
                                      bool aPrivateBrowsing) {
   
-  MOZ_ASSERT(NS_IsMainThread(), "wrong thread");
-
-  if (mExcludedDomains.GetEntry(aHost)) {
-    LOG(("Host [%s] is TRR blacklisted via pref\n", aHost.BeginReading()));
-    return true;
-  }
-  if (mDNSSuffixDomains.GetEntry(aHost)) {
-    LOG(("Host [%s] is TRR blacklisted dns suffix\n", aHost.BeginReading()));
-    return true;
-  }
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread(), "wrong thread");
 
   if (!Enabled()) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (IsExcludedFromTRR_unlocked(aHost)) {
     return true;
   }
 
@@ -591,11 +593,6 @@ bool TRRService::IsTRRBlacklisted(const nsACString& aHost,
   }
 
   LOG(("Checking if host [%s] is blacklisted", aHost.BeginReading()));
-  
-  if (StringEndsWith(aHost, NS_LITERAL_CSTRING(".local")) ||
-      aHost.Equals(NS_LITERAL_CSTRING("localhost"))) {
-    return true;
-  }
 
   int32_t dot = aHost.FindChar('.');
   if ((dot == kNotFound) && aParentsToo) {
@@ -624,6 +621,19 @@ bool TRRService::IsTRRBlacklisted(const nsACString& aHost,
 }
 
 bool TRRService::IsExcludedFromTRR(const nsACString& aHost) {
+  
+  
+  
+  MutexAutoLock lock(mLock);
+
+  return IsExcludedFromTRR_unlocked(aHost);
+}
+
+bool TRRService::IsExcludedFromTRR_unlocked(const nsACString& aHost) {
+  if (!NS_IsMainThread()) {
+    mLock.AssertCurrentThreadOwns();
+  }
+
   int32_t dot = 0;
   
   while (dot < static_cast<int32_t>(aHost.Length())) {
