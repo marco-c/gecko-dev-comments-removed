@@ -47,6 +47,7 @@ const SHIELD_ENABLED_PREF = `${PREF_PREFIX}.enabled`;
 const DEV_MODE_PREF = `${PREF_PREFIX}.dev_mode`;
 const API_URL_PREF = `${PREF_PREFIX}.api_url`;
 const LAZY_CLASSIFY_PREF = `${PREF_PREFIX}.experiments.lazy_classify`;
+const LAST_BUILDID_PREF = `${PREF_PREFIX}.last_seen_buildid`;
 
 
 
@@ -104,9 +105,23 @@ var RecipeRunner = {
 
     
     
+    
+    let lastSeenBuildID = Services.prefs.getCharPref(LAST_BUILDID_PREF, "");
+    let hasNewBuildID =
+      lastSeenBuildID && Services.appinfo.appBuildID != lastSeenBuildID;
+
+    if (hasNewBuildID || !lastSeenBuildID) {
+      Services.prefs.setCharPref(
+        LAST_BUILDID_PREF,
+        Services.appinfo.appBuildID
+      );
+    }
+
+    
+    
     const devMode = Services.prefs.getBoolPref(DEV_MODE_PREF, false);
 
-    if (this.enabled && (devMode || firstRun)) {
+    if (this.enabled && (devMode || firstRun || hasNewBuildID)) {
       
       
       
@@ -117,7 +132,16 @@ var RecipeRunner = {
           await gRemoteSettingsClient.sync();
         }
       }
-      await this.run();
+      let trigger;
+      if (devMode) {
+        trigger = "devMode";
+      } else if (firstRun) {
+        trigger = "firstRun";
+      } else if (hasNewBuildID) {
+        trigger = "newBuildID";
+      }
+
+      await this.run({ trigger });
     }
 
     
