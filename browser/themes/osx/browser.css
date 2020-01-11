@@ -126,7 +126,7 @@
 
 
 
-:root:-moz-any([sizemode="fullscreen"],[customize-entered]) #nav-bar:not([tabs-hidden="true"]),
+:root:-moz-any([sizemode="fullscreen"],[customizing]) #nav-bar:not([tabs-hidden="true"]),
 :root:not([tabsintitlebar]) #nav-bar:not([tabs-hidden="true"]),
 #nav-bar:not([tabs-hidden="true"]):-moz-lwtheme {
   box-shadow: 0 calc(-1 * var(--tabs-navbar-shadow-size)) 0 var(--tabs-border-color);
