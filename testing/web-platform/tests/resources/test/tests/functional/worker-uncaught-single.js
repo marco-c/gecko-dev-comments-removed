@@ -1,5 +1,7 @@
 importScripts("/resources/testharness.js");
 
+setup({ single_test: true });
+
 
 
 
