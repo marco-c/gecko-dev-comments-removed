@@ -78,7 +78,6 @@ class WorkerTargetFront extends TargetMixin(
       const connectResponse = await this.connect({});
       
       
-      this.workerName = connectResponse.workerName;
       this.targetForm.consoleActor = connectResponse.consoleActor;
       this.targetForm.threadActor = connectResponse.threadActor;
       this._threadActor = connectResponse.threadActor;
