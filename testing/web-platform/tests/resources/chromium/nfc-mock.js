@@ -106,7 +106,7 @@ function assertNDEFReaderOptionsEqual(provided, received) {
 
 function matchesWatchOptions(message, options) {
   
-  if (!matchesWebNfcId(message.url, options.url)) return false;
+  if (!matchesWebNfcId(message.url, options.id)) return false;
 
   
   if ((options.mediaType == null || options.mediaType === '') &&
