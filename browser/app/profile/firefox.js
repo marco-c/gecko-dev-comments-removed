@@ -1507,19 +1507,8 @@ pref("media.autoplay.default", 1);
   pref("media.autoplay.block-webaudio", false);
 #endif
 
-
-#if defined(XP_WIN)
-  pref("media.videocontrols.picture-in-picture.enabled", true);
-  pref("media.videocontrols.picture-in-picture.video-toggle.enabled", true);
-#endif
-
-
-#if defined(XP_MACOSX) || defined(MOZ_WIDGET_GTK)
-  #if defined(NIGHTLY_BUILD)
-    pref("media.videocontrols.picture-in-picture.enabled", true);
-    pref("media.videocontrols.picture-in-picture.video-toggle.enabled", true);
-  #endif
-#endif
+pref("media.videocontrols.picture-in-picture.enabled", true);
+pref("media.videocontrols.picture-in-picture.video-toggle.enabled", true);
 
 
 pref("media.videocontrols.picture-in-picture.audio-toggle.enabled", false);
