@@ -47,21 +47,12 @@ bool BytecodeAnalysis::init(TempAllocator& alloc, GSNCache& gsn) {
 
   Vector<CatchFinallyRange, 0, JitAllocPolicy> catchFinallyRanges(alloc);
 
-  
-  BytecodeLocation it(script_, script_->code());
-  BytecodeLocation next = it.next();
-
-  
-  BytecodeLocation end = script_->endLocation();
-
-  for (; it < end; it = next) {
+  for (const BytecodeLocation& it : AllBytecodesIterable(script_)) {
     JSOp op = it.getOp();
-    next = it.next();
     uint32_t offset = it.bytecodeToOffset(script_);
 
-    JitSpew(JitSpew_BaselineOp, "Analyzing op @ %d (end=%d): %s",
-            int(it.bytecodeToOffset(script_)), int(script_->length()),
-            CodeName[op]);
+    JitSpew(JitSpew_BaselineOp, "Analyzing op @ %u (end=%u): %s",
+            unsigned(offset), unsigned(script_->length()), CodeName[op]);
 
     
     if (!infos_[offset].initialized) {
@@ -178,20 +169,16 @@ bool BytecodeAnalysis::init(TempAllocator& alloc, GSNCache& gsn) {
       uint32_t targetOffset = it.getJumpTargetOffset(script_);
 
       
-      bool jumpBack =
-          (targetOffset < offset) && !infos_[targetOffset].initialized;
+      
+      MOZ_ASSERT_IF(targetOffset < offset, infos_[targetOffset].initialized);
 
       infos_[targetOffset].init(newStackDepth);
       infos_[targetOffset].jumpTarget = true;
-
-      if (jumpBack) {
-        next = script_->offsetToLocation(targetOffset);
-      }
     }
     
     if (it.fallsThrough()) {
       BytecodeLocation fallthroughLoc = it.next();
-      MOZ_ASSERT(fallthroughLoc < end);
+      MOZ_ASSERT(fallthroughLoc.isInBounds(script_));
       uint32_t fallthroughOffset = fallthroughLoc.bytecodeToOffset(script_);
 
       infos_[fallthroughOffset].init(stackDepth);
@@ -202,6 +189,7 @@ bool BytecodeAnalysis::init(TempAllocator& alloc, GSNCache& gsn) {
       }
     }
   }
+
   
   for (uint32_t offset : script_->resumeOffsets()) {
     BytecodeInfo& info = infos_[offset];
