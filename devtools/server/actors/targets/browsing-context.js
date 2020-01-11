@@ -1666,6 +1666,22 @@ DebuggerProgressListener.prototype = {
       this._knownWindowIDs.delete(innerID);
       this._targetActor._windowDestroyed(window, innerID);
     }
+
+    
+    
+    
+    
+    
+    
+    if (
+      this._watchedDocShells.has(window) &&
+      !window.docShell.chromeEventHandler
+    ) {
+      
+      this.unwatch(window.docShell);
+      
+      this.watch(window.docShell);
+    }
   }, "DebuggerProgressListener.prototype.observe"),
 
   onStateChange: DevToolsUtils.makeInfallible(function(

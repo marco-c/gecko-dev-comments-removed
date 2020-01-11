@@ -673,6 +673,12 @@ Toolbox.prototype = {
   },
 
   _stopThreadFrontListeners: function(threadFront) {
+    
+    
+    
+    if (!threadFront) {
+      return;
+    }
     threadFront.off("paused", this._onPausedState);
     threadFront.off("resumed", this._onResumedState);
   },
