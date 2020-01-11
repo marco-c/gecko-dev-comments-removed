@@ -101,7 +101,7 @@ class APZSampler {
 
   ScrollableLayerGuid GetGuid(const LayerMetricsWrapper& aLayer);
 
-  const ScreenMargin& GetGeckoFixedLayerMargins() const;
+  ScreenMargin GetGeckoFixedLayerMargins() const;
 
   
 
