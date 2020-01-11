@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 """
 Apply some defaults and minor modifications to the jobs defined in the build
 kind.
@@ -126,9 +126,9 @@ def use_profile_data(config, jobs):
             yield job
             continue
 
-        
-        
-        
+        # If use_pgo is True, the task uses the generate-profile task of the
+        # same name. Otherwise a task can specify a specific generate-profile
+        # task to use in the use_pgo field.
         if use_pgo is True:
             name = job['name']
         else:
@@ -173,7 +173,7 @@ def enable_full_crashsymbols(config, jobs):
 def use_artifact(config, jobs):
     if config.params['try_mode'] == 'try_task_config':
         use_artifact = config.params['try_task_config'] \
-            .get('templates', {}).get('artifact', {}).get('enabled')
+            .get('use-artifact-builds', False)
     elif config.params['try_mode'] == 'try_option_syntax':
         use_artifact = config.params['try_options'].get('artifact')
     else:

@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 """
 Templates provide a way of modifying the task definition of selected
@@ -58,7 +58,7 @@ class Template(TryConfig):
         pass
 
 
-class Artifact(Template):
+class Artifact(TryConfig):
 
     arguments = [
         [['--artifact'],
@@ -82,10 +82,10 @@ class Artifact(Template):
         except BuildEnvironmentNotFoundException:
             return False
 
-    def context(self, artifact, no_artifact, **kwargs):
+    def try_config(self, artifact, no_artifact, **kwargs):
         if artifact:
             return {
-                'artifact': {'enabled': '1'}
+                'use-artifact-builds': True
             }
 
         if no_artifact:
@@ -94,7 +94,7 @@ class Artifact(Template):
         if self.is_artifact_build():
             print("Artifact builds enabled, pass --no-artifact to disable")
             return {
-                'artifact': {'enabled': '1'}
+                'use-artifact-builds': True
             }
 
 
@@ -128,10 +128,10 @@ class Pernosco(Template):
                 sys.exit(1)
 
             try:
-                
-                
-                
-                
+                # The Pernosco service currently requires a Mozilla e-mail address to
+                # log in. Prevent people with non-Mozilla addresses from using this
+                # flag so they don't end up consuming time and resources only to
+                # realize they can't actually log in and see the reports.
                 output = subprocess.check_output(['ssh', '-G', 'hg.mozilla.org']).splitlines()
                 address = [l.rsplit(' ', 1)[-1] for l in output if l.startswith('user')][0]
                 if not address.endswith('@mozilla.com'):
@@ -268,14 +268,14 @@ class GeckoProfile(TryConfig):
           'default': False,
           'help': 'Create and upload a gecko profile during talos/raptor tasks.',
           }],
-        
+        # For backwards compatibility
         [['--talos-profile'],
          {'dest': 'profile',
           'action': 'store_true',
           'default': False,
           'help': SUPPRESS,
           }],
-        
+        # This is added for consistency with the 'syntax' selector
         [['--geckoProfile'],
          {'dest': 'profile',
           'action': 'store_true',
