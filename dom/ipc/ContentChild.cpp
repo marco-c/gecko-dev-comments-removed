@@ -73,6 +73,7 @@
 #include "mozilla/ipc/FileDescriptorSetChild.h"
 #include "mozilla/ipc/FileDescriptorUtils.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
+#include "mozilla/ipc/LibrarySandboxPreload.h"
 #include "mozilla/ipc/ProcessChild.h"
 #include "mozilla/ipc/PChildToParentStreamChild.h"
 #include "mozilla/ipc/PParentToChildStreamChild.h"
@@ -1802,6 +1803,11 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
   
   
 #if defined(MOZ_SANDBOX)
+
+#  ifdef MOZ_USING_WASM_SANDBOXING
+  mozilla::ipc::PreloadSandboxedDynamicLibraries();
+#  endif
+
   bool sandboxEnabled = true;
 #  if defined(XP_LINUX)
   
