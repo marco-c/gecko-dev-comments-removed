@@ -425,6 +425,24 @@ this.sidebarAction = class extends ExtensionAPI {
 
 
 
+  toggle(window) {
+    let { SidebarUI } = window;
+    if (!SidebarUI || !this.extension.canAccessWindow(window)) {
+      return;
+    }
+
+    if (!this.isOpen(window)) {
+      SidebarUI.show(this.id);
+    } else {
+      SidebarUI.hide();
+    }
+  }
+
+  
+
+
+
+
 
   isOpen(window) {
     let { SidebarUI } = window;
@@ -485,6 +503,13 @@ this.sidebarAction = class extends ExtensionAPI {
           let window = windowTracker.topWindow;
           if (context.canAccessWindow(window)) {
             sidebarAction.close(window);
+          }
+        },
+
+        toggle() {
+          let window = windowTracker.topWindow;
+          if (context.canAccessWindow(window)) {
+            sidebarAction.toggle(window);
           }
         },
 
