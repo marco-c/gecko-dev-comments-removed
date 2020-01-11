@@ -24,6 +24,9 @@ add_task(async function() {
   
   await pushPref("security.allow_parent_unrestricted_js_loads", true);
   await pushPref("devtools.browserconsole.contentMessages", true);
+  
+  await pushPref("devtools.browsertoolbox.fission", false);
+
   await addTab(TEST_URI);
 
   const opened = waitForBrowserConsole();
