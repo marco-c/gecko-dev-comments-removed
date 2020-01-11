@@ -5803,14 +5803,13 @@ void Context::getIntegervRobust(GLenum pname, GLsizei bufSize, GLsizei *length, 
 
 void Context::getProgramiv(GLuint program, GLenum pname, GLint *params)
 {
-    Program *programObject = nullptr;
-    if (!mContextLost)
-    {
-        
-        programObject = (pname == GL_COMPLETION_STATUS_KHR ? getProgramNoResolveLink(program)
-                                                           : getProgramResolveLink(program));
-        ASSERT(programObject);
-    }
+    if (mContextLost)
+        return;  
+
+    
+    Program *programObject = (pname == GL_COMPLETION_STATUS_KHR ? getProgramNoResolveLink(program)
+                                                                : getProgramResolveLink(program));
+    ASSERT(programObject);
     QueryProgramiv(this, programObject, pname, params);
 }
 

@@ -2433,6 +2433,7 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
             features->rewriteUnaryMinusOperator.enabled = capsVersion < IntelDriverVersion(4624);
 
             
+            
             features->setDataFasterThanImageUploadOn128bitFormats.enabled = false;
         }
     }
