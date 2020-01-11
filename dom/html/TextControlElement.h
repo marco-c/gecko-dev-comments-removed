@@ -127,13 +127,14 @@ class TextControlElement : public nsGenericHTMLFormElementWithState {
 
 
 
+
   virtual nsresult BindToFrame(nsTextControlFrame* aFrame) = 0;
 
   
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void UnbindFromFrame(
+  MOZ_CAN_RUN_SCRIPT virtual void UnbindFromFrame(
       nsTextControlFrame* aFrame) = 0;
 
   

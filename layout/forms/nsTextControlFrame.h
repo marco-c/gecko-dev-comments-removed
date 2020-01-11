@@ -41,8 +41,17 @@ class nsTextControlFrame final : public nsContainerFrame,
                               nsPresContext* aPresContext);
   virtual ~nsTextControlFrame();
 
-  virtual void DestroyFrom(nsIFrame* aDestructRoot,
-                           PostDestroyData& aPostDestroyData) override;
+  
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void DestroyFrom(
+      nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
 
   virtual nsIScrollableFrame* GetScrollTargetFrame() override {
     return do_QueryFrame(PrincipalChildList().FirstChild());
