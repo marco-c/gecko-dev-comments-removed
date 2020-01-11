@@ -321,7 +321,7 @@ const rollout = {
     results.evaluateReason = event;
 
     
-    await rollout.setSetting(DOH_SKIP_HEURISTICS_PREF, false);
+    await this.setSetting(DOH_SKIP_HEURISTICS_PREF, false);
 
     
     
@@ -344,7 +344,7 @@ const rollout = {
     results.evaluateReason = event;
 
     
-    await rollout.setSetting(DOH_SKIP_HEURISTICS_PREF, false);
+    await this.setSetting(DOH_SKIP_HEURISTICS_PREF, false);
 
     
     let policyEnableDoH = await browser.experiments.heuristics.checkEnterprisePolicies();
@@ -355,7 +355,7 @@ const rollout = {
 
     if (policyEnableDoH === "no_policy_set") {
       
-      await rollout.setSetting(DOH_SKIP_HEURISTICS_PREF, false);
+      await this.setSetting(DOH_SKIP_HEURISTICS_PREF, false);
       return;
     }
 
@@ -364,7 +364,7 @@ const rollout = {
     }
 
     
-    await rollout.setSetting(DOH_SKIP_HEURISTICS_PREF, true);
+    await this.setSetting(DOH_SKIP_HEURISTICS_PREF, true);
 
     browser.experiments.heuristics.sendHeuristicsPing(policyEnableDoH, results);
   },
@@ -423,7 +423,7 @@ const rollout = {
     log("calling init");
 
     
-    let doneFirstRun = await rollout.getSetting(DOH_DONE_FIRST_RUN_PREF, false);
+    let doneFirstRun = await this.getSetting(DOH_DONE_FIRST_RUN_PREF, false);
 
     
     browser.experiments.heuristics.setupTelemetry();
@@ -433,7 +433,7 @@ const rollout = {
 
     if (!doneFirstRun) {
       log("first run!");
-      await rollout.setSetting(DOH_DONE_FIRST_RUN_PREF, true);
+      await this.setSetting(DOH_DONE_FIRST_RUN_PREF, true);
       
       await this.trrModePrefHasUserValue("first_run", results);
       await this.enterprisePolicyCheck("first_run", results);
@@ -443,18 +443,15 @@ const rollout = {
     }
 
     
-    let skipHeuristicsCheck = await rollout.getSetting(
+    let skipHeuristicsCheck = await this.getSetting(
       DOH_SKIP_HEURISTICS_PREF,
       false
     );
 
     log("skipHeuristicsCheck: ", skipHeuristicsCheck);
 
-    if (!skipHeuristicsCheck) {
-      let shouldRunHeuristics = await stateManager.shouldRunHeuristics();
-      if (shouldRunHeuristics) {
-        await rollout.main();
-      }
+    if (!skipHeuristicsCheck && (await stateManager.shouldRunHeuristics())) {
+      await this.runStartupHeuristics();
     }
 
     
@@ -494,36 +491,21 @@ const rollout = {
         }
       }, 60000);
     });
+
+    
+    browser.captivePortal.onConnectivityAvailable.addListener(async () => {
+      log("Captive portal onConnectivityAvailable, running heuristics.");
+      if (rollout.networkSettledTimeout) {
+        log("Canceling queued heuristics run.");
+        clearTimeout(rollout.networkSettledTimeout);
+        rollout.networkSettledTimeout = null;
+      }
+      await this.runStartupHeuristics();
+    });
   },
 
-  isCaptive(state) {
-    return !["unlocked_portal", "not_captive"].includes(state);
-  },
-
-  async main() {
-    
-    browser.captivePortal.onStateChanged.addListener(rollout.onReady);
-
-    
-    
-    let state = await browser.captivePortal.getState();
-    log("Captive state:", state);
-    if (!this.isCaptive(state)) {
-      await rollout.onReady({ state });
-    }
-  },
-
-  async onReady(details) {
-    
-    browser.captivePortal.onStateChanged.removeListener(rollout.onReady);
-
-    
-    if (this.isCaptive(details.state)) {
-      return;
-    }
-
-    
-    let decision = await rollout.heuristics("startup");
+  async runStartupHeuristics() {
+    let decision = await this.heuristics("startup");
     let shouldShowDoorhanger = await stateManager.shouldShowDoorhanger();
     if (decision === "disable_doh") {
       await stateManager.setState("disabled");
