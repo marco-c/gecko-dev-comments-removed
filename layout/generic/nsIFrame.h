@@ -2903,33 +2903,32 @@ class nsIFrame : public nsQueryFrame {
   enum {
     eMathML = 1 << 0,
     eSVG = 1 << 1,
-    eSVGForeignObject = 1 << 2,
-    eSVGContainer = 1 << 3,
-    eSVGGeometry = 1 << 4,
-    eSVGPaintServer = 1 << 5,
-    eBidiInlineContainer = 1 << 6,
+    eSVGContainer = 1 << 2,
+    eSVGGeometry = 1 << 3,
+    eSVGPaintServer = 1 << 4,
+    eBidiInlineContainer = 1 << 5,
     
-    eReplaced = 1 << 7,
-    
-    
-    eReplacedContainsBlock = 1 << 8,
+    eReplaced = 1 << 6,
     
     
-    eLineParticipant = 1 << 9,
-    eXULBox = 1 << 10,
-    eCanContainOverflowContainers = 1 << 11,
-    eTablePart = 1 << 12,
-    eSupportsCSSTransforms = 1 << 13,
+    eReplacedContainsBlock = 1 << 7,
+    
+    
+    eLineParticipant = 1 << 8,
+    eXULBox = 1 << 9,
+    eCanContainOverflowContainers = 1 << 10,
+    eTablePart = 1 << 11,
+    eSupportsCSSTransforms = 1 << 12,
 
     
     
     
-    eReplacedSizing = 1 << 14,
+    eReplacedSizing = 1 << 13,
 
     
     
     
-    eSupportsContainLayoutAndPaint = 1 << 15,
+    eSupportsContainLayoutAndPaint = 1 << 14,
 
     
     
