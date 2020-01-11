@@ -231,9 +231,13 @@ void HttpTransactionParent::SetDNSWasRefreshed() {
   Unused << SendSetDNSWasRefreshed();
 }
 
-void HttpTransactionParent::GetNetworkAddresses(NetAddr& self, NetAddr& peer) {
+void HttpTransactionParent::GetNetworkAddresses(NetAddr& self, NetAddr& peer,
+                                                bool& aResolvedByTRR) {
   self = mSelfAddr;
   peer = mPeerAddr;
+
+  
+  aResolvedByTRR = false;
 }
 
 bool HttpTransactionParent::HasStickyConnection() const {
@@ -323,11 +327,6 @@ void HttpTransactionParent::SetDomainLookupStart(mozilla::TimeStamp timeStamp,
 void HttpTransactionParent::SetDomainLookupEnd(mozilla::TimeStamp timeStamp,
                                                bool onlyIfNull) {
   
-}
-
-bool HttpTransactionParent::ResolvedByTRR() {
-  
-  return false;
 }
 
 nsHttpTransaction* HttpTransactionParent::AsHttpTransaction() {
