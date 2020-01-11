@@ -27,6 +27,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
     "resource://activity-stream/lib/ASRouterPreferences.jsm",
   ASRouterTriggerListeners:
     "resource://activity-stream/lib/ASRouterTriggerListeners.jsm",
+  TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.jsm",
+  ClientEnvironment: "resource://normandy/lib/ClientEnvironment.jsm",
+  Sampling: "resource://gre/modules/components-utils/Sampling.jsm",
   CFRMessageProvider: "resource://activity-stream/lib/CFRMessageProvider.jsm",
   KintoHttpClient: "resource://services-common/kinto-http-client.js",
   Downloader: "resource://services-settings/Attachments.jsm",
@@ -56,8 +59,29 @@ const { AttributionCode } = ChromeUtils.import(
 );
 
 const TRAILHEAD_CONFIG = {
+  OVERRIDE_PREF: "trailhead.firstrun.branches",
   DID_SEE_ABOUT_WELCOME_PREF: "trailhead.firstrun.didSeeAboutWelcome",
+  INTERRUPTS_EXPERIMENT_PREF: "trailhead.firstrun.interruptsExperiment",
+  TRIPLETS_ENROLLED_PREF: "trailhead.firstrun.tripletsEnrolled",
+  DEFAULT_TRIPLET: "supercharge",
   DYNAMIC_TRIPLET_BUNDLE_LENGTH: 3,
+  BRANCHES: {
+    interrupts: [
+      ["modal_control"],
+      ["modal_variant_a"],
+      ["modal_variant_b"],
+      ["modal_variant_c"],
+      ["modal_variant_f"],
+      ["full_page_d"],
+      ["full_page_e"],
+    ],
+    triplets: [["supercharge"], ["payoff"], ["multidevice"], ["privacy"]],
+  },
+  EXPERIMENT_RATIOS: [["", 0], ["interrupts", 1], ["triplets", 0]],
+  
+  
+  EXPERIMENT_RATIOS_FOR_EXTENDED_TRIPLETS: [["control", 100], ["holdback", 0]],
+  EXTENDED_TRIPLETS_EXPERIMENT_PREF: "trailhead.extendedTriplets.experiment",
 };
 
 const INCOMING_MESSAGE_NAME = "ASRouter:child-to-parent";
@@ -98,6 +122,19 @@ const TOPIC_INTL_LOCALE_CHANGED = "intl:app-locales-changed";
 
 const USE_REMOTE_L10N_PREF =
   "browser.newtabpage.activity-stream.asrouter.useRemoteL10n";
+
+
+
+
+
+
+
+async function chooseBranch(seed, branches) {
+  const ratios = branches.map(([item, ratio]) =>
+    typeof ratio !== "undefined" ? ratio : 1
+  );
+  return branches[await Sampling.ratioSample(seed, ratios)][0];
+}
 
 const MessageLoaderUtils = {
   STARTPAGE_VERSION,
@@ -515,8 +552,12 @@ class _ASRouter {
       messageImpressions: {},
       providerImpressions: {},
       trailheadInitialized: false,
+      trailheadInterrupt: "",
+      trailheadTriplet: "",
       messages: [],
       errors: [],
+      extendedTripletsInitialized: false,
+      showExtendedTriplets: true,
       localeInUse: Services.locale.appLocaleAsLangTag,
     };
     this._triggerHandler = this._triggerHandler.bind(this);
@@ -806,6 +847,9 @@ class _ASRouter {
 
     this._loadLocalProviders();
 
+    
+    await this.setFirstRunStateFromPref();
+
     const messageBlockList =
       (await this._storage.get("messageBlockList")) || [];
     const providerBlockList =
@@ -935,7 +979,6 @@ class _ASRouter {
           ASRouterTargeting.Environment,
           this._getMessagesContext()
         ),
-        trailhead: ASRouterPreferences.trailhead,
         errors: this.errors,
       },
     });
@@ -955,21 +998,223 @@ class _ASRouter {
     }
   }
 
-  async setTrailHeadMessageSeen() {
-    if (!this.state.trailheadInitialized) {
-      Services.prefs.setBoolPref(
-        TRAILHEAD_CONFIG.DID_SEE_ABOUT_WELCOME_PREF,
-        true
+  async _hasAddonAttributionData() {
+    try {
+      const data = (await AttributionCode.getAttrDataAsync()) || {};
+      return data.source === "addons.mozilla.org";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async setFirstRunStateFromPref() {
+    let interrupt;
+    let triplet;
+
+    const overrideValue = Services.prefs.getStringPref(
+      TRAILHEAD_CONFIG.OVERRIDE_PREF,
+      ""
+    );
+
+    if (overrideValue) {
+      [interrupt, triplet] = overrideValue.split("-");
+    } else {
+      triplet = TRAILHEAD_CONFIG.DEFAULT_TRIPLET;
+    }
+
+    await this.setState({
+      trailheadInterrupt: interrupt,
+      trailheadTriplet: triplet,
+    });
+  }
+
+  
+
+
+
+
+  async _generateTrailheadBranches() {
+    let experiment = "";
+    let interrupt;
+    let triplet;
+
+    const overrideValue = Services.prefs.getStringPref(
+      TRAILHEAD_CONFIG.OVERRIDE_PREF,
+      ""
+    );
+    if (overrideValue) {
+      [interrupt, triplet] = overrideValue.split("-");
+    }
+
+    
+    if (await this._hasAddonAttributionData()) {
+      return {
+        experiment,
+        interrupt: "join",
+        triplet: triplet || "privacy",
+      };
+    }
+
+    
+    if (overrideValue) {
+      return { experiment, interrupt, triplet: triplet || "" };
+    }
+
+    const { userId } = ClientEnvironment;
+    experiment = await chooseBranch(
+      `${userId}-trailhead-experiments`,
+      TRAILHEAD_CONFIG.EXPERIMENT_RATIOS
+    );
+
+    
+    
+    if (experiment === "interrupts") {
+      interrupt = await chooseBranch(
+        `${userId}-interrupts-branch`,
+        TRAILHEAD_CONFIG.BRANCHES.interrupts
       );
-      await this.setState({
-        trailheadInitialized: true,
-      });
+      triplet = TRAILHEAD_CONFIG.DEFAULT_TRIPLET;
+      
+      
+    } else if (experiment === "triplets") {
+      interrupt = "join";
+      triplet = await chooseBranch(
+        `${userId}-triplets-branch`,
+        TRAILHEAD_CONFIG.BRANCHES.triplets
+      );
+    } else {
+      
+      interrupt = "join";
+      triplet = TRAILHEAD_CONFIG.DEFAULT_TRIPLET;
+    }
+
+    return { experiment, interrupt, triplet };
+  }
+
+  
+  _sendTrailheadEnrollEvent(data) {
+    this.dispatchToAS({
+      type: at.TRAILHEAD_ENROLL_EVENT,
+      data,
+    });
+  }
+
+  async setupExtendedTriplets() {
+    
+    if (this.state.extendedTripletsInitialized) {
+      return;
+    }
+
+    let branch = Services.prefs.getStringPref(
+      TRAILHEAD_CONFIG.EXTENDED_TRIPLETS_EXPERIMENT_PREF,
+      ""
+    );
+    if (!branch) {
+      const { userId } = ClientEnvironment;
+      branch = await chooseBranch(
+        `${userId}-extended-triplets-experiment`,
+        TRAILHEAD_CONFIG.EXPERIMENT_RATIOS_FOR_EXTENDED_TRIPLETS
+      );
+      Services.prefs.setStringPref(
+        TRAILHEAD_CONFIG.EXTENDED_TRIPLETS_EXPERIMENT_PREF,
+        branch
+      );
+    }
+
+    
+    const experimentName = `activity-stream-extended-triplets-v2-1581912`;
+    TelemetryEnvironment.setExperimentActive(experimentName, branch);
+
+    const state = { extendedTripletsInitialized: true };
+    
+    if (branch === "holdback") {
+      state.showExtendedTriplets = false;
+    }
+    await this.setState(state);
+  }
+
+  async setupTrailhead() {
+    
+    if (
+      this.state.trailheadInitialized ||
+      !Services.prefs.getBoolPref(
+        TRAILHEAD_CONFIG.DID_SEE_ABOUT_WELCOME_PREF,
+        false
+      )
+    ) {
+      return;
+    }
+
+    const {
+      experiment,
+      interrupt,
+      triplet,
+    } = await this._generateTrailheadBranches();
+
+    await this.setState({
+      trailheadInitialized: true,
+      trailheadInterrupt: interrupt,
+      trailheadTriplet: triplet,
+    });
+
+    if (experiment) {
+      
+      const experimentName = `activity-stream-firstrun-trailhead-${experiment}`;
+
+      TelemetryEnvironment.setExperimentActive(
+        experimentName,
+        experiment === "interrupts" ? interrupt : triplet,
+        { type: "as-firstrun" }
+      );
+
+      
+      
+      if (
+        experiment === "interrupts" &&
+        !Services.prefs.prefHasUserValue(
+          TRAILHEAD_CONFIG.INTERRUPTS_EXPERIMENT_PREF
+        )
+      ) {
+        Services.prefs.setStringPref(
+          TRAILHEAD_CONFIG.INTERRUPTS_EXPERIMENT_PREF,
+          interrupt
+        );
+        this._sendTrailheadEnrollEvent({
+          experiment: experimentName,
+          type: "as-firstrun",
+          branch: interrupt,
+        });
+      }
+
+      
+      if (
+        experiment === "triplets" &&
+        !Services.prefs.getBoolPref(
+          TRAILHEAD_CONFIG.TRIPLETS_ENROLLED_PREF,
+          false
+        )
+      ) {
+        Services.prefs.setBoolPref(
+          TRAILHEAD_CONFIG.TRIPLETS_ENROLLED_PREF,
+          true
+        );
+        this._sendTrailheadEnrollEvent({
+          experiment: experimentName,
+          type: "as-firstrun",
+          branch: triplet,
+        });
+      }
     }
   }
 
   
   _getMessagesContext() {
-    const { messageImpressions, previousSessionEnd } = this.state;
+    const {
+      messageImpressions,
+      previousSessionEnd,
+      trailheadInterrupt,
+      trailheadTriplet,
+    } = this.state;
 
     const {
       personalizedCfrScores,
@@ -982,6 +1227,12 @@ class _ASRouter {
       },
       get previousSessionEnd() {
         return previousSessionEnd;
+      },
+      get trailheadInterrupt() {
+        return trailheadInterrupt;
+      },
+      get trailheadTriplet() {
+        return trailheadTriplet;
       },
       get scores() {
         return personalizedCfrScores;
@@ -1048,10 +1299,7 @@ class _ASRouter {
 
     channel.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {
       type: "ADMIN_SET_STATE",
-      data: {
-        ...this.state,
-        evaluationStatus,
-      },
+      data: { ...this.state, evaluationStatus },
     });
   }
 
@@ -1157,9 +1405,7 @@ class _ASRouter {
             
             
             blockOnClick:
-              ASRouterPreferences.trailhead.trailheadTriplet.startsWith(
-                "dynamic"
-              ) &&
+              this.state.trailheadTriplet.startsWith("dynamic") &&
               allMessages.length >
                 TRAILHEAD_CONFIG.DYNAMIC_TRIPLET_BUNDLE_LENGTH,
           }))
@@ -1293,8 +1539,6 @@ class _ASRouter {
           type: "SET_MESSAGE",
           data: {
             ...message,
-            trailheadTriplet:
-              ASRouterPreferences.trailhead.trailheadTriplet || "",
             bundle: bundledMessages && bundledMessages.bundle,
           },
         });
@@ -1853,7 +2097,15 @@ class _ASRouter {
       });
 
       
-      if (!message) {
+      
+      
+      if (message) {
+        await this.setupExtendedTriplets();
+      }
+
+      
+      
+      if (!message || !this.state.showExtendedTriplets) {
         message = await this.handleMessageRequest({ provider: "snippets" });
       }
 
@@ -1868,7 +2120,13 @@ class _ASRouter {
 
     if (trigger.id === "firstRun") {
       
-      await this.setTrailHeadMessageSeen();
+      if (!this.state.trailheadInitialized) {
+        Services.prefs.setBoolPref(
+          TRAILHEAD_CONFIG.DID_SEE_ABOUT_WELCOME_PREF,
+          true
+        );
+        await this.setupTrailhead();
+      }
     }
 
     const message = await this.handleMessageRequest({
@@ -2016,6 +2274,7 @@ class _ASRouter {
   }
 }
 this._ASRouter = _ASRouter;
+this.chooseBranch = chooseBranch;
 this.TRAILHEAD_CONFIG = TRAILHEAD_CONFIG;
 
 
@@ -2028,5 +2287,6 @@ const EXPORTED_SYMBOLS = [
   "_ASRouter",
   "ASRouter",
   "MessageLoaderUtils",
+  "chooseBranch",
   "TRAILHEAD_CONFIG",
 ];
