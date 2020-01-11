@@ -23,7 +23,8 @@ extern "C" IMAGE_DOS_HEADER __ImageBase;
 
 namespace mozilla {
 
-#if defined(MOZ_ASAN)
+#if defined(MOZ_ASAN) || defined(_M_ARM64)
+
 
 
 
