@@ -150,8 +150,7 @@ add_task(async function() {
     
     await waitUntil(() => {
       const { requests } = store.getState().requests;
-      const actIDs = [...requests.keys()];
-      const { formDataSections, requestPostData } = requests.get(actIDs[index]);
+      const { formDataSections, requestPostData } = requests[index];
       return formDataSections && requestPostData;
     });
     EventUtils.sendMouseEvent(
