@@ -696,6 +696,7 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
 
 bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
                                                     bool aIsSystemRealm) {
+  static Maybe<bool> sGeneralConfigFilenameSet;
   
   if (StaticPrefs::security_allow_parent_unrestricted_js_loads()) {
     return true;
@@ -703,6 +704,41 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
 
   
   if (!XRE_IsE10sParentProcess()) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (NS_IsMainThread()) {
+    
+    
+    
+    if (!sGeneralConfigFilenameSet.isSome()) {
+      nsAutoString jsConfigPref;
+      Preferences::GetString("general.config.filename", jsConfigPref);
+      sGeneralConfigFilenameSet.emplace(!jsConfigPref.IsEmpty());
+    }
+    if (sGeneralConfigFilenameSet.value()) {
+      MOZ_LOG(sCSMLog, LogLevel::Debug,
+              ("Allowing a javascript load of %s because "
+               "general.config.filename is set",
+               aFilename));
+      return true;
+    }
+  }
+
+  if (XRE_IsE10sParentProcess() &&
+      !StaticPrefs::extensions_webextensions_remote()) {
+    MOZ_LOG(sCSMLog, LogLevel::Debug,
+            ("Allowing a javascript load of %s because the web extension "
+             "process is disabled.",
+             aFilename));
     return true;
   }
 
