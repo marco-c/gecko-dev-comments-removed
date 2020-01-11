@@ -595,14 +595,28 @@ RootActor.prototype = {
     return { form: processDescriptor.form() };
   },
 
+  
+
+
+
+
+
+
+
+
   async _getChildBrowsingContexts(id) {
     
     
     
-    const window = Services.wm.getMostRecentWindow(
-      DebuggerServer.chromeWindowType
-    );
-    if (window && window.docShell.browsingContext.id === id) {
+    const parentBrowsingContext = BrowsingContext.get(id);
+    
+    
+    
+    if (
+      parentBrowsingContext.window &&
+      !parentBrowsingContext.embedderElement
+    ) {
+      const { window } = parentBrowsingContext;
       return [
         ...window.document.querySelectorAll(`browser[remote="true"]`),
       ].map(browser => browser.browsingContext);
@@ -610,7 +624,6 @@ RootActor.prototype = {
     
     
     
-    const parentBrowsingContext = BrowsingContext.get(id);
     return parentBrowsingContext.getChildren();
   },
 
