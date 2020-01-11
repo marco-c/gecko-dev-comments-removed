@@ -100,7 +100,6 @@ class InactivePropertyHelper {
           "grid-auto-flow",
           "grid-auto-rows",
           "grid-template",
-          "grid-gap",
           "justify-items",
         ],
         when: () => !this.gridContainer,
@@ -142,6 +141,10 @@ class InactivePropertyHelper {
           "place-content",
           "place-items",
           "row-gap",
+          
+          
+          "grid-gap",
+          "grid-row-gap",
         ],
         when: () => !this.gridContainer && !this.flexContainer,
         fixId: "inactive-css-not-grid-or-flex-container-fix",
@@ -150,7 +153,13 @@ class InactivePropertyHelper {
       },
       
       {
-        invalidProperties: ["column-gap", "gap"],
+        invalidProperties: [
+          "column-gap",
+          "gap",
+          
+          
+          "grid-column-gap",
+        ],
         when: () =>
           !this.gridContainer && !this.flexContainer && !this.multiColContainer,
         fixId:
