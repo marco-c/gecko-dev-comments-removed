@@ -322,6 +322,9 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   static ArrayBufferObject* createZeroed(JSContext* cx, uint32_t nbytes,
                                          HandleObject proto = nullptr);
 
+  static ArrayBufferObject* createForTypedObject(JSContext* cx,
+                                                 uint32_t nbytes);
+
   
   
   static ArrayBufferObject* createEmpty(JSContext* cx);
@@ -356,14 +359,14 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   
   JSObject* firstView();
 
-  bool addView(JSContext* cx, JSObject* view);
+  bool addView(JSContext* cx, ArrayBufferViewObject* view);
 
   
   
   static void detach(JSContext* cx, Handle<ArrayBufferObject*> buffer);
 
  private:
-  void setFirstView(JSObject* view);
+  void setFirstView(ArrayBufferViewObject* view);
 
   uint8_t* inlineDataPointer() const;
 
@@ -427,7 +430,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   static BufferContents createMappedContents(int fd, size_t offset,
                                              size_t length);
 
-  void setHasTypedObjectViews() { setFlags(flags() | TYPED_OBJECT_VIEWS); }
+  bool hasTypedObjectViews() const { return flags() & TYPED_OBJECT_VIEWS; }
 
  protected:
   void setDataPointer(BufferContents contents);
@@ -438,7 +441,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   uint32_t flags() const;
   void setFlags(uint32_t flags);
 
-  bool hasTypedObjectViews() const { return flags() & TYPED_OBJECT_VIEWS; }
+  void setHasTypedObjectViews() { setFlags(flags() | TYPED_OBJECT_VIEWS); }
 
   void setIsDetached() { setFlags(flags() | DETACHED); }
   void setIsPreparedForAsmJS() {
