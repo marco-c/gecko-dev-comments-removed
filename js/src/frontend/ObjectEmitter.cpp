@@ -605,22 +605,11 @@ bool ClassEmitter::emitInitConstructor(bool needsHomeObject) {
   return true;
 }
 
-bool ClassEmitter::emitInitDefaultConstructor(const Maybe<uint32_t>& classStart,
-                                              const Maybe<uint32_t>& classEnd) {
+bool ClassEmitter::emitInitDefaultConstructor(uint32_t classStart,
+                                              uint32_t classEnd) {
   MOZ_ASSERT(propertyState_ == PropertyState::Start);
   MOZ_ASSERT(classState_ == ClassState::Class ||
              classState_ == ClassState::FieldInitializersEnd);
-
-  if (classStart && classEnd) {
-    
-    
-    
-    
-    if (!bce_->newSrcNote3(SRC_CLASS_SPAN, ptrdiff_t(*classStart),
-                           ptrdiff_t(*classEnd))) {
-      return false;
-    }
-  }
 
   RootedAtom className(bce_->cx, name_);
   if (!className) {
@@ -631,19 +620,31 @@ bool ClassEmitter::emitInitDefaultConstructor(const Maybe<uint32_t>& classStart,
     }
   }
 
+  uint32_t atomIndex;
+  if (!bce_->makeAtomIndex(className, &atomIndex)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  BytecodeOffset off;
   if (isDerived_) {
     
-    if (!bce_->emitAtomOp(className, JSOP_DERIVEDCONSTRUCTOR)) {
+    if (!bce_->emitN(JSOP_DERIVEDCONSTRUCTOR, 12, &off)) {
       
       return false;
     }
   } else {
     
-    if (!bce_->emitAtomOp(className, JSOP_CLASSCONSTRUCTOR)) {
+    if (!bce_->emitN(JSOP_CLASSCONSTRUCTOR, 12, &off)) {
       
       return false;
     }
   }
+  SetClassConstructorOperands(bce_->bytecodeSection().code(off), atomIndex,
+                              classStart, classEnd);
 
   if (!initProtoAndCtor()) {
     

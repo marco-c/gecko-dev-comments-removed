@@ -1775,8 +1775,11 @@
 
 
 
+
+
+
  \
-    MACRO(JSOP_CLASSCONSTRUCTOR, 167, "classconstructor", NULL, 5, 0, 1, JOF_ATOM) \
+    MACRO(JSOP_CLASSCONSTRUCTOR, 167, "classconstructor", NULL, 13, 0, 1, JOF_CLASS_CTOR) \
     
 
 
@@ -1784,8 +1787,11 @@
 
 
 
+
+
+
  \
-    MACRO(JSOP_DERIVEDCONSTRUCTOR, 168, "derivedconstructor", NULL, 5, 1, 1, JOF_ATOM) \
+    MACRO(JSOP_DERIVEDCONSTRUCTOR, 168, "derivedconstructor", NULL, 13, 1, 1, JOF_CLASS_CTOR) \
     
 
 
