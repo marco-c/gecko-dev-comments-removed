@@ -615,22 +615,22 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 
 
 
-#urlbar[textoverflow="start"][hasrtldomain]:not([focused]) > #urlbar-input-container > .urlbar-input-box > #urlbar-scheme:valid {
+#urlbar[textoverflow="left"][hasrtldomain]:not([focused]) > #urlbar-input-container > .urlbar-input-box > #urlbar-scheme:valid {
   visibility: visible;
 }
 
 
 
 
-#urlbar[textoverflow="end"]:not([focused]) > #urlbar-input-container > .urlbar-input-box > #urlbar-input {
+#urlbar[textoverflow="right"]:not([focused]) > #urlbar-input-container > .urlbar-input-box > #urlbar-input {
   mask-image: linear-gradient(to left, transparent, black 3ch);
 }
 
-#urlbar[textoverflow="end"][rtltext]:not([focused]) > #urlbar-input-container > .urlbar-input-box > #urlbar-input {
+#urlbar[textoverflow="left"][rtltext]:not([focused]) > #urlbar-input-container > .urlbar-input-box > #urlbar-input {
   mask-image: linear-gradient(to right, transparent, black 3ch);
 }
 
-#urlbar[textoverflow="start"][hasrtldomain]:not([focused]) > #urlbar-input-container > .urlbar-input-box > #urlbar-input {
+#urlbar[textoverflow="left"][hasrtldomain]:not([focused]) > #urlbar-input-container > .urlbar-input-box > #urlbar-input {
   mask-image: linear-gradient(to right, transparent var(--urlbar-scheme-size), black calc(var(--urlbar-scheme-size) + 3ch));
 }
 
