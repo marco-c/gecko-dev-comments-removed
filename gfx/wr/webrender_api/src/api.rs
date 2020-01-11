@@ -30,6 +30,26 @@ pub type DocumentLayer = i8;
 
 
 
+#[derive(Copy, Clone, Deserialize, Serialize)]
+pub struct QualitySettings {
+    
+    
+    
+    
+    pub allow_sacrificing_subpixel_aa: bool,
+}
+
+impl Default for QualitySettings {
+    fn default() -> Self {
+        QualitySettings {
+            
+            allow_sacrificing_subpixel_aa: true,
+        }
+    }
+}
+
+
+
 
 #[derive(Clone, Deserialize, Serialize)]
 pub enum ResourceUpdate {
@@ -305,6 +325,11 @@ impl Transaction {
         clamp: ScrollClamping,
     ) {
         self.frame_ops.push(FrameMsg::ScrollNodeWithId(origin, id, clamp));
+    }
+
+    
+    pub fn set_quality_settings(&mut self, settings: QualitySettings) {
+        self.scene_ops.push(SceneMsg::SetQualitySettings { settings });
     }
 
     
@@ -812,6 +837,11 @@ pub enum SceneMsg {
         
         device_pixel_ratio: f32,
     },
+    
+    SetQualitySettings {
+        
+        settings: QualitySettings,
+    },
 }
 
 
@@ -849,6 +879,7 @@ impl fmt::Debug for SceneMsg {
             SceneMsg::EnableFrameOutput(..) => "SceneMsg::EnableFrameOutput",
             SceneMsg::SetDocumentView { .. } => "SceneMsg::SetDocumentView",
             SceneMsg::SetRootPipeline(..) => "SceneMsg::SetRootPipeline",
+            SceneMsg::SetQualitySettings { .. } => "SceneMsg::SetQualitySettings",
         })
     }
 }

@@ -6,7 +6,7 @@ use api::{AlphaType, BorderDetails, BorderDisplayItem, BuiltDisplayListIter, Pri
 use api::{ClipId, ColorF, CommonItemProperties, ComplexClipRegion, ComponentTransferFuncType, RasterSpace};
 use api::{DisplayItem, DisplayItemRef, ExtendMode, ExternalScrollId, FilterData};
 use api::{FilterOp, FilterPrimitive, FontInstanceKey, GlyphInstance, GlyphOptions, GradientStop};
-use api::{IframeDisplayItem, ImageKey, ImageRendering, ItemRange, ColorDepth};
+use api::{IframeDisplayItem, ImageKey, ImageRendering, ItemRange, ColorDepth, QualitySettings};
 use api::{LineOrientation, LineStyle, NinePatchBorderSource, PipelineId, MixBlendMode};
 use api::{PropertyBinding, ReferenceFrame, ReferenceFrameKind, ScrollFrameDisplayItem, ScrollSensitivity};
 use api::{Shadow, SpaceAndClipInfo, SpatialId, StackingContext, StickyFrameDisplayItem};
@@ -379,6 +379,9 @@ pub struct SceneBuilder<'a> {
     
     
     picture_cache_spatial_nodes: FastHashSet<SpatialNodeIndex>,
+
+    
+    quality_settings: QualitySettings,
 }
 
 impl<'a> SceneBuilder<'a> {
@@ -420,6 +423,7 @@ impl<'a> SceneBuilder<'a> {
             iframe_depth: 0,
             content_slice_count: 0,
             picture_cache_spatial_nodes: FastHashSet::default(),
+            quality_settings: view.quality_settings,
         };
 
         let device_pixel_scale = view.accumulated_scale_factor_for_snapping();
@@ -1910,6 +1914,7 @@ impl<'a> SceneBuilder<'a> {
                                 &self.clip_scroll_tree,
                                 &self.clip_store,
                                 &self.interners,
+                                &self.quality_settings,
                             );
 
                             
@@ -1942,6 +1947,7 @@ impl<'a> SceneBuilder<'a> {
                     &self.clip_scroll_tree,
                     &self.clip_store,
                     &self.interners,
+                    &self.quality_settings,
                 );
                 self.picture_caching_initialized = true;
             }
@@ -3601,6 +3607,7 @@ impl FlattenedStackingContext {
         clip_scroll_tree: &ClipScrollTree,
         clip_store: &ClipStore,
         interners: &Interners,
+        quality_settings: &QualitySettings,
     ) -> usize {
         struct SliceInfo {
             cluster_index: usize,
@@ -3633,6 +3640,12 @@ impl FlattenedStackingContext {
                             true
                         }
                         (_, ROOT_SPATIAL_NODE_INDEX) => {
+                            
+                            
+                            if !quality_settings.allow_sacrificing_subpixel_aa {
+                                return false;
+                            }
+
                             
                             
                             
