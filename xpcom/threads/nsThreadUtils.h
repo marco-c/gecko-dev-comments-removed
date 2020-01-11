@@ -1701,11 +1701,26 @@ extern mozilla::TimeStamp NS_GetTimerDeadlineHintOnCurrentThread(
 
 
 
+
+
+
+
+
+
 extern nsresult NS_DispatchBackgroundTask(
     already_AddRefed<nsIRunnable> aEvent,
     uint32_t aDispatchFlags = NS_DISPATCH_NORMAL);
 extern nsresult NS_DispatchBackgroundTask(
     nsIRunnable* aEvent, uint32_t aDispatchFlags = NS_DISPATCH_NORMAL);
+
+
+
+
+
+
+
+extern nsresult NS_CreateBackgroundTaskQueue(const char* aName,
+                                             nsISerialEventTarget** aTarget);
 
 namespace mozilla {
 

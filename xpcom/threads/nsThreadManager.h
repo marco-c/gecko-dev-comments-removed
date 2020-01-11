@@ -13,6 +13,8 @@
 
 class nsIRunnable;
 
+class BackgroundEventTarget;
+
 class nsThreadManager : public nsIThreadManager {
  public:
   NS_DECL_ISUPPORTS
@@ -56,13 +58,13 @@ class nsThreadManager : public nsIThreadManager {
   nsresult DispatchToBackgroundThread(nsIRunnable* aEvent,
                                       uint32_t aDispatchFlags);
 
+  already_AddRefed<nsISerialEventTarget> CreateBackgroundTaskQueue(const char* aName);
+
   
   
   uint32_t GetHighestNumberOfThreads();
 
-  
-  
-  ~nsThreadManager() {}
+  ~nsThreadManager();
 
   void EnableMainThreadEventPrioritization();
   void FlushInputEventPrioritization();
@@ -87,7 +89,7 @@ class nsThreadManager : public nsIThreadManager {
       mInitialized;
 
   
-  nsCOMPtr<nsIEventTarget> mBackgroundEventTarget;
+  RefPtr<BackgroundEventTarget> mBackgroundEventTarget;
 };
 
 #define NS_THREADMANAGER_CID                         \

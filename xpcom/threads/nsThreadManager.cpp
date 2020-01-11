@@ -16,9 +16,11 @@
 #include "mozilla/AbstractThread.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/EventQueue.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/SystemGroup.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/TaskQueue.h"
 #include "mozilla/ThreadEventQueue.h"
 #include "mozilla/ThreadLocal.h"
 #include "PrioritizedEventQueue.h"
@@ -41,20 +43,31 @@ class BackgroundEventTarget final : public nsIEventTarget {
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIEVENTTARGET_FULL
 
-  BackgroundEventTarget() = default;
+  BackgroundEventTarget();
 
   nsresult Init();
 
-  nsresult Shutdown();
+  already_AddRefed<nsISerialEventTarget>
+    CreateBackgroundTaskQueue(const char* aName);
+
+  void BeginShutdown(nsTArray<RefPtr<ShutdownPromise>>&);
+  void FinishShutdown();
 
  private:
   ~BackgroundEventTarget() = default;
 
   nsCOMPtr<nsIThreadPool> mPool;
   nsCOMPtr<nsIThreadPool> mIOPool;
+
+  Mutex mMutex;
+  nsTArray<RefPtr<TaskQueue>> mTaskQueues;
 };
 
 NS_IMPL_ISUPPORTS(BackgroundEventTarget, nsIEventTarget)
+
+BackgroundEventTarget::BackgroundEventTarget()
+    : mMutex("BackgroundEventTarget::mMutex")
+{}
 
 nsresult BackgroundEventTarget::Init() {
   nsCOMPtr<nsIThreadPool> pool(new nsThreadPool());
@@ -118,11 +131,29 @@ BackgroundEventTarget::IsOnCurrentThread(bool* aValue) {
 NS_IMETHODIMP
 BackgroundEventTarget::Dispatch(already_AddRefed<nsIRunnable> aRunnable,
                                 uint32_t aFlags) {
+  
+  
+  
+  
+  
+  
   uint32_t flags = aFlags & ~NS_DISPATCH_EVENT_MAY_BLOCK;
-  if (aFlags & NS_DISPATCH_EVENT_MAY_BLOCK) {
-    return mIOPool->Dispatch(std::move(aRunnable), flags);
+  bool mayBlock = bool(aFlags & NS_DISPATCH_EVENT_MAY_BLOCK);
+  nsCOMPtr<nsIThreadPool>& pool = mayBlock ? mIOPool : mPool;
+
+  
+  
+  
+  
+  
+  
+  if (pool->IsOnCurrentThread()) {
+    flags |= NS_DISPATCH_AT_END;
+  } else {
+    flags &= ~NS_DISPATCH_AT_END;
   }
-  return mPool->Dispatch(std::move(aRunnable), flags);
+
+  return pool->Dispatch(std::move(aRunnable), flags);
 }
 
 NS_IMETHODIMP
@@ -139,10 +170,28 @@ BackgroundEventTarget::DelayedDispatch(already_AddRefed<nsIRunnable> aRunnable,
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-nsresult BackgroundEventTarget::Shutdown() {
+void BackgroundEventTarget::BeginShutdown(nsTArray<RefPtr<ShutdownPromise>>& promises) {
+  for (auto& queue : mTaskQueues) {
+    promises.AppendElement(queue->BeginShutdown());
+  }
+}
+
+void BackgroundEventTarget::FinishShutdown() {
   mPool->Shutdown();
   mIOPool->Shutdown();
-  return NS_OK;
+}
+
+already_AddRefed<nsISerialEventTarget> BackgroundEventTarget::CreateBackgroundTaskQueue(const char* aName) {
+  MutexAutoLock lock(mMutex);
+
+  RefPtr<TaskQueue> queue = new TaskQueue(do_AddRef(this), aName,
+                                           false,
+                                           true);
+  nsCOMPtr<nsISerialEventTarget> target(queue->WrapAsEventTarget());
+
+  mTaskQueues.AppendElement(queue.forget());
+
+  return target.forget();
 }
 
 extern "C" {
@@ -294,6 +343,8 @@ void nsThreadManager::InitializeShutdownObserver() {
 nsThreadManager::nsThreadManager()
     : mCurThreadIndex(0), mMainPRThread(nullptr), mInitialized(false) {}
 
+nsThreadManager::~nsThreadManager() = default;
+
 nsresult nsThreadManager::Init() {
   
   
@@ -363,7 +414,33 @@ void nsThreadManager::Shutdown() {
   
   NS_ProcessPendingEvents(mMainThread);
 
-  static_cast<BackgroundEventTarget*>(mBackgroundEventTarget.get())->Shutdown();
+  typedef typename ShutdownPromise::AllPromiseType AllPromise;
+  typename AllPromise::ResolveOrRejectValue val;
+  using ResolveValueT = typename AllPromise::ResolveValueType;
+  using RejectValueT = typename AllPromise::RejectValueType;
+
+  nsTArray<RefPtr<ShutdownPromise>> promises;
+  mBackgroundEventTarget->BeginShutdown(promises);
+
+  RefPtr<AllPromise> complete = ShutdownPromise::All(mMainThread, promises);
+
+  bool taskQueuesShutdown = false;
+
+  complete->Then(mMainThread, __func__,
+                 [&](const ResolveValueT& aResolveValue) {
+                   mBackgroundEventTarget->FinishShutdown();
+                   taskQueuesShutdown = true;
+                 },
+                 [&](RejectValueT aRejectValue) {
+                   mBackgroundEventTarget->FinishShutdown();
+                   taskQueuesShutdown = true;
+                 });
+
+  
+  
+  
+  
+  ::SpinEventLoopUntil([&]() { return taskQueuesShutdown; }, mMainThread);
 
   {
     
@@ -473,6 +550,14 @@ nsresult nsThreadManager::DispatchToBackgroundThread(nsIRunnable* aEvent,
 
   nsCOMPtr<nsIEventTarget> backgroundTarget(mBackgroundEventTarget);
   return backgroundTarget->Dispatch(aEvent, aDispatchFlags);
+}
+
+already_AddRefed<nsISerialEventTarget> nsThreadManager::CreateBackgroundTaskQueue(const char* aName) {
+  if (!mInitialized) {
+    return nullptr;
+  }
+
+  return mBackgroundEventTarget->CreateBackgroundTaskQueue(aName);
 }
 
 nsThread* nsThreadManager::GetCurrentThread() {
