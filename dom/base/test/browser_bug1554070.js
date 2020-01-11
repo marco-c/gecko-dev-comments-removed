@@ -37,8 +37,10 @@ add_task(async function() {
 
   
   
-  await click();
-  await BrowserTestUtils.waitForNewTab(gBrowser, URL2, true);
+  await Promise.all([
+    click(),
+    BrowserTestUtils.waitForNewTab(gBrowser, URL2, true),
+  ]);
   is(gBrowser.tabs.length, 3, "got new tab");
   is(gBrowser.currentURI.spec, URL2, "loaded example.org");
 
