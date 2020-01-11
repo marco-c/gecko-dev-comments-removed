@@ -19,6 +19,32 @@ namespace mozilla {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <class T, size_t RequestedItemsPerPage = 256>
 class Queue {
  public:
@@ -38,52 +64,76 @@ class Queue {
       MOZ_ASSERT(mHead);
 
       mTail = mHead;
+      T& eltLocation = mTail->mEvents[0];
+      eltLocation = std::move(aElement);
       mOffsetHead = 0;
-      mOffsetTail = 0;
-    } else if (mOffsetTail == ItemsPerPage) {
+      mHeadLength = 1;
+#ifdef EXTRA_ASSERTS
+      MOZ_ASSERT(Count() == original_length + 1);
+#endif
+      return eltLocation;
+    }
+    if ((mHead == mTail && mHeadLength == ItemsPerPage) ||
+        (mHead != mTail && mTailLength == ItemsPerPage)) {
+      
+      
       Page* page = NewPage();
       MOZ_ASSERT(page);
 
       mTail->mNext = page;
       mTail = page;
-      mOffsetTail = 0;
+      T& eltLocation = page->mEvents[0];
+      eltLocation = std::move(aElement);
+      mTailLength = 1;
+#ifdef EXTRA_ASSERTS
+      MOZ_ASSERT(Count() == original_length + 1);
+#endif
+      return eltLocation;
     }
-
-    T& eltLocation = mTail->mEvents[mOffsetTail];
+    if (mHead == mTail) {
+      
+      uint16_t offset = (mOffsetHead + mHeadLength++) % ItemsPerPage;
+      T& eltLocation = mTail->mEvents[offset];
+      eltLocation = std::move(aElement);
+#ifdef EXTRA_ASSERTS
+      MOZ_ASSERT(Count() == original_length + 1);
+#endif
+      return eltLocation;
+    }
+    
+    T& eltLocation = mTail->mEvents[mTailLength++];
     eltLocation = std::move(aElement);
-    ++mOffsetTail;
-
     return eltLocation;
   }
 
   bool IsEmpty() const {
-    return !mHead || (mHead == mTail && mOffsetHead == mOffsetTail);
+    return !mHead || (mHead == mTail && mHeadLength == 0);
   }
 
   T Pop() {
     MOZ_ASSERT(!IsEmpty());
 
-    MOZ_ASSERT(mOffsetHead < ItemsPerPage);
-    MOZ_ASSERT_IF(mHead == mTail, mOffsetHead <= mOffsetTail);
-    T result = std::move(mHead->mEvents[mOffsetHead++]);
-
-    MOZ_ASSERT(mOffsetHead <= ItemsPerPage);
+    T result = std::move(mHead->mEvents[mOffsetHead]);
+    mOffsetHead = (mOffsetHead + 1) % ItemsPerPage;
+    mHeadLength -= 1;
 
     
-    if (mOffsetHead == ItemsPerPage) {
+    
+    if (mHead != mTail && mHeadLength == 0) {
       Page* dead = mHead;
       mHead = mHead->mNext;
       free(dead);
       mOffsetHead = 0;
+      
+      if (mHead != mTail) {
+        mHeadLength = ItemsPerPage;
+      } else {
+        mHeadLength = mTailLength;
+        mTailLength = 0;
+      }
     }
 
     return result;
-  }
-
-  void FirstElementAssertions() const {
-    MOZ_ASSERT(!IsEmpty());
-    MOZ_ASSERT(mOffsetHead < ItemsPerPage);
-    MOZ_ASSERT_IF(mHead == mTail, mOffsetHead <= mOffsetTail);
   }
 
   T& FirstElement() {
@@ -96,21 +146,18 @@ class Queue {
     return mHead->mEvents[mOffsetHead];
   }
 
-  void LastElementAssertions() const {
-    MOZ_ASSERT(!IsEmpty());
-    MOZ_ASSERT(mOffsetTail > 0);
-    MOZ_ASSERT(mOffsetTail <= ItemsPerPage);
-    MOZ_ASSERT_IF(mHead == mTail, mOffsetHead <= mOffsetTail);
-  }
-
   T& LastElement() {
     LastElementAssertions();
-    return mTail->mEvents[mOffsetTail - 1];
+    uint16_t offset =
+        mHead == mTail ? mOffsetHead + mHeadLength - 1 : mTailLength - 1;
+    return mTail->mEvents[offset];
   }
 
   const T& LastElement() const {
     LastElementAssertions();
-    return mTail->mEvents[mOffsetTail - 1];
+    uint16_t offset =
+        mHead == mTail ? mOffsetHead + mHeadLength - 1 : mTailLength - 1;
+    return mTail->mEvents[offset];
   }
 
   size_t Count() const {
@@ -120,27 +167,14 @@ class Queue {
     }
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-    int count = -mOffsetHead;
-
+    int count = 0;
     
-    for (Page* page = mHead; page != mTail; page = page->mNext) {
+    for (Page* page = mHead; page != mTail && page->mNext != mTail;
+         page = page->mNext) {
       count += ItemsPerPage;
     }
 
-    count += mOffsetTail;
+    count += mHeadLength + mTailLength;
     MOZ_ASSERT(count >= 0);
 
     return count;
@@ -184,7 +218,8 @@ class Queue {
   Page* mTail = nullptr;
 
   uint16_t mOffsetHead = 0;  
-  uint16_t mOffsetTail = 0;  
+  uint16_t mHeadLength = 0;  
+  uint16_t mTailLength = 0;  
 };
 
 }  
