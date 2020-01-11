@@ -15,6 +15,12 @@ var EXPORTED_SYMBOLS = ["LoadURIDelegateChild"];
 class LoadURIDelegateChild extends GeckoViewActorChild {
   
   loadURI(aUri, aWhere, aFlags, aTriggeringPrincipal) {
+    if (!this.isGeckoViewWindow()) {
+      
+      debug`loadURI: not a GeckoView window`;
+      return false;
+    }
+
     debug`loadURI: uri=${aUri && aUri.spec}
                     where=${aWhere} flags=0x${aFlags.toString(16)}
                     tp=${aTriggeringPrincipal &&
@@ -33,6 +39,12 @@ class LoadURIDelegateChild extends GeckoViewActorChild {
 
   
   handleLoadError(aUri, aError, aErrorModule) {
+    if (!this.isGeckoViewWindow()) {
+      
+      debug`loadURI: not a GeckoView window`;
+      return false;
+    }
+
     debug`handleLoadError: uri=${aUri && aUri.spec}
                              displaySpec=${aUri && aUri.displaySpec}
                              error=${aError}`;
