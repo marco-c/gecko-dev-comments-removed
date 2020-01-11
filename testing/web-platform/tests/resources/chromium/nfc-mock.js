@@ -176,6 +176,8 @@ var WebNFCTest = (() => {
       this.watchers_ = [];
       this.reading_messages_ = [];
       this.operations_suspended_ = false;
+      this.is_ndef_tech_ = true;
+      this.is_formatted_tag_ = false;
     }
 
     
@@ -193,7 +195,6 @@ var WebNFCTest = (() => {
 
       return new Promise(resolve => {
         this.pending_promise_func_ = resolve;
-        
         if (this.operations_suspended_) {
           
         } else if (options.timeout && options.timeout !== Infinity &&
@@ -203,6 +204,14 @@ var WebNFCTest = (() => {
             resolve(
                 createNDEFError(device.mojom.NDEFErrorType.TIMER_EXPIRED));
           }
+        } else if (!this.is_ndef_tech_) {
+          
+          
+          resolve(createNDEFError(device.mojom.NDEFErrorType.NOT_SUPPORTED));
+        } else if (this.is_formatted_tag_ && !options.overwrite) {
+          
+          
+          resolve(createNDEFError(device.mojom.NDEFErrorType.NOT_ALLOWED));
         } else {
           resolve(createNDEFError(null));
         }
@@ -231,7 +240,8 @@ var WebNFCTest = (() => {
 
       this.watchers_.push({id: id, options: options});
       
-      if(!this.operations_suspended_) {
+      
+      if(!this.operations_suspended_ && this.is_ndef_tech_) {
         
         for (let message of this.reading_messages_) {
           if (matchesWatchOptions(message, options)) {
@@ -301,6 +311,8 @@ var WebNFCTest = (() => {
       this.cancelPendingPushOperation();
       this.bindingSet_.closeAllBindings();
       this.interceptor_.stop();
+      this.is_ndef_tech_ = true;
+      this.is_formatted_tag_ = false;
     }
 
     cancelPendingPushOperation() {
@@ -319,6 +331,8 @@ var WebNFCTest = (() => {
     
     setReadingMessage(message) {
       this.reading_messages_.push(message);
+      
+      if(!this.is_ndef_tech_) return;
       
       if(this.operations_suspended_) return;
       
@@ -350,7 +364,7 @@ var WebNFCTest = (() => {
       
       for (let watcher of this.watchers_) {
         for (let message of this.reading_messages_) {
-          if (matchesWatchOptions(message, watcher.options)) {
+          if (matchesWatchOptions(message, watcher.options) && this.is_ndef_tech_) {
             this.client_.onWatch(
                 [watcher.id], fake_tag_serial_number,
                 toMojoNDEFMessage(message));
@@ -361,6 +375,14 @@ var WebNFCTest = (() => {
       if (this.pending_promise_func_) {
         this.pending_promise_func_(createNDEFError(null));
       }
+    }
+
+    setIsNDEFTech(isNdef) {
+      this.is_ndef_tech_ = isNdef;
+    }
+
+    setIsFormattedTag(isFormatted) {
+      this.is_formatted_tag_ = isFormatted;
     }
   }
 
