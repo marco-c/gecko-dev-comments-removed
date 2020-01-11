@@ -5728,7 +5728,7 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
     
 
     if (funbox->isLikelyConstructorWrapper()) {
-      innerScript->setLikelyConstructorWrapper();
+      innerScript->setIsLikelyConstructorWrapper();
     }
 
     if (!fe.emitNonLazyEnd()) {
