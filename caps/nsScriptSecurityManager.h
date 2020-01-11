@@ -52,7 +52,9 @@ class nsScriptSecurityManager final : public nsIScriptSecurityManager {
   static void InitStatics();
 
   void InitJSCallbacks(JSContext* aCx);
-  void ClearJSCallbacks(JSContext* aCx);
+
+  
+  static void ClearJSCallbacks(JSContext* aCx);
 
   static already_AddRefed<mozilla::SystemPrincipal>
   SystemPrincipalSingletonConstructor();
