@@ -190,18 +190,20 @@ function assertStack(stack, expected) {
 
 
 
-function do_x64CFITest(how, expectedStack, minidumpAnalyzerArgs) {
+async function do_x64CFITest(how, expectedStack, minidumpAnalyzerArgs) {
   
   let setupFn = "crashType = CrashTestUtils." + how + ";";
 
-  let callbackFn = function(minidumpFile, extra, extraFile) {
+  let callbackFn = async function(minidumpFile, extra, extraFile) {
     runMinidumpAnalyzer(minidumpFile, minidumpAnalyzerArgs);
 
     
-    extra = parseKeyValuePairsFromFile(extraFile);
+    let data = await OS.File.read(extraFile.path);
+    let decoder = new TextDecoder();
+    extra = JSON.parse(decoder.decode(data));
 
     initTestCrasherSymbols();
-    let stackTraces = JSON.parse(extra.StackTraces);
+    let stackTraces = extra.StackTraces;
     let crashingThreadIndex = stackTraces.crash_info.crashing_thread;
     gModules = stackTraces.modules;
     let crashingFrames = stackTraces.threads[crashingThreadIndex].frames;

@@ -57,9 +57,8 @@ class HTTPUpload {
   
   
   
-  
   static bool SendRequest(const string &url,
-                          const map<string, string> &parameters,
+                          const string &parameters,
                           const map<string, string> &files,
                           const string &proxy,
                           const string &proxy_user_pwd,
@@ -69,11 +68,6 @@ class HTTPUpload {
                           string *error_description);
 
  private:
-  
-  
-  
-  static bool CheckParameters(const map<string, string> &parameters);
-
   
   static bool CheckCurlLib(void* curl_lib);
 

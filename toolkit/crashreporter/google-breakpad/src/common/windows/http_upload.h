@@ -47,10 +47,10 @@
 
 namespace google_breakpad {
 
-using std::string;
-using std::wstring;
 using std::map;
+using std::string;
 using std::vector;
+using std::wstring;
 
 class HTTPUpload {
  public:
@@ -64,9 +64,8 @@ class HTTPUpload {
   
   
   
-  
   static bool SendRequest(const wstring &url,
-                          const map<wstring, wstring> &parameters,
+                          const string &parameters,
                           const map<wstring, wstring> &files,
                           int *timeout,
                           wstring *response_body,
@@ -90,7 +89,7 @@ class HTTPUpload {
   
   
   
-  static bool GenerateRequestBody(const map<wstring, wstring> &parameters,
+  static bool GenerateRequestBody(const string &parameters,
                                   const map<wstring, wstring> &files,
                                   const wstring &boundary,
                                   string *request_body);
@@ -108,11 +107,6 @@ class HTTPUpload {
 
   
   static string WideToMBCP(const wstring &wide, unsigned int cp);
-
-  
-  
-  
-  static bool CheckParameters(const map<wstring, wstring> &parameters);
 
   
   

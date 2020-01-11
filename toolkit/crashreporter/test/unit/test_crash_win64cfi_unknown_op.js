@@ -1,12 +1,12 @@
-function run_test() {
+add_task(async function run_test() {
   
   
   
   
-  do_x64CFITest("CRASH_X64CFI_UNKNOWN_OPCODE", [
+  await do_x64CFITest("CRASH_X64CFI_UNKNOWN_OPCODE", [
     { symbol: "CRASH_X64CFI_UNKNOWN_OPCODE", trust: "context" },
     
     
     { symbol: "CRASH_X64CFI_NO_MANS_LAND", trust: null },
   ]);
-}
+});

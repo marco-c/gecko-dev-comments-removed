@@ -115,15 +115,16 @@ const int kTelemetryVersion = 4;
 
 
 
-static Json::Value CreateMetadataNode(StringTable& strings) {
+static Json::Value CreateMetadataNode(const Json::Value& aExtra) {
   Json::Value node;
 
-  for (auto line : strings) {
+  for (Json::ValueConstIterator iter = aExtra.begin(); iter != aExtra.end();
+       ++iter) {
     Annotation annotation;
 
-    if (AnnotationFromString(annotation, line.first.c_str())) {
+    if (AnnotationFromString(annotation, iter.memberName())) {
       if (IsAnnotationWhitelistedForPing(annotation)) {
-        node[line.first] = line.second;
+        node[iter.memberName()] = *iter;
       }
     }
   }
@@ -132,7 +133,8 @@ static Json::Value CreateMetadataNode(StringTable& strings) {
 }
 
 
-static Json::Value CreatePayloadNode(StringTable& strings, const string& aHash,
+static Json::Value CreatePayloadNode(const Json::Value& aExtra,
+                                     const string& aHash,
                                      const string& aSessionId) {
   Json::Value payload;
 
@@ -144,18 +146,12 @@ static Json::Value CreatePayloadNode(StringTable& strings, const string& aHash,
   payload["crashId"] = GetDumpLocalID();
   payload["minidumpSha256Hash"] = aHash;
   payload["processType"] = "main";  
-
-  
-  Json::Value stackTracesValue;
-  Json::Reader reader;
-
-  if (reader.parse(strings["StackTraces"], stackTracesValue,
-                    false)) {
-    payload["stackTraces"] = stackTracesValue;
+  if (aExtra.isMember("StackTraces")) {
+    payload["stackTraces"] = aExtra["StackTraces"];
   }
 
   
-  payload["metadata"] = CreateMetadataNode(strings);
+  payload["metadata"] = CreateMetadataNode(aExtra);
 
   return payload;
 }
@@ -186,12 +182,10 @@ static Json::Value CreateApplicationNode(
 }
 
 
-static Json::Value CreateRootNode(StringTable& strings, const string& aUuid,
-                                  const string& aHash, const string& aClientId,
-                                  const string& aSessionId, const string& aName,
-                                  const string& aVersion,
-                                  const string& aChannel,
-                                  const string& aBuildId) {
+static Json::Value CreateRootNode(
+    const Json::Value& aExtra, const string& aUuid, const string& aHash,
+    const string& aClientId, const string& aSessionId, const string& aName,
+    const string& aVersion, const string& aChannel, const string& aBuildId) {
   Json::Value root;
   root["type"] = "crash";  
   root["id"] = aUuid;
@@ -207,7 +201,7 @@ static Json::Value CreateRootNode(StringTable& strings, const string& aUuid,
   string displayVersion;
   string platformVersion;
 
-  if (reader.parse(strings["TelemetryEnvironment"], environment,
+  if (reader.parse(aExtra["TelemetryEnvironment"].asString(), environment,
                     false)) {
     if (environment.isMember("build") && environment["build"].isObject()) {
       Json::Value build = environment["build"];
@@ -230,10 +224,10 @@ static Json::Value CreateRootNode(StringTable& strings, const string& aUuid,
     root["environment"] = environment;
   }
 
-  root["payload"] = CreatePayloadNode(strings, aHash, aSessionId);
+  root["payload"] = CreatePayloadNode(aExtra, aHash, aSessionId);
   root["application"] = CreateApplicationNode(
-      strings["Vendor"], aName, aVersion, displayVersion, platformVersion,
-      aChannel, aBuildId, architecture, xpcomAbi);
+      aExtra["Vendor"].asString(), aName, aVersion, displayVersion,
+      platformVersion, aChannel, aBuildId, architecture, xpcomAbi);
 
   return root;
 }
@@ -274,21 +268,30 @@ static bool WritePing(const string& aPath, const string& aPing) {
 
 
 
-bool SendCrashPing(StringTable& strings, const string& aHash, string& pingUuid,
+
+bool SendCrashPing(Json::Value& aExtra, const string& aHash, string& aPingUuid,
                    const string& pingDir) {
-  string clientId = strings[kTelemetryClientId];
-  string serverUrl = strings[kTelemetryUrl];
-  string sessionId = strings[kTelemetrySessionId];
-
   
-  strings.erase(kTelemetryClientId);
-  strings.erase(kTelemetryUrl);
-  strings.erase(kTelemetrySessionId);
+  Json::Value value;
+  if (!aExtra.removeMember(kTelemetryClientId, &value)) {
+    return false;
+  }
+  string clientId = value.asString();
 
-  string buildId = strings["BuildID"];
-  string channel = strings["ReleaseChannel"];
-  string name = strings["ProductName"];
-  string version = strings["Version"];
+  if (!aExtra.removeMember(kTelemetryUrl, &value)) {
+    return false;
+  }
+  string serverUrl = value.asString();
+
+  if (!aExtra.removeMember(kTelemetrySessionId, &value)) {
+    return false;
+  }
+  string sessionId = value.asString();
+
+  string buildId = aExtra["BuildID"].asString();
+  string channel = aExtra["ReleaseChannel"].asString();
+  string name = aExtra["ProductName"].asString();
+  string version = aExtra["Version"].asString();
   string uuid = GenerateUUID();
   string url =
       GenerateSubmissionUrl(serverUrl, uuid, name, version, channel, buildId);
@@ -297,7 +300,7 @@ bool SendCrashPing(StringTable& strings, const string& aHash, string& pingUuid,
     return false;
   }
 
-  Json::Value root = CreateRootNode(strings, uuid, aHash, clientId, sessionId,
+  Json::Value root = CreateRootNode(aExtra, uuid, aHash, clientId, sessionId,
                                     name, version, channel, buildId);
 
   
@@ -313,7 +316,7 @@ bool SendCrashPing(StringTable& strings, const string& aHash, string& pingUuid,
   
   vector<string> args = {url, pingPath};
   if (UIRunProgram(GetProgramPath(UI_PING_SENDER_FILENAME), args)) {
-    pingUuid = uuid;
+    aPingUuid = uuid;
     return true;
   } else {
     return false;
