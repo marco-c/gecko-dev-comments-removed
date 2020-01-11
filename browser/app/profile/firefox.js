@@ -412,11 +412,14 @@ pref("permissions.fullscreen.allowed", false);
 
 pref("permissions.postPrompt.animate", true);
 
+
 #ifdef NIGHTLY_BUILD
-  pref("permissions.delegation.enabled", true);
+  pref("permissions.eventTelemetry.enabled", true);
 #else
-  pref("permissions.delegation.enabled", false);
+  pref("permissions.eventTelemetry.enabled", false);
 #endif
+
+pref("permissions.delegation.enabled", true);
 
 
 
@@ -1708,11 +1711,7 @@ pref("view_source.tab", true);
 
 pref("dom.serviceWorkers.enabled", true);
 
-#ifdef NIGHTLY_BUILD
-  pref("dom.security.featurePolicy.enabled", true);
-#else
-  pref("dom.security.featurePolicy.enabled", false);
-#endif
+pref("dom.security.featurePolicy.enabled", true);
 
 
 pref("dom.push.enabled", true);
