@@ -98,7 +98,7 @@ add_task(async function test_searchConfig_google_with_mozparam() {
 
   
   
-  for (const useSelector of [false]) {
+  for (const useSelector of [false, true]) {
     info("Using " + (useSelector ? "Selector" : "Legacy Configuration"));
     for (const testData of TEST_DATA) {
       info(`Checking region ${testData.region}, locale ${testData.locale}`);
