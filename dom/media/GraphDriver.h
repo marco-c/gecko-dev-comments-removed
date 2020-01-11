@@ -353,6 +353,7 @@ class AudioCallbackDriver : public GraphDriver,
  public:
   
   AudioCallbackDriver(MediaTrackGraphImpl* aGraphImpl,
+                      uint32_t aOutputChannelCount,
                       uint32_t aInputChannelCount,
                       AudioInputType aAudioInputType);
   virtual ~AudioCallbackDriver();
@@ -460,7 +461,7 @@ class AudioCallbackDriver : public GraphDriver,
   }
 
   
-  uint32_t mOutputChannels;
+  const uint32_t mOutputChannels;
   
 
 
