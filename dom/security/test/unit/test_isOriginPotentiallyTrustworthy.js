@@ -49,18 +49,12 @@ add_task(async function test_isOriginPotentiallyTrustworthy() {
   ]) {
     let uri = NetUtil.newURI(uriSpec);
     let principal = gScriptSecurityManager.createContentPrincipal(uri, {});
-    Assert.equal(
-      gContentSecurityManager.isOriginPotentiallyTrustworthy(principal),
-      expectedResult
-    );
+    Assert.equal(principal.IsOriginPotentiallyTrustworthy, expectedResult);
   }
   
   
   Services.prefs.setBoolPref("dom.securecontext.whitelist_onions", true);
   let uri = NetUtil.newURI("http://1234567890abcdef.onion/");
   let principal = gScriptSecurityManager.createContentPrincipal(uri, {});
-  Assert.equal(
-    gContentSecurityManager.isOriginPotentiallyTrustworthy(principal),
-    true
-  );
+  Assert.equal(principal.IsOriginPotentiallyTrustworthy, true);
 });
