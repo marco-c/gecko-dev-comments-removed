@@ -721,33 +721,23 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 
 
 
- #urlbar-container {
-  min-width: calc(350px + 24px + 2 * var(--toolbarbutton-inner-padding));
+#urlbar-container {
+  min-width: calc(34ch + 24px + 2 * var(--toolbarbutton-inner-padding));
 }
 
 #nav-bar[downloadsbuttonshown] #urlbar-container {
-  min-width: 350px;
-}
-
-
-
-:root[customize-entered] #urlbar-container {
-  min-width: 280px;
+  min-width: 34ch;
 }
 
 #identity-icon-labels {
   max-width: 10em;
 }
-
-@media (max-width: 770px) {
+@media (max-width: 600px) {
   #urlbar-container {
-    min-width: calc(280px + 24px + 2 * var(--toolbarbutton-inner-padding));
+    min-width: calc(29ch + 24px + 2 * var(--toolbarbutton-inner-padding));
   }
   #nav-bar[downloadsbuttonshown] #urlbar-container {
-    min-width: 280px;
-  }
-  :root[customize-entered] #urlbar-container {
-    min-width: 245px;
+    min-width: 29ch;
   }
   #identity-icon-labels {
     max-width: 50px;
@@ -755,10 +745,10 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 }
 @media (max-width: 500px) {
   #urlbar-container {
-    min-width: calc(180px + 24px + 2 * var(--toolbarbutton-inner-padding));
+    min-width: calc(22ch + 24px + 2 * var(--toolbarbutton-inner-padding));
   }
   #nav-bar[downloadsbuttonshown] #urlbar-container {
-    min-width: 180px;
+    min-width: 22ch;
   }
   #identity-icon-labels {
     max-width: 40px;
@@ -766,10 +756,10 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 }
 @media (max-width: 400px) {
   #urlbar-container {
-    min-width: calc(76px + 24px + 2 * var(--toolbarbutton-inner-padding));
+    min-width: calc(10ch + 24px + 2 * var(--toolbarbutton-inner-padding));
   }
   #nav-bar[downloadsbuttonshown] #urlbar-container {
-    min-width: 76px;
+    min-width: 10ch;
   }
   #identity-icon-labels {
     max-width: 30px;
@@ -788,14 +778,8 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 toolbarpaletteitem[place=toolbar][id^=wrapper-customizableui-special-spring],
 toolbarspring {
   -moz-box-flex: 1;
+  min-width: 28px;
   max-width: 112px;
-}
-
-:root[customize-entered] toolbarpaletteitem[place=toolbar][id^=wrapper-customizableui-special-spring],
-:root[customize-entered] toolbarspring {
-  
-
-  min-width: 10px;
 }
 
 #nav-bar toolbarpaletteitem[id^=wrapper-customizableui-special-spring],
