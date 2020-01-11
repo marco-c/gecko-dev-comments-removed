@@ -7,6 +7,12 @@
 
 
 add_task(async function test_setup() {
+  await SpecialPowers.pushPrefEnv({
+    
+    
+    
+    set: [["browser.urlbar.openViewOnFocus", false]],
+  });
   await PlacesTestUtils.addVisits([
     {
       uri: `http://one.mozilla.org/`,

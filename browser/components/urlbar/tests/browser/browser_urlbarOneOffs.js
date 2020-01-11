@@ -38,6 +38,11 @@ add_task(async function init() {
 
 
 add_task(async function history() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.openViewOnFocus", false]],
+  });
   gURLBar.focus();
   await UrlbarTestUtils.promisePopupOpen(window, () => {
     EventUtils.synthesizeKey("KEY_ArrowDown");
@@ -62,6 +67,7 @@ add_task(async function history() {
   assertState(-1, -1, "");
 
   await hidePopup();
+  await SpecialPowers.popPrefEnv();
 });
 
 
