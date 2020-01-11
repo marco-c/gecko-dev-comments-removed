@@ -3,7 +3,7 @@ onfetch = function(e) {
     
     
     var url = e.request.url.substring(0, e.request.url.indexOf("?"));
-    url += "?headers=" + { Referer: self.location.href }.toSource();
+    url += "?headers=" + JSON.stringify({ Referer: self.location.href });
 
     e.respondWith(
       e.request.text().then(function(text) {
