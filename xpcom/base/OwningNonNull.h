@@ -14,10 +14,44 @@
 
 namespace mozilla {
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <class T>
 class MOZ_IS_SMARTPTR_TO_REFCOUNTED OwningNonNull {
  public:
-  OwningNonNull() {}
+  OwningNonNull() = default;
 
   MOZ_IMPLICIT OwningNonNull(T& aValue) { init(&aValue); }
 
@@ -106,7 +140,7 @@ class MOZ_IS_SMARTPTR_TO_REFCOUNTED OwningNonNull {
   }
 
   
-  template<typename U>
+  template <typename U>
   friend void ImplCycleCollectionUnlink(OwningNonNull<U>& aField);
 
  protected:
