@@ -32,6 +32,7 @@
 
 #include <algorithm>
 #include <array>
+#include <limits>
 #include <cstring>
 #include <iterator>
 
@@ -52,7 +53,7 @@ inline constexpr T narrow_cast(U&& u) {
 
 
 
-constexpr const size_t dynamic_extent = mozilla::MaxValue<size_t>::value;
+constexpr const size_t dynamic_extent = std::numeric_limits<size_t>::max();
 
 template <class ElementType, size_t Extent = dynamic_extent>
 class Span;
@@ -386,9 +387,8 @@ class Span {
 
 
   template <bool Dependent = false,
-            class = span_details::enable_if_t<
-                (Dependent || Extent == 0 ||
-                 Extent == mozilla::MaxValue<size_t>::value)>>
+            class = span_details::enable_if_t<(Dependent || Extent == 0 ||
+                                               Extent == dynamic_extent)>>
   constexpr Span() : storage_(nullptr, span_details::extent_type<0>()) {}
 
   
@@ -718,9 +718,8 @@ class Span {
           data_(elements ? elements
                          : reinterpret_cast<pointer>(alignof(element_type))) {
       const size_t extentSize = ExtentType::size();
-      MOZ_RELEASE_ASSERT(
-          (!elements && extentSize == 0) ||
-          (elements && extentSize != mozilla::MaxValue<size_t>::value));
+      MOZ_RELEASE_ASSERT((!elements && extentSize == 0) ||
+                         (elements && extentSize != dynamic_extent));
     }
 
     constexpr pointer data() const { return data_; }

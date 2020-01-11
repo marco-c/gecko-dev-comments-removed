@@ -6,11 +6,11 @@
 
 #include "frontend/BinASTTokenReaderContext.h"
 
-#include "mozilla/IntegerTypeTraits.h"      
 #include "mozilla/OperatorNewExtensions.h"  
 #include "mozilla/Result.h"                 
 #include "mozilla/ScopeExit.h"              
 
+#include <limits>    
 #include <string.h>  
 
 #include "ds/FixedLengthVector.h"    
@@ -2142,7 +2142,7 @@ JS::Result<Ok> SingleLookupHuffmanTable::initStart(
     uint8_t largestBitLength) {
   MOZ_ASSERT_IF(largestBitLength != 32,
                 (uint32_t(1) << largestBitLength) - 1 <=
-                    mozilla::MaxValue<InternalIndex>::value);
+                    std::numeric_limits<InternalIndex>::max());
 
   largestBitLength_ = largestBitLength;
 
@@ -3247,7 +3247,7 @@ Split<HuffmanLookup> HuffmanLookup::split(const uint8_t prefixLength) const {
   return {
        {bits_ >> shift, prefixLength},
       
-      {bits_ & (mozilla::MaxValue<uint32_t>::value >> (32 - shift)), shift},
+      {bits_ & (std::numeric_limits<uint32_t>::max() >> (32 - shift)), shift},
   };
 }
 

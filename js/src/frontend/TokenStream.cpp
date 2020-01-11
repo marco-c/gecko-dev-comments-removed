@@ -608,7 +608,7 @@ TokenStreamSpecific<Unit, AnyCharsAccess>::TokenStreamSpecific(
 bool TokenStreamAnyChars::checkOptions() {
   
   
-  if (options().column >= mozilla::MaxValue<int32_t>::value / 2 + 1) {
+  if (options().column >= std::numeric_limits<int32_t>::max() / 2 + 1) {
     reportErrorNoOffset(JSMSG_BAD_COLUMN_NUMBER);
     return false;
   }
