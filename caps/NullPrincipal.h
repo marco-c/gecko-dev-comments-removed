@@ -87,14 +87,8 @@ class NullPrincipal final : public BasePrincipal {
 
   
   enum SerializableKeys { eSpec = 0, eSuffix, eMax = eSuffix };
-  
-  
-  
-  struct KeyVal {
-    bool valueWasSerialized;
-    nsCString value;
-    SerializableKeys key;
-  };
+  typedef mozilla::BasePrincipal::KeyValT<SerializableKeys> KeyVal;
+
   static already_AddRefed<BasePrincipal> FromProperties(
       nsTArray<NullPrincipal::KeyVal>& aFields);
 

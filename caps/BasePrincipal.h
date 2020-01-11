@@ -256,6 +256,16 @@ class BasePrincipal : public nsJSPrincipals {
   void FinishInit(BasePrincipal* aOther,
                   const OriginAttributes& aOriginAttributes);
 
+  
+  
+  template<typename SerializedKey>
+  struct KeyValT
+  {
+    bool valueWasSerialized;
+    nsCString value;
+    SerializedKey key;
+  };
+
  private:
   static already_AddRefed<BasePrincipal> CreateContentPrincipal(
       nsIURI* aURI, const OriginAttributes& aAttrs,

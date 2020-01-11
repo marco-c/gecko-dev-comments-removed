@@ -63,14 +63,8 @@ class ExpandedPrincipal : public nsIExpandedPrincipal,
   virtual nsresult PopulateJSONObject(Json::Value& aObject) override;
   
   enum SerializableKeys { eSpecs = 0, eSuffix, eMax = eSuffix };
-  
-  
-  
-  struct KeyVal {
-    bool valueWasSerialized;
-    nsCString value;
-    SerializableKeys key;
-  };
+  typedef mozilla::BasePrincipal::KeyValT<SerializableKeys> KeyVal;
+
   static already_AddRefed<BasePrincipal> FromProperties(
       nsTArray<ExpandedPrincipal::KeyVal>& aFields);
 

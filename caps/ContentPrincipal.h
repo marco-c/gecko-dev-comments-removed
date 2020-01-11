@@ -60,14 +60,8 @@ class ContentPrincipal final : public BasePrincipal {
   virtual nsresult PopulateJSONObject(Json::Value& aObject) override;
   
   enum SerializableKeys { eURI = 0, eDomain, eSuffix, eMax = eSuffix };
-  
-  
-  
-  struct KeyVal {
-    bool valueWasSerialized;
-    nsCString value;
-    SerializableKeys key;
-  };
+  typedef mozilla::BasePrincipal::KeyValT<SerializableKeys> KeyVal;
+
   static already_AddRefed<BasePrincipal> FromProperties(
       nsTArray<ContentPrincipal::KeyVal>& aFields);
 
