@@ -39,6 +39,9 @@ class FeaturePolicyUtils final {
   static bool IsSupportedFeature(const nsAString& aFeatureName);
 
   
+  static bool IsExperimentalFeature(const nsAString& aFeatureName);
+
+  
   
   static void ForEachFeature(const std::function<void(const char*)>& aCallback);
 

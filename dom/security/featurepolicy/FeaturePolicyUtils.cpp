@@ -27,24 +27,45 @@ struct FeatureMap {
 
 
 static FeatureMap sSupportedFeatures[] = {
+    {"camera", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
+    {"geolocation", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
+    {"microphone", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
+    {"display-capture", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
+    {"fullscreen", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
+};
+
+
+
+
+
+static FeatureMap sExperimentalFeatures[] = {
     
     
     
     
     {"autoplay", FeaturePolicyUtils::FeaturePolicyValue::eAll},
-    {"camera", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"encrypted-media", FeaturePolicyUtils::FeaturePolicyValue::eAll},
-    {"fullscreen", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
-    {"geolocation", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
-    {"microphone", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"midi", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"payment", FeaturePolicyUtils::FeaturePolicyValue::eAll},
     {"document-domain", FeaturePolicyUtils::FeaturePolicyValue::eAll},
-    {"display-capture", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     
     {"speaker", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"vr", FeaturePolicyUtils::FeaturePolicyValue::eAll},
 };
+
+
+bool FeaturePolicyUtils::IsExperimentalFeature(const nsAString& aFeatureName) {
+  uint32_t numFeatures =
+      (sizeof(sExperimentalFeatures) / sizeof(sExperimentalFeatures[0]));
+  for (uint32_t i = 0; i < numFeatures; ++i) {
+    if (aFeatureName.LowerCaseEqualsASCII(
+            sExperimentalFeatures[i].mFeatureName)) {
+      return true;
+    }
+  }
+
+  return false;
+}
 
 
 bool FeaturePolicyUtils::IsSupportedFeature(const nsAString& aFeatureName) {
@@ -55,6 +76,12 @@ bool FeaturePolicyUtils::IsSupportedFeature(const nsAString& aFeatureName) {
       return true;
     }
   }
+
+  if (StaticPrefs::dom_security_featurePolicy_experimental_enabled() &&
+      IsExperimentalFeature(aFeatureName)) {
+    return true;
+  }
+
   return false;
 }
 
@@ -65,6 +92,14 @@ void FeaturePolicyUtils::ForEachFeature(
       (sizeof(sSupportedFeatures) / sizeof(sSupportedFeatures[0]));
   for (uint32_t i = 0; i < numFeatures; ++i) {
     aCallback(sSupportedFeatures[i].mFeatureName);
+  }
+
+  if (StaticPrefs::dom_security_featurePolicy_experimental_enabled()) {
+    numFeatures =
+        (sizeof(sExperimentalFeatures) / sizeof(sExperimentalFeatures[0]));
+    for (uint32_t i = 0; i < numFeatures; ++i) {
+      aCallback(sExperimentalFeatures[i].mFeatureName);
+    }
   }
 }
 
@@ -78,6 +113,17 @@ FeaturePolicyUtils::DefaultAllowListFeature(const nsAString& aFeatureName) {
     }
   }
 
+  if (StaticPrefs::dom_security_featurePolicy_experimental_enabled()) {
+    numFeatures =
+        (sizeof(sExperimentalFeatures) / sizeof(sExperimentalFeatures[0]));
+    for (uint32_t i = 0; i < numFeatures; ++i) {
+      if (aFeatureName.LowerCaseEqualsASCII(
+              sExperimentalFeatures[i].mFeatureName)) {
+        return sExperimentalFeatures[i].mDefaultAllowList;
+      }
+    }
+  }
+
   return FeaturePolicyValue::eNone;
 }
 
@@ -87,6 +133,12 @@ bool FeaturePolicyUtils::IsFeatureAllowed(Document* aDocument,
   MOZ_ASSERT(aDocument);
 
   if (!StaticPrefs::dom_security_featurePolicy_enabled()) {
+    return true;
+  }
+
+  
+  if (!StaticPrefs::dom_security_featurePolicy_experimental_enabled() &&
+      IsExperimentalFeature(aFeatureName)) {
     return true;
   }
 
