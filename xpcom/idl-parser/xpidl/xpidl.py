@@ -982,9 +982,6 @@ class Attribute(object):
     infallible = False
     
     
-    explicit_can_run_script = False
-    
-    
     explicit_setter_can_run_script = False
     
     
@@ -1025,10 +1022,22 @@ class Attribute(object):
             elif name == 'infallible':
                 self.infallible = True
             elif name == 'can_run_script':
-                self.explicit_can_run_script = True
+                if (self.explicit_setter_can_run_script or
+                    self.explicit_getter_can_run_script):
+                    raise IDLError("Redundant getter_can_run_script or "
+                                   "setter_can_run_script annotation on "
+                                   "attribute", aloc)
+                self.explicit_setter_can_run_script = True
+                self.explicit_getter_can_run_script = True
             elif name == 'setter_can_run_script':
+                if self.explicit_setter_can_run_script:
+                    raise IDLError("Redundant setter_can_run_script annotation "
+                                   "on attribute", aloc)
                 self.explicit_setter_can_run_script = True
             elif name == 'getter_can_run_script':
+                if self.explicit_getter_can_run_script:
+                    raise IDLError("Redundant getter_can_run_script annotation "
+                                   "on attribute", aloc)
                 self.explicit_getter_can_run_script = True
             else:
                 raise IDLError("Unexpected attribute '%s'" % name, aloc)
