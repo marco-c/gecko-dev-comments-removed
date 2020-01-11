@@ -1724,7 +1724,9 @@ nsresult nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   return NS_OK;
 }
 
-void nsFrameLoader::Destroy() { StartDestroy(); }
+void nsFrameLoader::Destroy(bool aForProcessSwitch) {
+  StartDestroy(aForProcessSwitch);
+}
 
 class nsFrameLoaderDestroyRunnable : public Runnable {
   enum DestroyPhase {
@@ -1746,7 +1748,7 @@ class nsFrameLoaderDestroyRunnable : public Runnable {
   NS_IMETHOD Run() override;
 };
 
-void nsFrameLoader::StartDestroy() {
+void nsFrameLoader::StartDestroy(bool aForProcessSwitch) {
   
   
   
@@ -1782,6 +1784,9 @@ void nsFrameLoader::StartDestroy() {
   
   if (auto* browserParent = GetBrowserParent()) {
     browserParent->RemoveWindowListeners();
+    if (aForProcessSwitch) {
+      browserParent->SetDestroyingForProcessSwitch();
+    }
   }
 
   nsCOMPtr<Document> doc;

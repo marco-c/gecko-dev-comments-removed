@@ -70,8 +70,9 @@ bool nsFrameLoaderOwner::ShouldPreserveBrowsingContext(
 }
 
 void nsFrameLoaderOwner::ChangeRemotenessCommon(
-    bool aPreserveContext, const nsAString& aRemoteType,
-    std::function<void()>& aFrameLoaderInit, mozilla::ErrorResult& aRv) {
+    bool aPreserveContext, bool aSwitchingInProgressLoad,
+    const nsAString& aRemoteType, std::function<void()>& aFrameLoaderInit,
+    mozilla::ErrorResult& aRv) {
   RefPtr<mozilla::dom::BrowsingContext> bc;
   bool networkCreated = false;
 
@@ -108,7 +109,7 @@ void nsFrameLoaderOwner::ChangeRemotenessCommon(
       
       
       networkCreated = mFrameLoader->IsNetworkCreated();
-      mFrameLoader->Destroy();
+      mFrameLoader->Destroy(aSwitchingInProgressLoad);
       mFrameLoader = nullptr;
     }
 
@@ -192,6 +193,7 @@ void nsFrameLoaderOwner::ChangeRemoteness(
   };
 
   ChangeRemotenessCommon(ShouldPreserveBrowsingContext(aOptions),
+                         aOptions.mSwitchingInProgressLoad,
                          aOptions.mRemoteType, frameLoaderInit, rv);
 }
 
@@ -213,6 +215,6 @@ void nsFrameLoaderOwner::ChangeRemotenessWithBridge(BrowserBridgeChild* aBridge,
   
   
   ChangeRemotenessCommon(
-       true, NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE),
-      frameLoaderInit, rv);
+       true,  true,
+      NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE), frameLoaderInit, rv);
 }

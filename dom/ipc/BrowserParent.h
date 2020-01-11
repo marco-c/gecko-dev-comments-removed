@@ -746,6 +746,8 @@ class BrowserParent final : public PBrowserParent,
                           uint32_t aPresShellId);
   void StopApzAutoscroll(nsViewID aScrollId, uint32_t aPresShellId);
 
+  void SetDestroyingForProcessSwitch() { mIsDestroyingForProcessSwitch = true; }
+
  protected:
   friend BrowserBridgeParent;
   friend BrowserHost;
@@ -933,51 +935,56 @@ class BrowserParent final : public PBrowserParent,
 #endif
 
   
-  bool mDocShellIsActive;
+  bool mDocShellIsActive : 1;
 
   
   
-  bool mMarkedDestroying;
+  bool mMarkedDestroying : 1;
   
   
-  bool mIsDestroyed;
+  bool mIsDestroyed : 1;
   
   
-  bool mTabSetsCursor;
+  bool mTabSetsCursor : 1;
 
   
   
-  bool mPreserveLayers;
-
-  
-  
-  
-  bool mRenderLayers;
-
-  
-  bool mActiveInPriorityManager;
-
-  
-  
-  bool mHasLayers;
-
-  
-  
-  bool mHasPresented;
-
-  
-  bool mIsReadyToHandleInputEvents;
+  bool mPreserveLayers : 1;
 
   
   
   
-  bool mIsMouseEnterIntoWidgetEventSuppressed;
+  bool mRenderLayers : 1;
+
+  
+  bool mActiveInPriorityManager : 1;
+
+  
+  
+  bool mHasLayers : 1;
+
+  
+  
+  bool mHasPresented : 1;
+
+  
+  bool mIsReadyToHandleInputEvents : 1;
+
+  
+  
+  
+  bool mIsMouseEnterIntoWidgetEventSuppressed : 1;
+
+  
+  
+  
+  bool mIsDestroyingForProcessSwitch : 1;
 
   
   static size_t gNumActiveRecordReplayTabs;
 
   
-  bool mIsActiveRecordReplayTab;
+  bool mIsActiveRecordReplayTab : 1;
 
   
   void SetIsActiveRecordReplayTab(bool aIsActive);

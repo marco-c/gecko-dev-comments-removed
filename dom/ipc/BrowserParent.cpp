@@ -219,6 +219,7 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
       mHasPresented(false),
       mIsReadyToHandleInputEvents(false),
       mIsMouseEnterIntoWidgetEventSuppressed(false),
+      mIsDestroyingForProcessSwitch(false),
       mIsActiveRecordReplayTab(false) {
   MOZ_ASSERT(aManager);
   
@@ -2507,6 +2508,17 @@ mozilla::ipc::IPCResult BrowserParent::RecvOnStateChange(
     const RequestData& aRequestData, const uint32_t aStateFlags,
     const nsresult aStatus,
     const Maybe<WebProgressStateChangeData>& aStateChangeData) {
+  
+  
+  
+  
+  uint32_t stopFlags = nsIWebProgressListener::STATE_STOP |
+                       nsIWebProgressListener::STATE_IS_WINDOW |
+                       nsIWebProgressListener::STATE_IS_NETWORK;
+  if (mIsDestroyingForProcessSwitch && (aStateFlags & stopFlags) == stopFlags) {
+    return IPC_OK();
+  }
+
   nsCOMPtr<nsIBrowser> browser;
   nsCOMPtr<nsIWebProgress> manager;
   nsCOMPtr<nsIWebProgressListener> managerAsListener;
