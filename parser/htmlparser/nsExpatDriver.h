@@ -113,6 +113,8 @@ class nsExpatDriver : public nsIDTD, public nsITokenizer {
   
   uint32_t mExpatBuffered;
 
+  uint16_t mTagDepth;
+
   
   
   
