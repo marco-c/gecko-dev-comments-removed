@@ -9314,8 +9314,17 @@ static bool SchemeUsesDocChannel(nsIURI* aURI) {
     srcdoc = VoidString();
   }
 
+  
+  
+  
+  
+  bool isSandboxed = false;
+  aLoadInfo->GetLoadingSandboxed(&isSandboxed);
+  bool canUseDocumentChannel =
+      isSrcdoc ? isSandboxed : SchemeUsesDocChannel(aLoadState->URI());
+
   if (StaticPrefs::browser_tabs_documentchannel() && XRE_IsContentProcess() &&
-      SchemeUsesDocChannel(aLoadState->URI()) && !isSrcdoc) {
+      canUseDocumentChannel) {
     RefPtr<DocumentChannelChild> child = new DocumentChannelChild(
         aLoadState, aLoadInfo, aInitiatorType, aLoadFlags, aLoadType, aCacheKey,
         aIsActive, aIsTopLevelDoc, aHasNonEmptySandboxingFlags);

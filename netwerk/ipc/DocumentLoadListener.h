@@ -329,6 +329,9 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   nsTArray<DocumentChannelRedirect> mRedirects;
 
+  nsString mSrcdocData;
+  nsCOMPtr<nsIURI> mBaseURI;
+
   
   
   uint32_t mLoadStateLoadFlags = 0;
