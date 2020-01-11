@@ -6098,7 +6098,7 @@ static bool ResolveModule(LifoAlloc& lifo, AstModule* module,
     switch (imp->kind()) {
       case DefinitionKind::Function:
         if (!r.registerFuncName(imp->name(), lastFuncIndex++)) {
-          return r.fail("duplicate import");
+          return r.fail("duplicate function import");
         }
         if (!r.resolveSignature(imp->funcType())) {
           return false;
@@ -6106,7 +6106,7 @@ static bool ResolveModule(LifoAlloc& lifo, AstModule* module,
         break;
       case DefinitionKind::Global:
         if (!r.registerGlobalName(imp->name(), lastGlobalIndex++)) {
-          return r.fail("duplicate import");
+          return r.fail("duplicate global import");
         }
         if (!ResolveType(r, imp->global().type())) {
           return false;
@@ -6114,12 +6114,12 @@ static bool ResolveModule(LifoAlloc& lifo, AstModule* module,
         break;
       case DefinitionKind::Memory:
         if (!r.registerMemoryName(imp->name(), lastMemoryIndex++)) {
-          return r.fail("duplicate import");
+          return r.fail("duplicate memory import");
         }
         break;
       case DefinitionKind::Table:
         if (!r.registerTableName(imp->name(), lastTableIndex++)) {
-          return r.fail("duplicate import");
+          return r.fail("duplicate table import");
         }
         break;
     }
@@ -6136,7 +6136,7 @@ static bool ResolveModule(LifoAlloc& lifo, AstModule* module,
 
   for (AstGlobal* global : module->globals()) {
     if (!r.registerGlobalName(global->name(), lastGlobalIndex++)) {
-      return r.fail("duplicate import");
+      return r.fail("duplicate global import");
     }
     if (!ResolveType(r, global->type())) {
       return false;
@@ -6151,7 +6151,7 @@ static bool ResolveModule(LifoAlloc& lifo, AstModule* module,
       continue;
     }
     if (!r.registerTableName(table.name, lastTableIndex++)) {
-      return r.fail("duplicate import");
+      return r.fail("duplicate table import");
     }
   }
 
@@ -6160,7 +6160,7 @@ static bool ResolveModule(LifoAlloc& lifo, AstModule* module,
       continue;
     }
     if (!r.registerMemoryName(memory.name, lastMemoryIndex++)) {
-      return r.fail("duplicate import");
+      return r.fail("duplicate memory import");
     }
   }
 

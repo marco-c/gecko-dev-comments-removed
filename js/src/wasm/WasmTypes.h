@@ -477,6 +477,11 @@ class ValType {
     return UnpackTypeCodeType(tc_) == TypeCode::FuncRef;
   }
 
+  bool isNullable() const {
+    MOZ_ASSERT(isReference());
+    return true;
+  }
+
   bool isTypeIndex() const {
     MOZ_ASSERT(isValid());
     return UnpackTypeCodeType(tc_) == TypeCode::Ref;
@@ -2235,6 +2240,10 @@ struct Limits {
                   Shareable shared = Shareable::False)
       : initial(initial), maximum(maximum), shared(shared) {}
 };
+
+
+
+
 
 
 
