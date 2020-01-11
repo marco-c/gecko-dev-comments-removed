@@ -188,11 +188,6 @@ class MediaTrackGraphInitThreadRunnable : public Runnable {
 
       MonitorAutoLock mon(mDriver->mGraphImpl->GetMonitor());
       mDriver->SetPreviousDriver(nullptr);
-    } else {
-      MonitorAutoLock mon(mDriver->mGraphImpl->GetMonitor());
-      MOZ_ASSERT(mDriver->mGraphImpl->MessagesQueued(),
-                 "Don't start a graph without messages queued.");
-      mDriver->mGraphImpl->SwapMessageQueues();
     }
 
     mDriver->RunThread();
@@ -685,12 +680,16 @@ void AudioCallbackDriver::Start() {
 bool AudioCallbackDriver::StartStream() {
   MOZ_ASSERT(!IsStarted() && OnCubebOperationThread());
   mShouldFallbackIfError = true;
+  
+  
+  
+  mStarted = true;
   if (cubeb_stream_start(mAudioStream) != CUBEB_OK) {
     NS_WARNING("Could not start cubeb stream for MTG.");
+    mStarted = false;
     return false;
   }
 
-  mStarted = true;
   return true;
 }
 
@@ -785,19 +784,6 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
 
   
   AddMixerCallback();
-
-  if (mStateComputedTime == 0) {
-    MonitorAutoLock mon(GraphImpl()->GetMonitor());
-    
-    
-    
-    
-    if (!GraphImpl()->MessagesQueued()) {
-      PodZero(aOutputBuffer, aFrames * mOutputChannels);
-      return aFrames;
-    }
-    GraphImpl()->SwapMessageQueues();
-  }
 
   uint32_t durationMS = aFrames * 1000 / mSampleRate;
 

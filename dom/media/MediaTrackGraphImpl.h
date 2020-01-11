@@ -278,9 +278,9 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   void UpdateGraph(GraphTime aEndBlockingDecisions);
 
   void SwapMessageQueues() {
-    MOZ_ASSERT(OnGraphThread());
-    MOZ_ASSERT(mFrontMessageQueue.IsEmpty());
+    MOZ_ASSERT(OnGraphThreadOrNotRunning());
     mMonitor.AssertCurrentThreadOwns();
+    MOZ_ASSERT(mFrontMessageQueue.IsEmpty());
     mFrontMessageQueue.SwapElements(mBackMessageQueue);
     if (!mFrontMessageQueue.IsEmpty()) {
       EnsureNextIterationLocked();
@@ -875,7 +875,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   LifecycleState mLifecycleState;
   LifecycleState& LifecycleStateRef() {
 #if DEBUG
-    if (!mDetectedNotRunning) {
+    if (mGraphDriverRunning) {
       mMonitor.AssertCurrentThreadOwns();
     }
 #endif
@@ -883,7 +883,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   }
   const LifecycleState& LifecycleStateRef() const {
 #if DEBUG
-    if (!mDetectedNotRunning) {
+    if (mGraphDriverRunning) {
       mMonitor.AssertCurrentThreadOwns();
     }
 #endif
@@ -926,7 +926,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  Atomic<bool> mDetectedNotRunning;
+  Atomic<bool> mGraphDriverRunning;
   
 
 
