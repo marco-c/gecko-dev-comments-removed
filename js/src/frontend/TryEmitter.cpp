@@ -256,12 +256,6 @@ bool TryEmitter::emitEnd() {
   MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == depth_);
 
   
-  
-  if (!bce_->emit1(JSOP_NOP)) {
-    return false;
-  }
-
-  
   if (!bce_->emitJumpTargetAndPatch(catchAndFinallyJump_)) {
     return false;
   }
