@@ -21,6 +21,7 @@
 #include "mozilla/StateWatching.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/HTMLMediaElementBinding.h"
+#include "mozilla/dom/MediaControlKeysEvent.h"
 #include "mozilla/dom/MediaDebugInfoBinding.h"
 #include "mozilla/dom/MediaKeys.h"
 #include "mozilla/dom/TextTrackManager.h"
@@ -533,6 +534,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   }
 
   already_AddRefed<Promise> Play(ErrorResult& aRv);
+  void Play() {
+    IgnoredErrorResult dummy;
+    RefPtr<Promise> toBeIgnored = Play(dummy);
+  }
 
   void Pause(ErrorResult& aRv);
   void Pause() { Pause(IgnoreErrors()); }
@@ -754,6 +759,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   class MediaStreamTrackListener;
   class FirstFrameListener;
   class ShutdownObserver;
+  class MediaControlEventListener;
 
   MediaDecoderOwner::NextFrameStatus NextFrameStatus();
 
@@ -1333,6 +1339,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
+  void NotifyMediaControlPlaybackStateChanged();
+
+  
+  
   RefPtr<MediaDecoder> mDecoder;
 
   
@@ -1903,6 +1913,12 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   RefPtr<ResumeDelayedPlaybackAgent> mResumeDelayedPlaybackAgent;
   MozPromiseRequestHolder<ResumeDelayedPlaybackAgent::ResumePromise>
       mResumePlaybackRequest;
+
+  
+  
+  void StartListeningMediaControlEventIfNeeded();
+  void StopListeningMediaControlEventIfNeeded();
+  RefPtr<MediaControlEventListener> mMediaControlEventListener;
 };
 
 
