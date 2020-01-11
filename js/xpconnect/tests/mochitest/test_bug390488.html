@@ -46,7 +46,7 @@
 
   function matches(s, p, name) {
     ok(s.match(p) != null,
-      name + " - got " + uneval(s) + ", expected a string matching " + uneval(p));
+      name + " - got " + s + ", expected a string matching " + p);
   }
 
   function checkForStacks() {
