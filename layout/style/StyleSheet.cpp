@@ -61,12 +61,15 @@ StyleSheet::StyleSheet(const StyleSheet& aCopy, StyleSheet* aParentToUse,
       mInner(aCopy.mInner) {
   MOZ_ASSERT(mInner, "Should only copy StyleSheets with an mInner.");
   mInner->AddSheet(this);
-
-  if (HasForcedUniqueInner()) {  
+  
+  if (HasForcedUniqueInner()) {
     MOZ_ASSERT(IsComplete(),
                "Why have rules been accessed on an incomplete sheet?");
-    
     EnsureUniqueInner();
+    
+    
+    mState &= ~(State::ForcedUniqueInner | State::ModifiedRules |
+                State::ModifiedRulesForDevtools);
   }
 
   if (aCopy.mMedia) {
@@ -549,17 +552,17 @@ ShadowRoot* StyleSheet::GetContainingShadow() const {
 }
 
 void StyleSheet::RuleAdded(css::Rule& aRule) {
-  mState |= State::ModifiedRules;
+  SetModifiedRules();
   NOTIFY(RuleAdded, (*this, aRule));
 }
 
 void StyleSheet::RuleRemoved(css::Rule& aRule) {
-  mState |= State::ModifiedRules;
+  SetModifiedRules();
   NOTIFY(RuleRemoved, (*this, aRule));
 }
 
 void StyleSheet::RuleChanged(css::Rule* aRule) {
-  mState |= State::ModifiedRules;
+  SetModifiedRules();
   NOTIFY(RuleChanged, (*this, aRule));
 }
 
@@ -1048,7 +1051,7 @@ nsresult StyleSheet::ReparseSheet(const nsAString& aInput) {
   }
 
   
-  ClearModifiedRules();
+  mState &= ~State::ModifiedRulesForDevtools;
 
   return NS_OK;
 }

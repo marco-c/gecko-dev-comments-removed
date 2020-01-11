@@ -477,7 +477,7 @@ RefPtr<StyleSheet> Loader::Sheets::LookupInline(const nsAString& aBuffer) {
   if (!result) {
     return nullptr;
   }
-  if (result.Data()->HasForcedUniqueInner()) {
+  if (result.Data()->HasModifiedRules()) {
     
     
     result.Remove();
@@ -525,7 +525,7 @@ auto Loader::Sheets::Lookup(SheetLoadDataHashKey& aKey, bool aSyncLoad)
         AssertComplete(*sheet);
         
         
-        if (!sheet->HasForcedUniqueInner() &&
+        if (!sheet->HasModifiedRules() &&
             sheet->ParsingMode() == aKey.ParsingMode()) {
           return MakeTuple(CloneSheet(*sheet), SheetState::Complete);
         }
@@ -544,18 +544,36 @@ auto Loader::Sheets::Lookup(SheetLoadDataHashKey& aKey, bool aSyncLoad)
     MOZ_ASSERT(lookup.Data()->ParsingMode() == aKey.ParsingMode());
     
     
-    
-    if (!lookup.Data()->HasForcedUniqueInner()) {
-      RefPtr<StyleSheet> clone = CloneSheet(*lookup.Data());
-      if (!lookup.Data()->GetOwnerNode() && !lookup.Data()->GetParentSheet()) {
+    if (!lookup.Data()->HasModifiedRules()) {
+      RefPtr<StyleSheet>& cachedSheet = lookup.Data();
+      RefPtr<StyleSheet> clone = CloneSheet(*cachedSheet);
+      MOZ_ASSERT(!clone->HasForcedUniqueInner());
+      MOZ_ASSERT(!clone->HasModifiedRules());
+
+      const bool oldSheetIsWorthKeeping = ([&cachedSheet] {
         
         
         
-        lookup.Data() = clone;
+        
+        if (cachedSheet->HasForcedUniqueInner()) {
+          return false;
+        }
+        
+        
+        
+        if (!cachedSheet->GetOwnerNode() && !cachedSheet->GetParentSheet()) {
+          return false;
+        }
+        return true;
+      }());
+
+      if (!oldSheetIsWorthKeeping) {
+        cachedSheet = clone;
       }
+
       return MakeTuple(std::move(clone), SheetState::Complete);
     }
-    LOG(("    Not cloning due to forced unique inner"));
+    LOG(("    Not cloning due to modified rules"));
     
     
     lookup.Remove();

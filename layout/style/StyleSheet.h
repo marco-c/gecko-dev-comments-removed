@@ -68,10 +68,12 @@ enum class StyleSheetState : uint8_t {
   ForcedUniqueInner = 1 << 2,
   
   
-  
-  
-  
   ModifiedRules = 1 << 3,
+  
+  
+  
+  
+  ModifiedRulesForDevtools = 1 << 4,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(StyleSheetState)
@@ -212,7 +214,9 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
   bool HasModifiedRules() const { return bool(mState & State::ModifiedRules); }
 
-  void ClearModifiedRules() { mState &= ~State::ModifiedRules; }
+  bool HasModifiedRulesForDevtools() const {
+    return bool(mState & State::ModifiedRulesForDevtools);
+  }
 
   bool HasUniqueInner() const { return Inner().mSheets.Length() == 1; }
 
@@ -393,6 +397,10 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   void RemoveFromParent();
 
  private:
+  void SetModifiedRules() {
+    mState |= State::ModifiedRules | State::ModifiedRulesForDevtools;
+  }
+
   
   
   
