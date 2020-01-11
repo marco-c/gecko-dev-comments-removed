@@ -167,53 +167,6 @@ static bool LineHasVisibleInlineContent(nsLineBox* aLine) {
   return false;
 }
 
-
-
-
-
-
-
-
-
-
-
-static nsRect GetFrameTextArea(nsIFrame* aFrame,
-                               nsDisplayListBuilder* aBuilder) {
-  nsRect textArea;
-  if (aFrame->IsTextFrame()) {
-    textArea = aFrame->GetVisualOverflowRect();
-  } else if (aFrame->IsFrameOfType(nsIFrame::eLineParticipant)) {
-    for (nsIFrame* kid : aFrame->PrincipalChildList()) {
-      nsRect kidTextArea = GetFrameTextArea(kid, aBuilder);
-      textArea.OrWith(kidTextArea);
-    }
-  }
-  
-  return textArea + aFrame->GetPosition();
-}
-
-
-
-
-
-
-
-
-
-static nsRect GetLineTextArea(nsLineBox* aLine,
-                              nsDisplayListBuilder* aBuilder) {
-  nsRect textArea;
-  nsIFrame* kid = aLine->mFirstChild;
-  int32_t n = aLine->GetChildCount();
-  while (n-- > 0) {
-    nsRect kidTextArea = GetFrameTextArea(kid, aBuilder);
-    textArea.OrWith(kidTextArea);
-    kid = kid->GetNextSibling();
-  }
-
-  return textArea;
-}
-
 #ifdef DEBUG
 #  include "nsBlockDebugFlags.h"
 
@@ -6990,8 +6943,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         lastYMost = lineArea.YMost();
         if (lineInLine && shouldDrawBackplate &&
             LineHasVisibleInlineContent(line)) {
-          nsRect lineBackplate = GetLineTextArea(line, aBuilder) +
-                                 aBuilder->ToReferenceFrame(this);
+          nsRect lineBackplate = lineArea + aBuilder->ToReferenceFrame(this);
           if (curBackplateArea.IsEmpty()) {
             curBackplateArea = lineBackplate;
           } else {
