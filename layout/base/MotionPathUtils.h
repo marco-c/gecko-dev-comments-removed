@@ -23,7 +23,7 @@ class MotionPathData;
 class PathCommand;
 }  
 
-struct MotionPathData {
+struct ResolvedMotionPathData {
   gfx::Point mTranslate;
   float mRotate;
   
@@ -159,7 +159,7 @@ class MotionPathUtils final {
 
 
 
-  static Maybe<mozilla::MotionPathData> ResolveMotionPath(
+  static Maybe<ResolvedMotionPathData> ResolveMotionPath(
       const OffsetPathData& aPath, const LengthPercentage& aDistance,
       const StyleOffsetRotate& aRotate, const StylePositionOrAuto& aAnchor,
       const CSSPoint& aTransformOrigin, const CSSSize& aFrameSize,
@@ -169,7 +169,7 @@ class MotionPathUtils final {
 
 
 
-  static Maybe<mozilla::MotionPathData> ResolveMotionPath(
+  static Maybe<ResolvedMotionPathData> ResolveMotionPath(
       const nsIFrame* aFrame);
 
   
@@ -177,7 +177,7 @@ class MotionPathUtils final {
 
 
 
-  static Maybe<mozilla::MotionPathData> ResolveMotionPath(
+  static Maybe<ResolvedMotionPathData> ResolveMotionPath(
       const StyleOffsetPath* aPath, const StyleLengthPercentage* aDistance,
       const StyleOffsetRotate* aRotate, const StylePositionOrAuto* aAnchor,
       const Maybe<layers::MotionPathData>& aMotionPathData,
