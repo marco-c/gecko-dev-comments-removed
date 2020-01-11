@@ -185,13 +185,15 @@ class ResponsiveUI {
     const fullZoom = rdmContent.fullZoom;
     const textZoom = rdmContent.textZoom;
 
-    if (!this.isBrowserUIEnabled) {
+    
+    
+    if (this.isBrowserUIEnabled) {
+      this.browserWindow.addEventListener("FullZoomChange", this);
+    } else {
       this.docShell.contentViewer.fullZoom = 1;
       this.docShell.contentViewer.textZoom = 1;
 
-      
-      
-      rdmContent.addEventListener("FullZoomChange", this);
+      this.tab.linkedBrowser.addEventListener("FullZoomChange", this);
     }
 
     this.tab.addEventListener("BeforeTabRemotenessChange", this);
@@ -323,6 +325,7 @@ class ResponsiveUI {
       this.tab.linkedBrowser.removeEventListener("FullZoomChange", this);
       this.toolWindow.removeEventListener("message", this);
     } else {
+      this.browserWindow.removeEventListener("FullZoomChange", this);
       this.rdmFrame.contentWindow.removeEventListener("message", this);
       this.rdmFrame.remove();
 
@@ -419,8 +422,18 @@ class ResponsiveUI {
         this.handleMessage(event);
         break;
       case "FullZoomChange":
-        const zoom = tab.linkedBrowser.fullZoom;
-        toolWindow.setViewportZoom(zoom);
+        if (this.isBrowserUIEnabled) {
+          
+          
+          const {
+            width,
+            height,
+          } = this.rdmFrame.contentWindow.getViewportSize();
+          this.updateViewportSize(width, height);
+        } else {
+          const zoom = tab.linkedBrowser.fullZoom;
+          toolWindow.setViewportZoom(zoom);
+        }
         break;
       case "BeforeTabRemotenessChange":
       case "TabClose":
@@ -821,10 +834,15 @@ class ResponsiveUI {
       return;
     }
 
+    const zoom = this.tab.linkedBrowser.fullZoom;
+
+    const scaledWidth = width * zoom;
+    const scaledHeight = height * zoom;
+
     
     
-    this.browserStackEl.style.setProperty("--rdm-width", `${width}px`);
-    this.browserStackEl.style.setProperty("--rdm-height", `${height}px`);
+    this.browserStackEl.style.setProperty("--rdm-width", `${scaledWidth}px`);
+    this.browserStackEl.style.setProperty("--rdm-height", `${scaledHeight}px`);
   }
 
   
