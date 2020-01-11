@@ -3880,6 +3880,14 @@ void SetUseCounter(JSObject* aObject, UseCounter aUseCounter) {
   }
 }
 
+void SetUseCounter(UseCounterWorker aUseCounter) {
+  
+  WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+  if (workerPrivate) {
+    workerPrivate->SetUseCounter(aUseCounter);
+  }
+}
+
 namespace {
 
 #define DEPRECATED_OPERATION(_op) #_op,
