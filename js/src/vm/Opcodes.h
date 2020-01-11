@@ -247,9 +247,7 @@
 
 
 
-
 #define FOR_EACH_OPCODE(MACRO)
-
 
 
 
@@ -261,14 +259,12 @@
     /*
      * Push `null`.
      *
-     *   Category: Literals
-     *   Type: Constants
+     *   Category: Constants
      *   Operands:
      *   Stack: => null
      */ \
     MACRO(JSOP_NULL, js_null_str, js_null_str, 1, 0, 1, JOF_BYTE) \
     
-
 
 
 
@@ -286,11 +282,9 @@
 
 
 
-
  \
     MACRO(JSOP_INT32, "int32", NULL, 5, 0, 1, JOF_INT32) \
     
-
 
 
 
@@ -304,11 +298,9 @@
 
 
 
-
  \
     MACRO(JSOP_ONE, "one", "1", 1, 0, 1, JOF_BYTE) \
     
-
 
 
 
@@ -322,11 +314,9 @@
 
 
 
-
  \
     MACRO(JSOP_UINT16, "uint16", NULL, 3, 0, 1, JOF_UINT16) \
     
-
 
 
 
@@ -343,11 +333,9 @@
 
 
 
-
  \
     MACRO(JSOP_DOUBLE, "double", NULL, 9, 0, 1, JOF_DOUBLE) \
     
-
 
 
 
@@ -361,11 +349,9 @@
 
 
 
-
  \
     MACRO(JSOP_STRING, "string", NULL, 5, 0, 1, JOF_ATOM) \
     
-
 
 
 
@@ -1356,6 +1342,7 @@
 
 
 
+
  \
     MACRO(JSOP_ITERNEXT, "iternext", NULL, 1, 1, 1, JOF_BYTE) \
     
@@ -2131,6 +2118,7 @@
 
 
 
+
  \
     MACRO(JSOP_JUMPTARGET, "jumptarget", NULL, 5, 0, 0, JOF_ICINDEX) \
     
@@ -2468,6 +2456,7 @@
 
 
 
+
  \
     MACRO(JSOP_TRY_DESTRUCTURING, "try-destructuring", NULL, 1, 0, 0, JOF_BYTE) \
     
@@ -2487,6 +2476,7 @@
  \
     MACRO(JSOP_EXCEPTION, "exception", NULL, 1, 0, 1, JOF_BYTE) \
     
+
 
 
 
@@ -3366,11 +3356,9 @@
 
 
 
-
  \
     MACRO(JSOP_POP, "pop", NULL, 1, 1, 0, JOF_BYTE) \
     
-
 
 
 
@@ -3386,11 +3374,9 @@
 
 
 
-
  \
     MACRO(JSOP_DUP, "dup", NULL, 1, 1, 2, JOF_BYTE) \
     
-
 
 
 
@@ -3407,11 +3393,9 @@
 
 
 
-
  \
     MACRO(JSOP_DUPAT, "dupat", NULL, 4, 0, 1, JOF_UINT24) \
     
-
 
 
 
@@ -3425,11 +3409,9 @@
 
 
 
-
  \
     MACRO(JSOP_PICK, "pick", NULL, 2, 0, 0, JOF_UINT8) \
     
-
 
 
 
@@ -3509,7 +3491,6 @@
  \
     MACRO(JSOP_INSTRUMENTATION_SCRIPT_ID, "instrumentationScriptId", NULL, 1, 0, 1, JOF_BYTE) \
     
-
 
 
 
