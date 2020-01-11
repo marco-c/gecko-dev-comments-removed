@@ -6346,7 +6346,12 @@ MIonToWasmCall* MIonToWasmCall::New(TempAllocator& alloc,
                                     WasmInstanceObject* instanceObj,
                                     const wasm::FuncExport& funcExport) {
   Maybe<wasm::ValType> retType = funcExport.funcType().ret();
-  MIRType resultType = retType ? ToMIRType(retType.ref()) : MIRType::Value;
+  MIRType resultType = MIRType::Value;
+  
+  
+  if (retType && !retType->isEncodedAsJSValueOnEscape()) {
+    resultType = ToMIRType(retType.ref());
+  }
 
   auto* ins = new (alloc) MIonToWasmCall(instanceObj, resultType, funcExport);
   if (!ins->init(alloc, funcExport.funcType().args().length())) {

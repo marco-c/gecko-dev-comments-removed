@@ -137,6 +137,11 @@ bool wasm::BoxAnyRef(JSContext* cx, HandleValue val, MutableHandleAnyRef addr) {
   return true;
 }
 
+JSObject* wasm::BoxBoxableValue(JSContext* cx, HandleValue val) {
+  MOZ_ASSERT(!val.isNull() && !val.isObject());
+  return WasmValueBox::create(cx, val);
+}
+
 Value wasm::UnboxAnyRef(AnyRef val) {
   
   
