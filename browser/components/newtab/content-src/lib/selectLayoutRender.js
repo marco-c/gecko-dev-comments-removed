@@ -2,7 +2,12 @@
 
 
 
-export const selectLayoutRender = (state, prefs, rickRollCache) => {
+export const selectLayoutRender = ({
+  state = {},
+  prefs = {},
+  rollCache = [],
+  lang = "",
+}) => {
   const { layout, feeds, spocs } = state;
   let spocIndexMap = {};
   let bufferRollCache = [];
@@ -23,11 +28,11 @@ export const selectLayoutRender = (state, prefs, rickRollCache) => {
 
       
       let rickRoll;
-      if (!rickRollCache.length) {
+      if (!rollCache.length) {
         rickRoll = Math.random();
         bufferRollCache.push(rickRoll);
       } else {
-        rickRoll = rickRollCache.shift();
+        rickRoll = rollCache.shift();
         bufferRollCache.push(rickRoll);
       }
 
@@ -61,6 +66,10 @@ export const selectLayoutRender = (state, prefs, rickRollCache) => {
 
   if (!prefs["feeds.topsites"]) {
     filterArray.push("TopSites");
+  }
+
+  if (!lang.startsWith("en-")) {
+    filterArray.push("Navigation");
   }
 
   if (!prefs["feeds.section.topstories"]) {
@@ -214,8 +223,8 @@ export const selectLayoutRender = (state, prefs, rickRollCache) => {
   const layoutRender = renderLayout();
 
   
-  if (!rickRollCache.length) {
-    rickRollCache.push(...bufferRollCache);
+  if (!rollCache.length) {
+    rollCache.push(...bufferRollCache);
   }
 
   

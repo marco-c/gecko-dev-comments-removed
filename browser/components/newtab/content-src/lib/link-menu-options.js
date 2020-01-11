@@ -73,7 +73,7 @@ export const LinkMenuOptions = {
       data: {
         url: site.open_url || site.url,
         pocket_id: site.pocket_id,
-        ...(site.campaign_id ? { campaign_id: site.campaign_id } : {}),
+        ...(site.flight_id ? { flight_id: site.flight_id } : {}),
       },
     }),
     impression: ac.ImpressionStats({

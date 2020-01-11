@@ -93,7 +93,7 @@
 __webpack_require__.r(__webpack_exports__);
 (function(global) { var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var content_src_components_Base_Base__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
- var content_src_lib_detect_user_session_start__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(57);
+ var content_src_lib_detect_user_session_start__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(77);
  var content_src_lib_init_store__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
  var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(28);
  var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
@@ -101,7 +101,7 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_5__);
  var react_dom__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(12);
  var react_dom__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_6__);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(62);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(81);
 
 
 
@@ -565,12 +565,12 @@ __webpack_require__.r(__webpack_exports__);
  var content_src_components_ConfirmDialog_ConfirmDialog__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(30);
  var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(28);
  var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
- var content_src_components_DiscoveryStreamBase_DiscoveryStreamBase__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(58);
- var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(39);
+ var content_src_components_DiscoveryStreamBase_DiscoveryStreamBase__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(31);
+ var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(47);
  var react__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_7___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_7__);
- var content_src_components_Search_Search__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(56);
- var content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(44);
+ var content_src_components_Search_Search__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(76);
+ var content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(59);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -1762,16 +1762,16 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "ASRouterUISurface", function() { return ASRouterUISurface; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var content_src_lib_init_store__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6);
- var _rich_text_strings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(61);
+ var _rich_text_strings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(80);
  var _components_ImpressionsWrapper_ImpressionsWrapper__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8);
- var fluent_react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(59);
+ var fluent_react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(78);
  var content_src_lib_constants__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(11);
  var react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_6__);
  var react_dom__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(12);
  var react_dom__WEBPACK_IMPORTED_MODULE_7___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_7__);
- var _templates_template_manifest__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(60);
- var _templates_FirstRun_FirstRun__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(63);
+ var _templates_template_manifest__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(79);
+ var _templates_FirstRun_FirstRun__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(82);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -2597,10 +2597,10 @@ module.exports = {"title":"EOYSnippet","description":"Fundraising Snippet","vers
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "convertLinks", function() { return convertLinks; });
  __webpack_require__.d(__webpack_exports__, "RichText", function() { return RichText; });
- var fluent_react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(59);
+ var fluent_react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(78);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
- var _rich_text_strings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(61);
+ var _rich_text_strings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(80);
  var _template_utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(15);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
@@ -3836,13 +3836,1001 @@ const ConfirmDialog = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect"]
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+(function(global) { __webpack_require__.d(__webpack_exports__, "isAllowedCSS", function() { return isAllowedCSS; });
+ __webpack_require__.d(__webpack_exports__, "_DiscoveryStreamBase", function() { return _DiscoveryStreamBase; });
+ __webpack_require__.d(__webpack_exports__, "DiscoveryStreamBase", function() { return DiscoveryStreamBase; });
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ var content_src_components_DiscoveryStreamComponents_CardGrid_CardGrid__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(32);
+ var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(46);
+ var react_redux__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(28);
+ var react_redux__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_3__);
+ var content_src_components_DiscoveryStreamComponents_DSDismiss_DSDismiss__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(52);
+ var content_src_components_DiscoveryStreamComponents_DSMessage_DSMessage__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(53);
+ var content_src_components_DiscoveryStreamComponents_DSPrivacyModal_DSPrivacyModal__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(54);
+ var content_src_components_DiscoveryStreamComponents_DSTextPromo_DSTextPromo__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(55);
+ var content_src_components_DiscoveryStreamComponents_Hero_Hero__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(56);
+ var content_src_components_DiscoveryStreamComponents_Highlights_Highlights__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(58);
+ var content_src_components_DiscoveryStreamComponents_HorizontalRule_HorizontalRule__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(71);
+ var content_src_components_DiscoveryStreamComponents_List_List__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(57);
+ var content_src_components_DiscoveryStreamComponents_Navigation_Navigation__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(72);
+ var react__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_13___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_13__);
+ var content_src_components_DiscoveryStreamComponents_SectionTitle_SectionTitle__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(73);
+ var content_src_lib_selectLayoutRender__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(74);
+ var content_src_components_DiscoveryStreamComponents_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(75);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const ALLOWED_CSS_URL_PREFIXES = ["chrome://", "resource://", "https://img-getpocket.cdn.mozilla.net/"];
+const DUMMY_CSS_SELECTOR = "DUMMY#CSS.SELECTOR";
+let rollCache = []; 
+
+
+
+
+
+function isAllowedCSS(property, value) {
+  
+  
+  
+  if (value === undefined) {
+    return true;
+  } 
+
+
+  const urls = value.match(/url\("[^"]+"\)/g);
+  return !urls || urls.every(url => ALLOWED_CSS_URL_PREFIXES.some(prefix => url.slice(5).startsWith(prefix)));
+}
+class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_13___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onStyleMount = this.onStyleMount.bind(this);
+  }
+
+  onStyleMount(style) {
+    
+    if (!style) {
+      return;
+    }
+
+    const {
+      sheet
+    } = style;
+    const styles = JSON.parse(style.dataset.styles);
+    styles.forEach((row, rowIndex) => {
+      row.forEach((component, componentIndex) => {
+        
+        if (!component) {
+          return;
+        }
+
+        Object.entries(component).forEach(([selectors, declarations]) => {
+          
+          sheet.insertRule(`${DUMMY_CSS_SELECTOR} {}`);
+          const [rule] = sheet.cssRules; 
+          
+
+          rule.style = declarations;
+          [...rule.style].forEach(property => {
+            const value = rule.style[property];
+
+            if (!isAllowedCSS(property, value)) {
+              console.error(`Bad CSS declaration ${property}: ${value}`); 
+
+              rule.style.removeProperty(property);
+            }
+          }); 
+
+          const prefix = `.ds-layout > .ds-column:nth-child(${rowIndex + 1}) .ds-column-grid > :nth-child(${componentIndex + 1})`; 
+          
+
+          rule.selectorText = selectors.split(",").map(selector => prefix + ( 
+          selector[0] === ":" ? "" : " ") + selector).join(","); 
+
+          if (rule.selectorText === DUMMY_CSS_SELECTOR) {
+            console.error(`Bad CSS selector ${selectors}`); 
+          }
+        });
+      });
+    });
+  }
+
+  renderComponent(component, embedWidth) {
+    const ENGAGEMENT_LABEL_ENABLED = this.props.Prefs.values[`discoverystream.engagementLabelEnabled`];
+
+    switch (component.type) {
+      case "Highlights":
+        return react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement(content_src_components_DiscoveryStreamComponents_Highlights_Highlights__WEBPACK_IMPORTED_MODULE_9__["Highlights"], null);
+
+      case "TopSites":
+        let promoAlignment;
+
+        if (component.spocs && component.spocs.positions && component.spocs.positions.length) {
+          promoAlignment = component.spocs.positions[0].index === 0 ? "left" : "right";
+        }
+
+        return react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement(content_src_components_DiscoveryStreamComponents_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_16__["TopSites"], {
+          header: component.header,
+          data: component.data,
+          promoAlignment: promoAlignment
+        });
+
+      case "TextPromo":
+        if (!component.data || !component.data.spocs || !component.data.spocs[0]) {
+          return null;
+        } 
+
+
+        const [spoc] = component.data.spocs;
+        const {
+          image_src,
+          raw_image_src,
+          alt_text,
+          title,
+          url,
+          context,
+          cta,
+          flight_id,
+          id,
+          shim
+        } = spoc;
+        return react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement(content_src_components_DiscoveryStreamComponents_DSDismiss_DSDismiss__WEBPACK_IMPORTED_MODULE_4__["DSDismiss"], {
+          data: {
+            url: spoc.url,
+            guid: spoc.id,
+            shim: spoc.shim
+          },
+          dispatch: this.props.dispatch,
+          shouldSendImpressionStats: true,
+          extraClasses: `ds-dismiss-ds-text-promo`
+        }, react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement(content_src_components_DiscoveryStreamComponents_DSTextPromo_DSTextPromo__WEBPACK_IMPORTED_MODULE_7__["DSTextPromo"], {
+          dispatch: this.props.dispatch,
+          image: image_src,
+          raw_image_src: raw_image_src,
+          alt_text: alt_text || title,
+          header: title,
+          cta_text: cta,
+          cta_url: url,
+          subtitle: context,
+          flightId: flight_id,
+          id: id,
+          pos: 0,
+          shim: shim,
+          type: component.type
+        }));
+
+      case "Message":
+        return react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement(content_src_components_DiscoveryStreamComponents_DSMessage_DSMessage__WEBPACK_IMPORTED_MODULE_5__["DSMessage"], {
+          title: component.header && component.header.title,
+          subtitle: component.header && component.header.subtitle,
+          link_text: component.header && component.header.link_text,
+          link_url: component.header && component.header.link_url,
+          icon: component.header && component.header.icon
+        });
+
+      case "SectionTitle":
+        return react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement(content_src_components_DiscoveryStreamComponents_SectionTitle_SectionTitle__WEBPACK_IMPORTED_MODULE_14__["SectionTitle"], {
+          header: component.header
+        });
+
+      case "Navigation":
+        return react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement(content_src_components_DiscoveryStreamComponents_Navigation_Navigation__WEBPACK_IMPORTED_MODULE_12__["Navigation"], {
+          links: component.properties.links,
+          alignment: component.properties.alignment,
+          header: component.header
+        });
+
+      case "CardGrid":
+        return react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement(content_src_components_DiscoveryStreamComponents_CardGrid_CardGrid__WEBPACK_IMPORTED_MODULE_1__["CardGrid"], {
+          title: component.header && component.header.title,
+          data: component.data,
+          feed: component.feed,
+          border: component.properties.border,
+          type: component.type,
+          dispatch: this.props.dispatch,
+          items: component.properties.items,
+          cta_variant: component.cta_variant,
+          display_engagement_labels: ENGAGEMENT_LABEL_ENABLED
+        });
+
+      case "Hero":
+        return react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement(content_src_components_DiscoveryStreamComponents_Hero_Hero__WEBPACK_IMPORTED_MODULE_8__["Hero"], {
+          subComponentType: embedWidth >= 9 ? `cards` : `list`,
+          feed: component.feed,
+          title: component.header && component.header.title,
+          data: component.data,
+          border: component.properties.border,
+          type: component.type,
+          dispatch: this.props.dispatch,
+          items: component.properties.items
+        });
+
+      case "HorizontalRule":
+        return react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement(content_src_components_DiscoveryStreamComponents_HorizontalRule_HorizontalRule__WEBPACK_IMPORTED_MODULE_10__["HorizontalRule"], null);
+
+      case "List":
+        return react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement(content_src_components_DiscoveryStreamComponents_List_List__WEBPACK_IMPORTED_MODULE_11__["List"], {
+          data: component.data,
+          feed: component.feed,
+          fullWidth: component.properties.full_width,
+          hasBorders: component.properties.border === "border",
+          hasImages: component.properties.has_images,
+          hasNumbers: component.properties.has_numbers,
+          items: component.properties.items,
+          type: component.type,
+          header: component.header
+        });
+
+      default:
+        return react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement("div", null, component.type);
+    }
+  }
+
+  renderStyles(styles) {
+    
+    
+    const json = JSON.stringify(styles);
+    return react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement("style", {
+      key: json,
+      "data-styles": json,
+      ref: this.onStyleMount
+    });
+  }
+
+  componentWillReceiveProps(oldProps) {
+    if (this.props.DiscoveryStream.layout !== oldProps.DiscoveryStream.layout) {
+      rollCache = [];
+    }
+  }
+
+  render() {
+    
+    const {
+      layoutRender,
+      spocsFill
+    } = Object(content_src_lib_selectLayoutRender__WEBPACK_IMPORTED_MODULE_15__["selectLayoutRender"])({
+      state: this.props.DiscoveryStream,
+      prefs: this.props.Prefs.values,
+      rollCache,
+      lang: this.props.document.documentElement.lang
+    });
+    const {
+      config,
+      spocs,
+      feeds
+    } = this.props.DiscoveryStream; 
+    
+
+    if (spocs.loaded && feeds.loaded && spocsFill.length && !this._spocsFillSent) {
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].DiscoveryStreamSpocsFill({
+        spoc_fills: spocsFill
+      }));
+      this._spocsFillSent = true;
+    } 
+
+
+    if (!config.collapsible) {
+      return this.renderLayout(layoutRender);
+    } 
+
+
+    const extractComponent = type => {
+      for (const [rowIndex, row] of Object.entries(layoutRender)) {
+        for (const [index, component] of Object.entries(row.components)) {
+          if (component.type === type) {
+            
+            if (row.components.length === 1) {
+              layoutRender.splice(rowIndex, 1);
+            } else {
+              row.components.splice(index, 1);
+            }
+
+            return component;
+          }
+        }
+      }
+
+      return null;
+    }; 
+
+
+    const topStories = this.props.Sections.find(s => s.id === "topstories");
+
+    if (!topStories) {
+      return null;
+    } 
+
+
+    const topSites = extractComponent("TopSites");
+    const message = extractComponent("Message") || {
+      header: {
+        link_text: topStories.learnMore.link.message,
+        link_url: topStories.learnMore.link.href,
+        title: topStories.title
+      }
+    }; 
+
+    return react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_13___default.a.Fragment, null, this.props.DiscoveryStream.isPrivacyInfoModalVisible && react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement(content_src_components_DiscoveryStreamComponents_DSPrivacyModal_DSPrivacyModal__WEBPACK_IMPORTED_MODULE_6__["DSPrivacyModal"], {
+      dispatch: this.props.dispatch
+    }), topSites && this.renderLayout([{
+      width: 12,
+      components: [topSites]
+    }]), !!layoutRender.length && react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement(content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__["CollapsibleSection"], {
+      className: "ds-layout",
+      collapsed: topStories.pref.collapsed,
+      dispatch: this.props.dispatch,
+      icon: topStories.icon,
+      id: topStories.id,
+      isFixed: true,
+      learnMore: {
+        link: {
+          href: message.header.link_url,
+          message: message.header.link_text
+        }
+      },
+      privacyNoticeURL: topStories.privacyNoticeURL,
+      showPrefName: topStories.pref.feed,
+      title: message.header.title
+    }, this.renderLayout(layoutRender)), this.renderLayout([{
+      width: 12,
+      components: [{
+        type: "Highlights"
+      }]
+    }]));
+  }
+
+  renderLayout(layoutRender) {
+    const styles = [];
+    return react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement("div", {
+      className: "discovery-stream ds-layout"
+    }, layoutRender.map((row, rowIndex) => react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement("div", {
+      key: `row-${rowIndex}`,
+      className: `ds-column ds-column-${row.width}`
+    }, react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement("div", {
+      className: "ds-column-grid"
+    }, row.components.map((component, componentIndex) => {
+      if (!component) {
+        return null;
+      }
+
+      styles[rowIndex] = [...(styles[rowIndex] || []), component.styles];
+      return react__WEBPACK_IMPORTED_MODULE_13___default.a.createElement("div", {
+        key: `component-${componentIndex}`
+      }, this.renderComponent(component, row.width));
+    })))), this.renderStyles(styles));
+  }
+
+}
+const DiscoveryStreamBase = Object(react_redux__WEBPACK_IMPORTED_MODULE_3__["connect"])(state => ({
+  DiscoveryStream: state.DiscoveryStream,
+  Prefs: state.Prefs,
+  Sections: state.Sections,
+  document: global.document
+}))(_DiscoveryStreamBase);
+}.call(this, __webpack_require__(1)))
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "CardGrid", function() { return CardGrid; });
+ var _DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(33);
+ var _DSEmptyState_DSEmptyState_jsx__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(45);
+ var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
+
+
+
+
+
+
+class CardGrid extends react__WEBPACK_IMPORTED_MODULE_2___default.a.PureComponent {
+  renderCards() {
+    const recs = this.props.data.recommendations.slice(0, this.props.items);
+    const cards = [];
+
+    for (let index = 0; index < this.props.items; index++) {
+      const rec = recs[index];
+      cards.push(!rec || rec.placeholder ? react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(_DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__["PlaceholderDSCard"], {
+        key: `dscard-${index}`
+      }) : react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(_DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__["DSCard"], {
+        key: `dscard-${rec.id}`,
+        pos: rec.pos,
+        flightId: rec.flight_id,
+        image_src: rec.image_src,
+        raw_image_src: rec.raw_image_src,
+        title: rec.title,
+        excerpt: rec.excerpt,
+        url: rec.url,
+        id: rec.id,
+        shim: rec.shim,
+        type: this.props.type,
+        context: rec.context,
+        sponsor: rec.sponsor,
+        dispatch: this.props.dispatch,
+        source: rec.domain,
+        pocket_id: rec.pocket_id,
+        context_type: rec.context_type,
+        bookmarkGuid: rec.bookmarkGuid,
+        engagement: rec.engagement,
+        display_engagement_labels: this.props.display_engagement_labels,
+        cta: rec.cta,
+        cta_variant: this.props.cta_variant
+      }));
+    }
+
+    let divisibility = ``;
+
+    if (this.props.items % 4 === 0) {
+      divisibility = `divisible-by-4`;
+    } else if (this.props.items % 3 === 0) {
+      divisibility = `divisible-by-3`;
+    }
+
+    return react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
+      className: `ds-card-grid ds-card-grid-${this.props.border} ds-card-grid-${divisibility}`
+    }, cards);
+  }
+
+  render() {
+    const {
+      data
+    } = this.props; 
+
+    if (!data) {
+      return null;
+    } 
+
+
+    const isEmpty = data.recommendations.length === 0;
+    return react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", null, this.props.title && react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
+      className: "ds-header"
+    }, this.props.title), isEmpty ? react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
+      className: "ds-card-grid empty"
+    }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(_DSEmptyState_DSEmptyState_jsx__WEBPACK_IMPORTED_MODULE_1__["DSEmptyState"], {
+      status: data.status,
+      dispatch: this.props.dispatch,
+      feed: this.props.feed
+    })) : this.renderCards());
+  }
+
+}
+CardGrid.defaultProps = {
+  border: `border`,
+  items: 4 
+
+};
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "DefaultMeta", function() { return DefaultMeta; });
+ __webpack_require__.d(__webpack_exports__, "CTAButtonMeta", function() { return CTAButtonMeta; });
+ __webpack_require__.d(__webpack_exports__, "DSCard", function() { return DSCard; });
+ __webpack_require__.d(__webpack_exports__, "PlaceholderDSCard", function() { return PlaceholderDSCard; });
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ var _DSImage_DSImage_jsx__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(34);
+ var _DSLinkMenu_DSLinkMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(35);
+ var _DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(40);
+ var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_4__);
+ var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(41);
+ var _DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(42);
+
+
+
+
+
+
+
+
+
+ 
+
+const DefaultMeta = ({
+  display_engagement_labels,
+  source,
+  title,
+  excerpt,
+  context,
+  context_type,
+  cta,
+  engagement,
+  cta_variant
+}) => react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
+  className: "meta"
+}, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
+  className: "info-wrap"
+}, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", {
+  className: "source clamp"
+}, source), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("header", {
+  className: "title clamp"
+}, title), excerpt && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", {
+  className: "excerpt clamp"
+}, excerpt), cta_variant === "link" && cta && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
+  role: "link",
+  className: "cta-link icon icon-arrow",
+  tabIndex: "0"
+}, cta)), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_6__["DSContextFooter"], {
+  context_type: context_type,
+  context: context,
+  display_engagement_labels: display_engagement_labels,
+  engagement: engagement
+}));
+const CTAButtonMeta = ({
+  display_engagement_labels,
+  source,
+  title,
+  excerpt,
+  context,
+  context_type,
+  cta,
+  engagement,
+  sponsor
+}) => react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
+  className: "meta"
+}, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
+  className: "info-wrap"
+}, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", {
+  className: "source clamp"
+}, sponsor ? sponsor : source, context && ` · Sponsored`), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("header", {
+  className: "title clamp"
+}, title), excerpt && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", {
+  className: "excerpt clamp"
+}, excerpt)), context && cta && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("button", {
+  className: "button cta-button"
+}, cta), !context && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_6__["DSContextFooter"], {
+  context_type: context_type,
+  context: context,
+  display_engagement_labels: display_engagement_labels,
+  engagement: engagement
+}));
+class DSCard extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onLinkClick = this.onLinkClick.bind(this);
+
+    this.setPlaceholderRef = element => {
+      this.placeholderElement = element;
+    };
+
+    this.state = {
+      isSeen: false
+    };
+  }
+
+  onLinkClick(event) {
+    if (this.props.dispatch) {
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({
+        event: "CLICK",
+        source: this.props.type.toUpperCase(),
+        action_position: this.props.pos
+      }));
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ImpressionStats({
+        source: this.props.type.toUpperCase(),
+        click: 0,
+        tiles: [{
+          id: this.props.id,
+          pos: this.props.pos,
+          ...(this.props.shim && this.props.shim.click ? {
+            shim: this.props.shim.click
+          } : {})
+        }]
+      }));
+    }
+  }
+
+  onSeen(entries) {
+    if (this.state) {
+      const entry = entries.find(e => e.isIntersecting);
+
+      if (entry) {
+        if (this.placeholderElement) {
+          this.observer.unobserve(this.placeholderElement);
+        } 
+
+
+        this.setState({
+          isSeen: true
+        });
+      }
+    }
+  }
+
+  onIdleCallback() {
+    if (!this.state.isSeen) {
+      if (this.observer && this.placeholderElement) {
+        this.observer.unobserve(this.placeholderElement);
+      }
+
+      this.setState({
+        isSeen: true
+      });
+    }
+  }
+
+  componentDidMount() {
+    this.idleCallbackId = this.props.windowObj.requestIdleCallback(this.onIdleCallback.bind(this));
+
+    if (this.placeholderElement) {
+      this.observer = new IntersectionObserver(this.onSeen.bind(this));
+      this.observer.observe(this.placeholderElement);
+    }
+  }
+
+  componentWillUnmount() {
+    
+    if (this.observer && this.placeholderElement) {
+      this.observer.unobserve(this.placeholderElement);
+    }
+
+    if (this.idleCallbackId) {
+      this.props.windowObj.cancelIdleCallback(this.idleCallbackId);
+    }
+  }
+
+  render() {
+    if (this.props.placeholder || !this.state.isSeen) {
+      return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
+        className: "ds-card placeholder",
+        ref: this.setPlaceholderRef
+      });
+    }
+
+    const isButtonCTA = this.props.cta_variant === "button";
+    return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
+      className: "ds-card"
+    }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_5__["SafeAnchor"], {
+      className: "ds-card-link",
+      dispatch: this.props.dispatch,
+      onLinkClick: !this.props.placeholder ? this.onLinkClick : undefined,
+      url: this.props.url
+    }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
+      className: "img-wrapper"
+    }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DSImage_DSImage_jsx__WEBPACK_IMPORTED_MODULE_1__["DSImage"], {
+      extraClassNames: "img",
+      source: this.props.image_src,
+      rawSource: this.props.raw_image_src
+    })), isButtonCTA ? react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(CTAButtonMeta, {
+      display_engagement_labels: this.props.display_engagement_labels,
+      source: this.props.source,
+      title: this.props.title,
+      excerpt: this.props.excerpt,
+      context: this.props.context,
+      context_type: this.props.context_type,
+      engagement: this.props.engagement,
+      cta: this.props.cta,
+      sponsor: this.props.sponsor
+    }) : react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(DefaultMeta, {
+      display_engagement_labels: this.props.display_engagement_labels,
+      source: this.props.source,
+      title: this.props.title,
+      excerpt: this.props.excerpt,
+      context: this.props.context,
+      engagement: this.props.engagement,
+      context_type: this.props.context_type,
+      cta: this.props.cta,
+      cta_variant: this.props.cta_variant
+    }), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_3__["ImpressionStats"], {
+      flightId: this.props.flightId,
+      rows: [{
+        id: this.props.id,
+        pos: this.props.pos,
+        ...(this.props.shim && this.props.shim.impression ? {
+          shim: this.props.shim.impression
+        } : {})
+      }],
+      dispatch: this.props.dispatch,
+      source: this.props.type
+    })), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DSLinkMenu_DSLinkMenu__WEBPACK_IMPORTED_MODULE_2__["DSLinkMenu"], {
+      id: this.props.id,
+      index: this.props.pos,
+      dispatch: this.props.dispatch,
+      url: this.props.url,
+      title: this.props.title,
+      source: this.props.source,
+      type: this.props.type,
+      pocket_id: this.props.pocket_id,
+      shim: this.props.shim,
+      bookmarkGuid: this.props.bookmarkGuid,
+      flightId: this.props.flightId
+    }));
+  }
+
+}
+DSCard.defaultProps = {
+  windowObj: window 
+
+};
+const PlaceholderDSCard = props => react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(DSCard, {
+  placeholder: true
+});
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "DSImage", function() { return DSImage; });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+ var react_dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(12);
+ var react_dom__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_1__);
+
+
+
+
+
+class DSImage extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onOptimizedImageError = this.onOptimizedImageError.bind(this);
+    this.onNonOptimizedImageError = this.onNonOptimizedImageError.bind(this);
+    this.state = {
+      isSeen: false,
+      optimizedImageFailed: false,
+      useTransition: false
+    };
+  }
+
+  onSeen(entries) {
+    if (this.state) {
+      const entry = entries.find(e => e.isIntersecting);
+
+      if (entry) {
+        if (this.props.optimize) {
+          this.setState({
+            
+            containerWidth: Math.round(entry.boundingClientRect.width),
+            containerHeight: Math.round(entry.boundingClientRect.height)
+          });
+        }
+
+        this.setState({
+          isSeen: true
+        }); 
+
+        this.observer.unobserve(react_dom__WEBPACK_IMPORTED_MODULE_1___default.a.findDOMNode(this));
+      }
+    }
+  }
+
+  onIdleCallback() {
+    if (!this.state.isSeen) {
+      this.setState({
+        useTransition: true
+      });
+    }
+  }
+
+  reformatImageURL(url, width, height) {
+    
+    
+    
+    return `https://img-getpocket.cdn.mozilla.net/${width}x${height}/filters:format(jpeg):quality(60):no_upscale():strip_exif()/${encodeURIComponent(url)}`;
+  }
+
+  componentDidMount() {
+    this.idleCallbackId = this.props.windowObj.requestIdleCallback(this.onIdleCallback.bind(this));
+    this.observer = new IntersectionObserver(this.onSeen.bind(this), {
+      
+      
+      
+      rootMargin: `540px`
+    });
+    this.observer.observe(react_dom__WEBPACK_IMPORTED_MODULE_1___default.a.findDOMNode(this));
+  }
+
+  componentWillUnmount() {
+    
+    if (this.observer) {
+      this.observer.unobserve(react_dom__WEBPACK_IMPORTED_MODULE_1___default.a.findDOMNode(this));
+    }
+
+    if (this.idleCallbackId) {
+      this.props.windowObj.cancelIdleCallback(this.idleCallbackId);
+    }
+  }
+
+  render() {
+    let classNames = `ds-image
+      ${this.props.extraClassNames ? ` ${this.props.extraClassNames}` : ``}
+      ${this.state && this.state.useTransition ? ` use-transition` : ``}
+      ${this.state && this.state.isSeen ? ` loaded` : ``}
+    `;
+    let img;
+
+    if (this.state && this.state.isSeen) {
+      if (this.props.optimize && this.props.rawSource && !this.state.optimizedImageFailed) {
+        let source;
+        let source2x;
+
+        if (this.state && this.state.containerWidth) {
+          let baseSource = this.props.rawSource;
+          source = this.reformatImageURL(baseSource, this.state.containerWidth, this.state.containerHeight);
+          source2x = this.reformatImageURL(baseSource, this.state.containerWidth * 2, this.state.containerHeight * 2);
+          img = react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("img", {
+            alt: this.props.alt_text,
+            crossOrigin: "anonymous",
+            onError: this.onOptimizedImageError,
+            src: source,
+            srcSet: `${source2x} 2x`
+          });
+        }
+      } else if (!this.state.nonOptimizedImageFailed) {
+        img = react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("img", {
+          alt: this.props.alt_text,
+          crossOrigin: "anonymous",
+          onError: this.onNonOptimizedImageError,
+          src: this.props.source
+        });
+      } else {
+        
+        img = react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+          className: "broken-image"
+        });
+      }
+    }
+
+    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("picture", {
+      className: classNames
+    }, img);
+  }
+
+  onOptimizedImageError() {
+    
+    this.setState({
+      optimizedImageFailed: true
+    });
+  }
+
+  onNonOptimizedImageError() {
+    this.setState({
+      nonOptimizedImageFailed: true
+    });
+  }
+
+}
+DSImage.defaultProps = {
+  source: null,
+  
+  rawSource: null,
+  
+  extraClassNames: null,
+  
+  optimize: true,
+  
+  alt_text: null,
+  windowObj: window 
+
+};
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "DSLinkMenu", function() { return DSLinkMenu; });
+ var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(36);
+ var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(39);
+ var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
+
+
+
+
+
+
+class DSLinkMenu extends react__WEBPACK_IMPORTED_MODULE_2___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onMenuUpdate = this.onMenuUpdate.bind(this);
+    this.onMenuShow = this.onMenuShow.bind(this);
+    this.contextMenuButtonRef = react__WEBPACK_IMPORTED_MODULE_2___default.a.createRef();
+  }
+
+  onMenuUpdate(showContextMenu) {
+    if (!showContextMenu) {
+      const dsLinkMenuHostDiv = this.contextMenuButtonRef.current.parentElement;
+      dsLinkMenuHostDiv.parentElement.classList.remove("active", "last-item");
+    }
+  }
+
+  nextAnimationFrame() {
+    return new Promise(resolve => this.props.windowObj.requestAnimationFrame(resolve));
+  }
+
+  async onMenuShow() {
+    const dsLinkMenuHostDiv = this.contextMenuButtonRef.current.parentElement; 
+
+    await this.nextAnimationFrame();
+
+    if (this.props.windowObj.scrollMaxX > 0) {
+      dsLinkMenuHostDiv.parentElement.classList.add("last-item");
+    }
+
+    dsLinkMenuHostDiv.parentElement.classList.add("active");
+  }
+
+  render() {
+    const {
+      index,
+      dispatch
+    } = this.props;
+    const TOP_STORIES_CONTEXT_MENU_OPTIONS = ["CheckBookmarkOrArchive", "CheckSavedToPocket", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", ...(this.props.flightId ? ["ShowPrivacyInfo"] : [])];
+    const type = this.props.type || "DISCOVERY_STREAM";
+    const title = this.props.title || this.props.source;
+    return react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", null, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_1__["ContextMenuButton"], {
+      refFunction: this.contextMenuButtonRef,
+      tooltip: "newtab-menu-content-tooltip",
+      tooltipArgs: {
+        title
+      },
+      onUpdate: this.onMenuUpdate
+    }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_0__["LinkMenu"], {
+      dispatch: dispatch,
+      index: index,
+      source: type.toUpperCase(),
+      onShow: this.onMenuShow,
+      options: TOP_STORIES_CONTEXT_MENU_OPTIONS,
+      shouldSendImpressionStats: true,
+      site: {
+        referrer: "https://getpocket.com/recommendations",
+        title: this.props.title,
+        type: this.props.type,
+        url: this.props.url,
+        guid: this.props.id,
+        pocket_id: this.props.pocket_id,
+        shim: this.props.shim,
+        bookmarkGuid: this.props.bookmarkGuid,
+        flight_id: this.props.flightId
+      }
+    })));
+  }
+
+}
+DSLinkMenu.defaultProps = {
+  windowObj: window 
+
+};
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_LinkMenu", function() { return _LinkMenu; });
  __webpack_require__.d(__webpack_exports__, "LinkMenu", function() { return LinkMenu; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(28);
  var react_redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_1__);
- var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(32);
- var content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(33);
+ var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(37);
+ var content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(38);
  var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_4__);
 
@@ -4197,8 +5185,8 @@ const LinkMenuOptions = {
       data: {
         url: site.open_url || site.url,
         pocket_id: site.pocket_id,
-        ...(site.campaign_id ? {
-          campaign_id: site.campaign_id
+        ...(site.flight_id ? {
+          flight_id: site.flight_id
         } : {})
       }
     }),
@@ -4565,11 +5553,11 @@ class ImpressionStats extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureC
     } = this;
     const cards = props.rows;
 
-    if (this.props.campaignId) {
+    if (this.props.flightId) {
       this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
         type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DISCOVERY_STREAM_SPOC_IMPRESSION,
         data: {
-          campaignId: this.props.campaignId
+          flightId: this.props.flightId
         }
       }));
     }
@@ -4729,6 +5717,161 @@ ImpressionStats.defaultProps = {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "SafeAnchor", function() { return SafeAnchor; });
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
+
+
+
+
+
+class SafeAnchor extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onClick = this.onClick.bind(this);
+  }
+
+  onClick(event) {
+    
+    if (this.props.dispatch) {
+      event.preventDefault();
+      const {
+        altKey,
+        button,
+        ctrlKey,
+        metaKey,
+        shiftKey
+      } = event;
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+        type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].OPEN_LINK,
+        data: {
+          event: {
+            altKey,
+            button,
+            ctrlKey,
+            metaKey,
+            shiftKey
+          },
+          referrer: "https://getpocket.com/recommendations",
+          
+          url: event.currentTarget.href
+        }
+      }));
+    } 
+
+
+    if (this.props.onLinkClick) {
+      this.props.onLinkClick(event);
+    }
+  }
+
+  safeURI(url) {
+    let protocol = null;
+
+    try {
+      protocol = new URL(url).protocol;
+    } catch (e) {
+      return "";
+    }
+
+    const isAllowed = ["http:", "https:"].includes(protocol);
+
+    if (!isAllowed) {
+      console.warn(`${url} is not allowed for anchor targets.`); 
+
+      return "";
+    }
+
+    return url;
+  }
+
+  render() {
+    const {
+      url,
+      className
+    } = this.props;
+    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("a", {
+      href: this.safeURI(url),
+      className: className,
+      onClick: this.onClick
+    }, this.props.children);
+  }
+
+}
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "StatusMessage", function() { return StatusMessage; });
+ __webpack_require__.d(__webpack_exports__, "DSContextFooter", function() { return DSContextFooter; });
+ var _Card_types_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(43);
+ var react_transition_group__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(44);
+ var react_transition_group__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_transition_group__WEBPACK_IMPORTED_MODULE_1__);
+ var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
+
+
+
+
+
+ 
+
+const ANIMATION_DURATION = 3000;
+const StatusMessage = ({
+  icon,
+  fluentID
+}) => react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
+  className: "status-message"
+}, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("span", {
+  "aria-haspopup": "true",
+  className: `story-badge-icon icon icon-${icon}`
+}), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
+  className: "story-context-label",
+  "data-l10n-id": fluentID
+}));
+class DSContextFooter extends react__WEBPACK_IMPORTED_MODULE_2___default.a.PureComponent {
+  render() {
+    
+    const {
+      context,
+      context_type,
+      engagement,
+      display_engagement_labels
+    } = this.props;
+    const {
+      icon,
+      fluentID
+    } = _Card_types_js__WEBPACK_IMPORTED_MODULE_0__["cardContextTypes"][context_type] || {};
+    return react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
+      className: "story-footer"
+    }, context && react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("p", {
+      className: "story-sponsored-label clamp"
+    }, context), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(react_transition_group__WEBPACK_IMPORTED_MODULE_1__["TransitionGroup"], {
+      component: null
+    }, !context && (context_type || display_engagement_labels && engagement) && react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(react_transition_group__WEBPACK_IMPORTED_MODULE_1__["CSSTransition"], {
+      key: fluentID,
+      timeout: ANIMATION_DURATION,
+      classNames: "story-animate"
+    }, engagement && !context_type ? react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
+      className: "story-view-count"
+    }, engagement) : react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(StatusMessage, {
+      icon: icon,
+      fluentID: fluentID
+    }))));
+  }
+
+}
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "cardContextTypes", function() { return cardContextTypes; });
 
 
@@ -4772,15 +5915,119 @@ module.exports = ReactTransitionGroup;
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "DSEmptyState", function() { return DSEmptyState; });
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
+
+
+
+
+
+class DSEmptyState extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onReset = this.onReset.bind(this);
+    this.state = {};
+  }
+
+  componentWillUnmount() {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
+  }
+
+  onReset() {
+    if (this.props.dispatch && this.props.feed) {
+      const {
+        feed
+      } = this.props;
+      const {
+        url
+      } = feed;
+      this.props.dispatch({
+        type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DISCOVERY_STREAM_FEED_UPDATE,
+        data: {
+          feed: { ...feed,
+            data: { ...feed.data,
+              status: "waiting"
+            }
+          },
+          url
+        }
+      });
+      this.setState({
+        waiting: true
+      });
+      this.timeout = setTimeout(() => {
+        this.timeout = null;
+        this.setState({
+          waiting: false
+        });
+      }, 300);
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+        type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DISCOVERY_STREAM_RETRY_FEED,
+        data: {
+          feed
+        }
+      }));
+    }
+  }
+
+  renderButton() {
+    if (this.props.status === "waiting" || this.state.waiting) {
+      return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("button", {
+        className: "try-again-button waiting",
+        "data-l10n-id": "newtab-discovery-empty-section-topstories-loading"
+      });
+    }
+
+    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("button", {
+      className: "try-again-button",
+      onClick: this.onReset,
+      "data-l10n-id": "newtab-discovery-empty-section-topstories-try-again-button"
+    });
+  }
+
+  renderState() {
+    if (this.props.status === "waiting" || this.props.status === "failed") {
+      return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_1___default.a.Fragment, null, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("h2", {
+        "data-l10n-id": "newtab-discovery-empty-section-topstories-timed-out"
+      }), this.renderButton());
+    }
+
+    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_1___default.a.Fragment, null, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("h2", {
+      "data-l10n-id": "newtab-discovery-empty-section-topstories-header"
+    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("p", {
+      "data-l10n-id": "newtab-discovery-empty-section-topstories-content"
+    }));
+  }
+
+  render() {
+    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
+      className: "section-empty-state"
+    }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
+      className: "empty-state-message"
+    }, this.renderState()));
+  }
+
+}
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "CollapsibleSection", function() { return CollapsibleSection; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(39);
- var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(41);
+ var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(47);
+ var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(49);
  var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
- var content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(42);
- var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(43);
- var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(34);
+ var content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(50);
+ var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(51);
+ var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(39);
 
 
 
@@ -5063,7 +6310,7 @@ CollapsibleSection.defaultProps = {
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "ErrorBoundaryFallback", function() { return ErrorBoundaryFallback; });
  __webpack_require__.d(__webpack_exports__, "ErrorBoundary", function() { return ErrorBoundary; });
- var content_src_components_A11yLinkButton_A11yLinkButton__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(40);
+ var content_src_components_A11yLinkButton_A11yLinkButton__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(48);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
 
@@ -5227,10 +6474,10 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_SectionMenu", function() { return _SectionMenu; });
  __webpack_require__.d(__webpack_exports__, "SectionMenu", function() { return SectionMenu; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(32);
+ var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(37);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
- var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(43);
+ var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(51);
 
 
 
@@ -5460,23 +6707,724 @@ const SectionMenuOptions = {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "DSDismiss", function() { return DSDismiss; });
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
+ var content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(38);
+
+
+
+
+
+
+class DSDismiss extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onDismissClick = this.onDismissClick.bind(this);
+    this.onHover = this.onHover.bind(this);
+    this.offHover = this.offHover.bind(this);
+    this.state = {
+      hovering: false
+    };
+  }
+
+  onDismissClick() {
+    const index = 0;
+    const source = "DISCOVERY_STREAM";
+    const blockUrlOption = content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_2__["LinkMenuOptions"].BlockUrl(this.props.data, index, source);
+    const {
+      action,
+      impression,
+      userEvent
+    } = blockUrlOption;
+    this.props.dispatch(action);
+    const userEventData = Object.assign({
+      event: userEvent,
+      source,
+      action_position: index
+    }, this.props.data);
+    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent(userEventData));
+
+    if (impression && this.props.shouldSendImpressionStats) {
+      this.props.dispatch(impression);
+    }
+  }
+
+  onHover() {
+    this.setState({
+      hovering: true
+    });
+  }
+
+  offHover() {
+    this.setState({
+      hovering: false
+    });
+  }
+
+  render() {
+    let className = `ds-dismiss
+      ${this.state.hovering ? ` hovering` : ``}
+      ${this.props.extraClasses ? ` ${this.props.extraClasses}` : ``}`;
+    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
+      className: className
+    }, this.props.children, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("button", {
+      className: "ds-dismiss-button",
+      onHover: this.onHover,
+      onClick: this.onDismissClick,
+      onMouseEnter: this.onHover,
+      onMouseLeave: this.offHover,
+      "aria-label": "dismiss"
+    }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("span", {
+      className: "icon icon-dismiss"
+    })));
+  }
+
+}
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "DSMessage", function() { return DSMessage; });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+ var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(41);
+ var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(49);
+
+
+
+
+
+
+class DSMessage extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
+  render() {
+    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      className: "ds-message"
+    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("header", {
+      className: "title"
+    }, this.props.icon && react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      className: "glyph",
+      style: {
+        backgroundImage: `url(${this.props.icon})`
+      }
+    }), this.props.title && react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", {
+      className: "title-text"
+    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__["FluentOrText"], {
+      message: this.props.title
+    })), this.props.link_text && this.props.link_url && react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_1__["SafeAnchor"], {
+      className: "link",
+      url: this.props.link_url
+    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__["FluentOrText"], {
+      message: this.props.link_text
+    }))));
+  }
+
+}
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "DSPrivacyModal", function() { return DSPrivacyModal; });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
+ var content_src_asrouter_components_ModalOverlay_ModalOverlay__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(21);
+
+
+
+
+
+
+class DSPrivacyModal extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.closeModal = this.closeModal.bind(this);
+    this.onLinkClick = this.onLinkClick.bind(this);
+  }
+
+  onLinkClick(event) {
+    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_1__["actionCreators"].UserEvent({
+      event: "CLICK_PRIVACY_INFO",
+      source: "DS_PRIVACY_MODAL"
+    }));
+  }
+
+  closeModal() {
+    this.props.dispatch({
+      type: `HIDE_PRIVACY_INFO`,
+      data: {}
+    });
+  }
+
+  render() {
+    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(content_src_asrouter_components_ModalOverlay_ModalOverlay__WEBPACK_IMPORTED_MODULE_2__["ModalOverlayWrapper"], {
+      onClose: this.closeModal,
+      innerClassName: "ds-privacy-modal"
+    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      className: "privacy-notice"
+    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h3", {
+      "data-l10n-id": "newtab-privacy-modal-header"
+    }), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("p", {
+      "data-l10n-id": "newtab-privacy-modal-paragraph"
+    }), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("a", {
+      "data-l10n-id": "newtab-privacy-modal-link",
+      onClick: this.onLinkClick,
+      href: "https://www.mozilla.org/en-US/privacy/firefox/"
+    })), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("section", {
+      className: "actions"
+    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
+      className: "done",
+      type: "submit",
+      onClick: this.closeModal,
+      "data-l10n-id": "newtab-privacy-modal-button-done"
+    })));
+  }
+
+}
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "DSTextPromo", function() { return DSTextPromo; });
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ var _DSImage_DSImage_jsx__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(34);
+ var _DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(40);
+ var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
+ var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(41);
+
+
+
+
+
+
+
+
+class DSTextPromo extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onLinkClick = this.onLinkClick.bind(this);
+  }
+
+  onLinkClick() {
+    if (this.props.dispatch) {
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({
+        event: "CLICK",
+        source: this.props.type.toUpperCase(),
+        action_position: this.props.pos
+      }));
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ImpressionStats({
+        source: this.props.type.toUpperCase(),
+        click: 0,
+        tiles: [{
+          id: this.props.id,
+          pos: this.props.pos,
+          ...(this.props.shim && this.props.shim.click ? {
+            shim: this.props.shim.click
+          } : {})
+        }]
+      }));
+    }
+  }
+
+  render() {
+    return react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
+      className: "ds-text-promo"
+    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_DSImage_DSImage_jsx__WEBPACK_IMPORTED_MODULE_1__["DSImage"], {
+      alt_text: this.props.alt_text,
+      source: this.props.image,
+      rawSource: this.props.raw_image_src
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
+      className: "text"
+    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("h3", null, `${this.props.header}\u2003`, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_4__["SafeAnchor"], {
+      className: "ds-chevron-link",
+      dispatch: this.props.dispatch,
+      onLinkClick: this.onLinkClick,
+      url: this.props.cta_url
+    }, this.props.cta_text)), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("p", {
+      className: "subtitle"
+    }, this.props.subtitle)), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_2__["ImpressionStats"], {
+      flightId: this.props.flightId,
+      rows: [{
+        id: this.props.id,
+        pos: this.props.pos,
+        shim: this.props.shim && this.props.shim.impression
+      }],
+      dispatch: this.props.dispatch,
+      source: this.props.type
+    }));
+  }
+
+}
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "Hero", function() { return Hero; });
+ var _DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(33);
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
+ var _DSEmptyState_DSEmptyState_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(45);
+ var _DSImage_DSImage_jsx__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(34);
+ var _DSLinkMenu_DSLinkMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(35);
+ var _DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(40);
+ var _List_List_jsx__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(57);
+ var react__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_7___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_7__);
+ var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(41);
+ var _DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(42);
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Hero extends react__WEBPACK_IMPORTED_MODULE_7___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onLinkClick = this.onLinkClick.bind(this);
+  }
+
+  onLinkClick(event) {
+    if (this.props.dispatch) {
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_1__["actionCreators"].UserEvent({
+        event: "CLICK",
+        source: this.props.type.toUpperCase(),
+        action_position: this.heroRec.pos
+      }));
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_1__["actionCreators"].ImpressionStats({
+        source: this.props.type.toUpperCase(),
+        click: 0,
+        tiles: [{
+          id: this.heroRec.id,
+          pos: this.heroRec.pos,
+          ...(this.heroRec.shim && this.heroRec.shim.click ? {
+            shim: this.heroRec.shim.click
+          } : {})
+        }]
+      }));
+    }
+  }
+
+  renderHero() {
+    let [heroRec, ...otherRecs] = this.props.data.recommendations.slice(0, this.props.items);
+    this.heroRec = heroRec;
+    const cards = [];
+
+    for (let index = 0; index < this.props.items - 1; index++) {
+      const rec = otherRecs[index];
+      cards.push(!rec || rec.placeholder ? react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__["PlaceholderDSCard"], {
+        key: `dscard-${index}`
+      }) : react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__["DSCard"], {
+        flightId: rec.flight_id,
+        key: `dscard-${rec.id}`,
+        image_src: rec.image_src,
+        raw_image_src: rec.raw_image_src,
+        title: rec.title,
+        url: rec.url,
+        id: rec.id,
+        shim: rec.shim,
+        pos: rec.pos,
+        type: this.props.type,
+        dispatch: this.props.dispatch,
+        context: rec.context,
+        context_type: rec.context_type,
+        source: rec.domain,
+        pocket_id: rec.pocket_id,
+        bookmarkGuid: rec.bookmarkGuid,
+        engagement: rec.engagement
+      }));
+    }
+
+    let heroCard = null;
+
+    if (!heroRec || heroRec.placeholder) {
+      heroCard = react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__["PlaceholderDSCard"], null);
+    } else {
+      heroCard = react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", {
+        className: "ds-hero-item",
+        key: `dscard-${heroRec.id}`
+      }, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_8__["SafeAnchor"], {
+        className: "wrapper",
+        dispatch: this.props.dispatch,
+        onLinkClick: this.onLinkClick,
+        url: heroRec.url
+      }, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", {
+        className: "img-wrapper"
+      }, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_DSImage_DSImage_jsx__WEBPACK_IMPORTED_MODULE_3__["DSImage"], {
+        extraClassNames: "img",
+        source: heroRec.image_src,
+        rawSource: heroRec.raw_image_src
+      })), react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", {
+        className: "meta"
+      }, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", {
+        className: "header-and-excerpt"
+      }, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("p", {
+        className: "source clamp"
+      }, heroRec.domain), react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("header", {
+        className: "clamp"
+      }, heroRec.title), react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("p", {
+        className: "excerpt clamp"
+      }, heroRec.excerpt)), react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_9__["DSContextFooter"], {
+        context: heroRec.context,
+        context_type: heroRec.context_type,
+        engagement: heroRec.engagement
+      })), react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_5__["ImpressionStats"], {
+        flightId: heroRec.flight_id,
+        rows: [{
+          id: heroRec.id,
+          pos: heroRec.pos,
+          ...(heroRec.shim && heroRec.shim.impression ? {
+            shim: heroRec.shim.impression
+          } : {})
+        }],
+        dispatch: this.props.dispatch,
+        source: this.props.type
+      })), react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_DSLinkMenu_DSLinkMenu__WEBPACK_IMPORTED_MODULE_4__["DSLinkMenu"], {
+        id: heroRec.id,
+        index: heroRec.pos,
+        dispatch: this.props.dispatch,
+        url: heroRec.url,
+        title: heroRec.title,
+        source: heroRec.domain,
+        type: this.props.type,
+        pocket_id: heroRec.pocket_id,
+        shim: heroRec.shim,
+        bookmarkGuid: heroRec.bookmarkGuid,
+        flightId: heroRec.flight_id
+      }));
+    }
+
+    let list = react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_List_List_jsx__WEBPACK_IMPORTED_MODULE_6__["List"], {
+      recStartingPoint: 1,
+      data: this.props.data,
+      feed: this.props.feed,
+      hasImages: true,
+      hasBorders: this.props.border === `border`,
+      items: this.props.items - 1,
+      type: `Hero`
+    });
+    return react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", {
+      className: `ds-hero ds-hero-${this.props.border}`
+    }, heroCard, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", {
+      className: `${this.props.subComponentType}`
+    }, this.props.subComponentType === `cards` ? cards : list));
+  }
+
+  render() {
+    const {
+      data
+    } = this.props; 
+
+    if (!data || !data.recommendations) {
+      return react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", null);
+    } 
+
+
+    const isEmpty = data.recommendations.length === 0;
+    return react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", null, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", {
+      className: "ds-header"
+    }, this.props.title), isEmpty ? react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", {
+      className: "ds-hero empty"
+    }, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_DSEmptyState_DSEmptyState_jsx__WEBPACK_IMPORTED_MODULE_2__["DSEmptyState"], {
+      status: data.status,
+      dispatch: this.props.dispatch,
+      feed: this.props.feed
+    })) : this.renderHero());
+  }
+
+}
+Hero.defaultProps = {
+  data: {},
+  border: `border`,
+  items: 1 
+
+};
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "ListItem", function() { return ListItem; });
+ __webpack_require__.d(__webpack_exports__, "PlaceholderListItem", function() { return PlaceholderListItem; });
+ __webpack_require__.d(__webpack_exports__, "_List", function() { return _List; });
+ __webpack_require__.d(__webpack_exports__, "List", function() { return List; });
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(28);
+ var react_redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_1__);
+ var _DSEmptyState_DSEmptyState_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(45);
+ var _DSImage_DSImage_jsx__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(34);
+ var _DSLinkMenu_DSLinkMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(35);
+ var _DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(40);
+ var react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_6__);
+ var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(41);
+ var _DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(42);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ListItem extends react__WEBPACK_IMPORTED_MODULE_6___default.a.PureComponent {
+  
+  
+  constructor(props) {
+    super(props);
+    this.onLinkClick = this.onLinkClick.bind(this);
+  }
+
+  onLinkClick(event) {
+    if (this.props.dispatch) {
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({
+        event: "CLICK",
+        source: this.props.type.toUpperCase(),
+        action_position: this.props.pos
+      }));
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ImpressionStats({
+        source: this.props.type.toUpperCase(),
+        click: 0,
+        tiles: [{
+          id: this.props.id,
+          pos: this.props.pos,
+          ...(this.props.shim && this.props.shim.click ? {
+            shim: this.props.shim.click
+          } : {})
+        }]
+      }));
+    }
+  }
+
+  render() {
+    return react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("li", {
+      className: `ds-list-item${this.props.placeholder ? " placeholder" : ""}`
+    }, react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_7__["SafeAnchor"], {
+      className: "ds-list-item-link",
+      dispatch: this.props.dispatch,
+      onLinkClick: !this.props.placeholder ? this.onLinkClick : undefined,
+      url: this.props.url
+    }, react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", {
+      className: "ds-list-item-text"
+    }, react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("p", null, react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("span", {
+      className: "ds-list-item-info clamp"
+    }, this.props.domain)), react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", {
+      className: "ds-list-item-body"
+    }, react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", {
+      className: "ds-list-item-title clamp"
+    }, this.props.title), this.props.excerpt && react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", {
+      className: "ds-list-item-excerpt clamp"
+    }, this.props.excerpt)), react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_8__["DSContextFooter"], {
+      context: this.props.context,
+      context_type: this.props.context_type,
+      engagement: this.props.engagement
+    })), react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_DSImage_DSImage_jsx__WEBPACK_IMPORTED_MODULE_3__["DSImage"], {
+      extraClassNames: "ds-list-image",
+      source: this.props.image_src,
+      rawSource: this.props.raw_image_src
+    }), react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_5__["ImpressionStats"], {
+      flightId: this.props.flightId,
+      rows: [{
+        id: this.props.id,
+        pos: this.props.pos,
+        ...(this.props.shim && this.props.shim.impression ? {
+          shim: this.props.shim.impression
+        } : {})
+      }],
+      dispatch: this.props.dispatch,
+      source: this.props.type
+    })), !this.props.placeholder && react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_DSLinkMenu_DSLinkMenu__WEBPACK_IMPORTED_MODULE_4__["DSLinkMenu"], {
+      id: this.props.id,
+      index: this.props.pos,
+      dispatch: this.props.dispatch,
+      url: this.props.url,
+      title: this.props.title,
+      source: this.props.source,
+      type: this.props.type,
+      pocket_id: this.props.pocket_id,
+      shim: this.props.shim,
+      bookmarkGuid: this.props.bookmarkGuid,
+      flightId: this.props.flightId
+    }));
+  }
+
+}
+const PlaceholderListItem = props => react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(ListItem, {
+  placeholder: true
+});
+
+
+
+
+function _List(props) {
+  const renderList = () => {
+    const recs = props.data.recommendations.slice(props.recStartingPoint, props.recStartingPoint + props.items);
+    const recMarkup = [];
+
+    for (let index = 0; index < props.items; index++) {
+      const rec = recs[index];
+      recMarkup.push(!rec || rec.placeholder ? react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(PlaceholderListItem, {
+        key: `ds-list-item-${index}`
+      }) : react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(ListItem, {
+        key: `ds-list-item-${rec.id}`,
+        dispatch: props.dispatch,
+        flightId: rec.flight_id,
+        domain: rec.domain,
+        excerpt: rec.excerpt,
+        id: rec.id,
+        shim: rec.shim,
+        image_src: rec.image_src,
+        raw_image_src: rec.raw_image_src,
+        pos: rec.pos,
+        title: rec.title,
+        context: rec.context,
+        context_type: rec.context_type,
+        type: props.type,
+        url: rec.url,
+        pocket_id: rec.pocket_id,
+        bookmarkGuid: rec.bookmarkGuid,
+        engagement: rec.engagement
+      }));
+    }
+
+    const listStyles = ["ds-list", props.fullWidth ? "ds-list-full-width" : "", props.hasBorders ? "ds-list-borders" : "", props.hasImages ? "ds-list-images" : "", props.hasNumbers ? "ds-list-numbers" : ""];
+    return react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("ul", {
+      className: listStyles.join(" ")
+    }, recMarkup);
+  };
+
+  const {
+    data
+  } = props;
+
+  if (!data || !data.recommendations) {
+    return null;
+  } 
+
+
+  const isEmpty = data.recommendations.length === 0;
+  return react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", null, props.header && props.header.title ? react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", {
+    className: "ds-header"
+  }, props.header.title) : null, isEmpty ? react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", {
+    className: "ds-list empty"
+  }, react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_DSEmptyState_DSEmptyState_jsx__WEBPACK_IMPORTED_MODULE_2__["DSEmptyState"], {
+    status: data.status,
+    dispatch: props.dispatch,
+    feed: props.feed
+  })) : renderList());
+}
+_List.defaultProps = {
+  recStartingPoint: 0,
+  
+  fullWidth: false,
+  
+  hasBorders: false,
+  
+  hasImages: false,
+  
+  hasNumbers: false,
+  
+  items: 6 
+
+};
+const List = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect"])(state => ({
+  DiscoveryStream: state.DiscoveryStream
+}))(_List);
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "_Highlights", function() { return _Highlights; });
+ __webpack_require__.d(__webpack_exports__, "Highlights", function() { return Highlights; });
+ var react_redux__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(28);
+ var react_redux__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_0__);
+ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
+ var content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(59);
+function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
+
+
+
+
+
+
+
+class _Highlights extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
+  render() {
+    const section = this.props.Sections.find(s => s.id === "highlights");
+
+    if (!section || !section.enabled) {
+      return null;
+    }
+
+    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
+      className: "ds-highlights sections-list"
+    }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_2__["SectionIntl"], _extends({}, section, {
+      isFixed: true
+    })));
+  }
+
+}
+const Highlights = Object(react_redux__WEBPACK_IMPORTED_MODULE_0__["connect"])(state => ({
+  Sections: state.Sections
+}))(_Highlights);
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "Section", function() { return Section; });
  __webpack_require__.d(__webpack_exports__, "SectionIntl", function() { return SectionIntl; });
  __webpack_require__.d(__webpack_exports__, "_Sections", function() { return _Sections; });
  __webpack_require__.d(__webpack_exports__, "Sections", function() { return Sections; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var content_src_components_Card_Card__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(45);
- var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(38);
- var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(47);
- var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(41);
+ var content_src_components_Card_Card__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(60);
+ var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(46);
+ var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(62);
+ var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(49);
  var react_redux__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(28);
  var react_redux__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_5__);
- var content_src_components_MoreRecommendations_MoreRecommendations__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(49);
- var content_src_components_PocketLoggedInCta_PocketLoggedInCta__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(50);
+ var content_src_components_MoreRecommendations_MoreRecommendations__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(64);
+ var content_src_components_PocketLoggedInCta_PocketLoggedInCta__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(65);
  var react__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_8___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_8__);
- var content_src_components_Topics_Topics__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(51);
- var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(52);
+ var content_src_components_Topics_Topics__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(66);
+ var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(67);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -5835,14 +7783,14 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "Card", function() { return Card; });
  __webpack_require__.d(__webpack_exports__, "PlaceholderCard", function() { return PlaceholderCard; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var _types__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(36);
+ var _types__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(43);
  var react_redux__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(28);
  var react_redux__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_2__);
- var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(34);
- var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(31);
+ var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(39);
+ var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(36);
  var react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_5__);
- var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(46);
+ var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(61);
 
 
 
@@ -6247,7 +8195,7 @@ const ScreenshotUtils = {
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "ComponentPerfTimer", function() { return ComponentPerfTimer; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(48);
+ var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(63);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
 
@@ -6680,18 +8628,18 @@ __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "_TopSites", function() { return _TopSites; });
  __webpack_require__.d(__webpack_exports__, "TopSites", function() { return TopSites; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(53);
- var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(38);
- var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(47);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(68);
+ var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(46);
+ var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(62);
  var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(28);
  var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
  var _asrouter_components_ModalOverlay_ModalOverlay__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(21);
  var react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_6__);
- var _SearchShortcutsForm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(54);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(62);
- var _TopSiteForm__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(64);
- var _TopSite__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(55);
+ var _SearchShortcutsForm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(69);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(81);
+ var _TopSiteForm__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(83);
+ var _TopSite__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(70);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -6934,7 +8882,7 @@ __webpack_require__.r(__webpack_exports__);
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(53);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(68);
 
 
 
@@ -7125,14 +9073,14 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "TopSitePlaceholder", function() { return TopSitePlaceholder; });
  __webpack_require__.d(__webpack_exports__, "TopSiteList", function() { return TopSiteList; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(53);
- var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(31);
- var _DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(35);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(68);
+ var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(36);
+ var _DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(40);
  var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_4__);
- var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(46);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(62);
- var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(34);
+ var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(61);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(81);
+ var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(39);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -7393,7 +9341,7 @@ class TopSiteLink extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureCompo
     }, title)), link.type === SPOC_TYPE ? react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("span", {
       className: "top-site-spoc-label"
     }, "Sponsored") : null), children, link.type === SPOC_TYPE ? react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_3__["ImpressionStats"], {
-      campaignId: link.campaignId,
+      flightId: link.flightId,
       rows: [{
         id: link.id,
         pos: link.pos,
@@ -7797,6 +9745,519 @@ class TopSiteList extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureCompo
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "HorizontalRule", function() { return HorizontalRule; });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+
+
+
+
+class HorizontalRule extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
+  render() {
+    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("hr", {
+      className: "ds-hr"
+    });
+  }
+
+}
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "Topic", function() { return Topic; });
+ __webpack_require__.d(__webpack_exports__, "Navigation", function() { return Navigation; });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+ var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(41);
+ var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(49);
+
+
+
+
+
+
+class Topic extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
+  render() {
+    const {
+      url,
+      name
+    } = this.props;
+    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("li", null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_1__["SafeAnchor"], {
+      key: name,
+      url: url
+    }, name));
+  }
+
+}
+class Navigation extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
+  render() {
+    const {
+      links
+    } = this.props || [];
+    const {
+      alignment
+    } = this.props || "centered";
+    const header = this.props.header || {};
+    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      className: `ds-navigation ds-navigation-${alignment}`
+    }, header.title ? react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__["FluentOrText"], {
+      message: header.title
+    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      className: "ds-header"
+    })) : null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("ul", null, links && links.map(t => react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(Topic, {
+      key: t.name,
+      url: t.url,
+      name: t.name
+    })))));
+  }
+
+}
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "SectionTitle", function() { return SectionTitle; });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+
+
+
+
+class SectionTitle extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
+  render() {
+    const {
+      header: {
+        title,
+        subtitle
+      }
+    } = this.props;
+    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      className: "ds-section-title"
+    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      className: "title"
+    }, title), subtitle ? react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      className: "subtitle"
+    }, subtitle) : null);
+  }
+
+}
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "selectLayoutRender", function() { return selectLayoutRender; });
+
+
+
+const selectLayoutRender = ({
+  state = {},
+  prefs = {},
+  rollCache = [],
+  lang = ""
+}) => {
+  const {
+    layout,
+    feeds,
+    spocs
+  } = state;
+  let spocIndexMap = {};
+  let bufferRollCache = []; 
+
+  let chosenSpocs = new Set();
+  let unchosenSpocs = new Set();
+
+  function rollForSpocs(data, spocsConfig, spocsData, placementName) {
+    if (!spocIndexMap[placementName] && spocIndexMap[placementName] !== 0) {
+      spocIndexMap[placementName] = 0;
+    }
+
+    const results = [...data];
+
+    for (let position of spocsConfig.positions) {
+      const spoc = spocsData[spocIndexMap[placementName]];
+
+      if (!spoc) {
+        break;
+      } 
+
+
+      let rickRoll;
+
+      if (!rollCache.length) {
+        rickRoll = Math.random();
+        bufferRollCache.push(rickRoll);
+      } else {
+        rickRoll = rollCache.shift();
+        bufferRollCache.push(rickRoll);
+      }
+
+      if (rickRoll <= spocsConfig.probability) {
+        spocIndexMap[placementName]++;
+
+        if (!spocs.blocked.includes(spoc.url)) {
+          results.splice(position.index, 0, spoc);
+          chosenSpocs.add(spoc);
+        }
+      } else {
+        unchosenSpocs.add(spoc);
+      }
+    }
+
+    return results;
+  }
+
+  const positions = {};
+  const DS_COMPONENTS = ["Message", "TextPromo", "SectionTitle", "Navigation", "CardGrid", "Hero", "HorizontalRule", "List"];
+  const filterArray = [];
+
+  if (!prefs["feeds.topsites"]) {
+    filterArray.push("TopSites");
+  }
+
+  if (!lang.startsWith("en-")) {
+    filterArray.push("Navigation");
+  }
+
+  if (!prefs["feeds.section.topstories"]) {
+    filterArray.push(...DS_COMPONENTS);
+  }
+
+  const placeholderComponent = component => {
+    if (!component.feed) {
+      
+      return { ...component,
+        data: {
+          spocs: []
+        }
+      };
+    }
+
+    const data = {
+      recommendations: []
+    };
+    let items = 0;
+
+    if (component.properties && component.properties.items) {
+      items = component.properties.items;
+    }
+
+    for (let i = 0; i < items; i++) {
+      data.recommendations.push({
+        placeholder: true
+      });
+    }
+
+    return { ...component,
+      data
+    };
+  }; 
+
+
+  const handleSpocs = (data, component) => {
+    let result = [...data]; 
+
+    if (component.spocs && component.spocs.positions && component.spocs.positions.length) {
+      const placement = component.placement || {};
+      const placementName = placement.name || "spocs";
+      const spocsData = spocs.data[placementName]; 
+
+      if (spocs.loaded && spocsData && spocsData.length) {
+        result = rollForSpocs(result, component.spocs, spocsData, placementName);
+      }
+    }
+
+    return result;
+  };
+
+  const handleComponent = component => {
+    return { ...component,
+      data: {
+        spocs: handleSpocs([], component)
+      }
+    };
+  };
+
+  const handleComponentWithFeed = component => {
+    positions[component.type] = positions[component.type] || 0;
+    let data = {
+      recommendations: []
+    };
+    const feed = feeds.data[component.feed.url];
+
+    if (feed && feed.data) {
+      data = { ...feed.data,
+        recommendations: [...(feed.data.recommendations || [])]
+      };
+    }
+
+    if (component && component.properties && component.properties.offset) {
+      data = { ...data,
+        recommendations: data.recommendations.slice(component.properties.offset)
+      };
+    }
+
+    data = { ...data,
+      recommendations: handleSpocs(data.recommendations, component)
+    };
+    let items = 0;
+
+    if (component.properties && component.properties.items) {
+      items = Math.min(component.properties.items, data.recommendations.length);
+    } 
+    
+    
+
+
+    for (let i = 0; i < items; i++) {
+      data.recommendations[i] = { ...data.recommendations[i],
+        pos: positions[component.type]++
+      };
+    }
+
+    return { ...component,
+      data
+    };
+  };
+
+  const renderLayout = () => {
+    const renderedLayoutArray = [];
+
+    for (const row of layout.filter(r => r.components.filter(c => !filterArray.includes(c.type)).length)) {
+      let components = [];
+      renderedLayoutArray.push({ ...row,
+        components
+      });
+
+      for (const component of row.components.filter(c => !filterArray.includes(c.type))) {
+        const spocsConfig = component.spocs;
+
+        if (spocsConfig || component.feed) {
+          
+          if (component.feed && !feeds.data[component.feed.url] || spocsConfig && spocsConfig.positions && spocsConfig.positions.length && !spocs.loaded) {
+            components.push(placeholderComponent(component));
+            return renderedLayoutArray;
+          }
+
+          if (component.feed) {
+            components.push(handleComponentWithFeed(component));
+          } else {
+            components.push(handleComponent(component));
+          }
+        } else {
+          components.push(component);
+        }
+      }
+    }
+
+    return renderedLayoutArray;
+  };
+
+  const layoutRender = renderLayout(); 
+
+  if (!rollCache.length) {
+    rollCache.push(...bufferRollCache);
+  } 
+  
+  
+  
+
+
+  let spocsFill = [];
+
+  if (spocs.loaded && feeds.loaded && spocs.data.spocs) {
+    const chosenSpocsFill = [...chosenSpocs].map(spoc => ({
+      id: spoc.id,
+      reason: "n/a",
+      displayed: 1,
+      full_recalc: 0
+    }));
+    const unchosenSpocsFill = [...unchosenSpocs].filter(spoc => !chosenSpocs.has(spoc)).map(spoc => ({
+      id: spoc.id,
+      reason: "probability_selection",
+      displayed: 0,
+      full_recalc: 0
+    }));
+    const outOfPositionSpocsFill = spocs.data.spocs.slice(spocIndexMap.spocs).filter(spoc => !unchosenSpocs.has(spoc)).map(spoc => ({
+      id: spoc.id,
+      reason: "out_of_position",
+      displayed: 0,
+      full_recalc: 0
+    }));
+    spocsFill = [...chosenSpocsFill, ...unchosenSpocsFill, ...outOfPositionSpocsFill];
+  }
+
+  return {
+    spocsFill,
+    layoutRender
+  };
+};
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "_TopSites", function() { return _TopSites; });
+ __webpack_require__.d(__webpack_exports__, "TopSites", function() { return TopSites; });
+ var react_redux__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(28);
+ var react_redux__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_0__);
+ var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(67);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(81);
+ var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
+
+
+
+
+
+
+
+class _TopSites extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponent {
+  
+  getFirstAvailableSpoc(topSites, data) {
+    const {
+      spocs
+    } = data;
+
+    if (!spocs || spocs.length === 0) {
+      return null;
+    }
+
+    const userTopSites = new Set(topSites.map(topSite => topSite && topSite.url)); 
+    
+
+    return spocs.find(spoc => !userTopSites.has(spoc.url) && !userTopSites.has(`http://${spoc.domain}`) && !userTopSites.has(`https://${spoc.domain}`) && !userTopSites.has(`http://www.${spoc.domain}`) && !userTopSites.has(`https://www.${spoc.domain}`));
+  } 
+  
+
+
+  getFirstAvailableIndex(topSites, promoAlignment) {
+    if (promoAlignment === "left") {
+      return topSites.findIndex(topSite => !topSite || !topSite.isPinned);
+    } 
+
+
+    if (topSites.length < common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_2__["TOP_SITES_MAX_SITES_PER_ROW"]) {
+      return -1;
+    } 
+    
+
+
+    let endOfRow = common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_2__["TOP_SITES_MAX_SITES_PER_ROW"] - 1;
+
+    for (let i = endOfRow; i >= 0; i--) {
+      if (!topSites[i] || !topSites[i].isPinned) {
+        return i;
+      }
+    }
+
+    for (let i = endOfRow + 1; i < topSites.length; i++) {
+      if (!topSites[i] || !topSites[i].isPinned) {
+        return i;
+      }
+    }
+
+    return -1;
+  }
+
+  insertSpocContent(TopSites, data, promoAlignment) {
+    if (!TopSites.rows || TopSites.rows.length === 0 || !data.spocs || data.spocs.length === 0) {
+      return null;
+    }
+
+    let topSites = [...TopSites.rows];
+    const topSiteSpoc = this.getFirstAvailableSpoc(topSites, data);
+
+    if (!topSiteSpoc) {
+      return null;
+    }
+
+    const link = {
+      customScreenshotURL: topSiteSpoc.image_src,
+      type: "SPOC",
+      label: topSiteSpoc.sponsor,
+      title: topSiteSpoc.sponsor,
+      url: topSiteSpoc.url,
+      flightId: topSiteSpoc.flight_id,
+      id: topSiteSpoc.id,
+      guid: topSiteSpoc.id,
+      shim: topSiteSpoc.shim,
+      
+      
+      
+      
+      pos: promoAlignment === "left" ? 0 : 7
+    };
+    const firstAvailableIndex = this.getFirstAvailableIndex(topSites, promoAlignment);
+
+    if (firstAvailableIndex === -1) {
+      topSites.push(link);
+    } else {
+      
+      
+      let shiftedTopSite = topSites[firstAvailableIndex];
+      let index = firstAvailableIndex + 1; 
+
+      while (shiftedTopSite) {
+        if (index === topSites.length) {
+          topSites.push(shiftedTopSite);
+          shiftedTopSite = null;
+        } else if (topSites[index] && topSites[index].isPinned) {
+          index += 1;
+        } else {
+          const nextTopSite = topSites[index];
+          topSites[index] = shiftedTopSite;
+          shiftedTopSite = nextTopSite;
+          index += 1;
+        }
+      }
+
+      topSites[firstAvailableIndex] = link;
+    }
+
+    return { ...TopSites,
+      rows: topSites
+    };
+  }
+
+  render() {
+    const {
+      header = {},
+      data,
+      promoAlignment,
+      TopSites
+    } = this.props;
+    const TopSitesWithSpoc = TopSites && data && promoAlignment ? this.insertSpocContent(TopSites, data, promoAlignment) : null;
+    return react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
+      className: `ds-top-sites ${TopSitesWithSpoc ? "top-sites-spoc" : ""}`
+    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_1__["TopSites"], {
+      isFixed: true,
+      title: header.title,
+      TopSitesWithSpoc: TopSitesWithSpoc
+    }));
+  }
+
+}
+const TopSites = Object(react_redux__WEBPACK_IMPORTED_MODULE_0__["connect"])(state => ({
+  TopSites: state.TopSites
+}))(_TopSites);
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_Search", function() { return _Search; });
  __webpack_require__.d(__webpack_exports__, "Search", function() { return Search; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
@@ -7987,7 +10448,7 @@ const Search = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect"])()(_Se
 __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "DetectUserSessionStart", function() { return DetectUserSessionStart; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(48);
+ var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(63);
 
 
 
@@ -8060,2240 +10521,6 @@ class DetectUserSessionStart {
 
 }
 }.call(this, __webpack_require__(1)))
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-
-
-var Actions = __webpack_require__(2);
-
-
-var external_React_ = __webpack_require__(9);
-var external_React_default = __webpack_require__.n(external_React_);
-
-
-var external_ReactDOM_ = __webpack_require__(12);
-var external_ReactDOM_default = __webpack_require__.n(external_ReactDOM_);
-
-
-
-
-
-
-
-class DSImage_DSImage extends external_React_default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.onOptimizedImageError = this.onOptimizedImageError.bind(this);
-    this.onNonOptimizedImageError = this.onNonOptimizedImageError.bind(this);
-    this.state = {
-      isSeen: false,
-      optimizedImageFailed: false,
-      useTransition: false
-    };
-  }
-
-  onSeen(entries) {
-    if (this.state) {
-      const entry = entries.find(e => e.isIntersecting);
-
-      if (entry) {
-        if (this.props.optimize) {
-          this.setState({
-            
-            containerWidth: Math.round(entry.boundingClientRect.width),
-            containerHeight: Math.round(entry.boundingClientRect.height)
-          });
-        }
-
-        this.setState({
-          isSeen: true
-        }); 
-
-        this.observer.unobserve(external_ReactDOM_default.a.findDOMNode(this));
-      }
-    }
-  }
-
-  onIdleCallback() {
-    if (!this.state.isSeen) {
-      this.setState({
-        useTransition: true
-      });
-    }
-  }
-
-  reformatImageURL(url, width, height) {
-    
-    
-    
-    return `https://img-getpocket.cdn.mozilla.net/${width}x${height}/filters:format(jpeg):quality(60):no_upscale():strip_exif()/${encodeURIComponent(url)}`;
-  }
-
-  componentDidMount() {
-    this.idleCallbackId = this.props.windowObj.requestIdleCallback(this.onIdleCallback.bind(this));
-    this.observer = new IntersectionObserver(this.onSeen.bind(this), {
-      
-      
-      
-      rootMargin: `540px`
-    });
-    this.observer.observe(external_ReactDOM_default.a.findDOMNode(this));
-  }
-
-  componentWillUnmount() {
-    
-    if (this.observer) {
-      this.observer.unobserve(external_ReactDOM_default.a.findDOMNode(this));
-    }
-
-    if (this.idleCallbackId) {
-      this.props.windowObj.cancelIdleCallback(this.idleCallbackId);
-    }
-  }
-
-  render() {
-    let classNames = `ds-image
-      ${this.props.extraClassNames ? ` ${this.props.extraClassNames}` : ``}
-      ${this.state && this.state.useTransition ? ` use-transition` : ``}
-      ${this.state && this.state.isSeen ? ` loaded` : ``}
-    `;
-    let img;
-
-    if (this.state && this.state.isSeen) {
-      if (this.props.optimize && this.props.rawSource && !this.state.optimizedImageFailed) {
-        let source;
-        let source2x;
-
-        if (this.state && this.state.containerWidth) {
-          let baseSource = this.props.rawSource;
-          source = this.reformatImageURL(baseSource, this.state.containerWidth, this.state.containerHeight);
-          source2x = this.reformatImageURL(baseSource, this.state.containerWidth * 2, this.state.containerHeight * 2);
-          img = external_React_default.a.createElement("img", {
-            alt: this.props.alt_text,
-            crossOrigin: "anonymous",
-            onError: this.onOptimizedImageError,
-            src: source,
-            srcSet: `${source2x} 2x`
-          });
-        }
-      } else if (!this.state.nonOptimizedImageFailed) {
-        img = external_React_default.a.createElement("img", {
-          alt: this.props.alt_text,
-          crossOrigin: "anonymous",
-          onError: this.onNonOptimizedImageError,
-          src: this.props.source
-        });
-      } else {
-        
-        img = external_React_default.a.createElement("div", {
-          className: "broken-image"
-        });
-      }
-    }
-
-    return external_React_default.a.createElement("picture", {
-      className: classNames
-    }, img);
-  }
-
-  onOptimizedImageError() {
-    
-    this.setState({
-      optimizedImageFailed: true
-    });
-  }
-
-  onNonOptimizedImageError() {
-    this.setState({
-      nonOptimizedImageFailed: true
-    });
-  }
-
-}
-DSImage_DSImage.defaultProps = {
-  source: null,
-  
-  rawSource: null,
-  
-  extraClassNames: null,
-  
-  optimize: true,
-  
-  alt_text: null,
-  windowObj: window 
-
-};
-
-var LinkMenu = __webpack_require__(31);
-
-
-var ContextMenuButton = __webpack_require__(34);
-
-
-
-
-
-
-
-
-class DSLinkMenu_DSLinkMenu extends external_React_default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.onMenuUpdate = this.onMenuUpdate.bind(this);
-    this.onMenuShow = this.onMenuShow.bind(this);
-    this.contextMenuButtonRef = external_React_default.a.createRef();
-  }
-
-  onMenuUpdate(showContextMenu) {
-    if (!showContextMenu) {
-      const dsLinkMenuHostDiv = this.contextMenuButtonRef.current.parentElement;
-      dsLinkMenuHostDiv.parentElement.classList.remove("active", "last-item");
-    }
-  }
-
-  nextAnimationFrame() {
-    return new Promise(resolve => this.props.windowObj.requestAnimationFrame(resolve));
-  }
-
-  async onMenuShow() {
-    const dsLinkMenuHostDiv = this.contextMenuButtonRef.current.parentElement; 
-
-    await this.nextAnimationFrame();
-
-    if (this.props.windowObj.scrollMaxX > 0) {
-      dsLinkMenuHostDiv.parentElement.classList.add("last-item");
-    }
-
-    dsLinkMenuHostDiv.parentElement.classList.add("active");
-  }
-
-  render() {
-    const {
-      index,
-      dispatch
-    } = this.props;
-    const TOP_STORIES_CONTEXT_MENU_OPTIONS = ["CheckBookmarkOrArchive", "CheckSavedToPocket", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", ...(this.props.campaignId ? ["ShowPrivacyInfo"] : [])];
-    const type = this.props.type || "DISCOVERY_STREAM";
-    const title = this.props.title || this.props.source;
-    return external_React_default.a.createElement("div", null, external_React_default.a.createElement(ContextMenuButton["ContextMenuButton"], {
-      refFunction: this.contextMenuButtonRef,
-      tooltip: "newtab-menu-content-tooltip",
-      tooltipArgs: {
-        title
-      },
-      onUpdate: this.onMenuUpdate
-    }, external_React_default.a.createElement(LinkMenu["LinkMenu"], {
-      dispatch: dispatch,
-      index: index,
-      source: type.toUpperCase(),
-      onShow: this.onMenuShow,
-      options: TOP_STORIES_CONTEXT_MENU_OPTIONS,
-      shouldSendImpressionStats: true,
-      site: {
-        referrer: "https://getpocket.com/recommendations",
-        title: this.props.title,
-        type: this.props.type,
-        url: this.props.url,
-        guid: this.props.id,
-        pocket_id: this.props.pocket_id,
-        shim: this.props.shim,
-        bookmarkGuid: this.props.bookmarkGuid,
-        campaign_id: this.props.campaignId
-      }
-    })));
-  }
-
-}
-DSLinkMenu_DSLinkMenu.defaultProps = {
-  windowObj: window 
-
-};
-
-var ImpressionStats = __webpack_require__(35);
-
-
-
-
-
-
-
-class SafeAnchor_SafeAnchor extends external_React_default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.onClick = this.onClick.bind(this);
-  }
-
-  onClick(event) {
-    
-    if (this.props.dispatch) {
-      event.preventDefault();
-      const {
-        altKey,
-        button,
-        ctrlKey,
-        metaKey,
-        shiftKey
-      } = event;
-      this.props.dispatch(Actions["actionCreators"].OnlyToMain({
-        type: Actions["actionTypes"].OPEN_LINK,
-        data: {
-          event: {
-            altKey,
-            button,
-            ctrlKey,
-            metaKey,
-            shiftKey
-          },
-          referrer: "https://getpocket.com/recommendations",
-          
-          url: event.currentTarget.href
-        }
-      }));
-    } 
-
-
-    if (this.props.onLinkClick) {
-      this.props.onLinkClick(event);
-    }
-  }
-
-  safeURI(url) {
-    let protocol = null;
-
-    try {
-      protocol = new URL(url).protocol;
-    } catch (e) {
-      return "";
-    }
-
-    const isAllowed = ["http:", "https:"].includes(protocol);
-
-    if (!isAllowed) {
-      console.warn(`${url} is not allowed for anchor targets.`); 
-
-      return "";
-    }
-
-    return url;
-  }
-
-  render() {
-    const {
-      url,
-      className
-    } = this.props;
-    return external_React_default.a.createElement("a", {
-      href: this.safeURI(url),
-      className: className,
-      onClick: this.onClick
-    }, this.props.children);
-  }
-
-}
-
-var types = __webpack_require__(36);
-
-
-var external_ReactTransitionGroup_ = __webpack_require__(37);
-
-
-
-
-
-
-
- 
-
-const ANIMATION_DURATION = 3000;
-const StatusMessage = ({
-  icon,
-  fluentID
-}) => external_React_default.a.createElement("div", {
-  className: "status-message"
-}, external_React_default.a.createElement("span", {
-  "aria-haspopup": "true",
-  className: `story-badge-icon icon icon-${icon}`
-}), external_React_default.a.createElement("div", {
-  className: "story-context-label",
-  "data-l10n-id": fluentID
-}));
-class DSContextFooter_DSContextFooter extends external_React_default.a.PureComponent {
-  render() {
-    
-    const {
-      context,
-      context_type,
-      engagement,
-      display_engagement_labels
-    } = this.props;
-    const {
-      icon,
-      fluentID
-    } = types["cardContextTypes"][context_type] || {};
-    return external_React_default.a.createElement("div", {
-      className: "story-footer"
-    }, context && external_React_default.a.createElement("p", {
-      className: "story-sponsored-label clamp"
-    }, context), external_React_default.a.createElement(external_ReactTransitionGroup_["TransitionGroup"], {
-      component: null
-    }, !context && (context_type || display_engagement_labels && engagement) && external_React_default.a.createElement(external_ReactTransitionGroup_["CSSTransition"], {
-      key: fluentID,
-      timeout: ANIMATION_DURATION,
-      classNames: "story-animate"
-    }, engagement && !context_type ? external_React_default.a.createElement("div", {
-      className: "story-view-count"
-    }, engagement) : external_React_default.a.createElement(StatusMessage, {
-      icon: icon,
-      fluentID: fluentID
-    }))));
-  }
-
-}
-
-
-
-
-
-
-
-
-
-
- 
-
-const DefaultMeta = ({
-  display_engagement_labels,
-  source,
-  title,
-  excerpt,
-  context,
-  context_type,
-  cta,
-  engagement,
-  cta_variant
-}) => external_React_default.a.createElement("div", {
-  className: "meta"
-}, external_React_default.a.createElement("div", {
-  className: "info-wrap"
-}, external_React_default.a.createElement("p", {
-  className: "source clamp"
-}, source), external_React_default.a.createElement("header", {
-  className: "title clamp"
-}, title), excerpt && external_React_default.a.createElement("p", {
-  className: "excerpt clamp"
-}, excerpt), cta_variant === "link" && cta && external_React_default.a.createElement("div", {
-  role: "link",
-  className: "cta-link icon icon-arrow",
-  tabIndex: "0"
-}, cta)), external_React_default.a.createElement(DSContextFooter_DSContextFooter, {
-  context_type: context_type,
-  context: context,
-  display_engagement_labels: display_engagement_labels,
-  engagement: engagement
-}));
-const CTAButtonMeta = ({
-  display_engagement_labels,
-  source,
-  title,
-  excerpt,
-  context,
-  context_type,
-  cta,
-  engagement,
-  sponsor
-}) => external_React_default.a.createElement("div", {
-  className: "meta"
-}, external_React_default.a.createElement("div", {
-  className: "info-wrap"
-}, external_React_default.a.createElement("p", {
-  className: "source clamp"
-}, sponsor ? sponsor : source, context && ` · Sponsored`), external_React_default.a.createElement("header", {
-  className: "title clamp"
-}, title), excerpt && external_React_default.a.createElement("p", {
-  className: "excerpt clamp"
-}, excerpt)), context && cta && external_React_default.a.createElement("button", {
-  className: "button cta-button"
-}, cta), !context && external_React_default.a.createElement(DSContextFooter_DSContextFooter, {
-  context_type: context_type,
-  context: context,
-  display_engagement_labels: display_engagement_labels,
-  engagement: engagement
-}));
-class DSCard_DSCard extends external_React_default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.onLinkClick = this.onLinkClick.bind(this);
-
-    this.setPlaceholderRef = element => {
-      this.placeholderElement = element;
-    };
-
-    this.state = {
-      isSeen: false
-    };
-  }
-
-  onLinkClick(event) {
-    if (this.props.dispatch) {
-      this.props.dispatch(Actions["actionCreators"].UserEvent({
-        event: "CLICK",
-        source: this.props.type.toUpperCase(),
-        action_position: this.props.pos
-      }));
-      this.props.dispatch(Actions["actionCreators"].ImpressionStats({
-        source: this.props.type.toUpperCase(),
-        click: 0,
-        tiles: [{
-          id: this.props.id,
-          pos: this.props.pos,
-          ...(this.props.shim && this.props.shim.click ? {
-            shim: this.props.shim.click
-          } : {})
-        }]
-      }));
-    }
-  }
-
-  onSeen(entries) {
-    if (this.state) {
-      const entry = entries.find(e => e.isIntersecting);
-
-      if (entry) {
-        if (this.placeholderElement) {
-          this.observer.unobserve(this.placeholderElement);
-        } 
-
-
-        this.setState({
-          isSeen: true
-        });
-      }
-    }
-  }
-
-  onIdleCallback() {
-    if (!this.state.isSeen) {
-      if (this.observer && this.placeholderElement) {
-        this.observer.unobserve(this.placeholderElement);
-      }
-
-      this.setState({
-        isSeen: true
-      });
-    }
-  }
-
-  componentDidMount() {
-    this.idleCallbackId = this.props.windowObj.requestIdleCallback(this.onIdleCallback.bind(this));
-
-    if (this.placeholderElement) {
-      this.observer = new IntersectionObserver(this.onSeen.bind(this));
-      this.observer.observe(this.placeholderElement);
-    }
-  }
-
-  componentWillUnmount() {
-    
-    if (this.observer && this.placeholderElement) {
-      this.observer.unobserve(this.placeholderElement);
-    }
-
-    if (this.idleCallbackId) {
-      this.props.windowObj.cancelIdleCallback(this.idleCallbackId);
-    }
-  }
-
-  render() {
-    if (this.props.placeholder || !this.state.isSeen) {
-      return external_React_default.a.createElement("div", {
-        className: "ds-card placeholder",
-        ref: this.setPlaceholderRef
-      });
-    }
-
-    const isButtonCTA = this.props.cta_variant === "button";
-    return external_React_default.a.createElement("div", {
-      className: "ds-card"
-    }, external_React_default.a.createElement(SafeAnchor_SafeAnchor, {
-      className: "ds-card-link",
-      dispatch: this.props.dispatch,
-      onLinkClick: !this.props.placeholder ? this.onLinkClick : undefined,
-      url: this.props.url
-    }, external_React_default.a.createElement("div", {
-      className: "img-wrapper"
-    }, external_React_default.a.createElement(DSImage_DSImage, {
-      extraClassNames: "img",
-      source: this.props.image_src,
-      rawSource: this.props.raw_image_src
-    })), isButtonCTA ? external_React_default.a.createElement(CTAButtonMeta, {
-      display_engagement_labels: this.props.display_engagement_labels,
-      source: this.props.source,
-      title: this.props.title,
-      excerpt: this.props.excerpt,
-      context: this.props.context,
-      context_type: this.props.context_type,
-      engagement: this.props.engagement,
-      cta: this.props.cta,
-      sponsor: this.props.sponsor
-    }) : external_React_default.a.createElement(DefaultMeta, {
-      display_engagement_labels: this.props.display_engagement_labels,
-      source: this.props.source,
-      title: this.props.title,
-      excerpt: this.props.excerpt,
-      context: this.props.context,
-      engagement: this.props.engagement,
-      context_type: this.props.context_type,
-      cta: this.props.cta,
-      cta_variant: this.props.cta_variant
-    }), external_React_default.a.createElement(ImpressionStats["ImpressionStats"], {
-      campaignId: this.props.campaignId,
-      rows: [{
-        id: this.props.id,
-        pos: this.props.pos,
-        ...(this.props.shim && this.props.shim.impression ? {
-          shim: this.props.shim.impression
-        } : {})
-      }],
-      dispatch: this.props.dispatch,
-      source: this.props.type
-    })), external_React_default.a.createElement(DSLinkMenu_DSLinkMenu, {
-      id: this.props.id,
-      index: this.props.pos,
-      dispatch: this.props.dispatch,
-      url: this.props.url,
-      title: this.props.title,
-      source: this.props.source,
-      type: this.props.type,
-      pocket_id: this.props.pocket_id,
-      shim: this.props.shim,
-      bookmarkGuid: this.props.bookmarkGuid,
-      campaignId: this.props.campaignId
-    }));
-  }
-
-}
-DSCard_DSCard.defaultProps = {
-  windowObj: window 
-
-};
-const PlaceholderDSCard = props => external_React_default.a.createElement(DSCard_DSCard, {
-  placeholder: true
-});
-
-
-
-
-
-
-class DSEmptyState_DSEmptyState extends external_React_default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.onReset = this.onReset.bind(this);
-    this.state = {};
-  }
-
-  componentWillUnmount() {
-    if (this.timeout) {
-      clearTimeout(this.timeout);
-    }
-  }
-
-  onReset() {
-    if (this.props.dispatch && this.props.feed) {
-      const {
-        feed
-      } = this.props;
-      const {
-        url
-      } = feed;
-      this.props.dispatch({
-        type: Actions["actionTypes"].DISCOVERY_STREAM_FEED_UPDATE,
-        data: {
-          feed: { ...feed,
-            data: { ...feed.data,
-              status: "waiting"
-            }
-          },
-          url
-        }
-      });
-      this.setState({
-        waiting: true
-      });
-      this.timeout = setTimeout(() => {
-        this.timeout = null;
-        this.setState({
-          waiting: false
-        });
-      }, 300);
-      this.props.dispatch(Actions["actionCreators"].OnlyToMain({
-        type: Actions["actionTypes"].DISCOVERY_STREAM_RETRY_FEED,
-        data: {
-          feed
-        }
-      }));
-    }
-  }
-
-  renderButton() {
-    if (this.props.status === "waiting" || this.state.waiting) {
-      return external_React_default.a.createElement("button", {
-        className: "try-again-button waiting",
-        "data-l10n-id": "newtab-discovery-empty-section-topstories-loading"
-      });
-    }
-
-    return external_React_default.a.createElement("button", {
-      className: "try-again-button",
-      onClick: this.onReset,
-      "data-l10n-id": "newtab-discovery-empty-section-topstories-try-again-button"
-    });
-  }
-
-  renderState() {
-    if (this.props.status === "waiting" || this.props.status === "failed") {
-      return external_React_default.a.createElement(external_React_default.a.Fragment, null, external_React_default.a.createElement("h2", {
-        "data-l10n-id": "newtab-discovery-empty-section-topstories-timed-out"
-      }), this.renderButton());
-    }
-
-    return external_React_default.a.createElement(external_React_default.a.Fragment, null, external_React_default.a.createElement("h2", {
-      "data-l10n-id": "newtab-discovery-empty-section-topstories-header"
-    }), external_React_default.a.createElement("p", {
-      "data-l10n-id": "newtab-discovery-empty-section-topstories-content"
-    }));
-  }
-
-  render() {
-    return external_React_default.a.createElement("div", {
-      className: "section-empty-state"
-    }, external_React_default.a.createElement("div", {
-      className: "empty-state-message"
-    }, this.renderState()));
-  }
-
-}
-
-
-
-
-
-
-
-class CardGrid_CardGrid extends external_React_default.a.PureComponent {
-  renderCards() {
-    const recs = this.props.data.recommendations.slice(0, this.props.items);
-    const cards = [];
-
-    for (let index = 0; index < this.props.items; index++) {
-      const rec = recs[index];
-      cards.push(!rec || rec.placeholder ? external_React_default.a.createElement(PlaceholderDSCard, {
-        key: `dscard-${index}`
-      }) : external_React_default.a.createElement(DSCard_DSCard, {
-        key: `dscard-${rec.id}`,
-        pos: rec.pos,
-        campaignId: rec.campaign_id,
-        image_src: rec.image_src,
-        raw_image_src: rec.raw_image_src,
-        title: rec.title,
-        excerpt: rec.excerpt,
-        url: rec.url,
-        id: rec.id,
-        shim: rec.shim,
-        type: this.props.type,
-        context: rec.context,
-        sponsor: rec.sponsor,
-        dispatch: this.props.dispatch,
-        source: rec.domain,
-        pocket_id: rec.pocket_id,
-        context_type: rec.context_type,
-        bookmarkGuid: rec.bookmarkGuid,
-        engagement: rec.engagement,
-        display_engagement_labels: this.props.display_engagement_labels,
-        cta: rec.cta,
-        cta_variant: this.props.cta_variant
-      }));
-    }
-
-    let divisibility = ``;
-
-    if (this.props.items % 4 === 0) {
-      divisibility = `divisible-by-4`;
-    } else if (this.props.items % 3 === 0) {
-      divisibility = `divisible-by-3`;
-    }
-
-    return external_React_default.a.createElement("div", {
-      className: `ds-card-grid ds-card-grid-${this.props.border} ds-card-grid-${divisibility}`
-    }, cards);
-  }
-
-  render() {
-    const {
-      data
-    } = this.props; 
-
-    if (!data) {
-      return null;
-    } 
-
-
-    const isEmpty = data.recommendations.length === 0;
-    return external_React_default.a.createElement("div", null, this.props.title && external_React_default.a.createElement("div", {
-      className: "ds-header"
-    }, this.props.title), isEmpty ? external_React_default.a.createElement("div", {
-      className: "ds-card-grid empty"
-    }, external_React_default.a.createElement(DSEmptyState_DSEmptyState, {
-      status: data.status,
-      dispatch: this.props.dispatch,
-      feed: this.props.feed
-    })) : this.renderCards());
-  }
-
-}
-CardGrid_CardGrid.defaultProps = {
-  border: `border`,
-  items: 4 
-
-};
-
-var CollapsibleSection = __webpack_require__(38);
-
-
-var external_ReactRedux_ = __webpack_require__(28);
-
-
-var link_menu_options = __webpack_require__(33);
-
-
-
-
-
-
-
-
-class DSDismiss_DSDismiss extends external_React_default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.onDismissClick = this.onDismissClick.bind(this);
-    this.onHover = this.onHover.bind(this);
-    this.offHover = this.offHover.bind(this);
-    this.state = {
-      hovering: false
-    };
-  }
-
-  onDismissClick() {
-    const index = 0;
-    const source = "DISCOVERY_STREAM";
-    const blockUrlOption = link_menu_options["LinkMenuOptions"].BlockUrl(this.props.data, index, source);
-    const {
-      action,
-      impression,
-      userEvent
-    } = blockUrlOption;
-    this.props.dispatch(action);
-    const userEventData = Object.assign({
-      event: userEvent,
-      source,
-      action_position: index
-    }, this.props.data);
-    this.props.dispatch(Actions["actionCreators"].UserEvent(userEventData));
-
-    if (impression && this.props.shouldSendImpressionStats) {
-      this.props.dispatch(impression);
-    }
-  }
-
-  onHover() {
-    this.setState({
-      hovering: true
-    });
-  }
-
-  offHover() {
-    this.setState({
-      hovering: false
-    });
-  }
-
-  render() {
-    let className = `ds-dismiss
-      ${this.state.hovering ? ` hovering` : ``}
-      ${this.props.extraClasses ? ` ${this.props.extraClasses}` : ``}`;
-    return external_React_default.a.createElement("div", {
-      className: className
-    }, this.props.children, external_React_default.a.createElement("button", {
-      className: "ds-dismiss-button",
-      onHover: this.onHover,
-      onClick: this.onDismissClick,
-      onMouseEnter: this.onHover,
-      onMouseLeave: this.offHover,
-      "aria-label": "dismiss"
-    }, external_React_default.a.createElement("span", {
-      className: "icon icon-dismiss"
-    })));
-  }
-
-}
-
-
-
-
-
-
-class DSMessage_DSMessage extends external_React_default.a.PureComponent {
-  render() {
-    return external_React_default.a.createElement("div", {
-      className: "ds-message"
-    }, external_React_default.a.createElement("header", {
-      className: "title"
-    }, this.props.icon && external_React_default.a.createElement("div", {
-      className: "glyph",
-      style: {
-        backgroundImage: `url(${this.props.icon})`
-      }
-    }), this.props.title && external_React_default.a.createElement("span", {
-      className: "title-text"
-    }, this.props.title), this.props.link_text && this.props.link_url && external_React_default.a.createElement(SafeAnchor_SafeAnchor, {
-      className: "link",
-      url: this.props.link_url
-    }, this.props.link_text)));
-  }
-
-}
-
-var ModalOverlay = __webpack_require__(21);
-
-
-
-
-
-
-
-
-class DSPrivacyModal_DSPrivacyModal extends external_React_default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.closeModal = this.closeModal.bind(this);
-    this.onLinkClick = this.onLinkClick.bind(this);
-  }
-
-  onLinkClick(event) {
-    this.props.dispatch(Actions["actionCreators"].UserEvent({
-      event: "CLICK_PRIVACY_INFO",
-      source: "DS_PRIVACY_MODAL"
-    }));
-  }
-
-  closeModal() {
-    this.props.dispatch({
-      type: `HIDE_PRIVACY_INFO`,
-      data: {}
-    });
-  }
-
-  render() {
-    return external_React_default.a.createElement(ModalOverlay["ModalOverlayWrapper"], {
-      onClose: this.closeModal,
-      innerClassName: "ds-privacy-modal"
-    }, external_React_default.a.createElement("div", {
-      className: "privacy-notice"
-    }, external_React_default.a.createElement("h3", {
-      "data-l10n-id": "newtab-privacy-modal-header"
-    }), external_React_default.a.createElement("p", {
-      "data-l10n-id": "newtab-privacy-modal-paragraph"
-    }), external_React_default.a.createElement("a", {
-      "data-l10n-id": "newtab-privacy-modal-link",
-      onClick: this.onLinkClick,
-      href: "https://www.mozilla.org/en-US/privacy/firefox/"
-    })), external_React_default.a.createElement("section", {
-      className: "actions"
-    }, external_React_default.a.createElement("button", {
-      className: "done",
-      type: "submit",
-      onClick: this.closeModal,
-      "data-l10n-id": "newtab-privacy-modal-button-done"
-    })));
-  }
-
-}
-
-
-
-
-
-
-
-
-
-class DSTextPromo_DSTextPromo extends external_React_default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.onLinkClick = this.onLinkClick.bind(this);
-  }
-
-  onLinkClick() {
-    if (this.props.dispatch) {
-      this.props.dispatch(Actions["actionCreators"].UserEvent({
-        event: "CLICK",
-        source: this.props.type.toUpperCase(),
-        action_position: this.props.pos
-      }));
-      this.props.dispatch(Actions["actionCreators"].ImpressionStats({
-        source: this.props.type.toUpperCase(),
-        click: 0,
-        tiles: [{
-          id: this.props.id,
-          pos: this.props.pos,
-          ...(this.props.shim && this.props.shim.click ? {
-            shim: this.props.shim.click
-          } : {})
-        }]
-      }));
-    }
-  }
-
-  render() {
-    return external_React_default.a.createElement("div", {
-      className: "ds-text-promo"
-    }, external_React_default.a.createElement(DSImage_DSImage, {
-      alt_text: this.props.alt_text,
-      source: this.props.image,
-      rawSource: this.props.raw_image_src
-    }), external_React_default.a.createElement("div", {
-      className: "text"
-    }, external_React_default.a.createElement("h3", null, `${this.props.header}\u2003`, external_React_default.a.createElement(SafeAnchor_SafeAnchor, {
-      className: "ds-chevron-link",
-      dispatch: this.props.dispatch,
-      onLinkClick: this.onLinkClick,
-      url: this.props.cta_url
-    }, this.props.cta_text)), external_React_default.a.createElement("p", {
-      className: "subtitle"
-    }, this.props.subtitle)), external_React_default.a.createElement(ImpressionStats["ImpressionStats"], {
-      campaignId: this.props.campaignId,
-      rows: [{
-        id: this.props.id,
-        pos: this.props.pos,
-        shim: this.props.shim && this.props.shim.impression
-      }],
-      dispatch: this.props.dispatch,
-      source: this.props.type
-    }));
-  }
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class List_ListItem extends external_React_default.a.PureComponent {
-  
-  
-  constructor(props) {
-    super(props);
-    this.onLinkClick = this.onLinkClick.bind(this);
-  }
-
-  onLinkClick(event) {
-    if (this.props.dispatch) {
-      this.props.dispatch(Actions["actionCreators"].UserEvent({
-        event: "CLICK",
-        source: this.props.type.toUpperCase(),
-        action_position: this.props.pos
-      }));
-      this.props.dispatch(Actions["actionCreators"].ImpressionStats({
-        source: this.props.type.toUpperCase(),
-        click: 0,
-        tiles: [{
-          id: this.props.id,
-          pos: this.props.pos,
-          ...(this.props.shim && this.props.shim.click ? {
-            shim: this.props.shim.click
-          } : {})
-        }]
-      }));
-    }
-  }
-
-  render() {
-    return external_React_default.a.createElement("li", {
-      className: `ds-list-item${this.props.placeholder ? " placeholder" : ""}`
-    }, external_React_default.a.createElement(SafeAnchor_SafeAnchor, {
-      className: "ds-list-item-link",
-      dispatch: this.props.dispatch,
-      onLinkClick: !this.props.placeholder ? this.onLinkClick : undefined,
-      url: this.props.url
-    }, external_React_default.a.createElement("div", {
-      className: "ds-list-item-text"
-    }, external_React_default.a.createElement("p", null, external_React_default.a.createElement("span", {
-      className: "ds-list-item-info clamp"
-    }, this.props.domain)), external_React_default.a.createElement("div", {
-      className: "ds-list-item-body"
-    }, external_React_default.a.createElement("div", {
-      className: "ds-list-item-title clamp"
-    }, this.props.title), this.props.excerpt && external_React_default.a.createElement("div", {
-      className: "ds-list-item-excerpt clamp"
-    }, this.props.excerpt)), external_React_default.a.createElement(DSContextFooter_DSContextFooter, {
-      context: this.props.context,
-      context_type: this.props.context_type,
-      engagement: this.props.engagement
-    })), external_React_default.a.createElement(DSImage_DSImage, {
-      extraClassNames: "ds-list-image",
-      source: this.props.image_src,
-      rawSource: this.props.raw_image_src
-    }), external_React_default.a.createElement(ImpressionStats["ImpressionStats"], {
-      campaignId: this.props.campaignId,
-      rows: [{
-        id: this.props.id,
-        pos: this.props.pos,
-        ...(this.props.shim && this.props.shim.impression ? {
-          shim: this.props.shim.impression
-        } : {})
-      }],
-      dispatch: this.props.dispatch,
-      source: this.props.type
-    })), !this.props.placeholder && external_React_default.a.createElement(DSLinkMenu_DSLinkMenu, {
-      id: this.props.id,
-      index: this.props.pos,
-      dispatch: this.props.dispatch,
-      url: this.props.url,
-      title: this.props.title,
-      source: this.props.source,
-      type: this.props.type,
-      pocket_id: this.props.pocket_id,
-      shim: this.props.shim,
-      bookmarkGuid: this.props.bookmarkGuid,
-      campaignId: this.props.campaignId
-    }));
-  }
-
-}
-const PlaceholderListItem = props => external_React_default.a.createElement(List_ListItem, {
-  placeholder: true
-});
-
-
-
-
-function _List(props) {
-  const renderList = () => {
-    const recs = props.data.recommendations.slice(props.recStartingPoint, props.recStartingPoint + props.items);
-    const recMarkup = [];
-
-    for (let index = 0; index < props.items; index++) {
-      const rec = recs[index];
-      recMarkup.push(!rec || rec.placeholder ? external_React_default.a.createElement(PlaceholderListItem, {
-        key: `ds-list-item-${index}`
-      }) : external_React_default.a.createElement(List_ListItem, {
-        key: `ds-list-item-${rec.id}`,
-        dispatch: props.dispatch,
-        campaignId: rec.campaign_id,
-        domain: rec.domain,
-        excerpt: rec.excerpt,
-        id: rec.id,
-        shim: rec.shim,
-        image_src: rec.image_src,
-        raw_image_src: rec.raw_image_src,
-        pos: rec.pos,
-        title: rec.title,
-        context: rec.context,
-        context_type: rec.context_type,
-        type: props.type,
-        url: rec.url,
-        pocket_id: rec.pocket_id,
-        bookmarkGuid: rec.bookmarkGuid,
-        engagement: rec.engagement
-      }));
-    }
-
-    const listStyles = ["ds-list", props.fullWidth ? "ds-list-full-width" : "", props.hasBorders ? "ds-list-borders" : "", props.hasImages ? "ds-list-images" : "", props.hasNumbers ? "ds-list-numbers" : ""];
-    return external_React_default.a.createElement("ul", {
-      className: listStyles.join(" ")
-    }, recMarkup);
-  };
-
-  const {
-    data
-  } = props;
-
-  if (!data || !data.recommendations) {
-    return null;
-  } 
-
-
-  const isEmpty = data.recommendations.length === 0;
-  return external_React_default.a.createElement("div", null, props.header && props.header.title ? external_React_default.a.createElement("div", {
-    className: "ds-header"
-  }, props.header.title) : null, isEmpty ? external_React_default.a.createElement("div", {
-    className: "ds-list empty"
-  }, external_React_default.a.createElement(DSEmptyState_DSEmptyState, {
-    status: data.status,
-    dispatch: props.dispatch,
-    feed: props.feed
-  })) : renderList());
-}
-_List.defaultProps = {
-  recStartingPoint: 0,
-  
-  fullWidth: false,
-  
-  hasBorders: false,
-  
-  hasImages: false,
-  
-  hasNumbers: false,
-  
-  items: 6 
-
-};
-const List = Object(external_ReactRedux_["connect"])(state => ({
-  DiscoveryStream: state.DiscoveryStream
-}))(_List);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class Hero_Hero extends external_React_default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.onLinkClick = this.onLinkClick.bind(this);
-  }
-
-  onLinkClick(event) {
-    if (this.props.dispatch) {
-      this.props.dispatch(Actions["actionCreators"].UserEvent({
-        event: "CLICK",
-        source: this.props.type.toUpperCase(),
-        action_position: this.heroRec.pos
-      }));
-      this.props.dispatch(Actions["actionCreators"].ImpressionStats({
-        source: this.props.type.toUpperCase(),
-        click: 0,
-        tiles: [{
-          id: this.heroRec.id,
-          pos: this.heroRec.pos,
-          ...(this.heroRec.shim && this.heroRec.shim.click ? {
-            shim: this.heroRec.shim.click
-          } : {})
-        }]
-      }));
-    }
-  }
-
-  renderHero() {
-    let [heroRec, ...otherRecs] = this.props.data.recommendations.slice(0, this.props.items);
-    this.heroRec = heroRec;
-    const cards = [];
-
-    for (let index = 0; index < this.props.items - 1; index++) {
-      const rec = otherRecs[index];
-      cards.push(!rec || rec.placeholder ? external_React_default.a.createElement(PlaceholderDSCard, {
-        key: `dscard-${index}`
-      }) : external_React_default.a.createElement(DSCard_DSCard, {
-        campaignId: rec.campaign_id,
-        key: `dscard-${rec.id}`,
-        image_src: rec.image_src,
-        raw_image_src: rec.raw_image_src,
-        title: rec.title,
-        url: rec.url,
-        id: rec.id,
-        shim: rec.shim,
-        pos: rec.pos,
-        type: this.props.type,
-        dispatch: this.props.dispatch,
-        context: rec.context,
-        context_type: rec.context_type,
-        source: rec.domain,
-        pocket_id: rec.pocket_id,
-        bookmarkGuid: rec.bookmarkGuid,
-        engagement: rec.engagement
-      }));
-    }
-
-    let heroCard = null;
-
-    if (!heroRec || heroRec.placeholder) {
-      heroCard = external_React_default.a.createElement(PlaceholderDSCard, null);
-    } else {
-      heroCard = external_React_default.a.createElement("div", {
-        className: "ds-hero-item",
-        key: `dscard-${heroRec.id}`
-      }, external_React_default.a.createElement(SafeAnchor_SafeAnchor, {
-        className: "wrapper",
-        dispatch: this.props.dispatch,
-        onLinkClick: this.onLinkClick,
-        url: heroRec.url
-      }, external_React_default.a.createElement("div", {
-        className: "img-wrapper"
-      }, external_React_default.a.createElement(DSImage_DSImage, {
-        extraClassNames: "img",
-        source: heroRec.image_src,
-        rawSource: heroRec.raw_image_src
-      })), external_React_default.a.createElement("div", {
-        className: "meta"
-      }, external_React_default.a.createElement("div", {
-        className: "header-and-excerpt"
-      }, external_React_default.a.createElement("p", {
-        className: "source clamp"
-      }, heroRec.domain), external_React_default.a.createElement("header", {
-        className: "clamp"
-      }, heroRec.title), external_React_default.a.createElement("p", {
-        className: "excerpt clamp"
-      }, heroRec.excerpt)), external_React_default.a.createElement(DSContextFooter_DSContextFooter, {
-        context: heroRec.context,
-        context_type: heroRec.context_type,
-        engagement: heroRec.engagement
-      })), external_React_default.a.createElement(ImpressionStats["ImpressionStats"], {
-        campaignId: heroRec.campaign_id,
-        rows: [{
-          id: heroRec.id,
-          pos: heroRec.pos,
-          ...(heroRec.shim && heroRec.shim.impression ? {
-            shim: heroRec.shim.impression
-          } : {})
-        }],
-        dispatch: this.props.dispatch,
-        source: this.props.type
-      })), external_React_default.a.createElement(DSLinkMenu_DSLinkMenu, {
-        id: heroRec.id,
-        index: heroRec.pos,
-        dispatch: this.props.dispatch,
-        url: heroRec.url,
-        title: heroRec.title,
-        source: heroRec.domain,
-        type: this.props.type,
-        pocket_id: heroRec.pocket_id,
-        shim: heroRec.shim,
-        bookmarkGuid: heroRec.bookmarkGuid,
-        campaignId: heroRec.campaign_id
-      }));
-    }
-
-    let list = external_React_default.a.createElement(List, {
-      recStartingPoint: 1,
-      data: this.props.data,
-      feed: this.props.feed,
-      hasImages: true,
-      hasBorders: this.props.border === `border`,
-      items: this.props.items - 1,
-      type: `Hero`
-    });
-    return external_React_default.a.createElement("div", {
-      className: `ds-hero ds-hero-${this.props.border}`
-    }, heroCard, external_React_default.a.createElement("div", {
-      className: `${this.props.subComponentType}`
-    }, this.props.subComponentType === `cards` ? cards : list));
-  }
-
-  render() {
-    const {
-      data
-    } = this.props; 
-
-    if (!data || !data.recommendations) {
-      return external_React_default.a.createElement("div", null);
-    } 
-
-
-    const isEmpty = data.recommendations.length === 0;
-    return external_React_default.a.createElement("div", null, external_React_default.a.createElement("div", {
-      className: "ds-header"
-    }, this.props.title), isEmpty ? external_React_default.a.createElement("div", {
-      className: "ds-hero empty"
-    }, external_React_default.a.createElement(DSEmptyState_DSEmptyState, {
-      status: data.status,
-      dispatch: this.props.dispatch,
-      feed: this.props.feed
-    })) : this.renderHero());
-  }
-
-}
-Hero_Hero.defaultProps = {
-  data: {},
-  border: `border`,
-  items: 1 
-
-};
-
-var Sections = __webpack_require__(44);
-
-
-function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
-
-
-
-
-
-
-
-class Highlights_Highlights extends external_React_default.a.PureComponent {
-  render() {
-    const section = this.props.Sections.find(s => s.id === "highlights");
-
-    if (!section || !section.enabled) {
-      return null;
-    }
-
-    return external_React_default.a.createElement("div", {
-      className: "ds-highlights sections-list"
-    }, external_React_default.a.createElement(Sections["SectionIntl"], _extends({}, section, {
-      isFixed: true
-    })));
-  }
-
-}
-const Highlights = Object(external_ReactRedux_["connect"])(state => ({
-  Sections: state.Sections
-}))(Highlights_Highlights);
-
-
-
-
-
-class HorizontalRule_HorizontalRule extends external_React_default.a.PureComponent {
-  render() {
-    return external_React_default.a.createElement("hr", {
-      className: "ds-hr"
-    });
-  }
-
-}
-
-
-
-
-
-
-class Navigation_Topic extends external_React_default.a.PureComponent {
-  render() {
-    const {
-      url,
-      name
-    } = this.props;
-    return external_React_default.a.createElement("li", null, external_React_default.a.createElement(SafeAnchor_SafeAnchor, {
-      key: name,
-      url: url
-    }, name));
-  }
-
-}
-class Navigation_Navigation extends external_React_default.a.PureComponent {
-  render() {
-    const {
-      links
-    } = this.props || [];
-    const {
-      alignment
-    } = this.props || "centered";
-    const header = this.props.header || {};
-    return external_React_default.a.createElement("div", {
-      className: `ds-navigation ds-navigation-${alignment}`
-    }, header.title ? external_React_default.a.createElement("div", {
-      className: "ds-header"
-    }, header.title) : null, external_React_default.a.createElement("div", null, external_React_default.a.createElement("ul", null, links && links.map(t => external_React_default.a.createElement(Navigation_Topic, {
-      key: t.name,
-      url: t.url,
-      name: t.name
-    })))));
-  }
-
-}
-
-
-
-
-
-class SectionTitle_SectionTitle extends external_React_default.a.PureComponent {
-  render() {
-    const {
-      header: {
-        title,
-        subtitle
-      }
-    } = this.props;
-    return external_React_default.a.createElement("div", {
-      className: "ds-section-title"
-    }, external_React_default.a.createElement("div", {
-      className: "title"
-    }, title), subtitle ? external_React_default.a.createElement("div", {
-      className: "subtitle"
-    }, subtitle) : null);
-  }
-
-}
-
-
-
-
-const selectLayoutRender = (state, prefs, rickRollCache) => {
-  const {
-    layout,
-    feeds,
-    spocs
-  } = state;
-  let spocIndexMap = {};
-  let bufferRollCache = []; 
-
-  let chosenSpocs = new Set();
-  let unchosenSpocs = new Set();
-
-  function rollForSpocs(data, spocsConfig, spocsData, placementName) {
-    if (!spocIndexMap[placementName] && spocIndexMap[placementName] !== 0) {
-      spocIndexMap[placementName] = 0;
-    }
-
-    const results = [...data];
-
-    for (let position of spocsConfig.positions) {
-      const spoc = spocsData[spocIndexMap[placementName]];
-
-      if (!spoc) {
-        break;
-      } 
-
-
-      let rickRoll;
-
-      if (!rickRollCache.length) {
-        rickRoll = Math.random();
-        bufferRollCache.push(rickRoll);
-      } else {
-        rickRoll = rickRollCache.shift();
-        bufferRollCache.push(rickRoll);
-      }
-
-      if (rickRoll <= spocsConfig.probability) {
-        spocIndexMap[placementName]++;
-
-        if (!spocs.blocked.includes(spoc.url)) {
-          results.splice(position.index, 0, spoc);
-          chosenSpocs.add(spoc);
-        }
-      } else {
-        unchosenSpocs.add(spoc);
-      }
-    }
-
-    return results;
-  }
-
-  const positions = {};
-  const DS_COMPONENTS = ["Message", "TextPromo", "SectionTitle", "Navigation", "CardGrid", "Hero", "HorizontalRule", "List"];
-  const filterArray = [];
-
-  if (!prefs["feeds.topsites"]) {
-    filterArray.push("TopSites");
-  }
-
-  if (!prefs["feeds.section.topstories"]) {
-    filterArray.push(...DS_COMPONENTS);
-  }
-
-  const placeholderComponent = component => {
-    if (!component.feed) {
-      
-      return { ...component,
-        data: {
-          spocs: []
-        }
-      };
-    }
-
-    const data = {
-      recommendations: []
-    };
-    let items = 0;
-
-    if (component.properties && component.properties.items) {
-      items = component.properties.items;
-    }
-
-    for (let i = 0; i < items; i++) {
-      data.recommendations.push({
-        placeholder: true
-      });
-    }
-
-    return { ...component,
-      data
-    };
-  }; 
-
-
-  const handleSpocs = (data, component) => {
-    let result = [...data]; 
-
-    if (component.spocs && component.spocs.positions && component.spocs.positions.length) {
-      const placement = component.placement || {};
-      const placementName = placement.name || "spocs";
-      const spocsData = spocs.data[placementName]; 
-
-      if (spocs.loaded && spocsData && spocsData.length) {
-        result = rollForSpocs(result, component.spocs, spocsData, placementName);
-      }
-    }
-
-    return result;
-  };
-
-  const handleComponent = component => {
-    return { ...component,
-      data: {
-        spocs: handleSpocs([], component)
-      }
-    };
-  };
-
-  const handleComponentWithFeed = component => {
-    positions[component.type] = positions[component.type] || 0;
-    let data = {
-      recommendations: []
-    };
-    const feed = feeds.data[component.feed.url];
-
-    if (feed && feed.data) {
-      data = { ...feed.data,
-        recommendations: [...(feed.data.recommendations || [])]
-      };
-    }
-
-    if (component && component.properties && component.properties.offset) {
-      data = { ...data,
-        recommendations: data.recommendations.slice(component.properties.offset)
-      };
-    }
-
-    data = { ...data,
-      recommendations: handleSpocs(data.recommendations, component)
-    };
-    let items = 0;
-
-    if (component.properties && component.properties.items) {
-      items = Math.min(component.properties.items, data.recommendations.length);
-    } 
-    
-    
-
-
-    for (let i = 0; i < items; i++) {
-      data.recommendations[i] = { ...data.recommendations[i],
-        pos: positions[component.type]++
-      };
-    }
-
-    return { ...component,
-      data
-    };
-  };
-
-  const renderLayout = () => {
-    const renderedLayoutArray = [];
-
-    for (const row of layout.filter(r => r.components.filter(c => !filterArray.includes(c.type)).length)) {
-      let components = [];
-      renderedLayoutArray.push({ ...row,
-        components
-      });
-
-      for (const component of row.components.filter(c => !filterArray.includes(c.type))) {
-        const spocsConfig = component.spocs;
-
-        if (spocsConfig || component.feed) {
-          
-          if (component.feed && !feeds.data[component.feed.url] || spocsConfig && spocsConfig.positions && spocsConfig.positions.length && !spocs.loaded) {
-            components.push(placeholderComponent(component));
-            return renderedLayoutArray;
-          }
-
-          if (component.feed) {
-            components.push(handleComponentWithFeed(component));
-          } else {
-            components.push(handleComponent(component));
-          }
-        } else {
-          components.push(component);
-        }
-      }
-    }
-
-    return renderedLayoutArray;
-  };
-
-  const layoutRender = renderLayout(); 
-
-  if (!rickRollCache.length) {
-    rickRollCache.push(...bufferRollCache);
-  } 
-  
-  
-  
-
-
-  let spocsFill = [];
-
-  if (spocs.loaded && feeds.loaded && spocs.data.spocs) {
-    const chosenSpocsFill = [...chosenSpocs].map(spoc => ({
-      id: spoc.id,
-      reason: "n/a",
-      displayed: 1,
-      full_recalc: 0
-    }));
-    const unchosenSpocsFill = [...unchosenSpocs].filter(spoc => !chosenSpocs.has(spoc)).map(spoc => ({
-      id: spoc.id,
-      reason: "probability_selection",
-      displayed: 0,
-      full_recalc: 0
-    }));
-    const outOfPositionSpocsFill = spocs.data.spocs.slice(spocIndexMap.spocs).filter(spoc => !unchosenSpocs.has(spoc)).map(spoc => ({
-      id: spoc.id,
-      reason: "out_of_position",
-      displayed: 0,
-      full_recalc: 0
-    }));
-    spocsFill = [...chosenSpocsFill, ...unchosenSpocsFill, ...outOfPositionSpocsFill];
-  }
-
-  return {
-    spocsFill,
-    layoutRender
-  };
-};
-
-var TopSites_TopSites = __webpack_require__(52);
-
-
-var Reducers = __webpack_require__(62);
-
-
-
-
-
-
-
-
-
-class TopSites_TopSites_TopSites extends external_React_default.a.PureComponent {
-  
-  getFirstAvailableSpoc(topSites, data) {
-    const {
-      spocs
-    } = data;
-
-    if (!spocs || spocs.length === 0) {
-      return null;
-    }
-
-    const userTopSites = new Set(topSites.map(topSite => topSite && topSite.url)); 
-    
-
-    return spocs.find(spoc => !userTopSites.has(spoc.url) && !userTopSites.has(`http://${spoc.domain}`) && !userTopSites.has(`https://${spoc.domain}`) && !userTopSites.has(`http://www.${spoc.domain}`) && !userTopSites.has(`https://www.${spoc.domain}`));
-  } 
-  
-
-
-  getFirstAvailableIndex(topSites, promoAlignment) {
-    if (promoAlignment === "left") {
-      return topSites.findIndex(topSite => !topSite || !topSite.isPinned);
-    } 
-
-
-    if (topSites.length < Reducers["TOP_SITES_MAX_SITES_PER_ROW"]) {
-      return -1;
-    } 
-    
-
-
-    let endOfRow = Reducers["TOP_SITES_MAX_SITES_PER_ROW"] - 1;
-
-    for (let i = endOfRow; i >= 0; i--) {
-      if (!topSites[i] || !topSites[i].isPinned) {
-        return i;
-      }
-    }
-
-    for (let i = endOfRow + 1; i < topSites.length; i++) {
-      if (!topSites[i] || !topSites[i].isPinned) {
-        return i;
-      }
-    }
-
-    return -1;
-  }
-
-  insertSpocContent(TopSites, data, promoAlignment) {
-    if (!TopSites.rows || TopSites.rows.length === 0 || !data.spocs || data.spocs.length === 0) {
-      return null;
-    }
-
-    let topSites = [...TopSites.rows];
-    const topSiteSpoc = this.getFirstAvailableSpoc(topSites, data);
-
-    if (!topSiteSpoc) {
-      return null;
-    }
-
-    const link = {
-      customScreenshotURL: topSiteSpoc.image_src,
-      type: "SPOC",
-      label: topSiteSpoc.sponsor,
-      title: topSiteSpoc.sponsor,
-      url: topSiteSpoc.url,
-      campaignId: topSiteSpoc.campaign_id,
-      id: topSiteSpoc.id,
-      guid: topSiteSpoc.id,
-      shim: topSiteSpoc.shim,
-      
-      
-      
-      
-      pos: promoAlignment === "left" ? 0 : 7
-    };
-    const firstAvailableIndex = this.getFirstAvailableIndex(topSites, promoAlignment);
-
-    if (firstAvailableIndex === -1) {
-      topSites.push(link);
-    } else {
-      
-      
-      let shiftedTopSite = topSites[firstAvailableIndex];
-      let index = firstAvailableIndex + 1; 
-
-      while (shiftedTopSite) {
-        if (index === topSites.length) {
-          topSites.push(shiftedTopSite);
-          shiftedTopSite = null;
-        } else if (topSites[index] && topSites[index].isPinned) {
-          index += 1;
-        } else {
-          const nextTopSite = topSites[index];
-          topSites[index] = shiftedTopSite;
-          shiftedTopSite = nextTopSite;
-          index += 1;
-        }
-      }
-
-      topSites[firstAvailableIndex] = link;
-    }
-
-    return { ...TopSites,
-      rows: topSites
-    };
-  }
-
-  render() {
-    const {
-      header = {},
-      data,
-      promoAlignment,
-      TopSites
-    } = this.props;
-    const TopSitesWithSpoc = TopSites && data && promoAlignment ? this.insertSpocContent(TopSites, data, promoAlignment) : null;
-    return external_React_default.a.createElement("div", {
-      className: `ds-top-sites ${TopSitesWithSpoc ? "top-sites-spoc" : ""}`
-    }, external_React_default.a.createElement(TopSites_TopSites["TopSites"], {
-      isFixed: true,
-      title: header.title,
-      TopSitesWithSpoc: TopSitesWithSpoc
-    }));
-  }
-
-}
-const DiscoveryStreamComponents_TopSites_TopSites_TopSites = Object(external_ReactRedux_["connect"])(state => ({
-  TopSites: state.TopSites
-}))(TopSites_TopSites_TopSites);
-
- __webpack_require__.d(__webpack_exports__, "isAllowedCSS", function() { return isAllowedCSS; });
- __webpack_require__.d(__webpack_exports__, "_DiscoveryStreamBase", function() { return DiscoveryStreamBase_DiscoveryStreamBase; });
- __webpack_require__.d(__webpack_exports__, "DiscoveryStreamBase", function() { return DiscoveryStreamBase; });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const ALLOWED_CSS_URL_PREFIXES = ["chrome://", "resource://", "https://img-getpocket.cdn.mozilla.net/"];
-const DUMMY_CSS_SELECTOR = "DUMMY#CSS.SELECTOR";
-let rickRollCache = []; 
-
-
-
-
-
-function isAllowedCSS(property, value) {
-  
-  
-  
-  if (value === undefined) {
-    return true;
-  } 
-
-
-  const urls = value.match(/url\("[^"]+"\)/g);
-  return !urls || urls.every(url => ALLOWED_CSS_URL_PREFIXES.some(prefix => url.slice(5).startsWith(prefix)));
-}
-class DiscoveryStreamBase_DiscoveryStreamBase extends external_React_default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.onStyleMount = this.onStyleMount.bind(this);
-  }
-
-  onStyleMount(style) {
-    
-    if (!style) {
-      return;
-    }
-
-    const {
-      sheet
-    } = style;
-    const styles = JSON.parse(style.dataset.styles);
-    styles.forEach((row, rowIndex) => {
-      row.forEach((component, componentIndex) => {
-        
-        if (!component) {
-          return;
-        }
-
-        Object.entries(component).forEach(([selectors, declarations]) => {
-          
-          sheet.insertRule(`${DUMMY_CSS_SELECTOR} {}`);
-          const [rule] = sheet.cssRules; 
-          
-
-          rule.style = declarations;
-          [...rule.style].forEach(property => {
-            const value = rule.style[property];
-
-            if (!isAllowedCSS(property, value)) {
-              console.error(`Bad CSS declaration ${property}: ${value}`); 
-
-              rule.style.removeProperty(property);
-            }
-          }); 
-
-          const prefix = `.ds-layout > .ds-column:nth-child(${rowIndex + 1}) .ds-column-grid > :nth-child(${componentIndex + 1})`; 
-          
-
-          rule.selectorText = selectors.split(",").map(selector => prefix + ( 
-          selector[0] === ":" ? "" : " ") + selector).join(","); 
-
-          if (rule.selectorText === DUMMY_CSS_SELECTOR) {
-            console.error(`Bad CSS selector ${selectors}`); 
-          }
-        });
-      });
-    });
-  }
-
-  renderComponent(component, embedWidth) {
-    const ENGAGEMENT_LABEL_ENABLED = this.props.Prefs.values[`discoverystream.engagementLabelEnabled`];
-
-    switch (component.type) {
-      case "Highlights":
-        return external_React_default.a.createElement(Highlights, null);
-
-      case "TopSites":
-        let promoAlignment;
-
-        if (component.spocs && component.spocs.positions && component.spocs.positions.length) {
-          promoAlignment = component.spocs.positions[0].index === 0 ? "left" : "right";
-        }
-
-        return external_React_default.a.createElement(DiscoveryStreamComponents_TopSites_TopSites_TopSites, {
-          header: component.header,
-          data: component.data,
-          promoAlignment: promoAlignment
-        });
-
-      case "TextPromo":
-        if (!component.data || !component.data.spocs || !component.data.spocs[0]) {
-          return null;
-        } 
-
-
-        const [spoc] = component.data.spocs;
-        const {
-          image_src,
-          raw_image_src,
-          alt_text,
-          title,
-          url,
-          context,
-          cta,
-          campaign_id,
-          id,
-          shim
-        } = spoc;
-        return external_React_default.a.createElement(DSDismiss_DSDismiss, {
-          data: {
-            url: spoc.url,
-            guid: spoc.id,
-            shim: spoc.shim
-          },
-          dispatch: this.props.dispatch,
-          shouldSendImpressionStats: true,
-          extraClasses: `ds-dismiss-ds-text-promo`
-        }, external_React_default.a.createElement(DSTextPromo_DSTextPromo, {
-          dispatch: this.props.dispatch,
-          image: image_src,
-          raw_image_src: raw_image_src,
-          alt_text: alt_text || title,
-          header: title,
-          cta_text: cta,
-          cta_url: url,
-          subtitle: context,
-          campaignId: campaign_id,
-          id: id,
-          pos: 0,
-          shim: shim,
-          type: component.type
-        }));
-
-      case "Message":
-        return external_React_default.a.createElement(DSMessage_DSMessage, {
-          title: component.header && component.header.title,
-          subtitle: component.header && component.header.subtitle,
-          link_text: component.header && component.header.link_text,
-          link_url: component.header && component.header.link_url,
-          icon: component.header && component.header.icon
-        });
-
-      case "SectionTitle":
-        return external_React_default.a.createElement(SectionTitle_SectionTitle, {
-          header: component.header
-        });
-
-      case "Navigation":
-        return external_React_default.a.createElement(Navigation_Navigation, {
-          links: component.properties.links,
-          alignment: component.properties.alignment,
-          header: component.header
-        });
-
-      case "CardGrid":
-        return external_React_default.a.createElement(CardGrid_CardGrid, {
-          title: component.header && component.header.title,
-          data: component.data,
-          feed: component.feed,
-          border: component.properties.border,
-          type: component.type,
-          dispatch: this.props.dispatch,
-          items: component.properties.items,
-          cta_variant: component.cta_variant,
-          display_engagement_labels: ENGAGEMENT_LABEL_ENABLED
-        });
-
-      case "Hero":
-        return external_React_default.a.createElement(Hero_Hero, {
-          subComponentType: embedWidth >= 9 ? `cards` : `list`,
-          feed: component.feed,
-          title: component.header && component.header.title,
-          data: component.data,
-          border: component.properties.border,
-          type: component.type,
-          dispatch: this.props.dispatch,
-          items: component.properties.items
-        });
-
-      case "HorizontalRule":
-        return external_React_default.a.createElement(HorizontalRule_HorizontalRule, null);
-
-      case "List":
-        return external_React_default.a.createElement(List, {
-          data: component.data,
-          feed: component.feed,
-          fullWidth: component.properties.full_width,
-          hasBorders: component.properties.border === "border",
-          hasImages: component.properties.has_images,
-          hasNumbers: component.properties.has_numbers,
-          items: component.properties.items,
-          type: component.type,
-          header: component.header
-        });
-
-      default:
-        return external_React_default.a.createElement("div", null, component.type);
-    }
-  }
-
-  renderStyles(styles) {
-    
-    
-    const json = JSON.stringify(styles);
-    return external_React_default.a.createElement("style", {
-      key: json,
-      "data-styles": json,
-      ref: this.onStyleMount
-    });
-  }
-
-  componentWillReceiveProps(oldProps) {
-    if (this.props.DiscoveryStream.layout !== oldProps.DiscoveryStream.layout) {
-      rickRollCache = [];
-    }
-  }
-
-  render() {
-    
-    const {
-      layoutRender,
-      spocsFill
-    } = selectLayoutRender(this.props.DiscoveryStream, this.props.Prefs.values, rickRollCache);
-    const {
-      config,
-      spocs,
-      feeds
-    } = this.props.DiscoveryStream; 
-    
-
-    if (spocs.loaded && feeds.loaded && spocsFill.length && !this._spocsFillSent) {
-      this.props.dispatch(Actions["actionCreators"].DiscoveryStreamSpocsFill({
-        spoc_fills: spocsFill
-      }));
-      this._spocsFillSent = true;
-    } 
-
-
-    if (!config.collapsible) {
-      return this.renderLayout(layoutRender);
-    } 
-
-
-    const extractComponent = type => {
-      for (const [rowIndex, row] of Object.entries(layoutRender)) {
-        for (const [index, component] of Object.entries(row.components)) {
-          if (component.type === type) {
-            
-            if (row.components.length === 1) {
-              layoutRender.splice(rowIndex, 1);
-            } else {
-              row.components.splice(index, 1);
-            }
-
-            return component;
-          }
-        }
-      }
-
-      return null;
-    }; 
-
-
-    const topStories = this.props.Sections.find(s => s.id === "topstories");
-
-    if (!topStories) {
-      return null;
-    } 
-
-
-    const topSites = extractComponent("TopSites");
-    const message = extractComponent("Message") || {
-      header: {
-        link_text: topStories.learnMore.link.message,
-        link_url: topStories.learnMore.link.href,
-        title: topStories.title
-      }
-    }; 
-
-    return external_React_default.a.createElement(external_React_default.a.Fragment, null, this.props.DiscoveryStream.isPrivacyInfoModalVisible && external_React_default.a.createElement(DSPrivacyModal_DSPrivacyModal, {
-      dispatch: this.props.dispatch
-    }), topSites && this.renderLayout([{
-      width: 12,
-      components: [topSites]
-    }]), !!layoutRender.length && external_React_default.a.createElement(CollapsibleSection["CollapsibleSection"], {
-      className: "ds-layout",
-      collapsed: topStories.pref.collapsed,
-      dispatch: this.props.dispatch,
-      icon: topStories.icon,
-      id: topStories.id,
-      isFixed: true,
-      learnMore: {
-        link: {
-          href: message.header.link_url,
-          message: message.header.link_text
-        }
-      },
-      privacyNoticeURL: topStories.privacyNoticeURL,
-      showPrefName: topStories.pref.feed,
-      title: message.header.title
-    }, this.renderLayout(layoutRender)), this.renderLayout([{
-      width: 12,
-      components: [{
-        type: "Highlights"
-      }]
-    }]));
-  }
-
-  renderLayout(layoutRender) {
-    const styles = [];
-    return external_React_default.a.createElement("div", {
-      className: "discovery-stream ds-layout"
-    }, layoutRender.map((row, rowIndex) => external_React_default.a.createElement("div", {
-      key: `row-${rowIndex}`,
-      className: `ds-column ds-column-${row.width}`
-    }, external_React_default.a.createElement("div", {
-      className: "ds-column-grid"
-    }, row.components.map((component, componentIndex) => {
-      if (!component) {
-        return null;
-      }
-
-      styles[rowIndex] = [...(styles[rowIndex] || []), component.styles];
-      return external_React_default.a.createElement("div", {
-        key: `component-${componentIndex}`
-      }, this.renderComponent(component, row.width));
-    })))), this.renderStyles(styles));
-  }
-
-}
-const DiscoveryStreamBase = Object(external_ReactRedux_["connect"])(state => ({
-  DiscoveryStream: state.DiscoveryStream,
-  Prefs: state.Prefs,
-  Sections: state.Sections
-}))(DiscoveryStreamBase_DiscoveryStreamBase);
 
  }),
 
@@ -14614,10 +14841,10 @@ var ReturnToAMO = __webpack_require__(24);
 var FullPageInterrupt = __webpack_require__(25);
 
 
-var src = __webpack_require__(59);
+var src = __webpack_require__(78);
 
 
-var rich_text_strings = __webpack_require__(61);
+var rich_text_strings = __webpack_require__(80);
 
 
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
@@ -14922,14 +15149,14 @@ __webpack_require__.r(__webpack_exports__);
 var Actions = __webpack_require__(2);
 
 
-var A11yLinkButton = __webpack_require__(40);
+var A11yLinkButton = __webpack_require__(48);
 
 
 var external_React_ = __webpack_require__(9);
 var external_React_default = __webpack_require__.n(external_React_);
 
 
-var TopSitesConstants = __webpack_require__(53);
+var TopSitesConstants = __webpack_require__(68);
 
 
 
@@ -15044,7 +15271,7 @@ TopSiteFormInput_TopSiteFormInput.defaultProps = {
   validationError: false
 };
 
-var TopSite = __webpack_require__(55);
+var TopSite = __webpack_require__(70);
 
 
  __webpack_require__.d(__webpack_exports__, "TopSiteForm", function() { return TopSiteForm_TopSiteForm; });

@@ -314,13 +314,6 @@ const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "telemetry.ping.endpoint",
-    {
-      title: "Telemetry server endpoint",
-      value: "https://tiles.services.mozilla.com/v4/links/activity-stream",
-    },
-  ],
-  [
     "section.highlights.includeVisited",
     {
       title:
@@ -463,9 +456,9 @@ const PREFS_CONFIG = new Map([
   ],
   
   [
-    "discoverystream.campaign.blocks",
+    "discoverystream.flight.blocks",
     {
-      title: "Track campaign blocks",
+      title: "Track flight blocks",
       skipBroadcast: true,
       value: "{}",
     },
@@ -480,6 +473,7 @@ const PREFS_CONFIG = new Map([
         const dsEnablementMatrix = {
           US: ["en-CA", "en-GB", "en-US"],
           CA: ["en-CA", "en-GB", "en-US"],
+          DE: ["de", "de-DE", "de-AT", "de-CH"],
         };
 
         
