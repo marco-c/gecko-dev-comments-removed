@@ -136,11 +136,6 @@ add_task(async function startup() {
     },
   };
 
-  if (SpecialPowers.useRemoteSubframes) {
-    
-    max = 50;
-  }
-
   let startupRecorder = Cc["@mozilla.org/test/startuprecorder;1"].getService()
     .wrappedJSObject;
   await startupRecorder.done;
@@ -221,7 +216,37 @@ add_task(async function navigate_around() {
 
   if (SpecialPowers.useRemoteSubframes) {
     
-    max = 50;
+    
+    
+    
+    
+    
+    
+    whitelist["dom.ipc.processCount.webIsolated"] = {
+      min: 50,
+      max: 51,
+    };
+    
+    whitelist["dom.ipc.keepProcessesAlive.webIsolated.perOrigin"] = {
+      min: 50,
+      max: 51,
+    };
+    if (AppConstants.platform == "linux") {
+      
+      
+      whitelist["security.sandbox.content.write_path_whitelist"] = {
+        min: 50,
+        max: 51,
+      };
+      whitelist["security.sandbox.content.read_path_whitelist"] = {
+        min: 50,
+        max: 51,
+      };
+      whitelist["security.sandbox.content.force-namespace"] = {
+        min: 50,
+        max: 51,
+      };
+    }
   }
 
   Services.prefs.resetStats();
@@ -234,17 +259,17 @@ add_task(async function navigate_around() {
   );
 
   let urls = [
-    "http://example.com",
-    "https://example.com",
-    "http://example.org",
-    "https://example.org",
+    "http://example.com/",
+    "https://example.com/",
+    "http://example.org/",
+    "https://example.org/",
   ];
 
   for (let i = 0; i < 50; i++) {
     let url = urls[i % urls.length];
     info(`Navigating to ${url}...`);
     await BrowserTestUtils.loadURI(tab.linkedBrowser, url);
-    await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+    await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, url);
     info(`Loaded ${url}.`);
   }
 
