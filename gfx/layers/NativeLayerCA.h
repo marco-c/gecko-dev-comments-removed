@@ -241,8 +241,9 @@ class NativeLayerCA : public NativeLayer {
   
   
   
-  CALayer* mWrappingCALayer = nullptr;  
-  CALayer* mContentCALayer = nullptr;   
+  CALayer* mWrappingCALayer = nullptr;      
+  CALayer* mContentCALayer = nullptr;       
+  CALayer* mOpaquenessTintLayer = nullptr;  
 
   float mBackingScale = 1.0f;
   bool mSurfaceIsFlipped = false;
