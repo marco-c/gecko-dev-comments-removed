@@ -979,10 +979,11 @@ class FuncType {
     return false;
   }
   
-  
   bool temporarilyUnsupportedReftypeForEntry() const {
-    if (hasReferenceArg()) {
-      return true;
+    for (ValType arg : args()) {
+      if (arg.isReference() && arg.code() != ValType::AnyRef) {
+        return true;
+      }
     }
     for (ValType result : results()) {
       if (result.isReference() && result.code() != ValType::AnyRef) {
@@ -1003,7 +1004,12 @@ class FuncType {
         return true;
       }
     }
-    return hasReferenceReturn();
+    for (ValType result : results()) {
+      if (result.isReference() && result.code() != ValType::AnyRef) {
+        return true;
+      }
+    }
+    return false;
   }
   bool jitExitRequiresArgCheck() const {
     for (ValType arg : args()) {
@@ -2051,6 +2057,7 @@ enum class SymbolicAddress {
   CoerceInPlace_ToInt32,
   CoerceInPlace_ToNumber,
   CoerceInPlace_JitEntry,
+  BoxValue_Anyref,
   DivI64,
   UDivI64,
   ModI64,
