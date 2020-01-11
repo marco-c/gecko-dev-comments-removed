@@ -1447,31 +1447,6 @@ PopupNotifications.prototype = {
   ) {
     for (let anchorElement of anchorElements) {
       anchorElement.setAttribute(ICON_ATTRIBUTE_SHOWING, "true");
-      
-      
-      
-      
-      if (anchorElement.classList.contains("notification-anchor-icon")) {
-        
-        let className = anchorElement.className.replace(
-          /([-\w]+-notification-icon\s?)/g,
-          ""
-        );
-        if (notifications.length) {
-          
-          let notification = notifications[0];
-          for (let n of notifications) {
-            if (n.anchorElement == anchorElement) {
-              notification = n;
-              break;
-            }
-          }
-          
-          
-          className = notification.anchorID + " " + className;
-        }
-        anchorElement.className = className;
-      }
     }
   },
 
