@@ -28,6 +28,7 @@ body {
 }
 
 #preferences-body {
+  vertical-align: top; 
   display: -moz-box;
   -moz-box-orient: vertical;
 }
