@@ -623,6 +623,25 @@ enum ReactionRecordSlots {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   ReactionRecordSlot_Promise = 0,
 
   
