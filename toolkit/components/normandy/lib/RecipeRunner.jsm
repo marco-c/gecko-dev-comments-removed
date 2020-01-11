@@ -31,6 +31,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Uptake: "resource://normandy/lib/Uptake.jsm",
   ActionsManager: "resource://normandy/lib/ActionsManager.jsm",
   Kinto: "resource://services-common/kinto-offline-client.js",
+  clearTimeout: "resource://gre/modules/Timer.jsm",
+  setTimeout: "resource://gre/modules/Timer.jsm",
 });
 
 var EXPORTED_SYMBOLS = ["RecipeRunner"];
@@ -48,6 +50,7 @@ const DEV_MODE_PREF = `${PREF_PREFIX}.dev_mode`;
 const API_URL_PREF = `${PREF_PREFIX}.api_url`;
 const LAZY_CLASSIFY_PREF = `${PREF_PREFIX}.experiments.lazy_classify`;
 const LAST_BUILDID_PREF = `${PREF_PREFIX}.last_seen_buildid`;
+const ONSYNC_SKEW_SEC_PREF = `${PREF_PREFIX}.onsync_skew_sec`;
 
 
 
@@ -93,6 +96,7 @@ var RecipeRunner = {
     this.running = false;
     this.enabled = null;
     this.loadFromRemoteSettings = false;
+    this._syncSkewTimeout = null;
 
     this.checkPrefs(); 
     this.watchPrefs();
@@ -270,7 +274,31 @@ var RecipeRunner = {
         if (!this.enabled) {
           return;
         }
-        await this.run({ trigger: "sync" });
+
+        
+        
+        
+        if (this._syncSkewTimeout) {
+          clearTimeout(this._syncSkewTimeout);
+        }
+        let minSkewSec = 1; 
+        let maxSkewSec = Services.prefs.getIntPref(ONSYNC_SKEW_SEC_PREF, 0);
+        if (maxSkewSec >= minSkewSec) {
+          let skewMillis =
+            (minSkewSec + Math.random() * (maxSkewSec - minSkewSec)) * 1000;
+          log.debug(
+            `Delaying on-sync Normandy run for ${Math.floor(
+              skewMillis / 1000
+            )} seconds`
+          );
+          this._syncSkewTimeout = setTimeout(
+            () => this.run({ trigger: "sync" }),
+            skewMillis
+          );
+        } else {
+          log.debug(`Not skewing on-sync Normandy run`);
+          await this.run({ trigger: "sync" });
+        }
       };
 
       gRemoteSettingsClient.on("sync", this._onSync);
@@ -282,8 +310,13 @@ var RecipeRunner = {
     if (this._onSync) {
       
       gRemoteSettingsClient.off("sync", this._onSync);
+      this._onSync = null;
     }
-    this._onSync = null;
+
+    if (this._syncSkewTimeout) {
+      clearTimeout(this._syncSkewTimeout);
+      this._syncSkewTimeout = null;
+    }
   },
 
   updateRunInterval() {
@@ -301,8 +334,13 @@ var RecipeRunner = {
     }
     try {
       this.running = true;
-
       Services.obs.notifyObservers(null, "recipe-runner:start");
+
+      if (this._syncSkewTimeout) {
+        clearTimeout(this._syncSkewTimeout);
+        this._syncSkewTimeout = null;
+      }
+
       this.clearCaches();
       
       if (!Services.prefs.getBoolPref(LAZY_CLASSIFY_PREF, false)) {
