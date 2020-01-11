@@ -475,7 +475,6 @@ static void HandleExceptionBaseline(JSContext* cx, JSJitFrameIter& frame,
   }
 
   
-  
   if (cx->isPropagatingForcedReturn()) {
     cx->clearPropagatingForcedReturn();
     ForcedReturn(cx, frame, pc, rfe);

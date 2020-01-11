@@ -1039,8 +1039,8 @@ bool DebugAPI::slowPathOnNewGenerator(JSContext* cx, AbstractFramePtr frame,
 }
 
 
-ResumeMode DebugAPI::slowPathOnDebuggerStatement(JSContext* cx,
-                                                 AbstractFramePtr frame) {
+bool DebugAPI::slowPathOnDebuggerStatement(JSContext* cx,
+                                           AbstractFramePtr frame) {
   RootedValue rval(cx);
   ResumeMode resumeMode = Debugger::dispatchHook(
       cx,
@@ -1053,22 +1053,23 @@ ResumeMode DebugAPI::slowPathOnDebuggerStatement(JSContext* cx,
 
   switch (resumeMode) {
     case ResumeMode::Continue:
-    case ResumeMode::Terminate:
       break;
+    case ResumeMode::Terminate:
+      return false;
 
     case ResumeMode::Return:
-      frame.setReturnValue(rval);
-      break;
+      DebugAPI::propagateForcedReturn(cx, frame, rval);
+      return false;
 
     case ResumeMode::Throw:
       cx->setPendingExceptionAndCaptureStack(rval);
-      break;
+      return false;
 
     default:
       MOZ_CRASH("Invalid onDebuggerStatement resume mode");
   }
 
-  return resumeMode;
+  return true;
 }
 
 
@@ -6498,7 +6499,6 @@ void DebugAPI::handleUnrecoverableIonBailoutError(
 
 void DebugAPI::propagateForcedReturn(JSContext* cx, AbstractFramePtr frame,
                                      HandleValue rval) {
-  
   
   
   
