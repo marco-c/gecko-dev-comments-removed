@@ -155,13 +155,7 @@ class RemoteAutomation(Automation):
             dumpDir = tempfile.mkdtemp()
             remoteCrashDir = posixpath.join(self.remoteProfile, 'minidumps')
             if not self.device.is_dir(remoteCrashDir):
-                
-                
-                
-                
-                print("Automation Error: No crash directory (%s) found on remote device" %
-                      remoteCrashDir)
-                return True
+                return False
             self.device.pull(remoteCrashDir, dumpDir)
 
             logger = get_default_logger()
