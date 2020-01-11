@@ -304,9 +304,6 @@ class ResponsiveUI {
     
     if (!isTabContentDestroying) {
       await this.inited;
-
-      
-      await this.updateScreenOrientation("landscape-primary", 0);
     }
 
     if (this.isBrowserUIEnabled) {
