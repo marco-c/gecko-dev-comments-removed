@@ -13,6 +13,12 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 ChromeUtils.defineModuleGetter(
   this,
+  "setTimeout",
+  "resource://gre/modules/Timer.jsm"
+);
+
+ChromeUtils.defineModuleGetter(
+  this,
   "ReaderMode",
   "resource://gre/modules/ReaderMode.jsm"
 );
@@ -172,7 +178,7 @@ class PrintingChild extends ActorChild {
               };
               contentWindow.addEventListener("MozAfterPaint", onPaint);
               
-              mm.setTimeout(() => {
+              setTimeout(() => {
                 mm.removeEventListener("MozAfterPaint", onPaint);
                 mm.sendAsyncMessage("Printing:Preview:ReaderModeReady");
               }, 100);
