@@ -105,10 +105,10 @@ const allowedStylesRegex = new RegExp(
 
 const forbiddenValuesRegexs = [
   
-  /\b(?:url|(?:-moz-)?element)[\s('"]+/gi,
+  /\b((?:-moz-)?element)[\s('"]+/gi,
 
   
-  /['"(]*(?:chrome|resource|about|app|data|https?|ftp|file):+\/*/gi,
+  /['"(]*(?:chrome|resource|about|app|https?|ftp|file):+\/*/gi,
 ];
 
 function cleanupStyle(userProvidedStyle, createElement) {
