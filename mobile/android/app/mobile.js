@@ -236,6 +236,7 @@ pref("accessibility.typeaheadfind.flashBar", 1);
 pref("accessibility.typeaheadfind.linksonly", false);
 pref("accessibility.typeaheadfind.casesensitive", 0);
 pref("accessibility.browsewithcaret_shortcut.enabled", false);
+pref("findbar.matchdiacritics", 0);
 
 
 

@@ -96,6 +96,8 @@ FinderIterator.prototype = {
 
 
 
+
+
   start({
     allowDistance,
     caseSensitive,
@@ -104,6 +106,7 @@ FinderIterator.prototype = {
     limit,
     linksOnly,
     listener,
+    matchDiacritics,
     useCache,
     word,
     useSubFrames,
@@ -132,6 +135,9 @@ FinderIterator.prototype = {
     if (typeof entireWord != "boolean") {
       throw new Error("Missing required option 'entireWord'");
     }
+    if (typeof matchDiacritics != "boolean") {
+      throw new Error("Missing required option 'matchDiacritics'");
+    }
     if (!finder) {
       throw new Error("Missing required option 'finder'");
     }
@@ -158,6 +164,7 @@ FinderIterator.prototype = {
       caseSensitive,
       entireWord,
       linksOnly,
+      matchDiacritics,
       useCache,
       window,
       word,
@@ -308,10 +315,13 @@ FinderIterator.prototype = {
 
 
 
+
+
   continueRunning({
     caseSensitive,
     entireWord,
     linksOnly,
+    matchDiacritics,
     word,
     useSubFrames,
   }) {
@@ -320,6 +330,7 @@ FinderIterator.prototype = {
       this._currentParams.caseSensitive === caseSensitive &&
       this._currentParams.entireWord === entireWord &&
       this._currentParams.linksOnly === linksOnly &&
+      this._currentParams.matchDiacritics === matchDiacritics &&
       this._currentParams.word == word &&
       this._currentParams.useSubFrames == useSubFrames
     );
@@ -379,10 +390,13 @@ FinderIterator.prototype = {
 
 
 
+
+
   _previousResultAvailable({
     caseSensitive,
     entireWord,
     linksOnly,
+    matchDiacritics,
     useCache,
     word,
   }) {
@@ -392,6 +406,7 @@ FinderIterator.prototype = {
         caseSensitive,
         entireWord,
         linksOnly,
+        matchDiacritics,
         word,
       }) &&
       this._previousRanges.length
@@ -415,6 +430,7 @@ FinderIterator.prototype = {
       paramSet1.caseSensitive === paramSet2.caseSensitive &&
       paramSet1.entireWord === paramSet2.entireWord &&
       paramSet1.linksOnly === paramSet2.linksOnly &&
+      paramSet1.matchDiacritics === paramSet2.matchDiacritics &&
       paramSet1.window === paramSet2.window &&
       paramSet1.useSubFrames === paramSet2.useSubFrames &&
       NLP.levenshtein(paramSet1.word, paramSet2.word) <= allowDistance
@@ -628,7 +644,12 @@ FinderIterator.prototype = {
 
 
 
-  *_iterateDocument({ caseSensitive, entireWord, word }, window) {
+
+
+  *_iterateDocument(
+    { caseSensitive, entireWord, matchDiacritics, word },
+    window
+  ) {
     let doc = window.document;
     let body = doc.body || doc.documentElement;
 
@@ -652,6 +673,7 @@ FinderIterator.prototype = {
       .QueryInterface(Ci.nsIFind);
     nsIFind.caseSensitive = caseSensitive;
     nsIFind.entireWord = entireWord;
+    nsIFind.matchDiacritics = matchDiacritics;
 
     while ((retRange = nsIFind.Find(word, searchRange, startPt, endPt))) {
       yield retRange;

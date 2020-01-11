@@ -775,6 +775,11 @@ pref("findbar.entireword", false);
 pref("findbar.iteratorTimeout", 100);
 
 
+
+
+pref("findbar.matchdiacritics", 0);
+
+
 pref("gfx.use_text_smoothing_setting", false);
 
 
