@@ -10,6 +10,9 @@ const TEST_URI =
 
 add_task(async function() {
   
+  await pushPref("security.allow_parent_unrestricted_js_loads", true);
+
+  
   await pushPref("devtools.debugger.features.map-await-expression", true);
   const hud = await openNewTabAndConsole(TEST_URI);
 

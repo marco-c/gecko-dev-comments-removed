@@ -13,6 +13,9 @@
 "use strict";
 
 add_task(async function() {
+  
+  await pushPref("security.allow_parent_unrestricted_js_loads", true);
+
   const hud = await BrowserConsoleManager.toggleBrowserConsole();
   ok(hud, "browser console opened");
 

@@ -29,6 +29,8 @@ async function test() {
     "privacy.resistFingerprinting.reduceTimerPrecision.microseconds",
     2000
   );
+  
+  await pushPref("security.allow_parent_unrestricted_js_loads", true);
 
   const tab = await addTab(URI);
   runCodeMirrorTest(tab.linkedBrowser);
