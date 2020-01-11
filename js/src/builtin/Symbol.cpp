@@ -14,7 +14,6 @@
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
 
-using JS::Symbol;
 using namespace js;
 
 const JSClass SymbolObject::class_ = {
@@ -78,12 +77,11 @@ const ClassSpec SymbolObject::classSpec_ = {
     SymbolClassFinish};
 
 
+
 bool SymbolObject::construct(JSContext* cx, unsigned argc, Value* vp) {
-  
-  
-  
-  
   CallArgs args = CallArgsFromVp(argc, vp);
+
+  
   if (args.isConstructing()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_NOT_CONSTRUCTOR, "Symbol");
@@ -100,14 +98,14 @@ bool SymbolObject::construct(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  RootedSymbol symbol(cx,
-                      JS::Symbol::new_(cx, JS::SymbolCode::UniqueSymbol, desc));
+  JS::Symbol* symbol = JS::Symbol::new_(cx, JS::SymbolCode::UniqueSymbol, desc);
   if (!symbol) {
     return false;
   }
   args.rval().setSymbol(symbol);
   return true;
 }
+
 
 
 bool SymbolObject::for_(JSContext* cx, unsigned argc, Value* vp) {
@@ -129,6 +127,7 @@ bool SymbolObject::for_(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+
 bool SymbolObject::keyFor(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -144,7 +143,7 @@ bool SymbolObject::keyFor(JSContext* cx, unsigned argc, Value* vp) {
   if (arg.toSymbol()->code() == JS::SymbolCode::InSymbolRegistry) {
 #ifdef DEBUG
     RootedString desc(cx, arg.toSymbol()->description());
-    MOZ_ASSERT(Symbol::for_(cx, desc) == arg.toSymbol());
+    MOZ_ASSERT(JS::Symbol::for_(cx, desc) == arg.toSymbol());
 #endif
     args.rval().setString(arg.toSymbol()->description());
     return true;
@@ -156,18 +155,30 @@ bool SymbolObject::keyFor(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-MOZ_ALWAYS_INLINE bool IsSymbol(HandleValue v) {
+static MOZ_ALWAYS_INLINE bool IsSymbol(HandleValue v) {
   return v.isSymbol() || (v.isObject() && v.toObject().is<SymbolObject>());
 }
 
 
+
+static MOZ_ALWAYS_INLINE JS::Symbol* ThisSymbolValue(HandleValue val) {
+  
+  MOZ_ASSERT(IsSymbol(val));
+
+  
+  if (val.isSymbol()) {
+    return val.toSymbol();
+  }
+
+  
+  return val.toObject().as<SymbolObject>().unbox();
+}
+
+
+
 bool SymbolObject::toString_impl(JSContext* cx, const CallArgs& args) {
   
-  HandleValue thisv = args.thisv();
-  MOZ_ASSERT(IsSymbol(thisv));
-  Rooted<Symbol*> sym(cx, thisv.isSymbol()
-                              ? thisv.toSymbol()
-                              : thisv.toObject().as<SymbolObject>().unbox());
+  JS::Symbol* sym = ThisSymbolValue(args.thisv());
 
   
   return SymbolDescriptiveString(cx, sym, args.rval());
@@ -179,15 +190,10 @@ bool SymbolObject::toString(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+
 bool SymbolObject::valueOf_impl(JSContext* cx, const CallArgs& args) {
   
-  HandleValue thisv = args.thisv();
-  MOZ_ASSERT(IsSymbol(thisv));
-  if (thisv.isSymbol()) {
-    args.rval().set(thisv);
-  } else {
-    args.rval().setSymbol(thisv.toObject().as<SymbolObject>().unbox());
-  }
+  args.rval().setSymbol(ThisSymbolValue(args.thisv()));
   return true;
 }
 
@@ -195,6 +201,7 @@ bool SymbolObject::valueOf(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return CallNonGenericMethod<IsSymbol, valueOf_impl>(cx, args);
 }
+
 
 
 bool SymbolObject::toPrimitive(JSContext* cx, unsigned argc, Value* vp) {
@@ -205,14 +212,13 @@ bool SymbolObject::toPrimitive(JSContext* cx, unsigned argc, Value* vp) {
   return CallNonGenericMethod<IsSymbol, valueOf_impl>(cx, args);
 }
 
+
+
 bool SymbolObject::descriptionGetter_impl(JSContext* cx, const CallArgs& args) {
   
-  HandleValue thisv = args.thisv();
-  MOZ_ASSERT(IsSymbol(thisv));
-  Rooted<Symbol*> sym(cx, thisv.isSymbol()
-                              ? thisv.toSymbol()
-                              : thisv.toObject().as<SymbolObject>().unbox());
+  JS::Symbol* sym = ThisSymbolValue(args.thisv());
 
+  
   
   if (JSString* str = sym->description()) {
     args.rval().setString(str);
