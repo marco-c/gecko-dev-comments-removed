@@ -855,10 +855,6 @@ NativeObject* GlobalObject::getOrCreateForOfPICObject(
   return forOfPIC;
 }
 
-bool GlobalObject::hasRegExpStatics() const {
-  return !getSlot(REGEXP_STATICS).isUndefined();
-}
-
 
 RegExpStatics* GlobalObject::getRegExpStatics(JSContext* cx,
                                               Handle<GlobalObject*> global) {
@@ -877,13 +873,6 @@ RegExpStatics* GlobalObject::getRegExpStatics(JSContext* cx,
     resObj = &val.toObject().as<RegExpStaticsObject>();
   }
   return static_cast<RegExpStatics*>(resObj->getPrivate( 1));
-}
-
-RegExpStatics* GlobalObject::getAlreadyCreatedRegExpStatics() const {
-  const Value& val = this->getSlot(REGEXP_STATICS);
-  MOZ_ASSERT(val.isObject());
-  return static_cast<RegExpStatics*>(
-      val.toObject().as<RegExpStaticsObject>().getPrivate( 1));
 }
 
 
