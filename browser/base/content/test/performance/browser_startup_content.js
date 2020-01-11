@@ -67,6 +67,9 @@ const whitelist = {
     "chrome://global/content/browser-content.js",
 
     
+    "chrome://formautofill/content/FormAutofillFrameScript.js",
+
+    
     "resource://gre/modules/addons/Content.js",
   ]),
   processScripts: new Set([

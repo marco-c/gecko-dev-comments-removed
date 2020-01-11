@@ -20,7 +20,7 @@ function play_not_in_tree_audio() {
   content.document.body.removeChild(audio);
 
   
-  content.setTimeout(function() {
+  setTimeout(function() {
     info("Prepare to start playing audio.");
     audio.play();
   }, 1000);
