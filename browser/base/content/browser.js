@@ -3963,9 +3963,6 @@ var newTabButtonObserver = {
         let data = await UrlbarUtils.getShortcutOrURIAndPostData(link.url);
         
         openNewTabWith(data.url, shiftKey, {
-          
-          
-          allowInheritPrincipal: true,
           postData: data.postData,
           allowThirdPartyFixup: true,
           triggeringPrincipal,
