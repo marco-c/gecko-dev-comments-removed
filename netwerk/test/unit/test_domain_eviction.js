@@ -56,7 +56,7 @@ function* do_run_test() {
   setCookies("tasty.horse.radish", 50, futureExpiry);
   Assert.equal(countCookies("horse.radish", "horse.radish"), 50);
 
-  for (let cookie of Services.cookiemgr.enumerator) {
+  for (let cookie of Services.cookiemgr.cookies) {
     if (cookie.host == "horse.radish") {
       do_throw("cookies not evicted by lastAccessed order");
     }
@@ -133,7 +133,7 @@ function countCookies(aBaseDomain, aHost) {
   
   
   let cookies = [];
-  for (let cookie of Services.cookiemgr.enumerator) {
+  for (let cookie of Services.cookiemgr.cookies) {
     if (
       cookie.host.length >= aBaseDomain.length &&
       cookie.host.slice(cookie.host.length - aBaseDomain.length) == aBaseDomain
@@ -165,7 +165,7 @@ function countCookies(aBaseDomain, aHost) {
       }
 
       if (!found) {
-        do_throw("cookie " + cookie.name + " not found in master enumerator");
+        do_throw("cookie " + cookie.name + " not found in master cookies");
       }
     } else {
       do_throw(
