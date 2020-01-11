@@ -10,16 +10,19 @@ const { UPDATE_DETAILS } = require("devtools/client/accessibility/constants");
 
 
 
-
-exports.updateDetails = (domWalker, accessible) => dispatch =>
-  Promise.all([
-    domWalker.getNodeFromActor(accessible.actorID, [
-      "rawAccessible",
-      "DOMNode",
-    ]),
-    accessible.getRelations(),
-    accessible.audit(),
-    accessible.hydrate(),
-  ])
+exports.updateDetails = accessible => dispatch =>
+  accessible.targetFront
+    .getFront("inspector")
+    .then(({ walker: domWalker }) =>
+      Promise.all([
+        domWalker.getNodeFromActor(accessible.actorID, [
+          "rawAccessible",
+          "DOMNode",
+        ]),
+        accessible.getRelations(),
+        accessible.audit(),
+        accessible.hydrate(),
+      ])
+    )
     .then(response => dispatch({ accessible, type: UPDATE_DETAILS, response }))
     .catch(error => dispatch({ accessible, type: UPDATE_DETAILS, error }));
