@@ -634,12 +634,17 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
 
             
             
+            
+            if self.browser_version is None:
+                self.browser_version = "n/a"
+
             app_data = {
                 'application': {
                     'name': self.browser_name,
                     'version': self.browser_version,
                 },
             }
+
             app_file = os.path.join(self.result_dir(), "application.json")
             LOG.info("Writing application data {} into {}".format(app_data, app_file))
             with open(app_file, "w") as f:
