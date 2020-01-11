@@ -175,6 +175,17 @@ nsresult AudioStream::EnsureTimeStretcherInitializedUnlocked() {
     mTimeStretcher->setSampleRate(mAudioClock.GetInputRate());
     mTimeStretcher->setChannels(mOutChannels);
     mTimeStretcher->setPitch(1.0);
+
+    
+    
+    
+    
+    
+    
+    
+    mTimeStretcher->setSetting(SETTING_SEQUENCE_MS, 10);
+    mTimeStretcher->setSetting(SETTING_SEEKWINDOW_MS, 15);
+    mTimeStretcher->setSetting(SETTING_OVERLAP_MS, 8);
   }
   return NS_OK;
 }
