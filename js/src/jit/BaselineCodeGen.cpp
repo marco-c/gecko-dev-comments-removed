@@ -1259,8 +1259,12 @@ bool BaselineCodeGen<Handler>::emitInterruptCheck() {
 
   prepareVMCall();
 
+  
+  
+  const RetAddrEntry::Kind kind = RetAddrEntry::Kind::InterruptCheck;
+
   using Fn = bool (*)(JSContext*);
-  if (!callVM<Fn, InterruptCheck>()) {
+  if (!callVM<Fn, InterruptCheck>(kind)) {
     return false;
   }
 

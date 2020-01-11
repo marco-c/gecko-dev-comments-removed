@@ -111,6 +111,9 @@ class RetAddrEntry {
     StackCheck,
 
     
+    InterruptCheck,
+
+    
     DebugTrap,
 
     
