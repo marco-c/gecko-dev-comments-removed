@@ -12,18 +12,8 @@ add_task(async function() {
   await enableApplicationPanel();
 
   
-  
-  
-  info("Set a low service worker idle timeout");
-  await pushPref("dom.serviceWorkers.idle_timeout", 1000);
-  await pushPref("dom.serviceWorkers.idle_extended_timeout", 1000);
-
-  
   info("Disable service worker debugging");
-  await pushPref(
-    "devtools.debugger.features.windowless-service-workers",
-    false
-  );
+  await pushPref("dom.ipc.processCount", 8);
 
   const { panel, tab, target } = await openNewTabAndApplicationPanel(TAB_URL);
   const doc = panel.panelWin.document;
