@@ -111,6 +111,13 @@ class PageAction {
         message_id: recommendation.id,
         bucket_id: recommendation.content.bucket_id,
         event: "IMPRESSION",
+        ...(recommendation.personalizedModelVersion
+          ? {
+              event_context: {
+                modelVersion: recommendation.personalizedModelVersion,
+              },
+            }
+          : {}),
       });
     }
   }
@@ -592,7 +599,7 @@ class PageAction {
 
   
   async _renderPopup(message, browser) {
-    const { id, content } = message;
+    const { id, content, modelVersion } = message;
 
     const headerLabel = this.window.document.getElementById(
       "cfr-notification-header-label"
@@ -628,6 +635,7 @@ class PageAction {
         message_id: id,
         bucket_id: content.bucket_id,
         event: "RATIONALE",
+        ...(modelVersion ? { event_context: { modelVersion } } : {}),
       });
     
     
@@ -652,6 +660,7 @@ class PageAction {
             message_id: id,
             bucket_id: content.bucket_id,
             event: "ENABLE",
+            ...(modelVersion ? { event_context: { modelVersion } } : {}),
           });
           RecommendationMap.delete(browser);
         };
@@ -688,6 +697,7 @@ class PageAction {
             message_id: id,
             bucket_id: content.bucket_id,
             event: "PIN",
+            ...(modelVersion ? { event_context: { modelVersion } } : {}),
           });
           RecommendationMap.delete(browser);
         };
@@ -730,6 +740,7 @@ class PageAction {
             message_id: id,
             bucket_id: content.bucket_id,
             event: "LEARN_MORE",
+            ...(modelVersion ? { event_context: { modelVersion } } : {}),
           });
 
         primaryActionCallback = async () => {
@@ -744,6 +755,7 @@ class PageAction {
             message_id: id,
             bucket_id: content.bucket_id,
             event: "INSTALL",
+            ...(modelVersion ? { event_context: { modelVersion } } : {}),
           });
           RecommendationMap.delete(browser);
         };
@@ -776,6 +788,7 @@ class PageAction {
             message_id: id,
             bucket_id: content.bucket_id,
             event,
+            ...(modelVersion ? { event_context: { modelVersion } } : {}),
           });
         },
       };
@@ -841,7 +854,7 @@ class PageAction {
   async showPopup() {
     const browser = this.window.gBrowser.selectedBrowser;
     const message = RecommendationMap.get(browser);
-    const { id, content } = message;
+    const { id, content, modelVersion } = message;
 
     
     
@@ -852,6 +865,7 @@ class PageAction {
       message_id: id,
       bucket_id: content.bucket_id,
       event: "CLICK_DOORHANGER",
+      ...(modelVersion ? { event_context: { modelVersion } } : {}),
     });
     await this._renderPopup(message, browser);
   }
@@ -954,15 +968,25 @@ const CFRPageActions = {
 
   async showMilestone(browser, message, dispatchToASRouter, options = {}) {
     let win = null;
-    const { id, content } = message;
+    const { id, content, personalizedModelVersion } = message;
 
     
     if (options.force) {
       win = browser.browser.ownerGlobal;
-      RecommendationMap.set(browser.browser, { id, retain: true, content });
+      RecommendationMap.set(browser.browser, {
+        id,
+        content,
+        retain: true,
+        modelVersion: personalizedModelVersion,
+      });
     } else {
       win = browser.ownerGlobal;
-      RecommendationMap.set(browser, { id, retain: true, content });
+      RecommendationMap.set(browser, {
+        id,
+        content,
+        retain: true,
+        modelVersion: personalizedModelVersion,
+      });
     }
 
     if (!PageActionMap.has(win)) {
@@ -985,8 +1009,13 @@ const CFRPageActions = {
   async forceRecommendation(browser, recommendation, dispatchToASRouter) {
     
     const win = browser.browser.ownerGlobal;
-    const { id, content } = recommendation;
-    RecommendationMap.set(browser.browser, { id, retain: true, content });
+    const { id, content, personalizedModelVersion } = recommendation;
+    RecommendationMap.set(browser.browser, {
+      id,
+      content,
+      retain: true,
+      modelVersion: personalizedModelVersion,
+    });
     if (!PageActionMap.has(win)) {
       PageActionMap.set(win, new PageAction(win, dispatchToASRouter));
     }
@@ -1024,8 +1053,14 @@ const CFRPageActions = {
       
       return false;
     }
-    const { id, content } = recommendation;
-    RecommendationMap.set(browser, { id, host, retain: true, content });
+    const { id, content, personalizedModelVersion } = recommendation;
+    RecommendationMap.set(browser, {
+      id,
+      host,
+      content,
+      retain: true,
+      modelVersion: personalizedModelVersion,
+    });
     if (!PageActionMap.has(win)) {
       PageActionMap.set(win, new PageAction(win, dispatchToASRouter));
     }
