@@ -110,5 +110,5 @@ addAccessibleTask(
     
     await removeTextFromInput(browser, "input", "n", 1, 2);
   },
-  { iframe: true }
+  { iframe: true, remoteIframe: true }
 );
