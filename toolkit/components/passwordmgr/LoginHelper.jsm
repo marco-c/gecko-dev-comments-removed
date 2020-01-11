@@ -1105,7 +1105,7 @@ this.LoginHelper = {
   },
 
   isUserFacingLogin(login) {
-    return login.origin != "chrome://FirefoxAccounts"; 
+    return !login.origin.startsWith("chrome://");
   },
 
   async getAllUserFacingLogins() {
