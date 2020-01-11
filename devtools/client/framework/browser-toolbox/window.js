@@ -23,8 +23,8 @@ const L10N = new LocalizationHelper(
 );
 loader.lazyImporter(
   this,
-  "BrowserToolboxProcess",
-  "resource://devtools/client/framework/ToolboxProcess.jsm"
+  "BrowserToolboxLauncher",
+  "resource://devtools/client/framework/browser-toolbox/Launcher.jsm"
 );
 
 
@@ -173,7 +173,7 @@ function onCloseCommand(event) {
 
 
 function onDebugBrowserToolbox() {
-  BrowserToolboxProcess.init();
+  BrowserToolboxLauncher.init();
 }
 
 async function openToolbox(target) {

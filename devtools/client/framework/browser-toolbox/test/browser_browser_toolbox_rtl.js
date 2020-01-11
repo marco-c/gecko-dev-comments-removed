@@ -2,12 +2,6 @@
 
 
 
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/framework/test/helpers.js",
-  this
-);
-
-
 
 const { PromiseTestUtils } = ChromeUtils.import(
   "resource://testing-common/PromiseTestUtils.jsm"

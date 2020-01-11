@@ -4,8 +4,8 @@
 
 "use strict";
 
-const DBG_XUL =
-  "chrome://devtools/content/framework/toolbox-process-window.html";
+const BROWSER_TOOLBOX_WINDOW_URL =
+  "chrome://devtools/content/framework/browser-toolbox/window.html";
 const CHROME_DEBUGGER_PROFILE_NAME = "chrome_debugger_profile";
 
 const { require, DevToolsLoader } = ChromeUtils.import(
@@ -38,7 +38,7 @@ XPCOMUtils.defineLazyGetter(this, "EventEmitter", function() {
 
 const Services = require("Services");
 
-this.EXPORTED_SYMBOLS = ["BrowserToolboxProcess"];
+this.EXPORTED_SYMBOLS = ["BrowserToolboxLauncher"];
 
 var processes = new Set();
 
@@ -53,7 +53,7 @@ var processes = new Set();
 
 
 
-this.BrowserToolboxProcess = function BrowserToolboxProcess(
+this.BrowserToolboxLauncher = function BrowserToolboxLauncher(
   onClose,
   onRun,
   overwritePreferences,
@@ -66,7 +66,7 @@ this.BrowserToolboxProcess = function BrowserToolboxProcess(
   
   this.emit = function(...args) {
     emitter.emit(...args);
-    BrowserToolboxProcess.emit(...args);
+    BrowserToolboxLauncher.emit(...args);
   };
 
   if (onClose) {
@@ -87,13 +87,13 @@ this.BrowserToolboxProcess = function BrowserToolboxProcess(
   processes.add(this);
 };
 
-EventEmitter.decorate(BrowserToolboxProcess);
+EventEmitter.decorate(BrowserToolboxLauncher);
 
 
 
 
 
-BrowserToolboxProcess.init = function(
+BrowserToolboxLauncher.init = function(
   onClose,
   onRun,
   overwritePreferences,
@@ -106,7 +106,7 @@ BrowserToolboxProcess.init = function(
     console.error("Could not start Browser Toolbox, you need to enable it.");
     return null;
   }
-  return new BrowserToolboxProcess(
+  return new BrowserToolboxLauncher(
     onClose,
     onRun,
     overwritePreferences,
@@ -118,11 +118,11 @@ BrowserToolboxProcess.init = function(
 
 
 
-BrowserToolboxProcess.getBrowserToolboxSessionState = function() {
+BrowserToolboxLauncher.getBrowserToolboxSessionState = function() {
   return processes.size !== 0;
 };
 
-BrowserToolboxProcess.prototype = {
+BrowserToolboxLauncher.prototype = {
   
 
 
@@ -247,7 +247,7 @@ BrowserToolboxProcess.prototype = {
       "-profile",
       profilePath,
       "-chrome",
-      DBG_XUL,
+      BROWSER_TOOLBOX_WINDOW_URL,
     ];
 
     const environment = {

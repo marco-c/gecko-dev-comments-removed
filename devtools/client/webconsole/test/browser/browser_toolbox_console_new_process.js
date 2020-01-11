@@ -5,7 +5,6 @@
 
 
 
-
 "use strict";
 
 requestLongerTimeout(4);
@@ -18,8 +17,10 @@ const EXAMPLE_URI =
   "http://example.com/browser/devtools/client/webconsole/" +
   "test/browser/test-console.html";
 
+
+
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/framework/test/helpers.js",
+  "chrome://mochitests/content/browser/devtools/client/framework/browser-toolbox/test/helpers-browser-toolbox.js",
   this
 );
 
