@@ -726,6 +726,15 @@ RefPtr<GenericPromise> GMPParent::ParseChromiumManifest(
   nsTArray<nsCString> codecs;
   SplitAt(",", codecsString, codecs);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
   for (const nsCString& chromiumCodec : codecs) {
     nsCString codec;
     if (chromiumCodec.EqualsASCII("vp8")) {
@@ -734,6 +743,8 @@ RefPtr<GenericPromise> GMPParent::ParseChromiumManifest(
       codec = NS_LITERAL_CSTRING("vp9");
     } else if (chromiumCodec.EqualsASCII("avc1")) {
       codec = NS_LITERAL_CSTRING("h264");
+    } else if (chromiumCodec.EqualsASCII("av01")) {
+      codec = NS_LITERAL_CSTRING("av1");
     } else {
       return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
     }
