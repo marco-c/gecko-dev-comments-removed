@@ -13,6 +13,15 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 Sanitizer.onStartup();
 
+
+
+
+
+
+const swm = Cc["@mozilla.org/serviceworkers/manager;1"].getService(
+  Ci.nsIServiceWorkerManager
+);
+
 function getStateFileContents() {
   let stateFile = do_get_profile();
   stateFile.append(SSS_STATE_FILE_NAME);
