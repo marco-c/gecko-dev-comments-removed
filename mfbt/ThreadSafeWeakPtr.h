@@ -221,7 +221,7 @@ class SupportsThreadSafeWeakPtr : public external::AtomicRefCounted<T> {
   
   
   already_AddRefed<ThreadSafeWeakReference> getThreadSafeWeakReference() {
-    static_assert(IsBaseOf<SupportsThreadSafeWeakPtr<T>, T>::value,
+    static_assert(std::is_base_of<SupportsThreadSafeWeakPtr<T>, T>::value,
                   "T must derive from SupportsThreadSafeWeakPtr<T>");
 
     if (!mRef) {
@@ -312,9 +312,9 @@ class ThreadSafeWeakPtr {
  private:
   
   already_AddRefed<T> getRefPtr() const {
-    static_assert(
-        IsBaseOf<typename ThreadSafeWeakReference::ElementType, T>::value,
-        "T must derive from ThreadSafeWeakReference::ElementType");
+    static_assert(std::is_base_of<typename ThreadSafeWeakReference::ElementType,
+                                  T>::value,
+                  "T must derive from ThreadSafeWeakReference::ElementType");
     return mRef ? mRef->getRefPtr().template downcast<T>() : nullptr;
   }
 
@@ -322,9 +322,9 @@ class ThreadSafeWeakPtr {
   
   
   T* get() const {
-    static_assert(
-        IsBaseOf<typename ThreadSafeWeakReference::ElementType, T>::value,
-        "T must derive from ThreadSafeWeakReference::ElementType");
+    static_assert(std::is_base_of<typename ThreadSafeWeakReference::ElementType,
+                                  T>::value,
+                  "T must derive from ThreadSafeWeakReference::ElementType");
     return mRef ? static_cast<T*>(mRef->get()) : nullptr;
   }
 

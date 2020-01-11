@@ -48,7 +48,7 @@ nsISupports* ToSupports(
 
 
 
-template <typename T, bool IsXPCOM = mozilla::IsBaseOf<nsISupports, T>::value>
+template <typename T, bool IsXPCOM = std::is_base_of<nsISupports, T>::value>
 struct CycleCollectionNoteChildImpl {};
 
 template <typename T>
