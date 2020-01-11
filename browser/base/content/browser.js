@@ -505,13 +505,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
-  "gHtmlAboutAddonsEnabled",
-  "extensions.htmlaboutaddons.enabled",
-  false
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
   "gAddonAbuseReportEnabled",
   "extensions.abuseReport.enabled",
   false
@@ -7279,11 +7272,7 @@ function promptRemoveExtension(addon) {
   
   
   
-  if (
-    gHtmlAboutAddonsEnabled &&
-    gAddonAbuseReportEnabled &&
-    ["extension", "theme"].includes(addon.type)
-  ) {
+  if (gAddonAbuseReportEnabled && ["extension", "theme"].includes(addon.type)) {
     checkboxMessage = getFormattedString(
       "webext.remove.abuseReportCheckbox.message",
       [document.getElementById("bundle_brand").getString("vendorShortName")]
@@ -7358,8 +7347,7 @@ var ToolbarContextMenu = {
       element.hidden = !addon;
     }
 
-    reportExtension.hidden =
-      !addon || !gAddonAbuseReportEnabled || !gHtmlAboutAddonsEnabled;
+    reportExtension.hidden = !addon || !gAddonAbuseReportEnabled;
 
     if (addon) {
       removeExtension.disabled = !(
