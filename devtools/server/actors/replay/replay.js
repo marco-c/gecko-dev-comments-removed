@@ -1133,9 +1133,9 @@ function finishResume(point) {
 const gManifestFinishedAfterCheckpointHandlers = {
   primordial(_, point) {
     
-    
     assert(point.checkpoint == FirstCheckpointId);
-    RecordReplayControl.manifestFinished({ point });
+    const maxRunningProcesses = RecordReplayControl.maxRunningProcesses();
+    RecordReplayControl.manifestFinished({ point, maxRunningProcesses });
   },
 
   resume(_, point) {
