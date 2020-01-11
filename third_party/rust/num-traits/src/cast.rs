@@ -11,11 +11,13 @@ use float::FloatCore;
 
 pub trait ToPrimitive {
     
+    
     #[inline]
     fn to_isize(&self) -> Option<isize> {
         self.to_i64().as_ref().and_then(ToPrimitive::to_isize)
     }
 
+    
     
     #[inline]
     fn to_i8(&self) -> Option<i8> {
@@ -23,11 +25,13 @@ pub trait ToPrimitive {
     }
 
     
+    
     #[inline]
     fn to_i16(&self) -> Option<i16> {
         self.to_i64().as_ref().and_then(ToPrimitive::to_i16)
     }
 
+    
     
     #[inline]
     fn to_i32(&self) -> Option<i32> {
@@ -35,8 +39,11 @@ pub trait ToPrimitive {
     }
 
     
+    
     fn to_i64(&self) -> Option<i64>;
 
+    
+    
     
     
     
@@ -50,11 +57,13 @@ pub trait ToPrimitive {
     }
 
     
+    
     #[inline]
     fn to_usize(&self) -> Option<usize> {
         self.to_u64().as_ref().and_then(ToPrimitive::to_usize)
     }
 
+    
     
     #[inline]
     fn to_u8(&self) -> Option<u8> {
@@ -62,11 +71,13 @@ pub trait ToPrimitive {
     }
 
     
+    
     #[inline]
     fn to_u16(&self) -> Option<u16> {
         self.to_u64().as_ref().and_then(ToPrimitive::to_u16)
     }
 
+    
     
     #[inline]
     fn to_u32(&self) -> Option<u32> {
@@ -74,9 +85,11 @@ pub trait ToPrimitive {
     }
 
     
-    #[inline]
+    
     fn to_u64(&self) -> Option<u64>;
 
+    
+    
     
     
     
@@ -90,11 +103,13 @@ pub trait ToPrimitive {
     }
 
     
+    
     #[inline]
     fn to_f32(&self) -> Option<f32> {
         self.to_f64().as_ref().and_then(ToPrimitive::to_f32)
     }
 
+    
     
     #[inline]
     fn to_f64(&self) -> Option<f64> {
@@ -638,6 +653,7 @@ pub fn cast<T: NumCast, U: NumCast>(n: T) -> Option<U> {
 
 
 pub trait NumCast: Sized + ToPrimitive {
+    
     
     
     fn from<T: ToPrimitive>(n: T) -> Option<Self>;

@@ -196,6 +196,7 @@ checked_impl_unary!(CheckedNeg, checked_neg, isize);
 checked_impl_unary!(CheckedNeg, checked_neg, i128);
 
 
+
 pub trait CheckedShl: Sized + Shl<u32, Output = Self> {
     
     
@@ -239,6 +240,7 @@ checked_shift_impl!(CheckedShl, checked_shl, i64);
 checked_shift_impl!(CheckedShl, checked_shl, isize);
 #[cfg(has_i128)]
 checked_shift_impl!(CheckedShl, checked_shl, i128);
+
 
 
 pub trait CheckedShr: Sized + Shr<u32, Output = Self> {

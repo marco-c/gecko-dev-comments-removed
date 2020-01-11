@@ -5,6 +5,32 @@ use ops::checked::*;
 use ops::saturating::Saturating;
 use {Num, NumCast};
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub trait PrimInt:
     Sized
     + Copy

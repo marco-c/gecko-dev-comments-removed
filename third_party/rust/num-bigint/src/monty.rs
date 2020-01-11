@@ -5,7 +5,7 @@ use biguint::BigUint;
 
 struct MontyReducer<'a> {
     n: &'a BigUint,
-    n0inv: u32
+    n0inv: u32,
 }
 
 
@@ -16,8 +16,8 @@ fn inv_mod_u32(num: u32) -> u32 {
     
     assert!(num % 2 != 0);
 
-    let mut a: i64 = num as i64;
-    let mut b: i64 = (u32::max_value() as i64) + 1;
+    let mut a: i64 = i64::from(num);
+    let mut b: i64 = i64::from(u32::max_value()) + 1;
 
     
     
@@ -33,10 +33,12 @@ fn inv_mod_u32(num: u32) -> u32 {
         let q = a / b;
         let r = a % b;
         
-        a = b; b = r;
+        a = b;
+        b = r;
         
-        let m = u - w*q;
-        u = w; w = m;
+        let m = u - w * q;
+        u = w;
+        w = m;
     }
 
     assert!(a == 1);
@@ -100,7 +102,7 @@ fn monty_sqr(a: BigUint, mr: &MontyReducer) -> BigUint {
     monty_redc(&a * &a, mr)
 }
 
-pub fn monty_modpow(a: &BigUint, exp: &BigUint, modulus: &BigUint) -> BigUint{
+pub fn monty_modpow(a: &BigUint, exp: &BigUint, modulus: &BigUint) -> BigUint {
     let mr = MontyReducer::new(modulus);
 
     

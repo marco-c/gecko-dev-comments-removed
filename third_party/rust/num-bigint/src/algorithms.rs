@@ -1,10 +1,10 @@
 use std::borrow::Cow;
 use std::cmp;
-use std::cmp::Ordering::{self, Less, Greater, Equal};
+use std::cmp::Ordering::{self, Equal, Greater, Less};
 use std::iter::repeat;
 use std::mem;
 use traits;
-use traits::{Zero, One};
+use traits::{One, Zero};
 
 use biguint::BigUint;
 
@@ -12,86 +12,44 @@ use bigint::BigInt;
 use bigint::Sign;
 use bigint::Sign::{Minus, NoSign, Plus};
 
-#[allow(non_snake_case)]
-pub mod big_digit {
-    
-    pub type BigDigit = u32;
-
-    
-    
-    pub type DoubleBigDigit = u64;
-
-    pub const ZERO_BIG_DIGIT: BigDigit = 0;
-
-    
-    pub const BITS: usize = 32;
-
-    pub const BASE: DoubleBigDigit = 1 << BITS;
-    const LO_MASK: DoubleBigDigit = (-1i32 as DoubleBigDigit) >> BITS;
-
-    #[inline]
-    fn get_hi(n: DoubleBigDigit) -> BigDigit {
-        (n >> BITS) as BigDigit
-    }
-    #[inline]
-    fn get_lo(n: DoubleBigDigit) -> BigDigit {
-        (n & LO_MASK) as BigDigit
-    }
-
-    
-    #[inline]
-    pub fn from_doublebigdigit(n: DoubleBigDigit) -> (BigDigit, BigDigit) {
-        (get_hi(n), get_lo(n))
-    }
-
-    
-    #[inline]
-    pub fn to_doublebigdigit(hi: BigDigit, lo: BigDigit) -> DoubleBigDigit {
-        (lo as DoubleBigDigit) | ((hi as DoubleBigDigit) << BITS)
-    }
-}
-
-use big_digit::{BigDigit, DoubleBigDigit};
+use big_digit::{self, BigDigit, DoubleBigDigit, SignedDoubleBigDigit};
 
 
 
 
 #[inline]
-fn adc(a: BigDigit, b: BigDigit, carry: &mut BigDigit) -> BigDigit {
-    let (hi, lo) = big_digit::from_doublebigdigit((a as DoubleBigDigit) + (b as DoubleBigDigit) +
-                                                  (*carry as DoubleBigDigit));
-
-    *carry = hi;
+fn adc(a: BigDigit, b: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
+    *acc += DoubleBigDigit::from(a);
+    *acc += DoubleBigDigit::from(b);
+    let lo = *acc as BigDigit;
+    *acc >>= big_digit::BITS;
     lo
 }
 
 
 #[inline]
-fn sbb(a: BigDigit, b: BigDigit, borrow: &mut BigDigit) -> BigDigit {
-    let (hi, lo) = big_digit::from_doublebigdigit(big_digit::BASE + (a as DoubleBigDigit) -
-                                                  (b as DoubleBigDigit) -
-                                                  (*borrow as DoubleBigDigit));
-    
-    
-    *borrow = (hi == 0) as BigDigit;
+fn sbb(a: BigDigit, b: BigDigit, acc: &mut SignedDoubleBigDigit) -> BigDigit {
+    *acc += SignedDoubleBigDigit::from(a);
+    *acc -= SignedDoubleBigDigit::from(b);
+    let lo = *acc as BigDigit;
+    *acc >>= big_digit::BITS;
     lo
 }
 
 #[inline]
-pub fn mac_with_carry(a: BigDigit, b: BigDigit, c: BigDigit, carry: &mut BigDigit) -> BigDigit {
-    let (hi, lo) = big_digit::from_doublebigdigit((a as DoubleBigDigit) +
-                                                  (b as DoubleBigDigit) * (c as DoubleBigDigit) +
-                                                  (*carry as DoubleBigDigit));
-    *carry = hi;
+pub fn mac_with_carry(a: BigDigit, b: BigDigit, c: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
+    *acc += DoubleBigDigit::from(a);
+    *acc += DoubleBigDigit::from(b) * DoubleBigDigit::from(c);
+    let lo = *acc as BigDigit;
+    *acc >>= big_digit::BITS;
     lo
 }
 
 #[inline]
-pub fn mul_with_carry(a: BigDigit, b: BigDigit, carry: &mut BigDigit) -> BigDigit {
-    let (hi, lo) = big_digit::from_doublebigdigit((a as DoubleBigDigit) * (b as DoubleBigDigit) +
-                                                  (*carry as DoubleBigDigit));
-
-    *carry = hi;
+pub fn mul_with_carry(a: BigDigit, b: BigDigit, acc: &mut DoubleBigDigit) -> BigDigit {
+    *acc += DoubleBigDigit::from(a) * DoubleBigDigit::from(b);
+    let lo = *acc as BigDigit;
+    *acc >>= big_digit::BITS;
     lo
 }
 
@@ -106,7 +64,7 @@ fn div_wide(hi: BigDigit, lo: BigDigit, divisor: BigDigit) -> (BigDigit, BigDigi
     debug_assert!(hi < divisor);
 
     let lhs = big_digit::to_doublebigdigit(hi, lo);
-    let rhs = divisor as DoubleBigDigit;
+    let rhs = DoubleBigDigit::from(divisor);
     ((lhs / rhs) as BigDigit, (lhs % rhs) as BigDigit)
 }
 
@@ -120,6 +78,16 @@ pub fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) {
     }
 
     (a.normalized(), rem)
+}
+
+pub fn rem_digit(a: &BigUint, b: BigDigit) -> BigDigit {
+    let mut rem: DoubleBigDigit = 0;
+    for &digit in a.data.iter().rev() {
+        rem = (rem << big_digit::BITS) + DoubleBigDigit::from(digit);
+        rem %= DoubleBigDigit::from(b);
+    }
+
+    rem as BigDigit
 }
 
 
@@ -137,11 +105,13 @@ pub fn __add2(a: &mut [BigDigit], b: &[BigDigit]) -> BigDigit {
     if carry != 0 {
         for a in a_hi {
             *a = adc(*a, 0, &mut carry);
-            if carry == 0 { break }
+            if carry == 0 {
+                break;
+            }
         }
     }
 
-    carry
+    carry as BigDigit
 }
 
 
@@ -169,33 +139,49 @@ pub fn sub2(a: &mut [BigDigit], b: &[BigDigit]) {
     if borrow != 0 {
         for a in a_hi {
             *a = sbb(*a, 0, &mut borrow);
-            if borrow == 0 { break }
+            if borrow == 0 {
+                break;
+            }
         }
     }
 
     
-    assert!(borrow == 0 && b_hi.iter().all(|x| *x == 0),
-            "Cannot subtract b from a because b is larger than a.");
+    assert!(
+        borrow == 0 && b_hi.iter().all(|x| *x == 0),
+        "Cannot subtract b from a because b is larger than a."
+    );
+}
+
+
+#[inline]
+pub fn __sub2rev(a: &[BigDigit], b: &mut [BigDigit]) -> BigDigit {
+    debug_assert!(b.len() == a.len());
+
+    let mut borrow = 0;
+
+    for (ai, bi) in a.iter().zip(b) {
+        *bi = sbb(*ai, *bi, &mut borrow);
+    }
+
+    borrow as BigDigit
 }
 
 pub fn sub2rev(a: &[BigDigit], b: &mut [BigDigit]) {
     debug_assert!(b.len() >= a.len());
 
-    let mut borrow = 0;
-
     let len = cmp::min(a.len(), b.len());
     let (a_lo, a_hi) = a.split_at(len);
     let (b_lo, b_hi) = b.split_at_mut(len);
 
-    for (a, b) in a_lo.iter().zip(b_lo) {
-        *b = sbb(*a, *b, &mut borrow);
-    }
+    let borrow = __sub2rev(a_lo, b_lo);
 
     assert!(a_hi.is_empty());
 
     
-    assert!(borrow == 0 && b_hi.iter().all(|x| *x == 0),
-            "Cannot subtract b from a because b is larger than a.");
+    assert!(
+        borrow == 0 && b_hi.iter().all(|x| *x == 0),
+        "Cannot subtract b from a because b is larger than a."
+    );
 }
 
 pub fn sub_sign(a: &[BigDigit], b: &[BigDigit]) -> (Sign, BigUint) {
@@ -242,11 +228,7 @@ pub fn mac_digit(acc: &mut [BigDigit], b: &[BigDigit], c: BigDigit) {
 
 
 fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
-    let (x, y) = if b.len() < c.len() {
-        (b, c)
-    } else {
-        (c, b)
-    };
+    let (x, y) = if b.len() < c.len() { (b, c) } else { (c, b) };
 
     
     
@@ -349,8 +331,8 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         
         p.normalize();
 
-        add2(&mut acc[b..],        &p.data[..]);
-        add2(&mut acc[b * 2..],    &p.data[..]);
+        add2(&mut acc[b..], &p.data[..]);
+        add2(&mut acc[b * 2..], &p.data[..]);
 
         
         p.data.truncate(0);
@@ -360,8 +342,8 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         mac3(&mut p.data[..], x0, y0);
         p.normalize();
 
-        add2(&mut acc[..],         &p.data[..]);
-        add2(&mut acc[b..],        &p.data[..]);
+        add2(&mut acc[..], &p.data[..]);
+        add2(&mut acc[b..], &p.data[..]);
 
         
         
@@ -369,7 +351,7 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         let (j1_sign, j1) = sub_sign(y1, y0);
 
         match j0_sign * j1_sign {
-            Plus    => {
+            Plus => {
                 p.data.truncate(0);
                 p.data.extend(repeat(0).take(len));
 
@@ -377,13 +359,12 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
                 p.normalize();
 
                 sub2(&mut acc[b..], &p.data[..]);
-            },
-            Minus   => {
+            }
+            Minus => {
                 mac3(&mut acc[b..], &j0.data[..], &j1.data[..]);
-            },
-            NoSign  => (),
+            }
+            NoSign => (),
         }
-
     } else {
         
         
@@ -391,8 +372,9 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         
         
         
-
-        let i = y.len()/3 + 1;
+        
+        
+        let i = y.len() / 3 + 1;
 
         let x0_len = cmp::min(x.len(), i);
         let x1_len = cmp::min(x.len() - x0_len, i);
@@ -400,34 +382,105 @@ fn mac3(acc: &mut [BigDigit], b: &[BigDigit], c: &[BigDigit]) {
         let y0_len = i;
         let y1_len = cmp::min(y.len() - y0_len, i);
 
+        
+        
+        
+        
+        
         let x0 = BigInt::from_slice(Plus, &x[..x0_len]);
         let x1 = BigInt::from_slice(Plus, &x[x0_len..x0_len + x1_len]);
         let x2 = BigInt::from_slice(Plus, &x[x0_len + x1_len..]);
 
+        
         let y0 = BigInt::from_slice(Plus, &y[..y0_len]);
         let y1 = BigInt::from_slice(Plus, &y[y0_len..y0_len + y1_len]);
         let y2 = BigInt::from_slice(Plus, &y[y0_len + y1_len..]);
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
         let p = &x0 + &x2;
+
+        
         let q = &y0 + &y2;
 
+        
         let p2 = &p - &x1;
+
+        
         let q2 = &q - &y1;
 
+        
         let r0 = &x0 * &y0;
-        let r4 = &x2 * &y2;
-        let r1 = (p + x1) * (q + y1);
-        let r2 = &p2 * &q2;
-        let r3 = ((p2 + x2)*2 - x0) * ((q2 + y2)*2 - y0);
 
+        
+        let r4 = &x2 * &y2;
+
+        
+        let r1 = (p + x1) * (q + y1);
+
+        
+        let r2 = &p2 * &q2;
+
+        
+        let r3 = ((p2 + x2) * 2 - x0) * ((q2 + y2) * 2 - y0);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         let mut comp3: BigInt = (r3 - &r1) / 3;
         let mut comp1: BigInt = (r1 - &r2) / 2;
         let mut comp2: BigInt = r2 - &r0;
-        comp3 = (&comp2 - comp3)/2 + &r4*2;
+        comp3 = (&comp2 - comp3) / 2 + &r4 * 2;
         comp2 = comp2 + &comp1 - &r4;
         comp1 = comp1 - &comp3;
 
-        let result = r0 + (comp1 << 32*i) + (comp2 << 2*32*i) + (comp3 << 3*32*i) + (r4 << 4*32*i);
+        
+        
+        
+        let result = r0
+            + (comp1 << 32 * i)
+            + (comp2 << 2 * 32 * i)
+            + (comp3 << 3 * 32 * i)
+            + (r4 << 4 * 32 * i);
         let result_pos = result.to_biguint().unwrap();
         add2(&mut acc[..], &result_pos.data);
     }
@@ -446,20 +499,68 @@ pub fn scalar_mul(a: &mut [BigDigit], b: BigDigit) -> BigDigit {
     for a in a.iter_mut() {
         *a = mul_with_carry(*a, b, &mut carry);
     }
-    carry
+    carry as BigDigit
 }
 
-pub fn div_rem(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
+pub fn div_rem(mut u: BigUint, mut d: BigUint) -> (BigUint, BigUint) {
     if d.is_zero() {
         panic!()
     }
     if u.is_zero() {
         return (Zero::zero(), Zero::zero());
     }
-    if d.data == [1] {
-        return (u.clone(), Zero::zero());
-    }
+
     if d.data.len() == 1 {
+        if d.data == [1] {
+            return (u, Zero::zero());
+        }
+        let (div, rem) = div_rem_digit(u, d.data[0]);
+        
+        d.data.clear();
+        d += rem;
+        return (div, d);
+    }
+
+    
+    match u.cmp(&d) {
+        Less => return (Zero::zero(), u),
+        Equal => {
+            u.set_one();
+            return (u, Zero::zero());
+        }
+        Greater => {} 
+    }
+
+    
+    
+    
+    
+    
+    
+    let shift = d.data.last().unwrap().leading_zeros() as usize;
+    let (q, r) = if shift == 0 {
+        
+        div_rem_core(u, &d)
+    } else {
+        div_rem_core(u << shift, &(d << shift))
+    };
+    
+    (q, r >> shift)
+}
+
+pub fn div_rem_ref(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
+    if d.is_zero() {
+        panic!()
+    }
+    if u.is_zero() {
+        return (Zero::zero(), Zero::zero());
+    }
+
+    if d.data.len() == 1 {
+        if d.data == [1] {
+            return (u.clone(), Zero::zero());
+        }
+
         let (div, rem) = div_rem_digit(u.clone(), d.data[0]);
         return (div, rem.into());
     }
@@ -478,9 +579,27 @@ pub fn div_rem(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
     
     
     let shift = d.data.last().unwrap().leading_zeros() as usize;
-    let mut a = u << shift;
-    let b = d << shift;
 
+    let (q, r) = if shift == 0 {
+        
+        div_rem_core(u.clone(), d)
+    } else {
+        div_rem_core(u << shift, &(d << shift))
+    };
+    
+    (q, r >> shift)
+}
+
+
+
+
+
+
+
+
+
+
+fn div_rem_core(mut a: BigUint, b: &BigUint) -> (BigUint, BigUint) {
     
     
     
@@ -497,13 +616,17 @@ pub fn div_rem(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
 
     let bn = *b.data.last().unwrap();
     let q_len = a.data.len() - b.data.len() + 1;
-    let mut q = BigUint { data: vec![0; q_len] };
+    let mut q = BigUint {
+        data: vec![0; q_len],
+    };
 
     
     
     
     
-    let mut tmp = BigUint { data: Vec::with_capacity(2) };
+    let mut tmp = BigUint {
+        data: Vec::with_capacity(2),
+    };
 
     for j in (0..q_len).rev() {
         
@@ -529,12 +652,12 @@ pub fn div_rem(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
 
 
         let (mut q0, _) = div_rem_digit(a0, bn);
-        let mut prod = &b * &q0;
+        let mut prod = b * &q0;
 
         while cmp_slice(&prod.data[..], &a.data[j..]) == Greater {
             let one: BigUint = One::one();
             q0 = q0 - one;
-            prod = prod - &b;
+            prod = prod - b;
         }
 
         add2(&mut q.data[j..], &q0.data[..]);
@@ -544,9 +667,9 @@ pub fn div_rem(u: &BigUint, d: &BigUint) -> (BigUint, BigUint) {
         tmp = q0;
     }
 
-    debug_assert!(a < b);
+    debug_assert!(&a < b);
 
-    (q.normalized(), a >> shift)
+    (q.normalized(), a)
 }
 
 
@@ -641,9 +764,10 @@ pub fn cmp_slice(a: &[BigDigit], b: &[BigDigit]) -> Ordering {
 
 #[cfg(test)]
 mod algorithm_tests {
-    use {BigDigit, BigUint, BigInt};
-    use Sign::Plus;
+    use big_digit::BigDigit;
     use traits::Num;
+    use Sign::Plus;
+    use {BigInt, BigUint};
 
     #[test]
     fn test_sub_sign() {

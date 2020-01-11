@@ -2,15 +2,14 @@ use core::num::Wrapping;
 use core::ops::{Add, Mul};
 
 
+
+
+
+
+
+
+
 pub trait Zero: Sized + Add<Self, Output = Self> {
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -21,7 +20,11 @@ pub trait Zero: Sized + Add<Self, Output = Self> {
     fn zero() -> Self;
 
     
-    #[inline]
+    fn set_zero(&mut self) {
+        *self = Zero::zero();
+    }
+
+    
     fn is_zero(&self) -> bool;
 }
 
@@ -66,10 +69,22 @@ where
     fn is_zero(&self) -> bool {
         self.0.is_zero()
     }
+
+    fn set_zero(&mut self) {
+        self.0.set_zero();
+    }
+
     fn zero() -> Self {
         Wrapping(T::zero())
     }
 }
+
+
+
+
+
+
+
 
 
 pub trait One: Sized + Mul<Self, Output = Self> {
@@ -81,14 +96,12 @@ pub trait One: Sized + Mul<Self, Output = Self> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
     fn one() -> Self;
+
+    
+    fn set_one(&mut self) {
+        *self = One::one();
+    }
 
     
     
@@ -110,6 +123,10 @@ macro_rules! one_impl {
             #[inline]
             fn one() -> $t {
                 $v
+            }
+            #[inline]
+            fn is_one(&self) -> bool {
+                *self == $v
             }
         }
     };
@@ -138,6 +155,10 @@ impl<T: One> One for Wrapping<T>
 where
     Wrapping<T>: Mul<Output = Wrapping<T>>,
 {
+    fn set_one(&mut self) {
+        self.0.set_one();
+    }
+
     fn one() -> Self {
         Wrapping(T::one())
     }

@@ -1,4 +1,6 @@
-use std::ops::Neg;
+#![cfg(any(feature = "std", feature = "libm"))]
+
+use core::ops::Neg;
 
 use {Float, Num, NumCast};
 
