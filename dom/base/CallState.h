@@ -1,0 +1,23 @@
+
+
+
+
+
+
+#ifndef mozilla_CallState_h
+#define mozilla_CallState_h
+
+namespace mozilla {
+
+
+
+
+
+enum class CallState {
+  Continue,
+  Stop,
+};
+
+}  
+
+#endif  
