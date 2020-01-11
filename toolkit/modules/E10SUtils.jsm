@@ -724,7 +724,7 @@ var E10SUtils = {
   },
 
   shouldLoadURI(aDocShell, aURI, aHasPostData) {
-    let remoteSubframes = aDocShell.useRemoteSubframes;
+    let { useRemoteSubframes } = aDocShell;
 
     
     
@@ -756,7 +756,7 @@ var E10SUtils = {
     
     
     if (
-      useHttpResponseProcessSelection &&
+      (useRemoteSubframes || useHttpResponseProcessSelection) &&
       (aURI.scheme == "http" || aURI.scheme == "https") &&
       Services.appinfo.remoteType != NOT_REMOTE
     ) {
@@ -797,7 +797,7 @@ var E10SUtils = {
         this.getRemoteTypeForURIObject(
           aURI,
           true,
-          remoteSubframes,
+          useRemoteSubframes,
           remoteType,
           webNav.currentURI
         )
@@ -805,7 +805,7 @@ var E10SUtils = {
     }
 
     
-    return this.shouldLoadURIInThisProcess(aURI, remoteSubframes);
+    return this.shouldLoadURIInThisProcess(aURI, useRemoteSubframes);
   },
 
   redirectLoad(
