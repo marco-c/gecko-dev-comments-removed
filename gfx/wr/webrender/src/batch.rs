@@ -888,8 +888,17 @@ impl BatchBuilder {
                 let prim_data = &ctx.data_stores.text_run[data_handle];
                 let prim_cache_address = gpu_cache.get_address(&prim_data.gpu_cache_handle);
 
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 let prim_header = PrimitiveHeader {
-                    local_rect: prim_rect,
+                    local_rect: prim_rect.translate(-run.reference_frame_relative_offset),
                     local_clip_rect: prim_info.combined_local_clip_rect,
                     specific_prim_address: prim_cache_address,
                     transform_id,
