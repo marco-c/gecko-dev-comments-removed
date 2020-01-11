@@ -20,7 +20,7 @@
 #  include "PlatformMacros.h"
 #  include "AutoObjectMapper.h"
 
-#  if defined(GP_OS_android)
+#  if defined(MOZ_LINKER)
 #    include <dlfcn.h>
 #    include "mozilla/Types.h"
 
@@ -95,7 +95,7 @@ bool AutoObjectMapperPOSIX::Map( void** start,  size_t* length,
   return true;
 }
 
-#  if defined(GP_OS_android)
+#  if defined(MOZ_LINKER)
 AutoObjectMapperFaultyLib::AutoObjectMapperFaultyLib(void (*aLog)(const char*))
     : AutoObjectMapperPOSIX(aLog), mHdl(nullptr) {}
 

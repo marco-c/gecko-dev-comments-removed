@@ -32,7 +32,7 @@ void read_procmaps(lul::LUL* aLUL) {
 
     std::string nativePath = lib.GetNativeDebugPath();
 
-#  if defined(GP_OS_android)
+#  if defined(MOZ_LINKER)
     
     AutoObjectMapperFaultyLib mapper(aLUL->mLog);
 #  else

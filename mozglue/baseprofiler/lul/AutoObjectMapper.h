@@ -61,7 +61,7 @@ class MOZ_STACK_CLASS AutoObjectMapperPOSIX {
   void operator delete[](void*);
 };
 
-#if defined(GP_OS_android)
+#if defined(MOZ_LINKER)
 
 
 
