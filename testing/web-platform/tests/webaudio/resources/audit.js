@@ -1189,9 +1189,10 @@ window.Audit = (function() {
 
       return new Promise((resolve, reject) => {
         this._resolve = resolve;
+        this._reject = reject;
         let result = this._taskFunction(this, this.should.bind(this));
         if (result && typeof result.then === "function") {
-          result.then(undefined, reject);
+          result.then(() => this.done()).catch(reject);
         }
       });
     }
@@ -1231,7 +1232,19 @@ window.Audit = (function() {
     
     
     timeout(subTask, time) {
-      this._harnessTest.step_timeout(subTask, time);
+      return new Promise(resolve => {
+        this._harnessTest.step_timeout(() => {
+          let result = subTask();
+          if (result && typeof result.then === "function") {
+            
+            
+            
+            result.then(resolve, this._reject());
+          } else {
+            resolve();
+          }
+        }, time);
+      });
     }
 
     isPassed() {
@@ -1277,6 +1290,8 @@ window.Audit = (function() {
       return Promise.resolve();
     }
 
+    
+    
     
     
     define(taskLabel, taskFunction) {
