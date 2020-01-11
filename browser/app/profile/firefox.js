@@ -330,8 +330,6 @@ pref("browser.urlbar.update1", false);
 
 pref("browser.urlbar.update1.expandTextOnFocus", false);
 
-pref("browser.urlbar.update1.searchButton", false);
-
 pref("browser.urlbar.update1.view.stripHttps", false);
 
 pref("browser.urlbar.openViewOnFocus", false);

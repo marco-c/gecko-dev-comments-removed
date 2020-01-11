@@ -151,10 +151,10 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["update1", false],
 
   
-  ["update1.searchButton", false],
+  ["update1.view.stripHttps", false],
 
   
-  ["update1.view.stripHttps", false],
+  ["update2.searchButton", false],
 ]);
 const PREF_OTHER_DEFAULTS = new Map([
   ["keyword.enabled", true],
