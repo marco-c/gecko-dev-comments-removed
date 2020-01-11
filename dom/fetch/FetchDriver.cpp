@@ -568,7 +568,7 @@ nsresult FetchDriver::HttpFetch(
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    SetRequestHeaders(httpChan);
+    SetRequestHeaders(httpChan, false);
 
     
     
@@ -1305,9 +1305,23 @@ NS_IMETHODIMP
 FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
                                     nsIChannel* aNewChannel, uint32_t aFlags,
                                     nsIAsyncVerifyRedirectCallback* aCallback) {
-  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aNewChannel);
-  if (httpChannel) {
-    SetRequestHeaders(httpChannel);
+  nsCOMPtr<nsIHttpChannel> oldHttpChannel = do_QueryInterface(aOldChannel);
+  nsCOMPtr<nsIHttpChannel> newHttpChannel = do_QueryInterface(aNewChannel);
+  if (newHttpChannel) {
+    uint32_t responseCode = 0;
+    nsAutoCString method;
+    mRequest->GetMethod(method);
+    bool rewriteToGET = false;
+    if (oldHttpChannel &&
+        NS_SUCCEEDED(oldHttpChannel->GetResponseStatus(&responseCode))) {
+      
+      rewriteToGET =
+          (responseCode <= 302 && method.LowerCaseEqualsASCII("post")) ||
+          (responseCode == 303 && !method.LowerCaseEqualsASCII("get") &&
+           !method.LowerCaseEqualsASCII("head"));
+    }
+
+    SetRequestHeaders(newHttpChannel, rewriteToGET);
   }
 
   
@@ -1343,9 +1357,9 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
 
   
   
-  if (httpChannel) {
+  if (newHttpChannel) {
     nsAutoString computedReferrerSpec;
-    nsCOMPtr<nsIReferrerInfo> referrerInfo = httpChannel->GetReferrerInfo();
+    nsCOMPtr<nsIReferrerInfo> referrerInfo = newHttpChannel->GetReferrerInfo();
     if (referrerInfo) {
       mRequest->SetReferrerPolicy(referrerInfo->ReferrerPolicy());
       Unused << referrerInfo->GetComputedReferrerSpec(computedReferrerSpec);
@@ -1407,7 +1421,8 @@ void FetchDriver::SetController(
   mController = aController;
 }
 
-void FetchDriver::SetRequestHeaders(nsIHttpChannel* aChannel) const {
+void FetchDriver::SetRequestHeaders(nsIHttpChannel* aChannel,
+                                    bool aStripRequestBodyHeader) const {
   MOZ_ASSERT(aChannel);
 
   
@@ -1420,6 +1435,14 @@ void FetchDriver::SetRequestHeaders(nsIHttpChannel* aChannel) const {
   AutoTArray<InternalHeaders::Entry, 5> headers;
   mRequest->Headers()->GetEntries(headers);
   for (uint32_t i = 0; i < headers.Length(); ++i) {
+    if (aStripRequestBodyHeader &&
+        (headers[i].mName.LowerCaseEqualsASCII("content-type") ||
+         headers[i].mName.LowerCaseEqualsASCII("content-encoding") ||
+         headers[i].mName.LowerCaseEqualsASCII("content-language") ||
+         headers[i].mName.LowerCaseEqualsASCII("content-location"))) {
+      continue;
+    }
+
     bool alreadySet = headersSet.Contains(headers[i].mName);
     if (!alreadySet) {
       headersSet.AppendElement(headers[i].mName);
