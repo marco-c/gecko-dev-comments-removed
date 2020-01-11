@@ -24,6 +24,7 @@ class Animation;
 class CompositorAnimations;
 class Layer;
 class LayerManager;
+class TransformData;
 struct PropertyAnimationGroup;
 
 class AnimationInfo final {
@@ -70,6 +71,9 @@ class AnimationInfo final {
   nsTArray<PropertyAnimationGroup>& GetPropertyAnimationGroups() {
     return mPropertyAnimationGroups;
   }
+  const TransformData* GetTransformLikeMetaData() const {
+    return mTransformLikeMetaData.get();
+  }
   bool ApplyPendingUpdatesForThisTransaction();
   bool HasTransformAnimation() const;
 
@@ -115,6 +119,7 @@ class AnimationInfo final {
   
   
   nsTArray<PropertyAnimationGroup> mPropertyAnimationGroups;
+  UniquePtr<TransformData> mTransformLikeMetaData;
   
   RefPtr<gfx::Path> mCachedMotionPath;
   
