@@ -113,10 +113,11 @@ class CellColor {
 
 
 
+
 struct alignas(gc::CellAlignBytes) Cell {
  public:
   
-  static constexpr int ReservedBits = 2;
+  static constexpr int ReservedBits = 3;
   static constexpr uintptr_t RESERVED_MASK = BitMask(ReservedBits);
 
   

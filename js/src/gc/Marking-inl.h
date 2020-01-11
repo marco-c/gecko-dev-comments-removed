@@ -110,7 +110,12 @@ inline T MaybeForwarded(T t) {
 
 inline void RelocationOverlay::forwardTo(Cell* cell) {
   MOZ_ASSERT(!isForwarded());
+  MOZ_ASSERT((uintptr_t(cell) & Cell::RESERVED_MASK) == 0,
+             "preserving flags doesn't clobber any existing bits");
 
+  
+  
+  
   
   
   
