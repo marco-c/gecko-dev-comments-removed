@@ -209,11 +209,11 @@ typedef Rooted<ModuleNamespaceObject*> RootedModuleNamespaceObject;
 typedef Handle<ModuleNamespaceObject*> HandleModuleNamespaceObject;
 
 struct FunctionDeclaration {
-  FunctionDeclaration(HandleAtom name, HandleFunction fun);
+  FunctionDeclaration(HandleAtom name, uint32_t funIndex);
   void trace(JSTracer* trc);
 
   const HeapPtr<JSAtom*> name;
-  const HeapPtr<JSFunction*> fun;
+  const uint32_t funIndex;
 };
 
 
@@ -304,7 +304,7 @@ class ModuleObject : public NativeObject {
 
   
   bool noteFunctionDeclaration(JSContext* cx, HandleAtom name,
-                               HandleFunction fun);
+                               uint32_t funIndex);
 
   
   static bool instantiateFunctionDeclarations(JSContext* cx,
