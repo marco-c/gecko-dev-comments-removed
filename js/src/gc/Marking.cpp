@@ -653,7 +653,7 @@ void GCMarker::markEphemeronValues(gc::Cell* markedCell,
 
 template <typename T>
 void GCMarker::markImplicitEdgesHelper(T markedThing) {
-  if (!isWeakMarking()) {
+  if (!isWeakMarkingTracer()) {
     return;
   }
 
@@ -1593,7 +1593,7 @@ GCMarker::MarkQueueProgress GCMarker::processMarkQueue() {
         return QueueYielded;
       } else if (js::StringEqualsLiteral(str, "enter-weak-marking-mode") ||
                  js::StringEqualsLiteral(str, "abort-weak-marking-mode")) {
-        if (state == MarkingState::RegularMarking) {
+        if (!isWeakMarkingTracer() && !linearWeakMarkingDisabled_) {
           
           
           
@@ -2430,11 +2430,11 @@ GCMarker::GCMarker(JSRuntime* rt)
       color(MarkColor::Black),
       mainStackColor(MarkColor::Black),
       delayedMarkingList(nullptr),
-      delayedMarkingWorkAdded(false),
-      state(MarkingState::NotActive)
+      delayedMarkingWorkAdded(false)
 #ifdef DEBUG
       ,
       markLaterArenas(0),
+      started(false),
       strictCompartmentChecking(false),
       markQueue(rt),
       queuePos(0)
@@ -2448,9 +2448,12 @@ bool GCMarker::init(JSGCMode gcMode) {
 }
 
 void GCMarker::start() {
-  MOZ_ASSERT(state == MarkingState::NotActive);
-  state = MarkingState::RegularMarking;
+#ifdef DEBUG
+  MOZ_ASSERT(!started);
+  started = true;
+#endif
   color = MarkColor::Black;
+  linearWeakMarkingDisabled_ = false;
 
 #ifdef DEBUG
   queuePos = 0;
@@ -2462,11 +2465,15 @@ void GCMarker::start() {
 }
 
 void GCMarker::stop() {
+#ifdef DEBUG
   MOZ_ASSERT(isDrained());
+
+  MOZ_ASSERT(started);
+  started = false;
+
   MOZ_ASSERT(!delayedMarkingList);
   MOZ_ASSERT(markLaterArenas == 0);
-  MOZ_ASSERT(state != MarkingState::NotActive);
-  state = MarkingState::NotActive;
+#endif
 
   stack.clear();
   auxStack.clear();
@@ -2575,43 +2582,42 @@ void GCMarker::repush(JSObject* obj) {
 void GCMarker::enterWeakMarkingMode() {
   MOZ_ASSERT(runtime()->gc.nursery().isEmpty());
 
-  MOZ_ASSERT(isMarkingTracer());
-  if (state != MarkingState::RegularMarking) {
+  MOZ_ASSERT(tag_ == TracerKindTag::Marking);
+  if (linearWeakMarkingDisabled_) {
     return;
   }
 
-  if (weakMapAction() != ExpandWeakMaps) {
-    return;  
-  }
+  
+  
+  
+  
+  
+  
+  if (weakMapAction() == ExpandWeakMaps) {
+    tag_ = TracerKindTag::WeakMarking;
 
-  
-  
-  
-  
-  
-  
+    
+    
+    
+    while (processMarkQueue() == QueueYielded) {
+    };
 
-  
-  
-  
-  state = MarkingState::WeakMarking;
-
-  
-  
-  
-  while (processMarkQueue() == QueueYielded) {
-  };
-
-  for (SweepGroupZonesIter zone(runtime()); !zone.done(); zone.next()) {
-    for (WeakMapBase* m : zone->gcWeakMapList()) {
-      if (m->mapColor) {
-        mozilla::Unused << m->markEntries(this);
+    for (SweepGroupZonesIter zone(runtime()); !zone.done(); zone.next()) {
+      for (WeakMapBase* m : zone->gcWeakMapList()) {
+        if (m->mapColor) {
+          mozilla::Unused << m->markEntries(this);
+        }
       }
     }
   }
 }
 
 void GCMarker::leaveWeakMarkingMode() {
+  MOZ_ASSERT_IF(
+      weakMapAction() == ExpandWeakMaps && !linearWeakMarkingDisabled_,
+      tag_ == TracerKindTag::WeakMarking);
+  tag_ = TracerKindTag::Marking;
+
   
   
   AutoEnterOOMUnsafeRegion oomUnsafe;
@@ -2619,14 +2625,6 @@ void GCMarker::leaveWeakMarkingMode() {
     if (!zone->gcWeakKeys().clear()) {
       oomUnsafe.crash("clearing weak keys in GCMarker::leaveWeakMarkingMode()");
     }
-  }
-
-  MOZ_ASSERT_IF(weakMapAction() == ExpandWeakMaps,
-                state == MarkingState::WeakMarking ||
-                    state == MarkingState::IterativeMarking);
-
-  if (state != MarkingState::IterativeMarking) {
-    state = MarkingState::RegularMarking;
   }
 }
 
@@ -2779,7 +2777,7 @@ void gc::PushArena(GCMarker* gcmarker, Arena* arena) {
 
 #ifdef DEBUG
 void GCMarker::checkZone(void* p) {
-  MOZ_ASSERT(state != MarkingState::NotActive);
+  MOZ_ASSERT(started);
   DebugOnly<Cell*> cell = static_cast<Cell*>(p);
   MOZ_ASSERT_IF(cell->isTenured(),
                 cell->asTenured().zone()->isCollectingFromAnyThread());
