@@ -123,11 +123,7 @@ DebuggerClient.prototype = {
 
 
 
-
-
-
-
-  close(onClosed) {
+  close() {
     const promise = new Promise(resolve => {
       
       
@@ -153,10 +149,6 @@ DebuggerClient.prototype = {
 
       cleanup();
     });
-
-    if (onClosed) {
-      promise.then(onClosed);
-    }
 
     return promise;
   },
