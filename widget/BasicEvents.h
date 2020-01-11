@@ -897,6 +897,12 @@ class WidgetEvent : public WidgetEventTime {
         
         mFlags.mComposed = mMessage == eWheel;
         break;
+      case eMouseScrollEventClass:
+        
+        
+        mFlags.mComposed = mMessage == eLegacyMouseLineOrPageScroll ||
+                           mMessage == eLegacyMousePixelScroll;
+        break;
       default:
         mFlags.mComposed = false;
         break;
