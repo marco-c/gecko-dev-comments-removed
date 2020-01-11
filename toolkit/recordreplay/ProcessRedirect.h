@@ -258,7 +258,7 @@ void InitializeRedirections();
 
 
 
-void ApplyInitialLibraryRedirections();
+void ApplyLibraryRedirections(void* aLibrary);
 
 
 uint8_t* GenerateRedirectStub(Assembler& aAssembler, size_t aCallId,
