@@ -664,7 +664,7 @@ impl<'a> SceneBuilder<'a> {
                 scroll_root,
                 slice.prim_list,
                 background_color,
-                slice.shared_clips.unwrap_or_else(Vec::new),
+                slice.shared_clips.unwrap_or(Vec::new()),
                 &mut self.interners,
                 &mut self.prim_store,
                 &mut self.clip_store,
@@ -727,7 +727,7 @@ impl<'a> SceneBuilder<'a> {
                     ((stats.num_bytes as f32 / total_bytes.max(1) as f32) * 100.0) as usize,
                     stats.num_bytes / stats.total_count.max(1));
             }
-            println!();
+            println!("");
         }
     }
 
@@ -3740,7 +3740,7 @@ impl FlattenedStackingContext {
 
         
         
-        if self.composite_ops.mix_blend_mode.is_some() &&
+        if !self.composite_ops.mix_blend_mode.is_none() &&
             !parent.prim_list.is_empty() {
             return false;
         }
@@ -3953,7 +3953,7 @@ fn filter_primitives_for_compositing(
     
     
     
-    input_filter_primitives.iter().map(|primitive| primitive).collect()
+    input_filter_primitives.iter().map(|primitive| primitive.into()).collect()
 }
 
 fn process_repeat_size(

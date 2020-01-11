@@ -1009,7 +1009,7 @@ pub enum ApiMsg {
     
     MemoryPressure,
     
-    ReportMemory(MsgSender<Box<MemoryReport>>),
+    ReportMemory(MsgSender<MemoryReport>),
     
     DebugCommand(DebugCommand),
     
@@ -1538,7 +1538,7 @@ impl RenderApi {
     pub fn report_memory(&self) -> MemoryReport {
         let (tx, rx) = channel::msg_channel().unwrap();
         self.api_sender.send(ApiMsg::ReportMemory(tx)).unwrap();
-        *rx.recv().unwrap()
+        rx.recv().unwrap()
     }
 
     
@@ -1636,7 +1636,7 @@ impl RenderApi {
         for payload in document_payloads.drain(..).flatten() {
             self.payload_sender.send_payload(payload).unwrap();
         }
-        self.api_sender.send(ApiMsg::UpdateDocuments(document_ids, msgs)).unwrap();
+        self.api_sender.send(ApiMsg::UpdateDocuments(document_ids.clone(), msgs)).unwrap();
     }
 
     
@@ -1779,7 +1779,7 @@ impl ZoomFactor {
     }
 
     
-    pub fn get(self) -> f32 {
+    pub fn get(&self) -> f32 {
         self.0
     }
 }
@@ -1815,8 +1815,8 @@ pub struct PropertyBindingKey<T> {
 
 impl<T: Copy> PropertyBindingKey<T> {
     
-    pub fn with(self, value: T) -> PropertyValue<T> {
-        PropertyValue { key: self, value }
+    pub fn with(&self, value: T) -> PropertyValue<T> {
+        PropertyValue { key: *self, value }
     }
 }
 
