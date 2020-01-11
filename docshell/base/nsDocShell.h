@@ -490,21 +490,7 @@ class nsDocShell final : public nsDocLoader,
   nsresult CreateContentViewerForActor(
       mozilla::dom::WindowGlobalChild* aWindowActor);
 
-  
-  
-  
-  
-  
-  static nsresult CreateRealChannelForDocument(
-      nsIChannel** aChannel, nsIURI* aURI, nsILoadInfo* aLoadInfo,
-      nsIInterfaceRequestor* aCallbacks, nsDocShell* aDocShell,
-      nsLoadFlags aLoadFlags, const nsAString& aSrcdoc, nsIURI* aBaseURI);
-
-  
-  
-  
-  
-  static bool CreateAndConfigureRealChannelForLoadState(
+  static bool CreateChannelForLoadState(
       nsDocShellLoadState* aLoadState, mozilla::net::LoadInfo* aLoadInfo,
       nsIInterfaceRequestor* aCallbacks, nsDocShell* aDocShell,
       const nsString* aInitiatorType, nsLoadFlags aLoadFlags,
@@ -512,10 +498,6 @@ class nsDocShell final : public nsDocLoader,
       bool aIsTopLevelDoc, bool aHasNonEmptySandboxingFlags, nsresult& rv,
       nsIChannel** aChannel);
 
-  
-  
-  
-  
   static nsresult ConfigureChannel(nsIChannel* aChannel,
                                    nsDocShellLoadState* aLoadState,
                                    const nsString* aInitiatorType,
