@@ -1583,7 +1583,7 @@ void nsCORSListenerProxy::LogBlockedCORSRequest(uint64_t aInnerWindowID,
                                               EmptyString(),  
                                               0,              
                                               0,              
-                                              nsIScriptError::warningFlag,
+                                              nsIScriptError::errorFlag,
                                               aCategory, aInnerWindowID);
   } else {
     nsCString category = PromiseFlatCString(aCategory);
@@ -1592,7 +1592,7 @@ void nsCORSListenerProxy::LogBlockedCORSRequest(uint64_t aInnerWindowID,
                            EmptyString(),  
                            0,              
                            0,              
-                           nsIScriptError::warningFlag, category.get(),
+                           nsIScriptError::errorFlag, category.get(),
                            aPrivateBrowsing,
                            aFromChromeContext);  
   }
