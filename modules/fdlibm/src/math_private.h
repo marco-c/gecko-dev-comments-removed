@@ -48,7 +48,7 @@
 
 
 
-#if MOZ_BIG_ENDIAN
+#if MOZ_BIG_ENDIAN()
 
 typedef union
 {
@@ -67,7 +67,7 @@ typedef union
 
 #endif
 
-#if MOZ_LITTLE_ENDIAN
+#if MOZ_LITTLE_ENDIAN()
 
 typedef union
 {
@@ -91,7 +91,7 @@ typedef union
 
 
 
-#if MOZ_BIG_ENDIAN
+#if MOZ_BIG_ENDIAN()
 
 typedef union
 {
@@ -109,7 +109,7 @@ typedef union
 
 #endif
 
-#if MOZ_LITTLE_ENDIAN
+#if MOZ_LITTLE_ENDIAN()
 
 typedef union
 {

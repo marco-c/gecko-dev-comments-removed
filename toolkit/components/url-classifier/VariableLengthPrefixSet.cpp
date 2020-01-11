@@ -161,7 +161,7 @@ nsresult VariableLengthPrefixSet::SetPrefixes(PrefixStringMap& aPrefixMap) {
     
     
     
-#if MOZ_LITTLE_ENDIAN
+#if MOZ_LITTLE_ENDIAN()
     char* begin = prefixes->BeginWriting();
     char* end = prefixes->EndWriting();
 

@@ -1653,7 +1653,7 @@ nsresult Classifier::ReadNoiseEntries(const Prefix& aPrefix,
     
     
     
-    if (!cacheV2 && !bool(MOZ_BIG_ENDIAN)) {
+    if (!cacheV2 && !bool(MOZ_BIG_ENDIAN())) {
       hash = NativeEndian::swapFromBigEndian(prefixes[idx]);
     }
 

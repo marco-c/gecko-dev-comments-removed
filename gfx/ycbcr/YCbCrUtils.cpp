@@ -238,7 +238,7 @@ ConvertYCbCrToRGB(const layers::PlanarYCbCrData& aData,
                           yuvtype,
                           srcData.mYUVColorSpace);
   }
-#if MOZ_BIG_ENDIAN
+#if MOZ_BIG_ENDIAN()
   
   if (aDestFormat != SurfaceFormat::R5G6B5_UINT16)
     gfx::SwizzleData(aDestBuffer, aStride, gfx::SurfaceFormat::X8R8G8B8,
@@ -266,7 +266,7 @@ ConvertYCbCrAToARGB(const uint8_t* aSrcY,
                         aSrcStrideYA,
                         aSrcStrideUV,
                         aDstStrideARGB);
-#if MOZ_BIG_ENDIAN
+#if MOZ_BIG_ENDIAN()
   
   gfx::SwizzleData(aDstARGB, aDstStrideARGB, gfx::SurfaceFormat::A8R8G8B8,
                    aDstARGB, aDstStrideARGB, gfx::SurfaceFormat::B8G8R8A8,
