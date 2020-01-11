@@ -171,6 +171,7 @@ class ClientInfo;
 class ClientState;
 class CDATASection;
 class Comment;
+class CSSImportRule;
 struct CustomElementDefinition;
 class DocGroup;
 class DocumentL10n;
@@ -2023,7 +2024,7 @@ class Document : public nsINode,
 
 
 
-  void SetStyleSheetApplicableState(StyleSheet* aSheet, bool aApplicable);
+  void SetStyleSheetApplicableState(StyleSheet&, bool aApplicable);
 
   enum additionalSheetType {
     eAgentSheet,
@@ -2367,9 +2368,11 @@ class Document : public nsINode,
 
   
   
-  void StyleRuleChanged(StyleSheet* aStyleSheet, css::Rule* aStyleRule);
-  void StyleRuleAdded(StyleSheet* aStyleSheet, css::Rule* aStyleRule);
-  void StyleRuleRemoved(StyleSheet* aStyleSheet, css::Rule* aStyleRule);
+  void RuleChanged(StyleSheet&, css::Rule*);
+  void RuleAdded(StyleSheet&, css::Rule&);
+  void RuleRemoved(StyleSheet&, css::Rule&);
+  void SheetCloned(StyleSheet&) {}
+  void ImportRuleLoaded(CSSImportRule&, StyleSheet&);
 
   
 
@@ -4273,8 +4276,8 @@ class Document : public nsINode,
   void RemoveContentEditableStyleSheets();
   void AddStyleSheetToStyleSets(StyleSheet* aSheet);
   void RemoveStyleSheetFromStyleSets(StyleSheet* aSheet);
-  void NotifyStyleSheetAdded(StyleSheet* aSheet, bool aDocumentSheet);
-  void NotifyStyleSheetRemoved(StyleSheet* aSheet, bool aDocumentSheet);
+  void NotifyStyleSheetAdded(StyleSheet&, bool aDocumentSheet);
+  void NotifyStyleSheetRemoved(StyleSheet&, bool aDocumentSheet);
   void NotifyStyleSheetApplicableStateChanged();
   
   

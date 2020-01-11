@@ -30,6 +30,7 @@ namespace css {
 class Rule;
 }  
 namespace dom {
+class CSSImportRule;
 class Element;
 class ShadowRoot;
 }  
@@ -110,7 +111,8 @@ class ServoStyleSet {
   void RuleAdded(StyleSheet&, css::Rule&);
   void RuleRemoved(StyleSheet&, css::Rule&);
   void RuleChanged(StyleSheet&, css::Rule* aRule);
-  void StyleSheetCloned(StyleSheet&);
+  void SheetCloned(StyleSheet&) { mNeedsRestyleAfterEnsureUniqueInner = true; }
+  void ImportRuleLoaded(dom::CSSImportRule&, StyleSheet&);
 
   
   void InvalidateStyleForDocumentStateChanges(EventStates aStatesChanged);

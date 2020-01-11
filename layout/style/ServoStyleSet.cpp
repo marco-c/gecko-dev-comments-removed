@@ -843,9 +843,29 @@ static OriginFlags ToOriginFlags(StyleOrigin aOrigin) {
   }
 }
 
+void ServoStyleSet::ImportRuleLoaded(dom::CSSImportRule&, StyleSheet& aSheet) {
+  if (mStyleRuleMap) {
+    mStyleRuleMap->SheetAdded(aSheet);
+  }
+
+  
+  if (!aSheet.IsApplicable()) {
+    return;
+  }
+
+  
+  
+  
+  MarkOriginsDirty(ToOriginFlags(aSheet.GetOrigin()));
+}
+
 void ServoStyleSet::RuleAdded(StyleSheet& aSheet, css::Rule& aRule) {
   if (mStyleRuleMap) {
     mStyleRuleMap->RuleAdded(aSheet, aRule);
+  }
+
+  if (!aSheet.IsApplicable() || aRule.IsIncompleteImportRule()) {
+    return;
   }
 
   
@@ -857,17 +877,21 @@ void ServoStyleSet::RuleRemoved(StyleSheet& aSheet, css::Rule& aRule) {
     mStyleRuleMap->RuleRemoved(aSheet, aRule);
   }
 
+  if (!aSheet.IsApplicable()) {
+    return;
+  }
+
   
   MarkOriginsDirty(ToOriginFlags(aSheet.GetOrigin()));
 }
 
 void ServoStyleSet::RuleChanged(StyleSheet& aSheet, css::Rule* aRule) {
+  if (!aSheet.IsApplicable()) {
+    return;
+  }
+
   
   MarkOriginsDirty(ToOriginFlags(aSheet.GetOrigin()));
-}
-
-void ServoStyleSet::StyleSheetCloned(StyleSheet& aSheet) {
-  mNeedsRestyleAfterEnsureUniqueInner = true;
 }
 
 #ifdef DEBUG

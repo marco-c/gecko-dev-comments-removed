@@ -300,6 +300,11 @@ void ShadowRoot::RuleAdded(StyleSheet& aSheet, css::Rule& aRule) {
   if (mStyleRuleMap) {
     mStyleRuleMap->RuleAdded(aSheet, aRule);
   }
+
+  if (aRule.IsIncompleteImportRule()) {
+    return;
+  }
+
   Servo_AuthorStyles_ForceDirty(mServoStyles.get());
   ApplicableRulesChanged();
 }
@@ -327,12 +332,27 @@ void ShadowRoot::RuleChanged(StyleSheet& aSheet, css::Rule*) {
   ApplicableRulesChanged();
 }
 
+void ShadowRoot::ImportRuleLoaded(CSSImportRule&, StyleSheet& aSheet) {
+  if (mStyleRuleMap) {
+    mStyleRuleMap->SheetAdded(aSheet);
+  }
+
+  if (!aSheet.IsApplicable()) {
+    return;
+  }
+
+  
+  
+  Servo_AuthorStyles_ForceDirty(mServoStyles.get());
+  ApplicableRulesChanged();
+}
 
 
-void ShadowRoot::StyleSheetCloned(StyleSheet& aSheet) {
+
+void ShadowRoot::SheetCloned(StyleSheet& aSheet) {
   if (Document* doc = GetComposedDoc()) {
     if (PresShell* shell = doc->GetPresShell()) {
-      shell->StyleSet()->StyleSheetCloned(aSheet);
+      shell->StyleSet()->SheetCloned(aSheet);
     }
   }
 }

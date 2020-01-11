@@ -397,6 +397,11 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   bool IsReadOnly() const;
 
  private:
+  
+  
+  
+  
+  
   dom::ShadowRoot* GetContainingShadow() const;
 
   StyleSheetInfo& Inner() {

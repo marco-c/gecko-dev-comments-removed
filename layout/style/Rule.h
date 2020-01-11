@@ -94,6 +94,10 @@ class Rule : public nsISupports, public nsWrapperCache {
 
   
   
+  bool IsIncompleteImportRule() const;
+
+  
+  
   virtual size_t SizeOfIncludingThis(MallocSizeOf) const MOZ_MUST_OVERRIDE = 0;
 
   
