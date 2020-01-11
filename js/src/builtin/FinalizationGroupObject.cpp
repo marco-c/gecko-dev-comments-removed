@@ -587,19 +587,22 @@ bool FinalizationGroupObject::cleanupQueuedHoldings(
 
   
   
-  RootedObject callback(cx, callbackArg);
-  if (!callbackArg) {
-    callback = group->cleanupCallback();
+  RootedValue callback(cx);
+  if (callbackArg) {
+    callback.setObject(*callbackArg);
+  } else {
+    JSObject* cleanupCallback = group->cleanupCallback();
+    MOZ_ASSERT(cleanupCallback);
+    callback.setObject(*cleanupCallback);
   }
 
   
   group->setCleanupJobActive(true);
 
   
+  RootedValue iteratorVal(cx, ObjectValue(*iterator));
   RootedValue rval(cx);
-  JS::AutoValueArray<1> args(cx);
-  args[0].setObject(*iterator);
-  bool ok = JS::Call(cx, UndefinedHandleValue, callback, args, &rval);
+  bool ok = Call(cx, callback, UndefinedHandleValue, iteratorVal, &rval);
 
   
   size_t index = iterator->index();
