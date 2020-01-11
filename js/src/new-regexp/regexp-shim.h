@@ -21,6 +21,7 @@
 
 #include "jit/Label.h"
 #include "js/Value.h"
+#include "new-regexp/util/flags.h"
 #include "new-regexp/util/vector.h"
 #include "new-regexp/util/zone.h"
 #include "vm/NativeObject.h"
@@ -747,6 +748,63 @@ class StringShape {
 };
 
 
+
+class JSRegExp : public HeapObject {
+ public:
+  
+  
+  
+  void TierUpTick();
+  bool MarkedForTierUp() const;
+
+  Object Code(bool is_latin1) const;
+  Object Bytecode(bool is_latin1) const;
+
+  uint32_t BacktrackLimit() const;
+
+  static JSRegExp cast(Object object);
+
+  
+  
+  
+
+  
+  
+  
+  
+  enum Type { NOT_COMPILED, ATOM, IRREGEXP };
+
+  
+  static constexpr int kMaxCaptures = 1 << 16;
+
+  
+  
+  
+
+  struct FlagShiftBit {
+    static constexpr int kGlobal = 0;
+    static constexpr int kIgnoreCase = 1;
+    static constexpr int kMultiline = 2;
+    static constexpr int kSticky = 3;
+    static constexpr int kUnicode = 4;
+    static constexpr int kDotAll = 5;
+    static constexpr int kInvalid = 6;
+  };
+  enum Flag : uint8_t {
+    kNone = 0,
+    kGlobal = 1 << FlagShiftBit::kGlobal,
+    kIgnoreCase = 1 << FlagShiftBit::kIgnoreCase,
+    kMultiline = 1 << FlagShiftBit::kMultiline,
+    kSticky = 1 << FlagShiftBit::kSticky,
+    kUnicode = 1 << FlagShiftBit::kUnicode,
+    kDotAll = 1 << FlagShiftBit::kDotAll,
+    kInvalid = 1 << FlagShiftBit::kInvalid,  
+  };
+  using Flags = base::Flags<Flag>;
+  static constexpr int kFlagCount = 6;
+
+  static constexpr int kNoBacktrackLimit = 0;
+};
 
 enum class MessageTemplate { kStackOverflow };
 
