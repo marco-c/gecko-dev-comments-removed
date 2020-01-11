@@ -80,8 +80,7 @@ add_task(async function test_common_initialize() {
   
   
   
-  const isAndroid = AppConstants.platform == "android";
-  const keyDBName = isAndroid ? "key4.db" : "key3.db";
+  const keyDBName = "key4.db";
   await OS.File.copy(
     do_get_file(`data/${keyDBName}`).path,
     OS.Path.join(OS.Constants.Path.profileDir, keyDBName)
