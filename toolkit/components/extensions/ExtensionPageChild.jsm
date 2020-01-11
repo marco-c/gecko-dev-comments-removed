@@ -241,6 +241,10 @@ class ExtensionBaseContextChild extends BaseContext {
 
   
   shutdown() {
+    if (this.contentWindow) {
+      this.contentWindow.close();
+    }
+
     this.unload();
   }
 
@@ -252,10 +256,6 @@ class ExtensionBaseContextChild extends BaseContext {
     
     if (this.unloaded) {
       return;
-    }
-
-    if (this.contentWindow) {
-      this.contentWindow.close();
     }
 
     super.unload();
