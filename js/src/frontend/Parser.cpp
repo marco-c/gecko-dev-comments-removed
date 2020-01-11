@@ -1855,6 +1855,9 @@ bool LazyScriptCreationData::create(JSContext* cx, FunctionBox* funbox,
   if (funbox->hasCallSiteObj()) {
     lazy->setHasCallSiteObj();
   }
+  if (funbox->argumentsHasLocalBinding()) {
+    lazy->setArgumentsHasVarBinding();
+  }
 
   
   
