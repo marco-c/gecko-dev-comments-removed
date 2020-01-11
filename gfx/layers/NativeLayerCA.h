@@ -49,17 +49,18 @@ class NativeLayerRootCA : public NativeLayerRoot {
   static already_AddRefed<NativeLayerRootCA> CreateForCALayer(CALayer* aLayer);
 
   
-  void ApplyChanges();
-
-  void SetBackingScale(float aBackingScale);
-
-  
   already_AddRefed<NativeLayer> CreateLayer(
       const gfx::IntSize& aSize, bool aIsOpaque,
       SurfacePoolHandle* aSurfacePoolHandle) override;
   void AppendLayer(NativeLayer* aLayer) override;
   void RemoveLayer(NativeLayer* aLayer) override;
   void SetLayers(const nsTArray<RefPtr<NativeLayer>>& aLayers) override;
+
+  void SetBackingScale(float aBackingScale);
+  float BackingScale();
+
+  
+  void ApplyChanges();
 
  protected:
   explicit NativeLayerRootCA(CALayer* aLayer);
