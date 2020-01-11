@@ -10,13 +10,18 @@
 #include <d3d11.h>
 #include <assert.h>
 #include <map>
+#include <vector>
 
 #define EGL_EGL_PROTOTYPES 1
 #define EGL_EGLEXT_PROTOTYPES 1
+#define GL_GLEXT_PROTOTYPES 1
 #include "EGL/egl.h"
 #include "EGL/eglext.h"
 #include "EGL/eglext_angle.h"
 #include "GL/gl.h"
+#include "GLES/gl.h"
+#include "GLES/glext.h"
+#include "GLES3/gl3.h"
 
 
 struct Tile {
@@ -24,6 +29,13 @@ struct Tile {
     IDCompositionSurface *pSurface;
     
     IDCompositionVisual2 *pVisual;
+};
+
+struct CachedFrameBuffer {
+    int width;
+    int height;
+    GLuint fboId;
+    GLuint depthRboId;
 };
 
 struct Window {
@@ -50,8 +62,9 @@ struct Window {
     EGLSurface fb_surface;
 
     
-    EGLSurface current_surface;
     IDCompositionSurface *pCurrentSurface;
+    EGLImage mEGLImage;
+    GLuint mColorRBO;
 
     
     
@@ -59,9 +72,49 @@ struct Window {
     IDCompositionVisualDebug *pVisualDebug;
     
     std::map<uint64_t, Tile> tiles;
+    std::vector<CachedFrameBuffer> mFrameBuffers;
 };
 
 static const wchar_t *CLASS_NAME = L"WR DirectComposite";
+
+static GLuint GetOrCreateFbo(Window *window, int aWidth, int aHeight) {
+    GLuint fboId = 0;
+
+    
+    for (auto it = window->mFrameBuffers.begin(); it != window->mFrameBuffers.end(); ++it) {
+        if (it->width == aWidth && it->height == aHeight) {
+            fboId = it->fboId;
+            break;
+        }
+    }
+
+    
+    if (fboId == 0) {
+        
+        GLuint depthRboId;
+        glGenRenderbuffers(1, &depthRboId);
+        glBindRenderbuffer(GL_RENDERBUFFER, depthRboId);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24,
+                              aWidth, aHeight);
+
+        
+        glGenFramebuffers(1, &fboId);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboId);
+        glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER,
+                                  GL_DEPTH_ATTACHMENT,
+                                  GL_RENDERBUFFER, depthRboId);
+
+        
+        CachedFrameBuffer frame_buffer_info;
+        frame_buffer_info.width = aWidth;
+        frame_buffer_info.height = aHeight;
+        frame_buffer_info.fboId = fboId;
+        frame_buffer_info.depthRboId = depthRboId;
+        window->mFrameBuffers.push_back(frame_buffer_info);
+    }
+
+    return fboId;
+}
 
 static LRESULT CALLBACK WndProc(
     HWND hwnd,
@@ -86,6 +139,7 @@ extern "C" {
         window->width = width;
         window->height = height;
         window->enable_compositor = enable_compositor;
+        window->mEGLImage = EGL_NO_IMAGE;
 
         WNDCLASSEX wcex = { sizeof(WNDCLASSEX) };
         wcex.style = CS_HREDRAW | CS_VREDRAW;
@@ -284,7 +338,7 @@ extern "C" {
         delete window;
     }
 
-    bool com_dc_tick(Window *window) {
+    bool com_dc_tick(Window *) {
         
         MSG msg;
         while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
@@ -356,7 +410,7 @@ extern "C" {
     }
 
     
-    void com_dc_bind_surface(
+    GLuint com_dc_bind_surface(
         Window *window,
         uint64_t id,
         int *x_offset,
@@ -395,35 +449,44 @@ extern "C" {
         offset.y -= dirty_y0;
         assert(SUCCEEDED(hr));
         pTexture->GetDesc(&desc);
-
-        
-        EGLint buffer_attribs[] = {
-            EGL_WIDTH, desc.Width,
-            EGL_HEIGHT, desc.Height,
-            EGL_FLEXIBLE_SURFACE_COMPATIBILITY_SUPPORTED_ANGLE, EGL_TRUE,
-            EGL_NONE
-        };
-
-        window->current_surface = eglCreatePbufferFromClientBuffer(
-            window->EGLDisplay,
-            EGL_D3D_TEXTURE_ANGLE,
-            pTexture,
-            window->config,
-            buffer_attribs
-        );
-        assert(window->current_surface != EGL_NO_SURFACE);
-
-        
-        EGLBoolean ok = eglMakeCurrent(
-            window->EGLDisplay,
-            window->current_surface,
-            window->current_surface,
-            window->EGLContext
-        );
-        assert(ok);
-
         *x_offset = offset.x;
         *y_offset = offset.y;
+
+        
+        const EGLAttrib attribs[] = { EGL_NONE };
+        window->mEGLImage = eglCreateImage(
+            window->EGLDisplay,
+            EGL_NO_CONTEXT,
+            EGL_D3D11_TEXTURE_ANGLE,
+            static_cast<EGLClientBuffer>(pTexture),
+            attribs
+        );
+
+        
+        GLint currentFboId, currentRboId;
+        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &currentFboId);
+        glGetIntegerv(GL_RENDERBUFFER_BINDING, &currentRboId);
+
+        
+        glGenRenderbuffers(1, &window->mColorRBO);
+        glBindRenderbuffer(GL_RENDERBUFFER, window->mColorRBO);
+        glEGLImageTargetRenderbufferStorageOES(GL_RENDERBUFFER, window->mEGLImage);
+
+        
+        GLuint fboId = GetOrCreateFbo(window, desc.Width, desc.Height);
+
+        
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboId);
+        glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER,
+                                  GL_COLOR_ATTACHMENT0,
+                                  GL_RENDERBUFFER,
+                                  window->mColorRBO);
+
+        
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, currentFboId);
+        glBindRenderbuffer(GL_RENDERBUFFER, currentRboId);
+
+        return fboId;
     }
 
     
@@ -431,7 +494,11 @@ extern "C" {
         HRESULT hr = window->pCurrentSurface->EndDraw();
         assert(SUCCEEDED(hr));
 
-        eglDestroySurface(window->EGLDisplay, window->current_surface);
+        glDeleteRenderbuffers(1, &window->mColorRBO);
+        window->mColorRBO = 0;
+
+        eglDestroyImage(window->EGLDisplay, window->mEGLImage);
+        window->mEGLImage = EGL_NO_IMAGE;
     }
 
     
@@ -467,8 +534,8 @@ extern "C" {
 
         
         
-        int offset_x = x + window->client_rect.left;
-        int offset_y = y + window->client_rect.top;
+        float offset_x = (float) (x + window->client_rect.left);
+        float offset_y = (float) (y + window->client_rect.top);
         tile.pVisual->SetOffsetX(offset_x);
         tile.pVisual->SetOffsetY(offset_y);
 
