@@ -1450,6 +1450,8 @@ pub struct TileCacheInstance {
     
     spatial_nodes: FastHashMap<SpatialNodeIndex, SpatialNodeDependency>,
     
+    old_spatial_nodes: FastHashMap<SpatialNodeIndex, SpatialNodeDependency>,
+    
     
     
     
@@ -1523,6 +1525,7 @@ impl TileCacheInstance {
             opacity_bindings: FastHashMap::default(),
             old_opacity_bindings: FastHashMap::default(),
             spatial_nodes: FastHashMap::default(),
+            old_spatial_nodes: FastHashMap::default(),
             used_spatial_nodes: FastHashSet::default(),
             dirty_region: DirtyRegion::new(),
             tile_size: PictureSize::zero(),
@@ -2241,10 +2244,11 @@ impl TileCacheInstance {
         }
 
         
-        let mut old_spatial_nodes = mem::replace(&mut self.spatial_nodes, FastHashMap::default());
+        mem::swap(&mut self.spatial_nodes, &mut self.old_spatial_nodes);
 
         
         
+        self.spatial_nodes.clear();
         for spatial_node_index in self.used_spatial_nodes.drain() {
             
             let mut value = get_transform_key(
@@ -2255,7 +2259,7 @@ impl TileCacheInstance {
 
             
             let mut changed = true;
-            if let Some(old_info) = old_spatial_nodes.remove(&spatial_node_index) {
+            if let Some(old_info) = self.old_spatial_nodes.remove(&spatial_node_index) {
                 if old_info.value == value {
                     
                     
