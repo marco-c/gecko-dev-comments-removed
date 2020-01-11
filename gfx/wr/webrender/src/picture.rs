@@ -1672,14 +1672,16 @@ impl TileCacheInstance {
         
         if self.frames_until_size_eval == 0 {
             const TILE_SIZE_TINY: f32 = 32.0;
-            const TILE_SIZE_LARGE: f32 = 512.0;
 
             
             let desired_tile_size;
 
-            if pic_rect.size.width <= TILE_SIZE_TINY && pic_rect.size.height > TILE_SIZE_LARGE {
+            
+            
+            
+            if pic_rect.size.width <= TILE_SIZE_TINY {
                 desired_tile_size = TILE_SIZE_SCROLLBAR_VERTICAL;
-            } else if pic_rect.size.width > TILE_SIZE_LARGE && pic_rect.size.height <= TILE_SIZE_TINY {
+            } else if pic_rect.size.height <= TILE_SIZE_TINY {
                 desired_tile_size = TILE_SIZE_SCROLLBAR_HORIZONTAL;
             } else {
                 desired_tile_size = TILE_SIZE_DEFAULT;
