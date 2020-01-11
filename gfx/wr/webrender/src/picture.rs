@@ -4282,8 +4282,6 @@ impl PicturePrimitive {
                 
                 
                 
-                
-                
                 let snap_surface_to_raster = SpaceSnapper::new_with_target(
                     surface.raster_spatial_node_index,
                     self.spatial_node_index,
