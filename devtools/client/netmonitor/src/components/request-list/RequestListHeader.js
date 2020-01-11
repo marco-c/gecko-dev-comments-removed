@@ -438,19 +438,11 @@ class RequestListHeader extends Component {
 
   shouldUpdateWidths() {
     const visibleColumns = this.getVisibleColumns();
+    const columnsData = this.props.columnsData;
     let totalPercent = 0;
 
     visibleColumns.forEach(col => {
-      const name = col.name;
-      const headerRef = this.refs[`${name}Header`];
-      
-      let widthFromStyle = 0;
-      
-      
-      if (headerRef.getBoundingClientRect().width > 0) {
-        widthFromStyle = headerRef.style.width.slice(0, -1);
-      }
-      totalPercent += +widthFromStyle; 
+      totalPercent += columnsData.get(col.name).width;
     });
 
     
