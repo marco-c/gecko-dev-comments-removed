@@ -186,9 +186,6 @@ class InspectorUtils {
   static already_AddRefed<nsINodeList> GetChildrenForNode(
       nsINode& aNode, bool aShowingAnonymousContent);
 
-  static void GetBindingURLs(GlobalObject& aGlobal, Element& aElement,
-                             nsTArray<nsString>& aResult);
-
   
 
 
