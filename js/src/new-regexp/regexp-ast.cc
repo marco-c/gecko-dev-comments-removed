@@ -2,8 +2,7 @@
 
 
 
-#include "src/regexp/regexp-ast.h"
-#include "src/utils/ostreams.h"
+#include "new-regexp/regexp-ast.h"
 
 namespace v8 {
 namespace internal {

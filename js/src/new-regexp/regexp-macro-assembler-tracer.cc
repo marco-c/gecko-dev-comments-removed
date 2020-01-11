@@ -2,10 +2,8 @@
 
 
 
-#include "src/regexp/regexp-macro-assembler-tracer.h"
+#include "new-regexp/regexp-macro-assembler-tracer.h"
 
-#include "src/ast/ast.h"
-#include "src/objects/objects-inl.h"
 
 namespace v8 {
 namespace internal {

@@ -2,10 +2,8 @@
 
 
 
-#include "src/regexp/regexp-stack.h"
+#include "new-regexp/regexp-stack.h"
 
-#include "src/execution/isolate.h"
-#include "src/utils/memcopy.h"
 
 namespace v8 {
 namespace internal {

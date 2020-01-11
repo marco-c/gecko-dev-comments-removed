@@ -2,15 +2,12 @@
 
 
 
-#include "src/regexp/regexp-compiler.h"
+#include "new-regexp/regexp-compiler.h"
 
-#include "src/execution/isolate.h"
-#include "src/regexp/regexp.h"
+#include "new-regexp/regexp.h"
 #ifdef V8_INTL_SUPPORT
-#include "src/regexp/special-case.h"
+#include "new-regexp/special-case.h"
 #endif  
-#include "src/strings/unicode-inl.h"
-#include "src/zone/zone-list-inl.h"
 
 #ifdef V8_INTL_SUPPORT
 #include "unicode/locid.h"
