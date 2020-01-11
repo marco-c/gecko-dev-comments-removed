@@ -30,9 +30,6 @@ async function enableBreakpoint(dbg, index) {
 }
 
 add_task(async function() {
-  
-  await pushPref("devtools.browsertoolbox.fission", false);
-
   clearDebuggerPreferences();
 
   info("Open a tab pointing to doc-scripts.html");
