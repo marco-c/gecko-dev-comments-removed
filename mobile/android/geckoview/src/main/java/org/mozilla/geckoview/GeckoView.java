@@ -299,11 +299,15 @@ public class GeckoView extends FrameLayout {
 
 
     public void setViewBackend(final @ViewBackend int backend) {
+        removeView(mSurfaceWrapper.getView());
+
         if (backend == BACKEND_SURFACE_VIEW) {
             mSurfaceWrapper.useSurfaceView(getContext());
         } else if (backend == BACKEND_TEXTURE_VIEW) {
             mSurfaceWrapper.useTextureView(getContext());
         }
+
+        addView(mSurfaceWrapper.getView());
     }
 
     
