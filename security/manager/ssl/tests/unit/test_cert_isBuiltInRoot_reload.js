@@ -72,11 +72,14 @@
 
 
 
+
+
 "use strict";
 
 function run_test() {
-  const certDBName = "cert9.db";
-  const keyDBName = "key4.db";
+  const isAndroid = AppConstants.platform == "android";
+  const certDBName = isAndroid ? "cert9.db" : "cert8.db";
+  const keyDBName = isAndroid ? "key4.db" : "key3.db";
   let profile = do_get_profile();
   let certDBFile = do_get_file(`test_cert_isBuiltInRoot_reload/${certDBName}`);
   certDBFile.copyTo(profile, certDBName);
