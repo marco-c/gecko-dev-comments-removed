@@ -173,6 +173,15 @@ uint16_t TraversalRule::ControlMatch(Accessible* aAccessible) {
              nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
     case roles::LINK:
       return LinkMatch(aAccessible);
+    case roles::EDITCOMBOBOX:
+      if (aAccessible->NativeState() & states::EDITABLE) {
+        
+        
+        
+        return nsIAccessibleTraversalRule::FILTER_MATCH |
+               nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+      }
+      break;
     default:
       break;
   }
@@ -186,6 +195,14 @@ uint16_t TraversalRule::DefaultMatch(Accessible* aAccessible) {
       
       
       return nsIAccessibleTraversalRule::FILTER_MATCH;
+    case roles::EDITCOMBOBOX:
+      if (aAccessible->NativeState() & states::EDITABLE) {
+        
+        
+        
+        return nsIAccessibleTraversalRule::FILTER_MATCH;
+      }
+      break;
     case roles::TEXT_LEAF:
     case roles::GRAPHIC:
       
