@@ -365,7 +365,7 @@ class WebConsoleUI {
     }
     
     
-    if (type == this.hud.targetList.TYPES.FRAME) {
+    if (type != this.hud.targetList.TYPES.PROCESS) {
       return;
     }
     const proxy = new WebConsoleConnectionProxy(this, targetFront);
