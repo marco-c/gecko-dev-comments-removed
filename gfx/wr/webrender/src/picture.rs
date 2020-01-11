@@ -4881,37 +4881,6 @@ impl TileNode {
     }
 
     
-    fn get_preference(
-        &self,
-        level: i32,
-        can_merge: bool,
-        max_split_levels: i32,
-    ) -> Option<TileModification> {
-        match self.kind {
-            TileNodeKind::Leaf { dirty_tracker, frames_since_modified, .. } => {
-                
-                if frames_since_modified > 64 {
-                    let dirty_frames = dirty_tracker.count_ones();
-                    
-                    if level < max_split_levels && dirty_frames > 32 {
-                        Some(TileModification::Split)
-                    } else if can_merge && (dirty_tracker == 0 || dirty_frames == 64) && level > 0 {
-                        
-                        Some(TileModification::Merge)
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            }
-            TileNodeKind::Node { .. } => {
-                None
-            }
-        }
-    }
-
-    
     fn maybe_merge_or_split(
         &mut self,
         level: i32,
@@ -4919,19 +4888,66 @@ impl TileNode {
         max_split_levels: i32,
     ) {
         
-        let tile_mod = match self.kind {
-            TileNodeKind::Leaf { .. } => {
-                self.get_preference(level, false, max_split_levels)
+        let mut tile_mod = None;
+
+        fn get_dirty_frames(
+            dirty_tracker: u64,
+            frames_since_modified: usize,
+        ) -> Option<u32> {
+            
+            if frames_since_modified > 64 {
+                
+                Some(dirty_tracker.count_ones())
+            } else {
+                None
+            }
+        }
+
+        match self.kind {
+            TileNodeKind::Leaf { dirty_tracker, frames_since_modified, .. } => {
+                
+                if level < max_split_levels {
+                    if let Some(dirty_frames) = get_dirty_frames(dirty_tracker, frames_since_modified) {
+                        
+                        if dirty_frames > 32 {
+                            tile_mod = Some(TileModification::Split);
+                        }
+                    }
+                }
             }
             TileNodeKind::Node { ref children, .. } => {
                 
-                if children.iter().all(|c| c.get_preference(level+1, true, max_split_levels) == Some(TileModification::Merge)) {
-                    Some(TileModification::Merge)
-                } else {
-                    None
+                
+                
+                
+                
+
+                let mut static_count = 0;
+                let mut changing_count = 0;
+
+                for child in children {
+                    
+                    if let TileNodeKind::Leaf { dirty_tracker, frames_since_modified, .. } = child.kind {
+                        if let Some(dirty_frames) = get_dirty_frames(dirty_tracker, frames_since_modified) {
+                            if dirty_frames == 0 {
+                                
+                                static_count += 1;
+                            } else if dirty_frames == 64 {
+                                
+                                changing_count += 1;
+                            }
+                        }
+                    }
+
+                    
+                    
+                    
+                    if static_count == 4 || changing_count == 4 {
+                        tile_mod = Some(TileModification::Merge);
+                    }
                 }
             }
-        };
+        }
 
         match tile_mod {
             Some(TileModification::Split) => {
