@@ -23,10 +23,6 @@ void EventQueue::PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
       mDispatchTimes.Push(TimeStamp());
     }
     mDispatchTimes.Push(aDelay ? TimeStamp::Now() - *aDelay : TimeStamp::Now());
-  } else {
-    
-    
-    mDispatchTimes.Push(TimeStamp());
   }
 #endif
 
@@ -49,21 +45,26 @@ already_AddRefed<nsIRunnable> EventQueue::GetEvent(
   }
 
 #ifdef MOZ_GECKO_PROFILER
-  if (profiler_is_active()) {
-    
-    while (mDispatchTimes.Count() < mQueue.Count()) {
-      mDispatchTimes.Push(TimeStamp());
-    }
+  
+  
+  
+  
+  if (!mDispatchTimes.IsEmpty()) {
     TimeStamp dispatch_time = mDispatchTimes.Pop();
-    if (!dispatch_time.IsNull()) {
-      if (aLastEventDelay) {
-        *aLastEventDelay = TimeStamp::Now() - dispatch_time;
+    if (profiler_is_active()) {
+      if (!dispatch_time.IsNull()) {
+        if (aLastEventDelay) {
+          *aLastEventDelay = TimeStamp::Now() - dispatch_time;
+        }
       }
     }
-  } else {
-    (void)mDispatchTimes.Pop();
+  } else if (profiler_is_active()) {
+    if (aLastEventDelay) {
+      
+      
+      *aLastEventDelay = TimeDuration();
+    }
   }
-  
 #endif
 
   nsCOMPtr<nsIRunnable> result = mQueue.Pop();
