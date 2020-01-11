@@ -6255,8 +6255,9 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     return false;
   }
 
-  JumpTarget tryStart;
-  if (!emitJumpTarget(&tryStart)) {
+  LoopControl loopInfo(this, StatementKind::YieldStar);
+
+  if (!loopInfo.emitLoopHead(this, Nothing())) {
     
     return false;
   }
@@ -6558,15 +6559,11 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     
     return false;
   }
-  {
+  if (!emitJump(JSOP_GOTO, &loopInfo.continues)) {
     
-    JumpList beq;
-    JumpTarget breakTarget;
-    if (!emitBackwardJump(JSOP_GOTO, tryStart, &beq, &breakTarget)) {
-      
-      return false;
-    }
+    return false;
   }
+
   bytecodeSection().setStackDepth(savedDepthTemp);
   if (!ifReturnDone.emitEnd()) {
     return false;
@@ -6663,14 +6660,19 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     
     return false;
   }
-  
-  {
-    JumpList beq;
-    JumpTarget breakTarget;
-    if (!emitBackwardJump(JSOP_IFEQ, tryStart, &beq, &breakTarget)) {
-      
-      return false;
-    }
+  if (!emitJump(JSOP_IFNE, &loopInfo.breaks)) {
+    
+    return false;
+  }
+
+  if (!loopInfo.emitContinueTarget(this)) {
+    
+    return false;
+  }
+
+  if (!loopInfo.emitLoopEnd(this, JSOP_GOTO, JSTRY_LOOP)) {
+    
+    return false;
   }
 
   
