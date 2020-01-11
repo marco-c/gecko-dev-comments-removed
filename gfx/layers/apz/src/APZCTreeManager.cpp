@@ -3420,10 +3420,6 @@ bool APZCTreeManager::GetAPZTestData(LayersId aLayersId,
 
 void APZCTreeManager::SendSubtreeTransformsToChromeMainThread(
     const AsyncPanZoomController* aAncestor) {
-  if (!mRootNode) {
-    
-    return;
-  }
   RefPtr<GeckoContentController> controller =
       GetContentController(mRootLayersId);
   if (!controller) {
@@ -3433,6 +3429,11 @@ void APZCTreeManager::SendSubtreeTransformsToChromeMainThread(
   bool underAncestor = (aAncestor == nullptr);
   {
     RecursiveMutexAutoLock lock(mTreeLock);
+    if (!mRootNode) {
+      
+      
+      return;
+    }
     
     
     
