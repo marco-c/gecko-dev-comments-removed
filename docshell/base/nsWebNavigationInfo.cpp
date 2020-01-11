@@ -16,56 +16,56 @@
 
 NS_IMPL_ISUPPORTS(nsWebNavigationInfo, nsIWebNavigationInfo)
 
+nsresult nsWebNavigationInfo::Init() {
+  nsresult rv;
+  mCategoryManager = do_GetService(NS_CATEGORYMANAGER_CONTRACTID, &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return NS_OK;
+}
+
 NS_IMETHODIMP
 nsWebNavigationInfo::IsTypeSupported(const nsACString& aType,
                                      nsIWebNavigation* aWebNav,
                                      uint32_t* aIsTypeSupported) {
   MOZ_ASSERT(aIsTypeSupported, "null out param?");
 
-  *aIsTypeSupported = IsTypeSupported(aType, aWebNav);
-  return NS_OK;
-}
-
-uint32_t nsWebNavigationInfo::IsTypeSupported(const nsACString& aType,
-                                              nsIWebNavigation* aWebNav) {
   
   
   
-  nsCOMPtr<nsIDocShell> docShell(do_QueryInterface(aWebNav));
-  bool pluginsAllowed = true;
-  if (docShell) {
-    docShell->GetAllowPlugins(&pluginsAllowed);
-  }
 
-  return IsTypeSupported(aType, pluginsAllowed);
-}
+  
+  
+  *aIsTypeSupported = nsIWebNavigationInfo::UNSUPPORTED;
 
-uint32_t nsWebNavigationInfo::IsTypeSupported(const nsACString& aType,
-                                              bool aPluginsAllowed) {
   
   
   if (aType.LowerCaseEqualsLiteral("application/pdf") &&
       nsContentUtils::IsPDFJSEnabled()) {
-    return nsIWebNavigationInfo::UNSUPPORTED;
-    ;
+    return NS_OK;
   }
 
   const nsCString& flatType = PromiseFlatCString(aType);
-  uint32_t result = IsTypeSupportedInternal(flatType);
-  if (result != nsIWebNavigationInfo::UNSUPPORTED) {
-    return result;
+  nsresult rv = IsTypeSupportedInternal(flatType, aIsTypeSupported);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (*aIsTypeSupported) {
+    return rv;
   }
 
   
   
   if (!nsPluginHost::CanUsePluginForMIMEType(aType)) {
-    return nsIWebNavigationInfo::UNSUPPORTED;
+    return NS_OK;
   }
 
   
   
-  if (!aPluginsAllowed) {
-    return nsIWebNavigationInfo::UNSUPPORTED;
+  nsCOMPtr<nsIDocShell> docShell(do_QueryInterface(aWebNav));
+  bool allowed;
+  if (docShell && NS_SUCCEEDED(docShell->GetAllowPlugins(&allowed)) &&
+      !allowed) {
+    return NS_OK;
   }
 
   
@@ -74,20 +74,23 @@ uint32_t nsWebNavigationInfo::IsTypeSupported(const nsACString& aType,
   if (pluginHost) {
     
     
-    nsresult rv = pluginHost->ReloadPlugins();
+    rv = pluginHost->ReloadPlugins();
     if (NS_SUCCEEDED(rv)) {
       
       
       
       
-      return IsTypeSupportedInternal(flatType);
+      return IsTypeSupportedInternal(flatType, aIsTypeSupported);
     }
   }
 
-  return nsIWebNavigationInfo::UNSUPPORTED;
+  return NS_OK;
 }
 
-uint32_t nsWebNavigationInfo::IsTypeSupportedInternal(const nsCString& aType) {
+nsresult nsWebNavigationInfo::IsTypeSupportedInternal(const nsCString& aType,
+                                                      uint32_t* aIsSupported) {
+  MOZ_ASSERT(aIsSupported, "Null out param?");
+
   nsContentUtils::ContentViewerType vtype = nsContentUtils::TYPE_UNSUPPORTED;
 
   nsCOMPtr<nsIDocumentLoaderFactory> docLoaderFactory =
@@ -95,24 +98,28 @@ uint32_t nsWebNavigationInfo::IsTypeSupportedInternal(const nsCString& aType) {
 
   switch (vtype) {
     case nsContentUtils::TYPE_UNSUPPORTED:
-      return nsIWebNavigationInfo::UNSUPPORTED;
+      *aIsSupported = nsIWebNavigationInfo::UNSUPPORTED;
+      break;
 
     case nsContentUtils::TYPE_PLUGIN:
-      return nsIWebNavigationInfo::PLUGIN;
+      *aIsSupported = nsIWebNavigationInfo::PLUGIN;
+      break;
 
     case nsContentUtils::TYPE_UNKNOWN:
-      return nsIWebNavigationInfo::OTHER;
+      *aIsSupported = nsIWebNavigationInfo::OTHER;
+      break;
 
     case nsContentUtils::TYPE_CONTENT:
       
       
       
       if (imgLoader::SupportImageWithMimeType(aType.get())) {
-        return nsIWebNavigationInfo::IMAGE;
+        *aIsSupported = nsIWebNavigationInfo::IMAGE;
       } else {
-        return nsIWebNavigationInfo::OTHER;
+        *aIsSupported = nsIWebNavigationInfo::OTHER;
       }
+      break;
   }
 
-  return nsIWebNavigationInfo::UNSUPPORTED;
+  return NS_OK;
 }

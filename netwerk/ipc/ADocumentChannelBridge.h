@@ -26,13 +26,7 @@ class ADocumentChannelBridge {
   
   
   
-  
-  
-  
-  
-  
-  virtual void DisconnectChildListeners(nsresult aStatus,
-                                        nsresult aLoadGroupStatus) = 0;
+  virtual void DisconnectChildListeners(nsresult aStatus) = 0;
 
   
   virtual void Delete() = 0;

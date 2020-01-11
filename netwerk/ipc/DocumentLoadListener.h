@@ -14,7 +14,6 @@
 #include "mozilla/net/PDocumentChannelParent.h"
 #include "mozilla/net/ParentChannelListener.h"
 #include "mozilla/net/ADocumentChannelBridge.h"
-#include "mozilla/dom/BrowserParent.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIObserver.h"
 #include "nsIParentChannel.h"
@@ -60,26 +59,20 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                              public nsIProcessSwitchRequestor,
                              public nsIMultiPartChannelListener {
  public:
-  explicit DocumentLoadListener(dom::BrowserParent* aBrowser,
+  explicit DocumentLoadListener(const dom::PBrowserOrId& aIframeEmbedding,
                                 nsILoadContext* aLoadContext,
                                 PBOverrideStatus aOverrideStatus,
                                 ADocumentChannelBridge* aBridge);
 
   
-  
-  
-  
-  bool Open(dom::BrowserParent* aBrowser, nsDocShellLoadState* aLoadState,
-            class LoadInfo* aLoadInfo, const nsString* aInitiatorType,
-            nsLoadFlags aLoadFlags, uint32_t aLoadType, uint32_t aCacheKey,
-            bool aIsActive, bool aIsTopLevelDoc,
-            bool aHasNonEmptySandboxingFlags,
+  bool Open(nsDocShellLoadState* aLoadState, class LoadInfo* aLoadInfo,
+            const nsString* aInitiatorType, nsLoadFlags aLoadFlags,
+            uint32_t aLoadType, uint32_t aCacheKey, bool aIsActive,
+            bool aIsTopLevelDoc, bool aHasNonEmptySandboxingFlags,
             const Maybe<ipc::URIParams>& aTopWindowURI,
             const Maybe<ipc::PrincipalInfo>& aContentBlockingAllowListPrincipal,
             const nsString& aCustomUserAgent, const uint64_t& aChannelId,
-            const TimeStamp& aAsyncOpenTime,
-            const Maybe<uint32_t>& aDocumentOpenFlags, bool aPluginsAllowed,
-            nsresult* aRv);
+            const TimeStamp& aAsyncOpenTime, nsresult* aRv);
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIREQUESTOBSERVER
@@ -140,13 +133,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   void DocumentChannelBridgeDisconnected();
-
-  void DisconnectChildListeners(nsresult aStatus, nsresult aLoadGroupStatus) {
-    if (mDocumentChannelBridge) {
-      mDocumentChannelBridge->DisconnectChildListeners(aStatus,
-                                                       aLoadGroupStatus);
-    }
-  }
 
   base::ProcessId OtherPid() const {
     if (mDocumentChannelBridge) {

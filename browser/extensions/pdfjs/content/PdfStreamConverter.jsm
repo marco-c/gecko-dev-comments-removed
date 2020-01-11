@@ -1008,10 +1008,6 @@ PdfStreamConverter.prototype = {
     this.listener = aListener;
   },
 
-  getConvertedType(aFromType) {
-    return "text/html";
-  },
-
   
   onDataAvailable(aRequest, aInputStream, aOffset, aCount) {
     if (!this.dataListener) {

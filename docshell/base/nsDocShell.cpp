@@ -466,6 +466,10 @@ already_AddRefed<nsDocShell> nsDocShell::Create(
 
   
   ds->mContentListener = new nsDSURIContentListener(ds);
+  rv = ds->mContentListener->Init();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
 
   
   
@@ -10244,15 +10248,6 @@ nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
   
   
   RefPtr<net::DocumentChannelChild> docChannel = do_QueryObject(aChannel);
-  if (docChannel) {
-    bool pluginsAllowed = true;
-    GetAllowPlugins(&pluginsAllowed);
-    docChannel->SetDocumentOpenFlags(aOpenFlags, pluginsAllowed);
-    
-    
-    
-    aOpenFlags |= nsIURILoader::DONT_RETARGET;
-  }
 
   
   
