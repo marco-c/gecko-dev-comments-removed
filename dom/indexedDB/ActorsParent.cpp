@@ -11422,7 +11422,13 @@ bool ConnectionPool::ScheduleTransaction(TransactionInfo* aTransactionInfo,
         
         
         
-        nsCOMPtr<nsIRunnable> runnable = new Runnable("IndexedDBDummyRunnable");
+        
+        
+        
+        
+        
+        const nsCOMPtr<nsIRunnable> runnable =
+            new Runnable("IndexedDBDummyRunnable");
 
         for (uint32_t index = mDatabasesPerformingIdleMaintenance.Length();
              index > 0; index--) {
@@ -11431,7 +11437,7 @@ bool ConnectionPool::ScheduleTransaction(TransactionInfo* aTransactionInfo,
           MOZ_ASSERT(dbInfo->mThreadInfo.mThread);
 
           MOZ_ALWAYS_SUCCEEDS(dbInfo->mThreadInfo.mThread->Dispatch(
-              runnable.forget(), NS_DISPATCH_NORMAL));
+              runnable, NS_DISPATCH_NORMAL));
         }
       }
 
