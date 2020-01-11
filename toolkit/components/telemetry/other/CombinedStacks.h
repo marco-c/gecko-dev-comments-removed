@@ -8,7 +8,6 @@
 
 #include <vector>
 
-#include "ipc/IPCMessageUtils.h"
 #include "ProcessedStack.h"
 
 class JSObject;
@@ -53,8 +52,6 @@ class CombinedStacks {
   size_t mNextIndex;
   
   size_t mMaxStacksCount;
-
-  friend struct ::IPC::ParamTraits<CombinedStacks>;
 };
 
 
@@ -63,43 +60,6 @@ class CombinedStacks {
 JSObject* CreateJSStackObject(JSContext* cx, const CombinedStacks& stacks);
 
 }  
-}  
-
-namespace IPC {
-
-template <>
-struct ParamTraits<mozilla::Telemetry::CombinedStacks> {
-  typedef mozilla::Telemetry::CombinedStacks paramType;
-
-  static void Write(Message* aMsg, const paramType& aParam) {
-    WriteParam(aMsg, aParam.mModules);
-    WriteParam(aMsg, aParam.mStacks);
-    WriteParam(aMsg, aParam.mNextIndex);
-    WriteParam(aMsg, aParam.mMaxStacksCount);
-  }
-
-  static bool Read(const Message* aMsg, PickleIterator* aIter,
-                   paramType* aResult) {
-    if (!ReadParam(aMsg, aIter, &aResult->mModules)) {
-      return false;
-    }
-
-    if (!ReadParam(aMsg, aIter, &aResult->mStacks)) {
-      return false;
-    }
-
-    if (!ReadParam(aMsg, aIter, &aResult->mNextIndex)) {
-      return false;
-    }
-
-    if (!ReadParam(aMsg, aIter, &aResult->mMaxStacksCount)) {
-      return false;
-    }
-
-    return true;
-  }
-};
-
 }  
 
 #endif  
