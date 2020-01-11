@@ -71,7 +71,7 @@ AccessibilityView.prototype = {
     supports,
     fluentBundles,
     simulator,
-    toolboxDoc,
+    toolbox,
   }) {
     
     await this.store.dispatch(reset(front, supports));
@@ -81,7 +81,7 @@ AccessibilityView.prototype = {
       accessibilityWalker: walker,
       fluentBundles,
       simulator,
-      toolboxDoc,
+      toolbox,
     });
     
     const provider = createElement(Provider, { store: this.store }, mainFrame);
