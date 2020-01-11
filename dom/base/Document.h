@@ -2210,7 +2210,7 @@ class Document : public nsINode,
 
 
 
-  nsresult RemoteFrameFullscreenChanged(Element* aFrameElement);
+  void RemoteFrameFullscreenChanged(Element* aFrameElement);
 
   
 
@@ -2221,7 +2221,7 @@ class Document : public nsINode,
 
 
 
-  nsresult RemoteFrameFullscreenReverted();
+  void RemoteFrameFullscreenReverted();
 
   
 
