@@ -184,6 +184,7 @@ function setPrefs(name, setting, item) {
 
 
 
+
 async function processSetting(id, name, action) {
   await ExtensionSettingsStore.initialize();
   let expectedItem = ExtensionSettingsStore.getSetting(STORE_TYPE, name);
@@ -299,6 +300,24 @@ this.ExtensionPreferencesManager = {
 
   enableSetting(id, name) {
     return processSetting(id, name, "enable");
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  selectSetting(id, name) {
+    return processSetting(id, name, "select");
   },
 
   
