@@ -2144,14 +2144,14 @@ var gPrivacyPane = {
 
 
   showCertificates() {
-    gSubDialog.open("chrome://pippki/content/certManager.xhtml");
+    gSubDialog.open("chrome://pippki/content/certManager.xul");
   },
 
   
 
 
   showSecurityDevices() {
-    gSubDialog.open("chrome://pippki/content/device_manager.xhtml");
+    gSubDialog.open("chrome://pippki/content/device_manager.xul");
   },
 
   initDataCollection() {
