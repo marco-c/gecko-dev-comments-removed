@@ -54,7 +54,7 @@ public class GeckoWebExecutor {
     }
 
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({FETCH_FLAGS_NONE, FETCH_FLAGS_ANONYMOUS, FETCH_FLAGS_NO_REDIRECTS, FETCH_FLAGS_STREAM_FAILURE_TEST})
+    @IntDef({FETCH_FLAGS_NONE, FETCH_FLAGS_ANONYMOUS, FETCH_FLAGS_NO_REDIRECTS})
      @interface FetchFlags {};
 
     
@@ -73,12 +73,6 @@ public class GeckoWebExecutor {
 
     @WrapForJNI
     public static final int FETCH_FLAGS_NO_REDIRECTS = 1 << 1;
-
-    
-
-
-    @WrapForJNI
-    public static final int FETCH_FLAGS_STREAM_FAILURE_TEST = 1 << 10;
 
     
 
