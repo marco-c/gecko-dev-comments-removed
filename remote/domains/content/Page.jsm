@@ -23,12 +23,15 @@ const {
 class Page extends ContentProcessDomain {
   constructor(session) {
     super(session);
+
     this.enabled = false;
+    this.lifecycleEnabled = false;
 
     this.onFrameNavigated = this.onFrameNavigated.bind(this);
   }
 
   destructor() {
+    this.setLifecycleEventsEnabled({ enabled: false });
     this.disable();
 
     super.destructor();
@@ -121,9 +124,21 @@ class Page extends ContentProcessDomain {
     };
   }
 
-  setLifecycleEventsEnabled() {}
   addScriptToEvaluateOnNewDocument() {}
   createIsolatedWorld() {}
+
+  
+
+
+
+
+
+
+  setLifecycleEventsEnabled(options) {
+    const { enabled } = options;
+
+    this.lifecycleEnabled = enabled;
+  }
 
   url() {
     return this.content.location.href;
