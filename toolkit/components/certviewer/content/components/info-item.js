@@ -64,8 +64,12 @@ export class InfoItem extends HTMLElement {
 
     if (labelId === "modulus" || labelId === "public-value") {
       info.classList.add("long-hex");
-      this.addEventListener("click", () => {
-        info.classList.toggle("long-hex-open");
+      this.addEventListener("mouseup", () => {
+        
+        
+        if (window.getSelection().type !== "Range") {
+          info.classList.toggle("long-hex-open");
+        }
       });
     }
 
