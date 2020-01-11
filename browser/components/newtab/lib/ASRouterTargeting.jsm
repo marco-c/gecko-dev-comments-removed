@@ -227,18 +227,6 @@ const QueryCache = {
 
 
 
-function sortMessagesByOrder(messages) {
-  return messages.sort((a, b) => a.order - b.order);
-}
-
-
-
-
-
-
-
-
-
 
 
 
@@ -265,8 +253,42 @@ function sortMessagesByWeightedRank(messages) {
 
 
 
-function sortMessagesByTargeting(messages) {
-  return messages.sort((a, b) => {
+
+
+
+
+function getSortedMessages(messages, options = {}) {
+  let { ordered } = { ordered: false, ...options };
+  let result = messages;
+  let hasScores;
+
+  if (!ordered) {
+    result = sortMessagesByWeightedRank(result);
+  }
+
+  result.sort((a, b) => {
+    
+    if (!isNaN(a.score) || !isNaN(b.score)) {
+      hasScores = true;
+    }
+
+    
+    if (a.score > b.score || (!isNaN(a.score) && isNaN(b.score))) {
+      return -1;
+    }
+    if (a.score < b.score || (isNaN(a.score) && !isNaN(b.score))) {
+      return 1;
+    }
+
+    
+    if (a.priority > b.priority || (!isNaN(a.priority) && isNaN(b.priority))) {
+      return -1;
+    }
+    if (a.priority < b.priority || (isNaN(a.priority) && !isNaN(b.priority))) {
+      return 1;
+    }
+
+    
     if (a.targeting && !b.targeting) {
       return -1;
     }
@@ -274,37 +296,28 @@ function sortMessagesByTargeting(messages) {
       return 1;
     }
 
-    return 0;
-  });
-}
-
-
-
-
-
-
-function sortMessagesByPriority(messages) {
-  return messages.sort((a, b) => {
-    if (isNaN(a.priority) && isNaN(b.priority)) {
-      return 0;
-    }
-    if (!isNaN(a.priority) && isNaN(b.priority)) {
-      return -1;
-    }
-    if (isNaN(a.priority) && !isNaN(b.priority)) {
-      return 1;
-    }
-
     
-    if (a.priority > b.priority) {
-      return -1;
-    }
-    if (a.priority < b.priority) {
-      return 1;
+    if (ordered) {
+      if (a.order > b.order || (!isNaN(a.order) && isNaN(b.order))) {
+        return 1;
+      }
+      if (a.order < b.order || (isNaN(a.order) && !isNaN(b.order))) {
+        return -1;
+      }
     }
 
     return 0;
   });
+
+  if (hasScores && !isNaN(ASRouterPreferences.personalizedCfrThreshold)) {
+    return result.filter(
+      message =>
+        isNaN(message.score) ||
+        message.score >= ASRouterPreferences.personalizedCfrThreshold
+    );
+  }
+
+  return result;
 }
 
 const TargetingGetters = {
@@ -526,6 +539,12 @@ const TargetingGetters = {
   get platformName() {
     return AppConstants.platform;
   },
+  get scores() {
+    return ASRouterPreferences.personalizedCfrScores;
+  },
+  get scoreThreshold() {
+    return ASRouterPreferences.personalizedCfrThreshold;
+  },
 };
 
 this.ASRouterTargeting = {
@@ -658,14 +677,6 @@ this.ASRouterTargeting = {
     return result;
   },
 
-  _getSortedMessages(messages, ordered) {
-    const weightSortedMessages = ordered
-      ? sortMessagesByOrder(messages)
-      : sortMessagesByWeightedRank([...messages]);
-    const sortedMessages = sortMessagesByTargeting(weightSortedMessages);
-    return sortMessagesByPriority(sortedMessages);
-  },
-
   _getCombinedContext(trigger, context) {
     const triggerContext = trigger ? trigger.context : {};
     return this.combineContexts(context, triggerContext);
@@ -703,7 +714,7 @@ this.ASRouterTargeting = {
     ordered = false,
     shouldCache = false,
   }) {
-    const sortedMessages = this._getSortedMessages(messages, ordered);
+    const sortedMessages = getSortedMessages(messages, { ordered });
     const combinedContext = this._getCombinedContext(trigger, context);
 
     for (const candidate of sortedMessages) {
@@ -740,7 +751,7 @@ this.ASRouterTargeting = {
     onError,
     ordered = false,
   }) {
-    const sortedMessages = this._getSortedMessages(messages, ordered);
+    const sortedMessages = getSortedMessages(messages, { ordered });
     const combinedContext = this._getCombinedContext(trigger, context);
     const matchingMessages = [];
 
@@ -756,10 +767,12 @@ this.ASRouterTargeting = {
 };
 
 
+this.getSortedMessages = getSortedMessages;
 this.QueryCache = QueryCache;
 this.CachedTargetingGetter = CachedTargetingGetter;
 this.EXPORTED_SYMBOLS = [
   "ASRouterTargeting",
   "QueryCache",
   "CachedTargetingGetter",
+  "getSortedMessages",
 ];
