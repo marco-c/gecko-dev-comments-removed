@@ -118,5 +118,14 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 
   
-  new window.ContentSearchHandoffUIController();
+  
+  
+  
+  let input = document.getElementById("dummy-input");
+  new window.ContentSearchUIController(
+    input,
+    input.parentNode,
+    "aboutprivatebrowsing",
+    "aboutprivatebrowsing"
+  );
 });

@@ -10301,7 +10301,6 @@ class _Search extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponent
     this.onSearchHandoffPaste = this.onSearchHandoffPaste.bind(this);
     this.onSearchHandoffDrop = this.onSearchHandoffDrop.bind(this);
     this.onInputMount = this.onInputMount.bind(this);
-    this.onInputMountHandoff = this.onInputMountHandoff.bind(this);
     this.onSearchHandoffButtonMount = this.onSearchHandoffButtonMount.bind(this);
   }
 
@@ -10391,14 +10390,6 @@ class _Search extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponent
     }
   }
 
-  onInputMountHandoff(input) {
-    if (input) {
-      
-      
-      this._handoffSearchController = new ContentSearchHandoffUIController();
-    }
-  }
-
   onSearchHandoffButtonMount(button) {
     
     this._searchHandoffButton = button;
@@ -10450,11 +10441,16 @@ class _Search extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponent
       tabIndex: "-1",
       "aria-hidden": "true",
       onDrop: this.onSearchHandoffDrop,
-      onPaste: this.onSearchHandoffPaste,
-      ref: this.onInputMountHandoff
+      onPaste: this.onSearchHandoffPaste
     }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
       className: "fake-caret"
-    }))));
+    })), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
+      type: "search",
+      style: {
+        display: "none"
+      },
+      ref: this.onInputMount
+    })));
   }
 
 }
