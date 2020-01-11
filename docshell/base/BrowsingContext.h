@@ -275,18 +275,6 @@ class BrowsingContext : public nsISupports,
   bool IsLoading();
 
   
-  void SetCurrentOrientation(OrientationType aType, float aAngle) {
-    SetCurrentOrientationType(aType);
-    SetCurrentOrientationAngle(aAngle);
-  }
-
-  void SetRDMPaneOrientation(OrientationType aType, float aAngle) {
-    if (mInRDMPane) {
-      SetCurrentOrientation(aType, aAngle);
-    }
-  }
-
-  
   
   
   
