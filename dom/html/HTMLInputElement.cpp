@@ -2906,16 +2906,11 @@ nsresult HTMLInputElement::MaybeSubmitForm(nsPresContext* aPresContext) {
     WidgetMouseEvent event(true, eMouseClick, nullptr, WidgetMouseEvent::eReal);
     nsEventStatus status = nsEventStatus_eIgnore;
     presShell->HandleDOMEventWithTarget(submitContent, &event, &status);
-  } else if (!mForm->ImplicitSubmissionIsDisabled() &&
-             mForm->SubmissionCanProceed(nullptr)) {
+  } else if (!mForm->ImplicitSubmissionIsDisabled()) {
     
     
-    
-    
-    RefPtr<mozilla::dom::HTMLFormElement> form = mForm;
-    InternalFormEvent event(true, eFormSubmit);
-    nsEventStatus status = nsEventStatus_eIgnore;
-    presShell->HandleDOMEventWithTarget(form, &event, &status);
+    RefPtr<mozilla::dom::HTMLFormElement> form(mForm);
+    form->MaybeSubmit(nullptr);
   }
 
   return NS_OK;
@@ -4155,27 +4150,14 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
           case NS_FORM_INPUT_SUBMIT:
           case NS_FORM_INPUT_IMAGE:
             if (mForm) {
-              InternalFormEvent event(true, (mType == NS_FORM_INPUT_RESET)
-                                                ? eFormReset
-                                                : eFormSubmit);
-              event.mOriginator = this;
-              nsEventStatus status = nsEventStatus_eIgnore;
-
-              RefPtr<PresShell> presShell =
-                  aVisitor.mPresContext->GetPresShell();
-
               
-              
-              
-              
-              
-              if (presShell && (event.mMessage != eFormSubmit ||
-                                mForm->SubmissionCanProceed(this))) {
-                
-                RefPtr<mozilla::dom::HTMLFormElement> form(mForm);
-                presShell->HandleDOMEventWithTarget(form, &event, &status);
-                aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+              RefPtr<mozilla::dom::HTMLFormElement> form(mForm);
+              if (mType == NS_FORM_INPUT_RESET) {
+                form->MaybeReset(this);
+              } else {
+                form->MaybeSubmit(this);
               }
+              aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
             }
             break;
 
