@@ -1284,41 +1284,50 @@ function passCssFilters(message, filters) {
 
 
 function passSearchFilters(message, filters) {
-  const text = (filters.text || "").trim().toLocaleLowerCase();
-  let regex;
-  if (text.startsWith("/") && text.endsWith("/") && text.length > 2) {
-    try {
-      regex = new RegExp(text.slice(1, -1), "im");
-    } catch (e) {}
-  }
+  const trimmed = (filters.text || "").trim().toLocaleLowerCase();
 
   
-  if (!text) {
+  const exclude = trimmed.startsWith("-");
+  const term = exclude ? trimmed.slice(1) : trimmed;
+
+  let regex;
+  if (term.startsWith("/") && term.endsWith("/") && term.length > 2) {
+    try {
+      regex = new RegExp(term.slice(1, -1), "im");
+    } catch (e) {}
+  }
+  const matchStr = regex
+    ? str => regex.test(str)
+    : str => str.toLocaleLowerCase().includes(term);
+
+  
+  if (!term) {
     return true;
   }
 
-  return (
+  const matched =
     
-    isTextInParameters(text, regex, message.parameters) ||
+    isTextInParameters(matchStr, message.parameters) ||
     
-    isTextInFrame(text, regex, message.frame) ||
+    isTextInFrame(matchStr, message.frame) ||
     
-    isTextInNetEvent(text, regex, message.request) ||
+    isTextInNetEvent(matchStr, message.request) ||
     
-    isTextInStackTrace(text, regex, message.stacktrace) ||
+    isTextInStackTrace(matchStr, message.stacktrace) ||
     
-    isTextInMessageText(text, regex, message.messageText) ||
+    isTextInMessageText(matchStr, message.messageText) ||
     
-    isTextInNotes(text, regex, message.notes) ||
+    isTextInNotes(matchStr, message.notes) ||
     
-    isTextInPrefix(text, regex, message.prefix)
-  );
+    isTextInPrefix(matchStr, message.prefix);
+
+  return matched ? !exclude : exclude;
 }
 
 
 
 
-function isTextInFrame(text, regex, frame) {
+function isTextInFrame(matchStr, frame) {
   if (!frame) {
     return false;
   }
@@ -1330,29 +1339,24 @@ function isTextInFrame(text, regex, frame) {
   const str = `${
     functionName ? functionName + " " : ""
   }${unicodeShort}:${line}:${column}`;
-  return regex ? regex.test(str) : str.toLocaleLowerCase().includes(text);
+  return matchStr(str);
 }
 
 
 
 
-function isTextInParameters(text, regex, parameters) {
+function isTextInParameters(matchStr, parameters) {
   if (!parameters) {
     return false;
   }
 
-  return parameters.some(parameter =>
-    isTextInParameter(text, regex, parameter)
-  );
+  return parameters.some(parameter => isTextInParameter(matchStr, parameter));
 }
 
 
 
 
-function isTextInParameter(text, regex, parameter) {
-  const matchStr = str =>
-    regex ? regex.test(str) : str.toLocaleLowerCase().includes(text);
-
+function isTextInParameter(matchStr, parameter) {
   const paramGrip =
     parameter && parameter.getGrip ? parameter.getGrip() : parameter;
 
@@ -1370,7 +1374,7 @@ function isTextInParameter(text, regex, parameter) {
 
   const previewItems = getGripPreviewItems(paramGrip);
   for (const item of previewItems) {
-    if (isTextInParameter(text, regex, item)) {
+    if (isTextInParameter(matchStr, item)) {
       return true;
     }
   }
@@ -1381,7 +1385,7 @@ function isTextInParameter(text, regex, parameter) {
         return true;
       }
 
-      if (isTextInParameter(text, regex, getDescriptorValue(desc))) {
+      if (isTextInParameter(matchStr, getDescriptorValue(desc))) {
         return true;
       }
     }
@@ -1393,23 +1397,20 @@ function isTextInParameter(text, regex, parameter) {
 
 
 
-function isTextInNetEvent(text, regex, request) {
+function isTextInNetEvent(matchStr, request) {
   if (!request) {
     return false;
   }
 
   const method = request.method;
   const url = request.url;
-  return regex
-    ? regex.test(method) || regex.test(url)
-    : method.toLocaleLowerCase().includes(text) ||
-        url.toLocaleLowerCase().includes(text);
+  return matchStr(method) || matchStr(url);
 }
 
 
 
 
-function isTextInStackTrace(text, regex, stacktrace) {
+function isTextInStackTrace(matchStr, stacktrace) {
   if (!Array.isArray(stacktrace)) {
     return false;
   }
@@ -1417,7 +1418,7 @@ function isTextInStackTrace(text, regex, stacktrace) {
   
   
   return stacktrace.some(frame =>
-    isTextInFrame(text, regex, {
+    isTextInFrame(matchStr, {
       functionName:
         frame.functionName || l10n.getStr("stacktrace.anonymousFunction"),
       source: frame.filename,
@@ -1430,23 +1431,19 @@ function isTextInStackTrace(text, regex, stacktrace) {
 
 
 
-function isTextInMessageText(text, regex, messageText) {
+function isTextInMessageText(matchStr, messageText) {
   if (!messageText) {
     return false;
   }
 
   if (typeof messageText === "string") {
-    return regex
-      ? regex.test(messageText)
-      : messageText.toLocaleLowerCase().includes(text);
+    return matchStr(messageText);
   }
 
   const grip =
     messageText && messageText.getGrip ? messageText.getGrip() : messageText;
   if (grip && grip.type === "longString") {
-    return regex
-      ? regex.test(grip.initial)
-      : grip.initial.toLocaleLowerCase().includes(text);
+    return matchStr(grip.initial);
   }
 
   return true;
@@ -1455,7 +1452,7 @@ function isTextInMessageText(text, regex, messageText) {
 
 
 
-function isTextInNotes(text, regex, notes) {
+function isTextInNotes(matchStr, notes) {
   if (!Array.isArray(notes)) {
     return false;
   }
@@ -1463,26 +1460,21 @@ function isTextInNotes(text, regex, notes) {
   return notes.some(
     note =>
       
-      isTextInFrame(text, regex, note.frame) ||
+      isTextInFrame(matchStr, note.frame) ||
       
-      (note.messageBody &&
-        (regex
-          ? regex.test(note.messageBody)
-          : note.messageBody.toLocaleLowerCase().includes(text)))
+      (note.messageBody && matchStr(note.messageBody))
   );
 }
 
 
 
 
-function isTextInPrefix(text, regex, prefix) {
+function isTextInPrefix(matchStr, prefix) {
   if (!prefix) {
     return false;
   }
 
-  const str = `${prefix}: `;
-
-  return regex ? regex.test(str) : str.toLocaleLowerCase().includes(text);
+  return matchStr(`${prefix}: `);
 }
 
 function getDefaultFiltersCounter() {
