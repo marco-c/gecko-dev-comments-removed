@@ -131,6 +131,9 @@ class MachCommands(MachCommandBase):
                 
                 
                 '--expensive-definedness-checks=yes',
+                
+                
+                '--show-mismatched-frees=no',
             ]
 
             for s in suppressions:
