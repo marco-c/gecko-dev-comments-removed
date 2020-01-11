@@ -53,13 +53,18 @@ using js::intl::SharedIntlData;
 using js::intl::StringsAreEqual;
 
 const JSClassOps DateTimeFormatObject::classOps_ = {
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    DateTimeFormatObject::finalize};
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    DateTimeFormatObject::finalize,  
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+};
 
 const JSClass DateTimeFormatObject::class_ = {
     js_Object_str,

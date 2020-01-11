@@ -37,13 +37,19 @@ using mozilla::AssertedCast;
 using js::intl::CallICU;
 using js::intl::IcuLocale;
 
-const JSClassOps PluralRulesObject::classOps_ = {nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 PluralRulesObject::finalize};
+const JSClassOps PluralRulesObject::classOps_ = {
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    PluralRulesObject::finalize,  
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+};
 
 const JSClass PluralRulesObject::class_ = {
     js_Object_str,

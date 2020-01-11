@@ -1704,17 +1704,18 @@ void ScriptSourceObject::trace(JSTracer* trc, JSObject* obj) {
 }
 
 static const JSClassOps ScriptSourceObjectClassOps = {
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    ScriptSourceObject::finalize,
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    ScriptSourceObject::trace};
+    nullptr,                       
+    nullptr,                       
+    nullptr,                       
+    nullptr,                       
+    nullptr,                       
+    nullptr,                       
+    ScriptSourceObject::finalize,  
+    nullptr,                       
+    nullptr,                       
+    nullptr,                       
+    ScriptSourceObject::trace,     
+};
 
 const JSClass ScriptSourceObject::class_ = {
     "ScriptSource",

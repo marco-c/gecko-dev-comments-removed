@@ -39,13 +39,19 @@ using mozilla::AssertedCast;
 using js::intl::CallICU;
 using js::intl::IcuLocale;
 
-const JSClassOps ListFormatObject::classOps_ = {nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                ListFormatObject::finalize};
+const JSClassOps ListFormatObject::classOps_ = {
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    ListFormatObject::finalize,  
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+};
 const JSClass ListFormatObject::class_ = {
     js_Object_str,
     JSCLASS_HAS_RESERVED_SLOTS(ListFormatObject::SLOT_COUNT) |

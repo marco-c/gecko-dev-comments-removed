@@ -50,17 +50,17 @@ void RealmInstrumentation::holderTrace(JSTracer* trc, JSObject* obj) {
 }
 
 static const JSClassOps InstrumentationHolderClassOps = {
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    RealmInstrumentation::holderFinalize,
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    RealmInstrumentation::holderTrace,
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    RealmInstrumentation::holderFinalize,  
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    RealmInstrumentation::holderTrace,     
 };
 
 static const JSClass InstrumentationHolderClass = {

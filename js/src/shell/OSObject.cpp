@@ -462,17 +462,17 @@ class FileObject : public NativeObject {
 };
 
 static const JSClassOps FileObjectClassOps = {
-    nullptr,              
-    nullptr,              
-    nullptr,              
-    nullptr,              
-    nullptr,              
-    nullptr,              
-    FileObject::finalize, 
-    nullptr,              
-    nullptr,              
-    nullptr,              
-    nullptr               
+    nullptr,               
+    nullptr,               
+    nullptr,               
+    nullptr,               
+    nullptr,               
+    nullptr,               
+    FileObject::finalize,  
+    nullptr,               
+    nullptr,               
+    nullptr,               
+    nullptr,               
 };
 
 const JSClass FileObject::class_ = {

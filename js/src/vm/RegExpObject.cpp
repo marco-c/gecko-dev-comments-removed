@@ -165,17 +165,17 @@ void RegExpObject::trace(JSTracer* trc) {
 }
 
 static const JSClassOps RegExpObjectClassOps = {
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    RegExpObject::trace,
+    nullptr,              
+    nullptr,              
+    nullptr,              
+    nullptr,              
+    nullptr,              
+    nullptr,              
+    nullptr,              
+    nullptr,              
+    nullptr,              
+    nullptr,              
+    RegExpObject::trace,  
 };
 
 static const ClassSpec RegExpObjectClassSpec = {

@@ -194,17 +194,17 @@ JSObject* newCCW(JS::HandleObject sourceZone, JS::HandleObject destZone) {
 
 JSObject* newDelegate() {
   static const JSClassOps delegateClassOps = {
-      nullptr, 
-      nullptr, 
-      nullptr, 
-      nullptr, 
-      nullptr, 
-      nullptr, 
-      nullptr, 
-      nullptr, 
-      nullptr, 
-      nullptr, 
-      JS_GlobalObjectTraceHook,
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      JS_GlobalObjectTraceHook,  
   };
 
   static const js::ClassExtension delegateClassExtension = {

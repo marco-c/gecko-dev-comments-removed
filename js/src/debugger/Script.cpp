@@ -58,17 +58,17 @@ using mozilla::Maybe;
 using mozilla::Some;
 
 const JSClassOps DebuggerScript::classOps_ = {
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    CallTraceMethod<DebuggerScript>, 
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    CallTraceMethod<DebuggerScript>,  
 };
 
 const JSClass DebuggerScript::class_ = {

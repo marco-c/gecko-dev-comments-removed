@@ -12,11 +12,19 @@
 
 
 BEGIN_TEST(testResolveRecursion) {
-  static const JSClassOps my_resolve_classOps = {nullptr,  
-                                                 nullptr,  
-                                                 nullptr,  
-                                                 nullptr,  
-                                                 my_resolve};
+  static const JSClassOps my_resolve_classOps = {
+      nullptr,     
+      nullptr,     
+      nullptr,     
+      nullptr,     
+      my_resolve,  
+      nullptr,     
+      nullptr,     
+      nullptr,     
+      nullptr,     
+      nullptr,     
+      nullptr,     
+  };
 
   static const JSClass my_resolve_class = {"MyResolve", JSCLASS_HAS_PRIVATE,
                                            &my_resolve_classOps};
@@ -142,17 +150,19 @@ BEGIN_TEST(testResolveRecursion_InitStandardClasses) {
 }
 
 const JSClass* getGlobalClass() override {
-  static const JSClassOps myGlobalClassOps = {nullptr,  
-                                              nullptr,  
-                                              nullptr,  
-                                              nullptr,  
-                                              my_resolve,
-                                              nullptr,  
-                                              nullptr,  
-                                              nullptr,  
-                                              nullptr,  
-                                              nullptr,  
-                                              JS_GlobalObjectTraceHook};
+  static const JSClassOps myGlobalClassOps = {
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      my_resolve,                
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      JS_GlobalObjectTraceHook,  
+  };
 
   static const JSClass myGlobalClass = {
       "testResolveRecursion_InitStandardClasses_myGlobalClass",

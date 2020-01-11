@@ -446,8 +446,18 @@ static const JSClass sCABIClass = {"CABI",
 
 
 static const JSClassOps sCTypeProtoClassOps = {
-    nullptr, nullptr, nullptr,           nullptr, nullptr,
-    nullptr, nullptr, ConstructAbstract, nullptr, ConstructAbstract};
+    nullptr,            
+    nullptr,            
+    nullptr,            
+    nullptr,            
+    nullptr,            
+    nullptr,            
+    nullptr,            
+    ConstructAbstract,  
+    nullptr,            
+    ConstructAbstract,  
+    nullptr,            
+};
 static const JSClass sCTypeProtoClass = {
     "CType", JSCLASS_HAS_RESERVED_SLOTS(CTYPEPROTO_SLOTS),
     &sCTypeProtoClassOps};
@@ -456,42 +466,55 @@ static const JSClass sCTypeProtoClass = {
 
 static const JSClass sCDataProtoClass = {"CData", 0};
 
-static const JSClassOps sCTypeClassOps = {nullptr,
-                                          nullptr,
-                                          nullptr,
-                                          nullptr,
-                                          nullptr,
-                                          nullptr,
-                                          CType::Finalize,
-                                          CType::ConstructData,
-                                          CType::HasInstance,
-                                          CType::ConstructData,
-                                          CType::Trace};
+static const JSClassOps sCTypeClassOps = {
+    nullptr,               
+    nullptr,               
+    nullptr,               
+    nullptr,               
+    nullptr,               
+    nullptr,               
+    CType::Finalize,       
+    CType::ConstructData,  
+    CType::HasInstance,    
+    CType::ConstructData,  
+    CType::Trace,          
+};
 static const JSClass sCTypeClass = {
     "CType",
     JSCLASS_HAS_RESERVED_SLOTS(CTYPE_SLOTS) | JSCLASS_FOREGROUND_FINALIZE,
     &sCTypeClassOps};
 
 static const JSClassOps sCDataClassOps = {
-    nullptr, nullptr,           nullptr,         nullptr,
-    nullptr, nullptr,           CData::Finalize, FunctionType::Call,
-    nullptr, FunctionType::Call};
+    nullptr,             
+    nullptr,             
+    nullptr,             
+    nullptr,             
+    nullptr,             
+    nullptr,             
+    CData::Finalize,     
+    FunctionType::Call,  
+    nullptr,             
+    FunctionType::Call,  
+    nullptr,             
+};
 static const JSClass sCDataClass = {
     "CData",
     JSCLASS_HAS_RESERVED_SLOTS(CDATA_SLOTS) | JSCLASS_FOREGROUND_FINALIZE,
     &sCDataClassOps};
 
-static const JSClassOps sCClosureClassOps = {nullptr,
-                                             nullptr,
-                                             nullptr,
-                                             nullptr,
-                                             nullptr,
-                                             nullptr,
-                                             CClosure::Finalize,
-                                             nullptr,
-                                             nullptr,
-                                             nullptr,
-                                             CClosure::Trace};
+static const JSClassOps sCClosureClassOps = {
+    nullptr,             
+    nullptr,             
+    nullptr,             
+    nullptr,             
+    nullptr,             
+    nullptr,             
+    CClosure::Finalize,  
+    nullptr,             
+    nullptr,             
+    nullptr,             
+    CClosure::Trace,     
+};
 static const JSClass sCClosureClass = {
     "CClosure",
     JSCLASS_HAS_RESERVED_SLOTS(CCLOSURE_SLOTS) | JSCLASS_FOREGROUND_FINALIZE,
@@ -508,13 +531,19 @@ static const JSClass sCDataFinalizerProtoClass = {"CDataFinalizer", 0};
 
 
 
-static const JSClassOps sCDataFinalizerClassOps = {nullptr,
-                                                   nullptr,
-                                                   nullptr,
-                                                   nullptr,
-                                                   nullptr,
-                                                   nullptr,
-                                                   CDataFinalizer::Finalize};
+static const JSClassOps sCDataFinalizerClassOps = {
+    nullptr,                   
+    nullptr,                   
+    nullptr,                   
+    nullptr,                   
+    nullptr,                   
+    nullptr,                   
+    CDataFinalizer::Finalize,  
+    nullptr,                   
+    nullptr,                   
+    nullptr,                   
+    nullptr,                   
+};
 static const JSClass sCDataFinalizerClass = {
     "CDataFinalizer",
     JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(CDATAFINALIZER_SLOTS) |
@@ -676,7 +705,18 @@ static const JSClass sInt64ProtoClass = {"Int64", 0};
 static const JSClass sUInt64ProtoClass = {"UInt64", 0};
 
 static const JSClassOps sInt64ClassOps = {
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, Int64Base::Finalize};
+    nullptr,              
+    nullptr,              
+    nullptr,              
+    nullptr,              
+    nullptr,              
+    nullptr,              
+    Int64Base::Finalize,  
+    nullptr,              
+    nullptr,              
+    nullptr,              
+    nullptr,              
+};
 
 static const JSClass sInt64Class = {
     "Int64",

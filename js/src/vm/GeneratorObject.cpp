@@ -226,17 +226,17 @@ const JSClass GeneratorObject::class_ = {
 };
 
 const JSClassOps GeneratorObject::classOps_ = {
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    CallTraceMethod<AbstractGeneratorObject>, 
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    CallTraceMethod<AbstractGeneratorObject>,  
 };
 
 static const JSFunctionSpec generator_methods[] = {

@@ -444,10 +444,18 @@ static bool str_resolve(JSContext* cx, HandleObject obj, HandleId id,
 }
 
 static const JSClassOps StringObjectClassOps = {
-    nullptr,                
-    nullptr,                
-    str_enumerate, nullptr, 
-    str_resolve,   str_mayResolve};
+    nullptr,         
+    nullptr,         
+    str_enumerate,   
+    nullptr,         
+    str_resolve,     
+    str_mayResolve,  
+    nullptr,         
+    nullptr,         
+    nullptr,         
+    nullptr,         
+    nullptr,         
+};
 
 const JSClass StringObject::class_ = {
     js_String_str,

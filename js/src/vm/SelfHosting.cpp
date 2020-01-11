@@ -2596,17 +2596,19 @@ GlobalObject* JSRuntime::createSelfHostingGlobal(JSContext* cx) {
     return nullptr;
   }
 
-  static const JSClassOps shgClassOps = {nullptr,
-                                         nullptr,
-                                         nullptr,
-                                         nullptr,
-                                         nullptr,
-                                         nullptr,
-                                         nullptr,
-                                         nullptr,
-                                         nullptr,
-                                         nullptr,
-                                         JS_GlobalObjectTraceHook};
+  static const JSClassOps shgClassOps = {
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      JS_GlobalObjectTraceHook,  
+  };
 
   static const JSClass shgClass = {"self-hosting-global", JSCLASS_GLOBAL_FLAGS,
                                    &shgClassOps};

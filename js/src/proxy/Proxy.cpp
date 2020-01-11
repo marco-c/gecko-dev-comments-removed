@@ -731,17 +731,17 @@ size_t js::proxy_ObjectMoved(JSObject* obj, JSObject* old) {
 }
 
 const JSClassOps js::ProxyClassOps = {
-    nullptr,            
-    nullptr,            
-    nullptr,            
-    nullptr,            
-    nullptr,            
-    nullptr,            
-    proxy_Finalize,     
-    nullptr,            
-    Proxy::hasInstance, 
-    nullptr,            
-    ProxyObject::trace, 
+    nullptr,             
+    nullptr,             
+    nullptr,             
+    nullptr,             
+    nullptr,             
+    nullptr,             
+    proxy_Finalize,      
+    nullptr,             
+    Proxy::hasInstance,  
+    nullptr,             
+    ProxyObject::trace,  
 };
 
 const ClassExtension js::ProxyClassExtension = {proxy_ObjectMoved};

@@ -1081,16 +1081,18 @@ void PropertyIteratorObject::finalize(JSFreeOp* fop, JSObject* obj) {
 }
 
 const JSClassOps PropertyIteratorObject::classOps_ = {
-    nullptr,           
-    nullptr,           
-    nullptr,           
-    nullptr,           
-    nullptr,           
-    nullptr,           
-    finalize, nullptr, 
-    nullptr,           
-    nullptr,           
-    trace};
+    nullptr,   
+    nullptr,   
+    nullptr,   
+    nullptr,   
+    nullptr,   
+    nullptr,   
+    finalize,  
+    nullptr,   
+    nullptr,   
+    nullptr,   
+    trace,     
+};
 
 const JSClass PropertyIteratorObject::class_ = {
     "Iterator", JSCLASS_HAS_PRIVATE | JSCLASS_BACKGROUND_FINALIZE,

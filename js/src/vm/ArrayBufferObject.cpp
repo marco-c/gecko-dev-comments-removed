@@ -263,17 +263,17 @@ void js::UnmapBufferMemory(void* base, size_t mappedSize) {
 
 
 static const JSClassOps ArrayBufferObjectClassOps = {
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    ArrayBufferObject::finalize,
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    ArrayBufferObject::finalize,  
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
 };
 
 static const JSFunctionSpec arraybuffer_functions[] = {

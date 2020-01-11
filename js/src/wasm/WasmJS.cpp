@@ -780,13 +780,19 @@ static JSObject* CreateWasmConstructor(JSContext* cx, JSProtoKey key) {
 
 
 
-const JSClassOps WasmModuleObject::classOps_ = {nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                WasmModuleObject::finalize};
+const JSClassOps WasmModuleObject::classOps_ = {
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    WasmModuleObject::finalize,  
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+};
 
 const JSClass WasmModuleObject::class_ = {
     "WebAssembly.Module",
@@ -1324,17 +1330,19 @@ const Module& WasmModuleObject::module() const {
 
 
 
-const JSClassOps WasmInstanceObject::classOps_ = {nullptr, 
-                                                  nullptr, 
-                                                  nullptr, 
-                                                  nullptr, 
-                                                  nullptr, 
-                                                  nullptr, 
-                                                  WasmInstanceObject::finalize,
-                                                  nullptr, 
-                                                  nullptr, 
-                                                  nullptr, 
-                                                  WasmInstanceObject::trace};
+const JSClassOps WasmInstanceObject::classOps_ = {
+    nullptr,                       
+    nullptr,                       
+    nullptr,                       
+    nullptr,                       
+    nullptr,                       
+    nullptr,                       
+    WasmInstanceObject::finalize,  
+    nullptr,                       
+    nullptr,                       
+    nullptr,                       
+    WasmInstanceObject::trace,     
+};
 
 const JSClass WasmInstanceObject::class_ = {
     "WebAssembly.Instance",
@@ -1770,13 +1778,19 @@ uint32_t wasm::ExportedFunctionToFuncIndex(JSFunction* fun) {
 
 
 
-const JSClassOps WasmMemoryObject::classOps_ = {nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                WasmMemoryObject::finalize};
+const JSClassOps WasmMemoryObject::classOps_ = {
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    WasmMemoryObject::finalize,  
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+};
 
 const JSClass WasmMemoryObject::class_ = {
     "WebAssembly.Memory",
@@ -2133,17 +2147,19 @@ bool js::wasm::IsSharedWasmMemoryObject(JSObject* obj) {
 
 
 
-const JSClassOps WasmTableObject::classOps_ = {nullptr, 
-                                               nullptr, 
-                                               nullptr, 
-                                               nullptr, 
-                                               nullptr, 
-                                               nullptr, 
-                                               WasmTableObject::finalize,
-                                               nullptr, 
-                                               nullptr, 
-                                               nullptr, 
-                                               WasmTableObject::trace};
+const JSClassOps WasmTableObject::classOps_ = {
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    WasmTableObject::finalize,  
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    WasmTableObject::trace,     
+};
 
 const JSClass WasmTableObject::class_ = {
     "WebAssembly.Table",
@@ -2520,17 +2536,19 @@ Table& WasmTableObject::table() const {
 
 
 
-const JSClassOps WasmGlobalObject::classOps_ = {nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                WasmGlobalObject::finalize,
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                WasmGlobalObject::trace};
+const JSClassOps WasmGlobalObject::classOps_ = {
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    WasmGlobalObject::finalize,  
+    nullptr,                     
+    nullptr,                     
+    nullptr,                     
+    WasmGlobalObject::trace,     
+};
 
 const JSClass WasmGlobalObject::class_ = {
     "WebAssembly.Global",
@@ -3731,13 +3749,18 @@ class ResolveResponseClosure : public NativeObject {
 };
 
 const JSClassOps ResolveResponseClosure::classOps_ = {
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    ResolveResponseClosure::finalize};
+    nullptr,                           
+    nullptr,                           
+    nullptr,                           
+    nullptr,                           
+    nullptr,                           
+    nullptr,                           
+    ResolveResponseClosure::finalize,  
+    nullptr,                           
+    nullptr,                           
+    nullptr,                           
+    nullptr,                           
+};
 
 const JSClass ResolveResponseClosure::class_ = {
     "WebAssembly ResolveResponseClosure",

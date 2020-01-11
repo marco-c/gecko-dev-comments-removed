@@ -990,17 +990,18 @@ size_t ArgumentsObject::objectMoved(JSObject* dst, JSObject* src) {
 
 
 const JSClassOps MappedArgumentsObject::classOps_ = {
-    nullptr, 
-    ArgumentsObject::obj_delProperty,
-    MappedArgumentsObject::obj_enumerate,
-    nullptr, 
-    MappedArgumentsObject::obj_resolve,
-    ArgumentsObject::obj_mayResolve,
-    ArgumentsObject::finalize,
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    ArgumentsObject::trace};
+    nullptr,                               
+    ArgumentsObject::obj_delProperty,      
+    MappedArgumentsObject::obj_enumerate,  
+    nullptr,                               
+    MappedArgumentsObject::obj_resolve,    
+    ArgumentsObject::obj_mayResolve,       
+    ArgumentsObject::finalize,             
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    ArgumentsObject::trace,                
+};
 
 const js::ClassExtension MappedArgumentsObject::classExt_ = {
     ArgumentsObject::objectMoved 
@@ -1026,17 +1027,18 @@ const JSClass MappedArgumentsObject::class_ = {
 
 
 const JSClassOps UnmappedArgumentsObject::classOps_ = {
-    nullptr, 
-    ArgumentsObject::obj_delProperty,
-    UnmappedArgumentsObject::obj_enumerate,
-    nullptr, 
-    UnmappedArgumentsObject::obj_resolve,
-    ArgumentsObject::obj_mayResolve,
-    ArgumentsObject::finalize,
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    ArgumentsObject::trace};
+    nullptr,                                 
+    ArgumentsObject::obj_delProperty,        
+    UnmappedArgumentsObject::obj_enumerate,  
+    nullptr,                                 
+    UnmappedArgumentsObject::obj_resolve,    
+    ArgumentsObject::obj_mayResolve,         
+    ArgumentsObject::finalize,               
+    nullptr,                                 
+    nullptr,                                 
+    nullptr,                                 
+    ArgumentsObject::trace,                  
+};
 
 const js::ClassExtension UnmappedArgumentsObject::classExt_ = {
     ArgumentsObject::objectMoved 

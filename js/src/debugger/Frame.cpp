@@ -183,17 +183,17 @@ inline void js::DebuggerFrame::setHasIncrementedStepper(bool incremented) {
 }
 
 const JSClassOps DebuggerFrame::classOps_ = {
-    nullptr,                        
-    nullptr,                        
-    nullptr,                        
-    nullptr,                        
-    nullptr,                        
-    nullptr,                        
-    finalize,                       
-    nullptr,                        
-    nullptr,                        
-    nullptr,                        
-    CallTraceMethod<DebuggerFrame>, 
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    finalize,                        
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    CallTraceMethod<DebuggerFrame>,  
 };
 
 const JSClass DebuggerFrame::class_ = {

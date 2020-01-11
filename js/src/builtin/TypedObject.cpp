@@ -207,14 +207,19 @@ const JSClass js::TypedProto::class_ = {
 
 
 
-static const JSClassOps ScalarTypeDescrClassOps = {nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   TypeDescr::finalize,
-                                                   ScalarTypeDescr::call};
+static const JSClassOps ScalarTypeDescrClassOps = {
+    nullptr,                
+    nullptr,                
+    nullptr,                
+    nullptr,                
+    nullptr,                
+    nullptr,                
+    TypeDescr::finalize,    
+    ScalarTypeDescr::call,  
+    nullptr,                
+    nullptr,                
+    nullptr,                
+};
 
 const JSClass js::ScalarTypeDescr::class_ = {
     "Scalar",
@@ -361,14 +366,18 @@ TypeDescr* GlobalObject::getOrCreateReferenceTypeDescr(
 
 
 static const JSClassOps ReferenceTypeDescrClassOps = {
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    TypeDescr::finalize,
-    ReferenceTypeDescr::call};
+    nullptr,                   
+    nullptr,                   
+    nullptr,                   
+    nullptr,                   
+    nullptr,                   
+    nullptr,                   
+    TypeDescr::finalize,       
+    ReferenceTypeDescr::call,  
+    nullptr,                   
+    nullptr,                   
+    nullptr,                   
+};
 
 const JSClass js::ReferenceTypeDescr::class_ = {
     "Reference",
@@ -501,16 +510,19 @@ static TypedProto* CreatePrototypeObjectForComplexTypeInstance(
                                              SingletonObject);
 }
 
-static const JSClassOps ArrayTypeDescrClassOps = {nullptr, 
-                                                  nullptr, 
-                                                  nullptr, 
-                                                  nullptr, 
-                                                  nullptr, 
-                                                  nullptr, 
-                                                  TypeDescr::finalize,
-                                                  nullptr, 
-                                                  nullptr, 
-                                                  TypedObject::construct};
+static const JSClassOps ArrayTypeDescrClassOps = {
+    nullptr,                 
+    nullptr,                 
+    nullptr,                 
+    nullptr,                 
+    nullptr,                 
+    nullptr,                 
+    TypeDescr::finalize,     
+    nullptr,                 
+    nullptr,                 
+    TypedObject::construct,  
+    nullptr,                 
+};
 
 const JSClass ArrayTypeDescr::class_ = {
     "ArrayType",
@@ -742,16 +754,19 @@ bool ArrayMetaTypeDescr::construct(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-static const JSClassOps StructTypeDescrClassOps = {nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   TypeDescr::finalize,
-                                                   StructTypeDescr::call,
-                                                   nullptr, 
-                                                   TypedObject::construct};
+static const JSClassOps StructTypeDescrClassOps = {
+    nullptr,                 
+    nullptr,                 
+    nullptr,                 
+    nullptr,                 
+    nullptr,                 
+    nullptr,                 
+    TypeDescr::finalize,     
+    StructTypeDescr::call,   
+    nullptr,                 
+    TypedObject::construct,  
+    nullptr,                 
+};
 
 const JSClass StructTypeDescr::class_ = {
     "StructType",

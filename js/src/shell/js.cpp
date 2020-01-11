@@ -3685,17 +3685,19 @@ static bool sandbox_resolve(JSContext* cx, HandleObject obj, HandleId id,
   return true;
 }
 
-static const JSClassOps sandbox_classOps = {nullptr,
-                                            nullptr,
-                                            nullptr,
-                                            sandbox_enumerate,
-                                            sandbox_resolve,
-                                            nullptr,
-                                            nullptr,
-                                            nullptr,
-                                            nullptr,
-                                            nullptr,
-                                            JS_GlobalObjectTraceHook};
+static const JSClassOps sandbox_classOps = {
+    nullptr,                   
+    nullptr,                   
+    nullptr,                   
+    sandbox_enumerate,         
+    sandbox_resolve,           
+    nullptr,                   
+    nullptr,                   
+    nullptr,                   
+    nullptr,                   
+    nullptr,                   
+    JS_GlobalObjectTraceHook,  
+};
 
 static const JSClass sandbox_class = {"sandbox", JSCLASS_GLOBAL_FLAGS,
                                       &sandbox_classOps};
@@ -4734,13 +4736,18 @@ class XDRBufferObject : public NativeObject {
 };
 
  const JSClassOps XDRBufferObject::classOps_ = {
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    XDRBufferObject::finalize};
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    XDRBufferObject::finalize,  
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+};
 
  const JSClass XDRBufferObject::class_ = {
     "XDRBufferObject",
@@ -6470,8 +6477,17 @@ static bool CreateIsHTMLDDA(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   static const JSClassOps classOps = {
-      nullptr, nullptr, nullptr, nullptr,
-      nullptr, nullptr, nullptr, IsHTMLDDA_Call,
+      nullptr,         
+      nullptr,         
+      nullptr,         
+      nullptr,         
+      nullptr,         
+      nullptr,         
+      nullptr,         
+      IsHTMLDDA_Call,  
+      nullptr,         
+      nullptr,         
+      nullptr,         
   };
 
   static const JSClass cls = {
@@ -7206,13 +7222,18 @@ class StreamCacheEntryObject : public NativeObject {
 };
 
 const JSClassOps StreamCacheEntryObject::classOps_ = {
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    StreamCacheEntryObject::finalize};
+    nullptr,                           
+    nullptr,                           
+    nullptr,                           
+    nullptr,                           
+    nullptr,                           
+    nullptr,                           
+    StreamCacheEntryObject::finalize,  
+    nullptr,                           
+    nullptr,                           
+    nullptr,                           
+    nullptr,                           
+};
 
 const JSClass StreamCacheEntryObject::class_ = {
     "StreamCacheEntryObject",
@@ -9651,17 +9672,19 @@ static bool global_mayResolve(const JSAtomState& names, jsid id,
   return JS_MayResolveStandardClass(names, id, maybeObj);
 }
 
-static const JSClassOps global_classOps = {nullptr,
-                                           nullptr,
-                                           nullptr,
-                                           global_enumerate,
-                                           global_resolve,
-                                           global_mayResolve,
-                                           nullptr,
-                                           nullptr,
-                                           nullptr,
-                                           nullptr,
-                                           JS_GlobalObjectTraceHook};
+static const JSClassOps global_classOps = {
+    nullptr,                   
+    nullptr,                   
+    nullptr,                   
+    global_enumerate,          
+    global_resolve,            
+    global_mayResolve,         
+    nullptr,                   
+    nullptr,                   
+    nullptr,                   
+    nullptr,                   
+    JS_GlobalObjectTraceHook,  
+};
 
 static constexpr uint32_t DOM_PROTOTYPE_SLOT = JSCLASS_GLOBAL_SLOT_COUNT;
 static constexpr uint32_t DOM_GLOBAL_SLOTS = 1;

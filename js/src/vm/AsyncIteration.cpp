@@ -156,17 +156,17 @@ const JSClass AsyncGeneratorObject::class_ = {
 };
 
 const JSClassOps AsyncGeneratorObject::classOps_ = {
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    nullptr,                                  
-    CallTraceMethod<AbstractGeneratorObject>, 
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    CallTraceMethod<AbstractGeneratorObject>,  
 };
 
 

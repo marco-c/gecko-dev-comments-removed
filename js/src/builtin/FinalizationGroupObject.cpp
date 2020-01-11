@@ -73,17 +73,18 @@ const JSClass FinalizationRecordVectorObject::class_ = {
     &classOps_, JS_NULL_CLASS_SPEC};
 
 const JSClassOps FinalizationRecordVectorObject::classOps_ = {
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    FinalizationRecordVectorObject::finalize,
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    FinalizationRecordVectorObject::trace};
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    FinalizationRecordVectorObject::finalize,  
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    FinalizationRecordVectorObject::trace,     
+};
 
 
 FinalizationRecordVectorObject* FinalizationRecordVectorObject::create(
@@ -173,17 +174,18 @@ const JSClass FinalizationGroupObject::protoClass_ = {
     &classSpec_};
 
 const JSClassOps FinalizationGroupObject::classOps_ = {
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    FinalizationGroupObject::finalize,
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    FinalizationGroupObject::trace};
+    nullptr,                            
+    nullptr,                            
+    nullptr,                            
+    nullptr,                            
+    nullptr,                            
+    nullptr,                            
+    FinalizationGroupObject::finalize,  
+    nullptr,                            
+    nullptr,                            
+    nullptr,                            
+    FinalizationGroupObject::trace,     
+};
 
 const ClassSpec FinalizationGroupObject::classSpec_ = {
     GenericCreateConstructor<construct, 1, gc::AllocKind::FUNCTION>,

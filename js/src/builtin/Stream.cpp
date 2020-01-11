@@ -366,17 +366,17 @@ static void ReadableByteStreamControllerFinalize(JSFreeOp* fop, JSObject* obj) {
 }
 
 static const JSClassOps ReadableByteStreamControllerClassOps = {
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    ReadableByteStreamControllerFinalize,
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    ReadableByteStreamControllerFinalize,  
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
 };
 
 JS_STREAMS_CLASS_SPEC(ReadableByteStreamController, 0, SlotCount,

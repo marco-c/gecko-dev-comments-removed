@@ -256,17 +256,19 @@ bool WeakMapObject::construct(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-const JSClassOps WeakCollectionObject::classOps_ = {nullptr, 
-                                                    nullptr, 
-                                                    nullptr, 
-                                                    nullptr, 
-                                                    nullptr, 
-                                                    nullptr, 
-                                                    WeakCollection_finalize,
-                                                    nullptr, 
-                                                    nullptr, 
-                                                    nullptr, 
-                                                    WeakCollection_trace};
+const JSClassOps WeakCollectionObject::classOps_ = {
+    nullptr,                  
+    nullptr,                  
+    nullptr,                  
+    nullptr,                  
+    nullptr,                  
+    nullptr,                  
+    WeakCollection_finalize,  
+    nullptr,                  
+    nullptr,                  
+    nullptr,                  
+    WeakCollection_trace,     
+};
 
 const ClassSpec WeakMapObject::classSpec_ = {
     GenericCreateConstructor<WeakMapObject::construct, 0,

@@ -171,16 +171,17 @@ const ClassSpec ErrorObject::classSpecs[JSEXN_ERROR_LIMIT] = {
 static void exn_finalize(JSFreeOp* fop, JSObject* obj);
 
 static const JSClassOps ErrorObjectClassOps = {
-    nullptr,               
-    nullptr,               
-    nullptr,               
-    nullptr,               
-    nullptr,               
-    nullptr,               
-    exn_finalize, nullptr, 
-    nullptr,               
-    nullptr,               
-    nullptr,               
+    nullptr,       
+    nullptr,       
+    nullptr,       
+    nullptr,       
+    nullptr,       
+    nullptr,       
+    exn_finalize,  
+    nullptr,       
+    nullptr,       
+    nullptr,       
+    nullptr,       
 };
 
 const JSClass ErrorObject::classes[JSEXN_ERROR_LIMIT] = {

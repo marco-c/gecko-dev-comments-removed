@@ -2614,13 +2614,19 @@ static void finalize_counter_finalize(JSFreeOp* fop, JSObject* obj) {
   ++finalizeCount;
 }
 
-static const JSClassOps FinalizeCounterClassOps = {nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   finalize_counter_finalize};
+static const JSClassOps FinalizeCounterClassOps = {
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    finalize_counter_finalize,  
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+};
 
 static const JSClass FinalizeCounterClass = {
     "FinalizeCounter", JSCLASS_FOREGROUND_FINALIZE, &FinalizeCounterClassOps};
@@ -3335,13 +3341,18 @@ class CloneBufferObject : public NativeObject {
 };
 
 static const JSClassOps CloneBufferObjectClassOps = {
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    CloneBufferObject::Finalize};
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    CloneBufferObject::Finalize,  
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+};
 
 const JSClass CloneBufferObject::class_ = {
     "CloneBuffer",

@@ -111,17 +111,17 @@ void WeakRefObject::finalize(JSFreeOp* fop, JSObject* obj) {
 }
 
 const JSClassOps WeakRefObject::classOps_ = {
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    finalize, 
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    trace     
+    nullptr,   
+    nullptr,   
+    nullptr,   
+    nullptr,   
+    nullptr,   
+    nullptr,   
+    finalize,  
+    nullptr,   
+    nullptr,   
+    nullptr,   
+    trace,     
 };
 
 const ClassSpec WeakRefObject::classSpec_ = {
