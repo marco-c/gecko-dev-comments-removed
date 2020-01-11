@@ -97,16 +97,40 @@ class DocumentChannelParent : public nsIInterfaceRequestor,
  private:
   virtual ~DocumentChannelParent() = default;
 
+  
+  
+  
   void TriggerRedirectToRealChannel(
-      nsIChannel* aChannel,
-      const Maybe<uint64_t>& aDestinationProcess = Nothing(),
-      uint64_t aIdentifier = 0);
+      const Maybe<uint64_t>& aDestinationProcess = Nothing());
 
+  
+  
+  
   void RedirectToRealChannelFinished(nsresult aRv);
 
+  
+  
+  
+  
   void FinishReplacementChannelSetup(bool aSucceeded);
 
+  
+  
+  
   void TriggerCrossProcessSwitch();
+
+  
+  
+  
+  RefPtr<PDocumentChannelParent::RedirectToRealChannelPromise>
+  RedirectToRealChannel(uint32_t aRedirectFlags, uint32_t aLoadFlags,
+                        const Maybe<uint64_t>& aDestinationProcess);
+
+  
+  
+  void SerializeRedirectData(RedirectToRealChannelArgs& aArgs,
+                             bool aIsCrossProcess, uint32_t aRedirectFlags,
+                             uint32_t aLoadFlags);
 
   
   
