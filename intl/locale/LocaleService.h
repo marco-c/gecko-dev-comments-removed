@@ -140,6 +140,17 @@ class LocaleService final : public mozILocaleService,
   
 
 
+
+
+  static bool IsLocaleRTL(const nsACString& aLocale);
+
+  
+
+
+
+
+
+
   bool IsAppLocaleRTL();
 
   static bool LanguagesMatch(const nsACString& aRequested,

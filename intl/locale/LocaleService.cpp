@@ -273,7 +273,7 @@ void LocaleService::LocalesChanged() {
   }
 }
 
-bool LocaleService::IsAppLocaleRTL() {
+bool LocaleService::IsLocaleRTL(const nsACString& aLocale) {
   
   
   int pref = Preferences::GetInt("intl.uidirection", -1);
@@ -281,21 +281,24 @@ bool LocaleService::IsAppLocaleRTL() {
     return (pref > 0);
   }
 
+  return uloc_isRightToLeft(PromiseFlatCString(aLocale).get());
+}
+
+bool LocaleService::IsAppLocaleRTL() {
   
-  
-  nsAutoCString locale;
-  if (NS_SUCCEEDED(Preferences::GetCString("intl.l10n.pseudo", locale))) {
-    if (locale.EqualsLiteral("bidi")) {
+  nsAutoCString pseudoLocale;
+  if (NS_SUCCEEDED(Preferences::GetCString("intl.l10n.pseudo", pseudoLocale))) {
+    if (pseudoLocale.EqualsLiteral("bidi")) {
       return true;
     }
-    if (locale.EqualsLiteral("accented")) {
+    if (pseudoLocale.EqualsLiteral("accented")) {
       return false;
     }
   }
 
+  nsAutoCString locale;
   GetAppLocaleAsBCP47(locale);
-
-  return uloc_isRightToLeft(locale.get());
+  return IsLocaleRTL(locale);
 }
 
 NS_IMETHODIMP
