@@ -42,10 +42,10 @@ function test(when, what) {
     g.eval("debugger;");
 
     assertEq(t, when);
-    assertEq(poppedFrame.live, false);
+    assertEq(poppedFrame.onStack, false);
     assertErrorMessage(() => poppedFrame.older,
                        Error,
-                       "Debugger.Frame is not live");
+                       "Debugger.Frame is not on stack");
 }
 
 for (let when = 0; when < 6; when++) {

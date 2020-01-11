@@ -19,7 +19,7 @@ dbg.onDebuggerStatement = function (frame) {
         assertThrowsInstanceOf(function () { fgetter.call(Math); }, TypeError);
     } else {
         
-        assertEq(fframe.live, true);
+        assertEq(fframe.onStack, true);
         assertEq(fgetter.call(farguments), 100);
 
         
@@ -34,5 +34,5 @@ g.f(100);
 assertEq(hits, 2);
 
 
-assertEq(fframe.live, false);
+assertEq(fframe.onStack, false);
 assertThrowsInstanceOf(function () { fgetter.call(farguments); }, Error);

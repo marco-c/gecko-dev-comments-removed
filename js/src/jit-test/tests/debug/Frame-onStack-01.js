@@ -20,7 +20,7 @@ g.eval("(" + function () {
             a[loc] = frame;
             for (var i = 0; i < a.length; i++) {
                 assertEq(a[i] === frame, i === loc);
-                assertEq(!!(a[i] && a[i].live), i >= loc);
+                assertEq(!!(a[i] && a[i].onStack), i >= loc);
             }
             hits++;
         };

@@ -9,7 +9,7 @@ let steps = new Set();
 dbg.onDebuggerStatement = function(frame) {
   
   steps.add("debugger 1");
-  assertEq(frame.live, true);
+  assertEq(frame.onStack, true);
   frame.onPop = function() {
     steps.add("onpop 1");
   };
@@ -17,7 +17,7 @@ dbg.onDebuggerStatement = function(frame) {
   dbg.onDebuggerStatement = function() {
     
     steps.add("debugger 2");
-    assertEq(frame.live, false);
+    assertEq(frame.onStack, false);
 
     
     frame.onPop = undefined;

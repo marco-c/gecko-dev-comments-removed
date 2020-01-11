@@ -26,6 +26,6 @@ assertEq(g.eval("debugger; 'ok';"), "ok");
 assertEq(hits, 2);
 assertEq(snapshot.length, 3);
 for (var i = 0; i < snapshot.length; i++) {
-    assertEq(snapshot[i].live, false);
+    assertEq(snapshot[i].onStack, false);
     assertThrowsInstanceOf(() => frame.script, Error);
 }
