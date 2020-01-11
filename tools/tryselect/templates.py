@@ -1,10 +1,10 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
 
 """
-Templates provide a way of modifying the task definition of selected
-tasks. They live under taskcluster/taskgraph/templates.
+Templates provide a way of modifying the task definition of selected tasks.
+They are added to 'try_task_config.json' and processed by the transforms.
 """
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -44,17 +44,6 @@ class TryConfig(object):
 
     @abstractmethod
     def try_config(self, **kwargs):
-        pass
-
-
-class Template(TryConfig):
-    def try_config(self, **kwargs):
-        context = self.context(**kwargs)
-        if context:
-            return {'templates': context}
-
-    @abstractmethod
-    def context(self, **kwargs):
         pass
 
 
@@ -98,7 +87,7 @@ class Artifact(TryConfig):
             }
 
 
-class Pernosco(Template):
+class Pernosco(TryConfig):
     arguments = [
         [['--pernosco'],
          {'action': 'store_true',
@@ -117,7 +106,7 @@ class Pernosco(Template):
         group = parser.add_mutually_exclusive_group()
         return super(Pernosco, self).add_arguments(group)
 
-    def context(self, pernosco, **kwargs):
+    def try_config(self, pernosco, **kwargs):
         if pernosco is None:
             return
 
@@ -128,10 +117,10 @@ class Pernosco(Template):
                 sys.exit(1)
 
             try:
-                # The Pernosco service currently requires a Mozilla e-mail address to
-                # log in. Prevent people with non-Mozilla addresses from using this
-                # flag so they don't end up consuming time and resources only to
-                # realize they can't actually log in and see the reports.
+                
+                
+                
+                
                 output = subprocess.check_output(['ssh', '-G', 'hg.mozilla.org']).splitlines()
                 address = [l.rsplit(' ', 1)[-1] for l in output if l.startswith('user')][0]
                 if not address.endswith('@mozilla.com'):
@@ -160,7 +149,7 @@ class Pernosco(Template):
         }
 
 
-class Path(Template):
+class Path(TryConfig):
 
     arguments = [
         [['paths'],
@@ -170,7 +159,7 @@ class Path(Template):
           }],
     ]
 
-    def context(self, paths, **kwargs):
+    def try_config(self, paths, **kwargs):
         if not paths:
             return
 
@@ -187,7 +176,7 @@ class Path(Template):
         }
 
 
-class Environment(Template):
+class Environment(TryConfig):
 
     arguments = [
         [['--env'],
@@ -198,7 +187,7 @@ class Environment(Template):
           }],
     ]
 
-    def context(self, env, **kwargs):
+    def try_config(self, env, **kwargs):
         if not env:
             return
         return {
@@ -222,7 +211,7 @@ class RangeAction(Action):
         setattr(namespace, self.dest, values)
 
 
-class Rebuild(Template):
+class Rebuild(TryConfig):
 
     arguments = [
         [['--rebuild'],
@@ -235,7 +224,7 @@ class Rebuild(Template):
           }],
     ]
 
-    def context(self, rebuild, **kwargs):
+    def try_config(self, rebuild, **kwargs):
         if not rebuild:
             return
 
@@ -244,7 +233,7 @@ class Rebuild(Template):
         }
 
 
-class ChemspillPrio(Template):
+class ChemspillPrio(TryConfig):
 
     arguments = [
         [['--chemspill-prio'],
@@ -253,7 +242,7 @@ class ChemspillPrio(Template):
           }],
     ]
 
-    def context(self, chemspill_prio, **kwargs):
+    def try_config(self, chemspill_prio, **kwargs):
         if chemspill_prio:
             return {
                 'chemspill-prio': {}
@@ -268,14 +257,14 @@ class GeckoProfile(TryConfig):
           'default': False,
           'help': 'Create and upload a gecko profile during talos/raptor tasks.',
           }],
-        # For backwards compatibility
+        
         [['--talos-profile'],
          {'dest': 'profile',
           'action': 'store_true',
           'default': False,
           'help': SUPPRESS,
           }],
-        # This is added for consistency with the 'syntax' selector
+        
         [['--geckoProfile'],
          {'dest': 'profile',
           'action': 'store_true',
