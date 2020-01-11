@@ -914,6 +914,78 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
 }
 
 
+RefPtr<ContentParent::LaunchPromise>
+ContentParent::GetNewOrUsedBrowserProcessAsync(Element* aFrameElement,
+                                               const nsAString& aRemoteType,
+                                               ProcessPriority aPriority,
+                                               ContentParent* aOpener,
+                                               bool aPreferUsed) {
+  
+  
+  nsAutoString recordingFile;
+  Maybe<RecordReplayState> maybeRecordReplayState =
+      GetRecordReplayState(aFrameElement, recordingFile);
+  if (maybeRecordReplayState.isNothing()) {
+    
+    return nullptr;
+  }
+  RecordReplayState recordReplayState = maybeRecordReplayState.value();
+
+  nsTArray<ContentParent*>& contentParents = GetOrCreatePool(aRemoteType);
+  uint32_t maxContentParents = GetMaxProcessCount(aRemoteType);
+  if (recordReplayState ==
+          eNotRecordingOrReplaying  
+                                    
+      && aRemoteType.EqualsLiteral(
+             LARGE_ALLOCATION_REMOTE_TYPE)  
+                                            
+      && contentParents.Length() >= maxContentParents) {
+    return GetNewOrUsedBrowserProcessAsync(
+        aFrameElement, NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE), aPriority,
+        aOpener);
+  }
+  {
+    RefPtr<ContentParent> existing = GetUsedBrowserProcess(
+        aOpener, aRemoteType, contentParents, maxContentParents, aPreferUsed);
+    if (existing != nullptr) {
+      return LaunchPromise::CreateAndResolve(existing, __func__);
+    }
+  }
+
+  
+  RefPtr<ContentParent> p =
+      new ContentParent(aOpener, aRemoteType, recordReplayState, recordingFile);
+
+  RefPtr<LaunchPromise> launchPromise = p->LaunchSubprocessAsync(aPriority);
+  MOZ_ASSERT(launchPromise);
+
+  return launchPromise->Then(
+      GetCurrentThreadSerialEventTarget(), __func__,
+      
+      [&p, &recordReplayState, &aRemoteType,
+       launchPromise =
+           std::move(launchPromise)](const RefPtr<ContentParent>& subProcess) {
+        
+        
+        PreallocatedProcessManager::AddBlocker(p);
+
+        if (recordReplayState == eNotRecordingOrReplaying) {
+          
+          
+          nsTArray<ContentParent*>& contentParents =
+              GetOrCreatePool(aRemoteType);
+          contentParents.AppendElement(p);
+        }
+
+        p->mActivateTS = TimeStamp::Now();
+        return launchPromise;
+      },
+      [launchPromise = std::move(launchPromise)]() { return launchPromise; }
+      
+  );
+}
+
+
 already_AddRefed<ContentParent> ContentParent::GetNewOrUsedBrowserProcess(
     Element* aFrameElement, const nsAString& aRemoteType,
     ProcessPriority aPriority, ContentParent* aOpener, bool aPreferUsed) {
@@ -923,6 +995,7 @@ already_AddRefed<ContentParent> ContentParent::GetNewOrUsedBrowserProcess(
   Maybe<RecordReplayState> maybeRecordReplayState =
       GetRecordReplayState(aFrameElement, recordingFile);
   if (maybeRecordReplayState.isNothing()) {
+    
     return nullptr;
   }
   RecordReplayState recordReplayState = maybeRecordReplayState.value();
