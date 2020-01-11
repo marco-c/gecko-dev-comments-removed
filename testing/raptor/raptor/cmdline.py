@@ -190,8 +190,8 @@ def verify_options(parser, args):
             parser.error("{binary} does not exist!".format(**ctx))
 
     
-    if args.gecko_profile is True and args.app != "firefox":
-        parser.error("Gecko profiling is only supported when running Raptor on Firefox!")
+    if args.gecko_profile and args.app in CHROMIUM_DISTROS:
+        parser.error("Gecko profiling is not supported on Chrome/Chromium!")
 
     
     if args.power_test:
