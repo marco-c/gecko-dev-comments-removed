@@ -366,10 +366,24 @@ JS_PUBLIC_API JSObject* JS_GetBoundFunctionTarget(JSFunction* fun) {
 
 
 
+
+
+static void PreventDiscardingFunctions() {
+  if (reinterpret_cast<uintptr_t>(&PreventDiscardingFunctions) == 1) {
+    
+    memset((void*)&js::debug::GetMarkInfo, 0, 1);
+    memset((void*)&js::debug::GetMarkWordAddress, 0, 1);
+    memset((void*)&js::debug::GetMarkMask, 0, 1);
+  }
+}
+
 JS_PUBLIC_API JSContext* JS_NewContext(uint32_t maxbytes,
                                        JSRuntime* parentRuntime) {
   MOZ_ASSERT(JS::detail::libraryInitState == JS::detail::InitState::Running,
              "must call JS_Init prior to creating any JSContexts");
+
+  
+  PreventDiscardingFunctions();
 
   
   while (parentRuntime && parentRuntime->parentRuntime) {
