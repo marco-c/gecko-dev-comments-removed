@@ -156,7 +156,7 @@ class NativeLayerCA : public NativeLayer {
   bool NextSurface(const MutexAutoLock&);
 
   
-  CALayer* UnderlyingCALayer() { return mWrappingCALayer; }
+  CALayer* UnderlyingCALayer();
   void ApplyChanges();
   void SetBackingScale(float aBackingScale);
 
@@ -191,6 +191,37 @@ class NativeLayerCA : public NativeLayer {
 
   Maybe<SurfaceWithInvalidRegion> GetUnusedSurfaceAndCleanUp(
       const MutexAutoLock&);
+
+  
+  struct Representation {
+    ~Representation();
+
+    CALayer* UnderlyingCALayer() { return mWrappingCALayer; }
+
+    
+    
+    
+    
+    void ApplyChanges(const gfx::IntSize& aSize, bool aIsOpaque,
+                      const gfx::IntPoint& aPosition,
+                      const Maybe<gfx::IntRect>& aClipRect, float aBackingScale,
+                      bool aSurfaceIsFlipped,
+                      CFTypeRefPtr<IOSurfaceRef> aFrontSurface);
+
+    
+    
+    
+    
+    CALayer* mWrappingCALayer = nullptr;      
+    CALayer* mContentCALayer = nullptr;       
+    CALayer* mOpaquenessTintLayer = nullptr;  
+
+    bool mMutatedPosition = true;
+    bool mMutatedClipRect = true;
+    bool mMutatedBackingScale = true;
+    bool mMutatedSurfaceIsFlipped = true;
+    bool mMutatedFrontSurface = true;
+  };
 
   
   Mutex mMutex;
@@ -243,26 +274,14 @@ class NativeLayerCA : public NativeLayer {
 
   RefPtr<SurfacePoolHandleCA> mSurfacePoolHandle;
 
+  Representation mRepresentation;
+
   gfx::IntPoint mPosition;
   const gfx::IntSize mSize;
   Maybe<gfx::IntRect> mClipRect;
-
-  
-  
-  
-  
-  CALayer* mWrappingCALayer = nullptr;      
-  CALayer* mContentCALayer = nullptr;       
-  CALayer* mOpaquenessTintLayer = nullptr;  
-
   float mBackingScale = 1.0f;
   bool mSurfaceIsFlipped = false;
   const bool mIsOpaque = false;
-  bool mMutatedBackingScale = false;
-  bool mMutatedSurfaceIsFlipped = false;
-  bool mMutatedPosition = false;
-  bool mMutatedClipRect = false;
-  bool mMutatedFrontSurface = false;
 };
 
 }  
