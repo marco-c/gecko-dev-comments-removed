@@ -106,23 +106,6 @@ class DebugAPI {
                                          AbstractGeneratorObject* generator);
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static MOZ_MUST_USE bool markIteratively(GCMarker* marker);
-
-  
   static void traceCrossCompartmentEdges(JSTracer* tracer);
 
   
@@ -130,6 +113,8 @@ class DebugAPI {
 
   
   static void traceDebugScript(JSTracer* trc, JSScript* script);
+
+  static void traceFromRealm(JSTracer* trc, Realm* realm);
 
   
   

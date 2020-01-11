@@ -2586,6 +2586,9 @@ GlobalObject* JSRuntime::createSelfHostingGlobal(JSContext* cx) {
 
   JS::RealmOptions options;
   options.creationOptions().setNewCompartmentAndZone();
+  
+  
+  options.creationOptions().setInvisibleToDebugger(true);
   options.behaviors().setDiscardSource(true);
 
   Realm* realm = NewRealm(cx, nullptr, options);

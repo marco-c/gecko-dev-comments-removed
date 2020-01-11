@@ -385,8 +385,26 @@ class JS::Realm : public JS::shadow::Realm {
   unsigned enterRealmDepthIgnoringJit_ = 0;
 
  public:
+  struct DebuggerVectorEntry {
+    
+    
+    
+    
+    
+    
+    
+    
+    js::WeakHeapPtr<js::Debugger*> dbg;
+
+    
+    
+    
+    js::HeapPtr<JSObject*> debuggerLink;
+
+    DebuggerVectorEntry(js::Debugger* dbg_, JSObject* link);
+  };
   using DebuggerVector =
-      js::Vector<js::WeakHeapPtr<js::Debugger*>, 0, js::ZoneAllocPolicy>;
+      js::Vector<DebuggerVectorEntry, 0, js::ZoneAllocPolicy>;
 
  private:
   DebuggerVector debuggers_;

@@ -92,6 +92,7 @@ class DebuggerSource;
 class DebuggerMemory;
 class ScriptedOnStepHandler;
 class ScriptedOnPopHandler;
+class DebuggerDebuggeeLink;
 
 
 
@@ -483,6 +484,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
     JSSLOT_DEBUG_HOOK_START = JSSLOT_DEBUG_PROTO_STOP,
     JSSLOT_DEBUG_HOOK_STOP = JSSLOT_DEBUG_HOOK_START + HookCount,
     JSSLOT_DEBUG_MEMORY_INSTANCE = JSSLOT_DEBUG_HOOK_STOP,
+    JSSLOT_DEBUG_DEBUGGEE_LINK,
     JSSLOT_DEBUG_COUNT
   };
 
@@ -915,7 +917,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   void updateObservesAsmJSOnDebuggees(IsObserving observing);
 
   JSObject* getHook(Hook hook) const;
-  bool hasAnyLiveHooks(JSRuntime* rt) const;
+  bool hasAnyLiveHooks() const;
 
   static void slowPathPromiseHook(JSContext* cx, Hook hook,
                                   Handle<PromiseObject*> promise);
@@ -1149,9 +1151,55 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   DebuggerSource* wrapWasmSource(JSContext* cx,
                                  Handle<WasmInstanceObject*> wasmInstance);
 
+  DebuggerDebuggeeLink* getDebuggeeLink();
+
  private:
   Debugger(const Debugger&) = delete;
   Debugger& operator=(const Debugger&) = delete;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class DebuggerDebuggeeLink : public NativeObject {
+ private:
+  enum {
+    DEBUGGER_LINK_SLOT,
+    RESERVED_SLOTS,
+  };
+
+ public:
+  static const JSClass class_;
+
+  void setLinkSlot(Debugger& dbg);
+  void clearLinkSlot();
 };
 
 
