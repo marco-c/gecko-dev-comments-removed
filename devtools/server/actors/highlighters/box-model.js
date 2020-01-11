@@ -125,8 +125,12 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
     const doc = this.win.document;
 
     const highlighterContainer = doc.createElement("div");
-    highlighterContainer.setAttribute("role", "presentation");
     highlighterContainer.className = "highlighter-container box-model";
+    
+    
+    
+    
+    highlighterContainer.setAttribute("aria-hidden", "true");
 
     
     const rootWrapper = createNode(this.win, {
