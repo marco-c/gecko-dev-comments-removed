@@ -38,7 +38,6 @@ class Value;
 
 
 
-
 class JSON_API StreamWriter {
 protected:
   OStream* sout_; 
@@ -46,6 +45,7 @@ public:
   StreamWriter();
   virtual ~StreamWriter();
   
+
 
 
 
@@ -346,10 +346,9 @@ String JSON_API valueToString(UInt value);
 #endif 
 String JSON_API valueToString(LargestInt value);
 String JSON_API valueToString(LargestUInt value);
-String JSON_API
-valueToString(double value,
-              unsigned int precision = Value::defaultRealPrecision,
-              PrecisionType precisionType = PrecisionType::significantDigits);
+String JSON_API valueToString(
+    double value, unsigned int precision = Value::defaultRealPrecision,
+    PrecisionType precisionType = PrecisionType::significantDigits);
 String JSON_API valueToString(bool value);
 String JSON_API valueToQuotedString(const char* value);
 

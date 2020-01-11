@@ -7,7 +7,7 @@
 #define CPPTL_JSON_READER_H_INCLUDED
 
 #if !defined(JSON_IS_AMALGAMATION)
-#include "features.h"
+#include "json_features.h"
 #include "value.h"
 #endif 
 #include <deque>
@@ -32,13 +32,14 @@ namespace Json {
 
 
 
-class JSON_API Reader {
+
+class JSONCPP_DEPRECATED(
+    "Use CharReader and CharReaderBuilder instead.") JSON_API Reader {
 public:
   typedef char Char;
   typedef const Char* Location;
 
   
-
 
 
 
@@ -51,12 +52,10 @@ public:
 
   
 
-
   JSONCPP_DEPRECATED("Use CharReader and CharReaderBuilder instead")
   Reader();
 
   
-
 
   JSONCPP_DEPRECATED("Use CharReader and CharReaderBuilder instead")
   Reader(const Features& features);
@@ -75,8 +74,8 @@ public:
 
 
 
-  bool
-  parse(const std::string& document, Value& root, bool collectComments = true);
+  bool parse(const std::string& document, Value& root,
+             bool collectComments = true);
 
   
 
@@ -94,11 +93,7 @@ public:
 
 
 
-
-
-  bool parse(const char* beginDoc,
-             const char* endDoc,
-             Value& root,
+  bool parse(const char* beginDoc, const char* endDoc, Value& root,
              bool collectComments = true);
 
   
@@ -113,12 +108,10 @@ public:
 
 
 
-
   JSONCPP_DEPRECATED("Use getFormattedErrorMessages() instead.")
   String getFormatedErrorMessages() const;
 
   
-
 
 
 
@@ -142,6 +135,7 @@ public:
 
 
 
+
   bool pushError(const Value& value, const String& message);
 
   
@@ -151,9 +145,11 @@ public:
 
 
 
+
   bool pushError(const Value& value, const String& message, const Value& extra);
 
   
+
 
 
 
@@ -195,7 +191,7 @@ private:
 
   bool readToken(Token& token);
   void skipSpaces();
-  bool match(Location pattern, int patternLength);
+  bool match(const Char* pattern, int patternLength);
   bool readComment();
   bool readCStyleComment();
   bool readCppStyleComment();
@@ -210,24 +206,19 @@ private:
   bool decodeString(Token& token, String& decoded);
   bool decodeDouble(Token& token);
   bool decodeDouble(Token& token, Value& decoded);
-  bool decodeUnicodeCodePoint(Token& token,
-                              Location& current,
-                              Location end,
+  bool decodeUnicodeCodePoint(Token& token, Location& current, Location end,
                               unsigned int& unicode);
-  bool decodeUnicodeEscapeSequence(Token& token,
-                                   Location& current,
-                                   Location end,
-                                   unsigned int& unicode);
+  bool decodeUnicodeEscapeSequence(Token& token, Location& current,
+                                   Location end, unsigned int& unicode);
   bool addError(const String& message, Token& token, Location extra = nullptr);
   bool recoverFromError(TokenType skipUntilToken);
-  bool addErrorAndRecover(const String& message,
-                          Token& token,
+  bool addErrorAndRecover(const String& message, Token& token,
                           TokenType skipUntilToken);
   void skipUntilSpace();
   Value& currentValue();
   Char getNextChar();
-  void
-  getLocationLineAndColumn(Location location, int& line, int& column) const;
+  void getLocationLineAndColumn(Location location, int& line,
+                                int& column) const;
   String getLocationLineAndColumn(Location location) const;
   void addComment(Location begin, Location end, CommentPlacement placement);
   void skipCommentTokens(Token& token);
@@ -270,11 +261,7 @@ public:
 
 
 
-
-
-  virtual bool parse(char const* beginDoc,
-                     char const* endDoc,
-                     Value* root,
+  virtual bool parse(char const* beginDoc, char const* endDoc, Value* root,
                      String* errs) = 0;
 
   class JSON_API Factory {
@@ -304,7 +291,6 @@ public:
   
   
   
-
 
 
 
@@ -375,9 +361,7 @@ public:
 
 
 
-bool JSON_API parseFromStream(CharReader::Factory const&,
-                              IStream&,
-                              Value* root,
+bool JSON_API parseFromStream(CharReader::Factory const&, IStream&, Value* root,
                               String* errs);
 
 

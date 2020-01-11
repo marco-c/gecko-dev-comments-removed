@@ -9,6 +9,18 @@
 #if !defined(JSON_IS_AMALGAMATION)
 #include "forwards.h"
 #endif 
+
+
+
+
+#if !defined(JSONCPP_NORETURN)
+#if defined(_MSC_VER) && _MSC_VER == 1800
+#define JSONCPP_NORETURN __declspec(noreturn)
+#else
+#define JSONCPP_NORETURN [[noreturn]]
+#endif
+#endif
+
 #include <array>
 #include <exception>
 #include <memory>
@@ -76,9 +88,9 @@ public:
 #endif
 
 
-[[noreturn]] void throwRuntimeError(String const& msg);
+JSONCPP_NORETURN void throwRuntimeError(String const& msg);
 
-[[noreturn]] void throwLogicError(String const& msg);
+JSONCPP_NORETURN void throwLogicError(String const& msg);
 
 
 
@@ -203,31 +215,34 @@ public:
   static Value const& nullSingleton();
 
   
-  static const LargestInt minLargestInt;
+  static constexpr LargestInt minLargestInt =
+      LargestInt(~(LargestUInt(-1) / 2));
   
-  static const LargestInt maxLargestInt;
+  static constexpr LargestInt maxLargestInt = LargestInt(LargestUInt(-1) / 2);
   
-  static const LargestUInt maxLargestUInt;
+  static constexpr LargestUInt maxLargestUInt = LargestUInt(-1);
 
   
-  static const Int minInt;
+  static constexpr Int minInt = Int(~(UInt(-1) / 2));
   
-  static const Int maxInt;
+  static constexpr Int maxInt = Int(UInt(-1) / 2);
   
-  static const UInt maxUInt;
+  static constexpr UInt maxUInt = UInt(-1);
 
 #if defined(JSON_HAS_INT64)
   
-  static const Int64 minInt64;
+  static constexpr Int64 minInt64 = Int64(~(UInt64(-1) / 2));
   
-  static const Int64 maxInt64;
+  static constexpr Int64 maxInt64 = Int64(UInt64(-1) / 2);
   
-  static const UInt64 maxUInt64;
+  static constexpr UInt64 maxUInt64 = UInt64(-1);
 #endif 
-
   
-  static const UInt defaultRealPrecision;
-
+  static constexpr UInt defaultRealPrecision = 17;
+  
+  
+  
+  static constexpr double maxUInt64AsDouble = 18446744073709551615.0;
 
 
 
@@ -295,6 +310,7 @@ public:
 
 
 
+
   Value(ValueType type = nullValue);
   Value(Int value);
   Value(UInt value);
@@ -320,9 +336,10 @@ public:
 
 
 
+
+
   Value(const StaticString& value);
-  Value(const String& value); 
-                              
+  Value(const String& value);
 #ifdef JSON_USE_CPPTL
   Value(const CppTL::ConstString& value);
 #endif
@@ -395,6 +412,10 @@ public:
   bool isArray() const;
   bool isObject() const;
 
+  
+  template <typename T> T as() const = delete;
+  template <typename T> bool is() const = delete;
+
   bool isConvertibleTo(ValueType other) const;
 
   
@@ -426,26 +447,17 @@ public:
   
   
   Value& operator[](ArrayIndex index);
-
-  
-  
-  
-  
-  
-  
   Value& operator[](int index);
+  
 
+  
   
   
   
   const Value& operator[](ArrayIndex index) const;
-
-  
-  
-  
   const Value& operator[](int index) const;
-
   
+
   
   
   Value get(ArrayIndex index, const Value& defaultValue) const;
@@ -456,6 +468,8 @@ public:
   
   Value& append(const Value& value);
   Value& append(Value&& value);
+  
+  bool insert(ArrayIndex index, Value newValue);
 
   
   
@@ -483,7 +497,6 @@ public:
 
 
 
-
   Value& operator[](const StaticString& key);
 #ifdef JSON_USE_CPPTL
   
@@ -498,8 +511,8 @@ public:
   
   
   
-  Value
-  get(const char* begin, const char* end, const Value& defaultValue) const;
+  Value get(const char* begin, const char* end,
+            const Value& defaultValue) const;
   
   
   
@@ -650,7 +663,7 @@ private:
     Comments& operator=(Comments&& that);
     bool has(CommentPlacement slot) const;
     String get(CommentPlacement slot) const;
-    void set(CommentPlacement slot, String s);
+    void set(CommentPlacement slot, String comment);
 
   private:
     using Array = std::array<String, numberOfCommentPlacement>;
@@ -664,6 +677,41 @@ private:
   ptrdiff_t limit_;
 };
 
+template <> inline bool Value::as<bool>() const { return asBool(); }
+template <> inline bool Value::is<bool>() const { return isBool(); }
+
+template <> inline Int Value::as<Int>() const { return asInt(); }
+template <> inline bool Value::is<Int>() const { return isInt(); }
+
+template <> inline UInt Value::as<UInt>() const { return asUInt(); }
+template <> inline bool Value::is<UInt>() const { return isUInt(); }
+
+#if defined(JSON_HAS_INT64)
+template <> inline Int64 Value::as<Int64>() const { return asInt64(); }
+template <> inline bool Value::is<Int64>() const { return isInt64(); }
+
+template <> inline UInt64 Value::as<UInt64>() const { return asUInt64(); }
+template <> inline bool Value::is<UInt64>() const { return isUInt64(); }
+#endif
+
+template <> inline double Value::as<double>() const { return asDouble(); }
+template <> inline bool Value::is<double>() const { return isDouble(); }
+
+template <> inline String Value::as<String>() const { return asString(); }
+template <> inline bool Value::is<String>() const { return isString(); }
+
+
+
+template <> inline float Value::as<float>() const { return asFloat(); }
+template <> inline const char* Value::as<const char*>() const {
+  return asCString();
+}
+#ifdef JSON_USE_CPPTL
+template <> inline CppTL::ConstString Value::as<CppTL::ConstString>() const {
+  return asConstString();
+}
+#endif
+
 
 
 
@@ -674,7 +722,7 @@ public:
   PathArgument();
   PathArgument(ArrayIndex index);
   PathArgument(const char* key);
-  PathArgument(const String& key);
+  PathArgument(String key);
 
 private:
   enum Kind { kindNone = 0, kindIndex, kindKey };
@@ -696,8 +744,7 @@ private:
 
 class JSON_API Path {
 public:
-  Path(const String& path,
-       const PathArgument& a1 = PathArgument(),
+  Path(const String& path, const PathArgument& a1 = PathArgument(),
        const PathArgument& a2 = PathArgument(),
        const PathArgument& a3 = PathArgument(),
        const PathArgument& a4 = PathArgument(),
@@ -714,10 +761,8 @@ private:
   typedef std::vector<PathArgument> Args;
 
   void makePath(const String& path, const InArgs& in);
-  void addPathInArg(const String& path,
-                    const InArgs& in,
-                    InArgs::const_iterator& itInArg,
-                    PathArgument::Kind kind);
+  void addPathInArg(const String& path, const InArgs& in,
+                    InArgs::const_iterator& itInArg, PathArgument::Kind kind);
   static void invalidPath(const String& path, int location);
 
   Args args_;
@@ -766,7 +811,14 @@ public:
   char const* memberName(char const** end) const;
 
 protected:
-  Value& deref() const;
+  
+
+
+
+
+
+  const Value& deref() const;
+  Value& deref();
 
   void increment();
 
@@ -889,9 +941,13 @@ public:
     return *this;
   }
 
-  reference operator*() const { return deref(); }
+  
 
-  pointer operator->() const { return &deref(); }
+
+
+
+  reference operator*() { return deref(); }
+  pointer operator->() { return &deref(); }
 };
 
 inline void swap(Value& a, Value& b) { a.swap(b); }
