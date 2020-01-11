@@ -1477,7 +1477,7 @@ bool PhysicalSocketServer::WaitSelect(int cmsWait, bool process_io) {
         int fd = pdispatcher->GetDescriptor();
         
         
-        RTC_DCHECK_LT(fd, FD_SETSIZE);
+        RTC_CHECK_LT(fd, FD_SETSIZE);
         if (fd > fdmax)
           fdmax = fd;
 
