@@ -64,6 +64,9 @@ var SearchUtils = {
   SETTINGS_IGNORELIST_KEY: "hijack-blocklists",
 
   
+  DEFAULT_TAG: "default",
+
+  
 
 
 
