@@ -2377,9 +2377,27 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_THROW, js_throw_str, NULL, 1, 1, 0, JOF_BYTE) \
     
+
+
+
+
+
+
 
 
 
@@ -2421,9 +2439,11 @@
 
 
 
+
  \
     MACRO(JSOP_THROWSETCONST, "throwsetconst", NULL, 4, 1, 1, JOF_LOCAL|JOF_NAME|JOF_DETECTING) \
     
+
 
 
 
@@ -2459,11 +2479,13 @@
 
 
 
+
+
+
+
  \
     MACRO(JSOP_EXCEPTION, "exception", NULL, 1, 0, 1, JOF_BYTE) \
     
-
-
 
 
 
@@ -2489,6 +2511,40 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_GOSUB, "gosub", NULL, 5, 2, 0, JOF_JUMP) \
     
@@ -2499,9 +2555,15 @@
 
 
 
+
+
+
  \
     MACRO(JSOP_FINALLY, "finally", NULL, 1, 0, 2, JOF_BYTE) \
     
+
+
+
 
 
 
