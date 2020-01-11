@@ -599,6 +599,12 @@ class nsLayoutUtils {
       const nsIFrame* aFixedPosFrame, nsPresContext* aPresContext,
       const ContainerLayerParameters& aContainerParameters);
 
+  static mozilla::SideBits GetSideBitsAndAdjustAnchorForFixedPositionContent(
+      const nsIFrame* aViewportFrame, const nsIFrame* aFixedPosFrame,
+      mozilla::LayerPoint* aAnchor, const Rect* aAnchorRect);
+  static mozilla::SideBits GetSideBitsForFixedPositionContent(
+      const nsIFrame* aFixedPosFrame);
+
   
 
 
