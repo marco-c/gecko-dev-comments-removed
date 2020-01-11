@@ -18,7 +18,6 @@
 #  include <wininet.h>
 #endif
 
-#include "mozilla/Logging.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/StaticPrefs_extensions.h"
 
@@ -147,13 +146,11 @@ nsString OptimizeFileName(const nsAString& aFileName) {
 
 
 
-FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
+FilenameType nsContentSecurityUtils::FilenameToEvalType(
     const nsString& fileName) {
   
   static NS_NAMED_LITERAL_CSTRING(kChromeURI, "chromeuri");
   static NS_NAMED_LITERAL_CSTRING(kResourceURI, "resourceuri");
-  static NS_NAMED_LITERAL_CSTRING(kBlobUri, "bloburi");
-  static NS_NAMED_LITERAL_CSTRING(kDataUri, "dataurl");
   static NS_NAMED_LITERAL_CSTRING(kSingleString, "singlestring");
   static NS_NAMED_LITERAL_CSTRING(kMozillaExtension, "mozillaextension");
   static NS_NAMED_LITERAL_CSTRING(kOtherExtension, "otherextension");
@@ -174,23 +171,15 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
 
   
   if (StringBeginsWith(fileName, NS_LITERAL_STRING("chrome://"))) {
-    return FilenameTypeAndDetails(kChromeURI, Some(fileName));
+    return FilenameType(kChromeURI, Some(fileName));
   }
   if (StringBeginsWith(fileName, NS_LITERAL_STRING("resource://"))) {
-    return FilenameTypeAndDetails(kResourceURI, Some(fileName));
-  }
-
-  
-  if (StringBeginsWith(fileName, NS_LITERAL_STRING("blob:"))) {
-    return FilenameTypeAndDetails(kBlobUri, Nothing());
-  }
-  if (StringBeginsWith(fileName, NS_LITERAL_STRING("data:"))) {
-    return FilenameTypeAndDetails(kDataUri, Nothing());
+    return FilenameType(kResourceURI, Some(fileName));
   }
 
   if (!NS_IsMainThread()) {
     
-    return FilenameTypeAndDetails(kOtherWorker, Nothing());
+    return FilenameType(kOtherWorker, Nothing());
   }
 
   
@@ -199,7 +188,7 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
   nsresult rv = RegexEval(kExtensionRegex, fileName,  false,
                           regexMatch, &regexResults);
   if (NS_FAILED(rv)) {
-    return FilenameTypeAndDetails(kRegexFailure, Nothing());
+    return FilenameType(kRegexFailure, Nothing());
   }
   if (regexMatch) {
     nsCString type =
@@ -208,27 +197,26 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
             : kOtherExtension;
     auto& extensionNameAndPath =
         Substring(regexResults[0], ArrayLength("extensions/") - 1);
-    return FilenameTypeAndDetails(type,
-                                  Some(OptimizeFileName(extensionNameAndPath)));
+    return FilenameType(type, Some(OptimizeFileName(extensionNameAndPath)));
   }
 
   
   rv = RegexEval(kSingleFileRegex, fileName,  true,
                  regexMatch);
   if (NS_FAILED(rv)) {
-    return FilenameTypeAndDetails(kRegexFailure, Nothing());
+    return FilenameType(kRegexFailure, Nothing());
   }
   if (regexMatch) {
-    return FilenameTypeAndDetails(kSingleString, Some(fileName));
+    return FilenameType(kSingleString, Some(fileName));
   }
 
   
   rv = RegexEval(kUCJSRegex, fileName,  true, regexMatch);
   if (NS_FAILED(rv)) {
-    return FilenameTypeAndDetails(kRegexFailure, Nothing());
+    return FilenameType(kRegexFailure, Nothing());
   }
   if (regexMatch) {
-    return FilenameTypeAndDetails(kSuspectedUserChromeJS, Nothing());
+    return FilenameType(kSuspectedUserChromeJS, Nothing());
   }
 
 #if defined(XP_WIN)
@@ -248,16 +236,14 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
         sanitizedPathAndScheme.Append(NS_LITERAL_STRING("://.../"));
         sanitizedPathAndScheme.Append(strSanitizedPath);
       }
-      return FilenameTypeAndDetails(kSanitizedWindowsURL,
-                                    Some(sanitizedPathAndScheme));
+      return FilenameType(kSanitizedWindowsURL, Some(sanitizedPathAndScheme));
     } else {
-      return FilenameTypeAndDetails(kSanitizedWindowsPath,
-                                    Some(strSanitizedPath));
+      return FilenameType(kSanitizedWindowsPath, Some(strSanitizedPath));
     }
   }
 #endif
 
-  return FilenameTypeAndDetails(kOther, Nothing());
+  return FilenameType(kOther, Nothing());
 }
 
 class EvalUsageNotificationRunnable final : public Runnable {
@@ -475,13 +461,12 @@ void nsContentSecurityUtils::NotifyEvalUsage(bool aIsSystemPrincipal,
       aIsSystemPrincipal ? Telemetry::EventID::Security_Evalusage_Systemcontext
                          : Telemetry::EventID::Security_Evalusage_Parentprocess;
 
-  FilenameTypeAndDetails fileNameTypeAndDetails =
-      FilenameToFilenameType(aFileNameA);
+  FilenameType fileNameType = FilenameToEvalType(aFileNameA);
   mozilla::Maybe<nsTArray<EventExtraEntry>> extra;
-  if (fileNameTypeAndDetails.second().isSome()) {
+  if (fileNameType.second().isSome()) {
     extra = Some<nsTArray<EventExtraEntry>>({EventExtraEntry{
         NS_LITERAL_CSTRING("fileinfo"),
-        NS_ConvertUTF16toUTF8(fileNameTypeAndDetails.second().value())}});
+        NS_ConvertUTF16toUTF8(fileNameType.second().value())}});
   } else {
     extra = Nothing();
   }
@@ -489,8 +474,7 @@ void nsContentSecurityUtils::NotifyEvalUsage(bool aIsSystemPrincipal,
     sTelemetryEventEnabled = true;
     Telemetry::SetEventRecordingEnabled(NS_LITERAL_CSTRING("security"), true);
   }
-  Telemetry::RecordEvent(eventType,
-                         mozilla::Some(fileNameTypeAndDetails.first()), extra);
+  Telemetry::RecordEvent(eventType, mozilla::Some(fileNameType.first()), extra);
 
   
   nsCOMPtr<nsIConsoleService> console(
@@ -692,101 +676,3 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
              "about: page must not contain a CSP including 'unsafe-inline'");
 }
 #endif
-
-
-bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
-                                                    bool aIsSystemRealm) {
-  
-  if (StaticPrefs::security_allow_parent_unrestricted_js_loads()) {
-    return true;
-  }
-
-  
-  if (!XRE_IsE10sParentProcess()) {
-    return true;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (NS_IsMainThread()) {
-    
-    
-    
-    
-    nsAutoString jsConfigPref;
-    Preferences::GetString("general.config.filename", jsConfigPref);
-    if (!jsConfigPref.IsEmpty()) {
-      MOZ_LOG(sCSMLog, LogLevel::Debug,
-              ("Allowing a javascript load of %s because "
-               "general.config.filename is set",
-               aFilename));
-      return true;
-    }
-  }
-
-  if (XRE_IsE10sParentProcess() &&
-      !StaticPrefs::extensions_webextensions_remote()) {
-    MOZ_LOG(sCSMLog, LogLevel::Debug,
-            ("Allowing a javascript load of %s because the web extension "
-             "process is disabled.",
-             aFilename));
-    return true;
-  }
-
-  NS_ConvertUTF8toUTF16 filenameU(aFilename);
-  if (StringBeginsWith(filenameU, NS_LITERAL_STRING("chrome://"))) {
-    
-    return true;
-  }
-  if (StringBeginsWith(filenameU, NS_LITERAL_STRING("resource://"))) {
-    
-    return true;
-  }
-  if (StringBeginsWith(filenameU, NS_LITERAL_STRING("file://"))) {
-    
-    return true;
-  }
-  if (StringBeginsWith(filenameU, NS_LITERAL_STRING("jar:file://"))) {
-    
-    return true;
-  }
-
-  
-  MOZ_LOG(sCSMLog, LogLevel::Info,
-          ("ValidateScriptFilename System:%i %s\n", (aIsSystemRealm ? 1 : 0),
-           aFilename));
-
-  
-  FilenameTypeAndDetails fileNameTypeAndDetails =
-      FilenameToFilenameType(filenameU);
-
-  Telemetry::EventID eventType =
-      Telemetry::EventID::Security_Javascriptload_Parentprocess;
-
-  mozilla::Maybe<nsTArray<EventExtraEntry>> extra;
-  if (fileNameTypeAndDetails.second().isSome()) {
-    extra = Some<nsTArray<EventExtraEntry>>({EventExtraEntry{
-        NS_LITERAL_CSTRING("fileinfo"),
-        NS_ConvertUTF16toUTF8(fileNameTypeAndDetails.second().value())}});
-  } else {
-    extra = Nothing();
-  }
-
-  if (!sTelemetryEventEnabled.exchange(true)) {
-    sTelemetryEventEnabled = true;
-    Telemetry::SetEventRecordingEnabled(NS_LITERAL_CSTRING("security"), true);
-  }
-  Telemetry::RecordEvent(eventType,
-                         mozilla::Some(fileNameTypeAndDetails.first()), extra);
-
-  
-  
-  
-  return true;
-}

@@ -37,8 +37,7 @@ add_task(async function() {
     global,
     undefined,
     "test-file.js",
-    1,
-     false
+    1
   );
   
 
@@ -59,14 +58,7 @@ add_task(async function() {
       ` + ${afterCreation - before} -> ${afterCreation})`
   );
 
-  Cu.evalInSandbox(
-    "list = null;",
-    global,
-    undefined,
-    "test-file.js",
-    7,
-     false
-  );
+  Cu.evalInSandbox("list = null;", global, undefined, "test-file.js", 7);
 
   Cu.forceGC();
   Cu.forceCC();

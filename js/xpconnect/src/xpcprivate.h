@@ -2504,8 +2504,7 @@ nsresult CreateSandboxObject(JSContext* cx, JS::MutableHandleValue vp,
 
 nsresult EvalInSandbox(JSContext* cx, JS::HandleObject sandbox,
                        const nsAString& source, const nsACString& filename,
-                       int32_t lineNo, bool enforceFilenameRestrictions,
-                       JS::MutableHandleValue rval);
+                       int32_t lineNo, JS::MutableHandleValue rval);
 
 
 
