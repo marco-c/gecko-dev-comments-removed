@@ -118,10 +118,7 @@ class nsGenericHTMLFrameElement : public nsGenericHTMLElement,
 
 
 
-
-
-
-  static int32_t MapScrollingAttribute(const nsAttrValue* aValue);
+  static mozilla::ScrollbarPreference MapScrollingAttribute(const nsAttrValue*);
 
   nsIPrincipal* GetSrcTriggeringPrincipal() const {
     return mSrcTriggeringPrincipal;

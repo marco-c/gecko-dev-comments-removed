@@ -35,7 +35,6 @@
 #include "nsIWindowMediator.h"
 #include "nsIScreenManager.h"
 #include "nsIScreen.h"
-#include "nsIScrollable.h"
 #include "nsIWindowWatcher.h"
 #include "nsIURI.h"
 #include "nsAppShellCID.h"
@@ -2447,17 +2446,10 @@ bool AppWindow::GetContentScrollbarVisibility() {
   
   
   
-  nsCOMPtr<nsIScrollable> scroller(do_QueryInterface(mPrimaryContentShell));
-
-  if (scroller) {
-    int32_t prefValue;
-    scroller->GetDefaultScrollbarPreferences(nsIScrollable::ScrollOrientation_Y,
-                                             &prefValue);
-    if (prefValue == nsIScrollable::Scrollbar_Never)  
-      scroller->GetDefaultScrollbarPreferences(
-          nsIScrollable::ScrollOrientation_X, &prefValue);
-
-    if (prefValue == nsIScrollable::Scrollbar_Never) return false;
+  
+  
+  if (nsCOMPtr<nsIDocShell> ds = do_QueryInterface(mPrimaryContentShell)) {
+    return nsDocShell::Cast(ds)->ScrollbarPreference() != ScrollbarPreference::Never;
   }
 
   return true;
