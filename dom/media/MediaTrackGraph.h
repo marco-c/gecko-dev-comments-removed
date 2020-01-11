@@ -1117,6 +1117,12 @@ class MediaTrackGraph {
 
   virtual Watchable<GraphTime>& CurrentTime() = 0;
 
+  
+
+
+
+  GraphTime ProcessedTime() const;
+
  protected:
   explicit MediaTrackGraph(TrackRate aSampleRate) : mSampleRate(aSampleRate) {
     MOZ_COUNT_CTOR(MediaTrackGraph);
