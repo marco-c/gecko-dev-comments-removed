@@ -12,20 +12,20 @@
 #include "mozilla/UniquePtr.h"
 
 #include "signaling/src/sdp/Sdp.h"
-#include "signaling/src/sdp/SdpParser.h"
+#include "signaling/src/sdp/SdpErrorHolder.h"
 
 namespace mozilla {
 
-class RsdparsaSdpParser final : public SdpParser {
+class RsdparsaSdpParser final : public SdpErrorHolder {
  public:
-  RsdparsaSdpParser() = default;
-  virtual ~RsdparsaSdpParser() = default;
+  RsdparsaSdpParser() {}
+  virtual ~RsdparsaSdpParser() {}
 
-  const std::string& Name() const override;
+  
 
-  UniquePtr<SdpParser::Results> Parse(const std::string& text) override;
 
-  static bool IsNamed(const std::string& aName);
+
+  UniquePtr<Sdp> Parse(const std::string& sdpText);
 };
 
 }  
