@@ -469,6 +469,9 @@ pref("browser.tabs.tabMinWidth", 76);
 #endif
 
 
+pref("browser.tabs.tabmanager.enabled", false);
+
+
 
 pref("browser.tabs.extraDragSpace", false);
 
