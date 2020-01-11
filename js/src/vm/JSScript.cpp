@@ -4585,6 +4585,11 @@ void JSScript::assertValidJumpTargets() const {
       MOZ_ASSERT(target.isJumpTarget());
 
       
+      
+      MOZ_ASSERT_IF(target < loc, target.is(JSOP_LOOPHEAD));
+      MOZ_ASSERT_IF(target < loc, IsBackedgePC(loc.toRawBytecode()));
+
+      
       if (loc.fallsThrough()) {
         BytecodeLocation fallthrough = loc.next();
         MOZ_ASSERT(mainLoc <= fallthrough && fallthrough < endLoc);
