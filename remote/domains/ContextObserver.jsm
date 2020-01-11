@@ -80,6 +80,10 @@ class ContextObserver {
         this.emit("context-destroyed", { frameId });
         this.emit("frame-navigated", { frameId, window });
         this.emit("context-created", { windowId: id, window });
+        
+        Services.tm.dispatchToMainThread(() => {
+          this.emit("script-loaded");
+        });
         break;
       case "pageshow":
         
@@ -89,6 +93,7 @@ class ContextObserver {
         
         
         this.emit("context-created", { windowId: id, window });
+        this.emit("script-loaded");
         break;
 
       case "pagehide":
