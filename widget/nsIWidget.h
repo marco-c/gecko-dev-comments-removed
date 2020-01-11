@@ -1140,6 +1140,13 @@ class nsIWidget : public nsISupports {
 
 
 
+  virtual void SetWindowMouseTransparent(bool aIsTransparent) {}
+
+  
+
+
+
+
 
   virtual void SetShowsToolbarButton(bool aShow) = 0;
 
