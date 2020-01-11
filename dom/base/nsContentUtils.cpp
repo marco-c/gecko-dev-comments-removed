@@ -1869,20 +1869,20 @@ bool nsContentUtils::CanCallerAccess(nsPIDOMWindowInner* aWindow) {
 }
 
 
-bool nsContentUtils::PrincipalHasPermission(nsIPrincipal* aPrincipal,
+bool nsContentUtils::PrincipalHasPermission(nsIPrincipal& aPrincipal,
                                             const nsAtom* aPerm) {
   
-  if (aPrincipal->IsSystemPrincipal()) {
+  if (aPrincipal.IsSystemPrincipal()) {
     return true;
   }
 
   
-  return BasePrincipal::Cast(aPrincipal)->AddonHasPermission(aPerm);
+  return BasePrincipal::Cast(aPrincipal).AddonHasPermission(aPerm);
 }
 
 
 bool nsContentUtils::CallerHasPermission(JSContext* aCx, const nsAtom* aPerm) {
-  return PrincipalHasPermission(SubjectPrincipal(aCx), aPerm);
+  return PrincipalHasPermission(*SubjectPrincipal(aCx), aPerm);
 }
 
 
@@ -6436,7 +6436,7 @@ bool nsContentUtils::ChannelShouldInheritPrincipal(
 }
 
 
-bool nsContentUtils::IsCutCopyAllowed(nsIPrincipal* aSubjectPrincipal) {
+bool nsContentUtils::IsCutCopyAllowed(nsIPrincipal& aSubjectPrincipal) {
   if (StaticPrefs::dom_allow_cut_copy() &&
       UserActivation::IsHandlingUserInput()) {
     return true;

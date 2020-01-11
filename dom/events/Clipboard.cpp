@@ -39,7 +39,7 @@ already_AddRefed<Promise> Clipboard::ReadHelper(
   
   
   if (!IsTestingPrefEnabled() &&
-      !nsContentUtils::PrincipalHasPermission(&aSubjectPrincipal,
+      !nsContentUtils::PrincipalHasPermission(aSubjectPrincipal,
                                               nsGkAtoms::clipboardRead)) {
     MOZ_LOG(GetClipboardLog(), LogLevel::Debug,
             ("Clipboard, ReadHelper, "
@@ -109,7 +109,7 @@ already_AddRefed<Promise> Clipboard::Write(JSContext* aCx, DataTransfer& aData,
   
   
   if (!IsTestingPrefEnabled() &&
-      !nsContentUtils::IsCutCopyAllowed(&aSubjectPrincipal)) {
+      !nsContentUtils::IsCutCopyAllowed(aSubjectPrincipal)) {
     MOZ_LOG(GetClipboardLog(), LogLevel::Debug,
             ("Clipboard, Write, Not allowed to write to clipboard\n"));
     p->MaybeRejectWithUndefined();

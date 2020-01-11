@@ -4482,7 +4482,7 @@ bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
 
   
   if (commandData.IsCutOrCopyCommand()) {
-    if (!nsContentUtils::IsCutCopyAllowed(&aSubjectPrincipal)) {
+    if (!nsContentUtils::IsCutCopyAllowed(aSubjectPrincipal)) {
       
       
       nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
@@ -4492,7 +4492,7 @@ bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
       return false;
     }
   } else if (commandData.IsPasteCommand()) {
-    if (!nsContentUtils::PrincipalHasPermission(&aSubjectPrincipal,
+    if (!nsContentUtils::PrincipalHasPermission(aSubjectPrincipal,
                                                 nsGkAtoms::clipboardRead)) {
       return false;
     }
@@ -4688,7 +4688,7 @@ bool Document::QueryCommandEnabled(const nsAString& aHTMLCommandName,
 
   
   if (commandData.IsCutOrCopyCommand()) {
-    return nsContentUtils::IsCutCopyAllowed(&aSubjectPrincipal);
+    return nsContentUtils::IsCutCopyAllowed(aSubjectPrincipal);
   }
 
   

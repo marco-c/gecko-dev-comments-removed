@@ -626,7 +626,7 @@ class nsContentUtils {
   static bool CanCallerAccess(nsPIDOMWindowInner* aWindow);
 
   
-  static bool PrincipalHasPermission(nsIPrincipal* aPrincipal,
+  static bool PrincipalHasPermission(nsIPrincipal& aPrincipal,
                                      const nsAtom* aPerm);
 
   
@@ -2336,7 +2336,7 @@ class nsContentUtils {
 
 
 
-  static bool IsCutCopyAllowed(nsIPrincipal* aSubjectPrincipal);
+  static bool IsCutCopyAllowed(nsIPrincipal& aSubjectPrincipal);
 
   
 
