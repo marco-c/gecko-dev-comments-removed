@@ -1585,7 +1585,7 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     }
 
     let docState = this.stateForDocument(doc);
-    let fieldsModified = this._formHasModifiedFields(formLikeRoot);
+    let fieldsModified = this._formHasModifiedFields(form);
     if (!fieldsModified && LoginHelper.userInputRequiredToCapture) {
       
       log(
@@ -2182,11 +2182,18 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     }
   }
 
-  _formHasModifiedFields(formLikeRoot) {
-    let state = this.stateForDocument(formLikeRoot.ownerDocument);
+  _formHasModifiedFields(form) {
+    let state = this.stateForDocument(form.rootElement.ownerDocument);
+    
     let fieldsModified = state.fieldModificationsByRootElement.get(
-      formLikeRoot
+      form.rootElement
     );
+    
+    if (!fieldsModified) {
+      fieldsModified = Array.from(form.elements).some(
+        field => field.value !== field.defaultValue
+      );
+    }
     return fieldsModified;
   }
 
