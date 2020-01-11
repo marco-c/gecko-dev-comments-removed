@@ -119,10 +119,14 @@ const stateManager = {
   async shouldRunHeuristics() {
     
     let disableHeuristics = await rollout.getSetting(DOH_DISABLED_PREF, false);
+    let skipHeuristicsCheck = await rollout.getSetting(
+      DOH_SKIP_HEURISTICS_PREF,
+      false
+    );
 
-    if (disableHeuristics) {
+    if (disableHeuristics || skipHeuristicsCheck) {
       
-      log("disableHeuristics has been enabled.");
+      log("shouldRunHeuristics: Will not run heuristics");
       return false;
     }
 
@@ -441,15 +445,7 @@ const rollout = {
       await this.enterprisePolicyCheck("startup", results);
     }
 
-    
-    let skipHeuristicsCheck = await this.getSetting(
-      DOH_SKIP_HEURISTICS_PREF,
-      false
-    );
-
-    log("skipHeuristicsCheck: ", skipHeuristicsCheck);
-
-    if (!skipHeuristicsCheck && (await stateManager.shouldRunHeuristics())) {
+    if (await stateManager.shouldRunHeuristics()) {
       await this.runStartupHeuristics();
     }
 
@@ -499,6 +495,13 @@ const rollout = {
         clearTimeout(rollout.networkSettledTimeout);
         rollout.networkSettledTimeout = null;
       }
+
+      let shouldRunHeuristics = await stateManager.shouldRunHeuristics();
+
+      if (!shouldRunHeuristics) {
+        return;
+      }
+
       await this.runStartupHeuristics();
     });
   },
