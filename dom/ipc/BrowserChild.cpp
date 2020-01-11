@@ -767,10 +767,10 @@ BrowserChild::IsWindowModal(bool* aRetVal) {
 }
 
 NS_IMETHODIMP
-BrowserChild::SetStatusLink(const nsAString& aStatusText) {
+BrowserChild::SetLinkStatus(const nsAString& aStatusText) {
   
   if (IPCOpen()) {
-    SendSetStatusLink(nsString(aStatusText));
+    SendSetLinkStatus(nsString(aStatusText));
   }
   return NS_OK;
 }
