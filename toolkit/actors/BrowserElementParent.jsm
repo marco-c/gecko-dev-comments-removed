@@ -91,17 +91,6 @@ class BrowserElementParent extends JSWindowActorParent {
         }
         break;
       }
-      case "ContentRequestedPrint": {
-        
-        
-        
-        let bc = this.manager.browsingContext;
-        let topWin = bc.top.embedderElement.ownerGlobal;
-        if (topWin.PrintUtils) {
-          topWin.PrintUtils.printWindow(bc);
-        }
-        break;
-      }
     }
   }
 }
