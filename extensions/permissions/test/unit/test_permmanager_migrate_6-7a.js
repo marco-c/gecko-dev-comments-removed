@@ -158,6 +158,7 @@ add_task(async function test() {
   ];
 
   
+  
   let created = [
     insertHost("foo.com", "A", 1, 0, 0, 0, 0, false),
     insertHost("foo.com", "C", 1, 0, 0, 0, 0, false),

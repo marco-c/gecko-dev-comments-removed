@@ -2,9 +2,11 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
+
+
 Cu.dispatch(function() {
   let chromeWin = Services.ww.activeWindow;
-  contextMenu = chromeWin.document.getElementById("contentAreaContextMenu");
+  let contextMenu = chromeWin.document.getElementById("contentAreaContextMenu");
   var suggestion = contextMenu.querySelector(".spell-suggestion");
   suggestion.doCommand();
   contextMenu.hidePopup();

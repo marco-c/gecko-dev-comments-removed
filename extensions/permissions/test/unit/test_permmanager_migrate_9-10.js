@@ -144,13 +144,14 @@ add_task(async function test() {
       isInBrowserElement,
     };
   }
-
+  
   let created7 = [
     insertOrigin("https://foo.com", "A", 2, 0, 0, 0),
     insertOrigin("http://foo.com", "A", 2, 0, 0, 0),
     insertOrigin("http://foo.com^inBrowser=1", "A", 2, 0, 0, 0),
   ];
 
+  
   
   let created = [
     insertHost("foo.com", "A", 1, 0, 0, 0, 0, false),

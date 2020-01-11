@@ -5,9 +5,7 @@ add_task(async function test() {
   Services.prefs.setCharPref("permissions.manager.defaultsUrl", "");
 
   
-  let pm = Cc["@mozilla.org/permissionmanager;1"].getService(
-    Ci.nsIPermissionManager
-  );
+  let pm = Services.perms;
 
   Assert.equal(pm.all.length, 0);
 

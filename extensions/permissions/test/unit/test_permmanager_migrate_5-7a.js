@@ -109,7 +109,6 @@ add_task(async function test() {
       modificationTime,
     };
   }
-
   function insertHost(
     host,
     type,
@@ -157,6 +156,7 @@ add_task(async function test() {
     insertOrigin("http://foo.com^inBrowser=1", "A", 2, 0, 0, 0),
   ];
 
+  
   
   let created = [
     insertHost("foo.com", "A", 1, 0, 0, 0, 0, false),

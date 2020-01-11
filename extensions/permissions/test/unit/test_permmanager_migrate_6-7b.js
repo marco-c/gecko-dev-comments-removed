@@ -49,7 +49,6 @@ add_task(function test() {
   );
 
   let id = 0;
-
   function insertOrigin(
     origin,
     type,
@@ -85,6 +84,7 @@ add_task(function test() {
     };
   }
 
+  
   let created6 = [
     insertOrigin("https://foo.com", "A", 2, 0, 0, 0),
     insertOrigin("http://foo.com", "A", 2, 0, 0, 0),

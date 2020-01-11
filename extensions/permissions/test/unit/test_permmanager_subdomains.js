@@ -2,17 +2,13 @@
 
 
 function getPrincipalFromURI(aURI) {
-  let ssm = Cc["@mozilla.org/scriptsecuritymanager;1"].getService(
-    Ci.nsIScriptSecurityManager
-  );
+  let ssm = Services.scriptSecurityManager;
   let uri = NetUtil.newURI(aURI);
   return ssm.createContentPrincipal(uri, {});
 }
 
 function run_test() {
-  var pm = Cc["@mozilla.org/permissionmanager;1"].getService(
-    Ci.nsIPermissionManager
-  );
+  var pm = Services.perms;
 
   
   let sub1Principal = getPrincipalFromURI("http://sub1.example.com");

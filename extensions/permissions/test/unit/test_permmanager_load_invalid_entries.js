@@ -1,6 +1,5 @@
 
 
-
 var DEBUG_TEST = false;
 
 function run_test() {
@@ -10,9 +9,7 @@ function run_test() {
   var file = dir.clone();
   file.append("permissions.sqlite");
 
-  var storage = Cc["@mozilla.org/storage/service;1"].getService(
-    Ci.mozIStorageService
-  );
+  var storage = Services.storage;
 
   
   var connection = storage.openDatabase(file);
@@ -223,12 +220,8 @@ function run_test() {
   
   Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk");
 
-  let earliestNow = Number(Date.now());
   
-  var pm = Cc["@mozilla.org/permissionmanager;1"].getService(
-    Ci.nsIPermissionManager
-  );
-  let latestNow = Number(Date.now());
+  var pm = Services.perms;
 
   
   
@@ -251,9 +244,7 @@ function run_test() {
   );
 
   
-  let ssm = Cc["@mozilla.org/scriptsecuritymanager;1"].getService(
-    Ci.nsIScriptSecurityManager
-  );
+  let ssm = Services.scriptSecurityManager;
   let uri = NetUtil.newURI("http://example.org");
   let principal = ssm.createContentPrincipal(uri, {});
   Assert.equal(

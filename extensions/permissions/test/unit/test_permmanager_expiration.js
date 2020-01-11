@@ -2,7 +2,6 @@
 
 
 
-
 var test_generator = do_run_test();
 
 function run_test() {
@@ -15,9 +14,6 @@ function continue_test() {
 }
 
 function* do_run_test() {
-  
-  let profile = do_get_profile();
-
   let pm = Services.perms;
   let permURI = NetUtil.newURI("http://example.com");
   let principal = Services.scriptSecurityManager.createContentPrincipal(

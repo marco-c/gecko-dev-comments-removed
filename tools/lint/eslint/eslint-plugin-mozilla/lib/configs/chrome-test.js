@@ -11,6 +11,11 @@ module.exports = {
   globals: {
     
     SpecialPowers: false,
+    extractJarToTmp: false,
+    getChromeDir: false,
+    getJar: false,
+    getResolvedURI: false,
+    getRootDirectory: false,
   },
 
   overrides: [
