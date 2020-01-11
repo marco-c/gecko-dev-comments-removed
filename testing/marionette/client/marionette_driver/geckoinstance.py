@@ -70,9 +70,7 @@ class GeckoInstance(object):
         "extensions.getAddons.cache.enabled": False,
         
         "extensions.installDistroAddons": False,
-        
-        
-        "extensions.showMismatchUI": False,
+
         
         "extensions.update.enabled": False,
         "extensions.update.notifyUser": False,
