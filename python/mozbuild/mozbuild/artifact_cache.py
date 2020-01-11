@@ -27,7 +27,8 @@ import binascii
 import hashlib
 import logging
 import os
-import urlparse
+import six
+import six.moves.urllib.parse as urlparse
 
 from mozbuild.util import (
     mkdir,
@@ -167,7 +168,7 @@ class ArtifactCache(object):
             
             
             
-            hash = hashlib.sha256(url).hexdigest()[:16]
+            hash = hashlib.sha256(six.ensure_binary(url)).hexdigest()[:16]
             
             basename = os.path.basename(urlparse.urlparse(url).path)
             fname = hash + '-' + basename
