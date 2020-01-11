@@ -3,6 +3,10 @@ use cranelift_entity::PrimaryMap;
 use std::boxed::Box;
 
 
+pub(crate) type WasmTypes =
+    PrimaryMap<SignatureIndex, (Box<[wasmparser::Type]>, Box<[wasmparser::Type]>)>;
+
+
 
 
 
@@ -14,14 +18,13 @@ pub struct ModuleTranslationState {
     
     
     
-    pub(crate) wasm_types:
-        PrimaryMap<SignatureIndex, (Box<[wasmparser::Type]>, Box<[wasmparser::Type]>)>,
+    pub(crate) wasm_types: WasmTypes,
 }
 
 impl ModuleTranslationState {
     
     pub fn new() -> Self {
-        ModuleTranslationState {
+        Self {
             wasm_types: PrimaryMap::new(),
         }
     }

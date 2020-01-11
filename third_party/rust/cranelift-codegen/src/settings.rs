@@ -26,7 +26,7 @@ use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use core::fmt;
 use core::str;
-use failure_derive::Fail;
+use thiserror::Error;
 
 
 
@@ -165,18 +165,18 @@ impl Configurable for Builder {
 }
 
 
-#[derive(Fail, Debug, PartialEq, Eq)]
+#[derive(Error, Debug, PartialEq, Eq)]
 pub enum SetError {
     
-    #[fail(display = "No existing setting named '{}'", _0)]
+    #[error("No existing setting named '{0}'")]
     BadName(String),
 
     
-    #[fail(display = "Trying to set a setting with the wrong type")]
+    #[error("Trying to set a setting with the wrong type")]
     BadType,
 
     
-    #[fail(display = "Unexpected value for a setting, expected {}", _0)]
+    #[error("Unexpected value for a setting, expected {0}")]
     BadValue(String),
 }
 
@@ -324,7 +324,7 @@ pub mod detail {
         
         pub fn is_preset(self) -> bool {
             match self {
-                Detail::Preset => true,
+                Self::Preset => true,
                 _ => false,
             }
         }

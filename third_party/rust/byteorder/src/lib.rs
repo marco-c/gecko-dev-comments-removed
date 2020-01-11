@@ -61,11 +61,24 @@
 
 
 
+
+
+
+
+
+
 #![deny(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(feature = "std")]
 extern crate core;
+
+#[cfg(test)]
+#[macro_use]
+extern crate doc_comment;
+
+#[cfg(test)]
+doctest!("../README.md");
 
 use core::fmt::Debug;
 use core::hash::Hash;

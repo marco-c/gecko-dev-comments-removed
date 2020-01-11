@@ -5,6 +5,9 @@
 
 
 
+
+
+
 use core::u32;
 use cranelift_codegen::entity::EntityRef;
 
@@ -16,14 +19,14 @@ impl Variable {
     
     pub fn with_u32(index: u32) -> Self {
         debug_assert!(index < u32::MAX);
-        Variable(index)
+        Self(index)
     }
 }
 
 impl EntityRef for Variable {
     fn new(index: usize) -> Self {
         debug_assert!(index < (u32::MAX as usize));
-        Variable(index as u32)
+        Self(index as u32)
     }
 
     fn index(self) -> usize {

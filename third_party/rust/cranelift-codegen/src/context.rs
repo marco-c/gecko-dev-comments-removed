@@ -196,6 +196,16 @@ impl Context {
     
     
     
+    
+    
+    
+    pub fn emit_unwind_info(&self, isa: &dyn TargetIsa, mem: &mut Vec<u8>) {
+        isa.emit_unwind_info(&self.func, mem);
+    }
+
+    
+    
+    
     pub fn verify<'a, FOI: Into<FlagsOrIsa<'a>>>(&self, fisa: FOI) -> VerifierResult<()> {
         let mut errors = VerifierErrors::default();
         let _ = verify_context(&self.func, &self.cfg, &self.domtree, fisa, &mut errors);

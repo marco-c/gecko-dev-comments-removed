@@ -21,7 +21,7 @@ pub struct SourceLoc(u32);
 impl SourceLoc {
     
     pub fn new(bits: u32) -> Self {
-        SourceLoc(bits)
+        Self(bits)
     }
 
     
@@ -37,7 +37,7 @@ impl SourceLoc {
 
 impl Default for SourceLoc {
     fn default() -> Self {
-        SourceLoc(!0)
+        Self(!0)
     }
 }
 

@@ -1,9 +1,10 @@
+
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::slice;
 
 
-pub struct UniqueTable<'entries, T: Eq + Hash> {
+pub(crate) struct UniqueTable<'entries, T: Eq + Hash> {
     table: Vec<&'entries T>,
     map: HashMap<&'entries T, usize>,
 }
@@ -40,7 +41,7 @@ impl<'entries, T: Eq + Hash> UniqueTable<'entries, T> {
 }
 
 
-pub struct UniqueSeqTable<T: PartialEq + Clone> {
+pub(crate) struct UniqueSeqTable<T: PartialEq + Clone> {
     table: Vec<T>,
 }
 
@@ -48,8 +49,8 @@ impl<T: PartialEq + Clone> UniqueSeqTable<T> {
     pub fn new() -> Self {
         Self { table: Vec::new() }
     }
-    pub fn add(&mut self, values: &Vec<T>) -> usize {
-        if values.len() == 0 {
+    pub fn add(&mut self, values: &[T]) -> usize {
+        if values.is_empty() {
             return 0;
         }
         if let Some(offset) = find_subsequence(values, &self.table) {
@@ -87,19 +88,19 @@ impl<T: PartialEq + Clone> UniqueSeqTable<T> {
 
 
 
-fn find_subsequence<T: PartialEq>(sub: &Vec<T>, whole: &Vec<T>) -> Option<usize> {
-    assert!(sub.len() > 0);
+fn find_subsequence<T: PartialEq>(sub: &[T], whole: &[T]) -> Option<usize> {
+    assert!(!sub.is_empty());
     
     if whole.len() < sub.len() {
         return None;
     }
     let max = whole.len() - sub.len();
-    for i in 0..max + 1 {
+    for i in 0..=max {
         if whole[i..i + sub.len()] == sub[..] {
             return Some(i);
         }
     }
-    return None;
+    None
 }
 
 #[test]

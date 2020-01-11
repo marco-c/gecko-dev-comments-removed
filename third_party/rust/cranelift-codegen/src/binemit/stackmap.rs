@@ -55,7 +55,7 @@ impl Stackmap {
             }
         }
 
-        Stackmap::from_slice(&vec)
+        Self::from_slice(&vec)
     }
 
     

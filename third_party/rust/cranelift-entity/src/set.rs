@@ -126,8 +126,7 @@ where
             
             
             
-            .map(|(i, byte)| ((i + 1) * 8) - byte.leading_zeros() as usize)
-            .unwrap_or(0);
+            .map_or(0, |(i, byte)| ((i + 1) * 8) - byte.leading_zeros() as usize);
 
         Some(K::new(last_index))
     }

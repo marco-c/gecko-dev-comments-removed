@@ -348,7 +348,7 @@ impl RedundantReloadRemover {
 impl AvailEnv {
     
     fn new(size: usize) -> Self {
-        let mut env = AvailEnv {
+        let mut env = Self {
             map: Vec::<Option<SlotInfo>>::new(),
         };
         env.map.resize(size, None);
@@ -494,9 +494,9 @@ impl RedundantReloadRemover {
         debug_assert!(!self.processing_stack.is_empty());
         let ProcessingStackElem {
             avail_env,
-            cursor: _,
             diversions,
-        } = &mut self.processing_stack.last_mut().unwrap();
+            ..
+        } = self.processing_stack.last_mut().unwrap();
 
         #[cfg(debug_assertions)]
         debug_assert!(
@@ -588,12 +588,7 @@ impl RedundantReloadRemover {
                     invalidate_regs_written_by_inst(locations, diversions, dfg, avail_env, inst);
                 }
             }
-            InstructionData::RegMove {
-                opcode: _,
-                arg: _,
-                src,
-                dst,
-            } => {
+            InstructionData::RegMove { src, dst, .. } => {
                 
                 
                 avail_env.copy_reg(*src, *dst);
@@ -817,9 +812,9 @@ impl RedundantReloadRemover {
         for i in 0..num_ebbs {
             let mut pi = cfg.pred_iter(Ebb::from_u32(i));
             let mut n_pi = ZeroOneOrMany::Zero;
-            if let Some(_) = pi.next() {
+            if pi.next().is_some() {
                 n_pi = ZeroOneOrMany::One;
-                if let Some(_) = pi.next() {
+                if pi.next().is_some() {
                     n_pi = ZeroOneOrMany::Many;
                     
                 }
@@ -886,7 +881,7 @@ impl RedundantReloadRemover {
         let ctx = Context {
             cur: EncCursor::new(func, isa),
             reginfo: isa.register_info(),
-            cfg: cfg,
+            cfg,
             state: self,
         };
         let mut total_regunits = 0;

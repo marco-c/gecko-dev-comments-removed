@@ -68,6 +68,15 @@ pub enum StackSlotKind {
     
     
     
+    
+    
+    
+    StructReturnSlot,
+
+    
+    
+    
+    
     EmergencySlot,
 }
 
@@ -81,6 +90,7 @@ impl FromStr for StackSlotKind {
             "spill_slot" => Ok(SpillSlot),
             "incoming_arg" => Ok(IncomingArg),
             "outgoing_arg" => Ok(OutgoingArg),
+            "sret_slot" => Ok(StructReturnSlot),
             "emergency_slot" => Ok(EmergencySlot),
             _ => Err(()),
         }
@@ -95,6 +105,7 @@ impl fmt::Display for StackSlotKind {
             SpillSlot => "spill_slot",
             IncomingArg => "incoming_arg",
             OutgoingArg => "outgoing_arg",
+            StructReturnSlot => "sret_slot",
             EmergencySlot => "emergency_slot",
         })
     }

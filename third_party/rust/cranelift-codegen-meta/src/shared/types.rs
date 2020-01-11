@@ -1,7 +1,7 @@
 
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-pub enum Bool {
+pub(crate) enum Bool {
     
     B1 = 1,
     
@@ -17,7 +17,7 @@ pub enum Bool {
 }
 
 
-pub struct BoolIterator {
+pub(crate) struct BoolIterator {
     index: u8,
 }
 
@@ -45,7 +45,7 @@ impl Iterator for BoolIterator {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-pub enum Int {
+pub(crate) enum Int {
     
     I8 = 8,
     
@@ -59,7 +59,7 @@ pub enum Int {
 }
 
 
-pub struct IntIterator {
+pub(crate) struct IntIterator {
     index: u8,
 }
 
@@ -86,13 +86,13 @@ impl Iterator for IntIterator {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-pub enum Float {
+pub(crate) enum Float {
     F32 = 32,
     F64 = 64,
 }
 
 
-pub struct FloatIterator {
+pub(crate) struct FloatIterator {
     index: u8,
 }
 
@@ -120,7 +120,7 @@ impl Iterator for FloatIterator {
 
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-pub enum Flag {
+pub(crate) enum Flag {
     
     IFlags,
     
@@ -128,7 +128,7 @@ pub enum Flag {
 }
 
 
-pub struct FlagIterator {
+pub(crate) struct FlagIterator {
     index: u8,
 }
 
@@ -152,7 +152,7 @@ impl Iterator for FlagIterator {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-pub enum Reference {
+pub(crate) enum Reference {
     
     R32 = 32,
     
@@ -160,7 +160,7 @@ pub enum Reference {
 }
 
 
-pub struct ReferenceIterator {
+pub(crate) struct ReferenceIterator {
     index: u8,
 }
 

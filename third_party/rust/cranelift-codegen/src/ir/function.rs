@@ -11,7 +11,7 @@ use crate::ir::{
     Ebb, ExtFuncData, FuncRef, GlobalValue, GlobalValueData, Heap, HeapData, Inst, JumpTable,
     JumpTableData, SigRef, StackSlot, StackSlotData, Table, TableData,
 };
-use crate::ir::{EbbOffsets, InstEncodings, SourceLocs, StackSlots, ValueLocations};
+use crate::ir::{EbbOffsets, FrameLayout, InstEncodings, SourceLocs, StackSlots, ValueLocations};
 use crate::ir::{JumpTableOffsets, JumpTables};
 use crate::isa::{CallConv, EncInfo, Encoding, Legalize, TargetIsa};
 use crate::regalloc::{EntryRegDiversions, RegDiversions};
@@ -33,6 +33,10 @@ pub struct Function {
 
     
     pub signature: Signature,
+
+    
+    
+    pub old_signature: Option<Signature>,
 
     
     pub stack_slots: StackSlots,
@@ -83,6 +87,18 @@ pub struct Function {
     
     
     pub srclocs: SourceLocs,
+
+    
+    
+    
+    pub prologue_end: Option<Inst>,
+
+    
+    
+    
+    
+    
+    pub frame_layout: Option<FrameLayout>,
 }
 
 impl Function {
@@ -91,6 +107,7 @@ impl Function {
         Self {
             name,
             signature: sig,
+            old_signature: None,
             stack_slots: StackSlots::new(),
             global_values: PrimaryMap::new(),
             heaps: PrimaryMap::new(),
@@ -104,6 +121,8 @@ impl Function {
             offsets: SecondaryMap::new(),
             jt_offsets: SecondaryMap::new(),
             srclocs: SecondaryMap::new(),
+            prologue_end: None,
+            frame_layout: None,
         }
     }
 
@@ -123,6 +142,8 @@ impl Function {
         self.offsets.clear();
         self.jt_offsets.clear();
         self.srclocs.clear();
+        self.prologue_end = None;
+        self.frame_layout = None;
     }
 
     
@@ -232,6 +253,7 @@ impl Function {
     
     pub fn collect_debug_info(&mut self) {
         self.dfg.collect_debug_info();
+        self.frame_layout = Some(FrameLayout::new());
     }
 
     
@@ -266,6 +288,14 @@ impl Function {
         }
 
         Ok(())
+    }
+
+    
+    
+    pub fn is_leaf(&self) -> bool {
+        
+        
+        !self.dfg.signatures.is_empty()
     }
 }
 

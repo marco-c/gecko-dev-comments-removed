@@ -28,7 +28,7 @@ fn main() {
 
     
     let isa_targets = meta::isa::Isa::all()
-        .into_iter()
+        .iter()
         .cloned()
         .filter(|isa| {
             let env_key = format!("CARGO_FEATURE_{}", isa.to_string().to_uppercase());

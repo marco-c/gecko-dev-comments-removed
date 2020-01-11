@@ -77,7 +77,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::cmp::Ordering;
 use core::fmt::{self, Display, Formatter, Write};
-use failure_derive::Fail;
+use thiserror::Error;
 
 pub use self::cssa::verify_cssa;
 pub use self::liveness::verify_liveness;
@@ -127,18 +127,13 @@ mod liveness;
 mod locations;
 
 
-#[derive(Fail, Debug, PartialEq, Eq)]
+#[derive(Error, Debug, PartialEq, Eq)]
+#[error("{location}: {message}")]
 pub struct VerifierError {
     
     pub location: AnyEntity,
     
     pub message: String,
-}
-
-impl Display for VerifierError {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}: {}", self.location, self.message)
-    }
 }
 
 
@@ -160,14 +155,14 @@ pub type VerifierStepResult<T> = Result<T, ()>;
 pub type VerifierResult<T> = Result<T, VerifierErrors>;
 
 
-#[derive(Fail, Debug, Default, PartialEq, Eq)]
+#[derive(Error, Debug, Default, PartialEq, Eq)]
 pub struct VerifierErrors(pub Vec<VerifierError>);
 
 impl VerifierErrors {
     
     #[inline]
     pub fn new() -> Self {
-        VerifierErrors(Vec::new())
+        Self(Vec::new())
     }
 
     
@@ -196,7 +191,7 @@ impl VerifierErrors {
 
 impl From<Vec<VerifierError>> for VerifierErrors {
     fn from(v: Vec<VerifierError>) -> Self {
-        VerifierErrors(v)
+        Self(v)
     }
 }
 

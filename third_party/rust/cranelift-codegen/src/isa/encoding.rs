@@ -80,12 +80,18 @@ impl fmt::Display for DisplayEncoding {
     }
 }
 
-type SizeCalculatorFn = fn(&RecipeSizing, Inst, &RegDiversions, &Function) -> u8;
+type SizeCalculatorFn = fn(&RecipeSizing, Encoding, Inst, &RegDiversions, &Function) -> u8;
 
 
 
 
-pub fn base_size(sizing: &RecipeSizing, _: Inst, _: &RegDiversions, _: &Function) -> u8 {
+pub fn base_size(
+    sizing: &RecipeSizing,
+    _: Encoding,
+    _: Inst,
+    _: &RegDiversions,
+    _: &Function,
+) -> u8 {
     sizing.base_size
 }
 
@@ -144,7 +150,7 @@ impl EncInfo {
     ) -> CodeOffset {
         self.sizing.get(enc.recipe()).map_or(0, |s| {
             let compute_size = s.compute_size;
-            CodeOffset::from(compute_size(&s, inst, divert, func))
+            CodeOffset::from(compute_size(&s, enc, inst, divert, func))
         })
     }
 

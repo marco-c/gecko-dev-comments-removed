@@ -389,7 +389,6 @@ impl Liveness {
         
         
         
-        
         for ebb in func.layout.ebbs() {
             
             
@@ -436,11 +435,9 @@ impl Liveness {
 
 impl Index<Value> for Liveness {
     type Output = LiveRange;
-
     fn index(&self, index: Value) -> &LiveRange {
-        match self.ranges.get(index) {
-            Some(lr) => lr,
-            None => panic!("{} has no live range", index),
-        }
+        self.ranges
+            .get(index)
+            .unwrap_or_else(|| panic!("{} has no live range", index))
     }
 }

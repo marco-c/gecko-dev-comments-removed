@@ -4,6 +4,7 @@
 
 
 use crate::ir::{AbiParam, ArgumentExtension, ArgumentLoc, Type};
+use alloc::borrow::Cow;
 use alloc::vec::Vec;
 use core::cmp::Ordering;
 
@@ -26,13 +27,13 @@ pub enum ArgAction {
 
 impl From<ArgumentLoc> for ArgAction {
     fn from(x: ArgumentLoc) -> Self {
-        ArgAction::Assign(x)
+        Self::Assign(x)
     }
 }
 
 impl From<ValueConversion> for ArgAction {
     fn from(x: ValueConversion) -> Self {
-        ArgAction::Convert(x)
+        Self::Convert(x)
     }
 }
 
@@ -59,17 +60,17 @@ impl ValueConversion {
     
     pub fn apply(self, ty: Type) -> Type {
         match self {
-            ValueConversion::IntSplit => ty.half_width().expect("Integer type too small to split"),
-            ValueConversion::VectorSplit => ty.half_vector().expect("Not a vector"),
-            ValueConversion::IntBits => Type::int(ty.bits()).expect("Bad integer size"),
-            ValueConversion::Sext(nty) | ValueConversion::Uext(nty) => nty,
+            Self::IntSplit => ty.half_width().expect("Integer type too small to split"),
+            Self::VectorSplit => ty.half_vector().expect("Not a vector"),
+            Self::IntBits => Type::int(ty.bits()).expect("Bad integer size"),
+            Self::Sext(nty) | Self::Uext(nty) => nty,
         }
     }
 
     
     pub fn is_split(self) -> bool {
         match self {
-            ValueConversion::IntSplit | ValueConversion::VectorSplit => true,
+            Self::IntSplit | Self::VectorSplit => true,
             _ => false,
         }
     }
@@ -86,7 +87,9 @@ pub trait ArgAssigner {
 
 
 
-pub fn legalize_args<AA: ArgAssigner>(args: &mut Vec<AbiParam>, aa: &mut AA) {
+pub fn legalize_args<AA: ArgAssigner>(args: &[AbiParam], aa: &mut AA) -> Option<Vec<AbiParam>> {
+    let mut args = Cow::Borrowed(args);
+
     
     
     
@@ -102,19 +105,24 @@ pub fn legalize_args<AA: ArgAssigner>(args: &mut Vec<AbiParam>, aa: &mut AA) {
         match aa.assign(&arg) {
             
             ArgAction::Assign(loc) => {
-                args[argno].location = loc;
+                args.to_mut()[argno].location = loc;
                 argno += 1;
             }
             
             ArgAction::Convert(conv) => {
                 let value_type = conv.apply(arg.value_type);
                 let new_arg = AbiParam { value_type, ..arg };
-                args[argno].value_type = value_type;
+                args.to_mut()[argno].value_type = value_type;
                 if conv.is_split() {
-                    args.insert(argno + 1, new_arg);
+                    args.to_mut().insert(argno + 1, new_arg);
                 }
             }
         }
+    }
+
+    match args {
+        Cow::Borrowed(_) => None,
+        Cow::Owned(a) => Some(a),
     }
 }
 

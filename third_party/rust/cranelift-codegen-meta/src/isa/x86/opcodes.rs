@@ -17,6 +17,14 @@ pub static ADD_IMM8_SIGN_EXTEND: [u8; 1] = [0x83];
 
 
 
+pub static ADDPD: [u8; 3] = [0x66, 0x0f, 0x58];
+
+
+
+pub static ADDPS: [u8; 2] = [0x0f, 0x58];
+
+
+
 pub static ADDSD: [u8; 3] = [0xf2, 0x0f, 0x58];
 
 
@@ -63,6 +71,14 @@ pub static CMP_REG: [u8; 1] = [0x39];
 
 
 
+pub static CMPPD: [u8; 3] = [0x66, 0x0f, 0xc2];
+
+
+
+pub static CMPPS: [u8; 2] = [0x0f, 0xc2];
+
+
+
 pub static CVTSD2SS: [u8; 3] = [0xf2, 0x0f, 0x5a];
 
 
@@ -84,6 +100,14 @@ pub static CVTTSS2SI: [u8; 3] = [0xf3, 0x0f, 0x2c];
 
 
 pub static DIV: [u8; 1] = [0xf7];
+
+
+
+pub static DIVPD: [u8; 3] = [0x66, 0x0f, 0x5e];
+
+
+
+pub static DIVPS: [u8; 2] = [0x0f, 0x5e];
 
 
 
@@ -136,11 +160,27 @@ pub static LZCNT: [u8; 3] = [0xf3, 0x0f, 0xbd];
 
 
 
+pub static MAXPD: [u8; 3] = [0x66, 0x0f, 0x5f];
+
+
+
+pub static MAXPS: [u8; 2] = [0x0f, 0x5f];
+
+
+
 pub static MAXSD: [u8; 3] = [0xf2, 0x0f, 0x5f];
 
 
 
 pub static MAXSS: [u8; 3] = [0xf3, 0x0f, 0x5f];
+
+
+
+pub static MINPD: [u8; 3] = [0x66, 0x0f, 0x5d];
+
+
+
+pub static MINPS: [u8; 2] = [0x0f, 0x5d];
 
 
 
@@ -218,6 +258,14 @@ pub static MUL: [u8; 1] = [0xf7];
 
 
 
+pub static MULPD: [u8; 3] = [0x66, 0x0f, 0x59];
+
+
+
+pub static MULPS: [u8; 2] = [0x0f, 0x59];
+
+
+
 pub static MULSD: [u8; 3] = [0xf2, 0x0f, 0x59];
 
 
@@ -267,6 +315,9 @@ pub static PADDUSW: [u8; 3] = [0x66, 0x0f, 0xdd];
 pub static PAND: [u8; 3] = [0x66, 0x0f, 0xdb];
 
 
+pub static PANDN: [u8; 3] = [0x66, 0x0f, 0xdf];
+
+
 pub static PCMPEQB: [u8; 3] = [0x66, 0x0f, 0x74];
 
 
@@ -277,6 +328,18 @@ pub static PCMPEQQ: [u8; 4] = [0x66, 0x0f, 0x38, 0x29];
 
 
 pub static PCMPEQW: [u8; 3] = [0x66, 0x0f, 0x75];
+
+
+pub static PCMPGTB: [u8; 3] = [0x66, 0x0f, 0x64];
+
+
+pub static PCMPGTD: [u8; 3] = [0x66, 0x0f, 0x66];
+
+
+pub static PCMPGTQ: [u8; 4] = [0x66, 0x0f, 0x38, 0x37];
+
+
+pub static PCMPGTW: [u8; 3] = [0x66, 0x0f, 0x65];
 
 
 pub static PEXTR: [u8; 4] = [0x66, 0x0f, 0x3a, 0x16];
@@ -295,6 +358,54 @@ pub static PINSRB: [u8; 4] = [0x66, 0x0f, 0x3a, 0x20];
 
 
 pub static PINSRW: [u8; 3] = [0x66, 0x0f, 0xc4];
+
+
+
+pub static PMAXSB: [u8; 4] = [0x66, 0x0f, 0x38, 0x3c];
+
+
+
+pub static PMAXSD: [u8; 4] = [0x66, 0x0f, 0x38, 0x3d];
+
+
+
+pub static PMAXSW: [u8; 3] = [0x66, 0x0f, 0xee];
+
+
+
+pub static PMAXUB: [u8; 3] = [0x66, 0x0f, 0xde];
+
+
+
+pub static PMAXUD: [u8; 4] = [0x66, 0x0f, 0x38, 0x3f];
+
+
+
+pub static PMAXUW: [u8; 4] = [0x66, 0x0f, 0x38, 0x3e];
+
+
+
+pub static PMINSB: [u8; 4] = [0x66, 0x0f, 0x38, 0x38];
+
+
+
+pub static PMINSD: [u8; 4] = [0x66, 0x0f, 0x38, 0x39];
+
+
+
+pub static PMINSW: [u8; 3] = [0x66, 0x0f, 0xea];
+
+
+
+pub static PMINUB: [u8; 3] = [0x66, 0x0f, 0xda];
+
+
+
+pub static PMINUD: [u8; 4] = [0x66, 0x0f, 0x38, 0x3b];
+
+
+
+pub static PMINUW: [u8; 4] = [0x66, 0x0f, 0x38, 0x3a];
 
 
 
@@ -319,6 +430,18 @@ pub static PSHUFB: [u8; 4] = [0x66, 0x0f, 0x38, 0x00];
 
 
 pub static PSHUFD: [u8; 3] = [0x66, 0x0f, 0x70];
+
+
+
+pub static PS_W_IMM: [u8; 3] = [0x66, 0x0f, 0x71];
+
+
+
+pub static PS_D_IMM: [u8; 3] = [0x66, 0x0f, 0x72];
+
+
+
+pub static PS_Q_IMM: [u8; 3] = [0x66, 0x0f, 0x73];
 
 
 pub static PSLLW: [u8; 3] = [0x66, 0x0f, 0xf1];
@@ -373,6 +496,10 @@ pub static PSUBUSB: [u8; 3] = [0x66, 0x0f, 0xd8];
 pub static PSUBUSW: [u8; 3] = [0x66, 0x0f, 0xd9];
 
 
+
+pub static PTEST: [u8; 4] = [0x66, 0x0f, 0x38, 0x17];
+
+
 pub static PUSH_REG: [u8; 1] = [0x50];
 
 
@@ -400,6 +527,14 @@ pub static SBB: [u8; 1] = [0x19];
 pub static SET_BYTE_IF_OVERFLOW: [u8; 2] = [0x0f, 0x90];
 
 
+
+pub static SQRTPD: [u8; 3] = [0x66, 0x0f, 0x51];
+
+
+
+pub static SQRTPS: [u8; 2] = [0x0f, 0x51];
+
+
 pub static SQRTSD: [u8; 3] = [0xf2, 0x0f, 0x51];
 
 
@@ -407,6 +542,14 @@ pub static SQRTSS: [u8; 3] = [0xf3, 0x0f, 0x51];
 
 
 pub static SUB: [u8; 1] = [0x29];
+
+
+
+pub static SUBPD: [u8; 3] = [0x66, 0x0f, 0x5c];
+
+
+
+pub static SUBPS: [u8; 2] = [0x0f, 0x5c];
 
 
 

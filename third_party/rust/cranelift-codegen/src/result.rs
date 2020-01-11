@@ -1,19 +1,19 @@
 
 
 use crate::verifier::VerifierErrors;
-use failure_derive::Fail;
+use thiserror::Error;
 
 
 
 
-#[derive(Fail, Debug, PartialEq, Eq)]
+#[derive(Error, Debug, PartialEq, Eq)]
 pub enum CodegenError {
     
     
     
     
-    #[fail(display = "Verifier errors:\n{}", _0)]
-    Verifier(#[cause] VerifierErrors),
+    #[error("Verifier errors")]
+    Verifier(#[from] VerifierErrors),
 
     
     
@@ -21,22 +21,16 @@ pub enum CodegenError {
     
     
     
-    #[fail(display = "Implementation limit exceeded")]
+    #[error("Implementation limit exceeded")]
     ImplLimitExceeded,
 
     
     
     
     
-    #[fail(display = "Code for function is too large")]
+    #[error("Code for function is too large")]
     CodeTooLarge,
 }
 
 
 pub type CodegenResult<T> = Result<T, CodegenError>;
-
-impl From<VerifierErrors> for CodegenError {
-    fn from(e: VerifierErrors) -> Self {
-        CodegenError::Verifier(e)
-    }
-}

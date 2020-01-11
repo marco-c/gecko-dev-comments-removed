@@ -24,6 +24,7 @@ pub fn simple_hash(s: &str) -> usize {
 
 
 
+#[allow(clippy::float_arithmetic)]
 pub fn generate_table<'cont, T, I: iter::Iterator<Item = &'cont T>, H: Fn(&T) -> usize>(
     items: I,
     num_items: usize,

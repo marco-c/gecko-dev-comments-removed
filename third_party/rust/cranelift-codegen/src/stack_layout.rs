@@ -15,7 +15,12 @@ use core::cmp::{max, min};
 
 
 
-pub fn layout_stack(frame: &mut StackSlots, alignment: StackSize) -> CodegenResult<StackSize> {
+
+pub fn layout_stack(
+    frame: &mut StackSlots,
+    is_leaf: bool,
+    alignment: StackSize,
+) -> CodegenResult<StackSize> {
     
     
     let max_size = StackOffset::max_value() as StackSize;
@@ -34,10 +39,14 @@ pub fn layout_stack(frame: &mut StackSlots, alignment: StackSize) -> CodegenResu
     
     
     
+    
+    
+    
 
     let mut incoming_min = 0;
     let mut outgoing_max = 0;
     let mut min_align = alignment;
+    let mut must_align = is_leaf;
 
     for slot in frame.values() {
         if slot.size > max_size {
@@ -55,12 +64,15 @@ pub fn layout_stack(frame: &mut StackSlots, alignment: StackSize) -> CodegenResu
                     .checked_add(slot.size as StackOffset)
                     .ok_or(CodegenError::ImplLimitExceeded)?;
                 outgoing_max = max(outgoing_max, offset);
+                must_align = true;
             }
-            StackSlotKind::SpillSlot
+            StackSlotKind::StructReturnSlot
+            | StackSlotKind::SpillSlot
             | StackSlotKind::ExplicitSlot
             | StackSlotKind::EmergencySlot => {
                 
                 min_align = slot.alignment(min_align);
+                must_align = true;
             }
         }
     }
@@ -75,6 +87,7 @@ pub fn layout_stack(frame: &mut StackSlots, alignment: StackSize) -> CodegenResu
             
             match slot.kind {
                 StackSlotKind::SpillSlot
+                | StackSlotKind::StructReturnSlot
                 | StackSlotKind::ExplicitSlot
                 | StackSlotKind::EmergencySlot => {
                     if slot.alignment(alignment) != min_align {
@@ -101,7 +114,10 @@ pub fn layout_stack(frame: &mut StackSlots, alignment: StackSize) -> CodegenResu
     offset = offset
         .checked_sub(outgoing_max)
         .ok_or(CodegenError::ImplLimitExceeded)?;
-    offset &= -(alignment as StackOffset);
+
+    if must_align {
+        offset &= -(alignment as StackOffset);
+    }
 
     let frame_size = (offset as StackSize).wrapping_neg();
     frame.frame_size = Some(frame_size);
@@ -121,15 +137,18 @@ mod tests {
         let sss = &mut StackSlots::new();
 
         
-        assert_eq!(layout_stack(sss, 1), Ok(0));
-        assert_eq!(layout_stack(sss, 16), Ok(0));
+        let is_leaf = true;
+
+        
+        assert_eq!(layout_stack(sss, is_leaf, 1), Ok(0));
+        assert_eq!(layout_stack(sss, is_leaf, 16), Ok(0));
 
         
         let in0 = sss.make_incoming_arg(types::I64, 0);
         let in1 = sss.make_incoming_arg(types::I64, 8);
 
-        assert_eq!(layout_stack(sss, 1), Ok(0));
-        assert_eq!(layout_stack(sss, 16), Ok(0));
+        assert_eq!(layout_stack(sss, is_leaf, 1), Ok(0));
+        assert_eq!(layout_stack(sss, is_leaf, 16), Ok(0));
         assert_eq!(sss[in0].offset, Some(0));
         assert_eq!(sss[in1].offset, Some(8));
 
@@ -137,13 +156,13 @@ mod tests {
         let ss0 = sss.make_spill_slot(types::I64);
         let ss1 = sss.make_spill_slot(types::I32);
 
-        assert_eq!(layout_stack(sss, 1), Ok(12));
+        assert_eq!(layout_stack(sss, is_leaf, 1), Ok(12));
         assert_eq!(sss[in0].offset, Some(0));
         assert_eq!(sss[in1].offset, Some(8));
         assert_eq!(sss[ss0].offset, Some(-8));
         assert_eq!(sss[ss1].offset, Some(-12));
 
-        assert_eq!(layout_stack(sss, 16), Ok(16));
+        assert_eq!(layout_stack(sss, is_leaf, 16), Ok(16));
         assert_eq!(sss[in0].offset, Some(0));
         assert_eq!(sss[in1].offset, Some(8));
         assert_eq!(sss[ss0].offset, Some(-16));
@@ -153,14 +172,14 @@ mod tests {
         
         let in2 = sss.make_incoming_arg(types::I32, -4);
 
-        assert_eq!(layout_stack(sss, 1), Ok(16));
+        assert_eq!(layout_stack(sss, is_leaf, 1), Ok(16));
         assert_eq!(sss[in0].offset, Some(0));
         assert_eq!(sss[in1].offset, Some(8));
         assert_eq!(sss[in2].offset, Some(-4));
         assert_eq!(sss[ss0].offset, Some(-12));
         assert_eq!(sss[ss1].offset, Some(-16));
 
-        assert_eq!(layout_stack(sss, 16), Ok(16));
+        assert_eq!(layout_stack(sss, is_leaf, 16), Ok(16));
         assert_eq!(sss[in0].offset, Some(0));
         assert_eq!(sss[in1].offset, Some(8));
         assert_eq!(sss[in2].offset, Some(-4));
@@ -170,7 +189,7 @@ mod tests {
         
         let out0 = sss.get_outgoing_arg(types::I32, 0);
 
-        assert_eq!(layout_stack(sss, 1), Ok(20));
+        assert_eq!(layout_stack(sss, is_leaf, 1), Ok(20));
         assert_eq!(sss[in0].offset, Some(0));
         assert_eq!(sss[in1].offset, Some(8));
         assert_eq!(sss[in2].offset, Some(-4));
@@ -178,7 +197,7 @@ mod tests {
         assert_eq!(sss[ss1].offset, Some(-16));
         assert_eq!(sss[out0].offset, Some(0));
 
-        assert_eq!(layout_stack(sss, 16), Ok(32));
+        assert_eq!(layout_stack(sss, is_leaf, 16), Ok(32));
         assert_eq!(sss[in0].offset, Some(0));
         assert_eq!(sss[in1].offset, Some(8));
         assert_eq!(sss[in2].offset, Some(-4));
@@ -188,7 +207,10 @@ mod tests {
 
         
         sss.get_outgoing_arg(types::I8, StackOffset::max_value() - 1);
-        assert_eq!(layout_stack(sss, 1), Err(CodegenError::ImplLimitExceeded));
+        assert_eq!(
+            layout_stack(sss, is_leaf, 1),
+            Err(CodegenError::ImplLimitExceeded)
+        );
     }
 
     #[test]
@@ -203,7 +225,7 @@ mod tests {
         ));
         let ss2 = sss.get_emergency_slot(types::I32, &[]);
 
-        assert_eq!(layout_stack(sss, 1), Ok(12));
+        assert_eq!(layout_stack(sss, true, 1), Ok(12));
         assert_eq!(sss[ss0].offset, Some(-4));
         assert_eq!(sss[ss1].offset, Some(-8));
         assert_eq!(sss[ss2].offset, Some(-12));

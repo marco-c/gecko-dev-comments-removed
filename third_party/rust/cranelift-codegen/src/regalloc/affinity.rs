@@ -30,7 +30,7 @@ pub enum Affinity {
 
 impl Default for Affinity {
     fn default() -> Self {
-        Affinity::Unassigned
+        Self::Unassigned
     }
 }
 
@@ -41,25 +41,25 @@ impl Affinity {
     
     pub fn new(constraint: &OperandConstraint) -> Self {
         if constraint.kind == ConstraintKind::Stack {
-            Affinity::Stack
+            Self::Stack
         } else {
-            Affinity::Reg(constraint.regclass.into())
+            Self::Reg(constraint.regclass.into())
         }
     }
 
     
     pub fn abi(arg: &AbiParam, isa: &dyn TargetIsa) -> Self {
         match arg.location {
-            ArgumentLoc::Unassigned => Affinity::Unassigned,
-            ArgumentLoc::Reg(_) => Affinity::Reg(isa.regclass_for_abi_type(arg.value_type).into()),
-            ArgumentLoc::Stack(_) => Affinity::Stack,
+            ArgumentLoc::Unassigned => Self::Unassigned,
+            ArgumentLoc::Reg(_) => Self::Reg(isa.regclass_for_abi_type(arg.value_type).into()),
+            ArgumentLoc::Stack(_) => Self::Stack,
         }
     }
 
     
     pub fn is_unassigned(self) -> bool {
         match self {
-            Affinity::Unassigned => true,
+            Self::Unassigned => true,
             _ => false,
         }
     }
@@ -67,7 +67,7 @@ impl Affinity {
     
     pub fn is_reg(self) -> bool {
         match self {
-            Affinity::Reg(_) => true,
+            Self::Reg(_) => true,
             _ => false,
         }
     }
@@ -75,7 +75,7 @@ impl Affinity {
     
     pub fn is_stack(self) -> bool {
         match self {
-            Affinity::Stack => true,
+            Self::Stack => true,
             _ => false,
         }
     }
@@ -86,21 +86,19 @@ impl Affinity {
     
     pub fn merge(&mut self, constraint: &OperandConstraint, reginfo: &RegInfo) {
         match *self {
-            Affinity::Unassigned => *self = Self::new(constraint),
-            Affinity::Reg(rc) => {
+            Self::Unassigned => *self = Self::new(constraint),
+            Self::Reg(rc) => {
                 
                 
                 if constraint.kind != ConstraintKind::Stack && !constraint.regclass.has_subclass(rc)
                 {
                     
-                    
                     if let Some(subclass) = constraint.regclass.intersect_index(reginfo.rc(rc)) {
-                        
-                        *self = Affinity::Reg(subclass);
+                        *self = Self::Reg(subclass);
                     }
                 }
             }
-            Affinity::Stack => {}
+            Self::Stack => {}
         }
     }
 

@@ -63,10 +63,12 @@ use crate::result::CodegenResult;
 use crate::settings;
 use crate::settings::SetResult;
 use crate::timing;
+use alloc::borrow::Cow;
 use alloc::boxed::Box;
+use alloc::vec::Vec;
 use core::fmt;
-use failure_derive::Fail;
 use target_lexicon::{triple, Architecture, PointerWidth, Triple};
+use thiserror::Error;
 
 #[cfg(feature = "riscv")]
 mod riscv;
@@ -124,14 +126,14 @@ pub fn lookup_by_name(name: &str) -> Result<Builder, LookupError> {
 }
 
 
-#[derive(Fail, PartialEq, Eq, Copy, Clone, Debug)]
+#[derive(Error, PartialEq, Eq, Copy, Clone, Debug)]
 pub enum LookupError {
     
-    #[fail(display = "Support for this target is disabled")]
+    #[error("Support for this target is disabled")]
     SupportDisabled,
 
     
-    #[fail(display = "Support for this target has not been implemented yet")]
+    #[error("Support for this target has not been implemented yet")]
     Unsupported,
 }
 
@@ -314,7 +316,7 @@ pub trait TargetIsa: fmt::Display + Sync {
     
     
     
-    fn legalize_signature(&self, sig: &mut ir::Signature, current: bool);
+    fn legalize_signature(&self, sig: &mut Cow<ir::Signature>, current: bool);
 
     
     
@@ -349,7 +351,8 @@ pub trait TargetIsa: fmt::Display + Sync {
             func.stack_slots.push(ss);
         }
 
-        layout_stack(&mut func.stack_slots, word_size)?;
+        let is_leaf = func.is_leaf();
+        layout_stack(&mut func.stack_slots, is_leaf, word_size)?;
         Ok(())
     }
 
@@ -377,4 +380,11 @@ pub trait TargetIsa: fmt::Display + Sync {
 
     
     fn unsigned_sub_overflow_condition(&self) -> ir::condcodes::IntCC;
+
+    
+    
+    
+    fn emit_unwind_info(&self, _func: &ir::Function, _mem: &mut Vec<u8>) {
+        
+    }
 }

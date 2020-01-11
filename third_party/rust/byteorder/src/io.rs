@@ -710,6 +710,42 @@ pub trait ReadBytesExt: io::Read {
     
     
     
+    
+    
+    
+    
+    
+    #[inline]
+    fn read_i8_into(&mut self, dst: &mut [i8]) -> Result<()> {
+        let buf = unsafe { slice_to_u8_mut(dst) };
+        self.read_exact(buf)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     fn read_i16_into<T: ByteOrder>(&mut self, dst: &mut [i16]) -> Result<()> {
         {

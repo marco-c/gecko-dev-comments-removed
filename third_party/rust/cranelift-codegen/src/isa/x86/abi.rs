@@ -3,20 +3,24 @@
 use super::super::settings as shared_settings;
 use super::registers::{FPR, GPR, RU};
 use super::settings as isa_settings;
+use super::unwind::UnwindInfo;
 use crate::abi::{legalize_args, ArgAction, ArgAssigner, ValueConversion};
 use crate::cursor::{Cursor, CursorPosition, EncCursor};
 use crate::ir;
 use crate::ir::immediates::Imm64;
 use crate::ir::stackslot::{StackOffset, StackSize};
 use crate::ir::{
-    get_probestack_funcref, AbiParam, ArgumentExtension, ArgumentLoc, ArgumentPurpose, InstBuilder,
-    ValueLoc,
+    get_probestack_funcref, AbiParam, ArgumentExtension, ArgumentLoc, ArgumentPurpose,
+    FrameLayoutChange, InstBuilder, ValueLoc,
 };
 use crate::isa::{CallConv, RegClass, RegUnit, TargetIsa};
 use crate::regalloc::RegisterSet;
 use crate::result::CodegenResult;
 use crate::stack_layout::layout_stack;
+use alloc::borrow::Cow;
+use alloc::vec::Vec;
 use core::i32;
+use std::boxed::Box;
 use target_lexicon::{PointerWidth, Triple};
 
 
@@ -31,6 +35,30 @@ static ARG_GPRS_WIN_FASTCALL_X64: [RU; 4] = [RU::rcx, RU::rdx, RU::r8, RU::r9];
 
 static RET_GPRS_WIN_FASTCALL_X64: [RU; 1] = [RU::rax];
 
+
+
+
+
+
+
+
+
+
+const WIN_SHADOW_STACK_SPACE: i32 = 32;
+
+
+
+
+
+
+
+
+
+
+
+const STACK_ALIGNMENT: u32 = 16;
+
+#[derive(Clone)]
 struct Args {
     pointer_bytes: u8,
     pointer_bits: u8,
@@ -56,12 +84,10 @@ impl Args {
         isa_flags: &isa_settings::Flags,
     ) -> Self {
         let offset = if call_conv.extends_windows_fastcall() {
-            
-            
-            32
+            WIN_SHADOW_STACK_SPACE
         } else {
             0
-        };
+        } as u32;
 
         Self {
             pointer_bytes: bits / 8,
@@ -166,7 +192,7 @@ impl ArgAssigner for Args {
 
 
 pub fn legalize_signature(
-    sig: &mut ir::Signature,
+    sig: &mut Cow<ir::Signature>,
     triple: &Triple,
     _current: bool,
     shared_flags: &shared_settings::Flags,
@@ -205,9 +231,7 @@ pub fn legalize_signature(
         }
     }
 
-    legalize_args(&mut sig.params, &mut args);
-
-    let (regs, fpr_limit) = if sig.call_conv.extends_windows_fastcall() {
+    let (ret_regs, ret_fpr_limit) = if sig.call_conv.extends_windows_fastcall() {
         
         (&RET_GPRS_WIN_FASTCALL_X64[..], 1)
     } else {
@@ -216,13 +240,91 @@ pub fn legalize_signature(
 
     let mut rets = Args::new(
         bits,
-        regs,
-        fpr_limit,
+        ret_regs,
+        ret_fpr_limit,
         sig.call_conv,
         shared_flags,
         isa_flags,
     );
-    legalize_args(&mut sig.returns, &mut rets);
+
+    let sig_is_multi_return = sig.is_multi_return();
+
+    
+    
+    
+    
+    let backup_rets_for_struct_return = if sig_is_multi_return {
+        Some(rets.clone())
+    } else {
+        None
+    };
+
+    if let Some(new_returns) = legalize_args(&sig.returns, &mut rets) {
+        if sig.is_multi_return()
+            && new_returns
+                .iter()
+                .filter(|r| r.purpose == ArgumentPurpose::Normal)
+                .any(|r| !r.location.is_reg())
+        {
+            
+            
+            debug_assert!(!sig.uses_struct_return_param());
+
+            
+            let mut ret_ptr_param = AbiParam {
+                value_type: args.pointer_type,
+                purpose: ArgumentPurpose::StructReturn,
+                extension: ArgumentExtension::None,
+                location: ArgumentLoc::Unassigned,
+            };
+            match args.assign(&ret_ptr_param) {
+                ArgAction::Assign(ArgumentLoc::Reg(reg)) => {
+                    ret_ptr_param.location = ArgumentLoc::Reg(reg);
+                    sig.to_mut().params.push(ret_ptr_param);
+                }
+                _ => unreachable!("return pointer should always get a register assignment"),
+            }
+
+            let mut backup_rets = backup_rets_for_struct_return.unwrap();
+
+            
+            
+            let mut ret_ptr_return = AbiParam {
+                value_type: args.pointer_type,
+                purpose: ArgumentPurpose::StructReturn,
+                extension: ArgumentExtension::None,
+                location: ArgumentLoc::Unassigned,
+            };
+            match backup_rets.assign(&ret_ptr_return) {
+                ArgAction::Assign(ArgumentLoc::Reg(reg)) => {
+                    ret_ptr_return.location = ArgumentLoc::Reg(reg);
+                    sig.to_mut().returns.push(ret_ptr_return);
+                }
+                _ => unreachable!("return pointer should always get a register assignment"),
+            }
+
+            sig.to_mut().returns.retain(|ret| {
+                
+                
+                
+                debug_assert_eq!(
+                    ret.location.is_assigned(),
+                    ret.purpose != ArgumentPurpose::Normal
+                );
+                ret.location.is_assigned()
+            });
+
+            if let Some(new_returns) = legalize_args(&sig.returns, &mut backup_rets) {
+                sig.to_mut().returns = new_returns;
+            }
+        } else {
+            sig.to_mut().returns = new_returns;
+        }
+    }
+
+    if let Some(new_params) = legalize_args(&sig.params, &mut args) {
+        sig.to_mut().params = new_params;
+    }
 }
 
 
@@ -351,11 +453,9 @@ fn baldrdash_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> 
         "baldrdash does not expect cranelift to emit stack probes"
     );
 
-    
-    let stack_align = 16;
     let word_size = StackSize::from(isa.pointer_bytes());
     let shadow_store_size = if func.signature.call_conv.extends_windows_fastcall() {
-        32
+        WIN_SHADOW_STACK_SPACE as u32
     } else {
         0
     };
@@ -367,8 +467,35 @@ fn baldrdash_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> 
     ss.offset = Some(-(bytes as StackOffset));
     func.stack_slots.push(ss);
 
-    layout_stack(&mut func.stack_slots, stack_align)?;
+    let is_leaf = func.is_leaf();
+    layout_stack(&mut func.stack_slots, is_leaf, STACK_ALIGNMENT)?;
     Ok(())
+}
+
+
+
+
+
+
+
+#[derive(Clone)]
+struct CFAState {
+    
+    
+    
+    cf_ptr_reg: RegUnit,
+    
+    
+    
+    
+    
+    
+    
+    cf_ptr_offset: isize,
+    
+    
+    
+    current_depth: isize,
 }
 
 
@@ -377,13 +504,6 @@ fn fastcall_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> C
     if isa.triple().pointer_width().unwrap() != PointerWidth::U64 {
         panic!("TODO: windows-fastcall: x86-32 not implemented yet");
     }
-
-    
-    
-    let stack_align = 16;
-
-    let word_size = isa.pointer_bytes() as usize;
-    let reg_type = isa.pointer_type();
 
     let csrs = callee_saved_gprs_used(isa, func);
 
@@ -394,15 +514,7 @@ fn fastcall_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> C
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    const SHADOW_STORE_SIZE: i32 = 32;
+    let word_size = isa.pointer_bytes() as usize;
     let csr_stack_size = ((csrs.iter(GPR).len() + 2) * word_size) as i32;
 
     
@@ -411,13 +523,15 @@ fn fastcall_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> C
     func.create_stack_slot(ir::StackSlotData {
         kind: ir::StackSlotKind::IncomingArg,
         size: csr_stack_size as u32,
-        offset: Some(-(SHADOW_STORE_SIZE + csr_stack_size)),
+        offset: Some(-(WIN_SHADOW_STACK_SPACE + csr_stack_size)),
     });
 
-    let total_stack_size = layout_stack(&mut func.stack_slots, stack_align)? as i32;
+    let is_leaf = func.is_leaf();
+    let total_stack_size = layout_stack(&mut func.stack_slots, is_leaf, STACK_ALIGNMENT)? as i32;
     let local_stack_size = i64::from(total_stack_size - csr_stack_size);
 
     
+    let reg_type = isa.pointer_type();
     let fp_arg = ir::AbiParam::special_reg(
         reg_type,
         ir::ArgumentPurpose::FramePointer,
@@ -435,23 +549,27 @@ fn fastcall_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> C
     
     let entry_ebb = func.layout.entry_block().expect("missing entry block");
     let mut pos = EncCursor::new(func, isa).at_first_insertion_point(entry_ebb);
-    insert_common_prologue(&mut pos, local_stack_size, reg_type, &csrs, isa);
+    let prologue_cfa_state =
+        insert_common_prologue(&mut pos, local_stack_size, reg_type, &csrs, isa);
 
     
     let mut pos = pos.at_position(CursorPosition::Nowhere);
-    insert_common_epilogues(&mut pos, local_stack_size, reg_type, &csrs);
+    insert_common_epilogues(
+        &mut pos,
+        local_stack_size,
+        reg_type,
+        &csrs,
+        isa,
+        prologue_cfa_state,
+    );
 
     Ok(())
 }
 
 
 fn system_v_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> CodegenResult<()> {
-    
-    
-    let stack_align = 16;
     let pointer_width = isa.triple().pointer_width().unwrap();
     let word_size = pointer_width.bytes() as usize;
-    let reg_type = ir::Type::int(u16::from(pointer_width.bits())).unwrap();
 
     let csrs = callee_saved_gprs_used(isa, func);
 
@@ -469,10 +587,12 @@ fn system_v_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> C
         offset: Some(-csr_stack_size),
     });
 
-    let total_stack_size = layout_stack(&mut func.stack_slots, stack_align)? as i32;
+    let is_leaf = func.is_leaf();
+    let total_stack_size = layout_stack(&mut func.stack_slots, is_leaf, STACK_ALIGNMENT)? as i32;
     let local_stack_size = i64::from(total_stack_size - csr_stack_size);
 
     
+    let reg_type = ir::Type::int(u16::from(pointer_width.bits())).unwrap();
     let fp_arg = ir::AbiParam::special_reg(
         reg_type,
         ir::ArgumentPurpose::FramePointer,
@@ -490,11 +610,19 @@ fn system_v_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> C
     
     let entry_ebb = func.layout.entry_block().expect("missing entry block");
     let mut pos = EncCursor::new(func, isa).at_first_insertion_point(entry_ebb);
-    insert_common_prologue(&mut pos, local_stack_size, reg_type, &csrs, isa);
+    let prologue_cfa_state =
+        insert_common_prologue(&mut pos, local_stack_size, reg_type, &csrs, isa);
 
     
     let mut pos = pos.at_position(CursorPosition::Nowhere);
-    insert_common_epilogues(&mut pos, local_stack_size, reg_type, &csrs);
+    insert_common_epilogues(
+        &mut pos,
+        local_stack_size,
+        reg_type,
+        &csrs,
+        isa,
+        prologue_cfa_state,
+    );
 
     Ok(())
 }
@@ -507,7 +635,8 @@ fn insert_common_prologue(
     reg_type: ir::types::Type,
     csrs: &RegisterSet,
     isa: &dyn TargetIsa,
-) {
+) -> Option<CFAState> {
+    let word_size = isa.pointer_bytes() as isize;
     if stack_size > 0 {
         
         if let Some(stack_limit_arg) = pos.func.special_param(ArgumentPurpose::StackLimit) {
@@ -516,21 +645,82 @@ fn insert_common_prologue(
             
             
             
-            let word_size = isa.pointer_bytes();
             let total_stack_size = (csrs.iter(GPR).len() + 1 + 1) as i64 * word_size as i64;
 
             insert_stack_check(pos, total_stack_size, stack_limit_arg);
         }
     }
 
+    let mut cfa_state = if let Some(ref mut frame_layout) = pos.func.frame_layout {
+        let cfa_state = CFAState {
+            cf_ptr_reg: RU::rsp as RegUnit,
+            cf_ptr_offset: word_size,
+            current_depth: -word_size,
+        };
+
+        frame_layout.initial = vec![
+            FrameLayoutChange::CallFrameAddressAt {
+                reg: cfa_state.cf_ptr_reg,
+                offset: cfa_state.cf_ptr_offset,
+            },
+            FrameLayoutChange::ReturnAddressAt {
+                cfa_offset: cfa_state.current_depth,
+            },
+        ]
+        .into_boxed_slice();
+
+        Some(cfa_state)
+    } else {
+        None
+    };
+
     
     let ebb = pos.current_ebb().expect("missing ebb under cursor");
     let fp = pos.func.dfg.append_ebb_param(ebb, reg_type);
     pos.func.locations[fp] = ir::ValueLoc::Reg(RU::rbp as RegUnit);
 
-    pos.ins().x86_push(fp);
-    pos.ins()
+    let push_fp_inst = pos.ins().x86_push(fp);
+
+    if let Some(ref mut frame_layout) = pos.func.frame_layout {
+        let cfa_state = cfa_state
+            .as_mut()
+            .expect("cfa state exists when recording frame layout");
+        cfa_state.current_depth -= word_size;
+        cfa_state.cf_ptr_offset += word_size;
+        frame_layout.instructions.insert(
+            push_fp_inst,
+            vec![
+                FrameLayoutChange::CallFrameAddressAt {
+                    reg: cfa_state.cf_ptr_reg,
+                    offset: cfa_state.cf_ptr_offset,
+                },
+                FrameLayoutChange::RegAt {
+                    reg: RU::rbp as RegUnit,
+                    cfa_offset: cfa_state.current_depth,
+                },
+            ]
+            .into_boxed_slice(),
+        );
+    }
+
+    let mov_sp_inst = pos
+        .ins()
         .copy_special(RU::rsp as RegUnit, RU::rbp as RegUnit);
+
+    if let Some(ref mut frame_layout) = pos.func.frame_layout {
+        let mut cfa_state = cfa_state
+            .as_mut()
+            .expect("cfa state exists when recording frame layout");
+        cfa_state.cf_ptr_reg = RU::rbp as RegUnit;
+        frame_layout.instructions.insert(
+            mov_sp_inst,
+            vec![FrameLayoutChange::CallFrameAddressAt {
+                reg: cfa_state.cf_ptr_reg,
+                offset: cfa_state.cf_ptr_offset,
+            }]
+            .into_boxed_slice(),
+        );
+    }
 
     for reg in csrs.iter(GPR) {
         
@@ -540,7 +730,22 @@ fn insert_common_prologue(
         pos.func.locations[csr_arg] = ir::ValueLoc::Reg(reg);
 
         
-        pos.ins().x86_push(csr_arg);
+        let reg_push_inst = pos.ins().x86_push(csr_arg);
+
+        if let Some(ref mut frame_layout) = pos.func.frame_layout {
+            let mut cfa_state = cfa_state
+                .as_mut()
+                .expect("cfa state exists when recording frame layout");
+            cfa_state.current_depth -= word_size;
+            frame_layout.instructions.insert(
+                reg_push_inst,
+                vec![FrameLayoutChange::RegAt {
+                    reg,
+                    cfa_offset: cfa_state.current_depth,
+                }]
+                .into_boxed_slice(),
+            );
+        }
     }
 
     
@@ -580,13 +785,15 @@ fn insert_common_prologue(
             if !isa.flags().probestack_func_adjusts_sp() {
                 let result = pos.func.dfg.inst_results(call)[0];
                 pos.func.locations[result] = rax_val;
-                pos.ins().adjust_sp_down(result);
+                pos.func.prologue_end = Some(pos.ins().adjust_sp_down(result));
             }
         } else {
             
-            pos.ins().adjust_sp_down_imm(Imm64::new(stack_size));
+            pos.func.prologue_end = Some(pos.ins().adjust_sp_down_imm(Imm64::new(stack_size)));
         }
     }
+
+    cfa_state
 }
 
 
@@ -618,12 +825,41 @@ fn insert_common_epilogues(
     stack_size: i64,
     reg_type: ir::types::Type,
     csrs: &RegisterSet,
+    isa: &dyn TargetIsa,
+    cfa_state: Option<CFAState>,
 ) {
     while let Some(ebb) = pos.next_ebb() {
         pos.goto_last_inst(ebb);
         if let Some(inst) = pos.current_inst() {
             if pos.func.dfg[inst].opcode().is_return() {
-                insert_common_epilogue(inst, stack_size, pos, reg_type, csrs);
+                if let (Some(ref mut frame_layout), ref func_layout) =
+                    (pos.func.frame_layout.as_mut(), &pos.func.layout)
+                {
+                    
+                    let following_inst = func_layout
+                        .next_ebb(ebb)
+                        .and_then(|next_ebb| func_layout.first_inst(next_ebb));
+
+                    if let Some(following_inst) = following_inst {
+                        frame_layout
+                            .instructions
+                            .insert(inst, vec![FrameLayoutChange::Preserve].into_boxed_slice());
+                        frame_layout.instructions.insert(
+                            following_inst,
+                            vec![FrameLayoutChange::Restore].into_boxed_slice(),
+                        );
+                    }
+                }
+
+                insert_common_epilogue(
+                    inst,
+                    stack_size,
+                    pos,
+                    reg_type,
+                    csrs,
+                    isa,
+                    cfa_state.clone(),
+                );
             }
         }
     }
@@ -637,7 +873,10 @@ fn insert_common_epilogue(
     pos: &mut EncCursor,
     reg_type: ir::types::Type,
     csrs: &RegisterSet,
+    isa: &dyn TargetIsa,
+    mut cfa_state: Option<CFAState>,
 ) {
+    let word_size = isa.pointer_bytes() as isize;
     if stack_size > 0 {
         pos.ins().adjust_sp_up_imm(Imm64::new(stack_size));
     }
@@ -645,6 +884,18 @@ fn insert_common_epilogue(
     
     
     let fp_ret = pos.ins().x86_pop(reg_type);
+    let fp_pop_inst = pos.built_inst();
+
+    if let Some(ref mut cfa_state) = cfa_state.as_mut() {
+        
+        cfa_state.current_depth += word_size;
+        cfa_state.cf_ptr_offset -= word_size;
+        
+        
+        
+        cfa_state.cf_ptr_reg = RU::rsp as RegUnit;
+    }
+
     pos.prev_inst();
 
     pos.func.locations[fp_ret] = ir::ValueLoc::Reg(RU::rbp as RegUnit);
@@ -652,9 +903,54 @@ fn insert_common_epilogue(
 
     for reg in csrs.iter(GPR) {
         let csr_ret = pos.ins().x86_pop(reg_type);
+        if let Some(ref mut cfa_state) = cfa_state.as_mut() {
+            
+            
+            
+            
+            cfa_state.current_depth += word_size;
+        }
         pos.prev_inst();
 
         pos.func.locations[csr_ret] = ir::ValueLoc::Reg(reg);
         pos.func.dfg.append_inst_arg(inst, csr_ret);
+    }
+
+    if let Some(ref mut frame_layout) = pos.func.frame_layout {
+        let cfa_state = cfa_state
+            .as_mut()
+            .expect("cfa state exists when recording frame layout");
+        
+        
+        
+        
+        
+        assert_eq!(cfa_state.current_depth, -word_size);
+        assert_eq!(cfa_state.cf_ptr_offset, word_size);
+
+        let new_cfa = FrameLayoutChange::CallFrameAddressAt {
+            reg: cfa_state.cf_ptr_reg,
+            offset: cfa_state.cf_ptr_offset,
+        };
+
+        frame_layout
+            .instructions
+            .entry(fp_pop_inst)
+            .and_modify(|insts| {
+                *insts = insts
+                    .into_iter()
+                    .cloned()
+                    .chain(std::iter::once(new_cfa))
+                    .collect::<Box<[_]>>();
+            })
+            .or_insert_with(|| Box::new([new_cfa]));
+    }
+}
+
+pub fn emit_unwind_info(func: &ir::Function, isa: &dyn TargetIsa, mem: &mut Vec<u8>) {
+    
+    
+    if let Some(info) = UnwindInfo::try_from_func(func, isa, Some(RU::rbp.into())) {
+        info.emit(mem);
     }
 }

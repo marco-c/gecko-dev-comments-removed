@@ -1,4 +1,3 @@
-use crate::cdsl::formats::FormatRegistry;
 use crate::cdsl::instructions::{InstSpec, Instruction, InstructionPredicate};
 use crate::cdsl::operands::{OperandKind, OperandKindFields};
 use crate::cdsl::types::ValueType;
@@ -152,12 +151,12 @@ pub(crate) enum Literal {
     
     
     Enumerator {
-        rust_type: String,
+        rust_type: &'static str,
         value: &'static str,
     },
 
     
-    Bits { rust_type: String, value: u64 },
+    Bits { rust_type: &'static str, value: u64 },
 
     
     Int(i64),
@@ -169,14 +168,16 @@ pub(crate) enum Literal {
 impl Literal {
     pub fn enumerator_for(kind: &OperandKind, value: &'static str) -> Self {
         let value = match &kind.fields {
-            OperandKindFields::ImmEnum(values) => values.get(value).expect(&format!(
-                "nonexistent value '{}' in enumeration '{}'",
-                value, kind.name
-            )),
+            OperandKindFields::ImmEnum(values) => values.get(value).unwrap_or_else(|| {
+                panic!(
+                    "nonexistent value '{}' in enumeration '{}'",
+                    value, kind.rust_type
+                )
+            }),
             _ => panic!("enumerator is for enum values"),
         };
         Literal::Enumerator {
-            rust_type: kind.rust_type.clone(),
+            rust_type: kind.rust_type,
             value,
         }
     }
@@ -187,7 +188,7 @@ impl Literal {
             _ => panic!("bits_of is for immediate scalar types"),
         }
         Literal::Bits {
-            rust_type: kind.rust_type.clone(),
+            rust_type: kind.rust_type,
             value: bits,
         }
     }
@@ -393,6 +394,8 @@ impl VarPool {
 
 
 
+
+
 pub(crate) struct ConstPool {
     pool: Vec<Vec<u8>>,
 }
@@ -474,12 +477,12 @@ impl Apply {
                                 "Nonexistent enum value '{}' passed to field of kind '{}' -- \
                                  did you use the right enum?",
                                 value,
-                                op.kind.name
+                                op.kind.rust_type
                             );
                         } else {
                             panic!(
                                 "Passed non-enum field value {:?} to field of kind {}",
-                                literal, op.kind.name
+                                literal, op.kind.rust_type
                             );
                         }
                     }
@@ -487,14 +490,14 @@ impl Apply {
                         Literal::Enumerator { value, .. } => panic!(
                             "Expected immediate value in immediate field of kind '{}', \
                              obtained enum value '{}'",
-                            op.kind.name, value
+                            op.kind.rust_type, value
                         ),
                         Literal::Bits { .. } | Literal::Int(_) | Literal::EmptyVarArgs => {}
                     },
                     _ => {
                         panic!(
                             "Literal passed to non-literal field of kind {}",
-                            op.kind.name
+                            op.kind.rust_type
                         );
                     }
                 }
@@ -523,23 +526,23 @@ impl Apply {
         format!("{}({})", inst_name, args)
     }
 
-    pub fn inst_predicate(
-        &self,
-        format_registry: &FormatRegistry,
-        var_pool: &VarPool,
-    ) -> InstructionPredicate {
-        let iform = format_registry.get(self.inst.format);
-
+    pub fn inst_predicate(&self, var_pool: &VarPool) -> InstructionPredicate {
         let mut pred = InstructionPredicate::new();
-        for (format_field, &op_num) in iform.imm_fields.iter().zip(self.inst.imm_opnums.iter()) {
+        for (format_field, &op_num) in self
+            .inst
+            .format
+            .imm_fields
+            .iter()
+            .zip(self.inst.imm_opnums.iter())
+        {
             let arg = &self.args[op_num];
             if arg.maybe_var().is_some() {
                 
                 continue;
             }
             pred = pred.and(InstructionPredicate::new_is_field_equal_ast(
-                iform,
-                &format_field,
+                &*self.inst.format,
+                format_field,
                 arg.to_rust_code(var_pool),
             ));
         }
@@ -565,12 +568,8 @@ impl Apply {
     }
 
     
-    pub fn inst_predicate_with_ctrl_typevar(
-        &self,
-        format_registry: &FormatRegistry,
-        var_pool: &VarPool,
-    ) -> InstructionPredicate {
-        let mut pred = self.inst_predicate(format_registry, var_pool);
+    pub fn inst_predicate_with_ctrl_typevar(&self, var_pool: &VarPool) -> InstructionPredicate {
+        let mut pred = self.inst_predicate(var_pool);
 
         if !self.value_types.is_empty() {
             let bound_type = &self.value_types[0];
@@ -586,7 +585,7 @@ impl Apply {
         pred
     }
 
-    pub fn rust_builder(&self, defined_vars: &Vec<VarIndex>, var_pool: &VarPool) -> String {
+    pub fn rust_builder(&self, defined_vars: &[VarIndex], var_pool: &VarPool) -> String {
         let mut args = self
             .args
             .iter()

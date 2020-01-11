@@ -16,8 +16,8 @@ use cranelift_codegen::ir::immediates::Offset32;
 use cranelift_codegen::ir::{self, InstBuilder};
 use cranelift_codegen::isa::TargetFrontendConfig;
 use cranelift_frontend::FunctionBuilder;
-use failure_derive::Fail;
 use std::boxed::Box;
+use thiserror::Error;
 use wasmparser::BinaryReaderError;
 use wasmparser::Operator;
 
@@ -42,13 +42,13 @@ pub enum GlobalVariable {
 
 
 
-#[derive(Fail, Debug)]
+#[derive(Error, Debug)]
 pub enum WasmError {
     
     
     
     
-    #[fail(display = "Invalid input WebAssembly code at offset {}: {}", _1, _0)]
+    #[error("Invalid input WebAssembly code at offset {offset}: {message}")]
     InvalidWebAssembly {
         
         message: &'static str,
@@ -59,7 +59,7 @@ pub enum WasmError {
     
     
     
-    #[fail(display = "Unsupported feature: {}", _0)]
+    #[error("Unsupported feature: {0}")]
     Unsupported(std::string::String),
 
     
@@ -68,11 +68,11 @@ pub enum WasmError {
     
     
     
-    #[fail(display = "Implementation limit exceeded")]
+    #[error("Implementation limit exceeded")]
     ImplLimitExceeded,
 
     
-    #[fail(display = "User error: {}", _0)]
+    #[error("User error: {0}")]
     User(std::string::String),
 }
 
@@ -87,7 +87,7 @@ impl From<BinaryReaderError> for WasmError {
     
     fn from(e: BinaryReaderError) -> Self {
         let BinaryReaderError { message, offset } = e;
-        WasmError::InvalidWebAssembly { message, offset }
+        Self::InvalidWebAssembly { message, offset }
     }
 }
 
@@ -478,8 +478,7 @@ pub trait ModuleEnvironment<'data> {
     }
 
     
-    fn custom_section(&mut self, name: &'data str, data: &'data [u8]) -> WasmResult<()> {
-        drop((name, data));
+    fn custom_section(&mut self, _name: &'data str, _data: &'data [u8]) -> WasmResult<()> {
         Ok(())
     }
 }

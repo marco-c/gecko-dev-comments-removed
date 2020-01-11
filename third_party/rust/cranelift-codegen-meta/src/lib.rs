@@ -1,3 +1,5 @@
+
+
 #[macro_use]
 mod cdsl;
 mod srcgen;
@@ -17,12 +19,14 @@ mod default_map;
 mod shared;
 mod unique_table;
 
+
 pub fn isa_from_arch(arch: &str) -> Result<isa::Isa, String> {
     isa::Isa::from_arch(arch).ok_or_else(|| format!("no supported isa found for arch `{}`", arch))
 }
 
 
-pub fn generate(isas: &Vec<isa::Isa>, out_dir: &str) -> Result<(), error::Error> {
+pub fn generate(isas: &[isa::Isa], out_dir: &str) -> Result<(), error::Error> {
+    
     
     let mut shared_defs = shared::define();
 
@@ -37,15 +41,19 @@ pub fn generate(isas: &Vec<isa::Isa>, out_dir: &str) -> Result<(), error::Error>
     
     let isas = isa::define(isas, &mut shared_defs);
 
-    gen_inst::generate(&shared_defs, "opcodes.rs", "inst_builder.rs", &out_dir)?;
+    
+    let all_formats = shared_defs.verify_instruction_formats();
 
-    gen_legalizer::generate(
-        &isas,
-        &shared_defs.format_registry,
-        &shared_defs.transform_groups,
-        "legalize",
+    
+    gen_inst::generate(
+        all_formats,
+        &shared_defs.all_instructions,
+        "opcodes.rs",
+        "inst_builder.rs",
         &out_dir,
     )?;
+
+    gen_legalizer::generate(&isas, &shared_defs.transform_groups, "legalize", &out_dir)?;
 
     for isa in isas {
         gen_registers::generate(&isa, &format!("registers-{}.rs", isa.name), &out_dir)?;
@@ -65,7 +73,6 @@ pub fn generate(isas: &Vec<isa::Isa>, out_dir: &str) -> Result<(), error::Error>
         )?;
 
         gen_binemit::generate(
-            &shared_defs.format_registry,
             &isa.name,
             &isa.recipes,
             &format!("binemit-{}.rs", isa.name),
