@@ -234,10 +234,9 @@ JS_PUBLIC_API bool JS_Utf8BufferIsCompilableUnit(JSContext* cx,
   }
 
   JS::AutoSuppressWarningReporter suppressWarnings(cx);
-  Parser<FullParseHandler, char16_t> parser(cx, options, chars.get(), length,
-                                             true,
-                                            parseInfo, nullptr, nullptr,
-                                            sourceObject, ParseGoal::Script);
+  Parser<FullParseHandler, char16_t> parser(
+      cx, options, chars.get(), length,
+       true, parseInfo, nullptr, nullptr, sourceObject);
   if (!parser.checkOptions() || !parser.parse()) {
     
     

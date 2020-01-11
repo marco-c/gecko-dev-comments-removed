@@ -44,7 +44,7 @@ struct LazyScriptCreationData {
   }
 
   bool create(JSContext* cx, FunctionBox* funbox,
-              HandleScriptSourceObject sourceObject, ParseGoal parseGoal);
+              HandleScriptSourceObject sourceObject);
 };
 
 
