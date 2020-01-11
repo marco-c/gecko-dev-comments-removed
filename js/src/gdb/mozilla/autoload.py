@@ -13,7 +13,6 @@ import mozilla.prettyprinters
 
 
 import mozilla.GCCellPtr
-import mozilla.ExecutableAllocator
 import mozilla.Interpreter
 import mozilla.IonGraph
 import mozilla.JSObject
