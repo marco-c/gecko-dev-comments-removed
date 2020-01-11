@@ -1,6 +1,6 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
 """
 Apply some defaults and minor modifications to the jobs defined in the build
 kind.
@@ -126,9 +126,9 @@ def use_profile_data(config, jobs):
             yield job
             continue
 
-        # If use_pgo is True, the task uses the generate-profile task of the
-        # same name. Otherwise a task can specify a specific generate-profile
-        # task to use in the use_pgo field.
+        
+        
+        
         if use_pgo is True:
             name = job['name']
         else:
@@ -136,7 +136,7 @@ def use_profile_data(config, jobs):
         dependencies = 'generate-profile-{}'.format(name)
         job.setdefault('dependencies', {})['generate-profile'] = dependencies
         job.setdefault('fetches', {})['generate-profile'] = ['profdata.tar.xz']
-        job['worker']['env'].update({"MOZ_PGO_PROFILE_USE": "1"})
+        job['worker']['env'].update({"TASKCLUSTER_PGO_PROFILE_USE": "1"})
         yield job
 
 
