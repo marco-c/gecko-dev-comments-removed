@@ -190,7 +190,12 @@ nsresult nsGIFDecoder2::BeginImageFrame(const IntRect& aFrameRect,
     
     pipeFlags |= SurfacePipeFlags::PROGRESSIVE_DISPLAY;
 
-    format = hasTransparency ? SurfaceFormat::OS_RGBA : SurfaceFormat::OS_RGBX;
+    
+    
+    
+    
+    format = hasTransparency || animParams ? SurfaceFormat::OS_RGBA
+                                           : SurfaceFormat::OS_RGBX;
   } else {
     format = SurfaceFormat::OS_RGBA;
   }
