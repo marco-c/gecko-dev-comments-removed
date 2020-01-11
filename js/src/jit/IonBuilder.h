@@ -1084,16 +1084,21 @@ class IonBuilder : public MIRGenerator,
   
 
   AbortReasonOr<Ok> setCurrentAndSpecializePhis(MBasicBlock* block) {
-    if (block) {
-      if (!block->specializePhis(alloc())) {
-        return abort(AbortReason::Alloc);
-      }
+    MOZ_ASSERT(block);
+    if (!block->specializePhis(alloc())) {
+      return abort(AbortReason::Alloc);
     }
     setCurrent(block);
     return Ok();
   }
 
-  void setCurrent(MBasicBlock* block) { current = block; }
+  void setCurrent(MBasicBlock* block) {
+    MOZ_ASSERT(block);
+    current = block;
+  }
+
+  bool hasTerminatedBlock() const { return current == nullptr; }
+  void setTerminatedBlock() { current = nullptr; }
 
   
   JSScript* script_;
@@ -1179,7 +1184,11 @@ class IonBuilder : public MIRGenerator,
   GSNCache gsn;
   jsbytecode* pc;
   jsbytecode* nextpc = nullptr;
-  MBasicBlock* current;
+
+  
+  
+  MBasicBlock* current = nullptr;
+
   uint32_t loopDepth_;
 
   PendingEdgesMap pendingEdges_;
