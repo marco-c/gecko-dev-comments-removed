@@ -228,13 +228,7 @@ enum nsChangeHint : uint32_t {
 
 
 
-  nsChangeHint_UpdateWidgetProperties = 1 << 27,
-
-  
-
-
-
-  nsChangeHint_UpdateTableCellSpans = 1 << 28,
+  nsChangeHint_UpdateTableCellSpans = 1 << 27,
 
   
 
@@ -242,7 +236,7 @@ enum nsChangeHint : uint32_t {
 
 
 
-  nsChangeHint_VisibilityChange = 1u << 29,
+  nsChangeHint_VisibilityChange = 1u << 28,
 
   
   
@@ -259,7 +253,7 @@ enum nsChangeHint : uint32_t {
   
 
 
-  nsChangeHint_AllHints = uint32_t((1ull << 30) - 1),
+  nsChangeHint_AllHints = uint32_t((1ull << 29) - 1),
 };
 
 
@@ -340,8 +334,7 @@ inline nsChangeHint operator^=(nsChangeHint& aLeft, nsChangeHint aRight) {
    nsChangeHint_UpdateOverflow | nsChangeHint_UpdateParentOverflow |          \
    nsChangeHint_UpdatePostTransformOverflow |                                 \
    nsChangeHint_UpdateTableCellSpans | nsChangeHint_UpdateTransformLayer |    \
-   nsChangeHint_UpdateUsesOpacity | nsChangeHint_AddOrRemoveTransform |       \
-   nsChangeHint_UpdateWidgetProperties)
+   nsChangeHint_UpdateUsesOpacity | nsChangeHint_AddOrRemoveTransform)
 
 
 #define nsChangeHint_Hints_SometimesHandledForDescendants           \

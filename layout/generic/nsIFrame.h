@@ -4113,11 +4113,6 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-  virtual void UpdateWidgetProperties();
-
-  
-
-
 
   bool HasImageRequest() const { return mHasImageRequest; }
 

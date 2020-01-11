@@ -11025,42 +11025,6 @@ gfx::Matrix nsIFrame::ComputeWidgetTransform() {
   return result2d;
 }
 
-static already_AddRefed<nsIWidget> GetWindowWidget(
-    nsPresContext* aPresContext) {
-  
-  
-  
-  
-  
-  nsCOMPtr<nsISupports> container = aPresContext->Document()->GetContainer();
-  nsCOMPtr<nsIBaseWindow> baseWindow = do_QueryInterface(container);
-  if (!baseWindow) {
-    return nullptr;
-  }
-
-  nsCOMPtr<nsIWidget> mainWidget;
-  baseWindow->GetMainWidget(getter_AddRefs(mainWidget));
-  return mainWidget.forget();
-}
-
-void nsIFrame::UpdateWidgetProperties() {
-  nsPresContext* presContext = PresContext();
-  if (presContext->IsRoot() || !presContext->IsChrome()) {
-    
-    return;
-  }
-  nsIFrame* rootFrame =
-      presContext->FrameConstructor()->GetRootElementStyleFrame();
-  if (this != rootFrame) {
-    
-    return;
-  }
-  if (nsCOMPtr<nsIWidget> widget = GetWindowWidget(presContext)) {
-    widget->SetWindowOpacity(StyleUIReset()->mWindowOpacity);
-    widget->SetWindowTransform(ComputeWidgetTransform());
-  }
-}
-
 void nsIFrame::DoUpdateStyleOfOwnedAnonBoxes(ServoRestyleState& aRestyleState) {
   
   
