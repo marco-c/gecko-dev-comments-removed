@@ -806,10 +806,6 @@ bool NonLocalExitControl::prepareForNonLocalJump(NestableControl* target) {
         }
 
         
-        if (!bce_->emit1(JSOP_POP)) {
-          
-          return false;
-        }
         if (!bce_->emit1(JSOP_ENDITER)) {
           
           return false;

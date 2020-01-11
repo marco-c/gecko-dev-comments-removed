@@ -1622,6 +1622,9 @@ class MOZ_RAII PoppedValueUseChecker {
           MOZ_ASSERT(popped_[i]->isImplicitlyUsed() ||
                      
                      
+                     (op == JSOP_ENDITER && i == 0) ||
+                     
+                     
                      
                      
                      popped_[i]->isNewDerivedTypedObject() ||
@@ -13182,9 +13185,10 @@ AbortReasonOr<Ok> IonBuilder::jsop_isnoiter() {
 }
 
 AbortReasonOr<Ok> IonBuilder::jsop_iterend() {
+  current->pop();  
   MDefinition* iter = current->pop();
-  MInstruction* ins = MIteratorEnd::New(alloc(), iter);
 
+  MInstruction* ins = MIteratorEnd::New(alloc(), iter);
   current->add(ins);
 
   return resumeAfter(ins);

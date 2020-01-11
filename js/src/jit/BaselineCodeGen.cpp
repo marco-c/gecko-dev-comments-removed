@@ -5586,6 +5586,10 @@ bool BaselineCodeGen<Handler>::emit_JSOP_ISNOITER() {
 
 template <typename Handler>
 bool BaselineCodeGen<Handler>::emit_JSOP_ENDITER() {
+  
+  frame.pop();
+
+  
   frame.popRegsAndSync(1);
 
   AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());

@@ -150,11 +150,8 @@ bool ForInEmitter::emitEnd(const Maybe<uint32_t>& forPos) {
   bce_->bytecodeSection().setStackDepth(stackDepth);
 
   
-  if (!bce_->emit1(JSOP_POP)) {
-    
-    return false;
-  }
 
+  
   if (!bce_->emit1(JSOP_ENDITER)) {
     
     return false;
