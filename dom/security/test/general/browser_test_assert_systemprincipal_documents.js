@@ -28,13 +28,12 @@ add_task(async function open_test_iframe_in_tab() {
           outerPrincipal.isSystemPrincipal,
           "Sanity: Using SystemPrincipal for test file on chrome://"
         );
-
-        const iframeWin = content.document.getElementById("testframe")
-          .contentWindow;
-        const iframeChannel = iframeWin.docShell.currentDocumentChannel;
-        ok(
-          iframeChannel.loadInfo.loadingPrincipal.isSystemPrincipal,
-          "LoadingPrincipal for iframe is SystemPrincipal"
+        const iframeDoc = content.document.getElementById("testframe")
+          .contentDocument;
+        is(
+          iframeDoc.body.innerHTML,
+          "",
+          "iframe with systemprincipal should be empty document"
         );
       });
     }
