@@ -7,20 +7,22 @@ from mozrunner import FennecEmulatorRunner
 from .base import (get_free_port,
                    cmd_arg,
                    browser_command)
-from ..executors.executormarionette import (MarionetteTestharnessExecutor,  # noqa: F401
-                                            MarionetteRefTestExecutor)  # noqa: F401
-from .firefox import (get_timeout_multiplier,  # noqa: F401
+from ..executors.executormarionette import (MarionetteTestharnessExecutor,  
+                                            MarionetteRefTestExecutor,  
+                                            MarionetteCrashtestExecutor)  
+from .firefox import (get_timeout_multiplier,  
                       run_info_extras as fx_run_info_extras,
-                      update_properties,  # noqa: F401
-                      executor_kwargs,  # noqa: F401
-                      FirefoxBrowser)  # noqa: F401
+                      update_properties,  
+                      executor_kwargs,  
+                      FirefoxBrowser)  
 
 
 __wptrunner__ = {"product": "firefox_android",
                  "check_args": "check_args",
                  "browser": "FirefoxAndroidBrowser",
                  "executor": {"testharness": "MarionetteTestharnessExecutor",
-                              "reftest": "MarionetteRefTestExecutor"},
+                              "reftest": "MarionetteRefTestExecutor",
+                              "crashtest": "MarionetteCrashtestExecutor"},
                  "browser_kwargs": "browser_kwargs",
                  "executor_kwargs": "executor_kwargs",
                  "env_extras": "env_extras",
@@ -51,7 +53,7 @@ def browser_kwargs(test_type, run_info_data, config, **kwargs):
             "timeout_multiplier": get_timeout_multiplier(test_type,
                                                          run_info_data,
                                                          **kwargs),
-            # desktop only
+            
             "leak_check": False,
             "stylo_threads": kwargs["stylo_threads"],
             "chaos_mode_flags": kwargs["chaos_mode_flags"],
@@ -73,8 +75,8 @@ def run_info_extras(**kwargs):
 
 
 def env_options():
-    # The server host is set to public localhost IP so that resources can be accessed
-    # from Android emulator
+    
+    
     return {"server_host": moznetwork.get_ip(),
             "bind_address": False,
             "supports_debugger": True}
@@ -125,13 +127,13 @@ class FirefoxAndroidBrowser(FirefoxBrowser):
             self.logger.info("Setting android reftest preferences")
             self.profile.set_preferences({
                 "browser.viewport.desktopWidth": 800,
-                # Disable high DPI
+                
                 "layout.css.devPixelsPerPx": "1.0",
-                # Ensure that the full browser element
-                # appears in the screenshot
+                
+                
                 "apz.allow_zooming": False,
                 "android.widget_paints_background": False,
-                # Ensure that scrollbars are always painted
+                
                 "layout.testing.overlay-scrollbars.always-visible": True,
             })
 
@@ -160,11 +162,11 @@ class FirefoxAndroidBrowser(FirefoxBrowser):
                                            env=env,
                                            symbols_path=self.symbols_path,
                                            serial=self.device_serial,
-                                           # TODO - choose appropriate log dir
+                                           
                                            logdir=os.getcwd())
 
         self.logger.debug("Starting %s" % self.package_name)
-        # connect to a running emulator
+        
         self.runner.device.connect()
 
         self.runner.stop()
@@ -191,8 +193,8 @@ class FirefoxAndroidBrowser(FirefoxBrowser):
                     self.runner.device.device.remove_reverses()
                 except Exception as e:
                     self.logger.warning("Failed to remove forwarded or reversed ports: %s" % e)
-            # We assume that stopping the runner prompts the
-            # browser to shut down.
+            
+            
             self.runner.stop()
         self.logger.debug("stopped")
 
