@@ -22,8 +22,8 @@
 #include "builtin/streams/ReadableStreamInternals.h"  
 #include "builtin/streams/ReadableStreamOperations.h"  
 #include "builtin/streams/ReadableStreamReader.h"  
-#include "builtin/streams/WritableStream.h"        
-#include "js/CallArgs.h"  
+#include "builtin/streams/WritableStream.h"  
+#include "js/CallArgs.h"                     
 #include "js/Class.h"  
 #include "js/Conversions.h"  
 #include "js/PropertySpec.h"  
@@ -37,7 +37,7 @@
 #include "vm/Runtime.h"           
 #include "vm/StringType.h"        
 
-#include "vm/Compartment-inl.h"  
+#include "vm/Compartment-inl.h"   
 #include "vm/JSObject-inl.h"      
 #include "vm/NativeObject-inl.h"  
 
