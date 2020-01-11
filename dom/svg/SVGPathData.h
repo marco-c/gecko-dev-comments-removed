@@ -163,7 +163,7 @@ class SVGPathData {
   already_AddRefed<Path> BuildPathForMeasuring() const;
 
   already_AddRefed<Path> BuildPath(PathBuilder* aBuilder,
-                                   uint8_t aStrokeLineCap,
+                                   StyleStrokeLinecap aStrokeLineCap,
                                    Float aStrokeWidth) const;
   
 
@@ -172,7 +172,7 @@ class SVGPathData {
 
   static already_AddRefed<Path> BuildPath(Span<const StylePathCommand> aPath,
                                           PathBuilder* aBuilder,
-                                          uint8_t aStrokeLineCap,
+                                          StyleStrokeLinecap aStrokeLineCap,
                                           Float aStrokeWidth,
                                           float aZoomFactor = 1.0);
 
