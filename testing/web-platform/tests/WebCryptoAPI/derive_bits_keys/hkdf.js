@@ -1,5 +1,5 @@
 
-function run_test() {
+function define_tests() {
     
     var subtle = self.crypto.subtle;
 
@@ -14,7 +14,7 @@ function run_test() {
     
     var derivedKeyTypes = testData.derivedKeyTypes;
 
-    setUpBaseKeys(derivedKeys)
+    return setUpBaseKeys(derivedKeys)
     .then(function(allKeys) {
         
         
@@ -232,13 +232,6 @@ function run_test() {
 
             });
         });
-
-        done();
-    }, function(err) {
-        subsetTest(test, function(test) {
-            assert_unreached("setUpBaseKeys failed with error '" + err.message + "'");
-        }, "setUpBaseKeys");
-        done();
     });
 
     
