@@ -484,7 +484,7 @@
 
 #urlbar .search-panel-one-offs-container {
   
-  min-width: calc(4 *  32px + 3 *  8px +  32px +  24px);
+  min-width: calc(4 *  40px +  56px);
 }
 
 #urlbar .search-panel-header {

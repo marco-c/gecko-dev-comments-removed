@@ -775,13 +775,17 @@
 
           document.popupNode = null;
 
-          let { width } = this.getBoundingClientRect();
           
-          if (this.oneOffButtons) {
-            width = Math.max(width, this.oneOffButtons.buttonWidth * 3);
-          }
-
-          popup.style.minWidth = width + "px";
+          
+          requestAnimationFrame(() => {
+            let { width } = window.windowUtils.getBoundsWithoutFlushing(this);
+            if (popup.oneOffButtons) {
+              
+              
+              width = Math.max(width, popup.oneOffButtons.buttonWidth * 3);
+            }
+            popup.style.width = width + "px";
+          });
 
           popup._invalidate();
 
