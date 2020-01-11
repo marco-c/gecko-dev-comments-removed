@@ -287,6 +287,7 @@ bool MediaTrackGraphImpl::AudioTrackPresent() {
 void MediaTrackGraphImpl::UpdateTrackOrder() {
   MOZ_ASSERT(OnGraphThread());
   bool audioTrackPresent = AudioTrackPresent();
+  uint32_t graphOutputChannelCount = AudioOutputChannelCount();
 
   
   
@@ -312,11 +313,26 @@ void MediaTrackGraphImpl::UpdateTrackOrder() {
 
   if (audioTrackPresent && mRealtime &&
       !CurrentDriver()->AsAudioCallbackDriver() && !switching &&
-      AudioOutputChannelCount() > 0) {
+      graphOutputChannelCount > 0) {
     MonitorAutoLock mon(mMonitor);
     if (LifecycleStateRef() == LIFECYCLE_RUNNING) {
       AudioCallbackDriver* driver = new AudioCallbackDriver(
-          this, AudioOutputChannelCount(), AudioInputChannelCount(),
+          this, graphOutputChannelCount, AudioInputChannelCount(),
+          AudioInputDevicePreference());
+      CurrentDriver()->SwitchAtNextIteration(driver);
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  if (CurrentDriver()->AsAudioCallbackDriver() && !switching) {
+    if (graphOutputChannelCount != CurrentDriver()->AsAudioCallbackDriver()->OutputChannelCount()) {
+      AudioCallbackDriver* driver = new AudioCallbackDriver(
+          this, graphOutputChannelCount, AudioInputChannelCount(),
           AudioInputDevicePreference());
       MonitorAutoLock mon(mMonitor);
       CurrentDriver()->SwitchAtNextIteration(driver);
