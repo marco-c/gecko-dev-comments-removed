@@ -4733,8 +4733,8 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
     
     assert not isDefinitelyObject or not isNullOrUndefined
 
-    isClamp = type.hasClamp()
-    isEnforceRange = type.hasEnforceRange()
+    isClamp = type.clamp
+    isEnforceRange = type.enforceRange
 
     
     
