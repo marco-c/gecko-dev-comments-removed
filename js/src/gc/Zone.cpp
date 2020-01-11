@@ -385,6 +385,10 @@ void Zone::discardJitCode(JSFreeOp* fop,
     }
 
     
+    
+    jitScript->clearControlFlowGraph();
+
+    
     jitScript->resetActive();
   }
 
@@ -400,6 +404,13 @@ void Zone::discardJitCode(JSFreeOp* fop,
     jitZone()->optimizedStubSpace()->freeAllAfterMinorGC(this);
     jitZone()->purgeIonCacheIRStubInfo();
   }
+
+  
+
+
+
+
+  jitZone()->cfgSpace()->lifoAlloc().freeAll();
 }
 
 #ifdef JSGC_HASH_TABLE_CHECKS
@@ -571,14 +582,15 @@ void Zone::traceAtomCache(JSTracer* trc) {
 void Zone::addSizeOfIncludingThis(
     mozilla::MallocSizeOf mallocSizeOf, JS::CodeSizes* code, size_t* typePool,
     size_t* regexpZone, size_t* jitZone, size_t* baselineStubsOptimized,
-    size_t* uniqueIdMap, size_t* shapeCaches, size_t* atomsMarkBitmaps,
-    size_t* compartmentObjects, size_t* crossCompartmentWrappersTables,
-    size_t* compartmentsPrivateData, size_t* scriptCountsMapArg) {
+    size_t* cachedCFG, size_t* uniqueIdMap, size_t* shapeCaches,
+    size_t* atomsMarkBitmaps, size_t* compartmentObjects,
+    size_t* crossCompartmentWrappersTables, size_t* compartmentsPrivateData,
+    size_t* scriptCountsMapArg) {
   *typePool += types.typeLifoAlloc().sizeOfExcludingThis(mallocSizeOf);
   *regexpZone += regExps().sizeOfExcludingThis(mallocSizeOf);
   if (jitZone_) {
     jitZone_->addSizeOfIncludingThis(mallocSizeOf, code, jitZone,
-                                     baselineStubsOptimized);
+                                     baselineStubsOptimized, cachedCFG);
   }
   *uniqueIdMap += uniqueIds().shallowSizeOfExcludingThis(mallocSizeOf);
   *shapeCaches += baseShapes().sizeOfExcludingThis(mallocSizeOf) +

@@ -19,6 +19,8 @@ class JS_PUBLIC_API JSScript;
 namespace js {
 namespace jit {
 
+class ControlFlowGraph;
+
 
 
 struct DependentWasmImport {
@@ -34,7 +36,6 @@ struct DependentWasmImport {
 struct IonBytecodeInfo {
   bool usesEnvironmentChain = false;
   bool modifiesArguments = false;
-  bool hasTryFinally = false;
 };
 
 
@@ -143,6 +144,10 @@ class alignas(uintptr_t) JitScript final {
     
     
     const HeapPtr<EnvironmentObject*> templateEnv = nullptr;
+
+    
+    
+    ControlFlowGraph* controlFlowGraph = nullptr;
 
     
     
@@ -469,14 +474,24 @@ class alignas(uintptr_t) JitScript final {
     return cachedIonData().templateEnv;
   }
 
+  const ControlFlowGraph* controlFlowGraph() const {
+    return cachedIonData().controlFlowGraph;
+  }
+  void setControlFlowGraph(ControlFlowGraph* controlFlowGraph) {
+    MOZ_ASSERT(controlFlowGraph);
+    cachedIonData().controlFlowGraph = controlFlowGraph;
+  }
+  void clearControlFlowGraph() {
+    if (hasCachedIonData()) {
+      cachedIonData().controlFlowGraph = nullptr;
+    }
+  }
+
   bool modifiesArguments() const {
     return cachedIonData().bytecodeInfo.modifiesArguments;
   }
   bool usesEnvironmentChain() const {
     return cachedIonData().bytecodeInfo.usesEnvironmentChain;
-  }
-  bool hasTryFinally() const {
-    return cachedIonData().bytecodeInfo.hasTryFinally;
   }
 
   uint8_t maxInliningDepth() const {

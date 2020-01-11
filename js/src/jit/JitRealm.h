@@ -20,6 +20,7 @@
 #include "jit/CompileInfo.h"
 #include "jit/ICStubSpace.h"
 #include "jit/IonCode.h"
+#include "jit/IonControlFlow.h"
 #include "jit/JitFrames.h"
 #include "jit/shared/Assembler-shared.h"
 #include "js/GCHashTable.h"
@@ -480,6 +481,8 @@ struct IcStubCodeMapGCPolicy {
 class JitZone {
   
   OptimizedICStubSpace optimizedStubSpace_;
+  
+  CFGSpace cfgSpace_;
 
   
   using IonCacheIRStubInfoSet =
@@ -500,9 +503,11 @@ class JitZone {
 
   void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
                               JS::CodeSizes* code, size_t* jitZone,
-                              size_t* baselineStubsOptimized) const;
+                              size_t* baselineStubsOptimized,
+                              size_t* cachedCFG) const;
 
   OptimizedICStubSpace* optimizedStubSpace() { return &optimizedStubSpace_; }
+  CFGSpace* cfgSpace() { return &cfgSpace_; }
 
   JitCode* getBaselineCacheIRStubCode(const CacheIRStubKey::Lookup& key,
                                       CacheIRStubInfo** stubInfo) {
