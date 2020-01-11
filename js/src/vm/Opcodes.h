@@ -2300,6 +2300,8 @@
 
 
 
+
+
  \
     MACRO(JSOP_RETURN, "return", NULL, 1, 1, 0, JOF_BYTE) \
     
@@ -2309,10 +2311,14 @@
 
 
 
+
+
+
+
+
  \
     MACRO(JSOP_GETRVAL, "getrval", NULL, 1, 0, 1, JOF_BYTE) \
     
-
 
 
 
@@ -2332,9 +2338,27 @@
 
 
 
+
+
+
+
  \
     MACRO(JSOP_RETRVAL, "retrval", NULL, 1, 0, 0, JOF_BYTE) \
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
