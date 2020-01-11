@@ -827,6 +827,10 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   TimeStamp mNavigationStartTimeStamp;
 
+  
+  
+  int32_t mProxyConnectResponseCode;
+
  protected:
   virtual void DoNotifyListenerCleanup() override;
 
