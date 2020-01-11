@@ -67,6 +67,7 @@ class RenderCompositorOGL : public RenderCompositor {
   
   RefPtr<layers::NativeLayer> mCurrentlyBoundNativeLayer;
   nsTArray<RefPtr<layers::NativeLayer>> mAddedLayers;
+  uint64_t mTotalPixelCount = 0;
   uint64_t mAddedPixelCount = 0;
   uint64_t mAddedClippedPixelCount = 0;
   uint64_t mDrawnPixelCount = 0;
