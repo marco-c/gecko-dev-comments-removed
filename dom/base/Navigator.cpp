@@ -1488,9 +1488,6 @@ already_AddRefed<Promise> Navigator::GetVRDisplays(ErrorResult& aRv) {
     return nullptr;
   }
 
-  nsGlobalWindowInner* win = nsGlobalWindowInner::Cast(mWindow);
-  win->NotifyVREventListenerAdded();
-
   RefPtr<Promise> p = Promise::Create(mWindow->AsGlobal(), aRv);
   if (aRv.Failed()) {
     return nullptr;
@@ -1518,39 +1515,53 @@ already_AddRefed<Promise> Navigator::GetVRDisplays(ErrorResult& aRv) {
 }
 
 void Navigator::FinishGetVRDisplays(bool isWebVRSupportedInwindow, Promise* p) {
-  if (isWebVRSupportedInwindow) {
-    nsGlobalWindowInner* win = nsGlobalWindowInner::Cast(mWindow);
-
-    
-    
-    
-    
-    
-    if (!win->IsDying()) {
-      win->NotifyVREventListenerAdded();
-      
-      
-      
-      if (!VRDisplay::RefreshVRDisplays(win->WindowID())) {
-        
-        p->MaybeRejectWithTypeError(u"Failed to find attached VR displays.");
-      } else {
-        
-        mVRGetDisplaysPromises.AppendElement(p);
-      }
-    } else {
-      
-      
-      p->MaybeRejectWithTypeError(
-          u"Unable to return VRDisplays for a closed window.");
-    }
-  } else {
+  if (!isWebVRSupportedInwindow) {
     
     
     nsTArray<RefPtr<VRDisplay>> vrDisplaysEmpty;
     p->MaybeResolve(vrDisplaysEmpty);
+    return;
   }
+
+  
+  
+  
+  
+  
+  nsGlobalWindowInner* win = nsGlobalWindowInner::Cast(mWindow);
+  if (win->IsDying()) {
+    
+    
+    p->MaybeRejectWithTypeError(
+        u"Unable to return VRDisplays for a closed window.");
+    return;
+  }
+
   mVRGetDisplaysPromises.AppendElement(p);
+  win->RequestXRPermission();
+}
+
+void Navigator::OnXRPermissionRequestAllow() {
+  nsGlobalWindowInner* win = nsGlobalWindowInner::Cast(mWindow);
+
+  
+  
+  if (!VRDisplay::RefreshVRDisplays(win->WindowID())) {
+    for (auto p : mVRGetDisplaysPromises) {
+      
+      p->MaybeRejectWithTypeError(u"Failed to find attached VR displays.");
+    }
+  }
+}
+
+void Navigator::OnXRPermissionRequestCancel() {
+  nsTArray<RefPtr<VRDisplay>> vrDisplays;
+  for (auto p : mVRGetDisplaysPromises) {
+    
+    
+    p->MaybeResolve(vrDisplays);
+  }
+  mVRGetDisplaysPromises.Clear();
 }
 
 void Navigator::GetActiveVRDisplays(

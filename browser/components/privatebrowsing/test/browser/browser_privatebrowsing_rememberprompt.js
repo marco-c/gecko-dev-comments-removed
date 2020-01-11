@@ -1,0 +1,92 @@
+
+
+
+
+
+
+
+
+
+add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.ipc.keepProcessesAlive.webIsolated.perOrigin", 1]],
+  });
+});
+
+add_task(async function test() {
+  function checkPrompt(aURL, aName, aPrivateMode, aWindow) {
+    return (async function() {
+      aWindow.gBrowser.selectedTab = BrowserTestUtils.addTab(
+        aWindow.gBrowser,
+        aURL
+      );
+      await BrowserTestUtils.browserLoaded(aWindow.gBrowser.selectedBrowser);
+
+      let notification = aWindow.PopupNotifications.getNotification(aName);
+
+      
+      while (!notification) {
+        await new Promise(resolve => {
+          executeSoon(resolve);
+        });
+        notification = aWindow.PopupNotifications.getNotification(aName);
+      }
+
+      if (aPrivateMode) {
+        
+        ok(
+          !notification.options.checkbox.show,
+          "Secondary actions should not exist (always/never remember)"
+        );
+      } else {
+        ok(
+          notification.options.checkbox.show,
+          "Secondary actions should exist (always/never remember)"
+        );
+      }
+      notification.remove();
+
+      aWindow.gBrowser.removeCurrentTab();
+    })();
+  }
+
+  function checkPrivateBrowsingRememberPrompt(aURL, aName) {
+    return (async function() {
+      let win = await BrowserTestUtils.openNewBrowserWindow();
+      let browser = win.gBrowser.selectedBrowser;
+      BrowserTestUtils.loadURI(browser, aURL);
+      await BrowserTestUtils.browserLoaded(browser);
+
+      await checkPrompt(aURL, aName, false, win);
+
+      let privateWin = await BrowserTestUtils.openNewBrowserWindow({
+        private: true,
+      });
+      let privateBrowser = privateWin.gBrowser.selectedBrowser;
+      BrowserTestUtils.loadURI(privateBrowser, aURL);
+      await BrowserTestUtils.browserLoaded(privateBrowser);
+
+      await checkPrompt(aURL, aName, true, privateWin);
+
+      
+      await BrowserTestUtils.closeWindow(win);
+      await BrowserTestUtils.closeWindow(privateWin);
+    })();
+  }
+
+  const geoTestPageURL =
+    "https://example.com/browser/" +
+    "browser/components/privatebrowsing/test/browser/browser_privatebrowsing_geoprompt_page.html";
+
+  await checkPrivateBrowsingRememberPrompt(geoTestPageURL, "geolocation");
+
+  const vrEnabled = Services.prefs.getBoolPref("dom.vr.enabled");
+
+  if (vrEnabled) {
+    const xrTestPageURL =
+      "https://example.com/browser/" +
+      "browser/components/privatebrowsing/test/browser/browser_privatebrowsing_xrprompt_page.html";
+
+    await checkPrivateBrowsingRememberPrompt(xrTestPageURL, "xr");
+  }
+});
