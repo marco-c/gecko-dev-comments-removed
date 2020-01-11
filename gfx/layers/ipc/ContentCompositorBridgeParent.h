@@ -221,6 +221,10 @@ class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
   UniquePtr<SurfaceDescriptor> LookupSurfaceDescriptorForClientDrawTarget(
       const uintptr_t aDrawTarget) final;
 
+  mozilla::ipc::IPCResult RecvSupportsAsyncDXGISurface(bool* value) override;
+  mozilla::ipc::IPCResult RecvPreferredDXGIAdapter(
+      DxgiAdapterDesc* desc) override;
+
  private:
   
   virtual ~ContentCompositorBridgeParent();

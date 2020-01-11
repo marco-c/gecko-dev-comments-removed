@@ -2119,7 +2119,7 @@ nsresult PluginModuleParent::NPP_NewInternal(
     
     
     if (supportsAsyncRender && supportsForceDirect &&
-        gfxWindowsPlatform::GetPlatform()->SupportsPluginDirectDXGIDrawing()) {
+        PluginInstanceParent::SupportsPluginDirectDXGISurfaceDrawing()) {
       ForceDirect(names, values);
     }
 #endif

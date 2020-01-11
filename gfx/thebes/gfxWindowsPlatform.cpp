@@ -2022,18 +2022,6 @@ void gfxWindowsPlatform::BuildContentDeviceData(ContentDeviceData* aOut) {
   }
 }
 
-bool gfxWindowsPlatform::SupportsPluginDirectDXGIDrawing() {
-  
-  
-  EnsureDevicesInitialized();
-
-  DeviceManagerDx* dm = DeviceManagerDx::Get();
-  if (!dm->GetContentDevice() || !dm->TextureSharingWorks()) {
-    return false;
-  }
-  return true;
-}
-
 bool gfxWindowsPlatform::CheckVariationFontSupport() {
   
   return IsWin10FallCreatorsUpdateOrLater();
