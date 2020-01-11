@@ -1128,45 +1128,6 @@ function makeURLAbsolute(aBase, aUrl) {
   return makeURI(aUrl, null, makeURI(aBase)).spec;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-function openNewTabWith(aURL, aShiftKey, aParams = {}) {
-  
-  
-  if (
-    document.documentElement.getAttribute("windowtype") == "navigator:browser"
-  ) {
-    aParams.charset = gBrowser.selectedBrowser.characterSet;
-  }
-
-  openLinkIn(aURL, aShiftKey ? "tabshifted" : "tab", aParams);
-}
-
-
-
-
-
-function openNewWindowWith(aURL, aParams = {}) {
-  
-  
-  if (
-    document.documentElement.getAttribute("windowtype") == "navigator:browser"
-  ) {
-    aParams.charset = gBrowser.selectedBrowser.characterSet;
-  }
-
-  openLinkIn(aURL, "window", aParams);
-}
-
 function getHelpLinkURL(aHelpTopic) {
   var url = Services.urlFormatter.formatURLPref("app.support.baseURL");
   return url + aHelpTopic;

@@ -4042,11 +4042,7 @@ var newTabButtonObserver = {
   },
   onDragExit(aEvent) {},
   async onDrop(aEvent) {
-    let shiftKey = aEvent.shiftKey;
     let links = browserDragAndDrop.dropLinks(aEvent);
-    let triggeringPrincipal = browserDragAndDrop.getTriggeringPrincipal(aEvent);
-    let csp = browserDragAndDrop.getCSP(aEvent);
-
     if (
       links.length >=
       Services.prefs.getIntPref("browser.tabs.maxOpenBeforeWarn")
@@ -4061,11 +4057,14 @@ var newTabButtonObserver = {
       }
     }
 
+    let where = aEvent.shiftKey ? "tabshifted" : "tab";
+    let triggeringPrincipal = browserDragAndDrop.getTriggeringPrincipal(aEvent);
+    let csp = browserDragAndDrop.getCSP(aEvent);
     for (let link of links) {
       if (link.url) {
         let data = await UrlbarUtils.getShortcutOrURIAndPostData(link.url);
         
-        openNewTabWith(data.url, shiftKey, {
+        openWebLinkIn(data.url, where, {
           postData: data.postData,
           allowThirdPartyFixup: true,
           triggeringPrincipal,
@@ -4083,9 +4082,6 @@ var newWindowButtonObserver = {
   onDragExit(aEvent) {},
   async onDrop(aEvent) {
     let links = browserDragAndDrop.dropLinks(aEvent);
-    let triggeringPrincipal = browserDragAndDrop.getTriggeringPrincipal(aEvent);
-    let csp = browserDragAndDrop.getCSP(aEvent);
-
     if (
       links.length >=
       Services.prefs.getIntPref("browser.tabs.maxOpenBeforeWarn")
@@ -4100,11 +4096,13 @@ var newWindowButtonObserver = {
       }
     }
 
+    let triggeringPrincipal = browserDragAndDrop.getTriggeringPrincipal(aEvent);
+    let csp = browserDragAndDrop.getCSP(aEvent);
     for (let link of links) {
       if (link.url) {
         let data = await UrlbarUtils.getShortcutOrURIAndPostData(link.url);
         
-        openNewWindowWith(data.url, {
+        openWebLinkIn(data.url, "window", {
           
           
           allowInheritPrincipal: true,
