@@ -391,6 +391,10 @@ void Animation::UpdatePlaybackRate(double aPlaybackRate) {
     
     
     
+    
+    
+    
+    UpdateRelevance();
     if (IsRelevant()) {
       MutationObservers::NotifyAnimationChanged(this);
     }
