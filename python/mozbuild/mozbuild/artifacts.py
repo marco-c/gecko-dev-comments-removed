@@ -102,7 +102,6 @@ class ArtifactJob(object):
     candidate_trees = [
         'mozilla-central',
         'integration/autoland',
-        'integration/mozilla-inbound',
         'releases/mozilla-beta',
         'releases/mozilla-release',
     ]
