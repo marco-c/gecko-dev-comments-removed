@@ -28,6 +28,7 @@ raptor_description_schema = Schema({
         [basestring]
     ),
     Optional('raptor-test'): basestring,
+    Optional('raptor-subtests'): [basestring],
     Optional('activity'): optionally_keyed_by(
         'app',
         basestring
@@ -157,7 +158,15 @@ def split_pageload(config, tests):
 
         assert 'raptor-test' in test
         test['description'] += " using cold pageload"
-        test['raptor-test'] += '-cold'
+
+        
+        
+        
+        if test['test-name'].startswith('browsertime-tp6'):
+            test['cold'] = True
+        else:
+            test['raptor-test'] += '-cold'
+
         test['max-run-time'] = 3000
         test['test-name'] += '-cold'
         test['try-name'] += '-cold'
@@ -200,6 +209,40 @@ def build_condprof_tests(config, tests):
 
 
 @transforms.add
+def split_browsertime_page_load_by_url(config, tests):
+
+    for test in tests:
+
+        
+        
+        subtests = test.pop('raptor-subtests', None)
+        if not subtests:
+            yield test
+            continue
+
+        chunk_number = 0
+
+        for subtest in subtests:
+
+            
+            chunked = deepcopy(test)
+
+            
+            chunked['test-name'] += "-{}".format(subtest)
+            chunked['try-name'] += "-{}".format(subtest)
+            chunked['raptor-test'] = subtest
+
+            
+            chunk_number += 1
+            group, symbol = split_symbol(test['treeherder-symbol'])
+            symbol += "-{}".format(chunk_number)
+            chunked['treeherder-symbol'] = join_symbol(group, symbol)
+            chunked['description'] += "-{}".format(subtest)
+
+            yield chunked
+
+
+@transforms.add
 def add_extra_options(config, tests):
     for test in tests:
         extra_options = test.setdefault('mozharness', {}).setdefault('extra-options', [])
@@ -210,6 +253,11 @@ def add_extra_options(config, tests):
 
         if 'app' in test:
             extra_options.append('--app={}'.format(test.pop('app')))
+
+        
+        if test['test-name'].startswith('browsertime-tp6'):
+            if test.pop('cold', False) is True:
+                extra_options.append('--cold')
 
         if 'activity' in test:
             extra_options.append('--activity={}'.format(test.pop('activity')))

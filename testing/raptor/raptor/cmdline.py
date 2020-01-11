@@ -157,6 +157,9 @@ def create_parser(mach_interface=False):
             help="Location where Android browser APK was extracted to before installation.")
 
     
+    add_arg('--cold', dest="cold", action="store_true",
+            help="Enable cold page-load for browsertime tp6")
+    
     add_arg('--browsertime', dest='browsertime', default=False, action="store_true",
             help="Whether to use browsertime to execute pageload tests")
     add_arg('--browsertime-node', dest='browsertime_node',
