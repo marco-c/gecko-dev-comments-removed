@@ -47,9 +47,7 @@ function enableActorReleaser(webConsoleUI) {
         });
 
         
-        Promise.all(promises).then(() =>
-          webConsoleUI.emitForTests("fronts-released")
-        );
+        Promise.all(promises).then(() => webConsoleUI.emit("fronts-released"));
 
         
         state = reducer(state, {

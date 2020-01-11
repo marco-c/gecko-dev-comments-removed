@@ -293,7 +293,7 @@ function createContextMenu(event, message, webConsoleWrapper) {
 
   
   const { screenX, screenY } = event;
-  menu.once("open", () => webConsoleWrapper.emitForTests("menu-open"));
+  menu.once("open", () => webConsoleWrapper.emit("menu-open"));
   menu.popup(screenX, screenY, hud.chromeWindow.document);
 
   return menu;
