@@ -226,6 +226,10 @@ class VideoReceiveStream {
     
     
     int target_delay_ms = 0;
+
+    
+    
+    RtcpEventObserver* rtcp_event_observer = nullptr;
   };
 
   
