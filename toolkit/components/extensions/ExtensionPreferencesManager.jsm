@@ -246,6 +246,29 @@ this.ExtensionPreferencesManager = {
 
 
 
+  async getManagedPrefDetails() {
+    await Management.asyncLoadSettingsModules();
+    let prefs = new Map();
+    settingsMap.forEach((setting, name) => {
+      for (let prefName of setting.prefNames) {
+        prefs.set(prefName, name);
+      }
+    });
+    return prefs;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
 
 
 
