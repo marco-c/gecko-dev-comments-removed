@@ -1717,7 +1717,9 @@ AbortReasonOr<Ok> IonBuilder::traverseBytecode() {
     }
   }
 
-  return Ok();
+  
+  
+  
 }
 
 AbortReasonOr<Ok> IonBuilder::startTraversingBlock(MBasicBlock* block) {
