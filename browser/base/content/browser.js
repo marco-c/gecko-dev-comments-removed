@@ -2108,8 +2108,6 @@ var gBrowserInit = {
     if (BrowserHandler.kiosk) {
       
       if (!gURLBar.readOnly) {
-        
-        document.getElementById("statuspanel").hidden = true;
         window.fullScreen = true;
       }
     }
