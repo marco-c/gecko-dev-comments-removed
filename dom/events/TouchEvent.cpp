@@ -207,7 +207,8 @@ bool TouchEvent::PlatformSupportsTouch() {
   
   if (!sDidCheckTouchDeviceSupport) {
     sDidCheckTouchDeviceSupport = true;
-    sIsTouchDeviceSupportPresent = WidgetUtils::IsTouchDeviceSupportPresent();
+    sIsTouchDeviceSupportPresent =
+        widget::WidgetUtils::IsTouchDeviceSupportPresent();
     
     
     
@@ -222,6 +223,8 @@ bool TouchEvent::PlatformSupportsTouch() {
 
 
 bool TouchEvent::PrefEnabled(nsIDocShell* aDocShell) {
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+
   static bool sPrefCached = false;
   static int32_t sPrefCacheValue = 0;
 
