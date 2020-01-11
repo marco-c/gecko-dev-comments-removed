@@ -481,8 +481,6 @@ struct IcStubCodeMapGCPolicy {
 class JitZone {
   
   OptimizedICStubSpace optimizedStubSpace_;
-  
-  CFGSpace cfgSpace_;
 
   
   using IonCacheIRStubInfoSet =
@@ -507,7 +505,6 @@ class JitZone {
                               size_t* cachedCFG) const;
 
   OptimizedICStubSpace* optimizedStubSpace() { return &optimizedStubSpace_; }
-  CFGSpace* cfgSpace() { return &cfgSpace_; }
 
   JitCode* getBaselineCacheIRStubCode(const CacheIRStubKey::Lookup& key,
                                       CacheIRStubInfo** stubInfo) {

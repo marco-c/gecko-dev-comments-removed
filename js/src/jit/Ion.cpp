@@ -424,6 +424,7 @@ void jit::FreeIonBuilder(IonBuilder* builder) {
   
   
   
+  MOZ_ASSERT(builder->pendingBlocks().empty(), "Should not leak malloc memory");
   js_delete(builder->backgroundCodegen());
   js_delete(builder->alloc().lifoAlloc());
 }
@@ -620,7 +621,6 @@ void JitZone::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
 
   *baselineStubsOptimized +=
       optimizedStubSpace_.sizeOfExcludingThis(mallocSizeOf);
-  *cachedCFG += cfgSpace_.sizeOfExcludingThis(mallocSizeOf);
 }
 
 TrampolinePtr JitRuntime::getBailoutTable(

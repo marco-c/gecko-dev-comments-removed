@@ -19,8 +19,6 @@ class JS_PUBLIC_API JSScript;
 namespace js {
 namespace jit {
 
-class ControlFlowGraph;
-
 
 
 struct DependentWasmImport {
@@ -145,10 +143,6 @@ class alignas(uintptr_t) JitScript final {
     
     
     const HeapPtr<EnvironmentObject*> templateEnv = nullptr;
-
-    
-    
-    ControlFlowGraph* controlFlowGraph = nullptr;
 
     
     
@@ -473,19 +467,6 @@ class alignas(uintptr_t) JitScript final {
 
   EnvironmentObject* templateEnvironment() const {
     return cachedIonData().templateEnv;
-  }
-
-  const ControlFlowGraph* controlFlowGraph() const {
-    return cachedIonData().controlFlowGraph;
-  }
-  void setControlFlowGraph(ControlFlowGraph* controlFlowGraph) {
-    MOZ_ASSERT(controlFlowGraph);
-    cachedIonData().controlFlowGraph = controlFlowGraph;
-  }
-  void clearControlFlowGraph() {
-    if (hasCachedIonData()) {
-      cachedIonData().controlFlowGraph = nullptr;
-    }
   }
 
   bool modifiesArguments() const {
