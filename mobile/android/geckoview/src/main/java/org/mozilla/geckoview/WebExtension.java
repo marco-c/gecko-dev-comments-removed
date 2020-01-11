@@ -585,7 +585,7 @@ public class WebExtension {
     
 
 
-    public static class ActionIcon {
+    public static class Icon {
         private Map<Integer, String> mIconUris;
 
         
@@ -618,7 +618,7 @@ public class WebExtension {
             return ImageDecoder.instance().decode(uri, pixelSize);
         }
 
-         ActionIcon(final GeckoBundle bundle) {
+         Icon(final GeckoBundle bundle) {
             mIconUris = new HashMap<>();
 
             for (final String key: bundle.keys()) {
@@ -635,7 +635,7 @@ public class WebExtension {
         }
 
         
-        protected ActionIcon() {
+        protected Icon() {
             mIconUris = null;
         }
 
@@ -645,11 +645,11 @@ public class WebExtension {
                 return true;
             }
 
-            if (!(o instanceof ActionIcon)) {
+            if (!(o instanceof Icon)) {
                 return false;
             }
 
-            return mIconUris.equals(((ActionIcon) o).mIconUris);
+            return mIconUris.equals(((Icon) o).mIconUris);
         }
 
         @Override
@@ -704,7 +704,7 @@ public class WebExtension {
 
 
 
-        final public @Nullable ActionIcon icon;
+        final public @Nullable Icon icon;
         
 
 
@@ -788,7 +788,7 @@ public class WebExtension {
                     bundle.getDoubleArray("badgeTextColor"));
 
             if (bundle.containsKey("icon")) {
-                icon = new ActionIcon(bundle.getBundle("icon"));
+                icon = new Icon(bundle.getBundle("icon"));
             } else {
                 icon = null;
             }
