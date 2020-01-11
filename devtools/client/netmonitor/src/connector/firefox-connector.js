@@ -209,11 +209,16 @@ class FirefoxConnector {
       }
     }
 
-    
     if (this.actions && this.getState) {
       const state = this.getState();
+      
       if (!state.requests.recording) {
         this.actions.toggleRecording();
+      }
+
+      
+      if (state.search.ongoingSearch) {
+        this.actions.stopOngoingSearch();
       }
     }
   }
