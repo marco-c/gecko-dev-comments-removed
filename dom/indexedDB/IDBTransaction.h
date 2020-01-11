@@ -48,18 +48,18 @@ class IDBTransaction final : public DOMEventTargetHelper, public nsIRunnable {
   friend class indexedDB::BackgroundRequestChild;
 
  public:
-  enum Mode {
-    READ_ONLY = 0,
-    READ_WRITE,
-    READ_WRITE_FLUSH,
-    CLEANUP,
-    VERSION_CHANGE,
+  enum struct Mode {
+    ReadOnly = 0,
+    ReadWrite,
+    ReadWriteFlush,
+    Cleanup,
+    VersionChange,
 
     
-    MODE_INVALID
+    Invalid
   };
 
-  enum ReadyState { INITIAL = 0, LOADING, INACTIVE, COMMITTING, DONE };
+  enum struct ReadyState { Initial = 0, Loading, Inactive, Committing, Done };
 
  private:
   
@@ -144,7 +144,7 @@ class IDBTransaction final : public DOMEventTargetHelper, public nsIRunnable {
   void ClearBackgroundActor() {
     AssertIsOnOwningThread();
 
-    if (mMode == VERSION_CHANGE) {
+    if (mMode == Mode::VersionChange) {
       mBackgroundActor.mVersionChangeBackgroundActor = nullptr;
     } else {
       mBackgroundActor.mNormalBackgroundActor = nullptr;
@@ -168,19 +168,20 @@ class IDBTransaction final : public DOMEventTargetHelper, public nsIRunnable {
   bool IsCommittingOrDone() const {
     AssertIsOnOwningThread();
 
-    return mReadyState == COMMITTING || mReadyState == DONE;
+    return mReadyState == ReadyState::Committing ||
+           mReadyState == ReadyState::Done;
   }
 
   bool IsDone() const {
     AssertIsOnOwningThread();
 
-    return mReadyState == DONE;
+    return mReadyState == ReadyState::Done;
   }
 
   bool IsWriteAllowed() const {
     AssertIsOnOwningThread();
-    return mMode == READ_WRITE || mMode == READ_WRITE_FLUSH ||
-           mMode == CLEANUP || mMode == VERSION_CHANGE;
+    return mMode == Mode::ReadWrite || mMode == Mode::ReadWriteFlush ||
+           mMode == Mode::Cleanup || mMode == Mode::VersionChange;
   }
 
   bool IsAborted() const {
@@ -190,9 +191,10 @@ class IDBTransaction final : public DOMEventTargetHelper, public nsIRunnable {
 
   auto TemporarilyProceedToInactive() {
     AssertIsOnOwningThread();
-    MOZ_ASSERT(mReadyState == INITIAL || mReadyState == LOADING);
+    MOZ_ASSERT(mReadyState == ReadyState::Initial ||
+               mReadyState == ReadyState::Loading);
     const auto savedReadyState = mReadyState;
-    mReadyState = INACTIVE;
+    mReadyState = ReadyState::Inactive;
 
     struct AutoRestoreState {
       IDBTransaction& mOwner;
@@ -203,7 +205,7 @@ class IDBTransaction final : public DOMEventTargetHelper, public nsIRunnable {
 
       ~AutoRestoreState() {
         mOwner.AssertIsOnOwningThread();
-        MOZ_ASSERT(mOwner.mReadyState == INACTIVE);
+        MOZ_ASSERT(mOwner.mReadyState == ReadyState::Inactive);
         MOZ_ASSERT(mOwner.mPendingRequestCount == mSavedPendingRequestCount);
 
         mOwner.mReadyState = mSavedReadyState;
