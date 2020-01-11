@@ -4616,7 +4616,22 @@ already_AddRefed<DocumentFragment> nsContentUtils::CreateContextualFragment(
 
   while (content && content->IsElement()) {
     nsString& tagName = *tagStack.AppendElement();
-    tagName = content->NodeInfo()->QualifiedName();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    tagName.AssignLiteral("notacustomelement");
 
     
     uint32_t count = content->AsElement()->GetAttrCount();
