@@ -702,9 +702,36 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_TOID, "toid", NULL, 1, 1, 1, JOF_BYTE) \
     
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -718,9 +745,21 @@
 
 
 
+
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_TOSTRING, "tostring", NULL, 1, 1, 1, JOF_BYTE) \
     
+
+
+
 
 
 
@@ -737,6 +776,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_NEWTARGET, "newtarget", NULL, 1, 0, 1, JOF_BYTE) \
     
@@ -747,9 +796,15 @@
 
 
 
+
+
+
+
  \
-    MACRO(JSOP_DYNAMIC_IMPORT, "call-import", NULL, 1, 1, 1, JOF_BYTE) \
+    MACRO(JSOP_DYNAMIC_IMPORT, "dynamic-import", NULL, 1, 1, 1, JOF_BYTE) \
     
+
+
 
 
 
