@@ -29,7 +29,7 @@
 
 
 enum JSOp : uint8_t {
-#define ENUMERATE_OPCODE(op, ...) op,
+#define ENUMERATE_OPCODE(op, val, ...) op = val,
   FOR_EACH_OPCODE(ENUMERATE_OPCODE)
 #undef ENUMERATE_OPCODE
 
@@ -76,6 +76,7 @@ enum {
   JOF_CHECKSLOPPY = 1 << 10, 
   JOF_CHECKSTRICT = 1 << 11, 
   JOF_INVOKE = 1 << 12,      
+
   JOF_GNAME = 1 << 13,       
   JOF_TYPESET = 1 << 14,     
   JOF_IC = 1 << 15,          
