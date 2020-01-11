@@ -329,10 +329,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 #ifdef DEBUG
   
   
-  bool requireGCTracer() const;
-
-  
-  
   unsigned lastSweepGroupIndex() { return gcSweepGroupIndex; }
 #endif
 
