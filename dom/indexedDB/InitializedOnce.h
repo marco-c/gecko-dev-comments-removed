@@ -22,13 +22,33 @@ namespace mozilla {
 
 enum struct LazyInit { Allow, Forbid };
 
+namespace ValueCheckPolicies {
+template <typename T>
+struct AllowAnyValue {
+  constexpr static bool Check(const T& ) { return true; }
+};
+
+template <typename T>
+struct ConvertsToTrue {
+  constexpr static bool Check(const T& aValue) {
+    return static_cast<bool>(aValue);
+  }
+};
+}  
 
 
 
 
 
-template <typename T, LazyInit LazyInit = LazyInit::Forbid>
+
+
+
+template <typename T, LazyInit LazyInit = LazyInit::Forbid,
+          template <typename> class ValueCheckPolicy =
+              ValueCheckPolicies::AllowAnyValue>
 class InitializedOnce final {
+  static_assert(std::is_const_v<T>);
+
  public:
   template <typename Dummy = void>
   explicit InitializedOnce(
@@ -36,8 +56,12 @@ class InitializedOnce final {
 
   template <typename... Args>
   explicit InitializedOnce(Args&&... aArgs)
-      : mMaybe{Some(T{std::forward<Args>(aArgs)...})} {}
+      : mMaybe{Some(T{std::forward<Args>(aArgs)...})} {
+    MOZ_ASSERT(ValueCheckPolicy<T>::Check(*mMaybe));
+  }
 
+  InitializedOnce(const InitializedOnce&) = delete;
+  InitializedOnce(InitializedOnce&&) = default;
   InitializedOnce& operator=(const InitializedOnce&) = delete;
   InitializedOnce& operator=(InitializedOnce&&) = delete;
 
@@ -46,6 +70,7 @@ class InitializedOnce final {
     MOZ_ASSERT(mMaybe.isNothing());
     MOZ_ASSERT(!mWasReset);
     mMaybe.emplace(T{std::forward<Args>(aArgs)...});
+    MOZ_ASSERT(ValueCheckPolicy<T>::Check(*mMaybe));
   }
 
   explicit operator bool() const { return isSome(); }
@@ -72,6 +97,10 @@ class InitializedOnce final {
   bool mWasReset = false;
 #endif
 };
+
+template <typename T, LazyInit LazyInit = LazyInit::Forbid>
+using InitializedOnceMustBeTrue =
+    InitializedOnce<T, LazyInit, ValueCheckPolicies::ConvertsToTrue>;
 
 }  
 
