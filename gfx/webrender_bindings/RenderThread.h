@@ -44,7 +44,7 @@ class RenderThread;
 
 class WebRenderThreadPool {
  public:
-  WebRenderThreadPool();
+  explicit WebRenderThreadPool(bool low_priority);
 
   ~WebRenderThreadPool();
 
@@ -232,6 +232,10 @@ class RenderThread final {
 
   
   
+  WebRenderThreadPool& ThreadPoolLP() { return mThreadPoolLP; }
+
+  
+  
   
   WebRenderProgramCache* GetProgramCache() {
     MOZ_ASSERT(IsInRenderThread());
@@ -288,6 +292,7 @@ class RenderThread final {
   base::Thread* const mThread;
 
   WebRenderThreadPool mThreadPool;
+  WebRenderThreadPool mThreadPoolLP;
 
   UniquePtr<WebRenderProgramCache> mProgramCache;
   UniquePtr<WebRenderShaders> mShaders;

@@ -45,6 +45,8 @@ static StaticRefPtr<RenderThread> sRenderThread;
 
 RenderThread::RenderThread(base::Thread* aThread)
     : mThread(aThread),
+      mThreadPool(false),
+      mThreadPoolLP(true),
       mWindowInfos("RenderThread.mWindowInfos"),
       mRenderTextureMapLock("RenderThread.mRenderTextureMapLock"),
       mHasShutdown(false),
@@ -118,6 +120,7 @@ void RenderThread::ShutDownTask(layers::SynchronousTask* aTask) {
 
   
   mThreadPool.Release();
+  mThreadPoolLP.Release();
 
   
   
@@ -867,8 +870,8 @@ WebRenderPipelineInfo::~WebRenderPipelineInfo() {
   wr_pipeline_info_delete(mPipelineInfo);
 }
 
-WebRenderThreadPool::WebRenderThreadPool() {
-  mThreadPool = wr_thread_pool_new();
+WebRenderThreadPool::WebRenderThreadPool(bool low_priority) {
+  mThreadPool = wr_thread_pool_new(low_priority);
 }
 
 WebRenderThreadPool::~WebRenderThreadPool() { Release(); }
