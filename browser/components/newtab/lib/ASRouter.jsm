@@ -33,6 +33,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   RemoteL10n: "resource://activity-stream/lib/RemoteL10n.jsm",
   MigrationUtils: "resource:///modules/MigrationUtils.jsm",
 });
+XPCOMUtils.defineLazyServiceGetters(this, {
+  BrowserHandler: ["@mozilla.org/browser/clh;1", "nsIBrowserHandler"],
+});
 const {
   ASRouterActions: ra,
   actionTypes: at,
@@ -1537,6 +1540,10 @@ class _ASRouter {
 
   
   async _triggerHandler(target, trigger) {
+    
+    if (BrowserHandler.kiosk) {
+      return;
+    }
     await this.onMessage({
       target,
       data: { type: "TRIGGER", data: { trigger } },
