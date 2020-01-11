@@ -78,6 +78,10 @@ const Hub = {
   openConduit(conduit) {
     this.conduits.set(conduit.id, conduit);
     for (let name of conduit.address.recv || []) {
+      if (this.byMethod.get(name)) {
+        
+        throw new Error(`Duplicate BroadcastConduit method name recv${name}`);
+      }
       this.byMethod.set(name, conduit);
     }
   },
@@ -111,6 +115,7 @@ const Hub = {
   recvConduitClosed(remote) {
     this.remotes.delete(remote.id);
     this.byActor.get(remote.actor).delete(remote);
+
     remote.actor = null;
     for (let conduit of this.onRemoteClosed.get(remote.id)) {
       conduit.subject.recvConduitClosed(remote);
@@ -125,6 +130,7 @@ const Hub = {
     for (let remote of this.byActor.get(actor)) {
       this.recvConduitClosed(remote);
     }
+    this.byActor.delete(actor);
   },
 };
 
@@ -152,7 +158,7 @@ class BroadcastConduit extends BaseConduit {
 
 
 
-  _send(method, query, target, arg) {
+  _send(method, query, target, arg = {}) {
     if (!this.open) {
       throw new Error(`send${method} on closed conduit ${this.id}`);
     }
@@ -200,6 +206,7 @@ class ConduitsParent extends JSWindowActorParent {
     if (!conduit) {
       throw new Error(`Parent conduit for recv${name} not found`);
     }
+
     sender = Hub.remotes.get(sender);
     return conduit._recv(name, arg, { actor: this, query, sender });
   }
@@ -209,5 +216,12 @@ class ConduitsParent extends JSWindowActorParent {
 
   willDestroy() {
     Hub.actorClosed(this);
+  }
+
+  
+
+
+  didDestroy() {
+    this.willDestroy();
   }
 }

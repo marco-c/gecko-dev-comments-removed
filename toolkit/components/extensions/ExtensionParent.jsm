@@ -1064,11 +1064,8 @@ ParentAPIManager = {
   },
 
   async recvAPICall(data, { actor }) {
-    return this.call(data, actor.browsingContext.top.embedderElement);
-  },
-
-  async call(data, target) {
     let context = this.getContextById(data.childId);
+    let target = actor.browsingContext.top.embedderElement;
     if (context.parentMessageManager !== target.messageManager) {
       throw new Error("Got message on unexpected message manager");
     }
@@ -1127,12 +1124,9 @@ ParentAPIManager = {
     }
   },
 
-  recvAddListener(data, { actor }) {
-    this.addListener(data, actor.browsingContext.top.embedderElement);
-  },
-
-  async addListener(data, target) {
+  async recvAddListener(data, { actor }) {
     let context = this.getContextById(data.childId);
+    let target = actor.browsingContext.top.embedderElement;
     if (context.parentMessageManager !== target.messageManager) {
       throw new Error("Got message on unexpected message manager");
     }
@@ -1141,7 +1135,7 @@ ParentAPIManager = {
     let handlingUserInput = false;
 
     
-    let lowPriority = data.path.startsWith("webRequest."); 
+    
 
     let listener = async (...listenerArgs) => {
       let result = await this.conduit.queryRunListener(childId, {

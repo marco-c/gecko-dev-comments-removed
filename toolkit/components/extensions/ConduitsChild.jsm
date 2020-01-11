@@ -97,7 +97,7 @@ class PointConduit extends BaseConduit {
 
 
 
-  _send(method, query, arg) {
+  _send(method, query, arg = {}) {
     if (!this.actor) {
       throw new Error(`send${method} on closed conduit ${this.id}`);
     }
@@ -108,11 +108,15 @@ class PointConduit extends BaseConduit {
   
 
 
-  close() {
-    if (this.actor) {
-      this.actor.conduits.delete(this.id);
-      this.actor.sendAsyncMessage("ConduitClosed", { arg: this.id });
+
+  close(silent = false) {
+    let { actor } = this;
+    if (actor) {
       this.actor = null;
+      actor.conduits.delete(this.id);
+      if (!silent) {
+        actor.sendAsyncMessage("ConduitClosed", { arg: this.id });
+      }
     }
   }
 }
@@ -145,7 +149,7 @@ class ConduitsChild extends JSWindowActorChild {
   receiveMessage({ name, data: { target, arg, query, sender } }) {
     let conduit = this.conduits.get(target);
     if (!conduit) {
-      throw new Error(`${name} ${arg.path} for closed conduit ${target}`);
+      throw new Error(`${name} for closed conduit ${target}: ${uneval(arg)}`);
     }
     return conduit._recv(name, arg, { sender, query, actor: this });
   }
@@ -156,8 +160,15 @@ class ConduitsChild extends JSWindowActorChild {
 
   willDestroy() {
     for (let conduit of this.conduits.values()) {
-      conduit.actor = null;
+      conduit.close(true);
     }
     this.conduits.clear();
+  }
+
+  
+
+
+  didDestroy() {
+    this.willDestroy();
   }
 }
