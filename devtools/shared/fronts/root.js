@@ -150,6 +150,16 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
         case Ci.nsIWorkerDebugger.TYPE_SERVICE:
           const registration = result.service.find(r => {
             
+            
+            
+            
+            if (!r.registrationFront) {
+              
+              
+              return false;
+            }
+
+            
 
 
 
@@ -175,12 +185,19 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
             }
             registration.workerTargetFront = front;
           } else {
-            worker.fetch = front.fetch;
+            
+            
+            
 
             
             
             
             
+            
+            
+            
+            
+            worker.fetch = front.fetch;
             worker.scope = front.scope;
             worker.active = false;
             result.service.push(worker);
