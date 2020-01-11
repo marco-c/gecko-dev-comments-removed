@@ -352,7 +352,7 @@ var GeckoViewWebExtension = {
         break;
       }
 
-      case "GeckoView:UnregisterWebExtension":
+      case "GeckoView:UnregisterWebExtension": {
         if (!this.extensionScopes.has(aData.id)) {
           aCallback.onError(
             `Could not find an extension with id='${aData.id}'.`
@@ -362,6 +362,49 @@ var GeckoViewWebExtension = {
 
         this.unregisterWebExtension(aData.id, aCallback);
         break;
+      }
+
+      case "GeckoView:WebExtension:Install": {
+        
+        aCallback.onError(`Not implemented`);
+        break;
+      }
+
+      case "GeckoView:WebExtension:InstallBuiltIn": {
+        
+        aCallback.onError(`Not implemented`);
+        break;
+      }
+
+      case "GeckoView:WebExtension:Uninstall": {
+        
+        aCallback.onError(`Not implemented`);
+        break;
+      }
+
+      case "GeckoView:WebExtension:Enable": {
+        
+        aCallback.onError(`Not implemented`);
+        break;
+      }
+
+      case "GeckoView:WebExtension:Disable": {
+        
+        aCallback.onError(`Not implemented`);
+        break;
+      }
+
+      case "GeckoView:WebExtension:List": {
+        
+        aCallback.onError(`Not implemented`);
+        break;
+      }
+
+      case "GeckoView:WebExtension:Update": {
+        
+        aCallback.onError(`Not implemented`);
+        break;
+      }
     }
   },
 };
