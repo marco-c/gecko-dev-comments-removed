@@ -92,8 +92,10 @@ class BrowserBridgeParent : public PBrowserBridgeParent {
   mozilla::ipc::IPCResult RecvSetIsUnderHiddenEmbedderElement(
       const bool& aIsUnderHiddenEmbedderElement);
 
+#ifdef ACCESSIBILITY
   mozilla::ipc::IPCResult RecvSetEmbedderAccessible(PDocAccessibleParent* aDoc,
                                                     uint64_t aID);
+#endif
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
@@ -101,7 +103,7 @@ class BrowserBridgeParent : public PBrowserBridgeParent {
   ~BrowserBridgeParent();
 
   RefPtr<BrowserParent> mBrowserParent;
-#if defined(ACCESSIBILITY)
+#ifdef ACCESSIBILITY
   RefPtr<a11y::DocAccessibleParent> mEmbedderAccessibleDoc;
   uint64_t mEmbedderAccessibleID = 0;
 #endif  

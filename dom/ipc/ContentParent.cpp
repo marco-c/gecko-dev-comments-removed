@@ -21,7 +21,9 @@
 
 #include "chrome/common/process_watcher.h"
 
+#ifdef ACCESSIBILITY
 #include "mozilla/a11y/PDocAccessible.h"
+#endif
 #include "GeckoProfiler.h"
 #include "GMPServiceParent.h"
 #include "HandlerServiceParent.h"
@@ -5321,6 +5323,7 @@ mozilla::ipc::IPCResult ContentParent::RecvA11yHandlerControl(
 bool ContentParent::HandleWindowsMessages(const Message& aMsg) const {
   MOZ_ASSERT(aMsg.is_sync());
 
+#ifdef ACCESSIBILITY
   
   
   
@@ -5328,6 +5331,7 @@ bool ContentParent::HandleWindowsMessages(const Message& aMsg) const {
       a11y::PDocAccessible::PDocAccessibleEnd > aMsg.type()) {
     return false;
   }
+#endif
 
   return true;
 }

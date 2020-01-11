@@ -1134,22 +1134,17 @@ void BrowserParent::Deactivate(bool aWindowLowering) {
   }
 }
 
+#ifdef ACCESSIBILITY
 a11y::PDocAccessibleParent* BrowserParent::AllocPDocAccessibleParent(
     PDocAccessibleParent* aParent, const uint64_t&, const uint32_t&,
     const IAccessibleHolder&) {
-#ifdef ACCESSIBILITY
   
   return do_AddRef(new a11y::DocAccessibleParent()).take();
-#else
-  return nullptr;
-#endif
 }
 
 bool BrowserParent::DeallocPDocAccessibleParent(PDocAccessibleParent* aParent) {
-#ifdef ACCESSIBILITY
   
   static_cast<a11y::DocAccessibleParent*>(aParent)->Release();
-#endif
   return true;
 }
 
@@ -1157,7 +1152,6 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
     PDocAccessibleParent* aDoc, PDocAccessibleParent* aParentDoc,
     const uint64_t& aParentID, const uint32_t& aMsaaID,
     const IAccessibleHolder& aDocCOMProxy) {
-#ifdef ACCESSIBILITY
   auto doc = static_cast<a11y::DocAccessibleParent*>(aDoc);
 
   
@@ -1259,9 +1253,9 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
     }
 #  endif
   }
-#endif
   return IPC_OK();
 }
+#endif
 
 PFilePickerParent* BrowserParent::AllocPFilePickerParent(const nsString& aTitle,
                                                          const int16_t& aMode) {

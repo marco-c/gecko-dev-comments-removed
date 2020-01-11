@@ -16,6 +16,7 @@ namespace mozilla {
 namespace dom {
 
 class SHistoryParent;
+class SHEntryParent;
 
 
 
