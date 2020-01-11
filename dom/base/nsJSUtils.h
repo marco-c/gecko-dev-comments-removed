@@ -335,13 +335,14 @@ inline void AssignJSLinearString(nsAString& dest, JSLinearString* s) {
   js::CopyLinearStringChars(dest.BeginWriting(), s, len);
 }
 
-class nsAutoJSString : public nsAutoString {
+template <typename T>
+class nsTAutoJSString : public nsTAutoString<T> {
  public:
   
 
 
 
-  nsAutoJSString() {}
+  nsTAutoJSString() {}
 
   bool init(JSContext* aContext, JSString* str) {
     return AssignJSString(aContext, *this, str);
@@ -371,7 +372,12 @@ class nsAutoJSString : public nsAutoString {
 
   bool init(const JS::Value& v);
 
-  ~nsAutoJSString() {}
+  ~nsTAutoJSString() = default;
 };
+
+using nsAutoJSString = nsTAutoJSString<char16_t>;
+
+
+using nsAutoJSCString = nsTAutoJSString<char>;
 
 #endif 

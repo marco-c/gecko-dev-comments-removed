@@ -86,15 +86,8 @@ class nsCSSProps {
     return Servo_Property_LookupEnabledForAllContent(&aProperty);
   }
 
-  static nsCSSPropertyID LookupProperty(const nsAString& aProperty) {
-    NS_ConvertUTF16toUTF8 utf8(aProperty);
-    return LookupProperty(utf8);
-  }
-
   
   
-  static nsCSSPropertyID LookupPropertyByIDLName(
-      const nsAString& aPropertyIDLName, EnabledState aEnabled);
   static nsCSSPropertyID LookupPropertyByIDLName(
       const nsACString& aPropertyIDLName, EnabledState aEnabled);
 

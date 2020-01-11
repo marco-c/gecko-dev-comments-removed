@@ -1090,7 +1090,7 @@ void StyleSheet::FinishParse() {
   SetSourceURL(sourceURL);
 }
 
-nsresult StyleSheet::ReparseSheet(const nsAString& aInput) {
+nsresult StyleSheet::ReparseSheet(const nsACString& aInput) {
   if (!IsComplete()) {
     return NS_ERROR_DOM_INVALID_ACCESS_ERR;
   }
@@ -1152,8 +1152,8 @@ nsresult StyleSheet::ReparseSheet(const nsAString& aInput) {
 
   DropRuleList();
 
-  ParseSheetSync(loader, NS_ConvertUTF16toUTF8(aInput),
-                  nullptr, lineNumber, &reusableSheets);
+  ParseSheetSync(loader, aInput,  nullptr, lineNumber,
+                 &reusableSheets);
 
   
   {

@@ -12,15 +12,19 @@
 
 class nsAtom;
 class nsINode;
+class nsINodeList;
+class nsRange;
 class ComputedStyle;
 
 namespace mozilla {
+class BindingStyleRule;
 class StyleSheet;
 namespace css {
 class Rule;
 }  
 namespace dom {
 class CharacterData;
+class Document;
 class Element;
 class InspectorFontFace;
 }  
@@ -99,7 +103,7 @@ class InspectorUtils {
   
   
   static bool IsInheritedProperty(GlobalObject& aGlobal,
-                                  const nsAString& aPropertyName);
+                                  const nsACString& aPropertyName);
 
   
   
@@ -114,7 +118,7 @@ class InspectorUtils {
 
   
   static void GetCSSValuesForProperty(GlobalObject& aGlobal,
-                                      const nsAString& aPropertyName,
+                                      const nsACString& aPropertyName,
                                       nsTArray<nsString>& aResult,
                                       ErrorResult& aRv);
 
@@ -127,12 +131,12 @@ class InspectorUtils {
   
   
   
-  static void ColorToRGBA(GlobalObject& aGlobal, const nsAString& aColorString,
+  static void ColorToRGBA(GlobalObject& aGlobal, const nsACString& aColorString,
                           Nullable<InspectorRGBATuple>& aResult);
 
   
   static bool IsValidCSSColor(GlobalObject& aGlobal,
-                              const nsAString& aColorString);
+                              const nsACString& aColorString);
 
   
 
@@ -140,14 +144,14 @@ class InspectorUtils {
   
   
   static void GetSubpropertiesForCSSProperty(GlobalObject& aGlobal,
-                                             const nsAString& aProperty,
+                                             const nsACString& aProperty,
                                              nsTArray<nsString>& aResult,
                                              ErrorResult& aRv);
 
   
   
   static bool CssPropertyIsShorthand(GlobalObject& aGlobal,
-                                     const nsAString& aProperty,
+                                     const nsACString& aProperty,
                                      ErrorResult& aRv);
 
   
@@ -155,7 +159,7 @@ class InspectorUtils {
   
   
   static bool CssPropertySupportsType(GlobalObject& aGlobal,
-                                      const nsAString& aProperty,
+                                      const nsACString& aProperty,
                                       InspectorPropertyType, ErrorResult& aRv);
 
   static bool IsIgnorableWhitespace(GlobalObject& aGlobalObject,
@@ -243,7 +247,7 @@ class InspectorUtils {
 
 
   static void ParseStyleSheet(GlobalObject& aGlobal, StyleSheet& aSheet,
-                              const nsAString& aInput, ErrorResult& aRv);
+                              const nsACString& aInput, ErrorResult& aRv);
 
   
 

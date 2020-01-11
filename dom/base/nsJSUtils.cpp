@@ -633,7 +633,8 @@ bool nsJSUtils::DumpEnabled() {
 
 
 
-bool nsAutoJSString::init(const JS::Value& v) {
+template <typename T>
+bool nsTAutoJSString<T>::init(const JS::Value& v) {
   
   
   
@@ -642,6 +643,8 @@ bool nsAutoJSString::init(const JS::Value& v) {
     JS_ClearPendingException(cx);
     return false;
   }
-
   return true;
 }
+
+template bool nsTAutoJSString<char16_t>::init(const JS::Value&);
+template bool nsTAutoJSString<char>::init(const JS::Value&);

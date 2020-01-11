@@ -381,7 +381,7 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
   }
 
   void DrawWindow(nsGlobalWindowInner& aWindow, double aX, double aY, double aW,
-                  double aH, const nsAString& aBgColor, uint32_t aFlags,
+                  double aH, const nsACString& aBgColor, uint32_t aFlags,
                   mozilla::ErrorResult& aError);
 
   
@@ -561,7 +561,7 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
                        Style aWhichStyle);
 
   
-  bool ParseColor(const nsAString& aString, nscolor* aColor);
+  bool ParseColor(const nsACString& aString, nscolor* aColor);
 
   static void StyleColorToString(const nscolor& aColor, nsAString& aStr);
 

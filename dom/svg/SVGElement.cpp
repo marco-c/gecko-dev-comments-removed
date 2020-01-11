@@ -1111,10 +1111,11 @@ void MappedAttrParser::ParseMappedAttrValue(nsAtom* aMappedAttrName,
 
   
   nsCSSPropertyID propertyID =
-      nsCSSProps::LookupProperty(nsDependentAtomString(aMappedAttrName));
+      nsCSSProps::LookupProperty(nsAtomCString(aMappedAttrName));
   if (propertyID != eCSSProperty_UNKNOWN) {
     bool changed = false;  
     NS_ConvertUTF16toUTF8 value(aMappedAttrValue);
+
     
     
     nsCOMPtr<nsIReferrerInfo> referrerInfo =
@@ -1152,9 +1153,7 @@ void MappedAttrParser::TellStyleAlreadyParsedResult(
   if (!mDecl) {
     mDecl = new DeclarationBlock();
   }
-  nsCSSPropertyID propertyID =
-      nsCSSProps::LookupProperty(nsDependentAtomString(aAtom));
-
+  nsCSSPropertyID propertyID = nsCSSProps::LookupProperty(nsAtomCString(aAtom));
   SVGElement::UpdateDeclarationBlockFromLength(*mDecl, propertyID, aLength,
                                                SVGElement::ValToUse::Base);
 }

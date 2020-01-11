@@ -456,6 +456,7 @@ nsresult CSSEditUtils::GetCSSInlinePropertyBase(nsINode* aNode,
     
     
     
+    
     MOZ_ALWAYS_SUCCEEDS(
         cssDecl->GetPropertyValue(nsAtomCString(aProperty), aValue));
 
@@ -468,8 +469,7 @@ nsresult CSSEditUtils::GetCSSInlinePropertyBase(nsINode* aNode,
     return NS_OK;
   }
 
-  nsCSSPropertyID prop =
-      nsCSSProps::LookupProperty(nsDependentAtomString(aProperty));
+  nsCSSPropertyID prop = nsCSSProps::LookupProperty(nsAtomCString(aProperty));
   MOZ_ASSERT(prop != eCSSProperty_UNKNOWN);
 
   decl->GetPropertyValueByID(prop, aValue);

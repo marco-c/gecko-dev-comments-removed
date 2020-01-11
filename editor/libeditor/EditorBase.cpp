@@ -5523,7 +5523,8 @@ void EditorBase::AutoEditActionDataSetter::SetColorData(
 
   bool wasCurrentColor = false;
   nscolor color = NS_RGB(0, 0, 0);
-  if (!ServoCSSParser::ComputeColor(nullptr, NS_RGB(0, 0, 0), aData, &color,
+  if (!ServoCSSParser::ComputeColor(nullptr, NS_RGB(0, 0, 0),
+                                    NS_ConvertUTF16toUTF8(aData), &color,
                                     &wasCurrentColor)) {
     
     

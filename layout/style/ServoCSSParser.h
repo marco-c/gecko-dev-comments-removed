@@ -46,7 +46,7 @@ class ServoCSSParser {
 
 
 
-  static bool IsValidCSSColor(const nsAString& aValue);
+  static bool IsValidCSSColor(const nsACString& aValue);
 
   
 
@@ -64,7 +64,7 @@ class ServoCSSParser {
 
 
   static bool ComputeColor(ServoStyleSet* aStyleSet, nscolor aCurrentColor,
-                           const nsAString& aValue, nscolor* aResultColor,
+                           const nsACString& aValue, nscolor* aResultColor,
                            bool* aWasCurrentColor = nullptr,
                            css::Loader* aLoader = nullptr);
 
