@@ -15,7 +15,6 @@ function toMojoNDEFPushTarget(target) {
 
 function toMojoNDEFMessage(message) {
   let ndefMessage = new device.mojom.NDEFMessage();
-  ndefMessage.url = message.url;
   ndefMessage.data = [];
   for (let record of message.records) {
     ndefMessage.data.push(toMojoNDEFRecord(record));

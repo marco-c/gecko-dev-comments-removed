@@ -157,9 +157,6 @@ function assertNDEFMessagesEqual(providedMessage, receivedMessage) {
 
 
 function assertWebNDEFMessagesEqual(message, expectedMessage) {
-  if (expectedMessage.url)
-    assert_equals(message.url, expectedMessage.url);
-
   assert_equals(message.records.length, expectedMessage.records.length);
 
   for(let i in message.records) {
