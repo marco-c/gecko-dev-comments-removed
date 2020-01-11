@@ -105,7 +105,7 @@ class ServoCSSParser {
 
 
 
-  static bool ParseTransformIntoMatrix(const nsAString& aValue,
+  static bool ParseTransformIntoMatrix(const nsACString& aValue,
                                        bool& aContains3DTransform,
                                        gfx::Matrix4x4& aResult);
 
