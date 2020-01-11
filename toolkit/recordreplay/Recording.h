@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_recordreplay_File_h
-#define mozilla_recordreplay_File_h
+#ifndef mozilla_recordreplay_Recording_h
+#define mozilla_recordreplay_Recording_h
 
 #include "InfallibleVector.h"
 #include "ProcessRecordReplay.h"
@@ -14,12 +14,10 @@
 #include "mozilla/PodOperations.h"
 #include "mozilla/RecordReplay.h"
 #include "mozilla/UniquePtr.h"
+#include "nsString.h"
 
 namespace mozilla {
 namespace recordreplay {
-
-
-
 
 
 
@@ -50,17 +48,31 @@ struct StreamChunkLocation {
   uint64_t mStreamPos;
 };
 
-enum class StreamName { Main, Lock, Event, Count };
+enum class StreamName {
+  
+  Event,
 
-class File;
+  
+  Lock,
+
+  
+  Endpoint,
+
+  
+  LocalReplaySkip,
+
+  Count
+};
+
+class Recording;
 class RecordingEventSection;
 
 class Stream {
-  friend class File;
+  friend class Recording;
   friend class RecordingEventSection;
 
   
-  File* mFile;
+  Recording* mRecording;
 
   
   StreamName mName;
@@ -70,12 +82,12 @@ class Stream {
   size_t mNameIndex;
 
   
-  
   InfallibleVector<StreamChunkLocation> mChunks;
 
   
   UniquePtr<char[]> mBuffer;
 
+  
   
   
   static const size_t BUFFER_MAX = 1024 * 1024;
@@ -108,14 +120,14 @@ class Stream {
   size_t mChunkIndex;
 
   
-  
-  size_t mFlushedChunks;
-
-  
   bool mInRecordingEventSection;
 
-  Stream(File* aFile, StreamName aName, size_t aNameIndex)
-      : mFile(aFile),
+  
+  
+  InfallibleVector<char*> mEvents;
+
+  Stream(Recording* aRecording, StreamName aName, size_t aNameIndex)
+      : mRecording(aRecording),
         mName(aName),
         mNameIndex(aNameIndex),
         mBuffer(nullptr),
@@ -129,7 +141,6 @@ class Stream {
         mInputBallastSize(0),
         mLastEvent((ThreadEvent)0),
         mChunkIndex(0),
-        mFlushedChunks(0),
         mInRecordingEventSection(false) {}
 
  public:
@@ -166,7 +177,7 @@ class Stream {
 
   
   
-  void RecordOrReplayThreadEvent(ThreadEvent aEvent);
+  void RecordOrReplayThreadEvent(ThreadEvent aEvent, const char* aExtra = nullptr);
 
   
   ThreadEvent ReplayThreadEvent();
@@ -189,9 +200,14 @@ class Stream {
   const char* ReadInputString();
 
   static size_t BallastMaxSize();
+
+  void PushEvent(const char* aEvent);
+  void DumpEvents();
+
+  bool ReadMismatchedEventData(ThreadEvent aEvent);
 };
 
-class File {
+class Recording {
  public:
   enum Mode { WRITE, READ };
 
@@ -200,16 +216,12 @@ class File {
 
  private:
   
-  FileHandle mFd;
+  Mode mMode = READ;
 
   
-  Mode mMode;
-
   
-  uint64_t mWriteOffset;
-
   
-  uint64_t mLastIndexOffset;
+  InfallibleVector<uint8_t> mContents;
 
   
   typedef InfallibleVector<UniquePtr<Stream>> StreamVector;
@@ -222,47 +234,34 @@ class File {
   
   ReadWriteSpinLock mStreamLock;
 
-  void Clear() {
-    mFd = 0;
-    mMode = READ;
-    mWriteOffset = 0;
-    mLastIndexOffset = 0;
-    for (auto& vector : mStreams) {
-      vector.clear();
-    }
-    PodZero(&mLock);
-    PodZero(&mStreamLock);
-  }
-
  public:
-  File() { Clear(); }
-  ~File() { Close(); }
+  Recording();
 
-  bool Open(const char* aName, Mode aMode);
-  void Close();
+  bool IsWriting() const { return mMode == WRITE; }
+  bool IsReading() const { return mMode == READ; }
 
-  bool OpenForWriting() const { return mFd && mMode == WRITE; }
-  bool OpenForReading() const { return mFd && mMode == READ; }
+  const uint8_t* Data() const { return mContents.begin(); }
+  size_t Size() const { return mContents.length(); }
 
+  
   Stream* OpenStream(StreamName aName, size_t aNameIndex);
+
+  
+  
+  
+  void NewContents(const uint8_t* aContents, size_t aSize,
+                   InfallibleVector<Stream*>* aUpdatedStreams);
 
   
   void PreventStreamWrites() { mStreamLock.WriteLock(); }
   void AllowStreamWrites() { mStreamLock.WriteUnlock(); }
 
   
-  
-  bool Flush();
-
-  enum class ReadIndexResult { InvalidFile, EndOfFile, FoundIndex };
-
-  
-  
-  
-  ReadIndexResult ReadNextIndex(InfallibleVector<Stream*>* aUpdatedStreams);
+  void Flush();
 
  private:
-  StreamChunkLocation WriteChunk(const char* aStart, size_t aCompressedSize,
+  StreamChunkLocation WriteChunk(StreamName aName, size_t aNameIndex,
+                                 const char* aStart, size_t aCompressedSize,
                                  size_t aDecompressedSize, uint64_t aStreamPos,
                                  bool aTakeLock);
   void ReadChunk(char* aDest, const StreamChunkLocation& aChunk);

@@ -64,15 +64,6 @@ namespace recordreplay {
 
 
 
-
-
-
-
-
-
-
-
-
 static const size_t InvalidCheckpointId = 0;
 static const size_t FirstCheckpointId = 1;
 
@@ -94,27 +85,18 @@ bool MainThreadShouldPause();
 void PauseMainThreadAndServiceCallbacks();
 
 
-size_t NumSnapshots();
-
-
 size_t GetLastCheckpoint();
 
 
 
-
-void RestoreSnapshotAndResume(size_t aNumSnapshots);
+bool ForkProcess();
 
 
 
 void ResumeExecution();
 
 
-
-
-
-
 void DivergeFromRecording();
-
 
 
 
@@ -124,14 +106,10 @@ void DisallowUnhandledDivergeFromRecording();
 
 
 
-void EnsureNotDivergedFromRecording();
+void EnsureNotDivergedFromRecording(const Maybe<int>& aCallId);
 
 
 void NewCheckpoint();
-
-
-
-bool NewSnapshot();
 
 }  
 }  

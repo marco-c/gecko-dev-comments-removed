@@ -14,7 +14,6 @@ namespace recordreplay {
 
 
 
-
 class BufferStream {
   InfallibleVector<char>* mOutput;
 

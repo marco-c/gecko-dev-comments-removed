@@ -21,7 +21,6 @@
 #include "mozilla/VsyncDispatcher.h"
 
 #include "InfallibleVector.h"
-#include "MemorySnapshot.h"
 #include "nsPrintfCString.h"
 #include "ParentInternal.h"
 #include "ProcessRecordReplay.h"
@@ -50,6 +49,9 @@ Monitor* gMonitor;
 
 Channel* gChannel;
 
+
+static size_t gForkId;
+
 static base::ProcessId gMiddlemanPid;
 static base::ProcessId gParentPid;
 static StaticInfallibleVector<char*> gParentArgv;
@@ -64,19 +66,30 @@ static FileHandle gCheckpointReadFd;
 static UniquePtr<IntroductionMessage, Message::FreePolicy> gIntroductionMessage;
 
 
+static StaticInfallibleVector<char> gPendingRecordingData;
+
+
 static bool gDebuggerRunsInMiddleman;
 
 
-static UniquePtr<MiddlemanCallResponseMessage, Message::FreePolicy>
+static UniquePtr<ExternalCallResponseMessage, Message::FreePolicy>
     gCallResponseMessage;
 
 
 
 static bool gWaitingForCallResponse;
 
+static void HandleMessageToForkedProcess(Message::UniquePtr aMsg);
+
 
 static void ChannelMessageHandler(Message::UniquePtr aMsg) {
   MOZ_RELEASE_ASSERT(MainThreadShouldPause() || aMsg->CanBeSentWhileUnpaused());
+
+  if (aMsg->mForkId != gForkId) {
+    MOZ_RELEASE_ASSERT(!gForkId);
+    HandleMessageToForkedProcess(std::move(aMsg));
+    return;
+  }
 
   switch (aMsg->mType) {
     case MessageType::Introduction: {
@@ -114,21 +127,16 @@ static void ChannelMessageHandler(Message::UniquePtr aMsg) {
       const PingMessage& nmsg = (const PingMessage&)*aMsg;
       uint64_t total =
           *ExecutionProgressCounter() + Thread::TotalEventProgress();
-      gChannel->SendMessage(PingResponseMessage(nmsg.mId, total));
+      gChannel->SendMessage(PingResponseMessage(gForkId, nmsg.mId, total));
       break;
     }
     case MessageType::Terminate: {
-      
-      
-      
-      
-      
-      if (IsRecording()) {
-        PrintSpew("Terminate message received, exiting...\n");
-        _exit(0);
-      } else {
-        ReportFatalError(Nothing(), "Hung replaying process");
-      }
+      PrintSpew("Terminate message received, exiting...\n");
+      _exit(0);
+      break;
+    }
+    case MessageType::Crash: {
+      ReportFatalError("Hung replaying process");
       break;
     }
     case MessageType::ManifestStart: {
@@ -141,12 +149,21 @@ static void ChannelMessageHandler(Message::UniquePtr aMsg) {
       });
       break;
     }
-    case MessageType::MiddlemanCallResponse: {
+    case MessageType::ExternalCallResponse: {
       MonitorAutoLock lock(*gMonitor);
       MOZ_RELEASE_ASSERT(gWaitingForCallResponse);
       MOZ_RELEASE_ASSERT(!gCallResponseMessage);
       gCallResponseMessage.reset(
-          static_cast<MiddlemanCallResponseMessage*>(aMsg.release()));
+          static_cast<ExternalCallResponseMessage*>(aMsg.release()));
+      gMonitor->NotifyAll();
+      break;
+    }
+    case MessageType::RecordingData: {
+      MonitorAutoLock lock(*gMonitor);
+      const RecordingDataMessage& nmsg = (const RecordingDataMessage&)*aMsg;
+      MOZ_RELEASE_ASSERT(
+          nmsg.mTag == gRecording->Size() + gPendingRecordingData.length());
+      gPendingRecordingData.append(nmsg.BinaryData(), nmsg.BinaryDataSize());
       gMonitor->NotifyAll();
       break;
     }
@@ -179,50 +196,10 @@ static void ListenForCheckpointThreadMain(void*) {
 
 void* gGraphicsShmem;
 
-void InitRecordingOrReplayingProcess(int* aArgc, char*** aArgv) {
-  if (!IsRecordingOrReplaying()) {
-    return;
-  }
-
-  Maybe<int> middlemanPid;
-  Maybe<int> channelID;
-  for (int i = 0; i < *aArgc; i++) {
-    if (!strcmp((*aArgv)[i], gMiddlemanPidOption)) {
-      MOZ_RELEASE_ASSERT(middlemanPid.isNothing() && i + 1 < *aArgc);
-      middlemanPid.emplace(atoi((*aArgv)[i + 1]));
-    }
-    if (!strcmp((*aArgv)[i], gChannelIDOption)) {
-      MOZ_RELEASE_ASSERT(channelID.isNothing() && i + 1 < *aArgc);
-      channelID.emplace(atoi((*aArgv)[i + 1]));
-    }
-  }
-  MOZ_RELEASE_ASSERT(middlemanPid.isSome());
-  MOZ_RELEASE_ASSERT(channelID.isSome());
-
-  gMiddlemanPid = middlemanPid.ref();
-
-  Maybe<AutoPassThroughThreadEvents> pt;
-  pt.emplace();
-
-  gMonitor = new Monitor();
-  gChannel = new Channel(channelID.ref(),  false,
-                         ChannelMessageHandler);
-
-  pt.reset();
-
+static void WaitForGraphicsShmem() {
   
-  
-  if (!gInitializationFailureMessage) {
-    DirectCreatePipe(&gCheckpointWriteFd, &gCheckpointReadFd);
-    Thread::StartThread(ListenForCheckpointThreadMain, nullptr, false);
-  }
-
-  pt.emplace();
-
-  
-  ReceivePort receivePort(
-      nsPrintfCString("WebReplay.%d.%d", gMiddlemanPid, (int)channelID.ref())
-          .get());
+  nsPrintfCString portString("WebReplay.%d.%lu", gMiddlemanPid, GetId());
+  ReceivePort receivePort(portString.get());
 
   MachSendMessage handshakeMessage(parent::GraphicsHandshakeMessageId);
   handshakeMessage.AddDescriptor(
@@ -248,39 +225,80 @@ void InitRecordingOrReplayingProcess(int* aArgc, char*** aArgv) {
   MOZ_RELEASE_ASSERT(kr == KERN_SUCCESS);
 
   gGraphicsShmem = (void*)address;
+}
 
-  
-  
-  
-  AddInitialUntrackedMemoryRegion((uint8_t*)gGraphicsShmem,
-                                  parent::GraphicsMemorySize);
+static void InitializeForkListener();
 
-  pt.reset();
+void SetupRecordReplayChannel(int aArgc, char* aArgv[]) {
+  MOZ_RELEASE_ASSERT(IsRecordingOrReplaying() &&
+                     AreThreadEventsPassedThrough());
+
+  Maybe<int> channelID;
+  for (int i = 0; i < aArgc; i++) {
+    if (!strcmp(aArgv[i], gMiddlemanPidOption)) {
+      MOZ_RELEASE_ASSERT(!gMiddlemanPid && i + 1 < aArgc);
+      gMiddlemanPid = atoi(aArgv[i + 1]);
+    }
+    if (!strcmp(aArgv[i], gChannelIDOption)) {
+      MOZ_RELEASE_ASSERT(channelID.isNothing() && i + 1 < aArgc);
+      channelID.emplace(atoi(aArgv[i + 1]));
+    }
+  }
+  MOZ_RELEASE_ASSERT(channelID.isSome());
+
+  gMonitor = new Monitor();
+  gChannel = new Channel(channelID.ref(), Channel::Kind::RecordReplay,
+                         ChannelMessageHandler, gMiddlemanPid);
 
   
   if (gInitializationFailureMessage) {
-    ReportFatalError(Nothing(), "%s", gInitializationFailureMessage);
+    ReportFatalError("%s", gInitializationFailureMessage);
     Unreachable();
   }
 
   
-  {
-    MonitorAutoLock lock(*gMonitor);
-    while (!gIntroductionMessage) {
-      gMonitor->Wait();
-    }
+  MonitorAutoLock lock(*gMonitor);
+  while (!gIntroductionMessage) {
+    gMonitor->Wait();
   }
 
   
-  MOZ_RELEASE_ASSERT(gParentArgv.empty());
+  if (IsReplaying()) {
+    while (gPendingRecordingData.empty()) {
+      gMonitor->Wait();
+    }
+  }
+}
 
-  gParentPid = gIntroductionMessage->mParentPid;
+void InitRecordingOrReplayingProcess(int* aArgc, char*** aArgv) {
+  if (!IsRecordingOrReplaying()) {
+    return;
+  }
+
+  MOZ_RELEASE_ASSERT(!AreThreadEventsPassedThrough());
+
+  {
+    AutoPassThroughThreadEvents pt;
+    if (IsRecording()) {
+      WaitForGraphicsShmem();
+    } else {
+      InitializeForkListener();
+    }
+  }
+
+  DirectCreatePipe(&gCheckpointWriteFd, &gCheckpointReadFd);
+  Thread::StartThread(ListenForCheckpointThreadMain, nullptr, false);
+
+  
+  MOZ_RELEASE_ASSERT(gParentArgv.empty());
 
   
   
   {
     IntroductionMessage* msg =
         IntroductionMessage::RecordReplay(*gIntroductionMessage);
+
+    gParentPid = gIntroductionMessage->mParentPid;
 
     const char* pos = msg->ArgvString();
     for (size_t i = 0; i < msg->mArgc; i++) {
@@ -311,51 +329,226 @@ bool DebuggerRunsInMiddleman() {
   return RecordReplayValue(gDebuggerRunsInMiddleman);
 }
 
-void ReportFatalError(const Maybe<MinidumpInfo>& aMinidump, const char* aFormat,
-                      ...) {
+static void HandleMessageFromForkedProcess(Message::UniquePtr aMsg);
+
+
+static StaticInfallibleVector<Message::UniquePtr> gPendingForkMessages;
+
+struct ForkedProcess {
+  base::ProcessId mPid;
+  size_t mForkId;
+  Channel* mChannel;
+};
+
+static StaticInfallibleVector<ForkedProcess> gForkedProcesses;
+static FileHandle gForkWriteFd, gForkReadFd;
+static char* gFatalErrorMemory;
+static const size_t FatalErrorMemorySize = PageSize;
+
+static void ForkListenerThread(void*) {
+  while (true) {
+    ForkedProcess process;
+    int nbytes = read(gForkReadFd, &process, sizeof(process));
+    MOZ_RELEASE_ASSERT(nbytes == sizeof(process));
+
+    process.mChannel = new Channel(0, Channel::Kind::ReplayRoot,
+                                   HandleMessageFromForkedProcess,
+                                   process.mPid);
+
+    
+    size_t i = 0;
+    while (i < gPendingForkMessages.length()) {
+      auto& pending = gPendingForkMessages[i];
+      if (pending->mForkId == process.mForkId) {
+        process.mChannel->SendMessage(std::move(*pending));
+        gPendingForkMessages.erase(&pending);
+      } else {
+        i++;
+      }
+    }
+
+    gForkedProcesses.emplaceBack(process);
+  }
+}
+
+static void InitializeForkListener() {
+  DirectCreatePipe(&gForkWriteFd, &gForkReadFd);
+
+  Thread::SpawnNonRecordedThread(ForkListenerThread, nullptr);
+
+  if (!ReplayingInCloud()) {
+    gFatalErrorMemory = (char*) mmap(nullptr, FatalErrorMemorySize,
+                                     PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
+    MOZ_RELEASE_ASSERT(gFatalErrorMemory != MAP_FAILED);
+  }
+}
+
+static void SendMessageToForkedProcess(Message::UniquePtr aMsg) {
+  for (const ForkedProcess& process : gForkedProcesses) {
+    if (process.mForkId == aMsg->mForkId) {
+      process.mChannel->SendMessage(std::move(*aMsg));
+      return;
+    }
+  }
+
+  gPendingForkMessages.append(std::move(aMsg));
+}
+
+static bool MaybeHandleExternalCallResponse(const Message& aMsg) {
   
   
-  gChannel->SendMessage(BeginFatalErrorMessage());
+  if (aMsg.mType == MessageType::ExternalCallResponse) {
+    const auto& nmsg = static_cast<const ExternalCallResponseMessage&>(aMsg);
+    AddExternalCallOutput(nmsg.mTag, nmsg.BinaryData(), nmsg.BinaryDataSize());
+    return true;
+  }
+  return false;
+}
+
+static void HandleMessageToForkedProcess(Message::UniquePtr aMsg) {
+  MaybeHandleExternalCallResponse(*aMsg);
+  SendMessageToForkedProcess(std::move(aMsg));
+}
+
+static void HandleMessageFromForkedProcess(Message::UniquePtr aMsg) {
+  
+  
+  if (aMsg->mType == MessageType::ExternalCallRequest) {
+    const auto& nmsg = static_cast<const ExternalCallRequestMessage&>(*aMsg);
+
+    InfallibleVector<char> outputData;
+    if (HasExternalCallOutput(nmsg.mTag, &outputData)) {
+      Message::UniquePtr response(ExternalCallResponseMessage::New(
+          nmsg.mForkId, nmsg.mTag, outputData.begin(), outputData.length()));
+      SendMessageToForkedProcess(std::move(response));
+      return;
+    }
+  }
+
+  if (MaybeHandleExternalCallResponse(*aMsg)) {
+    
+    
+    return;
+  }
+
+  gChannel->SendMessage(std::move(*aMsg));
+}
+
+static const size_t ForkTimeoutSeconds = 10;
+
+void RegisterFork(size_t aForkId) {
+  AutoPassThroughThreadEvents pt;
+
+  gForkId = aForkId;
+  gChannel = new Channel(0, Channel::Kind::ReplayForked, ChannelMessageHandler);
+
+  ForkedProcess process;
+  process.mPid = getpid();
+  process.mForkId = aForkId;
+  int nbytes = write(gForkWriteFd, &process, sizeof(process));
+  MOZ_RELEASE_ASSERT(nbytes == sizeof(process));
 
   
-  UnrecoverableSnapshotFailure();
+  
+  
+  TimeStamp deadline =
+      TimeStamp::Now() + TimeDuration::FromSeconds(ForkTimeoutSeconds);
+  gChannel->ExitIfNotInitializedBefore(deadline);
+}
+
+void ReportCrash(const MinidumpInfo& aInfo, void* aFaultingAddress) {
+  int pid;
+  pid_for_task(aInfo.mTask, &pid);
+
+  size_t forkId = 0;
+  if (aInfo.mTask != mach_task_self()) {
+    for (const ForkedProcess& fork : gForkedProcesses) {
+      if (fork.mPid == pid) {
+        forkId = fork.mForkId;
+      }
+    }
+    if (!forkId) {
+      Print("Could not find fork ID for crashing task\n");
+    }
+  }
 
   AutoEnsurePassThroughThreadEvents pt;
 
 #ifdef MOZ_CRASHREPORTER
-  MinidumpInfo info = aMinidump.isSome()
-                          ? aMinidump.ref()
-                          : MinidumpInfo(EXC_CRASH, 1, 0, mach_thread_self());
   google_breakpad::ExceptionHandler::WriteForwardedExceptionMinidump(
-      info.mExceptionType, info.mCode, info.mSubcode, info.mThread);
+      aInfo.mExceptionType, aInfo.mCode, aInfo.mSubcode, aInfo.mThread,
+      aInfo.mTask);
 #endif
 
-  va_list ap;
-  va_start(ap, aFormat);
   char buf[2048];
-  VsprintfLiteral(buf, aFormat, ap);
-  va_end(ap);
+  if (gFatalErrorMemory && gFatalErrorMemory[0]) {
+    SprintfLiteral(buf, "%s", gFatalErrorMemory);
+    memset(gFatalErrorMemory, 0, FatalErrorMemorySize);
+  } else {
+    SprintfLiteral(buf, "Fault %p", aFaultingAddress);
+  }
 
   
   char msgBuf[4096];
   size_t header = sizeof(FatalErrorMessage);
   size_t len = std::min(strlen(buf) + 1, sizeof(msgBuf) - header);
-  FatalErrorMessage* msg = new (msgBuf) FatalErrorMessage(header + len);
+  FatalErrorMessage* msg = new (msgBuf) FatalErrorMessage(header + len, forkId);
   memcpy(&msgBuf[header], buf, len);
   msgBuf[sizeof(msgBuf) - 1] = 0;
 
   
   gChannel->SendMessage(std::move(*msg));
 
-  DirectPrint("***** Fatal Record/Replay Error *****\n");
-  DirectPrint(buf);
-  DirectPrint("\n");
+  Print("***** Fatal Record/Replay Error #%lu:%lu *****\n%s\n", GetId(), forkId,
+        buf);
+}
+
+void ReportFatalError(const char* aFormat, ...) {
+  if (!gFatalErrorMemory) {
+    gFatalErrorMemory = new char[4096];
+  }
+
+  va_list ap;
+  va_start(ap, aFormat);
+  vsnprintf(gFatalErrorMemory, FatalErrorMemorySize - 1, aFormat, ap);
+  va_end(ap);
+
+  Print("FatalError: %s\n", gFatalErrorMemory);
+
+  MOZ_CRASH("ReportFatalError");
+}
+
+void ReportUnhandledDivergence() {
+  gChannel->SendMessage(UnhandledDivergenceMessage(gForkId));
 
   
   Thread::WaitForeverNoIdle();
 }
 
 size_t GetId() { return gChannel->GetId(); }
+
+void AddPendingRecordingData() {
+  Thread::WaitForIdleThreads();
+
+  InfallibleVector<Stream*> updatedStreams;
+  {
+    MonitorAutoLock lock(*gMonitor);
+
+    MOZ_RELEASE_ASSERT(!gPendingRecordingData.empty());
+
+    gRecording->NewContents((const uint8_t*)gPendingRecordingData.begin(),
+                            gPendingRecordingData.length(), &updatedStreams);
+    gPendingRecordingData.clear();
+  }
+
+  for (Stream* stream : updatedStreams) {
+    if (stream->Name() == StreamName::Lock) {
+      Lock::LockAcquiresUpdated(stream->NameIndex());
+    }
+  }
+
+  Thread::ResumeIdleThreads();
+}
 
 
 
@@ -464,6 +657,32 @@ already_AddRefed<gfx::DrawTarget> DrawTargetForRemoteDrawing(
   return drawTarget.forget();
 }
 
+bool EncodeGraphics(nsACString& aData) {
+  
+  nsCString encoderCID("@mozilla.org/image/encoder;2?type=image/png");
+  nsCOMPtr<imgIEncoder> encoder = do_CreateInstance(encoderCID.get());
+
+  size_t stride = layers::ImageDataSerializer::ComputeRGBStride(gSurfaceFormat,
+                                                                gPaintWidth);
+
+  nsString options;
+  nsresult rv = encoder->InitFromData(
+      (const uint8_t*)gDrawTargetBuffer, stride * gPaintHeight, gPaintWidth,
+      gPaintHeight, stride, imgIEncoder::INPUT_FORMAT_HOSTARGB, options);
+  if (NS_FAILED(rv)) {
+    return false;
+  }
+
+  uint64_t count;
+  rv = encoder->Available(&count);
+  if (NS_FAILED(rv)) {
+    return false;
+  }
+
+  rv = Base64EncodeInputStream(encoder, aData, count);
+  return NS_SUCCEEDED(rv);
+}
+
 void NotifyPaintStart() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
@@ -499,8 +718,22 @@ static void PaintFromMainThread() {
   MOZ_RELEASE_ASSERT(!gNumPendingPaints);
 
   if (IsMainChild() && gDrawTargetBuffer) {
-    memcpy(gGraphicsShmem, gDrawTargetBuffer, gDrawTargetBufferSize);
-    gChannel->SendMessage(PaintMessage(gPaintWidth, gPaintHeight));
+    if (IsRecording()) {
+      memcpy(gGraphicsShmem, gDrawTargetBuffer, gDrawTargetBufferSize);
+      gChannel->SendMessage(PaintMessage(gPaintWidth, gPaintHeight));
+    } else {
+      AutoPassThroughThreadEvents pt;
+
+      nsAutoCString data;
+      if (!EncodeGraphics(data)) {
+        MOZ_CRASH("EncodeGraphics failed");
+      }
+
+      Message* msg = PaintEncodedMessage::New(gForkId, 0, data.BeginReading(),
+                                              data.Length());
+      gChannel->SendMessage(std::move(*msg));
+      free(msg);
+    }
   }
 }
 
@@ -527,7 +760,7 @@ static bool gDidRepaint;
 
 static bool gRepainting;
 
-bool Repaint(nsAString& aData) {
+bool Repaint(nsACString& aData) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(HasDivergedFromRecording());
 
@@ -562,29 +795,7 @@ bool Repaint(nsAString& aData) {
     return false;
   }
 
-  
-  nsCString encoderCID("@mozilla.org/image/encoder;2?type=image/png");
-  nsCOMPtr<imgIEncoder> encoder = do_CreateInstance(encoderCID.get());
-
-  size_t stride = layers::ImageDataSerializer::ComputeRGBStride(gSurfaceFormat,
-                                                                gPaintWidth);
-
-  nsString options;
-  nsresult rv = encoder->InitFromData(
-      (const uint8_t*)gDrawTargetBuffer, stride * gPaintHeight, gPaintWidth,
-      gPaintHeight, stride, imgIEncoder::INPUT_FORMAT_HOSTARGB, options);
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-
-  uint64_t count;
-  rv = encoder->Available(&count);
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-
-  rv = Base64EncodeInputStream(encoder, aData, count);
-  return NS_SUCCEEDED(rv);
+  return EncodeGraphics(aData);
 }
 
 bool CurrentRepaintCannotFail() {
@@ -598,15 +809,16 @@ bool CurrentRepaintCannotFail() {
 void ManifestFinished(const js::CharBuffer& aBuffer) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   ManifestFinishedMessage* msg =
-      ManifestFinishedMessage::New(aBuffer.begin(), aBuffer.length());
+      ManifestFinishedMessage::New(gForkId, aBuffer.begin(), aBuffer.length());
   PauseMainThreadAndInvokeCallback([=]() {
     gChannel->SendMessage(std::move(*msg));
     free(msg);
   });
 }
 
-void SendMiddlemanCallRequest(const char* aInputData, size_t aInputSize,
-                              InfallibleVector<char>* aOutputData) {
+void SendExternalCallRequest(ExternalCallId aId,
+                             const char* aInputData, size_t aInputSize,
+                             InfallibleVector<char>* aOutputData) {
   AutoPassThroughThreadEvents pt;
   MonitorAutoLock lock(*gMonitor);
 
@@ -615,10 +827,9 @@ void SendMiddlemanCallRequest(const char* aInputData, size_t aInputSize,
   }
   gWaitingForCallResponse = true;
 
-  MiddlemanCallRequestMessage* msg =
-      MiddlemanCallRequestMessage::New(aInputData, aInputSize);
+  UniquePtr<ExternalCallRequestMessage> msg(ExternalCallRequestMessage::New(
+      gForkId, aId, aInputData, aInputSize));
   gChannel->SendMessage(std::move(*msg));
-  free(msg);
 
   while (!gCallResponseMessage) {
     gMonitor->Wait();
@@ -633,9 +844,19 @@ void SendMiddlemanCallRequest(const char* aInputData, size_t aInputSize,
   gMonitor->Notify();
 }
 
-void SendResetMiddlemanCalls() {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-  gChannel->SendMessage(ResetMiddlemanCallsMessage());
+void SendExternalCallOutput(ExternalCallId aId,
+                            const char* aOutputData, size_t aOutputSize) {
+  Message::UniquePtr msg(ExternalCallResponseMessage::New(
+      gForkId, aId, aOutputData, aOutputSize));
+  gChannel->SendMessage(std::move(*msg));
+}
+
+void SendRecordingData(size_t aStart, const uint8_t* aData, size_t aSize) {
+  MOZ_RELEASE_ASSERT(Thread::CurrentIsMainThread());
+  RecordingDataMessage* msg =
+      RecordingDataMessage::New(gForkId, aStart, (const char*)aData, aSize);
+  gChannel->SendMessage(std::move(*msg));
+  free(msg);
 }
 
 }  
