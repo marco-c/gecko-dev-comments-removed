@@ -3706,15 +3706,17 @@
         }, false);
 
         addEventListener("unhandledrejection", function(e) {
-            var reason;
-            if (e.reason) {
-                reason  = e.reason.message ? e.reason.message : e.reason;
+            var message;
+            if (e.reason && e.reason.message) {
+                message = "Unhandled rejection: " + e.reason.message;
             } else {
-                reason = e;
+                message = "Unhandled rejection";
             }
-            var message = "Unhandled rejection: " + reason;
-            
-            error_handler(message);
+            var stack;
+            if (e.reason && e.reason.stack) {
+                stack = e.reason.stack;
+            }
+            error_handler(message, stack);
         }, false);
     }
 
