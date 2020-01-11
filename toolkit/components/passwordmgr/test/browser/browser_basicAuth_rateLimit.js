@@ -5,7 +5,7 @@
 
 
 
-const PROMPT_URL = "chrome://global/content/commonDialog.xhtml";
+const PROMPT_URL = "chrome://global/content/commonDialog.xul";
 function promiseAuthWindowShown() {
   return new Promise(resolve => {
     let listener = {

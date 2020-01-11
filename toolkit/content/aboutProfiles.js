@@ -209,7 +209,7 @@ function CreateProfile(profile) {
 function createProfileWizard() {
   
   window.docShell.rootTreeItem.domWindow.openDialog(
-    "chrome://mozapps/content/profile/createProfileWizard.xhtml",
+    "chrome://mozapps/content/profile/createProfileWizard.xul",
     "",
     "centerscreen,chrome,modal,titlebar",
     ProfileService,

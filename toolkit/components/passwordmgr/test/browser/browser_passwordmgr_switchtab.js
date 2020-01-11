@@ -2,7 +2,7 @@
 
 
 
-const PROMPT_URL = "chrome://global/content/commonDialog.xhtml";
+const PROMPT_URL = "chrome://global/content/commonDialog.xul";
 
 add_task(async function test() {
   await new Promise(resolve => {
