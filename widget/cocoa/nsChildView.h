@@ -593,22 +593,6 @@ class nsChildView final : public nsBaseWidget {
   RefPtr<mozilla::SwipeTracker> mSwipeTracker;
   mozilla::UniquePtr<mozilla::SwipeEventQueue> mSwipeEventQueue;
 
-  
-  
-  
-  struct WidgetCompositingState {
-    
-    
-    
-    bool mAsyncCATransactionsSuspended = false;
-
-    
-    
-    
-    bool mNativeLayerChangesPending = false;
-  };
-  mozilla::DataMutex<WidgetCompositingState> mCompositingState;
-
   RefPtr<mozilla::CancelableRunnable> mUnsuspendAsyncCATransactionsRunnable;
 
   

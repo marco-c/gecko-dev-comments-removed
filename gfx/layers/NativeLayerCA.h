@@ -44,9 +44,32 @@ class SurfacePoolHandleCA;
 
 
 
+
+
+
+
+
+
+
 class NativeLayerRootCA : public NativeLayerRoot {
  public:
   static already_AddRefed<NativeLayerRootCA> CreateForCALayer(CALayer* aLayer);
+
+  
+  
+  
+  bool CommitToScreen() override;
+
+  
+  
+  void SuspendOffMainThreadCommits();
+
+  
+  
+  
+  bool UnsuspendOffMainThreadCommits();
+
+  bool AreOffMainThreadCommitsSuspended();
 
   
   already_AddRefed<NativeLayer> CreateLayer(
@@ -59,9 +82,6 @@ class NativeLayerRootCA : public NativeLayerRoot {
   void SetBackingScale(float aBackingScale);
   float BackingScale();
 
-  
-  void ApplyChanges();
-
  protected:
   explicit NativeLayerRootCA(CALayer* aLayer);
   ~NativeLayerRootCA() override;
@@ -71,6 +91,18 @@ class NativeLayerRootCA : public NativeLayerRoot {
   CALayer* mRootCALayer = nullptr;             
   float mBackingScale = 1.0f;
   bool mMutated = false;
+
+  
+  
+  
+  
+  bool mOffMainThreadCommitsSuspended = false;
+
+  
+  
+  
+  
+  bool mCommitPending = false;
 };
 
 

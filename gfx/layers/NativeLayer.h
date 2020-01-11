@@ -41,6 +41,10 @@ class NativeLayerRoot {
   virtual void RemoveLayer(NativeLayer* aLayer) = 0;
   virtual void SetLayers(const nsTArray<RefPtr<NativeLayer>>& aLayers) = 0;
 
+  
+  
+  virtual bool CommitToScreen() = 0;
+
  protected:
   virtual ~NativeLayerRoot() {}
 };
