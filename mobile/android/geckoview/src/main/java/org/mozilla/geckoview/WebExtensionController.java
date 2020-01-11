@@ -67,7 +67,7 @@ public class WebExtensionController {
     
     private class Internals implements BundleEventListener,
             WebExtension.Port.DisconnectDelegate,
-            WebExtension.DelegateObserver {
+            WebExtension.DelegateController {
         private boolean mMessageListenersAttached = false;
         private boolean mActionListenersAttached = false;
 
@@ -458,7 +458,7 @@ public class WebExtensionController {
     }
 
      void registerWebExtension(final WebExtension webExtension) {
-        webExtension.setDelegateObserver(mInternals);
+        webExtension.setDelegateController(mInternals);
         mExtensions.put(webExtension.id, webExtension);
     }
 
@@ -603,7 +603,7 @@ public class WebExtensionController {
 
      void unregisterWebExtension(final WebExtension webExtension) {
         mExtensions.remove(webExtension.id);
-        webExtension.setDelegateObserver(null);
+        webExtension.setDelegateController(null);
 
         
         

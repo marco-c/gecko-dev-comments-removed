@@ -65,15 +65,15 @@ public class WebExtension {
     final boolean isEnabled;
 
     
- interface DelegateObserver {
+ interface DelegateController {
         void onMessageDelegate(final String nativeApp, final MessageDelegate delegate);
         void onActionDelegate(final ActionDelegate delegate);
     }
 
-    private WeakReference<DelegateObserver> mDelegateObserver = new WeakReference<>(null);
+    private WeakReference<DelegateController> mDelegateController = new WeakReference<>(null);
 
-     void setDelegateObserver(final DelegateObserver observer) {
-        mDelegateObserver = new WeakReference<>(observer);
+     void setDelegateController(final DelegateController observer) {
+        mDelegateController = new WeakReference<>(observer);
 
         if (observer != null) {
             
@@ -240,7 +240,7 @@ public class WebExtension {
     @UiThread
     public void setMessageDelegate(final @Nullable MessageDelegate messageDelegate,
                                    final @NonNull String nativeApp) {
-        final DelegateObserver observer = mDelegateObserver.get();
+        final DelegateController observer = mDelegateController.get();
         if (observer != null) {
             observer.onMessageDelegate(nativeApp, messageDelegate);
         }
@@ -1139,7 +1139,7 @@ public class WebExtension {
 
     @AnyThread
     public void setActionDelegate(final @Nullable ActionDelegate delegate) {
-        final DelegateObserver observer = mDelegateObserver.get();
+        final DelegateController observer = mDelegateController.get();
         if (observer != null) {
             observer.onActionDelegate(delegate);
         }
