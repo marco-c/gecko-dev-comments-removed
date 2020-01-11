@@ -3121,13 +3121,13 @@ bool BytecodeEmitter::emitAnonymousFunctionWithName(ParseNode* node,
   MOZ_ASSERT(node->isDirectRHSAnonFunction());
 
   if (node->is<FunctionNode>()) {
-    if (!emitTree(node)) {
+    
+    
+    if (!setFunName(node->as<FunctionNode>().funbox()->function(), name)) {
       return false;
     }
 
-    
-    
-    return setFunName(node->as<FunctionNode>().funbox()->function(), name);
+    return emitTree(node);
   }
 
   MOZ_ASSERT(node->is<ClassNode>());
@@ -9128,14 +9128,14 @@ bool BytecodeEmitter::emitClass(
 
     bool needsHomeObject = ctor->funbox()->needsHomeObject();
     
-    if (!emitFunction(ctor, isDerived, classMembers)) {
-      
-      return false;
-    }
     if (nameKind == ClassNameKind::InferredName) {
       if (!setFunName(ctor->funbox()->function(), nameForAnonymousClass)) {
         return false;
       }
+    }
+    if (!emitFunction(ctor, isDerived, classMembers)) {
+      
+      return false;
     }
     if (lse.isSome()) {
       if (!lse->emitEnd()) {

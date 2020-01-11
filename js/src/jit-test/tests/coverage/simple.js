@@ -576,3 +576,21 @@ checkLcov(function () {
 
 
 
+{
+  
+  checkLcov(function () {
+    
+    
+
+    var x = function() {};  
+    let y = function() {};  
+
+    let z = {
+      z_method() { },       
+      get z_prop() { },     
+    }
+  });
+}
+
+
+
