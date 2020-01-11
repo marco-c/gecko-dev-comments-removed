@@ -141,7 +141,9 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
 
   static TextControlState* Construct(TextControlElement* aOwningElement);
 
-  static void Shutdown();
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void Shutdown();
 
   
 
@@ -350,27 +352,28 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
   
   
   
-  void SetSelectionRange(uint32_t aStart, uint32_t aEnd,
-                         nsITextControlFrame::SelectionDirection aDirection,
-                         ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void SetSelectionRange(
+      uint32_t aStart, uint32_t aEnd,
+      nsITextControlFrame::SelectionDirection aDirection, ErrorResult& aRv);
 
   
   
   
-  void SetSelectionRange(uint32_t aSelectionStart, uint32_t aSelectionEnd,
-                         const dom::Optional<nsAString>& aDirection,
-                         ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void SetSelectionRange(
+      uint32_t aSelectionStart, uint32_t aSelectionEnd,
+      const dom::Optional<nsAString>& aDirection, ErrorResult& aRv);
 
   
   
   
-  void SetSelectionStart(const dom::Nullable<uint32_t>& aStart,
-                         ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void SetSelectionStart(
+      const dom::Nullable<uint32_t>& aStart, ErrorResult& aRv);
 
   
   
   
-  void SetSelectionEnd(const dom::Nullable<uint32_t>& aEnd, ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void SetSelectionEnd(const dom::Nullable<uint32_t>& aEnd,
+                                          ErrorResult& aRv);
 
   
   
@@ -380,18 +383,20 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
   
   
   
-  void SetSelectionDirection(const nsAString& aDirection, ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void SetSelectionDirection(const nsAString& aDirection,
+                                                ErrorResult& aRv);
 
   
   
-  void SetRangeText(const nsAString& aReplacement, ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void SetRangeText(const nsAString& aReplacement,
+                                       ErrorResult& aRv);
   
   
-  void SetRangeText(const nsAString& aReplacement, uint32_t aStart,
-                    uint32_t aEnd, dom::SelectionMode aSelectMode,
-                    ErrorResult& aRv,
-                    const Maybe<uint32_t>& aSelectionStart = Nothing(),
-                    const Maybe<uint32_t>& aSelectionEnd = Nothing());
+  MOZ_CAN_RUN_SCRIPT void SetRangeText(
+      const nsAString& aReplacement, uint32_t aStart, uint32_t aEnd,
+      dom::SelectionMode aSelectMode, ErrorResult& aRv,
+      const Maybe<uint32_t>& aSelectionStart = Nothing(),
+      const Maybe<uint32_t>& aSelectionEnd = Nothing());
 
   void UpdateEditableState(bool aNotify) {
     if (auto* root = GetRootNode()) {
