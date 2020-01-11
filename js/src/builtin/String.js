@@ -66,6 +66,22 @@ function String_matchAll(regexp) {
     
     if (regexp !== undefined && regexp !== null) {
         
+        if (IsRegExp(regexp)) {
+            
+            var flags = regexp.flags;
+
+            
+            if (flags === undefined || flags === null) {
+                ThrowTypeError(JSMSG_FLAGS_UNDEFINED_OR_NULL);
+            }
+
+            
+            if (!callFunction(std_String_includes, ToString(flags), "g")) {
+                ThrowTypeError(JSMSG_REQUIRES_GLOBAL_REGEXP, "matchAll");
+            }
+        }
+
+        
         var matcher = GetMethod(regexp, std_matchAll);
 
         
