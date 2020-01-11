@@ -13721,6 +13721,48 @@ void CodeGenerator::visitNaNToZero(LNaNToZero* lir) {
   masm.bind(ool->rejoin());
 }
 
+static void BoundFunctionLength(MacroAssembler& masm, Register target,
+                                Register targetFlags, Register argCount,
+                                Register output) {
+  const size_t boundLengthOffset =
+      FunctionExtended::offsetOfExtendedSlot(BOUND_FUN_LENGTH_SLOT);
+
+  
+  Label isInterpreted, isBound, lengthLoaded;
+  masm.branchTest32(Assembler::NonZero, targetFlags,
+                    Imm32(FunctionFlags::BOUND_FUN), &isBound);
+  masm.branchTest32(Assembler::NonZero, targetFlags,
+                    Imm32(FunctionFlags::INTERPRETED), &isInterpreted);
+  {
+    
+    masm.load16ZeroExtend(Address(target, JSFunction::offsetOfNargs()), output);
+    masm.jump(&lengthLoaded);
+  }
+  masm.bind(&isBound);
+  {
+    
+    masm.unboxInt32(Address(target, boundLengthOffset), output);
+    masm.jump(&lengthLoaded);
+  }
+  masm.bind(&isInterpreted);
+  {
+    
+    masm.loadPtr(Address(target, JSFunction::offsetOfScript()), output);
+    masm.loadPtr(Address(output, JSScript::offsetOfSharedData()), output);
+    masm.loadPtr(Address(output, RuntimeScriptData::offsetOfISD()), output);
+    masm.load16ZeroExtend(
+        Address(output, ImmutableScriptData::offsetOfFunLength()), output);
+  }
+  masm.bind(&lengthLoaded);
+
+  
+  Label nonNegative;
+  masm.sub32(argCount, output);
+  masm.branch32(Assembler::GreaterThanOrEqual, output, Imm32(0), &nonNegative);
+  masm.move32(Imm32(0), output);
+  masm.bind(&nonNegative);
+}
+
 void CodeGenerator::visitFinishBoundFunctionInit(
     LFinishBoundFunctionInit* lir) {
   Register bound = ToRegister(lir->bound());
@@ -13824,42 +13866,8 @@ void CodeGenerator::visitFinishBoundFunctionInit(
   masm.store16(temp2, Address(bound, JSFunction::offsetOfFlags()));
 
   
-  Label isInterpreted, isBound, lengthLoaded;
-  masm.branchTest32(Assembler::NonZero, temp1, Imm32(FunctionFlags::BOUND_FUN),
-                    &isBound);
-  masm.branchTest32(Assembler::NonZero, temp1,
-                    Imm32(FunctionFlags::INTERPRETED), &isInterpreted);
-  {
-    
-    masm.load16ZeroExtend(Address(target, JSFunction::offsetOfNargs()), temp1);
-    masm.jump(&lengthLoaded);
-  }
-  masm.bind(&isBound);
-  {
-    
-    masm.unboxInt32(Address(target, boundLengthOffset), temp1);
-    masm.jump(&lengthLoaded);
-  }
-  masm.bind(&isInterpreted);
-  {
-    
-    masm.loadPtr(Address(target, JSFunction::offsetOfScript()), temp1);
-    masm.loadPtr(Address(temp1, JSScript::offsetOfSharedData()), temp1);
-    masm.loadPtr(Address(temp1, RuntimeScriptData::offsetOfISD()), temp1);
-    masm.load16ZeroExtend(
-        Address(temp1, ImmutableScriptData::offsetOfFunLength()), temp1);
-  }
-  masm.bind(&lengthLoaded);
-
-  
-  Label nonNegative;
-  masm.sub32(argCount, temp1);
-  masm.branch32(Assembler::GreaterThanOrEqual, temp1, Imm32(0), &nonNegative);
-  masm.move32(Imm32(0), temp1);
-  masm.bind(&nonNegative);
-
-  
-  masm.storeValue(JSVAL_TYPE_INT32, temp1, Address(bound, boundLengthOffset));
+  BoundFunctionLength(masm, target, temp1, argCount, temp2);
+  masm.storeValue(JSVAL_TYPE_INT32, temp2, Address(bound, boundLengthOffset));
 
   masm.bind(ool->rejoin());
 }
