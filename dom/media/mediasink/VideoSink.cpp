@@ -666,19 +666,13 @@ void VideoSink::SetSecondaryVideoContainer(VideoFrameContainer* aSecondary) {
 
     
     
-    
-    nsTArray<ImageContainer::OwningImage> oldImages;
-    mainImageContainer->GetCurrentImages(&oldImages);
-    if (oldImages.Length()) {
-      ImageContainer::OwningImage& old = oldImages.LastElement();
-
-      nsTArray<ImageContainer::NonOwningImage> currentFrame;
-      
-      
-      
+    AutoLockImage lockImage(mainImageContainer);
+    TimeStamp now = TimeStamp::Now();
+    if (RefPtr<Image> image = lockImage.GetImage(now)) {
+      AutoTArray<ImageContainer::NonOwningImage, 1> currentFrame;
       currentFrame.AppendElement(ImageContainer::NonOwningImage(
-          old.mImage, old.mTimeStamp,  0, old.mProducerID));
-
+          image, now,  1,
+           ImageContainer::AllocateProducerID()));
       secondaryImageContainer->SetCurrentImages(currentFrame);
     }
   }
