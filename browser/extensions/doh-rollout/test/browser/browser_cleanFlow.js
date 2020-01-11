@@ -1,6 +1,8 @@
 "use strict";
 
 add_task(async function testCleanFlow() {
+  await waitForBalrogMigration();
+
   
   setPassingHeuristics();
   let promise = waitForDoorhanger();
