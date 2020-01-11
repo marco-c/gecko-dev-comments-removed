@@ -2966,7 +2966,7 @@ nsresult BackgroundRequestChild::PreprocessHelper::Init(
   
   
   
-  mTaskQueue = new TaskQueue(target.forget());
+  mTaskQueue = MakeRefPtr<TaskQueue>(target.forget());
   mTaskQueueEventTarget = mTaskQueue->WrapAsEventTarget();
 
   ErrorResult errorResult;
