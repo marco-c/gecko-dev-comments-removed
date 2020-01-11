@@ -231,22 +231,49 @@ var gSync = {
     this.updateSyncStatus(state);
     this.updateFxAPanel(state);
     
-    this.refreshFxaDevices();
+    this.ensureFxaDevices();
   },
 
-  async refreshFxaDevices(options) {
+  
+  
+  
+  
+  
+  
+  async ensureFxaDevices(options) {
     if (UIState.get().status != UIState.STATUS_SIGNED_IN) {
       console.info("Skipping device list refresh; not signed in");
       return;
     }
+    if (!fxAccounts.device.recentDeviceList) {
+      if (await this.refreshFxaDevices()) {
+        
+        
+        if (!fxAccounts.device.recentDeviceList) {
+          console.warn("Refreshing device list didn't find any devices.");
+        }
+      }
+    }
+  },
+
+  
+  
+  
+  
+  
+  
+  async refreshFxaDevices() {
+    if (UIState.get().status != UIState.STATUS_SIGNED_IN) {
+      console.info("Skipping device list refresh; not signed in");
+      return false;
+    }
     try {
       
-      
-      
-      
-      await fxAccounts.device.refreshDeviceList(options);
+      await fxAccounts.device.refreshDeviceList({ ignoreCached: true });
+      return true;
     } catch (e) {
       console.error("Refreshing device list failed.", e);
+      return false;
     }
   },
 
@@ -346,23 +373,23 @@ var gSync = {
       bodyNode.setAttribute("state", "notready");
     }
     if (reloadDevices) {
-      if (UIState.get().syncEnabled) {
-        Services.tm.dispatchToMainThread(async () => {
-          
-          await Weave.Service.sync({ why: "pageactions", engines: [] });
-          if (!window.closed) {
-            this.populateSendTabToDevicesView(panelViewNode, false);
-          }
-        });
-      } else {
-        
-        
-        this.refreshFxaDevices({ ignoreCached: true }).then(_ => {
-          if (!window.closed) {
-            this.populateSendTabToDevicesView(panelViewNode, false);
-          }
-        });
-      }
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      
+      
+      this.refreshFxaDevices().then(_ => {
+        if (!window.closed) {
+          this.populateSendTabToDevicesView(panelViewNode, false);
+        }
+      });
     }
   },
 
