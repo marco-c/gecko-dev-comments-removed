@@ -20,6 +20,7 @@
 #include "prinrval.h"
 #include "prthread.h"
 #include "ThreadStackHelper.h"
+#include "nsAppDirectoryServiceDefs.h"
 #include "nsIObserverService.h"
 #include "nsIObserver.h"
 #include "mozilla/Services.h"
@@ -106,6 +107,10 @@ class BackgroundHangManager : public nsIObserver {
 
   
   
+  nsCOMPtr<nsIFile> mPermahangFile;
+
+  
+  
   CPUUsageWatcher mCPUUsageWatcher;
 
   void Shutdown() {
@@ -131,13 +136,36 @@ NS_IMPL_ISUPPORTS(BackgroundHangManager, nsIObserver)
 NS_IMETHODIMP
 BackgroundHangManager::Observe(nsISupports* aSubject, const char* aTopic,
                                const char16_t* aData) {
-  NS_ENSURE_TRUE(!strcmp(aTopic, "profile-after-change"), NS_ERROR_UNEXPECTED);
-  BackgroundHangMonitor::DisableOnBeta();
+  if (!strcmp(aTopic, "browser-delayed-startup-finished")) {
+    MonitorAutoLock autoLock(mLock);
+    nsresult rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
+                                         getter_AddRefs(mPermahangFile));
+    if (NS_SUCCEEDED(rv)) {
+      mPermahangFile->AppendNative(NS_LITERAL_CSTRING("last_permahang.bin"));
+    } else {
+      mPermahangFile = nullptr;
+    }
 
-  nsCOMPtr<nsIObserverService> observerService =
-      mozilla::services::GetObserverService();
-  MOZ_ASSERT(observerService);
-  observerService->RemoveObserver(this, "profile-after-change");
+    if (mHangProcessingThread && mPermahangFile) {
+      nsCOMPtr<nsIRunnable> submitRunnable =
+          new SubmitPersistedPermahangRunnable(mPermahangFile);
+      mHangProcessingThread->Dispatch(submitRunnable.forget());
+    }
+    nsCOMPtr<nsIObserverService> observerService =
+        mozilla::services::GetObserverService();
+    MOZ_ASSERT(observerService);
+    observerService->RemoveObserver(BackgroundHangManager::sInstance,
+                                    "browser-delayed-startup-finished");
+  } else if (!strcmp(aTopic, "profile-after-change")) {
+    BackgroundHangMonitor::DisableOnBeta();
+    nsCOMPtr<nsIObserverService> observerService =
+        mozilla::services::GetObserverService();
+    MOZ_ASSERT(observerService);
+    observerService->RemoveObserver(BackgroundHangManager::sInstance,
+                                    "profile-after-change");
+  } else {
+    return NS_ERROR_UNEXPECTED;
+  }
 
   return NS_OK;
 }
@@ -216,7 +244,8 @@ class BackgroundHangThread : public LinkedListElement<BackgroundHangThread> {
 
   
   
-  void ReportHang(TimeDuration aHangTime);
+  void ReportHang(TimeDuration aHangTime,
+                  PersistedToDisk aPersistedToDisk = PersistedToDisk::No);
   
   void ReportPermaHang();
   
@@ -468,7 +497,8 @@ BackgroundHangThread::~BackgroundHangThread() {
   }
 }
 
-void BackgroundHangThread::ReportHang(TimeDuration aHangTime) {
+void BackgroundHangThread::ReportHang(TimeDuration aHangTime,
+                                      PersistedToDisk aPersistedToDisk) {
   
   
 
@@ -478,17 +508,25 @@ void BackgroundHangThread::ReportHang(TimeDuration aHangTime) {
       VoidString(), mThreadName, mRunnableName, std::move(mHangStack),
       std::move(mAnnotations));
 
+  PersistedToDisk persistedToDisk = aPersistedToDisk;
+  if (aPersistedToDisk == PersistedToDisk::Yes && XRE_IsParentProcess() &&
+      mManager->mPermahangFile) {
+    auto res = WriteHangDetailsToFile(hangDetails, mManager->mPermahangFile);
+    persistedToDisk = res.isOk() ? PersistedToDisk::Yes : PersistedToDisk::No;
+  }
+
   
   
   
   if (mManager->mHangProcessingThread) {
     nsCOMPtr<nsIRunnable> processHangStackRunnable =
-        new ProcessHangStackRunnable(std::move(hangDetails));
+        new ProcessHangStackRunnable(std::move(hangDetails), persistedToDisk);
     mManager->mHangProcessingThread->Dispatch(
         processHangStackRunnable.forget());
   } else {
     NS_WARNING("Unable to report native stack without a BHR processing thread");
-    RefPtr<nsHangDetails> hd = new nsHangDetails(std::move(hangDetails));
+    RefPtr<nsHangDetails> hd =
+        new nsHangDetails(std::move(hangDetails), persistedToDisk);
     hd->Submit();
   }
 
@@ -513,9 +551,7 @@ void BackgroundHangThread::ReportPermaHang() {
   
   
   
-  
-  
-  ReportHang(mMaxTimeout);
+  ReportHang(mMaxTimeout, PersistedToDisk::Yes);
 }
 
 MOZ_ALWAYS_INLINE void BackgroundHangThread::Update() {
@@ -613,17 +649,16 @@ void BackgroundHangMonitor::Startup() {
     return;
   }
 
+  nsCOMPtr<nsIObserverService> observerService =
+      mozilla::services::GetObserverService();
+  MOZ_ASSERT(observerService);
+
   if (!strcmp(MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL), "beta")) {
     if (XRE_IsParentProcess()) {  
       BackgroundHangThread::Startup();
       BackgroundHangManager::sInstance = new BackgroundHangManager();
       Unused << NS_WARN_IF(
           BackgroundHangManager::sInstance->mCPUUsageWatcher.Init().isErr());
-
-      nsCOMPtr<nsIObserverService> observerService =
-          mozilla::services::GetObserverService();
-      MOZ_ASSERT(observerService);
-
       observerService->AddObserver(BackgroundHangManager::sInstance,
                                    "profile-after-change", false);
       return;
@@ -636,6 +671,10 @@ void BackgroundHangMonitor::Startup() {
   BackgroundHangManager::sInstance = new BackgroundHangManager();
   Unused << NS_WARN_IF(
       BackgroundHangManager::sInstance->mCPUUsageWatcher.Init().isErr());
+  if (XRE_IsParentProcess()) {
+    observerService->AddObserver(BackgroundHangManager::sInstance,
+                                 "browser-delayed-startup-finished", false);
+  }
 #endif
 }
 
