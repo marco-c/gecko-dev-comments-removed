@@ -65,8 +65,7 @@
 #include "vm/Opcodes.h"   
 #include "wasm/AsmJS.h"   
 
-#include "debugger/DebugAPI-inl.h"  
-#include "vm/JSObject-inl.h"        
+#include "vm/JSObject-inl.h"  
 
 using namespace js;
 using namespace js::frontend;
@@ -1598,20 +1597,6 @@ bool BytecodeEmitter::emitSuperBase() {
   return emit1(JSOP_SUPERBASE);
 }
 
-void BytecodeEmitter::tellDebuggerAboutCompiledScript(JSContext* cx) {
-  
-  
-  if (cx->isHelperThreadContext()) {
-    return;
-  }
-
-  
-  
-  if (emitterMode != LazyFunction && !parent) {
-    DebugAPI::onNewScript(cx, script);
-  }
-}
-
 void BytecodeEmitter::reportNeedMoreArgsError(ParseNode* pn,
                                               const char* errorName,
                                               const char* requiredArgs,
@@ -2501,8 +2486,6 @@ bool BytecodeEmitter::emitScript(ParseNode* body) {
   if (!JSScript::fullyInitFromEmitter(cx, script, this)) {
     return false;
   }
-
-  tellDebuggerAboutCompiledScript(cx);
 
   return true;
 }
