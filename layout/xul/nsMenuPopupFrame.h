@@ -259,8 +259,6 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   void LayoutPopup(nsBoxLayoutState& aState, nsIFrame* aParentMenu,
                    bool aSizedToPopup);
 
-  nsView* GetRootViewForPopup(nsIFrame* aStartFrame);
-
   
   
   

@@ -979,35 +979,6 @@ nsIFrame::ReflowChildFlags nsMenuPopupFrame::GetXULLayoutFlags() {
          ReflowChildFlags::NoVisibility;
 }
 
-
-
-
-
-
-nsView* nsMenuPopupFrame::GetRootViewForPopup(nsIFrame* aStartFrame) {
-  nsView* view = aStartFrame->GetClosestView();
-  NS_ASSERTION(view, "frame must have a closest view!");
-  while (view) {
-    
-    
-    
-    nsIWidget* widget = view->GetWidget();
-    if (widget && widget->WindowType() == eWindowType_popup) {
-      return view;
-    }
-
-    nsView* temp = view->GetParent();
-    if (!temp) {
-      
-      
-      return view;
-    }
-    view = temp;
-  }
-
-  return nullptr;
-}
-
 nsPoint nsMenuPopupFrame::AdjustPositionForAnchorAlign(nsRect& anchorRect,
                                                        FlipStyle& aHFlip,
                                                        FlipStyle& aVFlip) {
@@ -2183,10 +2154,9 @@ void nsMenuPopupFrame::LockMenuUntilClosed(bool aLock) {
 }
 
 nsIWidget* nsMenuPopupFrame::GetWidget() {
-  nsView* view = GetRootViewForPopup(this);
-  if (!view) return nullptr;
+  if (!mView) return nullptr;
 
-  return view->GetWidget();
+  return mView->GetWidget();
 }
 
 
