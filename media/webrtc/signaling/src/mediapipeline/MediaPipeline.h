@@ -32,18 +32,19 @@
 class nsIPrincipal;
 
 namespace mozilla {
+class AudioProxyThread;
+class MediaInputPort;
 class MediaPipelineFilter;
 class MediaTransportHandler;
 class PeerIdentity;
-class AudioProxyThread;
+class ProcessedMediaTrack;
+class SourceMediaTrack;
 class VideoFrameConverter;
 
 namespace dom {
 class MediaStreamTrack;
 struct RTCRTPContributingSourceStats;
 }  
-
-class SourceMediaTrack;
 
 
 
@@ -307,6 +308,7 @@ class MediaPipelineTransmit : public MediaPipeline {
 
   
   class PipelineListener;
+  class PipelineListenerTrackConsumer;
   class VideoFrameFeeder;
 
  protected:
@@ -317,10 +319,18 @@ class MediaPipelineTransmit : public MediaPipeline {
  private:
   const bool mIsVideo;
   const RefPtr<PipelineListener> mListener;
+  
+  
+  const nsMainThreadPtrHandle<PipelineListenerTrackConsumer> mTrackConsumer;
   const RefPtr<VideoFrameFeeder> mFeeder;
   RefPtr<AudioProxyThread> mAudioProcessing;
   RefPtr<VideoFrameConverter> mConverter;
   RefPtr<dom::MediaStreamTrack> mDomTrack;
+  
+  RefPtr<MediaInputPort> mSendPort;
+  
+  RefPtr<ProcessedMediaTrack> mSendTrack;
+  
   bool mTransmitting;
 };
 
