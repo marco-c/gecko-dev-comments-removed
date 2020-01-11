@@ -187,3 +187,8 @@ function timeoutPromise(ms) {
     window.setTimeout(resolve, ms);
   });
 }
+
+
+function fail(message) {
+  ok(false, message);
+}
