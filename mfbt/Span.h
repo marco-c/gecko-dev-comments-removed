@@ -358,7 +358,7 @@ class extent_type<dynamic_extent> {
 
 
 
-template <class ElementType, size_t Extent>
+template <class ElementType, size_t Extent >
 class Span {
  public:
   
