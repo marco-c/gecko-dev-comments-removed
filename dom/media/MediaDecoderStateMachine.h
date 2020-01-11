@@ -260,11 +260,6 @@ class MediaDecoderStateMachine
     return mOnNextFrameStatus;
   }
 
-  MediaEventSourceExc<RefPtr<VideoFrameContainer>>&
-  OnSecondaryVideoContainerInstalled() {
-    return mOnSecondaryVideoContainerInstalled;
-  }
-
   size_t SizeOfVideoQueue() const;
 
   size_t SizeOfAudioQueue() const;
@@ -273,6 +268,9 @@ class MediaDecoderStateMachine
   void SetVideoDecodeMode(VideoDecodeMode aMode);
 
   RefPtr<GenericPromise> InvokeSetSink(RefPtr<AudioDeviceInfo> aSink);
+
+  void SetSecondaryVideoContainer(
+      const RefPtr<VideoFrameContainer>& aSecondary);
 
  private:
   class StateObject;
@@ -377,7 +375,6 @@ class MediaDecoderStateMachine
   void SetPlaybackRate(double aPlaybackRate);
   void PreservesPitchChanged();
   void LoopingChanged();
-  void UpdateSecondaryVideoContainer();
   void UpdateOutputCaptured();
   void OutputTracksChanged();
   void OutputPrincipalChanged();
@@ -678,9 +675,6 @@ class MediaDecoderStateMachine
 
   MediaEventProducer<NextFrameStatus> mOnNextFrameStatus;
 
-  MediaEventProducerExc<RefPtr<VideoFrameContainer>>
-      mOnSecondaryVideoContainerInstalled;
-
   const bool mIsMSE;
 
   bool mSeamlessLoopingAllowed;
@@ -713,10 +707,6 @@ class MediaDecoderStateMachine
   
   
   Mirror<RefPtr<AudioDeviceInfo>> mSinkDevice;
-
-  
-  
-  Mirror<RefPtr<VideoFrameContainer>> mSecondaryVideoContainer;
 
   
   

@@ -308,10 +308,9 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   bool HasSuspendTaint() const;
 
-  void UpdateVideoDecodeMode();
+  void SetCloningVisually(bool aIsCloningVisually);
 
-  void SetSecondaryVideoContainer(
-      RefPtr<VideoFrameContainer> aSecondaryVideoContainer);
+  void UpdateVideoDecodeMode();
 
   void SetIsBackgroundVideoDecodingAllowed(bool aAllowed);
 
@@ -483,9 +482,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   void OnNextFrameStatus(MediaDecoderOwner::NextFrameStatus);
 
-  void OnSecondaryVideoContainerInstalled(
-      const RefPtr<VideoFrameContainer>& aSecondaryContainer);
-
   void OnStoreDecoderBenchmark(const VideoInfo& aInfo);
 
   void FinishShutdown();
@@ -571,6 +567,10 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   bool mHasSuspendTaint;
 
+  
+  
+  bool mIsCloningVisually;
+
   MediaDecoderOwner::NextFrameStatus mNextFrameStatus =
       MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE;
 
@@ -588,7 +588,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   MediaEventListener mOnWaitingForKey;
   MediaEventListener mOnDecodeWarning;
   MediaEventListener mOnNextFrameStatus;
-  MediaEventListener mOnSecondaryVideoContainerInstalled;
   MediaEventListener mOnStoreDecoderBenchmark;
 
   
@@ -623,10 +622,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   
   Canonical<RefPtr<AudioDeviceInfo>> mSinkDevice;
-
-  
-  
-  Canonical<RefPtr<VideoFrameContainer>> mSecondaryVideoContainer;
 
   
   
@@ -672,10 +667,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   AbstractCanonical<bool>* CanonicalLooping() { return &mLooping; }
   AbstractCanonical<RefPtr<AudioDeviceInfo>>* CanonicalSinkDevice() {
     return &mSinkDevice;
-  }
-  AbstractCanonical<RefPtr<VideoFrameContainer>>*
-  CanonicalSecondaryVideoContainer() {
-    return &mSecondaryVideoContainer;
   }
   AbstractCanonical<bool>* CanonicalOutputCaptured() {
     return &mOutputCaptured;

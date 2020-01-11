@@ -632,16 +632,6 @@ void VideoSink::MaybeResolveEndPromise() {
       }
     }
 
-    
-    
-    
-    
-    
-    mContainer->ClearFutureFrames();
-    if (mSecondaryContainer) {
-      mSecondaryContainer->ClearFutureFrames();
-    }
-
     TimeStamp nowTime;
     const auto clockTime = mAudioSink->GetPosition(&nowTime);
     if (clockTime < mVideoFrameEndTime) {
@@ -676,16 +666,27 @@ void VideoSink::SetSecondaryVideoContainer(VideoFrameContainer* aSecondary) {
 
     
     
-    AutoLockImage lockImage(mainImageContainer);
-    TimeStamp now = TimeStamp::Now();
-    if (RefPtr<Image> image = lockImage.GetImage(now)) {
-      AutoTArray<ImageContainer::NonOwningImage, 1> currentFrame;
+    
+    nsTArray<ImageContainer::OwningImage> oldImages;
+    mainImageContainer->GetCurrentImages(&oldImages);
+    if (oldImages.Length()) {
+      ImageContainer::OwningImage& old = oldImages.LastElement();
+
+      nsTArray<ImageContainer::NonOwningImage> currentFrame;
+      
+      
+      
       currentFrame.AppendElement(ImageContainer::NonOwningImage(
-          image, now,  1,
-           ImageContainer::AllocateProducerID()));
+          old.mImage, old.mTimeStamp,  0, old.mProducerID));
+
       secondaryImageContainer->SetCurrentImages(currentFrame);
     }
   }
+}
+
+void VideoSink::ClearSecondaryVideoContainer() {
+  AssertOwnerThread();
+  mSecondaryContainer = nullptr;
 }
 
 void VideoSink::GetDebugInfo(dom::MediaSinkDebugInfo& aInfo) {
