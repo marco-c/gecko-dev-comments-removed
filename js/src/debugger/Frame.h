@@ -185,19 +185,7 @@ class DebuggerFrame : public NativeObject {
       mozilla::Range<const char16_t> chars, HandleObject bindings,
       const EvalOptions& options);
 
-  enum class MinState {
-    
-    OnStack,
-
-    
-    OnStackOrSuspended,
-
-    
-    OnStackOrSuspendedOrTerminated,
-  };
-
-  static MOZ_MUST_USE DebuggerFrame* check(JSContext* cx, HandleValue thisv,
-                                           MinState minState);
+  static MOZ_MUST_USE DebuggerFrame* check(JSContext* cx, HandleValue thisv);
 
   bool isOnStack() const;
 
