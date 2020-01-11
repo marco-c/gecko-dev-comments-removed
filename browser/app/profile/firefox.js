@@ -325,12 +325,14 @@ pref("browser.urlbar.usepreloadedtopurls.enabled", false);
 pref("browser.urlbar.usepreloadedtopurls.expire_days", 14);
 
 
-pref("browser.urlbar.megabar", false);
+pref("browser.urlbar.update1", false);
 
-pref("browser.urlbar.megabar.expandTextOnFocus", false);
 
-pref("browser.urlbar.searchIcon", false);
-pref("browser.urlbar.view.stripHttps", false);
+pref("browser.urlbar.update1.expandTextOnFocus", false);
+
+pref("browser.urlbar.update1.searchButton", false);
+
+pref("browser.urlbar.update1.view.stripHttps", false);
 
 pref("browser.urlbar.openViewOnFocus", false);
 pref("browser.urlbar.eventTelemetry.enabled", false);

@@ -104,12 +104,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["maxRichResults", 10],
 
   
-  ["megabar", false],
-
-  
-  ["searchIcon", false],
-
-  
   ["oneOffSearches", false],
 
   
@@ -118,6 +112,11 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   ["openViewOnFocus", false],
+
+  
+  
+  
+  ["restyleSearches", false],
 
   
   ["speculativeConnect.enabled", true],
@@ -149,12 +148,13 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["usepreloadedtopurls.expire_days", 14],
 
   
-  
-  
-  ["restyleSearches", false],
+  ["update1", false],
 
   
-  ["view.stripHttps", false],
+  ["update1.searchButton", false],
+
+  
+  ["update1.view.stripHttps", false],
 ]);
 const PREF_OTHER_DEFAULTS = new Map([
   ["keyword.enabled", true],
