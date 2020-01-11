@@ -118,7 +118,7 @@ struct TabWidth {
   float mWidth;      
 };
 
-struct TabWidthStore {
+struct nsTextFrame::TabWidthStore {
   explicit TabWidthStore(int32_t aValidForContentOffset)
       : mLimit(0), mValidForContentOffset(aValidForContentOffset) {}
 
@@ -151,7 +151,7 @@ struct TabwidthAdaptor {
 
 }  
 
-void TabWidthStore::ApplySpacing(
+void nsTextFrame::TabWidthStore::ApplySpacing(
     gfxTextRun::PropertyProvider::Spacing* aSpacing, uint32_t aOffset,
     uint32_t aLength) {
   size_t i = 0;
@@ -176,7 +176,8 @@ void TabWidthStore::ApplySpacing(
   }
 }
 
-NS_DECLARE_FRAME_PROPERTY_DELETABLE(TabWidthProperty, TabWidthStore)
+NS_DECLARE_FRAME_PROPERTY_DELETABLE(TabWidthProperty,
+                                    nsTextFrame::TabWidthStore)
 
 NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(OffsetToFrameProperty, nsTextFrame)
 
@@ -1739,25 +1740,52 @@ static gfxFloat GetMinTabAdvanceAppUnits(const gfxTextRun* aTextRun) {
   return 0.5 * chWidthAppUnits;
 }
 
+static float GetSVGFontSizeScaleFactor(nsIFrame* aFrame) {
+  if (!nsSVGUtils::IsInSVGTextSubtree(aFrame)) {
+    return 1.0f;
+  }
+  auto container =
+      nsLayoutUtils::GetClosestFrameOfType(aFrame, LayoutFrameType::SVGText);
+  MOZ_ASSERT(container);
+  return static_cast<SVGTextFrame*>(container)->GetFontSizeScaleFactor();
+}
+
 static nscoord LetterSpacing(nsIFrame* aFrame,
                              const nsStyleText* aStyleText = nullptr) {
-  if (nsSVGUtils::IsInSVGTextSubtree(aFrame)) {
-    return 0;
-  }
   if (!aStyleText) {
     aStyleText = aFrame->StyleText();
   }
+
+  if (nsSVGUtils::IsInSVGTextSubtree(aFrame)) {
+    
+    
+    
+    
+    StyleCSSPixelLength spacing = aStyleText->mLetterSpacing;
+    spacing._0 *= GetSVGFontSizeScaleFactor(aFrame);
+    return spacing.ToAppUnits();
+  }
+
   return aStyleText->mLetterSpacing.ToAppUnits();
 }
 
 
 static nscoord WordSpacing(nsIFrame* aFrame, const gfxTextRun* aTextRun,
                            const nsStyleText* aStyleText = nullptr) {
-  if (nsSVGUtils::IsInSVGTextSubtree(aFrame)) {
-    return 0;
-  }
   if (!aStyleText) {
     aStyleText = aFrame->StyleText();
+  }
+
+  if (nsSVGUtils::IsInSVGTextSubtree(aFrame)) {
+    
+    
+    
+    
+    
+    
+    auto spacing = aStyleText->mWordSpacing;
+    spacing.length._0 *= GetSVGFontSizeScaleFactor(aFrame);
+    return spacing.Resolve([&] { return GetSpaceWidthAppUnits(aTextRun); });
   }
 
   return aStyleText->mWordSpacing.Resolve(
@@ -1768,10 +1796,6 @@ static nscoord WordSpacing(nsIFrame* aFrame, const gfxTextRun* aTextRun,
 
 static gfx::ShapedTextFlags GetSpacingFlags(
     nsIFrame* aFrame, const nsStyleText* aStyleText = nullptr) {
-  if (nsSVGUtils::IsInSVGTextSubtree(aFrame)) {
-    return gfx::ShapedTextFlags();
-  }
-
   const nsStyleText* styleText = aFrame->StyleText();
   const auto& ls = styleText->mLetterSpacing;
   const auto& ws = styleText->mWordSpacing;
@@ -3171,198 +3195,71 @@ static bool IsInBounds(const gfxSkipCharsIterator& aStart,
 }
 #endif
 
-class MOZ_STACK_CLASS PropertyProvider final
-    : public gfxTextRun::PropertyProvider {
-  typedef gfxTextRun::Range Range;
-  typedef gfxTextRun::HyphenType HyphenType;
+nsTextFrame::PropertyProvider::PropertyProvider(
+    gfxTextRun* aTextRun, const nsStyleText* aTextStyle,
+    const nsTextFragment* aFrag, nsTextFrame* aFrame,
+    const gfxSkipCharsIterator& aStart, int32_t aLength,
+    nsIFrame* aLineContainer, nscoord aOffsetFromBlockOriginForTabs,
+    nsTextFrame::TextRunType aWhichTextRun)
+    : mTextRun(aTextRun),
+      mFontGroup(nullptr),
+      mTextStyle(aTextStyle),
+      mFrag(aFrag),
+      mLineContainer(aLineContainer),
+      mFrame(aFrame),
+      mStart(aStart),
+      mTempIterator(aStart),
+      mTabWidths(nullptr),
+      mTabWidthsAnalyzedLimit(0),
+      mLength(aLength),
+      mWordSpacing(WordSpacing(aFrame, mTextRun, aTextStyle)),
+      mLetterSpacing(LetterSpacing(aFrame, aTextStyle)),
+      mMinTabAdvance(-1.0),
+      mHyphenWidth(-1),
+      mOffsetFromBlockOriginForTabs(aOffsetFromBlockOriginForTabs),
+      mJustificationArrayStart(0),
+      mReflowing(true),
+      mWhichTextRun(aWhichTextRun) {
+  NS_ASSERTION(mStart.IsInitialized(), "Start not initialized?");
+}
 
- public:
-  
+nsTextFrame::PropertyProvider::PropertyProvider(
+    nsTextFrame* aFrame, const gfxSkipCharsIterator& aStart,
+    nsTextFrame::TextRunType aWhichTextRun, nsFontMetrics* aFontMetrics)
+    : mTextRun(aFrame->GetTextRun(aWhichTextRun)),
+      mFontGroup(nullptr),
+      mFontMetrics(aFontMetrics),
+      mTextStyle(aFrame->StyleText()),
+      mFrag(aFrame->TextFragment()),
+      mLineContainer(nullptr),
+      mFrame(aFrame),
+      mStart(aStart),
+      mTempIterator(aStart),
+      mTabWidths(nullptr),
+      mTabWidthsAnalyzedLimit(0),
+      mLength(aFrame->GetContentLength()),
+      mWordSpacing(WordSpacing(aFrame, mTextRun)),
+      mLetterSpacing(LetterSpacing(aFrame)),
+      mMinTabAdvance(-1.0),
+      mHyphenWidth(-1),
+      mOffsetFromBlockOriginForTabs(0),
+      mJustificationArrayStart(0),
+      mReflowing(false),
+      mWhichTextRun(aWhichTextRun) {
+  NS_ASSERTION(mTextRun, "Textrun not initialized!");
+}
 
+already_AddRefed<DrawTarget> nsTextFrame::PropertyProvider::GetDrawTarget()
+    const {
+  return CreateReferenceDrawTarget(GetFrame());
+}
 
-
-
-
-
-
-
-  PropertyProvider(gfxTextRun* aTextRun, const nsStyleText* aTextStyle,
-                   const nsTextFragment* aFrag, nsTextFrame* aFrame,
-                   const gfxSkipCharsIterator& aStart, int32_t aLength,
-                   nsIFrame* aLineContainer,
-                   nscoord aOffsetFromBlockOriginForTabs,
-                   nsTextFrame::TextRunType aWhichTextRun)
-      : mTextRun(aTextRun),
-        mFontGroup(nullptr),
-        mTextStyle(aTextStyle),
-        mFrag(aFrag),
-        mLineContainer(aLineContainer),
-        mFrame(aFrame),
-        mStart(aStart),
-        mTempIterator(aStart),
-        mTabWidths(nullptr),
-        mTabWidthsAnalyzedLimit(0),
-        mLength(aLength),
-        mWordSpacing(WordSpacing(aFrame, mTextRun, aTextStyle)),
-        mLetterSpacing(LetterSpacing(aFrame, aTextStyle)),
-        mMinTabAdvance(-1.0),
-        mHyphenWidth(-1),
-        mOffsetFromBlockOriginForTabs(aOffsetFromBlockOriginForTabs),
-        mJustificationArrayStart(0),
-        mReflowing(true),
-        mWhichTextRun(aWhichTextRun) {
-    NS_ASSERTION(mStart.IsInitialized(), "Start not initialized?");
+gfxFloat nsTextFrame::PropertyProvider::MinTabAdvance() const {
+  if (mMinTabAdvance < 0.0) {
+    mMinTabAdvance = GetMinTabAdvanceAppUnits(mTextRun);
   }
-
-  
-
-
-
-
-  PropertyProvider(nsTextFrame* aFrame, const gfxSkipCharsIterator& aStart,
-                   nsTextFrame::TextRunType aWhichTextRun,
-                   nsFontMetrics* aFontMetrics)
-      : mTextRun(aFrame->GetTextRun(aWhichTextRun)),
-        mFontGroup(nullptr),
-        mFontMetrics(aFontMetrics),
-        mTextStyle(aFrame->StyleText()),
-        mFrag(aFrame->TextFragment()),
-        mLineContainer(nullptr),
-        mFrame(aFrame),
-        mStart(aStart),
-        mTempIterator(aStart),
-        mTabWidths(nullptr),
-        mTabWidthsAnalyzedLimit(0),
-        mLength(aFrame->GetContentLength()),
-        mWordSpacing(WordSpacing(aFrame, mTextRun)),
-        mLetterSpacing(LetterSpacing(aFrame)),
-        mMinTabAdvance(-1.0),
-        mHyphenWidth(-1),
-        mOffsetFromBlockOriginForTabs(0),
-        mJustificationArrayStart(0),
-        mReflowing(false),
-        mWhichTextRun(aWhichTextRun) {
-    NS_ASSERTION(mTextRun, "Textrun not initialized!");
-  }
-
-  
-  void InitializeForDisplay(bool aTrimAfter);
-
-  void InitializeForMeasure();
-
-  void GetSpacing(Range aRange, Spacing* aSpacing) const final;
-  gfxFloat GetHyphenWidth() const final;
-  void GetHyphenationBreaks(Range aRange, HyphenType* aBreakBefore) const final;
-  StyleHyphens GetHyphensOption() const final { return mTextStyle->mHyphens; }
-
-  already_AddRefed<DrawTarget> GetDrawTarget() const final {
-    return CreateReferenceDrawTarget(GetFrame());
-  }
-
-  uint32_t GetAppUnitsPerDevUnit() const final {
-    return mTextRun->GetAppUnitsPerDevUnit();
-  }
-
-  void GetSpacingInternal(Range aRange, Spacing* aSpacing,
-                          bool aIgnoreTabs) const;
-
-  
-
-
-
-  JustificationInfo ComputeJustification(
-      Range aRange, nsTArray<JustificationAssignment>* aAssignments = nullptr);
-
-  const nsTextFrame* GetFrame() const { return mFrame; }
-  
-  
-  
-  const gfxSkipCharsIterator& GetStart() const { return mStart; }
-  
-  uint32_t GetOriginalLength() const {
-    NS_ASSERTION(mLength != INT32_MAX, "Length not known");
-    return mLength;
-  }
-  const nsTextFragment* GetFragment() const { return mFrag; }
-
-  gfxFontGroup* GetFontGroup() const {
-    if (!mFontGroup) {
-      mFontGroup = GetFontMetrics()->GetThebesFontGroup();
-    }
-    return mFontGroup;
-  }
-
-  nsFontMetrics* GetFontMetrics() const {
-    if (!mFontMetrics) {
-      InitFontGroupAndFontMetrics();
-    }
-    return mFontMetrics;
-  }
-
-  void CalcTabWidths(Range aTransformedRange, gfxFloat aTabWidth) const;
-
-  gfxFloat MinTabAdvance() const {
-    if (mMinTabAdvance < 0.0) {
-      mMinTabAdvance = GetMinTabAdvanceAppUnits(mTextRun);
-    }
-    return mMinTabAdvance;
-  }
-
-  const gfxSkipCharsIterator& GetEndHint() const { return mTempIterator; }
-
- protected:
-  void SetupJustificationSpacing(bool aPostReflow);
-
-  void InitFontGroupAndFontMetrics() const {
-    if (!mFontMetrics) {
-      if (mWhichTextRun == nsTextFrame::eInflated) {
-        if (!mFrame->InflatedFontMetrics()) {
-          float inflation = mFrame->GetFontSizeInflation();
-          mFontMetrics =
-              nsLayoutUtils::GetFontMetricsForFrame(mFrame, inflation);
-          mFrame->SetInflatedFontMetrics(mFontMetrics);
-        } else {
-          mFontMetrics = mFrame->InflatedFontMetrics();
-        }
-      } else {
-        mFontMetrics = nsLayoutUtils::GetFontMetricsForFrame(mFrame, 1.0f);
-      }
-    }
-    mFontGroup = mFontMetrics->GetThebesFontGroup();
-  }
-
-  const RefPtr<gfxTextRun> mTextRun;
-  mutable gfxFontGroup* mFontGroup;
-  mutable RefPtr<nsFontMetrics> mFontMetrics;
-  const nsStyleText* mTextStyle;
-  const nsTextFragment* mFrag;
-  const nsIFrame* mLineContainer;
-  nsTextFrame* mFrame;
-  gfxSkipCharsIterator mStart;  
-  const gfxSkipCharsIterator mTempIterator;
-
-  
-  mutable TabWidthStore* mTabWidths;
-  
-  
-  
-  mutable uint32_t mTabWidthsAnalyzedLimit;
-
-  int32_t mLength;                  
-  const gfxFloat mWordSpacing;      
-  const gfxFloat mLetterSpacing;    
-  mutable gfxFloat mMinTabAdvance;  
-  mutable gfxFloat mHyphenWidth;
-  mutable gfxFloat mOffsetFromBlockOriginForTabs;
-
-  
-  
-  uint32_t mJustificationArrayStart;
-  nsTArray<Spacing> mJustificationSpacings;
-
-  const bool mReflowing;
-  const nsTextFrame::TextRunType mWhichTextRun;
-};
+  return mMinTabAdvance;
+}
 
 
 
@@ -3402,7 +3299,7 @@ static void FindClusterEnd(const gfxTextRun* aTextRun, int32_t aOriginalEnd,
   aPos->AdvanceOriginal(-1);
 }
 
-JustificationInfo PropertyProvider::ComputeJustification(
+JustificationInfo nsTextFrame::PropertyProvider::ComputeJustification(
     Range aRange, nsTArray<JustificationAssignment>* aAssignments) {
   JustificationInfo info;
 
@@ -3484,7 +3381,8 @@ JustificationInfo PropertyProvider::ComputeJustification(
 }
 
 
-void PropertyProvider::GetSpacing(Range aRange, Spacing* aSpacing) const {
+void nsTextFrame::PropertyProvider::GetSpacing(Range aRange,
+                                               Spacing* aSpacing) const {
   GetSpacingInternal(
       aRange, aSpacing,
       !(mTextRun->GetFlags2() & nsTextFrameUtils::Flags::HasTab));
@@ -3519,8 +3417,9 @@ static gfxFloat ComputeTabWidthAppUnits(const nsIFrame* aFrame,
   return spaces * spaceWidthAppUnits;
 }
 
-void PropertyProvider::GetSpacingInternal(Range aRange, Spacing* aSpacing,
-                                          bool aIgnoreTabs) const {
+void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
+                                                       Spacing* aSpacing,
+                                                       bool aIgnoreTabs) const {
   MOZ_ASSERT(IsInBounds(mStart, mLength, aRange), "Range out of bounds");
 
   uint32_t index;
@@ -3604,7 +3503,8 @@ static gfxFloat AdvanceToNextTab(gfxFloat aX, gfxFloat aTabWidth,
   return ceil((aX + aMinAdvance) / aTabWidth) * aTabWidth;
 }
 
-void PropertyProvider::CalcTabWidths(Range aRange, gfxFloat aTabWidth) const {
+void nsTextFrame::PropertyProvider::CalcTabWidths(Range aRange,
+                                                  gfxFloat aTabWidth) const {
   MOZ_ASSERT(aTabWidth > 0);
 
   if (!mTabWidths) {
@@ -3685,7 +3585,7 @@ void PropertyProvider::CalcTabWidths(Range aRange, gfxFloat aTabWidth) const {
   }
 }
 
-gfxFloat PropertyProvider::GetHyphenWidth() const {
+gfxFloat nsTextFrame::PropertyProvider::GetHyphenWidth() const {
   if (mHyphenWidth < 0) {
     mHyphenWidth = GetFontGroup()->GetHyphenWidth(this);
   }
@@ -3700,8 +3600,8 @@ static inline bool IS_HYPHEN(char16_t u) {
          u == 0x2013;           
 }
 
-void PropertyProvider::GetHyphenationBreaks(Range aRange,
-                                            HyphenType* aBreakBefore) const {
+void nsTextFrame::PropertyProvider::GetHyphenationBreaks(
+    Range aRange, HyphenType* aBreakBefore) const {
   MOZ_ASSERT(IsInBounds(mStart, mLength, aRange), "Range out of bounds");
   MOZ_ASSERT(mLength != INT32_MAX, "Can't call this with undefined length");
 
@@ -3769,7 +3669,7 @@ void PropertyProvider::GetHyphenationBreaks(Range aRange,
   }
 }
 
-void PropertyProvider::InitializeForDisplay(bool aTrimAfter) {
+void nsTextFrame::PropertyProvider::InitializeForDisplay(bool aTrimAfter) {
   nsTextFrame::TrimmedOffsets trimmed = mFrame->GetTrimmedOffsets(
       mFrag, (aTrimAfter ? nsTextFrame::TrimmedOffsetFlags::Default
                          : nsTextFrame::TrimmedOffsetFlags::NoTrimAfter));
@@ -3778,7 +3678,7 @@ void PropertyProvider::InitializeForDisplay(bool aTrimAfter) {
   SetupJustificationSpacing(true);
 }
 
-void PropertyProvider::InitializeForMeasure() {
+void nsTextFrame::PropertyProvider::InitializeForMeasure() {
   nsTextFrame::TrimmedOffsets trimmed = mFrame->GetTrimmedOffsets(
       mFrag, nsTextFrame::TrimmedOffsetFlags::NotPostReflow);
   mStart.SetOriginalOffset(trimmed.mStart);
@@ -3786,7 +3686,8 @@ void PropertyProvider::InitializeForMeasure() {
   SetupJustificationSpacing(false);
 }
 
-void PropertyProvider::SetupJustificationSpacing(bool aPostReflow) {
+void nsTextFrame::PropertyProvider::SetupJustificationSpacing(
+    bool aPostReflow) {
   MOZ_ASSERT(mLength != INT32_MAX, "Can't call this with undefined length");
 
   if (!(mFrame->GetStateBits() & TEXT_JUSTIFICATION_ENABLED)) {
@@ -5217,13 +5118,10 @@ void nsTextFrame::GetTextDecorations(
 static float GetInflationForTextDecorations(nsIFrame* aFrame,
                                             nscoord aInflationMinFontSize) {
   if (nsSVGUtils::IsInSVGTextSubtree(aFrame)) {
-    const nsIFrame* container = aFrame;
-    while (!container->IsSVGTextFrame()) {
-      container = container->GetParent();
-    }
-    NS_ASSERTION(container, "expected to find an ancestor SVGTextFrame");
-    return static_cast<const SVGTextFrame*>(container)
-        ->GetFontSizeScaleFactor();
+    auto container =
+        nsLayoutUtils::GetClosestFrameOfType(aFrame, LayoutFrameType::SVGText);
+    MOZ_ASSERT(container);
+    return static_cast<SVGTextFrame*>(container)->GetFontSizeScaleFactor();
   }
   return nsLayoutUtils::FontSizeInflationInner(aFrame, aInflationMinFontSize);
 }
@@ -5953,6 +5851,8 @@ static void GetSelectionTextShadow(nsIFrame* aFrame,
 
 
 class SelectionIterator {
+  typedef nsTextFrame::PropertyProvider PropertyProvider;
+
  public:
   
 
@@ -6577,7 +6477,7 @@ nscolor nsTextFrame::GetCaretColorAt(int32_t aOffset) {
   return result;
 }
 
-static gfxTextRun::Range ComputeTransformedRange(PropertyProvider& aProvider) {
+static gfxTextRun::Range ComputeTransformedRange(nsTextFrame::PropertyProvider& aProvider) {
   gfxSkipCharsIterator iter(aProvider.GetStart());
   uint32_t start = iter.GetSkippedOffset();
   iter.AdvanceOriginal(aProvider.GetOriginalLength());
@@ -7218,7 +7118,7 @@ int16_t nsTextFrame::GetSelectionStatus(int16_t* aSelectionFlags) {
 
 static uint32_t CountCharsFit(const gfxTextRun* aTextRun,
                               gfxTextRun::Range aRange, gfxFloat aWidth,
-                              PropertyProvider* aProvider,
+                              nsTextFrame::PropertyProvider* aProvider,
                               gfxFloat* aFitWidth) {
   uint32_t last = 0;
   gfxFloat width = 0;
@@ -8261,7 +8161,7 @@ static bool FindFirstLetterRange(const nsTextFragment* aFrag,
 }
 
 static uint32_t FindStartAfterSkippingWhitespace(
-    PropertyProvider* aProvider, nsIFrame::InlineIntrinsicISizeData* aData,
+    nsTextFrame::PropertyProvider* aProvider, nsIFrame::InlineIntrinsicISizeData* aData,
     const nsStyleText* aTextStyle, gfxSkipCharsIterator* aIterator,
     uint32_t aFlowEndInTextRun) {
   if (aData->mSkipWhitespace) {
