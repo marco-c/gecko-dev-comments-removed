@@ -15,10 +15,13 @@ add_task(async function test_async() {
 
   
   let engines = await Services.search.getEngines();
-  Assert.equal(engines.length, 1);
+  Assert.equal(engines.length, 2);
 
   
   let engine = Services.search.getEngineByName("basic");
+  Assert.notEqual(engine, null);
+
+  engine = Services.search.getEngineByName("Simple Engine");
   Assert.notEqual(engine, null);
 
   
