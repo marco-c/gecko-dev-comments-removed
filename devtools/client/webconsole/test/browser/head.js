@@ -1577,8 +1577,14 @@ async function waitForLazyRequests(toolbox) {
   });
 }
 
-async function clearOutput(hud, clearStorage = true) {
+
+
+
+
+
+
+async function clearOutput(hud, { keepStorage = false } = {}) {
   const onMessagesCleared = hud.ui.once("messages-cleared");
-  hud.ui.clearOutput(clearStorage);
+  hud.ui.clearOutput(!keepStorage);
   await onMessagesCleared;
 }

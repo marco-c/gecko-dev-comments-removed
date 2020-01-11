@@ -58,12 +58,6 @@ async function checkContentConsoleApiMessages(nonPrimitiveVariablesDisplayed) {
 
   
   
-  
-  
-  
-
-  
-  
   if (!nonPrimitiveVariablesDisplayed) {
     const loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
     tab.linkedBrowser.reload();
