@@ -13019,11 +13019,22 @@ bool nsDocShell::HasUnloadedParent() {
 }
 
 void nsDocShell::UpdateGlobalHistoryTitle(nsIURI* aURI) {
-  if (mUseGlobalHistory && !UsePrivateBrowsing()) {
-    nsCOMPtr<IHistory> history = services::GetHistoryService();
-    if (history) {
-      history->SetURITitle(aURI, mTitle);
-    }
+  if (!mUseGlobalHistory || UsePrivateBrowsing()) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (IsFrame()) {
+    return;
+  }
+
+  if (nsCOMPtr<IHistory> history = services::GetHistoryService()) {
+    history->SetURITitle(aURI, mTitle);
   }
 }
 
