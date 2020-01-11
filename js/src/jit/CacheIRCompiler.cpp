@@ -2946,36 +2946,7 @@ bool CacheIRCompiler::emitLoadFunctionLengthResult() {
       Imm32(FunctionFlags::INTERPRETED_LAZY | FunctionFlags::RESOLVED_LENGTH),
       failure->label());
 
-  Label boundFunction;
-  masm.branchTest32(Assembler::NonZero, scratch,
-                    Imm32(FunctionFlags::BOUND_FUN), &boundFunction);
-  Label interpreted;
-  masm.branchTest32(Assembler::NonZero, scratch,
-                    Imm32(FunctionFlags::INTERPRETED), &interpreted);
-
-  
-  masm.load16ZeroExtend(Address(obj, JSFunction::offsetOfNargs()), scratch);
-  Label done;
-  masm.jump(&done);
-
-  masm.bind(&boundFunction);
-  
-  Address boundLength(
-      obj, FunctionExtended::offsetOfExtendedSlot(BOUND_FUN_LENGTH_SLOT));
-  masm.branchTestInt32(Assembler::NotEqual, boundLength, failure->label());
-  masm.unboxInt32(boundLength, scratch);
-  masm.jump(&done);
-
-  masm.bind(&interpreted);
-  
-  masm.loadPtr(Address(obj, JSFunction::offsetOfScript()), scratch);
-  masm.loadPtr(Address(scratch, JSScript::offsetOfSharedData()), scratch);
-  masm.branchTestPtr(Assembler::Zero, scratch, scratch, failure->label());
-  masm.loadPtr(Address(scratch, RuntimeScriptData::offsetOfISD()), scratch);
-  masm.load16ZeroExtend(
-      Address(scratch, ImmutableScriptData::offsetOfFunLength()), scratch);
-
-  masm.bind(&done);
+  masm.loadFunctionLength(obj, scratch, scratch, failure->label());
   EmitStoreResult(masm, scratch, JSVAL_TYPE_INT32, output);
   return true;
 }

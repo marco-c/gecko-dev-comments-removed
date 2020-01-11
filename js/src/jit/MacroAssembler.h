@@ -1330,6 +1330,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void branchIfScriptHasNoJitScript(Register script, Label* label);
   inline void loadJitScript(Register script, Register dest);
 
+  
+  
+  
+  void loadFunctionLength(Register func, Register funFlags, Register output,
+                          Label* slowPath);
+
   inline void branchFunctionKind(Condition cond,
                                  FunctionFlags::FunctionKind kind, Register fun,
                                  Register scratch, Label* label);
