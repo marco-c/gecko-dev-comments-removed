@@ -70,7 +70,7 @@ class nsNotifyAddrListener : public nsINetworkLinkService,
   HANDLE mCheckEvent;
 
   
-  bool mShutdown;
+  mozilla::Atomic<bool> mShutdown;
 
   
   
