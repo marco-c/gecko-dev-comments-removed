@@ -115,7 +115,7 @@ def main():
                 **zip_arg)
             
             
-            if r.status_code < 500:
+            if r.ok or (r.status_code < 500 and r.status_code != 429):
                 break
             print_error(r)
         except requests.exceptions.RequestException as e:
