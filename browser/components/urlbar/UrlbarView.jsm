@@ -20,13 +20,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 const DEFAULT_REMOVE_STALE_ROWS_TIMEOUT = 400;
 
-
-const SELECTABLE_ELEMENTS = [
-  "urlbarView-row",
-  "urlbarView-tip-button",
-  "urlbarView-tip-help",
-];
-
 const getBoundsWithoutFlushing = element =>
   element.ownerGlobal.windowUtils.getBoundsWithoutFlushing(element);
 
@@ -296,6 +289,8 @@ class UrlbarView {
 
 
 
+
+
   getResultFromElement(element) {
     if (!this.isOpen) {
       return null;
@@ -308,6 +303,31 @@ class UrlbarView {
     }
 
     return row.result;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  getClosestSelectableElement(element) {
+    let result = this.getResultFromElement(element);
+    if (result && result.type == UrlbarUtils.RESULT_TYPE.TIP) {
+      if (
+        element.classList.contains("urlbarView-tip-button") ||
+        element.classList.contains("urlbarView-tip-help")
+      ) {
+        return element;
+      }
+      return null;
+    }
+    return element.closest(".urlbarView-row");
   }
 
   
@@ -1436,11 +1456,12 @@ class UrlbarView {
       
       return;
     }
-    let target = event.target;
-    while (!SELECTABLE_ELEMENTS.includes(target.className)) {
-      target = target.parentNode;
+    let element = this.getClosestSelectableElement(event.target);
+    if (!element) {
+      
+      return;
     }
-    this._selectElement(target, { updateInput: false });
+    this._selectElement(element, { updateInput: false });
     this.controller.speculativeConnect(
       this.selectedResult,
       this._queryContext,
@@ -1453,7 +1474,12 @@ class UrlbarView {
       
       return;
     }
-    this.input.pickElement(event.target, event);
+    let element = this.getClosestSelectableElement(event.target);
+    if (!element) {
+      
+      return;
+    }
+    this.input.pickElement(element, event);
   }
 
   _on_overflow(event) {
