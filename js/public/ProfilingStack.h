@@ -17,7 +17,7 @@
 #include "js/Utility.h"
 
 class JS_PUBLIC_API JSTracer;
-class ProfilingStack;
+class JS_FRIEND_API ProfilingStack;
 
 
 
@@ -395,7 +395,7 @@ JS_FRIEND_API void SetProfilingThreadCallbacks(
 
 
 
-class ProfilingStack final {
+class JS_FRIEND_API ProfilingStack final {
  public:
   ProfilingStack() : stackPointer(0) {}
 
