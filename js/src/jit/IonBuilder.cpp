@@ -1617,13 +1617,10 @@ class MOZ_RAII PoppedValueUseChecker {
 };
 #endif
 
-
-
-
-
-
-
 AbortReasonOr<Ok> IonBuilder::traverseBytecode() {
+  
+  
+
   
   
   auto freeMemory = mozilla::MakeScopeExit([&] {
