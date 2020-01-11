@@ -124,10 +124,8 @@ nsLayoutDebuggingTools::SetPagedMode(bool aPagedMode) {
   printSettingsService->GetNewPrintSettings(getter_AddRefs(printSettings));
 
   
-  
-  
-  printSettings->SetPaperWidth(8.5);
-  printSettings->SetPaperHeight(11);
+  printSettings->SetPaperWidth(5);
+  printSettings->SetPaperHeight(3);
 
   nsIntMargin unwriteableMargin(0, 0, 0, 0);
   printSettings->SetUnwriteableMarginInTwips(unwriteableMargin);
