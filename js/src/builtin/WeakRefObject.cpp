@@ -56,19 +56,24 @@ bool WeakRefObject::construct(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
+  RootedObject wrappedWeakRef(cx, weakRef);
+  AutoRealm ar(cx, target);
+  if (!JS_WrapObject(cx, &wrappedWeakRef)) {
+    return false;
+  }
+
+  if (JS_IsDeadWrapper(wrappedWeakRef)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEAD_OBJECT);
+    return false;
+  }
+
+  
   if (!target->zone()->keepDuringJob(target)) {
     return false;
   };
 
   
   weakRef->setPrivateGCThing(target);
-
-  
-  RootedObject wrappedWeakRef(cx, weakRef);
-  AutoRealm ar(cx, target);
-  if (!JS_WrapObject(cx, &wrappedWeakRef)) {
-    return false;
-  }
 
   
   
