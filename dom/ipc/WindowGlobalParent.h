@@ -74,7 +74,8 @@ class WindowGlobalParent final : public WindowGlobalActor,
   already_AddRefed<BrowserParent> GetBrowserParent();
 
   void ReceiveRawMessage(const JSWindowActorMessageMeta& aMeta,
-                         ipc::StructuredCloneData&& aData);
+                         ipc::StructuredCloneData&& aData,
+                         ipc::StructuredCloneData&& aStack);
 
   
   
@@ -148,7 +149,8 @@ class WindowGlobalParent final : public WindowGlobalActor,
   mozilla::ipc::IPCResult RecvBecomeCurrentWindowGlobal();
   mozilla::ipc::IPCResult RecvDestroy();
   mozilla::ipc::IPCResult RecvRawMessage(const JSWindowActorMessageMeta& aMeta,
-                                         const ClonedMessageData& aData);
+                                         const ClonedMessageData& aData,
+                                         const ClonedMessageData& aStack);
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
