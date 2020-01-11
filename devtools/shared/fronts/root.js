@@ -106,14 +106,8 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     };
 
     registrations.forEach(front => {
-      const {
-        activeWorker,
-        waitingWorker,
-        installingWorker,
-        evaluatingWorker,
-      } = front;
-      const newestWorker =
-        activeWorker || waitingWorker || installingWorker || evaluatingWorker;
+      const { activeWorker, waitingWorker, installingWorker } = front;
+      const newestWorker = activeWorker || waitingWorker || installingWorker;
 
       
       
@@ -171,8 +165,6 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
           });
 
           if (registration) {
-            
-            
             
             
             if (!registration.url) {

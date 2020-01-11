@@ -4,7 +4,6 @@
 
 "use strict";
 
-const { Ci } = require("chrome");
 const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 loader.lazyRequireGetter(
   this,
@@ -38,64 +37,31 @@ function matchWorkerDebugger(dbg, options) {
   return true;
 }
 
-function matchServiceWorker(dbg, origin) {
-  return (
-    dbg.type == Ci.nsIWorkerDebugger.TYPE_SERVICE &&
-    new URL(dbg.url).origin == origin
-  );
-}
 
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-function WorkerPauser(options) {
+function PauseMatchingWorkers(options) {
   this._options = options;
-  this._pauseMatching = null;
-  this._pauseServiceWorkerOrigin = null;
-
   this.onRegister = this._onRegister.bind(this);
   this.onUnregister = () => {};
 
   wdm.addListener(this);
 }
 
-WorkerPauser.prototype = {
+PauseMatchingWorkers.prototype = {
   destroy() {
     wdm.removeListener(this);
   },
 
   _onRegister(dbg) {
-    if (
-      (this._pauseMatching && matchWorkerDebugger(dbg, this._options)) ||
-      (this._pauseServiceWorkerOrigin &&
-        matchServiceWorker(dbg, this._pauseServiceWorkerOrigin))
-    ) {
+    if (matchWorkerDebugger(dbg, this._options)) {
       
       
       dbg.setDebuggerReady(false);
     }
-  },
-
-  setPauseMatching(shouldPause) {
-    this._pauseMatching = shouldPause;
-  },
-
-  setPauseServiceWorkers(origin) {
-    this._pauseServiceWorkerOrigin = origin;
   },
 };
 
@@ -104,21 +70,13 @@ function WorkerTargetActorList(conn, options) {
   this._options = options;
   this._actors = new Map();
   this._onListChanged = null;
-  this._workerPauser = null;
+  this._pauseMatchingWorkers = null;
   this._mustNotify = false;
   this.onRegister = this.onRegister.bind(this);
   this.onUnregister = this.onUnregister.bind(this);
 }
 
 WorkerTargetActorList.prototype = {
-  destroy() {
-    this.onListChanged = null;
-    if (this._workerPauser) {
-      this._workerPauser.destroy();
-      this._workerPauser = null;
-    }
-  },
-
   getList() {
     
     const dbgs = new Set();
@@ -201,11 +159,15 @@ WorkerTargetActorList.prototype = {
     }
   },
 
-  get workerPauser() {
-    if (!this._workerPauser) {
-      this._workerPauser = new WorkerPauser(this._options);
+  setPauseMatchingWorkers(shouldPause) {
+    if (shouldPause != !!this._pauseMatchingWorkers) {
+      if (shouldPause) {
+        this._pauseMatchingWorkers = new PauseMatchingWorkers(this._options);
+      } else {
+        this._pauseMatchingWorkers.destroy();
+        this._pauseMatchingWorkers = null;
+      }
     }
-    return this._workerPauser;
   },
 };
 

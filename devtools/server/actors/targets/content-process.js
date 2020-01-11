@@ -139,36 +139,30 @@ const ContentProcessTargetActor = ActorClassWithSpec(contentProcessTargetSpec, {
     };
   },
 
-  ensureWorkerList() {
+  listWorkers: function() {
     if (!this._workerList) {
       this._workerList = new WorkerTargetActorList(this.conn, {});
     }
-    return this._workerList;
-  },
+    return this._workerList.getList().then(actors => {
+      const pool = new Pool(this.conn);
+      for (const actor of actors) {
+        pool.manage(actor);
+      }
 
-  listWorkers: function() {
-    return this.ensureWorkerList()
-      .getList()
-      .then(actors => {
-        const pool = new Pool(this.conn);
-        for (const actor of actors) {
-          pool.manage(actor);
-        }
+      
+      
+      if (this._workerTargetActorPool) {
+        this._workerTargetActorPool.destroy();
+      }
 
-        
-        
-        if (this._workerTargetActorPool) {
-          this._workerTargetActorPool.destroy();
-        }
+      this._workerTargetActorPool = pool;
+      this._workerList.onListChanged = this._onWorkerListChanged;
 
-        this._workerTargetActorPool = pool;
-        this._workerList.onListChanged = this._onWorkerListChanged;
-
-        return {
-          from: this.actorID,
-          workers: actors,
-        };
-      });
+      return {
+        from: this.actorID,
+        workers: actors,
+      };
+    });
   },
 
   _onWorkerListChanged: function() {
@@ -176,17 +170,12 @@ const ContentProcessTargetActor = ActorClassWithSpec(contentProcessTargetSpec, {
     this._workerList.onListChanged = null;
   },
 
-  pauseMatchingServiceWorkers(request) {
-    this.ensureWorkerList().workerPauser.setPauseServiceWorkers(request.origin);
-  },
-
   destroy: function() {
     Actor.prototype.destroy.call(this);
 
     
     if (this._workerList) {
-      this._workerList.destroy();
-      this._workerList = null;
+      this._workerList.onListChanged = null;
     }
 
     if (this._sources) {
