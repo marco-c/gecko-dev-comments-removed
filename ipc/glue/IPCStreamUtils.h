@@ -120,7 +120,7 @@ already_AddRefed<nsIInputStream> DeserializeIPCStream(
 
 
 
-class AutoIPCStream final {
+class AutoIPCStream {
  public:
   
   
@@ -180,6 +180,14 @@ class AutoIPCStream final {
   Maybe<IPCStream>* const mOptionalValue = nullptr;
   bool mTaken = false;
   const bool mDelayedStart;
+};
+
+class HoldIPCStream final : public AutoIPCStream {
+ public:
+  NS_INLINE_DECL_REFCOUNTING(HoldIPCStream)
+
+ private:
+  ~HoldIPCStream() = default;
 };
 
 template <>
