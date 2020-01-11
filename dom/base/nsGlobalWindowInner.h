@@ -1019,7 +1019,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   
   
-  void InnerSetNewDocument(JSContext* aCx, Document* aDocument);
+  void InitDocumentDependentState(JSContext* aCx);
 
   nsresult EnsureClientSource();
   nsresult ExecutionReady();

@@ -428,18 +428,15 @@ bool nsScriptErrorBase::ComputeIsFromPrivateWindow(
     nsGlobalWindowInner* aWindow) {
   
   
-  
   nsIPrincipal* winPrincipal = aWindow->GetPrincipal();
-  return aWindow->IsPrivateBrowsing() &&
-         (!winPrincipal || !winPrincipal->IsSystemPrincipal());
+  return aWindow->IsPrivateBrowsing() && !winPrincipal->IsSystemPrincipal();
 }
 
 
 bool nsScriptErrorBase::ComputeIsFromChromeContext(
     nsGlobalWindowInner* aWindow) {
   nsIPrincipal* winPrincipal = aWindow->GetPrincipal();
-  
-  return (winPrincipal && winPrincipal->IsSystemPrincipal());
+  return winPrincipal->IsSystemPrincipal();
 }
 
 NS_IMPL_ISUPPORTS(nsScriptError, nsIConsoleMessage, nsIScriptError)

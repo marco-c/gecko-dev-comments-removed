@@ -2162,15 +2162,28 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
   
   nsCOMPtr<nsIScriptContext> kungFuDeathGrip(mContext);
 
+  
+  
+  
+  
+  
+  if (aState) {
+    MOZ_RELEASE_ASSERT(newInnerWindow->mDoc == aDocument);
+  } else {
+    if (reUseInnerWindow) {
+      MOZ_RELEASE_ASSERT(newInnerWindow->mDoc != aDocument);
+    }
+    newInnerWindow->mDoc = aDocument;
+  }
+
   aDocument->SetScriptGlobalObject(newInnerWindow);
   MOZ_ASSERT(newInnerWindow->mTabGroup,
              "We must have a TabGroup cached at this point");
 
+  MOZ_RELEASE_ASSERT(newInnerWindow->mDoc == aDocument);
+
   if (!aState) {
     if (reUseInnerWindow) {
-      MOZ_RELEASE_ASSERT(newInnerWindow->mDoc != aDocument);
-      newInnerWindow->mDoc = aDocument;
-
       
       
       newInnerWindow->mLocalStorage = nullptr;
@@ -2188,7 +2201,7 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
       rv = newInnerWindow->ExecutionReady();
       NS_ENSURE_SUCCESS(rv, rv);
     } else {
-      newInnerWindow->InnerSetNewDocument(cx, aDocument);
+      newInnerWindow->InitDocumentDependentState(cx);
 
       
       JS::Rooted<JSObject*> obj(cx, newInnerGlobal);
