@@ -517,138 +517,44 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![deny(missing_docs)]
+#![allow(ellipsis_inclusive_range_patterns)]
 #![cfg_attr(test, deny(warnings))]
 #![cfg_attr(feature = "pattern", feature(pattern))]
 
-#[cfg(not(feature = "std"))]
-compile_error!("`std` feature is currently required to build this crate");
+#[cfg(not(feature = "use_std"))]
+compile_error!("`use_std` feature is currently required to build this crate");
 
-#[cfg(feature = "perf-literal")]
 extern crate aho_corasick;
-#[cfg(test)]
-extern crate doc_comment;
-#[cfg(feature = "perf-literal")]
 extern crate memchr;
+extern crate thread_local;
 #[cfg(test)]
-#[cfg_attr(feature = "perf-literal", macro_use)]
+#[macro_use]
 extern crate quickcheck;
 extern crate regex_syntax as syntax;
-#[cfg(feature = "perf-cache")]
-extern crate thread_local;
+extern crate utf8_ranges;
+#[cfg(test)]
+extern crate doc_comment;
 
 #[cfg(test)]
 doc_comment::doctest!("../README.md");
 
-#[cfg(feature = "std")]
+#[cfg(feature = "use_std")]
 pub use error::Error;
-#[cfg(feature = "std")]
-pub use re_builder::set_unicode::*;
-#[cfg(feature = "std")]
+#[cfg(feature = "use_std")]
 pub use re_builder::unicode::*;
-#[cfg(feature = "std")]
+#[cfg(feature = "use_std")]
+pub use re_builder::set_unicode::*;
+#[cfg(feature = "use_std")]
 pub use re_set::unicode::*;
-#[cfg(feature = "std")]
-#[cfg(feature = "std")]
+#[cfg(feature = "use_std")]
+#[cfg(feature = "use_std")]
 pub use re_unicode::{
-    escape, CaptureLocations, CaptureMatches, CaptureNames, Captures,
-    Locations, Match, Matches, NoExpand, Regex, Replacer, ReplacerRef, Split,
-    SplitN, SubCaptureMatches,
+    Regex, Match, Captures,
+    CaptureNames, Matches, CaptureMatches, SubCaptureMatches,
+    CaptureLocations, Locations,
+    Replacer, ReplacerRef, NoExpand, Split, SplitN,
+    escape,
 };
 
 /**
@@ -738,7 +644,7 @@ When the `s` flag is enabled, `.` matches any byte.
 In general, one should expect performance on `&[u8]` to be roughly similar to
 performance on `&str`.
 */
-#[cfg(feature = "std")]
+#[cfg(feature = "use_std")]
 pub mod bytes {
     pub use re_builder::bytes::*;
     pub use re_builder::set_bytes::*;
@@ -747,15 +653,12 @@ pub mod bytes {
 }
 
 mod backtrack;
-mod cache;
+mod utf8;
 mod compile;
-#[cfg(feature = "perf-dfa")]
 mod dfa;
 mod error;
 mod exec;
 mod expand;
-mod find_byte;
-#[cfg(feature = "perf-literal")]
 mod freqs;
 mod input;
 mod literal;
@@ -769,17 +672,18 @@ mod re_set;
 mod re_trait;
 mod re_unicode;
 mod sparse;
-mod utf8;
+#[cfg(any(regex_runtime_teddy_ssse3, regex_runtime_teddy_avx2))]
+mod vector;
 
 /// The `internal` module exists to support suspicious activity, such as
 /// testing different matching engines and supporting the `regex-debug` CLI
 /// utility.
 #[doc(hidden)]
-#[cfg(feature = "std")]
+#[cfg(feature = "use_std")]
 pub mod internal {
     pub use compile::Compiler;
     pub use exec::{Exec, ExecBuilder};
-    pub use input::{Char, CharInput, Input, InputAt};
+    pub use input::{Char, Input, CharInput, InputAt};
     pub use literal::LiteralSearcher;
-    pub use prog::{EmptyLook, Inst, InstRanges, Program};
+    pub use prog::{Program, Inst, EmptyLook, InstRanges};
 }

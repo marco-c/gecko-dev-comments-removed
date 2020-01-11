@@ -1,3 +1,13 @@
+
+
+
+
+
+
+
+
+
+
 extern crate rand;
 extern crate regex;
 
@@ -9,13 +19,13 @@ macro_rules! regex_new {
             .only_utf8(false)
             .build()
             .map(|e| e.into_byte_regex())
-    }};
+    }}
 }
 
 macro_rules! regex {
     ($re:expr) => {
         regex_new!($re).unwrap()
-    };
+    }
 }
 
 macro_rules! regex_set_new {
@@ -26,13 +36,13 @@ macro_rules! regex_set_new {
             .only_utf8(false)
             .build()
             .map(|e| e.into_byte_regex_set())
-    }};
+    }}
 }
 
 macro_rules! regex_set {
     ($res:expr) => {
         regex_set_new!($res).unwrap()
-    };
+    }
 }
 
 
@@ -50,9 +60,6 @@ mod regression;
 mod replace;
 mod set;
 mod suffix_reverse;
-#[cfg(feature = "unicode")]
 mod unicode;
-#[cfg(feature = "unicode-perl")]
 mod word_boundary;
-#[cfg(feature = "unicode-perl")]
 mod word_boundary_ascii;

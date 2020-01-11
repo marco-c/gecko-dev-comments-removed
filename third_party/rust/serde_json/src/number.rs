@@ -1,12 +1,20 @@
+
+
+
+
+
+
+
+
 use error::Error;
 use serde::de::{self, Unexpected, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::{self, Debug, Display};
 
 #[cfg(feature = "arbitrary_precision")]
-use itoa;
-#[cfg(feature = "arbitrary_precision")]
 use ryu;
+#[cfg(feature = "arbitrary_precision")]
+use itoa;
 #[cfg(feature = "arbitrary_precision")]
 use serde::de::{IntoDeserializer, MapAccess};
 
@@ -18,7 +26,12 @@ use error::ErrorCode;
 #[cfg(feature = "arbitrary_precision")]
 
 #[doc(hidden)]
-pub const TOKEN: &'static str = "$serde_json::private::Number";
+pub const SERDE_STRUCT_FIELD_NAME: &'static str = "$__serde_private_number";
+
+#[cfg(feature = "arbitrary_precision")]
+
+#[doc(hidden)]
+pub const SERDE_STRUCT_NAME: &'static str = "$__serde_private_Number";
 
 
 #[derive(Clone, PartialEq)]
@@ -40,6 +53,9 @@ enum N {
 type N = String;
 
 impl Number {
+    
+    
+    
     
     
     
@@ -90,6 +106,9 @@ impl Number {
     
     
     
+    
+    
+    
     #[inline]
     pub fn is_u64(&self) -> bool {
         #[cfg(not(feature = "arbitrary_precision"))]
@@ -101,6 +120,9 @@ impl Number {
         self.as_u64().is_some()
     }
 
+    
+    
+    
     
     
     
@@ -151,17 +173,18 @@ impl Number {
     
     
     
+    
+    
+    
     #[inline]
     pub fn as_i64(&self) -> Option<i64> {
         #[cfg(not(feature = "arbitrary_precision"))]
         match self.n {
-            N::PosInt(n) => {
-                if n <= i64::max_value() as u64 {
-                    Some(n as i64)
-                } else {
-                    None
-                }
-            }
+            N::PosInt(n) => if n <= i64::max_value() as u64 {
+                Some(n as i64)
+            } else {
+                None
+            },
             N::NegInt(n) => Some(n),
             N::Float(_) => None,
         }
@@ -169,6 +192,9 @@ impl Number {
         self.n.parse().ok()
     }
 
+    
+    
+    
     
     
     
@@ -192,6 +218,9 @@ impl Number {
         self.n.parse().ok()
     }
 
+    
+    
+    
     
     
     
@@ -237,7 +266,7 @@ impl Number {
                 }
                 #[cfg(feature = "arbitrary_precision")]
                 {
-                    ryu::Buffer::new().format_finite(f).to_owned()
+                    ryu::Buffer::new().format(f).to_owned()
                 }
             };
             Some(Number { n: n })
@@ -317,8 +346,8 @@ impl Serialize for Number {
     {
         use serde::ser::SerializeStruct;
 
-        let mut s = serializer.serialize_struct(TOKEN, 1)?;
-        s.serialize_field(TOKEN, &self.n)?;
+        let mut s = serializer.serialize_struct(SERDE_STRUCT_NAME, 1)?;
+        s.serialize_field(SERDE_STRUCT_FIELD_NAME, &self.n)?;
         s.end()
     }
 }
@@ -397,7 +426,7 @@ impl<'de> de::Deserialize<'de> for NumberKey {
             where
                 E: de::Error,
             {
-                if s == TOKEN {
+                if s == SERDE_STRUCT_FIELD_NAME {
                     Ok(())
                 } else {
                     Err(de::Error::custom("expected field with custom name"))
@@ -473,7 +502,7 @@ macro_rules! deserialize_any {
             } else if let Some(i) = self.as_i64() {
                 return visitor.visit_i64(i);
             } else if let Some(f) = self.as_f64() {
-                if ryu::Buffer::new().format_finite(f) == self.n || f.to_string() == self.n {
+                if f.to_string() == self.n {
                     return visitor.visit_f64(f);
                 }
             }
@@ -609,7 +638,7 @@ impl<'de> Deserializer<'de> for NumberFieldDeserializer {
     where
         V: de::Visitor<'de>,
     {
-        visitor.visit_borrowed_str(TOKEN)
+        visitor.visit_borrowed_str(SERDE_STRUCT_FIELD_NAME)
     }
 
     forward_to_deserialize_any! {
@@ -672,7 +701,9 @@ macro_rules! impl_from_unsigned {
                         { N::PosInt(u as u64) }
                         #[cfg(feature = "arbitrary_precision")]
                         {
-                            itoa::Buffer::new().format(u).to_owned()
+                            let mut buf = Vec::new();
+                            itoa::write(&mut buf, u).unwrap();
+                            String::from_utf8(buf).unwrap()
                         }
                     };
                     Number { n: n }
@@ -701,7 +732,9 @@ macro_rules! impl_from_signed {
                         }
                         #[cfg(feature = "arbitrary_precision")]
                         {
-                            itoa::Buffer::new().format(i).to_owned()
+                            let mut buf = Vec::new();
+                            itoa::write(&mut buf, i).unwrap();
+                            String::from_utf8(buf).unwrap()
                         }
                     };
                     Number { n: n }
@@ -713,21 +746,6 @@ macro_rules! impl_from_signed {
 
 impl_from_unsigned!(u8, u16, u32, u64, usize);
 impl_from_signed!(i8, i16, i32, i64, isize);
-
-#[cfg(feature = "arbitrary_precision")]
-serde_if_integer128! {
-    impl From<i128> for Number {
-        fn from(i: i128) -> Self {
-            Number { n: i.to_string() }
-        }
-    }
-
-    impl From<u128> for Number {
-        fn from(u: u128) -> Self {
-            Number { n: u.to_string() }
-        }
-    }
-}
 
 impl Number {
     #[cfg(not(feature = "arbitrary_precision"))]

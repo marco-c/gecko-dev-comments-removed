@@ -27,6 +27,8 @@
 
 
 
+
+
 #[macro_export(local_inner_macros)]
 macro_rules! log {
     (target: $target:expr, $lvl:expr, $($arg:tt)+) => ({
@@ -58,11 +60,11 @@ macro_rules! log {
 
 #[macro_export(local_inner_macros)]
 macro_rules! error {
-    (target: $target:expr, $($arg:tt)+) => (
-        log!(target: $target, $crate::Level::Error, $($arg)+);
+    (target: $target:expr, $($arg:tt)*) => (
+        log!(target: $target, $crate::Level::Error, $($arg)*);
     );
-    ($($arg:tt)+) => (
-        log!($crate::Level::Error, $($arg)+);
+    ($($arg:tt)*) => (
+        log!($crate::Level::Error, $($arg)*);
     )
 }
 
@@ -82,11 +84,11 @@ macro_rules! error {
 
 #[macro_export(local_inner_macros)]
 macro_rules! warn {
-    (target: $target:expr, $($arg:tt)+) => (
-        log!(target: $target, $crate::Level::Warn, $($arg)+);
+    (target: $target:expr, $($arg:tt)*) => (
+        log!(target: $target, $crate::Level::Warn, $($arg)*);
     );
-    ($($arg:tt)+) => (
-        log!($crate::Level::Warn, $($arg)+);
+    ($($arg:tt)*) => (
+        log!($crate::Level::Warn, $($arg)*);
     )
 }
 
@@ -108,11 +110,11 @@ macro_rules! warn {
 
 #[macro_export(local_inner_macros)]
 macro_rules! info {
-    (target: $target:expr, $($arg:tt)+) => (
-        log!(target: $target, $crate::Level::Info, $($arg)+);
+    (target: $target:expr, $($arg:tt)*) => (
+        log!(target: $target, $crate::Level::Info, $($arg)*);
     );
-    ($($arg:tt)+) => (
-        log!($crate::Level::Info, $($arg)+);
+    ($($arg:tt)*) => (
+        log!($crate::Level::Info, $($arg)*);
     )
 }
 
@@ -133,11 +135,11 @@ macro_rules! info {
 
 #[macro_export(local_inner_macros)]
 macro_rules! debug {
-    (target: $target:expr, $($arg:tt)+) => (
-        log!(target: $target, $crate::Level::Debug, $($arg)+);
+    (target: $target:expr, $($arg:tt)*) => (
+        log!(target: $target, $crate::Level::Debug, $($arg)*);
     );
-    ($($arg:tt)+) => (
-        log!($crate::Level::Debug, $($arg)+);
+    ($($arg:tt)*) => (
+        log!($crate::Level::Debug, $($arg)*);
     )
 }
 
@@ -160,13 +162,14 @@ macro_rules! debug {
 
 #[macro_export(local_inner_macros)]
 macro_rules! trace {
-    (target: $target:expr, $($arg:tt)+) => (
-        log!(target: $target, $crate::Level::Trace, $($arg)+);
+    (target: $target:expr, $($arg:tt)*) => (
+        log!(target: $target, $crate::Level::Trace, $($arg)*);
     );
-    ($($arg:tt)+) => (
-        log!($crate::Level::Trace, $($arg)+);
+    ($($arg:tt)*) => (
+        log!($crate::Level::Trace, $($arg)*);
     )
 }
+
 
 
 

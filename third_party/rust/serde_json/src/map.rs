@@ -6,6 +6,14 @@
 
 
 
+
+
+
+
+
+
+
+
 use serde::{de, ser};
 use std::borrow::Borrow;
 use std::fmt::{self, Debug};
@@ -126,10 +134,7 @@ impl Map<String, Value> {
         String: Borrow<Q>,
         Q: Ord + Eq + Hash,
     {
-        #[cfg(feature = "preserve_order")]
-        return self.map.swap_remove(key);
-        #[cfg(not(feature = "preserve_order"))]
-        return self.map.remove(key);
+        self.map.remove(key)
     }
 
     
@@ -263,6 +268,9 @@ where
         self.map.index(index)
     }
 }
+
+
+
 
 
 
@@ -467,6 +475,9 @@ impl<'a> Entry<'a> {
     
     
     
+    
+    
+    
     pub fn or_insert(self, default: Value) -> &'a mut Value {
         match self {
             Entry::Vacant(entry) => entry.insert(default),
@@ -474,6 +485,9 @@ impl<'a> Entry<'a> {
         }
     }
 
+    
+    
+    
     
     
     
@@ -541,6 +555,9 @@ impl<'a> VacantEntry<'a> {
     
     
     
+    
+    
+    
     #[inline]
     pub fn insert(self, value: Value) -> &'a mut Value {
         self.vacant.insert(value)
@@ -548,6 +565,9 @@ impl<'a> VacantEntry<'a> {
 }
 
 impl<'a> OccupiedEntry<'a> {
+    
+    
+    
     
     
     
@@ -591,11 +611,17 @@ impl<'a> OccupiedEntry<'a> {
     
     
     
+    
+    
+    
     #[inline]
     pub fn get(&self) -> &Value {
         self.occupied.get()
     }
 
+    
+    
+    
     
     
     
@@ -643,11 +669,17 @@ impl<'a> OccupiedEntry<'a> {
     
     
     
+    
+    
+    
     #[inline]
     pub fn into_mut(self) -> &'a mut Value {
         self.occupied.into_mut()
     }
 
+    
+    
+    
     
     
     
@@ -693,12 +725,12 @@ impl<'a> OccupiedEntry<'a> {
     
     
     
+    
+    
+    
     #[inline]
     pub fn remove(self) -> Value {
-        #[cfg(feature = "preserve_order")]
-        return self.occupied.swap_remove();
-        #[cfg(not(feature = "preserve_order"))]
-        return self.occupied.remove();
+        self.occupied.remove()
     }
 }
 

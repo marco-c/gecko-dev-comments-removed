@@ -4,6 +4,9 @@
 
 
 
+extern crate log;
+extern crate env_logger;
+
 fn record() -> log::Record<'static> {
     let error_metadata = log::MetadataBuilder::new()
         .target("myApp")
@@ -31,7 +34,7 @@ fn main() {
         .filter(None, log::LevelFilter::Error)
         .write_style(env_logger::WriteStyle::Never)
         .build();
-
+    
     stylish_logger.log(&record());
     unstylish_logger.log(&record());
 }

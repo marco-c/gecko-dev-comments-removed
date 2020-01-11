@@ -1,15 +1,17 @@
+
+
+
+
+
+
+
+
 use std::ops::Deref;
 use std::{char, cmp, io, str};
 
-#[cfg(feature = "raw_value")]
-use serde::de::Visitor;
-
 use iter::LineColIterator;
 
-use error::{Error, ErrorCode, Result};
-
-#[cfg(feature = "raw_value")]
-use raw::{BorrowedRawDeserializer, OwnedRawDeserializer};
+use super::error::{Error, ErrorCode, Result};
 
 
 
@@ -19,9 +21,9 @@ use raw::{BorrowedRawDeserializer, OwnedRawDeserializer};
 
 pub trait Read<'de>: private::Sealed {
     #[doc(hidden)]
-    fn next(&mut self) -> Result<Option<u8>>;
+    fn next(&mut self) -> io::Result<Option<u8>>;
     #[doc(hidden)]
-    fn peek(&mut self) -> Result<Option<u8>>;
+    fn peek(&mut self) -> io::Result<Option<u8>>;
 
     
     #[doc(hidden)]
@@ -74,26 +76,6 @@ pub trait Read<'de>: private::Sealed {
     
     #[doc(hidden)]
     fn ignore_str(&mut self) -> Result<()>;
-
-    
-    
-    #[doc(hidden)]
-    fn decode_hex_escape(&mut self) -> Result<u16>;
-
-    
-    
-    
-    #[cfg(feature = "raw_value")]
-    #[doc(hidden)]
-    fn begin_raw_buffering(&mut self);
-
-    
-    
-    #[cfg(feature = "raw_value")]
-    #[doc(hidden)]
-    fn end_raw_buffering<V>(&mut self, visitor: V) -> Result<V::Value>
-    where
-        V: Visitor<'de>;
 }
 
 pub struct Position {
@@ -125,8 +107,6 @@ where
     iter: LineColIterator<io::Bytes<R>>,
     
     ch: Option<u8>,
-    #[cfg(feature = "raw_value")]
-    raw_buffer: Option<Vec<u8>>,
 }
 
 
@@ -137,8 +117,6 @@ pub struct SliceRead<'a> {
     slice: &'a [u8],
     
     index: usize,
-    #[cfg(feature = "raw_value")]
-    raw_buffering_start_index: usize,
 }
 
 
@@ -146,8 +124,6 @@ pub struct SliceRead<'a> {
 
 pub struct StrRead<'a> {
     delegate: SliceRead<'a>,
-    #[cfg(feature = "raw_value")]
-    data: &'a str,
 }
 
 
@@ -163,20 +139,9 @@ where
 {
     
     pub fn new(reader: R) -> Self {
-        #[cfg(not(feature = "raw_value"))]
-        {
-            IoRead {
-                iter: LineColIterator::new(reader.bytes()),
-                ch: None,
-            }
-        }
-        #[cfg(feature = "raw_value")]
-        {
-            IoRead {
-                iter: LineColIterator::new(reader.bytes()),
-                ch: None,
-                raw_buffer: None,
-            }
+        IoRead {
+            iter: LineColIterator::new(reader.bytes()),
+            ch: None,
         }
     }
 }
@@ -226,39 +191,23 @@ where
     R: io::Read,
 {
     #[inline]
-    fn next(&mut self) -> Result<Option<u8>> {
+    fn next(&mut self) -> io::Result<Option<u8>> {
         match self.ch.take() {
-            Some(ch) => {
-                #[cfg(feature = "raw_value")]
-                {
-                    if let Some(ref mut buf) = self.raw_buffer {
-                        buf.push(ch);
-                    }
-                }
-                Ok(Some(ch))
-            }
+            Some(ch) => Ok(Some(ch)),
             None => match self.iter.next() {
-                Some(Err(err)) => Err(Error::io(err)),
-                Some(Ok(ch)) => {
-                    #[cfg(feature = "raw_value")]
-                    {
-                        if let Some(ref mut buf) = self.raw_buffer {
-                            buf.push(ch);
-                        }
-                    }
-                    Ok(Some(ch))
-                }
+                Some(Err(err)) => Err(err),
+                Some(Ok(ch)) => Ok(Some(ch)),
                 None => Ok(None),
             },
         }
     }
 
     #[inline]
-    fn peek(&mut self) -> Result<Option<u8>> {
+    fn peek(&mut self) -> io::Result<Option<u8>> {
         match self.ch {
             Some(ch) => Ok(Some(ch)),
             None => match self.iter.next() {
-                Some(Err(err)) => Err(Error::io(err)),
+                Some(Err(err)) => Err(err),
                 Some(Ok(ch)) => {
                     self.ch = Some(ch);
                     Ok(self.ch)
@@ -268,19 +217,9 @@ where
         }
     }
 
-    #[cfg(not(feature = "raw_value"))]
     #[inline]
     fn discard(&mut self) {
         self.ch = None;
-    }
-
-    #[cfg(feature = "raw_value")]
-    fn discard(&mut self) {
-        if let Some(ch) = self.ch.take() {
-            if let Some(ref mut buf) = self.raw_buffer {
-                buf.push(ch);
-            }
-        }
     }
 
     fn position(&self) -> Position {
@@ -335,36 +274,6 @@ where
             }
         }
     }
-
-    fn decode_hex_escape(&mut self) -> Result<u16> {
-        let mut n = 0;
-        for _ in 0..4 {
-            match decode_hex_val(try!(next_or_eof(self))) {
-                None => return error(self, ErrorCode::InvalidEscape),
-                Some(val) => {
-                    n = (n << 4) + val;
-                }
-            }
-        }
-        Ok(n)
-    }
-
-    #[cfg(feature = "raw_value")]
-    fn begin_raw_buffering(&mut self) {
-        self.raw_buffer = Some(Vec::new());
-    }
-
-    #[cfg(feature = "raw_value")]
-    fn end_raw_buffering<V>(&mut self, visitor: V) -> Result<V::Value>
-    where
-        V: Visitor<'de>,
-    {
-        let raw = self.raw_buffer.take().unwrap();
-        let raw = String::from_utf8(raw).unwrap();
-        visitor.visit_map(OwnedRawDeserializer {
-            raw_value: Some(raw),
-        })
-    }
 }
 
 
@@ -372,20 +281,9 @@ where
 impl<'a> SliceRead<'a> {
     
     pub fn new(slice: &'a [u8]) -> Self {
-        #[cfg(not(feature = "raw_value"))]
-        {
-            SliceRead {
-                slice: slice,
-                index: 0,
-            }
-        }
-        #[cfg(feature = "raw_value")]
-        {
-            SliceRead {
-                slice: slice,
-                index: 0,
-                raw_buffering_start_index: 0,
-            }
+        SliceRead {
+            slice: slice,
+            index: 0,
         }
     }
 
@@ -449,10 +347,10 @@ impl<'a> SliceRead<'a> {
                     start = self.index;
                 }
                 _ => {
-                    self.index += 1;
                     if validate {
                         return error(self, ErrorCode::ControlCharacterWhileParsingString);
                     }
+                    self.index += 1;
                 }
             }
         }
@@ -463,7 +361,7 @@ impl<'a> private::Sealed for SliceRead<'a> {}
 
 impl<'a> Read<'a> for SliceRead<'a> {
     #[inline]
-    fn next(&mut self) -> Result<Option<u8>> {
+    fn next(&mut self) -> io::Result<Option<u8>> {
         
         
         Ok(if self.index < self.slice.len() {
@@ -476,7 +374,7 @@ impl<'a> Read<'a> for SliceRead<'a> {
     }
 
     #[inline]
-    fn peek(&mut self) -> Result<Option<u8>> {
+    fn peek(&mut self) -> io::Result<Option<u8>> {
         
         
         Ok(if self.index < self.slice.len() {
@@ -539,43 +437,6 @@ impl<'a> Read<'a> for SliceRead<'a> {
             }
         }
     }
-
-    fn decode_hex_escape(&mut self) -> Result<u16> {
-        if self.index + 4 > self.slice.len() {
-            self.index = self.slice.len();
-            return error(self, ErrorCode::EofWhileParsingString);
-        }
-
-        let mut n = 0;
-        for _ in 0..4 {
-            let ch = decode_hex_val(self.slice[self.index]);
-            self.index += 1;
-            match ch {
-                None => return error(self, ErrorCode::InvalidEscape),
-                Some(val) => {
-                    n = (n << 4) + val;
-                }
-            }
-        }
-        Ok(n)
-    }
-
-    #[cfg(feature = "raw_value")]
-    fn begin_raw_buffering(&mut self) {
-        self.raw_buffering_start_index = self.index;
-    }
-
-    #[cfg(feature = "raw_value")]
-    fn end_raw_buffering<V>(&mut self, visitor: V) -> Result<V::Value>
-    where
-        V: Visitor<'a>,
-    {
-        let raw = &self.slice[self.raw_buffering_start_index..self.index];
-        let raw = str::from_utf8(raw).unwrap();
-        visitor.visit_map(BorrowedRawDeserializer {
-            raw_value: Some(raw),
-        })
-    }
 }
 
 
@@ -583,18 +444,8 @@ impl<'a> Read<'a> for SliceRead<'a> {
 impl<'a> StrRead<'a> {
     
     pub fn new(s: &'a str) -> Self {
-        #[cfg(not(feature = "raw_value"))]
-        {
-            StrRead {
-                delegate: SliceRead::new(s.as_bytes()),
-            }
-        }
-        #[cfg(feature = "raw_value")]
-        {
-            StrRead {
-                delegate: SliceRead::new(s.as_bytes()),
-                data: s,
-            }
+        StrRead {
+            delegate: SliceRead::new(s.as_bytes()),
         }
     }
 }
@@ -603,12 +454,12 @@ impl<'a> private::Sealed for StrRead<'a> {}
 
 impl<'a> Read<'a> for StrRead<'a> {
     #[inline]
-    fn next(&mut self) -> Result<Option<u8>> {
+    fn next(&mut self) -> io::Result<Option<u8>> {
         self.delegate.next()
     }
 
     #[inline]
-    fn peek(&mut self) -> Result<Option<u8>> {
+    fn peek(&mut self) -> io::Result<Option<u8>> {
         self.delegate.peek()
     }
 
@@ -647,60 +498,40 @@ impl<'a> Read<'a> for StrRead<'a> {
     fn ignore_str(&mut self) -> Result<()> {
         self.delegate.ignore_str()
     }
-
-    fn decode_hex_escape(&mut self) -> Result<u16> {
-        self.delegate.decode_hex_escape()
-    }
-
-    #[cfg(feature = "raw_value")]
-    fn begin_raw_buffering(&mut self) {
-        self.delegate.begin_raw_buffering()
-    }
-
-    #[cfg(feature = "raw_value")]
-    fn end_raw_buffering<V>(&mut self, visitor: V) -> Result<V::Value>
-    where
-        V: Visitor<'a>,
-    {
-        let raw = &self.data[self.delegate.raw_buffering_start_index..self.delegate.index];
-        visitor.visit_map(BorrowedRawDeserializer {
-            raw_value: Some(raw),
-        })
-    }
 }
 
 
 
+const CT: bool = true; 
+const QU: bool = true; 
+const BS: bool = true; 
+const O: bool = false; 
 
 
-static ESCAPE: [bool; 256] = {
-    const CT: bool = true; 
-    const QU: bool = true; 
-    const BS: bool = true; 
-    const __: bool = false; 
-    [
-        
-        CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, 
-        CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, 
-        __, __, QU, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, BS, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-    ]
-};
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+static ESCAPE: [bool; 256] = [
+    
+    CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, 
+    CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, 
+     O,  O, QU,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O, 
+     O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O, 
+     O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O, 
+     O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O, BS,  O,  O,  O, 
+     O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O, 
+     O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O, 
+     O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O, 
+     O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O, 
+     O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O, 
+     O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O, 
+     O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O, 
+     O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O, 
+     O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O, 
+     O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O, 
+];
 
 fn next_or_eof<'de, R: ?Sized + Read<'de>>(read: &mut R) -> Result<u8> {
-    match try!(read.next()) {
+    match try!(read.next().map_err(Error::io)) {
         Some(b) => Ok(b),
         None => error(read, ErrorCode::EofWhileParsingString),
     }
@@ -730,7 +561,7 @@ fn parse_escape<'de, R: Read<'de>>(read: &mut R, scratch: &mut Vec<u8>) -> Resul
         b'r' => scratch.push(b'\r'),
         b't' => scratch.push(b'\t'),
         b'u' => {
-            let c = match try!(read.decode_hex_escape()) {
+            let c = match try!(decode_hex_escape(read)) {
                 0xDC00...0xDFFF => {
                     return error(read, ErrorCode::LoneLeadingSurrogateInHexEscape);
                 }
@@ -745,7 +576,7 @@ fn parse_escape<'de, R: Read<'de>>(read: &mut R, scratch: &mut Vec<u8>) -> Resul
                         return error(read, ErrorCode::UnexpectedEndOfHexEscape);
                     }
 
-                    let n2 = try!(read.decode_hex_escape());
+                    let n2 = try!(decode_hex_escape(read));
 
                     if n2 < 0xDC00 || n2 > 0xDFFF {
                         return error(read, ErrorCode::LoneLeadingSurrogateInHexEscape);
@@ -787,7 +618,7 @@ fn ignore_escape<'de, R: ?Sized + Read<'de>>(read: &mut R) -> Result<()> {
     match ch {
         b'"' | b'\\' | b'/' | b'b' | b'f' | b'n' | b'r' | b't' => {}
         b'u' => {
-            let n = match try!(read.decode_hex_escape()) {
+            let n = match try!(decode_hex_escape(read)) {
                 0xDC00...0xDFFF => {
                     return error(read, ErrorCode::LoneLeadingSurrogateInHexEscape);
                 }
@@ -802,7 +633,7 @@ fn ignore_escape<'de, R: ?Sized + Read<'de>>(read: &mut R) -> Result<()> {
                         return error(read, ErrorCode::UnexpectedEndOfHexEscape);
                     }
 
-                    let n2 = try!(read.decode_hex_escape());
+                    let n2 = try!(decode_hex_escape(read));
 
                     if n2 < 0xDC00 || n2 > 0xDFFF {
                         return error(read, ErrorCode::LoneLeadingSurrogateInHexEscape);
@@ -826,34 +657,21 @@ fn ignore_escape<'de, R: ?Sized + Read<'de>>(read: &mut R) -> Result<()> {
     Ok(())
 }
 
-static HEX: [u8; 256] = {
-    const __: u8 = 255; 
-    [
-        
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        00, 01, 02, 03, 04, 05, 06, 07, 08, 09, __, __, __, __, __, __, 
-        __, 10, 11, 12, 13, 14, 15, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, 10, 11, 12, 13, 14, 15, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-        __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, __, 
-    ]
-};
-
-fn decode_hex_val(val: u8) -> Option<u16> {
-    let n = HEX[val as usize] as u16;
-    if n == 255 {
-        None
-    } else {
-        Some(n)
+fn decode_hex_escape<'de, R: ?Sized + Read<'de>>(read: &mut R) -> Result<u16> {
+    let mut n = 0;
+    for _ in 0..4 {
+        n = match try!(next_or_eof(read)) {
+            c @ b'0'...b'9' => n * 16_u16 + ((c as u16) - (b'0' as u16)),
+            b'a' | b'A' => n * 16_u16 + 10_u16,
+            b'b' | b'B' => n * 16_u16 + 11_u16,
+            b'c' | b'C' => n * 16_u16 + 12_u16,
+            b'd' | b'D' => n * 16_u16 + 13_u16,
+            b'e' | b'E' => n * 16_u16 + 14_u16,
+            b'f' | b'F' => n * 16_u16 + 15_u16,
+            _ => {
+                return error(read, ErrorCode::InvalidEscape);
+            }
+        };
     }
+    Ok(n)
 }

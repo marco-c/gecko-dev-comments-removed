@@ -15,11 +15,21 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 use std::mem;
 
 use exec::ProgramCache;
 use input::{Input, InputAt};
-use prog::{InstPtr, Program};
+use prog::{Program, InstPtr};
 use re_trait::Slot;
 use sparse::SparseSet;
 
@@ -76,7 +86,11 @@ impl Cache {
     
     
     pub fn new(_prog: &Program) -> Self {
-        Cache { clist: Threads::new(), nlist: Threads::new(), stack: vec![] }
+        Cache {
+            clist: Threads::new(),
+            nlist: Threads::new(),
+            stack: vec![],
+        }
     }
 }
 
@@ -100,7 +114,11 @@ impl<'r, I: Input> Fsm<'r, I> {
         cache.clist.resize(prog.len(), prog.captures.len());
         cache.nlist.resize(prog.len(), prog.captures.len());
         let at = input.at(start);
-        Fsm { prog: prog, stack: &mut cache.stack, input: input }.exec_(
+        Fsm {
+            prog: prog,
+            stack: &mut cache.stack,
+            input: input,
+        }.exec_(
             &mut cache.clist,
             &mut cache.nlist,
             matches,
@@ -125,7 +143,7 @@ impl<'r, I: Input> Fsm<'r, I> {
         let mut all_matched = false;
         clist.set.clear();
         nlist.set.clear();
-        'LOOP: loop {
+'LOOP:  loop {
             if clist.set.is_empty() {
                 
                 
@@ -139,8 +157,7 @@ impl<'r, I: Input> Fsm<'r, I> {
                 
                 if (matched && matches.len() <= 1)
                     || all_matched
-                    || (!at.is_start() && self.prog.is_anchored_start)
-                {
+                    || (!at.is_start() && self.prog.is_anchored_start) {
                     break;
                 }
 
@@ -159,8 +176,7 @@ impl<'r, I: Input> Fsm<'r, I> {
             
             
             if clist.set.is_empty()
-                || (!self.prog.is_anchored_start && !all_matched)
-            {
+                || (!self.prog.is_anchored_start && !all_matched) {
                 self.add(&mut clist, slots, 0, at);
             }
             
@@ -199,7 +215,7 @@ impl<'r, I: Input> Fsm<'r, I> {
                     }
                 }
             }
-            if at.pos() >= end {
+            if at.pos() == end || at.is_end() {
                 break;
             }
             at = at_next;
@@ -341,7 +357,11 @@ impl<'r, I: Input> Fsm<'r, I> {
 
 impl Threads {
     fn new() -> Self {
-        Threads { set: SparseSet::new(0), caps: vec![], slots_per_thread: 0 }
+        Threads {
+            set: SparseSet::new(0),
+            caps: vec![],
+            slots_per_thread: 0,
+        }
     }
 
     fn resize(&mut self, num_insts: usize, ncaps: usize) {

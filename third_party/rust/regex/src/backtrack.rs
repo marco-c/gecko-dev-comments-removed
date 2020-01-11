@@ -16,9 +16,19 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 use exec::ProgramCache;
 use input::{Input, InputAt};
-use prog::{InstPtr, Program};
+use prog::{Program, InstPtr};
 use re_trait::Slot;
 
 type Bits = u32;
@@ -121,7 +131,8 @@ impl<'a, 'm, 'r, 's, I: Input> Bounded<'a, 'm, 'r, 's, I> {
         
         let visited_len =
             (self.prog.len() * (self.input.len() + 1) + BIT_SIZE - 1)
-                / BIT_SIZE;
+            /
+            BIT_SIZE;
         self.m.visited.truncate(visited_len);
         for v in &mut self.m.visited {
             *v = 0;
@@ -142,7 +153,11 @@ impl<'a, 'm, 'r, 's, I: Input> Bounded<'a, 'm, 'r, 's, I> {
         
         
         if self.prog.is_anchored_start {
-            return if !at.is_start() { false } else { self.backtrack(at) };
+            return if !at.is_start() {
+                false
+            } else {
+                self.backtrack(at)
+            };
         }
         let mut matched = false;
         loop {
@@ -156,7 +171,7 @@ impl<'a, 'm, 'r, 's, I: Input> Bounded<'a, 'm, 'r, 's, I> {
             if matched && self.prog.matches.len() == 1 {
                 return true;
             }
-            if at.pos() >= end {
+            if at.pos() == end || at.is_end() {
                 break;
             }
             at = self.input.at(at.next_pos());

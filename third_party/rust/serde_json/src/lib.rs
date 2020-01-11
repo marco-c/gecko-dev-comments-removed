@@ -291,47 +291,69 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde_json/1.0.44")]
-#![allow(unknown_lints, bare_trait_objects, ellipsis_inclusive_range_patterns)]
-#![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/serde_json/1.0.26")]
 #![cfg_attr(feature = "cargo-clippy", deny(clippy, clippy_pedantic))]
 
 #![cfg_attr(
     feature = "cargo-clippy",
-    allow(deprecated_cfg_attr, doc_markdown, needless_doctest_main)
+    allow(doc_markdown, needless_pass_by_value)
 )]
 
 #![cfg_attr(feature = "cargo-clippy", allow(
-    
+
     should_implement_trait,
-    
+
+    cast_possible_truncation,
     cast_possible_wrap,
     cast_precision_loss,
     cast_sign_loss,
-    
-    integer_division,
-    
+
+    indexing_slicing,
+
     cast_lossless,
-    module_name_repetitions,
+    shadow_reuse,
     shadow_unrelated,
     single_match_else,
-    too_many_lines,
+    stutter,
     use_self,
-    zero_prefixed_literal,
-    
-    checked_conversions,
+
+    missing_docs_in_private_items,
+    similar_names,
+
     redundant_field_names,
-    
-    must_use_candidate,
 ))]
 #![deny(missing_docs)]
 
 #[macro_use]
 extern crate serde;
+extern crate ryu;
 #[cfg(feature = "preserve_order")]
 extern crate indexmap;
 extern crate itoa;
-extern crate ryu;
 
 #[doc(inline)]
 pub use self::de::{from_reader, from_slice, from_str, Deserializer, StreamDeserializer};
@@ -367,6 +389,3 @@ pub mod value;
 mod iter;
 mod number;
 mod read;
-
-#[cfg(feature = "raw_value")]
-mod raw;

@@ -29,63 +29,18 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![no_std]
-#![doc(html_root_url = "https://docs.rs/ryu/1.0.2")]
-#![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
+#![doc(html_root_url = "https://docs.rs/ryu/0.2.4")]
+#![cfg_attr(feature = "no-panic", feature(use_extern_macros))]
 #![cfg_attr(
     feature = "cargo-clippy",
-    allow(cast_lossless, many_single_char_names, unreadable_literal,)
+    allow(
+        cast_lossless,
+        cyclomatic_complexity,
+        many_single_char_names,
+        needless_pass_by_value,
+        unreadable_literal,
+    )
 )]
 
 #[cfg(feature = "no-panic")]
@@ -96,16 +51,18 @@ mod common;
 mod d2s;
 #[cfg(not(feature = "small"))]
 mod d2s_full_table;
-mod d2s_intrinsics;
 #[cfg(feature = "small")]
 mod d2s_small_table;
 mod digit_table;
 mod f2s;
+#[cfg(not(integer128))]
+mod mulshift128;
 mod pretty;
 
 pub use buffer::{Buffer, Float};
 
 
 pub mod raw {
-    pub use pretty::{format32, format64};
+    pub use d2s::d2s_buffered_n;
+    pub use f2s::f2s_buffered_n;
 }
