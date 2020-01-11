@@ -532,6 +532,7 @@ bool Module::initSegments(JSContext* cx, HandleWasmInstanceObject instanceObj,
   if (eagerBoundsCheck) {
     
     
+    
 
     for (const ElemSegment* seg : elemSegments_) {
       if (!seg->active()) {
@@ -586,7 +587,7 @@ bool Module::initSegments(JSContext* cx, HandleWasmInstanceObject instanceObj,
         uint32_t tableLength = tables[seg->tableIndex]->length();
         if (offset > tableLength || tableLength - offset < count) {
           JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                                   JSMSG_WASM_BAD_FIT, "elem", "table");
+                                   JSMSG_WASM_OUT_OF_BOUNDS);
           return false;
         }
       }
@@ -621,7 +622,7 @@ bool Module::initSegments(JSContext* cx, HandleWasmInstanceObject instanceObj,
       if (!eagerBoundsCheck) {
         if (offset > memoryLength || memoryLength - offset < count) {
           JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                                   JSMSG_WASM_BAD_FIT, "data", "memory");
+                                   JSMSG_WASM_OUT_OF_BOUNDS);
           return false;
         }
       }
