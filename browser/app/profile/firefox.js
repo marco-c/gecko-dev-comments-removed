@@ -2097,12 +2097,12 @@ pref("devtools.performance.recording.duration", 0);
 #if defined(__ANDROID__)
   
   
-  pref("devtools.performance.recording.features", "[\"js\",\"leaf\",\"responsiveness\",\"stackwalk\",\"java\"]");
+  pref("devtools.performance.recording.features", "[\"js\",\"leaf\",\"stackwalk\",\"java\"]");
 #else
   
-  pref("devtools.performance.recording.features", "[\"js\",\"leaf\",\"responsiveness\",\"stackwalk\"]");
+  pref("devtools.performance.recording.features", "[\"js\",\"leaf\",\"stackwalk\"]");
 #endif
-pref("devtools.performance.recording.threads", "[\"GeckoMain\",\"Compositor\"]");
+pref("devtools.performance.recording.threads", "[\"GeckoMain\",\"Compositor\",\"Renderer\"]");
 
 
 
