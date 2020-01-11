@@ -44,15 +44,15 @@
 #include "mozilla/ipc/EnvironmentMap.h"
 
 #if defined(MOZ_ENABLE_FORKSERVER)
-#include "nsString.h"
-#include "mozilla/Tuple.h"
-#include "mozilla/ipc/FileDescriptorShuffle.h"
+#  include "nsString.h"
+#  include "mozilla/Tuple.h"
+#  include "mozilla/ipc/FileDescriptorShuffle.h"
 
 namespace mozilla {
 namespace ipc {
 class FileDescriptor;
 }
-}
+}  
 #endif
 
 #if defined(OS_MACOSX)
@@ -195,7 +195,7 @@ EnvironmentArray BuildEnvironmentArray(const environment_map& env_vars_to_set);
 
 
 class AppProcessBuilder {
-public:
+ public:
   AppProcessBuilder();
   
   
@@ -209,10 +209,10 @@ public:
   
   
   
-  void InitAppProcess(int *argcp, char*** argvp);
+  void InitAppProcess(int* argcp, char*** argvp);
 
-private:
-  void ReplaceArguments(int *argcp, char*** argvp);
+ private:
+  void ReplaceArguments(int* argcp, char*** argvp);
 
   mozilla::ipc::FileDescriptorShuffle shuffle_;
   std::vector<std::string> argv_;

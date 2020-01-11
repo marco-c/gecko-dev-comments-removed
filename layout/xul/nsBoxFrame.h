@@ -116,8 +116,8 @@ class nsBoxFrame : public nsContainerFrame {
     
     
     return nsContainerFrame::IsFrameOfType(
-        aFlags & ~(nsIFrame::eReplaced | nsIFrame::eReplacedContainsBlock |
-                   eXULBox));
+        aFlags &
+        ~(nsIFrame::eReplaced | nsIFrame::eReplacedContainsBlock | eXULBox));
   }
 
 #ifdef DEBUG_FRAME_DUMP

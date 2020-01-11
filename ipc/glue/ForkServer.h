@@ -14,31 +14,31 @@ namespace mozilla {
 namespace ipc {
 
 class ForkServer {
-public:
-    static const int kHELLO_MESSAGE_TYPE = 65535;
+ public:
+  static const int kHELLO_MESSAGE_TYPE = 65535;
 
-    ForkServer();
-    ~ForkServer() {};
+  ForkServer();
+  ~ForkServer(){};
 
-    void InitProcess(int* aArgc, char*** aArgv);
-    bool HandleMessages();
+  void InitProcess(int* aArgc, char*** aArgv);
+  bool HandleMessages();
 
-    
-    void OnMessageReceived(IPC::Message&& message);
+  
+  void OnMessageReceived(IPC::Message&& message);
 
-    static bool RunForkServer(int* aArgc, char*** aArgv);
+  static bool RunForkServer(int* aArgc, char*** aArgv);
 
-private:
-    UniquePtr<MiniTransceiver> mTcver;
-    UniquePtr<base::AppProcessBuilder> mAppProcBuilder;
+ private:
+  UniquePtr<MiniTransceiver> mTcver;
+  UniquePtr<base::AppProcessBuilder> mAppProcBuilder;
 };
 
 enum {
-    Msg_ForkNewSubprocess__ID = 0x7f0, 
-    Reply_ForkNewSubprocess__ID,
+  Msg_ForkNewSubprocess__ID = 0x7f0,  
+  Reply_ForkNewSubprocess__ID,
 };
 
-}
-}
+}  
+}  
 
-#endif 
+#endif  

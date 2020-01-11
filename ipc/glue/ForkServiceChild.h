@@ -26,13 +26,11 @@ class GeckoChildProcessHost;
 
 
 class ForkServiceChild {
-public:
-    ForkServiceChild(int aFd, GeckoChildProcessHost* aProcess);
-    virtual ~ForkServiceChild();
+ public:
+  ForkServiceChild(int aFd, GeckoChildProcessHost* aProcess);
+  virtual ~ForkServiceChild();
 
-    
-
-
+  
 
 
 
@@ -42,56 +40,56 @@ public:
 
 
 
-    bool SendForkNewSubprocess(
-        const nsTArray<nsCString>& aArgv,
-        const nsTArray<EnvVar>& aEnvMap,
-        const nsTArray<FdMapping>& aFdsRemap,
-        pid_t* aPid);
-
-    
 
 
+  bool SendForkNewSubprocess(const nsTArray<nsCString>& aArgv,
+                             const nsTArray<EnvVar>& aEnvMap,
+                             const nsTArray<FdMapping>& aFdsRemap, pid_t* aPid);
+
+  
 
 
 
 
-    static void StartForkServer();
-    static void StopForkServer();
-    
 
 
-    static ForkServiceChild* Get() { return sForkServiceChild.get(); }
+  static void StartForkServer();
+  static void StopForkServer();
+  
 
-private:
-    
-    void OnMessageReceived(IPC::Message&& message);
 
-    UniquePtr<MiniTransceiver> mTcver;
-    static UniquePtr<ForkServiceChild> sForkServiceChild;
-    pid_t mRecvPid;
-    bool mWaitForHello;
-    GeckoChildProcessHost* mProcess;
+  static ForkServiceChild* Get() { return sForkServiceChild.get(); }
+
+ private:
+  
+  void OnMessageReceived(IPC::Message&& message);
+
+  UniquePtr<MiniTransceiver> mTcver;
+  static UniquePtr<ForkServiceChild> sForkServiceChild;
+  pid_t mRecvPid;
+  bool mWaitForHello;
+  GeckoChildProcessHost* mProcess;
 };
 
 
 
 
 class ForkServerLauncher : public nsIObserver {
-public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIOBSERVER
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
 
-    ForkServerLauncher();
-    static already_AddRefed<ForkServerLauncher> Create();
+  ForkServerLauncher();
+  static already_AddRefed<ForkServerLauncher> Create();
 
-private:
-    virtual ~ForkServerLauncher();
+ private:
+  virtual ~ForkServerLauncher();
 
-    static bool mHaveStartedClient;
-    static StaticRefPtr<ForkServerLauncher> mSingleton;
+  static bool mHaveStartedClient;
+  static StaticRefPtr<ForkServerLauncher> mSingleton;
 };
 
-}
-}
+}  
+}  
 
 #endif 

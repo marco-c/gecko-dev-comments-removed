@@ -13,8 +13,7 @@
 
 using namespace mozilla;
 
-static bool
-UseForkServer(int argc, char* argv[]) {
+static bool UseForkServer(int argc, char* argv[]) {
 #if defined(MOZ_ENABLE_FORKSERVER)
   return strcmp(argv[argc - 1], "forkserver") == 0;
 #else
@@ -22,8 +21,8 @@ UseForkServer(int argc, char* argv[]) {
 #endif
 }
 
-static int
-RunForkServer(Bootstrap::UniquePtr&& bootstrap, int argc, char* argv[]) {
+static int RunForkServer(Bootstrap::UniquePtr&& bootstrap, int argc,
+                         char* argv[]) {
 #if defined(MOZ_ENABLE_FORKSERVER)
   int ret = 0;
 
@@ -38,7 +37,7 @@ RunForkServer(Bootstrap::UniquePtr&& bootstrap, int argc, char* argv[]) {
   
   
   
-  if(bootstrap->XRE_ForkServer(&argc, &argv)) {
+  if (bootstrap->XRE_ForkServer(&argc, &argv)) {
     
     
   } else {

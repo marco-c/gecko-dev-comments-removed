@@ -262,7 +262,7 @@ int main(int argc, char* argv[], char* envp[]) {
     
     
     
-    if(gBootstrap->XRE_ForkServer(&argc, &argv)) {
+    if (gBootstrap->XRE_ForkServer(&argc, &argv)) {
       
       
       gBootstrap->NS_LogTerm();

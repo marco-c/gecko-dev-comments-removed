@@ -58,7 +58,8 @@ class nsThreadManager : public nsIThreadManager {
   nsresult DispatchToBackgroundThread(nsIRunnable* aEvent,
                                       uint32_t aDispatchFlags);
 
-  already_AddRefed<nsISerialEventTarget> CreateBackgroundTaskQueue(const char* aName);
+  already_AddRefed<nsISerialEventTarget> CreateBackgroundTaskQueue(
+      const char* aName);
 
   
   

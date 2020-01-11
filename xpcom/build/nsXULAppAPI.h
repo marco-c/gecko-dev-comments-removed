@@ -513,6 +513,6 @@ XRE_API(void, XRE_LibFuzzerSetDriver, (LibFuzzerDriver))
 
 XRE_API(int, XRE_ForkServer, (int* aArgc, char*** aArgv))
 
-#endif 
+#endif  
 
 #endif  

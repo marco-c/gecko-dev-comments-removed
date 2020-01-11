@@ -114,13 +114,14 @@ void FileBlockCache::Flush() {
   
   
   RefPtr<FileBlockCache> self = this;
-  mBackgroundET->Dispatch(NS_NewRunnableFunction("FileBlockCache::Flush", [self]() {
-    MutexAutoLock mon(self->mDataMutex);
-    
-    
-    self->mChangeIndexList.clear();
-    self->mBlockChanges.Clear();
-  }));
+  mBackgroundET->Dispatch(
+      NS_NewRunnableFunction("FileBlockCache::Flush", [self]() {
+        MutexAutoLock mon(self->mDataMutex);
+        
+        
+        self->mChangeIndexList.clear();
+        self->mBlockChanges.Clear();
+      }));
 }
 
 size_t FileBlockCache::GetMaxBlocks(size_t aCacheSizeInKB) const {
@@ -177,16 +178,17 @@ void FileBlockCache::Close() {
   
   
   
-  nsresult rv = thread->Dispatch(
-      NS_NewRunnableFunction(
-          "FileBlockCache::Close",
-          [thread, fd] {
-            if (fd) {
-              CloseFD(fd);
-            }
-            
-          }),
-      NS_DISPATCH_EVENT_MAY_BLOCK);
+  
+  nsresult rv = thread->Dispatch(NS_NewRunnableFunction("FileBlockCache::Close",
+                                                        [thread, fd] {
+                                                          if (fd) {
+                                                            CloseFD(fd);
+                                                          }
+                                                          
+                                                          
+                                                          
+                                                        }),
+                                 NS_DISPATCH_EVENT_MAY_BLOCK);
   NS_ENSURE_SUCCESS_VOID(rv);
 }
 

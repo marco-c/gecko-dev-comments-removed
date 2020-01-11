@@ -31,7 +31,7 @@ class PresShell;
 namespace dom {
 class DOMStringList;
 class Element;
-}
+}  
 
 namespace a11y {
 

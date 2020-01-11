@@ -14,10 +14,7 @@ struct msghdr;
 namespace mozilla {
 namespace ipc {
 
-enum class DataBufferClear {
-    None,
-    AfterReceiving
-};
+enum class DataBufferClear { None, AfterReceiving };
 
 
 
@@ -31,89 +28,90 @@ enum class DataBufferClear {
 
 
 class MiniTransceiver {
-public:
-    
+ public:
+  
 
 
 
 
-    explicit MiniTransceiver(int aFd, DataBufferClear aDataBufClear = DataBufferClear::None);
+  explicit MiniTransceiver(
+      int aFd, DataBufferClear aDataBufClear = DataBufferClear::None);
 
-    bool Send(IPC::Message& aMsg);
-    inline bool SendInfallible(IPC::Message& aMsg, const char* aCrashMessage) {
-        bool Ok = Send(aMsg);
-        if (!Ok) {
-            MOZ_CRASH_UNSAFE(aCrashMessage);
-        }
-        return Ok;
+  bool Send(IPC::Message& aMsg);
+  inline bool SendInfallible(IPC::Message& aMsg, const char* aCrashMessage) {
+    bool Ok = Send(aMsg);
+    if (!Ok) {
+      MOZ_CRASH_UNSAFE(aCrashMessage);
     }
+    return Ok;
+  }
 
-    
+  
 
 
 
-    bool Recv(IPC::Message& aMsg);
-    inline bool RecvInfallible(IPC::Message& aMsg, const char* aCrashMessage) {
-        bool Ok = Recv(aMsg);
-        if (!Ok) {
-            MOZ_CRASH_UNSAFE(aCrashMessage);
-        }
-        return Ok;
+  bool Recv(IPC::Message& aMsg);
+  inline bool RecvInfallible(IPC::Message& aMsg, const char* aCrashMessage) {
+    bool Ok = Recv(aMsg);
+    if (!Ok) {
+      MOZ_CRASH_UNSAFE(aCrashMessage);
     }
+    return Ok;
+  }
 
-    int GetFD() { return mFd; }
+  int GetFD() { return mFd; }
 
-private:
-    
-
-
-
-    void PrepareFDs(msghdr* aHdr, IPC::Message& aMsg);
-    
+ private:
+  
 
 
 
-
-
-    size_t PrepareBuffers(msghdr* aHdr, IPC::Message& aMsg);
-    
+  void PrepareFDs(msghdr* aHdr, IPC::Message& aMsg);
+  
 
 
 
 
 
-
-    unsigned RecvFDs(msghdr* aHdr, int* aAllFds, unsigned aMaxFds);
-    
+  size_t PrepareBuffers(msghdr* aHdr, IPC::Message& aMsg);
+  
 
 
 
 
 
 
+  unsigned RecvFDs(msghdr* aHdr, int* aAllFds, unsigned aMaxFds);
+  
 
 
 
 
-    bool RecvData(char* aDataBuf, size_t aBufSize, uint32_t* aMsgSize,
-                  int* aFdsBuf, unsigned aMaxFds, unsigned* aNumFds);
 
-    int mFd;                    
+
+
+
+
+
+  bool RecvData(char* aDataBuf, size_t aBufSize, uint32_t* aMsgSize,
+                int* aFdsBuf, unsigned aMaxFds, unsigned* aNumFds);
+
+  int mFd;  
 
 #ifdef DEBUG
-    enum State {
-        STATE_NONE,
-        STATE_SENDING,
-        STATE_RECEIVING,
-    };
-    State mState;
+  enum State {
+    STATE_NONE,
+    STATE_SENDING,
+    STATE_RECEIVING,
+  };
+  State mState;
 #endif
 
-    
-    DataBufferClear mDataBufClear;
+  
+  DataBufferClear mDataBufClear;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  
