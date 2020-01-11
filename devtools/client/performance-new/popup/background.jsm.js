@@ -93,6 +93,16 @@ const lazyPreferenceManagement = requireLazy(() => {
   return preferenceManagementModule;
 });
 
+const lazyRecordingUtils = requireLazy(() => {
+  const { require } = ChromeUtils.import(
+    "resource://devtools/shared/Loader.jsm"
+  );
+
+  
+  const recordingUtils = require("devtools/shared/performance-new/recording-utils");
+  return recordingUtils;
+});
+
 
 
 
@@ -185,8 +195,7 @@ function startProfiler() {
   } = translatePreferencesToState(getRecordingPreferencesFromBrowser());
 
   
-  const getActiveBrowsingContextID = lazyBrowserModule()
-    .getActiveBrowsingContextID;
+  const { getActiveBrowsingContextID } = lazyRecordingUtils();
   const activeBrowsingContextID = getActiveBrowsingContextID();
 
   Services.profiler.StartProfiler(
