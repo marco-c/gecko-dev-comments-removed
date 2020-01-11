@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef mozilla_dom_workers_workerprivate_h__
 #define mozilla_dom_workers_workerprivate_h__
 
@@ -17,7 +16,6 @@
 #include "mozilla/RelativeTimeline.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
-#include "mozilla/UseCounter.h"
 #include "nsContentUtils.h"
 #include "nsIContentSecurityPolicy.h"
 #include "nsIEventTarget.h"
@@ -37,7 +35,6 @@ class nsIThreadInternal;
 namespace mozilla {
 class ThrottledEventQueue;
 namespace dom {
-
 
 
 
@@ -904,13 +901,6 @@ class WorkerPrivate : public RelativeTimeline {
   
   bool CrossOriginIsolated() const;
 
-  void SetUseCounter(UseCounterWorker aUseCounter) {
-    MOZ_ASSERT(!mReportedUseCounters);
-    MOZ_ASSERT(aUseCounter > UseCounterWorker::Unknown);
-    AssertIsOnWorkerThread();
-    mUseCounters[static_cast<size_t>(aUseCounter)] = true;
-  }
-
  private:
   WorkerPrivate(
       WorkerPrivate* aParent, const nsAString& aScriptURL, bool aIsChromeWorker,
@@ -1005,14 +995,6 @@ class WorkerPrivate : public RelativeTimeline {
   
   
   void DispatchCancelingRunnable();
-
-  bool GetUseCounter(UseCounterWorker aUseCounter) {
-    MOZ_ASSERT(aUseCounter > UseCounterWorker::Unknown);
-    AssertIsOnWorkerThread();
-    return mUseCounters[static_cast<size_t>(aUseCounter)];
-  }
-
-  void ReportUseCounters();
 
   class EventTarget;
   friend class EventTarget;
@@ -1129,14 +1111,6 @@ class WorkerPrivate : public RelativeTimeline {
 
   TimeStamp mCreationTimeStamp;
   DOMHighResTimeStamp mCreationTimeHighRes;
-
-  
-  static_assert(sizeof(UseCounterWorker) <= sizeof(size_t),
-                "UseCounterWorker is too big");
-  static_assert(UseCounterWorker::Count >= static_cast<UseCounterWorker>(0),
-                "Should be non-negative value and safe to cast to unsigned");
-  std::bitset<static_cast<size_t>(UseCounterWorker::Count)> mUseCounters;
-  bool mReportedUseCounters;
 
   
   
