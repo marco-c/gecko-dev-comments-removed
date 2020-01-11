@@ -1147,7 +1147,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
  public:
   mozilla::StyleHyphens mHyphens;
   mozilla::StyleRubyAlign mRubyAlign;
-  uint8_t mRubyPosition;        
+  mozilla::StyleRubyPosition mRubyPosition;
   mozilla::StyleTextSizeAdjust mTextSizeAdjust;
   uint8_t mTextCombineUpright;  
   uint8_t

@@ -658,9 +658,10 @@ enum class StyleRubyAlign : uint8_t {
 };
 
 
-#define NS_STYLE_RUBY_POSITION_OVER 0
-#define NS_STYLE_RUBY_POSITION_UNDER 1
-#define NS_STYLE_RUBY_POSITION_INTER_CHARACTER 2  // placeholder, not yet parsed
+enum class StyleRubyPosition : uint8_t {
+  Over,
+  Under,
+};
 
 
 enum class StyleTextSizeAdjust : uint8_t {
