@@ -7,60 +7,53 @@
 
 
 
+
+
+
+
+
 var { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
-
-ChromeUtils.defineModuleGetter(
-  this,
-  "DownloadUtils",
-  "resource://gre/modules/DownloadUtils.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "UpdateUtils",
-  "resource://gre/modules/UpdateUtils.jsm"
-);
-
-const PREF_APP_UPDATE_CANCELATIONS_OSX = "app.update.cancelations.osx";
-const PREF_APP_UPDATE_ELEVATE_NEVER = "app.update.elevate.never";
+XPCOMUtils.defineLazyModuleGetters(this, {
+  DownloadUtils: "resource://gre/modules/DownloadUtils.jsm",
+  UpdateUtils: "resource://gre/modules/UpdateUtils.jsm",
+});
 
 var gAppUpdater;
 
+(() => {
+
+
+if (!Services.prefs.getBoolPref("browser.aboutDialogNewAppUpdater", false)) {
+  Services.scriptloader.loadSubScript(
+    "chrome://browser/content/aboutDialog-appUpdater-legacy.js",
+    this
+  );
+  return;
+}
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  AppUpdater: "resource:///modules/AppUpdater.jsm",
+});
+
 function onUnload(aEvent) {
   if (gAppUpdater) {
-    if (gAppUpdater.isChecking) {
-      gAppUpdater.checker.stopCurrentCheck();
-    }
-    
-    gAppUpdater.removeDownloadListener();
+    gAppUpdater.stopCurrentCheck();
     gAppUpdater = null;
   }
 }
 
 function appUpdater(options = {}) {
-  XPCOMUtils.defineLazyServiceGetter(
-    this,
-    "aus",
-    "@mozilla.org/updates/update-service;1",
-    "nsIApplicationUpdateService"
-  );
-  XPCOMUtils.defineLazyServiceGetter(
-    this,
-    "checker",
-    "@mozilla.org/updates/update-checker;1",
-    "nsIUpdateChecker"
-  );
-  XPCOMUtils.defineLazyServiceGetter(
-    this,
-    "um",
-    "@mozilla.org/updates/update-manager;1",
-    "nsIUpdateManager"
-  );
+  this._appUpdater = new AppUpdater();
+
+  this._appUpdateListener = (status, ...args) => {
+    this._onAppUpdateStatus(status, ...args);
+  };
+  this._appUpdater.addListener(this._appUpdateListener);
 
   this.options = options;
   this.updateDeck = document.getElementById("updateDeck");
-  this.promiseAutoUpdateSetting = null;
 
   this.bundle = Services.strings.createBundle(
     "chrome://browser/locale/browser.properties"
@@ -72,127 +65,72 @@ function appUpdater(options = {}) {
   manualLink.href = manualURL;
   document.getElementById("failedLink").href = manualURL;
 
-  if (this.updateDisabledByPolicy) {
-    this.selectPanel("policyDisabled");
-    return;
-  }
-
-  if (this.isReadyForRestart) {
-    this.selectPanel("apply");
-    return;
-  }
-
-  if (this.aus.isOtherInstanceHandlingUpdates) {
-    this.selectPanel("otherInstanceHandlingUpdates");
-    return;
-  }
-
-  if (this.isDownloading) {
-    this.startDownload();
-    
-    return;
-  }
-
-  if (this.isStaging) {
-    this.waitForUpdateToStage();
-    
-    return;
-  }
-
-  
-  this.promiseAutoUpdateSetting = UpdateUtils.getAppUpdateAutoEnabled();
-
-  
-  
-  
-  
-  
-  this.checkForUpdates();
+  this._appUpdater.check();
 }
 
 appUpdater.prototype = {
-  
-  isChecking: false,
-
-  
-  get isPending() {
-    if (this.update) {
-      return (
-        this.update.state == "pending" ||
-        this.update.state == "pending-service" ||
-        this.update.state == "pending-elevate"
-      );
-    }
-    return (
-      this.um.activeUpdate &&
-      (this.um.activeUpdate.state == "pending" ||
-        this.um.activeUpdate.state == "pending-service" ||
-        this.um.activeUpdate.state == "pending-elevate")
-    );
+  stopCurrentCheck() {
+    this._appUpdater.removeListener(this._appUpdateListener);
+    this._appUpdater.stop();
   },
 
-  
-  get isApplied() {
-    if (this.update) {
-      return (
-        this.update.state == "applied" || this.update.state == "applied-service"
-      );
-    }
-    return (
-      this.um.activeUpdate &&
-      (this.um.activeUpdate.state == "applied" ||
-        this.um.activeUpdate.state == "applied-service")
-    );
+  get update() {
+    return this._appUpdater.update;
   },
 
-  get isStaging() {
-    if (!this.updateStagingEnabled) {
-      return false;
+  _onAppUpdateStatus(status, ...args) {
+    switch (status) {
+      case AppUpdater.STATUS.UPDATE_DISABLED_BY_POLICY:
+        this.selectPanel("policyDisabled");
+        break;
+      case AppUpdater.STATUS.READY_FOR_RESTART:
+        this.selectPanel("apply");
+        break;
+      case AppUpdater.STATUS.OTHER_INSTANCE_HANDLING_UPDATES:
+        this.selectPanel("otherInstanceHandlingUpdates");
+        break;
+      case AppUpdater.STATUS.DOWNLOADING:
+        if (!args.length) {
+          this.downloadStatus = document.getElementById("downloadStatus");
+          this.downloadStatus.textContent = DownloadUtils.getTransferTotal(
+            0,
+            this.update.selectedPatch.size
+          );
+          this.selectPanel("downloading");
+        } else {
+          let [progress, max] = args;
+          this.downloadStatus.textContent = DownloadUtils.getTransferTotal(
+            progress,
+            max
+          );
+        }
+        break;
+      case AppUpdater.STATUS.STAGING:
+        this.selectPanel("applying");
+        break;
+      case AppUpdater.STATUS.CHECKING:
+        this.selectPanel("checkingForUpdates");
+        break;
+      case AppUpdater.STATUS.NO_UPDATES_FOUND:
+        this.selectPanel("noUpdatesFound");
+        break;
+      case AppUpdater.STATUS.UNSUPPORTED_SYSTEM:
+        if (this.update.detailsURL) {
+          let unsupportedLink = document.getElementById("unsupportedLink");
+          unsupportedLink.href = this.update.detailsURL;
+        }
+        this.selectPanel("unsupportedSystem");
+        break;
+      case AppUpdater.STATUS.MANUAL_UPDATE:
+        this.selectPanel("manualUpdate");
+        break;
+      case AppUpdater.STATUS.DOWNLOAD_AND_INSTALL:
+        this.selectPanel("downloadAndInstall");
+        break;
+      case AppUpdater.STATUS.DOWNLOAD_FAILED:
+        this.selectPanel("downloadFailed");
+        break;
     }
-    let errorCode;
-    if (this.update) {
-      errorCode = this.update.errorCode;
-    } else if (this.um.activeUpdate) {
-      errorCode = this.um.activeUpdate.errorCode;
-    }
-    
-    
-    return this.isPending && errorCode == 0;
-  },
-
-  
-  get isReadyForRestart() {
-    if (this.updateStagingEnabled) {
-      let errorCode;
-      if (this.update) {
-        errorCode = this.update.errorCode;
-      } else if (this.um.activeUpdate) {
-        errorCode = this.um.activeUpdate.errorCode;
-      }
-      
-      
-      
-      return this.isApplied || (this.isPending && errorCode != 0);
-    }
-    return this.isPending;
-  },
-
-  
-  get isDownloading() {
-    if (this.update) {
-      return this.update.state == "downloading";
-    }
-    return this.um.activeUpdate && this.um.activeUpdate.state == "downloading";
-  },
-
-  
-  get updateDisabledByPolicy() {
-    return Services.policies && !Services.policies.isAllowed("appUpdate");
-  },
-
-  
-  get updateStagingEnabled() {
-    return !this.updateDisabledByPolicy && this.aus.canStageUpdates;
   },
 
   
@@ -242,17 +180,7 @@ appUpdater.prototype = {
 
 
   checkForUpdates() {
-    
-    if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_CANCELATIONS_OSX)) {
-      Services.prefs.clearUserPref(PREF_APP_UPDATE_CANCELATIONS_OSX);
-    }
-    if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_ELEVATE_NEVER)) {
-      Services.prefs.clearUserPref(PREF_APP_UPDATE_ELEVATE_NEVER);
-    }
-    this.selectPanel("checkingForUpdates");
-    this.isChecking = true;
-    this.checker.checkForUpdates(this.updateCheckListener, true);
-    
+    this._appUpdater.checkForUpdates();
   },
 
   
@@ -260,7 +188,7 @@ appUpdater.prototype = {
 
 
   buttonRestartAfterDownload() {
-    if (!this.isReadyForRestart) {
+    if (!this._appUpdater.isReadyForRestart) {
       return;
     }
 
@@ -296,217 +224,12 @@ appUpdater.prototype = {
   
 
 
-
-
-  updateCheckListener: {
-    
-
-
-    onCheckComplete(aRequest, aUpdates) {
-      gAppUpdater.isChecking = false;
-      gAppUpdater.update = gAppUpdater.aus.selectUpdate(aUpdates);
-      if (!gAppUpdater.update) {
-        gAppUpdater.selectPanel("noUpdatesFound");
-        return;
-      }
-
-      if (gAppUpdater.update.unsupported) {
-        if (gAppUpdater.update.detailsURL) {
-          let unsupportedLink = document.getElementById("unsupportedLink");
-          unsupportedLink.href = gAppUpdater.update.detailsURL;
-        }
-        gAppUpdater.selectPanel("unsupportedSystem");
-        return;
-      }
-
-      if (!gAppUpdater.aus.canApplyUpdates) {
-        gAppUpdater.selectPanel("manualUpdate");
-        return;
-      }
-
-      if (!gAppUpdater.promiseAutoUpdateSetting) {
-        gAppUpdater.promiseAutoUpdateSetting = UpdateUtils.getAppUpdateAutoEnabled();
-      }
-      gAppUpdater.promiseAutoUpdateSetting.then(updateAuto => {
-        if (updateAuto) {
-          
-          gAppUpdater.startDownload();
-        } else {
-          
-          gAppUpdater.selectPanel("downloadAndInstall");
-        }
-      });
-    },
-
-    
-
-
-    onError(aRequest, aUpdate) {
-      
-      
-      
-      gAppUpdater.isChecking = false;
-      gAppUpdater.selectPanel("noUpdatesFound");
-    },
-
-    
-
-
-    QueryInterface: ChromeUtils.generateQI(["nsIUpdateCheckListener"]),
-  },
-
-  
-
-
-  waitForUpdateToStage() {
-    if (!this.update) {
-      this.update = this.um.activeUpdate;
-    }
-    this.update.QueryInterface(Ci.nsIWritablePropertyBag);
-    this.update.setProperty("foregroundDownload", "true");
-    this.selectPanel("applying");
-    this.updateUIWhenStagingComplete();
-  },
-
-  
-
-
   startDownload() {
-    if (!this.update) {
-      this.update = this.um.activeUpdate;
-    }
-    this.update.QueryInterface(Ci.nsIWritablePropertyBag);
-    this.update.setProperty("foregroundDownload", "true");
-
-    let state = this.aus.downloadUpdate(this.update, false);
-    if (state == "failed") {
-      this.selectPanel("downloadFailed");
-      return;
-    }
-
-    this.setupDownloadingUI();
+    this._appUpdater.startDownload();
   },
-
-  
-
-
-  setupDownloadingUI() {
-    this.downloadStatus = document.getElementById("downloadStatus");
-    this.downloadStatus.textContent = DownloadUtils.getTransferTotal(
-      0,
-      this.update.selectedPatch.size
-    );
-    this.selectPanel("downloading");
-    this.aus.addDownloadListener(this);
-  },
-
-  removeDownloadListener() {
-    if (this.aus) {
-      this.aus.removeDownloadListener(this);
-    }
-  },
-
-  
-
-
-  onStartRequest(aRequest) {},
-
-  
-
-
-  onStopRequest(aRequest, aStatusCode) {
-    switch (aStatusCode) {
-      case Cr.NS_ERROR_UNEXPECTED:
-        if (
-          this.update.selectedPatch.state == "download-failed" &&
-          (this.update.isCompleteUpdate || this.update.patchCount != 2)
-        ) {
-          
-          
-          this.removeDownloadListener();
-          this.selectPanel("downloadFailed");
-          break;
-        }
-        
-        
-        break;
-      case Cr.NS_BINDING_ABORTED:
-        
-        break;
-      case Cr.NS_OK:
-        this.removeDownloadListener();
-        if (this.updateStagingEnabled) {
-          this.selectPanel("applying");
-          this.updateUIWhenStagingComplete();
-        } else {
-          this.selectPanel("apply");
-        }
-        break;
-      default:
-        this.removeDownloadListener();
-        this.selectPanel("downloadFailed");
-        break;
-    }
-  },
-
-  
-
-
-  onStatus(aRequest, aContext, aStatus, aStatusArg) {},
-
-  
-
-
-  onProgress(aRequest, aContext, aProgress, aProgressMax) {
-    this.downloadStatus.textContent = DownloadUtils.getTransferTotal(
-      aProgress,
-      aProgressMax
-    );
-  },
-
-  
-
-
-
-
-
-
-  updateUIWhenStagingComplete() {
-    let observer = (aSubject, aTopic, aData) => {
-      
-      let status = aData;
-      if (
-        status == "applied" ||
-        status == "applied-service" ||
-        status == "pending" ||
-        status == "pending-service" ||
-        status == "pending-elevate"
-      ) {
-        
-        
-        
-        this.selectPanel("apply");
-      } else if (status == "failed") {
-        
-        
-        this.selectPanel("downloadFailed");
-      } else if (status == "downloading") {
-        
-        
-        
-        this.setupDownloadingUI();
-        return;
-      }
-      Services.obs.removeObserver(observer, "update-staged");
-    };
-    Services.obs.addObserver(observer, "update-staged");
-  },
-
-  
-
-
-  QueryInterface: ChromeUtils.generateQI([
-    "nsIProgressEventSink",
-    "nsIRequestObserver",
-  ]),
 };
+
+this.onUnload = onUnload;
+this.appUpdater = appUpdater;
+
+})();
