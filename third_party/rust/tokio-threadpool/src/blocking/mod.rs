@@ -1,9 +1,15 @@
 use worker::Worker;
 
-use futures::Poll;
+use futures::{Async, Poll};
+use tokio_executor;
 
 use std::error::Error;
 use std::fmt;
+
+mod global;
+pub use self::global::blocking;
+#[doc(hidden)]
+pub use self::global::{set_default, with_default, DefaultGuard};
 
 
 pub struct BlockingError {
@@ -16,120 +22,15 @@ pub struct BlockingError {
 
 
 
+#[doc(hidden)]
+pub type BlockingImpl = fn(&mut dyn FnMut()) -> Poll<(), BlockingError>;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn blocking<F, T>(f: F) -> Poll<T, BlockingError>
-where
-    F: FnOnce() -> T,
-{
+fn default_blocking(f: &mut dyn FnMut()) -> Poll<(), BlockingError> {
     let res = Worker::with_current(|worker| {
         let worker = match worker {
             Some(worker) => worker,
             None => {
-                return Err(BlockingError { _p: () });
+                return Err(BlockingError::new());
             }
         };
 
@@ -143,7 +44,10 @@ where
     try_ready!(res);
 
     
-    let ret = f();
+    
+    
+    
+    tokio_executor::exit(move || (f)());
 
     
     
@@ -152,8 +56,15 @@ where
         worker.unwrap().transition_from_blocking();
     });
 
+    Ok(Async::Ready(()))
+}
+
+impl BlockingError {
     
-    Ok(ret.into())
+    #[doc(hidden)]
+    pub fn new() -> Self {
+        Self { _p: () }
+    }
 }
 
 impl fmt::Display for BlockingError {

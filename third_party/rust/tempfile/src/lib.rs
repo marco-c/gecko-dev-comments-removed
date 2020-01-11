@@ -87,62 +87,86 @@
 
 
 
-#![doc(html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
-       html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-       html_root_url = "https://docs.rs/tempfile/2.2.0")]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![doc(
+    html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
+    html_favicon_url = "https://www.rust-lang.org/favicon.ico",
+    html_root_url = "https://docs.rs/tempfile/3.1.0"
+)]
 #![cfg_attr(test, deny(warnings))]
+#![deny(rust_2018_idioms)]
 
 #[macro_use]
 extern crate cfg_if;
-extern crate rand;
-extern crate remove_dir_all;
-
-#[cfg(unix)]
-extern crate libc;
-
-#[cfg(windows)]
-extern crate winapi;
-
-#[cfg(target_os = "redox")]
-extern crate syscall;
 
 const NUM_RETRIES: u32 = 1 << 31;
 const NUM_RAND_CHARS: usize = 6;
 
+use std::ffi::OsStr;
+use std::fs::OpenOptions;
 use std::path::Path;
 use std::{env, io};
 
-mod error;
 mod dir;
+mod error;
 mod file;
-mod util;
 mod spooled;
+mod util;
 
-pub use dir::{tempdir, tempdir_in, TempDir};
-pub use file::{tempfile, tempfile_in, NamedTempFile, PersistError, TempPath};
-pub use spooled::{spooled_tempfile, SpooledTempFile};
+pub use crate::dir::{tempdir, tempdir_in, TempDir};
+pub use crate::file::{tempfile, tempfile_in, NamedTempFile, PathPersistError, PersistError, TempPath};
+pub use crate::spooled::{spooled_tempfile, SpooledTempFile};
 
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Builder<'a, 'b> {
     random_len: usize,
-    prefix: &'a str,
-    suffix: &'b str,
+    prefix: &'a OsStr,
+    suffix: &'b OsStr,
+    append: bool,
 }
 
 impl<'a, 'b> Default for Builder<'a, 'b> {
     fn default() -> Self {
         Builder {
-            random_len: ::NUM_RAND_CHARS,
-            prefix: ".tmp",
-            suffix: "",
+            random_len: crate::NUM_RAND_CHARS,
+            prefix: OsStr::new(".tmp"),
+            suffix: OsStr::new(""),
+            append: false,
         }
     }
 }
 
 impl<'a, 'b> Builder<'a, 'b> {
-    
-    
     
     
     
@@ -238,9 +262,8 @@ impl<'a, 'b> Builder<'a, 'b> {
     
     
     
-    
-    pub fn prefix(&mut self, prefix: &'a str) -> &mut Self {
-        self.prefix = prefix;
+    pub fn prefix<S: AsRef<OsStr> + ?Sized>(&mut self, prefix: &'a S) -> &mut Self {
+        self.prefix = prefix.as_ref();
         self
     }
 
@@ -266,13 +289,11 @@ impl<'a, 'b> Builder<'a, 'b> {
     
     
     
-    
-    pub fn suffix(&mut self, suffix: &'b str) -> &mut Self {
-        self.suffix = suffix;
+    pub fn suffix<S: AsRef<OsStr> + ?Sized>(&mut self, suffix: &'b S) -> &mut Self {
+        self.suffix = suffix.as_ref();
         self
     }
 
-    
     
     
     
@@ -300,6 +321,31 @@ impl<'a, 'b> Builder<'a, 'b> {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn append(&mut self, append: bool) -> &mut Self {
+        self.append = append;
+        self
+    }
+
     
     
     
@@ -368,14 +414,13 @@ impl<'a, 'b> Builder<'a, 'b> {
     
     
     
-    
     pub fn tempfile_in<P: AsRef<Path>>(&self, dir: P) -> io::Result<NamedTempFile> {
         util::create_helper(
             dir.as_ref(),
             self.prefix,
             self.suffix,
             self.random_len,
-            file::create_named,
+            |path| file::create_named(path, OpenOptions::new().append(self.append)),
         )
     }
 

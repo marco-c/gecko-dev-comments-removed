@@ -8,7 +8,7 @@
 
 
 
-extern crate tempfile;
+#![deny(rust_2018_idioms)]
 
 use std::env;
 use std::fs;
@@ -222,7 +222,8 @@ pub fn dont_double_panic() {
         
         
         panic!();
-    }).join();
+    })
+    .join();
     assert!(r.is_err());
 }
 

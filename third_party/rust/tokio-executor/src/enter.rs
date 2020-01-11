@@ -11,7 +11,7 @@ thread_local!(static ENTERED: Cell<bool> = Cell::new(false));
 
 
 pub struct Enter {
-    on_exit: Vec<Box<Callback>>,
+    on_exit: Vec<Box<dyn Callback>>,
     permanent: bool,
 }
 
@@ -65,6 +65,42 @@ pub fn enter() -> Result<Enter, EnterError> {
             })
         }
     })
+}
+
+
+
+
+
+
+
+
+#[doc(hidden)]
+pub fn exit<F: FnOnce() -> R, R>(f: F) -> R {
+    
+    struct Reset;
+    impl Drop for Reset {
+        fn drop(&mut self) {
+            ENTERED.with(|c| {
+                c.set(true);
+            });
+        }
+    }
+
+    ENTERED.with(|c| {
+        debug_assert!(c.get());
+        c.set(false);
+    });
+
+    let reset = Reset;
+    let ret = f();
+    ::std::mem::forget(reset);
+
+    ENTERED.with(|c| {
+        assert!(!c.get(), "closure claimed permanent executor");
+        c.set(true);
+    });
+
+    ret
 }
 
 impl Enter {

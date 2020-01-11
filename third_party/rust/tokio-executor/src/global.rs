@@ -19,6 +19,13 @@ pub struct DefaultExecutor {
     _dummy: (),
 }
 
+
+
+#[derive(Debug)]
+pub struct DefaultGuard {
+    _p: (),
+}
+
 impl DefaultExecutor {
     
     
@@ -37,7 +44,7 @@ impl DefaultExecutor {
     }
 
     #[inline]
-    fn with_current<F: FnOnce(&mut Executor) -> R, R>(f: F) -> Option<R> {
+    fn with_current<F: FnOnce(&mut dyn Executor) -> R, R>(f: F) -> Option<R> {
         EXECUTOR.with(
             |current_executor| match current_executor.replace(State::Active) {
                 State::Ready(executor_ptr) => {
@@ -57,7 +64,7 @@ enum State {
     
     Empty,
     
-    Ready(*mut Executor),
+    Ready(*mut dyn Executor),
     
     Active,
 }
@@ -72,7 +79,7 @@ thread_local! {
 impl super::Executor for DefaultExecutor {
     fn spawn(
         &mut self,
-        future: Box<Future<Item = (), Error = ()> + Send>,
+        future: Box<dyn Future<Item = (), Error = ()> + Send>,
     ) -> Result<(), SpawnError> {
         DefaultExecutor::with_current(|executor| executor.spawn(future))
             .unwrap_or_else(|| Err(SpawnError::shutdown()))
@@ -175,6 +182,11 @@ where
     T: Executor,
     F: FnOnce(&mut Enter) -> R,
 {
+    unsafe fn hide_lt<'a>(p: *mut (dyn Executor + 'a)) -> *mut (dyn Executor + 'static) {
+        use std::mem;
+        mem::transmute(p)
+    }
+
     EXECUTOR.with(|cell| {
         match cell.get() {
             State::Ready(_) | State::Active => {
@@ -210,9 +222,47 @@ where
     })
 }
 
-unsafe fn hide_lt<'a>(p: *mut (Executor + 'a)) -> *mut (Executor + 'static) {
-    use std::mem;
-    mem::transmute(p)
+
+
+
+
+
+
+pub fn set_default<T>(executor: T) -> DefaultGuard
+where
+    T: Executor + 'static,
+{
+    EXECUTOR.with(|cell| {
+        match cell.get() {
+            State::Ready(_) | State::Active => {
+                panic!("default executor already set for execution context")
+            }
+            _ => {}
+        }
+
+        
+        
+        
+        let executor = Box::new(executor);
+
+        cell.set(State::Ready(Box::into_raw(executor)));
+    });
+
+    DefaultGuard { _p: () }
+}
+
+impl Drop for DefaultGuard {
+    fn drop(&mut self) {
+        let _ = EXECUTOR.try_with(|cell| {
+            if let State::Ready(prev) = cell.replace(State::Empty) {
+                
+                unsafe {
+                    let prev = Box::from_raw(prev);
+                    drop(prev);
+                };
+            }
+        });
+    }
 }
 
 #[cfg(test)]

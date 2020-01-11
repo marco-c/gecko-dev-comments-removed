@@ -12,9 +12,8 @@ use remove_dir_all::remove_dir_all;
 use std::path::{self, Path, PathBuf};
 use std::{fmt, fs, io};
 
-use error::IoResultExt;
-use Builder;
-
+use crate::error::IoResultExt;
+use crate::Builder;
 
 
 
@@ -64,7 +63,6 @@ use Builder;
 pub fn tempdir() -> io::Result<TempDir> {
     TempDir::new()
 }
-
 
 
 
@@ -385,7 +383,7 @@ impl AsRef<Path> for TempDir {
 }
 
 impl fmt::Debug for TempDir {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("TempDir")
             .field("path", &self.path())
             .finish()

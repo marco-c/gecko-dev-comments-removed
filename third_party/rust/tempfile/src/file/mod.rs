@@ -3,17 +3,16 @@ use std::env;
 use std::error;
 use std::ffi::OsStr;
 use std::fmt;
-use std::fs::{self, File};
+use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::mem;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
-use error::IoResultExt;
-use Builder;
+use crate::error::IoResultExt;
+use crate::Builder;
 
 mod imp;
-
 
 
 
@@ -94,7 +93,6 @@ pub fn tempfile() -> io::Result<File> {
 
 
 
-
 pub fn tempfile_in<P: AsRef<Path>>(dir: P) -> io::Result<File> {
     imp::create(dir.as_ref())
 }
@@ -123,17 +121,13 @@ impl From<PathPersistError> for TempPath {
 }
 
 impl fmt::Display for PathPersistError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "failed to persist temporary file path: {}", self.error)
     }
 }
 
 impl error::Error for PathPersistError {
-    fn description(&self) -> &str {
-        "failed to persist temporary file path"
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         Some(&self.error)
     }
 }
@@ -182,7 +176,6 @@ impl TempPath {
     
     
     
-    
     pub fn close(mut self) -> io::Result<()> {
         let result = fs::remove_file(&self.path).with_err_path(|| &self.path);
         mem::replace(&mut self.path, PathBuf::new());
@@ -190,7 +183,6 @@ impl TempPath {
         result
     }
 
-    
     
     
     
@@ -290,7 +282,6 @@ impl TempPath {
     
     
     
-    
     pub fn persist_noclobber<P: AsRef<Path>>(
         mut self,
         new_path: P,
@@ -310,10 +301,59 @@ impl TempPath {
             }),
         }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn keep(mut self) -> Result<PathBuf, PathPersistError> {
+        match imp::keep(&self.path) {
+            Ok(_) => {
+                
+                
+                
+                let mut path = PathBuf::new();
+                mem::swap(&mut self.path, &mut path);
+                mem::forget(self);
+                Ok(path)
+            }
+            Err(e) => Err(PathPersistError {
+                error: e,
+                path: self,
+            }),
+        }
+    }
 }
 
 impl fmt::Debug for TempPath {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.path.fmt(f)
     }
 }
@@ -369,13 +409,69 @@ impl AsRef<OsStr> for TempPath {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub struct NamedTempFile {
     path: TempPath,
     file: File,
 }
 
 impl fmt::Debug for NamedTempFile {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "NamedTempFile({:?})", self.path)
     }
 }
@@ -411,22 +507,18 @@ impl From<PersistError> for NamedTempFile {
 }
 
 impl fmt::Display for PersistError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "failed to persist temporary file: {}", self.error)
     }
 }
 
 impl error::Error for PersistError {
-    fn description(&self) -> &str {
-        "failed to persist temporary file"
-    }
-    fn cause(&self) -> Option<&error::Error> {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         Some(&self.error)
     }
 }
 
 impl NamedTempFile {
-    
     
     
     
@@ -523,7 +615,6 @@ impl NamedTempFile {
     
     
     
-    
     #[inline]
     pub fn path(&self) -> &Path {
         &self.path
@@ -560,13 +651,11 @@ impl NamedTempFile {
     
     
     
-    
     pub fn close(self) -> io::Result<()> {
         let NamedTempFile { path, .. } = self;
         path.close()
     }
 
-    
     
     
     
@@ -659,7 +748,6 @@ impl NamedTempFile {
     
     
     
-    
     pub fn persist_noclobber<P: AsRef<Path>>(self, new_path: P) -> Result<File, PersistError> {
         let NamedTempFile { path, file } = self;
         match path.persist_noclobber(new_path) {
@@ -704,8 +792,55 @@ impl NamedTempFile {
     
     
     
+    pub fn keep(self) -> Result<(File, PathBuf), PersistError> {
+        let (file, path) = (self.file, self.path);
+        match path.keep() {
+            Ok(path) => Ok((file, path)),
+            Err(PathPersistError { error, path }) => Err(PersistError {
+                file: NamedTempFile { path, file },
+                error,
+            }),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn reopen(&self) -> io::Result<File> {
-        imp::reopen(self.as_file(), NamedTempFile::path(self)).with_err_path(|| NamedTempFile::path(self))
+        imp::reopen(self.as_file(), NamedTempFile::path(self))
+            .with_err_path(|| NamedTempFile::path(self))
     }
 
     
@@ -731,6 +866,14 @@ impl NamedTempFile {
     
     pub fn into_temp_path(self) -> TempPath {
         self.path
+    }
+
+    
+    
+    
+    
+    pub fn into_parts(self) -> (File, TempPath) {
+        (self.file, self.path)
     }
 }
 
@@ -794,8 +937,16 @@ impl std::os::windows::io::AsRawHandle for NamedTempFile {
     }
 }
 
-pub(crate) fn create_named(path: PathBuf) -> io::Result<NamedTempFile> {
-    imp::create_named(&path)
+pub(crate) fn create_named(
+    mut path: PathBuf,
+    open_options: &mut OpenOptions,
+) -> io::Result<NamedTempFile> {
+    
+    
+    if !path.is_absolute() {
+        path = env::current_dir()?.join(path)
+    }
+    imp::create_named(&path, open_options)
         .with_err_path(|| path.clone())
         .map(|file| NamedTempFile {
             path: TempPath { path },

@@ -61,7 +61,7 @@ pub enum Kind {
     
     
     
-    Custom(Box<StdError + Send + Sync>),
+    Custom(Box<dyn StdError + Send + Sync>),
 }
 
 
@@ -81,7 +81,7 @@ impl Error {
         }
     }
 
-    pub fn into_box(self) -> Box<StdError> {
+    pub fn into_box(self) -> Box<dyn StdError> {
         match self.kind {
             Kind::Custom(err) => err,
             _ => Box::new(self),
@@ -127,7 +127,7 @@ impl StdError for Error {
         }
     }
 
-    fn cause(&self) -> Option<&StdError> {
+    fn cause(&self) -> Option<&dyn StdError> {
         match self.kind {
             Kind::Encoding(ref err) => Some(err),
             Kind::Io(ref err) => Some(err),

@@ -17,6 +17,8 @@ use worker::{self, Worker, WorkerId};
 use futures::Poll;
 
 use std::cell::Cell;
+use std::collections::hash_map::RandomState;
+use std::hash::{BuildHasher, Hash, Hasher};
 use std::num::Wrapping;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering::{AcqRel, Acquire};
@@ -25,7 +27,6 @@ use std::thread;
 
 use crossbeam_deque::Injector;
 use crossbeam_utils::CachePadded;
-use rand;
 
 #[derive(Debug)]
 pub(crate) struct Pool {
@@ -420,11 +421,7 @@ impl Pool {
     
     pub fn rand_usize(&self) -> usize {
         thread_local! {
-            static RNG: Cell<Wrapping<u32>> = {
-                // The initial seed must be non-zero.
-                let init = rand::random::<u32>() | 1;
-                Cell::new(Wrapping(init))
-            }
+            static RNG: Cell<Wrapping<u32>> = Cell::new(Wrapping(prng_seed()));
         }
 
         RNG.with(|rng| {
@@ -448,3 +445,31 @@ impl PartialEq for Pool {
 
 unsafe impl Send for Pool {}
 unsafe impl Sync for Pool {}
+
+
+
+
+fn prng_seed() -> u32 {
+    
+    
+    
+    
+    
+    
+    lazy_static! {
+        static ref RND_STATE: RandomState = RandomState::new();
+    }
+
+    
+    let mut hasher = RND_STATE.build_hasher();
+    thread::current().id().hash(&mut hasher);
+    let hash: u64 = hasher.finish();
+    let seed = (hash as u32) ^ ((hash >> 32) as u32);
+
+    
+    if seed == 0 {
+        0x9b4e_6d25 
+    } else {
+        seed
+    }
+}
