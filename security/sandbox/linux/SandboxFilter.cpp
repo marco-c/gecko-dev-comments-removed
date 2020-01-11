@@ -451,7 +451,13 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
 
     switch (sysno) {
         
+      case __NR_clock_nanosleep:
       case __NR_clock_gettime: {
+        
+        
+        
+        
+        
         Arg<clockid_t> clk_id(0);
         return If(clk_id == CLOCK_MONOTONIC, Allow())
 #ifdef CLOCK_MONOTONIC_COARSE
@@ -466,12 +472,12 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
             .ElseIf(clk_id == CLOCK_THREAD_CPUTIME_ID, Allow())
             .Else(InvalidSyscall());
       }
+
       case __NR_gettimeofday:
 #ifdef __NR_time
       case __NR_time:
 #endif
       case __NR_nanosleep:
-      case __NR_clock_nanosleep:
         return Allow();
 
         
