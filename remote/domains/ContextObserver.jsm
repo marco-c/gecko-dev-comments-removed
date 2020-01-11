@@ -79,7 +79,7 @@ class ContextObserver {
         
         this.emit("context-destroyed", { frameId });
         this.emit("frame-navigated", { frameId, window });
-        this.emit("context-created", { id, window });
+        this.emit("context-created", { windowId: id, window });
         break;
       case "pageshow":
         
@@ -88,7 +88,7 @@ class ContextObserver {
         }
         
         
-        this.emit("context-created", { id, window });
+        this.emit("context-created", { windowId: id, window });
         break;
 
       case "pagehide":
@@ -96,7 +96,7 @@ class ContextObserver {
         if (!persisted) {
           return;
         }
-        this.emit("context-destroyed", { id });
+        this.emit("context-destroyed", { windowId: id });
         break;
     }
   }
@@ -104,6 +104,6 @@ class ContextObserver {
   
   observe(subject, topic, data) {
     const innerWindowID = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
-    this.emit("context-destroyed", { id: innerWindowID });
+    this.emit("context-destroyed", { windowId: innerWindowID });
   }
 }

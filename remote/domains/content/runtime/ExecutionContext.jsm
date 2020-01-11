@@ -40,15 +40,17 @@ function uuid() {
 
 
 class ExecutionContext {
-  constructor(dbg, debuggee) {
+  constructor(dbg, debuggee, id, isDefault) {
     this._debugger = dbg;
     this._debuggee = this._debugger.addDebuggee(debuggee);
 
     
     
     const { windowUtils } = debuggee;
-    this.id = windowUtils.currentInnerWindowID;
+    this.windowId = windowUtils.currentInnerWindowID;
+    this.id = id;
     this.frameId = windowUtils.outerWindowID.toString();
+    this.isDefault = isDefault;
 
     this._remoteObjects = new Map();
   }

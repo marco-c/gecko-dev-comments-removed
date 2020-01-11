@@ -21,6 +21,32 @@ const { addDebuggerToGlobal } = ChromeUtils.import(
 
 addDebuggerToGlobal(Cu.getGlobalForObject(this));
 
+class SetMap extends Map {
+  constructor() {
+    super();
+    this._count = 1;
+  }
+  
+  
+  
+  
+  
+  set(key, value) {
+    const innerSet = this.get(key);
+    if (innerSet) {
+      innerSet.add(value);
+    } else {
+      super.set(key, new Set([value]));
+    }
+    this._count++;
+    return this;
+  }
+  
+  get count() {
+    return this._count;
+  }
+}
+
 class Runtime extends ContentProcessDomain {
   constructor(session) {
     super(session);
@@ -29,6 +55,8 @@ class Runtime extends ContentProcessDomain {
     
     
     this.contexts = new Map();
+    
+    this.contextsByWindow = new SetMap();
 
     this._onContextCreated = this._onContextCreated.bind(this);
     this._onContextDestroyed = this._onContextDestroyed.bind(this);
@@ -52,8 +80,9 @@ class Runtime extends ContentProcessDomain {
       
       Services.tm.dispatchToMainThread(() => {
         this._onContextCreated("context-created", {
-          id: this.content.windowUtils.currentInnerWindowID,
+          windowId: this.content.windowUtils.currentInnerWindowID,
           window: this.content,
+          isDefault: true,
         });
       });
     }
@@ -77,7 +106,7 @@ class Runtime extends ContentProcessDomain {
         );
       }
     } else {
-      context = this._getCurrentContext();
+      context = this._getDefaultContextForWindow();
     }
 
     if (typeof expression != "string") {
@@ -186,18 +215,30 @@ class Runtime extends ContentProcessDomain {
     return null;
   }
 
-  _getCurrentContext() {
-    const { windowUtils } = this.content;
-    return this.contexts.get(windowUtils.currentInnerWindowID);
-  }
-
-  _getContextByFrameId(frameId) {
-    for (const ctx of this.contexts.values()) {
-      if (ctx.frameId == frameId) {
-        return ctx;
+  _getDefaultContextForWindow(innerWindowId) {
+    if (!innerWindowId) {
+      const { windowUtils } = this.content;
+      innerWindowId = windowUtils.currentInnerWindowID;
+    }
+    const curContexts = this.contextsByWindow.get(innerWindowId);
+    if (curContexts) {
+      for (const ctx of curContexts) {
+        if (ctx.isDefault) {
+          return ctx;
+        }
       }
     }
     return null;
+  }
+
+  _getContextsForFrame(frameId) {
+    const frameContexts = [];
+    for (const ctx of this.contexts.values()) {
+      if (ctx.frameId == frameId) {
+        frameContexts.push(ctx);
+      }
+    }
+    return frameContexts;
   }
 
   
@@ -208,23 +249,59 @@ class Runtime extends ContentProcessDomain {
 
 
 
-  _onContextCreated(name, { id, window }) {
-    if (this.contexts.has(id)) {
-      return;
+
+
+
+
+
+
+
+
+
+
+
+
+  _onContextCreated(name, options = {}) {
+    const {
+      windowId,
+      window,
+      contextName = "",
+      isDefault = options.window == this.content,
+      contextType = options.contextType ||
+        (options.window == this.content ? "default" : ""),
+    } = options;
+
+    if (windowId === undefined) {
+      throw new Error("windowId is required");
     }
 
-    const context = new ExecutionContext(this._debugger, window);
-    this.contexts.set(id, context);
+    
+    if (isDefault && this.contextsByWindow.has(windowId)) {
+      for (const ctx of this.contextsByWindow.get(windowId)) {
+        if (ctx.isDefault) {
+          return;
+        }
+      }
+    }
+
+    const context = new ExecutionContext(
+      this._debugger,
+      window,
+      this.contextsByWindow.count,
+      isDefault
+    );
+    this.contexts.set(context.id, context);
+    this.contextsByWindow.set(windowId, context);
 
     this.emit("Runtime.executionContextCreated", {
       context: {
-        id,
+        id: context.id,
         origin: window.location.href,
-        name: "",
+        name: contextName,
         auxData: {
-          isDefault: window == this.content,
+          isDefault,
           frameId: context.frameId,
-          type: window == this.content ? "default" : "",
+          type: contextType,
         },
       },
     });
@@ -242,24 +319,35 @@ class Runtime extends ContentProcessDomain {
 
 
 
-  _onContextDestroyed(name, { id, frameId }) {
-    let context;
-    if (id && frameId) {
-      throw new Error("Expects only id *or* frameId argument to be passed");
+
+
+
+
+
+  _onContextDestroyed(name, { id, frameId, windowId }) {
+    let contexts;
+    if ([id, frameId, windowId].filter(id => !!id).length > 1) {
+      throw new Error("Expects only *one* of id, frameId, windowId");
     }
 
     if (id) {
-      context = this.contexts.get(id);
+      contexts = [this.contexts.get(id)];
+    } else if (frameId) {
+      contexts = this._getContextsForFrame(frameId);
     } else {
-      context = this._getContextByFrameId(frameId);
+      contexts = this.contextsByWindow.get(windowId) || [];
     }
 
-    if (context) {
-      context.destructor();
-      this.contexts.delete(context.id);
+    for (const ctx of contexts) {
+      ctx.destructor();
+      this.contexts.delete(ctx.id);
+      this.contextsByWindow.get(ctx.windowId).delete(ctx);
       this.emit("Runtime.executionContextDestroyed", {
-        executionContextId: context.id,
+        executionContextId: ctx.id,
       });
+      if (this.contextsByWindow.get(ctx.windowId).size == 0) {
+        this.contextsByWindow.delete(ctx.windowId);
+      }
     }
   }
 }
