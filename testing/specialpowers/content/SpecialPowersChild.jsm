@@ -286,12 +286,18 @@ class SpecialPowersChild extends JSWindowActorChild {
 
       case "Assert":
         {
+          if ("info" in message.data) {
+            this.SimpleTest.info(message.data.info);
+            break;
+          }
+
           
-          let { name, passed, stack, diag } = message.data;
+          let { name, passed, stack, diag, expectFail } = message.data;
 
           let { SimpleTest } = this;
           if (SimpleTest) {
-            SimpleTest.record(passed, name, diag, stack);
+            let expected = expectFail ? "fail" : "pass";
+            SimpleTest.record(passed, name, diag, stack, expected);
           } else {
             
             dump(name + "\n");
