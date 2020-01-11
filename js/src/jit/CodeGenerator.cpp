@@ -13757,11 +13757,6 @@ static void BoundFunctionName(MacroAssembler& masm, Register target,
     masm.bind(&guessed);
 
     
-    
-    masm.branchFunctionKind(Assembler::Equal, FunctionFlags::ClassConstructor,
-                            target, output, slowPath);
-
-    
     masm.movePtr(ImmGCPtr(names.empty), output);
   }
   masm.bind(&hasName);
