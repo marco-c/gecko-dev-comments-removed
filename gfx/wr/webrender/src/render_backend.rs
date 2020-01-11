@@ -1429,6 +1429,7 @@ impl RenderBackend {
         }
 
         let requires_frame_build = self.requires_frame_build();
+        let use_multiple_documents = self.documents.len() > 1;
         let doc = self.documents.get_mut(&document_id).unwrap();
         doc.has_built_scene |= has_built_scene;
 
@@ -1447,17 +1448,6 @@ impl RenderBackend {
             scroll |= op.scroll;
         }
 
-        for update in &resource_updates {
-            if let ResourceUpdate::UpdateImage(..) = update {
-                doc.frame_is_valid = false;
-            }
-        }
-
-        self.resource_cache.post_scene_building_update(
-            resource_updates,
-            &mut profile_counters.resources,
-        );
-
         if doc.dynamic_properties.flush_pending_updates() {
             doc.frame_is_valid = false;
             doc.hit_tester_is_valid = false;
@@ -1469,6 +1459,35 @@ impl RenderBackend {
             
             render_frame = false;
         }
+
+        if doc.frame_is_valid {
+            
+            
+            let resource_cache = &self.resource_cache;
+            if resource_updates.iter().any(|update| {
+                match update {
+                    ResourceUpdate::UpdateImage(update_image) => {
+                        
+                        if use_multiple_documents {
+                            return true;
+                        }
+                        if !resource_cache.is_image_active(update_image.key) {
+                            return false;
+                        }
+                        true
+                    }
+                    _ => { false }
+                }
+            })
+            {
+                doc.frame_is_valid = false;
+            }
+        }
+
+        self.resource_cache.post_scene_building_update(
+            resource_updates,
+            &mut profile_counters.resources,
+        );
 
         
         
@@ -1522,12 +1541,6 @@ impl RenderBackend {
                 let pending_update = self.resource_cache.pending_updates();
                 (pending_update, rendered_document)
             };
-
-            
-            
-            if pending_update.is_nop() && rendered_document.frame.is_nop() {
-                doc.rendered_frame_is_valid = true;
-            }
 
             let msg = ResultMsg::PublishPipelineInfo(doc.updated_pipeline_info());
             self.result_tx.send(msg).unwrap();

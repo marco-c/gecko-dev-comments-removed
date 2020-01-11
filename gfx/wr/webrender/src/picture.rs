@@ -3561,6 +3561,16 @@ impl PicturePrimitive {
                                 continue;
                             }
 
+                            
+                            
+                            
+                            
+                            
+                            
+                            for image_key in &tile.current_descriptor.image_keys {
+                                frame_state.resource_cache.set_image_active(*image_key);
+                            }
+
                             if frame_context.debug_flags.contains(DebugFlags::PICTURE_CACHING_DBG) {
                                 tile.root.draw_debug_rects(
                                     &map_pic_to_world,

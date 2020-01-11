@@ -998,26 +998,4 @@ impl Frame {
     pub fn must_be_drawn(&self) -> bool {
         self.has_texture_cache_tasks && !self.has_been_rendered
     }
-
-    
-    pub fn is_nop(&self) -> bool {
-        
-        
-        if !self.composite_state.picture_caching_is_enabled {
-            return false;
-        }
-
-        
-        
-        
-        
-        
-        
-
-        if self.passes.len() > 1 {
-            return false;
-        }
-
-        true
-    }
 }

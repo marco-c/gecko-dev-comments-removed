@@ -376,11 +376,6 @@ impl TextureUpdateList {
     }
 
     
-    pub fn is_nop(&self) -> bool {
-        self.allocations.is_empty() && self.updates.is_empty()
-    }
-
-    
     #[inline]
     pub fn note_clear(&mut self) {
         self.clears_shared_cache = true;

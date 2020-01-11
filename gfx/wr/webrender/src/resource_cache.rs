@@ -504,6 +504,8 @@ pub struct ResourceCache {
     
     
     dirty_image_keys: FastHashSet<ImageKey>,
+    
+    active_image_keys: FastHashSet<ImageKey>,
 }
 
 impl ResourceCache {
@@ -534,6 +536,7 @@ impl ResourceCache {
             
             deleted_blob_keys: vec![Vec::new(), Vec::new(), Vec::new()].into(),
             dirty_image_keys: FastHashSet::default(),
+            active_image_keys: FastHashSet::default(),
         }
     }
 
@@ -1062,6 +1065,20 @@ impl ResourceCache {
         self.dirty_image_keys.contains(&image_key)
     }
 
+    pub fn is_image_active(
+        &self,
+        image_key: ImageKey,
+    ) -> bool {
+        self.active_image_keys.contains(&image_key)
+    }
+
+    pub fn set_image_active(
+        &mut self,
+        image_key: ImageKey,
+    ) {
+        self.active_image_keys.insert(image_key);
+    }
+
     pub fn request_image(
         &mut self,
         request: ImageRequest,
@@ -1567,6 +1584,7 @@ impl ResourceCache {
         );
         self.cached_render_tasks.begin_frame(&mut self.texture_cache);
         self.current_frame_id = stamp.frame_id();
+        self.active_image_keys.clear();
 
         
         self.deleted_blob_keys.pop_front();
