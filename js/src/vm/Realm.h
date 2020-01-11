@@ -250,11 +250,6 @@ class ObjectRealm {
 
   
   
-  
-  js::UniquePtr<js::ObjectWeakMap> lazyArrayBuffers;
-
-  
-  
   js::UniquePtr<js::ObjectWeakMap> objectMetadataTable;
 
   using IteratorCache =
@@ -276,7 +271,6 @@ class ObjectRealm {
 
   void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
                               size_t* innerViewsArg,
-                              size_t* lazyArrayBuffersArg,
                               size_t* objectMetadataTablesArg,
                               size_t* nonSyntacticLexicalEnvironmentsArg);
 
@@ -467,13 +461,15 @@ class JS::Realm : public JS::shadow::Realm {
   void destroy(JSFreeOp* fop);
   void clearTables();
 
-  void addSizeOfIncludingThis(
-      mozilla::MallocSizeOf mallocSizeOf, size_t* tiAllocationSiteTables,
-      size_t* tiArrayTypeTables, size_t* tiObjectTypeTables,
-      size_t* realmObject, size_t* realmTables, size_t* innerViewsArg,
-      size_t* lazyArrayBuffersArg, size_t* objectMetadataTablesArg,
-      size_t* savedStacksSet, size_t* varNamesSet,
-      size_t* nonSyntacticLexicalEnvironmentsArg, size_t* jitRealm);
+  void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
+                              size_t* tiAllocationSiteTables,
+                              size_t* tiArrayTypeTables,
+                              size_t* tiObjectTypeTables, size_t* realmObject,
+                              size_t* realmTables, size_t* innerViewsArg,
+                              size_t* objectMetadataTablesArg,
+                              size_t* savedStacksSet, size_t* varNamesSet,
+                              size_t* nonSyntacticLexicalEnvironmentsArg,
+                              size_t* jitRealm);
 
   JS::Zone* zone() { return zone_; }
   const JS::Zone* zone() const { return zone_; }
