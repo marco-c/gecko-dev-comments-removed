@@ -72,7 +72,7 @@ var whitelist = [
   { file: "chrome://pdf.js/locale/viewer.properties" },
 
   
-  { file: "chrome://pippki/content/load_device.xul" },
+  { file: "chrome://pippki/content/load_device.xhtml" },
 
   
   
@@ -187,7 +187,7 @@ var whitelist = [
     platforms: ["linux", "win"],
   },
   
-  { file: "chrome://pippki/content/resetpassword.xul" },
+  { file: "chrome://pippki/content/resetpassword.xhtml" },
   
   { file: "resource://gre/modules/Manifest.jsm" },
   
