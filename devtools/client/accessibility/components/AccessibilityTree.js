@@ -41,7 +41,6 @@ class AccessibilityTree extends Component {
       expanded: PropTypes.object,
       selected: PropTypes.string,
       highlighted: PropTypes.object,
-      supports: PropTypes.object,
       filtered: PropTypes.bool,
     };
   }
@@ -167,21 +166,15 @@ class AccessibilityTree extends Component {
       expanded,
       selected,
       highlighted: highlightedItem,
-      supports,
       accessibilityWalker,
       filtered,
     } = this.props;
-
-    
-    
-    const hasContextMenu = supports.snapshot;
 
     const renderRow = rowProps => {
       const { object } = rowProps.member;
       const highlighted = object === highlightedItem;
       return AccessibilityRow(
         Object.assign({}, rowProps, {
-          hasContextMenu,
           highlighted,
           decorator: {
             getRowClass: function() {
@@ -217,32 +210,29 @@ class AccessibilityTree extends Component {
 
         return true;
       },
-      onContextMenuTree:
-        hasContextMenu &&
-        function(e) {
-          
-          
-          let row = this.getSelectedRow();
-          if (!row) {
-            return;
-          }
+      onContextMenuTree: function(e) {
+        
+        
+        let row = this.getSelectedRow();
+        if (!row) {
+          return;
+        }
 
-          row = row.getWrappedInstance();
-          row.onContextMenu(e);
-        },
+        row = row.getWrappedInstance();
+        row.onContextMenu(e);
+      },
     });
   }
 }
 
 const mapStateToProps = ({
   accessibles,
-  ui: { expanded, selected, supports, highlighted },
+  ui: { expanded, selected, highlighted },
   audit: { filters },
 }) => ({
   accessibles,
   expanded,
   selected,
-  supports,
   highlighted,
   filtered: isFiltered(filters),
 });
