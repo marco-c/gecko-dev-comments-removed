@@ -2,276 +2,21 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var EXPORTED_SYMBOLS = [
-  "SiteSpecificBrowserService",
-  "SiteSpecificBrowserBase",
-  "SiteSpecificBrowser",
-  "SSBCommandLineHandler",
-];
+var EXPORTED_SYMBOLS = ["SiteSpecificBrowserService", "SSBCommandLineHandler"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  ManifestObtainer: "resource://gre/modules/ManifestObtainer.jsm",
-  ManifestProcessor: "resource://gre/modules/ManifestProcessor.jsm",
-});
-
-function uuid() {
-  return Cc["@mozilla.org/uuid-generator;1"]
-    .getService(Ci.nsIUUIDGenerator)
-    .generateUUID()
-    .toString();
-}
-
-const sharedDataKey = id => `SiteSpecificBrowserBase:${id}`;
-
-const IS_MAIN_PROCESS =
-  Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT;
-
-
-
-
-
-
-
-function manifestForURI(uri) {
-  try {
-    let manifestURI = Services.io.newURI("/manifest.json", null, uri);
-    return ManifestProcessor.process({
-      jsonText: "{}",
-      manifestURL: manifestURI.spec,
-      docURL: uri.spec,
-    });
-  } catch (e) {
-    console.error(`Failed to generate a SSB manifest for ${uri.spec}.`, e);
-    throw e;
-  }
-}
-
-
-
-
-
-
-
-async function buildManifestForBrowser(browser) {
-  let manifest = null;
-  try {
-    manifest = await ManifestObtainer.browserObtainManifest(browser);
-  } catch (e) {
-    
-    console.error(e);
-  }
-
-  if (!manifest) {
-    manifest = manifestForURI(browser.currentURI);
-  }
-
-  return manifest;
-}
-
-
-
-
-
-
-
-
-
-
-const SSBMap = new Map();
-
-
-
-
-
-
-class SiteSpecificBrowserBase {
+const SiteSpecificBrowserService = {
   
 
 
 
 
-
-  constructor(scope) {
-    this._scope = scope;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  static get(id) {
-    if (IS_MAIN_PROCESS) {
-      return SiteSpecificBrowser.get(id);
-    }
-
-    let key = sharedDataKey(id);
-    if (!Services.cpmm.sharedData.has(key)) {
-      return null;
-    }
-
-    let scope = Services.io.newURI(Services.cpmm.sharedData.get(key));
-    return new SiteSpecificBrowserBase(scope);
-  }
-
-  
-
-
-
-
-
-
-  canLoad(uri) {
-    
-    if (uri.spec == "about:blank") {
-      return true;
-    }
-
-    
-    if (this._scope.prePath != uri.prePath) {
-      return false;
-    }
-
-    return uri.filePath.startsWith(this._scope.filePath);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class SiteSpecificBrowser extends SiteSpecificBrowserBase {
-  
-
-
-
-
-
-
-  constructor(id, manifest) {
-    if (!IS_MAIN_PROCESS) {
-      throw new Error(
-        "SiteSpecificBrowser instances are only available in the main process."
-      );
-    }
-
-    super(Services.io.newURI(manifest.scope));
-    this._id = id;
-    this._manifest = manifest;
-
-    
-    SSBMap.set(id, this);
-
-    this._updateSharedData();
-  }
-
-  
-
-
-
-
-
-
-  static get(id) {
-    if (!IS_MAIN_PROCESS) {
-      throw new Error(
-        "SiteSpecificBrowser instances are only available in the main process."
-      );
-    }
-
-    return SSBMap.get(id);
-  }
-
-  
-
-
-
-
-
-  static async createFromManifest(manifest) {
-    if (!SiteSpecificBrowserService.isEnabled) {
-      throw new Error("Site specific browsing is disabled.");
-    }
-
-    if (!manifest.scope.startsWith("https:")) {
-      throw new Error(
-        "Site specific browsers can only be opened for secure sites."
-      );
-    }
-
-    return new SiteSpecificBrowser(uuid(), manifest);
-  }
-
-  
-
-
-
-
-
-  static async createFromBrowser(browser) {
-    if (!SiteSpecificBrowserService.isEnabled) {
-      throw new Error("Site specific browsing is disabled.");
-    }
-
-    if (!browser.currentURI.schemeIs("https")) {
-      throw new Error(
-        "Site specific browsers can only be opened for secure sites."
-      );
-    }
-
-    return SiteSpecificBrowser.createFromManifest(
-      await buildManifestForBrowser(browser)
-    );
-  }
-
-  
-
-
-
-
-
-  static createFromURI(uri) {
-    if (!SiteSpecificBrowserService.isEnabled) {
+  launchFromURI(uri) {
+    if (!this.isEnabled) {
       throw new Error("Site specific browsing is disabled.");
     }
 
@@ -281,53 +26,12 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
       );
     }
 
-    return new SiteSpecificBrowser(uuid(), manifestForURI(uri));
-  }
-
-  
-
-
-  _updateSharedData() {
-    Services.ppmm.sharedData.set(sharedDataKey(this.id), this._scope.spec);
-    Services.ppmm.sharedData.flush();
-  }
-
-  
-
-
-  get id() {
-    return this._id;
-  }
-
-  
-
-
-  get startURI() {
-    return Services.io.newURI(this._manifest.start_url);
-  }
-
-  
-
-
-
-
-  launch(uri = null) {
     let sa = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
-
-    let idstr = Cc["@mozilla.org/supports-string;1"].createInstance(
+    let uristr = Cc["@mozilla.org/supports-string;1"].createInstance(
       Ci.nsISupportsString
     );
-    idstr.data = this.id;
-    sa.appendElement(idstr);
-
-    if (uri) {
-      let uristr = Cc["@mozilla.org/supports-string;1"].createInstance(
-        Ci.nsISupportsString
-      );
-      uristr.data = uri.spec;
-      sa.appendElement(uristr);
-    }
-
+    uristr.data = uri.spec;
+    sa.appendElement(uristr);
     Services.ww.openWindow(
       null,
       "chrome://browser/content/ssb/ssb.html",
@@ -335,10 +39,8 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
       "chrome,dialog=no,all",
       sa
     );
-  }
-}
-
-const SiteSpecificBrowserService = {};
+  },
+};
 
 XPCOMUtils.defineLazyPreferenceGetter(
   SiteSpecificBrowserService,
@@ -376,8 +78,7 @@ class SSBCommandLineHandler {
             .setScheme("https")
             .finalize();
         }
-        let ssb = SiteSpecificBrowser.createFromURI(uri);
-        ssb.launch();
+        SiteSpecificBrowserService.launchFromURI(uri);
       } catch (e) {
         dump(`Unable to parse '${site}' as a URI: ${e}\n`);
       }
