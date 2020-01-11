@@ -665,9 +665,7 @@ class Browsertime(Perftest):
     def clean_up(self):
         super(Browsertime, self).clean_up()
 
-    def run_test(self, test, timeout):
-        self.run_test_setup(test)
-
+    def _compose_cmd(self, test, timeout):
         browsertime_script = [os.path.join(os.path.dirname(__file__), "..",
                               "browsertime", "browsertime_pageload.js")]
 
@@ -679,7 +677,36 @@ class Browsertime(Perftest):
 
         
         
+        browsertime_script.extend(["--browsertime.page_cycles",
+                                   str(test.get("page_cycles", 1))])
+        browsertime_script.extend(["--browsertime.url", test["test_url"]])
 
+        
+        browsertime_script.extend(["--browsertime.page_cycle_delay", "1000"])
+        
+        browsertime_script.extend(["--browsertime.foreground_delay", "5000"])
+
+        
+        browsertime_script.extend(["--browsertime.post_startup_delay",
+                                   str(self.post_startup_delay)])
+
+        return ([self.browsertime_node, self.browsertime_browsertimejs] +
+                self.driver_paths +
+                browsertime_script +
+                ['--firefox.profileTemplate', str(self.profile.profile),
+                 '--skipHar',
+                 '--video', self.browsertime_video and 'true' or 'false',
+                 '--visualMetrics', 'false',
+                 
+                 '--timeouts.pageLoad', str(timeout),
+                 
+                 '--timeouts.script', str(timeout * int(test.get("page_cycles", 1))),
+                 '-vv',
+                 '--resultDir', self.results_handler.result_dir_for_test(test),
+                 
+                 '-n', str(test.get('browser_cycles', 1))])
+
+    def _compute_process_timeout(self, test, timeout):
         
         
         
@@ -701,39 +728,13 @@ class Browsertime(Perftest):
         
         if self.config['gecko_profile'] is True:
             bt_timeout += 5 * 60
+        return bt_timeout
 
+    def run_test(self, test, timeout):
+        self.run_test_setup(test)
         
         
-        browsertime_script.extend(["--browsertime.page_cycles",
-                                  str(test.get("page_cycles", 1))])
-        browsertime_script.extend(["--browsertime.url", test["test_url"]])
-
-        
-        browsertime_script.extend(["--browsertime.page_cycle_delay", "1000"])
-        
-        browsertime_script.extend(["--browsertime.foreground_delay", "5000"])
-
-        
-        browsertime_script.extend(["--browsertime.post_startup_delay",
-                                  str(self.post_startup_delay)])
-
-        
-        
-
-        cmd = ([self.browsertime_node, self.browsertime_browsertimejs] +
-               self.driver_paths +
-               browsertime_script +
-               ['--firefox.profileTemplate', str(self.profile.profile),
-                '--skipHar',
-                '--video', self.browsertime_video and 'true' or 'false',
-                '--visualMetrics', 'false',
-                
-                '--timeouts.pageLoad', str(timeout),
-                
-                '--timeouts.script', str(timeout * int(test.get("page_cycles", 1))),
-                '-vv',
-                '--resultDir', self.results_handler.result_dir_for_test(test),
-                '-n', str(test.get('browser_cycles', 1))])
+        cmd = self._compose_cmd(test, timeout)
 
         if test.get('type') == "benchmark":
             cmd.extend(['--script',
@@ -763,7 +764,7 @@ class Browsertime(Perftest):
 
         try:
             proc = self.process_handler(cmd, env=env)
-            proc.run(timeout=bt_timeout,
+            proc.run(timeout=self._compute_process_timeout(test, timeout),
                      outputTimeout=2*60)
             proc.wait()
 
