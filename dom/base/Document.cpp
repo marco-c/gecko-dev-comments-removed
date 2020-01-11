@@ -15055,8 +15055,13 @@ void Document::TraceProtos(JSTracer* aTrc) {
 
 FlashClassification Document::DocumentFlashClassification() {
   
-  if (!StaticPrefs::plugins_http_https_only() &&
-      !StaticPrefs::plugins_flashBlock_enabled()) {
+  const auto fnIsFlashBlockingEnabled = [] {
+    return StaticPrefs::plugins_flashBlock_enabled() &&
+           !StaticPrefs::fission_autostart();
+  };
+
+  
+  if (!StaticPrefs::plugins_http_https_only() && !fnIsFlashBlockingEnabled()) {
     return FlashClassification::Unknown;
   }
 
@@ -15079,7 +15084,7 @@ FlashClassification Document::DocumentFlashClassification() {
 
   
   
-  if (!StaticPrefs::plugins_flashBlock_enabled()) {
+  if (!fnIsFlashBlockingEnabled()) {
     return FlashClassification::Unknown;
   }
 
