@@ -894,15 +894,11 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         return undefined;
       }
 
-      if (thread.sources.isFrameBlackBoxed(this)) {
-        return undefined;
-      }
-
       
       
       this.reportedPop = true;
 
-      if (steppingType != "finish") {
+      if (steppingType != "finish" && !thread.sources.isFrameBlackBoxed(this)) {
         return pauseAndRespond(this, packet =>
           thread.createCompletionGrip(packet, completion)
         );
