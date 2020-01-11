@@ -1585,7 +1585,9 @@ already_AddRefed<IAccessible> AccessibleWrap::GetRemoteIAccessibleFor(
 
     DebugOnly<HRESULT> hr =
         disp->QueryInterface(IID_IAccessible, getter_AddRefs(result));
-    MOZ_ASSERT(SUCCEEDED(hr));
+    
+    
+    NS_WARNING_ASSERTION(SUCCEEDED(hr), "QI failed on remote IDispatch");
     return result.forget();
   }
 
