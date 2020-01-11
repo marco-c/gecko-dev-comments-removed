@@ -231,42 +231,8 @@ void nsBoxFrame::CacheAttributes() {
 }
 
 bool nsBoxFrame::GetInitialHAlignment(nsBoxFrame::Halignment& aHalign) {
-  if (!GetContent() || !GetContent()->IsElement()) return false;
+  if (!GetContent()) return false;
 
-  Element* element = GetContent()->AsElement();
-  
-  static Element::AttrValuesArray alignStrings[] = {nsGkAtoms::left,
-                                                    nsGkAtoms::right, nullptr};
-  static const Halignment alignValues[] = {hAlign_Left, hAlign_Right};
-  int32_t index = element->FindAttrValueIn(kNameSpaceID_None, nsGkAtoms::align,
-                                           alignStrings, eCaseMatters);
-  if (index >= 0) {
-    aHalign = alignValues[index];
-    return true;
-  }
-
-  
-  
-  
-  nsAtom* attrName = IsXULHorizontal() ? nsGkAtoms::pack : nsGkAtoms::align;
-  static Element::AttrValuesArray strings[] = {
-      nsGkAtoms::_empty, nsGkAtoms::start, nsGkAtoms::center, nsGkAtoms::end,
-      nullptr};
-  static const Halignment values[] = {hAlign_Left , hAlign_Left,
-                                      hAlign_Center, hAlign_Right};
-  index = element->FindAttrValueIn(kNameSpaceID_None, attrName, strings,
-                                   eCaseMatters);
-
-  if (index == Element::ATTR_VALUE_NO_MATCH) {
-    
-    return false;
-  }
-  if (index > 0) {
-    aHalign = values[index];
-    return true;
-  }
-
-  
   
   
   const nsStyleXUL* boxInfo = StyleXUL();
@@ -304,44 +270,7 @@ bool nsBoxFrame::GetInitialHAlignment(nsBoxFrame::Halignment& aHalign) {
 }
 
 bool nsBoxFrame::GetInitialVAlignment(nsBoxFrame::Valignment& aValign) {
-  if (!GetContent() || !GetContent()->IsElement()) return false;
-
-  Element* element = GetContent()->AsElement();
-
-  static Element::AttrValuesArray valignStrings[] = {
-      nsGkAtoms::top, nsGkAtoms::baseline, nsGkAtoms::middle, nsGkAtoms::bottom,
-      nullptr};
-  static const Valignment valignValues[] = {vAlign_Top, vAlign_BaseLine,
-                                            vAlign_Middle, vAlign_Bottom};
-  int32_t index = element->FindAttrValueIn(kNameSpaceID_None, nsGkAtoms::valign,
-                                           valignStrings, eCaseMatters);
-  if (index >= 0) {
-    aValign = valignValues[index];
-    return true;
-  }
-
-  
-  
-  
-  nsAtom* attrName = IsXULHorizontal() ? nsGkAtoms::align : nsGkAtoms::pack;
-  static Element::AttrValuesArray strings[] = {
-      nsGkAtoms::_empty,   nsGkAtoms::start, nsGkAtoms::center,
-      nsGkAtoms::baseline, nsGkAtoms::end,   nullptr};
-  static const Valignment values[] = {vAlign_Top , vAlign_Top,
-                                      vAlign_Middle, vAlign_BaseLine,
-                                      vAlign_Bottom};
-  index = element->FindAttrValueIn(kNameSpaceID_None, attrName, strings,
-                                   eCaseMatters);
-  if (index == Element::ATTR_VALUE_NO_MATCH) {
-    
-    return false;
-  }
-  if (index > 0) {
-    aValign = values[index];
-    return true;
-  }
-
-  
+  if (!GetContent()) return false;
   
   
   const nsStyleXUL* boxInfo = StyleXUL();
@@ -385,24 +314,11 @@ void nsBoxFrame::GetInitialOrientation(bool& aIsHorizontal) {
   
   if (!GetContent()) return;
 
-  
   const nsStyleXUL* boxInfo = StyleXUL();
   if (boxInfo->mBoxOrient == StyleBoxOrient::Horizontal) {
     aIsHorizontal = true;
   } else {
     aIsHorizontal = false;
-  }
-
-  
-  
-  if (!GetContent()->IsElement()) return;
-
-  static Element::AttrValuesArray strings[] = {nsGkAtoms::vertical,
-                                               nsGkAtoms::horizontal, nullptr};
-  int32_t index = GetContent()->AsElement()->FindAttrValueIn(
-      kNameSpaceID_None, nsGkAtoms::orient, strings, eCaseMatters);
-  if (index >= 0) {
-    aIsHorizontal = index == 1;
   }
 }
 
@@ -460,18 +376,6 @@ bool nsBoxFrame::GetInitialEqualSize(bool& aEqualSize) {
 
 bool nsBoxFrame::GetInitialAutoStretch(bool& aStretch) {
   if (!GetContent()) return false;
-
-  
-  if (GetContent()->IsElement()) {
-    static Element::AttrValuesArray strings[] = {nsGkAtoms::_empty,
-                                                 nsGkAtoms::stretch, nullptr};
-    int32_t index = GetContent()->AsElement()->FindAttrValueIn(
-        kNameSpaceID_None, nsGkAtoms::align, strings, eCaseMatters);
-    if (index != Element::ATTR_MISSING && index != 0) {
-      aStretch = index == 1;
-      return true;
-    }
-  }
 
   
   const nsStyleXUL* boxInfo = StyleXUL();

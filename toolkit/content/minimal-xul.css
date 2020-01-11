@@ -38,7 +38,6 @@
 }
 
 
-
 scrollcorner, resizer, scrollbar, scrollbarbutton, slider {
   
 
@@ -90,10 +89,19 @@ scrollcorner, resizer, scrollbar, scrollbarbutton, slider {
   box-sizing: border-box;
 }
 
+scrollbar[orient="vertical"],
+slider[orient="vertical"],
+thumb[orient="vertical"] {
+  -moz-box-orient: vertical;
+}
+
 thumb {
   
 
   -moz-user-modify: initial;
+
+  -moz-box-align: center;
+  -moz-box-pack: center;
 }
 
 
