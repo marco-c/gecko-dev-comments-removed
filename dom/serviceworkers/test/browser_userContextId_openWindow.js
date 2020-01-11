@@ -104,7 +104,7 @@ add_task(async function test() {
 
   
   
-  let uci = await SpecialPowers.spawn(browser, [URI], uri => {
+  let uci = await ContentTask.spawn(browser, URI, uri => {
     let uci = content.document.nodePrincipal.userContextId;
 
     
@@ -145,7 +145,7 @@ add_task(async function test() {
 
   
   
-  uci = await SpecialPowers.spawn(browser, [], () => {
+  uci = await ContentTask.spawn(browser, null, () => {
     let uci = content.document.nodePrincipal.userContextId;
 
     return content.navigator.serviceWorker

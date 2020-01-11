@@ -165,7 +165,7 @@ function getParentChromeFlags(win) {
 
 function getContentChromeFlags(win) {
   let b = win.gBrowser.selectedBrowser;
-  return SpecialPowers.spawn(b, [], async function() {
+  return ContentTask.spawn(b, null, async function() {
     
     
     docShell.QueryInterface(Ci.nsIInterfaceRequestor);

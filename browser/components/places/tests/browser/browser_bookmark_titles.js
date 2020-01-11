@@ -85,7 +85,7 @@ add_task(async function check_default_bookmark_title() {
   await promiseLoaded;
 
   
-  await SpecialPowers.spawn(browser, [], function() {
+  await ContentTask.spawn(browser, null, function() {
     Assert.equal(
       content.document.documentURI.substring(0, 14),
       "about:neterror",

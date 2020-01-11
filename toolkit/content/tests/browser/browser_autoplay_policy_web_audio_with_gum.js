@@ -91,7 +91,7 @@ function resumeWithoutExpectedSuccess() {
   let promise = ac.resume();
   ac.resumePromises.push(promise);
   return new Promise((resolve, reject) => {
-    content.setTimeout(() => {
+    setTimeout(() => {
       if (ac.state == "suspended") {
         ok(true, "audio context is still suspended");
         resolve();
@@ -110,16 +110,15 @@ function resumeWithExpectedSuccess() {
   });
 }
 
-async function callGUM(testParameters) {
+function callGUM(testParameters) {
   info("- calling gum with " + JSON.stringify(testParameters.constraints));
   if (testParameters.shouldAllowStartingContext) {
     
     
     testParameters.constraints.fake = true;
-    await content.navigator.mediaDevices.getUserMedia(
+    return content.navigator.mediaDevices.getUserMedia(
       testParameters.constraints
     );
-    return;
   }
 
   
@@ -131,6 +130,7 @@ async function callGUM(testParameters) {
   
   
   content.navigator.mediaDevices.getUserMedia(testParameters.constraints);
+  return Promise.resolve();
 }
 
 async function testWebAudioWithGUM(testParameters) {
@@ -147,9 +147,9 @@ async function testWebAudioWithGUM(testParameters) {
 
   info("- check whether audio context starts running -");
   try {
-    await SpecialPowers.spawn(
+    await ContentTask.spawn(
       tab.linkedBrowser,
-      [],
+      null,
       checkingAudioContextRunningState
     );
   } catch (error) {
@@ -157,7 +157,7 @@ async function testWebAudioWithGUM(testParameters) {
   }
 
   try {
-    await SpecialPowers.spawn(tab.linkedBrowser, [testParameters], callGUM);
+    await ContentTask.spawn(tab.linkedBrowser, testParameters, callGUM);
   } catch (error) {
     ok(false, error.toString());
   }
@@ -167,7 +167,7 @@ async function testWebAudioWithGUM(testParameters) {
     let resumeFunc = testParameters.shouldAllowStartingContext
       ? resumeWithExpectedSuccess
       : resumeWithoutExpectedSuccess;
-    await SpecialPowers.spawn(tab.linkedBrowser, [], resumeFunc);
+    await ContentTask.spawn(tab.linkedBrowser, null, resumeFunc);
   } catch (error) {
     ok(false, error.toString());
   }

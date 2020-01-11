@@ -34,9 +34,9 @@ add_UITour_task(async function test_bg_showInfo() {
 async function loadForegroundTab() {
   
   
-  let promise = SpecialPowers.spawn(
+  let promise = ContentTask.spawn(
     gBrowser.selectedTab.linkedBrowser,
-    [],
+    null,
     async function() {
       return new Promise(resolve => {
         let document = content.document;

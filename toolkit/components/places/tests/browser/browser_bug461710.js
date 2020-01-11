@@ -57,9 +57,9 @@ add_task(async function() {
           
           
           await TestUtils.waitForCondition(async function() {
-            let color = await SpecialPowers.spawn(
+            let color = await ContentTask.spawn(
               browser,
-              [],
+              null,
               async function() {
                 let elem = content.document.getElementById("link");
                 return content.windowUtils.getVisitedDependentComputedStyle(

@@ -41,7 +41,7 @@ add_task(async function pp_after_orientation_change() {
   await printPreviewEntered;
 
   
-  await SpecialPowers.spawn(ppBrowser, [], async function() {
+  await ContentTask.spawn(ppBrowser, null, async function() {
     is(
       content.document.body.textContent.trim(),
       "INITIAL PAGE",
@@ -67,7 +67,7 @@ add_task(async function pp_after_orientation_change() {
   await printPreviewEntered;
 
   
-  await SpecialPowers.spawn(ppBrowser, [], async function() {
+  await ContentTask.spawn(ppBrowser, null, async function() {
     is(
       content.document.body.textContent.trim(),
       "INITIAL PAGE",
@@ -76,7 +76,7 @@ add_task(async function pp_after_orientation_change() {
   });
 
   
-  await SpecialPowers.spawn(browserToPrint, [], async function() {
+  await ContentTask.spawn(browserToPrint, null, async function() {
     is(
       content.document.body.textContent.trim(),
       "REPLACED PAGE!",

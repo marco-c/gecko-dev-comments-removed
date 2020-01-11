@@ -32,7 +32,7 @@ function sum(aArray) {
 
 
 function hangContentProcess(browser, aMs) {
-  return ContentTask.spawn(browser, aMs, function(ms) {
+  return ContentTask.spawn(browser, aMs, async function(ms) {
     let then = Date.now();
     while (Date.now() - then < ms) {
       

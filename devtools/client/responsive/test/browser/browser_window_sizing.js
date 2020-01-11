@@ -30,9 +30,9 @@ add_task(async function() {
 });
 
 async function checkWindowOuterSize(ui, zoom_level) {
-  return SpecialPowers.spawn(
+  return ContentTask.spawn(
     ui.getViewportBrowser(),
-    [{ width: WIDTH, height: HEIGHT, zoom: zoom_level }],
+    { width: WIDTH, height: HEIGHT, zoom: zoom_level },
     async function({ width, height, zoom }) {
       
       
@@ -56,9 +56,9 @@ async function checkWindowOuterSize(ui, zoom_level) {
 }
 
 async function checkWindowScreenSize(ui, zoom_level) {
-  return SpecialPowers.spawn(
+  return ContentTask.spawn(
     ui.getViewportBrowser(),
-    [{ width: WIDTH, height: HEIGHT, zoom: zoom_level }],
+    { width: WIDTH, height: HEIGHT, zoom: zoom_level },
     async function({ width, height, zoom }) {
       const { screen } = content;
 

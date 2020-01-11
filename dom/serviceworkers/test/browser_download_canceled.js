@@ -69,7 +69,7 @@ async function performCanceledDownload(tab, path) {
   
   info(`triggering download of "${path}"`);
   
-  await SpecialPowers.spawn(tab.linkedBrowser, [path], function(path) {
+  await ContentTask.spawn(tab.linkedBrowser, path, function(path) {
     
     content.wrappedJSObject.trackStreamClosure(path);
     
@@ -89,9 +89,7 @@ async function performCanceledDownload(tab, path) {
   
   info(`wait for the ${path} stream to close.`);
   
-  const why = await SpecialPowers.spawn(tab.linkedBrowser, [path], function(
-    path
-  ) {
+  const why = await ContentTask.spawn(tab.linkedBrowser, path, function(path) {
     return content.wrappedJSObject.streamClosed[path].promise;
   });
   
@@ -128,9 +126,9 @@ add_task(async function interruptedDownloads() {
 
   
   
-  const controlled = await SpecialPowers.spawn(
+  const controlled = await ContentTask.spawn(
     tab.linkedBrowser,
-    [],
+    null,
     function() {
       
       return content.wrappedJSObject.controlled;
@@ -145,7 +143,7 @@ add_task(async function interruptedDownloads() {
   await performCanceledDownload(tab, "sw-stream-download");
 
   
-  await SpecialPowers.spawn(tab.linkedBrowser, [], function() {
+  await ContentTask.spawn(tab.linkedBrowser, null, function() {
     return content.wrappedJSObject.registration.unregister();
   });
   BrowserTestUtils.removeTab(tab);

@@ -16,11 +16,7 @@ add_task(async function test_nav_data_uri() {
     set: [["security.data_uri.block_toplevel_data_uri_navigations", true]],
   });
   await BrowserTestUtils.withNewTab(kDataURI, async function(browser) {
-    await SpecialPowers.spawn(
-      gBrowser.selectedBrowser,
-      [{ kDataBody }],
-      async function({ kDataBody }) {
-        
+    await ContentTask.spawn(gBrowser.selectedBrowser, {kDataBody}, async function({kDataBody}) { 
         is(
           content.document.body.innerHTML,
           kDataBody,
@@ -41,7 +37,7 @@ add_task(async function test_nav_data_uri_redirect() {
   });
   
   await new Promise(resolve => setTimeout(resolve, 500));
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
+  await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
     is(
       content.document.body.innerHTML,
       "",
@@ -60,7 +56,7 @@ add_task(async function test_nav_data_uri_meta_redirect() {
   });
   
   await new Promise(resolve => setTimeout(resolve, 500));
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
+  await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
     is(
       content.document.body.innerHTML,
       "",

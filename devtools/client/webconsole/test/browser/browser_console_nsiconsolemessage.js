@@ -30,7 +30,7 @@ add_task(async function() {
   
   let text = "foobarz";
   const onFooBarzMessage = waitForMessage(hud, text);
-  SpecialPowers.spawn(gBrowser.selectedBrowser, [text], function(msg) {
+  ContentTask.spawn(gBrowser.selectedBrowser, text, function(msg) {
     content.console.log(msg);
   });
   await onFooBarzMessage;

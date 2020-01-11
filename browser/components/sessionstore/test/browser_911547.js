@@ -27,7 +27,7 @@ add_task(async function test() {
   );
 
   let loadedPromise = promiseBrowserLoaded(browser);
-  await SpecialPowers.spawn(browser, [], function() {
+  await ContentTask.spawn(browser, null, function() {
     is(
       content.document.getElementById("test_id1").value,
       "id1_initial",
@@ -38,8 +38,7 @@ add_task(async function test() {
 
   await loadedPromise;
 
-  await SpecialPowers.spawn(browser, [], function() {
-    
+  await ContentTask.spawn(browser, {}, function( {}) { 
     
     is(
       content.document.getElementById("test_id2").value,
@@ -56,8 +55,7 @@ add_task(async function test() {
   await promiseTabRestored(tab);
   browser = tab.linkedBrowser;
 
-  await SpecialPowers.spawn(browser, [], function() {
-    
+  await ContentTask.spawn(browser, {}, function({}) { 
     
     
     is(
@@ -73,7 +71,7 @@ add_task(async function test() {
 
 
 function injectInlineScript(browser, scriptText) {
-  return SpecialPowers.spawn(browser, [scriptText], function(text) {
+  return ContentTask.spawn(browser, scriptText, function(text) {
     let scriptElt = content.document.createElement("script");
     scriptElt.type = "text/javascript";
     scriptElt.text = text;

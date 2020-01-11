@@ -34,7 +34,7 @@ add_task(async function test_add_interesting_window() {
   
   
   
-  await SpecialPowers.spawn(browser, [PAGE], async function(newPage) {
+  await ContentTask.spawn(browser, PAGE, async function(newPage) {
     content.location = newPage;
   });
 
@@ -113,7 +113,7 @@ add_task(async function test_remove_uninteresting_window() {
 
   
   
-  await SpecialPowers.spawn(browser, [], async function() {
+  await ContentTask.spawn(browser, null, async function() {
     
     docShell.setCurrentURI(Services.io.newURI("about:blank"));
 
