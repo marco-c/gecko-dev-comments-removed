@@ -4464,7 +4464,8 @@ static StyleUserSelect UsedUserSelect(const nsIFrame* aFrame) {
     return style;
   }
 
-  if (IsEditingHost(aFrame)) {
+  if (aFrame->IsTextInputFrame() || IsEditingHost(aFrame)) {
+    
     
     
     return StyleUserSelect::Text;
