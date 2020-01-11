@@ -2427,204 +2427,213 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
   int32_t endOffset = range->EndOffset();
 
   
-
-  
-  
-  
-  
-  
-  
-  
-  bool disconnected = false;
   bool shouldClearRange = false;
-  int32_t result1 = nsContentUtils::ComparePoints_Deprecated(
-      anchorNode, anchorOffset, focusNode, focusOffset, &disconnected);
+  const Maybe<int32_t> result1 = nsContentUtils::ComparePoints(
+      anchorNode, anchorOffset, focusNode, focusOffset);
   
-  shouldClearRange |= disconnected;
-  int32_t result2 = nsContentUtils::ComparePoints_Deprecated(
-      focusNode, focusOffset, &aContainer, aOffset, &disconnected);
+  shouldClearRange |= !result1;
+  const Maybe<int32_t> result2 = nsContentUtils::ComparePoints(
+      focusNode, focusOffset, &aContainer, aOffset);
   
-  shouldClearRange |= disconnected;
-  int32_t result3 = nsContentUtils::ComparePoints_Deprecated(
-      anchorNode, anchorOffset, &aContainer, aOffset, &disconnected);
+  shouldClearRange |= !result2;
+  const Maybe<int32_t> result3 = nsContentUtils::ComparePoints(
+      anchorNode, anchorOffset, &aContainer, aOffset);
+  shouldClearRange |= !result3;
 
   
   
   if (shouldClearRange) {
     
     SelectFrames(presContext, range, false);
-  }
 
-  RefPtr<nsRange> difRange = new nsRange(&aContainer);
-  if ((result1 == 0 && result3 < 0) ||
-      (result1 <= 0 && result2 < 0)) {  
-    
-    range->SetEnd(aContainer, aOffset, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
-    SetDirection(eDirNext);
-    res = difRange->SetStartAndEnd(
-        focusNode, focusOffset, range->GetEndContainer(), range->EndOffset());
-    if (NS_FAILED(res)) {
-      aRv.Throw(res);
-      return;
-    }
-    SelectFrames(presContext, difRange, true);
-    res = SetAnchorFocusToRange(range);
-    if (NS_FAILED(res)) {
-      aRv.Throw(res);
-      return;
-    }
-  } else if (result1 == 0 && result3 > 0) {  
-    
-    SetDirection(eDirPrevious);
-    range->SetStart(aContainer, aOffset, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
-    SelectFrames(presContext, range, true);
-    res = SetAnchorFocusToRange(range);
-    if (NS_FAILED(res)) {
-      aRv.Throw(res);
-      return;
-    }
-  } else if (result3 <= 0 && result2 >= 0) {  
-    
-    res =
-        difRange->SetStartAndEnd(&aContainer, aOffset, focusNode, focusOffset);
+    res = range->CollapseTo(&aContainer, aOffset);
     if (NS_FAILED(res)) {
       aRv.Throw(res);
       return;
     }
 
-    range->SetEnd(aContainer, aOffset, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
     res = SetAnchorFocusToRange(range);
     if (NS_FAILED(res)) {
       aRv.Throw(res);
       return;
     }
-    SelectFrames(presContext, difRange, false);  
-    difRange->SetEnd(range->GetEndContainer(), range->EndOffset());
-    SelectFrames(presContext, difRange, true);  
-                                                
-  } else if (result1 >= 0 && result3 <= 0) {    
-    if (GetDirection() == eDirPrevious) {
-      res = range->SetStart(endNode, endOffset);
+  } else {
+    RefPtr<nsRange> difRange = new nsRange(&aContainer);
+    if ((*result1 == 0 && *result3 < 0) ||
+        (*result1 <= 0 && *result2 < 0)) {  
+      
+      range->SetEnd(aContainer, aOffset, aRv);
+      if (aRv.Failed()) {
+        return;
+      }
+      SetDirection(eDirNext);
+      res = difRange->SetStartAndEnd(
+          focusNode, focusOffset, range->GetEndContainer(), range->EndOffset());
       if (NS_FAILED(res)) {
         aRv.Throw(res);
         return;
       }
-    }
-    SetDirection(eDirNext);
-    range->SetEnd(aContainer, aOffset, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
-    if (focusNode != anchorNode ||
-        focusOffset != anchorOffset) {  
-      res = difRange->SetStart(focusNode, focusOffset);
-      nsresult tmp = difRange->SetEnd(anchorNode, anchorOffset);
-      if (NS_FAILED(tmp)) {
-        res = tmp;
-      }
+      SelectFrames(presContext, difRange, true);
+      res = SetAnchorFocusToRange(range);
       if (NS_FAILED(res)) {
         aRv.Throw(res);
+        return;
+      }
+    } else if (*result1 == 0 && *result3 > 0) {  
+      
+      SetDirection(eDirPrevious);
+      range->SetStart(aContainer, aOffset, aRv);
+      if (aRv.Failed()) {
+        return;
+      }
+      SelectFrames(presContext, range, true);
+      res = SetAnchorFocusToRange(range);
+      if (NS_FAILED(res)) {
+        aRv.Throw(res);
+        return;
+      }
+    } else if (*result3 <= 0 &&
+               *result2 >= 0) {  
+      
+      res = difRange->SetStartAndEnd(&aContainer, aOffset, focusNode,
+                                     focusOffset);
+      if (NS_FAILED(res)) {
+        aRv.Throw(res);
+        return;
+      }
+
+      range->SetEnd(aContainer, aOffset, aRv);
+      if (aRv.Failed()) {
         return;
       }
       res = SetAnchorFocusToRange(range);
       if (NS_FAILED(res)) {
         aRv.Throw(res);
+        return;
+      }
+      SelectFrames(presContext, difRange, false);  
+      difRange->SetEnd(range->GetEndContainer(), range->EndOffset());
+      SelectFrames(presContext, difRange, true);  
+                                                  
+    } else if (*result1 >= 0 &&
+               *result3 <= 0) {  
+      if (GetDirection() == eDirPrevious) {
+        res = range->SetStart(endNode, endOffset);
+        if (NS_FAILED(res)) {
+          aRv.Throw(res);
+          return;
+        }
+      }
+      SetDirection(eDirNext);
+      range->SetEnd(aContainer, aOffset, aRv);
+      if (aRv.Failed()) {
+        return;
+      }
+      if (focusNode != anchorNode ||
+          focusOffset != anchorOffset) {  
+        res = difRange->SetStart(focusNode, focusOffset);
+        nsresult tmp = difRange->SetEnd(anchorNode, anchorOffset);
+        if (NS_FAILED(tmp)) {
+          res = tmp;
+        }
+        if (NS_FAILED(res)) {
+          aRv.Throw(res);
+          return;
+        }
+        res = SetAnchorFocusToRange(range);
+        if (NS_FAILED(res)) {
+          aRv.Throw(res);
+          return;
+        }
+        
+        SelectFrames(presContext, difRange, false);
+      } else {
+        res = SetAnchorFocusToRange(range);
+        if (NS_FAILED(res)) {
+          aRv.Throw(res);
+          return;
+        }
+      }
+      
+      SelectFrames(presContext, range, true);
+    } else if (*result2 <= 0 &&
+               *result3 >= 0) {  
+      
+      res = difRange->SetStartAndEnd(focusNode, focusOffset, &aContainer,
+                                     aOffset);
+      if (NS_FAILED(res)) {
+        aRv.Throw(res);
+        return;
+      }
+      SetDirection(eDirPrevious);
+      range->SetStart(aContainer, aOffset, aRv);
+      if (aRv.Failed()) {
+        return;
+      }
+
+      res = SetAnchorFocusToRange(range);
+      if (NS_FAILED(res)) {
+        aRv.Throw(res);
+        return;
+      }
+      SelectFrames(presContext, difRange, false);
+      difRange->SetStart(range->GetStartContainer(), range->StartOffset());
+      SelectFrames(presContext, difRange, true);  
+    } else if (*result3 >= 0 &&
+               *result1 <= 0) {  
+      if (GetDirection() == eDirNext) {
+        range->SetEnd(startNode, startOffset);
+      }
+      SetDirection(eDirPrevious);
+      range->SetStart(aContainer, aOffset, aRv);
+      if (aRv.Failed()) {
         return;
       }
       
-      SelectFrames(presContext, difRange, false);
-    } else {
-      res = SetAnchorFocusToRange(range);
-      if (NS_FAILED(res)) {
-        aRv.Throw(res);
+      if (focusNode != anchorNode ||
+          focusOffset != anchorOffset) {  
+        res = difRange->SetStartAndEnd(anchorNode, anchorOffset, focusNode,
+                                       focusOffset);
+        nsresult tmp = SetAnchorFocusToRange(range);
+        if (NS_FAILED(tmp)) {
+          res = tmp;
+        }
+        if (NS_FAILED(res)) {
+          aRv.Throw(res);
+          return;
+        }
+        SelectFrames(presContext, difRange, false);
+      } else {
+        res = SetAnchorFocusToRange(range);
+        if (NS_FAILED(res)) {
+          aRv.Throw(res);
+          return;
+        }
+      }
+      
+      SelectFrames(presContext, range, true);
+    } else if (*result2 >= 0 &&
+               *result1 >= 0) {  
+      
+      range->SetStart(aContainer, aOffset, aRv);
+      if (aRv.Failed()) {
         return;
       }
-    }
-    
-    SelectFrames(presContext, range, true);
-  } else if (result2 <= 0 && result3 >= 0) {  
-    
-    res =
-        difRange->SetStartAndEnd(focusNode, focusOffset, &aContainer, aOffset);
-    if (NS_FAILED(res)) {
-      aRv.Throw(res);
-      return;
-    }
-    SetDirection(eDirPrevious);
-    range->SetStart(aContainer, aOffset, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
-
-    res = SetAnchorFocusToRange(range);
-    if (NS_FAILED(res)) {
-      aRv.Throw(res);
-      return;
-    }
-    SelectFrames(presContext, difRange, false);
-    difRange->SetStart(range->GetStartContainer(), range->StartOffset());
-    SelectFrames(presContext, difRange, true);  
-  } else if (result3 >= 0 && result1 <= 0) {    
-    if (GetDirection() == eDirNext) {
-      range->SetEnd(startNode, startOffset);
-    }
-    SetDirection(eDirPrevious);
-    range->SetStart(aContainer, aOffset, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
-    
-    if (focusNode != anchorNode ||
-        focusOffset != anchorOffset) {  
-      res = difRange->SetStartAndEnd(anchorNode, anchorOffset, focusNode,
+      SetDirection(eDirPrevious);
+      res = difRange->SetStartAndEnd(range->GetStartContainer(),
+                                     range->StartOffset(), focusNode,
                                      focusOffset);
-      nsresult tmp = SetAnchorFocusToRange(range);
-      if (NS_FAILED(tmp)) {
-        res = tmp;
-      }
       if (NS_FAILED(res)) {
         aRv.Throw(res);
         return;
       }
-      SelectFrames(presContext, difRange, false);
-    } else {
+
+      SelectFrames(presContext, difRange, true);
       res = SetAnchorFocusToRange(range);
       if (NS_FAILED(res)) {
         aRv.Throw(res);
         return;
       }
-    }
-    
-    SelectFrames(presContext, range, true);
-  } else if (result2 >= 0 && result1 >= 0) {  
-    
-    range->SetStart(aContainer, aOffset, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
-    SetDirection(eDirPrevious);
-    res =
-        difRange->SetStartAndEnd(range->GetStartContainer(),
-                                 range->StartOffset(), focusNode, focusOffset);
-    if (NS_FAILED(res)) {
-      aRv.Throw(res);
-      return;
-    }
-
-    SelectFrames(presContext, difRange, true);
-    res = SetAnchorFocusToRange(range);
-    if (NS_FAILED(res)) {
-      aRv.Throw(res);
-      return;
     }
   }
 
@@ -3334,11 +3343,15 @@ void Selection::SetBaseAndExtentInternal(InLimiter aInLimiter,
   
   
   SelectionBatcher batch(this);
-  if (nsContentUtils::ComparePoints_Deprecated(aAnchorRef, aFocusRef) <= 0) {
+  const Maybe<int32_t> order =
+      nsContentUtils::ComparePoints(aAnchorRef, aFocusRef);
+  if (order && (*order <= 0)) {
     SetStartAndEndInternal(aInLimiter, aAnchorRef, aFocusRef, eDirNext, aRv);
     return;
   }
 
+  
+  
   SetStartAndEndInternal(aInLimiter, aFocusRef, aAnchorRef, eDirPrevious, aRv);
 }
 
