@@ -239,16 +239,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       (this._contentType.includes("javascript") ||
         this._contentType === "text/wasm")
     ) {
-      
-      
-      
-      
-      
-      
-      const padding = this._source.startLine
-        ? "\n".repeat(this._source.startLine - 1)
-        : "";
-      return toResolvedContent(padding + this._source.text);
+      return toResolvedContent(this.actualText());
     }
 
     const result = await this.sources.urlContents(
@@ -261,6 +252,37 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     this._contentType = result.contentType;
 
     return result;
+  },
+
+  
+  
+  actualText() {
+    
+    
+    
+    
+    
+    
+    const padding = this._source.startLine
+      ? "\n".repeat(this._source.startLine - 1)
+      : "";
+    return padding + this._source.text;
+  },
+
+  
+  
+  contentMatches(fileContents) {
+    const lineBreak = /\r\n?|\n|\u2028|\u2029/;
+    const contentLines = fileContents.content.split(lineBreak);
+    const sourceLines = this._source.text.split(lineBreak);
+    let line = this._source.startLine - 1;
+    for (const sourceLine of sourceLines) {
+      const contentLine = contentLines[line++] || "";
+      if (!contentLine.includes(sourceLine)) {
+        return false;
+      }
+    }
+    return true;
   },
 
   getBreakableLines: async function() {
