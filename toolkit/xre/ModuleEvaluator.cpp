@@ -91,6 +91,8 @@ bool ModuleEvaluator::ResolveKnownFolder(REFKNOWNFOLDERID aFolderId,
 
 ModuleEvaluator::ModuleEvaluator()
     : mKeyboardLayoutDlls(GetKeyboardLayoutDlls()) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
 #if defined(_M_IX86)
   
   REFKNOWNFOLDERID systemFolderId = FOLDERID_SystemX86;
@@ -155,6 +157,8 @@ ModuleEvaluator::operator bool() const {
 
 Maybe<ModuleTrustFlags> ModuleEvaluator::GetTrust(
     const ModuleRecord& aModuleRecord) const {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
   
   
   if (aModuleRecord.mVendorInfo.isSome() &&
@@ -175,7 +179,11 @@ Maybe<ModuleTrustFlags> ModuleEvaluator::GetTrust(
     }
   }
 
-  const nsCOMPtr<nsIFile>& dllFile = aModuleRecord.mResolvedDllName;
+  const nsCOMPtr<nsIFile>& dllFile = aModuleRecord.mResolvedDosName;
+  MOZ_ASSERT(!!dllFile);
+  if (!dllFile) {
+    return Nothing();
+  }
 
   nsAutoString dllLeafLower;
   if (NS_FAILED(dllFile->GetLeafName(dllLeafLower))) {

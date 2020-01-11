@@ -8,6 +8,7 @@
 #define mozilla_UntrustedModulesProcessor_h
 
 #include "mozilla/Atomics.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/glue/WindowsDllServices.h"
 #include "mozilla/LazyIdleThread.h"
 #include "mozilla/Maybe.h"
@@ -29,6 +30,11 @@ class ModuleEvaluator;
 using UntrustedModulesPromise =
     MozPromise<Maybe<UntrustedModulesData>, nsresult, true>;
 
+using ModulesTrustPromise = MozPromise<ModulesMapResult, nsresult, true>;
+
+using GetModulesTrustIpcPromise =
+    MozPromise<Maybe<ModulesMapResult>, ipc::ResponseRejectReason, true>;
+
 class UntrustedModulesProcessor final : public nsIObserver {
  public:
   static RefPtr<UntrustedModulesProcessor> Create();
@@ -36,10 +42,20 @@ class UntrustedModulesProcessor final : public nsIObserver {
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
+  
+  void Disable();
+
+  
   void Enqueue(glue::EnhancedModuleLoadInfo&& aModLoadInfo);
   void Enqueue(ModuleLoadInfoVec&& aEvents);
 
+  
   RefPtr<UntrustedModulesPromise> GetProcessedData();
+
+  
+  
+  RefPtr<ModulesTrustPromise> GetModulesTrust(ModulePaths&& aModPaths,
+                                              bool aRunAtNormalPriority);
 
   UntrustedModulesProcessor(const UntrustedModulesProcessor&) = delete;
   UntrustedModulesProcessor(UntrustedModulesProcessor&&) = delete;
@@ -50,20 +66,68 @@ class UntrustedModulesProcessor final : public nsIObserver {
  private:
   ~UntrustedModulesProcessor() = default;
   UntrustedModulesProcessor();
+
+  static bool IsSupportedProcessType();
+
   void AddObservers();
   void RemoveObservers();
-  void ScheduleNonEmptyQueueProcessing(const char* aSource,
-                                       const MutexAutoLock& aProofOfLock);
-  void CancelScheduledProcessing(const MutexAutoLock& aProofOfLock);
-  void DispatchBackgroundProcessing(const char* aSource);
-  void BackgroundProcessModuleLoadQueue(const char* aSource);
-  void ProcessModuleLoadQueue(const char* aSource);
-  void AssertRunningOnLazyIdleThread();
-  RefPtr<UntrustedModulesPromise> GetProcessedDataInternal();
-  RefPtr<ModuleRecord> GetModuleRecord(
-      UntrustedModulesData::ModulesMap& aModules,
-      const ModuleEvaluator& aModEval, const nsAString& aResolvedNtPath);
 
+  void ScheduleNonEmptyQueueProcessing(const MutexAutoLock& aProofOfLock);
+  void CancelScheduledProcessing(const MutexAutoLock& aProofOfLock);
+  void DispatchBackgroundProcessing();
+
+  void BackgroundProcessModuleLoadQueue();
+  void ProcessModuleLoadQueue();
+
+  using LoadsVec = Vector<glue::EnhancedModuleLoadInfo>;
+
+  class ModulesMapResultWithLoads final {
+   public:
+    ModulesMapResultWithLoads(Maybe<ModulesMapResult>&& aModMapResult,
+                              LoadsVec&& aLoads)
+        : mModMapResult(std::move(aModMapResult)), mLoads(std::move(aLoads)) {}
+    Maybe<ModulesMapResult> mModMapResult;
+    LoadsVec mLoads;
+  };
+
+  using GetModulesTrustPromise =
+      MozPromise<Maybe<ModulesMapResultWithLoads>, nsresult, true>;
+
+  enum class Priority { Default, Background };
+
+  RefPtr<GetModulesTrustPromise> ProcessModuleLoadQueueChildProcess(
+      Priority aPriority);
+  void BackgroundProcessModuleLoadQueueChildProcess();
+
+  void AssertRunningOnLazyIdleThread();
+
+  RefPtr<UntrustedModulesPromise> GetProcessedDataInternal();
+  RefPtr<UntrustedModulesPromise> GetProcessedDataInternalChildProcess();
+
+  RefPtr<ModulesTrustPromise> GetModulesTrustInternal(
+      ModulePaths&& aModPaths, bool aRunAtNormalPriority);
+  RefPtr<ModulesTrustPromise> GetModulesTrustInternal(ModulePaths&& aModPaths);
+
+  
+  RefPtr<ModuleRecord> GetOrAddModuleRecord(
+      ModulesMap& aModules, const ModuleEvaluator& aModEval,
+      const glue::EnhancedModuleLoadInfo& aModLoadInfo);
+  RefPtr<ModuleRecord> GetOrAddModuleRecord(ModulesMap& aModules,
+                                            const ModuleEvaluator& aModEval,
+                                            const nsAString& aResolvedNtPath);
+
+  
+  RefPtr<ModuleRecord> GetModuleRecord(
+      const ModulesMap& aModules,
+      const glue::EnhancedModuleLoadInfo& aModuleLoadInfo);
+
+  RefPtr<GetModulesTrustIpcPromise> SendGetModulesTrust(ModulePaths&& aModules,
+                                                        Priority aPriority);
+
+  void CompleteProcessing(ModulesMapResultWithLoads&& aModulesAndLoads);
+  RefPtr<UntrustedModulesPromise> GetAllProcessedData(const char* aSource);
+
+ private:
   RefPtr<LazyIdleThread> mThread;
 
   Mutex mUnprocessedMutex;
