@@ -3,6 +3,8 @@
 
 
 add_task(async () => {
+  Services.prefs.setBoolPref("browser.ssb.osintegration", true);
+
   let ssb = SiteSpecificBrowser.createFromURI(uri("https://www.mozilla.org/"));
   await ssb.install();
 
@@ -17,4 +19,15 @@ add_task(async () => {
   let data = JSON.parse(await kvstore.get(`ssb:${ssb.id}`));
   Assert.ok("manifest" in data);
   Assert.ok("config" in data);
+
+  if (AppConstants.platform == "win") {
+    
+    let link = Services.dirsvc.get("Desk", Ci.nsIFile);
+    link.append("www.mozilla.org.lnk");
+
+    Assert.ok(link.isFile());
+
+    await ssb.uninstall();
+    Assert.ok(!link.exists());
+  }
 });
