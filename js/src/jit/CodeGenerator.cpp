@@ -5007,30 +5007,27 @@ void CodeGenerator::visitCallGeneric(LCallGeneric* call) {
   }
 
   
-  
-  
   if (call->mir()->isConstructing()) {
-    masm.branchIfNotInterpretedConstructor(calleereg, nargsreg, &invoke);
+    masm.branchTestFunctionFlags(calleereg, FunctionFlags::CONSTRUCTOR,
+                                 Assembler::Zero, &invoke);
   } else {
-    
-    if (call->mir()->needsArgCheck()) {
-      masm.branchIfFunctionHasNoJitEntry(calleereg,  false,
-                                         &invoke);
-    } else {
-      masm.branchIfFunctionHasNoScript(calleereg, &invoke);
-    }
     masm.branchFunctionKind(Assembler::Equal, FunctionFlags::ClassConstructor,
                             calleereg, objreg, &invoke);
   }
 
-  if (call->mir()->maybeCrossRealm()) {
-    masm.switchToObjectRealm(calleereg, objreg);
-  }
-
+  
   if (call->mir()->needsArgCheck()) {
+    masm.branchIfFunctionHasNoJitEntry(calleereg, call->mir()->isConstructing(),
+                                       &invoke);
     masm.loadJitCodeRaw(calleereg, objreg);
   } else {
+    masm.branchIfFunctionHasNoScript(calleereg, &invoke);
     masm.loadJitCodeNoArgCheck(calleereg, objreg);
+  }
+
+  
+  if (call->mir()->maybeCrossRealm()) {
+    masm.switchToObjectRealm(calleereg, nargsreg);
   }
 
   
