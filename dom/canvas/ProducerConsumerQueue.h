@@ -1160,10 +1160,7 @@ class Consumer : public detail::PcqBase {
                              : status;
   }
 
-  template <>
-  PcqStatus TryPeekRemoveHelper<>(ConsumerView&) {
-    return PcqStatus::Success;
-  }
+  PcqStatus TryPeekRemoveHelper(ConsumerView&) { return PcqStatus::Success; }
 
   
   

@@ -5,12 +5,8 @@
 
 
 #include "VRLayerParent.h"
-
-#include "mozilla/dom/WebGLParent.h"
-#include "mozilla/layers/CompositorThread.h"
 #include "mozilla/Unused.h"
-#include "SharedSurface.h"
-#include "SurfaceTypes.h"
+#include "mozilla/layers/CompositorThread.h"
 
 namespace mozilla {
 using namespace layers;
@@ -43,65 +39,13 @@ void VRLayerParent::Destroy() {
 }
 
 mozilla::ipc::IPCResult VRLayerParent::RecvSubmitFrame(
-    mozilla::dom::PWebGLParent* aPWebGLParent, const uint64_t& aFrameId,
-    const uint64_t& aLastFrameId, const gfx::Rect& aLeftEyeRect,
-    const gfx::Rect& aRightEyeRect) {
-  
-  
-  mLastFrameTexture = mThisFrameTexture;
-
-  auto webGLParent = static_cast<mozilla::dom::WebGLParent*>(aPWebGLParent);
-  if (!webGLParent) {
-    return IPC_OK();
-  }
-
-#if defined(MOZ_WIDGET_ANDROID)
-  
-
-
-
-
-
-
-
-  if (!mThisFrameTexture || aLastFrameId == mLastSubmittedFrameId) {
-    mThisFrameTexture = webGLParent->GetVRFrame();
-  }
-#else
-  mThisFrameTexture = webGLParent->GetVRFrame();
-#endif  
-
-  if (!mThisFrameTexture) {
-    return IPC_OK();
-  }
-
-  
-  
-
-  gl::SharedSurface* surf = mThisFrameTexture->Surf();
-  if (surf->mType == gl::SharedSurfaceType::Basic) {
-    gfxCriticalError() << "SharedSurfaceType::Basic not supported for WebVR";
-    return IPC_OK();
-  }
-
-  layers::SurfaceDescriptor desc;
-  if (!surf->ToSurfaceDescriptor(&desc)) {
-    gfxCriticalError() << "SharedSurface::ToSurfaceDescriptor failed in "
-                          "VRLayerParent::SubmitFrame";
-    return IPC_OK();
-  }
-
+    const layers::SurfaceDescriptor& aTexture, const uint64_t& aFrameId,
+    const gfx::Rect& aLeftEyeRect, const gfx::Rect& aRightEyeRect) {
   if (mVRDisplayID) {
     VRManager* vm = VRManager::Get();
-    vm->SubmitFrame(this, desc, aFrameId, aLeftEyeRect, aRightEyeRect);
+    vm->SubmitFrame(this, aTexture, aFrameId, aLeftEyeRect, aRightEyeRect);
   }
 
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult VRLayerParent::RecvClearSurfaces() {
-  mThisFrameTexture = nullptr;
-  mLastFrameTexture = nullptr;
   return IPC_OK();
 }
 
