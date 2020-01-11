@@ -163,6 +163,13 @@ class nsTextControlFrame final : public nsContainerFrame,
 
   void GetText(nsString& aText);
 
+  
+
+
+
+
+  bool TextEquals(const nsAString& aText) const;
+
   virtual nsresult PeekOffset(nsPeekOffsetStruct* aPos) override;
 
   NS_DECL_QUERYFRAME
