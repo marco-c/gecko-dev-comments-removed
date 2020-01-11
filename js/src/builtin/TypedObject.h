@@ -665,6 +665,7 @@ class OutlineTypedObject : public TypedObject {
 
   uint8_t* outOfLineTypedMem() const { return data_; }
 
+ private:
   
   static OutlineTypedObject* createUnattachedWithClass(
       JSContext* cx, const JSClass* clasp, HandleTypeDescr type,
@@ -681,6 +682,10 @@ class OutlineTypedObject : public TypedObject {
       JSContext* cx, HandleTypeDescr type,
       gc::InitialHeap heap = gc::DefaultHeap);
 
+ public:
+  static OutlineTypedObject* createZeroed(JSContext* cx, HandleTypeDescr descr,
+                                          gc::InitialHeap heap);
+
   
   
   
@@ -692,12 +697,14 @@ class OutlineTypedObject : public TypedObject {
                                           Handle<TypedObject*> target,
                                           uint32_t offset);
 
+ private:
   
-  void attach(JSContext* cx, ArrayBufferObject& buffer, uint32_t offset);
+  void attach(ArrayBufferObject& buffer, uint32_t offset);
 
   
   void attach(JSContext* cx, TypedObject& typedObj, uint32_t offset);
 
+ public:
   static void obj_trace(JSTracer* trace, JSObject* object);
 };
 
