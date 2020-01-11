@@ -27,27 +27,6 @@ function test_cert_equals() {
   );
 }
 
-function test_bad_cert_list_serialization() {
-  
-  
-  
-  
-  
-  
-  
-  const badCertListSerialization =
-    "lZ+xZWUXSH+rm9iRO+UxlwAAAAAAAAAAwAAAAAAAAEYAAAABlZ+xZWUXSH+rm9iRO+UxlwAAAAAA" +
-    "AAAAwAAAAAAAAEYAAAAA";
-  let serHelper = Cc["@mozilla.org/network/serialization-helper;1"].getService(
-    Ci.nsISerializationHelper
-  );
-  throws(
-    () => serHelper.deserializeObject(badCertListSerialization),
-    /NS_ERROR_UNEXPECTED/,
-    "deserializing a bogus nsIX509CertList should throw NS_ERROR_UNEXPECTED"
-  );
-}
-
 
 
 
@@ -683,11 +662,6 @@ function run_test() {
   
   add_test(function() {
     test_cert_equals();
-    run_next_test();
-  });
-
-  add_test(function() {
-    test_bad_cert_list_serialization();
     run_next_test();
   });
 

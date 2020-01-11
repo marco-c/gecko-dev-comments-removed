@@ -17,7 +17,6 @@
 #include "nsISerializable.h"
 #include "nsIX509Cert.h"
 #include "nsIX509CertDB.h"
-#include "nsIX509CertList.h"
 #include "nsSimpleEnumerator.h"
 #include "nsStringFwd.h"
 
@@ -94,64 +93,6 @@ SECStatus ConstructCERTCertListFromReversedDERArray(
      mozilla::UniqueCERTCertList& certList);
 
 }  
-
-typedef const std::function<nsresult(nsCOMPtr<nsIX509Cert>& aCert,
-                                     bool aHasMore,  bool& aContinue)>
-    ForEachCertOperation;
-
-class nsNSSCertList : public nsIX509CertList, public nsISerializable {
- public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSIX509CERTLIST
-  NS_DECL_NSISERIALIZABLE
-
-  
-  
-  
-  
-  
-  
-  explicit nsNSSCertList(mozilla::UniqueCERTCertList certList);
-
-  nsNSSCertList();
-
-  static mozilla::UniqueCERTCertList DupCertList(
-      const mozilla::UniqueCERTCertList& certList);
-
-  
-  
-  
-  
-  
-  nsresult ForEachCertificateInChain(ForEachCertOperation& aOperation);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsresult SegmentCertificateChain(
-       nsCOMPtr<nsIX509Cert>& aRoot,
-       nsCOMPtr<nsIX509CertList>& aIntermediates,
-       nsCOMPtr<nsIX509Cert>& aEndEntity);
-
-  
-  
-  
-  nsresult GetRootCertificate( nsCOMPtr<nsIX509Cert>& aRoot);
-
- private:
-  virtual ~nsNSSCertList() {}
-
-  std::vector<mozilla::UniqueCERTCertificate> mCerts;
-
-  nsNSSCertList(const nsNSSCertList&) = delete;
-  void operator=(const nsNSSCertList&) = delete;
-};
 
 #define NS_X509CERT_CID                              \
   { /* 660a3226-915c-4ffb-bb20-8985a632df05 */       \

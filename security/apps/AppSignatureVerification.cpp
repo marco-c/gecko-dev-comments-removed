@@ -1282,7 +1282,6 @@ nsresult OpenSignedAppFile(AppTrustedRoot aTrustedRoot, nsIFile* aJarFile,
   }
 
   
-  
   if (aSignerCert) {
     
     if (aPolicy.COSERequired() || (coseCertItem && coseCertItem->len != 0)) {
