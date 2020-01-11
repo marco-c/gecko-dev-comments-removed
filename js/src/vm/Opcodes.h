@@ -2127,9 +2127,16 @@
 
 
 
+
+
+
  \
     MACRO(JSOP_JUMPTARGET, "jumptarget", NULL, 5, 0, 0, JOF_ICINDEX) \
     
+
+
+
+
 
 
 
@@ -2150,13 +2157,11 @@
 
 
 
+
+
  \
     MACRO(JSOP_GOTO, "goto", NULL, 5, 0, 0, JOF_JUMP) \
     
-
-
-
-
 
 
 
@@ -2174,9 +2179,14 @@
 
 
 
+
+
+
  \
     MACRO(JSOP_IFNE, "ifne", NULL, 5, 1, 0, JOF_JUMP|JOF_IC) \
     
+
+
 
 
 
@@ -2194,6 +2204,8 @@
 
 
 
+
+
  \
     MACRO(JSOP_OR, "or", NULL, 5, 1, 1, JOF_JUMP|JOF_DETECTING|JOF_IC) \
     
@@ -2204,9 +2216,38 @@
 
 
 
+
+
  \
     MACRO(JSOP_COALESCE, "coalesce", NULL, 5, 1, 1, JOF_JUMP|JOF_DETECTING) \
-    
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2227,9 +2268,17 @@
 
 
 
+
  \
     MACRO(JSOP_DEFAULT, "default", NULL, 5, 1, 0, JOF_JUMP) \
     
+
+
+
+
+
+
+
 
 
 
