@@ -551,25 +551,6 @@ const rollout = {
   },
 };
 
-async function checkNormandyAddonStudy() {
-  const study = await browser.normandyAddonStudy.getStudy();
-
-  if (typeof study === "undefined" || study === undefined) {
-    log("No Normandy study detected!");
-    return false;
-  }
-
-  const branch = study.branch;
-  switch (branch) {
-    case "doh-rollout-heuristics":
-      return true;
-    case "doh-rollout-disabled":
-      return false;
-    default:
-      throw new Error(`Unexpected study branch: ${JSON.stringify(branch)}`);
-  }
-}
-
 const setup = {
   async start() {
     showConsoleLogs = await browser.experiments.preferences.getBoolPref(
@@ -580,7 +561,6 @@ const setup = {
     
     await rollout.migrateLocalStoragePrefs();
 
-    const isNormandyStudy = await checkNormandyAddonStudy();
     const isAddonDisabled = await rollout.getSetting(DOH_DISABLED_PREF, false);
     const runAddonPref = await rollout.getSetting(DOH_ENABLED_PREF, false);
     const runAddonBypassPref = await rollout.getSetting(
@@ -612,12 +592,8 @@ const setup = {
       runAddonDoorhangerDecision === "UIOk" ||
       runAddonDoorhangerDecision === "enabled" ||
       runAddonPreviousTRRMode === 2 ||
-      runAddonPreviousTRRMode === 0 ||
-      isNormandyStudy
+      runAddonPreviousTRRMode === 0
     ) {
-      
-      
-      
       rollout.init();
     } else {
       log(
