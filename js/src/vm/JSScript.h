@@ -1408,7 +1408,17 @@ enum class FunctionAsyncKind : bool { SyncFunction, AsyncFunction };
 
 
 
+
+
+
+
+
+
+
 class ScriptWarmUpData {
+  uintptr_t data_ = ResetState();
+
+ private:
   static constexpr uintptr_t NumTagBits = 2;
   static constexpr uint32_t MaxWarmUpCount = UINT32_MAX >> NumTagBits;
 
@@ -1416,10 +1426,27 @@ class ScriptWarmUpData {
   
   static constexpr uintptr_t TagMask = (1 << NumTagBits) - 1;
   static constexpr uintptr_t JitScriptTag = 0;
-  static constexpr uintptr_t WarmUpCountTag = 1;
+  static constexpr uintptr_t EnclosingScriptTag = 1;
+  static constexpr uintptr_t EnclosingScopeTag = 2;
+  static constexpr uintptr_t WarmUpCountTag = 3;
 
  private:
-  uintptr_t data_ = 0 | WarmUpCountTag;
+  
+  constexpr uintptr_t ResetState() { return 0 | WarmUpCountTag; }
+
+  template <uintptr_t Tag>
+  inline void setTaggedPtr(void* ptr) {
+    static_assert(Tag <= TagMask, "Tag must fit in TagMask");
+    MOZ_ASSERT((uintptr_t(ptr) & TagMask) == 0);
+    data_ = uintptr_t(ptr) | Tag;
+  }
+
+  template <typename T, uintptr_t Tag>
+  inline T getTaggedPtr() const {
+    static_assert(Tag <= TagMask, "Tag must fit in TagMask");
+    MOZ_ASSERT((data_ & TagMask) == Tag);
+    return reinterpret_cast<T>(data_ & ~TagMask);
+  }
 
   void setWarmUpCount(uint32_t count) {
     if (count > MaxWarmUpCount) {
@@ -1431,8 +1458,29 @@ class ScriptWarmUpData {
  public:
   void trace(JSTracer* trc);
 
+  bool isEnclosingScript() const {
+    return (data_ & TagMask) == EnclosingScriptTag;
+  }
+  bool isEnclosingScope() const {
+    return (data_ & TagMask) == EnclosingScopeTag;
+  }
   bool isWarmUpCount() const { return (data_ & TagMask) == WarmUpCountTag; }
   bool isJitScript() const { return (data_ & TagMask) == JitScriptTag; }
+
+  
+  
+
+  LazyScript* toEnclosingScript() const {
+    return getTaggedPtr<LazyScript*, EnclosingScriptTag>();
+  }
+  inline void initEnclosingScript(LazyScript* enclosingScript);
+  inline void clearEnclosingScript();
+
+  Scope* toEnclosingScope() const {
+    return getTaggedPtr<Scope*, EnclosingScopeTag>();
+  }
+  inline void initEnclosingScope(Scope* enclosingScope);
+  inline void clearEnclosingScope();
 
   uint32_t toWarmUpCount() const {
     MOZ_ASSERT(isWarmUpCount());
@@ -1448,20 +1496,17 @@ class ScriptWarmUpData {
   }
 
   jit::JitScript* toJitScript() const {
-    MOZ_ASSERT(isJitScript());
-    static_assert(JitScriptTag == 0, "Code depends on JitScriptTag being zero");
-    return reinterpret_cast<jit::JitScript*>(data_);
+    return getTaggedPtr<jit::JitScript*, JitScriptTag>();
   }
-  void setJitScript(jit::JitScript* jitScript) {
+  void initJitScript(jit::JitScript* jitScript) {
     MOZ_ASSERT(isWarmUpCount());
-    MOZ_ASSERT((uintptr_t(jitScript) & TagMask) == 0);
-    data_ = uintptr_t(jitScript) | JitScriptTag;
+    setTaggedPtr<JitScriptTag>(jitScript);
   }
   void clearJitScript() {
     MOZ_ASSERT(isJitScript());
-    setWarmUpCount(0);
+    data_ = ResetState();
   }
-};
+} JS_HAZ_GC_POINTER;
 
 static_assert(sizeof(ScriptWarmUpData) == sizeof(uintptr_t),
               "JIT code depends on ScriptWarmUpData being pointer-sized");
