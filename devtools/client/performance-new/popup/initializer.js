@@ -65,10 +65,6 @@ const {
   ActorReadyGeckoProfilerInterface,
 } = require("devtools/shared/performance-new/gecko-profiler-interface");
 
-const { LightweightThemeManager } = ChromeUtils.import(
-  "resource://gre/modules/LightweightThemeManager.jsm"
-);
-
 
 
 
@@ -76,7 +72,7 @@ const { LightweightThemeManager } = ChromeUtils.import(
 
 document.documentElement.setAttribute(
   "force-theme",
-  isCurrentThemeDark() ? "dark" : "light"
+  window.gIsDarkMode ? "dark" : "light"
 );
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -134,17 +130,4 @@ function resizeWindow() {
       gResizePopup(document.body.clientHeight);
     }
   });
-}
-
-
-
-
-
-function isCurrentThemeDark() {
-  const DARK_THEME_ID = "firefox-compact-dark@mozilla.org";
-  return (
-    LightweightThemeManager.themeData &&
-    LightweightThemeManager.themeData.theme &&
-    LightweightThemeManager.themeData.theme.id === DARK_THEME_ID
-  );
 }

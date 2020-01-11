@@ -182,6 +182,22 @@ function initialize() {
 
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        contentWindow.gIsDarkMode = document.documentElement.hasAttribute(
+          "lwt-popup-brighttext"
+        );
+
+        
+        
         event.detail.addBlocker(
           new Promise(resolve => {
             contentWindow.gReportReady = () => {

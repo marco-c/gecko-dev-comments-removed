@@ -202,8 +202,6 @@ function LightweightThemeConsumer(aDocument) {
   Services.obs.addObserver(this, "lightweight-theme-styling-update");
 
   
-  
-  
   if (AppConstants.platform != "linux") {
     this.darkThemeMediaQuery = this._win.matchMedia("(-moz-system-dark-theme)");
     this.darkThemeMediaQuery.addListener(this);
