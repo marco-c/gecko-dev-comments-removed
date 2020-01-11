@@ -7,6 +7,7 @@
 
 
 
+
 "use strict";
 
 
@@ -1152,4 +1153,31 @@ async function waitForDOMIfNeeded(target, selector, expectedLength = 1) {
       });
     }
   });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function toggleBlockedUrl(element, monitor, store, action = "block") {
+  EventUtils.sendMouseEvent({ type: "contextmenu" }, element);
+  const contextMenuId = `request-list-context-${action}-url`;
+  const contextBlockToggle = getContextMenuItem(monitor, contextMenuId);
+  const onRequestComplete = waitForDispatch(
+    store,
+    "REQUEST_BLOCKING_UPDATE_COMPLETE"
+  );
+  contextBlockToggle.click();
+
+  info(`Wait for selected request to be ${action}ed`);
+  await onRequestComplete;
+  info(`Selected request is now ${action}ed`);
 }
