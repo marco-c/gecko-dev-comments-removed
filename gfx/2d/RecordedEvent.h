@@ -27,7 +27,7 @@ const uint32_t kMagicInt = 0xc001feed;
 const uint16_t kMajorRevision = 10;
 
 
-const uint16_t kMinorRevision = 0;
+const uint16_t kMinorRevision = 1;
 
 struct ReferencePtr {
   ReferencePtr() : mLongPtr(0) {}
@@ -319,6 +319,7 @@ class RecordedEvent {
     EXTERNALSURFACECREATION,
     FLUSH,
     DETACHALLSNAPSHOTS,
+    OPTIMIZESOURCESURFACE,
     LAST,
   };
 
