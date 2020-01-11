@@ -172,7 +172,51 @@ static bool IsAllowedToPlayByBlockingModel(const HTMLMediaElement& aElement) {
   return IsWindowAllowedToPlay(aElement.OwnerDoc()->GetInnerWindow());
 }
 
+
+
+
+
+#if defined(MOZ_WIDGET_ANDROID)
+using RType = GVAutoplayRequestType;
+
+static bool IsGVAutoplayRequestAllowed(nsPIDOMWindowInner* aWindow,
+                                       RType aType) {
+  if (!aWindow) {
+    return false;
+  }
+
+  RefPtr<BrowsingContext> context = aWindow->GetBrowsingContext()->Top();
+  GVAutoplayRequestStatus status =
+      aType == RType::eAUDIBLE ? context->GetGVAudibleAutoplayRequestStatus()
+                               : context->GetGVInaudibleAutoplayRequestStatus();
+  return status == GVAutoplayRequestStatus::eALLOWED;
+}
+
+static bool IsGVAutoplayRequestAllowed(const HTMLMediaElement& aElement) {
+  
+  
+  
+  if (IsAllowedToPlayByBlockingModel(aElement)) {
+    return true;
+  }
+
+  RefPtr<nsPIDOMWindowInner> window = aElement.OwnerDoc()->GetInnerWindow();
+  if (!window) {
+    return false;
+  }
+
+  const RType type =
+      IsMediaElementInaudible(aElement) ? RType::eINAUDIBLE : RType::eAUDIBLE;
+  return IsGVAutoplayRequestAllowed(window, type);
+}
+#endif
+
 static bool IsAllowedToPlayInternal(const HTMLMediaElement& aElement) {
+#if defined(MOZ_WIDGET_ANDROID)
+  if (StaticPrefs::media_geckoview_autoplay_request()) {
+    return IsGVAutoplayRequestAllowed(aElement);
+  }
+#endif
   Document* approver = ApproverDocOf(*aElement.OwnerDoc());
 
   bool isInaudible = IsMediaElementInaudible(aElement);
@@ -269,6 +313,20 @@ bool AutoplayPolicy::IsAllowedToPlay(const AudioContext& aContext) {
 
 DocumentAutoplayPolicy AutoplayPolicy::IsAllowedToPlay(
     const Document& aDocument) {
+#if defined(MOZ_WIDGET_ANDROID)
+  if (StaticPrefs::media_geckoview_autoplay_request()) {
+    nsPIDOMWindowInner* window = aDocument.GetInnerWindow();
+    if (IsGVAutoplayRequestAllowed(window, RType::eAUDIBLE)) {
+      return DocumentAutoplayPolicy::Allowed;
+    }
+
+    if (IsGVAutoplayRequestAllowed(window, RType::eINAUDIBLE)) {
+      return DocumentAutoplayPolicy::Allowed_muted;
+    }
+
+    return DocumentAutoplayPolicy::Disallowed;
+  }
+#endif
   if (DefaultAutoplayBehaviour() == nsIAutoplay::ALLOWED ||
       IsWindowAllowedToPlay(aDocument.GetInnerWindow())) {
     return DocumentAutoplayPolicy::Allowed;
