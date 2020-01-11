@@ -253,7 +253,7 @@ void MediaEngineTabVideoSource::Draw() {
     return;
   }
 
-  if (mTrackMain->IsDestroyed()) {
+  if (!mTrackMain || mTrackMain->IsDestroyed()) {
     
     
     return;
