@@ -314,7 +314,11 @@ var gSitePermissionsManager = {
     
     if (
       perm.type !== this._type ||
-      !PERMISSION_STATES.includes(perm.capability)
+      !PERMISSION_STATES.includes(perm.capability) ||
+      
+      (perm.principal.privateBrowsingId !==
+        Services.scriptSecurityManager.DEFAULT_PRIVATE_BROWSING_ID &&
+        perm.expireType === Services.perms.EXPIRE_SESSION)
     ) {
       return;
     }
