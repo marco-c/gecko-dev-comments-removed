@@ -1008,8 +1008,16 @@ const js::ClassExtension MappedArgumentsObject::classExt_ = {
 };
 
 const ObjectOps MappedArgumentsObject::objectOps_ = {
-    nullptr, 
-    MappedArgumentsObject::obj_defineProperty};
+    nullptr,                                    
+    MappedArgumentsObject::obj_defineProperty,  
+    nullptr,                                    
+    nullptr,                                    
+    nullptr,                                    
+    nullptr,                                    
+    nullptr,                                    
+    nullptr,                                    
+    nullptr,                                    
+};
 
 const JSClass MappedArgumentsObject::class_ = {
     "Arguments",

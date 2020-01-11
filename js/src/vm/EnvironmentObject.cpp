@@ -374,15 +374,17 @@ const JSClass VarEnvironmentObject::class_ = {
 
 
 const ObjectOps ModuleEnvironmentObject::objectOps_ = {
-    ModuleEnvironmentObject::lookupProperty,
-    nullptr, 
-    ModuleEnvironmentObject::hasProperty,
-    ModuleEnvironmentObject::getProperty,
-    ModuleEnvironmentObject::setProperty,
-    ModuleEnvironmentObject::getOwnPropertyDescriptor,
-    ModuleEnvironmentObject::deleteProperty,
-    nullptr, 
-    nullptr};
+    ModuleEnvironmentObject::lookupProperty,  
+    nullptr,                                  
+    ModuleEnvironmentObject::hasProperty,     
+    ModuleEnvironmentObject::getProperty,     
+    ModuleEnvironmentObject::setProperty,     
+    ModuleEnvironmentObject::
+        getOwnPropertyDescriptor,             
+    ModuleEnvironmentObject::deleteProperty,  
+    nullptr,                                  
+    nullptr,                                  
+};
 
 const JSClassOps ModuleEnvironmentObject::classOps_ = {
     nullptr,                                
@@ -812,15 +814,15 @@ static bool with_DeleteProperty(JSContext* cx, HandleObject obj, HandleId id,
 }
 
 static const ObjectOps WithEnvironmentObjectOps = {
-    with_LookupProperty,
-    with_DefineProperty,
-    with_HasProperty,
-    with_GetProperty,
-    with_SetProperty,
-    with_GetOwnPropertyDescriptor,
-    with_DeleteProperty,
-    nullptr, 
-    nullptr,
+    with_LookupProperty,            
+    with_DefineProperty,            
+    with_HasProperty,               
+    with_GetProperty,               
+    with_SetProperty,               
+    with_GetOwnPropertyDescriptor,  
+    with_DeleteProperty,            
+    nullptr,                        
+    nullptr,                        
 };
 
 const JSClass WithEnvironmentObject::class_ = {
@@ -1234,15 +1236,15 @@ static bool lexicalError_DeleteProperty(JSContext* cx, HandleObject obj,
 }
 
 static const ObjectOps RuntimeLexicalErrorObjectObjectOps = {
-    lexicalError_LookupProperty,
-    nullptr, 
-    lexicalError_HasProperty,
-    lexicalError_GetProperty,
-    lexicalError_SetProperty,
-    lexicalError_GetOwnPropertyDescriptor,
-    lexicalError_DeleteProperty,
-    nullptr, 
-    nullptr, 
+    lexicalError_LookupProperty,            
+    nullptr,                                
+    lexicalError_HasProperty,               
+    lexicalError_GetProperty,               
+    lexicalError_SetProperty,               
+    lexicalError_GetOwnPropertyDescriptor,  
+    lexicalError_DeleteProperty,            
+    nullptr,                                
+    nullptr,                                
 };
 
 const JSClass RuntimeLexicalErrorObject::class_ = {

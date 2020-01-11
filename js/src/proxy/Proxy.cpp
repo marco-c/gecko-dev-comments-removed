@@ -749,11 +749,16 @@ const ClassExtension js::ProxyClassExtension = {
 };
 
 const ObjectOps js::ProxyObjectOps = {
-    proxy_LookupProperty, Proxy::defineProperty,
-    Proxy::has,           Proxy::get,
-    Proxy::set,           Proxy::getOwnPropertyDescriptor,
-    proxy_DeleteProperty, Proxy::getElements,
-    Proxy::fun_toString};
+    proxy_LookupProperty,             
+    Proxy::defineProperty,            
+    Proxy::has,                       
+    Proxy::get,                       
+    Proxy::set,                       
+    Proxy::getOwnPropertyDescriptor,  
+    proxy_DeleteProperty,             
+    Proxy::getElements,               
+    Proxy::fun_toString,              
+};
 
 static const JSFunctionSpec proxy_static_methods[] = {
     JS_FN("revocable", proxy_revocable, 2, 0), JS_FS_END};
