@@ -163,7 +163,7 @@ void TextTrack::GetId(nsAString& aId) const {
   
   
   if (mTrackElement) {
-    mTrackElement->GetAttribute(NS_LITERAL_STRING("id"), aId);
+    mTrackElement->GetAttr(nsGkAtoms::id, aId);
   }
 }
 

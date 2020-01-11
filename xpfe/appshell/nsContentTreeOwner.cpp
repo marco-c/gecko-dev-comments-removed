@@ -233,7 +233,7 @@ nsContentTreeOwner::SetPersistence(bool aPersistPosition, bool aPersistSize,
   if (!docShellElement) return NS_ERROR_FAILURE;
 
   nsAutoString persistString;
-  docShellElement->GetAttribute(NS_LITERAL_STRING("persist"), persistString);
+  docShellElement->GetAttr(nsGkAtoms::persist, persistString);
 
   bool saveString = false;
   int32_t index;
@@ -301,7 +301,7 @@ nsContentTreeOwner::GetPersistence(bool* aPersistPosition, bool* aPersistSize,
   if (!docShellElement) return NS_ERROR_FAILURE;
 
   nsAutoString persistString;
-  docShellElement->GetAttribute(NS_LITERAL_STRING("persist"), persistString);
+  docShellElement->GetAttr(nsGkAtoms::persist, persistString);
 
   
   

@@ -622,10 +622,10 @@ nsresult DragDataProducer::Produce(DataTransfer* aDataTransfer, bool* aCanDrag,
           HTMLAreaElement::FromNodeOrNull(draggedNode);
       if (areaElem) {
         
-        areaElem->GetAttribute(NS_LITERAL_STRING("alt"), mTitleString);
+        areaElem->GetAttr(nsGkAtoms::alt, mTitleString);
         if (mTitleString.IsEmpty()) {
           
-          areaElem->GetAttribute(NS_LITERAL_STRING("href"), mTitleString);
+          areaElem->GetAttr(nsGkAtoms::href, mTitleString);
         }
 
         
@@ -662,7 +662,7 @@ nsresult DragDataProducer::Produce(DataTransfer* aDataTransfer, bool* aCanDrag,
         
         
         if (imageElement) {
-          imageElement->GetAttribute(NS_LITERAL_STRING("alt"), mTitleString);
+          imageElement->GetAttr(nsGkAtoms::alt, mTitleString);
         }
 
         if (mTitleString.IsEmpty()) {
