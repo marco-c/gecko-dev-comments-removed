@@ -1,5 +1,3 @@
-
-
 var SRIScriptTest = function(pass, name, src, integrityValue, crossoriginValue, nonce) {
     this.pass = pass;
     this.name = "Script: " + name;
