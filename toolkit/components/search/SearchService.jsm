@@ -43,7 +43,11 @@ XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "gModernConfig",
   SearchUtils.BROWSER_SEARCH_PREF + "modernConfig",
-  false
+  false,
+  () => {
+    
+    Services.search.reInit();
+  }
 );
 
 
