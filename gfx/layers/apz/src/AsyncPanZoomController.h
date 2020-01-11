@@ -1044,9 +1044,14 @@ class AsyncPanZoomController {
   
   ExternalPoint mStartTouch;
 
+  Maybe<CompositionPayload> mCompositedScrollPayload;
+  Maybe<CompositionPayload> mScrollPayload;
+
   friend class Axis;
 
  public:
+  Maybe<CompositionPayload> NotifyScrollSampling();
+
   
 
 
@@ -1501,6 +1506,8 @@ class AsyncPanZoomController {
   void CallDispatchScroll(ParentLayerPoint& aStartPoint,
                           ParentLayerPoint& aEndPoint,
                           OverscrollHandoffState& aOverscrollHandoffState);
+
+  void RecordScrollPayload(const TimeStamp& aTimeStamp);
 
   
 
