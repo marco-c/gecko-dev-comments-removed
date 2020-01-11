@@ -1042,9 +1042,9 @@ nsresult nsPrintJob::Print(Document* aSourceDoc,
   
   
   
-  Document* doc = mPrtPreview && mPrtPreview->mPrintObject
-                      ? mPrtPreview->mPrintObject->mDocument.get()
-                      : aSourceDoc;
+  RefPtr<Document> doc = mPrtPreview && mPrtPreview->mPrintObject
+                             ? mPrtPreview->mPrintObject->mDocument.get()
+                             : aSourceDoc;
 
   return CommonPrint(false, aPrintSettings, aWebProgressListener, doc);
 }
@@ -1468,7 +1468,8 @@ nsresult nsPrintJob::ReconstructAndReflow(bool doSetPixelScale) {
                      float(printData->mPrintDC->AppUnitsPerDevPixel());
     po->mPresContext->SetPrintPreviewScale(mScreenDPI / printDPI);
 
-    po->mPresShell->ReconstructFrames();
+    RefPtr<PresShell> presShell(po->mPresShell);
+    presShell->ReconstructFrames();
 
     
     
@@ -1491,7 +1492,6 @@ nsresult nsPrintJob::ReconstructAndReflow(bool doSetPixelScale) {
       }
     }
 
-    RefPtr<PresShell> presShell = po->mPresShell;
     presShell->FlushPendingNotifications(FlushType::Layout);
 
     
@@ -1817,7 +1817,7 @@ nsresult nsPrintJob::ResumePrintAfterResourcesLoaded(bool aCleanupOnError) {
 
 
 
-NS_IMETHODIMP
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
 nsPrintJob::OnStateChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
                           uint32_t aStateFlags, nsresult aStatus) {
   nsAutoCString name;
@@ -3044,9 +3044,8 @@ nsresult nsPrintJob::StartPagePrintTimer(const UniquePtr<nsPrintObject>& aPO) {
 }
 
 
-NS_IMETHODIMP
-nsPrintJob::Observe(nsISupports* aSubject, const char* aTopic,
-                    const char16_t* aData) {
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP nsPrintJob::Observe(
+    nsISupports* aSubject, const char* aTopic, const char16_t* aData) {
   
   if (aTopic) {
     return NS_OK;

@@ -93,9 +93,9 @@ class nsPrintJob final : public nsIObserver,
 
 
 
-  nsresult Print(mozilla::dom::Document* aSourceDoc,
-                 nsIPrintSettings* aPrintSettings,
-                 nsIWebProgressListener* aWebProgressListener);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+  Print(mozilla::dom::Document* aSourceDoc, nsIPrintSettings* aPrintSettings,
+        nsIWebProgressListener* aWebProgressListener);
 
   
 
@@ -107,9 +107,9 @@ class nsPrintJob final : public nsIObserver,
 
 
 
-  nsresult PrintPreview(mozilla::dom::Document* aSourceDoc,
-                        nsIPrintSettings* aPrintSettings,
-                        nsIWebProgressListener* aWebProgressListener);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult PrintPreview(
+      mozilla::dom::Document* aSourceDoc, nsIPrintSettings* aPrintSettings,
+      nsIWebProgressListener* aWebProgressListener);
 
   bool IsDoingPrint() const { return mIsDoingPrinting; }
   bool IsDoingPrintPreview() const { return mIsDoingPrintPreview; }
@@ -148,7 +148,7 @@ class nsPrintJob final : public nsIObserver,
   nsresult CleanupOnFailure(nsresult aResult, bool aIsPrinting);
   
   
-  nsresult FinishPrintPreview();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult FinishPrintPreview();
   void FirePrintingErrorEvent(nsresult aPrintError);
   bool CheckBeforeDestroy() const { return mPrt && mPrt->mPreparingForPrint; }
 
@@ -169,8 +169,8 @@ class nsPrintJob final : public nsIObserver,
 
   ~nsPrintJob();
 
-  nsresult DocumentReadyForPrinting();
-  nsresult SetupToPrintContent();
+  MOZ_CAN_RUN_SCRIPT nsresult DocumentReadyForPrinting();
+  MOZ_CAN_RUN_SCRIPT nsresult SetupToPrintContent();
   nsresult EnablePOsForPrinting();
   nsPrintObject* FindSmallestSTF();
 
@@ -216,13 +216,15 @@ class nsPrintJob final : public nsIObserver,
                              nsAString& aTitle, nsAString& aURLStr,
                              eDocTitleDefault aDefType);
 
-  nsresult CommonPrint(bool aIsPrintPreview, nsIPrintSettings* aPrintSettings,
-                       nsIWebProgressListener* aWebProgressListener,
-                       mozilla::dom::Document* aSourceDoc);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  CommonPrint(bool aIsPrintPreview, nsIPrintSettings* aPrintSettings,
+              nsIWebProgressListener* aWebProgressListener,
+              mozilla::dom::Document* aSourceDoc);
 
-  nsresult DoCommonPrint(bool aIsPrintPreview, nsIPrintSettings* aPrintSettings,
-                         nsIWebProgressListener* aWebProgressListener,
-                         mozilla::dom::Document* aSourceDoc);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  DoCommonPrint(bool aIsPrintPreview, nsIPrintSettings* aPrintSettings,
+                nsIWebProgressListener* aWebProgressListener,
+                mozilla::dom::Document* aSourceDoc);
 
   void FirePrintCompletionEvent();
 
@@ -237,18 +239,18 @@ class nsPrintJob final : public nsIObserver,
 
 
 
-  nsresult ResumePrintAfterResourcesLoaded(bool aCleanupOnError);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  ResumePrintAfterResourcesLoaded(bool aCleanupOnError);
 
   nsresult SetRootView(nsPrintObject* aPO, bool& aDoReturn,
                        bool& aDocumentIsTopLevel, nsSize& aAdjSize);
   nsView* GetParentViewForRoot();
   bool DoSetPixelScale();
   void UpdateZoomRatio(nsPrintObject* aPO, bool aSetPixelScale);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  nsresult ReconstructAndReflow(bool aDoSetPixelScale);
+  MOZ_CAN_RUN_SCRIPT nsresult ReconstructAndReflow(bool aDoSetPixelScale);
   nsresult UpdateSelectionAndShrinkPrintObject(nsPrintObject* aPO,
                                                bool aDocumentIsTopLevel);
-  nsresult InitPrintDocConstruction(bool aHandleError);
+  MOZ_CAN_RUN_SCRIPT nsresult InitPrintDocConstruction(bool aHandleError);
   void FirePrintPreviewUpdateEvent();
 
   void PageDone(nsresult aResult);

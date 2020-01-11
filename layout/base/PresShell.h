@@ -176,7 +176,7 @@ class PresShell final : public nsStubDocumentObserver,
   typedef nsTHashtable<nsPtrHashKey<nsIFrame>> VisibleFrames;
 
  public:
-  PresShell();
+  explicit PresShell(Document* aDocument);
 
   
   NS_DECL_ISUPPORTS
@@ -237,7 +237,7 @@ class PresShell final : public nsStubDocumentObserver,
   static nsAccessibilityService* GetAccessibilityService();
 #endif  
 
-  void Init(Document*, nsPresContext*, nsViewManager*);
+  void Init(nsPresContext*, nsViewManager*);
 
   
 
@@ -732,7 +732,7 @@ class PresShell final : public nsStubDocumentObserver,
   
 
 
-  void ReconstructFrames();
+  MOZ_CAN_RUN_SCRIPT void ReconstructFrames();
 
   
 
@@ -2818,7 +2818,10 @@ class PresShell final : public nsStubDocumentObserver,
 
   
   
-  RefPtr<Document> mDocument;
+  
+  
+  
+  RefPtr<Document> const mDocument;
   RefPtr<nsPresContext> mPresContext;
   
   RefPtr<StyleSheet> mPrefStyleSheet;
