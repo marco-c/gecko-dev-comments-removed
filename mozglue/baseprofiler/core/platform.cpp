@@ -622,7 +622,7 @@ class ActivePS {
 
     size_t n = aMallocSizeOf(sInstance);
 
-    n += sInstance->mProfileBuffer.SizeOfIncludingThis(aMallocSizeOf);
+    n += sInstance->mProfileBuffer.SizeOfExcludingThis(aMallocSizeOf);
 
     
     
