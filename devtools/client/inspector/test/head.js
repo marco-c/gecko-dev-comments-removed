@@ -249,6 +249,24 @@ var getNodeFrontInFrame = async function(selector, frameSelector, inspector) {
 
 
 
+var getShadowRoot = async function(hostSelector, inspector) {
+  const hostFront = await getNodeFront(hostSelector, inspector);
+  const { nodes } = await inspector.walker.children(hostFront);
+
+  
+  return nodes.filter(node => node.isShadowRoot)[0];
+};
+
+
+
+
+
+
+
+
+
+
+
 
 
 var getNodeFrontInShadowDom = async function(
@@ -256,11 +274,7 @@ var getNodeFrontInShadowDom = async function(
   hostSelector,
   inspector
 ) {
-  const hostFront = await getNodeFront(hostSelector, inspector);
-  const { nodes } = await inspector.walker.children(hostFront);
-
-  
-  const shadowRoot = nodes.filter(node => node.isShadowRoot)[0];
+  const shadowRoot = await getShadowRoot(hostSelector, inspector);
   if (!shadowRoot) {
     throw new Error(
       "Could not find a shadow root under selector: " + hostSelector
