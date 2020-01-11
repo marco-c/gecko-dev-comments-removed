@@ -7,13 +7,27 @@
 #ifndef gc_Allocator_h
 #define gc_Allocator_h
 
-#include "gc/GCLock.h"
-#include "gc/Heap.h"
+#include <stdint.h>
+
+#include "gc/AllocKind.h"
 #include "js/RootingAPI.h"
 
 class JSFatInlineString;
 
 namespace js {
+
+enum AllowGC { NoGC = 0, CanGC = 1 };
+
+namespace gc {
+
+
+
+
+
+
+enum InitialHeap : uint8_t { DefaultHeap, TenuredHeap };
+
+}  
 
 
 

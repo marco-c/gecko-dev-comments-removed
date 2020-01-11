@@ -25,7 +25,6 @@
 #include "builtin/streams/ReadableStreamReader.h"  
 #include "builtin/streams/StreamController.h"  
 #include "builtin/streams/TeeState.h"          
-#include "gc/Heap.h"
 #include "js/ArrayBuffer.h"  
 #include "js/Class.h"        
 #include "js/PropertySpec.h"

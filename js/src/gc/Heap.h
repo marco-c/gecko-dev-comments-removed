@@ -34,13 +34,6 @@ class TenuredCell;
 struct Chunk;
 
 
-
-
-
-
-enum InitialHeap : uint8_t { DefaultHeap, TenuredHeap };
-
-
 const uintptr_t LargestTaggedNullCellPointer = (1 << CellAlignShift) - 1;
 
 

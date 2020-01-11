@@ -19,7 +19,6 @@
 #include "builtin/streams/ReadableStreamDefaultControllerOperations.h"  
 #include "builtin/streams/ReadableStreamInternals.h"  
 #include "builtin/streams/ReadableStreamReader.h"  
-#include "gc/Heap.h"
 #include "js/ArrayBuffer.h"  
 #include "js/PropertySpec.h"
 #include "vm/Interpreter.h"
