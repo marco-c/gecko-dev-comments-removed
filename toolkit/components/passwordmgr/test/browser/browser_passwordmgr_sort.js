@@ -63,7 +63,7 @@ add_task(async function test() {
     }
 
     
-    const PWMGR_DLG = "chrome://passwordmgr/content/passwordManager.xul";
+    const PWMGR_DLG = "chrome://passwordmgr/content/passwordManager.xhtml";
     let pwmgrdlg = window.openDialog(PWMGR_DLG, "Toolkit:PasswordManager", "");
     SimpleTest.waitForFocus(doTest, pwmgrdlg);
 

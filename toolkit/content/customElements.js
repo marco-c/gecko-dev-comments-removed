@@ -770,7 +770,7 @@
   
   
   const isDummyDocument =
-    document.documentURI == "chrome://extensions/content/dummy.xul";
+    document.documentURI == "chrome://extensions/content/dummy.xhtml";
   if (!isDummyDocument) {
     for (let script of [
       "chrome://global/content/elements/arrowscrollbox.js",
