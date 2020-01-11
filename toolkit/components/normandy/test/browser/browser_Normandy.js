@@ -129,6 +129,9 @@ decorate_task(
     );
 
     Normandy.observe(null, "sessionstore-windows-restored");
+    
+    await null;
+
     ok(
       finishInitStub.called,
       "Once the sessionstore-windows-restored event is observed, finishInit should be called."

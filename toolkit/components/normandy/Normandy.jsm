@@ -20,6 +20,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   RecipeRunner: "resource://normandy/lib/RecipeRunner.jsm",
   ShieldPreferences: "resource://normandy/lib/ShieldPreferences.jsm",
   TelemetryEvents: "resource://normandy/lib/TelemetryEvents.jsm",
+  PromiseUtils: "resource://gre/modules/PromiseUtils.jsm",
 });
 
 var EXPORTED_SYMBOLS = ["Normandy"];
@@ -43,6 +44,13 @@ var Normandy = {
   rolloutPrefsChanged: {},
 
   async init({ runAsync = true } = {}) {
+    this.uiAvailableDeferred = PromiseUtils.defer();
+    if (runAsync) {
+      Services.obs.addObserver(this, UI_AVAILABLE_NOTIFICATION);
+    } else {
+      this.uiAvailableDeferred.resolve();
+    }
+
     
     await NormandyMigrations.applyAll();
     this.rolloutPrefsChanged = this.applyStartupPrefs(
@@ -52,26 +60,24 @@ var Normandy = {
       STARTUP_EXPERIMENT_PREFS_BRANCH
     );
 
-    if (runAsync) {
-      Services.obs.addObserver(this, UI_AVAILABLE_NOTIFICATION);
-    } else {
-      
-      try {
-        Services.obs.removeObserver(this, UI_AVAILABLE_NOTIFICATION);
-      } catch (e) {}
-
-      await this.finishInit();
-    }
+    
+    
+    this.uiAvailableDeferred.promise.then(() => this.finishInit());
   },
 
   observe(subject, topic, data) {
     if (topic === UI_AVAILABLE_NOTIFICATION) {
       Services.obs.removeObserver(this, UI_AVAILABLE_NOTIFICATION);
-      this.finishInit();
+      this.uiAvailableDeferred.resolve();
     }
   },
 
   async finishInit() {
+    
+    try {
+      Services.obs.removeObserver(this, UI_AVAILABLE_NOTIFICATION);
+    } catch (e) {}
+
     try {
       TelemetryEvents.init();
     } catch (err) {
