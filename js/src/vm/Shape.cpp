@@ -85,36 +85,43 @@ bool ShapeTable::init(JSContext* cx, Shape* lastProp) {
 void Shape::removeFromDictionary(NativeObject* obj) {
   MOZ_ASSERT(inDictionary());
   MOZ_ASSERT(obj->inDictionaryMode());
-  MOZ_ASSERT(listp);
+  MOZ_ASSERT(!dictNext.isNone());
 
   MOZ_ASSERT(obj->shape()->inDictionary());
-  MOZ_ASSERT(obj->shape()->listp == obj->shapePtr());
+  MOZ_ASSERT(obj->shape()->dictNext.toObject() == obj);
 
   if (parent) {
-    parent->listp = listp;
+    parent->setDictionaryNextPtr(dictNext);
   }
-  *listp = parent;
-  listp = nullptr;
+  *dictNext.prevPtr() = parent;
+  clearDictionaryNextPtr();
 
   obj->shape()->clearCachedBigEnoughForShapeTable();
 }
 
-void Shape::insertIntoDictionary(GCPtrShape* dictp) {
+void Shape::insertIntoDictionaryBefore(DictionaryShapeLink next) {
   
   
   MOZ_ASSERT(inDictionary());
-  MOZ_ASSERT(!listp);
+  MOZ_ASSERT(dictNext.isNone());
 
-  MOZ_ASSERT_IF(*dictp, (*dictp)->inDictionary());
-  MOZ_ASSERT_IF(*dictp, (*dictp)->listp == dictp);
-  MOZ_ASSERT_IF(*dictp, zone() == (*dictp)->zone());
+  Shape* prev = *next.prevPtr();
 
-  setParent(dictp->get());
-  if (parent) {
-    parent->listp = &parent;
+#ifdef DEBUG
+  if (prev) {
+    MOZ_ASSERT(prev->inDictionary());
+    MOZ_ASSERT(prev->dictNext == next);
+    MOZ_ASSERT(zone() == prev->zone());
   }
-  listp = (GCPtrShape*)dictp;
-  *dictp = this;
+#endif
+
+  setParent(prev);
+  if (parent) {
+    parent->setNextDictionaryShape(this);
+  }
+
+  setDictionaryNextPtr(next);
+  *dictNext.prevPtr() = this;
 }
 
 bool Shape::makeOwnBaseShape(JSContext* cx) {
@@ -423,7 +430,8 @@ Shape* Shape::replaceLastProperty(JSContext* cx, StackBaseShape& base,
         return nullptr;
       }
     }
-    shape->initDictionaryShape(child, obj->numFixedSlots(), obj->shapePtr());
+    shape->initDictionaryShape(child, obj->numFixedSlots(),
+                               DictionaryShapeLink(obj));
     return shape;
   }
 
@@ -456,7 +464,8 @@ Shape* Shape::replaceLastProperty(JSContext* cx, StackBaseShape& base,
     if (!shape) {
       return nullptr;
     }
-    shape->initDictionaryShape(child, obj->numFixedSlots(), obj->shapePtr());
+    shape->initDictionaryShape(child, obj->numFixedSlots(),
+                               DictionaryShapeLink(obj));
     return shape;
   }
 
@@ -499,9 +508,12 @@ bool js::NativeObject::toDictionaryMode(JSContext* cx, HandleNativeObject obj) {
       return false;
     }
 
-    GCPtrShape* listp = dictionaryShape ? &dictionaryShape->parent : nullptr;
+    DictionaryShapeLink next;
+    if (dictionaryShape) {
+      next.setShape(dictionaryShape);
+    }
     StackShape child(shape);
-    dprop->initDictionaryShape(child, obj->numFixedSlots(), listp);
+    dprop->initDictionaryShape(child, obj->numFixedSlots(), next);
 
     if (!dictionaryShape) {
       root = dprop;
@@ -523,8 +535,8 @@ bool js::NativeObject::toDictionaryMode(JSContext* cx, HandleNativeObject obj) {
     return false;
   }
 
-  MOZ_ASSERT(root->listp == nullptr);
-  root->listp = obj->shapePtr();
+  MOZ_ASSERT(root->dictNext.isNone());
+  root->setDictionaryObject(obj);
   obj->setShape(root);
 
   MOZ_ASSERT(obj->inDictionaryMode());
@@ -860,7 +872,8 @@ Shape* NativeObject::addEnumerableDataProperty(JSContext* cx,
         return nullptr;
       }
     }
-    shape->initDictionaryShape(child, obj->numFixedSlots(), obj->shapePtr());
+    shape->initDictionaryShape(child, obj->numFixedSlots(),
+                               DictionaryShapeLink(obj));
   } else {
     uint32_t slot = obj->slotSpan();
     MOZ_ASSERT(slot >= JSSLOT_FREE(obj->getClass()));
@@ -1393,7 +1406,7 @@ void NativeObject::clear(JSContext* cx, HandleNativeObject obj) {
   MOZ_ASSERT(shape->isEmptyShape());
 
   if (obj->inDictionaryMode()) {
-    shape->listp = obj->shapePtr();
+    shape->setDictionaryObject(obj);
   }
 
   MOZ_ALWAYS_TRUE(obj->setLastProperty(cx, shape));
@@ -1476,7 +1489,8 @@ Shape* NativeObject::replaceWithNewEquivalentShape(JSContext* cx,
 
 
   StackShape nshape(oldShape);
-  newShape->initDictionaryShape(nshape, obj->numFixedSlots(), oldShape->listp);
+  newShape->initDictionaryShape(nshape, obj->numFixedSlots(),
+                                oldShape->dictNext);
 
   MOZ_ASSERT(newShape->parent == oldShape);
   oldShape->removeFromDictionary(obj);
@@ -1896,8 +1910,8 @@ void Shape::sweep(JSFreeOp* fop) {
 
   if (parent && parent->isMarkedAny()) {
     if (inDictionary()) {
-      if (parent->listp == &parent) {
-        parent->listp = nullptr;
+      if (parent->dictNext == DictionaryShapeLink(this)) {
+        parent->dictNext.setNone();
       }
     } else {
       parent->removeChild(fop, this);
@@ -1912,40 +1926,18 @@ void Shape::finalize(JSFreeOp* fop) {
 }
 
 void Shape::fixupDictionaryShapeAfterMovingGC() {
-  if (!listp) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  bool listpPointsIntoShape = !MaybeForwarded(base())->isOwned();
-
-#ifdef DEBUG
-  
-  
-  
-  
-  Cell* cell = reinterpret_cast<Cell*>(uintptr_t(listp) & ~gc::CellAlignMask);
-  gc::AllocKind kind = TenuredCell::fromPointer(cell)->getAllocKind();
-  MOZ_ASSERT_IF(listpPointsIntoShape, IsShapeAllocKind(kind));
-  MOZ_ASSERT_IF(!listpPointsIntoShape, IsObjectAllocKind(kind));
-#endif
-
-  if (listpPointsIntoShape) {
-    
-    Shape* next = Shape::fromParentFieldPointer(uintptr_t(listp));
-    if (gc::IsForwarded(next)) {
-      listp = &gc::Forwarded(next)->parent;
+  if (dictNext.isShape()) {
+    Shape* shape = dictNext.toShape();
+    if (gc::IsForwarded(shape)) {
+      dictNext.setShape(gc::Forwarded(shape));
+    }
+  } else if (dictNext.isObject()) {
+    JSObject* obj = dictNext.toObject();
+    if (gc::IsForwarded(obj)) {
+      dictNext.setObject(gc::Forwarded(obj));
     }
   } else {
-    
-    JSObject* last = JSObject::fromShapeFieldPointer(uintptr_t(listp));
-    if (gc::IsForwarded(last)) {
-      listp = gc::Forwarded(last)->as<NativeObject>().shapePtr();
-    }
+    MOZ_ASSERT(dictNext.isNone());
   }
 }
 

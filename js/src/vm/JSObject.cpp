@@ -1754,7 +1754,7 @@ void JSObject::fixDictionaryShapeAfterSwap() {
   
   
   if (isNative() && as<NativeObject>().inDictionaryMode()) {
-    as<NativeObject>().shape()->listp = as<NativeObject>().shapePtr();
+    shape()->dictNext.setObject(this);
   }
 }
 

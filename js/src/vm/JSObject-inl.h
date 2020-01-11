@@ -103,8 +103,8 @@ MOZ_ALWAYS_INLINE void js::NativeObject::sweepDictionaryListPointer() {
   
   
   
-  if (shape()->listp == shapePtr()) {
-    shape()->listp = nullptr;
+  if (shape()->dictNext == DictionaryShapeLink(this)) {
+    shape()->dictNext.setNone();
   }
 }
 
@@ -114,8 +114,8 @@ js::NativeObject::updateDictionaryListPointerAfterMinorGC(NativeObject* old) {
 
   
   
-  if (shape()->listp == old->shapePtr()) {
-    shape()->listp = shapePtr();
+  if (shape()->dictNext == DictionaryShapeLink(old)) {
+    shape()->dictNext = DictionaryShapeLink(this);
   }
 }
 
