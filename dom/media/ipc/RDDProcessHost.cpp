@@ -35,13 +35,8 @@ RDDProcessHost::RDDProcessHost(Listener* aListener)
   MOZ_COUNT_CTOR(RDDProcessHost);
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
-  
-  
-  
-  
   if (!sLaunchWithMacSandbox) {
-    sLaunchWithMacSandbox =
-        Preferences::GetBool("security.sandbox.rdd.mac.earlyinit");
+    sLaunchWithMacSandbox = (PR_GetEnv("MOZ_DISABLE_RDD_SANDBOX") == nullptr);
   }
   mDisableOSActivityMode = sLaunchWithMacSandbox;
 #endif
@@ -162,15 +157,7 @@ void RDDProcessHost::InitAfterConnect(bool aSucceeded) {
     
     mPrefSerializer = nullptr;
 
-    bool startMacSandbox = false;
-
-#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
-    
-    
-    startMacSandbox = !sLaunchWithMacSandbox;
-#endif
-
-    if (!mRDDChild->Init(startMacSandbox)) {
+    if (!mRDDChild->Init()) {
       
       
       
