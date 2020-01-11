@@ -1699,6 +1699,13 @@ InplaceEditor.prototype = {
 
 
   _isSingleLine: function() {
+    if (!this.multiline) {
+      
+      
+      
+      
+      return true;
+    }
     const inputRect = this.input.getBoundingClientRect();
     return inputRect.height < 2 * this.inputCharDimensions.height;
   },
