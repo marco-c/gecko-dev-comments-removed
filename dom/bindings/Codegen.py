@@ -1215,9 +1215,6 @@ class CGHeaders(CGWrapper):
             getAllTypes(descriptors + callbackDescriptors, dictionaries,
                         callbacks))
 
-        
-        declareIncludes.discard(prefix + ".h")
-
         def addHeaderForFunc(func, desc):
             if func is None:
                 return
@@ -1300,6 +1297,9 @@ class CGHeaders(CGWrapper):
             if jsParent:
                 parentDesc = jsImplemented.getDescriptor(jsParent.identifier.name)
                 declareIncludes.add(parentDesc.jsImplParentHeader)
+
+        
+        declareIncludes.discard(prefix + ".h")
 
         
         def _includeString(includes):
