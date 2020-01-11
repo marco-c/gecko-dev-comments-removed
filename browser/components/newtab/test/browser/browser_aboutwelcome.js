@@ -15,7 +15,6 @@ async function setTrailheadBranch(value) {
   
   Services.prefs.clearUserPref("trailhead.firstrun.didSeeAboutWelcome");
   await ASRouter.setState({ trailheadInitialized: false });
-  await ASRouter.setupTrailhead();
 
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref(BRANCH_PREF);
