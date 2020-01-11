@@ -266,7 +266,8 @@ pref("dom.workers.maxPerDomain", 512);
 pref("dom.serviceWorkers.idle_timeout", 30000);
 
 
-pref("dom.serviceWorkers.idle_extended_timeout", 300000);
+
+pref("dom.serviceWorkers.idle_extended_timeout", 30000);
 
 
 
