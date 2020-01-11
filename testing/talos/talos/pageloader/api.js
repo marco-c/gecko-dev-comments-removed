@@ -85,7 +85,7 @@ async function talosStart() {
 
   
   
-  let chromeURL = "chrome://pageloader/content/pageloader.xul";
+  let chromeURL = "chrome://pageloader/content/pageloader.xhtml";
 
   let args = {};
   args.wrappedJSObject = args;
