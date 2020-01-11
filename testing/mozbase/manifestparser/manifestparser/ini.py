@@ -138,13 +138,6 @@ def read_ini(fp, variables=None, default='DEFAULT', defaults_only=False,
             raise IniParseError(fp, linenum, "Unexpected line '{}'".format(stripped))
 
     
-    
-    if 'server-root' in variables:
-        root = os.path.join(os.path.dirname(fp.name),
-                            variables['server-root'])
-        variables['server-root'] = os.path.abspath(root)
-
-    
     if defaults_only:
         return [(default, variables)]
 

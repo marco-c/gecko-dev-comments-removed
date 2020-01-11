@@ -341,26 +341,6 @@ yellow = submarine
         self.assertEqual(parser.get('name', disabled='NO'),
                          ['testSecond.js'])
 
-    def test_server_root(self):
-        """
-        Test server_root properly expands as an absolute path
-        """
-        server_example = os.path.join(here, 'parent', 'level_1', 'level_2',
-                                      'level_3', 'level_3_server-root.ini')
-        parser = ManifestParser(manifests=(server_example,))
-
-        
-        self.assertEqual(parser.get('name', **{'other-root': '../root'}),
-                         ['test_3'])
-
-        
-        
-        self.assertEqual(parser.get('name', **{'server-root': '../root'}), [])
-
-        
-        self.assertEqual(parser.get('server-root')[0],
-                         os.path.join(here, 'parent', 'root'))
-
     def test_copy(self):
         """Test our ability to copy a set of manifests"""
 
