@@ -1961,16 +1961,17 @@ void FragmentOrElement::SetInnerHTMLInternal(const nsAString& aInnerHTML,
 
   nsAutoScriptLoaderDisabler sld(doc);
 
-  nsAtom* contextLocalName = NodeInfo()->NameAtom();
-  int32_t contextNameSpaceID = GetNameSpaceID();
-
+  FragmentOrElement* parseContext = this;
   if (ShadowRoot* shadowRoot = ShadowRoot::FromNode(this)) {
     
-    contextLocalName = shadowRoot->GetHost()->NodeInfo()->NameAtom();
-    contextNameSpaceID = shadowRoot->GetHost()->GetNameSpaceID();
+    
+    parseContext = shadowRoot->GetHost();
   }
 
   if (doc->IsHTMLDocument()) {
+    nsAtom* contextLocalName = parseContext->NodeInfo()->NameAtom();
+    int32_t contextNameSpaceID = parseContext->GetNameSpaceID();
+
     int32_t oldChildCount = target->GetChildCount();
     aError = nsContentUtils::ParseFragmentHTML(
         aInnerHTML, target, contextLocalName, contextNameSpaceID,
@@ -1981,14 +1982,14 @@ void FragmentOrElement::SetInnerHTMLInternal(const nsAString& aInnerHTML,
                                                        oldChildCount);
   } else {
     RefPtr<DocumentFragment> df = nsContentUtils::CreateContextualFragment(
-        target, aInnerHTML, true, aError);
+        parseContext, aInnerHTML, true, aError);
     if (!aError.Failed()) {
       
       
       
       nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
 
-      static_cast<nsINode*>(target)->AppendChild(*df, aError);
+      target->AppendChild(*df, aError);
       mb.NodesAdded();
     }
   }
