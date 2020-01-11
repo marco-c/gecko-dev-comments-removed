@@ -144,7 +144,12 @@ add_task(async function test_per_window_ntp_theme() {
       };
 
       let { id: winId } = await browser.windows.getCurrent();
-      let { id: secondWinId } = await browser.windows.create();
+      
+      
+      
+      let { id: secondWinId } = await browser.windows.create({
+        url: "about:blank",
+      });
 
       browser.test.log("Test that single window update works");
       await browser.theme.update(winId, darkTextTheme);
@@ -175,6 +180,8 @@ add_task(async function test_per_window_ntp_theme() {
     async ({ theme, isBrightText, winId }) => {
       let win = Services.wm.getOuterWindowWithId(winId);
       win.NewTabPagePreloading.removePreloadedBrowser(win);
+      
+      
       for (let url of ["about:newtab", "about:home", "about:welcome"]) {
         info("Opening url: " + url);
         await BrowserTestUtils.withNewTab(
