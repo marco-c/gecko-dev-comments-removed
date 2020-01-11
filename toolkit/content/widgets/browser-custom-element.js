@@ -1013,20 +1013,6 @@
       this._wrapURIChangeCall(() => this.webNavigation.gotoIndex(aIndex));
     }
 
-    
-
-
-
-
-
-    _setCurrentURI(aURI) {
-      if (this.isRemoteBrowser) {
-        this._remoteWebProgressManager.setCurrentURI(aURI);
-      } else {
-        this.docShell.setCurrentURI(aURI);
-      }
-    }
-
     preserveLayers(preserve) {
       if (!this.isRemoteBrowser) {
         return;
