@@ -11,6 +11,10 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+const { UnknownMethodError } = ChromeUtils.import(
+  "chrome://remote/content/Error.jsm"
+);
+
 XPCOMUtils.defineLazyGetter(this, "log", Log.get);
 XPCOMUtils.defineLazyServiceGetter(
   this,
@@ -208,6 +212,11 @@ class Connection {
         if (!session) {
           throw new Error(`Session '${sessionId}' doesn't exists.`);
         }
+      }
+
+      
+      if (command.startsWith("_")) {
+        throw new UnknownMethodError(command);
       }
 
       
