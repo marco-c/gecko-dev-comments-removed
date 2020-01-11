@@ -28,12 +28,6 @@ nsPrintSettingsServiceWin::SerializeToPrintData(nsIPrintSettings* aSettings,
       nsPrintSettingsService::SerializeToPrintData(aSettings, aWBP, data);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  if (aWBP) {
-    aWBP->GetIsIFrameSelected(&data->isIFrameSelected());
-    aWBP->GetIsRangeSelection(&data->isRangeSelection());
-  }
-
   nsCOMPtr<nsIPrintSettingsWin> psWin = do_QueryInterface(aSettings);
   if (!psWin) {
     return NS_ERROR_FAILURE;
