@@ -7,6 +7,7 @@
 
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/AutoRestore.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/UniquePtr.h"
 
@@ -936,6 +937,14 @@ void XPCJSRuntime::WeakPointerZonesCallback(JSContext* cx, void* data) {
   
   
   XPCJSRuntime* self = static_cast<XPCJSRuntime*>(data);
+
+  
+  
+  
+  
+  
+  AutoRestore<bool> restoreState(self->mGCIsRunning);
+  self->mGCIsRunning = true;
 
   self->mWrappedJSMap->UpdateWeakPointersAfterGC();
   self->mUAWidgetScopeMap.sweep();
