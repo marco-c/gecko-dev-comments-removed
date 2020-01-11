@@ -1547,14 +1547,6 @@ bool TypedObject::isAttached() const {
 }
 
 
-bool TypedObject::GetByteOffset(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  args.rval().setInt32(
-      AssertedCast<int32_t>(args[0].toObject().as<TypedObject>().offset()));
-  return true;
-}
-
-
 
 
 

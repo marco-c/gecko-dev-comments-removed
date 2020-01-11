@@ -634,10 +634,6 @@ class TypedObject : public JSObject {
   
   static MOZ_MUST_USE bool construct(JSContext* cx, unsigned argc, Value* vp);
 
-  
-  static MOZ_MUST_USE bool GetByteOffset(JSContext* cx, unsigned argc,
-                                         Value* vp);
-
   Shape** addressOfShapeFromGC() {
     return shape_.unsafeUnbarrieredForTracing();
   }
