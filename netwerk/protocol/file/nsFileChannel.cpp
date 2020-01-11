@@ -239,11 +239,6 @@ nsFileChannel::nsFileChannel(nsIURI* uri) : mUploadLength(0), mFileURI(uri) {}
 nsresult nsFileChannel::Init() {
   NS_ENSURE_STATE(mLoadInfo);
 
-  nsresult rv;
-
-  rv = nsBaseChannel::Init();
-  NS_ENSURE_SUCCESS(rv, rv);
-
   
   
   
