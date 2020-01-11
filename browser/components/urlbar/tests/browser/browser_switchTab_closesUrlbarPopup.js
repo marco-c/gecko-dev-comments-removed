@@ -30,8 +30,10 @@ add_task(async function() {
   gURLBar.focus(); 
   await BrowserTestUtils.switchTab(gBrowser, tab1);
   
-  await UrlbarTestUtils.promisePopupOpen(window, () => {
-    EventUtils.synthesizeMouseAtCenter(gURLBar.dropmarker, {}, window);
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    waitForFocus,
+    value: "",
   });
   
   await UrlbarTestUtils.promisePopupClose(window, () => {

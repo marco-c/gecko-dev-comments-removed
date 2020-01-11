@@ -265,21 +265,26 @@ async function prepareSettledWindow() {
 
 
 async function ensureFocusedUrlbar() {
-  
-  
-  
-  await BrowserTestUtils.waitForCondition(
-    () => !gURLBar.hasAttribute("switchingtabs")
-  );
+  let opacityPromise;
+  if (!gURLBar.dropmarker.hidden) {
+    
+    
+    
+    await BrowserTestUtils.waitForCondition(
+      () => !gURLBar.hasAttribute("switchingtabs")
+    );
 
-  let opacityPromise = BrowserTestUtils.waitForEvent(
-    gURLBar.dropmarker,
-    "transitionend",
-    false,
-    e => e.propertyName === "opacity"
-  );
+    opacityPromise = BrowserTestUtils.waitForEvent(
+      gURLBar.dropmarker,
+      "transitionend",
+      false,
+      e => e.propertyName === "opacity"
+    );
+  }
   gURLBar.focus();
-  await opacityPromise;
+  if (opacityPromise) {
+    await opacityPromise;
+  }
 }
 
 
