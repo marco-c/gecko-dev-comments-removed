@@ -882,6 +882,26 @@ struct GenericHuffmanTable {
 
 
 class HuffmanDictionary {
+ private:
+  
+  
+  class TableIdentity {
+    size_t index_;
+
+    static const size_t ListIdentityBase = BINAST_INTERFACE_AND_FIELD_LIMIT;
+
+   public:
+    
+    static const size_t Limit = ListIdentityBase + BINAST_NUMBER_OF_LIST_TYPES;
+
+    explicit TableIdentity(NormalizedInterfaceAndField index)
+        : index_(static_cast<size_t>(index.identity_)) {}
+    explicit TableIdentity(BinASTList list)
+        : index_(static_cast<size_t>(list) + ListIdentityBase) {}
+
+    size_t toIndex() const { return index_; }
+  };
+
  public:
   HuffmanDictionary() {}
   ~HuffmanDictionary();
@@ -914,14 +934,11 @@ class HuffmanDictionary {
   
   
   
-  TableStatus fieldStatus_[BINAST_INTERFACE_AND_FIELD_LIMIT] = {
-      TableStatus::Unreachable};
-  TableStatus listLengthStatus_[BINAST_NUMBER_OF_LIST_TYPES] = {
-      TableStatus::Unreachable};
+  TableStatus status_[TableIdentity::Limit] = {TableStatus::Unreachable};
 
-  TableStatus& fieldStatus(size_t i) { return fieldStatus_[i]; }
+  TableStatus& status(TableIdentity i) { return status(i.toIndex()); }
 
-  TableStatus& listLengthStatus(size_t i) { return listLengthStatus_[i]; }
+  TableStatus& status(size_t i) { return status_[i]; }
 
   
   
@@ -933,27 +950,16 @@ class HuffmanDictionary {
   
   
   
-  alignas(GenericHuffmanTable) char fields_[sizeof(GenericHuffmanTable) *
-                                            BINAST_INTERFACE_AND_FIELD_LIMIT];
+  
+  
+  alignas(GenericHuffmanTable) char tables_[sizeof(GenericHuffmanTable) *
+                                            TableIdentity::Limit];
 
-  GenericHuffmanTable& tableForField(size_t i) {
-    return (reinterpret_cast<GenericHuffmanTable*>(fields_))[i];
+  GenericHuffmanTable& table(TableIdentity i) { return table(i.toIndex()); }
+
+  GenericHuffmanTable& table(size_t i) {
+    return (reinterpret_cast<GenericHuffmanTable*>(tables_))[i];
   }
-  GenericHuffmanTable& tableForListLength(size_t i) {
-    return (reinterpret_cast<GenericHuffmanTable*>(listLengths_))[i];
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  alignas(GenericHuffmanTable) char listLengths_[sizeof(GenericHuffmanTable) *
-                                                 BINAST_NUMBER_OF_LIST_TYPES];
 };
 
 
