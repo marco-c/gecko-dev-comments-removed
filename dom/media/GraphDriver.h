@@ -243,7 +243,8 @@ class GraphDriver {
   GraphDriver(GraphInterface* aGraphInterface, GraphDriver* aPreviousDriver,
               uint32_t aSampleRate);
 
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GraphDriver);
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+
   
 
 
@@ -262,7 +263,7 @@ class GraphDriver {
 
 
 
-  virtual void EnsureNextIteration() {}
+  virtual void EnsureNextIteration() = 0;
 
   
   void SwitchToDriver(GraphDriver* aDriver);
@@ -390,9 +391,10 @@ class ThreadedDriver : public GraphDriver {
   };
 
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ThreadedDriver, override);
+
   ThreadedDriver(GraphInterface* aGraphInterface, GraphDriver* aPreviousDriver,
                  uint32_t aSampleRate);
-  virtual ~ThreadedDriver();
 
   void EnsureNextIteration() override;
   void Start() override;
@@ -425,6 +427,8 @@ class ThreadedDriver : public GraphDriver {
 
   virtual MediaTime GetIntervalForIteration() = 0;
 
+  virtual ~ThreadedDriver();
+
   nsCOMPtr<nsIThread> mThread;
 
  private:
@@ -440,14 +444,11 @@ class ThreadedDriver : public GraphDriver {
 
 
 
-enum class FallbackMode { Regular, Fallback };
 class SystemClockDriver : public ThreadedDriver {
  public:
   SystemClockDriver(GraphInterface* aGraphInterface,
-                    GraphDriver* aPreviousDriver, uint32_t aSampleRate,
-                    FallbackMode aFallback = FallbackMode::Regular);
+                    GraphDriver* aPreviousDriver, uint32_t aSampleRate);
   virtual ~SystemClockDriver();
-  bool IsFallback();
   SystemClockDriver* AsSystemClockDriver() override { return this; }
 
  protected:
@@ -461,10 +462,6 @@ class SystemClockDriver : public ThreadedDriver {
   TimeStamp mInitialTimeStamp;
   TimeStamp mCurrentTimeStamp;
   TimeStamp mLastTimeStamp;
-
-  
-  
-  const bool mIsFallback;
 };
 
 
@@ -530,7 +527,12 @@ class AudioCallbackDriver : public GraphDriver,
                             public audio::DeviceChangeListener
 #endif
 {
+  using IterationResult = GraphInterface::IterationResult;
+  class FallbackWrapper;
+
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AudioCallbackDriver, override);
+
   
   AudioCallbackDriver(GraphInterface* aGraphInterface,
                       GraphDriver* aPreviousDriver, uint32_t aSampleRate,
@@ -538,7 +540,6 @@ class AudioCallbackDriver : public GraphDriver,
                       CubebUtils::AudioDeviceID aOutputDeviceID,
                       CubebUtils::AudioDeviceID aInputDeviceID,
                       AudioInputType aAudioInputType);
-  virtual ~AudioCallbackDriver();
 
   void Start() override;
   MOZ_CAN_RUN_SCRIPT void Shutdown() override;
@@ -553,6 +554,7 @@ class AudioCallbackDriver : public GraphDriver,
   static void StateCallback_s(cubeb_stream* aStream, void* aUser,
                               cubeb_state aState);
   static void DeviceChangedCallback_s(void* aUser);
+
   
 
 
@@ -566,6 +568,10 @@ class AudioCallbackDriver : public GraphDriver,
   
 
   uint32_t IterationDuration() override;
+  
+
+
+  void EnsureNextIteration() override;
 
   
 
@@ -575,10 +581,7 @@ class AudioCallbackDriver : public GraphDriver,
 
   AudioCallbackDriver* AsAudioCallbackDriver() override { return this; }
 
-  uint32_t OutputChannelCount() {
-    MOZ_ASSERT(mOutputChannels != 0 && mOutputChannels <= 8);
-    return mOutputChannels;
-  }
+  uint32_t OutputChannelCount() { return mOutputChannels; }
 
   uint32_t InputChannelCount() { return mInputChannelCount; }
 
@@ -602,6 +605,8 @@ class AudioCallbackDriver : public GraphDriver,
   bool OnThread() override {
     return mAudioThreadId.load() == std::this_thread::get_id();
   }
+
+  
 
   bool ThreadRunning() override { return mAudioThreadRunning; }
 
@@ -632,6 +637,12 @@ class AudioCallbackDriver : public GraphDriver,
 
 
   void FallbackToSystemClockDriver();
+  
+
+
+
+  void FallbackDriverStopped(GraphTime aIterationStart, GraphTime aIterationEnd,
+                             GraphTime aStateComputedTime);
 
   
   bool OnCubebOperationThread() {
@@ -703,21 +714,15 @@ class AudioCallbackDriver : public GraphDriver,
   Atomic<bool> mAudioThreadRunning;
   
 
-
-
-
-
-
-  bool mShouldFallbackIfError;
-  
-
-  bool mFromFallback;
+  DataMutex<RefPtr<FallbackWrapper>> mFallback;
 #ifdef XP_MACOSX
   
 
 
   Atomic<bool> mNeedsPanning;
 #endif
+
+  virtual ~AudioCallbackDriver();
 };
 
 class AsyncCubebTask : public Runnable {

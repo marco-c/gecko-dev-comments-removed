@@ -3442,8 +3442,7 @@ void MediaTrackGraphImpl::ApplyAudioContextOperationImpl(
       
       
     } else if (!audioTrackPresent && Switching()) {
-      MOZ_ASSERT(NextDriver()->AsAudioCallbackDriver() ||
-                 NextDriver()->AsSystemClockDriver()->IsFallback());
+      MOZ_ASSERT(NextDriver()->AsAudioCallbackDriver());
       if (NextDriver()->AsAudioCallbackDriver()) {
         NextDriver()
             ->AsAudioCallbackDriver()
