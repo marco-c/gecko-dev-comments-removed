@@ -61,7 +61,11 @@ async function do_test(openFn, pickMethod) {
 
 add_task(async function setup() {
   await PlacesUtils.history.clear();
-  await PlacesTestUtils.addVisits(TEST_URL);
+  for (let i = 0; i < 5; i++) {
+    await PlacesTestUtils.addVisits(TEST_URL);
+  }
+
+  await updateTopSites(sites => sites[0].url == TEST_URL);
   registerCleanupFunction(async () => {
     await PlacesUtils.history.clear();
   });
@@ -96,24 +100,26 @@ add_task(async function test_history_no_search_terms() {
         gURLBar.dropmarker.click();
         return true;
       },
-      
       async () => {
         info("Test opening panel on focus");
         Services.prefs.setBoolPref("browser.urlbar.openViewOnFocus", true);
         gURLBar.blur();
         EventUtils.synthesizeMouseAtCenter(gURLBar.textbox, {});
-        registerCleanupFunction(() => {
-          Services.prefs.clearUserPref("browser.urlbar.openViewOnFocus");
-        });
+        Services.prefs.clearUserPref("browser.urlbar.openViewOnFocus");
         return true;
       },
       async () => {
         info("Test opening panel on focus on a page");
+        Services.prefs.setBoolPref("browser.urlbar.openViewOnFocus", true);
         let selectedBrowser = gBrowser.selectedBrowser;
-        await BrowserTestUtils.loadURI(selectedBrowser, TEST_URL);
+        
+        
+        
+        await BrowserTestUtils.loadURI(selectedBrowser, "http://example.org/");
         await BrowserTestUtils.browserLoaded(selectedBrowser);
         gURLBar.blur();
         EventUtils.synthesizeMouseAtCenter(gURLBar.textbox, {});
+        Services.prefs.clearUserPref("browser.urlbar.openViewOnFocus");
         return true;
       },
     ]) {

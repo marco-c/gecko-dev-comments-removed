@@ -70,6 +70,14 @@ add_task(async function setUp() {
   
   let originalTimeout = UrlbarProviderExtension.notificationTimeout;
   UrlbarProviderExtension.notificationTimeout = 5000;
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts",
+        false,
+      ],
+    ],
+  });
   registerCleanupFunction(() => {
     UrlbarProviderExtension.notificationTimeout = originalTimeout;
   });
@@ -232,6 +240,11 @@ add_task(async function search() {
 
 
 add_task(async function searchEmpty() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.openViewOnFocus", false]],
+  });
   gURLBar.blur();
 
   
@@ -280,10 +293,14 @@ add_task(async function searchEmpty() {
 
   await UrlbarTestUtils.promisePopupClose(window);
   await ext.unload();
+  await SpecialPowers.popPrefEnv();
 });
 
 
 add_task(async function searchFocusFalse() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.openViewOnFocus", false]],
+  });
   await PlacesUtils.history.clear();
   await PlacesUtils.bookmarks.eraseEverything();
   await PlacesTestUtils.addVisits([
@@ -327,17 +344,20 @@ add_task(async function searchFocusFalse() {
 
   await UrlbarTestUtils.promisePopupClose(window);
   await ext.unload();
+  await SpecialPowers.popPrefEnv();
 });
 
 
 add_task(async function searchFocusFalseEmpty() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.openViewOnFocus", false]],
+  });
   await PlacesUtils.history.clear();
   await PlacesUtils.bookmarks.eraseEverything();
   await PlacesTestUtils.addVisits([
     "http://example.com/test1",
     "http://example.com/test2",
   ]);
-
   gURLBar.blur();
 
   let ext = ExtensionTestUtils.loadExtension({
@@ -370,6 +390,7 @@ add_task(async function searchFocusFalseEmpty() {
 
   await UrlbarTestUtils.promisePopupClose(window);
   await ext.unload();
+  await SpecialPowers.popPrefEnv();
 });
 
 
