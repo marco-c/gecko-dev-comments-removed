@@ -20,7 +20,7 @@ add_task(async function task() {
   const onMessage = waitForMessage(hud, xhrUrl);
 
   
-  SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
+  ContentTask.spawn(gBrowser.selectedBrowser, null, function() {
     content.wrappedJSObject.testXhrGet();
   });
 

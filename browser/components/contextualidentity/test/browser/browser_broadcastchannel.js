@@ -64,7 +64,7 @@ async function runTestForReceiver(receiver) {
   let channelName = "contextualidentity-broadcastchannel";
 
   
-  await SpecialPowers.spawn(receiver.browser, [channelName], function(name) {
+  await ContentTask.spawn(receiver.browser, channelName, function(name) {
     content.window.testPromise = new content.window.Promise(resolve => {
       content.window.bc = new content.window.BroadcastChannel(name);
       content.window.bc.onmessage = function(e) {
@@ -82,9 +82,9 @@ async function runTestForReceiver(receiver) {
   
   
   for (let sender of [sender1, sender2]) {
-    await SpecialPowers.spawn(
+    await ContentTask.spawn(
       sender.browser,
-      [{ name: channelName, message: sender.message }],
+      { name: channelName, message: sender.message },
       function(opts) {
         let bc = new content.window.BroadcastChannel(opts.name);
         bc.postMessage(opts.message);
@@ -94,7 +94,7 @@ async function runTestForReceiver(receiver) {
 
   
   
-  await SpecialPowers.spawn(receiver.browser, [sender2.message], async function(
+  await ContentTask.spawn(receiver.browser, sender2.message, async function(
     message
   ) {
     await content.window.testPromise.then(function() {

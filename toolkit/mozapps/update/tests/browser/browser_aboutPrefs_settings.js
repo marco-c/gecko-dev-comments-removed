@@ -8,9 +8,9 @@ ChromeUtils.import("resource://gre/modules/osfile.jsm", this);
 
 
 async function changeAndVerifyPref(tab, newConfigValue) {
-  await SpecialPowers.spawn(
+  await ContentTask.spawn(
     tab.linkedBrowser,
-    [{ newConfigValue }],
+    { newConfigValue },
     async function({ newConfigValue }) {
       let radioId = newConfigValue ? "autoDesktop" : "manualDesktop";
       let radioElement = content.document.getElementById(radioId);
@@ -46,9 +46,9 @@ async function changeAndVerifyPref(tab, newConfigValue) {
     );
   }
 
-  await SpecialPowers.spawn(
+  await ContentTask.spawn(
     tab.linkedBrowser,
-    [{ newConfigValue }],
+    { newConfigValue },
     async function({ newConfigValue }) {
       let updateRadioGroup = content.document.getElementById(
         "updateRadioGroup"

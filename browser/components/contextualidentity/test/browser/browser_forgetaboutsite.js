@@ -294,9 +294,9 @@ async function test_storage_cleared() {
     );
 
     
-    await SpecialPowers.spawn(
+    await ContentTask.spawn(
       tabInfo.browser,
-      [{ userContext: USER_CONTEXTS[userContextId] }],
+      { userContext: USER_CONTEXTS[userContextId] },
       async function(arg) {
         
         Assert.equal(
@@ -356,7 +356,7 @@ async function test_storage_cleared() {
     );
 
     
-    await SpecialPowers.spawn(tabInfo.browser, [], async function() {
+    await ContentTask.spawn(tabInfo.browser, null, async function() {
       
       Assert.ok(
         !content.localStorage.getItem("userContext"),

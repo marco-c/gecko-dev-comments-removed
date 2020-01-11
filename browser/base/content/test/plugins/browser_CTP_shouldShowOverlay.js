@@ -55,7 +55,7 @@ add_task(async function() {
   
   await promiseUpdatePluginBindings(gTestBrowser);
 
-  await SpecialPowers.spawn(gTestBrowser, [], async function() {
+  await ContentTask.spawn(gTestBrowser, null, async function() {
     let doc = content.document;
     let testcases = doc.querySelectorAll(".testcase");
 

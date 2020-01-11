@@ -119,9 +119,9 @@ add_task(async function test() {
     let tabInfo = await openTabInUserContext(testURL, userContextId);
 
     
-    await SpecialPowers.spawn(
+    await ContentTask.spawn(
       tabInfo.browser,
-      [{ userContext: USER_CONTEXTS[userContextId] }],
+      { userContext: USER_CONTEXTS[userContextId] },
       function(arg) {
         content.document.cookie = "userContext=" + arg.userContext;
       }

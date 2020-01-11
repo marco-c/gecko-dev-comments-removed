@@ -28,7 +28,7 @@ add_task(async function test_disabledForMediaStreamVideos() {
       "no-controls": { canToggle: false },
     },
     async browser => {
-      await SpecialPowers.spawn(browser, [], async () => {
+      await ContentTask.spawn(browser, null, async () => {
         
         
         let newVideo = content.document.createElement("video");

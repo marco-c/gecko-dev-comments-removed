@@ -29,7 +29,7 @@ add_task(async () => {
 
   
   const wait = waitForNetworkEvents(monitor, 3);
-  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+  await ContentTask.spawn(tab.linkedBrowser, {}, async () => {
     await content.wrappedJSObject.executeTest();
   });
   await wait;

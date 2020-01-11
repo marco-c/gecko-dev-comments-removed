@@ -27,7 +27,7 @@ add_task(async function task() {
   const onNetworkMessageUpdate = ui.once("network-message-updated");
 
   
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
+  await ContentTask.spawn(gBrowser.selectedBrowser, null, function() {
     content.wrappedJSObject.testXhrPost();
   });
 

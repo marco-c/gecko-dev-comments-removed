@@ -10,11 +10,8 @@ add_task(async function test_getSelectionDetails_input() {
   
   const url = kFixtureBaseURL + "file_getSelectionDetails_inputs.html";
   await BrowserTestUtils.withNewTab({ gBrowser, url }, async browser => {
-    await SpecialPowers.spawn(browser, [], () => {
+    await ContentTask.spawn(browser, null, () => {
       function checkSelection({ id, text, linkURL }) {
-        const { BrowserUtils } = ChromeUtils.import(
-          "resource://gre/modules/BrowserUtils.jsm"
-        );
         content.document.getElementById(id).select();
         
         

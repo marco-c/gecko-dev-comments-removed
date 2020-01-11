@@ -23,7 +23,7 @@ add_task(async () => {
 
         
         
-        await SpecialPowers.spawn(browser, [videoID], async videoID => {
+        await ContentTask.spawn(browser, videoID, async videoID => {
           let doc = content.document;
           let otherVideo = doc.querySelector(`video:not([id="${videoID}"])`);
           let eventFired = false;
@@ -32,35 +32,27 @@ add_task(async () => {
             eventFired = true;
           };
 
-          docShell.chromeEventHandler.addEventListener(
-            "MozStopPictureInPicture",
-            listener,
-            {
-              capture: true,
-            }
-          );
+          addEventListener("MozStopPictureInPicture", listener, {
+            capture: true,
+          });
           otherVideo.remove();
           Assert.ok(
             !eventFired,
             "Should not have seen MozStopPictureInPicture for other video"
           );
-          docShell.chromeEventHandler.removeEventListener(
-            "MozStopPictureInPicture",
-            listener,
-            {
-              capture: true,
-            }
-          );
+          removeEventListener("MozStopPictureInPicture", listener, {
+            capture: true,
+          });
         });
 
         Assert.ok(!pipWin.closed, "PiP window should still be open.");
 
-        await SpecialPowers.spawn(browser, [videoID], async videoID => {
+        await ContentTask.spawn(browser, videoID, async videoID => {
           let doc = content.document;
           let video = doc.querySelector(`#${videoID}`);
 
           let promise = ContentTaskUtils.waitForEvent(
-            docShell.chromeEventHandler,
+            this,
             "MozStopPictureInPicture",
             { capture: true }
           );

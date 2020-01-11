@@ -25,7 +25,7 @@ add_task(async function() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank", forceNewProcess: true },
     async function(aBrowser) {
-      await SpecialPowers.spawn(aBrowser, [], async function() {
+      await ContentTask.spawn(aBrowser, null, async function() {
         
         is(
           Services.perms.testPermissionFromPrincipal(
@@ -145,7 +145,7 @@ add_task(async function() {
       addPerm("https://example.com", "newperm4");
       addPerm("https://someotherrandomwebsite.com", "document");
 
-      await SpecialPowers.spawn(aBrowser, [], async function() {
+      await ContentTask.spawn(aBrowser, null, async function() {
         
         
         is(
