@@ -89,14 +89,12 @@ NS_IMPL_ISUPPORTS_INHERITED(DelayedRunnable, Runnable, nsITimerCallback)
 ThreadEventTarget::ThreadEventTarget(ThreadTargetSink* aSink,
                                      bool aIsMainThread)
     : mSink(aSink), mIsMainThread(aIsMainThread) {
-  mVirtualThread = GetCurrentVirtualThread();
+  mThread = PR_GetCurrentThread();
 }
 
-void ThreadEventTarget::SetCurrentThread() {
-  mVirtualThread = GetCurrentVirtualThread();
-}
+void ThreadEventTarget::SetCurrentThread() { mThread = PR_GetCurrentThread(); }
 
-void ThreadEventTarget::ClearCurrentThread() { mVirtualThread = nullptr; }
+void ThreadEventTarget::ClearCurrentThread() { mThread = nullptr; }
 
 NS_IMPL_ISUPPORTS(ThreadEventTarget, nsIEventTarget, nsISerialEventTarget)
 

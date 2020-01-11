@@ -551,7 +551,7 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver {
   
   void AssertWorkerThread() const {
     MOZ_ASSERT(mWorkerThread, "Channel hasn't been opened yet");
-    MOZ_RELEASE_ASSERT(mWorkerThread == GetCurrentVirtualThread(),
+    MOZ_RELEASE_ASSERT(mWorkerThread == PR_GetCurrentThread(),
                        "not on worker thread!");
   }
 
@@ -569,7 +569,7 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver {
     
     
     MOZ_ASSERT(mWorkerThread, "Channel hasn't been opened yet");
-    MOZ_RELEASE_ASSERT(mWorkerThread != GetCurrentVirtualThread(),
+    MOZ_RELEASE_ASSERT(mWorkerThread != PR_GetCurrentThread(),
                        "on worker thread but should not be!");
   }
 
