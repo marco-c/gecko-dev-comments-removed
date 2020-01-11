@@ -12,7 +12,6 @@
 #include "mozilla/Utf8.h"  
 
 #include "nsContentUtils.h"
-#include "nsICacheInfoChannel.h"
 #include "ScriptLoadRequest.h"
 #include "ScriptSettings.h"
 

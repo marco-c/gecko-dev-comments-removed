@@ -4,7 +4,6 @@
 
 
 
-#include "nsIServiceManager.h"
 #include "UDPSocketParent.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIUDPSocket.h"
@@ -16,7 +15,6 @@
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/PNeckoParent.h"
 #include "nsIPermissionManager.h"
-#include "nsIScriptSecurityManager.h"
 #include "mozilla/ipc/PBackgroundParent.h"
 #include "mtransport/runnable_utils.h"
 
