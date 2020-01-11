@@ -24,6 +24,7 @@
 #include "vm/JSContext.h"    
 #include "vm/Runtime.h"      
 
+#include "builtin/streams/MiscellaneousOperations-inl.h"  
 #include "vm/Compartment-inl.h"  
 #include "vm/List-inl.h"         
 #include "vm/Realm-inl.h"        
@@ -111,8 +112,7 @@ MOZ_MUST_USE bool js::ReadableStreamReaderGenericInitialize(
     }
 
     
-    promise->as<PromiseObject>().setHandled();
-    cx->runtime()->removeUnhandledRejectedPromise(cx, promise);
+    SetPromiseIsHandled(cx, promise.as<PromiseObject>());
   }
 
   if (!promise) {
@@ -210,8 +210,7 @@ MOZ_MUST_USE bool js::ReadableStreamReaderGenericRelease(
   }
 
   
-  unwrappedClosedPromise->setHandled();
-  cx->runtime()->removeUnhandledRejectedPromise(cx, unwrappedClosedPromise);
+  SetPromiseIsHandled(cx, unwrappedClosedPromise);
 
   
   unwrappedStream->clearReader();

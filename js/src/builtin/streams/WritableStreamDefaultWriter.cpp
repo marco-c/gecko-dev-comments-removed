@@ -28,6 +28,7 @@
 #include "vm/Compartment.h"  
 #include "vm/JSContext.h"    
 
+#include "builtin/streams/MiscellaneousOperations-inl.h"  
 #include "vm/Compartment-inl.h"  
 #include "vm/JSObject-inl.h"      
 #include "vm/NativeObject-inl.h"  
@@ -137,7 +138,8 @@ MOZ_MUST_USE WritableStreamDefaultWriter* js::CreateWritableStreamDefaultWriter(
     if (unwrappedStream->erroring()) {
       
       
-      JSObject* promise = PromiseObject::unforgeableReject(cx, storedError);
+      Rooted<JSObject*> promise(
+          cx, PromiseObject::unforgeableReject(cx, storedError));
       if (!promise) {
         return nullptr;
       }
@@ -145,9 +147,7 @@ MOZ_MUST_USE WritableStreamDefaultWriter* js::CreateWritableStreamDefaultWriter(
       writer->setReadyPromise(promise);
 
       
-      Rooted<PromiseObject*> readyPromise(cx, &promise->as<PromiseObject>());
-      readyPromise->setHandled();
-      cx->runtime()->removeUnhandledRejectedPromise(cx, readyPromise);
+      SetPromiseIsHandled(cx, promise.as<PromiseObject>());
 
       
       JSObject* closedPromise = PromiseObject::createSkippingExecutor(cx);
@@ -175,8 +175,7 @@ MOZ_MUST_USE WritableStreamDefaultWriter* js::CreateWritableStreamDefaultWriter(
       writer->setReadyPromise(promise);
 
       
-      promise->as<PromiseObject>().setHandled();
-      cx->runtime()->removeUnhandledRejectedPromise(cx, promise);
+      SetPromiseIsHandled(cx, promise.as<PromiseObject>());
 
       
       
@@ -188,8 +187,7 @@ MOZ_MUST_USE WritableStreamDefaultWriter* js::CreateWritableStreamDefaultWriter(
       writer->setClosedPromise(promise);
 
       
-      promise->as<PromiseObject>().setHandled();
-      cx->runtime()->removeUnhandledRejectedPromise(cx, promise);
+      SetPromiseIsHandled(cx, promise.as<PromiseObject>());
     }
   }
 
