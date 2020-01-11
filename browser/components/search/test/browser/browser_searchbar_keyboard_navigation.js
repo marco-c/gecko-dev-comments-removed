@@ -27,6 +27,28 @@ function getOpenSearchItems() {
 let searchbar;
 let textbox;
 
+async function checkHeader(engine) {
+  
+  
+  let header = searchPopup.searchbarEngineName;
+  if (!header.getAttribute("value").includes(engine.name)) {
+    await new Promise(resolve => {
+      let observer = new MutationObserver(() => {
+        observer.disconnect();
+        resolve();
+      });
+      observer.observe(searchPopup.searchbarEngineName, {
+        attributes: true,
+        attributeFilter: ["value"],
+      });
+    });
+  }
+  Assert.ok(
+    header.getAttribute("value").includes(engine.name),
+    "Should have the correct engine name displayed in the header"
+  );
+}
+
 add_task(async function init() {
   searchbar = await gCUITestUtils.addSearchBar();
   registerCleanupFunction(() => {
@@ -95,6 +117,7 @@ add_task(async function test_arrows() {
       kValues[i],
       "the textfield value should be " + kValues[i]
     );
+    await checkHeader(Services.search.defaultEngine);
   }
 
   
@@ -109,11 +132,13 @@ add_task(async function test_arrows() {
 
   
   for (let i = 0; i < oneOffs.length; ++i) {
+    let oneOffButton = oneOffs[i];
     is(
       textbox.selectedButton,
-      oneOffs[i],
+      oneOffButton,
       "the one-off button #" + (i + 1) + " should be selected"
     );
+    await checkHeader(oneOffButton.engine);
     EventUtils.synthesizeKey("KEY_ArrowDown");
   }
 
@@ -121,11 +146,13 @@ add_task(async function test_arrows() {
     textbox.selectedButton.classList.contains("search-setting-button"),
     "the settings item should be selected"
   );
+  await checkHeader(Services.search.defaultEngine);
   EventUtils.synthesizeKey("KEY_ArrowDown");
 
   
   is(searchPopup.selectedIndex, -1, "no suggestion should be selected");
   ok(!textbox.selectedButton, "no one-off button should be selected");
+  await checkHeader(Services.search.defaultEngine);
 
   info("now test the up arrow key");
   EventUtils.synthesizeKey("KEY_ArrowUp");
@@ -133,15 +160,18 @@ add_task(async function test_arrows() {
     textbox.selectedButton.classList.contains("search-setting-button"),
     "the settings item should be selected"
   );
+  await checkHeader(Services.search.defaultEngine);
 
   
   for (let i = oneOffs.length; i; --i) {
     EventUtils.synthesizeKey("KEY_ArrowUp");
+    let oneOffButton = oneOffs[i - 1];
     is(
       textbox.selectedButton,
-      oneOffs[i - 1],
+      oneOffButton,
       "the one-off button #" + i + " should be selected"
     );
+    await checkHeader(oneOffButton.engine);
   }
 
   
@@ -160,6 +190,7 @@ add_task(async function test_arrows() {
       kValues[i],
       "the textfield value should be " + kValues[i]
     );
+    await checkHeader(Services.search.defaultEngine);
     EventUtils.synthesizeKey("KEY_ArrowUp");
   }
 
