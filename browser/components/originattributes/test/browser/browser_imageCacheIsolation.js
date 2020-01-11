@@ -20,6 +20,8 @@ server.start(-1);
 let rcwnEnabled = Services.prefs.getBoolPref("network.http.rcwn.enabled");
 Services.prefs.setBoolPref("network.http.rcwn.enabled", false);
 
+Services.prefs.setBoolPref("browser.cache.cache_isolation", false);
+
 registerCleanupFunction(() => {
   Services.prefs.setBoolPref("network.http.rcwn.enabled", rcwnEnabled);
 
