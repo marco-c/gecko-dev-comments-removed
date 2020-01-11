@@ -51,6 +51,9 @@ XPCOMUtils.defineLazyServiceGetter(
 
 
 
+
+
+
 const CookieCleaner = {
   deleteByLocalFiles(aOriginAttributes) {
     return new Promise(aResolve => {
@@ -74,6 +77,17 @@ const CookieCleaner = {
 
   deleteByRange(aFrom, aTo) {
     return Services.cookies.removeAllSince(aFrom);
+  },
+
+  deleteByOriginAttributes(aOriginAttributesString) {
+    return new Promise(aResolve => {
+      try {
+        Services.cookies.removeCookiesWithOriginAttributes(
+          aOriginAttributesString
+        );
+      } catch (ex) {}
+      aResolve();
+    });
   },
 
   deleteAll() {
@@ -383,6 +397,18 @@ const MediaDevicesCleaner = {
 };
 
 const AppCacheCleaner = {
+  deleteByOriginAttributes(aOriginAttributesString) {
+    return new Promise(aResolve => {
+      let appCacheService = Cc[
+        "@mozilla.org/network/application-cache-service;1"
+      ].getService(Ci.nsIApplicationCacheService);
+      try {
+        appCacheService.evictMatchingOriginAttributes(aOriginAttributesString);
+      } catch (ex) {}
+      aResolve();
+    });
+  },
+
   deleteAll() {
     
     OfflineAppCacheHelper.clear();
@@ -571,6 +597,36 @@ const QuotaCleaner = {
     }
 
     return Promise.all(promises);
+  },
+
+  deleteByOriginAttributes(aOriginAttributesString) {
+    
+    
+    
+
+    return ServiceWorkerCleanUp.removeFromOriginAttributes(
+      aOriginAttributesString
+    )
+      .then(
+        _ =>  false,
+        _ =>  true
+      )
+      .then(exceptionThrown => {
+        
+        
+        return new Promise((aResolve, aReject) => {
+          let req = Services.qms.clearStoragesForOriginAttributesPattern(
+            aOriginAttributesString
+          );
+          req.callback = () => {
+            if (req.resultCode == Cr.NS_OK) {
+              aResolve();
+            } else {
+              aReject({ message: "Delete by origin attributes failed" });
+            }
+          };
+        });
+      });
   },
 
   deleteAll() {
@@ -848,6 +904,11 @@ const PermissionsCleaner = {
 
   deleteByRange(aFrom, aTo) {
     Services.perms.removeAllSince(aFrom / 1000);
+    return Promise.resolve();
+  },
+
+  deleteByOriginAttributes(aOriginAttributesString) {
+    Services.perms.removePermissionsWithAttributes(aOriginAttributesString);
     return Promise.resolve();
   },
 
@@ -1180,10 +1241,32 @@ ClearDataService.prototype = Object.freeze({
   },
 
   deleteDataFromOriginAttributesPattern(aPattern) {
+    if (!aPattern) {
+      return Cr.NS_ERROR_INVALID_ARG;
+    }
+
+    let patternString = JSON.stringify(aPattern);
+    
     Services.obs.notifyObservers(
       null,
       "clear-origin-attributes-data",
-      JSON.stringify(aPattern)
+      patternString
+    );
+
+    let dummyCallback = {
+      onDataDeleted: () => {},
+    };
+    return this._deleteInternal(
+      Ci.nsIClearDataService.CLEAR_ALL,
+      dummyCallback,
+      aCleaner => {
+        if (aCleaner.deleteByOriginAttributes) {
+          return aCleaner.deleteByOriginAttributes(patternString);
+        }
+
+        
+        return Promise.resolve();
+      }
     );
   },
 

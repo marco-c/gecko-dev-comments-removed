@@ -11,7 +11,6 @@ function createPrincipal(aOrigin, aOriginAttributes) {
   );
 }
 
-
 function getData(aPattern) {
   return JSON.stringify(aPattern);
 }
@@ -44,7 +43,9 @@ function test(aEntries, aData, aResults) {
     );
   }
 
-  Services.obs.notifyObservers(null, "clear-origin-attributes-data", aData);
+  
+  
+  pm.removePermissionsWithAttributes(aData);
 
   var length = aEntries.length;
   for (let i = 0; i < length; ++i) {

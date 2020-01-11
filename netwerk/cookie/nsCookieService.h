@@ -191,7 +191,6 @@ class nsCookieService final : public nsICookieService,
 
 
 
-  static void AppClearDataObserverInit();
   static nsAutoCString GetPathFromURI(nsIURI* aHostURI);
   static nsresult GetBaseDomain(nsIEffectiveTLDService* aTLDService,
                                 nsIURI* aHostURI, nsCString& aBaseDomain,
