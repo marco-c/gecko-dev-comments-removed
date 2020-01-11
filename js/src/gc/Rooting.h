@@ -151,6 +151,38 @@ class FakeMutableHandle
   T* ptr;
 };
 
+
+
+
+
+
+
+
+
+
+enum AllowGC { NoGC = 0, CanGC = 1 };
+template <typename T, AllowGC allowGC>
+class MaybeRooted {};
+
+template <typename T>
+class MaybeRooted<T, CanGC> {
+ public:
+  typedef JS::Handle<T> HandleType;
+  typedef JS::Rooted<T> RootType;
+  typedef JS::MutableHandle<T> MutableHandleType;
+
+  static inline JS::Handle<T> toHandle(HandleType v) { return v; }
+
+  static inline JS::MutableHandle<T> toMutableHandle(MutableHandleType v) {
+    return v;
+  }
+
+  template <typename T2>
+  static inline JS::Handle<T2*> downcastHandle(HandleType v) {
+    return v.template as<T2>();
+  }
+};
+
 template <typename T>
 class MaybeRooted<T, NoGC> {
  public:
