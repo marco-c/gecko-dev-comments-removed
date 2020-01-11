@@ -943,6 +943,41 @@ class MOZ_STACK_CLASS AutoAssertFunctionDelazificationCompletion {
   }
 };
 
+static void CheckFlagsOnDelazification(uint32_t lazy, uint32_t nonLazy) {
+#ifdef DEBUG
+  
+  
+  constexpr uint32_t NonLazyFlagsMask =
+      uint32_t(BaseScript::ImmutableFlags::HasNonSyntacticScope) |
+      uint32_t(BaseScript::ImmutableFlags::FunHasExtensibleScope) |
+      uint32_t(BaseScript::ImmutableFlags::HasCallSiteObj) |
+      uint32_t(BaseScript::ImmutableFlags::FunctionHasExtraBodyVarScope) |
+      uint32_t(BaseScript::ImmutableFlags::HasMappedArgsObj) |
+      uint32_t(BaseScript::ImmutableFlags::ArgumentsHasVarBinding) |
+      uint32_t(BaseScript::ImmutableFlags::NeedsFunctionEnvironmentObjects) |
+      uint32_t(BaseScript::ImmutableFlags::IsFunction);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  constexpr uint32_t CustomFlagsMask =
+      uint32_t(BaseScript::ImmutableFlags::HasInnerFunctions) |
+      uint32_t(BaseScript::ImmutableFlags::TreatAsRunOnce);
+
+  
+  constexpr uint32_t MatchedFlagsMask = ~(NonLazyFlagsMask | CustomFlagsMask);
+
+  MOZ_ASSERT((lazy & NonLazyFlagsMask) == 0);
+  MOZ_ASSERT((lazy & MatchedFlagsMask) == (nonLazy & MatchedFlagsMask));
+#endif  
+}
+
 template <typename Unit>
 static bool CompileLazyFunctionImpl(JSContext* cx, Handle<LazyScript*> lazy,
                                     const Unit* units, size_t length) {
@@ -1036,8 +1071,7 @@ static bool CompileLazyFunctionImpl(JSContext* cx, Handle<LazyScript*> lazy,
     return false;
   }
 
-  MOZ_ASSERT(lazy->hasDirectEval() == script->hasDirectEval());
-  MOZ_ASSERT(lazy->hasModuleGoal() == script->hasModuleGoal());
+  CheckFlagsOnDelazification(lazy->immutableFlags(), script->immutableFlags());
 
   delazificationCompletion.complete();
   assertException.reset();
