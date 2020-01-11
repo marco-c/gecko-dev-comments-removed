@@ -80,10 +80,8 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     
     var dataLocale = r.dataLocale;
 
-#ifdef NIGHTLY_BUILD
     
     dataLocale = addUnicodeExtension(dataLocale, "-u-ca-" + r.ca);
-#endif
 
     
     internalProps.timeZone = lazyDateTimeFormatData.timeZone;
