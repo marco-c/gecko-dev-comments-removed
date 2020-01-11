@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { actions } = require("devtools/client/memory/constants");
+const { actions } = require("../constants");
 
 exports.resizeShortestPaths = function(newSize) {
   return {

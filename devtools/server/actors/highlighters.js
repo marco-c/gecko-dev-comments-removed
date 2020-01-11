@@ -559,8 +559,7 @@ exports.CustomHighlighterActor = protocol.ActorClassWithSpec(
         );
       }
 
-      const constructor = require("devtools/server/actors/highlighters/" +
-        modulePath)[typeName];
+      const constructor = require("./highlighters/" + modulePath)[typeName];
       
       
       

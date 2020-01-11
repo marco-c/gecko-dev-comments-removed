@@ -27,7 +27,7 @@ const {
   treeMapState,
   dominatorTreeState,
   individualsState,
-} = require("devtools/client/memory/constants");
+} = require("./constants");
 
 
 

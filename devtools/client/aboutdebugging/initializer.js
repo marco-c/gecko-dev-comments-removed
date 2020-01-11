@@ -20,4 +20,4 @@ const { require } = BrowserLoader({
 
 
 
-require("devtools/client/aboutdebugging/aboutdebugging");
+require("./aboutdebugging");

@@ -3,10 +3,7 @@
 
 "use strict";
 
-const {
-  UPDATE_DETAILS,
-  RESET,
-} = require("devtools/client/accessibility/constants");
+const { UPDATE_DETAILS, RESET } = require("../constants");
 
 
 

@@ -18,9 +18,7 @@ const {
   getCurrentZoom,
   getViewportDimensions,
 } = require("devtools/shared/layout/utils");
-const {
-  getComputedStyle,
-} = require("devtools/server/actors/highlighters/utils/markup");
+const { getComputedStyle } = require("./markup");
 
 
 

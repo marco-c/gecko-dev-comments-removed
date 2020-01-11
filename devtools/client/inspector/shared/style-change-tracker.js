@@ -5,7 +5,7 @@
 "use strict";
 
 const EventEmitter = require("devtools/shared/event-emitter");
-const WalkerEventListener = require("devtools/client/inspector/shared/walker-event-listener");
+const WalkerEventListener = require("./walker-event-listener");
 
 
 

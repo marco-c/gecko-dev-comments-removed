@@ -14,7 +14,7 @@ const {
   CanvasFrameAnonymousContentHelper,
   createSVGNode,
   createNode,
-} = require("devtools/server/actors/highlighters/utils/markup");
+} = require("./utils/markup");
 
 
 

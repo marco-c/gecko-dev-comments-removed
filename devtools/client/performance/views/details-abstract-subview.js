@@ -8,7 +8,7 @@ const {
   setNamedTimeout,
   clearNamedTimeout,
 } = require("devtools/client/shared/widgets/view-helpers");
-const EVENTS = require("devtools/client/performance/events");
+const EVENTS = require("../events");
 
 
 

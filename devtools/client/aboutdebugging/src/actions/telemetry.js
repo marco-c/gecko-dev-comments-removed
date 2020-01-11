@@ -4,9 +4,7 @@
 
 "use strict";
 
-const {
-  TELEMETRY_RECORD,
-} = require("devtools/client/aboutdebugging/src/constants");
+const { TELEMETRY_RECORD } = require("../constants");
 
 
 

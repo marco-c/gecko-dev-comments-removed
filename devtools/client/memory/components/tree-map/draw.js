@@ -13,7 +13,7 @@
 
 
 
-const colorCoarseType = require("devtools/client/memory/components/tree-map/color-coarse-type");
+const colorCoarseType = require("./color-coarse-type");
 const {
   hslToStyle,
   formatAbbreviatedBytes,

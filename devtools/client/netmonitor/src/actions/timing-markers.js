@@ -3,10 +3,7 @@
 
 "use strict";
 
-const {
-  ADD_TIMING_MARKER,
-  CLEAR_TIMING_MARKERS,
-} = require("devtools/client/netmonitor/src/constants");
+const { ADD_TIMING_MARKER, CLEAR_TIMING_MARKERS } = require("../constants");
 
 exports.addTimingMarker = marker => {
   return {

@@ -3,9 +3,7 @@
 
 "use strict";
 
-const {
-  fetchChildren,
-} = require("devtools/client/accessibility/actions/accessibles");
+const { fetchChildren } = require("./actions/accessibles");
 
 
 
