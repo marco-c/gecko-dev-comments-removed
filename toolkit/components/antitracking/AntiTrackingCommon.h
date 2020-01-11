@@ -130,8 +130,7 @@ class AntiTrackingCommon final {
   static RefPtr<FirstPartyStorageAccessGrantPromise>
   SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(
       nsIPrincipal* aPrincipal, nsIPrincipal* aTrackingPrinciapl,
-      const nsCString& aParentOrigin, const nsCString& aGrantedOrigin,
-      int aAllowMode);
+      const nsCString& aTrackingOrigin, int aAllowMode);
 
   
   static nsresult IsOnContentBlockingAllowList(nsIPrincipal* aTopWinPrincipal,
