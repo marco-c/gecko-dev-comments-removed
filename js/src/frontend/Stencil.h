@@ -108,6 +108,10 @@ struct FunctionCreationData {
 
   bool isSelfHosting = false;
 
+  
+  
+  mozilla::Maybe<bool> typeForScriptedFunction;
+
   mozilla::Maybe<LazyScriptCreationData> lazyScriptData;
 
   HandleAtom getAtom(JSContext* cx) const;

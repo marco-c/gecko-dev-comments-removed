@@ -44,7 +44,7 @@ bool FunctionEmitter::interpretedCommon() {
   
   
   bool singleton = bce_->checkRunOnceContext();
-  if (!JSFunction::setTypeForScriptedFunction(bce_->cx, fun_, singleton)) {
+  if (!funbox_->setTypeForScriptedFunction(bce_->cx, singleton)) {
     return false;
   }
 
