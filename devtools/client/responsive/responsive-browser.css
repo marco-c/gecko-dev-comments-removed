@@ -39,6 +39,9 @@
 }
 
 .browserContainer.responsive-mode > .browserStack > * {
+  box-sizing: content-box; 
+
+
   height: var(--rdm-height);
   width: var(--rdm-width);
 }
