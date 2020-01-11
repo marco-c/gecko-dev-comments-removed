@@ -20,13 +20,12 @@ add_task(async function test_flush() {
   is(entries.length, 1, "there is a single history entry");
 
   
-  await SpecialPowers.spawn(browser, [], async function() {
+  await ContentTask.spawn(browser, null, async function() {
     return new Promise(resolve => {
-      docShell.chromeEventHandler.addEventListener(
-        "hashchange",
-        () => resolve(),
-        { once: true }
-      );
+      addEventListener("hashchange", function onHashChange() {
+        removeEventListener("hashchange", onHashChange);
+        resolve();
+      });
 
       
       content.document.querySelector("a").click();
@@ -59,13 +58,12 @@ add_task(async function test_crash() {
   is(entries.length, 1, "there is a single history entry");
 
   
-  await SpecialPowers.spawn(browser, [], async function() {
+  await ContentTask.spawn(browser, null, async function() {
     return new Promise(resolve => {
-      docShell.chromeEventHandler.addEventListener(
-        "hashchange",
-        () => resolve(),
-        { once: true }
-      );
+      addEventListener("hashchange", function onHashChange() {
+        removeEventListener("hashchange", onHashChange);
+        resolve();
+      });
 
       
       content.document.querySelector("a").click();
@@ -102,13 +100,12 @@ add_task(async function test_remove() {
   is(entries.length, 1, "there is a single history entry");
 
   
-  await SpecialPowers.spawn(browser, [], async function() {
+  await ContentTask.spawn(browser, null, async function() {
     return new Promise(resolve => {
-      docShell.chromeEventHandler.addEventListener(
-        "hashchange",
-        () => resolve(),
-        { once: true }
-      );
+      addEventListener("hashchange", function onHashChange() {
+        removeEventListener("hashchange", onHashChange);
+        resolve();
+      });
 
       
       content.document.querySelector("a").click();

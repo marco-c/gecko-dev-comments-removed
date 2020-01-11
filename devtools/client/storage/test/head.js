@@ -60,7 +60,7 @@ async function openTab(url, options = {}) {
   const tab = await addTab(url, options);
 
   
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
+  await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
     
 
 
@@ -222,7 +222,7 @@ function forceCollections() {
 
 async function finishTests() {
   while (gBrowser.tabs.length > 1) {
-    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
+    await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
       
 
 

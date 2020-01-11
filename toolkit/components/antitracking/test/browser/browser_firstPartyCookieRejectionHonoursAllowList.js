@@ -23,7 +23,7 @@ add_task(async function() {
   
   await BrowserTestUtils.browserLoaded(browser);
 
-  await SpecialPowers.spawn(browser, [], async function(obj) {
+  await ContentTask.spawn(browser, {}, async function(obj) {
     await new content.Promise(async resolve => {
       let document = content.document;
       let window = document.defaultView;

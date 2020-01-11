@@ -80,9 +80,7 @@ add_task(async function() {
   
   await promiseUpdatePluginBindings(gTestBrowser);
 
-  await SpecialPowers.spawn(gTestBrowser, [gTestcases], async function(
-    testcases
-  ) {
+  await ContentTask.spawn(gTestBrowser, gTestcases, async function(testcases) {
     let doc = content.document;
 
     for (let testcaseId of Object.keys(testcases)) {

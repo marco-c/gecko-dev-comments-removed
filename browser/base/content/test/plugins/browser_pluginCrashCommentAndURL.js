@@ -71,7 +71,7 @@ add_task(async function() {
   );
 
   
-  await SpecialPowers.spawn(gTestBrowser, [config], async function(aConfig) {
+  await ContentTask.spawn(gTestBrowser, config, async function(aConfig) {
     let doc = content.document;
     let plugin = doc.getElementById("plugin");
     let pleaseSubmit = plugin.openOrClosedShadowRoot.getElementById(
@@ -122,7 +122,7 @@ add_task(async function() {
   );
 
   
-  await SpecialPowers.spawn(gTestBrowser, [config], async function(aConfig) {
+  await ContentTask.spawn(gTestBrowser, config, async function(aConfig) {
     let doc = content.document;
     let plugin = doc.getElementById("plugin");
     let pleaseSubmit = plugin.openOrClosedShadowRoot.getElementById(
@@ -217,7 +217,7 @@ add_task(async function() {
   await pluginCrashed;
 
   
-  await SpecialPowers.spawn(gTestBrowser, [config], async function(aConfig) {
+  await ContentTask.spawn(gTestBrowser, config, async function(aConfig) {
     let doc = content.document;
     let plugin = doc.getElementById("plugin");
     let pleaseSubmit = plugin.openOrClosedShadowRoot.getElementById(

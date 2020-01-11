@@ -87,9 +87,9 @@ add_task(async function test_text_input_spellcheck() {
       
       
       async preCheckContextMenuFn() {
-        await SpecialPowers.spawn(
+        await ContentTask.spawn(
           gBrowser.selectedBrowser,
-          [],
+          null,
           async function() {
             let doc = content.document;
             let input = doc.getElementById("input_spellcheck_no_value");
@@ -265,9 +265,9 @@ add_task(async function test_password_input() {
       
       
       async preCheckContextMenuFn() {
-        await SpecialPowers.spawn(
+        await ContentTask.spawn(
           gBrowser.selectedBrowser,
-          [],
+          null,
           async function() {
             let doc = content.document;
             let input = doc.getElementById("input_password");
@@ -277,9 +277,9 @@ add_task(async function test_password_input() {
         );
       },
       async postCheckContextMenuFn() {
-        await SpecialPowers.spawn(
+        await ContentTask.spawn(
           gBrowser.selectedBrowser,
-          [],
+          null,
           async function() {
             let doc = content.document;
             let input = doc.getElementById("input_password");

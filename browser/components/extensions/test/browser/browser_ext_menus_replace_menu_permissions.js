@@ -187,9 +187,9 @@ add_task(async function overrideContext_permissions() {
   await extension.awaitMessage("sidebar_ready");
 
   
-  await SpecialPowers.spawn(
+  await ContentTask.spawn(
     SidebarUI.browser.contentDocument.getElementById("webext-panels-browser"),
-    [],
+    null,
     () => {
       let { withHandlingUserInput } = ChromeUtils.import(
         "resource://gre/modules/ExtensionCommon.jsm",

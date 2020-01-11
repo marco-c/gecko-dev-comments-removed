@@ -12,7 +12,7 @@ add_task(async function thumbnails_bg_no_cookies_sent() {
     },
     async browser => {
       
-      await SpecialPowers.spawn(browser, [], function() {
+      await ContentTask.spawn(browser, null, function() {
         Assert.notEqual(
           content.document.documentElement.style.backgroundColor,
           "rgb(0, 255, 0)",
@@ -24,7 +24,7 @@ add_task(async function thumbnails_bg_no_cookies_sent() {
       
       browser.reload();
       await BrowserTestUtils.browserLoaded(browser);
-      await SpecialPowers.spawn(browser, [], function() {
+      await ContentTask.spawn(browser, null, function() {
         Assert.equal(
           content.document.documentElement.style.backgroundColor,
           "rgb(0, 255, 0)",

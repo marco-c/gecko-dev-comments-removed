@@ -104,19 +104,15 @@ this.CookiePolicyHelper = {
       await BrowserTestUtils.browserLoaded(browser);
 
       
-      await SpecialPowers.spawn(
-        browser,
-        [{ url: TEST_TOP_PAGE }],
-        async obj => {
-          return new content.Promise(resolve => {
-            let ifr = content.document.createElement("iframe");
-            ifr.setAttribute("id", "iframe");
-            ifr.src = obj.url;
-            ifr.onload = () => resolve();
-            content.document.body.appendChild(ifr);
-          });
-        }
-      );
+      await ContentTask.spawn(browser, { url: TEST_TOP_PAGE }, async obj => {
+        return new content.Promise(resolve => {
+          let ifr = content.document.createElement("iframe");
+          ifr.setAttribute("id", "iframe");
+          ifr.src = obj.url;
+          ifr.onload = resolve;
+          content.document.body.appendChild(ifr);
+        });
+      });
 
       
       info(
@@ -125,9 +121,9 @@ this.CookiePolicyHelper = {
           " and permission to " +
           config.fromPermission
       );
-      await SpecialPowers.spawn(
+      await ContentTask.spawn(
         browser,
-        [{ callback: goodCb.toString() }],
+        { callback: goodCb.toString() },
         async obj => {
           let runnableStr = `(() => {return (${obj.callback});})();`;
           let runnable = eval(runnableStr); 
@@ -151,9 +147,9 @@ this.CookiePolicyHelper = {
           " and permission to " +
           config.toPermission
       );
-      await SpecialPowers.spawn(
+      await ContentTask.spawn(
         browser,
-        [{ callback: goodCb.toString() }],
+        { callback: goodCb.toString() },
         async obj => {
           let runnableStr = `(() => {return (${obj.callback});})();`;
           let runnable = eval(runnableStr); 
@@ -176,9 +172,9 @@ this.CookiePolicyHelper = {
 
       
       info("Executing the test in a new tab");
-      await SpecialPowers.spawn(
+      await ContentTask.spawn(
         browser,
-        [{ callback: badCb.toString() }],
+        { callback: badCb.toString() },
         async obj => {
           let runnableStr = `(() => {return (${obj.callback});})();`;
           let runnable = eval(runnableStr); 

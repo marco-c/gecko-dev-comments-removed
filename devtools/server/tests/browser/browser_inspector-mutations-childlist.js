@@ -20,9 +20,7 @@ function loadSelectors(walker, selectors) {
 }
 
 function doMoves(movesArg) {
-  return SpecialPowers.spawn(gBrowser.selectedBrowser, [movesArg], function(
-    moves
-  ) {
+  return ContentTask.spawn(gBrowser.selectedBrowser, movesArg, function(moves) {
     function setParent(nodeSelector, newParentSelector) {
       const node = content.document.querySelector(nodeSelector);
       if (newParentSelector) {
@@ -61,9 +59,9 @@ function mutationTest(testSpec) {
     
     
     
-    await SpecialPowers.spawn(
+    await ContentTask.spawn(
       gBrowser.selectedBrowser,
-      [[gDummySerial++]],
+      [gDummySerial++],
       function(serial) {
         content.document.documentElement.setAttribute("data-dummy", serial);
       }

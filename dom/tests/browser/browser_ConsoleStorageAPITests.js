@@ -77,7 +77,7 @@ add_task(async function() {
 
   let windowId = await observerPromise;
 
-  await SpecialPowers.spawn(browser, [], function() {
+  await ContentTask.spawn(browser, null, function() {
     
     
     content.console.log("adding a new event");
@@ -93,9 +93,11 @@ add_task(async function() {
   browser = gBrowser.selectedBrowser;
 
   
-  await SpecialPowers.spawn(browser, [], () => {});
+  await ContentTask.spawn(browser, null, function() {
+    return Promise.resolve();
+  });
 
-  await SpecialPowers.spawn(browser, [windowId], function(windowId) {
+  await ContentTask.spawn(browser, windowId, function(windowId) {
     var ConsoleAPIStorage = Cc["@mozilla.org/consoleAPI-storage;1"].getService(
       Ci.nsIConsoleAPIStorage
     );
