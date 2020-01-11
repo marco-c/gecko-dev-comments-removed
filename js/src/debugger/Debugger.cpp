@@ -3685,6 +3685,34 @@ void DebugAPI::slowPathTraceGeneratorFrame(JSTracer* tracer,
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (tracer->isCallbackTracer()) {
     return;
   }
@@ -3696,8 +3724,6 @@ void DebugAPI::slowPathTraceGeneratorFrame(JSTracer* tracer,
             dbg->generatorFrames.lookupUnbarriered(generator)) {
       HeapPtr<DebuggerFrame*>& frameObj = entry->value();
       if (frameObj->hasAnyHooks()) {
-        
-        
         
         TraceCrossCompartmentEdge(tracer, generator, &frameObj,
                                   "Debugger.Frame with hooks for generator");
