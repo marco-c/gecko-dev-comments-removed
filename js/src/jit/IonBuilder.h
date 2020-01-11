@@ -619,6 +619,9 @@ class IonBuilder : public MIRGenerator,
       MNewArray* obj, MDefinition* id, MDefinition* value,
       bool addResumePointAndIncrementInitializedLength);
 
+  AbortReasonOr<Ok> initArrayElement(MDefinition* obj, MDefinition* id,
+                                     MDefinition* value);
+
   
   AbortReasonOr<Ok> getElemTryDense(bool* emitted, MDefinition* obj,
                                     MDefinition* index);
