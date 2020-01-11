@@ -42,9 +42,7 @@ class nsNPAPIPlugin final {
   
   
   
-  
-  void PluginCrashed(const nsAString& pluginDumpID,
-                     const nsAString& browserDumpID);
+  void PluginCrashed(const nsAString& pluginDumpID);
 
   nsresult Shutdown();
 
