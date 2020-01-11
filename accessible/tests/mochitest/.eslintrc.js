@@ -11,7 +11,10 @@ module.exports = {
   "overrides": [{
     "files": [
       "*.xhtml",
-      "*.html",
+      
+      
+      "attributes/test_listbox.html",
+      "treeupdate/test_ariaowns.html",
     ],
     "rules": {
       "no-undef": "off",
