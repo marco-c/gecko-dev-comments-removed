@@ -1906,6 +1906,12 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
   } else {
     NS_ASSERTION(aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE,
                  "Shouldn't be incomplete if availableBSize is UNCONSTRAINED.");
+    if (aState.mBCoord == nscoord_MAX) {
+      
+      
+      
+      blockEndEdgeOfChildren = aState.mBCoord = aReflowInput.AvailableBSize();
+    }
     finalSize.BSize(wm) =
         std::max(aState.mBCoord, aReflowInput.AvailableBSize());
     if (aReflowInput.AvailableBSize() == NS_UNCONSTRAINEDSIZE) {
