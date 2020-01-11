@@ -2123,7 +2123,9 @@ void Selection::Collapse(const RawRangeBoundary& aPoint, ErrorResult& aRv) {
       aPoint.Container()->IsContent()) {
     int32_t frameOffset;
     nsTextFrame* f = do_QueryFrame(nsCaret::GetFrameAndOffset(
-        this, aPoint.Container(), aPoint.Offset(), &frameOffset));
+        this, aPoint.Container(),
+        *aPoint.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets),
+        &frameOffset));
     if (f && f->IsAtEndOfLine() && f->HasSignificantTerminalNewline()) {
       
       
@@ -2131,7 +2133,9 @@ void Selection::Collapse(const RawRangeBoundary& aPoint, ErrorResult& aRv) {
       
       
       if ((aPoint.Container()->AsContent() == f->GetContent() &&
-           f->GetContentEnd() == static_cast<int32_t>(aPoint.Offset())) ||
+           f->GetContentEnd() ==
+               static_cast<int32_t>(*aPoint.Offset(
+                   RawRangeBoundary::OffsetFilter::kValidOffsets))) ||
           (aPoint.Container() == f->GetContent()->GetParentNode() &&
            f->GetContent() == aPoint.GetPreviousSiblingOfChildAtOffset())) {
         frameSelection->SetHint(CARET_ASSOCIATE_AFTER);
