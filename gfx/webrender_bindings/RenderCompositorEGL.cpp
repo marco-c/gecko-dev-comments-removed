@@ -65,17 +65,6 @@ RenderCompositorEGL::~RenderCompositorEGL() {
 
 bool RenderCompositorEGL::BeginFrame() {
 #ifdef MOZ_WAYLAND
-  bool newSurface =
-      mWidget->AsX11() && mWidget->AsX11()->WaylandRequestsUpdatingEGLSurface();
-  if (newSurface) {
-    
-    
-    DestroyEGLSurface();
-    mEGLSurface = CreateEGLSurface();
-    if (mEGLSurface == EGL_NO_SURFACE) {
-      RenderThread::Get()->HandleWebRenderError(WebRenderError::NEW_SURFACE);
-    }
-  }
   if (mEGLSurface == EGL_NO_SURFACE) {
     gfxCriticalNote
         << "We don't have EGLSurface to draw into. Called too early?";
@@ -89,19 +78,6 @@ bool RenderCompositorEGL::BeginFrame() {
     gfxCriticalNote << "Failed to make render context current, can't draw.";
     return false;
   }
-
-#ifdef MOZ_WAYLAND
-  if (newSurface) {
-    
-    
-    
-    
-    const auto& gle = gl::GLContextEGL::Cast(gl());
-    const auto& egl = gle->mEgl;
-    
-    egl->fSwapInterval(egl->Display(), 0);
-  }
-#endif
 
 #ifdef MOZ_WIDGET_ANDROID
   java::GeckoSurfaceTexture::DestroyUnused((int64_t)gl());
@@ -134,6 +110,23 @@ bool RenderCompositorEGL::Resume() {
   DestroyEGLSurface();
   mEGLSurface = CreateEGLSurface();
   gl::GLContextEGL::Cast(gl())->SetEGLSurfaceOverride(mEGLSurface);
+#elif defined(MOZ_WAYLAND)
+  
+  
+  DestroyEGLSurface();
+  mEGLSurface = CreateEGLSurface();
+  if (mEGLSurface != EGL_NO_SURFACE) {
+    
+    
+    
+    
+    const auto& gle = gl::GLContextEGL::Cast(gl());
+    const auto& egl = gle->mEgl;
+    
+    egl->fSwapInterval(egl->Display(), 0);
+  } else {
+    RenderThread::Get()->HandleWebRenderError(WebRenderError::NEW_SURFACE);
+  }
 #endif
   return true;
 }
