@@ -716,7 +716,7 @@ class SourceMediaTrack : public MediaTrack {
     
     
     nsAutoRef<SpeexResamplerState> mResampler;
-    int mResamplerChannelCount;
+    uint32_t mResamplerChannelCount;
     
     
     UniquePtr<MediaSegment> mData;
