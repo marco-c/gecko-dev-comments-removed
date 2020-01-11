@@ -24,6 +24,14 @@ function toMojoNDEFMessage(message) {
 
 function toMojoNDEFRecord(record) {
   let nfcRecord = new device.mojom.NDEFRecord();
+  if (record.recordType.search(':') != -1) {
+    
+    
+    
+    nfcRecord.category = device.mojom.NDEFRecordTypeCategory.kExternal;
+  } else {
+    nfcRecord.category = device.mojom.NDEFRecordTypeCategory.kStandardized;
+  }
   nfcRecord.recordType = record.recordType;
   nfcRecord.mediaType = record.mediaType;
   nfcRecord.id = record.id;
