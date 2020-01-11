@@ -5119,7 +5119,3 @@ Simulator* Simulator::Current() {
 }  
 
 js::jit::Simulator* JSContext::simulator() const { return simulator_; }
-
-uintptr_t* JSContext::addressOfSimulatorStackLimit() {
-  return simulator_->addressOfStackLimit();
-}

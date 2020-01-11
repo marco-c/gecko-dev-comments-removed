@@ -4063,7 +4063,3 @@ uintptr_t Simulator::popAddress() {
 }  
 
 js::jit::Simulator* JSContext::simulator() const { return simulator_; }
-
-uintptr_t* JSContext::addressOfSimulatorStackLimit() {
-  return simulator_->addressOfStackLimit();
-}
