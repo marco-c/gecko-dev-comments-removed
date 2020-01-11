@@ -236,6 +236,12 @@ static int GetEffectiveSandboxLevel(GeckoProcessType aType) {
       }
       return 0;
     case GeckoProcessType_Content:
+#ifdef MOZ_ENABLE_FORKSERVER
+      
+      
+      
+    case GeckoProcessType_ForkServer:
+#endif
       
       MOZ_ASSERT(NS_IsMainThread());
       if (info.Test(SandboxInfo::kEnabledForContent)) {
@@ -327,9 +333,9 @@ void SandboxLaunchPrepare(GeckoProcessType aType,
     auto forker = MakeUnique<SandboxFork>(flags, canChroot);
     forker->PrepareMapping(&aOptions->fds_to_remap);
     aOptions->fork_delegate = std::move(forker);
-    if (canChroot) {
-      aOptions->env_map[kSandboxChrootEnvFlag] = std::to_string(flags);
-    }
+    
+    aOptions->env_map[kSandboxChrootEnvFlag] =
+      std::to_string(canChroot? 1 : 0) + std::to_string(flags);
   }
 }
 
@@ -351,10 +357,9 @@ void SandboxLaunchForkServerPrepare(const std::vector<std::string>& aArgv,
   if (chroot == aOptions.env_map.end()) {
     return;
   }
-  int flags = atoi(chroot->second.c_str());
-  if (flags == 0) {
-    return;
-  }
+  bool canChroot = chroot->second.c_str()[0] == '1';
+  int flags = atoi(chroot->second.c_str() + 1);
+  MOZ_ASSERT(flags || canChroot);
 
   
   
@@ -373,7 +378,7 @@ void SandboxLaunchForkServerPrepare(const std::vector<std::string>& aArgv,
   
   
   
-  auto forker = MakeUnique<SandboxFork>(flags, true, chrootserverfd);
+  auto forker = MakeUnique<SandboxFork>(flags, canChroot, chrootserverfd);
   aOptions.fork_delegate = std::move(forker);
 }
 #endif
