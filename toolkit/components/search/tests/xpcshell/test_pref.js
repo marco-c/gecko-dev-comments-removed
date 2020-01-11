@@ -38,6 +38,13 @@ add_task(async function test_pref_initial_value() {
     base + "good%26id%3Dunique",
     "Should have got the submission URL with the correct code"
   );
+
+  
+  
+  
+  
+  
+  Services.prefs.clearUserPref(SearchUtils.BROWSER_SEARCH_PREF + "param.code");
 });
 
 add_task(async function test_pref_updated() {
