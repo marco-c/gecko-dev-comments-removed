@@ -13,9 +13,19 @@ const MockDocument = {
   
 
 
-  createTestDocument(aDocumentURL, aContent = "<form>", aType = "text/html") {
+  createTestDocument(
+    aDocumentURL,
+    aContent = "<form>",
+    aType = "text/html",
+    useSystemPrincipal = false
+  ) {
     let parser = new DOMParser();
-    let parsedDoc = parser.parseFromString(aContent, aType);
+    let parsedDoc;
+    if (useSystemPrincipal) {
+      parsedDoc = parser.parseFromSafeString(aContent, aType);
+    } else {
+      parsedDoc = parser.parseFromString(aContent, aType);
+    }
 
     
     
@@ -71,6 +81,12 @@ const MockDocument = {
         Services.io.newURI(aURL),
         {}
       ),
+    });
+  },
+
+  mockBrowsingContextProperty(aElement, aBC) {
+    Object.defineProperty(aElement, "browsingContext", {
+      value: aBC,
     });
   },
 

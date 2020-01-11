@@ -1135,6 +1135,40 @@ this.LoginHelper = {
       data: guidSupportsString,
     });
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  getBrowserForPrompt(browser) {
+    let chromeWindow = browser.ownerGlobal;
+    let openerBrowsingContext = browser.browsingContext.opener;
+    let openerBrowser = openerBrowsingContext
+      ? openerBrowsingContext.top.embedderElement
+      : null;
+    if (openerBrowser) {
+      let chromeDoc = chromeWindow.document.documentElement;
+
+      
+      
+      
+      
+      if (chromeDoc.getAttribute("chromehidden") && !browser.canGoBack) {
+        log.debug("Using opener window for prompt.");
+        return openerBrowser;
+      }
+    }
+
+    return browser;
+  },
 };
 
 LoginHelper.init();

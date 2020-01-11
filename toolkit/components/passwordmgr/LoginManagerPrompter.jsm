@@ -9,9 +9,6 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { PrivateBrowsingUtils } = ChromeUtils.import(
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );
-const { PromptUtils } = ChromeUtils.import(
-  "resource://gre/modules/SharedPromptUtils.jsm"
-);
 
 
 
@@ -20,6 +17,12 @@ ChromeUtils.defineModuleGetter(
   "LoginHelper",
   "resource://gre/modules/LoginHelper.jsm"
 );
+
+XPCOMUtils.defineLazyGetter(this, "strBundle", () => {
+  return Services.strings.createBundle(
+    "chrome://passwordmgr/locale/passwordmgr.properties"
+  );
+});
 
 const LoginInfo = Components.Constructor(
   "@mozilla.org/login-manager/loginInfo;1",
@@ -59,569 +62,38 @@ const ATTENTION_NOTIFICATION_TIMEOUT_MS = 60 * 1000;
 
 
 
-const PromptAbuseHelper = {
-  getBaseDomainOrFallback(hostname) {
-    try {
-      return Services.eTLD.getBaseDomainFromHost(hostname);
-    } catch (e) {
-      return hostname;
-    }
-  },
 
-  incrementPromptAbuseCounter(baseDomain, browser) {
-    if (!browser) {
-      return;
-    }
-
-    if (!browser.authPromptAbuseCounter) {
-      browser.authPromptAbuseCounter = {};
-    }
-
-    if (!browser.authPromptAbuseCounter[baseDomain]) {
-      browser.authPromptAbuseCounter[baseDomain] = 0;
-    }
-
-    browser.authPromptAbuseCounter[baseDomain] += 1;
-  },
-
-  resetPromptAbuseCounter(baseDomain, browser) {
-    if (!browser || !browser.authPromptAbuseCounter) {
-      return;
-    }
-
-    browser.authPromptAbuseCounter[baseDomain] = 0;
-  },
-
-  hasReachedAbuseLimit(baseDomain, browser) {
-    if (!browser || !browser.authPromptAbuseCounter) {
-      return false;
-    }
-
-    let abuseCounter = browser.authPromptAbuseCounter[baseDomain];
-    
-    if (this.abuseLimit < 0) {
-      return false;
-    }
-    return !!abuseCounter && abuseCounter >= this.abuseLimit;
-  },
-};
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  PromptAbuseHelper,
-  "abuseLimit",
-  "prompts.authentication_dialog_abuse_limit"
-);
-
-
-
-
-
-
-function LoginManagerPromptFactory() {
-  Services.obs.addObserver(this, "quit-application-granted", true);
-  Services.obs.addObserver(this, "passwordmgr-crypto-login", true);
-  Services.obs.addObserver(this, "passwordmgr-crypto-loginCanceled", true);
-}
-
-LoginManagerPromptFactory.prototype = {
-  classID: Components.ID("{749e62f4-60ae-4569-a8a2-de78b649660e}"),
-  QueryInterface: ChromeUtils.generateQI([
-    Ci.nsIPromptFactory,
-    Ci.nsIObserver,
-    Ci.nsISupportsWeakReference,
-  ]),
-
-  _asyncPrompts: {},
-  _asyncPromptInProgress: false,
-
-  observe(subject, topic, data) {
-    this.log("Observed: " + topic);
-    if (topic == "quit-application-granted") {
-      this._cancelPendingPrompts();
-    } else if (topic == "passwordmgr-crypto-login") {
-      
-      this._doAsyncPrompt();
-    } else if (topic == "passwordmgr-crypto-loginCanceled") {
-      
-      
-      this._cancelPendingPrompts();
-    }
-  },
-
-  getPrompt(aWindow, aIID) {
-    var prompt = new LoginManagerPrompter().QueryInterface(aIID);
-    prompt.init(aWindow, this);
-    return prompt;
-  },
-
-  _doAsyncPrompt() {
-    if (this._asyncPromptInProgress) {
-      this.log("_doAsyncPrompt bypassed, already in progress");
-      return;
-    }
-
-    
-    var hashKey = null;
-    for (hashKey in this._asyncPrompts) {
-      break;
-    }
-
-    if (!hashKey) {
-      this.log("_doAsyncPrompt:run bypassed, no prompts in the queue");
-      return;
-    }
-
-    
-    
-    var prompt = this._asyncPrompts[hashKey];
-    var prompter = prompt.prompter;
-    var [origin, httpRealm] = prompter._getAuthTarget(
-      prompt.channel,
-      prompt.authInfo
-    );
-    var hasLogins = Services.logins.countLogins(origin, null, httpRealm) > 0;
-    if (
-      !hasLogins &&
-      LoginHelper.schemeUpgrades &&
-      origin.startsWith("https://")
-    ) {
-      let httpOrigin = origin.replace(/^https:\/\//, "http://");
-      hasLogins = Services.logins.countLogins(httpOrigin, null, httpRealm) > 0;
-    }
-    if (hasLogins && Services.logins.uiBusy) {
-      this.log("_doAsyncPrompt:run bypassed, master password UI busy");
-      return;
-    }
-
-    var self = this;
-
-    var runnable = {
-      cancel: false,
-      run() {
-        var ok = false;
-        if (!this.cancel) {
-          try {
-            self.log(
-              "_doAsyncPrompt:run - performing the prompt for '" + hashKey + "'"
-            );
-            ok = prompter.promptAuth(
-              prompt.channel,
-              prompt.level,
-              prompt.authInfo
-            );
-          } catch (e) {
-            if (
-              e instanceof Components.Exception &&
-              e.result == Cr.NS_ERROR_NOT_AVAILABLE
-            ) {
-              self.log(
-                "_doAsyncPrompt:run bypassed, UI is not available in this context"
-              );
-            } else {
-              Cu.reportError(
-                "LoginManagerPrompter: _doAsyncPrompt:run: " + e + "\n"
-              );
-            }
-          }
-
-          delete self._asyncPrompts[hashKey];
-          prompt.inProgress = false;
-          self._asyncPromptInProgress = false;
-        }
-
-        for (var consumer of prompt.consumers) {
-          if (!consumer.callback) {
-            
-            
-            continue;
-          }
-
-          self.log("Calling back to " + consumer.callback + " ok=" + ok);
-          try {
-            if (ok) {
-              consumer.callback.onAuthAvailable(
-                consumer.context,
-                prompt.authInfo
-              );
-            } else {
-              consumer.callback.onAuthCancelled(consumer.context, !this.cancel);
-            }
-          } catch (e) {
-            
-          }
-        }
-        self._doAsyncPrompt();
-      },
-    };
-
-    this._asyncPromptInProgress = true;
-    prompt.inProgress = true;
-
-    Services.tm.dispatchToMainThread(runnable);
-    this.log("_doAsyncPrompt:run dispatched");
-  },
-
-  _cancelPendingPrompts() {
-    this.log("Canceling all pending prompts...");
-    var asyncPrompts = this._asyncPrompts;
-    this.__proto__._asyncPrompts = {};
-
-    for (var hashKey in asyncPrompts) {
-      let prompt = asyncPrompts[hashKey];
-      
-      
-      
-      if (prompt.inProgress) {
-        this.log("skipping a prompt in progress");
-        continue;
-      }
-
-      for (var consumer of prompt.consumers) {
-        if (!consumer.callback) {
-          continue;
-        }
-
-        this.log("Canceling async auth prompt callback " + consumer.callback);
-        try {
-          consumer.callback.onAuthCancelled(consumer.context, true);
-        } catch (e) {
-          
-        }
-      }
-    }
-  },
-}; 
-
-XPCOMUtils.defineLazyGetter(
-  this.LoginManagerPromptFactory.prototype,
-  "log",
-  () => {
-    let logger = LoginHelper.createLogger("Login PromptFactory");
-    return logger.log.bind(logger);
+class LoginManagerPrompter {
+  get classID() {
+    return Components.ID("{c47ff942-9678-44a5-bc9b-05e0d676c79c}");
   }
-);
 
+  get QueryInterface() {
+    return ChromeUtils.generateQI([Ci.nsILoginManagerPrompter]);
+  }
 
-
-
-
-
-
-
-
-
-
-
-
-
-function LoginManagerPrompter() {}
-
-LoginManagerPrompter.prototype = {
-  classID: Components.ID("{8aa66d77-1bbb-45a6-991e-b8f47751c291}"),
-  QueryInterface: ChromeUtils.generateQI([
-    Ci.nsIAuthPrompt,
-    Ci.nsIAuthPrompt2,
-    Ci.nsILoginManagerPrompter,
-  ]),
-
-  _factory: null,
-  _chromeWindow: null,
-  _browser: null,
-  _openerBrowser: null,
-
-  __strBundle: null, 
-  get _strBundle() {
-    if (!this.__strBundle) {
-      this.__strBundle = Services.strings.createBundle(
-        "chrome://passwordmgr/locale/passwordmgr.properties"
-      );
-      if (!this.__strBundle) {
-        throw new Error("String bundle for Login Manager not present!");
-      }
-    }
-
-    return this.__strBundle;
-  },
-
-  __ellipsis: null,
-  get _ellipsis() {
-    if (!this.__ellipsis) {
-      this.__ellipsis = "\u2026";
-      try {
-        this.__ellipsis = Services.prefs.getComplexValue(
-          "intl.ellipsis",
-          Ci.nsIPrefLocalizedString
-        ).data;
-      } catch (e) {}
-    }
-    return this.__ellipsis;
-  },
-
-  
-  get _inPrivateBrowsing() {
-    if (this._chromeWindow) {
-      return PrivateBrowsingUtils.isWindowPrivate(this._chromeWindow);
-    }
-    
-    
-    
-    
-    
-    this.log("We have no chromeWindow so assume we're in a private context");
-    return true;
-  },
-
-  get _allowRememberLogin() {
-    if (!this._inPrivateBrowsing) {
-      return true;
-    }
-    return LoginHelper.privateBrowsingCaptureEnabled;
-  },
-
-  
-
-  
-
-
-
-  prompt(
-    aDialogTitle,
-    aText,
-    aPasswordRealm,
-    aSavePassword,
-    aDefaultText,
-    aResult
+  promptToSavePassword(
+    aBrowser,
+    aLogin,
+    dismissed = false,
+    notifySaved = false
   ) {
-    if (aSavePassword != Ci.nsIAuthPrompt.SAVE_PASSWORD_NEVER) {
-      throw new Components.Exception(
-        "prompt only supports SAVE_PASSWORD_NEVER",
-        Cr.NS_ERROR_NOT_IMPLEMENTED
-      );
-    }
-
-    this.log("===== prompt() called =====");
-
-    if (aDefaultText) {
-      aResult.value = aDefaultText;
-    }
-
-    return Services.prompt.prompt(
-      this._chromeWindow,
-      aDialogTitle,
-      aText,
-      aResult,
-      null,
-      {}
+    log.debug("promptToSavePassword");
+    let inPrivateBrowsing = PrivateBrowsingUtils.isBrowserPrivate(aBrowser);
+    LoginManagerPrompter._showLoginCaptureDoorhanger(
+      aBrowser,
+      aLogin,
+      "password-save",
+      {
+        dismissed: inPrivateBrowsing || dismissed,
+        extraAttr: notifySaved ? "attention" : "",
+      },
+      {
+        notifySaved,
+      }
     );
-  },
-
-  
-
-
-
-  promptUsernameAndPassword(
-    aDialogTitle,
-    aText,
-    aPasswordRealm,
-    aSavePassword,
-    aUsername,
-    aPassword
-  ) {
-    this.log("===== promptUsernameAndPassword() called =====");
-
-    if (aSavePassword == Ci.nsIAuthPrompt.SAVE_PASSWORD_FOR_SESSION) {
-      throw new Components.Exception(
-        "promptUsernameAndPassword doesn't support SAVE_PASSWORD_FOR_SESSION",
-        Cr.NS_ERROR_NOT_IMPLEMENTED
-      );
-    }
-
-    let foundLogins = null;
-    var selectedLogin = null;
-    var checkBox = { value: false };
-    var checkBoxLabel = null;
-    var [origin, realm, unused] = this._getRealmInfo(aPasswordRealm);
-
-    
-    if (origin) {
-      var canRememberLogin = false;
-      if (this._allowRememberLogin) {
-        canRememberLogin =
-          aSavePassword == Ci.nsIAuthPrompt.SAVE_PASSWORD_PERMANENTLY &&
-          Services.logins.getLoginSavingEnabled(origin);
-      }
-
-      
-      if (canRememberLogin) {
-        checkBoxLabel = this._getLocalizedString("rememberPassword");
-      }
-
-      
-      foundLogins = Services.logins.findLogins(origin, null, realm);
-
-      
-      
-      if (foundLogins.length) {
-        selectedLogin = foundLogins[0];
-
-        
-        
-        
-        if (aUsername.value) {
-          selectedLogin = this._repickSelectedLogin(
-            foundLogins,
-            aUsername.value
-          );
-        }
-
-        if (selectedLogin) {
-          checkBox.value = true;
-          aUsername.value = selectedLogin.username;
-          
-          if (!aPassword.value) {
-            aPassword.value = selectedLogin.password;
-          }
-        }
-      }
-    }
-
-    var ok = Services.prompt.promptUsernameAndPassword(
-      this._chromeWindow,
-      aDialogTitle,
-      aText,
-      aUsername,
-      aPassword,
-      checkBoxLabel,
-      checkBox
-    );
-
-    if (!ok || !checkBox.value || !origin) {
-      return ok;
-    }
-
-    if (!aPassword.value) {
-      this.log("No password entered, so won't offer to save.");
-      return ok;
-    }
-
-    
-    
-    
-    selectedLogin = this._repickSelectedLogin(foundLogins, aUsername.value);
-
-    
-    
-    let newLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(
-      Ci.nsILoginInfo
-    );
-    newLogin.init(
-      origin,
-      null,
-      realm,
-      aUsername.value,
-      aPassword.value,
-      "",
-      ""
-    );
-    if (!selectedLogin) {
-      
-      this.log("New login seen for " + realm);
-      Services.logins.addLogin(newLogin);
-    } else if (aPassword.value != selectedLogin.password) {
-      
-      this.log("Updating password for  " + realm);
-      this._updateLogin(selectedLogin, newLogin);
-    } else {
-      this.log("Login unchanged, no further action needed.");
-      this._updateLogin(selectedLogin);
-    }
-
-    return ok;
-  },
-
-  
-
-
-
-
-
-
-
-  promptPassword(
-    aDialogTitle,
-    aText,
-    aPasswordRealm,
-    aSavePassword,
-    aPassword
-  ) {
-    this.log("===== promptPassword called() =====");
-
-    if (aSavePassword == Ci.nsIAuthPrompt.SAVE_PASSWORD_FOR_SESSION) {
-      throw new Components.Exception(
-        "promptPassword doesn't support SAVE_PASSWORD_FOR_SESSION",
-        Cr.NS_ERROR_NOT_IMPLEMENTED
-      );
-    }
-
-    var checkBox = { value: false };
-    var checkBoxLabel = null;
-    var [origin, realm, username] = this._getRealmInfo(aPasswordRealm);
-
-    username = decodeURIComponent(username);
-
-    
-    if (origin && !this._inPrivateBrowsing) {
-      var canRememberLogin =
-        aSavePassword == Ci.nsIAuthPrompt.SAVE_PASSWORD_PERMANENTLY &&
-        Services.logins.getLoginSavingEnabled(origin);
-
-      
-      if (canRememberLogin) {
-        checkBoxLabel = this._getLocalizedString("rememberPassword");
-      }
-
-      if (!aPassword.value) {
-        
-        var foundLogins = Services.logins.findLogins(origin, null, realm);
-
-        
-        
-        
-        
-        for (var i = 0; i < foundLogins.length; ++i) {
-          if (foundLogins[i].username == username) {
-            aPassword.value = foundLogins[i].password;
-            
-            return true;
-          }
-        }
-      }
-    }
-
-    var ok = Services.prompt.promptPassword(
-      this._chromeWindow,
-      aDialogTitle,
-      aText,
-      aPassword,
-      checkBoxLabel,
-      checkBox
-    );
-
-    if (ok && checkBox.value && origin && aPassword.value) {
-      var newLogin = Cc[
-        "@mozilla.org/login-manager/loginInfo;1"
-      ].createInstance(Ci.nsILoginInfo);
-      newLogin.init(origin, null, realm, username, aPassword.value, "", "");
-
-      this.log("New login seen for " + realm);
-
-      Services.logins.addLogin(newLogin);
-    }
-
-    return ok;
-  },
-
-  
+    Services.obs.notifyObservers(aLogin, "passwordmgr-prompt-save");
+  }
 
   
 
@@ -635,365 +107,23 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _getRealmInfo(aRealmString) {
-    var httpRealm = /^.+ \(.+\)$/;
-    if (httpRealm.test(aRealmString)) {
-      return [null, null, null];
-    }
 
-    var uri = Services.io.newURI(aRealmString);
-    var pathname = "";
 
-    if (uri.pathQueryRef != "/") {
-      pathname = uri.pathQueryRef;
-    }
 
-    var formattedOrigin = this._getFormattedOrigin(uri);
 
-    return [formattedOrigin, formattedOrigin + pathname, uri.username];
-  },
 
-  
 
-  
 
 
 
-
-
-
-  promptAuth(aChannel, aLevel, aAuthInfo) {
-    var selectedLogin = null;
-    var checkbox = { value: false };
-    var checkboxLabel = null;
-    var epicfail = false;
-    var canAutologin = false;
-    var notifyObj;
-    var foundLogins;
-
-    try {
-      this.log("===== promptAuth called =====");
-
-      
-      
-      
-      this._removeLoginNotifications();
-
-      var [origin, httpRealm] = this._getAuthTarget(aChannel, aAuthInfo);
-
-      
-      foundLogins = LoginHelper.searchLoginsWithObject({
-        origin,
-        httpRealm,
-        schemeUpgrades: LoginHelper.schemeUpgrades,
-      });
-      this.log("found", foundLogins.length, "matching logins.");
-      let resolveBy = ["scheme", "timePasswordChanged"];
-      foundLogins = LoginHelper.dedupeLogins(
-        foundLogins,
-        ["username"],
-        resolveBy,
-        origin
-      );
-      this.log(foundLogins.length, "matching logins remain after deduping");
-
-      
-      if (foundLogins.length) {
-        selectedLogin = foundLogins[0];
-        this._SetAuthInfo(
-          aAuthInfo,
-          selectedLogin.username,
-          selectedLogin.password
-        );
-
-        
-        if (
-          aAuthInfo.flags & Ci.nsIAuthInformation.AUTH_PROXY &&
-          !(aAuthInfo.flags & Ci.nsIAuthInformation.PREVIOUS_FAILED) &&
-          Services.prefs.getBoolPref("signon.autologin.proxy") &&
-          !this._inPrivateBrowsing
-        ) {
-          this.log("Autologin enabled, skipping auth prompt.");
-          canAutologin = true;
-        }
-
-        checkbox.value = true;
-      }
-
-      var canRememberLogin = Services.logins.getLoginSavingEnabled(origin);
-      if (!this._allowRememberLogin) {
-        canRememberLogin = false;
-      }
-
-      
-      notifyObj = this._getPopupNote();
-      if (canRememberLogin && !notifyObj) {
-        checkboxLabel = this._getLocalizedString("rememberPassword");
-      }
-    } catch (e) {
-      
-      epicfail = true;
-      Cu.reportError(
-        "LoginManagerPrompter: Epic fail in promptAuth: " + e + "\n"
-      );
-    }
-
-    var ok = canAutologin;
-    let browser = this._browser;
-    let baseDomain;
-
-    
-    
-    try {
-      let topLevelHost = browser.currentURI.host;
-      baseDomain = PromptAbuseHelper.getBaseDomainOrFallback(topLevelHost);
-    } catch (e) {
-      baseDomain = PromptAbuseHelper.getBaseDomainOrFallback(origin);
-    }
-
-    if (!ok) {
-      if (PromptAbuseHelper.hasReachedAbuseLimit(baseDomain, browser)) {
-        this.log("Blocking auth dialog, due to exceeding dialog bloat limit");
-        return false;
-      }
-
-      
-      
-      
-      
-      PromptAbuseHelper.incrementPromptAbuseCounter(baseDomain, browser);
-
-      if (this._chromeWindow) {
-        PromptUtils.fireDialogEvent(
-          this._chromeWindow,
-          "DOMWillOpenModalDialog",
-          this._browser
-        );
-      }
-      ok = Services.prompt.promptAuth(
-        this._chromeWindow,
-        aChannel,
-        aLevel,
-        aAuthInfo,
-        checkboxLabel,
-        checkbox
-      );
-    }
-
-    let [username, password] = this._GetAuthInfo(aAuthInfo);
-
-    
-    
-    if (ok && (username || password)) {
-      PromptAbuseHelper.resetPromptAbuseCounter(baseDomain, browser);
-    }
-
-    
-    
-    
-    
-    var rememberLogin = notifyObj ? canRememberLogin : checkbox.value;
-    if (!ok || !rememberLogin || epicfail) {
-      return ok;
-    }
-
-    try {
-      if (!password) {
-        this.log("No password entered, so won't offer to save.");
-        return ok;
-      }
-
-      
-      
-      
-      selectedLogin = this._repickSelectedLogin(foundLogins, username);
-
-      
-      
-      let newLogin = Cc[
-        "@mozilla.org/login-manager/loginInfo;1"
-      ].createInstance(Ci.nsILoginInfo);
-      newLogin.init(origin, null, httpRealm, username, password, "", "");
-      if (!selectedLogin) {
-        this.log(
-          "New login seen for " +
-            username +
-            " @ " +
-            origin +
-            " (" +
-            httpRealm +
-            ")"
-        );
-
-        if (notifyObj) {
-          this._showLoginCaptureDoorhanger(newLogin, "password-save", {
-            dismissed: this._inPrivateBrowsing,
-          });
-          Services.obs.notifyObservers(newLogin, "passwordmgr-prompt-save");
-        } else {
-          Services.logins.addLogin(newLogin);
-        }
-      } else if (password != selectedLogin.password) {
-        this.log(
-          "Updating password for " +
-            username +
-            " @ " +
-            origin +
-            " (" +
-            httpRealm +
-            ")"
-        );
-        if (notifyObj) {
-          this._showChangeLoginNotification(notifyObj, selectedLogin, newLogin);
-        } else {
-          this._updateLogin(selectedLogin, newLogin);
-        }
-      } else {
-        this.log("Login unchanged, no further action needed.");
-        this._updateLogin(selectedLogin);
-      }
-    } catch (e) {
-      Cu.reportError("LoginManagerPrompter: Fail2 in promptAuth: " + e + "\n");
-    }
-
-    return ok;
-  },
-
-  asyncPromptAuth(aChannel, aCallback, aContext, aLevel, aAuthInfo) {
-    var cancelable = null;
-
-    try {
-      this.log("===== asyncPromptAuth called =====");
-
-      
-      
-      
-      this._removeLoginNotifications();
-
-      cancelable = this._newAsyncPromptConsumer(aCallback, aContext);
-
-      var [origin, httpRealm] = this._getAuthTarget(aChannel, aAuthInfo);
-
-      var hashKey = aLevel + "|" + origin + "|" + httpRealm;
-      this.log("Async prompt key = " + hashKey);
-      var asyncPrompt = this._factory._asyncPrompts[hashKey];
-      if (asyncPrompt) {
-        this.log(
-          "Prompt bound to an existing one in the queue, callback = " +
-            aCallback
-        );
-        asyncPrompt.consumers.push(cancelable);
-        return cancelable;
-      }
-
-      this.log("Adding new prompt to the queue, callback = " + aCallback);
-      asyncPrompt = {
-        consumers: [cancelable],
-        channel: aChannel,
-        authInfo: aAuthInfo,
-        level: aLevel,
-        inProgress: false,
-        prompter: this,
-      };
-
-      this._factory._asyncPrompts[hashKey] = asyncPrompt;
-      this._factory._doAsyncPrompt();
-    } catch (e) {
-      Cu.reportError(
-        "LoginManagerPrompter: " +
-          "asyncPromptAuth: " +
-          e +
-          "\nFalling back to promptAuth\n"
-      );
-      
-      
-      throw e;
-    }
-
-    return cancelable;
-  },
-
-  
-
-  init(aWindow = null, aFactory = null) {
-    if (!aWindow) {
-      
-      this._chromeWindow = null;
-      this._browser = null;
-    } else if (aWindow.isChromeWindow) {
-      this._chromeWindow = aWindow;
-      
-      this._browser = null;
-    } else {
-      let { win, browser } = this._getChromeWindow(aWindow);
-      this._chromeWindow = win;
-      this._browser = browser;
-    }
-    this._openerBrowser = null;
-    this._factory = aFactory || null;
-
-    this.log("===== initialized =====");
-  },
-
-  set browser(aBrowser) {
-    this._browser = aBrowser;
-  },
-
-  set openerBrowser(aOpenerBrowser) {
-    this._openerBrowser = aOpenerBrowser;
-  },
-
-  promptToSavePassword(aLogin, dismissed = false, notifySaved = false) {
-    this.log("promptToSavePassword");
-    var notifyObj = this._getPopupNote();
-    if (notifyObj) {
-      this._showLoginCaptureDoorhanger(
-        aLogin,
-        "password-save",
-        {
-          dismissed: this._inPrivateBrowsing || dismissed,
-          extraAttr: notifySaved ? "attention" : "",
-        },
-        {
-          notifySaved,
-        }
-      );
-      Services.obs.notifyObservers(aLogin, "passwordmgr-prompt-save");
-    } else {
-      this._showSaveLoginDialog(aLogin);
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _showLoginCaptureDoorhanger(
+  static _showLoginCaptureDoorhanger(
+    browser,
     login,
     type,
     showOptions = {},
     { notifySaved = false, messageStringID, autoSavedLoginGuid = "" } = {}
   ) {
-    let { browser } = this._getNotifyWindow();
-    if (!browser) {
-      return;
-    }
-    this.log(
+    log.debug(
       `_showLoginCaptureDoorhanger, got autoSavedLoginGuid: ${autoSavedLoginGuid}`
     );
 
@@ -1177,7 +307,7 @@ LoginManagerPrompter.prototype = {
       
       logins.sort(l => (l.username == login.username ? -1 : 1));
 
-      this.log(`persistData: Matched ${logins.length} logins`);
+      log.debug(`persistData: Matched ${logins.length} logins`);
 
       let loginToRemove;
       let loginToUpdate = logins.shift();
@@ -1186,7 +316,7 @@ LoginManagerPrompter.prototype = {
         loginToRemove = logins.shift();
       }
       if (logins.length) {
-        this.log(
+        log.debug(
           "multiple logins, loginToRemove:",
           loginToRemove && loginToRemove.guid
         );
@@ -1214,10 +344,10 @@ LoginManagerPrompter.prototype = {
         loginToUpdate.username == login.username
       ) {
         
-        this.log("persistData: Touch matched login", loginToUpdate.guid);
+        log.debug("persistData: Touch matched login", loginToUpdate.guid);
         this._updateLogin(loginToUpdate);
       } else {
-        this.log("persistData: Update matched login", loginToUpdate.guid);
+        log.debug("persistData: Update matched login", loginToUpdate.guid);
         this._updateLogin(loginToUpdate, login);
         
         if (loginToRemove && loginToRemove.guid == autoSavedLoginGuid) {
@@ -1229,7 +359,7 @@ LoginManagerPrompter.prototype = {
       }
 
       if (loginToRemove) {
-        this.log("persistData: removing login", loginToRemove.guid);
+        log.debug("persistData: removing login", loginToRemove.guid);
         Services.logins.removeLogin(loginToRemove);
       }
     };
@@ -1295,14 +425,16 @@ LoginManagerPrompter.prototype = {
       "togglePasswordAccessKey2"
     );
 
-    let popupNote = this._getPopupNote();
+    
+    let { PopupNotifications } = browser.ownerGlobal.wrappedJSObject;
+
     let notificationID = "password";
     
     const timeoutMs =
       showOptions.dismissed && showOptions.extraAttr == "attention"
         ? ATTENTION_NOTIFICATION_TIMEOUT_MS
         : NOTIFICATION_TIMEOUT_MS;
-    popupNote.show(
+    PopupNotifications.show(
       browser,
       notificationID,
       promptMsg,
@@ -1403,83 +535,15 @@ LoginManagerPrompter.prototype = {
     );
 
     if (notifySaved) {
-      let notification = popupNote.getNotification(notificationID);
+      let notification = PopupNotifications.getNotification(notificationID);
       let anchor = notification.anchorElement;
       anchor.ownerGlobal.ConfirmationHint.show(anchor, "passwordSaved");
     }
-  },
-
-  _removeLoginNotifications() {
-    var popupNote = this._getPopupNote();
-    if (popupNote) {
-      popupNote = popupNote.getNotification("password");
-    }
-    if (popupNote) {
-      popupNote.remove();
-    }
-  },
+  }
 
   
 
 
-
-  _showSaveLoginDialog(aLogin) {
-    const buttonFlags =
-      Ci.nsIPrompt.BUTTON_POS_1_DEFAULT +
-      Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_0 +
-      Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_1 +
-      Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_2;
-
-    var displayHost = this._getShortDisplayHost(aLogin.origin);
-
-    var dialogText;
-    if (aLogin.username) {
-      var displayUser = this._sanitizeUsername(aLogin.username);
-      dialogText = this._getLocalizedString("rememberPasswordMsg", [
-        displayUser,
-        displayHost,
-      ]);
-    } else {
-      dialogText = this._getLocalizedString("rememberPasswordMsgNoUsername", [
-        displayHost,
-      ]);
-    }
-    var dialogTitle = this._getLocalizedString("savePasswordTitle");
-    var neverButtonText = this._getLocalizedString("neverForSiteButtonText");
-    var rememberButtonText = this._getLocalizedString("rememberButtonText");
-    var notNowButtonText = this._getLocalizedString("notNowButtonText");
-
-    this.log("Prompting user to save/ignore login");
-    var userChoice = Services.prompt.confirmEx(
-      this._chromeWindow,
-      dialogTitle,
-      dialogText,
-      buttonFlags,
-      rememberButtonText,
-      notNowButtonText,
-      neverButtonText,
-      null,
-      {}
-    );
-    
-    
-    
-    
-    if (userChoice == 2) {
-      this.log("Disabling " + aLogin.origin + " logins by request.");
-      Services.logins.setLoginSavingEnabled(aLogin.origin, false);
-    } else if (userChoice == 0) {
-      this.log("Saving login for " + aLogin.origin);
-      Services.logins.addLogin(aLogin);
-    } else {
-      
-      this.log("Ignoring login.");
-    }
-
-    Services.obs.notifyObservers(aLogin, "passwordmgr-prompt-save");
-  },
-
-  
 
 
 
@@ -1497,48 +561,7 @@ LoginManagerPrompter.prototype = {
 
 
   promptToChangePassword(
-    aOldLogin,
-    aNewLogin,
-    dismissed = false,
-    notifySaved = false,
-    autoSavedLoginGuid = ""
-  ) {
-    let notifyObj = this._getPopupNote();
-
-    if (notifyObj) {
-      this._showChangeLoginNotification(
-        notifyObj,
-        aOldLogin,
-        aNewLogin,
-        dismissed,
-        notifySaved,
-        autoSavedLoginGuid
-      );
-    } else {
-      this._showChangeLoginDialog(aOldLogin, aNewLogin);
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _showChangeLoginNotification(
-    aNotifyObj,
+    aBrowser,
     aOldLogin,
     aNewLogin,
     dismissed = false,
@@ -1563,7 +586,8 @@ LoginManagerPrompter.prototype = {
       messageStringID = "updateLoginMsgAddUsername";
     }
 
-    this._showLoginCaptureDoorhanger(
+    LoginManagerPrompter._showLoginCaptureDoorhanger(
+      aBrowser,
       login,
       "password-change",
       {
@@ -1583,49 +607,7 @@ LoginManagerPrompter.prototype = {
       "passwordmgr-prompt-change",
       oldGUID
     );
-  },
-
-  
-
-
-  _showChangeLoginDialog(aOldLogin, aNewLogin) {
-    const buttonFlags = Ci.nsIPrompt.STD_YES_NO_BUTTONS;
-
-    var dialogText;
-    if (aOldLogin.username) {
-      dialogText = this._getLocalizedString("updatePasswordMsg", [
-        aOldLogin.username,
-      ]);
-    } else {
-      dialogText = this._getLocalizedString("updatePasswordMsgNoUser");
-    }
-
-    var dialogTitle = this._getLocalizedString("passwordChangeTitle");
-
-    
-    var ok = !Services.prompt.confirmEx(
-      this._chromeWindow,
-      dialogTitle,
-      dialogText,
-      buttonFlags,
-      null,
-      null,
-      null,
-      null,
-      {}
-    );
-    if (ok) {
-      this.log("Updating password for user " + aOldLogin.username);
-      this._updateLogin(aOldLogin, aNewLogin);
-    }
-
-    let oldGUID = aOldLogin.QueryInterface(Ci.nsILoginMetaInfo).guid;
-    Services.obs.notifyObservers(
-      aNewLogin,
-      "passwordmgr-prompt-change",
-      oldGUID
-    );
-  },
+  }
 
   
 
@@ -1636,20 +618,24 @@ LoginManagerPrompter.prototype = {
 
 
 
-  promptToChangePasswordWithUsernames(logins, aNewLogin) {
-    this.log("promptToChangePasswordWithUsernames with count:", logins.length);
+  promptToChangePasswordWithUsernames(browser, logins, aNewLogin) {
+    log.debug("promptToChangePasswordWithUsernames with count:", logins.length);
 
     var usernames = logins.map(
-      l => l.username || this._getLocalizedString("noUsername")
+      l => l.username || LoginManagerPrompter._getLocalizedString("noUsername")
     );
-    var dialogText = this._getLocalizedString("userSelectText2");
-    var dialogTitle = this._getLocalizedString("passwordChangeTitle");
+    var dialogText = LoginManagerPrompter._getLocalizedString(
+      "userSelectText2"
+    );
+    var dialogTitle = LoginManagerPrompter._getLocalizedString(
+      "passwordChangeTitle"
+    );
     var selectedIndex = { value: null };
 
     
     
     var ok = Services.prompt.select(
-      this._chromeWindow,
+      browser.ownerGlobal,
       dialogTitle,
       dialogText,
       usernames,
@@ -1658,7 +644,7 @@ LoginManagerPrompter.prototype = {
     if (ok) {
       
       var selectedLogin = logins[selectedIndex.value];
-      this.log("Updating password for user " + selectedLogin.username);
+      log.debug("Updating password for user", selectedLogin.username);
       var newLoginWithUsername = Cc[
         "@mozilla.org/login-manager/loginInfo;1"
       ].createInstance(Ci.nsILoginInfo);
@@ -1671,13 +657,13 @@ LoginManagerPrompter.prototype = {
         selectedLogin.usernameField,
         aNewLogin.passwordField
       );
-      this._updateLogin(selectedLogin, newLoginWithUsername);
+      LoginManagerPrompter._updateLogin(selectedLogin, newLoginWithUsername);
     }
-  },
+  }
 
   
 
-  _updateLogin(login, aNewLogin = null) {
+  static _updateLogin(login, aNewLogin = null) {
     var now = Date.now();
     var propBag = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
       Ci.nsIWritablePropertyBag
@@ -1695,88 +681,7 @@ LoginManagerPrompter.prototype = {
     propBag.setProperty("timeLastUsed", now);
     propBag.setProperty("timesUsedIncrement", 1);
     Services.logins.modifyLogin(login, propBag);
-  },
-
-  
-
-
-  _getChromeWindow(aWindow) {
-    
-    if (!Cu.isCrossProcessWrapper(aWindow)) {
-      let browser = aWindow.docShell.chromeEventHandler;
-      if (!browser) {
-        return null;
-      }
-
-      let chromeWin = browser.ownerGlobal;
-      if (!chromeWin) {
-        return null;
-      }
-
-      return { win: chromeWin, browser };
-    }
-
-    return null;
-  },
-
-  _getNotifyWindow() {
-    
-    
-    
-    if (this._openerBrowser) {
-      let chromeDoc = this._chromeWindow.document.documentElement;
-
-      
-      
-      
-      
-      if (chromeDoc.getAttribute("chromehidden") && !this._browser.canGoBack) {
-        this.log("Using opener window for notification prompt.");
-        return {
-          win: this._openerBrowser.ownerGlobal,
-          browser: this._openerBrowser,
-        };
-      }
-    }
-
-    return {
-      win: this._chromeWindow,
-      browser: this._browser,
-    };
-  },
-
-  
-
-
-
-  _getPopupNote() {
-    let popupNote = null;
-
-    try {
-      let { win: notifyWin } = this._getNotifyWindow();
-
-      
-      popupNote = notifyWin.wrappedJSObject.PopupNotifications;
-    } catch (e) {
-      this.log("Popup notifications not available on window");
-    }
-
-    return popupNote;
-  },
-
-  
-
-
-
-
-  _repickSelectedLogin(foundLogins, username) {
-    for (var i = 0; i < foundLogins.length; i++) {
-      if (foundLogins[i].username == username) {
-        return foundLogins[i];
-      }
-    }
-    return null;
-  },
+  }
 
   
 
@@ -1789,49 +694,19 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _getLocalizedString(key, formatArgs) {
+  static _getLocalizedString(key, formatArgs) {
     if (formatArgs) {
-      return this._strBundle.formatStringFromName(key, formatArgs);
+      return strBundle.formatStringFromName(key, formatArgs);
     }
-    return this._strBundle.GetStringFromName(key);
-  },
+    return strBundle.GetStringFromName(key);
+  }
 
   
 
 
 
 
-  _sanitizeUsername(username) {
-    if (username.length > 30) {
-      username = username.substring(0, 30);
-      username += this._ellipsis;
-    }
-    return username.replace(/['"]/g, "");
-  },
-
-  
-
-
-
-
-
-  _getFormattedOrigin(aURI) {
-    let uri;
-    if (aURI instanceof Ci.nsIURI) {
-      uri = aURI;
-    } else {
-      uri = Services.io.newURI(aURI);
-    }
-
-    return uri.scheme + "://" + uri.displayHostPort;
-  },
-
-  
-
-
-
-
-  _getShortDisplayHost(aURIString) {
+  static _getShortDisplayHost(aURIString) {
     var displayHost;
 
     var idnService = Cc["@mozilla.org/network/idn-service;1"].getService(
@@ -1842,7 +717,7 @@ LoginManagerPrompter.prototype = {
       var baseDomain = Services.eTLD.getBaseDomain(uri);
       displayHost = idnService.convertToDisplayIDN(baseDomain, {});
     } catch (e) {
-      this.log("_getShortDisplayHost couldn't process " + aURIString);
+      log.warn("_getShortDisplayHost couldn't process", aURIString);
     }
 
     if (!displayHost) {
@@ -1850,115 +725,7 @@ LoginManagerPrompter.prototype = {
     }
 
     return displayHost;
-  },
-
-  
-
-
-
-  _getAuthTarget(aChannel, aAuthInfo) {
-    var origin, realm;
-
-    
-    
-    if (aAuthInfo.flags & Ci.nsIAuthInformation.AUTH_PROXY) {
-      this.log("getAuthTarget is for proxy auth");
-      if (!(aChannel instanceof Ci.nsIProxiedChannel)) {
-        throw new Error("proxy auth needs nsIProxiedChannel");
-      }
-
-      var info = aChannel.proxyInfo;
-      if (!info) {
-        throw new Error("proxy auth needs nsIProxyInfo");
-      }
-
-      
-      
-      var idnService = Cc["@mozilla.org/network/idn-service;1"].getService(
-        Ci.nsIIDNService
-      );
-      origin =
-        "moz-proxy://" +
-        idnService.convertUTF8toACE(info.host) +
-        ":" +
-        info.port;
-      realm = aAuthInfo.realm;
-      if (!realm) {
-        realm = origin;
-      }
-
-      return [origin, realm];
-    }
-
-    origin = this._getFormattedOrigin(aChannel.URI);
-
-    
-    
-    
-    realm = aAuthInfo.realm;
-    if (!realm) {
-      realm = origin;
-    }
-
-    return [origin, realm];
-  },
-
-  
-
-
-
-
-
-
-  _GetAuthInfo(aAuthInfo) {
-    var username, password;
-
-    var flags = aAuthInfo.flags;
-    if (flags & Ci.nsIAuthInformation.NEED_DOMAIN && aAuthInfo.domain) {
-      username = aAuthInfo.domain + "\\" + aAuthInfo.username;
-    } else {
-      username = aAuthInfo.username;
-    }
-
-    password = aAuthInfo.password;
-
-    return [username, password];
-  },
-
-  
-
-
-
-
-  _SetAuthInfo(aAuthInfo, username, password) {
-    var flags = aAuthInfo.flags;
-    if (flags & Ci.nsIAuthInformation.NEED_DOMAIN) {
-      
-      var idx = username.indexOf("\\");
-      if (idx == -1) {
-        aAuthInfo.username = username;
-      } else {
-        aAuthInfo.domain = username.substring(0, idx);
-        aAuthInfo.username = username.substring(idx + 1);
-      }
-    } else {
-      aAuthInfo.username = username;
-    }
-    aAuthInfo.password = password;
-  },
-
-  _newAsyncPromptConsumer(aCallback, aContext) {
-    return {
-      QueryInterface: ChromeUtils.generateQI([Ci.nsICancelable]),
-      callback: aCallback,
-      context: aContext,
-      cancel() {
-        this.callback.onAuthCancelled(this.context, false);
-        this.callback = null;
-        this.context = null;
-      },
-    };
-  },
+  }
 
   
 
@@ -1979,19 +746,18 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _filterUpdatableLogins(aLogin, aLoginList, includeGUID) {
+  static _filterUpdatableLogins(aLogin, aLoginList, includeGUID) {
     return aLoginList.filter(
       l =>
         l.username == aLogin.username ||
         (l.password == aLogin.password && !l.username) ||
         (includeGUID && includeGUID == l.guid)
     );
-  },
-}; 
+  }
+}
 
-XPCOMUtils.defineLazyGetter(this.LoginManagerPrompter.prototype, "log", () => {
-  let logger = LoginHelper.createLogger("LoginManagerPrompter");
-  return logger.log.bind(logger);
+XPCOMUtils.defineLazyGetter(this, "log", () => {
+  return LoginHelper.createLogger("LoginManagerPrompter");
 });
 
-const EXPORTED_SYMBOLS = ["LoginManagerPromptFactory", "LoginManagerPrompter"];
+const EXPORTED_SYMBOLS = ["LoginManagerPrompter"];
