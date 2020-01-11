@@ -407,11 +407,6 @@ button.invoke-getter {
 }
 
 
-.objectBox-function .param {
-  color: var(--theme-highlight-red);
-}
-
-
 
 
 .tree.object-inspector .node.object-node {
