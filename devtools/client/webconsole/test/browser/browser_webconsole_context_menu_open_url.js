@@ -9,6 +9,7 @@
 const TEST_URI =
   "http://example.com/browser/devtools/client/webconsole/" +
   "test/browser/test-console.html";
+const TEST_URI2 = "http://example.com/";
 
 add_task(async function() {
   
@@ -32,6 +33,32 @@ add_task(async function() {
   ok(!openUrlItem, "Open URL menu item is not available");
 
   await hideContextMenu(hud);
+
+  info("Test Open URL menu item for a text message containing a link");
+  await ContentTask.spawn(gBrowser.selectedBrowser, TEST_URI2, url => {
+    content.wrappedJSObject.console.log("Visit", url);
+  });
+
+  info("Open context menu for the link");
+  message = await waitFor(() => findMessage(hud, "Visit"));
+  const urlNode = message.querySelector("a.url");
+  menuPopup = await openContextMenu(hud, urlNode);
+  openUrlItem = menuPopup.querySelector("#console-menu-open-url");
+  ok(openUrlItem, "Open URL menu item is available");
+
+  info("Click on Open URL menu item and wait for new tab to open");
+  let currentTab = gBrowser.selectedTab;
+  const onTabLoaded = BrowserTestUtils.waitForNewTab(gBrowser, TEST_URI2, true);
+  openUrlItem.click();
+  let newTab = await onTabLoaded;
+  ok(newTab, "The expected tab was opened.");
+  is(
+    newTab._tPos,
+    currentTab._tPos + 1,
+    "The new tab was opened in the position to the right of the current tab"
+  );
+  is(gBrowser.selectedTab, currentTab, "The tab was opened in the background");
+
   await clearOutput(hud);
 
   info("Test Open URL menu item for network log");
@@ -48,12 +75,12 @@ add_task(async function() {
   openUrlItem = menuPopup.querySelector("#console-menu-open-url");
   ok(openUrlItem, "Open URL menu item is available");
 
-  const currentTab = gBrowser.selectedTab;
+  currentTab = gBrowser.selectedTab;
   const tabLoaded = listenToTabLoad();
   info("Click on Open URL menu item and wait for new tab to open");
   openUrlItem.click();
   await hideContextMenu(hud);
-  const newTab = await tabLoaded;
+  newTab = await tabLoaded;
   const newTabHref = newTab.linkedBrowser.currentURI.spec;
   is(newTabHref, TEST_URI, "Tab was opened with the expected URL");
 
