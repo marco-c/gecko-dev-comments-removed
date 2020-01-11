@@ -557,32 +557,25 @@ nsresult IDBDatabase::Transaction(JSContext* aCx,
   sortedStoreNames.SetCapacity(nameCount);
 
   
-  for (uint32_t nameIndex = 0; nameIndex < nameCount; nameIndex++) {
-    const nsString& name = storeNames[nameIndex];
-
-    bool found = false;
-
-    for (uint32_t objCount = objectStores.Length(), objIndex = 0;
-         objIndex < objCount; objIndex++) {
-      if (objectStores[objIndex].metadata().name() == name) {
-        found = true;
-        break;
-      }
-    }
-
-    if (!found) {
+  
+  const auto begin = objectStores.cbegin();
+  const auto end = objectStores.cend();
+  for (const auto& name : storeNames) {
+    const auto foundIt =
+        std::find_if(begin, end, [&name](const auto& objectStore) {
+          return objectStore.metadata().name() == name;
+        });
+    if (foundIt == end) {
       return NS_ERROR_DOM_INDEXEDDB_NOT_FOUND_ERR;
     }
 
-    sortedStoreNames.InsertElementSorted(name);
+    sortedStoreNames.EmplaceBack(name);
   }
+  sortedStoreNames.Sort();
 
   
-  for (uint32_t nameIndex = nameCount - 1; nameIndex > 0; nameIndex--) {
-    if (sortedStoreNames[nameIndex] == sortedStoreNames[nameIndex - 1]) {
-      sortedStoreNames.RemoveElementAt(nameIndex);
-    }
-  }
+  sortedStoreNames.SetLength(
+      std::unique(sortedStoreNames.begin(), sortedStoreNames.end()).GetIndex());
 
   IDBTransaction::Mode mode;
   switch (aMode) {
