@@ -46,9 +46,9 @@ def create_manifest(tmpdir, build_obj):
 
     def inner(string, name='manifest.ini'):
         manifest = tmpdir.join(name)
-        manifest.write(string)
+        manifest.write(string, ensure=True)
         path = unicode(manifest)
-        return TestManifest(manifests=(path,), strict=False)
+        return TestManifest(manifests=(path,), strict=False, rootdir=tmpdir.strpath)
 
     return inner
 
@@ -80,30 +80,6 @@ def test_prefs_validation(get_active_tests, create_manifest):
     assert prefs.pop() == "\nfoo=bar\nbrowser.dom.foo=baz"
 
     
-    manifest = create_manifest(dedent("""
-    [DEFAULT]
-    prefs =
-      browser.dom.foo=fleem
-      flower=rose
-
-    [include:manifest.ini]
-    [test_foo.html]
-    """), name='ancestor-manifest.ini')
-    options['manifestFile'] = manifest
-    md, tests = get_active_tests(**options)
-    assert len(tests) == 3
-
-    assert 'ancestor-manifest.ini' in md.prefs_by_manifest
-    prefs = md.prefs_by_manifest['ancestor-manifest.ini']
-    assert len(prefs) == 1
-    assert prefs.pop() == '\nbrowser.dom.foo=fleem\nflower=rose'
-
-    assert 'ancestor-manifest.ini:manifest.ini' in md.prefs_by_manifest
-    prefs = md.prefs_by_manifest['ancestor-manifest.ini:manifest.ini']
-    assert len(prefs) == 1
-    assert prefs.pop() == '\nbrowser.dom.foo=fleem\nflower=rose \nfoo=bar\nbrowser.dom.foo=baz'
-
-    
     options['runByManifest'] = False
     with pytest.raises(SystemExit):
         get_active_tests(**options)
@@ -117,6 +93,52 @@ def test_prefs_validation(get_active_tests, create_manifest):
     """))
     with pytest.raises(SystemExit):
         get_active_tests(**options)
+
+
+def test_prefs_validation_with_ancestor_manifest(get_active_tests, create_manifest):
+    
+    create_manifest(dedent("""
+    [DEFAULT]
+    prefs=
+      foo=bar
+      browser.dom.foo=baz
+
+    [files/test_pass.html]
+    [files/test_fail.html]
+    """), name='subdir/manifest.ini')
+
+    manifest = create_manifest(dedent("""
+    [DEFAULT]
+    prefs =
+      browser.dom.foo=fleem
+      flower=rose
+
+    [include:manifest.ini]
+    [test_foo.html]
+    """), name='subdir/ancestor-manifest.ini')
+
+    options = {
+        'runByManifest': True,
+        'manifestFile': manifest,
+    }
+
+    md, tests = get_active_tests(**options)
+    assert len(tests) == 3
+
+    key = os.path.join('subdir', 'ancestor-manifest.ini')
+    assert key in md.prefs_by_manifest
+    prefs = md.prefs_by_manifest[key]
+    assert len(prefs) == 1
+    assert prefs.pop() == '\nbrowser.dom.foo=fleem\nflower=rose'
+
+    key = '{}:{}'.format(
+        os.path.join('subdir', 'ancestor-manifest.ini'),
+        os.path.join('subdir', 'manifest.ini')
+    )
+    assert key in md.prefs_by_manifest
+    prefs = md.prefs_by_manifest[key]
+    assert len(prefs) == 1
+    assert prefs.pop() == '\nbrowser.dom.foo=fleem\nflower=rose \nfoo=bar\nbrowser.dom.foo=baz'
 
 
 if __name__ == '__main__':
