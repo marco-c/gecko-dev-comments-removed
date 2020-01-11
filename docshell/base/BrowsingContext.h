@@ -73,6 +73,10 @@ class BrowsingContextBase {
   }
   ~BrowsingContextBase() = default;
 
+  
+  
+  
+  
 #define MOZ_BC_FIELD(name, type)                                    \
   type m##name;                                                     \
                                                                     \
@@ -456,6 +460,14 @@ class BrowsingContext : public nsISupports,
     bool mValidated = false;
   };
 
+  
+  
+  
+  
+  
+  
+  
+  
 #define MOZ_BC_FIELD(name, type)                        \
   template <typename... Args>                           \
   void Set##name(Args&&... aValue) {                    \
@@ -573,6 +585,8 @@ class BrowsingContext : public nsISupports,
   
   
   void DidSetMuted();
+
+  void DidSetAncestorLoading();
 
   bool MaySetEmbedderInnerWindowId(const uint64_t& aValue,
                                    ContentParent* aSource);
