@@ -78,6 +78,11 @@ pref("security.enterprise_roots.enabled", false);
 
 
 
+pref("security.osclientcerts.autoload", false);
+
+
+
+
 
 pref("security.OCSP.enabled", 1);
 pref("security.OCSP.require", false);
