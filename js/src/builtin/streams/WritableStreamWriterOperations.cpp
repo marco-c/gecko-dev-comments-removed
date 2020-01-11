@@ -185,8 +185,7 @@ static bool EnsurePromiseRejected(
   }
 
   
-  unwrappedPromise->setHandled();
-  cx->runtime()->removeUnhandledRejectedPromise(cx, unwrappedPromise);
+  SetPromiseIsHandled(cx, unwrappedPromise);
   return true;
 }
 
