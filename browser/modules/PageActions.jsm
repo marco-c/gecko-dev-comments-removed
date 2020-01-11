@@ -1280,6 +1280,20 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
   });
 }
 
+if (Services.prefs.getBoolPref("browser.ssb.enabled", false)) {
+  gBuiltInActions.push({
+    id: "launchSSB",
+    
+    title: "Launch Site Specific Browser",
+    onLocationChange(browserWindow) {
+      browserPageActions(browserWindow).launchSSB.updateState();
+    },
+    onCommand(event, buttonNode) {
+      browserPageActions(buttonNode).launchSSB.onCommand(event, buttonNode);
+    },
+  });
+}
+
 
 if (AppConstants.platform == "macosx") {
   gBuiltInActions.push({
