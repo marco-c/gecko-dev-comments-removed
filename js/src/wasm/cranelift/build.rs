@@ -30,7 +30,7 @@ fn main() {
     
     println!("cargo:rerun-if-changed=baldrapi.h");
 
-    let mut bindings = bindgen::builder()
+    let mut generator = bindgen::builder()
         .disable_name_namespacing()
         
         .whitelist_function("env_.*")
@@ -70,7 +70,7 @@ fn main() {
                 .map(|s| s.to_owned())
                 .collect();
             for flag in extra_flags {
-                bindings = bindings.clang_arg(flag);
+                generator = generator.clang_arg(flag);
             }
         }
         None => {
@@ -78,9 +78,17 @@ fn main() {
         }
     }
 
-    let bindings = bindings
-        .generate()
-        .expect("Unable to generate baldrapi.h bindings");
+    let command_line_opts = generator.command_line_flags();
+
+    
+    let bindings = generator.generate().unwrap_or_else(|_err| {
+        panic!(
+            r#"Unable to generate baldrapi.h bindings:
+- flags: {}
+"#,
+            command_line_opts.join(" "),
+        );
+    });
 
     
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
