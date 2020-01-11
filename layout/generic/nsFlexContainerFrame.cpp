@@ -417,24 +417,27 @@ class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
   void InitAxesFromModernProps(const nsFlexContainerFrame* aFlexContainer);
 
   
-  AxisOrientationType mMainAxis;
-  AxisOrientationType mCrossAxis;
+  AxisOrientationType mMainAxis = eAxis_LR;
+  AxisOrientationType mCrossAxis = eAxis_TB;
   
 
   const WritingMode mWM;  
 
-  bool mIsRowOriented;  
-                        
-
-  bool mIsMainAxisReversed;   
-                              
-  bool mIsCrossAxisReversed;  
-                              
+  
+  bool mIsRowOriented = true;
 
   
   
+  bool mIsMainAxisReversed = false;
+
   
-  bool mAreAxesInternallyReversed;
+  
+  bool mIsCrossAxisReversed = false;
+
+  
+  
+  
+  bool mAreAxesInternallyReversed = false;
 };
 
 
@@ -3621,11 +3624,7 @@ static inline AxisOrientationType BlockDirToAxisOrientation(
 FlexboxAxisTracker::FlexboxAxisTracker(
     const nsFlexContainerFrame* aFlexContainer, const WritingMode& aWM,
     AxisTrackerFlags aFlags)
-    : mMainAxis(eAxis_LR),
-      mWM(aWM),
-      mIsRowOriented(true),
-      mIsMainAxisReversed(false),
-      mAreAxesInternallyReversed(false) {
+    : mWM(aWM) {
   if (IsLegacyBox(aFlexContainer)) {
     InitAxesFromLegacyProps(aFlexContainer);
   } else {
