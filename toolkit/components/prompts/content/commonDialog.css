@@ -2,7 +2,19 @@
 
 
 
-@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"); 
+#dialogGrid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+}
+
+.dialogRow:not([hidden]) {
+  display: contents;
+}
+
+#iconContainer {
+  align-self: start;
+}
 
 #infoContainer {
   max-width: 45em;
@@ -17,6 +29,5 @@
 }
 
 #loginLabel, #password1Label {
-  text-align: right;
+  text-align: end;
 }
-
