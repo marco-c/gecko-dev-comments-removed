@@ -97,9 +97,9 @@ class AccessibilityTree extends Component {
 
 
 
-  onReorder(accessible) {
-    if (this.props.accessibles.has(accessible.actorID)) {
-      this.props.dispatch(fetchChildren(accessible));
+  onReorder(accessibleFront) {
+    if (this.props.accessibles.has(accessibleFront.actorID)) {
+      this.props.dispatch(fetchChildren(accessibleFront));
     }
   }
 
@@ -113,16 +113,17 @@ class AccessibilityTree extends Component {
 
 
 
-  onNameChange(accessible, parent) {
+
+  onNameChange(accessibleFront, parentFront) {
     const { accessibles, dispatch } = this.props;
-    const accessibilityWalkerFront = accessible.parent();
-    parent = parent || accessibilityWalkerFront;
+    const accessibilityWalkerFront = accessibleFront.parent();
+    parentFront = parentFront || accessibilityWalkerFront;
 
     if (
-      accessibles.has(accessible.actorID) ||
-      accessibles.has(parent.actorID)
+      accessibles.has(accessibleFront.actorID) ||
+      accessibles.has(parentFront.actorID)
     ) {
-      dispatch(fetchChildren(parent));
+      dispatch(fetchChildren(parentFront));
     }
   }
 
@@ -134,10 +135,10 @@ class AccessibilityTree extends Component {
 
 
 
-  onTextChange(accessible) {
+  onTextChange(accessibleFront) {
     const { accessibles, dispatch } = this.props;
-    if (accessibles.has(accessible.actorID)) {
-      dispatch(fetchChildren(accessible));
+    if (accessibles.has(accessibleFront.actorID)) {
+      dispatch(fetchChildren(accessibleFront));
     }
   }
 
@@ -180,7 +181,6 @@ class AccessibilityTree extends Component {
       const highlighted = object === highlightedItem;
       return AccessibilityRow(
         Object.assign({}, rowProps, {
-          accessibilityWalker,
           hasContextMenu,
           highlighted,
           decorator: {
