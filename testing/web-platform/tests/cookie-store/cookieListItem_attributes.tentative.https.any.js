@@ -1,3 +1,6 @@
+
+
+
 'use strict';
 
 const kCurrentHostname = (new URL(self.location.href)).hostname;
