@@ -940,7 +940,9 @@ class HuffmanDictionary {
 
     setReady(i);
 
-    auto& t = table(i.toIndex());
+    tableIndices_[i.toIndex()] = nextIndex_++;
+
+    auto& t = table(i);
     new (mozilla::KnownNotNull, &t) GenericHuffmanTable();
 
     return t;
@@ -948,10 +950,11 @@ class HuffmanDictionary {
 
   const GenericHuffmanTable& getTable(TableIdentity i) const {
     MOZ_ASSERT(isReady(i));
-    return table(i.toIndex());
+    return table(i);
   }
 
  private:
+  
   
   
   
@@ -969,6 +972,12 @@ class HuffmanDictionary {
   
   
   
+  uint16_t tableIndices_[TableIdentity::Limit] = {0};
+
+  
+  uint16_t nextIndex_ = 0;
+
+  
   
   
   
@@ -980,11 +989,19 @@ class HuffmanDictionary {
   alignas(GenericHuffmanTable) char tables_[sizeof(GenericHuffmanTable) *
                                             TableIdentity::Limit];
 
-  GenericHuffmanTable& table(size_t i) {
+  GenericHuffmanTable& table(TableIdentity i) {
+    return tableAtIndex(tableIndices_[i.toIndex()]);
+  }
+
+  const GenericHuffmanTable& table(TableIdentity i) const {
+    return tableAtIndex(tableIndices_[i.toIndex()]);
+  }
+
+  GenericHuffmanTable& tableAtIndex(size_t i) {
     return (reinterpret_cast<GenericHuffmanTable*>(tables_))[i];
   }
 
-  const GenericHuffmanTable& table(size_t i) const {
+  const GenericHuffmanTable& tableAtIndex(size_t i) const {
     return (reinterpret_cast<const GenericHuffmanTable*>(tables_))[i];
   }
 };
