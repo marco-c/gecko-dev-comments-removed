@@ -508,40 +508,54 @@ nsNotifyAddrListener::CheckAdaptersAddresses(void) {
     
     
 
-    auto checkRegistry = [&dnsSuffixList] {
+    
+    
+    
+    auto checkRegistry = [&dnsSuffixList](const nsAString& aRegPath) -> bool {
       nsresult rv;
       nsCOMPtr<nsIWindowsRegKey> regKey =
           do_CreateInstance("@mozilla.org/windows-registry-key;1", &rv);
       if (NS_FAILED(rv)) {
         LOG(("  creating nsIWindowsRegKey failed\n"));
-        return;
+        return false;
       }
-      rv = regKey->Open(
-          nsIWindowsRegKey::ROOT_KEY_LOCAL_MACHINE,
-          NS_LITERAL_STRING(
-              "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters"),
-          nsIWindowsRegKey::ACCESS_READ);
+      rv = regKey->Open(nsIWindowsRegKey::ROOT_KEY_LOCAL_MACHINE, aRegPath,
+                        nsIWindowsRegKey::ACCESS_READ);
       if (NS_FAILED(rv)) {
         LOG(("  opening registry key failed\n"));
-        return;
+        return false;
       }
       nsAutoString wideSuffixString;
       rv = regKey->ReadStringValue(NS_LITERAL_STRING("SearchList"),
                                    wideSuffixString);
       if (NS_FAILED(rv)) {
         LOG(("  reading registry string value failed\n"));
-        return;
+        return false;
       }
 
+      
+      
       nsAutoCString list = NS_ConvertUTF16toUTF8(wideSuffixString);
+      list.StripWhitespace();
       for (const nsACString& suffix : list.Split(',')) {
         LOG(("  appending DNS suffix from registry: %s\n",
              suffix.BeginReading()));
-        dnsSuffixList.AppendElement(suffix);
+        if (!suffix.IsEmpty()) {
+          dnsSuffixList.AppendElement(suffix);
+        }
       }
+
+      return true;
     };
 
-    checkRegistry();
+    
+    
+    
+    if (!checkRegistry(NS_LITERAL_STRING(
+            "SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient"))) {
+      checkRegistry(NS_LITERAL_STRING(
+          "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters"));
+    }
   }
 
   auto registryChildCount = [](const nsAString& aRegPath) -> uint32_t {
