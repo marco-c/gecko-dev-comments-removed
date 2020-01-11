@@ -604,6 +604,9 @@ class BackgroundRequestChild final : public BackgroundRequestChildBase,
 
   nsresult HandlePreprocess(const nsTArray<PreprocessInfo>& aPreprocessInfos);
 
+  nsresult HandlePreprocessInternal(
+      const nsTArray<PreprocessInfo>& aPreprocessInfos);
+
   
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
