@@ -1,0 +1,7 @@
+
+
+
+
+#include "Logging.h"
+
+Logging Logging::Singleton;

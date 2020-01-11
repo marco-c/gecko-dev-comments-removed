@@ -30,7 +30,7 @@
 
 #if defined(MOZ_LINKER)
 #  include "AutoObjectMapper.h"
-#  include "ElfLoader.h"  
+#  include "Linker.h"  
 #elif defined(GP_OS_linux) || defined(GP_OS_android)
 #  include <link.h>  
 #else
