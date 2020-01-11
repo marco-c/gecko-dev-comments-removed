@@ -65,8 +65,6 @@ XPCOMUtils.defineLazyGetter(this, "passwordMgrBundle", () => {
 function loginSort(formHostPort, a, b) {
   let maybeHostPortA = LoginHelper.maybeGetHostPortForURL(a.origin);
   let maybeHostPortB = LoginHelper.maybeGetHostPortForURL(b.origin);
-
-  
   if (formHostPort == maybeHostPortA && formHostPort != maybeHostPortB) {
     return -1;
   }
@@ -84,8 +82,18 @@ function loginSort(formHostPort, a, b) {
     }
   }
 
-  
-  return a.username.localeCompare(b.username);
+  let userA = a.username.toLowerCase();
+  let userB = b.username.toLowerCase();
+
+  if (userA < userB) {
+    return -1;
+  }
+
+  if (userA > userB) {
+    return 1;
+  }
+
+  return 0;
 }
 
 function findDuplicates(loginList) {
