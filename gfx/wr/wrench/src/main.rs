@@ -345,11 +345,11 @@ impl RenderNotifier for Notifier {
     fn new_frame_ready(&self,
                        _: DocumentId,
                        _scrolled: bool,
-                       composite_needed: bool,
+                       _composite_needed: bool,
                        _render_time: Option<u64>) {
-        if composite_needed {
-            self.wake_up();
-        }
+        
+        
+        self.wake_up();
     }
 }
 
