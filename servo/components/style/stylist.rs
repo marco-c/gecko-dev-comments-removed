@@ -1890,15 +1890,30 @@ impl CascadeData {
     }
 
     
+    pub fn any_host_rules(&self) -> bool {
+        self.host_rules.is_some()
+    }
+
+    
     #[inline]
     pub fn slotted_rules(&self, pseudo: Option<&PseudoElement>) -> Option<&SelectorMap<Rule>> {
         self.slotted_rules.as_ref().and_then(|d| d.rules(pseudo))
     }
 
     
+    pub fn any_slotted_rule(&self) -> bool {
+        self.slotted_rules.is_some()
+    }
+
+    
     #[inline]
     pub fn part_rules(&self, pseudo: Option<&PseudoElement>) -> Option<&PartMap> {
         self.part_rules.as_ref().and_then(|d| d.rules(pseudo))
+    }
+
+    
+    pub fn any_part_rule(&self) -> bool {
+        self.part_rules.is_some()
     }
 
     

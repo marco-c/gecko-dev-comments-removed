@@ -807,6 +807,9 @@ pub trait TElement:
     
     
     
+    
+    
+    
     fn each_applicable_non_document_style_rule_data<'a, F>(&self, mut f: F) -> bool
     where
         Self: 'a,
@@ -841,9 +844,40 @@ pub trait TElement:
             
             let shadow = slot.containing_shadow().unwrap();
             if let Some(data) = shadow.style_data() {
-                f(data, shadow.host());
+                if data.any_slotted_rule() {
+                    f(data, shadow.host());
+                }
             }
             current = slot.assigned_slot();
+        }
+
+        if target.has_part_attr() {
+            if let Some(mut inner_shadow) = target.containing_shadow() {
+                loop {
+                    let inner_shadow_host = inner_shadow.host();
+                    match inner_shadow_host.containing_shadow() {
+                        Some(shadow) => {
+                            if let Some(data) = shadow.style_data() {
+                                if data.any_part_rule() {
+                                    f(data, shadow.host())
+                                }
+                            }
+                            
+                            if !shadow.host().exports_any_part() {
+                                break;
+                            }
+                            inner_shadow = shadow;
+                        }
+                        None => {
+                            
+                            
+                            
+                            doc_rules_apply = true;
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         doc_rules_apply
