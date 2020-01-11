@@ -65,33 +65,6 @@ class GL_CONTEXT_PROVIDER_NAME {
 
 
 
-
-  static already_AddRefed<GLContext> CreateForWindow(nsIWidget* aWidget,
-                                                     bool aWebRender,
-                                                     bool aForceAccelerated);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   static already_AddRefed<GLContext> CreateOffscreen(
       const mozilla::gfx::IntSize& size, const SurfaceCaps& minCaps,
       CreateContextFlags flags, nsACString* const out_failureId);
