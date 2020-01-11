@@ -1415,48 +1415,6 @@ add_task(async function test_nonPrivateBrowsing() {
 });
 
 
-add_task(async function test_setOpenViewOnFocus() {
-  let getPrefValue = () => UrlbarPrefs.get("openViewOnFocus");
-
-  Assert.equal(
-    getPrefValue(),
-    true,
-    "Open-view-on-focus mode should be enabled by default"
-  );
-
-  let ext = ExtensionTestUtils.loadExtension({
-    manifest: {
-      permissions: ["urlbar"],
-    },
-    isPrivileged: true,
-    incognitoOverride: "spanning",
-    useAddonManager: "temporary",
-    async background() {
-      await browser.urlbar.openViewOnFocus.set({ value: false });
-      browser.test.sendMessage("ready");
-    },
-  });
-  await ext.startup();
-  await ext.awaitMessage("ready");
-
-  Assert.equal(
-    getPrefValue(),
-    false,
-    "Successfully disabled the open-view-on-focus mode"
-  );
-
-  let completed = promiseUninstallCompleted(ext.id);
-  await ext.unload();
-  await completed;
-
-  Assert.equal(
-    getPrefValue(),
-    true,
-    "Open-view-on-focus mode should be reset after unloading the add-on"
-  );
-});
-
-
 add_task(async function test_engagementTelemetry() {
   let getPrefValue = () => UrlbarPrefs.get("eventTelemetry.enabled");
 
@@ -1475,9 +1433,11 @@ add_task(async function test_engagementTelemetry() {
     useAddonManager: "temporary",
     background() {
       browser.urlbar.engagementTelemetry.set({ value: true });
+      browser.test.sendMessage("ready");
     },
   });
   await ext.startup();
+  await ext.awaitMessage("ready");
 
   Assert.equal(
     getPrefValue(),
