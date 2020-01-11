@@ -24,6 +24,8 @@ class nsOSHelperAppService final : public nsExternalHelperAppService {
   
   NS_IMETHOD GetApplicationDescription(const nsACString& aScheme,
                                        nsAString& _retval);
+  NS_IMETHOD IsCurrentAppOSDefaultForProtocol(const nsACString& aScheme,
+                                              bool* _retval);
 
   
   NS_IMETHOD GetFromTypeAndExtension(const nsACString& aType,

@@ -45,6 +45,8 @@ class MaybeCloseWindowHelper;
 
 
 
+
+
 class nsExternalHelperAppService : public nsIExternalHelperAppService,
                                    public nsPIExternalAppLauncher,
                                    public nsIExternalProtocolService,
@@ -55,7 +57,6 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
   NS_DECL_ISUPPORTS
   NS_DECL_NSIEXTERNALHELPERAPPSERVICE
   NS_DECL_NSPIEXTERNALAPPLAUNCHER
-  NS_DECL_NSIEXTERNALPROTOCOLSERVICE
   NS_DECL_NSIMIMESERVICE
   NS_DECL_NSIOBSERVER
 
@@ -66,6 +67,21 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
 
 
   MOZ_MUST_USE nsresult Init();
+
+  
+
+
+
+  NS_IMETHOD ExternalProtocolHandlerExists(const char* aProtocolScheme,
+                                           bool* aHandlerExists) override;
+  NS_IMETHOD IsExposedProtocol(const char* aProtocolScheme,
+                               bool* aResult) override;
+  NS_IMETHOD GetProtocolHandlerInfo(const nsACString& aScheme,
+                                    nsIHandlerInfo** aHandlerInfo) override;
+  NS_IMETHOD LoadURI(nsIURI* aURI,
+                     nsIInterfaceRequestor* aWindowContext) override;
+  NS_IMETHOD SetProtocolHandlerDefaults(nsIHandlerInfo* aHandlerInfo,
+                                        bool aOSHandlerExists) override;
 
   
 

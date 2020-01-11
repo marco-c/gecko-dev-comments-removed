@@ -1008,13 +1008,6 @@ nsExternalHelperAppService::LoadURI(nsIURI* aURI,
                       nsIContentDispatchChooser::REASON_CANNOT_HANDLE);
 }
 
-NS_IMETHODIMP nsExternalHelperAppService::GetApplicationDescription(
-    const nsACString& aScheme, nsAString& _retval) {
-  
-  
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
 
 
 
@@ -1099,13 +1092,6 @@ nsExternalHelperAppService::GetProtocolHandlerInfo(
   }
 
   return SetProtocolHandlerDefaults(*aHandlerInfo, exists);
-}
-
-NS_IMETHODIMP
-nsExternalHelperAppService::GetProtocolHandlerInfoFromOS(
-    const nsACString& aScheme, bool* found, nsIHandlerInfo** aHandlerInfo) {
-  
-  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP

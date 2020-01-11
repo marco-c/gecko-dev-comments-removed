@@ -152,6 +152,12 @@ NS_IMETHODIMP nsOSHelperAppService::GetApplicationDescription(
   return NS_ERROR_NOT_AVAILABLE;
 }
 
+NS_IMETHODIMP nsOSHelperAppService::IsCurrentAppOSDefaultForProtocol(
+    const nsACString& aScheme, bool* _retval) {
+  *_retval = false;
+  return NS_OK;
+}
+
 
 
 
