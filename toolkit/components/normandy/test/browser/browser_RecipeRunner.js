@@ -831,6 +831,17 @@ decorate_task(
     reportRecipeStub
   ) {
     loadRecipesStub.returns(Promise.resolve([]));
+
+    
+    for (const { value } of Services.catMan.enumerateCategory("update-timer")) {
+      const timerID = value.split(",")[2];
+      console.log(`Mark timer ${timerID} as ran recently`);
+      
+      const timerLastUpdatePref = `app.update.lastUpdateTime.${timerID}`;
+      const lastUpdateTime = Math.round(Date.now() / 1000);
+      Services.prefs.setIntPref(timerLastUpdatePref, lastUpdateTime);
+    }
+
     
     
     Services.prefs.setIntPref("app.normandy.run_interval_seconds", 1);
