@@ -25,7 +25,7 @@ function _contentHeroHandler(isload) {
     }
   } else if (isload) {
     
-    content.setTimeout(function() {
+    setTimeout(function() {
       _contentHeroHandler(false);
     }, 5000);
   } else {

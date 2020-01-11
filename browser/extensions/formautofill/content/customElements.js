@@ -19,12 +19,18 @@
       "resource://gre/actors/AutoCompleteParent.jsm"
     );
 
-    let actor = AutoCompleteParent.getCurrentActor();
-    if (!actor) {
+    let browser = AutoCompleteParent.getCurrentBrowser();
+    if (!browser) {
       return;
     }
 
-    actor.manager.getActor("FormAutofill").sendAsyncMessage(msgName, data);
+    if (browser.messageManager) {
+      browser.messageManager.sendAsyncMessage(msgName, data);
+    } else {
+      Cu.reportError(
+        `customElements.js: No messageManager for message "${msgName}"`
+      );
+    }
   }
 
   class MozAutocompleteProfileListitemBase extends MozElements.MozRichlistitem {
@@ -207,9 +213,7 @@
 
 
 
-
-
-      this.updateWarningNote = data => {
+      this._updateWarningNote = ({ data } = {}) => {
         let categories =
           data && data.categories ? data.categories : this._allFieldCategories;
         
@@ -259,11 +263,12 @@
     }
 
     _onCollapse() {
+      
       if (this.showWarningText) {
-        let { FormAutofillParent } = ChromeUtils.import(
-          "resource://formautofill/FormAutofillParent.jsm"
+        messageManager.removeMessageListener(
+          "FormAutofill:UpdateWarningMessage",
+          this._updateWarningNote
         );
-        FormAutofillParent.removeMessageObserver(this);
       }
       this._itemBox.removeAttribute("no-warning");
     }
@@ -294,11 +299,11 @@
       this.showWarningText = this._allFieldCategories && this._focusedCategory;
 
       if (this.showWarningText) {
-        let { FormAutofillParent } = ChromeUtils.import(
-          "resource://formautofill/FormAutofillParent.jsm"
+        messageManager.addMessageListener(
+          "FormAutofill:UpdateWarningMessage",
+          this._updateWarningNote
         );
-        FormAutofillParent.addMessageObserver(this);
-        this.updateWarningNote();
+        this._updateWarningNote();
       } else {
         this._itemBox.setAttribute("no-warning", "true");
       }
