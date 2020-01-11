@@ -188,9 +188,11 @@ void ChildProcessInfo::OnCrash(size_t aForkId, const char* aWhy) {
       CrashReporter::Annotation::RecordReplayError, nsAutoCString(aWhy));
 
   if (!IsRecording()) {
-    
-    
-    dom::ContentChild::GetSingleton()->SendGenerateReplayCrashReport(GetId());
+    if (!UseCloudForReplayingProcesses()) {
+      
+      
+      dom::ContentChild::GetSingleton()->SendGenerateReplayCrashReport(GetId());
+    }
 
     
     if (js::RecoverFromCrash(GetId(), aForkId)) {
