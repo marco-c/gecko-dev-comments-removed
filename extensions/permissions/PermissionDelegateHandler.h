@@ -27,7 +27,6 @@
 #define PermissionDelegateHandler_h__
 
 #include "nsISupports.h"
-#include "nsIPermissionDelegateHandler.h"
 
 class nsIPrincipal;
 class nsIContentPermissionRequest;
@@ -38,15 +37,12 @@ class Document;
 }
 }  
 
-class PermissionDelegateHandler final : public nsIPermissionDelegateHandler {
+class PermissionDelegateHandler final : nsISupports {
  public:
+  explicit PermissionDelegateHandler(mozilla::dom::Document* aDocument);
+
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(PermissionDelegateHandler)
-
-  NS_DECL_NSIPERMISSIONDELEGATEHANDLER
-
-  explicit PermissionDelegateHandler() = default;
-  explicit PermissionDelegateHandler(mozilla::dom::Document* aDocument);
 
   bool Initialize();
 
@@ -119,40 +115,15 @@ class PermissionDelegateHandler final : public nsIPermissionDelegateHandler {
 
   void DropDocumentReference() { mDocument = nullptr; }
 
-  
-
-
-
-  static const PermissionDelegateInfo* GetPermissionDelegateInfo(
-      const nsAString& aPermissionName);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  static nsresult GetDelegatePrincipal(const nsACString& aType,
-                                       nsIContentPermissionRequest* aRequest,
-                                       nsIPrincipal** aResult);
-
  private:
-  ~PermissionDelegateHandler() = default;
+  virtual ~PermissionDelegateHandler() = default;
 
   
 
 
 
-
-
-
-  bool HasFeaturePolicyAllowed(const PermissionDelegateInfo* info) const;
+  const PermissionDelegateInfo* GetPermissionDelegateInfo(
+      const nsAString& aPermissionName) const;
 
   
   mozilla::dom::Document* mDocument;

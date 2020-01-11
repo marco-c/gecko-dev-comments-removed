@@ -152,8 +152,14 @@ var PermissionPromptPrototype = {
 
 
 
-  get type() {
-    return undefined;
+
+
+  get principalName() {
+    if (this.principal.addonPolicy) {
+      return this.principal.addonPolicy.name;
+    }
+
+    return this.principal.URI.hostPort;
   },
 
   
@@ -267,20 +273,6 @@ var PermissionPromptPrototype = {
 
   get message() {
     throw new Error("Not implemented.");
-  },
-
-  
-
-
-
-
-
-  getPrincipalName(principal = this.principal) {
-    if (principal.addonPolicy) {
-      return principal.addonPolicy.name;
-    }
-
-    return principal.URI.hostPort;
   },
 
   
@@ -421,10 +413,7 @@ var PermissionPromptPrototype = {
         return;
       }
 
-      if (
-        state == SitePermissions.ALLOW &&
-        !this.request.maybeUnsafePermissionDelegate
-      ) {
+      if (state == SitePermissions.ALLOW) {
         this.allow();
         return;
       }
@@ -722,8 +711,7 @@ var PermissionPromptForRequestPrototype = {
   },
 
   get principal() {
-    let request = this.request.QueryInterface(Ci.nsIContentPermissionRequest);
-    return request.getDelegatePrincipal(this.type);
+    return this.request.principal;
   },
 
   cancel() {
@@ -751,10 +739,6 @@ function GeolocationPermissionPrompt(request) {
 GeolocationPermissionPrompt.prototype = {
   __proto__: PermissionPromptForRequestPrototype,
 
-  get type() {
-    return "geo";
-  },
-
   get permissionKey() {
     return "geo";
   },
@@ -768,7 +752,7 @@ GeolocationPermissionPrompt.prototype = {
     let options = {
       learnMoreURL: Services.urlFormatter.formatURLPref(pref),
       displayURI: false,
-      name: this.getPrincipalName(),
+      name: this.principalName,
     };
 
     if (this.principal.schemeIs("file")) {
@@ -778,12 +762,6 @@ GeolocationPermissionPrompt.prototype = {
       options.checkbox = {
         show: !PrivateBrowsingUtils.isWindowPrivate(this.browser.ownerGlobal),
       };
-    }
-
-    if (this.request.maybeUnsafePermissionDelegate) {
-      
-      options.secondName = this.getPrincipalName(this.request.principal);
-      options.checkbox = { show: false };
     }
 
     if (options.checkbox.show) {
@@ -806,13 +784,6 @@ GeolocationPermissionPrompt.prototype = {
   get message() {
     if (this.principal.schemeIs("file")) {
       return gBrowserBundle.GetStringFromName("geolocation.shareWithFile3");
-    }
-
-    if (this.request.maybeUnsafePermissionDelegate) {
-      return gBrowserBundle.formatStringFromName(
-        "geolocation.shareWithSiteUnsafeDelegation",
-        ["<>", "{}"]
-      );
     }
 
     return gBrowserBundle.formatStringFromName("geolocation.shareWithSite3", [
@@ -917,10 +888,6 @@ function DesktopNotificationPermissionPrompt(request) {
 DesktopNotificationPermissionPrompt.prototype = {
   __proto__: PermissionPromptForRequestPrototype,
 
-  get type() {
-    return "desktop-notification";
-  },
-
   get permissionKey() {
     return "desktop-notification";
   },
@@ -936,7 +903,7 @@ DesktopNotificationPermissionPrompt.prototype = {
     return {
       learnMoreURL,
       displayURI: false,
-      name: this.getPrincipalName(),
+      name: this.principalName,
     };
   },
 
@@ -1024,10 +991,6 @@ function PersistentStoragePermissionPrompt(request) {
 PersistentStoragePermissionPrompt.prototype = {
   __proto__: PermissionPromptForRequestPrototype,
 
-  get type() {
-    return "persistent-storage";
-  },
-
   get permissionKey() {
     return "persistent-storage";
   },
@@ -1039,7 +1002,7 @@ PersistentStoragePermissionPrompt.prototype = {
     return {
       learnMoreURL,
       displayURI: false,
-      name: this.getPrincipalName(),
+      name: this.principalName,
     };
   },
 
@@ -1116,10 +1079,6 @@ function MIDIPermissionPrompt(request) {
 MIDIPermissionPrompt.prototype = {
   __proto__: PermissionPromptForRequestPrototype,
 
-  get type() {
-    return "midi";
-  },
-
   get permissionKey() {
     return this.permName;
   },
@@ -1128,7 +1087,7 @@ MIDIPermissionPrompt.prototype = {
     
     let options = {
       displayURI: false,
-      name: this.getPrincipalName(),
+      name: this.principalName,
     };
 
     if (this.principal.schemeIs("file")) {
@@ -1210,10 +1169,6 @@ StorageAccessPermissionPrompt.prototype = {
 
   get usePermissionManager() {
     return false;
-  },
-
-  get type() {
-    return "storage-access";
   },
 
   get permissionKey() {

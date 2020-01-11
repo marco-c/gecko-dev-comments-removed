@@ -15,10 +15,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/PBackgroundParent.h"
-#include "mozilla/dom/CanonicalBrowsingContext.h"
-#include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/StaticPrefs_permissions.h"
 #include "nsIPermissionManager.h"
 #include "nsThreadUtils.h"
 #include "nsNetUtil.h"
@@ -638,42 +635,25 @@ mozilla::ipc::IPCResult CamerasParent::RecvGetCaptureDevice(
 
 
 
-static bool HasCameraPermission(const uint64_t& aWindowId) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  RefPtr<dom::WindowGlobalParent> window =
-      dom::WindowGlobalParent::GetByInnerWindowId(aWindowId);
-  if (!window) {
-    
+static bool HasCameraPermission(const ipc::PrincipalInfo& aPrincipalInfo) {
+  if (aPrincipalInfo.type() == ipc::PrincipalInfo::TNullPrincipalInfo) {
     return false;
   }
 
-  
-  
-  if (StaticPrefs::dom_security_featurePolicy_enabled() &&
-      StaticPrefs::permissions_delegation_enabled()) {
-    RefPtr<dom::BrowsingContext> topBC = window->BrowsingContext()->Top();
-    window = topBC->Canonical()->GetCurrentWindowGlobal();
-  }
-
-  
-  
-  if (!window || !window->IsCurrentGlobal()) {
-    return false;
-  }
-
-  nsIPrincipal* principal = window->DocumentPrincipal();
-  if (principal->GetIsNullPrincipal()) {
-    return false;
-  }
-
-  if (principal->IsSystemPrincipal()) {
+  if (aPrincipalInfo.type() == ipc::PrincipalInfo::TSystemPrincipalInfo) {
     return true;
   }
 
-  MOZ_ASSERT(principal->GetIsContentPrincipal());
+  MOZ_ASSERT(aPrincipalInfo.type() ==
+             ipc::PrincipalInfo::TContentPrincipalInfo);
 
   nsresult rv;
+  nsCOMPtr<nsIPrincipal> principal =
+      PrincipalInfoToPrincipal(aPrincipalInfo, &rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
+  }
+
   
   static const nsLiteralCString cameraPermission =
       NS_LITERAL_CSTRING("MediaManagerVideo");
@@ -702,15 +682,15 @@ static bool HasCameraPermission(const uint64_t& aWindowId) {
 
 mozilla::ipc::IPCResult CamerasParent::RecvAllocateCaptureDevice(
     const CaptureEngine& aCapEngine, const nsCString& unique_id,
-    const uint64_t& aWindowID) {
+    const PrincipalInfo& aPrincipalInfo) {
   LOG(("%s: Verifying permissions", __PRETTY_FUNCTION__));
   RefPtr<CamerasParent> self(this);
   RefPtr<Runnable> mainthread_runnable = NewRunnableFrom([self, aCapEngine,
                                                           unique_id,
-                                                          aWindowID]() {
+                                                          aPrincipalInfo]() {
     
     
-    bool allowed = HasCameraPermission(aWindowID);
+    bool allowed = HasCameraPermission(aPrincipalInfo);
     if (!allowed) {
       
       if (Preferences::GetBool("media.navigator.permission.disabled", false) ||

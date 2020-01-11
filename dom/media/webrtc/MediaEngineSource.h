@@ -109,7 +109,8 @@ class MediaEngineSourceInterface {
 
 
   virtual nsresult Allocate(const dom::MediaTrackConstraints& aConstraints,
-                            const MediaEnginePrefs& aPrefs, uint64_t aWindowID,
+                            const MediaEnginePrefs& aPrefs,
+                            const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
                             const char** aOutBadConstraint) = 0;
 
   

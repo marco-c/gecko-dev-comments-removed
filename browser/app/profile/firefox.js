@@ -421,9 +421,9 @@ pref("permissions.postPrompt.animate", true);
 #endif
 
 #ifdef NIGHTLY_BUILD
-  pref("permissions.delegation.enabled", true);
+  pref("permissions.delegation.enable", true);
 #else
-  pref("permissions.delegation.enabled", false);
+  pref("permissions.delegation.enable", false);
 #endif
 
 
@@ -1720,12 +1720,6 @@ pref("reader.errors.includeURLs", true);
 pref("view_source.tab", true);
 
 pref("dom.serviceWorkers.enabled", true);
-
-#ifdef NIGHTLY_BUILD
-  pref("dom.security.featurePolicy.enabled", true);
-#else
-  pref("dom.security.featurePolicy.enabled", false);
-#endif
 
 
 pref("dom.push.enabled", true);
