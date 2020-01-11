@@ -1528,7 +1528,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   mozilla::StyleOverflowClipBox mOverflowClipBoxInline;
   mozilla::StyleResize mResize;
   mozilla::StyleOrient mOrient;
-  uint8_t mIsolation;  
+  mozilla::StyleIsolation mIsolation;
   mozilla::StyleTopLayer mTopLayer;
 
   mozilla::StyleTouchAction mTouchAction;
