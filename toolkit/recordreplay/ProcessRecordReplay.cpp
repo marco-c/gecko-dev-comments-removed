@@ -64,6 +64,14 @@ static bool gMainChild;
 
 static bool gReplayingInCloud;
 
+
+static char* gInstallDirectory;
+
+
+
+static const char gExecutableSuffix[] =
+    "Contents/MacOS/plugin-container.app/Contents/MacOS/plugin-container";
+
 static void InitializeCrashDetector();
 
 extern "C" {
@@ -129,6 +137,20 @@ MOZ_EXPORT void RecordReplayInterface_Initialize(int aArgc, char* aArgv[]) {
   if (!IsRecordingOrReplaying()) {
     InitializeExternalCalls();
     return;
+  }
+
+  
+  const char* executable = aArgv[0];
+  size_t executableLength = strlen(executable);
+  size_t suffixLength = strlen(gExecutableSuffix);
+  if (executableLength >= suffixLength) {
+    const char* suffixStart = executable + executableLength - suffixLength;
+    if (!strcmp(suffixStart, gExecutableSuffix)) {
+      size_t directoryLength = suffixStart - executable;
+      gInstallDirectory = new char[directoryLength + 1];
+      memcpy(gInstallDirectory, executable, directoryLength);
+      gInstallDirectory[directoryLength] = 0;
+    }
   }
 
   InitializeCurrentTime();
@@ -323,6 +345,7 @@ void ResetPid() { gPid = getpid(); }
 bool IsMainChild() { return gMainChild; }
 void SetMainChild() { gMainChild = true; }
 bool ReplayingInCloud() { return gReplayingInCloud; }
+const char* InstallDirectory() { return gInstallDirectory; }
 
 
 

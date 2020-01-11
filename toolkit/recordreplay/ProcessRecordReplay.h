@@ -110,6 +110,9 @@ void SetMainChild();
 bool ReplayingInCloud();
 
 
+const char* InstallDirectory();
+
+
 
 extern ProcessKind gProcessKind;
 extern char* gRecordingFilename;
