@@ -1,11 +1,13 @@
+
+
+
+
 "use strict";
 
 
-let Cu4 = Components.utils;
-Cu4.import("resource://gre/modules/Services.jsm");
-Cu4.import("resource://gre/modules/ExtensionCommon.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-const { setTimeout } = Cu4.import("resource://gre/modules/Timer.jsm");
+const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 var { EventManager } = ExtensionCommon;
 let gNetworkLinkService = Cc[

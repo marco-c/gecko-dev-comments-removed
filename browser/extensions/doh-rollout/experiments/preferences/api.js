@@ -1,14 +1,15 @@
+
+
+
+
 "use strict";
 
 
 
-let Cu2 = Components.utils;
-Cu2.import("resource://gre/modules/Services.jsm");
-Cu2.import("resource://gre/modules/ExtensionSettingsStore.jsm");
-Cu2.import("resource://gre/modules/AddonManager.jsm");
-Cu2.import("resource://gre/modules/NetUtil.jsm");
-Cu2.import("resource://gre/modules/ExtensionPreferencesManager.jsm");
-
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { ExtensionPreferencesManager } = ChromeUtils.import(
+  "resource://gre/modules/ExtensionPreferencesManager.jsm"
+);
 
 
 const TRR_URI_PREF = "network.trr.uri";

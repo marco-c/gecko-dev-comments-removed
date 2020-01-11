@@ -1,8 +1,11 @@
+
+
+
+
 "use strict";
 
 
-let Cu3 = Components.utils;
-Cu3.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function log() {
   
