@@ -57,8 +57,8 @@ impl Context {
         }
 
         let egl_version = unsafe {
-            let mut major: ffi::egl::types::EGLint = mem::uninitialized();
-            let mut minor: ffi::egl::types::EGLint = mem::uninitialized();
+            let mut major: ffi::egl::types::EGLint = 0; 
+            let mut minor: ffi::egl::types::EGLint = 0; 
 
             if egl::Initialize(display, &mut major, &mut minor) == 0 {
                 return Err(CreationError::OsError(format!("eglInitialize failed")))
@@ -129,7 +129,7 @@ impl Context {
         };
 
         let (config_id, pixel_format) = unsafe {
-            r#try!(choose_fbconfig(display, &egl_version, api, version, pf_reqs))
+            choose_fbconfig(display, &egl_version, api, version, pf_reqs)?
         };
 
         Ok(ContextPrototype {
@@ -209,8 +209,8 @@ unsafe impl Sync for Context {}
 impl Drop for Context {
     fn drop(&mut self) {
         unsafe {
-            // we don't call MakeCurrent(0, 0) because we are not sure that the context
-            // is still the current one
+            
+            
             egl::DestroyContext(self.display, self.context);
             egl::DestroySurface(self.display, self.surface.get());
             egl::Terminate(self.display);
@@ -231,7 +231,7 @@ pub struct ContextPrototype<'a> {
 
 impl<'a> ContextPrototype<'a> {
     pub fn get_native_visual_id(&self) -> ffi::egl::types::EGLint {
-        let mut value = unsafe { mem::uninitialized() };
+        let mut value = 0;
         let ret = unsafe { egl::GetConfigAttrib(self.display, self.config_id,
                                                     ffi::egl::NATIVE_VISUAL_ID
                                                     as ffi::egl::types::EGLint, &mut value) };
@@ -278,9 +278,9 @@ impl<'a> ContextPrototype<'a> {
     {
         let context = unsafe {
             if let Some(version) = self.version {
-                r#try!(create_context(self.display, &self.egl_version,
-                                    &self.extensions, self.api, version, self.config_id,
-                                    self.opengl.debug, self.opengl.robustness))
+                create_context(self.display, &self.egl_version,
+                               &self.extensions, self.api, version, self.config_id,
+                               self.opengl.debug, self.opengl.robustness)?
 
             } else if self.api == Api::OpenGlEs {
                 if let Ok(ctxt) = create_context(self.display, &self.egl_version,
@@ -346,8 +346,8 @@ unsafe fn choose_fbconfig(display: ffi::egl::types::EGLDisplay,
         }
 
         out.push(ffi::egl::SURFACE_TYPE as c_int);
-        // TODO: Some versions of Mesa report a BAD_ATTRIBUTE error
-        // if we ask for PBUFFER_BIT as well as WINDOW_BIT
+        
+        
         out.push((ffi::egl::WINDOW_BIT) as c_int);
 
         match (api, version) {
@@ -430,12 +430,12 @@ unsafe fn choose_fbconfig(display: ffi::egl::types::EGLDisplay,
             return Err(CreationError::NoAvailablePixelFormat);
         }
 
-        // FIXME: srgb is not taken into account
+        
 
         match reqs.release_behavior {
             ReleaseBehavior::Flush => (),
             ReleaseBehavior::None => {
-                // TODO: with EGL you need to manually set the behavior
+                
                 unimplemented!()
             },
         }
@@ -444,9 +444,9 @@ unsafe fn choose_fbconfig(display: ffi::egl::types::EGLDisplay,
         out
     };
 
-    // calling `eglChooseConfig`
-    let mut config_id = mem::uninitialized();
-    let mut num_configs = mem::uninitialized();
+    
+    let mut config_id = ptr::null(); 
+    let mut num_configs = 0;         
     if egl::ChooseConfig(display, descriptor.as_ptr(), &mut config_id, 1, &mut num_configs) == 0 {
         return Err(CreationError::OsError(format!("eglChooseConfig failed")));
     }
@@ -454,11 +454,11 @@ unsafe fn choose_fbconfig(display: ffi::egl::types::EGLDisplay,
         return Err(CreationError::NoAvailablePixelFormat);
     }
 
-    // analyzing each config
+    
     macro_rules! attrib {
         ($display:expr, $config:expr, $attr:expr) => (
             {
-                let mut value = mem::uninitialized();
+                let mut value = 0; // out param
                 let res = egl::GetConfigAttrib($display, $config,
                                                $attr as ffi::egl::types::EGLint, &mut value);
                 if res == 0 {
@@ -484,7 +484,7 @@ unsafe fn choose_fbconfig(display: ffi::egl::types::EGLDisplay,
             0 | 1 => None,
             a => Some(a as u16),
         },
-        srgb: false,        // TODO: use EGL_KHR_gl_colorspace to know that
+        srgb: false,        
     };
 
     Ok((config_id, desc))
@@ -508,7 +508,7 @@ unsafe fn create_context(display: ffi::egl::types::EGLDisplay,
         context_attributes.push(ffi::egl::CONTEXT_MINOR_VERSION as i32);
         context_attributes.push(version.1 as i32);
 
-        // handling robustness
+        
         let supports_robustness = egl_version >= &(1, 5) ||
                                   extensions.iter()
                                             .find(|s| s == &"EGL_EXT_create_context_robustness")
@@ -571,18 +571,18 @@ unsafe fn create_context(display: ffi::egl::types::EGLDisplay,
                 context_attributes.push(ffi::egl::TRUE as i32);
             }
 
-            // TODO: using this flag sometimes generates an error
-            //       there was a change in the specs that added this flag, so it may not be
-            //       supported everywhere ; however it is not possible to know whether it is
-            //       supported or not
-            //flags = flags | ffi::egl::CONTEXT_OPENGL_DEBUG_BIT_KHR as i32;
+            
+            
+            
+            
+            
         }
 
         context_attributes.push(ffi::egl::CONTEXT_FLAGS_KHR as i32);
         context_attributes.push(flags);
 
     } else if egl_version >= &(1, 3) && api == Api::OpenGlEs {
-        // robustness is not supported
+        
         match gl_robustness {
             Robustness::RobustNoResetNotification | Robustness::RobustLoseContextOnReset => {
                 return Err(CreationError::RobustnessNotSupported);
