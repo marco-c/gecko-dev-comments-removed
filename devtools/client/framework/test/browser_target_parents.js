@@ -64,7 +64,7 @@ add_task(async function() {
               "Got the correct descriptorFront from the process target."
             );
             
-            ok(target.activeConsole, "The target is attached");
+            ok(target.getCachedFront("console"), "The target is attached");
             return target;
           })
         );
