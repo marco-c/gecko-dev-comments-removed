@@ -4,9 +4,6 @@
 
 
 add_task(async function() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.cache.cache_isolation", false]],
-  });
   const kRoot = getRootDirectory(gTestPath).replace(
     "chrome://mochitests/content/",
     "https://example.com/"
