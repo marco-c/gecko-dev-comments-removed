@@ -182,28 +182,14 @@ directory_test(async (t, root_dir) => {
     t, root_dir, self, iframe.contentWindow,
     '*', true,
     location.origin);
-
-  
-  
-  
-  
-  
-  
-  
-}, 'Fail to send and receive messages using a sandboxed iframe.');
+}, 'Fail to send to a sandboxed iframe.');
 
 directory_test(async (t, root_dir) => {
   const iframe = await add_iframe(
     t, { src: kDocumentMessageTarget, sandbox: 'allow-scripts' });
   await do_send_message_port_error_test(
     t, root_dir, iframe.contentWindow, '*');
-
-  
-  
-  
-  
-  
-}, 'Fail to send and receive messages using a message port in a sandboxed ' +
+}, 'Fail to send messages using a message port to a sandboxed ' +
 'iframe.');
 
 directory_test(async (t, root_dir) => {
@@ -246,15 +232,7 @@ directory_test(async (t, root_dir) => {
     t, root_dir, self, child_window,
     '*', true,
     location.origin);
-
-  
-  
-  
-  
-  
-  
-  
-}, 'Fail to send and receive messages using a sandboxed window.');
+}, 'Fail to send messages to  a sandboxed window.');
 
 directory_test(async (t, root_dir) => {
   const url = `${kDocumentMessageTarget}?pipe=header(Content-Security-Policy` +
@@ -262,11 +240,5 @@ directory_test(async (t, root_dir) => {
   const child_window = await open_window(t, url);
   await do_send_message_port_error_test(
     t, root_dir, child_window, '*');
-
-  
-  
-  
-  
-  
-}, 'Fail to send and receive messages using a message port in a sandboxed ' +
+}, 'Fail to send messages using a message port to a sandboxed ' +
 'window.');
