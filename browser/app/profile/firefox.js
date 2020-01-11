@@ -324,11 +324,11 @@ pref("browser.urlbar.usepreloadedtopurls.expire_days", 14);
   pref("browser.urlbar.update1.view.stripHttps", true);
 #else
   pref("browser.urlbar.update1", false);
-  
-  
-  pref("browser.urlbar.update1.expandTextOnFocus", false);
   pref("browser.urlbar.update1.view.stripHttps", false);
 #endif
+
+
+pref("browser.urlbar.update1.expandTextOnFocus", false);
 
 pref("browser.urlbar.openViewOnFocus", false);
 pref("browser.urlbar.eventTelemetry.enabled", false);
