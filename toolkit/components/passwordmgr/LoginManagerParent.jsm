@@ -68,6 +68,7 @@ let gRecipeManager = null;
 
 
 
+
 let gLastMPLoginCancelled = Math.NEGATIVE_INFINITY;
 
 let gGeneratedPasswordObserver = {
