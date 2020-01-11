@@ -353,6 +353,9 @@ typedef const PSAutoLock& PSLockRef;
     sInstance->m##name_ = a##name_;                   \
   }
 
+static const size_t MAX_JS_FRAMES = 1024;
+using JsFrameBuffer = JS::ProfilingFrameIterator::Frame[MAX_JS_FRAMES];
+
 
 
 
@@ -445,6 +448,8 @@ class CorePS {
   PS_GET_LOCKLESS(BlocksRingBuffer&, CoreBlocksRingBuffer)
 
   PS_GET(const Vector<UniquePtr<RegisteredThread>>&, RegisteredThreads)
+
+  PS_GET(JsFrameBuffer&, JsFrames)
 
   static void AppendRegisteredThread(
       PSLockRef, UniquePtr<RegisteredThread>&& aRegisteredThread) {
@@ -578,6 +583,14 @@ class CorePS {
 
   
   nsAutoCString mProcessName;
+
+  
+  
+  
+  
+  
+  
+  JsFrameBuffer mJsFrames;
 };
 
 CorePS* CorePS::sInstance = nullptr;
@@ -1338,7 +1351,6 @@ class Registers {
 
 
 static const size_t MAX_NATIVE_FRAMES = 1024;
-static const size_t MAX_JS_FRAMES = 1024;
 
 struct NativeStack {
   void* mPCs[MAX_NATIVE_FRAMES];
@@ -1369,7 +1381,8 @@ struct AutoWalkJSStack {
 static void MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
                         const RegisteredThread& aRegisteredThread,
                         const Registers& aRegs, const NativeStack& aNativeStack,
-                        ProfilerStackCollector& aCollector) {
+                        ProfilerStackCollector& aCollector,
+                        JsFrameBuffer aJsFrames) {
   
   
   
@@ -1395,12 +1408,10 @@ static void MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
     samplePosInBuffer = aCollector.SamplePositionInBuffer();
   }
   uint32_t jsCount = 0;
-  JS::ProfilingFrameIterator::Frame jsFrames[MAX_JS_FRAMES];
 
   
   if (context && JS::IsProfilingEnabledForContext(context)) {
     AutoWalkJSStack autoWalkJSStack;
-    const uint32_t maxFrames = ArrayLength(jsFrames);
 
     if (autoWalkJSStack.walkAllowed) {
       JS::ProfilingFrameIterator::RegisterState registerState;
@@ -1411,19 +1422,19 @@ static void MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
 
       JS::ProfilingFrameIterator jsIter(context, registerState,
                                         samplePosInBuffer);
-      for (; jsCount < maxFrames && !jsIter.done(); ++jsIter) {
+      for (; jsCount < MAX_JS_FRAMES && !jsIter.done(); ++jsIter) {
         if (aIsSynchronous || jsIter.isWasm()) {
           uint32_t extracted =
-              jsIter.extractStack(jsFrames, jsCount, maxFrames);
+              jsIter.extractStack(aJsFrames, jsCount, MAX_JS_FRAMES);
           jsCount += extracted;
-          if (jsCount == maxFrames) {
+          if (jsCount == MAX_JS_FRAMES) {
             break;
           }
         } else {
           Maybe<JS::ProfilingFrameIterator::Frame> frame =
               jsIter.getPhysicalFrameWithoutLabel();
           if (frame.isSome()) {
-            jsFrames[jsCount++] = frame.value();
+            aJsFrames[jsCount++] = frame.value();
           }
         }
       }
@@ -1475,8 +1486,8 @@ static void MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
     }
 
     if (jsIndex >= 0) {
-      jsStackAddr = (uint8_t*)jsFrames[jsIndex].stackAddress;
-      jsActivationAddr = (uint8_t*)jsFrames[jsIndex].activation;
+      jsStackAddr = (uint8_t*)aJsFrames[jsIndex].stackAddress;
+      jsActivationAddr = (uint8_t*)aJsFrames[jsIndex].activation;
     }
 
     if (nativeIndex >= 0) {
@@ -1529,7 +1540,7 @@ static void MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
     
     if (jsStackAddr > nativeStackAddr) {
       MOZ_ASSERT(jsIndex >= 0);
-      const JS::ProfilingFrameIterator::Frame& jsFrame = jsFrames[jsIndex];
+      const JS::ProfilingFrameIterator::Frame& jsFrame = aJsFrames[jsIndex];
       jitEndStackAddr = (uint8_t*)jsFrame.endStackAddress;
       
       
@@ -1934,12 +1945,12 @@ static inline void DoSharedSample(PSLockRef aLock, bool aIsSynchronous,
     DoNativeBacktrace(aLock, aRegisteredThread, aRegs, nativeStack);
 
     MergeStacks(ActivePS::Features(aLock), aIsSynchronous, aRegisteredThread,
-                aRegs, nativeStack, collector);
+                aRegs, nativeStack, collector, CorePS::JsFrames(aLock));
   } else
 #endif
   {
     MergeStacks(ActivePS::Features(aLock), aIsSynchronous, aRegisteredThread,
-                aRegs, nativeStack, collector);
+                aRegs, nativeStack, collector, CorePS::JsFrames(aLock));
 
     
     if (ActivePS::FeatureLeaf(aLock)) {
@@ -4983,12 +4994,12 @@ void profiler_suspend_and_sample_thread(int aThreadId, uint32_t aFeatures,
 #  endif
 
               MergeStacks(aFeatures, isSynchronous, registeredThread, aRegs,
-                          nativeStack, aCollector);
+                          nativeStack, aCollector, CorePS::JsFrames(lock));
             } else
 #endif
             {
               MergeStacks(aFeatures, isSynchronous, registeredThread, aRegs,
-                          nativeStack, aCollector);
+                          nativeStack, aCollector, CorePS::JsFrames(lock));
 
               if (ProfilerFeature::HasLeaf(aFeatures)) {
                 aCollector.CollectNativeLeafAddr((void*)aRegs.mPC);
