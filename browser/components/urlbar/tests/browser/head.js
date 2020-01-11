@@ -13,7 +13,6 @@ var { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AboutNewTab: "resource:///modules/AboutNewTab.jsm",
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   PromiseUtils: "resource://gre/modules/PromiseUtils.jsm",
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.jsm",
@@ -45,31 +44,4 @@ async function selectAndPaste(str, win = window) {
   win.document.commandDispatcher
     .getControllerForCommand("cmd_paste")
     .doCommand("cmd_paste");
-}
-
-
-
-
-
-
-
-
-async function updateTopSites(condition, searchShortcuts = false) {
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.newtabpage.activity-stream.feeds.topsites", false],
-      ["browser.newtabpage.activity-stream.feeds.topsites", true],
-      [
-        "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts",
-        searchShortcuts,
-      ],
-    ],
-  });
-
-  
-  await TestUtils.waitForCondition(() => {
-    let sites = AboutNewTab.getTopSites();
-    return condition(sites);
-  }, "Waiting for top sites to be updated");
 }
