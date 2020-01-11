@@ -611,6 +611,16 @@ class WasmFlags(TargetCompileFlags):
 
         TargetCompileFlags.__init__(self, context)
 
+    def _optimize_flags(self):
+        if not self._context.config.substs.get('MOZ_OPTIMIZE'):
+            return []
+
+        
+        
+        
+        
+        return ['-Os']
+
 
 class FinalTargetValue(ContextDerivedValue, six.text_type):
     def __new__(cls, context, value=""):
