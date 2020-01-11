@@ -2227,7 +2227,7 @@ class MOZ_STACK_CLASS PositionTracker {
  protected:
   
   PositionTracker(AxisOrientationType aAxis, bool aIsAxisReversed)
-      : mPosition(0), mAxis(aAxis), mIsAxisReversed(aIsAxisReversed) {}
+      : mAxis(aAxis), mIsAxisReversed(aIsAxisReversed) {}
 
   
   
@@ -2235,13 +2235,16 @@ class MOZ_STACK_CLASS PositionTracker {
   PositionTracker& operator=(const PositionTracker&) = delete;
 
   
-  nscoord mPosition;  
   
-  const AxisOrientationType mAxis;  
+  nscoord mPosition = 0;
   
-  const bool mIsAxisReversed;  
-                               
-                               
+  
+  const AxisOrientationType mAxis = eAxis_LR;
+  
+
+  
+  
+  const bool mIsAxisReversed = false;
 };
 
 
@@ -2271,11 +2274,11 @@ class MOZ_STACK_CLASS MainAxisPositionTracker : public PositionTracker {
   void ResolveAutoMarginsInMainAxis(FlexItem& aItem);
 
  private:
-  nscoord mPackingSpaceRemaining;
-  uint32_t mNumAutoMarginsInMainAxis;
-  uint32_t mNumPackingSpacesRemaining;
+  nscoord mPackingSpaceRemaining = 0;
+  uint32_t mNumAutoMarginsInMainAxis = 0;
+  uint32_t mNumPackingSpacesRemaining = 0;
   
-  uint8_t mJustifyContent;
+  uint8_t mJustifyContent = NS_STYLE_JUSTIFY_AUTO;
 };
 
 
@@ -2312,10 +2315,10 @@ class MOZ_STACK_CLASS CrossAxisPositionTracker : public PositionTracker {
   void EnterChildFrame(nscoord aChildFrameSize) = delete;
   void ExitChildFrame(nscoord aChildFrameSize) = delete;
 
-  nscoord mPackingSpaceRemaining;
-  uint32_t mNumPackingSpacesRemaining;
+  nscoord mPackingSpaceRemaining = 0;
+  uint32_t mNumPackingSpacesRemaining = 0;
   
-  uint8_t mAlignContent;
+  uint8_t mAlignContent = NS_STYLE_ALIGN_AUTO;
 
   nscoord mCrossGapSize = 0;
 };
@@ -2922,8 +2925,6 @@ MainAxisPositionTracker::MainAxisPositionTracker(
                       aAxisTracker.IsMainAxisReversed()),
       
       mPackingSpaceRemaining(aContentBoxMainSize),
-      mNumAutoMarginsInMainAxis(0),
-      mNumPackingSpacesRemaining(0),
       mJustifyContent(aJustifyContent) {
   
   
@@ -3104,8 +3105,6 @@ CrossAxisPositionTracker::CrossAxisPositionTracker(
     const FlexboxAxisTracker& aAxisTracker, const nscoord aCrossGapSize)
     : PositionTracker(aAxisTracker.GetCrossAxis(),
                       aAxisTracker.IsCrossAxisReversed()),
-      mPackingSpaceRemaining(0),
-      mNumPackingSpacesRemaining(0),
       mAlignContent(aReflowInput.mStylePosition->mAlignContent),
       mCrossGapSize(aCrossGapSize) {
   MOZ_ASSERT(aFirstLine, "null first line pointer");
