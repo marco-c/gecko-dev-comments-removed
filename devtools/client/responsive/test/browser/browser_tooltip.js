@@ -9,11 +9,19 @@ const TEST_URL = `data:text/html;charset=utf-8,${TEST_CONTENT}`;
 
 
 addRDMTask(TEST_URL, async ({ ui }) => {
+  
+  
+  info("Disable non test mouse event");
+  window.windowUtils.disableNonTestMouseEvents(true);
+  registerCleanupFunction(() => {
+    window.windowUtils.disableNonTestMouseEvents(false);
+  });
+
   info("Create a promise which waits until the tooltip will be shown");
   const tooltip = ui.browserWindow.gBrowser.ownerDocument.getElementById(
     "remoteBrowserTooltip"
   );
-  const onTooltipShown = waitUntil(() => tooltip.state === "open");
+  const onTooltipShown = BrowserTestUtils.waitForEvent(tooltip, "popupshown");
 
   info("Show a tooltip");
   await spawnViewportTask(ui, {}, async () => {
