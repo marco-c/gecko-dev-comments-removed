@@ -463,7 +463,7 @@ OptionsPanel.prototype = {
     if (this.target.isParentProcess) {
       prefDefinitions.push({
         pref: "devtools.browsertoolbox.fission",
-        label: "Enable Omniscient Browser Toolbox (⚠ WIP ⚠, needs restart)",
+        label: L10N.getStr("options.enableMultiProcessToolbox"),
         id: "devtools-browsertoolbox-fission",
         parentId: "context-options",
       });
