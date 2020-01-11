@@ -100,6 +100,15 @@ struct GCPolicy<js::WeakHeapPtr<T>> {
   }
 };
 
+template <>
+struct GCPolicy<JS::GCCellPtr> {
+  static void trace(JSTracer* trc, JS::GCCellPtr* thingp, const char* name) {
+    
+    
+    js::TraceGCCellPtrRoot(trc, thingp, name);
+  }
+};
+
 }  
 
 #endif  
