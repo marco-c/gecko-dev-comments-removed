@@ -14,5 +14,15 @@ class Emulation extends ContentProcessDomain {
   
 
   setDeviceMetricsOverride() {}
+
   setTouchEmulationEnabled() {}
+
+  
+
+
+
+
+  _setCustomUserAgent(userAgent) {
+    this.docShell.customUserAgent = userAgent;
+  }
 }
