@@ -148,6 +148,9 @@ class SharedContext {
   
   bool hasDirectEval_ : 1;
 
+  
+  bool hasCallSiteObj_ : 1;
+
   void computeAllowSyntax(Scope* scope);
   void computeInWith(Scope* scope);
   void computeThisBinding(Scope* scope);
@@ -169,7 +172,8 @@ class SharedContext {
         needsThisTDZChecks_(false),
         hasExplicitUseStrict_(false),
         bindingsAccessedDynamically_(false),
-        hasDirectEval_(false) {}
+        hasDirectEval_(false),
+        hasCallSiteObj_(false) {}
 
   
   
@@ -211,10 +215,12 @@ class SharedContext {
     return bindingsAccessedDynamically_;
   }
   bool hasDirectEval() const { return hasDirectEval_; }
+  bool hasCallSiteObj() const { return hasCallSiteObj_; }
 
   void setExplicitUseStrict() { hasExplicitUseStrict_ = true; }
   void setBindingsAccessedDynamically() { bindingsAccessedDynamically_ = true; }
   void setHasDirectEval() { hasDirectEval_ = true; }
+  void setHasCallSiteObj() { hasCallSiteObj_ = true; }
 
   inline bool allBindingsClosedOver();
 
