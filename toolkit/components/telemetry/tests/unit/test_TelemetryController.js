@@ -23,6 +23,9 @@ const { Preferences } = ChromeUtils.import(
   "resource://gre/modules/Preferences.jsm"
 );
 ChromeUtils.import("resource://testing-common/ContentTaskUtils.jsm", this);
+const { TestUtils } = ChromeUtils.import(
+  "resource://testing-common/TestUtils.jsm"
+);
 
 const PING_FORMAT_VERSION = 4;
 const DELETION_REQUEST_PING_TYPE = "deletion-request";
@@ -184,7 +187,15 @@ add_task(async function test_disableDataUpload() {
   );
 
   
+  let disableObserved = TestUtils.topicObserved(
+    TelemetryUtils.TELEMETRY_UPLOAD_DISABLED_TOPIC
+  );
+
+  
   Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, false);
+
+  
+  await disableObserved;
 
   ping = await PingServer.promiseNextPing();
   checkPingFormat(ping, DELETION_REQUEST_PING_TYPE, true, false);
