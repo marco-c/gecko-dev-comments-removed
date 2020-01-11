@@ -1,6 +1,8 @@
 
 
 
+load(libdir + "asserts.js");
+
 let g = newGlobal({newCompartment: true});
 g.eval(`
     function* f() {
@@ -29,4 +31,4 @@ dbg1.onEnterFrame = frame => {
 
 let values = [...g.f()];
 assertEq(hits, 2);
-assertEq(values.toSource(), "[1]");
+assertDeepEq(values, [1]);
