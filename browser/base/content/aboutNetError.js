@@ -817,7 +817,7 @@ async function setCertErrorDetails(event) {
     
     !clockSkew &&
     
-    failedCertInfo.erroCodeString !=
+    failedCertInfo.errorCodeString !=
       "MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED"
   ) {
     document.body.classList.add("caution");
