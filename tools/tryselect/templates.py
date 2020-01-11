@@ -75,6 +75,13 @@ class Artifact(Template):
         group = parser.add_mutually_exclusive_group()
         return super(Artifact, self).add_arguments(group)
 
+    @classmethod
+    def is_artifact_build(cls):
+        try:
+            return build.substs.get("MOZ_ARTIFACT_BUILDS", False)
+        except BuildEnvironmentNotFoundException:
+            return False
+
     def context(self, artifact, no_artifact, **kwargs):
         if artifact:
             return {
@@ -84,14 +91,11 @@ class Artifact(Template):
         if no_artifact:
             return
 
-        try:
-            if build.substs.get("MOZ_ARTIFACT_BUILDS"):
-                print("Artifact builds enabled, pass --no-artifact to disable")
-                return {
-                    'artifact': {'enabled': '1'}
-                }
-        except BuildEnvironmentNotFoundException:
-            pass
+        if self.is_artifact_build():
+            print("Artifact builds enabled, pass --no-artifact to disable")
+            return {
+                'artifact': {'enabled': '1'}
+            }
 
 
 class Pernosco(Template):
@@ -117,12 +121,17 @@ class Pernosco(Template):
         if pernosco is None:
             return
 
-        
-        
-        
-        
         if pernosco:
+            if not kwargs['no_artifact'] and (kwargs['artifact'] or Artifact.is_artifact_build()):
+                print("Pernosco does not support artifact builds at this time. "
+                      "Please try again with '--no-artifact'.")
+                sys.exit(1)
+
             try:
+                
+                
+                
+                
                 output = subprocess.check_output(['ssh', '-G', 'hg.mozilla.org']).splitlines()
                 address = [l.rsplit(' ', 1)[-1] for l in output if l.startswith('user')][0]
                 if not address.endswith('@mozilla.com'):
