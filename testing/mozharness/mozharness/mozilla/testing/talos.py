@@ -424,7 +424,9 @@ class Talos(TestingMixin, MercurialScript, TooltoolMixin,
             options.extend(['--setpref={}'.format(p) for p in self.config['extra_prefs']])
         if self.config['enable_webrender']:
             options.extend(['--enable-webrender'])
-        if self.config['enable_fission']:
+        
+        
+        if self.config['enable_fission'] or "fission.autostart=true" in self.config['extra_prefs']:
             options.extend(['--enable-fission'])
 
         return options
