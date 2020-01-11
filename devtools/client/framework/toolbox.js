@@ -628,7 +628,7 @@ Toolbox.prototype = {
 
 
 
-  async _onTargetAvailable(type, targetFront, isTopLevel) {
+  async _onTargetAvailable({ type, targetFront, isTopLevel }) {
     if (isTopLevel) {
       
       
@@ -648,7 +648,7 @@ Toolbox.prototype = {
     }
   },
 
-  _onTargetDestroyed(type, targetFront, isTopLevel) {
+  _onTargetDestroyed({ type, targetFront, isTopLevel }) {
     if (isTopLevel) {
       this.detachTarget();
     } else {

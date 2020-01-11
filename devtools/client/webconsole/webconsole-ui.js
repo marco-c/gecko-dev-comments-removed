@@ -346,7 +346,7 @@ class WebConsoleUI {
 
 
 
-  async _onTargetAvailable(type, targetFront, isTopLevel) {
+  async _onTargetAvailable({ type, targetFront, isTopLevel }) {
     
     
     if (isTopLevel) {
@@ -379,7 +379,7 @@ class WebConsoleUI {
 
 
 
-  _onTargetDestroyed(type, targetFront, isTopLevel) {
+  _onTargetDestroyed({ type, targetFront, isTopLevel }) {
     if (isTopLevel) {
       this.proxy.disconnect();
       this.proxy = null;
