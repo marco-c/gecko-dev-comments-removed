@@ -9,7 +9,7 @@ add_task(async function() {
   const tab = await addTab("data:text/html,<div id=quack></div>");
   const target = await getTargetForTab(tab);
 
-  const webConsoleFront = target.activeConsole;
+  const webConsoleFront = await target.getFront("console");
 
   
   await ContentTask.spawn(gBrowser.selectedBrowser, null, function() {
