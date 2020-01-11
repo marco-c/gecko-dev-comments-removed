@@ -259,7 +259,7 @@ this.proxy = class extends ExtensionAPI {
                 
                 
                 
-                for (let prop of ["ftp", "ssl"]) {
+                for (let prop of ["ftp", "ssl", "socks"]) {
                   value[prop] = value.http;
                 }
               }
