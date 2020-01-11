@@ -1568,6 +1568,8 @@ class BaseScript : public gc::TenuredCell {
   uint32_t immutableFlags_ = 0;
   uint32_t mutableFlags_ = 0;
 
+  ScriptWarmUpData warmUpData_ = {};
+
   BaseScript(uint8_t* stubEntry, JSObject* functionOrGlobal,
              ScriptSourceObject* sourceObject, uint32_t sourceStart,
              uint32_t sourceEnd, uint32_t toStringStart, uint32_t toStringEnd)
@@ -1990,6 +1992,9 @@ setterLevel:                                                                  \
   }
   static constexpr size_t offsetOfMutableFlags() {
     return offsetof(BaseScript, mutableFlags_);
+  }
+  static constexpr size_t offsetOfWarmUpData() {
+    return offsetof(BaseScript, warmUpData_);
   }
 };
 
@@ -2511,8 +2516,6 @@ class JSScript : public js::BaseScript {
   js::PrivateScriptData* data_ = nullptr;
 
  private:
-  js::ScriptWarmUpData warmUpData_ = {};
-
   
   js::LazyScript* lazyScript = nullptr;
 
@@ -2800,9 +2803,6 @@ class JSScript : public js::BaseScript {
   }
   static constexpr size_t offsetOfPrivateScriptData() {
     return offsetof(JSScript, data_);
-  }
-  static constexpr size_t offsetOfWarmUpData() {
-    return offsetof(JSScript, warmUpData_);
   }
 
   void updateJitCodeRaw(JSRuntime* rt);
@@ -3349,7 +3349,8 @@ class LazyScript : public BaseScript {
   
   
   
-  GCPtr<TenuredCell*> enclosingLazyScriptOrScope_;
+  
+  
 
   
   
@@ -3423,25 +3424,17 @@ class LazyScript : public BaseScript {
   }
   bool hasScript() const { return bool(script_); }
 
-  bool hasEnclosingScope() const {
-    return enclosingLazyScriptOrScope_ &&
-           enclosingLazyScriptOrScope_->is<Scope>();
-  }
+  bool hasEnclosingScope() const { return warmUpData_.isEnclosingScope(); }
   bool hasEnclosingLazyScript() const {
-    return enclosingLazyScriptOrScope_ &&
-           enclosingLazyScriptOrScope_->is<LazyScript>();
+    return warmUpData_.isEnclosingScript();
   }
 
   LazyScript* enclosingLazyScript() const {
-    MOZ_ASSERT(hasEnclosingLazyScript());
-    return enclosingLazyScriptOrScope_->as<LazyScript>();
+    return warmUpData_.toEnclosingScript();
   }
   void setEnclosingLazyScript(LazyScript* enclosingLazyScript);
 
-  Scope* enclosingScope() const {
-    MOZ_ASSERT(hasEnclosingScope());
-    return enclosingLazyScriptOrScope_->as<Scope>();
-  }
+  Scope* enclosingScope() const { return warmUpData_.toEnclosingScope(); }
   void setEnclosingScope(Scope* enclosingScope);
 
   bool hasNonSyntacticScope() const {
