@@ -1056,10 +1056,16 @@ class FullParseHandler {
                 .as<JSFunction>();
   }
   JSAtom* nextLazyClosedOverBinding() {
+    auto gcthings = lazyOuterFunction_->gcthings();
+
+    
+    if (lazyClosedOverBindingIndex >= gcthings.Length()) {
+      return nullptr;
+    }
+
     
     
-    gc::Cell* cell =
-        lazyOuterFunction_->gcthings()[lazyClosedOverBindingIndex++].asCell();
+    gc::Cell* cell = gcthings[lazyClosedOverBindingIndex++].asCell();
     MOZ_ASSERT_IF(cell, cell->is<JSAtom>());
     return static_cast<JSAtom*>(cell);
   }

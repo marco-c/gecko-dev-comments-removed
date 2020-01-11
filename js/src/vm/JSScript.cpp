@@ -4210,8 +4210,6 @@ PrivateScriptData::PrivateScriptData(uint32_t ngcthings)
 
   
   {
-    MOZ_ASSERT(ngcthings > 0);
-
     static_assert(alignof(PrivateScriptData) >= alignof(JS::GCCellPtr),
                   "Incompatible alignment");
     initElements<JS::GCCellPtr>(cursor, ngcthings);

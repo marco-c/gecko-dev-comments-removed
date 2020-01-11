@@ -1741,6 +1741,15 @@ bool PerHandlerParser<SyntaxParseHandler>::finishFunction(
 
   
   
+  {
+    AtomVector& COB = pc_->closedOverBindingsForLazy();
+    while (!COB.empty() && (COB.back() == nullptr)) {
+      COB.popBack();
+    }
+  }
+
+  
+  
   if (pc_->closedOverBindingsForLazy().length() >=
           LazyScript::NumClosedOverBindingsLimit ||
       pc_->innerFunctionBoxesForLazy.length() >=
