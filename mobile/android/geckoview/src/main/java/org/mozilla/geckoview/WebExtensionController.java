@@ -51,7 +51,13 @@ public class WebExtensionController {
             mData.remove(id);
         }
 
-        public void put(final String id, final WebExtension extension) {
+        
+
+
+
+
+
+        public void update(final String id, final WebExtension extension) {
             mData.put(id, extension);
         }
     }
@@ -393,13 +399,23 @@ public class WebExtensionController {
     }
 
     
-    GeckoResult<List<WebExtension>> listInstalled() {
+
+
+
+
+
+
+
+    @AnyThread
+    @NonNull
+    public GeckoResult<List<WebExtension>> list() {
         final CallbackResult<List<WebExtension>> result = new CallbackResult<List<WebExtension>>() {
             @Override
             public void sendSuccess(final Object response) {
                 final GeckoBundle[] bundles = ((GeckoBundle) response)
                         .getBundleArray("extensions");
                 final List<WebExtension> list = new ArrayList<>(bundles.length);
+
                 for (GeckoBundle bundle : bundles) {
                     final WebExtension extension = new WebExtension(bundle);
                     registerWebExtension(extension);
@@ -438,7 +454,7 @@ public class WebExtensionController {
 
      void registerWebExtension(final WebExtension webExtension) {
         webExtension.setDelegateController(new DelegateController(webExtension));
-        mExtensions.put(webExtension.id, webExtension);
+        mExtensions.update(webExtension.id, webExtension);
     }
 
      void handleMessage(final String event, final GeckoBundle message,
