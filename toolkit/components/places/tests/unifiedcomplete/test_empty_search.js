@@ -30,7 +30,7 @@ add_task(async function test_javascript_match() {
   await addBookmark({ uri: uri5, title: "title" });
   await addBookmark({ uri: uri6, title: "title" });
 
-  addOpenPages(uri7, 1);
+  await addOpenPages(uri7, 1);
 
   
   await PlacesUtils.history.remove(uri6);

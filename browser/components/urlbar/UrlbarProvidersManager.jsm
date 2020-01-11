@@ -169,6 +169,10 @@ class ProvidersManager {
     UrlbarTokenizer.tokenize(queryContext);
 
     
+    if (queryContext.sources && queryContext.sources.length == 1) {
+      queryContext.restrictSource = queryContext.sources[0];
+    }
+    
     
     updateSourcesIfEmpty(queryContext);
     logger.debug(`Context sources ${queryContext.sources}`);
