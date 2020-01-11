@@ -3433,7 +3433,9 @@ class FullPageInterrupt extends react__WEBPACK_IMPORTED_MODULE_3___default.a.Pur
     }); 
 
     if (message.blockOnClick) {
-      this.props.onBlockById(message.id);
+      this.props.onBlockById(message.id, {
+        preloadedOnly: true
+      });
     }
 
     this.removeOverlay();
@@ -3617,7 +3619,9 @@ class Triplets extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponen
     }); 
 
     if (message.blockOnClick) {
-      this.props.onBlockById(message.id);
+      this.props.onBlockById(message.id, {
+        preloadedOnly: true
+      });
     }
   }
 

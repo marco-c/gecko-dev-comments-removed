@@ -1998,6 +1998,52 @@ class _ASRouter {
     }
   }
 
+  
+
+
+
+
+  sendAsyncMessageToPreloaded(action) {
+    const preloadedBrowsers = this.getPreloadedBrowser();
+    if (preloadedBrowsers) {
+      for (let preloadedBrowser of preloadedBrowsers) {
+        try {
+          preloadedBrowser.sendAsyncMessage(OUTGOING_MESSAGE_NAME, action);
+        } catch (e) {
+          
+        }
+      }
+    }
+  }
+
+  
+
+
+
+
+
+  getPreloadedBrowser() {
+    let preloadedPorts = [];
+    for (let port of this.messageChannel.messagePorts) {
+      if (this.isPreloadedBrowser(port.browser)) {
+        preloadedPorts.push(port);
+      }
+    }
+    return preloadedPorts.length ? preloadedPorts : null;
+  }
+
+  
+
+
+
+
+
+
+
+  isPreloadedBrowser(browser) {
+    return browser.getAttribute("preloadedState") === "preloaded";
+  }
+
   dispatch(action, target) {
     this.onMessage({ data: action, target });
   }
@@ -2098,10 +2144,19 @@ class _ASRouter {
         if (action.data.preventDismiss) {
           break;
         }
-        this.messageChannel.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {
+
+        const outgoingMessage = {
           type: "CLEAR_MESSAGE",
           data: { id: action.data.id },
-        });
+        };
+        if (action.data.preloadedOnly) {
+          this.sendAsyncMessageToPreloaded(outgoingMessage);
+        } else {
+          this.messageChannel.sendAsyncMessage(
+            OUTGOING_MESSAGE_NAME,
+            outgoingMessage
+          );
+        }
         break;
       case "DISMISS_MESSAGE_BY_ID":
         this.messageChannel.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {
