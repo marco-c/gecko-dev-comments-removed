@@ -363,7 +363,7 @@ pub struct TextureUpdateList {
     
     pub allocations: Vec<TextureCacheAllocation>,
     
-    pub updates: FastHashMap<CacheTextureId, Vec<TextureCacheUpdate>>,
+    pub updates: Vec<TextureCacheUpdate>,
 }
 
 impl TextureUpdateList {
@@ -372,7 +372,7 @@ impl TextureUpdateList {
         TextureUpdateList {
             clears_shared_cache: false,
             allocations: Vec::new(),
-            updates: FastHashMap::default(),
+            updates: Vec::new(),
         }
     }
 
@@ -390,10 +390,7 @@ impl TextureUpdateList {
     
     #[inline]
     pub fn push_update(&mut self, update: TextureCacheUpdate) {
-        self.updates
-            .entry(update.id)
-            .or_default()
-            .push(update);
+        self.updates.push(update);
     }
 
     
@@ -483,7 +480,7 @@ impl TextureUpdateList {
         self.debug_assert_coalesced(id);
 
         
-        self.updates.remove(&id);
+        self.updates.retain(|x| x.id != id);
 
         
         

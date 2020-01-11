@@ -2697,67 +2697,29 @@ impl Device {
         pbo.reserved_size = 0
     }
 
-    
-    
-    pub fn required_upload_size(size: DeviceIntSize, stride: Option<i32>, format: ImageFormat, optimal_pbo_stride: NonZeroUsize) -> usize {
-        assert!(size.width >= 0);
-        assert!(size.height >= 0);
-        if let Some(stride) = stride {
-            assert!(stride >= 0);
-        }
-
-        let bytes_pp = format.bytes_per_pixel() as usize;
-        let width_bytes = size.width as usize * bytes_pp;
-        let src_stride = stride.map_or(width_bytes, |stride| {
-            assert!(stride >= 0);
-            stride as usize
-        });
-
-        let dst_stride = round_up_to_multiple(src_stride, optimal_pbo_stride);
-
-        
-        
-        
-        
-        
-        dst_stride * size.height as usize
-    }
-
-    
-    
-    
-    
     pub fn upload_texture<'a, T>(
         &'a mut self,
         texture: &'a Texture,
         pbo: &PBO,
-        upload_size: usize,
+        upload_count: usize,
     ) -> TextureUploader<'a, T> {
         debug_assert!(self.inside_frame);
-        assert_ne!(upload_size, 0, "Must specify valid upload size");
-
         self.bind_texture(DEFAULT_TEXTURE, texture, Swizzle::default());
 
         let buffer = match self.upload_method {
             UploadMethod::Immediate => None,
             UploadMethod::PixelBuffer(hint) => {
+                let upload_size = upload_count * mem::size_of::<T>();
                 self.gl.bind_buffer(gl::PIXEL_UNPACK_BUFFER, pbo.id);
-                self.gl.buffer_data_untyped(
-                    gl::PIXEL_UNPACK_BUFFER,
-                    upload_size as _,
-                    ptr::null(),
-                    hint.to_gl(),
-                );
-                let ptr = self.gl.map_buffer_range(
-                    gl::PIXEL_UNPACK_BUFFER,
-                    0,
-                    upload_size as _,
-                    gl::MAP_WRITE_BIT | gl::MAP_INVALIDATE_BUFFER_BIT,
-                );
-                let mapping = unsafe {
-                    slice::from_raw_parts_mut(ptr as *mut _, upload_size)
-                };
-                Some(PixelBuffer::new(upload_size, mapping))
+                if upload_size != 0 {
+                    self.gl.buffer_data_untyped(
+                        gl::PIXEL_UNPACK_BUFFER,
+                        upload_size as _,
+                        ptr::null(),
+                        hint.to_gl(),
+                    );
+                }
+                Some(PixelBuffer::new(hint.to_gl(), upload_size))
             },
         };
 
@@ -3523,24 +3485,24 @@ struct UploadChunk {
     format_override: Option<ImageFormat>,
 }
 
-struct PixelBuffer<'a> {
+struct PixelBuffer {
+    usage: gl::GLenum,
     size_allocated: usize,
     size_used: usize,
     
     chunks: SmallVec<[UploadChunk; 1]>,
-    mapping: &'a mut [mem::MaybeUninit<u8>],
 }
 
-impl<'a> PixelBuffer<'a> {
+impl PixelBuffer {
     fn new(
+        usage: gl::GLenum,
         size_allocated: usize,
-        mapping: &'a mut [mem::MaybeUninit<u8>],
     ) -> Self {
         PixelBuffer {
+            usage,
             size_allocated,
             size_used: 0,
             chunks: SmallVec::new(),
-            mapping,
         }
     }
 }
@@ -3554,14 +3516,13 @@ struct UploadTarget<'a> {
 
 pub struct TextureUploader<'a, T> {
     target: UploadTarget<'a>,
-    buffer: Option<PixelBuffer<'a>>,
+    buffer: Option<PixelBuffer>,
     marker: PhantomData<T>,
 }
 
 impl<'a, T> Drop for TextureUploader<'a, T> {
     fn drop(&mut self) {
         if let Some(buffer) = self.buffer.take() {
-            self.target.gl.unmap_buffer(gl::PIXEL_UNPACK_BUFFER);
             for chunk in buffer.chunks {
                 self.target.update_impl(chunk);
             }
@@ -3606,39 +3567,67 @@ impl<'a, T> TextureUploader<'a, T> {
         
         
         let dst_stride = round_up_to_multiple(src_stride, self.target.optimal_pbo_stride);
-        let dst_size = Device::required_upload_size(
-            rect.size,
-            stride,
-            self.target.texture.format,
-            self.target.optimal_pbo_stride
-        );
+        
+        
+        
+        let dst_size = rect.size.height as usize * dst_stride;
 
         match self.buffer {
             Some(ref mut buffer) => {
-                assert!(buffer.size_used + dst_size <= buffer.size_allocated, "UploadBuffer is too small");
+                if buffer.size_used + dst_size > buffer.size_allocated {
+                    
+                    for chunk in buffer.chunks.drain() {
+                        self.target.update_impl(chunk);
+                    }
+                    buffer.size_used = 0;
+                }
 
-                unsafe {
-                    let src: &[mem::MaybeUninit<u8>] = slice::from_raw_parts(data as *const _, src_size);
+                if dst_size > buffer.size_allocated {
+                    
+                    self.target.gl.buffer_data_untyped(
+                        gl::PIXEL_UNPACK_BUFFER,
+                        dst_size as _,
+                        ptr::null(),
+                        buffer.usage,
+                    );
+                    buffer.size_allocated = dst_size;
+                }
 
-                    if src_stride == dst_stride {
-                        
-                        
-                        let dst_start = buffer.size_used;
-                        let dst_end = dst_start + src_size;
+                if src_stride == dst_stride {
+                    
+                    
+                    assert_eq!(src_size % mem::size_of::<T>(), 0);
+                    self.target.gl.buffer_sub_data_untyped(
+                        gl::PIXEL_UNPACK_BUFFER,
+                        buffer.size_used as isize,
+                        src_size as isize,
+                        data as *const _,
+                    );
+                } else {
+                    
+                    
+                    let ptr = self.target.gl.map_buffer_range(
+                        gl::PIXEL_UNPACK_BUFFER,
+                        buffer.size_used as _,
+                        dst_size as _,
+                        gl::MAP_WRITE_BIT | gl::MAP_INVALIDATE_RANGE_BIT,
+                    );
 
-                        buffer.mapping[dst_start..dst_end].copy_from_slice(src);
-                    } else {
-                        
-                        
+                    unsafe {
+                        let src: &[mem::MaybeUninit<u8>] = slice::from_raw_parts(data as *const _, src_size);
+                        let dst: &mut [mem::MaybeUninit<u8>] = slice::from_raw_parts_mut(ptr as *mut _, dst_size);
+
                         for y in 0..rect.size.height as usize {
                             let src_start = y * src_stride;
                             let src_end = src_start + width_bytes;
-                            let dst_start = buffer.size_used + y * dst_stride;
+                            let dst_start = y * dst_stride;
                             let dst_end = dst_start + width_bytes;
 
-                            buffer.mapping[dst_start..dst_end].copy_from_slice(&src[src_start..src_end])
+                            dst[dst_start..dst_end].copy_from_slice(&src[src_start..src_end])
                         }
                     }
+
+                    self.target.gl.unmap_buffer(gl::PIXEL_UNPACK_BUFFER);
                 }
 
                 buffer.chunks.push(UploadChunk {
