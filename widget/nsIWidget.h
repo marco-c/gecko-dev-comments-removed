@@ -1117,7 +1117,7 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual void SetWindowShadowStyle(mozilla::StyleWindowShadow aStyle) = 0;
+  virtual void SetWindowShadowStyle(int32_t aStyle) = 0;
 
   
 
