@@ -2,13 +2,14 @@
 
 
 
-#iconContainer {
-  -moz-box-pack: center;
-  min-height: 55px; 
-  min-width: 58px; 
+#infoContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 #infoIcon {
+  justify-self: center;
   max-width: 48px;
   max-height: 48px;
   margin: 3px 5px 4px;
