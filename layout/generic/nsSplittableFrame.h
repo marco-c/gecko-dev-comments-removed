@@ -34,6 +34,12 @@ class nsSplittableFrame : public nsFrame {
 
 
 
+
+
+
+
+
+
   
   
   nsIFrame* GetPrevContinuation() const final;
