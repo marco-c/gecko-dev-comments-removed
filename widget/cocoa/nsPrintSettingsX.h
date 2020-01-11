@@ -9,19 +9,6 @@
 #include "nsPrintSettingsImpl.h"
 #import <Cocoa/Cocoa.h>
 
-
-
-
-
-
-#ifdef __MAC_10_9
-#  define NS_PAPER_ORIENTATION_PORTRAIT (NSPaperOrientationPortrait)
-#  define NS_PAPER_ORIENTATION_LANDSCAPE (NSPaperOrientationLandscape)
-#else
-#  define NS_PAPER_ORIENTATION_PORTRAIT (NSPortraitOrientation)
-#  define NS_PAPER_ORIENTATION_LANDSCAPE (NSLandscapeOrientation)
-#endif
-
 #define NS_PRINTSETTINGSX_IID                        \
   {                                                  \
     0x0DF2FDBD, 0x906D, 0x4726, {                    \
