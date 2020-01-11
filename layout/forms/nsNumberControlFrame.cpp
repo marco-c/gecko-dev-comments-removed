@@ -294,7 +294,8 @@ class FocusTextField : public Runnable {
       
       
       FocusOptions options;
-      HTMLInputElement::FromNode(mTextField)->Focus(options, IgnoreErrors());
+      HTMLInputElement::FromNode(mTextField)
+          ->Focus(options, CallerType::System, IgnoreErrors());
     }
 
     return NS_OK;
@@ -541,7 +542,7 @@ void nsNumberControlFrame::HandleFocusEvent(WidgetEvent* aEvent) {
     
     
     FocusOptions options;
-    textField->Focus(options, IgnoreErrors());
+    textField->Focus(options, CallerType::System, IgnoreErrors());
   }
 }
 

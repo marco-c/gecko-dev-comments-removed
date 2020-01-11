@@ -234,7 +234,8 @@ class Element : public FragmentOrElement {
   
 
 
-  virtual void Focus(const FocusOptions& aOptions, ErrorResult& aError);
+  virtual void Focus(const FocusOptions& aOptions, const CallerType aCallerType,
+                     ErrorResult& aError);
 
   
 

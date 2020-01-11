@@ -1540,7 +1540,8 @@ class nsContentUtils {
 
 
 
-  static void RequestFrameFocus(Element& aFrameElement, bool aCanRaise);
+  static void RequestFrameFocus(Element& aFrameElement, bool aCanRaise,
+                                mozilla::dom::CallerType aCallerType);
 
   
 
