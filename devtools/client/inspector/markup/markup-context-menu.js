@@ -472,14 +472,14 @@ class MarkupContextMenu {
     return null;
   }
 
-  _getCopySubmenu(markupContainer, isSelectionElement) {
+  _getCopySubmenu(markupContainer, isSelectionElement, isFragment) {
     const copySubmenu = new Menu();
     copySubmenu.append(
       new MenuItem({
         id: "node-menu-copyinner",
         label: INSPECTOR_L10N.getStr("inspectorCopyInnerHTML.label"),
         accesskey: INSPECTOR_L10N.getStr("inspectorCopyInnerHTML.accesskey"),
-        disabled: !isSelectionElement,
+        disabled: !isSelectionElement && !isFragment,
         click: () => this._copyInnerHTML(),
       })
     );
@@ -743,6 +743,7 @@ class MarkupContextMenu {
     this.nodeMenuTriggerInfo =
       markupContainer && markupContainer.editor.getInfoAtNode(target);
 
+    const isFragment = this.selection.isDocumentFragmentNode();
     const isSelectionElement =
       this.selection.isElementNode() && !this.selection.isPseudoElementNode();
     const isEditableElement =
@@ -816,6 +817,9 @@ class MarkupContextMenu {
       menu.append(
         new MenuItem({
           label: INSPECTOR_L10N.getStr("inspectorBreakpointSubmenu.label"),
+          
+          
+          
           submenu: this._getDOMBreakpointSubmenu(isSelectionElement),
           id: "node-menu-mutation-breakpoint",
         })
@@ -895,7 +899,11 @@ class MarkupContextMenu {
     menu.append(
       new MenuItem({
         label: INSPECTOR_L10N.getStr("inspectorCopyHTMLSubmenu.label"),
-        submenu: this._getCopySubmenu(markupContainer, isSelectionElement),
+        submenu: this._getCopySubmenu(
+          markupContainer,
+          isSelectionElement,
+          isFragment
+        ),
       })
     );
 
