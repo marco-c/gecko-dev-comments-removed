@@ -15,6 +15,7 @@
 #include <stdint.h>   
 
 #include "jsapi.h"  
+#include "jstypes.h"  
 
 #include "js/CompilationAndEvaluation.h"  
 #include "js/CompileOptions.h"            
@@ -33,8 +34,8 @@
 using mozilla::ArrayLength;
 using mozilla::Utf8Unit;
 
-struct JSContext;
-class JSString;
+struct JS_PUBLIC_API JSContext;
+class JS_PUBLIC_API JSString;
 
 template <typename Unit>
 using Source = js::UniquePtr<Unit[], JS::FreePolicy>;
