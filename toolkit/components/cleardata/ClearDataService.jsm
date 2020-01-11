@@ -347,8 +347,11 @@ const PasswordsCleaner = {
       } catch (ex) {
         
         
-        if (!ex.message.includes("User canceled Master Password entry")) {
-          throw new Error("Exception occured in clearing passwords :" + ex);
+        if (
+          !ex.message.includes("User canceled Master Password entry") &&
+          ex.result != Cr.NS_ERROR_NOT_IMPLEMENTED
+        ) {
+          throw new Error("Exception occured in clearing passwords: " + ex);
         }
       }
 
