@@ -78,8 +78,6 @@ class nsNetworkLinkService : public nsINetworkLinkService,
   nsCOMPtr<nsITimer> mNetworkIdTimer;
 
   
-  
-  bool mDoRouteCheckIPv4;
   struct in_addr mRouteCheckIPv4;
 };
 

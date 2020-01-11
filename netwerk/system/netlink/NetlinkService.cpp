@@ -17,6 +17,7 @@
 #include "nsPrintfCString.h"
 #include "mozilla/Logging.h"
 #include "../../base/IPv6Utils.h"
+#include "../NetworkLinkServiceDefines.h"
 
 #include "mozilla/Base64.h"
 #include "mozilla/FileUtils.h"
@@ -40,13 +41,6 @@ namespace net {
 
 
 static const unsigned int kNetworkChangeCoalescingPeriod = 1000;
-
-
-
-
-
-#define NETLINK_ROUTE_CHECK_IPV4 "23.219.91.27"
-#define NETLINK_ROUTE_CHECK_IPV6 "2a02:26f0:40::17db:5b1b"
 
 static LazyLogModule gNlSvcLog("NetlinkService");
 #define LOG(args) MOZ_LOG(gNlSvcLog, mozilla::LogLevel::Debug, args)
@@ -1252,17 +1246,15 @@ nsresult NetlinkService::Init(NetlinkServiceListener* aListener) {
 
   mListener = aListener;
 
-  if (inet_pton(AF_INET, NETLINK_ROUTE_CHECK_IPV4, &mRouteCheckIPv4) != 1) {
-    LOG(("Cannot parse address " NETLINK_ROUTE_CHECK_IPV4));
-    MOZ_DIAGNOSTIC_ASSERT(false,
-                          "Cannot parse address " NETLINK_ROUTE_CHECK_IPV4);
+  if (inet_pton(AF_INET, ROUTE_CHECK_IPV4, &mRouteCheckIPv4) != 1) {
+    LOG(("Cannot parse address " ROUTE_CHECK_IPV4));
+    MOZ_DIAGNOSTIC_ASSERT(false, "Cannot parse address " ROUTE_CHECK_IPV4);
     return NS_ERROR_UNEXPECTED;
   }
 
-  if (inet_pton(AF_INET6, NETLINK_ROUTE_CHECK_IPV6, &mRouteCheckIPv6) != 1) {
-    LOG(("Cannot parse address " NETLINK_ROUTE_CHECK_IPV6));
-    MOZ_DIAGNOSTIC_ASSERT(false,
-                          "Cannot parse address " NETLINK_ROUTE_CHECK_IPV6);
+  if (inet_pton(AF_INET6, ROUTE_CHECK_IPV6, &mRouteCheckIPv6) != 1) {
+    LOG(("Cannot parse address " ROUTE_CHECK_IPV6));
+    MOZ_DIAGNOSTIC_ASSERT(false, "Cannot parse address " ROUTE_CHECK_IPV6);
     return NS_ERROR_UNEXPECTED;
   }
 
@@ -1714,7 +1706,6 @@ void NetlinkService::UpdateLinkStatus() {
   MOZ_ASSERT(!mRecalculateNetworkId);
   MOZ_ASSERT(mInitialScanFinished);
 
-  
   
   bool newLinkUp = mIPv4RouteCheckResult || mIPv6RouteCheckResult;
 
