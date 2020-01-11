@@ -29,6 +29,67 @@ async function CheckBrowserNotInPid(browser, unExpectedPid, message) {
   isnot(pid, unExpectedPid, message);
 }
 
+async function runWebNotInFileTest() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.remote.allowLinkedWebInFileUriProcess", false]],
+  });
+  info("Running test with allowLinkedWebInFileUriProcess=false");
+
+  
+  
+
+  
+  await BrowserTestUtils.withNewTab(testFileURI, async function(fileBrowser) {
+    
+    let filePid = await getBrowserPid(fileBrowser);
+
+    
+    
+    let promiseTabOpened = BrowserTestUtils.waitForNewTab(
+      gBrowser,
+      TEST_HTTP,
+       true
+    );
+    await SpecialPowers.spawn(fileBrowser, [TEST_HTTP], uri => {
+      content.open(uri, "_blank");
+    });
+    let httpTab = await promiseTabOpened;
+    let httpBrowser = httpTab.linkedBrowser;
+    registerCleanupFunction(async function() {
+      BrowserTestUtils.removeTab(httpTab);
+    });
+    await CheckBrowserNotInPid(
+      httpBrowser,
+      filePid,
+      "Check that new http tab opened from file loaded in a new content process."
+    );
+    ok(
+      E10SUtils.isWebRemoteType(httpBrowser.remoteType),
+      `Check that tab now has web remote type, got ${httpBrowser.remoteType}.`
+    );
+
+    
+    let httpPid = await getBrowserPid(httpBrowser);
+    let promiseLoad = BrowserTestUtils.browserLoaded(
+      httpBrowser,
+       false,
+      testFileURI
+    );
+    BrowserTestUtils.loadURI(httpBrowser, testFileURI);
+    await promiseLoad;
+    await CheckBrowserNotInPid(
+      httpBrowser,
+      httpPid,
+      "Check that tab not in http content process after file:// load."
+    );
+    is(
+      httpBrowser.remoteType,
+      E10SUtils.FILE_REMOTE_TYPE,
+      "Check that tab now has file remote type."
+    );
+  });
+}
+
 
 async function runWebInFileTest() {
   
@@ -234,6 +295,5 @@ add_task(async function setup() {
   });
 });
 
-add_task(async function runTest() {
-  await runWebInFileTest();
-});
+add_task(runWebNotInFileTest);
+add_task(runWebInFileTest);
