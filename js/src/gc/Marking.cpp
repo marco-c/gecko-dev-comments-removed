@@ -653,7 +653,7 @@ void GCMarker::markEphemeronValues(gc::Cell* markedCell,
 
 template <typename T>
 void GCMarker::markImplicitEdgesHelper(T markedThing) {
-  if (!isWeakMarkingTracer()) {
+  if (!isWeakMarking()) {
     return;
   }
 
@@ -1593,7 +1593,7 @@ GCMarker::MarkQueueProgress GCMarker::processMarkQueue() {
         return QueueYielded;
       } else if (js::StringEqualsLiteral(str, "enter-weak-marking-mode") ||
                  js::StringEqualsLiteral(str, "abort-weak-marking-mode")) {
-        if (!isWeakMarkingTracer() && !linearWeakMarkingDisabled_) {
+        if (state == MarkingState::RegularMarking) {
           
           
           
@@ -2430,11 +2430,11 @@ GCMarker::GCMarker(JSRuntime* rt)
       color(MarkColor::Black),
       mainStackColor(MarkColor::Black),
       delayedMarkingList(nullptr),
-      delayedMarkingWorkAdded(false)
+      delayedMarkingWorkAdded(false),
+      state(MarkingState::NotActive)
 #ifdef DEBUG
       ,
       markLaterArenas(0),
-      started(false),
       strictCompartmentChecking(false),
       markQueue(rt),
       queuePos(0)
@@ -2448,12 +2448,9 @@ bool GCMarker::init(JSGCMode gcMode) {
 }
 
 void GCMarker::start() {
-#ifdef DEBUG
-  MOZ_ASSERT(!started);
-  started = true;
-#endif
+  MOZ_ASSERT(state == MarkingState::NotActive);
+  state = MarkingState::RegularMarking;
   color = MarkColor::Black;
-  linearWeakMarkingDisabled_ = false;
 
 #ifdef DEBUG
   queuePos = 0;
@@ -2465,15 +2462,11 @@ void GCMarker::start() {
 }
 
 void GCMarker::stop() {
-#ifdef DEBUG
   MOZ_ASSERT(isDrained());
-
-  MOZ_ASSERT(started);
-  started = false;
-
   MOZ_ASSERT(!delayedMarkingList);
   MOZ_ASSERT(markLaterArenas == 0);
-#endif
+  MOZ_ASSERT(state != MarkingState::NotActive);
+  state = MarkingState::NotActive;
 
   stack.clear();
   auxStack.clear();
@@ -2582,13 +2575,13 @@ void GCMarker::repush(JSObject* obj) {
 void GCMarker::enterWeakMarkingMode() {
   MOZ_ASSERT(runtime()->gc.nursery().isEmpty());
 
-  MOZ_ASSERT(tag_ == TracerKindTag::Marking);
-  if (linearWeakMarkingDisabled_) {
+  MOZ_ASSERT(isMarkingTracer());
+  if (state != MarkingState::RegularMarking) {
     return;
   }
 
   if (weakMapAction() != ExpandWeakMaps) {
-    return;
+    return;  
   }
 
   
@@ -2598,7 +2591,10 @@ void GCMarker::enterWeakMarkingMode() {
   
   
 
-  tag_ = TracerKindTag::WeakMarking;
+  
+  
+  
+  state = MarkingState::WeakMarking;
 
   
   
@@ -2616,11 +2612,6 @@ void GCMarker::enterWeakMarkingMode() {
 }
 
 void GCMarker::leaveWeakMarkingMode() {
-  MOZ_ASSERT_IF(
-      weakMapAction() == ExpandWeakMaps && !linearWeakMarkingDisabled_,
-      tag_ == TracerKindTag::WeakMarking);
-  tag_ = TracerKindTag::Marking;
-
   
   
   AutoEnterOOMUnsafeRegion oomUnsafe;
@@ -2628,6 +2619,14 @@ void GCMarker::leaveWeakMarkingMode() {
     if (!zone->gcWeakKeys().clear()) {
       oomUnsafe.crash("clearing weak keys in GCMarker::leaveWeakMarkingMode()");
     }
+  }
+
+  MOZ_ASSERT_IF(weakMapAction() == ExpandWeakMaps,
+                state == MarkingState::WeakMarking ||
+                    state == MarkingState::IterativeMarking);
+
+  if (state != MarkingState::IterativeMarking) {
+    state = MarkingState::RegularMarking;
   }
 }
 
@@ -2780,7 +2779,7 @@ void gc::PushArena(GCMarker* gcmarker, Arena* arena) {
 
 #ifdef DEBUG
 void GCMarker::checkZone(void* p) {
-  MOZ_ASSERT(started);
+  MOZ_ASSERT(state != MarkingState::NotActive);
   DebugOnly<Cell*> cell = static_cast<Cell*>(p);
   MOZ_ASSERT_IF(cell->isTenured(),
                 cell->asTenured().zone()->isCollectingFromAnyThread());
