@@ -80,6 +80,11 @@ void ServiceWorkerRegistrationProxy::InitOnMainThread() {
       swm->GetRegistration(mDescriptor.PrincipalInfo(), mDescriptor.Scope());
   NS_ENSURE_TRUE_VOID(reg);
 
+  if (reg->Id() != mDescriptor.Id()) {
+    
+    return;
+  }
+
   scopeExit.release();
 
   mReg = new nsMainThreadPtrHolder<ServiceWorkerRegistrationInfo>(
