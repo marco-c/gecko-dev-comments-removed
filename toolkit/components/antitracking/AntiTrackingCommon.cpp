@@ -866,23 +866,18 @@ void NotifyBlockingDecisionInternal(
     nsIChannel* aReportingChannel, nsIChannel* aTrackingChannel,
     AntiTrackingCommon::BlockingDecision aDecision, uint32_t aRejectedReason,
     nsIURI* aURI, nsPIDOMWindowOuter* aWindow) {
-  MOZ_DIAGNOSTIC_ASSERT_IF(
-      nsGlobalWindowOuter::Cast(aWindow)->IsChromeWindow(),
-      aDecision == AntiTrackingCommon::BlockingDecision::eAllow);
-
   if (aDecision == AntiTrackingCommon::BlockingDecision::eBlock) {
-    AntiTrackingCommon::NotifyContentBlockingEvent(aWindow, aReportingChannel,
-                                                   aTrackingChannel, true,
-                                                   aRejectedReason, aURI);
+    aWindow->NotifyContentBlockingEvent(aRejectedReason, aReportingChannel,
+                                        true, aURI, aTrackingChannel);
 
     ReportBlockingToConsole(aWindow, aURI, aRejectedReason);
   }
 
   
   
-  AntiTrackingCommon::NotifyContentBlockingEvent(
-      aWindow, aReportingChannel, aTrackingChannel, false,
-      nsIWebProgressListener::STATE_COOKIES_LOADED, aURI);
+  aWindow->NotifyContentBlockingEvent(
+      nsIWebProgressListener::STATE_COOKIES_LOADED, aReportingChannel, false,
+      aURI, aTrackingChannel);
 
   nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
       do_QueryInterface(aTrackingChannel);
@@ -894,16 +889,16 @@ void NotifyBlockingDecisionInternal(
       classifiedChannel->GetThirdPartyClassificationFlags();
   if (classificationFlags &
       nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_TRACKING) {
-    AntiTrackingCommon::NotifyContentBlockingEvent(
-        aWindow, aReportingChannel, aTrackingChannel, false,
-        nsIWebProgressListener::STATE_COOKIES_LOADED_TRACKER, aURI);
+    aWindow->NotifyContentBlockingEvent(
+        nsIWebProgressListener::STATE_COOKIES_LOADED_TRACKER, aReportingChannel,
+        false, aURI, aTrackingChannel);
   }
 
   if (classificationFlags &
       nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_SOCIALTRACKING) {
-    AntiTrackingCommon::NotifyContentBlockingEvent(
-        aWindow, aReportingChannel, aTrackingChannel, false,
-        nsIWebProgressListener::STATE_COOKIES_LOADED_SOCIALTRACKER, aURI);
+    aWindow->NotifyContentBlockingEvent(
+        nsIWebProgressListener::STATE_COOKIES_LOADED_SOCIALTRACKER,
+        aReportingChannel, false, aURI, aTrackingChannel);
   }
 }
 
@@ -1118,9 +1113,9 @@ AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(
     nsIChannel* channel =
         pwin->GetCurrentInnerWindow()->GetExtantDoc()->GetChannel();
 
-    NotifyContentBlockingEvent(pwin, channel,
-                               parentWindow->GetExtantDoc()->GetChannel(),
-                               false, blockReason, trackingURI, Some(aReason));
+    pwin->NotifyContentBlockingEvent(blockReason, channel, false, trackingURI,
+                                     parentWindow->GetExtantDoc()->GetChannel(),
+                                     Some(aReason));
 
     ReportUnblockingToConsole(parentWindow,
                               NS_ConvertUTF8toUTF16(trackingOrigin),
@@ -2104,13 +2099,6 @@ void AntiTrackingCommon::NotifyBlockingDecision(nsIChannel* aChannel,
       } else {
         parentChannel->NotifyCookieAllowed();
       }
-
-      
-      
-      
-      
-      
-      
     }
     return;
   }
@@ -2307,39 +2295,4 @@ already_AddRefed<nsIURI> AntiTrackingCommon::MaybeGetDocumentURIBeingLoaded(
     }
   }
   return uriBeingLoaded.forget();
-}
-
-
-void AntiTrackingCommon::NotifyContentBlockingEvent(
-    nsPIDOMWindowOuter* aWindow, nsIChannel* aReportingChannel,
-    nsIChannel* aTrackingChannel, bool aBlocked, uint32_t aRejectedReason,
-    nsIURI* aURI, const Maybe<StorageAccessGrantedReason>& aReason) {
-  MOZ_ASSERT(aWindow);
-
-  
-  aWindow->NotifyContentBlockingEvent(aRejectedReason, aReportingChannel,
-                                      aBlocked, aURI, aTrackingChannel,
-                                      aReason);
-
-  RefPtr<dom::BrowserChild> browserChild = dom::BrowserChild::GetFrom(aWindow);
-  NS_ENSURE_TRUE_VOID(browserChild);
-
-  nsTArray<nsCString> trackingFullHashes;
-  nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
-      do_QueryInterface(aTrackingChannel);
-
-  if (classifiedChannel) {
-    Unused << classifiedChannel->GetMatchedTrackingFullHashes(
-        trackingFullHashes);
-  }
-
-  
-  
-  
-  
-  
-  
-  browserChild->NotifyContentBlockingEvent(aRejectedReason, aReportingChannel,
-                                           aBlocked, aURI, trackingFullHashes,
-                                           aReason);
 }
