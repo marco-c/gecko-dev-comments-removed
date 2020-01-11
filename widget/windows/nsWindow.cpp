@@ -334,9 +334,6 @@ static const char* sScreenManagerContractID =
 extern mozilla::LazyLogModule gWindowsLog;
 
 
-static bool gWindowsVisible = false;
-
-
 static bool gIsSleepMode = false;
 
 static NS_DEFINE_CID(kCClipboardCID, NS_CLIPBOARD_CID);
@@ -8183,31 +8180,51 @@ nsWindow* nsWindow::GetTopLevelWindow(bool aStopOnDialogOrPopup) {
   }
 }
 
-static BOOL CALLBACK gEnumWindowsProc(HWND hwnd, LPARAM lParam) {
+
+
+
+
+static BOOL CALLBACK EnumVisibleWindowsProc(HWND hwnd, LPARAM lParam) {
   DWORD pid;
   ::GetWindowThreadProcessId(hwnd, &pid);
-  if (pid == GetCurrentProcessId() && ::IsWindowVisible(hwnd)) {
-    gWindowsVisible = true;
-    return FALSE;
+  if (pid == ::GetCurrentProcessId() && ::IsWindowVisible(hwnd)) {
+    
+    
+    
+    nsWindow* window = WinUtils::GetNSWindowPtr(hwnd);
+    if (!window || !window->IsPopup()) {
+      bool* windowsVisible = reinterpret_cast<bool*>(lParam);
+      *windowsVisible = true;
+      return FALSE;
+    }
   }
   return TRUE;
 }
 
+
+
 bool nsWindow::CanTakeFocus() {
-  gWindowsVisible = false;
-  EnumWindows(gEnumWindowsProc, 0);
-  if (!gWindowsVisible) {
+  HWND fgWnd = ::GetForegroundWindow();
+  if (!fgWnd) {
+    
     return true;
-  } else {
-    HWND fgWnd = ::GetForegroundWindow();
-    if (!fgWnd) {
-      return true;
-    }
-    DWORD pid;
-    GetWindowThreadProcessId(fgWnd, &pid);
-    if (pid == GetCurrentProcessId()) {
-      return true;
-    }
+  }
+  
+  
+  DWORD pid;
+  ::GetWindowThreadProcessId(fgWnd, &pid);
+  if (pid == ::GetCurrentProcessId()) {
+    return true;
+  }
+
+  bool windowsVisible = false;
+  ::EnumWindows(EnumVisibleWindowsProc,
+                reinterpret_cast<LPARAM>(&windowsVisible));
+
+  if (!windowsVisible) {
+    
+    
+    return true;
   }
   return false;
 }
