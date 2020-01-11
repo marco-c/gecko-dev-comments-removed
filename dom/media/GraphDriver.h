@@ -658,7 +658,7 @@ class AudioCallbackDriver : public GraphDriver,
   
   bool StartStream();
   friend class AsyncCubebTask;
-  bool Init();
+  void Init();
   void Stop();
   
 
