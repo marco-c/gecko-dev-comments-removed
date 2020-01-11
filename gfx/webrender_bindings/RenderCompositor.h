@@ -53,6 +53,9 @@ class RenderCompositor {
     return mLatestRenderFrameId.Prev();
   }
 
+  
+  virtual RenderedFrameId UpdateFrameId() { return GetNextRenderFrameId(); }
+
   virtual void Pause() = 0;
   virtual bool Resume() = 0;
   

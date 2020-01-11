@@ -503,6 +503,12 @@ void RenderThread::UpdateAndRender(
     renderer->WaitForGPU();
   }
 
+  if (!aRender) {
+    
+    
+    latestFrameId = renderer->UpdateFrameId();
+  }
+
   RenderedFrameId lastCompletedFrameId = renderer->GetLastCompletedFrameId();
 
   RefPtr<layers::AsyncImagePipelineManager> pipelineMgr =

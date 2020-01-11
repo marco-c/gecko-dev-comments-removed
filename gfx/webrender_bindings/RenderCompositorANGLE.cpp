@@ -703,6 +703,12 @@ RenderedFrameId RenderCompositorANGLE::GetLastCompletedFrameId() {
   return mLastCompletedFrameId;
 }
 
+RenderedFrameId RenderCompositorANGLE::UpdateFrameId() {
+  RenderedFrameId frameId = GetNextRenderFrameId();
+  InsertGraphicsCommandsFinishedWaitQuery(frameId);
+  return frameId;
+}
+
 bool RenderCompositorANGLE::IsContextLost() {
   
   

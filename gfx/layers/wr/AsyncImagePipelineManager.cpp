@@ -528,40 +528,29 @@ void AsyncImagePipelineManager::NotifyPipelinesUpdated(
     wr::RenderedFrameId aLastCompletedFrameId) {
   MOZ_ASSERT(wr::RenderThread::IsInRenderThread());
   MOZ_ASSERT(mLastCompletedFrameId <= aLastCompletedFrameId.mId);
+  MOZ_ASSERT(aLatestFrameId.IsValid());
 
   
   
   mPendingUpdates.push_back(aInfo);
+  mLastCompletedFrameId = aLastCompletedFrameId.mId;
+
+  {
+    
+    
+    MutexAutoLock lock(mRenderSubmittedUpdatesLock);
+
+    
+    
+    mRenderSubmittedUpdates.emplace_back(aLatestFrameId,
+                                         std::move(mPendingUpdates));
+  }
 
   
-  if (aLatestFrameId.IsValid()) {
-    mLastCompletedFrameId = aLastCompletedFrameId.mId;
-
-    {
-      
-      
-      MutexAutoLock lock(mRenderSubmittedUpdatesLock);
-
-      
-      
-      mRenderSubmittedUpdates.emplace_back(aLatestFrameId,
-                                           std::move(mPendingUpdates));
-    }
-
-    
-    
-    layers::CompositorThreadHolder::Loop()->PostTask(
-        NewRunnableMethod("ProcessPipelineUpdates", this,
-                          &AsyncImagePipelineManager::ProcessPipelineUpdates));
-  } else if (mLastCompletedFrameId < aLastCompletedFrameId.mId) {
-    
-    
-    
-    mLastCompletedFrameId = aLastCompletedFrameId.mId;
-    layers::CompositorThreadHolder::Loop()->PostTask(NewRunnableMethod(
-        "CheckForTextureHostsNotUsedByGPU", this,
-        &AsyncImagePipelineManager::CheckForTextureHostsNotUsedByGPU));
-  }
+  
+  layers::CompositorThreadHolder::Loop()->PostTask(
+      NewRunnableMethod("ProcessPipelineUpdates", this,
+                        &AsyncImagePipelineManager::ProcessPipelineUpdates));
 }
 
 void AsyncImagePipelineManager::ProcessPipelineUpdates() {

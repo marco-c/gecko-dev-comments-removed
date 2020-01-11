@@ -70,6 +70,9 @@ class RendererOGL {
   RenderedFrameId GetLastCompletedFrameId();
 
   
+  RenderedFrameId UpdateFrameId();
+
+  
   void SetProfilerEnabled(bool aEnabled);
 
   
