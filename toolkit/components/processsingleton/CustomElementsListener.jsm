@@ -14,8 +14,7 @@ Services.obs.addObserver(
     observe(doc) {
       if (
         doc.nodePrincipal.isSystemPrincipal &&
-        (doc.contentType == "application/vnd.mozilla.xul+xml" ||
-          doc.contentType == "application/xhtml+xml" ||
+        (doc.contentType == "application/xhtml+xml" ||
           doc.contentType == "text/html") &&
         
         

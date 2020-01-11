@@ -247,8 +247,7 @@ const char* const gSupportedTextTypes[] = {
     "application/ecmascript",
     "application/x-javascript",  
     "text/xul",                  
-    "application/vnd.mozilla.xul+xml",
-    nullptr  
+    nullptr                      
 };
 
 bool IsSupportedTextType(const char* aMIMEType) {
