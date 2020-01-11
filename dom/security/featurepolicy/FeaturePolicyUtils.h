@@ -49,6 +49,13 @@ class FeaturePolicyUtils final {
   static FeaturePolicyValue DefaultAllowListFeature(
       const nsAString& aFeatureName);
 
+  
+  
+  
+  
+  static bool IsFeatureUnsafeAllowedAll(Document* aDocument,
+                                        const nsAString& aFeatureName);
+
  private:
   static void ReportViolation(Document* aDocument,
                               const nsAString& aFeatureName);
