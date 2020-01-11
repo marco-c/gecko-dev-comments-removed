@@ -402,7 +402,7 @@ static const MeasureUnit& FindSimpleMeasureUnit(const char* subtype) {
 
 static constexpr size_t MaxUnitLength() {
   
-#if __GLIBCXX__ > 20181026
+#if _GLIBCXX_RELEASE >= 7
   size_t length = 0;
   for (const auto& unit : simpleMeasureUnits) {
     length = std::max(length, std::char_traits<char>::length(unit.subtype));
