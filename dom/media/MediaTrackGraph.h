@@ -48,6 +48,7 @@ extern LazyLogModule gMediaTrackGraphLog;
 namespace dom {
 enum class AudioContextOperation;
 enum class AudioContextOperationFlags;
+enum class AudioContextState : uint8_t;
 }  
 
 
@@ -1055,7 +1056,11 @@ class MediaTrackGraph {
 
   
 
-  void NotifyWhenGraphStarted(AudioNodeTrack* aNodeTrack);
+
+
+
+  using GraphStartedPromise = GenericPromise;
+  RefPtr<GraphStartedPromise> NotifyWhenGraphStarted(AudioNodeTrack* aTrack);
   
 
 
@@ -1066,11 +1071,11 @@ class MediaTrackGraph {
 
 
 
-  void ApplyAudioContextOperation(MediaTrack* aDestinationTrack,
-                                  const nsTArray<MediaTrack*>& aTracks,
-                                  dom::AudioContextOperation aState,
-                                  void* aPromise,
-                                  dom::AudioContextOperationFlags aFlags);
+  using AudioContextOperationPromise =
+      MozPromise<dom::AudioContextState, bool, true>;
+  RefPtr<AudioContextOperationPromise> ApplyAudioContextOperation(
+      MediaTrack* aDestinationTrack, const nsTArray<MediaTrack*>& aTracks,
+      dom::AudioContextOperation aOperation);
 
   bool IsNonRealtime() const;
   

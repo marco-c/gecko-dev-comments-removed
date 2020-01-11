@@ -13,6 +13,7 @@
 #include "SelfRef.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/dom/AudioContext.h"
+#include "mozilla/DataMutex.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/StaticPtr.h"
 
@@ -381,13 +382,16 @@ class OfflineClockDriver : public ThreadedDriver {
 };
 
 struct TrackAndPromiseForOperation {
-  TrackAndPromiseForOperation(MediaTrack* aTrack, void* aPromise,
-                              dom::AudioContextOperation aOperation,
-                              dom::AudioContextOperationFlags aFlags);
+  TrackAndPromiseForOperation(
+      MediaTrack* aTrack, dom::AudioContextOperation aOperation,
+      AbstractThread* aMainThread,
+      MozPromiseHolder<MediaTrackGraph::AudioContextOperationPromise>&&
+          aHolder);
+  TrackAndPromiseForOperation(TrackAndPromiseForOperation&& aOther) noexcept;
   RefPtr<MediaTrack> mTrack;
-  void* mPromise;
   dom::AudioContextOperation mOperation;
-  dom::AudioContextOperationFlags mFlags;
+  RefPtr<AbstractThread> mMainThread;
+  MozPromiseHolder<MediaTrackGraph::AudioContextOperationPromise> mHolder;
 };
 
 enum class AsyncCubebOperation { INIT, SHUTDOWN };
@@ -481,8 +485,10 @@ class AudioCallbackDriver : public GraphDriver,
   
 
   void EnqueueTrackAndPromiseForOperation(
-      MediaTrack* aTrack, void* aPromise, dom::AudioContextOperation aOperation,
-      dom::AudioContextOperationFlags aFlags);
+      MediaTrack* aTrack, dom::AudioContextOperation aOperation,
+      AbstractThread* aMainThread,
+      MozPromiseHolder<MediaTrackGraph::AudioContextOperationPromise>&&
+          aHolder);
 
   std::thread::id ThreadId() { return mAudioThreadId.load(); }
 
@@ -577,8 +583,7 @@ class AudioCallbackDriver : public GraphDriver,
   
 
   const RefPtr<SharedThreadPool> mInitShutdownThread;
-  
-  AutoTArray<TrackAndPromiseForOperation, 1> mPromisesForOperation;
+  DataMutex<AutoTArray<TrackAndPromiseForOperation, 1>> mPromisesForOperation;
   cubeb_device_pref mInputDevicePreference;
   
 

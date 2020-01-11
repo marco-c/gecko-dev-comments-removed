@@ -301,23 +301,17 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   void RunMessageAfterProcessing(UniquePtr<ControlMessage> aMessage);
 
-  
-
-
-
-  void AudioContextOperationCompleted(MediaTrack* aTrack, void* aPromise,
-                                      dom::AudioContextOperation aOperation,
-                                      dom::AudioContextOperationFlags aFlags);
+  void NotifyWhenGraphStarted(RefPtr<AudioNodeTrack> aTrack,
+                              MozPromiseHolder<GraphStartedPromise>&& aHolder);
 
   
 
 
 
-  void ApplyAudioContextOperationImpl(MediaTrack* aDestinationTrack,
-                                      const nsTArray<MediaTrack*>& aTracks,
-                                      dom::AudioContextOperation aOperation,
-                                      void* aPromise,
-                                      dom::AudioContextOperationFlags aSource);
+  void ApplyAudioContextOperationImpl(
+      MediaTrack* aDestinationTrack, const nsTArray<MediaTrack*>& aTracks,
+      dom::AudioContextOperation aOperation,
+      MozPromiseHolder<AudioContextOperationPromise>&& aHolder);
 
   
 
