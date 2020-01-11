@@ -17,8 +17,6 @@ function _getSupportsFile(path) {
 async function enableExtensionDebugging() {
   
   await pushPref("devtools.debugger.prompt-connection", false);
-  
-  await pushPref("devtools.browser-toolbox.allow-unsafe-script", true);
 }
 
 
