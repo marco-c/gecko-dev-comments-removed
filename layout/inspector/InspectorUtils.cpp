@@ -691,7 +691,6 @@ bool InspectorUtils::IsCustomElementName(GlobalObject&, const nsAString& aName,
   return nsContentUtils::IsCustomElementName(nameElt, namespaceID);
 }
 
-
 bool InspectorUtils::IsElementThemed(GlobalObject&, Element& aElement) {
   
   
@@ -700,6 +699,18 @@ bool InspectorUtils::IsElementThemed(GlobalObject&, Element& aElement) {
   
   nsIFrame* frame = aElement.GetPrimaryFrame(FlushType::Frames);
   return frame && frame->IsThemed();
+}
+
+Element* InspectorUtils::ContainingBlockOf(GlobalObject&, Element& aElement) {
+  nsIFrame* frame = aElement.GetPrimaryFrame(FlushType::Frames);
+  if (!frame) {
+    return nullptr;
+  }
+  nsIFrame* cb = frame->GetContainingBlock();
+  if (!cb) {
+    return nullptr;
+  }
+  return Element::FromNodeOrNull(cb->GetContent());
 }
 
 }  
