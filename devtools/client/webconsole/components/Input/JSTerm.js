@@ -101,6 +101,8 @@ class JSTerm extends Component {
       
       editorOnboardingDismiss: PropTypes.func.isRequired,
       
+      terminalInputChanged: PropTypes.func.isRequired,
+      
       editorMode: PropTypes.bool,
       editorWidth: PropTypes.number,
       showEditorOnboarding: PropTypes.bool,
@@ -125,6 +127,14 @@ class JSTerm extends Component {
     
     
     this.autocompleteUpdate = debounce(this.props.autocompleteUpdate, 75, this);
+
+    
+    
+    this.terminalInputChanged = debounce(
+      this.props.terminalInputChanged,
+      75,
+      this
+    );
 
     
     
@@ -618,6 +628,7 @@ class JSTerm extends Component {
 
   _setValue(newValue = "") {
     this.lastInputValue = newValue;
+    this.terminalInputChanged(newValue);
 
     if (this.editor) {
       
@@ -767,6 +778,7 @@ class JSTerm extends Component {
         this.autocompleteUpdate();
       }
       this.lastInputValue = value;
+      this.terminalInputChanged(value);
     }
   }
 
@@ -1264,6 +1276,8 @@ function mapDispatchToProps(dispatch) {
       dispatch(actions.evaluateExpression(expression)),
     editorToggle: () => dispatch(actions.editorToggle()),
     editorOnboardingDismiss: () => dispatch(actions.editorOnboardingDismiss()),
+    terminalInputChanged: value =>
+      dispatch(actions.terminalInputChanged(value)),
   };
 }
 
