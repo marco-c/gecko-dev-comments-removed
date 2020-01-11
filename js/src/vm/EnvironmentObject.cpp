@@ -103,6 +103,10 @@ static T* CreateEnvironmentObject(JSContext* cx, HandleShape shape,
       return nullptr;
     }
     obj = objRoot;
+  } else {
+    
+    
+    MarkObjectGroupUnknownProperties(cx, group);
   }
 
   return &obj->as<T>();
