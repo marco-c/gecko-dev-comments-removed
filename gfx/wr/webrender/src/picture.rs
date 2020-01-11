@@ -879,8 +879,20 @@ impl Tile {
         self.update_content_validity(ctx, state);
 
         
-        if self.current_descriptor.prims.is_empty() {
-            return false;
+        
+        
+        
+        
+        
+        match state.composite_state.compositor_kind {
+            CompositorKind::Draw { .. } => {
+                
+                if self.current_descriptor.prims.is_empty() {
+                    return false;
+                }
+            }
+            CompositorKind::Native { .. } => {
+            }
         }
 
         
@@ -1922,7 +1934,7 @@ impl TileCacheInstance {
         
         
         frame_state.composite_state.destroy_native_tiles(
-            self.old_tiles.values(),
+            self.old_tiles.values_mut(),
             frame_state.resource_cache,
         );
 
@@ -5228,7 +5240,7 @@ impl TileNode {
 
 impl CompositeState {
     
-    pub fn destroy_native_tiles<'a, I: Iterator<Item = &'a Tile>>(
+    pub fn destroy_native_tiles<'a, I: Iterator<Item = &'a mut Tile>>(
         &mut self,
         tiles_iter: I,
         resource_cache: &mut ResourceCache,
@@ -5242,8 +5254,8 @@ impl CompositeState {
                 
                 
                 
-                if let Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::Native { id, .. }, .. }) = tile.surface {
-                    if let Some(id) = id {
+                if let Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::Native { ref mut id, .. }, .. }) = tile.surface {
+                    if let Some(id) = id.take() {
                         resource_cache.destroy_compositor_tile(id);
                     }
                 }
