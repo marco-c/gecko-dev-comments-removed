@@ -1,14 +1,14 @@
-use crate::rust::{
-	cmp::min,
-	iter::{FromIterator, IntoIterator},
-	mem,
-	slice,
-	vec::{self, Vec},
-};
-
+use alloc::vec::Vec;
 use crate::io;
 
 use super::{Deserialize, Error, Serialize, VarUint32};
+
+use alloc::vec;
+use core::{
+	cmp::min,
+	iter::{FromIterator, IntoIterator},
+	mem, slice
+};
 
 
 

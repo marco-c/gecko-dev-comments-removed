@@ -1,8 +1,7 @@
+use crate::prelude::*;
 use md5;
-use prelude::*;
 
 impl Uuid {
-    
     
     
     
@@ -26,17 +25,24 @@ impl Uuid {
         context.consume(namespace.as_bytes());
         context.consume(name);
 
-        let mut uuid = Uuid::from_bytes(context.compute().into());
+        let computed = context.compute();
+        let bytes = computed.into();
 
-        uuid.set_variant(Variant::RFC4122);
-        uuid.set_version(Version::Md5);
-        uuid
+        let mut builder = crate::builder::Builder::from_bytes(bytes);
+
+        builder
+            .set_variant(Variant::RFC4122)
+            .set_version(Version::Md5);
+
+        builder.build()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use prelude::*;
+    use super::*;
+
+    use crate::std::string::ToString;
 
     static FIXTURE: &'static [(&'static Uuid, &'static str, &'static str)] = &[
         (

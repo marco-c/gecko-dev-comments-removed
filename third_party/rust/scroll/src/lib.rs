@@ -135,17 +135,11 @@
 
 
 
-
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(feature = "derive")]
 #[allow(unused_imports)]
-#[macro_use]
-extern crate scroll_derive;
-
-#[cfg(feature = "derive")]
-#[doc(hidden)]
-pub use scroll_derive::*;
+pub use scroll_derive::{Pread, Pwrite, SizeWith, IOread, IOwrite};
 
 #[cfg(feature = "std")]
 extern crate core;
@@ -160,14 +154,14 @@ mod leb128;
 #[cfg(feature = "std")]
 mod lesser;
 
-pub use endian::*;
-pub use pread::*;
-pub use pwrite::*;
-pub use greater::*;
-pub use error::*;
-pub use leb128::*;
+pub use crate::endian::*;
+pub use crate::pread::*;
+pub use crate::pwrite::*;
+pub use crate::greater::*;
+pub use crate::error::*;
+pub use crate::leb128::*;
 #[cfg(feature = "std")]
-pub use lesser::*;
+pub use crate::lesser::*;
 
 #[doc(hidden)]
 pub mod export {
@@ -333,7 +327,7 @@ mod tests {
         fn description(&self) -> &str {
             "ExternalError"
         }
-        fn cause(&self) -> Option<&error::Error> { None}
+        fn cause(&self) -> Option<&dyn error::Error> { None}
     }
 
     impl From<super::Error> for ExternalError {
@@ -350,8 +344,7 @@ mod tests {
 
     impl super::ctx::TryIntoCtx<super::Endian> for Foo {
         type Error = ExternalError;
-        type Size = usize;
-        fn try_into_ctx(self, this: &mut [u8], le: super::Endian) -> Result<Self::Size, Self::Error> {
+        fn try_into_ctx(self, this: &mut [u8], le: super::Endian) -> Result<usize, Self::Error> {
             use super::Pwrite;
             if this.len() < 2 { return Err((ExternalError {}).into()) }
             this.pwrite_with(self.0, 0, le)?;
@@ -361,8 +354,7 @@ mod tests {
 
     impl<'a> super::ctx::TryFromCtx<'a, super::Endian> for Foo {
         type Error = ExternalError;
-        type Size = usize;
-        fn try_from_ctx(this: &'a [u8], le: super::Endian) -> Result<(Self, Self::Size), Self::Error> {
+        fn try_from_ctx(this: &'a [u8], le: super::Endian) -> Result<(Self, usize), Self::Error> {
             use super::Pread;
             if this.len() > 2 { return Err((ExternalError {}).into()) }
             let n = this.pread_with(0, le)?;

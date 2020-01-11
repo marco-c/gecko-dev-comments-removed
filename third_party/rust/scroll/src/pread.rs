@@ -1,8 +1,8 @@
 use core::result;
-use core::ops::{Index, RangeFrom, Add, AddAssign};
+use core::ops::{Index, RangeFrom};
 
-use ctx::{TryFromCtx, MeasureWith};
-use error;
+use crate::ctx::{TryFromCtx, MeasureWith};
+use crate::error;
 
 
 
@@ -78,13 +78,10 @@ use error;
 
 
 
-
-
-pub trait Pread<Ctx, E, I = usize> : Index<I> + Index<RangeFrom<I>> + MeasureWith<Ctx, Units = I>
+pub trait Pread<Ctx, E> : Index<usize> + Index<RangeFrom<usize>> + MeasureWith<Ctx>
  where
        Ctx: Copy,
-       I: Add + Copy + PartialOrd,
-       E: From<error::Error<I>>,
+       E: From<error::Error>,
 {
     #[inline]
     
@@ -93,7 +90,7 @@ pub trait Pread<Ctx, E, I = usize> : Index<I> + Index<RangeFrom<I>> + MeasureWit
     
     
     
-    fn pread<'a, N: TryFromCtx<'a, Ctx, <Self as Index<RangeFrom<I>>>::Output, Error = E, Size = I>>(&'a self, offset: I) -> result::Result<N, E> where <Self as Index<RangeFrom<I>>>::Output: 'a, Ctx: Default {
+    fn pread<'a, N: TryFromCtx<'a, Ctx, <Self as Index<RangeFrom<usize>>>::Output, Error = E>>(&'a self, offset: usize) -> result::Result<N, E> where <Self as Index<RangeFrom<usize>>>::Output: 'a, Ctx: Default {
         self.pread_with(offset, Ctx::default())
     }
     #[inline]
@@ -104,7 +101,7 @@ pub trait Pread<Ctx, E, I = usize> : Index<I> + Index<RangeFrom<I>> + MeasureWit
     
     
     
-    fn pread_with<'a, N: TryFromCtx<'a, Ctx, <Self as Index<RangeFrom<I>>>::Output, Error = E, Size = I>>(&'a self, offset: I, ctx: Ctx) -> result::Result<N, E> where <Self as Index<RangeFrom<I>>>::Output: 'a {
+    fn pread_with<'a, N: TryFromCtx<'a, Ctx, <Self as Index<RangeFrom<usize>>>::Output, Error = E>>(&'a self, offset: usize, ctx: Ctx) -> result::Result<N, E> where <Self as Index<RangeFrom<usize>>>::Output: 'a {
         let len = self.measure_with(&ctx);
         if offset >= len {
             return Err(error::Error::BadOffset(offset).into())
@@ -120,7 +117,7 @@ pub trait Pread<Ctx, E, I = usize> : Index<I> + Index<RangeFrom<I>> + MeasureWit
     
     
     
-    fn gread<'a, N: TryFromCtx<'a, Ctx, <Self as Index<RangeFrom<I>>>::Output, Error = E, Size = I>>(&'a self, offset: &mut I) -> result::Result<N, E> where I: AddAssign, Ctx: Default, <Self as Index<RangeFrom<I>>>::Output: 'a {
+    fn gread<'a, N: TryFromCtx<'a, Ctx, <Self as Index<RangeFrom<usize>>>::Output, Error = E>>(&'a self, offset: &mut usize) -> result::Result<N, E> where Ctx: Default, <Self as Index<RangeFrom<usize>>>::Output: 'a {
         let ctx = Ctx::default();
         self.gread_with(offset, ctx)
     }
@@ -134,10 +131,10 @@ pub trait Pread<Ctx, E, I = usize> : Index<I> + Index<RangeFrom<I>> + MeasureWit
     
     
     #[inline]
-    fn gread_with<'a, N: TryFromCtx<'a, Ctx, <Self as Index<RangeFrom<I>>>::Output, Error = E, Size = I>>
-        (&'a self, offset: &mut I, ctx: Ctx) ->
+    fn gread_with<'a, N: TryFromCtx<'a, Ctx, <Self as Index<RangeFrom<usize>>>::Output, Error = E>>
+        (&'a self, offset: &mut usize, ctx: Ctx) ->
         result::Result<N, E>
-        where I: AddAssign, <Self as Index<RangeFrom<I>>>::Output: 'a
+        where <Self as Index<RangeFrom<usize>>>::Output: 'a
     {
         let o = *offset;
         
@@ -165,16 +162,14 @@ pub trait Pread<Ctx, E, I = usize> : Index<I> + Index<RangeFrom<I>> + MeasureWit
     
     
     #[inline]
-    fn gread_inout<'a, N>(&'a self, offset: &mut I, inout: &mut [N]) -> result::Result<(), E>
+    fn gread_inout<'a, N>(&'a self, offset: &mut usize, inout: &mut [N]) -> result::Result<(), E>
         where
-        I: AddAssign,
-        N: TryFromCtx<'a, Ctx, <Self as Index<RangeFrom<I>>>::Output, Error = E, Size = I>,
+        N: TryFromCtx<'a, Ctx, <Self as Index<RangeFrom<usize>>>::Output, Error = E>,
     Ctx: Default,
-    <Self as Index<RangeFrom<I>>>::Output: 'a
+    <Self as Index<RangeFrom<usize>>>::Output: 'a
     {
-        let len = inout.len();
-        for i in 0..len {
-            inout[i] = self.gread(offset)?;
+        for i in inout.iter_mut() {
+            *i = self.gread(offset)?;
         }
         Ok(())
     }
@@ -190,22 +185,19 @@ pub trait Pread<Ctx, E, I = usize> : Index<I> + Index<RangeFrom<I>> + MeasureWit
     
     
     #[inline]
-    fn gread_inout_with<'a, N>(&'a self, offset: &mut I, inout: &mut [N], ctx: Ctx) -> result::Result<(), E>
+    fn gread_inout_with<'a, N>(&'a self, offset: &mut usize, inout: &mut [N], ctx: Ctx) -> result::Result<(), E>
         where
-        I: AddAssign,
-        N: TryFromCtx<'a, Ctx, <Self as Index<RangeFrom<I>>>::Output, Error = E, Size = I>,
-    <Self as Index<RangeFrom<I>>>::Output: 'a
+        N: TryFromCtx<'a, Ctx, <Self as Index<RangeFrom<usize>>>::Output, Error = E>,
+    <Self as Index<RangeFrom<usize>>>::Output: 'a
     {
-        let len = inout.len();
-        for i in 0..len {
-            inout[i] = self.gread_with(offset, ctx)?;
+        for i in inout.iter_mut() {
+            *i = self.gread_with(offset, ctx)?;
         }
         Ok(())
     }
 }
 
 impl<Ctx: Copy,
-     I: Add + Copy + PartialOrd,
-     E: From<error::Error<I>>,
-     R: ?Sized + Index<I> + Index<RangeFrom<I>> + MeasureWith<Ctx, Units = I>>
-    Pread<Ctx, E, I> for R {}
+     E: From<error::Error>,
+     R: ?Sized + Index<usize> + Index<RangeFrom<usize>> + MeasureWith<Ctx>>
+    Pread<Ctx, E> for R {}

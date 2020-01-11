@@ -152,6 +152,9 @@ pub trait ObjectSegment<'data> {
     fn align(&self) -> u64;
 
     
+    fn file_range(&self) -> (u64, u64);
+
+    
     
     
     fn data(&self) -> &'data [u8];
@@ -182,6 +185,9 @@ pub trait ObjectSection<'data> {
 
     
     fn align(&self) -> u64;
+
+    
+    fn file_range(&self) -> Option<(u64, u64)>;
 
     
     

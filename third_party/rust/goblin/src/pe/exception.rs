@@ -345,13 +345,11 @@ pub struct UnwindCode {
 
 impl<'a> TryFromCtx<'a, UnwindOpContext> for UnwindCode {
     type Error = error::Error;
-    type Size = usize;
-
     #[inline]
     fn try_from_ctx(
         bytes: &'a [u8],
         ctx: UnwindOpContext,
-    ) -> Result<(Self, Self::Size), Self::Error> {
+    ) -> Result<(Self, usize), Self::Error> {
         let mut read = 0;
         let code_offset = bytes.gread_with::<u8>(&mut read, scroll::LE)?;
         let operation = bytes.gread_with::<u8>(&mut read, scroll::LE)?;
@@ -675,10 +673,10 @@ impl<'a> ExceptionData<'a> {
         let size = directory.size as usize;
 
         if size % RUNTIME_FUNCTION_SIZE != 0 {
-            Err(scroll::Error::BadInput {
+            return Err(error::Error::from(scroll::Error::BadInput {
                 size,
                 msg: "invalid exception directory table size",
-            })?;
+            }));
         }
 
         let rva = directory.virtual_address as usize;
@@ -687,7 +685,7 @@ impl<'a> ExceptionData<'a> {
         })?;
 
         if offset % 4 != 0 {
-            Err(scroll::Error::BadOffset(offset))?;
+            return Err(error::Error::from(scroll::Error::BadOffset(offset)));
         }
 
         Ok(ExceptionData {
@@ -723,7 +721,7 @@ impl<'a> ExceptionData<'a> {
 
     
     pub fn get_function(&self, index: usize) -> error::Result<RuntimeFunction> {
-        self.get_function_by_offset(index * RUNTIME_FUNCTION_SIZE)
+        self.get_function_by_offset(self.offset + index * RUNTIME_FUNCTION_SIZE)
     }
 
     
@@ -797,10 +795,10 @@ impl<'a> ExceptionData<'a> {
 
     #[inline]
     fn get_function_by_offset(&self, offset: usize) -> error::Result<RuntimeFunction> {
-        debug_assert!(offset % RUNTIME_FUNCTION_SIZE == 0);
-        debug_assert!(offset < self.size);
+        debug_assert!((offset - self.offset) % RUNTIME_FUNCTION_SIZE == 0);
+        debug_assert!(offset < self.offset + self.size);
 
-        Ok(self.bytes.pread_with(self.offset + offset, scroll::LE)?)
+        Ok(self.bytes.pread_with(offset, scroll::LE)?)
     }
 }
 
@@ -822,5 +820,199 @@ impl<'a> IntoIterator for &'_ ExceptionData<'a> {
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.functions()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_size_of_runtime_function() {
+        assert_eq!(
+            std::mem::size_of::<RuntimeFunction>(),
+            RUNTIME_FUNCTION_SIZE
+        );
+    }
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+
+    
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+
+    
+    
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+
+    
+    
+    
+    
+    
+
+    
+    
+
+    #[test]
+    fn test_iter_unwind_codes() {
+        let unwind_info = UnwindInfo {
+            version: 1,
+            size_of_prolog: 4,
+            frame_register: Register(0),
+            frame_register_offset: 0,
+            chained_info: None,
+            handler: None,
+            code_bytes: &[4, 98],
+        };
+
+        let unwind_codes: Vec<UnwindCode> = unwind_info
+            .unwind_codes()
+            .map(|result| result.expect("parse unwind code"))
+            .collect();
+
+        assert_eq!(unwind_codes.len(), 1);
+
+        let expected = UnwindCode {
+            code_offset: 4,
+            operation: UnwindOperation::Alloc(56),
+        };
+
+        assert_eq!(unwind_codes[0], expected);
     }
 }

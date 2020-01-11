@@ -1,6 +1,6 @@
 use core::ops::{Index, IndexMut, RangeFrom};
 
-use ctx::{FromCtx, IntoCtx};
+use crate::ctx::{FromCtx, IntoCtx};
 
 
 
@@ -52,7 +52,7 @@ pub trait Cread<Ctx, I = usize> : Index<I> + Index<RangeFrom<I>>
     
     
     #[inline]
-    fn cread_with<'a, N: FromCtx<Ctx, <Self as Index<RangeFrom<I>>>::Output>>(&'a self, offset: I, ctx: Ctx) -> N {
+    fn cread_with<N: FromCtx<Ctx, <Self as Index<RangeFrom<I>>>::Output>>(&self, offset: I, ctx: Ctx) -> N {
         N::from_ctx(&self[offset..], ctx)
     }
     
@@ -78,7 +78,7 @@ pub trait Cread<Ctx, I = usize> : Index<I> + Index<RangeFrom<I>>
     
     
     #[inline]
-    fn cread<'a, N: FromCtx<Ctx, <Self as Index<RangeFrom<I>>>::Output>>(&'a self, offset: I) -> N where Ctx: Default {
+    fn cread<N: FromCtx<Ctx, <Self as Index<RangeFrom<I>>>::Output>>(&self, offset: I) -> N where Ctx: Default {
         let ctx = Ctx::default();
         N::from_ctx(&self[offset..], ctx)
     }

@@ -1,6 +1,5 @@
 use std::io::{Result, Read, Write};
-use ctx::{FromCtx, IntoCtx, SizeWith};
-
+use crate::ctx::{FromCtx, IntoCtx, SizeWith};
 
 
 
@@ -69,7 +68,7 @@ pub trait IOread<Ctx: Copy> : Read
     
     
     #[inline]
-    fn ioread<N: FromCtx<Ctx> + SizeWith<Ctx, Units = usize>>(&mut self) -> Result<N> where Ctx: Default {
+    fn ioread<N: FromCtx<Ctx> + SizeWith<Ctx>>(&mut self) -> Result<N> where Ctx: Default {
         let ctx = Ctx::default();
         self.ioread_with(ctx)
     }
@@ -95,7 +94,7 @@ pub trait IOread<Ctx: Copy> : Read
     
     
     #[inline]
-    fn ioread_with<N: FromCtx<Ctx> + SizeWith<Ctx, Units = usize>>(&mut self, ctx: Ctx) -> Result<N> {
+    fn ioread_with<N: FromCtx<Ctx> + SizeWith<Ctx>>(&mut self, ctx: Ctx) -> Result<N> {
         let mut scratch = [0u8; 256];
         let size = N::size_with(&ctx);
         let mut buf = &mut scratch[0..size];
@@ -133,7 +132,7 @@ pub trait IOwrite<Ctx: Copy>: Write
     
     
     #[inline]
-    fn iowrite<N: SizeWith<Ctx, Units = usize> + IntoCtx<Ctx>>(&mut self, n: N) -> Result<()> where Ctx: Default {
+    fn iowrite<N: SizeWith<Ctx> + IntoCtx<Ctx>>(&mut self, n: N) -> Result<()> where Ctx: Default {
         let ctx = Ctx::default();
         self.iowrite_with(n, ctx)
     }
@@ -155,7 +154,7 @@ pub trait IOwrite<Ctx: Copy>: Write
     
     
     #[inline]
-    fn iowrite_with<N: SizeWith<Ctx, Units = usize> + IntoCtx<Ctx>>(&mut self, n: N, ctx: Ctx) -> Result<()> {
+    fn iowrite_with<N: SizeWith<Ctx> + IntoCtx<Ctx>>(&mut self, n: N, ctx: Ctx) -> Result<()> {
         let mut buf = [0u8; 256];
         let size = N::size_with(&ctx);
         let buf = &mut buf[0..size];

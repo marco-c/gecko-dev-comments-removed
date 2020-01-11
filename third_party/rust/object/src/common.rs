@@ -147,7 +147,16 @@ pub enum RelocationKind {
     
     SectionIndex,
     
-    Other(u32),
+    Elf(u32),
+    
+    MachO {
+        
+        value: u8,
+        
+        relative: bool,
+    },
+    
+    Coff(u16),
 }
 
 
