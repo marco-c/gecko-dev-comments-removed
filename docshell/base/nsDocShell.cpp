@@ -9683,6 +9683,24 @@ static bool SchemeUsesDocChannel(nsIURI* aURI) {
     }
   }
 
+  channel->SetOriginalURI(aLoadState->OriginalURI() ? aLoadState->OriginalURI()
+                                                    : aLoadState->URI());
+
+  const nsACString& typeHint = aLoadState->TypeHint();
+  if (!typeHint.IsVoid()) {
+    channel->SetContentType(typeHint);
+  }
+
+  const nsAString& fileName = aLoadState->FileName();
+  if (!fileName.IsVoid()) {
+    aRv = channel->SetContentDisposition(nsIChannel::DISPOSITION_ATTACHMENT);
+    NS_ENSURE_SUCCESS(aRv, false);
+    if (!fileName.IsEmpty()) {
+      aRv = channel->SetContentDispositionFilename(fileName);
+      NS_ENSURE_SUCCESS(aRv, false);
+    }
+  }
+
   channel.forget(aChannel);
   return true;
 }
@@ -9720,37 +9738,17 @@ static bool SchemeUsesDocChannel(nsIURI* aURI) {
   }
 
   nsresult rv = NS_OK;
-  if (aLoadState->OriginalURI()) {
-    aChannel->SetOriginalURI(aLoadState->OriginalURI());
+  if (aLoadState->OriginalURI() && aLoadState->LoadReplace()) {
     
     
     
     
     
     
-    if (aLoadState->LoadReplace()) {
-      uint32_t loadFlags;
-      aChannel->GetLoadFlags(&loadFlags);
-      NS_ENSURE_SUCCESS(rv, rv);
-      aChannel->SetLoadFlags(loadFlags | nsIChannel::LOAD_REPLACE);
-    }
-  } else {
-    aChannel->SetOriginalURI(aLoadState->URI());
-  }
-
-  const nsACString& typeHint = aLoadState->TypeHint();
-  if (!typeHint.IsVoid()) {
-    aChannel->SetContentType(typeHint);
-  }
-
-  const nsAString& fileName = aLoadState->FileName();
-  if (!fileName.IsVoid()) {
-    rv = aChannel->SetContentDisposition(nsIChannel::DISPOSITION_ATTACHMENT);
+    uint32_t loadFlags;
+    rv = aChannel->GetLoadFlags(&loadFlags);
     NS_ENSURE_SUCCESS(rv, rv);
-    if (!fileName.IsEmpty()) {
-      rv = aChannel->SetContentDispositionFilename(fileName);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
+    aChannel->SetLoadFlags(loadFlags | nsIChannel::LOAD_REPLACE);
   }
 
   nsCOMPtr<nsICacheInfoChannel> cacheChannel(do_QueryInterface(aChannel));
@@ -10201,7 +10199,6 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
 
   const nsACString& typeHint = aLoadState->TypeHint();
   if (!typeHint.IsVoid()) {
-    channel->SetContentType(typeHint);
     mContentTypeHint = typeHint;
   } else {
     mContentTypeHint.Truncate();
