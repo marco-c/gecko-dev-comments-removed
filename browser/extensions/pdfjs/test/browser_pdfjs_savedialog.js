@@ -10,7 +10,7 @@ function test() {
   
   
   addWindowListener(
-    "chrome://mozapps/content/downloads/unknownContentType.xul",
+    "chrome://mozapps/content/downloads/unknownContentType.xhtml",
     finish
   );
 

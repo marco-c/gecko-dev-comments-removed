@@ -24,7 +24,7 @@
 
 
 const URI_EXTENSION_BLOCKLIST_DIALOG =
-  "chrome://mozapps/content/extensions/blocklist.xul";
+  "chrome://mozapps/content/extensions/blocklist.xhtml";
 
 
 Services.prefs.setBoolPref("extensions.checkUpdateSecurity", false);

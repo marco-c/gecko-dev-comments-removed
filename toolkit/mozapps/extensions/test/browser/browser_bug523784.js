@@ -2,7 +2,7 @@
 
 
 const URI_BLOCKLIST_DIALOG =
-  "chrome://mozapps/content/extensions/blocklist.xul";
+  "chrome://mozapps/content/extensions/blocklist.xhtml";
 
 
 

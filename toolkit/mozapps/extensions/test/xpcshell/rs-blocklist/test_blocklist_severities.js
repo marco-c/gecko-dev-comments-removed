@@ -4,7 +4,7 @@
 
 
 const URI_EXTENSION_BLOCKLIST_DIALOG =
-  "chrome://mozapps/content/extensions/blocklist.xul";
+  "chrome://mozapps/content/extensions/blocklist.xhtml";
 
 
 const PREF_BLOCKLIST_ITEM_URL = "extensions.blocklist.itemURL";

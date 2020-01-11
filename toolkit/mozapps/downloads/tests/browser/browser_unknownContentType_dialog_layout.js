@@ -8,7 +8,7 @@
 
 
 
-const UCT_URI = "chrome://mozapps/content/downloads/unknownContentType.xul";
+const UCT_URI = "chrome://mozapps/content/downloads/unknownContentType.xhtml";
 
 let tests = [
   {

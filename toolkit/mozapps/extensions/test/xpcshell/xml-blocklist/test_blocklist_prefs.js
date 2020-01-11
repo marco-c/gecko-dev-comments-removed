@@ -6,7 +6,7 @@
 
 
 const URI_EXTENSION_BLOCKLIST_DIALOG =
-  "chrome://mozapps/content/extensions/blocklist.xul";
+  "chrome://mozapps/content/extensions/blocklist.xhtml";
 
 var testserver = createHttpServer({ hosts: ["example.com"] });
 gPort = testserver.identity.primaryPort;
