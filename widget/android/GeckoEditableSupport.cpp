@@ -1556,6 +1556,8 @@ void GeckoEditableSupport::TransferParent(jni::Object::Param aEditableParent) {
     mEditable->NotifyIME(EditableListener::NOTIFY_IME_OF_TOKEN);
     NotifyIMEContext(mInputContext, InputContextAction());
     mEditable->NotifyIME(EditableListener::NOTIFY_IME_OF_FOCUS);
+    
+    return;
   }
 
   if (mIsRemote && !mDispatcher) {
