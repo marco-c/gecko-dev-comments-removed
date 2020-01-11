@@ -190,6 +190,13 @@ add_task(async function test() {
   );
 });
 
+
+
+
+function waitForRoundTrip(browser) {
+  return SpecialPowers.spawn(browser, [], () => {});
+}
+
 async function waitForRenderAndGetWidth(newTabBrowser) {
   return SpecialPowers.spawn(newTabBrowser, [], async function() {
     function waitForRender(document) {
@@ -233,6 +240,7 @@ add_task(async function test_browser_zoom() {
 
       
       let newWidthPromise = waitForRenderAndGetWidth(newTabBrowser);
+      await waitForRoundTrip(newTabBrowser);
       FullZoom.enlarge();
       ok(
         (await newWidthPromise) > initialWidth,
@@ -241,11 +249,13 @@ add_task(async function test_browser_zoom() {
 
       
       newWidthPromise = waitForRenderAndGetWidth(newTabBrowser);
+      await waitForRoundTrip(newTabBrowser);
       FullZoom.reset();
       is(await newWidthPromise, initialWidth, "Zoom reset restores page.");
 
       
       newWidthPromise = waitForRenderAndGetWidth(newTabBrowser);
+      await waitForRoundTrip(newTabBrowser);
       FullZoom.reduce();
       ok(
         (await newWidthPromise) < initialWidth,
