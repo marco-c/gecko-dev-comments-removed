@@ -6,12 +6,8 @@
 "use strict";
 
 var EXPORTED_SYMBOLS = ["ZoomUI"];
-const gLoadContext = Cu.createLoadContext();
-const gContentPrefs = Cc["@mozilla.org/content-pref/service;1"].getService(
-  Ci.nsIContentPrefService2
-);
+
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const gZoomPropertyName = "browser.content.full-zoom";
 
 var ZoomUI = {
   init(aWindow) {
@@ -31,45 +27,6 @@ var ZoomUI = {
       },
       { once: true }
     );
-  },
-
-  
-
-
-
-
-
-  getGlobalValue() {
-    return new Promise(resolve => {
-      let cachedVal = gContentPrefs.getCachedGlobal(
-        gZoomPropertyName,
-        gLoadContext
-      );
-      if (cachedVal) {
-        
-        
-        
-        
-        resolve(parseFloat(cachedVal.value) || 1.0);
-        return;
-      }
-      
-      
-      let value = 1.0;
-      gContentPrefs.getGlobal(gZoomPropertyName, gLoadContext, {
-        handleResult(pref) {
-          if (pref.value) {
-            value = parseFloat(pref.value);
-          }
-        },
-        handleCompletion(reason) {
-          resolve(value);
-        },
-        handleError(error) {
-          Cu.reportError(error);
-        },
-      });
-    });
   },
 };
 
@@ -117,7 +74,7 @@ function onZoomChange(event) {
 
 
 
-async function updateZoomUI(aBrowser, aAnimate = false) {
+function updateZoomUI(aBrowser, aAnimate = false) {
   let win = aBrowser.ownerGlobal;
   if (!win.gBrowser || win.gBrowser.selectedBrowser != aBrowser) {
     return;
@@ -133,20 +90,8 @@ async function updateZoomUI(aBrowser, aAnimate = false) {
 
   
   
-
-  let defaultZoom = (await ZoomUI.getGlobalValue()) * 100;
-
-  if (!win.gBrowser || win.gBrowser.selectedBrowser != aBrowser) {
-    
-    
-    
-    
-    
-    return;
-  }
-
   urlbarZoomButton.hidden =
-    defaultZoom == zoomFactor ||
+    zoomFactor == 100 ||
     (customizableZoomControls &&
       customizableZoomControls.getAttribute("cui-areatype") == "toolbar");
 
