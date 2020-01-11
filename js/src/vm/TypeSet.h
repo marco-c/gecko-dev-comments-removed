@@ -382,10 +382,18 @@ class TypeSet {
   static inline Type AnyObjectType() { return Type(JSVAL_TYPE_OBJECT); }
   static inline Type UnknownType() { return Type(JSVAL_TYPE_UNKNOWN); }
 
-  static inline Type PrimitiveType(JSValueType type) {
-    MOZ_ASSERT(type < JSVAL_TYPE_UNKNOWN);
-    return Type(type);
-  }
+ protected:
+  static inline Type PrimitiveTypeFromTypeFlag(TypeFlags flag);
+
+ public:
+  
+  
+  
+  static inline Type PrimitiveType(const JS::Value& val);
+  static inline Type PrimitiveType(jit::MIRType type);
+
+  
+  static inline Type PrimitiveOrAnyObjectType(jit::MIRType type);
 
   static inline Type ObjectType(const JSObject* obj);
   static inline Type ObjectType(const ObjectGroup* group);
@@ -396,7 +404,6 @@ class TypeSet {
   static JS::UniqueChars TypeString(const Type type);
   static JS::UniqueChars ObjectGroupString(const ObjectGroup* group);
 
- public:
   void print(FILE* fp = stderr);
 
   
@@ -546,12 +553,15 @@ class TypeSet {
  public:
   static inline Type GetValueType(const JS::Value& val);
 
+  
+  
   static inline bool IsUntrackedValue(const JS::Value& val);
+  static inline bool IsUntrackedMIRType(jit::MIRType type);
 
   
   
-  
   static inline Type GetMaybeUntrackedValueType(const JS::Value& val);
+  static inline Type GetMaybeUntrackedType(jit::MIRType type);
 
   static bool IsTypeMarked(JSRuntime* rt, Type* v);
   static bool IsTypeAboutToBeFinalized(Type* v);

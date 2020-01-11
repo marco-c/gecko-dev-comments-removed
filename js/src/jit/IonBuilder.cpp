@@ -1395,7 +1395,7 @@ AbortReasonOr<Ok> IonBuilder::addOsrValueTypeBarrier(
              type == MIRType::MagicOptimizedArguments) {
     
     
-    TypeSet::Type ntype = TypeSet::PrimitiveType(ValueTypeFromMIRType(type));
+    TypeSet::Type ntype = TypeSet::PrimitiveType(type);
     LifoAlloc* lifoAlloc = alloc().lifoAlloc();
     typeSet = lifoAlloc->new_<TemporaryTypeSet>(lifoAlloc, ntype);
     if (!typeSet) {
@@ -2802,7 +2802,7 @@ AbortReasonOr<Ok> IonBuilder::improveTypesAtTypeOfCompare(MCompare* ins,
       return Ok();
     }
     inputTypes = &tmp;
-    tmp.addType(TypeSet::PrimitiveType(ValueTypeFromMIRType(subject->type())),
+    tmp.addType(TypeSet::PrimitiveOrAnyObjectType(subject->type()),
                 alloc_->lifoAlloc());
   }
 
@@ -2893,7 +2893,7 @@ AbortReasonOr<Ok> IonBuilder::improveTypesAtNullOrUndefinedCompare(
       return Ok();
     }
     inputTypes = &tmp;
-    tmp.addType(TypeSet::PrimitiveType(ValueTypeFromMIRType(subject->type())),
+    tmp.addType(TypeSet::PrimitiveOrAnyObjectType(subject->type()),
                 alloc_->lifoAlloc());
   }
 
@@ -2976,9 +2976,8 @@ AbortReasonOr<Ok> IonBuilder::improveTypesAtTest(MDefinition* ins,
           return Ok();
         }
         oldType = &tmp;
-        tmp.addType(
-            TypeSet::PrimitiveType(ValueTypeFromMIRType(subject->type())),
-            alloc_->lifoAlloc());
+        tmp.addType(TypeSet::PrimitiveOrAnyObjectType(subject->type()),
+                    alloc_->lifoAlloc());
       }
 
       if (oldType->unknown()) {
@@ -3010,9 +3009,8 @@ AbortReasonOr<Ok> IonBuilder::improveTypesAtTest(MDefinition* ins,
           return Ok();
         }
         oldType = &tmp;
-        tmp.addType(
-            TypeSet::PrimitiveType(ValueTypeFromMIRType(subject->type())),
-            alloc_->lifoAlloc());
+        tmp.addType(TypeSet::PrimitiveOrAnyObjectType(subject->type()),
+                    alloc_->lifoAlloc());
       }
 
       
@@ -3060,7 +3058,7 @@ AbortReasonOr<Ok> IonBuilder::improveTypesAtTest(MDefinition* ins,
       return Ok();
     }
     oldType = &tmp;
-    tmp.addType(TypeSet::PrimitiveType(ValueTypeFromMIRType(ins->type())),
+    tmp.addType(TypeSet::PrimitiveOrAnyObjectType(ins->type()),
                 alloc_->lifoAlloc());
   }
 
