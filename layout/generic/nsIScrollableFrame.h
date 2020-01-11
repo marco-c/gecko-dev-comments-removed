@@ -99,6 +99,12 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
+  uint32_t GetAvailableVisualScrollingDirections() const;
+  
+
+
+
+
 
   virtual nsMargin GetActualScrollbarSizes() const = 0;
   
@@ -189,6 +195,10 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
   virtual nsPoint GetVisualViewportOffset() const = 0;
+  
+
+
+  virtual nsRect GetVisualScrollRange() const = 0;
   
 
 
