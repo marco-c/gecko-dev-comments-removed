@@ -256,7 +256,7 @@ const startupPhases = {
       
       path: "ProfD:permissions.sqlite",
       condition: WIN || MAC,
-      fsync: 7,
+      fsync: 8,
       read: 2,
       stat: 1,
       write: 10,
@@ -265,9 +265,9 @@ const startupPhases = {
       
       path: "ProfD:permissions.sqlite-journal",
       condition: WIN || MAC,
-      fsync: 7,
-      stat: 26,
-      write: 38,
+      fsync: 8,
+      stat: 28,
+      write: 40,
     },
     {
       
