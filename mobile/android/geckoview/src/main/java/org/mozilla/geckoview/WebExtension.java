@@ -115,30 +115,6 @@ public class WebExtension {
 
 
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     public WebExtension(final @NonNull String location, final @NonNull String id,
                         final @WebExtensionFlags long flags) {
         this.location = location;
