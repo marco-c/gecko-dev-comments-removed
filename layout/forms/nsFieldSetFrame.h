@@ -16,6 +16,7 @@ class nsFieldSetFrame final : public nsContainerFrame {
 
  public:
   NS_DECL_FRAMEARENA_HELPERS(nsFieldSetFrame)
+  NS_DECL_QUERYFRAME
 
   explicit nsFieldSetFrame(ComputedStyle* aStyle, nsPresContext* aPresContext);
 
@@ -87,7 +88,8 @@ class nsFieldSetFrame final : public nsContainerFrame {
 
 
 
-  nsIFrame* GetInner() const;
+
+  nsContainerFrame* GetInner() const;
 
   
 
@@ -96,8 +98,21 @@ class nsFieldSetFrame final : public nsContainerFrame {
 
   nsIFrame* GetLegend() const;
 
+  
+  nscoord LegendSpace() const { return mLegendSpace; }
+
  protected:
+  
+
+
+
+  void EnsureChildContinuation(nsIFrame* aChild, const nsReflowStatus& aStatus);
+
   mozilla::LogicalRect mLegendRect;
+
+  
+  
+  
   nscoord mLegendSpace;
 };
 

@@ -19,6 +19,7 @@
 
   border-radius: inherit;
   padding: inherit;
+  box-decoration-break: inherit;
   block-size: 100%; 
   
 
