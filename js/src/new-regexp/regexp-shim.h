@@ -881,6 +881,27 @@ class Isolate {
   Counters counters_;
 };
 
+
+
+class StackLimitCheck {
+ public:
+  StackLimitCheck(Isolate* isolate) : cx_(isolate->cx()) {}
+
+  
+  bool HasOverflowed() { return !CheckRecursionLimitDontReport(cx_); }
+
+  
+  bool InterruptRequested() { return cx_->hasAnyPendingInterrupt(); }
+
+  
+  bool JsHasOverflowed() {
+    return !CheckRecursionLimitConservativeDontReport(cx_);
+  }
+
+ private:
+  JSContext* cx_;
+};
+
 class Code {
  public:
   bool operator!=(Code& other) const;
