@@ -1,5 +1,5 @@
 
-#define BUILD "20190905"
+#define BUILD "20191231"
 
 
 #include "mozilla/Attributes.h"
@@ -9,7 +9,7 @@
 #define PACKAGE_NAME "libjpeg-turbo"
 
 
-#define VERSION "2.0.3"
+#define VERSION "2.0.4"
 
 
 #ifdef HAVE_64BIT_BUILD

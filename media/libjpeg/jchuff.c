@@ -43,8 +43,8 @@
 
 
 
-#if defined __GNUC__ && (defined __arm__ || defined __aarch64__)
-#if !defined __thumb__ || defined __thumb2__
+#if defined(__GNUC__) && (defined(__arm__) || defined(__aarch64__))
+#if !defined(__thumb__) || defined(__thumb2__)
 #define USE_CLZ_INTRINSIC
 #endif
 #endif
@@ -432,7 +432,7 @@ dump_buffer(working_state *state)
 
 
 
-#define BUFSIZE  (DCTSIZE2 * 4)
+#define BUFSIZE  (DCTSIZE2 * 8)
 
 #define LOAD_BUFFER() { \
   if (state->free_in_buffer < BUFSIZE) { \
