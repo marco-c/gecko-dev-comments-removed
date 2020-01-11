@@ -455,3 +455,7 @@ JS_FRIEND_API uint8_t* JS::GetSharedArrayBufferData(
   *isSharedMemory = true;
   return aobj->dataPointerShared().unwrap();
 }
+
+JS_PUBLIC_API bool JS::ContainsSharedArrayBuffer(JSContext* cx) {
+  return cx->runtime()->hasLiveSABs();
+}

@@ -58,6 +58,14 @@ extern JS_PUBLIC_API uint8_t* GetSharedArrayBufferData(JSObject* obj,
 extern JS_PUBLIC_API void GetSharedArrayBufferLengthAndData(
     JSObject* obj, uint32_t* length, bool* isSharedMemory, uint8_t** data);
 
+
+
+
+
+
+
+extern JS_PUBLIC_API bool ContainsSharedArrayBuffer(JSContext* cx);
+
 }  
 
 #endif 
