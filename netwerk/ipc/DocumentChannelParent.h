@@ -7,260 +7,81 @@
 #ifndef mozilla_net_DocumentChannelParent_h
 #define mozilla_net_DocumentChannelParent_h
 
-#include "mozilla/MozPromise.h"
-#include "mozilla/Variant.h"
-#include "mozilla/net/NeckoCommon.h"
-#include "mozilla/net/NeckoParent.h"
 #include "mozilla/net/PDocumentChannelParent.h"
-#include "mozilla/net/ParentChannelListener.h"
-#include "nsIInterfaceRequestor.h"
-#include "nsIObserver.h"
-#include "nsIParentChannel.h"
-#include "nsIParentRedirectingChannel.h"
-#include "nsIProcessSwitchRequestor.h"
-#include "nsIRedirectResultListener.h"
-
-#define DOCUMENT_CHANNEL_PARENT_IID                  \
-  {                                                  \
-    0x3b393c56, 0x9e01, 0x11e9, {                    \
-      0xa2, 0xa3, 0x2a, 0x2a, 0xe2, 0xdb, 0xcc, 0xe4 \
-    }                                                \
-  }
+#include "mozilla/net/DocumentLoadListener.h"
 
 namespace mozilla {
 namespace net {
 
 
 
-class DocumentChannelParent : public nsIInterfaceRequestor,
-                              public PDocumentChannelParent,
-                              public nsIAsyncVerifyRedirectReadyCallback,
-                              public nsIParentChannel,
-                              public nsIChannelEventSink,
-                              public HttpChannelSecurityWarningReporter,
-                              public nsIProcessSwitchRequestor {
- public:
-  explicit DocumentChannelParent(const dom::PBrowserOrId& iframeEmbedding,
-                                 nsILoadContext* aLoadContext,
-                                 PBOverrideStatus aOverrideStatus);
 
+
+
+class DocumentChannelParent final : public ADocumentChannelBridge,
+                                    public PDocumentChannelParent {
+ public:
+  NS_INLINE_DECL_REFCOUNTING(DocumentChannelParent, override);
+
+  explicit DocumentChannelParent(const dom::PBrowserOrId& aIframeEmbedding,
+                                 nsILoadContext* aLoadContext,
+                                 PBOverrideStatus aOverrideStatus) {
+    mParent = new DocumentLoadListener(aIframeEmbedding, aLoadContext,
+                                       aOverrideStatus, this);
+  }
   bool Init(const DocumentChannelCreationArgs& aArgs);
 
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIREQUESTOBSERVER
-  NS_DECL_NSISTREAMLISTENER
-  NS_DECL_NSIPARENTCHANNEL
-  NS_DECL_NSIINTERFACEREQUESTOR
-  NS_DECL_NSIASYNCVERIFYREDIRECTREADYCALLBACK
-  NS_DECL_NSICHANNELEVENTSINK
-  NS_DECL_NSIPROCESSSWITCHREQUESTOR
-
-  NS_DECLARE_STATIC_IID_ACCESSOR(DOCUMENT_CHANNEL_PARENT_IID)
-
-  bool RecvCancel(const nsresult& status);
-  bool RecvSuspend();
-  bool RecvResume();
-
-  nsresult ReportSecurityMessage(const nsAString& aMessageTag,
-                                 const nsAString& aMessageCategory) override {
-    ReportSecurityMessageParams params;
-    params.mMessageTag = aMessageTag;
-    params.mMessageCategory = aMessageCategory;
-    mSecurityWarningFunctions.AppendElement(
-        SecurityWarningFunction{VariantIndex<0>{}, std::move(params)});
-    return NS_OK;
+  
+  bool RecvCancel(const nsresult& aStatus) {
+    mParent->Cancel(aStatus);
+    return true;
   }
-  nsresult LogBlockedCORSRequest(const nsAString& aMessage,
-                                 const nsACString& aCategory) override {
-    LogBlockedCORSRequestParams params;
-    params.mMessage = aMessage;
-    params.mCategory = aCategory;
-    mSecurityWarningFunctions.AppendElement(
-        SecurityWarningFunction{VariantIndex<1>{}, std::move(params)});
-    return NS_OK;
+  bool RecvSuspend() {
+    mParent->Suspend();
+    return true;
   }
-  nsresult LogMimeTypeMismatch(const nsACString& aMessageName, bool aWarning,
-                               const nsAString& aURL,
-                               const nsAString& aContentType) override {
-    LogMimeTypeMismatchParams params;
-    params.mMessageName = aMessageName;
-    params.mWarning = aWarning;
-    params.mURL = aURL;
-    params.mContentType = aContentType;
-    mSecurityWarningFunctions.AppendElement(
-        SecurityWarningFunction{VariantIndex<2>{}, std::move(params)});
-    return NS_OK;
+  bool RecvResume() {
+    mParent->Resume();
+    return true;
   }
-
-  virtual void ActorDestroy(ActorDestroyReason why) override;
+  void ActorDestroy(ActorDestroyReason aWhy) override {
+    mParent->DocumentChannelBridgeDisconnected();
+    mParent = nullptr;
+  }
 
  private:
-  virtual ~DocumentChannelParent() = default;
+  
+  void DisconnectChildListeners(nsresult aStatus) override {
+    if (CanSend()) {
+      Unused << SendDisconnectChildListeners(aStatus);
+    }
+  }
 
-  
-  
-  
-  void TriggerRedirectToRealChannel(
-      const Maybe<uint64_t>& aDestinationProcess = Nothing());
+  void Delete() override {
+    if (CanSend()) {
+      Unused << SendDeleteSelf();
+    }
+  }
 
-  
-  
-  
-  void RedirectToRealChannelFinished(nsresult aRv);
+  RefPtr<PDocumentChannelParent::ConfirmRedirectPromise> ConfirmRedirect(
+      const LoadInfoArgs& aLoadInfo, nsIURI* aNewURI) override {
+    return SendConfirmRedirect(aLoadInfo, aNewURI);
+  }
 
-  
-  
-  
-  
-  void FinishReplacementChannelSetup(bool aSucceeded);
+  virtual ProcessId OtherPid() const override { return IProtocol::OtherPid(); }
 
-  
-  
-  
-  void TriggerCrossProcessSwitch();
+  virtual bool AttachStreamFilter(
+      Endpoint<mozilla::extensions::PStreamFilterParent>&& aEndpoint) override {
+    return SendAttachStreamFilter(std::move(aEndpoint));
+  }
 
-  
-  
-  
   RefPtr<PDocumentChannelParent::RedirectToRealChannelPromise>
-  RedirectToRealChannel(uint32_t aRedirectFlags, uint32_t aLoadFlags,
-                        const Maybe<uint64_t>& aDestinationProcess);
+  RedirectToRealChannel(uint32_t aRedirectFlags, uint32_t aLoadFlags) override;
 
-  
-  
-  void SerializeRedirectData(RedirectToRealChannelArgs& aArgs,
-                             bool aIsCrossProcess, uint32_t aRedirectFlags,
-                             uint32_t aLoadFlags);
+  ~DocumentChannelParent() = default;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  struct ClassifierMatchedInfoParams {
-    nsCString mList;
-    nsCString mProvider;
-    nsCString mFullHash;
-  };
-  struct ClassifierMatchedTrackingInfoParams {
-    nsCString mLists;
-    nsCString mFullHashes;
-  };
-  struct ClassificationFlagsParams {
-    uint32_t mClassificationFlags;
-    bool mIsThirdParty;
-  };
-
-  struct NotifyChannelClassifierProtectionDisabledParams {
-    uint32_t mAcceptedReason;
-  };
-
-  struct NotifyCookieAllowedParams {};
-
-  struct NotifyCookieBlockedParams {
-    uint32_t mRejectedReason;
-  };
-
-  typedef mozilla::Variant<
-      nsIHttpChannel::FlashPluginState, ClassifierMatchedInfoParams,
-      ClassifierMatchedTrackingInfoParams, ClassificationFlagsParams,
-      NotifyChannelClassifierProtectionDisabledParams,
-      NotifyCookieAllowedParams, NotifyCookieBlockedParams>
-      IParentChannelFunction;
-
-  
-  
-  
-  nsTArray<IParentChannelFunction> mIParentChannelFunctions;
-
-  
-  
-  
-
-  struct ReportSecurityMessageParams {
-    nsString mMessageTag;
-    nsString mMessageCategory;
-  };
-  struct LogBlockedCORSRequestParams {
-    nsString mMessage;
-    nsCString mCategory;
-  };
-  struct LogMimeTypeMismatchParams {
-    nsCString mMessageName;
-    bool mWarning;
-    nsString mURL;
-    nsString mContentType;
-  };
-
-  typedef mozilla::Variant<ReportSecurityMessageParams,
-                           LogBlockedCORSRequestParams,
-                           LogMimeTypeMismatchParams>
-      SecurityWarningFunction;
-  nsTArray<SecurityWarningFunction> mSecurityWarningFunctions;
-
-  struct OnDataAvailableRequest {
-    nsCString data;
-    uint64_t offset;
-    uint32_t count;
-  };
-  
-  nsTArray<OnDataAvailableRequest> mPendingRequests;
-  Maybe<nsresult> mStopRequestValue;
-
-  nsCOMPtr<nsIChannel> mChannel;
-  RefPtr<ParentChannelListener> mListener;
-
-  nsCOMPtr<nsILoadContext> mLoadContext;
-
-  PBOverrideStatus mPBOverride;
-
-  
-  
-  
-  
-  nsCOMPtr<nsIURI> mChannelCreationURI;
-
-  nsTArray<DocumentChannelRedirect> mRedirects;
-
-  
-  
-  
-  uint32_t mRedirectChannelId = 0;
-  
-  
-  
-  bool mSuspendedChannel = false;
-  
-  
-  bool mDoingProcessSwitch = false;
-  
-  
-  
-  
-  bool mOldApplyConversion = false;
-  
-  
-  bool mHasCrossOriginOpenerPolicyMismatch = false;
-
-  typedef MozPromise<uint64_t, nsresult, true >
-      ContentProcessIdPromise;
-  
-  
-  
-  RefPtr<ContentProcessIdPromise> mRedirectContentProcessIdPromise;
-  
-  
-  
-  
-  uint64_t mCrossProcessRedirectIdentifier = 0;
+  RefPtr<DocumentLoadListener> mParent;
 };
-
-NS_DEFINE_STATIC_IID_ACCESSOR(DocumentChannelParent,
-                              DOCUMENT_CHANNEL_PARENT_IID)
 
 }  
 }  
