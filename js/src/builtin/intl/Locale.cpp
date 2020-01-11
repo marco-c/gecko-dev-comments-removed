@@ -262,8 +262,7 @@ static bool GetBooleanOption(JSContext* cx, HandleObject options,
     
 
     
-    JSString* str = BooleanToString(cx, ToBoolean(option));
-    MOZ_ALWAYS_TRUE(linear = str->ensureLinear(cx));
+    linear = BooleanToString(cx, ToBoolean(option));
   }
 
   
