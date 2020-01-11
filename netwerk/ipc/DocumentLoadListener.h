@@ -153,7 +153,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                              uint32_t aLoadFlags);
 
  protected:
-  virtual ~DocumentLoadListener() = default;
+  virtual ~DocumentLoadListener();
 
   
   
