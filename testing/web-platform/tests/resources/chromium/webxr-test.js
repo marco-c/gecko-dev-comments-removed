@@ -830,6 +830,10 @@ class MockXRInputSource {
 
     input_state.primaryInputPressed = this.primary_input_pressed_;
     input_state.primaryInputClicked = this.primary_input_clicked_;
+    
+    
+    
+    this.primary_input_clicked_ = false;
 
     input_state.mojoFromInput = this.mojo_from_input_;
 
