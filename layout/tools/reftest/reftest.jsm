@@ -173,6 +173,7 @@ function OnRefTestLoad(win)
     var prefs = Cc["@mozilla.org/preferences-service;1"].
                 getService(Ci.nsIPrefBranch);
     g.browserIsRemote = prefs.getBoolPref("browser.tabs.remote.autostart", false);
+    g.browserIsFission = prefs.getBoolPref("fission.autostart", false);
 
     g.browserIsIframe = prefs.getBoolPref("reftest.browser.iframe.enabled", false);
 
@@ -243,6 +244,13 @@ function InitAndStartRefTests()
     try {
       prefs.setBoolPref("android.widget_paints_background", false);
     } catch (e) {}
+    
+    
+    
+    
+    if (g.browserIsFission) {
+      prefs.setBoolPref("browser.tabs.remote.dataUriInDefaultWebProcess", true);
+    }
 
     
     try {
