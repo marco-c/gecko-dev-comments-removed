@@ -155,6 +155,26 @@ class Network extends Domain {
 
 
 
+
+
+  async setCacheDisabled(options = {}) {
+    const { cacheDisabled = false } = options;
+
+    const { INHIBIT_CACHING, LOAD_BYPASS_CACHE, LOAD_NORMAL } = Ci.nsIRequest;
+
+    let loadFlags = LOAD_NORMAL;
+    if (cacheDisabled) {
+      loadFlags = LOAD_BYPASS_CACHE | INHIBIT_CACHING;
+    }
+
+    await this.executeInChild("_updateLoadFlags", loadFlags);
+  }
+
+  
+
+
+
+
   setUserAgentOverride(options = {}) {
     const { id } = this.session;
     this.session.execute(id, "Emulation", "setUserAgentOverride", options);
