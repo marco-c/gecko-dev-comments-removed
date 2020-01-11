@@ -118,6 +118,14 @@ class NativeLayer {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
   virtual Maybe<GLuint> NextSurfaceAsFramebuffer(
       const gfx::IntRegion& aUpdateRegion, bool aNeedsDepth) = 0;
 

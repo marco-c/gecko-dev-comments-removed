@@ -94,6 +94,11 @@ class SurfacePoolCA final : public SurfacePool {
   
   
   
+  
+  
+  
+  
+  
   Maybe<GLuint> GetFramebufferForSurface(CFTypeRefPtr<IOSurfaceRef> aSurface,
                                          gl::GLContext* aGL,
                                          bool aNeedsDepthBuffer);
@@ -160,6 +165,12 @@ class SurfacePoolCA final : public SurfacePool {
                                      const gfx::IntSize& aSize,
                                      gl::GLContext* aGL);
 
+    RefPtr<gl::DepthAndStencilBuffer> GetDepthBufferForSharing(
+        gl::GLContext* aGL, const gfx::IntSize& aSize);
+    UniquePtr<gl::MozFramebuffer> CreateFramebufferForTexture(
+        gl::GLContext* aGL, const gfx::IntSize& aSize, GLuint aTexture,
+        bool aNeedsDepthBuffer);
+
     
     
     
@@ -216,6 +227,14 @@ class SurfacePoolCA final : public SurfacePool {
     
     std::unordered_map<gl::GLContext*, SurfacePoolCAWrapperForGL*> mWrappers;
     size_t mPoolSizeLimit = 0;
+
+    struct DepthBufferEntry {
+      RefPtr<gl::GLContext> mGLContext;
+      gfx::IntSize mSize;
+      WeakPtr<gl::DepthAndStencilBuffer> mBuffer;
+    };
+
+    nsTArray<DepthBufferEntry> mDepthBuffers;
   };
 
   DataMutex<LockedPool> mPool;
