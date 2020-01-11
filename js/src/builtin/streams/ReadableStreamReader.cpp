@@ -71,6 +71,9 @@ MOZ_MUST_USE bool js::ReadableStreamReaderGenericInitialize(
   cx->check(reader);
 
   
+  reader->setForAuthorCode(forAuthorCode);
+
+  
   {
     Rooted<JSObject*> readerCompartmentStream(cx, unwrappedStream);
     if (!cx->compartment()->wrap(cx, &readerCompartmentStream)) {
@@ -117,10 +120,6 @@ MOZ_MUST_USE bool js::ReadableStreamReaderGenericInitialize(
   }
 
   reader->setClosedPromise(promise);
-
-  
-  
-  reader->setForAuthorCode(forAuthorCode);
 
   
   
