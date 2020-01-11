@@ -456,6 +456,13 @@ class WriteBarriered : public BarrieredBase<T>,
   }
 };
 
+#define DECLARE_POINTER_ASSIGN_AND_MOVE_OPS(Wrapper, T) \
+  DECLARE_POINTER_ASSIGN_OPS(Wrapper, T)                \
+  Wrapper<T>& operator=(Wrapper<T>&& other) {           \
+    setUnchecked(other.release());                      \
+    return *this;                                       \
+  }
+
 
 
 
@@ -474,25 +481,36 @@ class PreBarriered : public WriteBarriered<T> {
 
 
   MOZ_IMPLICIT PreBarriered(const T& v) : WriteBarriered<T>(v) {}
-  explicit PreBarriered(const PreBarriered<T>& v)
-      : WriteBarriered<T>(v.value) {}
+
+  explicit PreBarriered(const PreBarriered<T>& other)
+      : WriteBarriered<T>(other.value) {}
+
+  PreBarriered(PreBarriered<T>&& other) : WriteBarriered<T>(other.release()) {}
+
   ~PreBarriered() { this->pre(); }
 
   void init(const T& v) { this->value = v; }
 
   
-  void clear() {
-    this->pre();
-    this->value = nullptr;
-  }
+  void clear() { set(JS::SafelyInitialized<T>()); }
 
-  DECLARE_POINTER_ASSIGN_OPS(PreBarriered, T);
+  DECLARE_POINTER_ASSIGN_AND_MOVE_OPS(PreBarriered, T);
 
  private:
   void set(const T& v) {
     AssertTargetIsNotGray(v);
+    setUnchecked(v);
+  }
+
+  void setUnchecked(const T& v) {
     this->pre();
     this->value = v;
+  }
+
+  T release() {
+    T tmp = this->value;
+    this->value = JS::SafelyInitialized<T>();
+    return tmp;
   }
 };
 
@@ -511,12 +529,15 @@ template <class T>
 class GCPtr : public WriteBarriered<T> {
  public:
   GCPtr() : WriteBarriered<T>(JS::SafelyInitialized<T>()) {}
+
   explicit GCPtr(const T& v) : WriteBarriered<T>(v) {
     this->post(JS::SafelyInitialized<T>(), v);
   }
+
   explicit GCPtr(const GCPtr<T>& v) : WriteBarriered<T>(v) {
     this->post(JS::SafelyInitialized<T>(), v);
   }
+
 #ifdef DEBUG
   ~GCPtr() {
     
@@ -546,6 +567,10 @@ class GCPtr : public WriteBarriered<T> {
  private:
   void set(const T& v) {
     AssertTargetIsNotGray(v);
+    setUnchecked(v);
+  }
+
+  void setUnchecked(const T& v) {
     this->pre();
     T tmp = this->value;
     this->value = v;
@@ -594,13 +619,11 @@ class HeapPtr : public WriteBarriered<T> {
     this->post(JS::SafelyInitialized<T>(), this->value);
   }
 
-  
+  MOZ_IMPLICIT HeapPtr(const HeapPtr<T>& other) : WriteBarriered<T>(other) {
+    this->post(JS::SafelyInitialized<T>(), this->value);
+  }
 
-
-
-
-
-  MOZ_IMPLICIT HeapPtr(const HeapPtr<T>& v) : WriteBarriered<T>(v) {
+  HeapPtr(HeapPtr<T>&& other) : WriteBarriered<T>(other.release()) {
     this->post(JS::SafelyInitialized<T>(), this->value);
   }
 
@@ -615,7 +638,7 @@ class HeapPtr : public WriteBarriered<T> {
     this->post(JS::SafelyInitialized<T>(), this->value);
   }
 
-  DECLARE_POINTER_ASSIGN_OPS(HeapPtr, T);
+  DECLARE_POINTER_ASSIGN_AND_MOVE_OPS(HeapPtr, T);
 
   
   template <class T1, class T2>
@@ -625,15 +648,24 @@ class HeapPtr : public WriteBarriered<T> {
  protected:
   void set(const T& v) {
     AssertTargetIsNotGray(v);
+    setUnchecked(v);
+  }
+
+  void setUnchecked(const T& v) {
     this->pre();
     postBarrieredSet(v);
   }
 
   void postBarrieredSet(const T& v) {
-    AssertTargetIsNotGray(v);
     T tmp = this->value;
     this->value = v;
     this->post(tmp, this->value);
+  }
+
+  T release() {
+    T tmp = this->value;
+    postBarrieredSet(JS::SafelyInitialized<T>());
+    return tmp;
   }
 };
 
@@ -674,14 +706,14 @@ class WeakHeapPtr : public ReadBarriered<T>,
 
   
   
-  explicit WeakHeapPtr(const WeakHeapPtr& v) : ReadBarriered<T>(v) {
-    this->post(JS::SafelyInitialized<T>(), v.unbarrieredGet());
+  explicit WeakHeapPtr(const WeakHeapPtr& other) : ReadBarriered<T>(other) {
+    this->post(JS::SafelyInitialized<T>(), value);
   }
 
   
   
-  WeakHeapPtr(WeakHeapPtr&& v) : ReadBarriered<T>(std::move(v)) {
-    this->post(JS::SafelyInitialized<T>(), v.value);
+  WeakHeapPtr(WeakHeapPtr&& other) : ReadBarriered<T>(other.release()) {
+    this->post(JS::SafelyInitialized<T>(), value);
   }
 
   ~WeakHeapPtr() { this->post(this->value, JS::SafelyInitialized<T>()); }
@@ -714,9 +746,20 @@ class WeakHeapPtr : public ReadBarriered<T>,
 
   void set(const T& v) {
     AssertTargetIsNotGray(v);
+    setUnchecked(v);
+  }
+
+ private:
+  void setUnchecked(const T& v) {
     T tmp = this->value;
     this->value = v;
     this->post(tmp, v);
+  }
+
+  T release() {
+    T tmp = value;
+    set(JS::SafelyInitialized<T>());
+    return tmp;
   }
 };
 
@@ -822,6 +865,8 @@ class HeapSlotArray {
 template <class T1, class T2>
 static inline void BarrieredSetPair(Zone* zone, HeapPtr<T1*>& v1, T1* val1,
                                     HeapPtr<T2*>& v2, T2* val2) {
+  AssertTargetIsNotGray(val1);
+  AssertTargetIsNotGray(val2);
   if (T1::needWriteBarrierPre(zone)) {
     v1.pre();
     v2.pre();
