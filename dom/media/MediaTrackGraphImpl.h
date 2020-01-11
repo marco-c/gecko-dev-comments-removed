@@ -576,12 +576,19 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   void SetCurrentDriver(GraphDriver* aDriver) {
-    MOZ_ASSERT(RunByGraphDriver(mDriver) || !mDriver->ThreadRunning());
-#ifdef DEBUG
-    mMonitor.AssertCurrentThreadOwns();
-#endif
+    MOZ_ASSERT_IF(mDriver->ThreadRunning(), RunByGraphDriver(mDriver));
+    MOZ_ASSERT_IF(!mDriver->ThreadRunning(), NS_IsMainThread());
     mDriver = aDriver;
   }
+
+  GraphDriver* NextDriver() const {
+    MOZ_ASSERT(OnGraphThread());
+    return mNextDriver;
+  }
+
+  bool Switching() const { return NextDriver(); }
+
+  void SwitchAtNextIteration(GraphDriver* aNextDriver);
 
   Monitor& GetMonitor() { return mMonitor; }
 
@@ -676,6 +683,12 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   RefPtr<GraphDriver> mDriver;
+
+  
+  
+  
+  
+  RefPtr<GraphDriver> mNextDriver;
 
   
   
