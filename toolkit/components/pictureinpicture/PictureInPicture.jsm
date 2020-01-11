@@ -70,11 +70,6 @@ class PictureInPictureParent extends JSWindowActorParent {
         PictureInPicture.handlePictureInPictureRequest(browser, videoData);
         break;
       }
-      case "PictureInPicture:Resize": {
-        let videoData = aMessage.data;
-        PictureInPicture.resizePictureInPictureWindow(videoData);
-        break;
-      }
       case "PictureInPicture:Close": {
         
 
@@ -279,76 +274,7 @@ var PictureInPicture = {
 
 
   async openPipWindow(parentWin, videoData) {
-    let { top, left, width, height } = this.fitToScreen(parentWin, videoData);
-
-    let features =
-      `${PLAYER_FEATURES},top=${top},left=${left},` +
-      `outerWidth=${width},outerHeight=${height}`;
-
-    let pipWindow = Services.ww.openWindow(
-      parentWin,
-      PLAYER_URI,
-      null,
-      features,
-      null
-    );
-
-    TelemetryStopwatch.start(
-      "FX_PICTURE_IN_PICTURE_WINDOW_OPEN_DURATION",
-      pipWindow,
-      {
-        inSeconds: true,
-      }
-    );
-
-    return new Promise(resolve => {
-      pipWindow.addEventListener(
-        "load",
-        () => {
-          resolve(pipWindow);
-        },
-        { once: true }
-      );
-    });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  fitToScreen(windowOrPlayer, videoData) {
     let { videoHeight, videoWidth } = videoData;
-    let isPlayerWindow = windowOrPlayer == this.getWeakPipPlayer();
 
     
     
@@ -356,8 +282,8 @@ var PictureInPicture = {
       Ci.nsIScreenManager
     );
     let screen = screenManager.screenForRect(
-      windowOrPlayer.screenX,
-      windowOrPlayer.screenY,
+      parentWin.screenX,
+      parentWin.screenY,
       1,
       1
     );
@@ -393,28 +319,14 @@ var PictureInPicture = {
 
     
     
-    
-    
-    
-    
-    let preferredSize;
-    if (isPlayerWindow) {
-      let prevWidth = windowOrPlayer.innerWidth;
-      let prevHeight = windowOrPlayer.innerHeight;
-      preferredSize = prevWidth >= prevHeight ? prevWidth : prevHeight;
-    }
-    const MAX_HEIGHT = preferredSize || screenHeight.value / 4;
-    const MAX_WIDTH = preferredSize || screenWidth.value / 3;
+    const MAX_HEIGHT = screenHeight.value / 4;
+    const MAX_WIDTH = screenWidth.value / 3;
 
-    let width = videoWidth;
-    let height = videoHeight;
-    let aspectRatio = videoWidth / videoHeight;
+    let resultWidth = videoWidth;
+    let resultHeight = videoHeight;
 
-    if (
-      videoHeight > MAX_HEIGHT ||
-      videoWidth > MAX_WIDTH ||
-      (isPlayerWindow && videoHeight < MAX_HEIGHT && videoWidth < MAX_WIDTH)
-    ) {
+    if (videoHeight > MAX_HEIGHT || videoWidth > MAX_WIDTH) {
+      let aspectRatio = videoWidth / videoHeight;
       
       
       
@@ -423,53 +335,16 @@ var PictureInPicture = {
         
         
         
-        width = MAX_WIDTH;
-        height = Math.round(MAX_WIDTH / aspectRatio);
+        resultWidth = MAX_WIDTH;
+        resultHeight = Math.round(MAX_WIDTH / aspectRatio);
       } else {
         
         
         
         
-        height = MAX_HEIGHT;
-        width = Math.round(MAX_HEIGHT * aspectRatio);
+        resultHeight = MAX_HEIGHT;
+        resultWidth = Math.round(MAX_HEIGHT * aspectRatio);
       }
-    }
-
-    
-    
-    
-
-    if (isPlayerWindow) {
-      
-      
-      
-      
-      
-      let prevWidth = windowOrPlayer.innerWidth;
-      let prevHeight = windowOrPlayer.innerHeight;
-      let distanceLeft = windowOrPlayer.screenX;
-      let distanceRight =
-        screenWidth.value - windowOrPlayer.screenX - prevWidth;
-      let distanceTop = windowOrPlayer.screenY;
-      let distanceBottom =
-        screenHeight.value - windowOrPlayer.screenY - prevHeight;
-
-      let left = windowOrPlayer.screenX;
-      let top = windowOrPlayer.screenY;
-
-      if (distanceRight < distanceLeft) {
-        
-        
-        left += prevWidth - width;
-      }
-
-      if (distanceBottom < distanceTop) {
-        
-        
-        top += prevHeight - height;
-      }
-
-      return { top, left, width, height };
     }
 
     
@@ -487,24 +362,39 @@ var PictureInPicture = {
     
     
     let isRTL = Services.locale.isAppLocaleRTL;
-    let left = isRTL
+    let pipLeft = isRTL
       ? screenLeft.value
-      : screenLeft.value + screenWidth.value - width;
-    let top = screenTop.value + screenHeight.value - height;
+      : screenLeft.value + screenWidth.value - resultWidth;
+    let pipTop = screenTop.value + screenHeight.value - resultHeight;
+    let features =
+      `${PLAYER_FEATURES},top=${pipTop},left=${pipLeft},` +
+      `outerWidth=${resultWidth},outerHeight=${resultHeight}`;
 
-    return { top, left, width, height };
-  },
+    let pipWindow = Services.ww.openWindow(
+      parentWin,
+      PLAYER_URI,
+      null,
+      features,
+      null
+    );
 
-  resizePictureInPictureWindow(videoData) {
-    let win = this.getWeakPipPlayer();
+    TelemetryStopwatch.start(
+      "FX_PICTURE_IN_PICTURE_WINDOW_OPEN_DURATION",
+      pipWindow,
+      {
+        inSeconds: true,
+      }
+    );
 
-    if (!win) {
-      return;
-    }
-
-    let { top, left, width, height } = this.fitToScreen(win, videoData);
-    win.resizeTo(width, height);
-    win.moveTo(left, top);
+    return new Promise(resolve => {
+      pipWindow.addEventListener(
+        "load",
+        () => {
+          resolve(pipWindow);
+        },
+        { once: true }
+      );
+    });
   },
 
   openToggleContextMenu(window, data) {
