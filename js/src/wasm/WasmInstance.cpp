@@ -935,9 +935,14 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
   
   
   
+  
+  
+  
   if (funcIndex < funcImports.length()) {
     FuncImportTls& import = instance->funcImportTls(funcImports[funcIndex]);
-    return FuncRef::fromJSFunction(import.fun).forCompiledCode();
+    if (IsWasmExportedFunction(import.fun)) {
+      return FuncRef::fromJSFunction(import.fun).forCompiledCode();
+    }
   }
 
   RootedFunction fun(cx);
