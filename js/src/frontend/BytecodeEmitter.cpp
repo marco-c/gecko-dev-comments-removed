@@ -23,7 +23,6 @@
 #include <algorithm>
 #include <string.h>
 
-#include "jsnum.h"    
 #include "jstypes.h"  
 
 #include "ds/Nestable.h"  
@@ -3732,6 +3731,11 @@ bool BytecodeEmitter::emitDestructuringOpsObject(ListNode* pattern,
       ParseNode* key = member->as<BinaryNode>().left();
       if (key->isKind(ParseNodeKind::NumberExpr)) {
         if (!emitNumberOp(key->as<NumericLiteral>().value())) {
+          
+          return false;
+        }
+      } else if (key->isKind(ParseNodeKind::BigIntExpr)) {
+        if (!emitBigIntOp(&key->as<BigIntLiteral>())) {
           
           return false;
         }
@@ -7606,6 +7610,15 @@ void BytecodeEmitter::isPropertyListObjLiteralCompatible(ListNode* obj,
         break;
       }
     }
+    
+    if (key->isKind(ParseNodeKind::BigIntExpr)) {
+      keysOK = false;
+      break;
+    }
+
+    MOZ_ASSERT(key->isKind(ParseNodeKind::ObjectPropertyName) ||
+               key->isKind(ParseNodeKind::StringExpr) ||
+               key->isKind(ParseNodeKind::NumberExpr));
 
     AccessorType accessorType =
         prop->is<PropertyDefinition>()
@@ -7753,8 +7766,18 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
         if (key->isKind(ParseNodeKind::NumberExpr)) {
           MOZ_ASSERT(accessorType == AccessorType::None);
 
-          NumericLiteral* literal = &key->as<NumericLiteral>();
-          RootedAtom keyAtom(cx, NumberToAtom(cx, literal->value()));
+          RootedAtom keyAtom(cx, key->as<NumericLiteral>().toAtom(cx));
+          if (!keyAtom) {
+            return false;
+          }
+          if (!emitAnonymousFunctionWithName(propVal, keyAtom)) {
+            
+            return false;
+          }
+        } else if (key->isKind(ParseNodeKind::BigIntExpr)) {
+          MOZ_ASSERT(accessorType == AccessorType::None);
+
+          RootedAtom keyAtom(cx, key->as<BigIntLiteral>().toAtom(cx));
           if (!keyAtom) {
             return false;
           }
@@ -7806,15 +7829,23 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
         (type == ClassBody && propdef->as<ClassMethod>().isStatic())
             ? PropertyEmitter::Kind::Static
             : PropertyEmitter::Kind::Prototype;
-    if (key->isKind(ParseNodeKind::NumberExpr)) {
+    if (key->isKind(ParseNodeKind::NumberExpr) ||
+        key->isKind(ParseNodeKind::BigIntExpr)) {
       
       if (!pe.prepareForIndexPropKey(Some(propdef->pn_pos.begin), kind)) {
         
         return false;
       }
-      if (!emitNumberOp(key->as<NumericLiteral>().value())) {
-        
-        return false;
+      if (key->isKind(ParseNodeKind::NumberExpr)) {
+        if (!emitNumberOp(key->as<NumericLiteral>().value())) {
+          
+          return false;
+        }
+      } else {
+        if (!emitBigIntOp(&key->as<BigIntLiteral>())) {
+          
+          return false;
+        }
       }
       if (!pe.prepareForIndexPropValue()) {
         
@@ -8055,6 +8086,7 @@ bool BytecodeEmitter::isRHSObjLiteralCompatible(ParseNode* value) {
 
 bool BytecodeEmitter::emitObjLiteralValue(ObjLiteralCreationData* data,
                                           ParseNode* value) {
+  MOZ_ASSERT(isRHSObjLiteralCompatible(value));
   if (value->isKind(ParseNodeKind::NumberExpr)) {
     double numValue = value->as<NumericLiteral>().value();
     int32_t i = 0;
@@ -8093,7 +8125,7 @@ bool BytecodeEmitter::emitObjLiteralValue(ObjLiteralCreationData* data,
       return false;
     }
   } else {
-    return false;
+    MOZ_CRASH("Unexpected parse node");
   }
   return true;
 }
