@@ -32,7 +32,7 @@ var instance = wasmEvalText(`(module
 (function() {
     
     
-    assertErrorMessage(() => instance.add_two_i64(0, 1), TypeError, /cannot pass i64 to or from JS/);
+    assertErrorMessage(() => instance.add_two_i64(0n, 1n), TypeError, /cannot pass i64 to or from JS/);
 })();
 
 enableGeckoProfiling();
