@@ -978,15 +978,6 @@ class UrlbarInput {
       return;
     }
     
-    
-    if (
-      this.selectionStart != this.selectionEnd &&
-      !(this.selectionStart == 0 && this.selectionEnd == this.value.length) &&
-      !this.view.isOpen
-    ) {
-      return;
-    }
-    
     if (this.getAttribute("focused") != "true" && !this.view.isOpen) {
       return;
     }
