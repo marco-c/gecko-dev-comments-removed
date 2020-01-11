@@ -59,14 +59,14 @@ static bool NodeIsInTraversalRange(nsINode* aNode, bool aIsPreMode,
         NS_WARN_IF(!aNode->IsContent()) ? nullptr : aNode->AsContent();
     
     RawRangeBoundary afterNode(parent, content);
-    return nsContentUtils::ComparePoints(aStart, afterNode) < 0 &&
-           nsContentUtils::ComparePoints(aEnd, afterNode) >= 0;
+    return nsContentUtils::ComparePoints_Deprecated(aStart, afterNode) < 0 &&
+           nsContentUtils::ComparePoints_Deprecated(aEnd, afterNode) >= 0;
   }
 
   
   RawRangeBoundary beforeNode(parent, aNode->GetPreviousSibling());
-  return nsContentUtils::ComparePoints(aStart, beforeNode) <= 0 &&
-         nsContentUtils::ComparePoints(aEnd, beforeNode) > 0;
+  return nsContentUtils::ComparePoints_Deprecated(aStart, beforeNode) <= 0 &&
+         nsContentUtils::ComparePoints_Deprecated(aEnd, beforeNode) > 0;
 }
 
 ContentIteratorBase::ContentIteratorBase(bool aPre)

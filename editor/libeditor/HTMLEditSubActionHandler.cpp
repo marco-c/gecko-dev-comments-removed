@@ -7159,13 +7159,13 @@ nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
   
 
   int16_t comp;
-  comp = nsContentUtils::ComparePoints(startPoint.ToRawRangeBoundary(),
-                                       newEndPoint.ToRawRangeBoundary());
+  comp = nsContentUtils::ComparePoints_Deprecated(
+      startPoint.ToRawRangeBoundary(), newEndPoint.ToRawRangeBoundary());
   if (comp == 1) {
     return NS_OK;  
   }
-  comp = nsContentUtils::ComparePoints(newStartPoint.ToRawRangeBoundary(),
-                                       endPoint.ToRawRangeBoundary());
+  comp = nsContentUtils::ComparePoints_Deprecated(
+      newStartPoint.ToRawRangeBoundary(), endPoint.ToRawRangeBoundary());
   if (comp == 1) {
     return NS_OK;  
   }

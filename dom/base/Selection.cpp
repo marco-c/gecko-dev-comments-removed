@@ -686,8 +686,8 @@ static nsresult CompareToRangeStart(const nsINode* aCompareNode,
       aCompareNode->SubtreeRoot() != start->SubtreeRoot()) {
     *aCmp = 1;
   } else {
-    *aCmp = nsContentUtils::ComparePoints(aCompareNode, aCompareOffset, start,
-                                          aRange->StartOffset());
+    *aCmp = nsContentUtils::ComparePoints_Deprecated(
+        aCompareNode, aCompareOffset, start, aRange->StartOffset());
   }
   return NS_OK;
 }
@@ -704,8 +704,8 @@ static nsresult CompareToRangeEnd(const nsINode* aCompareNode,
       aCompareNode->SubtreeRoot() != end->SubtreeRoot()) {
     *aCmp = 1;
   } else {
-    *aCmp = nsContentUtils::ComparePoints(aCompareNode, aCompareOffset, end,
-                                          aRange->EndOffset());
+    *aCmp = nsContentUtils::ComparePoints_Deprecated(
+        aCompareNode, aCompareOffset, end, aRange->EndOffset());
   }
   return NS_OK;
 }
@@ -2437,15 +2437,15 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
   
   bool disconnected = false;
   bool shouldClearRange = false;
-  int32_t result1 = nsContentUtils::ComparePoints(
+  int32_t result1 = nsContentUtils::ComparePoints_Deprecated(
       anchorNode, anchorOffset, focusNode, focusOffset, &disconnected);
   
   shouldClearRange |= disconnected;
-  int32_t result2 = nsContentUtils::ComparePoints(
+  int32_t result2 = nsContentUtils::ComparePoints_Deprecated(
       focusNode, focusOffset, &aContainer, aOffset, &disconnected);
   
   shouldClearRange |= disconnected;
-  int32_t result3 = nsContentUtils::ComparePoints(
+  int32_t result3 = nsContentUtils::ComparePoints_Deprecated(
       anchorNode, anchorOffset, &aContainer, aOffset, &disconnected);
 
   
@@ -3334,7 +3334,7 @@ void Selection::SetBaseAndExtentInternal(InLimiter aInLimiter,
   
   
   SelectionBatcher batch(this);
-  if (nsContentUtils::ComparePoints(aAnchorRef, aFocusRef) <= 0) {
+  if (nsContentUtils::ComparePoints_Deprecated(aAnchorRef, aFocusRef) <= 0) {
     SetStartAndEndInternal(aInLimiter, aAnchorRef, aFocusRef, eDirNext, aRv);
     return;
   }

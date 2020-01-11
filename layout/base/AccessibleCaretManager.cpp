@@ -1121,7 +1121,7 @@ bool AccessibleCaretManager::RestrictCaretDraggingOffsets(
 
   
   
-  int32_t cmpToInactiveCaretPos = nsContentUtils::ComparePoints(
+  int32_t cmpToInactiveCaretPos = nsContentUtils::ComparePoints_Deprecated(
       aOffsets.content, aOffsets.StartOffset(), content, contentOffset);
 
   
@@ -1135,9 +1135,9 @@ bool AccessibleCaretManager::RestrictCaretDraggingOffsets(
   }
 
   
-  int32_t cmpToLimit =
-      nsContentUtils::ComparePoints(aOffsets.content, aOffsets.StartOffset(),
-                                    limit.mResultContent, limit.mContentOffset);
+  int32_t cmpToLimit = nsContentUtils::ComparePoints_Deprecated(
+      aOffsets.content, aOffsets.StartOffset(), limit.mResultContent,
+      limit.mContentOffset);
 
   auto SetOffsetsToLimit = [&aOffsets, &limit]() {
     aOffsets.content = limit.mResultContent;

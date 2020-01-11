@@ -1533,8 +1533,8 @@ bool HyperTextAccessible::SelectionBoundsAt(int32_t aSelectionNum,
 
   
   
-  int32_t rangeCompare =
-      nsContentUtils::ComparePoints(endNode, endOffset, startNode, startOffset);
+  int32_t rangeCompare = nsContentUtils::ComparePoints_Deprecated(
+      endNode, endOffset, startNode, startOffset);
   if (rangeCompare < 0) {
     nsINode* tempNode = startNode;
     startNode = endNode;
@@ -2025,8 +2025,8 @@ void HyperTextAccessible::GetSpellTextAttr(
     
     nsINode* endNode = range->GetEndContainer();
     int32_t endNodeOffset = range->EndOffset();
-    if (nsContentUtils::ComparePoints(aNode, aNodeOffset, endNode,
-                                      endNodeOffset) >= 0)
+    if (nsContentUtils::ComparePoints_Deprecated(aNode, aNodeOffset, endNode,
+                                                 endNodeOffset) >= 0)
       continue;
 
     
@@ -2035,8 +2035,8 @@ void HyperTextAccessible::GetSpellTextAttr(
     
     nsINode* startNode = range->GetStartContainer();
     int32_t startNodeOffset = range->StartOffset();
-    if (nsContentUtils::ComparePoints(startNode, startNodeOffset, aNode,
-                                      aNodeOffset) <= 0) {
+    if (nsContentUtils::ComparePoints_Deprecated(startNode, startNodeOffset,
+                                                 aNode, aNodeOffset) <= 0) {
       startOffset = DOMPointToOffset(startNode, startNodeOffset);
 
       endOffset = DOMPointToOffset(endNode, endNodeOffset);

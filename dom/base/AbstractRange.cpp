@@ -134,7 +134,8 @@ nsresult AbstractRange::SetStartAndEndInternal(
 
   
   
-  if (nsContentUtils::ComparePoints(aStartBoundary, aEndBoundary) == 1) {
+  if (nsContentUtils::ComparePoints_Deprecated(aStartBoundary, aEndBoundary) ==
+      1) {
     aRange->DoSetRange(aEndBoundary, aEndBoundary, newEndRoot);
     return NS_OK;
   }
