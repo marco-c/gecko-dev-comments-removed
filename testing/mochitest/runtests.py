@@ -2577,7 +2577,7 @@ toolbar#nav-bar {
             
             
             "serviceworker_e10s": self.extraPrefs.get(
-                'dom.serviceWorkers.parent_intercept', mozinfo.info['nightly_build']),
+                'dom.serviceWorkers.parent_intercept', True),
 
             "socketprocess_e10s": self.extraPrefs.get(
                 'network.process.enabled', False),
