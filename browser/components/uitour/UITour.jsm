@@ -1740,7 +1740,11 @@ var UITour = {
       
       
       if (!devices) {
-        await fxAccounts.device.refreshDeviceList();
+        try {
+          await fxAccounts.device.refreshDeviceList();
+        } catch (ex) {
+          log.warn("failed to fetch device list", ex);
+        }
         devices = fxAccounts.device.recentDeviceList;
       }
       if (devices) {
@@ -1778,19 +1782,26 @@ var UITour = {
           ),
         };
       }
+      try {
+        
+        let attachedClients = await fxAccounts.listAttachedOAuthClients();
+        result.accountServices = attachedClients
+          .filter(c => !!c.id)
+          .reduce((accum, c) => {
+            accum[c.id] = {
+              id: c.id,
+              lastAccessedWeeksAgo: c.lastAccessedDaysAgo
+                ? Math.floor(c.lastAccessedDaysAgo / 7)
+                : null,
+            };
+            return accum;
+          }, {});
+      } catch (ex) {
+        log.warn("Failed to build the attached clients list", ex);
+      }
       
-      let attachedClients = await fxAccounts.listAttachedOAuthClients();
-      result.accountServices = attachedClients
-        .filter(c => !!c.id)
-        .reduce((accum, c) => {
-          accum[c.id] = {
-            id: c.id,
-            lastAccessedWeeksAgo: c.lastAccessedDaysAgo
-              ? Math.floor(c.lastAccessedDaysAgo / 7)
-              : null,
-          };
-          return accum;
-        }, {});
+      
+      result.accountStateOK = await fxAccounts.hasLocalSession();
       this.sendPageCallback(aBrowser, aCallbackID, result);
     })().catch(err => {
       log.error(err);
