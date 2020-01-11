@@ -977,17 +977,8 @@ void LazyScript::traceChildren(JSTracer* trc) {
     TraceNullableEdge(trc, &script_, "script");
   }
 
-  
-  for (GCPtrAtom& closedOverBinding : closedOverBindings()) {
-    if (closedOverBinding) {
-      TraceEdge(trc, &closedOverBinding, "closedOverBinding");
-    }
-  }
-
-  for (GCPtrFunction& innerFunction : innerFunctions()) {
-    if (innerFunction) {
-      TraceEdge(trc, &innerFunction, "lazyScriptInnerFunction");
-    }
+  if (data_) {
+    data_->trace(trc);
   }
 
   if (trc->isMarkingTracer()) {
@@ -1005,16 +996,16 @@ inline void js::GCMarker::eagerlyMarkChildren(LazyScript* thing) {
 
   
 
-  
-  for (GCPtrAtom& closedOverBinding : thing->closedOverBindings()) {
-    if (closedOverBinding) {
-      traverseEdge(thing, static_cast<JSString*>(closedOverBinding));
-    }
-  }
-
-  for (GCPtrFunction& innerFunction : thing->innerFunctions()) {
-    if (innerFunction) {
-      traverseEdge(thing, static_cast<JSObject*>(innerFunction));
+  if (thing->data_) {
+    
+    for (JS::GCCellPtr& elem : thing->data_->gcthings()) {
+      if (elem.is<JSObject>()) {
+        traverseEdge(thing, &elem.as<JSObject>());
+      } else if (elem.is<JSString>()) {
+        traverseEdge(thing, &elem.as<JSString>());
+      } else {
+        MOZ_ASSERT(!elem);
+      }
     }
   }
 
