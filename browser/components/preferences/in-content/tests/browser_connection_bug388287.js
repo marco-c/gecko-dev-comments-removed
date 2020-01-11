@@ -35,14 +35,8 @@ function test() {
 
 
   open_preferences(async function tabOpened(aContentWindow) {
-    let dialog, dialogClosingPromise;
-    let doc,
-      proxyTypePref,
-      sharePref,
-      httpPref,
-      httpPortPref,
-      ftpPref,
-      ftpPortPref;
+    let dialog, dialogClosingPromise, dialogElement;
+    let proxyTypePref, sharePref, httpPref, httpPortPref, ftpPref, ftpPortPref;
 
     
     async function setDoc() {
@@ -58,12 +52,12 @@ function test() {
       }
 
       dialog = await openAndLoadSubDialog(connectionURL);
+      dialogElement = dialog.document.getElementById("ConnectionsDialog");
       dialogClosingPromise = BrowserTestUtils.waitForEvent(
-        dialog.document.documentElement,
+        dialogElement,
         "dialogclosing"
       );
 
-      doc = dialog.document;
       proxyTypePref = dialog.Preferences.get("network.proxy.type");
       sharePref = dialog.Preferences.get("network.proxy.share_proxy_settings");
       httpPref = dialog.Preferences.get("network.proxy.http");
@@ -80,18 +74,18 @@ function test() {
     sharePref.value = true;
     httpPref.value = "localhost";
     httpPortPref.value = 0;
-    doc.documentElement.acceptDialog();
+    dialogElement.acceptDialog();
 
     
     sharePref.value = false;
     ftpPref.value = "localhost";
     ftpPortPref.value = 80;
-    doc.documentElement.acceptDialog();
+    dialogElement.acceptDialog();
 
     
     httpPortPref.value = 80;
     ftpPortPref.value = 0;
-    doc.documentElement.acceptDialog();
+    dialogElement.acceptDialog();
 
     
     
@@ -100,7 +94,7 @@ function test() {
     
     httpPortPref.value = 80;
     ftpPortPref.value = 80;
-    doc.documentElement.acceptDialog();
+    dialogElement.acceptDialog();
 
     
     await setDoc();
@@ -110,7 +104,7 @@ function test() {
     httpPref.value = "localhost";
     httpPortPref.value = 80;
     ftpPortPref.value = 0;
-    doc.documentElement.acceptDialog();
+    dialogElement.acceptDialog();
 
     
     await setDoc();
@@ -118,7 +112,7 @@ function test() {
     sharePref.value = true;
     httpPref.value = "";
     httpPortPref.value = 0;
-    doc.documentElement.acceptDialog();
+    dialogElement.acceptDialog();
 
     
     await setDoc();
@@ -129,7 +123,7 @@ function test() {
 
     
     finalTest = true;
-    doc.documentElement.acceptDialog();
+    dialogElement.acceptDialog();
     await setDoc();
   });
 }

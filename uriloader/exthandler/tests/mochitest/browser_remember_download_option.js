@@ -6,6 +6,7 @@ add_task(async function() {
   let dlg = await openHelperAppDialog(launcher);
 
   let doc = dlg.document;
+  let dialogElement = doc.getElementById("unknownContentType");
 
   
   ok(
@@ -25,8 +26,8 @@ add_task(async function() {
   
   
   
-  doc.documentElement.getButton("accept").disabled = false;
-  doc.documentElement.acceptDialog();
+  dialogElement.getButton("accept").disabled = false;
+  dialogElement.acceptDialog();
   await dialogClosedPromise;
 
   
