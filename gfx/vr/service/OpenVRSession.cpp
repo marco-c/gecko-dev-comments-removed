@@ -1388,22 +1388,22 @@ void OpenVRSession::UpdateControllerButtons(VRSystemState& aState) {
 
   for (uint32_t stateIndex = 0; stateIndex < kVRControllerMaxCount;
        ++stateIndex) {
-    OpenVRHand trackedDevice = mControllerDeviceIndex[stateIndex];
-    if (trackedDevice == OpenVRHand::None) {
+    const OpenVRHand role = mControllerDeviceIndex[stateIndex];
+    if (role == OpenVRHand::None) {
       continue;
     }
     VRControllerState& controllerState = aState.controllerState[stateIndex];
-    controllerState.hand = GetControllerHandFromControllerRole(trackedDevice);
+    controllerState.hand = GetControllerHandFromControllerRole(role);
 
     uint32_t axisIdx = 0;
     uint32_t buttonIdx = 0;
     
     
     vr::InputAnalogActionData_t analogData;
-    if (mControllerHand[stateIndex].mActionTrackpad_Analog.handle &&
+    if (mControllerHand[role].mActionTrackpad_Analog.handle &&
         vr::VRInput()->GetAnalogActionData(
-            mControllerHand[stateIndex].mActionTrackpad_Analog.handle,
-            &analogData, sizeof(analogData),
+            mControllerHand[role].mActionTrackpad_Analog.handle, &analogData,
+            sizeof(analogData),
             vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None &&
         analogData.bActive) {
       controllerState.axisValue[axisIdx] = analogData.x;
@@ -1415,10 +1415,10 @@ void OpenVRSession::UpdateControllerButtons(VRSystemState& aState) {
     bool bPressed = false;
     bool bTouched = false;
     uint64_t mask = 0;
-    if (mControllerHand[stateIndex].mActionTrackpad_Pressed.handle &&
+    if (mControllerHand[role].mActionTrackpad_Pressed.handle &&
         vr::VRInput()->GetDigitalActionData(
-            mControllerHand[stateIndex].mActionTrackpad_Pressed.handle,
-            &actionData, sizeof(actionData),
+            mControllerHand[role].mActionTrackpad_Pressed.handle, &actionData,
+            sizeof(actionData),
             vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None &&
         actionData.bActive) {
       bPressed = actionData.bState;
@@ -1429,10 +1429,10 @@ void OpenVRSession::UpdateControllerButtons(VRSystemState& aState) {
       } else {
         controllerState.buttonPressed &= ~mask;
       }
-      if (mControllerHand[stateIndex].mActionTrackpad_Touched.handle &&
+      if (mControllerHand[role].mActionTrackpad_Touched.handle &&
           vr::VRInput()->GetDigitalActionData(
-              mControllerHand[stateIndex].mActionTrackpad_Touched.handle,
-              &actionData, sizeof(actionData),
+              mControllerHand[role].mActionTrackpad_Touched.handle, &actionData,
+              sizeof(actionData),
               vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None) {
         bTouched = actionData.bActive && actionData.bState;
         mask = (1ULL << buttonIdx);
@@ -1446,10 +1446,10 @@ void OpenVRSession::UpdateControllerButtons(VRSystemState& aState) {
     }
 
     
-    if (mControllerHand[stateIndex].mActionTrigger_Value.handle &&
+    if (mControllerHand[role].mActionTrigger_Value.handle &&
         vr::VRInput()->GetAnalogActionData(
-            mControllerHand[stateIndex].mActionTrigger_Value.handle,
-            &analogData, sizeof(analogData),
+            mControllerHand[role].mActionTrigger_Value.handle, &analogData,
+            sizeof(analogData),
             vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None &&
         analogData.bActive) {
       UpdateTrigger(controllerState, buttonIdx, analogData.x, triggerThreshold);
@@ -1457,9 +1457,9 @@ void OpenVRSession::UpdateControllerButtons(VRSystemState& aState) {
     }
 
     
-    if (mControllerHand[stateIndex].mActionGrip_Pressed.handle &&
+    if (mControllerHand[role].mActionGrip_Pressed.handle &&
         vr::VRInput()->GetDigitalActionData(
-            mControllerHand[stateIndex].mActionGrip_Pressed.handle, &actionData,
+            mControllerHand[role].mActionGrip_Pressed.handle, &actionData,
             sizeof(actionData),
             vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None &&
         actionData.bActive) {
@@ -1471,102 +1471,9 @@ void OpenVRSession::UpdateControllerButtons(VRSystemState& aState) {
       } else {
         controllerState.buttonPressed &= ~mask;
       }
-      if (mControllerHand[stateIndex].mActionGrip_Touched.handle &&
+      if (mControllerHand[role].mActionGrip_Touched.handle &&
           vr::VRInput()->GetDigitalActionData(
-              mControllerHand[stateIndex].mActionGrip_Touched.handle,
-              &actionData, sizeof(actionData),
-              vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None) {
-        bTouched = actionData.bActive && actionData.bState;
-        mask = (1ULL << buttonIdx);
-        if (bTouched) {
-          controllerState.buttonTouched |= mask;
-        } else {
-          controllerState.buttonTouched &= ~mask;
-        }
-      }
-      ++buttonIdx;
-    }
-
-    
-    if (mControllerHand[stateIndex].mActionMenu_Pressed.handle &&
-        vr::VRInput()->GetDigitalActionData(
-            mControllerHand[stateIndex].mActionMenu_Pressed.handle, &actionData,
-            sizeof(actionData),
-            vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None &&
-        actionData.bActive) {
-      bPressed = actionData.bState;
-      mask = (1ULL << buttonIdx);
-      controllerState.triggerValue[buttonIdx] = bPressed ? 1.0 : 0.0f;
-      if (bPressed) {
-        controllerState.buttonPressed |= mask;
-      } else {
-        controllerState.buttonPressed &= ~mask;
-      }
-      if (mControllerHand[stateIndex].mActionMenu_Touched.handle &&
-          vr::VRInput()->GetDigitalActionData(
-              mControllerHand[stateIndex].mActionMenu_Touched.handle,
-              &actionData, sizeof(actionData),
-              vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None) {
-        bTouched = actionData.bActive && actionData.bState;
-        mask = (1ULL << buttonIdx);
-        if (bTouched) {
-          controllerState.buttonTouched |= mask;
-        } else {
-          controllerState.buttonTouched &= ~mask;
-        }
-      }
-      ++buttonIdx;
-    }
-
-    
-    if (mControllerHand[stateIndex].mActionSystem_Pressed.handle &&
-        vr::VRInput()->GetDigitalActionData(
-            mControllerHand[stateIndex].mActionSystem_Pressed.handle,
-            &actionData, sizeof(actionData),
-            vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None &&
-        actionData.bActive) {
-      bPressed = actionData.bState;
-      mask = (1ULL << buttonIdx);
-      controllerState.triggerValue[buttonIdx] = bPressed ? 1.0 : 0.0f;
-      if (bPressed) {
-        controllerState.buttonPressed |= mask;
-      } else {
-        controllerState.buttonPressed &= ~mask;
-      }
-      if (mControllerHand[stateIndex].mActionSystem_Touched.handle &&
-          vr::VRInput()->GetDigitalActionData(
-              mControllerHand[stateIndex].mActionSystem_Touched.handle,
-              &actionData, sizeof(actionData),
-              vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None) {
-        bTouched = actionData.bActive && actionData.bState;
-        mask = (1ULL << buttonIdx);
-        if (bTouched) {
-          controllerState.buttonTouched |= mask;
-        } else {
-          controllerState.buttonTouched &= ~mask;
-        }
-      }
-      ++buttonIdx;
-    }
-
-    
-    if (mControllerHand[stateIndex].mActionA_Pressed.handle &&
-        vr::VRInput()->GetDigitalActionData(
-            mControllerHand[stateIndex].mActionA_Pressed.handle, &actionData,
-            sizeof(actionData),
-            vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None &&
-        actionData.bActive) {
-      bPressed = actionData.bState;
-      mask = (1ULL << buttonIdx);
-      controllerState.triggerValue[buttonIdx] = bPressed ? 1.0 : 0.0f;
-      if (bPressed) {
-        controllerState.buttonPressed |= mask;
-      } else {
-        controllerState.buttonPressed &= ~mask;
-      }
-      if (mControllerHand[stateIndex].mActionA_Touched.handle &&
-          vr::VRInput()->GetDigitalActionData(
-              mControllerHand[stateIndex].mActionA_Touched.handle, &actionData,
+              mControllerHand[role].mActionGrip_Touched.handle, &actionData,
               sizeof(actionData),
               vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None) {
         bTouched = actionData.bActive && actionData.bState;
@@ -1581,9 +1488,9 @@ void OpenVRSession::UpdateControllerButtons(VRSystemState& aState) {
     }
 
     
-    if (mControllerHand[stateIndex].mActionB_Pressed.handle &&
+    if (mControllerHand[role].mActionMenu_Pressed.handle &&
         vr::VRInput()->GetDigitalActionData(
-            mControllerHand[stateIndex].mActionB_Pressed.handle, &actionData,
+            mControllerHand[role].mActionMenu_Pressed.handle, &actionData,
             sizeof(actionData),
             vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None &&
         actionData.bActive) {
@@ -1595,9 +1502,102 @@ void OpenVRSession::UpdateControllerButtons(VRSystemState& aState) {
       } else {
         controllerState.buttonPressed &= ~mask;
       }
-      if (mControllerHand[stateIndex].mActionB_Touched.handle &&
+      if (mControllerHand[role].mActionMenu_Touched.handle &&
           vr::VRInput()->GetDigitalActionData(
-              mControllerHand[stateIndex].mActionB_Touched.handle, &actionData,
+              mControllerHand[role].mActionMenu_Touched.handle, &actionData,
+              sizeof(actionData),
+              vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None) {
+        bTouched = actionData.bActive && actionData.bState;
+        mask = (1ULL << buttonIdx);
+        if (bTouched) {
+          controllerState.buttonTouched |= mask;
+        } else {
+          controllerState.buttonTouched &= ~mask;
+        }
+      }
+      ++buttonIdx;
+    }
+
+    
+    if (mControllerHand[role].mActionSystem_Pressed.handle &&
+        vr::VRInput()->GetDigitalActionData(
+            mControllerHand[role].mActionSystem_Pressed.handle, &actionData,
+            sizeof(actionData),
+            vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None &&
+        actionData.bActive) {
+      bPressed = actionData.bState;
+      mask = (1ULL << buttonIdx);
+      controllerState.triggerValue[buttonIdx] = bPressed ? 1.0 : 0.0f;
+      if (bPressed) {
+        controllerState.buttonPressed |= mask;
+      } else {
+        controllerState.buttonPressed &= ~mask;
+      }
+      if (mControllerHand[role].mActionSystem_Touched.handle &&
+          vr::VRInput()->GetDigitalActionData(
+              mControllerHand[role].mActionSystem_Touched.handle, &actionData,
+              sizeof(actionData),
+              vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None) {
+        bTouched = actionData.bActive && actionData.bState;
+        mask = (1ULL << buttonIdx);
+        if (bTouched) {
+          controllerState.buttonTouched |= mask;
+        } else {
+          controllerState.buttonTouched &= ~mask;
+        }
+      }
+      ++buttonIdx;
+    }
+
+    
+    if (mControllerHand[role].mActionA_Pressed.handle &&
+        vr::VRInput()->GetDigitalActionData(
+            mControllerHand[role].mActionA_Pressed.handle, &actionData,
+            sizeof(actionData),
+            vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None &&
+        actionData.bActive) {
+      bPressed = actionData.bState;
+      mask = (1ULL << buttonIdx);
+      controllerState.triggerValue[buttonIdx] = bPressed ? 1.0 : 0.0f;
+      if (bPressed) {
+        controllerState.buttonPressed |= mask;
+      } else {
+        controllerState.buttonPressed &= ~mask;
+      }
+      if (mControllerHand[role].mActionA_Touched.handle &&
+          vr::VRInput()->GetDigitalActionData(
+              mControllerHand[role].mActionA_Touched.handle, &actionData,
+              sizeof(actionData),
+              vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None) {
+        bTouched = actionData.bActive && actionData.bState;
+        mask = (1ULL << buttonIdx);
+        if (bTouched) {
+          controllerState.buttonTouched |= mask;
+        } else {
+          controllerState.buttonTouched &= ~mask;
+        }
+      }
+      ++buttonIdx;
+    }
+
+    
+    if (mControllerHand[role].mActionB_Pressed.handle &&
+        vr::VRInput()->GetDigitalActionData(
+            mControllerHand[role].mActionB_Pressed.handle, &actionData,
+            sizeof(actionData),
+            vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None &&
+        actionData.bActive) {
+      bPressed = actionData.bState;
+      mask = (1ULL << buttonIdx);
+      controllerState.triggerValue[buttonIdx] = bPressed ? 1.0 : 0.0f;
+      if (bPressed) {
+        controllerState.buttonPressed |= mask;
+      } else {
+        controllerState.buttonPressed &= ~mask;
+      }
+      if (mControllerHand[role].mActionB_Touched.handle &&
+          vr::VRInput()->GetDigitalActionData(
+              mControllerHand[role].mActionB_Touched.handle, &actionData,
               sizeof(actionData),
               vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None) {
         bTouched = actionData.bActive && actionData.bState;
@@ -1613,10 +1613,10 @@ void OpenVRSession::UpdateControllerButtons(VRSystemState& aState) {
 
     
     
-    if (mControllerHand[stateIndex].mActionThumbstick_Analog.handle &&
+    if (mControllerHand[role].mActionThumbstick_Analog.handle &&
         vr::VRInput()->GetAnalogActionData(
-            mControllerHand[stateIndex].mActionThumbstick_Analog.handle,
-            &analogData, sizeof(analogData),
+            mControllerHand[role].mActionThumbstick_Analog.handle, &analogData,
+            sizeof(analogData),
             vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None &&
         analogData.bActive) {
       controllerState.axisValue[axisIdx] = analogData.x;
@@ -1624,10 +1624,10 @@ void OpenVRSession::UpdateControllerButtons(VRSystemState& aState) {
       controllerState.axisValue[axisIdx] = analogData.y * yAxisInvert;
       ++axisIdx;
     }
-    if (mControllerHand[stateIndex].mActionThumbstick_Pressed.handle &&
+    if (mControllerHand[role].mActionThumbstick_Pressed.handle &&
         vr::VRInput()->GetDigitalActionData(
-            mControllerHand[stateIndex].mActionThumbstick_Pressed.handle,
-            &actionData, sizeof(actionData),
+            mControllerHand[role].mActionThumbstick_Pressed.handle, &actionData,
+            sizeof(actionData),
             vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None &&
         actionData.bActive) {
       bPressed = actionData.bState;
@@ -1638,9 +1638,9 @@ void OpenVRSession::UpdateControllerButtons(VRSystemState& aState) {
       } else {
         controllerState.buttonPressed &= ~mask;
       }
-      if (mControllerHand[stateIndex].mActionThumbstick_Touched.handle &&
+      if (mControllerHand[role].mActionThumbstick_Touched.handle &&
           vr::VRInput()->GetDigitalActionData(
-              mControllerHand[stateIndex].mActionThumbstick_Touched.handle,
+              mControllerHand[role].mActionThumbstick_Touched.handle,
               &actionData, sizeof(actionData),
               vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None) {
         bTouched = actionData.bActive && actionData.bState;
@@ -1655,10 +1655,10 @@ void OpenVRSession::UpdateControllerButtons(VRSystemState& aState) {
     }
 
     
-    if (mControllerHand[stateIndex].mActionBumper_Pressed.handle &&
+    if (mControllerHand[role].mActionBumper_Pressed.handle &&
         vr::VRInput()->GetDigitalActionData(
-            mControllerHand[stateIndex].mActionBumper_Pressed.handle,
-            &actionData, sizeof(actionData),
+            mControllerHand[role].mActionBumper_Pressed.handle, &actionData,
+            sizeof(actionData),
             vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None &&
         actionData.bActive) {
       bPressed = actionData.bState;
@@ -1673,10 +1673,10 @@ void OpenVRSession::UpdateControllerButtons(VRSystemState& aState) {
     }
 
     
-    if (mControllerHand[stateIndex].mActionFingerIndex_Value.handle &&
+    if (mControllerHand[role].mActionFingerIndex_Value.handle &&
         vr::VRInput()->GetAnalogActionData(
-            mControllerHand[stateIndex].mActionFingerIndex_Value.handle,
-            &analogData, sizeof(analogData),
+            mControllerHand[role].mActionFingerIndex_Value.handle, &analogData,
+            sizeof(analogData),
             vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None &&
         analogData.bActive) {
       UpdateTrigger(controllerState, buttonIdx, analogData.x, triggerThreshold);
@@ -1684,10 +1684,10 @@ void OpenVRSession::UpdateControllerButtons(VRSystemState& aState) {
     }
 
     
-    if (mControllerHand[stateIndex].mActionFingerMiddle_Value.handle &&
+    if (mControllerHand[role].mActionFingerMiddle_Value.handle &&
         vr::VRInput()->GetAnalogActionData(
-            mControllerHand[stateIndex].mActionFingerMiddle_Value.handle,
-            &analogData, sizeof(analogData),
+            mControllerHand[role].mActionFingerMiddle_Value.handle, &analogData,
+            sizeof(analogData),
             vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None &&
         analogData.bActive) {
       UpdateTrigger(controllerState, buttonIdx, analogData.x, triggerThreshold);
@@ -1695,10 +1695,10 @@ void OpenVRSession::UpdateControllerButtons(VRSystemState& aState) {
     }
 
     
-    if (mControllerHand[stateIndex].mActionFingerRing_Value.handle &&
+    if (mControllerHand[role].mActionFingerRing_Value.handle &&
         vr::VRInput()->GetAnalogActionData(
-            mControllerHand[stateIndex].mActionFingerRing_Value.handle,
-            &analogData, sizeof(analogData),
+            mControllerHand[role].mActionFingerRing_Value.handle, &analogData,
+            sizeof(analogData),
             vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None &&
         analogData.bActive) {
       UpdateTrigger(controllerState, buttonIdx, analogData.x, triggerThreshold);
@@ -1706,10 +1706,10 @@ void OpenVRSession::UpdateControllerButtons(VRSystemState& aState) {
     }
 
     
-    if (mControllerHand[stateIndex].mActionFingerPinky_Value.handle &&
+    if (mControllerHand[role].mActionFingerPinky_Value.handle &&
         vr::VRInput()->GetAnalogActionData(
-            mControllerHand[stateIndex].mActionFingerPinky_Value.handle,
-            &analogData, sizeof(analogData),
+            mControllerHand[role].mActionFingerPinky_Value.handle, &analogData,
+            sizeof(analogData),
             vr::k_ulInvalidInputValueHandle) == vr::VRInputError_None &&
         analogData.bActive) {
       UpdateTrigger(controllerState, buttonIdx, analogData.x, triggerThreshold);
@@ -1850,11 +1850,16 @@ void OpenVRSession::UpdateControllerButtonsObsolete(VRSystemState& aState) {
 void OpenVRSession::UpdateControllerPoses(VRSystemState& aState) {
   MOZ_ASSERT(mVRSystem);
 
-  for (int8_t handIndex = 0; handIndex < OpenVRHand::Total; ++handIndex) {
-    VRControllerState& controllerState = aState.controllerState[handIndex];
+  for (uint32_t stateIndex = 0; stateIndex < kVRControllerMaxCount;
+       ++stateIndex) {
+    const OpenVRHand role = mControllerDeviceIndex[stateIndex];
+    if (role == OpenVRHand::None) {
+      continue;
+    }
+    VRControllerState& controllerState = aState.controllerState[stateIndex];
     vr::InputPoseActionData_t poseData;
     if (vr::VRInput()->GetPoseActionData(
-            mControllerHand[handIndex].mActionPose.handle,
+            mControllerHand[role].mActionPose.handle,
             vr::TrackingUniverseSeated, 0, &poseData, sizeof(poseData),
             vr::k_ulInvalidInputValueHandle) != vr::VRInputError_None ||
         !poseData.bActive || !poseData.pose.bPoseIsValid) {
@@ -2183,27 +2188,17 @@ void OpenVRSession::VibrateHaptic(uint32_t aControllerIdx,
     NS_DispatchToMainThread(NS_NewRunnableFunction(
         "OpenVRSession::StartHapticThread", [this]() { StartHapticThread(); }));
   }
-
   if (aHapticIndex >= kNumOpenVRHaptics ||
       aControllerIdx >= kVRControllerMaxCount) {
     return;
   }
 
-  OpenVRHand deviceIndex = mControllerDeviceIndex[aControllerIdx];
-  if (deviceIndex == OpenVRHand::None) {
+  const OpenVRHand role = mControllerDeviceIndex[aControllerIdx];
+  if (role == OpenVRHand::None) {
     return;
   }
-
   mHapticPulseRemaining[aControllerIdx][aHapticIndex] = aDuration;
   mHapticPulseIntensity[aControllerIdx][aHapticIndex] = aIntensity;
-
-  
-
-
-
-
-
-
 }
 
 void OpenVRSession::StartHapticThread() {
@@ -2274,28 +2269,27 @@ void OpenVRSession::UpdateHaptics() {
   float deltaTime = (float)(now - mLastHapticUpdate).ToSeconds();
   mLastHapticUpdate = now;
 
-  for (int iController = 0; iController < kVRControllerMaxCount;
-       iController++) {
-    for (int iHaptic = 0; iHaptic < kNumOpenVRHaptics; iHaptic++) {
-      OpenVRHand deviceIndex = mControllerDeviceIndex[iController];
-      if (deviceIndex == OpenVRHand::None) {
-        continue;
-      }
-      float intensity = mHapticPulseIntensity[iController][iHaptic];
-      float duration = mHapticPulseRemaining[iController][iHaptic];
+  for (uint32_t stateIndex = 0; stateIndex < kVRControllerMaxCount;
+       ++stateIndex) {
+    const OpenVRHand role = mControllerDeviceIndex[stateIndex];
+    if (role == OpenVRHand::None) {
+      continue;
+    }
+    for (uint32_t hapticIdx = 0; hapticIdx < kNumOpenVRHaptics; hapticIdx++) {
+      float intensity = mHapticPulseIntensity[stateIndex][hapticIdx];
+      float duration = mHapticPulseRemaining[stateIndex][hapticIdx];
       if (duration <= 0.0f || intensity <= 0.0f) {
         continue;
       }
       vr::VRInput()->TriggerHapticVibrationAction(
-          mControllerHand[iController].mActionHaptic.handle, 0.0f, deltaTime,
-          4.0f, intensity > 1.0 ? 1.0 : intensity,
-          vr::k_ulInvalidInputValueHandle);
+          mControllerHand[role].mActionHaptic.handle, 0.0f, deltaTime, 4.0f,
+          intensity > 1.0f ? 1.0f : intensity, vr::k_ulInvalidInputValueHandle);
 
       duration -= deltaTime;
       if (duration < 0.0f) {
         duration = 0.0f;
       }
-      mHapticPulseRemaining[iController][iHaptic] = duration;
+      mHapticPulseRemaining[stateIndex][hapticIdx] = duration;
     }
   }
 }
