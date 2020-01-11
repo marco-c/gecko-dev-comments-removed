@@ -3,7 +3,10 @@ import os
 from .base import NullBrowser, ExecutorBrowser, require_arg
 from .base import get_timeout_multiplier   
 from ..executors import executor_kwargs as base_executor_kwargs
-from ..executors.executorservo import ServoTestharnessExecutor, ServoRefTestExecutor, ServoWdspecExecutor  
+from ..executors.executorservo import (ServoCrashtestExecutor,  
+                                       ServoTestharnessExecutor,  
+                                       ServoRefTestExecutor,  
+                                       ServoWdspecExecutor)  
 
 here = os.path.join(os.path.split(__file__)[0])
 
@@ -12,6 +15,7 @@ __wptrunner__ = {
     "check_args": "check_args",
     "browser": "ServoBrowser",
     "executor": {
+        "crashtest": "ServoCrashtestExecutor",
         "testharness": "ServoTestharnessExecutor",
         "reftest": "ServoRefTestExecutor",
         "wdspec": "ServoWdspecExecutor",
