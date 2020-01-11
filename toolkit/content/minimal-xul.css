@@ -50,6 +50,7 @@ scrollcorner, resizer, scrollbar, scrollbarbutton, slider {
   
   -moz-list-reversed: initial;
   -moz-font-smoothing-background-color: initial;
+  -moz-min-font-size-ratio: initial;
 
   
 
