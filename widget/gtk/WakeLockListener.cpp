@@ -222,7 +222,12 @@ bool WakeLockTopic::InhibitXScreenSaver(bool inhibit) {
 
 
 bool WakeLockTopic::CheckWaylandIdleInhibitSupport() {
+  
+  
+  if (gfxPlatform::IsHeadless()) return false;
+
   GdkDisplay* gDisplay = gdk_display_get_default();
+  if (!gDisplay) return false;
   if (GDK_IS_X11_DISPLAY(gDisplay)) return false;
 
   widget::nsWaylandDisplay* waylandDisplay =
