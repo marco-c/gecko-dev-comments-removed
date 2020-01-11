@@ -18,6 +18,7 @@
 #  include <wininet.h>
 #endif
 
+#include "mozilla/Logging.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/StaticPrefs_extensions.h"
 
@@ -676,3 +677,46 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
              "about: page must not contain a CSP including 'unsafe-inline'");
 }
 #endif
+
+
+bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
+                                                    bool aIsSystemRealm) {
+  
+  if (StaticPrefs::security_allow_parent_unrestricted_js_loads()) {
+    return true;
+  }
+
+  
+  if (!XRE_IsE10sParentProcess()) {
+    return true;
+  }
+
+  NS_ConvertUTF8toUTF16 filenameU(aFilename);
+
+  if (StringBeginsWith(filenameU, NS_LITERAL_STRING("chrome://"))) {
+    
+    return true;
+  }
+  if (StringBeginsWith(filenameU, NS_LITERAL_STRING("resource://"))) {
+    
+    return true;
+  }
+  if (StringBeginsWith(filenameU, NS_LITERAL_STRING("file://"))) {
+    
+    return true;
+  }
+  if (StringBeginsWith(filenameU, NS_LITERAL_STRING("jar:file://"))) {
+    
+    return true;
+  }
+
+  
+  MOZ_LOG(sCSMLog, LogLevel::Info,
+          ("ValidateScriptFilename System:%i %s\n", (aIsSystemRealm ? 1 : 0),
+           aFilename));
+
+  
+  
+  
+  return true;
+}
