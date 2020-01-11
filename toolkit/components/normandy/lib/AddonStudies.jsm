@@ -183,54 +183,6 @@ var AddonStudies = {
 
 
 
-
-
-
-  async migrateAddonStudyFieldsToSlugAndUserFacingFields() {
-    const db = await getDatabase();
-    const studies = await db.objectStore(STORE_NAME, "readonly").getAll();
-
-    
-    if (studies.length === 0) {
-      return;
-    }
-
-    
-    
-    const writePromises = [];
-    const objectStore = db.objectStore(STORE_NAME, "readwrite");
-
-    for (const study of studies) {
-      
-      if (!study.slug) {
-        study.slug = study.name;
-      }
-
-      
-      if (study.name && !study.userFacingName) {
-        study.userFacingName = study.name;
-      }
-      delete study.name;
-      if (study.description && !study.userFacingDescription) {
-        study.userFacingDescription = study.description;
-      }
-      delete study.description;
-
-      
-      if (!study.branch) {
-        study.branch = AddonStudies.NO_BRANCHES_MARKER;
-      }
-
-      writePromises.push(objectStore.put(study));
-    }
-
-    await Promise.all(writePromises);
-  },
-
-  
-
-
-
   async onUninstalled(addon) {
     const activeStudies = (await this.getAll()).filter(study => study.active);
     const matchingStudy = activeStudies.find(
@@ -318,6 +270,42 @@ var AddonStudies = {
   async update(study) {
     const db = await getDatabase();
     return getStore(db, "readwrite").put(study);
+  },
+
+  
+
+
+
+
+
+  async updateMany(studies) {
+    
+    if (!studies.length) {
+      return;
+    }
+
+    
+    
+    
+    
+
+    const db = await getDatabase();
+    let store = await getStore(db, "readonly");
+    await Promise.all(
+      studies.map(async ({ recipeId }) => {
+        let existingStudy = await store.get(recipeId);
+        if (!existingStudy) {
+          throw new Error(
+            `Tried to update addon study ${recipeId}, but it doesn't exist.`
+          );
+        }
+      })
+    );
+
+    
+    
+    store = await getStore(db, "readwrite");
+    await Promise.all(studies.map(study => store.put(study)));
   },
 
   
@@ -418,6 +406,56 @@ var AddonStudies = {
     
     
     await Promise.all(promises);
+  },
+
+  migrations: {
+    
+
+
+
+
+
+
+    async migration01StudyFieldsToSlugAndUserFacingFields() {
+      
+      const studies = await AddonStudies.getAll();
+
+      for (const study of studies) {
+        
+        if (!study.slug) {
+          study.slug = study.name;
+        }
+
+        
+        if (study.name && !study.userFacingName) {
+          study.userFacingName = study.name;
+        }
+        delete study.name;
+        if (study.description && !study.userFacingDescription) {
+          study.userFacingDescription = study.description;
+        }
+        delete study.description;
+
+        
+        if (!study.branch) {
+          study.branch = AddonStudies.NO_BRANCHES_MARKER;
+        }
+      }
+
+      await AddonStudies.updateMany(studies);
+    },
+
+    async migration02AddFillerEnrollmentId() {
+      const studies = await AddonStudies.getAll();
+      const studiesToUpdate = [];
+      for (const study of studies) {
+        if (typeof study.enrollmentId != "string") {
+          study.enrollmentId = TelemetryEvents.NO_ENROLLMENT_ID_MARKER;
+          studiesToUpdate.push(study);
+        }
+      }
+      await AddonStudies.updateMany(studiesToUpdate);
+    },
   },
 };
 
