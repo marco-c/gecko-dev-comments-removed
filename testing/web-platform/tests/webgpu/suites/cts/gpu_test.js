@@ -99,19 +99,23 @@ export class GPUTest extends Fixture {
     return this.device.createShaderModule({
       code
     });
-  } 
+  }
 
-
-  expectContents(src, expected) {
-    const exp = new Uint8Array(expected.buffer, expected.byteOffset, expected.byteLength);
-    const size = expected.buffer.byteLength;
+  createCopyForMapRead(src, size) {
     const dst = this.device.createBuffer({
-      size: expected.buffer.byteLength,
+      size,
       usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST
     });
     const c = this.device.createCommandEncoder();
     c.copyBufferToBuffer(src, 0, dst, 0, size);
     this.queue.submit([c.finish()]);
+    return dst;
+  } 
+
+
+  expectContents(src, expected) {
+    const exp = new Uint8Array(expected.buffer, expected.byteOffset, expected.byteLength);
+    const dst = this.createCopyForMapRead(src, expected.buffer.byteLength);
     this.eventualAsyncExpectation(async niceStack => {
       const actual = new Uint8Array((await dst.mapReadAsync()));
       const check = this.checkBuffer(actual, exp);
@@ -153,7 +157,21 @@ export class GPUTest extends Fixture {
         failedPixels++;
         lines.push(`at [${i}], expected ${exp[i]}, got ${actual[i]}`);
       }
-    }
+    } 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
 
     if (size <= 256 && failedPixels > 0) {
       const expHex = Array.from(exp).map(x => x.toString(16).padStart(2, '0')).join('');
