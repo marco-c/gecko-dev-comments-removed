@@ -1799,12 +1799,6 @@ void MacroAssembler::loadJitCodeRaw(Register func, Register dest) {
   loadPtr(Address(dest, BaseScript::offsetOfJitCodeRaw()), dest);
 }
 
-void MacroAssembler::loadJitCodeNoArgCheck(Register func, Register dest) {
-  loadPtr(Address(func, JSFunction::offsetOfScript()), dest);
-  loadJitScript(dest, dest);
-  loadPtr(Address(dest, JitScript::offsetOfJitCodeSkipArgCheck()), dest);
-}
-
 void MacroAssembler::loadJitCodeMaybeNoArgCheck(Register func, Register dest) {
 #ifdef DEBUG
   {
@@ -2912,19 +2906,6 @@ void MacroAssembler::loadFunctionLength(Register func, Register funFlags,
                      output);
   }
   bind(&lengthLoaded);
-}
-
-void MacroAssembler::branchIfNotInterpretedConstructor(Register fun,
-                                                       Register scratch,
-                                                       Label* label) {
-  
-  branchTestFunctionFlags(
-      fun, FunctionFlags::INTERPRETED | FunctionFlags::INTERPRETED_LAZY,
-      Assembler::Zero, label);
-
-  
-  branchTestFunctionFlags(fun, FunctionFlags::CONSTRUCTOR, Assembler::Zero,
-                          label);
 }
 
 void MacroAssembler::branchTestObjGroupNoSpectreMitigations(
