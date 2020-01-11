@@ -1853,7 +1853,8 @@ static inline bool ConvertJSValueToString(JSContext* cx,
 
 MOZ_MUST_USE bool NormalizeUSVString(nsAString& aString);
 
-MOZ_MUST_USE bool NormalizeUSVString(binding_detail::FakeString& aString);
+MOZ_MUST_USE bool NormalizeUSVString(
+    binding_detail::FakeString<char16_t>& aString);
 
 template <typename T>
 static inline bool ConvertJSValueToUSVString(JSContext* cx,
@@ -2389,29 +2390,34 @@ const T& NonNullHelper(const OwningNonNull<T>& aArg) {
   return aArg;
 }
 
-inline void NonNullHelper(NonNull<binding_detail::FakeString>& aArg) {
+template <typename CharT>
+inline void NonNullHelper(NonNull<binding_detail::FakeString<CharT>>& aArg) {
   
   
   
   
 }
 
-inline void NonNullHelper(const NonNull<binding_detail::FakeString>& aArg) {
+template <typename CharT>
+inline void NonNullHelper(
+    const NonNull<binding_detail::FakeString<CharT>>& aArg) {
   
   
   
   
 }
 
-inline void NonNullHelper(binding_detail::FakeString& aArg) {
+template <typename CharT>
+inline void NonNullHelper(binding_detail::FakeString<CharT>& aArg) {
   
   
   
   
 }
 
-MOZ_ALWAYS_INLINE
-const nsAString& NonNullHelper(const binding_detail::FakeString& aArg) {
+template <typename CharT>
+MOZ_ALWAYS_INLINE const nsTSubstring<CharT>& NonNullHelper(
+    const binding_detail::FakeString<CharT>& aArg) {
   return aArg;
 }
 

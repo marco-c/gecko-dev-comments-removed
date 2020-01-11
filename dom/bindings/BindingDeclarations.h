@@ -280,29 +280,32 @@ class Optional<OwningNonNull<T> > : public Optional_base<T, OwningNonNull<T> > {
 
 
 namespace binding_detail {
+template <typename CharT>
 struct FakeString;
 }  
 
-template <>
-class Optional<nsAString> {
+template <typename CharT>
+class Optional<nsTSubstring<CharT>> {
+  using AString = nsTSubstring<CharT>;
+
  public:
   Optional() : mStr(nullptr) {}
 
   bool WasPassed() const { return !!mStr; }
 
-  void operator=(const nsAString* str) {
+  void operator=(const AString* str) {
     MOZ_ASSERT(str);
     mStr = str;
   }
 
   
   
-  void operator=(const binding_detail::FakeString* str) {
+  void operator=(const binding_detail::FakeString<CharT>* str) {
     MOZ_ASSERT(str);
-    mStr = reinterpret_cast<const nsString*>(str);
+    mStr = reinterpret_cast<const nsTString<CharT>*>(str);
   }
 
-  const nsAString& Value() const {
+  const AString& Value() const {
     MOZ_ASSERT(WasPassed());
     return *mStr;
   }
@@ -312,31 +315,7 @@ class Optional<nsAString> {
   Optional(const Optional& other) = delete;
   const Optional& operator=(const Optional& other) = delete;
 
-  const nsAString* mStr;
-};
-
-template <>
-class Optional<nsACString> {
- public:
-  Optional() : mStr(nullptr) {}
-
-  bool WasPassed() const { return !!mStr; }
-
-  void operator=(const nsACString* str) {
-    MOZ_ASSERT(str);
-    mStr = str;
-  }
-  const nsACString& Value() const {
-    MOZ_ASSERT(WasPassed());
-    return *mStr;
-  }
-
- private:
-  
-  Optional(const Optional& other) = delete;
-  const Optional& operator=(const Optional& other) = delete;
-
-  const nsACString* mStr;
+  const AString* mStr;
 };
 
 template <typename T>
