@@ -134,15 +134,6 @@ class NativeLayer {
   
   
   
-  
-  
-  
-  
-  virtual gfx::IntRegion CurrentSurfaceInvalidRegion() = 0;
-
-  
-  
-  
   virtual void NotifySurfaceReady() = 0;
 
  protected:
