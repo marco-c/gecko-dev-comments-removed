@@ -253,30 +253,9 @@ async function bindToolboxHandlers() {
     
     updateBadgeText(false);
 
-    
-    const panel = await gToolbox.getPanelWhenReady("jsdebugger");
-    setupThreadListeners(panel);
+    gToolbox.on("toolbox-paused", () => updateBadgeText(true));
+    gToolbox.on("toolbox-resumed", () => updateBadgeText(false));
   }
-}
-
-function setupThreadListeners(panel) {
-  updateBadgeText(panel.isPaused());
-
-  const onPaused = packet => {
-    if (packet.why.type === "interrupted") {
-      return;
-    }
-    updateBadgeText(true);
-  };
-  const onResumed = updateBadgeText.bind(null, false);
-  const threadFront = gToolbox.target.threadFront;
-  threadFront.on("paused", onPaused);
-  threadFront.on("resumed", onResumed);
-
-  panel.once("destroyed", () => {
-    threadFront.off("paused", onPaused);
-    threadFront.off("resumed", onResumed);
-  });
 }
 
 function updateBadgeText(paused) {

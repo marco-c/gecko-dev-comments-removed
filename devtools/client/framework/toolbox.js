@@ -238,6 +238,9 @@ function Toolbox(
   this.selectedFrameId = null;
 
   
+  this._pausedThreads = new Set();
+
+  
 
 
 
@@ -589,7 +592,7 @@ Toolbox.prototype = {
     );
   },
 
-  _onPausedState: function(packet) {
+  _onPausedState: function(packet, threadFront) {
     
     
     if (packet.why.type === "interrupted") {
@@ -607,11 +610,18 @@ Toolbox.prototype = {
     ) {
       this.raise();
       this.selectTool("jsdebugger", packet.why.type);
+      this._pausedThreads.add(threadFront);
+      this.emit("toolbox-paused");
     }
   },
 
-  _onResumedState: function() {
-    this.unhighlightTool("jsdebugger");
+  _onResumedState: function(threadFront) {
+    this._pausedThreads.delete(threadFront);
+
+    if (this._pausedThreads.size == 0) {
+      this.emit("toolbox-resumed");
+      this.unhighlightTool("jsdebugger");
+    }
   },
 
   
@@ -668,19 +678,11 @@ Toolbox.prototype = {
   },
 
   _startThreadFrontListeners: function(threadFront) {
-    threadFront.on("paused", this._onPausedState);
-    threadFront.on("resumed", this._onResumedState);
-  },
-
-  _stopThreadFrontListeners: function(threadFront) {
     
-    
-    
-    if (!threadFront) {
-      return;
-    }
-    threadFront.off("paused", this._onPausedState);
-    threadFront.off("resumed", this._onResumedState);
+    threadFront.on("paused", packet =>
+      this._onPausedState(packet, threadFront)
+    );
+    threadFront.on("resumed", () => this._onResumedState(threadFront));
   },
 
   _attachAndResumeThread: async function(target) {
@@ -902,7 +904,6 @@ Toolbox.prototype = {
     this.target.off("frame-update", this._updateFrames);
 
     
-    this._stopThreadFrontListeners(this._threadFront);
     this._threadFront = null;
   },
 
@@ -2942,9 +2943,7 @@ Toolbox.prototype = {
 
 
   raise: function() {
-    this.postMessage({
-      name: "raise-host",
-    });
+    this.postMessage({ name: "raise-host" });
   },
 
   
@@ -3586,6 +3585,7 @@ Toolbox.prototype = {
     this.telemetry.toolClosed(this.currentToolId, this.sessionId, this);
 
     this._lastFocusedElement = null;
+    this._pausedThreads = null;
 
     if (this._sourceMapURLService) {
       this._sourceMapURLService.destroy();
