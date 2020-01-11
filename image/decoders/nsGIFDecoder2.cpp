@@ -44,7 +44,6 @@
 
 #include "imgFrame.h"
 #include "mozilla/EndianUtils.h"
-#include "nsIInputStream.h"
 #include "RasterImage.h"
 #include "SurfacePipeFactory.h"
 

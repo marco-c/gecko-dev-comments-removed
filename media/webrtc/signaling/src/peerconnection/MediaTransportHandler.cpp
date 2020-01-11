@@ -12,7 +12,6 @@
 #include "transportlayersrtp.h"
 
 
-#include "nsIPrefService.h"
 #include "mozilla/dom/RTCConfigurationBinding.h"
 
 

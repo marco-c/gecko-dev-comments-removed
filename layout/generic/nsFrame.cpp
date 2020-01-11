@@ -76,7 +76,6 @@
 #include "nsAnimationManager.h"
 
 
-#include "imgIContainer.h"
 #include "imgIRequest.h"
 #include "nsError.h"
 #include "nsContainerFrame.h"

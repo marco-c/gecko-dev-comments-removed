@@ -28,7 +28,6 @@
 #include "mozilla/dom/Document.h"
 #include "nsIContentInlines.h"       
 #include "nsIEditor.h"               
-#include "nsIObserver.h"             
 #include "nsIPlaintextEditor.h"      
 #include "nsISelectionController.h"  
 #include "nsISelectionListener.h"    

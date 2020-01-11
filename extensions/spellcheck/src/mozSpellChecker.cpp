@@ -4,7 +4,6 @@
 
 
 #include "mozSpellChecker.h"
-#include "nsIServiceManager.h"
 #include "nsIStringEnumerator.h"
 #include "nsICategoryManager.h"
 #include "nsISupportsPrimitives.h"

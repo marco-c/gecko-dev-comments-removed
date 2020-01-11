@@ -2,7 +2,6 @@
 
 
 
-#include "nsIDirectoryService.h"
 #include "DirectoryProvider.h"
 
 #include "nsIFile.h"
@@ -23,7 +22,6 @@
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
 #include "nsXULAppAPI.h"
-#include "nsIPrefLocalizedString.h"
 
 using mozilla::intl::LocaleService;
 

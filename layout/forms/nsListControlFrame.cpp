@@ -11,7 +11,6 @@
 #include "nsCheckboxRadioFrame.h"  
 #include "nsGkAtoms.h"
 #include "nsComboboxControlFrame.h"
-#include "nsIXULRuntime.h"
 #include "nsFontMetrics.h"
 #include "nsIScrollableFrame.h"
 #include "nsCSSRendering.h"

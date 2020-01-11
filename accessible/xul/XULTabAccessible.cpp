@@ -13,7 +13,6 @@
 
 
 #include "mozilla/dom/Document.h"
-#include "nsIDOMXULSelectCntrlEl.h"
 #include "nsIDOMXULSelectCntrlItemEl.h"
 #include "nsIDOMXULRelatedElement.h"
 #include "nsXULElement.h"

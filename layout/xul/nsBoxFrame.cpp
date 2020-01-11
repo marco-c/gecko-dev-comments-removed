@@ -59,7 +59,6 @@
 #include "nsViewManager.h"
 #include "nsView.h"
 #include "nsCSSRendering.h"
-#include "nsIServiceManager.h"
 #include "nsBoxLayout.h"
 #include "nsSprocketLayout.h"
 #include "nsIScrollableFrame.h"
@@ -78,7 +77,6 @@
 #include <algorithm>
 
 
-#include "nsIURI.h"
 
 #include "mozilla/TouchEvents.h"
 

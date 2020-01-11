@@ -66,7 +66,6 @@
 
 
 #include "nsIHttpChannelInternal.h"
-#include "nsILoadContext.h"
 #include "nsILoadGroupChild.h"
 #include "nsIDocShell.h"
 

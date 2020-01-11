@@ -3,7 +3,6 @@
 
 
 #include "xpctest_private.h"
-#include "xpctest_interfaces.h"
 #include "nsComponentManagerUtils.h"
 
 NS_IMPL_ISUPPORTS(nsXPCTestReturnCodeParent, nsIXPCTestReturnCodeParent)

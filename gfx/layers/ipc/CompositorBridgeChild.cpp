@@ -36,7 +36,6 @@
 #include "gfxConfig.h"
 #include "nsAutoPtr.h"
 #include "nsDebug.h"          
-#include "nsIObserver.h"      
 #include "nsISupportsImpl.h"  
 #include "nsTArray.h"         
 #include "nsXULAppAPI.h"      

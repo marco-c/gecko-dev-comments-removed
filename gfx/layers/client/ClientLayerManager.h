@@ -23,7 +23,6 @@
 #include "mozilla/layers/APZTestData.h"   
 #include "mozilla/layers/MemoryPressureObserver.h"
 #include "nsCOMPtr.h"         
-#include "nsIObserver.h"      
 #include "nsISupportsImpl.h"  
 #include "nsRect.h"           
 #include "nsTArray.h"         

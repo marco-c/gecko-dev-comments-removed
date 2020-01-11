@@ -36,7 +36,6 @@
 #include "mozilla/dom/quota/QuotaManagerService.h"
 
 #include "nsIEventListenerService.h"
-#include "nsIMessageManager.h"
 
 
 #include "nsContentCreatorFunctions.h"

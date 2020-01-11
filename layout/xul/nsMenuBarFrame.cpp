@@ -5,7 +5,6 @@
 
 
 #include "nsMenuBarFrame.h"
-#include "nsIServiceManager.h"
 #include "nsIContent.h"
 #include "nsAtom.h"
 #include "nsPresContext.h"

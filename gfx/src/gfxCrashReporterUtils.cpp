@@ -17,7 +17,6 @@
 #include "nsError.h"              
 #include "nsExceptionHandler.h"   
 #include "nsID.h"
-#include "nsIEventTarget.h"      
 #include "nsIObserver.h"         
 #include "nsIObserverService.h"  
 #include "nsIRunnable.h"         

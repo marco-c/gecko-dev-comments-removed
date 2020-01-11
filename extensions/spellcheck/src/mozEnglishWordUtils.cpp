@@ -4,8 +4,8 @@
 
 
 #include "mozEnglishWordUtils.h"
+#include "nsComponentManagerUtils.h"
 #include "nsReadableUtils.h"
-#include "nsIServiceManager.h"
 #include "nsUnicharUtils.h"
 #include "nsUnicodeProperties.h"
 #include "nsCRT.h"

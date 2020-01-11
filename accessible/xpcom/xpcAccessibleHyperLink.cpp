@@ -5,7 +5,6 @@
 
 
 #include "Accessible-inl.h"
-#include "xpcAccessibleDocument.h"
 #include "nsNetUtil.h"
 
 using namespace mozilla::a11y;

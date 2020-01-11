@@ -5,7 +5,6 @@
 
 
 #include "JSDebugger.h"
-#include "nsIXPConnect.h"
 #include "nsThreadUtils.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"

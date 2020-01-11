@@ -4,7 +4,6 @@
 
 
 #include "nsJSInspector.h"
-#include "nsIXPConnect.h"
 #include "nsThreadUtils.h"
 #include "jsfriendapi.h"
 #include "mozilla/HoldDropJSObjects.h"

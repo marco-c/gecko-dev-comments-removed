@@ -10,7 +10,6 @@
 #include "nsPIWindowRoot.h"
 
 
-#include "nsIServiceManager.h"
 #include "nsWidgetsCID.h"
 #include "nsCOMPtr.h"
 #include "nsIContent.h"

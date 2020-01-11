@@ -5,18 +5,16 @@
 
 #include "mozilla/EditorCommands.h"
 
-#include "mozilla/HTMLEditor.h"      
-#include "mozilla/TextEditor.h"      
-#include "mozilla/dom/Document.h"    
-#include "nsCommandParams.h"         
-#include "nsIDocShell.h"             
-#include "nsIEditingSession.h"       
-#include "nsIPrincipal.h"            
-#include "nsISelectionController.h"  
-#include "nsISupportsImpl.h"         
-#include "nsISupportsUtils.h"        
-#include "nsIURI.h"                  
-#include "nsPresContext.h"           
+#include "mozilla/HTMLEditor.h"    
+#include "mozilla/TextEditor.h"    
+#include "mozilla/dom/Document.h"  
+#include "nsCommandParams.h"       
+#include "nsIEditingSession.h"     
+#include "nsIPrincipal.h"          
+#include "nsISupportsImpl.h"       
+#include "nsISupportsUtils.h"      
+#include "nsIURI.h"                
+#include "nsPresContext.h"         
 
 
 #define STATE_ENABLED "state_enabled"
