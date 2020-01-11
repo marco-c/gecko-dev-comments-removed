@@ -44,9 +44,17 @@ bool RemoteDecoderModule::SupportsMimeType(
     supports |= AOMDecoder::IsAV1(aMimeType);
   }
 #endif
+#if !defined(__MINGW32__)
+  
+  
+  
+  
+  
+  
   if (StaticPrefs::media_rdd_vorbis_enabled()) {
     supports |= VorbisDataDecoder::IsVorbis(aMimeType);
   }
+#endif
   if (StaticPrefs::media_rdd_wav_enabled()) {
     supports |= WaveDataDecoder::IsWave(aMimeType);
   }

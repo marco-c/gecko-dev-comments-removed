@@ -24,11 +24,22 @@ bool AgnosticDecoderModule::SupportsMimeType(
     const nsACString& aMimeType, DecoderDoctorDiagnostics* aDiagnostics) const {
   bool supports =
       VPXDecoder::IsVPX(aMimeType) || TheoraDecoder::IsTheora(aMimeType);
+#if defined(__MINGW32__)
+  
+  
+  
+  
+  
+  
+  
+  supports |= VorbisDataDecoder::IsVorbis(aMimeType);
+#else
   if (!StaticPrefs::media_rdd_vorbis_enabled() ||
       !StaticPrefs::media_rdd_process_enabled() ||
       !BrowserTabsRemoteAutostart()) {
     supports |= VorbisDataDecoder::IsVorbis(aMimeType);
   }
+#endif
   if (!StaticPrefs::media_rdd_wav_enabled() ||
       !StaticPrefs::media_rdd_process_enabled() ||
       !BrowserTabsRemoteAutostart()) {
