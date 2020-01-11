@@ -64,19 +64,17 @@ function spawnInNewReaderTab(url, func) {
   return BrowserTestUtils.withNewTab(
     { gBrowser, url: `about:reader?url=${encodeURIComponent(url)}` },
     async function(browser) {
+      
+      
+      
+      SpecialPowers.addTaskImport(
+        "NarrateTestUtils",
+        "chrome://mochitests/content/browser/" +
+          "toolkit/components/narrate/test/NarrateTestUtils.jsm"
+      );
       await SpecialPowers.spawn(browser, [], async function() {
-        
-        
-        
-        ChromeUtils.import(
-          "chrome://mochitests/content/browser/" +
-            "toolkit/components/narrate/test/NarrateTestUtils.jsm",
-          Cu.getGlobalForObject({})
-        );
-
         await NarrateTestUtils.getReaderReadyPromise(content);
       });
-
       await SpecialPowers.spawn(browser, [], func);
     }
   );

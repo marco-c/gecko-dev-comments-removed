@@ -12,6 +12,9 @@ add_task(async function test_getSelectionDetails_input() {
   await BrowserTestUtils.withNewTab({ gBrowser, url }, async browser => {
     await SpecialPowers.spawn(browser, [], () => {
       function checkSelection({ id, text, linkURL }) {
+        const { BrowserUtils } = ChromeUtils.import(
+          "resource://gre/modules/BrowserUtils.jsm"
+        );
         content.document.getElementById(id).select();
         
         
