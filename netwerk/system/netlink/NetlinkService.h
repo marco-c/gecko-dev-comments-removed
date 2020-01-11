@@ -102,6 +102,10 @@ class NetlinkService : public nsIRunnable {
   bool mRecalculateNetworkId;
 
   
+  
+  bool mSendNetworkChangeEvent;
+
+  
   mozilla::TimeStamp mTriggerTime;
 
   nsCString mNetworkId;

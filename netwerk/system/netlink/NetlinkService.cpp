@@ -79,6 +79,10 @@ class NetlinkAddress {
   bool ScopeIsUniverse() const { return mIfam.ifa_scope == RT_SCOPE_UNIVERSE; }
   const in_common_addr* GetAddrPtr() const { return &mAddr; }
 
+  bool MsgEquals(const NetlinkAddress* aOther) const {
+    return !memcmp(&mIfam, &(aOther->mIfam), sizeof(mIfam));
+  }
+
   bool Equals(const NetlinkAddress* aOther) const {
     if (mIfam.ifa_family != aOther->mIfam.ifa_family) {
       return false;
@@ -627,7 +631,8 @@ NetlinkService::NetlinkService()
       mInitialScanFinished(false),
       mMsgId(0),
       mLinkUp(true),
-      mRecalculateNetworkId(false) {
+      mRecalculateNetworkId(false),
+      mSendNetworkChangeEvent(false) {
   mPid = getpid();
   mShutdownPipe[0] = -1;
   mShutdownPipe[1] = -1;
@@ -829,6 +834,14 @@ void NetlinkService::OnAddrMessage(struct nlmsghdr* aNlh) {
   
   
   for (uint32_t i = 0; i < linkInfo->mAddresses.Length(); ++i) {
+    if (aNlh->nlmsg_type == RTM_NEWADDR &&
+        linkInfo->mAddresses[i]->MsgEquals(address)) {
+      
+      LOG(("Exactly the same address already exists [ifIdx=%u, addr=%s/%u",
+           ifIdx, addrStr.get(), address->GetPrefixLen()));
+      return;
+    }
+
     if (linkInfo->mAddresses[i]->Equals(address)) {
       LOG(("Removing address [ifIdx=%u, addr=%s/%u]", ifIdx, addrStr.get(),
            address->GetPrefixLen()));
@@ -876,7 +889,12 @@ void NetlinkService::OnAddrMessage(struct nlmsghdr* aNlh) {
     }
   }
 
-  TriggerNetworkIDCalculation();
+  
+  if (mInitialScanFinished) {
+    
+    mSendNetworkChangeEvent = true;
+    TriggerNetworkIDCalculation();
+  }
 }
 
 void NetlinkService::OnRouteMessage(struct nlmsghdr* aNlh) {
@@ -1780,19 +1798,23 @@ void NetlinkService::CalculateNetworkID() {
   
   static bool initialIDCalculation = true;
 
-  if (idChanged && !initialIDCalculation) {
-    RefPtr<NetlinkServiceListener> listener;
-    {
-      MutexAutoLock lock(mMutex);
-      listener = mListener;
-    }
-    if (listener) {
-      listener->OnNetworkIDChanged();
-      listener->OnNetworkChanged();
-    }
+  RefPtr<NetlinkServiceListener> listener;
+  {
+    MutexAutoLock lock(mMutex);
+    listener = mListener;
+  }
+
+  if (!initialIDCalculation && idChanged && listener) {
+    listener->OnNetworkIDChanged();
+    mSendNetworkChangeEvent = true;
+  }
+
+  if (mSendNetworkChangeEvent && listener) {
+    listener->OnNetworkChanged();
   }
 
   initialIDCalculation = false;
+  mSendNetworkChangeEvent = false;
 }
 
 void NetlinkService::GetNetworkID(nsACString& aNetworkID) {
