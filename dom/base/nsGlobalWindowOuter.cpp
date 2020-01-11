@@ -99,6 +99,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/ProcessHangMonitor.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/ThrottledEventQueue.h"
 #include "AudioChannelService.h"
 #include "nsAboutProtocolUtils.h"
@@ -3622,7 +3623,9 @@ Maybe<CSSIntSize> nsGlobalWindowOuter::GetRDMDeviceSize(
   
   const Document* topInProcessContentDoc =
       aDocument.GetTopLevelContentDocument();
-  BrowsingContext* bc = topInProcessContentDoc ? topInProcessContentDoc->GetBrowsingContext() : nullptr;
+  BrowsingContext* bc = topInProcessContentDoc
+                            ? topInProcessContentDoc->GetBrowsingContext()
+                            : nullptr;
   if (bc && bc->InRDMPane()) {
     nsIDocShell* docShell = topInProcessContentDoc->GetDocShell();
     if (docShell) {
@@ -7751,8 +7754,14 @@ mozilla::dom::TabGroup* nsGlobalWindowOuter::TabGroupOuter() {
       RefPtr<BrowsingContext> openerBC = GetBrowsingContext()->GetOpener();
       nsPIDOMWindowOuter* opener =
           openerBC ? openerBC->GetDOMWindow() : nullptr;
-      MOZ_ASSERT_IF(opener && Cast(opener) != this,
-                    opener->TabGroup() == mTabGroup);
+      
+      
+      
+      
+      
+      MOZ_ASSERT_IF(
+          !StaticPrefs::fission_autostart() && opener && Cast(opener) != this,
+          opener->TabGroup() == mTabGroup);
     }
     mIsValidatingTabGroup = false;
   }
