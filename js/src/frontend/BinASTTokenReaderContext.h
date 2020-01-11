@@ -882,7 +882,20 @@ struct GenericHuffmanTable {
 
 
 class HuffmanDictionary {
- private:
+ public:
+  HuffmanDictionary() {}
+  ~HuffmanDictionary();
+
+  
+  
+  
+  
+  enum class TableStatus : uint8_t {
+    Unreachable,
+    Initializing,
+    Ready,
+  };
+
   
   
   class TableIdentity {
@@ -902,25 +915,9 @@ class HuffmanDictionary {
     size_t toIndex() const { return index_; }
   };
 
- public:
-  HuffmanDictionary() {}
-  ~HuffmanDictionary();
+  TableStatus& status(TableIdentity i) { return status(i.toIndex()); }
 
-  
-  
-  
-  
-  enum class TableStatus : uint8_t {
-    Unreachable,
-    Initializing,
-    Ready,
-  };
-
-  TableStatus& fieldStatus(NormalizedInterfaceAndField index);
-  GenericHuffmanTable& tableForField(NormalizedInterfaceAndField index);
-
-  TableStatus& listLengthStatus(BinASTList list);
-  GenericHuffmanTable& tableForListLength(BinASTList list);
+  GenericHuffmanTable& table(TableIdentity i) { return table(i.toIndex()); }
 
  private:
   
@@ -935,8 +932,6 @@ class HuffmanDictionary {
   
   
   TableStatus status_[TableIdentity::Limit] = {TableStatus::Unreachable};
-
-  TableStatus& status(TableIdentity i) { return status(i.toIndex()); }
 
   TableStatus& status(size_t i) { return status_[i]; }
 
@@ -954,8 +949,6 @@ class HuffmanDictionary {
   
   alignas(GenericHuffmanTable) char tables_[sizeof(GenericHuffmanTable) *
                                             TableIdentity::Limit];
-
-  GenericHuffmanTable& table(TableIdentity i) { return table(i.toIndex()); }
 
   GenericHuffmanTable& table(size_t i) {
     return (reinterpret_cast<GenericHuffmanTable*>(tables_))[i];
