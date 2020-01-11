@@ -188,7 +188,6 @@ static bool XPC_WN_Shared_toPrimitive(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-
 static JSObject* GetDoubleWrappedJSObject(XPCCallContext& ccx,
                                           XPCWrappedNative* wrapper) {
   RootedObject obj(ccx);

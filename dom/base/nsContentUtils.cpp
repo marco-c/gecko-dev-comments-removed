@@ -2006,12 +2006,7 @@ bool nsContentUtils::InProlog(nsINode* aNode) {
 
 bool nsContentUtils::IsCallerChrome() {
   MOZ_ASSERT(NS_IsMainThread());
-  if (SubjectPrincipal() == sSystemPrincipal) {
-    return true;
-  }
-
-  
-  return xpc::IsUniversalXPConnectEnabled(GetCurrentJSContext());
+  return SubjectPrincipal() == sSystemPrincipal;
 }
 
 #ifdef FUZZING

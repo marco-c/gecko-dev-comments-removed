@@ -15,7 +15,6 @@
 
 
 
-
 if (!Cu.isInAutomation) {
   throw new Error("WrapPrivileged.jsm is only for use in automation");
 }

@@ -387,8 +387,7 @@ static void DEBUG_CheckUnwrapSafety(HandleObject obj,
     
     
     MOZ_ASSERT_UNREACHABLE("CheckUnwrapSafety called for a dead wrapper");
-  } else if (AccessCheck::isChrome(targetCompartment) ||
-             xpc::IsUniversalXPConnectEnabled(targetCompartment)) {
+  } else if (AccessCheck::isChrome(targetCompartment)) {
     
     
     
@@ -532,14 +531,7 @@ JSObject* WrapperFactory::Rewrap(JSContext* cx, HandleObject existing,
   
 
   
-  
-  if (targetCompartmentPrivate->universalXPConnectEnabled) {
-    CrashIfNotInAutomation();
-    wrapper = &CrossCompartmentWrapper::singleton;
-  }
-
-  
-  else if (originRealmPrivate->forcePermissiveCOWs) {
+  if (originRealmPrivate->forcePermissiveCOWs) {
     CrashIfNotInAutomation();
     wrapper = &CrossCompartmentWrapper::singleton;
   }

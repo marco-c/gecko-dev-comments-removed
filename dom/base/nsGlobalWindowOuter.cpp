@@ -1704,14 +1704,6 @@ static bool TreatAsRemoteXUL(nsIPrincipal* aPrincipal) {
          !Preferences::GetBool("dom.use_xbl_scopes_for_remote_xul", false);
 }
 
-static bool EnablePrivilege(JSContext* cx, unsigned argc, JS::Value* vp) {
-  Telemetry::Accumulate(Telemetry::ENABLE_PRIVILEGE_EVER_CALLED, true);
-  return xpc::EnableUniversalXPConnect(cx);
-}
-
-static const JSFunctionSpec EnablePrivilegeSpec[] = {
-    JS_FN("enablePrivilege", EnablePrivilege, 1, 0), JS_FS_END};
-
 static bool InitializeLegacyNetscapeObject(JSContext* aCx,
                                            JS::Handle<JSObject*> aGlobal) {
   JSAutoRealm ar(aCx, aGlobal);
@@ -1724,21 +1716,7 @@ static bool InitializeLegacyNetscapeObject(JSContext* aCx,
   obj = JS_DefineObject(aCx, obj, "security", nullptr);
   NS_ENSURE_TRUE(obj, false);
 
-  
-  
-  
-  
-  
-  
-  if (!xpc::IsInAutomation()) {
-    return true;
-  }
-
-  
-  obj = JS_DefineObject(aCx, obj, "PrivilegeManager", nullptr);
-  NS_ENSURE_TRUE(obj, false);
-
-  return JS_DefineFunctions(aCx, obj, EnablePrivilegeSpec);
+  return true;
 }
 
 struct MOZ_STACK_CLASS CompartmentFinderState {

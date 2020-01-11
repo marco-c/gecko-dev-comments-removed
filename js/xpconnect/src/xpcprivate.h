@@ -825,10 +825,6 @@ class XPCWrappedNativeScope final
 
   nsXPCComponentsBase* GetComponents() const { return mComponents; }
 
-  
-  
-  void ForcePrivilegedComponents();
-
   bool AttachComponentsObject(JSContext* aCx);
 
   
@@ -2640,8 +2636,7 @@ class CompartmentPrivate {
 
     
     return !wantXrays && !isWebExtensionContentScript &&
-           !isUAWidgetCompartment && !universalXPConnectEnabled &&
-           mScope->XBLScopeStateMatches(principal);
+           !isUAWidgetCompartment && mScope->XBLScopeStateMatches(principal);
   }
 
   CompartmentOriginInfo originInfo;
@@ -2673,14 +2668,6 @@ class CompartmentPrivate {
 
   
   bool hasExclusiveExpandos;
-
-  
-  
-  
-  
-  
-  
-  bool universalXPConnectEnabled;
 
   
   bool wasShutdown;
@@ -2717,10 +2704,6 @@ class CompartmentPrivate {
   
   mozilla::UniquePtr<XPCWrappedNativeScope> mScope;
 };
-
-bool IsUniversalXPConnectEnabled(JS::Compartment* compartment);
-bool IsUniversalXPConnectEnabled(JSContext* cx);
-bool EnableUniversalXPConnect(JSContext* cx);
 
 inline void CrashIfNotInAutomation() { MOZ_RELEASE_ASSERT(IsInAutomation()); }
 
