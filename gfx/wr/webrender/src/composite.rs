@@ -3,9 +3,10 @@
 
 
 use api::ColorF;
-use api::units::{DeviceRect, DeviceIntSize, DeviceIntRect, DeviceIntPoint, WorldRect, DevicePixelScale};
+use api::units::{DeviceRect, DeviceIntSize, DeviceIntRect, DeviceIntPoint, WorldRect, DevicePixelScale, DevicePoint};
 use crate::gpu_types::{ZBufferId, ZBufferIdGenerator};
-use crate::picture::{ResolvedSurfaceTexture, TileId};
+use crate::picture::{ResolvedSurfaceTexture, TileId, TileCacheInstance, TileSurface};
+use crate::resource_cache::ResourceCache;
 use std::{ops, u64};
 
 
@@ -19,10 +20,19 @@ use std::{ops, u64};
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum NativeSurfaceOperationDetails {
     CreateSurface {
-        size: DeviceIntSize,
+        id: NativeSurfaceId,
+        tile_size: DeviceIntSize,
+    },
+    DestroySurface {
+        id: NativeSurfaceId,
+    },
+    CreateTile {
+        id: NativeTileId,
         is_opaque: bool,
     },
-    DestroySurface,
+    DestroyTile {
+        id: NativeTileId,
+    }
 }
 
 
@@ -30,7 +40,6 @@ pub enum NativeSurfaceOperationDetails {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct NativeSurfaceOperation {
-    pub id: NativeSurfaceId,
     pub details: NativeSurfaceOperationDetails,
 }
 
@@ -131,25 +140,30 @@ struct Occluder {
 }
 
 
-#[derive(PartialEq)]
-pub struct CompositeTileDescriptor {
-    pub rect: DeviceRect,
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(PartialEq, Clone)]
+pub struct CompositeSurfaceDescriptor {
+    pub slice: usize,
+    pub surface_id: Option<NativeSurfaceId>,
+    pub offset: DevicePoint,
     pub clip_rect: DeviceRect,
-    pub tile_id: TileId,
 }
 
 
 
-#[derive(PartialEq)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(PartialEq, Clone)]
 pub struct CompositeDescriptor {
-    tiles: Vec<CompositeTileDescriptor>,
+    pub surfaces: Vec<CompositeSurfaceDescriptor>,
 }
 
 impl CompositeDescriptor {
     
     pub fn empty() -> Self {
         CompositeDescriptor {
-            tiles: Vec::new(),
+            surfaces: Vec::new(),
         }
     }
 }
@@ -161,9 +175,6 @@ pub struct CompositeState {
     
     
     
-    
-    
-    pub native_tiles: Vec<CompositeTile>,
     
     pub opaque_tiles: Vec<CompositeTile>,
     
@@ -187,6 +198,8 @@ pub struct CompositeState {
     global_device_pixel_scale: DevicePixelScale,
     
     occluders: Vec<Occluder>,
+    
+    pub descriptor: CompositeDescriptor,
 }
 
 impl CompositeState {
@@ -207,7 +220,6 @@ impl CompositeState {
         }
 
         CompositeState {
-            native_tiles: Vec::new(),
             opaque_tiles: Vec::new(),
             alpha_tiles: Vec::new(),
             clear_tiles: Vec::new(),
@@ -217,29 +229,7 @@ impl CompositeState {
             picture_caching_is_enabled,
             global_device_pixel_scale,
             occluders: Vec::new(),
-        }
-    }
-
-    
-    
-    pub fn create_descriptor(&self) -> CompositeDescriptor {
-        let mut tiles = Vec::new();
-
-        let native_iter = self.native_tiles.iter();
-        let opaque_iter = self.opaque_tiles.iter();
-        let clear_iter = self.clear_tiles.iter();
-        let alpha_iter = self.alpha_tiles.iter();
-
-        for tile in native_iter.chain(opaque_iter).chain(clear_iter).chain(alpha_iter) {
-            tiles.push(CompositeTileDescriptor {
-                rect: tile.rect,
-                clip_rect: tile.clip_rect,
-                tile_id: tile.tile_id,
-            });
-        }
-
-        CompositeDescriptor {
-            tiles,
+            descriptor: CompositeDescriptor::empty(),
         }
     }
 
@@ -290,22 +280,86 @@ impl CompositeState {
     }
 
     
-    pub fn push_tile(
+    pub fn push_surface(
+        &mut self,
+        tile_cache: &TileCacheInstance,
+        device_clip_rect: DeviceRect,
+        z_id: ZBufferId,
+        global_device_pixel_scale: DevicePixelScale,
+        resource_cache: &ResourceCache,
+    ) {
+        let mut visible_tile_count = 0;
+
+        for key in &tile_cache.tiles_to_draw {
+            let tile = &tile_cache.tiles[key];
+            if !tile.is_visible {
+                
+                continue;
+            }
+
+            visible_tile_count += 1;
+
+            let device_rect = (tile.world_rect * global_device_pixel_scale).round();
+            let dirty_rect = (tile.world_dirty_rect * global_device_pixel_scale).round();
+            let surface = tile.surface.as_ref().expect("no tile surface set!");
+
+            let (surface, is_opaque) = match surface {
+                TileSurface::Color { color } => {
+                    (CompositeTileSurface::Color { color: *color }, true)
+                }
+                TileSurface::Clear => {
+                    (CompositeTileSurface::Clear, false)
+                }
+                TileSurface::Texture { descriptor, .. } => {
+                    let surface = descriptor.resolve(resource_cache, tile_cache.current_tile_size);
+                    (
+                        CompositeTileSurface::Texture { surface },
+                        tile.is_opaque || tile_cache.is_opaque(),
+                    )
+                }
+            };
+
+            let tile = CompositeTile {
+                surface,
+                rect: device_rect,
+                dirty_rect,
+                clip_rect: device_clip_rect,
+                z_id,
+                tile_id: tile.id,
+            };
+
+            self.push_tile(tile, is_opaque);
+        }
+
+        if visible_tile_count > 0 {
+            self.descriptor.surfaces.push(
+                CompositeSurfaceDescriptor {
+                    slice: tile_cache.slice,
+                    surface_id: tile_cache.native_surface_id,
+                    offset: tile_cache.device_position,
+                    clip_rect: device_clip_rect,
+                }
+            );
+        }
+    }
+
+    
+    fn push_tile(
         &mut self,
         tile: CompositeTile,
         is_opaque: bool,
     ) {
-        match (self.compositor_kind, &tile.surface) {
-            (CompositorKind::Draw { .. }, CompositeTileSurface::Color { .. }) => {
+        match tile.surface {
+            CompositeTileSurface::Color { .. } => {
                 
                 
                 self.opaque_tiles.push(tile);
             }
-            (CompositorKind::Draw { .. }, CompositeTileSurface::Clear) => {
+            CompositeTileSurface::Clear => {
                 
                 self.clear_tiles.push(tile);
             }
-            (CompositorKind::Draw { .. }, CompositeTileSurface::Texture { .. }) => {
+            CompositeTileSurface::Texture { .. } => {
                 
                 
                 if is_opaque {
@@ -313,20 +367,6 @@ impl CompositeState {
                 } else {
                     self.alpha_tiles.push(tile);
                 }
-            }
-            (CompositorKind::Native { .. }, CompositeTileSurface::Color { .. }) => {
-                
-                unreachable!();
-            }
-            (CompositorKind::Native { .. }, CompositeTileSurface::Clear) => {
-                
-                unreachable!();
-            }
-            (CompositorKind::Native { .. }, CompositeTileSurface::Texture { .. }) => {
-                
-                
-                
-                self.native_tiles.push(tile);
             }
         }
     }
@@ -342,6 +382,25 @@ pub struct NativeSurfaceId(pub u64);
 impl NativeSurfaceId {
     
     pub const DEBUG_OVERLAY: NativeSurfaceId = NativeSurfaceId(u64::MAX);
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct NativeTileId {
+    pub surface_id: NativeSurfaceId,
+    pub x: i32,
+    pub y: i32,
+}
+
+impl NativeTileId {
+    
+    pub const DEBUG_OVERLAY: NativeTileId = NativeTileId {
+        surface_id: NativeSurfaceId::DEBUG_OVERLAY,
+        x: 0,
+        y: 0,
+    };
 }
 
 
@@ -370,12 +429,10 @@ pub struct NativeSurfaceInfo {
 
 pub trait Compositor {
     
-    
     fn create_surface(
         &mut self,
         id: NativeSurfaceId,
-        size: DeviceIntSize,
-        is_opaque: bool,
+        tile_size: DeviceIntSize,
     );
 
     
@@ -387,6 +444,19 @@ pub trait Compositor {
     fn destroy_surface(
         &mut self,
         id: NativeSurfaceId,
+    );
+
+    
+    fn create_tile(
+        &mut self,
+        id: NativeTileId,
+        is_opaque: bool,
+    );
+
+    
+    fn destroy_tile(
+        &mut self,
+        id: NativeTileId,
     );
 
     
@@ -402,7 +472,7 @@ pub trait Compositor {
     
     fn bind(
         &mut self,
-        id: NativeSurfaceId,
+        id: NativeTileId,
         dirty_rect: DeviceIntRect,
     ) -> NativeSurfaceInfo;
 

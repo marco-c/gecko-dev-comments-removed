@@ -12,6 +12,7 @@
 #include <map>
 #include <vector>
 #include <dwmapi.h>
+#include <unordered_map>
 
 #define EGL_EGL_PROTOTYPES 1
 #define EGL_EGLEXT_PROTOTYPES 1
@@ -39,6 +40,30 @@ struct Tile {
     
     IDCompositionSurface *pSurface;
     
+    IDCompositionVisual2 *pVisual;
+};
+
+struct TileKey {
+    int x;
+    int y;
+
+    TileKey(int ax, int ay) : x(ax), y(ay) {}
+};
+
+bool operator==(const TileKey &k0, const TileKey &k1) {
+    return k0.x == k1.x && k0.y == k1.y;
+}
+
+struct TileKeyHasher {
+    size_t operator()(const TileKey &key) const {
+        return key.x ^ key.y;
+    }
+};
+
+struct Surface {
+    int tile_width;
+    int tile_height;
+    std::unordered_map<TileKey, Tile, TileKeyHasher> tiles;
     IDCompositionVisual2 *pVisual;
 };
 
@@ -82,13 +107,14 @@ struct Window {
     
     IDCompositionVisual2 *pRoot;
     IDCompositionVisualDebug *pVisualDebug;
-    
-    std::map<uint64_t, Tile> tiles;
     std::vector<CachedFrameBuffer> mFrameBuffers;
 
     
     std::vector<uint64_t> mCurrentLayers;
     std::vector<uint64_t> mPrevLayers;
+
+    
+    std::unordered_map<uint64_t, Surface> surfaces;
 };
 
 static const wchar_t *CLASS_NAME = L"WR DirectComposite";
@@ -349,9 +375,15 @@ extern "C" {
     }
 
     void com_dc_destroy_window(Window *window) {
-        for (auto it=window->tiles.begin() ; it != window->tiles.end() ; ++it) {
-            it->second.pSurface->Release();
-            it->second.pVisual->Release();
+        for (auto surface_it=window->surfaces.begin() ; surface_it != window->surfaces.end() ; ++surface_it) {
+            Surface &surface = surface_it->second;
+
+            for (auto tile_it=surface.tiles.begin() ; tile_it != surface.tiles.end() ; ++tile_it) {
+                tile_it->second.pSurface->Release();
+                tile_it->second.pVisual->Release();
+            }
+
+            surface.pVisual->Release();
         }
 
         if (window->fb_surface != EGL_NO_SURFACE) {
@@ -432,20 +464,42 @@ extern "C" {
     void com_dc_create_surface(
         Window *window,
         uint64_t id,
-        int width,
-        int height,
+        int tile_width,
+        int tile_height
+    ) {
+        assert(window->surfaces.count(id) == 0);
+
+        Surface surface;
+        surface.tile_width = tile_width;
+        surface.tile_height = tile_height;
+
+        
+        HRESULT hr = window->pDCompDevice->CreateVisual(&surface.pVisual);
+        assert(SUCCEEDED(hr));
+
+        window->surfaces[id] = surface;
+    }
+
+    void com_dc_create_tile(
+        Window *window,
+        uint64_t id,
+        int x,
+        int y,
         bool is_opaque
     ) {
-        assert(window->tiles.count(id) == 0);
+        assert(window->surfaces.count(id) == 1);
+        Surface &surface = window->surfaces[id];
+
+        TileKey key(x, y);
+        assert(surface.tiles.count(key) == 0);
 
         Tile tile;
 
-        DXGI_ALPHA_MODE alpha_mode = is_opaque ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
-
         
+        DXGI_ALPHA_MODE alpha_mode = is_opaque ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
         HRESULT hr = window->pDCompDevice->CreateSurface(
-            width,
-            height,
+            surface.tile_width,
+            surface.tile_height,
             DXGI_FORMAT_B8G8R8A8_UNORM,
             alpha_mode,
             &tile.pSurface
@@ -460,27 +514,67 @@ extern "C" {
         hr = tile.pVisual->SetContent(tile.pSurface);
         assert(SUCCEEDED(hr));
 
-        window->tiles[id] = tile;
+        
+        float offset_x = (float) (x * surface.tile_width);
+        float offset_y = (float) (y * surface.tile_height);
+        tile.pVisual->SetOffsetX(offset_x);
+        tile.pVisual->SetOffsetY(offset_y);
+
+        surface.pVisual->AddVisual(
+            tile.pVisual,
+            FALSE,
+            NULL
+        );
+
+        surface.tiles[key] = tile;
+    }
+
+    void com_dc_destroy_tile(
+        Window *window,
+        uint64_t id,
+        int x,
+        int y
+    ) {
+        assert(window->surfaces.count(id) == 1);
+        Surface &surface = window->surfaces[id];
+
+        TileKey key(x, y);
+        assert(surface.tiles.count(key) == 1);
+        Tile &tile = surface.tiles[key];
+
+        surface.pVisual->RemoveVisual(tile.pVisual);
+
+        tile.pVisual->Release();
+        tile.pSurface->Release();
+
+        surface.tiles.erase(key);
     }
 
     void com_dc_destroy_surface(
         Window *window,
         uint64_t id
     ) {
-        assert(window->tiles.count(id) == 1);
+        assert(window->surfaces.count(id) == 1);
+        Surface &surface = window->surfaces[id];
+
+        window->pRoot->RemoveVisual(surface.pVisual);
 
         
-        Tile &tile = window->tiles[id];
-        tile.pVisual->Release();
-        tile.pSurface->Release();
+        for (auto tile_it=surface.tiles.begin() ; tile_it != surface.tiles.end() ; ++tile_it) {
+            tile_it->second.pSurface->Release();
+            tile_it->second.pVisual->Release();
+        }
 
-        window->tiles.erase(id);
+        surface.pVisual->Release();
+        window->surfaces.erase(id);
     }
 
     
     GLuint com_dc_bind_surface(
         Window *window,
-        uint64_t id,
+        uint64_t surface_id,
+        int tile_x,
+        int tile_y,
         int *x_offset,
         int *y_offset,
         int dirty_x0,
@@ -488,8 +582,12 @@ extern "C" {
         int dirty_width,
         int dirty_height
     ) {
-        assert(window->tiles.count(id) == 1);
-        Tile &tile = window->tiles[id];
+        assert(window->surfaces.count(surface_id) == 1);
+        Surface &surface = window->surfaces[surface_id];
+
+        TileKey key(tile_x, tile_y);
+        assert(surface.tiles.count(key) == 1);
+        Tile &tile = surface.tiles[key];
 
         
         window->pCurrentSurface = tile.pSurface;
@@ -583,16 +681,15 @@ extern "C" {
         int clip_w,
         int clip_h
     ) {
-        Tile &tile = window->tiles[id];
-
+        Surface surface = window->surfaces[id];
         window->mCurrentLayers.push_back(id);
 
         
         
         float offset_x = (float) (x + window->client_rect.left);
         float offset_y = (float) (y + window->client_rect.top);
-        tile.pVisual->SetOffsetX(offset_x);
-        tile.pVisual->SetOffsetY(offset_y);
+        surface.pVisual->SetOffsetX(offset_x);
+        surface.pVisual->SetOffsetY(offset_y);
 
         
         
@@ -601,7 +698,7 @@ extern "C" {
         clip_rect.top = clip_y - offset_y;
         clip_rect.right = clip_rect.left + clip_w;
         clip_rect.bottom = clip_rect.top + clip_h;
-        tile.pVisual->SetClip(clip_rect);
+        surface.pVisual->SetClip(clip_rect);
     }
 
     
@@ -613,12 +710,12 @@ extern "C" {
             assert(SUCCEEDED(hr));
 
             for (auto it = window->mCurrentLayers.begin(); it != window->mCurrentLayers.end(); ++it) {
-                Tile &tile = window->tiles[*it];
+                Surface &surface = window->surfaces[*it];
 
                 
                 
-                HRESULT hr = window->pRoot->AddVisual(
-                    tile.pVisual,
+                hr = window->pRoot->AddVisual(
+                    surface.pVisual,
                     FALSE,
                     NULL
                 );

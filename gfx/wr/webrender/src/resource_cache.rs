@@ -17,7 +17,7 @@ use crate::capture::ExternalCaptureImage;
 use crate::capture::PlainExternalImage;
 #[cfg(any(feature = "replay", feature = "png"))]
 use crate::capture::CaptureConfig;
-use crate::composite::{NativeSurfaceId, NativeSurfaceOperation, NativeSurfaceOperationDetails};
+use crate::composite::{NativeSurfaceId, NativeSurfaceOperation, NativeTileId, NativeSurfaceOperationDetails};
 use crate::device::TextureFilter;
 use euclid::{point2, size2};
 use crate::glyph_cache::GlyphCache;
@@ -1778,18 +1778,16 @@ impl ResourceCache {
     
     pub fn create_compositor_surface(
         &mut self,
-        size: DeviceIntSize,
-        is_opaque: bool,
+        tile_size: DeviceIntSize,
     ) -> NativeSurfaceId {
         let id = NativeSurfaceId(NEXT_NATIVE_SURFACE_ID.fetch_add(1, Ordering::Relaxed));
 
         self.pending_native_surface_updates.push(
             NativeSurfaceOperation {
-                id,
                 details: NativeSurfaceOperationDetails::CreateSurface {
-                    size,
-                    is_opaque,
-                }
+                    id,
+                    tile_size,
+                },
             }
         );
 
@@ -1804,8 +1802,39 @@ impl ResourceCache {
     ) {
         self.pending_native_surface_updates.push(
             NativeSurfaceOperation {
-                id,
-                details: NativeSurfaceOperationDetails::DestroySurface,
+                details: NativeSurfaceOperationDetails::DestroySurface {
+                    id,
+                }
+            }
+        );
+    }
+
+    
+    pub fn create_compositor_tile(
+        &mut self,
+        id: NativeTileId,
+        is_opaque: bool,
+    ) {
+        self.pending_native_surface_updates.push(
+            NativeSurfaceOperation {
+                details: NativeSurfaceOperationDetails::CreateTile {
+                    id,
+                    is_opaque,
+                },
+            }
+        );
+    }
+
+    
+    pub fn destroy_compositor_tile(
+        &mut self,
+        id: NativeTileId,
+    ) {
+        self.pending_native_surface_updates.push(
+            NativeSurfaceOperation {
+                details: NativeSurfaceOperationDetails::DestroyTile {
+                    id,
+                },
             }
         );
     }

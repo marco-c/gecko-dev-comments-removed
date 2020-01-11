@@ -1548,7 +1548,8 @@ impl RenderBackend {
             let composite_descriptor = rendered_document
                 .frame
                 .composite_state
-                .create_descriptor();
+                .descriptor
+                .clone();
 
             
             
