@@ -65,19 +65,16 @@ nsresult nsTitleBarFrame::HandleEvent(nsPresContext* aPresContext,
     case eMouseDown: {
       if (aEvent->AsMouseEvent()->mButton == MouseButton::eLeft) {
         
-        nsCOMPtr<nsIDocShellTreeItem> dsti = aPresContext->GetDocShell();
-        if (dsti) {
-          if (dsti->ItemType() == nsIDocShellTreeItem::typeChrome) {
-            
-            mTrackingMouseMove = true;
+        if (aPresContext->IsChrome()) {
+          
+          mTrackingMouseMove = true;
 
-            
-            PresShell::SetCapturingContent(GetContent(),
-                                           CaptureFlags::IgnoreAllowedState);
+          
+          PresShell::SetCapturingContent(GetContent(),
+                                          CaptureFlags::IgnoreAllowedState);
 
-            
-            mLastPoint = aEvent->mRefPoint;
-          }
+          
+          mLastPoint = aEvent->mRefPoint;
         }
 
         *aEventStatus = nsEventStatus_eConsumeNoDefault;
