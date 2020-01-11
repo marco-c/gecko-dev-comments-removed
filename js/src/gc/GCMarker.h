@@ -493,6 +493,7 @@ class GCMarker : public JSTracer {
 
 
   MainThreadOrGCTaskData<Compartment*> tracingCompartment;
+  MainThreadOrGCTaskData<Zone*> tracingZone;
 
   
 
