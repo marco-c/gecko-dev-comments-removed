@@ -46,7 +46,8 @@ TARGET_TASK_FILTERS = (
     '.*win64-aarch64-laptop.*',
     'android-hw.*',
     '.*android-geckoview-docs.*',
-    'linux1804-32.*',  
+    'linux1804-32.*',   
+    r'linux-.*',  
 )
 
 
