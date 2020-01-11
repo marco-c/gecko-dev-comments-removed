@@ -228,26 +228,6 @@ const rollout = {
     await stateManager.rememberDoorhangerShown();
   },
 
-  async netChangeListener() {
-    
-    let curTime = new Date().getTime() / 1000;
-    let timePassed = curTime - this.lastNetworkChangeTime;
-    log("Time passed since last network change:", timePassed);
-    if (timePassed < 30) {
-      return;
-    }
-
-    this.lastNetworkChangeTime = curTime;
-
-    
-    let decision = await rollout.heuristics("netChange");
-    if (decision === "disable_doh") {
-      await stateManager.setState("disabled");
-    } else {
-      await stateManager.setState("enabled");
-    }
-  },
-
   async heuristics(evaluateReason) {
     
     let results = await runHeuristics();
@@ -478,25 +458,41 @@ const rollout = {
     }
 
     
-    browser.experiments.netChange.onConnectionChanged.addListener(async () => {
+    browser.networkStatus.onConnectionChanged.addListener(async () => {
       log("onConnectionChanged");
-      
-      let shouldRunHeuristics = await stateManager.shouldRunHeuristics();
-      let shouldShowDoorhanger = await stateManager.shouldShowDoorhanger();
 
-      if (!shouldRunHeuristics) {
+      let linkInfo = await browser.networkStatus.getLinkInfo();
+      if (linkInfo.status !== "up") {
+        log("Link down.");
+        if (rollout.networkSettledTimeout) {
+          log("Canceling queued heuristics run.");
+          clearTimeout(rollout.networkSettledTimeout);
+          rollout.networkSettledTimeout = null;
+        }
         return;
       }
 
-      const netChangeDecision = await rollout.heuristics("netChange");
+      log("Queing a heuristics run in 60s, will cancel if network fluctuates.");
+      rollout.networkSettledTimeout = setTimeout(async () => {
+        log("No network fluctuation for 60 seconds, running heuristics.");
+        
+        let shouldRunHeuristics = await stateManager.shouldRunHeuristics();
+        let shouldShowDoorhanger = await stateManager.shouldShowDoorhanger();
 
-      if (netChangeDecision === "disable_doh") {
-        await stateManager.setState("disabled");
-      } else if (shouldShowDoorhanger) {
-        await stateManager.showDoorHangerAndEnableDoH();
-      } else {
-        await stateManager.setState("enabled");
-      }
+        if (!shouldRunHeuristics) {
+          return;
+        }
+
+        const netChangeDecision = await rollout.heuristics("netChange");
+
+        if (netChangeDecision === "disable_doh") {
+          await stateManager.setState("disabled");
+        } else if (shouldShowDoorhanger) {
+          await stateManager.showDoorHangerAndEnableDoH();
+        } else {
+          await stateManager.setState("enabled");
+        }
+      }, 60000);
     });
   },
 
