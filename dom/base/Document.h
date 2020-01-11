@@ -48,6 +48,7 @@
 #include "nsClassHashtable.h"
 #include "ReferrerInfo.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/CallState.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/dom/ContentBlockingLog.h"
 #include "mozilla/dom/DispatcherTrait.h"
@@ -288,7 +289,7 @@ class DocHeaderData {
 };
 
 class ExternalResourceMap {
-  typedef bool (*SubDocEnumFunc)(Document& aDocument, void* aData);
+  typedef CallState (*SubDocEnumFunc)(Document& aDocument, void* aData);
 
  public:
   
@@ -2573,7 +2574,8 @@ class Document : public nsINode,
 
 
 
-  typedef bool (*SubDocEnumFunc)(Document&, void* aData);
+
+  typedef CallState (*SubDocEnumFunc)(Document&, void* aData);
   void EnumerateSubDocuments(SubDocEnumFunc aCallback, void* aData);
 
   
@@ -2884,6 +2886,7 @@ class Document : public nsINode,
                                     ExternalResourceLoad** aPendingLoad);
 
   
+
 
 
 
