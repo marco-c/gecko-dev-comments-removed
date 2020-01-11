@@ -220,7 +220,8 @@ class AndroidEnv(BaseEnv):
     def dump_logs(self):
         try:
             logcat = self.device.get_logcat()
-        except ADBError:
+        
+        except (ADBError, ValueError):
             ERROR("logcat call failure")
             return
 
