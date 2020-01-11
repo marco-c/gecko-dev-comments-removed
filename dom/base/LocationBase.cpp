@@ -40,8 +40,11 @@ already_AddRefed<nsDocShellLoadState> LocationBase::CheckURL(
   }
 
   
+  
+  
+  
   nsresult rv = ssm->CheckLoadURIWithPrincipal(
-      &aSubjectPrincipal, aURI, nsIScriptSecurityManager::STANDARD);
+      &aSubjectPrincipal, aURI, nsIScriptSecurityManager::STANDARD, 0);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     nsAutoCString spec;
     aURI->GetSpec(spec);
