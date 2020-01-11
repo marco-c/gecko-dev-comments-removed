@@ -733,7 +733,8 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
   border-radius: 50%;
 }
 
-.PanelUI-fxa-service-description-label {
+.PanelUI-fxa-service-description-label,
+.PanelUI-remotetabs-instruction-label {
   
 
 
@@ -839,21 +840,9 @@ panelmultiview[mainViewId="PanelUI-fxa"] #PanelUI-remotetabs-syncnow {
   max-width: 15em;
 }
 
-.PanelUI-fxa-service-description-label {
-  margin-top: 10px;
-}
-
+.PanelUI-fxa-service-description-label,
 .PanelUI-remotetabs-instruction-label {
-  color: var(--panel-disabled-color);
-}
-
-
-
-.PanelUI-remotetabs-instruction-box {
-  
-
-
-  padding-bottom: 30px;
+  margin-top: 10px;
 }
 
 .PanelUI-fxa-signin-button,
@@ -874,7 +863,8 @@ panelmultiview[mainViewId="PanelUI-fxa"] #PanelUI-remotetabs-syncnow {
   min-width: 200px;
 }
 
-.PanelUI-fxa-signin-button {
+.PanelUI-fxa-signin-button,
+.PanelUI-remotetabs-button {
   padding: 1em;
 }
 
@@ -909,7 +899,6 @@ panelmultiview[mainViewId="PanelUI-fxa"] #PanelUI-remotetabs-syncnow {
 
   width: 204px;
   height: var(--panel-ui-sync-illustration-height);
-  margin: 38px 0 15px;
   -moz-context-properties: fill;
   fill: #cdcdcd;
 }
@@ -943,11 +932,10 @@ panelmultiview[mainViewId="PanelUI-fxa"] #PanelUI-remotetabs-syncnow {
 #PanelUI-remotetabs[mainview] #PanelUI-remotetabs-nodevicespane,
 #PanelUI-remotetabs[mainview] #PanelUI-remotetabs-tabsdisabledpane {
   min-height: calc(var(--panel-ui-sync-illustration-height) +
-                   53px + 
+                   15px + 
                    30px + 
-                   16px + 
-                   30px + 
-                   11em);
+                   8px + 
+                   1em);
 }
 
 .PanelUI-remotetabs-clientcontainer > label[itemtype="client"] {
