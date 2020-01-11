@@ -1635,41 +1635,49 @@ static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
 
 bool JSFunction::delazifyLazilyInterpretedFunction(JSContext* cx,
                                                    HandleFunction fun) {
-  MOZ_ASSERT(fun->isInterpretedLazy());
+  MOZ_ASSERT(fun->hasLazyScript());
   MOZ_ASSERT(cx->compartment() == fun->compartment());
 
   
   
   AutoRealm ar(cx, fun);
 
-  if (fun->hasLazyScript()) {
-    Rooted<LazyScript*> lazy(cx, fun->lazyScript());
-    RootedFunction canonicalFun(cx, lazy->function());
+  Rooted<LazyScript*> lazy(cx, fun->lazyScript());
+  RootedFunction canonicalFun(cx, lazy->function());
 
-    
-    
-    
-    
-    if (fun != canonicalFun) {
-      JSScript* script = JSFunction::getOrCreateScript(cx, canonicalFun);
-      if (!script) {
-        return false;
-      }
-
-      fun->setUnlazifiedScript(script);
-      return true;
+  
+  
+  
+  
+  if (fun != canonicalFun) {
+    JSScript* script = JSFunction::getOrCreateScript(cx, canonicalFun);
+    if (!script) {
+      return false;
     }
 
-    
-    
-    if (lazy->hasScript()) {
-      fun->setUnlazifiedScript(lazy->maybeScript());
-      return true;
-    }
-
-    
-    return DelazifyCanonicalScriptedFunction(cx, fun);
+    fun->setUnlazifiedScript(script);
+    return true;
   }
+
+  
+  
+  if (lazy->hasScript()) {
+    fun->setUnlazifiedScript(lazy->maybeScript());
+    return true;
+  }
+
+  
+  return DelazifyCanonicalScriptedFunction(cx, fun);
+}
+
+
+bool JSFunction::delazifySelfHostedLazyFunction(JSContext* cx,
+                                                js::HandleFunction fun) {
+  MOZ_ASSERT(cx->compartment() == fun->compartment());
+
+  
+  
+  AutoRealm ar(cx, fun);
 
   
   MOZ_ASSERT(fun->isSelfHostedBuiltin());
