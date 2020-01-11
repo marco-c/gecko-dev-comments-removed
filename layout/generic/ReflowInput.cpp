@@ -2139,6 +2139,7 @@ LogicalSize ReflowInput::ComputeContainingBlockRectangle(
     
     if (!wm.IsVertical() && NS_UNCONSTRAINEDSIZE == cbSize.BSize(wm)) {
       if (eCompatibility_NavQuirks == aPresContext->CompatibilityMode() &&
+          !aContainingBlockRI->mFrame->IsFlexOrGridItem() &&
           (IsQuirky(mStylePosition->mHeight) ||
            (mFrame->IsTableWrapperFrame() &&
             IsQuirky(mFrame->PrincipalChildList()
@@ -2275,7 +2276,8 @@ void ReflowInput::InitConstraints(
           
           if (!wm.IsVertical() &&
               eCompatibility_NavQuirks == aPresContext->CompatibilityMode()) {
-            if (!cbri->mFrame->IsTableCellFrame()) {
+            if (!cbri->mFrame->IsTableCellFrame() &&
+                !cbri->mFrame->IsFlexOrGridItem()) {
               cbSize.BSize(wm) = CalcQuirkContainingBlockHeight(cbri);
               if (cbSize.BSize(wm) == NS_UNCONSTRAINEDSIZE) {
                 isAutoBSize = true;
