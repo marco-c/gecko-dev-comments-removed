@@ -106,6 +106,7 @@ class MOZ_STACK_CLASS TryEmitter {
   
   
   
+  
   enum class ControlKind { Syntactic, NonSyntactic };
 
  private:
@@ -136,10 +137,7 @@ class MOZ_STACK_CLASS TryEmitter {
   int depth_;
 
   
-  unsigned noteIndex_;
-
-  
-  BytecodeOffset tryStart_;
+  BytecodeOffset tryOpOffset_;
 
   
   JumpList catchAndFinallyJump_;
@@ -186,6 +184,10 @@ class MOZ_STACK_CLASS TryEmitter {
   }
   bool hasFinally() const {
     return kind_ == Kind::TryCatchFinally || kind_ == Kind::TryFinally;
+  }
+
+  BytecodeOffset offsetAfterTryOp() const {
+    return tryOpOffset_ + BytecodeOffsetDiff(JSOP_TRY_LENGTH);
   }
 
  public:

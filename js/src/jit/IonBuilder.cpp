@@ -1654,10 +1654,7 @@ AbortReasonOr<Ok> IonBuilder::traverseBytecode() {
   
   
   pendingEdges_.emplace();
-  auto freeMemory = mozilla::MakeScopeExit([&] {
-    pendingEdges_.reset();
-    gsn.purge();
-  });
+  auto freeMemory = mozilla::MakeScopeExit([&] { pendingEdges_.reset(); });
 
   MOZ_TRY(startTraversingBlock(current));
 
@@ -3220,13 +3217,9 @@ AbortReasonOr<Ok> IonBuilder::visitTry() {
     return abort(AbortReason::Disable, "Try-catch during analysis");
   }
 
-  jssrcnote* sn = GetSrcNote(gsn, script(), pc);
-  MOZ_ASSERT(SN_TYPE(sn) == SRC_TRY);
-
   
   
-  jsbytecode* endpc =
-      pc + GetSrcNoteOffset(sn, SrcNote::Try::EndOfTryJumpOffset);
+  jsbytecode* endpc = pc + GET_CODE_OFFSET(pc);
   MOZ_ASSERT(JSOp(*endpc) == JSOP_GOTO);
   MOZ_ASSERT(GET_JUMP_OFFSET(endpc) > 0);
 

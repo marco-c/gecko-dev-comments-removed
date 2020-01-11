@@ -297,10 +297,6 @@ class CompileInfo {
 
   BigInt* getBigInt(jsbytecode* pc) const { return script_->getBigInt(pc); }
 
-  jssrcnote* getNote(GSNCache& gsn, jsbytecode* pc) const {
-    return GetSrcNote(gsn, script(), pc);
-  }
-
   
   unsigned nslots() const { return nslots_; }
 

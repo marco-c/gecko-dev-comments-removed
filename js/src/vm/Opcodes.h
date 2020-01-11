@@ -2277,8 +2277,12 @@
 
 
 
+
+
+
+
  \
-    MACRO(JSOP_TRY, "try", NULL, 1, 0, 0, JOF_BYTE) \
+    MACRO(JSOP_TRY, "try", NULL, 5, 0, 0, JOF_CODE_OFFSET) \
     
 
 

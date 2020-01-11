@@ -24,8 +24,7 @@ TryEmitter::TryEmitter(BytecodeEmitter* bce, Kind kind, ControlKind controlKind)
       kind_(kind),
       controlKind_(controlKind),
       depth_(0),
-      noteIndex_(0),
-      tryStart_(0)
+      tryOpOffset_(0)
 #ifdef DEBUG
       ,
       state_(State::Start)
@@ -49,14 +48,9 @@ bool TryEmitter::emitTry() {
   
   depth_ = bce_->bytecodeSection().stackDepth();
 
-  
-  if (!bce_->newSrcNote(SRC_TRY, &noteIndex_)) {
+  if (!bce_->emitN(JSOP_TRY, 4, &tryOpOffset_)) {
     return false;
   }
-  if (!bce_->emit1(JSOP_TRY)) {
-    return false;
-  }
-  tryStart_ = bce_->bytecodeSection().offset();
 
 #ifdef DEBUG
   state_ = State::Try;
@@ -76,11 +70,10 @@ bool TryEmitter::emitTryEnd() {
   }
 
   
-  if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::Try::EndOfTryJumpOffset,
-                              bce_->bytecodeSection().offset() - tryStart_ +
-                                  BytecodeOffsetDiff(JSOP_TRY_LENGTH))) {
-    return false;
-  }
+  jsbytecode* trypc = bce_->bytecodeSection().code(tryOpOffset_);
+  BytecodeOffsetDiff offset = bce_->bytecodeSection().offset() - tryOpOffset_;
+  MOZ_ASSERT(*trypc == JSOP_TRY);
+  SET_CODE_OFFSET(trypc, offset.value());
 
   
   if (!bce_->emitJump(JSOP_GOTO, &catchAndFinallyJump_)) {
@@ -276,7 +269,8 @@ bool TryEmitter::emitEnd() {
   
   
   if (hasCatch()) {
-    if (!bce_->addTryNote(JSTRY_CATCH, depth_, tryStart_, tryEnd_.offset)) {
+    if (!bce_->addTryNote(JSTRY_CATCH, depth_, offsetAfterTryOp(),
+                          tryEnd_.offset)) {
       return false;
     }
   }
@@ -285,7 +279,7 @@ bool TryEmitter::emitEnd() {
   
   
   if (hasFinally()) {
-    if (!bce_->addTryNote(JSTRY_FINALLY, depth_, tryStart_,
+    if (!bce_->addTryNote(JSTRY_FINALLY, depth_, offsetAfterTryOp(),
                           finallyStart_.offset)) {
       return false;
     }
