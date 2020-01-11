@@ -1940,12 +1940,7 @@ bool DebuggerObject::getPrototypeOf(JSContext* cx, HandleDebuggerObject object,
     }
   }
 
-  if (!proto) {
-    result.set(nullptr);
-    return true;
-  }
-
-  return dbg->wrapDebuggeeObject(cx, proto, result);
+  return dbg->wrapNullableDebuggeeObject(cx, proto, result);
 }
 
 
@@ -2507,21 +2502,17 @@ bool DebuggerObject::unwrap(JSContext* cx, HandleDebuggerObject object,
   Debugger* dbg = object->owner();
 
   RootedObject unwrapped(cx, UnwrapOneCheckedStatic(referent));
-  if (!unwrapped) {
-    result.set(nullptr);
-    return true;
-  }
 
   
   
   
-  if (unwrapped->compartment()->invisibleToDebugger()) {
+  if (unwrapped && unwrapped->compartment()->invisibleToDebugger()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_DEBUG_INVISIBLE_COMPARTMENT);
     return false;
   }
 
-  return dbg->wrapDebuggeeObject(cx, unwrapped, result);
+  return dbg->wrapNullableDebuggeeObject(cx, unwrapped, result);
 }
 
 
@@ -2590,11 +2581,8 @@ bool DebuggerObject::getScriptedProxyTarget(
   RootedObject referent(cx, object->referent());
   Debugger* dbg = object->owner();
   RootedObject unwrapped(cx, js::GetProxyTargetObject(referent));
-  if (!unwrapped) {
-    result.set(nullptr);
-    return true;
-  }
-  return dbg->wrapDebuggeeObject(cx, unwrapped, result);
+
+  return dbg->wrapNullableDebuggeeObject(cx, unwrapped, result);
 }
 
 
@@ -2605,9 +2593,5 @@ bool DebuggerObject::getScriptedProxyHandler(
   RootedObject referent(cx, object->referent());
   Debugger* dbg = object->owner();
   RootedObject unwrapped(cx, ScriptedProxyHandler::handlerObject(referent));
-  if (!unwrapped) {
-    result.set(nullptr);
-    return true;
-  }
-  return dbg->wrapDebuggeeObject(cx, unwrapped, result);
+  return dbg->wrapNullableDebuggeeObject(cx, unwrapped, result);
 }
