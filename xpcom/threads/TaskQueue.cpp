@@ -58,17 +58,19 @@ NS_IMPL_ISUPPORTS(TaskQueue::EventTargetWrapper, nsIEventTarget,
                   nsISerialEventTarget)
 
 TaskQueue::TaskQueue(already_AddRefed<nsIEventTarget> aTarget,
-                     const char* aName, bool aRequireTailDispatch)
+                     const char* aName, bool aRequireTailDispatch,
+                     bool aRetainFlags)
     : AbstractThread(aRequireTailDispatch),
       mTarget(aTarget),
       mQueueMonitor("TaskQueue::Queue"),
       mTailDispatcher(nullptr),
+      mShouldRetainFlags(aRetainFlags),
       mIsRunning(false),
       mIsShutdown(false),
       mName(aName) {}
 
 TaskQueue::TaskQueue(already_AddRefed<nsIEventTarget> aTarget,
-                     bool aSupportsTailDispatch)
+                     bool aSupportsTailDispatch, bool aRetainFlags)
     : TaskQueue(std::move(aTarget), "Unnamed", aSupportsTailDispatch) {}
 
 TaskQueue::~TaskQueue() {
@@ -99,7 +101,11 @@ nsresult TaskQueue::DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable,
     return currentThread->TailDispatcher().AddTask(this, aRunnable.forget());
   }
 
-  mTasks.push(aRunnable.forget());
+  
+  uint32_t retainFlags = mShouldRetainFlags ? aFlags : 0;
+
+  mTasks.push({aRunnable.forget(), retainFlags});
+
   if (mIsRunning) {
     return NS_OK;
   }
@@ -176,7 +182,7 @@ already_AddRefed<nsISerialEventTarget> TaskQueue::WrapAsEventTarget() {
 }
 
 nsresult TaskQueue::Runner::Run() {
-  RefPtr<nsIRunnable> event;
+  TaskStruct event;
   {
     MonitorAutoLock mon(mQueue->mQueueMonitor);
     MOZ_ASSERT(mQueue->mIsRunning);
@@ -186,10 +192,10 @@ nsresult TaskQueue::Runner::Run() {
       mon.NotifyAll();
       return NS_OK;
     }
-    event = mQueue->mTasks.front().forget();
+    event = std::move(mQueue->mTasks.front());
     mQueue->mTasks.pop();
   }
-  MOZ_ASSERT(event);
+  MOZ_ASSERT(event.event);
 
   
   
@@ -198,7 +204,7 @@ nsresult TaskQueue::Runner::Run() {
   
   {
     AutoTaskGuard g(mQueue);
-    event->Run();
+    event.event->Run();
   }
 
   
@@ -206,7 +212,7 @@ nsresult TaskQueue::Runner::Run() {
   
   
   
-  event = nullptr;
+  event.event = nullptr;
 
   {
     MonitorAutoLock mon(mQueue->mQueueMonitor);
@@ -224,7 +230,12 @@ nsresult TaskQueue::Runner::Run() {
   
   
   
-  nsresult rv = mQueue->mTarget->Dispatch(this, NS_DISPATCH_AT_END);
+  nsresult rv;
+  {
+    MonitorAutoLock mon(mQueue->mQueueMonitor);
+    rv = mQueue->mTarget->Dispatch(
+        this, mQueue->mTasks.front().flags | NS_DISPATCH_AT_END);
+  }
   if (NS_FAILED(rv)) {
     
     MonitorAutoLock mon(mQueue->mQueueMonitor);

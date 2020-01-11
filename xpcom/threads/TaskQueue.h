@@ -54,10 +54,11 @@ class TaskQueue : public AbstractThread {
 
  public:
   explicit TaskQueue(already_AddRefed<nsIEventTarget> aTarget,
-                     bool aSupportsTailDispatch = false);
+                     bool aSupportsTailDispatch = false,
+                     bool aRetainFlags = false);
 
   TaskQueue(already_AddRefed<nsIEventTarget> aTarget, const char* aName,
-            bool aSupportsTailDispatch = false);
+            bool aSupportsTailDispatch = false, bool aRetainFlags = false);
 
   TaskDispatcher& TailDispatcher() override;
 
@@ -127,8 +128,13 @@ class TaskQueue : public AbstractThread {
   
   Monitor mQueueMonitor;
 
+  typedef struct {
+    nsCOMPtr<nsIRunnable> event;
+    uint32_t flags;
+  } TaskStruct;
+
   
-  std::queue<nsCOMPtr<nsIRunnable>> mTasks;
+  std::queue<TaskStruct> mTasks;
 
   
   
@@ -175,6 +181,11 @@ class TaskQueue : public AbstractThread {
   };
 
   TaskDispatcher* mTailDispatcher;
+
+  
+  
+  
+  bool mShouldRetainFlags;
 
   
   
