@@ -31,8 +31,8 @@ function test_pause_frame() {
     Assert.equal(args[0].class, "Object");
     Assert.ok(!!objActor);
 
-    const objClient = gThreadFront.pauseGrip(args[0]);
-    Assert.ok(objClient.valid);
+    const objectFront = gThreadFront.pauseGrip(args[0]);
+    Assert.ok(objectFront.valid);
 
     
     
@@ -44,7 +44,7 @@ function test_pause_frame() {
       ok(true, "bogusRequest thrown");
       Assert.ok(!!e.match(/unrecognizedPacketType/));
     }
-    Assert.ok(objClient.valid);
+    Assert.ok(objectFront.valid);
 
     gThreadFront.resume().then(async function() {
       
@@ -57,7 +57,7 @@ function test_pause_frame() {
         ok(true, "bogusRequest thrown");
         Assert.ok(!!e.match(/noSuchActor/));
       }
-      Assert.ok(!objClient.valid);
+      Assert.ok(!objectFront.valid);
       threadFrontTestFinished();
     });
   });

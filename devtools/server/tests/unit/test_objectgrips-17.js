@@ -207,9 +207,13 @@ function check_proxy_slots(debuggee, testOptions, grip, proxySlots) {
     );
   } else if (global === debuggee) {
     const { proxyTarget, proxyHandler } = proxySlots;
-    strictEqual(proxyTarget.type, "object", "There is a [[ProxyTarget]] grip.");
     strictEqual(
-      proxyHandler.type,
+      proxyTarget.getGrip().type,
+      "object",
+      "There is a [[ProxyTarget]] grip."
+    );
+    strictEqual(
+      proxyHandler.getGrip().type,
       "object",
       "There is a [[ProxyHandler]] grip."
     );
@@ -253,12 +257,16 @@ function check_prototype(
   if (isOpaque && !globalIsInvisible && !createdInDebuggee) {
     
     
-    strictEqual(proto.class, "Object", "The prototype has a Object class.");
+    strictEqual(
+      proto.getGrip().class,
+      "Object",
+      "The prototype has a Object class."
+    );
   } else if (isProxy && isOpaque && globalIsInvisible) {
     
     
     strictEqual(
-      proto.class,
+      proto.getGrip().class,
       "InvisibleToDebugger: Object",
       "The prototype has an InvisibleToDebugger class."
     );
@@ -271,7 +279,7 @@ function check_prototype(
     check_proxy_grip(
       debuggee,
       { global, isOpaque, subsumes, globalIsInvisible },
-      proto
+      proto.getGrip()
     );
   } else {
     

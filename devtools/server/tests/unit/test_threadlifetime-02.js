@@ -39,9 +39,19 @@ function test_thread_lifetime() {
       
       Assert.equal(pauseGrip.actor, packet.frame.arguments[0].actor);
       
-      const objFront = new ObjectFront(gClient, pauseGrip);
+      const objFront = new ObjectFront(
+        gThreadFront.conn,
+        gThreadFront.targetFront,
+        gThreadFront,
+        pauseGrip
+      );
       await objFront.release();
-      const objFront2 = new ObjectFront(gClient, pauseGrip);
+      const objFront2 = new ObjectFront(
+        gThreadFront.conn,
+        gThreadFront.targetFront,
+        gThreadFront,
+        pauseGrip
+      );
 
       try {
         await objFront2
