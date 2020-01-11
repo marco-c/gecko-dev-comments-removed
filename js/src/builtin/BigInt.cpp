@@ -124,7 +124,7 @@ bool BigIntObject::toString(JSContext* cx, unsigned argc, Value* vp) {
   return CallNonGenericMethod<IsBigInt, toString_impl>(cx, args);
 }
 
-#ifndef ENABLE_INTL_API
+#ifndef JS_HAS_INTL_API
 
 
 
@@ -226,7 +226,7 @@ const JSPropertySpec BigIntObject::properties[] = {
 
 const JSFunctionSpec BigIntObject::methods[] = {
     JS_FN("valueOf", valueOf, 0, 0), JS_FN("toString", toString, 0, 0),
-#ifdef ENABLE_INTL_API
+#ifdef JS_HAS_INTL_API
     JS_SELF_HOSTED_FN("toLocaleString", "BigInt_toLocaleString", 0, 0),
 #else
     JS_FN("toLocaleString", toLocaleString, 0, 0),

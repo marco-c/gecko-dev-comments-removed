@@ -131,7 +131,7 @@ namespace {
 
 class DateTimeHelper {
  private:
-#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
+#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
   static double localTZA(double t, DateTimeInfo::TimeZoneOffset offset);
 #else
   static int equivalentYearForDST(int year);
@@ -146,7 +146,7 @@ class DateTimeHelper {
   static double UTC(double t);
   static JSString* timeZoneComment(JSContext* cx, double utcTime,
                                    double localTime);
-#if !ENABLE_INTL_API || MOZ_SYSTEM_ICU
+#if !JS_HAS_INTL_API || MOZ_SYSTEM_ICU
   static size_t formatTime(char* buf, size_t buflen, const char* fmt,
                            double utcTime, double localTime);
 #endif
@@ -441,7 +441,7 @@ JS_PUBLIC_API void JS::SetTimeResolutionUsec(uint32_t resolution, bool jitter) {
   sJitter = jitter;
 }
 
-#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
+#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
 
 
 double DateTimeHelper::localTZA(double t, DateTimeInfo::TimeZoneOffset offset) {
@@ -2687,7 +2687,7 @@ static bool date_toJSON(JSContext* cx, unsigned argc, Value* vp) {
   return Call(cx, toISO, obj, args.rval());
 }
 
-#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
+#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
 JSString* DateTimeHelper::timeZoneComment(JSContext* cx, double utcTime,
                                           double localTime) {
   const char* locale = cx->runtime()->getDefaultLocale();
@@ -2887,7 +2887,7 @@ static bool FormatDate(JSContext* cx, double utcTime, FormatSpec format,
   return true;
 }
 
-#if !ENABLE_INTL_API
+#if !JS_HAS_INTL_API
 static bool ToLocaleFormatHelper(JSContext* cx, HandleObject obj,
                                  const char* format, MutableHandleValue rval) {
   double utcTime = obj->as<DateObject>().UTCTime().toNumber();
@@ -3134,7 +3134,7 @@ static const JSFunctionSpec date_methods[] = {
     JS_FN("setMilliseconds", date_setMilliseconds, 1, 0),
     JS_FN("setUTCMilliseconds", date_setUTCMilliseconds, 1, 0),
     JS_FN("toUTCString", date_toGMTString, 0, 0),
-#if ENABLE_INTL_API
+#if JS_HAS_INTL_API
     JS_SELF_HOSTED_FN(js_toLocaleString_str, "Date_toLocaleString", 0, 0),
     JS_SELF_HOSTED_FN("toLocaleDateString", "Date_toLocaleDateString", 0, 0),
     JS_SELF_HOSTED_FN("toLocaleTimeString", "Date_toLocaleTimeString", 0, 0),

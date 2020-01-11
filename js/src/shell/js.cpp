@@ -1301,7 +1301,7 @@ static bool BindToAsyncStack(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-#ifdef ENABLE_INTL_API
+#ifdef JS_HAS_INTL_API
 static bool AddIntlExtras(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   if (!args.get(0).isObject()) {
@@ -9069,7 +9069,7 @@ JS_FN_HELP("parseBin", BinParse, 1, 0,
 "            or only when there are no other JavaScript frames on the stack\n"
 "            below it (false). If omitted, this is treated as 'true'."),
 
-#ifdef ENABLE_INTL_API
+#ifdef JS_HAS_INTL_API
     JS_FN_HELP("addIntlExtras", AddIntlExtras, 1, 0,
 "addIntlExtras(obj)",
 "Adds various not-yet-standardized Intl functions as properties on the\n"

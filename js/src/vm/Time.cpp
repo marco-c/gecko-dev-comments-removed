@@ -246,7 +246,7 @@ static int64_t PRMJ_NowImpl() {
 }
 #endif
 
-#if !ENABLE_INTL_API || MOZ_SYSTEM_ICU
+#if !JS_HAS_INTL_API || MOZ_SYSTEM_ICU
 #  ifdef XP_WIN
 static void PRMJ_InvalidParameterHandler(const wchar_t* expression,
                                          const wchar_t* function,
