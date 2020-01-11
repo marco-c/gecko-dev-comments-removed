@@ -172,7 +172,9 @@ JS::Zone::Zone(JSRuntime* rt)
       gcPreserveCode_(false),
       keepShapeCaches_(this, false),
       wasCollected_(false),
-      listNext_(NotOnList) {
+      listNext_(NotOnList),
+      weakRefMap_(this, this),
+      keptObjects(this, this) {
   
   MOZ_ASSERT(reinterpret_cast<JS::shadow::Zone*>(this) ==
              static_cast<JS::shadow::Zone*>(this));
@@ -917,3 +919,11 @@ void Zone::finishRoots() {
   
   finalizationRecordMap().clear();
 }
+
+void Zone::traceKeptObjects(JSTracer* trc) { keptObjects.ref().trace(trc); }
+
+bool Zone::keepDuringJob(HandleObject target) {
+  return keptObjects.ref().put(target);
+}
+
+void Zone::clearKeptObjects() { keptObjects.ref().clear(); }
