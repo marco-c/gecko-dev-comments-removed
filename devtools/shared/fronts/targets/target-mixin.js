@@ -454,7 +454,7 @@ function TargetMixin(parentClass) {
           } catch (e) {
             
             
-            console.warn("Error while closing client:", e);
+            console.warn(`Error while closing client: ${e.message}`);
           }
 
           
@@ -467,7 +467,7 @@ function TargetMixin(parentClass) {
           try {
             await this.detach();
           } catch (e) {
-            console.warn("Error while detaching target:", e);
+            console.warn(`Error while detaching target: ${e.message}`);
           }
         }
 
