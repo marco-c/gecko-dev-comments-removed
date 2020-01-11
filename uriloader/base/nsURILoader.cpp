@@ -24,6 +24,7 @@
 #include "nsIDocShell.h"
 #include "nsIThreadRetargetableStreamListener.h"
 #include "nsIChildChannel.h"
+#include "nsExternalHelperAppService.h"
 
 #include "nsString.h"
 #include "nsThreadUtils.h"
@@ -76,6 +77,14 @@ nsDocumentOpenInfo::nsDocumentOpenInfo(nsIInterfaceRequestor* aWindowContext,
       mFlags(aFlags),
       mURILoader(aURILoader),
       mDataConversionDepthLimit(sConvertDataLimit) {}
+
+nsDocumentOpenInfo::nsDocumentOpenInfo(uint32_t aFlags,
+                                       bool aAllowListenerConversions)
+    : m_originalContext(nullptr),
+      mFlags(aFlags),
+      mURILoader(nullptr),
+      mDataConversionDepthLimit(sConvertDataLimit),
+      mAllowListenerConversions(aAllowListenerConversions) {}
 
 nsDocumentOpenInfo::~nsDocumentOpenInfo() {}
 
@@ -169,8 +178,8 @@ NS_IMETHODIMP nsDocumentOpenInfo::OnStartRequest(nsIRequest* request) {
   if (NS_FAILED(rv)) return rv;
 
   if (NS_FAILED(status)) {
-    LOG_ERROR(
-        ("  Request failed, status: 0x%08" PRIX32, static_cast<uint32_t>(rv)));
+    LOG_ERROR(("  Request failed, status: 0x%08" PRIX32,
+               static_cast<uint32_t>(status)));
 
     
     
@@ -242,6 +251,7 @@ NS_IMETHODIMP nsDocumentOpenInfo::OnStopRequest(nsIRequest* request,
     mContentType.Truncate();
     listener->OnStopRequest(request, aStatus);
   }
+  mUsedContentHandler = false;
 
   
   
@@ -300,7 +310,7 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request,
     
     
     
-    if (m_contentListener && TryContentListener(m_contentListener, aChannel)) {
+    if (TryDefaultContentListener(aChannel)) {
       LOG(("  Success!  Our default listener likes this type"));
       
       return NS_OK;
@@ -313,7 +323,7 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request,
       
       
       
-      int32_t count = mURILoader->m_listeners.Count();
+      int32_t count = mURILoader ? mURILoader->m_listeners.Count() : 0;
       nsCOMPtr<nsIURIContentListener> listener;
       for (int32_t i = 0; i < count; i++) {
         listener = do_QueryReferent(mURILoader->m_listeners[i]);
@@ -364,6 +374,10 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request,
           do_CreateInstance(handlerContractID.get());
       if (contentHandler) {
         LOG(("  Content handler found"));
+        
+        
+        
+        
         rv = contentHandler->HandleContent(mContentType.get(),
                                            m_originalContext, request);
         
@@ -376,6 +390,7 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request,
             request->Cancel(rv);
           } else {
             LOG(("  Content handler taking over load"));
+            mUsedContentHandler = true;
           }
 
           return rv;
@@ -397,13 +412,8 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request,
     
     
     if (mContentType != anyType) {
-      rv = ConvertData(request, m_contentListener, mContentType, anyType);
-      if (NS_FAILED(rv)) {
-        m_targetStreamListener = nullptr;
-      } else if (m_targetStreamListener) {
-        
-        
-        LOG(("  Converter taking over now"));
+      rv = TryStreamConversion(aChannel);
+      if (NS_SUCCEEDED(rv)) {
         return NS_OK;
       }
     }
@@ -455,9 +465,7 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request,
       aChannel->SetContentType(NS_LITERAL_CSTRING(APPLICATION_GUESS_FROM_EXT));
     }
 
-    rv = helperAppService->DoContent(mContentType, request, m_originalContext,
-                                     false, nullptr,
-                                     getter_AddRefs(m_targetStreamListener));
+    rv = TryExternalHelperApp(helperAppService, aChannel);
     if (NS_FAILED(rv)) {
       request->SetLoadFlags(loadFlags);
       m_targetStreamListener = nullptr;
@@ -470,6 +478,13 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request,
   return rv;
 }
 
+nsresult nsDocumentOpenInfo::TryExternalHelperApp(
+    nsIExternalHelperAppService* aHelperAppService, nsIChannel* aChannel) {
+  return aHelperAppService->DoContent(mContentType, aChannel, m_originalContext,
+                                      false, nullptr,
+                                      getter_AddRefs(m_targetStreamListener));
+}
+
 nsresult nsDocumentOpenInfo::ConvertData(nsIRequest* request,
                                          nsIURIContentListener* aListener,
                                          const nsACString& aSrcContentType,
@@ -479,9 +494,10 @@ nsresult nsDocumentOpenInfo::ConvertData(nsIRequest* request,
        PromiseFlatCString(aOutContentType).get()));
 
   if (mDataConversionDepthLimit == 0) {
-    LOG((
-        "[0x%p] nsDocumentOpenInfo::ConvertData - reached the recursion limit!",
-        this));
+    LOG(
+        ("[0x%p] nsDocumentOpenInfo::ConvertData - reached the recursion "
+         "limit!",
+         this));
     
     return NS_ERROR_ABORT;
   }
@@ -505,8 +521,7 @@ nsresult nsDocumentOpenInfo::ConvertData(nsIRequest* request,
   
   
   
-  RefPtr<nsDocumentOpenInfo> nextLink =
-      new nsDocumentOpenInfo(m_originalContext, mFlags, mURILoader);
+  RefPtr<nsDocumentOpenInfo> nextLink = Clone();
 
   LOG(("  Downstream DocumentOpenInfo would be: 0x%p", nextLink.get()));
 
@@ -536,6 +551,19 @@ nsresult nsDocumentOpenInfo::ConvertData(nsIRequest* request,
       getter_AddRefs(m_targetStreamListener));
 }
 
+nsresult nsDocumentOpenInfo::TryStreamConversion(nsIChannel* aChannel) {
+  NS_NAMED_LITERAL_CSTRING(anyType, "*/*");
+  nsresult rv = ConvertData(aChannel, m_contentListener, mContentType, anyType);
+  if (NS_FAILED(rv)) {
+    m_targetStreamListener = nullptr;
+  } else if (m_targetStreamListener) {
+    
+    
+    LOG(("  Converter taking over now"));
+  }
+  return rv;
+}
+
 bool nsDocumentOpenInfo::TryContentListener(nsIURIContentListener* aListener,
                                             nsIChannel* aChannel) {
   LOG(("[0x%p] nsDocumentOpenInfo::TryContentListener; mFlags = 0x%x", this,
@@ -563,7 +591,10 @@ bool nsDocumentOpenInfo::TryContentListener(nsIURIContentListener* aListener,
   if (!typeToUse.IsEmpty() && typeToUse != mContentType) {
     
 
-    nsresult rv = ConvertData(aChannel, aListener, mContentType, typeToUse);
+    nsresult rv = NS_ERROR_NOT_AVAILABLE;
+    if (mAllowListenerConversions) {
+      rv = ConvertData(aChannel, aListener, mContentType, typeToUse);
+    }
 
     if (NS_FAILED(rv)) {
       
@@ -625,6 +656,13 @@ bool nsDocumentOpenInfo::TryContentListener(nsIURIContentListener* aListener,
   return true;
 }
 
+bool nsDocumentOpenInfo::TryDefaultContentListener(nsIChannel* aChannel) {
+  if (m_contentListener) {
+    return TryContentListener(m_contentListener, aChannel);
+  }
+  return false;
+}
+
 
 
 
@@ -680,6 +718,7 @@ NS_IMETHODIMP nsURILoader::OpenURI(nsIChannel* channel, uint32_t aFlags,
 
   if (NS_SUCCEEDED(rv)) {
     if (aFlags & nsIURILoader::REDIRECTED_CHANNEL) {
+      
       
       
       nsCOMPtr<nsIChildChannel> childChannel = do_QueryInterface(channel);

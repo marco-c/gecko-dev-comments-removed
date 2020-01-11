@@ -17,6 +17,7 @@
 #include "mozilla/Attributes.h"
 #include "nsIStreamListener.h"
 #include "nsIThreadRetargetableStreamListener.h"
+#include "nsIExternalHelperAppService.h"
 
 #include "mozilla/Logging.h"
 
@@ -62,13 +63,14 @@ class nsURILoader final : public nsIURILoader {
 
 
 
-class nsDocumentOpenInfo final : public nsIStreamListener,
-                                 public nsIThreadRetargetableStreamListener {
+class nsDocumentOpenInfo : public nsIStreamListener,
+                           public nsIThreadRetargetableStreamListener {
  public:
   
   
   nsDocumentOpenInfo(nsIInterfaceRequestor* aWindowContext, uint32_t aFlags,
                      nsURILoader* aURILoader);
+  nsDocumentOpenInfo(uint32_t aFlags, bool aAllowListenerConversions);
 
   NS_DECL_THREADSAFE_ISUPPORTS
 
@@ -100,6 +102,44 @@ class nsDocumentOpenInfo final : public nsIStreamListener,
                           nsIChannel* aChannel);
 
   
+
+
+
+
+
+
+
+  
+
+
+
+
+  virtual nsresult TryStreamConversion(nsIChannel* aChannel);
+
+  
+
+
+
+
+  virtual bool TryDefaultContentListener(nsIChannel* aChannel);
+
+  
+
+
+
+  virtual nsresult TryExternalHelperApp(
+      nsIExternalHelperAppService* aHelperAppService, nsIChannel* aChannel);
+
+  
+
+
+
+
+  virtual nsDocumentOpenInfo* Clone() {
+    return new nsDocumentOpenInfo(m_originalContext, mFlags, mURILoader);
+  }
+
+  
   NS_DECL_NSIREQUESTOBSERVER
 
   
@@ -107,11 +147,14 @@ class nsDocumentOpenInfo final : public nsIStreamListener,
 
   
   NS_DECL_NSITHREADRETARGETABLESTREAMLISTENER
+
  protected:
-  ~nsDocumentOpenInfo();
+  virtual ~nsDocumentOpenInfo();
 
  protected:
   
+
+
 
 
 
@@ -124,6 +167,8 @@ class nsDocumentOpenInfo final : public nsIStreamListener,
   nsCOMPtr<nsIStreamListener> m_targetStreamListener;
 
   
+
+
 
 
 
@@ -146,12 +191,29 @@ class nsDocumentOpenInfo final : public nsIStreamListener,
 
 
 
+
+
   RefPtr<nsURILoader> mURILoader;
 
   
 
 
   uint32_t mDataConversionDepthLimit;
+
+  
+
+
+
+
+  bool mUsedContentHandler = false;
+
+  
+
+
+
+
+
+  bool mAllowListenerConversions = true;
 };
 
 #endif 
