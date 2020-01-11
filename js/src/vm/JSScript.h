@@ -1728,6 +1728,8 @@ class BaseScript : public gc::TenuredCell {
     HasCallSiteObj = 1 << 7,
 
     
+    
+    HasModuleGoal = 1 << 8,
 
     FunctionHasThisBinding = 1 << 9,
     FunctionHasExtraBodyVarScope = 1 << 10,
@@ -2003,6 +2005,7 @@ setterLevel:                                                                  \
                                       BindingsAccessedDynamically)
   IMMUTABLE_FLAG_GETTER(funHasExtensibleScope, FunHasExtensibleScope)
   IMMUTABLE_FLAG_GETTER(hasCallSiteObj, HasCallSiteObj)
+  IMMUTABLE_FLAG_GETTER(hasModuleGoal, HasModuleGoal)
   IMMUTABLE_FLAG_GETTER_SETTER(functionHasThisBinding, FunctionHasThisBinding)
   
   IMMUTABLE_FLAG_GETTER_SETTER_CUSTOM_PUBLIC(FunctionHasThisBinding,
@@ -3406,7 +3409,7 @@ class LazyScript : public BaseScript {
   bool hasScript() const { return bool(script_); }
 
   frontend::ParseGoal parseGoal() const {
-    if (hasFlag(ImmutableFlags::IsModule)) {
+    if (hasFlag(ImmutableFlags::HasModuleGoal)) {
       return frontend::ParseGoal::Module;
     }
     return frontend::ParseGoal::Script;
