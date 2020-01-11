@@ -600,6 +600,14 @@ class HTMLEditor final : public TextEditor,
   
 
 
+  bool IsInDesignMode() const {
+    Document* document = GetDocument();
+    return document && document->HasFlag(NODE_IS_EDITABLE);
+  }
+
+  
+
+
 
   void NotifyEditingHostMaybeChanged();
 

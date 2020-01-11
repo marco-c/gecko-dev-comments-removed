@@ -17,6 +17,7 @@
 #include "nsContentUtils.h"
 #include "nsDebug.h"
 #include "nsError.h"
+#include "nsFocusManager.h"
 #include "nsIClipboard.h"
 #include "nsIContent.h"
 #include "mozilla/dom/Document.h"
@@ -188,8 +189,8 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
   }
 
   
-  Document* destdoc = GetDocument();
-  if (NS_WARN_IF(!destdoc)) {
+  RefPtr<Document> document = GetDocument();
+  if (NS_WARN_IF(!document)) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
@@ -202,7 +203,8 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
   
   EditorDOMPoint droppedAt(aDropEvent->GetRangeParent(),
                            aDropEvent->RangeOffset());
-  if (NS_WARN_IF(!droppedAt.IsSet())) {
+  if (NS_WARN_IF(!droppedAt.IsSet()) ||
+      NS_WARN_IF(!droppedAt.GetContainerAsContent())) {
     return NS_ERROR_FAILURE;
   }
 
@@ -211,7 +213,7 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
   
   bool deleteSelection = false;
   if (!SelectionRefPtr()->IsCollapsed() && sourceNode &&
-      sourceNode->IsEditable() && srcdoc == destdoc) {
+      sourceNode->IsEditable() && srcdoc == document) {
     uint32_t rangeCount = SelectionRefPtr()->RangeCount();
     for (uint32_t j = 0; j < rangeCount; j++) {
       nsRange* range = SelectionRefPtr()->GetRangeAt(j);
@@ -278,37 +280,116 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
   
   
   
+  IgnoredErrorResult ignoredError;
+  RefPtr<nsRange> rangeAtDropPoint =
+      nsRange::Create(droppedAt.ToRawRangeBoundary(),
+                      droppedAt.ToRawRangeBoundary(), ignoredError);
+  if (NS_WARN_IF(ignoredError.Failed()) ||
+      NS_WARN_IF(!rangeAtDropPoint->IsPositioned())) {
+    editActionData.Abort();
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  
+  
   if (deleteSelection && !SelectionRefPtr()->IsCollapsed()) {
-    nsresult rv = PrepareToInsertContent(droppedAt, true);
+    nsresult rv = DeleteSelectionAsSubAction(eNone, eStrip);
     if (NS_WARN_IF(NS_FAILED(rv))) {
+      editActionData.Abort();
       return EditorBase::ToGenericNSResult(rv);
     }
-    
-    
-    
-    if (NS_WARN_IF(!SelectionRefPtr()->IsCollapsed()) ||
-        NS_WARN_IF(!SelectionRefPtr()->RangeCount())) {
+    if (NS_WARN_IF(!rangeAtDropPoint->IsPositioned()) ||
+        NS_WARN_IF(!rangeAtDropPoint->GetStartContainer()->IsContent())) {
+      editActionData.Abort();
       return NS_ERROR_FAILURE;
     }
-    droppedAt = SelectionRefPtr()->FocusRef();
-    if (NS_WARN_IF(!droppedAt.IsSet())) {
-      return NS_ERROR_FAILURE;
-    }
+    droppedAt = rangeAtDropPoint->StartRef();
+    MOZ_ASSERT(droppedAt.IsSetAndValid());
 
     
     if (mDispatchInputEvent) {
-      FireInputEvent(EditAction::eDeleteByDrag, VoidString(), nullptr);
+      DispatchInputEvent(EditAction::eDeleteByDrag, VoidString(), nullptr);
       if (NS_WARN_IF(Destroyed())) {
+        editActionData.Abort();
         return NS_OK;
       }
+      if (NS_WARN_IF(!rangeAtDropPoint->IsPositioned()) ||
+          NS_WARN_IF(!rangeAtDropPoint->GetStartContainer()->IsContent())) {
+        editActionData.Abort();
+        return NS_ERROR_FAILURE;
+      }
+      droppedAt = rangeAtDropPoint->StartRef();
+      MOZ_ASSERT(droppedAt.IsSetAndValid());
     }
+  }
 
+  
+  
+  RefPtr<Element> focusedElement, newFocusedElement;
+  if (!AsHTMLEditor()) {
+    newFocusedElement = GetExposedRoot();
+    focusedElement = IsActiveInDOMWindow() ? newFocusedElement : nullptr;
+  } else if (!AsHTMLEditor()->IsInDesignMode()) {
+    focusedElement = AsHTMLEditor()->GetActiveEditingHost();
+    if (focusedElement &&
+        droppedAt.GetContainerAsContent()->IsInclusiveDescendantOf(
+            focusedElement)) {
+      newFocusedElement = focusedElement;
+    } else {
+      newFocusedElement = droppedAt.GetContainerAsContent()->GetEditingHost();
+    }
+  }
+  
+  
+  
+  
+  ErrorResult error;
+  MOZ_KnownLive(SelectionRefPtr())
+      ->SetStartAndEnd(droppedAt.ToRawRangeBoundary(),
+                       droppedAt.ToRawRangeBoundary(), error);
+  if (NS_WARN_IF(error.Failed())) {
+    editActionData.Abort();
+    return error.StealNSResult();
+  }
+  if (NS_WARN_IF(Destroyed())) {
+    editActionData.Abort();
+    return NS_OK;
+  }
+  
+  
+  if (newFocusedElement && focusedElement != newFocusedElement) {
+    DebugOnly<nsresult> rvIgnored =
+        nsFocusManager::GetFocusManager()->SetFocus(newFocusedElement, 0);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                         "nsFocusManager::SetFocus() failed to set focus "
+                         "to the element, but ignored");
+    if (NS_WARN_IF(Destroyed())) {
+      editActionData.Abort();
+      return NS_OK;
+    }
     
     
+    if (NS_WARN_IF(!rangeAtDropPoint->IsPositioned()) ||
+        NS_WARN_IF(!rangeAtDropPoint->GetStartContainer()->IsContent())) {
+      return NS_ERROR_FAILURE;
+    }
+    droppedAt = rangeAtDropPoint->StartRef();
+    MOZ_ASSERT(droppedAt.IsSetAndValid());
+  }
+
+  
+  
+  
+  if (NS_WARN_IF(newFocusedElement !=
+                     nsFocusManager::GetFocusManager()->GetFocusedElement() &&
+                 AsHTMLEditor() && !AsHTMLEditor()->IsInDesignMode())) {
+    editActionData.Abort();
+    return NS_OK;
   }
 
   if (!AsHTMLEditor()) {
-    
     AutoTArray<nsString, 5> textArray;
     textArray.SetCapacity(numItems);
     uint32_t textLength = 0;
