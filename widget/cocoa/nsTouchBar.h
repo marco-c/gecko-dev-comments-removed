@@ -39,7 +39,8 @@
 
 
 
-@property(strong) NSMutableDictionary<NSTouchBarItemIdentifier, NSButton*>* scrollViewButtons;
+@property(strong)
+    NSMutableDictionary<NSTouchBarItemIdentifier, NSCustomTouchBarItem*>* scrollViewButtons;
 
 
 
@@ -93,8 +94,9 @@
 
 
 
-- (void)updateButton:(NSButton*)aButton withIdentifier:(NSTouchBarItemIdentifier)aIdentifier;
-- (void)updateMainButton:(NSButton*)aMainButton
+- (void)updateButton:(NSCustomTouchBarItem*)aButton
+      withIdentifier:(NSTouchBarItemIdentifier)aIdentifier;
+- (void)updateMainButton:(NSCustomTouchBarItem*)aMainButton
           withIdentifier:(NSTouchBarItemIdentifier)aIdentifier;
 - (void)updatePopover:(NSPopoverTouchBarItem*)aPopoverItem
        withIdentifier:(NSTouchBarItemIdentifier)aIdentifier;
