@@ -155,8 +155,10 @@ MediaResult RemoteVideoDecoderChild::ProcessOutput(
       
       
       
-      data.sd().get_SurfaceDescriptorGPUVideo().source() = Some(GetManager()->GetSource());
-      image = new GPUVideoImage(GetManager(), data.sd(), data.frameSize());
+      SurfaceDescriptorRemoteDecoder remoteSD =
+        static_cast<const SurfaceDescriptorGPUVideo&>(data.sd());
+      remoteSD.source() = Some(GetManager()->GetSource());
+      image = new GPUVideoImage(GetManager(), remoteSD, data.frameSize());
     }
 
     RefPtr<VideoData> video = VideoData::CreateFromImage(
