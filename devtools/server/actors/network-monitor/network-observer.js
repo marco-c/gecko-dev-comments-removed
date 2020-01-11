@@ -685,6 +685,21 @@ NetworkObserver.prototype = {
       }
     }
 
+    
+    if (channel.notificationCallbacks) {
+      let wsChannel = null;
+      try {
+        wsChannel = channel.notificationCallbacks.QueryInterface(
+          Ci.nsIWebSocketChannel
+        );
+      } catch (e) {
+        
+      }
+      if (wsChannel) {
+        event.url = wsChannel.URI.spec;
+      }
+    }
+
     event.cause = {
       type: causeTypeToString(causeType),
       loadingDocumentUri: causeUri,
