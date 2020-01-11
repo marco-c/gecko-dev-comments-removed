@@ -732,6 +732,12 @@ add_task(async function test_settings_store_setByUser() {
         applications: { gecko: { id: "@second" } },
       },
     }),
+    ExtensionTestUtils.loadExtension({
+      useAddonManager: "temporary",
+      manifest: {
+        applications: { gecko: { id: "@third" } },
+      },
+    }),
   ];
 
   let type = "some_type";
@@ -743,7 +749,7 @@ add_task(async function test_settings_store_setByUser() {
 
   
   
-  let [one, two] = testExtensions.map(extension => extension.extension);
+  let [one, two, three] = testExtensions.map(extension => extension.extension);
   let initialCallback = () => "initial";
 
   
@@ -781,27 +787,6 @@ add_task(async function test_settings_store_setByUser() {
     "addSetting returns the second set item"
   );
 
-  
-  
-  ExtensionSettingsStore.select(
-    ExtensionSettingsStore.SETTING_USER_SET,
-    type,
-    key
-  );
-  deepEqual(
-    { key, initialValue: "initial" },
-    ExtensionSettingsStore.getSetting(type, key),
-    "getSetting returns the initial value after being set by user"
-  );
-
-  let three = ExtensionTestUtils.loadExtension({
-    useAddonManager: "temporary",
-    manifest: {
-      applications: { gecko: { id: "@third" } },
-    },
-  });
-  await three.startup();
-
   item = await ExtensionSettingsStore.addSetting(
     three.id,
     type,
@@ -814,86 +799,46 @@ add_task(async function test_settings_store_setByUser() {
     item,
     "addSetting returns the third set item"
   );
+
   deepEqual(
     item,
     ExtensionSettingsStore.getSetting(type, key),
     "getSetting returns the third set item"
   );
 
-  ExtensionSettingsStore.select(
-    ExtensionSettingsStore.SETTING_USER_SET,
-    type,
-    key
-  );
+  ExtensionSettingsStore.setByUser(type, key);
   deepEqual(
     { key, initialValue: "initial" },
     ExtensionSettingsStore.getSetting(type, key),
     "getSetting returns the initial value after being set by user"
   );
 
-  item = ExtensionSettingsStore.select(one.id, type, key);
+  item = ExtensionSettingsStore.enable(one.id, type, key);
   deepEqual(
     { key, value: "one", id: one.id },
     item,
-    "selecting an extension returns the first set item after enable"
-  );
-
-  
-  ExtensionSettingsStore.disable(one.id, type, key);
-  deepEqual(
-    { key, value: "three", id: three.id },
-    ExtensionSettingsStore.getSetting(type, key),
-    "returning to precedence order sets the third set item"
-  );
-
-  
-  ExtensionSettingsStore.select(
-    ExtensionSettingsStore.SETTING_USER_SET,
-    type,
-    key
-  );
-  deepEqual(
-    { key, initialValue: "initial" },
-    ExtensionSettingsStore.getSetting(type, key),
-    "getSetting returns the initial value after being set by user"
-  );
-
-  ExtensionSettingsStore.disable(three.id, type, key);
-  ExtensionSettingsStore.disable(two.id, type, key);
-  deepEqual(
-    { key, initialValue: "initial" },
-    ExtensionSettingsStore.getSetting(type, key),
-    "getSetting returns the initial value after disabling all extensions"
-  );
-
-  ExtensionSettingsStore.enable(three.id, type, key);
-  deepEqual(
-    { key, initialValue: "initial" },
-    ExtensionSettingsStore.getSetting(type, key),
-    "getSetting returns the initial value after enabling one extension"
-  );
-
-  
-  
-  item = await ExtensionSettingsStore.addSetting(
-    three.id,
-    type,
-    key,
-    "three",
-    initialCallback
-  );
-  deepEqual(
-    { key, initialValue: "initial" },
-    ExtensionSettingsStore.getSetting(type, key),
-    "getSetting returns the initial value after calling addSetting for old addon"
+    "enable returns the first set item after enable"
   );
 
   item = ExtensionSettingsStore.enable(three.id, type, key);
-  equal(undefined, item, "enabling the active item does not return an item");
   deepEqual(
-    { key, initialValue: "initial" },
-    ExtensionSettingsStore.getSetting(type, key),
-    "getSetting returns the initial value after enabling one extension"
+    { key, value: "three", id: three.id },
+    item,
+    "enable returns the third set item after enable"
+  );
+
+  item = ExtensionSettingsStore.enable(two.id, type, key);
+  deepEqual(
+    undefined,
+    item,
+    "enable returns undefined after enabling the second item"
+  );
+
+  item = ExtensionSettingsStore.getSetting(type, key);
+  deepEqual(
+    { key, value: "three", id: three.id },
+    item,
+    "getSetting returns the third set item after enabling the second item"
   );
 
   ExtensionSettingsStore.removeSetting(three.id, type, key);
