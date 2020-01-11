@@ -129,7 +129,7 @@ def set_vars_from_script(script, vars):
         script_text += '; echo VAR SETTINGS:; '
         script_text += '; '.join('echo $' + var for var in vars)
         parse_state = 'scanning'
-    stdout = subprocess.check_output(['sh', '-x', '-c', script_text])
+    stdout = subprocess.check_output(['sh', '-x', '-c', script_text]).decode()
     tograb = vars[:]
     for line in stdout.splitlines():
         if parse_state == 'scanning':
@@ -345,7 +345,7 @@ REPLACEMENTS = {
 
 
 for k, v in variant.get('env', {}).items():
-    env[k.encode('ascii')] = v.encode('ascii').format(**REPLACEMENTS)
+    env[k] = v.format(**REPLACEMENTS)
 
 if AUTOMATION:
     
@@ -457,7 +457,7 @@ else:
 
 
 for k, v in variant.get('conditional-env', {}).get(variant_platform, {}).items():
-    env[k.encode('ascii')] = v.encode('ascii').format(**REPLACEMENTS)
+    env[k] = v.format(**REPLACEMENTS)
 
 
 test_suites -= set(normalize_tests(variant.get('skip-tests', {}).get(variant_platform, [])))
