@@ -1332,7 +1332,7 @@ class nsContextMenu {
 
         
         const kDesktopBackgroundURL =
-          "chrome://browser/content/setDesktopBackground.xul";
+          "chrome://browser/content/setDesktopBackground.xhtml";
 
         if (AppConstants.platform == "macosx") {
           

@@ -20,7 +20,7 @@ var { IconDetails, watchExtensionProxyContextLoad } = ExtensionParent;
 
 var { promiseDocumentLoaded } = ExtensionUtils;
 
-const WEBEXT_PANELS_URL = "chrome://browser/content/webext-panels.xul";
+const WEBEXT_PANELS_URL = "chrome://browser/content/webext-panels.xhtml";
 
 class BaseDevToolsPanel {
   constructor(context, panelOptions) {

@@ -17,7 +17,7 @@ var { IconDetails } = ExtensionParent;
 
 let sidebarActionMap = new WeakMap();
 
-const sidebarURL = "chrome://browser/content/webext-panels.xul";
+const sidebarURL = "chrome://browser/content/webext-panels.xhtml";
 
 
 

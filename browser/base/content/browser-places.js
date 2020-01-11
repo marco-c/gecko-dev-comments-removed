@@ -608,7 +608,7 @@ var PlacesCommandHook = {
     if (!organizer || organizer.closed) {
       
       openDialog(
-        "chrome://browser/content/places/places.xul",
+        "chrome://browser/content/places/places.xhtml",
         "",
         "chrome,toolbar=yes,dialog=no,resizable",
         item

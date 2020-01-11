@@ -68,7 +68,7 @@ add_task(async function checkDragForbiddenURL() {
     
     
     for (let url of [
-      "chrome://browser/content/aboutDialog.xul",
+      "chrome://browser/content/aboutDialog.xhtml",
       "file:///",
       "javascript:",
       "javascript:void(0)",

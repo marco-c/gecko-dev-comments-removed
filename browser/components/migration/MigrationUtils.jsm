@@ -996,7 +996,7 @@ var MigrationUtils = Object.freeze({
 
     Services.ww.openWindow(
       aOpener,
-      "chrome://browser/content/migration/migration.xul",
+      "chrome://browser/content/migration/migration.xhtml",
       "_blank",
       features,
       params
