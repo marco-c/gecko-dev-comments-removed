@@ -373,7 +373,14 @@ void HTMLTextFieldAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName) {
 bool HTMLTextFieldAccessible::DoAction(uint8_t aIndex) const {
   if (aIndex != 0) return false;
 
-  TakeFocus();
+  if (FocusMgr()->IsFocused(this)) {
+    
+    
+    
+    DoCommand();
+  } else {
+    TakeFocus();
+  }
   return true;
 }
 
