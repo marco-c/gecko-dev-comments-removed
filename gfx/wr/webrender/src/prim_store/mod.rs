@@ -3040,11 +3040,6 @@ impl PrimitiveStore {
             }
             PrimitiveInstanceKind::ImageBorder { data_handle, .. } => {
                 let prim_data = &mut data_stores.image_border[*data_handle];
-                let border_data = &prim_data.kind;
-
-                
-                
-                frame_state.resource_cache.set_image_active(border_data.request.key);
 
                 
                 
@@ -3084,12 +3079,6 @@ impl PrimitiveStore {
                 let common_data = &mut prim_data.common;
                 let yuv_image_data = &mut prim_data.kind;
 
-                
-                
-                for channel in 0 .. yuv_image_data.format.get_plane_num() {
-                    frame_state.resource_cache.set_image_active(yuv_image_data.yuv_key[channel]);
-                }
-
                 common_data.may_need_repetition = false;
 
                 
@@ -3110,10 +3099,6 @@ impl PrimitiveStore {
                 let prim_data = &mut data_stores.image[*data_handle];
                 let common_data = &mut prim_data.common;
                 let image_data = &mut prim_data.kind;
-
-                
-                
-                frame_state.resource_cache.set_image_active(image_data.key);
 
                 if image_data.stretch_size.width >= common_data.prim_size.width &&
                     image_data.stretch_size.height >= common_data.prim_size.height {
