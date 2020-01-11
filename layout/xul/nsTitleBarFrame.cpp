@@ -71,7 +71,7 @@ nsresult nsTitleBarFrame::HandleEvent(nsPresContext* aPresContext,
 
           
           PresShell::SetCapturingContent(GetContent(),
-                                          CaptureFlags::IgnoreAllowedState);
+                                         CaptureFlags::IgnoreAllowedState);
 
           
           mLastPoint = aEvent->mRefPoint;
