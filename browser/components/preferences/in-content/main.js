@@ -369,6 +369,11 @@ var gMainPane = {
       gMainPane.initBrowserLocale();
     }
 
+    
+    
+    
+    gMainPane.initDefaultZoomValues();
+
     let cfrLearnMoreUrl =
       Services.urlFormatter.formatURLPref("app.support.baseURL") +
       "extensionrecommendations";
@@ -926,6 +931,41 @@ var gMainPane = {
       }
     }
   },
+  
+
+
+
+
+
+  async initDefaultZoomValues() {
+    let win = window.docShell.rootTreeItem.domWindow;
+    let selected = await win.ZoomUI.getGlobalValue();
+    let menulist = document.getElementById("defaultZoom");
+
+    new SelectionChangedMenulist(menulist, event => {
+      let parsedZoom = parseFloat((event.target.value / 100).toFixed(2));
+      gMainPane.handleDefaultZoomChange(parsedZoom);
+    });
+    let zoomValues = win.ZoomManager.zoomValues.map(a => {
+      return Math.round(a * 100);
+    });
+
+    let fragment = document.createDocumentFragment();
+    for (let zoomLevel of zoomValues) {
+      let menuitem = document.createXULElement("menuitem");
+      document.l10n.setAttributes(menuitem, "preferences-default-zoom-value", {
+        percentage: zoomLevel,
+      });
+      menuitem.setAttribute("value", zoomLevel);
+      fragment.appendChild(menuitem);
+    }
+
+    let menupopup = menulist.querySelector("menupopup");
+    menupopup.appendChild(fragment);
+    menulist.value = Math.round(selected * 100);
+
+    document.getElementById("zoomBox").hidden = false;
+  },
 
   initBrowserLocale() {
     
@@ -1099,6 +1139,27 @@ var gMainPane = {
       new Set([locale, ...Services.locale.requestedLocales]).values()
     );
     this.showConfirmLanguageChangeMessageBar(locales);
+  },
+
+  
+
+
+
+
+
+  handleDefaultZoomChange(newZoom) {
+    let cps2 = Cc["@mozilla.org/content-pref/service;1"].getService(
+      Ci.nsIContentPrefService2
+    );
+    let nonPrivateLoadContext = Cu.createLoadContext();
+    
+
+
+
+
+
+    let win = window.docShell.rootTreeItem.domWindow;
+    cps2.setGlobal(win.FullZoom.name, newZoom, nonPrivateLoadContext);
   },
 
   onBrowserRestoreSessionChange(event) {
