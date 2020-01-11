@@ -3,14 +3,21 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["SearchTelemetryChild"];
+var EXPORTED_SYMBOLS = ["SearchTelemetryChild", "ADLINK_CHECK_TIMEOUT_MS"];
 
-const { ActorChild } = ChromeUtils.import(
-  "resource://gre/modules/ActorChild.jsm"
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
 );
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  ActorChild: "resource://gre/modules/ActorChild.jsm",
+  clearTimeout: "resource://gre/modules/Timer.jsm",
+  Services: "resource://gre/modules/Services.jsm",
+  setTimeout: "resource://gre/modules/Timer.jsm",
+});
 
 const SHARED_DATA_KEY = "SearchTelemetry:ProviderInfo";
+const ADLINK_CHECK_TIMEOUT_MS = 1000;
 
 
 
@@ -102,16 +109,19 @@ class SearchTelemetryChild extends ActorChild {
 
 
 
+  _checkForAdLink() {
+    if (!this.content) {
+      return;
+    }
 
-
-  _checkForAdLink(doc) {
-    let providerInfo = this._getProviderInfoForUrl(doc.documentURI);
+    let doc = this.content.document;
+    let url = doc.documentURI;
+    let providerInfo = this._getProviderInfoForUrl(url);
     if (!providerInfo) {
       return;
     }
 
     let regexps = providerInfo[1].extraAdServersRegexps;
-
     let anchors = doc.getElementsByTagName("a");
     let hasAds = false;
     for (let anchor of anchors) {
@@ -131,7 +141,7 @@ class SearchTelemetryChild extends ActorChild {
     if (hasAds) {
       this.sendAsyncMessage("SearchTelemetry:PageInfo", {
         hasAds: true,
-        url: doc.documentURI,
+        url,
       });
     }
   }
@@ -147,6 +157,19 @@ class SearchTelemetryChild extends ActorChild {
       return;
     }
 
+    const cancelCheck = () => {
+      if (this._waitForContentTimeout) {
+        clearTimeout(this._waitForContentTimeout);
+      }
+    };
+
+    const check = () => {
+      cancelCheck();
+      this._waitForContentTimeout = setTimeout(() => {
+        this._checkForAdLink();
+      }, ADLINK_CHECK_TIMEOUT_MS);
+    };
+
     switch (event.type) {
       case "pageshow": {
         
@@ -154,12 +177,16 @@ class SearchTelemetryChild extends ActorChild {
         
         
         if (event.persisted) {
-          this._checkForAdLink(this.content.document);
+          check();
         }
         break;
       }
       case "DOMContentLoaded": {
-        this._checkForAdLink(this.content.document);
+        check();
+        break;
+      }
+      case "unload": {
+        cancelCheck();
         break;
       }
     }
