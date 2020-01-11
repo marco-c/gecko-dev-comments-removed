@@ -6,7 +6,7 @@
 
 
 #include "nsWinRemoteServer.h"
-#include "RemoteUtils.h"
+#include "nsWinRemoteUtils.h"
 #include "nsCOMPtr.h"
 #include "nsXPCOM.h"
 #include "nsPIDOMWindow.h"

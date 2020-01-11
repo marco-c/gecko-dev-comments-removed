@@ -5,8 +5,8 @@
 
 
 
-#ifndef TOOLKIT_COMPONENTS_REMOTE_NSREMOTESERVER_H_
-#define TOOLKIT_COMPONENTS_REMOTE_NSREMOTESERVER_H_
+#ifndef __nsRemoteService_h__
+#define __nsRemoteService_h__
 
 #include "nsRemoteServer.h"
 #include "nsIObserver.h"
