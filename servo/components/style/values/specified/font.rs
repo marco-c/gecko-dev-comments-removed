@@ -961,7 +961,8 @@ impl FontSize {
                 
                 
                 
-                calc.percentage_relative_to(base_size.resolve(context)).clamp_to_non_negative()
+                calc.percentage_relative_to(base_size.resolve(context))
+                    .clamp_to_non_negative()
             },
             FontSize::Keyword(i) => {
                 

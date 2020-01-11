@@ -75,9 +75,7 @@ impl ToComputedValue for specified::Length {
 
 
 #[allow(missing_docs)]
-#[derive(
-    Clone, Debug, Deserialize, MallocSizeOf, Serialize, ToAnimatedZero, ToResolvedValue,
-)]
+#[derive(Clone, Debug, Deserialize, MallocSizeOf, Serialize, ToAnimatedZero, ToResolvedValue)]
 #[repr(C)]
 pub struct LengthPercentage {
     length: Length,

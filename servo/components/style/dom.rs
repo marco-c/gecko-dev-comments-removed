@@ -867,14 +867,14 @@ pub trait TElement:
                                 break;
                             }
                             inner_shadow = shadow;
-                        }
+                        },
                         None => {
                             
                             
                             
                             doc_rules_apply = true;
                             break;
-                        }
+                        },
                     }
                 }
             }

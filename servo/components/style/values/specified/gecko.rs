@@ -5,7 +5,7 @@
 
 
 use crate::parser::{Parse, ParserContext};
-use crate::values::computed::{self, LengthPercentage, Length};
+use crate::values::computed::{self, Length, LengthPercentage};
 use crate::values::generics::rect::Rect;
 use cssparser::{Parser, Token};
 use std::fmt;
