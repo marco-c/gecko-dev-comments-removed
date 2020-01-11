@@ -359,7 +359,7 @@ class LoginManagerParent extends JSWindowActorParent {
     
     let logins = null;
     if (guid) {
-      logins = LoginHelper.searchLoginsWithObject({
+      logins = await Services.logins.searchLoginsAsync({
         guid,
       });
     } else {
@@ -601,7 +601,7 @@ class LoginManagerParent extends JSWindowActorParent {
     );
 
     if (autoFilledLoginGuid) {
-      let loginsForGuid = LoginHelper.searchLoginsWithObject({
+      let loginsForGuid = await Services.logins.searchLoginsAsync({
         guid: autoFilledLoginGuid,
       });
       if (
@@ -811,7 +811,7 @@ class LoginManagerParent extends JSWindowActorParent {
       
       
       if (generatedPW.storageGUID) {
-        let existingLogins = LoginHelper.searchLoginsWithObject({
+        let existingLogins = await Services.logins.searchLoginsAsync({
           guid: generatedPW.storageGUID,
         });
 
