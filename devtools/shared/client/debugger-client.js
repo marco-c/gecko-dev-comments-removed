@@ -73,85 +73,6 @@ function DebuggerClient(transport) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-DebuggerClient.requester = function(packetSkeleton, config = {}) {
-  const { before, after } = config;
-  return DevToolsUtils.makeInfallible(function(...args) {
-    let outgoingPacket = {
-      to: packetSkeleton.to || this.actor,
-    };
-
-    let maxPosition = -1;
-    for (const k of Object.keys(packetSkeleton)) {
-      if (packetSkeleton[k] instanceof DebuggerClient.Argument) {
-        const { position } = packetSkeleton[k];
-        outgoingPacket[k] = packetSkeleton[k].getArgument(args);
-        maxPosition = Math.max(position, maxPosition);
-      } else {
-        outgoingPacket[k] = packetSkeleton[k];
-      }
-    }
-
-    if (before) {
-      outgoingPacket = before.call(this, outgoingPacket);
-    }
-
-    return this.request(
-      outgoingPacket,
-      DevToolsUtils.makeInfallible(response => {
-        if (after) {
-          const { from } = response;
-          response = after.call(this, response);
-          if (!response.from) {
-            response.from = from;
-          }
-        }
-
-        
-        const thisCallback = args[maxPosition + 1];
-        if (thisCallback) {
-          thisCallback(response);
-        }
-        return response;
-      }, "DebuggerClient.requester request callback")
-    );
-  }, "DebuggerClient.requester");
-};
-
-function arg(pos) {
-  return new DebuggerClient.Argument(pos);
-}
-exports.arg = arg;
-
-DebuggerClient.Argument = function(position) {
-  this.position = position;
-};
-
-DebuggerClient.Argument.prototype.getArgument = function(params) {
-  if (!(this.position in params)) {
-    throw new Error("Bad index into params: " + this.position);
-  }
-  return params[this.position];
-};
-
-
 DebuggerClient.socketConnect = function(options) {
   
   return DebuggerSocket.connect(options);
@@ -241,10 +162,12 @@ DebuggerClient.prototype = {
 
 
 
-  release: DebuggerClient.requester({
-    to: arg(0),
-    type: "release",
-  }),
+  release: function(to) {
+    return this.request({
+      to,
+      type: "release",
+    });
+  },
 
   
 
@@ -882,11 +805,6 @@ DebuggerClient.prototype = {
   
 
 
-  activeAddon: null,
-
-  
-
-
 
 
   createObjectFront: function(grip) {
@@ -912,6 +830,5 @@ class Request extends EventEmitter {
 }
 
 module.exports = {
-  arg,
   DebuggerClient,
 };
