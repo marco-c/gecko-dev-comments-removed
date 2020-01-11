@@ -1451,6 +1451,11 @@ void nsOfflineCacheUpdate::LoadCompleted(nsOfflineCacheUpdateItem* aItem) {
     
     uint16_t status;
     rv = mManifestItem->GetStatus(&status);
+    if (NS_FAILED(rv)) {
+      NotifyState(nsIOfflineCacheUpdateObserver::STATE_ERROR);
+      Finish();
+      return;
+    }
     if (status == 404 || status == 410) {
       LogToConsole("Offline cache manifest removed, cache cleared",
                    mManifestItem);
