@@ -119,7 +119,7 @@ class InactivePropertyHelper {
           "grid-row-start",
           "justify-self",
         ],
-        when: () => !this.gridItem && !this.absPosGridElement,
+        when: () => !this.gridItem,
         fixId: "inactive-css-not-grid-item-fix-2",
         msgId: "inactive-css-not-grid-item",
         numFixProps: 2,
@@ -477,14 +477,6 @@ class InactivePropertyHelper {
 
 
 
-  get absPosGridElement() {
-    return this.isAbsPosGridElement();
-  }
-
-  
-
-
-
   get multiColContainer() {
     const autoColumnWidth = this.checkComputedStyle("column-width", ["auto"]);
     const autoColumnCount = this.checkComputedStyle("column-count", ["auto"]);
@@ -678,15 +670,6 @@ class InactivePropertyHelper {
     return !!this.getParentGridElement(this.node);
   }
 
-  isAbsPosGridElement() {
-    
-    
-    
-    return (
-      this.style.position === "absolute" || this.style.position === "fixed"
-    );
-  }
-
   isVisitedRule() {
     if (!CssLogic.hasVisitedState(this.node)) {
       return false;
@@ -735,11 +718,7 @@ class InactivePropertyHelper {
       }
       const position = this.style ? this.style.position : null;
       const cssFloat = this.style ? this.style.cssFloat : null;
-      if (
-        position === "fixed" ||
-        position === "absolute" ||
-        cssFloat !== "none"
-      ) {
+      if (position === "fixed" || cssFloat !== "none") {
         
         return null;
       }
