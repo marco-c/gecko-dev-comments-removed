@@ -80,12 +80,14 @@ async function paused(threadFront: ThreadFront, packet: PausedPacket) {
     return;
   }
 
-  
-  
-  await actions.ensureSourceActor(
-    threadFront.actorID,
-    packet.frame.where.actor
-  );
+  if (packet.frame) {
+    
+    
+    await actions.ensureSourceActor(
+      threadFront.actorID,
+      packet.frame.where.actor
+    );
+  }
 
   const pause = createPause(threadFront.actor, packet);
 
