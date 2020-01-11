@@ -884,16 +884,17 @@ bool nsFrameLoader::Show(nsSubDocumentFrame* frame) {
   }
 
   ds->SetScrollbarPreference(GetScrollbarPreference(mOwnerContent));
-
-  if (ds->UpdateFrameMargins(GetMarginAttributes(mOwnerContent))) {
-    if (PresShell* presShell = ds->GetPresShell()) {
-      
+  const bool marginsChanged =
+    ds->UpdateFrameMargins(GetMarginAttributes(mOwnerContent));
+  if (PresShell* presShell = ds->GetPresShell()) {
+    
+    if (marginsChanged) {
       if (nsIFrame* rootScrollFrame = presShell->GetRootScrollFrame()) {
         presShell->FrameNeedsReflow(rootScrollFrame, IntrinsicDirty::Resize,
                                     NS_FRAME_IS_DIRTY);
       }
-      return true;
     }
+    return true;
   }
 
   nsView* view = frame->EnsureInnerView();
