@@ -71,6 +71,11 @@ class JSWindowActor : public nsISupports, public nsWrapperCache {
                               ipc::StructuredCloneData&& aStack,
                               ErrorResult& aRv) = 0;
 
+  
+  
+  static bool AllowMessage(const JSWindowActorMessageMeta& aMetadata,
+                           size_t aDataLength);
+
   virtual ~JSWindowActor() = default;
 
   void SetName(const nsAString& aName);
