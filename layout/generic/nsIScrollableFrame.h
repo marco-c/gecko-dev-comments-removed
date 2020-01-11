@@ -105,6 +105,13 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
+  virtual uint32_t GetAvailableScrollingDirectionsForUserInputEvents()
+      const = 0;
+  
+
+
+
+
 
   virtual nsMargin GetActualScrollbarSizes() const = 0;
   

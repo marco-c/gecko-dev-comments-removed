@@ -6666,6 +6666,42 @@ uint32_t nsIScrollableFrame::GetAvailableVisualScrollingDirections() const {
   return directions;
 }
 
+uint32_t ScrollFrameHelper::GetAvailableScrollingDirectionsForUserInputEvents()
+    const {
+  
+  
+  
+  
+  
+  
+  
+
+  ScrollStyles ss = GetScrollStylesFromFrame();
+
+  nsRect scrolledRect = GetScrolledRect();
+  if (StyleOverflow::Hidden == ss.mHorizontal) {
+    scrolledRect.width = mScrollPort.width;
+  }
+  if (StyleOverflow::Hidden == ss.mVertical) {
+    scrolledRect.height = mScrollPort.height;
+  }
+
+  nsSize scrollPort = GetVisualViewportSize();
+
+  nsSize scrollRange;
+  scrollRange.width = std::max(scrolledRect.width - scrollPort.width, 0);
+  scrollRange.height = std::max(scrolledRect.height - scrollPort.height, 0);
+
+  uint32_t directions = 0;
+  if (scrollRange.width > 0) {
+    directions |= nsIScrollableFrame::HORIZONTAL;
+  }
+  if (scrollRange.height > 0) {
+    directions |= nsIScrollableFrame::VERTICAL;
+  }
+  return directions;
+}
+
 static nsRect InflateByScrollMargin(const nsRect& aTargetRect,
                                     const nsMargin& aScrollMargin,
                                     const nsRect& aScrolledRect) {
