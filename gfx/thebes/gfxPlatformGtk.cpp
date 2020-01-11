@@ -266,10 +266,12 @@ gfxFontGroup* gfxPlatformGtk::CreateFontGroup(
                           aDevToCssSize);
 }
 
+
+
 static int32_t sDPI = 0;
 
 int32_t gfxPlatformGtk::GetFontScaleDPI() {
-  if (!sDPI) {
+  if (MOZ_UNLIKELY(!sDPI)) {
     
     GdkScreen* screen = gdk_screen_get_default();
     gtk_settings_get_for_screen(screen);
@@ -288,9 +290,18 @@ double gfxPlatformGtk::GetFontScaleFactor() {
   
   
   
+  
+  
+  
+  
+  
+  
   int32_t dpi = GetFontScaleDPI();
-  if (dpi < 132) {
+  if (dpi < 120) {
     return 1.0;
+  }
+  if (dpi < 132) {
+    return 1.25;
   }
   if (dpi < 168) {
     return 1.5;
