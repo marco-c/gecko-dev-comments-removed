@@ -990,6 +990,9 @@ WindowProxyHolder BrowsingContext::GetFrames(ErrorResult& aError) {
 }
 
 void BrowsingContext::Close(CallerType aCallerType, ErrorResult& aError) {
+  if (mIsDiscarded) {
+    return;
+  }
   
   
   
