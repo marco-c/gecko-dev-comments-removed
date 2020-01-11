@@ -102,8 +102,12 @@ def get_parser():
                    help="Install web-platform.test certificates to UA store")
     p.add_argument("--no-install-certificates", action="store_false", default=None,
                    help="Don't install web-platform.test certificates to UA store")
-    p.add_argument("--rev",
-                   help="Revision that the task_head ref is expected to point to")
+    p.add_argument("--ref",
+                   help="Git ref for the commit that should be run")
+    p.add_argument("--head-rev",
+                   help="Commit at the head of the branch when the decision task ran")
+    p.add_argument("--merge-rev",
+                   help="Provisional merge commit for PR when the decision task ran")
     p.add_argument("script",
                    help="Script to run for the job")
     p.add_argument("script_args",
@@ -262,13 +266,65 @@ def setup_environment(args):
     if args.oom_killer:
         start_userspace_oom_killer()
 
-    if args.checkout:
-        checkout_revision(args.checkout)
 
+def setup_repository(args):
+    is_pr = os.environ.get("GITHUB_PULL_REQUEST", "false") != "false"
 
-def setup_repository():
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    if args.ref:
+        if is_pr:
+            assert args.ref.endswith("/merge")
+            expected_head = args.merge_rev
+        else:
+            expected_head = args.head_rev
+
+        task_head = run(["git", "rev-parse", "task_head"], return_stdout=True).strip()
+
+        if task_head != expected_head:
+            if not is_pr:
+                try:
+                    run(["git", "fetch", "origin", "%s:task_head" % expected_head])
+                except subprocess.CalledProcessError:
+                    print("CRITICAL: task_head points at %s, expected %s and "
+                          "unable to fetch expected commit.\n"
+                          "This may be because the branch was updated" % (task_head, args.rev))
+                    sys.exit(1)
+            else:
+                
+                head_ref = args.ref.rsplit("/", 1)[0] + "/head"
+                try:
+                    remote_head = run(["git", "ls-remote", "origin", head_ref],
+                                      return_stdout=True).split("\t")[0]
+                except subprocess.CalledProcessError:
+                    print("CRITICAL: Failed to read remote ref %s" % head_ref)
+                    sys.exit(1)
+                if remote_head != args.head_rev:
+                    print("CRITICAL: task_head points at %s, expected %s. "
+                          "This may be because the branch was updated" % (task_head, args.rev))
+                    sys.exit(1)
+                print("INFO: Merge commit changed from %s to %s due to base branch changes. "
+                      "Running task anyway." % (expected_head, task_head))
+
     if os.environ.get("GITHUB_PULL_REQUEST", "false") != "false":
-        parents = run(["git", "show", "--no-patch", "--format=%P", "task_head"], return_stdout=True).strip().split()
+        parents = run(["git", "rev-parse", "task_head^@"],
+                      return_stdout=True).strip().split()
         if len(parents) == 2:
             base_head = parents[0]
             pr_head = parents[1]
@@ -278,7 +334,8 @@ def setup_repository():
         else:
             print("ERROR: Pull request HEAD wasn't a 2-parent merge commit; "
                   "expected to test the merge of PR into the base")
-            commit = run(["git", "show", "--no-patch", "--format=%H", "task_head"], return_stdout=True).strip()
+            commit = run(["git", "rev-parse", "task_head"],
+                         return_stdout=True).strip()
             print("HEAD: %s" % commit)
             print("Parents: %s" % ", ".join(parents))
             sys.exit(1)
@@ -288,6 +345,14 @@ def setup_repository():
         
         
         run(["git", "fetch", "--quiet", "origin", "%s:%s" % (branch, branch)])
+
+    checkout_rev = args.checkout if args.checkout is not None else "task_head"
+    checkout_revision(checkout_rev)
+
+    refs = run(["git", "for-each-ref", "refs/heads"], return_stdout=True)
+    print("INFO: git refs:\n%s" % refs)
+    print("INFO: checked out commit:\n%s" % run(["git", "rev-parse", "HEAD"],
+                                                return_stdout=True))
 
 
 def fetch_event_data():
@@ -333,13 +398,6 @@ def include_job(job):
 def main():
     args = get_parser().parse_args()
 
-    if args.rev is not None:
-        task_head = run(["git", "rev-parse", "task_head"], return_stdout=True).strip()
-        if task_head != args.rev:
-            print("CRITICAL: task_head points at %s, expected %s. "
-                  "This may be because the branch was updated" % (task_head, args.rev))
-            sys.exit(1)
-
     if "TASK_EVENT" in os.environ:
         event = json.loads(os.environ["TASK_EVENT"])
     else:
@@ -348,7 +406,7 @@ def main():
     if event:
         set_variables(event)
 
-    setup_repository()
+    setup_repository(args)
 
     
     if args.script in ["run-all", "lint", "update_built", "tools_unittest",
