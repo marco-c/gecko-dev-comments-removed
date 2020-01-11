@@ -102,6 +102,20 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
   void ResetDeclaredPolicy();
 
   
+  
+  
+  void AppendToDeclaredAllowInAncestorChain(const Feature& aFeature);
+
+  
+  
+  bool HasFeatureUnsafeAllowsAll(const nsAString& aFeatureName) const;
+
+  
+  
+  bool AllowsFeatureExplicitlyInAncestorChain(const nsAString& aFeatureName,
+                                              nsIPrincipal* aOrigin) const;
+
+  
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
@@ -158,6 +172,14 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
   
   
   nsTArray<nsString> mInheritedDeniedFeatureNames;
+
+  
+  nsTArray<nsString> mParentAllowedAllFeatures;
+
+  
+  
+  
+  nsTArray<Feature> mDeclaredFeaturesInAncestorChain;
 
   
   nsTArray<Feature> mFeatures;

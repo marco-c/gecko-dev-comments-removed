@@ -152,20 +152,6 @@ var PermissionPromptPrototype = {
 
 
 
-
-
-  get principalName() {
-    if (this.principal.addonPolicy) {
-      return this.principal.addonPolicy.name;
-    }
-
-    return this.principal.URI.hostPort;
-  },
-
-  
-
-
-
   get type() {
     return undefined;
   },
@@ -281,6 +267,20 @@ var PermissionPromptPrototype = {
 
   get message() {
     throw new Error("Not implemented.");
+  },
+
+  
+
+
+
+
+
+  getPrincipalName(principal = this.principal) {
+    if (principal.addonPolicy) {
+      return principal.addonPolicy.name;
+    }
+
+    return principal.URI.hostPort;
   },
 
   
@@ -421,7 +421,10 @@ var PermissionPromptPrototype = {
         return;
       }
 
-      if (state == SitePermissions.ALLOW) {
+      if (
+        state == SitePermissions.ALLOW &&
+        !this.request.maybeUnsafePermissionDelegate
+      ) {
         this.allow();
         return;
       }
@@ -719,11 +722,8 @@ var PermissionPromptForRequestPrototype = {
   },
 
   get principal() {
-    if (Services.prefs.getBoolPref("permissions.delegate.enable", false)) {
-      let request = this.request.QueryInterface(Ci.nsIContentPermissionRequest);
-      return request.getDelegatePrincipal(this.type);
-    }
-    return this.request.principal;
+    let request = this.request.QueryInterface(Ci.nsIContentPermissionRequest);
+    return request.getDelegatePrincipal(this.type);
   },
 
   cancel() {
@@ -768,7 +768,7 @@ GeolocationPermissionPrompt.prototype = {
     let options = {
       learnMoreURL: Services.urlFormatter.formatURLPref(pref),
       displayURI: false,
-      name: this.principalName,
+      name: this.getPrincipalName(),
     };
 
     if (this.principal.schemeIs("file")) {
@@ -778,6 +778,12 @@ GeolocationPermissionPrompt.prototype = {
       options.checkbox = {
         show: !PrivateBrowsingUtils.isWindowPrivate(this.browser.ownerGlobal),
       };
+    }
+
+    if (this.request.maybeUnsafePermissionDelegate) {
+      
+      options.secondName = this.getPrincipalName(this.request.principal);
+      options.checkbox = { show: false };
     }
 
     if (options.checkbox.show) {
@@ -800,6 +806,13 @@ GeolocationPermissionPrompt.prototype = {
   get message() {
     if (this.principal.schemeIs("file")) {
       return gBrowserBundle.GetStringFromName("geolocation.shareWithFile3");
+    }
+
+    if (this.request.maybeUnsafePermissionDelegate) {
+      return gBrowserBundle.formatStringFromName(
+        "geolocation.shareWithSiteUnsafeDelegation",
+        ["<>", "{}"]
+      );
     }
 
     return gBrowserBundle.formatStringFromName("geolocation.shareWithSite3", [
@@ -923,7 +936,7 @@ DesktopNotificationPermissionPrompt.prototype = {
     return {
       learnMoreURL,
       displayURI: false,
-      name: this.principalName,
+      name: this.getPrincipalName(),
     };
   },
 
@@ -1026,7 +1039,7 @@ PersistentStoragePermissionPrompt.prototype = {
     return {
       learnMoreURL,
       displayURI: false,
-      name: this.principalName,
+      name: this.getPrincipalName(),
     };
   },
 
@@ -1115,7 +1128,7 @@ MIDIPermissionPrompt.prototype = {
     
     let options = {
       displayURI: false,
-      name: this.principalName,
+      name: this.getPrincipalName(),
     };
 
     if (this.principal.schemeIs("file")) {
