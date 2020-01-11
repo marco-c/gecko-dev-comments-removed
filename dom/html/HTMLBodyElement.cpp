@@ -160,12 +160,10 @@ void HTMLBodyElement::MapAttributesIntoRule(
   
   
   if (bodyMarginWidth == -1 || bodyMarginHeight == -1) {
-    nsCOMPtr<nsIDocShell> docShell(aDecls.Document()->GetDocShell());
-    if (docShell) {
-      nscoord frameMarginWidth = -1;                
-      nscoord frameMarginHeight = -1;               
-      docShell->GetMarginWidth(&frameMarginWidth);  
-      docShell->GetMarginHeight(&frameMarginHeight);
+    if (nsDocShell* ds = nsDocShell::Cast(aDecls.Document()->GetDocShell())) {
+      CSSIntSize margins = ds->GetFrameMargins();
+      int32_t frameMarginWidth = margins.width;
+      int32_t frameMarginHeight = margins.height;
 
       if (bodyMarginWidth == -1 && frameMarginWidth >= 0) {
         if (bodyLeftMargin == -1) {

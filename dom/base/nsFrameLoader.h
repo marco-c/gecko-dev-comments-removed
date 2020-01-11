@@ -259,17 +259,14 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool Show(int32_t marginWidth,
-                                        int32_t marginHeight,
-                                        mozilla::ScrollbarPreference,
-                                        nsSubDocumentFrame*);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool Show(nsSubDocumentFrame*);
 
   void MaybeShowFrame();
 
   
 
 
-  void MarginsChanged(uint32_t aMarginWidth, uint32_t aMarginHeight);
+  void MarginsChanged();
 
   
 

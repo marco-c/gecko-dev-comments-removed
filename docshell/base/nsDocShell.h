@@ -219,6 +219,22 @@ class nsDocShell final : public nsDocLoader,
 
 
 
+  const mozilla::CSSIntSize& GetFrameMargins() const { return mFrameMargins; }
+
+  bool UpdateFrameMargins(const mozilla::CSSIntSize& aMargins) {
+    if (mFrameMargins == aMargins) {
+      return false;
+    }
+    mFrameMargins = aMargins;
+    return true;
+  }
+
+  
+
+
+
+
+
 
 
 
@@ -1188,8 +1204,7 @@ class nsDocShell final : public nsDocLoader,
   mozilla::hal::ScreenOrientation mOrientationLock;
 
   int32_t mParentCharsetSource;
-  int32_t mMarginWidth;
-  int32_t mMarginHeight;
+  mozilla::CSSIntSize mFrameMargins;
 
   
   const int32_t mItemType;

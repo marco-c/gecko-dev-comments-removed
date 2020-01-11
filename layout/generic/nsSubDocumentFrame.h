@@ -129,9 +129,6 @@ class nsSubDocumentFrame final : public nsAtomicContainerFrame,
  protected:
   friend class AsyncFrameInit;
 
-  
-  mozilla::CSSIntSize GetMarginAttributes();
-
   bool IsInline() { return mIsInline; }
 
   nscoord GetIntrinsicISize();
