@@ -22,7 +22,11 @@ SourceSurfaceSkia::SourceSurfaceSkia()
       mChangeMutex("SourceSurfaceSkia::mChangeMutex"),
       mIsMapped(false) {}
 
-SourceSurfaceSkia::~SourceSurfaceSkia() {}
+SourceSurfaceSkia::~SourceSurfaceSkia() {
+  
+  
+  MOZ_RELEASE_ASSERT(!mIsMapped);
+}
 
 IntSize SourceSurfaceSkia::GetSize() const { return mSize; }
 
