@@ -271,13 +271,14 @@ class ThreadedDriver : public GraphDriver {
 
 
 
+enum class FallbackMode { Regular, Fallback };
 class SystemClockDriver : public ThreadedDriver {
  public:
-  explicit SystemClockDriver(MediaTrackGraphImpl* aGraphImpl);
+  explicit SystemClockDriver(MediaTrackGraphImpl* aGraphImpl,
+                             FallbackMode aFallback = FallbackMode::Regular);
   virtual ~SystemClockDriver();
   TimeDuration WaitInterval() override;
   MediaTime GetIntervalForIteration() override;
-  void MarkAsFallback();
   bool IsFallback();
   SystemClockDriver* AsSystemClockDriver() override { return this; }
 
@@ -290,7 +291,7 @@ class SystemClockDriver : public ThreadedDriver {
 
   
   
-  bool mIsFallback;
+  const bool mIsFallback;
 };
 
 
