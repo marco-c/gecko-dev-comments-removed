@@ -6,6 +6,11 @@
 
 
 
+<script>
+window.onerror = (message, source, lineno) => {
+  dump(`TEST-UNEXPECTED-FAIL | tspaint_test | ${source}, line ${lineno}: ${message}\n`);
+};
+</script>
 <script language="Javascript" type="text/javascript" src="../talos-powers/content/TalosPowersContent.js"></script>
 <script language="Javascript" type="text/javascript" src="../scripts/MozillaFileLogger.js"></script>
 <script language="Javascript" type="text/javascript" src="../talos-powers/content/TalosContentProfiler.js"></script>
