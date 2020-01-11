@@ -2148,14 +2148,9 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
     GetRootFrame()->SetComputedStyleWithoutNotification(sc);
   }
 
-  ServoStyleSet* set = mPresShell->StyleSet();
-
   
   if (!aDocElement->HasServoData()) {
-    
-    
-    
-    set->StyleNewSubtree(aDocElement);
+    mPresShell->StyleSet()->StyleNewSubtree(aDocElement);
   }
 
   
