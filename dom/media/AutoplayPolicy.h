@@ -38,7 +38,15 @@ class AutoplayPolicy {
 
   
   static bool IsAllowedToPlay(const AudioContext& aContext);
+};
 
+
+
+
+
+
+class AutoplayPolicyTelemetryUtils {
+ public:
   
   
   
