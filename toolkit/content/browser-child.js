@@ -52,23 +52,6 @@ addEventListener(
   false
 );
 
-addEventListener(
-  "ImageContentLoaded",
-  function(aEvent) {
-    if (content.document instanceof Ci.nsIImageDocument) {
-      let req = content.document.imageRequest;
-      if (!req.image) {
-        return;
-      }
-      sendAsyncMessage("ImageDocumentLoaded", {
-        width: req.image.width,
-        height: req.image.height,
-      });
-    }
-  },
-  false
-);
-
 
 
 
