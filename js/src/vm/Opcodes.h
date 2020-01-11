@@ -1332,6 +1332,11 @@
 
 
 
+
+
+
+
+
  \
     MACRO(JSOP_MOREITER, "moreiter", NULL, 1, 1, 2, JOF_BYTE) \
     
@@ -1361,9 +1366,17 @@
 
 
 
+
  \
     MACRO(JSOP_ENDITER, "enditer", NULL, 1, 2, 0, JOF_BYTE) \
     
+
+
+
+
+
+
+
 
 
 
@@ -1393,6 +1406,14 @@
 
 
 
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_CHECKOBJCOERCIBLE, "checkobjcoercible", NULL, 1, 1, 1, JOF_BYTE) \
     
@@ -1404,10 +1425,16 @@
 
 
 
+
+
+
+
+
+
+
  \
     MACRO(JSOP_TOASYNCITER, "toasynciter", NULL, 1, 2, 1, JOF_BYTE) \
     
-
 
 
 
