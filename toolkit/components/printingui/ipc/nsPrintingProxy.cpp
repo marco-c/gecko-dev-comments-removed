@@ -123,9 +123,8 @@ nsPrintingProxy::ShowPrintDialog(mozIDOMWindowProxy* parent,
 NS_IMETHODIMP
 nsPrintingProxy::ShowPrintProgressDialog(
     mozIDOMWindowProxy* parent,
-    nsIWebBrowserPrint* webBrowserPrint,  
-    nsIPrintSettings* printSettings,      
-    nsIObserver* openDialogObserver,      
+    nsIPrintSettings* printSettings,  
+    nsIObserver* openDialogObserver,  
     bool isForPrinting, nsIWebProgressListener** webProgressListener,
     nsIPrintProgressParams** printProgressParams, bool* notifyOnOpen) {
   NS_ENSURE_ARG(parent);

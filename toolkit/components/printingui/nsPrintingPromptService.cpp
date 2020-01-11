@@ -81,9 +81,8 @@ nsPrintingPromptService::ShowPrintDialog(mozIDOMWindowProxy* parent,
 NS_IMETHODIMP
 nsPrintingPromptService::ShowPrintProgressDialog(
     mozIDOMWindowProxy* parent,
-    nsIWebBrowserPrint* webBrowserPrint,  
-    nsIPrintSettings* printSettings,      
-    nsIObserver* openDialogObserver,      
+    nsIPrintSettings* printSettings,  
+    nsIObserver* openDialogObserver,  
     bool isForPrinting, nsIWebProgressListener** webProgressListener,
     nsIPrintProgressParams** printProgressParams, bool* notifyOnOpen) {
 #if !defined(XP_MACOSX)
