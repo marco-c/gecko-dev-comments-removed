@@ -2,12 +2,6 @@
 
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "SiteSpecificBrowserService",
-  "resource:///modules/SiteSpecificBrowserService.jsm"
-);
-
 var BrowserPageActions = {
   
 
@@ -1088,24 +1082,6 @@ BrowserPageActions.pinTab = {
     } else {
       gBrowser.pinTab(gBrowser.selectedTab);
     }
-  },
-};
-
-
-BrowserPageActions.launchSSB = {
-  updateState() {
-    let action = PageActions.actionForID("launchSSB");
-    let browser = gBrowser.selectedBrowser;
-    action.setDisabled(!browser.currentURI.schemeIs("https"), window);
-  },
-
-  onCommand(event, buttonNode) {
-    if (!gBrowser.currentURI.schemeIs("https")) {
-      return;
-    }
-
-    SiteSpecificBrowserService.launchFromURI(gBrowser.currentURI);
-    gBrowser.removeTab(gBrowser.selectedTab, { closeWindowWithLastTab: false });
   },
 };
 

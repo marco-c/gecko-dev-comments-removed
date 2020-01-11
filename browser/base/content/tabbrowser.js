@@ -3156,10 +3156,7 @@
       this.removeTab(this.selectedTab, aParams);
     },
 
-    removeTab(
-      aTab,
-      { animate, byMouse, skipPermitUnload, closeWindowWithLastTab } = {}
-    ) {
+    removeTab(aTab, { animate, byMouse, skipPermitUnload } = {}) {
       
       
       if (
@@ -3191,7 +3188,6 @@
         !this._beginRemoveTab(aTab, {
           closeWindowFastpath: true,
           skipPermitUnload,
-          closeWindowWithLastTab,
         })
       ) {
         TelemetryStopwatch.cancel("FX_TAB_CLOSE_TIME_ANIM_MS", aTab);
