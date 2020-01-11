@@ -115,24 +115,6 @@ enum class AudioContextOperation;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class GraphDriver {
  public:
   GraphDriver(MediaTrackGraphImpl* aGraphImpl, uint32_t aSampleRate);
@@ -426,6 +408,8 @@ class AudioCallbackDriver : public GraphDriver,
   
   AudioCallbackDriver(MediaTrackGraphImpl* aGraphImpl, uint32_t aSampleRate,
                       uint32_t aOutputChannelCount, uint32_t aInputChannelCount,
+                      CubebUtils::AudioDeviceID aOutputDeviceID,
+                      CubebUtils::AudioDeviceID aInputDeviceID,
                       AudioInputType aAudioInputType);
   virtual ~AudioCallbackDriver();
 
@@ -543,6 +527,11 @@ class AudioCallbackDriver : public GraphDriver,
   
 
   const uint32_t mInputChannelCount;
+  
+
+
+  const CubebUtils::AudioDeviceID mOutputDeviceID;
+  const CubebUtils::AudioDeviceID mInputDeviceID;
   
 
 
