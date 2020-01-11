@@ -7,7 +7,7 @@ const ignore_features_for_auxilary_context = ["popups", "scripts"];
 
 
 const sandbox_features = [
-    "downloads-without-user-activation", "forms", "modals", "orientation-lock",
+    "downloads", "forms", "modals", "orientation-lock",
     "pointer-lock", "popups", "presentation", "scripts", "top-navigation"];
 
 
