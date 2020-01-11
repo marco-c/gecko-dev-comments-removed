@@ -3,7 +3,7 @@
 
 (function(mod) {
   if (typeof exports == "object" && typeof module == "object") 
-    mod(require("../../lib/codemirror"), require("./foldcode"));
+    mod(require("devtools/client/shared/sourceeditor/codemirror/lib/codemirror"), require("devtools/client/shared/sourceeditor/codemirror/addon/fold/foldcode"));
   else if (typeof define == "function" && define.amd) 
     define(["../../lib/codemirror", "./foldcode"], mod);
   else 

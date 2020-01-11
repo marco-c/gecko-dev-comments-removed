@@ -4,8 +4,12 @@
 
 "use strict";
 
-const { isNodeValid } = require("./utils/markup");
-const { BoxModelHighlighter } = require("./box-model");
+const {
+  isNodeValid,
+} = require("devtools/server/actors/highlighters/utils/markup");
+const {
+  BoxModelHighlighter,
+} = require("devtools/server/actors/highlighters/box-model");
 
 
 

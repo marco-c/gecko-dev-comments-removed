@@ -3,8 +3,10 @@
 
 "use strict";
 
-const { fetchProperties } = require("./actions/grips");
-const { Property } = require("./reducers/grips");
+const {
+  fetchProperties,
+} = require("devtools/client/dom/content/actions/grips");
+const { Property } = require("devtools/client/dom/content/reducers/grips");
 
 
 function GripProvider(grips, dispatch) {

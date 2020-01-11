@@ -21,7 +21,7 @@
 
 (function(mod) {
   if (typeof exports == "object" && typeof module == "object") 
-    mod(require("../../lib/codemirror"), require("./matchesonscrollbar"));
+    mod(require("devtools/client/shared/sourceeditor/codemirror/lib/codemirror"), require("devtools/client/shared/sourceeditor/codemirror/addon/search/matchesonscrollbar"));
   else if (typeof define == "function" && define.amd) 
     define(["../../lib/codemirror", "./matchesonscrollbar"], mod);
   else 

@@ -14,7 +14,7 @@ const {
   UPDATE_RULES,
   UPDATE_SOURCE_LINK_ENABLED,
   UPDATE_SOURCE_LINK,
-} = require("../actions/index");
+} = require("devtools/client/inspector/rules/actions/index");
 
 const INITIAL_RULES = {
   

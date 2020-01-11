@@ -3,7 +3,7 @@
 
 (function(mod) {
   if (typeof exports == "object" && typeof module == "object") 
-    mod(require("../../lib/codemirror"), require("../xml/xml"), require("../javascript/javascript"))
+    mod(require("devtools/client/shared/sourceeditor/codemirror/lib/codemirror"), require("devtools/client/shared/sourceeditor/codemirror/mode/xml/xml"), require("devtools/client/shared/sourceeditor/codemirror/mode/javascript/javascript"))
   else if (typeof define == "function" && define.amd) 
     define(["../../lib/codemirror", "../xml/xml", "../javascript/javascript"], mod)
   else 

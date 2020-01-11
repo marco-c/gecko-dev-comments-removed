@@ -18,7 +18,7 @@ loader.lazyRequireGetter(
   true
 );
 
-const { PREFERENCES } = require("../constants");
+const { PREFERENCES } = require("devtools/client/aboutdebugging/src/constants");
 
 
 

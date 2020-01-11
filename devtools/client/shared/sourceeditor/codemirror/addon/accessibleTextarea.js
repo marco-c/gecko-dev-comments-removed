@@ -28,7 +28,7 @@
 
 
 (function(mod) {
-  mod(require("../lib/codemirror"));
+  mod(require("devtools/client/shared/sourceeditor/codemirror/lib/codemirror"));
 })(function(CodeMirror) {
   
   

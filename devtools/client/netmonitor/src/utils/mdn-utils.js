@@ -4,7 +4,9 @@
 
 "use strict";
 
-const { SUPPORTED_HTTP_CODES } = require("../constants");
+const {
+  SUPPORTED_HTTP_CODES,
+} = require("devtools/client/netmonitor/src/constants");
 
 
 

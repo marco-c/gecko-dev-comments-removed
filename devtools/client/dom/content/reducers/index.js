@@ -3,8 +3,8 @@
 
 "use strict";
 
-const { grips } = require("./grips");
-const { filter } = require("./filter");
+const { grips } = require("devtools/client/dom/content/reducers/grips");
+const { filter } = require("devtools/client/dom/content/reducers/filter");
 
 exports.reducers = {
   grips,

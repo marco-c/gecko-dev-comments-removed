@@ -15,4 +15,4 @@ const require = BrowserLoader({
 }).require;
 
 
-require("./accessibility-view.js");
+require("devtools/client/accessibility/accessibility-view.js");

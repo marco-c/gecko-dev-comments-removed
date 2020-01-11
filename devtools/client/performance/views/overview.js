@@ -8,8 +8,10 @@
 
 
 
-const EVENTS = require("../events");
-const { GraphsController } = require("../modules/widgets/graphs");
+const EVENTS = require("devtools/client/performance/events");
+const {
+  GraphsController,
+} = require("devtools/client/performance/modules/widgets/graphs");
 
 const EventEmitter = require("devtools/shared/event-emitter");
 
