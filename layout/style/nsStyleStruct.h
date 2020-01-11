@@ -1266,11 +1266,11 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleVisibility {
   nsChangeHint CalcDifference(const nsStyleVisibility& aNewData) const;
 
   mozilla::StyleImageOrientation mImageOrientation;
-  uint8_t mDirection;        
-  uint8_t mVisible;          
-  uint8_t mImageRendering;   
-  uint8_t mWritingMode;      
-  uint8_t mTextOrientation;  
+  uint8_t mDirection;       
+  uint8_t mVisible;         
+  uint8_t mImageRendering;  
+  uint8_t mWritingMode;     
+  mozilla::StyleTextOrientation mTextOrientation;
   mozilla::StyleColorAdjust mColorAdjust;
 
   bool IsVisible() const { return (mVisible == NS_STYLE_VISIBILITY_VISIBLE); }
