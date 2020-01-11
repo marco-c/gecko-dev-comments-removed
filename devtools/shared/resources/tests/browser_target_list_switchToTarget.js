@@ -8,14 +8,6 @@
 const { TargetList } = require("devtools/shared/resources/target-list");
 
 add_task(async function() {
-  
-  await pushPref("devtools.browsertoolbox.fission", true);
-  
-  
-  await pushPref("dom.ipc.processPrelaunch.enabled", false);
-  
-  await pushPref("dom.ipc.keepProcessesAlive.web", 1);
-
   const client = await createLocalClient();
 
   await testSwitchToTarget(client);
@@ -27,10 +19,16 @@ async function testSwitchToTarget(client) {
   info("Test TargetList.switchToTarget method");
 
   const { mainRoot } = client;
-  const firstTarget = await mainRoot.getMainProcess();
+  
+  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
+  const firstTab = await addTab(
+    `data:text/html,<iframe src="data:text/html,foo"></iframe>`
+  );
+  const firstTarget = await mainRoot.getTab({ tab: gBrowser.selectedTab });
+
   const targetList = new TargetList(mainRoot, firstTarget);
 
-  await targetList.startListening([TargetList.TYPES.FRAME]);
+  await targetList.startListening();
 
   is(
     targetList.targetFront,
@@ -40,8 +38,8 @@ async function testSwitchToTarget(client) {
 
   
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
-  const tab = await addTab(
-    `data:text/html,<iframe src="data:text/html,foo"></iframe>`
+  const secondTab = await addTab(
+    `data:text/html,<iframe src="data:text/html,bar"></iframe>`
   );
   const secondTarget = await mainRoot.getTab({ tab: gBrowser.selectedTab });
 
@@ -148,7 +146,8 @@ async function testSwitchToTarget(client) {
     );
   }
 
-  targetList.stopListening([TargetList.TYPES.FRAME]);
+  targetList.stopListening();
 
-  BrowserTestUtils.removeTab(tab);
+  BrowserTestUtils.removeTab(firstTab);
+  BrowserTestUtils.removeTab(secondTab);
 }

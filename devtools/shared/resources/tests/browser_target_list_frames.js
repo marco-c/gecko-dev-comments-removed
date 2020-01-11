@@ -32,7 +32,7 @@ async function testBrowserFrames(mainRoot) {
 
   const target = await mainRoot.getMainProcess();
   const targetList = new TargetList(mainRoot, target);
-  await targetList.startListening([TargetList.TYPES.FRAME]);
+  await targetList.startListening();
 
   
   const frames = await targetList.getAllTargets(TargetList.TYPES.FRAME);
@@ -99,7 +99,7 @@ async function testBrowserFrames(mainRoot) {
 
 
 
-  targetList.stopListening([TargetList.TYPES.FRAME]);
+  targetList.stopListening();
 }
 
 
@@ -112,7 +112,7 @@ async function testTabFrames(mainRoot) {
   const target = await mainRoot.getTab({ tab });
   const targetList = new TargetList(mainRoot, target);
 
-  await targetList.startListening([TargetList.TYPES.FRAME]);
+  await targetList.startListening();
 
   
   const frames = await targetList.getAllTargets(TargetList.TYPES.FRAME);
@@ -156,7 +156,7 @@ async function testTabFrames(mainRoot) {
   }
   targetList.unwatchTargets([TargetList.TYPES.FRAME], onAvailable);
 
-  targetList.stopListening([TargetList.TYPES.FRAME]);
+  targetList.stopListening();
 
   BrowserTestUtils.removeTab(tab);
 }

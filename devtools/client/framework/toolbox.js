@@ -746,7 +746,7 @@ Toolbox.prototype = {
         );
       });
 
-      await this.targetList.startListening(TargetList.ALL_TYPES);
+      await this.targetList.startListening();
 
       
       
@@ -3661,7 +3661,7 @@ Toolbox.prototype = {
       this._onTargetDestroyed
     );
 
-    this.targetList.stopListening(TargetList.ALL_TYPES);
+    this.targetList.stopListening();
 
     
     this.toolbarButtons.forEach(button => {

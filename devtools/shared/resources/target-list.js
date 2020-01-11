@@ -218,18 +218,6 @@ class TargetList {
     this.listenForWorkers = false;
   }
 
-  _fissionEnabled() {
-    const fissionBrowserToolboxEnabled = Services.prefs.getBoolPref(
-      BROWSERTOOLBOX_FISSION_ENABLED
-    );
-    
-    
-    
-    
-    
-    return fissionBrowserToolboxEnabled && this.targetFront.isParentProcess;
-  }
-
   
   
   
@@ -292,21 +280,29 @@ class TargetList {
 
 
 
-  async startListening(types) {
+  async startListening() {
+    let types = [];
+    if (this.targetFront.isParentProcess) {
+      const fissionBrowserToolboxEnabled = Services.prefs.getBoolPref(
+        BROWSERTOOLBOX_FISSION_ENABLED
+      );
+      if (fissionBrowserToolboxEnabled) {
+        types = TargetList.ALL_TYPES;
+      }
+    }
+    if (this.listenForWorkers && !types.includes(TargetList.TYPES.WORKER)) {
+      types.push(TargetList.TYPES.WORKER);
+    }
+    
+    
+    
+
     for (const type of types) {
       if (this._isListening(type)) {
         continue;
       }
       this._setListening(type, true);
 
-      
-      
-      if (
-        !this._fissionEnabled() &&
-        !(type == "worker" && this.listenForWorkers)
-      ) {
-        continue;
-      }
       if (this.legacyImplementation[type]) {
         await this.legacyImplementation[type].listen();
       } else {
@@ -317,21 +313,13 @@ class TargetList {
     }
   }
 
-  stopListening(types) {
-    for (const type of types) {
+  stopListening() {
+    for (const type of TargetList.ALL_TYPES) {
       if (!this._isListening(type)) {
         continue;
       }
       this._setListening(type, false);
 
-      
-      
-      if (
-        !this._fissionEnabled() &&
-        !(type == "worker" && this.listenForWorkers)
-      ) {
-        continue;
-      }
       if (this.legacyImplementation[type]) {
         this.legacyImplementation[type].unlisten();
       } else {
@@ -386,12 +374,6 @@ class TargetList {
     }
 
     for (const type of types) {
-      if (!this._isListening(type)) {
-        throw new Error(
-          `watchTargets was called for a target type (${type}) that isn't being listened to`
-        );
-      }
-
       
       for (const targetFront of this._targets) {
         if (this._matchTargetType(type, targetFront)) {
@@ -453,11 +435,6 @@ class TargetList {
     if (!type) {
       throw new Error("getAllTargets expects a 'type' argument");
     }
-    if (!this._isListening(type)) {
-      throw new Error(
-        `getAllTargets was called for a target type (${type}) that isn't being listened to`
-      );
-    }
 
     const targets = [...this._targets].filter(target =>
       this._matchTargetType(type, target)
@@ -498,10 +475,7 @@ class TargetList {
       const isTargetSwitching = target == this.targetFront;
       this._onTargetDestroyed(target, isTargetSwitching);
     }
-    const listenedTypes = TargetList.ALL_TYPES.filter(type =>
-      this._isListening(type)
-    );
-    this.stopListening(listenedTypes);
+    this.stopListening();
 
     
     this._targets.clear();
@@ -515,7 +489,7 @@ class TargetList {
 
     
     
-    await this.startListening(listenedTypes);
+    await this.startListening();
   }
 }
 
