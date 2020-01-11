@@ -13,7 +13,8 @@ import traceback
 from textwrap import dedent
 
 from mozpack import path as mozpath
-from mozbuild.util import system_encoding, ensure_subprocess_env
+from mozbuild.util import system_encoding
+
 
 MOZ_MYCONFIG_ERROR = '''
 The MOZ_MYCONFIG environment variable to define the location of mozconfigs
@@ -237,6 +238,8 @@ class MozconfigLoader(object):
         result['make_extra'] = []
         result['make_flags'] = []
 
+        env = dict(os.environ)
+
         
         
         
@@ -255,8 +258,7 @@ class MozconfigLoader(object):
             
             
             output = subprocess.check_output(command, stderr=subprocess.STDOUT,
-                                             cwd=self.topsrcdir,
-                                             env=ensure_subprocess_env(os.environ))
+                                             cwd=self.topsrcdir, env=env)
         except subprocess.CalledProcessError as e:
             lines = e.output.splitlines()
 
