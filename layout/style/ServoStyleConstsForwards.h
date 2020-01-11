@@ -71,6 +71,11 @@ class ComputedStyle;
 using Matrix4x4Components = float[16];
 using StyleMatrix4x4Components = Matrix4x4Components;
 
+
+
+
+using StyleNonZeroUsize = uintptr_t;
+
 struct Keyframe;
 struct PropertyStyleAnimationValuePair;
 
