@@ -3438,10 +3438,9 @@ void BackgroundCursorChild::SendContinueInternal(
     
     
     
-    nsCOMPtr<nsIRunnable> continueRunnable = new DelayedActionRunnable(
-        this, &BackgroundCursorChild::CompleteContinueRequestFromCache);
-    MOZ_ALWAYS_TRUE(
-        NS_SUCCEEDED(NS_DispatchToCurrentThread(continueRunnable.forget())));
+    MOZ_ALWAYS_SUCCEEDS(
+        NS_DispatchToCurrentThread(MakeAndAddRef<DelayedActionRunnable>(
+            this, &BackgroundCursorChild::CompleteContinueRequestFromCache)));
 
     
     
@@ -3588,10 +3587,10 @@ void BackgroundCursorChild::HandleResponse(const void_t& aResponse) {
   DispatchSuccessEvent(&helper);
 
   if (!mCursor) {
-    nsCOMPtr<nsIRunnable> deleteRunnable = new DelayedActionRunnable(
-        this, &BackgroundCursorChild::SendDeleteMeInternal);
     MOZ_ALWAYS_SUCCEEDS(this->GetActorEventTarget()->Dispatch(
-        deleteRunnable.forget(), NS_DISPATCH_NORMAL));
+        MakeAndAddRef<DelayedActionRunnable>(
+            this, &BackgroundCursorChild::SendDeleteMeInternal),
+        NS_DISPATCH_NORMAL));
   }
 }
 
