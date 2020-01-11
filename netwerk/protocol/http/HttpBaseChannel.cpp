@@ -3131,6 +3131,7 @@ bool HttpBaseChannel::ShouldRewriteRedirectToGET(
 HttpBaseChannel::ReplacementChannelConfig
 HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
                                                uint32_t aRedirectFlags,
+                                               ReplacementReason aReason,
                                                uint32_t aExtraLoadFlags) {
   ReplacementChannelConfig config;
   config.loadFlags = mLoadFlags;
@@ -3156,27 +3157,37 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
   }
 
   if (mReferrerInfo) {
-    dom::ReferrerPolicy referrerPolicy = dom::ReferrerPolicy::_empty;
-    nsAutoCString tRPHeaderCValue;
-    Unused << GetResponseHeader(NS_LITERAL_CSTRING("referrer-policy"),
-                                tRPHeaderCValue);
-    NS_ConvertUTF8toUTF16 tRPHeaderValue(tRPHeaderCValue);
-
-    if (!tRPHeaderValue.IsEmpty()) {
-      referrerPolicy =
-          dom::ReferrerInfo::ReferrerPolicyFromHeaderString(tRPHeaderValue);
-    }
-
-    if (referrerPolicy != dom::ReferrerPolicy::_empty) {
-      
-      
-      
-      nsCOMPtr<nsIReferrerInfo> referrerInfo =
-          dom::ReferrerInfo::CreateFromOtherAndPolicyOverride(mReferrerInfo,
-                                                              referrerPolicy);
-      config.referrerInfo = referrerInfo;
-    } else {
+    
+    
+    
+    
+    
+    
+    if (aReason == ReplacementReason::DocumentChannel) {
       config.referrerInfo = mReferrerInfo;
+    } else {
+      dom::ReferrerPolicy referrerPolicy = dom::ReferrerPolicy::_empty;
+      nsAutoCString tRPHeaderCValue;
+      Unused << GetResponseHeader(NS_LITERAL_CSTRING("referrer-policy"),
+                                  tRPHeaderCValue);
+      NS_ConvertUTF8toUTF16 tRPHeaderValue(tRPHeaderCValue);
+
+      if (!tRPHeaderValue.IsEmpty()) {
+        referrerPolicy =
+            dom::ReferrerInfo::ReferrerPolicyFromHeaderString(tRPHeaderValue);
+      }
+
+      if (referrerPolicy != dom::ReferrerPolicy::_empty) {
+        
+        
+        
+        nsCOMPtr<nsIReferrerInfo> referrerInfo =
+            dom::ReferrerInfo::CreateFromOtherAndPolicyOverride(mReferrerInfo,
+                                                                referrerPolicy);
+        config.referrerInfo = referrerInfo;
+      } else {
+        config.referrerInfo = mReferrerInfo;
+      }
     }
   }
 
@@ -3250,7 +3261,7 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
 
  void HttpBaseChannel::ConfigureReplacementChannel(
     nsIChannel* newChannel, const ReplacementChannelConfig& config,
-    ConfigureReason aReason) {
+    ReplacementReason aReason) {
   newChannel->SetLoadFlags(config.loadFlags);
 
   nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(newChannel));
@@ -3275,7 +3286,7 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
     
     
     
-    bool shouldHideTiming = aReason != ConfigureReason::Redirect;
+    bool shouldHideTiming = aReason != ReplacementReason::Redirect;
     if (shouldHideTiming) {
       newTimedChannel->SetRedirectCount(config.timedChannel->redirectCount());
       int8_t newCount = config.timedChannel->internalRedirectCount() + 1;
@@ -3484,12 +3495,12 @@ nsresult HttpBaseChannel::SetupReplacementChannel(nsIURI* newURI,
 
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(newChannel);
 
-  ReplacementChannelConfig config = CloneReplacementChannelConfig(
-      preserveMethod, redirectFlags, LOAD_REPLACE);
-  ConfigureReason redirectType =
+  ReplacementReason redirectType =
       (redirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL)
-          ? ConfigureReason::InternalRedirect
-          : ConfigureReason::Redirect;
+          ? ReplacementReason::InternalRedirect
+          : ReplacementReason::Redirect;
+  ReplacementChannelConfig config = CloneReplacementChannelConfig(
+      preserveMethod, redirectFlags, redirectType, LOAD_REPLACE);
   ConfigureReplacementChannel(newChannel, config, redirectType);
 
   

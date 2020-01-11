@@ -492,21 +492,21 @@ class HttpBaseChannel : public nsHashPropertyBag,
     dom::ReplacementChannelConfigInit Serialize();
   };
 
+  enum class ReplacementReason {
+    Redirect,
+    InternalRedirect,
+    DocumentChannel,
+  };
+
   
   
   ReplacementChannelConfig CloneReplacementChannelConfig(
-      bool aPreserveMethod, uint32_t aRedirectFlags,
+      bool aPreserveMethod, uint32_t aRedirectFlags, ReplacementReason aReason,
       uint32_t aExtraLoadFlags = 0);
-
-  enum class ConfigureReason {
-    Redirect,
-    InternalRedirect,
-    DocumentChannelReplacement,
-  };
 
   static void ConfigureReplacementChannel(nsIChannel*,
                                           const ReplacementChannelConfig&,
-                                          ConfigureReason);
+                                          ReplacementReason);
 
   
   already_AddRefed<nsILoadInfo> CloneLoadInfoForRedirect(
