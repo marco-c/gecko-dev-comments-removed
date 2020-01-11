@@ -25997,6 +25997,12 @@ nsresult Cursor::CursorOpBase::PopulateResponseFromTypedStatement(
     }
   }
 
+  
+  
+  
+  
+  
+
   if (aInitializeResponse) {
     mResponse = std::remove_reference_t<decltype(
         cursorTypeTraits.GetTypedResponse(&mResponse))>{};
@@ -26079,9 +26085,17 @@ nsresult Cursor::CursorOpBase::PopulateExtraResponses(
     
     
     
+    
     rv = PopulateResponseFromStatement(aStmt, false, aOptPreviousSortKey);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+      
+      
+      
+      
+      
+      
+
+      break;
     }
 
     
