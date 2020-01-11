@@ -6341,18 +6341,6 @@ bool IonBuilder::testNeedsArgumentCheck(JSFunction* target,
   
   
 
-  if (target->isNativeWithJitEntry()) {
-    
-    
-    
-    
-    return true;
-  }
-
-  if (target->isNative()) {
-    return false;
-  }
-
   if (!target->hasScript()) {
     return true;
   }

@@ -5021,8 +5021,9 @@ void CodeGenerator::visitCallGeneric(LCallGeneric* call) {
                                        &invoke);
     masm.loadJitCodeRaw(calleereg, objreg);
   } else {
-    masm.branchIfFunctionHasNoScript(calleereg, &invoke);
-    masm.loadJitCodeNoArgCheck(calleereg, objreg);
+    
+    
+    masm.loadJitCodeMaybeNoArgCheck(calleereg, objreg);
   }
 
   
