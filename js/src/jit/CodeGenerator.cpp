@@ -5138,15 +5138,7 @@ void CodeGenerator::visitCallKnown(LCallKnown* call) {
     
     
 
-    Label uncompiled, end;
-    masm.branchIfFunctionHasNoScript(calleereg, &uncompiled);
-    masm.loadJitCodeNoArgCheck(calleereg, objreg);
-    masm.jump(&end);
-
-    
-    masm.bind(&uncompiled);
-    masm.loadJitCodeRaw(calleereg, objreg);
-    masm.bind(&end);
+    masm.loadJitCodeMaybeNoArgCheck(calleereg, objreg);
   }
 
   
