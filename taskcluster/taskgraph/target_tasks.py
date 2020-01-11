@@ -531,6 +531,16 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
             return True
 
         
+        if 'raptor-scn-power-idle' in try_name \
+                and 'pgo' in platform \
+                and ('-fenix' in try_name or '-fennec68' in try_name):
+            return True
+        if 'raptor-speedometer' in try_name \
+                and 'pgo' in platform \
+                and ('-fenix-power' in try_name or '-fennec68-power' in try_name):
+            return True
+
+        
         if platform and 'android' not in platform:
             return False
         if 'geckoview' not in try_name:
