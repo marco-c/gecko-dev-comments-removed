@@ -47,9 +47,6 @@ class SrcNote {
       CondOffset,
 
       
-      UpdateOffset,
-
-      
       
       BackJumpOffset,
       Count,
@@ -69,9 +66,6 @@ class SrcNote {
   class DoWhile {
    public:
     enum Fields {
-      
-      CondOffset,
-
       
       
       BackJumpOffset,

@@ -165,12 +165,6 @@ class LoopControl : public BreakableControl {
 
   
   
-  BytecodeOffsetDiff continueTargetOffsetFromLoopHead() const {
-    return continueTarget_.offset - head_.offset;
-  }
-
-  
-  
   
   
   void setContinueTarget(BytecodeOffset offset) {

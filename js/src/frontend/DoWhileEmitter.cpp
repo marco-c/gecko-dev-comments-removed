@@ -35,7 +35,7 @@ bool DoWhileEmitter::emitBody(const Maybe<uint32_t>& doPos,
   }
 
   
-  if (!bce_->newSrcNote3(SRC_DO_WHILE, 0, 0, &noteIndex_)) {
+  if (!bce_->newSrcNote(SRC_DO_WHILE, &noteIndex_)) {
     return false;
   }
 
@@ -82,11 +82,6 @@ bool DoWhileEmitter::emitEnd() {
   }
 
   
-  
-  if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::DoWhile::CondOffset,
-                              loopInfo_->continueTargetOffsetFromLoopHead())) {
-    return false;
-  }
   if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::DoWhile::BackJumpOffset,
                               loopInfo_->loopEndOffsetFromLoopHead())) {
     return false;
