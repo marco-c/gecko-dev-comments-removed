@@ -223,7 +223,7 @@ public class SessionAccessibility {
                     if (virtualViewId == View.NO_ID) {
                         
                         mSession.getPanZoomController().scrollBy(
-                                ScreenLength.zero(), ScreenLength.fromViewportHeight(0.8),
+                                ScreenLength.zero(), ScreenLength.fromVisualViewportHeight(0.8),
                                 PanZoomController.SCROLL_BEHAVIOR_AUTO);
                     } else {
                         
@@ -234,7 +234,7 @@ public class SessionAccessibility {
                     if (virtualViewId == View.NO_ID) {
                         
                         mSession.getPanZoomController().scrollBy(
-                                ScreenLength.zero(), ScreenLength.fromViewportHeight(-0.8),
+                                ScreenLength.zero(), ScreenLength.fromVisualViewportHeight(-0.8),
                                 PanZoomController.SCROLL_BEHAVIOR_AUTO);
                     } else {
                         

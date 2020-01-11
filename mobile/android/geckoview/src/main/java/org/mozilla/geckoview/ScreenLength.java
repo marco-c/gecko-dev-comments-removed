@@ -17,7 +17,7 @@ import java.lang.annotation.RetentionPolicy;
 
 public class ScreenLength {
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({PIXEL, VIEWPORT_WIDTH, VIEWPORT_HEIGHT, DOCUMENT_WIDTH, DOCUMENT_HEIGHT})
+    @IntDef({PIXEL, VISUAL_VIEWPORT_WIDTH, VISUAL_VIEWPORT_HEIGHT, DOCUMENT_WIDTH, DOCUMENT_HEIGHT})
      @interface ScreenLengthType {}
 
     
@@ -29,13 +29,13 @@ public class ScreenLength {
 
 
 
-    public static final int VIEWPORT_WIDTH = 1;
+    public static final int VISUAL_VIEWPORT_WIDTH = 1;
     
 
 
 
 
-    public static final int VIEWPORT_HEIGHT = 2;
+    public static final int VISUAL_VIEWPORT_HEIGHT = 2;
     
 
 
@@ -104,8 +104,8 @@ public class ScreenLength {
 
     @NonNull
     @AnyThread
-    public static ScreenLength fromViewportWidth(final double value) {
-        return new ScreenLength(value, VIEWPORT_WIDTH);
+    public static ScreenLength fromVisualViewportWidth(final double value) {
+        return new ScreenLength(value, VISUAL_VIEWPORT_WIDTH);
     }
 
     
@@ -118,8 +118,8 @@ public class ScreenLength {
 
     @NonNull
     @AnyThread
-    public static ScreenLength fromViewportHeight(final double value) {
-        return new ScreenLength(value, VIEWPORT_HEIGHT);
+    public static ScreenLength fromVisualViewportHeight(final double value) {
+        return new ScreenLength(value, VISUAL_VIEWPORT_HEIGHT);
     }
 
     private final double mValue;
