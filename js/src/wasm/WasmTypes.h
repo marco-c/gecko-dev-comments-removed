@@ -37,6 +37,7 @@
 #include "js/UniquePtr.h"
 #include "js/Utility.h"
 #include "js/Vector.h"
+#include "vm/JSFunction.h"
 #include "vm/MallocProvider.h"
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmUtility.h"
@@ -640,6 +641,83 @@ Value UnboxAnyRef(AnyRef val);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class FuncRef {
+  JSFunction* value_;
+
+  explicit FuncRef() : value_((JSFunction*)-1) {}
+  explicit FuncRef(JSFunction* p) : value_(p) {
+    MOZ_ASSERT(((uintptr_t)p & 0x03) == 0);
+  }
+
+ public:
+  
+  static FuncRef fromCompiledCode(void* p) { return FuncRef((JSFunction*)p); }
+
+  
+  static FuncRef fromJSFunction(JSFunction* p) { return FuncRef(p); }
+
+  
+  
+  static FuncRef fromAnyRefUnchecked(AnyRef p) {
+#ifdef DEBUG
+    Value v = UnboxAnyRef(p);
+    if (v.isNull()) {
+      return FuncRef(nullptr);
+    }
+    if (v.toObject().is<JSFunction>()) {
+      return FuncRef(&v.toObject().as<JSFunction>());
+    }
+    MOZ_CRASH("Bad value");
+#else
+    return FuncRef(&p.asJSObject()->as<JSFunction>());
+#endif
+  }
+
+  AnyRef asAnyRef() { return AnyRef::fromJSObject((JSObject*)value_); }
+
+  void* forCompiledCode() const { return value_; }
+
+  JSFunction* asJSFunction() { return value_; }
+
+  bool isNull() { return value_ == nullptr; }
+};
+
+typedef Rooted<FuncRef> RootedFuncRef;
+typedef Handle<FuncRef> HandleFuncRef;
+typedef MutableHandle<FuncRef> MutableHandleFuncRef;
+
+
+
+Value UnboxFuncRef(FuncRef val);
+
+
+
+
+
+
+
+
 enum class Tier {
   Baseline,
   Debug = Baseline,
@@ -773,6 +851,10 @@ class MOZ_NON_PARAM Val : public LitVal {
   explicit Val(ValType type, AnyRef val) : LitVal(type, AnyRef::null()) {
     MOZ_ASSERT(type.isReference());
     u.ref_ = val;
+  }
+  explicit Val(ValType type, FuncRef val) : LitVal(type, AnyRef::null()) {
+    MOZ_ASSERT(type == ValType::FuncRef);
+    u.ref_ = val.asAnyRef();
   }
   void trace(JSTracer* trc);
 };
@@ -2175,6 +2257,7 @@ struct TableTls {
   
   void* functionBase;
 };
+
 
 
 
