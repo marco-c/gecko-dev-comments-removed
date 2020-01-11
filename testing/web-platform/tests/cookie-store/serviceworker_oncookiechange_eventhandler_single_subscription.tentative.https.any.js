@@ -1,26 +1,26 @@
-self.GLOBAL = {
-  isWindow: function() { return false; },
-  isWorker: function() { return true; },
-};
-importScripts("/resources/testharness.js");
+
+
+
+'use strict';
+
+const kScope = '/cookie-store/does/not/exist';
 
 
 const kServiceWorkerActivatedPromise = new Promise((resolve) => {
   self.addEventListener('activate', event => { resolve(); });
 });
 
-const kCookieChangeReceivedPromise = new Promise((resolve) => {
-  self.addEventListener('cookiechange', (event) => {
-    resolve(event);
-  });
+
+const kCookieChangeReceivedPromise = new Promise(resolve => {
+  self.oncookiechange = event => { resolve(event); };
 });
 
 promise_test(async testCase => {
   await kServiceWorkerActivatedPromise;
 
   const subscriptions = [
-    { name: 'cookie-name', matchType: 'equals',
-      url: '/cookie-store/scope/path' }];
+    { name: 'cookie-name', matchType: 'equals', url: `${kScope}/path` }
+  ];
   await registration.cookies.subscribe(subscriptions);
   testCase.add_cleanup(() => registration.cookies.unsubscribe(subscriptions));
 
@@ -38,6 +38,4 @@ promise_test(async testCase => {
   assert_true(event instanceof ExtendableCookieChangeEvent);
   assert_true(event instanceof ExtendableEvent);
 }, 'cookiechange dispatched with cookie change that matches subscription ' +
-   'to event handler registered with oncookiechange');
-
-done();
+   'to cookiechange event handler registered with addEventListener');

@@ -1,56 +1,14 @@
-self.GLOBAL = {
-  isWindow: function() { return false; },
-  isWorker: function() { return true; },
-};
-importScripts("/resources/testharness.js");
 
 
-const kServiceWorkerActivatedPromise = new Promise(resolve => {
+
+'use strict';
+
+const kScope = '/cookie-store/does/not/exist';
+
+
+const kServiceWorkerActivatedPromise = new Promise((resolve) => {
   self.addEventListener('activate', event => { resolve(); });
 });
-
-
-
-
-
-
-function CompareStrings(a, b) {
-  return a < b ? -1 : (b < a ? 1 : 0);
-}
-
-promise_test(async testCase => {
-  await kServiceWorkerActivatedPromise;
-
-  {
-    const subscriptions = [
-      { name: 'cookie-name1', matchType: 'equals', url: '/cookie-store/path1' },
-    ];
-    await registration.cookies.subscribe(subscriptions);
-    testCase.add_cleanup(() => registration.cookies.unsubscribe(subscriptions));
-  }
-  {
-    const subscriptions = [
-      { },  
-      { name: 'cookie-prefix', matchType: 'starts-with' },
-    ];
-    await registration.cookies.subscribe(subscriptions);
-    testCase.add_cleanup(() => registration.cookies.unsubscribe(subscriptions));
-  }
-
-  const subscriptions = await registration.cookies.getSubscriptions();
-  assert_equals(subscriptions.length, 3);
-
-  subscriptions.sort((a, b) => CompareStrings(`${a.name}`, `${b.name}`));
-
-  assert_equals(subscriptions[0].name, 'cookie-name1');
-  assert_equals('equals', subscriptions[0].matchType);
-
-  assert_equals(subscriptions[1].name, 'cookie-prefix');
-  assert_equals('starts-with', subscriptions[1].matchType);
-
-  assert_false('name' in subscriptions[2]);
-  assert_equals('starts-with', subscriptions[2].matchType);
-}, 'getSubscriptions returns subscriptions passed to subscribe');
 
 
 let g_cookie_changes = [];
@@ -61,8 +19,9 @@ let g_cookie_change_received_promise = null;
 let g_cookie_change_received_promise_resolver = null;
 self.addEventListener('cookiechange', (event) => {
   g_cookie_changes.push(event);
-  if (g_cookie_change_received_promise_resolver)
+  if (g_cookie_change_received_promise_resolver) {
     g_cookie_change_received_promise_resolver();
+  }
 });
 function RearmCookieChangeReceivedPromise() {
   g_cookie_change_received_promise = new Promise((resolve) => {
@@ -76,7 +35,7 @@ promise_test(async testCase => {
 
   {
     const subscriptions = [
-      { name: 'cookie-name1', matchType: 'equals', url: '/cookie-store/path1' },
+      { name: 'cookie-name1', matchType: 'equals', url: `${kScope}/path1` },
     ];
     await registration.cookies.subscribe(subscriptions);
     testCase.add_cleanup(() => registration.cookies.unsubscribe(subscriptions));
@@ -100,7 +59,7 @@ promise_test(async testCase => {
   testCase.add_cleanup(() => RearmCookieChangeReceivedPromise());
 
   assert_equals(g_cookie_changes.length, 1);
-  const event = g_cookie_changes[0]
+  const event = g_cookie_changes[0];
   assert_equals(event.type, 'cookiechange');
   assert_equals(event.changed.length, 1);
   assert_equals(event.changed[0].name, 'cookie-name');
@@ -109,5 +68,3 @@ promise_test(async testCase => {
   assert_true(event instanceof ExtendableCookieChangeEvent);
   assert_true(event instanceof ExtendableEvent);
 }, 'cookiechange dispatched with cookie change that matches subscription');
-
-done();
