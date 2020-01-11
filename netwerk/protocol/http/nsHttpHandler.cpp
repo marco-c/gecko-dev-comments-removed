@@ -454,6 +454,10 @@ nsresult nsHttpHandler::Init() {
   }
 
   
+  
+  EnsureConnectionMgr();
+
+  
   Preferences::RegisterPrefixCallbacks(nsHttpHandler::PrefsChanged,
                                        gCallbackPrefs, this);
   PrefsChanged(nullptr);
@@ -562,6 +566,12 @@ nsresult nsHttpHandler::Init() {
   if (pc) {
     pc->GetParentalControlsEnabled(&mParentalControlEnabled);
   }
+
+  
+  
+  MOZ_ASSERT_IF(mConnMgr, mConnMgr->GetParamUpdateCount() ==
+                              ((1 << nsHttpConnectionMgr::PARAM_COUNT) - 1));
+
   return NS_OK;
 }
 
@@ -580,16 +590,24 @@ void nsHttpHandler::MakeNewRequestTokenBucket() {
   }
 }
 
-nsresult nsHttpHandler::InitConnectionMgr() {
-  
+bool nsHttpHandler::EnsureConnectionMgr() {
   if (IsNeckoChild()) {
-    return NS_OK;
+    return false;
   }
-
-  nsresult rv;
 
   if (!mConnMgr) {
     mConnMgr = new nsHttpConnectionMgr();
+  }
+
+  return true;
+}
+
+nsresult nsHttpHandler::InitConnectionMgr() {
+  nsresult rv;
+
+  
+  if (!EnsureConnectionMgr()) {
+    return NS_OK;
   }
 
   rv = mConnMgr->Init(

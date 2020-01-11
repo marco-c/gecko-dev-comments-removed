@@ -66,7 +66,9 @@ class nsHttpConnectionMgr final : public nsIObserver, public AltSvcCache {
     THROTTLING_READ_INTERVAL,
     THROTTLING_HOLD_TIME,
     THROTTLING_MAX_TIME,
-    PROXY_BE_CONSERVATIVE
+    PROXY_BE_CONSERVATIVE,
+
+    PARAM_COUNT  
   };
 
   
@@ -259,6 +261,13 @@ class nsHttpConnectionMgr final : public nsIObserver, public AltSvcCache {
   }
 
   void BlacklistSpdy(const nsHttpConnectionInfo* ci);
+
+#ifdef DEBUG
+  
+  
+  
+  uint32_t GetParamUpdateCount() { return mParamUpdateFlags; }
+#endif
 
  private:
   virtual ~nsHttpConnectionMgr();
@@ -721,6 +730,12 @@ class nsHttpConnectionMgr final : public nsIObserver, public AltSvcCache {
   nsCOMPtr<nsITimer> mTimeoutTick;
   bool mTimeoutTickArmed;
   uint32_t mTimeoutTickNext;
+
+#ifdef DEBUG
+  
+  
+  Atomic<uint32_t, ReleaseAcquire> mParamUpdateFlags;
+#endif
 
   
   
