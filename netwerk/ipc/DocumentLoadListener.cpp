@@ -276,7 +276,7 @@ void DocumentLoadListener::FinishReplacementChannelSetup(bool aSucceeded) {
       !SameCOMIdentity(redirectChannel, static_cast<nsIParentChannel*>(this)));
 
   Delete();
-  if (!mStopRequestValue) {
+  if (!mIsFinished) {
     mParentChannelListener->SetListenerAfterRedirect(redirectChannel);
   }
   redirectChannel->SetParentListener(mParentChannelListener);
@@ -344,45 +344,58 @@ void DocumentLoadListener::ResumeSuspendedChannel(
     return;
   }
 
-  nsTArray<OnDataAvailableRequest> pendingRequests =
-      std::move(mPendingRequests);
-  MOZ_ASSERT(mPendingRequests.IsEmpty());
-
   RefPtr<nsHttpChannel> httpChannel = do_QueryObject(mChannel);
   if (httpChannel) {
     httpChannel->SetApplyConversion(mOldApplyConversion);
   }
-  nsresult rv = aListener->OnStartRequest(mChannel);
-  if (NS_FAILED(rv)) {
-    mChannel->Cancel(rv);
-  }
 
   
   
   
-  if (NS_SUCCEEDED(rv) &&
-      (!mStopRequestValue || NS_SUCCEEDED(*mStopRequestValue))) {
-    for (auto& request : pendingRequests) {
-      nsCOMPtr<nsIInputStream> stringStream;
-      rv = NS_NewByteInputStream(
-          getter_AddRefs(stringStream),
-          Span<const char>(request.data.get(), request.count),
-          NS_ASSIGNMENT_DEPEND);
-      if (NS_SUCCEEDED(rv)) {
-        rv = aListener->OnDataAvailable(mChannel, stringStream, request.offset,
-                                        request.count);
-      }
-      if (NS_FAILED(rv)) {
-        mChannel->Cancel(rv);
-        mStopRequestValue = Some(rv);
-        break;
-      }
-    }
+  nsTArray<StreamListenerFunction> streamListenerFunctions =
+      std::move(mStreamListenerFunctions);
+  nsresult rv = NS_OK;
+  for (auto& variant : streamListenerFunctions) {
+    variant.match(
+        [&](const OnStartRequestParams& aParams) {
+          rv = aListener->OnStartRequest(aParams.request);
+          if (NS_FAILED(rv)) {
+            aParams.request->Cancel(rv);
+          }
+        },
+        [&](const OnDataAvailableParams& aParams) {
+          
+          
+          if (NS_FAILED(rv)) {
+            return;
+          }
+          nsCOMPtr<nsIInputStream> stringStream;
+          rv = NS_NewByteInputStream(
+              getter_AddRefs(stringStream),
+              Span<const char>(aParams.data.get(), aParams.count),
+              NS_ASSIGNMENT_DEPEND);
+          if (NS_SUCCEEDED(rv)) {
+            rv = aListener->OnDataAvailable(aParams.request, stringStream,
+                                            aParams.offset, aParams.count);
+          }
+          if (NS_FAILED(rv)) {
+            aParams.request->Cancel(rv);
+          }
+        },
+        [&](const OnStopRequestParams& aParams) {
+          if (NS_SUCCEEDED(rv)) {
+            aListener->OnStopRequest(aParams.request, aParams.status);
+          } else {
+            aListener->OnStopRequest(aParams.request, rv);
+          }
+          rv = NS_OK;
+        });
   }
-
-  if (mStopRequestValue) {
-    aListener->OnStopRequest(mChannel, *mStopRequestValue);
-  }
+  
+  
+  
+  NS_ASSERTION(mStreamListenerFunctions.IsEmpty(),
+               "Should not have added new stream listener function!");
 
   mChannel->Resume();
 }
@@ -647,6 +660,7 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   
   
   
+  
   if (mDoingProcessSwitch) {
     return NS_OK;
   }
@@ -663,6 +677,9 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
     mDocumentChannelBridge->DisconnectChildListeners(NS_ERROR_NO_CONTENT);
     return NS_OK;
   }
+
+  mStreamListenerFunctions.AppendElement(StreamListenerFunction{
+      VariantIndex<0>{}, OnStartRequestParams{aRequest}});
 
   mChannel->Suspend();
   mSuspendedChannel = true;
@@ -702,8 +719,9 @@ NS_IMETHODIMP
 DocumentLoadListener::OnStopRequest(nsIRequest* aRequest,
                                     nsresult aStatusCode) {
   LOG(("DocumentLoadListener OnStopRequest [this=%p]", this));
-  mStopRequestValue = Some(aStatusCode);
-
+  mStreamListenerFunctions.AppendElement(StreamListenerFunction{
+      VariantIndex<2>{}, OnStopRequestParams{aRequest, aStatusCode}});
+  mIsFinished = true;
   return NS_OK;
 }
 
@@ -721,8 +739,9 @@ DocumentLoadListener::OnDataAvailable(nsIRequest* aRequest,
   nsresult rv = NS_ReadInputStreamToString(aInputStream, data, aCount);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  mPendingRequests.AppendElement(
-      OnDataAvailableRequest({data, aOffset, aCount}));
+  mStreamListenerFunctions.AppendElement(StreamListenerFunction{
+      VariantIndex<1>{},
+      OnDataAvailableParams{aRequest, data, aOffset, aCount}});
 
   return NS_OK;
 }

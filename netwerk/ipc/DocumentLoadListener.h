@@ -258,14 +258,29 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
       SecurityWarningFunction;
   nsTArray<SecurityWarningFunction> mSecurityWarningFunctions;
 
-  struct OnDataAvailableRequest {
+  struct OnStartRequestParams {
+    nsCOMPtr<nsIRequest> request;
+  };
+  struct OnDataAvailableParams {
+    nsCOMPtr<nsIRequest> request;
     nsCString data;
     uint64_t offset;
     uint32_t count;
   };
+  struct OnStopRequestParams {
+    nsCOMPtr<nsIRequest> request;
+    nsresult status;
+  };
+  typedef mozilla::Variant<OnStartRequestParams, OnDataAvailableParams,
+                           OnStopRequestParams>
+      StreamListenerFunction;
   
-  nsTArray<OnDataAvailableRequest> mPendingRequests;
-  Maybe<nsresult> mStopRequestValue;
+  
+  
+  
+  
+  
+  nsTArray<StreamListenerFunction> mStreamListenerFunctions;
 
   nsCOMPtr<nsIChannel> mChannel;
 
@@ -313,6 +328,10 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   bool mHasCrossOriginOpenerPolicyMismatch = false;
+  
+  
+  
+  bool mIsFinished = false;
 
   typedef MozPromise<uint64_t, nsresult, true >
       ContentProcessIdPromise;
