@@ -391,19 +391,31 @@ static void ComposeSortedEffects(
     const nsTArray<KeyframeEffect*>& aSortedEffects,
     const EffectSet* aEffectSet, EffectCompositor::CascadeLevel aCascadeLevel,
     RawServoAnimationValueMap* aAnimationValues) {
-  
-  
-  
+  const bool isTransition =
+      aCascadeLevel == EffectCompositor::CascadeLevel::Transitions;
   nsCSSPropertyIDSet propertiesToSkip;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (aEffectSet) {
     propertiesToSkip =
-        aCascadeLevel == EffectCompositor::CascadeLevel::Animations
-            ? aEffectSet->PropertiesForAnimationsLevel().Inverse()
-            : aEffectSet->PropertiesForAnimationsLevel();
+        isTransition ? aEffectSet->PropertiesForAnimationsLevel()
+                     : aEffectSet->PropertiesForAnimationsLevel().Inverse();
   }
 
   for (KeyframeEffect* effect : aSortedEffects) {
-    effect->GetAnimation()->ComposeStyle(*aAnimationValues, propertiesToSkip);
+    auto* animation = effect->GetAnimation();
+    MOZ_ASSERT(!isTransition || animation->CascadeLevel() == aCascadeLevel);
+    animation->ComposeStyle(*aAnimationValues, propertiesToSkip);
   }
 }
 
@@ -423,11 +435,27 @@ bool EffectCompositor::GetServoAnimationRule(
     return false;
   }
 
+  const bool isTransition = aCascadeLevel == CascadeLevel::Transitions;
+
   
   nsTArray<KeyframeEffect*> sortedEffectList(effectSet->Count());
   for (KeyframeEffect* effect : *effectSet) {
+    if (isTransition &&
+        effect->GetAnimation()->CascadeLevel() != aCascadeLevel) {
+      
+      
+      
+      
+      
+      continue;
+    }
     sortedEffectList.AppendElement(effect);
   }
+
+  if (sortedEffectList.IsEmpty()) {
+    return false;
+  }
+
   sortedEffectList.Sort(EffectCompositeOrderComparator());
 
   ComposeSortedEffects(sortedEffectList, effectSet, aCascadeLevel,
@@ -461,8 +489,7 @@ bool EffectCompositor::ComposeServoAnimationRuleForEffect(
   
   
   
-  EffectCompositor::MaybeUpdateCascadeResults(target->mElement,
-                                              target->mPseudoType);
+  MaybeUpdateCascadeResults(target->mElement, target->mPseudoType);
 
   EffectSet* effectSet =
       EffectSet::GetEffectSet(target->mElement, target->mPseudoType);
