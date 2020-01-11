@@ -122,10 +122,27 @@ class GraphDriver {
 
 
 
+
+
+
+
+
   class IterationResult final {
     struct Undefined {};
     struct StillProcessing {};
-    struct Stop {};
+    struct Stop {
+      explicit Stop(RefPtr<Runnable> aStoppedRunnable)
+          : mStoppedRunnable(std::move(aStoppedRunnable)) {}
+      Stop(const Stop&) = delete;
+      Stop(Stop&& aOther)
+          : mStoppedRunnable(std::move(aOther.mStoppedRunnable)) {}
+      ~Stop() { MOZ_ASSERT(!mStoppedRunnable); }
+      RefPtr<Runnable> mStoppedRunnable;
+      void Stopped() {
+        mStoppedRunnable->Run();
+        mStoppedRunnable = nullptr;
+      }
+    };
     Variant<Undefined, StillProcessing, Stop> mResult;
 
     explicit IterationResult(StillProcessing&& aArg)
@@ -143,10 +160,17 @@ class GraphDriver {
     static IterationResult CreateStillProcessing() {
       return IterationResult(StillProcessing());
     }
-    static IterationResult CreateStop() { return IterationResult(Stop()); }
+    static IterationResult CreateStop(RefPtr<Runnable> aStoppedRunnable) {
+      return IterationResult(Stop(std::move(aStoppedRunnable)));
+    }
 
     bool IsStillProcessing() const { return mResult.is<StillProcessing>(); }
     bool IsStop() const { return mResult.is<Stop>(); }
+
+    void Stopped() {
+      MOZ_ASSERT(IsStop());
+      mResult.as<Stop>().Stopped();
+    }
   };
 
   GraphDriver(MediaTrackGraphImpl* aGraphImpl, uint32_t aSampleRate);

@@ -284,9 +284,8 @@ void ThreadedDriver::RunThread() {
 
     if (result.IsStop()) {
       
-      
       dom::WorkletThread::DeleteCycleCollectedJSContext();
-      GraphImpl()->SignalMainThreadCleanup();
+      result.Stopped();
       break;
     }
     MOZ_ASSERT(result.IsStillProcessing());
@@ -852,10 +851,9 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
     
     mShouldFallbackIfError = false;
     
+    result.Stopped();
+    
     mAudioThreadRunning = false;
-    
-    
-    mGraphImpl->SignalMainThreadCleanup();
     return aFrames - 1;
   }
   MOZ_ASSERT(result.IsStillProcessing());
