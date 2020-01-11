@@ -6143,7 +6143,7 @@ class DatabaseFile final : public PBackgroundIDBDatabaseFileParent {
 
 
 
-  already_AddRefed<nsIInputStream> GetInputStream(ErrorResult& rv) const;
+  MOZ_MUST_USE nsCOMPtr<nsIInputStream> GetInputStream(ErrorResult& rv) const;
 
   
 
@@ -6180,8 +6180,7 @@ class DatabaseFile final : public PBackgroundIDBDatabaseFileParent {
   }
 };
 
-already_AddRefed<nsIInputStream> DatabaseFile::GetInputStream(
-    ErrorResult& rv) const {
+nsCOMPtr<nsIInputStream> DatabaseFile::GetInputStream(ErrorResult& rv) const {
   
   
   MOZ_ASSERT(!IsOnBackgroundThread());
@@ -6196,7 +6195,7 @@ already_AddRefed<nsIInputStream> DatabaseFile::GetInputStream(
     return nullptr;
   }
 
-  return inputStream.forget();
+  return inputStream;
 }
 
 class TransactionBase {
