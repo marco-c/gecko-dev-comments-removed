@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+"use strict";
+
+
+
+
+
+var helpers = require("../helpers");
+
+module.exports = function(context) {
+  
+  
+  
+
+  const isRelativePath = function(path) {
+    return path.startsWith("./") || path.startsWith("../");
+  };
+
+  return {
+    CallExpression(node) {
+      const path = helpers.getDevToolsRequirePath(node);
+      if (path && isRelativePath(path)) {
+        context.report(node, "relative paths are not allowed with require()");
+      }
+    },
+  };
+};

@@ -133,7 +133,23 @@ module.exports = {
     "rules": {
       "mozilla/no-define-cc-etc": "off",
     }
-  }, ],
+  }, {
+    
+    "files": [
+      "**"
+    ],
+    "excludedFiles": [
+      
+      
+      "client/debugger/**",
+      
+      
+      "client/shared/build/**",
+    ],
+    "rules": {
+      "mozilla/reject-relative-requires": "error",
+    }
+  }],
   "rules": {
     
     
