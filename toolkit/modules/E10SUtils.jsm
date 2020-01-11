@@ -57,8 +57,8 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
-  "useHttpResponseProcessSelection",
-  "browser.tabs.remote.useHTTPResponseProcessSelection",
+  "documentChannel",
+  "browser.tabs.documentchannel",
   false
 );
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -258,7 +258,12 @@ function validatedWebRemoteType(
   ) {
     
     
+    
     if (aCurrentUri) {
+      if (documentChannel && aCurrentUri.scheme == "file") {
+        return aPreferredRemoteType;
+      }
+
       try {
         
         
@@ -287,11 +292,11 @@ var E10SUtils = {
   PRIVILEGEDMOZILLA_REMOTE_TYPE,
   LARGE_ALLOCATION_REMOTE_TYPE,
 
-  useHttpResponseProcessSelection() {
-    return useHttpResponseProcessSelection;
-  },
   useCrossOriginOpenerPolicy() {
     return useCrossOriginOpenerPolicy;
+  },
+  documentChannel() {
+    return documentChannel;
   },
 
   
@@ -776,7 +781,7 @@ var E10SUtils = {
     
     
     if (
-      (useRemoteSubframes || useHttpResponseProcessSelection) &&
+      (useRemoteSubframes || documentChannel) &&
       (aURI.scheme == "http" ||
         aURI.scheme == "https" ||
         aURI.scheme == "data") &&
