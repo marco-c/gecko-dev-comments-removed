@@ -22,9 +22,7 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @RobocopTarget
@@ -44,12 +42,12 @@ public final class EventDispatcher extends JNIObject {
     private static final int DEFAULT_BACKGROUND_EVENTS_COUNT = 64; 
 
     
-    private final Map<String, List<BundleEventListener>> mGeckoThreadListeners =
-        new HashMap<String, List<BundleEventListener>>(DEFAULT_GECKO_EVENTS_COUNT);
-    private final Map<String, List<BundleEventListener>> mUiThreadListeners =
-        new HashMap<String, List<BundleEventListener>>(DEFAULT_UI_EVENTS_COUNT);
-    private final Map<String, List<BundleEventListener>> mBackgroundThreadListeners =
-        new HashMap<String, List<BundleEventListener>>(DEFAULT_BACKGROUND_EVENTS_COUNT);
+    private final MultiMap<String, BundleEventListener> mGeckoThreadListeners =
+        new MultiMap<>(DEFAULT_GECKO_EVENTS_COUNT);
+    private final MultiMap<String, BundleEventListener> mUiThreadListeners =
+        new MultiMap<>(DEFAULT_UI_EVENTS_COUNT);
+    private final MultiMap<String, BundleEventListener> mBackgroundThreadListeners =
+        new MultiMap<>(DEFAULT_BACKGROUND_EVENTS_COUNT);
 
     private boolean mAttachedToGecko;
     private final NativeQueue mNativeQueue;
@@ -104,7 +102,7 @@ public final class EventDispatcher extends JNIObject {
     }
 
     private <T> void registerListener(final Class<?> listType,
-                                      final Map<String, List<T>> listenersMap,
+                                      final MultiMap<String, T> listenersMap,
                                       final T listener,
                                       final String[] events) {
         try {
@@ -113,18 +111,10 @@ public final class EventDispatcher extends JNIObject {
                     if (event == null) {
                         continue;
                     }
-                    List<T> listeners = listenersMap.get(event);
-                    if (listeners == null) {
-                        
-                        @SuppressWarnings("unchecked")
-                        final Class<? extends List<T>> type = (Class) listType;
-                        listeners = type.newInstance();
-                        listenersMap.put(event, listeners);
-                    }
-                    if (!BuildConfig.RELEASE_OR_BETA && listeners.contains(listener)) {
+                    if (!BuildConfig.RELEASE_OR_BETA && listenersMap.containsEntry(event, listener)) {
                         throw new IllegalStateException("Already registered " + event);
                     }
-                    listeners.add(listener);
+                    listenersMap.add(event, listener);
                 }
             }
         } catch (final Exception e) {
@@ -132,14 +122,14 @@ public final class EventDispatcher extends JNIObject {
         }
     }
 
-    private void checkNotRegisteredElsewhere(final Map<String, ?> allowedMap,
+    private void checkNotRegisteredElsewhere(final MultiMap<String, ?> allowedMap,
                                              final String[] events) {
         if (BuildConfig.RELEASE_OR_BETA) {
             
             
             return;
         }
-        for (final Map<String, ?> listenersMap : Arrays.asList(mGeckoThreadListeners,
+        for (final MultiMap<String, ?> listenersMap : Arrays.asList(mGeckoThreadListeners,
                                                                mUiThreadListeners,
                                                                mBackgroundThreadListeners)) {
             if (listenersMap == allowedMap) {
@@ -147,7 +137,7 @@ public final class EventDispatcher extends JNIObject {
             }
             synchronized (listenersMap) {
                 for (final String event : events) {
-                    if (listenersMap.get(event) != null) {
+                    if (listenersMap.containsKey(event)) {
                         throw new IllegalStateException(
                             "Already registered " + event + " under a different type");
                     }
@@ -156,7 +146,7 @@ public final class EventDispatcher extends JNIObject {
         }
     }
 
-    private <T> void unregisterListener(final Map<String, List<T>> listenersMap,
+    private <T> void unregisterListener(final MultiMap<String, T> listenersMap,
                                         final T listener,
                                         final String[] events) {
         synchronized (listenersMap) {
@@ -164,9 +154,8 @@ public final class EventDispatcher extends JNIObject {
                 if (event == null) {
                     continue;
                 }
-                List<T> listeners = listenersMap.get(event);
-                if ((listeners == null ||
-                     !listeners.remove(listener)) && !BuildConfig.RELEASE_OR_BETA) {
+
+                if (!listenersMap.remove(event, listener) && !BuildConfig.RELEASE_OR_BETA) {
                     throw new IllegalArgumentException(event + " was not registered");
                 }
             }
@@ -272,7 +261,7 @@ public final class EventDispatcher extends JNIObject {
         synchronized (mGeckoThreadListeners) {
             geckoListeners = mGeckoThreadListeners.get(type);
         }
-        if (geckoListeners != null && !geckoListeners.isEmpty()) {
+        if (!geckoListeners.isEmpty()) {
             final boolean onGeckoThread = ThreadUtils.isOnGeckoThread();
             final EventCallback wrappedCallback = JavaCallbackDelegate.wrap(callback);
 
@@ -329,11 +318,11 @@ public final class EventDispatcher extends JNIObject {
 
     @WrapForJNI
     public boolean hasListener(final String event) {
-        for (final Map<String, ?> listenersMap : Arrays.asList(mGeckoThreadListeners,
+        for (final MultiMap<String, ?> listenersMap : Arrays.asList(mGeckoThreadListeners,
                 mUiThreadListeners,
                 mBackgroundThreadListeners)) {
             synchronized (listenersMap) {
-                if (listenersMap.get(event) != null) {
+                if (listenersMap.containsKey(event)) {
                     return true;
                 }
             }
@@ -345,20 +334,14 @@ public final class EventDispatcher extends JNIObject {
     private boolean dispatchToThread(final String type,
                                      final GeckoBundle message,
                                      final EventCallback callback,
-                                     final Map<String, List<BundleEventListener>> listenersMap,
+                                     final MultiMap<String, BundleEventListener> listenersMap,
                                      final Handler thread) {
         
         
         
         
         synchronized (listenersMap) {
-            final List<BundleEventListener> listeners = listenersMap.get(type);
-            if (listeners == null) {
-                return false;
-            }
-
-            if (listeners.isEmpty()) {
-                
+            if (!listenersMap.containsKey(type)) {
                 return false;
             }
 
@@ -366,7 +349,7 @@ public final class EventDispatcher extends JNIObject {
             final EventCallback wrappedCallback = JavaCallbackDelegate.wrap(callback);
 
             
-            for (final BundleEventListener listener : listeners) {
+            for (final BundleEventListener listener : listenersMap.get(type)) {
                 thread.post(new Runnable() {
                     @Override
                     public void run() {
