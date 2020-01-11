@@ -308,9 +308,10 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   bool HasSuspendTaint() const;
 
-  void SetCloningVisually(bool aIsCloningVisually);
-
   void UpdateVideoDecodeMode();
+
+  void SetSecondaryVideoContainer(
+      RefPtr<VideoFrameContainer> aSecondaryVideoContainer);
 
   void SetIsBackgroundVideoDecodingAllowed(bool aAllowed);
 
@@ -567,10 +568,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   bool mHasSuspendTaint;
 
-  
-  
-  bool mIsCloningVisually;
-
   MediaDecoderOwner::NextFrameStatus mNextFrameStatus =
       MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE;
 
@@ -625,6 +622,10 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   
   
+  Canonical<RefPtr<VideoFrameContainer>> mSecondaryVideoContainer;
+
+  
+  
   Canonical<bool> mOutputCaptured;
 
   
@@ -667,6 +668,10 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   AbstractCanonical<bool>* CanonicalLooping() { return &mLooping; }
   AbstractCanonical<RefPtr<AudioDeviceInfo>>* CanonicalSinkDevice() {
     return &mSinkDevice;
+  }
+  AbstractCanonical<RefPtr<VideoFrameContainer>>*
+  CanonicalSecondaryVideoContainer() {
+    return &mSecondaryVideoContainer;
   }
   AbstractCanonical<bool>* CanonicalOutputCaptured() {
     return &mOutputCaptured;
