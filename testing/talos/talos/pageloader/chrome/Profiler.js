@@ -14,7 +14,6 @@
 
 
 
-
 var Profiler;
 
 (function() {
@@ -33,14 +32,6 @@ var Profiler;
 
   
   var profiler_interval, profiler_entries, profiler_threadsArray, profiler_dir;
-
-  try {
-    
-    
-    
-    
-    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
-  } catch (e) {}
 
   
   try {
