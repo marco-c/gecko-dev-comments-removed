@@ -200,28 +200,21 @@ already_AddRefed<Promise> ServiceWorkerRegistration::Update(ErrorResult& aRv) {
   }
 
   
-
-
-
-  const bool hasNewestWorker = mDescriptor.GetInstalling() ||
-                               mDescriptor.GetWaiting() ||
-                               mDescriptor.GetActive();
+  
+  const Maybe<ServiceWorkerDescriptor> newestWorkerDescriptor =
+      mDescriptor.Newest();
 
   
-
-
-
-  if (!hasNewestWorker) {
+  
+  if (newestWorkerDescriptor.isNothing()) {
     outer->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
     return outer.forget();
   }
 
   
-
-
-
-
-
+  
+  
+  
   if (!NS_IsMainThread()) {
     WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
     MOZ_ASSERT(workerPrivate);
@@ -237,6 +230,7 @@ already_AddRefed<Promise> ServiceWorkerRegistration::Update(ErrorResult& aRv) {
   RefPtr<ServiceWorkerRegistration> self = this;
 
   mInner->Update(
+      newestWorkerDescriptor.ref().ScriptURL(),
       [outer, self](const ServiceWorkerRegistrationDescriptor& aDesc) {
         nsIGlobalObject* global = self->GetParentObject();
         

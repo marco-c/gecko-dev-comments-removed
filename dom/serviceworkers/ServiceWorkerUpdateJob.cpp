@@ -140,11 +140,10 @@ class ServiceWorkerUpdateJob::ContinueInstallRunnable final
 };
 
 ServiceWorkerUpdateJob::ServiceWorkerUpdateJob(
-    nsIPrincipal* aPrincipal, const nsACString& aScope,
-    const nsACString& aScriptSpec, ServiceWorkerUpdateViaCache aUpdateViaCache)
-    : ServiceWorkerJob(Type::Update, aPrincipal, aScope, aScriptSpec),
-      mUpdateViaCache(aUpdateViaCache),
-      mOnFailure(OnFailure::DoNothing) {}
+    nsIPrincipal* aPrincipal, const nsACString& aScope, nsCString aScriptSpec,
+    ServiceWorkerUpdateViaCache aUpdateViaCache)
+    : ServiceWorkerUpdateJob(Type::Update, aPrincipal, aScope,
+                             std::move(aScriptSpec), aUpdateViaCache) {}
 
 already_AddRefed<ServiceWorkerRegistrationInfo>
 ServiceWorkerUpdateJob::GetRegistration() const {
@@ -155,8 +154,8 @@ ServiceWorkerUpdateJob::GetRegistration() const {
 
 ServiceWorkerUpdateJob::ServiceWorkerUpdateJob(
     Type aType, nsIPrincipal* aPrincipal, const nsACString& aScope,
-    const nsACString& aScriptSpec, ServiceWorkerUpdateViaCache aUpdateViaCache)
-    : ServiceWorkerJob(aType, aPrincipal, aScope, aScriptSpec),
+    nsCString aScriptSpec, ServiceWorkerUpdateViaCache aUpdateViaCache)
+    : ServiceWorkerJob(aType, aPrincipal, aScope, std::move(aScriptSpec)),
       mUpdateViaCache(aUpdateViaCache),
       mOnFailure(serviceWorkerScriptCache::OnFailure::DoNothing) {}
 
@@ -225,7 +224,8 @@ void ServiceWorkerUpdateJob::AsyncExecute() {
   
   
   
-
+  
+  
   RefPtr<ServiceWorkerRegistrationInfo> registration =
       swm->GetRegistration(mPrincipal, mScope);
 
@@ -239,9 +239,13 @@ void ServiceWorkerUpdateJob::AsyncExecute() {
 
   
   
-  
   RefPtr<ServiceWorkerInfo> newest = registration->Newest();
-  if (newest && !mScriptSpec.Equals(newest->ScriptSpec())) {
+
+  
+  
+  
+  
+  if (newest && !newest->ScriptSpec().Equals(mScriptSpec)) {
     ErrorResult rv;
     rv.ThrowTypeError<MSG_SW_UPDATE_BAD_REGISTRATION>(
         NS_ConvertUTF8toUTF16(mScope), NS_LITERAL_STRING("changed"));
