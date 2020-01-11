@@ -1,0 +1,16 @@
+
+
+
+
+#include "MediaKeysEventSourceFactory.h"
+
+namespace mozilla {
+namespace widget {
+
+mozilla::dom::MediaControlKeysEventSource* CreateMediaControlKeysEventSource() {
+  
+  return nullptr;
+}
+
+}  
+}  
