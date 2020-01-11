@@ -568,7 +568,7 @@ class TryOptionSyntax(object):
             return set(['try', 'all']) & set(attr('run_on_projects', []))
 
         
-        if 'ccov' in attr('build_platform', []):
+        if 'ccov' in (attr('build_platform') or []):
             return False
 
         
