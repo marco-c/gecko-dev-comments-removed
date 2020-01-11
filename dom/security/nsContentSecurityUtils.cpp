@@ -147,7 +147,7 @@ nsString OptimizeFileName(const nsAString& aFileName) {
 
 
 
-FilenameTypeAndDetails nsContentSecurityUtils::FilenameToEvalType(
+FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
     const nsString& fileName) {
   
   static NS_NAMED_LITERAL_CSTRING(kChromeURI, "chromeuri");
@@ -466,7 +466,7 @@ void nsContentSecurityUtils::NotifyEvalUsage(bool aIsSystemPrincipal,
                          : Telemetry::EventID::Security_Evalusage_Parentprocess;
 
   FilenameTypeAndDetails fileNameTypeAndDetails =
-      FilenameToEvalType(aFileNameA);
+      FilenameToFilenameType(aFileNameA);
   mozilla::Maybe<nsTArray<EventExtraEntry>> extra;
   if (fileNameTypeAndDetails.second().isSome()) {
     extra = Some<nsTArray<EventExtraEntry>>({EventExtraEntry{
