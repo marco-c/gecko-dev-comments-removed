@@ -382,6 +382,10 @@
 
 
 
+
+
+
+
  \
     MACRO(JSOP_VOID, js_void_str, NULL, 1, 1, 1, JOF_BYTE) \
     
@@ -391,21 +395,38 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_TYPEOF, js_typeof_str, NULL, 1, 1, 1, JOF_BYTE|JOF_DETECTING|JOF_IC) \
-    
-
-
-
-
-
-
-
-
-
- \
     MACRO(JSOP_TYPEOFEXPR, "typeofexpr", NULL, 1, 1, 1, JOF_BYTE|JOF_DETECTING|JOF_IC) \
     
+
+
+
+
+
+
+
+
 
 
 
@@ -422,9 +443,21 @@
 
 
 
+
+
+
+
+
+
  \
     MACRO(JSOP_NEG, "neg", "- ", 1, 1, 1, JOF_BYTE|JOF_IC) \
     
+
+
+
+
+
+
 
 
 
@@ -440,9 +473,20 @@
 
 
 
+
+
+
+
+
+
+
  \
     MACRO(JSOP_NOT, "not", "!", 1, 1, 1, JOF_BYTE|JOF_DETECTING|JOF_IC) \
     
+
+
+
+
 
 
 
@@ -463,6 +507,13 @@
 
 
 
+
+
+
+
+
+
+
  \
     MACRO(JSOP_EQ, "eq", "==", 1, 2, 1, JOF_BYTE|JOF_DETECTING|JOF_IC) \
     MACRO(JSOP_NE, "ne", "!=", 1, 2, 1, JOF_BYTE|JOF_DETECTING|JOF_IC) \
@@ -474,10 +525,24 @@
 
 
 
+
+
+
+
+
+
+
  \
     MACRO(JSOP_STRICTEQ, "stricteq", "===", 1, 2, 1, JOF_BYTE|JOF_DETECTING|JOF_IC) \
     MACRO(JSOP_STRICTNE, "strictne", "!==", 1, 2, 1, JOF_BYTE|JOF_DETECTING|JOF_IC) \
     
+
+
+
+
+
+
+
 
 
 
@@ -499,9 +564,18 @@
 
 
 
+
+
+
+
  \
     MACRO(JSOP_INSTANCEOF, js_instanceof_str, js_instanceof_str, 1, 2, 1, JOF_BYTE|JOF_IC) \
     
+
+
+
+
+
 
 
 
@@ -521,20 +595,25 @@
 
 
 
+
+
+
+
+
+
+
  \
     MACRO(JSOP_LSH, "lsh", "<<", 1, 2, 1, JOF_BYTE|JOF_IC) \
     MACRO(JSOP_RSH, "rsh", ">>", 1, 2, 1, JOF_BYTE|JOF_IC) \
-    
-
-
-
-
-
-
-
- \
     MACRO(JSOP_URSH, "ursh", ">>>", 1, 2, 1, JOF_BYTE|JOF_IC) \
     
+
+
+
+
+
+
+
 
 
 
@@ -552,6 +631,13 @@
 
 
 
+
+
+
+
+
+
+
  \
     MACRO(JSOP_SUB, "sub", "-", 1, 2, 1, JOF_BYTE|JOF_IC) \
     
@@ -561,18 +647,24 @@
 
 
 
+
+
+
+
+
+
+
  \
     MACRO(JSOP_INC, "inc", NULL, 1, 1, 1, JOF_BYTE|JOF_IC) \
-    
-
-
-
-
-
-
- \
     MACRO(JSOP_DEC, "dec", NULL, 1, 1, 1, JOF_BYTE|JOF_IC) \
     
+
+
+
+
+
+
+
 
 
 
@@ -585,6 +677,14 @@
     MACRO(JSOP_DIV, "div", "/", 1, 2, 1, JOF_BYTE|JOF_IC) \
     MACRO(JSOP_MOD, "mod", "%", 1, 2, 1, JOF_BYTE|JOF_IC) \
     
+
+
+
+
+
+
+
+
 
 
 
