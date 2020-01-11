@@ -1237,22 +1237,15 @@ nsresult nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
         NS_ASSERTION(!contRow,
                      "We should not have created a continuation if none of "
                      "this row fits");
-        if (!aRowForcedPageBreak && ShouldAvoidBreakInside(aReflowInput)) {
+        if (!prevRowFrame ||
+            (!aRowForcedPageBreak && ShouldAvoidBreakInside(aReflowInput))) {
           aStatus.SetInlineLineBreakBeforeAndReset();
           break;
         }
-        if (prevRowFrame) {
-          spanningRowBottom = prevRowFrame->GetNormalRect().YMost();
-          lastRowThisPage = prevRowFrame;
-          aStatus.Reset();
-          aStatus.SetIncomplete();
-        } else {
-          
-          
-          aDesiredSize.Height() = rowRect.YMost();
-          aStatus.Reset();
-          break;
-        }
+        spanningRowBottom = prevRowFrame->GetNormalRect().YMost();
+        lastRowThisPage = prevRowFrame;
+        aStatus.Reset();
+        aStatus.SetIncomplete();
       }
       
 
