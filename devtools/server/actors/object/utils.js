@@ -55,6 +55,17 @@ function getPromiseState(obj) {
 
 
 
+function isObjectOrFunction(value) {
+  return value && (typeof value == "object" || typeof value == "function");
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -62,7 +73,7 @@ function getPromiseState(obj) {
 
 
 function makeDebuggeeValueIfNeeded(obj, value) {
-  if (value && (typeof value == "object" || typeof value == "function")) {
+  if (isObjectOrFunction(value)) {
     return obj.makeDebuggeeValue(value);
   }
   return value;
@@ -267,6 +278,105 @@ function getStorageLength(object) {
   return DevToolsUtils.getProperty(object, "length");
 }
 
+
+
+
+
+
+
+function getPropsForEvent(className) {
+  const positionProps = ["buttons", "clientX", "clientY", "layerX", "layerY"];
+  const eventToPropsMap = {
+    MouseEvent: positionProps,
+    DragEvent: positionProps,
+    PointerEvent: positionProps,
+    SimpleGestureEvent: positionProps,
+    WheelEvent: positionProps,
+    KeyboardEvent: ["key", "charCode", "keyCode"],
+    TransitionEvent: ["propertyName", "pseudoElement"],
+    AnimationEvent: ["animationName", "pseudoElement"],
+    ClipboardEvent: ["clipboardData"],
+  };
+
+  if (className in eventToPropsMap) {
+    return eventToPropsMap[className];
+  }
+
+  return [];
+}
+
+
+
+
+
+
+
+
+function getPropNamesFromObject(obj, rawObj) {
+  let names = [];
+
+  try {
+    if (isStorage(obj)) {
+      
+      
+      
+      
+      for (let j = 0; j < rawObj.length; j++) {
+        names.push(rawObj.key(j));
+      }
+    } else if (isReplaying) {
+      
+      
+      names = obj.getEnumerableOwnPropertyNamesForPreview();
+    } else {
+      names = obj.getOwnPropertyNames();
+    }
+  } catch (ex) {
+    
+    
+  }
+
+  return names;
+}
+
+
+
+
+
+
+
+function getSafeOwnPropertySymbols(obj) {
+  try {
+    return obj.getOwnPropertySymbols();
+  } catch (ex) {
+    return [];
+  }
+}
+
+
+
+
+
+
+
+function getModifiersForEvent(rawObj) {
+  const modifiers = [];
+  const keysToModifiersMap = {
+    altKey: "Alt",
+    ctrlKey: "Control",
+    metaKey: "Meta",
+    shiftKey: "Shift",
+  };
+
+  for (const key in keysToModifiersMap) {
+    if (keysToModifiersMap.hasOwnProperty(key) && rawObj[key]) {
+      modifiers.push(keysToModifiersMap[key]);
+    }
+  }
+
+  return modifiers;
+}
+
 module.exports = {
   getPromiseState,
   makeDebuggeeValueIfNeeded,
@@ -279,4 +389,9 @@ module.exports = {
   getArrayLength,
   getStorageLength,
   isArrayIndex,
+  getPropsForEvent,
+  getPropNamesFromObject,
+  getSafeOwnPropertySymbols,
+  getModifiersForEvent,
+  isObjectOrFunction,
 };
