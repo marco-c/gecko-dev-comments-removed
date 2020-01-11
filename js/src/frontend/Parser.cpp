@@ -1755,30 +1755,21 @@ bool PerHandlerParser<SyntaxParseHandler>::finishFunction(
   FunctionBox* funbox = pc_->functionBox();
   funbox->synchronizeArgCount();
 
-  
-  
-  
-  auto cleanupGuard =
-      mozilla::MakeScopeExit([funbox]() { funbox->lazyScriptData().reset(); });
-
-  
-  
-  funbox->lazyScriptData().emplace(cx_);
-  if (!funbox->lazyScriptData()->init(cx_, pc_->closedOverBindingsForLazy(),
-                                      pc_->innerFunctionBoxesForLazy,
-                                      pc_->sc()->strict())) {
+  LazyScriptCreationData data(cx_);
+  if (!data.init(cx_, pc_->closedOverBindingsForLazy(),
+                pc_->innerFunctionBoxesForLazy, pc_->sc()->strict())) {
     return false;
   }
 
   
   if (parseInfo_.isDeferred()) {
-    cleanupGuard.release();
+    
+    funbox->lazyScriptData() = mozilla::Some(std::move(data));
     return true;
   }
 
   
-  return funbox->lazyScriptData()->create(cx_, funbox, sourceObject_,
-                                          parseGoal());
+  return data.create(cx_, funbox, sourceObject_, parseGoal());
 }
 
 bool ParserBase::publishLazyScripts(FunctionTree* root) {
