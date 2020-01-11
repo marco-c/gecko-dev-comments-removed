@@ -3377,6 +3377,7 @@
 
 
 
+
  \
     MACRO(JSOP_POPN, "popn", NULL, 3, -1, 0, JOF_UINT16) \
     
@@ -3405,6 +3406,8 @@
 
 
 
+
+
  \
     MACRO(JSOP_DUPAT, "dupat", NULL, 4, 0, 1, JOF_UINT24) \
     
@@ -3414,11 +3417,9 @@
 
 
 
-
  \
     MACRO(JSOP_SWAP, "swap", NULL, 1, 2, 2, JOF_BYTE) \
     
-
 
 
 
@@ -3438,6 +3439,7 @@
  \
     MACRO(JSOP_UNPICK, "unpick", NULL, 2, 0, 0, JOF_UINT8) \
     
+
 
 
 
@@ -3487,9 +3489,11 @@
 
 
 
+
  \
     MACRO(JSOP_INSTRUMENTATION_ACTIVE, "instrumentationActive", NULL, 1, 0, 1, JOF_BYTE) \
     
+
 
 
 
@@ -3501,9 +3505,17 @@
 
 
 
+
  \
     MACRO(JSOP_INSTRUMENTATION_SCRIPT_ID, "instrumentationScriptId", NULL, 1, 0, 1, JOF_BYTE) \
     
+
+
+
+
+
+
+
 
 
 
