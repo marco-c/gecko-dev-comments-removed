@@ -867,15 +867,15 @@ void MediaPipelineTransmit::SetDescription() {
       NS_DISPATCH_NORMAL);
 }
 
-void MediaPipelineTransmit::Stop() {
+RefPtr<GenericPromise> MediaPipelineTransmit::Stop() {
   ASSERT_ON_THREAD(mMainThread);
 
   if (!mTransmitting) {
-    return;
+    return GenericPromise::CreateAndResolve(true, __func__);
   }
 
   if (!mSendTrack) {
-    return;
+    return GenericPromise::CreateAndResolve(true, __func__);
   }
 
   mTransmitting = false;
@@ -885,7 +885,7 @@ void MediaPipelineTransmit::Stop() {
   if (mSendTrack->mType == MediaSegment::VIDEO) {
     mSendTrack->RemoveDirectListener(mListener);
   }
-  mSendTrack->RemoveListener(mListener);
+  return mSendTrack->RemoveListener(mListener);
 }
 
 bool MediaPipelineTransmit::Transmitting() const {
@@ -1007,8 +1007,23 @@ nsresult MediaPipelineTransmit::SetTrack(RefPtr<MediaStreamTrack> aDomTrack) {
   if (aDomTrack && mDomTrack && !aDomTrack->Ended() && !mDomTrack->Ended() &&
       aDomTrack->Graph() != mDomTrack->Graph() && mSendTrack) {
     
+    
+    
+    
+    
+    
+    
+    
     wasTransmitting = mTransmitting;
-    Stop();
+    RefPtr<MediaPipelineTransmit> self = this;
+    Stop()->Then(
+        GetMainThreadSerialEventTarget(), __func__,
+        [wasTransmitting, self](bool) {
+          if (wasTransmitting) {
+            self->Start();
+          }
+        },
+        [](nsresult aRv) { MOZ_CRASH("Never get here!"); });
     mSendTrack->Destroy();
     mSendTrack = nullptr;
   }
@@ -1030,9 +1045,6 @@ nsresult MediaPipelineTransmit::SetTrack(RefPtr<MediaStreamTrack> aDomTrack) {
     if (mConverter) {
       mConverter->SetTrackEnabled(mDomTrack->Enabled());
     }
-  }
-  if (wasTransmitting) {
-    Start();
   }
 
   return NS_OK;
@@ -1543,11 +1555,12 @@ void MediaPipelineReceiveAudio::Start() {
   }
 }
 
-void MediaPipelineReceiveAudio::Stop() {
+RefPtr<GenericPromise> MediaPipelineReceiveAudio::Stop() {
   if (mListener) {
     mListener->RemoveSelf();
   }
   mConduit->StopReceiving();
+  return GenericPromise::CreateAndResolve(true, __func__);
 }
 
 void MediaPipelineReceiveAudio::OnRtpPacketReceived() {
@@ -1718,11 +1731,12 @@ void MediaPipelineReceiveVideo::Start() {
   }
 }
 
-void MediaPipelineReceiveVideo::Stop() {
+RefPtr<GenericPromise> MediaPipelineReceiveVideo::Stop() {
   if (mListener) {
     mListener->RemoveSelf();
   }
   mConduit->StopReceiving();
+  return GenericPromise::CreateAndResolve(true, __func__);
 }
 
 void MediaPipelineReceiveVideo::OnRtpPacketReceived() {

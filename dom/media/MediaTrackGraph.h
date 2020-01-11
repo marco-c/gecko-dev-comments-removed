@@ -306,7 +306,7 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   virtual void Resume();
   
   virtual void AddListener(MediaTrackListener* aListener);
-  virtual void RemoveListener(MediaTrackListener* aListener);
+  virtual RefPtr<GenericPromise> RemoveListener(MediaTrackListener* aListener);
 
   
 
