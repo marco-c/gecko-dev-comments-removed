@@ -907,7 +907,7 @@ class ProcessedMediaTrack : public MediaTrack {
 
 
 
-  void QueueSetAutoend(bool aAutoend);
+  virtual void QueueSetAutoend(bool aAutoend);
 
   ProcessedMediaTrack* AsProcessedTrack() override { return this; }
 

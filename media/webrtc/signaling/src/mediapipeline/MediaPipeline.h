@@ -301,10 +301,10 @@ class MediaPipelineTransmit : public MediaPipeline {
   void TransportReady_s() override;
 
   
+  nsresult SetTrack(RefPtr<dom::MediaStreamTrack> aDomTrack);
+
   
-  
-  
-  virtual nsresult SetTrack(RefPtr<dom::MediaStreamTrack> aDomTrack);
+  void SetSendTrack(RefPtr<ProcessedMediaTrack> aSendTrack);
 
   
   class PipelineListener;
