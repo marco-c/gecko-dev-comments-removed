@@ -240,10 +240,9 @@ SubDialog.prototype = {
     }
 
     
-    this._frame.contentDocument.documentElement.setAttribute(
-      "subdialog",
-      "true"
-    );
+    for (let dialog of this._frame.contentDocument.querySelectorAll("dialog")) {
+      dialog.setAttribute("subdialog", "true");
+    }
 
     this._frame.contentWindow.addEventListener("dialogclosing", this);
 

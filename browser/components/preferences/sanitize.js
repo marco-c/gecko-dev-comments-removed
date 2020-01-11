@@ -5,10 +5,9 @@
 
 
 
-document.documentElement.addEventListener(
-  "dialoghelp",
-  window.top.openPrefsHelp
-);
+document
+  .getElementById("SanitizeDialog")
+  .addEventListener("dialoghelp", window.top.openPrefsHelp);
 
 Preferences.addAll([
   { id: "privacy.clearOnShutdown.history", type: "bool" },

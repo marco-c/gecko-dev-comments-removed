@@ -33,8 +33,9 @@ var gSanitizePromptDialog = {
   init() {
     
     this._inited = true;
+    this._dialog = document.getElementById("SanitizeDialog");
 
-    let OKButton = document.documentElement.getButton("accept");
+    let OKButton = this._dialog.getButton("accept");
     document.l10n.setAttributes(OKButton, "sanitize-button-ok");
 
     document.addEventListener("dialogaccept", function(e) {
@@ -114,11 +115,10 @@ var gSanitizePromptDialog = {
     
     
     
-    let docElt = document.documentElement;
-    let acceptButton = docElt.getButton("accept");
+    let acceptButton = this._dialog.getButton("accept");
     acceptButton.disabled = true;
     document.l10n.setAttributes(acceptButton, "sanitize-button-clearing");
-    docElt.getButton("cancel").disabled = true;
+    this._dialog.getButton("cancel").disabled = true;
 
     try {
       let range = Sanitizer.getClearRange(this.selectedTimespan);
@@ -175,7 +175,7 @@ var gSanitizePromptDialog = {
     );
 
     try {
-      document.documentElement.getButton("accept").disabled = !found;
+      this._dialog.getButton("accept").disabled = !found;
     } catch (e) {}
 
     

@@ -14,7 +14,7 @@ function doPrompt(msg) {
 }
 
 function onLoad() {
-  document.documentElement.getButton("accept").disabled = true;
+  document.getElementById("set_password").getButton("accept").disabled = true;
   document.addEventListener("dialogaccept", setPassword);
 
   pw1 = document.getElementById("pw1");
@@ -197,10 +197,13 @@ function checkPasswords() {
       
       
       
-      document.documentElement.getButton("accept").disabled = true;
+      document
+        .getElementById("set_password")
+        .getButton("accept").disabled = true;
       return;
     }
   }
 
-  document.documentElement.getButton("accept").disabled = pw1 != pw2;
+  document.getElementById("set_password").getButton("accept").disabled =
+    pw1 != pw2;
 }

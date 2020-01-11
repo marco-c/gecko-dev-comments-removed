@@ -69,6 +69,7 @@ function onExtra1() {
 }
 
 function onLoad() {
+  const dialog = document.getElementById("safeModeDialog");
   if (appStartup.automaticSafeModeNecessary) {
     document.getElementById("autoSafeMode").hidden = false;
     document.getElementById("safeMode").hidden = true;
@@ -76,11 +77,11 @@ function onLoad() {
       document.getElementById("resetProfile").hidden = false;
     } else {
       
-      document.documentElement.getButton("extra1").hidden = true;
+      dialog.getButton("extra1").hidden = true;
     }
   } else if (!ResetProfile.resetSupported()) {
     
-    document.documentElement.getButton("extra1").hidden = true;
+    dialog.getButton("extra1").hidden = true;
     document.getElementById("resetProfileInstead").hidden = true;
   }
   document.addEventListener("dialogaccept", onDefaultButton);

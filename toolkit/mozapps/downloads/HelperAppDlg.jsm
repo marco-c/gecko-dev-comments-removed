@@ -506,6 +506,8 @@ nsUnknownContentTypeDialog.prototype = {
       this.mLauncher.MIMEInfo.MIMEType;
     this.dialogElement("contentTypeImage").setAttribute("src", iconString);
 
+    let dialog = this.mDialog.document.getElementById("unknownContentType");
+
     
     
     var mimeType = this.mLauncher.MIMEInfo.MIMEType;
@@ -523,16 +525,14 @@ nsUnknownContentTypeDialog.prototype = {
       this.dialogElement("basicBox").collapsed = false;
       
       
-      let acceptButton = this.mDialog.document.documentElement.getButton(
-        "accept"
-      );
+      let acceptButton = dialog.getButton("accept");
       acceptButton.label = this.dialogElement("strings").getString(
         "unknownAccept.label"
       );
       acceptButton.setAttribute("icon", "save");
-      this.mDialog.document.documentElement.getButton(
-        "cancel"
-      ).label = this.dialogElement("strings").getString("unknownCancel.label");
+      dialog.getButton("cancel").label = this.dialogElement(
+        "strings"
+      ).getString("unknownCancel.label");
       
       this.dialogElement("openHandler").collapsed = true;
       
@@ -589,14 +589,10 @@ nsUnknownContentTypeDialog.prototype = {
 
     this.delayHelper = new EnableDelayHelper({
       disableDialog: () => {
-        this.mDialog.document.documentElement.getButton(
-          "accept"
-        ).disabled = true;
+        dialog.getButton("accept").disabled = true;
       },
       enableDialog: () => {
-        this.mDialog.document.documentElement.getButton(
-          "accept"
-        ).disabled = false;
+        dialog.getButton("accept").disabled = false;
       },
       focusTarget: this.mDialog,
     });
@@ -893,7 +889,8 @@ nsUnknownContentTypeDialog.prototype = {
     }
 
     
-    this.mDialog.document.documentElement.getButton("accept").disabled = !ok;
+    let dialog = this.mDialog.document.getElementById("unknownContentType");
+    dialog.getButton("accept").disabled = !ok;
   },
 
   
@@ -996,9 +993,8 @@ nsUnknownContentTypeDialog.prototype = {
         );
 
         
-        this.mDialog.document.documentElement.getButton(
-          "accept"
-        ).disabled = true;
+        let dialog = this.mDialog.document.getElementById("unknownContentType");
+        dialog.getButton("accept").disabled = true;
         this.dialogElement("mode").focus();
 
         

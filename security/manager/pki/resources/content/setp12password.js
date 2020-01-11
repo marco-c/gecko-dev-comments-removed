@@ -122,5 +122,6 @@ function onPasswordInput(recalculatePasswordStrength) {
   
   
   let pw2 = document.getElementById("pw2").value;
-  document.documentElement.getButton("accept").disabled = pw1 != pw2;
+  document.getElementById("setp12password").getButton("accept").disabled =
+    pw1 != pw2;
 }

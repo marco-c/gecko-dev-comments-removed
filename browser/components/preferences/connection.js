@@ -7,10 +7,9 @@
 
 
 
-document.documentElement.addEventListener(
-  "dialoghelp",
-  window.top.openPrefsHelp
-);
+document
+  .getElementById("ConnectionsDialog")
+  .addEventListener("dialoghelp", window.top.openPrefsHelp);
 
 Preferences.addAll([
   
@@ -85,9 +84,11 @@ window.addEventListener(
     gConnectionsDialog.updateProxySettingsUI();
     initializeProxyUI(gConnectionsDialog);
     gConnectionsDialog.registerSyncPrefListeners();
-    document.documentElement.addEventListener("beforeaccept", e =>
-      gConnectionsDialog.beforeAccept(e)
-    );
+    document
+      .getElementById("ConnectionsDialog")
+      .addEventListener("beforeaccept", e =>
+        gConnectionsDialog.beforeAccept(e)
+      );
   },
   { once: true, capture: true }
 );

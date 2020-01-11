@@ -54,7 +54,9 @@ var SelectBookmarkDialog = {
 
 
   selectionChanged: function SBD_selectionChanged() {
-    var accept = document.documentElement.getButton("accept");
+    var accept = document
+      .getElementById("selectBookmarkDialog")
+      .getButton("accept");
     var bookmarks = document.getElementById("bookmarks");
     var disableAcceptButton = true;
     if (bookmarks.hasSelection) {
@@ -73,7 +75,10 @@ var SelectBookmarkDialog = {
 
 
 
-      document.documentElement.getButton("accept").click();
+      document
+        .getElementById("selectBookmarkDialog")
+        .getButton("accept")
+        .click();
     }
   },
 

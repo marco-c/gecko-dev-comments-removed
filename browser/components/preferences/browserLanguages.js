@@ -30,10 +30,9 @@ ChromeUtils.defineModuleGetter(
   "resource:///modules/SelectionChangedMenulist.jsm"
 );
 
-document.documentElement.addEventListener(
-  "dialoghelp",
-  window.top.openPrefsHelp
-);
+document
+  .getElementById("BrowserLanguagesDialog")
+  .addEventListener("dialoghelp", window.top.openPrefsHelp);
 
 
 
@@ -384,9 +383,9 @@ var gBrowserLanguagesDialog = {
   },
 
   async onLoad() {
-    document.documentElement.addEventListener("beforeaccept", () =>
-      this.beforeAccept()
-    );
+    document
+      .getElementById("BrowserLanguagesDialog")
+      .addEventListener("beforeaccept", () => this.beforeAccept());
     
     let { telemetryId, selected, search } = window.arguments[0];
     this.telemetryId = telemetryId;

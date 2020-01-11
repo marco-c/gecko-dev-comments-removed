@@ -247,7 +247,9 @@ var BookmarkPropertiesPanel = {
     });
 
     
-    let acceptButton = document.documentElement.getButton("accept");
+    let acceptButton = document
+      .getElementById("bookmarkproperties")
+      .getButton("accept");
     acceptButton.disabled = true;
 
     
@@ -262,7 +264,9 @@ var BookmarkPropertiesPanel = {
 
 
   async _initDialog() {
-    let acceptButton = document.documentElement.getButton("accept");
+    let acceptButton = document
+      .getElementById("bookmarkproperties")
+      .getButton("accept");
     acceptButton.label = this._getAcceptLabel();
     let acceptButtonDisabled = false;
 
@@ -364,9 +368,9 @@ var BookmarkPropertiesPanel = {
           target.id == "editBMPanel_keywordField"
         ) {
           
-          document.documentElement.getButton(
-            "accept"
-          ).disabled = !this._inputIsValid();
+          document
+            .getElementById("bookmarkproperties")
+            .getButton("accept").disabled = !this._inputIsValid();
         }
         break;
       case "resize":
