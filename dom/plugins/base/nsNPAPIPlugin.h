@@ -42,7 +42,8 @@ class nsNPAPIPlugin final {
   
   
   
-  void PluginCrashed(const nsAString& pluginDumpID);
+  void PluginCrashed(const nsAString& aPluginDumpID,
+                     const nsACString& aAdditionalMinidumps);
 
   nsresult Shutdown();
 
