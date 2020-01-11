@@ -17,13 +17,20 @@ namespace widget {
 #define GBMLIB_NAME "libgbm.so.1"
 #define DRMLIB_NAME "libdrm.so.2"
 
+
+
 #define DMABUF_PREF "widget.wayland_dmabuf_backend.enabled"
+
+
+
+#define DMABUF_BASIC_PREF "widget.wayland_dmabuf_basic_compositor.enabled"
 
 #define CACHE_MODE_PREF "widget.wayland_cache_mode"
 
 bool nsWaylandDisplay::mIsDMABufEnabled = false;
 
 int nsWaylandDisplay::mIsDMABufPrefState = -1;
+int nsWaylandDisplay::mIsDMABufPrefBasicCompositorState = -1;
 bool nsWaylandDisplay::mIsDMABufConfigured = false;
 int nsWaylandDisplay::mRenderingCacheModePref = -1;
 
@@ -397,6 +404,8 @@ nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
     
     if (mIsDMABufPrefState == -1) {
       mIsDMABufPrefState = Preferences::GetBool(DMABUF_PREF, false);
+      mIsDMABufPrefBasicCompositorState =
+          Preferences::GetBool(DMABUF_BASIC_PREF, false);
     }
     if (mRenderingCacheModePref == -1) {
       mRenderingCacheModePref = Preferences::GetInt(CACHE_MODE_PREF, 0);
@@ -467,6 +476,10 @@ bool nsWaylandDisplay::IsDMABufEnabled() {
 
   mIsDMABufEnabled = true;
   return true;
+}
+
+bool nsWaylandDisplay::IsDMABufBasicEnabled() {
+  return IsDMABufEnabled() && mIsDMABufPrefBasicCompositorState;
 }
 
 void* nsGbmLib::sGbmLibHandle = nullptr;
