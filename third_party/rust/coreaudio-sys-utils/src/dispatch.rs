@@ -54,13 +54,13 @@ where
         F: FnOnce(),
     {
         
-        let closure: Box<F> = unsafe { Box::from_raw(unboxed_closure as *mut F) };
+        let closure = unsafe { Box::from_raw(unboxed_closure as *mut F) };
         
         (*closure)();
         
     }
 
-    let closure: Box<F> = Box::new(closure); 
+    let closure = Box::new(closure); 
     let executor: dispatch_function_t = Some(closure_executer::<F>);
 
     (
