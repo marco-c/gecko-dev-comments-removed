@@ -1015,6 +1015,7 @@ bool ModuleObject::instantiateFunctionDeclarations(JSContext* cx,
   }
 #endif
 
+  
   FunctionDeclarationVector* funDecls = self->functionDeclarations();
   if (!funDecls) {
     JS_ReportErrorASCII(
@@ -1040,8 +1041,10 @@ bool ModuleObject::instantiateFunctionDeclarations(JSContext* cx,
     }
   }
 
-  js_delete(funDecls);
+  
+  
   self->setReservedSlot(FunctionDeclarationsSlot, UndefinedValue());
+  js_delete(funDecls);
   return true;
 }
 
