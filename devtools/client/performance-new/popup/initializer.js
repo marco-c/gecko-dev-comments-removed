@@ -77,10 +77,13 @@ const {
 
 
 
-document.documentElement.setAttribute(
-  "force-theme",
-  window.gIsDarkMode ? "dark" : "light"
-);
+{
+  const popupWindow =  (window);
+  document.documentElement.setAttribute(
+    "force-theme",
+    popupWindow.gIsDarkMode ? "dark" : "light"
+  );
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   gInit();
