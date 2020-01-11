@@ -106,6 +106,10 @@ const PAGE_TYPES = {
 
 const PREFERENCES = {
   
+  
+  
+  FISSION_BROWSER_TOOLBOX: "devtools.browsertoolbox.fission",
+  
   LOCAL_TAB_DEBUGGING_ENABLED: "devtools.aboutdebugging.local-tab-debugging",
   
   PROCESS_DEBUGGING_ENABLED: "devtools.aboutdebugging.process-debugging",
