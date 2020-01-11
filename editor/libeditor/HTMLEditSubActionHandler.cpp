@@ -7082,11 +7082,15 @@ nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
     return NS_ERROR_FAILURE;
   }
 
-  EditorDOMPoint startPoint(range->StartRef());
+  if (NS_WARN_IF(!range->IsPositioned())) {
+    return NS_ERROR_FAILURE;
+  }
+
+  const EditorDOMPoint startPoint(range->StartRef());
   if (NS_WARN_IF(!startPoint.IsSet())) {
     return NS_ERROR_FAILURE;
   }
-  EditorDOMPoint endPoint(range->EndRef());
+  const EditorDOMPoint endPoint(range->EndRef());
   if (NS_WARN_IF(!endPoint.IsSet())) {
     return NS_ERROR_FAILURE;
   }
@@ -7163,15 +7167,25 @@ nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
   
   
 
-  int16_t comp;
-  comp = nsContentUtils::ComparePoints_Deprecated(
+  Maybe<int32_t> comp = nsContentUtils::ComparePoints(
       startPoint.ToRawRangeBoundary(), newEndPoint.ToRawRangeBoundary());
-  if (comp == 1) {
+
+  if (NS_WARN_IF(!comp)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  if (*comp == 1) {
     return NS_OK;  
   }
-  comp = nsContentUtils::ComparePoints_Deprecated(
-      newStartPoint.ToRawRangeBoundary(), endPoint.ToRawRangeBoundary());
-  if (comp == 1) {
+
+  comp = nsContentUtils::ComparePoints(newStartPoint.ToRawRangeBoundary(),
+                                       endPoint.ToRawRangeBoundary());
+
+  if (NS_WARN_IF(!comp)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  if (*comp == 1) {
     return NS_OK;  
   }
 
