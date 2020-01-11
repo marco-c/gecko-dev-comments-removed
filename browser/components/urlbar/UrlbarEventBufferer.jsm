@@ -78,7 +78,7 @@ class UrlbarEventBufferer {
       
       
       
-      startDate: null,
+      startDate: Cu.now(),
       
       status: QUERY_STATUS.UKNOWN,
       
@@ -278,6 +278,12 @@ class UrlbarEventBufferer {
 
 
   isSafeToPlayDeferredEvent(event) {
+    if (this._lastQuery.status != QUERY_STATUS.RUNNING) {
+      
+      
+      return true;
+    }
+
     let waitingFirstResult =
       this._lastQuery.status == QUERY_STATUS.RUNNING &&
       !this._lastQuery.results.length;
@@ -294,12 +300,6 @@ class UrlbarEventBufferer {
       
       
       return false;
-    }
-
-    if (this._lastQuery.status == QUERY_STATUS.COMPLETE) {
-      
-      
-      return true;
     }
 
     let isMacDownNavigation =
