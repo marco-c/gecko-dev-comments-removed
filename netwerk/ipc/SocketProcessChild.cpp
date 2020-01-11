@@ -212,20 +212,5 @@ bool SocketProcessChild::DeallocPWebrtcTCPSocketChild(
   return true;
 }
 
-PDNSRequestChild* SocketProcessChild::AllocPDNSRequestChild(
-    const nsCString& aHost, const OriginAttributes& aOriginAttributes,
-    const uint32_t& aFlags) {
-  
-  
-  MOZ_ASSERT_UNREACHABLE("AllocPDNSRequestChild should not be called on child");
-  return nullptr;
-}
-
-bool SocketProcessChild::DeallocPDNSRequestChild(PDNSRequestChild* aChild) {
-  DNSRequestChild* p = static_cast<DNSRequestChild*>(aChild);
-  p->ReleaseIPDLReference();
-  return true;
-}
-
 }  
 }  
