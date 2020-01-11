@@ -538,11 +538,6 @@ var gPrivacyPane = {
       gPrivacyPane.showLocationExceptions
     );
     setEventListener(
-      "xrSettingsButton",
-      "command",
-      gPrivacyPane.showXRExceptions
-    );
-    setEventListener(
       "cameraSettingsButton",
       "command",
       gPrivacyPane.showCameraExceptions
@@ -1681,22 +1676,6 @@ var gPrivacyPane = {
 
   showLocationExceptions() {
     let params = { permissionType: "geo" };
-
-    gSubDialog.open(
-      "chrome://browser/content/preferences/sitePermissions.xhtml",
-      "resizable=yes",
-      params
-    );
-  },
-
-  
-
-  
-
-
-
-  showXRExceptions() {
-    let params = { permissionType: "xr" };
 
     gSubDialog.open(
       "chrome://browser/content/preferences/sitePermissions.xhtml",
