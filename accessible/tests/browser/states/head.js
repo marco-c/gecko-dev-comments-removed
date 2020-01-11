@@ -22,8 +22,10 @@ loadScripts(
 
 
 async function waitForIFrameA11yReady(iFrameBrowsingContext) {
-  async function waitForReady() {
-    new Promise(resolve => {
+  await SimpleTest.promiseFocus(window);
+
+  await SpecialPowers.spawn(iFrameBrowsingContext, [], () => {
+    return new Promise(resolve => {
       function waitForDocLoad() {
         SpecialPowers.executeSoon(() => {
           const acc = SpecialPowers.Cc[
@@ -42,11 +44,7 @@ async function waitForIFrameA11yReady(iFrameBrowsingContext) {
       }
       waitForDocLoad();
     });
-  }
-
-  await SimpleTest.promiseFocus(window);
-
-  await SpecialPowers.spawn(iFrameBrowsingContext, [], waitForReady);
+  });
 }
 
 
