@@ -18,55 +18,27 @@
 
 
 
-use core::{mem, ptr};
+use core::ptr;
+
+#[cfg(maybe_uninit)]
+use core::mem::MaybeUninit;
+
+#[cfg(not(maybe_uninit))]
+use core::mem;
 
 use common::*;
 #[cfg(not(feature = "small"))]
 use d2s_full_table::*;
+use d2s_intrinsics::*;
 #[cfg(feature = "small")]
 use d2s_small_table::*;
-use digit_table::*;
-#[cfg(not(integer128))]
-use mulshift128::*;
-
-#[cfg(feature = "no-panic")]
-use no_panic::no_panic;
 
 pub const DOUBLE_MANTISSA_BITS: u32 = 52;
 pub const DOUBLE_EXPONENT_BITS: u32 = 11;
 
+const DOUBLE_BIAS: i32 = 1023;
 const DOUBLE_POW5_INV_BITCOUNT: i32 = 122;
 const DOUBLE_POW5_BITCOUNT: i32 = 121;
-
-#[cfg_attr(feature = "no-panic", inline)]
-fn pow5_factor(mut value: u64) -> u32 {
-    let mut count = 0u32;
-    loop {
-        debug_assert!(value != 0);
-        let q = value / 5;
-        let r = value % 5;
-        if r != 0 {
-            break;
-        }
-        value = q;
-        count += 1;
-    }
-    count
-}
-
-
-#[cfg_attr(feature = "no-panic", inline)]
-fn multiple_of_power_of_5(value: u64, p: u32) -> bool {
-    
-    pow5_factor(value) >= p
-}
-
-
-#[cfg_attr(feature = "no-panic", inline)]
-fn multiple_of_power_of_2(value: u64, p: u32) -> bool {
-    
-    (value & ((1u64 << p) - 1)) == 0
-}
 
 #[cfg(integer128)]
 #[cfg_attr(feature = "no-panic", inline)]
@@ -78,27 +50,27 @@ fn mul_shift(m: u64, mul: &(u64, u64), j: u32) -> u64 {
 
 #[cfg(integer128)]
 #[cfg_attr(feature = "no-panic", inline)]
-fn mul_shift_all(
+unsafe fn mul_shift_all(
     m: u64,
     mul: &(u64, u64),
     j: u32,
-    vp: &mut u64,
-    vm: &mut u64,
+    vp: *mut u64,
+    vm: *mut u64,
     mm_shift: u32,
 ) -> u64 {
-    *vp = mul_shift(4 * m + 2, mul, j);
-    *vm = mul_shift(4 * m - 1 - mm_shift as u64, mul, j);
+    ptr::write(vp, mul_shift(4 * m + 2, mul, j));
+    ptr::write(vm, mul_shift(4 * m - 1 - mm_shift as u64, mul, j));
     mul_shift(4 * m, mul, j)
 }
 
 #[cfg(not(integer128))]
 #[cfg_attr(feature = "no-panic", inline)]
-fn mul_shift_all(
+unsafe fn mul_shift_all(
     mut m: u64,
     mul: &(u64, u64),
     j: u32,
-    vp: &mut u64,
-    vm: &mut u64,
+    vp: *mut u64,
+    vm: *mut u64,
     mm_shift: u32,
 ) -> u64 {
     m <<= 1;
@@ -111,13 +83,13 @@ fn mul_shift_all(
     let lo2 = lo.wrapping_add(mul.0);
     let mid2 = mid.wrapping_add(mul.1).wrapping_add((lo2 < lo) as u64);
     let hi2 = hi.wrapping_add((mid2 < mid) as u64);
-    *vp = shiftright128(mid2, hi2, j - 64 - 1);
+    ptr::write(vp, shiftright128(mid2, hi2, j - 64 - 1));
 
     if mm_shift == 1 {
         let lo3 = lo.wrapping_sub(mul.0);
         let mid3 = mid.wrapping_sub(mul.1).wrapping_sub((lo3 > lo) as u64);
         let hi3 = hi.wrapping_sub((mid3 > mid) as u64);
-        *vm = shiftright128(mid3, hi3, j - 64 - 1);
+        ptr::write(vm, shiftright128(mid3, hi3, j - 64 - 1));
     } else {
         let lo3 = lo + lo;
         let mid3 = mid.wrapping_add(mid).wrapping_add((lo3 < lo) as u64);
@@ -125,14 +97,14 @@ fn mul_shift_all(
         let lo4 = lo3.wrapping_sub(mul.0);
         let mid4 = mid3.wrapping_sub(mul.1).wrapping_sub((lo4 > lo3) as u64);
         let hi4 = hi3.wrapping_sub((mid4 > mid3) as u64);
-        *vm = shiftright128(mid4, hi4, j - 64);
+        ptr::write(vm, shiftright128(mid4, hi4, j - 64));
     }
 
     shiftright128(mid, hi, j - 64 - 1)
 }
 
 #[cfg_attr(feature = "no-panic", inline)]
-pub fn decimal_length(v: u64) -> u32 {
+pub fn decimal_length17(v: u64) -> u32 {
     
     
     
@@ -179,22 +151,22 @@ pub fn decimal_length(v: u64) -> u32 {
 
 pub struct FloatingDecimal64 {
     pub mantissa: u64,
+    
+    
     pub exponent: i32,
 }
 
 #[cfg_attr(feature = "no-panic", inline)]
 pub fn d2d(ieee_mantissa: u64, ieee_exponent: u32) -> FloatingDecimal64 {
-    let bias = (1u32 << (DOUBLE_EXPONENT_BITS - 1)) - 1;
-
     let (e2, m2) = if ieee_exponent == 0 {
         (
             
-            1 - bias as i32 - DOUBLE_MANTISSA_BITS as i32 - 2,
+            1 - DOUBLE_BIAS - DOUBLE_MANTISSA_BITS as i32 - 2,
             ieee_mantissa,
         )
     } else {
         (
-            ieee_exponent as i32 - bias as i32 - DOUBLE_MANTISSA_BITS as i32 - 2,
+            ieee_exponent as i32 - DOUBLE_BIAS - DOUBLE_MANTISSA_BITS as i32 - 2,
             (1u64 << DOUBLE_MANTISSA_BITS) | ieee_mantissa,
         )
     };
@@ -211,39 +183,68 @@ pub fn d2d(ieee_mantissa: u64, ieee_exponent: u32) -> FloatingDecimal64 {
 
     
     let mut vr: u64;
-    let mut vp: u64 = unsafe { mem::uninitialized() };
-    let mut vm: u64 = unsafe { mem::uninitialized() };
+    let mut vp: u64;
+    let mut vm: u64;
+    #[cfg(not(maybe_uninit))]
+    {
+        vp = unsafe { mem::uninitialized() };
+        vm = unsafe { mem::uninitialized() };
+    }
+    #[cfg(maybe_uninit)]
+    let mut vp_uninit: MaybeUninit<u64> = MaybeUninit::uninit();
+    #[cfg(maybe_uninit)]
+    let mut vm_uninit: MaybeUninit<u64> = MaybeUninit::uninit();
     let e10: i32;
     let mut vm_is_trailing_zeros = false;
     let mut vr_is_trailing_zeros = false;
     if e2 >= 0 {
         
         
-        let q = (log10_pow2(e2) - (e2 > 3) as i32) as u32;
+        let q = log10_pow2(e2) - (e2 > 3) as u32;
         e10 = q as i32;
-        let k = DOUBLE_POW5_INV_BITCOUNT + pow5bits(q as i32) as i32 - 1;
+        let k = DOUBLE_POW5_INV_BITCOUNT + pow5bits(q as i32) - 1;
         let i = -e2 + q as i32 + k;
-        vr = mul_shift_all(
-            m2,
-            #[cfg(feature = "small")]
-            unsafe {
-                &compute_inv_pow5(q)
-            },
-            #[cfg(not(feature = "small"))]
-            unsafe {
-                debug_assert!(q < DOUBLE_POW5_INV_SPLIT.len() as u32);
-                DOUBLE_POW5_INV_SPLIT.get_unchecked(q as usize)
-            },
-            i as u32,
-            &mut vp,
-            &mut vm,
-            mm_shift,
-        );
+        vr = unsafe {
+            mul_shift_all(
+                m2,
+                #[cfg(feature = "small")]
+                &compute_inv_pow5(q),
+                #[cfg(not(feature = "small"))]
+                {
+                    debug_assert!(q < DOUBLE_POW5_INV_SPLIT.len() as u32);
+                    DOUBLE_POW5_INV_SPLIT.get_unchecked(q as usize)
+                },
+                i as u32,
+                #[cfg(maybe_uninit)]
+                {
+                    vp_uninit.as_mut_ptr()
+                },
+                #[cfg(not(maybe_uninit))]
+                {
+                    &mut vp
+                },
+                #[cfg(maybe_uninit)]
+                {
+                    vm_uninit.as_mut_ptr()
+                },
+                #[cfg(not(maybe_uninit))]
+                {
+                    &mut vm
+                },
+                mm_shift,
+            )
+        };
+        #[cfg(maybe_uninit)]
+        {
+            vp = unsafe { vp_uninit.assume_init() };
+            vm = unsafe { vm_uninit.assume_init() };
+        }
         if q <= 21 {
             
             
             
-            if mv % 5 == 0 {
+            let mv_mod5 = (mv as u32).wrapping_sub(5u32.wrapping_mul(div5(mv) as u32));
+            if mv_mod5 == 0 {
                 vr_is_trailing_zeros = multiple_of_power_of_5(mv, q);
             } else if accept_bounds {
                 
@@ -257,27 +258,46 @@ pub fn d2d(ieee_mantissa: u64, ieee_exponent: u32) -> FloatingDecimal64 {
         }
     } else {
         
-        let q = (log10_pow5(-e2) - (-e2 > 1) as i32) as u32;
+        let q = log10_pow5(-e2) - (-e2 > 1) as u32;
         e10 = q as i32 + e2;
         let i = -e2 - q as i32;
-        let k = pow5bits(i) as i32 - DOUBLE_POW5_BITCOUNT;
+        let k = pow5bits(i) - DOUBLE_POW5_BITCOUNT;
         let j = q as i32 - k;
-        vr = mul_shift_all(
-            m2,
-            #[cfg(feature = "small")]
-            unsafe {
-                &compute_pow5(i as u32)
-            },
-            #[cfg(not(feature = "small"))]
-            unsafe {
-                debug_assert!(i < DOUBLE_POW5_SPLIT.len() as i32);
-                DOUBLE_POW5_SPLIT.get_unchecked(i as usize)
-            },
-            j as u32,
-            &mut vp,
-            &mut vm,
-            mm_shift,
-        );
+        vr = unsafe {
+            mul_shift_all(
+                m2,
+                #[cfg(feature = "small")]
+                &compute_pow5(i as u32),
+                #[cfg(not(feature = "small"))]
+                {
+                    debug_assert!(i < DOUBLE_POW5_SPLIT.len() as i32);
+                    DOUBLE_POW5_SPLIT.get_unchecked(i as usize)
+                },
+                j as u32,
+                #[cfg(maybe_uninit)]
+                {
+                    vp_uninit.as_mut_ptr()
+                },
+                #[cfg(not(maybe_uninit))]
+                {
+                    &mut vp
+                },
+                #[cfg(maybe_uninit)]
+                {
+                    vm_uninit.as_mut_ptr()
+                },
+                #[cfg(not(maybe_uninit))]
+                {
+                    &mut vm
+                },
+                mm_shift,
+            )
+        };
+        #[cfg(maybe_uninit)]
+        {
+            vp = unsafe { vp_uninit.assume_init() };
+            vm = unsafe { vm_uninit.assume_init() };
+        }
         if q <= 1 {
             
             
@@ -295,33 +315,48 @@ pub fn d2d(ieee_mantissa: u64, ieee_exponent: u32) -> FloatingDecimal64 {
             
             
             
-            
-            vr_is_trailing_zeros = multiple_of_power_of_2(mv, q - 1);
+            vr_is_trailing_zeros = multiple_of_power_of_2(mv, q);
         }
     }
 
     
-    let mut removed = 0u32;
+    let mut removed = 0i32;
     let mut last_removed_digit = 0u8;
     
     let output = if vm_is_trailing_zeros || vr_is_trailing_zeros {
         
-        while vp / 10 > vm / 10 {
-            vm_is_trailing_zeros &= vm - (vm / 10) * 10 == 0;
+        loop {
+            let vp_div10 = div10(vp);
+            let vm_div10 = div10(vm);
+            if vp_div10 <= vm_div10 {
+                break;
+            }
+            let vm_mod10 = (vm as u32).wrapping_sub(10u32.wrapping_mul(vm_div10 as u32));
+            let vr_div10 = div10(vr);
+            let vr_mod10 = (vr as u32).wrapping_sub(10u32.wrapping_mul(vr_div10 as u32));
+            vm_is_trailing_zeros &= vm_mod10 == 0;
             vr_is_trailing_zeros &= last_removed_digit == 0;
-            last_removed_digit = (vr % 10) as u8;
-            vr /= 10;
-            vp /= 10;
-            vm /= 10;
+            last_removed_digit = vr_mod10 as u8;
+            vr = vr_div10;
+            vp = vp_div10;
+            vm = vm_div10;
             removed += 1;
         }
         if vm_is_trailing_zeros {
-            while vm % 10 == 0 {
+            loop {
+                let vm_div10 = div10(vm);
+                let vm_mod10 = (vm as u32).wrapping_sub(10u32.wrapping_mul(vm_div10 as u32));
+                if vm_mod10 != 0 {
+                    break;
+                }
+                let vp_div10 = div10(vp);
+                let vr_div10 = div10(vr);
+                let vr_mod10 = (vr as u32).wrapping_sub(10u32.wrapping_mul(vr_div10 as u32));
                 vr_is_trailing_zeros &= last_removed_digit == 0;
-                last_removed_digit = (vr % 10) as u8;
-                vr /= 10;
-                vp /= 10;
-                vm /= 10;
+                last_removed_digit = vr_mod10 as u8;
+                vr = vr_div10;
+                vp = vp_div10;
+                vm = vm_div10;
                 removed += 1;
             }
         }
@@ -335,219 +370,43 @@ pub fn d2d(ieee_mantissa: u64, ieee_exponent: u32) -> FloatingDecimal64 {
     } else {
         
         let mut round_up = false;
+        let vp_div100 = div100(vp);
+        let vm_div100 = div100(vm);
         
-        if vp / 100 > vm / 100 {
-            round_up = vr % 100 >= 50;
-            vr /= 100;
-            vp /= 100;
-            vm /= 100;
+        if vp_div100 > vm_div100 {
+            let vr_div100 = div100(vr);
+            let vr_mod100 = (vr as u32).wrapping_sub(100u32.wrapping_mul(vr_div100 as u32));
+            round_up = vr_mod100 >= 50;
+            vr = vr_div100;
+            vp = vp_div100;
+            vm = vm_div100;
             removed += 2;
         }
         
         
         
         
-        while vp / 10 > vm / 10 {
-            round_up = vr % 10 >= 5;
-            vr /= 10;
-            vp /= 10;
-            vm /= 10;
+        loop {
+            let vp_div10 = div10(vp);
+            let vm_div10 = div10(vm);
+            if vp_div10 <= vm_div10 {
+                break;
+            }
+            let vr_div10 = div10(vr);
+            let vr_mod10 = (vr as u32).wrapping_sub(10u32.wrapping_mul(vr_div10 as u32));
+            round_up = vr_mod10 >= 5;
+            vr = vr_div10;
+            vp = vp_div10;
+            vm = vm_div10;
             removed += 1;
         }
         
         vr + (vr == vm || round_up) as u64
     };
-    let exp = e10 + removed as i32;
+    let exp = e10 + removed;
 
     FloatingDecimal64 {
         exponent: exp,
         mantissa: output,
     }
-}
-
-#[cfg_attr(feature = "no-panic", inline)]
-unsafe fn to_chars(v: FloatingDecimal64, sign: bool, result: *mut u8) -> usize {
-    
-    let mut index = 0isize;
-    if sign {
-        *result.offset(index) = b'-';
-        index += 1;
-    }
-
-    let mut output = v.mantissa;
-    let olength = decimal_length(output);
-
-    
-    
-    
-    
-    
-    
-    
-
-    let mut i = 0isize;
-    
-    
-    
-    
-    if (output >> 32) != 0 {
-        
-        let mut output2 = (output - 100000000 * (output / 100000000)) as u32;
-        output /= 100000000;
-
-        let c = output2 % 10000;
-        output2 /= 10000;
-        let d = output2 % 10000;
-        let c0 = (c % 100) << 1;
-        let c1 = (c / 100) << 1;
-        let d0 = (d % 100) << 1;
-        let d1 = (d / 100) << 1;
-        ptr::copy_nonoverlapping(
-            DIGIT_TABLE.get_unchecked(c0 as usize),
-            result.offset(index + olength as isize - i - 1),
-            2,
-        );
-        ptr::copy_nonoverlapping(
-            DIGIT_TABLE.get_unchecked(c1 as usize),
-            result.offset(index + olength as isize - i - 3),
-            2,
-        );
-        ptr::copy_nonoverlapping(
-            DIGIT_TABLE.get_unchecked(d0 as usize),
-            result.offset(index + olength as isize - i - 5),
-            2,
-        );
-        ptr::copy_nonoverlapping(
-            DIGIT_TABLE.get_unchecked(d1 as usize),
-            result.offset(index + olength as isize - i - 7),
-            2,
-        );
-        i += 8;
-    }
-    let mut output2 = output as u32;
-    while output2 >= 10000 {
-        let c = (output2 - 10000 * (output2 / 10000)) as u32;
-        output2 /= 10000;
-        let c0 = (c % 100) << 1;
-        let c1 = (c / 100) << 1;
-        ptr::copy_nonoverlapping(
-            DIGIT_TABLE.get_unchecked(c0 as usize),
-            result.offset(index + olength as isize - i - 1),
-            2,
-        );
-        ptr::copy_nonoverlapping(
-            DIGIT_TABLE.get_unchecked(c1 as usize),
-            result.offset(index + olength as isize - i - 3),
-            2,
-        );
-        i += 4;
-    }
-    if output2 >= 100 {
-        let c = ((output2 % 100) << 1) as u32;
-        output2 /= 100;
-        ptr::copy_nonoverlapping(
-            DIGIT_TABLE.get_unchecked(c as usize),
-            result.offset(index + olength as isize - i - 1),
-            2,
-        );
-        i += 2;
-    }
-    if output2 >= 10 {
-        let c = (output2 << 1) as u32;
-        
-        *result.offset(index + olength as isize - i) = *DIGIT_TABLE.get_unchecked(c as usize + 1);
-        *result.offset(index) = *DIGIT_TABLE.get_unchecked(c as usize);
-    } else {
-        *result.offset(index) = b'0' + output2 as u8;
-    }
-
-    
-    if olength > 1 {
-        *result.offset(index + 1) = b'.';
-        index += olength as isize + 1;
-    } else {
-        index += 1;
-    }
-
-    
-    *result.offset(index) = b'E';
-    index += 1;
-    let mut exp = v.exponent as i32 + olength as i32 - 1;
-    if exp < 0 {
-        *result.offset(index) = b'-';
-        index += 1;
-        exp = -exp;
-    }
-
-    if exp >= 100 {
-        let c = exp % 10;
-        ptr::copy_nonoverlapping(
-            DIGIT_TABLE.get_unchecked((2 * (exp / 10)) as usize),
-            result.offset(index),
-            2,
-        );
-        *result.offset(index + 2) = b'0' + c as u8;
-        index += 3;
-    } else if exp >= 10 {
-        ptr::copy_nonoverlapping(
-            DIGIT_TABLE.get_unchecked((2 * exp) as usize),
-            result.offset(index),
-            2,
-        );
-        index += 2;
-    } else {
-        *result.offset(index) = b'0' + exp as u8;
-        index += 1;
-    }
-
-    debug_assert!(index <= 24);
-    index as usize
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg_attr(must_use_return, must_use)]
-#[cfg_attr(feature = "no-panic", no_panic)]
-pub unsafe fn d2s_buffered_n(f: f64, result: *mut u8) -> usize {
-    
-    let bits = mem::transmute::<f64, u64>(f);
-
-    
-    let ieee_sign = ((bits >> (DOUBLE_MANTISSA_BITS + DOUBLE_EXPONENT_BITS)) & 1) != 0;
-    let ieee_mantissa = bits & ((1u64 << DOUBLE_MANTISSA_BITS) - 1);
-    let ieee_exponent =
-        (bits >> DOUBLE_MANTISSA_BITS) as u32 & ((1u32 << DOUBLE_EXPONENT_BITS) - 1);
-    
-    if ieee_exponent == ((1u32 << DOUBLE_EXPONENT_BITS) - 1)
-        || (ieee_exponent == 0 && ieee_mantissa == 0)
-    {
-        return copy_special_str(result, ieee_sign, ieee_exponent != 0, ieee_mantissa != 0);
-    }
-
-    let v = d2d(ieee_mantissa, ieee_exponent);
-    to_chars(v, ieee_sign, result)
 }

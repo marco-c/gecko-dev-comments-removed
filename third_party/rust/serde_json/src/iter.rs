@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 use std::io;
 
 pub struct LineColIterator<I> {

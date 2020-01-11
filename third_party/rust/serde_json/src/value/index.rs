@@ -1,19 +1,8 @@
-
-
-
-
-
-
-
-
 use std::fmt;
 use std::ops;
 
 use super::Value;
 use map::Map;
-
-
-
 
 
 
@@ -219,9 +208,6 @@ where
     
     
     
-    
-    
-    
     fn index(&self, index: I) -> &Value {
         static NULL: Value = Value::Null;
         index.index_into(self).unwrap_or(&NULL)
@@ -232,9 +218,6 @@ impl<I> ops::IndexMut<I> for Value
 where
     I: Index,
 {
-    
-    
-    
     
     
     

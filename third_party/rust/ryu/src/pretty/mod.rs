@@ -5,17 +5,54 @@ use core::{mem, ptr};
 
 use self::exponent::*;
 use self::mantissa::*;
+use common;
 use d2s;
 use d2s::*;
-use f2s;
 use f2s::*;
 
 #[cfg(feature = "no-panic")]
 use no_panic::no_panic;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[cfg_attr(must_use_return, must_use)]
 #[cfg_attr(feature = "no-panic", no_panic)]
-pub unsafe fn d2s_buffered_n(f: f64, result: *mut u8) -> usize {
+pub unsafe fn format64(f: f64, result: *mut u8) -> usize {
     let bits = mem::transmute::<f64, u64>(f);
     let sign = ((bits >> (DOUBLE_MANTISSA_BITS + DOUBLE_EXPONENT_BITS)) & 1) != 0;
     let ieee_mantissa = bits & ((1u64 << DOUBLE_MANTISSA_BITS) - 1);
@@ -35,7 +72,7 @@ pub unsafe fn d2s_buffered_n(f: f64, result: *mut u8) -> usize {
 
     let v = d2d(ieee_mantissa, ieee_exponent);
 
-    let length = d2s::decimal_length(v.mantissa) as isize;
+    let length = d2s::decimal_length17(v.mantissa) as isize;
     let k = v.exponent as isize;
     let kk = length + k; 
     debug_assert!(k >= -324);
@@ -83,9 +120,46 @@ pub unsafe fn d2s_buffered_n(f: f64, result: *mut u8) -> usize {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[cfg_attr(must_use_return, must_use)]
 #[cfg_attr(feature = "no-panic", no_panic)]
-pub unsafe fn f2s_buffered_n(f: f32, result: *mut u8) -> usize {
+pub unsafe fn format32(f: f32, result: *mut u8) -> usize {
     let bits = mem::transmute::<f32, u32>(f);
     let sign = ((bits >> (FLOAT_MANTISSA_BITS + FLOAT_EXPONENT_BITS)) & 1) != 0;
     let ieee_mantissa = bits & ((1u32 << FLOAT_MANTISSA_BITS) - 1);
@@ -105,7 +179,7 @@ pub unsafe fn f2s_buffered_n(f: f32, result: *mut u8) -> usize {
 
     let v = f2d(ieee_mantissa, ieee_exponent);
 
-    let length = f2s::decimal_length(v.mantissa) as isize;
+    let length = common::decimal_length9(v.mantissa) as isize;
     let k = v.exponent as isize;
     let kk = length + k; 
     debug_assert!(k >= -45);

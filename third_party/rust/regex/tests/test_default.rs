@@ -1,13 +1,3 @@
-
-
-
-
-
-
-
-
-
-
 #![cfg_attr(feature = "pattern", feature(pattern))]
 
 extern crate rand;
@@ -24,26 +14,26 @@ macro_rules! regex_new {
     ($re:expr) => {{
         use regex::Regex;
         Regex::new($re)
-    }}
+    }};
 }
 
 macro_rules! regex {
     ($re:expr) => {
         regex_new!($re).unwrap()
-    }
+    };
 }
 
 macro_rules! regex_set_new {
     ($re:expr) => {{
         use regex::RegexSet;
         RegexSet::new($re)
-    }}
+    }};
 }
 
 macro_rules! regex_set {
     ($res:expr) => {
         regex_set_new!($res).unwrap()
-    }
+    };
 }
 
 
@@ -64,8 +54,11 @@ mod searcher;
 mod set;
 mod shortest_match;
 mod suffix_reverse;
+#[cfg(feature = "unicode")]
 mod unicode;
+#[cfg(feature = "unicode-perl")]
 mod word_boundary;
+#[cfg(feature = "unicode-perl")]
 mod word_boundary_unicode;
 
 #[test]
@@ -88,9 +81,9 @@ fn allow_octal() {
 
 #[test]
 fn oibits() {
-    use std::panic::UnwindSafe;
-    use regex::{Regex, RegexBuilder};
     use regex::bytes;
+    use regex::{Regex, RegexBuilder};
+    use std::panic::UnwindSafe;
 
     fn assert_send<T: Send>() {}
     fn assert_sync<T: Sync>() {}
@@ -114,8 +107,8 @@ fn oibits() {
 
 #[test]
 fn oibits_regression() {
-    use std::panic;
     use regex::Regex;
+    use std::panic;
 
     let _ = panic::catch_unwind(|| Regex::new("a").unwrap());
 }

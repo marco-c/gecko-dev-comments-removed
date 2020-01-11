@@ -1,5 +1,5 @@
-extern crate regex;
 extern crate quickcheck;
+extern crate regex;
 
 
 
@@ -45,12 +45,12 @@ mod crates_regex {
 
                 if option_env!("RUST_REGEX_RANDOM_TEST").is_some() {
                     match backends_are_consistent($regex_src) {
-                        Ok(_) => {},
+                        Ok(_) => {}
                         Err(err) => panic!("{}", err),
                     }
                 }
             }
-        }
+        };
     }
 
     include!("crates_regex.rs");
