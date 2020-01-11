@@ -64,15 +64,11 @@ NetMonitorAPI.prototype = {
     
     
     const connection = {
-      tabConnection: {
-        tabTarget: toolbox.target,
-      },
       toolbox,
       owner: this,
     };
 
-    await this.connectBackend(
-      this.connector,
+    await this.connector.connectFirefox(
       connection,
       this.actions,
       this.store.getState
@@ -90,19 +86,6 @@ NetMonitorAPI.prototype = {
     if (this.harExportConnector) {
       this.harExportConnector.disconnect();
     }
-  },
-
-  
-
-
-
-
-
-  async connectBackend(connector, connection, actions, getState) {
-    
-    
-    await connection.tabConnection.tabTarget.attach();
-    return connector.connectFirefox(connection, actions, getState);
   },
 
   
@@ -203,17 +186,14 @@ NetMonitorAPI.prototype = {
     }
 
     const connection = {
-      tabConnection: {
-        tabTarget: this.toolbox.target,
-      },
       toolbox: this.toolbox,
     };
 
     this.harExportConnector = new Connector();
-    this.harExportConnectorReady = this.connectBackend(
-      this.harExportConnector,
+    this.harExportConnectorReady = this.harExportConnector.connectFirefox(
       connection
     );
+
     await this.harExportConnectorReady;
     return this.harExportConnector;
   },
