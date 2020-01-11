@@ -43,6 +43,16 @@ add_task(async function loadSource() {
   scriptSource = await (await fetch("file://" + SCRIPT_PATH)).text();
 });
 
+
+
+
+
+
+
+
+
+
+
 async function loadExtension(background) {
   let ext = ExtensionTestUtils.loadExtension({
     manifest: {

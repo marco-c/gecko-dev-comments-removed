@@ -1,5 +1,9 @@
 
 
+
+
+
+
 "use strict";
 
 const { XPCOMUtils } = ChromeUtils.import(
@@ -8,6 +12,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppMenuNotifications: "resource://gre/modules/AppMenuNotifications.jsm",
+  AppUpdater: "resource:///modules/AppUpdater.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   Preferences: "resource://gre/modules/Preferences.jsm",
   ProfileAge: "resource://gre/modules/ProfileAge.jsm",
@@ -30,25 +35,49 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIUpdateManager"
 );
 
+XPCOMUtils.defineLazyGetter(this, "appUpdater", () => new AppUpdater());
+
+XPCOMUtils.defineLazyGetter(this, "appUpdaterStatusToStringMap", () => {
+  
+  
+  
+  
+  let map = new Map();
+  for (let name in AppUpdater.STATUS) {
+    let parts = name.split("_").map(p => p.toLowerCase());
+    let string =
+      parts[0] +
+      parts
+        .slice(1)
+        .map(p => p[0].toUpperCase() + p.substring(1))
+        .join("");
+    map.set(AppUpdater.STATUS[name], string);
+  }
+  return map;
+});
+
 XPCOMUtils.defineLazyGetter(
   this,
   "defaultPreferences",
   () => new Preferences({ defaultBranch: true })
 );
 
-function updateStateIs(prefix) {
-  let update = updateManager.activeUpdate;
-  return !!(update && update.state.startsWith(prefix));
-}
-
 this.experiments_urlbar = class extends ExtensionAPI {
   getAPI() {
     return {
       experiments: {
         urlbar: {
+          checkForBrowserUpdate() {
+            appUpdater.check();
+          },
+
           engagementTelemetry: this._getDefaultSettingsAPI(
             "browser.urlbar.eventTelemetry.enabled"
           ),
+
+          getBrowserUpdateStatus() {
+            return appUpdaterStatusToStringMap.get(appUpdater.status);
+          },
 
           isBrowserShowingNotification() {
             let window = BrowserWindowTracker.getTopWindow();
@@ -104,23 +133,6 @@ this.experiments_urlbar = class extends ExtensionAPI {
             }
 
             return false;
-          },
-
-          isBrowserUpdateReadyToInstall() {
-            if (
-              !updateService.canStageUpdates ||
-              !Services.policies.isAllowed("appUpdate")
-            ) {
-              return updateStateIs("pending");
-            }
-            if (updateStateIs("applied")) {
-              return true;
-            }
-            
-            
-            let update = updateManager.activeUpdate;
-            let errorCode = update ? update.errorCode : 0;
-            return updateStateIs("pending") && errorCode != 0;
           },
 
           async lastBrowserUpdateDate() {

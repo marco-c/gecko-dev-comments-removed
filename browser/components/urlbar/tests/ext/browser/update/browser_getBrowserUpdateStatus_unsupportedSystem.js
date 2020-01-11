@@ -1,0 +1,23 @@
+
+
+
+
+
+
+"use strict";
+
+let params = { queryString: "&unsupported=1" };
+let steps = [
+  {
+    panelId: "checkingForUpdates",
+    checkActiveUpdate: null,
+    continueFile: CONTINUE_CHECK,
+  },
+  {
+    panelId: "unsupportedSystem",
+    checkActiveUpdate: null,
+    continueFile: null,
+  },
+];
+
+add_getBrowserUpdateStatus_task(params, steps, "unsupportedSystem");

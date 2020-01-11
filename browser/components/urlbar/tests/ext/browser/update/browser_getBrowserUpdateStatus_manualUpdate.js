@@ -1,0 +1,25 @@
+
+
+
+
+
+
+"use strict";
+
+let params = {};
+let steps = [
+  {
+    panelId: "checkingForUpdates",
+    checkActiveUpdate: null,
+    continueFile: CONTINUE_CHECK,
+  },
+  {
+    panelId: "manualUpdate",
+    checkActiveUpdate: null,
+    continueFile: null,
+  },
+];
+
+add_getBrowserUpdateStatus_task(params, steps, "manualUpdate", () => {
+  lockWriteTestFile();
+});
