@@ -3667,7 +3667,10 @@ nsChangeHint nsStyleUI::CalcDifference(const nsStyleUI& aNewData) const {
     
     
     hint |= nsChangeHint_NeedReflow |
-            nsChangeHint_NeedDirtyReflow;  
+            nsChangeHint_NeedDirtyReflow |  
+            nsChangeHint_SchedulePaint;     
+                                            
+                                            
   }
 
   if (mUserModify != aNewData.mUserModify) {
