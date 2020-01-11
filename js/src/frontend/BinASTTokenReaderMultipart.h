@@ -69,6 +69,11 @@ class MOZ_STACK_CLASS BinASTTokenReaderMultipart
   MOZ_MUST_USE JS::Result<Ok> readHeader();
 
   
+
+
+  MOZ_MUST_USE JS::Result<Ok> readTreeFooter() { return Ok(); }
+
+  
   
   
   
@@ -139,6 +144,14 @@ class MOZ_STACK_CLASS BinASTTokenReaderMultipart
 
   MOZ_MUST_USE JS::Result<SkippableSubTree> readSkippableSubTree(
       const FieldContext&);
+
+  
+
+
+
+  MOZ_MUST_USE JS::Result<Ok> registerLazyScript(LazyScript* lazy) {
+    return Ok();
+  }
 
   
   
