@@ -80,11 +80,13 @@ exclude_patterns = [
     '.DS_Store'
 ]
 
+from docs.wpt_lint_rules import WPTLintRules
 
 
 from recommonmark.transform import AutoStructify
 def setup(app):
     app.add_transform(AutoStructify)
+    app.add_directive('wpt-lint-rules', WPTLintRules)
 
 
 pygments_style = None
