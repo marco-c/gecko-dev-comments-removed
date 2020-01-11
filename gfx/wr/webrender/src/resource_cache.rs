@@ -1724,7 +1724,7 @@ impl ResourceCache {
                         
                         
                         
-                        if descriptor.allow_mipmaps &&
+                        if descriptor.allow_mipmaps() &&
                            descriptor.size.width > 512 &&
                            descriptor.size.height > 512 &&
                            !self.texture_cache.is_allowed_in_shared_cache(
