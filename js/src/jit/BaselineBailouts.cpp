@@ -501,33 +501,22 @@ class TryNoteIterAll : public TryNoteIter<NoOpTryNoteFilter> {
 };
 
 static bool HasLiveStackValueAtDepth(JSContext* cx, HandleScript script,
-                                     jsbytecode* pc, uint32_t stackDepth) {
+                                     jsbytecode* pc, uint32_t stackSlotIndex,
+                                     uint32_t stackDepth) {
+  
+  
+
+  MOZ_ASSERT(stackSlotIndex < stackDepth);
+
   for (TryNoteIterAll tni(cx, script, pc); !tni.done(); ++tni) {
     const JSTryNote& tn = **tni;
 
     switch (tn.kind) {
       case JSTRY_FOR_IN:
-        
-        if (stackDepth == tn.stackDepth) {
-          return true;
-        }
-        break;
-
       case JSTRY_FOR_OF:
-        
-        
-        
-        
-        if (stackDepth == tn.stackDepth - 1 ||
-            stackDepth == tn.stackDepth - 2) {
-          return true;
-        }
-        break;
-
       case JSTRY_DESTRUCTURING:
-        
-        
-        if (stackDepth == tn.stackDepth || stackDepth == tn.stackDepth - 1) {
+        MOZ_ASSERT(tn.stackDepth <= stackDepth);
+        if (stackSlotIndex < tn.stackDepth) {
           return true;
         }
         break;
@@ -1035,7 +1024,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
       
       MOZ_ASSERT(cx->realm()->isDebuggee());
       if (iter.moreFrames() ||
-          HasLiveStackValueAtDepth(cx, script, pc, i + 1)) {
+          HasLiveStackValueAtDepth(cx, script, pc, i, exprStackSlots)) {
         v = iter.read();
       } else {
         iter.skip();
