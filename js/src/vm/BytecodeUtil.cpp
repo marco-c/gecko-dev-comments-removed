@@ -2896,6 +2896,10 @@ static bool GenerateLcovInfo(JSContext* cx, JS::Realm* realm,
 
   
 
+  MOZ_RELEASE_ASSERT(
+      coverage::IsLCovEnabled(),
+      "Coverage must be enabled for process before generating LCov info");
+
   
   
   using JSScriptSet = GCHashSet<JSScript*>;

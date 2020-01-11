@@ -1,4 +1,5 @@
 
+
 s = newGlobal()
 evalcx("\
     switch (0) {\
