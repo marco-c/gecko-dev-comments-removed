@@ -47,7 +47,7 @@ class TestClient(unittest.TestCase):
         else:
             num_elmts = 0
 
-        get_profile(self.target, "win64", "cold", "default")
+        get_profile(self.target, "win64", "settled", "default")
 
         
         self.assertEqual(len(os.listdir(download_dir)), num_elmts + 2)
@@ -57,7 +57,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(response_calls, 2)
 
         
-        get_profile(self.target, "win64", "cold", "default")
+        get_profile(self.target, "win64", "settled", "default")
 
         
         self.assertEqual(len(os.listdir(download_dir)), num_elmts + 2)

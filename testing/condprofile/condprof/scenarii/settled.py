@@ -1,7 +1,7 @@
 import asyncio
 
 
-async def cold(session, options):
+async def settled(session, options):
     
     await asyncio.sleep(options.get("sleep", 30))
     return {}
