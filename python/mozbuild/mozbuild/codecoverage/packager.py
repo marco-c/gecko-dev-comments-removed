@@ -2,13 +2,13 @@
 
 
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
-import errno
-import sys
-import json
 import buildconfig
+import errno
+import json
+import sys
 
 from mozpack.copier import Jarrer, FileRegistry
 from mozpack.files import FileFinder, GeneratedFile
@@ -40,10 +40,6 @@ def describe_install_manifest(manifest, dest_dir):
 
 
 def package_coverage_data(root, output_file):
-    
-    if isinstance(root, unicode):
-        root = root.encode('utf-8')
-
     finder = FileFinder(root)
     jarrer = Jarrer()
     for p, f in finder.find("**/*.gcno"):
