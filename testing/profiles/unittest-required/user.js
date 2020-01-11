@@ -34,9 +34,6 @@ user_pref("browser.download.panel.shown", true);
 user_pref("browser.newtabpage.activity-stream.default.sites", "");
 user_pref("browser.newtabpage.activity-stream.telemetry", false);
 
-user_pref("browser.ping-centre.production.endpoint", "");
-user_pref("browser.ping-centre.staging.endpoint", "");
-
 user_pref("browser.safebrowsing.downloads.remote.url", "http://{server}/safebrowsing-dummy/update");
 user_pref("browser.safebrowsing.provider.google.gethashURL", "http://{server}/safebrowsing-dummy/gethash");
 user_pref("browser.safebrowsing.provider.google.updateURL", "http://{server}/safebrowsing-dummy/update");

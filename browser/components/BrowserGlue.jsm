@@ -502,12 +502,6 @@ let LEGACY_ACTORS = {
   TelemetryTimestamps.add("blankWindowShown");
 })();
 
-XPCOMUtils.defineLazyServiceGetters(this, {
-  aboutNewTabService: [
-    "@mozilla.org/browser/aboutnewtab-service;1",
-    "nsIAboutNewTabService",
-  ],
-});
 XPCOMUtils.defineLazyGetter(
   this,
   "WeaveService",
@@ -548,7 +542,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PageThumbs: "resource://gre/modules/PageThumbs.jsm",
   PdfJs: "resource://pdf.js/PdfJs.jsm",
   PermissionUI: "resource:///modules/PermissionUI.jsm",
-  PingCentre: "resource:///modules/PingCentre.jsm",
   PlacesBackups: "resource://gre/modules/PlacesBackups.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   PluralForm: "resource://gre/modules/PluralForm.jsm",
@@ -826,65 +819,6 @@ BrowserGlue.prototype = {
   },
 
   
-
-
-  get pingCentre() {
-    const MAIN_TOPIC_ID = "main";
-    Object.defineProperty(this, "pingCentre", {
-      value: new PingCentre({ topic: MAIN_TOPIC_ID }),
-    });
-    return this.pingCentre;
-  },
-
-  _sendMainPingCentrePing() {
-    let newTabSetting;
-    let homePageSetting;
-
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    if (
-      Services.prefs.getBoolPref("browser.newtabpage.enabled") &&
-      !aboutNewTabService.overridden
-    ) {
-      newTabSetting = 0;
-    } else if (aboutNewTabService.newTabURL.startsWith("moz-extension://")) {
-      newTabSetting = 2;
-    } else if (!Services.prefs.getBoolPref("browser.newtabpage.enabled")) {
-      newTabSetting = 1;
-    } else {
-      newTabSetting = 3;
-    }
-
-    const homePageURL = HomePage.get();
-    if (homePageURL === "about:home") {
-      homePageSetting = 0;
-    } else if (homePageURL === "about:blank") {
-      homePageSetting = 1;
-    } else if (homePageURL.startsWith("moz-extension://")) {
-      homePageSetting = 2;
-    } else {
-      homePageSetting = 3;
-    }
-
-    const payload = {
-      event: "AS_ENABLED",
-      value: newTabSetting | (homePageSetting << 2),
-    };
-    const ACTIVITY_STREAM_ID = "activity-stream";
-    const options = { filter: ACTIVITY_STREAM_ID };
-    this.pingCentre.sendPing(payload, options);
-  },
-
-  
   observe: async function BG_observe(subject, topic, data) {
     switch (topic) {
       case "notifications-open-settings":
@@ -1080,7 +1014,6 @@ BrowserGlue.prototype = {
         break;
       case "shield-init-complete":
         this._shieldInitComplete = true;
-        this._sendMainPingCentrePing();
         break;
     }
   },
@@ -1964,11 +1897,6 @@ BrowserGlue.prototype = {
 
     BrowserUsageTelemetry.uninit();
     SearchTelemetry.uninit();
-    
-    if (Object.prototype.hasOwnProperty.call(this, "pingCentre")) {
-      this.pingCentre.uninit();
-    }
-
     PageThumbs.uninit();
     NewTabUtils.uninit();
     AboutPrivateBrowsingHandler.uninit();
