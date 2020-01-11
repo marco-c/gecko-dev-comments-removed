@@ -10244,6 +10244,15 @@ nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
   
   
   RefPtr<net::DocumentChannelChild> docChannel = do_QueryObject(aChannel);
+  if (docChannel) {
+    bool pluginsAllowed = true;
+    GetAllowPlugins(&pluginsAllowed);
+    docChannel->SetDocumentOpenFlags(aOpenFlags, pluginsAllowed);
+    
+    
+    
+    aOpenFlags |= nsIURILoader::DONT_RETARGET;
+  }
 
   
   

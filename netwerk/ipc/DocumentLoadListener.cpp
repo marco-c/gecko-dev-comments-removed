@@ -10,6 +10,7 @@
 #include "mozilla/LoadInfo.h"
 #include "mozilla/MozPromiseInlines.h"  
 #include "mozilla/dom/BrowserParent.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/ClientChannelHelper.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ContentProcessManager.h"
@@ -25,6 +26,13 @@
 #include "nsSerializationHelper.h"
 #include "nsIPrompt.h"
 #include "nsIWindowWatcher.h"
+#include "nsIURIContentListener.h"
+#include "nsWebNavigationInfo.h"
+#include "nsURILoader.h"
+#include "nsIStreamConverterService.h"
+#include "nsExternalHelperAppService.h"
+#include "nsCExternalHandlerService.h"
+#include "nsMimeTypes.h"
 
 mozilla::LazyLogModule gDocumentChannelLog("DocumentChannel");
 #define LOG(fmt) MOZ_LOG(gDocumentChannelLog, mozilla::LogLevel::Verbose, fmt)
@@ -33,6 +41,181 @@ using namespace mozilla::dom;
 
 namespace mozilla {
 namespace net {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
+                                            public nsIMultiPartChannelListener {
+ public:
+  ParentProcessDocumentOpenInfo(ParentChannelListener* aListener,
+                                bool aPluginsAllowed, uint32_t aFlags,
+                                mozilla::dom::BrowsingContext* aBrowsingContext)
+      : nsDocumentOpenInfo(aFlags, false),
+        mBrowsingContext(aBrowsingContext),
+        mListener(aListener),
+        mPluginsAllowed(aPluginsAllowed) {}
+
+  NS_DECL_ISUPPORTS_INHERITED
+
+  
+  
+  
+  bool TryDefaultContentListener(nsIChannel* aChannel,
+                                 const nsCString& aContentType) {
+    uint32_t canHandle =
+        nsWebNavigationInfo::IsTypeSupported(aContentType, mPluginsAllowed);
+    if (canHandle != nsIWebNavigationInfo::UNSUPPORTED) {
+      m_targetStreamListener = mListener;
+      nsLoadFlags loadFlags = 0;
+      aChannel->GetLoadFlags(&loadFlags);
+      aChannel->SetLoadFlags(loadFlags | nsIChannel::LOAD_TARGETED);
+      return true;
+    }
+    return false;
+  }
+
+  bool TryDefaultContentListener(nsIChannel* aChannel) override {
+    return TryDefaultContentListener(aChannel, mContentType);
+  }
+
+  
+  
+  
+  
+  
+  nsresult TryStreamConversion(nsIChannel* aChannel) override {
+    
+    
+    
+    if (mContentType.LowerCaseEqualsASCII(UNKNOWN_CONTENT_TYPE)) {
+      return nsDocumentOpenInfo::TryStreamConversion(aChannel);
+    }
+
+    nsresult rv;
+    nsCOMPtr<nsIStreamConverterService> streamConvService =
+        do_GetService(NS_STREAMCONVERTERSERVICE_CONTRACTID, &rv);
+    nsAutoCString str;
+    rv = streamConvService->ConvertedType(mContentType, str);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    
+    if (TryDefaultContentListener(aChannel, str)) {
+      mContentType = str;
+      return NS_OK;
+    }
+    
+    
+    return NS_ERROR_FAILURE;
+  }
+
+  nsresult TryExternalHelperApp(nsIExternalHelperAppService* aHelperAppService,
+                                nsIChannel* aChannel) override {
+    RefPtr<nsExternalAppHandler> handler;
+    nsresult rv = aHelperAppService->CreateListener(
+        mContentType, aChannel, mBrowsingContext, false, nullptr,
+        getter_AddRefs(handler));
+    if (NS_SUCCEEDED(rv)) {
+      m_targetStreamListener = handler;
+    }
+    return rv;
+  }
+
+  nsDocumentOpenInfo* Clone() override {
+    mCloned = true;
+    return new ParentProcessDocumentOpenInfo(mListener, mPluginsAllowed, mFlags,
+                                             mBrowsingContext);
+  }
+
+  NS_IMETHOD OnStartRequest(nsIRequest* request) override {
+    nsCOMPtr<nsIMultiPartChannel> multiPartChannel = do_QueryInterface(request);
+    if (multiPartChannel) {
+      mExpectingOnAfterLastPart = true;
+    }
+
+    nsresult rv = nsDocumentOpenInfo::OnStartRequest(request);
+
+    
+    
+    
+    
+    
+    if (!mUsedContentHandler && !m_targetStreamListener) {
+      m_targetStreamListener = mListener;
+      return m_targetStreamListener->OnStartRequest(request);
+    }
+    return rv;
+  }
+
+  NS_IMETHOD OnStopRequest(nsIRequest* request, nsresult aStatus) override {
+    
+    
+    
+    
+    
+    bool needToNotifyListener = false;
+    if (!mExpectingOnAfterLastPart && m_targetStreamListener != mListener &&
+        !mCloned) {
+      needToNotifyListener = true;
+    }
+
+    nsresult rv = nsDocumentOpenInfo::OnStopRequest(request, aStatus);
+
+    if (needToNotifyListener) {
+      
+      
+      
+      
+      RefPtr<DocumentLoadListener> doc = do_GetInterface(ToSupports(mListener));
+      MOZ_ASSERT(doc);
+      doc->DisconnectChildListeners(NS_BINDING_RETARGETED, NS_OK);
+      mListener->SetListenerAfterRedirect(nullptr);
+    }
+    return rv;
+  }
+
+  NS_IMETHOD OnAfterLastPart(nsresult aStatus) override {
+    mListener->OnAfterLastPart(aStatus);
+    return NS_OK;
+  }
+
+ private:
+  virtual ~ParentProcessDocumentOpenInfo() = default;
+
+  RefPtr<mozilla::dom::BrowsingContext> mBrowsingContext;
+  RefPtr<ParentChannelListener> mListener;
+  bool mPluginsAllowed;
+
+  
+
+
+
+
+  bool mExpectingOnAfterLastPart = false;
+
+  
+
+
+  bool mCloned = false;
+};
+
+NS_IMPL_ADDREF_INHERITED(ParentProcessDocumentOpenInfo, nsDocumentOpenInfo)
+NS_IMPL_RELEASE_INHERITED(ParentProcessDocumentOpenInfo, nsDocumentOpenInfo)
+
+NS_INTERFACE_MAP_BEGIN(ParentProcessDocumentOpenInfo)
+  NS_INTERFACE_MAP_ENTRY(nsIMultiPartChannelListener)
+NS_INTERFACE_MAP_END_INHERITING(nsDocumentOpenInfo)
 
 NS_IMPL_ADDREF(DocumentLoadListener)
 NS_IMPL_RELEASE(DocumentLoadListener)
@@ -50,18 +233,13 @@ NS_INTERFACE_MAP_BEGIN(DocumentLoadListener)
   NS_INTERFACE_MAP_ENTRY_CONCRETE(DocumentLoadListener)
 NS_INTERFACE_MAP_END
 
-DocumentLoadListener::DocumentLoadListener(const PBrowserOrId& aIframeEmbedding,
+DocumentLoadListener::DocumentLoadListener(BrowserParent* aBrowser,
                                            nsILoadContext* aLoadContext,
                                            PBOverrideStatus aOverrideStatus,
                                            ADocumentChannelBridge* aBridge)
     : mLoadContext(aLoadContext), mPBOverride(aOverrideStatus) {
   LOG(("DocumentLoadListener ctor [this=%p]", this));
-  RefPtr<dom::BrowserParent> parent;
-  if (aIframeEmbedding.type() == PBrowserOrId::TPBrowserParent) {
-    parent =
-        static_cast<dom::BrowserParent*>(aIframeEmbedding.get_PBrowserParent());
-  }
-  mParentChannelListener = new ParentChannelListener(this, parent);
+  mParentChannelListener = new ParentChannelListener(this, aBrowser);
   mDocumentChannelBridge = aBridge;
 }
 
@@ -70,13 +248,15 @@ DocumentLoadListener::~DocumentLoadListener() {
 }
 
 bool DocumentLoadListener::Open(
-    nsDocShellLoadState* aLoadState, class LoadInfo* aLoadInfo,
-    const nsString* aInitiatorType, nsLoadFlags aLoadFlags, uint32_t aLoadType,
-    uint32_t aCacheKey, bool aIsActive, bool aIsTopLevelDoc,
-    bool aHasNonEmptySandboxingFlags, const Maybe<URIParams>& aTopWindowURI,
+    BrowserParent* aBrowser, nsDocShellLoadState* aLoadState,
+    class LoadInfo* aLoadInfo, const nsString* aInitiatorType,
+    nsLoadFlags aLoadFlags, uint32_t aLoadType, uint32_t aCacheKey,
+    bool aIsActive, bool aIsTopLevelDoc, bool aHasNonEmptySandboxingFlags,
+    const Maybe<URIParams>& aTopWindowURI,
     const Maybe<PrincipalInfo>& aContentBlockingAllowListPrincipal,
     const nsString& aCustomUserAgent, const uint64_t& aChannelId,
-    const TimeStamp& aAsyncOpenTime, nsresult* aRv) {
+    const TimeStamp& aAsyncOpenTime, const Maybe<uint32_t>& aDocumentOpenFlags,
+    bool aPluginsAllowed, nsresult* aRv) {
   LOG(("DocumentLoadListener Open [this=%p, uri=%s]", this,
        aLoadState->URI()->GetSpecOrDefault().get()));
   if (!nsDocShell::CreateChannelForLoadState(
@@ -142,7 +322,17 @@ bool DocumentLoadListener::Open(
   
   AddClientChannelHelperInParent(mChannel, GetMainThreadSerialEventTarget());
 
-  *aRv = mChannel->AsyncOpen(mParentChannelListener);
+  if (aDocumentOpenFlags) {
+    RefPtr<ParentProcessDocumentOpenInfo> openInfo =
+        new ParentProcessDocumentOpenInfo(mParentChannelListener,
+                                          aPluginsAllowed, *aDocumentOpenFlags,
+                                          aBrowser->GetBrowsingContext());
+    openInfo->Prepare();
+
+    *aRv = mChannel->AsyncOpen(openInfo);
+  } else {
+    *aRv = mChannel->AsyncOpen(mParentChannelListener);
+  }
   if (NS_FAILED(*aRv)) {
     mParentChannelListener = nullptr;
     return false;
@@ -230,7 +420,8 @@ void DocumentLoadListener::FinishReplacementChannelSetup(bool aSucceeded) {
   nsresult rv;
 
   if (mDoingProcessSwitch && mDocumentChannelBridge) {
-    mDocumentChannelBridge->DisconnectChildListeners(NS_BINDING_ABORTED);
+    mDocumentChannelBridge->DisconnectChildListeners(NS_BINDING_ABORTED,
+                                                     NS_BINDING_ABORTED);
   }
 
   nsCOMPtr<nsIParentChannel> redirectChannel;
@@ -687,7 +878,7 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   nsresult status = NS_OK;
   aRequest->GetStatus(&status);
   if (status == NS_ERROR_NO_CONTENT) {
-    mDocumentChannelBridge->DisconnectChildListeners(NS_ERROR_NO_CONTENT);
+    mDocumentChannelBridge->DisconnectChildListeners(status, status);
     return NS_OK;
   }
 
@@ -779,6 +970,15 @@ DocumentLoadListener::OnDataAvailable(nsIRequest* aRequest,
 
 NS_IMETHODIMP
 DocumentLoadListener::OnAfterLastPart(nsresult aStatus) {
+  LOG(("DocumentLoadListener OnAfterLastPart [this=%p]", this));
+  if (!mInitiatedRedirectToRealChannel) {
+    
+    
+    
+    LOG(("DocumentLoadListener Disconnecting child"));
+    DisconnectChildListeners(NS_BINDING_RETARGETED, NS_OK);
+    return NS_OK;
+  }
   mStreamListenerFunctions.AppendElement(StreamListenerFunction{
       VariantIndex<3>{}, OnAfterLastPartParams{aStatus}});
   mIsFinished = true;
