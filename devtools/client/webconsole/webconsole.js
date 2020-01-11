@@ -443,6 +443,17 @@ class WebConsole {
 
 
 
+  evaluateJSAsync(expression, options = {}) {
+    return this.ui._commands.evaluateJSAsync(expression, options);
+  }
+
+  
+
+
+
+
+
+
   destroy() {
     if (!this.hudId) {
       return;
