@@ -2622,13 +2622,11 @@ var SessionStoreInternal = {
 
     
     let browsingContext;
-    let isSubframe = false;
     let cp = channel.loadInfo.externalContentPolicyType;
     if (cp == Ci.nsIContentPolicy.TYPE_DOCUMENT) {
       browsingContext = channel.loadInfo.browsingContext;
     } else {
       browsingContext = channel.loadInfo.frameBrowsingContext;
-      isSubframe = true;
     }
 
     if (!browsingContext) {
@@ -2735,8 +2733,7 @@ var SessionStoreInternal = {
       true,
       useRemoteSubframes,
       preferredRemoteType,
-      currentPrincipal,
-      isSubframe
+      currentPrincipal
     );
 
     debug(
@@ -2981,7 +2978,7 @@ var SessionStoreInternal = {
     
     
     let uriObj = aTab.linkedBrowser.currentURI;
-    if (!uriObj || (uriObj && !uriObj.schemeIs("about"))) {
+    if (!uriObj || (uriObj && !aWindow.gBrowser.isLocalAboutURI(uriObj))) {
       newTab.setAttribute("busy", "true");
     }
 
@@ -3665,7 +3662,7 @@ var SessionStoreInternal = {
     
     
     
-    if (!uriObj || (uriObj && !uriObj.schemeIs("about"))) {
+    if (!uriObj || (uriObj && !window.gBrowser.isLocalAboutURI(uriObj))) {
       tab.setAttribute("busy", "true");
     }
 
