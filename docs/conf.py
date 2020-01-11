@@ -14,7 +14,7 @@ from recommonmark.transform import AutoStructify
 
 
 OUR_DIR = os.path.dirname(__file__)
-topsrcdir = os.path.normpath(os.path.join(OUR_DIR, '..', '..'))
+topsrcdir = os.path.normpath(os.path.join(OUR_DIR, '..'))
 
 EXTRA_PATHS = (
     'layout/tools/reftest',
