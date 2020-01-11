@@ -22,6 +22,8 @@
 
 var EXPORTED_SYMBOLS = ["ExtensionPreferencesManager"];
 
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 const { Management } = ChromeUtils.import(
   "resource://gre/modules/Extension.jsm",
   null
@@ -41,6 +43,17 @@ ChromeUtils.defineModuleGetter(
   "Preferences",
   "resource://gre/modules/Preferences.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "ExtensionCommon",
+  "resource://gre/modules/ExtensionCommon.jsm"
+);
+
+const { ExtensionUtils } = ChromeUtils.import(
+  "resource://gre/modules/ExtensionUtils.jsm"
+);
+
+const { ExtensionError } = ExtensionUtils;
 
 XPCOMUtils.defineLazyGetter(this, "defaultPreferences", function() {
   return new Preferences({ defaultBranch: true });
@@ -52,12 +65,12 @@ Management.on("uninstall", (type, { id }) => {
 });
 
 Management.on("disable", (type, id) => {
-  this.ExtensionPreferencesManager.disableAll(id);
+  ExtensionPreferencesManager.disableAll(id);
 });
 
 Management.on("startup", async (type, extension) => {
   if (extension.startupReason == "ADDON_ENABLE") {
-    this.ExtensionPreferencesManager.enableAll(extension.id);
+    ExtensionPreferencesManager.enableAll(extension.id);
   }
 });
 
@@ -123,7 +136,9 @@ function settingsUpdate(initialValue) {
 
 
 
-function setPrefs(setting, item) {
+
+
+function setPrefs(name, setting, item) {
   let prefs = item.initialValue || setting.setCallback(item.value);
   let changed = false;
   for (let pref of setting.prefNames) {
@@ -140,6 +155,7 @@ function setPrefs(setting, item) {
   if (changed && typeof setting.onPrefsChanged == "function") {
     setting.onPrefsChanged(item);
   }
+  Management.emit(`extension-setting-changed:${name}`);
 }
 
 
@@ -181,7 +197,7 @@ async function processSetting(id, name, action) {
     ) {
       return false;
     }
-    setPrefs(setting, item);
+    setPrefs(name, setting, item);
     return true;
   }
   return false;
@@ -243,7 +259,7 @@ this.ExtensionPreferencesManager = {
       settingsUpdate.bind(setting)
     );
     if (item) {
-      setPrefs(setting, item);
+      setPrefs(name, setting, item);
       return true;
     }
     return false;
@@ -422,7 +438,69 @@ this.ExtensionPreferencesManager = {
     readOnly = false,
     validate = () => {}
   ) {
-    return {
+    if (arguments.length > 1) {
+      Services.console.logStringMessage(
+        `ExtensionPreferencesManager.getSettingsAPI for ${name} should be updated to use a single paramater object.`
+      );
+    }
+    return ExtensionPreferencesManager._getSettingsAPI(
+      arguments.length === 1
+        ? extensionId
+        : {
+            extensionId,
+            name,
+            storeType,
+            readOnly,
+            validate,
+          }
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _getSettingsAPI(params) {
+    let {
+      extensionId,
+      context,
+      name,
+      callback,
+      storeType,
+      readOnly = false,
+      onChange,
+      validate = () => {},
+    } = params;
+    if (!extensionId) {
+      extensionId = context.extension.id;
+    }
+
+    const checkScope = details => {
+      let { scope } = details;
+      if (scope && scope !== "regular") {
+        throw new ExtensionError(
+          `Firefox does not support the ${scope} settings scope.`
+        );
+      }
+    };
+
+    let settingsAPI = {
       async get(details) {
         validate();
         let levelOfControl = details.incognito
@@ -443,6 +521,7 @@ this.ExtensionPreferencesManager = {
       },
       set(details) {
         validate();
+        checkScope(details);
         if (!readOnly) {
           return ExtensionPreferencesManager.setSetting(
             extensionId,
@@ -454,11 +533,44 @@ this.ExtensionPreferencesManager = {
       },
       clear(details) {
         validate();
+        checkScope(details);
         if (!readOnly) {
           return ExtensionPreferencesManager.removeSetting(extensionId, name);
         }
         return false;
       },
+      onChange,
     };
+    
+    
+    
+    if (onChange === undefined && context) {
+      
+      
+      let setting = settingsMap.get(name);
+      if (!setting) {
+        Services.console.logStringMessage(
+          `ExtensionPreferencesManager API ${name} created but addSetting was not called.`
+        );
+        return settingsAPI;
+      }
+
+      settingsAPI.onChange = new ExtensionCommon.EventManager({
+        context,
+        name: `${name}.onChange`,
+        register: fire => {
+          let listener = async () => {
+            fire.async({
+              details: await settingsAPI.get({}),
+            });
+          };
+          Management.on(`extension-setting-changed:${name}`, listener);
+          return () => {
+            Management.off(`extension-setting-changed:${name}`, listener);
+          };
+        },
+      }).api();
+    }
+    return settingsAPI;
   },
 };
