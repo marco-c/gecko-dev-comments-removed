@@ -302,10 +302,8 @@ pub trait ToComputedValue {
 
     
     
-    #[inline]
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue;
 
-    #[inline]
     
     
     
