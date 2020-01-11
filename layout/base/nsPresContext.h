@@ -1060,8 +1060,8 @@ class nsPresContext : public nsISupports,
   
   
   
-  static bool UIResolutionChangedSubdocumentCallback(
-      mozilla::dom::Document* aDocument, void* aData);
+  static bool UIResolutionChangedSubdocumentCallback(mozilla::dom::Document&,
+                                                     void* aData);
 
   void SetImgAnimations(nsIContent* aParent, uint16_t aMode);
   void SetSMILAnimations(mozilla::dom::Document* aDoc, uint16_t aNewMode,
@@ -1077,10 +1077,10 @@ class nsPresContext : public nsISupports,
 
   void UpdateCharSet(NotNull<const Encoding*> aCharSet);
 
-  static bool NotifyDidPaintSubdocumentCallback(
-      mozilla::dom::Document* aDocument, void* aData);
-  static bool NotifyRevokingDidPaintSubdocumentCallback(
-      mozilla::dom::Document* aDocument, void* aData);
+  static bool NotifyDidPaintSubdocumentCallback(mozilla::dom::Document&,
+                                                void* aData);
+  static bool NotifyRevokingDidPaintSubdocumentCallback(mozilla::dom::Document&,
+                                                        void* aData);
 
  public:
   

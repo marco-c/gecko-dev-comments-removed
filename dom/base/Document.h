@@ -288,7 +288,7 @@ class DocHeaderData {
 };
 
 class ExternalResourceMap {
-  typedef bool (*SubDocEnumFunc)(Document* aDocument, void* aData);
+  typedef bool (*SubDocEnumFunc)(Document& aDocument, void* aData);
 
  public:
   
@@ -2573,7 +2573,7 @@ class Document : public nsINode,
 
 
 
-  typedef bool (*SubDocEnumFunc)(Document* aDocument, void* aData);
+  typedef bool (*SubDocEnumFunc)(Document&, void* aData);
   void EnumerateSubDocuments(SubDocEnumFunc aCallback, void* aData);
 
   
