@@ -304,17 +304,6 @@ BrowserHost::GetHasBeforeUnload(bool* aHasBeforeUnload) {
 }
 
 
-NS_IMETHODIMP
-BrowserHost::GetOwnerElement(mozilla::dom::Element** aOwnerElement) {
-  if (!mRoot) {
-    *aOwnerElement = nullptr;
-    return NS_OK;
-  }
-  *aOwnerElement = mRoot->GetOwnerElement();
-  return NS_OK;
-}
-
-
 
 NS_IMETHODIMP
 BrowserHost::StartApzAutoscroll(float aAnchorX, float aAnchorY,
