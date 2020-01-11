@@ -862,6 +862,14 @@ class UrlbarView {
     helpIcon.setAttribute("data-l10n-id", "urlbar-tip-help-icon");
     item._elements.set("helpButton", helpIcon);
     item._content.appendChild(helpIcon);
+
+    
+    
+    
+    
+    
+    
+    item.addEventListener("focus", () => this.input.focus(), true);
   }
 
   _updateRow(item, result) {
