@@ -72,8 +72,14 @@ Fuzzyfox::Fuzzyfox()
 
   sFuzzyfoxInitializing = fuzzyfoxEnabled;
 
-  
   nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
+  if (!prefs) {
+    
+    
+    
+    return;
+  }
+
   prefs->AddObserver(FUZZYFOX_ENABLED_PREF, this, false);
   prefs->AddObserver(FUZZYFOX_CLOCKGRAIN_PREF, this, false);
 }
