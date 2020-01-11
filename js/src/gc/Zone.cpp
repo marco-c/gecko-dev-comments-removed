@@ -918,6 +918,8 @@ void Zone::finishRoots() {
 
   
   finalizationRecordMap().clear();
+
+  clearKeptObjects();
 }
 
 void Zone::traceKeptObjects(JSTracer* trc) { keptObjects.ref().trace(trc); }
