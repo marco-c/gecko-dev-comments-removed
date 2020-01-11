@@ -554,6 +554,10 @@ class AsyncPanZoomController {
   const FrameMetrics& Metrics() const;
   FrameMetrics& Metrics();
 
+  
+  
+  bool UpdateRootFrameMetricsIfChanged(FrameMetrics& metrics);
+
  private:
   
   

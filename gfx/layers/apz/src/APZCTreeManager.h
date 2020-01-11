@@ -954,6 +954,9 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
  private:
   RefPtr<AndroidDynamicToolbarAnimator> mToolbarAnimator;
+
+  
+  FrameMetrics mLastRootMetrics;
 #endif  
 };
 

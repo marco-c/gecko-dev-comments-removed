@@ -731,6 +731,16 @@ void APZCTreeManager::SampleForWebRender(wr::TransactionWrapper& aTxn,
                               wr::ToLayoutPoint(asyncScrollDelta));
 
     apzc->ReportCheckerboard(aSampleTime);
+
+#if defined(MOZ_WIDGET_ANDROID)
+    
+    RefPtr<UiCompositorControllerParent> uiController =
+        UiCompositorControllerParent::GetFromRootLayerTreeId(mRootLayersId);
+    if (uiController &&
+        apzc->UpdateRootFrameMetricsIfChanged(mLastRootMetrics)) {
+      uiController->NotifyUpdateScreenMetrics(mLastRootMetrics);
+    }
+#endif
   }
 
   
