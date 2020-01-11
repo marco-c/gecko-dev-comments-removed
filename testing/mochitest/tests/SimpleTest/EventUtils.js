@@ -2909,9 +2909,18 @@ function synthesizeDrop(
 
 
 
+
+
+
+
+
+
+
 async function synthesizePlainDragAndDrop(aParams) {
   let {
+    dragEvent = {},
     srcElement,
+    srcSelection,
     destElement,
     srcX = 2,
     srcY = 2,
@@ -2933,6 +2942,59 @@ async function synthesizePlainDragAndDrop(aParams) {
 
   if (logFunc) {
     logFunc("synthesizePlainDragAndDrop() -- START");
+  }
+
+  if (srcSelection) {
+    srcElement = srcSelection.focusNode;
+    while (_EU_maybeWrap(srcElement).isNativeAnonymous) {
+      srcElement = _EU_maybeUnwrap(
+        _EU_maybeWrap(srcElement).flattenedTreeParentNode
+      );
+    }
+    if (srcElement.nodeType !== Node.NODE_TYPE_ELEMENT) {
+      srcElement = srcElement.parentElement;
+    }
+    let srcElementRect = srcElement.getBoundingClientRect();
+    if (logFunc) {
+      logFunc(
+        `srcElement.getBoundingClientRect(): ${rectToString(srcElementRect)}`
+      );
+    }
+    
+    
+    let selectionRectList = srcSelection.getRangeAt(0).getClientRects();
+    let lastSelectionRect = selectionRectList[selectionRectList.length - 1];
+    if (logFunc) {
+      logFunc(
+        `srcSelection.getRangeAt(0).getClientRects()[${selectionRectList.length -
+          1}]: ${rectToString(lastSelectionRect)}`
+      );
+    }
+    
+    srcX = Math.floor(
+      lastSelectionRect.left + lastSelectionRect.width / 2
+    );
+    srcY = Math.floor(
+      lastSelectionRect.top + lastSelectionRect.height / 2
+    );
+    
+    
+    
+    srcX = Math.floor(
+      srcX - srcElementRect.left
+    );
+    srcY = Math.floor(
+      srcY - srcElementRect.top
+    );
+    
+    
+    if (aParams.finalX === undefined) {
+      finalX = srcX + stepX * 2;
+    }
+    if (aParams.finalY === undefined) {
+      finalY = srcY + stepY * 2;
+    }
+  } else if (logFunc) {
     logFunc(
       `srcElement.getBoundingClientRect(): ${rectToString(
         srcElement.getBoundingClientRect()
@@ -2945,6 +3007,8 @@ async function synthesizePlainDragAndDrop(aParams) {
   );
 
   try {
+    _getDOMWindowUtils().disableNonTestMouseEvents(true);
+
     await new Promise(r => setTimeout(r, 0));
 
     synthesizeMouse(srcElement, srcX, srcY, { type: "mousedown" }, srcWindow);
@@ -3053,7 +3117,7 @@ async function synthesizePlainDragAndDrop(aParams) {
             destElement,
             destWindow,
             null,
-            {}
+            dragEvent
           );
           sendDragEvent(event, destElement, destWindow);
           if (!dragEnterEvent && !destElement.disabled) {
@@ -3091,7 +3155,7 @@ async function synthesizePlainDragAndDrop(aParams) {
           destElement,
           destWindow,
           null,
-          {}
+          dragEvent
         );
         sendDragEvent(event, destElement, destWindow);
         if (!dragOverEvent && !destElement.disabled) {
@@ -3129,7 +3193,7 @@ async function synthesizePlainDragAndDrop(aParams) {
           destElement,
           destWindow,
           null,
-          {}
+          dragEvent
         );
         sendDragEvent(event, destElement, destWindow);
         if (!dropEvent && session.canDrop) {
@@ -3142,12 +3206,14 @@ async function synthesizePlainDragAndDrop(aParams) {
       
       
       
+      dragEvent.clientX = finalX;
+      dragEvent.clientY = finalY;
       let event = createDragEventObject(
         "dragend",
         srcElement,
         srcWindow,
         null,
-        { clientX: finalX, clientY: finalY }
+        dragEvent
       );
       session.setDragEndPointForTests(event.screenX, event.screenY);
     }
@@ -3169,7 +3235,7 @@ async function synthesizePlainDragAndDrop(aParams) {
       }
       srcWindow.addEventListener("dragend", onDragEnd, { capture: true });
       try {
-        ds.endDragSession(true, 0);
+        ds.endDragSession(true, _parseModifiers(dragEvent));
         if (!dragEndEvent) {
           
           throw new Error(
@@ -3180,6 +3246,7 @@ async function synthesizePlainDragAndDrop(aParams) {
         srcWindow.removeEventListener("dragend", onDragEnd, { capture: true });
       }
     }
+    _getDOMWindowUtils().disableNonTestMouseEvents(false);
     if (logFunc) {
       logFunc("synthesizePlainDragAndDrop() -- END");
     }
