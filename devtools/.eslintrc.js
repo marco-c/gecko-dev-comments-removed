@@ -90,6 +90,12 @@ module.exports = {
     
     "files": [
       "server/**",
+      
+      
+      
+      "shared/!(fronts)/**",
+      
+      "shared/*.**",
     ],
     "rules": {
       "mozilla/reject-some-requires": ["error", "^(resource\://)?devtools/client"],
