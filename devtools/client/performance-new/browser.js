@@ -27,7 +27,6 @@
 
 
 
-
 function requireLazy(callback) {
   
   let cache;
@@ -546,33 +545,6 @@ function openFilePickerForObjdir(window, objdirs, changeObjdirs) {
   });
 }
 
-
-
-
-
-
-function getActiveBrowsingContextID() {
-  const { Services } = lazyServices();
-  const win = Services.wm.getMostRecentWindow("navigator:browser");
-
-  if (
-    win &&
-    win.gBrowser &&
-    win.gBrowser.selectedBrowser &&
-    win.gBrowser.selectedBrowser.browsingContext &&
-    win.gBrowser.selectedBrowser.browsingContext.id
-  ) {
-    return win.gBrowser.selectedBrowser.browsingContext.id;
-  }
-
-  console.error(
-    "Failed to get the active BrowsingContext ID while starting the profiler."
-  );
-  
-  
-  return 0;
-}
-
 module.exports = {
   receiveProfile,
   getRecordingPreferencesFromDebuggee,
@@ -581,5 +553,4 @@ module.exports = {
   restartBrowserWithEnvironmentVariable,
   getEnvironmentVariable,
   openFilePickerForObjdir,
-  getActiveBrowsingContextID,
 };

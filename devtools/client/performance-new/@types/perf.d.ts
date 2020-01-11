@@ -169,12 +169,6 @@ export type GetEnvironmentVariable = (envName: string) => string;
 
 
 
-
-export type GetActiveBrowsingContextID = () => number;
-
-
-
-
 interface GeckoProfilerFrameScriptInterface {
   getProfile: () => Promise<object>;
   getSymbolTable: GetSymbolTableCallback;

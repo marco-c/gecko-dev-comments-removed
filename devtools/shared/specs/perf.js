@@ -20,14 +20,6 @@ const perfDescription = {
       interval: Arg(1, "number"),
       features: Arg(2, "number"),
       duration: Arg(3, "nullable:number"),
-      
-      
-      
-      
-      
-      
-      
-      activeBrowsingContextID: Arg(4, "nullable:number"),
     },
     "profiler-stopped": {
       type: "profiler-stopped",

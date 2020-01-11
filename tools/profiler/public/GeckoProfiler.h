@@ -330,13 +330,9 @@ void profiler_shutdown();
 
 
 
-
-
-
 void profiler_start(
     mozilla::PowerOfTwo32 aCapacity, double aInterval, uint32_t aFeatures,
     const char** aFilters, uint32_t aFilterCount,
-    uint64_t aActiveBrowsingContextID,
     const mozilla::Maybe<double>& aDuration = mozilla::Nothing());
 
 
@@ -351,7 +347,6 @@ void profiler_stop();
 void profiler_ensure_started(
     mozilla::PowerOfTwo32 aCapacity, double aInterval, uint32_t aFeatures,
     const char** aFilters, uint32_t aFilterCount,
-    uint64_t aActiveBrowsingContextID,
     const mozilla::Maybe<double>& aDuration = mozilla::Nothing());
 
 
@@ -533,8 +528,7 @@ bool profiler_feature_active(uint32_t aFeature);
 void profiler_get_start_params(
     int* aEntrySize, mozilla::Maybe<double>* aDuration, double* aInterval,
     uint32_t* aFeatures,
-    mozilla::Vector<const char*, 0, mozilla::MallocAllocPolicy>* aFilters,
-    uint64_t* aActiveBrowsingContextID);
+    mozilla::Vector<const char*, 0, mozilla::MallocAllocPolicy>* aFilters);
 
 
 
