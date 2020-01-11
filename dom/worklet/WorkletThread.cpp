@@ -83,7 +83,7 @@ class WorkletJSRuntime final : public mozilla::CycleCollectedJSRuntime {
     
     
     
-    if (aStatus == JSGC_END && !Contexts().isEmpty()) {
+    if (aStatus == JSGC_END && GetContext()) {
       nsCycleCollector_collect(nullptr);
     }
   }

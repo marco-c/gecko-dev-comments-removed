@@ -112,7 +112,7 @@ class CycleCollectedJSRuntime {
   virtual void CustomGCCallback(JSGCStatus aStatus) {}
   virtual void CustomOutOfMemoryCallback() {}
 
-  LinkedList<CycleCollectedJSContext>& Contexts() { return mContexts; }
+  CycleCollectedJSContext* GetContext() { return mContext; }
 
  private:
   void DescribeGCThing(bool aIsMarked, JS::GCCellPtr aThing,
@@ -286,8 +286,7 @@ class CycleCollectedJSRuntime {
   
   static CycleCollectedJSRuntime* Get();
 
-  void AddContext(CycleCollectedJSContext* aContext);
-  void RemoveContext(CycleCollectedJSContext* aContext);
+  void SetContext(CycleCollectedJSContext* aContext);
 
 #ifdef NIGHTLY_BUILD
   bool GetRecentDevError(JSContext* aContext,
@@ -296,7 +295,7 @@ class CycleCollectedJSRuntime {
 #endif  
 
  private:
-  LinkedList<CycleCollectedJSContext> mContexts;
+  CycleCollectedJSContext* mContext;
 
   JSGCThingParticipant mGCThingCycleCollectorGlobal;
 
