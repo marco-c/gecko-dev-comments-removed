@@ -42,6 +42,9 @@ add_task(async function async_init() {
   let engine = Services.search.getEngineByName("basic");
   Assert.equal(engine, null);
 
+  engine = Services.search.getEngineByName("Simple Engine");
+  Assert.equal(engine, null);
+
   
   engine = Services.search.getEngineByName("hidden");
   Assert.notEqual(engine, null);
@@ -74,10 +77,13 @@ add_task(async function invalid_engine() {
   await asyncReInit({ waitForRegionFetch: true });
 
   let engines = await Services.search.getEngines();
-  Assert.equal(engines.length, 1);
+  Assert.equal(engines.length, 2);
 
   
   let engine = Services.search.getEngineByName("basic");
+  Assert.notEqual(engine, null);
+
+  engine = Services.search.getEngineByName("basic");
   Assert.notEqual(engine, null);
 
   
