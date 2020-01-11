@@ -3485,20 +3485,23 @@ AbortReasonOr<Ok> IonBuilder::visitJumpTarget(JSOp op) {
   PendingEdges edges(std::move(p->value()));
   pendingEdges_->remove(p);
 
+  
+  
+  
+  if (edges.empty()) {
+    return Ok();
+  }
+
   MBasicBlock* joinBlock = nullptr;
 
-  auto createFallthroughJoinBlock = [this, &joinBlock]() -> AbortReasonOr<Ok> {
-    MOZ_ASSERT(!joinBlock);
+  
+  if (!hasTerminatedBlock()) {
     MOZ_TRY_VAR(joinBlock, newBlock(current, pc));
     current->end(MGoto::New(alloc(), joinBlock));
     setTerminatedBlock();
-    return Ok();
-  };
+  }
 
   auto addEdge = [&](MBasicBlock* pred, size_t popped) -> AbortReasonOr<Ok> {
-    if (!joinBlock && !hasTerminatedBlock()) {
-      MOZ_TRY(createFallthroughJoinBlock());
-    }
     if (joinBlock) {
       if (!joinBlock->addPredecessorPopN(alloc(), pred, popped)) {
         return abort(AbortReason::Alloc);
@@ -3515,10 +3518,7 @@ AbortReasonOr<Ok> IonBuilder::visitJumpTarget(JSOp op) {
   
   auto createBlockForShortCircuit =
       [&](MBasicBlock* pred) -> AbortReasonOr<MBasicBlock*> {
-    if (!joinBlock) {
-      MOZ_ASSERT(!hasTerminatedBlock());
-      MOZ_TRY(createFallthroughJoinBlock());
-    }
+    MOZ_ASSERT(joinBlock);
 
     MBasicBlock* trueBlock;
     MOZ_TRY_VAR(trueBlock, newBlock(pred, pc));
@@ -3578,10 +3578,7 @@ AbortReasonOr<Ok> IonBuilder::visitJumpTarget(JSOp op) {
     MOZ_CRASH("Invalid kind");
   }
 
-  if (!joinBlock) {
-    return Ok();
-  }
-
+  MOZ_ASSERT(joinBlock);
   MOZ_TRY(startTraversingBlock(joinBlock));
 
   
