@@ -112,7 +112,7 @@ host_fetches = {
             
             
             
-            'url': 'https://ftp.icm.edu.pl/packages/ImageMagick/binaries/ImageMagick-x86_64-apple-darwin18.7.0.tar.gz',  
+            'url': 'https://ftp.icm.edu.pl/packages/ImageMagick/binaries/ImageMagick-x86_64-apple-darwin17.7.0.tar.gz',  
             
             'path': 'ImageMagick-7.0.8',
         },
@@ -210,7 +210,16 @@ class MachBrowsertime(MachCommandBase):
                         'browsertime',
                         {'path': archive},
                         'Unpacking temporary location {path}')
-                    unpack_file(archive)
+
+                    if 'win64' in host_platform() and 'imagemagick' in tool.lower():
+                        
+                        
+                        mkdir(fetch.get('path'))
+                        os.chdir(os.path.join(self.state_path, fetch.get('path')))
+                        unpack_file(archive)
+                        os.chdir(self.state_path)
+                    else:
+                        unpack_file(archive)
 
                     
                     path = os.path.join(self.state_path, fetch.get('path'))
@@ -243,7 +252,7 @@ class MachBrowsertime(MachCommandBase):
         if 'GECKODRIVER_BASE_URL' not in os.environ:
             
             url = 'https://github.com/ncalexan/geckodriver/releases/download/v0.24.0-android/'
-            os.environ['GECKODRIVER_BASE_URL'] = url
+            os.environ[str('GECKODRIVER_BASE_URL')] = str(url)
 
         self.log(
             logging.INFO,
@@ -303,6 +312,12 @@ class MachBrowsertime(MachCommandBase):
         
         node_dir = os.path.dirname(node_path())
         path = [node_dir] + path
+
+        
+        
+        
+        if 'win64' in host_platform() and path_to_imagemagick:
+            path.insert(0, path_to_imagemagick)
 
         append_env = {
             'PATH': os.pathsep.join(path),
