@@ -383,29 +383,6 @@ GeckoDriver.prototype.sendAsync = function(name, data, commandID) {
 
 
 
-GeckoDriver.prototype.getBrowsingContext = async function() {
-  let browsingContext = null;
-
-  switch (this.context) {
-    case Context.Chrome:
-      browsingContext = this.getCurrentWindow().docShell.browsingContext;
-      break;
-
-    case Context.Content:
-      const id = await this.listener.getBrowsingContextId();
-      browsingContext = BrowsingContext.get(id);
-      break;
-  }
-
-  return browsingContext;
-};
-
-
-
-
-
-
-
 
 
 
@@ -3026,9 +3003,13 @@ GeckoDriver.prototype.takeScreenshot = async function(cmd) {
   
   full = webEl ? false : full;
 
+  let browsingContext;
   let rect;
+
   switch (this.context) {
     case Context.Chrome:
+      browsingContext = win.docShell.browsingContext;
+
       if (id) {
         let el = this.curBrowser.seenEls.get(webEl, win);
         rect = el.getBoundingClientRect();
@@ -3047,11 +3028,11 @@ GeckoDriver.prototype.takeScreenshot = async function(cmd) {
       break;
 
     case Context.Content:
+      browsingContext = this.curBrowser.contentBrowser.browsingContext;
       rect = await this.listener.getScreenshotRect({ el: webEl, full, scroll });
       break;
   }
 
-  const browsingContext = await this.getBrowsingContext();
   let canvas = await capture.canvas(
     win,
     browsingContext,
