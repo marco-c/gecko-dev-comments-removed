@@ -208,6 +208,15 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
     
     eSetValue_MoveCursorToBeginSetSelectionDirectionForward = 1 << 6,
   };
+  
+
+
+
+
+
+
+
+
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE bool SetValue(const nsAString& aValue,
                                                 const nsAString* aOldValue,
                                                 uint32_t aFlags);
@@ -215,7 +224,17 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
                                                 uint32_t aFlags) {
     return SetValue(aValue, nullptr, aFlags);
   }
+  
+
+
+
   void GetValue(nsAString& aValue, bool aIgnoreWrap) const;
+  
+
+
+
+
+  bool ValueEquals(const nsAString& aValue) const;
   bool HasNonEmptyValue();
   
   

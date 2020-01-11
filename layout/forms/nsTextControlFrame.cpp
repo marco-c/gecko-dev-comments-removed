@@ -1124,18 +1124,43 @@ nsresult nsTextControlFrame::AttributeChanged(int32_t aNameSpaceID,
 }
 
 void nsTextControlFrame::GetText(nsString& aText) {
-  TextControlElement* textControlElement =
-      TextControlElement::FromNode(GetContent());
-  MOZ_ASSERT(textControlElement);
-  if (IsSingleLineTextControl()) {
-    
-    textControlElement->GetTextEditorValue(aText, true);
-  } else {
-    HTMLTextAreaElement* textArea = HTMLTextAreaElement::FromNode(mContent);
-    if (textArea) {
-      textArea->GetValue(aText);
+  if (HTMLInputElement* inputElement = HTMLInputElement::FromNode(mContent)) {
+    if (IsSingleLineTextControl()) {
+      
+      inputElement->GetTextEditorValue(aText, true);
+      return;
     }
+    aText.Truncate();
+    return;
   }
+
+  MOZ_ASSERT(!IsSingleLineTextControl());
+  if (HTMLTextAreaElement* textAreaElement =
+          HTMLTextAreaElement::FromNode(mContent)) {
+    textAreaElement->GetValue(aText);
+    return;
+  }
+
+  MOZ_ASSERT(aText.IsEmpty());
+  aText.Truncate();
+}
+
+bool nsTextControlFrame::TextEquals(const nsAString& aText) const {
+  if (HTMLInputElement* inputElement = HTMLInputElement::FromNode(mContent)) {
+    if (IsSingleLineTextControl()) {
+      
+      return inputElement->TextEditorValueEquals(aText);
+    }
+    return aText.IsEmpty();
+  }
+
+  MOZ_ASSERT(!IsSingleLineTextControl());
+  if (HTMLTextAreaElement* textAreaElement =
+          HTMLTextAreaElement::FromNode(mContent)) {
+    return textAreaElement->ValueEquals(aText);
+  }
+
+  return aText.IsEmpty();
 }
 
 
