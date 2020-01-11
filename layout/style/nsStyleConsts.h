@@ -634,9 +634,11 @@ enum class StyleTopLayer : uint8_t {
 };
 
 
-#define NS_STYLE_VISIBILITY_HIDDEN 0
-#define NS_STYLE_VISIBILITY_VISIBLE 1
-#define NS_STYLE_VISIBILITY_COLLAPSE 2
+enum class StyleVisibility : uint8_t {
+  Hidden,
+  Visible,
+  Collapse,
+};
 
 
 #define NS_STYLE_TABSIZE_INITIAL 8

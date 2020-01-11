@@ -1139,7 +1139,7 @@ static void BuildStrutInfoFromCollapsedItems(const FlexLine* aFirstLine,
   for (const FlexLine* line = aFirstLine; line; line = line->getNext()) {
     for (const FlexItem* item = line->GetFirstItem(); item;
          item = item->getNext()) {
-      if (NS_STYLE_VISIBILITY_COLLAPSE ==
+      if (StyleVisibility::Collapse ==
           item->Frame()->StyleVisibility()->mVisible) {
         
         aStruts.AppendElement(
@@ -2074,9 +2074,8 @@ FlexItem::FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize,
       mAlignSelf(NS_STYLE_ALIGN_FLEX_START),
       mAlignSelfFlags(0) {
   MOZ_ASSERT(mFrame, "expecting a non-null child frame");
-  MOZ_ASSERT(
-      NS_STYLE_VISIBILITY_COLLAPSE == mFrame->StyleVisibility()->mVisible,
-      "Should only make struts for children with 'visibility:collapse'");
+  MOZ_ASSERT(StyleVisibility::Collapse == mFrame->StyleVisibility()->mVisible,
+             "Should only make struts for children with 'visibility:collapse'");
   MOZ_ASSERT(!mFrame->IsPlaceholderFrame(),
              "placeholder frames should not be treated as flex items");
   MOZ_ASSERT(!(mFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW),
@@ -3925,7 +3924,7 @@ void nsFlexContainerFrame::GenerateFlexLines(
 
     UniquePtr<FlexItem> item;
     if (useMozBoxCollapseBehavior &&
-        (NS_STYLE_VISIBILITY_COLLAPSE ==
+        (StyleVisibility::Collapse ==
          childFrame->StyleVisibility()->mVisible)) {
       
       
@@ -5341,7 +5340,7 @@ nscoord nsFlexContainerFrame::IntrinsicISize(gfxContext* aRenderingContext,
     
     
     if (!useMozBoxCollapseBehavior ||
-        (NS_STYLE_VISIBILITY_COLLAPSE !=
+        (StyleVisibility::Collapse !=
          childFrame->StyleVisibility()->mVisible)) {
       nscoord childISize = nsLayoutUtils::IntrinsicForContainer(
           aRenderingContext, childFrame, aType);

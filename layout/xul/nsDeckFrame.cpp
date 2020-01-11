@@ -139,8 +139,9 @@ nsIFrame* nsDeckFrame::GetSelectedBox() {
 void nsDeckFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                    const nsDisplayListSet& aLists) {
   
-  if (!StyleVisibility()->mVisible) return;
-
+  if (StyleVisibility()->mVisible == StyleVisibility::Hidden) {
+    return;
+  }
   nsBoxFrame::BuildDisplayList(aBuilder, aLists);
 }
 
