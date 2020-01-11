@@ -161,9 +161,10 @@ function promiseTabLoadEvent(tab, url) {
 
 
 function promiseContentSearchChange(browser, newEngineName) {
-  return SpecialPowers.spawn(browser, [{ newEngineName }], async function(
-    args
-  ) {
+  
+  
+  
+  return ContentTask.spawn(browser, { newEngineName }, async function(args) {
     return new Promise(resolve => {
       content.addEventListener("ContentSearchService", function listener(
         aEvent
