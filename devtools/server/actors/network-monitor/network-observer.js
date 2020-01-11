@@ -728,7 +728,10 @@ NetworkObserver.prototype = {
     
     
     if (!blockedReason) {
-      if (this.blockedURLs.some(url => httpActivity.url.includes(url))) {
+      if (blockedReason !== undefined) {
+        
+        event.blockedReason = "unknown";
+      } else if (this.blockedURLs.some(url => httpActivity.url.includes(url))) {
         channel.cancel(Cr.NS_BINDING_ABORTED);
         event.blockedReason = "devtools";
       }
