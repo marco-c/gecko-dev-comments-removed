@@ -7,6 +7,7 @@
 const EventEmitter = require("devtools/shared/event-emitter");
 const { LocalizationHelper, ELLIPSIS } = require("devtools/shared/l10n");
 const KeyShortcuts = require("devtools/client/shared/key-shortcuts");
+const { parseItemValue } = require("devtools/shared/storage/utils");
 const { KeyCodes } = require("devtools/client/shared/keycodes");
 const { getUnicodeHostname } = require("devtools/client/shared/unicode-url");
 
@@ -33,12 +34,6 @@ loader.lazyImporter(
   "VariablesView",
   "resource://devtools/client/shared/widgets/VariablesView.jsm"
 );
-loader.lazyRequireGetter(
-  this,
-  "validator",
-  "devtools/client/shared/vendor/stringvalidator/validator"
-);
-loader.lazyRequireGetter(this, "JSON5", "devtools/client/shared/vendor/json5");
 
 
 
@@ -76,7 +71,6 @@ const COOKIE_KEY_MAP = {
 };
 
 const SAFE_HOSTS_PREFIXES_REGEX = /^(about:|https?:|file:|moz-extension:)/;
-const MATH_REGEX = /(?:(?:^|[-+_*/])(?:\s*-?\d+(\.\d+)?(?:[eE][+-]?\d+)?\s*))+$/;
 
 
 
@@ -834,6 +828,7 @@ class StorageUI {
 
 
 
+  
   async updateObjectSidebar() {
     const item = this.table.selectedRow;
     let value;
@@ -872,7 +867,10 @@ class StorageUI {
       itemVar.setGrip(value);
 
       
-      this.parseItemValue(item.name, value);
+      const obj = parseItemValue(value);
+      if (typeof obj === "object") {
+        this.populateSidebar(item.name, obj);
+      }
 
       
       
@@ -906,7 +904,10 @@ class StorageUI {
         }
 
         mainScope.addItem(key, {}, true).setGrip(item[key]);
-        this.parseItemValue(key, item[key]);
+        const obj = parseItemValue(item[key]);
+        if (typeof obj === "object") {
+          this.populateSidebar(item.name, obj);
+        }
       }
     }
 
@@ -948,43 +949,7 @@ class StorageUI {
 
 
 
-
-
-
-
-  parseItemValue(name, originalValue) {
-    
-    let decodedValue = "";
-    try {
-      decodedValue = decodeURIComponent(originalValue);
-    } catch (e) {
-      
-    }
-    const value =
-      decodedValue && decodedValue !== originalValue
-        ? decodedValue
-        : originalValue;
-
-    if (!this._shouldParse(value)) {
-      return;
-    }
-
-    let obj = null;
-    try {
-      obj = JSON5.parse(value);
-    } catch (ex) {
-      obj = null;
-    }
-
-    if (!obj && value) {
-      obj = this._extractKeyValPairs(value);
-    }
-
-    
-    if (!obj || obj === value || typeof obj === "string") {
-      return;
-    }
-
+  populateSidebar(name, obj) {
     const jsonObject = Object.create(null);
     const view = this.view;
     jsonObject[name] = obj;
@@ -998,101 +963,6 @@ class StorageUI {
     jsonVar.expanded = true;
     jsonVar.twisty = true;
     jsonVar.populate(jsonObject, { expanded: true });
-  }
-
-  
-
-
-
-
-
-
-
-  _extractKeyValPairs(value) {
-    const makeObject = (keySep, pairSep) => {
-      const object = {};
-      for (const pair of value.split(pairSep)) {
-        const [key, val] = pair.split(keySep);
-        object[key] = val;
-      }
-      return object;
-    };
-
-    
-    const separators = ["=", ":", "~", "#", "&", "\\*", ",", "\\."];
-    
-    for (let i = 0; i < separators.length; i++) {
-      const kv = separators[i];
-      for (let j = 0; j < separators.length; j++) {
-        if (i == j) {
-          continue;
-        }
-        const p = separators[j];
-        const word = `[^${kv}${p}]*`;
-        const keyValue = `${word}${kv}${word}`;
-        const keyValueList = `${keyValue}(${p}${keyValue})*`;
-        const regex = new RegExp(`^${keyValueList}$`);
-        if (
-          value.match &&
-          value.match(regex) &&
-          value.includes(kv) &&
-          (value.includes(p) || value.split(kv).length == 2)
-        ) {
-          return makeObject(kv, p);
-        }
-      }
-    }
-    
-    for (const p of separators) {
-      const word = `[^${p}]*`;
-      const wordList = `(${word}${p})+${word}`;
-      const regex = new RegExp(`^${wordList}$`);
-
-      if (regex.test(value)) {
-        const pNoBackslash = p.replace(/\\*/g, "");
-        return value.split(pNoBackslash);
-      }
-    }
-    return null;
-  }
-
-  
-
-
-
-
-
-
-  _shouldParse(value) {
-    const validators = [
-      "isBase64",
-      "isBoolean",
-      "isCurrency",
-      "isDataURI",
-      "isEmail",
-      "isFQDN",
-      "isHexColor",
-      "isIP",
-      "isISO8601",
-      "isMACAddress",
-      "isSemVer",
-      "isURL",
-    ];
-
-    
-    if (MATH_REGEX.test(value)) {
-      return false;
-    }
-
-    
-    for (const test of validators) {
-      if (validator[test](value)) {
-        return false;
-      }
-    }
-
-    
-    return true;
   }
 
   

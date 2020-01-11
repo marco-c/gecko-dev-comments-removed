@@ -134,9 +134,13 @@ async function openTabAndSetupStorage(url, options = {}) {
 
 
 
-var openStoragePanel = async function(cb) {
+
+
+var openStoragePanel = async function(cb, target, hostType) {
   info("Opening the storage inspector");
-  const target = await TargetFactory.forTab(gBrowser.selectedTab);
+  if (!target) {
+    target = await TargetFactory.forTab(gBrowser.selectedTab);
+  }
 
   let storage, toolbox;
 
@@ -163,7 +167,7 @@ var openStoragePanel = async function(cb) {
   }
 
   info("Opening the toolbox");
-  toolbox = await gDevTools.showToolbox(target, "storage");
+  toolbox = await gDevTools.showToolbox(target, "storage", hostType);
   storage = toolbox.getPanel("storage");
   gPanelWindow = storage.panelWindow;
   gUI = storage.UI;
@@ -822,6 +826,28 @@ function checkCell(id, column, expected) {
 
 
 
+function checkCellUneditable(id, column) {
+  const row = getRowCells(id, true);
+  const cell = row[column];
+
+  const editableFieldsEngine = gUI.table._editableFieldsEngine;
+  const textbox = editableFieldsEngine.textbox;
+
+  
+  ok(
+    !cell.hidden && textbox.hidden,
+    `The cell located in column ${column} and row ${id} is not editable.`
+  );
+}
+
+
+
+
+
+
+
+
+
 function showColumn(id, state) {
   const columns = gUI.table.columns;
   const column = columns.get(id);
@@ -884,10 +910,10 @@ async function typeWithTerminator(str, terminator, validate = true) {
   }
 
   info("Typing " + str);
-  EventUtils.sendString(str);
+  EventUtils.sendString(str, gPanelWindow);
 
   info("Pressing " + terminator);
-  EventUtils.synthesizeKey(terminator);
+  EventUtils.synthesizeKey(terminator, null, gPanelWindow);
 
   if (validate) {
     info("Validating results... waiting for ROW_EDIT event.");

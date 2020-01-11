@@ -12,6 +12,7 @@ const Services = require("Services");
 const defer = require("devtools/shared/defer");
 const { isWindowIncluded } = require("devtools/shared/layout/utils");
 const specs = require("devtools/shared/specs/storage");
+const { parseItemValue } = require("devtools/shared/storage/utils");
 loader.lazyGetter(this, "ExtensionProcessScript", () => {
   return require("resource://gre/modules/ExtensionProcessScript.jsm")
     .ExtensionProcessScript;
@@ -1405,6 +1406,120 @@ const extensionStorageHelpers = {
   
   
   onChangedChildListeners: new Set(),
+  
+
+
+
+  isEditable(value) {
+    
+    for (const { test } of Object.values(this.supportedTypes)) {
+      if (test(value)) {
+        return true;
+      }
+    }
+    return false;
+  },
+  isPrimitive(value) {
+    const primitiveValueTypes = ["string", "number", "boolean"];
+    return primitiveValueTypes.includes(typeof value) || value === null;
+  },
+  isObjectLiteral(value) {
+    return (
+      value &&
+      typeof value === "object" &&
+      Cu.getClassName(value, true) === "Object"
+    );
+  },
+  
+  isArrayOrObjectLiteralEditable(obj) {
+    const topLevelValuesArr = Array.isArray(obj) ? obj : Object.values(obj);
+    if (
+      topLevelValuesArr.some(
+        value =>
+          !this.isPrimitive(value) &&
+          !Array.isArray(value) &&
+          !this.isObjectLiteral(value)
+      )
+    ) {
+      
+      return false;
+    }
+    const arrayOrObjects = topLevelValuesArr.filter(
+      value => Array.isArray(value) || this.isObjectLiteral(value)
+    );
+    if (arrayOrObjects.length === 0) {
+      
+      return true;
+    }
+
+    
+    
+    
+    for (const nestedObj of arrayOrObjects) {
+      const secondLevelValuesArr = Array.isArray(nestedObj)
+        ? nestedObj
+        : Object.values(nestedObj);
+      if (secondLevelValuesArr.some(value => !this.isPrimitive(value))) {
+        return false;
+      }
+    }
+    return true;
+  },
+  typesFromString: {
+    
+    jsonifiable: {
+      test(str) {
+        try {
+          JSON.parse(str);
+        } catch (e) {
+          return false;
+        }
+        return true;
+      },
+      parse(str) {
+        return JSON.parse(str);
+      },
+    },
+  },
+  supportedTypes: {
+    
+    array: {
+      test(value) {
+        if (Array.isArray(value)) {
+          return extensionStorageHelpers.isArrayOrObjectLiteralEditable(value);
+        }
+        return false;
+      },
+    },
+    boolean: {
+      test(value) {
+        return typeof value === "boolean";
+      },
+    },
+    null: {
+      test(value) {
+        return value === null;
+      },
+    },
+    number: {
+      test(value) {
+        return typeof value === "number";
+      },
+    },
+    object: {
+      test(value) {
+        if (extensionStorageHelpers.isObjectLiteral(value)) {
+          return extensionStorageHelpers.isArrayOrObjectLiteralEditable(value);
+        }
+        return false;
+      },
+    },
+    string: {
+      test(value) {
+        return typeof value === "string";
+      },
+    },
+  },
 
   
   setPpmm(ppmm) {
@@ -1774,11 +1889,14 @@ if (Services.prefs.getBoolPref(EXTENSION_STORAGE_ENABLED_PREF, false)) {
           storeMap.set(key, value);
         }
 
-        
-        
-        const storageData = {};
-        storageData[host] = this.getNamesForHost(host);
-        this.storageActor.update("added", this.typeName, storageData);
+        if (this.storageActor.parentActor.fallbackWindow) {
+          
+          
+          
+          const storageData = {};
+          storageData[host] = this.getNamesForHost(host);
+          this.storageActor.update("added", this.typeName, storageData);
+        }
       },
 
       async getStoragePrincipal(addonId) {
@@ -1821,29 +1939,35 @@ if (Services.prefs.getBoolPref(EXTENSION_STORAGE_ENABLED_PREF, false)) {
 
 
 
+
+
       toStoreObject(item) {
         if (!item) {
           return null;
         }
 
-        const { name, value } = item;
+        let { name, value } = item;
+        let isValueEditable = extensionStorageHelpers.isEditable(value);
 
-        let newValue;
-        if (typeof value === "string") {
-          newValue = value;
-        } else {
-          try {
-            newValue = JSON.stringify(value) || String(value);
-          } catch (error) {
-            
-            newValue = String(value);
-          }
-
-          
-          
-          if (newValue === "{}") {
-            newValue = "Object";
-          }
+        
+        
+        switch (typeof value) {
+          case "bigint":
+            value = `${value.toString()}n`;
+            break;
+          case "string":
+            break;
+          case "undefined":
+            value = "undefined";
+            break;
+          default:
+            value = JSON.stringify(value);
+            if (
+              
+              Object.prototype.toString.call(item.value) === "[object Date]"
+            ) {
+              value = JSON.parse(value);
+            }
         }
 
         
@@ -1851,23 +1975,93 @@ if (Services.prefs.getBoolPref(EXTENSION_STORAGE_ENABLED_PREF, false)) {
         
         
         const maxLength = DebuggerServer.LONG_STRING_LENGTH - 1;
-        if (newValue.length > maxLength) {
-          newValue = newValue.substr(0, maxLength);
+        if (value.length > maxLength) {
+          value = value.substr(0, maxLength);
+          isValueEditable = false;
         }
 
         return {
           name,
-          value: new LongStringActor(this.conn, newValue || ""),
+          value: new LongStringActor(this.conn, value),
           area: "local", 
+          isValueEditable,
         };
       },
 
       getFields() {
         return [
           { name: "name", editable: false },
-          { name: "value", editable: false },
+          { name: "value", editable: true },
           { name: "area", editable: false },
+          { name: "isValueEditable", editable: false, private: true },
         ];
+      },
+
+      onItemUpdated(action, host, names) {
+        this.storageActor.update(action, this.typeName, {
+          [host]: names,
+        });
+      },
+
+      async editItem({ host, field, items, oldValue }) {
+        const db = this.dbConnectionForHost.get(host);
+        if (!db) {
+          return;
+        }
+
+        const { name, value } = items;
+
+        let parsedValue = parseItemValue(value);
+        if (parsedValue === value) {
+          const { typesFromString } = extensionStorageHelpers;
+          for (const { test, parse } of Object.values(typesFromString)) {
+            if (test(value)) {
+              parsedValue = parse(value);
+              break;
+            }
+          }
+        }
+        const changes = await db.set({ [name]: parsedValue });
+        this.fireOnChangedExtensionEvent(host, changes);
+
+        this.onItemUpdated("changed", host, [name]);
+      },
+
+      async removeItem(host, name) {
+        const db = this.dbConnectionForHost.get(host);
+        if (!db) {
+          return;
+        }
+
+        const changes = await db.remove(name);
+        this.fireOnChangedExtensionEvent(host, changes);
+
+        this.onItemUpdated("deleted", host, [name]);
+      },
+
+      async removeAll(host) {
+        const db = this.dbConnectionForHost.get(host);
+        if (!db) {
+          return;
+        }
+
+        const changes = await db.clear();
+        this.fireOnChangedExtensionEvent(host, changes);
+
+        this.onItemUpdated("cleared", host, []);
+      },
+
+      
+
+
+
+      fireOnChangedExtensionEvent(host, changes) {
+        
+        const uuid = new URL(host).host;
+        Services.cpmm.sendAsyncMessage(
+          `Extension:StorageLocalOnChanged:${uuid}`,
+          changes
+        );
       },
     }
   );

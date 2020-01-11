@@ -97,7 +97,7 @@ async function openAddonStoragePanel(id) {
   const stores = await storageFront.listStores();
   const extensionStorage = stores.extensionStorage || null;
 
-  return { target, extensionStorage };
+  return { target, extensionStorage, storageFront };
 }
 
 
@@ -141,13 +141,13 @@ async function extensionScriptWithMessageListener() {
   });
 
   browser.test.onMessage.addListener(async (msg, ...args) => {
-    let value = null;
+    let item = null;
     switch (msg) {
       case "storage-local-set":
         await browser.storage.local.set(args[0]);
         break;
       case "storage-local-get":
-        value = (await browser.storage.local.get(args[0]))[args[0]];
+        item = await browser.storage.local.get(args[0]);
         break;
       case "storage-local-remove":
         await browser.storage.local.remove(args[0]);
@@ -166,7 +166,7 @@ async function extensionScriptWithMessageListener() {
         browser.test.fail(`Unexpected test message: ${msg}`);
     }
 
-    browser.test.sendMessage(`${msg}:done`, value);
+    browser.test.sendMessage(`${msg}:done`, item);
   });
   browser.test.sendMessage("extension-origin", window.location.origin);
 }
@@ -331,6 +331,7 @@ add_task(async function test_panel_live_updates() {
       area: "local",
       name,
       value: { str: String(value) },
+      isValueEditable: true,
     });
   }
   data = (await extensionStorage.getStoreObjects(host)).data;
@@ -338,12 +339,42 @@ add_task(async function test_panel_live_updates() {
     data,
     [
       ...bulkStorageObjects,
-      { area: "local", name: "a", value: { str: "123" } },
-      { area: "local", name: "b", value: { str: "[4,5]" } },
-      { area: "local", name: "c", value: { str: '{"d":678}' } },
-      { area: "local", name: "d", value: { str: "true" } },
-      { area: "local", name: "e", value: { str: "hi" } },
-      { area: "local", name: "f", value: { str: "null" } },
+      {
+        area: "local",
+        name: "a",
+        value: { str: "123" },
+        isValueEditable: true,
+      },
+      {
+        area: "local",
+        name: "b",
+        value: { str: "[4,5]" },
+        isValueEditable: true,
+      },
+      {
+        area: "local",
+        name: "c",
+        value: { str: '{"d":678}' },
+        isValueEditable: true,
+      },
+      {
+        area: "local",
+        name: "d",
+        value: { str: "true" },
+        isValueEditable: true,
+      },
+      {
+        area: "local",
+        name: "e",
+        value: { str: "hi" },
+        isValueEditable: true,
+      },
+      {
+        area: "local",
+        name: "f",
+        value: { str: "null" },
+        isValueEditable: true,
+      },
     ],
     "Got the expected results on populated storage.local"
   );
@@ -366,12 +397,42 @@ add_task(async function test_panel_live_updates() {
     data,
     [
       ...bulkStorageObjects,
-      { area: "local", name: "a", value: { str: '["c","d"]' } },
-      { area: "local", name: "b", value: { str: "456" } },
-      { area: "local", name: "c", value: { str: "false" } },
-      { area: "local", name: "d", value: { str: "true" } },
-      { area: "local", name: "e", value: { str: "hi" } },
-      { area: "local", name: "f", value: { str: "null" } },
+      {
+        area: "local",
+        name: "a",
+        value: { str: '["c","d"]' },
+        isValueEditable: true,
+      },
+      {
+        area: "local",
+        name: "b",
+        value: { str: "456" },
+        isValueEditable: true,
+      },
+      {
+        area: "local",
+        name: "c",
+        value: { str: "false" },
+        isValueEditable: true,
+      },
+      {
+        area: "local",
+        name: "d",
+        value: { str: "true" },
+        isValueEditable: true,
+      },
+      {
+        area: "local",
+        name: "e",
+        value: { str: "hi" },
+        isValueEditable: true,
+      },
+      {
+        area: "local",
+        name: "f",
+        value: { str: "null" },
+        isValueEditable: true,
+      },
     ],
     "Got the expected results on populated storage.local"
   );
@@ -390,9 +451,24 @@ add_task(async function test_panel_live_updates() {
     data,
     [
       ...bulkStorageObjects,
-      { area: "local", name: "a", value: { str: '["c","d"]' } },
-      { area: "local", name: "b", value: { str: "456" } },
-      { area: "local", name: "c", value: { str: "false" } },
+      {
+        area: "local",
+        name: "a",
+        value: { str: '["c","d"]' },
+        isValueEditable: true,
+      },
+      {
+        area: "local",
+        name: "b",
+        value: { str: "456" },
+        isValueEditable: true,
+      },
+      {
+        area: "local",
+        name: "c",
+        value: { str: "false" },
+        isValueEditable: true,
+      },
     ],
     "Got the expected results on populated storage.local"
   );
@@ -446,7 +522,14 @@ add_task(
     const { data } = await extensionStorage.getStoreObjects(host);
     Assert.deepEqual(
       data,
-      [{ area: "local", name: "a", value: { str: "123" } }],
+      [
+        {
+          area: "local",
+          name: "a",
+          value: { str: "123" },
+          isValueEditable: true,
+        },
+      ],
       "Got the expected results on populated storage.local"
     );
 
@@ -488,13 +571,19 @@ add_task(async function test_panel_data_matches_extension_with_no_pages_open() {
   const { data } = await extensionStorage.getStoreObjects(host);
   Assert.deepEqual(
     data,
-    [{ area: "local", name: "a", value: { str: "123" } }],
+    [
+      {
+        area: "local",
+        name: "a",
+        value: { str: "123" },
+        isValueEditable: true,
+      },
+    ],
     "Got the expected results on populated storage.local"
   );
 
   await shutdown(extension, target);
 });
-
 
 
 
@@ -541,7 +630,14 @@ add_task(
     data = (await extensionStorage.getStoreObjects(host)).data;
     Assert.deepEqual(
       data,
-      [{ area: "local", name: "a", value: { str: "123" } }],
+      [
+        {
+          area: "local",
+          name: "a",
+          value: { str: "123" },
+          isValueEditable: true,
+        },
+      ],
       "Got the expected results on populated storage.local"
     );
 
@@ -553,11 +649,258 @@ add_task(
     data = (await extensionStorage.getStoreObjects(host)).data;
     Assert.deepEqual(
       data,
-      [{ area: "local", name: "a", value: { str: "123" } }],
+      [
+        {
+          area: "local",
+          name: "a",
+          value: { str: "123" },
+          isValueEditable: true,
+        },
+      ],
       "The results are unchanged when an extension page adds duplicate items"
     );
 
     await contentPage.close();
+    await shutdown(extension, target);
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(
+  async function test_editing_items_in_panel_parses_supported_values_correctly() {
+    const extension = await startupExtension(
+      getExtensionConfig({ background: extensionScriptWithMessageListener })
+    );
+
+    const host = await extension.awaitMessage("extension-origin");
+
+    const { target, extensionStorage } = await openAddonStoragePanel(
+      extension.id
+    );
+
+    const oldItem = { a: 123 };
+    const key = Object.keys(oldItem)[0];
+    const oldValue = oldItem[key];
+    
+    
+    
+    
+    
+    
+    const valueInfo = [
+      [true, "true", "true"],
+      ["hi", "hi", "hi"],
+      [456, "456", "456"],
+      [{ b: 789 }, "{b: 789}", '{"b":789}'],
+      [[1, 2, 3], "[1, 2, 3]", "[1,2,3]"],
+      [null, "null", "null"],
+    ];
+    for (const [value, editItemValueStr, toStoreObjectValueStr] of valueInfo) {
+      info("Setting a storage item through the extension");
+      extension.sendMessage("storage-local-fireOnChanged");
+      extension.sendMessage("storage-local-set", oldItem);
+      await extension.awaitMessage("storage-local-set:done");
+      await extension.awaitMessage("storage-local-onChanged");
+
+      info(
+        "Editing the storage item in the panel with a new value of a different type"
+      );
+      
+      
+      await extensionStorage.editItem({
+        host,
+        field: "value",
+        items: { name: key, value: editItemValueStr },
+        oldValue,
+      });
+
+      info(
+        "Verifying item in the storage actor matches the item edited in the panel"
+      );
+      const { data } = await extensionStorage.getStoreObjects(host);
+      Assert.deepEqual(
+        data,
+        [
+          {
+            area: "local",
+            name: key,
+            value: { str: toStoreObjectValueStr },
+            isValueEditable: true,
+          },
+        ],
+        "Got the expected results on populated storage.local"
+      );
+
+      
+      
+      
+      info(
+        "Verifying the expected new value matches the value fetched in the extension"
+      );
+      extension.sendMessage("storage-local-get", key);
+      const extItem = await extension.awaitMessage("storage-local-get:done");
+      Assert.deepEqual(
+        value,
+        extItem[key],
+        `The string value ${editItemValueStr} was correctly parsed to ${value}`
+      );
+    }
+
+    await shutdown(extension, target);
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+add_task(
+  async function test_modifying_items_in_panel_updates_extension_storage_data() {
+    const extension = await startupExtension(
+      getExtensionConfig({ background: extensionScriptWithMessageListener })
+    );
+
+    const host = await extension.awaitMessage("extension-origin");
+
+    const {
+      target,
+      extensionStorage,
+      storageFront,
+    } = await openAddonStoragePanel(extension.id);
+
+    const DEFAULT_VALUE = "value"; 
+    let items = {
+      guid_1: DEFAULT_VALUE,
+      guid_2: DEFAULT_VALUE,
+      guid_3: DEFAULT_VALUE,
+    };
+
+    info("Adding storage items from the extension");
+    let storesUpdate = storageFront.once("stores-update");
+    extension.sendMessage("storage-local-set", items);
+    await extension.awaitMessage("storage-local-set:done");
+
+    info("Waiting for the storage actor to emit a 'stores-update' event");
+    let data = await storesUpdate;
+    Assert.deepEqual(
+      {
+        added: {
+          extensionStorage: {
+            [host]: ["guid_1", "guid_2", "guid_3"],
+          },
+        },
+      },
+      data,
+      "The change data from the storage actor's 'stores-update' event matches the changes made in the client."
+    );
+
+    info("Waiting for panel to edit some items");
+    storesUpdate = storageFront.once("stores-update");
+    await extensionStorage.editItem({
+      host,
+      field: "value",
+      items: { name: "guid_1", value: "anotherValue" },
+      DEFAULT_VALUE,
+    });
+
+    info("Waiting for the storage actor to emit a 'stores-update' event");
+    data = await storesUpdate;
+    Assert.deepEqual(
+      {
+        changed: {
+          extensionStorage: {
+            [host]: ["guid_1"],
+          },
+        },
+      },
+      data,
+      "The change data from the storage actor's 'stores-update' event matches the changes made in the client."
+    );
+
+    items = {
+      guid_1: "anotherValue",
+      guid_2: DEFAULT_VALUE,
+      guid_3: DEFAULT_VALUE,
+    };
+    extension.sendMessage("storage-local-get", Object.keys(items));
+    let extItems = await extension.awaitMessage("storage-local-get:done");
+    Assert.deepEqual(
+      items,
+      extItems,
+      `The storage items in the extension match the items in the panel`
+    );
+
+    info("Waiting for panel to remove an item");
+    storesUpdate = storageFront.once("stores-update");
+    await extensionStorage.removeItem(host, "guid_3");
+
+    info("Waiting for the storage actor to emit a 'stores-update' event");
+    data = await storesUpdate;
+    Assert.deepEqual(
+      {
+        deleted: {
+          extensionStorage: {
+            [host]: ["guid_3"],
+          },
+        },
+      },
+      data,
+      "The change data from the storage actor's 'stores-update' event matches the changes made in the client."
+    );
+
+    items = {
+      guid_1: "anotherValue",
+      guid_2: DEFAULT_VALUE,
+    };
+    extension.sendMessage("storage-local-get", Object.keys(items));
+    extItems = await extension.awaitMessage("storage-local-get:done");
+    Assert.deepEqual(
+      items,
+      extItems,
+      `The storage items in the extension match the items in the panel`
+    );
+
+    info("Waiting for panel to remove all items");
+    const storesCleared = storageFront.once("stores-cleared");
+    await extensionStorage.removeAll(host);
+
+    info("Waiting for the storage actor to emit a 'stores-cleared' event");
+    data = await storesCleared;
+    Assert.deepEqual(
+      {
+        extensionStorage: {
+          [host]: [],
+        },
+      },
+      data,
+      "The change data from the storage actor's 'stores-cleared' event matches the changes made in the client."
+    );
+
+    items = {};
+    extension.sendMessage("storage-local-get", Object.keys(items));
+    extItems = await extension.awaitMessage("storage-local-get:done");
+    Assert.deepEqual(
+      items,
+      extItems,
+      `The storage items in the extension match the items in the panel`
+    );
+
     await shutdown(extension, target);
   }
 );
@@ -612,7 +955,14 @@ add_task(
     let { data } = await extensionStorage.getStoreObjects(host);
     Assert.deepEqual(
       data,
-      [{ area: "local", name: "a", value: { str: "123" } }],
+      [
+        {
+          area: "local",
+          name: "a",
+          value: { str: "123" },
+          isValueEditable: true,
+        },
+      ],
       "Got the expected results on populated storage.local"
     );
 
@@ -626,8 +976,18 @@ add_task(
     Assert.deepEqual(
       data,
       [
-        { area: "local", name: "a", value: { str: "123" } },
-        { area: "local", name: "b", value: { str: "456" } },
+        {
+          area: "local",
+          name: "a",
+          value: { str: "123" },
+          isValueEditable: true,
+        },
+        {
+          area: "local",
+          name: "b",
+          value: { str: "456" },
+          isValueEditable: true,
+        },
       ],
       "Got the expected results on populated storage.local"
     );
@@ -701,7 +1061,14 @@ add_task(async function test_panel_live_reload() {
   const { data } = await extensionStorage.getStoreObjects(host);
   Assert.deepEqual(
     data,
-    [{ area: "local", name: "a", value: { str: "123" } }],
+    [
+      {
+        area: "local",
+        name: "a",
+        value: { str: "123" },
+        isValueEditable: true,
+      },
+    ],
     "Got the expected results on populated storage.local"
   );
 
@@ -772,7 +1139,14 @@ add_task(async function test_panel_live_reload_for_extension_without_bg_page() {
   const { data } = await extensionStorage.getStoreObjects(host);
   Assert.deepEqual(
     data,
-    [{ area: "local", name: "a", value: { str: "123" } }],
+    [
+      {
+        area: "local",
+        name: "a",
+        value: { str: "123" },
+        isValueEditable: true,
+      },
+    ],
     "Got the expected results on populated storage.local"
   );
 
@@ -835,8 +1209,74 @@ add_task(
     Assert.deepEqual(
       data,
       [
-        { area: "local", name: "a", value: { str: '{"b":123}' } },
-        { area: "local", name: "c", value: { str: '{"d":456}' } },
+        {
+          area: "local",
+          name: "a",
+          value: { str: '{"b":123}' },
+          isValueEditable: true,
+        },
+        {
+          area: "local",
+          name: "c",
+          value: { str: '{"d":456}' },
+          isValueEditable: true,
+        },
+      ],
+      "Got the expected results on populated storage.local"
+    );
+
+    await shutdown(extension, target);
+  }
+);
+
+
+
+
+
+
+
+add_task(
+  async function test_panel_data_only_updates_for_storage_local_changes() {
+    async function background() {
+      await browser.storage.local.set({ a: { b: 123 } });
+      await browser.storage.sync.set({ c: { d: 456 } });
+      browser.test.sendMessage("extension-origin", window.location.origin);
+    }
+
+    
+    const EXTENSION_ID =
+      "test_panel_data_only_updates_for_storage_local_changes@xpcshell.mozilla.org";
+    const manifest = {
+      applications: {
+        gecko: {
+          id: EXTENSION_ID,
+        },
+      },
+    };
+
+    info("Loading and starting extension");
+    const extension = await startupExtension(
+      getExtensionConfig({ manifest, background })
+    );
+
+    info("Waiting for message from test extension");
+    const host = await extension.awaitMessage("extension-origin");
+
+    info("Opening storage panel");
+    const { target, extensionStorage } = await openAddonStoragePanel(
+      extension.id
+    );
+
+    const { data } = await extensionStorage.getStoreObjects(host);
+    Assert.deepEqual(
+      data,
+      [
+        {
+          area: "local",
+          name: "a",
+          value: { str: '{"b":123}' },
+          isValueEditable: true,
+        },
       ],
       "Got the expected results on populated storage.local"
     );
