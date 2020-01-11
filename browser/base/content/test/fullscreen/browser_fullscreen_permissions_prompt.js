@@ -8,6 +8,10 @@
 
 
 SimpleTest.ignoreAllUncaughtExceptions(true);
+const { PromiseTestUtils } = ChromeUtils.import(
+  "resource://testing-common/PromiseTestUtils.jsm"
+);
+PromiseTestUtils.whitelistRejectionsGlobally(/Not in fullscreen mode/);
 
 SimpleTest.requestCompleteLog();
 

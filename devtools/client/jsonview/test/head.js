@@ -80,7 +80,7 @@ async function addJsonViewTab(
   await Promise.race([
     error,
     
-    SpecialPowers.spawn(browser, [data], async function(data) {
+    ContentTask.spawn(browser, data, async function(data) {
       
       const { JSONView } = content.wrappedJSObject;
       if (!JSONView) {

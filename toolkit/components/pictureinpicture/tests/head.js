@@ -450,5 +450,5 @@ async function testToggleHelper(browser, videoID, canToggle) {
   
   
   await BrowserTestUtils.synthesizeMouseAtPoint(1, 1, {}, browser);
-  assertSawMouseEvents(browser, true);
+  await assertSawMouseEvents(browser, true);
 }

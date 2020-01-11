@@ -5,6 +5,13 @@
 
 const TEST_URL = TEST_URI_ROOT + "contextual_identity.html";
 
+const { PromiseTestUtils } = ChromeUtils.import(
+  "resource://testing-common/PromiseTestUtils.jsm"
+);
+PromiseTestUtils.whitelistRejectionsGlobally(
+  /Permission denied to access property "document" on cross-origin object/
+);
+
 
 
 async function addTabInUserContext(uri, userContextId) {
