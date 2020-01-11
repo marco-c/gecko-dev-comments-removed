@@ -340,7 +340,9 @@ nsIContent* nsResizerFrame::GetContentToResize(mozilla::PresShell* aPresShell,
     }
 
     
-    if (aPresShell->GetPresContext()->IsChrome()) {
+    nsCOMPtr<nsIDocShellTreeItem> dsti =
+        aPresShell->GetPresContext()->GetDocShell();
+    if (!dsti || dsti->ItemType() != nsIDocShellTreeItem::typeChrome) {
       
       
       nsIContent* nonNativeAnon =
