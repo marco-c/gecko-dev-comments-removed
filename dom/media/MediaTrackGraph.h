@@ -682,6 +682,11 @@ class SourceMediaTrack : public MediaTrack {
 
   void RemoveAllDirectListenersImpl() override;
 
+  
+  
+  void SetVolume(float aVolume);
+  float GetVolumeLocked();
+
   friend class MediaTrackGraphImpl;
 
  protected:
@@ -737,6 +742,7 @@ class SourceMediaTrack : public MediaTrack {
   
   Mutex mMutex;
   
+  float mVolume = 1.0;
   UniquePtr<TrackData> mUpdateTrack;
   nsTArray<RefPtr<DirectMediaTrackListener>> mDirectTrackListeners;
 };
