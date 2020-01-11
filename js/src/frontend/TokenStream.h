@@ -324,7 +324,34 @@ class SourceUnits;
 
 class TokenStreamAnyChars : public TokenStreamShared {
  private:
+  JSContext* const cx;
+
+  
+  const JS::ReadOnlyCompileOptions& options_;
+
+  
+
+
+
+  StrictModeGetter* const strictModeGetter_;
+
+  
+  const char* const filename_;
+
+  
+
+
+
+
+
   uint32_t invalidTemplateEscapeOffset = 0;
+
+  
+
+
+
+
+
   InvalidEscapeType invalidTemplateEscapeType = InvalidEscapeType::None;
 
  public:
@@ -525,23 +552,49 @@ class TokenStreamAnyChars : public TokenStreamShared {
   mutable HashMap<uint32_t, Vector<ChunkInfo>> longLineColumnInfo_;
 
  protected:
-  
-  const JS::ReadOnlyCompileOptions& options_;
-
-  Token tokens[ntokens];  
+  Token tokens[ntokens] = {};  
 
  private:
-  unsigned cursor_;  
+  unsigned cursor_ = 0;  
  protected:
-  unsigned lookahead;      
+  unsigned lookahead = 0;  
   unsigned lineno;         
   TokenStreamFlags flags;  
-  size_t linebase;         
-  size_t
-      prevLinebase;  
-  const char* filename_;             
-  UniqueTwoByteChars displayURL_;    
-  UniqueTwoByteChars sourceMapURL_;  
+  size_t linebase = 0;     
+  size_t prevLinebase =
+      size_t(-1);  
+  UniqueTwoByteChars displayURL_ =
+      nullptr;  
+  UniqueTwoByteChars sourceMapURL_ = nullptr;  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mutable uint32_t lineOfLastColumnComputation_ = UINT32_MAX;
+  mutable Vector<ChunkInfo>* lastChunkVectorForLine_ = nullptr;
+  mutable uint32_t lastOffsetOfComputedColumn_ = UINT32_MAX;
+  mutable uint32_t lastComputedColumn_ = 0;
+
+  
+
+
+
+
+
+  const bool mutedErrors;
 
   
 
@@ -565,31 +618,6 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
 
   bool isExprEnding[size_t(TokenKind::Limit)] = {};  
-
-  JSContext* const cx;
-  bool mutedErrors;
-  StrictModeGetter* strictModeGetter;  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  mutable uint32_t lineOfLastColumnComputation_ = UINT32_MAX;
-  mutable Vector<ChunkInfo>* lastChunkVectorForLine_ = nullptr;
-  mutable uint32_t lastOffsetOfComputedColumn_ = UINT32_MAX;
-  mutable uint32_t lastComputedColumn_ = 0;
 
   
 
@@ -667,7 +695,7 @@ class TokenStreamAnyChars : public TokenStreamShared {
   
   
   bool strictMode() const {
-    return strictModeGetter && strictModeGetter->strictMode();
+    return strictModeGetter_ && strictModeGetter_->strictMode();
   }
 
   void setInvalidTemplateEscape(uint32_t offset, InvalidEscapeType type) {
