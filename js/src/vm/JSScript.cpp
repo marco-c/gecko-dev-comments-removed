@@ -5702,7 +5702,6 @@ LazyScript* LazyScript::CreateForXDR(
   
   
   
-  MOZ_ASSERT(!lazy->hasEnclosingScope());
   if (enclosingScope) {
     lazy->setEnclosingScope(enclosingScope);
   }
