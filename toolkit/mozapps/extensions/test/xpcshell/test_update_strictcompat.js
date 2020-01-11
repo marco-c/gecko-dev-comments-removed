@@ -24,10 +24,6 @@ add_task(async function setup() {
     PREF_GETADDONS_BYIDS,
     "http://example.com/data/test_update_addons.json"
   );
-  Services.prefs.setCharPref(
-    PREF_COMPAT_OVERRIDES,
-    "http://example.com/data/test_update_compat.json"
-  );
   Services.prefs.setBoolPref(PREF_GETADDONS_CACHE_ENABLED, true);
 });
 
@@ -71,18 +67,6 @@ add_task(async function test_update_strict() {
           {
             version: "3.0",
             update_link: "http://example.com/addons/test_update9_3.xpi",
-            applications: {
-              gecko: {
-                strict_min_version: "0.9",
-                advisory_max_version: "0.9",
-              },
-            },
-          },
-
-          
-          {
-            version: "4.0",
-            update_link: "http://example.com/addons/test_update9_4.xpi",
             applications: {
               gecko: {
                 strict_min_version: "0.9",

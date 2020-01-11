@@ -30,11 +30,6 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(
   this,
-  "AddonRepository",
-  "resource://gre/modules/addons/AddonRepository.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
   "Blocklist",
   "resource://gre/modules/Blocklist.jsm"
 );
@@ -455,28 +450,13 @@ UpdateParser.prototype = {
 
 
 
-
-
 function matchesVersions(
   aUpdate,
   aAppVersion,
   aPlatformVersion,
   aIgnoreMaxVersion,
-  aIgnoreStrictCompat,
-  aCompatOverrides
+  aIgnoreStrictCompat
 ) {
-  if (aCompatOverrides) {
-    let override = AddonRepository.findMatchingCompatOverride(
-      aUpdate.version,
-      aCompatOverrides,
-      aAppVersion,
-      aPlatformVersion
-    );
-    if (override && override.type == "incompatible") {
-      return false;
-    }
-  }
-
   if (aUpdate.strictCompatibility && !aIgnoreStrictCompat) {
     aIgnoreMaxVersion = false;
   }
@@ -578,15 +558,12 @@ var AddonUpdateChecker = {
 
 
 
-
-
   async getNewestCompatibleUpdate(
     aUpdates,
     aAppVersion,
     aPlatformVersion,
     aIgnoreMaxVersion,
-    aIgnoreStrictCompat,
-    aCompatOverrides
+    aIgnoreStrictCompat
   ) {
     if (!aAppVersion) {
       aAppVersion = Services.appinfo.version;
@@ -616,8 +593,7 @@ var AddonUpdateChecker = {
           aAppVersion,
           aPlatformVersion,
           aIgnoreMaxVersion,
-          aIgnoreStrictCompat,
-          aCompatOverrides
+          aIgnoreStrictCompat
         )
       ) {
         newest = update;

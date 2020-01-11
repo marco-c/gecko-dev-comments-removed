@@ -473,71 +473,6 @@ AddonScreenshot.prototype = {
 
 
 
-function AddonCompatibilityOverride(
-  aType,
-  aMinVersion,
-  aMaxVersion,
-  aAppID,
-  aAppMinVersion,
-  aAppMaxVersion
-) {
-  this.type = aType;
-  this.minVersion = aMinVersion;
-  this.maxVersion = aMaxVersion;
-  this.appID = aAppID;
-  this.appMinVersion = aAppMinVersion;
-  this.appMaxVersion = aAppMaxVersion;
-}
-
-AddonCompatibilityOverride.prototype = {
-  
-
-
-
-  type: null,
-
-  
-
-
-  minVersion: null,
-
-  
-
-
-  maxVersion: null,
-
-  
-
-
-  appID: null,
-
-  
-
-
-  appMinVersion: null,
-
-  
-
-
-  appMaxVersion: null,
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -3611,8 +3546,6 @@ var AddonManagerPrivate = {
   AddonAuthor,
 
   AddonScreenshot,
-
-  AddonCompatibilityOverride,
 
   AddonType,
 
