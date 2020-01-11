@@ -374,6 +374,15 @@ var PreferenceExperiments = {
   },
 
   
+  async onTelemetryDisabled() {
+    const store = await ensureStorage();
+    for (const experiment of Object.values(store.data.experiments)) {
+      experiment.enrollmentId = TelemetryEvents.NO_ENROLLMENT_ID_MARKER;
+    }
+    store.saveSoon();
+  },
+
+  
 
 
   async clearAllExperimentStorage() {

@@ -180,6 +180,15 @@ var AddonStudies = {
   },
 
   
+  async onTelemetryDisabled() {
+    const studies = await this.getAll();
+    for (const study of studies) {
+      study.enrollmentId = TelemetryEvents.NO_ENROLLMENT_ID_MARKER;
+    }
+    await this.updateMany(studies);
+  },
+
+  
 
 
 
@@ -318,6 +327,42 @@ var AddonStudies = {
   async update(study) {
     const db = await getDatabase();
     return getStore(db, "readwrite").put(study);
+  },
+
+  
+
+
+
+
+
+  async updateMany(studies) {
+    
+    if (!studies.length) {
+      return;
+    }
+
+    
+    
+    
+    
+
+    const db = await getDatabase();
+    let store = await getStore(db, "readonly");
+    await Promise.all(
+      studies.map(async ({ recipeId }) => {
+        let existingStudy = await store.get(recipeId);
+        if (!existingStudy) {
+          throw new Error(
+            `Tried to update addon study ${recipeId}, but it doesn't exist.`
+          );
+        }
+      })
+    );
+
+    
+    
+    store = await getStore(db, "readwrite");
+    await Promise.all(studies.map(study => store.put(study)));
   },
 
   
