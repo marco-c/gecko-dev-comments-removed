@@ -55,13 +55,34 @@ public class WebExtension {
     public final @WebExtensionFlags long flags;
 
     
-    final MetaData metaData;
+    
+    public final @Nullable MetaData metaData;
 
     
     final boolean isBuiltIn;
 
     
     final boolean isEnabled;
+
+    
+ interface DelegateObserver {
+        void onMessageDelegate(final String nativeApp, final MessageDelegate delegate);
+        void onActionDelegate(final ActionDelegate delegate);
+    }
+
+    private WeakReference<DelegateObserver> mDelegateObserver = new WeakReference<>(null);
+
+     void setDelegateObserver(final DelegateObserver observer) {
+        mDelegateObserver = new WeakReference<>(observer);
+
+        if (observer != null) {
+            
+            for (final Map.Entry<String, MessageDelegate> entry : messageDelegates.entrySet()) {
+                observer.onMessageDelegate(entry.getKey(), entry.getValue());
+            }
+            observer.onActionDelegate(actionDelegate);
+        }
+    }
 
     
 
@@ -219,6 +240,10 @@ public class WebExtension {
     @UiThread
     public void setMessageDelegate(final @Nullable MessageDelegate messageDelegate,
                                    final @NonNull String nativeApp) {
+        final DelegateObserver observer = mDelegateObserver.get();
+        if (observer != null) {
+            observer.onMessageDelegate(nativeApp, messageDelegate);
+        }
         if (messageDelegate == null) {
             messageDelegates.remove(nativeApp);
             return;
@@ -1023,6 +1048,58 @@ public class WebExtension {
     }
 
     
+    public static class InstallException extends Exception {
+        public static class ErrorCodes {
+            
+            public static final int ERROR_NETWORK_FAILURE = -1;
+            
+            public static final int ERROR_INCORRECT_HASH = -2;
+            
+            public static final int ERROR_CORRUPT_FILE = -3;
+            
+            public static final int ERROR_FILE_ACCESS = -4;
+            
+            public static final int ERROR_SIGNEDSTATE_REQUIRED = -5;
+            
+            public static final int ERROR_UNEXPECTED_ADDON_TYPE = -6;
+            
+            public static final int ERROR_INCORRECT_ID = -7;
+
+            
+            protected ErrorCodes() {}
+        }
+
+        @Retention(RetentionPolicy.SOURCE)
+        @IntDef(value = {
+                ErrorCodes.ERROR_NETWORK_FAILURE,
+                ErrorCodes.ERROR_INCORRECT_HASH,
+                ErrorCodes.ERROR_CORRUPT_FILE,
+                ErrorCodes.ERROR_FILE_ACCESS,
+                ErrorCodes.ERROR_SIGNEDSTATE_REQUIRED,
+                ErrorCodes.ERROR_UNEXPECTED_ADDON_TYPE,
+                ErrorCodes.ERROR_INCORRECT_ID
+        })
+         @interface Codes {}
+
+        
+        public final @Codes int code;
+
+        
+        protected InstallException() {
+            this.code = ErrorCodes.ERROR_NETWORK_FAILURE;
+        }
+
+        @Override
+        public String toString() {
+            return "InstallException: " + code;
+        }
+
+         InstallException(final @Codes int code) {
+            this.code = code;
+        }
+    }
+
+    
 
 
 
@@ -1035,6 +1112,11 @@ public class WebExtension {
 
     @AnyThread
     public void setActionDelegate(final @Nullable ActionDelegate delegate) {
+        final DelegateObserver observer = mDelegateObserver.get();
+        if (observer != null) {
+            observer.onActionDelegate(delegate);
+        }
+
         actionDelegate = delegate;
 
         final GeckoBundle bundle = new GeckoBundle(1);
@@ -1045,14 +1127,26 @@ public class WebExtension {
     }
 
     
-    
-    static class SignedStateFlags {
-        final static int UNKNOWN = -1;
-        final static int MISSING = 0;
-        final static int PRELIMINARY = 1;
-        final static int SIGNED = 2;
-        final static int SYSTEM = 3;
-        final static int PRIVILEGED = 4;
+
+
+
+
+
+    public static class SignedStateFlags {
+        
+        
+
+        public final static int UNKNOWN = -1;
+        
+        public final static int MISSING = 0;
+        
+        public final static int PRELIMINARY = 1;
+        
+        public final static int SIGNED = 2;
+        
+        public final static int SYSTEM = 3;
+        
+        public final static int PRIVILEGED = 4;
 
          final static int LAST = PRIVILEGED;
     }
@@ -1063,14 +1157,26 @@ public class WebExtension {
     @interface SignedState {}
 
     
-    
-    static class BlocklistStateFlags {
-        final static int NOT_BLOCKED = 0;
-        final static int SOFTBLOCKED = 1;
-        final static int BLOCKED = 2;
-        final static int OUTDATED = 3;
-        final static int VULNERABLE_UPDATE_AVAILABLE = 4;
-        final static int VULNERABLE_NO_UPDATE = 5;
+
+
+
+
+    public static class BlocklistStateFlags {
+        
+        
+        public final static int NOT_BLOCKED = 0;
+        
+
+        public final static int SOFTBLOCKED = 1;
+        
+        public final static int BLOCKED = 2;
+        
+
+        public final static int OUTDATED = 3;
+        
+        public final static int VULNERABLE_UPDATE_AVAILABLE = 4;
+        
+        public final static int VULNERABLE_NO_UPDATE = 5;
     }
 
     @Retention(RetentionPolicy.SOURCE)
@@ -1081,21 +1187,105 @@ public class WebExtension {
     @interface BlocklistState {}
 
     
-    class MetaData {
-        final Icon icon;
-        final String[] permissions;
-        final String[] origins;
-        final String name;
-        final String description;
-        final String version;
-        final String creatorName;
-        final String creatorUrl;
-        final String homepageUrl;
-        final String optionsPageUrl;
+    public class MetaData {
+        
+
+        public final @NonNull Icon icon;
+        
+
+
+
+
+
+
+        public final @NonNull String[] permissions;
+        
+
+
+
+
+
+        public final @NonNull String[] origins;
+        
+
+
+
+
+
+        public final @Nullable String name;
+        
+
+
+
+
+
+
+        public final @Nullable String description;
+        
+
+
+
+
+
+        public final @NonNull String version;
+        
+
+
+
+
+
+        public final @Nullable String creatorName;
+        
+
+
+
+
+
+        public final @Nullable String creatorUrl;
+        
+
+
+
+
+
+        public final @Nullable String homepageUrl;
+        
+
+
+
+
+
+        
+        final @Nullable String optionsPageUrl;
+        
+
+
+
+
+
+        
         final boolean openOptionsPageInTab;
-        final boolean isRecommended;
-        final @BlocklistState int blocklistState;
-        final @SignedState int signedState;
+        
+
+
+
+
+
+        public final boolean isRecommended;
+        
+
+
+
+
+
+        public final @BlocklistState int blocklistState;
+        
+
+
+
+
+
+        public final @SignedState int signedState;
 
         
         protected MetaData() {
