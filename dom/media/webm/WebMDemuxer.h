@@ -121,7 +121,7 @@ class WebMDemuxer : public MediaDataDemuxer,
   nsresult GetNextPacket(TrackInfo::TrackType aType,
                          MediaRawDataQueue* aSamples);
 
-  nsresult Reset(TrackInfo::TrackType aType);
+  void Reset(TrackInfo::TrackType aType);
 
   
   void PushAudioPacket(NesteggPacketHolder* aItem);
