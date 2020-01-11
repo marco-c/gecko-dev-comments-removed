@@ -282,6 +282,9 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
     MOZ_ASSERT(mFrontMessageQueue.IsEmpty());
     mMonitor.AssertCurrentThreadOwns();
     mFrontMessageQueue.SwapElements(mBackMessageQueue);
+    if (!mFrontMessageQueue.IsEmpty()) {
+      EnsureNextIterationLocked();
+    }
   }
   
 
