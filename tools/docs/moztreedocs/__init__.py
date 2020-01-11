@@ -5,6 +5,7 @@
 from __future__ import absolute_import, unicode_literals, print_function
 
 import os
+import tempfile
 import yaml
 
 from mozbuild.base import MozbuildObject
@@ -14,6 +15,7 @@ from mozpack.copier import FileCopier
 from mozpack.files import FileFinder
 from mozpack.manifests import InstallManifest
 
+import frontmatter
 import sphinx
 import sphinx.apidoc
 
@@ -114,6 +116,35 @@ class _SphinxManager(object):
 
             sphinx.ext.apidoc.main(argv=args)
 
+    def _process_markdown(self, m, markdown_file, dest):
+        """
+        When dealing with a markdown file, we check if we have a front matter.
+        If this is the case, we read the information, create a temporary file,
+        reuse the front matter info into the md file
+        """
+        with open(markdown_file) as f:
+            
+            post = frontmatter.load(f)
+            if len(post.keys()) > 0:
+                
+                with tempfile.NamedTemporaryFile(delete=False) as fh:
+                    
+                    fh.write(post["title"] + "\n")
+                    
+                    fh.write('=' * len(post["title"]) + "\n")
+                    
+                    if "summary" in post:
+                        fh.write(post["summary"] + "\n")
+                    
+                    fh.write(post.__str__())
+                    fh.close()
+                    
+                    m.add_copy(fh.name, dest)
+            else:
+                
+                
+                m.add_link(markdown_file, dest)
+
     def _synchronize_docs(self):
         m = InstallManifest()
 
@@ -128,8 +159,11 @@ class _SphinxManager(object):
                 for f in files:
                     source_path = os.path.join(root, f)
                     rel_source = source_path[len(source_dir) + 1:]
-
-                    m.add_link(source_path, os.path.join(dest, rel_source))
+                    target = os.path.join(dest, rel_source)
+                    if source_path.endswith(".md"):
+                        self._process_markdown(m, source_path, os.path.join(".", target))
+                    else:
+                        m.add_link(source_path, target)
 
         copier = FileCopier()
         m.populate_registry(copier)
