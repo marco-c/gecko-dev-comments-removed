@@ -693,13 +693,10 @@ class JSFunction : public js::NativeObject {
   JSScript* existingScript() {
     MOZ_ASSERT(isInterpreted());
     if (isInterpretedLazy()) {
-      if (shadowZone()->needsIncrementalBarrier()) {
-        js::LazyScript::writeBarrierPre(lazyScript());
-      }
       JSFunction* canonicalFunction = lazyScript()->function();
       JSScript* script = canonicalFunction->nonLazyScript();
-      flags_.clearInterpretedLazy();
-      flags_.setInterpreted();
+
+      clearLazyScript();
       initScript(script);
     }
     return nonLazyScript();
@@ -806,6 +803,15 @@ class JSFunction : public js::NativeObject {
     MOZ_ASSERT(hasLazyScript());
   }
 
+  
+  void clearLazyScript() {
+    js::LazyScript::writeBarrierPre(lazyScript());
+    flags_.clearInterpretedLazy();
+    flags_.setInterpreted();
+    u.scripted.s.script_ = nullptr;
+    MOZ_ASSERT(isIncomplete());
+  }
+
   void initSelfHostedLazyScript(js::SelfHostedLazyScript* lazy) {
     MOZ_ASSERT(isInterpreted());
     flags_.clearInterpreted();
@@ -814,21 +820,27 @@ class JSFunction : public js::NativeObject {
     MOZ_ASSERT(hasSelfHostedLazyScript());
   }
 
+  void clearSelfHostedLazyScript() {
+    
+    
+    flags_.clearInterpretedLazy();
+    flags_.setInterpreted();
+    u.scripted.s.script_ = nullptr;
+    MOZ_ASSERT(isIncomplete());
+  }
+
   
   void setUnlazifiedScript(JSScript* script) {
     MOZ_ASSERT(isInterpretedLazy());
     if (hasLazyScript()) {
-      
-      if (shadowZone()->needsIncrementalBarrier()) {
-        js::LazyScript::writeBarrierPre(lazyScript());
-      }
-
       if (!lazyScript()->maybeScript()) {
         lazyScript()->initScript(script);
       }
+      clearLazyScript();
+    } else {
+      MOZ_ASSERT(isSelfHostedBuiltin());
+      clearSelfHostedLazyScript();
     }
-    flags_.clearInterpretedLazy();
-    flags_.setInterpreted();
     initScript(script);
   }
 
