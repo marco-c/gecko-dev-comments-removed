@@ -58,6 +58,7 @@ class nsExtProtocolChannel : public nsIChannel,
   nsresult mStatus;
   nsLoadFlags mLoadFlags;
   bool mWasOpened;
+  bool mCanceled;
   
   
   
@@ -89,6 +90,7 @@ nsExtProtocolChannel::nsExtProtocolChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo)
       mStatus(NS_OK),
       mLoadFlags(nsIRequest::LOAD_NORMAL),
       mWasOpened(false),
+      mCanceled(false),
       mConnectedParent(false),
       mLoadInfo(aLoadInfo) {}
 
@@ -334,11 +336,12 @@ NS_IMETHODIMP nsExtProtocolChannel::Cancel(nsresult status) {
   if (NS_SUCCEEDED(mStatus)) {
     mStatus = status;
   }
+  mCanceled = true;
   return NS_OK;
 }
 
 NS_IMETHODIMP nsExtProtocolChannel::GetCanceled(bool* aCanceled) {
-  *aCanceled = NS_FAILED(mStatus);
+  *aCanceled = mCanceled;
   return NS_OK;
 }
 
