@@ -35,7 +35,9 @@ function verifyResult(
   aFissionEnabled
 ) {
   return SpecialPowers.spawn(
-    aBrowser, [{ aTestName, aDataURI, aPID, aSamePID, aFissionEnabled }], async function({ aTestName, aDataURI, aPID, aSamePID, aFissionEnabled }) {
+    aBrowser,
+    [{ aTestName, aDataURI, aPID, aSamePID, aFissionEnabled }],
+    async function({ aTestName, aDataURI, aPID, aSamePID, aFissionEnabled }) {
       
       let channel = content.docShell.currentDocumentChannel;
       is(

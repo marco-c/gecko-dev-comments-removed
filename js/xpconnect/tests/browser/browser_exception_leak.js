@@ -6,47 +6,68 @@
 
 
 add_task(async function test() {
-  const url = "http://mochi.test:8888/browser/js/xpconnect/tests/browser/browser_consoleStack.html";
+  const url =
+    "http://mochi.test:8888/browser/js/xpconnect/tests/browser/browser_consoleStack.html";
   let newTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
   let browser = gBrowser.selectedBrowser;
   let innerWindowId = browser.innerWindowID;
 
-  let stackTraceEmpty = await SpecialPowers.spawn(browser, [{innerWindowId}], async function(args) {
-    let {TestUtils} = ChromeUtils.import("resource://testing-common/TestUtils.jsm");
-    let {Assert} = ChromeUtils.import("resource://testing-common/Assert.jsm");
+  let stackTraceEmpty = await SpecialPowers.spawn(
+    browser,
+    [{ innerWindowId }],
+    async function(args) {
+      let { TestUtils } = ChromeUtils.import(
+        "resource://testing-common/TestUtils.jsm"
+      );
+      let { Assert } = ChromeUtils.import(
+        "resource://testing-common/Assert.jsm"
+      );
 
-    const ConsoleAPIStorage = Cc["@mozilla.org/consoleAPI-storage;1"].getService(Ci.nsIConsoleAPIStorage);
-    let consoleEvents = ConsoleAPIStorage.getEvents(args.innerWindowId);
-    Assert.equal(consoleEvents.length, 1, "Should only be one console event for the window");
+      const ConsoleAPIStorage = Cc[
+        "@mozilla.org/consoleAPI-storage;1"
+      ].getService(Ci.nsIConsoleAPIStorage);
+      let consoleEvents = ConsoleAPIStorage.getEvents(args.innerWindowId);
+      Assert.equal(
+        consoleEvents.length,
+        1,
+        "Should only be one console event for the window"
+      );
 
-    
-    let leakedConsoleEvent = consoleEvents[0];
+      
+      let leakedConsoleEvent = consoleEvents[0];
 
-    let doc = content.document;
-    let promise = TestUtils.topicObserved("inner-window-nuked", (subject, data) => {
-      let id = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
-      return id == args.innerWindowId;
-    });
-    content.location = "http://mochi.test:8888/";
-    await promise;
+      let doc = content.document;
+      let promise = TestUtils.topicObserved(
+        "inner-window-nuked",
+        (subject, data) => {
+          let id = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
+          return id == args.innerWindowId;
+        }
+      );
+      content.location = "http://mochi.test:8888/";
+      await promise;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return leakedConsoleEvent.stacktrace[0].filename;
-  });
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      return leakedConsoleEvent.stacktrace[0].filename;
+    }
+  );
 
-  is(stackTraceEmpty, "",
-     "JSStackFrame shouldn't leak mStack after window nuking");
+  is(
+    stackTraceEmpty,
+    "",
+    "JSStackFrame shouldn't leak mStack after window nuking"
+  );
 
   BrowserTestUtils.removeTab(newTab);
 });

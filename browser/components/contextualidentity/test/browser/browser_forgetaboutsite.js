@@ -295,7 +295,9 @@ async function test_storage_cleared() {
 
     
     await SpecialPowers.spawn(
-      tabInfo.browser, [{ userContext: USER_CONTEXTS[userContextId] }], async function(arg) {
+      tabInfo.browser,
+      [{ userContext: USER_CONTEXTS[userContextId] }],
+      async function(arg) {
         
         Assert.equal(
           content.localStorage.getItem("userContext"),

@@ -93,19 +93,20 @@ add_task(async function test_save_change() {
       async function(browser) {
         
         
-        await SpecialPowers.spawn(browser, [[username, password]], async function([
-          contentUsername,
-          contentPassword,
-        ]) {
-          let doc = content.document;
-          doc
-            .getElementById("form-basic-username")
-            .setUserInput(contentUsername);
-          doc
-            .getElementById("form-basic-password")
-            .setUserInput(contentPassword);
-          doc.getElementById("form-basic").submit();
-        });
+        await SpecialPowers.spawn(
+          browser,
+          [[username, password]],
+          async function([contentUsername, contentPassword]) {
+            let doc = content.document;
+            doc
+              .getElementById("form-basic-username")
+              .setUserInput(contentUsername);
+            doc
+              .getElementById("form-basic-password")
+              .setUserInput(contentPassword);
+            doc.getElementById("form-basic").submit();
+          }
+        );
 
         
         

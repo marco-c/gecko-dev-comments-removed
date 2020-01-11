@@ -15,7 +15,10 @@ add_task(async function() {
   const tab = await addJsonViewTab(uri.spec);
 
   
-  await SpecialPowers.spawn(tab.linkedBrowser, [{TEST_JSON_FILE}], async function ({TEST_JSON_FILE}) { 
+  await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [{ TEST_JSON_FILE }],
+    async function({ TEST_JSON_FILE }) { 
       const channel = content.docShell.currentDocumentChannel;
       const channelURI = channel.URI.spec;
       ok(
@@ -54,7 +57,11 @@ add_task(async function() {
   await loaded;
 
   
-  await SpecialPowers.spawn(tab.linkedBrowser, [{TEST_JSON_FILE}], async function ({TEST_JSON_FILE}) { 
+  await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [{ TEST_JSON_FILE }],
+    async function({ TEST_JSON_FILE }) {
+      
       const channel = content.docShell.currentDocumentChannel;
       const channelURI = channel.URI.spec;
       ok(
