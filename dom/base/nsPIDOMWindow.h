@@ -176,16 +176,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   
   virtual void SetActiveLoadingState(bool aIsActiveLoading) = 0;
 
-  nsPIDOMWindowInner* GetWindowForDeprioritizedLoadRunner();
-
-  
-
-
-
-
-
-  virtual void AddDeprioritizedLoadRunner(nsIRunnable* aRunner) = 0;
-
   bool AddAudioContext(mozilla::dom::AudioContext* aAudioContext);
   void RemoveAudioContext(mozilla::dom::AudioContext* aAudioContext);
   void MuteAudioContexts();

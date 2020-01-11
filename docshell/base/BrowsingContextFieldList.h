@@ -46,6 +46,8 @@ MOZ_BC_FIELD(HistoryID, nsID)
 
 MOZ_BC_FIELD(InRDMPane, bool)
 
+MOZ_BC_FIELD(Loading, bool)
+
 
 
 

@@ -8,6 +8,7 @@
 #define mozilla_dom_BrowsingContext_h
 
 #include "GVAutoplayRequestUtils.h"
+#include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Tuple.h"
@@ -484,6 +485,11 @@ class BrowsingContext : public nsISupports,
   
   bool CanAccess(BrowsingContext* aTarget, bool aConsiderOpener = true);
 
+  
+  
+  
+  void AddDeprioritizedLoadRunner(nsIRunnable* aRunner);
+
  protected:
   virtual ~BrowsingContext();
   BrowsingContext(BrowsingContext* aParent, BrowsingContextGroup* aGroup,
@@ -562,6 +568,8 @@ class BrowsingContext : public nsISupports,
   void DidSetGVAudibleAutoplayRequestStatus();
   void DidSetGVInaudibleAutoplayRequestStatus();
 
+  void DidSetLoading();
+
   
   const Type mType;
 
@@ -610,6 +618,28 @@ class BrowsingContext : public nsISupports,
   
   
   TimeStamp mUserGestureStart;
+
+  class DeprioritizedLoadRunner
+      : public mozilla::Runnable,
+        public mozilla::LinkedListElement<DeprioritizedLoadRunner> {
+   public:
+    explicit DeprioritizedLoadRunner(nsIRunnable* aInner)
+        : Runnable("DeprioritizedLoadRunner"), mInner(aInner) {}
+
+    NS_IMETHOD Run() override {
+      if (mInner) {
+        RefPtr<nsIRunnable> inner = std::move(mInner);
+        inner->Run();
+      }
+
+      return NS_OK;
+    }
+
+   private:
+    RefPtr<nsIRunnable> mInner;
+  };
+
+  mozilla::LinkedList<DeprioritizedLoadRunner> mDeprioritizedLoadRunner;
 };
 
 
