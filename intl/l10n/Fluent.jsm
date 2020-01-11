@@ -204,6 +204,7 @@ function DATETIME([arg], opts) {
 }
 
 const builtins = Object.freeze({
+  __proto__: null,
   NUMBER: NUMBER,
   DATETIME: DATETIME
 });
@@ -211,7 +212,9 @@ const builtins = Object.freeze({
 
 
 
-const MAX_PLACEABLE_LENGTH = 2500;
+
+
+const MAX_PLACEABLES = 100;
 
 
 const FSI = "\u2068";
@@ -257,7 +260,7 @@ function getDefault(scope, variants, star) {
 
 function getArguments(scope, args) {
   const positional = [];
-  const named = {};
+  const named = Object.create(null);
 
   for (const arg of args) {
     if (arg.type === "narg") {
@@ -267,7 +270,7 @@ function getArguments(scope, args) {
     }
   }
 
-  return [positional, named];
+  return {positional, named};
 }
 
 
@@ -296,14 +299,25 @@ function resolveExpression(scope, expr) {
 
 
 function VariableReference(scope, {name}) {
-  if (!scope.args || !scope.args.hasOwnProperty(name)) {
-    if (scope.insideTermReference === false) {
-      scope.reportError(new ReferenceError(`Unknown variable: $${name}`));
+  let arg;
+  if (scope.params) {
+    
+    if (Object.prototype.hasOwnProperty.call(scope.params, name)) {
+      arg = scope.params[name];
+    } else {
+      return new FluentNone(`$${name}`);
     }
+  } else if (
+    scope.args
+    && Object.prototype.hasOwnProperty.call(scope.args, name)
+  ) {
+    
+    
+    arg = scope.args[name];
+  } else {
+    scope.reportError(new ReferenceError(`Unknown variable: $${name}`));
     return new FluentNone(`$${name}`);
   }
-
-  const arg = scope.args[name];
 
   
   if (arg instanceof FluentType) {
@@ -362,20 +376,23 @@ function TermReference(scope, {name, attr, args}) {
     return new FluentNone(id);
   }
 
-  
-  const [, params] = getArguments(scope, args);
-  const local = scope.cloneForTermReference(params);
-
   if (attr) {
     const attribute = term.attributes[attr];
     if (attribute) {
-      return resolvePattern(local, attribute);
+      
+      scope.params = getArguments(scope, args).named;
+      const resolved = resolvePattern(scope, attribute);
+      scope.params = null;
+      return resolved;
     }
     scope.reportError(new ReferenceError(`Unknown attribute: ${attr}`));
     return new FluentNone(`${id}.${attr}`);
   }
 
-  return resolvePattern(local, term.value);
+  scope.params = getArguments(scope, args).named;
+  const resolved = resolvePattern(scope, term.value);
+  scope.params = null;
+  return resolved;
 }
 
 
@@ -394,7 +411,8 @@ function FunctionReference(scope, {name, args}) {
   }
 
   try {
-    return func(...getArguments(scope, args));
+    let resolved = getArguments(scope, args);
+    return func(resolved.positional, resolved.named);
   } catch (err) {
     scope.reportError(err);
     return new FluentNone(`${name}()`);
@@ -440,25 +458,24 @@ function resolveComplexPattern(scope, ptn) {
       continue;
     }
 
-    const part = resolveExpression(scope, elem).toString(scope);
-
-    if (useIsolating) {
-      result.push(FSI);
-    }
-
-    if (part.length > MAX_PLACEABLE_LENGTH) {
+    scope.placeables++;
+    if (scope.placeables > MAX_PLACEABLES) {
       scope.dirty.delete(ptn);
       
       
       
       
       throw new RangeError(
-        "Too many characters in placeable " +
-        `(${part.length}, max allowed is ${MAX_PLACEABLE_LENGTH})`
+        `Too many placeables expanded: ${scope.placeables}, ` +
+        `max allowed is ${MAX_PLACEABLES}`
       );
     }
 
-    result.push(part);
+    if (useIsolating) {
+      result.push(FSI);
+    }
+
+    result.push(resolveExpression(scope, elem).toString(scope));
 
     if (useIsolating) {
       result.push(PDI);
@@ -481,13 +498,7 @@ function resolvePattern(scope, node) {
 }
 
 class Scope {
-  constructor(
-    bundle,
-    errors,
-    args,
-    insideTermReference = false,
-    dirty = new WeakSet()
-  ) {
+  constructor(bundle, errors, args) {
     
     this.bundle = bundle;
     
@@ -496,14 +507,13 @@ class Scope {
     this.args = args;
 
     
-    this.insideTermReference = insideTermReference;
+
+    this.dirty = new WeakSet();
+    
+    this.params = null;
     
 
-    this.dirty = dirty;
-  }
-
-  cloneForTermReference(args) {
-    return new Scope(this.bundle, this.errors, args, true, this.dirty);
+    this.placeables = 0;
   }
 
   reportError(error) {
@@ -761,10 +771,6 @@ const TOKEN_BLANK = /\s+/y;
 
 
 
-const MAX_PLACEABLES = 100;
-
-
-
 
 class FluentResource {
   constructor(source) {
@@ -927,8 +933,6 @@ class FluentResource {
 
     
     function parsePatternElements(elements = [], commonIndent) {
-      let placeableCount = 0;
-
       while (true) {
         if (test(RE_TEXT_RUN)) {
           elements.push(match1(RE_TEXT_RUN));
@@ -936,9 +940,6 @@ class FluentResource {
         }
 
         if (source[cursor] === "{") {
-          if (++placeableCount > MAX_PLACEABLES) {
-            throw new FluentError("Too many placeables");
-          }
           elements.push(parsePlaceable());
           continue;
         }
@@ -1208,15 +1209,6 @@ class FluentResource {
     }
   }
 }
-
-
-
-
-
-
-
-
-
 
 this.EXPORTED_SYMBOLS = [
   ...Object.keys({
