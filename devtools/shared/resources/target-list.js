@@ -211,6 +211,11 @@ class TargetList {
         this._onTargetDestroyed
       ),
     };
+
+    
+    
+    
+    this.listenForWorkers = false;
   }
 
   _fissionEnabled() {
@@ -295,7 +300,11 @@ class TargetList {
       this._setListening(type, true);
 
       
-      if (!this._fissionEnabled()) {
+      
+      if (
+        !this._fissionEnabled() &&
+        !(type == "worker" && this.listenForWorkers)
+      ) {
         continue;
       }
       if (this.legacyImplementation[type]) {
@@ -314,8 +323,13 @@ class TargetList {
         continue;
       }
       this._setListening(type, false);
+
       
-      if (!this._fissionEnabled()) {
+      
+      if (
+        !this._fissionEnabled() &&
+        !(type == "worker" && this.listenForWorkers)
+      ) {
         continue;
       }
       if (this.legacyImplementation[type]) {
