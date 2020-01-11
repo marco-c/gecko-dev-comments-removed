@@ -1562,9 +1562,29 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_LAMBDA, "lambda", NULL, 5, 0, 1, JOF_OBJECT) \
     
+
+
+
+
+
+
 
 
 
@@ -1583,12 +1603,15 @@
 
 
 
+
+
+
+
+
+
  \
     MACRO(JSOP_SETFUNNAME, "setfunname", NULL, 2, 2, 1, JOF_UINT8) \
     
-
-
-
 
 
 
@@ -1605,9 +1628,23 @@
 
 
 
+
+
+
  \
     MACRO(JSOP_CHECKCLASSHERITAGE, "checkclassheritage", NULL, 1, 1, 1, JOF_BYTE) \
     
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1626,9 +1663,20 @@
 
 
 
+
+
+
+
+
  \
     MACRO(JSOP_CLASSCONSTRUCTOR, "classconstructor", NULL, 13, 0, 1, JOF_CLASS_CTOR) \
     
+
+
+
+
+
+
 
 
 
@@ -1658,62 +1706,34 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_CALL, "call", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
-    
-
-
-
-
-
-
-
-
- \
     MACRO(JSOP_CALLITER, "calliter", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
-    
-
-
-
-
-
-
-
-
-
-
- \
     MACRO(JSOP_FUNAPPLY, "funapply", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- \
     MACRO(JSOP_FUNCALL, "funcall", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
-    
-
-
-
-
-
-
-
-
- \
     MACRO(JSOP_CALL_IGNORES_RV, "call-ignores-rv", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
     
+
+
 
 
 
@@ -1736,9 +1756,27 @@
 
 
 
+
+
+
+
+
+
  \
     MACRO(JSOP_OPTIMIZE_SPREADCALL, "optimize-spreadcall", NULL, 1, 1, 2, JOF_BYTE) \
     
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1760,15 +1798,9 @@
 
 
 
-
-
-
  \
     MACRO(JSOP_SPREADEVAL, "spreadeval", NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSLOPPY|JOF_IC) \
     
-
-
-
 
 
 
@@ -1787,9 +1819,6 @@
 
 
 
-
-
-
  \
     MACRO(JSOP_STRICTSPREADEVAL, "strict-spreadeval", NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSTRICT|JOF_IC) \
     
@@ -1800,9 +1829,26 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_IMPLICITTHIS, "implicitthis", "", 5, 0, 1, JOF_ATOM) \
     
+
+
+
+
 
 
 
@@ -1846,6 +1892,9 @@
 
 
 
+
+
+
  \
     MACRO(JSOP_IS_CONSTRUCTING, "is-constructing", NULL, 1, 0, 1, JOF_BYTE) \
     
@@ -1857,9 +1906,26 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_NEW, "new", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC|JOF_IC) \
+    MACRO(JSOP_SUPERCALL, "supercall", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
     
+
+
+
+
+
+
 
 
 
@@ -1871,7 +1937,14 @@
 
  \
     MACRO(JSOP_SPREADNEW, "spreadnew", NULL, 1, 4, 1, JOF_BYTE|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
+    MACRO(JSOP_SPREADSUPERCALL, "spreadsupercall", NULL, 1, 4, 1, JOF_BYTE|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
     
+
+
+
+
+
+
 
 
 
@@ -1887,23 +1960,6 @@
 
 
 
-
-
-
- \
-    MACRO(JSOP_SUPERCALL, "supercall", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
-    
-
-
-
-
-
-
-
-
- \
-    MACRO(JSOP_SPREADSUPERCALL, "spreadsupercall", NULL, 1, 4, 1, JOF_BYTE|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
-    
 
 
 
