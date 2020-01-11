@@ -39,6 +39,7 @@ let expectedCommonApis = [
   "runtime.onMessage",
   "runtime.sendMessage",
   
+  
   "test.assertEq",
   "test.assertFalse",
   "test.assertRejects",
@@ -51,6 +52,7 @@ let expectedCommonApis = [
   "test.onMessage",
   "test.sendMessage",
   "test.succeed",
+  "test.withHandlingUserInput",
 ];
 
 let expectedContentApis = [
