@@ -602,11 +602,13 @@ void enable_native_allocations(int aMainThreadId) {
   
   
   
-  if (!PR_GetEnv("XPCOM_MEM_BLOAT_LOG")) {
-    EnsureBernoulliIsInstalled();
-    EnsureAllocationTrackerIsInstalled();
-    ThreadIntercept::EnableAllocationFeature(aMainThreadId);
-  }
+  MOZ_ASSERT(!PR_GetEnv("XPCOM_MEM_BLOAT_LOG"),
+             "The bloat log feature is not compatible with the native "
+             "allocations instrumentation.");
+
+  EnsureBernoulliIsInstalled();
+  EnsureAllocationTrackerIsInstalled();
+  ThreadIntercept::EnableAllocationFeature(aMainThreadId);
 }
 
 
