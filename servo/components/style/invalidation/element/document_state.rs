@@ -79,7 +79,13 @@ where
                     continue;
                 }
 
-                self_invalidations.push(Invalidation::new(&dependency.selector, 0));
+                
+                
+                self_invalidations.push(Invalidation::new(
+                    &dependency.selector,
+                     None,
+                    0,
+                ));
             }
         }
 

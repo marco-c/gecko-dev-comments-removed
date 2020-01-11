@@ -25,6 +25,10 @@ class ShadowParts final {
     return mMappings.GetWeak(aName);
   }
 
+  nsAtom* GetReverse(nsAtom* aName) const {
+    return mReverseMappings.GetWeak(aName);
+  }
+
 #ifdef DEBUG
   void Dump() const;
 #endif
@@ -32,7 +36,10 @@ class ShadowParts final {
  private:
   ShadowParts() = default;
 
+  
+  
   nsRefPtrHashtable<nsRefPtrHashKey<nsAtom>, nsAtom> mMappings;
+  nsRefPtrHashtable<nsRefPtrHashKey<nsAtom>, nsAtom> mReverseMappings;
 };
 
 }  

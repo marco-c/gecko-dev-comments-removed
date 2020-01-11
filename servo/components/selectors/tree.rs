@@ -117,6 +117,20 @@ pub trait Element: Sized + Clone + Debug {
         case_sensitivity: CaseSensitivity,
     ) -> bool;
 
+    
+    
+    fn exported_part(
+        &self,
+        name: &<Self::Impl as SelectorImpl>::PartName,
+    ) -> Option<<Self::Impl as SelectorImpl>::PartName>;
+
+    
+    
+    fn imported_part(
+        &self,
+        name: &<Self::Impl as SelectorImpl>::PartName,
+    ) -> Option<<Self::Impl as SelectorImpl>::PartName>;
+
     fn is_part(&self, name: &<Self::Impl as SelectorImpl>::PartName) -> bool;
 
     

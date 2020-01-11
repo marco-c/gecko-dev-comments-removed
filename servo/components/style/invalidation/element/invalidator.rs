@@ -8,6 +8,7 @@
 use crate::context::StackLimitChecker;
 use crate::dom::{TElement, TNode, TShadowRoot};
 use crate::selector_parser::SelectorImpl;
+use selectors::OpaqueElement;
 use selectors::matching::matches_compound_selector_from;
 use selectors::matching::{CompoundSelectorMatchingResult, MatchingContext};
 use selectors::parser::{Combinator, Component, Selector};
@@ -128,6 +129,8 @@ enum InvalidationKind {
 pub struct Invalidation<'a> {
     selector: &'a Selector<SelectorImpl>,
     
+    scope: Option<OpaqueElement>,
+    
     
     
     
@@ -143,9 +146,14 @@ pub struct Invalidation<'a> {
 
 impl<'a> Invalidation<'a> {
     
-    pub fn new(selector: &'a Selector<SelectorImpl>, offset: usize) -> Self {
+    pub fn new(
+        selector: &'a Selector<SelectorImpl>,
+        scope: Option<OpaqueElement>,
+        offset: usize,
+    ) -> Self {
         Self {
             selector,
+            scope,
             offset,
             matched_by_any_previous: false,
         }
@@ -483,6 +491,9 @@ where
 
         let mut any = false;
         let mut sibling_invalidations = InvalidationVector::new();
+
+        
+        
         for element in shadow.parts() {
             any |= self.invalidate_child(
                 *element,
@@ -721,12 +732,17 @@ where
             self.element, invalidation, invalidation_kind
         );
 
-        let matching_result = matches_compound_selector_from(
-            &invalidation.selector,
-            invalidation.offset,
-            self.processor.matching_context(),
-            &self.element,
-        );
+        let matching_result = {
+            let mut context = self.processor.matching_context();
+            context.current_host = invalidation.scope;
+
+            matches_compound_selector_from(
+                &invalidation.selector,
+                invalidation.offset,
+                context,
+                &self.element,
+            )
+        };
 
         let mut invalidated_self = false;
         let mut matched = false;
@@ -809,6 +825,7 @@ where
 
                 let next_invalidation = Invalidation {
                     selector: invalidation.selector,
+                    scope: invalidation.scope,
                     offset: next_combinator_offset + 1,
                     matched_by_any_previous: false,
                 };

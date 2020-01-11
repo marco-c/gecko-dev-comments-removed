@@ -36,6 +36,7 @@ struct MiscContainer;
 
 namespace mozilla {
 class DeclarationBlock;
+class ShadowParts;
 }  
 
 #define NS_ATTRVALUE_MAX_STRINGLENGTH_ATOM 12
@@ -212,6 +213,7 @@ class nsAttrValue {
   inline nsIURI* GetURLValue() const;
   inline double GetDoubleValue() const;
   bool GetIntMarginValue(nsIntMargin& aMargin) const;
+  inline const mozilla::ShadowParts& GetShadowPartsValue() const;
 
   
 
