@@ -627,6 +627,10 @@ class nsWindow final : public nsBaseWidget {
   
   
   nsSizeMode mLastSizeMode;
+  
+  
+  
+  bool mBoundsNeedSizeUpdate;
 
   static bool DragInProgress(void);
 

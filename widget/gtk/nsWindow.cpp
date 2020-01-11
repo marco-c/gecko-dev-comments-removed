@@ -414,6 +414,7 @@ nsWindow::nsWindow() {
   mRetryPointerGrab = false;
   mWindowType = eWindowType_child;
   mSizeState = nsSizeMode_Normal;
+  mBoundsNeedSizeUpdate = false;
   mAspectRatio = 0.0f;
   mLastSizeMode = nsSizeMode_Normal;
   mSizeConstraints.mMaxSize = GetSafeWindowSize(mSizeConstraints.mMaxSize);
@@ -1070,8 +1071,11 @@ void nsWindow::Resize(double aWidth, double aHeight, bool aRepaint) {
   
   
   
-
   mBounds.SizeTo(width, height);
+
+  
+  
+  mBoundsNeedSizeUpdate = false;
 
   
   if (mAspectRatio != 0.0) {
@@ -2537,9 +2541,6 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
     }
   }
 
-  
-  
-
   NS_ASSERTION(GTK_IS_WINDOW(aWidget),
                "Configure event on widget that is not a GtkWindow");
   if (gtk_window_get_window_type(GTK_WINDOW(aWidget)) == GTK_WINDOW_POPUP) {
@@ -2564,6 +2565,27 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
   
   NotifyWindowMoved(mBounds.x, mBounds.y);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mBoundsNeedSizeUpdate) {
+    mBoundsNeedSizeUpdate = false;
+    GtkAllocation allocation = {-1, -1, 0, 0};
+    gtk_window_get_size(GTK_WINDOW(mShell), &allocation.width,
+                        &allocation.height);
+    OnSizeAllocate(&allocation);
+  }
   return FALSE;
 }
 
@@ -2586,8 +2608,10 @@ void nsWindow::OnSizeAllocate(GtkAllocation* aAllocation) {
        aAllocation->height));
 
   LayoutDeviceIntSize size = GdkRectToDevicePixels(*aAllocation).Size();
-
-  if (mBounds.Size() == size) return;
+  if (mBounds.Size() == size) {
+    
+    return;
+  }
 
   
   
@@ -3436,6 +3460,10 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
     LOG(("\tNot tiled\n"));
     mIsTiled = false;
   }
+
+  
+  
+  mBoundsNeedSizeUpdate = true;
 
   if (mWidgetListener) {
     mWidgetListener->SizeModeChanged(mSizeState);
