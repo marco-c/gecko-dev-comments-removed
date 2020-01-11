@@ -37,10 +37,6 @@ using namespace gfx;
 
 namespace image {
 
-static void ScopedMapRelease(void* aMap) {
-  delete static_cast<DataSourceSurface::ScopedMap*>(aMap);
-}
-
 static int32_t VolatileSurfaceStride(const IntSize& size,
                                      SurfaceFormat format) {
   
@@ -49,25 +45,26 @@ static int32_t VolatileSurfaceStride(const IntSize& size,
 
 static already_AddRefed<DataSourceSurface> CreateLockedSurface(
     DataSourceSurface* aSurface, const IntSize& size, SurfaceFormat format) {
-  
-  if (aSurface->GetType() == SurfaceType::DATA_SHARED) {
-    RefPtr<DataSourceSurface> surf(aSurface);
-    return surf.forget();
-  }
-
-  DataSourceSurface::ScopedMap* smap =
-      new DataSourceSurface::ScopedMap(aSurface, DataSourceSurface::READ_WRITE);
-  if (smap->IsMapped()) {
-    
-    RefPtr<DataSourceSurface> surf = Factory::CreateWrappingDataSourceSurface(
-        smap->GetData(), aSurface->Stride(), size, format, &ScopedMapRelease,
-        static_cast<void*>(smap));
-    if (surf) {
+  switch (aSurface->GetType()) {
+    case SurfaceType::DATA_SHARED:
+    case SurfaceType::DATA_ALIGNED: {
+      
+      
+      RefPtr<DataSourceSurface> surf(aSurface);
       return surf.forget();
+    }
+    default: {
+      
+      DataSourceSurface::ScopedMap smap(aSurface,
+                                        DataSourceSurface::READ_WRITE);
+      if (smap.IsMapped()) {
+        return MakeAndAddRef<SourceSurfaceMappedData>(std::move(smap), size,
+                                                      format);
+      }
+      break;
     }
   }
 
-  delete smap;
   return nullptr;
 }
 
