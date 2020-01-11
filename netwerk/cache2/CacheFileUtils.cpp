@@ -563,6 +563,8 @@ uint32_t CachePerfStats::GetStdDev(EDataType aType, bool aFiltered) {
 
 
 bool CachePerfStats::IsCacheSlow() {
+  StaticMutexAutoLock lock(sLock);
+
   
   
   
