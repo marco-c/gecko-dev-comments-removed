@@ -2060,6 +2060,19 @@ public class GeckoSessionTestRule implements TestRule {
         });
     }
 
+    
+
+
+
+
+
+    public void removeCertOverride(final String host, final long port) {
+        webExtensionApiCall("RemoveCertOverride", args -> {
+            args.put("host", host);
+            args.put("port", port);
+        });
+    }
+
     private interface SetArgs {
         void setArgs(JSONObject object) throws JSONException;
     }
