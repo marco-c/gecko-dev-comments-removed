@@ -787,7 +787,8 @@ class HuffmanPreludeReader {
 
     
     
-    auxStorageLength_.infallibleEmplaceBack(MAX_CODE_BIT_LENGTH, numberOfSymbols);
+    auxStorageLength_.infallibleEmplaceBack(MAX_CODE_BIT_LENGTH,
+                                            numberOfSymbols);
 
     
     uint32_t code = 0;
@@ -1122,13 +1123,8 @@ JS::Result<Ok> BinASTTokenReaderContext::readStringPrelude() {
     return raiseError("Too many entries in strings dictionary");
   }
 
-  
-  
-  
-  Vector<BinASTKind> binASTKinds(cx_);
-
   BinASTSourceMetadata* metadata =
-      BinASTSourceMetadata::Create(binASTKinds, stringsNumberOfEntries);
+      BinASTSourceMetadata::Create(stringsNumberOfEntries);
   if (MOZ_UNLIKELY(!metadata)) {
     return raiseOOM();
   }
@@ -1743,7 +1739,8 @@ typename GenericHuffmanTable::Iterator GenericHuffmanTable::begin() const {
           -> GenericHuffmanTable::Iterator {
         return Iterator(implementation.begin());
       },
-      [](const TableImplementationUninitialized&) -> GenericHuffmanTable::Iterator {
+      [](const TableImplementationUninitialized&)
+          -> GenericHuffmanTable::Iterator {
         MOZ_CRASH("GenericHuffmanTable is unitialized!");
       });
 }
@@ -1770,7 +1767,8 @@ typename GenericHuffmanTable::Iterator GenericHuffmanTable::end() const {
           -> GenericHuffmanTable::Iterator {
         return Iterator(implementation.end());
       },
-      [](const TableImplementationUninitialized&) -> GenericHuffmanTable::Iterator {
+      [](const TableImplementationUninitialized&)
+          -> GenericHuffmanTable::Iterator {
         MOZ_CRASH("GenericHuffmanTable is unitialized!");
       });
 }
@@ -1780,6 +1778,7 @@ JS::Result<Ok> GenericHuffmanTable::initWithSingleValue(
   
   MOZ_ASSERT(implementation_.template is<
              TableImplementationUninitialized>());  
+                                                    
 
   implementation_ = {mozilla::VariantType<SingleEntryHuffmanTable>{}, value};
   return Ok();
