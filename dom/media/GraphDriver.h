@@ -121,9 +121,6 @@ class GraphDriver {
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GraphDriver);
   
-
-  virtual void WaitForNextIteration() = 0;
-  
   virtual void WakeUp() = 0;
   
 
@@ -229,7 +226,10 @@ class ThreadedDriver : public GraphDriver {
  public:
   explicit ThreadedDriver(MediaTrackGraphImpl* aGraphImpl);
   virtual ~ThreadedDriver();
-  void WaitForNextIteration() override;
+  
+
+
+  void WaitForNextIteration();
   void WakeUp() override;
   void Start() override;
   MOZ_CAN_RUN_SCRIPT void Shutdown() override;
@@ -359,7 +359,6 @@ class AudioCallbackDriver : public GraphDriver,
   virtual ~AudioCallbackDriver();
 
   void Start() override;
-  void WaitForNextIteration() override;
   void WakeUp() override;
   MOZ_CAN_RUN_SCRIPT void Shutdown() override;
 #if defined(XP_WIN)
