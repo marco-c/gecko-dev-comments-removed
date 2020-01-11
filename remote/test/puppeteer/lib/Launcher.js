@@ -141,14 +141,14 @@ class BrowserRunner {
           childProcess.execSync(`taskkill /pid ${this.proc.pid} /T /F`);
         else
           process.kill(-this.proc.pid, 'SIGKILL');
-      } catch (e) {
+      } catch (error) {
         
       }
     }
     
     try {
       removeFolder.sync(this._tempDirectory);
-    } catch (e) { }
+    } catch (error) { }
   }
 
   
@@ -174,6 +174,9 @@ class BrowserRunner {
     return this.connection;
   }
 }
+
+
+
 
 class ChromeLauncher {
   
@@ -243,9 +246,9 @@ class ChromeLauncher {
       const browser = await Browser.create(connection, [], ignoreHTTPSErrors, defaultViewport, runner.proc, runner.close.bind(runner));
       await browser.waitForTarget(t => t.type() === 'page');
       return browser;
-    } catch (e) {
+    } catch (error) {
       runner.kill();
-      throw e;
+      throw error;
     }
   }
 
@@ -313,6 +316,13 @@ class ChromeLauncher {
   
 
 
+  get product() {
+    return 'chrome';
+  }
+
+  
+
+
 
   async connect(options) {
     const {
@@ -343,6 +353,8 @@ class ChromeLauncher {
   }
 
 }
+
+
 
 
 class FirefoxLauncher {
@@ -376,7 +388,7 @@ class FirefoxLauncher {
       defaultViewport = {width: 800, height: 600},
       slowMo = 0,
       timeout = 30000,
-      extraPrefs = {}
+      extraPrefsFirefox = {}
     } = options;
 
     const firefoxArguments = [];
@@ -390,7 +402,7 @@ class FirefoxLauncher {
     let temporaryUserDataDir = null;
 
     if (!firefoxArguments.includes('-profile') && !firefoxArguments.includes('--profile')) {
-      temporaryUserDataDir = await this._createProfile(extraPrefs);
+      temporaryUserDataDir = await this._createProfile(extraPrefsFirefox);
       firefoxArguments.push('--profile');
       firefoxArguments.push(temporaryUserDataDir);
     }
@@ -411,9 +423,9 @@ class FirefoxLauncher {
       const browser = await Browser.create(connection, [], ignoreHTTPSErrors, defaultViewport, runner.proc, runner.close.bind(runner));
       await browser.waitForTarget(t => t.type() === 'page');
       return browser;
-    } catch (e) {
+    } catch (error) {
       runner.kill();
-      throw e;
+      throw error;
     }
   }
 
@@ -463,6 +475,13 @@ class FirefoxLauncher {
   
 
 
+  get product() {
+    return 'firefox';
+  }
+
+  
+
+
 
   defaultArgs(options = {}) {
     const firefoxArguments = [
@@ -496,211 +515,19 @@ class FirefoxLauncher {
 
   async _createProfile(extraPrefs) {
     const profilePath = await mkdtempAsync(path.join(os.tmpdir(), 'puppeteer_dev_firefox_profile-'));
-    const prefsJS = [];
-    const userJS = [];
-    const server = 'dummy.test';
-    const defaultPreferences = {
-      
-      'app.normandy.api_url': '',
-      
-      'app.update.checkInstallTime': false,
-      
-      'app.update.disabledForTesting': true,
-
-      
-      'apz.content_response_timeout': 60000,
-
-      
-      
-      'browser.contentblocking.features.standard': '-tp,tpPrivate,cookieBehavior0,-cm,-fp',
-
-
-      
-      
-      
-      'browser.dom.window.dump.enabled': true,
-      
-      'browser.newtabpage.activity-stream.feeds.section.topstories': false,
-      
-      'browser.newtabpage.enabled': false,
-      
-      
-      'browser.pagethumbnails.capturing_disabled': true,
-
-      
-      'browser.safebrowsing.blockedURIs.enabled': false,
-      'browser.safebrowsing.downloads.enabled': false,
-      'browser.safebrowsing.malware.enabled': false,
-      'browser.safebrowsing.passwords.enabled': false,
-      'browser.safebrowsing.phishing.enabled': false,
-
-      
-      'browser.search.update': false,
-      
-      'browser.sessionstore.resume_from_crash': false,
-      
-      'browser.shell.checkDefaultBrowser': false,
-
-      
-      'browser.startup.homepage': 'about:blank',
-      
-      'browser.startup.homepage_override.mstone': 'ignore',
-      
-      'browser.startup.page': 0,
-
-      
-      
-      
-      'browser.tabs.disableBackgroundZombification': false,
-      
-      'browser.tabs.warnOnCloseOtherTabs': false,
-      
-      'browser.tabs.warnOnOpen': false,
-
-      
-      'browser.uitour.enabled': false,
-      
-      
-      'browser.urlbar.suggest.searches': false,
-      
-      'browser.usedOnWindows10.introURL': '',
-      
-      'browser.warnOnQuit': false,
-
-      
-      
-      'datareporting.healthreport.about.reportUrl': `http://${server}/dummy/abouthealthreport/`,
-      'datareporting.healthreport.documentServerURI': `http://${server}/dummy/healthreport/`,
-      'datareporting.healthreport.logging.consoleEnabled': false,
-      'datareporting.healthreport.service.enabled': false,
-      'datareporting.healthreport.service.firstRun': false,
-      'datareporting.healthreport.uploadEnabled': false,
-      'datareporting.policy.dataSubmissionEnabled': false,
-      'datareporting.policy.dataSubmissionPolicyAccepted': false,
-      'datareporting.policy.dataSubmissionPolicyBypassNotification': true,
-
-      
-      
-      'devtools.jsonview.enabled': false,
-
-      
-      'dom.disable_open_during_load': false,
-
-      
-      
-      'dom.file.createInChild': true,
-
-      
-      'dom.ipc.reportProcessHangs': false,
-
-      
-      'dom.max_chrome_script_run_time': 0,
-      'dom.max_script_run_time': 0,
-
-      
-      
-      'extensions.autoDisableScopes': 0,
-      'extensions.enabledScopes': 5,
-
-      
-      'extensions.getAddons.cache.enabled': false,
-
-      
-      'extensions.installDistroAddons': false,
-
-      
-      'extensions.screenshots.disabled': true,
-
-      
-      'extensions.update.enabled': false,
-
-      
-      'extensions.update.notifyUser': false,
-
-      
-      'extensions.webservice.discoverURL': `http://${server}/dummy/discoveryURL`,
-
-      
-      'focusmanager.testmode': true,
-      
-      'general.useragent.updates.enabled': false,
-      
-      
-      'geo.provider.testing': true,
-      
-      'geo.wifi.scan': false,
-      
-      'hangmonitor.timeout': 0,
-      
-      'javascript.options.showInConsole': true,
-
-      
-      'media.gmp-manager.updateEnabled': false,
-      
-      
-      'network.cookie.cookieBehavior': 0,
-
-      
-      'network.http.prompt-temp-redirect': false,
-
-      
-      
-      'network.http.speculative-parallel-limit': 0,
-
-      
-      'network.manage-offline-status': false,
-
-      
-      'network.sntp.pools': `${server}`,
-
-      
-      'plugin.state.flash': 0,
-
-      'privacy.trackingprotection.enabled': false,
-
-      
+    const prefsJs = [];
+    const userJs = [];
+    const preferences = {
       
       'remote.enabled': true,
-
       
-      'security.certerrors.mitm.priming.enabled': false,
-      
-      
-      'security.fileuri.strict_origin_policy': false,
-      
-      'security.notification_enable_delay': 0,
-
-      
-      'services.settings.server': `http://${server}/dummy/blocklist/`,
-
-      
-      
-      'signon.autofillForms': false,
-      
-      
-      'signon.rememberSignons': false,
-
-      
-      'startup.homepage_welcome_url': 'about:blank',
-
-      
-      'startup.homepage_welcome_url.additional': '',
-
-      
-      'toolkit.cosmeticAnimations.enabled': false,
-
-      
-      'toolkit.telemetry.server': `https://${server}/dummy/telemetry/`,
-      
-      'toolkit.startup.max_resumed_crashes': -1,
-
+      'browser.dom.window.dump.enabled': true
     };
-
-    Object.assign(defaultPreferences, extraPrefs);
-    for (const [key, value] of Object.entries(defaultPreferences))
-      userJS.push(`user_pref(${JSON.stringify(key)}, ${JSON.stringify(value)});`);
-    await writeFileAsync(path.join(profilePath, 'user.js'), userJS.join('\n'));
-    await writeFileAsync(path.join(profilePath, 'prefs.js'), prefsJS.join('\n'));
+    Object.assign(preferences, extraPrefs);
+    for (const [key, value] of Object.entries(preferences))
+      userJs.push(`user_pref(${JSON.stringify(key)}, ${JSON.stringify(value)});`);
+    await writeFileAsync(path.join(profilePath, 'user.js'), userJs.join('\n'));
+    await writeFileAsync(path.join(profilePath, 'prefs.js'), prefsJs.join('\n'));
     return profilePath;
   }
 }
@@ -714,7 +541,7 @@ class FirefoxLauncher {
 
 function waitForWSEndpoint(browserProcess, timeout, preferredRevision) {
   return new Promise((resolve, reject) => {
-    const rl = readline.createInterface({ input: browserProcess.stderr});
+    const rl = readline.createInterface({ input: browserProcess.stderr });
     let stderr = '';
     const listeners = [
       helper.addEventListener(rl, 'line', onLine),
@@ -831,7 +658,10 @@ function resolveExecutablePath(launcher) {
 
 
 
-function Launcher(product, projectRoot, preferredRevision, isPuppeteerCore) {
+function Launcher(projectRoot, preferredRevision, isPuppeteerCore, product) {
+  
+  if (!product && !isPuppeteerCore)
+    product = process.env.PUPPETEER_PRODUCT || process.env.npm_config_puppeteer_product || process.env.npm_package_config_puppeteer_product;
   switch (product) {
     case 'firefox':
       return new FirefoxLauncher(projectRoot, preferredRevision, isPuppeteerCore);

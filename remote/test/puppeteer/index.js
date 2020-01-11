@@ -28,4 +28,11 @@ const packageJson = require('./package.json');
 const preferredRevision = packageJson.puppeteer.chromium_revision;
 const isPuppeteerCore = packageJson.name === 'puppeteer-core';
 
-module.exports = new Puppeteer(__dirname, preferredRevision, isPuppeteerCore);
+const puppeteer = new Puppeteer(__dirname, preferredRevision, isPuppeteerCore);
+
+
+
+
+puppeteer._lazyLauncher = undefined;
+
+module.exports = puppeteer;

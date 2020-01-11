@@ -18,8 +18,6 @@ const BrowserFetcher = require('./BrowserFetcher');
 const Errors = require('./Errors');
 const DeviceDescriptors = require('./DeviceDescriptors');
 
-const PRODUCT = process.env.PUPPETEER_PRODUCT || process.env.npm_config_puppeteer_product || process.env.npm_package_config_puppeteer_product;
-
 module.exports = class {
   
 
@@ -28,7 +26,8 @@ module.exports = class {
 
   constructor(projectRoot, preferredRevision, isPuppeteerCore) {
     this._projectRoot = projectRoot;
-    this._launcher = Launcher(PRODUCT, projectRoot, preferredRevision, isPuppeteerCore);
+    this._preferredRevision = preferredRevision;
+    this._isPuppeteerCore = isPuppeteerCore;
   }
 
   
@@ -36,6 +35,8 @@ module.exports = class {
 
 
   launch(options) {
+    if (!this._productName && options)
+      this._productName = options.product;
     return this._launcher.launch(options);
   }
 
@@ -57,8 +58,18 @@ module.exports = class {
   
 
 
+  get _launcher() {
+    if (!this._lazyLauncher)
+      this._lazyLauncher = Launcher(this._projectRoot, this._preferredRevision, this._isPuppeteerCore, this._productName);
+    return this._lazyLauncher;
+
+  }
+
+  
+
+
   get product() {
-    return PRODUCT || 'chrome';
+    return this._launcher.product;
   }
 
   
