@@ -18,7 +18,7 @@ use crate::prim_store::{PrimitiveInstanceKind, PrimitiveOpacity, PrimitiveSceneD
 use crate::prim_store::{PrimKeyCommonData, PrimTemplateCommonData, PrimitiveStore};
 use crate::prim_store::{NinePatchDescriptor, PointKey, SizeKey, InternablePrimitive};
 use crate::render_task_cache::RenderTaskCacheEntryHandle;
-use std::{hash, ops::{Deref, DerefMut}, mem};
+use std::{hash, ops::{Deref, DerefMut}};
 use crate::util::pack_as_float;
 
 
@@ -580,12 +580,22 @@ pub const GRADIENT_DATA_TABLE_SIZE: usize = 128;
 
 pub const GRADIENT_DATA_SIZE: usize = GRADIENT_DATA_TABLE_SIZE + 2;
 
-#[derive(Debug)]
-#[repr(C)]
 
-pub struct GradientDataEntry {
-    pub start_color: PremultipliedColorF,
-    pub end_color: PremultipliedColorF,
+
+#[derive(Debug, Copy, Clone)]
+#[repr(C)]
+struct GradientDataEntry {
+    start_color: PremultipliedColorF,
+    end_color: PremultipliedColorF,
+}
+
+impl GradientDataEntry {
+    fn white() -> Self {
+        Self {
+            start_color: PremultipliedColorF::WHITE,
+            end_color: PremultipliedColorF::WHITE,
+        }
+    }
 }
 
 
@@ -662,7 +672,7 @@ impl GradientGpuBlockBuilder {
         
         
         
-        let mut entries: [GradientDataEntry; GRADIENT_DATA_SIZE] = unsafe { mem::uninitialized() };
+        let mut entries = [GradientDataEntry::white(); GRADIENT_DATA_SIZE];
 
         if reverse_stops {
             
@@ -697,13 +707,6 @@ impl GradientGpuBlockBuilder {
             }
             if cur_idx != GRADIENT_DATA_TABLE_BEGIN {
                 error!("Gradient stops abruptly at {}, auto-completing to white", cur_idx);
-                GradientGpuBlockBuilder::fill_colors(
-                    GRADIENT_DATA_TABLE_BEGIN,
-                    cur_idx,
-                    &PremultipliedColorF::WHITE,
-                    &cur_color,
-                    &mut entries,
-                );
             }
 
             
@@ -747,13 +750,6 @@ impl GradientGpuBlockBuilder {
             }
             if cur_idx != GRADIENT_DATA_TABLE_END {
                 error!("Gradient stops abruptly at {}, auto-completing to white", cur_idx);
-                GradientGpuBlockBuilder::fill_colors(
-                    cur_idx,
-                    GRADIENT_DATA_TABLE_END,
-                    &PremultipliedColorF::WHITE,
-                    &cur_color,
-                    &mut entries,
-                );
             }
 
             
