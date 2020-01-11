@@ -158,7 +158,7 @@ nsresult CacheFileContextEvictor::AddContext(
   return NS_OK;
 }
 
-nsresult CacheFileContextEvictor::CacheIndexStateChanged() {
+void CacheFileContextEvictor::CacheIndexStateChanged() {
   LOG(("CacheFileContextEvictor::CacheIndexStateChanged() [this=%p]", this));
 
   MOZ_ASSERT(CacheFileIOManager::IsOnIOThread());
@@ -168,18 +168,18 @@ nsresult CacheFileContextEvictor::CacheIndexStateChanged() {
   if (mEntries.Length() == 0) {
     
     mIndexIsUpToDate = isUpToDate;
-    return NS_OK;
+    return;
   }
 
   if (!isUpToDate && !mIndexIsUpToDate) {
     
-    return NS_OK;
+    return;
   }
 
   if (isUpToDate && mIndexIsUpToDate) {
     
     if (mEvicting) {
-      return NS_OK;
+      return;
     }
 
     
@@ -197,18 +197,13 @@ nsresult CacheFileContextEvictor::CacheIndexStateChanged() {
   } else {
     CloseIterators();
   }
-
-  return NS_OK;
 }
 
-nsresult CacheFileContextEvictor::WasEvicted(const nsACString& aKey,
-                                             nsIFile* aFile,
-                                             bool* aEvictedAsPinned,
-                                             bool* aEvictedAsNonPinned) {
+void CacheFileContextEvictor::WasEvicted(const nsACString& aKey, nsIFile* aFile,
+                                         bool* aEvictedAsPinned,
+                                         bool* aEvictedAsNonPinned) {
   LOG(("CacheFileContextEvictor::WasEvicted() [key=%s]",
        PromiseFlatCString(aKey).get()));
-
-  nsresult rv;
 
   *aEvictedAsPinned = false;
   *aEvictedAsNonPinned = false;
@@ -219,7 +214,7 @@ nsresult CacheFileContextEvictor::WasEvicted(const nsACString& aKey,
   MOZ_ASSERT(info);
   if (!info) {
     LOG(("CacheFileContextEvictor::WasEvicted() - Cannot parse key!"));
-    return NS_OK;
+    return;
   }
 
   for (uint32_t i = 0; i < mEntries.Length(); ++i) {
@@ -230,13 +225,11 @@ nsresult CacheFileContextEvictor::WasEvicted(const nsACString& aKey,
     }
 
     PRTime lastModifiedTime;
-    rv = aFile->GetLastModifiedTime(&lastModifiedTime);
-    if (NS_FAILED(rv)) {
+    if (NS_FAILED(aFile->GetLastModifiedTime(&lastModifiedTime))) {
       LOG(
           ("CacheFileContextEvictor::WasEvicted() - Cannot get last modified "
-           "time"
-           ", returning false."));
-      return NS_OK;
+           "time, returning."));
+      return;
     }
 
     if (lastModifiedTime > entry->mTimeStamp) {
@@ -255,8 +248,6 @@ nsresult CacheFileContextEvictor::WasEvicted(const nsACString& aKey,
       *aEvictedAsNonPinned = true;
     }
   }
-
-  return NS_OK;
 }
 
 nsresult CacheFileContextEvictor::PersistEvictionInfoToDisk(
@@ -543,9 +534,9 @@ void CacheFileContextEvictor::StartEvicting() {
     return;
   }
 
-  nsCOMPtr<nsIRunnable> ev;
-  ev = NewRunnableMethod("net::CacheFileContextEvictor::EvictEntries", this,
-                         &CacheFileContextEvictor::EvictEntries);
+  nsCOMPtr<nsIRunnable> ev =
+      NewRunnableMethod("net::CacheFileContextEvictor::EvictEntries", this,
+                        &CacheFileContextEvictor::EvictEntries);
 
   RefPtr<CacheIOThread> ioThread = CacheFileIOManager::IOThread();
 
@@ -560,7 +551,7 @@ void CacheFileContextEvictor::StartEvicting() {
   mEvicting = true;
 }
 
-nsresult CacheFileContextEvictor::EvictEntries() {
+void CacheFileContextEvictor::EvictEntries() {
   LOG(("CacheFileContextEvictor::EvictEntries()"));
 
   nsresult rv;
@@ -573,7 +564,7 @@ nsresult CacheFileContextEvictor::EvictEntries() {
     LOG(
         ("CacheFileContextEvictor::EvictEntries() - Stopping evicting due to "
          "outdated index."));
-    return NS_OK;
+    return;
   }
 
   while (true) {
@@ -584,7 +575,7 @@ nsresult CacheFileContextEvictor::EvictEntries() {
       mEvicting =
           true;  
                  
-      return NS_OK;
+      return;
     }
 
     if (CacheIOThread::YieldAndRerun()) {
@@ -592,7 +583,7 @@ nsresult CacheFileContextEvictor::EvictEntries() {
           ("CacheFileContextEvictor::EvictEntries() - Breaking loop for higher "
            "level events."));
       mEvicting = true;
-      return NS_OK;
+      return;
     }
 
     if (mEntries.Length() == 0) {
@@ -603,7 +594,7 @@ nsresult CacheFileContextEvictor::EvictEntries() {
       
       
       CacheIndex::OnAsyncEviction(false);
-      return NS_OK;
+      return;
     }
 
     SHA1Sum::Hash hash;
@@ -677,13 +668,9 @@ nsresult CacheFileContextEvictor::EvictEntries() {
       }
 
       
-      nsAutoCString key;
-      metadata->GetKey(key);
-
       nsAutoCString uriSpec;
-
       RefPtr<nsILoadContextInfo> info =
-          CacheFileUtils::ParseKey(key, nullptr, &uriSpec);
+          CacheFileUtils::ParseKey(metadata->GetKey(), nullptr, &uriSpec);
       MOZ_ASSERT(info);
       if (!info) {
         continue;
@@ -743,7 +730,6 @@ nsresult CacheFileContextEvictor::EvictEntries() {
   }
 
   MOZ_ASSERT_UNREACHABLE("We should never get here");
-  return NS_OK;
 }
 
 }  

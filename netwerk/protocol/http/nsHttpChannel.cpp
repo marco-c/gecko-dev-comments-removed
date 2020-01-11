@@ -3558,8 +3558,7 @@ nsresult nsHttpChannel::ProcessPartialContent(
   }
 
   
-  rv = mCachedResponseHead->UpdateHeaders(mResponseHead);
-  if (NS_FAILED(rv)) return rv;
+  mCachedResponseHead->UpdateHeaders(mResponseHead);
 
   
   nsAutoCString head;
@@ -3702,8 +3701,7 @@ nsresult nsHttpChannel::ProcessNotModified(
   }
 
   
-  rv = mCachedResponseHead->UpdateHeaders(mResponseHead);
-  if (NS_FAILED(rv)) return rv;
+  mCachedResponseHead->UpdateHeaders(mResponseHead);
 
   
   nsAutoCString head;

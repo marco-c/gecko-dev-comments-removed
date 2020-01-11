@@ -182,7 +182,7 @@ class nsHttpConnectionMgr final : public nsIObserver, public AltSvcCache {
   MOZ_MUST_USE nsresult UpdateRequestTokenBucket(EventTokenBucket* aBucket);
 
   
-  MOZ_MUST_USE nsresult ClearConnectionHistory();
+  void ClearConnectionHistory();
 
   void ReportFailedToProcess(nsIURI* uri);
 

@@ -46,14 +46,14 @@ class CacheFileContextEvictor {
   
   
   
-  nsresult CacheIndexStateChanged();
+  void CacheIndexStateChanged();
   
   
   
   
   
-  nsresult WasEvicted(const nsACString& aKey, nsIFile* aFile,
-                      bool* aEvictedAsPinned, bool* aEvictedAsNonPinned);
+  void WasEvicted(const nsACString& aKey, nsIFile* aFile,
+                  bool* aEvictedAsPinned, bool* aEvictedAsNonPinned);
 
  private:
   
@@ -75,7 +75,7 @@ class CacheFileContextEvictor {
   void CreateIterators();
   void CloseIterators();
   void StartEvicting();
-  nsresult EvictEntries();
+  void EvictEntries();
 
   
   bool mEvicting;

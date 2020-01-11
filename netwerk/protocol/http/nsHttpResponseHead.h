@@ -132,7 +132,7 @@ class nsHttpResponseHead {
   bool ExpiresInPast();
 
   
-  MOZ_MUST_USE nsresult UpdateHeaders(nsHttpResponseHead* headers);
+  void UpdateHeaders(nsHttpResponseHead* headers);
 
   
   void Reset();

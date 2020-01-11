@@ -196,7 +196,7 @@ class nsHttpAuthCache {
                       const char* realm, nsACString const& originSuffix);
 
   
-  MOZ_MUST_USE nsresult ClearAll();
+  void ClearAll();
 
  private:
   nsHttpAuthNode* LookupAuthNode(const char* scheme, const char* host,

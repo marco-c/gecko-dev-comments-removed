@@ -1045,13 +1045,13 @@ HttpBaseChannel::ExplicitSetUploadStream(nsIInputStream* aStream,
   return NS_OK;
 }
 
-nsresult HttpBaseChannel::ExplicitSetUploadStreamLength(
-    uint64_t aContentLength, bool aStreamHasHeaders) {
+void HttpBaseChannel::ExplicitSetUploadStreamLength(uint64_t aContentLength,
+                                                    bool aStreamHasHeaders) {
   
   mReqContentLength = aContentLength;
 
   if (aStreamHasHeaders) {
-    return NS_OK;
+    return;
   }
 
   nsAutoCString header;
@@ -1061,7 +1061,7 @@ nsresult HttpBaseChannel::ExplicitSetUploadStreamLength(
   nsAutoCString value;
   nsresult rv = GetRequestHeader(header, value);
   if (NS_SUCCEEDED(rv) && !value.IsEmpty()) {
-    return NS_OK;
+    return;
   }
 
   
@@ -1069,8 +1069,6 @@ nsresult HttpBaseChannel::ExplicitSetUploadStreamLength(
   nsAutoCString contentLengthStr;
   contentLengthStr.AppendInt(aContentLength);
   SetRequestHeader(header, contentLengthStr, false);
-
-  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -3580,8 +3578,7 @@ nsresult HttpBaseChannel::SetupReplacementChannel(nsIURI* newURI,
       realChannel->SetContentBlockingAllowListPrincipal(
           mContentBlockingAllowListPrincipal);
 
-      rv = realChannel->SetTopWindowURI(mTopWindowURI);
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
+      realChannel->SetTopWindowURI(mTopWindowURI);
     }
 
     

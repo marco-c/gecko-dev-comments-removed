@@ -43,7 +43,7 @@ class ParentChannelListener final : public nsIInterfaceRequestor,
                                  dom::BrowserParent* aBrowserParent);
 
   
-  MOZ_MUST_USE nsresult DivertTo(nsIStreamListener* aListener);
+  void DivertTo(nsIStreamListener* aListener);
   MOZ_MUST_USE nsresult SuspendForDiversion();
 
   void SetupInterception(const nsHttpResponseHead& aResponseHead);
@@ -57,7 +57,7 @@ class ParentChannelListener final : public nsIInterfaceRequestor,
   virtual ~ParentChannelListener();
 
   
-  MOZ_MUST_USE nsresult ResumeForDiversion();
+  void ResumeForDiversion();
 
   
   
