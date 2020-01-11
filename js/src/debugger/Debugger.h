@@ -756,8 +756,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   
 
 
-
-  ResumeMode reportUncaughtException(mozilla::Maybe<AutoRealm>& ar);
+  void reportUncaughtException(mozilla::Maybe<AutoRealm>& ar);
 
   
 
