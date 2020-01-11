@@ -1,6 +1,6 @@
 def main(output, stylesheet):
     css = open(stylesheet, 'rb').read()
-    css = css.replace('\\', '\\\\').replace('\n', '\\n').replace('"', '\\"')
+    css = css.replace('\\', '\\\\').replace('\r', '\\r').replace('\n', '\\n').replace('"', '\\"')
 
     
     
