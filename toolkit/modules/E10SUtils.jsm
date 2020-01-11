@@ -57,12 +57,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
-  "useHttpResponseProcessSelection",
-  "browser.tabs.remote.useHTTPResponseProcessSelection",
-  false
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
   "useCrossOriginOpenerPolicy",
   "browser.tabs.remote.useCrossOriginOpenerPolicy",
   false
@@ -287,9 +281,6 @@ var E10SUtils = {
   PRIVILEGEDMOZILLA_REMOTE_TYPE,
   LARGE_ALLOCATION_REMOTE_TYPE,
 
-  useHttpResponseProcessSelection() {
-    return useHttpResponseProcessSelection;
-  },
   useCrossOriginOpenerPolicy() {
     return useCrossOriginOpenerPolicy;
   },
@@ -768,7 +759,7 @@ var E10SUtils = {
     
     
     if (
-      (useRemoteSubframes || useHttpResponseProcessSelection) &&
+      useRemoteSubframes &&
       (aURI.scheme == "http" ||
         aURI.scheme == "https" ||
         aURI.scheme == "data") &&
