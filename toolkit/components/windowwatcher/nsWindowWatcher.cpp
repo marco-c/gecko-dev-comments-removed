@@ -1309,6 +1309,19 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     }
   }
 
+  
+  if (aCalledFromJS && !nsContentUtils::LegacyIsCallerChromeOrNativeCode() &&
+      parentWindow && parentWindow->GetFullScreen()) {
+    nsCOMPtr<nsPIDOMWindowOuter> parentTopWindow =
+        parentWindow->GetBrowsingContext()->Top()->GetDOMWindow();
+    if (Document* doc = parentTopWindow ? parentTopWindow->GetDoc() : nullptr) {
+      if (doc->GetFullscreenElement()) {
+        Document::AsyncExitFullscreen(doc);
+        
+      }
+    }
+  }
+
   if (aForceNoOpener && windowIsNew) {
     NS_RELEASE(*aResult);
   }
