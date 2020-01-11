@@ -91,11 +91,10 @@ class MessageBlock {
 
 
 class MediaTrackGraphImpl : public MediaTrackGraph,
+                            public GraphInterface,
                             public nsIMemoryReporter,
                             public nsITimerCallback,
                             public nsINamed {
-  using IterationResult = GraphDriver::IterationResult;
-
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIMEMORYREPORTER
@@ -127,7 +126,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  bool InDriverIteration(GraphDriver* aDriver);
+  bool InDriverIteration(GraphDriver* aDriver) override;
 #endif
 
   
@@ -217,7 +216,8 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  IterationResult OneIteration(GraphTime aStateEnd, AudioMixer* aMixer);
+  IterationResult OneIteration(GraphTime aStateEnd,
+                               AudioMixer* aMixer) override;
 
   
 
@@ -428,15 +428,15 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
 
   void NotifyOutputData(AudioDataValue* aBuffer, size_t aFrames,
-                        TrackRate aRate, uint32_t aChannels);
+                        TrackRate aRate, uint32_t aChannels) override;
   
 
   void NotifyInputData(const AudioDataValue* aBuffer, size_t aFrames,
-                       TrackRate aRate, uint32_t aChannels);
+                       TrackRate aRate, uint32_t aChannels) override;
   
 
 
-  void DeviceChanged();
+  void DeviceChanged() override;
   
 
   void DeviceChangedImpl();

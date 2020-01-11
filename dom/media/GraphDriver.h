@@ -57,10 +57,9 @@ static const int SCHEDULE_SAFETY_MARGIN_MS = 10;
 static const int AUDIO_TARGET_MS =
     2 * MEDIA_GRAPH_TARGET_PERIOD_MS + SCHEDULE_SAFETY_MARGIN_MS;
 
-class MediaTrack;
-class MediaTrackGraphImpl;
-
 class AudioCallbackDriver;
+class GraphDriver;
+class MediaTrack;
 class OfflineClockDriver;
 class SystemClockDriver;
 
@@ -68,56 +67,7 @@ namespace dom {
 enum class AudioContextOperation;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class GraphDriver {
- public:
+struct GraphInterface {
   
 
 
@@ -212,7 +162,84 @@ class GraphDriver {
     }
   };
 
-  GraphDriver(MediaTrackGraphImpl* aGraphImpl, GraphDriver* aPreviousDriver,
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+
+  
+
+  virtual void NotifyOutputData(AudioDataValue* aBuffer, size_t aFrames,
+                                TrackRate aRate, uint32_t aChannels) = 0;
+  
+
+  virtual void NotifyInputData(const AudioDataValue* aBuffer, size_t aFrames,
+                               TrackRate aRate, uint32_t aChannels) = 0;
+  
+
+
+  virtual void DeviceChanged() = 0;
+  
+
+  virtual IterationResult OneIteration(GraphTime aStateEnd,
+                                       AudioMixer* aMixer) = 0;
+#ifdef DEBUG
+  
+
+  virtual bool InDriverIteration(GraphDriver* aDriver) = 0;
+#endif
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class GraphDriver {
+ public:
+  using IterationResult = GraphInterface::IterationResult;
+
+  GraphDriver(GraphInterface* aGraphInterface, GraphDriver* aPreviousDriver,
               uint32_t aSampleRate);
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GraphDriver);
@@ -259,7 +286,7 @@ class GraphDriver {
   void SetState(GraphTime aIterationStart, GraphTime aIterationEnd,
                 GraphTime aStateComputedTime);
 
-  MediaTrackGraphImpl* GraphImpl() const { return mGraphImpl; }
+  GraphInterface* Graph() const { return mGraphInterface; }
 
 #ifdef DEBUG
   
@@ -296,7 +323,7 @@ class GraphDriver {
   
   GraphTime mStateComputedTime = 0;
   
-  const RefPtr<MediaTrackGraphImpl> mGraphImpl;
+  const RefPtr<GraphInterface> mGraphInterface;
   
   
   const uint32_t mSampleRate;
@@ -366,7 +393,7 @@ class ThreadedDriver : public GraphDriver {
   };
 
  public:
-  ThreadedDriver(MediaTrackGraphImpl* aGraphImpl, GraphDriver* aPreviousDriver,
+  ThreadedDriver(GraphInterface* aGraphInterface, GraphDriver* aPreviousDriver,
                  uint32_t aSampleRate);
   virtual ~ThreadedDriver();
 
@@ -419,7 +446,7 @@ class ThreadedDriver : public GraphDriver {
 enum class FallbackMode { Regular, Fallback };
 class SystemClockDriver : public ThreadedDriver {
  public:
-  SystemClockDriver(MediaTrackGraphImpl* aGraphImpl,
+  SystemClockDriver(GraphInterface* aGraphInterface,
                     GraphDriver* aPreviousDriver, uint32_t aSampleRate,
                     FallbackMode aFallback = FallbackMode::Regular);
   virtual ~SystemClockDriver();
@@ -449,7 +476,7 @@ class SystemClockDriver : public ThreadedDriver {
 
 class OfflineClockDriver : public ThreadedDriver {
  public:
-  OfflineClockDriver(MediaTrackGraphImpl* aGraphImpl, uint32_t aSampleRate,
+  OfflineClockDriver(GraphInterface* aGraphInterface, uint32_t aSampleRate,
                      GraphTime aSlice);
   virtual ~OfflineClockDriver();
   OfflineClockDriver* AsOfflineClockDriver() override { return this; }
@@ -508,7 +535,7 @@ class AudioCallbackDriver : public GraphDriver,
 {
  public:
   
-  AudioCallbackDriver(MediaTrackGraphImpl* aGraphImpl,
+  AudioCallbackDriver(GraphInterface* aGraphInterface,
                       GraphDriver* aPreviousDriver, uint32_t aSampleRate,
                       uint32_t aOutputChannelCount, uint32_t aInputChannelCount,
                       CubebUtils::AudioDeviceID aOutputDeviceID,
@@ -712,7 +739,7 @@ class AsyncCubebTask : public Runnable {
 
   RefPtr<AudioCallbackDriver> mDriver;
   AsyncCubebOperation mOperation;
-  RefPtr<MediaTrackGraphImpl> mShutdownGrip;
+  RefPtr<GraphInterface> mShutdownGrip;
 };
 
 }  
