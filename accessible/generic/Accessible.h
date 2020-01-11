@@ -1078,6 +1078,13 @@ class Accessible : public nsISupports {
   
 
 
+
+  static void NameFromAssociatedXULLabel(DocAccessible* aDocument,
+                                         nsIContent* aElm, nsString& aName);
+
+  
+
+
   static void XULElmName(DocAccessible* aDocument, nsIContent* aElm,
                          nsString& aName);
 
