@@ -809,14 +809,6 @@ MOZ_MUST_USE bool AttachTypedObject(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-
-MOZ_MUST_USE bool SetTypedObjectOffset(JSContext*, unsigned argc, Value* vp);
-
-
-
-
-
-
 MOZ_MUST_USE bool ObjectIsTypeDescr(JSContext* cx, unsigned argc, Value* vp);
 
 

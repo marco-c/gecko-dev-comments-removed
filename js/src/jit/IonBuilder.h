@@ -1014,7 +1014,6 @@ class IonBuilder : public MIRGenerator,
 
   
   InliningResult inlineObjectIsTypeDescr(CallInfo& callInfo);
-  InliningResult inlineSetTypedObjectOffset(CallInfo& callInfo);
   InliningResult inlineConstructTypedObject(CallInfo& callInfo,
                                             TypeDescr* target);
 
