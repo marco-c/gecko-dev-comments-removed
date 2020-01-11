@@ -42,11 +42,20 @@ async function renderPluginMetadata(id) {
   document
     .getElementById("pluginEnableProtectedMode")
     .setAttribute("collapsed", showProtectedModePref ? "" : "true");
+
+  
+  document.getElementById(
+    "pluginFlashBlocking"
+  ).hidden = canDisableFlashBlocking();
 }
 
 
 function canDisableFlashProtectedMode(aPlugin) {
   return aPlugin.isFlashPlugin && Services.appinfo.XPCOMABI == "x86-msvc";
+}
+
+function canDisableFlashBlocking() {
+  return Services.prefs.getBoolPref("fission.autostart");
 }
 
 function init() {
