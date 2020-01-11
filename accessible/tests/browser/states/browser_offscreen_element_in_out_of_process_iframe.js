@@ -57,7 +57,7 @@ add_task(async function() {
     
     const iframe = await SpecialPowers.spawn(browser, [iframeURL], setup);
 
-    await waitForIFrameUpdates();
+    await waitForIFrameA11yReady(iframe);
     await spawnTestStates(
       iframe,
       "target",

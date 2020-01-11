@@ -21,6 +21,35 @@ loadScripts(
 );
 
 
+async function waitForIFrameA11yReady(iFrameBrowsingContext) {
+  async function waitForReady() {
+    new Promise(resolve => {
+      function waitForDocLoad() {
+        SpecialPowers.executeSoon(() => {
+          const acc = SpecialPowers.Cc[
+            "@mozilla.org/accessibilityService;1"
+          ].getService(SpecialPowers.Ci.nsIAccessibilityService);
+
+          const accDoc = acc.getAccessibleFor(content.document);
+          let state = {};
+          accDoc.getState(state, {});
+          if (state.value & SpecialPowers.Ci.nsIAccessibleStates.STATE_BUSY) {
+            SpecialPowers.executeSoon(waitForDocLoad);
+            return;
+          }
+          resolve();
+        }, 0);
+      }
+      waitForDocLoad();
+    });
+  }
+
+  await SimpleTest.promiseFocus(window);
+
+  await SpecialPowers.spawn(iFrameBrowsingContext, [], waitForReady);
+}
+
+
 
 async function waitForIFrameUpdates() {
   
