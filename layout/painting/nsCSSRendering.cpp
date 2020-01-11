@@ -4379,7 +4379,7 @@ void nsCSSRendering::PaintDecorationLineInternal(
       
       
       
-      bool goDown = aParams.vertical ? false : true;
+      bool goDown = !aParams.vertical;
       uint32_t iter = 0;
       while (ptICoord < iCoordLimit) {
         if (++iter > 1000) {

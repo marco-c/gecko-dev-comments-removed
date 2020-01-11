@@ -1127,8 +1127,8 @@ class ScriptLoaderRunnable final : public nsIRunnable, public nsINamed {
     
     
     
-    aLoadInfo.mMutedErrorFlag.emplace(
-        IsMainWorkerScript() ? false : !principal->Subsumes(channelPrincipal));
+    aLoadInfo.mMutedErrorFlag.emplace(!IsMainWorkerScript() &&
+                                      !principal->Subsumes(channelPrincipal));
 
     
     

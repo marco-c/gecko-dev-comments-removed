@@ -2087,7 +2087,7 @@ bool nsXULPopupManager::HandleKeyboardNavigationInPopup(
       
       bool wrap =
 #ifdef XP_WIN
-          aFrame->IsMenuList() ? false : true;
+          !aFrame->IsMenuList();
 #elif defined XP_MACOSX
           false;
 #else
