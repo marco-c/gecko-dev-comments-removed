@@ -966,7 +966,6 @@ struct nsGridContainerFrame::TrackSizingFunctions {
         mExplicitGridOffset(0),
         mRepeatAutoStart(aRepeatAutoIndex.valueOr(0)),
         mRepeatAutoEnd(mRepeatAutoStart),
-        mRepeatEndDelta(0),
         mHasRepeatAuto(aRepeatAutoIndex.isSome()) {
     MOZ_ASSERT(!mHasRepeatAuto || !aIsSubgrid,
                "a track-list for a subgrid can't have an <auto-repeat> track");
@@ -1183,7 +1182,7 @@ struct nsGridContainerFrame::TrackSizingFunctions {
       if (index < mRepeatAutoEnd) {
         index = mRepeatAutoStart;
       } else {
-        index -= mRepeatEndDelta;
+        index -= RepeatEndDelta();
       }
     }
     if (index >= mExpandedTracks.Length()) {
@@ -1204,13 +1203,16 @@ struct nsGridContainerFrame::TrackSizingFunctions {
     return SizingFor(aTrackIndex).GetMin();
   }
   uint32_t NumExplicitTracks() const {
-    return mExpandedTracks.Length() + mRepeatEndDelta;
+    return mExpandedTracks.Length() + RepeatEndDelta();
   }
   uint32_t NumRepeatTracks() const { return mRepeatAutoEnd - mRepeatAutoStart; }
+  
+  int32_t RepeatEndDelta() const {
+    return mHasRepeatAuto ? int32_t(NumRepeatTracks()) - 1 : 0;
+  }
   void SetNumRepeatTracks(uint32_t aNumRepeatTracks) {
     MOZ_ASSERT(mHasRepeatAuto || aNumRepeatTracks == 0);
     mRepeatAutoEnd = mRepeatAutoStart + aNumRepeatTracks;
-    mRepeatEndDelta = mHasRepeatAuto ? int32_t(aNumRepeatTracks) - 1 : 0;
   }
 
   
@@ -1226,7 +1228,9 @@ struct nsGridContainerFrame::TrackSizingFunctions {
       if (!repeat.count.IsNumber()) {
         MOZ_ASSERT(i == mRepeatAutoStart);
         mRepeatAutoStart = mExpandedTracks.Length();
-        mRepeatAutoEnd = mRepeatAutoStart;
+        
+        
+        mRepeatAutoEnd = mRepeatAutoStart + 1;
         mExpandedTracks.AppendElement(MakePair(i, size_t(0)));
         continue;
       }
@@ -1266,8 +1270,6 @@ struct nsGridContainerFrame::TrackSizingFunctions {
   
   uint32_t mRepeatAutoEnd;
   
-  int32_t mRepeatEndDelta;
-  
   bool mHasRepeatAuto;
   
   
@@ -1301,7 +1303,7 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
         mAreas(aImplicitNamedAreas),
         mRepeatAutoStart(aTracks.mRepeatAutoStart),
         mRepeatAutoEnd(aTracks.mRepeatAutoEnd),
-        mRepeatEndDelta(aTracks.mRepeatEndDelta),
+        mRepeatEndDelta(aTracks.RepeatEndDelta()),
         mParentLineNameMap(aParentLineNameMap),
         mRange(aRange),
         mIsSameDirection(aIsSameDirection),
