@@ -11,16 +11,15 @@ const { UPDATE_DETAILS } = require("../constants");
 
 
 
-
-exports.updateDetails = (domWalker, accessible, supports) => dispatch =>
+exports.updateDetails = (domWalker, accessible) => dispatch =>
   Promise.all([
     domWalker.getNodeFromActor(accessible.actorID, [
       "rawAccessible",
       "DOMNode",
     ]),
-    supports.relations ? accessible.getRelations() : [],
-    supports.audit ? accessible.audit() : {},
-    supports.hydration ? accessible.hydrate() : null,
+    accessible.getRelations(),
+    accessible.audit(),
+    accessible.hydrate(),
   ])
     .then(response => dispatch({ accessible, type: UPDATE_DETAILS, response }))
     .catch(error => dispatch({ accessible, type: UPDATE_DETAILS, error }));
