@@ -33,15 +33,17 @@ nsresult nsDNSPrefetch::Shutdown() {
 
 nsDNSPrefetch::nsDNSPrefetch(nsIURI* aURI,
                              mozilla::OriginAttributes& aOriginAttributes,
+                             nsIRequest::TRRMode aTRRMode,
                              nsIDNSListener* aListener, bool storeTiming)
     : mOriginAttributes(aOriginAttributes),
       mStoreTiming(storeTiming),
+      mTRRMode(aTRRMode),
       mListener(do_GetWeakReference(aListener)) {
   aURI->GetAsciiHost(mHostname);
   mIsHttps = aURI->SchemeIs("https");
 }
 
-nsresult nsDNSPrefetch::Prefetch(uint16_t flags) {
+nsresult nsDNSPrefetch::Prefetch(uint32_t flags) {
   
   
   
@@ -60,6 +62,8 @@ nsresult nsDNSPrefetch::Prefetch(uint16_t flags) {
   
   
   nsCOMPtr<nsIEventTarget> main = mozilla::GetMainThreadEventTarget();
+
+  flags |= nsIDNSService::GetFlagsFromTRRMode(mTRRMode);
 
   nsresult rv = sDNSService->AsyncResolveNative(
       mHostname, flags | nsIDNSService::RESOLVE_SPECULATE, this, main,
