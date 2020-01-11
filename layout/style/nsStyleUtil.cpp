@@ -279,8 +279,7 @@ bool nsStyleUtil::ObjectPropsMightCauseOverflow(
 
   
   
-  if (objectFit == NS_STYLE_OBJECT_FIT_COVER ||
-      objectFit == NS_STYLE_OBJECT_FIT_NONE) {
+  if (objectFit == StyleObjectFit::Cover || objectFit == StyleObjectFit::None) {
     return true;
   }
   

@@ -4543,11 +4543,11 @@ static Maybe<nsSize> MaybeComputeObjectFitNoneSize(
 static nsSize ComputeConcreteObjectSize(const nsSize& aConstraintSize,
                                         const IntrinsicSize& aIntrinsicSize,
                                         const AspectRatio& aIntrinsicRatio,
-                                        uint8_t aObjectFit) {
+                                        StyleObjectFit aObjectFit) {
   
   
   
-  if (MOZ_LIKELY(aObjectFit == NS_STYLE_OBJECT_FIT_FILL) || !aIntrinsicRatio) {
+  if (MOZ_LIKELY(aObjectFit == StyleObjectFit::Fill) || !aIntrinsicRatio) {
     return aConstraintSize;
   }
 
@@ -4555,18 +4555,18 @@ static nsSize ComputeConcreteObjectSize(const nsSize& aConstraintSize,
   Maybe<nsImageRenderer::FitType> fitType;
 
   Maybe<nsSize> noneSize;
-  if (aObjectFit == NS_STYLE_OBJECT_FIT_NONE ||
-      aObjectFit == NS_STYLE_OBJECT_FIT_SCALE_DOWN) {
+  if (aObjectFit == StyleObjectFit::None ||
+      aObjectFit == StyleObjectFit::ScaleDown) {
     noneSize = MaybeComputeObjectFitNoneSize(aConstraintSize, aIntrinsicSize,
                                              aIntrinsicRatio);
-    if (!noneSize || aObjectFit == NS_STYLE_OBJECT_FIT_SCALE_DOWN) {
+    if (!noneSize || aObjectFit == StyleObjectFit::ScaleDown) {
       
       
       fitType.emplace(nsImageRenderer::CONTAIN);
     }
-  } else if (aObjectFit == NS_STYLE_OBJECT_FIT_COVER) {
+  } else if (aObjectFit == StyleObjectFit::Cover) {
     fitType.emplace(nsImageRenderer::COVER);
-  } else if (aObjectFit == NS_STYLE_OBJECT_FIT_CONTAIN) {
+  } else if (aObjectFit == StyleObjectFit::Contain) {
     fitType.emplace(nsImageRenderer::CONTAIN);
   }
 
@@ -4579,19 +4579,19 @@ static nsSize ComputeConcreteObjectSize(const nsSize& aConstraintSize,
   
   switch (aObjectFit) {
     
-    case NS_STYLE_OBJECT_FIT_CONTAIN:
-    case NS_STYLE_OBJECT_FIT_COVER:
+    case StyleObjectFit::Contain:
+    case StyleObjectFit::Cover:
       MOZ_ASSERT(constrainedSize);
       return *constrainedSize;
 
-    case NS_STYLE_OBJECT_FIT_NONE:
+    case StyleObjectFit::None:
       if (noneSize) {
         return *noneSize;
       }
       MOZ_ASSERT(constrainedSize);
       return *constrainedSize;
 
-    case NS_STYLE_OBJECT_FIT_SCALE_DOWN:
+    case StyleObjectFit::ScaleDown:
       MOZ_ASSERT(constrainedSize);
       if (noneSize) {
         constrainedSize->width =
@@ -4618,7 +4618,7 @@ static bool IsCoord50Pct(const LengthPercentage& aCoord) {
 static bool HasInitialObjectFitAndPosition(const nsStylePosition* aStylePos) {
   const Position& objectPos = aStylePos->mObjectPosition;
 
-  return aStylePos->mObjectFit == NS_STYLE_OBJECT_FIT_FILL &&
+  return aStylePos->mObjectFit == StyleObjectFit::Fill &&
          IsCoord50Pct(objectPos.horizontal) && IsCoord50Pct(objectPos.vertical);
 }
 

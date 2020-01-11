@@ -134,7 +134,7 @@ void nsSVGOuterSVGFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
           bool dependsOnIntrinsicSize = DependsOnIntrinsicSize(embeddingFrame);
           if (dependsOnIntrinsicSize ||
               embeddingFrame->StylePosition()->mObjectFit !=
-                  NS_STYLE_OBJECT_FIT_FILL) {
+                  StyleObjectFit::Fill) {
             
             
             
@@ -708,7 +708,7 @@ nsresult nsSVGOuterSVGFrame::AttributeChanged(int32_t aNameSpaceID,
         bool dependsOnIntrinsicSize = DependsOnIntrinsicSize(embeddingFrame);
         if (dependsOnIntrinsicSize ||
             embeddingFrame->StylePosition()->mObjectFit !=
-                NS_STYLE_OBJECT_FIT_FILL) {
+                StyleObjectFit::Fill) {
           
           
           
