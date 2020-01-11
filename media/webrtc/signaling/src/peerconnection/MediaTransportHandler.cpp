@@ -703,7 +703,11 @@ void MediaTransportHandlerSTS::AddIceCandidate(
         nsresult rv = stream->ParseTrickleCandidate(aCandidate, aUfrag,
                                                     aObfuscatedAddress);
         if (NS_SUCCEEDED(rv)) {
-          if (mObfuscateHostAddresses && tokens.size() > 4) {
+          
+          
+          
+          if (mObfuscateHostAddresses && tokens.size() > 4 &&
+              aObfuscatedAddress.empty()) {
             mSignaledAddresses.insert(tokens[4]);
           }
         } else {
