@@ -166,22 +166,25 @@ impl From<LinearGradientKey> for LinearGradientTemplate {
             
             item.nine_patch.is_none();
 
-        let mut prev_offset = None;
         
         
+        let mut prev_color = None;
+
         let stops: Vec<GradientStop> = item.stops.iter().map(|stop| {
             let color: ColorF = stop.color.into();
             min_alpha = min_alpha.min(color.a);
 
-            
-            
-            
-            
-            if prev_offset == Some(stop.offset) {
-                supports_caching = false;
+            if let Some(prev_color) = prev_color {
+                
+                
+                
+                
+                if prev_color == color {
+                    supports_caching = false;
+                }
             }
 
-            prev_offset = Some(stop.offset);
+            prev_color = Some(color);
 
             GradientStop {
                 offset: stop.offset,
