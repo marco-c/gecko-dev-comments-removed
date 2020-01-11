@@ -1934,19 +1934,19 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
 
   
   
-  AutoTArray<PresShell*, 16> observers;
+  AutoTArray<RefPtr<PresShell>, 16> observers;
   observers.AppendElements(mResizeEventFlushObservers);
-  for (PresShell* shell : Reversed(observers)) {
+  for (RefPtr<PresShell>& presShell : Reversed(observers)) {
     if (!mPresContext || !mPresContext->GetPresShell()) {
       StopTimer();
       return;
     }
     
     
-    if (!mResizeEventFlushObservers.RemoveElement(shell)) {
+    if (!mResizeEventFlushObservers.RemoveElement(presShell)) {
       continue;
     }
-    shell->FireResizeEvent();
+    presShell->FireResizeEvent();
   }
   DispatchVisualViewportResizeEvents();
 
