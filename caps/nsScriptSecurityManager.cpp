@@ -676,7 +676,8 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
         aPrincipal->OriginAttributesRef().mPrivateBrowsingId > 0);
     NS_ENSURE_SUCCESS(rv, rv);
     
-    return aPrincipal->CheckMayLoad(targetBaseURI, true, false);
+    
+    return aPrincipal->CheckMayLoadWithReporting(targetBaseURI, false, 0);
   }
 
   

@@ -910,8 +910,12 @@ class GetRegistrationsRunnable final : public Runnable {
         break;
       }
 
-      rv = principal->CheckMayLoad(scopeURI, true ,
-                                   false );
+      
+      
+      
+      rv = principal->CheckMayLoadWithReporting(
+          scopeURI, false ,
+          0 );
       if (NS_WARN_IF(NS_FAILED(rv))) {
         continue;
       }
@@ -973,8 +977,11 @@ class GetRegistrationRunnable final : public Runnable {
       return NS_OK;
     }
 
-    rv = principal->CheckMayLoad(uri, true ,
-                                 false );
+    
+    
+    
+    rv = principal->CheckMayLoadWithReporting(
+        uri, false , 0 );
     if (NS_FAILED(rv)) {
       mPromise->Reject(NS_ERROR_DOM_SECURITY_ERR, __func__);
       return NS_OK;

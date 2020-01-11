@@ -86,12 +86,14 @@ nsresult ServiceWorkerScopeAndScriptAreValid(const ClientInfo& aClientInfo,
   Unused << aScriptURI->GetRef(ref);
   NS_ENSURE_TRUE(ref.IsEmpty(), NS_ERROR_DOM_SECURITY_ERR);
 
-  rv = principal->CheckMayLoad(aScopeURI, true ,
-                               false );
+  
+  
+  rv = principal->CheckMayLoadWithReporting(
+      aScopeURI, false , 0 );
   NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_SECURITY_ERR);
 
-  rv = principal->CheckMayLoad(aScriptURI, true ,
-                               false );
+  rv = principal->CheckMayLoadWithReporting(
+      aScriptURI, false , 0 );
   NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_SECURITY_ERR);
 
   return NS_OK;
