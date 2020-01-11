@@ -207,6 +207,19 @@ class Stream {
   bool ReadMismatchedEventData(ThreadEvent aEvent);
 };
 
+
+struct BuildId {
+  char mContents[128];
+
+  BuildId() { PodZero(this); }
+  bool Matches(const BuildId& aOther) {
+    return !memcmp(this, &aOther, sizeof(*this));
+  }
+};
+
+
+void GetCurrentBuildId(BuildId* aBuildId);
+
 class Recording {
  public:
   enum Mode { WRITE, READ };
@@ -258,6 +271,10 @@ class Recording {
 
   
   void Flush();
+
+  
+  static void ExtractBuildId(const char* aContents, size_t aLength,
+                             BuildId* aBuildId);
 
  private:
   StreamChunkLocation WriteChunk(StreamName aName, size_t aNameIndex,

@@ -343,6 +343,8 @@ void InitializeMiddleman(int aArgc, char* aArgv[], base::ProcessId aParentPid,
 
   
   IntroductionMessage* msg = IntroductionMessage::New(aParentPid, aArgc, aArgv);
+  GetCurrentBuildId(&msg->mBuildId);
+
   ChildProcessInfo::SetIntroductionMessage(msg);
 
   MOZ_RELEASE_ASSERT(gProcessKind == ProcessKind::MiddlemanRecording ||
@@ -379,6 +381,13 @@ void InitializeMiddleman(int aArgc, char* aArgv[], base::ProcessId aParentPid,
     }
 
     DirectCloseFile(fd);
+
+    
+    
+    
+    
+    Recording::ExtractBuildId(gRecordingContents.begin(),
+                              gRecordingContents.length(), &msg->mBuildId);
   }
 }
 

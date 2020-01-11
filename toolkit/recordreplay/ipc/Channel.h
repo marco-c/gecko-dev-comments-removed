@@ -44,8 +44,14 @@ namespace recordreplay {
 #define ForEachMessageType(_Macro)
 
 
-                                       \
+
+                      \
   _Macro(Introduction)                                         \
+                                                               \
+  /* An error occurred in the cloud server. */                 \
+  _Macro(CloudError)                                           \
+                                                               \
+  /* Messages sent from the middleman to the child process. */ \
                                                                \
   /* Sent to recording processes to indicate that the middleman will be running */ \
   /* developer tools server-side code instead of the recording process itself. */ \
@@ -82,6 +88,7 @@ namespace recordreplay {
   /* Respond to a ping message */                              \
   _Macro(PingResponse)                                         \
                                                                \
+  /* An unhandled recording divergence occurred and execution cannot continue. */ \
   _Macro(UnhandledDivergence)                                  \
                                                                \
   /* A critical error occurred and execution cannot continue. The child will */ \
@@ -187,7 +194,12 @@ struct Message {
 };
 
 struct IntroductionMessage : public Message {
+  
+  BuildId mBuildId;
+
+  
   base::ProcessId mParentPid;
+
   uint32_t mArgc;
 
   IntroductionMessage(uint32_t aSize, base::ProcessId aParentPid,
@@ -263,12 +275,16 @@ struct JSONMessage : public Message {
 typedef JSONMessage<MessageType::ManifestStart> ManifestStartMessage;
 typedef JSONMessage<MessageType::ManifestFinished> ManifestFinishedMessage;
 
-struct FatalErrorMessage : public Message {
-  explicit FatalErrorMessage(uint32_t aSize, uint32_t aForkId)
-      : Message(MessageType::FatalError, aSize, aForkId) {}
+template <MessageType Type>
+struct ErrorMessage : public Message {
+  explicit ErrorMessage(uint32_t aSize, uint32_t aForkId)
+      : Message(Type, aSize, aForkId) {}
 
-  const char* Error() const { return Data<FatalErrorMessage, const char>(); }
+  const char* Error() const { return Data<ErrorMessage<Type>, const char>(); }
 };
+
+typedef ErrorMessage<MessageType::FatalError> FatalErrorMessage;
+typedef ErrorMessage<MessageType::CloudError> CloudErrorMessage;
 
 typedef EmptyMessage<MessageType::UnhandledDivergence> UnhandledDivergenceMessage;
 
