@@ -56,6 +56,7 @@ function MenuItem({
   hover = () => {},
   id = null,
   label = "",
+  image = null,
   submenu = null,
   type = "normal",
   visible = true,
@@ -69,6 +70,7 @@ function MenuItem({
   this.hover = hover;
   this.id = id;
   this.label = label;
+  this.image = image;
   this.submenu = submenu;
   this.type = type;
   this.visible = visible;
