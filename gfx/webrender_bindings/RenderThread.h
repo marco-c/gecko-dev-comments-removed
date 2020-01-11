@@ -32,6 +32,9 @@ namespace mozilla {
 namespace gl {
 class GLContext;
 }  
+namespace layers {
+class SurfacePool;
+}  
 namespace wr {
 
 typedef MozPromise<MemoryReport, bool, true> MemoryReportPromise;
@@ -250,8 +253,9 @@ class RenderThread final {
 
   
   gl::GLContext* SharedGL();
-
   void ClearSharedGL();
+  RefPtr<layers::SurfacePool> SharedSurfacePool();
+  void ClearSharedSurfacePool();
 
   
   void HandleDeviceReset(const char* aWhere, bool aNotify);
@@ -300,6 +304,8 @@ class RenderThread final {
   
   
   RefPtr<gl::GLContext> mSharedGL;
+
+  RefPtr<layers::SurfacePool> mSurfacePool;
 
   std::map<wr::WindowId, UniquePtr<RendererOGL>> mRenderers;
   std::map<wr::WindowId, UniquePtr<layers::WebRenderCompositionRecorder>>

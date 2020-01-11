@@ -22,6 +22,7 @@ namespace layers {
 
 class NativeLayer;
 class NativeLayerCA;
+class SurfacePoolHandle;
 
 
 
@@ -33,8 +34,9 @@ class NativeLayerRoot {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(NativeLayerRoot)
 
-  virtual already_AddRefed<NativeLayer> CreateLayer(const gfx::IntSize& aSize,
-                                                    bool aIsOpaque) = 0;
+  virtual already_AddRefed<NativeLayer> CreateLayer(
+      const gfx::IntSize& aSize, bool aIsOpaque,
+      SurfacePoolHandle* aSurfacePoolHandle) = 0;
   virtual void AppendLayer(NativeLayer* aLayer) = 0;
   virtual void RemoveLayer(NativeLayer* aLayer) = 0;
   virtual void SetLayers(const nsTArray<RefPtr<NativeLayer>>& aLayers) = 0;
@@ -107,18 +109,6 @@ class NativeLayer {
   
   
   
-  virtual void SetGLContext(gl::GLContext* aGLContext) = 0;
-  virtual gl::GLContext* GetGLContext() = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   
@@ -135,6 +125,11 @@ class NativeLayer {
   
   
   virtual void NotifySurfaceReady() = 0;
+
+  
+  
+  
+  virtual void DiscardBackbuffers() = 0;
 
  protected:
   virtual ~NativeLayer() {}

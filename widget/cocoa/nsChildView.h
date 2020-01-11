@@ -584,6 +584,7 @@ class nsChildView final : public nsBaseWidget {
   
   
   RefPtr<mozilla::layers::NativeLayerCA> mContentLayer;
+  RefPtr<mozilla::layers::SurfacePoolHandle> mPoolHandle;
 
   
   LayoutDeviceIntRegion mContentLayerInvalidRegion;

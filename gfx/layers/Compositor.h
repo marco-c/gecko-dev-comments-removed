@@ -19,6 +19,7 @@
 #include "mozilla/gfx/Triangle.h"            
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/LayersTypes.h"      
+#include "mozilla/layers/SurfacePool.h"      
 #include "mozilla/layers/TextureSourceProvider.h"
 #include "mozilla/widget/CompositorWidget.h"
 #include "nsISupportsImpl.h"  
@@ -511,6 +512,8 @@ class Compositor : public TextureSourceProvider {
   virtual void CancelFrame(bool aNeedFlush = true) { ReadUnlockTextures(); }
 
   virtual void WaitForGPU() {}
+
+  virtual RefPtr<SurfacePoolHandle> GetSurfacePoolHandle() { return nullptr; }
 
   
 
