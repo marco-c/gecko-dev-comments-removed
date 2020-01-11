@@ -184,22 +184,29 @@ void StickyScrollContainer::ComputeStickyLimits(nsIFrame* aFrame,
   
   
   
-  if (cbFrame != scrolledFrame) {
+  if (cbFrame == scrolledFrame) {
+    
+    
+    
+    *aContain = cbFrame->GetScrollableOverflowRectRelativeToSelf();
+    nsLayoutUtils::TransformRect(cbFrame, aFrame->GetParent(), *aContain);
+  } else {
     *aContain = nsLayoutUtils::GetAllInFlowRectsUnion(
         cbFrame, aFrame->GetParent(), nsLayoutUtils::RECTS_USE_CONTENT_BOX);
-    nsRect marginRect = nsLayoutUtils::GetAllInFlowRectsUnion(
-        aFrame, aFrame->GetParent(), nsLayoutUtils::RECTS_USE_MARGIN_BOX);
-
-    
-    
-    
-    
-    aContain->Deflate(marginRect - rect);
-
-    
-    
-    aContain->Deflate(nsMargin(0, rect.width, rect.height, 0));
   }
+
+  nsRect marginRect = nsLayoutUtils::GetAllInFlowRectsUnion(
+      aFrame, aFrame->GetParent(), nsLayoutUtils::RECTS_USE_MARGIN_BOX);
+
+  
+  
+  
+  
+  aContain->Deflate(marginRect - rect);
+
+  
+  
+  aContain->Deflate(nsMargin(0, rect.width, rect.height, 0));
 
   nsMargin sfPadding = scrolledFrame->GetUsedPadding();
   nsPoint sfOffset = aFrame->GetParent()->GetOffsetTo(scrolledFrame);
