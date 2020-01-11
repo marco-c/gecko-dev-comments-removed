@@ -170,6 +170,10 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   
   
+  virtual bool WasCurrentInnerWindow() const = 0;
+
+  
+  
   inline bool IsLoading() const;
   inline bool IsHandlingResizeEvent() const;
 
