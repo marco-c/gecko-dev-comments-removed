@@ -21683,7 +21683,14 @@ void OpenDatabaseOp::VersionChangeOp::Cleanup() {
   
   
   
-  NoteActorDestroyed();
+  
+  
+  
+  
+  
+  if (!IsActorDestroyed()) {
+    NoteActorDestroyed();
+  }
 #endif
 
   TransactionDatabaseOperationBase::Cleanup();
