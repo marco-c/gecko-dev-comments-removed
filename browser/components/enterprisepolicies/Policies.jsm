@@ -266,30 +266,23 @@ var Policies = {
                   log.error(`Unable to add certificate - ${certfile.path}`);
                 }
               }
-              let now = Date.now() / 1000;
               if (cert) {
-                gCertDB.asyncVerifyCertAtTime(
-                  cert,
-                  0x0008 ,
-                  0,
-                  null,
-                  now,
-                  (aPRErrorCode, aVerifiedChain, aHasEVPolicy) => {
-                    if (aPRErrorCode == Cr.NS_OK) {
-                      
-                      return;
-                    }
-                    try {
-                      gCertDB.addCert(certFile, "CT,CT,");
-                    } catch (e) {
-                      
-                      gCertDB.addCertFromBase64(
-                        pemToBase64(certFile),
-                        "CT,CT,"
-                      );
-                    }
-                  }
-                );
+                if (
+                  gCertDB.isCertTrusted(
+                    cert,
+                    Ci.nsIX509Cert.CA_CERT,
+                    Ci.nsIX509CertDB.TRUSTED_SSL
+                  )
+                ) {
+                  
+                  return;
+                }
+                try {
+                  gCertDB.addCert(certFile, "CT,CT,");
+                } catch (e) {
+                  
+                  gCertDB.addCertFromBase64(pemToBase64(certFile), "CT,CT,");
+                }
               }
             };
             reader.readAsBinaryString(file);
