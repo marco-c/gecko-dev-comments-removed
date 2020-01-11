@@ -302,72 +302,17 @@ function sanitizeName(name) {
 
 
 
-const ParamPreferenceCache = {
-  QueryInterface: ChromeUtils.generateQI([
-    Ci.nsIObserver,
-    Ci.nsISupportsWeakReference,
-  ]),
-
-  initCache() {
-    this.branch = Services.prefs.getDefaultBranch(
-      SearchUtils.BROWSER_SEARCH_PREF + "param."
-    );
-    this.cache = new Map();
-    for (let prefName of this.branch.getChildList("")) {
-      this.cache.set(prefName, this.branch.getCharPref(prefName, null));
-    }
-    this.branch.addObserver("", this, true);
-  },
-
-  observe(subject, topic, data) {
-    this.cache.set(data, this.branch.getCharPref(data, null));
-  },
-
-  getPref(prefName) {
-    if (!this.cache) {
-      this.initCache();
-    }
-    return this.cache.get(prefName);
-  },
-};
 
 
 
 
 
-class QueryParameter {
-  
-
-
-
-
-
-
-
-  constructor(name, value, purpose) {
-    if (!name || value == null) {
-      SearchUtils.fail("missing name or value for QueryParameter!");
-    }
-
-    this.name = name;
-    this._value = value;
-    this.purpose = purpose;
-  }
-
-  get value() {
-    return this._value;
-  }
-
-  toJSON() {
-    const result = {
-      name: this.name,
-      value: this.value,
-    };
-    if (this.purpose) {
-      result.purpose = this.purpose;
-    }
-    return result;
-  }
+function getMozParamPref(prefName) {
+  let branch = Services.prefs.getDefaultBranch(
+    SearchUtils.BROWSER_SEARCH_PREF + "param."
+  );
+  let prefValue = branch.getCharPref(prefName, null);
+  return prefValue ? encodeURIComponent(prefValue) : null;
 }
 
 
@@ -375,44 +320,17 @@ class QueryParameter {
 
 
 
-class QueryPreferenceParameter extends QueryParameter {
-  
 
 
 
-
-
-
-
-
-  constructor(name, prefName, purpose) {
-    super(name, prefName, purpose);
+function QueryParameter(name, value, purpose) {
+  if (!name || value == null) {
+    SearchUtils.fail("missing name or value for QueryParameter!");
   }
 
-  get value() {
-    const prefValue = ParamPreferenceCache.getPref(this._value);
-    return prefValue ? encodeURIComponent(prefValue) : null;
-  }
-
-  
-
-
-
-
-
-
-  toJSON() {
-    const result = {
-      condition: "pref",
-      mozparam: true,
-      name: this.name,
-      pref: this._value,
-    };
-    if (this.purpose) {
-      result.purpose = this.purpose;
-    }
-    return result;
-  }
+  this.name = name;
+  this.value = value;
+  this.purpose = purpose;
 }
 
 
@@ -558,6 +476,8 @@ function EngineURL(mimeType, requestMethod, template, resultDomain) {
   this.method = method;
   this.params = [];
   this.rels = [];
+  
+  this.mozparams = {};
 
   var templateURI = SearchUtils.makeURI(template);
   if (!templateURI) {
@@ -593,35 +513,10 @@ EngineURL.prototype = {
   },
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _addMozParam(param) {
-    const purpose = param.purpose || undefined;
-    if (param.condition && param.condition == "pref") {
-      this.params.push(
-        new QueryPreferenceParameter(param.name, param.pref, purpose)
-      );
-    } else {
-      this.addParam(param.name, param.value || undefined, purpose);
-    }
+  
+  _addMozParam(obj) {
+    obj.mozparam = true;
+    this.mozparams[obj.name] = obj;
   },
 
   getSubmission(searchTerms, engine, purpose) {
@@ -631,8 +526,9 @@ EngineURL.prototype = {
 
     
     if (
-      requestPurpose != "searchbar" &&
-      !this.params.some(p => p.purpose && p.purpose == requestPurpose)
+      !this.params.some(
+        p => p.purpose !== undefined && p.purpose == requestPurpose
+      )
     ) {
       requestPurpose = "searchbar";
     }
@@ -644,17 +540,13 @@ EngineURL.prototype = {
       var param = this.params[i];
 
       
-      if (param.purpose && param.purpose != requestPurpose) {
+      if (param.purpose !== undefined && param.purpose != requestPurpose) {
         continue;
       }
 
-      const paramValue = param.value;
-      
-      if (paramValue) {
-        var value = ParamSubstitution(paramValue, searchTerms, engine);
+      var value = ParamSubstitution(param.value, searchTerms, engine);
 
-        dataArray.push(param.name + "=" + value);
-      }
+      dataArray.push(param.name + "=" + value);
     }
     let dataString = dataArray.join("&");
 
@@ -706,6 +598,12 @@ EngineURL.prototype = {
     for (let i = 0; i < json.params.length; ++i) {
       let param = json.params[i];
       if (param.mozparam) {
+        if (param.condition == "pref") {
+          let value = getMozParamPref(param.pref);
+          if (value) {
+            this.addParam(param.name, value);
+          }
+        }
         this._addMozParam(param);
       } else {
         this.addParam(param.name, param.value, param.purpose || undefined);
@@ -721,10 +619,9 @@ EngineURL.prototype = {
 
   toJSON() {
     var json = {
-      params: this.params,
+      template: this.template,
       rels: this.rels,
       resultDomain: this.resultDomain,
-      template: this.template,
     };
 
     if (this.type != SearchUtils.URL_TYPE.SEARCH) {
@@ -733,6 +630,11 @@ EngineURL.prototype = {
     if (this.method != "GET") {
       json.method = this.method;
     }
+
+    function collapseMozParams(param) {
+      return this.mozparams[param.name] || param;
+    }
+    json.params = this.params.map(collapseMozParams, this);
 
     return json;
   },
@@ -1462,7 +1364,15 @@ SearchEngine.prototype = {
         if ((p.condition || p.purpose) && !this._isDefault) {
           continue;
         }
-        url._addMozParam(p);
+        if (p.condition == "pref") {
+          let value = getMozParamPref(p.pref);
+          if (value) {
+            url.addParam(p.name, value);
+          }
+          url._addMozParam(p);
+        } else {
+          url.addParam(p.name, p.value, p.purpose || undefined);
+        }
       }
     }
 
@@ -1596,6 +1506,7 @@ SearchEngine.prototype = {
         
         this._isDefault
       ) {
+        var value;
         let condition = param.getAttribute("condition");
 
         
@@ -1611,10 +1522,6 @@ SearchEngine.prototype = {
           continue;
         }
 
-        
-        
-        
-        
         switch (condition) {
           case "purpose":
             url.addParam(
@@ -1622,8 +1529,14 @@ SearchEngine.prototype = {
               param.getAttribute("value"),
               param.getAttribute("purpose")
             );
+            
+            
             break;
           case "pref":
+            value = getMozParamPref(param.getAttribute("pref"), value);
+            if (value) {
+              url.addParam(param.getAttribute("name"), value);
+            }
             url._addMozParam({
               pref: param.getAttribute("pref"),
               name: param.getAttribute("name"),
@@ -2071,14 +1984,14 @@ SearchEngine.prototype = {
     return this.__internalAliases;
   },
 
-  _getSearchFormWithPurpose(purpose) {
+  _getSearchFormWithPurpose(aPurpose = "") {
     
     var searchFormURL = this._getURLOfType(
       SearchUtils.URL_TYPE.SEARCH,
       "searchform"
     );
     if (searchFormURL) {
-      let submission = searchFormURL.getSubmission("", this, purpose);
+      let submission = searchFormURL.getSubmission("", this, aPurpose);
 
       
       
