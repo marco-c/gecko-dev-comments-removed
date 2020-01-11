@@ -1,4 +1,17 @@
+#!/bin/sh
+# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
 
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# The beginning of this script is both valid shell and valid python,
+# such that the script starts with the shell and is reexecuted python
+''':'
+which mach > /dev/null 2>&1 && exec mach python "$0" "$@" ||
+echo "mach not found, either add it to your \$PATH or run this script via ./mach python testing/runtimes/writeruntimes"; exit  # noqa
+'''
 
 from __future__ import absolute_import, print_function
 
@@ -15,7 +28,7 @@ import requests
 here = os.path.abspath(os.path.dirname(__file__))
 
 ACTIVE_DATA_URL = "https://activedata.allizom.org/query"
-PERCENTILE = 0.5 
+PERCENTILE = 0.5 # ignore the bottom PERCENTILE*100% of numbers
 
 def query_activedata(suite, e10s, platforms=None):
     platforms = ', "build.platform":%s' % json.dumps(platforms) if platforms else ''
@@ -56,13 +69,13 @@ def write_runtimes(data, suite, indir=here, outdir=here):
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    
+    # read in existing data, if any
     indata = None
     if os.path.exists(infilename):
         with open(infilename, 'r') as f:
             indata = json.loads(f.read()).get('runtimes')
 
-    
+    # identify a threshold of durations, below which we ignore
     runtimes = []
     for result in data.itervalues():
         duration = int(result * 1000) if result else 0
@@ -71,7 +84,7 @@ def write_runtimes(data, suite, indir=here, outdir=here):
     runtimes.sort()
     threshold = runtimes[int(len(runtimes) * PERCENTILE)]
 
-    
+    # split the durations into two groups; omitted and specified
     omitted = []
     specified = indata if indata else {}
     current_tests = []
@@ -85,10 +98,10 @@ def write_runtimes(data, suite, indir=here, outdir=here):
         elif duration >= threshold and test != "automation.py":
             original = specified.get(test, 0)
             if not original or abs(original - duration) > (original/20):
-                
+                # only write new data if it's > 20% different than original
                 specified[test] = duration
 
-    
+    # delete any test references no longer needed
     to_delete = []
     for test in specified:
         if test not in current_tests:
