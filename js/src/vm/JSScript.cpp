@@ -5660,6 +5660,7 @@ LazyScript* LazyScript::Create(
   lazy->setFlag(ImmutableFlags::HasModuleGoal,
                 (parseGoal == frontend::ParseGoal::Module));
   lazy->setFlag(ImmutableFlags::HasInnerFunctions, !innerFunctionBoxes.empty());
+  lazy->setFlag(ImmutableFlags::IsFunction);
 
   
   mozilla::Span<JS::GCCellPtr> gcThings =
