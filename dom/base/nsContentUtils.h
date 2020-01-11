@@ -1990,7 +1990,8 @@ class nsContentUtils {
 
 
 
-  static bool PrincipalAllowsL10n(nsIPrincipal* aPrincipal,
+
+  static bool PrincipalAllowsL10n(nsIPrincipal& aPrincipal,
                                   nsIURI* aDocumentURI);
 
   
