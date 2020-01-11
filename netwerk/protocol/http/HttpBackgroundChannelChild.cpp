@@ -102,9 +102,18 @@ bool HttpBackgroundChannelChild::IsWaitingOnStartRequest() {
   MOZ_ASSERT(OnSocketThread());
   
   
-  return !mStartReceived;
+  return (mStartSent && !mStartReceived);
 }
 
+
+IPCResult HttpBackgroundChannelChild::RecvOnStartRequestSent() {
+  LOG(("HttpBackgroundChannelChild::RecvOnStartRequestSent [this=%p]\n", this));
+  MOZ_ASSERT(OnSocketThread());
+  MOZ_ASSERT(!mStartSent);  
+
+  mStartSent = true;
+  return IPC_OK();
+}
 
 IPCResult HttpBackgroundChannelChild::RecvOnTransportAndData(
     const nsresult& aChannelStatus, const nsresult& aTransportStatus,

@@ -56,6 +56,8 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
 
   IPCResult RecvDivertMessages();
 
+  IPCResult RecvOnStartRequestSent();
+
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
  private:
@@ -83,6 +85,10 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   
   
   bool mStartReceived = false;
+
+  
+  
+  bool mStartSent = false;
 
   
   
