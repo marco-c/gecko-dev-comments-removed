@@ -303,9 +303,6 @@ class MOZ_STACK_CLASS SwitchEmitter {
   unsigned noteIndex_ = 0;
 
   
-  unsigned caseNoteIndex_ = 0;
-
-  
   uint32_t caseCount_ = 0;
 
   
