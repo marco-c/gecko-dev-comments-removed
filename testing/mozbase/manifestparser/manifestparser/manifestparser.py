@@ -185,22 +185,10 @@ class ManifestParser(object):
         else:
             self.manifest_defaults[filename] = defaults
 
-        parent_section_found = False
-
         
         for section, data in sections:
             
-            
-            if defaults_only and not section.startswith('parent:'):
-                continue
-
-            
-            if section.startswith('parent:'):
-                parent_section_found = True
-
-                include_file = read_file('parent:')
-                if include_file:
-                    self._read(root, include_file, {}, True)
+            if defaults_only:
                 continue
 
             
@@ -256,7 +244,7 @@ class ManifestParser(object):
 
         
         
-        if defaults_only and not parent_section_found:
+        if defaults_only:
             sections = read_ini(fp=fp, variables=defaults, defaults_only=True,
                                 strict=self.strict)
             (section, self._ancestor_defaults) = sections[0]
