@@ -110,7 +110,9 @@ void ContentMediaController::NotifyMediaStateChanged(
   } else {
     
     
-    
+    RefPtr<MediaController> controller =
+        MediaControlService::GetService()->GetOrCreateControllerById(bc->Id());
+    controller->NotifyMediaStateChanged(aState);
   }
 }
 
