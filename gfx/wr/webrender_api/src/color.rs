@@ -95,6 +95,8 @@ impl Ord for PremultipliedColorF {
         self.partial_cmp(other).unwrap_or(cmp::Ordering::Equal)
     }
 }
+
+#[cfg_attr(feature = "cargo-clippy", allow(clippy::derive_hash_xor_eq))]
 impl Hash for PremultipliedColorF {
     fn hash<H: Hasher>(&self, state: &mut H) {
         
