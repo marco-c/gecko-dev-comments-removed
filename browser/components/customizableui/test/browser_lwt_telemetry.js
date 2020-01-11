@@ -60,5 +60,10 @@ add_task(async function testCustomize() {
     "The events are recorded correctly"
   );
 
+  
+  
+  await TestUtils.waitForCondition(
+    () => document.documentElement.getAttribute("customizing") == "true"
+  );
   await endCustomizing();
 });
