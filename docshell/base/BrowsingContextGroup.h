@@ -8,6 +8,7 @@
 #define mozilla_dom_BrowsingContextGroup_h
 
 #include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/ContentParent.h"
 #include "nsHashKeys.h"
 #include "nsTArray.h"
 #include "nsTHashtable.h"
@@ -19,7 +20,6 @@ class ThrottledEventQueue;
 namespace dom {
 
 class BrowsingContext;
-class ContentParent;
 
 
 
