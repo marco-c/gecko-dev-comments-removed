@@ -838,6 +838,7 @@ class MochitestArguments(ArgumentContainer):
         options.leakThresholds = {
             "default": options.defaultLeakThreshold,
             "tab": options.defaultLeakThreshold,
+            "forkserver": options.defaultLeakThreshold,
             
             "gmplugin": 20000,
             "rdd": 400,
