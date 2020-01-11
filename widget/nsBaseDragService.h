@@ -149,6 +149,9 @@ class nsBaseDragService : public nsIDragService, public nsIDragSession {
   bool mCanDrop;
   bool mOnlyChromeDrop;
   bool mDoingDrag;
+
+  
+  bool mEndingSession;
   
   bool mHasImage;
   
