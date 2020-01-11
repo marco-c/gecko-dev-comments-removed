@@ -8,6 +8,7 @@
 #define mozilla_dom_FileBlobImpl_h
 
 #include "mozilla/dom/BaseBlobImpl.h"
+#include "mozilla/Mutex.h"
 
 class nsIFile;
 
@@ -71,6 +72,18 @@ class FileBlobImpl : public BaseBlobImpl {
                                                  uint64_t aLength,
                                                  const nsAString& aContentType,
                                                  ErrorResult& aRv) override;
+
+  class GetTypeRunnable;
+  void GetTypeInternal(nsAString& aType, const MutexAutoLock& aProofOfLock);
+
+  
+  
+  
+  
+  
+  
+  
+  Mutex mMutex;
 
   nsCOMPtr<nsIFile> mFile;
   nsString mMozFullPath;

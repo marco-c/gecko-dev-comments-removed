@@ -283,33 +283,6 @@ void MultipartBlobImpl::SetLengthAndModifiedDate(ErrorResult& aRv) {
   }
 }
 
-nsresult MultipartBlobImpl::SetMutable(bool aMutable) {
-  nsresult rv;
-
-  
-  
-  
-  
-  if (!aMutable && !mImmutable && !mBlobImpls.IsEmpty()) {
-    for (uint32_t index = 0, count = mBlobImpls.Length(); index < count;
-         index++) {
-      rv = mBlobImpls[index]->SetMutable(aMutable);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-    }
-  }
-
-  rv = BaseBlobImpl::SetMutable(aMutable);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  MOZ_ASSERT_IF(!aMutable, mImmutable);
-
-  return NS_OK;
-}
-
 bool MultipartBlobImpl::MayBeClonedToOtherThreads() const {
   for (uint32_t i = 0; i < mBlobImpls.Length(); ++i) {
     if (!mBlobImpls[i]->MayBeClonedToOtherThreads()) {
