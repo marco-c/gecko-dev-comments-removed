@@ -2373,13 +2373,18 @@ already_AddRefed<ComputedStyle> nsIFrame::ComputeSelectionStyle(
       aSelectionStatus != nsISelectionController::SELECTION_DISABLED) {
     return nullptr;
   }
+  
+  
+  
+  if (!PresContext()->PrefSheetPrefs().mUseDocumentColors) {
+    return nullptr;
+  }
   Element* element = FindElementAncestorForMozSelection(GetContent());
   if (!element) {
     return nullptr;
   }
-  RefPtr<ComputedStyle> sc = PresContext()->StyleSet()->ProbePseudoElementStyle(
+  return PresContext()->StyleSet()->ProbePseudoElementStyle(
       *element, PseudoStyleType::selection, Style());
-  return sc.forget();
 }
 
 
