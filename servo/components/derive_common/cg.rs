@@ -29,6 +29,8 @@ use synstructure::{self, BindStyle, BindingInfo, VariantAst, VariantInfo};
 
 
 
+
+
 pub fn propagate_clauses_to_output_type(
     where_clause: &mut Option<syn::WhereClause>,
     generics: &syn::Generics,
