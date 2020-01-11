@@ -9,22 +9,11 @@ const { XPCOMUtils } = ChromeUtils.import(
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "PrivateBrowsingUtils",
-  "resource://gre/modules/PrivateBrowsingUtils.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "L10nRegistry",
-  "resource://gre/modules/L10nRegistry.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "FileSource",
-  "resource://gre/modules/L10nRegistry.jsm"
-);
-ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
+XPCOMUtils.defineLazyModuleGetters(this, {
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
+  RemoteL10n: "resource://activity-stream/lib/RemoteL10n.jsm",
+});
+
 XPCOMUtils.defineLazyServiceGetter(
   this,
   "TrackingDBService",
@@ -55,14 +44,6 @@ const CATEGORY_ICONS = {
   cfrAddons: "webextensions-icon",
   cfrFeatures: "recommendations-icon",
 };
-
-
-
-
-
-const RS_DOWNLOADED_FILE_SUBDIR = "settings/main/ms-language-packs";
-const USE_REMOTE_L10N_PREF =
-  "browser.newtabpage.activity-stream.asrouter.useRemoteL10n";
 
 
 
@@ -105,8 +86,6 @@ class PageAction {
     this._showPopupOnClick = this._showPopupOnClick.bind(this);
     this.dispatchUserAction = this.dispatchUserAction.bind(this);
 
-    this._l10n = this._createDOML10n();
-
     
     this.stateTransitionTimeoutIDs = [];
 
@@ -136,55 +115,8 @@ class PageAction {
     }
   }
 
-  
-
-
-
-
-
-
-  _createDOML10n() {
-    async function* generateBundles(resourceIds) {
-      const appLocale = Services.locale.appLocaleAsBCP47;
-      const appLocales = Services.locale.appLocalesAsBCP47;
-      const l10nFluentDir = OS.Path.join(
-        OS.Constants.Path.localProfileDir,
-        RS_DOWNLOADED_FILE_SUBDIR
-      );
-      const fs = new FileSource("cfr", [appLocale], `file://${l10nFluentDir}/`);
-      
-      
-      const resource = await fs.fetchFile(appLocale, "asrouter.ftl");
-      for await (let bundle of L10nRegistry.generateBundles(
-        appLocales.slice(0, 1),
-        resourceIds
-      )) {
-        
-        
-        if (resource) {
-          bundle.addResource(resource, { allowOverrides: true });
-        }
-        yield bundle;
-      }
-      
-      yield* L10nRegistry.generateBundles(appLocales.slice(1), resourceIds);
-    }
-
-    return new DOMLocalization(
-      [
-        "browser/newtab/asrouter.ftl",
-        "browser/branding/brandings.ftl",
-        "browser/branding/sync-brand.ftl",
-        "branding/brand.ftl",
-      ],
-      Services.prefs.getBoolPref(USE_REMOTE_L10N_PREF, true)
-        ? generateBundles
-        : undefined
-    );
-  }
-
   reloadL10n() {
-    this._l10n = this._createDOML10n();
+    RemoteL10n.reloadL10n();
   }
 
   async showAddressBarNotifier(recommendation, shouldExpand = false) {
@@ -376,7 +308,7 @@ class PageAction {
       return string;
     }
 
-    const [localeStrings] = await this._l10n.formatMessages([
+    const [localeStrings] = await RemoteL10n.l10n.formatMessages([
       {
         id: string.string_id,
         args: string.args,
@@ -576,11 +508,15 @@ class PageAction {
       panelTitle = message.content.heading_text;
       headerLabel.value = panelTitle;
     } else {
-      this._l10n.setAttributes(headerLabel, content.heading_text.string_id, {
-        blockedCount: reachedMilestone,
-        date: monthName,
-      });
-      await this._l10n.translateElements([headerLabel]);
+      RemoteL10n.l10n.setAttributes(
+        headerLabel,
+        content.heading_text.string_id,
+        {
+          blockedCount: reachedMilestone,
+          date: monthName,
+        }
+      );
+      await RemoteL10n.l10n.translateElements([headerLabel]);
     }
 
     
@@ -770,10 +706,10 @@ class PageAction {
           for (let step of content.descriptionDetails.steps) {
             
             const li = this.window.document.createXULElement("li");
-            this._l10n.setAttributes(li, step.string_id);
+            RemoteL10n.l10n.setAttributes(li, step.string_id);
             stepsContainer.appendChild(li);
           }
-          await this._l10n.translateElements([...stepsContainer.children]);
+          await RemoteL10n.l10n.translateElements([...stepsContainer.children]);
         }
 
         await this._renderPinTabAnimation();
