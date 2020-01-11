@@ -4,8 +4,6 @@
 
 
 
-#include "gc/Verifier.h"
-
 #include "mozilla/DebugOnly.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Sprintf.h"
