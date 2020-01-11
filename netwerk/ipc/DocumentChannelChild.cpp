@@ -149,6 +149,8 @@ DocumentChannelChild::AsyncOpen(nsIStreamListener* aListener) {
 
   
   if (mLoadGroup) {
+    
+    
     mLoadGroup->AddRequest(this, nullptr);
   }
 
@@ -192,7 +194,9 @@ DocumentChannelChild::AsyncOpen(nsIStreamListener* aListener) {
   args.asyncOpenTime() = mAsyncOpenTime;
   args.documentOpenFlags() = mDocumentOpenFlags;
   args.pluginsAllowed() = mPluginsAllowed;
-
+  if (mTiming) {
+    args.timing() = Some(mTiming);
+  }
   nsDocShell* docshell = GetDocShell();
   if (docshell) {
     docshell->GetCustomUserAgent(args.customUserAgent());

@@ -3773,9 +3773,9 @@ mozilla::ipc::IPCResult ContentChild::RecvCrossProcessRedirect(
   RefPtr<ChildProcessChannelListener> processListener =
       ChildProcessChannelListener::GetSingleton();
   
-  processListener->OnChannelReady(childChannel, aArgs.redirectIdentifier(),
-                                  std::move(aArgs.redirects()),
-                                  aArgs.loadStateLoadFlags());
+  processListener->OnChannelReady(
+      childChannel, aArgs.redirectIdentifier(), std::move(aArgs.redirects()),
+      aArgs.loadStateLoadFlags(), aArgs.timing().refOr(nullptr));
 
   
   return IPC_OK();
