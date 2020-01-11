@@ -84,13 +84,6 @@ exports.times = function(target, eventName, receiveCount, options = {}) {
 
 
 
-exports.observeOnce = function(notificationName, options = {}) {
-  return exports.observeTimes(notificationName, 1, options);
-};
-
-
-
-
 
 exports.observeTimes = function(notificationName, receiveCount, options = {}) {
   dump(
