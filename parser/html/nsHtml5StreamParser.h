@@ -8,9 +8,9 @@
 
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
-#include "nsICharsetDetectionObserver.h"
 #include "nsHtml5MetaScanner.h"
 #include "mozilla/Encoding.h"
+#include "mozilla/EncodingDetector.h"
 #include "mozilla/JapaneseDetector.h"
 #include "nsHtml5TreeOpExecutor.h"
 #include "nsHtml5OwningUTF16Buffer.h"
@@ -21,7 +21,6 @@
 #include "nsHtml5Speculation.h"
 #include "nsISerialEventTarget.h"
 #include "nsITimer.h"
-#include "nsICharsetDetector.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/Buffer.h"
 
@@ -101,7 +100,7 @@ enum eHtml5StreamState {
   STREAM_ENDED = 2
 };
 
-class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
+class nsHtml5StreamParser final : public nsISupports {
   template <typename T>
   using NotNull = mozilla::NotNull<T>;
   using Encoding = mozilla::Encoding;
@@ -118,8 +117,7 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
 
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsHtml5StreamParser,
-                                           nsICharsetDetectionObserver)
+  NS_DECL_CYCLE_COLLECTION_CLASS(nsHtml5StreamParser)
 
   nsHtml5StreamParser(nsHtml5TreeOpExecutor* aExecutor, nsHtml5Parser* aOwner,
                       eParserMode aMode);
@@ -133,12 +131,6 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
                            uint64_t aSourceOffset, uint32_t aLength);
 
   nsresult OnStopRequest(nsIRequest* aRequest, nsresult status);
-
-  
-  
-
-
-  NS_IMETHOD Notify(const char* aCharset, nsDetectionConfident aConf) override;
 
   
   
@@ -335,13 +327,26 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
 
 
 
-  void CommitLocalFileToUTF8();
+  void CommitLocalFileToEncoding();
 
   
 
 
 
   void ReDecodeLocalFile();
+
+  
+
+
+  void GuessEncoding(bool aEof, bool aInitial);
+
+  inline void DontGuessEncoding() {
+    mFeedChardet = false;
+    mGuessEncoding = false;
+    if (mDecodingLocalFileWithoutTokenizing) {
+      CommitLocalFileToEncoding();
+    }
+  }
 
   
 
@@ -441,6 +446,11 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
 
 
   bool mFeedChardet;
+
+  
+
+
+  bool mGuessEncoding;
 
   
 
@@ -558,12 +568,19 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
   
 
 
-  nsCOMPtr<nsICharsetDetector> mChardet;
+  mozilla::UniquePtr<mozilla::JapaneseDetector> mJapaneseDetector;
 
   
 
 
-  mozilla::UniquePtr<mozilla::JapaneseDetector> mJapaneseDetector;
+  mozilla::UniquePtr<mozilla::EncodingDetector> mDetector;
+
+  
+
+
+  nsCString mTLD;
+
+  bool mUseJapaneseDetector;
 
   
 
@@ -576,7 +593,7 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
 
 
 
-  bool mDecodingLocalFileAsUTF8;
+  bool mDecodingLocalFileWithoutTokenizing;
 
   
 
