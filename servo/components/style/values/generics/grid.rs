@@ -262,6 +262,19 @@ pub use self::GenericTrackSize as TrackSize;
 
 impl<L> TrackSize<L> {
     
+    const INITIAL_VALUE: Self = TrackSize::Breadth(TrackBreadth::Auto);
+
+    
+    pub const fn initial_value() -> Self {
+        Self::INITIAL_VALUE
+    }
+
+    
+    pub fn is_initial(&self) -> bool {
+        matches!(*self, TrackSize::Breadth(TrackBreadth::Auto)) 
+    }
+
+    
     
     
     pub fn is_fixed(&self) -> bool {
@@ -286,17 +299,9 @@ impl<L> TrackSize<L> {
     }
 }
 
-impl<L: PartialEq> TrackSize<L> {
-    
-    #[inline]
-    pub fn is_auto(&self) -> bool {
-        *self == TrackSize::Breadth(TrackBreadth::Auto)
-    }
-}
-
 impl<L> Default for TrackSize<L> {
     fn default() -> Self {
-        TrackSize::Breadth(TrackBreadth::Auto)
+        Self::initial_value()
     }
 }
 
@@ -513,8 +518,23 @@ pub enum GenericTrackListValue<LengthPercentage, Integer> {
 pub use self::GenericTrackListValue as TrackListValue;
 
 impl<L, I> TrackListValue<L, I> {
+    
+    const INITIAL_VALUE: Self = TrackListValue::TrackSize(TrackSize::Breadth(TrackBreadth::Auto));
+
     fn is_repeat(&self) -> bool {
         matches!(*self, TrackListValue::TrackRepeat(..))
+    }
+
+    
+    pub fn is_initial(&self) -> bool {
+        matches!(*self, TrackListValue::TrackSize(TrackSize::Breadth(TrackBreadth::Auto))) 
+    }
+}
+
+impl<L, I> Default for TrackListValue<L, I> {
+    #[inline]
+    fn default() -> Self {
+        Self::INITIAL_VALUE
     }
 }
 
@@ -756,10 +776,25 @@ pub use self::GenericGridTemplateComponent as GridTemplateComponent;
 
 impl<L, I> GridTemplateComponent<L, I> {
     
+    const INITIAL_VALUE: Self = Self::None;
+
+    
     pub fn track_list_len(&self) -> usize {
         match *self {
             GridTemplateComponent::TrackList(ref tracklist) => tracklist.values.len(),
             _ => 0,
         }
+    }
+
+    
+    pub fn is_initial(&self) -> bool {
+        matches!(*self, Self::None) 
+    }
+}
+
+impl<L, I> Default for GridTemplateComponent<L, I> {
+    #[inline]
+    fn default() -> Self {
+        Self::INITIAL_VALUE
     }
 }

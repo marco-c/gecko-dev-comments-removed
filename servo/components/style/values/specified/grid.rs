@@ -102,7 +102,7 @@ impl Parse for ImplicitGridTracks<TrackSize<LengthPercentage>> {
     ) -> Result<Self, ParseError<'i>> {
         use style_traits::{Separator, Space};
         let track_sizes = Space::parse(input, |i| TrackSize::parse(context, i))?;
-        if track_sizes.len() == 1 && track_sizes[0].is_auto() {
+        if track_sizes.len() == 1 && track_sizes[0].is_initial() {
             
             return Ok(Default::default());
         }
