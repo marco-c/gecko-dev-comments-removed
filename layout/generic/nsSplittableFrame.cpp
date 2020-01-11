@@ -187,6 +187,13 @@ void nsSplittableFrame::RemoveFromFlow(nsIFrame* aFrame) {
 nscoord nsSplittableFrame::ConsumedBSize(WritingMode aWM) const {
   nscoord bSize = 0;
 
+  
+  const auto& pseudoType = Style()->GetPseudoType();
+  if (pseudoType == PseudoStyleType::columnContent ||
+      pseudoType == PseudoStyleType::columnSet) {
+    return bSize;
+  }
+
   for (nsIFrame* prev = GetPrevContinuation(); prev;
        prev = prev->GetPrevContinuation()) {
     bSize += prev->ContentBSize(aWM);
