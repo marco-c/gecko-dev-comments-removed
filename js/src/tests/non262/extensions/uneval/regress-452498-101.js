@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+var BUGNUMBER = 452498;
+var summary = 'TM: upvar2 regression tests';
+var actual = '';
+var expect = '';
+
+
+
+test();
+
+
+function test()
+{
+  printBugNumber(BUGNUMBER);
+  printStatus (summary);
+
+
+
+  uneval(function(){with({functional: []}){x5, y = this;const y = undefined }});
+
+
+  reportCompare(expect, actual, summary);
+}
