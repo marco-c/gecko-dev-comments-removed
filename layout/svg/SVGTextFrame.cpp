@@ -322,27 +322,6 @@ static nscoord GetBaselinePosition(nsTextFrame* aFrame, gfxTextRun* aTextRun,
 
 
 
-
-
-
-static gfxTextRun::Range ClusterRange(gfxTextRun* aTextRun,
-                                      const gfxSkipCharsIterator& aIterator) {
-  uint32_t start = aIterator.GetSkippedOffset();
-  uint32_t end = start + 1;
-  while (end < aTextRun->GetLength() && (!aTextRun->IsLigatureGroupStart(end) ||
-                                         !aTextRun->IsClusterStart(end))) {
-    end++;
-  }
-  return gfxTextRun::Range(start, end);
-}
-
-
-
-
-
-
-
-
 template <typename T, typename U>
 static void TruncateTo(nsTArray<T>& aArrayToTruncate,
                        const nsTArray<U>& aReferenceArray) {
@@ -1968,15 +1947,11 @@ class CharIterator {
     
     eOriginal,
     
+    eUnskipped,
+    
     
     
     eAddressable,
-    
-    
-    eClusterAndLigatureGroupStart,
-    
-    
-    eClusterOrLigatureGroupMiddle
   };
 
   
@@ -2102,33 +2077,6 @@ class CharIterator {
 
 
 
-  uint32_t GlyphUndisplayedCharacters() const {
-    return mGlyphUndisplayedCharacters;
-  }
-
-  
-
-
-
-
-
-
-
-  void GetOriginalGlyphOffsets(uint32_t& aOriginalOffset,
-                               uint32_t& aOriginalLength) const;
-
-  
-
-
-
-
-
-  gfxFloat GetGlyphAdvance(nsPresContext* aContext) const;
-
-  
-
-
-
 
 
 
@@ -2138,31 +2086,19 @@ class CharIterator {
 
 
 
+  nsIFrame* TextPathFrame() const { return mFrameIterator.TextPathFrame(); }
+
+#ifdef DEBUG
+  
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  gfxFloat GetGlyphPartialAdvance(uint32_t aPartLength,
-                                  nsPresContext* aContext) const;
+  nsIContent* GetSubtree() const { return mSubtree; }
 
   
 
 
-
-  nsIFrame* TextPathFrame() const { return mFrameIterator.TextPathFrame(); }
+  CharacterFilter Filter() const { return mFilter; }
+#endif
 
  private:
   
@@ -2183,7 +2119,6 @@ class CharIterator {
   void UpdateGlyphStartTextElementCharIndex() {
     if (!IsOriginalCharSkipped() && IsClusterAndLigatureGroupStart()) {
       mGlyphStartTextElementCharIndex = mTextElementCharIndex;
-      mGlyphUndisplayedCharacters = 0;
     }
   }
 
@@ -2196,6 +2131,13 @@ class CharIterator {
 
 
   TextFrameIterator mFrameIterator;
+
+#ifdef DEBUG
+  
+
+
+  nsIContent* mSubtree;
+#endif
 
   
 
@@ -2228,14 +2170,6 @@ class CharIterator {
 
 
 
-
-
-  uint32_t mGlyphUndisplayedCharacters;
-
-  
-
-
-
   float mLengthAdjustScaleFactor;
 
   
@@ -2250,13 +2184,15 @@ CharIterator::CharIterator(SVGTextFrame* aSVGTextFrame,
                            nsIContent* aSubtree, bool aPostReflow)
     : mFilter(aFilter),
       mFrameIterator(aSVGTextFrame, aSubtree),
+#ifdef DEBUG
+      mSubtree(aSubtree),
+#endif
       mFrameForTrimCheck(nullptr),
       mTrimmedOffset(0),
       mTrimmedLength(0),
       mTextRun(nullptr),
       mTextElementCharIndex(0),
       mGlyphStartTextElementCharIndex(0),
-      mGlyphUndisplayedCharacters(0),
       mLengthAdjustScaleFactor(aSVGTextFrame->mLengthAdjustScaleFactor),
       mPostReflow(aPostReflow) {
   if (!AtEnd()) {
@@ -2379,57 +2315,6 @@ bool CharIterator::IsOriginalCharTrimmed() const {
        mFrameForTrimCheck->TextFragment()->CharAt(index) == '\n'));
 }
 
-void CharIterator::GetOriginalGlyphOffsets(uint32_t& aOriginalOffset,
-                                           uint32_t& aOriginalLength) const {
-  gfxSkipCharsIterator it = TextFrame()->EnsureTextRun(nsTextFrame::eInflated);
-  it.SetOriginalOffset(mSkipCharsIterator.GetOriginalOffset() -
-                       (mTextElementCharIndex -
-                        mGlyphStartTextElementCharIndex -
-                        mGlyphUndisplayedCharacters));
-
-  while (it.GetSkippedOffset() > 0 &&
-         (!mTextRun->IsClusterStart(it.GetSkippedOffset()) ||
-          !mTextRun->IsLigatureGroupStart(it.GetSkippedOffset()))) {
-    it.AdvanceSkipped(-1);
-  }
-
-  aOriginalOffset = it.GetOriginalOffset();
-
-  
-  it.SetOriginalOffset(mSkipCharsIterator.GetOriginalOffset());
-  do {
-    it.AdvanceSkipped(1);
-  } while (it.GetSkippedOffset() < mTextRun->GetLength() &&
-           (!mTextRun->IsClusterStart(it.GetSkippedOffset()) ||
-            !mTextRun->IsLigatureGroupStart(it.GetSkippedOffset())));
-
-  aOriginalLength = it.GetOriginalOffset() - aOriginalOffset;
-}
-
-gfxFloat CharIterator::GetGlyphAdvance(nsPresContext* aContext) const {
-  uint32_t offset, length;
-  GetOriginalGlyphOffsets(offset, length);
-
-  gfxSkipCharsIterator it = TextFrame()->EnsureTextRun(nsTextFrame::eInflated);
-  gfxSkipCharsIterator start = it;
-  Range range = ConvertOriginalToSkipped(it, offset, length);
-  if (range.Length() == 0) {
-    return 0.0;
-  }
-
-  Maybe<nsTextFrame::PropertyProvider> provider;
-  if (StaticPrefs::svg_text_spacing_enabled()) {
-    provider.emplace(TextFrame(), start);
-  }
-
-  float cssPxPerDevPx =
-      nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
-
-  gfxFloat advance = mTextRun->GetAdvanceWidth(range, provider.ptrOr(nullptr));
-  return aContext->AppUnitsToGfxUnits(advance) * mLengthAdjustScaleFactor *
-         cssPxPerDevPx;
-}
-
 gfxFloat CharIterator::GetAdvance(nsPresContext* aContext) const {
   float cssPxPerDevPx =
       nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
@@ -2444,35 +2329,6 @@ gfxFloat CharIterator::GetAdvance(nsPresContext* aContext) const {
   uint32_t offset = mSkipCharsIterator.GetSkippedOffset();
   gfxFloat advance = mTextRun->GetAdvanceWidth(Range(offset, offset + 1),
                                                provider.ptrOr(nullptr));
-  return aContext->AppUnitsToGfxUnits(advance) * mLengthAdjustScaleFactor *
-         cssPxPerDevPx;
-}
-
-gfxFloat CharIterator::GetGlyphPartialAdvance(uint32_t aPartLength,
-                                              nsPresContext* aContext) const {
-  uint32_t offset, length;
-  GetOriginalGlyphOffsets(offset, length);
-
-  NS_ASSERTION(aPartLength <= length, "invalid aPartLength value");
-  length = aPartLength;
-
-  gfxSkipCharsIterator it = TextFrame()->EnsureTextRun(nsTextFrame::eInflated);
-  gfxSkipCharsIterator start = it;
-
-  Range range = ConvertOriginalToSkipped(it, offset, length);
-  if (range.Length() == 0) {
-    return 0.0;
-  }
-
-  Maybe<nsTextFrame::PropertyProvider> provider;
-  if (StaticPrefs::svg_text_spacing_enabled()) {
-    provider.emplace(TextFrame(), start);
-  }
-
-  float cssPxPerDevPx =
-      nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
-
-  gfxFloat advance = mTextRun->GetAdvanceWidth(range, provider.ptrOr(nullptr));
   return aContext->AppUnitsToGfxUnits(advance) * mLengthAdjustScaleFactor *
          cssPxPerDevPx;
 }
@@ -2497,7 +2353,6 @@ bool CharIterator::NextCharacter() {
 
   
   uint32_t undisplayed = mFrameIterator.UndisplayedCharacters();
-  mGlyphUndisplayedCharacters += undisplayed;
   mTextElementCharIndex += undisplayed;
   if (!TextFrame()) {
     
@@ -2512,20 +2367,16 @@ bool CharIterator::NextCharacter() {
 }
 
 bool CharIterator::MatchesFilter() const {
-  if (mFilter == eOriginal) {
-    return true;
+  switch (mFilter) {
+    case eOriginal:
+      return true;
+    case eUnskipped:
+      return !IsOriginalCharSkipped();
+    case eAddressable:
+      return !IsOriginalCharSkipped() && !IsOriginalCharUnaddressable();
   }
-
-  if (IsOriginalCharSkipped()) {
-    return false;
-  }
-
-  if (mFilter == eAddressable) {
-    return !IsOriginalCharUnaddressable();
-  }
-
-  return (mFilter == eClusterAndLigatureGroupStart) ==
-         IsClusterAndLigatureGroupStart();
+  MOZ_ASSERT_UNREACHABLE("Invalid mFilter value");
+  return true;
 }
 
 
@@ -3999,6 +3850,60 @@ nsresult SVGTextFrame::GetStartPositionOfChar(nsIContent* aContent,
 
 
 
+
+
+
+
+static gfxFloat GetGlyphAdvance(SVGTextFrame* aFrame, nsIContent* aContent,
+                                uint32_t aTextElementCharIndex,
+                                CharIterator* aIterator) {
+  MOZ_ASSERT(!aIterator || (aIterator->Filter() == CharIterator::eAddressable &&
+                            aIterator->GetSubtree() == aContent &&
+                            aIterator->GlyphStartTextElementCharIndex() ==
+                                aTextElementCharIndex),
+             "Invalid aIterator");
+
+  Maybe<CharIterator> newIterator;
+  CharIterator* it = aIterator;
+  if (!it) {
+    newIterator.emplace(aFrame, CharIterator::eAddressable, aContent);
+    if (!newIterator->AdvanceToSubtree()) {
+      MOZ_ASSERT_UNREACHABLE("Invalid aContent");
+      return 0.0;
+    }
+    it = newIterator.ptr();
+  }
+
+  while (it->GlyphStartTextElementCharIndex() != aTextElementCharIndex) {
+    if (!it->Next()) {
+      MOZ_ASSERT_UNREACHABLE("Invalid aTextElementCharIndex");
+      return 0.0;
+    }
+  }
+
+  if (it->AtEnd()) {
+    MOZ_ASSERT_UNREACHABLE("Invalid aTextElementCharIndex");
+    return 0.0;
+  }
+
+  nsPresContext* presContext = aFrame->PresContext();
+  gfxFloat advance = 0.0;
+
+  for (;;) {
+    advance += it->GetAdvance(presContext);
+    if (!it->Next() ||
+        it->GlyphStartTextElementCharIndex() != aTextElementCharIndex) {
+      break;
+    }
+  }
+
+  return advance;
+}
+
+
+
+
+
 nsresult SVGTextFrame::GetEndPositionOfChar(nsIContent* aContent,
                                             uint32_t aCharNum,
                                             nsISVGPoint** aResult) {
@@ -4020,7 +3925,9 @@ nsresult SVGTextFrame::GetEndPositionOfChar(nsIContent* aContent,
   uint32_t startIndex = it.GlyphStartTextElementCharIndex();
 
   
-  gfxFloat advance = it.GetGlyphAdvance(PresContext());
+  gfxFloat advance =
+      GetGlyphAdvance(this, aContent, startIndex,
+                      it.IsClusterAndLigatureGroupStart() ? &it : nullptr);
   if (it.TextRun()->IsRightToLeft()) {
     advance = -advance;
   }
@@ -4051,26 +3958,30 @@ nsresult SVGTextFrame::GetExtentOfChar(nsIContent* aContent, uint32_t aCharNum,
 
   UpdateGlyphPositioning();
 
+  
   CharIterator it(this, CharIterator::eAddressable, aContent);
   if (!it.AdvanceToSubtree() || !it.Next(aCharNum)) {
     return NS_ERROR_DOM_INDEX_SIZE_ERR;
   }
 
   nsPresContext* presContext = PresContext();
-
   float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(
       presContext->AppUnitsPerDevPixel());
 
-  
+  nsTextFrame* textFrame = it.TextFrame();
   uint32_t startIndex = it.GlyphStartTextElementCharIndex();
+  bool isRTL = it.TextRun()->IsRightToLeft();
+  bool isVertical = it.TextRun()->IsVertical();
+
+  
+  gfxFloat advance =
+      GetGlyphAdvance(this, aContent, startIndex,
+                      it.IsClusterAndLigatureGroupStart() ? &it : nullptr);
+  gfxFloat x = isRTL ? -advance : 0.0;
 
   
   gfxFloat ascent, descent;
-  GetAscentAndDescentInAppUnits(it.TextFrame(), ascent, descent);
-
-  
-  gfxFloat advance = it.GetGlyphAdvance(presContext);
-  gfxFloat x = it.TextRun()->IsRightToLeft() ? -advance : 0.0;
+  GetAscentAndDescentInAppUnits(textFrame, ascent, descent);
 
   
   
@@ -4080,7 +3991,7 @@ nsresult SVGTextFrame::GetExtentOfChar(nsIContent* aContent, uint32_t aCharNum,
   m.PreScale(1 / mFontSizeScaleFactor, 1 / mFontSizeScaleFactor);
 
   gfxRect glyphRect;
-  if (it.TextRun()->IsVertical()) {
+  if (isVertical) {
     glyphRect = gfxRect(
         -presContext->AppUnitsToGfxUnits(descent) * cssPxPerDevPx, x,
         presContext->AppUnitsToGfxUnits(ascent + descent) * cssPxPerDevPx,
@@ -4389,7 +4300,7 @@ bool SVGTextFrame::ResolvePositions(nsTArray<gfxPoint>& aDeltas,
 void SVGTextFrame::DetermineCharPositions(nsTArray<nsPoint>& aPositions) {
   NS_ASSERTION(aPositions.IsEmpty(), "expected aPositions to be empty");
 
-  nsPoint position, lastPosition;
+  nsPoint position;
 
   TextFrameIterator frit(this);
   for (nsTextFrame* frame = frit.Current(); frame; frame = frit.Next()) {
@@ -4430,32 +4341,19 @@ void SVGTextFrame::DetermineCharPositions(nsTArray<nsPoint>& aPositions) {
     }
 
     
-    
-    while (it.GetOriginalOffset() < frame->GetContentEnd() &&
-           !it.IsOriginalCharSkipped() &&
-           (!textRun->IsLigatureGroupStart(it.GetSkippedOffset()) ||
-            !textRun->IsClusterStart(it.GetSkippedOffset()))) {
-      uint32_t offset = it.GetSkippedOffset();
-      nscoord advance = textRun->GetAdvanceWidth(Range(offset, offset + 1),
-                                                 provider.ptrOr(nullptr));
-      (textRun->IsVertical() ? position.y : position.x) +=
-          textRun->IsRightToLeft() ? -advance : advance;
-      aPositions.AppendElement(lastPosition);
-      it.AdvanceOriginal(1);
-    }
-
-    
     while (it.GetOriginalOffset() < frame->GetContentEnd()) {
       aPositions.AppendElement(position);
-      if (!it.IsOriginalCharSkipped() &&
-          textRun->IsLigatureGroupStart(it.GetSkippedOffset()) &&
-          textRun->IsClusterStart(it.GetSkippedOffset())) {
+      if (!it.IsOriginalCharSkipped()) {
         
-        nscoord advance = textRun->GetAdvanceWidth(ClusterRange(textRun, it),
+        
+        
+        
+        
+        uint32_t offset = it.GetSkippedOffset();
+        nscoord advance = textRun->GetAdvanceWidth(Range(offset, offset + 1),
                                                    provider.ptrOr(nullptr));
         (textRun->IsVertical() ? position.y : position.x) +=
             textRun->IsRightToLeft() ? -advance : advance;
-        lastPosition = position;
       }
       it.AdvanceOriginal(1);
     }
@@ -4556,58 +4454,81 @@ void SVGTextFrame::AdjustChunksForLineBreaks() {
 void SVGTextFrame::AdjustPositionsForClusters() {
   nsPresContext* presContext = PresContext();
 
-  CharIterator it(this, CharIterator::eClusterOrLigatureGroupMiddle,
-                   nullptr);
+  
+  
+  
+  
+  
+  
+
+  
+  
+  gfxFloat partialAdvance = 0.0;
+
+  CharIterator it(this, CharIterator::eUnskipped,  nullptr);
   while (!it.AtEnd()) {
-    
-    uint32_t charIndex = it.TextElementCharIndex();
-    uint32_t startIndex = it.GlyphStartTextElementCharIndex();
+    if (it.IsClusterAndLigatureGroupStart()) {
+      
+      
+      partialAdvance = 0.0;
+    } else {
+      
+      
+      
 
-    mPositions[charIndex].mClusterOrLigatureGroupMiddle = true;
+      
+      uint32_t charIndex = it.TextElementCharIndex();
+      uint32_t startIndex = it.GlyphStartTextElementCharIndex();
+      MOZ_ASSERT(charIndex != startIndex,
+                 "If the current character is in the middle of a cluster or "
+                 "ligature group, then charIndex must be different from "
+                 "startIndex");
 
-    
-    bool rotationAdjusted = false;
-    double angle = mPositions[startIndex].mAngle;
-    if (mPositions[charIndex].mAngle != angle) {
-      mPositions[charIndex].mAngle = angle;
-      rotationAdjusted = true;
-    }
+      mPositions[charIndex].mClusterOrLigatureGroupMiddle = true;
 
-    
-    
-    uint32_t partLength =
-        charIndex - startIndex - it.GlyphUndisplayedCharacters();
-    gfxFloat advance = it.GetGlyphPartialAdvance(partLength, presContext) /
-                       mFontSizeScaleFactor;
-    gfxPoint direction = gfxPoint(cos(angle), sin(angle)) *
-                         (it.TextRun()->IsRightToLeft() ? -1.0 : 1.0);
-    if (it.TextRun()->IsVertical()) {
-      Swap(direction.x, direction.y);
-    }
-    mPositions[charIndex].mPosition =
-        mPositions[startIndex].mPosition + direction * advance;
-
-    
-    
-    if (mPositions[charIndex].mRunBoundary) {
-      mPositions[charIndex].mRunBoundary = false;
-      if (charIndex + 1 < mPositions.Length()) {
-        mPositions[charIndex + 1].mRunBoundary = true;
+      
+      bool rotationAdjusted = false;
+      double angle = mPositions[startIndex].mAngle;
+      if (mPositions[charIndex].mAngle != angle) {
+        mPositions[charIndex].mAngle = angle;
+        rotationAdjusted = true;
       }
-    } else if (rotationAdjusted) {
-      if (charIndex + 1 < mPositions.Length()) {
-        mPositions[charIndex + 1].mRunBoundary = true;
+
+      
+      gfxFloat advance = partialAdvance / mFontSizeScaleFactor;
+      gfxPoint direction = gfxPoint(cos(angle), sin(angle)) *
+                           (it.TextRun()->IsRightToLeft() ? -1.0 : 1.0);
+      if (it.TextRun()->IsVertical()) {
+        Swap(direction.x, direction.y);
+      }
+      mPositions[charIndex].mPosition =
+          mPositions[startIndex].mPosition + direction * advance;
+
+      
+      
+      if (mPositions[charIndex].mRunBoundary) {
+        mPositions[charIndex].mRunBoundary = false;
+        if (charIndex + 1 < mPositions.Length()) {
+          mPositions[charIndex + 1].mRunBoundary = true;
+        }
+      } else if (rotationAdjusted) {
+        if (charIndex + 1 < mPositions.Length()) {
+          mPositions[charIndex + 1].mRunBoundary = true;
+        }
+      }
+
+      
+      
+      if (mPositions[charIndex].mStartOfChunk) {
+        mPositions[charIndex].mStartOfChunk = false;
+        if (charIndex + 1 < mPositions.Length()) {
+          mPositions[charIndex + 1].mStartOfChunk = true;
+        }
       }
     }
 
     
-    
-    if (mPositions[charIndex].mStartOfChunk) {
-      mPositions[charIndex].mStartOfChunk = false;
-      if (charIndex + 1 < mPositions.Length()) {
-        mPositions[charIndex + 1].mStartOfChunk = true;
-      }
-    }
+    partialAdvance += it.GetAdvance(presContext);
 
     it.Next();
   }
@@ -4679,8 +4600,7 @@ gfxFloat SVGTextFrame::GetStartOffset(nsIFrame* aTextPathFrame) {
 void SVGTextFrame::DoTextPathLayout() {
   nsPresContext* context = PresContext();
 
-  CharIterator it(this, CharIterator::eClusterAndLigatureGroupStart,
-                   nullptr);
+  CharIterator it(this, CharIterator::eOriginal,  nullptr);
   while (!it.AtEnd()) {
     nsIFrame* textPathFrame = it.TextPathFrame();
     if (!textPathFrame) {
@@ -4710,12 +4630,55 @@ void SVGTextFrame::DoTextPathLayout() {
     Float pathLength = path->ComputeLength();
 
     
-    do {
+    
+    
+    while (!it.AtEnd()) {
+      if (it.IsOriginalCharSkipped()) {
+        it.Next();
+        continue;
+      }
+      if (it.IsClusterAndLigatureGroupStart()) {
+        break;
+      }
+      it.Next();
+    }
+
+    
+    while (!it.AtEnd() && it.TextPathFrame() &&
+           it.TextPathFrame()->GetContent() == textPath) {
+      
       uint32_t i = it.TextElementCharIndex();
-      gfxFloat halfAdvance =
-          it.GetGlyphAdvance(context) / mFontSizeScaleFactor / 2.0;
+
+      MOZ_ASSERT(!mPositions[i].mClusterOrLigatureGroupMiddle);
+
       gfxFloat sign = it.TextRun()->IsRightToLeft() ? -1.0 : 1.0;
       bool vertical = it.TextRun()->IsVertical();
+
+      
+      
+      AutoTArray<gfxFloat, 4> partialAdvances;
+      gfxFloat partialAdvance = it.GetAdvance(context);
+      partialAdvances.AppendElement(partialAdvance);
+      while (it.Next()) {
+        
+        
+        
+        
+        if (it.IsOriginalCharSkipped()) {
+          
+        } else if (it.IsClusterAndLigatureGroupStart()) {
+          break;
+        } else {
+          partialAdvance += it.GetAdvance(context);
+        }
+        partialAdvances.AppendElement(partialAdvance);
+      }
+
+      
+      uint32_t j = it.TextElementCharIndex();
+
+      gfxFloat halfAdvance =
+          partialAdvances.LastElement() / mFontSizeScaleFactor / 2.0;
       gfxFloat midx =
           (vertical ? mPositions[i].mPosition.y : mPositions[i].mPosition.x) +
           sign * halfAdvance + offset;
@@ -4744,19 +4707,14 @@ void SVGTextFrame::DoTextPathLayout() {
       mPositions[i].mAngle += rotation;
 
       
-      for (uint32_t j = i + 1; j < mPositions.Length() &&
-                               mPositions[j].mClusterOrLigatureGroupMiddle;
-           j++) {
+      for (uint32_t k = i + 1; k < j; k++) {
         gfxPoint partialAdvance = ThebesPoint(direction) *
-                                  it.GetGlyphPartialAdvance(j - i, context) /
-                                  mFontSizeScaleFactor;
-        mPositions[j].mPosition = mPositions[i].mPosition + partialAdvance;
-        mPositions[j].mAngle = mPositions[i].mAngle;
-        mPositions[j].mHidden = mPositions[i].mHidden;
+                                  partialAdvances[k - i] / mFontSizeScaleFactor;
+        mPositions[k].mPosition = mPositions[i].mPosition + partialAdvance;
+        mPositions[k].mAngle = mPositions[i].mAngle;
+        mPositions[k].mHidden = mPositions[i].mHidden;
       }
-      it.Next();
-    } while (it.TextPathFrame() &&
-             it.TextPathFrame()->GetContent() == textPath);
+    }
   }
 }
 
