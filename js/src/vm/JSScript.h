@@ -1401,222 +1401,6 @@ enum class FunctionAsyncKind : bool { SyncFunction, AsyncFunction };
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ScriptWarmUpData {
-  uintptr_t data_ = ResetState();
-
- private:
-  static constexpr uintptr_t NumTagBits = 2;
-  static constexpr uint32_t MaxWarmUpCount = UINT32_MAX >> NumTagBits;
-
- public:
-  
-  static constexpr uintptr_t TagMask = (1 << NumTagBits) - 1;
-  static constexpr uintptr_t JitScriptTag = 0;
-  static constexpr uintptr_t EnclosingScriptTag = 1;
-  static constexpr uintptr_t EnclosingScopeTag = 2;
-  static constexpr uintptr_t WarmUpCountTag = 3;
-
- private:
-  
-  constexpr uintptr_t ResetState() { return 0 | WarmUpCountTag; }
-
-  template <uintptr_t Tag>
-  inline void setTaggedPtr(void* ptr) {
-    static_assert(Tag <= TagMask, "Tag must fit in TagMask");
-    MOZ_ASSERT((uintptr_t(ptr) & TagMask) == 0);
-    data_ = uintptr_t(ptr) | Tag;
-  }
-
-  template <typename T, uintptr_t Tag>
-  inline T getTaggedPtr() const {
-    static_assert(Tag <= TagMask, "Tag must fit in TagMask");
-    MOZ_ASSERT((data_ & TagMask) == Tag);
-    return reinterpret_cast<T>(data_ & ~TagMask);
-  }
-
-  void setWarmUpCount(uint32_t count) {
-    if (count > MaxWarmUpCount) {
-      count = MaxWarmUpCount;
-    }
-    data_ = (uintptr_t(count) << NumTagBits) | WarmUpCountTag;
-  }
-
- public:
-  void trace(JSTracer* trc);
-
-  bool isEnclosingScript() const {
-    return (data_ & TagMask) == EnclosingScriptTag;
-  }
-  bool isEnclosingScope() const {
-    return (data_ & TagMask) == EnclosingScopeTag;
-  }
-  bool isWarmUpCount() const { return (data_ & TagMask) == WarmUpCountTag; }
-  bool isJitScript() const { return (data_ & TagMask) == JitScriptTag; }
-
-  
-  
-
-  LazyScript* toEnclosingScript() const {
-    return getTaggedPtr<LazyScript*, EnclosingScriptTag>();
-  }
-  inline void initEnclosingScript(LazyScript* enclosingScript);
-  inline void clearEnclosingScript();
-
-  Scope* toEnclosingScope() const {
-    return getTaggedPtr<Scope*, EnclosingScopeTag>();
-  }
-  inline void initEnclosingScope(Scope* enclosingScope);
-  inline void clearEnclosingScope();
-
-  uint32_t toWarmUpCount() const {
-    MOZ_ASSERT(isWarmUpCount());
-    return data_ >> NumTagBits;
-  }
-  void resetWarmUpCount(uint32_t count) {
-    MOZ_ASSERT(isWarmUpCount());
-    setWarmUpCount(count);
-  }
-  void incWarmUpCount(uint32_t amount) {
-    MOZ_ASSERT(isWarmUpCount());
-    data_ += uintptr_t(amount) << NumTagBits;
-  }
-
-  jit::JitScript* toJitScript() const {
-    return getTaggedPtr<jit::JitScript*, JitScriptTag>();
-  }
-  void initJitScript(jit::JitScript* jitScript) {
-    MOZ_ASSERT(isWarmUpCount());
-    setTaggedPtr<JitScriptTag>(jitScript);
-  }
-  void clearJitScript() {
-    MOZ_ASSERT(isJitScript());
-    data_ = ResetState();
-  }
-} JS_HAZ_GC_POINTER;
-
-static_assert(sizeof(ScriptWarmUpData) == sizeof(uintptr_t),
-              "JIT code depends on ScriptWarmUpData being pointer-sized");
-
-struct FieldInitializers {
-#ifdef DEBUG
-  bool valid;
-#endif
-  
-  
-  size_t numFieldInitializers;
-
-  explicit FieldInitializers(size_t numFieldInitializers)
-      :
-#ifdef DEBUG
-        valid(true),
-#endif
-        numFieldInitializers(numFieldInitializers) {
-  }
-
-  static FieldInitializers Invalid() { return FieldInitializers(); }
-
- private:
-  FieldInitializers()
-      :
-#ifdef DEBUG
-        valid(false),
-#endif
-        numFieldInitializers(0) {
-  }
-};
-
-
-
-
-
-
-
-
-
-
-class alignas(uintptr_t) PrivateScriptData final {
-  uint32_t ngcthings = 0;
-
-  js::FieldInitializers fieldInitializers_ = js::FieldInitializers::Invalid();
-
-  
-  template <typename T>
-  T* offsetToPointer(size_t offset) {
-    uintptr_t base = reinterpret_cast<uintptr_t>(this);
-    uintptr_t elem = base + offset;
-    return reinterpret_cast<T*>(elem);
-  }
-
-  
-  template <typename T>
-  void initElements(size_t offset, size_t length);
-
-  
-  static size_t AllocationSize(uint32_t ngcthings);
-
-  
-  explicit PrivateScriptData(uint32_t ngcthings);
-
- public:
-  static constexpr size_t offsetOfGCThings() {
-    return sizeof(PrivateScriptData);
-  }
-
-  
-  mozilla::Span<JS::GCCellPtr> gcthings() {
-    size_t offset = offsetOfGCThings();
-    return mozilla::MakeSpan(offsetToPointer<JS::GCCellPtr>(offset), ngcthings);
-  }
-
-  void setFieldInitializers(FieldInitializers fieldInitializers) {
-    fieldInitializers_ = fieldInitializers;
-  }
-  const FieldInitializers& getFieldInitializers() { return fieldInitializers_; }
-
-  
-  static PrivateScriptData* new_(JSContext* cx, uint32_t ngcthings);
-
-  template <XDRMode mode>
-  static MOZ_MUST_USE XDRResult XDR(js::XDRState<mode>* xdr,
-                                    js::HandleScript script,
-                                    js::HandleScriptSourceObject sourceObject,
-                                    js::HandleScope scriptEnclosingScope,
-                                    js::HandleFunction fun);
-
-  
-  static bool Clone(JSContext* cx, js::HandleScript src, js::HandleScript dst,
-                    js::MutableHandle<JS::GCVector<js::Scope*>> scopes);
-
-  static bool InitFromEmitter(JSContext* cx, js::HandleScript script,
-                              js::frontend::BytecodeEmitter* bce);
-
-  void trace(JSTracer* trc);
-
-  size_t allocationSize() const;
-
-  
-  PrivateScriptData(const PrivateScriptData&) = delete;
-  PrivateScriptData& operator=(const PrivateScriptData&) = delete;
-};
-
-
-
-
-
 class BaseScript : public gc::TenuredCell {
  protected:
   
@@ -1631,12 +1415,6 @@ class BaseScript : public gc::TenuredCell {
 
   
   GCPtr<ScriptSourceObject*> sourceObject_ = {};
-
-  
-  
-  
-  
-  PrivateScriptData* data_ = nullptr;
 
   
   
@@ -1675,8 +1453,6 @@ class BaseScript : public gc::TenuredCell {
   
   uint32_t immutableFlags_ = 0;
   uint32_t mutableFlags_ = 0;
-
-  ScriptWarmUpData warmUpData_ = {};
 
   BaseScript(uint8_t* stubEntry, JSObject* functionOrGlobal,
              ScriptSourceObject* sourceObject, uint32_t sourceStart,
@@ -2091,28 +1867,6 @@ setterLevel:                                                                  \
     }
   }
 
-  mozilla::Span<const JS::GCCellPtr> gcthings() const {
-    return data_ ? data_->gcthings() : mozilla::Span<JS::GCCellPtr>();
-  }
-
-  void setFieldInitializers(FieldInitializers fieldInitializers) {
-    MOZ_ASSERT(data_);
-    data_->setFieldInitializers(fieldInitializers);
-  }
-
-  const FieldInitializers& getFieldInitializers() const {
-    MOZ_ASSERT(data_);
-    return data_->getFieldInitializers();
-  }
-
- protected:
-  void finalize(JSFreeOp* fop);
-
- public:
-  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) {
-    return mallocSizeOf(data_);
-  }
-
   
   static constexpr size_t offsetOfJitCodeRaw() {
     return offsetof(BaseScript, jitCodeRaw_);
@@ -2123,8 +1877,33 @@ setterLevel:                                                                  \
   static constexpr size_t offsetOfMutableFlags() {
     return offsetof(BaseScript, mutableFlags_);
   }
-  static constexpr size_t offsetOfWarmUpData() {
-    return offsetof(BaseScript, warmUpData_);
+};
+
+struct FieldInitializers {
+#ifdef DEBUG
+  bool valid;
+#endif
+  
+  
+  size_t numFieldInitializers;
+
+  explicit FieldInitializers(size_t numFieldInitializers)
+      :
+#ifdef DEBUG
+        valid(true),
+#endif
+        numFieldInitializers(numFieldInitializers) {
+  }
+
+  static FieldInitializers Invalid() { return FieldInitializers(); }
+
+ private:
+  FieldInitializers()
+      :
+#ifdef DEBUG
+        valid(false),
+#endif
+        numFieldInitializers(0) {
   }
 };
 
@@ -2148,6 +1927,80 @@ XDRResult XDRLazyScript(XDRState<mode>* xdr, HandleScope enclosingScope,
 
 template <XDRMode mode>
 XDRResult XDRScriptConst(XDRState<mode>* xdr, MutableHandleValue vp);
+
+
+
+
+
+
+
+
+
+
+class alignas(uintptr_t) PrivateScriptData final {
+  uint32_t ngcthings = 0;
+
+  js::FieldInitializers fieldInitializers_ = js::FieldInitializers::Invalid();
+
+  
+  template <typename T>
+  T* offsetToPointer(size_t offset) {
+    uintptr_t base = reinterpret_cast<uintptr_t>(this);
+    uintptr_t elem = base + offset;
+    return reinterpret_cast<T*>(elem);
+  }
+
+  
+  template <typename T>
+  void initElements(size_t offset, size_t length);
+
+  
+  static size_t AllocationSize(uint32_t ngcthings);
+
+  
+  explicit PrivateScriptData(uint32_t ngcthings);
+
+ public:
+  static constexpr size_t offsetOfGCThings() {
+    return sizeof(PrivateScriptData);
+  }
+
+  
+  mozilla::Span<JS::GCCellPtr> gcthings() {
+    size_t offset = offsetOfGCThings();
+    return mozilla::MakeSpan(offsetToPointer<JS::GCCellPtr>(offset), ngcthings);
+  }
+
+  void setFieldInitializers(FieldInitializers fieldInitializers) {
+    fieldInitializers_ = fieldInitializers;
+  }
+  const FieldInitializers& getFieldInitializers() { return fieldInitializers_; }
+
+  
+  static PrivateScriptData* new_(JSContext* cx, uint32_t ngcthings);
+
+  template <XDRMode mode>
+  static MOZ_MUST_USE XDRResult XDR(js::XDRState<mode>* xdr,
+                                    js::HandleScript script,
+                                    js::HandleScriptSourceObject sourceObject,
+                                    js::HandleScope scriptEnclosingScope,
+                                    js::HandleFunction fun);
+
+  
+  static bool Clone(JSContext* cx, js::HandleScript src, js::HandleScript dst,
+                    js::MutableHandle<JS::GCVector<js::Scope*>> scopes);
+
+  static bool InitFromEmitter(JSContext* cx, js::HandleScript script,
+                              js::frontend::BytecodeEmitter* bce);
+
+  void trace(JSTracer* trc);
+
+  size_t allocationSize() const;
+
+  
+  PrivateScriptData(const PrivateScriptData&) = delete;
+  PrivateScriptData& operator=(const PrivateScriptData&) = delete;
+};
 
 
 
@@ -2523,6 +2376,75 @@ using RuntimeScriptDataTable =
 
 extern void SweepScriptData(JSRuntime* rt);
 
+
+
+
+
+
+
+
+
+
+
+
+class ScriptWarmUpData {
+  static constexpr uintptr_t NumTagBits = 2;
+  static constexpr uint32_t MaxWarmUpCount = UINT32_MAX >> NumTagBits;
+
+ public:
+  
+  static constexpr uintptr_t TagMask = (1 << NumTagBits) - 1;
+  static constexpr uintptr_t JitScriptTag = 0;
+  static constexpr uintptr_t WarmUpCountTag = 1;
+
+ private:
+  uintptr_t data_ = 0 | WarmUpCountTag;
+
+  void setWarmUpCount(uint32_t count) {
+    if (count > MaxWarmUpCount) {
+      count = MaxWarmUpCount;
+    }
+    data_ = (uintptr_t(count) << NumTagBits) | WarmUpCountTag;
+  }
+
+ public:
+  void trace(JSTracer* trc);
+
+  bool isWarmUpCount() const { return (data_ & TagMask) == WarmUpCountTag; }
+  bool isJitScript() const { return (data_ & TagMask) == JitScriptTag; }
+
+  uint32_t toWarmUpCount() const {
+    MOZ_ASSERT(isWarmUpCount());
+    return data_ >> NumTagBits;
+  }
+  void resetWarmUpCount(uint32_t count) {
+    MOZ_ASSERT(isWarmUpCount());
+    setWarmUpCount(count);
+  }
+  void incWarmUpCount(uint32_t amount) {
+    MOZ_ASSERT(isWarmUpCount());
+    data_ += uintptr_t(amount) << NumTagBits;
+  }
+
+  jit::JitScript* toJitScript() const {
+    MOZ_ASSERT(isJitScript());
+    static_assert(JitScriptTag == 0, "Code depends on JitScriptTag being zero");
+    return reinterpret_cast<jit::JitScript*>(data_);
+  }
+  void setJitScript(jit::JitScript* jitScript) {
+    MOZ_ASSERT(isWarmUpCount());
+    MOZ_ASSERT((uintptr_t(jitScript) & TagMask) == 0);
+    data_ = uintptr_t(jitScript) | JitScriptTag;
+  }
+  void clearJitScript() {
+    MOZ_ASSERT(isJitScript());
+    setWarmUpCount(0);
+  }
+};
+
+static_assert(sizeof(ScriptWarmUpData) == sizeof(uintptr_t),
+              "JIT code depends on ScriptWarmUpData being pointer-sized");
+
 } 
 
 namespace JS {
@@ -2540,7 +2462,12 @@ class JSScript : public js::BaseScript {
   
   RefPtr<js::RuntimeScriptData> scriptData_ = {};
 
+  
+  js::PrivateScriptData* data_ = nullptr;
+
  private:
+  js::ScriptWarmUpData warmUpData_ = {};
+
   
   js::LazyScript* lazyScript = nullptr;
 
@@ -2801,6 +2728,16 @@ class JSScript : public js::BaseScript {
   static void argumentsOptimizationFailed(JSContext* cx,
                                           js::HandleScript script);
 
+  void setFieldInitializers(js::FieldInitializers fieldInitializers) {
+    MOZ_ASSERT(data_);
+    data_->setFieldInitializers(fieldInitializers);
+  }
+
+  const js::FieldInitializers& getFieldInitializers() const {
+    MOZ_ASSERT(data_);
+    return data_->getFieldInitializers();
+  }
+
   
 
 
@@ -2819,37 +2756,23 @@ class JSScript : public js::BaseScript {
   static constexpr size_t offsetOfPrivateScriptData() {
     return offsetof(JSScript, data_);
   }
+  static constexpr size_t offsetOfWarmUpData() {
+    return offsetof(JSScript, warmUpData_);
+  }
 
   void updateJitCodeRaw(JSRuntime* rt);
 
+  
+  
+  
+  bool isRelazifiableIgnoringJitCode() const {
+    return (selfHosted() || lazyScript) && !hasInnerFunctions() &&
+           !isGenerator() && !isAsync() && !isDefaultClassConstructor() &&
+           !doNotRelazify() && !hasCallSiteObj();
+  }
   bool isRelazifiable() const {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return !hasInnerFunctions() && !hasDirectEval() && !isGenerator() &&
-           !isAsync() && !hasCallSiteObj();
+    return isRelazifiableIgnoringJitCode() && !hasJitScript();
   }
-  bool canRelazify() const {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool lazyAvailable = selfHosted() || lazyScript;
-    return isRelazifiable() && lazyAvailable && !hasJitScript() &&
-           !doNotRelazify();
-  }
-
   void setLazyScript(js::LazyScript* lazy) { lazyScript = lazy; }
   js::LazyScript* maybeLazyScript() { return lazyScript; }
 
@@ -3065,11 +2988,17 @@ class JSScript : public js::BaseScript {
 
 
 
+
+  size_t computedSizeOfData() const;
   size_t sizeOfData(mozilla::MallocSizeOf mallocSizeOf) const;
 
   void addSizeOfJitScript(mozilla::MallocSizeOf mallocSizeOf,
                           size_t* sizeOfJitScript,
                           size_t* sizeOfBaselineFallbackStubs) const;
+
+  mozilla::Span<const JS::GCCellPtr> gcthings() const {
+    return data_->gcthings();
+  }
 
   mozilla::Span<const JSTryNote> trynotes() const {
     return immutableScriptData()->tryNotes();
@@ -3251,6 +3180,48 @@ namespace js {
 
 
 
+class alignas(uintptr_t) LazyScriptData final {
+ private:
+  uint32_t numClosedOverBindings_ = 0;
+  uint32_t numInnerFunctions_ = 0;
+
+  FieldInitializers fieldInitializers_ = FieldInitializers::Invalid();
+
+  
+  static size_t AllocationSize(uint32_t numClosedOverBindings,
+                               uint32_t numInnerFunctions);
+  size_t allocationSize() const;
+
+  
+  template <typename T>
+  T* offsetToPointer(size_t offset) {
+    uintptr_t base = reinterpret_cast<uintptr_t>(this);
+    return reinterpret_cast<T*>(base + offset);
+  }
+
+  template <typename T>
+  void initElements(size_t offset, size_t length);
+
+  LazyScriptData(uint32_t numClosedOverBindings, uint32_t numInnerFunctions);
+
+ public:
+  static LazyScriptData* new_(JSContext* cx, uint32_t numClosedOverBindings,
+                              uint32_t numInnerFunctions);
+
+  friend class LazyScript;
+
+  mozilla::Span<GCPtrAtom> closedOverBindings();
+  mozilla::Span<GCPtrFunction> innerFunctions();
+
+  void trace(JSTracer* trc);
+
+  
+  LazyScriptData(const LazyScriptData&) = delete;
+  LazyScriptData& operator=(const LazyScriptData&) = delete;
+};
+
+
+
 class LazyScript : public BaseScript {
   
   
@@ -3333,14 +3304,17 @@ class LazyScript : public BaseScript {
   
   
   
+  GCPtr<TenuredCell*> enclosingLazyScriptOrScope_;
+
   
   
+  LazyScriptData* lazyData_;
 
   static const uint32_t NumClosedOverBindingsBits = 20;
   static const uint32_t NumInnerFunctionsBits = 20;
 
   LazyScript(JSFunction* fun, uint8_t* stubEntry,
-             ScriptSourceObject& sourceObject, PrivateScriptData* data,
+             ScriptSourceObject& sourceObject, LazyScriptData* data,
              uint32_t immutableFlags, uint32_t sourceStart, uint32_t sourceEnd,
              uint32_t toStringStart, uint32_t toStringEnd, uint32_t lineno,
              uint32_t column);
@@ -3348,8 +3322,8 @@ class LazyScript : public BaseScript {
   
   
   
-  static LazyScript* CreateRaw(JSContext* cx, uint32_t ngcthings,
-                               HandleFunction fun,
+  static LazyScript* CreateRaw(JSContext* cx, uint32_t numClosedOverBindings,
+                               uint32_t numInnerFunctions, HandleFunction fun,
                                HandleScriptSourceObject sourceObject,
                                uint32_t immutableFlags, uint32_t sourceStart,
                                uint32_t sourceEnd, uint32_t toStringStart,
@@ -3380,19 +3354,21 @@ class LazyScript : public BaseScript {
   
   
   
-  static LazyScript* CreateForXDR(JSContext* cx, uint32_t ngcthings,
-                                  HandleFunction fun, HandleScript script,
-                                  HandleScope enclosingScope,
-                                  HandleScriptSourceObject sourceObject,
-                                  uint32_t immutableFlags, uint32_t sourceStart,
-                                  uint32_t sourceEnd, uint32_t toStringStart,
-                                  uint32_t toStringEnd, uint32_t lineno,
-                                  uint32_t column);
+  static LazyScript* CreateForXDR(
+      JSContext* cx, uint32_t numClosedOverBindings, uint32_t numInnerFunctions,
+      HandleFunction fun, HandleScript script, HandleScope enclosingScope,
+      HandleScriptSourceObject sourceObject, uint32_t immutableFlags,
+      uint32_t sourceStart, uint32_t sourceEnd, uint32_t toStringStart,
+      uint32_t toStringEnd, uint32_t lineno, uint32_t column);
 
-  template <XDRMode mode>
-  static XDRResult XDRScriptData(XDRState<mode>* xdr,
-                                 HandleScriptSourceObject sourceObject,
-                                 Handle<LazyScript*> lazy);
+  bool canRelazify() const {
+    
+    
+    
+    
+    
+    return !hasInnerFunctions() && !hasDirectEval();
+  }
 
   void initScript(JSScript* script);
 
@@ -3402,21 +3378,45 @@ class LazyScript : public BaseScript {
   }
   bool hasScript() const { return bool(script_); }
 
-  bool hasEnclosingScope() const { return warmUpData_.isEnclosingScope(); }
+  bool hasEnclosingScope() const {
+    return enclosingLazyScriptOrScope_ &&
+           enclosingLazyScriptOrScope_->is<Scope>();
+  }
   bool hasEnclosingLazyScript() const {
-    return warmUpData_.isEnclosingScript();
+    return enclosingLazyScriptOrScope_ &&
+           enclosingLazyScriptOrScope_->is<LazyScript>();
   }
 
   LazyScript* enclosingLazyScript() const {
-    return warmUpData_.toEnclosingScript();
+    MOZ_ASSERT(hasEnclosingLazyScript());
+    return enclosingLazyScriptOrScope_->as<LazyScript>();
   }
   void setEnclosingLazyScript(LazyScript* enclosingLazyScript);
 
-  Scope* enclosingScope() const { return warmUpData_.toEnclosingScope(); }
+  Scope* enclosingScope() const {
+    MOZ_ASSERT(hasEnclosingScope());
+    return enclosingLazyScriptOrScope_->as<Scope>();
+  }
   void setEnclosingScope(Scope* enclosingScope);
 
   bool hasNonSyntacticScope() const {
     return enclosingScope()->hasOnChain(ScopeKind::NonSyntactic);
+  }
+
+  mozilla::Span<GCPtrAtom> closedOverBindings() {
+    return lazyData_ ? lazyData_->closedOverBindings()
+                     : mozilla::Span<GCPtrAtom>();
+  }
+  uint32_t numClosedOverBindings() const {
+    return lazyData_ ? lazyData_->closedOverBindings().size() : 0;
+  };
+
+  mozilla::Span<GCPtrFunction> innerFunctions() {
+    return lazyData_ ? lazyData_->innerFunctions()
+                     : mozilla::Span<GCPtrFunction>();
+  }
+  uint32_t numInnerFunctions() const {
+    return lazyData_ ? lazyData_->innerFunctions().size() : 0;
   }
 
   frontend::ParseGoal parseGoal() const {
@@ -3433,6 +3433,16 @@ class LazyScript : public BaseScript {
   }
   void setWrappedByDebugger() { setFlag(MutableFlags::WrappedByDebugger); }
 
+  void setFieldInitializers(FieldInitializers fieldInitializers) {
+    MOZ_ASSERT(lazyData_);
+    lazyData_->fieldInitializers_ = fieldInitializers;
+  }
+
+  const FieldInitializers& getFieldInitializers() const {
+    MOZ_ASSERT(lazyData_);
+    return lazyData_->fieldInitializers_;
+  }
+
   
   
   
@@ -3445,9 +3455,13 @@ class LazyScript : public BaseScript {
 
   friend class GCMarker;
   void traceChildren(JSTracer* trc);
-  void finalize(JSFreeOp* fop) { BaseScript::finalize(fop); }
+  void finalize(JSFreeOp* fop);
 
   static const JS::TraceKind TraceKind = JS::TraceKind::LazyScript;
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) {
+    return mallocSizeOf(lazyData_);
+  }
 };
 
 
