@@ -102,7 +102,22 @@ class FullParseHandler {
         lazyOuterFunction_(cx, lazyOuterFunction),
         lazyInnerFunctionIndex(0),
         lazyClosedOverBindingIndex(0),
-        sourceKind_(kind) {}
+        sourceKind_(kind) {
+    
+    
+    
+    
+    
+    if (lazyOuterFunction) {
+      for (JS::GCCellPtr gcThing : lazyOuterFunction->gcthings()) {
+        if (gcThing.is<JSObject>()) {
+          lazyClosedOverBindingIndex++;
+        } else {
+          break;
+        }
+      }
+    }
+  }
 
   static NullNode null() { return NullNode(); }
 
@@ -1036,15 +1051,17 @@ class FullParseHandler {
   bool canSkipLazyInnerFunctions() { return !!lazyOuterFunction_; }
   bool canSkipLazyClosedOverBindings() { return !!lazyOuterFunction_; }
   JSFunction* nextLazyInnerFunction() {
-    MOZ_ASSERT(lazyInnerFunctionIndex <
-               lazyOuterFunction_->numInnerFunctions());
-    return lazyOuterFunction_->innerFunctions()[lazyInnerFunctionIndex++];
+    return &lazyOuterFunction_->gcthings()[lazyInnerFunctionIndex++]
+                .as<JSObject>()
+                .as<JSFunction>();
   }
   JSAtom* nextLazyClosedOverBinding() {
-    MOZ_ASSERT(lazyClosedOverBindingIndex <
-               lazyOuterFunction_->numClosedOverBindings());
-    return lazyOuterFunction_
-        ->closedOverBindings()[lazyClosedOverBindingIndex++];
+    
+    
+    gc::Cell* cell =
+        lazyOuterFunction_->gcthings()[lazyClosedOverBindingIndex++].asCell();
+    MOZ_ASSERT_IF(cell, cell->is<JSAtom>());
+    return static_cast<JSAtom*>(cell);
   }
 };
 
