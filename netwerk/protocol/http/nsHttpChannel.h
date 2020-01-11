@@ -651,7 +651,7 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   
-  Maybe<nsILoadInfo::CrossOriginOpenerPolicy> mComputedCrossOriginOpenerPolicy;
+  nsILoadInfo::CrossOriginOpenerPolicy mComputedCrossOriginOpenerPolicy;
 
   bool mCacheOpenWithPriority;
   uint32_t mCacheQueueSizeWhenOpen;
