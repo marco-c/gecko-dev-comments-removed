@@ -106,6 +106,11 @@ typedef struct {
   ToolbarButtonGTKMetrics button[TOOLBAR_BUTTONS];
 } ToolbarGTKMetrics;
 
+typedef struct {
+  bool initialized;
+  GtkBorder decorationSize;
+} CSDWindowDecorationSize;
+
 typedef enum {
   MOZ_GTK_STEPPER_DOWN = 1 << 0,
   MOZ_GTK_STEPPER_BOTTOM = 1 << 1,
@@ -617,9 +622,6 @@ int GetGtkHeaderBarButtonLayout(WidgetNodeType* aButtonLayout,
 
 
 
-
-
-
-bool GetCSDDecorationSize(GtkWindow* aGtkWindow, GtkBorder* aDecorationSize);
+GtkBorder GetCSDDecorationSize(bool aIsPopup);
 
 #endif
