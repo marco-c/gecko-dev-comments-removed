@@ -1506,6 +1506,18 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
   }
   requestHead->Exit();
 
+  
+  
+  
+  
+  
+  if (NS_SUCCEEDED(rv) && !multiPartID) {
+    MOZ_ASSERT(mBgParent);
+    if (!mBgParent->OnStartRequestSent()) {
+      rv = NS_ERROR_UNEXPECTED;
+    }
+  }
+
   return rv;
 }
 
