@@ -107,7 +107,10 @@ nsresult AbstractRange::SetStartAndEndInternal(
     
     
     
-    if (aStartBoundary.Offset() > aEndBoundary.Offset()) {
+    if (*aStartBoundary.Offset(
+            RangeBoundaryBase<SPT, SRT>::OffsetFilter::kValidOffsets) >
+        *aEndBoundary.Offset(
+            RangeBoundaryBase<EPT, ERT>::OffsetFilter::kValidOffsets)) {
       aRange->DoSetRange(aEndBoundary, aEndBoundary, newStartRoot);
     } else {
       aRange->DoSetRange(aStartBoundary, aEndBoundary, newStartRoot);

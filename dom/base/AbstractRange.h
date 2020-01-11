@@ -50,17 +50,21 @@ class AbstractRange : public nsISupports, public nsWrapperCache {
 
   nsINode* GetStartContainer() const { return mStart.Container(); }
   nsINode* GetEndContainer() const { return mEnd.Container(); }
+
+  
   uint32_t StartOffset() const {
-    
-    return static_cast<uint32_t>(mStart.Offset());
+    return static_cast<uint32_t>(
+        *mStart.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets));
   }
+
+  
   uint32_t EndOffset() const {
-    
-    return static_cast<uint32_t>(mEnd.Offset());
+    return static_cast<uint32_t>(
+        *mEnd.Offset(RangeBoundary::OffsetFilter::kValidOrInvalidOffsets));
   }
   bool Collapsed() const {
     return !mIsPositioned || (mStart.Container() == mEnd.Container() &&
-                              mStart.Offset() == mEnd.Offset());
+                              StartOffset() == EndOffset());
   }
 
   nsINode* GetParentObject() const { return mOwner; }
