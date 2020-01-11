@@ -254,8 +254,8 @@ nsresult NrIceTurnServer::ToNicerTurnStruct(nr_ice_turn_server* server) const {
   
   
   
-  int r = r_data_create(&server->password, const_cast<UCHAR*>(&password_[0]),
-                        password_.size());
+  const UCHAR* data = password_.empty() ? nullptr : &password_[0];
+  int r = r_data_create(&server->password, data, password_.size());
   if (r) {
     RFREE(server->username);
     return NS_ERROR_OUT_OF_MEMORY;
