@@ -371,6 +371,9 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   bool HasUsedVR() const;
   bool IsVRContentDetected() const;
   bool IsVRContentPresenting() const;
+  void RequestXRPermission();
+  void OnXRPermissionRequestAllow();
+  void OnXRPermissionRequestCancel();
 
   using EventTarget::EventListenerAdded;
   virtual void EventListenerAdded(nsAtom* aType) override;
@@ -1285,6 +1288,15 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   
   bool mHasVRDisplayActivateEvents : 1;
+
+  
+  
+  bool mXRPermissionRequestInFlight : 1;
+
+  
+  
+  bool mXRPermissionGranted : 1;
+
   nsCheapSet<nsUint32HashKey> mGamepadIndexSet;
   nsRefPtrHashtable<nsUint32HashKey, mozilla::dom::Gamepad> mGamepads;
   bool mHasSeenGamepadInput;

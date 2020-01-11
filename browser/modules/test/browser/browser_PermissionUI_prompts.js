@@ -19,6 +19,11 @@ add_task(async function test_geo_permission_prompt() {
 });
 
 
+add_task(async function test_xr_permission_prompt() {
+  await testPrompt(PermissionUI.XRPermissionPrompt);
+});
+
+
 add_task(async function test_desktop_notification_permission_prompt() {
   Services.prefs.setBoolPref(
     "dom.webnotifications.requireuserinteraction",
