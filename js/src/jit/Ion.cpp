@@ -424,7 +424,7 @@ void jit::FreeIonBuilder(IonBuilder* builder) {
   
   
   
-  MOZ_ASSERT(builder->pendingEdges().empty(), "Should not leak malloc memory");
+  MOZ_ASSERT(!builder->hasPendingEdgesMap(), "Should not leak malloc memory");
   js_delete(builder->backgroundCodegen());
   js_delete(builder->alloc().lifoAlloc());
 }
