@@ -48,6 +48,7 @@ class CompositorVsyncDispatcher final {
 
  public:
   CompositorVsyncDispatcher();
+  explicit CompositorVsyncDispatcher(RefPtr<gfx::VsyncSource> aVsyncSource);
 
   
   void NotifyVsync(const VsyncEvent& aVsync);
@@ -60,6 +61,7 @@ class CompositorVsyncDispatcher final {
   virtual ~CompositorVsyncDispatcher();
   void ObserveVsync(bool aEnable);
 
+  RefPtr<gfx::VsyncSource> mVsyncSource;
   Mutex mCompositorObserverLock;
   RefPtr<VsyncObserver> mCompositorVsyncObserver;
   bool mDidShutdown;
@@ -70,10 +72,12 @@ class RefreshTimerVsyncDispatcher final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RefreshTimerVsyncDispatcher)
 
  public:
-  RefreshTimerVsyncDispatcher();
+  explicit RefreshTimerVsyncDispatcher(gfx::VsyncSource::Display* aDisplay);
 
   
   void NotifyVsync(const VsyncEvent& aVsync);
+
+  void MoveToDisplay(gfx::VsyncSource::Display* aDisplay);
 
   
   
@@ -91,6 +95,11 @@ class RefreshTimerVsyncDispatcher final {
   void UpdateVsyncStatus();
   bool NeedsVsync();
 
+  
+  
+  
+  gfx::VsyncSource::Display* mDisplay;
+  Mutex mDisplayLock;
   Mutex mRefreshTimersLock;
   RefPtr<VsyncObserver> mParentRefreshTimer;
   nsTArray<RefPtr<VsyncObserver>> mChildRefreshTimers;

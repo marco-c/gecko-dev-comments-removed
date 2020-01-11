@@ -342,6 +342,8 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
   static void PVsyncActorCreated(mozilla::layout::VsyncChild* aVsyncChild);
 
+  void CreateVsyncRefreshTimer();
+
 #ifdef DEBUG
   
 
@@ -479,8 +481,9 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
   void FinishedWaitingForTransaction();
 
-  mozilla::RefreshDriverTimer* ChooseTimer() const;
+  mozilla::RefreshDriverTimer* ChooseTimer();
   mozilla::RefreshDriverTimer* mActiveTimer;
+  RefPtr<mozilla::RefreshDriverTimer> mOwnTimer;
 
   
   mozilla::WeakPtr<nsPresContext> mPresContext;

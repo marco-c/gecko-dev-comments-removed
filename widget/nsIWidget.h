@@ -30,6 +30,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/widget/IMEData.h"
+#include "VsyncSource.h"
 #include "nsDataHashtable.h"
 #include "nsIObserver.h"
 #include "nsIWidgetListener.h"
@@ -2023,6 +2024,12 @@ class nsIWidget : public nsISupports {
 
 
   virtual CompositorBridgeChild* GetRemoteRenderer() { return nullptr; }
+
+  
+
+
+
+  virtual RefPtr<mozilla::gfx::VsyncSource> GetVsyncSource() { return nullptr; }
 
   
 
