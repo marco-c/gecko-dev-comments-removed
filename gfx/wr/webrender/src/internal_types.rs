@@ -341,7 +341,6 @@ pub enum TextureCacheAllocationKind {
 
 #[derive(Debug)]
 pub struct TextureCacheUpdate {
-    pub id: CacheTextureId,
     pub rect: DeviceIntRect,
     pub stride: Option<i32>,
     pub offset: i32,
@@ -363,7 +362,7 @@ pub struct TextureUpdateList {
     
     pub allocations: Vec<TextureCacheAllocation>,
     
-    pub updates: Vec<TextureCacheUpdate>,
+    pub updates: FastHashMap<CacheTextureId, Vec<TextureCacheUpdate>>,
 }
 
 impl TextureUpdateList {
@@ -372,7 +371,7 @@ impl TextureUpdateList {
         TextureUpdateList {
             clears_shared_cache: false,
             allocations: Vec::new(),
-            updates: Vec::new(),
+            updates: FastHashMap::default(),
         }
     }
 
@@ -389,8 +388,11 @@ impl TextureUpdateList {
 
     
     #[inline]
-    pub fn push_update(&mut self, update: TextureCacheUpdate) {
-        self.updates.push(update);
+    pub fn push_update(&mut self, id: CacheTextureId, update: TextureCacheUpdate) {
+        self.updates
+            .entry(id)
+            .or_default()
+            .push(update);
     }
 
     
@@ -406,8 +408,7 @@ impl TextureUpdateList {
     ) {
         let size = DeviceIntSize::new(width, height);
         let rect = DeviceIntRect::new(origin, size);
-        self.push_update(TextureCacheUpdate {
-            id,
+        self.push_update(id, TextureCacheUpdate {
             rect,
             stride: None,
             offset: 0,
@@ -480,7 +481,7 @@ impl TextureUpdateList {
         self.debug_assert_coalesced(id);
 
         
-        self.updates.retain(|x| x.id != id);
+        self.updates.remove(&id);
 
         
         
