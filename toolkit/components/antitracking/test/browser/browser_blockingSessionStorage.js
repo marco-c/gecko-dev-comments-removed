@@ -1,5 +1,7 @@
 
 
+requestLongerTimeout(2);
+
 AntiTracking.runTestInNormalAndPrivateMode(
   "sessionStorage",
   async _ => {
