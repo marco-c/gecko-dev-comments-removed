@@ -1151,6 +1151,9 @@ class JSTerm extends Component {
     }
 
     this.editor.setAutoCompletionText(suffix);
+
+    
+    this.terminalInputChanged(this.lastInputValue + suffix);
   }
 
   getAutoCompletionText() {
