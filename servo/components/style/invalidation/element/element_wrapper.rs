@@ -63,6 +63,12 @@ pub trait ElementSnapshot: Sized {
     fn is_part(&self, name: &Atom) -> bool;
 
     
+    fn exported_part(&self, name: &Atom) -> Option<Atom>;
+
+    
+    fn imported_part(&self, name: &Atom) -> Option<Atom>;
+
+    
     
     fn each_class<F>(&self, _: F)
     where
@@ -366,13 +372,17 @@ where
     }
 
     fn exported_part(&self, name: &Atom) -> Option<Atom> {
-        
-        self.element.exported_part(name)
+        match self.snapshot() {
+            Some(snapshot) if snapshot.has_attrs() => snapshot.exported_part(name),
+            _ => self.element.exported_part(name),
+        }
     }
 
     fn imported_part(&self, name: &Atom) -> Option<Atom> {
-        
-        self.element.imported_part(name)
+        match self.snapshot() {
+            Some(snapshot) if snapshot.has_attrs() => snapshot.imported_part(name),
+            _ => self.element.imported_part(name),
+        }
     }
 
     fn has_class(&self, name: &Atom, case_sensitivity: CaseSensitivity) -> bool {

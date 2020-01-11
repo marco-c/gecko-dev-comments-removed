@@ -524,6 +524,9 @@ pub trait TElement:
     fn has_part_attr(&self) -> bool;
 
     
+    fn exports_any_part(&self) -> bool;
+
+    
     fn id(&self) -> Option<&WeakAtom>;
 
     
