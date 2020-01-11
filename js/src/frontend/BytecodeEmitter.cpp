@@ -411,22 +411,6 @@ bool BytecodeEmitter::emitJump(JSOp op, JumpList* jump) {
   return true;
 }
 
-bool BytecodeEmitter::emitBackwardJump(JSOp op, JumpTarget target,
-                                       JumpList* jump,
-                                       JumpTarget* fallthrough) {
-  if (!emitJumpNoFallthrough(op, jump)) {
-    return false;
-  }
-  patchJumpsToTarget(*jump, target);
-
-  
-  
-  if (!emitJumpTarget(fallthrough)) {
-    return false;
-  }
-  return true;
-}
-
 void BytecodeEmitter::patchJumpsToTarget(JumpList jump, JumpTarget target) {
   MOZ_ASSERT(
       !jump.offset.valid() ||

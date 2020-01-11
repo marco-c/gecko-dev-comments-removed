@@ -110,9 +110,6 @@ class LoopControl : public BreakableControl {
   JumpTarget head_;
 
   
-  JumpTarget breakTarget_;
-
-  
   int32_t stackDepth_;
 
   
@@ -125,7 +122,6 @@ class LoopControl : public BreakableControl {
   LoopControl(BytecodeEmitter* bce, StatementKind loopKind);
 
   BytecodeOffset headOffset() const { return head_.offset; }
-  BytecodeOffset breakTargetOffset() const { return breakTarget_.offset; }
 
   MOZ_MUST_USE bool emitContinueTarget(BytecodeEmitter* bce);
 
