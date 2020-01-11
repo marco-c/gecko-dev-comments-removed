@@ -594,7 +594,6 @@ add_task(async function ensure_search_engine() {
   
   
   
-  
   let geoPref = "browser.search.geoip.url";
   Services.prefs.setCharPref(geoPref, "");
   registerCleanupFunction(() => Services.prefs.clearUserPref(geoPref));

@@ -180,6 +180,13 @@ async function addTestEngine(basename, httpServer = undefined) {
   let dataUrl =
     "http://localhost:" + httpServer.identity.primaryPort + "/data/";
 
+  
+  
+  
+  let geoPref = "browser.search.geoip.url";
+  Services.prefs.setCharPref(geoPref, "");
+  registerCleanupFunction(() => Services.prefs.clearUserPref(geoPref));
+
   info("Adding engine: " + basename);
   return new Promise(resolve => {
     Services.obs.addObserver(function obs(subject, topic, data) {
