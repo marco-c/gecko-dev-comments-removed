@@ -94,14 +94,6 @@ class CrashReporterHost {
     return mExtraAnnotations[CrashReporter::Annotation::additional_minidumps];
   }
 
-  
-  
-  
-  
-  
-  
-  bool IsLikelyOOM();
-
  private:
   static void AsyncAddCrash(int32_t aProcessType, int32_t aCrashType,
                             const nsString& aChildDumpID);

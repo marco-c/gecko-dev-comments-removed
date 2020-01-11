@@ -1634,16 +1634,11 @@ var BrowserTestUtils = {
 
 
 
-
-
-
-
   async crashFrame(
     browser,
     shouldShowTabCrashPage = true,
     shouldClearMinidumps = true,
-    browsingContext,
-    options = {}
+    browsingContext
   ) {
     let extra = {};
     let KeyValueParser = {};
@@ -1781,9 +1776,7 @@ var BrowserTestUtils = {
     this.sendAsyncMessage(
       browsingContext || browser.browsingContext,
       "BrowserTestUtils:CrashFrame",
-      {
-        crashType: options.crashType || "",
-      }
+      {}
     );
 
     await Promise.all(expectedPromises);
