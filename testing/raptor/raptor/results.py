@@ -632,6 +632,19 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
             with open(jobs_file, "w") as f:
                 f.write(json.dumps({"jobs": video_jobs}))
 
+            
+            
+            app_data = {
+                'application': {
+                    'name': self.browser_name,
+                    'version': self.browser_version,
+                },
+            }
+            app_file = os.path.join(self.result_dir(), "application.json")
+            LOG.info("Writing application data {} into {}".format(app_data, app_file))
+            with open(app_file, "w") as f:
+                f.write(json.dumps(app_data))
+
         return success and validate_success
 
 
