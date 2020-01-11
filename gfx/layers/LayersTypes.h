@@ -16,7 +16,6 @@
 #include "mozilla/TimeStamp.h"  
 #include "mozilla/TypedEnumBits.h"
 #include "nsRegion.h"
-#include "nsStyleConsts.h"
 
 #include <stdio.h>            
 #include "mozilla/Logging.h"  
@@ -43,6 +42,9 @@ struct ParamTraits;
 }  
 
 namespace mozilla {
+
+enum class StyleBorderStyle : uint8_t;
+
 namespace layers {
 
 class TextureHost;

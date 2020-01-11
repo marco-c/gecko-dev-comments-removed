@@ -42,7 +42,6 @@
 #include "nsURIHashKey.h"
 #include "mozilla/UseCounter.h"
 #include "mozilla/WeakPtr.h"
-#include "mozilla/StaticPresData.h"
 #include "Units.h"
 #include "nsContentListDeclarations.h"
 #include "nsExpirationTracker.h"
@@ -58,7 +57,6 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/SegmentedVector.h"
-#include "mozilla/ServoBindingTypes.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
@@ -5286,13 +5284,6 @@ class Document : public nsINode,
   
   
   nsTHashtable<nsPtrHashKey<SVGElement>> mLazySVGPresElements;
-
-  
-  
-  
-  
-  
-  LangGroupFontPrefs mLangGroupFontPrefs;
 
   nsTHashtable<nsRefPtrHashKey<nsAtom>> mLanguagesUsed;
 

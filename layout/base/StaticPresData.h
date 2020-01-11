@@ -42,22 +42,6 @@ struct LangGroupFontPrefs {
     mLangGroup = nullptr;
   }
 
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
-    size_t n = 0;
-    LangGroupFontPrefs* curr = mNext.get();
-    while (curr) {
-      n += aMallocSizeOf(curr);
-
-      
-      
-      
-      
-
-      curr = curr->mNext.get();
-    }
-    return n;
-  }
-
   
   void Initialize(nsStaticAtom* aLangGroupAtom);
 
@@ -103,7 +87,7 @@ struct LangGroupFontPrefs {
   nsFont mDefaultMonospaceFont;
   nsFont mDefaultCursiveFont;
   nsFont mDefaultFantasyFont;
-  mozilla::UniquePtr<LangGroupFontPrefs> mNext;
+  UniquePtr<LangGroupFontPrefs> mNext;
 };
 
 

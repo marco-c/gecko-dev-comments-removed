@@ -39,6 +39,7 @@
 #include "mozilla/layers/CanvasRenderer.h"
 #include "mozilla/layers/LayerAttributes.h"
 #include "mozilla/layers/LayersTypes.h"
+#include "mozilla/webrender/WebRenderTypes.h"
 #include "mozilla/mozalloc.h"        
 #include "nsAutoPtr.h"               
 #include "nsCOMPtr.h"                
