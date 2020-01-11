@@ -61,6 +61,12 @@ void GCRuntime::sweepFinalizationGroups(Zone* zone) {
       
       for (JSObject* obj : records) {
         obj = UncheckedUnwrapWithoutExpose(obj);
+        if (!obj->is<FinalizationRecordObject>()) {
+          MOZ_ASSERT(JS_IsDeadWrapper(obj));
+          
+          
+          continue;
+        }
         auto record = &obj->as<FinalizationRecordObject>();
         FinalizationGroupObject* group = record->group();
         if (group) {
@@ -75,6 +81,12 @@ void GCRuntime::sweepFinalizationGroups(Zone* zone) {
       
       records.eraseIf([](JSObject* obj) {
         obj = UncheckedUnwrapWithoutExpose(obj);
+        if (!obj->is<FinalizationRecordObject>()) {
+          MOZ_ASSERT(JS_IsDeadWrapper(obj));
+          
+          
+          return true;
+        }
         auto record = &obj->as<FinalizationRecordObject>();
         return !record->group();
       });
