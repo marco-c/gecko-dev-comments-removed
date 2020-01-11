@@ -158,7 +158,6 @@ void Thread::ThreadMain(void* aArgument) {
 
   if (forked) {
     AutoPassThroughThreadEvents pt;
-    thread->ReleaseOrAcquireOwnedLocks(OwnedLockState::NeedAcquire);
     RestoreThreadStack(thread->Id());
   }
 
