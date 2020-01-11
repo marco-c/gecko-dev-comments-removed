@@ -1179,8 +1179,9 @@ window.Audit = (function() {
 
     
     
-    run() {
+    run(harnessTest) {
       this._state = TaskState.STARTED;
+      this._harnessTest = harnessTest;
       
       _logPassed(
           '> [' + this._label + '] ' +
@@ -1229,12 +1230,7 @@ window.Audit = (function() {
     
     
     timeout(subTask, time) {
-      async_test((test) => {
-        test.step_timeout(() => {
-          subTask();
-          test.done();
-        }, time);
-      });
+      this._harnessTest.step_timeout(subTask, time);
     }
 
     isPassed() {
@@ -1324,7 +1320,7 @@ window.Audit = (function() {
         let task = this._tasks[this._taskSequence[taskIndex]];
         
         
-        promise_test(() => task.run(), `Executing "${task.label}"`);
+        promise_test((t) => task.run(t), `Executing "${task.label}"`);
       }
 
       
