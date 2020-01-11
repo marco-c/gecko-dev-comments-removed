@@ -2099,6 +2099,11 @@ setterLevel:                                                                  \
     }
   }
 
+  frontend::ParseGoal parseGoal() const {
+    return hasModuleGoal() ? frontend::ParseGoal::Module
+                           : frontend::ParseGoal::Script;
+  }
+
   bool hasEnclosingLazyScript() const {
     return warmUpData_.isEnclosingScript();
   }
@@ -3407,13 +3412,6 @@ class LazyScript : public BaseScript {
     return script_.unbarrieredGet();
   }
   bool hasScript() const { return bool(script_); }
-
-  frontend::ParseGoal parseGoal() const {
-    if (hasFlag(ImmutableFlags::HasModuleGoal)) {
-      return frontend::ParseGoal::Module;
-    }
-    return frontend::ParseGoal::Script;
-  }
 
   
   
