@@ -28,6 +28,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ASRouterTriggerListeners:
     "resource://activity-stream/lib/ASRouterTriggerListeners.jsm",
   CFRMessageProvider: "resource://activity-stream/lib/CFRMessageProvider.jsm",
+  GroupsConfigurationProvider:
+    "resource://activity-stream/lib/GroupsConfigurationProvider.jsm",
   KintoHttpClient: "resource://services-common/kinto-http-client.js",
   Downloader: "resource://services-settings/Attachments.jsm",
   RemoteL10n: "resource://activity-stream/lib/RemoteL10n.jsm",
@@ -364,16 +366,7 @@ const MessageLoaderUtils = {
     );
   },
 
-  
-
-
-
-
-
-
-
-
-  async loadMessagesForProvider(provider, options) {
+  async _loadDataForProvider(provider, options) {
     const loader = this._getMessageLoader(provider);
     let messages = await loader(provider, options);
     
@@ -387,6 +380,21 @@ const MessageLoaderUtils = {
         )
       );
     }
+
+    return { messages };
+  },
+
+  
+
+
+
+
+
+
+
+
+  async loadMessagesForProvider(provider, options) {
+    let { messages } = await this._loadDataForProvider(provider, options);
     
     if (provider.exclude && provider.exclude.length) {
       messages = messages.filter(
@@ -400,6 +408,7 @@ const MessageLoaderUtils = {
           const message = {
             weight: 100,
             ...messageData,
+            groups: [...(messageData.groups || []), provider.id],
             provider: provider.id,
           };
 
@@ -510,11 +519,12 @@ class _ASRouter {
     this._state = {
       providers: [],
       messageBlockList: [],
+      groupBlockList: [],
       providerBlockList: [],
       messageImpressions: {},
-      providerImpressions: {},
       trailheadInitialized: false,
       messages: [],
+      groups: [],
       errors: [],
       localeInUse: Services.locale.appLocaleAsLangTag,
     };
@@ -669,16 +679,116 @@ class _ASRouter {
 
 
 
+  hasGroupsEnabled(groups = []) {
+    return this.state.groups
+      .filter(({ id }) => groups.includes(id))
+      .every(({ enabled }) => enabled);
+  }
+
+  
+
+
+
+
+  isExcludedByProvider(message) {
+    const provider = this.state.providers.find(p => p.id === message.provider);
+    if (!provider) {
+      return true;
+    }
+    if (provider.exclude) {
+      return provider.exclude.includes(message.id);
+    }
+    return false;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async loadAllMessageGroups() {
+    const LOCAL_GROUP_CONFIGURATIONS = GroupsConfigurationProvider.getMessages();
+    const [provider] = this.state.providers.filter(
+      p =>
+        p.id === "message-groups" && MessageLoaderUtils.shouldProviderUpdate(p)
+    );
+    if (!provider) {
+      return;
+    }
+    let { messages } = await MessageLoaderUtils._loadDataForProvider(provider, {
+      storage: this._storage,
+      dispatchToAS: this.dispatchToAS,
+    });
+    const providerGroups = this.state.providers.map(
+      ({ id, frequency = null, enabled }) => {
+        const defaultGroup = { id, enabled, type: "default" };
+        if (frequency) {
+          defaultGroup.frequency = frequency;
+        }
+        const localGroup =
+          LOCAL_GROUP_CONFIGURATIONS.find(g => g.id === id) || {};
+        const remoteGroup = messages.find(g => g.id === id) || {};
+        return { ...defaultGroup, ...localGroup, ...remoteGroup };
+      }
+    );
+    const messageGroups = messages
+      .filter(m => !providerGroups.find(g => g.id === m.id))
+      .map(remoteGroup => {
+        const localGroup =
+          LOCAL_GROUP_CONFIGURATIONS.find(g => g.id === remoteGroup.id) || {};
+        return { ...localGroup, ...remoteGroup };
+      });
+    const localGroups = LOCAL_GROUP_CONFIGURATIONS.filter(
+      local =>
+        !providerGroups.find(g => g.id === local.id) &&
+        !messageGroups.find(g => g.id === local.id)
+    );
+    
+    
+    
+    await this.setState(state => ({
+      groups: [...providerGroups, ...messageGroups, ...localGroups].map(
+        group => ({
+          ...group,
+          enabled:
+            group.enabled &&
+            
+            !state.groupBlockList.includes(group.id) &&
+            (Array.isArray(group.userPreferences)
+              ? group.userPreferences.every(
+                  ASRouterPreferences.getUserPreference
+                )
+              : true),
+        })
+      ),
+    }));
+  }
+
+  
+
+
+
+
   async loadMessagesFromAllProviders() {
     const needsUpdate = this.state.providers.filter(provider =>
       MessageLoaderUtils.shouldProviderUpdate(provider)
     );
+    await this.loadAllMessageGroups();
     
     if (needsUpdate.length) {
       let newState = { messages: [], providers: [] };
       for (const provider of this.state.providers) {
         if (needsUpdate.includes(provider)) {
-          let {
+          const {
             messages,
             lastUpdated,
             errors,
@@ -686,12 +796,6 @@ class _ASRouter {
             storage: this._storage,
             dispatchToAS: this.dispatchToAS,
           });
-          messages = messages.filter(
-            ({ content }) =>
-              !content ||
-              !content.category ||
-              ASRouterPreferences.getUserPreference(content.category)
-          );
           newState.providers.push({ ...provider, lastUpdated, errors });
           newState.messages = [...newState.messages, ...messages];
         } else {
@@ -814,15 +918,32 @@ class _ASRouter {
       (await this._storage.get("providerBlockList")) || [];
     const messageImpressions =
       (await this._storage.get("messageImpressions")) || {};
+    const groupImpressions =
+      (await this._storage.get("groupImpressions")) || {};
+    
+    const groupBlockList = (
+      (await this._storage.get("groupBlockList")) || []
+    ).concat(providerBlockList);
+
+    
+    
     const providerImpressions =
       (await this._storage.get("providerImpressions")) || {};
+    for (const provider of Object.keys(providerImpressions)) {
+      groupImpressions[provider] = [
+        ...(groupImpressions[provider] || []),
+        ...providerImpressions[provider],
+      ];
+    }
+
     const previousSessionEnd =
       (await this._storage.get("previousSessionEnd")) || 0;
     await this.setState({
       messageBlockList,
+      groupBlockList,
       providerBlockList,
+      groupImpressions,
       messageImpressions,
-      providerImpressions,
       previousSessionEnd,
     });
     this._updateMessageProviders();
@@ -1010,18 +1131,21 @@ class _ASRouter {
 
   
   isBelowFrequencyCaps(message) {
-    const { providers, messageImpressions, providerImpressions } = this.state;
-
-    const provider = providers.find(p => p.id === message.provider);
+    const { messageImpressions, groupImpressions } = this.state;
     const impressionsForMessage = messageImpressions[message.id];
-    const impressionsForProvider = providerImpressions[message.provider];
 
     return (
       this._isBelowItemFrequencyCap(
         message,
         impressionsForMessage,
         MAX_MESSAGE_LIFETIME_CAP
-      ) && this._isBelowItemFrequencyCap(provider, impressionsForProvider)
+      ) &&
+      message.groups.every(messageGroup =>
+        this._isBelowItemFrequencyCap(
+          this.state.groups.find(({ id }) => id === messageGroup),
+          groupImpressions[messageGroup]
+        )
+      )
     );
   }
 
@@ -1161,7 +1285,9 @@ class _ASRouter {
       item =>
         !state.messageBlockList.includes(item.id) &&
         (!item.campaign || !state.messageBlockList.includes(item.campaign)) &&
-        !state.providerBlockList.includes(item.provider)
+        !state.providerBlockList.includes(item.provider) &&
+        this.hasGroupsEnabled(item.groups) &&
+        !this.isExcludedByProvider(item)
     );
   }
 
@@ -1257,10 +1383,12 @@ class _ASRouter {
   }
 
   async addImpression(message) {
-    const provider = this.state.providers.find(p => p.id === message.provider);
+    const groupsWithFrequency = this.state.groups.filter(
+      ({ frequency, id }) => frequency && message.groups.includes(id)
+    );
     
     
-    if (message.frequency || (provider && provider.frequency)) {
+    if (message.frequency || groupsWithFrequency.length) {
       const time = Date.now();
       await this.setState(state => {
         const messageImpressions = this._addImpressionForItem(
@@ -1269,13 +1397,16 @@ class _ASRouter {
           "messageImpressions",
           time
         );
-        const providerImpressions = this._addImpressionForItem(
-          state,
-          provider,
-          "providerImpressions",
-          time
-        );
-        return { messageImpressions, providerImpressions };
+        let { groupImpressions } = this.state;
+        for (const group of groupsWithFrequency) {
+          groupImpressions = this._addImpressionForItem(
+            state,
+            group,
+            "groupImpressions",
+            time
+          );
+        }
+        return { messageImpressions, groupImpressions };
       });
     }
   }
@@ -1329,17 +1460,27 @@ class _ASRouter {
         state.messages,
         "messageImpressions"
       );
-      const providerImpressions = this._cleanupImpressionsForItems(
+      const groupImpressions = this._cleanupImpressionsForItems(
+        state,
+        state.groups,
+        "groupImpressions"
+      );
+      this._cleanupImpressionsForItems(
         state,
         state.providers,
         "providerImpressions"
       );
-      return { messageImpressions, providerImpressions };
+      return { messageImpressions, groupImpressions };
     });
   }
 
   
-  
+
+
+
+
+
+
   _cleanupImpressionsForItems(state, items, impressionsString) {
     const impressions = { ...state[impressionsString] };
     let needsUpdate = false;
@@ -1452,15 +1593,54 @@ class _ASRouter {
     });
   }
 
-  unblockMessageById(id) {
+  unblockMessageById(idOrIds) {
+    const idsToUnblock = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
+
     return this.setState(state => {
       const messageBlockList = [...state.messageBlockList];
-      const message = state.messages.find(m => m.id === id);
-      const idToUnblock = message && message.campaign ? message.campaign : id;
-      messageBlockList.splice(messageBlockList.indexOf(idToUnblock), 1);
+      idsToUnblock
+        .map(id => state.messages.find(m => m.id === id))
+        
+        
+        .forEach(message => {
+          const idToUnblock =
+            message && message.campaign ? message.campaign : message.id;
+          messageBlockList.splice(messageBlockList.indexOf(idToUnblock), 1);
+        });
+
       this._storage.set("messageBlockList", messageBlockList);
       return { messageBlockList };
     });
+  }
+
+  
+
+
+
+
+  blockGroupById(id) {
+    if (!id) {
+      return false;
+    }
+    const groupBlockList = [...this.state.groupBlockList, id];
+    this._storage.set("groupBlockList", groupBlockList);
+    return this.setGroupState({ id, value: false });
+  }
+
+  
+
+
+
+
+  unblockGroupById(id) {
+    if (!id) {
+      return false;
+    }
+    const groupBlockList = [
+      ...this.state.groupBlockList.filter(groupId => groupId !== id),
+    ];
+    this._storage.set("groupBlockList", groupBlockList);
+    return this.setGroupState({ id, value: true });
   }
 
   async blockProviderById(idOrIds) {
@@ -1474,6 +1654,19 @@ class _ASRouter {
       this._storage.set("providerBlockList", providerBlockList);
       return { providerBlockList, providerImpressions };
     });
+  }
+
+  setGroupState({ id, value }) {
+    const newGroupState = {
+      ...this.state.groups.find(group => group.id === id),
+      enabled: value,
+    };
+    const newGroupImpressions = { ...this.state.groupImpressions };
+    delete newGroupImpressions[id];
+    return this.setState(({ groups }) => ({
+      groups: [...groups.filter(group => group.id !== id), newGroupState],
+      groupImpressions: newGroupImpressions,
+    }));
   }
 
   _validPreviewEndpoint(url) {
@@ -1963,6 +2156,18 @@ class _ASRouter {
           action.data.id,
           action.data.value
         );
+        break;
+      case "SET_GROUP_STATE":
+        await this.setGroupState(action.data);
+        await this.loadMessagesFromAllProviders();
+        break;
+      case "BLOCK_GROUP_BY_ID":
+        await this.blockGroupById(action.data.id);
+        await this.loadMessagesFromAllProviders();
+        break;
+      case "UNBLOCK_GROUP_BY_ID":
+        await this.unblockGroupById(action.data.id);
+        await this.loadMessagesFromAllProviders();
         break;
       case "EVALUATE_JEXL_EXPRESSION":
         this.evaluateExpression(target, action.data);
