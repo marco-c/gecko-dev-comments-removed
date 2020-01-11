@@ -77,7 +77,7 @@ class MachCommands(MachCommandBase):
                 if not no_virtualenv:
                     
                     
-                    self.virtualenv_manager._run_pip(['install', '--use-wheel', 'ipython'])
+                    self.virtualenv_manager._run_pip(['install', 'ipython'])
                     python_path = which('ipython', path=bindir)
 
                 if not python_path:
