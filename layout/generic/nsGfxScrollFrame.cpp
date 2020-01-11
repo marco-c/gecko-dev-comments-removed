@@ -2593,28 +2593,36 @@ static nscoord ClampAndAlignWithPixels(nscoord aDesired, nscoord aBoundLower,
   
   
   nscoord aligned =
-      NSToCoordRoundWithClamp(nearestLayerVal * aAppUnitsPerPixel / aRes);
+      aRes == 0.0
+          ? 0.0
+          : NSToCoordRoundWithClamp(nearestLayerVal * aAppUnitsPerPixel / aRes);
 
   
   
   if (aBoundUpper == destUpper &&
       static_cast<decltype(Abs(desired))>(aBoundUpper - desired) <
-          Abs(desired - aligned))
+          Abs(desired - aligned)) {
     return aBoundUpper;
+  }
 
   if (aBoundLower == destLower &&
       static_cast<decltype(Abs(desired))>(desired - aBoundLower) <
-          Abs(aligned - desired))
+          Abs(aligned - desired)) {
     return aBoundLower;
+  }
 
   
-  if (aligned >= destLower && aligned <= destUpper) return aligned;
+  if (aligned >= destLower && aligned <= destUpper) {
+    return aligned;
+  }
 
   
   double oppositeLayerVal =
       nearestLayerVal + ((nearestLayerVal < desiredLayerVal) ? 1.0 : -1.0);
-  nscoord opposite =
-      NSToCoordRoundWithClamp(oppositeLayerVal * aAppUnitsPerPixel / aRes);
+  nscoord opposite = aRes == 0.0
+                         ? 0.0
+                         : NSToCoordRoundWithClamp(oppositeLayerVal *
+                                                   aAppUnitsPerPixel / aRes);
   if (opposite >= destLower && opposite <= destUpper) {
     return opposite;
   }
