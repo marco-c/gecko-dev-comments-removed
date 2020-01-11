@@ -1047,20 +1047,6 @@ Toolbox.prototype = {
     if (!this._hostOptions || this._hostOptions.zoom === true) {
       ZoomKeys.register(this.win, this.shortcuts);
     }
-
-    
-    
-    
-    const wrongShortcuts = ["CmdOrCtrl+P", "CmdOrCtrl+Shift+P"];
-    for (const shortcut of wrongShortcuts) {
-      this.shortcuts.on(shortcut, event => {
-        this.telemetry.recordEvent("wrong_shortcut", "tools", null, {
-          shortcut,
-          tool_id: this.currentToolId,
-          session_id: this.sessionId,
-        });
-      });
-    }
   },
 
   _removeShortcuts: function() {
