@@ -1842,10 +1842,11 @@
 
 
 
+
+
  \
     MACRO(JSOP_IMPLICITTHIS, "implicitthis", "", 5, 0, 1, JOF_ATOM) \
     
-
 
 
 
@@ -2596,9 +2597,22 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_INITLEXICAL, "initlexical", NULL, 4, 1, 1, JOF_LOCAL|JOF_NAME|JOF_DETECTING) \
     
+
 
 
 
@@ -2616,9 +2630,28 @@
 
 
 
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_INITALIASEDLEXICAL, "initaliasedlexical", NULL, 5, 1, 1, JOF_ENVCOORD|JOF_NAME|JOF_PROPINIT|JOF_DETECTING) \
     
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2636,9 +2669,18 @@
 
 
 
+
+
+
  \
     MACRO(JSOP_CHECKALIASEDLEXICAL, "checkaliasedlexical", NULL, 5, 0, 0, JOF_ENVCOORD|JOF_NAME) \
     
+
+
+
+
+
+
 
 
 
@@ -2679,9 +2721,31 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_GETNAME, "getname", NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC) \
     
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2703,7 +2767,6 @@
 
 
 
-
  \
     MACRO(JSOP_GETARG, "getarg", NULL, 3, 0, 1, JOF_QARG|JOF_NAME) \
     
@@ -2713,9 +2776,18 @@
 
 
 
+
+
+
  \
     MACRO(JSOP_GETLOCAL, "getlocal", NULL, 4, 0, 1, JOF_LOCAL|JOF_NAME) \
     
+
+
+
+
+
+
 
 
 
@@ -2754,6 +2826,20 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_GETBOUNDNAME, "getboundname", NULL, 5, 1, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC) \
     
@@ -2767,11 +2853,18 @@
 
 
 
-
-
  \
     MACRO(JSOP_GETINTRINSIC, "getintrinsic", NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC) \
     
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2801,11 +2894,27 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_SETNAME, "setname", NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY|JOF_IC) \
     
-
-
 
 
 
@@ -2828,9 +2937,6 @@
 
 
 
-
-
-
  \
     MACRO(JSOP_SETGNAME, "setgname", NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_DETECTING|JOF_GNAME|JOF_CHECKSLOPPY|JOF_IC) \
     
@@ -2841,14 +2947,9 @@
 
 
 
-
-
-
-
  \
     MACRO(JSOP_STRICTSETGNAME, "strict-setgname", NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_DETECTING|JOF_GNAME|JOF_CHECKSTRICT|JOF_IC) \
     
-
 
 
 
@@ -2874,9 +2975,20 @@
 
 
 
+
+
+
+
+
+
  \
     MACRO(JSOP_SETALIASEDVAR, "setaliasedvar", NULL, 5, 1, 1, JOF_ENVCOORD|JOF_NAME|JOF_PROPSET|JOF_DETECTING) \
     
+
+
+
+
+
 
 
 
@@ -2892,6 +3004,40 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_PUSHLEXICALENV, "pushlexicalenv", NULL, 5, 0, 0, JOF_SCOPE) \
     
@@ -2901,9 +3047,21 @@
 
 
 
+
+
  \
     MACRO(JSOP_POPLEXICALENV, "poplexicalenv", NULL, 1, 0, 0, JOF_BYTE) \
     
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2944,9 +3102,39 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_PUSHVARENV, "pushvarenv", NULL, 5, 0, 0, JOF_SCOPE) \
     
+
+
 
 
 
@@ -2967,9 +3155,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_ENTERWITH, "enterwith", NULL, 5, 1, 0, JOF_SCOPE) \
     
+
+
+
+
+
+
 
 
 
@@ -2985,9 +3188,24 @@
 
 
 
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_BINDVAR, "bindvar", NULL, 1, 0, 1, JOF_BYTE) \
     
+
+
+
+
+
+
+
 
 
 
@@ -3014,10 +3232,17 @@
 
 
 
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_DEFFUN, "deffun", NULL, 1, 1, 0, JOF_BYTE) \
     
-
 
 
 
@@ -3053,9 +3278,44 @@
 
 
 
+
+
+
+
+
  \
     MACRO(JSOP_DELNAME, "delname", NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_CHECKSLOPPY) \
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3078,9 +3338,18 @@
 
 
 
+
  \
     MACRO(JSOP_REST, "rest", NULL, 1, 0, 1, JOF_BYTE|JOF_TYPESET|JOF_IC) \
     
+
+
+
+
+
+
+
+
 
 
 
