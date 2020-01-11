@@ -47,11 +47,12 @@ class EmitterScope;
 
 
 
-
-
-
-
 class MOZ_STACK_CLASS CForEmitter {
+  
+  
+  
+  
+  
   
   
   
@@ -80,13 +81,6 @@ class MOZ_STACK_CLASS CForEmitter {
 
   
   unsigned noteIndex_ = 0;
-
-  
-  
-  BytecodeOffset condOffset_;
-
-  
-  BytecodeOffset biasedTop_;
 
   
   Cond cond_ = Cond::Missing;
@@ -139,13 +133,13 @@ class MOZ_STACK_CLASS CForEmitter {
     Init,
 
     
+    Cond,
+
+    
     Body,
 
     
     Update,
-
-    
-    Cond,
 
     
     End
@@ -171,19 +165,12 @@ class MOZ_STACK_CLASS CForEmitter {
   
   
   
-  
-  
-  
-  
   MOZ_MUST_USE bool emitInit(const mozilla::Maybe<uint32_t>& initPos);
-  MOZ_MUST_USE bool emitBody(Cond cond,
-                             const mozilla::Maybe<uint32_t>& bodyPos);
+  MOZ_MUST_USE bool emitCond(const mozilla::Maybe<uint32_t>& condPos);
+  MOZ_MUST_USE bool emitBody(Cond cond);
   MOZ_MUST_USE bool emitUpdate(Update update,
                                const mozilla::Maybe<uint32_t>& updatePos);
-  MOZ_MUST_USE bool emitCond(const mozilla::Maybe<uint32_t>& forPos,
-                             const mozilla::Maybe<uint32_t>& condPos,
-                             const mozilla::Maybe<uint32_t>& endPos);
-  MOZ_MUST_USE bool emitEnd();
+  MOZ_MUST_USE bool emitEnd(const mozilla::Maybe<uint32_t>& forPos);
 };
 
 } 

@@ -41,13 +41,6 @@ bool ForInEmitter::emitInitialize() {
     return false;
   }
 
-  
-  
-  if (!bce_->emit1(JSOP_UNDEFINED)) {
-    
-    return false;
-  }
-
   loopInfo_.emplace(bce_, StatementKind::ForInLoop);
 
   
@@ -55,14 +48,20 @@ bool ForInEmitter::emitInitialize() {
     return false;
   }
 
-  
-  
-  if (!loopInfo_->emitEntryJump(bce_)) {
+  if (!loopInfo_->emitLoopHead(bce_, Nothing())) {
     
     return false;
   }
 
-  if (!loopInfo_->emitLoopHead(bce_, Nothing())) {
+  if (!bce_->emit1(JSOP_MOREITER)) {
+    
+    return false;
+  }
+  if (!bce_->emit1(JSOP_ISNOITER)) {
+    
+    return false;
+  }
+  if (!bce_->emitJump(JSOP_IFNE, &loopInfo_->breaks)) {
     
     return false;
   }
@@ -132,38 +131,33 @@ bool ForInEmitter::emitEnd(const Maybe<uint32_t>& forPos) {
   }
 
   if (!loopInfo_->emitContinueTarget(bce_)) {
-    return false;
-  }
-
-  if (!loopInfo_->emitLoopEntry(bce_, Nothing())) {
     
     return false;
   }
+
   if (!bce_->emit1(JSOP_POP)) {
     
     return false;
   }
-  if (!bce_->emit1(JSOP_MOREITER)) {
-    
-    return false;
-  }
-  if (!bce_->emit1(JSOP_ISNOITER)) {
-    
-    return false;
-  }
-
-  if (!loopInfo_->emitLoopEnd(bce_, JSOP_IFEQ)) {
+  if (!loopInfo_->emitLoopEnd(bce_, JSOP_GOTO)) {
     
     return false;
   }
 
   
   if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::ForIn::BackJumpOffset,
-                              loopInfo_->loopEndOffsetFromEntryJump())) {
+                              loopInfo_->loopEndOffsetFromLoopHead())) {
     return false;
   }
 
+  
+  
+  int32_t stackDepth = bce_->bytecodeSection().stackDepth() + 1;
+  MOZ_ASSERT(stackDepth == loopDepth_);
+  bce_->bytecodeSection().setStackDepth(stackDepth);
+
   if (!loopInfo_->patchBreaksAndContinues(bce_)) {
+    
     return false;
   }
 

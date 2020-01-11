@@ -56,7 +56,7 @@ LoopControl::LoopControl(BytecodeEmitter* bce, StatementKind loopKind)
     loopSlots = 3;
   } else if (loopKind == StatementKind::ForInLoop) {
     
-    loopSlots = 2;
+    loopSlots = 1;
   } else {
     
     loopSlots = 0;
@@ -92,13 +92,6 @@ bool LoopControl::emitSpecialBreakForDone(BytecodeEmitter* bce) {
   return true;
 }
 
-bool LoopControl::emitEntryJump(BytecodeEmitter* bce) {
-  if (!bce->emitJump(JSOP_GOTO, &entryJump_)) {
-    return false;
-  }
-  return true;
-}
-
 bool LoopControl::emitLoopHead(BytecodeEmitter* bce,
                                const Maybe<uint32_t>& nextPos) {
   if (nextPos) {
@@ -107,34 +100,20 @@ bool LoopControl::emitLoopHead(BytecodeEmitter* bce,
     }
   }
 
-  head_ = {bce->bytecodeSection().offset()};
-  BytecodeOffset off;
-  if (!bce->emitJumpTargetOp(JSOP_LOOPHEAD, &off)) {
-    return false;
-  }
-
-  return true;
-}
-
-bool LoopControl::emitLoopEntry(BytecodeEmitter* bce,
-                                const Maybe<uint32_t>& nextPos) {
-  if (nextPos) {
-    if (!bce->updateSourceCoordNotes(*nextPos)) {
-      return false;
-    }
-  }
-
-  JumpTarget entry = {bce->bytecodeSection().offset()};
-  bce->patchJumpsToTarget(entryJump_, entry);
-
   MOZ_ASSERT(loopDepth_ > 0);
 
-  BytecodeOffset off;
-  if (!bce->emitJumpTargetOp(JSOP_LOOPENTRY, &off)) {
+  head_ = {bce->bytecodeSection().offset()};
+  BytecodeOffset headOff;
+  if (!bce->emitJumpTargetOp(JSOP_LOOPHEAD, &headOff)) {
     return false;
   }
-  SetLoopEntryDepthHintAndFlags(bce->bytecodeSection().code(off), loopDepth_,
-                                canIonOsr_);
+
+  BytecodeOffset entryOff;
+  if (!bce->emitJumpTargetOp(JSOP_LOOPENTRY, &entryOff)) {
+    return false;
+  }
+  SetLoopEntryDepthHintAndFlags(bce->bytecodeSection().code(entryOff),
+                                loopDepth_, canIonOsr_);
 
   return true;
 }

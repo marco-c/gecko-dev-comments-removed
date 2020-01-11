@@ -52,9 +52,6 @@ class MOZ_STACK_CLASS ForOfEmitter {
   bool allowSelfHostedIter_;
   IteratorKind iterKind_;
 
-  
-  JumpList initialJump_;
-
   mozilla::Maybe<ForOfLoopControl> loopInfo_;
 
   

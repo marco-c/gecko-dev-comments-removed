@@ -105,20 +105,9 @@ class LoopControl : public BreakableControl {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
 
   
   BytecodeOffset loopEndOffset_ = BytecodeOffset::invalidOffset();
-
-  
-  JumpList entryJump_;
 
   
   JumpTarget head_;
@@ -152,42 +141,20 @@ class LoopControl : public BreakableControl {
   BytecodeOffset continueTargetOffset() const { return continueTarget_.offset; }
 
   
-  
-  BytecodeOffsetDiff loopEndOffsetFromEntryJump() const {
-    return loopEndOffset_ - entryJump_.offset;
-  }
-
-  
-  
   BytecodeOffsetDiff loopEndOffsetFromLoopHead() const {
     return loopEndOffset_ - head_.offset;
   }
 
-  
-  
-  
-  
-  void setContinueTarget(BytecodeOffset offset) {
-    continueTarget_.offset = offset;
-  }
   MOZ_MUST_USE bool emitContinueTarget(BytecodeEmitter* bce);
 
   
   MOZ_MUST_USE bool emitSpecialBreakForDone(BytecodeEmitter* bce);
-
-  MOZ_MUST_USE bool emitEntryJump(BytecodeEmitter* bce);
 
   
   
   
   MOZ_MUST_USE bool emitLoopHead(BytecodeEmitter* bce,
                                  const mozilla::Maybe<uint32_t>& nextPos);
-
-  
-  
-  
-  MOZ_MUST_USE bool emitLoopEntry(BytecodeEmitter* bce,
-                                  const mozilla::Maybe<uint32_t>& nextPos);
 
   MOZ_MUST_USE bool emitLoopEnd(BytecodeEmitter* bce, JSOp op);
   MOZ_MUST_USE bool patchBreaksAndContinues(BytecodeEmitter* bce);

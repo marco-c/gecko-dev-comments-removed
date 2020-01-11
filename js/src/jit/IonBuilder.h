@@ -102,15 +102,6 @@ using CallTargets = Vector<JSFunction*, 6, JitAllocPolicy>;
 
 
 
-
-
-
-
-
-
-
-
-
 class PendingEdge {
  public:
   enum class Kind : uint8_t {
@@ -260,7 +251,7 @@ class IonBuilder : public MIRGenerator,
                                        uint32_t maxTargets);
 
   AbortReasonOr<Ok> analyzeNewLoopTypes(MBasicBlock* entry,
-                                        jsbytecode* loopHeadPc, bool isForIn,
+                                        jsbytecode* loopHeadPc,
                                         jsbytecode* loopStartPc,
                                         jsbytecode* loopStopPc);
   AbortReasonOr<Ok> analyzeNewLoopTypesForLocation(
@@ -293,10 +284,8 @@ class IonBuilder : public MIRGenerator,
 
   AbortReasonOr<Ok> startLoop(LoopState::State initState, jsbytecode* loopEntry,
                               jsbytecode* loopHead, jsbytecode* backjump,
-                              bool isForIn, uint32_t stackPhiCount);
-  AbortReasonOr<Ok> visitDoWhileLoop(jssrcnote* sn);
-  AbortReasonOr<Ok> visitForLoop(jssrcnote* sn);
-  AbortReasonOr<Ok> visitWhileOrForInOrForOfLoop(jssrcnote* sn);
+                              uint32_t stackPhiCount);
+  AbortReasonOr<Ok> jsop_loophead();
 
   AbortReasonOr<Ok> visitJumpTarget(JSOp op);
   AbortReasonOr<Ok> visitTest(JSOp op, bool* restarted);

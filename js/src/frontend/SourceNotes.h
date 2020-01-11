@@ -44,15 +44,11 @@ class SrcNote {
    public:
     enum Fields {
       
-      CondOffset,
-
-      
       
       BackJumpOffset,
       Count,
     };
   };
-  
   
   class While {
    public:
@@ -73,7 +69,6 @@ class SrcNote {
     };
   };
   
-  
   class ForIn {
    public:
     enum Fields {
@@ -82,7 +77,6 @@ class SrcNote {
       Count,
     };
   };
-  
   
   class ForOf {
    public:

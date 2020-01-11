@@ -5186,24 +5186,10 @@ bool BytecodeEmitter::emitSpread(bool allowSelfHosted) {
     return false;
   }
 
-  
-  
-  
-  if (!loopInfo.emitEntryJump(this)) {
-    
-    return false;
-  }
-
   if (!loopInfo.emitLoopHead(this, Nothing())) {
     
     return false;
   }
-
-  
-  
-  
-  
-  bytecodeSection().setStackDepth(bytecodeSection().stackDepth() + 1);
 
   {
 #ifdef DEBUG
@@ -5211,25 +5197,7 @@ bool BytecodeEmitter::emitSpread(bool allowSelfHosted) {
 #endif
 
     
-    if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) {
-      
-      return false;
-    }
-    if (!emit1(JSOP_INITELEM_INC)) {
-      
-      return false;
-    }
-
-    MOZ_ASSERT(bytecodeSection().stackDepth() == loopDepth - 1);
-
     
-    
-
-    
-    if (!loopInfo.emitLoopEntry(this, Nothing())) {
-      
-      return false;
-    }
 
     if (!emitDupAt(3, 2)) {
       
@@ -5247,8 +5215,22 @@ bool BytecodeEmitter::emitSpread(bool allowSelfHosted) {
       
       return false;
     }
+    if (!emitJump(JSOP_IFNE, &loopInfo.breaks)) {
+      
+      return false;
+    }
 
-    if (!loopInfo.emitLoopEnd(this, JSOP_IFEQ)) {
+    
+    if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) {
+      
+      return false;
+    }
+    if (!emit1(JSOP_INITELEM_INC)) {
+      
+      return false;
+    }
+
+    if (!loopInfo.emitLoopEnd(this, JSOP_GOTO)) {
       
       return false;
     }
@@ -5257,14 +5239,22 @@ bool BytecodeEmitter::emitSpread(bool allowSelfHosted) {
   }
 
   
+  
+  
+  bytecodeSection().setStackDepth(bytecodeSection().stackDepth() + 1);
+
+  
   if (!setSrcNoteOffset(noteIndex, SrcNote::ForOf::BackJumpOffset,
-                        loopInfo.loopEndOffsetFromEntryJump())) {
+                        loopInfo.loopEndOffsetFromLoopHead())) {
     return false;
   }
 
   
-  MOZ_ASSERT(!loopInfo.breaks.offset.valid());
   MOZ_ASSERT(!loopInfo.continues.offset.valid());
+
+  if (!loopInfo.patchBreaks(this)) {
+    return false;
+  }
 
   if (!addTryNote(JSTRY_FOR_OF, bytecodeSection().stackDepth(),
                   loopInfo.headOffset(), loopInfo.breakTargetOffset())) {
@@ -5600,9 +5590,26 @@ bool BytecodeEmitter::emitCStyleFor(
     }
   }
 
-  if (!cfor.emitBody(
-          cond ? CForEmitter::Cond::Present : CForEmitter::Cond::Missing,
-          getOffsetForLoop(forBody))) {
+  if (!cfor.emitCond(cond ? Some(cond->pn_pos.begin) : Nothing())) {
+    
+    return false;
+  }
+
+  if (cond) {
+    if (!updateSourceCoordNotes(cond->pn_pos.begin)) {
+      return false;
+    }
+    if (!markStepBreakpoint()) {
+      return false;
+    }
+    if (!emitTree(cond)) {
+      
+      return false;
+    }
+  }
+
+  if (!cfor.emitBody(cond ? CForEmitter::Cond::Present
+                          : CForEmitter::Cond::Missing)) {
     
     return false;
   }
@@ -5633,27 +5640,7 @@ bool BytecodeEmitter::emitCStyleFor(
     }
   }
 
-  if (!cfor.emitCond(Some(forNode->pn_pos.begin),
-                     cond ? Some(cond->pn_pos.begin) : Nothing(),
-                     Some(forNode->pn_pos.end))) {
-    
-    return false;
-  }
-
-  if (cond) {
-    if (!updateSourceCoordNotes(cond->pn_pos.begin)) {
-      return false;
-    }
-    if (!markStepBreakpoint()) {
-      return false;
-    }
-    if (!emitTree(cond)) {
-      
-      return false;
-    }
-  }
-
-  if (!cfor.emitEnd()) {
+  if (!cfor.emitEnd(Some(forNode->pn_pos.begin))) {
     
     return false;
   }
@@ -5828,17 +5815,10 @@ bool BytecodeEmitter::emitWhile(BinaryNode* whileNode) {
   ParseNode* bodyNode = whileNode->right();
 
   WhileEmitter wh(this);
-  if (!wh.emitBody(Some(whileNode->pn_pos.begin), getOffsetForLoop(bodyNode),
-                   Some(whileNode->pn_pos.end))) {
-    return false;
-  }
-
-  if (!emitTree(bodyNode)) {
-    return false;
-  }
 
   ParseNode* condNode = whileNode->left();
-  if (!wh.emitCond(getOffsetForLoop(condNode))) {
+  if (!wh.emitCond(Some(whileNode->pn_pos.begin), getOffsetForLoop(condNode),
+                   Some(whileNode->pn_pos.end))) {
     return false;
   }
 
@@ -5849,6 +5829,13 @@ bool BytecodeEmitter::emitWhile(BinaryNode* whileNode) {
     return false;
   }
   if (!emitTree(condNode)) {
+    return false;
+  }
+
+  if (!wh.emitBody()) {
+    return false;
+  }
+  if (!emitTree(bodyNode)) {
     return false;
   }
 

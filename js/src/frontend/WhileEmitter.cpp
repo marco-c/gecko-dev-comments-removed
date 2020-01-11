@@ -17,25 +17,11 @@ using mozilla::Maybe;
 
 WhileEmitter::WhileEmitter(BytecodeEmitter* bce) : bce_(bce) {}
 
-bool WhileEmitter::emitBody(const Maybe<uint32_t>& whilePos,
-                            const Maybe<uint32_t>& bodyPos,
+bool WhileEmitter::emitCond(const Maybe<uint32_t>& whilePos,
+                            const Maybe<uint32_t>& condPos,
                             const Maybe<uint32_t>& endPos) {
   MOZ_ASSERT(state_ == State::Start);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
   
   
   
@@ -48,11 +34,10 @@ bool WhileEmitter::emitBody(const Maybe<uint32_t>& whilePos,
     if (!bce_->updateSourceCoordNotes(*whilePos)) {
       return false;
     }
-  }
-
-  JumpTarget top = {BytecodeOffset::invalidOffset()};
-  if (!bce_->emitJumpTarget(&top)) {
-    return false;
+    
+    if (!bce_->emit1(JSOP_NOP)) {
+      return false;
+    }
   }
 
   loopInfo_.emplace(bce_, StatementKind::WhileLoop);
@@ -61,11 +46,20 @@ bool WhileEmitter::emitBody(const Maybe<uint32_t>& whilePos,
     return false;
   }
 
-  if (!loopInfo_->emitEntryJump(bce_)) {
+  if (!loopInfo_->emitLoopHead(bce_, condPos)) {
     return false;
   }
 
-  if (!loopInfo_->emitLoopHead(bce_, bodyPos)) {
+#ifdef DEBUG
+  state_ = State::Cond;
+#endif
+  return true;
+}
+
+bool WhileEmitter::emitBody() {
+  MOZ_ASSERT(state_ == State::Cond);
+
+  if (!bce_->emitJump(JSOP_IFEQ, &loopInfo_->breaks)) {
     return false;
   }
 
@@ -77,7 +71,7 @@ bool WhileEmitter::emitBody(const Maybe<uint32_t>& whilePos,
   return true;
 }
 
-bool WhileEmitter::emitCond(const Maybe<uint32_t>& condPos) {
+bool WhileEmitter::emitEnd() {
   MOZ_ASSERT(state_ == State::Body);
 
   tdzCacheForBody_.reset();
@@ -86,20 +80,7 @@ bool WhileEmitter::emitCond(const Maybe<uint32_t>& condPos) {
     return false;
   }
 
-  if (!loopInfo_->emitLoopEntry(bce_, condPos)) {
-    return false;
-  }
-
-#ifdef DEBUG
-  state_ = State::Cond;
-#endif
-  return true;
-}
-
-bool WhileEmitter::emitEnd() {
-  MOZ_ASSERT(state_ == State::Cond);
-
-  if (!loopInfo_->emitLoopEnd(bce_, JSOP_IFNE)) {
+  if (!loopInfo_->emitLoopEnd(bce_, JSOP_GOTO)) {
     return false;
   }
 
@@ -110,7 +91,7 @@ bool WhileEmitter::emitEnd() {
   }
 
   if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::While::BackJumpOffset,
-                              loopInfo_->loopEndOffsetFromEntryJump())) {
+                              loopInfo_->loopEndOffsetFromLoopHead())) {
     return false;
   }
 

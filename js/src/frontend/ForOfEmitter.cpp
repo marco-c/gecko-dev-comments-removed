@@ -75,11 +75,6 @@ bool ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos) {
     return false;
   }
 
-  if (!loopInfo_->emitEntryJump(bce_)) {
-    
-    return false;
-  }
-
   if (!loopInfo_->emitLoopHead(bce_, Nothing())) {
     
     return false;
@@ -233,15 +228,13 @@ bool ForOfEmitter::emitEnd(const Maybe<uint32_t>& iteratedPos) {
   
   
   
-  if (!loopInfo_->emitLoopEntry(bce_, iteratedPos)) {
-    return false;
+  if (iteratedPos) {
+    if (!bce_->updateSourceCoordNotes(*iteratedPos)) {
+      return false;
+    }
   }
 
-  if (!bce_->emit1(JSOP_FALSE)) {
-    
-    return false;
-  }
-  if (!loopInfo_->emitLoopEnd(bce_, JSOP_IFEQ)) {
+  if (!loopInfo_->emitLoopEnd(bce_, JSOP_GOTO)) {
     
     return false;
   }
@@ -250,7 +243,7 @@ bool ForOfEmitter::emitEnd(const Maybe<uint32_t>& iteratedPos) {
 
   
   if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::ForOf::BackJumpOffset,
-                              loopInfo_->loopEndOffsetFromEntryJump())) {
+                              loopInfo_->loopEndOffsetFromLoopHead())) {
     return false;
   }
 
