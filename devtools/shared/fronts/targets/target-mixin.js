@@ -167,7 +167,7 @@ function TargetMixin(parentClass) {
       return false;
     }
 
-    get tab() {
+    get localTab() {
       return null;
     }
 

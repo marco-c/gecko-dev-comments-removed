@@ -53,7 +53,7 @@
   
   exports.getTestActor = async function(toolbox) {
     const client = toolbox.target.client;
-    return getTestActor(client, toolbox.target.tab, toolbox);
+    return getTestActor(client, toolbox.target.localTab, toolbox);
   };
 
   

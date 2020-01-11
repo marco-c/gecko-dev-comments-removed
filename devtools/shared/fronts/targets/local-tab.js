@@ -44,27 +44,30 @@ class LocalTabTargetFront extends BrowsingContextTargetFront {
   get isLocalTab() {
     return true;
   }
-  get tab() {
+  get localTab() {
     return this._tab;
   }
   toString() {
-    return `Target:${this.tab}`;
+    return `Target:${this.localTab}`;
   }
 
   
 
 
   _setupTabListeners() {
-    this.tab.addEventListener("TabClose", this._handleTabEvent);
-    this.tab.addEventListener("TabRemotenessChange", this._handleTabEvent);
+    this.localTab.addEventListener("TabClose", this._handleTabEvent);
+    this.localTab.addEventListener("TabRemotenessChange", this._handleTabEvent);
   }
 
   
 
 
   _teardownTabListeners() {
-    this.tab.removeEventListener("TabClose", this._handleTabEvent);
-    this.tab.removeEventListener("TabRemotenessChange", this._handleTabEvent);
+    this.localTab.removeEventListener("TabClose", this._handleTabEvent);
+    this.localTab.removeEventListener(
+      "TabRemotenessChange",
+      this._handleTabEvent
+    );
   }
 
   
@@ -102,7 +105,7 @@ class LocalTabTargetFront extends BrowsingContextTargetFront {
     
     
     
-    if (this.tab.isResponsiveDesignMode) {
+    if (this.localTab.isResponsiveDesignMode) {
       return;
     }
 
@@ -140,7 +143,7 @@ class LocalTabTargetFront extends BrowsingContextTargetFront {
     
     
     const newTarget = await TargetFactory.forTab(
-      this.tab,
+      this.localTab,
       targetSwitchingEnabled ? client : null
     );
 
