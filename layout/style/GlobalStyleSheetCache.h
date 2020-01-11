@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsLayoutStylesheetCache_h__
-#define nsLayoutStylesheetCache_h__
+#ifndef mozilla_GlobalStyleSheetCache_h__
+#define mozilla_GlobalStyleSheetCache_h__
 
 #include "nsIMemoryReporter.h"
 #include "nsIObserver.h"
@@ -31,16 +31,15 @@ namespace css {
 enum FailureAction { eCrash = 0, eLogToConsole };
 
 }  
-}  
 
-class nsLayoutStylesheetCache final : public nsIObserver,
-                                      public nsIMemoryReporter {
+class GlobalStyleSheetCache final : public nsIObserver,
+                                    public nsIMemoryReporter {
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIMEMORYREPORTER
 
-  static nsLayoutStylesheetCache* Singleton();
+  static GlobalStyleSheetCache* Singleton();
 
 #define STYLE_SHEET(identifier_, url_, shared_) \
   mozilla::NotNull<mozilla::StyleSheet*> identifier_##Sheet();
@@ -95,8 +94,8 @@ class nsLayoutStylesheetCache final : public nsIObserver,
     uint8_t mBuffer[1];
   };
 
-  nsLayoutStylesheetCache();
-  ~nsLayoutStylesheetCache();
+  GlobalStyleSheetCache();
+  ~GlobalStyleSheetCache();
 
   void InitFromProfile();
   void InitSharedSheetsInParent();
@@ -111,12 +110,12 @@ class nsLayoutStylesheetCache final : public nsIObserver,
       mozilla::css::FailureAction aFailureAction);
   void LoadSheetFromSharedMemory(const char* aURL,
                                  RefPtr<mozilla::StyleSheet>* aSheet,
-                                 mozilla::css::SheetParsingMode,
-                                 Header*, mozilla::UserAgentStyleSheetID);
+                                 mozilla::css::SheetParsingMode, Header*,
+                                 mozilla::UserAgentStyleSheetID);
   void BuildPreferenceSheet(RefPtr<mozilla::StyleSheet>* aSheet,
                             const mozilla::PreferenceSheet::Prefs&);
 
-  static mozilla::StaticRefPtr<nsLayoutStylesheetCache> gStyleCache;
+  static mozilla::StaticRefPtr<GlobalStyleSheetCache> gStyleCache;
   static mozilla::StaticRefPtr<mozilla::css::Loader> gCSSLoader;
   static mozilla::StaticRefPtr<nsIURI> gUserContentSheetURL;
 
@@ -137,5 +136,7 @@ class nsLayoutStylesheetCache final : public nsIObserver,
   
   static size_t sUsedSharedMemory;
 };
+
+}  
 
 #endif

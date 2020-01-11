@@ -15,7 +15,6 @@
 #include "nsGkAtoms.h"
 #include "nsIContentInlines.h"
 #include "nsITableCellLayout.h"  
-#include "nsLayoutStylesheetCache.h"
 #include "nsCSSValue.h"
 #include "nsMappedAttributes.h"
 #include "nsStyleConsts.h"

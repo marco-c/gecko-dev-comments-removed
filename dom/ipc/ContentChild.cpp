@@ -174,7 +174,7 @@
 #include "SandboxHal.h"
 #include "nsDebugImpl.h"
 #include "nsHashPropertyBag.h"
-#include "nsLayoutStylesheetCache.h"
+#include "mozilla/GlobalStyleSheetCache.h"
 #include "nsThreadManager.h"
 #include "nsAnonymousTemporaryFile.h"
 #include "nsClipboardProxy.h"
@@ -1330,7 +1330,7 @@ void ContentChild::InitSharedUASheets(const Maybe<SharedMemoryHandle>& aHandle,
   
   
   
-  nsLayoutStylesheetCache::SetSharedMemory(*aHandle, aAddress);
+  GlobalStyleSheetCache::SetSharedMemory(*aHandle, aAddress);
 }
 
 void ContentChild::InitXPCOM(
@@ -1417,7 +1417,7 @@ void ContentChild::InitXPCOM(
 
   
   nsCOMPtr<nsIURI> ucsURL = DeserializeURI(aXPCOMInit.userContentSheetURL());
-  nsLayoutStylesheetCache::SetUserContentCSSURL(ucsURL);
+  GlobalStyleSheetCache::SetUserContentCSSURL(ucsURL);
 
   GfxInfoBase::SetFeatureStatus(aXPCOMInit.gfxFeatureStatus());
 
