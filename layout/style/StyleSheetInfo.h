@@ -58,7 +58,8 @@ struct StyleSheetInfo final {
   
   
   
-  RefPtr<StyleSheet> mFirstChild;
+  nsTArray<RefPtr<StyleSheet>> mChildren;
+
   AutoTArray<StyleSheet*, 8> mSheets;
 
   

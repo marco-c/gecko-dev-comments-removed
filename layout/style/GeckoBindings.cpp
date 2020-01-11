@@ -1676,14 +1676,15 @@ static already_AddRefed<StyleSheet> LoadImportSheet(
   nsCOMPtr<nsIURI> uri = aURL.GetURI();
   nsresult rv = uri ? NS_OK : NS_ERROR_FAILURE;
 
-  StyleSheet* previousFirstChild = aParent->GetFirstChild();
+  size_t previousSheetCount = aParent->ChildSheets().Length();
   if (NS_SUCCEEDED(rv)) {
+    
+    
     rv = aLoader->LoadChildSheet(*aParent, aParentLoadData, uri, media,
                                  aReusableSheets);
   }
 
-  if (NS_FAILED(rv) || !aParent->GetFirstChild() ||
-      aParent->GetFirstChild() == previousFirstChild) {
+  if (NS_FAILED(rv) || previousSheetCount == aParent->ChildSheets().Length()) {
     
     
     
@@ -1703,11 +1704,11 @@ static already_AddRefed<StyleSheet> LoadImportSheet(
         ReferrerInfo::CreateForExternalCSSResources(emptySheet);
     emptySheet->SetReferrerInfo(referrerInfo);
     emptySheet->SetComplete();
-    aParent->PrependStyleSheet(emptySheet);
+    aParent->AppendStyleSheet(*emptySheet);
     return emptySheet.forget();
   }
 
-  RefPtr<StyleSheet> sheet = static_cast<StyleSheet*>(aParent->GetFirstChild());
+  RefPtr<StyleSheet> sheet = aParent->ChildSheets().LastElement();
   return sheet.forget();
 }
 

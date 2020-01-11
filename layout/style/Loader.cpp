@@ -1282,7 +1282,7 @@ void Loader::InsertChildSheet(StyleSheet& aSheet, StyleSheet& aParentSheet) {
   
   
   aSheet.SetEnabled(true);
-  aParentSheet.PrependStyleSheet(&aSheet);
+  aParentSheet.AppendStyleSheet(aSheet);
 
   LOG(("  Inserting into parent sheet"));
 }

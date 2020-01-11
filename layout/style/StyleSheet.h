@@ -221,9 +221,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   void EnsureUniqueInner();
 
   
-  void AppendAllChildSheets(nsTArray<StyleSheet*>& aArray);
-
-  
   enum AssociationMode : uint8_t {
     
     
@@ -264,16 +261,19 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   }
   dom::CSSImportRule* GetOwnerRule() const { return mOwnerRule; }
 
-  void PrependStyleSheet(StyleSheet* aSheet);
+  void AppendStyleSheet(StyleSheet&);
 
   
-  void PrependStyleSheetSilently(StyleSheet* aSheet);
+  void AppendStyleSheetSilently(StyleSheet&);
 
-  StyleSheet* GetFirstChild() const;
-  StyleSheet* GetMostRecentlyAddedChildSheet() const {
-    
-    
-    return GetFirstChild();
+  const nsTArray<RefPtr<StyleSheet>>& ChildSheets() const {
+#ifdef DEBUG
+    for (StyleSheet* child : Inner().mChildren) {
+      MOZ_ASSERT(child->GetParentSheet());
+      MOZ_ASSERT(child->GetParentSheet()->mInner == mInner);
+    }
+#endif
+    return Inner().mChildren;
   }
 
   
@@ -374,13 +374,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   uint64_t FindOwningWindowInnerID() const;
 
-  template <typename Func>
-  void EnumerateChildSheets(Func aCallback) {
-    for (StyleSheet* child = GetFirstChild(); child; child = child->mNext) {
-      aCallback(child);
-    }
-  }
-
   
   
   
@@ -453,16 +446,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
   void ApplicableStateChanged(bool aApplicable);
 
-  struct ChildSheetListBuilder {
-    RefPtr<StyleSheet>* sheetSlot;
-    StyleSheet* parent;
-
-    void SetParentLinks(StyleSheet* aSheet);
-
-    static void ReparentChildList(StyleSheet* aPrimarySheet,
-                                  StyleSheet* aFirstChild);
-  };
-
   void UnparentChildren();
 
   void LastRelease();
@@ -495,8 +478,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   dom::CSSImportRule* mOwnerRule;  
 
   RefPtr<dom::MediaList> mMedia;
-
-  RefPtr<StyleSheet> mNext;
 
   
   

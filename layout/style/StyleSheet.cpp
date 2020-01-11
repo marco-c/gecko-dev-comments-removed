@@ -123,15 +123,7 @@ void StyleSheet::UnlinkInner() {
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  RefPtr<StyleSheet> child;
-  child.swap(Inner().mFirstChild);
-  while (child) {
+  for (StyleSheet* child : ChildSheets()) {
     MOZ_ASSERT(child->mParent == this, "We have a unique inner!");
     child->mParent = nullptr;
     
@@ -140,15 +132,8 @@ void StyleSheet::UnlinkInner() {
     
     
     child->ClearAssociatedDocumentOrShadowRoot();
-
-    RefPtr<StyleSheet> next;
-    
-    next.swap(child->mNext);
-    
-    child.swap(next);
-    
-    
   }
+  Inner().mChildren.Clear();
 }
 
 void StyleSheet::TraverseInner(nsCycleCollectionTraversalCallback& cb) {
@@ -158,11 +143,9 @@ void StyleSheet::TraverseInner(nsCycleCollectionTraversalCallback& cb) {
     return;
   }
 
-  StyleSheet* childSheet = GetFirstChild();
-  while (childSheet) {
+  for (StyleSheet* child : ChildSheets()) {
     NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "child sheet");
-    cb.NoteXPCOMChild(childSheet);
-    childSheet = childSheet->mNext;
+    cb.NoteXPCOMChild(child);
   }
 }
 
@@ -290,8 +273,8 @@ StyleSheetInfo::StyleSheetInfo(StyleSheetInfo& aCopy, StyleSheet* aPrimarySheet)
       mCORSMode(aCopy.mCORSMode),
       mReferrerInfo(aCopy.mReferrerInfo),
       mIntegrity(aCopy.mIntegrity),
-      mFirstChild(),  
-                      
+      
+      
       mSourceMapURL(aCopy.mSourceMapURL),
       mSourceMapURLFromComment(aCopy.mSourceMapURLFromComment),
       mSourceURL(aCopy.mSourceURL),
@@ -333,9 +316,13 @@ void StyleSheetInfo::AddSheet(StyleSheet* aSheet) {
 }
 
 void StyleSheetInfo::RemoveSheet(StyleSheet* aSheet) {
-  if ((aSheet == mSheets.ElementAt(0)) && (mSheets.Length() > 1)) {
-    StyleSheet::ChildSheetListBuilder::ReparentChildList(mSheets[1],
-                                                         mFirstChild);
+  if (aSheet == mSheets[0] && mSheets.Length() > 1) {
+    StyleSheet* newParent = mSheets[1];
+    for (StyleSheet* child : mChildren) {
+      child->mParent = newParent;
+      child->SetAssociatedDocumentOrShadowRoot(newParent->mDocumentOrShadowRoot,
+                                               newParent->mAssociationMode);
+    }
   }
 
   if (1 == mSheets.Length()) {
@@ -345,21 +332,6 @@ void StyleSheetInfo::RemoveSheet(StyleSheet* aSheet) {
   }
 
   mSheets.RemoveElement(aSheet);
-}
-
-void StyleSheet::ChildSheetListBuilder::SetParentLinks(StyleSheet* aSheet) {
-  aSheet->mParent = parent;
-  aSheet->SetAssociatedDocumentOrShadowRoot(parent->mDocumentOrShadowRoot,
-                                            parent->mAssociationMode);
-}
-
-void StyleSheet::ChildSheetListBuilder::ReparentChildList(
-    StyleSheet* aPrimarySheet, StyleSheet* aFirstChild) {
-  for (StyleSheet* child = aFirstChild; child; child = child->mNext) {
-    child->mParent = aPrimarySheet;
-    child->SetAssociatedDocumentOrShadowRoot(
-        aPrimarySheet->mDocumentOrShadowRoot, aPrimarySheet->mAssociationMode);
-  }
 }
 
 void StyleSheet::GetType(nsAString& aType) { aType.AssignLiteral("text/css"); }
@@ -461,12 +433,6 @@ void StyleSheet::EnsureUniqueInner() {
   
   
   NOTIFY(SheetCloned, (*this));
-}
-
-void StyleSheet::AppendAllChildSheets(nsTArray<StyleSheet*>& aArray) {
-  for (StyleSheet* child = GetFirstChild(); child; child = child->mNext) {
-    aArray.AppendElement(child);
-  }
 }
 
 
@@ -669,35 +635,16 @@ void StyleSheet::RemoveFromParent() {
     return;
   }
 
-  
-  
-  
-  
-  
-  bool found = false;
-  for (auto* child = mParent->GetFirstChild(); child; child = child->mNext) {
-    if (child == this) {
-      
-      found = true;
-      mParent->Inner().mFirstChild = mNext;
-      break;
-    }
-    if (child->mNext == this) {
-      found = true;
-      child->mNext = mNext;
-      break;
-    }
-  }
-  MOZ_DIAGNOSTIC_ASSERT(found, "Should find the rule in the child list.");
+  MOZ_ASSERT(mParent->ChildSheets().Contains(this));
+  mParent->Inner().mChildren.RemoveElement(this);
   mParent = nullptr;
   ClearAssociatedDocumentOrShadowRoot();
-  mNext = nullptr;
 }
 
 void StyleSheet::UnparentChildren() {
   
   
-  for (StyleSheet* child = GetFirstChild(); child; child = child->mNext) {
+  for (StyleSheet* child : ChildSheets()) {
     if (child->mParent == this) {
       child->mParent = nullptr;
       MOZ_ASSERT(child->mAssociationMode == NotOwnedByDocumentOrShadowRoot,
@@ -760,8 +707,6 @@ bool StyleSheet::AreRulesAvailable(nsIPrincipal& aSubjectPrincipal,
   return true;
 }
 
-StyleSheet* StyleSheet::GetFirstChild() const { return Inner().mFirstChild; }
-
 void StyleSheet::SetAssociatedDocumentOrShadowRoot(
     DocumentOrShadowRoot* aDocOrShadowRoot, AssociationMode aAssociationMode) {
   MOZ_ASSERT(aDocOrShadowRoot ||
@@ -774,7 +719,7 @@ void StyleSheet::SetAssociatedDocumentOrShadowRoot(
   
   
   
-  for (StyleSheet* child = GetFirstChild(); child; child = child->mNext) {
+  for (StyleSheet* child : ChildSheets()) {
     if (child->mParent == this) {
       child->SetAssociatedDocumentOrShadowRoot(aDocOrShadowRoot,
                                                aAssociationMode);
@@ -782,48 +727,40 @@ void StyleSheet::SetAssociatedDocumentOrShadowRoot(
   }
 }
 
-void StyleSheet::PrependStyleSheet(StyleSheet* aSheet) {
+void StyleSheet::AppendStyleSheet(StyleSheet& aSheet) {
   WillDirty();
-  PrependStyleSheetSilently(aSheet);
+  AppendStyleSheetSilently(aSheet);
 }
 
-void StyleSheet::PrependStyleSheetSilently(StyleSheet* aSheet) {
-  MOZ_ASSERT(aSheet);
+void StyleSheet::AppendStyleSheetSilently(StyleSheet& aSheet) {
   MOZ_ASSERT(!IsReadOnly());
 
-  aSheet->mNext = Inner().mFirstChild;
-  Inner().mFirstChild = aSheet;
+  Inner().mChildren.AppendElement(&aSheet);
 
   
   
-  aSheet->mParent = this;
-  aSheet->SetAssociatedDocumentOrShadowRoot(mDocumentOrShadowRoot,
-                                            mAssociationMode);
+  aSheet.mParent = this;
+  aSheet.SetAssociatedDocumentOrShadowRoot(mDocumentOrShadowRoot,
+                                           mAssociationMode);
 }
 
 size_t StyleSheet::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
   size_t n = 0;
-  const StyleSheet* s = this;
-  while (s) {
-    n += aMallocSizeOf(s);
+  n += aMallocSizeOf(this);
 
-    
-    
-    
-    
-    if (s->Inner().mSheets.LastElement() == s) {
-      n += s->Inner().SizeOfIncludingThis(aMallocSizeOf);
-    }
-
-    
-    
-    
-    
-    
-    
-
-    s = s->mNext;
+  
+  
+  if (Inner().mSheets.LastElement() == this) {
+    n += Inner().SizeOfIncludingThis(aMallocSizeOf);
   }
+
+  
+  
+  
+  
+  
+  
+
   return n;
 }
 
@@ -853,7 +790,7 @@ void StyleSheet::List(FILE* out, int32_t aIndent) const {
   str.Append('\n');
   fprintf_stderr(out, "%s", str.get());
 
-  for (const StyleSheet* child = GetFirstChild(); child; child = child->mNext) {
+  for (const StyleSheet* child : ChildSheets()) {
     child->List(out, aIndent + 1);
   }
 }
@@ -892,7 +829,7 @@ JSObject* StyleSheet::WrapObject(JSContext* aCx,
 void StyleSheet::BuildChildListAfterInnerClone() {
   MOZ_ASSERT(Inner().mSheets.Length() == 1, "Should've just cloned");
   MOZ_ASSERT(Inner().mSheets[0] == this);
-  MOZ_ASSERT(!Inner().mFirstChild);
+  MOZ_ASSERT(Inner().mChildren.IsEmpty());
 
   auto* contents = Inner().mContents.get();
   RefPtr<ServoCssRules> rules = Servo_StyleSheet_GetRules(contents).Consume();
@@ -910,7 +847,7 @@ void StyleSheet::BuildChildListAfterInnerClone() {
     }
     auto* sheet = const_cast<StyleSheet*>(Servo_ImportRule_GetSheet(import));
     MOZ_ASSERT(sheet);
-    PrependStyleSheetSilently(sheet);
+    AppendStyleSheetSilently(*sheet);
     index++;
   }
 }
@@ -1057,21 +994,18 @@ nsresult StyleSheet::ReparseSheet(const nsAString& aInput) {
 
   
   css::LoaderReusableStyleSheets reusableSheets;
-  for (StyleSheet* child = GetFirstChild(); child; child = child->mNext) {
+  for (StyleSheet* child : ChildSheets()) {
     if (child->GetOriginalURI()) {
       reusableSheets.AddReusableSheet(child);
     }
   }
 
   
-  for (StyleSheet* child = GetFirstChild(); child;) {
-    StyleSheet* next = child->mNext;
+  for (StyleSheet* child : ChildSheets()) {
     child->mParent = nullptr;
     child->ClearAssociatedDocumentOrShadowRoot();
-    child->mNext = nullptr;
-    child = next;
   }
-  Inner().mFirstChild = nullptr;
+  Inner().mChildren.Clear();
 
   uint32_t lineNumber = 1;
   if (mOwningNode) {
