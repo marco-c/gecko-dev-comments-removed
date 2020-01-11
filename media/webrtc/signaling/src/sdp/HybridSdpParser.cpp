@@ -22,7 +22,8 @@ namespace mozilla {
 using mozilla::LogLevel;
 
 HybridSdpParser::HybridSdpParser()
-    : mPrimary(SdpPref::Primary()),
+    : mStrictSuccess(SdpPref::StrictSuccess()),
+      mPrimary(SdpPref::Primary()),
       mSecondary(SdpPref::Secondary()),
       mFailover(SdpPref::Failover()) {
   MOZ_ASSERT(!(mSecondary && mFailover),
@@ -48,12 +49,19 @@ auto HybridSdpParser::Parse(const std::string& aText)
   Mode mode = Mode::Never;
   auto results = mPrimary->Parse(aText);
 
+  auto successful = [&](Results& aRes) -> bool {
+    
+    if (mStrictSuccess) {
+      return aRes->Ok();
+    }
+    return aRes->Sdp() != nullptr;
+  };
   
   
   auto compare = [&](Results&& aResB) -> Results {
     SdpTelemetry::RecordParse(aResB, mode, Role::Secondary);
     ParsingResultComparer::Compare(results, aResB, aText, mode);
-    return std::move(results->Ok() ? results : aResB);
+    return std::move(successful(results) ? results : aResB);
   };
   
   mSecondary.apply([&](auto& sec) {
@@ -63,7 +71,7 @@ auto HybridSdpParser::Parse(const std::string& aText)
   
   mFailover.apply([&](auto& failover) {  
     mode = Mode::Failover;
-    if (!results->Ok()) {
+    if (!successful(results)) {
       results = compare(std::move(failover->Parse(aText)));
     }
   });

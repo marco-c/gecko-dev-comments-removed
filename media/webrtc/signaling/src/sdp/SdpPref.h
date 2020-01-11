@@ -22,6 +22,7 @@ class SdpPref {
  private:
   static const std::string PRIMARY_PREF;
   static const std::string ALTERNATE_PREF;
+  static const std::string STRICT_SUCCESS_PREF;
   static const std::string DEFAULT;
 
  public:
@@ -66,6 +67,8 @@ class SdpPref {
   static auto AlternateParseMode() -> AlternateParseModes;
 
  public:
+  
+  static auto StrictSuccess() -> bool;
   
 
   
