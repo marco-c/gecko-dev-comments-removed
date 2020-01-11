@@ -3344,14 +3344,21 @@ void gfxPlatform::InitWebRenderConfig() {
   
   
   if (StaticPrefs::gfx_webrender_max_partial_present_rects_AtStartup() > 0) {
-    
-    if (UseWebRender() && !gfxVars::UseWebRenderCompositor()) {
+    if (UseWebRender()) {
       FeatureState& featurePartial =
           gfxConfig::GetFeature(Feature::WEBRENDER_PARTIAL);
       featurePartial.EnableByDefault();
-      
-      
-      featurePartial.UserEnable("Enabled");
+      if (StaticPrefs::gfx_webrender_picture_caching()) {
+        gfxVars::SetWebRenderMaxPartialPresentRects(
+            StaticPrefs::gfx_webrender_max_partial_present_rects_AtStartup());
+        
+        
+        featurePartial.UserEnable("Enabled");
+      } else {
+        featurePartial.ForceDisable(
+            FeatureStatus::Unavailable, "Picture caching is disabled",
+            NS_LITERAL_CSTRING("FEATURE_FAILURE_PICTURE_CACHING_DISABLED"));
+      }
     }
   }
 
