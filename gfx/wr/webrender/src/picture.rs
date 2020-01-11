@@ -107,6 +107,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::texture_cache::TextureCacheHandle;
 use crate::util::{TransformedRectKind, MatrixHelpers, MaxRect, scale_factors, VecHelper, RectHelpers};
 use crate::filterdata::{FilterDataHandle};
+use crate::scene_building::{SliceFlags};
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -1430,6 +1431,8 @@ pub struct TileCacheInstance {
     
     pub slice: usize,
     
+    pub slice_flags: SliceFlags,
+    
     pub current_tile_size: DeviceIntSize,
     
     pub spatial_node_index: SpatialNodeIndex,
@@ -1498,6 +1501,7 @@ pub struct TileCacheInstance {
 impl TileCacheInstance {
     pub fn new(
         slice: usize,
+        slice_flags: SliceFlags,
         spatial_node_index: SpatialNodeIndex,
         background_color: Option<ColorF>,
         shared_clips: Vec<ClipDataHandle>,
@@ -1505,6 +1509,7 @@ impl TileCacheInstance {
     ) -> Self {
         TileCacheInstance {
             slice,
+            slice_flags,
             spatial_node_index,
             tiles: FastHashMap::default(),
             map_local_to_surface: SpaceMapper::new(
@@ -1662,21 +1667,18 @@ impl TileCacheInstance {
         
         
         if self.frames_until_size_eval == 0 {
-            const TILE_SIZE_TINY: f32 = 32.0;
 
             
-            let desired_tile_size;
-
-            
-            
-            
-            if pic_rect.size.width <= TILE_SIZE_TINY {
-                desired_tile_size = TILE_SIZE_SCROLLBAR_VERTICAL;
-            } else if pic_rect.size.height <= TILE_SIZE_TINY {
-                desired_tile_size = TILE_SIZE_SCROLLBAR_HORIZONTAL;
-            } else {
-                desired_tile_size = TILE_SIZE_DEFAULT;
-            }
+            let desired_tile_size =
+                if self.slice_flags.contains(SliceFlags::IS_SCROLLBAR) {
+                    if pic_rect.size.width <= pic_rect.size.height {
+                        TILE_SIZE_SCROLLBAR_VERTICAL
+                    } else {
+                        TILE_SIZE_SCROLLBAR_HORIZONTAL
+                    }
+                } else {
+                    TILE_SIZE_DEFAULT
+                };
 
             
             
