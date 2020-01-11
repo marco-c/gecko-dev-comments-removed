@@ -18,6 +18,18 @@ namespace frontend {
 
 
 
+template <typename Tag>
+struct TypedIndex {
+  explicit TypedIndex(uint32_t index) : index(index){};
+
+  uint32_t index = 0;
+
+  
+  operator size_t() const { return index; }
+};
+
+
+
 
 
 
@@ -136,6 +148,8 @@ class RegExpCreationData {
 
   RegExpObject* createRegExp(JSContext* cx) const;
 };
+
+using RegExpIndex = TypedIndex<RegExpCreationData>;
 
 } 
 } 

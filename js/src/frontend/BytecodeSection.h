@@ -22,8 +22,10 @@
 #include "frontend/JumpList.h"         
 #include "frontend/NameCollections.h"  
 #include "frontend/ObjLiteral.h"       
+#include "frontend/ParseInfo.h"        
 #include "frontend/ParseNode.h"        
 #include "frontend/SourceNotes.h"      
+#include "frontend/Stencil.h"          
 #include "gc/Barrier.h"                
 #include "gc/Rooting.h"                
 #include "js/GCVariant.h"              
@@ -47,7 +49,7 @@ class ObjectBox;
 
 struct MOZ_STACK_CLASS GCThingList {
   using ListType = mozilla::Variant<JS::GCCellPtr, BigIntCreationData,
-                                    ObjLiteralCreationData, RegExpCreationData>;
+                                    ObjLiteralCreationData, RegExpIndex>;
   JS::RootedVector<ListType> vector;
 
   
@@ -78,8 +80,7 @@ struct MOZ_STACK_CLASS GCThingList {
   MOZ_MUST_USE bool append(RegExpLiteral* literal, uint32_t* index) {
     *index = vector.length();
     if (literal->isDeferred()) {
-      return vector.append(
-          mozilla::AsVariant(std::move(literal->creationData())));
+      return vector.append(mozilla::AsVariant(literal->index()));
     }
     return vector.append(
         mozilla::AsVariant(JS::GCCellPtr(literal->objbox()->object())));
@@ -91,7 +92,8 @@ struct MOZ_STACK_CLASS GCThingList {
   MOZ_MUST_USE bool append(ObjectBox* obj, uint32_t* index);
 
   uint32_t length() const { return vector.length(); }
-  MOZ_MUST_USE bool finish(JSContext* cx, mozilla::Span<JS::GCCellPtr> array);
+  MOZ_MUST_USE bool finish(JSContext* cx, ParseInfo& parseInfo,
+                           mozilla::Span<JS::GCCellPtr> array);
   void finishInnerFunctions();
 
   AbstractScope getScope(size_t index) const {
@@ -397,9 +399,9 @@ template <>
 struct GCPolicy<js::frontend::BigIntCreationData>
     : JS::IgnoreGCPolicy<js::frontend::BigIntCreationData> {};
 
-template <>
-struct GCPolicy<js::frontend::RegExpCreationData>
-    : JS::IgnoreGCPolicy<js::frontend::RegExpCreationData> {};
+template <typename T>
+struct GCPolicy<js::frontend::TypedIndex<T>>
+    : JS::IgnoreGCPolicy<js::frontend::TypedIndex<T>> {};
 }  
 
 #endif 

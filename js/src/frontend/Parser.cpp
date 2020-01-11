@@ -9632,22 +9632,16 @@ RegExpLiteral* Parser<FullParseHandler, Unit>::newRegExp() {
       }
     }
 
-    
-    
-    
-    
-    RegExpCreationData data;
-    if (!data.init(cx_, range, flags)) {
+    RegExpIndex index(this->parseInfo_.regExpData.length());
+    if (!this->parseInfo_.regExpData.emplaceBack()) {
       return nullptr;
     }
 
-    RegExpLiteral* node = handler_.newRegExp(pos());
-    if (!node) {
+    if (!this->parseInfo_.regExpData[index].init(cx_, range, flags)) {
       return nullptr;
     }
 
-    node->init(std::move(data));
-    return node;
+    return handler_.newRegExp(index, pos());
   }
 
   Rooted<RegExpObject*> reobj(cx_);
