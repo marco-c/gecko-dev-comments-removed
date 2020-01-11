@@ -280,6 +280,7 @@ class Optional<OwningNonNull<T> > : public Optional_base<T, OwningNonNull<T> > {
 
 
 namespace binding_detail {
+template <typename CharT>
 struct FakeString;
 }  
 
@@ -297,7 +298,7 @@ class Optional<nsAString> {
 
   
   
-  void operator=(const binding_detail::FakeString* str) {
+  void operator=(const binding_detail::FakeString<nsAString::char_type>* str) {
     MOZ_ASSERT(str);
     mStr = reinterpret_cast<const nsString*>(str);
   }
@@ -326,6 +327,14 @@ class Optional<nsACString> {
     MOZ_ASSERT(str);
     mStr = str;
   }
+
+  
+  
+  void operator=(const binding_detail::FakeString<nsACString::char_type>* str) {
+    MOZ_ASSERT(str);
+    mStr = reinterpret_cast<const nsCString*>(str);
+  }
+
   const nsACString& Value() const {
     MOZ_ASSERT(WasPassed());
     return *mStr;

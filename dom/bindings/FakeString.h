@@ -22,15 +22,20 @@ namespace binding_detail {
 
 
 
+template <typename CharT>
 struct FakeString {
-  using char_type = nsString::char_type;
+  using char_type = CharT;
+  using string_type = nsTString<CharT>;
+  using size_type = typename string_type::size_type;
+  using DataFlags = typename string_type::DataFlags;
+  using ClassFlags = typename string_type::ClassFlags;
+  using AString = nsTSubstring<CharT>;
 
   FakeString()
-      : mDataFlags(nsString::DataFlags::TERMINATED),
-        mClassFlags(nsString::ClassFlags(0)) {}
+      : mDataFlags(DataFlags::TERMINATED), mClassFlags(ClassFlags(0)) {}
 
   ~FakeString() {
-    if (mDataFlags & nsString::DataFlags::REFCOUNTED) {
+    if (mDataFlags & DataFlags::REFCOUNTED) {
       MOZ_ASSERT(mDataInitialized);
       nsStringBuffer::FromData(mData)->Release();
     }
@@ -39,24 +44,24 @@ struct FakeString {
   
   
   
-  void ShareOrDependUpon(const nsAString& aString) {
+  void ShareOrDependUpon(const AString& aString) {
     RefPtr<nsStringBuffer> sharedBuffer = nsStringBuffer::FromString(aString);
     if (!sharedBuffer) {
       InitData(aString.BeginReading(), aString.Length());
       if (!aString.IsTerminated()) {
-        mDataFlags &= ~nsString::DataFlags::TERMINATED;
+        mDataFlags &= ~DataFlags::TERMINATED;
       }
     } else {
       AssignFromStringBuffer(sharedBuffer.forget(), aString.Length());
     }
   }
 
-  void Truncate() { InitData(nsString::char_traits::sEmptyBuffer, 0); }
+  void Truncate() { InitData(string_type::char_traits::sEmptyBuffer, 0); }
 
   void SetIsVoid(bool aValue) {
     MOZ_ASSERT(aValue, "We don't support SetIsVoid(false) on FakeString!");
     Truncate();
-    mDataFlags |= nsString::DataFlags::VOIDED;
+    mDataFlags |= DataFlags::VOIDED;
   }
 
   char_type* BeginWriting() {
@@ -65,7 +70,7 @@ struct FakeString {
     return mData;
   }
 
-  nsString::size_type Length() const { return mLength; }
+  size_type Length() const { return mLength; }
 
   operator mozilla::Span<const char_type>() const {
     MOZ_ASSERT(mDataInitialized);
@@ -76,12 +81,23 @@ struct FakeString {
     return mozilla::MakeSpan(BeginWriting(), Length());
   }
 
+  mozilla::BulkWriteHandle<CharT> BulkWrite(size_type aCapacity,
+                                            size_type aPrefixToPreserve,
+                                            bool aAllowShrinking,
+                                            nsresult& aRv) {
+    MOZ_ASSERT(!mDataInitialized);
+    InitData(mInlineStorage, 0);
+    mDataFlags |= DataFlags::INLINE;
+    return ToAStringPtr()->BulkWrite(aCapacity, aPrefixToPreserve,
+                                     aAllowShrinking, aRv);
+  }
+
   
-  bool SetLength(nsString::size_type aLength, mozilla::fallible_t const&) {
+  bool SetLength(size_type aLength, mozilla::fallible_t const&) {
     
     if (aLength < sInlineCapacity) {
       InitData(mInlineStorage, aLength);
-      mDataFlags |= nsString::DataFlags::INLINE;
+      mDataFlags |= DataFlags::INLINE;
     } else {
       RefPtr<nsStringBuffer> buf =
           nsStringBuffer::Alloc((aLength + 1) * sizeof(char_type));
@@ -93,7 +109,7 @@ struct FakeString {
     }
 
     MOZ_ASSERT(mDataInitialized);
-    mData[mLength] = char16_t(0);
+    mData[mLength] = char_type(0);
     return true;
   }
 
@@ -106,14 +122,14 @@ struct FakeString {
     }
 
     RefPtr<nsStringBuffer> buffer;
-    if (mDataFlags & nsString::DataFlags::REFCOUNTED) {
+    if (mDataFlags & DataFlags::REFCOUNTED) {
       
       buffer = dont_AddRef(nsStringBuffer::FromData(mData));
       
     }
     const char_type* oldChars = mData;
 
-    mDataFlags = nsString::DataFlags::TERMINATED;
+    mDataFlags = DataFlags::TERMINATED;
 #ifdef DEBUG
     
     
@@ -135,7 +151,7 @@ struct FakeString {
   void AssignFromStringBuffer(already_AddRefed<nsStringBuffer> aBuffer,
                               size_t aLength) {
     InitData(static_cast<char_type*>(aBuffer.take()->Data()), aLength);
-    mDataFlags |= nsString::DataFlags::REFCOUNTED;
+    mDataFlags |= DataFlags::REFCOUNTED;
   }
 
   
@@ -151,28 +167,26 @@ struct FakeString {
   
   void AssignLiteral(const char_type* aData, size_t aLength) {
     InitData(aData, aLength);
-    mDataFlags |= nsString::DataFlags::LITERAL;
+    mDataFlags |= DataFlags::LITERAL;
   }
 
   
   
-  const nsAString* ToAStringPtr() const {
-    return reinterpret_cast<const nsString*>(this);
+  const AString* ToAStringPtr() const {
+    return reinterpret_cast<const string_type*>(this);
   }
 
-  operator const nsAString&() const {
-    return *reinterpret_cast<const nsString*>(this);
-  }
+  operator const AString&() const { return *ToAStringPtr(); }
 
  private:
-  nsAString* ToAStringPtr() { return reinterpret_cast<nsString*>(this); }
+  AString* ToAStringPtr() { return reinterpret_cast<string_type*>(this); }
 
   
   MOZ_INIT_OUTSIDE_CTOR char_type* mData;
   
-  MOZ_INIT_OUTSIDE_CTOR nsString::size_type mLength;
-  nsString::DataFlags mDataFlags;
-  nsString::ClassFlags mClassFlags;
+  MOZ_INIT_OUTSIDE_CTOR size_type mLength;
+  DataFlags mDataFlags;
+  ClassFlags mClassFlags;
 
   static const size_t sInlineCapacity = 64;
   char_type mInlineStorage[sInlineCapacity];
@@ -183,8 +197,8 @@ struct FakeString {
   FakeString(const FakeString& other) = delete;
   void operator=(const FakeString& other) = delete;
 
-  void InitData(const char_type* aData, nsString::size_type aLength) {
-    MOZ_ASSERT(mDataFlags == nsString::DataFlags::TERMINATED);
+  void InitData(const char_type* aData, size_type aLength) {
+    MOZ_ASSERT(mDataFlags == DataFlags::TERMINATED);
     MOZ_ASSERT(!mDataInitialized);
     mData = const_cast<char_type*>(aData);
     mLength = aLength;
@@ -194,22 +208,22 @@ struct FakeString {
   }
 
   bool IsMutable() {
-    return (mDataFlags & nsString::DataFlags::INLINE) ||
-           ((mDataFlags & nsString::DataFlags::REFCOUNTED) &&
+    return (mDataFlags & DataFlags::INLINE) ||
+           ((mDataFlags & DataFlags::REFCOUNTED) &&
             !nsStringBuffer::FromData(mData)->IsReadonly());
   }
 
-  friend class NonNull<nsAString>;
+  friend class NonNull<AString>;
 
   
   
   class StringAsserter;
   friend class StringAsserter;
 
-  class StringAsserter : public nsString {
+  class StringAsserter : public string_type {
    public:
     static void StaticAsserts() {
-      static_assert(offsetof(FakeString, mInlineStorage) == sizeof(nsString),
+      static_assert(offsetof(FakeString, mInlineStorage) == sizeof(string_type),
                     "FakeString should include all nsString members");
       static_assert(
           offsetof(FakeString, mData) == offsetof(StringAsserter, mData),
@@ -230,9 +244,10 @@ struct FakeString {
 }  
 }  
 
+template <typename CharT>
 inline void AssignFromStringBuffer(
     nsStringBuffer* aBuffer, size_t aLength,
-    mozilla::dom::binding_detail::FakeString& aDest) {
+    mozilla::dom::binding_detail::FakeString<CharT>& aDest) {
   aDest.AssignFromStringBuffer(do_AddRef(aBuffer), aLength);
 }
 
