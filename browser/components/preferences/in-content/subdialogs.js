@@ -320,16 +320,8 @@ SubDialog.prototype = {
       2 * parseFloat(getComputedStyle(this._frame).marginLeft);
 
     
-    let frameMinWidth = docEl.style.width;
-    if (!frameMinWidth) {
-      if (docEl.ownerDocument.body) {
-        
-        frameMinWidth = docEl.ownerDocument.body.scrollWidth;
-      } else {
-        frameMinWidth = docEl.scrollWidth;
-      }
-      frameMinWidth += "px";
-    }
+    let { scrollWidth } = docEl.ownerDocument.body || docEl;
+    let frameMinWidth = docEl.style.width || scrollWidth + "px";
     let frameWidth = docEl.getAttribute("width")
       ? docEl.getAttribute("width") + "px"
       : frameMinWidth;
@@ -400,7 +392,8 @@ SubDialog.prototype = {
     
     
     
-    let frameMinHeight = docEl.style.height || docEl.scrollHeight + "px";
+    let { scrollHeight } = docEl.ownerDocument.body || docEl;
+    let frameMinHeight = docEl.style.height || scrollHeight + "px";
     let frameHeight = docEl.getAttribute("height")
       ? docEl.getAttribute("height") + "px"
       : frameMinHeight;
