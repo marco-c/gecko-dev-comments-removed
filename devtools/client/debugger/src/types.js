@@ -249,7 +249,7 @@ export type Frame = {
   location: SourceLocation,
   generatedLocation: SourceLocation,
   source: ?Source,
-  scope: Scope,
+  scope?: Scope,
   
   this: Object,
   framework?: string,
