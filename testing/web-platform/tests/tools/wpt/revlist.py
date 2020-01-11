@@ -50,18 +50,14 @@ def get_tagged_revisions(pattern):
         yield tag, commit, date
 
 
-def list_tagged_revisons(epoch, max_count):
+def get_epoch_revisions(epoch, until, max_count):
     
-    logger.debug("list_tagged_revisons(%s, %s)" % (epoch, max_count))
+    logger.debug("get_epoch_revisions(%s, %s)" % (epoch, max_count))
     
     
     
     
     epoch_offset = 345600
-    
-    
-    epoch_threshold = 600
-    epoch_until = int(time.time()) - epoch_threshold
     count = 0
 
     
@@ -84,12 +80,12 @@ def list_tagged_revisons(epoch, max_count):
     
     
 
-    cutoff_date = calculate_cutoff_date(epoch_until, epoch, epoch_offset)
+    cutoff_date = calculate_cutoff_date(until, epoch, epoch_offset)
     for _, commit, date in get_tagged_revisions("refs/tags/merge_pr_*"):
         if count >= max_count:
             return
         if date < cutoff_date:
-            print(commit)
+            yield commit
             count += 1
             cutoff_date = calculate_cutoff_date(date, epoch, epoch_offset)
 
@@ -115,4 +111,9 @@ def get_parser():
 
 def run_rev_list(**kwargs):
     
-    list_tagged_revisons(kwargs["epoch"], kwargs["max_count"])
+    
+    
+    epoch_threshold = 600
+    until = int(time.time()) - epoch_threshold
+    for line in get_epoch_revisions(kwargs["epoch"], until, kwargs["max_count"]):
+        print(line)
