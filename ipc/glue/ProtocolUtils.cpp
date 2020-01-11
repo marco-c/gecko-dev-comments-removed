@@ -833,6 +833,18 @@ already_AddRefed<nsIEventTarget> IToplevelProtocol::GetMessageEventTarget(
       target = GetConstructedEventTarget(aMsg);
     }
 
+#ifdef DEBUG
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIEventTarget> existingTgt = mEventTargetMap.Lookup(handle.mId);
+    MOZ_ASSERT(existingTgt == target || existingTgt == nullptr);
+    mEventTargetMap.RemoveIfPresent(handle.mId);
+#endif 
+
     mEventTargetMap.AddWithID(target, handle.mId);
   } else if (!target) {
     
