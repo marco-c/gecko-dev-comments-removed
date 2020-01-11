@@ -59,7 +59,9 @@ add_task(async function test_open_feedback() {
     
     
     let { x, y } = await SpecialPowers.spawn(
-      browser, [selector], async menuItemSelector => {
+      browser,
+      [selector],
+      async menuItemSelector => {
         let menuButton = Cu.waiveXrays(
           content.document.querySelector("menu-button")
         );

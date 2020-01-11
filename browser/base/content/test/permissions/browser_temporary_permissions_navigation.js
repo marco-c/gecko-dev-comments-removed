@@ -182,7 +182,9 @@ add_task(async function testTempPermissionOnNavigation() {
 
     
     await SpecialPowers.spawn(
-      browser, [], () => (content.document.location = "https://example.org/")
+      browser,
+      [],
+      () => (content.document.location = "https://example.org/")
     );
 
     await loaded;
@@ -200,7 +202,9 @@ add_task(async function testTempPermissionOnNavigation() {
 
     
     await SpecialPowers.spawn(
-      browser, [], () => (content.document.location = "https://example.com/")
+      browser,
+      [],
+      () => (content.document.location = "https://example.com/")
     );
 
     await loaded;
