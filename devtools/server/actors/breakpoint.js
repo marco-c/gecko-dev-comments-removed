@@ -93,6 +93,12 @@ BreakpointActor.prototype = {
   _newOffsetsOrOptions(script, offsets, oldOptions) {
     
     
+    for (const offset of offsets) {
+      script.clearBreakpoint(this, offset);
+    }
+
+    
+    
     if (this.threadActor.dbg.replaying && this.options.logGroupId) {
       const { logGroupId } = this.options;
 
@@ -125,10 +131,7 @@ BreakpointActor.prototype = {
     }
 
     
-    
-    
     for (const offset of offsets) {
-      script.clearBreakpoint(this, offset);
       script.setBreakpoint(offset, this);
     }
   },
