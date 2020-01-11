@@ -481,10 +481,6 @@ class AudioCallbackDriver : public GraphDriver,
 
  private:
   
-  void RemoveMixerCallback();
-  
-  void AddMixerCallback();
-  
 
 
 
@@ -562,9 +558,7 @@ class AudioCallbackDriver : public GraphDriver,
   cubeb_device_pref mInputDevicePreference;
   
 
-
-
-  Atomic<bool> mAddedMixer;
+  AudioMixer mMixer;
   
 
   std::atomic<std::thread::id> mAudioThreadId;

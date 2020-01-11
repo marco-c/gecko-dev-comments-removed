@@ -525,10 +525,12 @@ void MediaTrackGraphImpl::UpdateTrackOrder() {
   MOZ_ASSERT(orderedTrackCount == mFirstCycleBreaker);
 }
 
-TrackTime MediaTrackGraphImpl::PlayAudio(const TrackKeyAndVolume& aTkv,
+TrackTime MediaTrackGraphImpl::PlayAudio(AudioMixer* aMixer,
+                                         const TrackKeyAndVolume& aTkv,
                                          GraphTime aPlayedTime) {
   MOZ_ASSERT(OnGraphThread());
   MOZ_ASSERT(mRealtime, "Should only attempt to play audio in realtime mode");
+  MOZ_ASSERT(aMixer, "Can only play audio if there's a mixer");
 
   TrackTime ticksWritten = 0;
 
@@ -615,7 +617,7 @@ TrackTime MediaTrackGraphImpl::PlayAudio(const TrackKeyAndVolume& aTkv,
     } else {
       outputChannels = AudioOutputChannelCount();
     }
-    output.WriteTo(mMixer, outputChannels, mSampleRate);
+    output.WriteTo(*aMixer, outputChannels, mSampleRate);
   }
   return ticksWritten;
 }
@@ -1210,7 +1212,7 @@ void MediaTrackGraphImpl::UpdateGraph(GraphTime aEndBlockingDecisions) {
   }
 }
 
-void MediaTrackGraphImpl::Process() {
+void MediaTrackGraphImpl::Process(AudioMixer* aMixer) {
   TRACE_AUDIO_CALLBACK();
   MOZ_ASSERT(OnGraphThread());
   
@@ -1218,8 +1220,6 @@ void MediaTrackGraphImpl::Process() {
   
   bool doneAllProducing = false;
   const GraphTime oldProcessedTime = mProcessedTime;
-
-  mMixer.StartMixing();
 
   
   for (uint32_t i = 0; i < mTracks.Length(); ++i) {
@@ -1261,35 +1261,34 @@ void MediaTrackGraphImpl::Process() {
   }
   mProcessedTime = mStateComputedTime;
 
-  
-  
-  TrackTime ticksPlayed = 0;
-  
-  if (mRealtime) {
-    if (CurrentDriver()->AsAudioCallbackDriver()) {
-      for (auto& t : mAudioOutputs) {
-        TrackTime ticksPlayedForThisTrack = PlayAudio(t, oldProcessedTime);
-        if (ticksPlayed == 0) {
-          ticksPlayed = ticksPlayedForThisTrack;
-        } else {
-          MOZ_ASSERT(!ticksPlayedForThisTrack ||
-                         ticksPlayedForThisTrack == ticksPlayed,
-                     "Each track should have the same number of frames.");
-        }
+  if (aMixer) {
+    MOZ_ASSERT(mRealtime, "If there's a mixer, this graph must be realtime");
+    aMixer->StartMixing();
+    
+    
+    TrackTime ticksPlayed = 0;
+    for (auto& t : mAudioOutputs) {
+      TrackTime ticksPlayedForThisTrack =
+          PlayAudio(aMixer, t, oldProcessedTime);
+      if (ticksPlayed == 0) {
+        ticksPlayed = ticksPlayedForThisTrack;
+      } else {
+        MOZ_ASSERT(
+            !ticksPlayedForThisTrack || ticksPlayedForThisTrack == ticksPlayed,
+            "Each track should have the same number of frames.");
       }
     }
-  }
 
-  if (CurrentDriver()->AsAudioCallbackDriver()) {
-    if (!ticksPlayed) {
+    if (ticksPlayed == 0) {
       
       
       
-      mMixer.Mix(nullptr,
-                 CurrentDriver()->AsAudioCallbackDriver()->OutputChannelCount(),
-                 mStateComputedTime - oldProcessedTime, mSampleRate);
+      aMixer->Mix(
+          nullptr,
+          CurrentDriver()->AsAudioCallbackDriver()->OutputChannelCount(),
+          mStateComputedTime - oldProcessedTime, mSampleRate);
     }
-    mMixer.FinishMixing();
+    aMixer->FinishMixing();
   }
 
   if (!allBlockedForever) {
@@ -1320,15 +1319,17 @@ bool MediaTrackGraphImpl::UpdateMainThreadState() {
   return true;
 }
 
-bool MediaTrackGraphImpl::OneIteration(GraphTime aStateEnd) {
+bool MediaTrackGraphImpl::OneIteration(GraphTime aStateEnd,
+                                       AudioMixer* aMixer) {
   if (mGraphRunner) {
-    return mGraphRunner->OneIteration(aStateEnd);
+    return mGraphRunner->OneIteration(aStateEnd, aMixer);
   }
 
-  return OneIterationImpl(aStateEnd);
+  return OneIterationImpl(aStateEnd, aMixer);
 }
 
-bool MediaTrackGraphImpl::OneIterationImpl(GraphTime aStateEnd) {
+bool MediaTrackGraphImpl::OneIterationImpl(GraphTime aStateEnd,
+                                           AudioMixer* aMixer) {
   TRACE_AUDIO_CALLBACK();
 
   if (SoftRealTimeLimitReached()) {
@@ -1359,7 +1360,7 @@ bool MediaTrackGraphImpl::OneIterationImpl(GraphTime aStateEnd) {
   mStateComputedTime = stateEnd;
 
   GraphTime oldProcessedTime = mProcessedTime;
-  Process();
+  Process(aMixer);
   MOZ_ASSERT(mProcessedTime == stateEnd);
 
   UpdateCurrentTimeForTracks(oldProcessedTime);

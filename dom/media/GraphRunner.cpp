@@ -22,7 +22,6 @@ GraphRunner::GraphRunner(MediaTrackGraphImpl* aGraph,
     : Runnable("GraphRunner"),
       mMonitor("GraphRunner::mMonitor"),
       mGraph(aGraph),
-      mStateEnd(0),
       mStillProcessing(true),
       mThreadState(ThreadState::Wait),
       mThread(aThread) {
@@ -58,12 +57,12 @@ void GraphRunner::Shutdown() {
   mThread->Shutdown();
 }
 
-bool GraphRunner::OneIteration(GraphTime aStateEnd) {
+bool GraphRunner::OneIteration(GraphTime aStateEnd, AudioMixer* aMixer) {
   TRACE_AUDIO_CALLBACK();
 
   MonitorAutoLock lock(mMonitor);
   MOZ_ASSERT(mThreadState == ThreadState::Wait);
-  mStateEnd = aStateEnd;
+  mIterationState = Some(IterationState(aStateEnd, aMixer));
 
 #ifdef DEBUG
   if (auto audioDriver = mGraph->CurrentDriver()->AsAudioCallbackDriver()) {
@@ -88,6 +87,8 @@ bool GraphRunner::OneIteration(GraphTime aStateEnd) {
   mClockDriverThread = nullptr;
 #endif
 
+  mIterationState = Nothing();
+
   return mStillProcessing;
 }
 
@@ -103,8 +104,10 @@ NS_IMETHODIMP GraphRunner::Run() {
     if (mThreadState == ThreadState::Shutdown) {
       break;
     }
+    MOZ_DIAGNOSTIC_ASSERT(mIterationState.isSome());
     TRACE();
-    mStillProcessing = mGraph->OneIterationImpl(mStateEnd);
+    mStillProcessing = mGraph->OneIterationImpl(mIterationState->StateEnd(),
+                                                mIterationState->Mixer());
     
     mThreadState = ThreadState::Wait;
     mMonitor.Notify();

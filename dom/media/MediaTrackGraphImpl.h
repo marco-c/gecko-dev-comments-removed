@@ -214,12 +214,13 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  bool OneIteration(GraphTime aStateEnd);
+
+  bool OneIteration(GraphTime aStateEnd, AudioMixer* aMixer);
 
   
 
 
-  bool OneIterationImpl(GraphTime aStateEnd);
+  bool OneIterationImpl(GraphTime aStateEnd, AudioMixer* aMixer);
 
   
 
@@ -290,7 +291,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  void Process();
+  void Process(AudioMixer* aMixer);
 
   
 
@@ -389,13 +390,13 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-
   struct TrackKeyAndVolume {
     MediaTrack* mTrack;
     void* mKey;
     float mVolume;
   };
-  TrackTime PlayAudio(const TrackKeyAndVolume& aTkv, GraphTime aPlayedTime);
+  TrackTime PlayAudio(AudioMixer* aMixer, const TrackKeyAndVolume& aTkv,
+                      GraphTime aPlayedTime);
   
 
 
@@ -920,7 +921,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   bool mTrackOrderDirty;
-  AudioMixer mMixer;
   const RefPtr<AbstractThread> mAbstractMainThread;
 
   

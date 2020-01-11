@@ -275,7 +275,8 @@ void ThreadedDriver::RunThread() {
          (long)mIterationStart, (long)mIterationEnd, (long)mStateComputedTime,
          (long)nextStateComputedTime));
 
-    bool stillProcessing = GraphImpl()->OneIteration(nextStateComputedTime);
+    bool stillProcessing =
+        GraphImpl()->OneIteration(nextStateComputedTime, nullptr);
 
     if (!stillProcessing) {
       
@@ -417,7 +418,6 @@ AudioCallbackDriver::AudioCallbackDriver(MediaTrackGraphImpl* aGraphImpl,
       mStarted(false),
       mInitShutdownThread(
           SharedThreadPool::Get(NS_LITERAL_CSTRING("CubebOperation"), 1)),
-      mAddedMixer(false),
       mAudioThreadId(std::thread::id()),
       mAudioThreadRunning(false),
       mShouldFallbackIfError(false),
@@ -440,11 +440,12 @@ AudioCallbackDriver::AudioCallbackDriver(MediaTrackGraphImpl* aGraphImpl,
   } else {
     mInputDevicePreference = CUBEB_DEVICE_PREF_ALL;
   }
+
+  mMixer.AddCallback(WrapNotNull(this));
 }
 
 AudioCallbackDriver::~AudioCallbackDriver() {
   MOZ_ASSERT(mPromisesForOperation.IsEmpty());
-  MOZ_ASSERT(!mAddedMixer);
 #if defined(XP_WIN)
   if (XRE_IsContentProcess()) {
     audio::AudioNotificationReceiver::Unregister(this);
@@ -668,24 +669,6 @@ void AudioCallbackDriver::Stop() {
   mStarted = false;
 }
 
-void AudioCallbackDriver::RemoveMixerCallback() {
-  MOZ_ASSERT(OnGraphThread() || !ThreadRunning());
-
-  if (mAddedMixer) {
-    GraphImpl()->mMixer.RemoveCallback(this);
-    mAddedMixer = false;
-  }
-}
-
-void AudioCallbackDriver::AddMixerCallback() {
-  MOZ_ASSERT(OnGraphThread());
-
-  if (!mAddedMixer) {
-    mGraphImpl->mMixer.AddCallback(WrapNotNull(this));
-    mAddedMixer = true;
-  }
-}
-
 void AudioCallbackDriver::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
   LOG(LogLevel::Debug,
@@ -747,9 +730,6 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
   AutoInCallback aic(this);
 #endif
 
-  
-  AddMixerCallback();
-
   uint32_t durationMS = aFrames * 1000 / mSampleRate;
 
   
@@ -810,7 +790,7 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
   if (mBuffer.Available()) {
     
     
-    stillProcessing = GraphImpl()->OneIteration(nextStateComputedTime);
+    stillProcessing = GraphImpl()->OneIteration(nextStateComputedTime, &mMixer);
     if (stillProcessing) {
       mStateComputedTime = nextStateComputedTime;
     }
@@ -849,7 +829,6 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
     
     
     mShouldFallbackIfError = false;
-    RemoveMixerCallback();
     
     mAudioThreadRunning = false;
     
@@ -873,7 +852,6 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
       return aFrames;
     }
     LOG(LogLevel::Debug, ("%p: Switching to system driver.", GraphImpl()));
-    RemoveMixerCallback();
     mAudioThreadRunning = false;
     SwitchToNextDriver();
     
@@ -911,11 +889,9 @@ void AudioCallbackDriver::StateCallback(cubeb_state aState) {
   if (aState == CUBEB_STATE_ERROR && mShouldFallbackIfError) {
     MOZ_ASSERT(!ThreadRunning());
     mShouldFallbackIfError = false;
-    RemoveMixerCallback();
     FallbackToSystemClockDriver();
   } else if (aState == CUBEB_STATE_STOPPED) {
     MOZ_ASSERT(!ThreadRunning());
-    RemoveMixerCallback();
   }
 }
 

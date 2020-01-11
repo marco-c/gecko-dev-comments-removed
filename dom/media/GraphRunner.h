@@ -16,6 +16,7 @@ struct PRThread;
 
 namespace mozilla {
 
+class AudioMixer;
 class GraphDriver;
 class MediaTrackGraphImpl;
 
@@ -32,7 +33,7 @@ class GraphRunner final : public Runnable {
 
 
 
-  bool OneIteration(GraphTime aStateEnd);
+  bool OneIteration(GraphTime aStateEnd, AudioMixer* aMixer);
 
   
 
@@ -57,6 +58,22 @@ class GraphRunner final : public Runnable {
                        already_AddRefed<nsIThread> aThread);
   ~GraphRunner();
 
+  class IterationState {
+    GraphTime mStateEnd;
+    AudioMixer* MOZ_NON_OWNING_REF mMixer;
+
+   public:
+    IterationState(GraphTime aStateEnd, AudioMixer* aMixer)
+        : mStateEnd(aStateEnd), mMixer(aMixer) {}
+    IterationState& operator=(const IterationState& aOther) {
+      mStateEnd = aOther.mStateEnd;
+      mMixer = aOther.mMixer;
+      return *this;
+    }
+    GraphTime StateEnd() const { return mStateEnd; }
+    AudioMixer* Mixer() const { return mMixer; }
+  };
+
   
   
   Monitor mMonitor;
@@ -65,7 +82,7 @@ class GraphRunner final : public Runnable {
   MediaTrackGraphImpl* const mGraph;
   
   
-  GraphTime mStateEnd;
+  Maybe<IterationState> mIterationState;
   
   bool mStillProcessing;
 
