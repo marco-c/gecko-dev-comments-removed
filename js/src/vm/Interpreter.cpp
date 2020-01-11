@@ -1108,14 +1108,6 @@ jsbytecode* js::UnwindEnvironmentToTryPc(JSScript* script,
   return pc;
 }
 
-static bool ForcedReturn(JSContext* cx, InterpreterRegs& regs) {
-  bool ok = DebugAPI::onLeaveFrame(cx, regs.fp(), regs.pc, true);
-  
-  
-  regs.setToEndOfScript();
-  return ok;
-}
-
 static void SettleOnTryNote(JSContext* cx, const JSTryNote* tn,
                             EnvironmentIter& ei, InterpreterRegs& regs) {
   
@@ -1264,25 +1256,14 @@ again:
   if (cx->isExceptionPending()) {
     
     if (!cx->isClosingGenerator()) {
-      ResumeMode mode = DebugAPI::onExceptionUnwind(cx, regs.fp());
-      switch (mode) {
-        case ResumeMode::Terminate:
+      if (!DebugAPI::onExceptionUnwind(cx, regs.fp())) {
+        if (!cx->isExceptionPending()) {
           goto again;
-
-        case ResumeMode::Continue:
-        case ResumeMode::Throw:
-          break;
-
-        case ResumeMode::Return:
-          UnwindIteratorsForUncatchableException(cx, regs);
-          if (!ForcedReturn(cx, regs)) {
-            return ErrorReturnContinuation;
-          }
-          return SuccessfulReturnContinuation;
-
-        default:
-          MOZ_CRASH("bad DebugAPI::onExceptionUnwind resume mode");
+        }
       }
+      
+      
+      MOZ_ASSERT(cx->isExceptionPending());
     }
 
     HandleErrorContinuation res = ProcessTryNotes(cx, ei, regs);
@@ -1301,19 +1282,17 @@ again:
     }
 
     ok = HandleClosingGeneratorReturn(cx, regs.fp(), ok);
-    ok = DebugAPI::onLeaveFrame(cx, regs.fp(), regs.pc, ok);
   } else {
+    UnwindIteratorsForUncatchableException(cx, regs);
+
     
     if (MOZ_UNLIKELY(cx->isPropagatingForcedReturn())) {
       cx->clearPropagatingForcedReturn();
-      if (!ForcedReturn(cx, regs)) {
-        return ErrorReturnContinuation;
-      }
-      return SuccessfulReturnContinuation;
+      ok = true;
     }
-
-    UnwindIteratorsForUncatchableException(cx, regs);
   }
+
+  ok = DebugAPI::onLeaveFrame(cx, regs.fp(), regs.pc, ok);
 
   
   

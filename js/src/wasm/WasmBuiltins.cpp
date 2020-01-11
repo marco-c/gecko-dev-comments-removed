@@ -404,13 +404,15 @@ void* wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter) {
     
     
     if (cx->isExceptionPending()) {
-      ResumeMode mode = DebugAPI::onExceptionUnwind(cx, frame);
-      if (mode == ResumeMode::Return) {
-        
-        
-        
-        JS_ReportErrorASCII(
-            cx, "Unexpected resumption value from onExceptionUnwind");
+      if (!DebugAPI::onExceptionUnwind(cx, frame)) {
+        if (cx->isPropagatingForcedReturn()) {
+          cx->clearPropagatingForcedReturn();
+          
+          
+          
+          JS_ReportErrorASCII(
+              cx, "Unexpected resumption value from onExceptionUnwind");
+        }
       }
     }
 

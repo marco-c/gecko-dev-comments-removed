@@ -1071,17 +1071,17 @@ bool DebugAPI::slowPathOnDebuggerStatement(JSContext* cx,
 }
 
 
-ResumeMode DebugAPI::slowPathOnExceptionUnwind(JSContext* cx,
-                                               AbstractFramePtr frame) {
+bool DebugAPI::slowPathOnExceptionUnwind(JSContext* cx,
+                                         AbstractFramePtr frame) {
   
   
   if (cx->isThrowingOverRecursed() || cx->isThrowingOutOfMemory()) {
-    return ResumeMode::Continue;
+    return true;
   }
 
   
   if (frame.hasScript() && frame.script()->selfHosted()) {
-    return ResumeMode::Continue;
+    return true;
   }
 
   RootedValue rval(cx);
@@ -1100,22 +1100,22 @@ ResumeMode DebugAPI::slowPathOnExceptionUnwind(JSContext* cx,
 
     case ResumeMode::Throw:
       cx->setPendingExceptionAndCaptureStack(rval);
-      break;
+      return false;
 
     case ResumeMode::Terminate:
       cx->clearPendingException();
-      break;
+      return false;
 
     case ResumeMode::Return:
       cx->clearPendingException();
-      frame.setReturnValue(rval);
-      break;
+      DebugAPI::propagateForcedReturn(cx, frame, rval);
+      return false;
 
     default:
       MOZ_CRASH("Invalid onExceptionUnwind resume mode");
   }
 
-  return resumeMode;
+  return true;
 }
 
 

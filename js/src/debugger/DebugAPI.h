@@ -243,8 +243,8 @@ class DebugAPI {
 
 
 
-  static inline ResumeMode onExceptionUnwind(JSContext* cx,
-                                             AbstractFramePtr frame);
+  static inline MOZ_MUST_USE bool onExceptionUnwind(JSContext* cx,
+                                                    AbstractFramePtr frame);
 
   
 
@@ -389,8 +389,8 @@ class DebugAPI {
                                          CallReason reason);
   static MOZ_MUST_USE bool slowPathOnDebuggerStatement(JSContext* cx,
                                                        AbstractFramePtr frame);
-  static ResumeMode slowPathOnExceptionUnwind(JSContext* cx,
-                                              AbstractFramePtr frame);
+  static MOZ_MUST_USE bool slowPathOnExceptionUnwind(JSContext* cx,
+                                                     AbstractFramePtr frame);
   static void slowPathOnNewWasmInstance(
       JSContext* cx, Handle<WasmInstanceObject*> wasmInstance);
   static void slowPathOnNewPromise(JSContext* cx,
