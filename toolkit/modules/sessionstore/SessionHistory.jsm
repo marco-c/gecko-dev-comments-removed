@@ -511,19 +511,23 @@ var SessionHistoryInternal = {
       }
     }
 
-    if (entry.triggeringPrincipal_base64) {
-      shEntry.triggeringPrincipal = E10SUtils.deserializePrincipal(
-        entry.triggeringPrincipal_base64,
-        () => {
-          
-          
-          debug(
-            "Couldn't deserialize the triggeringPrincipal, falling back to NullPrincipal"
-          );
-          return Services.scriptSecurityManager.createNullPrincipal({});
-        }
-      );
-    }
+    
+    
+    shEntry.triggeringPrincipal = E10SUtils.deserializePrincipal(
+      entry.triggeringPrincipal_base64,
+      () => {
+        
+        
+        
+        
+        debug(
+          "Couldn't deserialize the triggeringPrincipal, falling back to NullPrincipal"
+        );
+        return Services.scriptSecurityManager.createNullPrincipal({});
+      }
+    );
+    
+    
     if (entry.storagePrincipalToInherit_base64) {
       shEntry.storagePrincipalToInherit = E10SUtils.deserializePrincipal(
         entry.storagePrincipalToInherit_base64
