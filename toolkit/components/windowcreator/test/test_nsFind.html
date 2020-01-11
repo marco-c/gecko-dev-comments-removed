@@ -5,7 +5,6 @@
 
 
 
-
 <head>
   <meta charset="UTF-8">
   <title>Test for nsFind::Find()</title>
@@ -14,6 +13,7 @@
 
 <script type="application/javascript">
 
+/** Test for Bug 450048 **/
 SimpleTest.waitForExplicitFinish();
 
 async function runTests() {
@@ -47,13 +47,12 @@ async function runTests() {
   rf.findBackwards = false;
 
   rf.caseSensitive = false;
-  rf.matchDiacritics = false;
 
   searchValue = "TexT";
   retRange = rf.Find(searchValue, searchRange, startPt, endPt);
   ok(retRange, "\"" + searchValue + "\" not found (not caseSensitive)");
 
-  searchValue = "λογος";
+  searchValue = "λόγος";
   retRange = rf.Find(searchValue, searchRange, startPt, endPt);
   ok(retRange, "\"" + searchValue + "\" not found (not caseSensitive)");
 
@@ -65,15 +64,9 @@ async function runTests() {
   retRange = rf.Find(searchValue, searchRange, startPt, endPt);
   ok(retRange, "\"" + searchValue + "\" not found (not caseSensitive)");
 
-  rf.matchDiacritics = true;
-
-  searchValue = "λογος";
-  retRange = rf.Find(searchValue, searchRange, startPt, endPt);
-  ok(!retRange, "\"" + searchValue + "\" found (not caseSensitive)");
-
   rf.caseSensitive = true;
 
-  searchValue = "TexT";
+  // searchValue = "TexT";
   retRange = rf.Find(searchValue, searchRange, startPt, endPt);
   ok(!retRange, "\"" + searchValue + "\" found (caseSensitive)");
 

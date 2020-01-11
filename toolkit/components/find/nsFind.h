@@ -42,7 +42,6 @@ class nsFind : public nsIFind {
   
   bool mFindBackward;
   bool mCaseSensitive;
-  bool mMatchDiacritics;
 
   
   

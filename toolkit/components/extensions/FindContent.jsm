@@ -58,7 +58,6 @@ class FindContent {
 
 
 
-
   findRanges(params) {
     return new Promise(resolve => {
       let {
@@ -67,7 +66,6 @@ class FindContent {
         entireWord,
         includeRangeData,
         includeRectData,
-        matchDiacritics,
       } = params;
 
       this.iterator.reset();
@@ -79,7 +77,6 @@ class FindContent {
         entireWord: !!entireWord,
         finder: this.finder,
         listener: this.finder,
-        matchDiacritics: !!matchDiacritics,
         useSubFrames: false,
       });
 
