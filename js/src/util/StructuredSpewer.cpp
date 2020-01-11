@@ -80,7 +80,6 @@ void StructuredSpewer::tryToInitializeOutput(const char* path) {
   
   output_.put("[");
   json_.emplace(output_);
-  return;
 }
 
 
