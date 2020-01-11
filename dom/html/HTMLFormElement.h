@@ -274,15 +274,6 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
 
 
-  bool SubmissionCanProceed(Element* aSubmitter);
-
-  
-
-
-
-
-
-
   nsresult ConstructEntryList(FormData* aFormData);
 
   
@@ -360,6 +351,15 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
   int32_t Length();
 
+  
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT void MaybeSubmit(Element* aSubmitter);
+  MOZ_CAN_RUN_SCRIPT void MaybeReset(Element* aSubmitter);
   void Submit(ErrorResult& aRv);
   void Reset();
 
