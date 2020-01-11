@@ -200,6 +200,11 @@ function MockFxAccounts(credentials = null) {
     device: {
       _registerOrUpdateDevice() {},
     },
+    profile: {
+      getProfile() {
+        return null;
+      },
+    },
   });
   
   
