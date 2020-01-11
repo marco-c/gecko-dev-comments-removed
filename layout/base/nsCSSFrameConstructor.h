@@ -1751,18 +1751,12 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   
-  
-  
-  
-  
-  nsContainerFrame* BeginBuildingColumns(nsFrameConstructorState& aState,
-                                         nsIContent* aContent,
-                                         nsContainerFrame* aParentFrame,
-                                         nsContainerFrame* aColumnContent,
-                                         ComputedStyle* aComputedStyle);
+  nsBlockFrame* BeginBuildingColumns(nsFrameConstructorState& aState,
+                                     nsIContent* aContent,
+                                     nsContainerFrame* aParentFrame,
+                                     nsContainerFrame* aColumnContent,
+                                     ComputedStyle* aComputedStyle);
 
-  
-  
   
   
   
