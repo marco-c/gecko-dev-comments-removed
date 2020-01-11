@@ -1280,6 +1280,9 @@ pref("browser.newtabpage.activity-stream.asrouter.providers.whats-new-panel", "{
 
 
 pref("browser.newtabpage.activity-stream.asrouter.providers.snippets", "{\"id\":\"snippets\",\"enabled\":true,\"type\":\"remote\",\"url\":\"https://snippets.cdn.mozilla.net/%STARTPAGE_VERSION%/%NAME%/%VERSION%/%APPBUILDID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/\",\"updateCycleInMs\":14400000}");
+#ifdef NIGHTLY_BUILD
+  pref("browser.newtabpage.activity-stream.asrouter.useReleaseSnippets", true);
+#endif
 
 
 

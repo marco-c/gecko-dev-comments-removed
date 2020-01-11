@@ -721,6 +721,15 @@ this.TelemetryFeed = class TelemetryFeed {
       Cu.reportError("Unknown ping type for ASRouter telemetry");
       return;
     }
+    
+    
+    if (
+      pingType === "snippets" &&
+      ASRouterPreferences.useReleaseSnippets &&
+      action.data.action !== "snippets_local_testing_user_event"
+    ) {
+      return;
+    }
     this.sendStructuredIngestionEvent(
       ping,
       STRUCTURED_INGESTION_NAMESPACE_MS,
