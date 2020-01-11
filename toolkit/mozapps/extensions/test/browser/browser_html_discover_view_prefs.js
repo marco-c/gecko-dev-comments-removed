@@ -56,7 +56,6 @@ add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["extensions.getAddons.discovery.api_url", TEST_API_URL],
-      ["extensions.htmlaboutaddons.discover.enabled", true],
       
       
       

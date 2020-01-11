@@ -47,7 +47,6 @@ add_task(async function setup() {
       ["datareporting.healthreport.uploadEnabled", true],
       ["extensions.getAddons.discovery.api_url", `${serverBaseUrl}discoapi`],
       ["app.support.baseURL", `${serverBaseUrl}sumo/`],
-      ["extensions.htmlaboutaddons.discover.enabled", true],
       
       
       
@@ -162,8 +161,8 @@ add_task(async function clientid_enabled_from_extension_list() {
   await SpecialPowers.pushPrefEnv({
     
     set: [
-      ["extensions.htmlaboutaddons.discover.enabled", false],
       ["extensions.htmlaboutaddons.recommendations.enabled", true],
+      ["extensions.getAddons.showPane", false],
     ],
   });
 
@@ -197,8 +196,8 @@ add_task(async function clientid_enabled_from_theme_list() {
   await SpecialPowers.pushPrefEnv({
     
     set: [
-      ["extensions.htmlaboutaddons.discover.enabled", false],
       ["extensions.htmlaboutaddons.recommendations.enabled", true],
+      ["extensions.getAddons.showPane", false],
     ],
   });
 
