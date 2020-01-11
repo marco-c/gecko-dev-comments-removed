@@ -5226,7 +5226,7 @@ bool BytecodeEmitter::emitSpread(bool allowSelfHosted) {
       return false;
     }
 
-    if (!loopInfo.emitLoopEnd(this, JSOP_GOTO)) {
+    if (!loopInfo.emitLoopEnd(this, JSOP_GOTO, JSTRY_FOR_OF)) {
       
       return false;
     }
@@ -5241,15 +5241,6 @@ bool BytecodeEmitter::emitSpread(bool allowSelfHosted) {
 
   
   MOZ_ASSERT(!loopInfo.continues.offset.valid());
-
-  if (!loopInfo.patchBreaks(this)) {
-    return false;
-  }
-
-  if (!addTryNote(JSTRY_FOR_OF, bytecodeSection().stackDepth(),
-                  loopInfo.headOffset(), loopInfo.breakTargetOffset())) {
-    return false;
-  }
 
   if (!emit2(JSOP_PICK, 4)) {
     

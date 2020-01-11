@@ -138,7 +138,7 @@ bool ForInEmitter::emitEnd(const Maybe<uint32_t>& forPos) {
     
     return false;
   }
-  if (!loopInfo_->emitLoopEnd(bce_, JSOP_GOTO)) {
+  if (!loopInfo_->emitLoopEnd(bce_, JSOP_GOTO, JSTRY_FOR_IN)) {
     
     return false;
   }
@@ -149,20 +149,9 @@ bool ForInEmitter::emitEnd(const Maybe<uint32_t>& forPos) {
   MOZ_ASSERT(stackDepth == loopDepth_);
   bce_->bytecodeSection().setStackDepth(stackDepth);
 
-  if (!loopInfo_->patchBreaks(bce_)) {
-    
-    return false;
-  }
-
   
   if (!bce_->emit1(JSOP_POP)) {
     
-    return false;
-  }
-
-  if (!bce_->addTryNote(JSTRY_FOR_IN, bce_->bytecodeSection().stackDepth(),
-                        loopInfo_->headOffset(),
-                        bce_->bytecodeSection().offset())) {
     return false;
   }
 

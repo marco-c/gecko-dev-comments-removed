@@ -170,18 +170,7 @@ bool CForEmitter::emitEnd(const Maybe<uint32_t>& forPos) {
   }
 
   
-  if (!loopInfo_->emitLoopEnd(bce_, JSOP_GOTO)) {
-    
-    return false;
-  }
-
-  if (!bce_->addTryNote(JSTRY_LOOP, bce_->bytecodeSection().stackDepth(),
-                        loopInfo_->headOffset(),
-                        loopInfo_->breakTargetOffset())) {
-    return false;
-  }
-
-  if (!loopInfo_->patchBreaks(bce_)) {
+  if (!loopInfo_->emitLoopEnd(bce_, JSOP_GOTO, JSTRY_LOOP)) {
     
     return false;
   }
