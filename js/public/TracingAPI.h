@@ -437,9 +437,21 @@ inline void TraceEdge(JSTracer* trc, JS::TenuredHeap<T>* thingp,
 
 
 
-template <typename T>
-extern JS_PUBLIC_API void UnsafeTraceRoot(JSTracer* trc, T* edgep,
-                                          const char* name);
+#define JS_DECLARE_UNSAFE_TRACE_ROOT(type)                               \
+  extern JS_PUBLIC_API void UnsafeTraceRoot(JSTracer* trc, type* edgep, \
+                                            const char* name);
+
+
+JS_FOR_EACH_PUBLIC_GC_POINTER_TYPE(JS_DECLARE_UNSAFE_TRACE_ROOT)
+JS_FOR_EACH_PUBLIC_TAGGED_GC_POINTER_TYPE(JS_DECLARE_UNSAFE_TRACE_ROOT)
+
+
+
+
+JS_DECLARE_UNSAFE_TRACE_ROOT(js::AbstractGeneratorObject*)
+JS_DECLARE_UNSAFE_TRACE_ROOT(js::SavedFrame*)
+
+#undef JS_DECLARE_UNSAFE_TRACE_ROOT
 
 extern JS_PUBLIC_API void TraceChildren(JSTracer* trc, GCCellPtr thing);
 
