@@ -40,6 +40,34 @@ function downgradeRedirectTo(partialPath) {
 
 
 
+
+
+
+
+
+function testPrefetch(nonce, testNamePrefix, urlHelperMethod, expectedResults) {
+  async_test(t => {
+    let key = 'prefetch' + nonce;
+    let e = document.createElement('link');
+    e.rel = 'prefetch';
+    e.crossOrigin = 'anonymous';
+    e.href = urlHelperMethod('resources/record-header.py?file=' + key) + '&simple=true';
+    e.onload = t.step_func(e => {
+      let expectation = { ...expectedResults };
+      if (expectation['mode'] != '')
+        expectation['mode'] = 'cors';
+      fetch('/fetch/metadata/resources/record-header.py?retrieve=true&file=' + key)
+        .then(t.step_func(response => response.text()))
+        .then(t.step_func_done(text => assert_header_equals(text, expectation, testNamePrefix + ' prefetch => No headers')))
+        .catch(t.unreached_func('Fetching and verifying the results should succeed.'));
+    });
+    e.onerror = t.unreached_func();
+    document.head.appendChild(e);
+  }, testNamePrefix + ' prefetch => No headers');
+}
+
+
+
 function RunCommonRedirectTests(testNamePrefix, urlHelperMethod, expectedResults) {
   async_test(t => {
     let i = document.createElement('iframe');
@@ -123,27 +151,6 @@ function RunCommonRedirectTests(testNamePrefix, urlHelperMethod, expectedResults
       document.body.appendChild(e);
     });
   }, testNamePrefix + ' object');
-
-  if (document.createElement('link').relList.supports('prefetch')) {
-    async_test(t => {
-      let key = 'prefetch' + nonce;
-      let e = document.createElement('link');
-      e.rel = 'prefetch';
-      e.crossOrigin = 'anonymous';
-      e.href = urlHelperMethod('resources/record-header.py?file=' + key) + '&simple=true';
-      e.onload = t.step_func(e => {
-        let expectation = { ...expectedResults };
-        if (expectation['mode'] != '')
-          expectation['mode'] = 'cors';
-        fetch('/fetch/metadata/resources/record-header.py?retrieve=true&file=' + key)
-          .then(t.step_func(response => response.text()))
-          .then(t.step_func_done(text => assert_header_equals(text, expectation, testNamePrefix + ' prefetch => No headers')))
-          .catch(t.unreached_func('Fetching and verifying the results should succeed.'));
-      });
-      e.onerror = t.unreached_func();
-      document.head.appendChild(e);
-    }, testNamePrefix + ' prefetch => No headers');
-  }
 
   if (document.createElement('link').relList.supports('preload')) {
     async_test(t => {
