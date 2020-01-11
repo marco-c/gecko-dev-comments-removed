@@ -101,22 +101,6 @@ class TabGroup final : public SchedulerGroup,
   
   nsISerialEventTarget* EventTargetFor(TaskCategory aCategory) const override;
 
-  void WindowChangedBackgroundStatus(bool aIsNowBackground);
-
-  
-  
-  bool IsBackground() const override;
-
-  
-  
-  Atomic<uint32_t>& IndexedDBTransactionCounter() {
-    return mNumOfIndexedDBTransactions;
-  }
-
-  Atomic<uint32_t>& IndexedDBDatabaseCounter() {
-    return mNumOfIndexedDBDatabases;
-  }
-
   static LinkedList<TabGroup>* GetTabGroupList() { return sTabGroups; }
 
  private:
@@ -132,14 +116,11 @@ class TabGroup final : public SchedulerGroup,
   
   Atomic<bool> mLastWindowLeft;
   Atomic<bool> mThrottledQueuesInitialized;
-  Atomic<uint32_t> mNumOfIndexedDBTransactions;
-  Atomic<uint32_t> mNumOfIndexedDBDatabases;
   const bool mIsChrome;
 
   
   DocGroupMap mDocGroups;
   nsTArray<nsPIDOMWindowOuter*> mWindows;
-  uint32_t mForegroundCount;
 
   static LinkedList<TabGroup>* sTabGroups;
 };

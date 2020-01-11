@@ -311,7 +311,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   
   
-  void UpdateActiveIndexedDBTransactionCount(int32_t aDelta);
   void UpdateActiveIndexedDBDatabaseCount(int32_t aDelta);
 
   
