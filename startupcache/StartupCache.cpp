@@ -319,8 +319,17 @@ Result<Ok, nsresult> StartupCache::LoadArchive() {
       }
       currentOffset += compressedSize;
 
-      if (!mTable.putNew(key, StartupCacheEntry(offset, compressedSize,
-                                                uncompressedSize))) {
+      
+      
+      
+      decltype(mTable)::AddPtr p = mTable.lookupForAdd(key);
+      if (p) {
+        return Err(NS_ERROR_UNEXPECTED);
+      }
+
+      if (!mTable.add(
+              p, key,
+              StartupCacheEntry(offset, compressedSize, uncompressedSize))) {
         return Err(NS_ERROR_UNEXPECTED);
       }
     }
