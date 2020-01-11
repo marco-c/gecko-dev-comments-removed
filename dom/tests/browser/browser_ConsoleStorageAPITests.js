@@ -17,10 +17,10 @@ add_task(async function() {
 
   
   
-  var keepaliveTab = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  var keepaliveTab = await BrowserTestUtils.addTab(gBrowser, "about:blank");
 
   
-  var tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  var tab = await BrowserTestUtils.addTab(gBrowser, "about:blank");
   gBrowser.selectedTab = tab;
   var browser = gBrowser.selectedBrowser;
 
@@ -67,6 +67,14 @@ add_task(async function() {
     });
 
     await ContentTaskUtils.waitForEvent(this, "DOMContentLoaded");
+
+    
+    
+    
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector("#test-emptyTimeStamp"),
+      "Test document should be fully loaded"
+    );
 
     content.console.log("this", "is", "a", "log message");
     content.console.info("this", "is", "a", "info message");
