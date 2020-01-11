@@ -87,9 +87,9 @@ struct CompilerEnvironment {
   
   CompilerEnvironment(CompileMode mode, Tier tier,
                       OptimizedBackend optimizedBackend,
-                      DebugEnabled debugEnabled, bool refTypesConfigured,
-                      bool gcTypesConfigured, bool hugeMemory,
-                      bool bigIntConfigured);
+                      DebugEnabled debugEnabled, bool multiValueConfigured,
+                      bool refTypesConfigured, bool gcTypesConfigured,
+                      bool hugeMemory, bool bigIntConfigured);
 
   
   void computeParameters(Decoder& d, bool gcFeatureOptIn);
