@@ -692,6 +692,8 @@ void js::BaseScript::finalize(JSFreeOp* fop) {
                  MemCheckKind::MakeNoAccess);
     fop->free_(this, data_, size, MemoryUse::ScriptPrivateData);
   }
+
+  freeSharedData();
 }
 
 template <XDRMode mode>
@@ -1235,10 +1237,9 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
   
   
   
-  
   auto scriptDataGuard = mozilla::MakeScopeExit([&] {
     if (mode == XDR_DECODE) {
-      script->freeScriptData();
+      script->freeSharedData();
     }
   });
 
@@ -4131,8 +4132,6 @@ bool JSScript::createImmutableScriptData(JSContext* cx, uint32_t codeLength,
   return true;
 }
 
-void JSScript::freeScriptData() { sharedData_ = nullptr; }
-
 
 
 
@@ -4462,7 +4461,7 @@ bool JSScript::fullyInitFromEmitter(JSContext* cx, HandleScript script,
   
   
   auto scriptDataGuard =
-      mozilla::MakeScopeExit([&] { script->freeScriptData(); });
+      mozilla::MakeScopeExit([&] { script->freeSharedData(); });
 
   
   MOZ_ASSERT(bce->perScriptData().atomIndices()->count() <= INDEX_LIMIT);
@@ -4654,8 +4653,6 @@ void JSScript::finalize(JSFreeOp* fop) {
 
   
   BaseScript::finalize(fop);
-
-  freeScriptData();
 
   
   
@@ -5326,10 +5323,6 @@ void JSScript::traceChildren(JSTracer* trc) {
 
   
   BaseScript::traceChildren(trc);
-
-  if (sharedData()) {
-    sharedData()->traceChildren(trc);
-  }
 
   if (maybeLazyScript()) {
     TraceManuallyBarrieredEdge(trc, &lazyScript, "lazyScript");
