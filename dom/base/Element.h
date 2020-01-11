@@ -1365,8 +1365,8 @@ class Element : public FragmentOrElement {
 
 
 
-  nsresult SetEventHandler(nsAtom* aEventName, const nsAString& aValue,
-                           bool aDefer = true);
+  void SetEventHandler(nsAtom* aEventName, const nsAString& aValue,
+                       bool aDefer = true);
 
   
 

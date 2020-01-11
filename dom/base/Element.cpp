@@ -2021,13 +2021,13 @@ nsresult Element::LeaveLink(nsPresContext* aPresContext) {
   return nsDocShell::Cast(shell)->OnLeaveLink();
 }
 
-nsresult Element::SetEventHandler(nsAtom* aEventName, const nsAString& aValue,
-                                  bool aDefer) {
+void Element::SetEventHandler(nsAtom* aEventName, const nsAString& aValue,
+                              bool aDefer) {
   Document* ownerDoc = OwnerDoc();
   if (ownerDoc->IsLoadedAsData()) {
     
     
-    return NS_OK;
+    return;
   }
 
   MOZ_ASSERT(aEventName, "Must have event name!");
@@ -2035,13 +2035,12 @@ nsresult Element::SetEventHandler(nsAtom* aEventName, const nsAString& aValue,
   EventListenerManager* manager =
       GetEventListenerManagerForAttr(aEventName, &defer);
   if (!manager) {
-    return NS_OK;
+    return;
   }
 
   defer = defer && aDefer;  
   manager->SetEventHandler(aEventName, aValue, defer,
                            !nsContentUtils::IsChromeDoc(ownerDoc), this);
-  return NS_OK;
 }
 
 
