@@ -24,7 +24,6 @@
 
 class nsIAsyncInputStream;
 class nsIThread;
-class nsIX509CertList;
 
 namespace mozilla {
 namespace net {
@@ -203,7 +202,7 @@ class BackgroundFileSaver : public nsIBackgroundFileSaver {
   
 
 
-  nsCOMArray<nsIX509CertList> mSignatureInfo;
+  nsTArray<nsTArray<nsTArray<uint8_t>>> mSignatureInfo;
 
   
 

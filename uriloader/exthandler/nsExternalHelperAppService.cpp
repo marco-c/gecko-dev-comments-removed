@@ -1980,7 +1980,7 @@ nsExternalAppHandler::OnSaveComplete(nsIBackgroundFileSaver* aSaver,
   if (!mCanceled) {
     
     (void)mSaver->GetSha256Hash(mHash);
-    (void)mSaver->GetSignatureInfo(getter_AddRefs(mSignatureInfo));
+    (void)mSaver->GetSignatureInfo(mSignatureInfo);
 
     
     

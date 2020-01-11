@@ -339,7 +339,7 @@ class nsExternalAppHandler final : public nsIStreamListener,
 
 
 
-  nsCOMPtr<nsIArray> mSignatureInfo;
+  nsTArray<nsTArray<nsTArray<uint8_t>>> mSignatureInfo;
   
 
 

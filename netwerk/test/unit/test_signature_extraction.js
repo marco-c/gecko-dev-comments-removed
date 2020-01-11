@@ -178,22 +178,20 @@ add_task(async function test_signature() {
 
   
   Assert.equal(1, saver.signatureInfo.length);
-  let certLists = saver.signatureInfo.enumerate();
-  Assert.ok(certLists.hasMoreElements());
-  let certList = certLists.getNext().QueryInterface(Ci.nsIX509CertList);
-  Assert.ok(!certLists.hasMoreElements());
+  let certLists = saver.signatureInfo;
+  Assert.ok(certLists.length === 1);
 
   
-  let certs = certList.getEnumerator();
-  Assert.ok(certs.hasMoreElements());
-  let signer = certs.getNext().QueryInterface(Ci.nsIX509Cert);
-  Assert.ok(certs.hasMoreElements());
-  let issuer = certs.getNext().QueryInterface(Ci.nsIX509Cert);
-  Assert.ok(certs.hasMoreElements());
-  let root = certs.getNext().QueryInterface(Ci.nsIX509Cert);
-  Assert.ok(!certs.hasMoreElements());
+  let certs = certLists[0];
+  Assert.ok(certs.length === 3);
 
-  
+  const certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
+    Ci.nsIX509CertDB
+  );
+  let signer = certDB.constructX509(certs[0]);
+  let issuer = certDB.constructX509(certs[1]);
+  let root = certDB.constructX509(certs[2]);
+
   let organization = "Microsoft Corporation";
   Assert.equal("Microsoft Corporation", signer.commonName);
   Assert.equal(organization, signer.organization);
