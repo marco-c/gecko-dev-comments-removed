@@ -759,6 +759,7 @@ class UrlbarInput {
     
     if (
       !isPlaceholderSelected &&
+      !this._autofillIgnoresSelection &&
       (this.selectionStart != this.selectionEnd ||
         this.selectionEnd != this._lastSearchString.length)
     ) {
@@ -806,8 +807,12 @@ class UrlbarInput {
 
 
 
+
+
+
   startQuery({
     allowAutofill = true,
+    autofillIgnoresSelection = false,
     searchString = null,
     resetSearchState = true,
     event = null,
@@ -827,6 +832,7 @@ class UrlbarInput {
       return;
     }
 
+    this._autofillIgnoresSelection = autofillIgnoresSelection;
     if (resetSearchState) {
       this._resetSearchState();
     }
@@ -989,7 +995,6 @@ class UrlbarInput {
       this._toolbar.setAttribute("urlbar-exceeds-toolbar-bounds", "true");
     }
     this.setAttribute("breakout-extend", "true");
-    this.view.reOpen();
 
     
     
@@ -1736,6 +1741,7 @@ class UrlbarInput {
     
     if (this._focusedViaMousedown) {
       this._focusedViaMousedown = false;
+      this.view.maybeReopen();
     } else {
       this.startLayoutExtend();
       if (this.inputField.hasAttribute("refocused-by-panel")) {
@@ -1823,7 +1829,11 @@ class UrlbarInput {
           this._mousedownOnUrlbarDescendant = false;
           break;
         }
-
+        
+        
+        if (event.target.closest("tab")) {
+          break;
+        }
         
         
         

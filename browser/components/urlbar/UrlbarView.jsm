@@ -60,7 +60,6 @@ class UrlbarView {
     this._rows.addEventListener("overflow", this);
     this._rows.addEventListener("underflow", this);
 
-    this.window.addEventListener("deactivate", this);
     this.window.gBrowser.tabContainer.addEventListener("TabSelect", this);
 
     this.controller.setView(this);
@@ -412,10 +411,30 @@ class UrlbarView {
     }
   }
 
-  reOpen() {
-    if (this._rows.firstElementChild) {
-      this._openPanel();
+  maybeReopen() {
+    
+    
+    
+    
+    
+    if (
+      this.input.megabar &&
+      this._rows.firstElementChild &&
+      this.input.focused &&
+      this.input.value &&
+      this._queryContext.searchString == this.input.value
+    ) {
+      
+      if (!this.isOpen) {
+        this._openPanel();
+      }
+      this.input.startQuery({
+        autofillIgnoresSelection: true,
+        searchString: this.input.value,
+      });
+      return true;
     }
+    return false;
   }
 
   
@@ -1468,20 +1487,15 @@ class UrlbarView {
     this.close();
   }
 
-  _on_deactivate() {
-    
-    
-    
-    if (!UrlbarPrefs.get("ui.popup.disable_autohide")) {
-      this.clear();
-    }
-  }
-
   _on_TabSelect() {
     
     
+    if (this.maybeReopen()) {
+      return;
+    }
+    
+    
     this.close();
-    this.clear();
   }
 }
 
