@@ -296,13 +296,6 @@ class TouchBarHelper {
       layoutItems.appendElement(input);
     }
 
-    
-    
-    
-    this._inputsNotUpdated = new Set(Object.keys(kBuiltInInputs));
-    
-    this._inputsNotUpdated.delete("SearchPopover");
-
     return layoutItems;
   }
 
@@ -363,7 +356,6 @@ class TouchBarHelper {
       kBuiltInInputs[inputName].localTitle = result; 
       
       if (TouchBarHelper.window) {
-        this._inputsNotUpdated.delete(inputName);
         gTouchBarUpdater.updateTouchBarInputs(TouchBarHelper.baseWindow, [
           item,
         ]);
@@ -378,18 +370,19 @@ class TouchBarHelper {
 
 
 
+
+
   _updateTouchBarInputs(...inputNames) {
-    if (!TouchBarHelper.window || !inputNames.length) {
+    if (!TouchBarHelper.window) {
       return;
     }
 
     let inputs = [];
-    for (let inputName of new Set(inputNames)) {
+    for (let inputName of inputNames) {
       let input = this.getTouchBarInput(inputName);
       if (!input) {
         continue;
       }
-      this._inputsNotUpdated.delete(inputName);
       inputs.push(input);
     }
 
@@ -426,12 +419,7 @@ class TouchBarHelper {
           .canGoBack;
         kBuiltInInputs.Forward.disabled = !TouchBarHelper.window.gBrowser
           .canGoForward;
-        this._updateTouchBarInputs(
-          "ReaderView",
-          "Back",
-          "Forward",
-          ...this._inputsNotUpdated
-        );
+        this._updateTouchBarInputs("ReaderView", "Back", "Forward");
         break;
       case "bookmark-icon-updated":
         data == "starred"
