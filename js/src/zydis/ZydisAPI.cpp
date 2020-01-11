@@ -70,7 +70,10 @@ void zydisDisassemble(const uint8_t* code, size_t codeLen,
 
     
     if (strlen(buffer) < LIMIT) {
-      sprintf(buffer+strlen(buffer), "%*s", int(LIMIT-strlen(buffer)), "");
+      char* cur_end = buffer + strlen(buffer);
+      size_t spaces = LIMIT - strlen(buffer);
+      memset(cur_end, ' ', spaces);
+      cur_end[spaces] = '\0';
     }
 
     
@@ -92,4 +95,3 @@ void zydisDisassemble(const uint8_t* code, size_t codeLen,
 #  undef LIMSTR
   }
 }
-
