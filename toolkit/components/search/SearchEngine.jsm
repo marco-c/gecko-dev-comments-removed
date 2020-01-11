@@ -525,11 +525,7 @@ EngineURL.prototype = {
     var requestPurpose = purpose || "searchbar";
 
     
-    if (
-      !this.params.some(
-        p => p.purpose !== undefined && p.purpose == requestPurpose
-      )
-    ) {
+    if (!this.params.some(p => p.purpose && p.purpose == requestPurpose)) {
       requestPurpose = "searchbar";
     }
 
@@ -540,7 +536,7 @@ EngineURL.prototype = {
       var param = this.params[i];
 
       
-      if (param.purpose !== undefined && param.purpose != requestPurpose) {
+      if (param.purpose && param.purpose != requestPurpose) {
         continue;
       }
 
@@ -1984,14 +1980,14 @@ SearchEngine.prototype = {
     return this.__internalAliases;
   },
 
-  _getSearchFormWithPurpose(aPurpose = "") {
+  _getSearchFormWithPurpose(purpose) {
     
     var searchFormURL = this._getURLOfType(
       SearchUtils.URL_TYPE.SEARCH,
       "searchform"
     );
     if (searchFormURL) {
-      let submission = searchFormURL.getSubmission("", this, aPurpose);
+      let submission = searchFormURL.getSubmission("", this, purpose);
 
       
       
