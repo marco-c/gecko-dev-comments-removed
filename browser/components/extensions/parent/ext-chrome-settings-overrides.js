@@ -78,7 +78,10 @@ XPCOMUtils.defineLazyGetter(this, "homepagePopup", () => {
 
 async function handleInitialHomepagePopup(extensionId, homepageUrl) {
   
-  if (Services.prefs.getIntPref("browser.startup.page") == 1) {
+  if (
+    Services.prefs.getIntPref("browser.startup.page") == 1 &&
+    windowTracker.topWindow
+  ) {
     let { gBrowser } = windowTracker.topWindow;
     let tab = gBrowser.selectedTab;
     let currentUrl = gBrowser.currentURI.spec;

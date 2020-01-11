@@ -573,6 +573,10 @@ ExtensionParent.apiManager.on("uninstall-complete", async (type, { id }) => {
   
   await ExtensionSettingsStore.initialize();
   for (let type in _store.data) {
+    
+    if (type === "prefs") {
+      continue;
+    }
     let items = ExtensionSettingsStore.getAllForExtension(id, type);
     for (let key of items) {
       ExtensionSettingsStore.removeSetting(id, type, key);

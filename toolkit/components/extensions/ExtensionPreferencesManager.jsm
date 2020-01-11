@@ -60,8 +60,11 @@ XPCOMUtils.defineLazyGetter(this, "defaultPreferences", function() {
 });
 
 
-Management.on("uninstall", (type, { id }) => {
-  ExtensionPreferencesManager.removeAll(id);
+Management.on("uninstall", async (type, { id }) => {
+  
+  
+  await Management.asyncLoadSettingsModules();
+  return this.ExtensionPreferencesManager.removeAll(id);
 });
 
 Management.on("disable", (type, id) => {
