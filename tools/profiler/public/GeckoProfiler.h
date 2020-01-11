@@ -1060,6 +1060,35 @@ class MOZ_RAII AutoProfilerThreadWake {
 
 
 
+class ProfilingStackOwner {
+ public:
+  class ProfilingStack& ProfilingStack() {
+    return mProfilingStack;
+  }
+
+  
+  
+  
+  void AddRef() const { ++mRefCnt; }
+  void Release() const {
+    MOZ_ASSERT(int32_t(mRefCnt) > 0);
+    if (--mRefCnt == 0) {
+      delete this;
+    }
+  }
+
+ private:
+  ~ProfilingStackOwner() = default;
+
+  class ProfilingStack mProfilingStack;
+
+  mutable Atomic<int32_t, MemoryOrdering::ReleaseAcquire,
+                 recordreplay::Behavior::DontPreserve>
+      mRefCnt;
+};
+
+
+
 
 
 class MOZ_RAII AutoProfilerLabel {
@@ -1071,7 +1100,9 @@ class MOZ_RAII AutoProfilerLabel {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
 
     
-    Push(sProfilingStack.get(), aLabel, aDynamicString, aCategoryPair, aFlags);
+    ProfilingStackOwner* profilingStackOwner = sProfilingStackOwnerTLS.get();
+    Push(profilingStackOwner ? &profilingStackOwner->ProfilingStack() : nullptr,
+         aLabel, aDynamicString, aCategoryPair, aFlags);
   }
 
   
@@ -1115,7 +1146,7 @@ class MOZ_RAII AutoProfilerLabel {
 
  public:
   
-  static MOZ_THREAD_LOCAL(ProfilingStack*) sProfilingStack;
+  static MOZ_THREAD_LOCAL(ProfilingStackOwner*) sProfilingStackOwnerTLS;
 };
 
 class MOZ_RAII AutoProfilerTracing {

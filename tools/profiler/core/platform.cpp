@@ -1192,7 +1192,7 @@ class TLSRegisteredThread {
  public:
   static bool Init(PSLockRef) {
     bool ok1 = sRegisteredThread.init();
-    bool ok2 = AutoProfilerLabel::sProfilingStack.init();
+    bool ok2 = AutoProfilerLabel::sProfilingStackOwnerTLS.init();
     return ok1 && ok2;
   }
 
@@ -1212,16 +1212,41 @@ class TLSRegisteredThread {
   
   
   static ProfilingStack* Stack() {
-    return AutoProfilerLabel::sProfilingStack.get();
+    ProfilingStackOwner* profilingStackOwner =
+        AutoProfilerLabel::sProfilingStackOwnerTLS.get();
+    if (!profilingStackOwner) {
+      return nullptr;
+    }
+    return &profilingStackOwner->ProfilingStack();
   }
 
-  static void SetRegisteredThread(PSLockRef,
-                                  class RegisteredThread* aRegisteredThread) {
+  static void SetRegisteredThreadAndAutoProfilerLabelProfilingStack(
+      PSLockRef, class RegisteredThread* aRegisteredThread) {
+    MOZ_RELEASE_ASSERT(
+        aRegisteredThread,
+        "Use ResetRegisteredThread() instead of SetRegisteredThread(nullptr)");
     sRegisteredThread.set(aRegisteredThread);
-    AutoProfilerLabel::sProfilingStack.set(
-        aRegisteredThread
-            ? &aRegisteredThread->RacyRegisteredThread().ProfilingStack()
-            : nullptr);
+    ProfilingStackOwner& profilingStackOwner =
+        aRegisteredThread->RacyRegisteredThread().ProfilingStackOwner();
+    profilingStackOwner.AddRef();
+    AutoProfilerLabel::sProfilingStackOwnerTLS.set(&profilingStackOwner);
+  }
+
+  
+  
+  
+  static void ResetRegisteredThread(PSLockRef) {
+    sRegisteredThread.set(nullptr);
+  }
+
+  
+  
+  static void ResetAutoProfilerLabelProfilingStack(PSLockRef) {
+    MOZ_RELEASE_ASSERT(
+        AutoProfilerLabel::sProfilingStackOwnerTLS.get(),
+        "ResetAutoProfilerLabelProfilingStack should only be called once");
+    AutoProfilerLabel::sProfilingStackOwnerTLS.get()->Release();
+    AutoProfilerLabel::sProfilingStackOwnerTLS.set(nullptr);
   }
 
  private:
@@ -1249,7 +1274,14 @@ MOZ_THREAD_LOCAL(RegisteredThread*) TLSRegisteredThread::sRegisteredThread;
 
 
 
-MOZ_THREAD_LOCAL(ProfilingStack*) AutoProfilerLabel::sProfilingStack;
+
+
+
+
+
+
+MOZ_THREAD_LOCAL(ProfilingStackOwner*)
+AutoProfilerLabel::sProfilingStackOwnerTLS;
 
 
 static const char* const kMainThreadName = "GeckoMain";
@@ -3302,7 +3334,8 @@ static ProfilingStack* locked_register_thread(PSLockRef aLock,
   UniquePtr<RegisteredThread> registeredThread = MakeUnique<RegisteredThread>(
       info, NS_GetCurrentThreadNoCreate(), aStackTop);
 
-  TLSRegisteredThread::SetRegisteredThread(aLock, registeredThread.get());
+  TLSRegisteredThread::SetRegisteredThreadAndAutoProfilerLabelProfilingStack(
+      aLock, registeredThread.get());
 
   if (ActivePS::Exists(aLock) && ActivePS::ShouldProfileThread(aLock, info)) {
     registeredThread->RacyRegisteredThread().SetIsBeingProfiled(true);
@@ -3378,18 +3411,21 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
 
 static void* MozGlueLabelEnter(const char* aLabel, const char* aDynamicString,
                                void* aSp) {
-  ProfilingStack* profilingStack = AutoProfilerLabel::sProfilingStack.get();
-  if (profilingStack) {
-    profilingStack->pushLabelFrame(aLabel, aDynamicString, aSp,
-                                   JS::ProfilingCategoryPair::OTHER);
+  ProfilingStackOwner* profilingStackOwner =
+      AutoProfilerLabel::sProfilingStackOwnerTLS.get();
+  if (profilingStackOwner) {
+    profilingStackOwner->ProfilingStack().pushLabelFrame(
+        aLabel, aDynamicString, aSp, JS::ProfilingCategoryPair::OTHER);
   }
-  return profilingStack;
+  return profilingStackOwner;
 }
 
 
-static void MozGlueLabelExit(void* sProfilingStack) {
-  if (sProfilingStack) {
-    reinterpret_cast<ProfilingStack*>(sProfilingStack)->pop();
+static void MozGlueLabelExit(void* aProfilingStackOwner) {
+  if (aProfilingStackOwner) {
+    reinterpret_cast<ProfilingStackOwner*>(aProfilingStackOwner)
+        ->ProfilingStack()
+        .pop();
   }
 }
 
@@ -3459,6 +3495,7 @@ void profiler_init(void* aStackTop) {
     
     CorePS::Create(lock);
 
+    
     locked_register_thread(lock, kMainThreadName, aStackTop);
 
     
@@ -3627,7 +3664,10 @@ void profiler_shutdown() {
 
     
     
-    TLSRegisteredThread::SetRegisteredThread(lock, nullptr);
+    TLSRegisteredThread::ResetRegisteredThread(lock);
+    
+    
+    TLSRegisteredThread::ResetAutoProfilerLabelProfilingStack(lock);
 
 #ifdef MOZ_TASK_TRACER
     tasktracer::ShutdownTaskTracer();
@@ -4375,6 +4415,10 @@ void profiler_unregister_thread() {
 
   if (!CorePS::Exists()) {
     
+    
+    
+    
+    TLSRegisteredThread::ResetAutoProfilerLabelProfilingStack(lock);
     return;
   }
 
@@ -4395,7 +4439,9 @@ void profiler_unregister_thread() {
 
     
     
-    TLSRegisteredThread::SetRegisteredThread(lock, nullptr);
+    
+    TLSRegisteredThread::ResetRegisteredThread(lock);
+    TLSRegisteredThread::ResetAutoProfilerLabelProfilingStack(lock);
 
     
     
