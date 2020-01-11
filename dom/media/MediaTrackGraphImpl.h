@@ -676,7 +676,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  const UniquePtr<GraphRunner> mGraphRunner;
+  const RefPtr<GraphRunner> mGraphRunner;
 
   
 
