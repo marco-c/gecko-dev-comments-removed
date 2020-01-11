@@ -355,7 +355,7 @@ bool FinalizationGroupObject::register_(JSContext* cx, unsigned argc,
     return false;
   }
 
-  RootedValue holdings(cx, args.get(1));
+  HandleValue holdings = args.get(1);
 
   
   
