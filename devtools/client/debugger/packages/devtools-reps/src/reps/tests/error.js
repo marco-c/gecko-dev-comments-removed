@@ -618,3 +618,61 @@ describe("Error - Error with undefined-grip stack", () => {
     expectActorAttribute(renderedComponent, stub.actor);
   });
 });
+
+describe("Error - Error with undefined-grip name", () => {
+  
+  
+  
+  const stub = stubs.get("Error with undefined-grip name");
+
+  it("correctly selects Error Rep for Error object", () => {
+    expect(getRep(stub)).toBe(ErrorRep.rep);
+  });
+
+  it("renders with expected text", () => {
+    const renderedComponent = shallow(
+      ErrorRep.rep({
+        object: stub,
+      })
+    );
+    expect(renderedComponent).toMatchSnapshot();
+
+    const tinyRenderedComponent = shallow(
+      ErrorRep.rep({
+        object: stub,
+        mode: MODE.TINY,
+      })
+    );
+
+    expect(tinyRenderedComponent).toMatchSnapshot();
+  });
+});
+
+describe("Error - Error with undefined-grip message", () => {
+  
+  
+  
+  const stub = stubs.get("Error with undefined-grip message");
+
+  it("correctly selects Error Rep for Error object", () => {
+    expect(getRep(stub)).toBe(ErrorRep.rep);
+  });
+
+  it("renders with expected text", () => {
+    const renderedComponent = shallow(
+      ErrorRep.rep({
+        object: stub,
+      })
+    );
+    expect(renderedComponent).toMatchSnapshot();
+
+    const tinyRenderedComponent = shallow(
+      ErrorRep.rep({
+        object: stub,
+        mode: MODE.TINY,
+      })
+    );
+
+    expect(tinyRenderedComponent).toMatchSnapshot();
+  });
+});
