@@ -48,14 +48,6 @@ pub const AU_PER_PT: CSSFloat = AU_PER_IN / 72.;
 pub const AU_PER_PC: CSSFloat = AU_PER_PT * 12.;
 
 
-
-
-
-pub fn au_to_int_px(au: f32) -> i32 {
-    (au / AU_PER_PX).round() as i32
-}
-
-
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub enum FontRelativeLength {
     
@@ -87,7 +79,7 @@ pub enum FontBaseSize {
 
 impl FontBaseSize {
     
-    pub fn resolve(&self, context: &Context) -> Au {
+    pub fn resolve(&self, context: &Context) -> computed::Length {
         match *self {
             FontBaseSize::CurrentStyle => context.style().get_font().clone_font_size().size(),
             FontBaseSize::InheritedStyleButStripEmUnits | FontBaseSize::InheritedStyle => {
@@ -109,13 +101,9 @@ impl FontRelativeLength {
     }
 
     
-    pub fn to_computed_value(&self, context: &Context, base_size: FontBaseSize) -> CSSPixelLength {
-        use std::f32;
+    pub fn to_computed_value(&self, context: &Context, base_size: FontBaseSize) -> computed::Length {
         let (reference_size, length) = self.reference_font_size_and_length(context, base_size);
-        let pixel = (length * reference_size.to_f32_px())
-            .min(f32::MAX)
-            .max(f32::MIN);
-        CSSPixelLength::new(pixel)
+        reference_size * length
     }
 
     
@@ -129,7 +117,7 @@ impl FontRelativeLength {
         &self,
         context: &Context,
         base_size: FontBaseSize,
-    ) -> (Au, CSSFloat) {
+    ) -> (computed::Length, CSSFloat) {
         fn query_font_metrics(
             context: &Context,
             base_size: FontBaseSize,
@@ -153,7 +141,7 @@ impl FontRelativeLength {
                 }
 
                 if base_size == FontBaseSize::InheritedStyleButStripEmUnits {
-                    (Au(0), length)
+                    (Zero::zero(), length)
                 } else {
                     (reference_font_size, length)
                 }
@@ -175,7 +163,7 @@ impl FontRelativeLength {
                     
                     
                     
-                    reference_font_size.scale_by(0.5)
+                    reference_font_size * 0.5
                 });
                 (reference_size, length)
             },
@@ -210,7 +198,7 @@ impl FontRelativeLength {
                     if wm.is_vertical() && wm.is_upright() {
                         reference_font_size
                     } else {
-                        reference_font_size.scale_by(0.5)
+                        reference_font_size * 0.5
                     }
                 });
                 (reference_size, length)
@@ -225,7 +213,7 @@ impl FontRelativeLength {
                 let reference_size = if context.is_root_element || context.in_media_query {
                     reference_font_size
                 } else {
-                    context.device().root_font_size()
+                    computed::Length::new(context.device().root_font_size().to_f32_px())
                 };
                 (reference_size, length)
             },
@@ -290,15 +278,14 @@ pub struct CharacterWidth(pub i32);
 
 impl CharacterWidth {
     
-    pub fn to_computed_value(&self, reference_font_size: Au) -> CSSPixelLength {
+    pub fn to_computed_value(&self, reference_font_size: computed::Length) -> computed::Length {
         
         
         
         
-        let average_advance = reference_font_size.scale_by(0.5);
+        let average_advance = reference_font_size * 0.5;
         let max_advance = reference_font_size;
-        let au = average_advance.scale_by(self.0 as CSSFloat - 1.0) + max_advance;
-        au.into()
+        average_advance * (self.0 as CSSFloat - 1.0) + max_advance
     }
 }
 

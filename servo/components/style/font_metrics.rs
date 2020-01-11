@@ -8,16 +8,16 @@
 
 use crate::context::SharedStyleContext;
 use crate::Atom;
-use app_units::Au;
+use crate::values::computed::Length;
 
 
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct FontMetrics {
     
-    pub x_height: Option<Au>,
+    pub x_height: Option<Length>,
     
-    pub zero_advance_measure: Option<Au>,
+    pub zero_advance_measure: Option<Length>,
 }
 
 
@@ -47,7 +47,7 @@ pub trait FontMetricsProvider {
         &self,
         font_name: &Atom,
         font_family: crate::values::computed::font::GenericFontFamily,
-    ) -> Au;
+    ) -> Length;
 
     
     fn create_from(context: &SharedStyleContext) -> Self
@@ -70,7 +70,7 @@ impl FontMetricsProvider for ServoMetricsProvider {
         ServoMetricsProvider
     }
 
-    fn get_size(&self, _: &Atom, _: crate::values::computed::font::GenericFontFamily) -> Au {
+    fn get_size(&self, _: &Atom, _: crate::values::computed::font::GenericFontFamily) -> Length {
         unreachable!("Dummy provider should never be used to compute font size")
     }
 }
