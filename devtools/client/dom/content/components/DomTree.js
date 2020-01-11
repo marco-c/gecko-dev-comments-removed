@@ -115,15 +115,20 @@ class DomTree extends Component {
     
     
     const renderValue = props => {
-      return Rep(
-        Object.assign({}, props, {
-          onDOMNodeMouseOver,
-          onDOMNodeMouseOut,
-          onInspectIconClick,
-          defaultRep: Grip,
-          cropLimit: 50,
-        })
-      );
+      const repProps = Object.assign({}, props, {
+        onDOMNodeMouseOver,
+        onDOMNodeMouseOut,
+        onInspectIconClick,
+        defaultRep: Grip,
+        cropLimit: 50,
+      });
+
+      
+      if (props && props.object && props.object.getGrip) {
+        repProps.object = props.object.getGrip();
+      }
+
+      return Rep(repProps);
     };
 
     return TreeView({
