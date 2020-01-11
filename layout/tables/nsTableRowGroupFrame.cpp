@@ -1104,8 +1104,8 @@ nsresult nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
   nsTableRowFrame* prevRowFrame = nullptr;
   aDesiredSize.Height() = 0;
 
-  nscoord availWidth = aReflowInput.AvailableWidth();
-  nscoord availHeight = aReflowInput.AvailableHeight();
+  const nscoord availWidth = aReflowInput.AvailableWidth();
+  const nscoord availHeight = aReflowInput.AvailableHeight();
 
   const bool borderCollapse = aTableFrame->IsBorderCollapse();
 
@@ -1328,8 +1328,17 @@ nsresult nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
         }
       }
       if (aStatus.IsIncomplete() && !contRow) {
-        nsTableRowFrame* nextRow = lastRowThisPage->GetNextRow();
-        if (nextRow) {
+        if (nsTableRowFrame* nextRow = lastRowThisPage->GetNextRow()) {
+          PushChildren(nextRow, lastRowThisPage);
+        }
+      } else if (aStatus.IsComplete() && lastRowThisPage) {
+        
+        
+        
+        
+        if (nsTableRowFrame* nextRow = lastRowThisPage->GetNextRow()) {
+          aStatus.Reset();
+          aStatus.SetIncomplete();
           PushChildren(nextRow, lastRowThisPage);
         }
       }
