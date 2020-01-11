@@ -1,23 +1,9 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
 const { PureComponent } = require("devtools/client/shared/vendor/react");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const {
   div,
   input,
@@ -27,21 +13,27 @@ const {
 
 
 
-
 class Range extends PureComponent {
-  
+  static get propTypes() {
+    return {
+      value: PropTypes.number.isRequired,
+      label: PropTypes.string.isRequired,
+      id: PropTypes.string.isRequired,
+      scale: PropTypes.object.isRequired,
+      onChange: PropTypes.func.isRequired,
+      display: PropTypes.func.isRequired,
+    };
+  }
+
   constructor(props) {
     super(props);
     this.handleInput = this.handleInput.bind(this);
   }
 
-  
-
-
-  handleInput(event) {
-    event.preventDefault();
+  handleInput(e) {
+    e.preventDefault();
     const { scale, onChange } = this.props;
-    const frac = Number(event.target.value) / 100;
+    const frac = e.target.value / 100;
     onChange(scale.fromFractionToSingleDigitValue(frac));
   }
 

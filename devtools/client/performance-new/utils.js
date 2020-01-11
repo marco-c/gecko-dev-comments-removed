@@ -2,10 +2,6 @@
 
 
 
-
-
-
-
 "use strict";
 
 
@@ -67,6 +63,18 @@ function formatFileSize(num) {
 
   return (neg ? "-" : "") + numStr + " " + unit;
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -247,22 +255,10 @@ function withCommonPathPrefixRemoved(pathArray) {
   );
 }
 
-class UnhandledCaseError extends Error {
-  
-
-
-
-  constructor(value, typeName) {
-    super(`There was an unhandled case for "${typeName}": ${value}`);
-    this.name = "UnhandledCaseError";
-  }
-}
-
 module.exports = {
   formatFileSize,
   makeExponentialScale,
   scaleRangeWithClamping,
   calculateOverhead,
   withCommonPathPrefixRemoved,
-  UnhandledCaseError,
 };

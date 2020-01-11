@@ -1,17 +1,7 @@
 
 
 
-
-
-
-
-
-
-
-
-
 "use strict";
-
 const { PureComponent } = require("devtools/client/shared/vendor/react");
 const {
   div,
@@ -22,9 +12,7 @@ const {
 const {
   withCommonPathPrefixRemoved,
 } = require("devtools/client/performance-new/utils");
-
-
-
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 
 
@@ -39,7 +27,14 @@ const {
 
 
 class DirectoryPicker extends PureComponent {
-  
+  static get propTypes() {
+    return {
+      dirs: PropTypes.array.isRequired,
+      onAdd: PropTypes.func.isRequired,
+      onRemove: PropTypes.func.isRequired,
+    };
+  }
+
   constructor(props) {
     super(props);
     this._listBox = null;
@@ -47,9 +42,6 @@ class DirectoryPicker extends PureComponent {
     this._handleAddButtonClick = this._handleAddButtonClick.bind(this);
     this._handleRemoveButtonClick = this._handleRemoveButtonClick.bind(this);
   }
-
-  
-
 
   _takeListBoxRef(element) {
     this._listBox = element;
@@ -72,7 +64,7 @@ class DirectoryPicker extends PureComponent {
       select(
         {
           className: "perf-settings-dir-list",
-          size: 4,
+          size: "4",
           ref: this._takeListBoxRef,
         },
         dirs.map((fullPath, i) =>

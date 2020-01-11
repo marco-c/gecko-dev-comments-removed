@@ -1,37 +1,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
 
 const { PureComponent } = require("devtools/client/shared/vendor/react");
@@ -41,6 +10,7 @@ const {
   span,
   img,
 } = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { connect } = require("devtools/client/shared/vendor/react-redux");
 const actions = require("devtools/client/performance-new/store/actions");
 const selectors = require("devtools/client/performance-new/store/selectors");
@@ -50,28 +20,27 @@ const selectors = require("devtools/client/performance-new/store/selectors");
 
 
 
-
-
 class RecordingButton extends PureComponent {
-  
+  static get propTypes() {
+    return {
+      
+      recordingState: PropTypes.string.isRequired,
+      isSupportedPlatform: PropTypes.bool,
+      recordingUnexpectedlyStopped: PropTypes.bool.isRequired,
+      isPopup: PropTypes.bool.isRequired,
+
+      
+      startRecording: PropTypes.func.isRequired,
+      getProfileAndStopProfiler: PropTypes.func.isRequired,
+      stopProfilerAndDiscardProfile: PropTypes.func.isRequired,
+    };
+  }
+
   constructor(props) {
     super(props);
     this._getProfileAndStopProfiler = () =>
       this.props.getProfileAndStopProfiler(window);
   }
-
-  
-
-
-
-
-
-
-
-
-
-
-
 
   renderButton(buttonSettings) {
     const {
@@ -80,12 +49,12 @@ class RecordingButton extends PureComponent {
       onClick,
       additionalMessage,
       isPrimary,
-      pageContext,
+      isPopup,
       additionalButton,
     } = buttonSettings;
 
     const nbsp = "\u00A0";
-    const showAdditionalMessage = pageContext === "popup" && additionalMessage;
+    const showAdditionalMessage = isPopup && additionalMessage;
     const buttonClass = isPrimary ? "primary" : "default";
 
     return div(
@@ -101,6 +70,7 @@ class RecordingButton extends PureComponent {
         button(
           {
             className: `perf-photon-button perf-photon-button-${buttonClass} perf-button`,
+            "data-standalone": true,
             disabled,
             onClick,
           },
@@ -110,6 +80,7 @@ class RecordingButton extends PureComponent {
           ? button(
               {
                 className: `perf-photon-button perf-photon-button-default perf-button`,
+                "data-standalone": true,
                 onClick: additionalButton.onClick,
                 disabled,
               },
@@ -213,10 +184,6 @@ class RecordingButton extends PureComponent {
   }
 }
 
-
-
-
-
 function mapStateToProps(state) {
   return {
     recordingState: selectors.getRecordingState(state),
@@ -224,10 +191,9 @@ function mapStateToProps(state) {
     recordingUnexpectedlyStopped: selectors.getRecordingUnexpectedlyStopped(
       state
     ),
-    pageContext: selectors.getPageContext(state),
+    isPopup: selectors.getIsPopup(state),
   };
 }
-
 
 const mapDispatchToProps = {
   startRecording: actions.startRecording,

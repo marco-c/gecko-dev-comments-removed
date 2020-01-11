@@ -16,7 +16,6 @@ export interface PanelWindow {
   gTarget?: any;
   gInit(perfFront: any, preferenceFront: any): void;
   gDestroy(): void;
-  gReportReady?(): void
 }
 
 
@@ -56,8 +55,6 @@ export interface PerfFront {
   isActive: () => MaybePromise<boolean>;
   isSupportedPlatform: () => MaybePromise<boolean>;
   isLockedForPrivateBrowsing: () => MaybePromise<boolean>;
-  on: (type: string, listener: () => void) => void;
-  off: (type: string, listener: () => void) => void;
   
 
 
@@ -95,11 +92,6 @@ export type RecordingState =
   | "other-is-recording"
   
   | "locked-by-private-browsing";
-
-
-
-
-export type PageContext = "popup" | "devtools" | "aboutprofiling";
 
 export interface State {
   recordingState: RecordingState;
@@ -211,7 +203,8 @@ export interface InitializedValues {
   
   setRecordingPreferences: SetRecordingPreferences;
   
-  pageContext: PageContext;
+  
+  isPopup: boolean;
   
   getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
   
@@ -264,7 +257,7 @@ export type Action =
       perfFront: PerfFront;
       receiveProfile: ReceiveProfile;
       setRecordingPreferences: SetRecordingPreferences;
-      pageContext: PageContext;
+      isPopup: boolean;
       recordingSettingsFromPreferences: RecordingStateFromPreferences;
       getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
       supportedFeatures: string[] | null;
@@ -274,7 +267,7 @@ export interface InitializeStoreValues {
   perfFront: PerfFront;
   receiveProfile: ReceiveProfile;
   setRecordingPreferences: SetRecordingPreferences;
-  pageContext: PageContext;
+  isPopup: boolean;
   recordingPreferences: RecordingStateFromPreferences;
   supportedFeatures: string[] | null;
   getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
@@ -362,18 +355,4 @@ export interface PerformancePref {
 
 export interface PopupWindow extends Window {
   gResizePopup?: (height: number) => void;
-}
-
-
-
-
-export type NumberScaler = (value: number) => number;
-
-
-
-
-export interface ScaleFunctions {
-  fromFractionToValue: NumberScaler,
-  fromValueToFraction: NumberScaler,
-  fromFractionToSingleDigitValue: NumberScaler,
 }

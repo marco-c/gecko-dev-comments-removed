@@ -1,48 +1,32 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
 
-const { PureComponent } = require("devtools/client/shared/vendor/react");
+const {
+  PureComponent,
+  createFactory,
+} = require("devtools/client/shared/vendor/react");
 const { connect } = require("devtools/client/shared/vendor/react-redux");
+const {
+  div,
+  button,
+} = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+const RecordingButton = createFactory(
+  require("devtools/client/performance-new/components/RecordingButton.js")
+);
+const Settings = createFactory(
+  require("devtools/client/performance-new/components/Settings.js")
+);
+const Description = createFactory(
+  require("devtools/client/performance-new/components/Description.js")
+);
 const actions = require("devtools/client/performance-new/store/actions");
 const selectors = require("devtools/client/performance-new/store/selectors");
-const { UnhandledCaseError } = require("devtools/client/performance-new/utils");
+const {
+  restartBrowserWithEnvironmentVariable,
+} = require("devtools/client/performance-new/browser");
 
 
 
@@ -51,8 +35,26 @@ const { UnhandledCaseError } = require("devtools/client/performance-new/utils");
 
 
 
-class ProfilerEventHandling extends PureComponent {
-  
+
+
+
+
+class Perf extends PureComponent {
+  static get propTypes() {
+    return {
+      
+      perfFront: PropTypes.object.isRequired,
+      recordingState: PropTypes.string.isRequired,
+      isSupportedPlatform: PropTypes.bool,
+      isPopup: PropTypes.bool,
+      promptEnvRestart: PropTypes.string,
+
+      
+      changeRecordingState: PropTypes.func.isRequired,
+      reportProfilerReady: PropTypes.func.isRequired,
+    };
+  }
+
   constructor(props) {
     super(props);
     this.handleProfilerStarting = this.handleProfilerStarting.bind(this);
@@ -63,10 +65,11 @@ class ProfilerEventHandling extends PureComponent {
     this.handlePrivateBrowsingEnding = this.handlePrivateBrowsingEnding.bind(
       this
     );
+    this.handleRestart = this.handleRestart.bind(this);
   }
 
   componentDidMount() {
-    const { perfFront, reportProfilerReady, pageContext } = this.props;
+    const { perfFront, reportProfilerReady, isPopup } = this.props;
 
     
     Promise.all([
@@ -87,22 +90,9 @@ class ProfilerEventHandling extends PureComponent {
         if (isLockedForPrivateBrowsing) {
           recordingState = "locked-by-private-browsing";
         } else if (isActive) {
-          switch (pageContext) {
-            case "popup":
-            case "aboutprofiling":
-              
-              
-              recordingState = "recording";
-              break;
-            case "devtools":
-              
-              
-              
-              recordingState = "other-is-recording";
-              break;
-            default:
-              throw new UnhandledCaseError(pageContext, "PageContext");
-          }
+          
+          
+          recordingState = isPopup ? "recording" : "other-is-recording";
         } else {
           recordingState = "available-to-record";
         }
@@ -113,12 +103,8 @@ class ProfilerEventHandling extends PureComponent {
       
       
       
-      
-      const anyWindow = window;
-      
-      const { gReportReady } = anyWindow;
-      if (gReportReady) {
-        gReportReady();
+      if (window.gReportReady) {
+        window.gReportReady();
       }
     });
 
@@ -157,7 +143,7 @@ class ProfilerEventHandling extends PureComponent {
   }
 
   handleProfilerStarting() {
-    const { changeRecordingState, recordingState, pageContext } = this.props;
+    const { changeRecordingState, recordingState, isPopup } = this.props;
     switch (recordingState) {
       case "not-yet-known":
       
@@ -168,21 +154,14 @@ class ProfilerEventHandling extends PureComponent {
       
       
       case "request-to-get-profile-and-stop-profiler":
-        switch (pageContext) {
-          case "popup":
-          case "aboutprofiling":
-            
-            
-            changeRecordingState("recording");
-            break;
-          case "devtools":
-            
-            
-            
-            changeRecordingState("other-is-recording");
-            break;
-          default:
-            throw new UnhandledCaseError(pageContext, "PageContext");
+        if (isPopup) {
+          
+          
+          changeRecordingState("recording");
+        } else {
+          
+          
+          changeRecordingState("other-is-recording");
         }
         break;
 
@@ -273,25 +252,65 @@ class ProfilerEventHandling extends PureComponent {
     this.props.changeRecordingState("available-to-record");
   }
 
+  handleRestart() {
+    const { promptEnvRestart } = this.props;
+    if (!promptEnvRestart) {
+      throw new Error(
+        "handleRestart() should only be called when promptEnvRestart exists."
+      );
+    }
+    restartBrowserWithEnvironmentVariable(promptEnvRestart, "1");
+  }
+
   render() {
-    return null;
+    const { isSupportedPlatform, isPopup, promptEnvRestart } = this.props;
+
+    if (isSupportedPlatform === null) {
+      
+      return null;
+    }
+
+    const additionalClassName = isPopup ? "perf-popup" : "perf-devtools";
+
+    return div(
+      { className: `perf ${additionalClassName}` },
+      promptEnvRestart
+        ? div(
+            { className: "perf-env-restart" },
+            div(
+              {
+                className:
+                  "perf-photon-message-bar perf-photon-message-bar-warning perf-env-restart-fixed",
+              },
+              div({ className: "perf-photon-message-bar-warning-icon" }),
+              "The browser must be restarted to enable this feature.",
+              button(
+                {
+                  className: "perf-photon-button perf-photon-button-micro",
+                  type: "button",
+                  onClick: this.handleRestart,
+                },
+                "Restart"
+              )
+            )
+          )
+        : null,
+      RecordingButton(),
+      Settings(),
+      isPopup ? null : Description()
+    );
   }
 }
-
-
-
-
 
 function mapStateToProps(state) {
   return {
     perfFront: selectors.getPerfFront(state),
     recordingState: selectors.getRecordingState(state),
     isSupportedPlatform: selectors.getIsSupportedPlatform(state),
-    pageContext: selectors.getPageContext(state),
+    isPopup: selectors.getIsPopup(state),
     promptEnvRestart: selectors.getPromptEnvRestart(state),
   };
 }
-
 
 const mapDispatchToProps = {
   changeRecordingState: actions.changeRecordingState,
@@ -301,4 +320,4 @@ const mapDispatchToProps = {
 module.exports = connect(
   mapStateToProps,
   mapDispatchToProps
-)(ProfilerEventHandling);
+)(Perf);
