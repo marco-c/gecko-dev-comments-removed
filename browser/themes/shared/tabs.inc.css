@@ -698,7 +698,7 @@
 
 #tabbrowser-tabs[movingtab] > .tabbrowser-arrowscrollbox > .tabbrowser-tab[visuallyselected]::before {
   content: "";
-  display: -moz-box;
+  display: block;
 }
 
 
