@@ -13,7 +13,6 @@
 #include "frontend/Stencil.h"
 #include "frontend/Token.h"
 #include "util/Text.h"
-#include "vm/BigIntType.h"
 #include "vm/BytecodeUtil.h"
 #include "vm/JSContext.h"
 #include "vm/Printer.h"
@@ -1524,41 +1523,6 @@ class NumericLiteral : public ParseNode {
   void setValue(double v) { value_ = v; }
 
   void setDecimalPoint(DecimalPoint d) { decimalPoint_ = d; }
-};
-
-
-
-
-class BigIntCreationData {
-  UniqueTwoByteChars buf_;
-  size_t length_ = 0;
-
- public:
-  BigIntCreationData() = default;
-
-  MOZ_MUST_USE bool init(JSContext* cx, const Vector<char16_t, 32>& buf) {
-#ifdef DEBUG
-    
-    
-    for (char16_t c : buf) {
-      MOZ_ASSERT(c != '_');
-    }
-#endif
-    length_ = buf.length();
-    buf_ = js::DuplicateString(cx, buf.begin(), buf.length());
-    return buf_ != nullptr;
-  }
-
-  BigInt* createBigInt(JSContext* cx) {
-    mozilla::Range<const char16_t> source(buf_.get(), length_);
-
-    return js::ParseBigIntLiteral(cx, source);
-  }
-
-  bool isZero() {
-    mozilla::Range<const char16_t> source(buf_.get(), length_);
-    return js::BigIntLiteralIsZero(source);
-  }
 };
 
 class BigIntLiteral : public ParseNode {
