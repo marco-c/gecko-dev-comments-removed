@@ -67,7 +67,7 @@ const clearCookies = async function(options) {
 
   if (options.since || options.hostnames) {
     
-    for (const cookie of cookieMgr.cookies) {
+    for (const cookie of cookieMgr.enumerator) {
       if (
         (!options.since ||
           cookie.creationTime >= PlacesUtils.toPRTime(options.since)) &&

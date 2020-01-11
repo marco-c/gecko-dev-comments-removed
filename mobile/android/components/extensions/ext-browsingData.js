@@ -32,7 +32,7 @@ const clearCookies = async function(options) {
     
     let since = options.since * 1000;
     
-    for (let cookie of cookieMgr.cookies) {
+    for (let cookie of cookieMgr.enumerator) {
       if (cookie.creationTime >= since) {
         
         cookieMgr.remove(

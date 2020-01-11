@@ -59,7 +59,7 @@ conn.executeSimpleSQL(
 
 
 
-const cookies = Services.cookies.sessionCookies;
+const enumerator = Services.cookies.sessionEnumerator;
 
 Assert.equal(conn.schemaVersion, 10);
 let stmt = conn.createStatement(
