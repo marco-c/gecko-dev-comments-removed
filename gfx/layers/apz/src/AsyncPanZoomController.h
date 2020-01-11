@@ -1284,6 +1284,7 @@ class AsyncPanZoomController {
   
 
 
+  bool IsInTransformingState() const;
   static bool IsTransformingState(PanZoomState aState);
 
   
