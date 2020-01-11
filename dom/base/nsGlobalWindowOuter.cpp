@@ -5529,31 +5529,6 @@ void nsGlobalWindowOuter::NotifyContentBlockingEvent(
         } else {
           
         }
-        const uint32_t oldEvent = event;
-        if (blockedValue) {
-          event |= aEvent;
-        } else if (unblocked) {
-          event &= ~aEvent;
-        }
-
-        if (event == oldEvent
-#ifdef ANDROID
-            
-            
-            
-            
-            
-            
-            && aEvent != nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT
-#endif
-        ) {
-          
-          
-          return;
-        }
-
-        nsDocShell::Cast(docShell)->nsDocLoader::OnContentBlockingEvent(channel,
-                                                                        event);
       });
   nsresult rv;
   if (StaticPrefs::dom_testing_sync_content_blocking_notifications()) {
