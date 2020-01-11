@@ -61,6 +61,7 @@
   grid-row-end: inherit;
   order: inherit;
   outline: inherit;
+  outline-offset: inherit;
   column-span: inherit; 
   contain: inherit; 
 }
