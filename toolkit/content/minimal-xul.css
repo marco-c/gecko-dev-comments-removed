@@ -38,7 +38,11 @@
 }
 
 
-scrollcorner, resizer, scrollbar, scrollbarbutton, slider {
+scrollcorner:-moz-native-anonymous,
+resizer:-moz-native-anonymous,
+scrollbar:-moz-native-anonymous,
+scrollbarbutton:-moz-native-anonymous,
+slider:-moz-native-anonymous {
   
 
 
@@ -109,7 +113,9 @@ thumb {
 
 
 
-scrollbarbutton, slider, thumb {
+scrollbarbutton:-moz-native-anonymous,
+slider:-moz-native-anonymous,
+thumb:-moz-native-anonymous {
   direction: inherit;
   cursor: inherit;
 }
