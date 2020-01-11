@@ -5665,8 +5665,7 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
 
     
     
-    Rooted<JSScript*> parent(cx, script);
-    MOZ_ASSERT(parent->mutedErrors() == parser->options().mutedErrors());
+    MOZ_ASSERT(script->mutedErrors() == parser->options().mutedErrors());
     const JS::TransitiveCompileOptions& transitiveOptions = parser->options();
     JS::CompileOptions options(cx, transitiveOptions);
 
