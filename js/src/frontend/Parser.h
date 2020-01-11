@@ -1430,8 +1430,6 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
 
   inline BigIntLiteralType newBigInt();
 
-  JSAtom* bigIntAtom();
-
  protected:
   
   

@@ -40,6 +40,7 @@
 #include "frontend/ValueUsage.h"     
 #include "js/RootingAPI.h"           
 #include "js/TypeDecls.h"            
+#include "vm/BigIntType.h"           
 #include "vm/BytecodeUtil.h"         
 #include "vm/Instrumentation.h"      
 #include "vm/Interpreter.h"          
