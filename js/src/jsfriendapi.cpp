@@ -1452,7 +1452,7 @@ JS_FRIEND_API bool js::RuntimeIsBeingDestroyed() {
 
 
 
-#ifndef ENABLE_INTL_API
+#ifndef JS_HAS_INTL_API
 
 static bool IntlNotEnabled(JSContext* cx) {
   JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,

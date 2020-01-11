@@ -13,7 +13,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#if !ENABLE_INTL_API || MOZ_SYSTEM_ICU
+#if !JS_HAS_INTL_API || MOZ_SYSTEM_ICU
 
 
 
@@ -52,7 +52,7 @@ extern void PRMJ_NowShutdown();
 inline void PRMJ_NowShutdown() {}
 #endif
 
-#if !ENABLE_INTL_API || MOZ_SYSTEM_ICU
+#if !JS_HAS_INTL_API || MOZ_SYSTEM_ICU
 
 extern size_t PRMJ_FormatTime(char* buf, size_t buflen, const char* fmt,
                               const PRMJTime* tm, int timeZoneYear,

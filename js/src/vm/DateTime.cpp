@@ -24,7 +24,7 @@
 #include "js/Date.h"
 #include "threading/ExclusiveData.h"
 
-#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
+#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
 #  include "unicode/basictz.h"
 #  include "unicode/locid.h"
 #  include "unicode/timezone.h"
@@ -189,7 +189,7 @@ void js::DateTimeInfo::updateTimeZone() {
 
   dstRange_.reset();
 
-#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
+#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
   utcRange_.reset();
   localRange_.reset();
 
@@ -239,7 +239,7 @@ int32_t js::DateTimeInfo::computeDSTOffsetMilliseconds(int64_t utcSeconds) {
   MOZ_ASSERT(utcSeconds >= MinTimeT);
   MOZ_ASSERT(utcSeconds <= MaxTimeT);
 
-#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
+#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
   UDate date = UDate(utcSeconds * msPerSecond);
   constexpr bool dateIsLocalTime = false;
   int32_t rawOffset, dstOffset;
@@ -381,7 +381,7 @@ void js::DateTimeInfo::RangeCache::sanityCheck() {
   assertRange(oldStartSeconds, oldEndSeconds);
 }
 
-#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
+#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
 int32_t js::DateTimeInfo::computeUTCOffsetMilliseconds(int64_t localSeconds) {
   MOZ_ASSERT(localSeconds >= MinTimeT);
   MOZ_ASSERT(localSeconds <= MaxTimeT);
@@ -581,7 +581,7 @@ static bool IsOlsonCompatibleWindowsTimeZoneId(const char* tz) {
   }
   return false;
 }
-#elif ENABLE_INTL_API && !MOZ_SYSTEM_ICU
+#elif JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
 static inline const char* TZContainsAbsolutePath(const char* tzVar) {
   
   
@@ -725,7 +725,7 @@ void js::ResyncICUDefaultTimeZone() {
 }
 
 void js::DateTimeInfo::internalResyncICUDefaultTimeZone() {
-#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
+#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
   if (const char* tz = std::getenv("TZ")) {
     icu::UnicodeString tzid;
 
