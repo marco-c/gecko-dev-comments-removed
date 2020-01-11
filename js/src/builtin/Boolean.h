@@ -4,15 +4,15 @@
 
 
 
-
-
 #ifndef builtin_Boolean_h
 #define builtin_Boolean_h
 
-#include "jstypes.h"  
 
-struct JS_PUBLIC_API JSContext;
-class JS_PUBLIC_API JSString;
+
+
+
+struct JSContext;
+class JSString;
 
 namespace js {
 

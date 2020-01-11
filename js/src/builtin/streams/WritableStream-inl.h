@@ -14,8 +14,6 @@
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
 
-#include "jstypes.h"  
-
 #include "builtin/Promise.h"                              
 #include "builtin/streams/WritableStreamDefaultWriter.h"  
 #include "js/RootingAPI.h"                                
@@ -23,7 +21,7 @@
 
 #include "vm/Compartment-inl.h"  
 
-struct JS_PUBLIC_API JSContext;
+struct JSContext;
 
 namespace js {
 
