@@ -77,14 +77,11 @@ const HTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 
-
-
-function StyleEditorUI(toolbox, debuggee, target, panelDoc, cssProperties) {
+function StyleEditorUI(toolbox, debuggee, panelDoc, cssProperties) {
   EventEmitter.decorate(this);
 
   this._toolbox = toolbox;
   this._debuggee = debuggee;
-  this._target = target;
   this._panelDoc = panelDoc;
   this._cssProperties = cssProperties;
   this._window = this._panelDoc.defaultView;
@@ -126,6 +123,10 @@ function StyleEditorUI(toolbox, debuggee, target, panelDoc, cssProperties) {
 this.StyleEditorUI = StyleEditorUI;
 
 StyleEditorUI.prototype = {
+  get currentTarget() {
+    return this._toolbox.targetList.targetFront;
+  },
+
   
 
 
@@ -147,12 +148,12 @@ StyleEditorUI.prototype = {
     const styleSheets = await this._debuggee.getStyleSheets();
     await this._resetStyleSheetList(styleSheets);
 
-    this._target.on("will-navigate", this._clear);
-    this._target.on("navigate", this._onNewDocument);
+    this.currentTarget.on("will-navigate", this._clear);
+    this.currentTarget.on("navigate", this._onNewDocument);
   },
 
   async initializeHighlighter() {
-    const inspectorFront = await this._toolbox.target.getFront("inspector");
+    const inspectorFront = await this.currentTarget.getFront("inspector");
     this._walker = inspectorFront.walker;
 
     try {
@@ -991,7 +992,7 @@ StyleEditorUI.prototype = {
         if (!rule.matches) {
           cond.classList.add("media-condition-unmatched");
         }
-        if (this._target.isLocalTab) {
+        if (this.currentTarget.isLocalTab) {
           this._setConditionContents(cond, rule.conditionText);
         } else {
           cond.textContent = rule.conditionText;
@@ -1078,8 +1079,8 @@ StyleEditorUI.prototype = {
 
 
   async _launchResponsiveMode(options = {}) {
-    const tab = this._target.localTab;
-    const win = this._target.localTab.ownerDocument.defaultView;
+    const tab = this.currentTarget.localTab;
+    const win = this.currentTarget.localTab.ownerDocument.defaultView;
 
     await ResponsiveUIManager.openIfNeeded(win, tab, {
       trigger: "style_editor",
