@@ -2331,6 +2331,7 @@ CustomizeMode.prototype = {
     
     
     
+    
     if (this._skipSourceNodeCheck) {
       return false;
     }

@@ -279,7 +279,6 @@ nsBaseDragService::InvokeDragSession(
   
   
   
-  
   if (XRE_IsParentProcess()) {
     MOZ_ASSERT(
         !xpc::IsInAutomation(),
