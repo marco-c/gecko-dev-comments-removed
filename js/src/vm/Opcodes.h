@@ -259,7 +259,7 @@
  \
     MACRO(JSOP_UNDEFINED, js_undefined_str, "", 1, 0, 1, JOF_BYTE) \
     /*
-     * Pushes 'null' onto the stack.
+     * Push `null`.
      *
      *   Category: Literals
      *   Type: Constants
@@ -277,6 +277,18 @@
  \
     MACRO(JSOP_FALSE, js_false_str, js_false_str, 1, 0, 1, JOF_BYTE) \
     MACRO(JSOP_TRUE, js_true_str, js_true_str, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(JSOP_INT32, "int32", NULL, 5, 0, 1, JOF_INT32) \
     
 
 
@@ -329,18 +341,13 @@
 
 
 
- \
-    MACRO(JSOP_INT32, "int32", NULL, 5, 0, 1, JOF_INT32) \
-    
-
-
-
 
 
 
  \
     MACRO(JSOP_DOUBLE, "double", NULL, 9, 0, 1, JOF_DOUBLE) \
     
+
 
 
 
@@ -358,6 +365,8 @@
  \
     MACRO(JSOP_STRING, "string", NULL, 5, 0, 1, JOF_ATOM) \
     
+
+
 
 
 
