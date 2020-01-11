@@ -793,7 +793,7 @@ constexpr TimeDelta TimeDelta::Min() {
 constexpr TimeDelta TimeDelta::FromDouble(double value) {
   
   
-  return value > std::numeric_limits<int64_t>::max()
+  return value > double(std::numeric_limits<int64_t>::max())
              ? Max()
              : value < std::numeric_limits<int64_t>::min()
                    ? Min()
