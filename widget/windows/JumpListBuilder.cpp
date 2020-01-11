@@ -107,11 +107,6 @@ JumpListBuilder::JumpListBuilder()
       return;
     }
 
-    nsString modelId;
-    if (mozilla::widget::WinTaskbar::GetAppUserModelID(modelId)) {
-      jumpListMgr->SetAppID(modelId.get());
-    }
-
     
     
     mJumpListMgr = jumpListMgr;
