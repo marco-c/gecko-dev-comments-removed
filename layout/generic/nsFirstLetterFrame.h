@@ -74,10 +74,10 @@ class nsFirstLetterFrame final : public nsContainerFrame {
   
   
   
-  nsresult CreateContinuationForFloatingParent(nsPresContext* aPresContext,
-                                               nsIFrame* aChild,
-                                               nsIFrame** aContinuation,
-                                               bool aIsFluid);
+  void CreateContinuationForFloatingParent(nsPresContext* aPresContext,
+                                           nsIFrame* aChild,
+                                           nsIFrame** aContinuation,
+                                           bool aIsFluid);
 
  protected:
   nscoord mBaseline;
