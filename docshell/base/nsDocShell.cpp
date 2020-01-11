@@ -1207,16 +1207,9 @@ bool nsDocShell::SetCurrentURI(nsIURI* aURI, nsIRequest* aRequest,
     mHasLoadedNonBlankURI = true;
   }
 
-  bool isRoot = false;      
+  bool isRoot = !mBrowsingContext->GetParent();
   bool isSubFrame = false;  
 
-  nsCOMPtr<nsIDocShellTreeItem> root;
-
-  GetInProcessSameTypeRootTreeItem(getter_AddRefs(root));
-  if (root.get() == static_cast<nsIDocShellTreeItem*>(this)) {
-    
-    isRoot = true;
-  }
   if (mLSHE) {
     isSubFrame = mLSHE->GetIsSubFrame();
   }
