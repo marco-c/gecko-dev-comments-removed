@@ -625,11 +625,6 @@ class nsHtml5StreamParser final : public nsISupports {
   
 
 
-  bool mSkipContentSniffing;
-
-  
-
-
 
 
 
