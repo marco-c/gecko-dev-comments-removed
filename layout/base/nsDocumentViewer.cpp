@@ -160,41 +160,32 @@ class nsDocViewerSelectionListener final : public nsISelectionListener {
   
   NS_DECL_NSISELECTIONLISTENER
 
-  nsDocViewerSelectionListener()
-      : mDocViewer(nullptr), mSelectionWasCollapsed(true) {}
-
-  nsresult Init(nsDocumentViewer* aDocViewer);
+  nsDocViewerSelectionListener(nsDocumentViewer* aDocViewer)
+      : mDocViewer(aDocViewer), mSelectionWasCollapsed(true) {}
 
   void Disconnect() { mDocViewer = nullptr; }
 
  protected:
-  virtual ~nsDocViewerSelectionListener() {}
+  virtual ~nsDocViewerSelectionListener() = default;
 
   nsDocumentViewer* mDocViewer;
   bool mSelectionWasCollapsed;
 };
 
 
-
 class nsDocViewerFocusListener final : public nsIDOMEventListener {
  public:
-  
-
-  nsDocViewerFocusListener();
+  nsDocViewerFocusListener(nsDocumentViewer* aDocViewer)
+      : mDocViewer(aDocViewer) {}
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIDOMEVENTLISTENER
 
-  nsresult Init(nsDocumentViewer* aDocViewer);
-
   void Disconnect() { mDocViewer = nullptr; }
 
  protected:
-  
+  virtual ~nsDocViewerFocusListener() = default;
 
-  virtual ~nsDocViewerFocusListener();
-
- private:
   nsDocumentViewer* mDocViewer;
 };
 
@@ -387,6 +378,9 @@ class nsDocumentViewer final : public nsIContentViewer,
   void PrepareToStartLoad(void);
 
   nsresult SyncParentSubDocMap();
+
+  void RemoveFocusListener();
+  void ReinitializeFocusListener();
 
   mozilla::dom::Selection* GetDocumentSelection();
 
@@ -655,9 +649,7 @@ nsDocumentViewer::~nsDocumentViewer() {
     mSelectionListener->Disconnect();
   }
 
-  if (mFocusListener) {
-    mFocusListener->Disconnect();
-  }
+  RemoveFocusListener();
 
   
 }
@@ -676,6 +668,29 @@ void nsDocumentViewer::LoadStart(Document* aDocument) {
 
   if (!mDocument) {
     mDocument = aDocument;
+  }
+}
+
+void nsDocumentViewer::RemoveFocusListener() {
+  if (RefPtr<nsDocViewerFocusListener> oldListener = mFocusListener.forget()) {
+    oldListener->Disconnect();
+    if (mDocument) {
+      mDocument->RemoveEventListener(NS_LITERAL_STRING("focus"), oldListener,
+                                     false);
+      mDocument->RemoveEventListener(NS_LITERAL_STRING("blur"), oldListener,
+                                     false);
+    }
+  }
+}
+
+void nsDocumentViewer::ReinitializeFocusListener() {
+  RemoveFocusListener();
+  mFocusListener = new nsDocViewerFocusListener(this);
+  if (mDocument) {
+    mDocument->AddEventListener(NS_LITERAL_STRING("focus"), mFocusListener,
+                                false, false);
+    mDocument->AddEventListener(NS_LITERAL_STRING("blur"), mFocusListener,
+                                false, false);
   }
 }
 
@@ -771,19 +786,19 @@ nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
     
     
     
-
     mDocument->FlushPendingNotifications(FlushType::ContentAndNotify);
   }
 
   mPresShell->BeginObservingDocument();
 
   
-  int32_t p2a = mPresContext->AppUnitsPerDevPixel();
-  MOZ_ASSERT(
-      p2a ==
-      mPresContext->DeviceContext()->AppUnitsPerDevPixelAtUnitFullZoom());
 
   {
+    int32_t p2a = mPresContext->AppUnitsPerDevPixel();
+    MOZ_ASSERT(
+        p2a ==
+        mPresContext->DeviceContext()->AppUnitsPerDevPixelAtUnitFullZoom());
+
     nscoord width = p2a * mBounds.width;
     nscoord height = p2a * mBounds.height;
 
@@ -794,7 +809,6 @@ nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
     mPresContext->SetOverrideDPPX(mOverrideDPPX);
   }
 
-  p2a = mPresContext->AppUnitsPerDevPixel();  
   if (aDoInitialReflow) {
     RefPtr<PresShell> presShell = mPresShell;
     
@@ -804,13 +818,7 @@ nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
   
   
   if (!mSelectionListener) {
-    nsDocViewerSelectionListener* selectionListener =
-        new nsDocViewerSelectionListener();
-
-    selectionListener->Init(this);
-
-    
-    mSelectionListener = selectionListener;
+    mSelectionListener = new nsDocViewerSelectionListener(this);
   }
 
   RefPtr<mozilla::dom::Selection> selection = GetDocumentSelection();
@@ -820,36 +828,7 @@ nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
 
   selection->AddSelectionListener(mSelectionListener);
 
-  
-  RefPtr<nsDocViewerFocusListener> oldFocusListener = mFocusListener;
-  if (oldFocusListener) {
-    oldFocusListener->Disconnect();
-  }
-
-  
-  
-  
-  
-  nsDocViewerFocusListener* focusListener = new nsDocViewerFocusListener();
-
-  focusListener->Init(this);
-
-  
-  mFocusListener = focusListener;
-
-  if (mDocument) {
-    mDocument->AddEventListener(NS_LITERAL_STRING("focus"), mFocusListener,
-                                false, false);
-    mDocument->AddEventListener(NS_LITERAL_STRING("blur"), mFocusListener,
-                                false, false);
-
-    if (oldFocusListener) {
-      mDocument->RemoveEventListener(NS_LITERAL_STRING("focus"),
-                                     oldFocusListener, false);
-      mDocument->RemoveEventListener(NS_LITERAL_STRING("blur"),
-                                     oldFocusListener, false);
-    }
-  }
+  ReinitializeFocusListener();
 
   if (aDoInitialReflow && mDocument) {
     nsCOMPtr<Document> document = mDocument;
@@ -1595,14 +1574,7 @@ nsDocumentViewer::Open(nsISupports* aState, nsISHEntry* aSHEntry) {
 
   SyncParentSubDocMap();
 
-  if (mFocusListener && mDocument) {
-    
-    mFocusListener->Init(this);
-    mDocument->AddEventListener(NS_LITERAL_STRING("focus"), mFocusListener,
-                                false, false);
-    mDocument->AddEventListener(NS_LITERAL_STRING("blur"), mFocusListener,
-                                false, false);
-  }
+  ReinitializeFocusListener();
 
   
 
@@ -1682,16 +1654,7 @@ nsDocumentViewer::Close(nsISHEntry* aSHEntry) {
     if (!mSHEntry && mDocument) mDocument->RemovedFromDocShell();
   }
 
-  if (mFocusListener) {
-    mFocusListener->Disconnect();
-    if (mDocument) {
-      mDocument->RemoveEventListener(NS_LITERAL_STRING("focus"), mFocusListener,
-                                     false);
-      mDocument->RemoveEventListener(NS_LITERAL_STRING("blur"), mFocusListener,
-                                     false);
-    }
-  }
-
+  RemoveFocusListener();
   return NS_OK;
 }
 
@@ -3242,11 +3205,6 @@ nsDocumentViewer::GetContentSizeConstrained(int32_t aMaxWidth,
 
 NS_IMPL_ISUPPORTS(nsDocViewerSelectionListener, nsISelectionListener)
 
-nsresult nsDocViewerSelectionListener::Init(nsDocumentViewer* aDocViewer) {
-  mDocViewer = aDocViewer;
-  return NS_OK;
-}
-
 
 
 
@@ -3417,10 +3375,6 @@ NS_IMETHODIMP nsDocViewerSelectionListener::NotifySelectionChanged(
 
 NS_IMPL_ISUPPORTS(nsDocViewerFocusListener, nsIDOMEventListener)
 
-nsDocViewerFocusListener::nsDocViewerFocusListener() : mDocViewer(nullptr) {}
-
-nsDocViewerFocusListener::~nsDocViewerFocusListener() {}
-
 nsresult nsDocViewerFocusListener::HandleEvent(Event* aEvent) {
   NS_ENSURE_STATE(mDocViewer);
 
@@ -3450,11 +3404,6 @@ nsresult nsDocViewerFocusListener::HandleEvent(Event* aEvent) {
     }
   }
 
-  return NS_OK;
-}
-
-nsresult nsDocViewerFocusListener::Init(nsDocumentViewer* aDocViewer) {
-  mDocViewer = aDocViewer;
   return NS_OK;
 }
 
