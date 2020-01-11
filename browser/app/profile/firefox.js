@@ -1553,10 +1553,9 @@ pref("media.gmp-provider.enabled", true);
 
 
 pref("network.cookie.cookieBehavior", 4 );
-#ifdef EARLY_BETA_OR_EARLIER
-  
-  pref("privacy.trackingprotection.fingerprinting.enabled", true);
-#endif
+
+
+pref("privacy.trackingprotection.fingerprinting.enabled", true);
 
 
 pref("privacy.trackingprotection.cryptomining.enabled", true);
