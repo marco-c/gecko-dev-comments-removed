@@ -567,7 +567,6 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 
 
 #urlbar-input:-moz-locale-dir(rtl) {
-  direction: ltr !important;
   text-align: right !important;
 }
 
@@ -576,6 +575,10 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 
 #urlbar-input[dir=ltr]:-moz-locale-dir(rtl) {
   text-align: left !important;
+}
+
+#urlbar-input[dir=rtl]:-moz-locale-dir(ltr) {
+  text-align: right !important;
 }
 
 
@@ -623,12 +626,18 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
   mask-image: linear-gradient(to left, transparent, black 3ch);
 }
 
+#urlbar[textoverflow="end"][rtltext]:not([focused]) > #urlbar-input-container > .urlbar-input-box > #urlbar-input {
+  mask-image: linear-gradient(to right, transparent, black 3ch);
+}
+
 #urlbar[textoverflow="start"][hasrtldomain]:not([focused]) > #urlbar-input-container > .urlbar-input-box > #urlbar-input {
   mask-image: linear-gradient(to right, transparent var(--urlbar-scheme-size), black calc(var(--urlbar-scheme-size) + 3ch));
 }
 
 #urlbar-input {
   mask-repeat: no-repeat;
+  unicode-bidi: plaintext;
+  text-align: match-parent;
 }
 
 
