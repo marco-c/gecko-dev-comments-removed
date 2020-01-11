@@ -88,23 +88,6 @@ function createStyle(test, rules, doc) {
 }
 
 
-function getPseudoElement(test, type) {
-  createStyle(test, { '@keyframes anim': '',
-                      [`.pseudo::${type}`]: 'animation: anim 10s; ' +
-                                            'content: \'\';'  });
-  const div = createDiv(test);
-  if (type == 'marker') {
-    div.style.display = 'list-item';
-  }
-  div.classList.add('pseudo');
-  const anims = document.getAnimations();
-  assert_true(anims.length >= 1);
-  const anim = anims[anims.length - 1];
-  anim.cancel();
-  return anim.effect.target;
-}
-
-
 function cubicBezier(x1, y1, x2, y2) {
   const xForT = t => {
     const omt = 1-t;
