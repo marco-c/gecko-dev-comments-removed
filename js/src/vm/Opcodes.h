@@ -1904,8 +1904,11 @@
 
 
 
+
+
+
  \
-    MACRO(JSOP_INITIALYIELD, "initialyield", NULL, 4, 1, 1, JOF_RESUMEINDEX) \
+    MACRO(JSOP_INITIALYIELD, "initialyield", NULL, 4, 1, 3, JOF_RESUMEINDEX) \
     
 
 
@@ -1936,8 +1939,11 @@
 
 
 
+
+
+
  \
-    MACRO(JSOP_YIELD, "yield", NULL, 4, 2, 1, JOF_RESUMEINDEX) \
+    MACRO(JSOP_YIELD, "yield", NULL, 4, 2, 3, JOF_RESUMEINDEX) \
     
 
 
@@ -1980,8 +1986,11 @@
 
 
 
+
+
+
  \
-    MACRO(JSOP_AWAIT, "await", NULL, 4, 2, 1, JOF_RESUMEINDEX) \
+    MACRO(JSOP_AWAIT, "await", NULL, 4, 2, 3, JOF_RESUMEINDEX) \
     
 
 
@@ -2002,10 +2011,31 @@
 
 
 
+ \
+    MACRO(JSOP_RESUMEKIND, "resumekind", NULL, 2, 0, 1, JOF_UINT8) \
+    
+
+
+
+
+
+
+
 
 
  \
-    MACRO(JSOP_RESUME, "resume", NULL, 2, 2, 1, JOF_UINT8|JOF_INVOKE) \
+    MACRO(JSOP_CHECK_RESUMEKIND, "check-resumekind", NULL, 1, 3, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(JSOP_RESUME, "resume", NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE) \
     
 
 
@@ -2999,8 +3029,6 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  MACRO(238)                                   \
-  MACRO(239)                                   \
   MACRO(240)                                   \
   MACRO(241)                                   \
   MACRO(242)                                   \

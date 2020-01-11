@@ -691,7 +691,6 @@ uint32_t BytecodeParser::simulateOp(JSOp op, uint32_t offset,
     case JSOP_THROWSETCALLEE:
     case JSOP_THROWSETCONST:
     case JSOP_INITALIASEDLEXICAL:
-    case JSOP_INITIALYIELD:
     case JSOP_ITERNEXT:
       
       MOZ_ASSERT(nuses == 1);
@@ -701,6 +700,12 @@ uint32_t BytecodeParser::simulateOp(JSOp op, uint32_t offset,
     case JSOP_INITHOMEOBJECT:
       
       MOZ_ASSERT(nuses == 2);
+      MOZ_ASSERT(ndefs == 1);
+      break;
+
+    case JSOP_CHECK_RESUMEKIND:
+      
+      MOZ_ASSERT(nuses == 3);
       MOZ_ASSERT(ndefs == 1);
       break;
 
@@ -2126,12 +2131,23 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
       case JSOP_UNINITIALIZED:
         return write("UNINITIALIZED");
 
+      case JSOP_INITIALYIELD:
       case JSOP_AWAIT:
       case JSOP_YIELD:
         
         
         
-        return write("RVAL");
+        if (defIndex == 0) {
+          return write("RVAL");
+        }
+        if (defIndex == 1) {
+          return write("GENERATOR");
+        }
+        MOZ_ASSERT(defIndex == 2);
+        return write("RESUMEKIND");
+
+      case JSOP_RESUMEKIND:
+        return write("RESUMEKIND");
 
       case JSOP_ASYNCAWAIT:
       case JSOP_ASYNCRESOLVE:

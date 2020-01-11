@@ -111,17 +111,20 @@ testFunction(() => g.asyncer(1), [
   "asyncer:main",
   "promiser:main", "promiseInternal:main", "promiseInternal:exit", "promiser:exit",
   "asyncer:exit",
+  "asyncer:entry", 
   "asyncer:entry", "asyncer:exit"
 ]);
 testFunction(() => g.asyncerCatch(1), [
   "asyncerCatch:main",
   "promiser:main", "promiseInternal:main", "promiseInternal:exit", "promiser:exit",
   "asyncerCatch:exit",
+  "asyncerCatch:entry", 
   "asyncerCatch:entry", "f1:main", "f1:exit", "asyncerCatch:exit"
 ]);
 testFunction(() => g.asyncerFinally(1), [
   "asyncerFinally:main",
   "promiser:main", "promiseInternal:main", "promiseInternal:exit", "promiser:exit",
   "asyncerFinally:exit",
+  "asyncerFinally:entry", 
   "asyncerFinally:entry", "f1:main", "f1:exit", "asyncerFinally:entry", "asyncerFinally:exit"
 ]);

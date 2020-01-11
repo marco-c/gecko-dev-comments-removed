@@ -935,14 +935,24 @@ bool FinalSuspend(JSContext* cx, HandleObject obj, jsbytecode* pc) {
   return true;
 }
 
-bool InterpretResume(JSContext* cx, HandleObject obj, HandleValue val,
-                     HandlePropertyName kind, MutableHandleValue rval) {
+bool InterpretResume(JSContext* cx, HandleObject obj, Value* stackValues,
+                     MutableHandleValue rval) {
   MOZ_ASSERT(obj->is<AbstractGeneratorObject>());
+
+  
+  
+  
+  
+
+  MOZ_ASSERT(stackValues[2].toObject() == *obj);
+
+  GeneratorResumeKind resumeKind = IntToResumeKind(stackValues[0].toInt32());
+  JSAtom* kind = ResumeKindToAtom(cx, resumeKind);
 
   FixedInvokeArgs<3> args(cx);
 
   args[0].setObject(*obj);
-  args[1].set(val);
+  args[1].set(stackValues[1]);
   args[2].setString(kind);
 
   return CallSelfHostedFunction(cx, cx->names().InterpretGeneratorResume,
@@ -965,27 +975,8 @@ bool DebugAfterYield(JSContext* cx, BaselineFrame* frame) {
 
 bool GeneratorThrowOrReturn(JSContext* cx, BaselineFrame* frame,
                             Handle<AbstractGeneratorObject*> genObj,
-                            HandleValue arg, uint32_t resumeKindArg) {
-  JSScript* script = frame->script();
-  uint32_t offset = script->resumeOffsets()[genObj->resumeIndex()];
-  jsbytecode* pc = script->offsetToPC(offset);
-
-  
-  
-  
-  MOZ_ASSERT(!frame->runningInInterpreter());
-  frame->initInterpFieldsForGeneratorThrowOrReturn(script, pc);
-
-  
-  
-  genObj->setRunning();
-
-  if (!DebugAfterYield(cx, frame)) {
-    return false;
-  }
-
-  GeneratorResumeKind resumeKind = GeneratorResumeKind(resumeKindArg);
-
+                            HandleValue arg, int32_t resumeKindArg) {
+  GeneratorResumeKind resumeKind = IntToResumeKind(resumeKindArg);
   MOZ_ALWAYS_FALSE(
       js::GeneratorThrowOrReturn(cx, frame, genObj, arg, resumeKind));
   return false;

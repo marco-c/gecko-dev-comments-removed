@@ -2305,6 +2305,10 @@ bool BytecodeEmitter::emitYieldOp(JSOp op) {
   return emitJumpTargetOp(JSOP_AFTERYIELD, &unusedOffset);
 }
 
+bool BytecodeEmitter::emitPushResumeKind(GeneratorResumeKind kind) {
+  return emit2(JSOP_RESUMEKIND, uint8_t(kind));
+}
+
 bool BytecodeEmitter::emitSetThis(BinaryNode* setThisNode) {
   
   
@@ -6053,10 +6057,15 @@ bool BytecodeEmitter::emitInitialYield(UnaryNode* yieldNode) {
   }
 
   if (!emitYieldOp(JSOP_INITIALYIELD)) {
+    
     return false;
   }
-
+  if (!emit1(JSOP_CHECK_RESUMEKIND)) {
+    
+    return false;
+  }
   if (!emit1(JSOP_POP)) {
+    
     return false;
   }
 
@@ -6116,6 +6125,11 @@ bool BytecodeEmitter::emitYield(UnaryNode* yieldNode) {
     return false;
   }
 
+  if (!emit1(JSOP_CHECK_RESUMEKIND)) {
+    
+    return false;
+  }
+
   return true;
 }
 
@@ -6162,6 +6176,10 @@ bool BytecodeEmitter::emitAwaitInScope(EmitterScope& currentScope) {
     return false;
   }
   if (!emitYieldOp(JSOP_AWAIT)) {
+    
+    return false;
+  }
+  if (!emit1(JSOP_CHECK_RESUMEKIND)) {
     
     return false;
   }
@@ -6269,6 +6287,10 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
 
   
   if (!emitYieldOp(JSOP_YIELD)) {
+    
+    return false;
+  }
+  if (!emit1(JSOP_CHECK_RESUMEKIND)) {
     
     return false;
   }
@@ -6993,21 +7015,29 @@ bool BytecodeEmitter::emitSelfHostedResumeGenerator(BinaryNode* callNode) {
 
   ParseNode* genNode = argsList->head();
   if (!emitTree(genNode)) {
+    
     return false;
   }
 
   ParseNode* valNode = genNode->pn_next;
   if (!emitTree(valNode)) {
+    
     return false;
   }
 
   ParseNode* kindNode = valNode->pn_next;
   MOZ_ASSERT(kindNode->isKind(ParseNodeKind::StringExpr));
-  uint8_t operand = uint8_t(AbstractGeneratorObject::getResumeKind(
-      cx, kindNode->as<NameNode>().atom()));
+  GeneratorResumeKind kind =
+      AtomToResumeKind(cx, kindNode->as<NameNode>().atom());
   MOZ_ASSERT(!kindNode->pn_next);
 
-  if (!emit2(JSOP_RESUME, operand)) {
+  if (!emitPushResumeKind(kind)) {
+    
+    return false;
+  }
+
+  if (!emit1(JSOP_RESUME)) {
+    
     return false;
   }
 

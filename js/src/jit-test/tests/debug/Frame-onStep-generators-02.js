@@ -41,4 +41,4 @@ assertThrowsValue(() => g.f(), "fit");
 
 
 
-assertEq(log, "f{56z{1}67z{12}78z{!}!}");
+assertEq(log, "f{56z{1}67z{12}78z{2!}!}");
