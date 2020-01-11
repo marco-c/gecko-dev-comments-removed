@@ -520,9 +520,6 @@ class BrowsingContext : public nsISupports,
 
   Type GetType() const { return mType; }
 
-  bool PendingInitialization() const { return mPendingInitialization; };
-  void SetPendingInitialization(bool aVal) { mPendingInitialization = aVal; };
-
  protected:
   virtual ~BrowsingContext();
   BrowsingContext(BrowsingContext* aParent, BrowsingContextGroup* aGroup,
@@ -649,10 +646,6 @@ class BrowsingContext : public nsISupports,
   
   
   bool mDanglingRemoteOuterProxies : 1;
-
-  
-  
-  bool mPendingInitialization : 1;
 
   
   

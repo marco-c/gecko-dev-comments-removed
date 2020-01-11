@@ -20,7 +20,7 @@
 #include "imgRequestProxy.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
-#include "js/Array.h"  
+#include "js/Array.h"        
 #include "js/ArrayBuffer.h"  
 #include "js/JSON.h"
 #include "js/RegExp.h"  
@@ -532,47 +532,6 @@ class SameOriginCheckerImpl final : public nsIChannelEventSink,
 };
 
 }  
-
-AutoSuppressEventHandlingAndSuspend::AutoSuppressEventHandlingAndSuspend(
-    BrowsingContextGroup* aGroup) {
-  for (const auto& bc : aGroup->Toplevels()) {
-    SuppressBrowsingContext(bc);
-  }
-}
-
-void AutoSuppressEventHandlingAndSuspend::SuppressBrowsingContext(
-    BrowsingContext* aBC) {
-  if (nsCOMPtr<nsPIDOMWindowOuter> win = aBC->GetDOMWindow()) {
-    if (RefPtr<Document> doc = win->GetExtantDoc()) {
-      mDocuments.AppendElement(doc);
-      mWindows.AppendElement(win->GetCurrentInnerWindow());
-      
-      
-      
-      
-      
-      
-      
-      doc->SuppressEventHandling();
-      win->GetCurrentInnerWindow()->Suspend();
-    }
-  }
-
-  BrowsingContext::Children children;
-  aBC->GetChildren(children);
-  for (const auto& bc : children) {
-    SuppressBrowsingContext(bc);
-  }
-}
-
-AutoSuppressEventHandlingAndSuspend::~AutoSuppressEventHandlingAndSuspend() {
-  for (const auto& win : mWindows) {
-    win->Resume();
-  }
-  for (const auto& doc : mDocuments) {
-    doc->UnsuppressEventHandlingAndFireEvents(true);
-  }
-}
 
 
 

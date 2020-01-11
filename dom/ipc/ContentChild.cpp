@@ -997,11 +997,6 @@ nsresult ContentChild::ProvideWindowCommon(
   RefPtr<BrowsingContext> browsingContext = BrowsingContext::Create(
       nullptr, openerBC, aName, BrowsingContext::Type::Content);
 
-  browsingContext->SetPendingInitialization(true);
-  auto unsetPending = MakeScopeExit([browsingContext]() {
-    browsingContext->SetPendingInitialization(false);
-  });
-
   TabContext newTabContext = aTabOpener ? *aTabOpener : TabContext();
 
   
@@ -1064,6 +1059,15 @@ nsresult ContentChild::ProvideWindowCommon(
     return NS_ERROR_ABORT;
   }
 
+  nsCOMPtr<nsPIDOMWindowInner> parentTopInnerWindow;
+  if (aParent) {
+    nsCOMPtr<nsPIDOMWindowOuter> parentTopWindow =
+        nsPIDOMWindowOuter::From(aParent)->GetInProcessTop();
+    if (parentTopWindow) {
+      parentTopInnerWindow = parentTopWindow->GetCurrentInnerWindow();
+    }
+  }
+
   
   bool ready = false;
 
@@ -1074,6 +1078,7 @@ nsresult ContentChild::ProvideWindowCommon(
     rv = info.rv();
     *aWindowIsNew = info.windowOpened();
     nsTArray<FrameScriptInfo> frameScripts(info.frameScripts());
+    nsCString urlToLoad = info.urlToLoad();
     uint32_t maxTouchPoints = info.maxTouchPoints();
     DimensionInfo dimensionInfo = info.dimensions();
     bool hasSiblings = info.hasSiblings();
@@ -1221,7 +1226,6 @@ nsresult ContentChild::ProvideWindowCommon(
   
   
   
-  
 
   
   
@@ -1232,15 +1236,12 @@ nsresult ContentChild::ProvideWindowCommon(
     }
   });
 
-  {
-    
-    
-    
-    
-    
-    
-    AutoSuppressEventHandlingAndSuspend seh(browsingContext->Group());
+  
+  if (parentTopInnerWindow) {
+    parentTopInnerWindow->Suspend();
+  }
 
+  {
     AutoNoJSAPI nojsapi;
 
     
@@ -1251,6 +1252,10 @@ nsresult ContentChild::ProvideWindowCommon(
     MOZ_RELEASE_ASSERT(ready,
                        "We are on the main thread, so we should not exit this "
                        "loop without ready being true.");
+  }
+
+  if (parentTopInnerWindow) {
+    parentTopInnerWindow->Resume();
   }
 
   
