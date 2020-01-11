@@ -9,6 +9,12 @@
 
 
 
+
+
+
+
+
+
 const EXPORTED_SYMBOLS = ["BaseConduit", "ConduitsChild"];
 
 
@@ -146,7 +152,16 @@ class ConduitsChild extends JSWindowActorChild {
 
 
 
-  receiveMessage({ name, data: { target, arg, query, sender } }) {
+
+
+  receiveMessage({ name, data }) {
+    
+    if (Array.isArray(data)) {
+      let run = data => this.receiveMessage({ name, data });
+      return Promise.all(data.map(data => run(data).catch(Cu.reportError)));
+    }
+
+    let { target, arg, query, sender } = data;
     let conduit = this.conduits.get(target);
     if (!conduit) {
       throw new Error(`${name} for closed conduit ${target}: ${uneval(arg)}`);

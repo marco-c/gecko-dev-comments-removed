@@ -1134,9 +1134,6 @@ ParentAPIManager = {
     let { childId } = data;
     let handlingUserInput = false;
 
-    
-    
-
     let listener = async (...listenerArgs) => {
       let result = await this.conduit.queryRunListener(childId, {
         childId,
