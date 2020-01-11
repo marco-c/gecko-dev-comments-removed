@@ -205,6 +205,8 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   static bool UseWebRender();
 
+  static bool CanMigrateMacGPUs();
+
   
 
 
