@@ -11,6 +11,10 @@ logging.basicConfig()
 logger = logging.getLogger("tc-download")
 
 
+
+
+TASKCLUSTER_ROOT_URL = 'https://taskcluster.net'
+
 def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--ref", action="store", default="master",
@@ -74,8 +78,13 @@ def run(*args, **kwargs):
         return 1
 
     for taskgroup in taskgroups:
-        taskgroup_url = "https://queue.taskcluster.net/v1/task-group/%s/list"
-        artifacts_list_url = "https://queue.taskcluster.net/v1/task/%s/artifacts"
+        if TASKCLUSTER_ROOT_URL == 'https://taskcluster.net':
+            
+            taskgroup_url = "https://queue.taskcluster.net/v1/task-group/%s/list"
+            artifacts_list_url = "https://queue.taskcluster.net/v1/task/%s/artifacts"
+        else:
+            taskgroup_url = TASKCLUSTER_ROOT_URL + "/api/queue/v1/task-group/%s/list"
+            artifacts_list_url = TASKCLUSTER_ROOT_URL + "/api/queue/v1/task/%s/artifacts"
         tasks = get_json(taskgroup_url % taskgroup, "tasks")
         for task in tasks:
             task_id = task["status"]["taskId"]
