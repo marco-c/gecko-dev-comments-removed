@@ -247,10 +247,21 @@ const observer = {
 
       
       case "input": {
-        if (docState.generatedPasswordFields.has(aEvent.target)) {
+        let field = aEvent.target;
+        if (docState.generatedPasswordFields.has(field)) {
           LoginManagerChild.forWindow(
             window
           )._maybeStopTreatingAsGeneratedPasswordField(aEvent);
+        }
+        if (
+          field.hasBeenTypePassword ||
+          LoginHelper.isUsernameFieldType(field)
+        ) {
+          
+          let formLikeRoot = FormLikeFactory.findRootForField(field);
+          if (formLikeRoot == aEvent.currentTarget) {
+            docState.fieldModificationsByRootElement.set(formLikeRoot, true);
+          }
         }
         break;
       }
@@ -877,6 +888,12 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       return;
     }
 
+    
+    form.rootElement.addEventListener("input", observer, {
+      capture: true,
+      mozSystemGroup: true,
+    });
+
     this._getLoginDataFromParent(form, { showMasterPassword: true })
       .then(this.loginsFound.bind(this))
       .catch(Cu.reportError);
@@ -906,6 +923,7 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
 
         lastSubmittedValuesByRootElement: new WeakMap(),
+        fieldModificationsByRootElement: new WeakMap(),
         loginFormRootElements: new WeakSet(),
       };
       this._loginFormStateByDocument.set(document, loginFormState);
@@ -1568,9 +1586,17 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       return;
     }
 
-    let autoFilledLogin = this.stateForDocument(doc).fillsByRootElement.get(
-      form.rootElement
-    );
+    let docState = this.stateForDocument(doc);
+    let fieldsModified = this._formHasModifiedFields(formLikeRoot);
+    if (!fieldsModified && LoginHelper.userInputRequiredToCapture) {
+      
+      log(
+        "(form submission ignored -- submitting values that are not changed by the user)"
+      );
+      return;
+    }
+
+    let autoFilledLogin = docState.fillsByRootElement.get(form.rootElement);
 
     let detail = {
       origin,
@@ -1825,7 +1851,6 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     }
 
     log("_fillForm", form.elements);
-    let usernameField;
     
     let autofillResult = -1;
     const AUTOFILL_RESULT = {
@@ -1843,6 +1868,16 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       PASSWORD_AUTOCOMPLETE_NEW_PASSWORD: 11,
     };
 
+    
+    
+    
+    
+    let [usernameField, passwordField] = this._getFormFields(
+      form,
+      false,
+      recipes
+    );
+
     try {
       
       
@@ -1856,17 +1891,6 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
         autofillResult = AUTOFILL_RESULT.NO_SAVED_LOGINS;
         return;
       }
-
-      
-      
-      
-      
-      let passwordField;
-      [usernameField, passwordField] = this._getFormFields(
-        form,
-        false,
-        recipes
-      );
 
       
       
@@ -2158,6 +2182,14 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
         formid: form.rootElement.id,
       });
     }
+  }
+
+  _formHasModifiedFields(formLikeRoot) {
+    let state = this.stateForDocument(formLikeRoot.ownerDocument);
+    let fieldsModified = state.fieldModificationsByRootElement.get(
+      formLikeRoot
+    );
+    return fieldsModified;
   }
 
   
