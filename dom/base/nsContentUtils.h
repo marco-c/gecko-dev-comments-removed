@@ -133,6 +133,8 @@ class TextEditor;
 enum class StorageAccess;
 
 namespace dom {
+class BrowsingContext;
+class BrowsingContextGroup;
 class ContentFrameMessageManager;
 struct CustomElementDefinition;
 class DataTransfer;
@@ -3414,6 +3416,26 @@ class MOZ_STACK_CLASS nsAutoScriptBlockerSuppressNodeRemoved
 
 namespace mozilla {
 namespace dom {
+
+
+
+
+
+
+
+
+
+class MOZ_RAII AutoSuppressEventHandlingAndSuspend {
+ public:
+  explicit AutoSuppressEventHandlingAndSuspend(BrowsingContextGroup* aGroup);
+  ~AutoSuppressEventHandlingAndSuspend();
+
+ private:
+  void SuppressBrowsingContext(BrowsingContext* aBC);
+
+  AutoTArray<RefPtr<Document>, 16> mDocuments;
+  AutoTArray<nsCOMPtr<nsPIDOMWindowInner>, 16> mWindows;
+};
 
 class TreeOrderComparator {
  public:
