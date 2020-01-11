@@ -37,6 +37,8 @@ var gExceptionPaths = [
 
   
   "resource://activity-stream/data/content/tippytop/images/",
+  
+  "resource://activity-stream/data/content/assets/remote/",
 
   
   "resource://pdf.js/web/images/",
