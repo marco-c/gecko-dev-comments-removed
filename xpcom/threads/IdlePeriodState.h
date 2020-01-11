@@ -84,8 +84,9 @@ class IdlePeriodState {
   
   
   
-  TimeStamp PeekIdleDeadline(const MutexAutoUnlock& aProofOfUnlock) {
-    return GetIdleDeadlineInternal(true, aProofOfUnlock);
+  
+  void CachePeekedIdleDeadline(const MutexAutoUnlock& aProofOfUnlock) {
+    mCachedIdleDeadline = GetIdleDeadlineInternal(true, aProofOfUnlock);
   }
 
   void SetIdleToken(uint64_t aId, TimeDuration aDuration);

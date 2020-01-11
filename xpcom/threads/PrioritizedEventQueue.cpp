@@ -299,11 +299,12 @@ bool PrioritizedEventQueue::HasReadyEvent(const MutexAutoLock& aProofOfLock) {
   }
 
   
-  TimeStamp idleDeadline;
   {
     MutexAutoUnlock unlock(*mMutex);
-    idleDeadline = mIdlePeriodState.PeekIdleDeadline(unlock);
+    mIdlePeriodState.CachePeekedIdleDeadline(unlock);
   }
+  TimeStamp idleDeadline = mIdlePeriodState.GetCachedIdleDeadline();
+  mIdlePeriodState.ClearCachedIdleDeadline();
 
   
   
