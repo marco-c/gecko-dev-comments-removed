@@ -243,7 +243,7 @@ class SearchConfigTest {
 
   async _getLocales() {
     if (TEST_DEBUG) {
-      return ["be", "en-US", "kk", "tr", "ru", "zh-CN", "ach"];
+      return ["be", "en-US", "kk", "tr", "ru", "zh-CN", "ach", "unknown"];
     }
     const data = await OS.File.read(do_get_file("all-locales").path, {
       encoding: "utf-8",
@@ -255,6 +255,10 @@ class SearchConfigTest {
     
     
     locales = locales.map(l => (l == "ja-JP-mac" ? "ja-JP-macos" : l));
+    
+    
+    
+    locales.push("unknown");
     return locales;
   }
 
