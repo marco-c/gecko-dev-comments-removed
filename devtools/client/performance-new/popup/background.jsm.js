@@ -308,6 +308,42 @@ function revertRecordingPreferences() {
   Services.prefs.clearUserPref(DURATION_PREF);
 }
 
+
+
+
+
+let _defaultPrefsForOlderFirefox;
+
+
+
+
+
+
+
+
+
+
+function getDefaultRecordingPreferencesForOlderFirefox() {
+  if (!_defaultPrefsForOlderFirefox) {
+    _defaultPrefsForOlderFirefox = {
+      entries: 10000000, 
+      
+      duration: 0,
+      interval: 1000, 
+      features: ["js", "leaf", "stackwalk"],
+      threads: ["GeckoMain", "Compositor"],
+      objdirs: [],
+    };
+
+    if (AppConstants.platform === "android") {
+      
+      _defaultPrefsForOlderFirefox.features.push("java");
+    }
+  }
+
+  return _defaultPrefsForOlderFirefox;
+}
+
 var EXPORTED_SYMBOLS = [
   "captureProfile",
   "startProfiler",
@@ -319,4 +355,5 @@ var EXPORTED_SYMBOLS = [
   "getRecordingPreferencesFromBrowser",
   "setRecordingPreferencesOnBrowser",
   "revertRecordingPreferences",
+  "getDefaultRecordingPreferencesForOlderFirefox",
 ];
