@@ -304,7 +304,7 @@ class VorbisState : public OggCodecState {
 
   
   
-  nsresult ReconstructVorbisGranulepos();
+  void ReconstructVorbisGranulepos();
 
   
   
