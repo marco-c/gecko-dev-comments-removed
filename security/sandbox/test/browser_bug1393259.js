@@ -130,7 +130,7 @@ add_task(async function() {
       unregisterFont(privateFontPath,  false);
 
       
-      let origWidth = await ContentTask.spawn(aBrowser, {}, async function() {
+      let origWidth = await SpecialPowers.spawn(aBrowser, [], async function() {
         let window = content.window.wrappedJSObject;
         let contentDiv = window.document.getElementById("content");
         return contentDiv.offsetWidth;
@@ -140,7 +140,7 @@ add_task(async function() {
       await registerFont(privateFontPath);
 
       
-      await ContentTask.spawn(aBrowser, {}, async function() {
+      await SpecialPowers.spawn(aBrowser, [], async function() {
         let window = content.window.wrappedJSObject;
         let contentDiv = window.document.getElementById("content");
         contentDiv.style.fontFamily = "'Fira Sans', monospace";
@@ -149,7 +149,7 @@ add_task(async function() {
       
       
       while (true) {
-        let width = await ContentTask.spawn(aBrowser, {}, async function() {
+        let width = await SpecialPowers.spawn(aBrowser, [], async function() {
           let window = content.window.wrappedJSObject;
           let contentDiv = window.document.getElementById("content");
           return contentDiv.offsetWidth;
@@ -163,7 +163,7 @@ add_task(async function() {
       }
 
       
-      let fontList = await ContentTask.spawn(aBrowser, {}, async function() {
+      let fontList = await SpecialPowers.spawn(aBrowser, [], async function() {
         let window = content.window.wrappedJSObject;
         let range = window.document.createRange();
         let contentDiv = window.document.getElementById("content");

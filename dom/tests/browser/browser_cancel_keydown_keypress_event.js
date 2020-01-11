@@ -19,7 +19,7 @@ add_task(async function() {
   let browser = tab.linkedBrowser;
 
   
-  await ContentTask.spawn(browser, null, async function() {
+  await SpecialPowers.spawn(browser, [], async function() {
     let input = content.document.getElementById("input");
     input.focus();
     input.value = "abcd";
@@ -31,7 +31,7 @@ add_task(async function() {
   await dialogShown;
 
   
-  await ContentTask.spawn(browser, null, async function() {
+  await SpecialPowers.spawn(browser, [], async function() {
     let result = content.document.getElementById("result").innerHTML;
     info("submit result: " + result);
     is(result, "not submitted", "form should not have submitted");

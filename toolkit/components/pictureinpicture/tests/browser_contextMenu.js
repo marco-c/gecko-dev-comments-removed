@@ -80,7 +80,7 @@ add_task(async () => {
         let pipWin = await triggerPictureInPicture(browser, videoID);
         ok(pipWin, "Got Picture-in-Picture window.");
 
-        await ContentTask.spawn(browser, videoID, async videoID => {
+        await SpecialPowers.spawn(browser, [videoID], async videoID => {
           let video = content.document.getElementById(videoID);
           await ContentTaskUtils.waitForCondition(() => {
             return video.isCloningElementVisually;
@@ -99,10 +99,8 @@ add_task(async () => {
         );
         await closeContextMenu(menu);
 
-        let videoNotCloning = ContentTask.spawn(
-          browser,
-          videoID,
-          async videoID => {
+        let videoNotCloning = SpecialPowers.spawn(
+          browser, [videoID], async videoID => {
             let video = content.document.getElementById(videoID);
             await ContentTaskUtils.waitForCondition(() => {
               return !video.isCloningElementVisually;
@@ -127,7 +125,7 @@ add_task(async () => {
         
         
         
-        await ContentTask.spawn(browser, videoID, async videoID => {
+        await SpecialPowers.spawn(browser, [videoID], async videoID => {
           
           
           let newVideo = content.document.createElement("video");

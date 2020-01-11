@@ -15,7 +15,7 @@ add_task(async function() {
 
   
   await selectJsonViewContentTab("headers");
-  await ContentTask.spawn(tab.linkedBrowser, null, async function() {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
     const responseHeaders = content.document.querySelector(".netHeadersGroup");
     const names = responseHeaders.querySelectorAll(".netInfoParamName");
     let found = false;

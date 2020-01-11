@@ -187,7 +187,7 @@ body > div > div {width: 1000px;height: 1000px;}\
 
     
     
-    await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
+    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
       var iframe = content.document.getElementById("iframe");
 
       if (iframe) {
@@ -259,15 +259,13 @@ body > div > div {width: 1000px;height: 1000px;}\
     let scrollVert = test.expected & expectScrollVert;
     let scrollHori = test.expected & expectScrollHori;
 
-    await ContentTask.spawn(
-      gBrowser.selectedBrowser,
-      {
+    await SpecialPowers.spawn(
+      gBrowser.selectedBrowser, [{
         scrollVert,
         scrollHori,
         elemid: test.elem,
         checkWindow: test.testwindow,
-      },
-      async function(args) {
+      }], async function(args) {
         let msg = "";
         if (args.checkWindow) {
           if (

@@ -35,7 +35,7 @@ add_task(async function show_pointerlock_warning_escape() {
   ok(true, "Pointerlock warning hidden");
 
   
-  await ContentTask.spawn(tab.linkedBrowser, null, async function() {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
     Assert.equal(content.document.pointerLockElement, null);
   });
 

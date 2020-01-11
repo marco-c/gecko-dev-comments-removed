@@ -25,7 +25,7 @@ add_task(async function() {
   
   
   let promiseNewWindow = BrowserTestUtils.waitForNewWindow({ url: TEST_HTTP });
-  await ContentTask.spawn(browser, TEST_HTTP, uri => {
+  await SpecialPowers.spawn(browser, [TEST_HTTP], uri => {
     content.open(uri, "_blank");
   });
   let win = await promiseNewWindow;

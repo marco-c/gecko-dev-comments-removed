@@ -42,7 +42,7 @@ function test() {
         is(tabState.entries[0].url, baseURL + 0, "... but not more");
 
         
-        ContentTask.spawn(tab.linkedBrowser, null, function() {
+        SpecialPowers.spawn(tab.linkedBrowser, [], function() {
           content.window.document.querySelector("a").click();
         }).then(flushAndCheck);
 

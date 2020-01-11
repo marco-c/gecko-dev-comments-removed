@@ -3,7 +3,7 @@
 
 
 async function checkState(browser) {
-  await ContentTask.spawn(browser, null, () => {
+  await SpecialPowers.spawn(browser, [], () => {
     
     
     
@@ -17,7 +17,7 @@ async function checkState(browser) {
   });
 
   
-  let popstatePromise = ContentTask.spawn(browser, null, async () => {
+  let popstatePromise = SpecialPowers.spawn(browser, [], async () => {
     let event = await ContentTaskUtils.waitForEvent(this, "popstate", true);
     ok(event.state, "Event should have a state property.");
 
@@ -41,12 +41,12 @@ async function checkState(browser) {
 
   
   
-  await ContentTask.spawn(browser, null, () => {});
+  await SpecialPowers.spawn(browser, [], () => {});
   browser.goBack();
 
   await popstatePromise;
 
-  popstatePromise = ContentTask.spawn(browser, null, async () => {
+  popstatePromise = SpecialPowers.spawn(browser, [], async () => {
     let event = await ContentTaskUtils.waitForEvent(this, "popstate", true);
 
     
@@ -73,7 +73,7 @@ async function checkState(browser) {
 
   
   
-  await ContentTask.spawn(browser, null, () => {});
+  await SpecialPowers.spawn(browser, [], () => {});
   browser.goForward();
   await popstatePromise;
 }
@@ -103,7 +103,7 @@ add_task(async function test() {
         history.pushState({ obj2: 2 }, "title-obj2", "?page2");
         history.replaceState({ obj3: /^a$/ }, "title-obj3");
       }
-      await ContentTask.spawn(browser, null, contentTest);
+      await SpecialPowers.spawn(browser, [], contentTest);
       await TabStateFlusher.flush(browser);
 
       state = ss.getTabState(gBrowser.getTabForBrowser(browser));
