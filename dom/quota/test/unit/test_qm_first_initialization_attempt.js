@@ -60,6 +60,119 @@ const testcases = [
       initFailureThenSuccess: [1, 1, 0],
     },
   },
+  {
+    key: "PersistentOrigin",
+    testingInitFunction: [
+      function() {
+        return initStorageAndOrigin(
+          getPrincipal("https://example1.com"),
+          "persistent"
+        );
+      },
+      function() {
+        return initStorageAndOrigin(
+          getPrincipal("https://example2.com"),
+          "persistent"
+        );
+      },
+      function() {
+        return initStorageAndOrigin(
+          getPrincipal("https://example3.com"),
+          "default"
+        );
+      },
+    ],
+    get originFiles() {
+      return [
+        getRelativeFile("storage/permanent/https+++example1.com"),
+        getRelativeFile("storage/permanent/https+++example2.com"),
+        getRelativeFile("storage/default/https+++example3.com"),
+      ];
+    },
+    async settingForForcingInitFailure() {
+      
+      
+      
+      let request = initTemporaryStorage();
+      await requestFinished(request);
+
+      for (let originFile of this.originFiles) {
+        originFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, 0o666);
+      }
+    },
+    removeSetting() {
+      for (let originFile of this.originFiles) {
+        originFile.remove(false);
+      }
+    },
+    expectedResult: {
+      
+      
+      initFailure: [2, 0],
+      initFailureThenSuccess: [2, 2, 0],
+    },
+  },
+  {
+    key: "TemporaryOrigin",
+    testingInitFunction: [
+      function() {
+        return initStorageAndOrigin(
+          getPrincipal("https://example.com"),
+          "temporary"
+        );
+      },
+      function() {
+        return initStorageAndOrigin(
+          getPrincipal("https://example.com"),
+          "default"
+        );
+      },
+      function() {
+        return initStorageAndOrigin(
+          getPrincipal("https://example1.com"),
+          "default"
+        );
+      },
+      function() {
+        return initStorageAndOrigin(
+          getPrincipal("https://example2.com"),
+          "persistent"
+        );
+      },
+    ],
+    get originFiles() {
+      return [
+        getRelativeFile("storage/temporary/https+++example.com"),
+        getRelativeFile("storage/default/https+++example.com"),
+        getRelativeFile("storage/default/https+++example1.com"),
+        getRelativeFile("storage/permanent/https+++example2.com"),
+      ];
+    },
+    async settingForForcingInitFailure() {
+      
+      
+      
+      let request = initTemporaryStorage();
+      await requestFinished(request);
+
+      for (let originFile of this.originFiles) {
+        originFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, 0o666);
+      }
+    },
+    removeSetting() {
+      for (let originFile of this.originFiles) {
+        originFile.remove(false);
+      }
+    },
+    expectedResult: {
+      
+      
+      
+      
+      initFailure: [2, 0],
+      initFailureThenSuccess: [2, 2, 0],
+    },
+  },
 ];
 
 function verifyResult(histogram, key, expectedResult) {
@@ -110,12 +223,18 @@ async function testSteps() {
       
       
       for (let i = 0; i < 2; ++i) {
-        request = testcase.testingInitFunction();
-        try {
-          await requestFinished(request);
-          ok(expectedInitResult, msg);
-        } catch (ex) {
-          ok(!expectedInitResult, msg);
+        const iterableInitFunc =
+          typeof testcase.testingInitFunction[Symbol.iterator] === "function"
+            ? testcase.testingInitFunction
+            : [testcase.testingInitFunction];
+        for (let initFunc of iterableInitFunc) {
+          request = initFunc();
+          try {
+            await requestFinished(request);
+            ok(expectedInitResult, msg);
+          } catch (ex) {
+            ok(!expectedInitResult, msg);
+          }
         }
       }
 

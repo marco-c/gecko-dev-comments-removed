@@ -616,6 +616,14 @@ class QuotaManager final : public BackgroundThreadObject {
 
   
   
+  
+  
+  
+  
+  nsDataHashtable<nsCStringHashKey, uint8_t> mOriginInitializationsAttempted;
+
+  
+  
   AutoTArray<RefPtr<Client>, Client::TYPE_MAX> mClients;
 
   AutoTArray<Client::Type, Client::TYPE_MAX> mAllClientTypes;
