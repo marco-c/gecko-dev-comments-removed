@@ -999,6 +999,7 @@ nsSHEntry::CreateLoadInfo(nsDocShellLoadState** aLoadState) {
   loadState->SetLoadFlags(flags);
 
   loadState->SetFirstParty(true);
+  loadState->SetSHEntry(this);
 
   loadState.forget(aLoadState);
   return NS_OK;
@@ -1009,20 +1010,6 @@ nsSHEntry::GetBfcacheID(uint64_t* aBFCacheID) {
   MOZ_CRASH(
       "Classes inheriting from nsSHEntry should implement this. "
       "Bug 1546344 will clean this up.");
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsLegacySHEntry::CreateLoadInfo(nsDocShellLoadState** aLoadState) {
-  RefPtr<nsDocShellLoadState> loadState;
-  nsSHEntry::CreateLoadInfo(getter_AddRefs(loadState));
-  
-  
-  
-  
-  
-  loadState->SetSHEntry(this);
-  loadState.forget(aLoadState);
   return NS_OK;
 }
 
