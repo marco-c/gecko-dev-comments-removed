@@ -2561,6 +2561,7 @@
         replayExecution,
         csp,
         skipLoad,
+        batchInsertingTabs,
       } = {}
     ) {
       
@@ -2619,38 +2620,6 @@
 
       var uriIsAboutBlank = aURI == "about:blank";
 
-      if (!noInitialLabel) {
-        if (isBlankPageURL(aURI)) {
-          t.setAttribute("label", this.tabContainer.emptyTabTitle);
-        } else {
-          
-          this.setInitialTabTitle(t, aURI, { beforeTabOpen: true });
-        }
-      }
-
-      
-      
-      if (userContextId == null && openerTab) {
-        userContextId = openerTab.getAttribute("usercontextid") || 0;
-      }
-
-      if (userContextId) {
-        t.setAttribute("usercontextid", userContextId);
-        ContextualIdentityService.setTabStyle(t);
-      }
-
-      if (skipBackgroundNotify) {
-        t.setAttribute("skipbackgroundnotify", true);
-      }
-
-      if (pinned) {
-        t.setAttribute("pinned", "true");
-      }
-
-      t.classList.add("tabbrowser-tab");
-
-      this.tabContainer._unlockTabSizing();
-
       
       
       
@@ -2659,89 +2628,33 @@
         !pinned &&
         this.tabContainer.getAttribute("overflow") != "true" &&
         this.animationsEnabled;
-      if (!animate) {
-        t.setAttribute("fadein", "true");
 
-        
-        
-        setTimeout(
-          function(tabContainer) {
-            tabContainer._handleNewTab(t);
-          },
-          0,
-          this.tabContainer
-        );
-      }
+      this.setTabAttributes(t, {
+        animate,
+        noInitialLabel,
+        aURI,
+        userContextId,
+        openerTab,
+        skipBackgroundNotify,
+        pinned,
+        skipAnimation,
+      });
 
       let usingPreloadedContent = false;
       let b;
 
       try {
-        
-        if (ownerTab) {
-          t.owner = ownerTab;
-        }
-
-        
-        if (typeof index != "number") {
+        if (!batchInsertingTabs) {
           
-          if (
-            !bulkOrderedOpen &&
-            ((openerTab &&
-              Services.prefs.getBoolPref(
-                "browser.tabs.insertRelatedAfterCurrent"
-              )) ||
-              Services.prefs.getBoolPref("browser.tabs.insertAfterCurrent"))
-          ) {
-            let lastRelatedTab =
-              openerTab && this._lastRelatedTabMap.get(openerTab);
-            let previousTab = lastRelatedTab || openerTab || this.selectedTab;
-            if (previousTab.multiselected) {
-              index = this.selectedTabs[this.selectedTabs.length - 1]._tPos + 1;
-            } else {
-              index = previousTab._tPos + 1;
-            }
-
-            if (lastRelatedTab) {
-              lastRelatedTab.owner = null;
-            } else if (openerTab) {
-              t.owner = openerTab;
-            }
-            
-            if (openerTab) {
-              this._lastRelatedTabMap.set(openerTab, t);
-            }
-          } else {
-            index = Infinity;
-          }
+          
+          this.updateTabPosition(t, {
+            index,
+            ownerTab,
+            openerTab,
+            pinned,
+            bulkOrderedOpen,
+          });
         }
-        
-        if (pinned) {
-          index = Math.max(index, 0);
-          index = Math.min(index, this._numPinnedTabs);
-        } else {
-          index = Math.max(index, this._numPinnedTabs);
-          index = Math.min(index, this.tabs.length);
-        }
-
-        let tabAfter = this.tabs[index] || null;
-        this._invalidateCachedTabs();
-        
-        
-        t.initialize();
-        this.tabContainer.insertBefore(t, tabAfter);
-        if (tabAfter) {
-          this._updateTabsAfterInsert();
-        } else {
-          t._tPos = index;
-        }
-
-        if (pinned) {
-          this._updateTabBarForPinnedTabs();
-        }
-        this.tabContainer._setPositionalAttributes();
-
-        TabBarVisibility.update();
 
         
         
@@ -2861,74 +2774,69 @@
       
       this.setDefaultIcon(t, aURIObject);
 
-      
-      
-      
-      delete t.initializingTab;
-      let evt = new CustomEvent("TabOpen", {
-        bubbles: true,
-        detail: eventDetail || {},
-      });
-      t.dispatchEvent(evt);
+      if (!batchInsertingTabs) {
+        
+        this._fireOpenTab(t, eventDetail);
 
-      if (
-        !usingPreloadedContent &&
-        originPrincipal &&
-        originStoragePrincipal &&
-        aURI
-      ) {
-        let { URI_INHERITS_SECURITY_CONTEXT } = Ci.nsIProtocolHandler;
+        if (
+          !usingPreloadedContent &&
+          originPrincipal &&
+          originStoragePrincipal &&
+          aURI
+        ) {
+          let { URI_INHERITS_SECURITY_CONTEXT } = Ci.nsIProtocolHandler;
+          
+          
+          if (
+            !aURIObject ||
+            doGetProtocolFlags(aURIObject) & URI_INHERITS_SECURITY_CONTEXT
+          ) {
+            b.createAboutBlankContentViewer(
+              originPrincipal,
+              originStoragePrincipal
+            );
+          }
+        }
+
         
         
         if (
-          !aURIObject ||
-          doGetProtocolFlags(aURIObject) & URI_INHERITS_SECURITY_CONTEXT
+          !usingPreloadedContent &&
+          (!uriIsAboutBlank || !allowInheritPrincipal) &&
+          !skipLoad
         ) {
-          b.createAboutBlankContentViewer(
-            originPrincipal,
-            originStoragePrincipal
-          );
-        }
-      }
+          
+          
+          if (aURI && !gInitialPages.includes(aURI)) {
+            b.userTypedValue = aURI;
+          }
 
-      
-      
-      if (
-        !usingPreloadedContent &&
-        (!uriIsAboutBlank || !allowInheritPrincipal) &&
-        !skipLoad
-      ) {
-        
-        
-        if (aURI && !gInitialPages.includes(aURI)) {
-          b.userTypedValue = aURI;
-        }
-
-        let flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
-        if (allowThirdPartyFixup) {
-          flags |= Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
-          flags |= Ci.nsIWebNavigation.LOAD_FLAGS_FIXUP_SCHEME_TYPOS;
-        }
-        if (fromExternal) {
-          flags |= Ci.nsIWebNavigation.LOAD_FLAGS_FROM_EXTERNAL;
-        }
-        if (allowMixedContent) {
-          flags |= Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_MIXED_CONTENT;
-        }
-        if (!allowInheritPrincipal) {
-          flags |= Ci.nsIWebNavigation.LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
-        }
-        try {
-          b.loadURI(aURI, {
-            flags,
-            triggeringPrincipal,
-            referrerInfo,
-            charset,
-            postData,
-            csp,
-          });
-        } catch (ex) {
-          Cu.reportError(ex);
+          let flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
+          if (allowThirdPartyFixup) {
+            flags |= Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
+            flags |= Ci.nsIWebNavigation.LOAD_FLAGS_FIXUP_SCHEME_TYPOS;
+          }
+          if (fromExternal) {
+            flags |= Ci.nsIWebNavigation.LOAD_FLAGS_FROM_EXTERNAL;
+          }
+          if (allowMixedContent) {
+            flags |= Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_MIXED_CONTENT;
+          }
+          if (!allowInheritPrincipal) {
+            flags |= Ci.nsIWebNavigation.LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
+          }
+          try {
+            b.loadURI(aURI, {
+              flags,
+              triggeringPrincipal,
+              referrerInfo,
+              charset,
+              postData,
+              csp,
+            });
+          } catch (ex) {
+            Cu.reportError(ex);
+          }
         }
       }
 
@@ -2949,6 +2857,134 @@
       }
 
       return t;
+    },
+
+    addMultipleTabs(restoreTabsLazily, window, selectTab, aPropertiesTabs) {
+      let tabs = [];
+      let tabsFragment = document.createDocumentFragment();
+      let tabToSelect = null;
+      let hiddenTabs = new Map();
+
+      
+      
+      
+      
+      for (var i = 0; i < aPropertiesTabs.length; i++) {
+        let tabData = aPropertiesTabs[i];
+
+        let userContextId = tabData.userContextId;
+        let select = i == selectTab - 1;
+        let tab;
+
+        
+        
+        if (select && this.selectedTab.userContextId == userContextId) {
+          tab = this.selectedTab;
+          if (!tabData.pinned) {
+            this.unpinTab(tab);
+          }
+          if (
+            window.gMultiProcessBrowser &&
+            !tab.linkedBrowser.isRemoteBrowser
+          ) {
+            this.updateBrowserRemoteness(tab.linkedBrowser, {
+              remoteType: E10SUtils.DEFAULT_REMOTE_TYPE,
+            });
+          }
+        }
+
+        
+        if (!tab) {
+          let createLazyBrowser =
+            restoreTabsLazily && !select && !tabData.pinned;
+
+          let url = "about:blank";
+          if (createLazyBrowser && tabData.entries && tabData.entries.length) {
+            
+            
+            let activeIndex = (tabData.index || tabData.entries.length) - 1;
+            
+            activeIndex = Math.min(activeIndex, tabData.entries.length - 1);
+            activeIndex = Math.max(activeIndex, 0);
+            url = tabData.entries[activeIndex].url;
+          }
+
+          
+          
+          
+          tab = this.addTrustedTab(url, {
+            createLazyBrowser,
+            skipAnimation: true,
+            allowInheritPrincipal: true,
+            noInitialLabel: true,
+            userContextId,
+            skipBackgroundNotify: true,
+            bulkOrderedOpen: true,
+            batchInsertingTabs: true,
+          });
+
+          if (select) {
+            tabToSelect = tab;
+          }
+        }
+
+        tabs.push(tab);
+
+        if (tab.pinned) {
+          tabData.hidden = false;
+        }
+
+        if (tab.hidden) {
+          tab.setAttribute("hidden", "true");
+          hiddenTabs.set(tab, tabData.extData && tabData.extData.hiddenBy);
+        }
+
+        if (tabData.pinned) {
+          this.pinTab(tab); 
+        } else {
+          tabsFragment.appendChild(tab);
+        }
+
+        tab.initialize();
+      }
+
+      
+      this.tabContainer.appendChild(tabsFragment);
+
+      for (let [tab, hiddenBy] of hiddenTabs) {
+        let event = document.createEvent("Events");
+        event.initEvent("TabHide", true, false);
+        tab.dispatchEvent(event);
+        if (hiddenBy) {
+          SessionStore.setCustomTabValue(tab, "hiddenBy", hiddenBy);
+        }
+      }
+
+      this._invalidateCachedTabs();
+
+      
+      
+      if (tabToSelect) {
+        let leftoverTab = this.selectedTab;
+        this.selectedTab = tabToSelect;
+        this.removeTab(leftoverTab);
+      }
+
+      if (tabs.length > 1 || !tabs[0].selected) {
+        this._updateTabsAfterInsert();
+        this.tabContainer._setPositionalAttributes();
+        TabBarVisibility.update();
+
+        
+        
+        for (let tab of tabs) {
+          if (tabToSelect || !tab.selected) {
+            this._fireOpenTab(tab, {});
+          }
+        }
+      }
+
+      return tabs;
     },
 
     moveTabsToStart(contextTab) {
@@ -3043,6 +3079,155 @@
       }
 
       return reallyClose;
+    },
+
+    setTabAttributes(
+      tab,
+      {
+        animate,
+        noInitialLabel,
+        aURI,
+        userContextId,
+        openerTab,
+        skipBackgroundNotify,
+        pinned,
+        skipAnimation,
+      } = {}
+    ) {
+      if (!noInitialLabel) {
+        if (isBlankPageURL(aURI)) {
+          tab.setAttribute("label", this.tabContainer.emptyTabTitle);
+        } else {
+          
+          this.setInitialTabTitle(tab, aURI, { beforeTabOpen: true });
+        }
+      }
+
+      
+      
+      if (userContextId == null && openerTab) {
+        userContextId = openerTab.getAttribute("usercontextid") || 0;
+      }
+
+      if (userContextId) {
+        tab.setAttribute("usercontextid", userContextId);
+        ContextualIdentityService.setTabStyle(tab);
+      }
+
+      if (skipBackgroundNotify) {
+        tab.setAttribute("skipbackgroundnotify", true);
+      }
+
+      if (pinned) {
+        tab.setAttribute("pinned", "true");
+      }
+
+      tab.classList.add("tabbrowser-tab");
+
+      this.tabContainer._unlockTabSizing();
+
+      if (!animate) {
+        tab.setAttribute("fadein", "true");
+
+        
+        
+        setTimeout(
+          function(tabContainer) {
+            tabContainer._handleNewTab(tab);
+          },
+          0,
+          this.tabContainer
+        );
+      }
+    },
+
+    
+
+
+    updateTabPosition(
+      tab,
+      { index, ownerTab, openerTab, pinned, bulkOrderedOpen } = {}
+    ) {
+      
+      if (ownerTab) {
+        tab.owner = ownerTab;
+      }
+
+      
+      if (typeof index != "number") {
+        
+        if (
+          !bulkOrderedOpen &&
+          ((openerTab &&
+            Services.prefs.getBoolPref(
+              "browser.tabs.insertRelatedAfterCurrent"
+            )) ||
+            Services.prefs.getBoolPref("browser.tabs.insertAfterCurrent"))
+        ) {
+          let lastRelatedTab =
+            openerTab && this._lastRelatedTabMap.get(openerTab);
+          let previousTab = lastRelatedTab || openerTab || this.selectedTab;
+          if (previousTab.multiselected) {
+            index = this.selectedTabs[this.selectedTabs.length - 1]._tPos + 1;
+          } else {
+            index = previousTab._tPos + 1;
+          }
+
+          if (lastRelatedTab) {
+            lastRelatedTab.owner = null;
+          } else if (openerTab) {
+            tab.owner = openerTab;
+          }
+          
+          if (openerTab) {
+            this._lastRelatedTabMap.set(openerTab, tab);
+          }
+        } else {
+          index = Infinity;
+        }
+      }
+      
+      if (pinned) {
+        index = Math.max(index, 0);
+        index = Math.min(index, this._numPinnedTabs);
+      } else {
+        index = Math.max(index, this._numPinnedTabs);
+        index = Math.min(index, this.tabs.length);
+      }
+
+      let tabAfter = this.tabs[index] || null;
+      this._invalidateCachedTabs();
+      
+      
+      tab.initialize();
+      this.tabContainer.insertBefore(tab, tabAfter);
+      if (tabAfter) {
+        this._updateTabsAfterInsert();
+      } else {
+        tab._tPos = index;
+      }
+
+      if (pinned) {
+        this._updateTabBarForPinnedTabs();
+      }
+      this.tabContainer._setPositionalAttributes();
+
+      TabBarVisibility.update();
+    },
+
+    
+
+
+    _fireOpenTab(tab, eventDetail) {
+      
+      
+      
+      delete tab.initializingTab;
+      let evt = new CustomEvent("TabOpen", {
+        bubbles: true,
+        detail: eventDetail || {},
+      });
+      tab.dispatchEvent(evt);
     },
 
     getTabsToTheEndFrom(aTab) {
