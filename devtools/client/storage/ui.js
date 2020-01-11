@@ -1067,9 +1067,13 @@ class StorageUI {
       }
 
       if (!columnName) {
-        console.error(
-          "Unable to localize table header type:" + type + " key:" + f.name
-        );
+        
+        
+        if (!f.private) {
+          console.error(
+            "Unable to localize table header type:" + type + " key:" + f.name
+          );
+        }
       } else {
         columns[f.name] = columnName;
       }
