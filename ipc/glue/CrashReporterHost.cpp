@@ -8,7 +8,6 @@
 #include "CrashReporterMetadataShmem.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/recordreplay/ParentIPC.h"
-#include "mozilla/EnumeratedRange.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/Telemetry.h"
@@ -227,22 +226,6 @@ void CrashReporterHost::AddAnnotation(CrashReporter::Annotation aKey,
 void CrashReporterHost::AddAnnotation(CrashReporter::Annotation aKey,
                                       const nsACString& aValue) {
   mExtraAnnotations[aKey] = aValue;
-}
-
-bool CrashReporterHost::IsLikelyOOM() {
-  
-  MOZ_ASSERT(mFinalized);
-  if (mExtraAnnotations[CrashReporter::Annotation::OOMAllocationSize].Length() >
-      0) {
-    
-    
-    
-    
-    
-    
-    return true;
-  }
-  return false;
 }
 
 }  
