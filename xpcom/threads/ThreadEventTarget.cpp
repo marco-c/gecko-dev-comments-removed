@@ -186,5 +186,7 @@ ThreadEventTarget::IsOnCurrentThread(bool* aIsOnCurrentThread) {
 NS_IMETHODIMP_(bool)
 ThreadEventTarget::IsOnCurrentThreadInfallible() {
   
-  MOZ_CRASH("IsOnCurrentThreadInfallible should never be called on nsIThread");
+  
+  
+  return false;
 }
