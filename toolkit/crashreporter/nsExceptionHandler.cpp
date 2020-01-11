@@ -76,7 +76,6 @@
 #  include "common/linux/eintr_wrapper.h"
 #  include <fcntl.h>
 #  include <sys/types.h>
-#  include "sys/sysinfo.h"
 #  include <sys/wait.h>
 #  include <unistd.h>
 #else
@@ -771,63 +770,50 @@ static void OpenAPIData(PlatformWriter& aWriter, const XP_CHAR* dump_path,
   aWriter.Open(extraDataPath);
 }
 
-#if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_LINUX)
+#if defined(XP_WIN) || defined(XP_MACOSX)
 
-static void WriteMemoryAnnotation(AnnotationTable& aTable,
+static void WriteMemoryAnnotation(AnnotationWriter& aWriter,
                                   Annotation aAnnotation, uint64_t aValue) {
   
   
   
   char buffer[128];
-#  ifdef XP_LINUX
-  
-  
-  intmax_t value = intmax_t(aValue);
-  if (uint64_t(value) != aValue) {
-    
-    
-    value = intmax_t(-1);
-  }
-  my_inttostring(value, buffer, sizeof(buffer));
-  aTable[aAnnotation] = nsDependentCString(buffer);
-#  else
   if (SprintfLiteral(buffer, "%llu", aValue) > 0) {
-    aTable[aAnnotation] = nsDependentCString(buffer);
+    aWriter.Write(aAnnotation, buffer);
   }
-#  endif  
 }
 
 #endif  
 
 #ifdef XP_WIN
-static void AnnotateMemoryStatus(AnnotationTable& aTable) {
+static void WriteMemoryStatus(AnnotationWriter& aWriter) {
   MEMORYSTATUSEX statex;
   statex.dwLength = sizeof(statex);
   if (GlobalMemoryStatusEx(&statex)) {
-    WriteMemoryAnnotation(aTable, Annotation::SystemMemoryUsePercentage,
+    WriteMemoryAnnotation(aWriter, Annotation::SystemMemoryUsePercentage,
                           statex.dwMemoryLoad);
-    WriteMemoryAnnotation(aTable, Annotation::TotalVirtualMemory,
+    WriteMemoryAnnotation(aWriter, Annotation::TotalVirtualMemory,
                           statex.ullTotalVirtual);
-    WriteMemoryAnnotation(aTable, Annotation::AvailableVirtualMemory,
+    WriteMemoryAnnotation(aWriter, Annotation::AvailableVirtualMemory,
                           statex.ullAvailVirtual);
-    WriteMemoryAnnotation(aTable, Annotation::TotalPhysicalMemory,
+    WriteMemoryAnnotation(aWriter, Annotation::TotalPhysicalMemory,
                           statex.ullTotalPhys);
-    WriteMemoryAnnotation(aTable, Annotation::AvailablePhysicalMemory,
+    WriteMemoryAnnotation(aWriter, Annotation::AvailablePhysicalMemory,
                           statex.ullAvailPhys);
   }
 
   PERFORMANCE_INFORMATION info;
   if (K32GetPerformanceInfo(&info, sizeof(info))) {
-    WriteMemoryAnnotation(aTable, Annotation::TotalPageFile,
+    WriteMemoryAnnotation(aWriter, Annotation::TotalPageFile,
                           info.CommitLimit * info.PageSize);
     WriteMemoryAnnotation(
-        aTable, Annotation::AvailablePageFile,
+        aWriter, Annotation::AvailablePageFile,
         (info.CommitLimit - info.CommitTotal) * info.PageSize);
   }
 }
 #elif XP_MACOSX
 
-static void WritePhysicalMemoryStatus(AnnotationTable& aTable) {
+static void WritePhysicalMemoryStatus(AnnotationWriter& aWriter) {
   uint64_t physicalMemoryByteSize = 0;
   const size_t NAME_LEN = 2;
   int name[NAME_LEN] = { CTL_HW,
@@ -836,27 +822,27 @@ static void WritePhysicalMemoryStatus(AnnotationTable& aTable) {
   if (sysctl(name, NAME_LEN, &physicalMemoryByteSize, &infoByteSize,
               nullptr,
               0) != -1) {
-    WriteMemoryAnnotation(aTable, Annotation::TotalPhysicalMemory,
+    WriteMemoryAnnotation(aWriter, Annotation::TotalPhysicalMemory,
                           physicalMemoryByteSize);
   }
 }
 
 
-static void WriteAvailableMemoryStatus(AnnotationTable& aTable) {
+static void WriteAvailableMemoryStatus(AnnotationWriter& aWriter) {
   auto host = mach_host_self();
   vm_statistics64_data_t stats;
   unsigned int count = HOST_VM_INFO64_COUNT;
   if (host_statistics64(host, HOST_VM_INFO64, (host_info64_t)&stats, &count) ==
       KERN_SUCCESS) {
-    WriteMemoryAnnotation(aTable, Annotation::AvailablePhysicalMemory,
+    WriteMemoryAnnotation(aWriter, Annotation::AvailablePhysicalMemory,
                           stats.free_count * vm_page_size);
-    WriteMemoryAnnotation(aTable, Annotation::PurgeablePhysicalMemory,
+    WriteMemoryAnnotation(aWriter, Annotation::PurgeablePhysicalMemory,
                           stats.purgeable_count * vm_page_size);
   }
 }
 
 
-static void WriteSwapFileStatus(AnnotationTable& aTable) {
+static void WriteSwapFileStatus(AnnotationWriter& aWriter) {
   const size_t NAME_LEN = 2;
   int name[] = { CTL_VM,
                  VM_SWAPUSAGE};
@@ -865,294 +851,18 @@ static void WriteSwapFileStatus(AnnotationTable& aTable) {
   if (sysctl(name, NAME_LEN, &swapUsage, &infoByteSize,
               nullptr,
               0) != -1) {
-    WriteMemoryAnnotation(aTable, Annotation::AvailableSwapMemory,
+    WriteMemoryAnnotation(aWriter, Annotation::AvailableSwapMemory,
                           swapUsage.xsu_avail);
   }
 }
-static void AnnotateMemoryStatus(AnnotationTable& aTable) {
-  WritePhysicalMemoryStatus(aTable);
-  WriteAvailableMemoryStatus(aTable);
-  WriteSwapFileStatus(aTable);
+static void WriteMemoryStatus(AnnotationWriter& aWriter) {
+  WritePhysicalMemoryStatus(aWriter);
+  WriteAvailableMemoryStatus(aWriter);
+  WriteSwapFileStatus(aWriter);
 }
-
-#elif XP_LINUX
-
-static void AnnotateMemoryStatus(AnnotationTable& aTable) {
-  
-  
-
-  
-  
-  
-  
-  
-
-  
-  
-  
-  const size_t BUFFER_SIZE_BYTES = 10000;
-  char buffer[BUFFER_SIZE_BYTES];
-  ssize_t bufferLen = 0;
-
-  {
-    
-    int fd = sys_open("/proc/meminfo", O_RDONLY,  0);
-    if (fd == -1) {
-      
-      return;
-    }
-    auto Guard = MakeScopeExit([fd]() { mozilla::Unused << sys_close(fd); });
-
-    if ((bufferLen = sys_read(fd, buffer, BUFFER_SIZE_BYTES)) <= 0) {
-      
-      return;
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  struct DataBuffer {
-    DataBuffer() : data{0}, pos(0) {}
-    
-    void reset() {
-      pos = 0;
-      data[0] = 0;
-    }
-    
-    
-    
-    void append(char c) {
-      if (c == 0 || pos >= sizeof(data) - 1) {
-        return;
-      }
-      data[pos++] = c;
-      data[pos] = 0;
-    }
-    
-    bool operator==(const char* s) const {
-      for (size_t i = 0; i < pos; ++i) {
-        if (s[i] != data[i]) {
-          
-          
-          return false;
-        }
-      }
-      return true;
-    }
-
-    
-    char data[256];
-
-    
-    size_t pos;
-  };
-
-  
-  struct NumberBuffer : DataBuffer {
-    
-    
-    bool asNumber(size_t* number) {
-      int result;
-      if (!my_strtoui(&result, data)) {
-        return false;
-      }
-      *number = result;
-      return true;
-    }
-  };
-
-  
-  
-  
-  struct UnitBuffer : DataBuffer {
-    
-    
-    bool asMultiplier(size_t* multiplier) {
-      if (*this == "kB") {
-        *multiplier = 1024;
-        return true;
-      }
-      
-      return false;
-    }
-  };
-
-  
-  enum class State {
-    
-    Label,
-    
-    Number,
-    
-    Unit,
-  };
-
-  
-  
-  struct Measure {
-    Measure() : state(State::Label) {}
-    
-    void reset() {
-      state = State::Label;
-      label.reset();
-      number.reset();
-      unit.reset();
-    }
-    
-    
-    
-    
-    bool asValue(size_t* result) {
-      size_t numberAsSize = 0;
-      if (!number.asNumber(&numberAsSize)) {
-        return false;
-      }
-      size_t unitAsMultiplier = 0;
-      if (!unit.asMultiplier(&unitAsMultiplier)) {
-        return false;
-      }
-      if (numberAsSize * unitAsMultiplier >= numberAsSize) {
-        *result = numberAsSize * unitAsMultiplier;
-      } else {
-        
-        
-        *result = size_t(-1);
-      }
-      return true;
-    }
-
-    
-    DataBuffer label;
-
-    
-    NumberBuffer number;
-
-    
-    UnitBuffer unit;
-
-    
-    State state;
-  };
-
-  
-  
-  
-  struct ValueStore {
-    ValueStore() : value(0), found(false) {}
-    size_t value;
-    bool found;
-  };
-  ValueStore commitLimit;
-  ValueStore committedAS;
-  ValueStore memTotal;
-  ValueStore swapTotal;
-
-  
-  Measure measure;
-
-  for (size_t pos = 0; pos < size_t(bufferLen); ++pos) {
-    const char c = buffer[pos];
-    switch (measure.state) {
-      case State::Label:
-        if (c == ':') {
-          
-          measure.state = State::Number;
-        } else {
-          measure.label.append(c);
-        }
-        break;
-      case State::Number:
-        if (c == ' ') {
-          
-        } else if ('0' <= c && c <= '9') {
-          
-          measure.number.append(c);
-        } else {
-          
-          measure.unit.append(c);
-          measure.state = State::Unit;
-        }
-        break;
-      case State::Unit:
-        if (c == ' ') {
-          
-        } else if (c == '\n') {
-          
-          
-          
-          auto Guard = MakeScopeExit([&measure]() { measure.reset(); });
-
-          struct PointOfInterest {
-            
-            const char* label;
-            
-            ValueStore* dest;
-            
-            
-            Annotation annotation;
-          };
-          const PointOfInterest POINTS_OF_INTEREST[] = {
-              {"MemTotal", &memTotal, Annotation::TotalPhysicalMemory},
-              {"MemFree", nullptr, Annotation::AvailablePhysicalMemory},
-              {"MemAvailable", nullptr, Annotation::AvailableVirtualMemory},
-              {"SwapFree", nullptr, Annotation::AvailableSwapMemory},
-              {"SwapTotal", &swapTotal, Annotation::Count},
-              {"CommitLimit", &commitLimit, Annotation::Count},
-              {"Committed_AS", &committedAS, Annotation::Count},
-          };
-          for (const auto& pointOfInterest : POINTS_OF_INTEREST) {
-            if (measure.label == pointOfInterest.label) {
-              size_t value;
-              if (measure.asValue(&value)) {
-                if (pointOfInterest.dest != nullptr) {
-                  pointOfInterest.dest->found = true;
-                  pointOfInterest.dest->value = value;
-                }
-                if (pointOfInterest.annotation != Annotation::Count) {
-                  WriteMemoryAnnotation(aTable, pointOfInterest.annotation,
-                                        value);
-                }
-              }
-              break;
-            }
-          }
-          
-        } else {
-          measure.unit.append(c);
-        }
-        break;
-    }
-  }
-
-  if (commitLimit.found && committedAS.found) {
-    
-    
-    
-    uint64_t availablePageFile = (committedAS.value <= commitLimit.value)
-                                     ? (commitLimit.value - committedAS.value)
-                                     : 0;
-    WriteMemoryAnnotation(aTable, Annotation::AvailablePageFile,
-                          availablePageFile);
-  }
-  if (memTotal.found && swapTotal.found) {
-    
-    WriteMemoryAnnotation(aTable, Annotation::TotalPageFile,
-                          memTotal.value + swapTotal.value);
-  }
-}
-
 #else
 
-static void AnnotateMemoryStatus(AnnotationTable&) {
+static void WriteMemoryStatus(AnnotationWriter& aWriter) {
   
 }
 
@@ -1342,6 +1052,7 @@ static void WriteAnnotationsForMainProcessCrash(PlatformWriter& pw,
 #  endif
 #endif  
 
+  WriteMemoryStatus(writer);
   WriteMozCrashReason(writer);
 
   char oomAllocationSizeBuffer[32] = "";
@@ -1636,6 +1347,9 @@ static void PrepareChildExceptionTimeAnnotations(
   PlatformWriter apiData;
   apiData.OpenHandle(f);
   BinaryAnnotationWriter writer(apiData);
+
+  
+  WriteMemoryStatus(writer);
 
   char oomAllocationSizeBuffer[32] = "";
   if (gOOMAllocationSize) {
@@ -2434,8 +2148,6 @@ static void MergeContentCrashAnnotations(AnnotationTable& aDst,
 
 
 static void AddCommonAnnotations(AnnotationTable& aAnnotations) {
-  AnnotateMemoryStatus(aAnnotations);
-
   nsAutoCString crashTime;
   crashTime.AppendInt((uint64_t)time(nullptr));
   aAnnotations[Annotation::CrashTime] = crashTime;
