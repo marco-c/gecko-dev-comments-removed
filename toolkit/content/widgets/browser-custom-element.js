@@ -504,7 +504,7 @@
       }
 
       
-      popupAnchor = document.createXULElement("hbox");
+      popupAnchor = document.createElement("div");
       popupAnchor.className = "popup-anchor";
       popupAnchor.hidden = true;
       stack.appendChild(popupAnchor);
