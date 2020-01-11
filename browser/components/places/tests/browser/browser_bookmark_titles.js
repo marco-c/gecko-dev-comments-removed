@@ -20,8 +20,8 @@ var tests = [
   },
   
   {
-    url: "data:application/vnd.mozilla.xul+xml,",
-    title: "data:application/vnd.mozilla.xul+xml,",
+    url: "data:application/xhtml+xml,",
+    title: "data:application/xhtml+xml,",
     isError: true,
   },
   
