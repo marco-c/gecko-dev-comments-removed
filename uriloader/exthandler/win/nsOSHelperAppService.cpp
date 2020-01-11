@@ -390,12 +390,12 @@ NS_IMETHODIMP
 nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
                                         const nsACString& aFileExt,
                                         bool* aFound, nsIMIMEInfo** aMIMEInfo) {
-  *aFound = true;
+  *aFound = false;
 
   const nsCString& flatType = PromiseFlatCString(aMIMEType);
-  const nsCString& flatExt = PromiseFlatCString(aFileExt);
-
   nsAutoString fileExtension;
+  CopyUTF8toUTF16(aFileExt, fileExtension);
+
   
 
 
@@ -403,70 +403,96 @@ nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
 
 
 
+  bool haveMeaningfulMimeType =
+      !aMIMEType.IsEmpty() &&
+      !aMIMEType.LowerCaseEqualsLiteral(APPLICATION_OCTET_STREAM);
+  LOG(("Extension lookup on '%s' with mimetype '%s'%s\n", fileExtension.get(),
+       flatType.get(),
+       haveMeaningfulMimeType ? " (treated as meaningful)" : ""));
 
-  if (!aMIMEType.IsEmpty() &&
-      !aMIMEType.LowerCaseEqualsLiteral(APPLICATION_OCTET_STREAM)) {
-    
-    
-    GetExtensionFromWindowsMimeDatabase(aMIMEType, fileExtension);
-    LOG(("Windows mime database: extension '%s'\n", fileExtension.get()));
-  }
-  
   RefPtr<nsMIMEInfoWin> mi;
-  if (!fileExtension.IsEmpty())
-    mi = GetByExtension(fileExtension, flatType.get());
-  LOG(("Extension lookup on '%s' found: 0x%p\n", fileExtension.get(),
-       mi.get()));
 
-  bool hasDefault = false;
-  if (mi) {
-    mi->GetHasDefaultHandler(&hasDefault);
-    
-    
-    
-    
-    
-    if (!aFileExt.IsEmpty() &&
-        typeFromExtEquals(NS_ConvertUTF8toUTF16(flatExt).get(),
-                          flatType.get())) {
-      LOG(
-          ("Appending extension '%s' to mimeinfo, because its mimetype is "
-           "'%s'\n",
-           flatExt.get(), flatType.get()));
-      bool extExist = false;
-      mi->ExtensionExists(aFileExt, &extExist);
-      if (!extExist) mi->AppendExtension(aFileExt);
-    }
+  
+  if (fileExtension.IsEmpty() && !haveMeaningfulMimeType) {
+    mi = new nsMIMEInfoWin(flatType.get());
+    mi.forget(aMIMEInfo);
+    return NS_OK;
   }
-  if (!mi || !hasDefault) {
-    RefPtr<nsMIMEInfoWin> miByExt =
-        GetByExtension(NS_ConvertUTF8toUTF16(aFileExt), flatType.get());
-    LOG(("Ext. lookup for '%s' found 0x%p\n", flatExt.get(), miByExt.get()));
-    if (!miByExt && mi) {
-      mi.forget(aMIMEInfo);
-      return NS_OK;
-    }
-    if (miByExt && !mi) {
-      miByExt.forget(aMIMEInfo);
-      return NS_OK;
-    }
-    if (!miByExt && !mi) {
-      *aFound = false;
-      mi = new nsMIMEInfoWin(flatType);
+
+  nsAutoString extensionFromMimeType;
+  if (haveMeaningfulMimeType) {
+    GetExtensionFromWindowsMimeDatabase(aMIMEType, extensionFromMimeType);
+    if (extensionFromMimeType.IsEmpty()) {
+      
+      mi = new nsMIMEInfoWin(flatType.get());
       if (!aFileExt.IsEmpty()) {
         mi->AppendExtension(aFileExt);
       }
-
       mi.forget(aMIMEInfo);
       return NS_OK;
     }
+  }
+  
 
+  *aFound = true;
+
+  
+  
+  
+  
+  bool usedMimeTypeExtensionForLookup = false;
+  if (fileExtension.IsEmpty() ||
+      (haveMeaningfulMimeType &&
+       !typeFromExtEquals(fileExtension.get(), flatType.get()))) {
+    usedMimeTypeExtensionForLookup = true;
+    fileExtension = extensionFromMimeType;
+    LOG(("Now using '%s' mimetype's default file extension '%s' for lookup\n",
+         flatType.get(), fileExtension.get()));
+  }
+
+  
+  mi = GetByExtension(fileExtension, flatType.get());
+  LOG(("Extension lookup on '%s' found: 0x%p\n", fileExtension.get(),
+       mi.get()));
+
+  if (mi) {
+    bool hasDefault = false;
+    mi->GetHasDefaultHandler(&hasDefault);
     
-    nsCOMPtr<nsIFile> defaultApp;
-    nsAutoString desc;
-    miByExt->GetDefaultDescription(desc);
+    
+    if (!hasDefault && !usedMimeTypeExtensionForLookup) {
+      RefPtr<nsMIMEInfoWin> miFromMimeType =
+          GetByExtension(extensionFromMimeType, flatType.get());
+      LOG(("Mime-based ext. lookup for '%s' found 0x%p\n",
+           extensionFromMimeType.get(), miFromMimeType.get()));
+      if (miFromMimeType) {
+        nsAutoString desc;
+        miFromMimeType->GetDefaultDescription(desc);
+        mi->SetDefaultDescription(desc);
+      }
+    }
+    mi.forget(aMIMEInfo);
+    return NS_OK;
+  }
 
-    mi->SetDefaultDescription(desc);
+  
+  
+  if (!extensionFromMimeType.IsEmpty() && !usedMimeTypeExtensionForLookup) {
+    mi = GetByExtension(extensionFromMimeType, flatType.get());
+    LOG(("Mime-based ext. lookup for '%s' found 0x%p\n",
+         extensionFromMimeType.get(), mi.get()));
+  }
+  if (mi) {
+    mi.forget(aMIMEInfo);
+    return NS_OK;
+  }
+  
+  *aFound = false;
+  mi = new nsMIMEInfoWin(flatType.get());
+  
+  
+  if (!usedMimeTypeExtensionForLookup) {
+    mi->AppendExtension(aFileExt);
   }
   mi.forget(aMIMEInfo);
   return NS_OK;
