@@ -68,6 +68,21 @@ class MOZ_IS_SMARTPTR_TO_REFCOUNTED OwningNonNull {
   
   void operator=(decltype(nullptr)) = delete;
 
+  already_AddRefed<T> forget() {
+#ifdef DEBUG
+    mInited = false;
+#endif
+    return mPtr.forget();
+  }
+
+  template <class U>
+  void forget(U** aOther) {
+#ifdef DEBUG
+    mInited = false;
+#endif
+    mPtr.forget(aOther);
+  }
+
   T& ref() const {
     MOZ_ASSERT(mInited);
     MOZ_ASSERT(mPtr, "OwningNonNull<T> was set to null");
@@ -96,17 +111,6 @@ class MOZ_IS_SMARTPTR_TO_REFCOUNTED OwningNonNull {
     MOZ_ASSERT(!!mPtr == mInited, "mInited out of sync with mPtr?");
     return mPtr;
   }
-
- private:
-  already_AddRefed<T> forget() {
-#ifdef DEBUG
-    mInited = false;
-#endif
-    return mPtr.forget();
-  }
-
-  
-  friend void ImplCycleCollectionUnlink(OwningNonNull<T>& aField);
 
  protected:
   template <typename U>
