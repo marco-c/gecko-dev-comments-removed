@@ -3239,7 +3239,7 @@
 
 - name: gfx.canvas.remote
   type: RelaxedAtomicBool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 - name: gfx.color_management.enablev4
@@ -7177,6 +7177,18 @@
 
 # Report Anti-tracking warnings to console lazily
 - name: privacy.restrict3rdpartystorage.console.lazy
+  type: bool
+  value: true
+  mirror: always
+
+# Enable the heuristic to allow storage access for windows opened using window.open() after user interaction
+- name: privacy.restrict3rdpartystorage.heuristic.opened_window_after_interaction
+  type: bool
+  value: true
+  mirror: always
+
+# Enable the heuristic to allow storage access for windows opened using window.open()
+- name: privacy.restrict3rdpartystorage.heuristic.window_open
   type: bool
   value: true
   mirror: always
