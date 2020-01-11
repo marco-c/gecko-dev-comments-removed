@@ -72,34 +72,19 @@ AddonTestUtils.createAppInfo(
 
 
 
-function configureToLoadJarEngines() {
-  let searchExtensions = do_get_cwd();
-  searchExtensions.append("data");
-  searchExtensions.append("search-extensions");
-  let url = "file://" + searchExtensions.path;
+
+
+
+
+async function useTestEngines(folder = "data", subFolder = null) {
+  let url = `resource://test/${folder}/`;
+  if (subFolder) {
+    url += `${subFolder}/`;
+  }
   let resProt = Services.io
     .getProtocolHandler("resource")
     .QueryInterface(Ci.nsIResProtocolHandler);
   resProt.setSubstitution("search-extensions", Services.io.newURI(url));
-}
-
-
-
-
-
-
-
-function useTestEngines(folder) {
-  let searchExtensions = do_get_cwd();
-  searchExtensions.append("data");
-  searchExtensions.append(folder);
-  let resProt = Services.io
-    .getProtocolHandler("resource")
-    .QueryInterface(Ci.nsIResProtocolHandler);
-  resProt.setSubstitution(
-    "search-extensions",
-    Services.io.newURI("file://" + searchExtensions.path)
-  );
 }
 
 async function promiseCacheData() {
@@ -193,20 +178,6 @@ function isUSTimezone() {
 const kDefaultenginenamePref = "browser.search.defaultenginename";
 const kTestEngineName = "Test search engine";
 const TOPIC_LOCALES_CHANGE = "intl:app-locales-changed";
-
-
-
-
-
-
-
-
-function useTestEngineConfig(url = "resource://test/data/") {
-  const resProt = Services.io
-    .getProtocolHandler("resource")
-    .QueryInterface(Ci.nsIResProtocolHandler);
-  resProt.setSubstitution("search-extensions", Services.io.newURI(url));
-}
 
 
 

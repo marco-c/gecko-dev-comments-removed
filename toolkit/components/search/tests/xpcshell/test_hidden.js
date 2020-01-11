@@ -4,7 +4,7 @@
 const kUrlPref = "geoSpecificDefaults.url";
 
 add_task(async function setup() {
-  configureToLoadJarEngines();
+  await useTestEngines("data", "search-extensions");
 
   
   Services.prefs.setCharPref(

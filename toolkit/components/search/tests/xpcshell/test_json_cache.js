@@ -20,7 +20,7 @@ var cacheTemplate, appPluginsPath, profPlugins;
 
 
 add_task(async function setup() {
-  useTestEngineConfig("resource://test/data1/");
+  await useTestEngines("data1");
   await AddonTestUtils.promiseStartupManager();
 
   let cacheTemplateFile = do_get_file("data/search.json");
