@@ -8682,8 +8682,12 @@ bool nsDisplayTransform::CreateWebRenderCommands(
     position.Round();
   }
 
-  uint64_t animationsId = AddAnimationsForWebRender(
-      this, aManager, aDisplayListBuilder, aBuilder.GetRenderRoot());
+  
+  uint64_t animationsId =
+      mIsTransformSeparator
+          ? 0
+          : AddAnimationsForWebRender(this, aManager, aDisplayListBuilder,
+                                      aBuilder.GetRenderRoot());
   wr::WrAnimationProperty prop{
       wr::WrAnimationType::Transform,
       animationsId,
@@ -8700,7 +8704,8 @@ bool nsDisplayTransform::CreateWebRenderCommands(
   }
 
   
-  bool animated = ActiveLayerTracker::IsTransformMaybeAnimated(Frame());
+  bool animated = !mIsTransformSeparator &&
+                  ActiveLayerTracker::IsTransformMaybeAnimated(Frame());
 
   wr::StackingContextParams params;
   params.mBoundTransform = &newTransformMatrix;
@@ -8792,8 +8797,12 @@ already_AddRefed<Layer> nsDisplayTransform::BuildLayer(
     mFrame->SetProperty(nsIFrame::RefusedAsyncAnimationProperty(), false);
   }
 
-  nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(
-      container, aBuilder, this, mFrame, GetType());
+  
+  if (!mIsTransformSeparator) {
+    nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(
+        container, aBuilder, this, mFrame, GetType());
+  }
+
   if (mAllowAsyncAnimation && MayBeAnimated(aBuilder)) {
     
     
