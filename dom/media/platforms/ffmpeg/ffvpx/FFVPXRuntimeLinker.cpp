@@ -17,6 +17,8 @@
 
 
 
+
+#define ST_NO_EXCEPTION_HANDLING 1
 #include "soundtouch/SoundTouch.h"
 
 namespace mozilla {
