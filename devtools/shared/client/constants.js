@@ -19,19 +19,9 @@ const ThreadStateTypes = {
 
 
 
+
 const UnsolicitedNotifications = {
   networkEventUpdate: "networkEventUpdate",
-  tabDetached: "tabDetached",
-  tabListChanged: "tabListChanged",
-  addonListChanged: "addonListChanged",
-  workerListChanged: "workerListChanged",
-  serviceWorkerRegistrationListChanged: "serviceWorkerRegistrationList",
-
-  
-  
-  
-  
-  newSource: "newSource",
 };
 
 module.exports = {
