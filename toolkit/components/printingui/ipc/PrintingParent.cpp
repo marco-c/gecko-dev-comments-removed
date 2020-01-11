@@ -105,7 +105,8 @@ nsresult PrintingParent::ShowPrintDialog(PBrowserParent* aParent,
   
   
   
-  nsCOMPtr<nsIWebBrowserPrint> wbp = new MockWebBrowserPrint(aData);
+  nsCOMPtr<nsIWebBrowserPrint> wbp = new MockWebBrowserPrint(
+      aData.printJobName(), aData.isIFrameSelected(), aData.isRangeSelection());
 
   
   
