@@ -368,7 +368,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   
   virtual void SetHasGamepadEventListener(bool aHasGamepad = true) override;
-  void NotifyVREventListenerAdded();
+  void NotifyHasXRSession();
   bool HasUsedVR() const;
   bool IsVRContentDetected() const;
   bool IsVRContentPresenting() const;
@@ -521,6 +521,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   
   void NotifyActiveVRDisplaysChanged();
+  void NotifyDetectXRRuntimesCompleted();
   void NotifyPresentationGenerationChanged(uint32_t aDisplayID);
 
   void DispatchVRDisplayActivate(uint32_t aDisplayID,
@@ -1274,10 +1275,15 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   bool mHasGamepad : 1;
 
   
-  bool mHasVREvents : 1;
+  
+  bool mHasXRSession : 1;
 
   
   bool mHasVRDisplayActivateEvents : 1;
+
+  
+  
+  bool mXRRuntimeDetectionInFlight : 1;
 
   
   

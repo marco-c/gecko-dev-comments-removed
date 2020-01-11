@@ -24,7 +24,7 @@ VRManagerParent::VRManagerParent(ProcessId aChildProcessId,
     : mHaveEventListener(false),
       mHaveControllerListener(false),
       mIsContentChild(aIsContentChild),
-      mVRActiveStatus(true) {
+      mVRActiveStatus(false) {
   MOZ_COUNT_CTOR(VRManagerParent);
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -140,13 +140,24 @@ void VRManagerParent::OnChannelConnected(int32_t aPid) {
   mCompositorThreadHolder = CompositorThreadHolder::GetSingleton();
 }
 
+mozilla::ipc::IPCResult VRManagerParent::RecvDetectRuntimes() {
+  
+  
+  
+  
+  VRManager* vm = VRManager::Get();
+  vm->DetectRuntimes();
+
+  return IPC_OK();
+}
+
 mozilla::ipc::IPCResult VRManagerParent::RecvRefreshDisplays() {
   
   
   
   
   VRManager* vm = VRManager::Get();
-  vm->RefreshVRDisplays(true);
+  vm->EnumerateDevices();
 
   return IPC_OK();
 }

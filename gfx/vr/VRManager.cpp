@@ -107,6 +107,10 @@ void VRManager::ManagerInit() {
 VRManager::VRManager()
     : mState(VRManagerState::Disabled),
       mAccumulator100ms(0.0f),
+      mRuntimeDetectionRequested(false),
+      mRuntimeDetectionCompleted(false),
+      mEnumerationRequested(false),
+      mEnumerationCompleted(false),
       mVRDisplaysRequested(false),
       mVRDisplaysRequestedNonFocus(false),
       mVRControllersRequested(false),
@@ -116,7 +120,7 @@ VRManager::VRManager()
       mCurrentSubmitTask(nullptr),
       mLastSubmittedFrameId(0),
       mLastStartedFrame(0),
-      mEnumerationCompleted(false),
+      mRuntimeSupportFlags(VRDisplayCapabilityFlags::Cap_None),
       mAppPaused(false),
       mShmem(nullptr),
       mHapticPulseRemaining{},
@@ -172,6 +176,15 @@ void VRManager::OpenShmem() {
   } else {
     mShmem->ClearShMem();
   }
+
+  
+  mDisplayInfo.Clear();
+  mLastUpdateDisplayInfo.Clear();
+  mFrameStarted = false;
+  mBrowserState.Clear();
+  mLastSensorState.Clear();
+  mEnumerationCompleted = false;
+  mDisplayInfo.mGroupMask = kVRGroupContent;
 }
 
 void VRManager::CloseShmem() {
@@ -206,7 +219,10 @@ void VRManager::AddLayer(VRLayerParent* aLayer) {
   }
 
   
-  RefreshVRDisplays();
+  if (mState != VRManagerState::Enumeration &&
+      mState != VRManagerState::RuntimeDetection) {
+    DispatchVRDisplayInfoUpdate();
+  }
 }
 
 void VRManager::RemoveLayer(VRLayerParent* aLayer) {
@@ -220,7 +236,10 @@ void VRManager::RemoveLayer(VRLayerParent* aLayer) {
   }
 
   
-  RefreshVRDisplays();
+  if (mState != VRManagerState::Enumeration &&
+      mState != VRManagerState::RuntimeDetection) {
+    DispatchVRDisplayInfoUpdate();
+  }
 }
 
 void VRManager::AddVRManagerParent(VRManagerParent* aVRManagerParent) {
@@ -422,9 +441,7 @@ void VRManager::Run100msTasks() {
   mServiceHost->Refresh();
   CheckForPuppetCompletion();
 #endif
-  RefreshVRDisplays();
-  CheckForInactiveTimeout();
-  CheckForShutdown();
+  ProcessManagerState();
 }
 
 void VRManager::ProcessTelemetryEvent() {
@@ -461,7 +478,9 @@ void VRManager::ProcessTelemetryEvent() {
 void VRManager::CheckForInactiveTimeout() {
   
   if (mVRDisplaysRequested || mVRDisplaysRequestedNonFocus ||
-      mVRControllersRequested) {
+      mVRControllersRequested || mEnumerationRequested ||
+      mRuntimeDetectionRequested || mState == VRManagerState::Enumeration ||
+      mState == VRManagerState::RuntimeDetection) {
     
     mLastActiveTime = TimeStamp::Now();
   } else if (mLastActiveTime.IsNull()) {
@@ -482,8 +501,7 @@ void VRManager::CheckForInactiveTimeout() {
 
 void VRManager::CheckForShutdown() {
   
-  if (mState != VRManagerState::Disabled && mState != VRManagerState::Idle &&
-      mDisplayInfo.mDisplayState.shutdown) {
+  if (mDisplayInfo.mDisplayState.shutdown) {
     Shutdown();
   }
 }
@@ -542,144 +560,310 @@ void VRManager::StartFrame() {
   DispatchVRDisplayInfoUpdate();
 }
 
-void VRManager::EnumerateVRDisplays() {
+void VRManager::DetectRuntimes() {
+  if (mState == VRManagerState::RuntimeDetection) {
+    
+    
+    
+    return;
+  }
+
+  
+  
+  
+  
+  if (mRuntimeDetectionCompleted) {
+    
+    
+    
+    
+    
+    DispatchRuntimeCapabilitiesUpdate();
+    return;
+  }
+  mRuntimeDetectionRequested = true;
+  ProcessManagerState();
+}
+
+void VRManager::EnumerateDevices() {
+  if (mState == VRManagerState::Enumeration) {
+    
+    
+    
+    return;
+  }
+  
+  mEnumerationRequested = true;
+  ProcessManagerState();
+}
+
+void VRManager::ProcessManagerState() {
+  switch (mState) {
+    case VRManagerState::Disabled:
+      ProcessManagerState_Disabled();
+      break;
+    case VRManagerState::Idle:
+      ProcessManagerState_Idle();
+      break;
+    case VRManagerState::RuntimeDetection:
+      ProcessManagerState_DetectRuntimes();
+      break;
+    case VRManagerState::Enumeration:
+      ProcessManagerState_Enumeration();
+      break;
+    case VRManagerState::Active:
+      ProcessManagerState_Active();
+      break;
+    case VRManagerState::Stopping:
+      ProcessManagerState_Stopping();
+      break;
+  }
+  CheckForInactiveTimeout();
+  CheckForShutdown();
+}
+
+void VRManager::ProcessManagerState_Disabled() {
+  MOZ_ASSERT(mState == VRManagerState::Disabled);
+
   if (!StaticPrefs::dom_vr_enabled()) {
     return;
   }
 
-  if (mState == VRManagerState::Disabled) {
+  if (mRuntimeDetectionRequested || mEnumerationRequested ||
+      mVRDisplaysRequested) {
     StartTasks();
     mState = VRManagerState::Idle;
   }
-
-  if (mState == VRManagerState::Idle) {
-    
-
-
-
-    if (!mLastDisplayEnumerationTime.IsNull()) {
-      TimeDuration duration = TimeStamp::Now() - mLastDisplayEnumerationTime;
-      if (duration.ToMilliseconds() <
-          StaticPrefs::dom_vr_display_enumerate_interval()) {
-        return;
-      }
-    }
-
-    if (!mEarliestRestartTime.IsNull() &&
-        mEarliestRestartTime > TimeStamp::Now()) {
-      
-      
-      
-      
-      return;
-    }
-
-    
-
-
-
-    mLastDisplayEnumerationTime = TimeStamp::Now();
-
-    OpenShmem();
-
-    
-
-
-
-
-
-
-
-
-#if !defined(MOZ_WIDGET_ANDROID)
-    mServiceHost->StartService();
-#endif
-    if (mShmem) {
-      mDisplayInfo.Clear();
-      mLastUpdateDisplayInfo.Clear();
-      mFrameStarted = false;
-      mBrowserState.Clear();
-      mLastSensorState.Clear();
-      mEnumerationCompleted = false;
-      mDisplayInfo.mGroupMask = kVRGroupContent;
-      
-      
-      
-#if defined(MOZ_WIDGET_ANDROID)
-      
-      
-      
-      if (!mShmem->GetExternalShmem()) {
-        mShmem->CreateShMemForAndroid();
-      }
-      if (mShmem->GetExternalShmem()) {
-        mState = VRManagerState::Enumeration;
-      }
-#else
-      mState = VRManagerState::Enumeration;
-#endif  
-    }
-  }  
-
-  if (mState == VRManagerState::Enumeration) {
-    MOZ_ASSERT(mShmem != nullptr);
-
-    PullState();
-    if (mEnumerationCompleted) {
-      if (mDisplayInfo.mDisplayState.isConnected) {
-        mDisplayInfo.mDisplayID = VRManager::AllocateDisplayID();
-        mState = VRManagerState::Active;
-      } else {
-        Shutdown();
-      }
-    }
-  }  
 }
 
-void VRManager::RefreshVRDisplays(bool aMustDispatch) {
-  uint32_t previousDisplayID = mDisplayInfo.GetDisplayID();
+void VRManager::ProcessManagerState_Stopping() {
+  MOZ_ASSERT(mState == VRManagerState::Stopping);
+  PullState();
+  
+
+
+
+
+
+
+#if defined(MOZ_WIDGET_ANDROID)
+  
+  
+  Shutdown();
+#endif  
+}
+
+void VRManager::ProcessManagerState_Idle_StartEnumeration() {
+  MOZ_ASSERT(mState == VRManagerState::Idle);
+
+  if (!mEarliestRestartTime.IsNull() &&
+      mEarliestRestartTime > TimeStamp::Now()) {
+    
+    
+    
+    
+    return;
+  }
+
+  
+
+
+
+  if (!mLastDisplayEnumerationTime.IsNull()) {
+    TimeDuration duration = TimeStamp::Now() - mLastDisplayEnumerationTime;
+    if (duration.ToMilliseconds() <
+        StaticPrefs::dom_vr_display_enumerate_interval()) {
+      return;
+    }
+  }
+
+  
+
+
+
+  mLastDisplayEnumerationTime = TimeStamp::Now();
+
+  OpenShmem();
+
+  mEnumerationRequested = false;
+  
+  
+  
+#if defined(MOZ_WIDGET_ANDROID)
+  
+  
+  
+  if (!mShmem->GetExternalShmem()) {
+    mShmem->CreateShMemForAndroid();
+  }
+  if (mShmem->GetExternalShmem()) {
+    mState = VRManagerState::Enumeration;
+  } else {
+    
+    mDisplayInfo.Clear();
+    DispatchVRDisplayInfoUpdate();
+  }
+#else
+
+  PushState();
 
   
 
 
 
 
-  if (mVRDisplaysRequested || aMustDispatch) {
-    EnumerateVRDisplays();
+
+
+
+
+  mServiceHost->StartService();
+  mState = VRManagerState::Enumeration;
+#endif  
+}
+
+void VRManager::ProcessManagerState_Idle_StartRuntimeDetection() {
+  MOZ_ASSERT(mState == VRManagerState::Idle);
+
+  OpenShmem();
+  mBrowserState.detectRuntimesOnly = true;
+  mRuntimeDetectionRequested = false;
+
+  
+  
+  
+#if defined(MOZ_WIDGET_ANDROID)
+  
+  
+  
+  if (!mShmem->GetExternalShmem()) {
+    mShmem->CreateShMemForAndroid();
   }
-  if (mState == VRManagerState::Enumeration) {
+  if (mShmem->GetExternalShmem()) {
+    mState = VRManagerState::RuntimeDetection;
+  } else {
+    
+    mRuntimeSupportFlags = VRDisplayCapabilityFlags::Cap_None;
+    mRuntimeDetectionCompleted = true;
+    DispatchRuntimeCapabilitiesUpdate();
+  }
+#else
+
+  PushState();
+
+  
+
+
+
+
+
+
+
+
+  mServiceHost->StartService();
+  mState = VRManagerState::RuntimeDetection;
+#endif  
+}
+
+void VRManager::ProcessManagerState_Idle() {
+  MOZ_ASSERT(mState == VRManagerState::Idle);
+
+  if (!mRuntimeDetectionCompleted) {
     
     
+    
+    
+    if (mRuntimeDetectionRequested || mEnumerationRequested) {
+      ProcessManagerState_Idle_StartRuntimeDetection();
+    }
     return;
   }
-  bool changed = false;
 
-  if (previousDisplayID != mDisplayInfo.GetDisplayID()) {
-    changed = true;
+  
+  if (mRuntimeDetectionCompleted &&
+      (mVRDisplaysRequested || mEnumerationRequested)) {
+    ProcessManagerState_Idle_StartEnumeration();
   }
+}
 
-  if (mState == VRManagerState::Active &&
-      mDisplayInfo != mLastUpdateDisplayInfo) {
+void VRManager::ProcessManagerState_DetectRuntimes() {
+  MOZ_ASSERT(mState == VRManagerState::RuntimeDetection);
+  MOZ_ASSERT(mShmem != nullptr);
+
+  PullState();
+  if (mEnumerationCompleted) {
     
-    changed = true;
-  }
 
-  if (changed || aMustDispatch) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    mState = VRManagerState::Stopping;
+    mRuntimeSupportFlags = mDisplayInfo.mDisplayState.capabilityFlags &
+                           (VRDisplayCapabilityFlags::Cap_ImmersiveVR |
+                            VRDisplayCapabilityFlags::Cap_ImmersiveAR);
+    mRuntimeDetectionCompleted = true;
+    DispatchRuntimeCapabilitiesUpdate();
+  }
+}
+
+void VRManager::ProcessManagerState_Enumeration() {
+  MOZ_ASSERT(mState == VRManagerState::Enumeration);
+  MOZ_ASSERT(mShmem != nullptr);
+
+  PullState();
+  if (mEnumerationCompleted) {
+    if (mDisplayInfo.mDisplayState.isConnected) {
+      mDisplayInfo.mDisplayID = VRManager::AllocateDisplayID();
+      mState = VRManagerState::Active;
+    } else {
+      mDisplayInfo.Clear();
+      mState = VRManagerState::Stopping;
+    }
+    DispatchVRDisplayInfoUpdate();
+  }
+}
+
+void VRManager::ProcessManagerState_Active() {
+  MOZ_ASSERT(mState == VRManagerState::Active);
+
+  if (mDisplayInfo != mLastUpdateDisplayInfo) {
+    
     DispatchVRDisplayInfoUpdate();
   }
 }
 
 void VRManager::DispatchVRDisplayInfoUpdate() {
-  
-  nsTArray<VRDisplayInfo> displayUpdates;
-  if (mState == VRManagerState::Active) {
-    MOZ_ASSERT(mDisplayInfo.mDisplayID != 0);
-    displayUpdates.AppendElement(mDisplayInfo);
-  }
   for (auto iter = mVRManagerParents.Iter(); !iter.Done(); iter.Next()) {
-    Unused << iter.Get()->GetKey()->SendUpdateDisplayInfo(displayUpdates);
+    Unused << iter.Get()->GetKey()->SendUpdateDisplayInfo(mDisplayInfo);
   }
   mLastUpdateDisplayInfo = mDisplayInfo;
+}
+
+void VRManager::DispatchRuntimeCapabilitiesUpdate() {
+  VRDisplayCapabilityFlags flags = mRuntimeSupportFlags;
+  if (StaticPrefs::dom_vr_always_support_vr()) {
+    flags |= VRDisplayCapabilityFlags::Cap_ImmersiveVR;
+  }
+
+  if (StaticPrefs::dom_vr_always_support_ar()) {
+    flags |= VRDisplayCapabilityFlags::Cap_ImmersiveAR;
+  }
+
+  for (auto iter = mVRManagerParents.Iter(); !iter.Done(); iter.Next()) {
+    Unused << iter.Get()->GetKey()->SendUpdateRuntimeCapabilities(flags);
+  }
 }
 
 void VRManager::StopAllHaptics() {
@@ -898,10 +1082,30 @@ void VRManager::Shutdown() {
   StopPresentation();
   CancelCurrentSubmitTask();
   ShutdownSubmitThread();
+
   mDisplayInfo.Clear();
   mEnumerationCompleted = false;
 
+  if (mState == VRManagerState::RuntimeDetection) {
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    DispatchRuntimeCapabilitiesUpdate();
+  }
+
   if (mState == VRManagerState::Enumeration) {
+    
     
     DispatchVRDisplayInfoUpdate();
   }

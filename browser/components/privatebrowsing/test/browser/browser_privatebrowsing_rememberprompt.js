@@ -9,7 +9,10 @@
 
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
-    set: [["dom.ipc.keepProcessesAlive.webIsolated.perOrigin", 1]],
+    set: [
+      ["dom.ipc.keepProcessesAlive.webIsolated.perOrigin", 1],
+      ["dom.vr.always_support_vr", true],
+    ],
   });
 });
 

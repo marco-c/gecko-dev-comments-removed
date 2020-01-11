@@ -839,8 +839,9 @@ nsGlobalWindowInner::nsGlobalWindowInner(nsGlobalWindowOuter* aOuterWindow,
       mFocusByKeyOccurred(false),
       mDidFireDocElemInserted(false),
       mHasGamepad(false),
-      mHasVREvents(false),
+      mHasXRSession(false),
       mHasVRDisplayActivateEvents(false),
+      mXRRuntimeDetectionInFlight(false),
       mXRPermissionRequestInFlight(false),
       mXRPermissionGranted(false),
       mWasCurrentInnerWindow(false),
@@ -1142,8 +1143,9 @@ void nsGlobalWindowInner::FreeInnerObjects() {
   mHasGamepad = false;
   mGamepads.Clear();
   DisableVRUpdates();
-  mHasVREvents = false;
+  mHasXRSession = false;
   mHasVRDisplayActivateEvents = false;
+  mXRRuntimeDetectionInFlight = false;
   mXRPermissionRequestInFlight = false;
   mXRPermissionGranted = false;
   mVRDisplays.Clear();
@@ -3985,12 +3987,23 @@ void nsGlobalWindowInner::DisableGamepadUpdates() {
 }
 
 void nsGlobalWindowInner::EnableVRUpdates() {
-  if (mHasVREvents && !mVREventObserver) {
-    MOZ_ASSERT(!IsDying());
+  
+  
+  if (!mVREventObserver && (mHasXRSession || mXRRuntimeDetectionInFlight)) {
+    
+    
+    
+    MOZ_ASSERT(!IsDying(),
+               "Creating a VREventObserver for an nsGlobalWindow that is "
+               "dying would cause it to leak.");
     mVREventObserver = new VREventObserver(this);
+  }
+  
+  
+  if (mHasXRSession) {
     nsPIDOMWindowOuter* outer = GetOuterWindow();
     if (outer && !outer->IsBackground()) {
-      mVREventObserver->StartActivity();
+      StartVRActivity();
     }
   }
 }
@@ -4009,13 +4022,36 @@ void nsGlobalWindowInner::ResetVRTelemetry(bool aUpdate) {
 }
 
 void nsGlobalWindowInner::StartVRActivity() {
-  if (mVREventObserver) {
+  
+
+
+
+
+
+
+
+
+
+
+  if (mVREventObserver && mHasXRSession) {
     mVREventObserver->StartActivity();
   }
 }
 
 void nsGlobalWindowInner::StopVRActivity() {
-  if (mVREventObserver) {
+  
+
+
+
+
+
+
+
+
+
+
+
+  if (mVREventObserver && mHasXRSession) {
     mVREventObserver->StopActivity();
   }
 }
@@ -5994,28 +6030,70 @@ void nsGlobalWindowInner::SetHasGamepadEventListener(
   }
 }
 
-void nsGlobalWindowInner::RequestXRPermission() {
-  if (mXRPermissionGranted) {
-    
-    
-    OnXRPermissionRequestAllow();
+void nsGlobalWindowInner::NotifyDetectXRRuntimesCompleted() {
+  if (!mXRRuntimeDetectionInFlight) {
     return;
   }
+  mXRRuntimeDetectionInFlight = false;
   if (mXRPermissionRequestInFlight) {
-    
     return;
   }
+  gfx::VRManagerChild* vm = gfx::VRManagerChild::Get();
+  bool supported = vm->RuntimeSupportsVR();
+  if (!supported) {
+    
+    
+    OnXRPermissionRequestCancel();
+    return;
+  }
+  
+  
+  
+  
   mXRPermissionRequestInFlight = true;
   RefPtr<XRPermissionRequest> request =
       new XRPermissionRequest(this, WindowID());
   Unused << NS_WARN_IF(NS_FAILED(request->Start()));
 }
 
+void nsGlobalWindowInner::RequestXRPermission() {
+  if (IsDying()) {
+    
+    
+    
+    return;
+  }
+  if (mXRPermissionGranted) {
+    
+    
+    OnXRPermissionRequestAllow();
+    return;
+  }
+  if (mXRRuntimeDetectionInFlight || mXRPermissionRequestInFlight) {
+    
+    return;
+  }
+  
+  
+  gfx::VRManagerChild* vm = gfx::VRManagerChild::Get();
+  mXRRuntimeDetectionInFlight = true;
+  EnableVRUpdates();
+  vm->DetectRuntimes();
+}
+
 void nsGlobalWindowInner::OnXRPermissionRequestAllow() {
   mXRPermissionRequestInFlight = false;
+  if (IsDying()) {
+    
+    
+    
+    
+    
+    return;
+  }
   mXRPermissionGranted = true;
 
-  NotifyVREventListenerAdded();
+  NotifyHasXRSession();
 
   dom::Navigator* nav = Navigator();
   MOZ_ASSERT(nav != nullptr);
@@ -6024,6 +6102,14 @@ void nsGlobalWindowInner::OnXRPermissionRequestAllow() {
 
 void nsGlobalWindowInner::OnXRPermissionRequestCancel() {
   mXRPermissionRequestInFlight = false;
+  if (IsDying()) {
+    
+    
+    
+    
+    
+    return;
+  }
   dom::Navigator* nav = Navigator();
   MOZ_ASSERT(nav != nullptr);
   nav->OnXRPermissionRequestCancel();
@@ -6084,15 +6170,22 @@ void nsGlobalWindowInner::EventListenerRemoved(nsAtom* aType) {
   }
 }
 
-void nsGlobalWindowInner::NotifyVREventListenerAdded() {
-  mHasVREvents = true;
+void nsGlobalWindowInner::NotifyHasXRSession() {
+  if (IsDying()) {
+    
+    
+    
+    return;
+  }
+  mHasXRSession = true;
   EnableVRUpdates();
 }
 
 bool nsGlobalWindowInner::HasUsedVR() const {
   
   
-  return mHasVREvents;
+  
+  return mHasXRSession;
 }
 
 bool nsGlobalWindowInner::IsVRContentDetected() const {

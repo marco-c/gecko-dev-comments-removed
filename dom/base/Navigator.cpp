@@ -1608,7 +1608,7 @@ void Navigator::NotifyActiveVRDisplaysChanged() {
 VRServiceTest* Navigator::RequestVRServiceTest() {
   
   nsGlobalWindowInner* win = nsGlobalWindowInner::Cast(mWindow);
-  win->NotifyVREventListenerAdded();
+  win->NotifyHasXRSession();
 
   if (!mVRServiceTest) {
     mVRServiceTest = VRServiceTest::CreateTestService(mWindow);

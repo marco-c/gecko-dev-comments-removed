@@ -26,8 +26,11 @@ class VRShMem;
 enum class VRManagerState : uint32_t {
   Disabled,  
   Idle,  
-  Enumeration,  
-  Active        
+  RuntimeDetection,  
+                     
+  Enumeration,       
+  Active,            
+  Stopping,          
 };
 
 class VRManager : nsIObserver {
@@ -43,7 +46,8 @@ class VRManager : nsIObserver {
 
   void NotifyVsync(const TimeStamp& aVsyncTimestamp);
 
-  void RefreshVRDisplays(bool aMustDispatch = false);
+  void DetectRuntimes();
+  void EnumerateDevices();
   void StopAllHaptics();
 
   void VibrateHaptic(uint32_t aControllerIdx, uint32_t aHapticIndex,
@@ -81,14 +85,22 @@ class VRManager : nsIObserver {
   void Run10msTasks();
   void Run100msTasks();
   uint32_t GetOptimalTaskInterval();
+  void ProcessManagerState();
+  void ProcessManagerState_Disabled();
+  void ProcessManagerState_Idle();
+  void ProcessManagerState_Idle_StartRuntimeDetection();
+  void ProcessManagerState_Idle_StartEnumeration();
+  void ProcessManagerState_DetectRuntimes();
+  void ProcessManagerState_Enumeration();
+  void ProcessManagerState_Active();
+  void ProcessManagerState_Stopping();
   void PullState(const std::function<bool()>& aWaitCondition = nullptr);
   void PushState(const bool aNotifyCond = false);
   void ProcessTelemetryEvent();
   static uint32_t AllocateDisplayID();
-
   void DispatchVRDisplayInfoUpdate();
+  void DispatchRuntimeCapabilitiesUpdate();
   void UpdateRequestedDevices();
-  void EnumerateVRDisplays();
   void CheckForInactiveTimeout();
 #if !defined(MOZ_WIDGET_ANDROID)
   void CheckForPuppetCompletion();
@@ -131,6 +143,10 @@ class VRManager : nsIObserver {
   TimeStamp mVRNavigationTransitionEnd;
   TimeStamp mLastFrameStart[kVRMaxLatencyFrames];
   double mAccumulator100ms;
+  bool mRuntimeDetectionRequested;
+  bool mRuntimeDetectionCompleted;
+  bool mEnumerationRequested;
+  bool mEnumerationCompleted;
   bool mVRDisplaysRequested;
   bool mVRDisplaysRequestedNonFocus;
   bool mVRControllersRequested;
@@ -141,7 +157,7 @@ class VRManager : nsIObserver {
   RefPtr<CancelableRunnable> mCurrentSubmitTask;
   uint64_t mLastSubmittedFrameId;
   uint64_t mLastStartedFrame;
-  bool mEnumerationCompleted;
+  VRDisplayCapabilityFlags mRuntimeSupportFlags;
   bool mAppPaused;
 
   
