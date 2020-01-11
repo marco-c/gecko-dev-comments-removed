@@ -12,8 +12,8 @@ class ConsoleCommands {
     this.currentTarget = currentTarget;
   }
 
-  evaluateJSAsync(expression, options = {}) {
-    const { selectedNodeFront, webConsoleFront } = options;
+  async evaluateJSAsync(expression, options = {}) {
+    const { selectedNodeFront, webConsoleFront, selectedObjectActor } = options;
     let front = this.proxy.webConsoleFront;
 
     
@@ -22,8 +22,16 @@ class ConsoleCommands {
     }
 
     
-    if (selectedNodeFront) {
-      front = selectedNodeFront.targetFront.activeConsole;
+    
+    
+    if (selectedObjectActor) {
+      const objectFront = this.debuggerClient.getFrontByID(selectedObjectActor);
+      if (objectFront) {
+        front = await objectFront.targetFront.getFront("console");
+      }
+    } else if (selectedNodeFront) {
+      
+      front = await selectedNodeFront.targetFront.getFront("console");
       options.selectedNodeActor = selectedNodeFront.actorID;
     }
 
