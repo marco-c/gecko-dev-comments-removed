@@ -3020,7 +3020,23 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
     
     if (!FramingChecker::CheckFrameOptions(aChannel, mCSP)) {
       
-      aChannel->Cancel(NS_ERROR_XFO_VIOLATION);
+      
+      
+      
+      
+      
+      aChannel->Cancel(NS_BINDING_ABORTED);
+      if (docShell) {
+        nsCOMPtr<nsIWebNavigation> webNav(do_QueryObject(docShell));
+        if (webNav) {
+          RefPtr<NullPrincipal> principal =
+              NullPrincipal::CreateWithInheritedAttributes(
+                  loadInfo->TriggeringPrincipal());
+          LoadURIOptions loadURIOptions;
+          loadURIOptions.mTriggeringPrincipal = principal;
+          webNav->LoadURI(NS_LITERAL_STRING("about:blank"), loadURIOptions);
+        }
+      }
     }
   }
 
