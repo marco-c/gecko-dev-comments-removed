@@ -8,6 +8,8 @@
 #define mozilla_dom_RemoteWorkerManager_h
 
 #include "base/process.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/RemoteWorkerTypes.h"
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"
@@ -42,6 +44,9 @@ class RemoteWorkerManager final {
   RemoteWorkerServiceParent* SelectTargetActorForServiceWorker(
       const RemoteWorkerData& aData) const;
 
+  RemoteWorkerServiceParent* SelectTargetActorForSharedWorker(
+      base::ProcessId aProcessId) const;
+
   void LaunchInternal(RemoteWorkerController* aController,
                       RemoteWorkerServiceParent* aTargetActor,
                       const RemoteWorkerData& aData,
@@ -50,6 +55,21 @@ class RemoteWorkerManager final {
   void LaunchNewContentProcess(const RemoteWorkerData& aData);
 
   void AsyncCreationFailed(RemoteWorkerController* aController);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename Callback>
+  void ForEachActor(Callback&& aCallback) const;
 
   
   
