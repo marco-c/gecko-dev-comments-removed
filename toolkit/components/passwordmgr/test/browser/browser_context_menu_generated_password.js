@@ -301,9 +301,9 @@ add_task(async function fill_generated_password_with_matching_logins() {
       await openPasswordContextMenu(browser, passwordInputSelector);
 
       
-      let passwordChangedPromise = SpecialPowers.spawn(
+      let passwordChangedPromise = ContentTask.spawn(
         browser,
-        [],
+        null,
         async function() {
           let passwordInput = content.document.getElementById(
             "form-basic-password"
