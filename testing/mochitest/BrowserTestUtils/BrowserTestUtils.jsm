@@ -1826,6 +1826,34 @@ var BrowserTestUtils = {
 
 
 
+  waitForAttributeRemoval(attr, element) {
+    if (!element.hasAttribute(attr)) {
+      return Promise.resolve();
+    }
+
+    let MutationObserver = element.ownerGlobal.MutationObserver;
+    return new Promise(resolve => {
+      dump("Waiting for removal\n");
+      let mut = new MutationObserver(mutations => {
+        if (!element.hasAttribute(attr)) {
+          resolve();
+          mut.disconnect();
+        }
+      });
+
+      mut.observe(element, { attributeFilter: [attr] });
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
 
 
 

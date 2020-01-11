@@ -531,6 +531,12 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
     if (AppConstants.platform == "win") {
       await WindowsSupport.install(this);
     }
+
+    Services.obs.notifyObservers(
+      null,
+      "site-specific-browser-install",
+      this.id
+    );
   }
 
   
@@ -549,6 +555,12 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
     this._config.persisted = false;
     let kvstore = await SiteSpecificBrowserService.getKVStore();
     await kvstore.delete(storeKey(this.id));
+
+    Services.obs.notifyObservers(
+      null,
+      "site-specific-browser-uninstall",
+      this.id
+    );
   }
 
   
@@ -599,6 +611,7 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
 
 
 
+
   getIcon(size) {
     if (!this._iconSizes) {
       this._iconSizes = buildIconList(this._manifest.icons);
@@ -616,6 +629,25 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
     return i < this._iconSizes.length
       ? this._iconSizes[i].icon
       : this._iconSizes[this._iconSizes.length - 1].icon;
+  }
+
+  
+
+
+
+
+
+
+  async getScaledIcon(size) {
+    let icon = this.getIcon(size);
+    if (!icon) {
+      return null;
+    }
+
+    let { container } = await ImageTools.loadImage(
+      Services.io.newURI(icon.src)
+    );
+    return ImageTools.scaleImage(container, size, size);
   }
 
   
