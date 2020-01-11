@@ -16,7 +16,6 @@
 
 
 
-
 #ifndef mozilla_dom_ChildSHistory_h
 #define mozilla_dom_ChildSHistory_h
 
@@ -36,11 +35,8 @@ class nsIGlobalObject;
 namespace mozilla {
 namespace dom {
 
-class ParentSHistory;
-
 class ChildSHistory : public nsISupports, public nsWrapperCache {
  public:
-  friend class ParentSHistory;
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ChildSHistory)
@@ -75,8 +71,6 @@ class ChildSHistory : public nsISupports, public nsWrapperCache {
   void EvictLocalContentViewers();
 
   nsISHistory* LegacySHistory();
-
-  ParentSHistory* GetParentIfSameProcess();
 
  private:
   virtual ~ChildSHistory();
