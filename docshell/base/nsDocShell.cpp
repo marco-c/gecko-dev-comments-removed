@@ -10914,6 +10914,7 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
     newSHEntry = mOSHE;
 
     
+    
     if (!newSHEntry) {
       nsresult rv = AddToSessionHistory(
           aNewURI, nullptr,
