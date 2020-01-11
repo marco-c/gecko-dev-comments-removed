@@ -535,11 +535,20 @@ bool ActiveLayerTracker::IsStyleAnimated(
       return true;
     }
   }
-  if (aPropertySet.Intersects(transformSet) &&
-      aFrame->Combines3DTransformWithAncestors()) {
-    return IsStyleAnimated(aBuilder, aFrame->GetParent(), aPropertySet);
+
+  if (nsLayoutUtils::HasEffectiveAnimation(aFrame, aPropertySet)) {
+    return true;
   }
-  return nsLayoutUtils::HasEffectiveAnimation(aFrame, aPropertySet);
+
+  if (!aPropertySet.Intersects(transformSet) ||
+      !aFrame->Combines3DTransformWithAncestors()) {
+    return false;
+  }
+
+  
+  
+  
+  return IsStyleAnimated(aBuilder, aFrame->GetParent(), aPropertySet);
 }
 
 

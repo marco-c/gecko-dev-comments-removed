@@ -8511,6 +8511,22 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
     return FullPrerender;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aFrame->Extend3DContext() || aFrame->Combines3DTransformWithAncestors()) {
+    
+    *aDirtyRect = overflow;
+    return FullPrerender;
+  }
+
   if (StaticPrefs::layout_animation_prerender_partial()) {
     *aDirtyRect = nsLayoutUtils::ComputePartialPrerenderArea(*aDirtyRect,
                                                              overflow, maxSize);

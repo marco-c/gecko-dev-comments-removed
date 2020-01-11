@@ -1491,16 +1491,6 @@ bool KeyframeEffect::CanAnimateTransformOnCompositor(
   
   
   
-  if (primaryFrame->Combines3DTransformWithAncestors() ||
-      primaryFrame->StyleDisplay()->mTransformStyle ==
-          NS_STYLE_TRANSFORM_STYLE_PRESERVE_3D) {
-    aPerformanceWarning =
-        AnimationPerformanceWarning::Type::TransformPreserve3D;
-    return false;
-  }
-  
-  
-  
   
   if (primaryFrame->BackfaceIsHidden()) {
     aPerformanceWarning =

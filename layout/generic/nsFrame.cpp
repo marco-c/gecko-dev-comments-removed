@@ -3158,6 +3158,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
 
         
         
+        
+        
         if (combines3DTransformWithAncestors) {
           visibleRect = dirtyRect = aBuilder->GetPreserves3DRect();
         }
