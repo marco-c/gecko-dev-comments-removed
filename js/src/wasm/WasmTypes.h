@@ -39,6 +39,7 @@
 #include "js/Vector.h"
 #include "vm/JSFunction.h"
 #include "vm/MallocProvider.h"
+#include "vm/NativeObject.h"
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmUtility.h"
 
@@ -443,6 +444,12 @@ class ValType {
 
   bool isReference() const { return IsReferenceType(tc_); }
 
+  
+  
+  
+  
+  bool isEncodedAsJSValueOnEscape() const { return code() == Code::AnyRef; }
+
   bool operator==(const ValType& that) const { return tc_ == that.tc_; }
   bool operator!=(const ValType& that) const { return tc_ != that.tc_; }
   bool operator==(Code that) const {
@@ -475,6 +482,11 @@ static inline unsigned SizeOf(ValType vt) {
   }
   MOZ_CRASH("Invalid ValType");
 }
+
+
+
+
+
 
 static inline jit::MIRType ToMIRType(ValType vt) {
   switch (vt.code()) {
@@ -633,6 +645,20 @@ bool BoxAnyRef(JSContext* cx, HandleValue val, MutableHandleAnyRef result);
 
 
 Value UnboxAnyRef(AnyRef val);
+
+class WasmValueBox : public NativeObject {
+  static const unsigned VALUE_SLOT = 0;
+
+ public:
+  static const unsigned RESERVED_SLOTS = 1;
+  static const JSClass class_;
+
+  static WasmValueBox* create(JSContext* cx, HandleValue val);
+  Value value() const { return getFixedSlot(VALUE_SLOT); }
+  static size_t offsetOfValue() {
+    return NativeObject::getFixedSlotOffset(VALUE_SLOT);
+  }
+};
 
 
 
@@ -936,14 +962,52 @@ class FuncType {
     }
     return false;
   }
-  bool temporarilyUnsupportedAnyRef() const {
+  bool hasReferenceArg() const {
     for (ValType arg : args()) {
       if (arg.isReference()) {
         return true;
       }
     }
+    return false;
+  }
+  bool hasReferenceReturn() const {
     for (ValType result : results()) {
       if (result.isReference()) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  
+  bool temporarilyUnsupportedReftypeForEntry() const {
+    if (hasReferenceArg()) {
+      return true;
+    }
+    for (ValType result : results()) {
+      if (result.isReference() && result.code() != ValType::AnyRef) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  
+  bool temporarilyUnsupportedReftypeForInlineEntry() const {
+    return hasReferenceArg() || hasReferenceReturn();
+  }
+  
+  bool temporarilyUnsupportedReftypeForExit() const {
+    for (ValType arg : args()) {
+      if (arg.isReference() && arg.code() != ValType::AnyRef) {
+        return true;
+      }
+    }
+    return hasReferenceReturn();
+  }
+  bool jitExitRequiresArgCheck() const {
+    for (ValType arg : args()) {
+      if (arg.isEncodedAsJSValueOnEscape()) {
         return true;
       }
     }
@@ -2167,6 +2231,9 @@ struct TlsData {
 
   
   JSContext* cx;
+
+  
+  const JSClass* valueBoxClass;
 
   
   

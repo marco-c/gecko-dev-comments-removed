@@ -286,6 +286,20 @@ static unsigned StackArgBytes(const VectorT& args) {
   return iter.stackBytesConsumedSoFar();
 }
 
+static void Move64(MacroAssembler& masm, const Address& src,
+                   const Address& dest, Register scratch) {
+#if JS_BITS_PER_WORD == 32
+  masm.load32(LowWord(src), scratch);
+  masm.store32(scratch, LowWord(dest));
+  masm.load32(HighWord(src), scratch);
+  masm.store32(scratch, HighWord(dest));
+#else
+  Register64 scratch64(scratch);
+  masm.load64(src, scratch64);
+  masm.store64(scratch64, dest);
+#endif
+}
+
 static void SetupABIArguments(MacroAssembler& masm, const FuncExport& fe,
                               Register argv, Register scratch) {
   
@@ -340,18 +354,7 @@ static void SetupABIArguments(MacroAssembler& masm, const FuncExport& fe,
             break;
           case MIRType::Int64: {
             RegisterOrSP sp = masm.getStackPointer();
-#if JS_BITS_PER_WORD == 32
-            masm.load32(LowWord(src), scratch);
-            masm.store32(scratch,
-                         LowWord(Address(sp, iter->offsetFromArgBase())));
-            masm.load32(HighWord(src), scratch);
-            masm.store32(scratch,
-                         HighWord(Address(sp, iter->offsetFromArgBase())));
-#else
-            Register64 scratch64(scratch);
-            masm.load64(src, scratch64);
-            masm.store64(scratch64, Address(sp, iter->offsetFromArgBase()));
-#endif
+            Move64(masm, src, Address(sp, iter->offsetFromArgBase()), scratch);
             break;
           }
           case MIRType::RefOrNull:
@@ -508,6 +511,80 @@ static void CallFuncExport(MacroAssembler& masm, const FuncExport& fe,
   } else {
     masm.call(CallSiteDesc(CallSiteDesc::Func), fe.funcIndex());
   }
+}
+
+STATIC_ASSERT_ANYREF_IS_JSOBJECT;  
+
+
+
+
+
+
+
+
+static void UnboxAnyrefIntoValue(MacroAssembler& masm, Register tls,
+                                 Register src, const Address& dst,
+                                 Register scratch) {
+  MOZ_ASSERT(src != scratch);
+
+  
+  
+  GenPrintPtr(DebugChannel::Import, masm, src);
+
+  Label notNull, mustUnbox, done;
+  masm.branchTestPtr(Assembler::NonZero, src, src, &notNull);
+  masm.storeValue(NullValue(), dst);
+  masm.jump(&done);
+
+  masm.bind(&notNull);
+  
+  masm.storeValue(JSVAL_TYPE_OBJECT, src, dst);
+  
+  masm.branchTestObjClass(Assembler::Equal, src,
+                          Address(tls, offsetof(TlsData, valueBoxClass)),
+                          scratch, src, &mustUnbox);
+  masm.jump(&done);
+
+  masm.bind(&mustUnbox);
+  Move64(masm, Address(src, WasmValueBox::offsetOfValue()), dst, scratch);
+
+  masm.bind(&done);
+}
+
+
+static void UnboxAnyrefIntoValueReg(MacroAssembler& masm, Register tls,
+                                    Register src, ValueOperand dst,
+                                    Register scratch) {
+  MOZ_ASSERT(src != scratch);
+#if JS_BITS_PER_WORD == 32
+  MOZ_ASSERT(dst.typeReg() != scratch);
+  MOZ_ASSERT(dst.payloadReg() != scratch);
+#else
+  MOZ_ASSERT(dst.valueReg() != scratch);
+#endif
+
+  
+  
+  GenPrintPtr(DebugChannel::Import, masm, src);
+
+  Label notNull, mustUnbox, done;
+  masm.branchTestPtr(Assembler::NonZero, src, src, &notNull);
+  masm.moveValue(NullValue(), dst);
+  masm.jump(&done);
+
+  masm.bind(&notNull);
+  
+  masm.moveValue(TypedOrValueRegister(MIRType::Object, AnyRegister(src)), dst);
+  
+  masm.branchTestObjClass(Assembler::Equal, src,
+                          Address(tls, offsetof(TlsData, valueBoxClass)),
+                          scratch, src, &mustUnbox);
+  masm.jump(&done);
+
+  masm.bind(&mustUnbox);
+  masm.loadValue(Address(src, WasmValueBox::offsetOfValue()), dst);
+
+  masm.bind(&done);
 }
 
 
@@ -995,9 +1072,16 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
         masm.boxDouble(ReturnDoubleReg, JSReturnOperand, fpscratch);
         break;
       }
+      case ValType::AnyRef: {
+        
+        
+        GenerateJitEntryLoadTls(masm,  0);
+        UnboxAnyrefIntoValueReg(masm, WasmTlsReg, ReturnReg, JSReturnOperand,
+                                WasmJitEntryReturnScratch);
+        break;
+      }
       case ValType::Ref:
       case ValType::FuncRef:
-      case ValType::AnyRef:
         MOZ_CRASH("returning reference in jitentry NYI");
         break;
       case ValType::I64:
@@ -1312,12 +1396,20 @@ static void StackCopy(MacroAssembler& masm, MIRType type, Register scratch,
 
 typedef bool ToValue;
 
-static void FillArgumentArray(MacroAssembler& masm, unsigned funcImportIndex,
-                              const ValTypeVector& args, unsigned argOffset,
-                              unsigned offsetToCallerStackArgs,
-                              Register scratch, ToValue toValue) {
+
+
+static void FillArgumentArrayForExit(MacroAssembler& masm, Register tls,
+                                     unsigned funcImportIndex,
+                                     const ValTypeVector& args,
+                                     unsigned argOffset,
+                                     unsigned offsetToCallerStackArgs,
+                                     Register scratch, Register scratch2,
+                                     ToValue toValue) {
+  MOZ_ASSERT(scratch != scratch2);
+
   GenPrintf(DebugChannel::Import, masm, "wasm-import[%u]; arguments ",
             funcImportIndex);
+
   for (ABIArgValTypeIter i(args); !i.done(); i++) {
     Address dst(masm.getStackPointer(), argOffset + i.index() * sizeof(Value));
 
@@ -1341,12 +1433,14 @@ static void FillArgumentArray(MacroAssembler& masm, unsigned funcImportIndex,
           }
         } else if (type == MIRType::RefOrNull) {
           if (toValue) {
-            MOZ_CRASH("generating a jit exit for anyref NYI");
+            masm.movePtr(i->gpr(), scratch2);
+            UnboxAnyrefIntoValue(masm, tls, scratch2, dst, scratch);
+          } else {
+            GenPrintPtr(DebugChannel::Import, masm, i->gpr());
+            masm.storePtr(i->gpr(), dst);
           }
-          GenPrintPtr(DebugChannel::Import, masm, i->gpr());
-          masm.storePtr(i->gpr(), dst);
         } else {
-          MOZ_CRASH("FillArgumentArray, ABIArg::GPR: unexpected type");
+          MOZ_CRASH("FillArgumentArrayForExit, ABIArg::GPR: unexpected type");
         }
         break;
 #ifdef JS_CODEGEN_REGISTER_PAIR
@@ -1403,7 +1497,8 @@ static void FillArgumentArray(MacroAssembler& masm, unsigned funcImportIndex,
             
             masm.breakpoint();
           } else if (type == MIRType::RefOrNull) {
-            MOZ_CRASH("generating a jit exit for anyref NYI");
+            masm.loadPtr(src, scratch);
+            UnboxAnyrefIntoValue(masm, tls, scratch, dst, scratch2);
           } else if (IsFloatingPointType(type)) {
             ScratchDoubleScope dscratch(masm);
             FloatRegister fscratch = dscratch.asSingle();
@@ -1417,7 +1512,8 @@ static void FillArgumentArray(MacroAssembler& masm, unsigned funcImportIndex,
             GenPrintF64(DebugChannel::Import, masm, dscratch);
             masm.boxDouble(dscratch, dst);
           } else {
-            MOZ_CRASH("FillArgumentArray, ABIArg::Stack: unexpected type");
+            MOZ_CRASH(
+                "FillArgumentArrayForExit, ABIArg::Stack: unexpected type");
           }
         } else {
           StackCopy(masm, type, scratch, src, dst);
@@ -1559,8 +1655,10 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
   
   unsigned offsetToCallerStackArgs = sizeof(Frame) + masm.framePushed();
   Register scratch = ABINonArgReturnReg0;
-  FillArgumentArray(masm, funcImportIndex, fi.funcType().args(), argOffset,
-                    offsetToCallerStackArgs, scratch, ToValue(false));
+  Register scratch2 = ABINonArgReturnReg1;
+  FillArgumentArrayForExit(
+      masm, WasmTlsReg, funcImportIndex, fi.funcType().args(), argOffset,
+      offsetToCallerStackArgs, scratch, scratch2, ToValue(false));
 
   
   ABIArgMIRTypeIter i(invokeArgTypes);
@@ -1735,15 +1833,8 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   argOffset += sizeof(size_t);
 
   
-  Register callee = ABINonArgReturnReg0;   
-  Register scratch = ABINonArgReturnReg1;  
-
   
-  masm.loadWasmGlobalPtr(fi.tlsDataOffset() + offsetof(FuncImportTls, fun),
-                         callee);
-
-  
-  masm.storePtr(callee, Address(masm.getStackPointer(), argOffset));
+  size_t calleeArgOffset = argOffset;
   argOffset += sizeof(size_t);
 
   
@@ -1760,10 +1851,23 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   
   unsigned offsetToCallerStackArgs =
       jitFramePushed + sizeof(Frame) + frameAlignExtra;
-  FillArgumentArray(masm, funcImportIndex, fi.funcType().args(), argOffset,
-                    offsetToCallerStackArgs, scratch, ToValue(true));
+  Register scratch = ABINonArgReturnReg1;   
+  Register scratch2 = ABINonArgReturnReg0;  
+  FillArgumentArrayForExit(
+      masm, WasmTlsReg, funcImportIndex, fi.funcType().args(), argOffset,
+      offsetToCallerStackArgs, scratch, scratch2, ToValue(true));
   argOffset += fi.funcType().args().length() * sizeof(Value);
   MOZ_ASSERT(argOffset == sizeOfThisAndArgs + sizeOfPreFrame + frameAlignExtra);
+
+  
+  Register callee = ABINonArgReturnReg0;  
+
+  
+  masm.loadWasmGlobalPtr(fi.tlsDataOffset() + offsetof(FuncImportTls, fun),
+                         callee);
+
+  
+  masm.storePtr(callee, Address(masm.getStackPointer(), calleeArgOffset));
 
   
   masm.load16ZeroExtend(Address(callee, JSFunction::offsetOfNargs()), scratch);
@@ -1773,12 +1877,17 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
                 &rectify);
 
   
-  
-  
-  masm.loadWasmGlobalPtr(
-      fi.tlsDataOffset() + offsetof(FuncImportTls, jitScript), callee);
-  masm.loadPtr(Address(callee, JitScript::offsetOfJitCodeSkipArgCheck()),
-               callee);
+
+  if (fi.funcType().jitExitRequiresArgCheck()) {
+    masm.loadJitCodeRaw(callee, callee);
+  } else {
+    
+    
+    masm.loadWasmGlobalPtr(
+        fi.tlsDataOffset() + offsetof(FuncImportTls, jitScript), callee);
+    masm.loadPtr(Address(callee, JitScript::offsetOfJitCodeSkipArgCheck()),
+                 callee);
+  }
 
   Label rejoinBeforeCall;
   masm.bind(&rejoinBeforeCall);
@@ -2283,7 +2392,7 @@ bool wasm::GenerateEntryStubs(MacroAssembler& masm, size_t funcExportIndex,
     return false;
   }
 
-  if (isAsmJS || fe.funcType().temporarilyUnsupportedAnyRef()) {
+  if (isAsmJS || fe.funcType().temporarilyUnsupportedReftypeForEntry()) {
     return true;
   }
 
@@ -2326,7 +2435,7 @@ bool wasm::GenerateStubs(const ModuleEnvironment& env,
       return false;
     }
 
-    if (fi.funcType().temporarilyUnsupportedAnyRef()) {
+    if (fi.funcType().temporarilyUnsupportedReftypeForExit()) {
       continue;
     }
 

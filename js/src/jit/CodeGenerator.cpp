@@ -13971,6 +13971,8 @@ void CodeGenerator::emitIonToWasmCallBase(LIonToWasmCallBase<NumDefs>* lir) {
       case wasm::ValType::FuncRef:
         
         
+        
+        
         MOZ_CRASH("unexpected argument type when calling from ion to wasm");
       case wasm::ValType::NullRef:
         MOZ_CRASH("NullRef not expressible");
@@ -14031,8 +14033,6 @@ void CodeGenerator::emitIonToWasmCallBase(LIonToWasmCallBase<NumDefs>* lir) {
       case wasm::ValType::AnyRef:
       case wasm::ValType::FuncRef:
       case wasm::ValType::I64:
-        
-        
         MOZ_CRASH("unexpected return type when calling from ion to wasm");
       case wasm::ValType::NullRef:
         MOZ_CRASH("NullRef not expressible");

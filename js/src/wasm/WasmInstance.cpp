@@ -196,7 +196,8 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
   }
 
   
-  if (fi.funcType().temporarilyUnsupportedAnyRef()) {
+  
+  if (fi.funcType().temporarilyUnsupportedReftypeForExit()) {
     return true;
   }
 
@@ -204,30 +205,43 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
 
   size_t numKnownArgs = std::min(importArgs.length(), importFun->nargs());
   for (uint32_t i = 0; i < numKnownArgs; i++) {
-    TypeSet::Type type = TypeSet::UnknownType();
+    StackTypeSet* argTypes = jitScript->argTypes(sweep, script, i);
     switch (importArgs[i].code()) {
       case ValType::I32:
-        type = TypeSet::Int32Type();
+        if (!argTypes->hasType(TypeSet::Int32Type())) {
+          return true;
+        }
         break;
       case ValType::F32:
-        type = TypeSet::DoubleType();
+        if (!argTypes->hasType(TypeSet::DoubleType())) {
+          return true;
+        }
         break;
       case ValType::F64:
-        type = TypeSet::DoubleType();
+        if (!argTypes->hasType(TypeSet::DoubleType())) {
+          return true;
+        }
+        break;
+      case ValType::AnyRef:
+        
+        
+        
+        
+        
+        
+        
         break;
       case ValType::Ref:
+        MOZ_CRASH("case guarded above");
       case ValType::FuncRef:
-      case ValType::AnyRef:
+        
+        
+        
         MOZ_CRASH("case guarded above");
       case ValType::I64:
         MOZ_CRASH("NYI");
       case ValType::NullRef:
         MOZ_CRASH("NullRef not expressible");
-    }
-
-    StackTypeSet* argTypes = jitScript->argTypes(sweep, script, i);
-    if (!argTypes->hasType(type)) {
-      return true;
     }
   }
 
@@ -1157,6 +1171,7 @@ Instance::Instance(JSContext* cx, Handle<WasmInstanceObject*> object,
   tlsData()->instance = this;
   tlsData()->realm = realm_;
   tlsData()->cx = cx;
+  tlsData()->valueBoxClass = &WasmValueBox::class_;
   tlsData()->resetInterrupt(cx);
   tlsData()->jumpTable = code_->tieringJumpTable();
   tlsData()->addressOfNeedsIncrementalBarrier =
