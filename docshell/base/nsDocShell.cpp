@@ -6896,9 +6896,7 @@ bool nsDocShell::CanSavePresentation(uint32_t aLoadType,
   }
 
   
-  nsCOMPtr<nsIDocShellTreeItem> root;
-  GetInProcessSameTypeParent(getter_AddRefs(root));
-  if (root && root != this) {
+  if (mBrowsingContext->GetParent()) {
     return false;  
   }
 
