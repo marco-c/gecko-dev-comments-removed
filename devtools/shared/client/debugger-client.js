@@ -99,17 +99,10 @@ DebuggerClient.prototype = {
 
 
 
-
-
-
-
-  connect(onConnected) {
+  connect() {
     return new Promise(resolve => {
       this.once("connected", (applicationType, traits) => {
         this.traits = traits;
-        if (onConnected) {
-          onConnected(applicationType, traits);
-        }
         resolve([applicationType, traits]);
       });
 
