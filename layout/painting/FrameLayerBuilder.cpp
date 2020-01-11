@@ -6133,6 +6133,14 @@ Size FrameLayerBuilder::ChooseScale(nsIFrame* aContainerFrame,
     scale = Size(1.0, 1.0);
   }
 
+  
+  
+  
+  
+  
+  scale =
+      Size(std::min(scale.width, 32768.0f), std::min(scale.height, 32768.0f));
+
   return scale;
 }
 
