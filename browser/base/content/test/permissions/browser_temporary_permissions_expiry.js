@@ -18,6 +18,8 @@ PromiseTestUtils.whitelistRejectionsGlobally(/The request is not allowed/);
 const EXPIRE_TIME_MS = 100;
 const TIMEOUT_MS = 500;
 
+const kVREnabled = SpecialPowers.getBoolPref("dom.vr.enabled");
+
 
 
 add_task(async function testTempPermissionRequestAfterExpiry() {
@@ -31,7 +33,11 @@ add_task(async function testTempPermissionRequestAfterExpiry() {
   let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
     ORIGIN
   );
-  let ids = ["geo", "camera", "xr"];
+  let ids = ["geo", "camera"];
+
+  if (kVREnabled) {
+    ids.push("xr");
+  }
 
   for (let id of ids) {
     await BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, async function(
