@@ -217,6 +217,13 @@ kern_return_t ReadTaskMemory(task_port_t target_task,
 
 
 
+
+
+#define MH_SHAREDCACHE 0x80000000
+
+
+
+
 struct MachO32 {
   typedef mach_header mach_header_type;
   typedef segment_command mach_segment_command_type;
@@ -250,6 +257,11 @@ bool FindTextSection(DynamicImage& image) {
     return false;
   }
 
+  bool is_in_shared_cache = ((header->flags & MH_SHAREDCACHE) != 0);
+  if (is_in_shared_cache) {
+    image.slide_ = image.shared_cache_slide_;
+  }
+
   const struct load_command *cmd =
       reinterpret_cast<const struct load_command *>(header + 1);
 
@@ -261,15 +273,16 @@ bool FindTextSection(DynamicImage& image) {
         const mach_segment_command_type *seg =
             reinterpret_cast<const mach_segment_command_type *>(cmd);
 
+        if (!is_in_shared_cache) {
+          if (seg->fileoff == 0 && seg->filesize != 0) {
+            image.slide_ =
+              (uintptr_t)image.GetLoadAddress() - (uintptr_t)seg->vmaddr;
+          }
+        }
+
         if (!strcmp(seg->segname, "__TEXT")) {
           image.vmaddr_ = static_cast<mach_vm_address_t>(seg->vmaddr);
           image.vmsize_ = static_cast<mach_vm_size_t>(seg->vmsize);
-          image.slide_ = 0;
-
-          if (seg->fileoff == 0 && seg->filesize != 0) {
-            image.slide_ =
-                (uintptr_t)image.GetLoadAddress() - (uintptr_t)seg->vmaddr;
-          }
           found_text_section = true;
         }
       }
@@ -431,6 +444,8 @@ void ReadImageInfo(DynamicImages& images,
       mach_header_type *header =
           reinterpret_cast<mach_header_type*>(&mach_header_bytes[0]);
 
+      cpu_subtype_t cpusubtype = (header->cpusubtype & ~CPU_SUBTYPE_MASK);
+
       
       
       size_t header_size =
@@ -459,7 +474,9 @@ void ReadImageInfo(DynamicImages& images,
                                    file_path,
                                    static_cast<uintptr_t>(info.file_mod_date_),
                                    images.task_,
-                                   images.cpu_type_);
+                                   images.cpu_type_,
+                                   cpusubtype,
+                                   dyldInfo->sharedCacheSlide);
 
       if (new_image->IsValid()) {
         images.image_list_.push_back(DynamicImageRef(new_image));

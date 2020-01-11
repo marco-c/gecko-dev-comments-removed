@@ -77,6 +77,9 @@ typedef struct dyld_all_image_infos32 {
   uint32_t                      infoArray;  
   uint32_t                      notification;
   bool                          processDetachedFromSharedRegion;
+  uint32_t                      padding[15];
+  
+  uint32_t                      sharedCacheSlide;
 } dyld_all_image_infos32;
 
 typedef struct dyld_all_image_infos64 {
@@ -85,6 +88,9 @@ typedef struct dyld_all_image_infos64 {
   uint64_t                      infoArray;  
   uint64_t                      notification;
   bool                          processDetachedFromSharedRegion;
+  uint64_t                      padding[15];
+  
+  uint64_t                      sharedCacheSlide;
 } dyld_all_image_infos64;
 
 
@@ -114,7 +120,9 @@ class DynamicImage {
                string file_path,
                uintptr_t image_mod_date,
                mach_port_t task,
-               cpu_type_t cpu_type)
+               cpu_type_t cpu_type,
+               cpu_subtype_t cpu_subtype,
+               ptrdiff_t shared_cache_slide)
     : header_(header, header + header_size),
       header_size_(header_size),
       load_address_(load_address),
@@ -125,7 +133,9 @@ class DynamicImage {
       file_path_(file_path),
       file_mod_date_(image_mod_date),
       task_(task),
-      cpu_type_(cpu_type) {
+      cpu_type_(cpu_type),
+      cpu_subtype_(cpu_subtype),
+      shared_cache_slide_(shared_cache_slide) {
     CalculateMemoryAndVersionInfo();
   }
 
@@ -154,6 +164,9 @@ class DynamicImage {
 
   
   cpu_type_t GetCPUType() {return cpu_type_;}
+
+  
+  cpu_type_t GetCPUSubtype() {return cpu_subtype_;}
 
   
   uint32_t GetFileType();
@@ -195,6 +208,8 @@ class DynamicImage {
 
   mach_port_t             task_;
   cpu_type_t              cpu_type_;        
+  cpu_subtype_t           cpu_subtype_;     
+  ptrdiff_t               shared_cache_slide_; 
 };
 
 
