@@ -882,7 +882,7 @@ void nsPermissionManager::Startup() {
 
 
 #define PERMISSIONS_FILE_NAME "permissions.sqlite"
-#define HOSTS_SCHEMA_VERSION 10
+#define HOSTS_SCHEMA_VERSION 11
 
 
 
@@ -1539,6 +1539,25 @@ nsresult nsPermissionManager::InitDB(bool aRemoveFile) {
         MOZ_FALLTHROUGH;
 
       case 9: {
+        rv = mDBConn->SetSchemaVersion(10);
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+        
+        MOZ_FALLTHROUGH;
+
+      case 10: {
+        
+        
+        
+        rv = mDBConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+            "UPDATE moz_perms "
+            "SET type=SUBSTR(type, 0, INSTR(SUBSTR(type, INSTR(type, '^') + "
+            "1), '^') + INSTR(type, '^')) "
+            "WHERE INSTR(SUBSTR(type, INSTR(type, '^') + 1), '^') AND "
+            "SUBSTR(type, 0, 18) == \"storageAccessAPI^\";"));
+        NS_ENSURE_SUCCESS(rv, rv);
+
         rv = mDBConn->SetSchemaVersion(HOSTS_SCHEMA_VERSION);
         NS_ENSURE_SUCCESS(rv, rv);
       }
