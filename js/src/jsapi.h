@@ -344,6 +344,12 @@ extern JS_PUBLIC_API JSRuntime* JS_GetRuntime(JSContext* cx);
 
 extern JS_PUBLIC_API void JS_SetFutexCanWait(JSContext* cx);
 
+
+
+
+
+extern JS_PUBLIC_API bool JS_ContainsSharedArrayBuffer(JSContext* cx);
+
 namespace js {
 
 void AssertHeapIsIdle();
