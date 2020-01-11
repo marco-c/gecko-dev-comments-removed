@@ -43,6 +43,10 @@ struct FeaturesD3D : FeatureSetBase
                                             FeatureCategory::D3DWorkarounds,
                                             "Set data faster than image upload", &members};
 
+    Feature setDataFasterThanImageUploadOn128bitFormats = {
+        "set_data_faster_than_image_upload_on_128bit_formats", FeatureCategory::D3DWorkarounds,
+        "Set data faster than image upload on 128bit formats", &members};
+
     
     
     

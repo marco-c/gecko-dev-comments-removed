@@ -805,9 +805,10 @@ void MakeValidSize(bool isImage,
 
 void InitializeFeatures(angle::FeaturesD3D *features)
 {
-    features->mrtPerfWorkaround.enabled                = true;
-    features->setDataFasterThanImageUpload.enabled     = false;
-    features->useInstancedPointSpriteEmulation.enabled = false;
+    features->mrtPerfWorkaround.enabled                           = true;
+    features->setDataFasterThanImageUpload.enabled                = false;
+    features->setDataFasterThanImageUploadOn128bitFormats.enabled = false;
+    features->useInstancedPointSpriteEmulation.enabled            = false;
 
     
     features->expandIntegerPowExpressions.enabled = true;

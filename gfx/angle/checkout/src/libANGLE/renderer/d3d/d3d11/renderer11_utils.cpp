@@ -2383,10 +2383,11 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
 {
     bool is9_3 = (deviceCaps.featureLevel <= D3D_FEATURE_LEVEL_9_3);
 
-    features->mrtPerfWorkaround.enabled                = true;
-    features->setDataFasterThanImageUpload.enabled     = true;
-    features->zeroMaxLodWorkaround.enabled             = is9_3;
-    features->useInstancedPointSpriteEmulation.enabled = is9_3;
+    features->mrtPerfWorkaround.enabled                           = true;
+    features->setDataFasterThanImageUpload.enabled                = true;
+    features->setDataFasterThanImageUploadOn128bitFormats.enabled = true;
+    features->zeroMaxLodWorkaround.enabled                        = is9_3;
+    features->useInstancedPointSpriteEmulation.enabled            = is9_3;
 
     
     if (IsNvidia(adapterDesc.VendorId))
@@ -2432,7 +2433,7 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
             features->rewriteUnaryMinusOperator.enabled = capsVersion < IntelDriverVersion(4624);
 
             
-            features->setDataFasterThanImageUpload.enabled = false;
+            features->setDataFasterThanImageUploadOn128bitFormats.enabled = false;
         }
     }
 
