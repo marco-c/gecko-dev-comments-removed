@@ -68,6 +68,9 @@ class RtpRtcp : public Module {
     
     RtcpBandwidthObserver* bandwidth_callback = nullptr;
 
+    
+    RtcpEventObserver* event_callback = nullptr;
+
     TransportFeedbackObserver* transport_feedback_callback = nullptr;
     VideoBitrateAllocationObserver* bitrate_allocation_observer = nullptr;
     RtcpRttStats* rtt_stats = nullptr;
