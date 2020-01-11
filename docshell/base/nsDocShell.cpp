@@ -466,10 +466,6 @@ already_AddRefed<nsDocShell> nsDocShell::Create(
 
   
   ds->mContentListener = new nsDSURIContentListener(ds);
-  rv = ds->mContentListener->Init();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nullptr;
-  }
 
   
   
