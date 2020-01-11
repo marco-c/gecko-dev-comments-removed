@@ -866,17 +866,19 @@ impl Tile {
         }
 
         
-        let tile_is_opaque = ctx.backdrop.rect.contains_rect(&self.clipped_rect);
-        let opacity_changed = tile_is_opaque != self.is_opaque;
-        self.is_opaque = tile_is_opaque;
-
-        
         self.update_content_validity(ctx, state);
 
         
         if self.current_descriptor.prims.is_empty() {
             return false;
         }
+
+        
+        
+        
+        let tile_is_opaque = ctx.backdrop.rect.contains_rect(&self.clipped_rect);
+        let opacity_changed = tile_is_opaque != self.is_opaque;
+        self.is_opaque = tile_is_opaque;
 
         
         
