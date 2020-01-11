@@ -2109,7 +2109,26 @@ nsresult nsProtocolProxyService::Resolve_Internal(nsIChannel* channel,
     
     if (NS_SUCCEEDED(mSystemProxySettings->GetProxyForURI(spec, scheme, host,
                                                           port, pacString))) {
-      ProcessPACString(pacString, 0, result);
+      nsCOMPtr<nsIProxyInfo> pi;
+      ProcessPACString(pacString, 0, getter_AddRefs(pi));
+
+      if (flags & RESOLVE_PREFER_SOCKS_PROXY &&
+          flags & RESOLVE_PREFER_HTTPS_PROXY) {
+        nsAutoCString type;
+        pi->GetType(type);
+        
+        
+        
+        
+        if (type.EqualsLiteral(kProxyType_DIRECT)) {
+          scheme.AssignLiteral(kProxyType_HTTPS);
+          if (NS_SUCCEEDED(mSystemProxySettings->GetProxyForURI(
+                  spec, scheme, host, port, pacString))) {
+            ProcessPACString(pacString, 0, getter_AddRefs(pi));
+          }
+        }
+      }
+      pi.forget(result);
       return NS_OK;
     }
   }
