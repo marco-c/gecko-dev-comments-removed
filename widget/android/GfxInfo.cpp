@@ -559,13 +559,21 @@ nsresult GfxInfo::GetFeatureStatusImpl(
     }
 
     if (aFeature == FEATURE_WEBRENDER) {
+      bool isUnblocked = false;
+#ifndef NIGHTLY_BUILD
+      
       NS_LossyConvertUTF16toASCII model(mModel);
-      bool isBlocked = model.Find("Pixel 2",  true) <
-                           0 &&  
-                       model.Find("Pixel 3",  true) <
-                           0;  
-
-      if (isBlocked) {
+      isUnblocked |= model.Find("Pixel 2",  true) >=
+                         0 ||  
+                     model.Find("Pixel 3",  true) >=
+                         0;  
+#else
+      
+      const nsCString& gpu = mGLStrings->Renderer();
+      isUnblocked |= gpu.Find("Adreno (TM) 5",  true) >= 0 ||
+                     gpu.Find("Adreno (TM) 6",  true) >= 0;
+#endif
+      if (!isUnblocked) {
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
         aFailureId = "FEATURE_FAILURE_WEBRENDER_BLOCKED_DEVICE";
       } else {
