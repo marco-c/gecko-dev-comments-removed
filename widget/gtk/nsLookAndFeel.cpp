@@ -274,6 +274,29 @@ void nsLookAndFeel::RefreshImpl() {
   mInitialized = false;
 }
 
+nsTArray<LookAndFeelInt> nsLookAndFeel::GetIntCacheImpl() {
+  nsTArray<LookAndFeelInt> lookAndFeelIntCache =
+      nsXPLookAndFeel::GetIntCacheImpl();
+
+  LookAndFeelInt lafInt;
+  lafInt.id = eIntID_SystemUsesDarkTheme;
+  lafInt.value = GetInt(eIntID_SystemUsesDarkTheme);
+  lookAndFeelIntCache.AppendElement(lafInt);
+
+  return lookAndFeelIntCache;
+}
+
+void nsLookAndFeel::SetIntCacheImpl(
+    const nsTArray<LookAndFeelInt>& aLookAndFeelIntCache) {
+  for (auto entry : aLookAndFeelIntCache) {
+    switch (entry.id) {
+      case eIntID_SystemUsesDarkTheme:
+        mSystemUsesDarkTheme = entry.value;
+        break;
+    }
+  }
+}
+
 nsresult nsLookAndFeel::NativeGetColor(ColorID aID, nscolor& aColor) {
   EnsureInit();
 
@@ -944,19 +967,7 @@ void nsLookAndFeel::EnsureInit() {
   
   MOZ_ASSERT(NS_IsMainThread());
 
-  GdkRGBA color;
   GtkStyleContext* style;
-
-  
-  
-  
-  GdkRGBA bg, fg;
-  style = GetStyleContext(MOZ_GTK_WINDOW);
-  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &bg);
-  gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &fg);
-  mSystemUsesDarkTheme =
-      (RelativeLuminanceUtils::Compute(GDK_RGBA_TO_NS_RGBA(bg)) <
-       RelativeLuminanceUtils::Compute(GDK_RGBA_TO_NS_RGBA(fg)));
 
   if (XRE_IsContentProcess()) {
     LOG(("nsLookAndFeel::EnsureInit() [%p] Content process\n", (void*)this));
@@ -965,7 +976,21 @@ void nsLookAndFeel::EnsureInit() {
     
     ConfigureContentGtkTheme();
   } else {
-    LOG(("nsLookAndFeel::EnsureInit() [%p] Crome process\n", (void*)this));
+    
+    
+    
+    GdkRGBA bg, fg;
+    style = GetStyleContext(MOZ_GTK_WINDOW);
+    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &bg);
+    gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &fg);
+    LOG(("nsLookAndFeel::EnsureInit() [%p] Chrome process\n", (void*)this));
+    
+    
+    
+    
+    mSystemUsesDarkTheme =
+        (RelativeLuminanceUtils::Compute(GDK_RGBA_TO_NS_RGBA(bg)) <
+         RelativeLuminanceUtils::Compute(GDK_RGBA_TO_NS_RGBA(fg)));
   }
 
   
@@ -975,6 +1000,7 @@ void nsLookAndFeel::EnsureInit() {
   g_object_ref_sink(labelWidget);
 
   
+  GdkRGBA color;
   style = GetStyleContext(MOZ_GTK_SCROLLBAR_TROUGH_VERTICAL);
   gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &color);
   mMozScrollbar = GDK_RGBA_TO_NS_RGBA(color);
