@@ -91,7 +91,7 @@ void WebGLContext::EndQuery(GLenum target) {
   const auto& slot = ValidateQuerySlotByTarget(target);
   if (!slot) return;
 
-  const auto& query = *slot;
+  const auto query = *slot;  
   if (!query) return ErrorInvalidOperation("Query target not active.");
 
   query->EndQuery();

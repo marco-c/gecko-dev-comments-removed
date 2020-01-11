@@ -28,10 +28,22 @@ struct ParamTraits;
 
 
 namespace mozilla {
+
+template <typename T>
+inline bool IsHandleValid(const T& handle) {
+  return bool(handle);
+}
+
 #if defined(OS_WIN)
 typedef HANDLE CrossProcessSemaphoreHandle;
 #elif !defined(OS_MACOSX)
 typedef mozilla::ipc::SharedMemoryBasic::Handle CrossProcessSemaphoreHandle;
+
+template <>
+inline bool IsHandleValid<CrossProcessSemaphoreHandle>(
+    const CrossProcessSemaphoreHandle& handle) {
+  return !(handle == mozilla::ipc::SharedMemoryBasic::NULLHandle());
+}
 #else
 
 
