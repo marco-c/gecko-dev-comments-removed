@@ -433,6 +433,13 @@ class TextEditor : public EditorBase,
 
 
 
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  DeleteSelectionByDragAsAction(bool aDispatchInputEvent);
+
+  
+
+
+
 
 
 

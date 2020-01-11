@@ -3343,9 +3343,14 @@ nsresult HTMLEditor::DeleteUnnecessaryNodesAndCollapseSelection(
 
   
   
-  if (GetEditAction() == EditAction::eDrop) {
-    MOZ_ASSERT(atCaret.GetContainer() == selectionEndPoint.GetContainer());
-    MOZ_ASSERT(atCaret.Offset() == selectionEndPoint.Offset());
+  if (GetEditAction() == EditAction::eDrop ||
+      GetEditAction() == EditAction::eDeleteByDrag) {
+    MOZ_ASSERT((atCaret.GetContainer() == selectionEndPoint.GetContainer() &&
+                atCaret.Offset() == selectionEndPoint.Offset()) ||
+               (atCaret.GetContainer()->GetNextSibling() ==
+                    selectionEndPoint.GetContainer() &&
+                atCaret.IsEndOfContainer() &&
+                selectionEndPoint.IsStartOfContainer()));
     {
       AutoTrackDOMPoint startTracker(RangeUpdaterRef(), &atCaret);
       AutoTrackDOMPoint endTracker(RangeUpdaterRef(), &selectionEndPoint);
