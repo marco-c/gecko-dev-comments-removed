@@ -20,21 +20,13 @@ print(BUGNUMBER + ": " + summary);
 
 var ClassToMethodMap =
   {
-    Object:   [
-
-
-
-               
-               "__lookupGetter__", "__lookupSetter__", "watch", "unwatch",
-               "toSource"],
+    Object:   ["toSource"],
     Function: ["toSource"],
     Array:    ["toSource"],
-    String:   ["toSource", "quote", "bold", "italics", "fixed", "fontsize",
-               "fontcolor", "link", "anchor", "strike", "small", "big", "blink",
-               "sup", "sub", "substr", "trimLeft", "trimRight", "toJSON"],
-    Boolean:  ["toSource", "toJSON"],
-    Number:   ["toSource", "toJSON"],
-    Date:     ["toSource", "getYear", "setYear",  "toGMTString"],
+    String:   ["toSource"],
+    Boolean:  ["toSource"],
+    Number:   ["toSource"],
+    Date:     ["toSource"],
     RegExp:   ["toSource"],
     Error:    ["toSource"],
   };
