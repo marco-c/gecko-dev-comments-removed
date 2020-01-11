@@ -1119,9 +1119,13 @@ bool ContentCacheInParent::OnCompositionEvent(
   
   
   if (mCommitStringByRequest) {
-    MOZ_ASSERT(aEvent.mMessage == eCompositionChange ||
-               aEvent.mMessage == eCompositionCommit);
-    *mCommitStringByRequest = aEvent.mData;
+    if (aEvent.mMessage == eCompositionCommitAsIs) {
+      *mCommitStringByRequest = mCompositionString;
+    } else {
+      MOZ_ASSERT(aEvent.mMessage == eCompositionChange ||
+                 aEvent.mMessage == eCompositionCommit);
+      *mCommitStringByRequest = aEvent.mData;
+    }
     
     
     
