@@ -74,6 +74,7 @@ class EventTarget;
 }  
 namespace net {
 class LoadInfo;
+class DocumentChannelRedirect;
 }  
 }  
 
@@ -791,6 +792,24 @@ class nsDocShell final : public nsDocLoader,
   void AddURIVisit(nsIURI* aURI, nsIURI* aPreviousURI,
                    uint32_t aChannelRedirectFlags,
                    uint32_t aResponseStatus = 0);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void SavePreviousRedirectsAndLastVisit(
+      nsIChannel* aChannel, nsIURI* aURI, uint32_t aChannelRedirectFlags,
+      const nsTArray<mozilla::net::DocumentChannelRedirect>& aRedirects);
 
   
   

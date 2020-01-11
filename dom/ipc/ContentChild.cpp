@@ -3734,18 +3734,17 @@ mozilla::ipc::IPCResult ContentChild::RecvCrossProcessRedirect(
     return IPC_OK();
   }
 
-  nsCOMPtr<nsIChildProcessChannelListener> processListener =
-      do_GetService("@mozilla.org/network/childProcessChannelListener;1");
   
-  rv =
-      processListener->OnChannelReady(childChannel, aArgs.redirectIdentifier());
-  if (NS_FAILED(rv)) {
-    return IPC_OK();
-  }
-
+  
   if (nsCOMPtr<nsIWritablePropertyBag> bag = do_QueryInterface(newChannel)) {
     nsHashPropertyBag::CopyFrom(bag, aArgs.properties());
   }
+
+  nsCOMPtr<nsIChildProcessChannelListener> processListener =
+      do_GetService("@mozilla.org/network/childProcessChannelListener;1");
+  
+  processListener->OnChannelReady(childChannel, aArgs.redirectIdentifier(),
+                                  std::move(aArgs.redirects()));
 
   
   return IPC_OK();
