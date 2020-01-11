@@ -49,8 +49,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 
-project = u'Moz Harness'
-copyright = u'2014, aki and a cast of tens!'
+project = 'Mozharness'
+copyright = '2019, mozilla'
 
 
 
@@ -202,8 +202,8 @@ latex_elements = {
 
 
 latex_documents = [
-  ('index', 'MozHarness.tex', u'Moz Harness Documentation',
-   u'aki and a cast of tens!', 'manual'),
+  ('index', 'MozHarness.tex', 'Mozharness Documentation',
+   'mozilla', 'manual'),
 ]
 
 
@@ -232,8 +232,8 @@ latex_documents = [
 
 
 man_pages = [
-    ('index', 'mozharness', u'Moz Harness Documentation',
-     [u'aki and a cast of tens!'], 1)
+    ('index', 'mozharness', 'Mozharness Documentation',
+     ['mozilla'], 1)
 ]
 
 
@@ -246,8 +246,8 @@ man_pages = [
 
 
 texinfo_documents = [
-  ('index', 'MozHarness', u'Moz Harness Documentation',
-   u'aki and a cast of tens!', 'MozHarness', 'One line description of project.',
+  ('index', 'Mozharness', 'Mozharness Documentation',
+   'mozilla', 'Mozharness', 'One line description of project.',
    'Miscellaneous'),
 ]
 
