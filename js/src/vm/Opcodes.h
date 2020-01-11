@@ -907,6 +907,9 @@
 
 
 
+
+
+
  \
     MACRO(JSOP_NEWOBJECT, 91, "newobject", NULL, 5, 0, 1, JOF_OBJECT|JOF_IC) \
     
@@ -2537,7 +2540,21 @@
 
 
  \
-    MACRO(JSOP_COALESCE, 241, "coalesce", NULL, 5, 1, 1, JOF_JUMP|JOF_DETECTING)
+    MACRO(JSOP_COALESCE, 241, "coalesce", NULL, 5, 1, 1, JOF_JUMP|JOF_DETECTING) \
+    
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(JSOP_NEWOBJECT_WITHGROUP, 242, "newobjectwithgroup", NULL, 5, 0, 1, JOF_OBJECT|JOF_IC)
 
 
 
@@ -2546,7 +2563,6 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  MACRO(242)                                   \
   MACRO(243)                                   \
   MACRO(244)                                   \
   MACRO(245)                                   \

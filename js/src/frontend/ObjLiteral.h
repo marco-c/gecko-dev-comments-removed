@@ -17,6 +17,126 @@
 #include "js/Value.h"
 #include "js/Vector.h"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 namespace js {
 
 
@@ -54,6 +174,13 @@ enum class ObjLiteralFlag : uint8_t {
 
   
   NoValues = 5,
+
+  
+  
+  
+  
+  
+  IsInnerSingleton = 6,
 };
 
 using ObjLiteralFlags = mozilla::EnumSet<ObjLiteralFlag>;
