@@ -259,7 +259,7 @@ def main(argv):
     
     
     
-    if os.getenv('GCOV_PREFIX') is not None:
+    if os.getenv('JS_CODE_COVERAGE_OUTPUT_DIR') is not None:
         
         options.exclude += [os.path.join('basic', 'functionnames.js')]           
         options.exclude += [os.path.join('debug', 'Debugger-findScripts-23.js')]
