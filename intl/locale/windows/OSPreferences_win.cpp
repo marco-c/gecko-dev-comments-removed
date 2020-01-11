@@ -6,6 +6,7 @@
 
 #include "OSPreferences.h"
 #include "mozilla/intl/LocaleService.h"
+#include "mozilla/intl/MozLocale.h"
 #include "mozilla/WindowsVersion.h"
 #include "nsReadableUtils.h"
 
@@ -60,6 +61,20 @@ bool OSPreferences::ReadSystemLocales(nsTArray<nsCString>& aLocaleList) {
             const wchar_t* text = lang.GetRawBuffer(&length);
             NS_LossyConvertUTF16toASCII loc(text, length);
             if (CanonicalizeLanguageTag(loc)) {
+              if (!loc.Contains('-')) {
+                
+                
+                
+                
+                
+                
+                Locale locale(loc);
+                if (locale.AddLikelySubtags() &&
+                    !locale.GetRegion().IsEmpty()) {
+                  loc.Append('-');
+                  loc.Append(locale.GetRegion());
+                }
+              }
               aLocaleList.AppendElement(loc);
             }
           }
