@@ -673,7 +673,7 @@ function StringIteratorNext() {
     return result;
 }
 
-#if JS_HAS_INTL_API
+#if ENABLE_INTL_API
 var collatorCache = new Record();
 
 
@@ -791,7 +791,7 @@ function String_toLocaleUpperCase() {
     
     return intl_toLocaleUpperCase(string, requestedLocale);
 }
-#endif  // JS_HAS_INTL_API
+#endif  // ENABLE_INTL_API
 
 
 

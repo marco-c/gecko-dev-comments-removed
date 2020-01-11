@@ -21,7 +21,7 @@
 
 #include "builtin/Array.h"
 #include "builtin/BigInt.h"
-#ifdef JS_HAS_INTL_API
+#ifdef ENABLE_INTL_API
 #  include "builtin/intl/Collator.h"
 #  include "builtin/intl/DateTimeFormat.h"
 #  include "builtin/intl/IntlObject.h"
@@ -1761,7 +1761,7 @@ bool js::ReportIncompatibleSelfHostedMethod(JSContext* cx,
   return false;
 }
 
-#ifdef JS_HAS_INTL_API
+#ifdef ENABLE_INTL_API
 
 
 
@@ -2420,7 +2420,7 @@ static const JSFunctionSpec intrinsic_functions[] = {
 
 #undef LOAD_AND_STORE_REFERENCE_FN_DECLS
 
-#ifdef JS_HAS_INTL_API
+#ifdef ENABLE_INTL_API
     
     JS_FN("intl_availableCalendars", intl_availableCalendars, 1, 0),
     JS_FN("intl_availableCollations", intl_availableCollations, 1, 0),

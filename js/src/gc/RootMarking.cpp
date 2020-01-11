@@ -384,7 +384,7 @@ void js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc,
   
   rt->traceSelfHostingGlobal(trc);
 
-#ifdef JS_HAS_INTL_API
+#ifdef ENABLE_INTL_API
   
   rt->traceSharedIntlData(trc);
 #endif

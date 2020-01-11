@@ -79,18 +79,12 @@ static void* ComputeRandomAllocationAddress() {
 
 #  ifdef NEED_JIT_UNWIND_HANDLING
 static js::JitExceptionHandler sJitExceptionHandler;
-#  endif
 
 JS_FRIEND_API void js::SetJitExceptionHandler(JitExceptionHandler handler) {
-#  ifdef NEED_JIT_UNWIND_HANDLING
   MOZ_ASSERT(!sJitExceptionHandler);
   sJitExceptionHandler = handler;
-#  else
-  
-#  endif
 }
 
-#  ifdef NEED_JIT_UNWIND_HANDLING
 #    if defined(_M_ARM64)
 
 
@@ -330,32 +324,32 @@ static void DecommitPages(void* addr, size_t bytes) {
 #  endif
 
 static void* ComputeRandomAllocationAddress() {
-#  ifdef __OpenBSD__
+#ifdef __OpenBSD__
   
   
   
   return nullptr;
-#  else
+#else
   uint64_t rand = js::GenerateRandomSeed();
 
-#    ifdef HAVE_64BIT_BUILD
+#  ifdef HAVE_64BIT_BUILD
   
   
   
   rand >>= 18;
-#    else
+#  else
   
   
   
   
   rand >>= 34;
   rand += 512 * 1024 * 1024;
-#    endif
+#  endif
 
   
   uintptr_t mask = ~uintptr_t(gc::SystemPageSize() - 1);
   return (void*)uintptr_t(rand & mask);
-#  endif
+#endif
 }
 
 static void* ReserveProcessExecutableMemory(size_t bytes) {

@@ -17,7 +17,7 @@
 #include "js/Utility.h"
 #include "threading/ExclusiveData.h"
 
-#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
+#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
 #  include "unicode/uversion.h"
 
 U_NAMESPACE_BEGIN
@@ -166,7 +166,7 @@ class DateTimeInfo {
     return guard->utcToLocalStandardOffsetSeconds_;
   }
 
-#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
+#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
   enum class TimeZoneOffset { UTC, Local };
 
   
@@ -274,7 +274,7 @@ class DateTimeInfo {
 
   RangeCache dstRange_;  
 
-#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
+#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
   
   
   
@@ -340,7 +340,7 @@ class DateTimeInfo {
 
   int32_t internalGetDSTOffsetMilliseconds(int64_t utcMilliseconds);
 
-#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
+#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
   
 
 

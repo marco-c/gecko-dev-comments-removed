@@ -27,19 +27,19 @@
 
 #include "builtin/Array.h"
 #include "builtin/Boolean.h"
-#if JS_HAS_INTL_API
+#if ENABLE_INTL_API
 #  include "builtin/intl/CommonFunctions.h"
 #endif
 #include "builtin/RegExp.h"
 #include "jit/InlinableNatives.h"
 #include "js/Conversions.h"
-#if !JS_HAS_INTL_API
+#if !ENABLE_INTL_API
 #  include "js/LocaleSensitive.h"
 #endif
 #include "js/PropertySpec.h"
 #include "js/StableStringChars.h"
 #include "js/UniquePtr.h"
-#if JS_HAS_INTL_API
+#if ENABLE_INTL_API
 #  include "unicode/uchar.h"
 #  include "unicode/unorm2.h"
 #  include "unicode/ustring.h"
@@ -623,7 +623,7 @@ static char16_t Final_Sigma(const char16_t* chars, size_t length,
   MOZ_ASSERT(unicode::ToLowerCase(unicode::GREEK_CAPITAL_LETTER_SIGMA) ==
              unicode::GREEK_SMALL_LETTER_SIGMA);
 
-#if JS_HAS_INTL_API
+#if ENABLE_INTL_API
   
   
   JS::AutoSuppressGCAnalysis nogc;
@@ -889,7 +889,7 @@ bool js::str_toLowerCase(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-#if JS_HAS_INTL_API
+#if ENABLE_INTL_API
 
 
 
@@ -1331,7 +1331,7 @@ bool js::str_toUpperCase(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-#if JS_HAS_INTL_API
+#if ENABLE_INTL_API
 
 
 
@@ -1440,7 +1440,7 @@ static bool str_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp) {
 
 #endif  
 
-#if JS_HAS_INTL_API
+#if ENABLE_INTL_API
 
 
 
@@ -1485,7 +1485,7 @@ static bool str_localeCompare(JSContext* cx, unsigned argc, Value* vp) {
 
 #endif  
 
-#if JS_HAS_INTL_API
+#if ENABLE_INTL_API
 
 
 
@@ -3632,7 +3632,7 @@ static const JSFunctionSpec string_methods[] = {
     JS_FN("endsWith", str_endsWith, 1, 0), JS_FN("trim", str_trim, 0, 0),
     JS_FN("trimStart", str_trimStart, 0, 0),
     JS_FN("trimEnd", str_trimEnd, 0, 0),
-#if JS_HAS_INTL_API
+#if ENABLE_INTL_API
     JS_SELF_HOSTED_FN("toLocaleLowerCase", "String_toLocaleLowerCase", 0, 0),
     JS_SELF_HOSTED_FN("toLocaleUpperCase", "String_toLocaleUpperCase", 0, 0),
     JS_SELF_HOSTED_FN("localeCompare", "String_localeCompare", 1, 0),
@@ -3642,7 +3642,7 @@ static const JSFunctionSpec string_methods[] = {
     JS_FN("localeCompare", str_localeCompare, 1, 0),
 #endif
     JS_SELF_HOSTED_FN("repeat", "String_repeat", 1, 0),
-#if JS_HAS_INTL_API
+#if ENABLE_INTL_API
     JS_FN("normalize", str_normalize, 0, 0),
 #endif
 

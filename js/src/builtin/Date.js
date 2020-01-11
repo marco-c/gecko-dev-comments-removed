@@ -2,7 +2,7 @@
 
 
 
-#if JS_HAS_INTL_API
+#if ENABLE_INTL_API
 
 
 
@@ -167,4 +167,4 @@ function Date_toLocaleTimeString() {
     
     return intl_FormatDateTime(dateTimeFormat, x,  false);
 }
-#endif  // JS_HAS_INTL_API
+#endif  // ENABLE_INTL_API

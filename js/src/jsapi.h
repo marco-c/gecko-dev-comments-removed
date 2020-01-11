@@ -398,6 +398,7 @@ extern JS_PUBLIC_API void JS_SetSizeOfIncludingThisCompartmentCallback(
 extern JS_PUBLIC_API void JS_SetWrapObjectCallbacks(
     JSContext* cx, const JSWrapObjectCallbacks* callbacks);
 
+#if defined(NIGHTLY_BUILD)
 
 
 
@@ -414,7 +415,6 @@ extern JS_PUBLIC_API void JS_SetWrapObjectCallbacks(
 extern JS_PUBLIC_API void JS_SetErrorInterceptorCallback(
     JSRuntime*, JSErrorInterceptor* callback);
 
-
 extern JS_PUBLIC_API JSErrorInterceptor* JS_GetErrorInterceptorCallback(
     JSRuntime*);
 
@@ -422,6 +422,8 @@ extern JS_PUBLIC_API JSErrorInterceptor* JS_GetErrorInterceptorCallback(
 
 extern JS_PUBLIC_API mozilla::Maybe<JSExnType> JS_GetErrorType(
     const JS::Value& val);
+
+#endif  
 
 extern JS_PUBLIC_API void JS_SetCompartmentPrivate(JS::Compartment* compartment,
                                                    void* data);
@@ -1944,19 +1946,21 @@ extern JS_PUBLIC_API void SetScriptPrivateReferenceHooks(
 
 } 
 
-namespace JS {
+#if defined(JS_BUILD_BINAST)
 
+namespace JS {
 
 extern JS_PUBLIC_API JSScript* DecodeBinAST(
     JSContext* cx, const ReadOnlyCompileOptions& options, FILE* file,
     JS::BinASTFormat format);
-
 
 extern JS_PUBLIC_API JSScript* DecodeBinAST(
     JSContext* cx, const ReadOnlyCompileOptions& options, const uint8_t* buf,
     size_t length, JS::BinASTFormat format);
 
 } 
+
+#endif 
 
 extern JS_PUBLIC_API bool JS_CheckForInterrupt(JSContext* cx);
 

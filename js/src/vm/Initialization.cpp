@@ -21,7 +21,7 @@
 #include "jit/Ion.h"
 #include "jit/JitCommon.h"
 #include "js/Utility.h"
-#if JS_HAS_INTL_API
+#if ENABLE_INTL_API
 #  include "unicode/putil.h"
 #  include "unicode/uclean.h"
 #  include "unicode/utypes.h"
@@ -166,7 +166,7 @@ JS_PUBLIC_API const char* JS::detail::InitWithFailureDiagnostic(
 
   RETURN_IF_FAIL(js::jit::AtomicOperations::Initialize());
 
-#if JS_HAS_INTL_API
+#if ENABLE_INTL_API
 #  if !MOZ_SYSTEM_ICU
   
   
@@ -243,7 +243,7 @@ JS_PUBLIC_API void JS_ShutDown(void) {
   
   PRMJ_NowShutdown();
 
-#if JS_HAS_INTL_API
+#if ENABLE_INTL_API
   u_cleanup();
 #endif  
 
@@ -270,7 +270,7 @@ JS_PUBLIC_API bool JS_SetICUMemoryFunctions(JS_ICUAllocFn allocFn,
              "must call JS_SetICUMemoryFunctions before any other JSAPI "
              "operation (including JS_Init)");
 
-#if JS_HAS_INTL_API
+#if ENABLE_INTL_API
   UErrorCode status = U_ZERO_ERROR;
   u_setMemoryFunctions( nullptr, allocFn, reallocFn, freeFn,
                        &status);

@@ -375,8 +375,9 @@ extern JS_PUBLIC_DATA arena_id_t StringBufferArena;
 extern void InitMallocAllocator();
 extern void ShutDownMallocAllocator();
 
-
+#  ifdef MOZ_DEBUG
 extern void AssertJSStringBufferInCorrectArena(const void* ptr);
+#  endif
 
 } 
 

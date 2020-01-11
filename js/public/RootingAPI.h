@@ -922,11 +922,12 @@ class RootingContext {
 class JS_PUBLIC_API AutoGCRooter {
  protected:
   enum class Tag : uint8_t {
-    Array,         
-    ValueArray,    
-    Parser,        
+    Array,      
+    ValueArray, 
+    Parser,     
+#if defined(JS_BUILD_BINAST)
     BinASTParser,  
-
+#endif             
     WrapperVector, 
     Wrapper,       
     Custom         

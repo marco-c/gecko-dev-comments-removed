@@ -254,7 +254,7 @@ JS_FRIEND_API void RemoveRawValueRoot(JSContext* cx, JS::Value* vp);
 
 JS_FRIEND_API JSAtom* GetPropertyNameFromPC(JSScript* script, jsbytecode* pc);
 
-
+#if defined(DEBUG) || defined(JS_JITSPEW)
 
 
 
@@ -296,8 +296,7 @@ extern JS_FRIEND_API void DumpInterpreterFrame(
 extern JS_FRIEND_API bool DumpPC(JSContext* cx);
 extern JS_FRIEND_API bool DumpScript(JSContext* cx, JSScript* scriptArg);
 
-
-
+#endif
 
 extern JS_FRIEND_API void DumpBacktrace(JSContext* cx, FILE* fp);
 
@@ -2487,7 +2486,7 @@ extern JS_FRIEND_API JSObject* GetJSMEnvironmentOfScriptedCaller(JSContext* cx);
 extern JS_FRIEND_API bool IsJSMEnvironment(JSObject* obj);
 
 
-#if defined(XP_WIN)
+#if defined(XP_WIN) && defined(HAVE_64BIT_BUILD)
 
 
 typedef long (*JitExceptionHandler)(void* exceptionRecord,  
@@ -2593,8 +2592,7 @@ MOZ_ALWAYS_INLINE JSObject* ToWindowProxyIfWindow(JSObject* obj) {
 
 extern JS_FRIEND_API JSObject* ToWindowIfWindowProxy(JSObject* obj);
 
-
-
+#if ENABLE_INTL_API
 
 
 
@@ -2611,15 +2609,12 @@ extern bool AddMozDateTimeFormatConstructor(JSContext* cx,
                                             JS::Handle<JSObject*> intl);
 
 
-
-
 extern bool AddLocaleConstructor(JSContext* cx, JS::Handle<JSObject*> intl);
 
 
 
-
-
 extern bool AddListFormatConstructor(JSContext* cx, JS::Handle<JSObject*> intl);
+#endif  
 
 class MOZ_STACK_CLASS JS_FRIEND_API AutoAssertNoContentJS {
  public:

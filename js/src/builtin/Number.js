@@ -2,7 +2,7 @@
 
 
 
-#if JS_HAS_INTL_API
+#if ENABLE_INTL_API
 var numberFormatCache = new Record();
 
 
@@ -37,7 +37,7 @@ function Number_toLocaleString() {
     
     return intl_FormatNumber(numberFormat, x,  false);
 }
-#endif  // JS_HAS_INTL_API
+#endif  // ENABLE_INTL_API
 
 
 function Number_isFinite(num) {
