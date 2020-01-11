@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 :root {
   --card-padding: 24px;
@@ -10,19 +10,19 @@
   --fingerprinter-color: #FFA436;
   --cryptominer-color: #ADADBC;
 
-  /* Highlight colors for trackers */
+  
   --social-highlight-color: #7B4CDB;
   --cookie-highlight-color: #0081DB;
   --tracker-highlight-color: #23A488;
   --fingerprinter-highlight-color: #D37F17;
   --cryptominer-highlight-color: #9292A0;
 
-  --tab-highlight: var(--social-color); /* start with social selected */
+  --tab-highlight: var(--social-color); 
   --column-width: 16px;
   --graph-empty: #CECECF;
   --graph-curve: cubic-bezier(.66,.75,.59,.91);
 
-  /* Colors for the loading indicator */
+  
   --protection-report-loader-color-stop: #AEAEAE3D;
   --protection-report-loader-gradient-opacity: 0.95;
 }
@@ -91,24 +91,16 @@ h2 {
   line-height: initial;
 }
 
-.card:not(.has-logins) .wrapper div:nth-child(1),
-.etp-card.custom-not-blocking .wrapper div:nth-child(1) {
+.card:not(.has-logins) .wrapper div:nth-child(1) {
   grid-area: 1 / 1 / 1 / 5;
   padding-inline-end: 15px;
-}
-
-.etp-card:not(.custom-not-blocking) .wrapper div:nth-child(1) {
-  grid-area: 1 / 1 / 1 / 8;
 }
 
 .card.has-logins .wrapper div:nth-child(1) {
   grid-area: 1 / 1 / 1 / -1;
 }
 
-/* We want to hide certain components depending on its state. */
-.etp-card.custom-not-blocking .card-body,
-.etp-card.custom-not-blocking #protection-details,
-#manage-protections,
+
 .etp-card .icon.dark,
 a.hidden,
 .loading .card-body.hidden,
@@ -192,8 +184,9 @@ a.hidden,
   margin-block-end: 5px;
 }
 
-.custom-not-blocking #manage-protections {
-  display: initial;
+.etp-card.custom-not-blocking .card-body,
+.etp-card.custom-not-blocking #protection-details {
+  display: none;
 }
 
 #protection-details {
@@ -259,7 +252,7 @@ a.hidden,
   margin-block-end: 10px;
 }
 
-/* Graph Bars */
+
 .graph-bar {
   grid-row: 1 / -2;
   align-self: flex-end;
@@ -346,7 +339,7 @@ a.hidden,
   opacity: 1;
 }
 
-/* Legend */
+
 #graphLegendDescription {
   position: absolute;
   opacity: 0;
@@ -514,7 +507,7 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
   grid-area: cryptominer;
 }
 
-/* Lockwise Card */
+
 
 #lockwise-body-content > .no-logins,
 #lockwise-body-content > .has-logins {
@@ -562,7 +555,7 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
   margin-inline-start: 10px;
 }
 
-/* Monitor card */
+
 
 #monitor-body-content .monitor-breached-passwords {
   grid: 1fr / repeat(7, 1fr);
