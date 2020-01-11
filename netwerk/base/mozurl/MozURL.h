@@ -7,6 +7,7 @@
 
 #include "mozilla/net/MozURL_ffi.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/Result.h"
 
 namespace mozilla {
 namespace net {
@@ -60,6 +61,8 @@ class MozURL final {
   nsDependentCSubstring Ref() const { return mozurl_fragment(this); }
   bool HasFragment() const { return mozurl_has_fragment(this); }
   nsDependentCSubstring Directory() const { return mozurl_directory(this); }
+  nsDependentCSubstring PrePath() const { return mozurl_prepath(this); }
+  nsDependentCSubstring SpecNoRef() const { return mozurl_spec_no_ref(this); }
 
   
   
@@ -80,7 +83,9 @@ class MozURL final {
     return mozurl_relative(this, aOther, aRelative);
   }
 
-  class MOZ_STACK_CLASS Mutator {
+  size_t SizeOf() { return mozurl_sizeof(this); }
+
+  class Mutator {
    public:
     
     
@@ -176,9 +181,29 @@ class MozURL final {
     
     nsresult GetStatus() { return mURL ? mStatus : NS_ERROR_NOT_AVAILABLE; }
 
+    static Result<Mutator, nsresult> FromSpec(
+        const nsACString& aSpec, const MozURL* aBaseURL = nullptr) {
+      Mutator m = Mutator(aSpec, aBaseURL);
+      if (m.mURL) {
+        MOZ_ASSERT(NS_SUCCEEDED(m.mStatus));
+        return m;
+      }
+
+      MOZ_ASSERT(NS_FAILED(m.mStatus));
+      return Err(m.mStatus);
+    }
+
    private:
     explicit Mutator(MozURL* aUrl) : mStatus(NS_OK) {
       mozurl_clone(aUrl, getter_AddRefs(mURL));
+    }
+
+    
+    
+    
+    explicit Mutator(const nsACString& aSpec,
+                     const MozURL* aBaseURL = nullptr) {
+      mStatus = mozurl_new(getter_AddRefs(mURL), &aSpec, aBaseURL);
     }
     RefPtr<MozURL> mURL;
     nsresult mStatus;
