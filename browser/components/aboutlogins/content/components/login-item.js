@@ -54,6 +54,12 @@ export default class LoginItem extends HTMLElement {
     this._usernameInput = this.shadowRoot.querySelector(
       "input[name='username']"
     );
+    
+    
+    this._passwordDisplayInput = this.shadowRoot.querySelector(
+      "input.password-display"
+    );
+    
     this._passwordInput = this.shadowRoot.querySelector(
       "input[name='password']"
     );
@@ -171,7 +177,15 @@ export default class LoginItem extends HTMLElement {
       
       
       
+      
       this._passwordInput.value = this._login.password;
+
+      
+      
+      
+      this._passwordDisplayInput.value = " ".repeat(
+        this._login.password.length
+      );
     }
 
     if (this.dataset.editing) {
@@ -264,7 +278,8 @@ export default class LoginItem extends HTMLElement {
       case "click": {
         let classList = event.currentTarget.classList;
         if (classList.contains("reveal-password-checkbox")) {
-          if (this._revealCheckbox.checked && !this.dataset.isNewLogin) {
+          
+          if (this._revealCheckbox.checked && !this.dataset.editing) {
             let masterPasswordAuth = await new Promise(resolve => {
               window.AboutLoginsUtils.promptForMasterPassword(resolve);
             });
@@ -370,6 +385,13 @@ export default class LoginItem extends HTMLElement {
           return;
         }
         if (classList.contains("edit-button")) {
+          let masterPasswordAuth = await new Promise(resolve => {
+            window.AboutLoginsUtils.promptForMasterPassword(resolve);
+          });
+          if (!masterPasswordAuth) {
+            return;
+          }
+
           this._toggleEditing();
           this.render();
 
@@ -530,6 +552,24 @@ export default class LoginItem extends HTMLElement {
     return this.dataset.editing && valuesChanged;
   }
 
+  resetForm() {
+    
+    
+    
+    let wasConnected = this._passwordInput.isConnected;
+    if (!wasConnected) {
+      this._revealCheckbox.insertAdjacentElement(
+        "beforebegin",
+        this._passwordInput
+      );
+    }
+
+    this._form.reset();
+    if (!wasConnected) {
+      this._passwordInput.remove();
+    }
+  }
+
   
 
 
@@ -541,7 +581,7 @@ export default class LoginItem extends HTMLElement {
     this._login = login;
     this._error = null;
 
-    this._form.reset();
+    this.resetForm();
 
     if (login.guid) {
       delete this.dataset.isNewLogin;
@@ -711,16 +751,17 @@ export default class LoginItem extends HTMLElement {
 
     if (shouldEdit) {
       this._passwordInput.style.removeProperty("width");
+      this._passwordDisplayInput.style.removeProperty("width");
     } else {
       
       
-      this._passwordInput.style.width =
+      this._passwordDisplayInput.style.width = this._passwordInput.style.width =
         (this._login.password || "").length + "ch";
     }
 
     this._deleteButton.disabled = this.dataset.isNewLogin;
     this._editButton.disabled = shouldEdit;
-    let inputTabIndex = !shouldEdit ? -1 : 0;
+    let inputTabIndex = shouldEdit ? 0 : -1;
     this._originInput.readOnly = !this.dataset.isNewLogin;
     this._originInput.tabIndex = inputTabIndex;
     this._usernameInput.readOnly = !shouldEdit;
@@ -749,6 +790,23 @@ export default class LoginItem extends HTMLElement {
     let { checked } = this._revealCheckbox;
     let inputType = checked ? "text" : "password";
     this._passwordInput.type = inputType;
+
+    
+    
+    
+    if (checked || this.dataset.editing) {
+      this._revealCheckbox.insertAdjacentElement(
+        "beforebegin",
+        this._passwordInput
+      );
+      this._passwordDisplayInput.remove();
+    } else {
+      this._revealCheckbox.insertAdjacentElement(
+        "beforebegin",
+        this._passwordDisplayInput
+      );
+      this._passwordInput.remove();
+    }
   }
 }
 customElements.define("login-item", LoginItem);
