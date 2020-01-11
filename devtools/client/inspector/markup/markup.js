@@ -126,7 +126,7 @@ const shortcutHandlers = {
     }
   },
   "markupView.edit.key": markupView => {
-    markupView.beginEditingOuterHTML(markupView._selectedContainer.node);
+    markupView.beginEditingHTML(markupView._selectedContainer.node);
   },
   "markupView.scrollInto.key": markupView => {
     markupView.scrollNodeIntoView();
@@ -1892,8 +1892,13 @@ MarkupView.prototype = {
 
 
 
-  beginEditingOuterHTML: function(node) {
-    this.getNodeOuterHTML(node).then(oldValue => {
+  beginEditingHTML: function(node) {
+    
+    const isOuter = node.nodeType == nodeConstants.ELEMENT_NODE;
+    const html = isOuter
+      ? this.getNodeOuterHTML(node)
+      : this.getNodeInnerHTML(node);
+    html.then(oldValue => {
       const container = this.getContainer(node);
       if (!container) {
         return;
@@ -1911,7 +1916,11 @@ MarkupView.prototype = {
         this.doc.documentElement.focus();
 
         if (commit) {
-          this.updateNodeOuterHTML(node, value, oldValue);
+          if (isOuter) {
+            this.updateNodeOuterHTML(node, value, oldValue);
+          } else {
+            this.updateNodeInnerHTML(node, value, oldValue);
+          }
         }
 
         const end = this.telemetry.msSystemNow();
