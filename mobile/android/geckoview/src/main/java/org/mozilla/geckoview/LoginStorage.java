@@ -22,6 +22,56 @@ import org.mozilla.gecko.util.GeckoBundle;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 public class LoginStorage {
     private static final String LOGTAG = "LoginStorage";
     private static final boolean DEBUG = false;
@@ -244,12 +294,26 @@ public class LoginStorage {
                 @NonNull String domain) {
             return null;
         }
+
+        
+
+
+
+
+
+
+
+
+
+        @UiThread
+        default void onLoginSave(@NonNull LoginEntry login) {}
     }
 
      final static class Proxy implements BundleEventListener {
         private static final String LOGTAG = "LoginStorageProxy";
 
         private static final String FETCH_EVENT = "GeckoView:LoginStorage:Fetch";
+        private static final String SAVE_EVENT = "GeckoView:LoginStorage:Save";
 
         private @Nullable Delegate mDelegate;
 
@@ -258,13 +322,15 @@ public class LoginStorage {
         private void registerListener() {
             EventDispatcher.getInstance().registerUiThreadListener(
                     this,
-                    FETCH_EVENT);
+                    FETCH_EVENT,
+                    SAVE_EVENT);
         }
 
         private void unregisterListener() {
             EventDispatcher.getInstance().unregisterUiThreadListener(
                     this,
-                    FETCH_EVENT);
+                    FETCH_EVENT,
+                    SAVE_EVENT);
         }
 
         public synchronized void setDelegate(final @Nullable Delegate delegate) {
@@ -291,7 +357,9 @@ public class LoginStorage {
             }
 
             if (mDelegate == null) {
-                callback.sendError("No LoginStorage delegate attached");
+                if (callback != null) {
+                    callback.sendError("No LoginStorage delegate attached");
+                }
                 return;
             }
 
@@ -321,6 +389,11 @@ public class LoginStorage {
                         callback.sendSuccess(loginBundles);
                     },
                     exception -> callback.sendError(exception.getMessage()));
+            } else if (SAVE_EVENT.equals(event)) {
+                final GeckoBundle loginBundle = message.getBundle("login");
+                final LoginEntry login = new LoginEntry(loginBundle);
+
+                mDelegate.onLoginSave(login);
             }
         }
     }

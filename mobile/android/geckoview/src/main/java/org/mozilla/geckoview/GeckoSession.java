@@ -2593,7 +2593,8 @@ public class GeckoSession implements Parcelable {
         final String mode = message.getString("mode");
         final String title = message.getString("title");
         final String msg = message.getString("msg");
-        GeckoResult<PromptDelegate.PromptResponse> res;
+        GeckoResult<PromptDelegate.PromptResponse> res = null;
+
         switch (type) {
             case "alert": {
                 final PromptDelegate.AlertPrompt prompt =
@@ -2714,6 +2715,29 @@ public class GeckoSession implements Parcelable {
                 final PromptDelegate.SharePrompt prompt =
                     new PromptDelegate.SharePrompt(title, text, uri);
                 res = delegate.onSharePrompt(session, prompt);
+                break;
+            }
+            case "loginStorage": {
+                final int lsType = message.getInt("lsType");
+                final int hint = message.getInt("hint");
+                final GeckoBundle[] loginBundles =
+                    message.getBundleArray("logins");
+
+                if (loginBundles == null) {
+                    break;
+                }
+
+                final LoginStorage.LoginEntry[] logins =
+                    new LoginStorage.LoginEntry[loginBundles.length];
+
+                for (int i = 0; i < logins.length; ++i) {
+                    logins[i] = new LoginStorage.LoginEntry(loginBundles[i]);
+                }
+
+                final PromptDelegate.LoginStoragePrompt prompt =
+                    new PromptDelegate.LoginStoragePrompt(lsType, hint, logins);
+
+                res = delegate.onLoginStoragePrompt(session, prompt);
                 break;
             }
             default: {
@@ -4613,6 +4637,101 @@ public class GeckoSession implements Parcelable {
         }
 
         
+
+
+
+        public class LoginStoragePrompt extends BasePrompt {
+            @Retention(RetentionPolicy.SOURCE)
+            @IntDef({ Type.SAVE })
+             @interface LoginStorageType {}
+
+            
+            
+
+
+            public static class Type {
+                public static final int SAVE = 1;
+
+                protected Type() {}
+            }
+
+            @Retention(RetentionPolicy.SOURCE)
+            @IntDef(flag = true,
+                    value = { Hint.NONE })
+             @interface LoginStorageHint {}
+
+            public static class Hint {
+                public static final int NONE = 0;
+
+                protected Hint() {}
+            }
+
+            
+
+
+            public final @LoginStorageType int type;
+
+            
+
+
+
+
+            public final @LoginStorageHint int hint;
+
+            
+
+
+
+
+            public final @NonNull LoginStorage.LoginEntry[] logins;
+
+            protected LoginStoragePrompt(
+                    final @LoginStorageType int type,
+                    final @LoginStorageHint int hint,
+                    final @NonNull LoginStorage.LoginEntry[] logins) {
+                super(null);
+
+                this.type = type;
+                this.hint = hint;
+                this.logins = logins;
+            }
+
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            @UiThread
+            public @NonNull PromptResponse confirm(
+                    final @NonNull LoginStorage.LoginEntry login) {
+                ensureResult().putBundle("login", login.toBundle());
+                return super.confirm();
+            }
+
+            
+
+
+
+
+
+            @UiThread
+            public @NonNull PromptResponse dismiss() {
+                return super.dismiss();
+            }
+        }
+
+        
         
 
 
@@ -4763,6 +4882,24 @@ public class GeckoSession implements Parcelable {
         @UiThread
         default @Nullable GeckoResult<PromptResponse> onSharePrompt(@NonNull final GeckoSession session,
                                                                     @NonNull final SharePrompt prompt) {
+            return null;
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+        @UiThread
+        default @Nullable GeckoResult<PromptResponse> onLoginStoragePrompt(
+                @NonNull final GeckoSession session,
+                @NonNull final LoginStoragePrompt prompt) {
             return null;
         }
     }
