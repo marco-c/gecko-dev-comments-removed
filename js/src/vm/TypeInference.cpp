@@ -396,18 +396,6 @@ bool TypeSet::mightBeMIRType(jit::MIRType type) const {
       return baseFlags() & TYPE_FLAG_BIGINT;
     case jit::MIRType::MagicOptimizedArguments:
       return baseFlags() & TYPE_FLAG_LAZYARGS;
-    case jit::MIRType::MagicHole:
-    case jit::MIRType::MagicIsConstructing:
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      return false;
     default:
       MOZ_CRASH("Bad MIR type");
   }

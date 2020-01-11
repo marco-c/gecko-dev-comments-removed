@@ -1879,8 +1879,11 @@ bool TypeAnalyzer::adjustPhiInputs(MPhi* phi) {
 
     
     
-    if (in->isUnbox() && phi->typeIncludes(in->toUnbox()->input())) {
-      in = in->toUnbox()->input();
+    if (in->isUnbox()) {
+      MDefinition* unboxInput = in->toUnbox()->input();
+      if (!IsMagicType(unboxInput->type()) && phi->typeIncludes(unboxInput)) {
+        in = in->toUnbox()->input();
+      }
     }
 
     if (in->type() != MIRType::Value) {
