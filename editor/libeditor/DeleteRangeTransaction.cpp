@@ -130,16 +130,13 @@ nsresult DeleteRangeTransaction::CreateTxnsToDeleteBetween(
     if (aStart == aEnd) {
       numToDel = 1;
     } else {
-      numToDel = *aEnd.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets) -
-                 *aStart.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets);
+      numToDel = aEnd.Offset() - aStart.Offset();
       MOZ_DIAGNOSTIC_ASSERT(numToDel > 0);
     }
 
     RefPtr<DeleteTextTransaction> deleteTextTransaction =
-        DeleteTextTransaction::MaybeCreate(
-            *mEditorBase, *textNode,
-            *aStart.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets),
-            numToDel);
+        DeleteTextTransaction::MaybeCreate(*mEditorBase, *textNode,
+                                           aStart.Offset(), numToDel);
     
     
     if (NS_WARN_IF(!deleteTextTransaction)) {
@@ -186,11 +183,11 @@ nsresult DeleteRangeTransaction::CreateTxnsToDeleteContent(
   
   uint32_t startOffset, numToDelete;
   if (nsIEditor::eNext == aAction) {
-    startOffset = *aPoint.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets);
-    numToDelete = aPoint.Container()->Length() - startOffset;
+    startOffset = aPoint.Offset();
+    numToDelete = aPoint.Container()->Length() - aPoint.Offset();
   } else {
     startOffset = 0;
-    numToDelete = *aPoint.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets);
+    numToDelete = aPoint.Offset();
   }
 
   if (!numToDelete) {

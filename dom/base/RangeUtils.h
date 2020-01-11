@@ -40,8 +40,7 @@ class RangeUtils final {
     
     
     
-    if (NS_WARN_IF(
-            !afterNode.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets))) {
+    if (NS_WARN_IF(afterNode.Offset() == 0)) {
       return RawRangeBoundary();
     }
     return afterNode;
