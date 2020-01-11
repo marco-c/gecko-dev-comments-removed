@@ -33,60 +33,9 @@ enum CommandResult { Success, TimeExpired, QueueEmpty, Error };
 
 enum CommandSyncType { ASYNC, SYNC };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename Source, typename Sink>
-class CommandQueue {
- public:
-  using SelfType = CommandQueue<Source, Sink>;
-  using Source = Source;
-  using Sink = Sink;
-
-  
-  
-  
-  template <typename... Args>
-  static UniquePtr<SelfType> Create(UniquePtr<ProducerConsumerQueue>&& aPcq,
-                                    Args&... aArgs) {
-    
-    
-    UniquePtr<Source> source =
-        WrapUnique(new Source(std::move(aPcq->mProducer), aArgs...));
-    if (!source) {
-      return nullptr;
-    }
-    UniquePtr<Sink> sink =
-        WrapUnique(new Sink(std::move(aPcq->mConsumer), aArgs...));
-    if (!sink) {
-      return nullptr;
-    }
-    return WrapUnique(new CommandQueue(std::move(source), std::move(sink)));
-  }
-
-  UniquePtr<Source> mSource;
-  UniquePtr<Sink> mSink;
-
- protected:
-  CommandQueue(UniquePtr<Source>&& aSource, UniquePtr<Sink>&& aSink)
-      : mSource(std::move(aSource)), mSink(std::move(aSink)) {
-    MOZ_ASSERT(mSource && mSink);
-  }
-};
-
 class BasicSource {
  public:
-  BasicSource(UniquePtr<Producer>&& aProducer)
+  explicit BasicSource(UniquePtr<Producer>&& aProducer)
       : mProducer(std::move(aProducer)) {
     MOZ_ASSERT(mProducer);
   }
@@ -102,7 +51,8 @@ class BasicSource {
 
 class BasicSink {
  public:
-  BasicSink(UniquePtr<Consumer>&& aConsumer) : mConsumer(std::move(aConsumer)) {
+  explicit BasicSink(UniquePtr<Consumer>&& aConsumer)
+      : mConsumer(std::move(aConsumer)) {
     MOZ_ASSERT(mConsumer);
   }
   virtual ~BasicSink() {}
@@ -125,7 +75,7 @@ class BasicSink {
 template <typename Command>
 class CommandSource : public BasicSource {
  public:
-  CommandSource(UniquePtr<Producer>&& aProducer)
+  explicit CommandSource(UniquePtr<Producer>&& aProducer)
       : BasicSource(std::move(aProducer)) {}
 
   template <typename... Args>
@@ -162,13 +112,13 @@ class CommandSource : public BasicSource {
 template <typename Command>
 class CommandSink : public BasicSink {
  public:
-  CommandSink(UniquePtr<Consumer>&& aConsumer)
+  explicit CommandSink(UniquePtr<Consumer>&& aConsumer)
       : BasicSink(std::move(aConsumer)) {}
 
   
 
 
-  CommandResult ProcessOne(Maybe<TimeDuration> aTimeout) {
+  CommandResult ProcessOne(const Maybe<TimeDuration>& aTimeout) {
     Command command;
     PcqStatus status = (aTimeout.isNothing() || aTimeout.value())
                            ? this->mConsumer->TryWaitRemove(aTimeout, command)
@@ -259,7 +209,7 @@ class CommandSink : public BasicSink {
     if (!ReadArgs(args)) {
       return false;
     }
-    CallFunction(aObj, aFunc, args, std::index_sequence_for<Args...>{});
+    CallFunction(aFunc, args, std::index_sequence_for<Args...>{});
     return true;
   }
 
@@ -344,7 +294,7 @@ class CommandSink : public BasicSink {
   template <typename FunctionType, typename... Args, size_t... Indices,
             typename ReturnType =
                 typename mozilla::FunctionTypeTraits<FunctionType>::ReturnType>
-  ReturnType CallFunction(FunctionType aFun, std::tuple<Args...>& aArgs,
+  ReturnType CallFunction(FunctionType aFunc, std::tuple<Args...>& aArgs,
                           std::index_sequence<Indices...>) {
     return (*aFunc)(std::forward<Args>(std::get<Indices>(aArgs))...);
   }
@@ -357,7 +307,7 @@ class CommandSink : public BasicSink {
   }
 
   template <typename FunctionType, typename... Args, size_t... Indices>
-  void CallVoidFunction(FunctionType aFun, std::tuple<Args...>& aArgs,
+  void CallVoidFunction(FunctionType aFunc, std::tuple<Args...>& aArgs,
                         std::index_sequence<Indices...>) {
     (*aFunc)(std::forward<Args>(std::get<Indices>(aArgs))...);
   }
@@ -382,11 +332,9 @@ class SyncCommandSource : public CommandSource<Command> {
  public:
   using BaseType = CommandSource<Command>;
   SyncCommandSource(UniquePtr<Producer>&& aProducer,
-                    UniquePtr<ProducerConsumerQueue>& aResponsePcq)
+                    UniquePtr<Consumer>&& aResponseConsumer)
       : CommandSource<Command>(std::move(aProducer)),
-        mConsumer(std::move(aResponsePcq->mConsumer)) {
-    MOZ_ASSERT(mConsumer);
-  }
+        mConsumer(std::move(aResponseConsumer)) {}
 
   template <typename... Args>
   PcqStatus RunAsyncCommand(Command aCommand, Args&&... aArgs) {
@@ -449,11 +397,9 @@ class SyncCommandSink : public CommandSink<Command> {
 
  public:
   SyncCommandSink(UniquePtr<Consumer>&& aConsumer,
-                  UniquePtr<ProducerConsumerQueue>& aResponsePcq)
+                  UniquePtr<Producer>&& aResponseProducer)
       : CommandSink<Command>(std::move(aConsumer)),
-        mProducer(std::move(aResponsePcq->mProducer)) {
-    MOZ_ASSERT(mProducer);
-  }
+        mProducer(std::move(aResponseProducer)) {}
 
   
   SyncCommandSink() {}
@@ -793,28 +739,28 @@ struct MethodDispatcher {
 
 
 
-#define DEFINE_METHOD_DISPATCHER(_DISPATCHER, _ID, _METHOD, _SYNC)         \
-  template <>                                                              \
-  bool _DISPATCHER::DispatchCommand<_ID>(size_t aId, SinkType & aSink,     \
-                                         ObjectType & aObj) {              \
-    return CommandDispatchDriver<_DISPATCHER>::DispatchCommandHelper<_ID>( \
-        aId, aSink, aObj);                                                 \
-  }                                                                        \
-  template <>                                                              \
-  bool _DISPATCHER::Dispatch<_ID>(SinkType & aSink, ObjectType & aObj) {   \
-    return DispatchMethod<_SYNC>::Run(aSink, &_METHOD, aObj);              \
-  }                                                                        \
-  template <>                                                              \
-  struct _DISPATCHER::MethodInfo<_ID> {                                    \
-    using MethodType = decltype(&_METHOD);                                 \
-  };                                                                       \
-  template <>                                                              \
-  constexpr CommandSyncType _DISPATCHER::SyncType<_ID>() {                 \
-    return _SYNC;                                                          \
-  }                                                                        \
-  template <>                                                              \
-  constexpr size_t _DISPATCHER::Id<decltype(&_METHOD), &_METHOD>() {       \
-    return _ID;                                                            \
+#define DEFINE_METHOD_DISPATCHER(_DISPATCHER, _ID, _METHOD, _SYNC)
+
+
+
+
+
+
+
+
+
+                                                                     \
+  template <>                                                                \
+  struct _DISPATCHER::MethodInfo<_ID> {                                      \
+    using MethodType = decltype(&_METHOD);                                   \
+  };                                                                         \
+  template <>                                                                \
+  constexpr CommandSyncType _DISPATCHER::SyncType<_ID>() {                   \
+    return _SYNC;                                                            \
+  }                                                                          \
+  template <>                                                                \
+  constexpr size_t _DISPATCHER::Id<decltype(&_METHOD), &_METHOD>() {         \
+    return _ID;                                                              \
   }
 
 namespace ipc {

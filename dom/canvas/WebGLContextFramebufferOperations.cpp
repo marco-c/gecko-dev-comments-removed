@@ -140,7 +140,7 @@ void WebGLContext::DepthMask(WebGLboolean b) {
   gl->fDepthMask(b);
 }
 
-void WebGLContext::DrawBuffers(const nsTArray<GLenum>& buffers) {
+void WebGLContext::DrawBuffers(const std::vector<GLenum>& buffers) {
   const FuncScope funcScope(*this, "drawBuffers");
   if (IsContextLost()) return;
 
@@ -154,7 +154,7 @@ void WebGLContext::DrawBuffers(const nsTArray<GLenum>& buffers) {
   
   
   
-  if (buffers.Length() != 1) {
+  if (buffers.size() != 1) {
     ErrorInvalidOperation(
         "For the default framebuffer, `buffers` must have a"
         " length of 1.");
@@ -175,16 +175,6 @@ void WebGLContext::DrawBuffers(const nsTArray<GLenum>& buffers) {
 
   mDefaultFB_DrawBuffer0 = buffers[0];
   
-}
-
-void WebGLContext::StencilMask(GLuint mask) {
-  const FuncScope funcScope(*this, "stencilMask");
-  if (IsContextLost()) return;
-
-  mStencilWriteMaskFront = mask;
-  mStencilWriteMaskBack = mask;
-
-  gl->fStencilMask(mask);
 }
 
 void WebGLContext::StencilMaskSeparate(GLenum face, GLuint mask) {

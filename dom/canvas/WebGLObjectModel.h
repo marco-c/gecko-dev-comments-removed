@@ -6,14 +6,12 @@
 #ifndef WEBGLOBJECTMODEL_H_
 #define WEBGLOBJECTMODEL_H_
 
+#include "mozilla/RefCounted.h"
 #include "mozilla/WeakPtr.h"
-#include "nsCycleCollectionNoteChild.h"
 #include "WebGLTypes.h"
 
 namespace mozilla {
 
-template <typename>
-class LinkedList;
 class WebGLContext;
 
 
@@ -21,264 +19,17 @@ class WebGLContext;
 
 
 
-template <typename Derived>
-class WebGLContextBoundObject : public WebGLId<Derived> {
+class WebGLContextBoundObject : public VRefCounted {
  public:
   const WeakPtr<WebGLContext> mContext;
 
-  explicit WebGLContextBoundObject(WebGLContext* webgl)
-      : mContext(webgl), mContextGeneration(webgl->Generation()) {}
-
-  bool IsCompatibleWithContext(const WebGLContext* other) const {
-    return (mContext == other && mContextGeneration == other->Generation());
-  }
+  explicit WebGLContextBoundObject(WebGLContext* webgl);
 
  private:
   friend class HostWebGLContext;
-
-  const uint32_t mContextGeneration;
 };
 
 
-
-class WebGLDeletableObject {
-  template <typename>
-  friend class WebGLRefCountedObject;
-
- private:
-  enum DeletionStatus { Default, DeleteRequested, Deleted };
-
-  DeletionStatus mDeletionStatus;
-
-  
-
-  explicit WebGLDeletableObject() : mDeletionStatus(Default) {}
-
-  ~WebGLDeletableObject() {
-    MOZ_ASSERT(mDeletionStatus == Deleted,
-               "Derived class destructor must call DeleteOnce().");
-  }
-
- public:
-  bool IsDeleted() const { return mDeletionStatus == Deleted; }
-  bool IsDeleteRequested() const { return mDeletionStatus != Default; }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename Derived>
-class WebGLRefCountedObject : public WebGLContextBoundObject<Derived>,
-                              public WebGLDeletableObject {
-  friend class WebGLContext;
-  template <typename T>
-  friend void ClearLinkedList(LinkedList<T>& list);
-
- private:
-  nsAutoRefCnt mWebGLRefCnt;
-
- public:
-  explicit WebGLRefCountedObject(WebGLContext* webgl)
-      : WebGLContextBoundObject<Derived>(webgl), WebGLDeletableObject() {}
-
-  ~WebGLRefCountedObject() {
-    MOZ_ASSERT(mWebGLRefCnt == 0,
-               "Destroying WebGL object still referenced by other WebGL"
-               " objects.");
-  }
-
-  
-  void WebGLAddRef() { ++mWebGLRefCnt; }
-
-  
-  void WebGLRelease() {
-    MOZ_ASSERT(mWebGLRefCnt > 0,
-               "Releasing WebGL object with WebGL refcnt already zero");
-    --mWebGLRefCnt;
-    MaybeDelete();
-  }
-
-  
-  void RequestDelete() {
-    if (mDeletionStatus == Default) mDeletionStatus = DeleteRequested;
-    MaybeDelete();
-  }
-
- protected:
-  void DeleteOnce() {
-    if (mDeletionStatus != Deleted) {
-      static_cast<Derived*>(this)->Delete();
-      mDeletionStatus = Deleted;
-    }
-  }
-
- private:
-  void MaybeDelete() {
-    if (mWebGLRefCnt == 0 && mDeletionStatus == DeleteRequested) {
-      DeleteOnce();
-    }
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-class WebGLRefPtr {
- public:
-  WebGLRefPtr() : mRawPtr(0) {}
-
-  WebGLRefPtr(const WebGLRefPtr<T>& smartPtr) : mRawPtr(smartPtr.mRawPtr) {
-    AddRefOnPtr(mRawPtr);
-  }
-
-  explicit WebGLRefPtr(T* rawPtr) : mRawPtr(rawPtr) { AddRefOnPtr(mRawPtr); }
-
-  ~WebGLRefPtr() { ReleasePtr(mRawPtr); }
-
-  WebGLRefPtr<T>& operator=(const WebGLRefPtr<T>& rhs) {
-    assign_with_AddRef(rhs.mRawPtr);
-    return *this;
-  }
-
-  WebGLRefPtr<T>& operator=(T* rhs) {
-    assign_with_AddRef(rhs);
-    return *this;
-  }
-
-  T* get() const { return static_cast<T*>(mRawPtr); }
-
-  operator T*() const { return get(); }
-
-  T* operator->() const MOZ_NO_ADDREF_RELEASE_ON_RETURN {
-    MOZ_ASSERT(
-        mRawPtr != 0,
-        "You can't dereference a nullptr WebGLRefPtr with operator->()!");
-    return get();
-  }
-
-  T& operator*() const {
-    MOZ_ASSERT(mRawPtr != 0,
-               "You can't dereference a nullptr WebGLRefPtr with operator*()!");
-    return *get();
-  }
-
- private:
-  static void AddRefOnPtr(T* rawPtr) {
-    if (rawPtr) {
-      rawPtr->WebGLAddRef();
-      rawPtr->AddRef();
-    }
-  }
-
-  static void ReleasePtr(T* rawPtr) {
-    if (rawPtr) {
-      rawPtr->WebGLRelease();  
-                               
-      rawPtr->Release();
-    }
-  }
-
-  void assign_with_AddRef(T* rawPtr) {
-    AddRefOnPtr(rawPtr);
-    assign_assuming_AddRef(rawPtr);
-  }
-
-  void assign_assuming_AddRef(T* newPtr) {
-    T* oldPtr = mRawPtr;
-    mRawPtr = newPtr;
-    ReleasePtr(oldPtr);
-  }
-
- protected:
-  T* mRawPtr;
-};
 
 
 
@@ -320,18 +71,5 @@ class WebGLRectangleObject {
 };
 
 }  
-
-template <typename T>
-inline void ImplCycleCollectionUnlink(mozilla::WebGLRefPtr<T>& field) {
-  field = nullptr;
-}
-
-template <typename T>
-inline void ImplCycleCollectionTraverse(
-    nsCycleCollectionTraversalCallback& callback,
-    const mozilla::WebGLRefPtr<T>& field, const char* name,
-    uint32_t flags = 0) {
-  CycleCollectionNoteChild(callback, field.get(), name, flags);
-}
 
 #endif
