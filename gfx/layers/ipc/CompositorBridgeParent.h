@@ -529,6 +529,11 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   
 
 
+  static void InitializeStatics();
+
+  
+
+
 
   static CompositorBridgeParent* GetCompositorBridgeParent(uint64_t id);
 
@@ -720,6 +725,16 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   
 
 
+  static void UpdateQualitySettings();
+
+  
+
+
+  static void UpdateDebugFlags();
+
+  
+
+
   Maybe<CollectedFramesParams> WrapCollectedFrames(CollectedFrames&& aFrames);
 
  protected:
@@ -796,6 +811,11 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   
   template <typename Lambda>
   inline void ForEachIndirectLayerTree(const Lambda& aCallback);
+
+  
+  
+  template <typename Lambda>
+  static inline void ForEachWebRenderBridgeParent(const Lambda& aCallback);
 
   RefPtr<HostLayerManager> mLayerManager;
   RefPtr<Compositor> mCompositor;
