@@ -12,6 +12,7 @@ const actions = require("devtools/client/webconsole/actions/messages");
 const {
   l10n,
   getArrayTypeNames,
+  getDescriptorValue,
 } = require("devtools/client/webconsole/utils/messages");
 loader.lazyGetter(this, "MODE", function() {
   return require("devtools/client/shared/components/reps/reps").MODE;
@@ -37,6 +38,7 @@ class ConsoleTable extends Component {
       parameters: PropTypes.array.isRequired,
       serviceContainer: PropTypes.object.isRequired,
       id: PropTypes.string.isRequired,
+      
       tableData: PropTypes.object,
     };
   }
@@ -47,10 +49,13 @@ class ConsoleTable extends Component {
     this.getRows = this.getRows.bind(this);
   }
 
+  
   componentWillMount() {
     const { id, dispatch, parameters, tableData } = this.props;
 
-    if (!Array.isArray(parameters) || parameters.length === 0 || tableData) {
+    const data = tableData || (parameters[0] && parameters[0].ownProperties);
+
+    if (!Array.isArray(parameters) || parameters.length === 0 || data) {
       return;
     }
 
@@ -110,20 +115,27 @@ class ConsoleTable extends Component {
 
   render() {
     const { parameters, tableData } = this.props;
-    const headersGrip = parameters[1];
+    const [valueGrip, headersGrip] = parameters;
     const headers =
       headersGrip && headersGrip.preview ? headersGrip.preview.items : null;
 
+    const data =
+      valueGrip && valueGrip.ownProperties
+        ? valueGrip.ownProperties
+        : tableData;
+
     
-    if (!tableData) {
+    if (!data) {
       return null;
     }
 
-    const { columns, items } = getTableItems(
-      tableData,
-      getParametersDataType(parameters),
-      headers
-    );
+    const dataType = getParametersDataType(parameters);
+
+    
+    const { columns, items } =
+      valueGrip && valueGrip.ownProperties
+        ? getTableItems(data, dataType, headers)
+        : deprecatedGetTableItems(data, dataType, headers);
 
     return dom.div(
       {
@@ -146,10 +158,11 @@ function getParametersDataType(parameters = null) {
   return parameters[0].class;
 }
 
-function getTableItems(data = {}, type, headers = null) {
-  const INDEX_NAME = "_index";
-  const VALUE_NAME = "_value";
-  const namedIndexes = {
+const INDEX_NAME = "_index";
+const VALUE_NAME = "_value";
+
+function getNamedIndexes(type) {
+  return {
     [INDEX_NAME]: getArrayTypeNames()
       .concat("Object")
       .includes(type)
@@ -158,6 +171,19 @@ function getTableItems(data = {}, type, headers = null) {
     [VALUE_NAME]: l10n.getStr("table.value"),
     key: l10n.getStr("table.key"),
   };
+}
+
+function hasValidCustomHeaders(headers) {
+  return (
+    Array.isArray(headers) &&
+    headers.every(
+      header => typeof header === "string" || Number.isInteger(Number(header))
+    )
+  );
+}
+
+function getTableItems(data = {}, type, headers = null) {
+  const namedIndexes = getNamedIndexes(type);
 
   let columns = new Map();
   const items = [];
@@ -167,11 +193,7 @@ function getTableItems(data = {}, type, headers = null) {
     Object.keys(item).forEach(key => addColumn(key));
   };
 
-  const hasValidCustomHeaders =
-    Array.isArray(headers) &&
-    headers.every(
-      header => typeof header === "string" || Number.isInteger(Number(header))
-    );
+  const validCustomHeaders = hasValidCustomHeaders(headers);
 
   const addColumn = function(columnIndex) {
     const columnExists = columns.has(columnIndex);
@@ -180,7 +202,99 @@ function getTableItems(data = {}, type, headers = null) {
     if (
       !columnExists &&
       !hasMaxColumns &&
-      (!hasValidCustomHeaders ||
+      (!validCustomHeaders ||
+        headers.includes(columnIndex) ||
+        columnIndex === INDEX_NAME)
+    ) {
+      columns.set(columnIndex, namedIndexes[columnIndex] || columnIndex);
+    }
+  };
+
+  for (let [index, property] of Object.entries(data)) {
+    if (type !== "Object" && index == parseInt(index, 10)) {
+      index = parseInt(index, 10);
+    }
+
+    const item = {
+      [INDEX_NAME]: index,
+    };
+
+    const propertyValue = getDescriptorValue(property);
+
+    if (propertyValue && propertyValue.ownProperties) {
+      const entries = propertyValue.ownProperties;
+      for (const [key, entry] of Object.entries(entries)) {
+        item[key] = getDescriptorValue(entry);
+      }
+    } else if (
+      propertyValue &&
+      propertyValue.preview &&
+      (type === "Map" || type === "WeakMap")
+    ) {
+      item.key = propertyValue.preview.key;
+      item[VALUE_NAME] = propertyValue.preview.value;
+    } else {
+      item[VALUE_NAME] = propertyValue;
+    }
+
+    addItem(item);
+
+    if (items.length === TABLE_ROW_MAX_ITEMS) {
+      break;
+    }
+  }
+
+  
+  
+  if (validCustomHeaders) {
+    headers.forEach(header => addColumn(header));
+  }
+
+  
+  if (columns.has(INDEX_NAME)) {
+    const index = columns.get(INDEX_NAME);
+    columns.delete(INDEX_NAME);
+    columns = new Map([[INDEX_NAME, index], ...columns.entries()]);
+  }
+
+  
+  if (columns.has(VALUE_NAME)) {
+    const index = columns.get(VALUE_NAME);
+    columns.delete(VALUE_NAME);
+    columns.set(VALUE_NAME, index);
+  }
+
+  return {
+    columns,
+    items,
+  };
+}
+
+
+
+
+
+function deprecatedGetTableItems(data = {}, type, headers = null) {
+  const namedIndexes = getNamedIndexes(type);
+
+  let columns = new Map();
+  const items = [];
+
+  const addItem = function(item) {
+    items.push(item);
+    Object.keys(item).forEach(key => addColumn(key));
+  };
+
+  const validCustomHeaders = hasValidCustomHeaders(headers);
+
+  const addColumn = function(columnIndex) {
+    const columnExists = columns.has(columnIndex);
+    const hasMaxColumns = columns.size == TABLE_COLUMN_MAX_ITEMS;
+
+    if (
+      !columnExists &&
+      !hasMaxColumns &&
+      (!validCustomHeaders ||
         headers.includes(columnIndex) ||
         columnIndex === INDEX_NAME)
     ) {
@@ -234,7 +348,7 @@ function getTableItems(data = {}, type, headers = null) {
 
   
   
-  if (hasValidCustomHeaders) {
+  if (validCustomHeaders) {
     headers.forEach(header => addColumn(header));
   }
 

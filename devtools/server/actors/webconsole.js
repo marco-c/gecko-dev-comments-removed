@@ -17,6 +17,7 @@ const { ObjectActor } = require("devtools/server/actors/object");
 const { LongStringActor } = require("devtools/server/actors/string");
 const {
   createValueGrip,
+  isArray,
   stringIsLong,
 } = require("devtools/server/actors/object/utils");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
@@ -2020,7 +2021,6 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     const result = WebConsoleUtils.cloneObject(message);
 
     result.workerType = WebConsoleUtils.getWorkerType(result) || "none";
-
     result.sourceId = this.getActorIdForInternalSourceId(result.sourceId);
 
     delete result.wrappedJSObject;
@@ -2046,10 +2046,92 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       return this.createValueGrip(string);
     });
 
+    if (result.level === "table") {
+      const tableItems = this._getConsoleTableMessageItems(result);
+      if (tableItems) {
+        result.arguments[0].ownProperties = tableItems;
+        result.arguments[0].preview = null;
+      }
+
+      
+      result.arguments = result.arguments.slice(0, 2);
+    }
+
     result.category = message.category || "webdev";
     result.innerWindowID = message.innerID;
 
     return result;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _getConsoleTableMessageItems: function(result) {
+    if (
+      !result ||
+      !Array.isArray(result.arguments) ||
+      result.arguments.length == 0
+    ) {
+      return null;
+    }
+
+    const [tableItemGrip] = result.arguments;
+    const dataType = tableItemGrip.class;
+    const needEntries = ["Map", "WeakMap", "Set", "WeakSet"].includes(dataType);
+    const ignoreNonIndexedProperties = isArray(tableItemGrip);
+
+    const tableItemActor = this.getActorByID(tableItemGrip.actor);
+    if (!tableItemActor) {
+      return null;
+    }
+
+    
+    const iterator = needEntries
+      ? tableItemActor.enumEntries()
+      : tableItemActor.enumProperties({
+          ignoreNonIndexedProperties,
+        });
+    const { ownProperties } = iterator.all();
+
+    
+    
+    const descriptorKeys = ["safeGetterValues", "getterValue", "value"];
+
+    Object.values(ownProperties).forEach(desc => {
+      if (typeof desc !== "undefined") {
+        descriptorKeys.forEach(key => {
+          if (desc && desc.hasOwnProperty(key)) {
+            const grip = desc[key];
+
+            
+            const actor = grip && this.getActorByID(grip.actor);
+            if (actor) {
+              const res = actor
+                .enumProperties({
+                  ignoreNonIndexedProperties: isArray(grip),
+                })
+                .all();
+              if (res && res.ownProperties) {
+                desc[key].ownProperties = res.ownProperties;
+              }
+            }
+          }
+        });
+      }
+    });
+
+    return ownProperties;
   },
 
   
