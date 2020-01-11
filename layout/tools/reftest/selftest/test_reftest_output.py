@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import, print_function
+
 import os
 from cStringIO import StringIO
 from functools import partial
