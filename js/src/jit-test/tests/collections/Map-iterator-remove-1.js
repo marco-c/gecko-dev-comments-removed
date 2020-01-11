@@ -1,7 +1,7 @@
 
 
 function test(pairs) {
-    print(uneval(pairs));
+    print(JSON.stringify(pairs));
     var map = new Map(pairs);
     
     var all_keys = '';

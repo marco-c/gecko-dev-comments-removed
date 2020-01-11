@@ -6,7 +6,7 @@
 
 
 function check(expected, stack) {
-  print("check(" + uneval(expected) + ") against:\n" + stack);
+  print("check(" + JSON.stringify(expected) + ") against:\n" + stack);
   count++;
 
   while (stack.length && expected.length) {
