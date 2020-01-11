@@ -1,6 +1,6 @@
 
 var g = newGlobal();
-g.evaluate(`
+cloneAndExecuteScript(`
   function h() {
     function f() {
       'use asm';
@@ -9,6 +9,4 @@ g.evaluate(`
     }
     return f;
   }
-`);
-var h = clone(g.h);
-h();
+`, g);

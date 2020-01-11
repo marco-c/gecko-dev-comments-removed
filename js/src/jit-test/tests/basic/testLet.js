@@ -21,7 +21,7 @@ function test(str, arg, result)
 
     
     var code = "(function (x) { " + str + " })";
-    var c = clone(otherGlobal.evaluate(code));
+    var c = cloneAndExecuteScript(code, otherGlobal);
     assertEq(c.toSource(), eval(code).toSource());
 
     var got = fun(arg);
