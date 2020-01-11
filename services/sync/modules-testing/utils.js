@@ -177,6 +177,9 @@ var makeIdentityConfig = function(overrides) {
       
       result.fxaccount = overrides.fxaccount;
     }
+    if (overrides.node_type) {
+      result.fxaccount.token.node_type = overrides.node_type;
+    }
   }
   return result;
 };

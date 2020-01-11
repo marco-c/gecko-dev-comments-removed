@@ -326,6 +326,7 @@ class TelemetryRecord {
     
     this.failureReason = undefined;
     this.uid = "";
+    this.syncNodeType = null;
     this.when = Date.now();
     this.startTime = tryGetMonotonicTimestamp();
     this.took = 0; 
@@ -376,6 +377,8 @@ class TelemetryRecord {
     } catch (e) {
       this.uid = EMPTY_UID;
     }
+
+    this.syncNodeType = Weave.Service.identity.telemetryNodeType;
 
     
     
@@ -552,6 +555,7 @@ class SyncTelemetryImpl {
       Svc.Prefs.get("telemetry.submissionInterval") * 1000;
     this.lastSubmissionTime = Telemetry.msSinceProcessStart();
     this.lastUID = EMPTY_UID;
+    this.lastSyncNodeType = null;
     
     
     
@@ -672,6 +676,7 @@ class SyncTelemetryImpl {
       version: PING_FORMAT_VERSION,
       syncs: this.payloads.slice(),
       uid: this.lastUID,
+      syncNodeType: this.lastSyncNodeType || undefined,
       deviceID,
       sessionStartDate: this.sessionStartDate,
       events: this.events.length == 0 ? undefined : this.events,
@@ -750,13 +755,28 @@ class SyncTelemetryImpl {
     return true;
   }
 
-  shouldSubmitForIDChange(newID, oldID, defaultForID) {
-    if (newID != defaultForID && oldID != defaultForID) {
+  shouldSubmitForDataChange() {
+    let newID = this.current.uid;
+    let oldID = this.lastUID;
+    if (
+      newID != EMPTY_UID &&
+      oldID != EMPTY_UID &&
       
-      return newID != oldID;
+      newID != oldID
+    ) {
+      return true;
     }
     
     
+    
+    
+    if (
+      this.current.syncNodeType &&
+      this.lastSyncNodeType &&
+      this.current.syncNodeType != this.lastSyncNodeType
+    ) {
+      return true;
+    }
     
     return false;
   }
@@ -782,9 +802,7 @@ class SyncTelemetryImpl {
     }
     this.current.finished(error);
     if (this.payloads.length) {
-      if (
-        this.shouldSubmitForIDChange(this.current.uid, this.lastUID, EMPTY_UID)
-      ) {
+      if (this.shouldSubmitForDataChange()) {
         log.info("Early submission of sync telemetry due to changed IDs");
         this.finish("idchange");
         this.lastSubmissionTime = Telemetry.msSinceProcessStart();
@@ -793,6 +811,9 @@ class SyncTelemetryImpl {
     
     if (this.current.uid !== EMPTY_UID) {
       this.lastUID = this.current.uid;
+    }
+    if (this.current.syncNodeType) {
+      this.lastSyncNodeType = this.current.syncNodeType;
     }
     if (this.payloads.length < this.maxPayloadCount) {
       this.payloads.push(this.current.toJSON());

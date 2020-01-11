@@ -387,7 +387,10 @@ async function wait_for_ping(callback, allowErrorPings, getFullPing = false) {
 
 
 
-async function sync_and_validate_telem(fnValidate = null) {
+async function sync_and_validate_telem(
+  fnValidate = null,
+  wantFullPing = false
+) {
   let numErrors = 0;
   let telem = get_sync_test_telemetry();
   let oldSubmit = telem.submit;
@@ -401,8 +404,12 @@ async function sync_and_validate_telem(fnValidate = null) {
         if (fnValidate) {
           
           
-          Assert.equal(record.syncs.length, 1);
-          fnValidate(record.syncs[0]);
+          if (wantFullPing) {
+            fnValidate(record);
+          } else {
+            Assert.equal(record.syncs.length, 1);
+            fnValidate(record.syncs[0]);
+          }
         } else {
           
           assert_success_ping(record);

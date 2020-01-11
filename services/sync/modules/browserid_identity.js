@@ -139,6 +139,11 @@ this.BrowserIDManager.prototype = {
     return Utils.sha256(deviceID + uid);
   },
 
+  
+  get telemetryNodeType() {
+    return this._token && this._token.node_type ? this._token.node_type : null;
+  },
+
   finalize() {
     
     for (let topic of OBSERVER_TOPICS) {
