@@ -698,6 +698,11 @@ Result NSSCertDBTrustDomain::CheckRevocation(
       }
     }
   }
+#else
+  
+  
+  Unused << mCRLiteMode;
+  Unused << mCRLiteTelemetryInfo;
 #endif
 
   
