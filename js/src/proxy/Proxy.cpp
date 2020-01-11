@@ -744,7 +744,9 @@ const JSClassOps js::ProxyClassOps = {
     ProxyObject::trace,  
 };
 
-const ClassExtension js::ProxyClassExtension = {proxy_ObjectMoved};
+const ClassExtension js::ProxyClassExtension = {
+    proxy_ObjectMoved,  
+};
 
 const ObjectOps js::ProxyObjectOps = {
     proxy_LookupProperty, Proxy::defineProperty,
