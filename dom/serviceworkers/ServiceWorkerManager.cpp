@@ -317,6 +317,16 @@ ServiceWorkerManager::~ServiceWorkerManager() {
   if (!ServiceWorkersAreCrossProcess()) {
     MOZ_ASSERT(!mActor);
   }
+
+  
+  
+  
+  
+  
+  
+  if (!mShuttingDown && mShutdownBlocker) {
+    mShutdownBlocker->StopAcceptingPromises();
+  }
 }
 
 void ServiceWorkerManager::BlockShutdownOn(
