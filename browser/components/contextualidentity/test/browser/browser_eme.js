@@ -114,7 +114,9 @@ add_task(async function test() {
 
   
   let result = await SpecialPowers.spawn(
-    defaultContainer.browser, [keyInfo], async function(aKeyInfo) {
+    defaultContainer.browser,
+    [keyInfo],
+    async function(aKeyInfo) {
       let access = await content.navigator.requestMediaKeySystemAccess(
         "org.w3.clearkey",
         [
@@ -180,32 +182,38 @@ add_task(async function test() {
     USER_ID_PERSONAL
   );
 
-  await SpecialPowers.spawn(personalContainer.browser, [keyInfo], async function(
-    aKeyInfo
-  ) {
-    let access = await content.navigator.requestMediaKeySystemAccess(
-      "org.w3.clearkey",
-      [
-        {
-          initDataTypes: [aKeyInfo.initDataType],
-          videoCapabilities: [{ contentType: "video/webm" }],
-          sessionTypes: ["persistent-license"],
-          persistentState: "required",
-        },
-      ]
-    );
-    let mediaKeys = await access.createMediaKeys();
-    let session = mediaKeys.createSession(aKeyInfo.sessionType);
+  await SpecialPowers.spawn(
+    personalContainer.browser,
+    [keyInfo],
+    async function(aKeyInfo) {
+      let access = await content.navigator.requestMediaKeySystemAccess(
+        "org.w3.clearkey",
+        [
+          {
+            initDataTypes: [aKeyInfo.initDataType],
+            videoCapabilities: [{ contentType: "video/webm" }],
+            sessionTypes: ["persistent-license"],
+            persistentState: "required",
+          },
+        ]
+      );
+      let mediaKeys = await access.createMediaKeys();
+      let session = mediaKeys.createSession(aKeyInfo.sessionType);
 
-    
-    
-    await session.load(aKeyInfo.sessionId);
+      
+      
+      await session.load(aKeyInfo.sessionId);
 
-    let map = session.keyStatuses;
+      let map = session.keyStatuses;
 
-    
-    is(map.size, 0, "No media key should be here for the personal container.");
-  });
+      
+      is(
+        map.size,
+        0,
+        "No media key should be here for the personal container."
+      );
+    }
+  );
 
   
   BrowserTestUtils.removeTab(defaultContainer.tab);

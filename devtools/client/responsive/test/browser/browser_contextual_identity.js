@@ -36,7 +36,9 @@ async function sendMessages(receiver) {
   
   for (const sender of [sender1, sender2]) {
     await SpecialPowers.spawn(
-      sender.browser, [{ name: channelName, message: sender.message }], function(opts) {
+      sender.browser,
+      [{ name: channelName, message: sender.message }],
+      function(opts) {
         const bc = new content.BroadcastChannel(opts.name);
         bc.postMessage(opts.message);
       }

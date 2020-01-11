@@ -14,7 +14,9 @@ add_task(async function() {
 
   
   const [line1, line2, line3] = await SpecialPowers.spawn(
-    gBrowser.selectedBrowser, [], function() {
+    gBrowser.selectedBrowser,
+    [],
+    function() {
       
       return content.eval(
         "(" +

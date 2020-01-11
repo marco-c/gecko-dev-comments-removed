@@ -31,7 +31,9 @@ const gTests = [
     async setup(browser) {
       
       await SpecialPowers.spawn(
-        browser, [LoginHelper.loginToVanillaObject(TEST_LOGIN1)], async login => {
+        browser,
+        [LoginHelper.loginToVanillaObject(TEST_LOGIN1)],
+        async login => {
           let loginList = content.document.querySelector("login-list");
           let loginListItem = loginList.shadowRoot.querySelector(
             ".login-list-item[data-guid]:not([hidden])"

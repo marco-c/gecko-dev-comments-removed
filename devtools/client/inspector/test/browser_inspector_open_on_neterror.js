@@ -17,7 +17,9 @@ add_task(async function() {
   ));
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   await SpecialPowers.spawn(
-    tab.linkedBrowser, [{ url: TEST_URL_1 }], async function({ url }) {
+    tab.linkedBrowser,
+    [{ url: TEST_URL_1 }],
+    async function({ url }) {
       
       
       const { chromeEventHandler } = docShell; 

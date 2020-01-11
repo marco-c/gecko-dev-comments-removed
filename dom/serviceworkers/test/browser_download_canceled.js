@@ -91,7 +91,9 @@ async function performCanceledDownload(tab, path) {
   
   info(`wait for the ${path} stream to close.`);
   
-  const why = await SpecialPowers.spawn(tab.linkedBrowser, [path], function(path) {
+  const why = await SpecialPowers.spawn(tab.linkedBrowser, [path], function(
+    path
+  ) {
     return content.wrappedJSObject.streamClosed[path].promise;
   });
   
@@ -129,7 +131,9 @@ add_task(async function interruptedDownloads() {
   
   
   const controlled = await SpecialPowers.spawn(
-    tab.linkedBrowser, [], function() {
+    tab.linkedBrowser,
+    [],
+    function() {
       
       return content.wrappedJSObject.controlled;
     }

@@ -116,12 +116,16 @@ add_task(async function test_retry_with_genericError() {
       
       info("Tell merchant page to retry with an error string");
       let retryPromise = SpecialPowers.spawn(
-        browser, [{
-          delayMs: 1000,
-          validationErrors: {
-            error: "My generic error",
+        browser,
+        [
+          {
+            delayMs: 1000,
+            validationErrors: {
+              error: "My generic error",
+            },
           },
-        }], PTU.ContentTasks.addRetryHandler
+        ],
+        PTU.ContentTasks.addRetryHandler
       );
 
       await retryUpdatePromise;
@@ -137,7 +141,9 @@ add_task(async function test_retry_with_genericError() {
       
       info("acknowledging the completion from the merchant page");
       let result = await SpecialPowers.spawn(
-        browser, [], PTU.ContentTasks.addCompletionHandler
+        browser,
+        [],
+        PTU.ContentTasks.addCompletionHandler
       );
 
       

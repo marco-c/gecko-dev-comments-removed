@@ -771,16 +771,20 @@ async function registerActorInContentProcess(url, options) {
   
   
   url = url.startsWith("chrome://mochitests") ? convertChromeToFile(url) : url;
-  return SpecialPowers.spawn(gBrowser.selectedBrowser, [{ url, options }], args => {
-    
-    const { require } = ChromeUtils.import(
-      "resource://devtools/shared/Loader.jsm"
-    );
-    const {
-      ActorRegistry,
-    } = require("devtools/server/actors/utils/actor-registry");
-    ActorRegistry.registerModule(args.url, args.options);
-  });
+  return SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [{ url, options }],
+    args => {
+      
+      const { require } = ChromeUtils.import(
+        "resource://devtools/shared/Loader.jsm"
+      );
+      const {
+        ActorRegistry,
+      } = require("devtools/server/actors/utils/actor-registry");
+      ActorRegistry.registerModule(args.url, args.options);
+    }
+  );
 }
 
 

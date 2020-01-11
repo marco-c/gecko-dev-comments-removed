@@ -63,7 +63,9 @@ add_task(async function() {
   
   
   const textContent = await SpecialPowers.spawn(
-    gBrowser.selectedBrowser, [], async function() {
+    gBrowser.selectedBrowser,
+    [],
+    async function() {
       return content.document.querySelector("style").textContent;
     }
   );

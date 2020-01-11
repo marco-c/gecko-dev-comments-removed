@@ -16,7 +16,9 @@ async function checkNewtabLoads(selector, message) {
 
   
   let found = await SpecialPowers.spawn(
-    browser, [selector], arg => content.document.querySelector(arg) !== null
+    browser,
+    [selector],
+    arg => content.document.querySelector(arg) !== null
   );
   ok(found, message);
 

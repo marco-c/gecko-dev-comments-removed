@@ -35,7 +35,9 @@ add_task(async function() {
     );
     
     await SpecialPowers.spawn(
-      fileBrowser, [[TEST_HTTP_POST, filePaths]], ([actionUri, filePaths]) => {
+      fileBrowser,
+      [[TEST_HTTP_POST, filePaths]],
+      ([actionUri, filePaths]) => {
         Cu.importGlobalProperties(["File"]);
 
         let doc = content.document;

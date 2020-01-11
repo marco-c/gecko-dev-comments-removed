@@ -35,7 +35,9 @@ async function loadForegroundTab() {
   
   
   let promise = SpecialPowers.spawn(
-    gBrowser.selectedTab.linkedBrowser, [], async function() {
+    gBrowser.selectedTab.linkedBrowser,
+    [],
+    async function() {
       return new Promise(resolve => {
         let document = content.document;
         document.addEventListener("visibilitychange", function onStateChange() {

@@ -18,10 +18,16 @@ add_task(async function test_duplicate() {
   
   await SpecialPowers.spawn(browser, [], async function() {
     return new Promise(resolve => {
-      docShell.chromeEventHandler.addEventListener("hashchange", function onHashChange() {
-        docShell.chromeEventHandler.removeEventListener("hashchange", onHashChange);
-        resolve();
-      });
+      docShell.chromeEventHandler.addEventListener(
+        "hashchange",
+        function onHashChange() {
+          docShell.chromeEventHandler.removeEventListener(
+            "hashchange",
+            onHashChange
+          );
+          resolve();
+        }
+      );
 
       
       content.document.querySelector("a").click();
@@ -56,10 +62,16 @@ add_task(async function test_duplicate_remove() {
   
   await SpecialPowers.spawn(browser, [], async function() {
     return new Promise(resolve => {
-      docShell.chromeEventHandler.addEventListener("hashchange", function onHashChange() {
-        docShell.chromeEventHandler.removeEventListener("hashchange", onHashChange);
-        resolve();
-      });
+      docShell.chromeEventHandler.addEventListener(
+        "hashchange",
+        function onHashChange() {
+          docShell.chromeEventHandler.removeEventListener(
+            "hashchange",
+            onHashChange
+          );
+          resolve();
+        }
+      );
 
       
       content.document.querySelector("a").click();

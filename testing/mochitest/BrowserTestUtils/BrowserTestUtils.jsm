@@ -852,14 +852,18 @@ var BrowserTestUtils = {
 
     
     
-    await gBrowser.preloadedBrowser.ownerGlobal.SpecialPowers.spawn(gBrowser.preloadedBrowser, [], async () => {
-      await ContentTaskUtils.waitForCondition(() => {
-        return (
-          this.content.document &&
-          this.content.document.readyState == "complete"
-        );
-      });
-    });
+    await gBrowser.preloadedBrowser.ownerGlobal.SpecialPowers.spawn(
+      gBrowser.preloadedBrowser,
+      [],
+      async () => {
+        await ContentTaskUtils.waitForCondition(() => {
+          return (
+            this.content.document &&
+            this.content.document.readyState == "complete"
+          );
+        });
+      }
+    );
   },
 
   
