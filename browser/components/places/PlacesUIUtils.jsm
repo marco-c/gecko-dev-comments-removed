@@ -1129,7 +1129,7 @@ var PlacesUIUtils = {
     
     
     if (win.top.XULBrowserWindow) {
-      win.top.XULBrowserWindow.setOverLink(url, null);
+      win.top.XULBrowserWindow.setOverLink(url);
     }
   },
 };

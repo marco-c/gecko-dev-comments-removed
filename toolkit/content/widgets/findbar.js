@@ -755,7 +755,7 @@
 
       
       
-      this._xulBrowserWindow.setOverLink(foundURL || "", null);
+      this._xulBrowserWindow.setOverLink(foundURL || "");
       return true;
     }
 
