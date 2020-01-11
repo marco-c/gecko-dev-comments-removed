@@ -1308,6 +1308,8 @@ pref("browser.newtabpage.activity-stream.discoverystream.enabled", true);
 pref("browser.newtabpage.activity-stream.discoverystream.hardcoded-basic-layout", false);
 pref("browser.newtabpage.activity-stream.discoverystream.spocs-endpoint", "");
 
+pref("browser.newtabpage.activity-stream.discoverystream.lang-layout-config", "en");
+
 
 #ifdef NIGHTLY_BUILD
   pref("browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", true);
