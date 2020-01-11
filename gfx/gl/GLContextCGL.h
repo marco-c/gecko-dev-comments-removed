@@ -17,6 +17,10 @@
 typedef void NSOpenGLContext;
 #endif
 
+#include <CoreGraphics/CGDisplayConfiguration.h>
+
+#include "mozilla/Atomics.h"
+
 class nsIWidget;
 
 namespace mozilla {
@@ -26,6 +30,8 @@ class GLContextCGL : public GLContext {
   friend class GLContextProviderCGL;
 
   NSOpenGLContext* mContext;
+
+  mozilla::Atomic<bool> mActiveGPUSwitchMayHaveOccurred;
 
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(GLContextCGL, override)
@@ -45,6 +51,16 @@ class GLContextCGL : public GLContext {
 
   NSOpenGLContext* GetNSOpenGLContext() const { return mContext; }
   CGLContextObj GetCGLContext() const;
+
+  
+  static void DisplayReconfigurationCallback(CGDirectDisplayID aDisplay,
+                                             CGDisplayChangeSummaryFlags aFlags,
+                                             void* aUserInfo);
+
+  
+  
+  
+  void MigrateToActiveGPU();
 
   virtual bool MakeCurrentImpl() const override;
 
