@@ -1811,8 +1811,7 @@ AbortReasonOr<Ok> IonBuilder::startLoop(jsbytecode* loopEntry,
                                            stackPhiCount));
   current->end(MGoto::New(alloc(), header));
 
-  if (!loopStack_.emplaceBack(header, loopEntry, loopHead,
-                              GetNextPc(backjump))) {
+  if (!loopStack_.emplaceBack(header, GetNextPc(backjump))) {
     return abort(AbortReason::Alloc);
   }
 
@@ -3140,12 +3139,16 @@ AbortReasonOr<Ok> IonBuilder::visitTestBackedge(JSOp op, bool* restarted) {
 
   MDefinition* ins = current->pop();
 
+  jsbytecode* loopHead = pc + GET_JUMP_OFFSET(pc);
+  MOZ_ASSERT(JSOp(*loopHead) == JSOP_LOOPHEAD);
+
   jsbytecode* successorPC = GetNextPc(pc);
-  MOZ_ASSERT(loopStack_.back().successorStart() == successorPC);
 
   
+  
+  
   MBasicBlock* backedge;
-  MOZ_TRY_VAR(backedge, newBlock(current, loopStack_.back().loopEntry()));
+  MOZ_TRY_VAR(backedge, newBlock(current, loopHead));
 
   if (op == JSOP_IFNE) {
     current->end(newTest(ins, backedge, nullptr));
