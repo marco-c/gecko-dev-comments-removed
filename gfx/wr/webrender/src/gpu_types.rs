@@ -63,6 +63,21 @@ impl ZBufferIdGenerator {
     }
 }
 
+
+
+
+
+
+
+#[repr(i32)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum BrushShaderKind {
+    None = 0,
+    Solid = 0x1000000,
+    Image = 0x2000000,
+    Text = 0x4000000,
+}
+
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -342,13 +357,13 @@ impl GlyphInstance {
     
     
     
-    pub fn build(&self, data0: i32, data1: i32, data2: i32) -> PrimitiveInstanceData {
+    pub fn build(&self, data0: i32, data1: i32, resource_address: i32) -> PrimitiveInstanceData {
         PrimitiveInstanceData {
             data: [
                 self.prim_header_index.0 as i32,
                 data0,
                 data1,
-                data2,
+                resource_address | BrushShaderKind::Text as i32,
             ],
         }
     }
@@ -396,9 +411,6 @@ bitflags! {
 }
 
 
-
-
-#[repr(C)]
 pub struct BrushInstance {
     pub prim_header_index: PrimitiveHeaderIndex,
     pub render_task_address: RenderTaskAddress,
@@ -406,7 +418,8 @@ pub struct BrushInstance {
     pub segment_index: i32,
     pub edge_flags: EdgeAaSegmentMask,
     pub brush_flags: BrushFlags,
-    pub user_data: i32,
+    pub resource_address: i32,
+    pub brush_kind: BrushShaderKind,
 }
 
 impl From<BrushInstance> for PrimitiveInstanceData {
@@ -414,12 +427,13 @@ impl From<BrushInstance> for PrimitiveInstanceData {
         PrimitiveInstanceData {
             data: [
                 instance.prim_header_index.0,
-                ((instance.render_task_address.0 as i32) << 16) |
-                instance.clip_task_address.0 as i32,
-                instance.segment_index |
-                ((instance.edge_flags.bits() as i32) << 16) |
-                ((instance.brush_flags.bits() as i32) << 24),
-                instance.user_data,
+                ((instance.render_task_address.0 as i32) << 16)
+                | instance.clip_task_address.0 as i32,
+                instance.segment_index
+                | ((instance.edge_flags.bits() as i32) << 16)
+                | ((instance.brush_flags.bits() as i32) << 24),
+                instance.resource_address
+                | instance.brush_kind as i32,
             ]
         }
     }
