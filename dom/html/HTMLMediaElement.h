@@ -870,6 +870,19 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
+  enum class OutputMuteState { Muted, Unmuted };
+  OutputMuteState OutputTracksMuted();
+
+  
+
+
+
+  void UpdateOutputTracksMuting();
+
+  
+
+
+
 
 
   enum class AddTrackMode { ASYNC, SYNC };

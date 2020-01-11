@@ -359,6 +359,11 @@ class MediaStreamTrackConsumer
 
 
   virtual void NotifyEnded(MediaStreamTrack* aTrack){};
+
+  
+
+
+  virtual void NotifyEnabledChanged(MediaStreamTrack* aTrack, bool aEnabled){};
 };
 
 
@@ -414,6 +419,7 @@ class MediaStreamTrack : public DOMEventTargetHelper,
       nsPIDOMWindowInner* aWindow, mozilla::MediaTrack* aInputTrack,
       MediaStreamTrackSource* aSource,
       MediaStreamTrackState aReadyState = MediaStreamTrackState::Live,
+      bool aMuted = false,
       const MediaTrackConstraints& aConstraints = MediaTrackConstraints());
 
   NS_DECL_ISUPPORTS_INHERITED
@@ -575,6 +581,12 @@ class MediaStreamTrack : public DOMEventTargetHelper,
 
 
   void NotifyEnded();
+
+  
+
+
+
+  void NotifyEnabledChanged();
 
   
 
