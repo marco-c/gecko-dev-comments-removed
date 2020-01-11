@@ -31,32 +31,6 @@ const IS_CONTENT_PROCESS = (function() {
 })();
 
 var TelemetryUtils = {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  TELEMETRY_UPLOAD_DISABLED_TOPIC: "telemetry.upload.disabled",
-
   Preferences: Object.freeze({
     
     ArchiveEnabled: "toolkit.telemetry.archive.enabled",
