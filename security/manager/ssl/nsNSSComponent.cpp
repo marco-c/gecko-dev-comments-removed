@@ -677,11 +677,7 @@ LoadLoadableCertsTask::Run() {
     
     
     mNSSComponent->mLoadableCertsLoadedResult = loadLoadableRootsResult;
-    nsresult rv = mNSSComponent->mLoadableCertsLoadedMonitor.NotifyAll();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      MOZ_LOG(gPIPNSSLog, LogLevel::Error,
-              ("failed to notify loadable certs loaded monitor"));
-    }
+    mNSSComponent->mLoadableCertsLoadedMonitor.NotifyAll();
   }
   return NS_OK;
 }
