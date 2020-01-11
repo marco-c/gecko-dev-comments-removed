@@ -31,6 +31,7 @@
 #include "nsIChildChannel.h"
 #include "nsIHttpChannelChild.h"
 #include "nsIDivertableChannel.h"
+#include "nsIMultiPartChannel.h"
 #include "nsIThreadRetargetableRequest.h"
 #include "mozilla/net/DNS.h"
 
@@ -65,6 +66,7 @@ class HttpChannelChild final : public PHttpChannelChild,
                                public nsIChildChannel,
                                public nsIHttpChannelChild,
                                public nsIDivertableChannel,
+                               public nsIMultiPartChannel,
                                public nsIThreadRetargetableRequest,
                                public NeckoTargetHolder {
   virtual ~HttpChannelChild();
@@ -79,6 +81,7 @@ class HttpChannelChild final : public PHttpChannelChild,
   NS_DECL_NSICHILDCHANNEL
   NS_DECL_NSIHTTPCHANNELCHILD
   NS_DECL_NSIDIVERTABLECHANNEL
+  NS_DECL_NSIMULTIPARTCHANNEL
   NS_DECL_NSITHREADRETARGETABLEREQUEST
   NS_DECLARE_STATIC_IID_ACCESSOR(HTTP_CHANNEL_CHILD_IID)
 
@@ -143,7 +146,8 @@ class HttpChannelChild final : public PHttpChannelChild,
       const int64_t& altDataLen, const bool& deliveringAltData,
       const bool& aApplyConversion, const bool& aIsResolvedByTRR,
       const ResourceTimingStructArgs& aTiming,
-      const bool& aAllRedirectsSameOrigin) override;
+      const bool& aAllRedirectsSameOrigin, const Maybe<uint32_t>& aMultiPartID,
+      const bool& aIsLastPartOfMultiPart) override;
   mozilla::ipc::IPCResult RecvFailedAsyncOpen(const nsresult& status) override;
   mozilla::ipc::IPCResult RecvRedirect1Begin(
       const uint32_t& registrarId, const URIParams& newURI,
@@ -406,6 +410,10 @@ class HttpChannelChild final : public PHttpChannelChild,
   uint32_t mCacheExpirationTime;
 
   
+  
+  Maybe<uint32_t> mMultiPartID;
+
+  
   Atomic<bool> mDeletingChannelSent;
 
   Atomic<bool, ReleaseAcquire> mUnknownDecoderInvolved;
@@ -467,6 +475,10 @@ class HttpChannelChild final : public PHttpChannelChild,
   
   uint8_t mSuspendParentAfterSynthesizeResponse : 1;
 
+  
+  
+  uint8_t mIsLastPartOfMultiPart : 1;
+
   void FinishInterceptedRedirect();
   void CleanupRedirectingChannel(nsresult rv);
 
@@ -488,7 +500,8 @@ class HttpChannelChild final : public PHttpChannelChild,
       const nsCString& altDataType, const int64_t& altDataLen,
       const bool& deliveringAltData, const bool& aApplyConversion,
       const bool& aIsResolvedByTRR, const ResourceTimingStructArgs& aTiming,
-      const bool& aAllRedirectsSameOrigin);
+      const bool& aAllRedirectsSameOrigin, const Maybe<uint32_t>& aMultiPartID,
+      const bool& aIsLastPartOfMultiPart);
   void MaybeDivertOnData(const nsCString& data, const uint64_t& offset,
                          const uint32_t& count);
   void OnTransportAndData(const nsresult& channelStatus, const nsresult& status,
