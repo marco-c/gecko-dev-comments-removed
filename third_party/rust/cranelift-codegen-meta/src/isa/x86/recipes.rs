@@ -100,7 +100,7 @@ impl<'builder> RecipeGroup<'builder> {
 
 fn decode_opcodes(op_bytes: &[u8], rrr: u16, w: u16) -> (&'static str, u16) {
     let enc = EncodingBits::new(op_bytes, rrr, w);
-    (enc.prefix.recipe_name_prefix(), enc.bits())
+    (enc.prefix().recipe_name_prefix(), enc.bits())
 }
 
 
