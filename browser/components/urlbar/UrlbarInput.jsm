@@ -237,20 +237,6 @@ class UrlbarInput {
   
 
 
-
-
-
-
-
-
-
-  trimValue(val) {
-    return UrlbarPrefs.get("trimURLs") ? BrowserUtils.trimURL(val) : val;
-  }
-
-  
-
-
   formatValue() {
     
     if (this.editor) {
@@ -1084,7 +1070,7 @@ class UrlbarInput {
       val = originalUrl.displaySpec;
     }
 
-    val = allowTrim ? this.trimValue(val) : val;
+    val = allowTrim ? this._trimValue(val) : val;
 
     this.valueIsTyped = false;
     this._resultForCurrentValue = null;
@@ -1267,7 +1253,7 @@ class UrlbarInput {
     
     
     let spec = uri.displaySpec;
-    let trimmedSpec = this.trimValue(spec);
+    let trimmedSpec = this._trimValue(spec);
     if (spec != trimmedSpec) {
       
       
@@ -1345,6 +1331,20 @@ class UrlbarInput {
       "urlbar",
       details
     );
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  _trimValue(val) {
+    return UrlbarPrefs.get("trimURLs") ? BrowserUtils.trimURL(val) : val;
   }
 
   
