@@ -233,106 +233,32 @@ function restartProfiler() {
 
 
 
-
-function _getArrayOfStringsPref(prefName, defaultValue) {
-  let array;
-  try {
-    const text = Services.prefs.getCharPref(prefName);
-    array = JSON.parse(text);
-  } catch (error) {
-    return defaultValue;
-  }
-
-  if (
-    Array.isArray(array) &&
-    array.every(feature => typeof feature === "string")
-  ) {
-    return array;
-  }
-
-  return defaultValue;
+function _getArrayOfStringsPref(prefName) {
+  const text = Services.prefs.getCharPref(prefName);
+  return JSON.parse(text);
 }
 
 
 
 
 
-
-function _getArrayOfStringsHostPref(prefName, defaultValue) {
-  let array;
-  try {
-    const text = Services.prefs.getStringPref(
-      prefName,
-      JSON.stringify(defaultValue)
-    );
-    array = JSON.parse(text);
-  } catch (error) {
-    return defaultValue;
-  }
-
-  if (
-    Array.isArray(array) &&
-    array.every(feature => typeof feature === "string")
-  ) {
-    return array;
-  }
-
-  return defaultValue;
-}
-
-
-
-
-
-let _defaultPrefs;
-
-
-
-
-
-
-function getDefaultRecordingPreferences() {
-  if (!_defaultPrefs) {
-    _defaultPrefs = {
-      entries: 10000000, 
-      
-      duration: 0,
-      interval: 1000, 
-      features: ["js", "leaf", "responsiveness", "stackwalk"],
-      threads: ["GeckoMain", "Compositor"],
-      objdirs: [],
-    };
-
-    if (AppConstants.platform === "android") {
-      
-      _defaultPrefs.features.push("java");
-    }
-  }
-
-  return _defaultPrefs;
+function _getArrayOfStringsHostPref(prefName) {
+  const text = Services.prefs.getStringPref(prefName);
+  return JSON.parse(text);
 }
 
 
 
 
 function getRecordingPreferencesFromBrowser() {
-  const defaultPrefs = getDefaultRecordingPreferences();
-
-  const entries = Services.prefs.getIntPref(ENTRIES_PREF, defaultPrefs.entries);
-  const interval = Services.prefs.getIntPref(
-    INTERVAL_PREF,
-    defaultPrefs.interval
-  );
-  const features = _getArrayOfStringsPref(FEATURES_PREF, defaultPrefs.features);
-  const threads = _getArrayOfStringsPref(THREADS_PREF, defaultPrefs.threads);
-  const objdirs = _getArrayOfStringsHostPref(
-    OBJDIRS_PREF,
-    defaultPrefs.objdirs
-  );
-  const duration = Services.prefs.getIntPref(
-    DURATION_PREF,
-    defaultPrefs.duration
-  );
+  
+  
+  const entries = Services.prefs.getIntPref(ENTRIES_PREF);
+  const interval = Services.prefs.getIntPref(INTERVAL_PREF);
+  const features = _getArrayOfStringsPref(FEATURES_PREF);
+  const threads = _getArrayOfStringsPref(THREADS_PREF);
+  const objdirs = _getArrayOfStringsHostPref(OBJDIRS_PREF);
+  const duration = Services.prefs.getIntPref(DURATION_PREF);
 
   const supportedFeatures = new Set(Services.profiler.GetFeatures());
 
@@ -365,7 +291,12 @@ const platform = AppConstants.platform;
 
 
 function revertRecordingPreferences() {
-  setRecordingPreferencesOnBrowser(getDefaultRecordingPreferences());
+  Services.prefs.clearUserPref(ENTRIES_PREF);
+  Services.prefs.clearUserPref(INTERVAL_PREF);
+  Services.prefs.clearUserPref(FEATURES_PREF);
+  Services.prefs.clearUserPref(THREADS_PREF);
+  Services.prefs.clearUserPref(OBJDIRS_PREF);
+  Services.prefs.clearUserPref(DURATION_PREF);
 }
 
 var EXPORTED_SYMBOLS = [
@@ -376,7 +307,6 @@ var EXPORTED_SYMBOLS = [
   "toggleProfiler",
   "platform",
   "getSymbolsFromThisBrowser",
-  "getDefaultRecordingPreferences",
   "getRecordingPreferencesFromBrowser",
   "setRecordingPreferencesOnBrowser",
   "revertRecordingPreferences",

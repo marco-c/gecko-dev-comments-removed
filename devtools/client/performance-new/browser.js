@@ -160,24 +160,9 @@ function receiveProfile(profile, getSymbolTableCallback) {
 
 
 
-
-async function _getArrayOfStringsPref(preferenceFront, prefName, defaultValue) {
-  let array;
-  try {
-    const text = await preferenceFront.getCharPref(prefName);
-    array = JSON.parse(text);
-  } catch (error) {
-    return defaultValue;
-  }
-
-  if (
-    Array.isArray(array) &&
-    array.every(feature => typeof feature === "string")
-  ) {
-    return array;
-  }
-
-  return defaultValue;
+async function _getArrayOfStringsPref(preferenceFront, prefName) {
+  const text = await preferenceFront.getCharPref(prefName);
+  return JSON.parse(text);
 }
 
 
@@ -188,28 +173,11 @@ async function _getArrayOfStringsPref(preferenceFront, prefName, defaultValue) {
 
 
 
-
-async function _getArrayOfStringsHostPref(prefName, defaultValue) {
+async function _getArrayOfStringsHostPref(prefName) {
   const { Services } = lazyServices();
-  let array;
-  try {
-    const text = Services.prefs.getStringPref(
-      prefName,
-      JSON.stringify(defaultValue)
-    );
-    array = JSON.parse(text);
-  } catch (error) {
-    return defaultValue;
-  }
+  const text = Services.prefs.getStringPref(prefName);
 
-  if (
-    Array.isArray(array) &&
-    array.every(feature => typeof feature === "string")
-  ) {
-    return array;
-  }
-
-  return defaultValue;
+  return JSON.parse(text);
 }
 
 
@@ -218,13 +186,8 @@ async function _getArrayOfStringsHostPref(prefName, defaultValue) {
 
 
 
-
-async function _getIntPref(preferenceFront, prefName, defaultValue) {
-  try {
-    return await preferenceFront.getIntPref(prefName);
-  } catch (error) {
-    return defaultValue;
-  }
+async function _getIntPref(preferenceFront, prefName) {
+  return preferenceFront.getIntPref(prefName);
 }
 
 
@@ -235,33 +198,19 @@ async function _getIntPref(preferenceFront, prefName, defaultValue) {
 
 
 
-
-async function getRecordingPreferencesFromDebuggee(
-  preferenceFront,
-  defaultPrefs
-) {
+async function getRecordingPreferencesFromDebuggee(preferenceFront) {
   const [entries, interval, features, threads, objdirs] = await Promise.all([
-    _getIntPref(
+    _getIntPref(preferenceFront, `devtools.performance.recording.entries`),
+    _getIntPref(preferenceFront, `devtools.performance.recording.interval`),
+    _getArrayOfStringsPref(
       preferenceFront,
-      `devtools.performance.recording.entries`,
-      defaultPrefs.entries
-    ),
-    _getIntPref(
-      preferenceFront,
-      `devtools.performance.recording.interval`,
-      defaultPrefs.interval
+      `devtools.performance.recording.features`
     ),
     _getArrayOfStringsPref(
       preferenceFront,
-      `devtools.performance.recording.features`,
-      defaultPrefs.features
+      `devtools.performance.recording.threads`
     ),
-    _getArrayOfStringsPref(
-      preferenceFront,
-      `devtools.performance.recording.threads`,
-      defaultPrefs.threads
-    ),
-    _getArrayOfStringsHostPref(OBJDIRS_PREF, defaultPrefs.objdirs),
+    _getArrayOfStringsHostPref(OBJDIRS_PREF),
   ]);
 
   return { entries, interval, features, threads, objdirs };

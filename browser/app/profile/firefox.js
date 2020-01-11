@@ -2085,6 +2085,26 @@ pref("devtools.performance.recording.ui-base-url", "https://profiler.firefox.com
 
 
 
+pref("devtools.performance.recording.entries", 10000000);
+
+pref("devtools.performance.recording.interval", 1000);
+
+
+
+pref("devtools.performance.recording.duration", 0);
+
+
+#if defined(__ANDROID__)
+  
+  
+  pref("devtools.performance.recording.features", "[\"js\",\"leaf\",\"responsiveness\",\"stackwalk\",\"java\"]");
+#else
+  
+  pref("devtools.performance.recording.features", "[\"js\",\"leaf\",\"responsiveness\",\"stackwalk\"]");
+#endif
+pref("devtools.performance.recording.threads", "[\"GeckoMain\",\"Compositor\"]");
+
+
 
 pref("devtools.performance.recording.objdirs", "[]");
 

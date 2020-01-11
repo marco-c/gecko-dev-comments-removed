@@ -48,10 +48,6 @@ const {
   createMultiModalGetSymbolTableFn,
 } = require("devtools/client/performance-new/browser");
 
-const { getDefaultRecordingPreferences } = ChromeUtils.import(
-  "resource://devtools/client/performance-new/popup/background.jsm.js"
-);
-
 
 
 
@@ -73,10 +69,7 @@ async function gInit(perfFront, preferenceFront) {
     
     
     
-    getRecordingPreferencesFromDebuggee(
-      preferenceFront,
-      getDefaultRecordingPreferences()
-    ),
+    getRecordingPreferencesFromDebuggee(preferenceFront),
     
     
     
