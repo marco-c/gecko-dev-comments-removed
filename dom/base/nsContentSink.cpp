@@ -248,40 +248,6 @@ nsresult nsContentSink::ProcessHeaderData(nsAtom* aHeader,
 
   mDocument->SetHeaderData(aHeader, aValue);
 
-  if (aHeader == nsGkAtoms::setcookie &&
-      StaticPrefs::dom_metaElement_setCookie_allowed()) {
-    
-    
-    
-    nsCOMPtr<nsICookieService> cookieServ =
-        do_GetService(NS_COOKIESERVICE_CONTRACTID, &rv);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    
-
-    
-    
-
-    
-    
-    nsCOMPtr<nsIURI> contentURI;
-    rv = mDocument->NodePrincipal()->GetURI(getter_AddRefs(contentURI));
-    NS_ENSURE_TRUE(contentURI, rv);
-
-    nsCOMPtr<nsIChannel> channel;
-    if (mParser) {
-      mParser->GetChannel(getter_AddRefs(channel));
-    }
-
-    rv = cookieServ->SetCookieString(contentURI, nullptr,
-                                     NS_ConvertUTF16toUTF8(aValue), channel);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-  }
-
   return rv;
 }
 
@@ -750,13 +716,6 @@ nsresult nsContentSink::ProcessMETATag(nsIContent* aContent) {
     nsContentUtils::ASCIIToLower(header);
     if (nsGkAtoms::refresh->Equals(header) &&
         (mDocument->GetSandboxFlags() & SANDBOXED_AUTOMATIC_FEATURES)) {
-      return NS_OK;
-    }
-
-    
-    
-    if (nsGkAtoms::setcookie->Equals(header) && mDocument->IsCookieAverse() &&
-        StaticPrefs::dom_metaElement_setCookie_allowed()) {
       return NS_OK;
     }
 
