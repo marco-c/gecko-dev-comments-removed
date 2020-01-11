@@ -216,6 +216,8 @@ def start_xvfb():
 def get_extra_jobs(event):
     body = None
     jobs = set()
+    if not event:
+        return jobs
     if "commits" in event and event["commits"]:
         body = event["commits"][0]["message"]
     elif "pull_request" in event:
@@ -259,6 +261,9 @@ def set_variables(event):
 def include_job(job):
     
     
+    if "GITHUB_PULL_REQUEST" not in os.environ:
+        return True
+
     if (os.environ["GITHUB_PULL_REQUEST"] == "false" and
         job == "run-all"):
         return True
