@@ -274,8 +274,11 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
     nsCOMPtr<nsIRequest> request;
     nsresult status;
   };
+  struct OnAfterLastPartParams {
+    nsresult status;
+  };
   typedef mozilla::Variant<OnStartRequestParams, OnDataAvailableParams,
-                           OnStopRequestParams>
+                           OnStopRequestParams, OnAfterLastPartParams>
       StreamListenerFunction;
   
   

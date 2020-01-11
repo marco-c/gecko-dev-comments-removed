@@ -582,6 +582,51 @@ mozilla::ipc::IPCResult HttpChannelChild::RecvOnStopRequest(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult HttpChannelChild::RecvOnAfterLastPart(
+    const nsresult& aStatus) {
+  mEventQ->RunOrEnqueue(new NeckoTargetChannelFunctionEvent(
+      this, [self = UnsafePtr<HttpChannelChild>(this), aStatus]() {
+        self->OnAfterLastPart(aStatus);
+      }));
+  return IPC_OK();
+}
+
+void HttpChannelChild::OnAfterLastPart(const nsresult& aStatus) {
+  if (mOnStopRequestCalled) {
+    return;
+  }
+  mOnStopRequestCalled = true;
+
+  
+  gHttpHandler->OnStopRequest(this);
+
+  ReleaseListeners();
+
+  
+  
+  
+  if (!mPreferredCachedAltDataTypes.IsEmpty()) {
+    mAltDataCacheEntryAvailable = mCacheEntryAvailable;
+  }
+  mCacheEntryAvailable = false;
+
+  if (mLoadGroup) mLoadGroup->RemoveRequest(this, nullptr, mStatus);
+  CleanupBackgroundChannel();
+
+  if (mLoadFlags & LOAD_DOCUMENT_URI) {
+    
+    
+    if (CanSend()) {
+      mKeptAlive = true;
+      SendDocumentChannelCleanup(true);
+    }
+  } else {
+    
+    
+    TrySendDeletingChannel();
+  }
+}
+
 class SyntheticDiversionListener final : public nsIStreamListener {
   RefPtr<HttpChannelChild> mChannel;
 

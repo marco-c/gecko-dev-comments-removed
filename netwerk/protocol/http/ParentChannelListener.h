@@ -90,6 +90,10 @@ class ParentChannelListener final : public nsIInterfaceRequestor,
   nsCOMPtr<nsINetworkInterceptController> mInterceptController;
 
   RefPtr<mozilla::dom::BrowserParent> mBrowserParent;
+
+  
+  
+  bool mIsMultiPart = false;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(ParentChannelListener, PARENT_CHANNEL_LISTENER)

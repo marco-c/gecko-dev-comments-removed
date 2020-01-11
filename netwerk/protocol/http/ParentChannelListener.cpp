@@ -78,6 +78,14 @@ ParentChannelListener::OnStartRequest(nsIRequest* aRequest) {
 
   if (!mNextListener) return NS_ERROR_UNEXPECTED;
 
+  
+  
+  
+  nsCOMPtr<nsIMultiPartChannel> multiPartChannel = do_QueryInterface(aRequest);
+  if (multiPartChannel) {
+    mIsMultiPart = true;
+  }
+
   LOG(("ParentChannelListener::OnStartRequest [this=%p]\n", this));
   return mNextListener->OnStartRequest(aRequest);
 }
@@ -94,11 +102,7 @@ ParentChannelListener::OnStopRequest(nsIRequest* aRequest,
        this, static_cast<uint32_t>(aStatusCode)));
   nsresult rv = mNextListener->OnStopRequest(aRequest, aStatusCode);
 
-  
-  
-  
-  nsCOMPtr<nsIMultiPartChannel> multiPartChannel = do_QueryInterface(aRequest);
-  if (!multiPartChannel) {
+  if (!mIsMultiPart) {
     mNextListener = nullptr;
   }
   return rv;
