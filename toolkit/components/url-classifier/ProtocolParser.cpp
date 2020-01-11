@@ -30,7 +30,7 @@ namespace mozilla {
 namespace safebrowsing {
 
 
-const uint32_t MAX_CHUNK_SIZE = (1024 * 1024);
+const uint32_t MAX_CHUNK_SIZE = (4 * 1024 * 1024);
 
 const uint32_t MAX_CHUNK_RANGE = 1000000;
 
