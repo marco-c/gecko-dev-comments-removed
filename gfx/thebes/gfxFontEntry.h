@@ -24,7 +24,6 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
-#include "ThebesRLBoxTypes.h"
 #include <math.h>
 
 typedef struct gr_face gr_face;
@@ -339,29 +338,13 @@ class gfxFontEntry {
   void ForgetHBFace();
 
   
-  rlbox_sandbox_gr* GetGrSandbox();
+  
+  gr_face* GetGrFace();
+  void ReleaseGrFace(gr_face* aFace);
 
   
   
-  
-  
-  sandbox_callback_gr<float (*)(const void*, uint16_t)>*
-  GetGrSandboxAdvanceCallbackHandle();
-
-  
-  
-  
-  tainted_opaque_gr<gr_face*> GetGrFace();
-  void ReleaseGrFace(tainted_opaque_gr<gr_face*> aFace);
-
-  
-  
-  
-  
-  
-  
-  
-  tainted_boolean_hint HasGraphiteSpaceContextuals();
+  bool HasGraphiteSpaceContextuals();
 
   
   void DisconnectSVG();
@@ -589,14 +572,13 @@ class gfxFontEntry {
 
   
   
-  struct GrSandboxData;
-  GrSandboxData* mSandboxData = nullptr;
+  
+  
+  gr_face* mGrFace = nullptr;
 
   
   
-  
-  
-  tainted_opaque_gr<gr_face*> mGrFace;
+  nsDataHashtable<nsPtrHashKey<const void>, void*>* mGrTableMap = nullptr;
 
   
   hb_blob_t* const kTrakTableUninitialized = (hb_blob_t*)(intptr_t(-1));
@@ -612,12 +594,10 @@ class gfxFontEntry {
   
   nsrefcnt mGrFaceRefCnt = 0;
 
-  static tainted_opaque_gr<const void*> GrGetTable(
-      rlbox_sandbox_gr& sandbox, tainted_opaque_gr<const void*> aAppFaceHandle,
-      tainted_opaque_gr<unsigned int> aName, tainted_opaque_gr<size_t*> aLen);
-  static void GrReleaseTable(rlbox_sandbox_gr& sandbox,
-                             tainted_opaque_gr<const void*> aAppFaceHandle,
-                             tainted_opaque_gr<const void*> aTableBuffer);
+  static const void* GrGetTable(const void* aAppFaceHandle, unsigned int aName,
+                                size_t* aLen);
+  static void GrReleaseTable(const void* aAppFaceHandle,
+                             const void* aTableBuffer);
 
   
   

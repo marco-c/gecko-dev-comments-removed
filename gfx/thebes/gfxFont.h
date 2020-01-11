@@ -37,7 +37,6 @@
 #include "nsFontMetrics.h"
 #include "mozilla/ServoUtils.h"
 #include "TextDrawTarget.h"
-#include "ThebesRLBoxTypes.h"
 
 typedef struct _cairo cairo_t;
 typedef struct _cairo_scaled_font cairo_scaled_font_t;
@@ -1931,10 +1930,7 @@ class gfxFont {
   bool HasSubstitutionRulesWithSpaceLookups(Script aRunScript);
 
   
-  
-  
-  
-  tainted_boolean_hint SpaceMayParticipateInShaping(Script aRunScript);
+  bool SpaceMayParticipateInShaping(Script aRunScript);
 
   
   bool ShapeText(DrawTarget* aContext, const uint8_t* aText,
