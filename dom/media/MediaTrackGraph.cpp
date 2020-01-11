@@ -1473,7 +1473,9 @@ class MediaTrackGraphShutDownRunnable : public Runnable {
  public:
   explicit MediaTrackGraphShutDownRunnable(MediaTrackGraphImpl* aGraph)
       : Runnable("MediaTrackGraphShutDownRunnable"), mGraph(aGraph) {}
-  NS_IMETHOD Run() override {
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() override {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(mGraph->mDetectedNotRunning && mGraph->mDriver,
                "We should know the graph thread control loop isn't running!");
@@ -1495,9 +1497,9 @@ class MediaTrackGraphShutDownRunnable : public Runnable {
       mGraph->mGraphRunner->Shutdown();
     }
 
-    mGraph->mDriver
-        ->Shutdown();  
-                       
+    
+    
+    RefPtr<GraphDriver>(mGraph->mDriver)->Shutdown();
 
     
     

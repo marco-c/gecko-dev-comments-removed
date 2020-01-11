@@ -130,7 +130,7 @@ class GraphDriver {
 
   virtual void Start() = 0;
   
-  virtual void Shutdown() = 0;
+  MOZ_CAN_RUN_SCRIPT virtual void Shutdown() = 0;
   
 
 
@@ -232,7 +232,7 @@ class ThreadedDriver : public GraphDriver {
   void WaitForNextIteration() override;
   void WakeUp() override;
   void Start() override;
-  void Shutdown() override;
+  MOZ_CAN_RUN_SCRIPT void Shutdown() override;
   
 
 
@@ -360,7 +360,7 @@ class AudioCallbackDriver : public GraphDriver,
   void Start() override;
   void WaitForNextIteration() override;
   void WakeUp() override;
-  void Shutdown() override;
+  MOZ_CAN_RUN_SCRIPT void Shutdown() override;
 #if defined(XP_WIN)
   void ResetDefaultDevice() override;
 #endif
