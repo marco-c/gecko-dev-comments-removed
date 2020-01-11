@@ -5215,11 +5215,11 @@ void CodeGenerator::emitCallInvokeFunction(T* apply, Register extraStackSize) {
   masm.moveStackPtrTo(objreg);
   masm.Push(extraStackSize);
 
-  pushArg(objreg);                            
-  pushArg(ToRegister(apply->getArgc()));      
+  pushArg(objreg);                                     
+  pushArg(ToRegister(apply->getArgc()));               
   pushArg(Imm32(apply->mir()->ignoresReturnValue()));  
-  pushArg(Imm32(false));                      
-  pushArg(ToRegister(apply->getFunction()));  
+  pushArg(Imm32(false));                               
+  pushArg(ToRegister(apply->getFunction()));           
 
   
   using Fn = bool (*)(JSContext*, HandleObject, bool, bool, uint32_t, Value*,
@@ -13934,7 +13934,9 @@ void CodeGenerator::emitIonToWasmCallBase(LIonToWasmCallBase<NumDefs>* lir) {
             
             argMir = ToMIRType(sig.args()[i]);
             break;
-          default:
+          case wasm::RefType::Null:
+          case wasm::RefType::Func:
+          case wasm::RefType::TypeIndex:
             MOZ_CRASH("unexpected argument type when calling from ion to wasm");
         }
         break;
@@ -13997,13 +13999,14 @@ void CodeGenerator::emitIonToWasmCallBase(LIonToWasmCallBase<NumDefs>* lir) {
         switch (results[0].refTypeKind()) {
           case wasm::RefType::Any:
           case wasm::RefType::Func:
+          case wasm::RefType::Null:
             
             
             
             
             MOZ_ASSERT(lir->mir()->type() == MIRType::Value);
             break;
-          default:
+          case wasm::RefType::TypeIndex:
             MOZ_CRASH("unexpected return type when calling from ion to wasm");
         }
         break;
