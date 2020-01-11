@@ -793,6 +793,30 @@ nsresult ImageLoader::OnLoadComplete(imgIRequest* aRequest) {
   return NS_OK;
 }
 
+void ImageLoader::MediaFeatureValuesChangedAllDocuments(
+    const MediaFeatureChange& aChange) {
+  
+  
+  
+  
+  
+  
+  
+  nsTArray<nsCOMPtr<imgIContainer>> images;
+  for (auto iter = mRegisteredImages.Iter(); !iter.Done(); iter.Next()) {
+    imgRequestProxy* req = iter.Data();
+    nsCOMPtr<imgIContainer> image;
+    req->GetImage(getter_AddRefs(image));
+    if (!image) {
+      continue;
+    }
+    images.AppendElement(image->Unwrap());
+  }
+  for (imgIContainer* image : images) {
+    image->MediaFeatureValuesChangedAllDocuments(aChange);
+  }
+}
+
 bool ImageLoader::ImageReflowCallback::ReflowFinished() {
   
   

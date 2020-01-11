@@ -19,6 +19,7 @@
 #include "imgIRequest.h"
 #include "imgINotificationObserver.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/MediaFeatureChange.h"
 
 class imgIContainer;
 class nsIFrame;
@@ -70,6 +71,12 @@ class ImageLoader final : public imgINotificationObserver {
   void DropRequestsForFrame(nsIFrame* aFrame);
 
   void SetAnimationMode(uint16_t aMode);
+
+  
+
+
+
+  void MediaFeatureValuesChangedAllDocuments(const MediaFeatureChange& aChange);
 
   
   

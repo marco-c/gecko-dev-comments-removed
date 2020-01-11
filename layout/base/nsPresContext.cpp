@@ -87,6 +87,7 @@
 #include "mozilla/dom/PerformanceTiming.h"
 #include "mozilla/layers/APZThreadUtils.h"
 #include "MobileViewportManager.h"
+#include "mozilla/dom/ImageTracker.h"
 
 
 #include "imgIContainer.h"
@@ -1525,7 +1526,15 @@ static bool MediaFeatureValuesChangedAllDocumentsCallback(Document* aDocument,
 
 void nsPresContext::MediaFeatureValuesChangedAllDocuments(
     const MediaFeatureChange& aChange) {
+  
   MediaFeatureValuesChanged(aChange);
+
+  
+  
+  mDocument->StyleImageLoader()->MediaFeatureValuesChangedAllDocuments(aChange);
+  mDocument->ImageTracker()->MediaFeatureValuesChangedAllDocuments(aChange);
+
+  
   mDocument->EnumerateSubDocuments(
       MediaFeatureValuesChangedAllDocumentsCallback,
       const_cast<MediaFeatureChange*>(&aChange));

@@ -140,5 +140,29 @@ void ImageTracker::RequestDiscardAll() {
   }
 }
 
+void ImageTracker::MediaFeatureValuesChangedAllDocuments(
+    const MediaFeatureChange& aChange) {
+  
+  
+  
+  
+  
+  
+  
+  nsTArray<nsCOMPtr<imgIContainer>> images;
+  for (auto iter = mImages.Iter(); !iter.Done(); iter.Next()) {
+    imgIRequest* req = iter.Key();
+    nsCOMPtr<imgIContainer> image;
+    req->GetImage(getter_AddRefs(image));
+    if (!image) {
+      continue;
+    }
+    images.AppendElement(image->Unwrap());
+  }
+  for (imgIContainer* image : images) {
+    image->MediaFeatureValuesChangedAllDocuments(aChange);
+  }
+}
+
 }  
 }  

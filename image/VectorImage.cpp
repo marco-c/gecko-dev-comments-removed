@@ -39,6 +39,7 @@
 #include "nsIDOMEventListener.h"
 #include "SurfaceCache.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
 
 namespace mozilla {
 
@@ -564,7 +565,6 @@ void VectorImage::SendInvalidationNotifications() {
   
   
 
-  MOZ_ASSERT(mHasPendingInvalidation);
   mHasPendingInvalidation = false;
   SurfaceCache::RemoveImage(ImageKey(this));
 
@@ -1525,6 +1525,36 @@ nsIntSize VectorImage::OptimalImageSizeForDest(const gfxSize& aDest,
 already_AddRefed<imgIContainer> VectorImage::Unwrap() {
   nsCOMPtr<imgIContainer> self(this);
   return self.forget();
+}
+
+void VectorImage::MediaFeatureValuesChangedAllDocuments(
+    const MediaFeatureChange& aChange) {
+  if (!mSVGDocumentWrapper) {
+    return;
+  }
+
+  
+  if (!mIsFullyLoaded) {
+    return;
+  }
+
+  if (Document* doc = mSVGDocumentWrapper->GetDocument()) {
+    if (nsPresContext* presContext = doc->GetPresContext()) {
+      presContext->MediaFeatureValuesChangedAllDocuments(aChange);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      SendInvalidationNotifications();
+    }
+  }
 }
 
 }  
