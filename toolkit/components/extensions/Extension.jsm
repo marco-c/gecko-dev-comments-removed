@@ -11,7 +11,7 @@ var EXPORTED_SYMBOLS = [
   "ExtensionData",
   "Langpack",
   "Management",
-  "UninstallObserver",
+  "ExtensionAddonObserver",
 ];
 
 
@@ -261,7 +261,9 @@ var UUIDMap = {
 
 
 
-var UninstallObserver = {
+
+
+var ExtensionAddonObserver = {
   initialized: false,
 
   init() {
@@ -276,6 +278,27 @@ var UninstallObserver = {
     if (this.initialized) {
       AddonManager.removeAddonListener(this);
       this.initialized = false;
+    }
+  },
+
+  onEnabling(addon) {
+    if (addon.type !== "extension") {
+      return;
+    }
+    Management._callHandlers([addon.id], "enabling", "onEnabling");
+  },
+
+  onDisabled(addon) {
+    if (addon.type !== "extension") {
+      return;
+    }
+    if (Services.appinfo.inSafeMode) {
+      
+      
+      
+      
+      
+      Management._callHandlers([addon.id], "disable", "onDisable");
     }
   },
 
@@ -354,7 +377,7 @@ var UninstallObserver = {
   },
 };
 
-UninstallObserver.init();
+ExtensionAddonObserver.init();
 
 const manifestTypes = new Map([
   ["theme", "manifest.ThemeManifest"],
