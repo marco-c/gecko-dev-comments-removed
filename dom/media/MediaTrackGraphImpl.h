@@ -432,6 +432,9 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
                         TrackRate aRate, uint32_t aChannels) override;
   
 
+  void NotifyStarted() override;
+  
+
   void NotifyInputData(const AudioDataValue* aBuffer, size_t aFrames,
                        TrackRate aRate, uint32_t aChannels) override;
   

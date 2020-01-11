@@ -170,6 +170,9 @@ struct GraphInterface {
                                 TrackRate aRate, uint32_t aChannels) = 0;
   
 
+  virtual void NotifyStarted() = 0;
+  
+
   virtual void NotifyInputData(const AudioDataValue* aBuffer, size_t aFrames,
                                TrackRate aRate, uint32_t aChannels) = 0;
   
@@ -752,6 +755,9 @@ class AudioCallbackDriver : public GraphDriver,
   
 
   DataMutex<RefPtr<FallbackWrapper>> mFallback;
+  
+
+  bool mRanFirstIteration = false;
 #ifdef XP_MACOSX
   
 

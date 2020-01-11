@@ -1031,6 +1031,16 @@ void AudioInputProcessing::InsertInGraph(const T* aBuffer, size_t aFrames,
   mTrack->AppendData(&segment);
 }
 
+void AudioInputProcessing::NotifyStarted(MediaTrackGraphImpl* aGraph) {
+  MOZ_ASSERT(aGraph->OnGraphThread());
+  
+  
+  
+  
+  mLiveFramesAppended = false;
+  mLiveSilenceAppended = false;
+}
+
 
 
 void AudioInputProcessing::NotifyInputData(MediaTrackGraphImpl* aGraph,

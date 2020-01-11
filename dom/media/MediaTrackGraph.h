@@ -114,6 +114,11 @@ class AudioDataListenerInterface {
 
 
 
+  virtual void NotifyStarted(MediaTrackGraphImpl* aGraph) = 0;
+  
+
+
+
   virtual void NotifyInputData(MediaTrackGraphImpl* aGraph,
                                const AudioDataValue* aBuffer, size_t aFrames,
                                TrackRate aRate, uint32_t aChannels) = 0;
