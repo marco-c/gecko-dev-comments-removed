@@ -91,6 +91,13 @@ class ImageBitmapRenderingContext final
   int32_t mHeight;
 
   RefPtr<layers::Image> mImage;
+
+  
+
+
+
+
+  bool mIsCapturedFrameInvalid;
 };
 
 }  
