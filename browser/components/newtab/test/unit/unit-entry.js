@@ -74,7 +74,10 @@ const TEST_GLOBAL = {
     isSuccessCode: () => true,
   },
   
-  ContentSearchUIController: function() {}, 
+  
+  ContentSearchUIController: function() {},
+  
+  ContentSearchHandoffUIController: function() {},
   Cc: {
     "@mozilla.org/browser/nav-bookmarks-service;1": {
       addObserver() {},
