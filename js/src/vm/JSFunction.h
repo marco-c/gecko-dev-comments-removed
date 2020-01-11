@@ -37,54 +37,76 @@ class FunctionFlags {
  public:
   enum FunctionKind {
     NormalFunction = 0,
-    Arrow,  
-    Method, 
+    Arrow,   
+    Method,  
     ClassConstructor,
     Getter,
     Setter,
-    AsmJS, 
-    Wasm,  
+    AsmJS,  
+    Wasm,   
     FunctionKindLimit
   };
 
-  
-  enum Flags {
-    INTERPRETED = 0x0001, 
-    CONSTRUCTOR = 0x0002, 
-    EXTENDED = 0x0004,    
-    BOUND_FUN = 0x0008, 
-    WASM_JIT_ENTRY = 0x0010,   
-    HAS_GUESSED_ATOM = 0x0020, 
+  enum Flags : uint16_t {
+    
+    
+    FUNCTION_KIND_SHIFT = 0,
+    FUNCTION_KIND_MASK = 0x0007,
 
+    
+    
+    
+    EXTENDED = 1 << 3,
 
-    HAS_BOUND_FUNCTION_NAME_PREFIX =
-        0x0020,      
+    
+    
+    
+    
+    SELF_HOSTED = 1 << 4,
 
+    
+    
+    
+    
+    
+    INTERPRETED = 1 << 5,
+    INTERPRETED_LAZY = 1 << 6,
 
-    LAMBDA = 0x0040, 
+    
+    
+    CONSTRUCTOR = 1 << 7,
 
+    
+    BOUND_FUN = 1 << 8,
 
-    SELF_HOSTED =
-        0x0080, 
+    
+    
+    LAMBDA = 1 << 9,
 
+    
+    
+    WASM_JIT_ENTRY = 1 << 10,
 
+    
+    
+    HAS_INFERRED_NAME = 1 << 11,
 
-    HAS_INFERRED_NAME = 0x0100, 
+    
+    
+    ATOM_EXTRA_FLAG = 1 << 12,
+    HAS_GUESSED_ATOM = ATOM_EXTRA_FLAG,
+    HAS_BOUND_FUNCTION_NAME_PREFIX = ATOM_EXTRA_FLAG,
 
+    
+    RESOLVED_NAME = 1 << 13,
+    RESOLVED_LENGTH = 1 << 14,
 
+    
+    
+    NEW_SCRIPT_CLEARED = 1 << 15,
 
-    INTERPRETED_LAZY =
-        0x0200, 
-    RESOLVED_LENGTH =
-        0x0400,             
-    RESOLVED_NAME = 0x0800, 
-    NEW_SCRIPT_CLEARED =
-        0x1000, 
-
-
-    FUNCTION_KIND_SHIFT = 13,
-    FUNCTION_KIND_MASK = 0x7 << FUNCTION_KIND_SHIFT,
-
+    
+    NORMAL_KIND = NormalFunction << FUNCTION_KIND_SHIFT,
     ASMJS_KIND = AsmJS << FUNCTION_KIND_SHIFT,
     WASM_KIND = Wasm << FUNCTION_KIND_SHIFT,
     ARROW_KIND = Arrow << FUNCTION_KIND_SHIFT,
@@ -110,13 +132,15 @@ class FunctionFlags {
     INTERPRETED_LAMBDA_GENERATOR_OR_ASYNC = INTERPRETED | LAMBDA,
     INTERPRETED_NORMAL = INTERPRETED | CONSTRUCTOR,
     INTERPRETED_GENERATOR_OR_ASYNC = INTERPRETED,
+
+    
     NO_XDR_FLAGS = RESOLVED_LENGTH | RESOLVED_NAME,
 
     
-
-
-
-
+    
+    
+    
+    
     STABLE_ACROSS_CLONES =
         CONSTRUCTOR | LAMBDA | SELF_HOSTED | FUNCTION_KIND_MASK
   };
