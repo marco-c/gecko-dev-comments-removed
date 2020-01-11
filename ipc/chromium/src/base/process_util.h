@@ -43,6 +43,17 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/ipc/EnvironmentMap.h"
 
+#if defined(MOZ_ENABLE_FORKSERVER)
+#include "nsString.h"
+#include "mozilla/ipc/FileDescriptorShuffle.h"
+
+namespace mozilla {
+namespace ipc {
+class FileDescriptor;
+}
+}
+#endif
+
 #if defined(OS_MACOSX)
 struct kinfo_proc;
 #endif
@@ -163,6 +174,46 @@ typedef mozilla::UniquePtr<char*[], FreeEnvVarsArray> EnvironmentArray;
 
 
 EnvironmentArray BuildEnvironmentArray(const environment_map& env_vars_to_set);
+#endif
+
+#if defined(MOZ_ENABLE_FORKSERVER)
+
+
+
+
+
+
+
+
+
+
+
+
+class AppProcessBuilder {
+public:
+  AppProcessBuilder();
+  
+  
+  bool ForkProcess(const std::vector<std::string>& argv,
+                   const LaunchOptions& options, ProcessHandle* process_handle);
+  
+  
+  
+  
+  
+  
+  
+  
+  void InitAppProcess(int *argcp, char*** argvp);
+
+private:
+  void ReplaceArguments(int *argcp, char*** argvp);
+
+  mozilla::ipc::FileDescriptorShuffle shuffle_;
+  std::vector<std::string> argv_;
+};
+
+void RegisterForkServerNoCloseFD(int aFd);
 #endif
 
 
