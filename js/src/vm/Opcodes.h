@@ -838,23 +838,26 @@
 
 
 
+
+
+
+
  \
     MACRO(JSOP_NEWOBJECT, "newobject", NULL, 5, 0, 1, JOF_OBJECT|JOF_IC) \
-    
-
-
-
-
-
-
-
-
-
-
-
- \
     MACRO(JSOP_NEWOBJECT_WITHGROUP, "newobjectwithgroup", NULL, 5, 0, 1, JOF_OBJECT|JOF_IC) \
     
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -864,6 +867,8 @@
  \
     MACRO(JSOP_OBJECT, "object", NULL, 5, 0, 1, JOF_OBJECT) \
     
+
+
 
 
 
@@ -882,9 +887,19 @@
 
 
 
+
+
+
+
+
+
  \
     MACRO(JSOP_INITPROP, "initprop", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING|JOF_IC) \
     
+
+
+
+
 
 
 
@@ -907,6 +922,10 @@
 
 
 
+
+
+
+
  \
     MACRO(JSOP_INITLOCKEDPROP, "initlockedprop", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING|JOF_IC) \
     
@@ -919,20 +938,14 @@
 
 
 
+
+
+
+
+
+
  \
     MACRO(JSOP_INITELEM, "initelem", NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING|JOF_IC) \
-    
-
-
-
-
-
-
-
-
-
-
- \
     MACRO(JSOP_INITHIDDENELEM, "inithiddenelem", NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING|JOF_IC) \
     
 
@@ -944,19 +957,9 @@
 
 
 
+
  \
     MACRO(JSOP_INITPROP_GETTER, "initprop_getter", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING) \
-    
-
-
-
-
-
-
-
-
-
- \
     MACRO(JSOP_INITHIDDENPROP_GETTER, "inithiddenprop_getter", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING) \
     
 
@@ -969,20 +972,9 @@
 
 
 
+
  \
     MACRO(JSOP_INITELEM_GETTER, "initelem_getter", NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING) \
-    
-
-
-
-
-
-
-
-
-
-
- \
     MACRO(JSOP_INITHIDDENELEM_GETTER, "inithiddenelem_getter", NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING) \
     
 
@@ -994,19 +986,10 @@
 
 
 
+
+
  \
     MACRO(JSOP_INITPROP_SETTER, "initprop_setter", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING) \
-    
-
-
-
-
-
-
-
-
-
- \
     MACRO(JSOP_INITHIDDENPROP_SETTER, "inithiddenprop_setter", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING) \
     
 
@@ -1019,20 +1002,11 @@
 
 
 
+
+
+
  \
     MACRO(JSOP_INITELEM_SETTER, "initelem_setter", NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING) \
-    
-
-
-
-
-
-
-
-
-
-
- \
     MACRO(JSOP_INITHIDDENELEM_SETTER, "inithiddenelem_setter", NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING) \
     
 
@@ -1041,19 +1015,17 @@
 
 
 
+
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_GETPROP, "getprop", NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC) \
-    
-
-
-
-
-
-
-
-
-
- \
     MACRO(JSOP_CALLPROP, "callprop", NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC) \
     
 
@@ -1063,12 +1035,6 @@
 
 
 
- \
-    MACRO(JSOP_GETELEM, "getelem", NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_TYPESET|JOF_IC) \
-    
-
-
-
 
 
 
@@ -1077,8 +1043,11 @@
 
 
  \
+    MACRO(JSOP_GETELEM, "getelem", NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_TYPESET|JOF_IC) \
     MACRO(JSOP_CALLELEM, "callelem", NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_TYPESET|JOF_IC) \
     
+
+
 
 
 
@@ -1089,6 +1058,13 @@
  \
     MACRO(JSOP_LENGTH, "length", NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC) \
     
+
+
+
+
+
+
+
 
 
 
@@ -1117,6 +1093,9 @@
 
 
 
+
+
+
  \
     MACRO(JSOP_SETELEM, "setelem", NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY|JOF_IC) \
     
@@ -1138,10 +1117,16 @@
 
 
 
+
+
+
+
+
+
+
  \
     MACRO(JSOP_DELPROP, "delprop", NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_CHECKSLOPPY) \
     
-
 
 
 
@@ -1160,11 +1145,14 @@
 
 
 
+
+
+
+
+
  \
     MACRO(JSOP_DELELEM, "delelem", NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_CHECKSLOPPY) \
     
-
-
 
 
 
@@ -1184,9 +1172,22 @@
 
 
 
+
+
+
+
  \
     MACRO(JSOP_HASOWN, "hasown", NULL, 1, 2, 1, JOF_BYTE|JOF_IC) \
     
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1204,9 +1205,24 @@
 
 
 
+
+
+
+
+
+
+
  \
     MACRO(JSOP_GETPROP_SUPER, "getprop-super", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC) \
     
+
+
+
+
+
+
+
+
 
 
 
@@ -1224,12 +1240,16 @@
 
 
 
+
+
+
+
+
+
+
  \
     MACRO(JSOP_SETPROP_SUPER, "setprop-super", NULL, 5, 3, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY) \
     
-
-
-
 
 
 
@@ -1246,6 +1266,13 @@
 
 
 
+
+
+
+
+
+
+
  \
     MACRO(JSOP_SETELEM_SUPER, "setelem-super", NULL, 1, 4, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY) \
     
@@ -1255,10 +1282,39 @@
 
 
 
-
  \
     MACRO(JSOP_STRICTSETELEM_SUPER, "strict-setelem-super", NULL, 1, 4, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSTRICT) \
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1361,6 +1417,9 @@
 
 
 
+
+
+
  \
     MACRO(JSOP_MUTATEPROTO, "mutateproto", NULL, 1, 2, 1, JOF_BYTE) \
     
@@ -1371,10 +1430,18 @@
 
 
 
-
  \
     MACRO(JSOP_NEWARRAY, "newarray", NULL, 5, 0, 1, JOF_UINT32|JOF_IC) \
     
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1398,9 +1465,27 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  \
     MACRO(JSOP_INITELEM_INC, "initelem_inc", NULL, 1, 3, 2, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_IC) \
     
+
 
 
 
@@ -1420,9 +1505,19 @@
 
 
 
+
+
+
+
+
+
+
  \
     MACRO(JSOP_NEWARRAY_COPYONWRITE, "newarray_copyonwrite", NULL, 5, 0, 1, JOF_OBJECT) \
     
+
+
+
 
 
 
@@ -1698,6 +1793,14 @@
  \
     MACRO(JSOP_GIMPLICITTHIS, "gimplicitthis", "", 5, 0, 1, JOF_ATOM) \
     
+
+
+
+
+
+
+
+
 
 
 
@@ -2449,6 +2552,12 @@
  \
     MACRO(JSOP_SETNAME, "setname", NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY|JOF_IC) \
     
+
+
+
+
+
+
 
 
 
