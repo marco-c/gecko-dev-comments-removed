@@ -129,9 +129,10 @@ var PrintUtils = {
 
 
 
+  printWindow(aBrowsingContext) {
+    let windowID = aBrowsingContext.currentWindowGlobal.outerWindowId;
+    let topBrowser = aBrowsingContext.top.embedderElement;
 
-
-  printWindow(aWindowID, aBrowser) {
     const printPreviewIsOpen = !!document.getElementById(
       "print-preview-toolbar"
     );
@@ -142,8 +143,8 @@ var PrintUtils = {
       this._logKeyedTelemetry("PRINT_DIALOG_OPENED_COUNT", "FROM_PAGE");
     }
 
-    aBrowser.messageManager.sendAsyncMessage("Printing:Print", {
-      windowID: aWindowID,
+    topBrowser.messageManager.sendAsyncMessage("Printing:Print", {
+      windowID,
       simplifiedMode: this._shouldSimplify,
       defaultPrinterName: this._getDefaultPrinterName(),
     });
