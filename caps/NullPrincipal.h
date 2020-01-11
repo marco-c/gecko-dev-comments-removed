@@ -116,7 +116,7 @@ class NullPrincipal final : public BasePrincipal {
   
   
   
-  nsresult Init(const OriginAttributes& aOriginAttributes, bool aIsFirstParty);
+  void Init(const OriginAttributes& aOriginAttributes, bool aIsFirstParty);
 };
 
 }  
