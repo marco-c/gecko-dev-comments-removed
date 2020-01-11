@@ -4,6 +4,7 @@
 
 
 
+
 #include "vm/GlobalObject.h"
 
 #include "jsdate.h"
@@ -74,6 +75,7 @@ namespace js {
 extern const JSClass IntlClass;
 extern const JSClass JSONClass;
 extern const JSClass MathClass;
+extern const JSClass ReflectClass;
 extern const JSClass WebAssemblyClass;
 
 #define DECLARE_PROTOTYPE_CLASS_INIT(name, init, clasp) \
