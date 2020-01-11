@@ -20,6 +20,7 @@
 #include "nsIParentRedirectingChannel.h"
 #include "nsIProcessSwitchRequestor.h"
 #include "nsIRedirectResultListener.h"
+#include "nsIMultiPartChannel.h"
 
 #define DOCUMENT_LOAD_LISTENER_IID                   \
   {                                                  \
@@ -55,7 +56,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                              public nsIParentChannel,
                              public nsIChannelEventSink,
                              public HttpChannelSecurityWarningReporter,
-                             public nsIProcessSwitchRequestor {
+                             public nsIProcessSwitchRequestor,
+                             public nsIMultiPartChannelListener {
  public:
   explicit DocumentLoadListener(const dom::PBrowserOrId& aIframeEmbedding,
                                 nsILoadContext* aLoadContext,
@@ -80,6 +82,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   NS_DECL_NSIASYNCVERIFYREDIRECTREADYCALLBACK
   NS_DECL_NSICHANNELEVENTSINK
   NS_DECL_NSIPROCESSSWITCHREQUESTOR
+  NS_DECL_NSIMULTIPARTCHANNELLISTENER
 
   
   
@@ -316,7 +319,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  bool mSuspendedChannel = false;
+  bool mInitiatedRedirectToRealChannel = false;
   
   
   bool mDoingProcessSwitch = false;

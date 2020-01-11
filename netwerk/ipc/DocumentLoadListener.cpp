@@ -47,6 +47,7 @@ NS_INTERFACE_MAP_BEGIN(DocumentLoadListener)
   NS_INTERFACE_MAP_ENTRY(nsIAsyncVerifyRedirectReadyCallback)
   NS_INTERFACE_MAP_ENTRY(nsIChannelEventSink)
   NS_INTERFACE_MAP_ENTRY(nsIProcessSwitchRequestor)
+  NS_INTERFACE_MAP_ENTRY(nsIMultiPartChannelListener)
   NS_INTERFACE_MAP_ENTRY_CONCRETE(DocumentLoadListener)
 NS_INTERFACE_MAP_END
 
@@ -266,9 +267,7 @@ void DocumentLoadListener::FinishReplacementChannelSetup(bool aSucceeded) {
     if (redirectChannel) {
       redirectChannel->Delete();
     }
-    if (mSuspendedChannel) {
-      mChannel->Resume();
-    }
+    mChannel->Resume();
     return;
   }
 
@@ -340,10 +339,6 @@ void DocumentLoadListener::FinishReplacementChannelSetup(bool aSucceeded) {
 
 void DocumentLoadListener::ResumeSuspendedChannel(
     nsIStreamListener* aListener) {
-  if (!mSuspendedChannel) {
-    return;
-  }
-
   RefPtr<nsHttpChannel> httpChannel = do_QueryObject(mChannel);
   if (httpChannel) {
     httpChannel->SetApplyConversion(mOldApplyConversion);
@@ -645,9 +640,14 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
 NS_IMETHODIMP
 DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   LOG(("DocumentLoadListener OnStartRequest [this=%p]", this));
-  RefPtr<nsHttpChannel> httpChannel = do_QueryObject(aRequest);
-  mChannel = do_QueryInterface(aRequest);
+  nsCOMPtr<nsIMultiPartChannel> multiPartChannel = do_QueryInterface(aRequest);
+  if (multiPartChannel) {
+    multiPartChannel->GetBaseChannel(getter_AddRefs(mChannel));
+  } else {
+    mChannel = do_QueryInterface(aRequest);
+  }
   MOZ_DIAGNOSTIC_ASSERT(mChannel);
+  RefPtr<nsHttpChannel> httpChannel = do_QueryObject(mChannel);
 
   
   
@@ -681,8 +681,15 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   mStreamListenerFunctions.AppendElement(StreamListenerFunction{
       VariantIndex<0>{}, OnStartRequestParams{aRequest}});
 
-  mChannel->Suspend();
-  mSuspendedChannel = true;
+  if (!mInitiatedRedirectToRealChannel) {
+    mChannel->Suspend();
+  } else {
+    
+    
+    
+    return NS_OK;
+  }
+  mInitiatedRedirectToRealChannel = true;
 
   
   
@@ -721,7 +728,14 @@ DocumentLoadListener::OnStopRequest(nsIRequest* aRequest,
   LOG(("DocumentLoadListener OnStopRequest [this=%p]", this));
   mStreamListenerFunctions.AppendElement(StreamListenerFunction{
       VariantIndex<2>{}, OnStopRequestParams{aRequest, aStatusCode}});
-  mIsFinished = true;
+
+  
+  
+  
+  nsCOMPtr<nsIMultiPartChannel> multiPartChannel = do_QueryInterface(aRequest);
+  if (!multiPartChannel) {
+    mIsFinished = true;
+  }
   return NS_OK;
 }
 
@@ -743,6 +757,16 @@ DocumentLoadListener::OnDataAvailable(nsIRequest* aRequest,
       VariantIndex<1>{},
       OnDataAvailableParams{aRequest, data, aOffset, aCount}});
 
+  return NS_OK;
+}
+
+
+
+
+
+NS_IMETHODIMP
+DocumentLoadListener::OnAfterLastPart() {
+  mIsFinished = true;
   return NS_OK;
 }
 
