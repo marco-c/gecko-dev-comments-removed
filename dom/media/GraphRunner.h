@@ -7,6 +7,7 @@
 #ifndef mozilla_GraphRunner_h
 #define mozilla_GraphRunner_h
 
+#include "GraphDriver.h"
 #include "MediaSegment.h"
 #include "mozilla/Monitor.h"
 
@@ -17,10 +18,11 @@ struct PRThread;
 namespace mozilla {
 
 class AudioMixer;
-class GraphDriver;
 class MediaTrackGraphImpl;
 
 class GraphRunner final : public Runnable {
+  using IterationResult = GraphDriver::IterationResult;
+
  public:
   static already_AddRefed<GraphRunner> Create(MediaTrackGraphImpl* aGraph);
 
@@ -33,7 +35,7 @@ class GraphRunner final : public Runnable {
 
 
 
-  bool OneIteration(GraphTime aStateEnd, AudioMixer* aMixer);
+  IterationResult OneIteration(GraphTime aStateEnd, AudioMixer* aMixer);
 
   
 
@@ -84,7 +86,7 @@ class GraphRunner final : public Runnable {
   
   Maybe<IterationState> mIterationState;
   
-  bool mStillProcessing;
+  IterationResult mIterationResult;
 
   enum class ThreadState {
     Wait,      

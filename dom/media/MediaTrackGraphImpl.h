@@ -94,6 +94,8 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
                             public nsIMemoryReporter,
                             public nsITimerCallback,
                             public nsINamed {
+  using IterationResult = GraphDriver::IterationResult;
+
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIMEMORYREPORTER
@@ -215,12 +217,12 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  bool OneIteration(GraphTime aStateEnd, AudioMixer* aMixer);
+  IterationResult OneIteration(GraphTime aStateEnd, AudioMixer* aMixer);
 
   
 
 
-  bool OneIterationImpl(GraphTime aStateEnd, AudioMixer* aMixer);
+  IterationResult OneIterationImpl(GraphTime aStateEnd, AudioMixer* aMixer);
 
   
 
