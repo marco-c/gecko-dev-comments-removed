@@ -7,7 +7,6 @@
 
 
 
-
 const kDefaultFontType = "font.default.%LANG%";
 const kFontNameFmtSerif = "font.name.serif.%LANG%";
 const kFontNameFmtSansSerif = "font.name.sans-serif.%LANG%";
@@ -29,10 +28,6 @@ Preferences.addAll([
   { id: "browser.display.use_document_fonts", type: "int" },
   { id: "intl.charset.fallback.override", type: "string" },
 ]);
-
-document.getElementById("FallbackGroupbox").hidden = Services.prefs.getBoolPref(
-  "intl.charset.detector.ng.enabled"
-);
 
 var gFontsDialog = {
   _selectLanguageGroupPromise: Promise.resolve(),
