@@ -9701,6 +9701,23 @@ static bool SchemeUsesDocChannel(nsIURI* aURI) {
     }
   }
 
+  if (nsCOMPtr<nsIWritablePropertyBag2> props = do_QueryInterface(channel)) {
+    nsCOMPtr<nsIURI> referrer;
+    nsIReferrerInfo* referrerInfo = aLoadState->GetReferrerInfo();
+    if (referrerInfo) {
+      referrerInfo->GetOriginalReferrer(getter_AddRefs(referrer));
+    }
+    
+    
+    props->SetPropertyAsInterface(
+        NS_LITERAL_STRING("docshell.internalReferrer"), referrer);
+
+    if (aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_FIRST_LOAD)) {
+      props->SetPropertyAsBool(NS_LITERAL_STRING("docshell.newWindowTarget"),
+                               true);
+    }
+  }
+
   channel.forget(aChannel);
   return true;
 }
@@ -9709,20 +9726,6 @@ static bool SchemeUsesDocChannel(nsIURI* aURI) {
     nsIChannel* aChannel, nsDocShellLoadState* aLoadState,
     const nsString* aInitiatorType, uint32_t aLoadType, uint32_t aCacheKey,
     bool aHasNonEmptySandboxingFlags) {
-  nsCOMPtr<nsIWritablePropertyBag2> props(do_QueryInterface(aChannel));
-  if (props) {
-    nsCOMPtr<nsIURI> referrer;
-    nsIReferrerInfo* referrerInfo = aLoadState->GetReferrerInfo();
-    if (referrerInfo) {
-      referrerInfo->GetOriginalReferrer(getter_AddRefs(referrer));
-    }
-
-    
-    
-    props->SetPropertyAsInterface(
-        NS_LITERAL_STRING("docshell.internalReferrer"), referrer);
-  }
-
   nsCOMPtr<nsILoadInfo> loadInfo;
   MOZ_ALWAYS_SUCCEEDS(aChannel->GetLoadInfo(getter_AddRefs(loadInfo)));
 
@@ -9811,14 +9814,6 @@ static bool SchemeUsesDocChannel(nsIURI* aURI) {
   if (scriptChannel) {
     
     scriptChannel->SetExecutionPolicy(nsIScriptChannel::EXECUTE_NORMAL);
-  }
-
-  if (aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_FIRST_LOAD)) {
-    nsCOMPtr<nsIWritablePropertyBag2> props = do_QueryInterface(aChannel);
-    if (props) {
-      props->SetPropertyAsBool(NS_LITERAL_STRING("docshell.newWindowTarget"),
-                               true);
-    }
   }
 
   

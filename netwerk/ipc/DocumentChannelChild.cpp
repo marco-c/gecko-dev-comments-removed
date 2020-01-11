@@ -342,12 +342,14 @@ IPCResult DocumentChannelChild::RecvRedirectToRealChannel(
   
   
   
-  nsCOMPtr<nsIWritablePropertyBag> bag(do_QueryInterface(newChannel));
-  if (bag) {
-    for (auto iter = mPropertyHash.Iter(); !iter.Done(); iter.Next()) {
-      bag->SetProperty(iter.Key(), iter.UserData());
-    }
+  if (nsCOMPtr<nsIWritablePropertyBag> bag = do_QueryInterface(newChannel)) {
+    nsHashPropertyBag::CopyFrom(bag, aArgs.properties());
   }
+  
+  
+  
+  
+  nsHashPropertyBag::CopyFrom(this, aArgs.properties());
 
   
   if (childChannel) {
