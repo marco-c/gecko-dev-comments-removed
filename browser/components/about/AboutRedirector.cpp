@@ -71,6 +71,8 @@ static const RedirEntry kRedirMap[] = {
 #if !defined(ANDROID) && defined(NIGHTLY_BUILD)
     
     
+    
+    
     {"profiling",
      "chrome://devtools/content/performance-new/aboutprofiling/index.xhtml",
      nsIAboutModule::ALLOW_SCRIPT},
