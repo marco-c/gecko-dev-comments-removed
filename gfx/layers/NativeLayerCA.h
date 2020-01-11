@@ -191,6 +191,9 @@ class NativeLayerCA : public NativeLayer {
   
   
   
+  
+  
+  
 
   
   
@@ -202,6 +205,11 @@ class NativeLayerCA : public NativeLayer {
   
   
   Maybe<SurfaceWithInvalidRegion> mReadySurface;
+
+  
+  
+  
+  Maybe<SurfaceWithInvalidRegion> mFrontSurface;
 
   
   
