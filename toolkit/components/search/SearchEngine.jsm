@@ -302,6 +302,39 @@ function sanitizeName(name) {
 
 
 
+const ParamPreferenceCache = {
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIObserver,
+    Ci.nsISupportsWeakReference,
+  ]),
+
+  initCache() {
+    this.branch = Services.prefs.getDefaultBranch(
+      SearchUtils.BROWSER_SEARCH_PREF + "param."
+    );
+    this.cache = new Map();
+    for (let prefName of this.branch.getChildList("")) {
+      this.cache.set(prefName, this.branch.getCharPref(prefName, null));
+    }
+    this.branch.addObserver("", this, true);
+  },
+
+  observe(subject, topic, data) {
+    this.cache.set(data, this.branch.getCharPref(data, null));
+  },
+
+  getPref(prefName) {
+    if (!this.cache) {
+      this.initCache();
+    }
+    return this.cache.get(prefName);
+  },
+};
+
+
+
+
+
 class QueryParameter {
   
 
@@ -357,10 +390,7 @@ class QueryPreferenceParameter extends QueryParameter {
   }
 
   get value() {
-    const branch = Services.prefs.getDefaultBranch(
-      SearchUtils.BROWSER_SEARCH_PREF + "param."
-    );
-    const prefValue = branch.getCharPref(this._value, null);
+    const prefValue = ParamPreferenceCache.getPref(this._value);
     return prefValue ? encodeURIComponent(prefValue) : null;
   }
 
