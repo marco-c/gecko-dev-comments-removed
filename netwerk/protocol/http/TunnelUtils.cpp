@@ -1169,7 +1169,10 @@ void SpdyConnectTransaction::MapStreamToHttpConnection(
   mTunnelStreamOut = new OutputStreamShim(this, mIsWebsocket);
   mTunneledConn = new nsHttpConnection();
 
-  if (httpResponseCode != 200) {
+  
+  
+  
+  if (httpResponseCode > 0 && httpResponseCode != 200) {
     nsresult err = HttpProxyResponseToErrorCode(httpResponseCode);
     if (NS_FAILED(err)) {
       CreateShimError(err);
