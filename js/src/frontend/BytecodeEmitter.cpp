@@ -5244,7 +5244,7 @@ bool BytecodeEmitter::emitSpread(bool allowSelfHosted) {
   bytecodeSection().setStackDepth(bytecodeSection().stackDepth() + 1);
 
   
-  if (!setSrcNoteOffset(noteIndex, SrcNote::ForOf::BackJumpOffset,
+  if (!setSrcNoteOffset(noteIndex, SrcNote::Loop::BackJumpOffset,
                         loopInfo.loopEndOffsetFromLoopHead())) {
     return false;
   }

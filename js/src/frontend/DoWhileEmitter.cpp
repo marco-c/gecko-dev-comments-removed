@@ -78,7 +78,7 @@ bool DoWhileEmitter::emitEnd() {
   }
 
   
-  if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::DoWhile::BackJumpOffset,
+  if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::Loop::BackJumpOffset,
                               loopInfo_->loopEndOffsetFromLoopHead())) {
     return false;
   }

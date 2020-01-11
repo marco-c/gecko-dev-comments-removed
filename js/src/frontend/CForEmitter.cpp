@@ -176,7 +176,7 @@ bool CForEmitter::emitEnd(const Maybe<uint32_t>& forPos) {
   }
 
   
-  if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::For::BackJumpOffset,
+  if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::Loop::BackJumpOffset,
                               loopInfo_->loopEndOffsetFromLoopHead()))
 
   {
