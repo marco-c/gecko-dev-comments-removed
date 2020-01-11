@@ -13,18 +13,67 @@
 
 using namespace mozilla;
 
-int main(int argc, char* argv[]) {
-#ifdef HAS_DLL_BLOCKLIST
-  DllBlocklist_Initialize(eDllBlocklistInitFlagIsChildProcess);
+static bool
+UseForkServer(int argc, char* argv[]) {
+#if defined(MOZ_ENABLE_FORKSERVER)
+  return strcmp(argv[argc - 1], "forkserver") == 0;
+#else
+  return false;
 #endif
+}
 
+static int
+RunForkServer(Bootstrap::UniquePtr&& bootstrap, int argc, char* argv[]) {
+#if defined(MOZ_ENABLE_FORKSERVER)
+  int ret = 0;
+
+  bootstrap->NS_LogInit();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if(bootstrap->XRE_ForkServer(&argc, &argv)) {
+    
+    
+  } else {
+    
+    
+    ret = content_process_main(bootstrap.get(), argc, argv);
+  }
+
+  bootstrap->NS_LogTerm();
+  return ret;
+#else
+  return 0;
+#endif
+}
+
+int main(int argc, char* argv[]) {
   Bootstrap::UniquePtr bootstrap = GetBootstrap();
   if (!bootstrap) {
     return 2;
   }
-  int ret = content_process_main(bootstrap.get(), argc, argv);
-#if defined(DEBUG) && defined(HAS_DLL_BLOCKLIST)
-  DllBlocklist_Shutdown();
+
+  int ret;
+  if (UseForkServer(argc, argv)) {
+    ret = RunForkServer(std::move(bootstrap), argc, argv);
+  } else {
+#ifdef HAS_DLL_BLOCKLIST
+    DllBlocklist_Initialize(eDllBlocklistInitFlagIsChildProcess);
 #endif
+
+    ret = content_process_main(bootstrap.get(), argc, argv);
+
+#if defined(DEBUG) && defined(HAS_DLL_BLOCKLIST)
+    DllBlocklist_Shutdown();
+#endif
+  }
+
   return ret;
 }

@@ -162,12 +162,30 @@ handle_sigchld(int s) {
   waitpid(-1, nullptr, WNOHANG);
 }
 
-void
-InitForkServerProcess() {
+static void
+InstallChildSignalHandler() {
   
   
   
   signal(SIGCHLD, handle_sigchld);
+}
+
+static void
+ReserveFileDescriptors() {
+  
+  
+  
+  
+  int fd = open("/dev/null", O_RDONLY);
+  for (int i = 1; i < 10; i++) {
+    dup(fd);
+  }
+}
+
+void
+InitForkServerProcess() {
+  InstallChildSignalHandler();
+  ReserveFileDescriptors();
 }
 
 static bool

@@ -73,6 +73,24 @@ private:
     GeckoChildProcessHost* mProcess;
 };
 
+
+
+
+class ForkServerLauncher : public nsIObserver {
+public:
+    NS_DECL_ISUPPORTS
+    NS_DECL_NSIOBSERVER
+
+    ForkServerLauncher();
+    static already_AddRefed<ForkServerLauncher> Create();
+
+private:
+    virtual ~ForkServerLauncher();
+
+    static bool mHaveStartedClient;
+    static StaticRefPtr<ForkServerLauncher> mSingleton;
+};
+
 }
 }
 

@@ -300,6 +300,9 @@ ForkServer::RunForkServer(int* aArgc, char*** aArgv) {
     forkserver.mAppProcBuilder->InitAppProcess(aArgc, aArgv);
     forkserver.mAppProcBuilder.reset();
 
+    
+    nsTraceRefcnt::ResetLogFiles();
+
     return false;
 }
 
