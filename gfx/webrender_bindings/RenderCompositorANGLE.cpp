@@ -279,7 +279,12 @@ void RenderCompositorANGLE::CreateSwapChainForDCompIfPossible(
 
   HWND hwnd = mWidget->AsWindows()->GetCompositorHwnd();
   if (!hwnd) {
-    gfxCriticalNote << "Compositor window was not created ";
+    
+    
+    if (gfxVars::UseWebRenderDCompWin() ||
+        gfxVars::UseWebRenderFlipSequentialWin()) {
+      gfxCriticalNote << "Compositor window was not created";
+    }
     return;
   }
 
