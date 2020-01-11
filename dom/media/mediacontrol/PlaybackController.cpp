@@ -18,11 +18,7 @@ namespace dom {
 
 PlaybackController::PlaybackController(BrowsingContext* aContext) {
   MOZ_ASSERT(aContext);
-  
-  
-  
-  
-  mWindow = aContext->GetDOMWindow();
+  mBC = aContext;
 }
 
 void PlaybackController::Play() {
@@ -40,18 +36,22 @@ void PlaybackController::Play() {
 
   
   
-  if (mWindow) {
-    LOG("Handle 'play' in default behavior");
-    mWindow->SetMediaSuspend(nsISuspendedTypes::NONE_SUSPENDED);
+  LOG("Handle 'play' in default behavior");
+  RefPtr<ContentControlKeyEventReceiver> receiver =
+      ContentControlKeyEventReceiver::Get(mBC);
+  if (receiver) {
+    receiver->OnKeyPressed(MediaControlKeysEvent::ePlay);
   }
 };
 
 void PlaybackController::Pause() {
   
   
-  if (mWindow) {
-    LOG("Handle 'pause' in default behavior");
-    mWindow->SetMediaSuspend(nsISuspendedTypes::SUSPENDED_PAUSE_DISPOSABLE);
+  LOG("Handle 'pause' in default behavior");
+  RefPtr<ContentControlKeyEventReceiver> receiver =
+      ContentControlKeyEventReceiver::Get(mBC);
+  if (receiver) {
+    receiver->OnKeyPressed(MediaControlKeysEvent::ePause);
   }
 }
 
@@ -83,9 +83,11 @@ void PlaybackController::SkipAd() {
 void PlaybackController::Stop() {
   
   
-  if (mWindow) {
-    LOG("Handle 'stop' in default behavior");
-    mWindow->SetMediaSuspend(nsISuspendedTypes::SUSPENDED_STOP_DISPOSABLE);
+  LOG("Handle 'stop' in default behavior");
+  RefPtr<ContentControlKeyEventReceiver> receiver =
+      ContentControlKeyEventReceiver::Get(mBC);
+  if (receiver) {
+    receiver->OnKeyPressed(MediaControlKeysEvent::eStop);
   }
 }
 
