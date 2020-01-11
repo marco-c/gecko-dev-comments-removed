@@ -1639,36 +1639,22 @@ void gfxPlatformFontList::AppendCJKPrefLangs(eFontPrefLang aPrefLangs[],
 
     
     
-    nsAutoCString list;
-    Preferences::GetLocalizedCString("intl.accept_languages", list);
-    if (!list.IsEmpty()) {
-      const char kComma = ',';
-      const char *p, *p_end;
-      list.BeginReading(p);
-      list.EndReading(p_end);
-      while (p < p_end) {
-        while (nsCRT::IsAsciiSpace(*p)) {
-          if (++p == p_end) break;
-        }
-        if (p == p_end) break;
-        const char* start = p;
-        while (++p != p_end && *p != kComma) 
-          ;
-        nsAutoCString lang(Substring(start, p));
-        lang.CompressWhitespace(false, true);
-        eFontPrefLang fpl = gfxPlatformFontList::GetFontPrefLangFor(lang.get());
-        switch (fpl) {
-          case eFontPrefLang_Japanese:
-          case eFontPrefLang_Korean:
-          case eFontPrefLang_ChineseCN:
-          case eFontPrefLang_ChineseHK:
-          case eFontPrefLang_ChineseTW:
-            AppendPrefLang(tempPrefLangs, tempLen, fpl);
-            break;
-          default:
-            break;
-        }
-        p++;
+    
+    
+    AutoTArray<nsCString, 5> list;
+    gfxFontUtils::GetPrefsFontList("intl.accept_languages", list, true);
+    for (const auto& lang : list) {
+      eFontPrefLang fpl = GetFontPrefLangFor(lang.get());
+      switch (fpl) {
+        case eFontPrefLang_Japanese:
+        case eFontPrefLang_Korean:
+        case eFontPrefLang_ChineseCN:
+        case eFontPrefLang_ChineseHK:
+        case eFontPrefLang_ChineseTW:
+          AppendPrefLang(tempPrefLangs, tempLen, fpl);
+          break;
+        default:
+          break;
       }
     }
 
@@ -1737,35 +1723,32 @@ void gfxPlatformFontList::AppendCJKPrefLangs(eFontPrefLang aPrefLangs[],
     AppendPrefLang(tempPrefLangs, tempLen, eFontPrefLang_Korean);
 
     
-    uint32_t j;
-    for (j = 0; j < tempLen; j++) {
-      mCJKPrefLangs.AppendElement(tempPrefLangs[j]);
+    for (const auto lang : Span<eFontPrefLang>(tempPrefLangs, tempLen)) {
+      mCJKPrefLangs.AppendElement(lang);
     }
   }
 
   
-  uint32_t i, numCJKlangs = mCJKPrefLangs.Length();
-
-  for (i = 0; i < numCJKlangs; i++) {
-    AppendPrefLang(aPrefLangs, aLen, (eFontPrefLang)(mCJKPrefLangs[i]));
+  for (const auto lang : mCJKPrefLangs) {
+    AppendPrefLang(aPrefLangs, aLen, eFontPrefLang(lang));
   }
 }
 
 void gfxPlatformFontList::AppendPrefLang(eFontPrefLang aPrefLangs[],
                                          uint32_t& aLen,
                                          eFontPrefLang aAddLang) {
-  if (aLen >= kMaxLenPrefLangList) return;
+  if (aLen >= kMaxLenPrefLangList) {
+    return;
+  }
 
   
-  uint32_t i = 0;
-  while (i < aLen && aPrefLangs[i] != aAddLang) {
-    i++;
+  for (const auto lang : Span<eFontPrefLang>(aPrefLangs, aLen)) {
+    if (lang == aAddLang) {
+      return;
+    }
   }
 
-  if (i == aLen) {
-    aPrefLangs[aLen] = aAddLang;
-    aLen++;
-  }
+  aPrefLangs[aLen++] = aAddLang;
 }
 
 StyleGenericFontFamily gfxPlatformFontList::GetDefaultGeneric(
