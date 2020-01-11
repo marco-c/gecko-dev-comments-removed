@@ -101,6 +101,8 @@ struct BaseEventFlags {
   bool mIsBeingDispatched : 1;
   
   
+  
+  
   bool mDispatchedAtLeastOnce : 1;
   
   
@@ -321,6 +323,8 @@ struct BaseEventFlags {
     if (IsWaitingReplyFromRemoteProcess()) {
       mPropagationStopped = mImmediatePropagationStopped = false;
     }
+    
+    mDispatchedAtLeastOnce = false;
   }
   
 
