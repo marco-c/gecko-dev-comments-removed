@@ -94,6 +94,8 @@ class ResponsiveUI {
 
 
 
+
+
     this.toolWindow = null;
     
     this.rdmFrame = null;
@@ -844,7 +846,10 @@ class ResponsiveUI {
 
 
   getViewportBrowser() {
-    return this.toolWindow.getViewportBrowser();
+    if (!this.isBrowserUIEnabled) {
+      return this.toolWindow.getViewportBrowser();
+    }
+    return this.tab.linkedBrowser;
   }
 
   
