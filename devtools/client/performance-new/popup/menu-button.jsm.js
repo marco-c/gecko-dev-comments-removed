@@ -32,17 +32,20 @@ function requireLazy(callback) {
   };
 }
 
+
+ (this).exports = {};
+
 const lazyServices = requireLazy(() =>
   
   (ChromeUtils.import("resource://gre/modules/Services.jsm"))
 );
 const lazyCustomizableUI = requireLazy(() =>
   
-  ChromeUtils.import("resource:///modules/CustomizableUI.jsm")
+  (ChromeUtils.import("resource:///modules/CustomizableUI.jsm"))
 );
 const lazyCustomizableWidgets = requireLazy(() =>
   
-  ChromeUtils.import("resource:///modules/CustomizableWidgets.jsm")
+  (ChromeUtils.import("resource:///modules/CustomizableWidgets.jsm"))
 );
 
 const BUTTON_ENABLED_PREF = "devtools.performance.popup.enabled";
@@ -92,7 +95,7 @@ function toggle(document) {
     
     
     const element = document.getElementById("PanelUI-profiler");
-    delete element._addedEventListeners;
+    delete  (element)._addedEventListeners;
   }
 }
 
@@ -258,4 +261,8 @@ function initialize() {
 
 const ProfilerMenuButton = { toggle, initialize, isEnabled };
 
-var EXPORTED_SYMBOLS = ["ProfilerMenuButton"];
+exports.ProfilerMenuButton = ProfilerMenuButton;
+
+
+
+var EXPORTED_SYMBOLS = Object.keys(exports);

@@ -344,16 +344,23 @@ function getDefaultRecordingPreferencesForOlderFirefox() {
   return _defaultPrefsForOlderFirefox;
 }
 
-var EXPORTED_SYMBOLS = [
-  "captureProfile",
-  "startProfiler",
-  "stopProfiler",
-  "restartProfiler",
-  "toggleProfiler",
-  "platform",
-  "getSymbolsFromThisBrowser",
-  "getRecordingPreferencesFromBrowser",
-  "setRecordingPreferencesOnBrowser",
-  "revertRecordingPreferences",
-  "getDefaultRecordingPreferencesForOlderFirefox",
-];
+
+ (this).module = { exports: {} };
+
+module.exports = {
+  captureProfile,
+  startProfiler,
+  stopProfiler,
+  restartProfiler,
+  toggleProfiler,
+  platform,
+  getSymbolsFromThisBrowser,
+  getRecordingPreferencesFromBrowser,
+  setRecordingPreferencesOnBrowser,
+  revertRecordingPreferences,
+  getDefaultRecordingPreferencesForOlderFirefox,
+};
+
+
+
+var EXPORTED_SYMBOLS = Object.keys(module.exports);
