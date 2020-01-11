@@ -2089,8 +2089,9 @@ WebRenderCommandBuilder::GenerateFallbackData(
     nsDisplayItem* aItem, wr::DisplayListBuilder& aBuilder,
     wr::IpcResourceUpdateQueue& aResources, const StackingContextHelper& aSc,
     nsDisplayListBuilder* aDisplayListBuilder, LayoutDeviceRect& aImageRect) {
-  bool useBlobImage = StaticPrefs::gfx_webrender_blob_images() &&
-                      !aItem->MustPaintOnContentSide();
+  const bool paintOnContentSide = aItem->MustPaintOnContentSide();
+  bool useBlobImage =
+      StaticPrefs::gfx_webrender_blob_images() && !paintOnContentSide;
   Maybe<gfx::Color> highlight = Nothing();
   if (StaticPrefs::gfx_webrender_highlight_painted_layers()) {
     highlight = Some(useBlobImage ? gfx::Color(1.0, 0.0, 0.0, 0.5)
@@ -2110,12 +2111,9 @@ WebRenderCommandBuilder::GenerateFallbackData(
   
   
   
-  nsRect paintBounds = itemBounds;
-  if (useBlobImage || aItem->MustPaintOnContentSide()) {
-    paintBounds = itemBounds;
-  } else {
-    paintBounds = aItem->GetClippedBounds(aDisplayListBuilder);
-  }
+  nsRect paintBounds = (useBlobImage || paintOnContentSide)
+                           ? itemBounds
+                           : aItem->GetClippedBounds(aDisplayListBuilder);
 
   
   

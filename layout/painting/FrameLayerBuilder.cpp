@@ -580,7 +580,6 @@ class PaintedLayerData {
         mHideAllLayersBelow(false),
         mOpaqueForAnimatedGeometryRootParent(false),
         mBackfaceHidden(false),
-        mShouldPaintOnContentSide(false),
         mDTCRequiresTargetConfirmation(false),
         mImage(nullptr),
         mItemClip(nullptr),
@@ -802,11 +801,6 @@ class PaintedLayerData {
 
 
   bool mBackfaceHidden;
-  
-
-
-
-  bool mShouldPaintOnContentSide;
   
 
 
@@ -3883,10 +3877,6 @@ void PaintedLayerData::Accumulate(
         item.mType = DisplayItemEntryType::PushOpacityWithBg;
       }
     }
-  }
-
-  if (aItem->MustPaintOnContentSide()) {
-    mShouldPaintOnContentSide = true;
   }
 
   if (aTransform && aType == DisplayItemEntryType::Item) {
