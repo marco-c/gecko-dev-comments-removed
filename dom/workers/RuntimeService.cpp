@@ -94,9 +94,6 @@ namespace workerinternals {
 #define WORKER_DEFAULT_RUNTIME_HEAPSIZE 32 * 1024 * 1024
 
 
-#define WORKER_DEFAULT_NURSERY_SIZE 1 * 1024 * 1024
-
-
 
 #define WORKER_DEFAULT_ALLOCATION_THRESHOLD 30
 
@@ -956,7 +953,7 @@ class WorkerJSContext final : public mozilla::CycleCollectedJSContext {
   nsresult Initialize(JSRuntime* aParentRuntime) {
     nsresult rv = CycleCollectedJSContext::Initialize(
         aParentRuntime, WORKER_DEFAULT_RUNTIME_HEAPSIZE,
-        WORKER_DEFAULT_NURSERY_SIZE);
+        JS::DefaultNurseryMaxBytes);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
