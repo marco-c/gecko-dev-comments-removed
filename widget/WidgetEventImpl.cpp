@@ -18,6 +18,7 @@
 #include "nsCommandParams.h"
 #include "nsContentUtils.h"
 #include "nsIContent.h"
+#include "nsIDragSession.h"
 #include "nsPrintfCString.h"
 
 #if defined(XP_WIN)
@@ -666,6 +667,53 @@ Modifier WidgetInputEvent::AccelModifier() {
 
 bool WidgetMouseEvent::IsMiddleClickPasteEnabled() {
   return Preferences::GetBool("middlemouse.paste", false);
+}
+
+
+
+
+
+void WidgetDragEvent::InitDropEffectForTests() {
+  MOZ_ASSERT(mFlags.mIsSynthesizedForTests);
+
+  nsCOMPtr<nsIDragSession> session = nsContentUtils::GetDragSession();
+  if (NS_WARN_IF(!session)) {
+    return;
+  }
+
+  uint32_t effectAllowed = session->GetEffectAllowedForTests();
+  uint32_t desiredDropEffect = nsIDragService::DRAGDROP_ACTION_NONE;
+#ifdef XP_MACOSX
+  if (IsAlt()) {
+    desiredDropEffect = IsMeta() ? nsIDragService::DRAGDROP_ACTION_LINK
+                                 : nsIDragService::DRAGDROP_ACTION_COPY;
+  }
+#else
+  
+  
+  
+  if (IsControl()) {
+    desiredDropEffect = IsShift() ? nsIDragService::DRAGDROP_ACTION_LINK
+                                  : nsIDragService::DRAGDROP_ACTION_COPY;
+  } else if (IsShift()) {
+    desiredDropEffect = nsIDragService::DRAGDROP_ACTION_MOVE;
+  }
+#endif  
+  
+  
+  if (!(desiredDropEffect &= effectAllowed)) {
+    
+    desiredDropEffect = effectAllowed;
+  }
+  if (desiredDropEffect & nsIDragService::DRAGDROP_ACTION_MOVE) {
+    session->SetDragAction(nsIDragService::DRAGDROP_ACTION_MOVE);
+  } else if (desiredDropEffect & nsIDragService::DRAGDROP_ACTION_COPY) {
+    session->SetDragAction(nsIDragService::DRAGDROP_ACTION_COPY);
+  } else if (desiredDropEffect & nsIDragService::DRAGDROP_ACTION_LINK) {
+    session->SetDragAction(nsIDragService::DRAGDROP_ACTION_LINK);
+  } else {
+    session->SetDragAction(nsIDragService::DRAGDROP_ACTION_NONE);
+  }
 }
 
 

@@ -698,9 +698,21 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
         KillClickHoldTimer();
       }
       break;
-    case eDragOver:
+    case eDragOver: {
+      WidgetDragEvent* dragEvent = aEvent->AsDragEvent();
+      MOZ_ASSERT(dragEvent);
+      if (dragEvent->mFlags.mIsSynthesizedForTests) {
+        dragEvent->InitDropEffectForTests();
+      }
       
-      GenerateDragDropEnterExit(aPresContext, aEvent->AsDragEvent());
+      GenerateDragDropEnterExit(aPresContext, dragEvent);
+      break;
+    }
+    case eDrop:
+      if (aEvent->mFlags.mIsSynthesizedForTests) {
+        MOZ_ASSERT(aEvent->AsDragEvent());
+        aEvent->AsDragEvent()->InitDropEffectForTests();
+      }
       break;
 
     case eKeyPress: {
@@ -1899,6 +1911,8 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
 
   
   WidgetDragEvent startEvent(aEvent->IsTrusted(), eDragStart, widget);
+  startEvent.mFlags.mIsSynthesizedForTests =
+      aEvent->mFlags.mIsSynthesizedForTests;
   FillInEventFromGestureDown(&startEvent);
 
   startEvent.mDataTransfer = dataTransfer;
@@ -2077,9 +2091,13 @@ bool EventStateManager::DoDefaultDragStart(
   
   
   
+  
+  
   nsCOMPtr<nsIDragSession> dragSession;
   dragService->GetCurrentSession(getter_AddRefs(dragSession));
-  if (dragSession) return true;
+  if (dragSession && !dragSession->IsSynthesizedForTests()) {
+    return true;
+  }
 
   
   
@@ -2098,33 +2116,48 @@ bool EventStateManager::DoDefaultDragStart(
   nsCOMPtr<nsIContent> dragTarget = aDataTransfer->GetDragTarget();
   if (!dragTarget) {
     dragTarget = aDragTarget;
-    if (!dragTarget) return false;
+    if (!dragTarget) {
+      return false;
+    }
   }
 
   
   
   uint32_t action = aDataTransfer->EffectAllowedInt();
-  if (action == nsIDragService::DRAGDROP_ACTION_UNINITIALIZED)
+  if (action == nsIDragService::DRAGDROP_ACTION_UNINITIALIZED) {
     action = nsIDragService::DRAGDROP_ACTION_COPY |
              nsIDragService::DRAGDROP_ACTION_MOVE |
              nsIDragService::DRAGDROP_ACTION_LINK;
+  }
 
   
   int32_t imageX, imageY;
   RefPtr<Element> dragImage = aDataTransfer->GetDragImage(&imageX, &imageY);
 
   nsCOMPtr<nsIArray> transArray = aDataTransfer->GetTransferables(dragTarget);
-  if (!transArray) return false;
+  if (!transArray) {
+    return false;
+  }
 
-  
-  
-  
   RefPtr<DataTransfer> dataTransfer;
-  aDataTransfer->Clone(aDragTarget, eDrop, aDataTransfer->MozUserCancelled(),
-                       false, getter_AddRefs(dataTransfer));
+  if (!dragSession) {
+    
+    
+    
+    aDataTransfer->Clone(aDragTarget, eDrop, aDataTransfer->MozUserCancelled(),
+                         false, getter_AddRefs(dataTransfer));
 
-  
-  dataTransfer->SetDropEffectInt(aDataTransfer->DropEffectInt());
+    
+    dataTransfer->SetDropEffectInt(aDataTransfer->DropEffectInt());
+  } else {
+    MOZ_ASSERT(dragSession->IsSynthesizedForTests());
+    MOZ_ASSERT(aDragEvent->mFlags.mIsSynthesizedForTests);
+    
+    
+    
+    
+    dataTransfer = aDataTransfer;
+  }
 
   
   
@@ -3614,6 +3647,12 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       uint32_t action = nsIDragService::DRAGDROP_ACTION_NONE;
       if (nsEventStatus_eConsumeNoDefault == *aStatus) {
         
+        
+        
+        
+        
+        
+        
         if (dragEvent->mDataTransfer) {
           
           dataTransfer = dragEvent->mDataTransfer;
@@ -3688,6 +3727,29 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
     } break;
 
     case eDrop: {
+      if (aEvent->mFlags.mIsSynthesizedForTests) {
+        if (nsCOMPtr<nsIDragSession> dragSession =
+                nsContentUtils::GetDragSession()) {
+          MOZ_ASSERT(dragSession->IsSynthesizedForTests());
+          RefPtr<Document> sourceDocument;
+          DebugOnly<nsresult> rvIgnored =
+              dragSession->GetSourceDocument(getter_AddRefs(sourceDocument));
+          NS_WARNING_ASSERTION(
+              NS_SUCCEEDED(rvIgnored),
+              "nsIDragSession::GetSourceDocument() failed, but ignored");
+          
+          
+          
+          
+          
+          if (sourceDocument) {
+            CSSIntPoint dropPointInScreen =
+                Event::GetScreenCoords(aPresContext, aEvent, aEvent->mRefPoint);
+            dragSession->SetDragEndPointForTests(dropPointInScreen.x,
+                                                 dropPointInScreen.y);
+          }
+        }
+      }
       sLastDragOverFrame = nullptr;
       ClearGlobalActiveContent(this);
       break;
@@ -4755,6 +4817,8 @@ void EventStateManager::GenerateDragDropEnterExit(nsPresContext* aPresContext,
             WidgetDragEvent remoteEvent(aDragEvent->IsTrusted(), eDragExit,
                                         aDragEvent->mWidget);
             remoteEvent.AssignDragEventData(*aDragEvent, true);
+            remoteEvent.mFlags.mIsSynthesizedForTests =
+                aDragEvent->mFlags.mIsSynthesizedForTests;
             nsEventStatus remoteStatus = nsEventStatus_eIgnore;
             HandleCrossProcessEvent(&remoteEvent, &remoteStatus);
           }
@@ -4815,6 +4879,8 @@ void EventStateManager::FireDragEnterOrExit(nsPresContext* aPresContext,
   nsEventStatus status = nsEventStatus_eIgnore;
   WidgetDragEvent event(aDragEvent->IsTrusted(), aMessage, aDragEvent->mWidget);
   event.AssignDragEventData(*aDragEvent, false);
+  event.mFlags.mIsSynthesizedForTests =
+      aDragEvent->mFlags.mIsSynthesizedForTests;
   event.mRelatedTarget = aRelatedTarget;
   mCurrentTargetContent = aTargetContent;
 

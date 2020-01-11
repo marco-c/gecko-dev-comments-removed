@@ -318,7 +318,7 @@ function sendDragEvent(aEvent, aTarget, aWindow = window) {
   }
 
   var utils = _getDOMWindowUtils(aWindow);
-  return utils.dispatchDOMEventViaPresShell(aTarget, event);
+  return utils.dispatchDOMEventViaPresShellForTesting(aTarget, event);
 }
 
 
@@ -2623,14 +2623,17 @@ function createDragEventObject(
   }
 
   
-  let dataTransfer = _EU_maybeUnwrap(
-    _EU_maybeWrap(aDataTransfer).mozCloneForEvent(aType)
-  );
+  let dataTransfer;
+  if (aDataTransfer) {
+    dataTransfer = _EU_maybeUnwrap(
+      _EU_maybeWrap(aDataTransfer).mozCloneForEvent(aType)
+    );
 
-  
-  
-  
-  dataTransfer.dropEffect = aDataTransfer.dropEffect;
+    
+    
+    
+    dataTransfer.dropEffect = aDataTransfer.dropEffect;
+  }
 
   return Object.assign(
     {
@@ -2639,7 +2642,7 @@ function createDragEventObject(
       screenY: destScreenY,
       clientX: destClientX,
       clientY: destClientY,
-      dataTransfer: dataTransfer,
+      dataTransfer,
       _domDispatchOnly: aDragEvent._domDispatchOnly,
     },
     aDragEvent
@@ -2837,7 +2840,24 @@ function synthesizeDrop(
     _EU_Ci.nsIDragService
   );
 
-  ds.startDragSession();
+  let dropAction;
+  switch (aDropEffect) {
+    case null:
+    case undefined:
+    case "move":
+      dropAction = _EU_Ci.nsIDragService.DRAGDROP_ACTION_MOVE;
+      break;
+    case "copy":
+      dropAction = _EU_Ci.nsIDragService.DRAGDROP_ACTION_COPY;
+      break;
+    case "link":
+      dropAction = _EU_Ci.nsIDragService.DRAGDROP_ACTION_LINK;
+      break;
+    default:
+      throw new Error(`${aDropEffect} is an invalid drop effect value`);
+  }
+
+  ds.startDragSessionForTests(dropAction);
 
   try {
     var [result, dataTransfer] = synthesizeDragOver(
@@ -2884,6 +2904,11 @@ function synthesizeDrop(
 
 
 
+
+
+
+
+
 async function synthesizePlainDragAndDrop(aParams) {
   let {
     srcElement,
@@ -2896,80 +2921,268 @@ async function synthesizePlainDragAndDrop(aParams) {
     finalY = srcY + stepY * 2,
     srcWindow = window,
     destWindow = window,
+    expectCancelDragStart = false,
+    logFunc,
   } = aParams;
+
+  function rectToString(aRect) {
+    return `left: ${aRect.left}, top: ${aRect.top}, right: ${
+      aRect.right
+    }, bottom: ${aRect.bottom}`;
+  }
+
+  if (logFunc) {
+    logFunc("synthesizePlainDragAndDrop() -- START");
+    logFunc(
+      `srcElement.getBoundingClientRect(): ${rectToString(
+        srcElement.getBoundingClientRect()
+      )}`
+    );
+  }
 
   const ds = _EU_Cc["@mozilla.org/widget/dragservice;1"].getService(
     _EU_Ci.nsIDragService
   );
-  ds.startDragSession();
 
   try {
-    let dataTransfer = null;
-    function trapDrag(aEvent) {
-      dataTransfer = aEvent.dataTransfer;
-    }
-    srcElement.addEventListener("dragstart", trapDrag, true);
+    await new Promise(r => setTimeout(r, 0));
+
     synthesizeMouse(srcElement, srcX, srcY, { type: "mousedown" }, srcWindow);
+    if (logFunc) {
+      logFunc(`mousedown at ${srcX}, ${srcY}`);
+    }
 
-    
-    
-    await new Promise(r => setTimeout(r, 0));
-
-    srcX += stepX;
-    srcY += stepY;
-    synthesizeMouse(srcElement, srcX, srcY, { type: "mousemove" }, srcWindow);
-
-    await new Promise(r => setTimeout(r, 0));
-
-    srcX += stepX;
-    srcY += stepY;
-    synthesizeMouse(srcElement, srcX, srcY, { type: "mousemove" }, srcWindow);
-
-    await new Promise(r => setTimeout(r, 0));
-
-    srcElement.removeEventListener("dragstart", trapDrag, true);
-
-    await new Promise(r => setTimeout(r, 0));
-
-    let event;
-    if (destElement) {
+    let dragStartEvent;
+    function onDragStart(aEvent) {
+      dragStartEvent = aEvent;
+      if (logFunc) {
+        logFunc(`"${aEvent.type}" event is fired`);
+      }
+      if (!srcElement.contains(aEvent.target)) {
+        
+        
+        
+        
+        throw new Error(
+          'event target of "dragstart" is not srcElement nor its descendant'
+        );
+      }
+    }
+    let dragEnterEvent;
+    function onDragEnterGenerated(aEvent) {
+      dragEnterEvent = aEvent;
+    }
+    srcWindow.addEventListener("dragstart", onDragStart, { capture: true });
+    srcWindow.addEventListener("dragenter", onDragEnterGenerated, {
+      capture: true,
+    });
+    try {
       
       
-      
-      event = createDragEventObject(
-        "dragover",
-        destElement,
-        destWindow,
-        dataTransfer,
-        {}
-      );
-      sendDragEvent(event, destElement, destWindow);
+      await new Promise(r => setTimeout(r, 0));
+
+      srcX += stepX;
+      srcY += stepY;
+      synthesizeMouse(srcElement, srcX, srcY, { type: "mousemove" }, srcWindow);
+      if (logFunc) {
+        logFunc(`first mousemove at ${srcX}, ${srcY}`);
+      }
 
       await new Promise(r => setTimeout(r, 0));
 
-      event = createDragEventObject(
-        "drop",
-        destElement,
-        destWindow,
-        dataTransfer,
-        {}
-      );
-      sendDragEvent(event, destElement, destWindow);
+      srcX += stepX;
+      srcY += stepY;
+      synthesizeMouse(srcElement, srcX, srcY, { type: "mousemove" }, srcWindow);
+      if (logFunc) {
+        logFunc(`second mousemove at ${srcX}, ${srcY}`);
+      }
+
+      await new Promise(r => setTimeout(r, 0));
+
+      if (!dragStartEvent) {
+        throw new Error('"dragstart" event is not fired');
+      }
+    } finally {
+      srcWindow.removeEventListener("dragstart", onDragStart, {
+        capture: true,
+      });
+      srcWindow.removeEventListener("dragenter", onDragEnterGenerated, {
+        capture: true,
+      });
     }
 
-    
-    event = createDragEventObject(
-      "dragend",
-      srcElement,
-      srcWindow,
-      dataTransfer,
-      { clientX: finalX, clientY: finalY }
-    );
-    sendDragEvent(event, srcElement, srcWindow);
+    let session = ds.getCurrentSession();
+    if (!session) {
+      if (expectCancelDragStart) {
+        synthesizeMouse(srcElement, srcX, srcY, { type: "mouseup" }, srcWindow);
+        return;
+      }
+      throw new Error("drag hasn't been started by the operation");
+    } else if (expectCancelDragStart) {
+      throw new Error("drag has been started by the operation");
+    }
 
-    await new Promise(r => setTimeout(r, 0));
+    if (destElement) {
+      if (
+        (srcElement != destElement && !dragEnterEvent) ||
+        destElement != dragEnterEvent.target
+      ) {
+        if (logFunc) {
+          logFunc(
+            `destElement.getBoundingClientRect(): ${rectToString(
+              destElement.getBoundingClientRect()
+            )}`
+          );
+        }
+
+        function onDragEnter(aEvent) {
+          dragEnterEvent = aEvent;
+          if (logFunc) {
+            logFunc(`"${aEvent.type}" event is fired`);
+          }
+          if (aEvent.target != destElement) {
+            throw new Error('event target of "dragenter" is not destElement');
+          }
+        }
+        destWindow.addEventListener("dragenter", onDragEnter, {
+          capture: true,
+        });
+        try {
+          let event = createDragEventObject(
+            "dragenter",
+            destElement,
+            destWindow,
+            null,
+            {}
+          );
+          sendDragEvent(event, destElement, destWindow);
+          if (!dragEnterEvent && !destElement.disabled) {
+            throw new Error('"dragenter" event is not fired');
+          }
+          if (dragEnterEvent && destElement.disabled) {
+            throw new Error(
+              '"dragenter" event should not be fired on disable element'
+            );
+          }
+        } finally {
+          destWindow.removeEventListener("dragenter", onDragEnter, {
+            capture: true,
+          });
+        }
+      }
+
+      let dragOverEvent;
+      function onDragOver(aEvent) {
+        dragOverEvent = aEvent;
+        if (logFunc) {
+          logFunc(`"${aEvent.type}" event is fired`);
+        }
+        if (aEvent.target != destElement) {
+          throw new Error('event target of "dragover" is not destElement');
+        }
+      }
+      destWindow.addEventListener("dragover", onDragOver, { capture: true });
+      try {
+        
+        
+        
+        let event = createDragEventObject(
+          "dragover",
+          destElement,
+          destWindow,
+          null,
+          {}
+        );
+        sendDragEvent(event, destElement, destWindow);
+        if (!dragOverEvent && !destElement.disabled) {
+          throw new Error('"dragover" event is not fired');
+        }
+        if (dragEnterEvent && destElement.disabled) {
+          throw new Error(
+            '"dragover" event should not be fired on disable element'
+          );
+        }
+      } finally {
+        destWindow.removeEventListener("dragover", onDragOver, {
+          capture: true,
+        });
+      }
+
+      await new Promise(r => setTimeout(r, 0));
+
+      let dropEvent;
+      function onDrop(aEvent) {
+        dropEvent = aEvent;
+        if (logFunc) {
+          logFunc(`"${aEvent.type}" event is fired`);
+        }
+        if (!destElement.contains(aEvent.target)) {
+          throw new Error(
+            'event target of "drop" is not destElement nor its descendant'
+          );
+        }
+      };
+      destWindow.addEventListener("drop", onDrop, { capture: true });
+      try {
+        let event = createDragEventObject(
+          "drop",
+          destElement,
+          destWindow,
+          null,
+          {}
+        );
+        sendDragEvent(event, destElement, destWindow);
+        if (!dropEvent && session.canDrop) {
+          throw new Error('"drop" event is not fired');
+        }
+      } finally {
+        destWindow.removeEventListener("drop", onDrop, { capture: true });
+      }
+    } else {
+      
+      
+      
+      let event = createDragEventObject(
+        "dragend",
+        srcElement,
+        srcWindow,
+        null,
+        { clientX: finalX, clientY: finalY }
+      );
+      session.setDragEndPointForTests(event.screenX, event.screenY);
+    }
   } finally {
-    ds.endDragSession(true, 0);
+    await new Promise(r => setTimeout(r, 0));
+
+    if (ds.getCurrentSession()) {
+      let dragEndEvent;
+      function onDragEnd(aEvent) {
+        dragEndEvent = aEvent;
+        if (logFunc) {
+          logFunc(`"${aEvent.type}" event is fired`);
+        }
+        if (!srcElement.contains(aEvent.target)) {
+          throw new Error(
+            'event target of "dragend" is not srcElement not its descendant'
+          );
+        }
+      }
+      srcWindow.addEventListener("dragend", onDragEnd, { capture: true });
+      try {
+        ds.endDragSession(true, 0);
+        if (!dragEndEvent) {
+          
+          throw new Error(
+            '"dragend" event is not fired by nsIDragService.endDragSession()'
+          );
+        }
+      } finally {
+        srcWindow.removeEventListener("dragend", onDragEnd, { capture: true });
+      }
+    }
+    if (logFunc) {
+      logFunc("synthesizePlainDragAndDrop() -- END");
+    }
   }
 }
 

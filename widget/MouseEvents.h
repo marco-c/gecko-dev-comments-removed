@@ -366,6 +366,14 @@ class WidgetDragEvent : public WidgetMouseEvent {
     mUserCancelled = false;
     mDefaultPreventedOnContent = aEvent.mDefaultPreventedOnContent;
   }
+
+  
+
+
+
+
+
+  void InitDropEffectForTests();
 };
 
 
