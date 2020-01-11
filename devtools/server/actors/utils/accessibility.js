@@ -103,7 +103,29 @@ function isWebRenderEnabled(win) {
   return false;
 }
 
+
+
+
+
+
+
+
+
+
+
+function getAriaRoles(accessible) {
+  try {
+    return accessible.attributes.getStringProperty("xml-roles");
+  } catch (e) {
+    
+    
+  }
+
+  return null;
+}
+
+exports.getAriaRoles = getAriaRoles;
 exports.isDefunct = isDefunct;
+exports.isWebRenderEnabled = isWebRenderEnabled;
 exports.loadSheetForBackgroundCalculation = loadSheetForBackgroundCalculation;
 exports.removeSheetForBackgroundCalculation = removeSheetForBackgroundCalculation;
-exports.isWebRenderEnabled = isWebRenderEnabled;
