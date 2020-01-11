@@ -1104,6 +1104,9 @@ BrowserPageActions.launchSSB = {
     );
 
     
+    await ssb.install();
+
+    
     
     ssb.launch(gBrowser.selectedBrowser.currentURI);
     gBrowser.removeTab(gBrowser.selectedTab, { closeWindowWithLastTab: false });

@@ -36,7 +36,26 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   ManifestObtainer: "resource://gre/modules/ManifestObtainer.jsm",
   ManifestProcessor: "resource://gre/modules/ManifestProcessor.jsm",
+  KeyValueService: "resource://gre/modules/kvstore.jsm",
+  OS: "resource://gre/modules/osfile.jsm",
 });
+
+
+
+
+
+
+const DATA_VERSION = 1;
+
+
+
+
+const SSB_STORE_PREFIX = "ssb:";
+
+
+
+
+const SSB_STORE_LAST = "ssb;";
 
 function uuid() {
   return Cc["@mozilla.org/uuid-generator;1"]
@@ -46,6 +65,7 @@ function uuid() {
 }
 
 const sharedDataKey = id => `SiteSpecificBrowserBase:${id}`;
+const storeKey = id => SSB_STORE_PREFIX + id;
 
 const IS_MAIN_PROCESS =
   Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT;
@@ -223,6 +243,7 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
     this._config = Object.assign(
       {
         needsUpdate: true,
+        persisted: false,
       },
       config
     );
@@ -231,6 +252,44 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
     SSBMap.set(id, this);
 
     this._updateSharedData();
+  }
+
+  
+
+
+
+
+
+
+  static async load(id, data = null) {
+    if (!IS_MAIN_PROCESS) {
+      throw new Error(
+        "SiteSpecificBrowser instances are only available in the main process."
+      );
+    }
+
+    if (SSBMap.has(id)) {
+      return SSBMap.get(id);
+    }
+
+    if (!data) {
+      let kvstore = await SiteSpecificBrowserService.getKVStore();
+      data = await kvstore.get(storeKey(id), null);
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    try {
+      let parsed = JSON.parse(data);
+      parsed.config.persisted = true;
+      return new SiteSpecificBrowser(id, parsed.manifest, parsed.config);
+    } catch (e) {
+      console.error(e);
+    }
+
+    return null;
   }
 
   
@@ -323,6 +382,50 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
   
 
 
+
+  async _maybeSave() {
+    
+    if (this._config.persisted) {
+      let data = {
+        manifest: this._manifest,
+        config: this._config,
+      };
+
+      let kvstore = await SiteSpecificBrowserService.getKVStore();
+      await kvstore.put(storeKey(this.id), JSON.stringify(data));
+    }
+  }
+
+  
+
+
+
+  async install() {
+    if (this._config.persisted) {
+      return;
+    }
+
+    this._config.persisted = true;
+    await this._maybeSave();
+  }
+
+  
+
+
+
+  async uninstall() {
+    if (!this._config.persisted) {
+      return;
+    }
+
+    this._config.persisted = false;
+    let kvstore = await SiteSpecificBrowserService.getKVStore();
+    await kvstore.delete(storeKey(this.id));
+  }
+
+  
+
+
   get id() {
     return this._id;
   }
@@ -352,6 +455,7 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
     this._config.needsUpdate = false;
 
     this._updateSharedData();
+    await this._maybeSave();
   }
 
   
@@ -396,7 +500,105 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
   }
 }
 
-const SiteSpecificBrowserService = {};
+
+
+
+
+async function loadKVStore() {
+  let dir = OS.Path.join(OS.Constants.Path.profileDir, "ssb");
+
+  
+
+
+  async function createStore() {
+    await OS.File.makeDir(dir);
+    let kvstore = await KeyValueService.getOrCreate(dir, "ssb");
+    await kvstore.put(
+      "_meta",
+      JSON.stringify({
+        version: DATA_VERSION,
+      })
+    );
+
+    return kvstore;
+  }
+
+  
+  try {
+    let info = await OS.File.stat(dir);
+
+    if (!info.isDir) {
+      await OS.File.remove(dir, { ignoreAbsent: true });
+      return createStore();
+    }
+  } catch (e) {
+    if (e.becauseNoSuchFile) {
+      return createStore();
+    }
+    throw e;
+  }
+
+  
+  try {
+    let kvstore = await KeyValueService.getOrCreate(dir, "ssb");
+
+    let meta = await kvstore.get("_meta", null);
+    if (meta) {
+      let data = JSON.parse(meta);
+      if (data.version == DATA_VERSION) {
+        return kvstore;
+      }
+      console.error(`SSB store is an unexpected version ${data.version}`);
+    } else {
+      console.error("SSB store was missing meta data.");
+    }
+
+    
+    await kvstore.clear();
+    await kvstore.put(
+      "_meta",
+      JSON.stringify({
+        version: DATA_VERSION,
+      })
+    );
+
+    return kvstore;
+  } catch (e) {
+    console.error(e);
+
+    
+    await OS.File.removeDir(dir);
+    return createStore();
+  }
+}
+
+const SiteSpecificBrowserService = {
+  kvstore: null,
+
+  
+
+
+  getKVStore() {
+    if (!this.kvstore) {
+      this.kvstore = loadKVStore();
+    }
+
+    return this.kvstore;
+  },
+
+  
+
+
+  async list() {
+    let kvstore = await this.getKVStore();
+    let list = await kvstore.enumerate(SSB_STORE_PREFIX, SSB_STORE_LAST);
+    return Promise.all(
+      Array.from(list).map(({ key: id, value: data }) =>
+        SiteSpecificBrowser.load(id.substring(SSB_STORE_PREFIX.length), data)
+      )
+    );
+  },
+};
 
 XPCOMUtils.defineLazyPreferenceGetter(
   SiteSpecificBrowserService,
@@ -404,6 +606,25 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "browser.ssb.enabled",
   false
 );
+
+async function startSSB(id) {
+  
+  
+  
+  Services.startup.enterLastWindowClosingSurvivalArea();
+
+  
+  try {
+    let ssb = await SiteSpecificBrowser.load(id);
+    if (ssb) {
+      ssb.launch();
+    } else {
+      dump(`No SSB installed as ID ${id}\n`);
+    }
+  } finally {
+    Services.startup.exitLastWindowClosingSurvivalArea();
+  }
+}
 
 class SSBCommandLineHandler {
   
@@ -439,6 +660,15 @@ class SSBCommandLineHandler {
       } catch (e) {
         dump(`Unable to parse '${site}' as a URI: ${e}\n`);
       }
+
+      return;
+    }
+
+    let id = cmdLine.handleFlagWithParam("start-ssb", false);
+    if (id) {
+      cmdLine.preventDefault = true;
+
+      startSSB(id);
     }
   }
 

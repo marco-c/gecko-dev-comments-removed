@@ -1,0 +1,8 @@
+
+
+
+
+add_task(async () => {
+  let ssbs = await SiteSpecificBrowserService.list();
+  Assert.equal(ssbs.length, 0);
+});
