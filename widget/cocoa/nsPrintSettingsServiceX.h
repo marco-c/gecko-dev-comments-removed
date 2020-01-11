@@ -44,11 +44,6 @@ class nsPrintSettingsServiceX final : public nsPrintSettingsService {
 
  private:
   
-  nsresult SerializeToPrintDataChild(nsIPrintSettings* aSettings,
-                                     nsIWebBrowserPrint* aWBP,
-                                     mozilla::embedding::PrintData* data);
-
-  
   nsresult SerializeToPrintDataParent(nsIPrintSettings* aSettings,
                                       nsIWebBrowserPrint* aWBP,
                                       mozilla::embedding::PrintData* data);
