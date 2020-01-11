@@ -1849,6 +1849,9 @@ bool LazyScriptCreationData::create(JSContext* cx, FunctionBox* funbox,
   if (funbox->hasExtensibleScope()) {
     lazy->setFunHasExtensibleScope();
   }
+  if (funbox->hasMappedArgsObj()) {
+    lazy->setHasMappedArgsObj();
+  }
 
   
   
