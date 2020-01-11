@@ -2060,6 +2060,15 @@ public class GeckoSessionTestRule implements TestRule {
         });
     }
 
+    
+
+
+    public void setResolutionAndScaleTo(final float resolution) {
+        webExtensionApiCall("SetResolutionAndScaleTo", args -> {
+            args.put("resolution", resolution);
+        });
+    }
+
     private Object webExtensionApiCall(final String apiName, SetArgs argsSetter) {
         
         UiThreadUtils.waitForCondition(() -> RuntimeCreator.backgroundPort() != null,
