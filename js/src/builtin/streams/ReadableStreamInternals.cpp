@@ -345,16 +345,6 @@ MOZ_MUST_USE bool js::ReadableStreamErrorInternal(
     return false;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  Rooted<JSObject*> closedPromise(cx, unwrappedReader->closedPromise());
-  SetPromiseIsHandled(cx, closedPromise.as<PromiseObject>());
-
   if (unwrappedStream->mode() == JS::ReadableStreamMode::ExternalSource) {
     
     AutoRealm ar(cx, unwrappedStream);

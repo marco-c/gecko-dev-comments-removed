@@ -110,16 +110,6 @@ inline MOZ_MUST_USE bool RejectUnwrappedPromiseWithError(
   return RejectUnwrappedPromiseWithError(cx, &promise, error);
 }
 
-
-
-
-
-inline void SetPromiseIsHandled(JSContext* cx,
-                                JS::Handle<PromiseObject*> promise) {
-  promise->setHandled();
-  cx->runtime()->removeUnhandledRejectedPromise(cx, promise);
-}
-
 }  
 
 #endif  
