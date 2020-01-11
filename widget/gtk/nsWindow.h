@@ -87,6 +87,16 @@ class CurrentX11TimeGetter;
 
 }  
 
+class OpaqueRegionState {
+ public:
+  OpaqueRegionState() : mRect({-1, -1, -1, -1}), mSubtractedCorners(false){};
+  bool NeedsUpdate(GdkRectangle& aNewRect, bool aNewSubtractedCorners);
+
+ private:
+  GdkRectangle mRect;
+  bool mSubtractedCorners;
+};
+
 class nsWindow final : public nsBaseWidget {
  public:
   typedef mozilla::gfx::DrawTarget DrawTarget;
@@ -639,6 +649,9 @@ class nsWindow final : public nsBaseWidget {
   
   
   bool mBoundsAreValid;
+
+  
+  OpaqueRegionState mToplevelOpaqueRegionState;
 
   static bool DragInProgress(void);
 
