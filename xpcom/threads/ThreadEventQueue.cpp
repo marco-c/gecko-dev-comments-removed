@@ -133,29 +133,93 @@ template <class InnerQueueT>
 already_AddRefed<nsIRunnable> ThreadEventQueue<InnerQueueT>::GetEvent(
     bool aMayWait, EventQueuePriority* aPriority,
     mozilla::TimeDuration* aLastEventDelay) {
-  MutexAutoLock lock(mLock);
-
   nsCOMPtr<nsIRunnable> event;
   bool eventIsIdleRunnable = false;
-  for (;;) {
-    if (mNestedQueues.IsEmpty()) {
-      event = mBaseQueue->GetEvent(aPriority, lock, aLastEventDelay,
-                                   &eventIsIdleRunnable);
-    } else {
+  
+  
+  IdlePeriodState* idleState = nullptr;
+
+  {
+    
+    
+    
+    MutexAutoLock lock(mLock);
+
+    for (;;) {
+      const bool noNestedQueue = mNestedQueues.IsEmpty();
+      if (noNestedQueue) {
+        idleState = mBaseQueue->GetIdlePeriodState();
+        event = mBaseQueue->GetEvent(aPriority, lock, aLastEventDelay,
+                                     &eventIsIdleRunnable);
+      } else {
+        
+        
+        MOZ_ASSERT(!mNestedQueues.LastElement().mQueue->GetIdlePeriodState());
+        event = mNestedQueues.LastElement().mQueue->GetEvent(
+            aPriority, lock, aLastEventDelay, &eventIsIdleRunnable);
+        MOZ_ASSERT(!eventIsIdleRunnable);
+      }
+
+      if (event) {
+        break;
+      }
+
+      if (idleState) {
+        MOZ_ASSERT(noNestedQueue);
+        if (mBaseQueue->HasIdleRunnables(lock)) {
+          
+          
+          
+          
+          MutexAutoUnlock unlock(mLock);
+          idleState->UpdateCachedIdleDeadline(unlock);
+        } else {
+          
+          
+          MutexAutoUnlock unlock(mLock);
+          idleState->RanOutOfTasks(unlock);
+        }
+
+        
+        
+        
+        MOZ_ASSERT(
+            noNestedQueue == mNestedQueues.IsEmpty(),
+            "Who is pushing nested queues on us from some other thread?");
+        event = mBaseQueue->GetEvent(aPriority, lock, aLastEventDelay,
+                                     &eventIsIdleRunnable);
+        
+        
+        idleState->ClearCachedIdleDeadline();
+
+        if (event) {
+          break;
+        }
+      }
+
       
       
-      event = mNestedQueues.LastElement().mQueue->GetEvent(
-          aPriority, lock, aLastEventDelay, &eventIsIdleRunnable);
-      MOZ_ASSERT(!eventIsIdleRunnable);
-    }
+      if (!aMayWait) {
+        break;
+      }
 
-    if (event || !aMayWait) {
-      break;
+      AUTO_PROFILER_LABEL("ThreadEventQueue::GetEvent::Wait", IDLE);
+      AUTO_PROFILER_THREAD_SLEEP;
+      mEventsAvailable.Wait();
     }
+  }
 
-    AUTO_PROFILER_LABEL("ThreadEventQueue::GetEvent::Wait", IDLE);
-    AUTO_PROFILER_THREAD_SLEEP;
-    mEventsAvailable.Wait();
+  if (idleState) {
+    
+    
+    idleState->ForgetPendingTaskGuarantee();
+    if (event && !eventIsIdleRunnable) {
+      
+      
+      
+      
+      idleState->FlagNotIdle();
+    }
   }
 
   return event.forget();
@@ -166,6 +230,8 @@ void ThreadEventQueue<InnerQueueT>::DidRunEvent() {
   MutexAutoLock lock(mLock);
   if (mNestedQueues.IsEmpty()) {
     mBaseQueue->DidRunEvent(lock);
+    
+    
   } else {
     mNestedQueues.LastElement().mQueue->DidRunEvent(lock);
   }

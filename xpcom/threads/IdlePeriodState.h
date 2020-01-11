@@ -42,15 +42,13 @@ class IdlePeriodState {
   
   
   
-  
-  void FlagNotIdle(Mutex& aMutexToUnlock);
+  void FlagNotIdle();
 
   
   
   
   
-  
-  void RanOutOfTasks(Mutex& aMutexToUnlock);
+  void RanOutOfTasks(const MutexAutoUnlock& aProofOfUnlock);
 
   
   
@@ -69,15 +67,15 @@ class IdlePeriodState {
 
   
   
-  
-  
-  
-  
-  
-  
-  TimeStamp GetDeadlineForIdleTask(Mutex& aMutexToUnlock) {
-    return GetIdleDeadlineInternal(false, aMutexToUnlock);
+  void UpdateCachedIdleDeadline(const MutexAutoUnlock& aProofOfUnlock) {
+    mCachedIdleDeadline = GetIdleDeadlineInternal(false, aProofOfUnlock);
   }
+
+  
+  void ClearCachedIdleDeadline() { mCachedIdleDeadline = TimeStamp(); }
+
+  
+  TimeStamp GetCachedIdleDeadline() { return mCachedIdleDeadline; }
 
   
   
@@ -86,9 +84,8 @@ class IdlePeriodState {
   
   
   
-  
-  TimeStamp PeekIdleDeadline(Mutex& aMutexToUnlock) {
-    return GetIdleDeadlineInternal(true, aMutexToUnlock);
+  TimeStamp PeekIdleDeadline(const MutexAutoUnlock& aProofOfUnlock) {
+    return GetIdleDeadlineInternal(true, aProofOfUnlock);
   }
 
   void SetIdleToken(uint64_t aId, TimeDuration aDuration);
@@ -102,20 +99,21 @@ class IdlePeriodState {
     }
   }
 
-  void EnsureIsPaused(Mutex& aMutexToUnlock) {
+  void EnsureIsPaused(const MutexAutoUnlock& aProofOfUnlock) {
     if (mActive) {
-      SetPaused(aMutexToUnlock);
+      SetPaused(aProofOfUnlock);
     }
   }
 
   
-  TimeStamp GetLocalIdleDeadline(bool& aShuttingDown, Mutex& aMutexToUnlock);
+  TimeStamp GetLocalIdleDeadline(bool& aShuttingDown,
+                                 const MutexAutoUnlock& aProofOfUnlock);
 
   
   
   
-  
-  TimeStamp GetIdleToken(TimeStamp aLocalIdlePeriodHint, Mutex& aMutexToUnlock);
+  TimeStamp GetIdleToken(TimeStamp aLocalIdlePeriodHint,
+                         const MutexAutoUnlock& aProofOfUnlock);
 
   
   
@@ -123,7 +121,10 @@ class IdlePeriodState {
 
   
   
-  void ClearIdleToken(Mutex& aMutexToUnlock);
+  
+  
+  
+  void ClearIdleToken();
 
   
   
@@ -132,16 +133,15 @@ class IdlePeriodState {
   
   
   
-  
-  void SetPaused(Mutex& aMutexToUnlock);
+  void SetPaused(const MutexAutoUnlock& aProofOfUnlock);
 
   
   
   
   
   
-  
-  TimeStamp GetIdleDeadlineInternal(bool aIsPeek, Mutex& aMutexToUnlock);
+  TimeStamp GetIdleDeadlineInternal(bool aIsPeek,
+                                    const MutexAutoUnlock& aProofOfUnlock);
 
   
   
@@ -167,6 +167,11 @@ class IdlePeriodState {
   
   
   RefPtr<ipc::IdleSchedulerChild> mIdleScheduler;
+
+  
+  
+  
+  TimeStamp mCachedIdleDeadline;
 
   
   

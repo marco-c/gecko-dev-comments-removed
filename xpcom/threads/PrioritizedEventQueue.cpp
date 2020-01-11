@@ -59,10 +59,14 @@ void PrioritizedEventQueue::PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
       mNormalQueue->PutEvent(event.forget(), priority, aProofOfLock, aDelay);
       break;
     case EventQueuePriority::DeferredTimers:
+      MOZ_ASSERT(NS_IsMainThread(),
+                 "Should only queue deferred timers on main thread");
       mDeferredTimersQueue->PutEvent(event.forget(), priority, aProofOfLock,
                                      aDelay);
       break;
     case EventQueuePriority::Idle:
+      MOZ_ASSERT(NS_IsMainThread(),
+                 "Should only queue idle runnables on main thread");
       mIdleQueue->PutEvent(event.forget(), priority, aProofOfLock, aDelay);
       break;
     case EventQueuePriority::Count:
@@ -165,13 +169,6 @@ already_AddRefed<nsIRunnable> PrioritizedEventQueue::GetEvent(
     EventQueuePriority* aPriority, const MutexAutoLock& aProofOfLock,
     TimeDuration* aHypotheticalInputEventDelay, bool* aIsIdleEvent) {
   EventQueuePriority queue = SelectQueue(true, aProofOfLock);
-  auto guard = MakeScopeExit([&] {
-    mIdlePeriodState.ForgetPendingTaskGuarantee();
-    if (queue != EventQueuePriority::Idle &&
-        queue != EventQueuePriority::DeferredTimers) {
-      mIdlePeriodState.FlagNotIdle(*mMutex);
-    }
-  });
 
   if (aPriority) {
     *aPriority = queue;
@@ -225,13 +222,11 @@ already_AddRefed<nsIRunnable> PrioritizedEventQueue::GetEvent(
       
       
 
-      if (mIdleQueue->IsEmpty(aProofOfLock) &&
-          mDeferredTimersQueue->IsEmpty(aProofOfLock)) {
-        mIdlePeriodState.RanOutOfTasks(*mMutex);
+      if (!HasIdleRunnables(aProofOfLock)) {
         return nullptr;
       }
 
-      TimeStamp idleDeadline = mIdlePeriodState.GetDeadlineForIdleTask(*mMutex);
+      TimeStamp idleDeadline = mIdlePeriodState.GetCachedIdleDeadline();
       if (!idleDeadline) {
         return nullptr;
       }
@@ -260,7 +255,10 @@ already_AddRefed<nsIRunnable> PrioritizedEventQueue::GetEvent(
 void PrioritizedEventQueue::DidRunEvent(const MutexAutoLock& aProofOfLock) {
   if (IsEmpty(aProofOfLock)) {
     
-    mIdlePeriodState.RanOutOfTasks(*mMutex);
+    
+    
+    MutexAutoUnlock unlock(*mMutex);
+    mIdlePeriodState.RanOutOfTasks(unlock);
   }
 }
 
@@ -300,7 +298,15 @@ bool PrioritizedEventQueue::HasReadyEvent(const MutexAutoLock& aProofOfLock) {
     return false;
   }
 
-  TimeStamp idleDeadline = mIdlePeriodState.PeekIdleDeadline(*mMutex);
+  
+  TimeStamp idleDeadline;
+  {
+    MutexAutoUnlock unlock(*mMutex);
+    idleDeadline = mIdlePeriodState.PeekIdleDeadline(unlock);
+  }
+
+  
+  
   if (idleDeadline && (mDeferredTimersQueue->HasReadyEvent(aProofOfLock) ||
                        mIdleQueue->HasReadyEvent(aProofOfLock))) {
     mIdlePeriodState.EnforcePendingTaskGuarantee();
@@ -348,7 +354,7 @@ void PrioritizedEventQueue::ResumeInputEventPrioritization(
 }
 
 bool PrioritizedEventQueue::HasIdleRunnables(
-    const MutexAutoLock& aProofOfLock) {
+    const MutexAutoLock& aProofOfLock) const {
   return !mIdleQueue->IsEmpty(aProofOfLock) ||
          !mDeferredTimersQueue->IsEmpty(aProofOfLock);
 }
