@@ -11,6 +11,7 @@
 
 
 
+
 COUNTED_UNKNOWN_PROPERTIES = [
     "-webkit-font-smoothing",
     "-webkit-tap-highlight-color",
@@ -40,7 +41,6 @@ COUNTED_UNKNOWN_PROPERTIES = [
     "baseline-shift",
     "-webkit-hyphenate-character",
     "page",
-    "text-underline-position",
     "-webkit-highlight",
     "background-repeat-x",
     "-webkit-padding-end",
