@@ -23,8 +23,25 @@ XPCOMUtils.defineLazyPreferenceGetter(
   30 * 1000 
 );
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "AsyncShutdown",
+  "resource://gre/modules/AsyncShutdown.jsm"
+);
+
+
+
+
+let gShutdown = false;
+let gShutdownResolver = null;
+
 class Worker {
   constructor(source) {
+    if (gShutdown) {
+      Cu.reportError(
+        new Error("Can't create worker once shutdown has started")
+      );
+    }
     this.source = source;
     this.worker = null;
 
@@ -34,6 +51,9 @@ class Worker {
   }
 
   async _execute(method, args = []) {
+    if (gShutdown) {
+      return Promise.reject(new Error("Remote Settings has shut down."));
+    }
     
     if (!this.worker) {
       this.worker = new ChromeWorker(this.source);
@@ -62,13 +82,24 @@ class Worker {
 
     
     
-    if (this.callbacks.length == 0) {
-      this.idleTimeoutId = setTimeout(() => {
-        this.worker.terminate();
-        this.worker = null;
-        this.idleTimeoutId = null;
-      }, gMaxIdleMilliseconds);
+    if (!this.callbacks.size) {
+      if (gShutdown) {
+        this.stop();
+        if (gShutdownResolver) {
+          gShutdownResolver();
+        }
+      } else {
+        this.idleTimeoutId = setTimeout(() => {
+          this.stop();
+        }, gMaxIdleMilliseconds);
+      }
     }
+  }
+
+  stop() {
+    this.worker.terminate();
+    this.worker = null;
+    this.idleTimeoutId = null;
   }
 
   async canonicalStringify(localRecords, remoteRecords, timestamp) {
@@ -86,6 +117,49 @@ class Worker {
   async checkFileHash(filepath, size, hash) {
     return this._execute("checkFileHash", [filepath, size, hash]);
   }
+}
+
+
+
+
+
+
+
+try {
+  AsyncShutdown.profileBeforeChange.addBlocker(
+    "Remote Settings profile-before-change",
+    async () => {
+      
+      gShutdown = true;
+      
+      if (
+        !RemoteSettingsWorker.worker ||
+        !RemoteSettingsWorker.callbacks.size
+      ) {
+        return Promise.resolve();
+      }
+      
+      return new Promise(resolve => {
+        gShutdownResolver = resolve;
+      });
+    },
+    {
+      fetchState() {
+        return (
+          "Remaining: " + RemoteSettingsWorker.callbacks.size + " callbacks."
+        );
+      },
+    }
+  );
+} catch (ex) {
+  Cu.reportError(
+    "Couldn't add shutdown blocker, assuming shutdown has started."
+  );
+  Cu.reportError(ex);
+  
+  
+  
+  gShutdown = true;
 }
 
 var RemoteSettingsWorker = new Worker(
