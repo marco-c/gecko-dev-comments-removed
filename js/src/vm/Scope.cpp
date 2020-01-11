@@ -1501,8 +1501,9 @@ WasmFunctionScope* WasmFunctionScope::create(JSContext* cx,
   
   wasm::ValTypeVector locals;
   size_t argsLength;
-  if (!instance->instance().debug().debugGetLocalTypes(funcIndex, &locals,
-                                                       &argsLength)) {
+  wasm::StackResults unusedStackResults;
+  if (!instance->instance().debug().debugGetLocalTypes(
+          funcIndex, &locals, &argsLength, &unusedStackResults)) {
     return nullptr;
   }
   uint32_t namesCount = locals.length();
