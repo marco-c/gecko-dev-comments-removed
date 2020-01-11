@@ -7,14 +7,7 @@ var { AppConstants } = SpecialPowers.Cu.import(
   {}
 );
 
-
-
-
-
-let remote = location.pathname.includes("test-oop-extensions");
-SpecialPowers.pushPrefEnv({
-  set: [["extensions.webextensions.remote", remote]],
-});
+let remote = SpecialPowers.getBoolPref("extensions.webextensions.remote");
 if (remote) {
   
   
