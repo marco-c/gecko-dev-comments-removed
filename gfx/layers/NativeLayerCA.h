@@ -222,39 +222,11 @@ class NativeLayerCA : public NativeLayer {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
   
   
   
   Maybe<SurfaceWithInvalidRegion> mInProgressSurface;
-
-  
-  
-  
-  
-  Maybe<SurfaceWithInvalidRegion> mReadySurface;
 
   
   
@@ -290,6 +262,7 @@ class NativeLayerCA : public NativeLayer {
   bool mMutatedSurfaceIsFlipped = false;
   bool mMutatedPosition = false;
   bool mMutatedClipRect = false;
+  bool mMutatedFrontSurface = false;
 };
 
 }  
