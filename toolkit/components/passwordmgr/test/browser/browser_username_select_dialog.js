@@ -9,7 +9,7 @@ function getSelectDialogDoc() {
   
   
   for (let { docShell } of Services.wm.getEnumerator(null)) {
-    var containedDocShells = docShell.getDocShellEnumerator(
+    var containedDocShells = docShell.getAllDocShellsInSubtree(
       docShell.typeChrome,
       docShell.ENUMERATE_FORWARDS
     );

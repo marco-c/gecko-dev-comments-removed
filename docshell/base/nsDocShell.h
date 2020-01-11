@@ -493,6 +493,8 @@ class nsDocShell final : public nsDocLoader,
   static void MaybeNotifyKeywordSearchLoading(const nsString& aProvider,
                                               const nsString& aKeyword);
 
+  nsDocShell* GetInProcessChildAt(int32_t aIndex);
+
  private:  
   friend class nsDSURIContentListener;
   friend class FramingChecker;

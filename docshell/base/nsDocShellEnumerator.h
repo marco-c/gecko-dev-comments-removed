@@ -7,89 +7,33 @@
 #ifndef nsDocShellEnumerator_h___
 #define nsDocShellEnumerator_h___
 
-#include "nsSimpleEnumerator.h"
 #include "nsTArray.h"
-#include "nsIWeakReferenceUtils.h"
 
-class nsIDocShellTreeItem;
+class nsDocShell;
+class nsIDocShell;
 
+class MOZ_STACK_CLASS nsDocShellEnumerator {
+ public:
+  enum class EnumerationDirection : uint8_t { Forwards, Backwards };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class nsDocShellEnumerator : public nsSimpleEnumerator {
- protected:
-  enum { enumerateForwards, enumerateBackwards };
-
-  virtual ~nsDocShellEnumerator();
+  nsDocShellEnumerator(EnumerationDirection aDirection, int32_t aDocShellType,
+                       nsDocShell& aRootItem);
 
  public:
-  explicit nsDocShellEnumerator(int32_t aEnumerationDirection);
+  nsresult BuildDocShellArray(nsTArray<RefPtr<nsIDocShell>>& aItemArray);
 
-  
-  NS_DECL_NSISIMPLEENUMERATOR
+ private:
+  nsresult BuildArrayRecursiveForwards(
+      nsDocShell* aItem, nsTArray<RefPtr<nsIDocShell>>& aItemArray);
+  nsresult BuildArrayRecursiveBackwards(
+      nsDocShell* aItem, nsTArray<RefPtr<nsIDocShell>>& aItemArray);
 
-  const nsID& DefaultInterface() override { return NS_GET_IID(nsIDocShell); }
+ private:
+  const RefPtr<nsDocShell> mRootItem;
 
- public:
-  nsresult GetEnumerationRootItem(nsIDocShellTreeItem** aEnumerationRootItem);
-  nsresult SetEnumerationRootItem(nsIDocShellTreeItem* aEnumerationRootItem);
+  const int32_t mDocShellType;  
 
-  nsresult GetEnumDocShellType(int32_t* aEnumerationItemType);
-  nsresult SetEnumDocShellType(int32_t aEnumerationItemType);
-
-  nsresult First();
-
- protected:
-  nsresult EnsureDocShellArray();
-  nsresult ClearState();
-
-  nsresult BuildDocShellArray(nsTArray<nsWeakPtr>& aItemArray);
-  virtual nsresult BuildArrayRecursive(nsIDocShellTreeItem* aItem,
-                                       nsTArray<nsWeakPtr>& aItemArray) = 0;
-
- protected:
-  nsWeakPtr mRootItem;  
-
-  nsTArray<nsWeakPtr> mItemArray;  
-  uint32_t mCurIndex;
-
-  int32_t mDocShellType;  
-  bool mArrayValid;       
-
-  const int8_t mEnumerationDirection;
-};
-
-class nsDocShellForwardsEnumerator : public nsDocShellEnumerator {
- public:
-  nsDocShellForwardsEnumerator() : nsDocShellEnumerator(enumerateForwards) {}
-
- protected:
-  virtual nsresult BuildArrayRecursive(
-      nsIDocShellTreeItem* aItem, nsTArray<nsWeakPtr>& aItemArray) override;
-};
-
-class nsDocShellBackwardsEnumerator : public nsDocShellEnumerator {
- public:
-  nsDocShellBackwardsEnumerator() : nsDocShellEnumerator(enumerateBackwards) {}
-
- protected:
-  virtual nsresult BuildArrayRecursive(
-      nsIDocShellTreeItem* aItem, nsTArray<nsWeakPtr>& aItemArray) override;
+  const EnumerationDirection mDirection;
 };
 
 #endif  
