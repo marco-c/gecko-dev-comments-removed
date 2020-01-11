@@ -460,6 +460,19 @@ class Page extends Domain {
 
 
 
+
+
+
+
+
+
+
+  setInterceptFileChooserDialog(options = {}) {}
+
+  
+
+
+
   _onDialogLoaded(e, data) {
     const { message, type } = data;
     
