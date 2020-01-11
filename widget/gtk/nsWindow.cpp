@@ -2537,9 +2537,6 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
     }
   }
 
-  
-  
-
   NS_ASSERTION(GTK_IS_WINDOW(aWidget),
                "Configure event on widget that is not a GtkWindow");
   if (gtk_window_get_window_type(GTK_WINDOW(aWidget)) == GTK_WINDOW_POPUP) {
@@ -2564,6 +2561,24 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
   
   NotifyWindowMoved(mBounds.x, mBounds.y);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  GtkAllocation allocation = {-1, -1, 0, 0};
+  gtk_window_get_size(GTK_WINDOW(mShell), &allocation.width,
+                      &allocation.height);
+  OnSizeAllocate(&allocation);
   return FALSE;
 }
 
@@ -2586,8 +2601,10 @@ void nsWindow::OnSizeAllocate(GtkAllocation* aAllocation) {
        aAllocation->height));
 
   LayoutDeviceIntSize size = GdkRectToDevicePixels(*aAllocation).Size();
-
-  if (mBounds.Size() == size) return;
+  if (mBounds.Size() == size) {
+    
+    return;
+  }
 
   
   
