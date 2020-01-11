@@ -1,0 +1,18 @@
+
+
+
+"use strict";
+
+add_task(async function test_empty_policy() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      Certificates: {},
+    },
+  });
+
+  equal(
+    Services.policies.status,
+    Ci.nsIEnterprisePolicies.INACTIVE,
+    "Engine is not active"
+  );
+});
