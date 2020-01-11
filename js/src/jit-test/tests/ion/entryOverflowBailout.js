@@ -7,7 +7,7 @@ function f2(a) {
     return f2.arguments;
 };
 
-var restartCode = "counter = 0; " + f2.toSource();
+var restartCode = "counter = 0; " + f2.toString();
 
 
 

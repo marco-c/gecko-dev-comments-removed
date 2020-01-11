@@ -29,7 +29,7 @@ function checkGetOffsetsCoverage(fun) {
   };
 
   
-  var source = fun.toSource();
+  var source = fun.toString();
   source = source.slice(source.indexOf('{') + 1, source.lastIndexOf('}'));
 
   

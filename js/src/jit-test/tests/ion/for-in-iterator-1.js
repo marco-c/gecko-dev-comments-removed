@@ -20,7 +20,7 @@ var original = function (x) {
 for (var i = 1; i < 6; i++) {
     
     var res = false;
-    var test = eval(original.toSource().replace(".input", ".input" + i));
+    var test = eval(`(${original})`.replace(".input", ".input" + i));
 
     
     

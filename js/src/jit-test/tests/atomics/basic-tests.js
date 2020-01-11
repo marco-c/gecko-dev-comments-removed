@@ -22,7 +22,7 @@ function dprint(...xs) {
 
 
 function CLONE(f) {
-    return this.eval("(" + f.toSource() + ")");
+    return this.eval("(" + f.toString() + ")");
 }
 
 function testMethod(a, ...indices) {

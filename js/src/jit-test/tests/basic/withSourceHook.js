@@ -33,21 +33,21 @@ withSourceHook(function (url) {
                                 log += 'I';
                                 return evaluate('(function inner() { 2; })',
                                                 { fileName: 'inner', sourceIsLazy: true })
-                                       .toSource();
+                                       .toString();
                               }),
-               '(function inner() { 1; })');
+               'function inner() { 1; }');
       
       evaluate('(function middle() { })',
                { fileName: 'middle', sourceIsLazy: true })
-      .toSource();
+      .toString();
     });
   }, 'borborygmus');
 
   
   assertEq(evaluate('(function outer() { 4; })',
                     { fileName: 'outer', sourceIsLazy: true })
-           .toSource(),
-           '(function outer() { 3; })');
+           .toString(),
+           'function outer() { 3; }');
 });
 
 assertEq(log, 'OMIimo');

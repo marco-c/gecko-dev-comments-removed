@@ -43,17 +43,17 @@ var template = function (set) {
 }
 
 
-f = eval(template.toSource().replace(".placeholder", ".foo"));
+f = eval(`(${template})`.replace(".placeholder", ".foo"));
 f(testSet1);
 
 
-f = eval(template.toSource().replace(".placeholder", ".foo"));
+f = eval(`(${template})`.replace(".placeholder", ".foo"));
 f(testSet2);
 
 
-f = eval(template.toSource().replace(".placeholder", ".bar"));
+f = eval(`(${template})`.replace(".placeholder", ".bar"));
 f(testSet1);
 
 
-f = eval(template.toSource().replace(".placeholder", ".bar"));
+f = eval(`(${template})`.replace(".placeholder", ".bar"));
 f(testSet2);
