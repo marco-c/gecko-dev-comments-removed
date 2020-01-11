@@ -81,6 +81,7 @@ impl StylesheetContents {
         quirks_mode: QuirksMode,
         line_number_offset: u32,
         use_counters: Option<&UseCounters>,
+        sanitization_data: Option<&mut SanitizationData>,
     ) -> Self {
         let namespaces = RwLock::new(Namespaces::default());
         let (rules, source_map_url, source_url) = Stylesheet::parse_rules(
@@ -94,6 +95,7 @@ impl StylesheetContents {
             quirks_mode,
             line_number_offset,
             use_counters,
+            sanitization_data,
         );
 
         Self {
@@ -341,6 +343,71 @@ impl StylesheetInDocument for DocumentStyleSheet {
     }
 }
 
+
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum SanitizationKind {
+    
+    None,
+    
+    Standard,
+    
+    NoConditionalRules,
+}
+
+impl SanitizationKind {
+    fn allows(self, rule: &CssRule) -> bool {
+        debug_assert_ne!(self, SanitizationKind::None);
+        
+        
+        
+        let is_standard = matches!(self, SanitizationKind::Standard);
+        match *rule {
+            CssRule::Document(..) |
+            CssRule::Media(..) |
+            CssRule::Supports(..) |
+            CssRule::Import(..) => false,
+
+            CssRule::FontFace(..) |
+            CssRule::Namespace(..) |
+            CssRule::Style(..) => true,
+
+            CssRule::Keyframes(..) |
+            CssRule::Page(..) |
+            CssRule::FontFeatureValues(..) |
+            CssRule::Viewport(..) |
+            CssRule::CounterStyle(..) => !is_standard,
+        }
+    }
+}
+
+
+#[derive(Debug)]
+pub struct SanitizationData {
+    kind: SanitizationKind,
+    output: String,
+}
+
+impl SanitizationData {
+    
+    #[inline]
+    pub fn new(kind: SanitizationKind) -> Option<Self> {
+        if matches!(kind, SanitizationKind::None) {
+            return None;
+        }
+        Some(Self {
+            kind,
+            output: String::new(),
+        })
+    }
+
+    
+    #[inline]
+    pub fn take(self) -> String {
+        self.output
+    }
+}
+
 impl Stylesheet {
     
     pub fn update_from_str(
@@ -364,6 +431,7 @@ impl Stylesheet {
             error_reporter,
             existing.contents.quirks_mode,
             line_number_offset,
+             None,
              None,
         );
 
@@ -391,6 +459,7 @@ impl Stylesheet {
         quirks_mode: QuirksMode,
         line_number_offset: u32,
         use_counters: Option<&UseCounters>,
+        mut sanitization_data: Option<&mut SanitizationData>,
     ) -> (Vec<CssRule>, Option<String>, Option<String>) {
         let mut rules = Vec::new();
         let mut input = ParserInput::new_with_line_number_offset(css, line_number_offset);
@@ -419,9 +488,21 @@ impl Stylesheet {
         {
             let mut iter = RuleListParser::new_for_stylesheet(&mut input, rule_parser);
 
-            while let Some(result) = iter.next() {
+            loop {
+                let rule_start = iter.input.position().byte_index();
+                let result = match iter.next() {
+                    Some(result) => result,
+                    None => break,
+                };
                 match result {
                     Ok(rule) => {
+                        if let Some(ref mut data) = sanitization_data {
+                            if !data.kind.allows(&rule) {
+                                continue;
+                            }
+                            let end = iter.input.position().byte_index();
+                            data.output.push_str(&css[rule_start..end]);
+                        }
                         
                         
                         
@@ -469,6 +550,7 @@ impl Stylesheet {
             error_reporter,
             quirks_mode,
             line_number_offset,
+             None,
              None,
         );
 

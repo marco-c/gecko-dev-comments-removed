@@ -191,10 +191,7 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
 
-
-
-
-  bool SanitizeStyleSheet(const nsAString& aOriginal, nsAString& aSanitized,
+  void SanitizeStyleSheet(const nsAString& aOriginal, nsAString& aSanitized,
                           mozilla::dom::Document* aDocument, nsIURI* aBaseURI);
 
   
