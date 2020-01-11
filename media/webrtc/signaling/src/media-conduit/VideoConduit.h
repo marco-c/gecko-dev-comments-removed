@@ -68,6 +68,7 @@ class WebrtcVideoDecoder : public VideoDecoder, public webrtc::VideoDecoder {};
 
 class WebrtcVideoConduit
     : public VideoSessionConduit,
+      public webrtc::RtcpEventObserver,
       public webrtc::Transport,
       public webrtc::VideoEncoderFactory,
       public rtc::VideoSinkInterface<webrtc::VideoFrame>,
@@ -294,6 +295,12 @@ class WebrtcVideoConduit
     mSendStreamStats.RecordTelemetry();
     mRecvStreamStats.RecordTelemetry();
   }
+
+  void OnRtcpBye() override;
+
+  void OnRtcpTimeout() override;
+
+  void SetRtcpEventObserver(mozilla::RtcpEventObserver* observer) override;
 
  private:
   
@@ -640,6 +647,9 @@ class WebrtcVideoConduit
 
   
   Maybe<DOMHighResTimeStamp> mLastRtcpReceived;
+
+  
+  mozilla::RtcpEventObserver* mRtcpEventObserver = nullptr;
 };
 }  
 
