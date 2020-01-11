@@ -5116,7 +5116,7 @@ void nsTextFrame::GetTextDecorations(
     
     
     mozilla::StyleDisplay display = f->GetDisplay();
-    if (nsStyleDisplay::DisplayInside(display) != StyleDisplayInside::Inline &&
+    if (!nsStyleDisplay::IsInlineFlow(display) &&
         (!nsStyleDisplay::IsRubyDisplayType(display) ||
          display == mozilla::StyleDisplay::RubyTextContainer) &&
         nsStyleDisplay::IsDisplayTypeInlineOutside(display)) {

@@ -4300,8 +4300,15 @@ nsCSSFrameConstructor::FindDisplayData(const nsStyleDisplay& aDisplay,
   }
 
   switch (aDisplay.DisplayInside()) {
-    case StyleDisplayInside::Block:
+    case StyleDisplayInside::Flow:
     case StyleDisplayInside::FlowRoot: {
+      if (aDisplay.IsInlineFlow()) {
+        static const FrameConstructionData data =
+            FULL_CTOR_FCDATA(FCDATA_IS_INLINE | FCDATA_IS_LINE_PARTICIPANT,
+                             &nsCSSFrameConstructor::ConstructInline);
+        return &data;
+      }
+
       
       
       
@@ -4351,12 +4358,6 @@ nsCSSFrameConstructor::FindDisplayData(const nsStyleDisplay& aDisplay,
                FCDATA_FORCED_NON_SCROLLABLE_BLOCK | kCaptionCtorFlags,
                &nsCSSFrameConstructor::ConstructNonScrollableBlock)}};
       return &sNonScrollableBlockData[suppressScrollFrame][caption];
-    }
-    case StyleDisplayInside::Inline: {
-      static const FrameConstructionData data =
-          FULL_CTOR_FCDATA(FCDATA_IS_INLINE | FCDATA_IS_LINE_PARTICIPANT,
-                           &nsCSSFrameConstructor::ConstructInline);
-      return &data;
     }
     case StyleDisplayInside::Table: {
       static const FrameConstructionData data =
@@ -7116,8 +7117,7 @@ void nsCSSFrameConstructor::ContentRangeInserted(
   
   
   
-  if (StyleDisplayInside::Block == parentDisplayInside ||
-      StyleDisplayInside::Inline == parentDisplayInside) {
+  if (StyleDisplayInside::Flow == parentDisplayInside) {
     
     if (containingBlock) {
       haveFirstLetterStyle = HasFirstLetterStyle(containingBlock);
@@ -9322,12 +9322,13 @@ void nsCSSFrameConstructor::WrapItemsInPseudoParent(
     const FCItemIterator& aEndIter) {
   const PseudoParentData& pseudoData = sPseudoParentData[aWrapperType];
   PseudoStyleType pseudoType = pseudoData.mPseudoType;
-  auto parentDisplayInside = aParentStyle->StyleDisplay()->DisplayInside();
+  auto& parentDisplay = *aParentStyle->StyleDisplay();
+  auto parentDisplayInside = parentDisplay.DisplayInside();
 
   
   
   if (pseudoType == PseudoStyleType::table &&
-      (parentDisplayInside == StyleDisplayInside::Inline ||
+      (parentDisplay.IsInlineFlow() ||
        parentDisplayInside == StyleDisplayInside::RubyBase ||
        parentDisplayInside == StyleDisplayInside::RubyText)) {
     pseudoType = PseudoStyleType::inlineTable;
