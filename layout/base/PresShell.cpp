@@ -912,13 +912,10 @@ PresShell::~PresShell() {
 
 
 void PresShell::Init(nsPresContext* aPresContext, nsViewManager* aViewManager) {
-  MOZ_ASSERT(aPresContext, "null ptr");
-  MOZ_ASSERT(aViewManager, "null ptr");
+  MOZ_ASSERT(mDocument);
+  MOZ_ASSERT(aPresContext);
+  MOZ_ASSERT(aViewManager);
   MOZ_ASSERT(!mViewManager, "already initialized");
-
-  if (!mDocument || !aPresContext || !aViewManager || mViewManager) {
-    return;
-  }
 
   mViewManager = aViewManager;
 
@@ -938,7 +935,14 @@ void PresShell::Init(nsPresContext* aPresContext, nsViewManager* aViewManager) {
   mViewManager->SetPresShell(this);
 
   
-  mPresContext = aPresContext;
+  
+  
+  
+  
+  
+  
+  
+  const_cast<RefPtr<nsPresContext>&>(mPresContext) = aPresContext;
   mPresContext->AttachPresShell(this);
 
   mPresContext->DeviceContext()->InitFontCache();
@@ -974,10 +978,11 @@ void PresShell::Init(nsPresContext* aPresContext, nsViewManager* aViewManager) {
 #endif
   
   
-  nsPresContext::nsPresContextType type = aPresContext->Type();
+  nsPresContext::nsPresContextType type = mPresContext->Type();
   if (type != nsPresContext::eContext_PrintPreview &&
-      type != nsPresContext::eContext_Print)
+      type != nsPresContext::eContext_Print) {
     SetDisplaySelection(nsISelectionController::SELECTION_DISABLED);
+  }
 
   if (gMaxRCProcessingTime == -1) {
     gMaxRCProcessingTime =
@@ -4174,8 +4179,9 @@ void PresShell::CharacterDataChanged(nsIContent* aContent,
   mFrameConstructor->CharacterDataChanged(aContent, aInfo);
 }
 
-void PresShell::ContentStateChanged(Document* aDocument, nsIContent* aContent,
-                                    EventStates aStateMask) {
+MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentStateChanged(
+    Document* aDocument, nsIContent* aContent, EventStates aStateMask) {
+  MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript());
   MOZ_ASSERT(!mIsDocumentGone, "Unexpected ContentStateChanged");
   MOZ_ASSERT(aDocument == mDocument, "Unexpected aDocument");
 
