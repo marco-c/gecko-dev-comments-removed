@@ -70,7 +70,7 @@ add_task(async function() {
 
 
 async function toggleVisibleClass(tab) {
-  await ContentTask.spawn(tab.linkedBrowser, {}, async function() {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
     const win = content.wrappedJSObject;
     win.document.querySelector("div").classList.toggle("visible");
   });

@@ -11,7 +11,7 @@ const { AppMenuNotifications } = ChromeUtils.import(
 );
 
 function waitForDocshellActivated() {
-  return ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
+  return SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
     
     
     
@@ -95,7 +95,7 @@ add_task(async function testFullscreen() {
     PanelUI.notificationPanel,
     "popuphidden"
   );
-  await ContentTask.spawn(gBrowser.selectedBrowser, {}, async () => {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
     content.document.documentElement.requestFullscreen();
   });
   await popuphiddenPromise;
@@ -110,7 +110,7 @@ add_task(async function testFullscreen() {
     PanelUI.notificationPanel,
     "popupshown"
   );
-  await ContentTask.spawn(gBrowser.selectedBrowser, {}, async () => {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
     content.document.exitFullscreen();
   });
   await popupshownPromise;

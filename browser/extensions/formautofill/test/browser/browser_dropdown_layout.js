@@ -12,7 +12,7 @@ add_task(async function setup_storage() {
 async function reopenPopupWithResizedInput(browser, selector, newSize) {
   await closePopup(browser);
   
-  await ContentTask.spawn(browser, { selector, newSize }, async function({
+  await SpecialPowers.spawn(browser, [{ selector, newSize }], async function({
     selector,
     newSize,
   }) {

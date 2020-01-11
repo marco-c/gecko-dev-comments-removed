@@ -14,7 +14,7 @@ async function showPermissionPrompt(browser) {
     "popupshown"
   );
 
-  await ContentTask.spawn(browser, null, function() {
+  await SpecialPowers.spawn(browser, [], function() {
     E10SUtils.wrapHandlingUserInput(content, true, () => {
       
       

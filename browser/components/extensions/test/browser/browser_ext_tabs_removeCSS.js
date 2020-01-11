@@ -125,7 +125,7 @@ add_task(async function testExecuteScript() {
 
   
   
-  await ContentTask.spawn(tab.linkedBrowser, extension.id, async extId => {
+  await SpecialPowers.spawn(tab.linkedBrowser, [extension.id], async extId => {
     const { DocumentManager } = ChromeUtils.import(
       "resource://gre/modules/ExtensionContent.jsm",
       null

@@ -31,7 +31,7 @@ add_task(async function test_update() {
   let sw = BASE_URI + "server_multie10s_update.sjs";
 
   info("Let's make sure there are no existing registrations...");
-  let existingCount = await ContentTask.spawn(browser1, null, async function() {
+  let existingCount = await SpecialPowers.spawn(browser1, [], async function() {
     const regs = await content.navigator.serviceWorker.getRegistrations();
     return regs.length;
   });
@@ -39,7 +39,7 @@ add_task(async function test_update() {
 
   info("Let's start the test...");
   
-  let status = await ContentTask.spawn(browser1, sw, function(url) {
+  let status = await SpecialPowers.spawn(browser1, [sw], function(url) {
     
     
     
@@ -126,7 +126,7 @@ add_task(async function test_update() {
   
   
   
-  const count = await ContentTask.spawn(browser1, sw, async function(url) {
+  const count = await SpecialPowers.spawn(browser1, [sw], async function(url) {
     
     
     await content.registration.unregister();

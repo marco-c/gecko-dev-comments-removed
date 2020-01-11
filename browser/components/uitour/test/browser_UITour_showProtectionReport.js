@@ -33,7 +33,7 @@ add_UITour_task(async function test_openProtectionReport() {
   await aboutProtectionsLoaded;
   
   
-  await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
     await ContentTaskUtils.waitForCondition(() => {
       let bars = content.document.querySelectorAll(".graph-bar");
       return bars.length;
