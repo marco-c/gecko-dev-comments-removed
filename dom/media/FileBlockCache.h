@@ -173,8 +173,7 @@ class FileBlockCache : public MediaBlockCacheBase {
   nsTArray<RefPtr<BlockChange> > mBlockChanges;
   
   
-  
-  nsCOMPtr<nsIThread> mThread;
+  nsCOMPtr<nsISerialEventTarget> mBackgroundET;
   
   std::deque<int32_t> mChangeIndexList;
   
