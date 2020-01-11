@@ -52,7 +52,7 @@ class GraphRunner final : public Runnable {
 
 
 
-  bool RunByGraphDriver(GraphDriver* aDriver);
+  bool InDriverIteration(GraphDriver* aDriver);
 #endif
 
  private:

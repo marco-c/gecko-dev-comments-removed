@@ -263,7 +263,7 @@ class GraphDriver {
 
 #ifdef DEBUG
   
-  bool OnGraphThread();
+  bool InIteration();
 #endif
   
   virtual bool OnThread() = 0;

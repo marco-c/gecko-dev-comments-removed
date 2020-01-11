@@ -127,7 +127,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  bool RunByGraphDriver(GraphDriver* aDriver);
+  bool InDriverIteration(GraphDriver* aDriver);
 #endif
 
   
@@ -576,7 +576,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   void SetCurrentDriver(GraphDriver* aDriver) {
-    MOZ_ASSERT_IF(mDriver->ThreadRunning(), RunByGraphDriver(mDriver));
+    MOZ_ASSERT_IF(mDriver->ThreadRunning(), InDriverIteration(mDriver));
     MOZ_ASSERT_IF(!mDriver->ThreadRunning(), NS_IsMainThread());
     mDriver = aDriver;
   }
