@@ -2,10 +2,15 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "ClientEnvironmentBase",
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { ClientEnvironmentBase } = ChromeUtils.import(
   "resource://gre/modules/components-utils/ClientEnvironment.jsm"
+);
+const { TelemetryController } = ChromeUtils.import(
+  "resource://gre/modules/TelemetryController.jsm"
+);
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
 );
 
 
@@ -83,4 +88,25 @@ add_task(async () => {
       "Test environment does not have attribution data"
     );
   }
+});
+
+add_task(async function testLiveTelemetry() {
+  
+  do_get_profile(true);
+  await TelemetryController.testSetup();
+
+  equal(
+    ClientEnvironmentBase.liveTelemetry.main.environment.build.displayVersion,
+    AppConstants.MOZ_APP_VERSION_DISPLAY,
+    "Telemetry data is available"
+  );
+
+  Assert.throws(
+    () => ClientEnvironmentBase.liveTelemetry.anotherPingType,
+    /Live telemetry.*anotherPingType/,
+    "Non-main pings should raise an error if accessed"
+  );
+
+  
+  await TelemetryController.testShutdown();
 });

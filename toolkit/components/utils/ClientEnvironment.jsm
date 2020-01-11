@@ -23,6 +23,11 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(
   this,
+  "TelemetryController",
+  "resource://gre/modules/TelemetryController.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
   "TelemetryEnvironment",
   "resource://gre/modules/TelemetryEnvironment.jsm"
 );
@@ -92,6 +97,33 @@ class ClientEnvironmentBase {
       }
       return telemetry;
     })();
+  }
+
+  static get liveTelemetry() {
+    
+    
+    
+    
+    let target = {};
+    try {
+      target.main = TelemetryController.getCurrentPingData();
+    } catch (err) {
+      Cu.reportError(err);
+    }
+
+    return new Proxy(target, {
+      get(target, prop, receiver) {
+        if (prop == "main") {
+          return target.main;
+        }
+        throw new Error(
+          `Live telemetry only includes the main ping, not the ${prop} ping`
+        );
+      },
+      has(target, prop) {
+        return prop == "main";
+      },
+    });
   }
 
   static get version() {
