@@ -1026,7 +1026,7 @@ static void DestroyDisplayItemDataForFrames(nsIFrame* aFrame) {
   }
 }
 
-static CallState BeginSwapDocShellsForDocument(Document& aDocument, void*) {
+static bool BeginSwapDocShellsForDocument(Document& aDocument, void*) {
   if (PresShell* presShell = aDocument.GetPresShell()) {
     
     presShell->SetNeverPainting(true);
@@ -1038,7 +1038,7 @@ static CallState BeginSwapDocShellsForDocument(Document& aDocument, void*) {
   aDocument.EnumerateActivityObservers(nsPluginFrame::BeginSwapDocShells,
                                        nullptr);
   aDocument.EnumerateSubDocuments(BeginSwapDocShellsForDocument, nullptr);
-  return CallState::Continue;
+  return true;
 }
 
 static nsView* BeginSwapDocShellsForViews(nsView* aSibling) {
@@ -1099,7 +1099,7 @@ nsresult nsSubDocumentFrame::BeginSwapDocShells(nsIFrame* aOther) {
   return NS_OK;
 }
 
-static CallState EndSwapDocShellsForDocument(Document& aDocument, void*) {
+static bool EndSwapDocShellsForDocument(Document& aDocument, void*) {
   
   
   
@@ -1123,7 +1123,7 @@ static CallState EndSwapDocShellsForDocument(Document& aDocument, void*) {
   aDocument.EnumerateActivityObservers(nsPluginFrame::EndSwapDocShells,
                                        nullptr);
   aDocument.EnumerateSubDocuments(EndSwapDocShellsForDocument, nullptr);
-  return CallState::Continue;
+  return true;
 }
 
 static void EndSwapDocShellsForViews(nsView* aSibling) {

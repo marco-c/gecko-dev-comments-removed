@@ -1297,6 +1297,11 @@ void nsPresContext::ThemeChanged() {
   }
 }
 
+static bool NotifyThemeChanged(BrowserParent* aBrowserParent, void* aArg) {
+  aBrowserParent->ThemeChanged();
+  return false;
+}
+
 void nsPresContext::ThemeChangedInternal() {
   mPendingThemeChanged = false;
 
@@ -1324,13 +1329,8 @@ void nsPresContext::ThemeChangedInternal() {
   
   
   if (nsPIDOMWindowOuter* window = mDocument->GetWindow()) {
-    if (RefPtr<nsPIWindowRoot> topLevelWin = window->GetTopWindowRoot()) {
-      topLevelWin->EnumerateBrowsers(
-          [](nsIRemoteTab* aBrowserParent, void*) {
-            aBrowserParent->NotifyThemeChanged();
-          },
-          nullptr);
-    }
+    nsContentUtils::CallOnAllRemoteChildren(window, NotifyThemeChanged,
+                                            nullptr);
   }
 }
 
@@ -1362,6 +1362,10 @@ void nsPresContext::SysColorChangedInternal() {
   
   
   PreferenceSheet::Refresh();
+
+  
+  
+  RebuildAllStyleData(nsChangeHint(0), RestyleHint{0});
 }
 
 void nsPresContext::RefreshSystemMetrics() {
@@ -1402,7 +1406,7 @@ void nsPresContext::UIResolutionChangedSync() {
 }
 
 
-CallState nsPresContext::UIResolutionChangedSubdocumentCallback(
+bool nsPresContext::UIResolutionChangedSubdocumentCallback(
     dom::Document& aDocument, void* aData) {
   if (nsPresContext* pc = aDocument.GetPresContext()) {
     
@@ -1412,7 +1416,7 @@ CallState nsPresContext::UIResolutionChangedSubdocumentCallback(
     double scale = *static_cast<double*>(aData);
     pc->UIResolutionChangedInternalScale(scale);
   }
-  return CallState::Continue;
+  return true;
 }
 
 static void NotifyTabUIResolutionChanged(nsIRemoteTab* aTab, void* aArg) {
@@ -1512,13 +1516,13 @@ void nsPresContext::PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
   RestyleManager()->PostRebuildAllStyleDataEvent(aExtraHint, aRestyleHint);
 }
 
-static CallState MediaFeatureValuesChangedAllDocumentsCallback(
-    Document& aDocument, void* aChange) {
+static bool MediaFeatureValuesChangedAllDocumentsCallback(Document& aDocument,
+                                                          void* aChange) {
   auto* change = static_cast<const MediaFeatureChange*>(aChange);
   if (nsPresContext* pc = aDocument.GetPresContext()) {
     pc->MediaFeatureValuesChangedAllDocuments(*change);
   }
-  return CallState::Continue;
+  return true;
 }
 
 void nsPresContext::MediaFeatureValuesChangedAllDocuments(
@@ -1597,13 +1601,16 @@ void nsPresContext::FlushPendingMediaFeatureValuesChanged() {
   }
 }
 
+static bool NotifyTabSizeModeChanged(BrowserParent* aTab, void* aArg) {
+  nsSizeMode* sizeMode = static_cast<nsSizeMode*>(aArg);
+  aTab->SizeModeChanged(*sizeMode);
+  return false;
+}
+
 void nsPresContext::SizeModeChanged(nsSizeMode aSizeMode) {
   if (nsPIDOMWindowOuter* window = mDocument->GetWindow()) {
-    nsContentUtils::CallOnAllRemoteChildren(
-        window, [&aSizeMode](BrowserParent* aBrowserParent) -> CallState {
-          aBrowserParent->SizeModeChanged(aSizeMode);
-          return CallState::Continue;
-        });
+    nsContentUtils::CallOnAllRemoteChildren(window, NotifyTabSizeModeChanged,
+                                            &aSizeMode);
   }
   MediaFeatureValuesChangedAllDocuments(
       {MediaFeatureChangeReason::SizeModeChange});
@@ -1821,17 +1828,17 @@ void nsPresContext::FireDOMPaintEvent(
                                     static_cast<Event*>(event), this, nullptr);
 }
 
-static CallState MayHavePaintEventListenerSubdocumentCallback(
-    Document& aDocument, void* aData) {
+static bool MayHavePaintEventListenerSubdocumentCallback(Document& aDocument,
+                                                         void* aData) {
   bool* result = static_cast<bool*>(aData);
   if (nsPresContext* pc = aDocument.GetPresContext()) {
     *result = pc->MayHavePaintEventListenerInSubDocument();
 
     
     
-    return !*result ? CallState::Continue : CallState::Stop;
+    return !*result;
   }
-  return CallState::Continue;
+  return true;
 }
 
 static bool MayHavePaintEventListener(nsPIDOMWindowInner* aInnerWindow) {
@@ -1991,24 +1998,22 @@ struct NotifyDidPaintSubdocumentCallbackClosure {
   TransactionId mTransactionId;
   const mozilla::TimeStamp& mTimeStamp;
 };
-
-CallState nsPresContext::NotifyDidPaintSubdocumentCallback(
-    dom::Document& aDocument, void* aData) {
+bool nsPresContext::NotifyDidPaintSubdocumentCallback(dom::Document& aDocument,
+                                                      void* aData) {
   auto* closure = static_cast<NotifyDidPaintSubdocumentCallbackClosure*>(aData);
   if (nsPresContext* pc = aDocument.GetPresContext()) {
     pc->NotifyDidPaintForSubtree(closure->mTransactionId, closure->mTimeStamp);
   }
-  return CallState::Continue;
+  return true;
 }
 
-
-CallState nsPresContext::NotifyRevokingDidPaintSubdocumentCallback(
+bool nsPresContext::NotifyRevokingDidPaintSubdocumentCallback(
     dom::Document& aDocument, void* aData) {
   auto* closure = static_cast<NotifyDidPaintSubdocumentCallbackClosure*>(aData);
   if (nsPresContext* pc = aDocument.GetPresContext()) {
     pc->NotifyRevokingDidPaint(closure->mTransactionId);
   }
-  return CallState::Continue;
+  return true;
 }
 
 class DelayedFireDOMPaintEvent : public Runnable {
