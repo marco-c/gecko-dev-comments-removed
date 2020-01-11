@@ -260,24 +260,52 @@ loser:
 
 
 SECStatus
-sftkdb_DecryptAttribute(SECItem *passKey, SECItem *cipherText,
-                        SECItem **plain)
+sftkdb_DecryptAttribute(SFTKDBHandle *handle, SECItem *passKey,
+                        CK_OBJECT_HANDLE id, CK_ATTRIBUTE_TYPE type,
+                        SECItem *cipherText, SECItem **plain)
 {
     SECStatus rv;
     sftkCipherValue cipherValue;
 
     
+    *plain = NULL;
     rv = sftkdb_decodeCipherText(cipherText, &cipherValue);
     if (rv != SECSuccess) {
         goto loser;
     }
-    
 
     *plain = nsspkcs5_CipherData(cipherValue.param, passKey, &cipherValue.value,
                                  PR_FALSE, NULL);
     if (*plain == NULL) {
         rv = SECFailure;
         goto loser;
+    }
+
+    
+    if ((type != CKT_INVALID_TYPE) && (cipherValue.alg == SEC_OID_AES_256_CBC)) {
+        SECItem signature;
+        unsigned char signData[SDB_MAX_META_DATA_LEN];
+
+        
+
+        if (handle == NULL) {
+            rv = SECFailure;
+            PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+            goto loser;
+        }
+
+        signature.data = signData;
+        signature.len = sizeof(signData);
+        rv = sftkdb_GetAttributeSignature(handle, handle, id, type,
+                                          &signature);
+        if (rv != SECSuccess) {
+            goto loser;
+        }
+        rv = sftkdb_VerifyAttribute(handle, passKey, CK_INVALID_HANDLE, type,
+                                    *plain, &signature);
+        if (rv != SECSuccess) {
+            goto loser;
+        }
     }
 
 loser:
@@ -287,7 +315,34 @@ loser:
     if (cipherValue.arena) {
         PORT_FreeArena(cipherValue.arena, PR_FALSE);
     }
+    
+    if (*plain && rv != SECSuccess) {
+        SECITEM_ZfreeItem(*plain, PR_TRUE);
+        *plain = NULL;
+    }
     return rv;
+}
+
+
+
+static PRBool
+sftkdb_useLegacyEncryption(SFTKDBHandle *handle, SDB *db)
+{
+    if ((handle == NULL) || (db == NULL)) {
+        
+
+
+
+        return PR_TRUE;
+    }
+    
+
+
+
+    if ((db->sdb_flags & SDB_HAS_META) == 0) {
+        return PR_TRUE;
+    }
+    return PR_FALSE;
 }
 
 
@@ -297,22 +352,32 @@ loser:
 
 
 SECStatus
-sftkdb_EncryptAttribute(PLArenaPool *arena, SECItem *passKey,
-                        int iterationCount, SECItem *plainText,
-                        SECItem **cipherText)
+sftkdb_EncryptAttribute(PLArenaPool *arena, SFTKDBHandle *handle, SDB *db,
+                        SECItem *passKey, int iterationCount,
+                        CK_OBJECT_HANDLE id, CK_ATTRIBUTE_TYPE type,
+                        SECItem *plainText, SECItem **cipherText)
 {
     SECStatus rv;
     sftkCipherValue cipherValue;
     SECItem *cipher = NULL;
     NSSPKCS5PBEParameter *param = NULL;
     unsigned char saltData[HASH_LENGTH_MAX];
+    SECItem *signature = NULL;
+    HASH_HashType hashType = HASH_AlgNULL;
 
-    cipherValue.alg = SEC_OID_PKCS12_PBE_WITH_SHA1_AND_TRIPLE_DES_CBC;
-    cipherValue.salt.len = SHA1_LENGTH;
+    if (sftkdb_useLegacyEncryption(handle, db)) {
+        cipherValue.alg = SEC_OID_PKCS12_PBE_WITH_SHA1_AND_TRIPLE_DES_CBC;
+        cipherValue.salt.len = SHA1_LENGTH;
+        hashType = HASH_AlgSHA1;
+    } else {
+        cipherValue.alg = SEC_OID_AES_256_CBC;
+        cipherValue.salt.len = SHA256_LENGTH;
+        hashType = HASH_AlgSHA256;
+    }
     cipherValue.salt.data = saltData;
     RNG_GenerateGlobalRandomBytes(saltData, cipherValue.salt.len);
 
-    param = nsspkcs5_NewParam(cipherValue.alg, HASH_AlgSHA1, &cipherValue.salt,
+    param = nsspkcs5_NewParam(cipherValue.alg, hashType, &cipherValue.salt,
                               iterationCount);
     if (param == NULL) {
         rv = SECFailure;
@@ -331,7 +396,26 @@ sftkdb_EncryptAttribute(PLArenaPool *arena, SECItem *passKey,
         goto loser;
     }
 
+    
+    if ((type != CKT_INVALID_TYPE) &&
+        (cipherValue.param->encAlg == SEC_OID_AES_256_CBC)) {
+        rv = sftkdb_SignAttribute(arena, handle, db, passKey, iterationCount,
+                                  CK_INVALID_HANDLE, type, plainText,
+                                  &signature);
+        if (rv != SECSuccess) {
+            goto loser;
+        }
+        rv = sftkdb_PutAttributeSignature(handle, db, id, type,
+                                          signature);
+        if (rv != SECSuccess) {
+            goto loser;
+        }
+    }
+
 loser:
+    if ((arena == NULL) && signature) {
+        SECITEM_FreeItem(cipher, PR_TRUE);
+    }
     if (cipher) {
         SECITEM_FreeItem(cipher, PR_TRUE);
     }
@@ -408,7 +492,8 @@ loser:
 
 
 SECStatus
-sftkdb_VerifyAttribute(SECItem *passKey, CK_OBJECT_HANDLE objectID,
+sftkdb_VerifyAttribute(SFTKDBHandle *handle,
+                       SECItem *passKey, CK_OBJECT_HANDLE objectID,
                        CK_ATTRIBUTE_TYPE attrType,
                        SECItem *plainText, SECItem *signText)
 {
@@ -450,8 +535,9 @@ loser:
 
 
 SECStatus
-sftkdb_SignAttribute(PLArenaPool *arena, SECItem *passKey,
-                     int iterationCount, CK_OBJECT_HANDLE objectID,
+sftkdb_SignAttribute(PLArenaPool *arena, SFTKDBHandle *keyDB, SDB *db,
+                     SECItem *passKey, int iterationCount,
+                     CK_OBJECT_HANDLE objectID,
                      CK_ATTRIBUTE_TYPE attrType,
                      SECItem *plainText, SECItem **signature)
 {
@@ -860,7 +946,8 @@ sftkdb_finishPasswordCheck(SFTKDBHandle *keydb, SECItem *key, const char *pw,
     }
 
     
-    rv = sftkdb_DecryptAttribute(key, value, &result);
+    rv = sftkdb_DecryptAttribute(keydb, key, CK_INVALID_HANDLE,
+                                 CKT_INVALID_TYPE, value, &result);
     if (rv != SECSuccess) {
         goto done;
     }
@@ -1070,9 +1157,9 @@ sftk_updateMacs(PLArenaPool *arena, SFTKDBHandle *handle,
         SECItem plainText;
         plainText.data = authAttr.pValue;
         plainText.len = authAttr.ulValueLen;
-        if (sftkdb_SignAttribute(arena, newKey, iterationCount, id,
-                                 authAttr.type, &plainText,
-                                 &signText) != SECSuccess) {
+        if (sftkdb_SignAttribute(arena, handle, keyTarget, newKey,
+                                 iterationCount, id, authAttr.type,
+                                 &plainText, &signText) != SECSuccess) {
             return CKR_GENERAL_ERROR;
         }
         if (sftkdb_PutAttributeSignature(handle, keyTarget, id, authAttr.type,
@@ -1127,7 +1214,8 @@ sftk_updateEncrypted(PLArenaPool *arena, SFTKDBHandle *keydb,
         SECItem *result;
         plainText.data = privAttr.pValue;
         plainText.len = privAttr.ulValueLen;
-        if (sftkdb_EncryptAttribute(arena, newKey, iterationCount,
+        if (sftkdb_EncryptAttribute(arena, keydb, keydb->db, newKey,
+                                    iterationCount, id, privAttr.type,
                                     &plainText, &result) != SECSuccess) {
             return CKR_GENERAL_ERROR;
         }
@@ -1317,8 +1405,9 @@ sftkdb_ChangePassword(SFTKDBHandle *keydb,
     plainText.data = (unsigned char *)SFTK_PW_CHECK_STRING;
     plainText.len = SFTK_PW_CHECK_LEN;
 
-    rv = sftkdb_EncryptAttribute(NULL, &newKey, iterationCount,
-                                 &plainText, &result);
+    rv = sftkdb_EncryptAttribute(NULL, keydb, keydb->db, &newKey,
+                                 iterationCount, CK_INVALID_HANDLE,
+                                 CKT_INVALID_TYPE, &plainText, &result);
     if (rv != SECSuccess) {
         goto loser;
     }

@@ -963,6 +963,22 @@ lg_createKeyObject(SDB *sdb, CK_OBJECT_CLASS objclass,
 
 
 
+CK_RV
+lg_GetNewObjectID(SDB *sdb, CK_OBJECT_HANDLE *handle)
+{
+    
+
+
+
+
+
+    *handle = CK_INVALID_HANDLE;
+    return CKR_OK;
+}
+
+
+
+
 
 CK_RV
 lg_CreateObject(SDB *sdb, CK_OBJECT_HANDLE *handle,

@@ -73,6 +73,17 @@
 
 
 
+#define CT_DUPLICATE_MSB_TO_ALL(x) ((unsigned int)((int)(x) >> (sizeof(int) * 8 - 1)))
+
+
+
+#define CT_SEL(m, l, r) (((m) & (l)) | (~(m) & (r)))
+
+
+#define CT_NOT_ZERO(x) (CT_DUPLICATE_MSB_TO_ALL(((x) | (0 - x))))
+
+
+
 
 
 
@@ -867,6 +878,10 @@ CK_RV sftk_MAC_Finish(sftk_MACCtx *ctx, CK_BYTE_PTR result, unsigned int *result
 CK_RV sftk_MAC_Reset(sftk_MACCtx *ctx);
 void sftk_MAC_Destroy(sftk_MACCtx *ctx, PRBool free_it);
 
+
+unsigned int sftk_CKRVToMask(CK_RV rv);
+CK_RV sftk_CheckCBCPadding(CK_BYTE_PTR pBuf, unsigned int bufLen,
+                           unsigned int blockSize, unsigned int *outPadSize);
 SEC_END_PROTOS
 
 #endif 

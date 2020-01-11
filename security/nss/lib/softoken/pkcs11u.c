@@ -1249,7 +1249,7 @@ sftk_DeleteObject(SFTKSession *session, SFTKObject *object)
         SFTKTokenObject *to = sftk_narrowToTokenObject(object);
         PORT_Assert(to);
 #endif
-        crv = sftkdb_DestroyObject(handle, object->handle);
+        crv = sftkdb_DestroyObject(handle, object->handle, object->objclass);
         sftk_freeDB(handle);
     }
     return crv;
@@ -2009,4 +2009,55 @@ SFTKTokenObject *
 sftk_narrowToTokenObject(SFTKObject *obj)
 {
     return sftk_isToken(obj->handle) ? (SFTKTokenObject *)obj : NULL;
+}
+
+
+
+
+
+unsigned int
+sftk_CKRVToMask(CK_RV rv)
+{
+    PR_STATIC_ASSERT(CKR_OK == 0);
+    return ~CT_NOT_ZERO(rv);
+}
+
+
+
+CK_RV
+sftk_CheckCBCPadding(CK_BYTE_PTR pBuf, unsigned int bufLen,
+                     unsigned int blockSize, unsigned int *outPadSize)
+{
+    PORT_Assert(outPadSize);
+
+    unsigned int padSize = (unsigned int)pBuf[bufLen - 1];
+
+    
+    unsigned int goodPad = CT_DUPLICATE_MSB_TO_ALL(~(blockSize - padSize));
+    
+    goodPad &= CT_NOT_ZERO(padSize);
+
+    unsigned int i;
+    for (i = 0; i < blockSize; i++) {
+        
+        unsigned int loopMask = CT_DUPLICATE_MSB_TO_ALL(~(padSize - 1 - i));
+        
+        unsigned int padVal = pBuf[bufLen - 1 - i];
+        
+        goodPad &= CT_SEL(loopMask, ~(padVal ^ padSize), goodPad);
+    }
+
+    
+
+
+    goodPad &= goodPad >> 4;
+    goodPad &= goodPad >> 2;
+    goodPad &= goodPad >> 1;
+    goodPad <<= sizeof(goodPad) * 8 - 1;
+    goodPad = CT_DUPLICATE_MSB_TO_ALL(goodPad);
+
+    
+    *outPadSize = CT_SEL(goodPad, padSize, 0);
+    
+    return CT_SEL(goodPad, CKR_OK, CKR_ENCRYPTED_DATA_INVALID);
 }

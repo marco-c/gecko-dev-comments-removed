@@ -205,7 +205,8 @@ sftkdb_encrypt_stub(PLArenaPool *arena, SDB *sdb, SECItem *plainText,
         iterationCount = 1;
     }
 
-    rv = sftkdb_EncryptAttribute(arena, key, iterationCount,
+    rv = sftkdb_EncryptAttribute(arena, handle, sdb, key, iterationCount,
+                                 CK_INVALID_HANDLE, CKT_INVALID_TYPE,
                                  plainText, cipherText);
     PZ_Unlock(handle->passwordLock);
 
@@ -244,7 +245,9 @@ sftkdb_decrypt_stub(SDB *sdb, SECItem *cipherText, SECItem **plainText)
         
         return SECFailure;
     }
-    rv = sftkdb_DecryptAttribute(oldKey ? oldKey : &handle->passwordKey,
+    rv = sftkdb_DecryptAttribute(NULL, oldKey ? oldKey : &handle->passwordKey,
+                                 CK_INVALID_HANDLE,
+                                 CKT_INVALID_TYPE,
                                  cipherText, plainText);
     PZ_Unlock(handle->passwordLock);
 

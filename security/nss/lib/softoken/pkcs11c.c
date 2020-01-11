@@ -1238,7 +1238,7 @@ sftk_CryptInit(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism,
             PRUint8 *param = pMechanism->pParameter;
             int i = 0;
             for (; i < 4; ++i) {
-                ctx->counter |= param[i] << (i * 8);
+                ctx->counter |= (PRUint32)param[i] << (i * 8);
             }
             memcpy(ctx->nonce, param + 4, 12);
             context->cipherInfo = ctx;
@@ -1614,68 +1614,6 @@ NSC_DecryptUpdate(CK_SESSION_HANDLE hSession,
 }
 
 
-
-#define DUPLICATE_MSB_TO_ALL(x) ((unsigned int)((int)(x) >> (sizeof(int) * 8 - 1)))
-
-
-static unsigned int
-CK_RVToMask(CK_RV rv)
-{
-    unsigned int good;
-    
-
-    good = rv ^ CKR_OK;
-    good--;
-    return DUPLICATE_MSB_TO_ALL(good);
-}
-
-
-#define CT_SEL(m, l, r) (((m) & (l)) | (~(m) & (r)))
-
-
-#define CT_NOT_ZERO(x) (DUPLICATE_MSB_TO_ALL(((x) | (0 - x))))
-
-
-
-static CK_RV
-sftk_CheckCBCPadding(CK_BYTE_PTR pLastPart,
-                     unsigned int blockSize, unsigned int *outPadSize)
-{
-    PORT_Assert(outPadSize);
-
-    unsigned int padSize = (unsigned int)pLastPart[blockSize - 1];
-
-    
-    unsigned int goodPad = DUPLICATE_MSB_TO_ALL(~(blockSize - padSize));
-    
-    goodPad &= CT_NOT_ZERO(padSize);
-
-    unsigned int i;
-    for (i = 0; i < blockSize; i++) {
-        
-        unsigned int loopMask = DUPLICATE_MSB_TO_ALL(~(padSize - 1 - i));
-        
-        unsigned int padVal = pLastPart[blockSize - 1 - i];
-        
-        goodPad &= CT_SEL(loopMask, ~(padVal ^ padSize), goodPad);
-    }
-
-    
-
-
-    goodPad &= goodPad >> 4;
-    goodPad &= goodPad >> 2;
-    goodPad &= goodPad >> 1;
-    goodPad <<= sizeof(goodPad) * 8 - 1;
-    goodPad = DUPLICATE_MSB_TO_ALL(goodPad);
-
-    
-    *outPadSize = CT_SEL(goodPad, padSize, 0);
-    
-    return CT_SEL(goodPad, CKR_OK, CKR_ENCRYPTED_DATA_INVALID);
-}
-
-
 CK_RV
 NSC_DecryptFinal(CK_SESSION_HANDLE hSession,
                  CK_BYTE_PTR pLastPart, CK_ULONG_PTR pulLastPartLen)
@@ -1714,9 +1652,10 @@ NSC_DecryptFinal(CK_SESSION_HANDLE hSession,
                 crv = sftk_MapDecryptError(PORT_GetError());
             } else {
                 unsigned int padSize = 0;
-                crv = sftk_CheckCBCPadding(&pLastPart[outlen - context->blockSize], context->blockSize, &padSize);
+                crv = sftk_CheckCBCPadding(pLastPart, outlen,
+                                           context->blockSize, &padSize);
                 
-                *pulLastPartLen = CT_SEL(CK_RVToMask(crv), outlen - padSize, *pulLastPartLen);
+                *pulLastPartLen = CT_SEL(sftk_CKRVToMask(crv), outlen - padSize, *pulLastPartLen);
             }
         }
     }
@@ -1768,7 +1707,7 @@ NSC_Decrypt(CK_SESSION_HANDLE hSession,
         finalLen = maxoutlen;
         crv2 = NSC_DecryptFinal(hSession, pData, &finalLen);
         if (crv == CKR_OK) {
-            *pulDataLen = CT_SEL(CK_RVToMask(crv2), updateLen + finalLen, *pulDataLen);
+            *pulDataLen = CT_SEL(sftk_CKRVToMask(crv2), updateLen + finalLen, *pulDataLen);
             return crv2;
         } else {
             return crv;
@@ -1782,9 +1721,10 @@ NSC_Decrypt(CK_SESSION_HANDLE hSession,
     if (rv == SECSuccess) {
         if (context->doPad) {
             unsigned int padSize = 0;
-            crv = sftk_CheckCBCPadding(&pData[outlen - context->blockSize], context->blockSize, &padSize);
+            crv = sftk_CheckCBCPadding(pData, outlen, context->blockSize,
+                                       &padSize);
             
-            *pulDataLen = CT_SEL(CK_RVToMask(crv), outlen - padSize, *pulDataLen);
+            *pulDataLen = CT_SEL(sftk_CKRVToMask(crv), outlen - padSize, *pulDataLen);
         } else {
             *pulDataLen = (CK_ULONG)outlen;
         }
