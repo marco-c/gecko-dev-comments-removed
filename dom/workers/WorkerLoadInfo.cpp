@@ -104,7 +104,7 @@ nsresult WorkerLoadInfo::SetPrincipalsAndCSPOnMainThread(
 
   mPrincipal = aPrincipal;
   mStoragePrincipal = aStoragePrincipal;
-  mPrincipalIsSystem = nsContentUtils::IsSystemPrincipal(aPrincipal);
+  mPrincipalIsSystem = aPrincipal->IsSystemPrincipal();
   mPrincipalIsAddonOrExpandedAddon =
       aPrincipal->GetIsAddonOrExpandedAddonPrincipal();
 
@@ -193,8 +193,8 @@ nsresult WorkerLoadInfo::GetPrincipalsAndLoadGroupFromChannel(
   
   
   
-  if (nsContentUtils::IsSystemPrincipal(mLoadingPrincipal)) {
-    if (!nsContentUtils::IsSystemPrincipal(channelPrincipal)) {
+  if (mLoadingPrincipal->IsSystemPrincipal()) {
+    if (!channelPrincipal->IsSystemPrincipal()) {
       nsCOMPtr<nsIURI> finalURI;
       rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(finalURI));
       NS_ENSURE_SUCCESS(rv, rv);

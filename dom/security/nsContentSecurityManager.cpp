@@ -98,7 +98,7 @@ bool nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
   
   
   if (!loadInfo->GetLoadTriggeredFromExternal() &&
-      nsContentUtils::IsSystemPrincipal(loadInfo->TriggeringPrincipal()) &&
+      loadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
       loadInfo->RedirectChain().IsEmpty()) {
     return true;
   }
@@ -189,7 +189,7 @@ nsresult nsContentSecurityManager::CheckFTPSubresourceLoad(
   
   
   nsIPrincipal* triggeringPrincipal = loadInfo->TriggeringPrincipal();
-  if (nsContentUtils::IsSystemPrincipal(triggeringPrincipal)) {
+  if (triggeringPrincipal->IsSystemPrincipal()) {
     return NS_OK;
   }
 
@@ -344,7 +344,7 @@ static nsresult DoCORSChecks(nsIChannel* aChannel, nsILoadInfo* aLoadInfo,
   
   
   
-  if (nsContentUtils::IsSystemPrincipal(aLoadInfo->TriggeringPrincipal())) {
+  if (aLoadInfo->TriggeringPrincipal()->IsSystemPrincipal()) {
     return NS_OK;
   }
 
@@ -594,7 +594,7 @@ static nsresult DoContentSecurityChecks(nsIChannel* aChannel,
 
 static void LogPrincipal(nsIPrincipal* aPrincipal,
                          const nsAString& aPrincipalName) {
-  if (nsContentUtils::IsSystemPrincipal(aPrincipal)) {
+  if (aPrincipal && aPrincipal->IsSystemPrincipal()) {
     MOZ_LOG(sCSMLog, LogLevel::Debug,
             ("  %s: SystemPrincipal\n",
              NS_ConvertUTF16toUTF8(aPrincipalName).get()));
@@ -765,7 +765,8 @@ nsresult nsContentSecurityManager::CheckSystemPrincipalLoads(
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
 
   
-  if (!nsContentUtils::IsSystemPrincipal(loadInfo->LoadingPrincipal())) {
+  if (!loadInfo->LoadingPrincipal() ||
+      !loadInfo->LoadingPrincipal()->IsSystemPrincipal()) {
     return NS_OK;
   }
   nsContentPolicyType contentPolicyType =
@@ -1010,7 +1011,7 @@ nsresult nsContentSecurityManager::CheckChannel(nsIChannel* aChannel) {
 
   
   
-  if (nsContentUtils::IsSystemPrincipal(loadInfo->TriggeringPrincipal()) &&
+  if (loadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
       loadInfo->GetExternalContentPolicyType() !=
           nsIContentPolicy::TYPE_DOCUMENT &&
       loadInfo->GetExternalContentPolicyType() !=

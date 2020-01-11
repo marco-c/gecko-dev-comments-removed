@@ -59,6 +59,7 @@
 #include "nsIPrefService.h"
 #include "nsSandboxFlags.h"
 #include "nsSimpleEnumerator.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/Preferences.h"
@@ -401,7 +402,7 @@ static bool CheckUserContextCompatibility(nsIDocShell* aDocShell) {
 
   
   
-  if (nsContentUtils::IsSystemPrincipal(subjectPrincipal)) {
+  if (subjectPrincipal->IsSystemPrincipal()) {
     return true;
   }
 

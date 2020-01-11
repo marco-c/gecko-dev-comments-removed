@@ -8,6 +8,7 @@
 #include "DataTransferItemList.h"
 
 #include "mozilla/Attributes.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/ContentEvents.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/dom/DataTransferItemBinding.h"
@@ -491,7 +492,7 @@ already_AddRefed<nsIVariant> DataTransferItem::Data(nsIPrincipal* aPrincipal,
 
   
   
-  if (nsContentUtils::IsSystemPrincipal(aPrincipal)) {
+  if (aPrincipal->IsSystemPrincipal()) {
     return DataNoSecurityCheck();
   }
 

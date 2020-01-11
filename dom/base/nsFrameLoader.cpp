@@ -2106,8 +2106,7 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   
   
   
-  if (parentIsContent &&
-      !nsContentUtils::IsSystemPrincipal(doc->NodePrincipal()) &&
+  if (parentIsContent && !doc->NodePrincipal()->IsSystemPrincipal() &&
       !OwnerIsMozBrowserFrame()) {
     OriginAttributes oa = doc->NodePrincipal()->OriginAttributesRef();
 

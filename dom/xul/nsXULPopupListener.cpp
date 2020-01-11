@@ -22,6 +22,7 @@
 #include "nsLayoutUtils.h"
 #include "mozilla/ReflowInput.h"
 #include "nsIObjectLoadingContent.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/EventStates.h"
 #include "mozilla/Preferences.h"
@@ -134,7 +135,7 @@ nsresult nsXULPopupListener::HandleEvent(Event* aEvent) {
       
       
       
-      if (!nsContentUtils::IsSystemPrincipal(targetContent->NodePrincipal())) {
+      if (!targetContent->NodePrincipal()->IsSystemPrincipal()) {
         
         
         preventDefault = false;

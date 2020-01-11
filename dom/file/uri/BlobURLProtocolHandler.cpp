@@ -16,6 +16,7 @@
 #include "mozilla/dom/IPCBlobUtils.h"
 #include "mozilla/dom/MediaSource.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/Preferences.h"
@@ -832,7 +833,8 @@ BlobURLProtocolHandler::NewChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo,
   
   
   if (aLoadInfo &&
-      !nsContentUtils::IsSystemPrincipal(aLoadInfo->LoadingPrincipal()) &&
+      (!aLoadInfo->LoadingPrincipal() ||
+       !aLoadInfo->LoadingPrincipal()->IsSystemPrincipal()) &&
       !ChromeUtils::IsOriginAttributesEqualIgnoringFPD(
           aLoadInfo->GetOriginAttributes(),
           BasePrincipal::Cast(info->mPrincipal)->OriginAttributesRef())) {

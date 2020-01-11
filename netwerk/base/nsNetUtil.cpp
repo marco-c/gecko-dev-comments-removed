@@ -3005,7 +3005,8 @@ nsresult NS_CompareLoadInfoAndLoadContext(nsIChannel* aChannel) {
   
   
   
-  if (nsContentUtils::IsSystemPrincipal(loadInfo->LoadingPrincipal()) &&
+  if (loadInfo->LoadingPrincipal() &&
+      loadInfo->LoadingPrincipal()->IsSystemPrincipal() &&
       loadInfo->InternalContentPolicyType() ==
           nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON) {
     return NS_OK;
@@ -3126,7 +3127,7 @@ bool NS_ShouldClassifyChannel(nsIChannel* aChannel) {
   nsContentPolicyType type = loadInfo->GetExternalContentPolicyType();
   
   
-  if (nsContentUtils::IsSystemPrincipal(loadInfo->TriggeringPrincipal()) &&
+  if (loadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
       nsIContentPolicy::TYPE_DOCUMENT != type) {
     return false;
   }

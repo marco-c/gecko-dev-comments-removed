@@ -1859,21 +1859,14 @@ class nsContentUtils {
   
 
 
-
-
-
-  static bool IsSystemPrincipal(nsIPrincipal* aPrincipal);
-
-  
-
-
   static bool IsExpandedPrincipal(nsIPrincipal* aPrincipal);
 
   
 
 
   static bool IsSystemOrExpandedPrincipal(nsIPrincipal* aPrincipal) {
-    return IsSystemPrincipal(aPrincipal) || IsExpandedPrincipal(aPrincipal);
+    return (aPrincipal && aPrincipal->IsSystemPrincipal()) ||
+           IsExpandedPrincipal(aPrincipal);
   }
 
   

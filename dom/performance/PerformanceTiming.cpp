@@ -5,6 +5,7 @@
 
 
 #include "PerformanceTiming.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/PerformanceTimingBinding.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Telemetry.h"

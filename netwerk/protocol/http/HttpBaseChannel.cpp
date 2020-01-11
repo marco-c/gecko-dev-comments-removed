@@ -17,6 +17,7 @@
 #include "nsNetUtil.h"
 #include "nsReadableUtils.h"
 
+#include "mozilla/BasePrincipal.h"
 #include "nsICachingChannel.h"
 #include "nsIPrincipal.h"
 #include "nsIScriptError.h"
@@ -2890,7 +2891,8 @@ void HttpBaseChannel::AssertPrivateBrowsingId() {
   
   
   
-  if (nsContentUtils::IsSystemPrincipal(mLoadInfo->LoadingPrincipal()) &&
+  if (mLoadInfo->LoadingPrincipal() &&
+      mLoadInfo->LoadingPrincipal()->IsSystemPrincipal() &&
       mLoadInfo->InternalContentPolicyType() ==
           nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON) {
     return;

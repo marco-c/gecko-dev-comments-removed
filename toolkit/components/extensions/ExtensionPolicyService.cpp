@@ -8,6 +8,7 @@
 #include "mozilla/extensions/WebExtensionContentScript.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
 
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ResultExtensions.h"
@@ -433,7 +434,7 @@ static bool CheckParentFrames(nsPIDOMWindowOuter* aWindow,
     auto* win = nsGlobalWindowOuter::Cast(piWin);
 
     auto* principal = BasePrincipal::Cast(win->GetPrincipal());
-    if (nsContentUtils::IsSystemPrincipal(principal)) {
+    if (principal->IsSystemPrincipal()) {
       
       
       nsIURI* uri = win->GetDocumentURI();

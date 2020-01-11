@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/ErrorResult.h"
 #include "TCPSocket.h"
 #include "TCPServerSocket.h"
@@ -1042,6 +1043,5 @@ TCPSocket::Observe(nsISupports* aSubject, const char* aTopic,
 
 bool TCPSocket::ShouldTCPSocketExist(JSContext* aCx, JSObject* aGlobal) {
   JS::Rooted<JSObject*> global(aCx, aGlobal);
-  return nsContentUtils::IsSystemPrincipal(
-      nsContentUtils::ObjectPrincipal(global));
+  return nsContentUtils::ObjectPrincipal(global)->IsSystemPrincipal();
 }
