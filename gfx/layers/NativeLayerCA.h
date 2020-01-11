@@ -151,6 +151,11 @@ class NativeLayerCA : public NativeLayer {
     gfx::IntRegion mInvalidRegion;
   };
 
+  struct SurfaceWithInvalidRegionAndCheckCount {
+    SurfaceWithInvalidRegion mEntry;
+    uint32_t mCheckCount;  
+  };
+
   Maybe<SurfaceWithInvalidRegion> GetUnusedSurfaceAndCleanUp(
       const MutexAutoLock&);
 
@@ -226,7 +231,7 @@ class NativeLayerCA : public NativeLayer {
   
   
   
-  std::vector<SurfaceWithInvalidRegion> mSurfaces;
+  std::vector<SurfaceWithInvalidRegionAndCheckCount> mSurfaces;
 
   
   RefPtr<MacIOSurface> mInProgressLockedIOSurface;
