@@ -18,7 +18,7 @@ async function checkState(browser) {
 
   
   let popstatePromise = SpecialPowers.spawn(browser, [], async () => {
-    let event = await ContentTaskUtils.waitForEvent(this, "popstate", true);
+    let event = await ContentTaskUtils.waitForEvent(content, "popstate", true);
     ok(event.state, "Event should have a state property.");
 
     is(content.testState, "foo", "testState after going back");
@@ -47,7 +47,7 @@ async function checkState(browser) {
   await popstatePromise;
 
   popstatePromise = SpecialPowers.spawn(browser, [], async () => {
-    let event = await ContentTaskUtils.waitForEvent(this, "popstate", true);
+    let event = await ContentTaskUtils.waitForEvent(content, "popstate", true);
 
     
     

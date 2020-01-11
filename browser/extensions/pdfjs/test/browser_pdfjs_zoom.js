@@ -139,7 +139,7 @@ add_task(async function test() {
             }
 
             
-            ev = new Event(subTest.action.event);
+            ev = new content.Event(subTest.action.event);
           } else {
             
             
