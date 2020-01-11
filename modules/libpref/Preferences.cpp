@@ -3668,7 +3668,10 @@ void Preferences::InitializeUserPrefs() {
 
   
   sPreferences->mCurrentFile = prefsFile.forget();
+}
 
+
+void Preferences::FinishInitializingUserPrefs() {
   sPreferences->NotifyServiceObservers(NS_PREFSERVICE_READ_TOPIC_ID);
 
   

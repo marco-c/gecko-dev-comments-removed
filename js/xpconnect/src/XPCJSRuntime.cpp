@@ -32,6 +32,7 @@
 #include "nsIPlatformInfo.h"
 #include "nsPIDOMWindow.h"
 #include "nsPrintfCString.h"
+#include "nsScriptSecurityManager.h"
 #include "nsThreadPool.h"
 #include "nsWindowSizes.h"
 #include "mozilla/Preferences.h"
@@ -1119,6 +1120,8 @@ void XPCJSRuntime::Shutdown(JSContext* cx) {
   xpc_DelocalizeRuntime(JS_GetRuntime(cx));
 
   JS::SetGCSliceCallback(cx, mPrevGCSliceCallback);
+
+  nsScriptSecurityManager::GetScriptSecurityManager()->ClearJSCallbacks(cx);
 
   
   gHelperThreads->Shutdown();
@@ -3049,6 +3052,8 @@ void XPCJSRuntime::Initialize(JSContext* cx) {
 
   
   mStrIDs[0] = JSID_VOID;
+
+  nsScriptSecurityManager::GetScriptSecurityManager()->InitJSCallbacks(cx);
 
   
   

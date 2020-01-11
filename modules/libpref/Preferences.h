@@ -108,6 +108,7 @@ class Preferences final : public nsIPrefService,
 
   
   static void InitializeUserPrefs();
+  static void FinishInitializingUserPrefs();
 
   
   static already_AddRefed<Preferences> GetInstanceForService();

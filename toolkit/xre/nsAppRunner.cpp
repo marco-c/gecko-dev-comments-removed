@@ -1202,7 +1202,7 @@ class ScopedXPCOMStartup {
   ScopedXPCOMStartup() : mServiceManager(nullptr) {}
   ~ScopedXPCOMStartup();
 
-  nsresult Initialize();
+  nsresult Initialize(bool aInitJSContext = true);
   nsresult SetWindowCreator(nsINativeAppSupport* native);
 
  private:
@@ -1259,13 +1259,13 @@ static const mozilla::Module::ContractIDEntry kXREContracts[] = {
 extern const mozilla::Module kXREModule = {mozilla::Module::kVersion, kXRECIDs,
                                            kXREContracts};
 
-nsresult ScopedXPCOMStartup::Initialize() {
+nsresult ScopedXPCOMStartup::Initialize(bool aInitJSContext) {
   NS_ASSERTION(gDirServiceProvider, "Should not get here!");
 
   nsresult rv;
 
   rv = NS_InitXPCOM(&mServiceManager, gDirServiceProvider->GetAppDir(),
-                    gDirServiceProvider);
+                    gDirServiceProvider, aInitJSContext);
   if (NS_FAILED(rv)) {
     NS_ERROR("Couldn't start xpcom!");
     mServiceManager = nullptr;
@@ -4344,10 +4344,21 @@ nsresult XREMain::XRE_mainRun() {
     }
   }
 
+  
+  
+  
+  
+  
+  bool initializedJSContext = false;
+
   {
     
     if (mAppData->flags & NS_XRE_ENABLE_PROFILE_MIGRATOR && gDoMigration) {
       gDoMigration = false;
+
+      xpc::InitializeJSContext();
+      initializedJSContext = true;
+
       nsCOMPtr<nsIProfileMigrator> pm(
           do_CreateInstance(NS_PROFILEMIGRATOR_CONTRACTID));
       if (pm) {
@@ -4388,6 +4399,18 @@ nsresult XREMain::XRE_mainRun() {
   
   
   mDirProvider.InitializeUserPrefs();
+
+  
+  
+  if (!initializedJSContext) {
+    xpc::InitializeJSContext();
+  }
+
+  
+  
+  
+  
+  mDirProvider.FinishInitializingUserPrefs();
 
   nsAppStartupNotifier::NotifyObservers(APPSTARTUP_CATEGORY);
 
@@ -4711,10 +4734,12 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   bool appInitiatedRestart = false;
 
   
+  
+
   mScopedXPCOM = MakeUnique<ScopedXPCOMStartup>();
   if (!mScopedXPCOM) return 1;
 
-  rv = mScopedXPCOM->Initialize();
+  rv = mScopedXPCOM->Initialize( false);
   NS_ENSURE_SUCCESS(rv, 1);
 
   
