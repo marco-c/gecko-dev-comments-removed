@@ -3,13 +3,13 @@
 
 
 
-#include "mozilla/Types.h"
+#include <dlfcn.h>
+#include <gtk/gtk.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <gtk/gtk.h>
-
+#include "mozilla/Types.h"
 #include "nsGtkUtils.h"
 #include "nsIFileURL.h"
 #include "nsIGIOService.h"
