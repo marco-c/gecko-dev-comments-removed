@@ -33,6 +33,11 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+XPCOMUtils.defineLazyModuleGetters(this, {
+  ManifestObtainer: "resource://gre/modules/ManifestObtainer.jsm",
+  ManifestProcessor: "resource://gre/modules/ManifestProcessor.jsm",
+});
+
 function uuid() {
   return Cc["@mozilla.org/uuid-generator;1"]
     .getService(Ci.nsIUUIDGenerator)
@@ -44,6 +49,48 @@ const sharedDataKey = id => `SiteSpecificBrowserBase:${id}`;
 
 const IS_MAIN_PROCESS =
   Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT;
+
+
+
+
+
+
+
+function manifestForURI(uri) {
+  try {
+    let manifestURI = Services.io.newURI("/manifest.json", null, uri);
+    return ManifestProcessor.process({
+      jsonText: "{}",
+      manifestURL: manifestURI.spec,
+      docURL: uri.spec,
+    });
+  } catch (e) {
+    console.error(`Failed to generate a SSB manifest for ${uri.spec}.`, e);
+    throw e;
+  }
+}
+
+
+
+
+
+
+
+async function buildManifestForBrowser(browser) {
+  let manifest = null;
+  try {
+    manifest = await ManifestObtainer.browserObtainManifest(browser);
+  } catch (e) {
+    
+    console.error(e);
+  }
+
+  if (!manifest) {
+    manifest = manifestForURI(browser.currentURI);
+  }
+
+  return manifest;
+}
 
 
 
@@ -68,8 +115,8 @@ class SiteSpecificBrowserBase {
 
 
 
-  constructor(uri) {
-    this._uri = uri;
+  constructor(scope) {
+    this._scope = scope;
   }
 
   
@@ -94,8 +141,8 @@ class SiteSpecificBrowserBase {
       return null;
     }
 
-    let uri = Services.io.newURI(Services.cpmm.sharedData.get(key));
-    return new SiteSpecificBrowserBase(uri);
+    let scope = Services.io.newURI(Services.cpmm.sharedData.get(key));
+    return new SiteSpecificBrowserBase(scope);
   }
 
   
@@ -112,9 +159,23 @@ class SiteSpecificBrowserBase {
     }
 
     
-    return uri.prePath == this._uri.prePath;
+    if (this._scope.prePath != uri.prePath) {
+      return false;
+    }
+
+    return uri.filePath.startsWith(this._scope.filePath);
   }
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -127,22 +188,21 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
 
 
 
-  constructor(id, uri) {
+  constructor(id, manifest) {
     if (!IS_MAIN_PROCESS) {
       throw new Error(
         "SiteSpecificBrowser instances are only available in the main process."
       );
     }
 
-    super(uri);
+    super(Services.io.newURI(manifest.scope));
     this._id = id;
+    this._manifest = manifest;
 
     
     SSBMap.set(id, this);
 
-    
-    Services.ppmm.sharedData.set(sharedDataKey(id), this._uri.spec);
-    Services.ppmm.sharedData.flush();
+    this._updateSharedData();
   }
 
   
@@ -165,6 +225,76 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
   
 
 
+
+
+
+  static async createFromManifest(manifest) {
+    if (!SiteSpecificBrowserService.isEnabled) {
+      throw new Error("Site specific browsing is disabled.");
+    }
+
+    if (!manifest.scope.startsWith("https:")) {
+      throw new Error(
+        "Site specific browsers can only be opened for secure sites."
+      );
+    }
+
+    return new SiteSpecificBrowser(uuid(), manifest);
+  }
+
+  
+
+
+
+
+
+  static async createFromBrowser(browser) {
+    if (!SiteSpecificBrowserService.isEnabled) {
+      throw new Error("Site specific browsing is disabled.");
+    }
+
+    if (!browser.currentURI.schemeIs("https")) {
+      throw new Error(
+        "Site specific browsers can only be opened for secure sites."
+      );
+    }
+
+    return SiteSpecificBrowser.createFromManifest(
+      await buildManifestForBrowser(browser)
+    );
+  }
+
+  
+
+
+
+
+
+  static createFromURI(uri) {
+    if (!SiteSpecificBrowserService.isEnabled) {
+      throw new Error("Site specific browsing is disabled.");
+    }
+
+    if (!uri.schemeIs("https")) {
+      throw new Error(
+        "Site specific browsers can only be opened for secure sites."
+      );
+    }
+
+    return new SiteSpecificBrowser(uuid(), manifestForURI(uri));
+  }
+
+  
+
+
+  _updateSharedData() {
+    Services.ppmm.sharedData.set(sharedDataKey(this.id), this._scope.spec);
+    Services.ppmm.sharedData.flush();
+  }
+
+  
+
+
   get id() {
     return this._id;
   }
@@ -173,19 +303,31 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
 
 
   get startURI() {
-    return this._uri;
+    return Services.io.newURI(this._manifest.start_url);
   }
 
   
 
 
-  launch() {
+
+
+  launch(uri = null) {
     let sa = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
+
     let idstr = Cc["@mozilla.org/supports-string;1"].createInstance(
       Ci.nsISupportsString
     );
     idstr.data = this.id;
     sa.appendElement(idstr);
+
+    if (uri) {
+      let uristr = Cc["@mozilla.org/supports-string;1"].createInstance(
+        Ci.nsISupportsString
+      );
+      uristr.data = uri.spec;
+      sa.appendElement(uristr);
+    }
+
     Services.ww.openWindow(
       null,
       "chrome://browser/content/ssb/ssb.html",
@@ -196,27 +338,7 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
   }
 }
 
-const SiteSpecificBrowserService = {
-  
-
-
-
-
-  launchFromURI(uri) {
-    if (!this.isEnabled) {
-      throw new Error("Site specific browsing is disabled.");
-    }
-
-    if (!uri.schemeIs("https")) {
-      throw new Error(
-        "Site specific browsers can only be opened for secure sites."
-      );
-    }
-
-    let ssb = new SiteSpecificBrowser(uuid(), uri);
-    ssb.launch();
-  },
-};
+const SiteSpecificBrowserService = {};
 
 XPCOMUtils.defineLazyPreferenceGetter(
   SiteSpecificBrowserService,
@@ -254,7 +376,8 @@ class SSBCommandLineHandler {
             .setScheme("https")
             .finalize();
         }
-        SiteSpecificBrowserService.launchFromURI(uri);
+        let ssb = SiteSpecificBrowser.createFromURI(uri);
+        ssb.launch();
       } catch (e) {
         dump(`Unable to parse '${site}' as a URI: ${e}\n`);
       }

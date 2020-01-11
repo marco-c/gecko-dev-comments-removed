@@ -1,6 +1,10 @@
 
 
 
+const { SiteSpecificBrowser } = ChromeUtils.import(
+  "resource:///modules/SiteSpecificBrowserService.jsm"
+);
+
 
 const gHttpTestRoot = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content/",
@@ -34,7 +38,8 @@ async function openSSB(uri) {
     return domwin.location.toString() == SSB_WINDOW;
   });
 
-  SiteSpecificBrowserService.launchFromURI(uri);
+  let ssb = SiteSpecificBrowser.createFromURI(uri);
+  ssb.launch();
 
   let ssbwin = await openPromise;
   await BrowserTestUtils.browserLoaded(getBrowser(ssbwin), true, uri.spec);
