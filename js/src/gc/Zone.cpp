@@ -385,10 +385,6 @@ void Zone::discardJitCode(JSFreeOp* fop,
     }
 
     
-    
-    jitScript->clearControlFlowGraph();
-
-    
     jitScript->resetActive();
   }
 
@@ -404,13 +400,6 @@ void Zone::discardJitCode(JSFreeOp* fop,
     jitZone()->optimizedStubSpace()->freeAllAfterMinorGC(this);
     jitZone()->purgeIonCacheIRStubInfo();
   }
-
-  
-
-
-
-
-  jitZone()->cfgSpace()->lifoAlloc().freeAll();
 }
 
 #ifdef JSGC_HASH_TABLE_CHECKS
