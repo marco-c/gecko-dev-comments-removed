@@ -21,6 +21,7 @@ add_task(async function test() {
   ok(engine, "Found Google search engine");
 
   
+  
   let url = engine.getSubmission("foo", "application/x-suggestions+json").uri
     .spec;
   is(
