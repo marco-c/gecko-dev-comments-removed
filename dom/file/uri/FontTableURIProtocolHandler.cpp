@@ -5,7 +5,6 @@
 
 
 #include "FontTableURIProtocolHandler.h"
-#include "nsIURIMutator.h"
 #include "nsIUUIDGenerator.h"
 #include "nsNetUtil.h"
 #include "nsSimpleURI.h"

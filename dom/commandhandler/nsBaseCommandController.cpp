@@ -5,7 +5,6 @@
 
 
 #include "nsString.h"
-#include "nsIComponentManager.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsBaseCommandController.h"
 #include "nsControllerCommandTable.h"

@@ -12,7 +12,6 @@
 #include "mozilla/ClearOnShutdown.h"
 
 #include "nsPrintfCString.h"
-#include "nsIScriptSecurityManager.h"
 
 
 #ifdef DISABLE_ASSERTS_FOR_FUZZING

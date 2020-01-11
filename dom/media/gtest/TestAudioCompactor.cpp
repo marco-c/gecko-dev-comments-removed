@@ -5,7 +5,6 @@
 
 #include "gtest/gtest.h"
 #include "AudioCompactor.h"
-#include "nsIMemoryReporter.h"
 
 using mozilla::AudioCompactor;
 using mozilla::AudioData;

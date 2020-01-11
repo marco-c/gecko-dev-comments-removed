@@ -5,14 +5,12 @@
 
 
 #include "Location.h"
-#include "nsIScriptSecurityManager.h"
 #include "nsIScriptObjectPrincipal.h"
 #include "nsIScriptContext.h"
 #include "nsDocShellLoadState.h"
 #include "nsIWebNavigation.h"
 #include "nsIURIFixup.h"
 #include "nsIURL.h"
-#include "nsIURIMutator.h"
 #include "nsIJARURI.h"
 #include "nsNetUtil.h"
 #include "nsCOMPtr.h"
@@ -20,7 +18,6 @@
 #include "nsPresContext.h"
 #include "nsError.h"
 #include "nsReadableUtils.h"
-#include "nsITextToSubURI.h"
 #include "nsJSUtils.h"
 #include "nsContentUtils.h"
 #include "nsDocShell.h"

@@ -5,12 +5,8 @@
 
 #include "nsJSUtils.h"
 #include "nsString.h"
-#include "nsIServiceManager.h"
-#include "nsIScriptSecurityManager.h"
 #include "nsIScriptContext.h"
 #include "nsIScriptGlobalObject.h"
-#include "nsIXPConnect.h"
-#include "nsIMutableArray.h"
 #include "nsVariant.h"
 #include "nsGkAtoms.h"
 #include "xpcpublic.h"

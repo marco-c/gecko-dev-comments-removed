@@ -5,7 +5,6 @@
 
 
 #include "PluginMessageUtils.h"
-#include "nsIRunnable.h"
 #include "nsThreadUtils.h"
 
 #include "PluginInstanceParent.h"

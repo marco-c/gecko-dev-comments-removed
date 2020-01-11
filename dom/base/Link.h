@@ -13,7 +13,6 @@
 
 #include "mozilla/MemoryReporting.h"
 #include "nsIContent.h"  
-#include "nsIContentPolicy.h"
 
 namespace mozilla {
 

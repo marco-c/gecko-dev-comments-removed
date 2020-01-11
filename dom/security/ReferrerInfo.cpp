@@ -5,7 +5,7 @@
 
 
 #include "nsIClassInfoImpl.h"
-#include "nsICookieService.h"
+#include "nsIEffectiveTLDService.h"
 #include "nsIHttpChannel.h"
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"

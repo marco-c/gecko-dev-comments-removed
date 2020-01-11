@@ -12,7 +12,6 @@
 #include "nsCOMPtr.h"              
 #include "nsGkAtoms.h"             
 #include "mozilla/dom/NodeInfo.h"  
-#include "nsIVariant.h"            
 #include "nsIWeakReference.h"
 #include "nsNodeInfoManager.h"  
 #include "nsPropertyTable.h"    
