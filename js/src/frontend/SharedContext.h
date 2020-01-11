@@ -273,34 +273,6 @@ inline EvalSharedContext* SharedContext::asEvalContext() {
 
 enum class HasHeritage : bool { No, Yes };
 
-
-struct LazyScriptCreationData {
-  frontend::AtomVector closedOverBindings;
-
-  
-  FunctionBoxVector innerFunctionBoxes;
-  bool strict = false;
-
-  mozilla::Maybe<FieldInitializers> fieldInitializers;
-
-  explicit LazyScriptCreationData(JSContext* cx) : innerFunctionBoxes(cx) {}
-
-  bool init(JSContext* cx, const frontend::AtomVector& COB,
-            FunctionBoxVector& innerBoxes, bool isStrict) {
-    strict = isStrict;
-    
-    if (!innerFunctionBoxes.appendAll(innerBoxes)) {
-      return false;
-    }
-
-    if (!closedOverBindings.appendAll(COB)) {
-      ReportOutOfMemory(cx);  
-      return false;
-    }
-    return true;
-  }
-};
-
 class FunctionBox : public ObjectBox, public SharedContext {
   
   
