@@ -32,70 +32,56 @@ enum class MediaControlActions : uint32_t {
 
 
 
-class MediaController {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MediaController final {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaController);
 
-  explicit MediaController(uint64_t aContextId)
-      : mBrowsingContextId(aContextId) {}
+  explicit MediaController(uint64_t aContextId);
 
-  virtual void Play() = 0;
-  virtual void Pause() = 0;
-  virtual void Stop() = 0;
-  virtual void Shutdown() = 0;
+  void Play();
+  void Pause();
+  void Stop();
+  void Shutdown();
 
-  virtual void NotifyMediaActiveChanged(bool aActive) = 0;
-  virtual void NotifyMediaAudibleChanged(bool aAudible) = 0;
+  uint64_t Id() const;
+  bool IsPlaying() const;
+  bool IsAudible() const;
+  uint64_t ControlledMediaNum() const;
 
-  bool IsPlaying() const { return mIsPlaying; }
-  uint64_t Id() const { return mBrowsingContextId; }
-  virtual uint64_t ControlledMediaNum() const { return 0; }
-  virtual bool IsAudible() const { return false; }
-
- protected:
-  virtual ~MediaController() = default;
-
-  already_AddRefed<BrowsingContext> GetContext() const;
-
-  uint64_t mBrowsingContextId;
-  bool mIsPlaying = false;
-};
-
-
-
-
-
-
-
-
-
-class TabMediaController final : public MediaController {
- public:
-  explicit TabMediaController(uint64_t aContextId);
-
-  void Play() override;
-  void Pause() override;
-  void Stop() override;
-  void Shutdown() override;
-
-  uint64_t ControlledMediaNum() const override;
-  bool IsAudible() const override;
-
-  void NotifyMediaActiveChanged(bool aActive) override;
-  void NotifyMediaAudibleChanged(bool aAudible) override;
-
- protected:
-  ~TabMediaController();
+  
+  
+  void NotifyMediaActiveChanged(bool aActive);
+  void NotifyMediaAudibleChanged(bool aAudible);
 
  private:
+  ~MediaController();
+
+  already_AddRefed<BrowsingContext> GetContext() const;
   void IncreaseControlledMediaNum();
   void DecreaseControlledMediaNum();
 
   void Activate();
   void Deactivate();
 
-  int64_t mControlledMediaNum = 0;
+  uint64_t mBrowsingContextId;
+  bool mIsPlaying = false;
   bool mAudible = false;
+  int64_t mControlledMediaNum = 0;
 };
 
 }  
