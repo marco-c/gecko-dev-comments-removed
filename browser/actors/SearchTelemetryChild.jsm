@@ -102,16 +102,15 @@ class SearchTelemetryChild extends ActorChild {
 
 
 
-
-
-  _checkForAdLink(doc) {
-    let providerInfo = this._getProviderInfoForUrl(doc.documentURI);
+  _checkForAdLink() {
+    let doc = this.content.document;
+    let url = doc.documentURI;
+    let providerInfo = this._getProviderInfoForUrl(url);
     if (!providerInfo) {
       return;
     }
 
     let regexps = providerInfo[1].extraAdServersRegexps;
-
     let anchors = doc.getElementsByTagName("a");
     let hasAds = false;
     for (let anchor of anchors) {
@@ -131,7 +130,7 @@ class SearchTelemetryChild extends ActorChild {
     if (hasAds) {
       this.sendAsyncMessage("SearchTelemetry:PageInfo", {
         hasAds: true,
-        url: doc.documentURI,
+        url,
       });
     }
   }
@@ -147,6 +146,19 @@ class SearchTelemetryChild extends ActorChild {
       return;
     }
 
+    const cancelCheck = () => {
+      if (this._waitForContentTimeout && this.content) {
+        this.content.clearTimeout(this._waitForContentTimeout);
+      }
+    };
+
+    const check = () => {
+      cancelCheck();
+      this._waitForContentTimeout = this.content.setTimeout(() => {
+        this._checkForAdLink();
+      }, 1000);
+    };
+
     switch (event.type) {
       case "pageshow": {
         
@@ -154,12 +166,16 @@ class SearchTelemetryChild extends ActorChild {
         
         
         if (event.persisted) {
-          this._checkForAdLink(this.content.document);
+          check();
         }
         break;
       }
       case "DOMContentLoaded": {
-        this._checkForAdLink(this.content.document);
+        check();
+        break;
+      }
+      case "unload": {
+        cancelCheck();
         break;
       }
     }
