@@ -112,9 +112,6 @@ void nsPlaceholderFrame::Reflow(nsPresContext* aPresContext,
   
   
   
-  
-  
-  
   if ((GetStateBits() & NS_FRAME_FIRST_REFLOW) &&
       !(mOutOfFlowFrame->GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
     
@@ -124,8 +121,7 @@ void nsPlaceholderFrame::Reflow(nsPresContext* aPresContext,
     bool isInContinuationOrIBSplit = false;
     nsIFrame* ancestor = this;
     while ((ancestor = ancestor->GetParent())) {
-      if (ancestor->GetPrevContinuation() ||
-          ancestor->GetProperty(IBSplitPrevSibling())) {
+      if (nsLayoutUtils::GetPrevContinuationOrIBSplitSibling(ancestor)) {
         isInContinuationOrIBSplit = true;
         break;
       }

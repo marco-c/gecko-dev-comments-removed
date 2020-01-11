@@ -1402,7 +1402,13 @@ class nsLayoutUtils {
 
 
 
-  static nsIFrame* GetNextContinuationOrIBSplitSibling(nsIFrame* aFrame);
+  static nsIFrame* GetPrevContinuationOrIBSplitSibling(const nsIFrame* aFrame);
+
+  
+
+
+
+  static nsIFrame* GetNextContinuationOrIBSplitSibling(const nsIFrame* aFrame);
 
   
 
