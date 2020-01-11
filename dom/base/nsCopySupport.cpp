@@ -876,7 +876,7 @@ bool nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
     
     
     
-    if (RefPtr<HTMLInputElement> inputElement =
+    if (HTMLInputElement* inputElement =
             HTMLInputElement::FromNodeOrNull(sourceContent)) {
       if (TextEditor* textEditor = inputElement->GetTextEditor()) {
         if (textEditor->IsPasswordEditor() &&

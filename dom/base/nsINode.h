@@ -488,8 +488,6 @@ class nsINode : public mozilla::dom::EventTarget {
 
   bool IsElement() const { return GetBoolFlag(NodeIsElement); }
 
-  virtual bool IsTextControlElement() const { return false; }
-
   
 
 

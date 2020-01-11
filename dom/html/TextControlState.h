@@ -8,20 +8,22 @@
 #define mozilla_TextControlState_h
 
 #include "mozilla/Assertions.h"
+#include "nsString.h"
+#include "nsITextControlElement.h"
+#include "nsITextControlFrame.h"
+#include "nsCycleCollectionParticipant.h"
+#include "mozilla/dom/Element.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/TextControlElement.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/WeakPtr.h"
-#include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLInputElementBinding.h"
 #include "mozilla/dom/Nullable.h"
-#include "nsCycleCollectionParticipant.h"
-#include "nsITextControlFrame.h"
 
 class nsTextControlFrame;
 class nsISelectionController;
 class nsFrameSelection;
+class nsITextControlElement;
 class nsFrame;
 
 namespace mozilla {
@@ -139,7 +141,7 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
 
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(TextControlState)
 
-  static TextControlState* Construct(TextControlElement* aOwningElement);
+  static TextControlState* Construct(nsITextControlElement* aOwningElement);
 
   static void Shutdown();
 
@@ -208,15 +210,6 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
     
     eSetValue_MoveCursorToBeginSetSelectionDirectionForward = 1 << 6,
   };
-  
-
-
-
-
-
-
-
-
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE bool SetValue(const nsAString& aValue,
                                                 const nsAString* aOldValue,
                                                 uint32_t aFlags);
@@ -224,17 +217,7 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
                                                 uint32_t aFlags) {
     return SetValue(aValue, nullptr, aFlags);
   }
-  
-
-
-
   void GetValue(nsAString& aValue, bool aIgnoreWrap) const;
-  
-
-
-
-
-  bool ValueEquals(const nsAString& aValue) const;
   bool HasNonEmptyValue();
   
   
@@ -400,7 +383,7 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
   }
 
  private:
-  explicit TextControlState(TextControlElement* aOwningElement);
+  explicit TextControlState(nsITextControlElement* aOwningElement);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY ~TextControlState();
 
   
@@ -461,7 +444,7 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
   
   
   
-  TextControlElement* MOZ_NON_OWNING_REF mTextCtrlElement;
+  nsITextControlElement* MOZ_NON_OWNING_REF mTextCtrlElement;
   RefPtr<TextInputSelectionController> mSelCon;
   RefPtr<RestoreSelectionState> mRestoringSelection;
   RefPtr<TextEditor> mTextEditor;
@@ -486,10 +469,7 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
 
 
 
-
-  static const size_t kMaxCountOfCacheToReuse = 25;
-  static AutoTArray<TextControlState*, kMaxCountOfCacheToReuse>*
-      sReleasedInstances;
+  static TextControlState* sReleasedInstance;
   static bool sHasShutDown;
 
   friend class AutoTextControlHandlingState;

@@ -1501,7 +1501,7 @@ class Element : public FragmentOrElement {
   
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::TextEditor* GetTextEditorInternal();
+  mozilla::TextEditor* GetTextEditorInternal();
 
   
 
