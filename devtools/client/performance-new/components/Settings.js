@@ -413,58 +413,6 @@ class Settings extends PureComponent {
 
 
 
-
-
-
-
-  _renderSection(id, title, children) {
-    const { pageContext } = this.props;
-    switch (pageContext) {
-      case "popup":
-      case "devtools":
-        
-        return details(
-          {
-            className: "perf-settings-details",
-            
-            onToggle: _handleToggle,
-          },
-          summary(
-            {
-              className: "perf-settings-summary",
-              id,
-            },
-            
-            
-            title + ":"
-          ),
-          
-          div(
-            { className: "perf-settings-details-contents" },
-            
-            
-            div(
-              { className: "perf-settings-details-contents-slider" },
-              children
-            )
-          )
-        );
-      case "aboutprofiling":
-        
-        return div(
-          { className: "perf-settings-sections" },
-          div(null, h2(null, title), children)
-        );
-      default:
-        throw new UnhandledCaseError(pageContext, "PageContext");
-    }
-  }
-
-  
-
-
-
-
   _renderThreadsColumns(threadDisplay, index) {
     const { threads } = this.props;
     return div(
@@ -472,7 +420,8 @@ class Settings extends PureComponent {
       threadDisplay.map(({ name, title, id }) =>
         label(
           {
-            className: "perf-settings-checkbox-label",
+            className:
+              "perf-settings-checkbox-label perf-settings-thread-label",
             key: name,
             title,
           },
@@ -492,9 +441,12 @@ class Settings extends PureComponent {
 
   _renderThreads() {
     const { temporaryThreadText } = this.state;
-    return this._renderSection(
+    const { pageContext, threads } = this.props;
+
+    return renderSection(
       "perf-settings-threads-summary",
       "Threads",
+      pageContext,
       div(
         null,
         div(
@@ -519,7 +471,7 @@ class Settings extends PureComponent {
               type: "text",
               value:
                 temporaryThreadText === null
-                  ? this.props.threads.join(",")
+                  ? threads.join(",")
                   : temporaryThreadText,
               onBlur: this._handleThreadTextCleanup,
               onFocus: this._setThreadTextFromInput,
@@ -590,9 +542,10 @@ class Settings extends PureComponent {
   }
 
   _renderFeatures() {
-    return this._renderSection(
+    return renderSection(
       "perf-settings-features-summary",
       "Features",
+      this.props.pageContext,
       div(
         null,
         
@@ -612,10 +565,11 @@ class Settings extends PureComponent {
   }
 
   _renderLocalBuildSection() {
-    const { objdirs } = this.props;
-    return this._renderSection(
+    const { objdirs, pageContext } = this.props;
+    return renderSection(
       "perf-settings-local-build-summary",
       "Local build",
+      pageContext,
       div(
         null,
         p(
@@ -734,6 +688,55 @@ function _handleToggle() {
 
   if (popupWindow.gResizePopup) {
     popupWindow.gResizePopup(document.body.clientHeight);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+function renderSection(id, title, pageContext, children) {
+  switch (pageContext) {
+    case "popup":
+    case "devtools":
+      
+      return details(
+        {
+          className: "perf-settings-details",
+          
+          onToggle: _handleToggle,
+        },
+        summary(
+          {
+            className: "perf-settings-summary",
+            id,
+          },
+          
+          
+          title + ":"
+        ),
+        
+        div(
+          { className: "perf-settings-details-contents" },
+          
+          
+          div({ className: "perf-settings-details-contents-slider" }, children)
+        )
+      );
+    case "aboutprofiling":
+      
+      return div(
+        { className: "perf-settings-sections" },
+        div(null, h2(null, title), children)
+      );
+    default:
+      throw new UnhandledCaseError(pageContext, "PageContext");
   }
 }
 
