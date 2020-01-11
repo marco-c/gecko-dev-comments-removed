@@ -3555,7 +3555,11 @@ Toolbox.prototype = {
       return this._destroyer;
     }
 
-    this._destroyer = this._destroyToolbox();
+    
+    
+    let destroyerResolve;
+    this._destroyer = new Promise(r => (destroyerResolve = r));
+    this._destroyToolbox().then(destroyerResolve);
 
     return this._destroyer;
   },

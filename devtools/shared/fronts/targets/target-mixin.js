@@ -413,53 +413,59 @@ function TargetMixin(parentClass) {
         return this._destroyer;
       }
 
-      this._destroyer = (async () => {
-        
-        this.emit("close");
-
-        for (let [, front] of this.fronts) {
-          
-          
-          if (front instanceof Promise) {
-            front = await front;
-          }
-          front.destroy();
-        }
-
-        this._teardownRemoteListeners();
-
-        this.threadFront = null;
-
-        if (this.shouldCloseClient) {
-          try {
-            await this._client.close();
-          } catch (e) {
-            
-            
-            console.warn("Error while closing client:", e);
-          }
-
-          
-          
-        } else if (this.detach && this.actorID) {
-          
-          
-          
-          
-          try {
-            await this.detach();
-          } catch (e) {
-            console.warn("Error while detaching target:", e);
-          }
-        }
-
-        
-        super.destroy();
-
-        this._cleanup();
-      })();
+      
+      
+      let destroyerResolve;
+      this._destroyer = new Promise(r => (destroyerResolve = r));
+      this._destroyTarget().then(destroyerResolve);
 
       return this._destroyer;
+    }
+
+    async _destroyTarget() {
+      
+      this.emit("close");
+
+      for (let [, front] of this.fronts) {
+        
+        
+        if (front instanceof Promise) {
+          front = await front;
+        }
+        front.destroy();
+      }
+
+      this._teardownRemoteListeners();
+
+      this.threadFront = null;
+
+      if (this.shouldCloseClient) {
+        try {
+          await this._client.close();
+        } catch (e) {
+          
+          
+          console.warn("Error while closing client:", e);
+        }
+
+        
+        
+      } else if (this.detach && this.actorID) {
+        
+        
+        
+        
+        try {
+          await this.detach();
+        } catch (e) {
+          console.warn("Error while detaching target:", e);
+        }
+      }
+
+      
+      super.destroy();
+
+      this._cleanup();
     }
 
     
