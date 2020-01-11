@@ -44,6 +44,15 @@
 
 
 
+popupgroup:-moz-native-anonymous:-moz-locale-dir(rtl),
+tooltip:-moz-native-anonymous:-moz-locale-dir(rtl) {
+  direction: rtl;
+}
+
+
+
+
+
 
 *|*:root[chromehidden~="menubar"] .chromeclass-menubar,
 *|*:root[chromehidden~="directories"] .chromeclass-directories,
