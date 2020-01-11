@@ -632,6 +632,16 @@ void VideoSink::MaybeResolveEndPromise() {
       }
     }
 
+    
+    
+    
+    
+    
+    mContainer->ClearFutureFrames();
+    if (mSecondaryContainer) {
+      mSecondaryContainer->ClearFutureFrames();
+    }
+
     TimeStamp nowTime;
     const auto clockTime = mAudioSink->GetPosition(&nowTime);
     if (clockTime < mVideoFrameEndTime) {
