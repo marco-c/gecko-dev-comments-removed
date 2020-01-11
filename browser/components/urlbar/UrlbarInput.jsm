@@ -719,6 +719,9 @@ class UrlbarInput {
     this._resultForCurrentValue = result;
 
     
+    this.window.gBrowser.userTypedValue = this.value;
+
+    
     
     if (result) {
       switch (result.type) {
@@ -759,7 +762,6 @@ class UrlbarInput {
     
     if (
       !isPlaceholderSelected &&
-      !this._autofillIgnoresSelection &&
       (this.selectionStart != this.selectionEnd ||
         this.selectionEnd != this._lastSearchString.length)
     ) {
@@ -807,12 +809,8 @@ class UrlbarInput {
 
 
 
-
-
-
   startQuery({
     allowAutofill = true,
-    autofillIgnoresSelection = false,
     searchString = null,
     resetSearchState = true,
     event = null,
@@ -832,7 +830,6 @@ class UrlbarInput {
       return;
     }
 
-    this._autofillIgnoresSelection = autofillIgnoresSelection;
     if (resetSearchState) {
       this._resetSearchState();
     }
@@ -995,6 +992,7 @@ class UrlbarInput {
       this._toolbar.setAttribute("urlbar-exceeds-toolbar-bounds", "true");
     }
     this.setAttribute("breakout-extend", "true");
+    this.view.reOpen();
 
     
     
@@ -1091,6 +1089,9 @@ class UrlbarInput {
     this.inputField.value = val;
     this.formatValue();
     this.removeAttribute("actiontype");
+    if (!this.view.isOpen) {
+      this.view.clear();
+    }
 
     
     let event = this.document.createEvent("Events");
@@ -1673,13 +1674,13 @@ class UrlbarInput {
     this.removeAttribute("focused");
     this.endLayoutExtend();
 
-    if (this._autofillPlaceholder && this.window.gBrowser.userTypedValue) {
-      
-      this.value = this.window.gBrowser.userTypedValue;
-    }
-
     this.formatValue();
     this._resetSearchState();
+
+    
+    if (this.document.activeElement != this.inputField) {
+      this.selectionStart = this.selectionEnd = 0;
+    }
 
     
     
@@ -1741,7 +1742,6 @@ class UrlbarInput {
     
     if (this._focusedViaMousedown) {
       this._focusedViaMousedown = false;
-      this.view.maybeReopen();
     } else {
       this.startLayoutExtend();
       if (this.inputField.hasAttribute("refocused-by-panel")) {
@@ -1789,12 +1789,6 @@ class UrlbarInput {
           break;
         }
 
-        
-        
-        if (this._focusedViaMousedown) {
-          this.selectionStart = this.selectionEnd = 0;
-        }
-
         if (event.detail == 2 && UrlbarPrefs.get("doubleClickSelectsAll")) {
           this.editor.selectAll();
           event.preventDefault();
@@ -1829,11 +1823,7 @@ class UrlbarInput {
           this._mousedownOnUrlbarDescendant = false;
           break;
         }
-        
-        
-        if (event.target.closest("tab")) {
-          break;
-        }
+
         
         
         
@@ -1871,11 +1861,9 @@ class UrlbarInput {
     }
     this.removeAttribute("actiontype");
 
-    if (!this.view.isOpen || !value) {
-      this.view.clear();
-    }
-    if (this.view.isOpen && !value) {
+    if (!value && this.view.isOpen) {
       this.view.close();
+      this.view.clear();
       return;
     }
 
