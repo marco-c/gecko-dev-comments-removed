@@ -73,7 +73,8 @@ class HTMLTextFieldAccessible final : public HyperTextAccessibleWrap {
                                        HyperTextAccessibleWrap)
 
   
-  virtual already_AddRefed<TextEditor> GetEditor() const override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual already_AddRefed<TextEditor> GetEditor()
+      const override;
 
   
   virtual void Value(nsString& aValue) const override;

@@ -1891,7 +1891,7 @@ class Document : public nsINode,
   
   nsCommandManager* GetMidasCommandManager();
 
-  nsresult TurnEditingOff();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult TurnEditingOff();
 
   
   

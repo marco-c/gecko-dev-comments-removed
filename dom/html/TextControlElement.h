@@ -1,0 +1,236 @@
+
+
+
+
+
+
+#ifndef mozilla_TextControlElement_h
+#define mozilla_TextControlElement_h
+
+#include "mozilla/dom/FromParser.h"
+#include "mozilla/dom/NodeInfo.h"
+#include "nsGenericHTMLElement.h"
+
+class nsIContent;
+class nsISelectionController;
+class nsFrameSelection;
+class nsTextControlFrame;
+
+namespace mozilla {
+
+class ErrorResult;
+class TextControlState;
+class TextEditor;
+
+
+
+
+
+class TextControlElement : public nsGenericHTMLFormElementWithState {
+ public:
+  TextControlElement(already_AddRefed<dom::NodeInfo>&& aNodeInfo,
+                     dom::FromParser aFromParser, uint8_t aType)
+      : nsGenericHTMLFormElementWithState(std::move(aNodeInfo), aFromParser,
+                                          aType){};
+
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(TextControlElement,
+                                           nsGenericHTMLFormElementWithState)
+
+  bool IsTextControlElement() const final { return true; }
+
+  NS_IMPL_FROMNODE_HELPER(TextControlElement, IsTextControlElement())
+
+  
+
+
+  virtual nsresult SetValueChanged(bool changed) = 0;
+
+  
+
+
+
+  virtual bool IsSingleLineTextControl() const = 0;
+
+  
+
+
+
+  virtual bool IsTextArea() const = 0;
+
+  
+
+
+
+  virtual bool IsPasswordTextControl() const = 0;
+
+  
+
+
+
+  virtual int32_t GetCols() = 0;
+
+  
+
+
+  virtual int32_t GetWrapCols() = 0;
+
+  
+
+
+
+  virtual int32_t GetRows() = 0;
+
+  
+
+
+  virtual void GetDefaultValueFromContent(nsAString& aValue) = 0;
+
+  
+
+
+  virtual bool ValueChanged() const = 0;
+
+  
+
+
+
+
+
+
+  virtual void GetTextEditorValue(nsAString& aValue,
+                                  bool aIgnoreWrap) const = 0;
+
+  
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT virtual TextEditor* GetTextEditor() = 0;
+  virtual TextEditor* GetTextEditorWithoutCreation() = 0;
+
+  
+
+
+
+
+  virtual nsISelectionController* GetSelectionController() = 0;
+
+  virtual nsFrameSelection* GetConstFrameSelection() = 0;
+
+  virtual TextControlState* GetTextControlState() const = 0;
+
+  
+
+
+
+  virtual nsresult BindToFrame(nsTextControlFrame* aFrame) = 0;
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void UnbindFromFrame(
+      nsTextControlFrame* aFrame) = 0;
+
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT virtual nsresult CreateEditor() = 0;
+
+  
+
+
+  virtual void SetPreviewValue(const nsAString& aValue) = 0;
+
+  
+
+
+  virtual void GetPreviewValue(nsAString& aValue) = 0;
+
+  
+
+
+  virtual void EnablePreview() = 0;
+
+  
+
+
+  virtual bool IsPreviewEnabled() = 0;
+
+  
+
+
+  virtual void InitializeKeyboardEventListeners() = 0;
+
+  
+
+
+
+  virtual void UpdateOverlayTextVisibility(bool aNotify) = 0;
+
+  
+
+
+  virtual bool GetPlaceholderVisibility() = 0;
+
+  
+
+
+  virtual bool GetPreviewVisibility() = 0;
+
+  enum class ValueChangeKind {
+    Internal,
+    Script,
+    UserInteraction,
+  };
+
+  
+
+
+  virtual void OnValueChanged(bool aNotify, ValueChangeKind) = 0;
+
+  
+
+
+  virtual void GetValueFromSetRangeText(nsAString& aValue) = 0;
+  virtual nsresult SetValueFromSetRangeText(const nsAString& aValue) = 0;
+
+  static const int32_t DEFAULT_COLS = 20;
+  static const int32_t DEFAULT_ROWS = 1;
+  static const int32_t DEFAULT_ROWS_TEXTAREA = 2;
+  static const int32_t DEFAULT_UNDO_CAP = 1000;
+
+  
+  typedef enum {
+    eHTMLTextWrap_Off = 1,   
+    eHTMLTextWrap_Hard = 2,  
+    eHTMLTextWrap_Soft = 3   
+  } nsHTMLTextWrap;
+
+  static bool GetWrapPropertyEnum(nsIContent* aContent,
+                                  nsHTMLTextWrap& aWrapProp);
+
+  
+
+
+
+
+
+  virtual bool HasCachedSelection() = 0;
+
+  static already_AddRefed<TextControlElement>
+  GetTextControlElementFromEditingHost(nsIContent* aHost);
+
+ protected:
+  virtual ~TextControlElement() = default;
+};
+
+}  
+
+#endif  
