@@ -14,6 +14,11 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/ContentBlockingAllowList.jsm"
 );
 
+ChromeUtils.import(
+  "resource://testing-common/CustomizableUITestUtils.jsm",
+  this
+);
+
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -654,4 +659,31 @@ add_task(async function testQuickSwitchTabAfterTogglingTPSwitch() {
 
   
   await TrackingDBService.clearAll();
+});
+
+
+
+add_task(async function testProtectionsButton() {
+  let gCUITestUtils = new CustomizableUITestUtils(window);
+
+  await BrowserTestUtils.withNewTab(gBrowser, async function(browser) {
+    await gCUITestUtils.openMainMenu();
+
+    let loaded = TestUtils.waitForCondition(
+      () => gBrowser.currentURI.spec == "about:protections",
+      "Should open about:protections"
+    );
+    document.getElementById("appMenu-protection-report-button").click();
+    await loaded;
+
+    
+    
+    await SpecialPowers.spawn(browser, [], async function() {
+      await ContentTaskUtils.waitForCondition(() => {
+        let bars = content.document.querySelectorAll(".graph-bar");
+        return bars.length;
+      }, "The graph has been built");
+    });
+  });
+  checkClickTelemetry("open_full_report", undefined, "app_menu");
 });
