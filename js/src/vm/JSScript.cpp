@@ -5313,10 +5313,6 @@ void JSScript::traceChildren(JSTracer* trc) {
   
   BaseScript::traceChildren(trc);
 
-  if (data_) {
-    data_->trace(trc);
-  }
-
   if (scriptData()) {
     scriptData()->traceChildren(trc);
   }
