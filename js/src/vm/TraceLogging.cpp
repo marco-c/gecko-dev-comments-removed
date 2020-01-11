@@ -22,7 +22,7 @@
 #include "threading/LockGuard.h"
 #include "util/Text.h"
 #include "vm/Activation.h"  
-#include "vm/FrameIter.h"  
+#include "vm/FrameIter.h"   
 #include "vm/JSScript.h"
 #include "vm/Runtime.h"
 #include "vm/Time.h"

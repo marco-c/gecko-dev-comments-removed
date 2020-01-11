@@ -85,8 +85,7 @@ TaskDispatcher& TaskQueue::TailDispatcher() {
 
 
 nsresult TaskQueue::DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable,
-                                   uint32_t aFlags,
-                                   DispatchReason aReason) {
+                                   uint32_t aFlags, DispatchReason aReason) {
   mQueueMonitor.AssertCurrentThreadOwns();
   if (mIsShutdown) {
     return NS_ERROR_FAILURE;

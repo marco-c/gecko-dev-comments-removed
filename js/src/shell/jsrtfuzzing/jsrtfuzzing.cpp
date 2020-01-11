@@ -8,7 +8,7 @@
 
 #include "mozilla/ArrayUtils.h"  
 #include "mozilla/Assertions.h"  
-#include "mozilla/Utf8.h"  
+#include "mozilla/Utf8.h"        
 
 #include <stdio.h>  
 
@@ -19,8 +19,8 @@
 #include "js/CompilationAndEvaluation.h"  
 #include "js/CompileOptions.h"            
 #include "js/RootingAPI.h"                
-#include "js/SourceText.h"  
-#include "js/Value.h"       
+#include "js/SourceText.h"                
+#include "js/Value.h"                     
 #include "shell/jsshell.h"  
 #include "vm/Interpreter.h"
 #include "vm/JSContext.h"  

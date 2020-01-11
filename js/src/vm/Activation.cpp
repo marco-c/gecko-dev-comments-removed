@@ -12,12 +12,12 @@
 #include <stdint.h>  
 
 #include "debugger/DebugAPI.h"  
-#include "gc/GC.h"  
+#include "gc/GC.h"              
 #include "jit/JitFrames.h"  
 #include "js/RootingAPI.h"  
-#include "js/Value.h"  
-#include "vm/JSContext.h"  
-#include "vm/Stack.h"  
+#include "js/Value.h"       
+#include "vm/JSContext.h"   
+#include "vm/Stack.h"       
 
 #include "vm/Compartment-inl.h"  
 

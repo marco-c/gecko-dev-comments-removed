@@ -13,21 +13,21 @@
 #include <stdint.h>  
 #include <stdlib.h>  
 
-#include "jit/BaselineFrame.h"  
+#include "jit/BaselineFrame.h"   
 #include "jit/JSJitFrameIter.h"  
-#include "js/GCAPI.h"  
-#include "js/Principals.h"  
-#include "js/RootingAPI.h"  
-#include "vm/Activation.h"  
+#include "js/GCAPI.h"            
+#include "js/Principals.h"       
+#include "js/RootingAPI.h"       
+#include "vm/Activation.h"       
 #include "vm/EnvironmentObject.h"  
-#include "vm/JitActivation.h"  
-#include "vm/JSContext.h"  
+#include "vm/JitActivation.h"      
+#include "vm/JSContext.h"          
 #include "vm/JSFunction.h"  
 #include "vm/JSScript.h"  
-#include "vm/Runtime.h"  
+#include "vm/Runtime.h"   
 #include "vm/Stack.h"  
 #include "wasm/WasmFrameIter.h"  
-#include "wasm/WasmInstance.h"  
+#include "wasm/WasmInstance.h"   
 
 #include "jit/JSJitFrameIter-inl.h"  
 #include "vm/Stack-inl.h"  
@@ -49,11 +49,11 @@ using js::ArgumentsObject;
 using js::CallObject;
 using js::FrameIter;
 using js::JitFrameIter;
-using js::jit::JSJitFrameIter;
 using js::NonBuiltinFrameIter;
 using js::NonBuiltinScriptFrameIter;
 using js::OnlyJSJitFrameIter;
 using js::ScriptSource;
+using js::jit::JSJitFrameIter;
 
 JitFrameIter::JitFrameIter(const JitFrameIter& another) { *this = another; }
 

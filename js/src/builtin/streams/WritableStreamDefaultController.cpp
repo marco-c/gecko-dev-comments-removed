@@ -11,8 +11,8 @@
 #include "builtin/streams/ClassSpecMacro.h"  
 #include "builtin/streams/WritableStream.h"  
 #include "builtin/streams/WritableStreamDefaultControllerOperations.h"  
-#include "js/CallArgs.h"                     
-#include "js/Class.h"                        
+#include "js/CallArgs.h"      
+#include "js/Class.h"         
 #include "js/PropertySpec.h"  
 #include "js/Value.h"         
 

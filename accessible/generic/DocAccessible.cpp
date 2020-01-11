@@ -1955,7 +1955,8 @@ void DocAccessible::ProcessContentInserted(
           
           
           MOZ_DIAGNOSTIC_ASSERT(parent == aContainer,
-            "Child moving to new parent, but previous sibling in wrong parent");
+                                "Child moving to new parent, but previous "
+                                "sibling in wrong parent");
           continue;
         }
 #ifdef A11Y_LOG

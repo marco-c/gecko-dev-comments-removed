@@ -110,6 +110,7 @@ class TransportSecurityInfo : public nsITransportSecurityInfo,
   
 
   bool mHaveCertErrorBits;
+
  private:
   
   

@@ -10,15 +10,15 @@
 #include "vm/Activation.h"
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Likely.h"  
-#include "mozilla/Maybe.h"  
+#include "mozilla/Likely.h"      
+#include "mozilla/Maybe.h"       
 
-#include "jit/BaselineFrame.h"  
+#include "jit/BaselineFrame.h"   
 #include "jit/JSJitFrameIter.h"  
-#include "vm/FrameIter.h"  
-#include "vm/JitActivation.h"  
-#include "vm/JSContext.h"  
-#include "vm/Stack.h"  
+#include "vm/FrameIter.h"        
+#include "vm/JitActivation.h"    
+#include "vm/JSContext.h"        
+#include "vm/Stack.h"            
 
 namespace js {
 

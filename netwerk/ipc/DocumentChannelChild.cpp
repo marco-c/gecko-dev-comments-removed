@@ -76,7 +76,7 @@ NS_INTERFACE_MAP_BEGIN(DocumentChannelChild)
           "DocumentChannelChild, this will be broken");
     }
   }
-  if (false) 
+  if (false)  
 NS_INTERFACE_MAP_END
 
 DocumentChannelChild::DocumentChannelChild(

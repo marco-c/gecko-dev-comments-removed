@@ -7,18 +7,18 @@
 #include "vm/Stack-inl.h"
 
 #include "mozilla/ArrayUtils.h"  
-#include "mozilla/Maybe.h"  
+#include "mozilla/Maybe.h"       
 
 #include <algorithm>  
-#include <stddef.h>  
-#include <stdint.h>  
-#include <utility>  
+#include <stddef.h>   
+#include <stdint.h>   
+#include <utility>    
 
 #include "debugger/DebugAPI.h"
 #include "gc/Marking.h"
 #include "gc/Tracer.h"  
 #include "jit/JitcodeMap.h"
-#include "js/Value.h"  
+#include "js/Value.h"      
 #include "vm/FrameIter.h"  
 #include "vm/JSContext.h"
 #include "vm/Opcodes.h"

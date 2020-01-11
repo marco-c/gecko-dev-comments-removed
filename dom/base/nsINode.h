@@ -907,9 +907,8 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
   nsIContent* GetParent() const {
-    return MOZ_LIKELY(GetBoolFlag(ParentIsContent))
-               ? mParent->AsContent()
-               : nullptr;
+    return MOZ_LIKELY(GetBoolFlag(ParentIsContent)) ? mParent->AsContent()
+                                                    : nullptr;
   }
 
   

@@ -10,21 +10,21 @@
 
 #include <stddef.h>  
 #include <stdint.h>  
-#include <utility>  
+#include <utility>   
 
-#include "debugger/DebugAPI.h"  
+#include "debugger/DebugAPI.h"        
 #include "jit/RematerializedFrame.h"  
-#include "js/AllocPolicy.h"  
-#include "vm/EnvironmentObject.h"  
-#include "vm/FrameIter.h"  
-#include "vm/JSContext.h"  
-#include "vm/Realm.h"  
-#include "wasm/WasmCode.h"  
-#include "wasm/WasmConstants.h"  
+#include "js/AllocPolicy.h"           
+#include "vm/EnvironmentObject.h"     
+#include "vm/FrameIter.h"             
+#include "vm/JSContext.h"             
+#include "vm/Realm.h"                 
+#include "wasm/WasmCode.h"            
+#include "wasm/WasmConstants.h"       
 #include "wasm/WasmFrameIter.h"  
 #include "wasm/WasmInstance.h"  
-#include "wasm/WasmProcess.h"  
-#include "wasm/WasmTypes.h"  
+#include "wasm/WasmProcess.h"   
+#include "wasm/WasmTypes.h"     
 
 #include "vm/Realm-inl.h"  
 
@@ -63,7 +63,8 @@ js::jit::JitActivation::~JitActivation() {
   clearRematerializedFrames();
 }
 
-void js::jit::JitActivation::setBailoutData(jit::BailoutFrameInfo* bailoutData) {
+void js::jit::JitActivation::setBailoutData(
+    jit::BailoutFrameInfo* bailoutData) {
   MOZ_ASSERT(!bailoutData_);
   bailoutData_ = bailoutData;
 }
@@ -154,8 +155,8 @@ js::jit::RematerializedFrame* js::jit::JitActivation::lookupRematerializedFrame(
   return nullptr;
 }
 
-void js::jit::JitActivation::removeRematerializedFramesFromDebugger(JSContext* cx,
-                                                                uint8_t* top) {
+void js::jit::JitActivation::removeRematerializedFramesFromDebugger(
+    JSContext* cx, uint8_t* top) {
   
   
   
@@ -219,8 +220,9 @@ void js::jit::JitActivation::traceIonRecovery(JSTracer* trc) {
   }
 }
 
-void js::jit::JitActivation::startWasmTrap(wasm::Trap trap, uint32_t bytecodeOffset,
-                                       const wasm::RegisterState& state) {
+void js::jit::JitActivation::startWasmTrap(wasm::Trap trap,
+                                           uint32_t bytecodeOffset,
+                                           const wasm::RegisterState& state) {
   MOZ_ASSERT(!isWasmTrapping());
 
   bool unwound;

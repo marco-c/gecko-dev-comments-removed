@@ -1021,19 +1021,21 @@ class HTMLEditor final : public TextEditor,
 
 
   enum class SkipWhitespace { Yes, No };
-  nsIContent* GetPriorHTMLSibling(nsINode* aNode, SkipWhitespace = SkipWhitespace::No);
+  nsIContent* GetPriorHTMLSibling(nsINode* aNode,
+                                  SkipWhitespace = SkipWhitespace::No);
 
   
 
 
 
 
-  nsIContent* GetNextHTMLSibling(nsINode* aNode, SkipWhitespace = SkipWhitespace::No);
+  nsIContent* GetNextHTMLSibling(nsINode* aNode,
+                                 SkipWhitespace = SkipWhitespace::No);
 
   
   static bool SkippableWhitespace(nsINode* aNode, SkipWhitespace aSkipWS) {
-    return aSkipWS == SkipWhitespace::Yes &&
-      aNode->IsText() && aNode->AsText()->TextIsOnlyWhitespace();
+    return aSkipWS == SkipWhitespace::Yes && aNode->IsText() &&
+           aNode->AsText()->TextIsOnlyWhitespace();
   }
 
   
@@ -4334,8 +4336,7 @@ class HTMLEditor final : public TextEditor,
  protected:
   
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
-  IndentListChild(RefPtr<Element>* aCurList,
-                  const EditorDOMPoint& aCurPoint,
+  IndentListChild(RefPtr<Element>* aCurList, const EditorDOMPoint& aCurPoint,
                   OwningNonNull<nsINode>& aCurNode);
 
   RefPtr<TypeInState> mTypeInState;

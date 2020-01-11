@@ -2828,8 +2828,8 @@ already_AddRefed<ElementInternals> nsGenericHTMLElement::AttachInternals(
     
     if (!definition) {
       definition = nsContentUtils::LookupCustomElementDefinition(
-          NodeInfo()->GetDocument(), nameAtom,
-          NodeInfo()->NamespaceID(), ceData->GetCustomElementType());
+          NodeInfo()->GetDocument(), nameAtom, NodeInfo()->NamespaceID(),
+          ceData->GetCustomElementType());
     }
   }
 

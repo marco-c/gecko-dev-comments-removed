@@ -186,8 +186,7 @@ PLDHashTable::PLDHashTable(const PLDHashTableOps* aOps, uint32_t aEntrySize,
       mHashShift(HashShift(aEntrySize, aLength)),
       mEntrySize(aEntrySize),
       mEntryCount(0),
-      mRemovedCount(0)
-{
+      mRemovedCount(0) {
   
   
   

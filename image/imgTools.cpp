@@ -57,14 +57,16 @@ static nsresult sniff_mimetype_callback(nsIInputStream* in, void* data,
 }
 
 
-class NotificationObserverWrapper : public imgINotificationObserver,
-                                    public mozilla::SupportsWeakPtr<NotificationObserverWrapper> {
+class NotificationObserverWrapper
+    : public imgINotificationObserver,
+      public mozilla::SupportsWeakPtr<NotificationObserverWrapper> {
  public:
   NS_DECL_ISUPPORTS
   NS_FORWARD_IMGINOTIFICATIONOBSERVER(mObserver->)
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(nsGeolocationRequest)
 
-  explicit NotificationObserverWrapper(imgINotificationObserver* observer) : mObserver(observer) {}
+  explicit NotificationObserverWrapper(imgINotificationObserver* observer)
+      : mObserver(observer) {}
 
  private:
   virtual ~NotificationObserverWrapper() = default;
@@ -101,7 +103,8 @@ class ImageDecoderListener final : public nsIStreamListener,
         
         
         uint32_t unused;
-        aInputStream->ReadSegments(sniff_mimetype_callback, &mimeType, aCount, &unused);
+        aInputStream->ReadSegments(sniff_mimetype_callback, &mimeType, aCount,
+                                   &unused);
       }
 
       RefPtr<ProgressTracker> tracker = new ProgressTracker();
@@ -122,9 +125,7 @@ class ImageDecoderListener final : public nsIStreamListener,
   }
 
   NS_IMETHOD
-  OnStartRequest(nsIRequest* aRequest) override {
-    return NS_OK;
-  }
+  OnStartRequest(nsIRequest* aRequest) override { return NS_OK; }
 
   NS_IMETHOD
   OnStopRequest(nsIRequest* aRequest, nsresult aStatus) override {

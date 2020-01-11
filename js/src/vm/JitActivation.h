@@ -8,25 +8,25 @@
 #define vm_JitActivation_h
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Atomics.h"  
-#include "mozilla/Maybe.h"  
+#include "mozilla/Atomics.h"     
+#include "mozilla/Maybe.h"       
 
 #include <stddef.h>  
 #include <stdint.h>  
 
 #include "jstypes.h"  
 
-#include "jit/IonTypes.h"  
+#include "jit/IonTypes.h"        
 #include "jit/JSJitFrameIter.h"  
 #ifdef CHECK_OSIPOINT_REGISTERS
 #  include "jit/Registers.h"  
 #endif
 #include "jit/RematerializedFrame.h"  
-#include "js/GCVector.h"  
-#include "js/HashTable.h"  
-#include "js/UniquePtr.h"  
-#include "vm/Activation.h"  
-#include "wasm/WasmConstants.h"  
+#include "js/GCVector.h"              
+#include "js/HashTable.h"             
+#include "js/UniquePtr.h"             
+#include "vm/Activation.h"            
+#include "wasm/WasmConstants.h"       
 #include "wasm/WasmFrameIter.h"  
 #include "wasm/WasmTypes.h"  
 

@@ -22,7 +22,7 @@ class DefaultDelete<const HyphDic> {
  public:
   void operator()(const HyphDic* ptr) const;
 };
-}
+}  
 
 class nsHyphenator {
  public:

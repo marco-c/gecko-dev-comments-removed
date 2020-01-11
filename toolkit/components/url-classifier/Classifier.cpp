@@ -753,7 +753,7 @@ nsresult Classifier::AsyncApplyUpdates(const TableUpdateArray& aUpdates,
   RefPtr<Classifier> self = this;
   nsCOMPtr<nsIRunnable> bgRunnable = NS_NewRunnableFunction(
       "safebrowsing::Classifier::AsyncApplyUpdates",
-      [self, aUpdates, aCallback, callerThread] () mutable {
+      [self, aUpdates, aCallback, callerThread]() mutable {
         MOZ_ASSERT(self->OnUpdateThread(), "MUST be on update thread");
 
         nsresult bgRv;
@@ -780,7 +780,8 @@ nsresult Classifier::AsyncApplyUpdates(const TableUpdateArray& aUpdates,
         
         nsCOMPtr<nsIRunnable> fgRunnable = NS_NewRunnableFunction(
             "safebrowsing::Classifier::AsyncApplyUpdates",
-            [self = std::move(self), aCallback, bgRv, failedTableNames, callerThread] () mutable {
+            [self = std::move(self), aCallback, bgRv, failedTableNames,
+             callerThread]() mutable {
               RefPtr<Classifier> classifier = std::move(self);
 
               MOZ_ASSERT(NS_GetCurrentThread() == callerThread,

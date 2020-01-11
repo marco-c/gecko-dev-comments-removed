@@ -1814,7 +1814,7 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
   bool isPresentingInVR = false;
 #if defined(MOZ_WIDGET_ANDROID)
   isPresentingInVR = gfx::VRManagerChild::IsPresenting();
-#endif 
+#endif  
 
   if (!isPresentingInVR && IsWaitingForPaint(aNowTime)) {
     

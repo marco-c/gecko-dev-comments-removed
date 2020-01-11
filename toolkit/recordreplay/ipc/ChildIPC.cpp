@@ -112,7 +112,8 @@ static void ChannelMessageHandler(Message::UniquePtr aMsg) {
       
       
       const PingMessage& nmsg = (const PingMessage&)*aMsg;
-      uint64_t total = *ExecutionProgressCounter() + Thread::TotalEventProgress();
+      uint64_t total =
+          *ExecutionProgressCounter() + Thread::TotalEventProgress();
       gChannel->SendMessage(PingResponseMessage(nmsg.mId, total));
       break;
     }

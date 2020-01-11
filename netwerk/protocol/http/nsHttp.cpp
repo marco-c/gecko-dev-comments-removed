@@ -883,7 +883,7 @@ nsresult HttpProxyResponseToErrorCode(uint32_t aStatusCode) {
     case 406:
       rv = NS_ERROR_PROXY_NOT_ACCEPTABLE;
       break;
-    case 407: 
+    case 407:  
       rv = NS_ERROR_PROXY_AUTHENTICATION_FAILED;
       break;
     case 408:

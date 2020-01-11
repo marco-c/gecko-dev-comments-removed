@@ -1084,8 +1084,8 @@ bool PosixProcessLauncher::DoSetup() {
     if (mDisableOSActivityMode) {
       mLaunchOptions->env_map["OS_ACTIVITY_MODE"] = "disable";
     }
-#    endif         
-#  endif           
+#    endif  
+#  endif    
   }
 
   FilePath exePath;

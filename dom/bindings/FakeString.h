@@ -116,7 +116,7 @@ struct FakeString {
     
     
     mDataInitialized = false;
-#endif 
+#endif  
     
     
     
@@ -177,7 +177,7 @@ struct FakeString {
   nsString::char_type mInlineStorage[sInlineCapacity];
 #ifdef DEBUG
   bool mDataInitialized = false;
-#endif 
+#endif  
 
   FakeString(const FakeString& other) = delete;
   void operator=(const FakeString& other) = delete;
@@ -189,7 +189,7 @@ struct FakeString {
     mLength = aLength;
 #ifdef DEBUG
     mDataInitialized = true;
-#endif 
+#endif  
   }
 
   bool IsMutable() {

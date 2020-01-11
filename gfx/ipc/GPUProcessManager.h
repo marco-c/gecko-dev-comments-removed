@@ -107,7 +107,8 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
       nsTArray<uint32_t>* aNamespaces);
 
   
-  void InitVideoBridge(mozilla::ipc::Endpoint<PVideoBridgeParent>&& aVideoBridge);
+  void InitVideoBridge(
+      mozilla::ipc::Endpoint<PVideoBridgeParent>&& aVideoBridge);
 
   
   

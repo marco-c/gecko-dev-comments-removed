@@ -13,18 +13,18 @@
 
 #include <stdint.h>  
 
-#include "jsapi.h"  
+#include "jsapi.h"        
 #include "jsfriendapi.h"  
 
-#include "builtin/Promise.h"                 
+#include "builtin/Promise.h"                          
 #include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/WritableStream.h"  
 #include "builtin/streams/WritableStreamDefaultController.h"  
 #include "builtin/streams/WritableStreamDefaultControllerOperations.h"  
 #include "builtin/streams/WritableStreamWriterOperations.h"  
-#include "js/CallArgs.h"     
-#include "js/Promise.h"      
-#include "js/RootingAPI.h"   
+#include "js/CallArgs.h"    
+#include "js/Promise.h"     
+#include "js/RootingAPI.h"  
 #include "js/Value.h"  
 #include "vm/Compartment.h"  
 #include "vm/JSContext.h"    
@@ -35,10 +35,10 @@
 #include "builtin/streams/WritableStream-inl.h"  
 #include "builtin/streams/WritableStreamDefaultWriter-inl.h"  
 #include "vm/Compartment-inl.h"  
-#include "vm/JSContext-inl.h"    
-#include "vm/JSObject-inl.h"     
-#include "vm/List-inl.h"         
-#include "vm/Realm-inl.h"        
+#include "vm/JSContext-inl.h"  
+#include "vm/JSObject-inl.h"   
+#include "vm/List-inl.h"       
+#include "vm/Realm-inl.h"      
 
 using js::ExtraFromHandler;
 using js::PromiseObject;

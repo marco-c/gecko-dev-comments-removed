@@ -12,10 +12,10 @@
 #include "jsapi.h"        
 #include "jsfriendapi.h"  
 
-#include "builtin/Promise.h"                 
-#include "builtin/streams/ClassSpecMacro.h"  
+#include "builtin/Promise.h"                          
+#include "builtin/streams/ClassSpecMacro.h"           
 #include "builtin/streams/MiscellaneousOperations.h"  
-#include "builtin/streams/PullIntoDescriptor.h"  
+#include "builtin/streams/PullIntoDescriptor.h"       
 #include "builtin/streams/QueueWithSizes.h"  
 #include "builtin/streams/ReadableStream.h"  
 #include "builtin/streams/ReadableStreamController.h"  
@@ -33,7 +33,7 @@
 #include "vm/JSContext.h"
 #include "vm/SelfHosting.h"
 
-#include "builtin/streams/HandlerFunction-inl.h"       
+#include "builtin/streams/HandlerFunction-inl.h"  
 #include "builtin/streams/MiscellaneousOperations-inl.h"  
 #include "builtin/streams/ReadableStreamReader-inl.h"  
 #include "vm/Compartment-inl.h"  

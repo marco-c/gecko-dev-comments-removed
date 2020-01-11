@@ -363,7 +363,7 @@ nsresult GetJSObjectFromArray(JSContext* aCtx, JS::Handle<JSObject*> aArray,
   return NS_OK;
 }
 
-} 
+}  
 
 class VisitedQuery final : public AsyncStatementCallback {
  public:

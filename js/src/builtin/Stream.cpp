@@ -26,7 +26,7 @@
 #include "vm/JSContext.h"
 #include "vm/SelfHosting.h"
 
-#include "builtin/streams/HandlerFunction-inl.h"       
+#include "builtin/streams/HandlerFunction-inl.h"  
 #include "builtin/streams/ReadableStreamReader-inl.h"  
 #include "vm/Compartment-inl.h"
 #include "vm/List-inl.h"  

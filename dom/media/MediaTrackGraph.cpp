@@ -330,7 +330,8 @@ void MediaTrackGraphImpl::UpdateTrackOrder() {
   
   
   if (CurrentDriver()->AsAudioCallbackDriver() && !switching) {
-    if (graphOutputChannelCount != CurrentDriver()->AsAudioCallbackDriver()->OutputChannelCount()) {
+    if (graphOutputChannelCount !=
+        CurrentDriver()->AsAudioCallbackDriver()->OutputChannelCount()) {
       AudioCallbackDriver* driver = new AudioCallbackDriver(
           this, graphOutputChannelCount, AudioInputChannelCount(),
           AudioInputDevicePreference());
