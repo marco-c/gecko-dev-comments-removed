@@ -25,7 +25,7 @@
 #include "js/Vector.h"       
 
 class JSAtom;
-struct JSContext;
+struct JS_PUBLIC_API JSContext;
 
 namespace js {
 
