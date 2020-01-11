@@ -23,6 +23,7 @@
 #include "nsCaret.h"
 #include "nsContainerFrame.h"
 #include "nsContentUtils.h"
+#include "nsDebug.h"
 #include "nsFocusManager.h"
 #include "nsFrame.h"
 #include "nsFrameSelection.h"
@@ -1121,8 +1122,14 @@ bool AccessibleCaretManager::RestrictCaretDraggingOffsets(
 
   
   
-  int32_t cmpToInactiveCaretPos = nsContentUtils::ComparePoints_Deprecated(
+  const Maybe<int32_t> cmpToInactiveCaretPos = nsContentUtils::ComparePoints(
       aOffsets.content, aOffsets.StartOffset(), content, contentOffset);
+  if (NS_WARN_IF(!cmpToInactiveCaretPos)) {
+    
+    
+    
+    return false;
+  }
 
   
   
@@ -1135,9 +1142,15 @@ bool AccessibleCaretManager::RestrictCaretDraggingOffsets(
   }
 
   
-  int32_t cmpToLimit = nsContentUtils::ComparePoints_Deprecated(
-      aOffsets.content, aOffsets.StartOffset(), limit.mResultContent,
-      limit.mContentOffset);
+  const Maybe<int32_t> cmpToLimit =
+      nsContentUtils::ComparePoints(aOffsets.content, aOffsets.StartOffset(),
+                                    limit.mResultContent, limit.mContentOffset);
+  if (NS_WARN_IF(!cmpToLimit)) {
+    
+    
+    
+    return false;
+  }
 
   auto SetOffsetsToLimit = [&aOffsets, &limit]() {
     aOffsets.content = limit.mResultContent;
@@ -1147,15 +1160,15 @@ bool AccessibleCaretManager::RestrictCaretDraggingOffsets(
 
   if (!StaticPrefs::
           layout_accessiblecaret_allow_dragging_across_other_caret()) {
-    if ((mActiveCaret == mFirstCaret.get() && cmpToLimit == 1) ||
-        (mActiveCaret == mSecondCaret.get() && cmpToLimit == -1)) {
+    if ((mActiveCaret == mFirstCaret.get() && *cmpToLimit == 1) ||
+        (mActiveCaret == mSecondCaret.get() && *cmpToLimit == -1)) {
       
       
       
       SetOffsetsToLimit();
     }
   } else {
-    switch (cmpToInactiveCaretPos) {
+    switch (*cmpToInactiveCaretPos) {
       case 0:
         
         
