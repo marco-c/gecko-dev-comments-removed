@@ -395,6 +395,11 @@ class nsPresContext : public nsISupports,
   
 
 
+  void UpdateDynamicToolbarOffset(mozilla::ScreenIntCoord aOffset);
+
+  
+
+
 
   bool IsPaginated() const { return mPaginated; }
 
