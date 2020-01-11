@@ -237,6 +237,11 @@ const kBuiltInInputs = {
   },
 };
 
+
+
+
+var localizedStrings = {};
+
 const kHelperObservers = new Set([
   "bookmark-icon-updated",
   "reader-mode-available",
@@ -303,8 +308,6 @@ class TouchBarHelper {
     
     
     this._inputsNotUpdated = new Set(Object.keys(kBuiltInInputs));
-    
-    this._inputsNotUpdated.delete("SearchPopover");
 
     return layoutItems;
   }
@@ -351,8 +354,8 @@ class TouchBarHelper {
     
     
     if (
-      kBuiltInInputs[inputName].hasOwnProperty("localTitle") ||
-      !kBuiltInInputs[inputName].hasOwnProperty("title")
+      !inputData.hasOwnProperty("title") ||
+      localizedStrings[inputData.title]
     ) {
       return item;
     }
@@ -360,7 +363,7 @@ class TouchBarHelper {
     
     this._l10n.formatValue(item.key).then(result => {
       item.title = result;
-      kBuiltInInputs[inputName].localTitle = result; 
+      localizedStrings[inputData.title] = result; 
       
       if (TouchBarHelper.window) {
         if (this._inputsNotUpdated) {
@@ -475,12 +478,16 @@ class TouchBarHelper {
         );
         break;
       case "intl:app-locales-changed":
-        
         this._searchPopover = null;
-        for (let input in kBuiltInInputs) {
-          delete input.localTitle;
-        }
-        this._updateTouchBarInputs(...kBuiltInInputs.keys());
+        localizedStrings = {};
+
+        
+        
+        
+        this._l10n = new Localization(["browser/touchbar/touchbar.ftl"]);
+        helperProto._l10n = this._l10n;
+
+        this._updateTouchBarInputs(...Object.keys(kBuiltInInputs));
         break;
       case "quit-application":
         this.destructor();
@@ -523,7 +530,7 @@ helperProto._l10n = new Localization(["browser/touchbar/touchbar.ftl"]);
 class TouchBarInput {
   constructor(input) {
     this._key = input.key || input.title;
-    this._title = input.hasOwnProperty("localTitle") ? input.localTitle : "";
+    this._title = localizedStrings[this._key] || "";
     this._image = input.image;
     this._type = input.type;
     this._callback = input.callback;
@@ -544,7 +551,7 @@ class TouchBarInput {
         initializedChild.type = input.type + "-" + initializedChild.type;
         this._children.push(initializedChild);
         
-        if (childData.title && childData.title != "") {
+        if (childData.title && !localizedStrings[childData.title]) {
           toLocalize.push(initializedChild);
         }
       }
@@ -608,7 +615,12 @@ class TouchBarInput {
 
 
 
+
   async _localizeChildren(children) {
+    if (!children || !children.length) {
+      return;
+    }
+
     let titles = await helperProto._l10n.formatValues(
       children.map(child => ({ id: child.key }))
     );
@@ -617,7 +629,9 @@ class TouchBarInput {
     
     children.forEach(function(child, index) {
       child.title = titles[index];
+      localizedStrings[child.key] = child.title;
     });
+
     gTouchBarUpdater.updateTouchBarInputs(TouchBarHelper.baseWindow, children);
   }
 }
