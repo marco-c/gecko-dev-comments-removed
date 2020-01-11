@@ -147,7 +147,7 @@ MOZ_MUST_USE WritableStreamDefaultWriter* js::CreateWritableStreamDefaultWriter(
       writer->setReadyPromise(promise);
 
       
-      SetPromiseIsHandled(cx, promise.as<PromiseObject>());
+      SetSettledPromiseIsHandled(cx, promise.as<PromiseObject>());
 
       
       JSObject* closedPromise = PromiseObject::createSkippingExecutor(cx);
@@ -175,7 +175,7 @@ MOZ_MUST_USE WritableStreamDefaultWriter* js::CreateWritableStreamDefaultWriter(
       writer->setReadyPromise(promise);
 
       
-      SetPromiseIsHandled(cx, promise.as<PromiseObject>());
+      SetSettledPromiseIsHandled(cx, promise.as<PromiseObject>());
 
       
       
@@ -187,7 +187,7 @@ MOZ_MUST_USE WritableStreamDefaultWriter* js::CreateWritableStreamDefaultWriter(
       writer->setClosedPromise(promise);
 
       
-      SetPromiseIsHandled(cx, promise.as<PromiseObject>());
+      SetSettledPromiseIsHandled(cx, promise.as<PromiseObject>());
     }
   }
 

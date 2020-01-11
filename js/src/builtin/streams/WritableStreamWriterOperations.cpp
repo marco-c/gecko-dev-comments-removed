@@ -185,7 +185,7 @@ static bool EnsurePromiseRejected(
   }
 
   
-  SetPromiseIsHandled(cx, unwrappedPromise);
+  SetSettledPromiseIsHandled(cx, unwrappedPromise);
   return true;
 }
 

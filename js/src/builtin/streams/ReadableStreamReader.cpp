@@ -112,7 +112,7 @@ MOZ_MUST_USE bool js::ReadableStreamReaderGenericInitialize(
     }
 
     
-    SetPromiseIsHandled(cx, promise.as<PromiseObject>());
+    SetSettledPromiseIsHandled(cx, promise.as<PromiseObject>());
   }
 
   if (!promise) {
@@ -210,7 +210,7 @@ MOZ_MUST_USE bool js::ReadableStreamReaderGenericRelease(
   }
 
   
-  SetPromiseIsHandled(cx, unwrappedClosedPromise);
+  SetSettledPromiseIsHandled(cx, unwrappedClosedPromise);
 
   
   unwrappedStream->clearReader();

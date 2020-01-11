@@ -353,7 +353,7 @@ MOZ_MUST_USE bool js::ReadableStreamErrorInternal(
   
   
   Rooted<JSObject*> closedPromise(cx, unwrappedReader->closedPromise());
-  SetPromiseIsHandled(cx, closedPromise.as<PromiseObject>());
+  SetSettledPromiseIsHandled(cx, closedPromise.as<PromiseObject>());
 
   if (unwrappedStream->mode() == JS::ReadableStreamMode::ExternalSource) {
     
