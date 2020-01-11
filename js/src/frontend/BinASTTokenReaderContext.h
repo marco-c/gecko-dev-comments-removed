@@ -190,8 +190,12 @@ class alignas(8) BinASTSymbol {
   static BinASTSymbol fromVariant(BinASTVariant v) {
     return fromRawBits(uint64_t(v));
   }
-  static BinASTSymbol fromAtomIndex(size_t i) { return fromRawBits(i); }
-  static BinASTSymbol nullAtom() { return fromRawBits(NullAtomIndex); }
+  static BinASTSymbol fromAtomIndex(size_t i) {
+    return fromRawBits(i);
+  }
+  static BinASTSymbol nullAtom() {
+    return fromRawBits(NullAtomIndex);
+  }
 
   uint32_t toUnsignedLong() const { return uint32_t(asBits_); }
   uint32_t toListLength() const { return uint32_t(asBits_); }
@@ -206,10 +210,14 @@ class alignas(8) BinASTSymbol {
     return toAtomIndexNoCheck();
   }
 
-  bool isNullAtom() const { return toAtomIndexNoCheck() == NullAtomIndex; }
+  bool isNullAtom() const {
+    return toAtomIndexNoCheck() == NullAtomIndex;
+  }
 
- private:
-  size_t toAtomIndexNoCheck() const { return size_t(asBits_); }
+  private:
+  size_t toAtomIndexNoCheck() const {
+    return size_t(asBits_);
+  }
 };
 
 
@@ -912,12 +920,18 @@ class HuffmanDictionary {
     explicit TableIdentity(BinASTList list)
         : index_(static_cast<size_t>(list) + ListIdentityBase) {}
 
-    size_t toIndex() const { return index_; }
+    size_t toIndex() const {
+      return index_;
+    }
   };
 
-  TableStatus& status(TableIdentity i) { return status(i.toIndex()); }
+  TableStatus& status(TableIdentity i) {
+    return status(i.toIndex());
+  }
 
-  GenericHuffmanTable& table(TableIdentity i) { return table(i.toIndex()); }
+  GenericHuffmanTable& table(TableIdentity i) {
+    return table(i.toIndex());
+  }
 
  private:
   
@@ -931,9 +945,12 @@ class HuffmanDictionary {
   
   
   
-  TableStatus status_[TableIdentity::Limit] = {TableStatus::Unreachable};
+  TableStatus status_[TableIdentity::Limit] = {
+      TableStatus::Unreachable};
 
-  TableStatus& status(size_t i) { return status_[i]; }
+  TableStatus& status(size_t i) {
+    return status_[i];
+  }
 
   
   

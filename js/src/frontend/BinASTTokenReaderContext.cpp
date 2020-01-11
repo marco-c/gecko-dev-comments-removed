@@ -476,10 +476,8 @@ class HuffmanPreludeReader {
       
       status = HuffmanDictionary::TableStatus::Initializing;
 
-      auto& table = dictionary_.table(tableId);
-
       
-      MOZ_TRY((readTable<List>(table, status, list)));
+      MOZ_TRY((readTable<List>(tableId, list)));
     }
 
     
@@ -833,34 +831,40 @@ class HuffmanPreludeReader {
       return raiseDuplicateTableError(entry.identity_);
     }
 
-    auto& table = dictionary_.table(tableId);
-    return readTable<Entry>(table, status, entry);
+    return readTable<Entry>(tableId, entry);
   }
 
   
   
   
   template <typename Entry>
-  MOZ_MUST_USE JS::Result<Ok> readTable(GenericHuffmanTable& table,
-                                        HuffmanDictionary::TableStatus& status,
-                                        Entry entry) {
+  MOZ_MUST_USE JS::Result<Ok> readTable(
+      HuffmanDictionary::TableIdentity tableId, Entry entry) {
     uint8_t headerByte;
     MOZ_TRY_VAR(headerByte, reader_.readByte<Compression::No>());
     switch (headerByte) {
-      case TableHeader::SingleValue:
+      case TableHeader::SingleValue: {
+        auto& table = dictionary_.table(tableId);
+        auto& status = dictionary_.status(tableId);
+
         new (mozilla::KnownNotNull, &table) GenericHuffmanTable();
         status = HuffmanDictionary::TableStatus::Ready;
 
         
         MOZ_TRY((readSingleValueTable<Entry>(table, entry)));
         return Ok();
-      case TableHeader::MultipleValues:
+      }
+      case TableHeader::MultipleValues: {
+        auto& table = dictionary_.table(tableId);
+        auto& status = dictionary_.status(tableId);
+
         new (mozilla::KnownNotNull, &table) GenericHuffmanTable();
         status = HuffmanDictionary::TableStatus::Ready;
 
         
         MOZ_TRY((readMultipleValuesTable<Entry>(table, entry)));
         return Ok();
+      }
       case TableHeader::Unreachable:
         
         return Ok();
