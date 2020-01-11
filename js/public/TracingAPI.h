@@ -437,7 +437,7 @@ inline void TraceEdge(JSTracer* trc, JS::TenuredHeap<T>* thingp,
 
 
 
-#define JS_DECLARE_UNSAFE_TRACE_ROOT(type)                               \
+#define JS_DECLARE_UNSAFE_TRACE_ROOT(type)                              \
   extern JS_PUBLIC_API void UnsafeTraceRoot(JSTracer* trc, type* edgep, \
                                             const char* name);
 

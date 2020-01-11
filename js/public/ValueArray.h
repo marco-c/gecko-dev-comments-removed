@@ -15,10 +15,10 @@
 
 #include <stdint.h>  
 
-#include "js/CallArgs.h"  
-#include "js/GCVector.h"  
+#include "js/CallArgs.h"    
+#include "js/GCVector.h"    
 #include "js/RootingAPI.h"  
-#include "js/Value.h"  
+#include "js/Value.h"       
 
 namespace JS {
 
