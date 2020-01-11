@@ -10,6 +10,7 @@ from .base import (get_free_port,
 from ..executors.executormarionette import (MarionetteTestharnessExecutor,  
                                             MarionetteRefTestExecutor,  
                                             MarionetteCrashtestExecutor)  
+from ..process import cast_env
 from .firefox import (get_timeout_multiplier,  
                       run_info_extras as fx_run_info_extras,
                       update_properties,  
@@ -159,7 +160,7 @@ class FirefoxAndroidBrowser(FirefoxBrowser):
         self.runner = FennecEmulatorRunner(app=self.package_name,
                                            profile=self.profile,
                                            cmdargs=cmd[1:],
-                                           env=env,
+                                           env=cast_env(env),
                                            symbols_path=self.symbols_path,
                                            serial=self.device_serial,
                                            
