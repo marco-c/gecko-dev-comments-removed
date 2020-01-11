@@ -19,6 +19,7 @@
 #include "gc/Rooting.h"              
 #include "js/AllocPolicy.h"          
 #include "js/StableStringChars.h"    
+#include "js/UniquePtr.h"            
 #include "js/Utility.h"              
 #include "js/Vector.h"               
 #include "util/StringBuffer.h"       
@@ -111,30 +112,24 @@ using Chars = BinASTTokenReaderContext::Chars;
 class HuffmanPreludeReader {
  public:
   
-  
-  
-  
-  HuffmanPreludeReader(JSContext* cx, BinASTTokenReaderContext& reader,
-                       HuffmanDictionary& dictionary,
-                       TemporaryStorage& tempStorage)
-      : cx_(cx),
-        reader_(reader),
-        dictionary_(dictionary),
-        tempStorage_(tempStorage),
-        stack_(cx_),
+  HuffmanPreludeReader(JSContext* cx, BinASTTokenReaderContext& reader)
+      : cx_(cx), reader_(reader), dictionary_(nullptr), stack_(cx_),
         auxStorageLength_(cx_) {}
 
   
-  MOZ_MUST_USE JS::Result<Ok> run(size_t initialCapacity);
+  MOZ_MUST_USE JS::Result<HuffmanDictionaryForMetadata*> run(
+      size_t initialCapacity);
 
  private:
   JSContext* cx_;
   BinASTTokenReaderContext& reader_;
 
   
-  HuffmanDictionary& dictionary_;
+  UniquePtr<HuffmanDictionary> dictionary_;
 
-  TemporaryStorage& tempStorage_;
+  
+  
+  TemporaryStorage tempStorage_;
 
  public:
   
@@ -475,10 +470,10 @@ class HuffmanPreludeReader {
   MOZ_MUST_USE JS::Result<Ok> pushValue(NormalizedInterfaceAndField identity,
                                         const List& list) {
     const auto tableId = TableIdentity(list.contents_);
-    if (dictionary_.isUnreachable(tableId)) {
+    if (dictionary_->isUnreachable(tableId)) {
       
       
-      dictionary_.setInitializing(tableId);
+      dictionary_->setInitializing(tableId);
 
       
       MOZ_TRY((readTable<List>(tableId, list)));
@@ -488,7 +483,7 @@ class HuffmanPreludeReader {
     
     
     
-    const auto& table = dictionary_.getTable(tableId);
+    const auto& table = dictionary_->getTable(tableId);
     bool empty = true;
     for (auto iter : table) {
       if (iter->toListLength() > 0) {
@@ -526,9 +521,9 @@ class HuffmanPreludeReader {
   MOZ_MUST_USE JS::Result<Ok> pushValue(NormalizedInterfaceAndField identity,
                                         const Interface& interface) {
     const auto tableId = TableIdentity(identity);
-    if (dictionary_.isUnreachable(tableId)) {
+    if (dictionary_->isUnreachable(tableId)) {
       
-      auto& table = dictionary_.createTable(tableId);
+      auto& table = dictionary_->createTable(tableId);
 
       MOZ_TRY(table.initWithSingleValue(
           cx_, BinASTSymbol::fromKind(BinASTKind(interface.kind_))));
@@ -547,14 +542,14 @@ class HuffmanPreludeReader {
     
     
     const auto tableId = TableIdentity(identity);
-    if (!dictionary_.isUnreachable(tableId)) {
+    if (!dictionary_->isUnreachable(tableId)) {
       
       return Ok();
     }
 
     
     
-    dictionary_.setInitializing(tableId);
+    dictionary_->setInitializing(tableId);
 
     
     
@@ -824,7 +819,7 @@ class HuffmanPreludeReader {
   template <typename Entry>
   MOZ_MUST_USE JS::Result<Ok> readTable(Entry entry) {
     const auto tableId = TableIdentity(entry.identity_);
-    if (MOZ_UNLIKELY(!dictionary_.isInitializing(tableId))) {
+    if (MOZ_UNLIKELY(!dictionary_->isInitializing(tableId))) {
       
       
       return raiseDuplicateTableError(entry.identity_);
@@ -842,14 +837,14 @@ class HuffmanPreludeReader {
     MOZ_TRY_VAR(headerByte, reader_.readByte<Compression::No>());
     switch (headerByte) {
       case TableHeader::SingleValue: {
-        auto& table = dictionary_.createTable(tableId);
+        auto& table = dictionary_->createTable(tableId);
 
         
         MOZ_TRY((readSingleValueTable<Entry>(table, entry)));
         return Ok();
       }
       case TableHeader::MultipleValues: {
-        auto& table = dictionary_.createTable(tableId);
+        auto& table = dictionary_->createTable(tableId);
 
         
         MOZ_TRY((readMultipleValuesTable<Entry>(table, entry)));
@@ -918,11 +913,11 @@ class HuffmanPreludeReader {
       
       
       const auto tableId = TableIdentity(entry.identity_);
-      if (owner.dictionary_.isUnreachable(tableId)) {
+      if (owner.dictionary_->isUnreachable(tableId)) {
         return Ok();
       }
 
-      const auto& table = owner.dictionary_.getTable(tableId);
+      const auto& table = owner.dictionary_->getTable(tableId);
       if (!table.isMaybeInterfaceAlwaysNull()) {
         MOZ_TRY(owner.pushFields(entry.kind_));
       }
@@ -940,12 +935,12 @@ class HuffmanPreludeReader {
       
 
       const auto tableId = TableIdentity(entry.identity_);
-      if (owner.dictionary_.isInitializing(tableId)) {
+      if (owner.dictionary_->isInitializing(tableId)) {
         return Ok();
       }
 
       auto index = entry.identity_;
-      const auto& table = owner.dictionary_.getTable(tableId);
+      const auto& table = owner.dictionary_->getTable(tableId);
       for (auto iter : table) {
         MOZ_TRY(owner.pushValue(index, Interface(index, iter->toKind())));
       }
@@ -963,12 +958,12 @@ class HuffmanPreludeReader {
       
       
       const auto tableId = TableIdentity(entry.identity_);
-      if (owner.dictionary_.isUnreachable(tableId)) {
+      if (owner.dictionary_->isUnreachable(tableId)) {
         return Ok();
       }
 
       auto index = entry.identity_;
-      const auto& table = owner.dictionary_.getTable(tableId);
+      const auto& table = owner.dictionary_->getTable(tableId);
       for (auto iter : table) {
         MOZ_TRY(owner.pushValue(index, Interface(index, iter->toKind())));
       }
@@ -1169,8 +1164,10 @@ JS::Result<Ok> BinASTTokenReaderContext::readStringPrelude() {
 }
 
 JS::Result<Ok> BinASTTokenReaderContext::readHuffmanPrelude() {
-  HuffmanPreludeReader reader(cx_, *this, dictionary_, tempStorage_);
-  return reader.run(HUFFMAN_STACK_INITIAL_CAPACITY);
+  HuffmanPreludeReader reader(cx_, *this);
+  BINJS_MOZ_TRY_DECL(dictionary, reader.run(HUFFMAN_STACK_INITIAL_CAPACITY));
+  metadata_->setDictionary(dictionary);
+  return Ok();
 }
 
 BinASTTokenReaderContext::BitBuffer::BitBuffer() : bits_(0), bitLength_(0) {
@@ -1328,7 +1325,7 @@ JS::Result<BinASTKind> BinASTTokenReaderContext::readTagFromTable(
     const BinASTInterfaceAndField& identity) {
   
   const auto tableId = TableIdentity(NormalizedInterfaceAndField(identity));
-  const auto& table = dictionary_.getTable(tableId);
+  const auto& table = metadata_->dictionary()->getTable(tableId);
   BINJS_MOZ_TRY_DECL(bits_,
                      (bitBuffer.getHuffmanLookup<Compression::No>(*this)));
 
@@ -1344,11 +1341,11 @@ JS::Result<BinASTKind> BinASTTokenReaderContext::readTagFromTable(
 JS::Result<BinASTSymbol> BinASTTokenReaderContext::readFieldFromTable(
     const BinASTInterfaceAndField& identity) {
   const auto tableId = TableIdentity(NormalizedInterfaceAndField(identity));
-  if (!dictionary_.isReady(tableId)) {
+  if (!metadata_->dictionary()->isReady(tableId)) {
     return raiseNotInPrelude();
   }
 
-  const auto& table = dictionary_.getTable(tableId);
+  const auto& table = metadata_->dictionary()->getTable(tableId);
   BINJS_MOZ_TRY_DECL(bits_, bitBuffer.getHuffmanLookup<Compression::No>(*this));
 
   const auto result = table.lookup(bits_);
@@ -1488,7 +1485,7 @@ JS::Result<Ok> BinASTTokenReaderContext::enterSum(BinASTKind& tag,
 JS::Result<Ok> BinASTTokenReaderContext::enterList(uint32_t& items,
                                                    const ListContext& context) {
   const auto tableId = TableIdentity(context.content_);
-  const auto& table = dictionary_.getTable(tableId);
+  const auto& table = metadata_->dictionary()->getTable(tableId);
   BINJS_MOZ_TRY_DECL(bits_, bitBuffer.getHuffmanLookup<Compression::No>(*this));
   const auto result = table.lookup(bits_);
   if (MOZ_UNLIKELY(!result.isFound())) {
@@ -2492,8 +2489,12 @@ const BinASTVariant* STRING_ENUM_RESOLUTIONS[BINASTSTRINGENUM_LIMIT]{
 };
 
 
-MOZ_MUST_USE JS::Result<Ok> HuffmanPreludeReader::run(size_t initialCapacity) {
+MOZ_MUST_USE JS::Result<HuffmanDictionaryForMetadata*>
+HuffmanPreludeReader::run(size_t initialCapacity) {
   BINJS_TRY(stack_.reserve(initialCapacity));
+
+  dictionary_.reset(cx_->new_<HuffmanDictionary>());
+  BINJS_TRY(dictionary_);
 
   
   
@@ -2503,7 +2504,16 @@ MOZ_MUST_USE JS::Result<Ok> HuffmanPreludeReader::run(size_t initialCapacity) {
     const Entry entry = stack_.popCopy();
     MOZ_TRY(entry.match(ReadPoppedEntryMatcher(*this)));
   }
-  return Ok();
+
+  auto dictForMetadata =
+      HuffmanDictionaryForMetadata::createFrom(dictionary_.get(),
+                                               &tempStorage_);
+  if (!dictForMetadata) {
+    ReportOutOfMemory(cx_);
+    return cx_->alreadyReportedError();
+  }
+
+  return dictForMetadata;
 }
 
 
