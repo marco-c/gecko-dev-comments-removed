@@ -160,46 +160,23 @@ using PendingEdgesMap =
 
 
 class LoopState {
- public:
-  enum class State {
-    
-    
-    
-    DoWhileLike,
-
-    
-    
-    
-    WhileLikeCond,
-
-    
-    
-    WhileLikeBody,
-  };
-
- private:
-  State state_;
   MBasicBlock* header_ = nullptr;
   jsbytecode* loopEntry_ = nullptr;
   jsbytecode* loopHead_ = nullptr;
   jsbytecode* successorStart_ = nullptr;
 
  public:
-  LoopState(State state, MBasicBlock* header, jsbytecode* loopEntry,
-            jsbytecode* loopHead, jsbytecode* successorStart)
-      : state_(state),
-        header_(header),
+  LoopState(MBasicBlock* header, jsbytecode* loopEntry, jsbytecode* loopHead,
+            jsbytecode* successorStart)
+      : header_(header),
         loopEntry_(loopEntry),
         loopHead_(loopHead),
         successorStart_(successorStart) {}
 
-  State state() const { return state_; }
   MBasicBlock* header() const { return header_; }
   jsbytecode* loopEntry() const { return loopEntry_; }
   jsbytecode* loopHead() const { return loopHead_; }
   jsbytecode* successorStart() const { return successorStart_; }
-
-  void setState(State state) { state_ = state; }
 };
 using LoopStateStack = Vector<LoopState, 4, JitAllocPolicy>;
 
@@ -282,9 +259,8 @@ class IonBuilder : public MIRGenerator,
 
   AbortReasonOr<Ok> addPendingEdge(const PendingEdge& edge, jsbytecode* target);
 
-  AbortReasonOr<Ok> startLoop(LoopState::State initState, jsbytecode* loopEntry,
-                              jsbytecode* loopHead, jsbytecode* backjump,
-                              uint32_t stackPhiCount);
+  AbortReasonOr<Ok> startLoop(jsbytecode* loopEntry, jsbytecode* loopHead,
+                              jsbytecode* backjump, uint32_t stackPhiCount);
   AbortReasonOr<Ok> jsop_loophead();
 
   AbortReasonOr<Ok> visitJumpTarget(JSOp op);
