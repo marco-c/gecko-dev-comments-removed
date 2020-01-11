@@ -118,6 +118,20 @@ def main(request, response):
       return "self.postMessage('loaded');"
 
     
+    if key.startswith("appcache-manifest"):
+      response.headers.set("Content-Type", "text/cache-manifest")
+      return """CACHE MANIFEST
+/fetch/metadata/resources/record-header.py?file=appcache-resource%s
+
+NETWORK:
+*""" % key[17:]
+
+    
+    if key.startswith("appcache-resource"):
+      response.headers.set("Content-Type", "text/html")
+      return "<html>Appcache!</html>"
+
+    
     if key.startswith("xslt"):
       response.headers.set("Content-Type", "text/xsl")
       return """<?xml version="1.0" encoding="UTF-8"?>
@@ -128,4 +142,3 @@ def main(request, response):
     </xsl:copy>
   </xsl:template>
 </xsl:stylesheet>"""
-
