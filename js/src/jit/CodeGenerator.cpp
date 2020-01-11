@@ -14027,11 +14027,13 @@ void CodeGenerator::emitIonToWasmCallBase(LIonToWasmCallBase<NumDefs>* lir) {
         MOZ_ASSERT(ToFloatRegister(lir->output()) == ReturnDoubleReg);
         break;
       case wasm::ValType::AnyRef:
+      case wasm::ValType::FuncRef:
+        
+        
         
         MOZ_ASSERT(lir->mir()->type() == MIRType::Value);
         break;
       case wasm::ValType::Ref:
-      case wasm::ValType::FuncRef:
       case wasm::ValType::I64:
         MOZ_CRASH("unexpected return type when calling from ion to wasm");
       case wasm::ValType::NullRef:

@@ -231,12 +231,12 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
         
         
         break;
-      case ValType::Ref:
-        MOZ_CRASH("case guarded above");
       case ValType::FuncRef:
         
         
         
+        break;
+      case ValType::Ref:
         MOZ_CRASH("case guarded above");
       case ValType::I64:
         MOZ_CRASH("NYI");
