@@ -432,19 +432,6 @@ NS_IMETHODIMP AppWindow::SetZLevel(uint32_t aLevel) {
 NS_IMETHODIMP AppWindow::GetChromeFlags(uint32_t* aChromeFlags) {
   NS_ENSURE_ARG_POINTER(aChromeFlags);
   *aChromeFlags = mChromeFlags;
-  
-
-
-
-
-  
-  if (!mChromeLoaded) return NS_OK;
-
-  if (GetContentScrollbarVisibility())
-    *aChromeFlags |= nsIWebBrowserChrome::CHROME_SCROLLBARS;
-  else
-    *aChromeFlags &= ~nsIWebBrowserChrome::CHROME_SCROLLBARS;
-
   return NS_OK;
 }
 
@@ -2441,20 +2428,6 @@ void AppWindow::SetContentScrollbarVisibility(bool aVisible) {
   nsContentUtils::SetScrollbarsVisibility(contentWin->GetDocShell(), aVisible);
 }
 
-bool AppWindow::GetContentScrollbarVisibility() {
-  
-  
-  
-  
-  
-  
-  if (nsCOMPtr<nsIDocShell> ds = do_QueryInterface(mPrimaryContentShell)) {
-    return nsDocShell::Cast(ds)->ScrollbarPreference() != ScrollbarPreference::Never;
-  }
-
-  return true;
-}
-
 
 void AppWindow::PersistentAttributesDirty(uint32_t aDirtyFlags) {
   mPersistentAttributesDirty |= aDirtyFlags & mPersistentAttributesMask;
@@ -2473,8 +2446,8 @@ void AppWindow::ApplyChromeFlags() {
     
 
     
-    SetContentScrollbarVisibility(
-        mChromeFlags & nsIWebBrowserChrome::CHROME_SCROLLBARS ? true : false);
+    SetContentScrollbarVisibility(mChromeFlags &
+                                  nsIWebBrowserChrome::CHROME_SCROLLBARS);
   }
 
   
