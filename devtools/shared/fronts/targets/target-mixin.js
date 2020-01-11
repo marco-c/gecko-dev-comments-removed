@@ -172,24 +172,6 @@ function TargetMixin(parentClass) {
     }
 
     
-
-
-
-
-
-    get contentPrincipal() {
-      return null;
-    }
-
-    
-
-
-
-    get csp() {
-      return null;
-    }
-
-    
     get root() {
       return this.client.mainRoot.rootForm;
     }
