@@ -201,6 +201,16 @@
       return this.inputField.disabled;
     }
 
+    reset() {
+      this.value = this.defaultValue;
+      
+      try {
+        this.editor.transactionManager.clear();
+        return true;
+      } catch (e) {}
+      return false;
+    }
+
     _fireCommand(me) {
       if (me._timer) {
         clearTimeout(me._timer);

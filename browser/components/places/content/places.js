@@ -377,11 +377,7 @@ var PlacesOrganizer = {
     
     
 
-    let input = PlacesSearchBox.searchFilter;
-    input.value = "";
-    try {
-      input.editor.transactionManager.clear();
-    } catch (e) {}
+    PlacesSearchBox.searchFilter.reset();
     this._setSearchScopeForNode(node);
     this.updateDetailsPane();
   },

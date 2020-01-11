@@ -412,13 +412,12 @@ var Sanitizer = {
             let currentDocument = currentWindow.document;
 
             
+            
+            
+            
             let searchBar = currentDocument.getElementById("searchbar");
-            if (searchBar) {
-              let input = searchBar.textbox;
-              input.value = "";
-              try {
-                input.editor.transactionManager.clear();
-              } catch (e) {}
+            if (searchBar && searchBar.textbox) {
+              searchBar.textbox.reset();
             }
 
             let tabBrowser = currentWindow.gBrowser;
