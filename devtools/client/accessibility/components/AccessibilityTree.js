@@ -36,12 +36,12 @@ class AccessibilityTree extends Component {
   static get propTypes() {
     return {
       accessibilityWalker: PropTypes.object,
-      toolboxDoc: PropTypes.object.isRequired,
       dispatch: PropTypes.func.isRequired,
       accessibles: PropTypes.object,
       expanded: PropTypes.object,
       selected: PropTypes.string,
       highlighted: PropTypes.object,
+      supports: PropTypes.object,
       filtered: PropTypes.bool,
     };
   }
@@ -167,17 +167,21 @@ class AccessibilityTree extends Component {
       expanded,
       selected,
       highlighted: highlightedItem,
+      supports,
       accessibilityWalker,
-      toolboxDoc,
       filtered,
     } = this.props;
+
+    
+    
+    const hasContextMenu = supports.snapshot;
 
     const renderRow = rowProps => {
       const { object } = rowProps.member;
       const highlighted = object === highlightedItem;
       return AccessibilityRow(
         Object.assign({}, rowProps, {
-          toolboxDoc,
+          hasContextMenu,
           highlighted,
           decorator: {
             getRowClass: function() {
@@ -213,29 +217,32 @@ class AccessibilityTree extends Component {
 
         return true;
       },
-      onContextMenuTree: function(e) {
-        
-        
-        let row = this.getSelectedRow();
-        if (!row) {
-          return;
-        }
+      onContextMenuTree:
+        hasContextMenu &&
+        function(e) {
+          
+          
+          let row = this.getSelectedRow();
+          if (!row) {
+            return;
+          }
 
-        row = row.getWrappedInstance();
-        row.onContextMenu(e);
-      },
+          row = row.getWrappedInstance();
+          row.onContextMenu(e);
+        },
     });
   }
 }
 
 const mapStateToProps = ({
   accessibles,
-  ui: { expanded, selected, highlighted },
+  ui: { expanded, selected, supports, highlighted },
   audit: { filters },
 }) => ({
   accessibles,
   expanded,
   selected,
+  supports,
   highlighted,
   filtered: isFiltered(filters),
 });

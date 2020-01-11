@@ -142,7 +142,7 @@ async function addTestTab(url) {
 
   
   
-  await panel._toolbox.loadTool("inspector");
+  await win.gToolbox.loadTool("inspector");
 
   return {
     tab,
