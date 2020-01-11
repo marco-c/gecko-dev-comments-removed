@@ -2231,18 +2231,15 @@ var AddonManagerInternal = {
     
     
     let topBrowser = aBrowser;
-    
-    if (aBrowser) {
-      let docShell = aBrowser.ownerGlobal.docShell;
-      if (docShell.itemType == Ci.nsIDocShellTreeItem.typeContent) {
-        topBrowser = docShell.chromeEventHandler;
-      }
+    let docShell = aBrowser.ownerGlobal.docShell;
+    if (docShell.itemType == Ci.nsIDocShellTreeItem.typeContent) {
+      topBrowser = docShell.chromeEventHandler;
     }
 
     try {
       
       
-      if (topBrowser && topBrowser.ownerDocument.fullscreenElement) {
+      if (topBrowser.ownerDocument.fullscreenElement) {
         
         
         
@@ -2270,20 +2267,19 @@ var AddonManagerInternal = {
         return;
       } else if (
         aInstallingPrincipal.isNullPrincipal ||
-        (aBrowser &&
-          (!aBrowser.contentPrincipal ||
-            
-            
-            
-            
-            
-            
-            
-            
-            !(
-              aBrowser.contentPrincipal.isNullPrincipal ||
-              aInstallingPrincipal.subsumes(aBrowser.contentPrincipal)
-            ))) ||
+        !aBrowser.contentPrincipal ||
+        
+        
+        
+        
+        
+        
+        
+        
+        !(
+          aBrowser.contentPrincipal.isNullPrincipal ||
+          aInstallingPrincipal.subsumes(aBrowser.contentPrincipal)
+        ) ||
         !this.isInstallAllowedByPolicy(
           aInstallingPrincipal,
           aInstall,
@@ -2301,12 +2297,10 @@ var AddonManagerInternal = {
         return;
       }
 
-      if (aBrowser) {
-        
-        
-        
-        new BrowserListener(aBrowser, aInstallingPrincipal, aInstall);
-      }
+      
+      
+      
+      new BrowserListener(aBrowser, aInstallingPrincipal, aInstall);
 
       let startInstall = source => {
         AddonManagerInternal.setupPromptHandler(
