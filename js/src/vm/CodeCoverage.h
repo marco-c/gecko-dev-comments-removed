@@ -78,9 +78,6 @@ class LCovRealm {
   ~LCovRealm();
 
   
-  void collectCodeCoverageInfo(JSScript* script, const char* name);
-
-  
   
   void exportInto(GenericPrinter& out, bool* isEmpty) const;
 
@@ -172,8 +169,7 @@ inline bool IsLCovEnabled() {
 bool InitScriptCoverage(JSContext* cx, JSScript* script);
 
 
-
-void CollectScriptCoverage(JSScript* script);
+bool CollectScriptCoverage(JSScript* script, bool finalizing);
 
 }  
 }  

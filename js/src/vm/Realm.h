@@ -784,9 +784,6 @@ class JS::Realm : public JS::shadow::Realm {
   js::coverage::LCovRealm* lcovRealm();
 
   
-  void collectCodeCoverageInfo(JSScript* script, const char* name);
-
-  
   mozilla::non_crypto::XorShift128PlusRNG& getOrCreateRandomNumberGenerator();
 
   const mozilla::non_crypto::XorShift128PlusRNG*

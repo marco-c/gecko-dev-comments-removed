@@ -395,38 +395,6 @@ LCovRealm::~LCovRealm() {
   }
 }
 
-void LCovRealm::collectCodeCoverageInfo(JSScript* script, const char* name) {
-  
-  if (outTN_.hadOutOfMemory()) {
-    return;
-  }
-
-  if (script->isUncompleted()) {
-    return;
-  }
-
-  
-  LCovSource* source = lookupOrAdd(name);
-  if (!source) {
-    return;
-  }
-
-  
-  const char* scriptName = getScriptName(script);
-  if (!scriptName) {
-    outTN_.reportOutOfMemory();
-    return;
-  }
-
-  
-  source->writeScript(script, scriptName);
-
-  
-  if (source->hadOutOfMemory()) {
-    outTN_.reportOutOfMemory();
-  }
-}
-
 LCovSource* LCovRealm::lookupOrAdd(const char* name) {
   
   for (LCovSource* source : sources_) {
@@ -683,17 +651,17 @@ bool InitScriptCoverage(JSContext* cx, JSScript* script) {
   return true;
 }
 
-void CollectScriptCoverage(JSScript* script) {
+bool CollectScriptCoverage(JSScript* script, bool finalizing) {
   MOZ_ASSERT(IsLCovEnabled());
 
   ScriptLCovMap* map = script->zone()->scriptLCovMap.get();
   if (!map) {
-    return;
+    return false;
   }
 
   auto p = map->lookup(script);
   if (!p.found()) {
-    return;
+    return false;
   }
 
   LCovSource* source;
@@ -703,7 +671,13 @@ void CollectScriptCoverage(JSScript* script) {
   if (!script->isUncompleted()) {
     source->writeScript(script, scriptName);
   }
-  map->remove(p);
+
+  if (finalizing) {
+    map->remove(p);
+  }
+
+  
+  return !source->hadOutOfMemory();
 }
 
 }  
