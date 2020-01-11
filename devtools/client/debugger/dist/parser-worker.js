@@ -15571,8 +15571,7 @@ function getUniqueIdentifiers(identifiers) {
   }
 
   return newIdentifiers;
-}
-
+} 
 
 
 function extractSymbol(path, symbols, state) {
@@ -15782,8 +15781,6 @@ function extractSymbol(path, symbols, state) {
     symbols.identifiers.push(...(0, _helpers.getPatternIdentifiers)(nodeId));
   }
 }
-
-
 
 function extractSymbols(sourceId) {
   const symbols = {
