@@ -43,7 +43,9 @@ add_task(async function() {
   
   info("Registering a SW: " + SW_REL_SW_SCRIPT);
   await SpecialPowers.spawn(
-    topTab.linkedBrowser, [{ sw: SW_REL_SW_SCRIPT }], async function({ sw }) {
+    topTab.linkedBrowser,
+    [{ sw: SW_REL_SW_SCRIPT }],
+    async function({ sw }) {
       
       await content.wrappedJSObject.registerAndWaitForActive(sw);
       
@@ -61,7 +63,9 @@ add_task(async function() {
   
   info("Creating iframe and checking if controlled");
   let { controlled } = await SpecialPowers.spawn(
-    topTab.linkedBrowser, [{ url: SW_IFRAME_PAGE }], async function({ url }) {
+    topTab.linkedBrowser,
+    [{ url: SW_IFRAME_PAGE }],
+    async function({ url }) {
       content.document.userInteractionForTesting();
       const payload = await content.wrappedJSObject.createIframeAndWaitForMessage(
         url
@@ -75,7 +79,9 @@ add_task(async function() {
   
   info("Creating nested-iframe and checking if controlled");
   let { nested_controlled } = await SpecialPowers.spawn(
-    topTab.linkedBrowser, [{ url: SW_IFRAME_PAGE }], async function({ url }) {
+    topTab.linkedBrowser,
+    [{ url: SW_IFRAME_PAGE }],
+    async function({ url }) {
       const payload = await content.wrappedJSObject.createNestedIframeAndWaitForMessage(
         url
       );

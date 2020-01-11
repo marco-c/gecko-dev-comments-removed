@@ -50,7 +50,9 @@ async function doTest(
 
       
       await SpecialPowers.spawn(
-        browser, [childTabSpec], async childTabSpecContent => {
+        browser,
+        [childTabSpec],
+        async childTabSpecContent => {
           let testDiv = content.document.getElementById("mctestdiv");
           await ContentTaskUtils.waitForCondition(
             () => testDiv.innerHTML == "Mixed Content Blocker disabled"
