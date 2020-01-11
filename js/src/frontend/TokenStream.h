@@ -1135,6 +1135,19 @@ inline bool IsSingleUnitLineTerminator(mozilla::Utf8Unit unit) {
 
 template <typename Unit>
 class SourceUnits {
+ private:
+  
+  const Unit* base_;
+
+  
+  uint32_t startOffset_;
+
+  
+  const Unit* limit_;
+
+  
+  const Unit* ptr;
+
  public:
   SourceUnits(const Unit* units, size_t length, size_t startOffset)
       : base_(units),
@@ -1440,19 +1453,6 @@ class SourceUnits {
                                            size_t* utf16TokenOffset,
                                            size_t encodingSpecificWindowLength,
                                            size_t* utf16WindowLength);
-
- private:
-  
-  const Unit* base_;
-
-  
-  uint32_t startOffset_;
-
-  
-  const Unit* limit_;
-
-  
-  const Unit* ptr;
 };
 
 template <>
