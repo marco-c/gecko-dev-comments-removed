@@ -1592,7 +1592,7 @@ guint32 nsWindow::GetLastUserInputTime() {
   return timestamp;
 }
 
-void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
+void nsWindow::SetFocus(Raise aRaise) {
   
   
 

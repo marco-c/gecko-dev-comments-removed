@@ -60,8 +60,7 @@ class nsFocusManager final : public nsIFocusManager,
   
   
   
-  static void FocusWindow(nsPIDOMWindowOuter* aWindow,
-                          mozilla::dom::CallerType aCallerType);
+  static void FocusWindow(nsPIDOMWindowOuter* aWindow);
 
   static void PrefChanged(const char* aPref, void* aSelf);
   void PrefChanged(const char* aPref);
@@ -213,7 +212,7 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  void EnsureCurrentWidgetFocused(mozilla::dom::CallerType aCallerType);
+  void EnsureCurrentWidgetFocused();
 
   
 
@@ -361,6 +360,7 @@ class nsFocusManager final : public nsIFocusManager,
       Document* aDocument, nsISupports* aTarget, uint32_t aFocusMethod,
       bool aWindowRaised, bool aIsRefocus = false,
       mozilla::dom::EventTarget* aRelatedTarget = nullptr);
+
   
 
 
@@ -407,8 +407,7 @@ class nsFocusManager final : public nsIFocusManager,
   
 
 
-  void RaiseWindow(nsPIDOMWindowOuter* aWindow,
-                   mozilla::dom::CallerType aCallerType);
+  void RaiseWindow(nsPIDOMWindowOuter* aWindow);
 
   
 

@@ -32,7 +32,6 @@
 #include "nsIObserver.h"
 #include "nsIWidgetListener.h"
 #include "Units.h"
-#include "mozilla/dom/BindingDeclarations.h"
 
 
 class nsIBidiKeyboard;
@@ -878,7 +877,7 @@ class nsIWidget : public nsISupports {
   
 
 
-  virtual void SetFocus(Raise, mozilla::dom::CallerType aCallerType) = 0;
+  virtual void SetFocus(Raise) = 0;
 
   
 

@@ -51,7 +51,6 @@ HTMLFormElement* HTMLLabelElement::GetForm() const {
 }
 
 void HTMLLabelElement::Focus(const FocusOptions& aOptions,
-                             const CallerType aCallerType,
                              ErrorResult& aError) {
   
   nsIFocusManager* fm = nsFocusManager::GetFocusManager();

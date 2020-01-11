@@ -76,7 +76,7 @@ class ClientHandle final : public ClientThing<ClientHandleChild> {
   
   
   
-  RefPtr<ClientStatePromise> Focus(CallerType aCallerType);
+  RefPtr<ClientStatePromise> Focus();
 
   
   

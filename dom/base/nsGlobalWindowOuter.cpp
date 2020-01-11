@@ -4835,7 +4835,7 @@ void nsGlobalWindowOuter::PromptOuter(const nsAString& aMessage,
   }
 }
 
-void nsGlobalWindowOuter::FocusOuter(CallerType aCallerType) {
+void nsGlobalWindowOuter::FocusOuter() {
   nsFocusManager* fm = nsFocusManager::GetFocusManager();
   if (!fm) {
     return;
@@ -4904,7 +4904,7 @@ void nsGlobalWindowOuter::FocusOuter(CallerType aCallerType) {
     }
 
     if (Element* frame = parentdoc->FindContentForSubDocument(mDoc)) {
-      nsContentUtils::RequestFrameFocus(*frame, canFocus, aCallerType);
+      nsContentUtils::RequestFrameFocus(*frame, canFocus);
     }
     return;
   }
@@ -4913,17 +4913,15 @@ void nsGlobalWindowOuter::FocusOuter(CallerType aCallerType) {
     
     
     
-    DebugOnly<nsresult> rv =
-        fm->SetActiveWindowWithCallerType(this, aCallerType);
+    DebugOnly<nsresult> rv = fm->SetActiveWindow(this);
     MOZ_ASSERT(NS_SUCCEEDED(rv),
-               "SetActiveWindowWithCallerType only fails if passed null or a "
-               "non-toplevel "
+               "SetActiveWindow only fails if passed null or a non-toplevel "
                "window, which is not the case here.");
   }
 }
 
-nsresult nsGlobalWindowOuter::Focus(CallerType aCallerType) {
-  FORWARD_TO_INNER(Focus, (aCallerType), NS_ERROR_UNEXPECTED);
+nsresult nsGlobalWindowOuter::Focus() {
+  FORWARD_TO_INNER(Focus, (), NS_ERROR_UNEXPECTED);
 }
 
 void nsGlobalWindowOuter::BlurOuter() {
