@@ -24,6 +24,7 @@
 #include "nsGkAtoms.h"
 #include "nsIContent.h"
 #include "nsIFrame.h"
+#include "nsIFrameInlines.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsStyleStruct.h"
@@ -543,7 +544,7 @@ class MixModeBlender {
       gfxContextMatrixAutoSaveRestore matrixAutoSaveRestore(mSourceCtx);
       mSourceCtx->Multiply(aTransform);
       nsRect overflowRect = mFrame->GetVisualOverflowRectRelativeToSelf();
-      if (mFrame->IsFrameOfType(nsIFrame::eSVGGeometry) ||
+      if (mFrame->IsSVGGeometryFrameOrSubclass() ||
           nsSVGUtils::IsInSVGTextSubtree(mFrame)) {
         
         
@@ -604,7 +605,7 @@ void nsSVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
     
     
     nsRect overflowRect = aFrame->GetVisualOverflowRectRelativeToSelf();
-    if (aFrame->IsFrameOfType(nsIFrame::eSVGGeometry) ||
+    if (aFrame->IsSVGGeometryFrameOrSubclass() ||
         nsSVGUtils::IsInSVGTextSubtree(aFrame)) {
       
       
@@ -1120,7 +1121,7 @@ gfxPoint nsSVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(nsIFrame* aFrame) {
   }
 
   
-  if (aFrame->IsFrameOfType(nsIFrame::eSVGGeometry) ||
+  if (aFrame->IsSVGGeometryFrameOrSubclass() ||
       nsSVGUtils::IsInSVGTextSubtree(aFrame)) {
     return nsLayoutUtils::RectToGfxRect(aFrame->GetRect(),
                                         AppUnitsPerCSSPixel())

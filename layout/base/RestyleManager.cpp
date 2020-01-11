@@ -1615,8 +1615,7 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
       
       
       if ((hint & nsChangeHint_UpdateOpacityLayer) &&
-          nsSVGUtils::CanOptimizeOpacity(frame) &&
-          frame->IsFrameOfType(nsIFrame::eSVGGeometry)) {
+          nsSVGUtils::CanOptimizeOpacity(frame)) {
         hint &= ~nsChangeHint_UpdateOpacityLayer;
         hint |= nsChangeHint_RepaintFrame;
       }
