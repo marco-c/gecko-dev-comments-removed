@@ -510,7 +510,11 @@ var m = new Module(wasmTextToBinary(`
         (memory 0)
         (data (i32.const 0x10001) ""))
 `));
-assertEq(new Instance(m) instanceof Instance, true);
+if (wasmBulkMemSupported()) {
+    assertErrorMessage(() => new Instance(m), RuntimeError, /out of bounds/);
+} else {
+    assertEq(new Instance(m) instanceof Instance, true);
+}
 
 
 

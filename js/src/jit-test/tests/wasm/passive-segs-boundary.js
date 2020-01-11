@@ -178,12 +178,11 @@ mem_test("(memory.init 4 (i32.const 1234) (i32.const 1) (i32.const 1))", "",
          WebAssembly.CompileError, /memory.init segment index out of range/);
 
 
-mem_test("data.drop 2", "",
-         WebAssembly.RuntimeError, /use of dropped data segment/);
+mem_test("data.drop 2", "");
 
 
 mem_test("(memory.init 2 (i32.const 1234) (i32.const 1) (i32.const 1))", "",
-         WebAssembly.RuntimeError, /use of dropped data segment/);
+         WebAssembly.RuntimeError, /index out of bounds/);
 
 
 mem_test_nofail(
@@ -192,13 +191,12 @@ mem_test_nofail(
 
 
 mem_test("data.drop 1",
-         "data.drop 1",
-         WebAssembly.RuntimeError, /use of dropped data segment/);
+         "data.drop 1");
 
 
 mem_test("data.drop 1",
          "(memory.init 1 (i32.const 1234) (i32.const 1) (i32.const 1))",
-         WebAssembly.RuntimeError, /use of dropped data segment/);
+         WebAssembly.RuntimeError, /index out of bounds/);
 
 
 mem_test("",
@@ -223,7 +221,8 @@ mem_test("",
 
 
 mem_test("",
-         "(memory.init 1 (i32.const 1234) (i32.const 5) (i32.const 0))");
+         "(memory.init 1 (i32.const 1234) (i32.const 5) (i32.const 0))",
+         WebAssembly.RuntimeError, /index out of bounds/);
 
 
 
@@ -233,7 +232,8 @@ mem_test("",
 
 
 mem_test("",
-         "(memory.init 1 (i32.const 0x10001) (i32.const 2) (i32.const 0))");
+         "(memory.init 1 (i32.const 0x10001) (i32.const 2) (i32.const 0))",
+         WebAssembly.RuntimeError, /index out of bounds/);
 
 
 mem_test("data.drop 1 (i32.const 42)", "",
@@ -305,12 +305,11 @@ tab_test("(table.init 4 (i32.const 12) (i32.const 1) (i32.const 1))", "",
          WebAssembly.CompileError, /table.init segment index out of range/);
 
 
-tab_test("elem.drop 2", "",
-         WebAssembly.RuntimeError, /use of dropped element segment/);
+tab_test("elem.drop 2", "");
 
 
 tab_test("(table.init 2 (i32.const 12) (i32.const 1) (i32.const 1))", "",
-         WebAssembly.RuntimeError, /use of dropped element segment/);
+         WebAssembly.RuntimeError, /index out of bounds/);
 
 
 tab_test_nofail(
@@ -319,13 +318,12 @@ tab_test_nofail(
 
 
 tab_test("elem.drop 1",
-         "elem.drop 1",
-         WebAssembly.RuntimeError, /use of dropped element segment/);
+         "elem.drop 1");
 
 
 tab_test("elem.drop 1",
          "(table.init 1 (i32.const 12) (i32.const 1) (i32.const 1))",
-         WebAssembly.RuntimeError, /use of dropped element segment/);
+         WebAssembly.RuntimeError, /index out of bounds/);
 
 
 tab_test("",
@@ -350,7 +348,8 @@ tab_test("",
 
 
 tab_test("",
-         "(table.init 1 (i32.const 12) (i32.const 5) (i32.const 0))");
+         "(table.init 1 (i32.const 12) (i32.const 5) (i32.const 0))",
+         WebAssembly.RuntimeError, /index out of bounds/);
 
 
 tab_test("",
@@ -359,7 +358,8 @@ tab_test("",
 
 
 tab_test("",
-         "(table.init 1 (i32.const 31) (i32.const 2) (i32.const 0))");
+         "(table.init 1 (i32.const 31) (i32.const 2) (i32.const 0))",
+         WebAssembly.RuntimeError, /index out of bounds/);
 
 
 tab_test("elem.drop 1 (i32.const 42)", "",
@@ -433,7 +433,7 @@ tab_test("(table.copy (i32.const 30) (i32.const 15) (i32.const 0))",
 
 
 tab_test("(table.copy (i32.const 31) (i32.const 15) (i32.const 0))",
-         "");
+         "", WebAssembly.RuntimeError, /index out of bounds/);
 
 
 tab_test("(table.copy (i32.const 15) (i32.const 30) (i32.const 0))",
@@ -441,4 +441,4 @@ tab_test("(table.copy (i32.const 15) (i32.const 30) (i32.const 0))",
 
 
 tab_test("(table.copy (i32.const 15) (i32.const 31) (i32.const 0))",
-         "");
+         "", WebAssembly.RuntimeError, /index out of bounds/);

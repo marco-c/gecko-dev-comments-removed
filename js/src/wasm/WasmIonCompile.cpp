@@ -2937,11 +2937,7 @@ static bool EmitMemCopyInline(FunctionCompiler& f, MDefinition* dst,
 
   MOZ_ASSERT(len->isConstant() && len->type() == MIRType::Int32);
   uint32_t length = len->toConstant()->toInt32();
-
-  
-  if (length == 0) {
-    return true;
-  }
+  MOZ_ASSERT(length != 0 && length <= MaxInlineMemoryCopyLength);
 
   
   size_t remainder = length;
@@ -3064,7 +3060,7 @@ static bool EmitMemCopy(FunctionCompiler& f) {
   }
 
   if (MacroAssembler::SupportsFastUnalignedAccesses() && len->isConstant() &&
-      len->type() == MIRType::Int32 &&
+      len->type() == MIRType::Int32 && len->toConstant()->toInt32() != 0 &&
       uint32_t(len->toConstant()->toInt32()) <= MaxInlineMemoryCopyLength) {
     return EmitMemCopyInline(f, dst, src, len);
   }
@@ -3209,11 +3205,7 @@ static bool EmitMemFillInline(FunctionCompiler& f, MDefinition* start,
 
   uint32_t length = len->toConstant()->toInt32();
   uint32_t value = val->toConstant()->toInt32();
-
-  
-  if (length == 0) {
-    return true;
-  }
+  MOZ_ASSERT(length != 0 && length <= MaxInlineMemoryFillLength);
 
   
   size_t remainder = length;
@@ -3298,7 +3290,7 @@ static bool EmitMemFill(FunctionCompiler& f) {
   }
 
   if (MacroAssembler::SupportsFastUnalignedAccesses() && len->isConstant() &&
-      len->type() == MIRType::Int32 &&
+      len->type() == MIRType::Int32 && len->toConstant()->toInt32() != 0 &&
       uint32_t(len->toConstant()->toInt32()) <= MaxInlineMemoryFillLength &&
       val->isConstant() && val->type() == MIRType::Int32) {
     return EmitMemFillInline(f, start, val, len);

@@ -57,7 +57,7 @@ function testTableFill(tbl_type, val_type, obj) {
 
   
   assertErrorMessage(() => ins.exports.fill1(8, obj[5], 3),
-                     RangeError, /table index out of bounds/);
+                     WebAssembly.RuntimeError, /index out of bounds/);
 
   assertEq(ins.exports.get1(7), null);
   assertEq(ins.exports.get1(8), null);
@@ -106,25 +106,26 @@ function testTableFill(tbl_type, val_type, obj) {
 
   
   assertErrorMessage(() => ins.exports.fill1(10, null, 1),
-                     RangeError, /table index out of bounds/);
+                     WebAssembly.RuntimeError, /index out of bounds/);
 
   
   assertErrorMessage(() => ins.exports.fill1(10, null, 2),
-                     RangeError, /table index out of bounds/);
+                     WebAssembly.RuntimeError, /index out of bounds/);
 
 
   
 
   
-  assertEq(ins.exports.fill1(11, null, 0), undefined);
+  assertErrorMessage(() => ins.exports.fill1(11, null, 0),
+                     WebAssembly.RuntimeError, /index out of bounds/);
 
   
   assertErrorMessage(() => ins.exports.fill1(11, null, 1),
-                     RangeError, /table index out of bounds/);
+                     WebAssembly.RuntimeError, /index out of bounds/);
 
   
   assertErrorMessage(() => ins.exports.fill1(11, null, 2),
-                     RangeError, /table index out of bounds/);
+                     WebAssembly.RuntimeError, /index out of bounds/);
 
   
   check_table0();

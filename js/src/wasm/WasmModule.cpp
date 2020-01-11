@@ -575,14 +575,6 @@ bool Module::initSegments(JSContext* cx, HandleWasmInstanceObject instanceObj,
       uint32_t offset = EvaluateInitExpr(globalImportValues, seg->offset());
       uint32_t count = seg->length();
 
-      
-      
-      
-      
-      if (count == 0) {
-        continue;
-      }
-
       if (!eagerBoundsCheck) {
         uint32_t tableLength = tables[seg->tableIndex]->length();
         if (offset > tableLength || tableLength - offset < count) {
@@ -610,14 +602,6 @@ bool Module::initSegments(JSContext* cx, HandleWasmInstanceObject instanceObj,
 
       uint32_t offset = EvaluateInitExpr(globalImportValues, seg->offset());
       uint32_t count = seg->bytes.length();
-
-      
-      
-      
-      
-      if (count == 0) {
-        continue;
-      }
 
       if (!eagerBoundsCheck) {
         if (offset > memoryLength || memoryLength - offset < count) {

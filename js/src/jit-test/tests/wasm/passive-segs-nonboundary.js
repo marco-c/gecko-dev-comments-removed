@@ -572,7 +572,8 @@ function checkRange(arr, minIx, maxIxPlusOne, expectedValue)
        )
      )`
     );
-    inst.exports.testfn();
+    assertErrorMessage(() => inst.exports.testfn(),
+                       WebAssembly.RuntimeError, /index out of bounds/);
 }
 
 
@@ -752,7 +753,8 @@ function checkRange(arr, minIx, maxIxPlusOne, expectedValue)
        )
      )`
     );
-    inst.exports.testfn();
+    assertErrorMessage(() => inst.exports.testfn(),
+                       WebAssembly.RuntimeError, /index out of bounds/);
 }
 
 
@@ -778,7 +780,8 @@ function checkRange(arr, minIx, maxIxPlusOne, expectedValue)
        )
      )`
     );
-    inst.exports.testfn();
+    assertErrorMessage(() => inst.exports.testfn(),
+                       WebAssembly.RuntimeError, /index out of bounds/);
 }
 
 
