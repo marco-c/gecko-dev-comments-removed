@@ -511,14 +511,6 @@ pref("security.allow_eval_in_parent_process", false);
 
 pref("security.allow_parent_unrestricted_js_loads", false);
 
-#ifdef NIGHTLY_BUILD
-  pref("browser.tabs.remote.useHTTPResponseProcessSelection", true);
-#else
-  
-  pref("browser.tabs.remote.useHTTPResponseProcessSelection", false);
-#endif
-
-
 
 pref("browser.tabs.unloadOnLowMemory", false);
 
