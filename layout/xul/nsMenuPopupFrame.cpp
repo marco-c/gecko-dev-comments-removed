@@ -62,6 +62,8 @@
 #  include <gdk/gdkwayland.h>
 #endif 
 
+#include "X11UndefineNone.h"
+
 using namespace mozilla;
 using mozilla::dom::Document;
 using mozilla::dom::Event;
@@ -283,8 +285,8 @@ nsresult nsMenuPopupFrame::CreateWidgetForView(nsView* aView) {
 
     
     
-    mMouseTransparent = StyleUI()->GetEffectivePointerEvents(this) ==
-                        NS_STYLE_POINTER_EVENTS_NONE;
+    mMouseTransparent =
+        StyleUI()->GetEffectivePointerEvents(this) == StylePointerEvents::None;
     widgetData.mMouseTransparent = mMouseTransparent;
   }
 
@@ -475,10 +477,10 @@ void nsMenuPopupFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
     }
   }
 
-  bool newMouseTransparent = StyleUI()->GetEffectivePointerEvents(this) ==
-                             NS_STYLE_POINTER_EVENTS_NONE;
+  bool newMouseTransparent =
+      StyleUI()->GetEffectivePointerEvents(this) == StylePointerEvents::None;
   bool oldMouseTransparent = aOldStyle->StyleUI()->GetEffectivePointerEvents(
-                                 this) == NS_STYLE_POINTER_EVENTS_NONE;
+                                 this) == StylePointerEvents::None;
 
   if (newMouseTransparent != oldMouseTransparent) {
     if (nsIWidget* widget = GetWidget()) {

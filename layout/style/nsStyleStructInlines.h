@@ -202,12 +202,13 @@ bool nsStyleDisplay::IsAbsolutelyPositioned(
          !nsSVGUtils::IsInSVGTextSubtree(aContextFrame);
 }
 
-uint8_t nsStyleUI::GetEffectivePointerEvents(nsIFrame* aFrame) const {
+mozilla::StylePointerEvents nsStyleUI::GetEffectivePointerEvents(
+    nsIFrame* aFrame) const {
   if (aFrame->GetContent() && !aFrame->GetContent()->GetParent()) {
     
     
     
-    return NS_STYLE_POINTER_EVENTS_AUTO;
+    return mozilla::StylePointerEvents::Auto;
   }
   return mPointerEvents;
 }

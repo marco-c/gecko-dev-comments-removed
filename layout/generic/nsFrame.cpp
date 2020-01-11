@@ -3046,9 +3046,9 @@ void nsIFrame::BuildDisplayListForStackingContext(
   
   
   
-  bool needHitTestInfo = aBuilder->BuildCompositorHitTestInfo() &&
-                         StyleUI()->GetEffectivePointerEvents(this) !=
-                             NS_STYLE_POINTER_EVENTS_NONE;
+  bool needHitTestInfo =
+      aBuilder->BuildCompositorHitTestInfo() &&
+      StyleUI()->GetEffectivePointerEvents(this) != StylePointerEvents::None;
   bool opacityItemForEventsAndPluginsOnly = false;
   if (effects->mOpacity == 0.0 && aBuilder->IsForPainting() &&
       !(disp->mWillChange.bits & StyleWillChangeBits::OPACITY) &&
@@ -11173,8 +11173,9 @@ CompositorHitTestInfo nsIFrame::GetCompositorHitTestInfo(
     
     return result;
   }
-  const uint8_t pointerEvents = StyleUI()->GetEffectivePointerEvents(this);
-  if (pointerEvents == NS_STYLE_POINTER_EVENTS_NONE) {
+  const StylePointerEvents pointerEvents =
+      StyleUI()->GetEffectivePointerEvents(this);
+  if (pointerEvents == StylePointerEvents::None) {
     return result;
   }
   if (!StyleVisibility()->IsVisible()) {

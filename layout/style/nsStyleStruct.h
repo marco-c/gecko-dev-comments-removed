@@ -2125,7 +2125,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUI {
   mozilla::StyleUserInput mUserInput;
   mozilla::StyleUserModify mUserModify;  
   mozilla::StyleUserFocus mUserFocus;    
-  uint8_t mPointerEvents;                
+  mozilla::StylePointerEvents mPointerEvents;
 
   mozilla::StyleCursorKind mCursor;
   nsTArray<nsCursorImage> mCursorImages;  
@@ -2133,7 +2133,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUI {
   mozilla::StyleColorOrAuto mCaretColor;
   mozilla::StyleScrollbarColor mScrollbarColor;
 
-  inline uint8_t GetEffectivePointerEvents(nsIFrame* aFrame) const;
+  inline mozilla::StylePointerEvents GetEffectivePointerEvents(
+      nsIFrame* aFrame) const;
 
   bool HasCustomScrollbars() const { return !mScrollbarColor.IsAuto(); }
 };
