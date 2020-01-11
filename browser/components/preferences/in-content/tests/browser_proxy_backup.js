@@ -35,10 +35,10 @@ function test() {
   Services.prefs.setBoolPref("network.proxy.share_proxy_settings", true);
   Services.prefs.setCharPref("network.proxy.http", "example.com");
   Services.prefs.setIntPref("network.proxy.http_port", 1200);
-  Services.prefs.setCharPref("network.proxy.socks", "example.com");
-  Services.prefs.setIntPref("network.proxy.socks_port", 1200);
-  Services.prefs.setCharPref("network.proxy.backup.socks", "127.0.0.1");
-  Services.prefs.setIntPref("network.proxy.backup.socks_port", 9050);
+  Services.prefs.setCharPref("network.proxy.ssl", "example.com");
+  Services.prefs.setIntPref("network.proxy.ssl_port", 1200);
+  Services.prefs.setCharPref("network.proxy.backup.ssl", "127.0.0.1");
+  Services.prefs.setIntPref("network.proxy.backup.ssl_port", 9050);
 
   
 
@@ -66,12 +66,12 @@ function test() {
 
     
     is(
-      Services.prefs.getCharPref("network.proxy.backup.socks"),
+      Services.prefs.getCharPref("network.proxy.backup.ssl"),
       "127.0.0.1",
       "Shared proxy backup shouldn't be replaced"
     );
     is(
-      Services.prefs.getIntPref("network.proxy.backup.socks_port"),
+      Services.prefs.getIntPref("network.proxy.backup.ssl_port"),
       9050,
       "Shared proxy port backup shouldn't be replaced"
     );
