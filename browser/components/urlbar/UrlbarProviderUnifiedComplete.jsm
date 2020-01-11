@@ -18,7 +18,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   Log: "resource://gre/modules/Log.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
-  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
   UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
   UrlbarResult: "resource:///modules/UrlbarResult.jsm",
@@ -95,61 +94,17 @@ class ProviderUnifiedComplete extends UrlbarProvider {
     logger.info(`Starting query for ${queryContext.searchString}`);
     let instance = {};
     this.queries.set(queryContext, instance);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    let params = ["enable-actions"];
-    params.push(`max-results:${queryContext.maxResults}`);
-    
-    
-    params.push(`insert-method:${UrlbarUtils.INSERTMETHOD.APPEND}`);
-    if (queryContext.isPrivate) {
-      params.push("private-window");
-      if (!PrivateBrowsingUtils.permanentPrivateBrowsing) {
-        params.push("disable-private-actions");
-      }
-    }
-    if (queryContext.userContextId) {
-      params.push(`user-context-id:${queryContext.userContextId}}`);
-    }
-    if (!queryContext.allowAutofill) {
-      params.push("prohibit-autofill");
-    }
-
     let urls = new Set();
-    await new Promise(resolve => {
-      let listener = {
-        onSearchResult(_, result) {
-          let { done, matches } = convertResultToMatches(
-            queryContext,
-            result,
-            urls
-          );
-          for (let match of matches) {
-            addCallback(UrlbarProviderUnifiedComplete, match);
-          }
-          if (done) {
-            delete this._resolveSearch;
-            resolve();
-          }
-        },
-      };
-      this._resolveSearch = resolve;
-      unifiedComplete.startSearch(
-        queryContext.searchString,
-        params.join(" "),
-        null, 
-        listener
+    await unifiedComplete.wrappedJSObject.startQuery(queryContext, acResult => {
+      let results = convertLegacyAutocompleteResult(
+        queryContext,
+        acResult,
+        urls
       );
+      for (let result of results) {
+        addCallback(this, result);
+      }
     });
-
-    
     this.queries.delete(queryContext);
   }
 
@@ -162,9 +117,6 @@ class ProviderUnifiedComplete extends UrlbarProvider {
     
     this.queries.delete(queryContext);
     unifiedComplete.stopSearch();
-    if (this._resolveSearch) {
-      this._resolveSearch();
-    }
   }
 }
 
@@ -184,49 +136,45 @@ var UrlbarProviderUnifiedComplete = new ProviderUnifiedComplete();
 
 
 
-function convertResultToMatches(context, result, urls) {
-  let matches = [];
-  let done =
-    [
-      Ci.nsIAutoCompleteResult.RESULT_IGNORED,
-      Ci.nsIAutoCompleteResult.RESULT_FAILURE,
-      Ci.nsIAutoCompleteResult.RESULT_NOMATCH,
-      Ci.nsIAutoCompleteResult.RESULT_SUCCESS,
-    ].includes(result.searchResult) || result.errorDescription;
-
-  for (let i = 0; i < result.matchCount; ++i) {
+function convertLegacyAutocompleteResult(context, acResult, urls) {
+  let results = [];
+  for (let i = 0; i < acResult.matchCount; ++i) {
     
     
     
     
-    let url = result.getFinalCompleteValueAt(i);
+    let url = acResult.getFinalCompleteValueAt(i);
     if (urls.has(url)) {
       continue;
     }
     urls.add(url);
-    let style = result.getStyleAt(i);
+    let style = acResult.getStyleAt(i);
     let isHeuristic = i == 0 && style.includes("heuristic");
-    let match = makeUrlbarResult(context.tokens, {
+    let result = makeUrlbarResult(context.tokens, {
       url,
-      icon: result.getImageAt(i),
+      icon: acResult.getImageAt(i),
       style,
-      comment: result.getCommentAt(i),
+      comment: acResult.getCommentAt(i),
       firstToken: context.tokens[0],
       isHeuristic,
     });
     
-    if (!match) {
+    if (!result) {
       continue;
     }
     
-    if (isHeuristic && style.includes("autofill") && result.defaultIndex == 0) {
-      let autofillValue = result.getValueAt(i);
+    if (
+      isHeuristic &&
+      style.includes("autofill") &&
+      acResult.defaultIndex == 0
+    ) {
+      let autofillValue = acResult.getValueAt(i);
       if (
         autofillValue
           .toLocaleLowerCase()
           .startsWith(context.searchString.toLocaleLowerCase())
       ) {
-        match.autofill = {
+        result.autofill = {
           value:
             context.searchString +
             autofillValue.substring(context.searchString.length),
@@ -235,10 +183,10 @@ function convertResultToMatches(context, result, urls) {
         };
       }
     }
-    match.heuristic = isHeuristic;
-    matches.push(match);
+    result.heuristic = isHeuristic;
+    results.push(result);
   }
-  return { matches, done };
+  return results;
 }
 
 

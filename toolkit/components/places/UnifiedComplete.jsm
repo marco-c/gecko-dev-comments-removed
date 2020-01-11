@@ -359,7 +359,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PlacesSearchAutocompleteProvider:
     "resource://gre/modules/PlacesSearchAutocompleteProvider.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   ProfileAge: "resource://gre/modules/ProfileAge.jsm",
+  PromiseUtils: "resource://gre/modules/PromiseUtils.jsm",
   Sqlite: "resource://gre/modules/Sqlite.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.jsm",
@@ -641,13 +643,16 @@ function makeActionUrl(type, params) {
 
 
 
+
+
 function Search(
   searchString,
   searchParam,
   autocompleteListener,
   autocompleteSearch,
   prohibitSearchSuggestions,
-  previousResult
+  previousResult,
+  queryContext
 ) {
   
   this._originalSearchString = searchString;
@@ -666,23 +671,31 @@ function Search(
     ? UrlbarPrefs.get("defaultBehavior")
     : UrlbarPrefs.get("emptySearchDefaultBehavior");
 
-  let params = new Set(searchParam.split(" "));
-  this._enableActions = params.has("enable-actions");
-  this._disablePrivateActions = params.has("disable-private-actions");
-  this._inPrivateWindow = params.has("private-window");
-  this._prohibitAutoFill = params.has("prohibit-autofill");
-
-  
-  let maxResults = searchParam.match(REGEXP_MAX_RESULTS);
-  this._maxResults = maxResults
-    ? parseInt(maxResults[1])
-    : UrlbarPrefs.get("maxRichResults");
-
-  
-  let userContextId = searchParam.match(REGEXP_USER_CONTEXT_ID);
-  this._userContextId = userContextId
-    ? parseInt(userContextId[1], 10)
-    : Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID;
+  if (queryContext) {
+    this._enableActions = true;
+    this._inPrivateWindow = queryContext.isPrivate;
+    this._disablePrivateActions =
+      this._inPrivateWindow && !PrivateBrowsingUtils.permanentPrivateBrowsing;
+    this._prohibitAutoFill = !queryContext.allowAutofill;
+    this._maxResults = queryContext.maxResults;
+    this._userContextId = queryContext.userContextId;
+  } else {
+    let params = new Set(searchParam.split(" "));
+    this._enableActions = params.has("enable-actions");
+    this._disablePrivateActions = params.has("disable-private-actions");
+    this._inPrivateWindow = params.has("private-window");
+    this._prohibitAutoFill = params.has("prohibit-autofill");
+    
+    let maxResults = searchParam.match(REGEXP_MAX_RESULTS);
+    this._maxResults = maxResults
+      ? parseInt(maxResults[1])
+      : UrlbarPrefs.get("maxRichResults");
+    
+    let userContextId = searchParam.match(REGEXP_USER_CONTEXT_ID);
+    this._userContextId = userContextId
+      ? parseInt(userContextId[1], 10)
+      : Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID;
+  }
 
   
   
@@ -2862,7 +2875,50 @@ UnifiedComplete.prototype = {
 
   
 
-  startSearch(searchString, searchParam, acPreviousResult, listener) {
+
+
+
+
+
+
+
+  startQuery(queryContext, onAutocompleteResult) {
+    let deferred = PromiseUtils.defer();
+    let listener = {
+      onSearchResult(_, result) {
+        let done =
+          [
+            Ci.nsIAutoCompleteResult.RESULT_IGNORED,
+            Ci.nsIAutoCompleteResult.RESULT_FAILURE,
+            Ci.nsIAutoCompleteResult.RESULT_NOMATCH,
+            Ci.nsIAutoCompleteResult.RESULT_SUCCESS,
+          ].includes(result.searchResult) || result.errorDescription;
+        onAutocompleteResult(result);
+        if (done) {
+          deferred.resolve();
+        }
+      },
+    };
+    this.startSearch(
+      queryContext.searchString,
+      "",
+      null,
+      listener,
+      queryContext
+    );
+    this._deferred = deferred;
+    return this._deferred.promise;
+  },
+
+  
+
+  startSearch(
+    searchString,
+    searchParam,
+    acPreviousResult,
+    listener,
+    queryContext
+  ) {
     
     if (this._currentSearch) {
       this.stopSearch();
@@ -2892,10 +2948,13 @@ UnifiedComplete.prototype = {
     
 
     
-    let insertMethod = searchParam.match(REGEXP_INSERT_METHOD);
-    insertMethod = insertMethod
-      ? parseInt(insertMethod[1])
-      : UrlbarPrefs.get("insertMethod");
+    let insertMethod = UrlbarUtils.INSERTMETHOD.APPEND;
+    if (!queryContext) {
+      insertMethod = searchParam.match(REGEXP_INSERT_METHOD);
+      insertMethod = insertMethod
+        ? parseInt(insertMethod[1])
+        : UrlbarPrefs.get("insertMethod");
+    }
 
     let previousResult = null;
     if (
@@ -2923,7 +2982,8 @@ UnifiedComplete.prototype = {
       listener,
       this,
       prohibitSearchSuggestions,
-      previousResult
+      previousResult,
+      queryContext
     ));
     this.getDatabaseHandle()
       .then(conn => search.execute(conn))
@@ -2941,6 +3001,9 @@ UnifiedComplete.prototype = {
   stopSearch() {
     if (this._currentSearch) {
       this._currentSearch.stop();
+    }
+    if (this._deferred) {
+      this._deferred.resolve();
     }
     
     
