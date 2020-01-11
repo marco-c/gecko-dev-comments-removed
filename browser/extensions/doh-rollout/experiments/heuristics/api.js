@@ -52,6 +52,10 @@ this.heuristics = class heuristics extends ExtensionAPI {
     return {
       experiments: {
         heuristics: {
+          async isTesting() {
+            return Cu.isInAutomation;
+          },
+
           setupTelemetry() {
             
             Services.telemetry.registerEvents(

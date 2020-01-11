@@ -21,6 +21,11 @@ const DOH_ENABLED_PREF = "doh-rollout.enabled";
 
 
 
+const MOCK_HEURISTICS_PREF = "doh-rollout.heuristics.mockValues";
+
+
+
+
 
 
 
@@ -214,6 +219,14 @@ const rollout = {
   
   lastNetworkChangeTime: 0,
 
+  async isTesting() {
+    if (this._isTesting === undefined) {
+      this._isTesting = await browser.experiments.heuristics.isTesting();
+    }
+
+    return this._isTesting;
+  },
+
   async doorhangerAcceptListener(tabId) {
     log("Doorhanger accepted on tab", tabId);
     await stateManager.setState("UIOk");
@@ -234,20 +247,30 @@ const rollout = {
 
   async heuristics(evaluateReason) {
     
-    let results = await runHeuristics();
+    let results;
+
+    if (await rollout.isTesting()) {
+      results = await browser.experiments.preferences.getCharPref(
+        MOCK_HEURISTICS_PREF,
+        "disable_doh"
+      );
+      results = JSON.parse(results);
+    } else {
+      results = await runHeuristics();
+    }
 
     
-    let disableDoh = Object.values(results).includes("disable_doh")
+    let decision = Object.values(results).includes("disable_doh")
       ? "disable_doh"
       : "enable_doh";
 
-    log("Heuristics decision on " + evaluateReason + ": " + disableDoh);
+    log("Heuristics decision on " + evaluateReason + ": " + decision);
 
     
     results.evaluateReason = evaluateReason;
-    browser.experiments.heuristics.sendHeuristicsPing(disableDoh, results);
+    browser.experiments.heuristics.sendHeuristicsPing(decision, results);
 
-    return disableDoh;
+    return decision;
   },
 
   async getSetting(name, defaultValue) {
@@ -424,7 +447,6 @@ const rollout = {
 
   async init() {
     log("calling init");
-
     
     let doneFirstRun = await this.getSetting(DOH_DONE_FIRST_RUN_PREF, false);
 
@@ -465,6 +487,7 @@ const rollout = {
       }
 
       log("Queing a heuristics run in 60s, will cancel if network fluctuates.");
+      let gracePeriod = (await rollout.isTesting()) ? 0 : 60000;
       rollout.networkSettledTimeout = setTimeout(async () => {
         log("No network fluctuation for 60 seconds, running heuristics.");
         
@@ -484,7 +507,7 @@ const rollout = {
         } else {
           await stateManager.setState("enabled");
         }
-      }, 60000);
+      }, gracePeriod);
     });
 
     
