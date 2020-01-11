@@ -57,6 +57,18 @@ static const int SCHEDULE_SAFETY_MARGIN_MS = 10;
 static const int AUDIO_TARGET_MS =
     2 * MEDIA_GRAPH_TARGET_PERIOD_MS + SCHEDULE_SAFETY_MARGIN_MS;
 
+
+
+
+
+static const int AUDIO_INITIAL_FALLBACK_BACKOFF_STEP_MS = 10;
+
+
+
+
+
+static const int AUDIO_MAX_FALLBACK_BACKOFF_STEP_MS = 1000;
+
 class AudioCallbackDriver;
 class GraphDriver;
 class MediaTrack;
@@ -758,6 +770,12 @@ class AudioCallbackDriver : public GraphDriver,
   
 
   bool mRanFirstIteration = false;
+  
+
+  TimeDuration mNextReInitBackoffStep;
+  
+
+  TimeStamp mNextReInitAttempt;
 #ifdef XP_MACOSX
   
 
