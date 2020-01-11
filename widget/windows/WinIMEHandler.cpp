@@ -643,11 +643,9 @@ void IMEHandler::SetInputScopeForIMM32(nsWindow* aWindow,
   }
   AutoTArray<InputScope, 3> scopes;
 
-#ifndef __MINGW32__
   if (aInPrivateBrowsing) {
     scopes.AppendElement(IS_PRIVATE);
   }
-#endif
 
   
   if (aHTMLInputType.IsEmpty() || aHTMLInputType.EqualsLiteral("text")) {
