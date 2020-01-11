@@ -35,7 +35,11 @@ class nsTextFrameUtils {
     HasTab = 0x01,
     
     HasShy = 0x02,
-    UnusedFlags = 0x0C,
+    UnusedFlags = 0x04,
+
+    
+    
+    DontSkipDrawingForPendingUserFonts = 0x08,
 
     
 
