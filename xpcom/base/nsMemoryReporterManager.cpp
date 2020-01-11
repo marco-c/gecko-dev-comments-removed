@@ -5,7 +5,6 @@
 
 
 #include "nsAtomTable.h"
-#include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "nsCOMArray.h"
 #include "nsPrintfCString.h"
