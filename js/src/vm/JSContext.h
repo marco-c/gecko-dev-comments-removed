@@ -46,8 +46,6 @@ class AutoCheckCanAccessAtomsDuringGC;
 class AutoSuppressNurseryCellAlloc;
 }  
 
-typedef HashSet<Shape*> ShapeSet;
-
 
 class MOZ_RAII AutoCycleDetector {
  public:

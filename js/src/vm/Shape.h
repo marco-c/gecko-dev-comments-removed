@@ -132,43 +132,45 @@ struct ShapeHasher : public DefaultHasher<Shape*> {
   static MOZ_ALWAYS_INLINE bool match(Key k, const Lookup& l);
 };
 
-typedef HashSet<Shape*, ShapeHasher, SystemAllocPolicy> KidsHash;
+using ShapeSet = HashSet<Shape*, ShapeHasher, SystemAllocPolicy>;
 
-class KidsPointer {
+
+class ShapeChildren {
  private:
-  enum { SHAPE = 0, HASH = 1, TAG = 1 };
+  enum { SINGLE_SHAPE = 0, SHAPE_SET = 1, MASK = 1 };
 
-  uintptr_t w;
+  uintptr_t bits;
 
  public:
-  bool isNull() const { return !w; }
-  void setNull() { w = 0; }
+  bool isNone() const { return !bits; }
+  void setNone() { bits = 0; }
 
-  bool isShape() const { return (w & TAG) == SHAPE && !isNull(); }
-  Shape* toShape() const {
-    MOZ_ASSERT(isShape());
-    return reinterpret_cast<Shape*>(w & ~uintptr_t(TAG));
+  bool isSingleShape() const {
+    return (bits & MASK) == SINGLE_SHAPE && !isNone();
   }
-  void setShape(Shape* shape) {
+  Shape* toSingleShape() const {
+    MOZ_ASSERT(isSingleShape());
+    return reinterpret_cast<Shape*>(bits & ~uintptr_t(MASK));
+  }
+  void setSingleShape(Shape* shape) {
     MOZ_ASSERT(shape);
-    MOZ_ASSERT(
-        (reinterpret_cast<uintptr_t>(static_cast<Shape*>(shape)) & TAG) == 0);
-    w = reinterpret_cast<uintptr_t>(static_cast<Shape*>(shape)) | SHAPE;
+    MOZ_ASSERT((uintptr_t(shape) & MASK) == 0);
+    bits = uintptr_t(shape) | SINGLE_SHAPE;
   }
 
-  bool isHash() const { return (w & TAG) == HASH; }
-  KidsHash* toHash() const {
-    MOZ_ASSERT(isHash());
-    return reinterpret_cast<KidsHash*>(w & ~uintptr_t(TAG));
+  bool isShapeSet() const { return (bits & MASK) == SHAPE_SET; }
+  ShapeSet* toShapeSet() const {
+    MOZ_ASSERT(isShapeSet());
+    return reinterpret_cast<ShapeSet*>(bits & ~uintptr_t(MASK));
   }
-  void setHash(KidsHash* hash) {
+  void setShapeSet(ShapeSet* hash) {
     MOZ_ASSERT(hash);
-    MOZ_ASSERT((reinterpret_cast<uintptr_t>(hash) & TAG) == 0);
-    w = reinterpret_cast<uintptr_t>(hash) | HASH;
+    MOZ_ASSERT((uintptr_t(hash) & MASK) == 0);
+    bits = uintptr_t(hash) | SHAPE_SET;
   }
 
 #ifdef DEBUG
-  void checkConsistency(Shape* aKid) const;
+  void checkHasChild(Shape* child) const;
 #endif
 };
 
@@ -199,7 +201,7 @@ class PropertyTree {
   }
 
   MOZ_ALWAYS_INLINE Shape* inlinedGetChild(JSContext* cx, Shape* parent,
-                                           JS::Handle<StackShape> child);
+                                           JS::Handle<StackShape> childSpec);
   Shape* getChild(JSContext* cx, Shape* parent, JS::Handle<StackShape> child);
 };
 
@@ -945,14 +947,15 @@ class Shape : public gc::TenuredCell {
   uint8_t mutableFlags;    
 
   GCPtrShape parent; 
-  
+
   union {
-    KidsPointer kids;  
+    
+    ShapeChildren children;
 
-    GCPtrShape* listp; 
-
-
-
+    
+    
+    
+    GCPtrShape* listp;
   };
 
   template <MaybeAdding Adding = MaybeAdding::NotAdding>
@@ -1065,9 +1068,9 @@ class Shape : public gc::TenuredCell {
           getCache(nogc).sizeOfExcludingThis(mallocSizeOf);
     }
 
-    if (!inDictionary() && kids.isHash()) {
-      info->shapesMallocHeapTreeKids +=
-          kids.toHash()->shallowSizeOfIncludingThis(mallocSizeOf);
+    if (!inDictionary() && children.isShapeSet()) {
+      info->shapesMallocHeapTreeChildren +=
+          children.toShapeSet()->shallowSizeOfIncludingThis(mallocSizeOf);
     }
   }
 
@@ -1684,7 +1687,7 @@ inline Shape::Shape(const StackShape& other, uint32_t nfixed)
 
   MOZ_ASSERT_IF(!isEmptyShape(), AtomIsMarked(zone(), propid()));
 
-  kids.setNull();
+  children.setNone();
 }
 
 
@@ -1707,7 +1710,7 @@ inline Shape::Shape(UnownedBaseShape* base, uint32_t nfixed)
       parent(nullptr),
       listp(nullptr) {
   MOZ_ASSERT(base);
-  kids.setNull();
+  children.setNone();
 }
 
 inline GetterOp Shape::getter() const {
