@@ -1275,16 +1275,9 @@ void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
     return;
   }
 
-  if (aEvent->mLayersId.IsValid()) {
-    BrowserParent* preciseRemote =
-        BrowserParent::GetBrowserParentFromLayersId(aEvent->mLayersId);
-    if (preciseRemote) {
-      remote = preciseRemote;
-    }
-    
-    
-    
-  } else if (aEvent->mClass == eKeyboardEventClass) {
+  WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
+  bool isContextMenuKey = mouseEvent && mouseEvent->IsContextMenuKeyEvent();
+  if (aEvent->mClass == eKeyboardEventClass || isContextMenuKey) {
     
     
     BrowserParent* preciseRemote = BrowserParent::GetFocused();
@@ -1293,11 +1286,20 @@ void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
     }
     
     
+  } else if (aEvent->mLayersId.IsValid()) {
+    BrowserParent* preciseRemote =
+        BrowserParent::GetBrowserParentFromLayersId(aEvent->mLayersId);
+    if (preciseRemote) {
+      remote = preciseRemote;
+    }
+    
+    
+    
   }
 
   switch (aEvent->mClass) {
     case eMouseEventClass: {
-      remote->SendRealMouseEvent(*aEvent->AsMouseEvent());
+      remote->SendRealMouseEvent(*mouseEvent);
       return;
     }
     case eKeyboardEventClass: {
