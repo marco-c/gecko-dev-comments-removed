@@ -84,7 +84,8 @@ HttpChannelParent::HttpChannelParent(const PBrowserOrId& iframeEmbedding,
       mWillSynthesizeResponse(false),
       mCacheNeedFlowControlInitialized(false),
       mNeedFlowControl(true),
-      mSuspendedForFlowControl(false) {
+      mSuspendedForFlowControl(false),
+      mIsMultiPart(false) {
   LOG(("Creating HttpChannelParent [this=%p]\n", this));
 
   
@@ -1331,6 +1332,7 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
     nsCOMPtr<nsIMultiPartChannel> multiPartChannel =
         do_QueryInterface(aRequest);
     if (multiPartChannel) {
+      mIsMultiPart = true;
       nsCOMPtr<nsIChannel> baseChannel;
       multiPartChannel->GetBaseChannel(getter_AddRefs(baseChannel));
       chan = do_QueryObject(baseChannel);
@@ -1341,6 +1343,8 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
       multiPartChannel->GetIsLastPart(&isLastPartOfMultiPart);
     }
   }
+  MOZ_ASSERT(multiPartID || !mIsMultiPart, "Changed multi-part state?");
+
   if (!chan) {
     LOG(("  aRequest is not HttpBaseChannel"));
     NS_ERROR(
@@ -1497,16 +1501,6 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
   }
   requestHead->Exit();
 
-  
-  
-  
-  if (NS_SUCCEEDED(rv)) {
-    MOZ_ASSERT(mBgParent);
-    if (!mBgParent->OnStartRequestSent()) {
-      rv = NS_ERROR_UNEXPECTED;
-    }
-  }
-
   return rv;
 }
 
@@ -1531,10 +1525,20 @@ HttpChannelParent::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
   
   MOZ_ASSERT(mIPCClosed || mBgParent);
 
-  if (mIPCClosed || !mBgParent ||
-      !mBgParent->OnStopRequest(
-          aStatusCode, GetTimingAttributes(mChannel),
-          responseTrailer ? *responseTrailer : nsHttpHeaderArray())) {
+  
+  
+  if (!mIPCClosed && mIsMultiPart) {
+    
+    TimeStamp lastActTabOpt = nsHttp::GetLastActiveTabLoadOptimizationHit();
+    if (!SendOnStopRequest(
+            aStatusCode, GetTimingAttributes(mChannel), lastActTabOpt,
+            responseTrailer ? *responseTrailer : nsHttpHeaderArray())) {
+      return NS_ERROR_UNEXPECTED;
+    }
+  } else if (mIPCClosed || !mBgParent ||
+             !mBgParent->OnStopRequest(
+                 aStatusCode, GetTimingAttributes(mChannel),
+                 responseTrailer ? *responseTrailer : nsHttpHeaderArray())) {
     return NS_ERROR_UNEXPECTED;
   }
 
@@ -1622,9 +1626,16 @@ HttpChannelParent::OnDataAvailable(nsIRequest* aRequest,
     
     MOZ_ASSERT(mIPCClosed || mBgParent);
 
-    if (mIPCClosed || !mBgParent ||
-        !mBgParent->OnTransportAndData(channelStatus, transportStatus, aOffset,
-                                       toRead, data)) {
+    
+    
+    if (!mIPCClosed && mIsMultiPart) {
+      if (!SendOnTransportAndData(channelStatus, transportStatus, aOffset,
+                                  toRead, data)) {
+        return NS_ERROR_UNEXPECTED;
+      }
+    } else if (mIPCClosed || !mBgParent ||
+               !mBgParent->OnTransportAndData(channelStatus, transportStatus,
+                                              aOffset, toRead, data)) {
       return NS_ERROR_UNEXPECTED;
     }
 
