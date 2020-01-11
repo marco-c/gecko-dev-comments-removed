@@ -7356,11 +7356,18 @@ nsresult nsHttpChannel::ComputeCrossOriginOpenerPolicyMismatch() {
   nsHttpResponseHead* head =
       mResponseHead ? mResponseHead : mCachedResponseHead;
   if (!head) {
-    return NS_ERROR_NOT_AVAILABLE;
+    
+    
+    return NS_OK;
   }
 
   RefPtr<mozilla::dom::BrowsingContext> ctx;
   mLoadInfo->GetBrowsingContext(getter_AddRefs(ctx));
+
+  
+  if (!ctx) {
+    return NS_OK;
+  }
 
   
   nsILoadInfo::CrossOriginOpenerPolicy documentPolicy = ctx->GetOpenerPolicy();
