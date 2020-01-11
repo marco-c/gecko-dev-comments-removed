@@ -483,7 +483,7 @@ void gfxFontShaper::MergeFontFeatures(
     case NS_FONT_VARIANT_CAPS_ALLSMALL:
       mergedFeatures.Put(HB_TAG('c', '2', 's', 'c'), 1);
       
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
 
     case NS_FONT_VARIANT_CAPS_SMALLCAPS:
       mergedFeatures.Put(HB_TAG('s', 'm', 'c', 'p'), 1);
@@ -494,7 +494,7 @@ void gfxFontShaper::MergeFontFeatures(
                                        : HB_TAG('c', '2', 'p', 'c'),
                          1);
       
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
 
     case NS_FONT_VARIANT_CAPS_PETITECAPS:
       mergedFeatures.Put(aAddSmallCaps ? HB_TAG('s', 'm', 'c', 'p')
@@ -3272,7 +3272,7 @@ bool gfxFont::InitFakeSmallCapsRun(DrawTarget* aDrawTarget,
         case kUppercaseReduce:
           
           f = smallCapsFont;
-          MOZ_FALLTHROUGH;
+          [[fallthrough]];
 
         case kUppercase:
           

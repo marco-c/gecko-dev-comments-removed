@@ -553,7 +553,7 @@ void nsHtml5Highlighter::FlushChars() {
           
           
           buf[i] = '\n';
-          MOZ_FALLTHROUGH;
+          [[fallthrough]];
         case '\n': {
           ++i;
           if (mCStart < i) {

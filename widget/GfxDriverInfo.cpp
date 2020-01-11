@@ -169,7 +169,7 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id) {
       APPEND_DEVICE(0x0166); 
       APPEND_DEVICE(0x016A); 
       
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     case IntelHDGraphicsToSandyBridge:
       APPEND_DEVICE(0x0042); 
       APPEND_DEVICE(0x0046); 

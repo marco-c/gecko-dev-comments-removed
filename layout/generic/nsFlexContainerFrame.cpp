@@ -3223,7 +3223,7 @@ CrossAxisPositionTracker::CrossAxisPositionTracker(
             "NYI: "
             "align-items/align-self:left/right/self-start/self-end/baseline/"
             "last baseline");
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
       case NS_STYLE_ALIGN_FLEX_START:
         
         break;

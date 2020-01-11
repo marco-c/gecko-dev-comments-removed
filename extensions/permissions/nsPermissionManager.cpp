@@ -1111,7 +1111,7 @@ nsresult nsPermissionManager::InitDB(bool aRemoveFile) {
       }
 
         
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       
       
@@ -1131,7 +1131,7 @@ nsresult nsPermissionManager::InitDB(bool aRemoveFile) {
       }
 
         
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       
       case 3: {
@@ -1148,7 +1148,7 @@ nsresult nsPermissionManager::InitDB(bool aRemoveFile) {
       }
 
         
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       
       
@@ -1241,7 +1241,7 @@ nsresult nsPermissionManager::InitDB(bool aRemoveFile) {
         }
 
         
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       
       
@@ -1414,7 +1414,7 @@ nsresult nsPermissionManager::InitDB(bool aRemoveFile) {
       }
 
         
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       
       
@@ -1507,7 +1507,7 @@ nsresult nsPermissionManager::InitDB(bool aRemoveFile) {
       }
 
         
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       
       
@@ -1536,7 +1536,7 @@ nsresult nsPermissionManager::InitDB(bool aRemoveFile) {
       }
 
         
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case 9: {
         rv = mDBConn->SetSchemaVersion(10);
@@ -1544,7 +1544,7 @@ nsresult nsPermissionManager::InitDB(bool aRemoveFile) {
       }
 
         
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case 10: {
         
@@ -1563,7 +1563,7 @@ nsresult nsPermissionManager::InitDB(bool aRemoveFile) {
       }
 
         
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       
       case HOSTS_SCHEMA_VERSION:

@@ -3149,7 +3149,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
       case nsDisplayTransform::PartialPrerender:
         allowAsyncAnimation = true;
         visibleRect = dirtyRect;
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
         
       case nsDisplayTransform::NoPrerender:
         if (overflow.IsEmpty() && !extend3DContext) {
@@ -8603,7 +8603,7 @@ nsresult nsIFrame::PeekOffset(nsPeekOffsetStruct* aPos) {
         aPos->mWordMovementType = eEndWord;
       }
       
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     case eSelectWord: {
       
       

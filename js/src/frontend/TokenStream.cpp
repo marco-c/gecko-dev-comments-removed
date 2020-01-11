@@ -3423,7 +3423,7 @@ bool TokenStreamSpecific<Unit, AnyCharsAccess>::getStringOrTemplateToken(
 
         case '\r':
           matchLineTerminator('\n');
-          MOZ_FALLTHROUGH;
+          [[fallthrough]];
         case '\n': {
           
           

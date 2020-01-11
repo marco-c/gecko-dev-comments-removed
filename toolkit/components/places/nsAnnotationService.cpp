@@ -115,7 +115,7 @@ nsAnnotationService::SetItemAnnotation(int64_t aItemId, const nsACString& aName,
         break;
       }
       
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     }
     case nsIDataType::VTYPE_INT64:
     case nsIDataType::VTYPE_UINT64: {
@@ -129,7 +129,7 @@ nsAnnotationService::SetItemAnnotation(int64_t aItemId, const nsACString& aName,
         break;
       }
       
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     }
     case nsIDataType::VTYPE_FLOAT:
     case nsIDataType::VTYPE_DOUBLE: {

@@ -96,11 +96,11 @@ size_t XZStream::Decode(void* aOutBuf, size_t aOutSize) {
       case XZ_STREAM_END:
         
         MOZ_ASSERT(mBuffers.in_pos == mBuffers.in_size);
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 #ifdef XZ_DEC_ANY_CHECK
       case XZ_UNSUPPORTED_CHECK:
         
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 #endif
       case XZ_OK:
         
@@ -123,7 +123,7 @@ size_t XZStream::Decode(void* aOutBuf, size_t aOutSize) {
         return 0;
 
       case XZ_DATA_ERROR:
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
       case XZ_BUF_ERROR:
         ERROR("XZ decoding: corrupt input stream");
         return 0;

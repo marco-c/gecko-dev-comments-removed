@@ -1492,7 +1492,7 @@ NPError _getvalue(NPP npp, NPNVariable variable, void* result) {
       
       
       *(nsISupports**)result = nullptr;
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
 
     default:
       NPN_PLUGIN_LOG(PLUGIN_LOG_NORMAL,

@@ -2617,7 +2617,7 @@ void Simulator::decodeTypeRegister(SimInstruction* instr) {
               
               MOZ_ASSERT((FCSR_ & 3) == 0);
               
-              MOZ_FALLTHROUGH;
+              [[fallthrough]];
             case ff_round_w_fmt: {  
                                     
               float rounded = std::floor(fs_value + 0.5);
@@ -2767,7 +2767,7 @@ void Simulator::decodeTypeRegister(SimInstruction* instr) {
               
               MOZ_ASSERT((FCSR_ & 3) == 0);
               
-              MOZ_FALLTHROUGH;
+              [[fallthrough]];
             case ff_round_w_fmt: {  
                                     
               double rounded = std::floor(ds_value + 0.5);

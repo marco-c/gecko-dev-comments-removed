@@ -292,7 +292,7 @@ bool RangeAnalysis::addBetaNodes() {
           continue;
         }
         
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
       case JSOP_EQ:
         comp.setDouble(bound, bound);
         break;
@@ -302,7 +302,7 @@ bool RangeAnalysis::addBetaNodes() {
           continue;
         }
         
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
       case JSOP_NE:
         
         if (bound == 0) {

@@ -2050,7 +2050,7 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
     
     case Bailout_OverflowInvalidate:
       outerScript->setHadOverflowBailout();
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     case Bailout_DoubleOutput:
     case Bailout_ObjectIdentityOrTypeGuard:
       HandleBaselineInfoBailout(cx, outerScript, innerScript);

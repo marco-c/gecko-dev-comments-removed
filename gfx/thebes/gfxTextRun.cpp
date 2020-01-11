@@ -1885,7 +1885,7 @@ void gfxFontGroup::FamilyFace::CheckState(bool& aSkipDrawing) {
       case gfxUserFontEntry::STATUS_FAILED:
         SetInvalid();
         
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
       default:
         SetLoading(false);
     }

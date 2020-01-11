@@ -7853,7 +7853,7 @@ bool ClusterIterator::IsPunctuation() {
       if (ch == '_' && !sStopAtUnderscore) {
         return false;
       }
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     case HB_UNICODE_GENERAL_CATEGORY_DASH_PUNCTUATION:    
     case HB_UNICODE_GENERAL_CATEGORY_CLOSE_PUNCTUATION:   
     case HB_UNICODE_GENERAL_CATEGORY_FINAL_PUNCTUATION:   

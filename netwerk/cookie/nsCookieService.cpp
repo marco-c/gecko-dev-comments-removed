@@ -844,7 +844,7 @@ OpenDBResult nsCookieService::TryInitDB(bool aRecreateDB) {
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
       }
         
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case 2: {
         
@@ -902,7 +902,7 @@ OpenDBResult nsCookieService::TryInitDB(bool aRecreateDB) {
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
       }
         
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case 3: {
         
@@ -998,7 +998,7 @@ OpenDBResult nsCookieService::TryInitDB(bool aRecreateDB) {
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
       }
         
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case 4: {
         
@@ -1046,7 +1046,7 @@ OpenDBResult nsCookieService::TryInitDB(bool aRecreateDB) {
                          ("Upgraded database to schema version 5"));
       }
         
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case 5: {
         
@@ -1113,7 +1113,7 @@ OpenDBResult nsCookieService::TryInitDB(bool aRecreateDB) {
         COOKIE_LOGSTRING(LogLevel::Debug,
                          ("Upgraded database to schema version 6"));
       }
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case 6: {
         
@@ -1168,7 +1168,7 @@ OpenDBResult nsCookieService::TryInitDB(bool aRecreateDB) {
         COOKIE_LOGSTRING(LogLevel::Debug,
                          ("Upgraded database to schema version 7"));
       }
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case 7: {
         
@@ -1253,7 +1253,7 @@ OpenDBResult nsCookieService::TryInitDB(bool aRecreateDB) {
         COOKIE_LOGSTRING(LogLevel::Debug,
                          ("Upgraded database to schema version 8"));
       }
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case 8: {
         
@@ -1264,7 +1264,7 @@ OpenDBResult nsCookieService::TryInitDB(bool aRecreateDB) {
         COOKIE_LOGSTRING(LogLevel::Debug,
                          ("Upgraded database to schema version 9"));
       }
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case 9: {
         
@@ -1285,7 +1285,7 @@ OpenDBResult nsCookieService::TryInitDB(bool aRecreateDB) {
             mDefaultDBState->syncConn->SetSchemaVersion(COOKIES_SCHEMA_VERSION);
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
       }
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case COOKIES_SCHEMA_VERSION:
         break;
@@ -1303,7 +1303,7 @@ OpenDBResult nsCookieService::TryInitDB(bool aRecreateDB) {
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
       }
         
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       
       

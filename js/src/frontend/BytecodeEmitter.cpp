@@ -1233,7 +1233,7 @@ restart:
     
     case ParseNodeKind::CommaExpr:
       MOZ_ASSERT(!pn->as<ListNode>().empty());
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     
     case ParseNodeKind::ArrayExpr:
     case ParseNodeKind::ObjectExpr:
@@ -9573,7 +9573,7 @@ bool BytecodeEmitter::emitTree(
       if (!markStepBreakpoint()) {
         return false;
       }
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     case ParseNodeKind::VoidExpr:
     case ParseNodeKind::NotExpr:
     case ParseNodeKind::BitNotExpr:

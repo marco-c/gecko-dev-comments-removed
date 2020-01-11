@@ -693,7 +693,7 @@ void WebAudioDecodeJob::OnFailure(ErrorCode aErrorCode) {
       
       
     case UnknownError:
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     default:
       errorMessage = "MediaDecodeAudioDataUnknownError";
       break;

@@ -2805,7 +2805,7 @@ void Element::GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor) {
     
     case eMouseOver:
       aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     case eFocus: {
       InternalFocusEvent* focusEvent = aVisitor.mEvent->AsFocusEvent();
       if (!focusEvent || !focusEvent->mIsRefocus) {
@@ -2820,7 +2820,7 @@ void Element::GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor) {
     }
     case eMouseOut:
       aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     case eBlur: {
       nsresult rv = LeaveLink(aVisitor.mPresContext);
       if (NS_SUCCEEDED(rv)) {

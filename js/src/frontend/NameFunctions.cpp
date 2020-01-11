@@ -199,7 +199,7 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
           
           
           pos--;
-          MOZ_FALLTHROUGH;
+          [[fallthrough]];
 
         default:
           

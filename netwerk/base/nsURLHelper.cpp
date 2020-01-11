@@ -372,7 +372,7 @@ nsresult net_ResolveRelativePath(const nsACString& relativePath,
       case '#':
       case '?':
         stop = true;
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
       case '/':
         
         if (name.EqualsLiteral("..")) {

@@ -130,7 +130,7 @@ nscoord CSSAlignUtils::AlignJustifySelf(uint8_t aAlignment, LogicalAxis aAxis,
       }
       break;
     case NS_STYLE_ALIGN_STRETCH:
-      MOZ_FALLTHROUGH;  
+      [[fallthrough]];  
     case NS_STYLE_ALIGN_START:
       offset = marginStart;
       break;

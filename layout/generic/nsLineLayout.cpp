@@ -2961,7 +2961,7 @@ void nsLineLayout::ExpandRubyBox(PerFrameData* aFrame, nscoord aReservedISize,
       }
       
       
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     }
     case StyleRubyAlign::Center:
       
@@ -3148,7 +3148,7 @@ void nsLineLayout::TextAlignLine(nsLineBox* aLine, bool aIsLastLine) {
         }
         
         
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
       }
 
       case NS_STYLE_TEXT_ALIGN_START:

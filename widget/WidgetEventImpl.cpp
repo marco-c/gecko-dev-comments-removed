@@ -478,7 +478,7 @@ bool WidgetEvent::IsAllowedToDispatchDOMEvent() const {
       if (mMessage == eMouseTouchDrag) {
         return false;
       }
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     case ePointerEventClass:
       
       

@@ -578,7 +578,7 @@ void nsTableCellFrame::BlockDirAlignChild(WritingMode aWM, nscoord aMaxAscent) {
       }
       
       
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     case StyleVerticalAlignKeyword::Top:
       
       kidBStart = bStartInset;

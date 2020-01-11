@@ -387,7 +387,7 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
                mInfo.image_width, mInfo.image_height));
 
       mState = JPEG_START_DECOMPRESS;
-      MOZ_FALLTHROUGH;  
+      [[fallthrough]];  
     }
 
     case JPEG_START_DECOMPRESS: {
@@ -416,7 +416,7 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
       
       mState = mInfo.buffered_image ? JPEG_DECOMPRESS_PROGRESSIVE
                                     : JPEG_DECOMPRESS_SEQUENTIAL;
-      MOZ_FALLTHROUGH;  
+      [[fallthrough]];  
     }
 
     case JPEG_DECOMPRESS_SEQUENTIAL: {
@@ -444,7 +444,7 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
             return Transition::TerminateFailure();
         }
       }
-      MOZ_FALLTHROUGH;  
+      [[fallthrough]];  
     }
 
     case JPEG_DECOMPRESS_PROGRESSIVE: {
@@ -521,7 +521,7 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
           }
         }
       }
-      MOZ_FALLTHROUGH;  
+      [[fallthrough]];  
     }
 
     case JPEG_DONE: {

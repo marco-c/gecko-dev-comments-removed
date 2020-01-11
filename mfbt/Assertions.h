@@ -660,7 +660,7 @@ struct AssertionConditionType {
 #  define MOZ_FALLTHROUGH_ASSERT(...) \
     MOZ_CRASH("MOZ_FALLTHROUGH_ASSERT: " __VA_ARGS__)
 #else
-#  define MOZ_FALLTHROUGH_ASSERT(...) MOZ_FALLTHROUGH
+#  define MOZ_FALLTHROUGH_ASSERT(...) [[fallthrough]]
 #endif
 
 

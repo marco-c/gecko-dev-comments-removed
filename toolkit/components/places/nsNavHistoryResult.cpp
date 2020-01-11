@@ -2056,7 +2056,7 @@ nsresult nsNavHistoryQueryResultNode::OnVisit(nsIURI* aURI, int64_t aVisitId,
 
       
       
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     }
 
     case QUERYUPDATE_TIME: {
@@ -2077,7 +2077,7 @@ nsresult nsNavHistoryQueryResultNode::OnVisit(nsIURI* aURI, int64_t aVisitId,
       }
       
       
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     }
 
     case QUERYUPDATE_SIMPLE: {
