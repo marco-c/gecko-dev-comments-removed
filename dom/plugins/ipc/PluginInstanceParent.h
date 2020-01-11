@@ -13,6 +13,7 @@
 #  include "mozilla/gfx/SharedDIBWin.h"
 #  include <d3d10_1.h>
 #  include "nsRefPtrHashtable.h"
+#  include "mozilla/layers/LayersSurfaces.h"
 #elif defined(MOZ_WIDGET_COCOA)
 #  include "mozilla/gfx/QuartzSupport.h"
 #endif
@@ -148,11 +149,35 @@ class PluginInstanceParent : public PPluginInstanceParent {
 
   mozilla::ipc::IPCResult RecvRevokeCurrentDirectSurface();
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   mozilla::ipc::IPCResult RecvInitDXGISurface(const gfx::SurfaceFormat& format,
                                               const gfx::IntSize& size,
                                               WindowsHandle* outHandle,
                                               NPError* outError);
+  mozilla::ipc::IPCResult RecvShowDirectDXGISurface(const WindowsHandle& handle,
+                                                    const gfx::IntRect& rect);
+
   mozilla::ipc::IPCResult RecvFinalizeDXGISurface(const WindowsHandle& handle);
+
+  
 
   mozilla::ipc::IPCResult RecvShowDirectBitmap(Shmem&& buffer,
                                                const gfx::SurfaceFormat& format,
@@ -160,10 +185,6 @@ class PluginInstanceParent : public PPluginInstanceParent {
                                                const gfx::IntSize& size,
                                                const gfx::IntRect& dirty);
 
-  mozilla::ipc::IPCResult RecvShowDirectDXGISurface(const WindowsHandle& handle,
-                                                    const gfx::IntRect& rect);
-
-  
   mozilla::ipc::IPCResult RecvShow(const NPRect& updatedRect,
                                    const SurfaceDescriptor& newSurface,
                                    SurfaceDescriptor* prevSurface);
@@ -343,7 +364,15 @@ class PluginInstanceParent : public PPluginInstanceParent {
   HWND mChildPluginHWND;
   HWND mChildPluginsParentHWND;
   WNDPROC mPluginWndProc;
+
+  struct AsyncSurfaceInfo {
+    layers::SurfaceDescriptorPlugin mSD;
+    gfx::IntSize mSize;
+  };
+  
+  HashMap<WindowsHandle, AsyncSurfaceInfo> mAsyncSurfaceMap;
 #endif  
+
 #if defined(MOZ_WIDGET_COCOA)
  private:
   Shmem mShSurface;
