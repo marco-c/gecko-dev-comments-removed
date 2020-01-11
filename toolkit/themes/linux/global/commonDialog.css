@@ -8,9 +8,19 @@
   justify-content: center;
 }
 
+
+
+
+
+
+#iconContainer {
+  height: 55px; 
+  width: 58px; 
+}
+
 #infoIcon {
-  justify-self: center;
+  display: block;
   max-width: 48px;
   max-height: 48px;
-  margin: 3px 5px 4px;
+  margin: 3px auto 0;
 }
