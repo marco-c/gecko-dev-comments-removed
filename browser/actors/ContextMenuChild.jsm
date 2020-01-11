@@ -704,16 +704,10 @@ class ContextMenuChild extends JSWindowActorChild {
       "on-prepare-contextmenu"
     );
 
-    
-    
-    data.principal = E10SUtils.serializePrincipal(doc.nodePrincipal);
-    data.context.principal = E10SUtils.serializePrincipal(context.principal);
-    data.storagePrincipal = E10SUtils.serializePrincipal(
-      doc.effectiveStoragePrincipal
-    );
-    data.context.storagePrincipal = E10SUtils.serializePrincipal(
-      context.storagePrincipal
-    );
+    data.principal = doc.nodePrincipal;
+    data.context.principal = context.principal;
+    data.storagePrincipal = doc.effectiveStoragePrincipal;
+    data.context.storagePrincipal = context.storagePrincipal;
 
     
     

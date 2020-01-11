@@ -3501,10 +3501,10 @@ const PREF_SSL_IMPACT_ROOTS = ["security.tls.version.", "security.ssl3."];
 
 var BrowserOnClick = {
   ignoreWarningLink(reason, blockedInfo, browsingContext) {
-    let triggeringPrincipal = E10SUtils.deserializePrincipal(
-      blockedInfo.triggeringPrincipal,
-      _createNullPrincipalFromTabUserContextId()
-    );
+    let triggeringPrincipal =
+      blockedInfo.triggeringPrincipal ||
+      _createNullPrincipalFromTabUserContextId();
+
     
     
     
