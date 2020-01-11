@@ -21,4 +21,11 @@ gdbg.executeInGlobal(`
   x.sort((a, b) => {print(a)});
 `);
 
-assertEqArray(rv, ["EnterFrame", "sort", "EnterFrame", "print", "EnterFrame", "print"]);
+
+
+
+const validNames = ["EnterFrame", "sort", "print"];
+const filtered = rv.filter(name => validNames.includes(name));
+
+assertEq(filtered.length < rv.length, true);
+assertEqArray(filtered, ["EnterFrame", "sort", "EnterFrame", "print", "EnterFrame", "print"]);

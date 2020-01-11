@@ -2144,19 +2144,6 @@ ResumeMode Debugger::fireEnterFrame(JSContext* cx, MutableHandleValue vp) {
 
 ResumeMode Debugger::fireNativeCall(JSContext* cx, const CallArgs& args,
                                     CallReason reason, MutableHandleValue vp) {
-  
-  
-  
-  
-  
-  
-  
-  
-  JSScript* script = cx->currentScript();
-  if (script && script->selfHosted()) {
-    return ResumeMode::Continue;
-  }
-
   RootedObject hook(cx, getHook(OnNativeCall));
   MOZ_ASSERT(hook);
   MOZ_ASSERT(hook->isCallable());
