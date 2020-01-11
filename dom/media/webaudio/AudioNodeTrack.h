@@ -115,6 +115,8 @@ class AudioNodeTrack : public ProcessedMediaTrack {
     MOZ_ASSERT(!mAudioParamTrack, "Can only do this once");
     mAudioParamTrack = true;
   }
+  
+  uint32_t NumberOfChannels() const;
 
   
 
