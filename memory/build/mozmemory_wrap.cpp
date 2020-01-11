@@ -133,13 +133,8 @@ wchar_t* _wcsdup(const wchar_t* src)
 
 
 
-
-
-
-
 void (*__MINGW_IMP_SYMBOL(_aligned_free))(void*) = _aligned_free;
 void* (*__MINGW_IMP_SYMBOL(_aligned_malloc))(size_t, size_t) = _aligned_malloc;
-char* (*__MINGW_IMP_SYMBOL(_strdup))(const char* src) = _strdup;
 MOZ_END_EXTERN_C
 #  endif
 #endif  
