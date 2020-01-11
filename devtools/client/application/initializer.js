@@ -44,26 +44,31 @@ const App = createFactory(
 
 window.Application = {
   async bootstrap({ toolbox, panel }) {
+    
     this.handleOnNavigate = this.handleOnNavigate.bind(this);
     this.updateWorkers = this.updateWorkers.bind(this);
     this.updateDomain = this.updateDomain.bind(this);
     this.updateCanDebugWorkers = this.updateCanDebugWorkers.bind(this);
+    this.onTargetAvailable = this.onTargetAvailable.bind(this);
+    this.onTargetDestroyed = this.onTargetDestroyed.bind(this);
 
-    this.mount = document.querySelector("#mount");
     this.toolbox = toolbox;
+    
+    
     this.client = toolbox.target.client;
 
     this.store = configureStore();
     this.actions = bindActionCreators(actions, this.store.dispatch);
 
     services.init(this.toolbox);
+    await l10n.init(["devtools/application.ftl"]);
 
-    this.deviceFront = await this.client.mainRoot.getFront("device");
-
+    await this.updateWorkers();
     this.workersListener = new WorkersListener(this.client.mainRoot);
     this.workersListener.addListener(this.updateWorkers);
-    this.toolbox.target.on("navigate", this.handleOnNavigate);
 
+    this.deviceFront = await this.client.mainRoot.getFront("device");
+    await this.updateCanDebugWorkers();
     if (this.deviceFront) {
       this.canDebugWorkersListener = this.deviceFront.on(
         "can-debug-sw-updated",
@@ -72,13 +77,15 @@ window.Application = {
     }
 
     
-    this.updateDomain();
-    await this.updateCanDebugWorkers();
-    await this.updateWorkers();
-
-    await l10n.init(["devtools/application.ftl"]);
+    
+    await this.toolbox.targetList.watchTargets(
+      [this.toolbox.targetList.TYPES.FRAME],
+      this.onTargetAvailable,
+      this.onTargetDestroyed
+    );
 
     
+    this.mount = document.querySelector("#mount");
     const app = App({
       client: this.client,
       fluentBundles: l10n.getBundles(),
@@ -114,16 +121,50 @@ window.Application = {
     );
   },
 
+  setupTarget(targetFront) {
+    this.handleOnNavigate(); 
+    targetFront.on("navigate", this.handleOnNavigate);
+  },
+
+  cleanUpTarget(targetFront) {
+    targetFront.off("navigate", this.handleOnNavigate);
+  },
+
+  onTargetAvailable({ targetFront, isTopLevel }) {
+    if (!isTopLevel) {
+      return; 
+    }
+
+    this.setupTarget(targetFront);
+  },
+
+  onTargetDestroyed({ targetFront, isTopLevel }) {
+    if (!isTopLevel) {
+      return; 
+    }
+
+    this.cleanUpTarget(targetFront);
+  },
+
   destroy() {
     this.workersListener.removeListener();
     if (this.deviceFront) {
       this.deviceFront.off("can-debug-sw-updated", this.updateCanDebugWorkers);
     }
-    this.toolbox.target.off("navigate", this.updateDomain);
+
+    this.toolbox.targetList.unwatchTargets(
+      [this.toolbox.targetList.TYPES.FRAME],
+      this.onTargetAvailable,
+      this.onTargetDestroyed
+    );
+
+    this.cleanUpTarget(this.toolbox.target);
 
     unmountComponentAtNode(this.mount);
     this.mount = null;
     this.toolbox = null;
     this.client = null;
+    this.workersListener = null;
+    this.deviceFront = null;
   },
 };
