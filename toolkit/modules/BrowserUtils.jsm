@@ -781,6 +781,11 @@ var BrowserUtils = {
     });
   },
 
+  removeSingleTrailingSlashFromURL(aURL) {
+    
+    return aURL.replace(/^((?:http|https|ftp):\/\/[^/]+)\/$/, "$1");
+  },
+
   
 
 
@@ -792,8 +797,7 @@ var BrowserUtils = {
     
     
 
-    
-    let url = aURL.replace(/^((?:http|https|ftp):\/\/[^/]+)\/$/, "$1");
+    let url = this.removeSingleTrailingSlashFromURL(aURL);
 
     
     if (!url.startsWith("http://")) {
