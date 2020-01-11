@@ -31,6 +31,8 @@ class ThreadEventTarget final : public nsISerialEventTarget {
   
   
   void SetCurrentThread();
+  
+  void ClearCurrentThread();
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
     size_t n = 0;

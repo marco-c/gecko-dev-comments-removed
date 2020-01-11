@@ -241,6 +241,7 @@ struct nsThreadShutdownContext {
                           NotNull<nsThread*> aJoiningThread,
                           bool aAwaitingShutdownAck)
       : mTerminatingThread(aTerminatingThread),
+        mTerminatingPRThread(aTerminatingThread->GetPRThread()),
         mJoiningThread(aJoiningThread),
         mAwaitingShutdownAck(aAwaitingShutdownAck),
         mIsMainThreadJoining(NS_IsMainThread()) {
@@ -250,6 +251,7 @@ struct nsThreadShutdownContext {
 
   
   NotNull<RefPtr<nsThread>> mTerminatingThread;
+  PRThread* const mTerminatingPRThread;
   NotNull<nsThread*> MOZ_UNSAFE_REF(
       "Thread manager is holding reference to joining thread") mJoiningThread;
   bool mAwaitingShutdownAck;
@@ -504,6 +506,10 @@ void nsThread::ThreadFunc(void* aArg) {
   FreeTraceInfo();
 #endif
 
+  
+  self->mThread = nullptr;
+  self->mVirtualThread = nullptr;
+  self->mEventTarget->ClearCurrentThread();
   NS_RELEASE(self);
 }
 
@@ -765,7 +771,9 @@ nsThread::IsOnCurrentThread(bool* aResult) {
 NS_IMETHODIMP_(bool)
 nsThread::IsOnCurrentThreadInfallible() {
   
-  MOZ_CRASH("IsOnCurrentThreadInfallible should never be called on nsIThread");
+  
+  
+  return false;
 }
 
 
@@ -866,7 +874,6 @@ nsThreadShutdownContext* nsThread::ShutdownInternal(bool aSync) {
 void nsThread::ShutdownComplete(NotNull<nsThreadShutdownContext*> aContext) {
   MOZ_ASSERT(mEvents);
   MOZ_ASSERT(mEventTarget);
-  MOZ_ASSERT(mThread);
   MOZ_ASSERT(aContext->mTerminatingThread == this);
 
   MaybeRemoveFromThreadList();
@@ -879,9 +886,8 @@ void nsThread::ShutdownComplete(NotNull<nsThreadShutdownContext*> aContext) {
   }
 
   
-
-  PR_JoinThread(mThread);
-  mThread = nullptr;
+  PR_JoinThread(aContext->mTerminatingPRThread);
+  MOZ_ASSERT(!mThread);
 
 #ifdef DEBUG
   nsCOMPtr<nsIThreadObserver> obs = mEvents->GetObserver();
