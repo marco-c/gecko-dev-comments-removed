@@ -57,6 +57,13 @@ const PublicSuffixList = {
   },
 
   notifyUpdate(fileURI) {
+    if (!Services.prefs.getBoolPref("network.psl.onUpdate_notify", false)) {
+      
+      
+      
+      return;
+    }
+
     const filePath = this.getFilePath(fileURI);
     const nsifile = new FileUtils.File(filePath);
     
@@ -92,6 +99,7 @@ const PublicSuffixList = {
       Cu.reportError(err);
       return;
     }
+
     
     this.notifyUpdate(fileURI);
   },
