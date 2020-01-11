@@ -22,11 +22,12 @@
 #include "mozilla/TimeStamp.h"                   
 #include "nsDataHashtable.h"                     
 #include "nsString.h"
-#include "mozilla/ServoStyleConsts.h"
 #include "PLDHashTable.h"  
 
 struct nsStyleDisplay;
 namespace mozilla {
+enum class StyleScrollSnapStrictness : uint8_t;
+enum class StyleOverscrollBehavior : uint8_t;
 class WritingMode;
 }  
 
@@ -728,7 +729,7 @@ struct FrameMetrics {
 };
 
 struct ScrollSnapInfo {
-  ScrollSnapInfo() = default;
+  ScrollSnapInfo();
 
   bool operator==(const ScrollSnapInfo& aOther) const {
     return mScrollSnapStrictnessX == aOther.mScrollSnapStrictnessX &&
@@ -740,27 +741,15 @@ struct ScrollSnapInfo {
            mSnapportSize == aOther.mSnapportSize;
   }
 
-  bool HasScrollSnapping() const {
-    return mScrollSnapStrictnessY != mozilla::StyleScrollSnapStrictness::None ||
-           mScrollSnapStrictnessX != mozilla::StyleScrollSnapStrictness::None;
-  }
-
-  bool HasSnapPositions() const {
-    return (!mSnapPositionX.IsEmpty() &&
-            mScrollSnapStrictnessX !=
-                mozilla::StyleScrollSnapStrictness::None) ||
-           (!mSnapPositionY.IsEmpty() &&
-            mScrollSnapStrictnessY != mozilla::StyleScrollSnapStrictness::None);
-  }
+  bool HasScrollSnapping() const;
+  bool HasSnapPositions() const;
 
   void InitializeScrollSnapStrictness(WritingMode aWritingMode,
                                       const nsStyleDisplay* aDisplay);
 
   
-  mozilla::StyleScrollSnapStrictness mScrollSnapStrictnessX =
-      mozilla::StyleScrollSnapStrictness::None;
-  mozilla::StyleScrollSnapStrictness mScrollSnapStrictnessY =
-      mozilla::StyleScrollSnapStrictness::None;
+  StyleScrollSnapStrictness mScrollSnapStrictnessX;
+  StyleScrollSnapStrictness mScrollSnapStrictnessY;
 
   
   nsTArray<nscoord> mSnapPositionX;
