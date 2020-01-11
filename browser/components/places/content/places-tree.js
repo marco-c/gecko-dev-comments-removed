@@ -160,6 +160,9 @@
 
     set view(val) {
       
+      
+      this._view = val;
+      
       return Object.getOwnPropertyDescriptor(
         XULTreeElement.prototype,
         "view"
@@ -168,18 +171,7 @@
     }
 
     get view() {
-      try {
-        
-        return (
-          Object.getOwnPropertyDescriptor(
-            XULTreeElement.prototype,
-            "view"
-          ).get.call(this).wrappedJSObject || null
-        );
-        
-      } catch (e) {
-        return null;
-      }
+      return this._view;
     }
 
     get associatedElement() {
