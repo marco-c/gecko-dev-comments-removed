@@ -216,51 +216,32 @@ const observer = {
       return;
     }
 
-    let ownerDocument = aEvent.target.ownerDocument;
-    let window = ownerDocument.defaultView;
-    let docState = LoginManagerChild.forWindow(window).stateForDocument(
-      ownerDocument
-    );
+    let window = aEvent.target.ownerDocument.defaultView;
 
     switch (aEvent.type) {
       
       case "blur": {
-        if (docState.generatedPasswordFields.has(aEvent.target)) {
-          let unmask = false;
-          LoginManagerChild.forWindow(window)._togglePasswordFieldMasking(
-            aEvent.target,
-            unmask
-          );
-        }
+        let unmask = false;
+        LoginManagerChild.forWindow(window)._togglePasswordFieldMasking(
+          aEvent.target,
+          unmask
+        );
         break;
       }
 
       
       case "change": {
-        if (docState.generatedPasswordFields.has(aEvent.target)) {
-          LoginManagerChild.forWindow(window)._generatedPasswordFilledOrEdited(
-            aEvent.target
-          );
-        }
+        LoginManagerChild.forWindow(window)._generatedPasswordFilledOrEdited(
+          aEvent.target
+        );
         break;
       }
 
       
       case "input": {
-        let field = aEvent.target;
-        if (docState.generatedPasswordFields.has(field)) {
-          LoginManagerChild.forWindow(
-            window
-          )._maybeStopTreatingAsGeneratedPasswordField(aEvent);
-        }
-        if (
-          field.hasBeenTypePassword ||
-          LoginHelper.isUsernameFieldType(field)
-        ) {
-          
-          let formLikeRoot = FormLikeFactory.findRootForField(field);
-          docState.fieldModificationsByRootElement.set(formLikeRoot, true);
-        }
+        LoginManagerChild.forWindow(
+          window
+        )._maybeStopTreatingAsGeneratedPasswordField(aEvent);
         break;
       }
 
@@ -277,10 +258,7 @@ const observer = {
       }
 
       case "focus": {
-        if (
-          aEvent.target.type == "password" &&
-          docState.generatedPasswordFields.has(aEvent.target)
-        ) {
+        if (aEvent.target.type == "password") {
           
           let unmask = true;
           LoginManagerChild.forWindow(window)._togglePasswordFieldMasking(
@@ -879,12 +857,6 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       return;
     }
 
-    
-    form.rootElement.addEventListener("input", observer, {
-      capture: true,
-      mozSystemGroup: true,
-    });
-
     this._getLoginDataFromParent(form, { showMasterPassword: true })
       .then(this.loginsFound.bind(this))
       .catch(Cu.reportError);
@@ -905,12 +877,7 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
         
 
 
-        generatedPasswordFields: new WeakSet(),
-        
-
-
         lastSubmittedValuesByRootElement: new WeakMap(),
-        fieldModificationsByRootElement: new WeakMap(),
         loginFormRootElements: new WeakSet(),
       };
       this._loginFormStateByDocument.set(document, loginFormState);
@@ -1573,17 +1540,9 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       return;
     }
 
-    let docState = this.stateForDocument(doc);
-    let fieldsModified = this._formHasModifiedFields(formLikeRoot);
-    if (!fieldsModified && LoginHelper.userInputRequiredToCapture) {
-      
-      log(
-        "(form submission ignored -- submitting values that are not changed by the user)"
-      );
-      return;
-    }
-
-    let autoFilledLogin = docState.fillsByRootElement.get(form.rootElement);
+    let autoFilledLogin = this.stateForDocument(doc).fillsByRootElement.get(
+      form.rootElement
+    );
 
     let detail = {
       origin,
@@ -1616,10 +1575,6 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
   _stopTreatingAsGeneratedPasswordField(passwordField) {
     log("_stopTreatingAsGeneratedPasswordField");
 
-    let fields = this.stateForDocument(passwordField.ownerDocument)
-      .generatedPasswordFields;
-    fields.delete(passwordField);
-
     
     for (let eventType of ["blur", "change", "focus", "input"]) {
       passwordField.removeEventListener(eventType, observer, {
@@ -1648,8 +1603,6 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
     let win = passwordField.ownerGlobal;
     let formLikeRoot = FormLikeFactory.findRootForField(passwordField);
-    let docState = this.stateForDocument(passwordField.ownerDocument);
-    docState.generatedPasswordFields.add(passwordField);
 
     this._highlightFilledField(passwordField);
 
@@ -1840,6 +1793,7 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     }
 
     log("_fillForm", form.elements);
+    let usernameField;
     
     let autofillResult = -1;
     const AUTOFILL_RESULT = {
@@ -1857,16 +1811,6 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       PASSWORD_AUTOCOMPLETE_NEW_PASSWORD: 11,
     };
 
-    
-    
-    
-    
-    let [usernameField, passwordField] = this._getFormFields(
-      form,
-      false,
-      recipes
-    );
-
     try {
       
       
@@ -1880,6 +1824,17 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
         autofillResult = AUTOFILL_RESULT.NO_SAVED_LOGINS;
         return;
       }
+
+      
+      
+      
+      
+      let passwordField;
+      [usernameField, passwordField] = this._getFormFields(
+        form,
+        false,
+        recipes
+      );
 
       
       
@@ -2171,14 +2126,6 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
         formid: form.rootElement.id,
       });
     }
-  }
-
-  _formHasModifiedFields(formLikeRoot) {
-    let state = this.stateForDocument(formLikeRoot.ownerDocument);
-    let fieldsModified = state.fieldModificationsByRootElement.get(
-      formLikeRoot
-    );
-    return fieldsModified;
   }
 
   
