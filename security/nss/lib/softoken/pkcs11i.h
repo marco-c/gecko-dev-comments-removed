@@ -17,6 +17,9 @@
 #include "chacha20poly1305.h"
 #include "hasht.h"
 
+#include "alghmac.h"
+#include "cmac.h"
+
 
 
 
@@ -595,6 +598,73 @@ typedef struct sftk_parametersStr {
 #define CERT_DB_FMT "%scert%s.db"
 #define KEY_DB_FMT "%skey%s.db"
 
+struct sftk_MACConstantTimeCtxStr {
+    const SECHashObject *hash;
+    unsigned char mac[64];
+    unsigned char secret[64];
+    unsigned int headerLength;
+    unsigned int secretLength;
+    unsigned int totalLength;
+    unsigned char header[75];
+};
+typedef struct sftk_MACConstantTimeCtxStr sftk_MACConstantTimeCtx;
+
+struct sftk_MACCtxStr {
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    CK_MECHANISM_TYPE mech;
+    unsigned int mac_size;
+
+    union {
+        HMACContext *hmac;
+        CMACContext *cmac;
+
+        
+
+
+
+
+
+
+        void *raw;
+    } mac;
+
+    void (*destroy_func)(void *ctx, PRBool free_it);
+};
+typedef struct sftk_MACCtxStr sftk_MACCtx;
+
 SEC_BEGIN_PROTOS
 
 
@@ -766,17 +836,6 @@ extern CK_RV jpake_Final(HASH_HashType hashType,
                          SFTKObject *sourceKey, SFTKObject *key);
 
 
-
-struct sftk_MACConstantTimeCtxStr {
-    const SECHashObject *hash;
-    unsigned char mac[64];
-    unsigned char secret[64];
-    unsigned int headerLength;
-    unsigned int secretLength;
-    unsigned int totalLength;
-    unsigned char header[75];
-};
-typedef struct sftk_MACConstantTimeCtxStr sftk_MACConstantTimeCtx;
 sftk_MACConstantTimeCtx *sftk_HMACConstantTime_New(
     CK_MECHANISM_PTR mech, SFTKObject *key);
 sftk_MACConstantTimeCtx *sftk_SSLv3MACConstantTime_New(
@@ -797,6 +856,16 @@ sftk_TLSPRFInit(SFTKSessionContext *context,
                 CK_KEY_TYPE key_type,
                 HASH_HashType hash_alg,
                 unsigned int out_len);
+
+
+
+CK_RV sftk_MAC_Create(CK_MECHANISM_TYPE mech, SFTKObject *key, sftk_MACCtx **ret_ctx);
+CK_RV sftk_MAC_Init(sftk_MACCtx *ctx, CK_MECHANISM_TYPE mech, SFTKObject *key);
+CK_RV sftk_MAC_InitRaw(sftk_MACCtx *ctx, CK_MECHANISM_TYPE mech, const unsigned char *key, unsigned int key_len, PRBool isFIPS);
+CK_RV sftk_MAC_Update(sftk_MACCtx *ctx, CK_BYTE_PTR data, unsigned int data_len);
+CK_RV sftk_MAC_Finish(sftk_MACCtx *ctx, CK_BYTE_PTR result, unsigned int *result_len, unsigned int max_result_len);
+CK_RV sftk_MAC_Reset(sftk_MACCtx *ctx);
+void sftk_MAC_Destroy(sftk_MACCtx *ctx, PRBool free_it);
 
 SEC_END_PROTOS
 

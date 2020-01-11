@@ -1102,6 +1102,12 @@ ssl3_NegotiateVersion(sslSocket *ss, SSL3ProtocolVersion peerVersion,
 {
     SSL3ProtocolVersion negotiated;
 
+    
+    if (ss->ssl3.hs.helloRetry) {
+        PORT_SetError(SSL_ERROR_UNSUPPORTED_VERSION);
+        return SECFailure;
+    }
+
     if (SSL_ALL_VERSIONS_DISABLED(&ss->vrange)) {
         PORT_SetError(SSL_ERROR_SSL_DISABLED);
         return SECFailure;
@@ -8672,15 +8678,8 @@ ssl3_HandleClientHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
             goto alert_loser;
         }
     }
-
-    if (ss->firstHsDone && ss->version >= SSL_LIBRARY_VERSION_TLS_1_3) {
-        desc = unexpected_message;
-        errCode = SSL_ERROR_RENEGOTIATION_NOT_ALLOWED;
-        goto alert_loser;
-    }
-
-    isTLS13 = ss->version >= SSL_LIBRARY_VERSION_TLS_1_3;
     ss->ssl3.hs.preliminaryInfo |= ssl_preinfo_version;
+
     
     if (!ss->firstHsDone) {
         ssl_GetSpecWriteLock(ss);
@@ -8688,28 +8687,58 @@ ssl3_HandleClientHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
         ssl_ReleaseSpecWriteLock(ss);
     }
 
-    if (isTLS13 && sidBytes.len > 0 && !IS_DTLS(ss)) {
-        SECITEM_FreeItem(&ss->ssl3.hs.fakeSid, PR_FALSE);
-        rv = SECITEM_CopyItem(NULL, &ss->ssl3.hs.fakeSid, &sidBytes);
-        if (rv != SECSuccess) {
-            desc = internal_error;
-            errCode = PORT_GetError();
+    isTLS13 = ss->version >= SSL_LIBRARY_VERSION_TLS_1_3;
+    if (isTLS13) {
+        if (ss->firstHsDone) {
+            desc = unexpected_message;
+            errCode = SSL_ERROR_RENEGOTIATION_NOT_ALLOWED;
             goto alert_loser;
         }
-    }
 
-    
-    if (ssl3_FindExtension(ss, ssl_tls13_cookie_xtn)) {
-        ss->ssl3.hs.helloRetry = PR_TRUE;
-    }
+        if (sidBytes.len > 0 && !IS_DTLS(ss)) {
+            SECITEM_FreeItem(&ss->ssl3.hs.fakeSid, PR_FALSE);
+            rv = SECITEM_CopyItem(NULL, &ss->ssl3.hs.fakeSid, &sidBytes);
+            if (rv != SECSuccess) {
+                desc = internal_error;
+                errCode = PORT_GetError();
+                goto alert_loser;
+            }
+        }
 
-    if (ss->ssl3.hs.receivedCcs) {
         
+        if (comps.len != 1 || comps.data[0] != ssl_compression_null) {
+            goto alert_loser;
+        }
 
-        if (ss->version < SSL_LIBRARY_VERSION_TLS_1_3 ||
-            !ss->ssl3.hs.helloRetry) {
+        
+        if (ssl3_FindExtension(ss, ssl_tls13_cookie_xtn)) {
+            ss->ssl3.hs.helloRetry = PR_TRUE;
+        }
+
+        
+        if (ss->ssl3.hs.receivedCcs && !ss->ssl3.hs.helloRetry) {
             desc = unexpected_message;
             errCode = SSL_ERROR_RX_UNEXPECTED_CHANGE_CIPHER;
+            goto alert_loser;
+        }
+    } else {
+        
+        if (ss->ssl3.hs.helloRetry) {
+            desc = protocol_version;
+            errCode = SSL_ERROR_UNSUPPORTED_VERSION;
+            goto alert_loser;
+        }
+
+        
+        if (ss->ssl3.hs.receivedCcs) {
+            desc = unexpected_message;
+            errCode = SSL_ERROR_RX_UNEXPECTED_CHANGE_CIPHER;
+            goto alert_loser;
+        }
+
+        
+        if (comps.len < 1 ||
+            !memchr(comps.data, ssl_compression_null, comps.len)) {
             goto alert_loser;
         }
     }
@@ -8737,19 +8766,6 @@ ssl3_HandleClientHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
         }
     }
 
-    
-    if (isTLS13) {
-        if (comps.len != 1 || comps.data[0] != ssl_compression_null) {
-            goto alert_loser;
-        }
-    } else {
-        
-        if (comps.len < 1 ||
-            !memchr(comps.data, ssl_compression_null, comps.len)) {
-            goto alert_loser;
-        }
-    }
-
     if (!ssl3_ExtensionNegotiated(ss, ssl_renegotiation_info_xtn)) {
         
 
@@ -8767,7 +8783,7 @@ ssl3_HandleClientHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
     }
 
     
-    if (ss->version < SSL_LIBRARY_VERSION_TLS_1_3) {
+    if (!isTLS13) {
         if (ss->firstHsDone &&
             (ss->opt.enableRenegotiation == SSL_RENEGOTIATE_REQUIRES_XTN ||
              ss->opt.enableRenegotiation == SSL_RENEGOTIATE_TRANSITIONAL) &&
@@ -8792,7 +8808,7 @@ ssl3_HandleClientHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
 
 
 
-    if ((ss->version < SSL_LIBRARY_VERSION_TLS_1_3) &&
+    if (!isTLS13 &&
         (!ssl3_ExtensionNegotiated(ss, ssl_session_ticket_xtn) ||
          ss->xtnData.emptySessionTicket)) {
         if (sidBytes.len > 0 && !ss->opt.noCache) {
@@ -8859,7 +8875,7 @@ ssl3_HandleClientHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
         dtls_ReceivedFirstMessageInFlight(ss);
     }
 
-    if (ss->version >= SSL_LIBRARY_VERSION_TLS_1_3) {
+    if (isTLS13) {
         rv = tls13_HandleClientHelloPart2(ss, &suites, sid, savedMsg, savedLen);
     } else {
         rv = ssl3_HandleClientHelloPart2(ss, &suites, sid,

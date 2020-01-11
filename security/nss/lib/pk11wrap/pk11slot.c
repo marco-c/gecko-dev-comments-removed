@@ -2177,10 +2177,6 @@ PK11_GetAllTokens(CK_MECHANISM_TYPE type, PRBool needRW, PRBool loadCerts,
     SECMODModuleList *modules;
     SECMODListLock *moduleLock;
     int i;
-#if defined(XP_WIN32)
-    int j = 0;
-    PRInt32 waste[16];
-#endif
 
     moduleLock = SECMOD_GetDefaultModuleListLock();
     if (!moduleLock) {
@@ -2205,18 +2201,6 @@ PK11_GetAllTokens(CK_MECHANISM_TYPE type, PRBool needRW, PRBool loadCerts,
 
     modules = SECMOD_GetDefaultModuleList();
     for (mlp = modules; mlp != NULL; mlp = mlp->next) {
-
-#if defined(XP_WIN32)
-        
-
-
-
-
-
-
-        waste[j & 0xf] = j++;
-#endif
-
         for (i = 0; i < mlp->module->slotCount; i++) {
             PK11SlotInfo *slot = mlp->module->slots[i];
 
