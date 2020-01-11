@@ -2183,6 +2183,14 @@ BrowserGlue.prototype = {
     });
 
     
+    
+    if (AppConstants.ENABLE_REMOTE_AGENT) {
+      Services.tm.idleDispatchToMainThread(() => {
+        Services.obs.notifyObservers(null, "remote-startup-requested");
+      });
+    }
+
+    
     Services.tm.idleDispatchToMainThread(() => {
       Services.obs.notifyObservers(null, "marionette-startup-requested");
     });
