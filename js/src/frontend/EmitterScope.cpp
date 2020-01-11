@@ -6,10 +6,10 @@
 
 #include "frontend/EmitterScope.h"
 
+#include "frontend/AbstractScope.h"
 #include "frontend/BytecodeEmitter.h"
 #include "frontend/ModuleSharedContext.h"
 #include "frontend/TDZCheckCache.h"
-
 #include "vm/GlobalObject.h"
 
 using namespace js;
@@ -118,14 +118,14 @@ EmitterScope* EmitterScope::enclosing(BytecodeEmitter** bce) const {
   return nullptr;
 }
 
-Scope* EmitterScope::enclosingScope(BytecodeEmitter* bce) const {
+AbstractScope EmitterScope::enclosingScope(BytecodeEmitter* bce) const {
   if (EmitterScope* es = enclosing(&bce)) {
     return es->scope(bce);
   }
 
   
   
-  return bce->sc->compilationEnclosingScope();
+  return AbstractScope(bce->sc->compilationEnclosingScope());
 }
 
 
@@ -336,7 +336,7 @@ NameLocation EmitterScope::searchAndCache(BytecodeEmitter* bce, JSAtom* name) {
 
 template <typename ScopeCreator>
 bool EmitterScope::internScope(BytecodeEmitter* bce, ScopeCreator createScope) {
-  RootedScope enclosing(bce->cx, enclosingScope(bce));
+  RootedScope enclosing(bce->cx, enclosingScope(bce).maybeScope());
   Scope* scope = createScope(bce->cx, enclosing);
   if (!scope) {
     return false;
@@ -355,7 +355,7 @@ bool EmitterScope::internBodyScope(BytecodeEmitter* bce,
 }
 
 bool EmitterScope::appendScopeNote(BytecodeEmitter* bce) {
-  MOZ_ASSERT(ScopeKindIsInBody(scope(bce)->kind()) && enclosingInFrame(),
+  MOZ_ASSERT(ScopeKindIsInBody(scope(bce).kind()) && enclosingInFrame(),
              "Scope notes are not needed for body-level scopes.");
   noteIndex_ = bce->bytecodeSection().scopeNoteList().length();
   return bce->bytecodeSection().scopeNoteList().append(
@@ -392,7 +392,7 @@ bool EmitterScope::deadZoneFrameSlotRange(BytecodeEmitter* bce,
 }
 
 void EmitterScope::dump(BytecodeEmitter* bce) {
-  fprintf(stdout, "EmitterScope [%s] %p\n", ScopeKindString(scope(bce)->kind()),
+  fprintf(stdout, "EmitterScope [%s] %p\n", ScopeKindString(scope(bce).kind()),
           this);
 
   for (NameLocationMap::Range r = nameCache_->all(); !r.empty(); r.popFront()) {
@@ -899,7 +899,7 @@ bool EmitterScope::enterEval(BytecodeEmitter* bce, EvalSharedContext* evalsc) {
     
     
     
-    if (scope(bce)->enclosing()->is<GlobalScope>()) {
+    if (scope(bce).enclosing().is<GlobalScope>()) {
       fallbackFreeNameLocation_ = Some(NameLocation::Global(BindingKind::Var));
     }
   }
@@ -1009,7 +1009,7 @@ bool EmitterScope::leave(BytecodeEmitter* bce, bool nonLocal) {
   
   MOZ_ASSERT_IF(!nonLocal, this == bce->innermostEmitterScopeNoCheck());
 
-  ScopeKind kind = scope(bce)->kind();
+  ScopeKind kind = scope(bce).kind();
   switch (kind) {
     case ScopeKind::Lexical:
     case ScopeKind::SimpleCatch:
@@ -1070,7 +1070,7 @@ bool EmitterScope::leave(BytecodeEmitter* bce, bool nonLocal) {
   return true;
 }
 
-Scope* EmitterScope::scope(const BytecodeEmitter* bce) const {
+AbstractScope EmitterScope::scope(const BytecodeEmitter* bce) const {
   return bce->perScriptData().gcThingList().getScope(index());
 }
 

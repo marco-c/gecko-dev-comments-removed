@@ -26,7 +26,8 @@
 #include "jsnum.h"    
 #include "jstypes.h"  
 
-#include "ds/Nestable.h"                         
+#include "ds/Nestable.h"  
+#include "frontend/AbstractScope.h"
 #include "frontend/BytecodeControlStructures.h"  
 #include "frontend/CallOrNewEmitter.h"           
 #include "frontend/CForEmitter.h"                
@@ -180,7 +181,7 @@ Maybe<NameLocation> BytecodeEmitter::locationOfNameBoundInScope(
 Maybe<NameLocation> BytecodeEmitter::locationOfNameBoundInFunctionScope(
     JSAtom* name, EmitterScope* source) {
   EmitterScope* funScope = source;
-  while (!funScope->scope(this)->is<FunctionScope>()) {
+  while (!funScope->scope(this).is<FunctionScope>()) {
     funScope = funScope->enclosingInFrame();
   }
   return source->locationBoundInScope(name, funScope);
@@ -869,7 +870,7 @@ bool BytecodeEmitter::emitGoto(NestableControl* target, JumpList* jumplist,
   return emitJump(JSOP_GOTO, jumplist);
 }
 
-Scope* BytecodeEmitter::innermostScope() const {
+AbstractScope BytecodeEmitter::innermostScope() const {
   return innermostEmitterScope()->scope(this);
 }
 
@@ -1562,7 +1563,7 @@ bool BytecodeEmitter::needsImplicitThis() {
   
   for (EmitterScope* es = innermostEmitterScope(); es;
        es = es->enclosingInFrame()) {
-    if (es->scope(this)->kind() == ScopeKind::With) {
+    if (es->scope(this).kind() == ScopeKind::With) {
       return true;
     }
   }
@@ -1580,14 +1581,14 @@ bool BytecodeEmitter::emitThisEnvironmentCallee() {
 
   
   unsigned numHops = 0;
-  for (ScopeIter si(innermostScope()); si; si++) {
-    if (si.hasSyntacticEnvironment() && si.scope()->is<FunctionScope>()) {
-      JSFunction* fun = si.scope()->as<FunctionScope>().canonicalFunction();
-      if (!fun->isArrow()) {
+  for (AbstractScopeIter si(innermostScope()); si; si++) {
+    if (si.hasSyntacticEnvironment() &&
+        si.abstractScope().is<FunctionScope>()) {
+      if (!si.abstractScope().isArrow()) {
         break;
       }
     }
-    if (si.scope()->hasEnvironment()) {
+    if (si.abstractScope().hasEnvironment()) {
       numHops++;
     }
   }
@@ -8364,9 +8365,9 @@ const FieldInitializers& BytecodeEmitter::findFieldInitializersForCall() {
     }
   }
 
-  for (ScopeIter si(innermostScope()); si; si++) {
-    if (si.scope()->is<FunctionScope>()) {
-      JSFunction* fun = si.scope()->as<FunctionScope>().canonicalFunction();
+  for (AbstractScopeIter si(innermostScope()); si; si++) {
+    if (si.abstractScope().is<FunctionScope>()) {
+      JSFunction* fun = si.abstractScope().canonicalFunction();
       if (fun->kind() == FunctionFlags::FunctionKind::ClassConstructor) {
         const FieldInitializers& fieldInitializers =
             fun->isInterpretedLazy()

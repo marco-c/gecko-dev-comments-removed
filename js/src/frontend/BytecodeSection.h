@@ -14,8 +14,10 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "jstypes.h"                   
-#include "NamespaceImports.h"          
+#include "jstypes.h"           
+#include "NamespaceImports.h"  
+
+#include "frontend/AbstractScope.h"    
 #include "frontend/BytecodeOffset.h"   
 #include "frontend/JumpList.h"         
 #include "frontend/NameCollections.h"  
@@ -94,11 +96,12 @@ struct MOZ_STACK_CLASS GCThingList {
   MOZ_MUST_USE bool finish(JSContext* cx, mozilla::Span<JS::GCCellPtr> array);
   void finishInnerFunctions();
 
-  Scope* getScope(size_t index) const {
-    return &vector[index].get().as<StackGCCellPtr>().get().as<Scope>();
+  AbstractScope getScope(size_t index) const {
+    auto& elem = vector[index].get();
+    return AbstractScope(&elem.as<StackGCCellPtr>().get().as<Scope>());
   }
 
-  Scope* firstScope() const {
+  AbstractScope firstScope() const {
     MOZ_ASSERT(firstScopeIndex.isSome());
     return getScope(*firstScopeIndex);
   }

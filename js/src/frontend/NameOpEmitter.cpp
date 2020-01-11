@@ -6,6 +6,7 @@
 
 #include "frontend/NameOpEmitter.h"
 
+#include "frontend/AbstractScope.h"
 #include "frontend/BytecodeEmitter.h"
 #include "frontend/SharedContext.h"
 #include "frontend/TDZCheckCache.h"
@@ -167,7 +168,7 @@ bool NameOpEmitter::prepareForRhs() {
       if (loc_.isLexical() && isInitialize()) {
         
         
-        MOZ_ASSERT(bce_->innermostScope()->is<GlobalScope>());
+        MOZ_ASSERT(bce_->innermostScope().is<GlobalScope>());
       } else {
         if (!bce_->emitIndexOp(JSOP_BINDGNAME, atomIndex_)) {
           
