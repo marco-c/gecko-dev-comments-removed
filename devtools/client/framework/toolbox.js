@@ -665,10 +665,8 @@ Toolbox.prototype = {
     await target.attach();
 
     
-    
-    if (target.activeConsole) {
-      await target.activeConsole.startListeners(["NetworkActivity"]);
-    }
+    const webConsoleFront = await target.getFront("console");
+    await webConsoleFront.startListeners(["NetworkActivity"]);
 
     const threadFront = await this._attachAndResumeThread(target);
     this._startThreadFrontListeners(threadFront);
