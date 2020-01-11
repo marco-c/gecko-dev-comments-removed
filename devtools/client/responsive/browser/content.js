@@ -28,9 +28,6 @@ var global = this;
   addMessageListener("ResponsiveMode:Stop", stopResponsiveMode);
   addMessageListener("ResponsiveMode:IsActive", isActive);
 
-  
-  let resolutionBeforeFullZoom = 0;
-
   function debug(msg) {
     
   }
@@ -63,16 +60,6 @@ var global = this;
       startOnResize();
     }
 
-    addEventListener("PreFullZoomChange", onPreFullZoomChange);
-    addEventListener(
-      "mozupdatedremoteframedimensions",
-      onUpdatedRemoteFrameDimensions,
-      {
-        capture: true,
-        mozSystemGroup: true,
-      }
-    );
-
     
     
     
@@ -82,20 +69,6 @@ var global = this;
     }
     active = true;
     sendAsyncMessage("ResponsiveMode:Start:Done");
-  }
-
-  function onPreFullZoomChange(event) {
-    if (event.originalTarget == content.document) {
-      resolutionBeforeFullZoom = content.windowUtils.getResolution();
-    }
-  }
-
-  function onUpdatedRemoteFrameDimensions(event) {
-    if (event.originalTarget == content.document) {
-      content.windowUtils.setResolutionAndScaleTo(resolutionBeforeFullZoom);
-      const e = new CustomEvent("ZoomComplete", { bubbles: true });
-      content.dispatchEvent(e);
-    }
   }
 
   function onResize() {
@@ -157,11 +130,6 @@ var global = this;
     restoreScrollbars();
     setDocumentInRDMPane(false);
     stopOnResize();
-    removeEventListener("PreFullZoomChange", onPreFullZoomChange);
-    removeEventListener(
-      "mozupdatedremoteframedimensions",
-      onUpdatedRemoteFrameDimensions
-    );
     sendAsyncMessage("ResponsiveMode:Stop:Done");
   }
 
