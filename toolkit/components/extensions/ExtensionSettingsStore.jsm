@@ -61,6 +61,12 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/ExtensionParent.jsm"
 );
 
+
+
+
+const SETTING_USER_SET = null;
+const SETTING_PRECEDENCE_ORDER = undefined;
+
 const JSON_FILE_NAME = "extension-settings.json";
 const JSON_FILE_VERSION = 2;
 const STORE_PATH = OS.Path.join(
@@ -152,6 +158,10 @@ function getItem(type, key, id) {
     return null;
   }
 
+  
+  if (!id && keyInfo.selected) {
+    id = keyInfo.selected;
+  }
   if (id) {
     
     let item = keyInfo.precedenceList.find(item => item.id === id);
@@ -159,12 +169,16 @@ function getItem(type, key, id) {
   }
 
   
-  for (let item of keyInfo.precedenceList) {
-    if (item.enabled) {
-      return { key, value: item.value, id: item.id };
+  
+  if (keyInfo.selected === SETTING_PRECEDENCE_ORDER) {
+    for (let item of keyInfo.precedenceList) {
+      if (item.enabled) {
+        return { key, value: item.value, id: item.id };
+      }
     }
   }
 
+  
   
   return { key, initialValue: keyInfo.initialValue };
 }
@@ -199,8 +213,9 @@ function precedenceComparator(a, b) {
 
 
 
+
 function alterSetting(id, type, key, action) {
-  let returnItem;
+  let returnItem = null;
   ensureType(type);
 
   let keyInfo = _store.data[type][key];
@@ -215,27 +230,54 @@ function alterSetting(id, type, key, action) {
 
   let foundIndex = keyInfo.precedenceList.findIndex(item => item.id == id);
 
-  if (foundIndex === -1) {
+  if (foundIndex === -1 && (action !== "select" || id !== SETTING_USER_SET)) {
     if (action === "remove") {
       return null;
     }
     throw new Error(
-      `Cannot alter the setting for ${type}:${key} as it does not exist.`
+      `Cannot alter the setting for ${type}:${key} as ${id} does not exist.`
     );
   }
 
+  let selected = keyInfo.selected;
   switch (action) {
+    case "select":
+      if (foundIndex >= 0 && !keyInfo.precedenceList[foundIndex].enabled) {
+        throw new Error(
+          `Cannot select the setting for ${type}:${key} as ${id} is disabled.`
+        );
+      }
+      keyInfo.selected = id;
+      keyInfo.selectedDate = Date.now();
+      break;
+
     case "remove":
+      
+      if (id === keyInfo.selected) {
+        keyInfo.selected = SETTING_PRECEDENCE_ORDER;
+        delete keyInfo.selectedDate;
+      }
       keyInfo.precedenceList.splice(foundIndex, 1);
       break;
 
     case "enable":
       keyInfo.precedenceList[foundIndex].enabled = true;
       keyInfo.precedenceList.sort(precedenceComparator);
+      
+      
+      if (keyInfo.selected !== SETTING_PRECEDENCE_ORDER) {
+        _store.saveSoon();
+        return null;
+      }
       foundIndex = keyInfo.precedenceList.findIndex(item => item.id == id);
       break;
 
     case "disable":
+      
+      if (keyInfo.selected === id) {
+        keyInfo.selected = SETTING_PRECEDENCE_ORDER;
+        delete keyInfo.selectedDate;
+      }
       keyInfo.precedenceList[foundIndex].enabled = false;
       keyInfo.precedenceList.sort(precedenceComparator);
       break;
@@ -244,7 +286,7 @@ function alterSetting(id, type, key, action) {
       throw new Error(`${action} is not a valid action for alterSetting.`);
   }
 
-  if (foundIndex === 0) {
+  if (selected !== keyInfo.selected || foundIndex === 0) {
     returnItem = getItem(type, key);
   }
 
@@ -264,6 +306,8 @@ function alterSetting(id, type, key, action) {
 }
 
 var ExtensionSettingsStore = {
+  SETTING_USER_SET,
+
   
 
 
@@ -277,7 +321,6 @@ var ExtensionSettingsStore = {
   },
 
   
-
 
 
 
@@ -334,6 +377,7 @@ var ExtensionSettingsStore = {
 
     
     let foundIndex = keyInfo.precedenceList.findIndex(item => item.id == id);
+    let newInstall = false;
     if (foundIndex === -1) {
       
       let addon = await AddonManager.getAddonByID(id);
@@ -343,6 +387,7 @@ var ExtensionSettingsStore = {
         value,
         enabled: true,
       });
+      newInstall = addon.installDate.valueOf() > keyInfo.selectedDate;
     } else {
       
       let item = keyInfo.precedenceList[foundIndex];
@@ -353,20 +398,28 @@ var ExtensionSettingsStore = {
 
     
     keyInfo.precedenceList.sort(precedenceComparator);
+    foundIndex = keyInfo.precedenceList.findIndex(item => item.id == id);
+
+    
+    if (foundIndex === 0 && newInstall) {
+      keyInfo.selected = SETTING_PRECEDENCE_ORDER;
+      delete keyInfo.selectedDate;
+    }
 
     _store.saveSoon();
 
     
-    if (keyInfo.precedenceList[0].id == id) {
+    
+    if (
+      keyInfo.selected !== SETTING_USER_SET &&
+      (keyInfo.selected === id || foundIndex === 0)
+    ) {
       return { id, key, value };
     }
     return null;
   },
 
   
-
-
-
 
 
 
@@ -396,17 +449,11 @@ var ExtensionSettingsStore = {
 
 
 
-
-
-
   enable(id, type, key) {
     return alterSetting(id, type, key, "enable");
   },
 
   
-
-
-
 
 
 
@@ -430,24 +477,23 @@ var ExtensionSettingsStore = {
 
 
 
-  setByUser(type, key) {
-    let { precedenceList } =
-      (_store.data[type] && _store.data[type][key]) || {};
-    if (!precedenceList) {
-      
-      return;
-    }
 
-    for (let item of precedenceList) {
-      item.enabled = false;
-    }
-    ExtensionParent.apiManager.emit("extension-setting-changed", {
-      action: "disable",
-      type,
-      key,
-    });
 
-    _store.saveSoon();
+
+
+
+
+
+
+
+
+
+
+
+
+
+  select(id, type, key) {
+    return alterSetting(id, type, key, "select");
   },
 
   
@@ -533,6 +579,18 @@ var ExtensionSettingsStore = {
     let keyInfo = _store.data[type][key];
     if (!keyInfo || !keyInfo.precedenceList.length) {
       return "controllable_by_this_extension";
+    }
+
+    if (keyInfo.selected !== SETTING_PRECEDENCE_ORDER) {
+      if (id === keyInfo.selected) {
+        return "controlled_by_this_extension";
+      }
+      
+      
+      let addon = await AddonManager.getAddonByID(id);
+      return keyInfo.selectedDate > addon.installDate.valueOf()
+        ? "not_controllable"
+        : "controllable_by_this_extension";
     }
 
     let enabledItems = keyInfo.precedenceList.filter(item => item.enabled);
