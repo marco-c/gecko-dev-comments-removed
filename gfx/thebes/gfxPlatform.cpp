@@ -3326,6 +3326,9 @@ void gfxPlatform::InitWebRenderConfig() {
 
   if (gfx::gfxConfig::IsEnabled(gfx::Feature::WEBRENDER_COMPOSITOR)) {
     gfxVars::SetUseWebRenderCompositor(true);
+    
+    
+    featureComp.UserEnable("Enabled");
   }
 
   
