@@ -78,7 +78,7 @@ class TRRService : public nsIObserver,
   bool IsExcludedFromTRR_unlocked(const nsACString& aHost);
 
   void RebuildSuffixList(nsINetworkLinkService* aLinkService);
-  void CheckVPNStatus(nsINetworkLinkService* aLinkService);
+  void CheckPlatformDNSStatus(nsINetworkLinkService* aLinkService);
 
   bool mInitialized;
   Atomic<uint32_t, Relaxed> mMode;
@@ -105,7 +105,7 @@ class TRRService : public nsIObserver,
   Atomic<bool, Relaxed> mDisableECS;  
   Atomic<uint32_t, Relaxed>
       mDisableAfterFails;  
-  Atomic<bool, Relaxed> mVPNDetected;
+  Atomic<bool, Relaxed> mPlatformDisabledTRR;
 
   
   

@@ -73,7 +73,8 @@ class nsNotifyAddrListener : public nsINetworkLinkService,
   bool mShutdown;
 
   
-  mozilla::Atomic<bool, mozilla::MemoryOrdering::Relaxed> mFoundVPN;
+  
+  mozilla::Atomic<uint32_t, mozilla::Relaxed> mPlatformDNSIndications;
 
   
   
