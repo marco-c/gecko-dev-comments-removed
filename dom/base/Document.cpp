@@ -3104,6 +3104,9 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
         IsSynthesized() && XRE_IsContentProcess()) {
       ContentChild::UpdateCookieStatus(mChannel);
     }
+
+    
+    mChannel->GetSecurityInfo(getter_AddRefs(mSecurityInfo));
   }
 
   
