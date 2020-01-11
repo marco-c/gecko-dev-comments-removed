@@ -8,11 +8,14 @@
 
 
 
-import struct, sys
+
+
+import struct
+import sys
 
 
 def seekread(f, offset=None, length=0, relative=True):
-    if offset != None:
+    if offset is not None:
         
         f.seek(offset, [0, 1, 2][relative])
     if length != 0:
@@ -44,6 +47,7 @@ def parse_pbzx(pbzx_path):
         if xzmagic != "\xfd7zXZ\x00":
             
             
+            
             seekread(f, offset=-6, length=0)
             
             f_content = seekread(f, length=f_length)
@@ -52,6 +56,7 @@ def parse_pbzx(pbzx_path):
             g = open(decomp_out, "wb")
             g.write(f_content)
             g.close()
+            
             
             xar_f.close()
             section += 1
@@ -70,7 +75,7 @@ def parse_pbzx(pbzx_path):
     try:
         f.close()
         xar_f.close()
-    except:
+    except BaseException:
         pass
 
 
