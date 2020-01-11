@@ -492,8 +492,11 @@ nsHttpNegotiateAuth::GenerateCredentials(
     while (*challenge == ' ') challenge++;
     len = strlen(challenge);
 
+    if (!len)
+      return NS_ERROR_UNEXPECTED;
+
     
-    while (challenge[len - 1] == '=') len--;
+    while (len && challenge[len - 1] == '=') len--;
 
     
     
