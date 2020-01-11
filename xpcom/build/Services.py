@@ -1,5 +1,8 @@
 
 
+import buildconfig
+
+
 services = []
 
 
@@ -56,6 +59,10 @@ service('Bits', 'nsIBits',
 service('AppInfoService', 'nsIXULRuntime',
         "@mozilla.org/xre/app-info;1")
 
+if buildconfig.substs.get('ENABLE_REMOTE_AGENT'):
+    service('RemoteAgent', 'nsIRemoteAgent',
+            "@mozilla.org/remote/agent;1")
+
 
 
 
@@ -90,6 +97,10 @@ CPP_INCLUDES = """
 #include "nsIBits.h"
 #include "nsIXULRuntime.h"
 """
+
+if buildconfig.substs.get('ENABLE_REMOTE_AGENT'):
+    CPP_INCLUDES += '#include "nsIRemoteAgent.h"'
+
 
 
 
