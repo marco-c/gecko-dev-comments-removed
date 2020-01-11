@@ -29,7 +29,6 @@ async function setRTAMOOnboarding() {
   
   Services.prefs.clearUserPref("trailhead.firstrun.didSeeAboutWelcome");
   await ASRouter.setState({ trailheadInitialized: false });
-  await ASRouter.setupTrailhead();
   ASRouter._updateMessageProviders();
   await ASRouter.loadMessagesFromAllProviders();
 
