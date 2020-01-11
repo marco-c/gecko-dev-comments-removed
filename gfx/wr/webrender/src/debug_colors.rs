@@ -3,6 +3,7 @@
 
 
 #![allow(dead_code)]
+#![cfg_attr(feature = "cargo-clippy", allow(clippy::excessive_precision))]
 
 use api::ColorF;
 
