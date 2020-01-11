@@ -98,70 +98,22 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 pub mod adapter;
 
 #[cfg(feature="std")] mod entropy;
 pub mod mock;   
                 
+#[cfg(feature="small_rng")]
 mod small;
 mod std;
 #[cfg(feature="std")] pub(crate) mod thread;
 
-
-pub use rand_jitter::{JitterRng, TimerError};
+#[allow(deprecated)]
 #[cfg(feature="std")] pub use self::entropy::EntropyRng;
 
+#[cfg(feature="small_rng")]
 pub use self::small::SmallRng;
 pub use self::std::StdRng;
 #[cfg(feature="std")] pub use self::thread::ThreadRng;
 
-#[cfg(feature="rand_os")]
-pub use rand_os::OsRng;
+#[cfg(feature="getrandom")] pub use rand_core::OsRng;

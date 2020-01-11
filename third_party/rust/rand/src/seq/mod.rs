@@ -11,15 +11,45 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[cfg(feature="alloc")] pub mod index;
 
 #[cfg(feature="alloc")] use core::ops::Index;
 
-#[cfg(all(feature="alloc", not(feature="std")))] use alloc::vec::Vec;
+#[cfg(all(feature="alloc", not(feature="std")))] use crate::alloc::vec::Vec;
 
-use Rng;
-#[cfg(feature="alloc")] use distributions::WeightedError;
-#[cfg(feature="alloc")] use distributions::uniform::{SampleUniform, SampleBorrow};
+use crate::Rng;
+#[cfg(feature="alloc")] use crate::distributions::WeightedError;
+#[cfg(feature="alloc")] use crate::distributions::uniform::{SampleUniform, SampleBorrow};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -46,14 +76,14 @@ pub trait SliceRandom {
     
     
     fn choose<R>(&self, rng: &mut R) -> Option<&Self::Item>
-        where R: Rng + ?Sized;
+    where R: Rng + ?Sized;
 
     
     
     
     
     fn choose_mut<R>(&mut self, rng: &mut R) -> Option<&mut Self::Item>
-        where R: Rng + ?Sized;
+    where R: Rng + ?Sized;
 
     
     
@@ -81,8 +111,15 @@ pub trait SliceRandom {
     
     #[cfg(feature = "alloc")]
     fn choose_multiple<R>(&self, rng: &mut R, amount: usize) -> SliceChooseIter<Self, Self::Item>
-        where R: Rng + ?Sized;
+    where R: Rng + ?Sized;
 
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -100,16 +137,23 @@ pub trait SliceRandom {
     
     
     #[cfg(feature = "alloc")]
-    fn choose_weighted<R, F, B, X>(&self, rng: &mut R, weight: F) -> Result<&Self::Item, WeightedError>
-        where R: Rng + ?Sized,
-              F: Fn(&Self::Item) -> B,
-              B: SampleBorrow<X>,
-              X: SampleUniform +
-                 for<'a> ::core::ops::AddAssign<&'a X> +
-                 ::core::cmp::PartialOrd<X> +
-                 Clone +
-                 Default;
+    fn choose_weighted<R, F, B, X>(
+        &self, rng: &mut R, weight: F,
+    ) -> Result<&Self::Item, WeightedError>
+    where
+        R: Rng + ?Sized,
+        F: Fn(&Self::Item) -> B,
+        B: SampleBorrow<X>,
+        X: SampleUniform
+            + for<'a> ::core::ops::AddAssign<&'a X>
+            + ::core::cmp::PartialOrd<X>
+            + Clone
+            + Default;
 
+    
+    
+    
+    
     
     
     
@@ -120,15 +164,18 @@ pub trait SliceRandom {
     
     
     #[cfg(feature = "alloc")]
-    fn choose_weighted_mut<R, F, B, X>(&mut self, rng: &mut R, weight: F) -> Result<&mut Self::Item, WeightedError>
-        where R: Rng + ?Sized,
-              F: Fn(&Self::Item) -> B,
-              B: SampleBorrow<X>,
-              X: SampleUniform +
-                 for<'a> ::core::ops::AddAssign<&'a X> +
-                 ::core::cmp::PartialOrd<X> +
-                 Clone +
-                 Default;
+    fn choose_weighted_mut<R, F, B, X>(
+        &mut self, rng: &mut R, weight: F,
+    ) -> Result<&mut Self::Item, WeightedError>
+    where
+        R: Rng + ?Sized,
+        F: Fn(&Self::Item) -> B,
+        B: SampleBorrow<X>,
+        X: SampleUniform
+            + for<'a> ::core::ops::AddAssign<&'a X>
+            + ::core::cmp::PartialOrd<X>
+            + Clone
+            + Default;
 
     
     
@@ -146,7 +193,8 @@ pub trait SliceRandom {
     
     
     
-    fn shuffle<R>(&mut self, rng: &mut R) where R: Rng + ?Sized;
+    fn shuffle<R>(&mut self, rng: &mut R)
+    where R: Rng + ?Sized;
 
     
     
@@ -165,9 +213,29 @@ pub trait SliceRandom {
     
     
     
-    fn partial_shuffle<R>(&mut self, rng: &mut R, amount: usize)
-        -> (&mut [Self::Item], &mut [Self::Item]) where R: Rng + ?Sized;
+    fn partial_shuffle<R>(
+        &mut self, rng: &mut R, amount: usize,
+    ) -> (&mut [Self::Item], &mut [Self::Item])
+    where R: Rng + ?Sized;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 pub trait IteratorRandom: Iterator + Sized {
@@ -184,27 +252,25 @@ pub trait IteratorRandom: Iterator + Sized {
     
     
     fn choose<R>(mut self, rng: &mut R) -> Option<Self::Item>
-        where R: Rng + ?Sized
-    {
+    where R: Rng + ?Sized {
         let (mut lower, mut upper) = self.size_hint();
         let mut consumed = 0;
         let mut result = None;
 
         if upper == Some(lower) {
-            return if lower == 0 { None } else { self.nth(rng.gen_range(0, lower)) };
+            return if lower == 0 { None } else { self.nth(gen_index(rng, lower)) };
         }
 
         
         loop {
             if lower > 1 {
-                let ix = rng.gen_range(0, lower + consumed);
-                let skip;
-                if ix < lower {
+                let ix = gen_index(rng, lower + consumed);
+                let skip = if ix < lower {
                     result = self.nth(ix);
-                    skip = lower - (ix + 1);
+                    lower - (ix + 1)
                 } else {
-                    skip = lower;
-                }
+                    lower
+                };
                 if upper == Some(lower) {
                     return result;
                 }
@@ -242,9 +308,9 @@ pub trait IteratorRandom: Iterator + Sized {
     
     
     
-    fn choose_multiple_fill<R>(mut self, rng: &mut R, buf: &mut [Self::Item])
-        -> usize where R: Rng + ?Sized
-    {
+    
+    fn choose_multiple_fill<R>(mut self, rng: &mut R, buf: &mut [Self::Item]) -> usize
+    where R: Rng + ?Sized {
         let amount = buf.len();
         let mut len = 0;
         while len < amount {
@@ -259,7 +325,7 @@ pub trait IteratorRandom: Iterator + Sized {
 
         
         for (i, elem) in self.enumerate() {
-            let k = rng.gen_range(0, i + 1 + amount);
+            let k = gen_index(rng, i + 1 + amount);
             if let Some(slot) = buf.get_mut(k) {
                 *slot = elem;
             }
@@ -280,10 +346,10 @@ pub trait IteratorRandom: Iterator + Sized {
     
     
     
+    
     #[cfg(feature = "alloc")]
     fn choose_multiple<R>(mut self, rng: &mut R, amount: usize) -> Vec<Self::Item>
-        where R: Rng + ?Sized
-    {
+    where R: Rng + ?Sized {
         let mut reservoir = Vec::with_capacity(amount);
         reservoir.extend(self.by_ref().take(amount));
 
@@ -293,7 +359,7 @@ pub trait IteratorRandom: Iterator + Sized {
         
         if reservoir.len() == amount {
             for (i, elem) in self.enumerate() {
-                let k = rng.gen_range(0, i + 1 + amount);
+                let k = gen_index(rng, i + 1 + amount);
                 if let Some(slot) = reservoir.get_mut(k) {
                     *slot = elem;
                 }
@@ -312,31 +378,27 @@ impl<T> SliceRandom for [T] {
     type Item = T;
 
     fn choose<R>(&self, rng: &mut R) -> Option<&Self::Item>
-        where R: Rng + ?Sized
-    {
+    where R: Rng + ?Sized {
         if self.is_empty() {
             None
         } else {
-            Some(&self[rng.gen_range(0, self.len())])
+            Some(&self[gen_index(rng, self.len())])
         }
     }
 
     fn choose_mut<R>(&mut self, rng: &mut R) -> Option<&mut Self::Item>
-        where R: Rng + ?Sized
-    {
+    where R: Rng + ?Sized {
         if self.is_empty() {
             None
         } else {
             let len = self.len();
-            Some(&mut self[rng.gen_range(0, len)])
+            Some(&mut self[gen_index(rng, len)])
         }
     }
 
     #[cfg(feature = "alloc")]
-    fn choose_multiple<R>(&self, rng: &mut R, amount: usize)
-        -> SliceChooseIter<Self, Self::Item>
-        where R: Rng + ?Sized
-    {
+    fn choose_multiple<R>(&self, rng: &mut R, amount: usize) -> SliceChooseIter<Self, Self::Item>
+    where R: Rng + ?Sized {
         let amount = ::core::cmp::min(amount, self.len());
         SliceChooseIter {
             slice: self,
@@ -346,57 +408,66 @@ impl<T> SliceRandom for [T] {
     }
 
     #[cfg(feature = "alloc")]
-    fn choose_weighted<R, F, B, X>(&self, rng: &mut R, weight: F) -> Result<&Self::Item, WeightedError>
-        where R: Rng + ?Sized,
-              F: Fn(&Self::Item) -> B,
-              B: SampleBorrow<X>,
-              X: SampleUniform +
-                 for<'a> ::core::ops::AddAssign<&'a X> +
-                 ::core::cmp::PartialOrd<X> +
-                 Clone +
-                 Default {
-        use distributions::{Distribution, WeightedIndex};
+    fn choose_weighted<R, F, B, X>(
+        &self, rng: &mut R, weight: F,
+    ) -> Result<&Self::Item, WeightedError>
+    where
+        R: Rng + ?Sized,
+        F: Fn(&Self::Item) -> B,
+        B: SampleBorrow<X>,
+        X: SampleUniform
+            + for<'a> ::core::ops::AddAssign<&'a X>
+            + ::core::cmp::PartialOrd<X>
+            + Clone
+            + Default,
+    {
+        use crate::distributions::{Distribution, WeightedIndex};
         let distr = WeightedIndex::new(self.iter().map(weight))?;
         Ok(&self[distr.sample(rng)])
     }
 
     #[cfg(feature = "alloc")]
-    fn choose_weighted_mut<R, F, B, X>(&mut self, rng: &mut R, weight: F) -> Result<&mut Self::Item, WeightedError>
-        where R: Rng + ?Sized,
-              F: Fn(&Self::Item) -> B,
-              B: SampleBorrow<X>,
-              X: SampleUniform +
-                 for<'a> ::core::ops::AddAssign<&'a X> +
-                 ::core::cmp::PartialOrd<X> +
-                 Clone +
-                 Default {
-        use distributions::{Distribution, WeightedIndex};
+    fn choose_weighted_mut<R, F, B, X>(
+        &mut self, rng: &mut R, weight: F,
+    ) -> Result<&mut Self::Item, WeightedError>
+    where
+        R: Rng + ?Sized,
+        F: Fn(&Self::Item) -> B,
+        B: SampleBorrow<X>,
+        X: SampleUniform
+            + for<'a> ::core::ops::AddAssign<&'a X>
+            + ::core::cmp::PartialOrd<X>
+            + Clone
+            + Default,
+    {
+        use crate::distributions::{Distribution, WeightedIndex};
         let distr = WeightedIndex::new(self.iter().map(weight))?;
         Ok(&mut self[distr.sample(rng)])
     }
 
-    fn shuffle<R>(&mut self, rng: &mut R) where R: Rng + ?Sized
-    {
+    fn shuffle<R>(&mut self, rng: &mut R)
+    where R: Rng + ?Sized {
         for i in (1..self.len()).rev() {
             
-            self.swap(i, rng.gen_range(0, i + 1));
+            self.swap(i, gen_index(rng, i + 1));
         }
     }
 
-    fn partial_shuffle<R>(&mut self, rng: &mut R, amount: usize)
-        -> (&mut [Self::Item], &mut [Self::Item]) where R: Rng + ?Sized
-    {
+    fn partial_shuffle<R>(
+        &mut self, rng: &mut R, amount: usize,
+    ) -> (&mut [Self::Item], &mut [Self::Item])
+    where R: Rng + ?Sized {
         
         
         
         
-        
+
         let len = self.len();
         let end = if amount >= len { 0 } else { len - amount };
-        
+
         for i in (end..len).rev() {
             
-            self.swap(i, rng.gen_range(0, i + 1));
+            self.swap(i, gen_index(rng, i + 1));
         }
         let r = self.split_at_mut(end);
         (r.1, r.0)
@@ -404,6 +475,9 @@ impl<T> SliceRandom for [T] {
 }
 
 impl<I> IteratorRandom for I where I: Iterator + Sized {}
+
+
+
 
 
 
@@ -423,7 +497,7 @@ impl<'a, S: Index<usize, Output = T> + ?Sized + 'a, T: 'a> Iterator for SliceCho
         
         self.indices.next().map(|i| &self.slice[i as usize])
     }
-    
+
     fn size_hint(&self) -> (usize, Option<usize>) {
         (self.indices.len(), Some(self.indices.len()))
     }
@@ -442,85 +516,36 @@ impl<'a, S: Index<usize, Output = T> + ?Sized + 'a, T: 'a> ExactSizeIterator
 
 
 
-#[cfg(feature = "alloc")]
-#[deprecated(since="0.6.0", note="use IteratorRandom::choose_multiple instead")]
-pub fn sample_iter<T, I, R>(rng: &mut R, iterable: I, amount: usize) -> Result<Vec<T>, Vec<T>>
-    where I: IntoIterator<Item=T>,
-          R: Rng + ?Sized,
-{
-    use seq::IteratorRandom;
-    let iter = iterable.into_iter();
-    let result = iter.choose_multiple(rng, amount);
-    if result.len() == amount {
-        Ok(result)
+#[inline]
+fn gen_index<R: Rng + ?Sized>(rng: &mut R, ubound: usize) -> usize {
+    if ubound <= (core::u32::MAX as usize) {
+        rng.gen_range(0, ubound as u32) as usize
     } else {
-        Err(result)
+        rng.gen_range(0, ubound)
     }
 }
 
 
-
-
-
-
-
-
-
-
-#[cfg(feature = "alloc")]
-#[deprecated(since="0.6.0", note="use SliceRandom::choose_multiple instead")]
-pub fn sample_slice<R, T>(rng: &mut R, slice: &[T], amount: usize) -> Vec<T>
-    where R: Rng + ?Sized,
-          T: Clone
-{
-    let indices = index::sample(rng, slice.len(), amount).into_iter();
-
-    let mut out = Vec::with_capacity(amount);
-    out.extend(indices.map(|i| slice[i].clone()));
-    out
-}
-
-
-
-
-
-
-
-
-
-
-#[cfg(feature = "alloc")]
-#[deprecated(since="0.6.0", note="use SliceRandom::choose_multiple instead")]
-pub fn sample_slice_ref<'a, R, T>(rng: &mut R, slice: &'a [T], amount: usize) -> Vec<&'a T>
-    where R: Rng + ?Sized
-{
-    let indices = index::sample(rng, slice.len(), amount).into_iter();
-
-    let mut out = Vec::with_capacity(amount);
-    out.extend(indices.map(|i| &slice[i]));
-    out
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
-    #[cfg(feature = "alloc")] use {Rng, SeedableRng};
-    #[cfg(feature = "alloc")] use rngs::SmallRng;
+    #[cfg(feature = "alloc")] use crate::Rng;
     #[cfg(all(feature="alloc", not(feature="std")))]
     use alloc::vec::Vec;
 
     #[test]
     fn test_slice_choose() {
-        let mut r = ::test::rng(107);
+        let mut r = crate::test::rng(107);
         let chars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'];
         let mut chosen = [0i32; 14];
+        
+        
         for _ in 0..1000 {
             let picked = *chars.choose(&mut r).unwrap();
             chosen[(picked as usize) - ('a' as usize)] += 1;
         }
         for count in chosen.iter() {
-            let err = *count - (1000 / (chars.len() as i32));
-            assert!(-20 <= err && err <= 20);
+            assert!(40 < *count && *count < 106);
         }
 
         chosen.iter_mut().for_each(|x| *x = 0);
@@ -528,8 +553,7 @@ mod test {
             *chosen.choose_mut(&mut r).unwrap() += 1;
         }
         for count in chosen.iter() {
-            let err = *count - (1000 / (chosen.len() as i32));
-            assert!(-20 <= err && err <= 20);
+            assert!(40 < *count && *count < 106);
         }
 
         let mut v: [isize; 0] = [];
@@ -590,8 +614,9 @@ mod test {
     }
 
     #[test]
+    #[cfg(not(miri))] 
     fn test_iterator_choose() {
-        let r = &mut ::test::rng(109);
+        let r = &mut crate::test::rng(109);
         fn test_iter<R: Rng + ?Sized, Iter: Iterator<Item=usize> + Clone>(r: &mut R, iter: Iter) {
             let mut chosen = [0i32; 9];
             for _ in 0..1000 {
@@ -621,8 +646,9 @@ mod test {
     }
 
     #[test]
+    #[cfg(not(miri))] 
     fn test_shuffle() {
-        let mut r = ::test::rng(108);
+        let mut r = crate::test::rng(108);
         let empty: &mut [isize] = &mut [];
         empty.shuffle(&mut r);
         let mut one = [1];
@@ -662,14 +688,16 @@ mod test {
             counts[permutation] += 1;
         }
         for count in counts.iter() {
-            let err = *count - 10000i32 / 24;
-            assert!(-50 <= err && err <= 50);
+            
+            
+            
+            assert!(352 <= *count && *count <= 483, "count: {}", count);
         }
     }
     
     #[test]
     fn test_partial_shuffle() {
-        let mut r = ::test::rng(118);
+        let mut r = crate::test::rng(118);
         
         let mut empty: [u32; 0] = [];
         let res = empty.partial_shuffle(&mut r, 10);
@@ -689,7 +717,7 @@ mod test {
         let min_val = 1;
         let max_val = 100;
 
-        let mut r = ::test::rng(401);
+        let mut r = crate::test::rng(401);
         let vals = (min_val..max_val).collect::<Vec<i32>>();
         let small_sample = vals.iter().choose_multiple(&mut r, 5);
         let large_sample = vals.iter().choose_multiple(&mut r, vals.len() + 5);
@@ -706,75 +734,9 @@ mod test {
     
     #[test]
     #[cfg(feature = "alloc")]
-    #[allow(deprecated)]
-    fn test_sample_slice_boundaries() {
-        let empty: &[u8] = &[];
-
-        let mut r = ::test::rng(402);
-
-        
-        assert_eq!(&sample_slice(&mut r, empty, 0)[..], [0u8; 0]);
-        assert_eq!(&sample_slice(&mut r, &[42, 2, 42], 0)[..], [0u8; 0]);
-
-        
-        assert_eq!(&sample_slice(&mut r, &[42], 1)[..], [42]);
-        let v = sample_slice(&mut r, &[1, 42], 1)[0];
-        assert!(v == 1 || v == 42);
-
-        
-        let v = sample_slice(&mut r, &[42, 133], 2);
-        assert!(&v[..] == [42, 133] || v[..] == [133, 42]);
-
-        
-        let slice = &[42, 777];
-        let mut num_42 = 0;
-        let total = 1000;
-        for _ in 0..total {
-            let v = sample_slice(&mut r, slice, 1);
-            assert_eq!(v.len(), 1);
-            let v = v[0];
-            assert!(v == 42 || v == 777);
-            if v == 42 {
-                num_42 += 1;
-            }
-        }
-        let ratio_42 = num_42 as f64 / 1000 as f64;
-        assert!(0.4 <= ratio_42 || ratio_42 <= 0.6, "{}", ratio_42);
-    }
-
-    #[test]
-    #[cfg(feature = "alloc")]
-    #[allow(deprecated)]
-    fn test_sample_slice() {
-        let seeded_rng = SmallRng::from_seed;
-
-        let mut r = ::test::rng(403);
-
-        for n in 1..20 {
-            let length = 5*n - 4;   
-            let amount = r.gen_range(0, length);
-            let mut seed = [0u8; 16];
-            r.fill(&mut seed);
-
-            
-            let regular = index::sample(&mut seeded_rng(seed), length, amount);
-            assert_eq!(regular.len(), amount);
-            assert!(regular.iter().all(|e| e < length));
-
-            
-            let vec: Vec<u32> = (0..(length as u32)).collect();
-            let result = sample_slice(&mut seeded_rng(seed), &vec, amount);
-            assert_eq!(result, regular.iter().map(|i| i as u32).collect::<Vec<_>>());
-
-            let result = sample_slice_ref(&mut seeded_rng(seed), &vec, amount);
-            assert!(result.iter().zip(regular.iter()).all(|(i,j)| **i == j as u32));
-        }
-    }
-    
-    #[test]
-    #[cfg(feature = "alloc")]
+    #[cfg(not(miri))] 
     fn test_weighted() {
-        let mut r = ::test::rng(406);
+        let mut r = crate::test::rng(406);
         const N_REPS: u32 = 3000;
         let weights = [1u32, 2, 3, 0, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7];
         let total_weight = weights.iter().sum::<u32>() as f32;
@@ -823,7 +785,7 @@ mod test {
         assert_eq!(empty_slice.choose_weighted(&mut r, |_| 1), Err(WeightedError::NoItem));
         assert_eq!(empty_slice.choose_weighted_mut(&mut r, |_| 1), Err(WeightedError::NoItem));
         assert_eq!(['x'].choose_weighted_mut(&mut r, |_| 0), Err(WeightedError::AllWeightsZero));
-        assert_eq!([0, -1].choose_weighted_mut(&mut r, |x| *x), Err(WeightedError::NegativeWeight));
-        assert_eq!([-1, 0].choose_weighted_mut(&mut r, |x| *x), Err(WeightedError::NegativeWeight));
+        assert_eq!([0, -1].choose_weighted_mut(&mut r, |x| *x), Err(WeightedError::InvalidWeight));
+        assert_eq!([-1, 0].choose_weighted_mut(&mut r, |x| *x), Err(WeightedError::InvalidWeight));
     }
 }

@@ -8,13 +8,11 @@
 
 
 
+#![allow(deprecated)]
 
-use Rng;
-use distributions::{ziggurat_tables, Distribution, Open01};
-use distributions::utils::ziggurat;
-
-
-
+use crate::Rng;
+use crate::distributions::{ziggurat_tables, Distribution, Open01};
+use crate::distributions::utils::ziggurat;
 
 
 
@@ -28,12 +26,7 @@ use distributions::utils::ziggurat;
 
 
 
-
-
-
-
-
-
+#[deprecated(since="0.7.0", note="moved to rand_distr crate")]
 #[derive(Clone, Copy, Debug)]
 pub struct StandardNormal;
 
@@ -81,17 +74,7 @@ impl Distribution<f64> for StandardNormal {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+#[deprecated(since="0.7.0", note="moved to rand_distr crate")]
 #[derive(Clone, Copy, Debug)]
 pub struct Normal {
     mean: f64,
@@ -126,17 +109,7 @@ impl Distribution<f64> for Normal {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+#[deprecated(since="0.7.0", note="moved to rand_distr crate")]
 #[derive(Clone, Copy, Debug)]
 pub struct LogNormal {
     norm: Normal
@@ -163,13 +136,13 @@ impl Distribution<f64> for LogNormal {
 
 #[cfg(test)]
 mod tests {
-    use distributions::Distribution;
+    use crate::distributions::Distribution;
     use super::{Normal, LogNormal};
 
     #[test]
     fn test_normal() {
         let norm = Normal::new(10.0, 10.0);
-        let mut rng = ::test::rng(210);
+        let mut rng = crate::test::rng(210);
         for _ in 0..1000 {
             norm.sample(&mut rng);
         }
@@ -184,7 +157,7 @@ mod tests {
     #[test]
     fn test_log_normal() {
         let lnorm = LogNormal::new(10.0, 10.0);
-        let mut rng = ::test::rng(211);
+        let mut rng = crate::test::rng(211);
         for _ in 0..1000 {
             lnorm.sample(&mut rng);
         }

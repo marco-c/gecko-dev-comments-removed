@@ -8,33 +8,10 @@
 
 
 
-use rand_core::{RngCore, CryptoRng, Error, ErrorKind, impls};
-#[allow(unused)]
-use rngs;
+#![allow(deprecated)]   
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+use rand_core::{RngCore, CryptoRng, Error};
+use crate::rngs::OsRng;
 
 
 
@@ -43,16 +20,9 @@ use rngs;
 
 
 #[derive(Debug)]
+#[deprecated(since="0.7.0", note="use rngs::OsRng instead")]
 pub struct EntropyRng {
-    source: Source,
-}
-
-#[derive(Debug)]
-enum Source {
-    Os(Os),
-    Custom(Custom),
-    Jitter(Jitter),
-    None,
+    source: OsRng,
 }
 
 impl EntropyRng {
@@ -62,7 +32,7 @@ impl EntropyRng {
     
     
     pub fn new() -> Self {
-        EntropyRng { source: Source::None }
+        EntropyRng { source: OsRng }
     }
 }
 
@@ -74,165 +44,23 @@ impl Default for EntropyRng {
 
 impl RngCore for EntropyRng {
     fn next_u32(&mut self) -> u32 {
-        impls::next_u32_via_fill(self)
+        self.source.next_u32()
     }
 
     fn next_u64(&mut self) -> u64 {
-        impls::next_u64_via_fill(self)
+        self.source.next_u64()
     }
 
     fn fill_bytes(&mut self, dest: &mut [u8]) {
-        self.try_fill_bytes(dest).unwrap_or_else(|err|
-                panic!("all entropy sources failed; first error: {}", err))
+        self.source.fill_bytes(dest)
     }
 
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-        let mut reported_error = None;
-
-        if let Source::Os(ref mut os_rng) = self.source {
-            match os_rng.fill(dest) {
-                Ok(()) => return Ok(()),
-                Err(err) => {
-                    warn!("EntropyRng: OsRng failed \
-                          [trying other entropy sources]: {}", err);
-                    reported_error = Some(err);
-                },
-            }
-        } else if Os::is_supported() {
-            match Os::new_and_fill(dest) {
-                Ok(os_rng) => {
-                    debug!("EntropyRng: using OsRng");
-                    self.source = Source::Os(os_rng);
-                    return Ok(());
-                },
-                Err(err) => { reported_error = reported_error.or(Some(err)) },
-            }
-        }
-
-        if let Source::Custom(ref mut rng) = self.source {
-            match rng.fill(dest) {
-                Ok(()) => return Ok(()),
-                Err(err) => {
-                    warn!("EntropyRng: custom entropy source failed \
-                          [trying other entropy sources]: {}", err);
-                    reported_error = Some(err);
-                },
-            }
-        } else if Custom::is_supported() {
-            match Custom::new_and_fill(dest) {
-                Ok(custom) => {
-                    debug!("EntropyRng: using custom entropy source");
-                    self.source = Source::Custom(custom);
-                    return Ok(());
-                },
-                Err(err) => { reported_error = reported_error.or(Some(err)) },
-            }
-        }
-
-        if let Source::Jitter(ref mut jitter_rng) = self.source {
-            match jitter_rng.fill(dest) {
-                Ok(()) => return Ok(()),
-                Err(err) => {
-                    warn!("EntropyRng: JitterRng failed: {}", err);
-                    reported_error = Some(err);
-                },
-            }
-        } else if Jitter::is_supported() {
-            match Jitter::new_and_fill(dest) {
-                Ok(jitter_rng) => {
-                    debug!("EntropyRng: using JitterRng");
-                    self.source = Source::Jitter(jitter_rng);
-                    return Ok(());
-                },
-                Err(err) => { reported_error = reported_error.or(Some(err)) },
-            }
-        }
-
-        if let Some(err) = reported_error {
-            Err(Error::with_cause(ErrorKind::Unavailable,
-                                  "All entropy sources failed",
-                                  err))
-        } else {
-            Err(Error::new(ErrorKind::Unavailable,
-                           "No entropy sources available"))
-        }
+        self.source.try_fill_bytes(dest)
     }
 }
 
 impl CryptoRng for EntropyRng {}
-
-
-
-trait EntropySource {
-    fn new_and_fill(dest: &mut [u8]) -> Result<Self, Error>
-        where Self: Sized;
-
-    fn fill(&mut self, dest: &mut [u8]) -> Result<(), Error>;
-
-    fn is_supported() -> bool { true }
-}
-
-#[allow(unused)]
-#[derive(Clone, Debug)]
-struct NoSource;
-
-#[allow(unused)]
-impl EntropySource for NoSource {
-    fn new_and_fill(dest: &mut [u8]) -> Result<Self, Error> {
-        Err(Error::new(ErrorKind::Unavailable, "Source not supported"))
-    }
-
-    fn fill(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-        unreachable!()
-    }
-
-    fn is_supported() -> bool { false }
-}
-
-
-#[cfg(feature="rand_os")]
-#[derive(Clone, Debug)]
-pub struct Os(rngs::OsRng);
-
-#[cfg(feature="rand_os")]
-impl EntropySource for Os {
-    fn new_and_fill(dest: &mut [u8]) -> Result<Self, Error> {
-        let mut rng = rngs::OsRng::new()?;
-        rng.try_fill_bytes(dest)?;
-        Ok(Os(rng))
-    }
-
-    fn fill(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-        self.0.try_fill_bytes(dest)
-    }
-}
-
-#[cfg(not(feature="std"))]
-type Os = NoSource;
-
-
-type Custom = NoSource;
-
-
-#[cfg(not(target_arch = "wasm32"))]
-#[derive(Clone, Debug)]
-pub struct Jitter(rngs::JitterRng);
-
-#[cfg(not(target_arch = "wasm32"))]
-impl EntropySource for Jitter {
-    fn new_and_fill(dest: &mut [u8]) -> Result<Self, Error> {
-        let mut rng = rngs::JitterRng::new()?;
-        rng.try_fill_bytes(dest)?;
-        Ok(Jitter(rng))
-    }
-
-    fn fill(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-        self.0.try_fill_bytes(dest)
-    }
-}
-
-#[cfg(target_arch = "wasm32")]
-type Jitter = NoSource;
 
 
 #[cfg(test)]

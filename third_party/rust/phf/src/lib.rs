@@ -36,37 +36,69 @@
 
 
 
-
 #![doc(html_root_url="https://docs.rs/phf/0.7")]
 #![warn(missing_docs)]
-#![cfg_attr(feature = "core", no_std)]
+#![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 extern crate std as core;
 
-extern crate phf_shared;
 #[cfg(feature = "macros")]
-extern crate phf_macros;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[::proc_macro_hack::proc_macro_hack]
+pub use phf_macros:: phf_map;
 
 #[cfg(feature = "macros")]
-pub use phf_macros::*;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[::proc_macro_hack::proc_macro_hack]
+pub use phf_macros::phf_set;
 
 use core::ops::Deref;
 
 pub use phf_shared::PhfHash;
 #[doc(inline)]
-pub use map::Map;
+pub use self::map::Map;
 #[doc(inline)]
-pub use set::Set;
-#[doc(inline)]
-pub use ordered_map::OrderedMap;
-#[doc(inline)]
-pub use ordered_set::OrderedSet;
+pub use self::set::Set;
 
 pub mod map;
 pub mod set;
-pub mod ordered_map;
-pub mod ordered_set;
 
 
 
@@ -75,7 +107,7 @@ pub mod ordered_set;
 #[doc(hidden)]
 pub enum Slice<T: 'static> {
     Static(&'static [T]),
-    #[cfg(not(feature = "core"))]
+    #[cfg(feature = "std")]
     Dynamic(Vec<T>),
 }
 
@@ -85,7 +117,7 @@ impl<T> Deref for Slice<T> {
     fn deref(&self) -> &[T] {
         match *self {
             Slice::Static(t) => t,
-            #[cfg(not(feature = "core"))]
+            #[cfg(feature = "std")]
             Slice::Dynamic(ref t) => t,
         }
     }

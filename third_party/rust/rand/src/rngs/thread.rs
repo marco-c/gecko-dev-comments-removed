@@ -9,14 +9,12 @@
 
 
 use std::cell::UnsafeCell;
+use std::ptr::NonNull;
 
-use {RngCore, CryptoRng, SeedableRng, Error};
-use rngs::adapter::ReseedingRng;
-use rngs::EntropyRng;
-use rand_hc::Hc128Core;
-
-
-
+use crate::{RngCore, CryptoRng, SeedableRng, Error};
+use crate::rngs::adapter::ReseedingRng;
+use crate::rngs::OsRng;
+use super::std::Core;
 
 
 
@@ -36,11 +34,7 @@ use rand_hc::Hc128Core;
 
 
 
-
-
-
-const THREAD_RNG_RESEED_THRESHOLD: u64 = 32*1024*1024; 
-
+const THREAD_RNG_RESEED_THRESHOLD: u64 = 1024 * 64;
 
 
 
@@ -59,28 +53,19 @@ const THREAD_RNG_RESEED_THRESHOLD: u64 = 32*1024*1024;
 
 
 
-
-
-
-
-
-
-
-
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct ThreadRng {
     
-    rng: *mut ReseedingRng<Hc128Core, EntropyRng>,
+    rng: NonNull<ReseedingRng<Core, OsRng>>,
 }
 
 thread_local!(
-    static THREAD_RNG_KEY: UnsafeCell<ReseedingRng<Hc128Core, EntropyRng>> = {
-        let mut entropy_source = EntropyRng::new();
-        let r = Hc128Core::from_rng(&mut entropy_source).unwrap_or_else(|err|
+    static THREAD_RNG_KEY: UnsafeCell<ReseedingRng<Core, OsRng>> = {
+        let r = Core::from_rng(OsRng).unwrap_or_else(|err|
                 panic!("could not initialize thread_rng: {}", err));
         let rng = ReseedingRng::new(r,
                                     THREAD_RNG_RESEED_THRESHOLD,
-                                    entropy_source);
+                                    OsRng);
         UnsafeCell::new(rng)
     }
 );
@@ -93,32 +78,34 @@ thread_local!(
 
 
 pub fn thread_rng() -> ThreadRng {
-    ThreadRng { rng: THREAD_RNG_KEY.with(|t| t.get()) }
+    let raw = THREAD_RNG_KEY.with(|t| t.get());
+    let nn = NonNull::new(raw).unwrap();
+    ThreadRng { rng: nn }
 }
 
 impl Default for ThreadRng {
     fn default() -> ThreadRng {
-        ::prelude::thread_rng()
+        crate::prelude::thread_rng()
     }
 }
 
 impl RngCore for ThreadRng {
     #[inline(always)]
     fn next_u32(&mut self) -> u32 {
-        unsafe { (*self.rng).next_u32() }
+        unsafe { self.rng.as_mut().next_u32() }
     }
 
     #[inline(always)]
     fn next_u64(&mut self) -> u64 {
-        unsafe { (*self.rng).next_u64() }
+        unsafe { self.rng.as_mut().next_u64() }
     }
 
     fn fill_bytes(&mut self, dest: &mut [u8]) {
-        unsafe { (*self.rng).fill_bytes(dest) }
+        unsafe { self.rng.as_mut().fill_bytes(dest) }
     }
 
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-        unsafe { (*self.rng).try_fill_bytes(dest) }
+        unsafe { self.rng.as_mut().try_fill_bytes(dest) }
     }
 }
 
@@ -129,8 +116,8 @@ impl CryptoRng for ThreadRng {}
 mod test {
     #[test]
     fn test_thread_rng() {
-        use Rng;
-        let mut r = ::thread_rng();
+        use crate::Rng;
+        let mut r = crate::thread_rng();
         r.gen::<i32>();
         assert_eq!(r.gen_range(0, 1), 0);
     }

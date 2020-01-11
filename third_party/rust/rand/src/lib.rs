@@ -50,113 +50,61 @@
 #![doc(test(attr(allow(unused_variables), deny(warnings))))]
 
 #![cfg_attr(not(feature="std"), no_std)]
-#![cfg_attr(all(feature="alloc", not(feature="std")), feature(alloc))]
 #![cfg_attr(all(feature="simd_support", feature="nightly"), feature(stdsimd))]
 
-#[cfg(feature = "std")] extern crate core;
-#[cfg(all(feature = "alloc", not(feature="std")))] #[macro_use] extern crate alloc;
+#![allow(clippy::excessive_precision, clippy::unreadable_literal, clippy::float_cmp)]
 
-#[cfg(feature="simd_support")] extern crate packed_simd;
+#[cfg(all(feature="alloc", not(feature="std")))]
+extern crate alloc;
 
-extern crate rand_jitter;
-#[cfg(feature = "rand_os")]
-extern crate rand_os;
-
-extern crate rand_core;
-extern crate rand_isaac;    
-extern crate rand_chacha;    
-extern crate rand_hc;
-extern crate rand_pcg;
-extern crate rand_xorshift;
-
-#[cfg(feature = "log")] #[macro_use] extern crate log;
 #[allow(unused)]
-#[cfg(not(feature = "log"))] macro_rules! trace { ($($x:tt)*) => () }
+macro_rules! trace { ($($x:tt)*) => (
+    #[cfg(feature = "log")] {
+        log::trace!($($x)*)
+    }
+) }
 #[allow(unused)]
-#[cfg(not(feature = "log"))] macro_rules! debug { ($($x:tt)*) => () }
+macro_rules! debug { ($($x:tt)*) => (
+    #[cfg(feature = "log")] {
+        log::debug!($($x)*)
+    }
+) }
 #[allow(unused)]
-#[cfg(not(feature = "log"))] macro_rules! info { ($($x:tt)*) => () }
+macro_rules! info { ($($x:tt)*) => (
+    #[cfg(feature = "log")] {
+        log::info!($($x)*)
+    }
+) }
 #[allow(unused)]
-#[cfg(not(feature = "log"))] macro_rules! warn { ($($x:tt)*) => () }
+macro_rules! warn { ($($x:tt)*) => (
+    #[cfg(feature = "log")] {
+        log::warn!($($x)*)
+    }
+) }
 #[allow(unused)]
-#[cfg(not(feature = "log"))] macro_rules! error { ($($x:tt)*) => () }
+macro_rules! error { ($($x:tt)*) => (
+    #[cfg(feature = "log")] {
+        log::error!($($x)*)
+    }
+) }
 
 
-
-pub use rand_core::{RngCore, CryptoRng, SeedableRng};
-pub use rand_core::{ErrorKind, Error};
+pub use rand_core::{RngCore, CryptoRng, SeedableRng, Error};
 
 
-#[cfg(feature="std")] pub use rngs::thread::thread_rng;
+#[cfg(feature="std")] pub use crate::rngs::thread::thread_rng;
 
 
 pub mod distributions;
 pub mod prelude;
-#[deprecated(since="0.6.0")]
-pub mod prng;
 pub mod rngs;
 pub mod seq;
 
 
-
-
-#[doc(hidden)] mod deprecated;
-
-#[allow(deprecated)]
-#[doc(hidden)] pub use deprecated::ReseedingRng;
-
-#[allow(deprecated)]
-#[cfg(feature="std")] #[doc(hidden)] pub use deprecated::EntropyRng;
-
-#[allow(deprecated)]
-#[cfg(feature="rand_os")]
-#[doc(hidden)]
-pub use deprecated::OsRng;
-
-#[allow(deprecated)]
-#[doc(hidden)] pub use deprecated::{ChaChaRng, IsaacRng, Isaac64Rng, XorShiftRng};
-#[allow(deprecated)]
-#[doc(hidden)] pub use deprecated::StdRng;
-
-
-#[allow(deprecated)]
-#[doc(hidden)]
-pub mod jitter {
-    pub use deprecated::JitterRng;
-    pub use rngs::TimerError;
-}
-#[allow(deprecated)]
-#[cfg(feature="rand_os")]
-#[doc(hidden)]
-pub mod os {
-    pub use deprecated::OsRng;
-}
-#[allow(deprecated)]
-#[doc(hidden)]
-pub mod chacha {
-    pub use deprecated::ChaChaRng;
-}
-#[allow(deprecated)]
-#[doc(hidden)]
-pub mod isaac {
-    pub use deprecated::{IsaacRng, Isaac64Rng};
-}
-#[allow(deprecated)]
-#[cfg(feature="std")]
-#[doc(hidden)]
-pub mod read {
-    pub use deprecated::ReadRng;
-}
-
-#[allow(deprecated)]
-#[cfg(feature="std")] #[doc(hidden)] pub use deprecated::ThreadRng;
-
-
-
-
 use core::{mem, slice};
-use distributions::{Distribution, Standard};
-use distributions::uniform::{SampleUniform, UniformSampler, SampleBorrow};
+use core::num::Wrapping;
+use crate::distributions::{Distribution, Standard};
+use crate::distributions::uniform::{SampleUniform, UniformSampler, SampleBorrow};
 
 
 
@@ -210,8 +158,29 @@ pub trait Rng: RngCore {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    fn gen<T>(&mut self) -> T where Standard: Distribution<T> {
+    fn gen<T>(&mut self) -> T
+    where Standard: Distribution<T> {
         Standard.sample(self)
     }
 
@@ -240,8 +209,10 @@ pub trait Rng: RngCore {
     
     
     fn gen_range<T: SampleUniform, B1, B2>(&mut self, low: B1, high: B2) -> T
-        where B1: SampleBorrow<T> + Sized,
-              B2: SampleBorrow<T> + Sized {
+    where
+        B1: SampleBorrow<T> + Sized,
+        B2: SampleBorrow<T> + Sized,
+    {
         T::Sampler::sample_single(low, high, self)
     }
 
@@ -290,9 +261,14 @@ pub trait Rng: RngCore {
     
     
     
-    fn sample_iter<'a, T, D: Distribution<T>>(&'a mut self, distr: &'a D)
-        -> distributions::DistIter<'a, D, Self, T> where Self: Sized
-    {
+    
+    
+    
+    
+    
+    
+    fn sample_iter<T, D>(self, distr: D) -> distributions::DistIter<D, Self, T>
+    where D: Distribution<T>, Self: Sized {
         distr.sample_iter(self)
     }
 
@@ -350,8 +326,6 @@ pub trait Rng: RngCore {
     
     
     
-    
-    
     fn try_fill<T: AsByteSliceMut + ?Sized>(&mut self, dest: &mut T) -> Result<(), Error> {
         self.try_fill_bytes(dest.as_byte_slice_mut())?;
         dest.to_le();
@@ -379,7 +353,7 @@ pub trait Rng: RngCore {
     
     #[inline]
     fn gen_bool(&mut self, p: f64) -> bool {
-        let d = distributions::Bernoulli::new(p);
+        let d = distributions::Bernoulli::new(p).unwrap();
         self.sample(d)
     }
 
@@ -408,35 +382,8 @@ pub trait Rng: RngCore {
     
     #[inline]
     fn gen_ratio(&mut self, numerator: u32, denominator: u32) -> bool {
-        let d = distributions::Bernoulli::from_ratio(numerator, denominator);
+        let d = distributions::Bernoulli::from_ratio(numerator, denominator).unwrap();
         self.sample(d)
-    }
-
-    
-    
-    
-    #[deprecated(since="0.6.0", note="use SliceRandom::choose instead")]
-    fn choose<'a, T>(&mut self, values: &'a [T]) -> Option<&'a T> {
-        use seq::SliceRandom;
-        values.choose(self)
-    }
-
-    
-    
-    
-    #[deprecated(since="0.6.0", note="use SliceRandom::choose_mut instead")]
-    fn choose_mut<'a, T>(&mut self, values: &'a mut [T]) -> Option<&'a mut T> {
-        use seq::SliceRandom;
-        values.choose_mut(self)
-    }
-
-    
-    
-    
-    #[deprecated(since="0.6.0", note="use SliceRandom::shuffle instead")]
-    fn shuffle<T>(&mut self, values: &mut [T]) {
-        use seq::SliceRandom;
-        values.shuffle(self)
     }
 }
 
@@ -462,6 +409,7 @@ impl AsByteSliceMut for [u8] {
 }
 
 macro_rules! impl_as_byte_slice {
+    () => {};
     ($t:ty) => {
         impl AsByteSliceMut for [$t] {
             fn as_byte_slice_mut(&mut self) -> &mut [u8] {
@@ -472,8 +420,7 @@ macro_rules! impl_as_byte_slice {
                     }
                 } else {
                     unsafe {
-                        slice::from_raw_parts_mut(&mut self[0]
-                            as *mut $t
+                        slice::from_raw_parts_mut(self.as_mut_ptr()
                             as *mut u8,
                             self.len() * mem::size_of::<$t>()
                         )
@@ -487,26 +434,47 @@ macro_rules! impl_as_byte_slice {
                 }
             }
         }
+
+        impl AsByteSliceMut for [Wrapping<$t>] {
+            fn as_byte_slice_mut(&mut self) -> &mut [u8] {
+                if self.len() == 0 {
+                    unsafe {
+                        // must not use null pointer
+                        slice::from_raw_parts_mut(0x1 as *mut u8, 0)
+                    }
+                } else {
+                    unsafe {
+                        slice::from_raw_parts_mut(self.as_mut_ptr()
+                            as *mut u8,
+                            self.len() * mem::size_of::<$t>()
+                        )
+                    }
+                }
+            }
+
+            fn to_le(&mut self) {
+                for x in self {
+                    *x = Wrapping(x.0.to_le());
+                }
+            }
+        }
+    };
+    ($t:ty, $($tt:ty,)*) => {
+        impl_as_byte_slice!($t);
+        // TODO: this could replace above impl once Rust #32463 is fixed
+        // impl_as_byte_slice!(Wrapping<$t>);
+        impl_as_byte_slice!($($tt,)*);
     }
 }
 
-impl_as_byte_slice!(u16);
-impl_as_byte_slice!(u32);
-impl_as_byte_slice!(u64);
-#[cfg(all(rustc_1_26, not(target_os = "emscripten")))] impl_as_byte_slice!(u128);
-impl_as_byte_slice!(usize);
-impl_as_byte_slice!(i8);
-impl_as_byte_slice!(i16);
-impl_as_byte_slice!(i32);
-impl_as_byte_slice!(i64);
-#[cfg(all(rustc_1_26, not(target_os = "emscripten")))] impl_as_byte_slice!(i128);
-impl_as_byte_slice!(isize);
+impl_as_byte_slice!(u16, u32, u64, usize,);
+#[cfg(not(target_os = "emscripten"))] impl_as_byte_slice!(u128);
+impl_as_byte_slice!(i8, i16, i32, i64, isize,);
+#[cfg(not(target_os = "emscripten"))] impl_as_byte_slice!(i128);
 
 macro_rules! impl_as_byte_slice_arrays {
     ($n:expr,) => {};
-    ($n:expr, $N:ident, $($NN:ident,)*) => {
-        impl_as_byte_slice_arrays!($n - 1, $($NN,)*);
-
+    ($n:expr, $N:ident) => {
         impl<T> AsByteSliceMut for [T; $n] where [T]: AsByteSliceMut {
             fn as_byte_slice_mut(&mut self) -> &mut [u8] {
                 self[..].as_byte_slice_mut()
@@ -517,93 +485,18 @@ macro_rules! impl_as_byte_slice_arrays {
             }
         }
     };
+    ($n:expr, $N:ident, $($NN:ident,)*) => {
+        impl_as_byte_slice_arrays!($n, $N);
+        impl_as_byte_slice_arrays!($n - 1, $($NN,)*);
+    };
     (!div $n:expr,) => {};
     (!div $n:expr, $N:ident, $($NN:ident,)*) => {
+        impl_as_byte_slice_arrays!($n, $N);
         impl_as_byte_slice_arrays!(!div $n / 2, $($NN,)*);
-
-        impl<T> AsByteSliceMut for [T; $n] where [T]: AsByteSliceMut {
-            fn as_byte_slice_mut(&mut self) -> &mut [u8] {
-                self[..].as_byte_slice_mut()
-            }
-
-            fn to_le(&mut self) {
-                self[..].to_le()
-            }
-        }
     };
 }
 impl_as_byte_slice_arrays!(32, N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,);
 impl_as_byte_slice_arrays!(!div 4096, N,N,N,N,N,N,N,);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(feature="std")]
-pub trait FromEntropy: SeedableRng {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn from_entropy() -> Self;
-}
-
-#[cfg(feature="std")]
-impl<R: SeedableRng> FromEntropy for R {
-    fn from_entropy() -> R {
-        R::from_rng(rngs::EntropyRng::new()).unwrap_or_else(|err|
-            panic!("FromEntropy::from_entropy() failed: {}", err))
-    }
-}
-
 
 
 
@@ -649,36 +542,23 @@ impl<R: SeedableRng> FromEntropy for R {
 
 #[cfg(feature="std")]
 #[inline]
-pub fn random<T>() -> T where Standard: Distribution<T> {
+pub fn random<T>() -> T
+where Standard: Distribution<T> {
     thread_rng().gen()
 }
 
 #[cfg(test)]
 mod test {
-    use rngs::mock::StepRng;
-    use rngs::StdRng;
+    use crate::rngs::mock::StepRng;
     use super::*;
     #[cfg(all(not(feature="std"), feature="alloc"))] use alloc::boxed::Box;
 
-    pub struct TestRng<R> { inner: R }
-
-    impl<R: RngCore> RngCore for TestRng<R> {
-        fn next_u32(&mut self) -> u32 {
-            self.inner.next_u32()
-        }
-        fn next_u64(&mut self) -> u64 {
-            self.inner.next_u64()
-        }
-        fn fill_bytes(&mut self, dest: &mut [u8]) {
-            self.inner.fill_bytes(dest)
-        }
-        fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-            self.inner.try_fill_bytes(dest)
-        }
-    }
-
-    pub fn rng(seed: u64) -> TestRng<StdRng> {
-        TestRng { inner: StdRng::seed_from_u64(seed) }
+    
+    pub fn rng(seed: u64) -> impl RngCore {
+        
+        
+        const INC: u64 = 11634580027462260723;
+        rand_pcg::Pcg32::new(seed, INC)
     }
 
     #[test]
@@ -718,6 +598,12 @@ mod test {
         rng.fill(&mut array[..]);
         assert_eq!(array, [x as u32, (x >> 32) as u32]);
         assert_eq!(rng.next_u32(), x as u32);
+
+        
+        let mut warray = [Wrapping(0u32); 2];
+        rng.fill(&mut warray[..]);
+        assert_eq!(array[0], warray[0].0);
+        assert_eq!(array[1], warray[1].0);
     }
 
     #[test]
@@ -774,9 +660,9 @@ mod test {
 
     #[test]
     fn test_rng_trait_object() {
-        use distributions::{Distribution, Standard};
+        use crate::distributions::{Distribution, Standard};
         let mut rng = rng(109);
-        let mut r = &mut rng as &mut RngCore;
+        let mut r = &mut rng as &mut dyn RngCore;
         r.next_u32();
         r.gen::<i32>();
         assert_eq!(r.gen_range(0, 1), 0);
@@ -786,9 +672,9 @@ mod test {
     #[test]
     #[cfg(feature="alloc")]
     fn test_rng_boxed_trait() {
-        use distributions::{Distribution, Standard};
+        use crate::distributions::{Distribution, Standard};
         let rng = rng(110);
-        let mut r = Box::new(rng) as Box<RngCore>;
+        let mut r = Box::new(rng) as Box<dyn RngCore>;
         r.next_u32();
         r.gen::<i32>();
         assert_eq!(r.gen_range(0, 1), 0);
@@ -811,6 +697,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(not(miri))] 
     fn test_gen_ratio_average() {
         const NUM: u32 = 3;
         const DENOM: u32 = 10;

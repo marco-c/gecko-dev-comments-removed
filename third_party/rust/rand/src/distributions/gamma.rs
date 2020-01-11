@@ -8,13 +8,14 @@
 
 
 
+#![allow(deprecated)]
 
 use self::GammaRepr::*;
 use self::ChiSquaredRepr::*;
 
-use Rng;
-use distributions::normal::StandardNormal;
-use distributions::{Distribution, Exp, Open01};
+use crate::Rng;
+use crate::distributions::normal::StandardNormal;
+use crate::distributions::{Distribution, Exp, Open01};
 
 
 
@@ -36,16 +37,7 @@ use distributions::{Distribution, Exp, Open01};
 
 
 
-
-
-
-
-
-
-
-
-
-
+#[deprecated(since="0.7.0", note="moved to rand_distr crate")]
 #[derive(Clone, Copy, Debug)]
 pub struct Gamma {
     repr: GammaRepr,
@@ -174,16 +166,7 @@ impl Distribution<f64> for GammaLargeShape {
 
 
 
-
-
-
-
-
-
-
-
-
-
+#[deprecated(since="0.7.0", note="moved to rand_distr crate")]
 #[derive(Clone, Copy, Debug)]
 pub struct ChiSquared {
     repr: ChiSquaredRepr,
@@ -229,16 +212,7 @@ impl Distribution<f64> for ChiSquared {
 
 
 
-
-
-
-
-
-
-
-
-
-
+#[deprecated(since="0.7.0", note="moved to rand_distr crate")]
 #[derive(Clone, Copy, Debug)]
 pub struct FisherF {
     numer: ChiSquared,
@@ -270,16 +244,7 @@ impl Distribution<f64> for FisherF {
 
 
 
-
-
-
-
-
-
-
-
-
-
+#[deprecated(since="0.7.0", note="moved to rand_distr crate")]
 #[derive(Clone, Copy, Debug)]
 pub struct StudentT {
     chi: ChiSquared,
@@ -305,16 +270,7 @@ impl Distribution<f64> for StudentT {
 }
 
 
-
-
-
-
-
-
-
-
-
-
+#[deprecated(since="0.7.0", note="moved to rand_distr crate")]
 #[derive(Clone, Copy, Debug)]
 pub struct Beta {
     gamma_a: Gamma,
@@ -345,30 +301,32 @@ impl Distribution<f64> for Beta {
 
 #[cfg(test)]
 mod test {
-    use distributions::Distribution;
+    use crate::distributions::Distribution;
     use super::{Beta, ChiSquared, StudentT, FisherF};
+
+    const N: u32 = 100;
 
     #[test]
     fn test_chi_squared_one() {
         let chi = ChiSquared::new(1.0);
-        let mut rng = ::test::rng(201);
-        for _ in 0..1000 {
+        let mut rng = crate::test::rng(201);
+        for _ in 0..N {
             chi.sample(&mut rng);
         }
     }
     #[test]
     fn test_chi_squared_small() {
         let chi = ChiSquared::new(0.5);
-        let mut rng = ::test::rng(202);
-        for _ in 0..1000 {
+        let mut rng = crate::test::rng(202);
+        for _ in 0..N {
             chi.sample(&mut rng);
         }
     }
     #[test]
     fn test_chi_squared_large() {
         let chi = ChiSquared::new(30.0);
-        let mut rng = ::test::rng(203);
-        for _ in 0..1000 {
+        let mut rng = crate::test::rng(203);
+        for _ in 0..N {
             chi.sample(&mut rng);
         }
     }
@@ -381,8 +339,8 @@ mod test {
     #[test]
     fn test_f() {
         let f = FisherF::new(2.0, 32.0);
-        let mut rng = ::test::rng(204);
-        for _ in 0..1000 {
+        let mut rng = crate::test::rng(204);
+        for _ in 0..N {
             f.sample(&mut rng);
         }
     }
@@ -390,8 +348,8 @@ mod test {
     #[test]
     fn test_t() {
         let t = StudentT::new(11.0);
-        let mut rng = ::test::rng(205);
-        for _ in 0..1000 {
+        let mut rng = crate::test::rng(205);
+        for _ in 0..N {
             t.sample(&mut rng);
         }
     }
@@ -399,8 +357,8 @@ mod test {
     #[test]
     fn test_beta() {
         let beta = Beta::new(1.0, 2.0);
-        let mut rng = ::test::rng(201);
-        for _ in 0..1000 {
+        let mut rng = crate::test::rng(201);
+        for _ in 0..N {
             beta.sample(&mut rng);
         }
     }

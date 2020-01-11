@@ -11,8 +11,8 @@
 
 
 use core::fmt;
-use core::mem::transmute;
 use rand_core::{RngCore, SeedableRng, Error, le, impls};
+#[cfg(feature="serde1")] use serde::{Serialize, Deserialize};
 
 
 const MULTIPLIER: u64 = 6364136223846793005;
@@ -40,6 +40,7 @@ pub struct Lcg64Xsh32 {
 pub type Pcg32 = Lcg64Xsh32;
 
 impl Lcg64Xsh32 {
+    
     
     
     
@@ -115,27 +116,12 @@ impl RngCore for Lcg64Xsh32 {
 
     #[inline]
     fn fill_bytes(&mut self, dest: &mut [u8]) {
-        
-        let mut left = dest;
-        while left.len() >= 4 {
-            let (l, r) = {left}.split_at_mut(4);
-            left = r;
-            let chunk: [u8; 4] = unsafe {
-                transmute(self.next_u32().to_le())
-            };
-            l.copy_from_slice(&chunk);
-        }
-        let n = left.len();
-        if n > 0 {
-            let chunk: [u8; 4] = unsafe {
-                transmute(self.next_u32().to_le())
-            };
-            left.copy_from_slice(&chunk[..n]);
-        }
+        impls::fill_bytes_via_next(self, dest)
     }
 
     #[inline]
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-        Ok(self.fill_bytes(dest))
+        self.fill_bytes(dest);
+        Ok(())
     }
 }

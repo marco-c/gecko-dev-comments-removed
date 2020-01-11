@@ -8,13 +8,11 @@
 
 
 
+#![allow(deprecated)]
 
-use {Rng};
-use distributions::{ziggurat_tables, Distribution};
-use distributions::utils::ziggurat;
-
-
-
+use crate::{Rng};
+use crate::distributions::{ziggurat_tables, Distribution};
+use crate::distributions::utils::ziggurat;
 
 
 
@@ -30,12 +28,7 @@ use distributions::utils::ziggurat;
 
 
 
-
-
-
-
-
-
+#[deprecated(since="0.7.0", note="moved to rand_distr crate")]
 #[derive(Clone, Copy, Debug)]
 pub struct Exp1;
 
@@ -65,16 +58,7 @@ impl Distribution<f64> for Exp1 {
 
 
 
-
-
-
-
-
-
-
-
-
-
+#[deprecated(since="0.7.0", note="moved to rand_distr crate")]
 #[derive(Clone, Copy, Debug)]
 pub struct Exp {
     
@@ -100,13 +84,13 @@ impl Distribution<f64> for Exp {
 
 #[cfg(test)]
 mod test {
-    use distributions::Distribution;
+    use crate::distributions::Distribution;
     use super::Exp;
 
     #[test]
     fn test_exp() {
         let exp = Exp::new(10.0);
-        let mut rng = ::test::rng(221);
+        let mut rng = crate::test::rng(221);
         for _ in 0..1000 {
             assert!(exp.sample(&mut rng) >= 0.0);
         }

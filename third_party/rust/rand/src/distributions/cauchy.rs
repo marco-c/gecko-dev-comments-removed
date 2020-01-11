@@ -8,25 +8,18 @@
 
 
 
+#![allow(deprecated)]
+#![allow(clippy::all)]
 
-use Rng;
-use distributions::Distribution;
+use crate::Rng;
+use crate::distributions::Distribution;
 use std::f64::consts::PI;
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
+#[deprecated(since="0.7.0", note="moved to rand_distr crate")]
 #[derive(Clone, Copy, Debug)]
 pub struct Cauchy {
     median: f64,
@@ -61,7 +54,7 @@ impl Distribution<f64> for Cauchy {
 
 #[cfg(test)]
 mod test {
-    use distributions::Distribution;
+    use crate::distributions::Distribution;
     use super::Cauchy;
 
     fn median(mut numbers: &mut [f64]) -> f64 {
@@ -75,30 +68,25 @@ mod test {
     }
 
     #[test]
-    fn test_cauchy_median() {
+    #[cfg(not(miri))] 
+    fn test_cauchy_averages() {
+        
+        
         let cauchy = Cauchy::new(10.0, 5.0);
-        let mut rng = ::test::rng(123);
+        let mut rng = crate::test::rng(123);
         let mut numbers: [f64; 1000] = [0.0; 1000];
+        let mut sum = 0.0;
         for i in 0..1000 {
             numbers[i] = cauchy.sample(&mut rng);
+            sum += numbers[i];
         }
         let median = median(&mut numbers);
         println!("Cauchy median: {}", median);
-        assert!((median - 10.0).abs() < 0.5); 
-    }
-
-    #[test]
-    fn test_cauchy_mean() {
-        let cauchy = Cauchy::new(10.0, 5.0);
-        let mut rng = ::test::rng(123);
-        let mut sum = 0.0;
-        for _ in 0..1000 {
-            sum += cauchy.sample(&mut rng);
-        }
+        assert!((median - 10.0).abs() < 0.4); 
         let mean = sum / 1000.0;
         println!("Cauchy mean: {}", mean);
         
-        assert!((mean - 10.0).abs() > 0.5); 
+        assert!((mean - 10.0).abs() > 0.4); 
     }
 
     #[test]

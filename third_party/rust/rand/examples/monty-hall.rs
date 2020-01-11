@@ -26,13 +26,10 @@
 
 
 
-#![cfg(feature="std")]
+#![cfg(feature = "std")]
 
-
-extern crate rand;
-
-use rand::Rng;
 use rand::distributions::{Distribution, Uniform};
+use rand::Rng;
 
 struct SimulationResult {
     win: bool,
@@ -40,8 +37,7 @@ struct SimulationResult {
 }
 
 
-fn simulate<R: Rng>(random_door: &Uniform<u32>, rng: &mut R)
-                    -> SimulationResult {
+fn simulate<R: Rng>(random_door: &Uniform<u32>, rng: &mut R) -> SimulationResult {
     let car = random_door.sample(rng);
 
     

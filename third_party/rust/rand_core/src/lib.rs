@@ -35,28 +35,27 @@
 #![deny(missing_debug_implementations)]
 #![doc(test(attr(allow(unused_variables), deny(warnings))))]
 
-#![cfg_attr(not(feature="std"), no_std)]
-#![cfg_attr(all(feature="alloc", not(feature="std")), feature(alloc))]
+#![allow(clippy::unreadable_literal)]
 
-#[cfg(feature="std")] extern crate core;
-#[cfg(all(feature = "alloc", not(feature="std")))] extern crate alloc;
-#[cfg(feature="serde1")] extern crate serde;
-#[cfg(feature="serde1")] #[macro_use] extern crate serde_derive;
+#![cfg_attr(not(feature="std"), no_std)]
 
 
 use core::default::Default;
 use core::convert::AsMut;
 use core::ptr::copy_nonoverlapping;
 
+#[cfg(all(feature="alloc", not(feature="std")))] extern crate alloc;
 #[cfg(all(feature="alloc", not(feature="std")))] use alloc::boxed::Box;
 
-pub use error::{ErrorKind, Error};
+pub use error::Error;
+#[cfg(feature="getrandom")] pub use os::OsRng;
 
 
 mod error;
 pub mod block;
 pub mod impls;
 pub mod le;
+#[cfg(feature="getrandom")] mod os;
 
 
 
@@ -214,10 +213,6 @@ pub trait CryptoRng {}
 
 
 
-
-
-
-
 pub trait SeedableRng: Sized {
     
     
@@ -266,6 +261,10 @@ pub trait SeedableRng: Sized {
     
     type Seed: Sized + Default + AsMut<[u8]>;
 
+    
+    
+    
+    
     
     
     
@@ -353,17 +352,33 @@ pub trait SeedableRng: Sized {
     
     
     
-    
-    
-    
-    
-    
-    
-    
     fn from_rng<R: RngCore>(mut rng: R) -> Result<Self, Error> {
         let mut seed = Self::Seed::default();
         rng.try_fill_bytes(seed.as_mut())?;
         Ok(Self::from_seed(seed))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature="getrandom")]
+    fn from_entropy() -> Self {
+        let mut seed = Self::Seed::default();
+        if let Err(err) = getrandom::getrandom(seed.as_mut()) {
+            panic!("from_entropy failed: {}", err);
+        }
+        Self::from_seed(seed)
     }
 }
 
@@ -419,7 +434,7 @@ impl<R: RngCore + ?Sized> RngCore for Box<R> {
 }
 
 #[cfg(feature="std")]
-impl std::io::Read for RngCore {
+impl std::io::Read for dyn RngCore {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, std::io::Error> {
         self.try_fill_bytes(buf)?;
         Ok(buf.len())

@@ -10,8 +10,9 @@
 
 
 use std::io::Read;
+use std::fmt;
 
-use rand_core::{RngCore, Error, ErrorKind, impls};
+use rand_core::{RngCore, Error, impls};
 
 
 
@@ -71,24 +72,33 @@ impl<R: Read> RngCore for ReadRng<R> {
     }
 
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-        if dest.len() == 0 { return Ok(()); }
+        if dest.is_empty() { return Ok(()); }
         
-        self.reader.read_exact(dest).map_err(|err| {
-            match err.kind() {
-                ::std::io::ErrorKind::UnexpectedEof => Error::with_cause(
-                    ErrorKind::Unavailable,
-                    "not enough bytes available, reached end of source", err),
-                _ => Error::with_cause(ErrorKind::Unavailable,
-                    "error reading from Read source", err)
-            }
-        })
+        self.reader.read_exact(dest).map_err(|e| Error::new(ReadError(e)))
     }
 }
+
+
+#[derive(Debug)]
+pub struct ReadError(std::io::Error);
+
+impl fmt::Display for ReadError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "ReadError: {}", self.0)
+    }
+}
+
+impl std::error::Error for ReadError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.0)
+    }
+}
+
 
 #[cfg(test)]
 mod test {
     use super::ReadRng;
-    use {RngCore, ErrorKind};
+    use crate::RngCore;
 
     #[test]
     fn test_reader_rng_u64() {
@@ -131,6 +141,8 @@ mod test {
 
         let mut rng = ReadRng::new(&v[..]);
 
-        assert!(rng.try_fill_bytes(&mut w).err().unwrap().kind == ErrorKind::Unavailable);
+        let result = rng.try_fill_bytes(&mut w);
+        assert!(result.is_err());
+        println!("Error: {}", result.unwrap_err());
     }
 }

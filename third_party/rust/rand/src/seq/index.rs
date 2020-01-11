@@ -11,13 +11,13 @@
 #[cfg(feature="alloc")] use core::slice;
 
 #[cfg(feature="std")] use std::vec;
-#[cfg(all(feature="alloc", not(feature="std")))] use alloc::vec::{self, Vec};
+#[cfg(all(feature="alloc", not(feature="std")))] use crate::alloc::vec::{self, Vec};
 
 #[cfg(feature="std")] use std::collections::{HashSet};
-#[cfg(all(feature="alloc", not(feature="std")))] use alloc::collections::BTreeSet;
+#[cfg(all(feature="alloc", not(feature="std")))] use crate::alloc::collections::BTreeSet;
 
-#[cfg(feature="alloc")] use distributions::{Distribution, Uniform};
-use Rng;
+#[cfg(feature="alloc")] use crate::distributions::{Distribution, Uniform, uniform::SampleUniform};
+use crate::Rng;
 
 
 
@@ -30,10 +30,20 @@ pub enum IndexVec {
 
 impl IndexVec {
     
+    #[inline]
     pub fn len(&self) -> usize {
-        match self {
-            &IndexVec::U32(ref v) => v.len(),
-            &IndexVec::USize(ref v) => v.len(),
+        match *self {
+            IndexVec::U32(ref v) => v.len(),
+            IndexVec::USize(ref v) => v.len(),
+        }
+    }
+
+    
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        match *self {
+            IndexVec::U32(ref v) => v.is_empty(),
+            IndexVec::USize(ref v) => v.is_empty(),
         }
     }
 
@@ -41,14 +51,16 @@ impl IndexVec {
     
     
     
+    #[inline]
     pub fn index(&self, index: usize) -> usize {
-        match self {
-            &IndexVec::U32(ref v) => v[index] as usize,
-            &IndexVec::USize(ref v) => v[index],
+        match *self {
+            IndexVec::U32(ref v) => v[index] as usize,
+            IndexVec::USize(ref v) => v[index],
         }
     }
 
     
+    #[inline]
     pub fn into_vec(self) -> Vec<usize> {
         match self {
             IndexVec::U32(v) => v.into_iter().map(|i| i as usize).collect(),
@@ -57,14 +69,16 @@ impl IndexVec {
     }
 
     
-    pub fn iter<'a>(&'a self) -> IndexVecIter<'a> {
-        match self {
-            &IndexVec::U32(ref v) => IndexVecIter::U32(v.iter()),
-            &IndexVec::USize(ref v) => IndexVecIter::USize(v.iter()),
+    #[inline]
+    pub fn iter(&self) -> IndexVecIter<'_> {
+        match *self {
+            IndexVec::U32(ref v) => IndexVecIter::U32(v.iter()),
+            IndexVec::USize(ref v) => IndexVecIter::USize(v.iter()),
         }
     }
 
     
+    #[inline]
     pub fn into_iter(self) -> IndexVecIntoIter {
         match self {
             IndexVec::U32(v) => IndexVecIntoIter::U32(v.into_iter()),
@@ -88,12 +102,14 @@ impl PartialEq for IndexVec {
 }
 
 impl From<Vec<u32>> for IndexVec {
+    #[inline]
     fn from(v: Vec<u32>) -> Self {
         IndexVec::U32(v)
     }
 }
 
 impl From<Vec<usize>> for IndexVec {
+    #[inline]
     fn from(v: Vec<usize>) -> Self {
         IndexVec::USize(v)
     }
@@ -108,18 +124,20 @@ pub enum IndexVecIter<'a> {
 
 impl<'a> Iterator for IndexVecIter<'a> {
     type Item = usize;
+    #[inline]
     fn next(&mut self) -> Option<usize> {
         use self::IndexVecIter::*;
-        match self {
-            &mut U32(ref mut iter) => iter.next().map(|i| *i as usize),
-            &mut USize(ref mut iter) => iter.next().cloned(),
+        match *self {
+            U32(ref mut iter) => iter.next().map(|i| *i as usize),
+            USize(ref mut iter) => iter.next().cloned(),
         }
     }
 
+    #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
-        match self {
-            &IndexVecIter::U32(ref v) => v.size_hint(),
-            &IndexVecIter::USize(ref v) => v.size_hint(),
+        match *self {
+            IndexVecIter::U32(ref v) => v.size_hint(),
+            IndexVecIter::USize(ref v) => v.size_hint(),
         }
     }
 }
@@ -136,19 +154,21 @@ pub enum IndexVecIntoIter {
 impl Iterator for IndexVecIntoIter {
     type Item = usize;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         use self::IndexVecIntoIter::*;
-        match self {
-            &mut U32(ref mut v) => v.next().map(|i| i as usize),
-            &mut USize(ref mut v) => v.next(),
+        match *self {
+            U32(ref mut v) => v.next().map(|i| i as usize),
+            USize(ref mut v) => v.next(),
         }
     }
 
+    #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         use self::IndexVecIntoIter::*;
-        match self {
-            &U32(ref v) => v.size_hint(),
-            &USize(ref v) => v.size_hint(),
+        match *self {
+            U32(ref v) => v.size_hint(),
+            USize(ref v) => v.size_hint(),
         }
     }
 }
@@ -179,8 +199,7 @@ impl ExactSizeIterator for IndexVecIntoIter {}
 
 
 pub fn sample<R>(rng: &mut R, length: usize, amount: usize) -> IndexVec
-    where R: Rng + ?Sized,
-{
+where R: Rng + ?Sized {
     if amount > length {
         panic!("`amount` of samples must be less than or equal to `length`");
     }
@@ -213,9 +232,7 @@ pub fn sample<R>(rng: &mut R, length: usize, amount: usize) -> IndexVec
         if (length as f32) < C[j] * (amount as f32) {
             sample_inplace(rng, length, amount)
         } else {
-            
-            
-            sample_rejection(rng, length as usize, amount as usize)
+            sample_rejection(rng, length, amount)
         }
     }
 }
@@ -227,8 +244,7 @@ pub fn sample<R>(rng: &mut R, length: usize, amount: usize) -> IndexVec
 
 
 fn sample_floyd<R>(rng: &mut R, length: u32, amount: u32) -> IndexVec
-    where R: Rng + ?Sized,
-{
+where R: Rng + ?Sized {
     
     
     
@@ -243,11 +259,9 @@ fn sample_floyd<R>(rng: &mut R, length: u32, amount: u32) -> IndexVec
                 indices.insert(pos, j);
                 continue;
             }
-        } else {
-            if indices.contains(&t) {
-                indices.push(j);
-                continue;
-            }
+        } else if indices.contains(&t) {
+            indices.push(j);
+            continue;
         }
         indices.push(t);
     }
@@ -274,8 +288,7 @@ fn sample_floyd<R>(rng: &mut R, length: u32, amount: u32) -> IndexVec
 
 
 fn sample_inplace<R>(rng: &mut R, length: u32, amount: u32) -> IndexVec
-    where R: Rng + ?Sized,
-{
+where R: Rng + ?Sized {
     debug_assert!(amount <= length);
     let mut indices: Vec<u32> = Vec::with_capacity(length as usize);
     indices.extend(0..length);
@@ -288,21 +301,36 @@ fn sample_inplace<R>(rng: &mut R, length: u32, amount: u32) -> IndexVec
     IndexVec::from(indices)
 }
 
+trait UInt: Copy + PartialOrd + Ord + PartialEq + Eq + SampleUniform + core::hash::Hash {
+    fn zero() -> Self;
+    fn as_usize(self) -> usize;
+}
+impl UInt for u32 {
+    #[inline] fn zero() -> Self { 0 }
+    #[inline] fn as_usize(self) -> usize { self as usize }
+}
+impl UInt for usize {
+    #[inline] fn zero() -> Self { 0 }
+    #[inline] fn as_usize(self) -> usize { self }
+}
 
 
 
 
 
 
-fn sample_rejection<R>(rng: &mut R, length: usize, amount: usize) -> IndexVec
-    where R: Rng + ?Sized,
-{
+
+
+
+
+fn sample_rejection<X: UInt, R>(rng: &mut R, length: X, amount: X) -> IndexVec
+where R: Rng + ?Sized, IndexVec: From<Vec<X>> {
     debug_assert!(amount < length);
-    #[cfg(feature="std")] let mut cache = HashSet::with_capacity(amount);
+    #[cfg(feature="std")] let mut cache = HashSet::with_capacity(amount.as_usize());
     #[cfg(not(feature="std"))] let mut cache = BTreeSet::new();
-    let distr = Uniform::new(0, length);
-    let mut indices = Vec::with_capacity(amount);
-    for _ in 0..amount {
+    let distr = Uniform::new(X::zero(), length);
+    let mut indices = Vec::with_capacity(amount.as_usize());
+    for _ in 0..amount.as_usize() {
         let mut pos = distr.sample(rng);
         while !cache.insert(pos) {
             pos = distr.sample(rng);
@@ -310,30 +338,32 @@ fn sample_rejection<R>(rng: &mut R, length: usize, amount: usize) -> IndexVec
         indices.push(pos);
     }
 
-    debug_assert_eq!(indices.len(), amount);
+    debug_assert_eq!(indices.len(), amount.as_usize());
     IndexVec::from(indices)
 }
 
 #[cfg(test)]
 mod test {
+    #[cfg(feature="std")] use std::vec;
+    #[cfg(all(feature="alloc", not(feature="std")))] use crate::alloc::vec;
     use super::*;
 
     #[test]
     fn test_sample_boundaries() {
-        let mut r = ::test::rng(404);
+        let mut r = crate::test::rng(404);
 
         assert_eq!(sample_inplace(&mut r, 0, 0).len(), 0);
         assert_eq!(sample_inplace(&mut r, 1, 0).len(), 0);
         assert_eq!(sample_inplace(&mut r, 1, 1).into_vec(), vec![0]);
 
-        assert_eq!(sample_rejection(&mut r, 1, 0).len(), 0);
+        assert_eq!(sample_rejection(&mut r, 1u32, 0).len(), 0);
 
         assert_eq!(sample_floyd(&mut r, 0, 0).len(), 0);
         assert_eq!(sample_floyd(&mut r, 1, 0).len(), 0);
         assert_eq!(sample_floyd(&mut r, 1, 1).into_vec(), vec![0]);
 
         
-        let sum: usize = sample_rejection(&mut r, 1 << 25, 10)
+        let sum: usize = sample_rejection(&mut r, 1 << 25, 10u32)
                 .into_iter().sum();
         assert!(1 << 25 < sum && sum < (1 << 25) * 25);
 
@@ -343,8 +373,9 @@ mod test {
     }
 
     #[test]
+    #[cfg(not(miri))] 
     fn test_sample_alg() {
-        let seed_rng = ::test::rng;
+        let seed_rng = crate::test::rng;
 
         
         
@@ -371,7 +402,7 @@ mod test {
         
         let (length, amount): (usize, usize) = (1<<20, 600);
         let v1 = sample(&mut seed_rng(422), length, amount);
-        let v2 = sample_rejection(&mut seed_rng(422), length, amount);
+        let v2 = sample_rejection(&mut seed_rng(422), length as u32, amount as u32);
         assert!(v1.iter().all(|e| e < length));
         assert_eq!(v1, v2);
     }

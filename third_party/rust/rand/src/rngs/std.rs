@@ -8,11 +8,15 @@
 
 
 
-use {RngCore, CryptoRng, Error, SeedableRng};
-use rand_hc::Hc128Rng;
+use crate::{RngCore, CryptoRng, Error, SeedableRng};
 
+#[cfg(all(any(test, feature = "std"), target_os = "emscripten"))]
+pub(crate) use rand_hc::Hc128Core as Core;
+#[cfg(all(any(test, feature = "std"), not(target_os = "emscripten")))]
+pub(crate) use rand_chacha::ChaCha20Core as Core;
 
-
+#[cfg(target_os = "emscripten")] use rand_hc::Hc128Rng as Rng;
+#[cfg(not(target_os = "emscripten"))] use rand_chacha::ChaCha20Rng as Rng;
 
 
 
@@ -30,7 +34,7 @@ use rand_hc::Hc128Rng;
 
 
 #[derive(Clone, Debug)]
-pub struct StdRng(Hc128Rng);
+pub struct StdRng(Rng);
 
 impl RngCore for StdRng {
     #[inline(always)]
@@ -43,24 +47,28 @@ impl RngCore for StdRng {
         self.0.next_u64()
     }
 
+    #[inline(always)]
     fn fill_bytes(&mut self, dest: &mut [u8]) {
         self.0.fill_bytes(dest);
     }
 
+    #[inline(always)]
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
         self.0.try_fill_bytes(dest)
     }
 }
 
 impl SeedableRng for StdRng {
-    type Seed = <Hc128Rng as SeedableRng>::Seed;
+    type Seed = <Rng as SeedableRng>::Seed;
 
+    #[inline(always)]
     fn from_seed(seed: Self::Seed) -> Self {
-        StdRng(Hc128Rng::from_seed(seed))
+        StdRng(Rng::from_seed(seed))
     }
 
+    #[inline(always)]
     fn from_rng<R: RngCore>(rng: R) -> Result<Self, Error> {
-        Hc128Rng::from_rng(rng).map(StdRng)
+        Rng::from_rng(rng).map(StdRng)
     }
 }
 
@@ -69,17 +77,27 @@ impl CryptoRng for StdRng {}
 
 #[cfg(test)]
 mod test {
-    use {RngCore, SeedableRng};
-    use rngs::StdRng;
+    use crate::{RngCore, SeedableRng};
+    use crate::rngs::StdRng;
 
     #[test]
     fn test_stdrng_construction() {
+        
+        
         let seed = [1,0,0,0, 23,0,0,0, 200,1,0,0, 210,30,0,0,
                     0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0];
-        let mut rng1 = StdRng::from_seed(seed);
-        assert_eq!(rng1.next_u64(), 15759097995037006553);
 
-        let mut rng2 = StdRng::from_rng(rng1).unwrap();
-        assert_eq!(rng2.next_u64(), 6766915756997287454);
+        #[cfg(any(feature="stdrng_strong", not(feature="stdrng_fast")))]
+        let target = [3950704604716924505, 5573172343717151650];
+        #[cfg(all(not(feature="stdrng_strong"), feature="stdrng_fast"))]
+        let target = [10719222850664546238, 14064965282130556830];
+        
+        let mut rng0 = StdRng::from_seed(seed);
+        let x0 = rng0.next_u64();
+
+        let mut rng1 = StdRng::from_rng(rng0).unwrap();
+        let x1 = rng1.next_u64();
+
+        assert_eq!([x0, x1], target);
     }
 }

@@ -12,17 +12,8 @@
 
 use core::mem::size_of;
 
-use rand_core::{RngCore, CryptoRng, SeedableRng, Error, ErrorKind};
+use rand_core::{RngCore, CryptoRng, SeedableRng, Error};
 use rand_core::block::{BlockRngCore, BlockRng};
-
-
-
-
-
-
-
-
-
 
 
 
@@ -234,6 +225,7 @@ where R: BlockRngCore + SeedableRng,
                            results: &mut <Self as BlockRngCore>::Results,
                            global_fork_counter: usize)
     {
+        #![allow(clippy::if_same_then_else)]  
         if self.is_forked(global_fork_counter) {
             info!("Fork detected, reseeding RNG");
         } else {
@@ -243,21 +235,13 @@ where R: BlockRngCore + SeedableRng,
         let num_bytes =
             results.as_ref().len() * size_of::<<R as BlockRngCore>::Item>();
 
-        let threshold = if let Err(e) = self.reseed() {
-            let delay = match e.kind {
-                ErrorKind::Transient => num_bytes as i64,
-                kind @ _ if kind.should_retry() => self.threshold >> 8,
-                _ => self.threshold,
-            };
-            warn!("Reseeding RNG delayed reseeding by {} bytes due to \
-                   error from source: {}", delay, e);
-            delay
-        } else {
-            self.fork_counter = global_fork_counter;
-            self.threshold
-        };
+        if let Err(e) = self.reseed() {
+            warn!("Reseeding RNG failed: {}", e);
+            let _ = e;
+        }
+        self.fork_counter = global_fork_counter;
 
-        self.bytes_until_reseed = threshold - num_bytes as i64;
+        self.bytes_until_reseed = self.threshold - num_bytes as i64;
         self.inner.generate(results);
     }
 }
@@ -282,13 +266,12 @@ where R: BlockRngCore + SeedableRng + CryptoRng,
       Rsdr: RngCore + CryptoRng {}
 
 
-#[cfg(all(feature="std", unix, not(target_os="emscripten")))]
+#[cfg(all(unix, not(target_os="emscripten")))]
 mod fork {
-    extern crate libc;
+    use core::sync::atomic::{AtomicUsize, AtomicBool, Ordering};
+    #[allow(deprecated)]  
+    use core::sync::atomic::{ATOMIC_USIZE_INIT, ATOMIC_BOOL_INIT};
 
-    use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT, Ordering};
-    use std::sync::atomic::{AtomicBool, ATOMIC_BOOL_INIT};
-
     
     
     
@@ -301,12 +284,14 @@ mod fork {
     
     
 
+    #[allow(deprecated)]
     static RESEEDING_RNG_FORK_COUNTER: AtomicUsize = ATOMIC_USIZE_INIT;
 
     pub fn get_fork_counter() -> usize {
         RESEEDING_RNG_FORK_COUNTER.load(Ordering::Relaxed)
     }
 
+    #[allow(deprecated)]
     static FORK_HANDLER_REGISTERED: AtomicBool = ATOMIC_BOOL_INIT;
 
     extern fn fork_handler() {
@@ -316,14 +301,14 @@ mod fork {
     }
 
     pub fn register_fork_handler() {
-        if FORK_HANDLER_REGISTERED.load(Ordering::Relaxed) == false {
+        if !FORK_HANDLER_REGISTERED.load(Ordering::Relaxed) {
             unsafe { libc::pthread_atfork(None, None, Some(fork_handler)) };
             FORK_HANDLER_REGISTERED.store(true, Ordering::Relaxed);
         }
     }
 }
 
-#[cfg(not(all(feature="std", unix, not(target_os="emscripten"))))]
+#[cfg(not(all(unix, not(target_os="emscripten"))))]
 mod fork {
     pub fn get_fork_counter() -> usize { 0 }
     pub fn register_fork_handler() {}
@@ -332,25 +317,27 @@ mod fork {
 
 #[cfg(test)]
 mod test {
-    use {Rng, SeedableRng};
-    use rand_chacha::ChaChaCore;
-    use rngs::mock::StepRng;
+    use crate::{Rng, SeedableRng};
+    use crate::rngs::std::Core;
+    use crate::rngs::mock::StepRng;
     use super::ReseedingRng;
 
     #[test]
     fn test_reseeding() {
         let mut zero = StepRng::new(0, 0);
-        let rng = ChaChaCore::from_rng(&mut zero).unwrap();
-        let mut reseeding = ReseedingRng::new(rng, 32*4, zero);
+        let rng = Core::from_rng(&mut zero).unwrap();
+        let thresh = 1; 
+        let mut reseeding = ReseedingRng::new(rng, thresh, zero);
 
         
         
-        let mut buf = [0u32; 32]; 
-                                  
-        reseeding.fill(&mut buf);
+        let mut buf = ([0u32; 32], [0u32; 32]);
+        reseeding.fill(&mut buf.0);
+        reseeding.fill(&mut buf.1);
         let seq = buf;
         for _ in 0..10 {
-            reseeding.fill(&mut buf);
+            reseeding.fill(&mut buf.0);
+            reseeding.fill(&mut buf.1);
             assert_eq!(buf, seq);
         }
     }
@@ -358,7 +345,7 @@ mod test {
     #[test]
     fn test_clone_reseeding() {
         let mut zero = StepRng::new(0, 0);
-        let rng = ChaChaCore::from_rng(&mut zero).unwrap();
+        let rng = Core::from_rng(&mut zero).unwrap();
         let mut rng1 = ReseedingRng::new(rng, 32*4, zero);
 
         let first: u32 = rng1.gen();

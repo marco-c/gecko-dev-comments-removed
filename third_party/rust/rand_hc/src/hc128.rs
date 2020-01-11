@@ -63,27 +63,26 @@ const SEED_WORDS: usize = 8;
 
 
 
-
-
-
 #[derive(Clone, Debug)]
 pub struct Hc128Rng(BlockRng<Hc128Core>);
 
 impl RngCore for Hc128Rng {
-    #[inline(always)]
+    #[inline]
     fn next_u32(&mut self) -> u32 {
         self.0.next_u32()
     }
 
-    #[inline(always)]
+    #[inline]
     fn next_u64(&mut self) -> u64 {
         self.0.next_u64()
     }
 
+    #[inline]
     fn fill_bytes(&mut self, dest: &mut [u8]) {
         self.0.fill_bytes(dest)
     }
 
+    #[inline]
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
         self.0.try_fill_bytes(dest)
     }
@@ -92,10 +91,12 @@ impl RngCore for Hc128Rng {
 impl SeedableRng for Hc128Rng {
     type Seed = <Hc128Core as SeedableRng>::Seed;
 
+    #[inline]
     fn from_seed(seed: Self::Seed) -> Self {
         Hc128Rng(BlockRng::<Hc128Core>::from_seed(seed))
     }
 
+    #[inline]
     fn from_rng<R: RngCore>(rng: R) -> Result<Self, Error> {
         BlockRng::<Hc128Core>::from_rng(rng).map(Hc128Rng)
     }
@@ -271,6 +272,7 @@ impl Hc128Core {
     
     
     
+    #[inline(always)]   
     fn init(seed: [u32; SEED_WORDS]) -> Self {
         #[inline]
         fn f1(x: u32) -> u32 {

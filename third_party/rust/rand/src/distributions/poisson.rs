@@ -8,25 +8,17 @@
 
 
 
+#![allow(deprecated)]
 
-use Rng;
-use distributions::{Distribution, Cauchy};
-use distributions::utils::log_gamma;
-
-
-
+use crate::Rng;
+use crate::distributions::{Distribution, Cauchy};
+use crate::distributions::utils::log_gamma;
 
 
 
 
 
-
-
-
-
-
-
-
+#[deprecated(since="0.7.0", note="moved to rand_distr crate")]
 #[derive(Clone, Copy, Debug)]
 pub struct Poisson {
     lambda: f64,
@@ -113,13 +105,14 @@ impl Distribution<u64> for Poisson {
 
 #[cfg(test)]
 mod test {
-    use distributions::Distribution;
+    use crate::distributions::Distribution;
     use super::Poisson;
 
     #[test]
+    #[cfg(not(miri))] 
     fn test_poisson_10() {
         let poisson = Poisson::new(10.0);
-        let mut rng = ::test::rng(123);
+        let mut rng = crate::test::rng(123);
         let mut sum = 0;
         for _ in 0..1000 {
             sum += poisson.sample(&mut rng);
@@ -130,10 +123,11 @@ mod test {
     }
 
     #[test]
+    #[cfg(not(miri))] 
     fn test_poisson_15() {
         
         let poisson = Poisson::new(15.0);
-        let mut rng = ::test::rng(123);
+        let mut rng = crate::test::rng(123);
         let mut sum = 0;
         for _ in 0..1000 {
             sum += poisson.sample(&mut rng);
