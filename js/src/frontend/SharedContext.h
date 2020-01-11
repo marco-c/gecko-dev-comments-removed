@@ -520,8 +520,7 @@ class FunctionBox : public ObjectBox, public SharedContext {
                             HasHeritage hasHeritage);
 
   inline bool isLazyFunctionWithoutEnclosingScope() const {
-    return isInterpretedLazy() &&
-           !function()->lazyScript()->hasEnclosingScope();
+    return isInterpretedLazy() && !function()->enclosingScope();
   }
   void setEnclosingScopeForInnerLazyFunction(Scope* enclosingScope);
   void finish();
@@ -560,9 +559,8 @@ class FunctionBox : public ObjectBox, public SharedContext {
     
     
     
-    MOZ_ASSERT_IF(
-        isInterpretedLazy() && function()->lazyScript()->hasEnclosingScope(),
-        enclosingScope_ == function()->lazyScript()->enclosingScope());
+    MOZ_ASSERT_IF(isInterpretedLazy() && function()->enclosingScope(),
+                  enclosingScope_ == function()->enclosingScope());
 
     
     
