@@ -36,8 +36,9 @@ enum class MediaControlKeysEvent : uint32_t {
 
 
 
-class MediaControlKeysEventListener : public nsISupports {
+class MediaControlKeysEventListener {
  public:
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
   MediaControlKeysEventListener() = default;
 
   virtual void OnKeyPressed(MediaControlKeysEvent aKeyEvent) = 0;
@@ -52,8 +53,7 @@ class MediaControlKeysEventListener : public nsISupports {
 
 class MediaControlKeysHandler final : public MediaControlKeysEventListener {
  public:
-  NS_DECL_ISUPPORTS
-
+  NS_INLINE_DECL_REFCOUNTING(MediaControlKeysHandler, override)
   void OnKeyPressed(MediaControlKeysEvent aKeyEvent) override;
 
  private:
@@ -65,10 +65,9 @@ class MediaControlKeysHandler final : public MediaControlKeysEventListener {
 
 
 
-class MediaControlKeysEventSource : public nsISupports {
+class MediaControlKeysEventSource {
  public:
-  NS_DECL_ISUPPORTS
-
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
   MediaControlKeysEventSource() = default;
 
   virtual void AddListener(MediaControlKeysEventListener* aListener);
