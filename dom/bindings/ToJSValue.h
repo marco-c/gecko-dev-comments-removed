@@ -41,8 +41,8 @@ MOZ_MUST_USE bool ToJSValue(JSContext* aCx, const nsAString& aArgument,
 
 
 template <typename T>
-MOZ_MUST_USE typename std::enable_if<std::is_same<T, bool>::value, bool>::type
-ToJSValue(JSContext* aCx, T aArgument, JS::MutableHandle<JS::Value> aValue) {
+MOZ_MUST_USE std::enable_if_t<std::is_same<T, bool>::value, bool> ToJSValue(
+    JSContext* aCx, T aArgument, JS::MutableHandle<JS::Value> aValue) {
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
 
@@ -120,8 +120,7 @@ MOZ_MUST_USE inline bool ToJSValue(JSContext* aCx, CallbackObject& aArgument,
 
 
 template <class T>
-MOZ_MUST_USE typename std::enable_if<std::is_base_of<nsWrapperCache, T>::value,
-                                     bool>::type
+MOZ_MUST_USE std::enable_if_t<std::is_base_of<nsWrapperCache, T>::value, bool>
 ToJSValue(JSContext* aCx, T& aArgument, JS::MutableHandle<JS::Value> aValue) {
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
@@ -135,8 +134,7 @@ ToJSValue(JSContext* aCx, T& aArgument, JS::MutableHandle<JS::Value> aValue) {
 namespace binding_detail {
 template <class T>
 MOZ_MUST_USE
-    typename std::enable_if<std::is_base_of<NonRefcountedDOMObject, T>::value,
-                            bool>::type
+    std::enable_if_t<std::is_base_of<NonRefcountedDOMObject, T>::value, bool>
     ToJSValueFromPointerHelper(JSContext* aCx, T* aArgument,
                                JS::MutableHandle<JS::Value> aValue) {
   
@@ -164,8 +162,7 @@ MOZ_MUST_USE
 
 template <class T>
 MOZ_MUST_USE
-    typename std::enable_if<std::is_base_of<NonRefcountedDOMObject, T>::value,
-                            bool>::type
+    std::enable_if_t<std::is_base_of<NonRefcountedDOMObject, T>::value, bool>
     ToJSValue(JSContext* aCx, nsAutoPtr<T>&& aArgument,
               JS::MutableHandle<JS::Value> aValue) {
   if (!binding_detail::ToJSValueFromPointerHelper(aCx, aArgument.get(),
@@ -182,8 +179,7 @@ MOZ_MUST_USE
 
 template <class T>
 MOZ_MUST_USE
-    typename std::enable_if<std::is_base_of<NonRefcountedDOMObject, T>::value,
-                            bool>::type
+    std::enable_if_t<std::is_base_of<NonRefcountedDOMObject, T>::value, bool>
     ToJSValue(JSContext* aCx, UniquePtr<T>&& aArgument,
               JS::MutableHandle<JS::Value> aValue) {
   if (!binding_detail::ToJSValueFromPointerHelper(aCx, aArgument.get(),
@@ -217,13 +213,11 @@ MOZ_MUST_USE
 
 
 template <class T>
-MOZ_MUST_USE
-    typename std::enable_if<!std::is_base_of<nsWrapperCache, T>::value &&
-                                !std::is_base_of<CallbackObject, T>::value &&
-                                std::is_base_of<nsISupports, T>::value,
-                            bool>::type
-    ToJSValue(JSContext* aCx, T& aArgument,
-              JS::MutableHandle<JS::Value> aValue) {
+MOZ_MUST_USE std::enable_if_t<!std::is_base_of<nsWrapperCache, T>::value &&
+                                  !std::is_base_of<CallbackObject, T>::value &&
+                                  std::is_base_of<nsISupports, T>::value,
+                              bool>
+ToJSValue(JSContext* aCx, T& aArgument, JS::MutableHandle<JS::Value> aValue) {
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
 
@@ -256,8 +250,7 @@ MOZ_MUST_USE bool ToJSValue(JSContext* aCx, const NonNull<T>& aArgument,
 
 
 template <class T>
-MOZ_MUST_USE typename std::enable_if<std::is_base_of<DictionaryBase, T>::value,
-                                     bool>::type
+MOZ_MUST_USE std::enable_if_t<std::is_base_of<DictionaryBase, T>::value, bool>
 ToJSValue(JSContext* aCx, const T& aArgument,
           JS::MutableHandle<JS::Value> aValue) {
   return aArgument.ToObjectInternal(aCx, aValue);
@@ -316,8 +309,7 @@ MOZ_MUST_USE bool ToJSValue(JSContext* aCx, ErrorResult& aArgument,
 
 template <typename T>
 MOZ_MUST_USE
-    typename std::enable_if<std::is_base_of<AllOwningUnionBase, T>::value,
-                            bool>::type
+    std::enable_if_t<std::is_base_of<AllOwningUnionBase, T>::value, bool>
     ToJSValue(JSContext* aCx, const T& aArgument,
               JS::MutableHandle<JS::Value> aValue) {
   JS::Rooted<JSObject*> global(aCx, JS::CurrentGlobalOrNull(aCx));
@@ -326,8 +318,8 @@ MOZ_MUST_USE
 
 
 template <typename T>
-MOZ_MUST_USE typename std::enable_if<std::is_pointer<T>::value, bool>::type
-ToJSValue(JSContext* aCx, T aArgument, JS::MutableHandle<JS::Value> aValue) {
+MOZ_MUST_USE std::enable_if_t<std::is_pointer<T>::value, bool> ToJSValue(
+    JSContext* aCx, T aArgument, JS::MutableHandle<JS::Value> aValue) {
   return ToJSValue(aCx, *aArgument, aValue);
 }
 
