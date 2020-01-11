@@ -4,18 +4,6 @@ self.GLOBAL = {
 };
 importScripts("/resources/testharness.js");
 
-self.addEventListener('install', (event) => {
-  event.waitUntil((async () => {
-    try {
-      await cookieStore.subscribeToChanges([]);
-
-      
-      
-      
-    } catch (err) {}
-  })());
-});
-
 
 const kServiceWorkerActivatedPromise = new Promise(resolve => {
   self.addEventListener('activate', event => { resolve(); });
@@ -24,9 +12,9 @@ const kServiceWorkerActivatedPromise = new Promise(resolve => {
 promise_test(async testCase => {
   await kServiceWorkerActivatedPromise;
 
-  const subscriptions = await cookieStore.getChangeSubscriptions();
+  const subscriptions = await registration.cookies.getSubscriptions();
   assert_equals(subscriptions.length, 0);
 
-}, 'getChangeSubscriptions returns an empty array when there are no subscriptions');
+}, 'getSubscriptions returns an empty array when there are no subscriptions');
 
 done();

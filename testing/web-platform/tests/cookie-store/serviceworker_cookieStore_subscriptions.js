@@ -4,26 +4,6 @@ self.GLOBAL = {
 };
 importScripts("/resources/testharness.js");
 
-self.addEventListener('install', (event) => {
-  event.waitUntil((async () => {
-    
-    
-    
-    try {
-      await cookieStore.subscribeToChanges([
-        { name: 'cookie-name1', matchType: 'equals', url: '/cookie-store/path1' }]);
-      await cookieStore.subscribeToChanges([
-        { },  
-        { name: 'cookie-prefix', matchType: 'starts-with' },
-      ]);
-
-      
-      
-      
-    } catch (err) {}
-  })());
-});
-
 
 const kServiceWorkerActivatedPromise = new Promise(resolve => {
   self.addEventListener('activate', event => { resolve(); });
@@ -41,7 +21,23 @@ function CompareStrings(a, b) {
 promise_test(async testCase => {
   await kServiceWorkerActivatedPromise;
 
-  const subscriptions = await cookieStore.getChangeSubscriptions();
+  {
+    const subscriptions = [
+      { name: 'cookie-name1', matchType: 'equals', url: '/cookie-store/path1' },
+    ];
+    await registration.cookies.subscribe(subscriptions);
+    testCase.add_cleanup(() => registration.cookies.unsubscribe(subscriptions));
+  }
+  {
+    const subscriptions = [
+      { },  
+      { name: 'cookie-prefix', matchType: 'starts-with' },
+    ];
+    await registration.cookies.subscribe(subscriptions);
+    testCase.add_cleanup(() => registration.cookies.unsubscribe(subscriptions));
+  }
+
+  const subscriptions = await registration.cookies.getSubscriptions();
   assert_equals(subscriptions.length, 3);
 
   subscriptions.sort((a, b) => CompareStrings(`${a.name}`, `${b.name}`));
@@ -54,14 +50,7 @@ promise_test(async testCase => {
 
   assert_false('name' in subscriptions[2]);
   assert_equals('starts-with', subscriptions[2].matchType);
-}, 'getChangeSubscriptions returns subscriptions passed to subscribeToChanges');
-
-promise_test(async testCase => {
-  promise_rejects(
-      testCase, new TypeError(),
-      cookieStore.subscribeToChanges([{ name: 'cookie-name2' }]));
-}, 'subscribeToChanges rejects when called outside the install handler');
-
+}, 'getSubscriptions returns subscriptions passed to subscribe');
 
 
 let g_cookie_changes = [];
@@ -84,6 +73,22 @@ RearmCookieChangeReceivedPromise();
 
 promise_test(async testCase => {
   await kServiceWorkerActivatedPromise;
+
+  {
+    const subscriptions = [
+      { name: 'cookie-name1', matchType: 'equals', url: '/cookie-store/path1' },
+    ];
+    await registration.cookies.subscribe(subscriptions);
+    testCase.add_cleanup(() => registration.cookies.unsubscribe(subscriptions));
+  }
+  {
+    const subscriptions = [
+      { },  
+      { name: 'cookie-prefix', matchType: 'starts-with' },
+    ];
+    await registration.cookies.subscribe(subscriptions);
+    testCase.add_cleanup(() => registration.cookies.unsubscribe(subscriptions));
+  }
 
   await cookieStore.set('cookie-name', 'cookie-value');
   testCase.add_cleanup(async () => {
