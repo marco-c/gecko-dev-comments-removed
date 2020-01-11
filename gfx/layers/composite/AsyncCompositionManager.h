@@ -133,7 +133,8 @@ class AsyncCompositionManager final {
 
 
   static ScreenPoint ComputeFixedMarginsOffset(
-      const ScreenMargin& aFixedMargins, SideBits eFixedSides);
+      const ScreenMargin& aFixedMargins, SideBits eFixedSides,
+      const ScreenMargin& aGeckoFixedLayerMargins);
 
  private:
   
@@ -175,7 +176,9 @@ class AsyncCompositionManager final {
       ScrollableLayerGuid::ViewID aTransformScrollId,
       const LayerToParentLayerMatrix4x4& aPreviousTransformForRoot,
       const LayerToParentLayerMatrix4x4& aCurrentTransformForRoot,
-      const ScreenMargin& aFixedLayerMargins, ClipPartsCache& aClipPartsCache);
+      const ScreenMargin& aCompositorFixedLayerMargins,
+      ClipPartsCache& aClipPartsCache,
+      const ScreenMargin& aGeckoFixedLayerMargins);
 
   
 
@@ -187,7 +190,9 @@ class AsyncCompositionManager final {
       ScrollableLayerGuid::ViewID aTransformScrollId,
       const LayerToParentLayerMatrix4x4& aPreviousTransformForRoot,
       const LayerToParentLayerMatrix4x4& aCurrentTransformForRoot,
-      const ScreenMargin& aFixedLayerMargins, ClipPartsCache& aClipPartsCache);
+      const ScreenMargin& aCompositorFixedLayerMargins,
+      ClipPartsCache& aClipPartsCache,
+      const ScreenMargin& aGeckoFixedLayerMargins);
 
   
 

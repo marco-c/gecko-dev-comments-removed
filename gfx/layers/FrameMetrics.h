@@ -145,7 +145,8 @@ struct FrameMetrics {
            mIsRootContent == aOther.mIsRootContent &&
            mIsRelative == aOther.mIsRelative &&
            mDoSmoothScroll == aOther.mDoSmoothScroll &&
-           mIsScrollInfoLayer == aOther.mIsScrollInfoLayer;
+           mIsScrollInfoLayer == aOther.mIsScrollInfoLayer &&
+           mFixedLayerMargins == aOther.mFixedLayerMargins;
   }
 
   bool operator!=(const FrameMetrics& aOther) const {
@@ -510,6 +511,13 @@ struct FrameMetrics {
   
   void RecalculateLayoutViewportOffset();
 
+  void SetFixedLayerMargins(const ScreenMargin& aFixedLayerMargins) {
+    mFixedLayerMargins = aFixedLayerMargins;
+  }
+  const ScreenMargin& GetFixedLayerMargins() const {
+    return mFixedLayerMargins;
+  }
+
   
   
   
@@ -678,6 +686,10 @@ struct FrameMetrics {
   
   CSSPoint mVisualViewportOffset;
   ScrollOffsetUpdateType mVisualScrollUpdateType;
+
+  
+  
+  ScreenMargin mFixedLayerMargins;
 
   
   bool mIsRootContent : 1;
