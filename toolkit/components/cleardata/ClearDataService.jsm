@@ -73,44 +73,12 @@ const CookieCleaner = {
   },
 
   deleteByRange(aFrom, aTo) {
-    let enumerator = Services.cookies.enumerator;
-    return this._deleteInternal(
-      enumerator,
-      aCookie => aCookie.creationTime > aFrom
-    );
+    return Services.cookies.removeAllSince(aFrom);
   },
 
   deleteAll() {
     return new Promise(aResolve => {
       Services.cookies.removeAll();
-      aResolve();
-    });
-  },
-
-  _deleteInternal(aEnumerator, aCb) {
-    
-    const YIELD_PERIOD = 10;
-
-    return new Promise((aResolve, aReject) => {
-      let count = 0;
-      for (let cookie of aEnumerator) {
-        if (aCb(cookie)) {
-          Services.cookies.remove(
-            cookie.host,
-            cookie.name,
-            cookie.path,
-            cookie.originAttributes
-          );
-          
-          if (++count % YIELD_PERIOD == 0) {
-            setTimeout(() => {
-              this._deleteInternal(aEnumerator, aCb).then(aResolve, aReject);
-            }, 0);
-            return;
-          }
-        }
-      }
-
       aResolve();
     });
   },

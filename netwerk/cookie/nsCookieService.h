@@ -232,6 +232,13 @@ class nsCookieService final : public nsICookieService,
                         const OriginAttributes& aOriginAttrs,
                         nsTArray<nsCookie*>& aCookieList);
 
+  
+
+
+
+  nsresult Remove(const nsACString& aHost, const OriginAttributes& aAttrs,
+                  const nsACString& aName, const nsACString& aPath);
+
  protected:
   virtual ~nsCookieService();
 
@@ -336,14 +343,6 @@ class nsCookieService final : public nsICookieService,
   nsresult RemoveCookiesWithOriginAttributes(
       const mozilla::OriginAttributesPattern& aPattern,
       const nsCString& aBaseDomain);
-
-  
-
-
-
-
-  nsresult Remove(const nsACString& aHost, const OriginAttributes& aAttrs,
-                  const nsACString& aName, const nsACString& aPath);
 
  protected:
   nsresult RemoveCookiesFromExactHost(
