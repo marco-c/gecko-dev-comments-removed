@@ -20,24 +20,28 @@ async function testLocalListFrames(tabTarget) {
   
   
   const { frames } = await tabTarget.listRemoteFrames();
-  is(frames.length, 2, "Got two frames");
+  is(frames.length, 3, "Got three frames");
 
   info("Check that we can connect to the remote targets");
+  const frameTargets = [];
   for (const frame of frames) {
     const frameTarget = await frame.getTarget();
     ok(frameTarget && frameTarget.actor, "Valid frame target retrieved");
+    frameTargets.push(frameTarget);
   }
 
   
-  const browser = gBrowser.selectedBrowser;
-  const oopID = await SpecialPowers.spawn(browser, [], async () => {
-    const oop = content.document.querySelector("iframe");
-    return oop.frameLoader.browsingContext.id;
-  });
-  ok(
-    frames.find(f => f.id === oopID),
-    "tabTarget.listRemoteFrames returns the oop frame descriptor"
-  );
+  const expectedUrls = [
+    "data:text/html,<iframe src='data:text/html,foo'></iframe>",
+    "data:text/html,foo",
+    "http://example.com/browser/devtools/server/tests/browser/doc_iframe_content.html",
+  ];
+  for (const url of expectedUrls) {
+    ok(
+      frameTargets.find(target => target.url === url),
+      "Found a frame target for the expected url " + url
+    );
+  }
 }
 async function testBrowserListFrames(tabTarget) {
   

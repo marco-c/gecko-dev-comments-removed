@@ -79,7 +79,10 @@ try {
         const {
           FrameTargetActor,
         } = require("devtools/server/actors/targets/frame");
-        actor = new FrameTargetActor(conn, chromeGlobal);
+        const { docShell } = chromeGlobal;
+        
+        
+        actor = new FrameTargetActor(conn, docShell);
       }
 
       const actorPool = new ActorPool(conn);

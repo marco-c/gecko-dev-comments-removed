@@ -38,22 +38,20 @@ const frameTargetPrototype = extend({}, browsingContextTargetPrototype);
 
 
 
+frameTargetPrototype.initialize = function(connection, docShell) {
+  BrowsingContextTargetActor.prototype.initialize.call(this, connection);
 
+  
+  
+  
+  this._messageManager = docShell.messageManager;
 
-
-frameTargetPrototype.initialize = function(connection, chromeGlobal) {
-  this._chromeGlobal = chromeGlobal;
-  BrowsingContextTargetActor.prototype.initialize.call(
-    this,
-    connection,
-    chromeGlobal
-  );
   this.traits.reconfigure = false;
   this._sendForm = this._sendForm.bind(this);
-  this._chromeGlobal.addMessageListener("debug:form", this._sendForm);
+  this._messageManager.addMessageListener("debug:form", this._sendForm);
 
   Object.defineProperty(this, "docShell", {
-    value: this._chromeGlobal.docShell,
+    value: docShell,
     configurable: true,
   });
 };
@@ -69,7 +67,7 @@ Object.defineProperty(frameTargetPrototype, "title", {
 frameTargetPrototype.exit = function() {
   if (this._sendForm) {
     try {
-      this._chromeGlobal.removeMessageListener("debug:form", this._sendForm);
+      this._messageManager.removeMessageListener("debug:form", this._sendForm);
     } catch (e) {
       if (e.result != Cr.NS_ERROR_NULL_POINTER) {
         throw e;
@@ -83,7 +81,7 @@ frameTargetPrototype.exit = function() {
 
   BrowsingContextTargetActor.prototype.exit.call(this);
 
-  this._chromeGlobal = null;
+  this._messageManager = null;
 };
 
 
@@ -91,7 +89,7 @@ frameTargetPrototype.exit = function() {
 
 
 frameTargetPrototype._sendForm = function() {
-  this._chromeGlobal.sendAsyncMessage("debug:form", this.form());
+  this._messageManager.sendAsyncMessage("debug:form", this.form());
 };
 
 exports.FrameTargetActor = ActorClassWithSpec(
