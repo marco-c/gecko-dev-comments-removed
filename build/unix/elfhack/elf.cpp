@@ -180,6 +180,14 @@ Elf::Elf(std::ifstream& file) {
   sections = new ElfSection*[ehdr->e_shnum];
   for (int i = 0; i < ehdr->e_shnum; i++) sections[i] = nullptr;
   for (int i = 1; i < ehdr->e_shnum; i++) {
+    
+    
+    
+    if (tmp_shdr[i]->sh_type == SHT_DYNAMIC) {
+      getSection(i);
+    }
+  }
+  for (int i = 1; i < ehdr->e_shnum; i++) {
     if (sections[i] != nullptr) continue;
     getSection(i);
   }
