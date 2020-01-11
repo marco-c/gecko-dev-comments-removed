@@ -3,38 +3,35 @@
 
 
 
-function RemoteController(browser) {
-  this._browser = browser;
+var EXPORTED_SYMBOLS = ["RemoteController"];
 
-  
-  
-  this._supportedCommands = {};
-}
+class RemoteController {
+  constructor(browser) {
+    this._browser = browser;
 
-RemoteController.prototype = {
-  QueryInterface: ChromeUtils.generateQI([
-    Ci.nsIController,
-    Ci.nsICommandController,
-  ]),
+    
+    
+    this._supportedCommands = {};
+  }
 
   isCommandEnabled(aCommand) {
     return this._supportedCommands[aCommand] || false;
-  },
+  }
 
   supportsCommand(aCommand) {
     return aCommand in this._supportedCommands;
-  },
+  }
 
   doCommand(aCommand) {
     this._browser.messageManager.sendAsyncMessage(
       "ControllerCommands:Do",
       aCommand
     );
-  },
+  }
 
   getCommandStateWithParams(aCommand, aCommandParams) {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
-  },
+    throw Components.Exception("Not implemented", Cr.NS_ERROR_NOT_IMPLEMENTED);
+  }
 
   doCommandWithParams(aCommand, aCommandParams) {
     let cmd = {
@@ -64,13 +61,13 @@ RemoteController.prototype = {
       "ControllerCommands:DoWithParams",
       cmd
     );
-  },
+  }
 
   getSupportedCommands() {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
-  },
+    throw Components.Exception("Not implemented", Cr.NS_ERROR_NOT_IMPLEMENTED);
+  }
 
-  onEvent() {},
+  onEvent() {}
 
   
   
@@ -91,5 +88,10 @@ RemoteController.prototype = {
       return;
     }
     this._browser.ownerGlobal.updateCommands(aAction);
-  },
-};
+  }
+}
+
+RemoteController.prototype.QueryInterface = ChromeUtils.generateQI([
+  Ci.nsIController,
+  Ci.nsICommandController,
+]);
