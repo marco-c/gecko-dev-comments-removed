@@ -267,7 +267,7 @@ class DebugAPI {
   static ResumeMode onTrap(JSContext* cx, MutableHandleValue vp);
 
   
-  static ResumeMode onSingleStep(JSContext* cx, MutableHandleValue vp);
+  static MOZ_MUST_USE bool onSingleStep(JSContext* cx);
 
   
   
