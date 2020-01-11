@@ -137,6 +137,8 @@ static const char* kObservedPrefs[] = {"font.", "font.name-list.",
 
 static const char kFontSystemWhitelistPref[] = "font.system.whitelist";
 
+static const char kCJKFallbackOrderPref[] = "font.cjk_pref_fallback_order";
+
 
 static const char* gPrefLangNames[] = {
 #define FONT_PREF_LANG(enum_id_, str_, atom_id_) str_
@@ -1713,6 +1715,26 @@ void gfxPlatformFontList::AppendCJKPrefLangs(eFontPrefLang aPrefLangs[],
       }
     }
 
+    
+    
+    gfxFontUtils::GetPrefsFontList(kCJKFallbackOrderPref, list);
+    for (const auto& item : list) {
+      eFontPrefLang fpl = GetFontPrefLangFor(item.get());
+      switch (fpl) {
+        case eFontPrefLang_Japanese:
+        case eFontPrefLang_Korean:
+        case eFontPrefLang_ChineseCN:
+        case eFontPrefLang_ChineseHK:
+        case eFontPrefLang_ChineseTW:
+          AppendPrefLang(tempPrefLangs, tempLen, fpl);
+          break;
+        default:
+          break;
+      }
+    }
+
+    
+    
     
     
     
