@@ -702,17 +702,21 @@ bool TestAssemblyFunctions() {
         : functionName(aFunctionName), expectedStub(aExpectedStub) {}
   } testCases[] = {
 #if defined(__clang__)
-#  if defined(_M_X64)
+
+
+#  ifndef MOZ_CODE_COVERAGE
+#    if defined(_M_X64)
     
     
     TestCase("MovPushRet", JumpDestination),
     TestCase("MovRaxJump", JumpDestination),
-#  elif defined(_M_IX86)
+#    elif defined(_M_IX86)
     
     TestCase("PushRet", NoStubAddressCheck),
     TestCase("MovEaxJump", NoStubAddressCheck),
-#  endif
-#endif
+#    endif
+#  endif  
+#endif    
   };
 
   static const auto patchedFunction = []() { patched_func_called = true; };
