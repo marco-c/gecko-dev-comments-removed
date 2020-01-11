@@ -284,7 +284,17 @@ function initPage() {
 
     if (isTlsVersionError && !tls10OverrideEnabled) {
       
-      showTls10Container();
+      
+      
+      const showOverride = RPMGetBoolPref(
+        "security.certerrors.tls.version.show-override",
+        true
+      );
+
+      
+      if (showOverride) {
+        showTls10Container();
+      }
     } else {
       const hasPrefStyleError = [
         "interrupted", 
