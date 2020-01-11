@@ -256,26 +256,6 @@ assert.number = function(obj, msg = "") {
 
 
 
-assert.positiveNumber = function(obj, msg = "") {
-  assert.number(obj, msg);
-  msg = msg || pprint`Expected ${obj} to be >= 0`;
-  return assert.that(n => n >= 0, msg)(obj);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 assert.callable = function(obj, msg = "") {
   msg = msg || pprint`${obj} is not callable`;
   return assert.that(o => typeof o == "function", msg)(obj);
