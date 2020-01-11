@@ -2081,13 +2081,17 @@ var ExtensionParent = {
 
 
 
+
+
+
 ExtensionParent._resetStartupPromises = () => {
   ExtensionParent.browserPaintedPromise = promiseObserved(
     "browser-delayed-startup-finished"
   ).then(() => {});
-  ExtensionParent.browserStartupPromise = promiseObserved(
-    "sessionstore-windows-restored"
-  ).then(() => {});
+  ExtensionParent.browserStartupPromise = Promise.race([
+    promiseObserved("sessionstore-windows-restored"),
+    promiseObserved("extensions-late-startup"),
+  ]).then(() => {});
 };
 ExtensionParent._resetStartupPromises();
 

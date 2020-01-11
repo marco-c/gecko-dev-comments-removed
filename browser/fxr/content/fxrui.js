@@ -136,6 +136,11 @@ function setupBrowser() {
     );
 
     FullScreen.init();
+
+    
+    
+    
+    Services.obs.notifyObservers(window, "extensions-late-startup");
   }
 }
 
