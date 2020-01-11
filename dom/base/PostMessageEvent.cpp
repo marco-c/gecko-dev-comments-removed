@@ -8,6 +8,8 @@
 
 #include "MessageEvent.h"
 #include "mozilla/dom/BlobBinding.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/File.h"
@@ -20,6 +22,7 @@
 #include "mozilla/dom/StructuredCloneTags.h"
 #include "mozilla/dom/UnionConversions.h"
 #include "mozilla/EventDispatcher.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "nsDocShell.h"
 #include "nsGlobalWindow.h"
 #include "nsIConsoleService.h"
@@ -240,6 +243,54 @@ void PostMessageEvent::Dispatch(nsGlobalWindowInner* aTargetWindow,
   nsEventStatus status = nsEventStatus_eIgnore;
   EventDispatcher::Dispatch(ToSupports(aTargetWindow), presContext,
                             internalEvent, aEvent, &status);
+}
+
+void PostMessageEvent::DispatchToTargetThread(ErrorResult& aError) {
+  nsCOMPtr<nsIRunnable> event = this;
+
+  if (StaticPrefs::dom_separate_event_queue_for_post_message_enabled() &&
+      !DocGroup::TryToLoadIframesInBackground()) {
+    BrowsingContext* bc = mTargetWindow->GetBrowsingContext();
+    bc = bc ? bc->Top() : nullptr;
+    if (bc && bc->IsLoading()) {
+      
+      
+      aError = bc->Group()->QueuePostMessageEvent(event.forget());
+      return;
+    }
+  }
+
+  
+  
+  if (DocGroup::TryToLoadIframesInBackground()) {
+    RefPtr<nsIDocShell> docShell = mTargetWindow->GetDocShell();
+    RefPtr<nsDocShell> dShell = nsDocShell::Cast(docShell);
+
+    
+    
+    
+    if (dShell) {
+      if (!dShell->TreatAsBackgroundLoad()) {
+        BrowsingContext* bc = mTargetWindow->GetBrowsingContext();
+        bc = bc ? bc->Top() : nullptr;
+        if (bc && bc->IsLoading()) {
+          
+          
+          aError = bc->Group()->QueuePostMessageEvent(event.forget());
+          return;
+        }
+      } else if (mTargetWindow->GetExtantDoc() &&
+                 mTargetWindow->GetExtantDoc()->GetReadyStateEnum() <
+                     Document::READYSTATE_COMPLETE) {
+        mozilla::dom::DocGroup* docGroup = mTargetWindow->GetDocGroup();
+        aError = docGroup->QueueIframePostMessages(event.forget(),
+                                                   dShell->GetOuterWindowID());
+        return;
+      }
+    }
+  }
+
+  aError = mTargetWindow->Dispatch(TaskCategory::Other, event.forget());
 }
 
 }  
