@@ -149,7 +149,7 @@ function getTestPluginEnabledState(pluginName) {
 
 function promiseForPluginInfo(aId, aBrowser) {
   let browser = aBrowser || gTestBrowser;
-  return ContentTask.spawn(browser, aId, async function(contentId) {
+  return SpecialPowers.spawn(browser, [aId], async function(contentId) {
     let plugin = content.document.getElementById(contentId);
     if (!(plugin instanceof Ci.nsIObjectLoadingContent)) {
       throw new Error("no plugin found");
@@ -166,14 +166,14 @@ function promiseForPluginInfo(aId, aBrowser) {
 
 function promisePlayObject(aId, aBrowser) {
   let browser = aBrowser || gTestBrowser;
-  return ContentTask.spawn(browser, aId, async function(contentId) {
+  return SpecialPowers.spawn(browser, [aId], async function(contentId) {
     content.document.getElementById(contentId).playPlugin();
   });
 }
 
 function promiseCrashObject(aId, aBrowser) {
   let browser = aBrowser || gTestBrowser;
-  return ContentTask.spawn(browser, aId, async function(contentId) {
+  return SpecialPowers.spawn(browser, [aId], async function(contentId) {
     let plugin = content.document.getElementById(contentId);
     Cu.waiveXrays(plugin).crash();
   });
@@ -182,7 +182,7 @@ function promiseCrashObject(aId, aBrowser) {
 
 function promiseObjectValueResult(aId, aBrowser) {
   let browser = aBrowser || gTestBrowser;
-  return ContentTask.spawn(browser, aId, async function(contentId) {
+  return SpecialPowers.spawn(browser, [aId], async function(contentId) {
     let plugin = content.document.getElementById(contentId);
     return Cu.waiveXrays(plugin).getObjectValue();
   });
@@ -191,7 +191,7 @@ function promiseObjectValueResult(aId, aBrowser) {
 
 function promiseReloadPlugin(aId, aBrowser) {
   let browser = aBrowser || gTestBrowser;
-  return ContentTask.spawn(browser, aId, async function(contentId) {
+  return SpecialPowers.spawn(browser, [aId], async function(contentId) {
     let plugin = content.document.getElementById(contentId);
     
     plugin.src = plugin.src;
@@ -332,7 +332,7 @@ async function asyncSetAndUpdateBlocklist(aURL, aBrowser) {
   if (doTestRemote) {
     info("*** waiting on remote load");
     
-    await ContentTask.spawn(aBrowser, null, () => {});
+    await SpecialPowers.spawn(aBrowser, [], () => {});
   }
   info("*** blocklist loaded.");
 }
@@ -463,7 +463,7 @@ function promiseForNotificationShown(notification) {
 
 
 function promiseUpdatePluginBindings(browser) {
-  return ContentTask.spawn(browser, {}, async function() {
+  return SpecialPowers.spawn(browser, [], async function() {
     let doc = content.document;
     let elems = doc.getElementsByTagName("embed");
     if (!elems || elems.length < 1) {

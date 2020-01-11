@@ -50,7 +50,7 @@ add_task(async function() {
   ok(unhighlightSnapshot, "Got unhighlightSnapshot");
 
   
-  await ContentTask.spawn(tab.linkedBrowser, null, async function() {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
     let doc = content.document;
     let win = doc.defaultView;
 

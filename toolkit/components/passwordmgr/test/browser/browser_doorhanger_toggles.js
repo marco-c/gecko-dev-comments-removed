@@ -18,7 +18,7 @@ add_task(async function test_toggle_password() {
     async function(browser) {
       
       
-      await ContentTask.spawn(browser, null, async function() {
+      await SpecialPowers.spawn(browser, [], async function() {
         let doc = content.document;
         doc.getElementById("form-basic-username").setUserInput("username");
         doc.getElementById("form-basic-password").setUserInput("pw");
@@ -74,7 +74,7 @@ add_task(async function test_checkbox_disabled_if_has_master_password() {
       
       LoginTestUtils.masterPassword.enable();
 
-      await ContentTask.spawn(browser, null, async function() {
+      await SpecialPowers.spawn(browser, [], async function() {
         let doc = content.document;
         doc.getElementById("form-basic-username").setUserInput("username");
         doc.getElementById("form-basic-password").setUserInput("pass");

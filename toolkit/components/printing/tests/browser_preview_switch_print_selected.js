@@ -50,7 +50,7 @@ add_task(async function switch_print_preview_browsers() {
   await defaultPPEntered;
 
   
-  await ContentTask.spawn(defaultPPBrowser, null, async function() {
+  await SpecialPowers.spawn(defaultPPBrowser, [], async function() {
     is(content.document.title, "Article title", "Should have initial content.");
   });
 
@@ -78,7 +78,7 @@ add_task(async function switch_print_preview_browsers() {
   );
 
   
-  await ContentTask.spawn(simplifiedPPBrowser, null, async function() {
+  await SpecialPowers.spawn(simplifiedPPBrowser, [], async function() {
     is(content.document.title, "Article title", "Should have custom content.");
   });
 
@@ -110,7 +110,7 @@ add_task(async function switch_print_preview_browsers() {
   );
 
   
-  await ContentTask.spawn(defaultPPBrowser, null, async function() {
+  await SpecialPowers.spawn(defaultPPBrowser, [], async function() {
     is(content.document.title, "Article title", "Should have initial content.");
   });
 

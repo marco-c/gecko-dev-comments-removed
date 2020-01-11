@@ -83,7 +83,7 @@ var startPicker = async function(toolbox, skipFocus) {
   if (!skipFocus) {
     
     
-    await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
+    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
       content.focus();
     });
   }

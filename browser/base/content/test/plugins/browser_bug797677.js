@@ -44,7 +44,7 @@ add_task(async function() {
   );
 
   
-  await ContentTask.spawn(gTestBrowser, null, function() {
+  await SpecialPowers.spawn(gTestBrowser, [], function() {
     let plugin = content.document.getElementById("plugin");
     ok(plugin, "plugin should be in the page");
   });

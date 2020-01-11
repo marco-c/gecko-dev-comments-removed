@@ -36,7 +36,7 @@ add_task(async function loadNewChild() {
   
   await loadChildSelector(walker, "#longlist div");
   const onMutations = waitForMutation(walker, isChildList);
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
     const childFrame = content.document.querySelector("#childFrame");
     childFrame.src = "data:text/html,<html>new child</html>";
   });
@@ -61,14 +61,14 @@ add_task(async function loadNewChild() {
   
   await loadChildSelector(walker, "#longlist div");
   let onMutations = waitForMutation(walker, isChildList);
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
     const childFrame = content.document.querySelector("#childFrame");
     childFrame.src = "data:text/html,<html>new child</html>";
   });
   await onMutations;
 
   onMutations = waitForMutation(walker, isChildList);
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
     
     
     
@@ -93,7 +93,7 @@ add_task(async function loadNewChildTwiceAndCareAboutIt() {
   
   await loadChildSelector(walker, "#longlist div");
   let onMutations = waitForMutation(walker, isChildList);
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
     const childFrame = content.document.querySelector("#childFrame");
     childFrame.src = "data:text/html,<html>new child</html>";
   });
@@ -102,7 +102,7 @@ add_task(async function loadNewChildTwiceAndCareAboutIt() {
   await loadChildSelector(walker, "#longlist div");
 
   onMutations = waitForMutation(walker, isChildList);
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
     
     const childFrame = content.document.querySelector("#childFrame");
     childFrame.src = "data:text/html,<html>second new child</html>";
@@ -129,7 +129,7 @@ add_task(async function testBack() {
   
   await loadChildSelector(walker, "#longlist div");
   let onMutations = waitForMutation(walker, isChildList);
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
     const childFrame = content.document.querySelector("#childFrame");
     childFrame.src = "data:text/html,<html>new child</html>";
   });
@@ -139,7 +139,7 @@ add_task(async function testBack() {
   await loadChildSelector(walker, "#longlist div");
 
   onMutations = waitForMutation(walker, isChildList);
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
     
     
     const childFrame = content.document.querySelector("#childFrame");

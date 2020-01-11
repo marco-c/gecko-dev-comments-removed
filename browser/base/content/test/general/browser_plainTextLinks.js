@@ -19,7 +19,7 @@ add_task(async function() {
   await SimpleTest.promiseFocus(gBrowser.selectedBrowser);
 
   
-  await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function(arg) {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function(arg) {
     let doc = content.document;
     let range = doc.createRange();
     let selection = content.getSelection();
@@ -173,10 +173,8 @@ add_task(async function() {
   );
 
   for (let testid = 0; testid < checks.length; testid++) {
-    let menuPosition = await ContentTask.spawn(
-      gBrowser.selectedBrowser,
-      { testid },
-      async function(arg) {
+    let menuPosition = await SpecialPowers.spawn(
+      gBrowser.selectedBrowser, [{ testid }], async function(arg) {
         let range = content.tests[arg.testid]();
 
         

@@ -12,7 +12,7 @@ add_task(async function() {
     { gBrowser, url: "resource://gre/" },
     async function(browser) {
       
-      await ContentTask.spawn(browser, {}, function() {
+      await SpecialPowers.spawn(browser, [], function() {
         let link = Array.prototype.filter.call(
           content.document.getElementsByClassName("dir"),
           function(element) {
@@ -38,7 +38,7 @@ add_task(async function() {
       );
 
       
-      await ContentTask.spawn(browser, {}, function() {
+      await SpecialPowers.spawn(browser, [], function() {
         let link = content.document
           .getElementById("UI_goUp")
           .getElementsByTagName("a")[0];
@@ -53,7 +53,7 @@ add_task(async function() {
       );
 
       
-      await ContentTask.spawn(browser, {}, function() {
+      await SpecialPowers.spawn(browser, [], function() {
         let link = Array.prototype.filter.call(
           content.document.getElementsByClassName("file"),
           function(element) {

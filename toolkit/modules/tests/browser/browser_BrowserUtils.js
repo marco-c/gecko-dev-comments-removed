@@ -10,7 +10,7 @@ add_task(async function test_getSelectionDetails_input() {
   
   const url = kFixtureBaseURL + "file_getSelectionDetails_inputs.html";
   await BrowserTestUtils.withNewTab({ gBrowser, url }, async browser => {
-    await ContentTask.spawn(browser, null, () => {
+    await SpecialPowers.spawn(browser, [], () => {
       function checkSelection({ id, text, linkURL }) {
         content.document.getElementById(id).select();
         

@@ -44,7 +44,7 @@ add_task(async function test_open_feedback() {
 
     let browser = gBrowser.selectedBrowser;
     await BrowserTestUtils.synthesizeMouseAtCenter("menu-button", {}, browser);
-    await ContentTask.spawn(browser, null, async () => {
+    await SpecialPowers.spawn(browser, [], async () => {
       return ContentTaskUtils.waitForCondition(() => {
         let menuButton = Cu.waiveXrays(
           content.document.querySelector("menu-button")
@@ -58,10 +58,8 @@ add_task(async function test_open_feedback() {
     
     
     
-    let { x, y } = await ContentTask.spawn(
-      browser,
-      selector,
-      async menuItemSelector => {
+    let { x, y } = await SpecialPowers.spawn(
+      browser, [selector], async menuItemSelector => {
         let menuButton = Cu.waiveXrays(
           content.document.querySelector("menu-button")
         );

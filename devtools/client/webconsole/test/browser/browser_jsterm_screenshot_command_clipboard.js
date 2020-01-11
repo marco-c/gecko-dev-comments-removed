@@ -67,7 +67,7 @@ async function testSelectorClipboard(hud) {
   await executeScreenshotClipboardCommand(hud, command);
 
   const imgSize1 = await getImageSizeFromClipboard();
-  await ContentTask.spawn(gBrowser.selectedBrowser, imgSize1, function(
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [imgSize1], function(
     imgSize
   ) {
     const img = content.document.querySelector("#testImage");
@@ -130,16 +130,14 @@ async function createScrollbarOverflow() {
   
   
   
-  await ContentTask.spawn(gBrowser.selectedBrowser, {}, function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
     content.document.body.classList.add("overflow");
   });
 }
 
 async function getScrollbarSize() {
-  const scrollbarSize = await ContentTask.spawn(
-    gBrowser.selectedBrowser,
-    {},
-    function() {
+  const scrollbarSize = await SpecialPowers.spawn(
+    gBrowser.selectedBrowser, [], function() {
       const winUtils = content.windowUtils;
       const scrollbarHeight = {};
       const scrollbarWidth = {};
@@ -155,10 +153,8 @@ async function getScrollbarSize() {
 }
 
 async function getContentSize() {
-  const contentSize = await ContentTask.spawn(
-    gBrowser.selectedBrowser,
-    {},
-    function() {
+  const contentSize = await SpecialPowers.spawn(
+    gBrowser.selectedBrowser, [], function() {
       return {
         scrollMaxY: content.scrollMaxY,
         scrollMaxX: content.scrollMaxX,
@@ -224,7 +220,7 @@ async function getImageSizeFromClipboard() {
   
   
   
-  return ContentTask.spawn(gBrowser.selectedBrowser, buffer, async function(
+  return SpecialPowers.spawn(gBrowser.selectedBrowser, [buffer], async function(
     _buffer
   ) {
     const img = content.document.createElement("img");

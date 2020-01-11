@@ -27,7 +27,7 @@ add_task(
       );
       let privateWin = await promiseNewWindow;
 
-    await ContentTask.spawn(privateWin.gBrowser.selectedBrowser, {DUMMY_PAGE, TEST_PAGE}, async function({DUMMY_PAGE, TEST_PAGE}) { 
+    await SpecialPowers.spawn(privateWin.gBrowser.selectedBrowser, [{DUMMY_PAGE, TEST_PAGE}], async function({DUMMY_PAGE, TEST_PAGE}) { 
 
           let channel = content.docShell.currentDocumentChannel;
           is(

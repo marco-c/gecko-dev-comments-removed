@@ -17,7 +17,7 @@ add_task(async function() {
     let testDone = {};
     if (!SpecialPowers.getBoolPref("fission.sessionHistoryInParent")) {
       
-      testDone.promise = ContentTask.spawn(browser, null, async function() {
+      testDone.promise = SpecialPowers.spawn(browser, [], async function() {
         return new Promise(resolve => {
           let webNavigation = content.docShell.QueryInterface(
             Ci.nsIWebNavigation

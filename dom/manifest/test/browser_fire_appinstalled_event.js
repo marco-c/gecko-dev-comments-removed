@@ -23,7 +23,7 @@ function enableOnAppInstalledPref() {
 
 async function theTest(aBrowser) {
   aBrowser.allowEvents = true;
-  let waitForInstall = ContentTask.spawn(aBrowser, null, async function() {
+  let waitForInstall = SpecialPowers.spawn(aBrowser, [], async function() {
     await ContentTaskUtils.waitForEvent(content.window, "appinstalled");
   });
   const {

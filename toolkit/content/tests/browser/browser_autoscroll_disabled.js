@@ -19,7 +19,7 @@ add_task(async function() {
     gBrowser.selectedBrowser
   );
 
-  await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
     var iframe = content.document.getElementById("iframe");
 
     if (iframe) {
@@ -45,10 +45,8 @@ add_task(async function() {
   
   await new Promise(resolve => window.requestAnimationFrame(resolve));
 
-  let msg = await ContentTask.spawn(
-    gBrowser.selectedBrowser,
-    {},
-    async function() {
+  let msg = await SpecialPowers.spawn(
+    gBrowser.selectedBrowser, [], async function() {
       
       
       return new Promise(resolve => {

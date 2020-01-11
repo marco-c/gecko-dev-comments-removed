@@ -21,7 +21,7 @@ add_task(async function() {
   store.dispatch(Actions.batchEnable(false));
 
   
-  await ContentTask.spawn(tab.linkedBrowser, {}, async () => {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
     await content.wrappedJSObject.openConnection(2);
     await content.wrappedJSObject.openConnection(3);
   });
@@ -133,7 +133,7 @@ add_task(async function() {
   );
 
   
-  await ContentTask.spawn(tab.linkedBrowser, {}, async () => {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
     await content.wrappedJSObject.closeConnection();
   });
 

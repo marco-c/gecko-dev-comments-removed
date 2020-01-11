@@ -34,7 +34,7 @@ add_task(async function test_notificationPreventDefaultAndSwitchTabs() {
 
       
       function promiseNotificationEvent(evt) {
-        return ContentTask.spawn(aBrowser, evt, async function(contentEvt) {
+        return SpecialPowers.spawn(aBrowser, [evt], async function(contentEvt) {
           return new Promise(resolve => {
             let contentNotification = content.wrappedJSObject._notification;
             contentNotification.addEventListener(

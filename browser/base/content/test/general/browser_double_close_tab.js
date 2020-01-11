@@ -80,7 +80,7 @@ registerCleanupFunction(async function() {
   if (testTab.parentNode) {
     
     try {
-      await ContentTask.spawn(testTab.linkedBrowser, null, function() {
+      await SpecialPowers.spawn(testTab.linkedBrowser, [], function() {
         content.window.onbeforeunload = null;
       });
     } catch (ex) {}

@@ -47,7 +47,7 @@ add_task(async function test() {
   ok(promptShown, "prompt should have been displayed");
 
   
-  await ContentTask.spawn(browser, null, () => {
+  await SpecialPowers.spawn(browser, [], () => {
     ok(
       content.window.document.body.hasAttribute("fired"),
       "parent document beforeunload handler should fire"
@@ -71,7 +71,7 @@ add_task(async function test() {
   buttonId = "";
 
   
-  await ContentTask.spawn(browser, null, () => {
+  await SpecialPowers.spawn(browser, [], () => {
     ok(
       content.window.document.body.hasAttribute("fired"),
       "parent document beforeunload handler should fire"
@@ -95,7 +95,7 @@ add_task(async function test() {
   ok(!promptShown, "prompt should not have been displayed");
 
   
-  await ContentTask.spawn(browser, null, () => {
+  await SpecialPowers.spawn(browser, [], () => {
     ok(
       content.window.document.body.hasAttribute("fired"),
       "parent document beforeunload handler should fire"
@@ -119,7 +119,7 @@ add_task(async function test() {
   ok(!promptShown, "prompt should not have been displayed");
 
   
-  await ContentTask.spawn(browser, null, () => {
+  await SpecialPowers.spawn(browser, [], () => {
     ok(
       content.window.document.body.hasAttribute("fired"),
       "parent document beforeunload handler should fire"
@@ -149,7 +149,7 @@ add_task(async function test() {
   ok(!promptShown, "prompt should not have been displayed");
 
   
-  await ContentTask.spawn(browser, null, () => {
+  await SpecialPowers.spawn(browser, [], () => {
     ok(
       content.window.document.body.hasAttribute("fired"),
       "parent document beforeunload handler should fire"
@@ -173,7 +173,7 @@ add_task(async function test() {
   ok(!promptShown, "prompt should not have been displayed");
 
   
-  await ContentTask.spawn(browser, null, () => {
+  await SpecialPowers.spawn(browser, [], () => {
     ok(
       content.window.document.body.hasAttribute("fired"),
       "parent document beforeunload handler should fire"
@@ -197,7 +197,7 @@ add_task(async function test() {
   ok(!promptShown, "prompt should not have been displayed");
 
   
-  await ContentTask.spawn(browser, null, () => {
+  await SpecialPowers.spawn(browser, [], () => {
     ok(
       content.window.document.body.hasAttribute("fired"),
       "parent document beforeunload handler should fire"
@@ -227,7 +227,7 @@ add_task(async function test() {
   ok(promptShown, "prompt should have been displayed");
 
   
-  await ContentTask.spawn(browser, null, () => {
+  await SpecialPowers.spawn(browser, [], () => {
     ok(
       content.window.document.body.hasAttribute("fired"),
       "parent document beforeunload handler should fire"
@@ -252,7 +252,7 @@ add_task(async function test() {
 
   
   
-  await ContentTask.spawn(browser, null, () => {
+  await SpecialPowers.spawn(browser, [], () => {
     ok(
       content.window.document.body.hasAttribute("fired"),
       "parent document beforeunload handler should fire"
@@ -279,7 +279,7 @@ add_task(async function test() {
 
   
   
-  await ContentTask.spawn(browser, null, () => {
+  await SpecialPowers.spawn(browser, [], () => {
     ok(
       content.window.document.body.hasAttribute("fired"),
       "parent document beforeunload handler should fire"
@@ -305,7 +305,7 @@ add_task(async function test() {
   ok(!promptShown, "prompt should not have been displayed");
 
   
-  await ContentTask.spawn(browser, null, () => {
+  await SpecialPowers.spawn(browser, [], () => {
     ok(
       content.window.document.body.hasAttribute("fired"),
       "parent document beforeunload handler should fire"

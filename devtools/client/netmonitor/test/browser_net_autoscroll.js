@@ -62,7 +62,7 @@ add_task(async function() {
   is(requestsContainer.scrollTop, headersHeight, "Did not scroll.");
 
   
-  await ContentTask.spawn(tab.linkedBrowser, {}, function() {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], function() {
     content.wrappedJSObject.stopRequests();
   });
 

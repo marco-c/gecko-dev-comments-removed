@@ -11,7 +11,7 @@ add_task(async function test_bug1174036() {
     },
     async function(browser) {
       
-      await ContentTask.spawn(browser, null, function() {
+      await SpecialPowers.spawn(browser, [], function() {
         content.document.getElementsByTagName("textarea")[0].style.display =
           "none";
       });

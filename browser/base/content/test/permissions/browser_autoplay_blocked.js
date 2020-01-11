@@ -209,7 +209,7 @@ add_task(async function testBFCache() {
     
     
     
-    await ContentTask.spawn(browser, null, () => {
+    await SpecialPowers.spawn(browser, [], () => {
       content.history.forward();
     });
     await blockedIconShown();

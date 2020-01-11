@@ -111,7 +111,7 @@ async function waitForAboutProtectionsTab() {
 
   
   
-  await ContentTask.spawn(tab.linkedBrowser, {}, async function() {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
     await ContentTaskUtils.waitForCondition(() => {
       let bars = content.document.querySelectorAll(".graph-bar");
       return bars.length;

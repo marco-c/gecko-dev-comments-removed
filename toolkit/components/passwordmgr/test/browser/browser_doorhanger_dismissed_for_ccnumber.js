@@ -16,7 +16,7 @@ add_task(async function test_doorhanger_dismissal_un() {
       
 
       let processedPromise = listenForTestNotification("FormSubmit");
-      await ContentTask.spawn(browser, null, async () => {
+      await SpecialPowers.spawn(browser, [], async () => {
         content.document
           .getElementById("form-basic-username")
           .setUserInput("4111111111111111");
@@ -49,7 +49,7 @@ add_task(async function test_doorhanger_dismissal_pw() {
       
 
       let processedPromise = listenForTestNotification("FormSubmit");
-      await ContentTask.spawn(browser, null, async () => {
+      await SpecialPowers.spawn(browser, [], async () => {
         content.document
           .getElementById("form-basic-username")
           .setUserInput("aaa");
@@ -84,7 +84,7 @@ add_task(async function test_doorhanger_shown_on_un_with_invalid_ccnumber() {
       
 
       let processedPromise = listenForTestNotification("FormSubmit");
-      await ContentTask.spawn(browser, null, async () => {
+      await SpecialPowers.spawn(browser, [], async () => {
         content.document
           .getElementById("form-basic-username")
           .setUserInput("1234123412341234");
@@ -131,7 +131,7 @@ add_task(async function test_doorhanger_dismissal_on_change() {
       Services.logins.addLogin(login);
 
       let processedPromise = listenForTestNotification("FormSubmit");
-      await ContentTask.spawn(browser, null, async () => {
+      await SpecialPowers.spawn(browser, [], async () => {
         content.document
           .getElementById("form-basic-password")
           .setUserInput("111");

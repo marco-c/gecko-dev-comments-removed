@@ -34,7 +34,7 @@ function test() {
         is(aValue, faviconURL, "FaviconURL for original URI");
         
         
-        ContentTask.spawn(tab.linkedBrowser, null, function() {
+        SpecialPowers.spawn(tab.linkedBrowser, [], function() {
           content.history.pushState("", "", "?new_page");
         });
       }

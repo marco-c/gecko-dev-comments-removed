@@ -45,14 +45,14 @@ function waitForAnyNewTabAndInstallNotification() {
 }
 
 function CheckBrowserInPid(browser, expectedPid, message) {
-  return ContentTask.spawn(browser, { expectedPid, message }, arg => {
+  return SpecialPowers.spawn(browser, [{ expectedPid, message }], arg => {
     is(Services.appinfo.processID, arg.expectedPid, arg.message);
   });
 }
 
 async function testOpenedAndDraggedXPI(aBrowser) {
   
-  let browserPid = await ContentTask.spawn(aBrowser, null, () => {
+  let browserPid = await SpecialPowers.spawn(aBrowser, [], () => {
     return Services.appinfo.processID;
   });
 

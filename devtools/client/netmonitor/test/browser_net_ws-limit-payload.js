@@ -22,7 +22,7 @@ add_task(async function() {
   store.dispatch(Actions.batchEnable(false));
 
   
-  await ContentTask.spawn(tab.linkedBrowser, {}, async () => {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
     await content.wrappedJSObject.openConnection(0);
     content.wrappedJSObject.sendData(new Array(10 * 11).toString()); 
   });
@@ -73,7 +73,7 @@ add_task(async function() {
   );
 
   
-  await ContentTask.spawn(tab.linkedBrowser, {}, async () => {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
     await content.wrappedJSObject.closeConnection();
   });
 

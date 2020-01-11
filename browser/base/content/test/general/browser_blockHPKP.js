@@ -81,7 +81,7 @@ var successfulPinningPageListener = {
 
 
 function errorPageLoaded() {
-  ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
+  SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
     let textElement = content.document.getElementById("errorShortDescText2");
     let text = textElement.innerHTML;
     ok(

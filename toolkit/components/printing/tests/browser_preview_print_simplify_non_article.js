@@ -48,7 +48,7 @@ add_task(async function switch_print_preview_browsers() {
   await defaultPPEntered;
 
   
-  await ContentTask.spawn(defaultPPBrowser, null, async function() {
+  await SpecialPowers.spawn(defaultPPBrowser, [], async function() {
     is(
       content.document.title,
       "Non article title",
@@ -80,7 +80,7 @@ add_task(async function switch_print_preview_browsers() {
   );
 
   
-  await ContentTask.spawn(simplifiedPPBrowser, null, async function() {
+  await SpecialPowers.spawn(simplifiedPPBrowser, [], async function() {
     await ContentTaskUtils.waitForCondition(
       () => content.document.title === "Failed to load article from page",
       "Simplified document title should be updated with recovery title."

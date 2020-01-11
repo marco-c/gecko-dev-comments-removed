@@ -72,7 +72,7 @@ async function testMessages(hud) {
   Cu.nukeSandbox(sandbox);
 
   
-  await ContentTask.spawn(gBrowser.selectedBrowser, {}, () => {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
     content.console.log("message from content window");
   });
 

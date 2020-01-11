@@ -145,7 +145,7 @@ function clickTheLink(aWindow, aLinkId, aOptions) {
 
 
 function referrerResultExtracted(aWindow) {
-  return ContentTask.spawn(aWindow.gBrowser.selectedBrowser, {}, function() {
+  return SpecialPowers.spawn(aWindow.gBrowser.selectedBrowser, [], function() {
     return content.document.getElementById("testdiv").textContent;
   });
 }

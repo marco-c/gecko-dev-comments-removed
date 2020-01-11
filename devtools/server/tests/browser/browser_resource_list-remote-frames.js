@@ -32,7 +32,7 @@ async function testLocalListFrames(tabTarget) {
 
   
   const browser = gBrowser.selectedBrowser;
-  const oopID = await ContentTask.spawn(browser, {}, async () => {
+  const oopID = await SpecialPowers.spawn(browser, [], async () => {
     const oop = content.document.querySelector("iframe");
     return oop.frameLoader.browsingContext.id;
   });

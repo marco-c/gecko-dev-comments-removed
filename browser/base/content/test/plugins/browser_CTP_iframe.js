@@ -32,7 +32,7 @@ add_task(async function() {
 
   
 
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
     let frame = content.document.getElementById("frame");
     let doc = frame.contentDocument;
     let plugin = doc.getElementById("test");

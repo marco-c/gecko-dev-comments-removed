@@ -5,7 +5,7 @@
 declTest("test event triggering actor creation", {
   async test(browser) {
     
-    await ContentTask.spawn(browser, {}, async function() {
+    await SpecialPowers.spawn(browser, [], async function() {
       content.document.body.innerHTML += `
         <select id="testSelect">
           <option>A</option>

@@ -47,10 +47,8 @@ async function clearHistoryAndBookmarks() {
 
 
 async function waitForPreloaded(browser) {
-  let readyState = await ContentTask.spawn(
-    browser,
-    {},
-    () => content.document.readyState
+  let readyState = await SpecialPowers.spawn(
+    browser, [], () => content.document.readyState
   );
   if (readyState !== "complete") {
     await BrowserTestUtils.browserLoaded(browser);
@@ -174,15 +172,13 @@ function test_newtab(testInfo) {
     await waitForPreloaded(browser);
 
     
-    ContentTask.spawn(browser, {}, addContentHelpers);
+    SpecialPowers.spawn(browser, [], addContentHelpers);
 
     
     await BrowserTestUtils.waitForCondition(
       () =>
-        ContentTask.spawn(
-          browser,
-          {},
-          () => content.document.getElementById("root").children.length
+        SpecialPowers.spawn(
+          browser, [], () => content.document.getElementById("root").children.length
         ),
       "Should render activity stream content"
     );
@@ -190,10 +186,8 @@ function test_newtab(testInfo) {
     
     try {
       let contentArg = await before({ pushPrefs: scopedPushPrefs, tab });
-      let contentResult = await ContentTask.spawn(
-        browser,
-        contentArg,
-        contentTask
+      let contentResult = await SpecialPowers.spawn(
+        browser, [contentArg], contentTask
       );
       await after(contentResult);
     } finally {
