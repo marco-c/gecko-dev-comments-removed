@@ -55,7 +55,7 @@ async function installSearchExtension(id, name) {
 }
 
 add_task(async function setup() {
-  await useTestEngines("data", "test-extensions");
+  await useTestEngines("test-extensions");
   await promiseStartupManager();
 
   registerCleanupFunction(async () => {
@@ -74,35 +74,16 @@ add_task(async function basic_install_test() {
   Assert.deepEqual(await getEngineNames(), ["Plain", "Special"]);
 
   
-  await withGeoServer(
-    async function cont(requests) {
-      Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", true);
-      await restart();
-      Assert.deepEqual(await getEngineNames(), ["Special"]);
-    },
-    { visibleDefaultEngines: ["special-engine"] }
-  );
-
-  
   let extension = await installSearchExtension("example", "Example");
-  Assert.deepEqual(await getEngineNames(), ["Special", "Example"]);
+  Assert.deepEqual(await getEngineNames(), ["Plain", "Special", "Example"]);
 
   await forceExpiration();
-
-  
-  await withGeoServer(
-    async function cont(requests) {
-      await restart();
-      Assert.deepEqual(await getEngineNames(), ["Example", "Plain"]);
-    },
-    { visibleDefaultEngines: ["plainengine"] }
-  );
 
   
   await extension.awaitStartup();
   await extension.unload();
   await promiseAfterCache();
-  Assert.deepEqual(await getEngineNames(), ["Plain"]);
+  Assert.deepEqual(await getEngineNames(), ["Plain", "Special"]);
 });
 
 add_task(async function basic_multilocale_test() {
@@ -112,7 +93,11 @@ add_task(async function basic_multilocale_test() {
   await withGeoServer(
     async function cont(requests) {
       await restart();
-      Assert.deepEqual(await getEngineNames(), ["Multilocale AN"]);
+      Assert.deepEqual(await getEngineNames(), [
+        "Plain",
+        "Special",
+        "Multilocale AN",
+      ]);
     },
     { visibleDefaultEngines: ["multilocale-an"] }
   );
