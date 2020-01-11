@@ -232,7 +232,7 @@ class WebRenderAPI final {
 
   bool HitTest(const wr::WorldPoint& aPoint, wr::WrPipelineId& aOutPipelineId,
                layers::ScrollableLayerGuid::ViewID& aOutScrollId,
-               gfx::CompositorHitTestInfo& aOutHitInfo);
+               gfx::CompositorHitTestInfo& aOutHitInfo, SideBits& aOutSideBits);
 
   void SendTransaction(TransactionBuilder& aTxn);
 
@@ -586,10 +586,12 @@ class DisplayListBuilder final {
   Maybe<layers::ScrollableLayerGuid::ViewID> GetContainingFixedPosScrollTarget(
       const ActiveScrolledRoot* aAsr);
 
+  Maybe<SideBits> GetContainingFixedPosSideBits(const ActiveScrolledRoot* aAsr);
+
   
   
   void SetHitTestInfo(const layers::ScrollableLayerGuid::ViewID& aScrollId,
-                      gfx::CompositorHitTestInfo aHitInfo);
+                      gfx::CompositorHitTestInfo aHitInfo, SideBits aSideBits);
   
   void ClearHitTestInfo();
 
@@ -613,16 +615,19 @@ class DisplayListBuilder final {
    public:
     FixedPosScrollTargetTracker(DisplayListBuilder& aBuilder,
                                 const ActiveScrolledRoot* aAsr,
-                                layers::ScrollableLayerGuid::ViewID aScrollId);
+                                layers::ScrollableLayerGuid::ViewID aScrollId,
+                                SideBits aSideBits);
     ~FixedPosScrollTargetTracker();
     Maybe<layers::ScrollableLayerGuid::ViewID> GetScrollTargetForASR(
         const ActiveScrolledRoot* aAsr);
+    Maybe<SideBits> GetSideBitsForASR(const ActiveScrolledRoot* aAsr);
 
    private:
     FixedPosScrollTargetTracker* mParentTracker;
     DisplayListBuilder& mBuilder;
     const ActiveScrolledRoot* mAsr;
     layers::ScrollableLayerGuid::ViewID mScrollId;
+    SideBits mSideBits;
   };
 
  protected:

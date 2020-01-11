@@ -2673,8 +2673,9 @@ APZCTreeManager::HitTestResult APZCTreeManager::GetAPZCAtPointWR(
   wr::WrPipelineId pipelineId;
   ScrollableLayerGuid::ViewID scrollId;
   gfx::CompositorHitTestInfo hitInfo;
+  SideBits sideBits = SideBits::eNone;
   bool hitSomething = wr->HitTest(wr::ToWorldPoint(aHitTestPoint), pipelineId,
-                                  scrollId, hitInfo);
+                                  scrollId, hitInfo, sideBits);
   if (!hitSomething) {
     return hit;
   }
@@ -2727,20 +2728,7 @@ APZCTreeManager::HitTestResult APZCTreeManager::GetAPZCAtPointWR(
                                   mTreeLock);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  hit.mFixedPosSides = sideBits;
 
   return hit;
 }

@@ -59,6 +59,11 @@ enum class CompositorHitTestFlags : uint8_t {
   
   
   eRequiresTargetConfirmation,  
+
+  
+  
+  
+
 };
 
 using CompositorHitTestInfo = EnumSet<CompositorHitTestFlags, uint32_t>;
