@@ -245,10 +245,107 @@ static Document* GetTopLevelDocument(const Document& aDocument) {
   return topWindow->GetExtantDoc();
 }
 
+
+
+
+
+
+
+
+
+
+
+static Maybe<nsRect> ComputeTheIntersection(nsIFrame* aTarget, nsIFrame* aRoot,
+                                            const nsRect& aRootBounds) {
+  nsIFrame* target = aTarget;
+  
+  
+  
+  
+  
+  
+  
+  Maybe<nsRect> intersectionRect = Some(target->GetRectRelativeToSelf());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  nsIFrame* containerFrame = nsLayoutUtils::GetCrossDocParentFrame(target);
+  while (containerFrame && containerFrame != aRoot) {
+    
+    
+    
+    if (containerFrame->IsScrollFrame()) {
+      nsIScrollableFrame* scrollFrame = do_QueryFrame(containerFrame);
+      
+      nsRect subFrameRect = scrollFrame->GetScrollPortRect();
+
+      
+      nsRect intersectionRectRelativeToContainer =
+          nsLayoutUtils::TransformFrameRectToAncestor(
+              target, intersectionRect.value(), containerFrame);
+
+      
+      
+      
+      
+      
+      
+      
+      
+      intersectionRect = EdgeInclusiveIntersection(
+          intersectionRectRelativeToContainer, subFrameRect);
+      if (!intersectionRect) {
+        return Nothing();
+      }
+      target = containerFrame;
+    }
+
+    containerFrame = nsLayoutUtils::GetCrossDocParentFrame(containerFrame);
+  }
+  MOZ_ASSERT(intersectionRect);
+
+  
+  nsRect intersectionRectRelativeToRoot =
+      nsLayoutUtils::TransformFrameRectToAncestor(
+          target, intersectionRect.value(),
+          nsLayoutUtils::GetContainingBlockForClientRect(aRoot));
+
+  
+  
+  intersectionRect =
+      EdgeInclusiveIntersection(intersectionRectRelativeToRoot, aRootBounds);
+  if (intersectionRect.isNothing()) {
+    return Nothing();
+  }
+  
+  
+  
+  
+  
+  
+  nsRect rect = intersectionRect.value();
+  if (aTarget->PresContext() != aRoot->PresContext()) {
+    if (nsIFrame* rootScrollFrame =
+            aTarget->PresShell()->GetRootScrollFrame()) {
+      nsLayoutUtils::TransformRect(aRoot, rootScrollFrame, rect);
+    }
+  }
+  return Some(rect);
+}
+
+
+
 void DOMIntersectionObserver::Update(Document* aDocument,
                                      DOMHighResTimeStamp time) {
-  MOZ_ASSERT(aDocument);
-
+  
+  
+  
   nsRect rootRect;
   nsIFrame* rootFrame = nullptr;
   Element* root = mRoot;
@@ -288,125 +385,103 @@ void DOMIntersectionObserver::Update(Document* aDocument,
         mRootMargin.Get(side).Resolve(basis, NSToCoordRoundWithClamp);
   }
 
+  
+  
   for (Element* target : mObservationTargets) {
     nsIFrame* targetFrame = target->GetPrimaryFrame();
-    nsIFrame* originalTargetFrame = targetFrame;
-    nsRect targetRect;
-    Maybe<nsRect> intersectionRect;
-    bool isSameDoc = root && root->GetComposedDoc() == target->GetComposedDoc();
-
-    if (rootFrame && targetFrame) {
-      
-      
-      if (mRoot) {
-        
-        
-        
-        if (!isSameDoc) {
-          continue;
-        }
-        
-        
-        
-        
-        if (!nsLayoutUtils::IsAncestorFrameCrossDoc(rootFrame, targetFrame)) {
-          continue;
-        }
-      }
-
-      targetRect = nsLayoutUtils::GetAllInFlowRectsUnion(
-          targetFrame,
-          nsLayoutUtils::GetContainingBlockForClientRect(targetFrame),
-          nsLayoutUtils::RECTS_ACCOUNT_FOR_TRANSFORMS);
-      intersectionRect = Some(targetFrame->GetRectRelativeToSelf());
-
-      nsIFrame* containerFrame =
-          nsLayoutUtils::GetCrossDocParentFrame(targetFrame);
-      while (containerFrame && containerFrame != rootFrame) {
-        if (containerFrame->IsScrollFrame()) {
-          nsIScrollableFrame* scrollFrame = do_QueryFrame(containerFrame);
-          nsRect subFrameRect = scrollFrame->GetScrollPortRect();
-          nsRect intersectionRectRelativeToContainer =
-              nsLayoutUtils::TransformFrameRectToAncestor(
-                  targetFrame, intersectionRect.value(), containerFrame);
-          intersectionRect = EdgeInclusiveIntersection(
-              intersectionRectRelativeToContainer, subFrameRect);
-          if (!intersectionRect) {
-            break;
-          }
-          targetFrame = containerFrame;
-        }
-
-        
-
-        containerFrame = nsLayoutUtils::GetCrossDocParentFrame(containerFrame);
-      }
+    
+    
+    
+    if (mRoot && mRoot->OwnerDoc() != target->OwnerDoc()) {
+      continue;
     }
 
-    nsRect rootIntersectionRect;
+    nsRect rootBounds;
     if (rootFrame && targetFrame) {
       
-      rootIntersectionRect = rootRect;
+      rootBounds = rootRect;
     }
 
     BrowsingContextOrigin origin = SimilarOrigin(*target, root);
     if (origin == BrowsingContextOrigin::Similar) {
-      rootIntersectionRect.Inflate(rootMargin);
+      rootBounds.Inflate(rootMargin);
     }
 
-    if (intersectionRect.isSome()) {
-      nsRect intersectionRectRelativeToRoot =
-          nsLayoutUtils::TransformFrameRectToAncestor(
-              targetFrame, intersectionRect.value(),
-              nsLayoutUtils::GetContainingBlockForClientRect(rootFrame));
-      intersectionRect = EdgeInclusiveIntersection(
-          intersectionRectRelativeToRoot, rootIntersectionRect);
-      if (intersectionRect.isSome() && !isSameDoc) {
-        nsRect rect = intersectionRect.value();
-        nsPresContext* presContext = originalTargetFrame->PresContext();
-        nsIFrame* rootScrollFrame =
-            presContext->PresShell()->GetRootScrollFrame();
-        if (rootScrollFrame) {
-          nsLayoutUtils::TransformRect(rootFrame, rootScrollFrame, rect);
-        }
-        intersectionRect = Some(rect);
+    Maybe<nsRect> intersectionRect;
+    nsRect targetRect;
+    if (targetFrame && rootFrame) {
+      
+      
+      
+      if (mRoot && !nsLayoutUtils::IsProperAncestorFrameCrossDoc(rootFrame,
+                                                                 targetFrame)) {
+        continue;
       }
+
+      
+      
+      targetRect = nsLayoutUtils::GetAllInFlowRectsUnion(
+          targetFrame,
+          nsLayoutUtils::GetContainingBlockForClientRect(targetFrame),
+          nsLayoutUtils::RECTS_ACCOUNT_FOR_TRANSFORMS);
+
+      
+      
+      intersectionRect =
+          ComputeTheIntersection(targetFrame, rootFrame, rootBounds);
     }
 
+    
     int64_t targetArea =
         (int64_t)targetRect.Width() * (int64_t)targetRect.Height();
+    
     int64_t intersectionArea = !intersectionRect
                                    ? 0
                                    : (int64_t)intersectionRect->Width() *
                                          (int64_t)intersectionRect->Height();
 
+    
+    
+    
+    
+    const bool isIntersecting = intersectionRect.isSome();
+
+    
+    
+    
     double intersectionRatio;
     if (targetArea > 0.0) {
       intersectionRatio =
           std::min((double)intersectionArea / (double)targetArea, 1.0);
     } else {
-      intersectionRatio = intersectionRect.isSome() ? 1.0 : 0.0;
+      intersectionRatio = isIntersecting ? 1.0 : 0.0;
     }
 
-    int32_t threshold = -1;
-    if (intersectionRect.isSome()) {
-      
-      
-      threshold = mThresholds.IndexOfFirstElementGt(intersectionRatio);
-      if (threshold == 0) {
+    
+    
+    
+    
+    int32_t thresholdIndex = -1;
+    
+    if (isIntersecting) {
+      thresholdIndex = mThresholds.IndexOfFirstElementGt(intersectionRatio);
+      if (thresholdIndex == 0) {
         
         
         
         
         
-        threshold = -1;
+        
+        
+        thresholdIndex = -1;
       }
     }
 
-    if (target->UpdateIntersectionObservation(this, threshold)) {
+    
+    if (target->UpdateIntersectionObservation(this, thresholdIndex)) {
       QueueIntersectionObserverEntry(
           target, time,
-          origin == BrowsingContextOrigin::Similar ? Some(rootIntersectionRect)
+          origin == BrowsingContextOrigin::Similar ? Some(rootBounds)
                                                    : Nothing(),
           targetRect, intersectionRect, intersectionRatio);
     }
