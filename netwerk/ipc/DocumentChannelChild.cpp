@@ -41,22 +41,43 @@ NS_IMPL_ADDREF(DocumentChannelChild)
 NS_IMPL_RELEASE(DocumentChannelChild)
 
 NS_INTERFACE_MAP_BEGIN(DocumentChannelChild)
-  if (mWasOpened && aIID == NS_GET_IID(nsIHttpChannel)) {
-    
-    
-    
-    
-    
-    NS_WARNING(
-        "Trying to request nsIHttpChannel from DocumentChannelChild, this is "
-        "likely broken");
-  }
   NS_INTERFACE_MAP_ENTRY(nsIRequest)
   NS_INTERFACE_MAP_ENTRY(nsIChannel)
   NS_INTERFACE_MAP_ENTRY(nsITraceableChannel)
   NS_INTERFACE_MAP_ENTRY(nsIAsyncVerifyRedirectCallback)
   NS_INTERFACE_MAP_ENTRY_CONCRETE(DocumentChannelChild)
-NS_INTERFACE_MAP_END_INHERITING(nsHashPropertyBag)
+  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIRequest)
+   {
+    foundInterface = 0;
+    if (mWasOpened && aIID == NS_GET_IID(nsIHttpChannel)) {
+      
+      
+      
+      
+      
+      NS_WARNING(
+          "Trying to request nsIHttpChannel from DocumentChannelChild, this is "
+          "likely broken");
+    } else if (aIID == NS_GET_IID(nsIPropertyBag)) {
+      NS_WARNING(
+          "Trying to request nsIPropertyBag from DocumentChannelChild, this "
+          "will be broken");
+    } else if (aIID == NS_GET_IID(nsIPropertyBag2)) {
+      NS_WARNING(
+          "Trying to request nsIPropertyBag2 from DocumentChannelChild, this "
+          "will be broken");
+    } else if (aIID == NS_GET_IID(nsIWritablePropertyBag)) {
+      NS_WARNING(
+          "Trying to request nsIWritablePropertyBag from DocumentChannelChild, "
+          "this will be broken");
+    } else if (aIID == NS_GET_IID(nsIWritablePropertyBag2)) {
+      NS_WARNING(
+          "Trying to request nsIWritablePropertyBag2 from "
+          "DocumentChannelChild, this will be broken");
+    }
+  }
+  if (false) 
+NS_INTERFACE_MAP_END
 
 DocumentChannelChild::DocumentChannelChild(
     nsDocShellLoadState* aLoadState, net::LoadInfo* aLoadInfo,
@@ -161,18 +182,9 @@ DocumentChannelChild::AsyncOpen(nsIStreamListener* aListener) {
   args.channelId() = mChannelId;
   args.asyncOpenTime() = mAsyncOpenTime;
 
-  nsCOMPtr<nsILoadContext> loadContext;
-  NS_QueryNotificationCallbacks(this, loadContext);
-  if (loadContext) {
-    nsCOMPtr<mozIDOMWindowProxy> domWindow;
-    loadContext->GetAssociatedWindow(getter_AddRefs(domWindow));
-    if (domWindow) {
-      auto* pDomWindow = nsPIDOMWindowOuter::From(domWindow);
-      nsIDocShell* docshell = pDomWindow->GetDocShell();
-      if (docshell) {
-        docshell->GetCustomUserAgent(args.customUserAgent());
-      }
-    }
+  nsDocShell* docshell = GetDocShell();
+  if (docshell) {
+    docshell->GetCustomUserAgent(args.customUserAgent());
   }
 
   nsCOMPtr<nsIBrowserChild> iBrowserChild;
@@ -195,6 +207,22 @@ DocumentChannelChild::AsyncOpen(nsIStreamListener* aListener) {
   mListener = listener;
 
   return NS_OK;
+}
+
+nsDocShell* DocumentChannelChild::GetDocShell() {
+  nsCOMPtr<nsILoadContext> loadContext;
+  NS_QueryNotificationCallbacks(this, loadContext);
+  if (!loadContext) {
+    return nullptr;
+  }
+  nsCOMPtr<mozIDOMWindowProxy> domWindow;
+  loadContext->GetAssociatedWindow(getter_AddRefs(domWindow));
+  if (!domWindow) {
+    return nullptr;
+  }
+  auto* pDomWindow = nsPIDOMWindowOuter::From(domWindow);
+  nsIDocShell* docshell = pDomWindow->GetDocShell();
+  return nsDocShell::Cast(docshell);
 }
 
 IPCResult DocumentChannelChild::RecvFailedAsyncOpen(
@@ -270,6 +298,7 @@ IPCResult DocumentChannelChild::RecvRedirectToRealChannel(
                                              cspToInheritLoadingDocument,
                                              getter_AddRefs(loadInfo)));
 
+  mLastVisitInfo = std::move(aArgs.lastVisitInfo());
   mRedirects = std::move(aArgs.redirects());
   mRedirectResolver = std::move(aResolve);
 
@@ -345,11 +374,6 @@ IPCResult DocumentChannelChild::RecvRedirectToRealChannel(
   if (nsCOMPtr<nsIWritablePropertyBag> bag = do_QueryInterface(newChannel)) {
     nsHashPropertyBag::CopyFrom(bag, aArgs.properties());
   }
-  
-  
-  
-  
-  nsHashPropertyBag::CopyFrom(this, aArgs.properties());
 
   
   if (childChannel) {
