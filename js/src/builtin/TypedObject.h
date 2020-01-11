@@ -821,14 +821,6 @@ MOZ_MUST_USE bool ObjectIsTypedObject(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-
-
-MOZ_MUST_USE bool ObjectIsTransparentTypedObject(JSContext* cx, unsigned argc,
-                                                 Value* vp);
-
-
-
-
 MOZ_MUST_USE bool TypeDescrIsSimpleType(JSContext*, unsigned argc, Value* vp);
 
 MOZ_MUST_USE bool TypeDescrIsArrayType(JSContext*, unsigned argc, Value* vp);
