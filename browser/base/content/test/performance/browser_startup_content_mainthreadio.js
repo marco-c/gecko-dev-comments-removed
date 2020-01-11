@@ -145,12 +145,6 @@ const processes = {
     },
     {
       
-      path: "XREAppFeat:formautofill@mozilla.org.xpi",
-      condition: !WIN,
-      stat: 1,
-    },
-    {
-      
       path: "XREAppFeat:screenshots@mozilla.org.xpi",
       condition: !WIN,
       close: 1,

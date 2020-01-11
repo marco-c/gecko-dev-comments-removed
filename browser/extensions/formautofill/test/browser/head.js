@@ -205,22 +205,26 @@ async function focusAndWaitForFieldsIdentified(browser, selector) {
 
   
   
-  if (!previouslyFocused) {
-    info("!previouslyFocused");
-    await new Promise(resolve => {
-      Services.mm.addMessageListener(
-        "FormAutofill:FieldsIdentified",
-        function onIdentified() {
-          Services.mm.removeMessageListener(
-            "FormAutofill:FieldsIdentified",
-            onIdentified
-          );
-          resolve();
-        }
-      );
-    });
-    info("FieldsIdentified");
-  }
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
   await sleep();
   await ContentTask.spawn(browser, {}, async function() {
