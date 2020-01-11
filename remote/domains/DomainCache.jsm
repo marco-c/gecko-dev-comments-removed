@@ -4,14 +4,14 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["Domains"];
+var EXPORTED_SYMBOLS = ["DomainCache"];
 
-const { UnknownMethodError } = ChromeUtils.import(
-  "chrome://remote/content/Error.jsm"
-);
 const { Domain } = ChromeUtils.import(
   "chrome://remote/content/domains/Domain.jsm"
 );
+const { UnknownMethodError } = ChromeUtils.import(
+  "chrome://remote/content/Error.jsm"
+);
 
 
 
@@ -28,7 +28,7 @@ const { Domain } = ChromeUtils.import(
 
 
 
-class Domains {
+class DomainCache {
   constructor(session, modules) {
     this.session = session;
     this.modules = modules;
@@ -105,6 +105,10 @@ class Domains {
       inst.destructor();
     }
     this.instances.clear();
+  }
+
+  toString() {
+    return `[object DomainCache ${this.size}]`;
   }
 }
 
