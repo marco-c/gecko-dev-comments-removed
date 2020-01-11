@@ -174,6 +174,35 @@ class UnknownCollectionError extends Error {
   }
 }
 
+class AttachmentDownloader extends Downloader {
+  constructor(client) {
+    super(client.bucketName, client.collectionName);
+    this._client = client;
+  }
+
+  
+
+
+
+
+  async download(record, options) {
+    try {
+      
+      return await super.download(record, options);
+    } catch (err) {
+      
+      const status = /NetworkError/.test(err.message)
+        ? UptakeTelemetry.STATUS.NETWORK_ERROR
+        : UptakeTelemetry.STATUS.DOWNLOAD_ERROR;
+      
+      await UptakeTelemetry.report(TELEMETRY_COMPONENT, status, {
+        source: this._client.identifier,
+      });
+      throw err;
+    }
+  }
+}
+
 class RemoteSettingsClient extends EventEmitter {
   static get InvalidSignatureError() {
     return InvalidSignatureError;
@@ -232,7 +261,7 @@ class RemoteSettingsClient extends EventEmitter {
     XPCOMUtils.defineLazyGetter(
       this,
       "attachments",
-      () => new Downloader(this.bucketName, collectionName)
+      () => new AttachmentDownloader(this)
     );
   }
 

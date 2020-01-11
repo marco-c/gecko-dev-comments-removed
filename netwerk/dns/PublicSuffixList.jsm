@@ -19,6 +19,12 @@ const PublicSuffixList = {
   CLIENT: RemoteSettings("public-suffix-list"),
 
   init() {
+    
+    if (this._initialized) {
+      return;
+    }
+    this._initialized = true;
+
     this.CLIENT.on("sync", this.onUpdate.bind(this));
     
 
@@ -26,6 +32,7 @@ const PublicSuffixList = {
     this.CLIENT.get({ syncIfEmpty: false, filters: { id: RECORD_ID } })
       .then(async records => {
         if (records.length == 1) {
+          
           const fileURI = await this.CLIENT.attachments.download(records[0]);
           
           this.notifyUpdate(fileURI);
@@ -78,7 +85,13 @@ const PublicSuffixList = {
       return;
     }
     
-    const fileURI = await this.CLIENT.attachments.download(changed[0]);
+    let fileURI;
+    try {
+      fileURI = await this.CLIENT.attachments.download(changed[0]);
+    } catch (err) {
+      Cu.reportError(err);
+      return;
+    }
     
     this.notifyUpdate(fileURI);
   },
