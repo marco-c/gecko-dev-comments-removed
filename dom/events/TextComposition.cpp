@@ -715,9 +715,9 @@ RawRangeBoundary TextComposition::GetStartRef() const {
         continue;
       }
       
-      bool disconnected = false;
-      if (nsContentUtils::ComparePoints_Deprecated(
-              range->StartRef(), firstRange->StartRef(), &disconnected) == -1) {
+      
+      if (*nsContentUtils::ComparePoints(range->StartRef(),
+                                         firstRange->StartRef()) == -1) {
         firstRange = range;
       }
     }
@@ -772,9 +772,9 @@ RawRangeBoundary TextComposition::GetEndRef() const {
         continue;
       }
       
-      bool disconnected = false;
-      if (nsContentUtils::ComparePoints_Deprecated(
-              lastRange->EndRef(), range->EndRef(), &disconnected) == -1) {
+      
+      if (*nsContentUtils::ComparePoints(lastRange->EndRef(),
+                                         range->EndRef()) == -1) {
         lastRange = range;
       }
     }
