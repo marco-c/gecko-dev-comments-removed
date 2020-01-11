@@ -161,6 +161,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
                           IsAnyOfHTMLElements(nsGkAtoms::video,
                                               nsGkAtoms::audio))
 
+  NS_DECL_ADDSIZEOFEXCLUDINGTHIS
+
   
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 
