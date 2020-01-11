@@ -25,8 +25,10 @@ add_task(async function() {
 
   
   await BrowserTestUtils.waitForCondition(() =>
-    SpecialPowers.spawn(gBrowser.selectedTab.linkedBrowser, [], async () =>
-      content.document.getElementById("homeContentsGroup")
+    SpecialPowers.spawn(
+      gBrowser.selectedTab.linkedBrowser,
+      [],
+      () => !!content.document.getElementById("homeContentsGroup")
     )
   );
 

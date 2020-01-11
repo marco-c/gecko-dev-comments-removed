@@ -110,15 +110,16 @@ function resumeWithExpectedSuccess() {
   });
 }
 
-function callGUM(testParameters) {
+async function callGUM(testParameters) {
   info("- calling gum with " + JSON.stringify(testParameters.constraints));
   if (testParameters.shouldAllowStartingContext) {
     
     
     testParameters.constraints.fake = true;
-    return content.navigator.mediaDevices.getUserMedia(
+    await content.navigator.mediaDevices.getUserMedia(
       testParameters.constraints
     );
+    return;
   }
 
   
@@ -130,7 +131,6 @@ function callGUM(testParameters) {
   
   
   content.navigator.mediaDevices.getUserMedia(testParameters.constraints);
-  return Promise.resolve();
 }
 
 async function testWebAudioWithGUM(testParameters) {

@@ -63,12 +63,7 @@ function API_getAddonByID(browser, id) {
     let addon = await content.navigator.mozAddonManager.getAddonByID(id);
 
     
-    let result = {};
-    for (let prop in addon) {
-      result[prop] = addon[prop];
-    }
-
-    return result;
+    return JSON.parse(JSON.stringify(addon));
   });
 }
 
