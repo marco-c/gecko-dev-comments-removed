@@ -128,6 +128,15 @@ class JS_PUBLIC_API RealmCreationOptions {
   bool getSharedMemoryAndAtomicsEnabled() const;
   RealmCreationOptions& setSharedMemoryAndAtomicsEnabled(bool flag);
 
+  
+  
+  
+  
+  
+  
+  bool getCoopAndCoepEnabled() const;
+  RealmCreationOptions& setCoopAndCoepEnabled(bool flag);
+
   bool getStreamsEnabled() const { return streams_; }
   RealmCreationOptions& setStreamsEnabled(bool flag) {
     streams_ = flag;
@@ -199,6 +208,7 @@ class JS_PUBLIC_API RealmCreationOptions {
   bool preserveJitCode_ = false;
   bool cloneSingletons_ = false;
   bool sharedMemoryAndAtomics_ = false;
+  bool coopAndCoep_ = false;
   bool streams_ = false;
   bool readableByteStreams_ = false;
   bool byobStreamReaders_ = false;
