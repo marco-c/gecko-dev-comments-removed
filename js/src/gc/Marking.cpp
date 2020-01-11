@@ -2566,26 +2566,29 @@ void GCMarker::enterWeakMarkingMode() {
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  if (weakMapAction() == ExpandWeakMaps) {
-    tag_ = TracerKindTag::WeakMarking;
+  if (weakMapAction() != ExpandWeakMaps) {
+    return;
+  }
 
-    
-    
-    
-    while (processMarkQueue() == QueueYielded) {
-    };
+  
+  
+  
+  
+  
+  
 
-    for (SweepGroupZonesIter zone(runtime()); !zone.done(); zone.next()) {
-      for (WeakMapBase* m : zone->gcWeakMapList()) {
-        if (m->mapColor) {
-          mozilla::Unused << m->markEntries(this);
-        }
+  tag_ = TracerKindTag::WeakMarking;
+
+  
+  
+  
+  while (processMarkQueue() == QueueYielded) {
+  };
+
+  for (SweepGroupZonesIter zone(runtime()); !zone.done(); zone.next()) {
+    for (WeakMapBase* m : zone->gcWeakMapList()) {
+      if (m->mapColor) {
+        mozilla::Unused << m->markEntries(this);
       }
     }
   }
