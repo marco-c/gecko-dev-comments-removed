@@ -1969,8 +1969,7 @@ bool nsPrintJob::DoSetPixelScale() {
 
 nsView* nsPrintJob::GetParentViewForRoot() {
   if (mIsCreatingPrintPreview) {
-    nsCOMPtr<nsIContentViewer> cv = do_QueryInterface(mDocViewerPrint);
-    if (cv) {
+    if (nsCOMPtr<nsIContentViewer> cv = do_QueryInterface(mDocViewerPrint)) {
       return cv->FindContainerView();
     }
   }
@@ -2068,7 +2067,6 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
                            : GetParentViewForRoot();
   aPO->mPresContext = parentView ? new nsPresContext(aPO->mDocument, type)
                                  : new nsRootPresContext(aPO->mDocument, type);
-  NS_ENSURE_TRUE(aPO->mPresContext, NS_ERROR_OUT_OF_MEMORY);
   aPO->mPresContext->SetPrintSettings(printData->mPrintSettings);
 
   
@@ -2102,10 +2100,7 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
                           aPO->mDocument);
   }
 
-  
-
   bool doReturn = false;
-  ;
   bool documentIsTopLevel = false;
   nsSize adjSize;
 
@@ -2120,15 +2115,23 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
          adjSize.width, adjSize.height));
 
   aPO->mPresShell->BeginObservingDocument();
-
   aPO->mPresContext->SetPageSize(adjSize);
-  aPO->mPresContext->SetVisibleArea(
-      nsRect(0, 0, adjSize.width, adjSize.height));
+
+  int32_t p2a = aPO->mPresContext->DeviceContext()->AppUnitsPerDevPixel();
+  if (documentIsTopLevel && mIsCreatingPrintPreview) {
+    if (nsCOMPtr<nsIContentViewer> cv = do_QueryInterface(mDocViewerPrint)) {
+      
+      
+      nsIntRect bounds;
+      cv->GetBounds(bounds);
+      adjSize = nsSize(bounds.width * p2a, bounds.height * p2a);
+    }
+  }
+  aPO->mPresContext->SetVisibleArea(nsRect(nsPoint(), adjSize));
   aPO->mPresContext->SetIsRootPaginatedDocument(documentIsTopLevel);
   aPO->mPresContext->SetPageScale(aPO->mZoomRatio);
   
-  float printDPI = float(AppUnitsPerCSSInch()) /
-                   float(printData->mPrintDC->AppUnitsPerDevPixel());
+  float printDPI = float(AppUnitsPerCSSInch()) / float(p2a);
   aPO->mPresContext->SetPrintPreviewScale(mScreenDPI / printDPI);
 
   if (mIsCreatingPrintPreview && documentIsTopLevel) {
