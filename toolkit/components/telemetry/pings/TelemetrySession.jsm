@@ -683,7 +683,11 @@ var Impl = {
           payloadLoc = payloadObj;
         }
         
-        if (processType == "dynamic" && key !== "scalars") {
+        if (
+          processType == "dynamic" &&
+          key !== "scalars" &&
+          key !== "keyedScalars"
+        ) {
           continue;
         }
 
