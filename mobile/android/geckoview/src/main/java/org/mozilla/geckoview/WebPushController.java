@@ -47,9 +47,9 @@ public class WebPushController {
 
 
     @UiThread
-    public void onPushEvent(final @NonNull WebPushSubscription subscription) {
+    public void onPushEvent(final @NonNull String scope) {
         ThreadUtils.assertOnUiThread();
-        onPushEvent(subscription, null);
+        onPushEvent(scope, null);
     }
 
     
@@ -57,13 +57,12 @@ public class WebPushController {
 
 
 
-
     @UiThread
-    public void onPushEvent(final @NonNull WebPushSubscription subscription, final @Nullable byte[] data) {
+    public void onPushEvent(final @NonNull String scope, final @Nullable byte[] data) {
         ThreadUtils.assertOnUiThread();
 
         final GeckoBundle msg = new GeckoBundle(2);
-        msg.putBundle("subscription", subscription.toBundle());
+        msg.putString("scope", scope);
         msg.putString("data", Base64Utils.encode(data));
         EventDispatcher.getInstance().dispatch("GeckoView:PushEvent", msg);
     }
