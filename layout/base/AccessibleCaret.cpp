@@ -225,19 +225,6 @@ void AccessibleCaret::RemoveCaretElement(Document* aDocument) {
   CaretElement().RemoveEventListener(NS_LITERAL_STRING("touchstart"),
                                      mDummyTouchListener, false);
 
-  
-  
-  
-  
-  
-  if (nsIFrame* frame = CaretElement().GetPrimaryFrame()) {
-    if (frame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
-      frame = frame->GetPlaceholderFrame();
-    }
-    nsAutoScriptBlocker scriptBlocker;
-    frame->GetParent()->RemoveFrame(nsIFrame::kPrincipalList, frame);
-  }
-
   aDocument->RemoveAnonymousContent(*mCaretElementHolder, IgnoreErrors());
 }
 

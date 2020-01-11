@@ -1285,11 +1285,6 @@ void PresShell::Destroy() {
     frameSelection->DisconnectFromPresShell();
   }
 
-  if (mAccessibleCaretEventHub) {
-    mAccessibleCaretEventHub->Terminate();
-    mAccessibleCaretEventHub = nullptr;
-  }
-
   
   
   
@@ -1373,6 +1368,14 @@ void PresShell::Destroy() {
   }
   for (WeakFrame* weakFrame : toRemove) {
     weakFrame->Clear(this);
+  }
+
+  
+  
+  
+  if (mAccessibleCaretEventHub) {
+    mAccessibleCaretEventHub->Terminate();
+    mAccessibleCaretEventHub = nullptr;
   }
 
   if (mPresContext) {
