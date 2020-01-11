@@ -17,8 +17,6 @@
 #include "DllBlocklistInit.h"
 #include "freestanding/DllBlocklist.h"
 
-extern uint32_t gBlocklistInitFlags;
-
 #if defined(_MSC_VER)
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 #endif
@@ -101,6 +99,13 @@ LauncherVoidResult InitializeDllBlocklistOOP(const wchar_t* aFullImagePath,
 
   
   uint32_t newFlags = eDllBlocklistInitFlagWasBootstrapped;
+
+  if (gBlocklistInitFlags & eDllBlocklistInitFlagWasBootstrapped) {
+    
+    
+    newFlags |= eDllBlocklistInitFlagIsChildProcess;
+  }
+
   ok = !!::WriteProcessMemory(aChildProcess, &gBlocklistInitFlags, &newFlags,
                               sizeof(newFlags), &bytesWritten);
   if (!ok || bytesWritten != sizeof(newFlags)) {
