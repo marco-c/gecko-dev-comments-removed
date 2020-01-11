@@ -4863,9 +4863,31 @@ static nscoord ContentContribution(
       iMinSizeClamp = aMinSizeClamp;
     }
     LogicalSize availableSize(childWM, availISize, availBSize);
-    size = ::MeasuringReflow(child, aState.mReflowInput, aRC, availableSize,
-                             cbSize, iMinSizeClamp, bMinSizeClamp);
-    size += child->GetLogicalUsedMargin(childWM).BStartEnd(childWM);
+    if (MOZ_UNLIKELY(child->IsXULBoxFrame())) {
+      auto* pc = child->PresContext();
+      
+      
+      
+      
+      
+      
+      ReflowInput childRI(pc, *aState.mReflowInput, child, availableSize,
+                          Some(cbSize));
+
+      nsBoxLayoutState state(pc, &aState.mRenderingContext, &childRI,
+                             childRI.mReflowDepth);
+      nsSize physicalPrefSize = child->GetXULPrefSize(state);
+      auto prefSize = LogicalSize(childWM, physicalPrefSize);
+      size = prefSize.BSize(childWM);
+
+      
+      
+      size += childRI.ComputedLogicalMargin().BStartEnd(childWM);
+    } else {
+      size = ::MeasuringReflow(child, aState.mReflowInput, aRC, availableSize,
+                               cbSize, iMinSizeClamp, bMinSizeClamp);
+      size += child->GetLogicalUsedMargin(childWM).BStartEnd(childWM);
+    }
     nscoord overflow = size - aMinSizeClamp;
     if (MOZ_UNLIKELY(overflow > 0)) {
       nscoord contentSize = child->ContentBSize(childWM);
@@ -6435,10 +6457,34 @@ void nsGridContainerFrame::ReflowInFlowChild(
   
   ReflowOutput childSize(childRI);
   const nsSize dummyContainerSize;
-  ReflowChild(aChild, pc, childSize, childRI, childWM, LogicalPoint(childWM),
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  LogicalPoint childPos(childWM);
+  if (MOZ_LIKELY(childWM == wm)) {
+    
+    
+    childPos = cb.Origin(wm);
+  }
+  ReflowChild(aChild, pc, childSize, childRI, childWM, childPos,
               dummyContainerSize, ReflowChildFlags::Default, aStatus);
-  LogicalPoint childPos = cb.Origin(wm).ConvertTo(
-      childWM, wm, aContainerSize - childSize.PhysicalSize());
+  if (MOZ_UNLIKELY(childWM != wm)) {
+    
+    
+    
+    childPos = cb.Origin(wm).ConvertTo(
+        childWM, wm, aContainerSize - childSize.PhysicalSize());
+  }
   
   if (MOZ_LIKELY(isGridItem)) {
     LogicalSize size = childSize.Size(childWM);  
