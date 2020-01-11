@@ -139,14 +139,14 @@ BoxModel.prototype = {
 
 
   trackReflows() {
-    this.inspector.reflowTracker.trackReflows(this, this.updateBoxModel);
+    this.inspector.on("reflow-in-selected-target", this.updateBoxModel);
   },
 
   
 
 
   untrackReflows() {
-    this.inspector.reflowTracker.untrackReflows(this, this.updateBoxModel);
+    this.inspector.off("reflow-in-selected-target", this.updateBoxModel);
   },
 
   

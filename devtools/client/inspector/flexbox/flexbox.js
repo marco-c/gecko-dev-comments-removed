@@ -108,7 +108,7 @@ class FlexboxInspector {
     this.inspector.sidebar.off("select", this.onSidebarSelect);
     this.inspector.off("new-root", this.onNavigate);
 
-    this.inspector.reflowTracker.untrackReflows(this, this.onReflow);
+    this.inspector.off("reflow-in-selected-target", this.onReflow);
 
     this._customHostColors = null;
     this._highlighters = null;
@@ -420,13 +420,13 @@ class FlexboxInspector {
 
   onSidebarSelect() {
     if (!this.isPanelVisible()) {
-      this.inspector.reflowTracker.untrackReflows(this, this.onReflow);
+      this.inspector.off("reflow-in-selected-target", this.onReflow);
       this.inspector.off("new-root", this.onNavigate);
       this.selection.off("new-node-front", this.onUpdatePanel);
       return;
     }
 
-    this.inspector.reflowTracker.trackReflows(this, this.onReflow);
+    this.inspector.on("reflow-in-selected-target", this.onReflow);
     this.inspector.on("new-root", this.onNavigate);
     this.selection.on("new-node-front", this.onUpdatePanel);
 

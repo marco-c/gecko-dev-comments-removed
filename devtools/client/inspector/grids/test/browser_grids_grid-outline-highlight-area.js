@@ -35,7 +35,7 @@ add_task(async function() {
   const { highlighters, store } = inspector;
 
   
-  inspector.reflowTracker.untrackReflows(gridInspector, gridInspector.onReflow);
+  inspector.off("reflow-in-selected-target", gridInspector.onReflow);
 
   const gridList = doc.getElementById("grid-list");
   const checkbox = gridList.children[0].querySelector("input");

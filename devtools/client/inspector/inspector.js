@@ -9,7 +9,6 @@ const promise = require("promise");
 const EventEmitter = require("devtools/shared/event-emitter");
 const { executeSoon } = require("devtools/shared/DevToolsUtils");
 const { Toolbox } = require("devtools/client/framework/toolbox");
-const ReflowTracker = require("devtools/client/inspector/shared/reflow-tracker");
 const Store = require("devtools/client/inspector/store");
 const InspectorStyleChangeTracker = require("devtools/client/inspector/shared/style-change-tracker");
 
@@ -208,6 +207,7 @@ function Inspector(toolbox) {
   this.onSidebarToggle = this.onSidebarToggle.bind(this);
   this.handleThreadPaused = this.handleThreadPaused.bind(this);
   this.handleThreadResumed = this.handleThreadResumed.bind(this);
+  this.onReflowInSelection = this.onReflowInSelection.bind(this);
 }
 
 Inspector.prototype = {
@@ -241,7 +241,6 @@ Inspector.prototype = {
     
     
     this.previousURL = this.currentTarget.url;
-    this.reflowTracker = new ReflowTracker(this.currentTarget);
     this.styleChangeTracker = new InspectorStyleChangeTracker(this);
 
     this._markupBox = this.panelDoc.getElementById("markup-box");
@@ -264,7 +263,6 @@ Inspector.prototype = {
       this._getDefaultSelection(),
       this._getAccessibilityFront(),
     ]);
-    this.reflowTracker = new ReflowTracker(this.currentTarget);
 
     
     
@@ -290,9 +288,6 @@ Inspector.prototype = {
 
     this._defaultNode = null;
     this.selection.setNodeFront(null);
-
-    this.reflowTracker.destroy();
-    this.reflowTracker = null;
   },
 
   async initInspectorFront(targetFront) {
@@ -1581,6 +1576,7 @@ Inspector.prototype = {
 
     this.updateAddElementButton();
     this.updateSelectionCssSelectors();
+    this.trackReflowsInSelection();
 
     const selfUpdate = this.updating("inspector-panel");
     executeSoon(() => {
@@ -1591,6 +1587,41 @@ Inspector.prototype = {
         console.error(ex);
       }
     });
+  },
+
+  
+
+
+  async trackReflowsInSelection() {
+    this.untrackReflowsInSelection();
+    if (!this.selection.nodeFront) {
+      return;
+    }
+
+    const { targetFront } = this.selection.nodeFront;
+    this.reflowFront = await targetFront.getFront("reflow");
+    this.reflowFront.on("reflows", this.onReflowInSelection);
+    this.reflowFront.start();
+  },
+
+  
+
+
+  untrackReflowsInSelection() {
+    if (!this.reflowFront) {
+      return;
+    }
+
+    this.reflowFront.off("reflows", this.onReflowInSelection);
+    this.reflowFront.stop();
+    this.reflowFront = null;
+  },
+
+  onReflowInSelection() {
+    
+    
+    
+    this.emit("reflow-in-selected-target");
   },
 
   
@@ -1677,6 +1708,8 @@ Inspector.prototype = {
     }
 
     this.cancelUpdate();
+
+    this.untrackReflowsInSelection();
 
     this.sidebar.destroy();
 

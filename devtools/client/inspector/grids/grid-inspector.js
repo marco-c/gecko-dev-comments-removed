@@ -180,7 +180,7 @@ class GridInspector {
     this.inspector.sidebar.off("select", this.onSidebarSelect);
     this.inspector.off("new-root", this.onNavigate);
 
-    this.inspector.reflowTracker.untrackReflows(this, this.onReflow);
+    this.inspector.off("reflow-in-selected-target", this.onReflow);
 
     this._highlighters = null;
     this.document = null;
@@ -668,11 +668,11 @@ class GridInspector {
 
   onSidebarSelect() {
     if (!this.isPanelVisible()) {
-      this.inspector.reflowTracker.untrackReflows(this, this.onReflow);
+      this.inspector.off("reflow-in-selected-target", this.onReflow);
       return;
     }
 
-    this.inspector.reflowTracker.trackReflows(this, this.onReflow);
+    this.inspector.on("reflow-in-selected-target", this.onReflow);
     this.updateGridPanel();
   }
 
