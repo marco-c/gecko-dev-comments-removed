@@ -60,6 +60,8 @@ html|textarea {
   background-repeat: no-repeat;
   -moz-appearance: none;
   -moz-window-shadow: none;
+  
+  pointer-events: none;
 }
 
 .autoscroller[scrolldir="NS"] {

@@ -1726,9 +1726,6 @@
     _createAutoScrollPopup() {
       var popup = document.createXULElement("panel");
       popup.className = "autoscroller";
-      
-      
-      popup.setAttribute("mousethrough", "always");
       popup.setAttribute("consumeoutsideclicks", "true");
       popup.setAttribute("rolluponmousewheel", "true");
       popup.setAttribute("hidden", "true");
