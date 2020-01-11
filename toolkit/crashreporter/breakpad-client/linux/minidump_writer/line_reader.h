@@ -50,7 +50,7 @@ class LineReader {
   }
 
   
-  static const size_t kMaxLineLen = 512;
+  static const size_t kMaxLineLen = 1024;
 
   
   
