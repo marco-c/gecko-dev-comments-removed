@@ -564,26 +564,45 @@ impl ClipChainInstance {
 
 #[derive(Debug)]
 pub struct ClipChainLevel {
-    clips: Vec<ClipChainId>,
-    clip_counts: Vec<usize>,
     
     
     shared_clips: Vec<ClipDataHandle>,
+
+    
+    first_clip_index: usize,
+    
+    initial_clip_counts_len: usize,
 }
 
-impl ClipChainLevel {
-    
-    
-    fn new(
-        shared_clips: Vec<ClipDataHandle>,
-    ) -> Self {
-        ClipChainLevel {
-            clips: Vec::new(),
-            clip_counts: Vec::new(),
-            shared_clips,
-        }
-    }
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -594,13 +613,25 @@ pub struct ClipChainStack {
     
     
     
-    pub stack: Vec<ClipChainLevel>,
+    levels: Vec<ClipChainLevel>,
+    
+    clips: Vec<ClipChainId>,
+    
+    clip_counts: Vec<usize>,
 }
 
 impl ClipChainStack {
     pub fn new() -> Self {
         ClipChainStack {
-            stack: vec![ClipChainLevel::new(Vec::new())],
+            levels: vec![
+                ClipChainLevel {
+                    shared_clips: Vec::new(),
+                    first_clip_index: 0,
+                    initial_clip_counts_len: 0,
+                }
+            ],
+            clips: Vec::new(),
+            clip_counts: Vec::new(),
         }
     }
 
@@ -622,7 +653,7 @@ impl ClipChainStack {
             
             
             let mut valid_clip = true;
-            for level in &self.stack {
+            for level in &self.levels {
                 if level.shared_clips.iter().any(|handle| {
                     handle.uid() == clip_uid
                 }) {
@@ -632,22 +663,21 @@ impl ClipChainStack {
             }
 
             if valid_clip {
-                self.stack.last_mut().unwrap().clips.push(current_clip_chain_id);
+                self.clips.push(current_clip_chain_id);
                 clip_count += 1;
             }
 
             current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
         }
 
-        self.stack.last_mut().unwrap().clip_counts.push(clip_count);
+        self.clip_counts.push(clip_count);
     }
 
     
     pub fn pop_clip(&mut self) {
-        let level = self.stack.last_mut().unwrap();
-        let count = level.clip_counts.pop().unwrap();
+        let count = self.clip_counts.pop().unwrap();
         for _ in 0 .. count {
-            level.clips.pop().unwrap();
+            self.clips.pop().unwrap();
         }
     }
 
@@ -657,19 +687,26 @@ impl ClipChainStack {
         &mut self,
         shared_clips: &[ClipDataHandle],
     ) {
-        let level = ClipChainLevel::new(shared_clips.to_vec());
-        self.stack.push(level);
+        let level = ClipChainLevel {
+            shared_clips: shared_clips.to_vec(),
+            first_clip_index: self.clips.len(),
+            initial_clip_counts_len: self.clip_counts.len(),
+        };
+
+        self.levels.push(level);
     }
 
     
     pub fn pop_surface(&mut self) {
-        let level = self.stack.pop().unwrap();
-        assert!(level.clip_counts.is_empty() && level.clips.is_empty());
+        let level = self.levels.pop().unwrap();
+        assert!(self.clip_counts.len() == level.initial_clip_counts_len);
+        assert!(self.clips.len() == level.first_clip_index);
     }
 
     
     pub fn current_clips_array(&self) -> &[ClipChainId] {
-        &self.stack.last().unwrap().clips
+        let first = self.levels.last().unwrap().first_clip_index;
+        &self.clips[first..]
     }
 }
 
