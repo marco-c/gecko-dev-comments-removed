@@ -163,16 +163,7 @@ bool SwitchEmitter::emitCond() {
     return false;
   }
 
-  
-  
-  if (!bce_->newSrcNote3(SRC_CONDSWITCH, 0, 0, &noteIndex_)) {
-    return false;
-  }
-
   MOZ_ASSERT(top_ == bce_->bytecodeSection().offset());
-  if (!bce_->emitN(JSOP_CONDSWITCH, 0)) {
-    return false;
-  }
 
   tdzCacheCaseAndBody_.emplace(bce_);
 
@@ -189,7 +180,7 @@ bool SwitchEmitter::emitTable(const TableGenerator& tableGen) {
   top_ = bce_->bytecodeSection().offset();
 
   
-  if (!bce_->newSrcNote2(SRC_TABLESWITCH, 0, &noteIndex_)) {
+  if (!bce_->newSrcNote2(SRC_TABLESWITCH, 0, &tableSwitchNoteIndex_)) {
     return false;
   }
 
@@ -232,13 +223,6 @@ bool SwitchEmitter::emitCaseOrDefaultJump(uint32_t caseIndex, bool isDefault) {
   }
   caseOffsets_[caseIndex] = caseJump.offset;
   lastCaseOffset_ = caseJump.offset;
-
-  if (caseIndex == 0) {
-    
-    if (!bce_->setSrcNoteOffset(noteIndex_, 1, lastCaseOffset_ - top_)) {
-      return false;
-    }
-  }
 
   return true;
 }
@@ -390,18 +374,14 @@ bool SwitchEmitter::emitEnd() {
     pc += JUMP_OFFSET_LEN;
   }
 
-  
-  
-  static_assert(unsigned(SrcNote::TableSwitch::EndOffset) ==
-                    unsigned(SrcNote::CondSwitch::EndOffset),
-                "{TableSwitch,CondSwitch}::EndOffset should be same");
-  if (!bce_->setSrcNoteOffset(
-          noteIndex_, SrcNote::TableSwitch::EndOffset,
-          bce_->bytecodeSection().lastNonJumpTargetOffset() - top_)) {
-    return false;
-  }
-
   if (kind_ == Kind::Table) {
+    
+    if (!bce_->setSrcNoteOffset(
+            tableSwitchNoteIndex_, SrcNote::TableSwitch::EndOffset,
+            bce_->bytecodeSection().lastNonJumpTargetOffset() - top_)) {
+      return false;
+    }
+
     
     pc += 2 * JUMP_OFFSET_LEN;
 

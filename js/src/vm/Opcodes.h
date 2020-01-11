@@ -1242,40 +1242,8 @@
  \
     MACRO(JSOP_LINENO, 119, "lineno", NULL, 5, 0, 0, JOF_UINT32) \
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
  \
-    MACRO(JSOP_CONDSWITCH, 120, "condswitch", NULL, 1, 0, 0, JOF_BYTE) \
+    MACRO(JSOP_UNUSED120, 120, "unused", NULL, 1, 0, 0, JOF_BYTE) \
     
 
 

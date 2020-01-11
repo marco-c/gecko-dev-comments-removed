@@ -221,7 +221,6 @@ class MOZ_STACK_CLASS SwitchEmitter {
   
   
   
-  
 
  public:
   enum class Kind { Table, Cond };
@@ -300,7 +299,7 @@ class MOZ_STACK_CLASS SwitchEmitter {
   bool hasDefault_ = false;
 
   
-  unsigned noteIndex_ = 0;
+  unsigned tableSwitchNoteIndex_ = 0;
 
   
   uint32_t caseCount_ = 0;
