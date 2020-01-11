@@ -113,48 +113,28 @@ function assertNDEFReaderOptionsEqual(provided, received) {
 
 function matchesWatchOptions(message, options) {
   
-  if (!matchesWebNfcId(message.url, options.id)) return false;
-
   
-  if ((options.mediaType == null || options.mediaType === '') &&
-      options.recordType == null) {
+  
+  if (message.records.length == 0)
     return true;
-  }
 
-  
   for (let record of message.records) {
-    if (options.mediaType != null && options.mediaType !== ""
-        && options.mediaType !== record.mediaType) {
-      return false;
+    if (options.id != null && options.id !== record.id) {
+      continue;
     }
     if (options.recordType != null &&
         options.recordType !== record.recordType) {
-      return false;
+      continue;
     }
+    if (options.mediaType !== '' && options.mediaType !== record.mediaType) {
+      continue;
+    }
+
+    
+    return true;
   }
 
-  return true;
-}
-
-
-
-function matchesWebNfcId(id, pattern) {
-  if (id != null && id !== "" && pattern != null && pattern !== "") {
-    const id_url = new URL(id);
-    const pattern_url = new URL(pattern);
-
-    if (id_url.protocol !== pattern_url.protocol) return false;
-    if (!id_url.host.endsWith("." + pattern_url.host)
-        && id_url.host !== pattern_url.host) {
-      return false;
-    }
-    if (pattern_url.pathname === "/*") return true;
-    if (id_url.pathname.startsWith(pattern_url.pathname)) return true;
-
-    return false;
-  }
-
-  return true;
+  return false;
 }
 
 function createNDEFError(type) {
