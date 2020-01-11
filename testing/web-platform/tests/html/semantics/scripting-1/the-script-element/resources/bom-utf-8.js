@@ -1,2 +1,2 @@
 ﻿
-executed_utf8_bom = '三村かな子';
+window.executed_utf8_bom = '三村かな子';
