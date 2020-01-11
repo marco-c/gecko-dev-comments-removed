@@ -587,11 +587,6 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
     
     
     Count,
-
-    
-    
-    
-    Frequency
   };
   HitState getHitState() const { return hitState_; }
   void setHitCount(uint64_t count) {
