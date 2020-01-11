@@ -225,15 +225,18 @@ void TraceRootRange(JSTracer* trc, size_t len, T* vec, const char* name) {
 }
 
 
-
-template <typename T>
-void TraceCrossCompartmentEdge(JSTracer* trc, JSObject* src,
-                               const WriteBarriered<T>* dst, const char* name);
-
-
 template <typename T>
 void TraceManuallyBarrieredCrossCompartmentEdge(JSTracer* trc, JSObject* src,
                                                 T* dst, const char* name);
+
+
+
+template <typename T>
+void TraceCrossCompartmentEdge(JSTracer* trc, JSObject* src,
+                               const WriteBarriered<T>* dst, const char* name) {
+  TraceManuallyBarrieredCrossCompartmentEdge(
+      trc, src, gc::ConvertToBase(dst->unsafeUnbarrieredForTracing()), name);
+}
 
 
 
