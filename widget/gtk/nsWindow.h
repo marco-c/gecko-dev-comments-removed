@@ -546,6 +546,8 @@ class nsWindow final : public nsBaseWidget {
   
   CSDSupportLevel mCSDSupportLevel;
   
+  bool mDrawToContainer;
+  
   bool mDrawInTitlebar;
   
   bool mTitlebarBackdropState;
