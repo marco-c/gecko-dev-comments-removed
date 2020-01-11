@@ -247,6 +247,11 @@ static sk_sp<SkImage> GetSkImageForSurface(SourceSurface* aSurface,
     return nullptr;
   }
 
+  
+  
+  MOZ_ASSERT(VerifyRGBXCorners(surf->GetData(), surf->GetSize(), surf->Stride(),
+                               surf->GetFormat(), aBounds, aMatrix));
+
   SkPixmap pixmap(MakeSkiaImageInfo(surf->GetSize(), surf->GetFormat()),
                   surf->GetData(), surf->Stride());
   sk_sp<SkImage> image =
@@ -256,10 +261,6 @@ static sk_sp<SkImage> GetSkImageForSurface(SourceSurface* aSurface,
     gfxDebug() << "Failed making Skia raster image for temporary surface";
   }
 
-  
-  
-  MOZ_ASSERT(VerifyRGBXCorners(surf->GetData(), surf->GetSize(), surf->Stride(),
-                               surf->GetFormat(), aBounds, aMatrix));
   return image;
 }
 
