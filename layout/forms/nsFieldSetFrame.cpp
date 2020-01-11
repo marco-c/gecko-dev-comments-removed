@@ -31,9 +31,6 @@ nsContainerFrame* NS_NewFieldSetFrame(PresShell* aPresShell,
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsFieldSetFrame)
-NS_QUERYFRAME_HEAD(nsFieldSetFrame)
-  NS_QUERYFRAME_ENTRY(nsFieldSetFrame)
-NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
 
 nsFieldSetFrame::nsFieldSetFrame(ComputedStyle* aStyle,
                                  nsPresContext* aPresContext)
@@ -46,8 +43,7 @@ nsRect nsFieldSetFrame::VisualBorderRectRelativeToSelf() const {
   WritingMode wm = GetWritingMode();
   LogicalRect r(wm, LogicalPoint(wm, 0, 0), GetLogicalSize(wm));
   nsSize containerSize = r.Size(wm).GetPhysicalSize(wm);
-  nsIFrame* legend = GetLegend();
-  if (legend && !GetPrevInFlow()) {
+  if (nsIFrame* legend = GetLegend()) {
     nscoord legendSize = legend->GetLogicalSize(wm).BSize(wm);
     auto legendMargin = legend->GetLogicalUsedMargin(wm);
     nscoord legendStartMargin = legendMargin.BStart(wm);
@@ -74,11 +70,11 @@ nsRect nsFieldSetFrame::VisualBorderRectRelativeToSelf() const {
   return r.GetPhysicalRect(wm, containerSize);
 }
 
-nsContainerFrame* nsFieldSetFrame::GetInner() const {
+nsIFrame* nsFieldSetFrame::GetInner() const {
   nsIFrame* last = mFrames.LastChild();
   if (last &&
       last->Style()->GetPseudoType() == PseudoStyleType::fieldsetContent) {
-    return static_cast<nsContainerFrame*>(last);
+    return last;
   }
   MOZ_ASSERT(mFrames.LastChild() == mFrames.FirstChild());
   return nullptr;
@@ -282,7 +278,6 @@ image::ImgDrawResult nsFieldSetFrame::PaintBorder(
   nsRect rect = VisualBorderRectRelativeToSelf() + aPt;
   nsPresContext* presContext = PresContext();
 
-  const auto skipSides = GetSkipSides();
   PaintBorderFlags borderFlags = aBuilder->ShouldSyncDecodeImages()
                                      ? PaintBorderFlags::SyncDecodeImages
                                      : PaintBorderFlags();
@@ -333,12 +328,12 @@ image::ImgDrawResult nsFieldSetFrame::PaintBorder(
     aRenderingContext.Clip(clipPath);
     result &= nsCSSRendering::PaintBorder(presContext, aRenderingContext, this,
                                           aDirtyRect, rect, mComputedStyle,
-                                          borderFlags, skipSides);
+                                          borderFlags);
     aRenderingContext.Restore();
   } else {
-    result &= nsCSSRendering::PaintBorder(
-        presContext, aRenderingContext, this, aDirtyRect,
-        nsRect(aPt, mRect.Size()), mComputedStyle, borderFlags, skipSides);
+    result &= nsCSSRendering::PaintBorder(presContext, aRenderingContext, this,
+                                          aDirtyRect, nsRect(aPt, mRect.Size()),
+                                          mComputedStyle, borderFlags);
   }
 
   return result;
@@ -398,26 +393,17 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
 
   nsOverflowAreas ocBounds;
   nsReflowStatus ocStatus;
-  auto* prevInFlow = static_cast<nsFieldSetFrame*>(GetPrevInFlow());
-  if (prevInFlow) {
+  if (GetPrevInFlow()) {
     ReflowOverflowContainerChildren(aPresContext, aReflowInput, ocBounds,
                                     ReflowChildFlags::Default, ocStatus);
-
-    AutoFrameListPtr prevOverflowFrames(PresContext(),
-                                        prevInFlow->StealOverflowFrames());
-    if (prevOverflowFrames) {
-      nsContainerFrame::ReparentFrameViewList(*prevOverflowFrames, prevInFlow,
-                                              this);
-      mFrames.InsertFrames(this, nullptr, *prevOverflowFrames);
-    }
-    DrainSelfOverflowList();
   }
 
+  
   bool reflowInner;
   bool reflowLegend;
   nsIFrame* legend = GetLegend();
   nsIFrame* inner = GetInner();
-  if (aReflowInput.ShouldReflowAllKids() || GetNextInFlow()) {
+  if (aReflowInput.ShouldReflowAllKids()) {
     reflowInner = inner != nullptr;
     reflowLegend = legend != nullptr;
   } else {
@@ -427,24 +413,29 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
 
   
   
-  const auto wm = GetWritingMode();
-  LogicalMargin border = aReflowInput.ComputedLogicalBorderPadding() -
-                         aReflowInput.ComputedLogicalPadding();
-  auto skipSides = PreReflowBlockLevelLogicalSkipSides();
-  border.ApplySkipSides(skipSides);
-  LogicalSize availSize(wm, aReflowInput.ComputedSize().ISize(wm),
-                        aReflowInput.AvailableBSize());
+  
+  
+  WritingMode wm = GetWritingMode();
+  WritingMode innerWM = inner ? inner->GetWritingMode() : wm;
+  WritingMode legendWM = legend ? legend->GetWritingMode() : wm;
+  LogicalSize innerAvailSize = aReflowInput.ComputedSizeWithPadding(innerWM);
+  LogicalSize legendAvailSize = aReflowInput.ComputedSize(legendWM);
+  innerAvailSize.BSize(innerWM) = legendAvailSize.BSize(legendWM) =
+      NS_UNCONSTRAINEDSIZE;
 
   
+  LogicalMargin border = aReflowInput.ComputedLogicalBorderPadding() -
+                         aReflowInput.ComputedLogicalPadding();
+
+  
+  
   LogicalMargin legendMargin(wm);
+  
   Maybe<ReflowInput> legendReflowInput;
   if (legend) {
-    const auto legendWM = legend->GetWritingMode();
-    LogicalSize legendAvailSize = availSize.ConvertTo(legendWM, wm);
     legendReflowInput.emplace(aPresContext, aReflowInput, legend,
                               legendAvailSize);
   }
-  const bool avoidBreakInside = ShouldAvoidBreakInside(aReflowInput);
   if (reflowLegend) {
     ReflowOutput legendDesiredSize(aReflowInput);
 
@@ -454,55 +445,37 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
     ReflowChild(legend, aPresContext, legendDesiredSize, *legendReflowInput, wm,
                 LogicalPoint(wm), dummyContainerSize,
                 ReflowChildFlags::NoMoveFrame, aStatus);
-
-    if (!prevInFlow && !aReflowInput.mFlags.mIsTopOfPage &&
-        aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE) {
-      
-      if (legend->StyleDisplay()->BreakBefore() ||
-          aStatus.IsInlineBreakBefore()) {
-        
-        aDesiredSize.SetSize(wm, LogicalSize(wm));
-        aStatus.SetInlineLineBreakBeforeAndReset();
-        return;
-      }
-      
-      if (MOZ_UNLIKELY(avoidBreakInside) && !aStatus.IsFullyComplete()) {
-        aDesiredSize.SetSize(wm, LogicalSize(wm));
-        aStatus.SetInlineLineBreakBeforeAndReset();
-        return;
-      }
-    }
-
+#ifdef NOISY_REFLOW
+    printf("  returned (%d, %d)\n", legendDesiredSize.Width(),
+           legendDesiredSize.Height());
+#endif
     
     legendMargin = legend->GetLogicalUsedMargin(wm);
     mLegendRect = LogicalRect(
         wm, 0, 0, legendDesiredSize.ISize(wm) + legendMargin.IStartEnd(wm),
         legendDesiredSize.BSize(wm) + legendMargin.BStartEnd(wm));
-    
     nscoord oldSpace = mLegendSpace;
     mLegendSpace = 0;
     nscoord borderBStart = border.BStart(wm);
-    if (!prevInFlow) {
-      if (mLegendRect.BSize(wm) > borderBStart) {
-        mLegendSpace = mLegendRect.BSize(wm) - borderBStart;
-      } else {
-        
-        
-        nscoord off = (borderBStart - legendDesiredSize.BSize(wm)) / 2;
-        off -= legendMargin.BStart(wm);  
-        if (off > nscoord(0)) {
-          
-          nscoord overflow = off + mLegendRect.BSize(wm) - borderBStart;
-          if (overflow > nscoord(0)) {
-            off -= overflow;
-          }
-          mLegendRect.BStart(wm) += off;
-        }
-      }
+    if (mLegendRect.BSize(wm) > borderBStart) {
+      
+      mLegendSpace = mLegendRect.BSize(wm) - borderBStart;
     } else {
-      mLegendSpace = mLegendRect.BSize(wm);
+      
+      
+      nscoord off = (borderBStart - legendDesiredSize.BSize(wm)) / 2;
+      off -= legendMargin.BStart(wm);  
+      if (off > nscoord(0)) {
+        
+        nscoord overflow = off + mLegendRect.BSize(wm) - borderBStart;
+        if (overflow > nscoord(0)) {
+          off -= overflow;
+        }
+        mLegendRect.BStart(wm) += off;
+      }
     }
 
+    
     
     if (mLegendSpace != oldSpace && inner) {
       reflowInner = true;
@@ -511,20 +484,6 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
     FinishReflowChild(legend, aPresContext, legendDesiredSize,
                       legendReflowInput.ptr(), wm, LogicalPoint(wm),
                       dummyContainerSize, ReflowChildFlags::NoMoveFrame);
-    EnsureChildContinuation(legend, aStatus);
-    if (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE &&
-        !legend->GetWritingMode().IsOrthogonalTo(wm) &&
-        legend->StyleDisplay()->BreakAfter() &&
-        (!legendReflowInput->mFlags.mIsTopOfPage ||
-         mLegendRect.BSize(wm) > 0) &&
-        aStatus.IsComplete()) {
-      
-      
-      
-      availSize.BSize(wm) = nscoord(0);
-      aStatus.Reset();
-      aStatus.SetIncomplete();
-    }
   } else if (!legend) {
     mLegendRect.SetEmpty();
     mLegendSpace = 0;
@@ -538,47 +497,20 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
   
   nsSize containerSize =
       (LogicalSize(wm, 0, mLegendSpace) + border.Size(wm)).GetPhysicalSize(wm);
+  
   if (reflowInner) {
-    LogicalSize innerAvailSize = availSize;
-    innerAvailSize.ISize(wm) = aReflowInput.ComputedSizeWithPadding().ISize(wm);
-    nscoord remainingComputedBSize = aReflowInput.ComputedBSize();
-    if (prevInFlow && remainingComputedBSize != NS_UNCONSTRAINEDSIZE) {
-      
-      for (nsIFrame* prev = prevInFlow; prev; prev = prev->GetPrevInFlow()) {
-        auto* prevFieldSet = static_cast<nsFieldSetFrame*>(prev);
-        remainingComputedBSize -= prevFieldSet->mLegendSpace;
-      }
-      remainingComputedBSize = std::max(0, remainingComputedBSize);
-    }
-    if (innerAvailSize.BSize(wm) != NS_UNCONSTRAINEDSIZE) {
-      innerAvailSize.BSize(wm) -=
-          std::max(mLegendRect.BSize(wm), border.BStart(wm));
-      if (StyleBorder()->mBoxDecorationBreak ==
-              StyleBoxDecorationBreak::Clone &&
-          (aReflowInput.ComputedBSize() == NS_UNCONSTRAINEDSIZE ||
-           remainingComputedBSize +
-                   aReflowInput.ComputedLogicalBorderPadding().BStartEnd(wm) >=
-               availSize.BSize(wm))) {
-        innerAvailSize.BSize(wm) -= border.BEnd(wm);
-      }
-      innerAvailSize.BSize(wm) = std::max(0, innerAvailSize.BSize(wm));
-    }
     ReflowInput kidReflowInput(aPresContext, aReflowInput, inner,
                                innerAvailSize, Nothing(),
                                ReflowInput::CALLER_WILL_INIT);
     
     kidReflowInput.Init(aPresContext, Nothing(), nullptr,
                         &aReflowInput.ComputedPhysicalPadding());
-    if (kidReflowInput.mFlags.mIsTopOfPage) {
-      
-      kidReflowInput.mFlags.mIsTopOfPage = !legend;
-    }
     
     
     
     if (aReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE) {
       kidReflowInput.SetComputedBSize(
-          std::max(0, remainingComputedBSize - mLegendSpace));
+          std::max(0, aReflowInput.ComputedBSize() - mLegendSpace));
     }
 
     if (aReflowInput.ComputedMinBSize() > 0) {
@@ -592,6 +524,7 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
     }
 
     ReflowOutput kidDesiredSize(kidReflowInput);
+    
     NS_ASSERTION(
         kidReflowInput.ComputedPhysicalMargin() == nsMargin(0, 0, 0, 0),
         "Margins on anonymous fieldset child not supported!");
@@ -601,50 +534,19 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
     
     
     const nsSize dummyContainerSize;
-    nsReflowStatus status;
-    
-    
-    
-    
-    ReflowChildFlags flags = aStatus.IsFullyComplete()
-                                 ? ReflowChildFlags::Default
-                                 : ReflowChildFlags::NoDeleteNextInFlowChild;
     ReflowChild(inner, aPresContext, kidDesiredSize, kidReflowInput, wm, pt,
-                dummyContainerSize, flags, status);
-
-    
-    if (MOZ_UNLIKELY(avoidBreakInside) && !prevInFlow &&
-        !aReflowInput.mFlags.mIsTopOfPage &&
-        availSize.BSize(wm) != NS_UNCONSTRAINEDSIZE) {
-      if (status.IsInlineBreakBefore() || !status.IsFullyComplete()) {
-        aDesiredSize.SetSize(wm, LogicalSize(wm));
-        aStatus.SetInlineLineBreakBeforeAndReset();
-        return;
-      }
-    }
+                dummyContainerSize, ReflowChildFlags::Default, aStatus);
 
     
     
     containerSize += kidDesiredSize.PhysicalSize();
     FinishReflowChild(inner, aPresContext, kidDesiredSize, &kidReflowInput, wm,
                       pt, containerSize, ReflowChildFlags::Default);
-    EnsureChildContinuation(inner, status);
-    aStatus.MergeCompletionStatusFrom(status);
     NS_FRAME_TRACE_REFLOW_OUT("FieldSet::Reflow", aStatus);
   } else if (inner) {
     
     
     containerSize += inner->GetSize();
-  } else {
-    
-    MOZ_ASSERT(prevInFlow, "first-in-flow should always have an inner frame");
-    for (nsIFrame* prev = prevInFlow; prev; prev = prev->GetPrevInFlow()) {
-      auto* prevFieldSet = static_cast<nsFieldSetFrame*>(prev);
-      if (auto* prevInner = prevFieldSet->GetInner()) {
-        containerSize += prevInner->GetSize();
-        break;
-      }
-    }
   }
 
   LogicalRect contentRect(wm);
@@ -653,9 +555,12 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
     
     
     contentRect = inner->GetLogicalRect(wm, containerSize);
-  } else if (prevInFlow) {
-    auto size = prevInFlow->GetPaddingRectRelativeToSelf().Size();
-    contentRect.ISize(wm) = wm.IsVertical() ? size.height : size.width;
+  }
+
+  
+  LogicalSize availSize = aReflowInput.ComputedSizeWithPadding(wm);
+  if (availSize.ISize(wm) > contentRect.ISize(wm)) {
+    contentRect.ISize(wm) = innerAvailSize.ISize(wm);
   }
 
   if (legend) {
@@ -713,12 +618,6 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
   }
 
   
-  if (!aStatus.IsComplete() &&
-      StyleBorder()->mBoxDecorationBreak != StyleBoxDecorationBreak::Clone) {
-    border.BEnd(wm) = nscoord(0);
-  }
-
-  
   LogicalSize finalSize(
       wm, contentRect.ISize(wm) + border.IStartEnd(wm),
       mLegendSpace + border.BStartEnd(wm) + (inner ? inner->BSize(wm) : 0));
@@ -738,29 +637,6 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
         contentBoxBSize +
         aReflowInput.ComputedLogicalBorderPadding().BStartEnd(wm);
   }
-
-  if (aStatus.IsComplete() &&
-      finalSize.BSize(wm) > aReflowInput.AvailableBSize() &&
-      border.BEnd(wm) > 0 && aReflowInput.AvailableBSize() > border.BEnd(wm)) {
-    
-    if (MOZ_UNLIKELY(avoidBreakInside)) {
-      aDesiredSize.SetSize(wm, LogicalSize(wm));
-      aStatus.SetInlineLineBreakBeforeAndReset();
-      return;
-    } else {
-      if (StyleBorder()->mBoxDecorationBreak ==
-          StyleBoxDecorationBreak::Slice) {
-        finalSize.BSize(wm) -= border.BEnd(wm);
-      }
-      aStatus.SetIncomplete();
-    }
-  }
-
-  if (!aStatus.IsComplete()) {
-    
-    finalSize.BSize(wm) =
-        std::max(finalSize.BSize(wm), aReflowInput.AvailableBSize());
-  }
   aDesiredSize.SetSize(wm, finalSize);
   aDesiredSize.SetOverflowAreasToDesiredBounds();
 
@@ -777,7 +653,9 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
 
   FinishReflowWithAbsoluteFrames(aPresContext, aDesiredSize, aReflowInput,
                                  aStatus);
+
   InvalidateFrame();
+
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
 }
 
@@ -865,46 +743,5 @@ void nsFieldSetFrame::AppendDirectlyOwnedAnonBoxes(
     nsTArray<OwnedAnonBox>& aResult) {
   if (nsIFrame* kid = GetInner()) {
     aResult.AppendElement(OwnedAnonBox(kid));
-  }
-}
-
-void nsFieldSetFrame::EnsureChildContinuation(nsIFrame* aChild,
-                                              const nsReflowStatus& aStatus) {
-  MOZ_ASSERT(aChild == GetLegend() || aChild == GetInner(),
-             "unexpected child frame");
-  nsIFrame* nif = aChild->GetNextInFlow();
-  if (aStatus.IsFullyComplete()) {
-    if (nif) {
-      RemoveFrame(kPrincipalList, nif);
-      MOZ_ASSERT(!aChild->GetNextInFlow());
-    }
-  } else {
-    if (!nif) {
-      auto* pc = PresContext();
-      auto* fc = pc->PresShell()->FrameConstructor();
-      nif = fc->CreateContinuingFrame(pc, aChild, this);
-      if (aStatus.IsOverflowIncomplete()) {
-        nif->AddStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
-        if (nsFrameList* eoc =
-                GetPropTableFrames(ExcessOverflowContainersProperty())) {
-          eoc->AppendFrame(nullptr, nif);
-        } else {
-          SetPropTableFrames(new (PresShell()) nsFrameList(nif, nif),
-                             ExcessOverflowContainersProperty());
-        }
-      } else {
-        if (nsFrameList* oc = GetOverflowFrames()) {
-          oc->AppendFrame(nullptr, nif);
-        } else {
-          SetOverflowFrames(nsFrameList(nif, nif));
-        }
-      }
-    } else {
-      if (aStatus.IsOverflowIncomplete()) {
-        for (nsIFrame* n = nif; n; n = n->GetNextInFlow()) {
-          n->AddStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
-        }
-      }
-    }
   }
 }

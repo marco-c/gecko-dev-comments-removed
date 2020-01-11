@@ -11,7 +11,6 @@
 
 #include "nsSplittableFrame.h"
 #include "nsContainerFrame.h"
-#include "nsFieldSetFrame.h"
 #include "nsIFrameInlines.h"
 
 using namespace mozilla;
@@ -205,18 +204,6 @@ nscoord nsSplittableFrame::GetEffectiveComputedBSize(
   }
 
   bSize -= aConsumedBSize;
-
-  
-  
-  
-  
-  if (IS_TRUE_OVERFLOW_CONTAINER(this) &&
-      Style()->GetPseudoType() == PseudoStyleType::fieldsetContent) {
-    for (nsFieldSetFrame* fieldset = do_QueryFrame(GetParent()); fieldset;
-         fieldset = static_cast<nsFieldSetFrame*>(fieldset->GetPrevInFlow())) {
-      bSize -= fieldset->LegendSpace();
-    }
-  }
 
   
   return std::max(0, bSize);

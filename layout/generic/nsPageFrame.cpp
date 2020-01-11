@@ -14,7 +14,6 @@
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsGkAtoms.h"
-#include "nsFieldSetFrame.h"
 #include "nsPageContentFrame.h"
 #include "nsDisplayList.h"
 #include "nsPageSequenceFrame.h"  
@@ -678,30 +677,10 @@ void nsPageBreakFrame::Reflow(nsPresContext* aPresContext,
   
   
   WritingMode wm = aReflowInput.GetWritingMode();
-  nscoord bSize = aReflowInput.AvailableBSize();
-  if (aReflowInput.AvailableBSize() == NS_UNCONSTRAINEDSIZE) {
-    bSize = nscoord(0);
-  } else if (GetContent()->IsHTMLElement(nsGkAtoms::legend)) {
-    
-    
-    
-    
-    nsContainerFrame* parent = GetParent();
-    if (parent &&
-        parent->Style()->GetPseudoType() == PseudoStyleType::fieldsetContent) {
-      while ((parent = parent->GetParent())) {
-        if (nsFieldSetFrame* fieldset = do_QueryFrame(parent)) {
-          auto* legend = fieldset->GetLegend();
-          if (legend && legend->GetContent() == GetContent()) {
-            bSize = nscoord(0);
-          }
-          break;
-        }
-      }
-    }
-  }
-  LogicalSize finalSize(wm, GetIntrinsicISize(), bSize);
-  
+  LogicalSize finalSize(wm, GetIntrinsicISize(),
+                        aReflowInput.AvailableBSize() == NS_UNCONSTRAINEDSIZE
+                            ? 0
+                            : aReflowInput.AvailableBSize());
   
   finalSize.BSize(wm) -=
       finalSize.BSize(wm) % nsPresContext::CSSPixelsToAppUnits(1);
