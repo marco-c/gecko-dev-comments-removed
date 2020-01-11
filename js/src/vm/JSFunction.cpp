@@ -1219,20 +1219,7 @@ const JSClass JSFunction::class_ = {js_Function_str,
 const JSClass* const js::FunctionClassPtr = &JSFunction::class_;
 
 bool JSFunction::isDerivedClassConstructor() {
-  bool derived = false;
-  if (hasSelfHostedLazyScript()) {
-    
-    
-    JSAtom* name = GetClonedSelfHostedFunctionName(this);
-
-    
-    
-    derived = name == compartment()
-                          ->runtimeFromAnyThread()
-                          ->commonNames->DefaultDerivedClassConstructor;
-  } else if (hasBaseScript()) {
-    derived = baseScript()->isDerivedClassConstructor();
-  }
+  bool derived = hasBaseScript() && baseScript()->isDerivedClassConstructor();
   MOZ_ASSERT_IF(derived, isClassConstructor());
   return derived;
 }
@@ -1738,6 +1725,10 @@ void JSFunction::maybeRelazify(JSRuntime* rt) {
 
   MOZ_ASSERT(!script->isAsync() && !script->isGenerator(),
              "Generator resume code in the JITs assumes non-lazy function");
+
+  MOZ_ASSERT(!script->isDefaultClassConstructor(),
+             "default class constructors are built-in, but have their "
+             "self-hosted flag cleared");
 
   LazyScript* lazy = script->maybeLazyScript();
   if (lazy) {
