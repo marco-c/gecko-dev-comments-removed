@@ -180,13 +180,13 @@ WebGLContext::WebGLContext()
 }
 
 WebGLContext::~WebGLContext() {
-  RemovePostRefreshObserver();
-
-  DestroyResourcesAndContext();
   if (NS_IsMainThread()) {
     
     WebGLMemoryTracker::RemoveWebGLContext(this);
   }
+
+  RemovePostRefreshObserver();
+  DestroyResourcesAndContext();
 }
 
 template <typename T>
