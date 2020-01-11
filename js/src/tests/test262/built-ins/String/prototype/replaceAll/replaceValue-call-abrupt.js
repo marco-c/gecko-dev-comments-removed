@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function custom() {
+  throw new Test262Error();
+}
+
+assert.throws(Test262Error, function() {
+  'a'.replaceAll('a', custom);
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var proto = Object.getPrototypeOf(AggregateError.prototype);
+
+assert.sameValue(proto, Error.prototype);
+
+reportCompare(0, 0);

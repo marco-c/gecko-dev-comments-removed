@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+class C {
+  #m = 'test262';
+
+  access(obj) {
+    return obj?.#m;
+  }
+}

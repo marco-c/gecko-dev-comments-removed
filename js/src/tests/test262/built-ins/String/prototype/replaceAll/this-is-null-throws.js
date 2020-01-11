@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof String.prototype.replaceAll,
+  'function',
+  'function must exist'
+);
+
+assert.throws(TypeError, function() {
+  String.prototype.replaceAll.call(null);
+});
+
+
+reportCompare(0, 0);

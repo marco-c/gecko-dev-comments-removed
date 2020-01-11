@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = new AggregateError([]);
+
+assert.sameValue(Object.getPrototypeOf(obj), AggregateError.prototype);
+
+reportCompare(0, 0);

@@ -1,0 +1,50 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var custom = { x: 42 };
+var newt = new Proxy(function() {}, {
+  get(t, p) {
+    if (p === 'prototype') {
+      return custom;
+    }
+
+    return t[p];
+  }
+});
+
+var obj = Reflect.construct(AggregateError, [[]], newt);
+
+assert.sameValue(Object.getPrototypeOf(obj), custom);
+assert.sameValue(obj.x, 42);
+
+reportCompare(0, 0);

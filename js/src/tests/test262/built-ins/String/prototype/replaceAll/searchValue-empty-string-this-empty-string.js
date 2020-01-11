@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var result = ''.replaceAll('', 'abc');
+assert.sameValue(result, 'abc');
+
+reportCompare(0, 0);

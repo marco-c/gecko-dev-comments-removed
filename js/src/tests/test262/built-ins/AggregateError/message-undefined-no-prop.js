@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var case1 = new AggregateError([], undefined);
+
+assert.sameValue(
+  Object.prototype.hasOwnProperty.call(case1, 'message'),
+  false,
+  'explicit'
+);
+
+var case2 = new AggregateError([]);
+
+assert.sameValue(
+  Object.prototype.hasOwnProperty.call(case2, 'message'),
+  false,
+  'implicit'
+);
+
+reportCompare(0, 0);

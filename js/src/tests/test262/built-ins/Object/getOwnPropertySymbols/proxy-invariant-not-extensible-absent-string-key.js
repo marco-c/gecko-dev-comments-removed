@@ -1,0 +1,51 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var target = {prop: 2};
+var proxy = new Proxy(target, {
+  ownKeys: function() {
+    return [];
+  },
+});
+
+Object.preventExtensions(target);
+
+assert.throws(TypeError, function() {
+  Object.getOwnPropertySymbols(proxy);
+});
+
+reportCompare(0, 0);

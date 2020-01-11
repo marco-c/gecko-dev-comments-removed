@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Intl.DisplayNames.prototype.resolvedOptions,
+  "function",
+  "`typeof Intl.DisplayNames.prototype.resolvedOptions` is `'function'`"
+);
+
+verifyProperty(Intl.DisplayNames.prototype, "resolvedOptions", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var getter = Object.getOwnPropertyDescriptor(
+  AggregateError.prototype, 'errors'
+).get;
+
+assert.throws(TypeError, function() {
+  getter();
+});
+
+reportCompare(0, 0);
