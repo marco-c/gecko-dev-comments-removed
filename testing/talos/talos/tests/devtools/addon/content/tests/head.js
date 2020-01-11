@@ -45,11 +45,23 @@ function runTest(label, record) {
 }
 exports.runTest = runTest;
 
-exports.testSetup = function(url) {
+exports.testSetup = function(url, { disableCache } = {}) {
+  if (disableCache) {
+    
+    
+    
+    
+    
+    
+    Services.prefs.setBoolPref("devtools.cache.disabled", true);
+  }
   return damp.testSetup(url);
 };
 
 exports.testTeardown = function() {
+  
+  
+  Services.prefs.setBoolPref("devtools.cache.disabled", false);
   return damp.testTeardown();
 };
 
