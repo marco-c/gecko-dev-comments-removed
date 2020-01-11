@@ -1,4 +1,5 @@
 import click
+
 from piptools.scripts import compile, sync
 
 
@@ -7,10 +8,10 @@ def cli():
     pass
 
 
-cli.add_command(compile.cli, 'compile')
-cli.add_command(sync.cli, 'sync')
+cli.add_command(compile.cli, "compile")
+cli.add_command(sync.cli, "sync")
 
 
 
-if __name__ == '__main__':  
+if __name__ == "__main__":  
     cli()

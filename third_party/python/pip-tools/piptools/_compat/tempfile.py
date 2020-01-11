@@ -40,8 +40,10 @@ class TemporaryDirectory(object):
                 
                 if "None" not in str(ex):
                     raise
-                print("ERROR: {!r} while cleaning up {!r}".format(ex, self,),
-                      file=_sys.stderr)
+                print(
+                    "ERROR: {!r} while cleaning up {!r}".format(ex, self),
+                    file=_sys.stderr,
+                )
                 return
             self._closed = True
 

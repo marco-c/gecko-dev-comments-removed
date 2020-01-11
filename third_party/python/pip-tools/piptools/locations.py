@@ -1,19 +1,24 @@
 import os
 from shutil import rmtree
 
-from .click import secho
 from ._compat import user_cache_dir
+from .click import secho
 
 
-CACHE_DIR = user_cache_dir('pip-tools')
+CACHE_DIR = user_cache_dir("pip-tools")
 
 
 
 
 
 
-LEGACY_CACHE_DIR = os.path.expanduser('~/.pip-tools')
+LEGACY_CACHE_DIR = os.path.expanduser("~/.pip-tools")
 
 if os.path.exists(LEGACY_CACHE_DIR):
-    secho('Removing old cache dir {} (new cache dir is {})'.format(LEGACY_CACHE_DIR, CACHE_DIR), fg='yellow')
+    secho(
+        "Removing old cache dir {} (new cache dir is {})".format(
+            LEGACY_CACHE_DIR, CACHE_DIR
+        ),
+        fg="yellow",
+    )
     rmtree(LEGACY_CACHE_DIR)
