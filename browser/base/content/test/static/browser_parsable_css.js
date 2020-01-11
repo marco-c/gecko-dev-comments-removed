@@ -102,22 +102,6 @@ if (
   });
 }
 
-if (!Services.prefs.getBoolPref("full-screen-api.unprefix.enabled")) {
-  whitelist.push(
-    {
-      sourceName: /(?:res|gre-resources)\/(ua|html)\.css$/i,
-      errorMessage: /Unknown pseudo-class .*\bfullscreen\b/i,
-      isFromDevTools: false,
-    },
-    {
-      
-      sourceName: /web\/viewer\.css$/i,
-      errorMessage: /Unknown pseudo-class .*\bfullscreen\b/i,
-      isFromDevTools: false,
-    }
-  );
-}
-
 if (!Services.prefs.getBoolPref("layout.css.scrollbar-width.enabled")) {
   whitelist.push({
     sourceName: /(?:res|gre-resources)\/forms\.css$/i,
