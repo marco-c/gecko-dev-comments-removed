@@ -201,34 +201,8 @@ bool ScrollbarsProp::GetVisible(CallerType aCallerType, ErrorResult& aRv) {
   return pref != ScrollbarPreference::Never;
 }
 
-void ScrollbarsProp::SetVisible(bool aVisible, CallerType aCallerType,
-                                ErrorResult& aRv) {
-  if (aCallerType != CallerType::System) {
-    return;
-  }
-
+void ScrollbarsProp::SetVisible(bool aVisible, CallerType, ErrorResult&) {
   
-
-
-
-
-
-
-  nsContentUtils::SetScrollbarsVisibility(mDOMWindow->GetDocShell(), aVisible);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
 }  
