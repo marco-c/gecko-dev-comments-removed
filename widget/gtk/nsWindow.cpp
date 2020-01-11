@@ -4436,23 +4436,25 @@ void nsWindow::HideWaylandWindow() {
           g_list_delete_link(gVisibleWaylandPopupWindows, foundWindow);
     }
   }
-  if (mContainer && moz_container_has_wl_egl_window(mContainer)) {
-    
-    
-    
-    
-    MOZ_ASSERT(GetRemoteRenderer());
-    if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
+  if (!mIsDestroyed) {
+    if (mContainer && moz_container_has_wl_egl_window(mContainer)) {
       
-      remoteRenderer->SendPause();
       
-      RefPtr<nsWindow> self(this);
-      moz_container_add_initial_draw_callback(mContainer, [self]() -> void {
-        self->mNeedsCompositorResume = true;
-        self->MaybeResumeCompositor();
-      });
-    } else {
-      DestroyLayerManager();
+      
+      
+      MOZ_ASSERT(GetRemoteRenderer());
+      if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
+        
+        remoteRenderer->SendPause();
+        
+        RefPtr<nsWindow> self(this);
+        moz_container_add_initial_draw_callback(mContainer, [self]() -> void {
+          self->mNeedsCompositorResume = true;
+          self->MaybeResumeCompositor();
+        });
+      } else {
+        DestroyLayerManager();
+      }
     }
   }
 #endif
