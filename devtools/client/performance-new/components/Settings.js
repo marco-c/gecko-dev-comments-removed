@@ -50,6 +50,8 @@
 
 
 
+
+
 "use strict";
 
 const {
@@ -63,6 +65,7 @@ const {
   label,
   input,
   span,
+  h1,
   h2,
   h3,
   section,
@@ -78,6 +81,7 @@ const {
   makeExponentialScale,
   formatFileSize,
   calculateOverhead,
+  UnhandledCaseError,
 } = require("devtools/client/performance-new/utils");
 const { connect } = require("devtools/client/shared/vendor/react-redux");
 const actions = require("devtools/client/performance-new/store/actions");
@@ -403,6 +407,59 @@ class Settings extends PureComponent {
     this.setState({ temporaryThreadText: null });
     this.props.changeThreads(_threadTextToList(event.target.value));
   }
+
+  
+
+
+
+
+
+
+
+
+  _renderSection(id, title, children) {
+    const { pageContext } = this.props;
+    switch (pageContext) {
+      case "popup":
+      case "devtools":
+        
+        return details(
+          {
+            className: "perf-settings-details",
+            
+            onToggle: _handleToggle,
+          },
+          summary(
+            {
+              className: "perf-settings-summary",
+              id,
+            },
+            
+            
+            title + ":"
+          ),
+          
+          div(
+            { className: "perf-settings-details-contents" },
+            
+            
+            div(
+              { className: "perf-settings-details-contents-slider" },
+              children
+            )
+          )
+        );
+      case "aboutprofiling":
+        
+        return div(
+          { className: "perf-settings-sections" },
+          div(null, h2(null, title), children)
+        );
+      default:
+        throw new UnhandledCaseError(pageContext, "PageContext");
+    }
+  }
+
   
 
 
@@ -435,56 +492,39 @@ class Settings extends PureComponent {
 
   _renderThreads() {
     const { temporaryThreadText } = this.state;
-
-    return details(
-      {
-        className: "perf-settings-details",
-        
-        onToggle: _handleToggle,
-      },
-      summary(
-        {
-          className: "perf-settings-summary",
-          id: "perf-settings-threads-summary",
-        },
-        "Threads:"
-      ),
-      
+    return this._renderSection(
+      "perf-settings-threads-summary",
+      "Threads",
       div(
-        { className: "perf-settings-details-contents" },
-        
-        
+        null,
         div(
-          { className: "perf-settings-details-contents-slider" },
-          div(
-            { className: "perf-settings-thread-columns" },
-            threadColumns.map(this._renderThreadsColumns)
-          ),
-          div(
-            { className: "perf-settings-row" },
-            label(
-              {
-                className: "perf-settings-text-label",
-                title:
-                  "These thread names are a comma separated list that is used to " +
-                  "enable profiling of the threads in the profiler. The name needs to " +
-                  "be only a partial match of the thread name to be included. It " +
-                  "is whitespace sensitive.",
-              },
-              div({}, "Add custom threads by name:"),
-              input({
-                className: "perf-settings-text-input",
-                id: "perf-settings-thread-text",
-                type: "text",
-                value:
-                  temporaryThreadText === null
-                    ? this.props.threads.join(",")
-                    : temporaryThreadText,
-                onBlur: this._handleThreadTextCleanup,
-                onFocus: this._setThreadTextFromInput,
-                onChange: this._setThreadTextFromInput,
-              })
-            )
+          { className: "perf-settings-thread-columns" },
+          threadColumns.map(this._renderThreadsColumns)
+        ),
+        div(
+          { className: "perf-settings-row" },
+          label(
+            {
+              className: "perf-settings-text-label",
+              title:
+                "These thread names are a comma separated list that is used to " +
+                "enable profiling of the threads in the profiler. The name needs to " +
+                "be only a partial match of the thread name to be included. It " +
+                "is whitespace sensitive.",
+            },
+            div(null, "Add custom threads by name:"),
+            input({
+              className: "perf-settings-text-input",
+              id: "perf-settings-thread-text",
+              type: "text",
+              value:
+                temporaryThreadText === null
+                  ? this.props.threads.join(",")
+                  : temporaryThreadText,
+              onBlur: this._handleThreadTextCleanup,
+              onFocus: this._setThreadTextFromInput,
+              onChange: this._setThreadTextFromInput,
+            })
           )
         )
       )
@@ -517,16 +557,19 @@ class Settings extends PureComponent {
         className: `perf-settings-checkbox-label perf-settings-feature-label ${extraClassName}`,
         key: value,
       },
-      input({
-        className: "perf-settings-checkbox",
-        id: `perf-settings-feature-checkbox-${value}`,
-        type: "checkbox",
-        value,
-        checked: isSupported && this.props.features.includes(value),
-        onChange: this._handleFeaturesCheckboxChange,
-        disabled: !isSupported,
-      }),
-      div({ className: "perf-settings-feature-name" }, name),
+      div(
+        { className: "perf-settings-checkbox-and-name" },
+        input({
+          className: "perf-settings-checkbox",
+          id: `perf-settings-feature-checkbox-${value}`,
+          type: "checkbox",
+          value,
+          checked: isSupported && this.props.features.includes(value),
+          onChange: this._handleFeaturesCheckboxChange,
+          disabled: !isSupported,
+        }),
+        div({ className: "perf-settings-feature-name" }, name)
+      ),
       div(
         { className: "perf-settings-feature-title" },
         title,
@@ -547,35 +590,22 @@ class Settings extends PureComponent {
   }
 
   _renderFeatures() {
-    return details(
-      {
-        className: "perf-settings-details",
-        
-        onToggle: _handleToggle,
-      },
-      summary(
-        {
-          className: "perf-settings-summary",
-          id: "perf-settings-features-summary",
-        },
-        "Features:"
-      ),
+    return this._renderSection(
+      "perf-settings-features-summary",
+      "Features",
       div(
-        { className: "perf-settings-details-contents" },
-        div(
-          { className: "perf-settings-details-contents-slider" },
-          
-          featureCheckboxes.map(featureCheckbox =>
-            this._renderFeatureCheckbox(featureCheckbox, false)
-          ),
-          h3(
-            { className: "perf-settings-features-disabled-title" },
-            "The following features are currently unavailable:"
-          ),
-          
-          featureCheckboxes.map(featureCheckbox =>
-            this._renderFeatureCheckbox(featureCheckbox, true)
-          )
+        null,
+        
+        featureCheckboxes.map(featureCheckbox =>
+          this._renderFeatureCheckbox(featureCheckbox, false)
+        ),
+        h3(
+          { className: "perf-settings-features-disabled-title" },
+          "The following features are currently unavailable:"
+        ),
+        
+        featureCheckboxes.map(featureCheckbox =>
+          this._renderFeatureCheckbox(featureCheckbox, true)
         )
       )
     );
@@ -583,51 +613,61 @@ class Settings extends PureComponent {
 
   _renderLocalBuildSection() {
     const { objdirs } = this.props;
-    return details(
-      {
-        className: "perf-settings-details",
-        
-        onToggle: _handleToggle,
-      },
-      summary(
-        {
-          className: "perf-settings-summary",
-          id: "perf-settings-local-build-summary",
-        },
-        "Local build:"
-      ),
+    return this._renderSection(
+      "perf-settings-local-build-summary",
+      "Local build",
       div(
-        { className: "perf-settings-details-contents" },
-        div(
-          { className: "perf-settings-details-contents-slider" },
-          p(
-            null,
-            `If you're profiling a build that you have compiled yourself, on this
-            machine, please add your build's objdir to the list below so that
-            it can be used to look up symbol information.`
-          ),
-          DirectoryPicker({
-            dirs: objdirs,
-            onAdd: this._handleAddObjdir,
-            onRemove: this._handleRemoveObjdir,
-          })
-        )
+        null,
+        p(
+          null,
+          `If you're profiling a build that you have compiled yourself, on this
+          machine, please add your build's objdir to the list below so that
+          it can be used to look up symbol information.`
+        ),
+        DirectoryPicker({
+          dirs: objdirs,
+          onAdd: this._handleAddObjdir,
+          onRemove: this._handleRemoveObjdir,
+        })
       )
     );
+  }
+
+  
+
+
+
+  _renderTitle() {
+    const { pageContext } = this.props;
+    switch (pageContext) {
+      case "aboutprofiling":
+        return "Buffer Settings";
+      case "popup":
+      case "devtools":
+        return "Recording Settings";
+      default:
+        throw new UnhandledCaseError(pageContext, "PageContext");
+    }
   }
 
   render() {
     return section(
       { className: "perf-settings" },
-      h2({ className: "perf-settings-title" }, "Recording Settings"),
-      div(
-        { className: "perf-settings-row" },
-        label({ className: "perf-settings-label" }, "Overhead:"),
-        div(
-          { className: "perf-settings-value perf-settings-notches" },
-          this._renderNotches()
-        )
-      ),
+      this.props.pageContext === "aboutprofiling"
+        ? h1(null, "Full Settings")
+        : null,
+      h2({ className: "perf-settings-title" }, this._renderTitle()),
+      
+      this.props.pageContext === "aboutprofiling"
+        ? null
+        : div(
+            { className: "perf-settings-row" },
+            label({ className: "perf-settings-label" }, "Overhead:"),
+            div(
+              { className: "perf-settings-value perf-settings-notches" },
+              this._renderNotches()
+            )
+          ),
       Range({
         label: "Sampling interval:",
         value: this.props.interval,
@@ -710,6 +750,7 @@ function mapStateToProps(state) {
     threadsString: selectors.getThreadsString(state),
     objdirs: selectors.getObjdirs(state),
     supportedFeatures: selectors.getSupportedFeatures(state),
+    pageContext: selectors.getPageContext(state),
   };
 }
 
