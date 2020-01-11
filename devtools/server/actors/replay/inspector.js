@@ -38,6 +38,8 @@ function dbgObject(id) {
 
 
 
+let gInspectorUtils;
+
 const ReplayInspector = {
   
   get window() {
@@ -49,7 +51,7 @@ const ReplayInspector = {
 
   
   createInspectorUtils(utils) {
-    return new Proxy(
+    gInspectorUtils = new Proxy(
       {},
       {
         get(_, name) {
@@ -74,6 +76,7 @@ const ReplayInspector = {
         },
       }
     );
+    return gInspectorUtils;
   },
 
   wrapRequireHook(requireHook) {
@@ -282,6 +285,10 @@ function unwrapValue(value) {
     return obj;
   }
 
+  if (value == gInspectorUtils) {
+    return proxyMap.get(gFixedProxy.InspectorUtils);
+  }
+
   if (value instanceof Object) {
     const rv = dbg()._sendRequest({ type: "createObject" });
     const newobj = dbgObject(rv.id);
@@ -304,6 +311,14 @@ function getObjectProperty(obj, name) {
     name,
   });
   return dbg()._pool.convertCompletionValue(rv);
+}
+
+function ignoreSetProperty(obj, name) {
+  switch (obj.class) {
+    case "HTMLDocument":
+      return ["styleSheetChangeEventsEnabled"].includes(name);
+  }
+  return false;
 }
 
 function setObjectProperty(obj, name, value) {
@@ -375,9 +390,11 @@ const ReplayInspectorProxyHandler = {
     }
 
     
-    const desc = target.getOwnPropertyDescriptor(name);
-    if (desc && "value" in desc) {
-      return wrapValue(desc.value);
+    if (!target._modifiedProperties || !target._modifiedProperties.has(name)) {
+      const desc = target.getOwnPropertyDescriptor(name);
+      if (desc && "value" in desc) {
+        return wrapValue(desc.value);
+      }
     }
 
     
@@ -390,6 +407,15 @@ const ReplayInspectorProxyHandler = {
 
   set(target, name, value) {
     target = getTargetObject(target);
+
+    if (ignoreSetProperty(target, name)) {
+      return true;
+    }
+
+    if (!target._modifiedProperties) {
+      target._modifiedProperties = new Set();
+    }
+    target._modifiedProperties.add(name);
 
     const rv = setObjectProperty(target, name, unwrapValue(value));
     if ("return" in rv) {
@@ -490,8 +516,11 @@ function initFixedProxy(proxy, target, obj) {
 function updateFixedProxies() {
   dbg()._ensurePaused();
 
-  const data = dbg()._sendRequestAllowDiverge({ type: "getFixedObjects" });
-  for (const [key, value] of Object.entries(data)) {
+  const { objects, preview } = dbg()._sendRequestAllowDiverge({
+    type: "getFixedObjects",
+  });
+  dbg()._pool.addPauseData(preview);
+  for (const [key, value] of Object.entries(objects)) {
     if (!gFixedProxyTargets[key]) {
       gFixedProxyTargets[key] = { object: {} };
       gFixedProxy[key] = new Proxy(
