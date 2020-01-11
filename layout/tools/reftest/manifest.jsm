@@ -20,19 +20,19 @@ const RE_PROTOCOL = /^\w+:/;
 const RE_PREF_ITEM = /^(|test-|ref-)pref\((.+?),(.*)\)$/;
 
 
-function ReadTopManifest(aFileURL, aFilter)
+function ReadTopManifest(aFileURL, aFilter, aManifestID)
 {
     var url = g.ioService.newURI(aFileURL);
     if (!url)
         throw "Expected a file or http URL for the manifest.";
 
     g.manifestsLoaded = {};
-    ReadManifest(url, aFilter);
+    ReadManifest(url, aFilter, aManifestID);
 }
 
 
 
-function ReadManifest(aURL, aFilter)
+function ReadManifest(aURL, aFilter, aManifestID)
 {
     
     
@@ -306,7 +306,39 @@ function ReadManifest(aURL, aFilter)
                 var incURI = g.ioService.newURI(items[1], null, listURL);
                 secMan.checkLoadURIWithPrincipal(principal, incURI,
                                                  Ci.nsIScriptSecurityManager.DISALLOW_SCRIPT);
-                ReadManifest(incURI, aFilter);
+
+                
+                
+                var newManifestID = aManifestID;
+                var included = items[1];
+                
+                
+                var pos = included.lastIndexOf("/");
+                if (pos <= 0) {
+                    included = "";
+                } else {
+                    included = included.substring(0, pos);
+                }
+                
+                
+                while (included.startsWith("../")) {
+                    pos = newManifestID.lastIndexOf("/");
+                    if (pos < 0) {
+                        pos = 0;
+                    }
+                    newManifestID = newManifestID.substring(0, pos);
+                    included = included.substring(3);
+                }
+                
+                if (included.length > 0) {
+                    if (newManifestID.length > 0) {
+                        newManifestID = newManifestID + "/" + included;
+                    } else {
+                        
+                        newManifestID = included;
+                    }
+                }
+                ReadManifest(incURI, aFilter, newManifestID);
             }
         } else if (items[0] == TYPE_LOAD || items[0] == TYPE_SCRIPT) {
             var type = items[0];
@@ -334,7 +366,7 @@ function ReadManifest(aURL, aFilter)
                           url2: null,
                           chaosMode: chaosMode,
                           wrCapture: wrCapture,
-                          noAutoFuzz: noAutoFuzz }, aFilter);
+                          noAutoFuzz: noAutoFuzz }, aFilter, aManifestID);
         } else if (items[0] == TYPE_REFTEST_EQUAL || items[0] == TYPE_REFTEST_NOTEQUAL || items[0] == TYPE_PRINT) {
             if (items.length != 3)
                 throw "Error in manifest file " + aURL.spec + " line " + lineNo + ": incorrect number of arguments to " + items[0];
@@ -383,7 +415,7 @@ function ReadManifest(aURL, aFilter)
                           url2: items[2],
                           chaosMode: chaosMode,
                           wrCapture: wrCapture,
-                          noAutoFuzz: noAutoFuzz }, aFilter);
+                          noAutoFuzz: noAutoFuzz }, aFilter, aManifestID);
         } else {
             throw "Error in manifest file " + aURL.spec + " line " + lineNo + ": unknown test type " + items[0];
         }
@@ -701,9 +733,27 @@ function CreateUrls(test) {
     return test;
 }
 
-function AddTestItem(aTest, aFilter) {
+function TestIdentifier(aUrl, aManifestID) {
+    
+    
+    
+    
+    if (aUrl.startsWith("about:") || aUrl.startsWith("data:")) {
+        return aUrl;
+    }
+    var pos = aUrl.lastIndexOf("/");
+    var url = (pos < 0) ? aUrl : aUrl.substring(pos + 1);
+    return (aManifestID + "/" + url);
+}
+
+function AddTestItem(aTest, aFilter, aManifestID) {
     if (!aFilter)
         aFilter = [null, [], false];
+
+    var identifier = TestIdentifier(aTest.url1, aManifestID);
+    if (aTest.url2 !== null) {
+        identifier = [identifier, aTest.type, TestIdentifier(aTest.url2, aManifestID)];
+    }
 
     var {url1, url2} = CreateUrls(Object.assign({}, aTest));
 
@@ -721,10 +771,7 @@ function AddTestItem(aTest, aFilter) {
         aTest.needsFocus)
         return;
 
-    if (url2 !== null)
-        aTest.identifier = [url1.spec, aTest.type, url2.spec];
-    else
-        aTest.identifier = url1.spec;
+    aTest.identifier = identifier;
     g.urls.push(aTest);
     
     
