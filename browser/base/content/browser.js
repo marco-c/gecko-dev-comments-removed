@@ -279,6 +279,17 @@ if (AppConstants.MOZ_CRASHREPORTER) {
   );
 }
 
+if (AppConstants.ENABLE_REMOTE_AGENT) {
+  XPCOMUtils.defineLazyServiceGetter(
+    this,
+    "RemoteAgent",
+    "@mozilla.org/remote/agent;1",
+    "nsIRemoteAgent"
+  );
+} else {
+  this.RemoteAgent = { listening: false };
+}
+
 XPCOMUtils.defineLazyGetter(this, "RTL_UI", () => {
   return Services.locale.isAppLocaleRTL;
 });
@@ -1867,7 +1878,7 @@ var gBrowserInit = {
       ToolbarKeyboardNavigator.init();
     }
 
-    gRemoteControl.updateVisualCue(Marionette.running);
+    gRemoteControl.updateVisualCue(Marionette.running || RemoteAgent.listening);
 
     
     
@@ -8410,6 +8421,11 @@ function formatURL(aFormat, aIsPref) {
     ? Services.urlFormatter.formatURLPref(aFormat)
     : Services.urlFormatter.formatURL(aFormat);
 }
+
+
+
+
+
 
 
 
