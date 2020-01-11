@@ -1701,6 +1701,10 @@ gboolean IMContextWrapper::OnRetrieveSurroundingNative(GtkIMContext* aContext) {
     return FALSE;
   }
 
+  
+  
+  uniStr.ReplaceChar(char16_t(0), char16_t(0xFFFD));
+
   NS_ConvertUTF16toUTF8 utf8Str(nsDependentSubstring(uniStr, 0, cursorPos));
   uint32_t cursorPosInUTF8 = utf8Str.Length();
   AppendUTF16toUTF8(nsDependentSubstring(uniStr, cursorPos), utf8Str);
