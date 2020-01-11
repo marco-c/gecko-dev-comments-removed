@@ -10,7 +10,7 @@
 #include "js/RootingAPI.h"
 #include "mozilla/dom/IDBCursorBinding.h"
 #include "mozilla/dom/IDBIndexBinding.h"
-#include "nsAutoPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupports.h"
 #include "nsString.h"
@@ -64,7 +64,7 @@ class IDBObjectStore final : public nsISupports, public nsWrapperCache {
   
   
   const ObjectStoreSpec* mSpec;
-  nsAutoPtr<ObjectStoreSpec> mDeletedSpec;
+  UniquePtr<ObjectStoreSpec> mDeletedSpec;
 
   nsTArray<RefPtr<IDBIndex>> mIndexes;
   nsTArray<RefPtr<IDBIndex>> mDeletedIndexes;
