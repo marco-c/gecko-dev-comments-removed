@@ -205,7 +205,12 @@ class Loader final {
       nsIURI*, SheetParsingMode = eAuthorSheetFeatures,
       UseSystemPrincipal = UseSystemPrincipal::No);
 
-  enum class IsPreload { No, Yes };
+  
+
+
+
+
+  enum class IsPreload { No, FromParser, FromLink };
 
   
 
