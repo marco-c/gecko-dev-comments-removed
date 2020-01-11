@@ -95,11 +95,6 @@ class TabGroup final : public SchedulerGroup,
 
   Iterator Iter() { return mDocGroups.Iter(); }
 
-  
-  
-  
-  uint32_t Count(bool aActiveOnly = false) const;
-
   const nsTArray<nsPIDOMWindowOuter*>& GetWindows() { return mWindows; }
 
   
