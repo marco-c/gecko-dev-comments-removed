@@ -104,18 +104,37 @@ already_AddRefed<StyleSheet> StyleSheet::Constructor(
     return nullptr;
   }
 
-  auto ss = MakeRefPtr<StyleSheet>(css::SheetParsingMode::eAuthorSheetFeatures,
-                                   CORSMode::CORS_NONE, dom::SRIMetadata());
+  
+  
+  
+  
+  auto sheet =
+      MakeRefPtr<StyleSheet>(css::SheetParsingMode::eAuthorSheetFeatures,
+                             CORSMode::CORS_NONE, dom::SRIMetadata());
 
-  ss->mConstructorDocument = constructorDocument;
+  nsIURI* baseURI = constructorDocument->GetBaseURI();
+  nsIURI* sheetURI = constructorDocument->GetDocumentURI();
+  nsIURI* originalURI = nullptr;
+  sheet->SetURIs(sheetURI, originalURI, baseURI);
+
+  sheet->SetTitle(aOptions.mTitle);
+  sheet->SetPrincipal(constructorDocument->NodePrincipal());
+  sheet->SetReferrerInfo(constructorDocument->GetReferrerInfo());
+  sheet->mConstructorDocument = constructorDocument;
 
   
-  
-  
-  
-  
+  if (aOptions.mMedia.IsString()) {
+    sheet->SetMedia(MediaList::Create(aOptions.mMedia.GetAsString()));
+  } else {
+    sheet->SetMedia(aOptions.mMedia.GetAsMediaList()->Clone());
+  }
 
-  return ss.forget();
+  
+  sheet->SetDisabled(aOptions.mDisabled);
+  sheet->SetComplete();
+
+  
+  return sheet.forget();
 }
 
 StyleSheet::~StyleSheet() {
@@ -895,11 +914,11 @@ void StyleSheet::List(FILE* out, int32_t aIndent) const {
 }
 #endif
 
-void StyleSheet::SetMedia(dom::MediaList* aMedia) {
-  if (aMedia) {
-    aMedia->SetStyleSheet(this);
-  }
+void StyleSheet::SetMedia(already_AddRefed<dom::MediaList> aMedia) {
   mMedia = aMedia;
+  if (mMedia) {
+    mMedia->SetStyleSheet(this);
+  }
 }
 
 void StyleSheet::DropMedia() {
