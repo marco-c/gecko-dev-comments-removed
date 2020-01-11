@@ -102,6 +102,7 @@ const PREFS_WHITELIST = [
 
 
 const PREFS_BLACKLIST = [
+  /^browser[.]fixup[.]domainwhitelist[.]/,
   /^media[.]webrtc[.]debug[.]aec_log_dir/,
   /^media[.]webrtc[.]debug[.]log_file/,
   /^network[.]proxy[.]/,
