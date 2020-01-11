@@ -300,18 +300,12 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
   
 
 
-
-
-
-  bool UpdateIntrinsicSize(imgIContainer* aImage);
+  bool UpdateIntrinsicSize();
 
   
 
 
-
-
-
-  bool UpdateIntrinsicRatio(imgIContainer* aImage);
+  bool UpdateIntrinsicRatio();
 
   
 
