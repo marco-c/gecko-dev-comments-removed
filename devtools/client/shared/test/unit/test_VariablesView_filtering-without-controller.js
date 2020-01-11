@@ -6,7 +6,7 @@
 
 
 const { VariablesView } = ChromeUtils.import(
-  "resource://devtools/client/storage/VariablesView.jsm"
+  "resource://devtools/client/shared/widgets/VariablesView.jsm"
 );
 const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 const { globals } = require("devtools/shared/builtin-modules");
