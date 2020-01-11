@@ -12,6 +12,7 @@ from mozboot.linux_common import (
     NodeInstall,
     SccacheInstall,
     StyloInstall,
+    WasiSysrootInstall,
 )
 
 
@@ -32,8 +33,9 @@ How would you like to continue?
 Your choice: '''
 
 
-class DebianBootstrapper(NasmInstall, NodeInstall, StyloInstall, ClangStaticAnalysisInstall,
-                         SccacheInstall, LucetcInstall, BaseBootstrapper):
+class DebianBootstrapper(
+        NasmInstall, NodeInstall, StyloInstall, ClangStaticAnalysisInstall,
+        SccacheInstall, LucetcInstall, WasiSysrootInstall, BaseBootstrapper):
     
     
     COMMON_PACKAGES = [
