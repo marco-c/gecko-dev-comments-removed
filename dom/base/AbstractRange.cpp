@@ -7,6 +7,8 @@
 #include "mozilla/dom/AbstractRange.h"
 #include "mozilla/dom/AbstractRangeBinding.h"
 
+#include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/RangeUtils.h"
 #include "mozilla/dom/StaticRange.h"
 #include "nsContentUtils.h"
@@ -132,10 +134,17 @@ nsresult AbstractRange::SetStartAndEndInternal(
     return NS_OK;
   }
 
+  const Maybe<int32_t> pointOrder =
+      nsContentUtils::ComparePoints(aStartBoundary, aEndBoundary);
+  if (!pointOrder) {
+    
+    MOZ_ASSERT_UNREACHABLE();
+    return NS_ERROR_INVALID_ARG;
+  }
+
   
   
-  if (nsContentUtils::ComparePoints_Deprecated(aStartBoundary, aEndBoundary) ==
-      1) {
+  if (*pointOrder == 1) {
     aRange->DoSetRange(aEndBoundary, aEndBoundary, newEndRoot);
     return NS_OK;
   }
