@@ -512,6 +512,15 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
         return nodeFront;
       }
       nodeFront = await this.querySelector(nodeFront, selector);
+
+      
+      
+      
+      
+      if (!nodeFront) {
+        return null;
+      }
+
       if (nodeSelectors.length > 0) {
         if (nodeFront.traits.supportsWaitForFrameLoad) {
           
@@ -534,7 +543,7 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
           );
         });
       }
-      return querySelectors(nodeFront);
+      return querySelectors(nodeFront) || nodeFront;
     };
     const nodeFront = await this.getRootNode();
 
