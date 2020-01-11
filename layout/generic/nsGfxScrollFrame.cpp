@@ -6659,8 +6659,7 @@ uint32_t nsIScrollableFrame::GetAvailableVisualScrollingDirections() const {
   return directions;
 }
 
-uint32_t ScrollFrameHelper::GetAvailableScrollingDirectionsForUserInputEvents()
-    const {
+nsRect ScrollFrameHelper::GetScrollRangeForUserInputEvents() const {
   
   
   
@@ -6681,9 +6680,16 @@ uint32_t ScrollFrameHelper::GetAvailableScrollingDirectionsForUserInputEvents()
 
   nsSize scrollPort = GetVisualViewportSize();
 
-  nsSize scrollRange;
+  nsRect scrollRange = scrolledRect;
   scrollRange.width = std::max(scrolledRect.width - scrollPort.width, 0);
   scrollRange.height = std::max(scrolledRect.height - scrollPort.height, 0);
+
+  return scrollRange;
+}
+
+uint32_t ScrollFrameHelper::GetAvailableScrollingDirectionsForUserInputEvents()
+    const {
+  nsRect scrollRange = GetScrollRangeForUserInputEvents();
 
   
   

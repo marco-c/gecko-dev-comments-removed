@@ -209,6 +209,10 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
   
 
 
+  virtual nsRect GetScrollRangeForUserInputEvents() const = 0;
+  
+
+
 
   virtual nsSize GetLineScrollAmount() const = 0;
   
