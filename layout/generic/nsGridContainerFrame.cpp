@@ -7578,11 +7578,16 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
 
       col++;
     }
-    ComputedGridTrackInfo* colInfo = new ComputedGridTrackInfo(
-        gridReflowInput.mColFunctions.mExplicitGridOffset,
+    
+    
+    
+    
+    const uint32_t numColExplicitTracks =
         IsSubgrid(eLogicalAxisInline)
             ? colTrackSizes.Length()
-            : gridReflowInput.mColFunctions.NumExplicitTracks(),
+            : gridReflowInput.mColFunctions.NumExplicitTracks();
+    ComputedGridTrackInfo* colInfo = new ComputedGridTrackInfo(
+        gridReflowInput.mColFunctions.mExplicitGridOffset, numColExplicitTracks,
         0, col, std::move(colTrackPositions), std::move(colTrackSizes),
         std::move(colTrackStates), std::move(colRemovedRepeatTracks),
         gridReflowInput.mColFunctions.mRepeatAutoStart,
@@ -7618,11 +7623,16 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
     
     
     
-    ComputedGridTrackInfo* rowInfo = new ComputedGridTrackInfo(
-        gridReflowInput.mRowFunctions.mExplicitGridOffset,
+    
+    const uint32_t numRowExplicitTracks =
         IsSubgrid(eLogicalAxisBlock)
             ? rowTrackSizes.Length()
-            : gridReflowInput.mRowFunctions.NumExplicitTracks(),
+            : gridReflowInput.mRowFunctions.NumExplicitTracks();
+    
+    
+    
+    ComputedGridTrackInfo* rowInfo = new ComputedGridTrackInfo(
+        gridReflowInput.mRowFunctions.mExplicitGridOffset, numRowExplicitTracks,
         gridReflowInput.mStartRow, row, std::move(rowTrackPositions),
         std::move(rowTrackSizes), std::move(rowTrackStates),
         std::move(rowRemovedRepeatTracks),
