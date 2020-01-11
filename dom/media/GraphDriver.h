@@ -115,9 +115,27 @@ enum class AudioContextOperation;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class GraphDriver {
  public:
-  explicit GraphDriver(MediaTrackGraphImpl* aGraphImpl);
+  GraphDriver(MediaTrackGraphImpl* aGraphImpl, uint32_t aSampleRate);
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GraphDriver);
   
@@ -197,6 +215,9 @@ class GraphDriver {
   GraphTime mStateComputedTime = 0;
   
   const RefPtr<MediaTrackGraphImpl> mGraphImpl;
+  
+  
+  const uint32_t mSampleRate;
 
   
   
@@ -266,7 +287,7 @@ class ThreadedDriver : public GraphDriver {
   };
 
  public:
-  explicit ThreadedDriver(MediaTrackGraphImpl* aGraphImpl);
+  ThreadedDriver(MediaTrackGraphImpl* aGraphImpl, uint32_t aSampleRate);
   virtual ~ThreadedDriver();
 
   void EnsureNextIteration() override;
@@ -318,8 +339,8 @@ class ThreadedDriver : public GraphDriver {
 enum class FallbackMode { Regular, Fallback };
 class SystemClockDriver : public ThreadedDriver {
  public:
-  explicit SystemClockDriver(MediaTrackGraphImpl* aGraphImpl,
-                             FallbackMode aFallback = FallbackMode::Regular);
+  SystemClockDriver(MediaTrackGraphImpl* aGraphImpl, uint32_t aSampleRate,
+                    FallbackMode aFallback = FallbackMode::Regular);
   virtual ~SystemClockDriver();
   bool IsFallback();
   SystemClockDriver* AsSystemClockDriver() override { return this; }
@@ -347,7 +368,8 @@ class SystemClockDriver : public ThreadedDriver {
 
 class OfflineClockDriver : public ThreadedDriver {
  public:
-  OfflineClockDriver(MediaTrackGraphImpl* aGraphImpl, GraphTime aSlice);
+  OfflineClockDriver(MediaTrackGraphImpl* aGraphImpl, uint32_t aSampleRate,
+                     GraphTime aSlice);
   virtual ~OfflineClockDriver();
   OfflineClockDriver* AsOfflineClockDriver() override { return this; }
 
@@ -402,7 +424,7 @@ class AudioCallbackDriver : public GraphDriver,
 {
  public:
   
-  AudioCallbackDriver(MediaTrackGraphImpl* aGraphImpl,
+  AudioCallbackDriver(MediaTrackGraphImpl* aGraphImpl, uint32_t aSampleRate,
                       uint32_t aOutputChannelCount, uint32_t aInputChannelCount,
                       AudioInputType aAudioInputType);
   virtual ~AudioCallbackDriver();
@@ -518,9 +540,6 @@ class AudioCallbackDriver : public GraphDriver,
   
 
   nsAutoRef<cubeb_stream> mAudioStream;
-  
-
-  uint32_t mSampleRate;
   
 
   const uint32_t mInputChannelCount;
