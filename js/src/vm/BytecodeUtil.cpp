@@ -544,9 +544,9 @@ class BytecodeParser {
                              const OffsetAndDefIndex* offsetStack,
                              uint32_t stackDepth);
 
-  inline bool addJump(uint32_t offset, uint32_t* currentOffset,
-                      uint32_t stackDepth, const OffsetAndDefIndex* offsetStack,
-                      jsbytecode* pc, JumpKind kind);
+  inline bool addJump(uint32_t offset, uint32_t stackDepth,
+                      const OffsetAndDefIndex* offsetStack, jsbytecode* pc,
+                      JumpKind kind);
 };
 
 }  
@@ -775,8 +775,7 @@ bool BytecodeParser::recordBytecode(uint32_t offset,
   return true;
 }
 
-bool BytecodeParser::addJump(uint32_t offset, uint32_t* currentOffset,
-                             uint32_t stackDepth,
+bool BytecodeParser::addJump(uint32_t offset, uint32_t stackDepth,
                              const OffsetAndDefIndex* offsetStack,
                              jsbytecode* pc, JumpKind kind) {
   if (!recordBytecode(offset, offsetStack, stackDepth)) {
@@ -784,21 +783,17 @@ bool BytecodeParser::addJump(uint32_t offset, uint32_t* currentOffset,
   }
 
 #ifdef DEBUG
+  uint32_t currentOffset = script_->pcToOffset(pc);
   if (isStackDump) {
-    if (!codeArray_[offset]->addJump(script_->pcToOffset(pc), kind)) {
+    if (!codeArray_[offset]->addJump(currentOffset, kind)) {
       reportOOM();
       return false;
     }
   }
-#endif 
 
-  Bytecode*& code = codeArray_[offset];
-  if (offset < *currentOffset && !code->parsed) {
-    
-    
-    
-    *currentOffset = offset;
-  }
+  
+  MOZ_ASSERT_IF(offset < currentOffset, codeArray_[offset]->parsed);
+#endif 
 
   return true;
 }
@@ -834,22 +829,16 @@ bool BytecodeParser::parse() {
   startcode->stackDepth = 0;
   codeArray_[0] = startcode;
 
-  uint32_t offset, nextOffset = 0;
-  while (nextOffset < length) {
-    offset = nextOffset;
-
+  for (uint32_t offset = 0, nextOffset = 0; offset < length;
+       offset = nextOffset) {
     Bytecode* code = maybeCode(offset);
     jsbytecode* pc = script_->offsetToPC(offset);
 
+    
+    nextOffset = offset + GetBytecodeLength(pc);
+
     JSOp op = (JSOp)*pc;
     MOZ_ASSERT(op < JSOP_LIMIT);
-
-    
-    uint32_t successorOffset = offset + GetBytecodeLength(pc);
-
-    
-    
-    nextOffset = successorOffset;
 
     if (!code) {
       
@@ -892,7 +881,7 @@ bool BytecodeParser::parse() {
         int32_t high = GET_JUMP_OFFSET(pc2);
         pc2 += JUMP_OFFSET_LEN;
 
-        if (!addJump(defaultOffset, &nextOffset, stackDepth, offsetStack, pc,
+        if (!addJump(defaultOffset, stackDepth, offsetStack, pc,
                      JumpKind::SwitchDefault)) {
           return false;
         }
@@ -902,7 +891,7 @@ bool BytecodeParser::parse() {
         for (uint32_t i = 0; i < ncases; i++) {
           uint32_t targetOffset = script_->tableSwitchCaseOffset(pc, i);
           if (targetOffset != defaultOffset) {
-            if (!addJump(targetOffset, &nextOffset, stackDepth, offsetStack, pc,
+            if (!addJump(targetOffset, stackDepth, offsetStack, pc,
                          JumpKind::SwitchCase)) {
               return false;
             }
@@ -921,13 +910,13 @@ bool BytecodeParser::parse() {
           if (tn.start == offset + 1) {
             uint32_t catchOffset = tn.start + tn.length;
             if (tn.kind == JSTRY_CATCH) {
-              if (!addJump(catchOffset, &nextOffset, stackDepth, offsetStack,
-                           pc, JumpKind::TryCatch)) {
+              if (!addJump(catchOffset, stackDepth, offsetStack, pc,
+                           JumpKind::TryCatch)) {
                 return false;
               }
             } else if (tn.kind == JSTRY_FINALLY) {
-              if (!addJump(catchOffset, &nextOffset, stackDepth, offsetStack,
-                           pc, JumpKind::TryFinally)) {
+              if (!addJump(catchOffset, stackDepth, offsetStack, pc,
+                           JumpKind::TryFinally)) {
                 return false;
               }
             }
@@ -949,7 +938,7 @@ bool BytecodeParser::parse() {
       }
 
       uint32_t targetOffset = offset + GET_JUMP_OFFSET(pc);
-      if (!addJump(targetOffset, &nextOffset, newStackDepth, offsetStack, pc,
+      if (!addJump(targetOffset, newStackDepth, offsetStack, pc,
                    JumpKind::Simple)) {
         return false;
       }
@@ -957,7 +946,7 @@ bool BytecodeParser::parse() {
 
     
     if (BytecodeFallsThrough(op)) {
-      if (!recordBytecode(successorOffset, offsetStack, stackDepth)) {
+      if (!recordBytecode(nextOffset, offsetStack, stackDepth)) {
         return false;
       }
     }
