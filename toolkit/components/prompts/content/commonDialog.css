@@ -2,6 +2,10 @@
 
 
 
+:root {
+  min-width: 29em;
+}
+
 #dialogGrid {
   display: grid;
   grid-template-columns: auto 1fr;
