@@ -108,8 +108,8 @@ var connect = async function() {
   await gClient.connect();
 
   appendStatusMessage("Get root form for toolbox");
-  const front = await gClient.mainRoot.getMainProcess();
-  await openToolbox(front);
+  const mainProcessTargetFront = await gClient.mainRoot.getMainProcess();
+  await openToolbox(mainProcessTargetFront);
 };
 
 
@@ -186,8 +186,8 @@ function onDebugBrowserToolbox() {
   BrowserToolboxLauncher.init();
 }
 
-async function openToolbox(target) {
-  const form = target.targetForm;
+async function openToolbox(targetFront) {
+  const form = targetFront.targetForm;
   appendStatusMessage(
     `Create toolbox target: ${JSON.stringify({ form }, null, 2)}`
   );
@@ -201,19 +201,16 @@ async function openToolbox(target) {
 
   const toolboxOptions = { doc: document };
   appendStatusMessage(`Show toolbox with ${selectedTool} selected`);
-  const toolbox = await gDevTools.showToolbox(
-    target,
+
+  gToolbox = await gDevTools.showToolbox(
+    targetFront,
     selectedTool,
     Toolbox.HostType.BROWSERTOOLBOX,
     toolboxOptions
   );
-  await onNewToolbox(toolbox);
-}
 
-async function onNewToolbox(toolbox) {
-  gToolbox = toolbox;
   bindToolboxHandlers();
-  toolbox.raise();
+  gToolbox.raise();
 
   
   if (
@@ -223,11 +220,11 @@ async function onNewToolbox(toolbox) {
     )
   ) {
     
-    installTestingServer(toolbox);
+    installTestingServer();
   }
 }
 
-function installTestingServer(toolbox) {
+function installTestingServer() {
   
   
   
