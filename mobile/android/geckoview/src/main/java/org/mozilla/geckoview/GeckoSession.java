@@ -141,7 +141,7 @@ public class GeckoSession implements Parcelable {
     private int mWidth;
     private int mHeight; 
     private int mClientHeight; 
-    private int mFixedBottomOffset; 
+    private int mFixedBottomOffset = 0; 
     private int mDynamicToolbarMaxHeight = 0; 
     private float mViewportLeft;
     private float mViewportTop;
@@ -5512,7 +5512,9 @@ public class GeckoSession implements Parcelable {
             mToolbar.onCompositorReady();
         }
 
-        mCompositor.setFixedBottomOffset(mFixedBottomOffset);
+        if (mFixedBottomOffset != 0) {
+            mCompositor.setFixedBottomOffset(mFixedBottomOffset);
+        }
     }
 
      void updateOverscrollVelocity(final float x, final float y) {
