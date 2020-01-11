@@ -58,8 +58,20 @@ function run_test() {
   });
 
   let profile = do_get_profile();
-  let keyDBFile = do_get_file("test_sdr_preexisting_with_password/key3.db");
-  keyDBFile.copyTo(profile, "key3.db");
+  let key3DBFile = do_get_file("test_sdr_upgraded_with_password/key3.db");
+  key3DBFile.copyTo(profile, "key3.db");
+  let key4DBFile = do_get_file("test_sdr_upgraded_with_password/key4.db");
+  key4DBFile.copyTo(profile, "key4.db");
+  
+  
+  
+  
+  
+  
+  let cert8DBFile = do_get_file("test_sdr_upgraded_with_password/cert8.db");
+  cert8DBFile.copyTo(profile, "cert8.db");
+  let cert9DBFile = do_get_file("test_sdr_upgraded_with_password/cert9.db");
+  cert9DBFile.copyTo(profile, "cert9.db");
 
   let sdr = Cc["@mozilla.org/security/sdr;1"].getService(
     Ci.nsISecretDecoderRing
@@ -123,5 +135,15 @@ function run_test() {
     gMockPrompter.numPrompts,
     1,
     "Should have been prompted for a password once"
+  );
+
+  
+  
+  
+  let key3DBInProfile = do_get_profile();
+  key3DBInProfile.append("key3.db");
+  ok(
+    !key3DBInProfile.exists(),
+    "key3.db should not exist after running with key4.db with a password"
   );
 }
