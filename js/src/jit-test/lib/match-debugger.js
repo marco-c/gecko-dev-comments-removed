@@ -47,3 +47,18 @@ class DebuggerObjectPattern extends Match.Pattern {
   }
 }
 
+
+
+
+class DebuggerIdentical extends Match.Pattern {
+  constructor(expected) {
+    super();
+    this.expected = expected;
+  }
+
+  match(actual) {
+    if (actual !== this.expected) {
+      throw new Pattern.MatchError(`Expected exact value ${uneval(this.expected)}, got ${uneval(actual)}`);
+    }
+  }
+}

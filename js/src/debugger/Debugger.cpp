@@ -615,6 +615,36 @@ bool Debugger::getFrame(JSContext* cx, const FrameIter& iter,
   return true;
 }
 
+bool Debugger::getFrame(JSContext* cx, Handle<AbstractGeneratorObject*> genObj,
+                        MutableHandleDebuggerFrame result) {
+  
+  
+  
+  
+  
+  MOZ_ASSERT(!genObj->isRunning());
+
+  
+  GeneratorWeakMap::Ptr gp = generatorFrames.lookup(genObj);
+  if (gp) {
+    MOZ_ASSERT(&gp->value()->unwrappedGenerator() == genObj);
+    result.set(gp->value());
+    return true;
+  }
+
+  
+  RootedObject proto(
+      cx, &object->getReservedSlot(JSSLOT_DEBUG_FRAME_PROTO).toObject());
+  RootedNativeObject debugger(cx, object);
+
+  result.set(DebuggerFrame::create(cx, proto, debugger, nullptr, genObj));
+  if (!result) {
+    return false;
+  }
+
+  return true;
+}
+
 static bool DebuggerExists(
     GlobalObject* global, const std::function<bool(Debugger* dbg)>& predicate) {
   
