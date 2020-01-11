@@ -3721,12 +3721,6 @@ mozilla::ipc::IPCResult ContentChild::RecvCrossProcessRedirect(
     return IPC_OK();
   }
 
-  RefPtr<nsIChildChannel> childChannel = do_QueryObject(newChannel);
-  if (!childChannel) {
-    rv = NS_ERROR_UNEXPECTED;
-    return IPC_OK();
-  }
-
   if (httpChild) {
     rv = httpChild->SetChannelId(aArgs.channelId());
     if (NS_FAILED(rv)) {
@@ -3751,11 +3745,15 @@ mozilla::ipc::IPCResult ContentChild::RecvCrossProcessRedirect(
         HttpBaseChannel::ReplacementReason::DocumentChannel);
   }
 
-  
-  rv = childChannel->ConnectParent(
-      aArgs.registrarId());  
-  if (NS_FAILED(rv)) {
-    return IPC_OK();
+  if (nsCOMPtr<nsIChildChannel> childChannel = do_QueryInterface(newChannel)) {
+    
+    
+    
+    rv = childChannel->ConnectParent(
+        aArgs.registrarId());  
+    if (NS_FAILED(rv)) {
+      return IPC_OK();
+    }
   }
 
   
@@ -3767,7 +3765,7 @@ mozilla::ipc::IPCResult ContentChild::RecvCrossProcessRedirect(
   RefPtr<ChildProcessChannelListener> processListener =
       ChildProcessChannelListener::GetSingleton();
   
-  processListener->OnChannelReady(childChannel, aArgs.redirectIdentifier(),
+  processListener->OnChannelReady(newChannel, aArgs.redirectIdentifier(),
                                   std::move(aArgs.redirects()),
                                   aArgs.loadStateLoadFlags());
 

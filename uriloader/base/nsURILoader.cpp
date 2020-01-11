@@ -715,37 +715,38 @@ NS_IMETHODIMP nsURILoader::OpenURI(nsIChannel* channel, uint32_t aFlags,
   nsCOMPtr<nsIStreamListener> loader;
   nsresult rv = OpenChannel(channel, aFlags, aWindowContext, false,
                             getter_AddRefs(loader));
+  if (NS_FAILED(rv)) {
+    if (rv == NS_ERROR_WONT_HANDLE_CONTENT) {
+      
+      return NS_OK;
+    }
+  }
 
-  if (NS_SUCCEEDED(rv)) {
-    if (aFlags & nsIURILoader::REDIRECTED_CHANNEL) {
-      
-      
-      
-      nsCOMPtr<nsIChildChannel> childChannel = do_QueryInterface(channel);
-      MOZ_ASSERT(childChannel);
-      if (!childChannel) {
-        return NS_ERROR_UNEXPECTED;
-      }
-
+  if (aFlags & nsIURILoader::REDIRECTED_CHANNEL) {
+    
+    
+    
+    if (nsCOMPtr<nsIChildChannel> childChannel = do_QueryInterface(channel)) {
       return childChannel->CompleteRedirectSetup(loader, nullptr);
     }
 
     
     
     
-    
+  }
 
-    
-    rv = channel->AsyncOpen(loader);
+  
+  
+  
+  
 
-    
-    if (rv == NS_ERROR_NO_CONTENT) {
-      LOG(("  rv is NS_ERROR_NO_CONTENT -- doing nothing"));
-      rv = NS_OK;
-    }
-  } else if (rv == NS_ERROR_WONT_HANDLE_CONTENT) {
-    
-    rv = NS_OK;
+  
+  rv = channel->AsyncOpen(loader);
+
+  
+  if (rv == NS_ERROR_NO_CONTENT) {
+    LOG(("  rv is NS_ERROR_NO_CONTENT -- doing nothing"));
+    return NS_OK;
   }
   return rv;
 }
