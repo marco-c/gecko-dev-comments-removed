@@ -20,6 +20,11 @@ ChromeUtils.defineModuleGetter(
   "BrowserWindowTracker",
   "resource:///modules/BrowserWindowTracker.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "PromiseUtils",
+  "resource://gre/modules/PromiseUtils.jsm"
+);
 
 var { ExtensionError } = ExtensionUtils;
 
@@ -324,6 +329,7 @@ class TabTracker extends TabTrackerBase {
     this._browsers = new WeakMap();
     this._tabIds = new Map();
     this._nextId = 1;
+    this._deferredTabOpenEvents = new WeakMap();
 
     this._handleTabDestroyed = this._handleTabDestroyed.bind(this);
   }
@@ -489,6 +495,23 @@ class TabTracker extends TabTrackerBase {
     tab.openerTab = openerTab;
   }
 
+  deferredForTabOpen(nativeTab) {
+    let deferred = this._deferredTabOpenEvents.get(nativeTab);
+    if (!deferred) {
+      deferred = PromiseUtils.defer();
+      this._deferredTabOpenEvents.set(nativeTab, deferred);
+      deferred.promise.then(() => {
+        this._deferredTabOpenEvents.delete(nativeTab);
+      });
+    }
+    return deferred;
+  }
+
+  async maybeWaitForTabOpen(nativeTab) {
+    let deferred = this._deferredTabOpenEvents.get(nativeTab);
+    return deferred && deferred.promise;
+  }
+
   
 
 
@@ -526,7 +549,9 @@ class TabTracker extends TabTrackerBase {
           
           
           
+          let deferred = this.deferredForTabOpen(event.originalTarget);
           Promise.resolve().then(() => {
+            deferred.resolve();
             if (!event.originalTarget.parentNode) {
               
               return;
@@ -552,7 +577,7 @@ class TabTracker extends TabTrackerBase {
       case "TabSelect":
         
         
-        Promise.resolve().then(() => {
+        this.maybeWaitForTabOpen(nativeTab).then(() => {
           if (!nativeTab.parentNode) {
             
             return;
@@ -563,6 +588,7 @@ class TabTracker extends TabTrackerBase {
 
       case "TabMultiSelect":
         if (this.has("tabs-highlighted")) {
+          
           
           
           Promise.resolve().then(() => {

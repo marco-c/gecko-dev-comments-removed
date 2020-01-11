@@ -2598,6 +2598,9 @@
         (relatedToCurrent && this.selectedTab);
 
       var t = document.createXULElement("tab", { is: "tabbrowser-tab" });
+      
+      
+      t.initializingTab = true;
       t.openerTab = openerTab;
 
       aURI = aURI || "about:blank";
@@ -2861,6 +2864,7 @@
       
       
       
+      delete t.initializingTab;
       let evt = new CustomEvent("TabOpen", {
         bubbles: true,
         detail: eventDetail || {},
