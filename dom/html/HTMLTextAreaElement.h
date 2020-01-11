@@ -283,7 +283,7 @@ class HTMLTextAreaElement final : public TextControlElement,
       const nsAString& aValue, nsIPrincipal& aSubjectPrincipal);
 
  protected:
-  virtual ~HTMLTextAreaElement();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual ~HTMLTextAreaElement();
 
   
   using nsGenericHTMLFormElementWithState::IsSingleLineTextControl;

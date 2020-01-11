@@ -148,7 +148,7 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
   
 
 
-  void Destroy();
+  MOZ_CAN_RUN_SCRIPT void Destroy();
 
   TextControlState() = delete;
   explicit TextControlState(const TextControlState&) = delete;
@@ -406,19 +406,14 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
 
  private:
   explicit TextControlState(TextControlElement* aOwningElement);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY ~TextControlState();
+  MOZ_CAN_RUN_SCRIPT ~TextControlState();
 
   
 
 
-  void DeleteOrCacheForReuse();
+  MOZ_CAN_RUN_SCRIPT void DeleteOrCacheForReuse();
 
-  void PrepareForReuse() {
-    MOZ_ASSERT(!IsBusy());
-    Unlink();
-    mValue.reset();
-    mTextCtrlElement = nullptr;
-  }
+  MOZ_CAN_RUN_SCRIPT void UnlinkInternal();
 
   void ValueWasChanged(bool aNotify);
 

@@ -1073,11 +1073,14 @@ nsresult TextInputListener::UpdateTextInputCommands(
 
 
 enum class TextControlAction {
+  CacheForReuse,
   CommitComposition,
+  Destructor,
   PrepareEditor,
   SetRangeText,
   SetSelectionRange,
   SetValue,
+  Unlink,
 };
 
 class MOZ_STACK_CLASS AutoTextControlHandlingState {
@@ -1158,6 +1161,12 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
   }
 
   void OnDestroyTextControlState() {
+    if (IsHandling(TextControlAction::Destructor) ||
+        IsHandling(TextControlAction::CacheForReuse)) {
+      
+      
+      return;
+    }
     mTextControlStateDestroyed = true;
     if (mParent) {
       mParent->OnDestroyTextControlState();
@@ -1390,6 +1399,8 @@ TextControlState* TextControlState::Construct(
 TextControlState::~TextControlState() {
   MOZ_ASSERT(!mHandlingState);
   MOZ_COUNT_DTOR(TextControlState);
+  AutoTextControlHandlingState handlingDesctructor(
+      *this, TextControlAction::Destructor);
   Clear();
 }
 
@@ -1410,6 +1421,8 @@ void TextControlState::Destroy() {
     return;
   }
   DeleteOrCacheForReuse();
+  
+  
 }
 
 void TextControlState::DeleteOrCacheForReuse() {
@@ -1418,12 +1431,23 @@ void TextControlState::DeleteOrCacheForReuse() {
   
   if (!sHasShutDown && (!sReleasedInstances || sReleasedInstances->Length() <
                                                    kMaxCountOfCacheToReuse)) {
-    PrepareForReuse();
+    AutoTextControlHandlingState handlingCacheForReuse(
+        *this, TextControlAction::CacheForReuse);
+
+    
+    UnlinkInternal();
+    mValue.reset();
+    mTextCtrlElement = nullptr;
+
+    
+    
+    
     if (!sReleasedInstances) {
       sReleasedInstances =
           new AutoTArray<TextControlState*, kMaxCountOfCacheToReuse>;
     }
     sReleasedInstances->AppendElement(this);
+
     return;
   }
   delete this;
@@ -1442,13 +1466,12 @@ Element* TextControlState::GetPreviewNode() {
 }
 
 void TextControlState::Clear() {
+  MOZ_ASSERT(mHandlingState);
+  MOZ_ASSERT(mHandlingState->Is(TextControlAction::Destructor) ||
+             mHandlingState->Is(TextControlAction::CacheForReuse) ||
+             mHandlingState->Is(TextControlAction::Unlink));
   if (mTextEditor) {
     mTextEditor->SetTextInputListener(nullptr);
-  }
-
-  if (mHandlingState) {
-    mHandlingState->OnDestroyTextControlState();
-    mHandlingState = nullptr;
   }
 
   if (mBoundFrame) {
@@ -1468,6 +1491,14 @@ void TextControlState::Clear() {
 }
 
 void TextControlState::Unlink() {
+  AutoTextControlHandlingState handlingUnlink(*this, TextControlAction::Unlink);
+  UnlinkInternal();
+}
+
+void TextControlState::UnlinkInternal() {
+  MOZ_ASSERT(mHandlingState);
+  MOZ_ASSERT(mHandlingState->Is(TextControlAction::Unlink) ||
+             mHandlingState->Is(TextControlAction::CacheForReuse));
   TextControlState* tmp = this;
   tmp->Clear();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelCon)
