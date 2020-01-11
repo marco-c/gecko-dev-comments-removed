@@ -123,6 +123,15 @@ this.test = class extends ExtensionAPI {
     return {
       test: {
         withHandlingUserInput(callback) {
+          
+          
+          if (!Cu.isInAutomation) {
+            
+            
+            throw new ExtensionUtils.ExtensionError(
+              "withHandlingUserInput can only be called in automation"
+            );
+          }
           ExtensionCommon.withHandlingUserInput(
             context.contentWindow,
             callback
