@@ -61,37 +61,38 @@ class UrlbarController {
 
 
   constructor(options = {}) {
-    if (!options.browserWindow) {
-      throw new Error("Missing options: browserWindow");
+    if (!options.input) {
+      throw new Error("Missing options: input");
+    }
+    if (!options.input.window) {
+      throw new Error("input is missing 'window' property.");
     }
     if (
-      !options.browserWindow.location ||
-      options.browserWindow.location.href != AppConstants.BROWSER_CHROME_URL
+      !options.input.window.location ||
+      options.input.window.location.href != AppConstants.BROWSER_CHROME_URL
     ) {
-      throw new Error("browserWindow should be an actual browser window.");
+      throw new Error("input.window should be an actual browser window.");
+    }
+    if (!("isPrivate" in options.input)) {
+      throw new Error("input.isPrivate must be set.");
     }
 
+    this.input = options.input;
+    this.browserWindow = options.input.window;
+
     this.manager = options.manager || UrlbarProvidersManager;
-    this.browserWindow = options.browserWindow;
 
     this._listeners = new Set();
     this._userSelectionBehavior = "none";
 
-    this.engagementEvent = new TelemetryEvent(options.eventTelemetryCategory);
+    this.engagementEvent = new TelemetryEvent(
+      this,
+      options.eventTelemetryCategory
+    );
   }
 
   get NOTIFICATIONS() {
     return NOTIFICATIONS;
-  }
-
-  
-
-
-
-
-
-  setInput(input) {
-    this.input = input;
   }
 
   
@@ -617,8 +618,10 @@ class UrlbarController {
 
 
 class TelemetryEvent {
-  constructor(category) {
+  constructor(controller, category) {
+    this._controller = controller;
     this._category = category;
+    this._isPrivate = controller.input.isPrivate;
   }
 
   
@@ -677,6 +680,8 @@ class TelemetryEvent {
       timeStamp: event.timeStamp || Cu.now(),
       interactionType,
     };
+
+    this._controller.manager.notifyEngagementChange(this._isPrivate, "start");
   }
 
   
@@ -704,11 +709,18 @@ class TelemetryEvent {
       Cu.reportError("Could not record event: " + ex);
     } finally {
       this._startEventInfo = null;
+      this._discarded = false;
     }
   }
 
   _internalRecord(event, details) {
     if (!this._category || !this._startEventInfo) {
+      if (this._discarded && this._category) {
+        this._controller.manager.notifyEngagementChange(
+          this._isPrivate,
+          "discard"
+        );
+      }
       return;
     }
     if (
@@ -770,6 +782,8 @@ class TelemetryEvent {
       value,
       extra
     );
+
+    this._controller.manager.notifyEngagementChange(this._isPrivate, method);
   }
 
   
@@ -778,7 +792,10 @@ class TelemetryEvent {
 
 
   discard() {
-    this._startEventInfo = null;
+    if (this._startEventInfo) {
+      this._startEventInfo = null;
+      this._discarded = true;
+    }
   }
 
   

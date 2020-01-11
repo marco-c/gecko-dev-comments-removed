@@ -695,6 +695,12 @@ async function getPageActionButton(extension, win = window) {
   
   SetPageProxyState("valid");
 
+  
+  
+  
+  
+  gIdentityHandler._identityBox.classList.remove("chromeUI");
+
   await promiseAnimationFrame(win);
 
   let pageActionId = BrowserPageActions.urlbarButtonNodeIDForActionID(

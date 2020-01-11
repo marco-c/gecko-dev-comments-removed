@@ -697,6 +697,15 @@ class UrlbarProvider {
   pickResult(result) {
     throw new Error("Trying to access the base class, must be overridden");
   }
+
+  
+
+
+
+
+
+
+  onEngagement(isPrivate, state) {}
 }
 
 

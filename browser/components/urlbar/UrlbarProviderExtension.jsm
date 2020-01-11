@@ -235,14 +235,28 @@ class UrlbarProviderExtension extends UrlbarProvider {
 
 
 
-  async _notifyListener(eventName, context) {
+  onEngagement(isPrivate, state) {
+    this._notifyListener("engagement", isPrivate, state);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  async _notifyListener(eventName, ...args) {
     let listener = this._eventListeners.get(eventName);
     if (!listener) {
       return undefined;
     }
     let result;
     try {
-      result = listener(context);
+      result = listener(...args);
     } catch (error) {
       Cu.reportError(error);
       return undefined;

@@ -221,6 +221,20 @@ class ProvidersManager {
       this.interruptLevel--;
     }
   }
+
+  
+
+
+
+
+
+
+
+  notifyEngagementChange(isPrivate, state) {
+    for (let provider of this.providers) {
+      provider.onEngagement(isPrivate, state);
+    }
+  }
 }
 
 var UrlbarProvidersManager = new ProvidersManager();
