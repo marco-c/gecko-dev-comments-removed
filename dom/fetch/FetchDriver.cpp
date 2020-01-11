@@ -311,7 +311,8 @@ AlternativeDataStreamListener::OnStopRequest(nsIRequest* aRequest,
   
   
   MOZ_ASSERT(fetchDriver);
-  return fetchDriver->FinishOnStopRequest(this);
+  fetchDriver->FinishOnStopRequest(this);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -1262,16 +1263,17 @@ FetchDriver::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
     }
   }
 
-  return FinishOnStopRequest(altDataListener);
+  FinishOnStopRequest(altDataListener);
+  return NS_OK;
 }
 
-nsresult FetchDriver::FinishOnStopRequest(
+void FetchDriver::FinishOnStopRequest(
     AlternativeDataStreamListener* aAltDataListener) {
   AssertIsOnMainThread();
   
   
   if (!mOnStopRequestCalled) {
-    return NS_OK;
+    return;
   }
 
   MOZ_DIAGNOSTIC_ASSERT(!mAltDataListener);
@@ -1280,7 +1282,7 @@ nsresult FetchDriver::FinishOnStopRequest(
       aAltDataListener->Status() == AlternativeDataStreamListener::LOADING) {
     
     
-    return NS_OK;
+    return;
   }
 
   if (mObserver) {
@@ -1298,7 +1300,6 @@ nsresult FetchDriver::FinishOnStopRequest(
   }
 
   mChannel = nullptr;
-  return NS_OK;
 }
 
 NS_IMETHODIMP
