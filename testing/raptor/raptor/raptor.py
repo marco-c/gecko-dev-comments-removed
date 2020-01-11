@@ -709,8 +709,6 @@ class Browsertime(Perftest):
 
         
         browsertime_script.extend(["--browsertime.page_cycle_delay", "1000"])
-        
-        browsertime_script.extend(["--browsertime.foreground_delay", "5000"])
 
         
         browsertime_script.extend(["--browsertime.post_startup_delay",
