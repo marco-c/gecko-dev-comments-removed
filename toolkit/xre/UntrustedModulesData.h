@@ -553,10 +553,11 @@ struct ParamTraits<mozilla::UntrustedModulesData> {
       return false;
     }
 
+    
+    
+    
+    
     aResult->mModule = aModulesMap.Get(resolvedNtName);
-    if (!aResult->mModule) {
-      return false;
-    }
 
     return true;
   }
