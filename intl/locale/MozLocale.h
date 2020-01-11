@@ -8,6 +8,7 @@
 
 #include "nsString.h"
 #include "nsTArray.h"
+#include "MozLocaleBindings.h"
 
 namespace mozilla {
 namespace intl {
@@ -68,10 +69,10 @@ class Locale {
   explicit Locale(const nsACString& aLocale);
   explicit Locale(const char* aLocale) : Locale(nsDependentCString(aLocale)){};
 
-  const nsCString& GetLanguage() const;
-  const nsCString& GetScript() const;
-  const nsCString& GetRegion() const;
-  const nsTArray<nsCString>& GetVariants() const;
+  const nsDependentCSubstring GetLanguage() const;
+  const nsDependentCSubstring GetScript() const;
+  const nsDependentCSubstring GetRegion() const;
+  void GetVariants(nsTArray<nsCString>& aRetVal) const;
 
   
 
@@ -136,19 +137,21 @@ class Locale {
     
     
     
-    return IsWellFormed() && aOther.IsWellFormed() &&
-           mLanguage.Equals(aOther.mLanguage) &&
-           mScript.Equals(aOther.mScript) && mRegion.Equals(aOther.mRegion) &&
-           mVariants == aOther.mVariants && mPrivateUse == aOther.mPrivateUse;
+    return Matches(aOther, false, false);
   }
 
+  Locale(Locale&& aOther)
+      : mIsWellFormed(aOther.mIsWellFormed), mRaw(std::move(aOther.mRaw)) {}
+
+  ffi::LanguageIdentifier* Raw() { return mRaw.get(); }
+  const ffi::LanguageIdentifier* Raw() const { return mRaw.get(); }
+
  private:
-  nsAutoCStringN<3> mLanguage;
-  nsAutoCStringN<4> mScript;
-  nsAutoCStringN<2> mRegion;
-  nsTArray<nsCString> mVariants;
-  nsTArray<nsCString> mPrivateUse;
-  bool mIsWellFormed = true;
+  bool mIsWellFormed;
+
+  
+  
+  UniquePtr<ffi::LanguageIdentifier> mRaw;
 };
 
 }  

@@ -187,7 +187,7 @@ nsStaticAtom* nsLanguageAtomService::GetUncachedLanguageGroup(
       }
       
       size_t foundIndex;
-      const nsCString& script = loc.GetScript();
+      const nsDependentCSubstring& script = loc.GetScript();
       if (BinarySearchIf(
               kScriptLangGroup, 0, ArrayLength(kScriptLangGroup),
               [script](const auto& entry) -> int {
