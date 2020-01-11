@@ -27,6 +27,11 @@ class ParserBase;
 
 
 struct MOZ_RAII ParseInfo {
+  
+  
+  
+  
+  
   enum Mode { Eager, Deferred };
 
   UsedNameTracker usedNames;

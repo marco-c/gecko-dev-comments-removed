@@ -73,13 +73,6 @@ class FunctionTree {
 
 
 
-
-
-
-
-
-
-
 class FunctionTreeHolder {
  private:
   FunctionTree treeRoot_;
