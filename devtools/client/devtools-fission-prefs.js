@@ -26,13 +26,6 @@ const PREFERENCES = [
       "Console, so that it can see and debug resources from the content " +
       "processes at the same time as resources from the parent process",
   ],
-  
-  
-  
-  
-  
-  
-  
   [
     "devtools.inspector.use-new-box-model-highlighter",
     "Enables a new highlighter implementation that can simultaneously " +

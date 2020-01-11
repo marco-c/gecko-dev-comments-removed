@@ -1,0 +1,34 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function connectToFrameWithJsWindowActor(
+  connection,
+  browsingContext,
+  onDestroy
+) {
+  const parentActor = browsingContext.currentWindowGlobal.getActor(
+    "DevToolsFrame"
+  );
+
+  if (onDestroy) {
+    parentActor.once("devtools-frame-parent-actor-destroyed", onDestroy);
+  }
+  return parentActor.connectToFrame(connection);
+}
+exports.connectToFrameWithJsWindowActor = connectToFrameWithJsWindowActor;

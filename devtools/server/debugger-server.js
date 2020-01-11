@@ -35,6 +35,12 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
+  "JsWindowActorTransport",
+  "devtools/shared/transport/js-window-actor-transport",
+  true
+);
+loader.lazyRequireGetter(
+  this,
   "WorkerThreadWorkerDebuggerTransport",
   "devtools/shared/transport/worker-transport",
   true
@@ -327,6 +333,13 @@ var DebuggerServer = {
     const transport = isWorker
       ? new WorkerThreadWorkerDebuggerTransport(scopeOrManager, prefix)
       : new ChildDebuggerTransport(scopeOrManager, prefix);
+
+    return this._onConnection(transport, prefix, true);
+  },
+
+  connectToParentWindowActor(prefix, devtoolsFrameActor) {
+    this._checkInit();
+    const transport = new JsWindowActorTransport(devtoolsFrameActor, prefix);
 
     return this._onConnection(transport, prefix, true);
   },
