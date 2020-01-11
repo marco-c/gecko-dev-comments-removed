@@ -514,6 +514,10 @@ class HttpBaseChannel : public nsHashPropertyBag,
   already_AddRefed<nsILoadInfo> CloneLoadInfoForRedirect(
       nsIURI* aNewURI, uint32_t aRedirectFlags);
 
+  
+  
+  bool HasAppliedConversion() { return mHasAppliedConversion; }
+
  protected:
   nsresult GetTopWindowURI(nsIURI* aURIBeingLoaded, nsIURI** aTopWindowURI);
 
@@ -729,6 +733,9 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
   uint32_t mUpgradeToSecure : 1;
   uint32_t mApplyConversion : 1;
+  
+  
+  uint32_t mHasAppliedConversion : 1;
   uint32_t mIsPending : 1;
   uint32_t mWasOpened : 1;
   

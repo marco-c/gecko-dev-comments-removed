@@ -1413,6 +1413,12 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
   Unused << chan->GetApplyConversion(&applyConversion);
   chan->SetApplyConversion(false);
 
+  
+  
+  if (chan->HasAppliedConversion()) {
+    applyConversion = false;
+  }
+
   nsresult channelStatus = NS_OK;
   chan->GetStatus(&channelStatus);
 
