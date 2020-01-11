@@ -166,9 +166,6 @@ add_task(async function test_per_window_ntp_theme() {
       await checkWindow(null, false, winId);
       await checkWindow(brightTextTheme, true, secondWinId);
 
-      
-      await browser.theme.reset(secondWinId);
-
       await removeWindow(secondWinId);
       await checkWindow(null, false, winId);
       browser.test.notifyPass("perwindow-ntp-theme");
