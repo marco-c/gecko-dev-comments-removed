@@ -1003,12 +1003,23 @@ nsresult MediaPipelineTransmit::SetTrack(RefPtr<MediaStreamTrack> aDomTrack) {
     mSendPort = nullptr;
   }
 
+  bool wasTransmitting = false;
+  if (aDomTrack && mDomTrack && !aDomTrack->Ended() && !mDomTrack->Ended() &&
+      aDomTrack->Graph() != mDomTrack->Graph() && mSendTrack) {
+    
+    wasTransmitting = mTransmitting;
+    Stop();
+    mSendTrack->Destroy();
+    mSendTrack = nullptr;
+  }
+
   mDomTrack = std::move(aDomTrack);
   SetDescription();
 
   if (mDomTrack) {
     if (!mDomTrack->Ended()) {
       if (!mSendTrack) {
+        
         
         SetSendTrack(mDomTrack->Graph()->CreateForwardedInputTrack(
             mDomTrack->GetTrack()->mType));
@@ -1019,6 +1030,9 @@ nsresult MediaPipelineTransmit::SetTrack(RefPtr<MediaStreamTrack> aDomTrack) {
     if (mConverter) {
       mConverter->SetTrackEnabled(mDomTrack->Enabled());
     }
+  }
+  if (wasTransmitting) {
+    Start();
   }
 
   return NS_OK;
