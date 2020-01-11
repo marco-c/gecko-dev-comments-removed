@@ -59,6 +59,11 @@ function commonDialogOnLoad() {
 
   
   window.sizeToContent();
+
+  
+  
+  ui.infoIcon.addEventListener("load", () => window.sizeToContent());
+
   window.getAttention();
 }
 
