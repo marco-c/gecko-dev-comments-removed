@@ -149,6 +149,7 @@ AboutNewTabService.prototype = {
           
           const scripts = [
             "chrome://browser/content/contentSearchUI.js",
+            "chrome://browser/content/contentSearchHandoffUI.js",
             "chrome://browser/content/contentTheme.js",
             `${BASE_URL}vendor/react${debugString}.js`,
             `${BASE_URL}vendor/react-dom${debugString}.js`,

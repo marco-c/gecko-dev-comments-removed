@@ -26,6 +26,7 @@ const DEFAULT_OPTIONS = {
 
 function templateHTML(options) {
   const debugString = options.debug ? "-dev" : "";
+  
   const scripts = [
     "chrome://browser/content/contentSearchUI.js",
     "chrome://browser/content/contentSearchHandoffUI.js",
