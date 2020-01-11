@@ -70,6 +70,14 @@ class MediaControlKeysEventSource {
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
   MediaControlKeysEventSource() = default;
 
+  
+  
+  
+  enum class PlaybackState : uint8_t {
+    ePaused,
+    ePlayed,
+  };
+
   virtual void AddListener(MediaControlKeysEventListener* aListener);
   virtual void RemoveListener(MediaControlKeysEventListener* aListener);
   size_t GetListenersNum() const;
@@ -80,9 +88,13 @@ class MediaControlKeysEventSource {
   virtual void Close();
   virtual bool IsOpened() const = 0;
 
+  virtual void SetPlaybackState(PlaybackState aState);
+  virtual PlaybackState GetPlaybackState() const;
+
  protected:
   virtual ~MediaControlKeysEventSource() = default;
   nsTArray<RefPtr<MediaControlKeysEventListener>> mListeners;
+  PlaybackState mPlaybackState = PlaybackState::ePaused;
 };
 
 }  
