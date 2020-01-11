@@ -33,7 +33,7 @@ class Input extends Domain {
 
 
 
-  async dispatchKeyEvent(options) {
+  async dispatchKeyEvent(options = {}) {
     
     const { key, modifiers, type, windowsVirtualKeyCode } = options;
     const { alt, ctrl, meta, shift } = Input.Modifier;
