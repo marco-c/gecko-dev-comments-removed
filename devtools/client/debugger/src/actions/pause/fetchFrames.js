@@ -6,11 +6,22 @@
 
 import type { ThreadContext } from "../../types";
 import type { ThunkArgs } from "../types";
+import { isValidThreadContext } from "../../utils/context";
 
 export function fetchFrames(cx: ThreadContext) {
-  return async function({ dispatch, client }: ThunkArgs) {
+  return async function({ dispatch, client, getState }: ThunkArgs) {
     const { thread } = cx;
-    const frames = await client.getFrames(thread);
+    let frames;
+    try {
+      frames = await client.getFrames(thread);
+    } catch (e) {
+      
+      
+      
+      if (isValidThreadContext(getState(), cx)) {
+        throw e;
+      }
+    }
     dispatch({ type: "FETCHED_FRAMES", thread, frames, cx });
   };
 }
