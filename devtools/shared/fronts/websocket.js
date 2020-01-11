@@ -77,8 +77,9 @@ class WebSocketFront extends FrontClassWithSpec(webSocketSpec) {
 
 
 
-  async _onWebSocketClosed(wasClean, code, reason) {
-    this.emit("webSocketClosed", wasClean, code, reason);
+
+  async _onWebSocketClosed(httpChannelId, wasClean, code, reason) {
+    this.emit("webSocketClosed", httpChannelId, wasClean, code, reason);
   }
 
   

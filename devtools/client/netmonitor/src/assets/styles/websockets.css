@@ -54,6 +54,10 @@
   color: inherit;
 }
 
+#messages-panel .ws-connection-closed-message {
+  text-align: center;
+}
+
 
 
 #messages-panel .ws-frames-list-time {

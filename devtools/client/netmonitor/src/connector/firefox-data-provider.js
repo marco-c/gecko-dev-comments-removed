@@ -457,7 +457,12 @@ class FirefoxDataProvider {
 
 
 
-  async onWebSocketClosed(wasClean, code, reason) {}
+
+  async onWebSocketClosed(httpChannelId, wasClean, code, reason) {
+    if (this.actionsEnabled && this.actions.closeConnection) {
+      await this.actions.closeConnection(httpChannelId, wasClean, code, reason);
+    }
+  }
 
   
 

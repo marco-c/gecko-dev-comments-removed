@@ -13,6 +13,7 @@ const {
   WS_SET_REQUEST_FILTER_TEXT,
   WS_TOGGLE_COLUMN,
   WS_RESET_COLUMNS,
+  WS_CLOSE_CONNECTION,
 } = require("../constants");
 
 const { getDisplayedFrames } = require("../selectors/index");
@@ -113,6 +114,24 @@ function toggleWebSocketsColumn(column) {
 
 
 
+
+
+function closeConnection(httpChannelId, wasClean, code, reason) {
+  return {
+    type: WS_CLOSE_CONNECTION,
+    httpChannelId,
+    wasClean,
+    code,
+    reason,
+  };
+}
+
+
+
+
+
+
+
 function selectFrameDelta(delta) {
   return (dispatch, getState) => {
     const state = getState();
@@ -146,6 +165,7 @@ module.exports = {
   toggleFrameFilterType,
   setFrameFilterText,
   resetWebSocketsColumns,
+  closeConnection,
   toggleWebSocketsColumn,
   selectFrameDelta,
 };

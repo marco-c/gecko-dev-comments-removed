@@ -91,9 +91,30 @@ const getDisplayedFramesSummary = createSelector(
   }
 );
 
+
+
+
+const isCurrentChannelClosed = createSelector(
+  state => state.webSockets,
+  ({ closedConnections, currentChannelId }) =>
+    closedConnections.has(currentChannelId)
+);
+
+
+
+
+
+const getClosedConnectionDetails = createSelector(
+  state => state.webSockets,
+  ({ closedConnections, currentChannelId }) =>
+    closedConnections.get(currentChannelId)
+);
+
 module.exports = {
   getSelectedFrame,
   isSelectedFrameVisible,
   getDisplayedFrames,
   getDisplayedFramesSummary,
+  isCurrentChannelClosed,
+  getClosedConnectionDetails,
 };
