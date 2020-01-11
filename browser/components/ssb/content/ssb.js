@@ -2,11 +2,16 @@
 
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "SiteSpecificBrowser",
-  "resource:///modules/SiteSpecificBrowserService.jsm"
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
 );
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
+  Services: "resource://gre/modules/Services.jsm",
+  SiteSpecificBrowser: "resource:///modules/SiteSpecificBrowserService.jsm",
+  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
+});
 
 let gSSBBrowser = null;
 let gSSB = null;
@@ -14,12 +19,177 @@ let gSSB = null;
 function init() {
   gSSB = SiteSpecificBrowser.get(window.arguments[0]);
 
+  window.browserDOMWindow = new BrowserDOMWindow();
+
   gSSBBrowser = document.createXULElement("browser");
   gSSBBrowser.setAttribute("id", "browser");
   gSSBBrowser.setAttribute("type", "content");
   gSSBBrowser.setAttribute("remote", "true");
+  gSSBBrowser.setAttribute("nodefaultsrc", "true");
   document.getElementById("browser-container").appendChild(gSSBBrowser);
+
+  
+  let actor = gSSBBrowser.browsingContext.currentWindowGlobal.getActor(
+    "SiteSpecificBrowser"
+  );
+  actor.sendAsyncMessage("SetSSB", gSSB.id);
+
   gSSBBrowser.src = gSSB.startURI.spec;
 }
 
-window.addEventListener("load", init, true);
+class BrowserDOMWindow {
+  
+
+
+
+
+
+
+
+
+
+
+
+  createContentWindow(uri, opener, where, flags, triggeringPrincipal, csp) {
+    console.error(
+      "createContentWindow should never be called from a remote browser"
+    );
+    throw Cr.NS_ERROR_FAILURE;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  openURI(uri, opener, where, flags, triggeringPrincipal, csp) {
+    console.error("openURI should never be called from a remote browser");
+    throw Cr.NS_ERROR_FAILURE;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  getContentWindowOrOpenURIInFrame(
+    uri,
+    params,
+    where,
+    flags,
+    nextRemoteTabId,
+    name,
+    shouldOpen
+  ) {
+    
+    
+    
+
+    
+    if (gSSB.canLoad(uri)) {
+      return gSSBBrowser;
+    }
+
+    
+    let win = BrowserWindowTracker.getTopWindow({
+      private: params.isPrivate,
+      allowPopups: false,
+    });
+
+    if (win) {
+      
+      win.focus();
+      return win.browserDOMWindow.openURIInFrame(
+        shouldOpen ? uri : null,
+        params,
+        where,
+        flags,
+        nextRemoteTabId,
+        name
+      );
+    }
+
+    
+    
+    
+    return null;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  createContentWindowInFrame(uri, params, where, flags, nextRemoteTabId, name) {
+    return this.getContentWindowOrOpenURIInFrame(
+      uri,
+      params,
+      where,
+      flags,
+      nextRemoteTabId,
+      name,
+      false
+    );
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  openURIInFrame(uri, params, where, flags, nextRemoteTabId, name) {
+    return this.getContentWindowOrOpenURIInFrame(
+      uri,
+      params,
+      where,
+      flags,
+      nextRemoteTabId,
+      name,
+      true
+    );
+  }
+
+  isTabContentWindow(window) {
+    
+    return gSSBBrowser.contentWindow == window;
+  }
+
+  canClose() {
+    return BrowserUtils.canCloseWindow(window);
+  }
+
+  get tabCount() {
+    return 1;
+  }
+}
+
+BrowserDOMWindow.prototype.QueryInterface = ChromeUtils.generateQI([
+  Ci.nsIBrowserDOMWindow,
+]);
+
+window.addEventListener("DOMContentLoaded", init, true);
