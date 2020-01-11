@@ -12,6 +12,7 @@
 #include <wininet.h>
 #include <schnlsp.h>
 #include <winternl.h>
+#include <processthreadsapi.h>
 
 #include "AssemblyPayloads.h"
 #include "mozilla/DynamicallyLinkedFunctionPtr.h"
@@ -54,6 +55,12 @@ void __fastcall BaseThreadInitThunk(BOOL aIsInitialThread, void* aStartAddress,
 
 BOOL WINAPI ApiSetQueryApiSetPresence(PCUNICODE_STRING, PBOOLEAN);
 
+#if (_WIN32_WINNT < 0x0602)
+BOOL WINAPI
+SetProcessMitigationPolicy(PROCESS_MITIGATION_POLICY aMitigationPolicy,
+                           PVOID aBuffer, SIZE_T aBufferLen);
+#endif  
+
 using namespace mozilla;
 
 struct payload {
@@ -75,10 +82,25 @@ extern "C" __declspec(dllexport) __declspec(noinline) payload
   return p;
 }
 
+
+
+
+extern "C" __declspec(dllexport) __declspec(noinline) payload
+    payloadNotHooked(payload p) {
+  
+  p.a ^= p.b;
+  p.b ^= p.c;
+  p.c ^= p.a;
+  return p;
+}
+
 static bool patched_func_called = false;
 
 static WindowsDllInterceptor::FuncHookType<decltype(&rotatePayload)>
     orig_rotatePayload;
+
+static WindowsDllInterceptor::FuncHookType<decltype(&payloadNotHooked)>
+    orig_payloadNotHooked;
 
 static payload patched_rotatePayload(payload p) {
   patched_func_called = true;
@@ -767,6 +789,56 @@ bool TestAssemblyFunctions() {
   return true;
 }
 
+bool TestDynamicCodePolicy() {
+  if (!IsWin8Point1OrLater()) {
+    
+    return true;
+  }
+
+  PROCESS_MITIGATION_DYNAMIC_CODE_POLICY policy = {};
+  policy.ProhibitDynamicCode = true;
+
+  mozilla::DynamicallyLinkedFunctionPtr<decltype(&SetProcessMitigationPolicy)>
+      pSetProcessMitigationPolicy(L"kernel32.dll",
+                                  "SetProcessMitigationPolicy");
+  if (!pSetProcessMitigationPolicy) {
+    printf(
+        "TEST-UNEXPECTED-FAIL | WindowsDllInterceptor | "
+        "SetProcessMitigationPolicy does not exist.\n");
+    fflush(stdout);
+    return false;
+  }
+
+  if (!pSetProcessMitigationPolicy(ProcessDynamicCodePolicy, &policy,
+                                   sizeof(policy))) {
+    printf(
+        "TEST-UNEXPECTED-FAIL | WindowsDllInterceptor | "
+        "Fail to enable ProcessDynamicCodePolicy.\n");
+    fflush(stdout);
+    return false;
+  }
+
+  WindowsDllInterceptor ExeIntercept;
+  ExeIntercept.Init("TestDllInterceptor.exe");
+
+  
+  
+  if (orig_payloadNotHooked.Set(ExeIntercept, "payloadNotHooked",
+                                &patched_rotatePayload)) {
+    printf(
+        "TEST-UNEXPECTED-FAIL | WindowsDllInterceptor | "
+        "ProcessDynamicCodePolicy is not working.\n");
+    fflush(stdout);
+    return false;
+  }
+
+  printf(
+      "TEST-PASS | WindowsDllInterceptor | "
+      "Successfully passed TestDynamicCodePolicy.\n");
+  fflush(stdout);
+  return true;
+}
+
 extern "C" int wmain(int argc, wchar_t* argv[]) {
   LARGE_INTEGER start;
   QueryPerformanceCounter(&start);
@@ -954,7 +1026,10 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
       TEST_HOOK_PARAMS("sspicli.dll", QueryCredentialsAttributesA, Equals,
                        SEC_E_INVALID_HANDLE, &credHandle, 0, nullptr) &&
       TEST_HOOK_PARAMS("sspicli.dll", FreeCredentialsHandle, Equals,
-                       SEC_E_INVALID_HANDLE, &credHandle)) {
+                       SEC_E_INVALID_HANDLE, &credHandle) &&
+      
+      
+      TestDynamicCodePolicy()) {
     printf("TEST-PASS | WindowsDllInterceptor | all checks passed\n");
 
     LARGE_INTEGER end, freq;

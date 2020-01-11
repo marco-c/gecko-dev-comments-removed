@@ -715,6 +715,9 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
     *aOutTramp = nullptr;
 
     Trampoline<MMPolicyT>& tramp = aTramp;
+    if (!tramp) {
+      return;
+    }
 
     
     
