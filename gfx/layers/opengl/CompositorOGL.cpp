@@ -2148,11 +2148,15 @@ void CompositorOGL::Pause() {
   java::GeckoSurfaceTexture::DetachAllFromGLContext((int64_t)mGLContext.get());
   
   gl()->ReleaseSurface();
+#elif defined(MOZ_WAYLAND)
+  
+  gl()->ReleaseSurface();
 #endif
 }
 
 bool CompositorOGL::Resume() {
-#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_UIKIT)
+#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_UIKIT) || \
+    defined(MOZ_WAYLAND)
   if (!gl() || gl()->IsDestroyed()) return false;
 
   
