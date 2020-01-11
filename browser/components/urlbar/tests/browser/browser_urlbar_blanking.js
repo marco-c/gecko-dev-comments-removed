@@ -34,7 +34,7 @@ add_task(async function() {
   );
   
   
-  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
+  await ContentTask.spawn(tab.linkedBrowser, null, function() {
     
     content.location.reload();
   }).catch(e => {
