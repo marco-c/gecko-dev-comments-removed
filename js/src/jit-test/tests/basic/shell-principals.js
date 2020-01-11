@@ -7,7 +7,7 @@ var count = 0;
 
 
 function check(expected, stack) {
-  print("check(" + uneval(expected) + ") against:\n" + stack);
+  print("check(" + JSON.stringify(expected) + ") against:\n" + stack);
   count++;
 
   

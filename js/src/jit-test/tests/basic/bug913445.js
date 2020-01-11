@@ -1,5 +1,7 @@
 
 
+
+
 var obj = Object.create(null);
 assertEq(uneval(obj), "({})");
 assertEq(Function.prototype.toSource.call(obj), "({})");
