@@ -1078,6 +1078,14 @@ nsresult nsDNSService::ResolveInternal(
 
   uint16_t af = GetAFForLookup(hostname, flags);
 
+  
+  
+  
+  
+  if (NS_IsMainThread()) {
+    flags |= RESOLVE_DISABLE_TRR;
+  }
+
   rv = res->ResolveHost(hostname, RESOLVE_TYPE_DEFAULT, aOriginAttributes,
                         flags, af, syncReq);
   if (NS_SUCCEEDED(rv)) {
