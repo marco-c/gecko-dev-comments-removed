@@ -3,16 +3,25 @@
 
 
 
-function build_task(page, linkId, external) {
+function build_task(page, linkId, external, preload) {
   let expectedTarget = linkId + "/final.html";
 
   add_task(async () => {
-    await BrowserTestUtils.openNewForegroundTab({
-      gBrowser,
-      url: gHttpsTestRoot + page,
-    });
+    let ssb;
 
-    let ssb = await openSSBFromBrowserWindow();
+    info(`Loading ${page} (${preload})`);
+    if (preload) {
+      
+      await BrowserTestUtils.openNewForegroundTab({
+        gBrowser,
+        url: gHttpsTestRoot + page,
+      });
+
+      ssb = await openSSBFromBrowserWindow();
+    } else {
+      
+      ssb = await openSSB(gHttpsTestRoot + page);
+    }
 
     let promise;
     if (external) {
@@ -34,6 +43,7 @@ function build_task(page, linkId, external) {
       });
     }
 
+    info(`Clicking #${linkId}`);
     await BrowserTestUtils.synthesizeMouseAtCenter(
       `#${linkId}`,
       {},
@@ -45,6 +55,8 @@ function build_task(page, linkId, external) {
   });
 }
 
+function make_all_tasks(preload) {
+  
 
 
 
@@ -52,9 +64,16 @@ function build_task(page, linkId, external) {
 
 
 
-build_task("site1/simple.html", "site1", false);
-build_task("site1/simple.html", "site2", true);
-build_task("site1/empty.html", "site1", false);
-build_task("site1/empty.html", "site2", true);
-build_task("site1/allhost.html", "site1", false);
-build_task("site1/allhost.html", "site2", false);
+
+  build_task("site1/simple.html", "site1", false, preload);
+  build_task("site1/simple.html", "site2", true, preload);
+  build_task("site1/empty.html", "site1", false, preload);
+  build_task("site1/empty.html", "site2", true, preload);
+  build_task("site1/allhost.html", "site1", false, preload);
+  build_task("site1/allhost.html", "site2", false, preload);
+  build_task("site1/bad.html", "site1", false, preload);
+  build_task("site1/bad.html", "site2", true, preload);
+}
+
+make_all_tasks(true);
+make_all_tasks(false);

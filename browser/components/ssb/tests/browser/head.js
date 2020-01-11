@@ -42,7 +42,7 @@ async function openSSB(uri) {
   ssb.launch();
 
   let ssbwin = await openPromise;
-  await BrowserTestUtils.browserLoaded(getBrowser(ssbwin), true, uri.spec);
+  await BrowserTestUtils.waitForEvent(getBrowser(ssbwin), "SSBLoad");
   return ssbwin;
 }
 
@@ -57,8 +57,6 @@ async function openSSBFromBrowserWindow(win = window) {
   EventUtils.synthesizeMouseAtCenter(pageActionButton, {}, win);
   await popupShown;
 
-  let expectedUri = win.gBrowser.selectedBrowser.currentURI;
-
   let openItem = doc.getElementById("pageAction-panel-launchSSB");
   Assert.ok(!openItem.disabled, "Open menu item should not be disabled");
   Assert.ok(!openItem.hidden, "Open menu item should not be hidden");
@@ -70,8 +68,7 @@ async function openSSBFromBrowserWindow(win = window) {
 
   EventUtils.synthesizeMouseAtCenter(openItem, {}, win);
   let ssbwin = await openPromise;
-  let browser = ssbwin.document.getElementById("browser");
-  await BrowserTestUtils.browserLoaded(browser, true, expectedUri.spec);
+  await BrowserTestUtils.waitForEvent(getBrowser(ssbwin), "SSBLoad");
   return ssbwin;
 }
 
@@ -151,11 +148,7 @@ function expectLoadSomewhere(ssb, where, win = window) {
     };
     Services.ww.registerNotification(winObserver);
 
-    BrowserTestUtils.browserLoaded(
-      getBrowser(ssb),
-      true,
-      uri => uri != "about:blank"
-    ).then(() => {
+    const ssbListener = () => {
       cleanup();
 
       if (where != "ssb") {
@@ -175,14 +168,14 @@ function expectLoadSomewhere(ssb, where, win = window) {
         } loaded in the ssb window as expected.`
       );
       resolve();
-    }, reject);
+    };
+    getBrowser(ssb).addEventListener("SSBLoad", ssbListener);
 
-    
-    
     
     const cleanup = () => {
       win.gBrowser.tabContainer.removeEventListener("TabOpen", tabListener);
       Services.ww.unregisterNotification(winObserver);
+      getBrowser(ssb).removeEventListener("SSBLoad", ssbListener);
     };
   });
 }

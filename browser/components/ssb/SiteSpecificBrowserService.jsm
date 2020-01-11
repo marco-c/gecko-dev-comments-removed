@@ -56,6 +56,22 @@ const IS_MAIN_PROCESS =
 
 
 
+
+function scopeIncludes(scope, uri) {
+  
+  if (scope.prePath != uri.prePath) {
+    return false;
+  }
+
+  return uri.filePath.startsWith(scope.filePath);
+}
+
+
+
+
+
+
+
 function manifestForURI(uri) {
   try {
     let manifestURI = Services.io.newURI("/manifest.json", null, uri);
@@ -85,7 +101,11 @@ async function buildManifestForBrowser(browser) {
     console.error(e);
   }
 
-  if (!manifest) {
+  
+  if (
+    !manifest ||
+    !scopeIncludes(Services.io.newURI(manifest.scope), browser.currentURI)
+  ) {
     manifest = manifestForURI(browser.currentURI);
   }
 
@@ -158,14 +178,15 @@ class SiteSpecificBrowserBase {
       return true;
     }
 
-    
-    if (this._scope.prePath != uri.prePath) {
-      return false;
-    }
-
-    return uri.filePath.startsWith(this._scope.filePath);
+    return scopeIncludes(this._scope, uri);
   }
 }
+
+
+
+
+
+
 
 
 
@@ -188,7 +209,8 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
 
 
 
-  constructor(id, manifest) {
+
+  constructor(id, manifest, config = {}) {
     if (!IS_MAIN_PROCESS) {
       throw new Error(
         "SiteSpecificBrowser instances are only available in the main process."
@@ -198,6 +220,12 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
     super(Services.io.newURI(manifest.scope));
     this._id = id;
     this._manifest = manifest;
+    this._config = Object.assign(
+      {
+        needsUpdate: true,
+      },
+      config
+    );
 
     
     SSBMap.set(id, this);
@@ -239,7 +267,7 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
       );
     }
 
-    return new SiteSpecificBrowser(uuid(), manifest);
+    return new SiteSpecificBrowser(uuid(), manifest, { needsUpdate: false });
   }
 
   
@@ -304,6 +332,36 @@ class SiteSpecificBrowser extends SiteSpecificBrowserBase {
 
   get startURI() {
     return Services.io.newURI(this._manifest.start_url);
+  }
+
+  
+
+
+  get needsUpdate() {
+    return this._config.needsUpdate;
+  }
+
+  
+
+
+
+
+  async updateFromManifest(manifest) {
+    this._manifest = manifest;
+    this._scope = Services.io.newURI(this._manifest.scope);
+    this._config.needsUpdate = false;
+
+    this._updateSharedData();
+  }
+
+  
+
+
+
+
+  async updateFromBrowser(browser) {
+    let manifest = await buildManifestForBrowser(browser);
+    await this.updateFromManifest(manifest);
   }
 
   
