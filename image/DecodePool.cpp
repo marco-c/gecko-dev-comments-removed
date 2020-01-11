@@ -71,13 +71,15 @@ class DecodePoolImpl {
 
   
   void ShutdownThread(nsIThread* aThisThread, bool aShutdownIdle) {
+    bool removed = false;
+
     {
       
       
       MonitorAutoLock lock(mMonitor);
       if (!mShuttingDown) {
         ++mAvailableThreads;
-        DebugOnly<bool> removed = mThreads.RemoveElement(aThisThread);
+        removed = mThreads.RemoveElement(aThisThread);
         MOZ_ASSERT(aShutdownIdle);
         MOZ_ASSERT(mAvailableThreads < mThreads.Capacity());
         MOZ_ASSERT(removed);
@@ -86,10 +88,14 @@ class DecodePoolImpl {
 
     
     
-    SystemGroup::Dispatch(
-        TaskCategory::Other,
-        NewRunnableMethod("DecodePoolImpl::ShutdownThread", aThisThread,
-                          &nsIThread::AsyncShutdown));
+    
+    
+    if (removed) {
+      SystemGroup::Dispatch(
+          TaskCategory::Other,
+          NewRunnableMethod("DecodePoolImpl::ShutdownThread", aThisThread,
+                            &nsIThread::AsyncShutdown));
+    }
   }
 
   
