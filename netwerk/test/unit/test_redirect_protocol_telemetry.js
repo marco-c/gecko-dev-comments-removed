@@ -8,6 +8,13 @@ function make_channel(url, callback, ctx) {
 }
 
 add_task(async function check_protocols() {
+  
+  
+  Services.prefs.setBoolPref(
+    "toolkit.telemetry.testing.overrideProductsCheck",
+    true
+  );
+
   let httpserv = new HttpServer();
   httpserv.registerPathHandler("/redirect", redirectHandler);
   httpserv.registerPathHandler("/content", contentHandler);
