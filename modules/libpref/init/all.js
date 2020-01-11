@@ -581,7 +581,7 @@ pref("media.cubeb.logging_level", "");
 #endif
 
 
-pref("media.audiograph.single_thread.enabled", false);
+pref("media.audiograph.single_thread.enabled", true);
 
 
 
