@@ -1,9 +1,9 @@
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
-use std::hash::{BuildHasherDefault, Hasher};
 use std::fmt;
+use std::hash::{BuildHasherDefault, Hasher};
 
-type AnyMap = HashMap<TypeId, Box<Any + Send + Sync>, BuildHasherDefault<IdHasher>>;
+type AnyMap = HashMap<TypeId, Box<dyn Any + Send + Sync>, BuildHasherDefault<IdHasher>>;
 
 
 
@@ -31,8 +31,6 @@ impl Hasher for IdHasher {
 
 
 
-
-
 #[derive(Default)]
 pub struct Extensions {
     
@@ -44,9 +42,7 @@ impl Extensions {
     
     #[inline]
     pub fn new() -> Extensions {
-        Extensions {
-            map: None,
-        }
+        Extensions { map: None }
     }
 
     
@@ -64,13 +60,11 @@ impl Extensions {
     
     
     pub fn insert<T: Send + Sync + 'static>(&mut self, val: T) -> Option<T> {
-        self
-            .map
+        self.map
             .get_or_insert_with(|| Box::new(HashMap::default()))
             .insert(TypeId::of::<T>(), Box::new(val))
             .and_then(|boxed| {
-                
-                (boxed as Box<Any + 'static>)
+                (boxed as Box<dyn Any + 'static>)
                     .downcast()
                     .ok()
                     .map(|boxed| *boxed)
@@ -90,12 +84,10 @@ impl Extensions {
     
     
     pub fn get<T: Send + Sync + 'static>(&self) -> Option<&T> {
-        self
-            .map
+        self.map
             .as_ref()
             .and_then(|map| map.get(&TypeId::of::<T>()))
-            
-            .and_then(|boxed| (&**boxed as &(Any + 'static)).downcast_ref())
+            .and_then(|boxed| (&**boxed as &(dyn Any + 'static)).downcast_ref())
     }
 
     
@@ -111,14 +103,11 @@ impl Extensions {
     
     
     pub fn get_mut<T: Send + Sync + 'static>(&mut self) -> Option<&mut T> {
-        self
-            .map
+        self.map
             .as_mut()
             .and_then(|map| map.get_mut(&TypeId::of::<T>()))
-            
-            .and_then(|boxed| (&mut **boxed as &mut (Any + 'static)).downcast_mut())
+            .and_then(|boxed| (&mut **boxed as &mut (dyn Any + 'static)).downcast_mut())
     }
-
 
     
     
@@ -134,13 +123,11 @@ impl Extensions {
     
     
     pub fn remove<T: Send + Sync + 'static>(&mut self) -> Option<T> {
-        self
-            .map
+        self.map
             .as_mut()
             .and_then(|map| map.remove(&TypeId::of::<T>()))
             .and_then(|boxed| {
-                
-                (boxed as Box<Any + 'static>)
+                (boxed as Box<dyn Any + 'static>)
                     .downcast()
                     .ok()
                     .map(|boxed| *boxed)
@@ -168,9 +155,8 @@ impl Extensions {
 }
 
 impl fmt::Debug for Extensions {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Extensions")
-            .finish()
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Extensions").finish()
     }
 }
 

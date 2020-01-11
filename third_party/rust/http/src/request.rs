@@ -53,12 +53,13 @@
 
 
 use std::any::Any;
+use std::convert::{TryFrom};
 use std::fmt;
 
-use {Uri, Error, Result, HttpTryFrom, Extensions};
-use header::{HeaderMap, HeaderName, HeaderValue};
-use method::Method;
-use version::Version;
+use crate::header::{HeaderMap, HeaderName, HeaderValue};
+use crate::method::Method;
+use crate::version::Version;
+use crate::{Extensions, Result, Uri};
 
 
 
@@ -187,8 +188,7 @@ pub struct Parts {
 
 #[derive(Debug)]
 pub struct Builder {
-    head: Option<Parts>,
-    err: Option<Error>,
+    inner: Result<Parts>,
 }
 
 impl Request<()> {
@@ -213,7 +213,6 @@ impl Request<()> {
         Builder::new()
     }
 
-
     
     
     
@@ -229,10 +228,12 @@ impl Request<()> {
     
     
     pub fn get<T>(uri: T) -> Builder
-        where Uri: HttpTryFrom<T> {
-        let mut b = Builder::new();
-        b.method(Method::GET).uri(uri);
-        b
+    where
+        Uri: TryFrom<T>,
+        <Uri as TryFrom<T>>::Error: Into<crate::Error>,
+
+    {
+        Builder::new().method(Method::GET).uri(uri)
     }
 
     
@@ -250,10 +251,12 @@ impl Request<()> {
     
     
     pub fn put<T>(uri: T) -> Builder
-        where Uri: HttpTryFrom<T> {
-        let mut b = Builder::new();
-        b.method(Method::PUT).uri(uri);
-        b
+    where
+        Uri: TryFrom<T>,
+        <Uri as TryFrom<T>>::Error: Into<crate::Error>,
+
+    {
+        Builder::new().method(Method::PUT).uri(uri)
     }
 
     
@@ -271,10 +274,12 @@ impl Request<()> {
     
     
     pub fn post<T>(uri: T) -> Builder
-        where Uri: HttpTryFrom<T> {
-        let mut b = Builder::new();
-        b.method(Method::POST).uri(uri);
-        b
+    where
+        Uri: TryFrom<T>,
+        <Uri as TryFrom<T>>::Error: Into<crate::Error>,
+
+    {
+        Builder::new().method(Method::POST).uri(uri)
     }
 
     
@@ -292,10 +297,12 @@ impl Request<()> {
     
     
     pub fn delete<T>(uri: T) -> Builder
-        where Uri: HttpTryFrom<T> {
-        let mut b = Builder::new();
-        b.method(Method::DELETE).uri(uri);
-        b
+    where
+        Uri: TryFrom<T>,
+        <Uri as TryFrom<T>>::Error: Into<crate::Error>,
+
+    {
+        Builder::new().method(Method::DELETE).uri(uri)
     }
 
     
@@ -314,10 +321,12 @@ impl Request<()> {
     
     
     pub fn options<T>(uri: T) -> Builder
-        where Uri: HttpTryFrom<T> {
-        let mut b = Builder::new();
-        b.method(Method::OPTIONS).uri(uri);
-        b
+    where
+        Uri: TryFrom<T>,
+        <Uri as TryFrom<T>>::Error: Into<crate::Error>,
+
+    {
+        Builder::new().method(Method::OPTIONS).uri(uri)
     }
 
     
@@ -335,10 +344,12 @@ impl Request<()> {
     
     
     pub fn head<T>(uri: T) -> Builder
-        where Uri: HttpTryFrom<T> {
-        let mut b = Builder::new();
-        b.method(Method::HEAD).uri(uri);
-        b
+    where
+        Uri: TryFrom<T>,
+        <Uri as TryFrom<T>>::Error: Into<crate::Error>,
+
+    {
+        Builder::new().method(Method::HEAD).uri(uri)
     }
 
     
@@ -356,10 +367,12 @@ impl Request<()> {
     
     
     pub fn connect<T>(uri: T) -> Builder
-        where Uri: HttpTryFrom<T> {
-        let mut b = Builder::new();
-        b.method(Method::CONNECT).uri(uri);
-        b
+    where
+        Uri: TryFrom<T>,
+        <Uri as TryFrom<T>>::Error: Into<crate::Error>,
+
+    {
+        Builder::new().method(Method::CONNECT).uri(uri)
     }
 
     
@@ -377,10 +390,11 @@ impl Request<()> {
     
     
     pub fn patch<T>(uri: T) -> Builder
-        where Uri: HttpTryFrom<T> {
-        let mut b = Builder::new();
-        b.method(Method::PATCH).uri(uri);
-        b
+    where
+        Uri: TryFrom<T>,
+        <Uri as TryFrom<T>>::Error: Into<crate::Error>,
+    {
+        Builder::new().method(Method::PATCH).uri(uri)
     }
 
     
@@ -398,10 +412,11 @@ impl Request<()> {
     
     
     pub fn trace<T>(uri: T) -> Builder
-        where Uri: HttpTryFrom<T> {
-        let mut b = Builder::new();
-        b.method(Method::TRACE).uri(uri);
-        b
+    where
+        Uri: TryFrom<T>,
+        <Uri as TryFrom<T>>::Error: Into<crate::Error>,
+    {
+        Builder::new().method(Method::TRACE).uri(uri)
     }
 }
 
@@ -624,7 +639,6 @@ impl<T> Request<T> {
         &mut self.body
     }
 
-
     
     
     
@@ -671,9 +685,13 @@ impl<T> Request<T> {
     
     #[inline]
     pub fn map<F, U>(self, f: F) -> Request<U>
-        where F: FnOnce(T) -> U
+    where
+        F: FnOnce(T) -> U,
     {
-        Request { body: f(self.body), head: self.head }
+        Request {
+            body: f(self.body),
+            head: self.head,
+        }
     }
 }
 
@@ -684,7 +702,7 @@ impl<T: Default> Default for Request<T> {
 }
 
 impl<T: fmt::Debug> fmt::Debug for Request<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Request")
             .field("method", self.method())
             .field("uri", self.uri())
@@ -699,7 +717,7 @@ impl<T: fmt::Debug> fmt::Debug for Request<T> {
 impl Parts {
     
     fn new() -> Parts {
-        Parts{
+        Parts {
             method: Method::default(),
             uri: Uri::default(),
             version: Version::default(),
@@ -711,7 +729,7 @@ impl Parts {
 }
 
 impl fmt::Debug for Parts {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Parts")
             .field("method", &self.method)
             .field("uri", &self.uri)
@@ -758,16 +776,35 @@ impl Builder {
     
     
     
-    pub fn method<T>(&mut self, method: T) -> &mut Builder
-        where Method: HttpTryFrom<T>,
+    pub fn method<T>(self, method: T) -> Builder
+    where
+        Method: TryFrom<T>,
+        <Method as TryFrom<T>>::Error: Into<crate::Error>,
     {
-        if let Some(head) = head(&mut self.head, &self.err) {
-            match HttpTryFrom::try_from(method) {
-                Ok(s) => head.method = s,
-                Err(e) => self.err = Some(e.into()),
-            }
-        }
-        self
+        self.and_then(move |mut head| {
+            let method = TryFrom::try_from(method).map_err(Into::into)?;
+            head.method = method;
+            Ok(head)
+        })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn method_ref(&self) -> Option<&Method> {
+        self.inner.as_ref().ok().map(|h| &h.method)
     }
 
     
@@ -787,15 +824,34 @@ impl Builder {
     
     
     
-    pub fn method_ref(&self) -> Option<&Method>
+    pub fn uri<T>(self, uri: T) -> Builder
+    where
+        Uri: TryFrom<T>,
+        <Uri as TryFrom<T>>::Error: Into<crate::Error>,
     {
-        if self.err.is_some() {
-            return None
-        }
-        match self.head {
-            Some(ref head) => Some(&head.method),
-            None => None
-        }
+        self.and_then(move |mut head| {
+            head.uri = TryFrom::try_from(uri).map_err(Into::into)?;
+            Ok(head)
+        })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn uri_ref(&self) -> Option<&Uri> {
+        self.inner.as_ref().ok().map(|h| &h.uri)
     }
 
     
@@ -815,65 +871,11 @@ impl Builder {
     
     
     
-    pub fn uri<T>(&mut self, uri: T) -> &mut Builder
-        where Uri: HttpTryFrom<T>,
-    {
-        if let Some(head) = head(&mut self.head, &self.err) {
-            match HttpTryFrom::try_from(uri) {
-                Ok(s) => head.uri = s,
-                Err(e) => self.err = Some(e.into()),
-            }
-        }
-        self
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn uri_ref(&self) -> Option<&Uri>
-    {
-        if self.err.is_some() {
-            return None;
-        }
-        match self.head
-        {
-            Some(ref head) => Some(&head.uri),
-            None => None
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn version(&mut self, version: Version) -> &mut Builder {
-        if let Some(head) = head(&mut self.head, &self.err) {
+    pub fn version(self, version: Version) -> Builder {
+        self.and_then(move |mut head| {
             head.version = version;
-        }
-        self
+            Ok(head)
+        })
     }
 
     
@@ -894,26 +896,21 @@ impl Builder {
     
     
     
-    pub fn header<K, V>(&mut self, key: K, value: V) -> &mut Builder
-        where HeaderName: HttpTryFrom<K>,
-              HeaderValue: HttpTryFrom<V>
+    pub fn header<K, V>(self, key: K, value: V) -> Builder
+    where
+        HeaderName: TryFrom<K>,
+        <HeaderName as TryFrom<K>>::Error: Into<crate::Error>,
+        HeaderValue: TryFrom<V>,
+        <HeaderValue as TryFrom<V>>::Error: Into<crate::Error>,
     {
-        if let Some(head) = head(&mut self.head, &self.err) {
-            match <HeaderName as HttpTryFrom<K>>::try_from(key) {
-                Ok(key) => {
-                    match <HeaderValue as HttpTryFrom<V>>::try_from(value) {
-                        Ok(value) => { head.headers.append(key, value); }
-                        Err(e) => self.err = Some(e.into()),
-                    }
-                },
-                Err(e) => self.err = Some(e.into()),
-            };
-        }
-        self
+        self.and_then(move |mut head| {
+            let name = <HeaderName as TryFrom<K>>::try_from(key).map_err(Into::into)?;
+            let value = <HeaderValue as TryFrom<V>>::try_from(value).map_err(Into::into)?;
+            head.headers.append(name, value);
+            Ok(head)
+        })
     }
 
-    
-    
     
     
     
@@ -929,17 +926,9 @@ impl Builder {
     
     
     pub fn headers_ref(&self) -> Option<&HeaderMap<HeaderValue>> {
-        if self.err.is_some() {
-            return None;
-        }
-        match self.head
-        {
-            Some(ref head) => Some(&head.headers),
-            None => None
-        }
+        self.inner.as_ref().ok().map(|h| &h.headers)
     }
 
-    
     
     
     
@@ -959,14 +948,7 @@ impl Builder {
     
     
     pub fn headers_mut(&mut self) -> Option<&mut HeaderMap<HeaderValue>> {
-        if self.err.is_some() {
-            return None;
-        }
-        match self.head
-        {
-            Some(ref mut head) => Some(&mut head.headers),
-            None => None
-        }
+        self.inner.as_mut().ok().map(|h| &mut h.headers)
     }
 
     
@@ -984,71 +966,62 @@ impl Builder {
     
     
     
-    pub fn extension<T>(&mut self, extension: T) -> &mut Builder
-        where T: Any + Send + Sync + 'static,
+    pub fn extension<T>(self, extension: T) -> Builder
+    where
+        T: Any + Send + Sync + 'static,
     {
-        if let Some(head) = head(&mut self.head, &self.err) {
+        self.and_then(move |mut head| {
             head.extensions.insert(extension);
-        }
-        self
-    }
-
-    fn take_parts(&mut self) -> Result<Parts> {
-        let ret = self.head.take().expect("cannot reuse request builder");
-        if let Some(e) = self.err.take() {
-            return Err(e)
-        }
-        Ok(ret)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn body<T>(&mut self, body: T) -> Result<Request<T>> {
-        Ok(Request {
-            head: self.take_parts()?,
-            body: body,
+            Ok(head)
         })
     }
-}
 
-fn head<'a>(head: &'a mut Option<Parts>, err: &Option<Error>)
-    -> Option<&'a mut Parts>
-{
-    if err.is_some() {
-        return None
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn body<T>(self, body: T) -> Result<Request<T>> {
+        self.inner.map(move |head| {
+            Request {
+                head,
+                body,
+            }
+        })
     }
-    head.as_mut()
+
+    
+
+    fn and_then<F>(self, func: F) -> Self
+    where
+        F: FnOnce(Parts) -> Result<Parts>
+    {
+        Builder {
+            inner: self.inner.and_then(func),
+        }
+    }
 }
 
 impl Default for Builder {
     #[inline]
     fn default() -> Builder {
         Builder {
-            head: Some(Parts::new()),
-            err: None,
+            inner: Ok(Parts::new()),
         }
     }
 }
@@ -1059,7 +1032,7 @@ mod tests {
 
     #[test]
     fn it_can_map_a_body_from_one_type_to_another() {
-        let request= Request::builder().body("some string").unwrap();
+        let request = Request::builder().body("some string").unwrap();
         let mapped_request = request.map(|s| {
             assert_eq!(s, "some string");
             123u32

@@ -1,4 +1,4 @@
-use Buf;
+use crate::Buf;
 
 
 
@@ -23,11 +23,30 @@ use Buf;
 
 
 #[derive(Debug)]
-pub struct Iter<T> {
+pub struct IntoIter<T> {
     inner: T,
 }
 
-impl<T> Iter<T> {
+impl<T> IntoIter<T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(inner: T) -> IntoIter<T> {
+        IntoIter { inner }
+    }
     
     
     
@@ -90,11 +109,8 @@ impl<T> Iter<T> {
     }
 }
 
-pub fn new<T>(inner: T) -> Iter<T> {
-    Iter { inner: inner }
-}
 
-impl<T: Buf> Iterator for Iter<T> {
+impl<T: Buf> Iterator for IntoIter<T> {
     type Item = u8;
 
     fn next(&mut self) -> Option<u8> {
@@ -104,6 +120,7 @@ impl<T: Buf> Iterator for Iter<T> {
 
         let b = self.inner.bytes()[0];
         self.inner.advance(1);
+
         Some(b)
     }
 
@@ -113,4 +130,4 @@ impl<T: Buf> Iterator for Iter<T> {
     }
 }
 
-impl<T: Buf> ExactSizeIterator for Iter<T> { }
+impl<T: Buf> ExactSizeIterator for IntoIter<T> { }

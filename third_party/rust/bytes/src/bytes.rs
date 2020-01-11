@@ -1,48 +1,13 @@
-use {IntoBuf, Buf, BufMut};
-use buf::Iter;
-use debug;
+use core::{cmp, fmt, hash, mem, ptr, slice, usize};
+use core::iter::{FromIterator};
+use core::ops::{Deref, RangeBounds};
 
-use std::{cmp, fmt, mem, hash, ops, slice, ptr, usize};
-use std::borrow::{Borrow, BorrowMut};
-use std::io::Cursor;
-use std::sync::atomic::{self, AtomicUsize, AtomicPtr};
-use std::sync::atomic::Ordering::{Relaxed, Acquire, Release, AcqRel};
-use std::iter::{FromIterator, Iterator};
+use alloc::{vec::Vec, string::String, boxed::Box, borrow::Borrow};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+use crate::Buf;
+use crate::buf::IntoIter;
+use crate::debug;
+use crate::loom::sync::atomic::{self, AtomicPtr, AtomicUsize, Ordering};
 
 
 
@@ -103,289 +68,19 @@ use std::iter::{FromIterator, Iterator};
 
 
 pub struct Bytes {
-    inner: Inner,
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub struct BytesMut {
-    inner: Inner,
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(target_endian = "little")]
-#[repr(C)]
-struct Inner {
-    
-    
-    arc: AtomicPtr<Shared>,
-    ptr: *mut u8,
+    ptr: *const u8,
     len: usize,
-    cap: usize,
-}
-
-#[cfg(target_endian = "big")]
-#[repr(C)]
-struct Inner {
     
+    data: AtomicPtr<()>,
+    vtable: &'static Vtable,
+}
+
+pub(crate) struct Vtable {
     
-    ptr: *mut u8,
-    len: usize,
-    cap: usize,
-    arc: AtomicPtr<Shared>,
+    pub clone: unsafe fn(&AtomicPtr<()>, *const u8, usize) -> Bytes,
+    
+    pub drop: unsafe fn(&mut AtomicPtr<()>, *const u8, usize),
 }
-
-
-
-
-
-
-
-
-
-
-struct Shared {
-    vec: Vec<u8>,
-    original_capacity_repr: usize,
-    ref_count: AtomicUsize,
-}
-
-
-const KIND_ARC: usize = 0b00;
-const KIND_INLINE: usize = 0b01;
-const KIND_STATIC: usize = 0b10;
-const KIND_VEC: usize = 0b11;
-const KIND_MASK: usize = 0b11;
-
-
-
-const MAX_ORIGINAL_CAPACITY_WIDTH: usize = 17;
-
-
-const MIN_ORIGINAL_CAPACITY_WIDTH: usize = 10;
-
-
-const ORIGINAL_CAPACITY_MASK: usize = 0b11100;
-const ORIGINAL_CAPACITY_OFFSET: usize = 2;
-
-
-
-
-
-const VEC_POS_OFFSET: usize = 5;
-const MAX_VEC_POS: usize = usize::MAX >> VEC_POS_OFFSET;
-const NOT_VEC_POS_MASK: usize = 0b11111;
-
-
-const INLINE_LEN_MASK: usize = 0b11111100;
-const INLINE_LEN_OFFSET: usize = 2;
-
-
-
-
-
-#[cfg(target_endian = "little")]
-const INLINE_DATA_OFFSET: isize = 1;
-#[cfg(target_endian = "big")]
-const INLINE_DATA_OFFSET: isize = 0;
-
-#[cfg(target_pointer_width = "64")]
-const PTR_WIDTH: usize = 64;
-#[cfg(target_pointer_width = "32")]
-const PTR_WIDTH: usize = 32;
-
-
-
-#[cfg(target_pointer_width = "64")]
-const INLINE_CAP: usize = 4 * 8 - 1;
-#[cfg(target_pointer_width = "32")]
-const INLINE_CAP: usize = 4 * 4 - 1;
-
-
-
-
-
-
 
 impl Bytes {
     
@@ -400,6 +95,13 @@ impl Bytes {
     
     
     
+    #[inline]
+    pub fn new() -> Bytes {
+        Bytes::from_static(b"")
+    }
+
+    
+    
     
     
     
@@ -412,46 +114,23 @@ impl Bytes {
     
     
     #[inline]
-    pub fn with_capacity(capacity: usize) -> Bytes {
+    #[cfg(not(all(loom, test)))]
+    pub const fn from_static(bytes: &'static [u8]) -> Bytes {
         Bytes {
-            inner: Inner::with_capacity(capacity),
+            ptr: bytes.as_ptr(),
+            len: bytes.len(),
+            data: AtomicPtr::new(ptr::null_mut()),
+            vtable: &STATIC_VTABLE,
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn new() -> Bytes {
-        Bytes::with_capacity(0)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
+    #[cfg(all(loom, test))]
     pub fn from_static(bytes: &'static [u8]) -> Bytes {
         Bytes {
-            inner: Inner::from_static(bytes),
+            ptr: bytes.as_ptr(),
+            len: bytes.len(),
+            data: AtomicPtr::new(ptr::null_mut()),
+            vtable: &STATIC_VTABLE,
         }
     }
 
@@ -467,7 +146,7 @@ impl Bytes {
     
     #[inline]
     pub fn len(&self) -> usize {
-        self.inner.len()
+        self.len
     }
 
     
@@ -482,7 +161,13 @@ impl Bytes {
     
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.inner.is_empty()
+        self.len == 0
+    }
+
+
+    
+    pub fn copy_from_slice(data: &[u8]) -> Self {
+        data.to_vec().into()
     }
 
     
@@ -507,20 +192,35 @@ impl Bytes {
     
     
     
-    pub fn slice(&self, begin: usize, end: usize) -> Bytes {
-        assert!(begin <= end);
-        assert!(end <= self.len());
+    pub fn slice(&self, range: impl RangeBounds<usize>) -> Bytes {
+        use core::ops::Bound;
 
-        if end - begin <= INLINE_CAP {
-            return Bytes::from(&self[begin..end]);
+        let len = self.len();
+
+        let begin = match range.start_bound() {
+            Bound::Included(&n) => n,
+            Bound::Excluded(&n) => n + 1,
+            Bound::Unbounded => 0,
+        };
+
+        let end = match range.end_bound() {
+            Bound::Included(&n) => n + 1,
+            Bound::Excluded(&n) => n,
+            Bound::Unbounded => len,
+        };
+
+        assert!(begin <= end);
+        assert!(end <= len);
+
+        if end == begin {
+            return Bytes::new();
         }
+
 
         let mut ret = self.clone();
 
-        unsafe {
-            ret.inner.set_end(end);
-            ret.inner.set_start(begin);
-        }
+        ret.len = end - begin;
+        ret.ptr = unsafe { ret.ptr.offset(begin as isize) };
 
         ret
     }
@@ -547,8 +247,34 @@ impl Bytes {
     
     
     
-    pub fn slice_from(&self, begin: usize) -> Bytes {
-        self.slice(begin, self.len())
+    
+    
+    
+    pub fn slice_ref(&self, subset: &[u8]) -> Bytes {
+        let bytes_p = self.as_ptr() as usize;
+        let bytes_len = self.len();
+
+        let sub_p = subset.as_ptr() as usize;
+        let sub_len = subset.len();
+
+        assert!(
+            sub_p >= bytes_p,
+            "subset pointer ({:p}) is smaller than self pointer ({:p})",
+            sub_p as *const u8,
+            bytes_p as *const u8,
+        );
+        assert!(
+            sub_p + sub_len <= bytes_p + bytes_len,
+            "subset is out of bounds: self = ({:p}, {}), subset = ({:p}, {})",
+            bytes_p as *const u8,
+            bytes_len,
+            sub_p as *const u8,
+            sub_len,
+        );
+
+        let sub_offset = sub_p - bytes_p;
+
+        self.slice(sub_offset..(sub_offset + sub_len))
     }
 
     
@@ -572,33 +298,9 @@ impl Bytes {
     
     
     
-    pub fn slice_to(&self, end: usize) -> Bytes {
-        self.slice(0, end)
-    }
-
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[must_use = "consider Bytes::truncate if you don't need the other half"]
     pub fn split_off(&mut self, at: usize) -> Bytes {
         assert!(at <= self.len());
 
@@ -610,9 +312,13 @@ impl Bytes {
             return mem::replace(self, Bytes::new());
         }
 
-        Bytes {
-            inner: self.inner.split_off(at),
-        }
+        let mut ret = self.clone();
+
+        self.len = at;
+
+        unsafe { ret.inc_start(at) };
+
+        ret
     }
 
     
@@ -638,6 +344,7 @@ impl Bytes {
     
     
     
+    #[must_use = "consider Bytes::advance if you don't need the other half"]
     pub fn split_to(&mut self, at: usize) -> Bytes {
         assert!(at <= self.len());
 
@@ -649,17 +356,15 @@ impl Bytes {
             return Bytes::new();
         }
 
-        Bytes {
-            inner: self.inner.split_to(at),
-        }
+
+        let mut ret = self.clone();
+
+        unsafe { self.inc_start(at) };
+
+        ret.len = at;
+        ret
     }
 
-    #[deprecated(since = "0.4.1", note = "use split_to instead")]
-    #[doc(hidden)]
-    pub fn drain_to(&mut self, at: usize) -> Bytes {
-        self.split_to(at)
-    }
-
     
     
     
@@ -670,20 +375,6 @@ impl Bytes {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn truncate(&mut self, len: usize) {
-        self.inner.truncate(len);
-    }
-
     
     
     
@@ -695,9 +386,10 @@ impl Bytes {
     
     
     #[inline]
-    pub fn advance(&mut self, cnt: usize) {
-        assert!(cnt <= self.len(), "cannot advance past `remaining`");
-        unsafe { self.inner.set_start(cnt); }
+    pub fn truncate(&mut self, len: usize) {
+        if len < self.len {
+            self.len = len;
+        }
     }
 
     
@@ -711,2010 +403,174 @@ impl Bytes {
     
     
     
+    #[inline]
     pub fn clear(&mut self) {
         self.truncate(0);
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn try_mut(mut self) -> Result<BytesMut, Bytes> {
-        if self.inner.is_mut_safe() {
-            Ok(BytesMut { inner: self.inner })
-        } else {
-            Err(self)
+    #[inline]
+    pub(crate) unsafe fn with_vtable(ptr: *const u8, len: usize, data: AtomicPtr<()>, vtable: &'static Vtable) -> Bytes {
+        Bytes {
+            ptr,
+            len,
+            data,
+            vtable,
         }
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn extend_from_slice(&mut self, extend: &[u8]) {
-        if extend.is_empty() {
-            return;
+
+    #[inline]
+    fn as_slice(&self) -> &[u8] {
+        unsafe {
+            slice::from_raw_parts(self.ptr, self.len)
         }
+    }
 
-        let new_cap = self.len().checked_add(extend.len()).expect("capacity overflow");
-
-        let result = match mem::replace(self, Bytes::new()).try_mut() {
-            Ok(mut bytes_mut) => {
-                bytes_mut.extend_from_slice(extend);
-                bytes_mut
-            },
-            Err(bytes) => {
-                let mut bytes_mut = BytesMut::with_capacity(new_cap);
-                bytes_mut.put_slice(&bytes);
-                bytes_mut.put_slice(extend);
-                bytes_mut
-            }
-        };
-
-        mem::replace(self, result.freeze());
+    #[inline]
+    unsafe fn inc_start(&mut self, by: usize) {
+        
+        debug_assert!(self.len >= by);
+        self.len -= by;
+        self.ptr = self.ptr.offset(by as isize);
     }
 }
 
-impl IntoBuf for Bytes {
-    type Buf = Cursor<Self>;
 
-    fn into_buf(self) -> Self::Buf {
-        Cursor::new(self)
-    }
-}
+unsafe impl Send for Bytes {}
+unsafe impl Sync for Bytes {}
 
-impl<'a> IntoBuf for &'a Bytes {
-    type Buf = Cursor<Self>;
-
-    fn into_buf(self) -> Self::Buf {
-        Cursor::new(self)
+impl Drop for Bytes {
+    #[inline]
+    fn drop(&mut self) {
+        unsafe {
+            (self.vtable.drop)(&mut self.data, self.ptr, self.len)
+        }
     }
 }
 
 impl Clone for Bytes {
+    #[inline]
     fn clone(&self) -> Bytes {
-        Bytes {
-            inner: unsafe { self.inner.shallow_clone(false) },
+        unsafe {
+            (self.vtable.clone)(&self.data, self.ptr, self.len)
         }
+    }
+}
+
+impl fmt::Debug for Bytes {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&debug::BsDebug(&self.as_slice()), f)
+    }
+}
+
+impl Buf for Bytes {
+    #[inline]
+    fn remaining(&self) -> usize {
+        self.len()
+    }
+
+    #[inline]
+    fn bytes(&self) -> &[u8] {
+        self.as_slice()
+    }
+
+    #[inline]
+    fn advance(&mut self, cnt: usize) {
+        assert!(cnt <= self.len(), "cannot advance past `remaining`");
+        unsafe {
+            self.inc_start(cnt);
+        }
+    }
+
+    fn to_bytes(&mut self) -> crate::Bytes {
+        core::mem::replace(self, Bytes::new())
+    }
+}
+
+impl Deref for Bytes {
+    type Target = [u8];
+
+    #[inline]
+    fn deref(&self) -> &[u8] {
+        self.as_slice()
     }
 }
 
 impl AsRef<[u8]> for Bytes {
     #[inline]
     fn as_ref(&self) -> &[u8] {
-        self.inner.as_ref()
-    }
-}
-
-impl ops::Deref for Bytes {
-    type Target = [u8];
-
-    #[inline]
-    fn deref(&self) -> &[u8] {
-        self.inner.as_ref()
-    }
-}
-
-impl From<BytesMut> for Bytes {
-    fn from(src: BytesMut) -> Bytes {
-        src.freeze()
-    }
-}
-
-impl From<Vec<u8>> for Bytes {
-    fn from(src: Vec<u8>) -> Bytes {
-        BytesMut::from(src).freeze()
-    }
-}
-
-impl From<String> for Bytes {
-    fn from(src: String) -> Bytes {
-        BytesMut::from(src).freeze()
-    }
-}
-
-impl<'a> From<&'a [u8]> for Bytes {
-    fn from(src: &'a [u8]) -> Bytes {
-        BytesMut::from(src).freeze()
-    }
-}
-
-impl<'a> From<&'a str> for Bytes {
-    fn from(src: &'a str) -> Bytes {
-        BytesMut::from(src).freeze()
-    }
-}
-
-impl FromIterator<u8> for BytesMut {
-    fn from_iter<T: IntoIterator<Item = u8>>(into_iter: T) -> Self {
-        let iter = into_iter.into_iter();
-        let (min, maybe_max) = iter.size_hint();
-
-        let mut out = BytesMut::with_capacity(maybe_max.unwrap_or(min));
-
-        for i in iter {
-            out.reserve(1);
-            out.put(i);
-        }
-
-        out
-    }
-}
-
-impl FromIterator<u8> for Bytes {
-    fn from_iter<T: IntoIterator<Item = u8>>(into_iter: T) -> Self {
-        BytesMut::from_iter(into_iter).freeze()
-    }
-}
-
-impl PartialEq for Bytes {
-    fn eq(&self, other: &Bytes) -> bool {
-        self.inner.as_ref() == other.inner.as_ref()
-    }
-}
-
-impl PartialOrd for Bytes {
-    fn partial_cmp(&self, other: &Bytes) -> Option<cmp::Ordering> {
-        self.inner.as_ref().partial_cmp(other.inner.as_ref())
-    }
-}
-
-impl Ord for Bytes {
-    fn cmp(&self, other: &Bytes) -> cmp::Ordering {
-        self.inner.as_ref().cmp(other.inner.as_ref())
-    }
-}
-
-impl Eq for Bytes {
-}
-
-impl Default for Bytes {
-    #[inline]
-    fn default() -> Bytes {
-        Bytes::new()
-    }
-}
-
-impl fmt::Debug for Bytes {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Debug::fmt(&debug::BsDebug(&self.inner.as_ref()), fmt)
+        self.as_slice()
     }
 }
 
 impl hash::Hash for Bytes {
     fn hash<H>(&self, state: &mut H) where H: hash::Hasher {
-        let s: &[u8] = self.as_ref();
-        s.hash(state);
+        self.as_slice().hash(state);
     }
 }
 
 impl Borrow<[u8]> for Bytes {
     fn borrow(&self) -> &[u8] {
-        self.as_ref()
+        self.as_slice()
     }
 }
 
 impl IntoIterator for Bytes {
     type Item = u8;
-    type IntoIter = Iter<Cursor<Bytes>>;
+    type IntoIter = IntoIter<Bytes>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.into_buf().iter()
+        IntoIter::new(self)
     }
 }
 
 impl<'a> IntoIterator for &'a Bytes {
-    type Item = u8;
-    type IntoIter = Iter<Cursor<&'a Bytes>>;
+    type Item = &'a u8;
+    type IntoIter = core::slice::Iter<'a, u8>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.into_buf().iter()
+        self.as_slice().into_iter()
     }
 }
 
-impl Extend<u8> for Bytes {
-    fn extend<T>(&mut self, iter: T) where T: IntoIterator<Item = u8> {
-        let iter = iter.into_iter();
-
-        let (lower, upper) = iter.size_hint();
-
-        
-        if let Some(0) = upper {
-            return;
-        }
-
-        let mut bytes_mut = match mem::replace(self, Bytes::new()).try_mut() {
-            Ok(bytes_mut) => bytes_mut,
-            Err(bytes) => {
-                let mut bytes_mut = BytesMut::with_capacity(bytes.len() + lower);
-                bytes_mut.put_slice(&bytes);
-                bytes_mut
-            }
-        };
-
-        bytes_mut.extend(iter);
-
-        mem::replace(self, bytes_mut.freeze());
-    }
-}
-
-impl<'a> Extend<&'a u8> for Bytes {
-    fn extend<T>(&mut self, iter: T) where T: IntoIterator<Item = &'a u8> {
-        self.extend(iter.into_iter().map(|b| *b))
+impl FromIterator<u8> for Bytes {
+    fn from_iter<T: IntoIterator<Item = u8>>(into_iter: T) -> Self {
+        Vec::from_iter(into_iter).into()
     }
 }
 
 
 
-
-
-
-
-impl BytesMut {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn with_capacity(capacity: usize) -> BytesMut {
-        BytesMut {
-            inner: Inner::with_capacity(capacity),
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn new() -> BytesMut {
-        BytesMut::with_capacity(0)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn len(&self) -> usize {
-        self.inner.len()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn capacity(&self) -> usize {
-        self.inner.capacity()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn freeze(self) -> Bytes {
-        Bytes { inner: self.inner }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn split_off(&mut self, at: usize) -> BytesMut {
-        BytesMut {
-            inner: self.inner.split_off(at),
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn take(&mut self) -> BytesMut {
-        let len = self.len();
-        self.split_to(len)
-    }
-
-    #[deprecated(since = "0.4.1", note = "use take instead")]
-    #[doc(hidden)]
-    pub fn drain(&mut self) -> BytesMut {
-        self.take()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn split_to(&mut self, at: usize) -> BytesMut {
-        BytesMut {
-            inner: self.inner.split_to(at),
-        }
-    }
-
-    #[deprecated(since = "0.4.1", note = "use split_to instead")]
-    #[doc(hidden)]
-    pub fn drain_to(&mut self, at: usize) -> BytesMut {
-        self.split_to(at)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn truncate(&mut self, len: usize) {
-        self.inner.truncate(len);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn advance(&mut self, cnt: usize) {
-        assert!(cnt <= self.len(), "cannot advance past `remaining`");
-        unsafe { self.inner.set_start(cnt); }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn clear(&mut self) {
-        self.truncate(0);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn resize(&mut self, new_len: usize, value: u8) {
-        self.inner.resize(new_len, value);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub unsafe fn set_len(&mut self, len: usize) {
-        self.inner.set_len(len)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn reserve(&mut self, additional: usize) {
-        self.inner.reserve(additional)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn extend_from_slice(&mut self, extend: &[u8]) {
-        self.reserve(extend.len());
-        self.put_slice(extend);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn unsplit(&mut self, other: BytesMut) {
-        let ptr;
-
-        if other.is_empty() {
-            return;
-        }
-
-        if self.is_empty() {
-            *self = other;
-            return;
-        }
-
-        unsafe {
-            ptr = self.inner.ptr.offset(self.inner.len as isize); 
-        }
-        if ptr == other.inner.ptr &&
-           self.inner.kind() == KIND_ARC &&
-           other.inner.kind() == KIND_ARC
-        {
-            debug_assert_eq!(self.inner.arc.load(Acquire),
-                             other.inner.arc.load(Acquire));
-            
-            self.inner.len += other.inner.len;
-            self.inner.cap += other.inner.cap;
-        }
-        else {
-            self.extend_from_slice(&other);
-        }
+impl PartialEq for Bytes {
+    fn eq(&self, other: &Bytes) -> bool {
+        self.as_slice() == other.as_slice()
     }
 }
 
-impl BufMut for BytesMut {
-    #[inline]
-    fn remaining_mut(&self) -> usize {
-        self.capacity() - self.len()
-    }
-
-    #[inline]
-    unsafe fn advance_mut(&mut self, cnt: usize) {
-        let new_len = self.len() + cnt;
-
-        
-        self.inner.set_len(new_len);
-    }
-
-    #[inline]
-    unsafe fn bytes_mut(&mut self) -> &mut [u8] {
-        let len = self.len();
-
-        
-        &mut self.inner.as_raw()[len..]
-    }
-
-    #[inline]
-    fn put_slice(&mut self, src: &[u8]) {
-        assert!(self.remaining_mut() >= src.len());
-
-        let len = src.len();
-
-        unsafe {
-            self.bytes_mut()[..len].copy_from_slice(src);
-            self.advance_mut(len);
-        }
-    }
-
-    #[inline]
-    fn put_u8(&mut self, n: u8) {
-        self.inner.put_u8(n);
-    }
-
-    #[inline]
-    fn put_i8(&mut self, n: i8) {
-        self.put_u8(n as u8);
+impl PartialOrd for Bytes {
+    fn partial_cmp(&self, other: &Bytes) -> Option<cmp::Ordering> {
+        self.as_slice().partial_cmp(other.as_slice())
     }
 }
 
-impl IntoBuf for BytesMut {
-    type Buf = Cursor<Self>;
-
-    fn into_buf(self) -> Self::Buf {
-        Cursor::new(self)
+impl Ord for Bytes {
+    fn cmp(&self, other: &Bytes) -> cmp::Ordering {
+        self.as_slice().cmp(other.as_slice())
     }
 }
 
-impl<'a> IntoBuf for &'a BytesMut {
-    type Buf = Cursor<&'a BytesMut>;
-
-    fn into_buf(self) -> Self::Buf {
-        Cursor::new(self)
-    }
-}
-
-impl AsRef<[u8]> for BytesMut {
-    #[inline]
-    fn as_ref(&self) -> &[u8] {
-        self.inner.as_ref()
-    }
-}
-
-impl ops::Deref for BytesMut {
-    type Target = [u8];
-
-    #[inline]
-    fn deref(&self) -> &[u8] {
-        self.as_ref()
-    }
-}
-
-impl AsMut<[u8]> for BytesMut {
-    fn as_mut(&mut self) -> &mut [u8] {
-        self.inner.as_mut()
-    }
-}
-
-impl ops::DerefMut for BytesMut {
-    #[inline]
-    fn deref_mut(&mut self) -> &mut [u8] {
-        self.inner.as_mut()
-    }
-}
-
-impl From<Vec<u8>> for BytesMut {
-    fn from(src: Vec<u8>) -> BytesMut {
-        BytesMut {
-            inner: Inner::from_vec(src),
-        }
-    }
-}
-
-impl From<String> for BytesMut {
-    fn from(src: String) -> BytesMut {
-        BytesMut::from(src.into_bytes())
-    }
-}
-
-impl<'a> From<&'a [u8]> for BytesMut {
-    fn from(src: &'a [u8]) -> BytesMut {
-        let len = src.len();
-
-        if len == 0 {
-            BytesMut::new()
-        } else if len <= INLINE_CAP {
-            unsafe {
-                let mut inner: Inner = mem::uninitialized();
-
-                
-                inner.arc = AtomicPtr::new(KIND_INLINE as *mut Shared);
-                inner.set_inline_len(len);
-                inner.as_raw()[0..len].copy_from_slice(src);
-
-                BytesMut {
-                    inner: inner,
-                }
-            }
-        } else {
-            BytesMut::from(src.to_vec())
-        }
-    }
-}
-
-impl<'a> From<&'a str> for BytesMut {
-    fn from(src: &'a str) -> BytesMut {
-        BytesMut::from(src.as_bytes())
-    }
-}
-
-impl From<Bytes> for BytesMut {
-    fn from(src: Bytes) -> BytesMut {
-        src.try_mut()
-            .unwrap_or_else(|src| BytesMut::from(&src[..]))
-    }
-}
-
-impl PartialEq for BytesMut {
-    fn eq(&self, other: &BytesMut) -> bool {
-        self.inner.as_ref() == other.inner.as_ref()
-    }
-}
-
-impl PartialOrd for BytesMut {
-    fn partial_cmp(&self, other: &BytesMut) -> Option<cmp::Ordering> {
-        self.inner.as_ref().partial_cmp(other.inner.as_ref())
-    }
-}
-
-impl Ord for BytesMut {
-    fn cmp(&self, other: &BytesMut) -> cmp::Ordering {
-        self.inner.as_ref().cmp(other.inner.as_ref())
-    }
-}
-
-impl Eq for BytesMut {
-}
-
-impl Default for BytesMut {
-    #[inline]
-    fn default() -> BytesMut {
-        BytesMut::new()
-    }
-}
-
-impl fmt::Debug for BytesMut {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Debug::fmt(&debug::BsDebug(&self.inner.as_ref()), fmt)
-    }
-}
-
-impl hash::Hash for BytesMut {
-    fn hash<H>(&self, state: &mut H) where H: hash::Hasher {
-        let s: &[u8] = self.as_ref();
-        s.hash(state);
-    }
-}
-
-impl Borrow<[u8]> for BytesMut {
-    fn borrow(&self) -> &[u8] {
-        self.as_ref()
-    }
-}
-
-impl BorrowMut<[u8]> for BytesMut {
-    fn borrow_mut(&mut self) -> &mut [u8] {
-        self.as_mut()
-    }
-}
-
-impl fmt::Write for BytesMut {
-    #[inline]
-    fn write_str(&mut self, s: &str) -> fmt::Result {
-        if self.remaining_mut() >= s.len() {
-            self.put_slice(s.as_bytes());
-            Ok(())
-        } else {
-            Err(fmt::Error)
-        }
-    }
-
-    #[inline]
-    fn write_fmt(&mut self, args: fmt::Arguments) -> fmt::Result {
-        fmt::write(self, args)
-    }
-}
-
-impl Clone for BytesMut {
-    fn clone(&self) -> BytesMut {
-        BytesMut::from(&self[..])
-    }
-}
-
-impl IntoIterator for BytesMut {
-    type Item = u8;
-    type IntoIter = Iter<Cursor<BytesMut>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.into_buf().iter()
-    }
-}
-
-impl<'a> IntoIterator for &'a BytesMut {
-    type Item = u8;
-    type IntoIter = Iter<Cursor<&'a BytesMut>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.into_buf().iter()
-    }
-}
-
-impl Extend<u8> for BytesMut {
-    fn extend<T>(&mut self, iter: T) where T: IntoIterator<Item = u8> {
-        let iter = iter.into_iter();
-
-        let (lower, _) = iter.size_hint();
-        self.reserve(lower);
-
-        for b in iter {
-            unsafe {
-                self.bytes_mut()[0] = b;
-                self.advance_mut(1);
-            }
-        }
-    }
-}
-
-impl<'a> Extend<&'a u8> for BytesMut {
-    fn extend<T>(&mut self, iter: T) where T: IntoIterator<Item = &'a u8> {
-        self.extend(iter.into_iter().map(|b| *b))
-    }
-}
-
-
-
-
-
-
-
-impl Inner {
-    #[inline]
-    fn from_static(bytes: &'static [u8]) -> Inner {
-        let ptr = bytes.as_ptr() as *mut u8;
-
-        Inner {
-            
-            
-            
-            arc: AtomicPtr::new(KIND_STATIC as *mut Shared),
-            ptr: ptr,
-            len: bytes.len(),
-            cap: bytes.len(),
-        }
-    }
-
-    #[inline]
-    fn from_vec(mut src: Vec<u8>) -> Inner {
-        let len = src.len();
-        let cap = src.capacity();
-        let ptr = src.as_mut_ptr();
-
-        mem::forget(src);
-
-        let original_capacity_repr = original_capacity_to_repr(cap);
-        let arc = (original_capacity_repr << ORIGINAL_CAPACITY_OFFSET) | KIND_VEC;
-
-        Inner {
-            arc: AtomicPtr::new(arc as *mut Shared),
-            ptr: ptr,
-            len: len,
-            cap: cap,
-        }
-    }
-
-    #[inline]
-    fn with_capacity(capacity: usize) -> Inner {
-        if capacity <= INLINE_CAP {
-            unsafe {
-                
-                let mut inner: Inner = mem::uninitialized();
-                inner.arc = AtomicPtr::new(KIND_INLINE as *mut Shared);
-                inner
-            }
-        } else {
-            Inner::from_vec(Vec::with_capacity(capacity))
-        }
-    }
-
-    
-    #[inline]
-    fn as_ref(&self) -> &[u8] {
-        unsafe {
-            if self.is_inline() {
-                slice::from_raw_parts(self.inline_ptr(), self.inline_len())
-            } else {
-                slice::from_raw_parts(self.ptr, self.len)
-            }
-        }
-    }
-
-    
-    #[inline]
-    fn as_mut(&mut self) -> &mut [u8] {
-        debug_assert!(!self.is_static());
-
-        unsafe {
-            if self.is_inline() {
-                slice::from_raw_parts_mut(self.inline_ptr(), self.inline_len())
-            } else {
-                slice::from_raw_parts_mut(self.ptr, self.len)
-            }
-        }
-    }
-
-    
-    
-    #[inline]
-    unsafe fn as_raw(&mut self) -> &mut [u8] {
-        debug_assert!(!self.is_static());
-
-        if self.is_inline() {
-            slice::from_raw_parts_mut(self.inline_ptr(), INLINE_CAP)
-        } else {
-            slice::from_raw_parts_mut(self.ptr, self.cap)
-        }
-    }
-
-    
-    #[inline]
-    fn put_u8(&mut self, n: u8) {
-        if self.is_inline() {
-            let len = self.inline_len();
-            assert!(len < INLINE_CAP);
-            unsafe {
-                *self.inline_ptr().offset(len as isize) = n;
-            }
-            self.set_inline_len(len + 1);
-        } else {
-            assert!(self.len < self.cap);
-            unsafe {
-                *self.ptr.offset(self.len as isize) = n;
-            }
-            self.len += 1;
-        }
-    }
-
-    #[inline]
-    fn len(&self) -> usize {
-        if self.is_inline() {
-            self.inline_len()
-        } else {
-            self.len
-        }
-    }
-
-    
-    #[inline]
-    unsafe fn inline_ptr(&self) -> *mut u8 {
-        (self as *const Inner as *mut Inner as *mut u8)
-            .offset(INLINE_DATA_OFFSET)
-    }
-
-    #[inline]
-    fn inline_len(&self) -> usize {
-        let p: &usize = unsafe { mem::transmute(&self.arc) };
-        (p & INLINE_LEN_MASK) >> INLINE_LEN_OFFSET
-    }
-
-    
-    
-    #[inline]
-    fn set_inline_len(&mut self, len: usize) {
-        debug_assert!(len <= INLINE_CAP);
-        let p = self.arc.get_mut();
-        *p = ((*p as usize & !INLINE_LEN_MASK) | (len << INLINE_LEN_OFFSET)) as _;
-    }
-
-    
-    #[inline]
-    unsafe fn set_len(&mut self, len: usize) {
-        if self.is_inline() {
-            assert!(len <= INLINE_CAP);
-            self.set_inline_len(len);
-        } else {
-            assert!(len <= self.cap);
-            self.len = len;
-        }
-    }
-
-    #[inline]
-    fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    #[inline]
-    fn capacity(&self) -> usize {
-        if self.is_inline() {
-            INLINE_CAP
-        } else {
-            self.cap
-        }
-    }
-
-    fn split_off(&mut self, at: usize) -> Inner {
-        let mut other = unsafe { self.shallow_clone(true) };
-
-        unsafe {
-            other.set_start(at);
-            self.set_end(at);
-        }
-
-        return other
-    }
-
-    fn split_to(&mut self, at: usize) -> Inner {
-        let mut other = unsafe { self.shallow_clone(true) };
-
-        unsafe {
-            other.set_end(at);
-            self.set_start(at);
-        }
-
-        return other
-    }
-
-    fn truncate(&mut self, len: usize) {
-        if len <= self.len() {
-            unsafe { self.set_len(len); }
-        }
-    }
-
-    fn resize(&mut self, new_len: usize, value: u8) {
-        let len = self.len();
-        if new_len > len {
-            let additional = new_len - len;
-            self.reserve(additional);
-            unsafe {
-                let dst = self.as_raw()[len..].as_mut_ptr();
-                ptr::write_bytes(dst, value, additional);
-                self.set_len(new_len);
-            }
-        } else {
-            self.truncate(new_len);
-        }
-    }
-
-    unsafe fn set_start(&mut self, start: usize) {
-        
-        
-        if start == 0 {
-            return;
-        }
-
-        let kind = self.kind();
-
-        
-        
-        if kind == KIND_INLINE {
-            assert!(start <= INLINE_CAP);
-
-            let len = self.inline_len();
-
-            if len <= start {
-                self.set_inline_len(0);
-            } else {
-                
-                
-                
-                
-                let new_len = len - start;
-
-                let dst = self.inline_ptr();
-                let src = (dst as *const u8).offset(start as isize);
-
-                ptr::copy(src, dst, new_len);
-
-                self.set_inline_len(new_len);
-            }
-        } else {
-            assert!(start <= self.cap);
-
-            if kind == KIND_VEC {
-                
-                
-                
-                
-                let (mut pos, prev) = self.uncoordinated_get_vec_pos();
-                pos += start;
-
-                if pos <= MAX_VEC_POS {
-                    self.uncoordinated_set_vec_pos(pos, prev);
-                } else {
-                    
-                    
-                    
-                    
-                    let _ = self.shallow_clone(true);
-                }
-            }
-
-            
-            
-            
-            self.ptr = self.ptr.offset(start as isize);
-
-            if self.len >= start {
-                self.len -= start;
-            } else {
-                self.len = 0;
-            }
-
-            self.cap -= start;
-        }
-    }
-
-    unsafe fn set_end(&mut self, end: usize) {
-        debug_assert!(self.is_shared());
-
-        
-        
-        if self.is_inline() {
-            assert!(end <= INLINE_CAP);
-            let new_len = cmp::min(self.inline_len(), end);
-            self.set_inline_len(new_len);
-        } else {
-            assert!(end <= self.cap);
-
-            self.cap = end;
-            self.len = cmp::min(self.len, end);
-        }
-    }
-
-    
-    fn is_mut_safe(&mut self) -> bool {
-        let kind = self.kind();
-
-        
-        
-        if kind == KIND_INLINE {
-            
-            
-            true
-        } else if kind == KIND_VEC {
-            true
-        } else if kind == KIND_STATIC {
-            false
-        } else {
-            
-            
-            unsafe { (**self.arc.get_mut()).is_unique() }
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    unsafe fn shallow_clone(&self, mut_self: bool) -> Inner {
-        
-        
-        
-        
-        
-
-        if self.is_inline_or_static() {
-            
-            let mut inner: Inner = mem::uninitialized();
-            ptr::copy_nonoverlapping(
-                self,
-                &mut inner,
-                1,
-            );
-            inner
-        } else {
-            self.shallow_clone_sync(mut_self)
-        }
-    }
-
-
-    #[cold]
-    unsafe fn shallow_clone_sync(&self, mut_self: bool) -> Inner {
-        
-        
-        
-        
-        
-        
-        
-        
-        let arc = self.arc.load(Acquire);
-        let kind = arc as usize & KIND_MASK;
-
-        if kind == KIND_ARC {
-            self.shallow_clone_arc(arc)
-        } else {
-            assert!(kind == KIND_VEC);
-            self.shallow_clone_vec(arc as usize, mut_self)
-        }
-    }
-
-    unsafe fn shallow_clone_arc(&self, arc: *mut Shared) -> Inner {
-        debug_assert!(arc as usize & KIND_MASK == KIND_ARC);
-
-        let old_size = (*arc).ref_count.fetch_add(1, Relaxed);
-
-        if old_size == usize::MAX {
-            abort();
-        }
-
-        Inner {
-            arc: AtomicPtr::new(arc),
-            .. *self
-        }
-    }
-
-    #[cold]
-    unsafe fn shallow_clone_vec(&self, arc: usize, mut_self: bool) -> Inner {
-        
-        
-        
-
-        debug_assert!(arc & KIND_MASK == KIND_VEC);
-
-        let original_capacity_repr =
-            (arc as usize & ORIGINAL_CAPACITY_MASK) >> ORIGINAL_CAPACITY_OFFSET;
-
-        
-        
-        let off = (arc as usize) >> VEC_POS_OFFSET;
-
-        
-        
-        
-        
-        
-        
-        
-        let shared = Box::new(Shared {
-            vec: rebuild_vec(self.ptr, self.len, self.cap, off),
-            original_capacity_repr: original_capacity_repr,
-            
-            
-            
-            ref_count: AtomicUsize::new(2),
-        });
-
-        let shared = Box::into_raw(shared);
-
-        
-        
-        debug_assert!(0 == (shared as usize & 0b11));
-
-        
-        
-        if mut_self {
-            self.arc.store(shared, Relaxed);
-            return Inner {
-                arc: AtomicPtr::new(shared),
-                .. *self
-            };
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let actual = self.arc.compare_and_swap(arc as *mut Shared, shared, AcqRel);
-
-        if actual as usize == arc {
-            
-            
-            return Inner {
-                arc: AtomicPtr::new(shared),
-                .. *self
-            };
-        }
-
-        
-        
-        
-        let shared = Box::from_raw(shared);
-        mem::forget(*shared);
-
-        
-        
-        self.shallow_clone_arc(actual)
-    }
-
-    #[inline]
-    fn reserve(&mut self, additional: usize) {
-        let len = self.len();
-        let rem = self.capacity() - len;
-
-        if additional <= rem {
-            
-            
-            return;
-        }
-
-        let kind = self.kind();
-
-        
-        
-        if kind == KIND_INLINE {
-            let new_cap = len + additional;
-
-            
-            let mut v = Vec::with_capacity(new_cap);
-            v.extend_from_slice(self.as_ref());
-
-            self.ptr = v.as_mut_ptr();
-            self.len = v.len();
-            self.cap = v.capacity();
-
-            
-            
-            self.arc = AtomicPtr::new(KIND_VEC as *mut Shared);
-
-            mem::forget(v);
-            return;
-        }
-
-        if kind == KIND_VEC {
-            
-            
-            
-            
-            
-            unsafe {
-                let (off, prev) = self.uncoordinated_get_vec_pos();
-
-                
-                
-                if off >= additional && off >= (self.cap / 2) {
-                    
-                    
-                    
-                    
-                    let base_ptr = self.ptr.offset(-(off as isize));
-                    ptr::copy(self.ptr, base_ptr, self.len);
-                    self.ptr = base_ptr;
-                    self.uncoordinated_set_vec_pos(0, prev);
-
-                    
-                    
-                    self.cap += off;
-                } else {
-                    
-                    let mut v = rebuild_vec(self.ptr, self.len, self.cap, off);
-                    v.reserve(additional);
-
-                    
-                    self.ptr = v.as_mut_ptr().offset(off as isize);
-                    self.len = v.len() - off;
-                    self.cap = v.capacity() - off;
-
-                    
-                    mem::forget(v);
-                }
-                return;
-            }
-        }
-
-        let arc = *self.arc.get_mut();
-
-        debug_assert!(kind == KIND_ARC);
-
-        
-        
-        
-        
-        let mut new_cap = len + additional;
-        let original_capacity;
-        let original_capacity_repr;
-
-        unsafe {
-            original_capacity_repr = (*arc).original_capacity_repr;
-            original_capacity = original_capacity_from_repr(original_capacity_repr);
-
-            
-            
-            if (*arc).is_unique() {
-                
-                
-                
-                let v = &mut (*arc).vec;
-
-                if v.capacity() >= new_cap {
-                    
-                    let ptr = v.as_mut_ptr();
-
-                    ptr::copy(self.ptr, ptr, len);
-
-                    self.ptr = ptr;
-                    self.cap = v.capacity();
-
-                    return;
-                }
-
-                
-                
-                
-                
-                
-                
-                
-                
-                new_cap = cmp::max(
-                    cmp::max(v.capacity() << 1, new_cap),
-                    original_capacity);
-            } else {
-                new_cap = cmp::max(new_cap, original_capacity);
-            }
-        }
-
-        
-        let mut v = Vec::with_capacity(new_cap);
-
-        
-        v.extend_from_slice(self.as_ref());
-
-        
-        
-        release_shared(arc);
-
-        
-        self.ptr = v.as_mut_ptr();
-        self.len = v.len();
-        self.cap = v.capacity();
-
-        let arc = (original_capacity_repr << ORIGINAL_CAPACITY_OFFSET) | KIND_VEC;
-
-        self.arc = AtomicPtr::new(arc as *mut Shared);
-
-        
-        mem::forget(v);
-    }
-
-    
-    #[inline]
-    fn is_inline(&self) -> bool {
-        self.kind() == KIND_INLINE
-    }
-
-    #[inline]
-    fn is_inline_or_static(&self) -> bool {
-        
-        
-        
-        
-        
-        
-        let kind = self.kind();
-        kind == KIND_INLINE || kind == KIND_STATIC
-    }
-
-    
-    
-    #[inline]
-    fn is_shared(&mut self) -> bool {
-        match self.kind() {
-            KIND_VEC => false,
-            _ => true,
-        }
-    }
-
-    
-    #[inline]
-    fn is_static(&mut self) -> bool {
-        match self.kind() {
-            KIND_STATIC => true,
-            _ => false,
-        }
-    }
-
-    #[inline]
-    fn kind(&self) -> usize {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        #[cfg(target_endian = "little")]
-        #[inline]
-        fn imp(arc: &AtomicPtr<Shared>) -> usize {
-            unsafe {
-                let p: &u8 = mem::transmute(arc);
-                (*p as usize) & KIND_MASK
-            }
-        }
-
-        #[cfg(target_endian = "big")]
-        #[inline]
-        fn imp(arc: &AtomicPtr<Shared>) -> usize {
-            unsafe {
-                let p: &usize = mem::transmute(arc);
-                *p & KIND_MASK
-            }
-        }
-
-        imp(&self.arc)
-    }
-
-    #[inline]
-    fn uncoordinated_get_vec_pos(&mut self) -> (usize, usize) {
-        
-        
-        
-        
-        let prev = unsafe {
-            let p: &AtomicPtr<Shared> = &self.arc;
-            let p: &usize = mem::transmute(p);
-            *p
-        };
-
-        (prev >> VEC_POS_OFFSET, prev)
-    }
-
-    #[inline]
-    fn uncoordinated_set_vec_pos(&mut self, pos: usize, prev: usize) {
-        
-        debug_assert!(pos <= MAX_VEC_POS);
-
-        unsafe {
-            let p: &mut AtomicPtr<Shared> = &mut self.arc;
-            let p: &mut usize = mem::transmute(p);
-            *p = (pos << VEC_POS_OFFSET) | (prev & NOT_VEC_POS_MASK);
-        }
-    }
-}
-
-fn rebuild_vec(ptr: *mut u8, mut len: usize, mut cap: usize, off: usize) -> Vec<u8> {
-    unsafe {
-        let ptr = ptr.offset(-(off as isize));
-        len += off;
-        cap += off;
-
-        Vec::from_raw_parts(ptr, len, cap)
-    }
-}
-
-impl Drop for Inner {
-    fn drop(&mut self) {
-        let kind = self.kind();
-
-        if kind == KIND_VEC {
-            let (off, _) = self.uncoordinated_get_vec_pos();
-
-            
-            let _ = rebuild_vec(self.ptr, self.len, self.cap, off);
-        } else if kind == KIND_ARC {
-            release_shared(*self.arc.get_mut());
-        }
-    }
-}
-
-fn release_shared(ptr: *mut Shared) {
-    
-    unsafe {
-        if (*ptr).ref_count.fetch_sub(1, Release) != 1 {
-            return;
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        atomic::fence(Acquire);
-
-        
-        Box::from_raw(ptr);
-    }
-}
-
-impl Shared {
-    fn is_unique(&self) -> bool {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        self.ref_count.load(Acquire) == 1
-    }
-}
-
-fn original_capacity_to_repr(cap: usize) -> usize {
-    let width = PTR_WIDTH - ((cap >> MIN_ORIGINAL_CAPACITY_WIDTH).leading_zeros() as usize);
-    cmp::min(width, MAX_ORIGINAL_CAPACITY_WIDTH - MIN_ORIGINAL_CAPACITY_WIDTH)
-}
-
-fn original_capacity_from_repr(repr: usize) -> usize {
-    if repr == 0 {
-        return 0;
-    }
-
-    1 << (repr + (MIN_ORIGINAL_CAPACITY_WIDTH - 1))
-}
-
-#[test]
-fn test_original_capacity_to_repr() {
-    for &cap in &[0, 1, 16, 1000] {
-        assert_eq!(0, original_capacity_to_repr(cap));
-    }
-
-    for &cap in &[1024, 1025, 1100, 2000, 2047] {
-        assert_eq!(1, original_capacity_to_repr(cap));
-    }
-
-    for &cap in &[2048, 2049] {
-        assert_eq!(2, original_capacity_to_repr(cap));
-    }
-
-    
-
-    for &cap in &[65536, 65537, 68000, 1 << 17, 1 << 18, 1 << 20, 1 << 30] {
-        assert_eq!(7, original_capacity_to_repr(cap), "cap={}", cap);
-    }
-}
-
-#[test]
-fn test_original_capacity_from_repr() {
-    assert_eq!(0, original_capacity_from_repr(0));
-    assert_eq!(1024, original_capacity_from_repr(1));
-    assert_eq!(1024 * 2, original_capacity_from_repr(2));
-    assert_eq!(1024 * 4, original_capacity_from_repr(3));
-    assert_eq!(1024 * 8, original_capacity_from_repr(4));
-    assert_eq!(1024 * 16, original_capacity_from_repr(5));
-    assert_eq!(1024 * 32, original_capacity_from_repr(6));
-    assert_eq!(1024 * 64, original_capacity_from_repr(7));
-}
-
-unsafe impl Send for Inner {}
-unsafe impl Sync for Inner {}
-
-
-
-
-
-
-
-impl PartialEq<[u8]> for BytesMut {
-    fn eq(&self, other: &[u8]) -> bool {
-        &**self == other
-    }
-}
-
-impl PartialOrd<[u8]> for BytesMut {
-    fn partial_cmp(&self, other: &[u8]) -> Option<cmp::Ordering> {
-        (**self).partial_cmp(other)
-    }
-}
-
-impl PartialEq<BytesMut> for [u8] {
-    fn eq(&self, other: &BytesMut) -> bool {
-        *other == *self
-    }
-}
-
-impl PartialOrd<BytesMut> for [u8] {
-    fn partial_cmp(&self, other: &BytesMut) -> Option<cmp::Ordering> {
-        other.partial_cmp(self)
-    }
-}
-
-impl PartialEq<str> for BytesMut {
-    fn eq(&self, other: &str) -> bool {
-        &**self == other.as_bytes()
-    }
-}
-
-impl PartialOrd<str> for BytesMut {
-    fn partial_cmp(&self, other: &str) -> Option<cmp::Ordering> {
-        (**self).partial_cmp(other.as_bytes())
-    }
-}
-
-impl PartialEq<BytesMut> for str {
-    fn eq(&self, other: &BytesMut) -> bool {
-        *other == *self
-    }
-}
-
-impl PartialOrd<BytesMut> for str {
-    fn partial_cmp(&self, other: &BytesMut) -> Option<cmp::Ordering> {
-        other.partial_cmp(self)
-    }
-}
-
-impl PartialEq<Vec<u8>> for BytesMut {
-    fn eq(&self, other: &Vec<u8>) -> bool {
-        *self == &other[..]
-    }
-}
-
-impl PartialOrd<Vec<u8>> for BytesMut {
-    fn partial_cmp(&self, other: &Vec<u8>) -> Option<cmp::Ordering> {
-        (**self).partial_cmp(&other[..])
-    }
-}
-
-impl PartialEq<BytesMut> for Vec<u8> {
-    fn eq(&self, other: &BytesMut) -> bool {
-        *other == *self
-    }
-}
-
-impl PartialOrd<BytesMut> for Vec<u8> {
-    fn partial_cmp(&self, other: &BytesMut) -> Option<cmp::Ordering> {
-        other.partial_cmp(self)
-    }
-}
-
-impl PartialEq<String> for BytesMut {
-    fn eq(&self, other: &String) -> bool {
-        *self == &other[..]
-    }
-}
-
-impl PartialOrd<String> for BytesMut {
-    fn partial_cmp(&self, other: &String) -> Option<cmp::Ordering> {
-        (**self).partial_cmp(other.as_bytes())
-    }
-}
-
-impl PartialEq<BytesMut> for String {
-    fn eq(&self, other: &BytesMut) -> bool {
-        *other == *self
-    }
-}
-
-impl PartialOrd<BytesMut> for String {
-    fn partial_cmp(&self, other: &BytesMut) -> Option<cmp::Ordering> {
-        other.partial_cmp(self)
-    }
-}
-
-impl<'a, T: ?Sized> PartialEq<&'a T> for BytesMut
-    where BytesMut: PartialEq<T>
-{
-    fn eq(&self, other: &&'a T) -> bool {
-        *self == **other
-    }
-}
-
-impl<'a, T: ?Sized> PartialOrd<&'a T> for BytesMut
-    where BytesMut: PartialOrd<T>
-{
-    fn partial_cmp(&self, other: &&'a T) -> Option<cmp::Ordering> {
-        self.partial_cmp(*other)
-    }
-}
-
-impl<'a> PartialEq<BytesMut> for &'a [u8] {
-    fn eq(&self, other: &BytesMut) -> bool {
-        *other == *self
-    }
-}
-
-impl<'a> PartialOrd<BytesMut> for &'a [u8] {
-    fn partial_cmp(&self, other: &BytesMut) -> Option<cmp::Ordering> {
-        other.partial_cmp(self)
-    }
-}
-
-impl<'a> PartialEq<BytesMut> for &'a str {
-    fn eq(&self, other: &BytesMut) -> bool {
-        *other == *self
-    }
-}
-
-impl<'a> PartialOrd<BytesMut> for &'a str {
-    fn partial_cmp(&self, other: &BytesMut) -> Option<cmp::Ordering> {
-        other.partial_cmp(self)
-    }
-}
+impl Eq for Bytes {}
 
 impl PartialEq<[u8]> for Bytes {
     fn eq(&self, other: &[u8]) -> bool {
-        self.inner.as_ref() == other
+        self.as_slice() == other
     }
 }
 
 impl PartialOrd<[u8]> for Bytes {
     fn partial_cmp(&self, other: &[u8]) -> Option<cmp::Ordering> {
-        self.inner.as_ref().partial_cmp(other)
+        self.as_slice().partial_cmp(other)
     }
 }
 
@@ -2732,13 +588,13 @@ impl PartialOrd<Bytes> for [u8] {
 
 impl PartialEq<str> for Bytes {
     fn eq(&self, other: &str) -> bool {
-        self.inner.as_ref() == other.as_bytes()
+        self.as_slice() == other.as_bytes()
     }
 }
 
 impl PartialOrd<str> for Bytes {
     fn partial_cmp(&self, other: &str) -> Option<cmp::Ordering> {
-        self.inner.as_ref().partial_cmp(other.as_bytes())
+        self.as_slice().partial_cmp(other.as_bytes())
     }
 }
 
@@ -2762,7 +618,7 @@ impl PartialEq<Vec<u8>> for Bytes {
 
 impl PartialOrd<Vec<u8>> for Bytes {
     fn partial_cmp(&self, other: &Vec<u8>) -> Option<cmp::Ordering> {
-        self.inner.as_ref().partial_cmp(&other[..])
+        self.as_slice().partial_cmp(&other[..])
     }
 }
 
@@ -2786,7 +642,7 @@ impl PartialEq<String> for Bytes {
 
 impl PartialOrd<String> for Bytes {
     fn partial_cmp(&self, other: &String) -> Option<cmp::Ordering> {
-        self.inner.as_ref().partial_cmp(other.as_bytes())
+        self.as_slice().partial_cmp(other.as_bytes())
     }
 }
 
@@ -2802,25 +658,25 @@ impl PartialOrd<Bytes> for String {
     }
 }
 
-impl<'a> PartialEq<Bytes> for &'a [u8] {
+impl PartialEq<Bytes> for &[u8] {
     fn eq(&self, other: &Bytes) -> bool {
         *other == *self
     }
 }
 
-impl<'a> PartialOrd<Bytes> for &'a [u8] {
+impl PartialOrd<Bytes> for &[u8] {
     fn partial_cmp(&self, other: &Bytes) -> Option<cmp::Ordering> {
         other.partial_cmp(self)
     }
 }
 
-impl<'a> PartialEq<Bytes> for &'a str {
+impl PartialEq<Bytes> for &str {
     fn eq(&self, other: &Bytes) -> bool {
         *other == *self
     }
 }
 
-impl<'a> PartialOrd<Bytes> for &'a str {
+impl PartialOrd<Bytes> for &str {
     fn partial_cmp(&self, other: &Bytes) -> Option<cmp::Ordering> {
         other.partial_cmp(self)
     }
@@ -2842,34 +698,307 @@ impl<'a, T: ?Sized> PartialOrd<&'a T> for Bytes
     }
 }
 
-impl PartialEq<BytesMut> for Bytes
-{
-    fn eq(&self, other: &BytesMut) -> bool {
-        &other[..] == &self[..]
+
+
+impl Default for Bytes {
+    #[inline]
+    fn default() -> Bytes {
+        Bytes::new()
     }
 }
 
-impl PartialEq<Bytes> for BytesMut
-{
-    fn eq(&self, other: &Bytes) -> bool {
-        &other[..] == &self[..]
+impl From<&'static [u8]> for Bytes {
+    fn from(slice: &'static [u8]) -> Bytes {
+        Bytes::from_static(slice)
+    }
+}
+
+impl From<&'static str> for Bytes {
+    fn from(slice: &'static str) -> Bytes {
+        Bytes::from_static(slice.as_bytes())
+    }
+}
+
+impl From<Vec<u8>> for Bytes {
+    fn from(vec: Vec<u8>) -> Bytes {
+        
+        
+        
+        if vec.is_empty() {
+            return Bytes::new();
+        }
+
+        let slice = vec.into_boxed_slice();
+        let len = slice.len();
+        let ptr = slice.as_ptr();
+
+        assert!(
+            ptr as usize & KIND_VEC == 0,
+            "Vec pointer should not have LSB set: {:p}",
+            ptr,
+        );
+        drop(Box::into_raw(slice));
+
+        let data = ptr as usize | KIND_VEC;
+        Bytes {
+            ptr,
+            len,
+            data: AtomicPtr::new(data as *mut _),
+            vtable: &SHARED_VTABLE,
+        }
+    }
+}
+
+impl From<String> for Bytes {
+    fn from(s: String) -> Bytes {
+        Bytes::from(s.into_bytes())
     }
 }
 
 
 
-
-struct Abort;
-
-impl Drop for Abort {
-    fn drop(&mut self) {
-        panic!();
+impl fmt::Debug for Vtable {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Vtable")
+            .field("clone", &(self.clone as *const ()))
+            .field("drop", &(self.drop as *const ()))
+            .finish()
     }
 }
 
-#[inline(never)]
+
+
+const STATIC_VTABLE: Vtable = Vtable {
+    clone: static_clone,
+    drop: static_drop,
+};
+
+unsafe fn static_clone(_: &AtomicPtr<()>, ptr: *const u8, len: usize) -> Bytes {
+    let slice = slice::from_raw_parts(ptr, len);
+    Bytes::from_static(slice)
+}
+
+unsafe fn static_drop(_: &mut AtomicPtr<()>, _: *const u8, _: usize) {
+    
+}
+
+
+
+struct Shared {
+    
+    _vec: Vec<u8>,
+    ref_cnt: AtomicUsize,
+}
+
+static SHARED_VTABLE: Vtable = Vtable {
+    clone: shared_clone,
+    drop: shared_drop,
+};
+
+const KIND_ARC: usize = 0b0;
+const KIND_VEC: usize = 0b1;
+const KIND_MASK: usize = 0b1;
+
+unsafe fn shared_clone(data: &AtomicPtr<()>, ptr: *const u8, len: usize) -> Bytes {
+    let shared = data.load(Ordering::Acquire);
+    let kind = shared as usize & KIND_MASK;
+
+    if kind == KIND_ARC {
+        shallow_clone_arc(shared as _, ptr, len)
+    } else {
+        debug_assert_eq!(kind, KIND_VEC);
+        shallow_clone_vec(data, shared, ptr, len)
+    }
+}
+
+unsafe fn shared_drop(data: &mut AtomicPtr<()>, ptr: *const u8, len: usize) {
+    let shared = *data.get_mut();
+    let kind = shared as usize & KIND_MASK;
+
+
+    if kind == KIND_ARC {
+        release_shared(shared as *mut Shared);
+    } else {
+        debug_assert_eq!(kind, KIND_VEC);
+
+        drop(rebuild_vec(shared, ptr, len));
+    }
+}
+
+unsafe fn rebuild_vec(shared: *const (), offset: *const u8, len: usize) -> Vec<u8> {
+    debug_assert!(
+        shared as usize & KIND_MASK == KIND_VEC,
+        "rebuild_vec should have beeen called with KIND_VEC",
+    );
+    debug_assert!(
+        shared as usize & !KIND_MASK != 0,
+        "rebuild_vec should be called with non-null pointer: {:p}",
+        shared,
+    );
+
+    let buf = (shared as usize & !KIND_MASK) as *mut u8;
+    let cap = (offset as usize - buf as usize) + len;
+    Vec::from_raw_parts(buf, cap, cap)
+}
+
+unsafe fn shallow_clone_arc(shared: *mut Shared, ptr: *const u8, len: usize) -> Bytes {
+    let old_size = (*shared).ref_cnt.fetch_add(1, Ordering::Relaxed);
+
+    if old_size > usize::MAX >> 1 {
+        crate::abort();
+    }
+
+    Bytes {
+        ptr,
+        len,
+        data: AtomicPtr::new(shared as _),
+        vtable: &SHARED_VTABLE,
+    }
+}
+
 #[cold]
-fn abort() {
-    let _a = Abort;
-    panic!();
+unsafe fn shallow_clone_vec(atom: &AtomicPtr<()>, ptr: *const (), offset: *const u8, len: usize) -> Bytes {
+    
+    
+    
+
+    debug_assert_eq!(ptr as usize & KIND_MASK, KIND_VEC);
+
+    
+    
+    
+    
+    
+    
+    
+    let vec = rebuild_vec(ptr as *const (), offset, len);
+    let shared = Box::new(Shared {
+        _vec: vec,
+        
+        
+        
+        ref_cnt: AtomicUsize::new(2),
+    });
+
+    let shared = Box::into_raw(shared);
+
+    
+    
+    debug_assert!(0 == (shared as usize & KIND_MASK));
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let actual = atom.compare_and_swap(ptr as _, shared as _, Ordering::AcqRel);
+
+    if actual as usize == ptr as usize {
+        
+        
+        return Bytes {
+            ptr: offset,
+            len,
+            data: AtomicPtr::new(shared as _),
+            vtable: &SHARED_VTABLE,
+        };
+    }
+
+    
+    
+    
+    let shared = Box::from_raw(shared);
+    mem::forget(*shared);
+
+    
+    
+    shallow_clone_arc(actual as _, offset, len)
+}
+
+unsafe fn release_shared(ptr: *mut Shared) {
+    
+    if (*ptr).ref_cnt.fetch_sub(1, Ordering::Release) != 1 {
+        return;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    atomic::fence(Ordering::Acquire);
+
+    
+    Box::from_raw(ptr);
+}
+
+
+
+
+
+
+
+
+
+
+
+fn _split_to_must_use() {}
+
+
+
+
+
+
+
+
+
+fn _split_off_must_use() {}
+
+
+#[cfg(all(test, loom))]
+mod fuzz {
+    use std::sync::Arc;
+    use loom::thread;
+
+    use super::Bytes;
+    #[test]
+    fn bytes_cloning_vec() {
+        loom::model(|| {
+            let a = Bytes::from(b"abcdefgh".to_vec());
+            let addr = a.as_ptr() as usize;
+
+            
+            let a1 = Arc::new(a);
+            let a2 = a1.clone();
+
+            let t1 = thread::spawn(move || {
+                let b: Bytes = (*a1).clone();
+                assert_eq!(b.as_ptr() as usize, addr);
+            });
+
+            let t2 = thread::spawn(move || {
+                let b: Bytes = (*a2).clone();
+                assert_eq!(b.as_ptr() as usize, addr);
+            });
+
+            t1.join().unwrap();
+            t2.join().unwrap();
+        });
+    }
 }

@@ -1,64 +1,17 @@
-use Error;
-use header::{HeaderName, HeaderValue};
-use method::Method;
-use sealed::Sealed;
-use status::StatusCode;
-use uri::{Scheme, Authority, PathAndQuery, Uri};
-
-
-
-
-
-
-
-
-
-
-pub trait HttpTryFrom<T>: Sized + Sealed {
-    
-    type Error: Into<Error>;
-
-    #[doc(hidden)]
-    fn try_from(t: T) -> Result<Self, Self::Error>;
-}
-
-pub(crate) trait HttpTryInto<T>: Sized {
-    fn http_try_into(self) -> Result<T, Error>;
-}
-
-#[doc(hidden)]
-impl<T, U> HttpTryInto<U> for T
-where
-    U: HttpTryFrom<T>,
-    T: Sized,
-{
-    fn http_try_into(self) -> Result<U, Error> {
-        HttpTryFrom::try_from(self)
-            .map_err(|e: U::Error| e.into())
-    }
-}
-
-macro_rules! reflexive {
-    ($($t:ty,)*) => ($(
-        impl HttpTryFrom<$t> for $t {
-            type Error = Error;
-
-            fn try_from(t: Self) -> Result<Self, Self::Error> {
-                Ok(t)
-            }
+macro_rules! if_downcast_into {
+    ($in_ty:ty, $out_ty:ty, $val:ident, $body:expr) => ({
+        if std::any::TypeId::of::<$in_ty>() == std::any::TypeId::of::<$out_ty>() {
+            // Store the value in an `Option` so we can `take`
+            // it after casting to `&mut dyn Any`.
+            let mut slot = Some($val);
+            // Re-write the `$val` ident with the downcasted value.
+            let $val = (&mut slot as &mut dyn std::any::Any)
+                .downcast_mut::<Option<$out_ty>>()
+                .unwrap()
+                .take()
+                .unwrap();
+            // Run the $body in scope of the replaced val.
+            $body
         }
-
-        impl Sealed for $t {}
-    )*)
-}
-
-reflexive! {
-    Uri,
-    Method,
-    StatusCode,
-    HeaderName,
-    HeaderValue,
-    Scheme,
-    Authority,
-    PathAndQuery,
+    })
 }

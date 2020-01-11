@@ -1,3 +1,6 @@
+#![deny(warnings, missing_docs, missing_debug_implementations, rust_2018_idioms)]
+#![doc(html_root_url = "https://docs.rs/bytes/0.5.3")]
+#![no_std]
 
 
 
@@ -68,34 +71,48 @@
 
 
 
-#![deny(warnings, missing_docs, missing_debug_implementations)]
-#![doc(html_root_url = "https://docs.rs/bytes/0.4.9")]
 
-extern crate byteorder;
-extern crate iovec;
+
+extern crate alloc;
+
+#[cfg(feature = "std")]
+extern crate std;
 
 pub mod buf;
-pub use buf::{
+pub use crate::buf::{
     Buf,
     BufMut,
-    IntoBuf,
-};
-#[deprecated(since = "0.4.1", note = "moved to `buf` module")]
-#[doc(hidden)]
-pub use buf::{
-    Reader,
-    Writer,
-    Take,
 };
 
+mod bytes_mut;
 mod bytes;
 mod debug;
-pub use bytes::{Bytes, BytesMut};
-
-#[deprecated]
-pub use byteorder::{ByteOrder, BigEndian, LittleEndian};
+mod hex;
+mod loom;
+pub use crate::bytes_mut::BytesMut;
+pub use crate::bytes::Bytes;
 
 
 #[cfg(feature = "serde")]
-#[doc(hidden)]
-pub mod serde;
+mod serde;
+
+#[inline(never)]
+#[cold]
+fn abort() -> ! {
+    #[cfg(feature = "std")]
+    {
+        std::process::abort();
+    }
+
+    #[cfg(not(feature = "std"))]
+    {
+        struct Abort;
+        impl Drop for Abort {
+            fn drop(&mut self) {
+                panic!();
+            }
+        }
+        let _a = Abort;
+        panic!("abort");
+    }
+}

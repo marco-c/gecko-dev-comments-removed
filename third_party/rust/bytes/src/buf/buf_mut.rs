@@ -1,8 +1,9 @@
-use super::{IntoBuf, Writer};
-use byteorder::{LittleEndian, ByteOrder, BigEndian};
-use iovec::IoVec;
+use core::{cmp, mem::{self, MaybeUninit}, ptr, usize};
 
-use std::{cmp, io, ptr, usize};
+#[cfg(feature = "std")]
+use std::fmt;
+
+use alloc::{vec::Vec, boxed::Box};
 
 
 
@@ -25,7 +26,6 @@ use std::{cmp, io, ptr, usize};
 
 
 pub trait BufMut {
-    
     
     
     
@@ -95,9 +95,10 @@ pub trait BufMut {
     
     
     
+    
+    
     unsafe fn advance_mut(&mut self, cnt: usize);
 
-    
     
     
     
@@ -158,7 +159,10 @@ pub trait BufMut {
     
     
     
-    unsafe fn bytes_mut(&mut self) -> &mut [u8];
+    
+    
+    
+    fn bytes_mut(&mut self) -> &mut [MaybeUninit<u8>];
 
     
     
@@ -188,13 +192,14 @@ pub trait BufMut {
     
     
     
-    unsafe fn bytes_vec_mut<'a>(&'a mut self, dst: &mut [&'a mut IoVec]) -> usize {
+    #[cfg(feature = "std")]
+    fn bytes_vectored_mut<'a>(&'a mut self, dst: &mut [IoSliceMut<'a>]) -> usize {
         if dst.is_empty() {
             return 0;
         }
 
         if self.has_remaining_mut() {
-            dst[0] = self.bytes_mut().into();
+            dst[0] = IoSliceMut::from(self.bytes_mut());
             1
         } else {
             0
@@ -221,11 +226,7 @@ pub trait BufMut {
     
     
     
-    fn put<T: IntoBuf>(&mut self, src: T) where Self: Sized {
-        use super::Buf;
-
-        let mut src = src.into_buf();
-
+    fn put<T: super::Buf>(&mut self, mut src: T) where Self: Sized {
         assert!(self.remaining_mut() >= src.remaining());
 
         while src.has_remaining() {
@@ -238,7 +239,7 @@ pub trait BufMut {
 
                 ptr::copy_nonoverlapping(
                     s.as_ptr(),
-                    d.as_mut_ptr(),
+                    d.as_mut_ptr() as *mut u8,
                     l);
             }
 
@@ -266,11 +267,10 @@ pub trait BufMut {
     
     
     
-    
     fn put_slice(&mut self, src: &[u8]) {
         let mut off = 0;
 
-        assert!(self.remaining_mut() >= src.len(), "buffer overflow");
+        assert!(self.remaining_mut() >= src.len(), "buffer overflow; remaining = {}; src = {}", self.remaining_mut(), src.len());
 
         while off < src.len() {
             let cnt;
@@ -281,7 +281,7 @@ pub trait BufMut {
 
                 ptr::copy_nonoverlapping(
                     src[off..].as_ptr(),
-                    dst.as_mut_ptr(),
+                    dst.as_mut_ptr() as *mut u8,
                     cnt);
 
                 off += cnt;
@@ -338,14 +338,6 @@ pub trait BufMut {
         self.put_slice(&src)
     }
 
-    #[doc(hidden)]
-    #[deprecated(note="use put_u16_be or put_u16_le")]
-    fn put_u16<T: ByteOrder>(&mut self, n: u16) where Self: Sized {
-        let mut buf = [0; 2];
-        T::write_u16(&mut buf, n);
-        self.put_slice(&buf)
-    }
-
     
     
     
@@ -364,10 +356,8 @@ pub trait BufMut {
     
     
     
-    fn put_u16_be(&mut self, n: u16) {
-        let mut buf = [0; 2];
-        BigEndian::write_u16(&mut buf, n);
-        self.put_slice(&buf)
+    fn put_u16(&mut self, n: u16) {
+        self.put_slice(&n.to_be_bytes())
     }
 
     
@@ -389,17 +379,7 @@ pub trait BufMut {
     
     
     fn put_u16_le(&mut self, n: u16) {
-        let mut buf = [0; 2];
-        LittleEndian::write_u16(&mut buf, n);
-        self.put_slice(&buf)
-    }
-
-    #[doc(hidden)]
-    #[deprecated(note="use put_i16_be or put_i16_le")]
-    fn put_i16<T: ByteOrder>(&mut self, n: i16) where Self: Sized {
-        let mut buf = [0; 2];
-        T::write_i16(&mut buf, n);
-        self.put_slice(&buf)
+        self.put_slice(&n.to_le_bytes())
     }
 
     
@@ -420,10 +400,8 @@ pub trait BufMut {
     
     
     
-    fn put_i16_be(&mut self, n: i16) {
-        let mut buf = [0; 2];
-        BigEndian::write_i16(&mut buf, n);
-        self.put_slice(&buf)
+    fn put_i16(&mut self, n: i16) {
+        self.put_slice(&n.to_be_bytes())
     }
 
     
@@ -445,17 +423,7 @@ pub trait BufMut {
     
     
     fn put_i16_le(&mut self, n: i16) {
-        let mut buf = [0; 2];
-        LittleEndian::write_i16(&mut buf, n);
-        self.put_slice(&buf)
-    }
-
-    #[doc(hidden)]
-    #[deprecated(note="use put_u32_be or put_u32_le")]
-    fn put_u32<T: ByteOrder>(&mut self, n: u32) where Self: Sized {
-        let mut buf = [0; 4];
-        T::write_u32(&mut buf, n);
-        self.put_slice(&buf)
+        self.put_slice(&n.to_le_bytes())
     }
 
     
@@ -476,10 +444,8 @@ pub trait BufMut {
     
     
     
-    fn put_u32_be(&mut self, n: u32) {
-        let mut buf = [0; 4];
-        BigEndian::write_u32(&mut buf, n);
-        self.put_slice(&buf)
+    fn put_u32(&mut self, n: u32) {
+        self.put_slice(&n.to_be_bytes())
     }
 
     
@@ -501,17 +467,7 @@ pub trait BufMut {
     
     
     fn put_u32_le(&mut self, n: u32) {
-        let mut buf = [0; 4];
-        LittleEndian::write_u32(&mut buf, n);
-        self.put_slice(&buf)
-    }
-
-    #[doc(hidden)]
-    #[deprecated(note="use put_i32_be or put_i32_le")]
-    fn put_i32<T: ByteOrder>(&mut self, n: i32) where Self: Sized {
-        let mut buf = [0; 4];
-        T::write_i32(&mut buf, n);
-        self.put_slice(&buf)
+        self.put_slice(&n.to_le_bytes())
     }
 
     
@@ -532,10 +488,8 @@ pub trait BufMut {
     
     
     
-    fn put_i32_be(&mut self, n: i32) {
-        let mut buf = [0; 4];
-        BigEndian::write_i32(&mut buf, n);
-        self.put_slice(&buf)
+    fn put_i32(&mut self, n: i32) {
+        self.put_slice(&n.to_be_bytes())
     }
 
     
@@ -557,17 +511,7 @@ pub trait BufMut {
     
     
     fn put_i32_le(&mut self, n: i32) {
-        let mut buf = [0; 4];
-        LittleEndian::write_i32(&mut buf, n);
-        self.put_slice(&buf)
-    }
-
-    #[doc(hidden)]
-    #[deprecated(note="use put_u64_be or put_u64_le")]
-    fn put_u64<T: ByteOrder>(&mut self, n: u64) where Self: Sized {
-        let mut buf = [0; 8];
-        T::write_u64(&mut buf, n);
-        self.put_slice(&buf)
+        self.put_slice(&n.to_le_bytes())
     }
 
     
@@ -588,10 +532,8 @@ pub trait BufMut {
     
     
     
-    fn put_u64_be(&mut self, n: u64) {
-        let mut buf = [0; 8];
-        BigEndian::write_u64(&mut buf, n);
-        self.put_slice(&buf)
+    fn put_u64(&mut self, n: u64) {
+        self.put_slice(&n.to_be_bytes())
     }
 
     
@@ -613,17 +555,7 @@ pub trait BufMut {
     
     
     fn put_u64_le(&mut self, n: u64) {
-        let mut buf = [0; 8];
-        LittleEndian::write_u64(&mut buf, n);
-        self.put_slice(&buf)
-    }
-
-    #[doc(hidden)]
-    #[deprecated(note="use put_i64_be or put_i64_le")]
-    fn put_i64<T: ByteOrder>(&mut self, n: i64) where Self: Sized {
-        let mut buf = [0; 8];
-        T::write_i64(&mut buf, n);
-        self.put_slice(&buf)
+        self.put_slice(&n.to_le_bytes())
     }
 
     
@@ -644,10 +576,8 @@ pub trait BufMut {
     
     
     
-    fn put_i64_be(&mut self, n: i64) {
-        let mut buf = [0; 8];
-        BigEndian::write_i64(&mut buf, n);
-        self.put_slice(&buf)
+    fn put_i64(&mut self, n: i64) {
+        self.put_slice(&n.to_be_bytes())
     }
 
     
@@ -669,9 +599,7 @@ pub trait BufMut {
     
     
     fn put_i64_le(&mut self, n: i64) {
-        let mut buf = [0; 8];
-        LittleEndian::write_i64(&mut buf, n);
-        self.put_slice(&buf)
+        self.put_slice(&n.to_le_bytes())
     }
 
     
@@ -692,12 +620,8 @@ pub trait BufMut {
     
     
     
-    
-    #[cfg(feature = "i128")]
-    fn put_u128_be(&mut self, n: u128) {
-        let mut buf = [0; 16];
-        BigEndian::write_u128(&mut buf, n);
-        self.put_slice(&buf)
+    fn put_u128(&mut self, n: u128) {
+        self.put_slice(&n.to_be_bytes())
     }
 
     
@@ -718,12 +642,8 @@ pub trait BufMut {
     
     
     
-    
-    #[cfg(feature = "i128")]
     fn put_u128_le(&mut self, n: u128) {
-        let mut buf = [0; 16];
-        LittleEndian::write_u128(&mut buf, n);
-        self.put_slice(&buf)
+        self.put_slice(&n.to_le_bytes())
     }
 
     
@@ -744,12 +664,8 @@ pub trait BufMut {
     
     
     
-    
-    #[cfg(feature = "i128")]
-    fn put_i128_be(&mut self, n: i128) {
-        let mut buf = [0; 16];
-        BigEndian::write_i128(&mut buf, n);
-        self.put_slice(&buf)
+    fn put_i128(&mut self, n: i128) {
+        self.put_slice(&n.to_be_bytes())
     }
 
     
@@ -770,20 +686,8 @@ pub trait BufMut {
     
     
     
-    
-    #[cfg(feature = "i128")]
     fn put_i128_le(&mut self, n: i128) {
-        let mut buf = [0; 16];
-        LittleEndian::write_i128(&mut buf, n);
-        self.put_slice(&buf)
-    }
-
-    #[doc(hidden)]
-    #[deprecated(note="use put_uint_be or put_uint_le")]
-    fn put_uint<T: ByteOrder>(&mut self, n: u64, nbytes: usize) where Self: Sized {
-        let mut buf = [0; 8];
-        T::write_uint(&mut buf, n, nbytes);
-        self.put_slice(&buf[0..nbytes])
+        self.put_slice(&n.to_le_bytes())
     }
 
     
@@ -804,10 +708,8 @@ pub trait BufMut {
     
     
     
-    fn put_uint_be(&mut self, n: u64, nbytes: usize) {
-        let mut buf = [0; 8];
-        BigEndian::write_uint(&mut buf, n, nbytes);
-        self.put_slice(&buf[0..nbytes])
+    fn put_uint(&mut self, n: u64, nbytes: usize) {
+        self.put_slice(&n.to_be_bytes()[mem::size_of_val(&n) - nbytes..]);
     }
 
     
@@ -829,17 +731,7 @@ pub trait BufMut {
     
     
     fn put_uint_le(&mut self, n: u64, nbytes: usize) {
-        let mut buf = [0; 8];
-        LittleEndian::write_uint(&mut buf, n, nbytes);
-        self.put_slice(&buf[0..nbytes])
-    }
-
-    #[doc(hidden)]
-    #[deprecated(note="use put_int_be or put_int_le")]
-    fn put_int<T: ByteOrder>(&mut self, n: i64, nbytes: usize) where Self: Sized {
-        let mut buf = [0; 8];
-        T::write_int(&mut buf, n, nbytes);
-        self.put_slice(&buf[0..nbytes])
+        self.put_slice(&n.to_le_bytes()[0..nbytes]);
     }
 
     
@@ -860,10 +752,8 @@ pub trait BufMut {
     
     
     
-    fn put_int_be(&mut self, n: i64, nbytes: usize) {
-        let mut buf = [0; 8];
-        BigEndian::write_int(&mut buf, n, nbytes);
-        self.put_slice(&buf[0..nbytes])
+    fn put_int(&mut self, n: i64, nbytes: usize) {
+        self.put_slice(&n.to_be_bytes()[mem::size_of_val(&n) - nbytes..]);
     }
 
     
@@ -885,17 +775,7 @@ pub trait BufMut {
     
     
     fn put_int_le(&mut self, n: i64, nbytes: usize) {
-        let mut buf = [0; 8];
-        LittleEndian::write_int(&mut buf, n, nbytes);
-        self.put_slice(&buf[0..nbytes])
-    }
-
-    #[doc(hidden)]
-    #[deprecated(note="use put_f32_be or put_f32_le")]
-    fn put_f32<T: ByteOrder>(&mut self, n: f32) where Self: Sized {
-        let mut buf = [0; 4];
-        T::write_f32(&mut buf, n);
-        self.put_slice(&buf)
+        self.put_slice(&n.to_le_bytes()[0..nbytes]);
     }
 
     
@@ -917,10 +797,8 @@ pub trait BufMut {
     
     
     
-    fn put_f32_be(&mut self, n: f32) {
-        let mut buf = [0; 4];
-        BigEndian::write_f32(&mut buf, n);
-        self.put_slice(&buf)
+    fn put_f32(&mut self, n: f32) {
+        self.put_u32(n.to_bits());
     }
 
     
@@ -943,17 +821,7 @@ pub trait BufMut {
     
     
     fn put_f32_le(&mut self, n: f32) {
-        let mut buf = [0; 4];
-        LittleEndian::write_f32(&mut buf, n);
-        self.put_slice(&buf)
-    }
-
-    #[doc(hidden)]
-    #[deprecated(note="use put_f64_be or put_f64_le")]
-    fn put_f64<T: ByteOrder>(&mut self, n: f64) where Self: Sized {
-        let mut buf = [0; 8];
-        T::write_f64(&mut buf, n);
-        self.put_slice(&buf)
+        self.put_u32_le(n.to_bits());
     }
 
     
@@ -975,10 +843,8 @@ pub trait BufMut {
     
     
     
-    fn put_f64_be(&mut self, n: f64) {
-        let mut buf = [0; 8];
-        BigEndian::write_f64(&mut buf, n);
-        self.put_slice(&buf)
+    fn put_f64(&mut self, n: f64) {
+        self.put_u64(n.to_bits());
     }
 
     
@@ -1001,128 +867,116 @@ pub trait BufMut {
     
     
     fn put_f64_le(&mut self, n: f64) {
-        let mut buf = [0; 8];
-        LittleEndian::write_f64(&mut buf, n);
-        self.put_slice(&buf)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn by_ref(&mut self) -> &mut Self where Self: Sized {
-        self
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn writer(self) -> Writer<Self> where Self: Sized {
-        super::writer::new(self)
+        self.put_u64_le(n.to_bits());
     }
 }
 
-impl<'a, T: BufMut + ?Sized> BufMut for &'a mut T {
+macro_rules! deref_forward_bufmut {
+    () => (
     fn remaining_mut(&self) -> usize {
         (**self).remaining_mut()
     }
 
-    unsafe fn bytes_mut(&mut self) -> &mut [u8] {
+    fn bytes_mut(&mut self) -> &mut [MaybeUninit<u8>] {
         (**self).bytes_mut()
     }
 
-    unsafe fn bytes_vec_mut<'b>(&'b mut self, dst: &mut [&'b mut IoVec]) -> usize {
-        (**self).bytes_vec_mut(dst)
+    #[cfg(feature = "std")]
+    fn bytes_vectored_mut<'b>(&'b mut self, dst: &mut [IoSliceMut<'b>]) -> usize {
+        (**self).bytes_vectored_mut(dst)
     }
 
     unsafe fn advance_mut(&mut self, cnt: usize) {
         (**self).advance_mut(cnt)
     }
+
+    fn put_slice(&mut self, src: &[u8]) {
+        (**self).put_slice(src)
+    }
+
+    fn put_u8(&mut self, n: u8) {
+        (**self).put_u8(n)
+    }
+
+    fn put_i8(&mut self, n: i8) {
+        (**self).put_i8(n)
+    }
+
+    fn put_u16(&mut self, n: u16) {
+        (**self).put_u16(n)
+    }
+
+    fn put_u16_le(&mut self, n: u16) {
+        (**self).put_u16_le(n)
+    }
+
+    fn put_i16(&mut self, n: i16) {
+        (**self).put_i16(n)
+    }
+
+    fn put_i16_le(&mut self, n: i16) {
+        (**self).put_i16_le(n)
+    }
+
+    fn put_u32(&mut self, n: u32) {
+        (**self).put_u32(n)
+    }
+
+    fn put_u32_le(&mut self, n: u32) {
+        (**self).put_u32_le(n)
+    }
+
+    fn put_i32(&mut self, n: i32) {
+        (**self).put_i32(n)
+    }
+
+    fn put_i32_le(&mut self, n: i32) {
+        (**self).put_i32_le(n)
+    }
+
+    fn put_u64(&mut self, n: u64) {
+        (**self).put_u64(n)
+    }
+
+    fn put_u64_le(&mut self, n: u64) {
+        (**self).put_u64_le(n)
+    }
+
+    fn put_i64(&mut self, n: i64) {
+        (**self).put_i64(n)
+    }
+
+    fn put_i64_le(&mut self, n: i64) {
+        (**self).put_i64_le(n)
+    }
+    )
+}
+
+impl<T: BufMut + ?Sized> BufMut for &mut T {
+    deref_forward_bufmut!();
 }
 
 impl<T: BufMut + ?Sized> BufMut for Box<T> {
-    fn remaining_mut(&self) -> usize {
-        (**self).remaining_mut()
-    }
-
-    unsafe fn bytes_mut(&mut self) -> &mut [u8] {
-        (**self).bytes_mut()
-    }
-
-    unsafe fn bytes_vec_mut<'b>(&'b mut self, dst: &mut [&'b mut IoVec]) -> usize {
-        (**self).bytes_vec_mut(dst)
-    }
-
-    unsafe fn advance_mut(&mut self, cnt: usize) {
-        (**self).advance_mut(cnt)
-    }
+    deref_forward_bufmut!();
 }
 
-impl<T: AsMut<[u8]> + AsRef<[u8]>> BufMut for io::Cursor<T> {
+impl BufMut for &mut [u8] {
+    #[inline]
     fn remaining_mut(&self) -> usize {
-        use Buf;
-        self.remaining()
+        self.len()
     }
 
-    
+    #[inline]
+    fn bytes_mut(&mut self) -> &mut [MaybeUninit<u8>] {
+        
+        unsafe { mem::transmute(&mut **self) }
+    }
+
+    #[inline]
     unsafe fn advance_mut(&mut self, cnt: usize) {
-        use Buf;
-        self.advance(cnt);
-    }
-
-    
-    
-    
-    
-    unsafe fn bytes_mut(&mut self) -> &mut [u8] {
-        let len = self.get_ref().as_ref().len();
-        let pos = self.position() as usize;
-
-        if pos >= len {
-            return Default::default();
-        }
-
-        &mut (self.get_mut().as_mut())[pos..]
+        
+        let (_, b) = core::mem::replace(self, &mut []).split_at_mut(cnt);
+        *self = b;
     }
 }
 
@@ -1146,8 +1000,8 @@ impl BufMut for Vec<u8> {
     }
 
     #[inline]
-    unsafe fn bytes_mut(&mut self) -> &mut [u8] {
-        use std::slice;
+    fn bytes_mut(&mut self) -> &mut [MaybeUninit<u8>] {
+        use core::slice;
 
         if self.capacity() == self.len() {
             self.reserve(64); 
@@ -1156,11 +1010,79 @@ impl BufMut for Vec<u8> {
         let cap = self.capacity();
         let len = self.len();
 
-        let ptr = self.as_mut_ptr();
-        &mut slice::from_raw_parts_mut(ptr, cap)[len..]
+        let ptr = self.as_mut_ptr() as *mut MaybeUninit<u8>;
+        unsafe {
+            &mut slice::from_raw_parts_mut(ptr, cap)[len..]
+        }
+    }
+
+    
+    
+
+    fn put<T: super::Buf>(&mut self, mut src: T) where Self: Sized {
+        
+        self.reserve(src.remaining());
+
+        while src.has_remaining() {
+            let l;
+
+            
+            {
+                let s = src.bytes();
+                l = s.len();
+                self.extend_from_slice(s);
+            }
+
+            src.advance(l);
+        }
+    }
+
+    fn put_slice(&mut self, src: &[u8]) {
+        self.extend_from_slice(src);
     }
 }
 
 
 
-fn _assert_trait_object(_b: &BufMut) {}
+fn _assert_trait_object(_b: &dyn BufMut) {}
+
+
+
+
+
+
+
+
+
+
+
+#[repr(transparent)]
+#[cfg(feature = "std")]
+pub struct IoSliceMut<'a>(std::io::IoSliceMut<'a>);
+
+#[cfg(feature = "std")]
+impl fmt::Debug for IoSliceMut<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("IoSliceMut")
+            .field("len", &self.0.len())
+            .finish()
+    }
+}
+
+#[cfg(feature = "std")]
+impl<'a> From<&'a mut [u8]> for IoSliceMut<'a> {
+    fn from(buf: &'a mut [u8]) -> IoSliceMut<'a> {
+        IoSliceMut(std::io::IoSliceMut::new(buf))
+    }
+}
+
+#[cfg(feature = "std")]
+impl<'a> From<&'a mut [MaybeUninit<u8>]> for IoSliceMut<'a> {
+    fn from(buf: &'a mut [MaybeUninit<u8>]) -> IoSliceMut<'a> {
+        IoSliceMut(std::io::IoSliceMut::new(unsafe {
+            
+            
+            mem::transmute::<&'a mut [MaybeUninit<u8>], &'a mut [u8]>(buf)
+        }))
+    }
+}
