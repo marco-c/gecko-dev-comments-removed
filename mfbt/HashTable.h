@@ -1527,7 +1527,6 @@ class HashTable : private AllocPolicy {
     mRemovedCount = aRhs.mRemovedCount;
 #ifdef DEBUG
     mMutationCount = aRhs.mMutationCount;
-    mEntered = aRhs.mEntered;
 #endif
     aRhs.mTable = nullptr;
     aRhs.clearAndCompact();
@@ -1547,8 +1546,7 @@ class HashTable : private AllocPolicy {
   uint32_t mRemovedCount;   
 
 #ifdef DEBUG
-  uint64_t mMutationCount;
-  mutable bool mEntered;
+  uint64_t mMutationCount = 0;
 #endif
 
   
@@ -1669,11 +1667,6 @@ class HashTable : private AllocPolicy {
         mTable(nullptr),
         mEntryCount(0),
         mRemovedCount(0)
-#ifdef DEBUG
-        ,
-        mMutationCount(0),
-        mEntered(false)
-#endif
   {
   }
 
