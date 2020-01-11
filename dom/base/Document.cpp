@@ -6886,17 +6886,6 @@ bool Document::RemoveObserver(nsIDocumentObserver* aObserver) {
 }
 
 void Document::BeginUpdate() {
-  
-  
-  
-  
-  
-  
-  if (mDocGroup && !mIsGoingAway && !mInUnlinkOrDeletion &&
-      !mIgnoreDocGroupMismatches) {
-    mDocGroup->ValidateAccess();
-  }
-
   ++mUpdateNestLevel;
   nsContentUtils::AddScriptBlocker();
   NS_DOCUMENT_NOTIFY_OBSERVERS(BeginUpdate, (this));
@@ -9688,11 +9677,6 @@ EventListenerManager* Document::GetExistingListenerManager() const {
 }
 
 void Document::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
-  if (mDocGroup && aVisitor.mEvent->mMessage != eVoidEvent &&
-      !mIgnoreDocGroupMismatches) {
-    mDocGroup->ValidateAccess();
-  }
-
   aVisitor.mCanHandle = true;
   
   

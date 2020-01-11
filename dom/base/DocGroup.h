@@ -86,9 +86,6 @@ class DocGroup final {
   AbstractThread* AbstractMainThreadFor(TaskCategory aCategory);
 
   
-  void ValidateAccess() const { mTabGroup->ValidateAccess(); }
-
-  
   
   
   bool* GetValidAccessPtr();

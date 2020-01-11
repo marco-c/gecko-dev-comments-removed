@@ -250,23 +250,6 @@ void imgRequestProxy::ClearValidating() {
 }
 
 bool imgRequestProxy::IsOnEventTarget() const {
-  
-  
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (mTabGroup) {
-    MOZ_ASSERT(mEventTarget);
-    return mTabGroup->IsSafeToRun();
-  }
-
-  if (mListener) {
-    
-    
-    MOZ_ASSERT(mEventTarget);
-    return mozilla::SchedulerGroup::IsSafeToRunUnlabeled();
-  }
-
-  
   return true;
 }
 
