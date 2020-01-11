@@ -129,6 +129,12 @@ pub struct ValidationData {
     class_list: Option<SmallVec<[Atom; 5]>>,
 
     
+    
+    
+    
+    part_list: Option<SmallVec<[Atom; 5]>>,
+
+    
     pres_hints: Option<SmallVec<[ApplicableDeclarationBlock; 5]>>,
 
     
@@ -162,21 +168,40 @@ impl ValidationData {
     }
 
     
+    pub fn part_list<E>(&mut self, element: E) -> &[Atom]
+    where
+        E: TElement,
+    {
+        if !element.has_part_attr() {
+            return &[]
+        }
+        self.part_list.get_or_insert_with(|| {
+            let mut list = SmallVec::<[Atom; 5]>::new();
+            element.each_part(|p| list.push(p.clone()));
+            
+            if !list.spilled() {
+                list.sort_unstable_by_key(|a| a.get_hash());
+            }
+            list
+        })
+    }
+
+    
     pub fn class_list<E>(&mut self, element: E) -> &[Atom]
     where
         E: TElement,
     {
         self.class_list.get_or_insert_with(|| {
-            let mut class_list = SmallVec::<[Atom; 5]>::new();
-            element.each_class(|c| class_list.push(c.clone()));
+            let mut list = SmallVec::<[Atom; 5]>::new();
+            element.each_class(|c| list.push(c.clone()));
             
             
             
             
-            if !class_list.spilled() {
-                class_list.sort_by(|a, b| a.get_hash().cmp(&b.get_hash()));
+            if !list.spilled() {
+                list.sort_unstable_by_key(|a| a.get_hash());
             }
-            class_list
+            list
         })
     }
 
@@ -274,6 +299,11 @@ impl<E: TElement> StyleSharingCandidate<E> {
     }
 
     
+    fn part_list(&mut self) -> &[Atom] {
+        self.validation_data.part_list(self.element)
+    }
+
+    
     fn pres_hints(&mut self) -> &[ApplicableDeclarationBlock] {
         self.validation_data.pres_hints(self.element)
     }
@@ -333,6 +363,10 @@ impl<E: TElement> StyleSharingTarget<E> {
 
     fn class_list(&mut self) -> &[Atom] {
         self.validation_data.class_list(self.element)
+    }
+
+    fn part_list(&mut self) -> &[Atom] {
+        self.validation_data.part_list(self.element)
     }
 
     
@@ -769,6 +803,11 @@ impl<E: TElement> StyleSharingCache<E> {
 
         if !checks::have_same_presentational_hints(target, candidate) {
             trace!("Miss: Pres Hints");
+            return None;
+        }
+
+        if !checks::have_same_parts(target, candidate) {
+            trace!("Miss: Shadow parts");
             return None;
         }
 

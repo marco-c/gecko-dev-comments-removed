@@ -97,6 +97,19 @@ where
 
 
 
+pub fn have_same_parts<E>(
+    target: &mut StyleSharingTarget<E>,
+    candidate: &mut StyleSharingCandidate<E>,
+) -> bool
+where
+    E: TElement,
+{
+    target.part_list() == candidate.part_list()
+}
+
+
+
+
 
 
 
