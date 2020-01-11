@@ -42,8 +42,8 @@ class Front extends Pool {
     this._requests = [];
 
     
-    
-    this._frontListeners = new EventEmitter();
+    this._frontCreationListeners = new EventEmitter();
+    this._frontDestructionListeners = new EventEmitter();
 
     
     
@@ -72,7 +72,8 @@ class Front extends Pool {
     this.actorID = null;
     this.targetFront = null;
     this.parentFront = null;
-    this._frontListeners = null;
+    this._frontCreationListeners = null;
+    this._frontDestructionListeners = null;
     this._beforeListeners = null;
   }
 
@@ -101,15 +102,14 @@ class Front extends Pool {
     }
 
     
-    this._frontListeners.emit(front.typeName, front);
+    this._frontCreationListeners.emit(front.typeName, front);
   }
 
   async unmanage(front) {
     super.unmanage(front);
 
     
-    
-    this._frontListeners.emit(front.typeName + ":destroyed", front);
+    this._frontDestructionListeners.emit(front.typeName, front);
   }
 
   
@@ -124,53 +124,35 @@ class Front extends Pool {
 
 
 
-  onFront(typeName, callback) {
-    
-    for (const front of this.poolChildren()) {
-      if (front.typeName == typeName) {
-        callback(front);
+  watchFronts(typeName, onAvailable, onDestroy) {
+    if (onAvailable) {
+      
+      for (const front of this.poolChildren()) {
+        if (front.typeName == typeName) {
+          onAvailable(front);
+        }
       }
+
+      
+      this._frontCreationListeners.on(typeName, onAvailable);
     }
-    
-    this._frontListeners.on(typeName, callback);
+
+    if (onDestroy) {
+      this._frontDestructionListeners.on(typeName, onDestroy);
+    }
   }
 
   
 
 
 
-
-
-
-
-  offFront(typeName, callback) {
-    this._frontListeners.off(typeName, callback);
-  }
-
-  
-
-
-
-
-
-
-
-
-  onFrontDestroyed(typeName, callback) {
-    
-    this.onFront(typeName + ":destroyed", callback);
-  }
-
-  
-
-
-
-
-
-
-
-  offFrontDestroyed(typeName, callback) {
-    this.offFront(typeName + ":destroyed", callback);
+  unwatchFronts(typeName, onAvailable, onDestroy) {
+    if (onAvailable) {
+      this._frontCreationListeners.off(typeName, onAvailable);
+    }
+    if (onDestroy) {
+      this._frontDestructionListeners.off(typeName, onDestroy);
+    }
   }
 
   
