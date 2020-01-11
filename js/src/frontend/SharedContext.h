@@ -342,8 +342,8 @@ class FunctionBox : public ObjectBox, public SharedContext {
   
   FunctionNode* functionNode;
 
-  uint32_t bufStart;
-  uint32_t bufEnd;
+  uint32_t sourceStart;
+  uint32_t sourceEnd;
   uint32_t startLine;
   uint32_t startColumn;
   uint32_t toStringStart;
@@ -702,7 +702,7 @@ class FunctionBox : public ObjectBox, public SharedContext {
   bool useAsmOrInsideUseAsm() const { return useAsm; }
 
   void setStart(uint32_t offset, uint32_t line, uint32_t column) {
-    bufStart = offset;
+    sourceStart = offset;
     startLine = line;
     startColumn = column;
   }
@@ -711,7 +711,7 @@ class FunctionBox : public ObjectBox, public SharedContext {
     
     
     
-    bufEnd = toStringEnd = end;
+    sourceEnd = toStringEnd = end;
   }
 
   void setArgCount(uint16_t args) { nargs_ = args; }
