@@ -31,7 +31,7 @@ async function openTabInUserContext(uri, userContextId) {
 
 
 async function setupIndexedDB(browser) {
-  await ContentTask.spawn(browser, { input: "TestForgetAPIs" }, async function(
+  await SpecialPowers.spawn(browser, [{ input: "TestForgetAPIs" }], async function(
     arg
   ) {
     let request = content.indexedDB.open("idb", 1);
@@ -79,7 +79,7 @@ async function setupIndexedDB(browser) {
 
 
 async function checkIndexedDB(browser) {
-  await ContentTask.spawn(browser, null, async function() {
+  await SpecialPowers.spawn(browser, [], async function() {
     let request = content.indexedDB.open("idb", 1);
 
     let db = await new Promise(done => {

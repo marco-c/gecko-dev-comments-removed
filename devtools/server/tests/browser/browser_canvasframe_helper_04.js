@@ -13,7 +13,7 @@ const TEST_URL_2 =
 
 add_task(async function() {
   const browser = await addTab(TEST_URL_1);
-  await ContentTask.spawn(browser, TEST_URL_2, async function(url2) {
+  await SpecialPowers.spawn(browser, [TEST_URL_2], async function(url2) {
     const { require } = ChromeUtils.import(
       "resource://devtools/shared/Loader.jsm"
     );
@@ -101,7 +101,7 @@ add_task(async function() {
     
     
     
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise(r => content.setTimeout(r, 0));
 
     
     doc = content.document;

@@ -13,10 +13,8 @@ add_task(async function() {
   ok(true, "Can start recording allocations");
 
   
-  const [line1, line2, line3] = await ContentTask.spawn(
-    gBrowser.selectedBrowser,
-    null,
-    function() {
+  const [line1, line2, line3] = await SpecialPowers.spawn(
+    gBrowser.selectedBrowser, [], function() {
       
       return content.eval(
         "(" +

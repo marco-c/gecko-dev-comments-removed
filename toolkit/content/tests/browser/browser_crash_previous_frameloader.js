@@ -83,7 +83,7 @@ add_task(async function test_crash_in_previous_frameloader() {
 
       
       
-      await ContentTask.spawn(browser, null, function() {
+      await SpecialPowers.spawn(browser, [], function() {
         const { ctypes } = ChromeUtils.import(
           "resource://gre/modules/ctypes.jsm"
         );
@@ -99,7 +99,7 @@ add_task(async function test_crash_in_previous_frameloader() {
         
         
         
-        addEventListener("pagehide", function() {
+        docShell.chromeEventHandler.addEventListener("pagehide", function() {
           dump("\nEt tu, Brute?\n");
           dies();
         });

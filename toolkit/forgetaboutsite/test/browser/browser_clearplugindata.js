@@ -60,7 +60,7 @@ add_task(async function() {
   await BrowserTestUtils.openNewForegroundTab(gBrowser, testURL);
 
   
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
     content.wrappedJSObject.testSteps();
   });
 

@@ -33,7 +33,7 @@ const PLUGIN_TAG = getTestPlugin();
 
 
 function promiseUpdatePluginBindings(browser) {
-  return ContentTask.spawn(browser, {}, async function() {
+  return SpecialPowers.spawn(browser, [], async function() {
     let doc = content.document;
     let elems = doc.getElementsByTagName("embed");
     if (elems && elems.length) {

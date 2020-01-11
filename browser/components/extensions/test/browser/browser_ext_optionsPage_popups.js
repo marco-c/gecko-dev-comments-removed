@@ -16,7 +16,7 @@ async function openContextMenuInOptionsPage(optionsBrowser) {
   
   
   
-  ContentTask.spawn(optionsBrowser, null, () => {
+  SpecialPowers.spawn(optionsBrowser, [], () => {
     let el = content.document.querySelector("a");
     el.dispatchEvent(
       new content.MouseEvent("contextmenu", {

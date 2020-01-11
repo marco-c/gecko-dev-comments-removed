@@ -20,7 +20,7 @@ async function openTabAndSetupStorage(url) {
   const content = await addTab(url);
 
   
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
     
 
 
@@ -59,7 +59,7 @@ async function openTabAndSetupStorage(url) {
 }
 
 async function clearStorage() {
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
     
 
 

@@ -39,7 +39,7 @@ add_task(async function() {
   await promiseUpdatePluginBindings(gBrowser.selectedBrowser);
 
   
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
     let doc = content.document;
     let plugin = doc.getElementById("test");
     let overlay = plugin.openOrClosedShadowRoot.getElementById("main");
@@ -74,7 +74,7 @@ add_task(async function() {
   
   await promiseUpdatePluginBindings(gBrowser.selectedBrowser);
 
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
     let doc = content.document;
     let plugin = doc.getElementById("test");
     let overlay = plugin.openOrClosedShadowRoot.getElementById("main");

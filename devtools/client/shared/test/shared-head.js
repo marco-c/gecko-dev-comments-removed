@@ -771,7 +771,7 @@ async function registerActorInContentProcess(url, options) {
   
   
   url = url.startsWith("chrome://mochitests") ? convertChromeToFile(url) : url;
-  return ContentTask.spawn(gBrowser.selectedBrowser, { url, options }, args => {
+  return SpecialPowers.spawn(gBrowser.selectedBrowser, [{ url, options }], args => {
     
     const { require } = ChromeUtils.import(
       "resource://devtools/shared/Loader.jsm"

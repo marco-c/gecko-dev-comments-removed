@@ -57,7 +57,7 @@ const CRASH_URL =
 
 
 function preparePlugin(browser, pluginFallbackState) {
-  return ContentTask.spawn(browser, pluginFallbackState, async function(
+  return SpecialPowers.spawn(browser, [pluginFallbackState], async function(
     contentPluginFallbackState
   ) {
     let plugin = content.document.getElementById("plugin");
@@ -171,7 +171,7 @@ add_task(async function testChromeHearsPluginCrashFirst() {
   
   
   
-  await ContentTask.spawn(browser, null, async function() {
+  await SpecialPowers.spawn(browser, [], async function() {
     
     
     
@@ -256,7 +256,7 @@ add_task(async function testContentHearsCrashFirst() {
     });
   });
 
-  await ContentTask.spawn(browser, null, async function() {
+  await SpecialPowers.spawn(browser, [], async function() {
     
     
     
@@ -282,7 +282,7 @@ add_task(async function testContentHearsCrashFirst() {
   let receivedData = await parentRequestPromise;
   is(receivedData.runID, runID, "Should get a request for the same crash.");
 
-  await ContentTask.spawn(browser, null, function() {
+  await SpecialPowers.spawn(browser, [], function() {
     let plugin = content.document.getElementById("plugin");
     let statusDiv = plugin.openOrClosedShadowRoot.getElementById(
       "submitStatus"
@@ -297,7 +297,7 @@ add_task(async function testContentHearsCrashFirst() {
   
   allowParentToRespond.resolve();
 
-  await ContentTask.spawn(browser, null, async function() {
+  await SpecialPowers.spawn(browser, [], async function() {
     
     
     

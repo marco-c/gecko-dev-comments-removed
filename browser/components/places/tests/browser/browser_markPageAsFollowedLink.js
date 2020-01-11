@@ -45,7 +45,7 @@ add_task(async function test() {
   
   
   info("Clicking link");
-  await ContentTask.spawn(tab.linkedBrowser, {}, async function() {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
     content.frames[0].document.getElementById("clickme").click();
   });
 

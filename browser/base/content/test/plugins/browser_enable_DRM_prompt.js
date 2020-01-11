@@ -34,7 +34,7 @@ add_task(async function() {
 
     
     
-    let result = await ContentTask.spawn(browser, {}, async function() {
+    let result = await SpecialPowers.spawn(browser, [], async function() {
       try {
         let config = [
           {
