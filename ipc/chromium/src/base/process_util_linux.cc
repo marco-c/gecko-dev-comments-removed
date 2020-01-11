@@ -11,28 +11,10 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "algorithm"
-
-#if defined(MOZ_ENABLE_FORKSERVER)
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#  if defined(DEBUG)
-#include "base/message_loop.h"
-#  endif
-#include "mozilla/DebugOnly.h"
-#include "mozilla/ipc/ForkServiceChild.h"
-
-using namespace mozilla::ipc;
-#endif
-
 #include "base/eintr_wrapper.h"
 #include "base/logging.h"
-#include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/ipc/FileDescriptorShuffle.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/StaticPtr.h"
 
 
 
@@ -45,185 +27,8 @@ static mozilla::EnvironmentLog gProcessLog("MOZ_PROCESS_LOG");
 
 namespace base {
 
-#if defined(MOZ_ENABLE_FORKSERVER)
-static mozilla::StaticAutoPtr<std::vector<int> > sNoCloseFDs;
-
-void
-RegisterForkServerNoCloseFD(int fd) {
-  if (!sNoCloseFDs) {
-    sNoCloseFDs = new std::vector<int>();
-  }
-  sNoCloseFDs->push_back(fd);
-}
-
-static bool
-IsNoCloseFd(int fd) {
-  if (!sNoCloseFDs) {
-    return false;
-  }
-  return std::any_of(sNoCloseFDs->begin(), sNoCloseFDs->end(),
-                     [fd](int regfd) -> bool { return regfd == fd; });
-}
-
-AppProcessBuilder::AppProcessBuilder() {
-}
-
-static void
-ReplaceEnviroment(const LaunchOptions& options) {
-  for (auto& elt : options.env_map) {
-    setenv(elt.first.c_str(), elt.second.c_str(), 1);
-  }
-}
-
-bool
-AppProcessBuilder::ForkProcess(const std::vector<std::string>& argv,
-                               const LaunchOptions& options, ProcessHandle* process_handle) {
-  argv_ = argv;
-  if (!shuffle_.Init(options.fds_to_remap)) {
-    return false;
-  }
-
-  
-  
-  fflush(stdout);
-  fflush(stderr);
-
-#ifdef OS_LINUX
-  pid_t pid = options.fork_delegate ? options.fork_delegate->Fork() : fork();
-  
-  
-  
-  
-  
-#else
-  pid_t pid = fork();
-#endif
-
-  if (pid < 0) {
-    return false;
-  }
-
-  if (pid == 0) {
-    ReplaceEnviroment(options);
-  } else {
-    gProcessLog.print("==> process %d launched child process %d\n",
-                      GetCurrentProcId(), pid);
-    if (options.wait) HANDLE_EINTR(waitpid(pid, 0, 0));
-  }
-
-  if (process_handle) *process_handle = pid;
-
-  return true;
-}
-
-void
-AppProcessBuilder::ReplaceArguments(int *argcp, char*** argvp) {
-  
-  
-  char** argv = new char*[argv_.size() + 1];
-  char** p = argv;
-  for (auto& elt : argv_) {
-    *p++ = strdup(elt.c_str());
-  }
-  *p = nullptr;
-  *argvp = argv;
-  *argcp = argv_.size();
-}
-
-void
-AppProcessBuilder::InitAppProcess(int *argcp, char*** argvp) {
-  MOZ_ASSERT(MessageLoop::current() == nullptr,
-             "The message loop of the main thread should have been destroyed");
-
-  
-  
-  
-  signal(SIGCHLD, SIG_DFL);
-
-  for (const auto& fds : shuffle_.Dup2Sequence()) {
-    int fd = HANDLE_EINTR(dup2(fds.first, fds.second));
-    MOZ_RELEASE_ASSERT(fd == fds.second, "dup2 failed");
-  }
-
-  CloseSuperfluousFds(&shuffle_, [](void* ctx, int fd) {
-    return static_cast<decltype(&shuffle_)>(ctx)->MapsTo(fd) ||
-      IsNoCloseFd(fd);
-  });
-  
-  
-  
-  shuffle_.Forget();
-
-  ReplaceArguments(argcp, argvp);
-}
-
-static void
-handle_sigchld(int s) {
-  waitpid(-1, nullptr, WNOHANG);
-}
-
-static void
-InstallChildSignalHandler() {
-  
-  
-  
-  signal(SIGCHLD, handle_sigchld);
-}
-
-static void
-ReserveFileDescriptors() {
-  
-  
-  
-  
-  int fd = open("/dev/null", O_RDONLY);
-  for (int i = 1; i < 10; i++) {
-    dup(fd);
-  }
-}
-
-void
-InitForkServerProcess() {
-  InstallChildSignalHandler();
-  ReserveFileDescriptors();
-}
-
-static bool
-LaunchAppWithForkServer(const std::vector<std::string>& argv,
-                      const LaunchOptions& options,
-                      ProcessHandle* process_handle) {
-  MOZ_ASSERT(ForkServiceChild::Get());
-
-  nsTArray<nsCString> _argv(argv.size());
-  nsTArray<mozilla::EnvVar> env(options.env_map.size());
-  nsTArray<mozilla::FdMapping> fdsremap(options.fds_to_remap.size());
-
-  for (auto& arg : argv) {
-    _argv.AppendElement(arg.c_str());
-  }
-  for (auto& vv : options.env_map) {
-    env.AppendElement(mozilla::EnvVar(nsCString(vv.first.c_str()),
-                                      nsCString(vv.second.c_str())));
-  }
-  for (auto& fdmapping : options.fds_to_remap) {
-    fdsremap.AppendElement(mozilla::FdMapping(mozilla::ipc::FileDescriptor(fdmapping.first),
-                                              fdmapping.second));
-  }
-
-  return ForkServiceChild::Get()->SendForkNewSubprocess(_argv, env,
-                                                       fdsremap,
-                                                       process_handle);
-}
-#endif  
-
 bool LaunchApp(const std::vector<std::string>& argv,
                const LaunchOptions& options, ProcessHandle* process_handle) {
-#if defined(MOZ_ENABLE_FORKSERVER)
-  if (options.use_forkserver) {
-    return LaunchAppWithForkServer(argv, options, process_handle);
-  }
-#endif
-
   mozilla::UniquePtr<char*[]> argv_cstr(new char*[argv.size() + 1]);
 
   EnvironmentArray envp = BuildEnvironmentArray(options.env_map);
@@ -248,8 +53,12 @@ bool LaunchApp(const std::vector<std::string>& argv,
   if (pid == 0) {
     
     for (const auto& fds : shuffle.Dup2Sequence()) {
-      int fd = HANDLE_EINTR(dup2(fds.first, fds.second));
-      MOZ_RELEASE_ASSERT(fd == fds.second, "dup2 failed");
+      if (HANDLE_EINTR(dup2(fds.first, fds.second)) != fds.second) {
+        
+        
+        DLOG(ERROR) << "dup2 failed";
+        _exit(127);
+      }
     }
 
     CloseSuperfluousFds(&shuffle, [](void* aCtx, int aFd) {
@@ -261,11 +70,11 @@ bool LaunchApp(const std::vector<std::string>& argv,
     argv_cstr[argv.size()] = NULL;
 
     execve(argv_cstr[0], argv_cstr.get(), envp.get());
-
-    char failed_exec[256];
-    snprintf(failed_exec, sizeof(failed_exec),
-             "FAILED TO exec() CHILD PROCESS, path: %s", argv_cstr[0]);
-    MOZ_CRASH_UNSAFE(failed_exec);
+    
+    
+    
+    DLOG(ERROR) << "FAILED TO exec() CHILD PROCESS, path: " << argv_cstr[0];
+    _exit(127);
   }
 
   

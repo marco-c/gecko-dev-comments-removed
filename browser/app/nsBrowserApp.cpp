@@ -219,10 +219,6 @@ static int do_main(int argc, char* argv[], char* envp[]) {
 }
 
 static nsresult InitXPCOMGlue(LibLoadingStrategy aLibLoadingStrategy) {
-  if (gBootstrap) {
-    return NS_OK;
-  }
-
   UniqueFreePtr<char> exePath = BinaryPath::Get();
   if (!exePath) {
     Output("Couldn't find the application directory.\n");
@@ -247,33 +243,6 @@ uint32_t gBlocklistInitFlags = eDllBlocklistInitFlagDefault;
 #endif
 
 int main(int argc, char* argv[], char* envp[]) {
-#if defined(MOZ_ENABLE_FORKSERVER)
-  if (strcmp(argv[argc - 1], "forkserver") == 0) {
-    nsresult rv = InitXPCOMGlue(LibLoadingStrategy::NoReadAhead);
-    if (NS_FAILED(rv)) {
-      return 255;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if(gBootstrap->XRE_ForkServer(&argc, &argv)) {
-      
-      
-      gBootstrap->NS_LogTerm();
-      return 0;
-    }
-    
-    
-  }
-#endif
-
   mozilla::TimeStamp start = mozilla::TimeStamp::Now();
 
   AUTO_BASE_PROFILER_INIT;

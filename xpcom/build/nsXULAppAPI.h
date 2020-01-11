@@ -509,10 +509,4 @@ XRE_API(void, XRE_LibFuzzerSetDriver, (LibFuzzerDriver))
 
 #endif  
 
-#ifdef MOZ_ENABLE_FORKSERVER
-
-XRE_API(int, XRE_ForkServer, (int* aArgc, char*** aArgv))
-
-#endif 
-
 #endif  

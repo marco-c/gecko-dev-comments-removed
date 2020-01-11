@@ -49,12 +49,6 @@ class FileDescriptorShuffle {
   
   bool MapsTo(int aFd) const;
 
-  
-  
-  void Forget() {
-    mTempFds.Clear();
-  }
-
  private:
   nsTArray<std::pair<int, int>> mMapping;
   nsTArray<int> mTempFds;

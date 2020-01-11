@@ -43,18 +43,6 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/ipc/EnvironmentMap.h"
 
-#if defined(MOZ_ENABLE_FORKSERVER)
-#include "nsString.h"
-#include "mozilla/Tuple.h"
-#include "mozilla/ipc/FileDescriptorShuffle.h"
-
-namespace mozilla {
-namespace ipc {
-class FileDescriptor;
-}
-}
-#endif
-
 #if defined(OS_MACOSX)
 struct kinfo_proc;
 #endif
@@ -127,10 +115,6 @@ struct LaunchOptions {
   file_handle_mapping_vector fds_to_remap;
 #endif
 
-#if defined(MOZ_ENABLE_FORKSERVER)
-  bool use_forkserver = false;
-#endif
-
 #if defined(OS_LINUX)
   struct ForkDelegate {
     virtual ~ForkDelegate() {}
@@ -179,55 +163,6 @@ typedef mozilla::UniquePtr<char*[], FreeEnvVarsArray> EnvironmentArray;
 
 
 EnvironmentArray BuildEnvironmentArray(const environment_map& env_vars_to_set);
-#endif
-
-#if defined(MOZ_ENABLE_FORKSERVER)
-
-
-
-
-
-
-
-
-
-
-
-
-class AppProcessBuilder {
-public:
-  AppProcessBuilder();
-  
-  
-  bool ForkProcess(const std::vector<std::string>& argv,
-                   const LaunchOptions& options, ProcessHandle* process_handle);
-  
-  
-  
-  
-  
-  
-  
-  
-  void InitAppProcess(int *argcp, char*** argvp);
-
-private:
-  void ReplaceArguments(int *argcp, char*** argvp);
-
-  mozilla::ipc::FileDescriptorShuffle shuffle_;
-  std::vector<std::string> argv_;
-};
-
-void InitForkServerProcess();
-
-
-
-
-
-
-
-
-void RegisterForkServerNoCloseFD(int aFd);
 #endif
 
 
@@ -289,11 +224,6 @@ class EnvironmentLog {
 
   DISALLOW_EVIL_CONSTRUCTORS(EnvironmentLog);
 };
-
-#if defined(MOZ_ENABLE_FORKSERVER)
-typedef Tuple<nsCString, nsCString> EnvVar;
-typedef Tuple<mozilla::ipc::FileDescriptor, int> FdMapping;
-#endif
 
 }  
 

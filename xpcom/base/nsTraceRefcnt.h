@@ -28,10 +28,6 @@ class nsTraceRefcnt {
 
 
   static void SetActivityIsLegal(bool aLegal);
-
-#ifdef MOZ_ENABLE_FORKSERVER
-  static void ResetLogFiles();
-#endif
 };
 
 #endif  

@@ -9,7 +9,6 @@
 
 #include "base/process_util.h"
 #include "nsXULAppAPI.h"
-#include <vector>
 
 namespace mozilla {
 
@@ -18,10 +17,6 @@ namespace mozilla {
 
 void SandboxLaunchPrepare(GeckoProcessType aType,
                           base::LaunchOptions* aOptions);
-#if defined(MOZ_ENABLE_FORKSERVER)
-void SandboxLaunchForkServerPrepare(const std::vector<std::string>& aArgv,
-                                    base::LaunchOptions& aOptions);
-#endif
 bool HasAtiDrivers();
 
 }  
