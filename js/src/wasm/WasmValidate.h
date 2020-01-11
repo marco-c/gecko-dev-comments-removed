@@ -244,7 +244,6 @@ struct ModuleEnvironment {
     if (one == two) {
       return true;
     }
-#if defined(ENABLE_WASM_REFTYPES)
     
     if (two.isAnyRef()) {
       return true;
@@ -253,12 +252,11 @@ struct ModuleEnvironment {
     if (one.isNullRef()) {
       return two.isNullable();
     }
-#  if defined(ENABLE_WASM_GC)
+#if defined(ENABLE_WASM_GC)
     
     if (gcTypesEnabled() && isStructType(one) && isStructType(two)) {
       return isStructPrefixOf(two, one);
     }
-#  endif
 #endif
     return false;
   }
