@@ -706,9 +706,6 @@ class OutlineTypedObject : public TypedObject {
   
   void attach(JSContext* cx, TypedObject& typedObj, uint32_t offset);
 
-  
-  void notifyBufferDetached(void* newData);
-
   static void obj_trace(JSTracer* trace, JSObject* object);
 };
 
