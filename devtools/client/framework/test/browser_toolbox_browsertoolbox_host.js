@@ -1,7 +1,7 @@
 
 
 
-const TEST_URL = "data:text/html,test custom host";
+const TEST_URL = "data:text/html,test browsertoolbox host";
 
 add_task(async function() {
   const { Toolbox } = require("devtools/client/framework/toolbox");
@@ -33,7 +33,7 @@ add_task(async function() {
   let toolbox = await gDevTools.showToolbox(
     target,
     null,
-    Toolbox.HostType.CUSTOM,
+    Toolbox.HostType.BROWSERTOOLBOX,
     options
   );
 
