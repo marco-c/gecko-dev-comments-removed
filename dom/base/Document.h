@@ -4276,8 +4276,6 @@ class Document : public nsINode,
   void RemoveContentEditableStyleSheets();
   void AddStyleSheetToStyleSets(StyleSheet* aSheet);
   void RemoveStyleSheetFromStyleSets(StyleSheet* aSheet);
-  void NotifyStyleSheetAdded(StyleSheet&, bool aDocumentSheet);
-  void NotifyStyleSheetRemoved(StyleSheet&, bool aDocumentSheet);
   void NotifyStyleSheetApplicableStateChanged();
   
   
