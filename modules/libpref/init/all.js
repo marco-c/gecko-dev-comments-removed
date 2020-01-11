@@ -4616,9 +4616,6 @@ pref("dom.input.fallbackUploadDir", "");
 
 pref("plugins.rewrite_youtube_embeds", true);
 
-pref("dom.audiochannel.audioCompeting", false);
-pref("dom.audiochannel.audioCompeting.allAgents", false);
-
 
 pref("media.default_volume", "1.0");
 
