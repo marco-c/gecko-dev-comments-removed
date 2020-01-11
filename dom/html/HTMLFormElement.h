@@ -363,6 +363,21 @@ class HTMLFormElement final : public nsGenericHTMLElement,
   MOZ_CAN_RUN_SCRIPT void MaybeSubmit(Element* aSubmitter);
   MOZ_CAN_RUN_SCRIPT void MaybeReset(Element* aSubmitter);
   void Submit(ErrorResult& aRv);
+
+  
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT void RequestSubmit(nsGenericHTMLElement* aSubmitter,
+                                        ErrorResult& aRv);
+
   void Reset();
 
   bool CheckValidity() { return CheckFormValidity(nullptr); }

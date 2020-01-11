@@ -296,6 +296,32 @@ void HTMLFormElement::Submit(ErrorResult& aRv) {
   aRv = DoSubmitOrReset(nullptr, eFormSubmit);
 }
 
+
+void HTMLFormElement::RequestSubmit(nsGenericHTMLElement* aSubmitter,
+                                    ErrorResult& aRv) {
+  
+  if (aSubmitter) {
+    nsCOMPtr<nsIFormControl> fc = do_QueryObject(aSubmitter);
+
+    
+    if (!fc || !fc->IsSubmitControl()) {
+      aRv.ThrowTypeError<MSG_NOT_SUBMIT_BUTTON>();
+      return;
+    }
+
+    
+    
+    if (fc->GetFormElement() != this) {
+      aRv.Throw(NS_ERROR_DOM_NOT_FOUND_ERR);
+      return;
+    }
+  }
+
+  
+  
+  MaybeSubmit(aSubmitter);
+}
+
 void HTMLFormElement::Reset() {
   InternalFormEvent event(true, eFormReset);
   EventDispatcher::Dispatch(static_cast<nsIContent*>(this), nullptr, &event);
