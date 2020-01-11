@@ -8478,6 +8478,10 @@ bool IonBuilder::needsPostBarrier(MDefinition* value) {
       zone->canNurseryAllocateStrings()) {
     return true;
   }
+  if (value->mightBeType(MIRType::BigInt) &&
+      zone->canNurseryAllocateBigInts()) {
+    return true;
+  }
   return false;
 }
 
@@ -14180,12 +14184,12 @@ AbortReasonOr<Ok> IonBuilder::setPropTryReferenceTypedObjectValue(
   return resumeAfter(store);
 }
 
-JSObject* IonBuilder::checkNurseryObject(JSObject* obj) {
+void IonBuilder::checkNurseryCell(gc::Cell* cell) {
   
   
   
   
-  if (obj && IsInsideNursery(obj)) {
+  if (cell && IsInsideNursery(cell)) {
     realm->zone()->setMinorGCShouldCancelIonCompilations();
     IonBuilder* builder = this;
     while (builder) {
@@ -14193,7 +14197,10 @@ JSObject* IonBuilder::checkNurseryObject(JSObject* obj) {
       builder = builder->callerBuilder_;
     }
   }
+}
 
+JSObject* IonBuilder::checkNurseryObject(JSObject* obj) {
+  checkNurseryCell(obj);
   return obj;
 }
 
@@ -14201,8 +14208,8 @@ MConstant* IonBuilder::constant(const Value& v) {
   MOZ_ASSERT(!v.isString() || v.toString()->isAtom(),
              "Handle non-atomized strings outside IonBuilder.");
 
-  if (v.isObject()) {
-    checkNurseryObject(&v.toObject());
+  if (v.isGCThing()) {
+    checkNurseryCell(v.toGCThing());
   }
 
   MConstant* c = MConstant::New(alloc(), v, constraints());

@@ -2785,6 +2785,17 @@ void LIRGenerator::visitPostWriteBarrier(MPostWriteBarrier* ins) {
       assignSafepoint(lir, ins);
       break;
     }
+    case MIRType::BigInt: {
+      LDefinition tmp =
+          needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
+      auto* lir = new (alloc())
+          LPostWriteBarrierBI(useConstantObject ? useOrConstant(ins->object())
+                                                : useRegister(ins->object()),
+                              useRegister(ins->value()), tmp);
+      add(lir, ins);
+      assignSafepoint(lir, ins);
+      break;
+    }
     case MIRType::Value: {
       LDefinition tmp =
           needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
@@ -2832,6 +2843,17 @@ void LIRGenerator::visitPostWriteElementBarrier(MPostWriteElementBarrier* ins) {
       LDefinition tmp =
           needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
       LPostWriteElementBarrierS* lir = new (alloc()) LPostWriteElementBarrierS(
+          useConstantObject ? useOrConstant(ins->object())
+                            : useRegister(ins->object()),
+          useRegister(ins->value()), useRegister(ins->index()), tmp);
+      add(lir, ins);
+      assignSafepoint(lir, ins);
+      break;
+    }
+    case MIRType::BigInt: {
+      LDefinition tmp =
+          needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
+      auto* lir = new (alloc()) LPostWriteElementBarrierBI(
           useConstantObject ? useOrConstant(ins->object())
                             : useRegister(ins->object()),
           useRegister(ins->value()), useRegister(ins->index()), tmp);

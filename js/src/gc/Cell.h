@@ -129,6 +129,10 @@ struct alignas(gc::CellAlignBytes) Cell {
   
   static constexpr uintptr_t JSSTRING_BIT = Bit(1);
 
+  
+  
+  static constexpr uintptr_t BIGINT_BIT = Bit(2);
+
   MOZ_ALWAYS_INLINE bool isTenured() const { return !IsInsideNursery(this); }
   MOZ_ALWAYS_INLINE const TenuredCell& asTenured() const;
   MOZ_ALWAYS_INLINE TenuredCell& asTenured();
@@ -171,6 +175,12 @@ struct alignas(gc::CellAlignBytes) Cell {
     MOZ_ASSERT(!isTenured());
     uintptr_t firstWord = *reinterpret_cast<const uintptr_t*>(this);
     return firstWord & JSSTRING_BIT;
+  }
+
+  inline bool nurseryCellIsBigInt() const {
+    MOZ_ASSERT(!isTenured());
+    uintptr_t firstWord = *reinterpret_cast<const uintptr_t*>(this);
+    return firstWord & BIGINT_BIT;
   }
 
   template <class T>
@@ -357,6 +367,11 @@ inline JS::TraceKind Cell::getTraceKind() const {
     MOZ_ASSERT_IF(isForwarded(), UninlinedForwarded(this)->getTraceKind() ==
                                      JS::TraceKind::String);
     return JS::TraceKind::String;
+  }
+  if (nurseryCellIsBigInt()) {
+    MOZ_ASSERT_IF(isForwarded(), UninlinedForwarded(this)->getTraceKind() ==
+                                     JS::TraceKind::BigInt);
+    return JS::TraceKind::BigInt;
   }
   MOZ_ASSERT_IF(isForwarded(), UninlinedForwarded(this)->getTraceKind() ==
                                    JS::TraceKind::Object);
