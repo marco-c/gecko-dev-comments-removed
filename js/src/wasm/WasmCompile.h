@@ -58,6 +58,7 @@ struct CompileArgs : ShareableBase<CompileArgs> {
   bool forceTiering;
   bool gcEnabled;
   bool hugeMemory;
+  bool bigIntEnabled;
 
   
   
@@ -80,7 +81,8 @@ struct CompileArgs : ShareableBase<CompileArgs> {
         sharedMemoryEnabled(false),
         forceTiering(false),
         gcEnabled(false),
-        hugeMemory(false) {}
+        hugeMemory(false),
+        bigIntEnabled(false) {}
 };
 
 

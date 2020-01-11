@@ -355,6 +355,9 @@ struct Metadata : public ShareableBase<Metadata>, public MetadataCacheablePod {
   FuncReturnTypesVector debugFuncReturnTypes;
   ModuleHash debugHash;
 
+  
+  bool bigIntEnabled;
+
   explicit Metadata(ModuleKind kind = ModuleKind::Wasm)
       : MetadataCacheablePod(kind), debugEnabled(false), debugHash() {}
   virtual ~Metadata() {}

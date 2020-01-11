@@ -76,6 +76,11 @@ bool HasMultiValueSupport(JSContext* cx);
 
 
 
+bool HasI64BigIntSupport(JSContext* cx);
+
+
+
+
 MOZ_MUST_USE bool Eval(JSContext* cx, Handle<TypedArrayObject*> code,
                        HandleObject importObj,
                        MutableHandleWasmInstanceObject instanceObj);

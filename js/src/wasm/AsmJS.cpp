@@ -1352,7 +1352,8 @@ class MOZ_STACK_CLASS JS_HAZ_ROOTED ModuleValidatorShared {
         arrayViews_(cx),
         compilerEnv_(CompileMode::Once, Tier::Optimized, OptimizedBackend::Ion,
                      DebugEnabled::False,  false,
-                      false,  false),
+                      false,  false,
+                      false),
         env_(&compilerEnv_, Shareable::False, ModuleKind::AsmJS) {
     compilerEnv_.computeParameters( false);
     env_.minMemoryLength = RoundUpToNextValidAsmJSHeapLength(0);
