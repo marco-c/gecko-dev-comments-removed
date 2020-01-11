@@ -1,6 +1,7 @@
 
 
- requestLongerTimeout(2);
+
+requestLongerTimeout(2);
 
 
 
@@ -12,31 +13,31 @@ add_task(async function() {
   
   
   await waitForPaused(dbg);
-  await resume(dbg);
 
+  info("resume and wait for fib.c");
+  await resume(dbg);
   await waitForSources(dbg, "doc-wasm-sourcemaps.html", "fib.c");
 
-  
+  info("Set breakpoint and reload the page.");
   ok(true, "Original sources exist");
   await selectSource(dbg, "fib.c");
   await addBreakpoint(dbg, "fib.c", 10);
+
+  info("reload.");
   reload(dbg);
 
   
   
   await waitForPaused(dbg);
   await selectSource(dbg, "fib.c");
-  resume(dbg);
 
+  info("resume");
+  resume(dbg);
   await waitForPaused(dbg, "fib.c");
 
   const frames = findAllElements(dbg, "frames");
   const firstFrameTitle = frames[0].querySelector(".title").textContent;
   is(firstFrameTitle, "(wasmcall)", "It shall be a wasm call");
   const firstFrameLocation = frames[0].querySelector(".location").textContent;
-  is(
-    firstFrameLocation.includes("fib.c"),
-    true,
-    "It shall be fib.c source"
-  );
+  is(firstFrameLocation.includes("fib.c"), true, "It shall be fib.c source");
 });
