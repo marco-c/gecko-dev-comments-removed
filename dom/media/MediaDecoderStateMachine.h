@@ -269,9 +269,6 @@ class MediaDecoderStateMachine
 
   RefPtr<GenericPromise> InvokeSetSink(RefPtr<AudioDeviceInfo> aSink);
 
-  void SetSecondaryVideoContainer(
-      const RefPtr<VideoFrameContainer>& aSecondary);
-
  private:
   class StateObject;
   class DecodeMetadataState;
@@ -375,6 +372,7 @@ class MediaDecoderStateMachine
   void SetPlaybackRate(double aPlaybackRate);
   void PreservesPitchChanged();
   void LoopingChanged();
+  void UpdateSecondaryVideoContainer();
   void UpdateOutputCaptured();
   void OutputTracksChanged();
   void OutputPrincipalChanged();
@@ -707,6 +705,10 @@ class MediaDecoderStateMachine
   
   
   Mirror<RefPtr<AudioDeviceInfo>> mSinkDevice;
+
+  
+  
+  Mirror<RefPtr<VideoFrameContainer>> mSecondaryVideoContainer;
 
   
   
