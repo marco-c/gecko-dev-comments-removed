@@ -9775,7 +9775,6 @@ void nsHttpChannel::SetOriginHeader() {
   nsContentUtils::GetASCIIOrigin(referrer, origin);
 
   
-  
   if (sSendOriginHeader == 1) {
     nsAutoCString currentOrigin;
     nsContentUtils::GetASCIIOrigin(mURI, currentOrigin);
