@@ -650,20 +650,19 @@ add_task(async function testDefaultTheme() {
   let card = getAddonCard(doc, DEFAULT_THEME_ID);
   ok(!card.hasAttribute("expanded"), "The list card is not expanded");
 
-  
   let preview = card.querySelector(".card-heading-image");
   ok(preview, "There is a preview");
-  is(preview.hidden, true, "The preview is hidden");
+  ok(!preview.hidden, "The preview is visible");
+
   let loaded = waitForViewLoad(win);
   card.querySelector('[action="expand"]').click();
   await loaded;
 
   card = getAddonCard(doc, DEFAULT_THEME_ID);
 
-  
   preview = card.querySelector(".card-heading-image");
   ok(preview, "There is a preview");
-  is(preview.hidden, true, "The preview is hidden");
+  ok(!preview.hidden, "The preview is visible");
 
   
   assertDeckHeadingHidden(card.details.tabGroup);
