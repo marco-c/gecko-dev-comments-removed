@@ -90,10 +90,16 @@
 }
 
 
-#PopupAutoComplete > richlistbox > richlistitem[originaltype="generatedPassword"],
-#PopupAutoComplete > richlistbox > richlistitem[originaltype="loginWithOrigin"] {
+#PopupAutoComplete > richlistbox > richlistitem[originaltype="generatedPassword"] > .two-line-wrapper,
+#PopupAutoComplete > richlistbox > richlistitem[originaltype="loginWithOrigin"] > .two-line-wrapper {
   padding: 4px;
 }
+
+#PopupAutoComplete > richlistbox > richlistitem[originaltype="generatedPassword"] {
+  
+  display: block;
+}
+
 
 #PopupAutoComplete > richlistbox > richlistitem[originaltype="generatedPassword"] > .two-line-wrapper > .labels-wrapper > .line2-label {
   font-family: monospace;
@@ -102,6 +108,7 @@
 #PopupAutoComplete > richlistbox > richlistitem[originaltype="generatedPassword"] > .two-line-wrapper > .labels-wrapper > .generated-password-autosave {
   font-style: italic;
   font-size: 0.85em;
+  white-space: normal;
 }
 
 #PopupAutoComplete > richlistbox > richlistitem[originaltype="login"] + richlistitem[originaltype="generatedPassword"],
