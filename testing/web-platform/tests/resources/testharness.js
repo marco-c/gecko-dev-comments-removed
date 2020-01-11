@@ -792,8 +792,14 @@
 
     function done() {
         if (tests.tests.length === 0) {
-            tests.status.status = tests.status.ERROR;
-            tests.status.message = "done() was called without first defining any tests";
+            
+            
+            
+            if (tests.status.status === null) {
+                tests.status.status = tests.status.ERROR;
+                tests.status.message = "done() was called without first defining any tests";
+            }
+
             tests.complete();
             return;
         }
