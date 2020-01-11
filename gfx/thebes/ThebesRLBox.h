@@ -11,9 +11,13 @@
 
 #include "mozilla/rlbox/rlbox_config.h"
 
+#ifdef MOZ_WASM_SANDBOXING_GRAPHITE
+#  include "mozilla/rlbox/rlbox_lucet_sandbox.hpp"
+#else
 
-#define RLBOX_USE_STATIC_CALLS() rlbox_noop_sandbox_lookup_symbol
-#include "mozilla/rlbox/rlbox_noop_sandbox.hpp"
+#  define RLBOX_USE_STATIC_CALLS() rlbox_noop_sandbox_lookup_symbol
+#  include "mozilla/rlbox/rlbox_noop_sandbox.hpp"
+#endif
 
 #include "mozilla/rlbox/rlbox.hpp"
 
