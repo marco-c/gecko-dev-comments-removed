@@ -150,7 +150,8 @@ class TimedRunner(object):
 
         
         
-        finished = self.result_flag.wait(self.timeout + 2 * self.extra_timeout)
+        timeout = self.timeout + 2 * self.extra_timeout if self.timeout else None
+        finished = self.result_flag.wait(timeout)
         if self.result is None:
             if finished:
                 
