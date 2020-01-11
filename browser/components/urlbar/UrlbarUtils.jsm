@@ -545,6 +545,10 @@ class UrlbarQueryContext {
 
 
 
+
+
+
+
   constructor(options = {}) {
     this._checkRequiredOptions(options, [
       "allowAutofill",
@@ -559,18 +563,18 @@ class UrlbarQueryContext {
       );
     }
 
-    if (options.providers) {
-      if (!Array.isArray(options.providers) || !options.providers.length) {
-        throw new Error(`Invalid providers list`);
+    
+    for (let [prop, checkFn] of [
+      ["providers", v => Array.isArray(v) && v.length],
+      ["sources", v => Array.isArray(v) && v.length],
+      ["engineName", v => typeof v == "string" && !!v.length],
+    ]) {
+      if (options[prop]) {
+        if (!checkFn(options[prop])) {
+          throw new Error(`Invalid value for option "${prop}"`);
+        }
+        this[prop] = options[prop];
       }
-      this.providers = options.providers;
-    }
-
-    if (options.sources) {
-      if (!Array.isArray(options.sources) || !options.sources.length) {
-        throw new Error(`Invalid sources list`);
-      }
-      this.sources = options.sources;
     }
 
     this.lastResultCount = 0;

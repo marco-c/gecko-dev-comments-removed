@@ -741,9 +741,31 @@ function Search(
     this._searchTokens = tokens;
     this._behavior = 0;
     this.setBehavior("restrict");
-    this.setBehavior(sourceToBehaviorMap.get(queryContext.restrictSource));
+    let behavior = sourceToBehaviorMap.get(queryContext.restrictSource);
+    this.setBehavior(behavior);
+    if (behavior == "search" && queryContext.engineName) {
+      this._engineName = queryContext.engineName;
+    }
+    if (behavior != "search") {
+      prohibitSearchSuggestions = true;
+    }
+    
+    
+    this._heuristicToken = null;
   } else {
     this._searchTokens = this.filterTokens(tokens);
+    
+    
+    
+    
+    
+    
+    
+    let firstToken = !!this._searchTokens.length && this._searchTokens[0].value;
+    this._heuristicToken =
+      firstToken && this._trimmedOriginalSearchString.startsWith(firstToken)
+        ? firstToken
+        : null;
   }
 
   
@@ -752,19 +774,6 @@ function Search(
   if (!UrlbarPrefs.get("filter.javascript")) {
     this.setBehavior("javascript");
   }
-
-  
-  
-  
-  
-  
-  
-  
-  let firstToken = !!this._searchTokens.length && this._searchTokens[0].value;
-  this._heuristicToken =
-    firstToken && this._trimmedOriginalSearchString.startsWith(firstToken)
-      ? firstToken
-      : null;
 
   this._keywordSubstitute = null;
 
@@ -983,11 +992,15 @@ Search.prototype = {
       }
     };
 
-    
-    
-    await PlacesSearchAutocompleteProvider.ensureInitialized();
-    if (!this.pending) {
-      return;
+    if (UrlbarPrefs.get("restyleSearches")) {
+      
+      
+      
+      
+      await PlacesSearchAutocompleteProvider.ensureInitialized();
+      if (!this.pending) {
+        return;
+      }
     }
 
     
@@ -1111,10 +1124,12 @@ Search.prototype = {
           if (this._searchEngineAliasMatch) {
             engine = this._searchEngineAliasMatch.engine;
           } else {
-            engine = await PlacesSearchAutocompleteProvider.currentEngine(
-              this._inPrivateWindow
-            );
-            if (!this.pending) {
+            engine = this._engineName
+              ? Services.search.getEngineByName(this._engineName)
+              : await PlacesSearchAutocompleteProvider.currentEngine(
+                  this._inPrivateWindow
+                );
+            if (!this.pending || !engine) {
               return;
             }
           }
@@ -1421,27 +1436,27 @@ Search.prototype = {
     
     
 
-    let hasSearchTerms = !!this._searchTokens.length;
-
-    if (hasSearchTerms) {
+    if (this._heuristicToken) {
       
-      let matched = await this._matchExtensionHeuristicResult();
+      let matched = await this._matchExtensionHeuristicResult(
+        this._heuristicToken
+      );
       if (matched) {
         return true;
       }
     }
 
-    if (this._enableActions && hasSearchTerms) {
+    if (this.pending && this._enableActions && this._heuristicToken) {
       
-      let matched = await this._matchSearchEngineAlias();
+      let matched = await this._matchSearchEngineAlias(this._heuristicToken);
       if (matched) {
         return true;
       }
     }
 
-    if (this.pending && hasSearchTerms) {
+    if (this.pending && this._heuristicToken) {
       
-      let matched = await this._matchPlacesKeyword();
+      let matched = await this._matchPlacesKeyword(this._heuristicToken);
       if (matched) {
         return true;
       }
@@ -1487,7 +1502,7 @@ Search.prototype = {
       }
     }
 
-    if (this.pending && hasSearchTerms && this._enableActions) {
+    if (this.pending && this._searchTokens.length && this._enableActions) {
       
       
 
@@ -1649,26 +1664,19 @@ Search.prototype = {
     return gotResult;
   },
 
-  _matchExtensionHeuristicResult() {
+  _matchExtensionHeuristicResult(keyword) {
     if (
-      this._heuristicToken &&
-      ExtensionSearchHandler.isKeywordRegistered(this._heuristicToken) &&
-      substringAfter(this._originalSearchString, this._heuristicToken)
+      ExtensionSearchHandler.isKeywordRegistered(keyword) &&
+      substringAfter(this._originalSearchString, keyword)
     ) {
-      let description = ExtensionSearchHandler.getDescription(
-        this._heuristicToken
-      );
+      let description = ExtensionSearchHandler.getDescription(keyword);
       this._addExtensionMatch(this._originalSearchString, description);
       return true;
     }
     return false;
   },
 
-  async _matchPlacesKeyword() {
-    if (!this._heuristicToken) {
-      return false;
-    }
-    let keyword = this._heuristicToken;
+  async _matchPlacesKeyword(keyword) {
     let entry = await PlacesUtils.keywords.fetch(keyword);
     if (!entry) {
       return false;
@@ -1789,12 +1797,7 @@ Search.prototype = {
     return true;
   },
 
-  async _matchSearchEngineAlias() {
-    if (!this._heuristicToken) {
-      return false;
-    }
-
-    let alias = this._heuristicToken;
+  async _matchSearchEngineAlias(alias) {
     let engine = await PlacesSearchAutocompleteProvider.engineForAlias(alias);
     if (!engine) {
       return false;
@@ -1814,9 +1817,11 @@ Search.prototype = {
   },
 
   async _matchCurrentSearchEngine() {
-    let engine = await PlacesSearchAutocompleteProvider.currentEngine(
-      this._inPrivateWindow
-    );
+    let engine = this._engineName
+      ? Services.search.getEngineByName(this._engineName)
+      : await PlacesSearchAutocompleteProvider.currentEngine(
+          this._inPrivateWindow
+        );
     if (!engine || !this.pending) {
       return false;
     }
