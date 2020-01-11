@@ -706,6 +706,7 @@ this.ASRouterTargeting = {
 
 
 
+
   async findMatchingMessage({
     messages,
     trigger,
@@ -713,56 +714,32 @@ this.ASRouterTargeting = {
     onError,
     ordered = false,
     shouldCache = false,
+    returnAll = false,
   }) {
     const sortedMessages = getSortedMessages(messages, { ordered });
     const combinedContext = this._getCombinedContext(trigger, context);
+    const matching = returnAll ? [] : null;
+
+    const isMatch = candidate =>
+      this._isMessageMatch(
+        candidate,
+        trigger,
+        combinedContext,
+        onError,
+        shouldCache
+      );
 
     for (const candidate of sortedMessages) {
-      if (
-        await this._isMessageMatch(
-          candidate,
-          trigger,
-          combinedContext,
-          onError,
-          shouldCache
-        )
-      ) {
-        return candidate;
+      if (await isMatch(candidate)) {
+        
+        if (!returnAll) {
+          return candidate;
+        }
+
+        matching.push(candidate);
       }
     }
-    return null;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-  async findAllMatchingMessages({
-    messages,
-    trigger,
-    context,
-    onError,
-    ordered = false,
-  }) {
-    const sortedMessages = getSortedMessages(messages, { ordered });
-    const combinedContext = this._getCombinedContext(trigger, context);
-    const matchingMessages = [];
-
-    for (const candidate of sortedMessages) {
-      if (
-        await this._isMessageMatch(candidate, trigger, combinedContext, onError)
-      ) {
-        matchingMessages.push(candidate);
-      }
-    }
-    return matchingMessages;
+    return matching;
   },
 };
 
