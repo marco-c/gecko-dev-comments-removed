@@ -1636,6 +1636,12 @@ class BaseScript : public gc::TenuredCell {
   
   
   
+  PrivateScriptData* data_ = nullptr;
+
+  
+  
+  
+  
   
   
   
@@ -2085,6 +2091,28 @@ setterLevel:                                                                  \
     }
   }
 
+  mozilla::Span<const JS::GCCellPtr> gcthings() const {
+    return data_ ? data_->gcthings() : mozilla::Span<JS::GCCellPtr>();
+  }
+
+  void setFieldInitializers(FieldInitializers fieldInitializers) {
+    MOZ_ASSERT(data_);
+    data_->setFieldInitializers(fieldInitializers);
+  }
+
+  const FieldInitializers& getFieldInitializers() const {
+    MOZ_ASSERT(data_);
+    return data_->getFieldInitializers();
+  }
+
+ protected:
+  void finalize(JSFreeOp* fop);
+
+ public:
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) {
+    return mallocSizeOf(data_);
+  }
+
   
   static constexpr size_t offsetOfJitCodeRaw() {
     return offsetof(BaseScript, jitCodeRaw_);
@@ -2512,9 +2540,6 @@ class JSScript : public js::BaseScript {
   
   RefPtr<js::RuntimeScriptData> scriptData_ = {};
 
-  
-  js::PrivateScriptData* data_ = nullptr;
-
  private:
   
   js::LazyScript* lazyScript = nullptr;
@@ -2776,16 +2801,6 @@ class JSScript : public js::BaseScript {
   static void argumentsOptimizationFailed(JSContext* cx,
                                           js::HandleScript script);
 
-  void setFieldInitializers(js::FieldInitializers fieldInitializers) {
-    MOZ_ASSERT(data_);
-    data_->setFieldInitializers(fieldInitializers);
-  }
-
-  const js::FieldInitializers& getFieldInitializers() const {
-    MOZ_ASSERT(data_);
-    return data_->getFieldInitializers();
-  }
-
   
 
 
@@ -3033,17 +3048,11 @@ class JSScript : public js::BaseScript {
 
 
 
-
-  size_t computedSizeOfData() const;
   size_t sizeOfData(mozilla::MallocSizeOf mallocSizeOf) const;
 
   void addSizeOfJitScript(mozilla::MallocSizeOf mallocSizeOf,
                           size_t* sizeOfJitScript,
                           size_t* sizeOfBaselineFallbackStubs) const;
-
-  mozilla::Span<const JS::GCCellPtr> gcthings() const {
-    return data_->gcthings();
-  }
 
   mozilla::Span<const JSTryNote> trynotes() const {
     return immutableScriptData()->tryNotes();
@@ -3310,10 +3319,6 @@ class LazyScript : public BaseScript {
   
   
 
-  
-  
-  PrivateScriptData* data_ = nullptr;
-
   static const uint32_t NumClosedOverBindingsBits = 20;
   static const uint32_t NumInnerFunctionsBits = 20;
 
@@ -3406,10 +3411,6 @@ class LazyScript : public BaseScript {
     return enclosingScope()->hasOnChain(ScopeKind::NonSyntactic);
   }
 
-  mozilla::Span<JS::GCCellPtr> gcthings() {
-    return data_ ? data_->gcthings() : mozilla::Span<JS::GCCellPtr>();
-  }
-
   frontend::ParseGoal parseGoal() const {
     if (hasFlag(ImmutableFlags::IsModule)) {
       return frontend::ParseGoal::Module;
@@ -3424,16 +3425,6 @@ class LazyScript : public BaseScript {
   }
   void setWrappedByDebugger() { setFlag(MutableFlags::WrappedByDebugger); }
 
-  void setFieldInitializers(FieldInitializers fieldInitializers) {
-    MOZ_ASSERT(data_);
-    data_->setFieldInitializers(fieldInitializers);
-  }
-
-  const FieldInitializers& getFieldInitializers() const {
-    MOZ_ASSERT(data_);
-    return data_->getFieldInitializers();
-  }
-
   
   
   
@@ -3446,13 +3437,9 @@ class LazyScript : public BaseScript {
 
   friend class GCMarker;
   void traceChildren(JSTracer* trc);
-  void finalize(JSFreeOp* fop);
+  void finalize(JSFreeOp* fop) { BaseScript::finalize(fop); }
 
   static const JS::TraceKind TraceKind = JS::TraceKind::LazyScript;
-
-  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) {
-    return mallocSizeOf(data_);
-  }
 };
 
 
