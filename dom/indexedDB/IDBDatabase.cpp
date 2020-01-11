@@ -374,7 +374,7 @@ already_AddRefed<IDBObjectStore> IDBDatabase::CreateObjectStore(
     return nullptr;
   }
 
-  if (!transaction->IsOpen()) {
+  if (!transaction->CanAcceptRequests()) {
     aRv.Throw(NS_ERROR_DOM_INDEXEDDB_TRANSACTION_INACTIVE_ERR);
     return nullptr;
   }
@@ -447,7 +447,7 @@ void IDBDatabase::DeleteObjectStore(const nsAString& aName, ErrorResult& aRv) {
     return;
   }
 
-  if (!transaction->IsOpen()) {
+  if (!transaction->CanAcceptRequests()) {
     aRv.Throw(NS_ERROR_DOM_INDEXEDDB_TRANSACTION_INACTIVE_ERR);
     return;
   }
@@ -740,7 +740,7 @@ void IDBDatabase::AbortTransactions(bool aShouldWarn) {
         
         
         
-        if (!transaction->IsDone()) {
+        if (!transaction->IsFinished()) {
           transactionsToAbort.AppendElement(transaction);
         }
       }
@@ -761,7 +761,7 @@ void IDBDatabase::AbortTransactions(bool aShouldWarn) {
 
       for (RefPtr<IDBTransaction>& transaction : transactionsToAbort) {
         MOZ_ASSERT(transaction);
-        MOZ_ASSERT(!transaction->IsDone());
+        MOZ_ASSERT(!transaction->IsFinished());
 
         
         

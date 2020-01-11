@@ -689,13 +689,14 @@ void DispatchErrorEvent(IDBRequest* aRequest, nsresult aErrorCode,
     return;
   }
 
-  MOZ_ASSERT(!transaction || transaction->IsOpen() || transaction->IsAborted());
+  MOZ_ASSERT(!transaction || transaction->CanAcceptRequests() ||
+             transaction->IsAborted());
 
   
   
   
   
-  if (transaction && transaction->IsOpen() &&
+  if (transaction && transaction->CanAcceptRequests() &&
       aErrorCode != NS_ERROR_DOM_INDEXEDDB_ABORT_ERR) {
     WidgetEvent* const internalEvent = aEvent->WidgetEventPtr();
     MOZ_ASSERT(internalEvent);
@@ -738,7 +739,7 @@ void DispatchSuccessEvent(ResultHelper* aResultHelper,
   request->SetResultCallback(aResultHelper);
 
   MOZ_ASSERT(aEvent);
-  MOZ_ASSERT_IF(transaction, transaction->IsOpen());
+  MOZ_ASSERT_IF(transaction, transaction->CanAcceptRequests());
 
   if (transaction) {
     IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
@@ -752,7 +753,7 @@ void DispatchSuccessEvent(ResultHelper* aResultHelper,
   }
 
   MOZ_ASSERT_IF(transaction,
-                transaction->IsOpen() && !transaction->IsAborted());
+                transaction->CanAcceptRequests() && !transaction->IsAborted());
 
   IgnoredErrorResult rv;
   request->DispatchEvent(*aEvent, rv);
@@ -763,7 +764,7 @@ void DispatchSuccessEvent(ResultHelper* aResultHelper,
   WidgetEvent* const internalEvent = aEvent->WidgetEventPtr();
   MOZ_ASSERT(internalEvent);
 
-  if (transaction && transaction->IsOpen()) {
+  if (transaction && transaction->CanAcceptRequests()) {
     if (internalEvent->mFlags.mExceptionWasRaised) {
       transaction->Abort(NS_ERROR_DOM_INDEXEDDB_ABORT_ERR);
     } else {
