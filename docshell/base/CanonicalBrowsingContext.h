@@ -81,6 +81,12 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   
   
+  static uint32_t CountSiteOrigins(
+      GlobalObject& aGlobal,
+      const Sequence<mozilla::OwningNonNull<BrowsingContext>>& aRoots);
+
+  
+  
   void UpdateMediaAction(MediaControlActions aAction);
 
   
