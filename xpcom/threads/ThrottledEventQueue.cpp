@@ -100,7 +100,7 @@ class ThrottledEventQueue::Inner final : public nsISupports {
   
   
   
-  EventQueue mEventQueue;
+  EventQueueSized<64> mEventQueue;
 
   
   

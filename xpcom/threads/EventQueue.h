@@ -15,12 +15,15 @@ class nsIRunnable;
 
 namespace mozilla {
 
-class EventQueue final : public AbstractEventQueue {
+namespace detail {
+
+template <size_t ItemsPerPage>
+class EventQueueInternal : public AbstractEventQueue {
  public:
   static const bool SupportsPrioritization = false;
 
-  EventQueue() {}
-  explicit EventQueue(EventQueuePriority aPriority);
+  EventQueueInternal() {}
+  explicit EventQueueInternal(EventQueuePriority aPriority);
 
   void PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
                 EventQueuePriority aPriority, const MutexAutoLock& aProofOfLock,
@@ -38,7 +41,15 @@ class EventQueue final : public AbstractEventQueue {
   }
 
   size_t Count(const MutexAutoLock& aProofOfLock) const final;
-  already_AddRefed<nsIRunnable> PeekEvent(const MutexAutoLock& aProofOfLock);
+  
+  already_AddRefed<nsIRunnable> PeekEvent(const MutexAutoLock& aProofOfLock) {
+    if (mQueue.IsEmpty()) {
+      return nullptr;
+    }
+
+    nsCOMPtr<nsIRunnable> result = mQueue.FirstElement();
+    return result.forget();
+  }
 
   void EnableInputEventPrioritization(const MutexAutoLock& aProofOfLock) final {
   }
@@ -58,12 +69,30 @@ class EventQueue final : public AbstractEventQueue {
   }
 
  private:
-  mozilla::Queue<nsCOMPtr<nsIRunnable>, 16> mQueue;
+  mozilla::Queue<nsCOMPtr<nsIRunnable>, ItemsPerPage> mQueue;
 #ifdef MOZ_GECKO_PROFILER
   
-  mozilla::Queue<mozilla::TimeStamp, 16> mDispatchTimes;
+  mozilla::Queue<mozilla::TimeStamp, ItemsPerPage> mDispatchTimes;
   TimeDuration mLastEventDelay;
 #endif
+};
+
+}  
+
+class EventQueue final : public mozilla::detail::EventQueueInternal<16> {
+ public:
+  EventQueue() : mozilla::detail::EventQueueInternal<16>() {}
+  explicit EventQueue(EventQueuePriority aPriority)
+      : mozilla::detail::EventQueueInternal<16>(aPriority){};
+};
+
+template <size_t ItemsPerPage = 16>
+class EventQueueSized final
+    : public mozilla::detail::EventQueueInternal<ItemsPerPage> {
+ public:
+  EventQueueSized() : mozilla::detail::EventQueueInternal<ItemsPerPage>() {}
+  explicit EventQueueSized(EventQueuePriority aPriority)
+      : mozilla::detail::EventQueueInternal<ItemsPerPage>(aPriority){};
 };
 
 }  
