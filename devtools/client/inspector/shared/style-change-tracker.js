@@ -23,37 +23,40 @@ class InspectorStyleChangeTracker {
 
     this.onMutations = this.onMutations.bind(this);
     this.onResized = this.onResized.bind(this);
+    this.onTargetAvailable = this.onTargetAvailable.bind(this);
+    this.onTargetDestroyed = this.onTargetDestroyed.bind(this);
 
     this.init();
 
     EventEmitter.decorate(this);
   }
 
-  async init() {
-    try {
-      
-      
-      this.inspectorFronts = await this.inspector.getAllInspectorFronts();
-    } catch (e) {
-      
-      
-      return;
-    }
-
-    for (const { walker } of this.inspectorFronts) {
-      walker.on("mutations", this.onMutations);
-      walker.on("resize", this.onResized);
-    }
+  init() {
+    this.inspector.toolbox.targetList.watchTargets(
+      [this.inspector.toolbox.targetList.TYPES.FRAME],
+      this.onTargetAvailable,
+      this.onTargetDestroyed
+    );
   }
 
   destroy() {
-    for (const { walker } of this.inspectorFronts) {
-      walker.off("mutations", this.onMutations);
-      walker.off("resize", this.onResized);
+    this.inspector.toolbox.targetList.unwatchTargets(
+      [this.inspector.toolbox.targetList.TYPES.FRAME],
+      this.onTargetAvailable,
+      this.onTargetDestroyed
+    );
+
+    const targets = this.inspector.toolbox.targetList.getAllTargets(
+      this.inspector.toolbox.targetList.TYPES.FRAME
+    );
+    for (const target of targets) {
+      this.onTargetDestroyed(
+        this.inspector.toolbox.targetList.TYPES.FRAME,
+        target
+      );
     }
 
     this.inspector = null;
-    this.inspectorFronts = null;
     this.selection = null;
   }
 
@@ -63,7 +66,10 @@ class InspectorStyleChangeTracker {
 
 
   onMutations(mutations) {
-    const canMutationImpactCurrentStyles = ({ type, target }) => {
+    const canMutationImpactCurrentStyles = ({
+      type,
+      target: mutationTarget,
+    }) => {
       
       if (type !== "attributes") {
         return false;
@@ -71,7 +77,7 @@ class InspectorStyleChangeTracker {
 
       
       const currentNode = this.selection.nodeFront;
-      if (target === currentNode) {
+      if (mutationTarget === currentNode) {
         return true;
       }
 
@@ -81,13 +87,13 @@ class InspectorStyleChangeTracker {
       
       let parent = currentNode.parentNode();
       const siblings = parent.treeChildren();
-      if (siblings.includes(target)) {
+      if (siblings.includes(mutationTarget)) {
         return true;
       }
 
       
       while (parent) {
-        if (target === parent) {
+        if (mutationTarget === parent) {
           return true;
         }
         parent = parent.parentNode();
@@ -110,6 +116,22 @@ class InspectorStyleChangeTracker {
 
   onResized() {
     this.emit("style-changed");
+  }
+
+  async onTargetAvailable(type, targetFront, isTopLevel) {
+    const inspectorFront = await targetFront.getFront("inspector");
+    const { walker } = inspectorFront;
+    walker.on("mutations", this.onMutations);
+    walker.on("resize", this.onResized);
+  }
+
+  onTargetDestroyed(type, targetFront, isTopLevel) {
+    const inspectorFront = targetFront.getCachedFront("inspector");
+    if (inspectorFront) {
+      const { walker } = inspectorFront;
+      walker.off("mutations", this.onMutations);
+      walker.off("resize", this.onResized);
+    }
   }
 }
 
