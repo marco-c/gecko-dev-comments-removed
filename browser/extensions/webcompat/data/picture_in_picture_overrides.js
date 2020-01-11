@@ -1,0 +1,25 @@
+
+
+
+
+"use strict";
+
+
+
+let AVAILABLE_PIP_OVERRIDES;
+
+{
+  
+  
+  const TOGGLE_POLICIES = browser.pictureInPictureChild.getPolicies();
+
+  AVAILABLE_PIP_OVERRIDES = {
+    
+    
+    
+    
+    
+    
+    
+  };
+}

@@ -1,0 +1,17 @@
+
+
+
+
+"use strict";
+
+
+
+class PictureInPictureOverrides {
+  constructor(availableOverrides) {
+    this._availableOverrides = availableOverrides;
+  }
+
+  bootup() {
+    browser.pictureInPictureParent.setOverrides(this._availableOverrides);
+  }
+}
