@@ -3682,7 +3682,14 @@
                 tests.status.message = message;
                 tests.status.stack = stack;
             }
-            done();
+
+            
+            
+            
+            
+            if (!tests.allow_uncaught_exception) {
+                done();
+            }
         };
 
         addEventListener("error", function(e) {
