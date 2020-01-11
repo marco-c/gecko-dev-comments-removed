@@ -495,16 +495,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
-  "gMsgingSystemFxABadge",
-  "browser.messaging-system.fxatoolbarbadge.enabled",
-  true,
-  (aPref, aOldVal, aNewVal) => {
-    updateFxaToolbarMenu(gFxaToolbarEnabled);
-  }
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
   "gAddonAbuseReportEnabled",
   "extensions.abuseReport.enabled",
   false
@@ -637,16 +627,6 @@ function updateFxaToolbarMenu(enable, isInitialUpdate = false) {
     }
 
     Services.telemetry.setEventRecordingEnabled("fxa_avatar_menu", true);
-
-    
-    
-    
-    
-    if (!gFxaToolbarAccessed && !gMsgingSystemFxABadge) {
-      mainWindowEl.setAttribute("fxa_avatar_badged", "badged");
-    } else {
-      mainWindowEl.removeAttribute("fxa_avatar_badged");
-    }
 
     
     

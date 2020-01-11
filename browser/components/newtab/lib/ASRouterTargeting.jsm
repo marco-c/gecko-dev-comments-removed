@@ -44,12 +44,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
-  "isFxABadgeEnabled",
-  "browser.messaging-system.fxatoolbarbadge.enabled",
-  true
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
   "hasAccessedFxAPanel",
   "identity.fxaccounts.toolbar.accessed",
   false
@@ -483,7 +477,8 @@ const TargetingGetters = {
     return isWhatsNewPanelEnabled;
   },
   get isFxABadgeEnabled() {
-    return isFxABadgeEnabled;
+    
+    return true;
   },
   get userPrefs() {
     return {
