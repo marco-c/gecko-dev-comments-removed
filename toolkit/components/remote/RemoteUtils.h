@@ -3,8 +3,17 @@
 
 
 
-#ifndef RemoteUtils_h__
-#define RemoteUtils_h__
+#ifndef TOOLKIT_COMPONENTS_REMOTE_REMOTEUTILS_H_
+#define TOOLKIT_COMPONENTS_REMOTE_REMOTEUTILS_H_
+
+#include "nsString.h"
+
+#if defined XP_WIN || defined XP_MACOSX
+static void BuildClassName(const char* aProgram, const char* aProfile,
+                           nsString& aClassName) {
+  aClassName.AppendPrintf("Mozilla_%s_%s_RemoteWindow", aProgram, aProfile);
+}
+#endif
 
 char* ConstructCommandLine(int32_t argc, char** argv,
                            const char* aDesktopStartupID,
