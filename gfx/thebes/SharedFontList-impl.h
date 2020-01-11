@@ -138,9 +138,7 @@ class FontList {
 
 
 
-
-
-  Family* FindFamily(const nsCString& aName, bool aAllowHidden = false);
+  Family* FindFamily(const nsCString& aName);
 
   
 

@@ -234,11 +234,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
     
     
-    eQuotedFamilyName = 1 << 3,
-
-    
-    
-    eSearchHiddenFamilies = 1 << 4,
+    eQuotedFamilyName = 1 << 3
   };
 
   
