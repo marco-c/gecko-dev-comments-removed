@@ -4,6 +4,10 @@
 const TEST_FILE = "dummy_page.html";
 const TEST_HTTP = "http://example.org/";
 const TEST_CROSS_ORIGIN = "http://example.com/";
+let testFile = getChromeDir(getResolvedURI(gTestPath));
+testFile.append(TEST_FILE);
+testFile.normalize();
+const testFileURI = Services.io.newFileURI(testFile).spec;
 
 function CheckBrowserInPid(browser, expectedPid, message) {
   return ContentTask.spawn(browser, { expectedPid, message }, arg => {
@@ -18,24 +22,16 @@ function CheckBrowserNotInPid(browser, unExpectedPid, message) {
 }
 
 
-add_task(async function() {
+async function runWebInFileTest() {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.tabs.remote.separateFileUriProcess", true],
-      ["browser.tabs.remote.allowLinkedWebInFileUriProcess", true],
-      ["browser.tabs.remote.useHTTPResponseProcessSelection", false],
-      ["dom.ipc.processCount.file", 2],
-    ],
+    set: [["browser.tabs.remote.allowLinkedWebInFileUriProcess", true]],
   });
+  info("Running test with allowLinkedWebInFileUriProcess=true");
 
   
-  let dir = getChromeDir(getResolvedURI(gTestPath));
-  dir.append(TEST_FILE);
-  dir.normalize();
-  const uriString = Services.io.newFileURI(dir).spec;
-  await BrowserTestUtils.withNewTab(uriString, async function(fileBrowser) {
+  await BrowserTestUtils.withNewTab(testFileURI, async function(fileBrowser) {
     
     let filePid = await ContentTask.spawn(fileBrowser, null, () => {
       return Services.appinfo.processID;
@@ -138,8 +134,12 @@ add_task(async function() {
     );
 
     
-    promiseLoad = BrowserTestUtils.browserLoaded(httpBrowser, false, uriString);
-    BrowserTestUtils.loadURI(httpBrowser, uriString);
+    promiseLoad = BrowserTestUtils.browserLoaded(
+      httpBrowser,
+      false,
+      testFileURI
+    );
+    BrowserTestUtils.loadURI(httpBrowser, testFileURI);
     await promiseLoad;
     await CheckBrowserInPid(
       httpBrowser,
@@ -196,7 +196,7 @@ add_task(async function() {
     
     promiseLocation = BrowserTestUtils.waitForLocationChange(
       gBrowser,
-      uriString
+      testFileURI
     );
     httpBrowser.goBack();
     await promiseLocation;
@@ -211,4 +211,20 @@ add_task(async function() {
       "Check that tab now has file remote type."
     );
   });
+
+  await SpecialPowers.popPrefEnv();
+}
+
+add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.tabs.remote.separateFileUriProcess", true],
+      ["browser.tabs.remote.useHTTPResponseProcessSelection", false],
+      ["dom.ipc.processCount.file", 2],
+    ],
+  });
+});
+
+add_task(async function runTest() {
+  await runWebInFileTest();
 });
