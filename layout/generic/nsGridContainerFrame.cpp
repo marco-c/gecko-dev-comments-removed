@@ -8418,39 +8418,40 @@ nsGridContainerFrame* nsGridContainerFrame::GetGridContainerFrame(
 nsGridContainerFrame* nsGridContainerFrame::GetGridFrameWithComputedInfo(
     nsIFrame* aFrame) {
   nsGridContainerFrame* gridFrame = GetGridContainerFrame(aFrame);
-  if (gridFrame) {
-    
-    bool reflowNeeded = (!gridFrame->HasProperty(GridColTrackInfo()) ||
-                         !gridFrame->HasProperty(GridRowTrackInfo()) ||
-                         !gridFrame->HasProperty(GridColumnLineInfo()) ||
-                         !gridFrame->HasProperty(GridRowLineInfo()));
+  if (!gridFrame) {
+    return nullptr;
+  }
 
-    if (reflowNeeded) {
-      
-      
-      AutoWeakFrame weakFrameRef(aFrame);
+  auto HasComputedInfo = [](const nsGridContainerFrame& aFrame) -> bool {
+    return aFrame.HasProperty(GridColTrackInfo()) &&
+           aFrame.HasProperty(GridRowTrackInfo()) &&
+           aFrame.HasProperty(GridColumnLineInfo()) &&
+           aFrame.HasProperty(GridRowLineInfo());
+  };
 
-      RefPtr<mozilla::PresShell> presShell = gridFrame->PresShell();
-      gridFrame->AddStateBits(NS_STATE_GRID_GENERATE_COMPUTED_VALUES);
-      presShell->FrameNeedsReflow(gridFrame, IntrinsicDirty::Resize,
-                                  NS_FRAME_IS_DIRTY);
-      presShell->FlushPendingNotifications(FlushType::Layout);
+  if (HasComputedInfo(*gridFrame)) {
+    return gridFrame;
+  }
 
-      
-      
-      
-      if (!weakFrameRef.IsAlive()) {
-        return nullptr;
-      }
+  
+  
+  AutoWeakFrame weakFrameRef(gridFrame);
 
-      gridFrame = GetGridContainerFrame(weakFrameRef.GetFrame());
+  RefPtr<mozilla::PresShell> presShell = gridFrame->PresShell();
+  gridFrame->AddStateBits(NS_STATE_GRID_GENERATE_COMPUTED_VALUES);
+  presShell->FrameNeedsReflow(gridFrame, IntrinsicDirty::Resize,
+                              NS_FRAME_IS_DIRTY);
+  presShell->FlushPendingNotifications(FlushType::Layout);
 
-      
-      MOZ_ASSERT(!gridFrame || gridFrame->HasProperty(GridColTrackInfo()));
-      MOZ_ASSERT(!gridFrame || gridFrame->HasProperty(GridRowTrackInfo()));
-      MOZ_ASSERT(!gridFrame || gridFrame->HasProperty(GridColumnLineInfo()));
-      MOZ_ASSERT(!gridFrame || gridFrame->HasProperty(GridRowLineInfo()));
-    }
+  
+  if (!weakFrameRef.IsAlive()) {
+    return nullptr;
+  }
+
+  
+  
+  if (MOZ_UNLIKELY(!HasComputedInfo(*gridFrame))) {
+    return nullptr;
   }
 
   return gridFrame;
