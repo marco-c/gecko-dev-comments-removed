@@ -2,6 +2,10 @@
 
 
 
+
+
+
+
 "use strict";
 
 
@@ -63,18 +67,6 @@ function formatFileSize(num) {
 
   return (neg ? "-" : "") + numStr + " " + unit;
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

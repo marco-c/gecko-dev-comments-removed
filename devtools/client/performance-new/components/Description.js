@@ -1,6 +1,12 @@
 
 
 
+
+
+
+
+
+
 "use strict";
 
 const { PureComponent } = require("devtools/client/shared/vendor/react");
@@ -14,22 +20,31 @@ const {
 
 
 
+
 class Description extends PureComponent {
-  static get propTypes() {
-    return {};
-  }
+  
+
 
   constructor(props) {
     super(props);
     this.handleLinkClick = this.handleLinkClick.bind(this);
   }
 
+  
+
+
   handleLinkClick(event) {
     const { openDocLink } = require("devtools/client/shared/link");
-    openDocLink(event.target.value);
+
+    
+    const target =  (event.target);
+
+    openDocLink(target.value, {});
   }
 
   
+
+
 
 
 
