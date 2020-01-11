@@ -2735,7 +2735,8 @@ static void HardwareTooOldForWR(FeatureState& aFeature) {
 }
 
 static void UpdateWRQualificationForNvidia(FeatureState& aFeature,
-                                           int32_t aDeviceId,
+                                           int32_t aDeviceId, bool aHasBattery,
+                                           int64_t aScreenPixels,
                                            bool* aOutGuardedByQualifiedPref) {
   
   
@@ -2753,12 +2754,41 @@ static void UpdateWRQualificationForNvidia(FeatureState& aFeature,
 
 #  if defined(XP_WIN)
   
-  *aOutGuardedByQualifiedPref = false;
+  if (aHasBattery) {
+    
+    
+    const int64_t kMaxPixelsBattery = 1920 * 1200;  
+    if (aScreenPixels <= 0) {
+      aFeature.Disable(
+          FeatureStatus::BlockedScreenUnknown, "Screen size unknown",
+          NS_LITERAL_CSTRING("FEATURE_FAILURE_SCREEN_SIZE_UNKNOWN"));
+    } else if (aScreenPixels > kMaxPixelsBattery) {
+      aFeature.Disable(FeatureStatus::BlockedHasBattery, "Has battery",
+                       NS_LITERAL_CSTRING("FEATURE_FAILURE_WR_HAS_BATTERY"));
+    } else {  
+#    if defined(EARLY_BETA_OR_EARLIER)
+      
+      
+      *aOutGuardedByQualifiedPref = false;
+#    endif
+    }
+  } else {
+    
+    *aOutGuardedByQualifiedPref = false;
+  }
 #  elif defined(NIGHTLY_BUILD)
   
   
   
+
+  
+  
+  MOZ_ASSERT(!aHasBattery);
 #  else
+  
+  
+  MOZ_ASSERT(!aHasBattery);
+
   
   aFeature.Disable(
       FeatureStatus::BlockedReleaseChannelNvidia, "Release channel and Nvidia",
@@ -2767,7 +2797,8 @@ static void UpdateWRQualificationForNvidia(FeatureState& aFeature,
 }
 
 static void UpdateWRQualificationForAMD(FeatureState& aFeature,
-                                        int32_t aDeviceId,
+                                        int32_t aDeviceId, bool aHasBattery,
+                                        int64_t aScreenPixels,
                                         bool* aOutGuardedByQualifiedPref) {
   
   
@@ -2790,12 +2821,46 @@ static void UpdateWRQualificationForAMD(FeatureState& aFeature,
 
 #  if defined(XP_WIN)
   
-  *aOutGuardedByQualifiedPref = false;
+  if (aHasBattery) {
+    
+    
+    
+    const int64_t kMaxPixelsBattery = 1920 * 1200;  
+    if (aScreenPixels <= 0) {
+      aFeature.Disable(
+          FeatureStatus::BlockedScreenUnknown, "Screen size unknown",
+          NS_LITERAL_CSTRING("FEATURE_FAILURE_SCREEN_SIZE_UNKNOWN"));
+    } else if (aScreenPixels <= kMaxPixelsBattery) {
+#    ifdef NIGHTLY_BUILD
+      
+      *aOutGuardedByQualifiedPref = false;
+#    else
+      aFeature.Disable(
+          FeatureStatus::BlockedReleaseChannelBattery,
+          "Release channel and battery",
+          NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_BATTERY"));
+#    endif  
+    } else {
+      aFeature.Disable(FeatureStatus::BlockedHasBattery, "Has battery",
+                       NS_LITERAL_CSTRING("FEATURE_FAILURE_WR_HAS_BATTERY"));
+    }
+  } else {
+    
+    *aOutGuardedByQualifiedPref = false;
+  }
 #  elif defined(NIGHTLY_BUILD)
   
   
   
+
+  
+  
+  MOZ_ASSERT(!aHasBattery);
 #  else
+  
+  
+  MOZ_ASSERT(!aHasBattery);
+
   
   aFeature.Disable(FeatureStatus::BlockedReleaseChannelAMD,
                    "Release channel and AMD",
@@ -2804,7 +2869,7 @@ static void UpdateWRQualificationForAMD(FeatureState& aFeature,
 }
 
 static void UpdateWRQualificationForIntel(FeatureState& aFeature,
-                                          int32_t aDeviceId,
+                                          int32_t aDeviceId, bool aHasBattery,
                                           int64_t aScreenPixels,
                                           bool* aOutGuardedByQualifiedPref) {
   const uint16_t supportedDevices[] = {
@@ -2905,8 +2970,28 @@ static void UpdateWRQualificationForIntel(FeatureState& aFeature,
   
   
   
+  
+  
+  
+  const int64_t kMaxPixelsBattery = 1920 * 1200;  
 #  if defined(XP_WIN) && defined(NIGHTLY_BUILD)
   
+  if (aHasBattery) {
+    if (aScreenPixels <= 0) {
+      aFeature.Disable(
+          FeatureStatus::BlockedScreenUnknown, "Screen size unknown",
+          NS_LITERAL_CSTRING("FEATURE_FAILURE_SCREEN_SIZE_UNKNOWN"));
+      return;
+    }
+    if (aScreenPixels > kMaxPixelsBattery) {
+      aFeature.Disable(FeatureStatus::BlockedHasBattery, "Has battery",
+                       NS_LITERAL_CSTRING("FEATURE_FAILURE_WR_HAS_BATTERY"));
+      return;
+    }
+
+    
+    *aOutGuardedByQualifiedPref = false;
+  }
 #  else
   
   
@@ -2929,6 +3014,29 @@ static void UpdateWRQualificationForIntel(FeatureState& aFeature,
     aFeature.Disable(FeatureStatus::BlockedScreenUnknown, "Screen size unknown",
                      NS_LITERAL_CSTRING("FEATURE_FAILURE_SCREEN_SIZE_UNKNOWN"));
     return;
+  }
+  if (aHasBattery) {
+#    ifndef XP_WIN
+    
+    
+    MOZ_ASSERT(false);
+#    endif
+    if (aScreenPixels <= kMaxPixelsBattery) {
+#    ifdef NIGHTLY_BUILD
+      
+      *aOutGuardedByQualifiedPref = false;
+#    else
+      aFeature.Disable(
+          FeatureStatus::BlockedReleaseChannelBattery,
+          "Release channel and battery",
+          NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_BATTERY"));
+      return;
+#    endif  
+    } else {
+      aFeature.Disable(FeatureStatus::BlockedHasBattery, "Has battery",
+                       NS_LITERAL_CSTRING("FEATURE_FAILURE_WR_HAS_BATTERY"));
+      return;
+    }
   }
 #  endif
 
@@ -2996,13 +3104,16 @@ static FeatureState& WebRenderHardwareQualificationStatus(
 
   if (adapterVendorID == u"0x10de") {  
     UpdateWRQualificationForNvidia(featureWebRenderQualified, deviceID,
+                                   aHasBattery, aScreenPixels,
                                    aOutGuardedByQualifiedPref);
   } else if (adapterVendorID == u"0x1002") {  
     UpdateWRQualificationForAMD(featureWebRenderQualified, deviceID,
+                                aHasBattery, aScreenPixels,
                                 aOutGuardedByQualifiedPref);
   } else if (adapterVendorID == u"0x8086") {  
     UpdateWRQualificationForIntel(featureWebRenderQualified, deviceID,
-                                  aScreenPixels, aOutGuardedByQualifiedPref);
+                                  aHasBattery, aScreenPixels,
+                                  aOutGuardedByQualifiedPref);
   } else {
     featureWebRenderQualified.Disable(
         FeatureStatus::BlockedVendorUnsupported, "Unsupported vendor",
@@ -3014,35 +3125,6 @@ static FeatureState& WebRenderHardwareQualificationStatus(
     
     MOZ_ASSERT(*aOutGuardedByQualifiedPref);
     return featureWebRenderQualified;
-  }
-
-  
-  
-  if (aHasBattery) {
-#  ifndef XP_WIN
-    
-    
-    MOZ_ASSERT(false);
-#  endif
-    
-    
-    
-    *aOutGuardedByQualifiedPref = true;
-
-    
-    const int64_t kMaxPixelsBattery = 1920 * 1200;  
-    if (aScreenPixels > 0 && aScreenPixels <= kMaxPixelsBattery) {
-#  ifndef NIGHTLY_BUILD
-      featureWebRenderQualified.Disable(
-          FeatureStatus::BlockedReleaseChannelBattery,
-          "Release channel and battery",
-          NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_BATTERY"));
-#  endif  
-    } else {
-      featureWebRenderQualified.Disable(
-          FeatureStatus::BlockedHasBattery, "Has battery",
-          NS_LITERAL_CSTRING("FEATURE_FAILURE_WR_HAS_BATTERY"));
-    }
   }
 #else  
 #  ifndef NIGHTLY_BUILD
