@@ -40,6 +40,7 @@
 #include "mozilla/dom/StorageEvent.h"
 #include "mozilla/dom/StorageEventBinding.h"
 #include "mozilla/dom/UnionTypes.h"
+#include "mozilla/CallState.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/GuardObjects.h"
@@ -1036,33 +1037,22 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   
   
-  
-  enum class CallState {
-    Continue,
-    Stop,
-  };
-
-  
-  
-  
   template <typename Method, typename... Args>
-  CallState CallOnChildren(Method aMethod, Args&... aArgs);
+  mozilla::CallState CallOnChildren(Method aMethod, Args&... aArgs);
 
   
   
   template <typename Return, typename Method, typename... Args>
-  typename std::enable_if<std::is_void<Return>::value,
-                          nsGlobalWindowInner::CallState>::type
+  typename std::enable_if<std::is_void<Return>::value, mozilla::CallState>::type
   CallChild(nsGlobalWindowInner* aWindow, Method aMethod, Args&... aArgs) {
     (aWindow->*aMethod)(aArgs...);
-    return nsGlobalWindowInner::CallState::Continue;
+    return mozilla::CallState::Continue;
   }
 
   
   template <typename Return, typename Method, typename... Args>
-  typename std::enable_if<
-      std::is_same<Return, nsGlobalWindowInner::CallState>::value,
-      nsGlobalWindowInner::CallState>::type
+  typename std::enable_if<std::is_same<Return, mozilla::CallState>::value,
+                          mozilla::CallState>::type
   CallChild(nsGlobalWindowInner* aWindow, Method aMethod, Args&... aArgs) {
     return (aWindow->*aMethod)(aArgs...);
   }
@@ -1070,8 +1060,8 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   void FreezeInternal();
   void ThawInternal();
 
-  CallState ShouldReportForServiceWorkerScopeInternal(const nsACString& aScope,
-                                                      bool* aResultOut);
+  mozilla::CallState ShouldReportForServiceWorkerScopeInternal(
+      const nsACString& aScope, bool* aResultOut);
 
  public:
   
