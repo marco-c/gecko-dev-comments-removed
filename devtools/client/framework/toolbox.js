@@ -2064,7 +2064,7 @@ Toolbox.prototype = {
 
 
   updateToolboxButtons() {
-    const inspectorFront = this.target.getCachedFront("inspectorFront");
+    const inspectorFront = this.target.getCachedFront("inspector");
     
     
     const hasHighlighters =
