@@ -806,6 +806,26 @@ class JitHeapThreshold : public HeapThreshold {
   explicit JitHeapThreshold(size_t bytes) { bytes_ = bytes; }
 };
 
+struct SharedMemoryUse {
+  explicit SharedMemoryUse(MemoryUse use) : count(0), nbytes(0) {
+#ifdef DEBUG
+    this->use = use;
+#endif
+  }
+
+  size_t count;
+  size_t nbytes;
+#ifdef DEBUG
+  MemoryUse use;
+#endif
+};
+
+
+
+
+using SharedMemoryMap =
+    HashMap<void*, SharedMemoryUse, DefaultHasher<void*>, SystemAllocPolicy>;
+
 #ifdef DEBUG
 
 

@@ -138,6 +138,10 @@ class ZoneAllocator : public JS::shadow::Zone,
 #endif
   }
 
+  
+  bool addSharedMemory(void* mem, size_t nbytes, MemoryUse use);
+  void removeSharedMemory(void* mem, size_t nbytes, MemoryUse use);
+
   void incJitMemory(size_t nbytes) {
     MOZ_ASSERT(nbytes);
     jitHeapSize.addBytes(nbytes);
@@ -167,36 +171,39 @@ class ZoneAllocator : public JS::shadow::Zone,
 
  public:
   
-  js::gc::HeapSize gcHeapSize;
+  gc::HeapSize gcHeapSize;
 
   
-  js::gc::GCHeapThreshold gcHeapThreshold;
-
-  
-  
-  js::MainThreadData<size_t> gcDelayBytes;
+  gc::GCHeapThreshold gcHeapThreshold;
 
   
   
-  js::gc::HeapSize mallocHeapSize;
+  MainThreadData<size_t> gcDelayBytes;
 
   
-  js::gc::MallocHeapThreshold mallocHeapThreshold;
+  
+  gc::HeapSize mallocHeapSize;
 
   
-  js::gc::HeapSize jitHeapSize;
+  gc::MallocHeapThreshold mallocHeapThreshold;
 
   
-  js::gc::JitHeapThreshold jitHeapThreshold;
+  gc::HeapSize jitHeapSize;
+
+  
+  gc::JitHeapThreshold jitHeapThreshold;
+
+  
+  gc::SharedMemoryMap sharedMemoryUseCounts;
 
  private:
 #ifdef DEBUG
   
   
-  js::gc::MemoryTracker mallocTracker;
+  gc::MemoryTracker mallocTracker;
 #endif
 
-  friend class js::gc::GCRuntime;
+  friend class GCRuntime;
 };
 
 
