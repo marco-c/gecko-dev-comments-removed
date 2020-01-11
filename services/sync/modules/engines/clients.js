@@ -70,6 +70,9 @@ const STALE_CLIENT_REMOTE_AGE = 604800;
 const NOTIFY_TAB_SENT_TTL_SECS = 1 * 3600; 
 
 
+const REFRESH_FXA_DEVICE_INTERVAL_MS = 2 * 60 * 60 * 1000; 
+
+
 const COLLECTION_MODIFIED_REASON_SENDTAB = "sendtab";
 const COLLECTION_MODIFIED_REASON_FIRSTSYNC = "firstsync";
 
@@ -126,6 +129,7 @@ ClientEngine.prototype = {
   allowSkippedRecord: false,
   _knownStaleFxADeviceIds: null,
   _lastDeviceCounts: null,
+  _lastFxaDeviceRefresh: 0,
 
   async initialize() {
     
@@ -396,10 +400,19 @@ ClientEngine.prototype = {
   },
 
   async _fetchFxADevices() {
-    try {
-      await this.fxAccounts.device.refreshDeviceList();
-    } catch (e) {
-      this._log.error("Could not refresh the FxA device list", e);
+    
+    
+    
+    
+    
+    let now = this.fxAccounts._internal.now(); 
+    if (now - REFRESH_FXA_DEVICE_INTERVAL_MS > this._lastFxaDeviceRefresh) {
+      this._lastFxaDeviceRefresh = now;
+      try {
+        await this.fxAccounts.device.refreshDeviceList();
+      } catch (e) {
+        this._log.error("Could not refresh the FxA device list", e);
+      }
     }
 
     
