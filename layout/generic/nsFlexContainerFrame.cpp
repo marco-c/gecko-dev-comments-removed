@@ -849,64 +849,75 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
                            const FlexboxAxisTracker& aAxisTracker);
 
   
-  nsIFrame* const mFrame;  
-  const float mFlexGrow;
-  const float mFlexShrink;
+  
+  nsIFrame* const mFrame = nullptr;
+  const float mFlexGrow = 0.0f;
+  const float mFlexShrink = 0.0f;
   const AspectRatio mIntrinsicRatio;
   const nsMargin mBorderPadding;
-  nsMargin mMargin;  
+  
+  nsMargin mMargin;
 
   
   
   
-  nscoord mFlexBaseSize;
-  nscoord mMainMinSize;
-  nscoord mMainMaxSize;
+  nscoord mFlexBaseSize = 0;
+  nscoord mMainMinSize = 0;
+  nscoord mMainMaxSize = 0;
 
-  const nscoord mCrossMinSize;
-  const nscoord mCrossMaxSize;
+  const nscoord mCrossMinSize = 0;
+  const nscoord mCrossMaxSize = 0;
 
   
-  nscoord mMainSize;
-  nscoord mMainPosn;
-  nscoord mCrossSize;
-  nscoord mCrossPosn;
-  mutable nscoord mAscent;  
-                            
+  nscoord mMainSize = 0;
+  nscoord mMainPosn = 0;
+  nscoord mCrossSize = 0;
+  nscoord mCrossPosn = 0;
 
   
   
-  
-  
-  
-  float mShareOfWeightSoFar;
-
-  const WritingMode mWM;  
-  bool mIsFrozen;
-  bool mHadMinViolation;
-  bool mHadMaxViolation;
+  mutable nscoord mAscent = 0;
 
   
-  bool mHadMeasuringReflow;  
-                             
-  bool mIsStretched;         
-  bool mIsStrut;             
-                             
-  const bool mIsInlineAxisMainAxis;  
+  
+  
+  
+  
+  float mShareOfWeightSoFar = 0.0f;
 
   
-  bool mNeedsMinSizeAutoResolution;
+  const WritingMode mWM;
+  bool mIsFrozen = false;
+  bool mHadMinViolation = false;
+  bool mHadMaxViolation = false;
 
   
-  bool mTreatBSizeAsIndefinite;
+  bool mHadMeasuringReflow = false;
 
   
-  bool mHasAnyAutoMargin;
+  bool mIsStretched = false;
 
-  uint8_t mAlignSelf;       
-                            
-                            
-  uint8_t mAlignSelfFlags;  
+  
+  bool mIsStrut = false;
+
+  
+  const bool mIsInlineAxisMainAxis = true;
+
+  
+  bool mNeedsMinSizeAutoResolution = false;
+
+  
+  bool mTreatBSizeAsIndefinite = false;
+
+  
+  bool mHasAnyAutoMargin = false;
+
+  
+  
+  uint8_t mAlignSelf = NS_STYLE_ALIGN_AUTO;
+
+  
+  uint8_t mAlignSelfFlags = 0;
 };
 
 
@@ -1899,18 +1910,8 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
       mMainMaxSize(aMainMaxSize),
       mCrossMinSize(aCrossMinSize),
       mCrossMaxSize(aCrossMaxSize),
-      mMainPosn(0),
       mCrossSize(aTentativeCrossSize),
-      mCrossPosn(0),
-      mAscent(0),
-      mShareOfWeightSoFar(0.0f),
       mWM(aFlexItemReflowInput.GetWritingMode()),
-      mIsFrozen(false),
-      mHadMinViolation(false),
-      mHadMaxViolation(false),
-      mHadMeasuringReflow(false),
-      mIsStretched(false),
-      mIsStrut(false),
       mIsInlineAxisMainAxis(aAxisTracker.IsRowOriented() !=
                             aAxisTracker.GetWritingMode().IsOrthogonalTo(mWM))
 
@@ -2043,36 +2044,14 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
 FlexItem::FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize,
                    WritingMode aContainerWM)
     : mFrame(aChildFrame),
-      mFlexGrow(0.0f),
-      mFlexShrink(0.0f),
-      
-      
-      mFlexBaseSize(0),
-      mMainMinSize(0),
-      mMainMaxSize(0),
-      mCrossMinSize(0),
-      mCrossMaxSize(0),
-      mMainSize(0),
-      mMainPosn(0),
       mCrossSize(aCrossSize),
-      mCrossPosn(0),
-      mAscent(0),
-      mShareOfWeightSoFar(0.0f),
       
       
       mWM(aContainerWM),
       mIsFrozen(true),
-      mHadMinViolation(false),
-      mHadMaxViolation(false),
-      mHadMeasuringReflow(false),
-      mIsStretched(false),
       mIsStrut(true),  
       mIsInlineAxisMainAxis(true),  
-      mNeedsMinSizeAutoResolution(false),
-      mTreatBSizeAsIndefinite(false),
-      mHasAnyAutoMargin(false),
-      mAlignSelf(NS_STYLE_ALIGN_FLEX_START),
-      mAlignSelfFlags(0) {
+      mAlignSelf(NS_STYLE_ALIGN_FLEX_START) {
   MOZ_ASSERT(mFrame, "expecting a non-null child frame");
   MOZ_ASSERT(StyleVisibility::Collapse == mFrame->StyleVisibility()->mVisible,
              "Should only make struts for children with 'visibility:collapse'");
