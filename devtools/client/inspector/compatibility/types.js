@@ -13,6 +13,12 @@ const browser = {
   id: PropTypes.string.isRequired,
   
   
+  name: PropTypes.string.isRequired,
+  
+  
+  status: PropTypes.string,
+  
+  
   version: PropTypes.string.isRequired,
 };
 
@@ -31,4 +37,5 @@ const issue = {
   unsupportedBrowsers: PropTypes.arrayOf(PropTypes.shape(browser)).isRequired,
 };
 
+exports.browser = browser;
 exports.issue = issue;
