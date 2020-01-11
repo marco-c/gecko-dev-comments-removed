@@ -941,6 +941,16 @@ nsresult GetParameterHTTP(const nsACString& aHeaderVal, const char* aParamName,
 
 
 
+
+
+
+bool ChannelIsPost(nsIChannel* aChannel);
+
+
+
+
+
+
 bool SchemeIsHTTP(nsIURI* aURI);
 bool SchemeIsHTTPS(nsIURI* aURI);
 bool SchemeIsJavascript(nsIURI* aURI);

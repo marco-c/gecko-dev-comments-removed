@@ -694,13 +694,7 @@ NS_IMETHODIMP nsExternalHelperAppService::CreateListener(
 
     
     
-    bool allowURLExt = true;
-    nsCOMPtr<nsIHttpChannel> httpChan = do_QueryInterface(channel);
-    if (httpChan) {
-      nsAutoCString requestMethod;
-      Unused << httpChan->GetRequestMethod(requestMethod);
-      allowURLExt = !requestMethod.EqualsLiteral("POST");
-    }
+    bool allowURLExt = !net::ChannelIsPost(channel);
 
     
     

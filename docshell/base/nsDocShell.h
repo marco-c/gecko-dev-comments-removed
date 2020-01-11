@@ -495,6 +495,24 @@ class nsDocShell final : public nsDocLoader,
 
   nsDocShell* GetInProcessChildAt(int32_t aIndex);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static void ExtractLastVisit(nsIChannel* aChannel, nsIURI** aURI,
+                               uint32_t* aChannelRedirectFlags);
+
  private:  
   friend class nsDSURIContentListener;
   friend class FramingChecker;
@@ -733,34 +751,6 @@ class nsDocShell final : public nsDocLoader,
   
   nsIPrincipal* GetInheritedPrincipal(bool aConsiderCurrentDocument,
                                       bool aConsiderStoragePrincipal = false);
-
-  
-
-
-
-
-
-
-
-  bool ChannelIsPost(nsIChannel* aChannel);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void ExtractLastVisit(nsIChannel* aChannel, nsIURI** aURI,
-                        uint32_t* aChannelRedirectFlags);
 
   
 
