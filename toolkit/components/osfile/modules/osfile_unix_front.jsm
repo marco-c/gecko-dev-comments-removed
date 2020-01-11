@@ -716,20 +716,23 @@
       
       let result = UnixFile.rename(sourcePath, destPath);
       if (result != -1) {
+        
         return;
       }
 
       
       
       
-      
-      if (ctypes.errno != Const.EXDEV || options.noCopy) {
+      if (options.noCopy) {
         throw new File.Error("move", ctypes.errno, sourcePath);
       }
 
-      
       File.copy(sourcePath, destPath, options);
       
+      
+      
+      
+
       File.remove(sourcePath);
     };
 
