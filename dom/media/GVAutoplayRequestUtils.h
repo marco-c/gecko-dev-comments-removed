@@ -1,0 +1,25 @@
+
+
+
+
+#ifndef DOM_MEDIA_GVAUTOPLAYREQUESTUTILS_H_
+#define DOM_MEDIA_GVAUTOPLAYREQUESTUTILS_H_
+
+#include <cstdint>
+
+namespace mozilla {
+namespace dom {
+
+enum class GVAutoplayRequestType : bool { eINAUDIBLE = false, eAUDIBLE = true };
+
+enum class GVAutoplayRequestStatus : uint32_t {
+  eUNKNOWN,
+  eALLOWED,
+  eDENIED,
+  ePENDING,
+};
+
+}  
+}  
+
+#endif
