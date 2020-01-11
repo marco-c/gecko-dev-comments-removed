@@ -40,9 +40,6 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
   void OnChannelClosed();
 
   
-  bool OnStartRequestSent();
-
-  
   bool OnTransportAndData(const nsresult& aChannelStatus,
                           const nsresult& aTransportStatus,
                           const uint64_t& aOffset, const uint32_t& aCount,
