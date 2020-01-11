@@ -25,21 +25,24 @@ mod util;
 #[cfg(target_os = "windows")]
 mod backend_windows;
 
-use manager::Manager;
+use manager::ManagerProxy;
 
 lazy_static! {
-    /// The singleton `Manager` that handles state with respect to PKCS #11. Only one thread may
-    /// use it at a time.
-    static ref MANAGER: Mutex<Manager> = {
+    /// The singleton `ManagerProxy` that handles state with respect to PKCS #11. Only one thread
+    /// may use it at a time, but there is no restriction on which threads may use it. However, as
+    /// OS APIs being used are not necessarily thread-safe (e.g. they may be using
+    /// thread-local-storage), the `ManagerProxy` forwards calls from any thread to a single thread
+    /// where the real `Manager` does the actual work.
+    static ref MANAGER_PROXY: Mutex<ManagerProxy> = {
         env_logger::init();
-        Mutex::new(Manager::new())
+        Mutex::new(ManagerProxy::new())
     };
 }
 
 macro_rules! try_to_get_manager {
     () => {
-        match MANAGER.lock() {
-            Ok(manager) => manager,
+        match MANAGER_PROXY.lock() {
+            Ok(manager_proxy) => manager_proxy,
             Err(poison_error) => {
                 error!(
                     "previous thread panicked acquiring manager lock: {}",
@@ -61,8 +64,17 @@ extern "C" fn C_Initialize(_pInitArgs: CK_C_INITIALIZE_ARGS_PTR) -> CK_RV {
 }
 
 extern "C" fn C_Finalize(_pReserved: CK_VOID_PTR) -> CK_RV {
-    debug!("C_Finalize: CKR_OK");
-    CKR_OK
+    let mut manager = try_to_get_manager!();
+    match manager.stop() {
+        Ok(()) => {
+            debug!("C_Finalize: CKR_OK");
+            CKR_OK
+        }
+        Err(()) => {
+            debug!("C_Finalize: CKR_DEVICE_ERROR");
+            CKR_DEVICE_ERROR
+        }
+    }
 }
 
 
@@ -238,6 +250,7 @@ extern "C" fn C_SetPIN(
 }
 
 
+
 extern "C" fn C_OpenSession(
     slotID: CK_SLOT_ID,
     _flags: CK_FLAGS,
@@ -250,7 +263,13 @@ extern "C" fn C_OpenSession(
         return CKR_ARGUMENTS_BAD;
     }
     let mut manager = try_to_get_manager!();
-    let session_handle = manager.open_session();
+    let session_handle = match manager.open_session() {
+        Ok(session_handle) => session_handle,
+        Err(()) => {
+            error!("C_OpenSession: open_session failed");
+            return CKR_DEVICE_ERROR;
+        }
+    };
     unsafe {
         *phSession = session_handle;
     }
@@ -276,9 +295,16 @@ extern "C" fn C_CloseAllSessions(slotID: CK_SLOT_ID) -> CK_RV {
         return CKR_ARGUMENTS_BAD;
     }
     let mut manager = try_to_get_manager!();
-    manager.close_all_sessions();
-    debug!("C_CloseAllSessions: CKR_OK");
-    CKR_OK
+    match manager.close_all_sessions() {
+        Ok(()) => {
+            debug!("C_CloseAllSessions: CKR_OK");
+            CKR_OK
+        }
+        Err(()) => {
+            debug!("C_CloseAllSessions: close_all_sessions failed");
+            CKR_DEVICE_ERROR
+        }
+    }
 }
 
 extern "C" fn C_GetSessionInfo(_hSession: CK_SESSION_HANDLE, _pInfo: CK_SESSION_INFO_PTR) -> CK_RV {
@@ -375,17 +401,29 @@ extern "C" fn C_GetAttributeValue(
         error!("C_GetAttributeValue: CKR_ARGUMENTS_BAD");
         return CKR_ARGUMENTS_BAD;
     }
-    let mut manager = try_to_get_manager!();
-    let object = match manager.get_object(hObject) {
-        Ok(object) => object,
+    let mut attr_types = Vec::with_capacity(ulCount as usize);
+    for i in 0..ulCount {
+        let attr = unsafe { &*pTemplate.offset(i as isize) };
+        attr_types.push(attr.attrType);
+    }
+    let manager = try_to_get_manager!();
+    let values = match manager.get_attributes(hObject, attr_types) {
+        Ok(values) => values,
         Err(()) => {
             error!("C_GetAttributeValue: CKR_ARGUMENTS_BAD");
             return CKR_ARGUMENTS_BAD;
         }
     };
-    for i in 0..ulCount {
+    if values.len() != ulCount as usize {
+        error!(
+            "C_GetAttributeValue: manager.get_attributes didn't return the right number of values"
+        );
+        return CKR_DEVICE_ERROR;
+    }
+    for i in 0..ulCount as usize {
         let mut attr = unsafe { &mut *pTemplate.offset(i as isize) };
-        if let Some(attr_value) = object.get_attribute(attr.attrType) {
+        
+        if let Some(attr_value) = &values[i] {
             if attr.pValue.is_null() {
                 attr.ulValueLen = attr_value.len() as CK_ULONG;
             } else {
@@ -439,7 +477,7 @@ extern "C" fn C_FindObjectsInit(
         attrs.push((attr.attrType, slice.to_owned()));
     }
     let mut manager = try_to_get_manager!();
-    match manager.start_search(hSession, &attrs) {
+    match manager.start_search(hSession, attrs) {
         Ok(()) => {}
         Err(()) => {
             error!("C_FindObjectsInit: CKR_ARGUMENTS_BAD");
@@ -495,9 +533,16 @@ extern "C" fn C_FindObjects(
 extern "C" fn C_FindObjectsFinal(hSession: CK_SESSION_HANDLE) -> CK_RV {
     let mut manager = try_to_get_manager!();
     
-    manager.clear_search(hSession);
-    debug!("C_FindObjectsFinal: CKR_OK");
-    CKR_OK
+    match manager.clear_search(hSession) {
+        Ok(()) => {
+            debug!("C_FindObjectsFinal: CKR_OK");
+            CKR_OK
+        }
+        Err(()) => {
+            debug!("C_FindObjectsFinal: clear_search failed");
+            CKR_DEVICE_ERROR
+        }
+    }
 }
 
 extern "C" fn C_EncryptInit(
@@ -620,6 +665,7 @@ extern "C" fn C_DigestFinal(
 }
 
 
+
 extern "C" fn C_SignInit(
     hSession: CK_SESSION_HANDLE,
     pMechanism: CK_MECHANISM_PTR,
@@ -674,7 +720,7 @@ extern "C" fn C_Sign(
     let data = unsafe { std::slice::from_raw_parts(pData, ulDataLen as usize) };
     if pSignature.is_null() {
         let manager = try_to_get_manager!();
-        match manager.get_signature_length(hSession, data) {
+        match manager.get_signature_length(hSession, data.to_vec()) {
             Ok(signature_length) => unsafe {
                 *pulSignatureLen = signature_length as CK_ULONG;
             },
@@ -685,7 +731,7 @@ extern "C" fn C_Sign(
         }
     } else {
         let mut manager = try_to_get_manager!();
-        match manager.sign(hSession, data) {
+        match manager.sign(hSession, data.to_vec()) {
             Ok(signature) => {
                 let signature_capacity = unsafe { *pulSignatureLen } as usize;
                 if signature_capacity < signature.len() {
