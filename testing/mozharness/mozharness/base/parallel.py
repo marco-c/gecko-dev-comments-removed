@@ -26,7 +26,7 @@ class ChunkingMixin(object):
             possible_list = possible_list[:]
         length = len(possible_list)
         for c in range(1, total_chunks + 1):
-            n = length / total_chunks
+            n = length // total_chunks
             
             
             if c <= (length % total_chunks):
