@@ -952,7 +952,7 @@ class StaticAnalysis(MachCommandBase):
         common_args = ['-clang-tidy-binary', self._clang_tidy_path,
                        '-clang-apply-replacements-binary', self._clang_apply_replacements,
                        '-checks=%s' % checks,
-                       '-extra-arg=-DMOZ_CLANG_PLUGIN']
+                       '-extra-arg=-std=c++17', '-extra-arg=-DMOZ_CLANG_PLUGIN']
 
         
         
