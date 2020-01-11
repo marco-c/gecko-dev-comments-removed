@@ -4,6 +4,10 @@
 
 "use strict";
 
+
+
+
+
 const { Cu } = require("chrome");
 const Services = require("Services");
 const { Pool } = require("devtools/shared/protocol");
@@ -12,6 +16,8 @@ const {
   createExtraActors,
 } = require("devtools/shared/protocol/lazy-pool");
 const { DebuggerServer } = require("devtools/server/debugger-server");
+const protocol = require("devtools/shared/protocol");
+const { rootSpec } = require("devtools/shared/specs/root");
 
 loader.lazyRequireGetter(
   this,
@@ -106,59 +112,59 @@ loader.lazyRequireGetter(
 
 
 
-function RootActor(connection, parameters) {
-  this.conn = connection;
-  this._parameters = parameters;
-  this._onTabListChanged = this.onTabListChanged.bind(this);
-  this._onAddonListChanged = this.onAddonListChanged.bind(this);
-  this._onWorkerListChanged = this.onWorkerListChanged.bind(this);
-  this._onServiceWorkerRegistrationListChanged = this.onServiceWorkerRegistrationListChanged.bind(
-    this
-  );
-  this._onProcessListChanged = this.onProcessListChanged.bind(this);
-  this._extraActors = {};
+exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
+  initialize: function(conn, parameters) {
+    protocol.Actor.prototype.initialize.call(this, conn);
 
-  this._globalActorPool = new LazyPool(this.conn);
-}
+    this._parameters = parameters;
+    this._onTabListChanged = this.onTabListChanged.bind(this);
+    this._onAddonListChanged = this.onAddonListChanged.bind(this);
+    this._onWorkerListChanged = this.onWorkerListChanged.bind(this);
+    this._onServiceWorkerRegistrationListChanged = this.onServiceWorkerRegistrationListChanged.bind(
+      this
+    );
+    this._onProcessListChanged = this.onProcessListChanged.bind(this);
+    this._extraActors = {};
 
-RootActor.prototype = {
-  constructor: RootActor,
-  applicationType: "browser",
+    this._globalActorPool = new LazyPool(this.conn);
 
-  traits: {
-    sources: true,
-    networkMonitor: true,
-    
-    storageInspector: true,
-    
-    wasmBinarySource: true,
-    bulk: true,
-    
-    
-    webConsoleCommands: true,
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    get allowChromeProcess() {
-      return DebuggerServer.allowChromeProcess;
-    },
-    
-    
-    heapSnapshots: true,
-    
-    
-    
-    
-    
-    perfActorVersion: 1,
-    
-    watchpoints: true,
+    this.applicationType = "browser";
+
+    this.traits = {
+      sources: true,
+      networkMonitor: true,
+      
+      storageInspector: true,
+      
+      wasmBinarySource: true,
+      bulk: true,
+      
+      
+      webConsoleCommands: true,
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      get allowChromeProcess() {
+        return DebuggerServer.allowChromeProcess;
+      },
+      
+      
+      heapSnapshots: true,
+      
+      
+      
+      
+      
+      perfActorVersion: 1,
+      
+      watchpoints: true,
+    };
   },
 
   
@@ -186,6 +192,8 @@ RootActor.prototype = {
 
 
   destroy: function() {
+    protocol.Actor.prototype.destroy.call(this);
+
     
     if (this._parameters.tabList) {
       this._parameters.tabList.destroy();
@@ -244,7 +252,7 @@ RootActor.prototype = {
 
 
 
-  onGetRoot: function() {
+  getRoot: function() {
     
     if (!this._globalActorPool) {
       this._globalActorPool = new LazyPool(this.conn);
@@ -270,11 +278,10 @@ RootActor.prototype = {
 
 
 
-  onListTabs: async function(options) {
+  listTabs: async function(options) {
     const tabList = this._parameters.tabList;
     if (!tabList) {
-      return {
-        from: this.actorID,
+      throw {
         error: "noTabs",
         message: "This root actor has no browser tabs.",
       };
@@ -307,7 +314,7 @@ RootActor.prototype = {
     }
 
     
-    const reply = this.onGetRoot();
+    const reply = this.getRoot();
 
     
     
@@ -319,16 +326,16 @@ RootActor.prototype = {
     
     Object.assign(reply, {
       selected: selected || 0,
-      tabs: targetActorList.map(actor => actor.form()),
+      tabs: targetActorList,
     });
 
     return reply;
   },
 
-  onGetTab: async function(options) {
+  getTab: async function(options) {
     const tabList = this._parameters.tabList;
     if (!tabList) {
-      return {
+      throw {
         error: "noTabs",
         message: "This root actor has no browser tabs.",
       };
@@ -343,9 +350,9 @@ RootActor.prototype = {
     } catch (error) {
       if (error.error) {
         
-        return error;
+        throw error;
       }
-      return {
+      throw {
         error: "noTab",
         message: "Unexpected error while calling getTab(): " + error,
       };
@@ -354,21 +361,19 @@ RootActor.prototype = {
     targetActor.parentID = this.actorID;
     this._tabTargetActorPool.manage(targetActor);
 
-    return { tab: targetActor.form() };
+    return targetActor.form();
   },
 
-  onGetWindow: function({ outerWindowID }) {
+  getWindow: function({ outerWindowID }) {
     if (!DebuggerServer.allowChromeProcess) {
-      return {
-        from: this.actorID,
+      throw {
         error: "forbidden",
         message: "You are not allowed to debug windows.",
       };
     }
     const window = Services.wm.getOuterWindowWithId(outerWindowID);
     if (!window) {
-      return {
-        from: this.actorID,
+      throw {
         error: "notFound",
         message: `No window found with outerWindowID ${outerWindowID}`,
       };
@@ -382,10 +387,7 @@ RootActor.prototype = {
     actor.parentID = this.actorID;
     this._chromeWindowActorPool.manage(actor);
 
-    return {
-      from: this.actorID,
-      window: actor.form(),
-    };
+    return actor;
   },
 
   onTabListChanged: function() {
@@ -404,11 +406,10 @@ RootActor.prototype = {
 
 
 
-  onListAddons: async function(option) {
+  listAddons: async function(option) {
     const addonList = this._parameters.addonList;
     if (!addonList) {
-      return {
-        from: this.actorID,
+      throw {
         error: "noAddons",
         message: "This root actor has no browser addons.",
       };
@@ -432,12 +433,7 @@ RootActor.prototype = {
     }
     this._addonTargetActorPool = addonTargetActorPool;
 
-    return {
-      from: this.actorID,
-      addons: addonTargetActors.map(addonTargetActor =>
-        addonTargetActor.form()
-      ),
-    };
+    return addonTargetActors;
   },
 
   onAddonListChanged: function() {
@@ -445,11 +441,10 @@ RootActor.prototype = {
     this._parameters.addonList.onListChanged = null;
   },
 
-  onListWorkers: function() {
+  listWorkers: function() {
     const workerList = this._parameters.workerList;
     if (!workerList) {
-      return {
-        from: this.actorID,
+      throw {
         error: "noWorkers",
         message: "This root actor has no workers.",
       };
@@ -473,8 +468,7 @@ RootActor.prototype = {
       this._workerTargetActorPool = pool;
 
       return {
-        from: this.actorID,
-        workers: actors.map(actor => actor.form()),
+        workers: actors,
       };
     });
   },
@@ -484,11 +478,10 @@ RootActor.prototype = {
     this._parameters.workerList.onListChanged = null;
   },
 
-  onListServiceWorkerRegistrations: function() {
+  listServiceWorkerRegistrations: function() {
     const registrationList = this._parameters.serviceWorkerRegistrationList;
     if (!registrationList) {
-      return {
-        from: this.actorID,
+      throw {
         error: "noServiceWorkerRegistrations",
         message: "This root actor has no service worker registrations.",
       };
@@ -509,8 +502,7 @@ RootActor.prototype = {
       this._serviceWorkerRegistrationActorPool = pool;
 
       return {
-        from: this.actorID,
-        registrations: actors.map(actor => actor.form()),
+        registrations: actors,
       };
     });
   },
@@ -523,11 +515,10 @@ RootActor.prototype = {
     this._parameters.serviceWorkerRegistrationList.onListChanged = null;
   },
 
-  onListProcesses: function() {
+  listProcesses: function() {
     const { processList } = this._parameters;
     if (!processList) {
-      return {
-        from: this.actorID,
+      throw {
         error: "noProcesses",
         message: "This root actor has no processes.",
       };
@@ -563,23 +554,19 @@ RootActor.prototype = {
     this._parameters.processList.onListChanged = null;
   },
 
-  async onGetProcess(request) {
+  async getProcess(id) {
     if (!DebuggerServer.allowChromeProcess) {
-      return {
+      throw {
         error: "forbidden",
         message: "You are not allowed to debug chrome.",
       };
     }
-    if ("id" in request && typeof request.id != "number") {
-      return {
+    if (typeof id != "number") {
+      throw {
         error: "wrongParameter",
         message: "getProcess requires a valid `id` attribute.",
       };
     }
-    
-    
-    const id = request.id || 0;
-
     this._processDescriptorActorPool =
       this._processDescriptorActorPool || new Pool(this.conn);
 
@@ -588,6 +575,7 @@ RootActor.prototype = {
       this._processDescriptorActorPool
     );
     if (!processDescriptor) {
+      
       const options = { id, parent: id === 0 };
       processDescriptor = new ProcessDescriptorActor(this.conn, options);
       this._processDescriptorActorPool.manage(processDescriptor);
@@ -627,7 +615,7 @@ RootActor.prototype = {
     return parentBrowsingContext.getChildren();
   },
 
-  async onListRemoteFrames({ id }) {
+  async listRemoteFrames(id) {
     const frames = [];
     const contextsToWalk = await this._getChildBrowsingContexts(id);
 
@@ -657,8 +645,7 @@ RootActor.prototype = {
 
     this._frameDescriptorActorPool = pool;
 
-    
-    return { frames: frames.map(f => f.form()) };
+    return { frames };
   },
 
   _getKnownDescriptor(id, pool) {
@@ -698,7 +685,7 @@ RootActor.prototype = {
     return id == window.docShell.browsingContext.id;
   },
 
-  onGetBrowsingContextDescriptor({ id }) {
+  getBrowsingContextDescriptor(id) {
     
     
     
@@ -725,16 +712,7 @@ RootActor.prototype = {
     return newFrameDescriptor.form();
   },
 
-  
-  onEcho: function(request) {
-    
-
-
-
-    return Cu.cloneInto(request, {});
-  },
-
-  onProtocolDescription: function() {
+  protocolDescription: function() {
     return require("devtools/shared/protocol").dumpProtocolSpec();
   },
 
@@ -758,24 +736,21 @@ RootActor.prototype = {
       delete this._extraActors[name];
     }
   },
-};
+});
 
-RootActor.prototype.requestTypes = {
-  getRoot: RootActor.prototype.onGetRoot,
-  listTabs: RootActor.prototype.onListTabs,
-  getTab: RootActor.prototype.onGetTab,
-  getWindow: RootActor.prototype.onGetWindow,
-  listAddons: RootActor.prototype.onListAddons,
-  listWorkers: RootActor.prototype.onListWorkers,
-  listServiceWorkerRegistrations:
-    RootActor.prototype.onListServiceWorkerRegistrations,
-  listProcesses: RootActor.prototype.onListProcesses,
-  getProcess: RootActor.prototype.onGetProcess,
-  getBrowsingContextDescriptor:
-    RootActor.prototype.onGetBrowsingContextDescriptor,
-  listRemoteFrames: RootActor.prototype.onListRemoteFrames,
-  echo: RootActor.prototype.onEcho,
-  protocolDescription: RootActor.prototype.onProtocolDescription,
-};
 
-exports.RootActor = RootActor;
+
+
+
+
+
+
+
+
+exports.RootActor.prototype.requestTypes.echo = function(request) {
+  
+
+
+
+  return Cu.cloneInto(request, {});
+};

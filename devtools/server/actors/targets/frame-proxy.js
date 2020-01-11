@@ -15,6 +15,7 @@
 const {
   connectToFrame,
 } = require("devtools/server/connectors/frame-connector");
+const protocol = require("devtools/shared/protocol");
 
 loader.lazyImporter(
   this,
@@ -33,19 +34,28 @@ loader.lazyImporter(
 
 
 
-function FrameTargetActorProxy(connection, browser, options = {}) {
-  this._conn = connection;
-  this._browser = browser;
-  this._form = null;
-  this.exited = false;
-  this.options = options;
-}
 
-FrameTargetActorProxy.prototype = {
-  
-  
-  
-  actorPrefix: "frameTargetProxy",
+
+
+
+
+
+
+const proxySpec = protocol.generateActorSpec({
+  typeName: "frameTargetProxy",
+  methods: {},
+  events: {},
+});
+exports.FrameTargetActorProxy = protocol.ActorClassWithSpec(proxySpec, {
+  initialize: function(conn, browser, options = {}) {
+    protocol.Actor.prototype.initialize.call(this, conn);
+
+    this._conn = conn;
+    this._browser = browser;
+    this._form = null;
+    this.exited = false;
+    this.options = options;
+  },
 
   async connect() {
     const onDestroy = () => {
@@ -236,6 +246,4 @@ FrameTargetActorProxy.prototype = {
     this._form = null;
     this.exited = true;
   },
-};
-
-exports.FrameTargetActorProxy = FrameTargetActorProxy;
+});
