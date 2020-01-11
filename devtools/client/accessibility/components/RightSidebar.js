@@ -15,7 +15,7 @@ const Accordion = createFactory(
 const Checks = createFactory(require("./Checks"));
 
 
-function RightSidebar() {
+function RightSidebar({ toolbox }) {
   const propertiesID = "accessibility-properties";
   const checksID = "accessibility-checks";
 
@@ -38,6 +38,7 @@ function RightSidebar() {
           className: "accessible",
           component: Accessible,
           componentProps: {
+            toolbox,
             labelledby: `${propertiesID}-header`,
           },
           header: L10N.getStr("accessibility.properties"),
