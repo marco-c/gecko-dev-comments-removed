@@ -2,12 +2,6 @@
 
 
 
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/framework/test/helpers.js",
-  this
-);
-
-
 
 const { PromiseTestUtils } = ChromeUtils.import(
   "resource://testing-common/PromiseTestUtils.jsm"
@@ -19,17 +13,82 @@ requestLongerTimeout(4);
 
 
 add_task(async function() {
-  await pushPref("intl.uidirection", 1);
+  await setupPreferencesForBrowserToolbox();
 
-  const ToolboxTask = await initBrowserToolboxTask();
-  await ToolboxTask.importFunctions({});
-
-  const dir = await ToolboxTask.spawn(null, async () => {
-    
-    const inspector = await gToolbox.selectTool("inspector");
-    return inspector.panelDoc.dir;
+  
+  
+  const onCustomMessage = new Promise(resolve => {
+    Services.obs.addObserver(function listener(target, aTop, data) {
+      Services.obs.removeObserver(listener, "browser-toolbox-inspector-dir");
+      resolve(data);
+    }, "browser-toolbox-inspector-dir");
   });
-  is(dir, "rtl", "Inspector panel has the expected direction");
 
-  await ToolboxTask.destroy();
+  const env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
+  env.set(
+    "MOZ_TOOLBOX_TEST_SCRIPT",
+    "new function() {(" + testScript + ")();}"
+  );
+  registerCleanupFunction(() => env.set("MOZ_TOOLBOX_TEST_SCRIPT", ""));
+
+  const { BrowserToolboxProcess } = ChromeUtils.import(
+    "resource://devtools/client/framework/ToolboxProcess.jsm"
+  );
+
+  let closePromise;
+  await new Promise(onRun => {
+    closePromise = new Promise(onClose => {
+      info("Opening the browser toolbox");
+      BrowserToolboxProcess.init(onClose, onRun);
+    });
+  });
+  info("Browser toolbox started");
+
+  const inspectorPanelDirection = await onCustomMessage;
+  info("Received the custom message");
+  is(
+    inspectorPanelDirection,
+    "rtl",
+    "Inspector panel has the expected direction"
+  );
+
+  await closePromise;
+  info("Browser toolbox process just closed");
+  is(
+    BrowserToolboxProcess.getBrowserToolboxSessionState(),
+    false,
+    "No session state after closing"
+  );
 });
+
+
+
+async function testScript() {
+  
+  
+  const inspector = await toolbox.selectTool("inspector");
+  const dir = inspector.panelDoc.dir;
+
+  
+  const webconsole = await toolbox.selectTool("webconsole");
+  const js = `Services.obs.notifyObservers(null, "browser-toolbox-inspector-dir", "${dir}");`;
+
+  const onResult = new Promise(resolve => {
+    const onNewMessages = messages => {
+      for (const message of messages) {
+        if (message.node.classList.contains("result")) {
+          webconsole.hud.ui.off("new-messages", onNewMessages);
+          resolve();
+        }
+      }
+    };
+    webconsole.hud.ui.on("new-messages", onNewMessages);
+  });
+  webconsole.hud.ui.wrapper.dispatchEvaluateExpression(js);
+  await onResult;
+
+  
+  await toolbox.destroy();
+}

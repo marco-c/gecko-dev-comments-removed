@@ -207,15 +207,32 @@ async function onNewToolbox(toolbox) {
   raise();
 
   
+  const prefName = "devtools.browser-toolbox.allow-unsafe-script";
   if (
-    Services.prefs.getBoolPref(
-      "devtools.browsertoolbox.enable-test-server",
-      false
-    )
+    Services.prefs.getPrefType(prefName) == Services.prefs.PREF_BOOL &&
+    Services.prefs.getBoolPref(prefName) === true
   ) {
     
-    installTestingServer(toolbox);
+    const env = Cc["@mozilla.org/process/environment;1"].getService(
+      Ci.nsIEnvironment
+    );
+    const testScript = env.get("MOZ_TOOLBOX_TEST_SCRIPT");
+    if (testScript) {
+      evaluateTestScript(testScript, toolbox);
+    } else {
+      
+      
+      installTestingServer(toolbox);
+    }
   }
+}
+
+function evaluateTestScript(script, toolbox) {
+  const sandbox = Cu.Sandbox(window);
+  sandbox.window = window;
+  sandbox.toolbox = toolbox;
+  sandbox.ChromeUtils = ChromeUtils;
+  Cu.evalInSandbox(script, sandbox);
 }
 
 function installTestingServer(toolbox) {

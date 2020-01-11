@@ -443,6 +443,28 @@ async function openAboutToolbox(params) {
 
 
 
+function setupPreferencesForBrowserToolbox() {
+  const options = {
+    set: [
+      ["devtools.debugger.prompt-connection", false],
+      ["devtools.debugger.remote-enabled", true],
+      ["devtools.chrome.enabled", true],
+      
+      
+      ["devtools.browser-toolbox.allow-unsafe-script", true],
+      
+      
+      ["devtools.debugger.remote-timeout", 120000],
+    ],
+  };
+
+  return SpecialPowers.pushPrefEnv(options);
+}
+
+
+
+
+
 
 
 

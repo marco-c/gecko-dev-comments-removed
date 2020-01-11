@@ -2,12 +2,6 @@
 
 
 
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/framework/test/helpers.js",
-  this
-);
-
-
 
 const { PromiseTestUtils } = ChromeUtils.import(
   "resource://testing-common/PromiseTestUtils.jsm"
@@ -21,10 +15,7 @@ requestLongerTimeout(4);
 
 
 add_task(async function() {
-  const ToolboxTask = await initBrowserToolboxTask({
-    enableBrowserToolboxFission: true,
-  });
-  await ToolboxTask.importFunctions({});
+  await setupPreferencesForBrowserToolbox();
 
   const tab = await addTab(
     `data:text/html,<div id="my-div" style="color: red">Foo</div>`
@@ -33,47 +24,103 @@ add_task(async function() {
   
   tab.linkedBrowser.setAttribute("test-tab", "true");
 
-  const color = await ToolboxTask.spawn(null, async () => {
+  
+  
+  const env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
+  
+  const testScript = function() {
     
-    const inspector = await gToolbox.selectTool("inspector");
-    const onSidebarSelect = inspector.sidebar.once("select");
-    inspector.sidebar.select("computedview");
-    await onSidebarSelect;
-
-    async function select(walker, selector) {
-      const nodeFront = await walker.querySelector(walker.rootNode, selector);
-      const updated = inspector.once("inspector-updated");
-      inspector.selection.setNodeFront(nodeFront);
-      await updated;
-      return nodeFront;
-    }
-    const browser = await select(
-      inspector.walker,
-      'browser[remote="true"][test-tab]'
+    
+    
+    
+    const { Services } = ChromeUtils.import(
+      "resource://gre/modules/Services.jsm"
     );
-    const browserTarget = await browser.connectToRemoteFrame();
-    const walker = (await browserTarget.getFront("inspector")).walker;
-    await select(walker, "#my-div");
+    Services.prefs.setBoolPref("devtools.browsertoolbox.fission", true);
 
-    const view = inspector.getPanel("computedview").computedView;
-    function getProperty(name) {
-      const propertyViews = view.propertyViews;
-      for (const propView of propertyViews) {
-        if (propView.name == name) {
-          return propView;
+    toolbox
+      .selectTool("inspector")
+      .then(async inspector => {
+        const onSidebarSelect = inspector.sidebar.once("select");
+        inspector.sidebar.select("computedview");
+        await onSidebarSelect;
+
+        async function select(walker, selector) {
+          const nodeFront = await walker.querySelector(
+            walker.rootNode,
+            selector
+          );
+          const updated = inspector.once("inspector-updated");
+          inspector.selection.setNodeFront(nodeFront);
+          await updated;
+          return nodeFront;
         }
-      }
-      return null;
-    }
-    const prop = getProperty("color");
-    return prop.valueNode.textContent;
+        const browser = await select(
+          inspector.walker,
+          'browser[remote="true"][test-tab]'
+        );
+        const browserTarget = await browser.connectToRemoteFrame();
+        const walker = (await browserTarget.getFront("inspector")).walker;
+        await select(walker, "#my-div");
+
+        const view = inspector.getPanel("computedview").computedView;
+        function getProperty(name) {
+          const propertyViews = view.propertyViews;
+          for (const propView of propertyViews) {
+            if (propView.name == name) {
+              return propView;
+            }
+          }
+          return null;
+        }
+        const prop = getProperty("color");
+        const color = prop.valueNode.textContent;
+        if (color != "rgb(255, 0, 0)") {
+          throw new Error(
+            "The color property of the <div> within a tab isn't red, got: " +
+              color
+          );
+        }
+
+        Services.prefs.setBoolPref("devtools.browsertoolbox.fission", false);
+      })
+      .then(() => toolbox.destroy());
+  };
+  env.set("MOZ_TOOLBOX_TEST_SCRIPT", "new " + testScript);
+  registerCleanupFunction(() => {
+    env.set("MOZ_TOOLBOX_TEST_SCRIPT", "");
   });
 
+  const { BrowserToolboxProcess } = ChromeUtils.import(
+    "resource://devtools/client/framework/ToolboxProcess.jsm"
+  );
   is(
-    color,
-    "rgb(255, 0, 0)",
-    "The color property of the <div> within a tab isn't red"
+    BrowserToolboxProcess.getBrowserToolboxSessionState(),
+    false,
+    "No session state initially"
   );
 
-  await ToolboxTask.destroy();
+  let closePromise;
+  await new Promise(onRun => {
+    closePromise = new Promise(onClose => {
+      info("Opening the browser toolbox\n");
+      BrowserToolboxProcess.init(onClose, onRun);
+    });
+  });
+  ok(true, "Browser toolbox started\n");
+  is(
+    BrowserToolboxProcess.getBrowserToolboxSessionState(),
+    true,
+    "Has session state"
+  );
+
+  await closePromise;
+  ok(true, "Browser toolbox process just closed");
+  is(
+    BrowserToolboxProcess.getBrowserToolboxSessionState(),
+    false,
+    "No session state after closing"
+  );
 });

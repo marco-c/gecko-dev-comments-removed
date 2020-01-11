@@ -27,15 +27,10 @@ const { DebuggerClient } = require("devtools/shared/client/debugger-client");
 
 
 
-
-
-
-
-
-async function initBrowserToolboxTask({ enableBrowserToolboxFission } = {}) {
+async function initBrowserToolboxTask() {
   await pushPref("devtools.chrome.enabled", true);
   await pushPref("devtools.debugger.remote-enabled", true);
-  await pushPref("devtools.browsertoolbox.enable-test-server", true);
+  await pushPref("devtools.browser-toolbox.allow-unsafe-script", true);
   await pushPref("devtools.debugger.prompt-connection", false);
 
   
@@ -76,15 +71,10 @@ async function initBrowserToolboxTask({ enableBrowserToolboxFission } = {}) {
   ok(true, "Connected");
 
   const target = await client.mainRoot.getMainProcess();
-  const consoleFront = await target.getFront("console");
-  const preferenceFront = await client.mainRoot.getFront("preference");
-
-  if (enableBrowserToolboxFission) {
-    await preferenceFront.setBoolPref("devtools.browsertoolbox.fission", true);
-  }
+  const console = await target.getFront("console");
 
   async function spawn(arg, fn) {
-    const rv = await consoleFront.evaluateJSAsync(`(${fn})(${arg})`, {
+    const rv = await console.evaluateJSAsync(`(${fn})(${arg})`, {
       mapped: { await: true },
     });
     if (rv.exception) {
@@ -97,17 +87,13 @@ async function initBrowserToolboxTask({ enableBrowserToolboxFission } = {}) {
 
   async function importFunctions(functions) {
     for (const [key, fn] of Object.entries(functions)) {
-      await consoleFront.evaluateJSAsync(`this.${key} = ${fn}`);
+      await console.evaluateJSAsync(`this.${key} = ${fn}`);
     }
-  }
-
-  async function importScript(script) {
-    await consoleFront.evaluateJSAsync(script);
   }
 
   async function destroy() {
     const closePromise = process._dbgProcess.wait();
-    consoleFront.evaluateJSAsync("gToolbox.destroy()");
+    console.evaluateJSAsync("gToolbox.destroy()");
 
     const { exitCode } = await closePromise;
     ok(true, "Browser toolbox process closed");
@@ -125,7 +111,6 @@ async function initBrowserToolboxTask({ enableBrowserToolboxFission } = {}) {
 
   return {
     importFunctions,
-    importScript,
     spawn,
     destroy,
   };
