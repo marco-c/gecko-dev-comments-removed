@@ -4,8 +4,8 @@
 
 
 
-#ifndef frontend_FunctionCreationData_h
-#define frontend_FunctionCreationData_h
+#ifndef frontend_Stencil_h
+#define frontend_Stencil_h
 
 #include "frontend/ParseNode.h"
 #include "gc/AllocKind.h"
@@ -15,6 +15,15 @@
 
 namespace js {
 namespace frontend {
+
+
+
+
+
+
+
+
+
 
 
 struct LazyScriptCreationData {
