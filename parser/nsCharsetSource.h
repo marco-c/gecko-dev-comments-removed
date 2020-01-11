@@ -13,8 +13,11 @@ enum {
   kCharsetFromFileURLGuess,
   kCharsetFromDocTypeDefault,  
   kCharsetFromCache,
-  kCharsetFromParentFrame,
-  kCharsetFromAutoDetection,
+  kCharsetFromInitialAutoDetection,
+  kCharsetFromFinalAutoDetection,
+  kCharsetFromParentFrame,  
+                            
+                            
   kCharsetFromMetaPrescan,  
   kCharsetFromMetaTag,      
   kCharsetFromIrreversibleAutoDetection,
