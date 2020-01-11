@@ -73,6 +73,9 @@ class DCLayerTree {
     return mCompositionDevice;
   }
 
+  
+  GLuint GetOrCreateFbo(int aWidth, int aHeight);
+
  protected:
   bool Initialize(HWND aHwnd);
   bool MaybeUpdateDebugCounter();
@@ -94,6 +97,25 @@ class DCLayerTree {
   Maybe<wr::NativeSurfaceId> mCurrentId;
 
   std::unordered_map<uint64_t, UniquePtr<DCLayer>> mDCLayers;
+
+  
+  std::vector<uint64_t> mCurrentLayers;
+
+  
+  std::vector<uint64_t> mPrevLayers;
+
+  
+  struct CachedFrameBuffer {
+    int width;
+    int height;
+    GLuint fboId;
+    GLuint depthRboId;
+  };
+
+  
+  
+  
+  std::vector<CachedFrameBuffer> mFrameBuffers;
 };
 
 class DCLayer {
@@ -101,14 +123,13 @@ class DCLayer {
   explicit DCLayer(DCLayerTree* aDCLayerTree);
   ~DCLayer();
   bool Initialize(wr::DeviceIntSize aSize, bool aIsOpaque);
-  bool CreateEGLSurfaceForCompositionSurface(wr::DeviceIntRect aDirtyRect,
-                                             wr::DeviceIntPoint* aOffset);
+  GLuint CreateEGLSurfaceForCompositionSurface(wr::DeviceIntRect aDirtyRect,
+                                               wr::DeviceIntPoint* aOffset);
   void EndDraw();
 
   IDCompositionSurface* GetCompositionSurface() const {
     return mCompositionSurface;
   }
-  EGLSurface GetEGLSurface() const { return mEGLSurface; }
   IDCompositionVisual2* GetVisual() const { return mVisual; }
 
  protected:
@@ -121,8 +142,15 @@ class DCLayer {
 
   RefPtr<IDCompositionSurface> mCompositionSurface;
 
+  
+  
+  EGLImage mEGLImage;
+
+  
+  
+  GLuint mColorRBO;
+
   LayoutDeviceIntSize mBufferSize;
-  EGLSurface mEGLSurface;
 
   RefPtr<IDCompositionVisual2> mVisual;
 };
