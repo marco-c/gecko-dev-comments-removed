@@ -21,6 +21,7 @@ XPCOMUtils.defineLazyServiceGetter(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   RemoteSettings: "resource://services-settings/remote-settings.js",
+  FeatureGate: "resource://featuregates/FeatureGate.jsm",
   Storage: "resource://normandy/lib/Storage.jsm",
   FilterExpressions:
     "resource://gre/modules/components-utils/FilterExpressions.jsm",
@@ -64,6 +65,10 @@ XPCOMUtils.defineLazyGetter(this, "gRemoteSettingsClient", () => {
   });
 });
 
+XPCOMUtils.defineLazyGetter(this, "gRemoteSettingsGate", () => {
+  return FeatureGate.fromId("normandy-remote-settings");
+});
+
 
 
 
@@ -95,7 +100,7 @@ var RecipeRunner = {
 
     this.checkPrefs(); 
     this.watchPrefs();
-    this.setUpRemoteSettings();
+    await this.setUpRemoteSettings();
 
     
     
@@ -126,7 +131,10 @@ var RecipeRunner = {
       
       
       if (devMode) {
-        await gRemoteSettingsClient.sync();
+        let remoteSettingsGate = await gRemoteSettingsGate;
+        if (await remoteSettingsGate.isEnabled()) {
+          await gRemoteSettingsClient.sync();
+        }
       }
       let trigger;
       if (devMode) {
@@ -244,52 +252,70 @@ var RecipeRunner = {
     timerManager.unregisterTimer(TIMER_NAME);
   },
 
-  setUpRemoteSettings() {
-    if (this._alreadySetUpRemoteSettings) {
-      return;
+  async setUpRemoteSettings() {
+    const remoteSettingsGate = await gRemoteSettingsGate;
+    if (await remoteSettingsGate.isEnabled()) {
+      this.attachRemoteSettings();
     }
-    this._alreadySetUpRemoteSettings = true;
-
-    if (!this._onSync) {
-      this._onSync = this.onSync.bind(this);
-    }
-    gRemoteSettingsClient.on("sync", this._onSync);
-
-    CleanupManager.addCleanupHandler(() => {
-      gRemoteSettingsClient.off("sync", this._onSync);
-      this._alreadySetUpRemoteSettings = false;
-    });
+    const observer = {
+      onEnable: this.attachRemoteSettings.bind(this),
+      onDisable: this.detachRemoteSettings.bind(this),
+    };
+    remoteSettingsGate.addObserver(observer);
+    CleanupManager.addCleanupHandler(() =>
+      remoteSettingsGate.removeObserver(observer)
+    );
   },
 
-  
-  async onSync() {
-    if (!this.enabled) {
-      return;
+  attachRemoteSettings() {
+    this.loadFromRemoteSettings = true;
+    if (!this._onSync) {
+      this._onSync = async () => {
+        if (!this.enabled) {
+          return;
+        }
+
+        
+        
+        
+        if (this._syncSkewTimeout) {
+          clearTimeout(this._syncSkewTimeout);
+        }
+        let minSkewSec = 1; 
+        let maxSkewSec = Services.prefs.getIntPref(ONSYNC_SKEW_SEC_PREF, 0);
+        if (maxSkewSec >= minSkewSec) {
+          let skewMillis =
+            (minSkewSec + Math.random() * (maxSkewSec - minSkewSec)) * 1000;
+          log.debug(
+            `Delaying on-sync Normandy run for ${Math.floor(
+              skewMillis / 1000
+            )} seconds`
+          );
+          this._syncSkewTimeout = setTimeout(
+            () => this.run({ trigger: "sync" }),
+            skewMillis
+          );
+        } else {
+          log.debug(`Not skewing on-sync Normandy run`);
+          await this.run({ trigger: "sync" });
+        }
+      };
+
+      gRemoteSettingsClient.on("sync", this._onSync);
+    }
+  },
+
+  detachRemoteSettings() {
+    this.loadFromRemoteSettings = false;
+    if (this._onSync) {
+      
+      gRemoteSettingsClient.off("sync", this._onSync);
+      this._onSync = null;
     }
 
-    
-    
-    
     if (this._syncSkewTimeout) {
       clearTimeout(this._syncSkewTimeout);
-    }
-    let minSkewSec = 1; 
-    let maxSkewSec = Services.prefs.getIntPref(ONSYNC_SKEW_SEC_PREF, 0);
-    if (maxSkewSec >= minSkewSec) {
-      let skewMillis =
-        (minSkewSec + Math.random() * (maxSkewSec - minSkewSec)) * 1000;
-      log.debug(
-        `Delaying on-sync Normandy run for ${Math.floor(
-          skewMillis / 1000
-        )} seconds`
-      );
-      this._syncSkewTimeout = setTimeout(
-        () => this.run({ trigger: "sync" }),
-        skewMillis
-      );
-    } else {
-      log.debug(`Not skewing on-sync Normandy run`);
-      await this.run({ trigger: "sync" });
+      this._syncSkewTimeout = null;
     }
   },
 
@@ -331,6 +357,8 @@ var RecipeRunner = {
       try {
         recipesToRun = await this.loadRecipes();
       } catch (e) {
+        
+        
         let status = Uptake.RUNNER_SERVER_ERROR;
         if (/NetworkError/.test(e)) {
           status = Uptake.RUNNER_NETWORK_ERROR;
@@ -373,15 +401,42 @@ var RecipeRunner = {
   async loadRecipes() {
     
     
+    if (this.loadFromRemoteSettings) {
+      
+      const entries = await gRemoteSettingsClient.get();
+      
+      return Promise.all(
+        entries.map(async ({ recipe, signature }) => {
+          await NormandyApi.verifyObjectSignature(recipe, signature, "recipe");
+          return recipe;
+        })
+      );
+    }
+
     
-    const entries = await gRemoteSettingsClient.get();
-    return Promise.all(
-      entries.map(async ({ recipe, signature }) => {
-        
-        await NormandyApi.verifyObjectSignature(recipe, signature, "recipe");
-        return recipe;
-      })
-    );
+    let recipes;
+    try {
+      recipes = await NormandyApi.fetchRecipes();
+      log.debug(
+        `Fetched ${recipes.length} recipes from the server: ` +
+          recipes.map(r => r.name).join(", ")
+      );
+    } catch (e) {
+      const apiUrl = Services.prefs.getCharPref(API_URL_PREF);
+      log.error(`Could not fetch recipes from ${apiUrl}: "${e}"`);
+      throw e;
+    }
+
+    
+    
+    
+    const recipesToRun = [];
+    for (const recipe of recipes) {
+      if (await this.shouldRunRecipe(recipe)) {
+        recipesToRun.push(recipe);
+      }
+    }
+    return recipesToRun;
   },
 
   getFilterContext(recipe) {
