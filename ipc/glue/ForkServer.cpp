@@ -302,8 +302,10 @@ ForkServer::RunForkServer(int* aArgc, char*** aArgv) {
     forkserver.mAppProcBuilder->InitAppProcess(aArgc, aArgv);
     forkserver.mAppProcBuilder.reset();
 
+    MOZ_ASSERT(NS_LITERAL_CSTRING("tab") == (*aArgv)[*aArgc - 1], "Only |tab| is allowed!");
+
     
-    nsTraceRefcnt::ResetLogFiles();
+    nsTraceRefcnt::ResetLogFiles((*aArgv)[*aArgc - 1]);
 
     return false;
 }
