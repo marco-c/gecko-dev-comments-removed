@@ -1,6 +1,7 @@
 package org.mozilla.geckoview;
 
 import android.support.annotation.AnyThread;
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
@@ -13,6 +14,8 @@ import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -411,12 +414,48 @@ public class WebExtensionController {
         return result;
     }
 
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({ EnableSource.USER })
+    @interface EnableSources {}
+
     
-    GeckoResult<WebExtension> enable(final WebExtension extension) {
+
+    public static class EnableSource {
+        
+        public final static int USER = 1;
+
+        
+        
+
+        final static int APP = 2;
+
+        static String toString(final @EnableSources int flag) {
+            if (flag == USER) {
+                return  "user";
+            } else {
+                throw new IllegalArgumentException("Value provided in flags is not valid.");
+            }
+        }
+    }
+
+    
+
+
+
+
+
+
+
+
+    @AnyThread
+    @NonNull
+    public GeckoResult<WebExtension> enable(final @NonNull WebExtension extension,
+                                            final @EnableSources int source) {
         final WebExtensionResult result = new WebExtensionResult("extension");
 
-        final GeckoBundle bundle = new GeckoBundle(1);
+        final GeckoBundle bundle = new GeckoBundle(2);
         bundle.putString("webExtensionId", extension.id);
+        bundle.putString("source", EnableSource.toString(source));
 
         EventDispatcher.getInstance().dispatch("GeckoView:WebExtension:Enable",
                 bundle, result);
@@ -428,11 +467,23 @@ public class WebExtensionController {
     }
 
     
-    GeckoResult<WebExtension> disable(final WebExtension extension) {
+
+
+
+
+
+
+
+
+    @AnyThread
+    @NonNull
+    public GeckoResult<WebExtension> disable(final @NonNull WebExtension extension,
+                                             final @EnableSources int source) {
         final WebExtensionResult result = new WebExtensionResult("extension");
 
-        final GeckoBundle bundle = new GeckoBundle(1);
+        final GeckoBundle bundle = new GeckoBundle(2);
         bundle.putString("webExtensionId", extension.id);
+        bundle.putString("source", EnableSource.toString(source));
 
         EventDispatcher.getInstance().dispatch("GeckoView:WebExtension:Disable",
                 bundle, result);
