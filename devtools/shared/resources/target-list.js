@@ -228,7 +228,7 @@ class TargetList {
   
   
   
-  async _onTargetAvailable(targetFront) {
+  async _onTargetAvailable(targetFront, isTargetSwitching = false) {
     if (this._targets.has(targetFront)) {
       
       
@@ -252,15 +252,17 @@ class TargetList {
       type: targetType,
       targetFront,
       isTopLevel: targetFront == this.targetFront,
+      isTargetSwitching,
     });
   }
 
-  _onTargetDestroyed(targetFront) {
+  _onTargetDestroyed(targetFront, isTargetSwitching = false) {
     const targetType = this._getTargetType(targetFront);
     this._destroyListeners.emit(targetType, {
       type: targetType,
       targetFront,
       isTopLevel: targetFront == this.targetFront,
+      isTargetSwitching,
     });
     this._targets.delete(targetFront);
   }
@@ -360,6 +362,8 @@ class TargetList {
 
 
 
+
+
   async watchTargets(types, onAvailable, onDestroy) {
     if (typeof onAvailable != "function") {
       throw new Error(
@@ -385,6 +389,7 @@ class TargetList {
               type,
               targetFront,
               isTopLevel: targetFront == this.targetFront,
+              isTargetSwitching: false,
             });
           } catch (e) {
             
@@ -475,7 +480,9 @@ class TargetList {
   async switchToTarget(newTarget) {
     
     for (const target of this._targets) {
-      this._onTargetDestroyed(target);
+      
+      const isTargetSwitching = target == this.targetFront;
+      this._onTargetDestroyed(target, isTargetSwitching);
     }
     const listenedTypes = TargetList.ALL_TYPES.filter(type =>
       this._isListening(type)
@@ -490,7 +497,7 @@ class TargetList {
     this.targetFront = newTarget;
 
     
-    this._onTargetAvailable(newTarget);
+    this._onTargetAvailable(newTarget, true);
 
     
     
