@@ -100,24 +100,16 @@ ExtensionParent.apiManager.on(
   async (eventName, setting) => {
     let extensionId, url;
     if (setting.type === STORE_TYPE && setting.key === NEW_TAB_SETTING_NAME) {
-      let { item = {} } = setting;
-      if (setting.action === "enable") {
+      
+      
+      
+      let { item } = setting;
+      if (item) {
         
-        
-        extensionId = item.id || setting.id;
+        extensionId = item.id;
         url = item.value || item.initialValue;
-      } else if (setting.item) {
-        
-        if (item.id && item.value) {
-          
-          extensionId = item.id;
-          url = item.value;
-        } else {
-          
-          url = item.initialValue;
-        }
+        setNewTabURL(extensionId, url);
       }
-      setNewTabURL(extensionId, url);
     }
   }
 );
