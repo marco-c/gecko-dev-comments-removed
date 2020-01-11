@@ -12,14 +12,20 @@ const Services = require("Services");
 const { gDevTools } = require("devtools/client/framework/devtools");
 const { TargetFactory } = require("devtools/client/framework/target");
 
-const webserver = Services.prefs.getCharPref("addon.test.damp.webserver");
 
-const PAGES_BASE_URL = webserver + "/tests/devtools/addon/content/pages/";
+
+
+
+
+
+
+const BASE_DOMAIN = "http://damp.top.com";
+const PAGES_BASE_URL = BASE_DOMAIN + "/tests/devtools/addon/content/pages/";
 
 exports.PAGES_BASE_URL = PAGES_BASE_URL;
 exports.SIMPLE_URL = PAGES_BASE_URL + "simple.html";
 exports.COMPLICATED_URL =
-  webserver + "/tests/tp5n/bild.de/www.bild.de/index.html";
+  BASE_DOMAIN + "/tests/tp5n/bild.de/www.bild.de/index.html";
 
 let damp = null;
 
