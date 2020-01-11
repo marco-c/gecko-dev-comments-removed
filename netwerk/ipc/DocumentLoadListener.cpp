@@ -937,9 +937,11 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   
   
   
-  nsCOMPtr<nsIObserverService> obsService = services::GetObserverService();
-  obsService->NotifyObservers(ToSupports(this), "channel-on-may-change-process",
-                              nullptr);
+  if (status != NS_BINDING_ABORTED) {
+    nsCOMPtr<nsIObserverService> obsService = services::GetObserverService();
+    obsService->NotifyObservers(ToSupports(this),
+                                "channel-on-may-change-process", nullptr);
+  }
 
   if (mRedirectContentProcessIdPromise) {
     TriggerCrossProcessSwitch();
