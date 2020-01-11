@@ -18,7 +18,7 @@
 class nsGenConList;
 
 struct nsGenConNode : public mozilla::LinkedListElement<nsGenConNode> {
-  using StyleContentType = mozilla::StyleContentType;
+  using StyleContentType = mozilla::StyleContentItem::Tag;
 
   
   

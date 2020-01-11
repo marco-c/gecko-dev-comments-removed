@@ -1504,16 +1504,16 @@ CounterStyle* CustomCounterStyle::GetExtendsRoot() {
 AnonymousCounterStyle::AnonymousCounterStyle(const nsAString& aContent)
     : CounterStyle(NS_STYLE_LIST_STYLE_CUSTOM),
       mSingleString(true),
-      mSystem(NS_STYLE_COUNTER_SYSTEM_CYCLIC) {
+      mSymbolsType(StyleSymbolsType::Cyclic) {
   mSymbols.SetCapacity(1);
   mSymbols.AppendElement(aContent);
 }
 
-AnonymousCounterStyle::AnonymousCounterStyle(uint8_t aSystem,
+AnonymousCounterStyle::AnonymousCounterStyle(StyleSymbolsType aType,
                                              nsTArray<nsString> aSymbols)
     : CounterStyle(NS_STYLE_LIST_STYLE_CUSTOM),
       mSingleString(false),
-      mSystem(aSystem),
+      mSymbolsType(aType),
       mSymbols(std::move(aSymbols)) {}
 
 
@@ -1532,13 +1532,8 @@ void AnonymousCounterStyle::GetSuffix(nsAString& aResult) {
 
 
 bool AnonymousCounterStyle::IsBullet() {
-  switch (mSystem) {
-    case NS_STYLE_COUNTER_SYSTEM_CYCLIC:
-      
-      return true;
-    default:
-      return false;
-  }
+  
+  return mSymbolsType == StyleSymbolsType::Cyclic;
 }
 
 
@@ -1549,13 +1544,13 @@ void AnonymousCounterStyle::GetNegative(NegativeType& aResult) {
 
 
 bool AnonymousCounterStyle::IsOrdinalInRange(CounterValue aOrdinal) {
-  switch (mSystem) {
-    case NS_STYLE_COUNTER_SYSTEM_CYCLIC:
-    case NS_STYLE_COUNTER_SYSTEM_NUMERIC:
-    case NS_STYLE_COUNTER_SYSTEM_FIXED:
+  switch (mSymbolsType) {
+    case StyleSymbolsType::Cyclic:
+    case StyleSymbolsType::Numeric:
+    case StyleSymbolsType::Fixed:
       return true;
-    case NS_STYLE_COUNTER_SYSTEM_ALPHABETIC:
-    case NS_STYLE_COUNTER_SYSTEM_SYMBOLIC:
+    case StyleSymbolsType::Alphabetic:
+    case StyleSymbolsType::Symbolic:
       return aOrdinal >= 1;
     default:
       MOZ_ASSERT_UNREACHABLE("Invalid system.");
@@ -1579,14 +1574,31 @@ CounterStyle* AnonymousCounterStyle::GetFallback() {
   return CounterStyleManager::GetDecimalStyle();
 }
 
+uint8_t AnonymousCounterStyle::GetSystem() const {
+  switch (mSymbolsType) {
+    case StyleSymbolsType::Cyclic:
+      return NS_STYLE_COUNTER_SYSTEM_CYCLIC;
+    case StyleSymbolsType::Numeric:
+      return NS_STYLE_COUNTER_SYSTEM_NUMERIC;
+    case StyleSymbolsType::Fixed:
+      return NS_STYLE_COUNTER_SYSTEM_FIXED;
+    case StyleSymbolsType::Alphabetic:
+      return NS_STYLE_COUNTER_SYSTEM_ALPHABETIC;
+    case StyleSymbolsType::Symbolic:
+      return NS_STYLE_COUNTER_SYSTEM_SYMBOLIC;
+  }
+  MOZ_ASSERT_UNREACHABLE("Unknown symbols() type");
+  return NS_STYLE_COUNTER_SYSTEM_CYCLIC;
+}
+
 
 uint8_t AnonymousCounterStyle::GetSpeakAs() {
-  return GetDefaultSpeakAsForSystem(mSystem);
+  return GetDefaultSpeakAsForSystem(GetSystem());
 }
 
 
 bool AnonymousCounterStyle::UseNegativeSign() {
-  return SystemUsesNegativeSign(mSystem);
+  return SystemUsesNegativeSign(GetSystem());
 }
 
 
@@ -1594,21 +1606,20 @@ bool AnonymousCounterStyle::GetInitialCounterText(CounterValue aOrdinal,
                                                   WritingMode aWritingMode,
                                                   nsAString& aResult,
                                                   bool& aIsRTL) {
-  switch (mSystem) {
-    case NS_STYLE_COUNTER_SYSTEM_CYCLIC:
+  switch (mSymbolsType) {
+    case StyleSymbolsType::Cyclic:
       return GetCyclicCounterText(aOrdinal, aResult, mSymbols);
-    case NS_STYLE_COUNTER_SYSTEM_FIXED:
-      return GetFixedCounterText(aOrdinal, aResult, 1, mSymbols);
-    case NS_STYLE_COUNTER_SYSTEM_SYMBOLIC:
-      return GetSymbolicCounterText(aOrdinal, aResult, mSymbols);
-    case NS_STYLE_COUNTER_SYSTEM_ALPHABETIC:
-      return GetAlphabeticCounterText(aOrdinal, aResult, mSymbols);
-    case NS_STYLE_COUNTER_SYSTEM_NUMERIC:
+    case StyleSymbolsType::Numeric:
       return GetNumericCounterText(aOrdinal, aResult, mSymbols);
-    default:
-      MOZ_ASSERT_UNREACHABLE("Invalid system.");
-      return false;
+    case StyleSymbolsType::Fixed:
+      return GetFixedCounterText(aOrdinal, aResult, 1, mSymbols);
+    case StyleSymbolsType::Alphabetic:
+      return GetAlphabeticCounterText(aOrdinal, aResult, mSymbols);
+    case StyleSymbolsType::Symbolic:
+      return GetSymbolicCounterText(aOrdinal, aResult, mSymbols);
   }
+  MOZ_ASSERT_UNREACHABLE("Invalid system.");
+  return false;
 }
 
 bool CounterStyle::IsDependentStyle() const {

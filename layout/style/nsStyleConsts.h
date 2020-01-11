@@ -187,21 +187,6 @@ enum class StyleColumnSpan : uint8_t {
 };
 
 
-enum class StyleContentType : uint8_t {
-  String = 1,
-  Image = 10,
-  Attr = 20,
-  Counter = 30,
-  Counters = 31,
-  OpenQuote = 40,
-  CloseQuote = 41,
-  NoOpenQuote = 42,
-  NoCloseQuote = 43,
-  AltContent = 50,
-  Uninitialized,
-};
-
-
 
 enum class StyleGeometryBox : uint8_t {
   ContentBox,  
@@ -347,15 +332,6 @@ enum class StyleBorderCollapse : uint8_t { Collapse, Separate };
 
 
 enum class StyleBorderImageRepeat : uint8_t { Stretch, Repeat, Round, Space };
-
-
-enum class StyleContent : uint8_t {
-  OpenQuote,
-  CloseQuote,
-  NoOpenQuote,
-  NoCloseQuote,
-  AltContent
-};
 
 
 #define NS_STYLE_DIRECTION_LTR 0

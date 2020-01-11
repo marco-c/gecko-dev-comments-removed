@@ -55,6 +55,7 @@ pub mod url;
     ToResolvedValue,
     ToShmem,
 )]
+#[repr(u8)]
 pub enum SymbolsType {
     Cyclic,
     Numeric,
@@ -63,39 +64,12 @@ pub enum SymbolsType {
     Fixed,
 }
 
-#[cfg(feature = "gecko")]
-impl SymbolsType {
-    
-    pub fn to_gecko_keyword(self) -> u8 {
-        use crate::gecko_bindings::structs;
-        match self {
-            SymbolsType::Cyclic => structs::NS_STYLE_COUNTER_SYSTEM_CYCLIC as u8,
-            SymbolsType::Numeric => structs::NS_STYLE_COUNTER_SYSTEM_NUMERIC as u8,
-            SymbolsType::Alphabetic => structs::NS_STYLE_COUNTER_SYSTEM_ALPHABETIC as u8,
-            SymbolsType::Symbolic => structs::NS_STYLE_COUNTER_SYSTEM_SYMBOLIC as u8,
-            SymbolsType::Fixed => structs::NS_STYLE_COUNTER_SYSTEM_FIXED as u8,
-        }
-    }
-
-    
-    pub fn from_gecko_keyword(gecko_value: u32) -> SymbolsType {
-        use crate::gecko_bindings::structs;
-        match gecko_value {
-            structs::NS_STYLE_COUNTER_SYSTEM_CYCLIC => SymbolsType::Cyclic,
-            structs::NS_STYLE_COUNTER_SYSTEM_NUMERIC => SymbolsType::Numeric,
-            structs::NS_STYLE_COUNTER_SYSTEM_ALPHABETIC => SymbolsType::Alphabetic,
-            structs::NS_STYLE_COUNTER_SYSTEM_SYMBOLIC => SymbolsType::Symbolic,
-            structs::NS_STYLE_COUNTER_SYSTEM_FIXED => SymbolsType::Fixed,
-            x => panic!("Unexpected value for symbol type {}", x),
-        }
-    }
-}
-
 
 
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Debug, Eq, PartialEq, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
+#[repr(u8)]
 pub enum CounterStyle {
     
     Name(CustomIdent),

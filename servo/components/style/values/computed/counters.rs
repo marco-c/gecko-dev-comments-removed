@@ -16,7 +16,7 @@ pub type CounterIncrement = GenericCounterIncrement<i32>;
 pub type CounterSetOrReset = GenericCounterSetOrReset<i32>;
 
 
-pub type Content = generics::Content<ComputedImageUrl>;
+pub type Content = generics::GenericContent<ComputedImageUrl>;
 
 
-pub type ContentItem = generics::ContentItem<ComputedImageUrl>;
+pub type ContentItem = generics::GenericContentItem<ComputedImageUrl>;

@@ -25,6 +25,7 @@ macro_rules! ns {
 
 
 #[derive(Clone, Debug, Default, Eq, Hash, MallocSizeOf, PartialEq, ToShmem)]
+#[repr(transparent)]
 pub struct Namespace(pub Atom);
 
 impl PrecomputedHash for Namespace {
