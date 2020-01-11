@@ -34,14 +34,6 @@ async function enableServiceWorkerDebugging() {
 
 async function enableApplicationPanel() {
   
-  const { PromiseTestUtils } = ChromeUtils.import(
-    "resource://testing-common/PromiseTestUtils.jsm"
-  );
-  PromiseTestUtils.whitelistRejectionsGlobally(
-    /this._frontCreationListeners is null/
-  );
-
-  
   await enableServiceWorkerDebugging();
 
   
@@ -52,24 +44,9 @@ function getWorkerContainers(doc) {
   return doc.querySelectorAll(".js-sw-container");
 }
 
-async function navigate(toolbox, url) {
-  const isTargetSwitchingEnabled = Services.prefs.getBoolPref(
-    "devtools.target-switching.enabled",
-    false
-  );
-
-  
-  if (isTargetSwitchingEnabled) {
-    const onSwitched = once(toolbox, "switched-target");
-    toolbox.target.navigateTo({ url });
-    return onSwitched;
-  }
-
-  
-  
-  const onNavigated = once(toolbox.target, "navigate");
-  toolbox.target.navigateTo({ url });
-  return onNavigated;
+function navigate(target, url, waitForTargetEvent = "navigate") {
+  executeSoon(() => target.navigateTo({ url }));
+  return once(target, waitForTargetEvent);
 }
 
 async function openNewTabAndApplicationPanel(url) {
