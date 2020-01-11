@@ -6,11 +6,11 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { ExtensionPreferencesManager } = ChromeUtils.import(
-  "resource://gre/modules/ExtensionPreferencesManager.jsm"
+ChromeUtils.import("resource://gre/modules/Services.jsm", this);
+ChromeUtils.import(
+  "resource://gre/modules/ExtensionPreferencesManager.jsm",
+  this
 );
-
 
 const TRR_URI_PREF = "network.trr.uri";
 const TRR_DISABLE_ECS_PREF = "network.trr.disable-ECS";
