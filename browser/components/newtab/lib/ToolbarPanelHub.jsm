@@ -214,12 +214,20 @@ class _ToolbarPanelHub {
 
 
   _dispatchUserAction(win, message) {
+    let url;
+    try {
+      
+      url = Services.urlFormatter.formatURL(message.content.cta_url);
+    } catch (e) {
+      Cu.reportError(e);
+      url = message.content.cta_url;
+    }
     this._handleUserAction({
       target: win,
       data: {
         type: message.content.cta_type,
         data: {
-          args: message.content.cta_url,
+          args: url,
           where: "tabshifted",
         },
       },
