@@ -706,6 +706,39 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
     return true;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  if (NS_IsMainThread()) {
+    
+    
+    
+    
+    nsAutoString jsConfigPref;
+    Preferences::GetString("general.config.filename", jsConfigPref);
+    if (!jsConfigPref.IsEmpty()) {
+      MOZ_LOG(sCSMLog, LogLevel::Debug,
+              ("Allowing a javascript load of %s because "
+               "general.config.filename is set",
+               aFilename));
+      return true;
+    }
+  }
+
+  if (XRE_IsE10sParentProcess() &&
+      !StaticPrefs::extensions_webextensions_remote()) {
+    MOZ_LOG(sCSMLog, LogLevel::Debug,
+            ("Allowing a javascript load of %s because the web extension "
+             "process is disabled.",
+             aFilename));
+    return true;
+  }
+
   NS_ConvertUTF8toUTF16 filenameU(aFilename);
   if (StringBeginsWith(filenameU, NS_LITERAL_STRING("chrome://"))) {
     
