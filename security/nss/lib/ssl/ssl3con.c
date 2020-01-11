@@ -394,12 +394,12 @@ static const SSLCipher2Mech alg2Mech[] = {
     { ssl_calg_chacha20, CKM_NSS_CHACHA20_POLY1305 },
 };
 
-const PRUint8 tls13_downgrade_random[] = { 0x44, 0x4F, 0x57, 0x4E,
-                                           0x47, 0x52, 0x44, 0x01 };
 const PRUint8 tls12_downgrade_random[] = { 0x44, 0x4F, 0x57, 0x4E,
-                                           0x47, 0x52, 0x44, 0x00 };
-PR_STATIC_ASSERT(sizeof(tls13_downgrade_random) ==
-                 sizeof(tls13_downgrade_random));
+                                           0x47, 0x52, 0x44, 0x01 };
+const PRUint8 tls1_downgrade_random[] = { 0x44, 0x4F, 0x57, 0x4E,
+                                          0x47, 0x52, 0x44, 0x00 };
+PR_STATIC_ASSERT(sizeof(tls12_downgrade_random) ==
+                 sizeof(tls1_downgrade_random));
 
 
 
@@ -6713,13 +6713,13 @@ ssl_CheckServerRandom(sslSocket *ss)
         
         PRUint8 *downgrade_sentinel =
             ss->ssl3.hs.server_random +
-            SSL3_RANDOM_LENGTH - sizeof(tls13_downgrade_random);
+            SSL3_RANDOM_LENGTH - sizeof(tls12_downgrade_random);
         if (!PORT_Memcmp(downgrade_sentinel,
-                         tls13_downgrade_random,
-                         sizeof(tls13_downgrade_random)) ||
-            !PORT_Memcmp(downgrade_sentinel,
                          tls12_downgrade_random,
-                         sizeof(tls12_downgrade_random))) {
+                         sizeof(tls12_downgrade_random)) ||
+            !PORT_Memcmp(downgrade_sentinel,
+                         tls1_downgrade_random,
+                         sizeof(tls1_downgrade_random))) {
             return SECFailure;
         }
     }
@@ -8491,20 +8491,24 @@ ssl_GenerateServerRandom(sslSocket *ss)
 
     PRUint8 *downgradeSentinel =
         ss->ssl3.hs.server_random +
-        SSL3_RANDOM_LENGTH - sizeof(tls13_downgrade_random);
+        SSL3_RANDOM_LENGTH - sizeof(tls12_downgrade_random);
 
-    switch (ss->vrange.max) {
-        case SSL_LIBRARY_VERSION_TLS_1_3:
-            PORT_Memcpy(downgradeSentinel,
-                        tls13_downgrade_random, sizeof(tls13_downgrade_random));
-            break;
-        case SSL_LIBRARY_VERSION_TLS_1_2:
-            PORT_Memcpy(downgradeSentinel,
-                        tls12_downgrade_random, sizeof(tls12_downgrade_random));
-            break;
-        default:
-            
-            break;
+    if (ss->vrange.max >= SSL_LIBRARY_VERSION_TLS_1_2) {
+        switch (ss->version) {
+            case SSL_LIBRARY_VERSION_TLS_1_2:
+                
+                PORT_Memcpy(downgradeSentinel,
+                            tls12_downgrade_random, sizeof(tls12_downgrade_random));
+                break;
+            case SSL_LIBRARY_VERSION_TLS_1_1:
+            case SSL_LIBRARY_VERSION_TLS_1_0:
+                PORT_Memcpy(downgradeSentinel,
+                            tls1_downgrade_random, sizeof(tls1_downgrade_random));
+                break;
+            default:
+                
+                break;
+        }
     }
 
     return SECSuccess;
