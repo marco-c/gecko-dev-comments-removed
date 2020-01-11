@@ -34,12 +34,12 @@ add_task(async function() {
   );
   
   
-  SimpleTest.expectUncaughtException(true);
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
     
     content.location.reload();
+  }).catch(e => {
+    
   });
   ok(!!gURLBar.value, "URL bar should not be blank.");
   BrowserTestUtils.removeTab(tab);
-  SimpleTest.expectUncaughtException(false);
 });
