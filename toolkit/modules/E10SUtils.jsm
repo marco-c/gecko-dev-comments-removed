@@ -137,6 +137,8 @@ const kSafeSchemes = [
   "xmpp",
 ];
 
+const kDocumentChannelAllowedSchemes = ["http", "https", "ftp", "data"];
+
 
 
 
@@ -716,6 +718,18 @@ var E10SUtils = {
     }
 
     let mustChangeProcess = requiredRemoteType != currentRemoteType;
+
+    
+    
+    
+    if (
+      currentRemoteType != NOT_REMOTE &&
+      uriObject &&
+      (remoteSubframes || documentChannel) &&
+      kDocumentChannelAllowedSchemes.includes(uriObject.scheme)
+    ) {
+      mustChangeProcess = false;
+    }
     let newFrameloader = false;
     if (
       browser.getAttribute("preloadedState") === "consumed" &&
@@ -781,11 +795,9 @@ var E10SUtils = {
     
     
     if (
+      Services.appinfo.remoteType != NOT_REMOTE &&
       (useRemoteSubframes || documentChannel) &&
-      (aURI.scheme == "http" ||
-        aURI.scheme == "https" ||
-        aURI.scheme == "data") &&
-      Services.appinfo.remoteType != NOT_REMOTE
+      kDocumentChannelAllowedSchemes.includes(aURI.scheme)
     ) {
       return true;
     }
