@@ -1209,6 +1209,7 @@ window.Audit = (function() {
 
     
     done() {
+      assert_equals(this._state, TaskState.STARTED)
       this._state = TaskState.FINISHED;
 
       let message = '< [' + this._label + '] ';
