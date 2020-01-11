@@ -1765,10 +1765,10 @@ class CheckAvailData final : public Runnable {
   }
 
   MOZ_MUST_USE nsresult Dispatch() {
-    if (OnSocketThread()) {
-      return Run();
-    }
-
+    
+    
+    
+    
     nsCOMPtr<nsIEventTarget> sts =
         do_GetService("@mozilla.org/network/socket-transport-service;1");
     return sts->Dispatch(this, nsIEventTarget::DISPATCH_NORMAL);
