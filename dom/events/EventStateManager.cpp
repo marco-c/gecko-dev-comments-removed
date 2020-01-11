@@ -1126,27 +1126,6 @@ struct MOZ_STACK_CLASS AccessKeyInfo {
       : event(aEvent), charCodes(aCharCodes) {}
 };
 
-static bool HandleAccessKeyInRemoteChild(BrowserParent* aBrowserParent,
-                                         void* aArg) {
-  AccessKeyInfo* accessKeyInfo = static_cast<AccessKeyInfo*>(aArg);
-
-  
-  if (aBrowserParent->GetDocShellIsActive()) {
-    
-    
-    
-    
-    
-    accessKeyInfo->event->StopPropagation();
-    accessKeyInfo->event->MarkAsWaitingReplyFromRemoteProcess();
-    aBrowserParent->HandleAccessKey(*accessKeyInfo->event,
-                                    accessKeyInfo->charCodes);
-    return true;
-  }
-
-  return false;
-}
-
 bool EventStateManager::WalkESMTreeToHandleAccessKey(
     WidgetKeyboardEvent* aEvent, nsPresContext* aPresContext,
     nsTArray<uint32_t>& aAccessCharCodes, nsIDocShellTreeItem* aBubbledFrom,
@@ -1257,7 +1236,24 @@ bool EventStateManager::WalkESMTreeToHandleAccessKey(
     else if (!aEvent->IsHandledInRemoteProcess()) {
       AccessKeyInfo accessKeyInfo(aEvent, aAccessCharCodes);
       nsContentUtils::CallOnAllRemoteChildren(
-          mDocument->GetWindow(), HandleAccessKeyInRemoteChild, &accessKeyInfo);
+          mDocument->GetWindow(),
+          [&accessKeyInfo](BrowserParent* aBrowserParent) -> bool {
+            
+            if (aBrowserParent->GetDocShellIsActive()) {
+              
+              
+              
+              
+              
+              accessKeyInfo.event->StopPropagation();
+              accessKeyInfo.event->MarkAsWaitingReplyFromRemoteProcess();
+              aBrowserParent->HandleAccessKey(*accessKeyInfo.event,
+                                              accessKeyInfo.charCodes);
+              return true;
+            }
+
+            return false;
+          });
     }
   }
 
