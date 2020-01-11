@@ -23,6 +23,8 @@ function processResults(results) {
     gotSocket = data.location.startsWith("socket://127.0.0.1:") || gotSocket;
     gotFile = data.location.endsWith("aboutLicense.css") || gotFile;
     gotSqlite = data.location.endsWith("places.sqlite") || gotSqlite;
+    
+    gotSqlite = data.location.endsWith("places.sqlite-wal") || gotSqlite;
   }
 }
 
