@@ -1,0 +1,11 @@
+
+
+
+
+
+let port = window.browser.runtime.connectNative("browser");
+port.onMessage.addListener(response => {
+  
+  port.postMessage(`Received: ${JSON.stringify(response)}`);
+});
+port.postMessage("Hello from WebExtension!");
