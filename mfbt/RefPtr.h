@@ -110,19 +110,22 @@ class MOZ_IS_REFPTR RefPtr {
 
   MOZ_IMPLICIT RefPtr(decltype(nullptr)) : mRawPtr(nullptr) {}
 
-  template <typename I>
+  template <typename I,
+            typename = std::enable_if_t<std::is_convertible_v<I*, T*>>>
   MOZ_IMPLICIT RefPtr(already_AddRefed<I>& aSmartPtr)
       : mRawPtr(aSmartPtr.take())
   
   {}
 
-  template <typename I>
+  template <typename I,
+            typename = std::enable_if_t<std::is_convertible_v<I*, T*>>>
   MOZ_IMPLICIT RefPtr(already_AddRefed<I>&& aSmartPtr)
       : mRawPtr(aSmartPtr.take())
   
   {}
 
-  template <typename I>
+  template <typename I,
+            typename = std::enable_if_t<std::is_convertible_v<I*, T*>>>
   MOZ_IMPLICIT RefPtr(const RefPtr<I>& aSmartPtr)
       : mRawPtr(aSmartPtr.get())
   
@@ -132,7 +135,8 @@ class MOZ_IS_REFPTR RefPtr {
     }
   }
 
-  template <typename I>
+  template <typename I,
+            typename = std::enable_if_t<std::is_convertible_v<I*, T*>>>
   MOZ_IMPLICIT RefPtr(RefPtr<I>&& aSmartPtr)
       : mRawPtr(aSmartPtr.forget().take())
   
