@@ -265,9 +265,16 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
 
 
-
-
   bool CheckValidFormSubmission();
+
+  
+
+
+
+
+
+
+  bool SubmissionCanProceed(Element* aSubmitter);
 
   
 
@@ -353,15 +360,6 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
   int32_t Length();
 
-  
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT void MaybeSubmit(Element* aSubmitter);
-  MOZ_CAN_RUN_SCRIPT void MaybeReset(Element* aSubmitter);
   void Submit(ErrorResult& aRv);
   void Reset();
 
@@ -616,8 +614,6 @@ class HTMLFormElement final : public nsGenericHTMLElement,
   bool mEverTriedInvalidSubmit;
   
   bool mIsConstructingEntryList;
-  
-  bool mIsFiringSubmissionEvents;
 
  private:
   NotNull<const Encoding*> GetSubmitEncoding();

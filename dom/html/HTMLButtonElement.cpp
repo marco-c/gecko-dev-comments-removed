@@ -250,15 +250,29 @@ nsresult HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
         break;
     }
     if (aVisitor.mItemFlags & NS_OUTER_ACTIVATE_EVENT) {
-      if (mForm) {
+      if (mForm &&
+          (mType == NS_FORM_BUTTON_SUBMIT || mType == NS_FORM_BUTTON_RESET)) {
+        InternalFormEvent event(
+            true, (mType == NS_FORM_BUTTON_RESET) ? eFormReset : eFormSubmit);
+        event.mOriginator = this;
+        nsEventStatus status = nsEventStatus_eIgnore;
+
+        RefPtr<PresShell> presShell = aVisitor.mPresContext->GetPresShell();
         
-        RefPtr<mozilla::dom::HTMLFormElement> form(mForm);
-        if (mType == NS_FORM_BUTTON_RESET) {
-          form->MaybeReset(this);
-        } else if (mType == NS_FORM_BUTTON_SUBMIT) {
-          form->MaybeSubmit(this);
+        
+        
+        
+        
+        
+        if (presShell && (event.mMessage != eFormSubmit ||
+                          mForm->SubmissionCanProceed(this))) {
+          
+          
+          
+          RefPtr<HTMLFormElement> form(mForm);
+          presShell->HandleDOMEventWithTarget(form, &event, &status);
+          aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
         }
-        aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
       }
     }
   } else if ((aVisitor.mItemFlags & NS_IN_SUBMIT_CLICK) && mForm) {

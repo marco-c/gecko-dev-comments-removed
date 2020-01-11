@@ -119,8 +119,7 @@ HTMLFormElement::HTMLFormElement(
       mNotifiedObservers(false),
       mNotifiedObserversResult(false),
       mEverTriedInvalidSubmit(false),
-      mIsConstructingEntryList(false),
-      mIsFiringSubmissionEvents(false) {
+      mIsConstructingEntryList(false) {
   
   AddStatesSilently(NS_EVENT_STATE_VALID);
 }
@@ -217,70 +216,6 @@ void HTMLFormElement::GetEnctype(nsAString& aValue) {
 
 void HTMLFormElement::GetMethod(nsAString& aValue) {
   GetEnumAttr(nsGkAtoms::method, kFormDefaultMethod->tag, aValue);
-}
-
-
-void HTMLFormElement::MaybeSubmit(Element* aSubmitter) {
-#ifdef DEBUG
-  if (aSubmitter) {
-    nsCOMPtr<nsIFormControl> fc = do_QueryInterface(aSubmitter);
-    MOZ_ASSERT(fc);
-    MOZ_ASSERT(fc->IsSubmitControl(), "aSubmitter is not a submit control?");
-  }
-#endif
-
-  
-  
-  Document* doc = GetComposedDoc();
-  if (mIsConstructingEntryList || !doc ||
-      (doc->GetSandboxFlags() & SANDBOXED_FORMS)) {
-    return;
-  }
-
-  
-  if (mIsFiringSubmissionEvents) {
-    return;
-  }
-
-  
-  AutoRestore<bool> resetFiringSubmissionEventsFlag(mIsFiringSubmissionEvents);
-  mIsFiringSubmissionEvents = true;
-
-  
-  
-  
-  
-  bool noValidateState =
-      HasAttr(kNameSpaceID_None, nsGkAtoms::novalidate) ||
-      (aSubmitter &&
-       aSubmitter->HasAttr(kNameSpaceID_None, nsGkAtoms::formnovalidate));
-  if (!noValidateState && !CheckValidFormSubmission()) {
-    return;
-  }
-
-  
-  
-  
-  
-  if (RefPtr<PresShell> presShell = doc->GetPresShell()) {
-    InternalFormEvent event(true, eFormSubmit);
-    event.mOriginator = aSubmitter;
-    nsEventStatus status = nsEventStatus_eIgnore;
-    presShell->HandleDOMEventWithTarget(this, &event, &status);
-  }
-}
-
-void HTMLFormElement::MaybeReset(Element* aSubmitter) {
-  
-  
-  
-  
-  if (RefPtr<PresShell> presShell = OwnerDoc()->GetPresShell()) {
-    InternalFormEvent event(true, eFormReset);
-    event.mOriginator = aSubmitter;
-    nsEventStatus status = nsEventStatus_eIgnore;
-    presShell->HandleDOMEventWithTarget(this, &event, &status);
-  }
 }
 
 void HTMLFormElement::Submit(ErrorResult& aRv) {
@@ -1926,6 +1861,38 @@ One should be implemented!");
   }
 
   return result;
+}
+
+bool HTMLFormElement::SubmissionCanProceed(Element* aSubmitter) {
+#ifdef DEBUG
+  if (aSubmitter) {
+    nsCOMPtr<nsIFormControl> fc = do_QueryInterface(aSubmitter);
+    MOZ_ASSERT(fc);
+
+    uint32_t type = fc->ControlType();
+    MOZ_ASSERT(type == NS_FORM_INPUT_SUBMIT || type == NS_FORM_INPUT_IMAGE ||
+                   type == NS_FORM_BUTTON_SUBMIT,
+               "aSubmitter is not a submit control?");
+  }
+#endif
+
+  
+  
+  
+  if (OwnerDoc()->GetSandboxFlags() & SANDBOXED_FORMS) {
+    return false;
+  }
+
+  if (HasAttr(kNameSpaceID_None, nsGkAtoms::novalidate)) {
+    return true;
+  }
+
+  if (aSubmitter &&
+      aSubmitter->HasAttr(kNameSpaceID_None, nsGkAtoms::formnovalidate)) {
+    return true;
+  }
+
+  return CheckValidFormSubmission();
 }
 
 void HTMLFormElement::UpdateValidity(bool aElementValidity) {
