@@ -19,7 +19,7 @@ fn test_switch_output_device() {
         return;
     }
 
-    let output_device_switcher = TestDeviceSwitcher::new(Scope::Output);
+    let mut output_device_switcher = TestDeviceSwitcher::new(Scope::Output);
 
     
     
@@ -52,7 +52,7 @@ fn test_switch_output_device() {
                 assert_eq!(input.pop().unwrap(), '\n');
                 match input.as_str() {
                     "s" => {
-                        assert!(output_device_switcher.next().unwrap());
+                        output_device_switcher.next();
                     }
                     "q" => {
                         println!("Quit.");
