@@ -20,11 +20,11 @@ XPCOMUtils.defineLazyServiceGetter(
 );
 
 const idToTextMap = new Map([
-  [Ci.nsITrackingDBService.TRACKERS_ID, "tracker"],
-  [Ci.nsITrackingDBService.TRACKING_COOKIES_ID, "cookie"],
-  [Ci.nsITrackingDBService.CRYPTOMINERS_ID, "cryptominer"],
-  [Ci.nsITrackingDBService.FINGERPRINTERS_ID, "fingerprinter"],
-  [Ci.nsITrackingDBService.SOCIAL_ID, "social"],
+  [Ci.nsITrackingDBService.TRACKERS_ID, "trackerCount"],
+  [Ci.nsITrackingDBService.TRACKING_COOKIES_ID, "cookieCount"],
+  [Ci.nsITrackingDBService.CRYPTOMINERS_ID, "cryptominerCount"],
+  [Ci.nsITrackingDBService.FINGERPRINTERS_ID, "fingerprinterCount"],
+  [Ci.nsITrackingDBService.SOCIAL_ID, "socialCount"],
 ]);
 
 const WHATSNEW_ENABLED_PREF = "browser.messaging-system.whatsNewPanel.enabled";
@@ -333,7 +333,9 @@ class _ToolbarPanelHub {
         wrapperEl.appendChild(
           await this._createElement(doc, "h2", {
             classList: "whatsNew-message-title-large",
-            content: this.state.contentArguments.blockedCount,
+            content: this.state.contentArguments[
+              content.layout_title_content_variable
+            ],
           })
         );
         break;
@@ -400,18 +402,20 @@ class _ToolbarPanelHub {
     );
     
     
+    let totalEvents = { blockedCount: 0 };
+    for (let blockedType of idToTextMap.values()) {
+      totalEvents[blockedType] = 0;
+    }
     
     
-    const totalEvents = eventsByDate.reduce(
-      (acc, day) => {
-        const type = day.getResultByName("type");
-        const count = day.getResultByName("count");
-        acc[idToTextMap.get(type)] = (acc[idToTextMap.get(type)] || 0) + count;
-        acc.blockedCount += count;
-        return acc;
-      },
-      { blockedCount: 0 }
-    );
+    
+    totalEvents = eventsByDate.reduce((acc, day) => {
+      const type = day.getResultByName("type");
+      const count = day.getResultByName("count");
+      acc[idToTextMap.get(type)] = (acc[idToTextMap.get(type)] || 0) + count;
+      acc.blockedCount += count;
+      return acc;
+    }, totalEvents);
     return {
       
       
