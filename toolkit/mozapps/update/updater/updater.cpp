@@ -3383,39 +3383,33 @@ int NS_main(int argc, NS_tchar** argv) {
       
       
 
+      CloseHandle(elevatedFileHandle);
+
+      if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
+        CloseHandle(updateLockFileHandle);
+      }
+
+      if (!useService && noServiceFallback) {
+        
+        
+        
+        
+        
+        gCopyOutputFiles = false;
+        WriteStatusFile(lastFallbackError);
+      }
+
+      
+      
+      
+      
+      output_finish();
       if (argc > callbackIndex) {
         LaunchCallbackApp(argv[5], argc - callbackIndex, argv + callbackIndex,
                           sUsingService);
       }
+      return 0;
 
-      CloseHandle(elevatedFileHandle);
-
-      if (!useService && !noServiceFallback &&
-          INVALID_HANDLE_VALUE == updateLockFileHandle) {
-        
-        
-        
-        output_finish();
-        return 0;
-      } else if (useService) {
-        
-        
-        if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
-          CloseHandle(updateLockFileHandle);
-        }
-        output_finish();
-        return 0;
-      } else {
-        
-        
-        
-        
-        
-        CloseHandle(updateLockFileHandle);
-        WriteStatusFile(lastFallbackError);
-        output_finish();
-        return 0;
-      }
       
       
       

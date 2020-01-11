@@ -4253,10 +4253,9 @@ function getProcessArgs(aExtraArgs) {
       "/D",
       "/Q",
       "/C",
-      "set",
-      "XRE_PROFILE_PATH=" + profilePath,
-      "&&",
       appBinPath,
+      "-profile",
+      profilePath,
       "-no-remote",
       "-test-process-updates",
       "-wait-for-browser",
@@ -4451,6 +4450,15 @@ async function runUpdateUsingApp(aExpectedStatus) {
   await TestUtils.waitForCondition(
     () => readStatusFile() == aExpectedStatus,
     "Waiting for expected status file contents: " + aExpectedStatus
+  ).catch(e => {
+    
+    
+    logTestInfo(e);
+  });
+  Assert.equal(
+    readStatusFile(),
+    aExpectedStatus,
+    "the status file state" + MSG_SHOULD_EQUAL
   );
 
   
