@@ -116,9 +116,6 @@ RenderedFrameId RendererOGL::UpdateAndRender(
 
 #if defined(XP_MACOSX)
   widgetContext.mGL = mCompositor->gl();
-
-
-
 #endif
 
   if (!mCompositor->GetWidget()->PreRender(&widgetContext)) {
