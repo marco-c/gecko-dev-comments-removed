@@ -6733,7 +6733,7 @@ nsresult nsHttpChannel::BeginConnect() {
   if (mLoadFlags & LOAD_FRESH_CONNECTION) {
     
     if (mLoadFlags & LOAD_INITIAL_DOCUMENT_URI) {
-      gHttpHandler->ConnMgr()->ClearAltServiceMappings();
+      gHttpHandler->AltServiceCache()->ClearAltServiceMappings();
       rv = gHttpHandler->ConnMgr()->DoShiftReloadConnectionCleanup(
           mConnectionInfo);
       if (NS_FAILED(rv)) {
