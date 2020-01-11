@@ -154,7 +154,7 @@ function getSnapshot(acc, a11yService) {
 
 const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
   initialize(walker, rawAccessible) {
-    Actor.prototype.initialize.call(this, walker.conn);
+    Actor.prototype.initialize.call(this, null);
     this.walker = walker;
     this.rawAccessible = rawAccessible;
 
@@ -181,8 +181,9 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
   
 
 
-  marshallPool() {
-    return this.walker;
+
+  get conn() {
+    return this.walker.conn;
   },
 
   destroy() {
