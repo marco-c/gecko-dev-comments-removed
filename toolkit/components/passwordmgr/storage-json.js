@@ -37,17 +37,24 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIUUIDGenerator"
 );
 
-this.LoginManagerStorage_json = function() {};
+class LoginManagerStorage_json {
+  constructor() {
+    this.__crypto = null; 
+    this.__decryptedPotentiallyVulnerablePasswords = null;
+  }
 
-this.LoginManagerStorage_json.prototype = {
-  classID: Components.ID("{c00c432d-a0c9-46d7-bef6-9c45b4d07341}"),
-  QueryInterface: ChromeUtils.generateQI([Ci.nsILoginManagerStorage]),
+  get classID() {
+    return Components.ID("{c00c432d-a0c9-46d7-bef6-9c45b4d07341}");
+  }
 
-  _xpcom_factory: XPCOMUtils.generateSingletonFactory(
-    this.LoginManagerStorage_json
-  ),
+  get QueryInterface() {
+    return ChromeUtils.generateQI([Ci.nsILoginManagerStorage]);
+  }
 
-  __crypto: null, 
+  get _xpcom_factory() {
+    return XPCOMUtils.generateSingletonFactory(this.LoginManagerStorage_json);
+  }
+
   get _crypto() {
     if (!this.__crypto) {
       this.__crypto = Cc["@mozilla.org/login-manager/crypto/SDR;1"].getService(
@@ -55,9 +62,8 @@ this.LoginManagerStorage_json.prototype = {
       );
     }
     return this.__crypto;
-  },
+  }
 
-  __decryptedPotentiallyVulnerablePasswords: null,
   get _decryptedPotentiallyVulnerablePasswords() {
     if (!this.__decryptedPotentiallyVulnerablePasswords) {
       this._store.ensureDataReady();
@@ -73,7 +79,7 @@ this.LoginManagerStorage_json.prototype = {
       }
     }
     return this.__decryptedPotentiallyVulnerablePasswords;
-  },
+  }
 
   initialize() {
     try {
@@ -124,7 +130,7 @@ this.LoginManagerStorage_json.prototype = {
       this.log("Initialization failed:", e);
       throw new Error("Initialization failed");
     }
-  },
+  }
 
   
 
@@ -133,7 +139,7 @@ this.LoginManagerStorage_json.prototype = {
   terminate() {
     this._store._saver.disarm();
     return this._store._save();
-  },
+  }
 
   addLogin(
     login,
@@ -225,7 +231,7 @@ this.LoginManagerStorage_json.prototype = {
     
     LoginHelper.notifyStorageChanged("addLogin", loginClone);
     return loginClone;
-  },
+  }
 
   removeLogin(login) {
     this._store.ensureDataReady();
@@ -242,7 +248,7 @@ this.LoginManagerStorage_json.prototype = {
     }
 
     LoginHelper.notifyStorageChanged("removeLogin", storedLogin);
-  },
+  }
 
   modifyLogin(oldLogin, newLoginData) {
     this._store.ensureDataReady();
@@ -300,7 +306,7 @@ this.LoginManagerStorage_json.prototype = {
     }
 
     LoginHelper.notifyStorageChanged("modifyLogin", [oldStoredLogin, newLogin]);
-  },
+  }
 
   async recordBreachAlertDismissal(loginGUID) {
     this._store.ensureDataReady();
@@ -312,12 +318,12 @@ this.LoginManagerStorage_json.prototype = {
     };
 
     return this._store.saveSoon();
-  },
+  }
 
   getBreachAlertDismissalsByLoginGUID() {
     this._store.ensureDataReady();
     return this._store._data.dismissedBreachAlertsByLoginGUID;
-  },
+  }
 
   
 
@@ -330,7 +336,7 @@ this.LoginManagerStorage_json.prototype = {
 
     this.log("getAllLogins: returning", logins.length, "logins.");
     return logins;
-  },
+  }
 
   
 
@@ -382,14 +388,14 @@ this.LoginManagerStorage_json.prototype = {
     }
 
     return result;
-  },
+  }
 
   async searchLoginsAsync(matchData) {
     this.log("searchLoginsAsync:", matchData);
     let result = this.searchLogins(LoginHelper.newPropertyBag(matchData));
     
     return Promise.resolve(result);
-  },
+  }
 
   
 
@@ -422,7 +428,7 @@ this.LoginManagerStorage_json.prototype = {
     logins = this._decryptLogins(logins);
 
     return logins;
-  },
+  }
 
   
 
@@ -569,7 +575,7 @@ this.LoginManagerStorage_json.prototype = {
       aOptions
     );
     return [foundLogins, foundIds];
-  },
+  }
 
   
 
@@ -585,7 +591,7 @@ this.LoginManagerStorage_json.prototype = {
     this._store.saveSoon();
 
     LoginHelper.notifyStorageChanged("removeAllLogins", null);
-  },
+  }
 
   findLogins(origin, formActionOrigin, httpRealm) {
     let loginData = {
@@ -606,7 +612,7 @@ this.LoginManagerStorage_json.prototype = {
 
     this.log("_findLogins: returning", logins.length, "logins");
     return logins;
-  },
+  }
 
   countLogins(origin, formActionOrigin, httpRealm) {
     let loginData = {
@@ -624,7 +630,7 @@ this.LoginManagerStorage_json.prototype = {
 
     this.log("_countLogins: counted logins:", logins.length);
     return logins.length;
-  },
+  }
 
   addPotentiallyVulnerablePassword(login) {
     this._store.ensureDataReady();
@@ -638,13 +644,13 @@ this.LoginManagerStorage_json.prototype = {
       encryptedPassword: this._crypto.encrypt(login.password),
     });
     this._store.saveSoon();
-  },
+  }
 
   isPotentiallyVulnerablePassword(login) {
     return this._decryptedPotentiallyVulnerablePasswords.includes(
       login.password
     );
-  },
+  }
 
   clearAllPotentiallyVulnerablePasswords() {
     this._store.ensureDataReady();
@@ -655,15 +661,15 @@ this.LoginManagerStorage_json.prototype = {
     this._store.data.potentiallyVulnerablePasswords = [];
     this._store.saveSoon();
     this.__decryptedPotentiallyVulnerablePasswords = null;
-  },
+  }
 
   get uiBusy() {
     return this._crypto.uiBusy;
-  },
+  }
 
   get isLoggedIn() {
     return this._crypto.isLoggedIn;
-  },
+  }
 
   
 
@@ -700,7 +706,7 @@ this.LoginManagerStorage_json.prototype = {
     }
 
     return [id, foundLogin];
-  },
+  }
 
   
 
@@ -709,7 +715,7 @@ this.LoginManagerStorage_json.prototype = {
     this._store.ensureDataReady();
 
     return this._store.data.logins.every(l => l.guid != guid);
-  },
+  }
 
   
 
@@ -721,7 +727,7 @@ this.LoginManagerStorage_json.prototype = {
     let encType = this._crypto.defaultEncType;
 
     return [encUsername, encPassword, encType];
-  },
+  }
 
   
 
@@ -753,16 +759,12 @@ this.LoginManagerStorage_json.prototype = {
     }
 
     return result;
-  },
-};
-
-XPCOMUtils.defineLazyGetter(
-  this.LoginManagerStorage_json.prototype,
-  "log",
-  () => {
-    let logger = LoginHelper.createLogger("Login storage");
-    return logger.log.bind(logger);
   }
-);
+}
+
+XPCOMUtils.defineLazyGetter(LoginManagerStorage_json.prototype, "log", () => {
+  let logger = LoginHelper.createLogger("Login storage");
+  return logger.log.bind(logger);
+});
 
 const EXPORTED_SYMBOLS = ["LoginManagerStorage_json"];
