@@ -31,7 +31,7 @@ class TRRService : public nsIObserver,
   TRRService();
   nsresult Init();
   nsresult Start();
-  bool Enabled();
+  bool Enabled(nsIRequest::TRRMode aMode);
 
   uint32_t Mode() { return mMode; }
   bool AllowRFC1918() { return mRfc1918; }
@@ -41,6 +41,9 @@ class TRRService : public nsIObserver,
   bool WaitForAllResponses() { return mWaitForAllResponses; }
   bool DisableIPv6() { return mDisableIPv6; }
   bool DisableECS() { return mDisableECS; }
+  bool SkipTRRWhenParentalControlEnabled() {
+    return mSkipTRRWhenParentalControlEnabled;
+  }
   nsresult GetURI(nsCString& result);
   nsresult GetCredentials(nsCString& result);
   uint32_t GetRequestTimeout();
@@ -103,6 +106,7 @@ class TRRService : public nsIObserver,
   Atomic<bool, Relaxed> mWaitForAllResponses;  
   Atomic<bool, Relaxed> mDisableIPv6;          
   Atomic<bool, Relaxed> mDisableECS;  
+  Atomic<bool, Relaxed> mSkipTRRWhenParentalControlEnabled;
   Atomic<uint32_t, Relaxed>
       mDisableAfterFails;  
   Atomic<bool, Relaxed> mPlatformDisabledTRR;

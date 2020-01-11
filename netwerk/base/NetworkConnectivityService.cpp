@@ -200,10 +200,11 @@ static inline already_AddRefed<nsIChannel> SetupIPCheckChannel(bool ipv4) {
       nullptr,  
       nullptr,  
       nullptr,
-      nsIRequest::LOAD_BYPASS_CACHE |     
-          nsIRequest::INHIBIT_CACHING |   
-          nsIRequest::LOAD_DISABLE_TRR |  
-          nsIRequest::LOAD_ANONYMOUS);    
+      nsIRequest::LOAD_BYPASS_CACHE |    
+          nsIRequest::INHIBIT_CACHING |  
+          nsIRequest::LOAD_ANONYMOUS);   
+
+  channel->SetTRRMode(nsIRequest::TRR_DISABLED_MODE);
 
   NS_ENSURE_SUCCESS(rv, nullptr);
 

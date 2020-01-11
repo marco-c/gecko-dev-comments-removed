@@ -150,10 +150,8 @@ class nsHttpConnectionInfo final : public ARefBase {
   }
   bool GetIsTrrServiceChannel() const { return mIsTrrServiceChannel; }
 
-  
-  
-  void SetTrrDisabled(bool aNoTrr);
-  bool GetTrrDisabled() const { return mTrrDisabled; }
+  void SetTRRMode(nsIRequest::TRRMode aTRRMode);
+  nsIRequest::TRRMode GetTRRMode() const { return mTRRMode; }
 
   void SetIPv4Disabled(bool aNoIPv4);
   bool GetIPv4Disabled() const { return mIPv4Disabled; }
@@ -236,11 +234,11 @@ class nsHttpConnectionInfo final : public ARefBase {
   bool mUsingConnect;  
   nsCString mNPNToken;
   OriginAttributes mOriginAttributes;
+  nsIRequest::TRRMode mTRRMode;
 
   uint32_t mTlsFlags;
   uint16_t mIsolated : 1;
   uint16_t mIsTrrServiceChannel : 1;
-  uint16_t mTrrDisabled : 1;
   uint16_t mIPv4Disabled : 1;
   uint16_t mIPv6Disabled : 1;
 
