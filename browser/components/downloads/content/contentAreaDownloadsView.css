@@ -2,11 +2,7 @@
 
 
 
-#downloadsListEmptyDescription {
+#downloadsRichListBox:not(:empty) + #downloadsListEmptyDescription,
+#downloadsRichListBox:empty {
   display: none;
-  pointer-events: none;
-}
-
-#downloadsRichListBox:empty + #downloadsListEmptyDescription {
-  display: -moz-box;
 }
