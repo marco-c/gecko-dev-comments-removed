@@ -130,10 +130,6 @@ class TabGroup final : public SchedulerGroup,
   
   static bool HasOnlyThrottableTabs();
 
-  nsresult QueuePostMessageEvent(already_AddRefed<nsIRunnable>&& aRunnable);
-
-  void FlushPostMessageEvents();
-
  private:
   virtual AbstractThread* AbstractMainThreadForImpl(
       TaskCategory aCategory) override;
@@ -157,10 +153,6 @@ class TabGroup final : public SchedulerGroup,
   uint32_t mForegroundCount;
 
   static LinkedList<TabGroup>* sTabGroups;
-
-  
-  
-  RefPtr<mozilla::ThrottledEventQueue> mPostMessageEventQueue;
 };
 
 }  

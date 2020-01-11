@@ -15,6 +15,8 @@
 #include "nsWrapperCache.h"
 
 namespace mozilla {
+class ThrottledEventQueue;
+
 namespace dom {
 
 class BrowsingContext;
@@ -108,6 +110,10 @@ class BrowsingContextGroup final : public nsWrapperCache {
     }
   }
 
+  nsresult QueuePostMessageEvent(already_AddRefed<nsIRunnable>&& aRunnable);
+
+  void FlushPostMessageEvents();
+
   static BrowsingContextGroup* GetChromeGroup();
 
  private:
@@ -129,6 +135,10 @@ class BrowsingContextGroup final : public nsWrapperCache {
 
   
   nsTHashtable<nsRefPtrHashKey<BrowsingContext>> mCachedContexts;
+
+  
+  
+  RefPtr<mozilla::ThrottledEventQueue> mPostMessageEventQueue;
 };
 
 }  

@@ -272,6 +272,8 @@ class BrowsingContext : public nsISupports,
 
   bool InRDMPane() { return mInRDMPane; }
 
+  bool IsLoading();
+
   
   
   

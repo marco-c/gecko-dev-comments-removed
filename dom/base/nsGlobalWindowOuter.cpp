@@ -219,6 +219,7 @@
 #include "nsXULControllers.h"
 #include "mozilla/dom/AudioContext.h"
 #include "mozilla/dom/BrowserElementDictionariesBinding.h"
+#include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/cache/CacheStorage.h"
 #include "mozilla/dom/Console.h"
 #include "mozilla/dom/Fetch.h"
@@ -6076,33 +6077,33 @@ void nsGlobalWindowOuter::PostMessageMozOuter(JSContext* aCx,
     return;
   }
 
-  if (mDoc &&
-      StaticPrefs::dom_separate_event_queue_for_post_message_enabled() &&
+  if (StaticPrefs::dom_separate_event_queue_for_post_message_enabled() &&
       !DocGroup::TryToLoadIframesInBackground()) {
-    Document* doc = mDoc->GetTopLevelContentDocument();
-    if (doc && doc->GetReadyStateEnum() < Document::READYSTATE_COMPLETE) {
+    BrowsingContext* bc = GetBrowsingContext();
+    bc = bc ? bc->Top() : nullptr;
+    if (bc && bc->IsLoading()) {
       
       
-      mozilla::dom::TabGroup* tabGroup = TabGroup();
-      aError = tabGroup->QueuePostMessageEvent(event.forget());
+      aError = bc->Group()->QueuePostMessageEvent(event.forget());
       return;
     }
   }
 
-  if (mDoc && DocGroup::TryToLoadIframesInBackground()) {
+  if (DocGroup::TryToLoadIframesInBackground()) {
     RefPtr<nsIDocShell> docShell = GetDocShell();
     RefPtr<nsDocShell> dShell = nsDocShell::Cast(docShell);
 
     
     
+    
     if (dShell) {
       if (!dShell->TreatAsBackgroundLoad()) {
-        Document* doc = mDoc->GetTopLevelContentDocument();
-        if (doc && doc->GetReadyStateEnum() < Document::READYSTATE_COMPLETE) {
+        BrowsingContext* bc = GetBrowsingContext();
+        bc = bc ? bc->Top() : nullptr;
+        if (bc && bc->IsLoading()) {
           
           
-          mozilla::dom::TabGroup* tabGroup = TabGroup();
-          aError = tabGroup->QueuePostMessageEvent(event.forget());
+          aError = bc->Group()->QueuePostMessageEvent(event.forget());
           return;
         }
       } else if (mDoc->GetReadyStateEnum() < Document::READYSTATE_COMPLETE) {
