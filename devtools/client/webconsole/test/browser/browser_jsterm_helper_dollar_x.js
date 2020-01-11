@@ -16,6 +16,16 @@ const TEST_URI = `data:text/html,
 add_task(async function() {
   const hud = await openNewTabAndConsole(TEST_URI);
 
+  
+  
+  EventUtils.synthesizeMouse(
+    hud.ui.outputNode,
+    0,
+    0,
+    { type: "mousemove" },
+    hud.iframeWindow
+  );
+
   let message = await executeAndWaitForMessage(
     hud,
     "$x('.//li')",
