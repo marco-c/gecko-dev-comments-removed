@@ -41,6 +41,9 @@
 
 
 
+#![cfg_attr(feature = "cargo-clippy", allow(clippy::unreadable_literal, clippy::new_without_default, clippy::too_many_arguments))]
+
+
 
 macro_rules! matches {
     ($expression:expr, $($pattern:tt)+) => {
