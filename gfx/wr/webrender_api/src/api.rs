@@ -1009,7 +1009,7 @@ pub enum ApiMsg {
     
     MemoryPressure,
     
-    ReportMemory(MsgSender<MemoryReport>),
+    ReportMemory(MsgSender<Box<MemoryReport>>),
     
     DebugCommand(DebugCommand),
     
@@ -1538,7 +1538,7 @@ impl RenderApi {
     pub fn report_memory(&self) -> MemoryReport {
         let (tx, rx) = channel::msg_channel().unwrap();
         self.api_sender.send(ApiMsg::ReportMemory(tx)).unwrap();
-        rx.recv().unwrap()
+        *rx.recv().unwrap()
     }
 
     
