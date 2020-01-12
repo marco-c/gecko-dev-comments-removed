@@ -1443,17 +1443,29 @@ static nsresult GetNSSProfilePath(nsAutoCString& aProfilePath) {
 
 
 
+
 static nsresult AttemptToRenamePKCS11ModuleDB(
     const nsACString& profilePath, const nsACString& moduleDBFilename) {
-  nsAutoCString destModuleDBFilename(moduleDBFilename);
-  destModuleDBFilename.Append(".fips");
-  nsCOMPtr<nsIFile> dbFile = do_CreateInstance("@mozilla.org/file/local;1");
-  if (!dbFile) {
+  nsCOMPtr<nsIFile> profileDir = do_CreateInstance("@mozilla.org/file/local;1");
+  if (!profileDir) {
     return NS_ERROR_FAILURE;
   }
-  nsresult rv = dbFile->InitWithNativePath(profilePath);
+#  ifdef XP_WIN
+  
+  
+  nsresult rv = profileDir->InitWithPath(NS_ConvertUTF8toUTF16(profilePath));
+#  else
+  nsresult rv = profileDir->InitWithNativePath(profilePath);
+#  endif
   if (NS_FAILED(rv)) {
     return rv;
+  }
+  nsAutoCString destModuleDBFilename(moduleDBFilename);
+  destModuleDBFilename.Append(".fips");
+  nsCOMPtr<nsIFile> dbFile;
+  rv = profileDir->Clone(getter_AddRefs(dbFile));
+  if (NS_FAILED(rv) || !dbFile) {
+    return NS_ERROR_FAILURE;
   }
   rv = dbFile->AppendNative(moduleDBFilename);
   if (NS_FAILED(rv)) {
@@ -1471,13 +1483,10 @@ static nsresult AttemptToRenamePKCS11ModuleDB(
             ("%s doesn't exist?", PromiseFlatCString(moduleDBFilename).get()));
     return NS_OK;
   }
-  nsCOMPtr<nsIFile> destDBFile = do_CreateInstance("@mozilla.org/file/local;1");
-  if (!destDBFile) {
+  nsCOMPtr<nsIFile> destDBFile;
+  rv = profileDir->Clone(getter_AddRefs(destDBFile));
+  if (NS_FAILED(rv) || !destDBFile) {
     return NS_ERROR_FAILURE;
-  }
-  rv = destDBFile->InitWithNativePath(profilePath);
-  if (NS_FAILED(rv)) {
-    return rv;
   }
   rv = destDBFile->AppendNative(destModuleDBFilename);
   if (NS_FAILED(rv)) {
@@ -1497,20 +1506,13 @@ static nsresult AttemptToRenamePKCS11ModuleDB(
     return NS_OK;
   }
   
-  nsCOMPtr<nsIFile> profileDir = do_CreateInstance("@mozilla.org/file/local;1");
-  if (!profileDir) {
-    return NS_ERROR_FAILURE;
-  }
-  rv = profileDir->InitWithNativePath(profilePath);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
   
   
   
   Unused << dbFile->MoveToNative(profileDir, destModuleDBFilename);
   return NS_OK;
 }
+
 
 
 
@@ -1543,7 +1545,13 @@ static nsresult GetFileIfExists(const nsACString& path,
   if (!file) {
     return NS_ERROR_FAILURE;
   }
+#  ifdef XP_WIN
+  
+  
+  nsresult rv = file->InitWithPath(NS_ConvertUTF8toUTF16(path));
+#  else
   nsresult rv = file->InitWithNativePath(path);
+#  endif
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -1561,6 +1569,7 @@ static nsresult GetFileIfExists(const nsACString& path,
   }
   return NS_OK;
 }
+
 
 
 
@@ -1615,6 +1624,7 @@ static void MaybeCleanUpOldNSSFiles(const nsACString& profilePath) {
   Unused << oldDBFile->Remove(false);
 }
 #endif  
+
 
 
 
