@@ -15170,7 +15170,7 @@ NS_IMPL_ISUPPORTS_INHERITED(UserIntractionTimer, Runnable, nsITimerCallback,
 
 void Document::MaybeStoreUserInteractionAsPermission() {
   
-  if (GetSameTypeParentDocument()) {
+  if (!IsTopLevelContentDocument()) {
     return;
   }
 
