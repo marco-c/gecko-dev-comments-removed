@@ -43,7 +43,7 @@ bool testPreserveJitCode(bool preserveJitCode, unsigned remainingIonScripts) {
 
   
   
-  if (!js::jit::IsIonEnabled()) {
+  if (!js::jit::IsIonEnabled(cx)) {
     knownFail = true;
   }
 
