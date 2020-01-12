@@ -73,14 +73,21 @@ document.addEventListener("DOMContentLoaded", e => {
   document.sendTelemetryEvent("show", "protection_report");
 
   let createGraph = data => {
-    let earliestDate = data.earliestDate || Date.now();
-
+    let graph = document.getElementById("graph");
     let summary = document.getElementById("graph-total-summary");
-    summary.setAttribute(
-      "data-l10n-args",
-      JSON.stringify({ count: data.sumEvents, earliestDate })
-    );
-    summary.setAttribute("data-l10n-id", "graph-total-tracker-summary");
+    let weekSummary = document.getElementById("graph-week-summary");
+
+    
+    if (data.isPrivate) {
+      graph.classList.add("private-window");
+    } else {
+      let earliestDate = data.earliestDate || Date.now();
+      summary.setAttribute(
+        "data-l10n-args",
+        JSON.stringify({ count: data.sumEvents, earliestDate })
+      );
+      summary.setAttribute("data-l10n-id", "graph-total-tracker-summary");
+    }
 
     
     
@@ -105,13 +112,10 @@ document.addEventListener("DOMContentLoaded", e => {
     
     let maxColumnCount = 0;
     let date = new Date();
-    
-    let graph = document.getElementById("graph");
     for (let i = 0; i <= 6; i++) {
       let dateString = date.toISOString().split("T")[0];
       let ariaOwnsString = ""; 
       let currentColumnCount = 0;
-
       let bar = document.createElement("div");
       bar.className = "graph-bar";
       bar.setAttribute("role", "row");
@@ -170,12 +174,19 @@ document.addEventListener("DOMContentLoaded", e => {
       }
       bar.appendChild(innerBar);
       graph.prepend(bar);
-      let weekSummary = document.getElementById("graph-week-summary");
-      weekSummary.setAttribute(
-        "data-l10n-args",
-        JSON.stringify({ count: weekCount })
-      );
-      weekSummary.setAttribute("data-l10n-id", "graph-week-summary");
+
+      if (data.isPrivate) {
+        weekSummary.setAttribute(
+          "data-l10n-id",
+          "graph-week-summary-private-window"
+        );
+      } else {
+        weekSummary.setAttribute(
+          "data-l10n-args",
+          JSON.stringify({ count: weekCount })
+        );
+        weekSummary.setAttribute("data-l10n-id", "graph-week-summary");
+      }
 
       let label = document.createElement("span");
       label.className = "column-label";
