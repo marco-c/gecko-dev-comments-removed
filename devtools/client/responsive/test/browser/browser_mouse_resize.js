@@ -5,39 +5,43 @@
 
 const TEST_URL = "data:text/html;charset=utf-8,";
 
-addRDMTask(TEST_URL, async function({ ui, manager }) {
-  const store = ui.toolWindow.store;
+addRDMTask(
+  TEST_URL,
+  async function({ ui, manager }) {
+    const store = ui.toolWindow.store;
 
-  
-  await waitUntilState(store, state => state.viewports.length == 1);
+    
+    await waitUntilState(store, state => state.viewports.length == 1);
 
-  await setViewportSize(ui, manager, 300, 300);
+    await setViewportSize(ui, manager, 300, 300);
 
-  
-  await testViewportResize(
-    ui,
-    ".viewport-resize-handle",
-    [10, 10],
-    [320, 310],
-    [10, 10]
-  );
+    
+    await testViewportResize(
+      ui,
+      ".viewport-resize-handle",
+      [10, 10],
+      [320, 310],
+      [10, 10]
+    );
 
-  
-  await testViewportResize(
-    ui,
-    ".viewport-horizontal-resize-handle",
-    [-10, 10],
-    [300, 310],
-    [-10, 0]
-  );
+    
+    await testViewportResize(
+      ui,
+      ".viewport-horizontal-resize-handle",
+      [-10, 10],
+      [300, 310],
+      [-10, 0]
+    );
 
-  
-  await testViewportResize(
-    ui,
-    ".viewport-vertical-resize-handle",
-    [-10, -10],
-    [300, 300],
-    [0, -10],
-    ui
-  );
-});
+    
+    await testViewportResize(
+      ui,
+      ".viewport-vertical-resize-handle",
+      [-10, -10],
+      [300, 300],
+      [0, -10],
+      ui
+    );
+  },
+  true
+);

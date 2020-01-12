@@ -1020,6 +1020,17 @@ class ResponsiveUI {
   getInitialViewportOrientation(viewport) {
     return getOrientation(viewport, viewport);
   }
+
+  
+
+
+  getBrowserWindow() {
+    if (!this.isBrowserUIEnabled) {
+      return this.toolWindow;
+    }
+
+    return this.browserWindow;
+  }
 }
 
 module.exports = ResponsiveUI;
