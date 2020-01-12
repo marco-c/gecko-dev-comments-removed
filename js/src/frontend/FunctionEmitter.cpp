@@ -273,7 +273,7 @@ bool FunctionEmitter::emitNonHoisted(unsigned index) {
 
   if (syntaxKind_ == FunctionSyntaxKind::DerivedClassConstructor) {
     
-    if (!bce_->emitIndex32(JSOP_FUNWITHPROTO, index)) {
+    if (!bce_->emitIndexOp(JSOP_FUNWITHPROTO, index)) {
       
       return false;
     }
@@ -284,7 +284,7 @@ bool FunctionEmitter::emitNonHoisted(unsigned index) {
   
   JSOp op = syntaxKind_ == FunctionSyntaxKind::Arrow ? JSOP_LAMBDA_ARROW
                                                      : JSOP_LAMBDA;
-  if (!bce_->emitIndex32(op, index)) {
+  if (!bce_->emitIndexOp(op, index)) {
     
     return false;
   }
@@ -343,7 +343,7 @@ bool FunctionEmitter::emitTopLevelFunction(unsigned index) {
   MOZ_ASSERT(syntaxKind_ == FunctionSyntaxKind::Statement);
   MOZ_ASSERT(bce_->inPrologue());
 
-  if (!bce_->emitIndex32(JSOP_LAMBDA, index)) {
+  if (!bce_->emitIndexOp(JSOP_LAMBDA, index)) {
     
     return false;
   }
