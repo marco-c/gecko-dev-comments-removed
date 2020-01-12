@@ -40,6 +40,11 @@ public class WebResponse extends WebMessage {
     
 
 
+    public final boolean isSecure;
+
+    
+
+
     public final @Nullable InputStream body;
 
     protected WebResponse(final @NonNull Builder builder) {
@@ -47,6 +52,7 @@ public class WebResponse extends WebMessage {
         this.statusCode = builder.mStatusCode;
         this.redirected = builder.mRedirected;
         this.body = builder.mBody;
+        this.isSecure = builder.mIsSecure;
 
         this.setReadTimeoutMillis(DEFAULT_READ_TIMEOUT_MS);
     }
@@ -74,6 +80,7 @@ public class WebResponse extends WebMessage {
          int mStatusCode;
          boolean mRedirected;
          InputStream mBody;
+         boolean mIsSecure;
 
         
 
@@ -110,6 +117,15 @@ public class WebResponse extends WebMessage {
 
         public @NonNull Builder body(final @NonNull InputStream stream) {
             mBody = stream;
+            return this;
+        }
+
+        
+
+
+
+        public @NonNull Builder isSecure(final boolean isSecure) {
+            mIsSecure = isSecure;
             return this;
         }
 
