@@ -66,7 +66,7 @@ void MediaControlService::Init() {
   mMediaControlKeysManager->Open();
   MOZ_ASSERT(mMediaControlKeysManager->IsOpened());
   mMediaControlKeysManager->AddListener(mMediaKeysHandler.get());
-  mControllerManager = MakeUnique<ControllerManager>();
+  mControllerManager = MakeUnique<ControllerManager>(this);
 }
 
 MediaControlService::~MediaControlService() {
@@ -148,6 +148,12 @@ void MediaControlService::GenerateMediaControlKeysTestEvent(
 }
 
 
+MediaControlService::ControllerManager::ControllerManager(
+    MediaControlService* aService)
+    : mSource(aService->GetMediaControlKeysEventSource()) {
+  MOZ_ASSERT(mSource);
+}
+
 void MediaControlService::ControllerManager::AddController(
     MediaController* aController) {
   MOZ_DIAGNOSTIC_ASSERT(aController);
@@ -180,18 +186,36 @@ void MediaControlService::ControllerManager::Shutdown() {
     iter.Data()->Shutdown();
   }
   mControllers.Clear();
+  mPlayStateChangedListener.DisconnectIfExists();
+}
+
+void MediaControlService::ControllerManager::ControllerPlaybackStateChanged(
+    PlaybackState aState) {
+  MOZ_ASSERT(NS_IsMainThread());
+  mSource->SetPlaybackState(aState);
 }
 
 void MediaControlService::ControllerManager::UpdateMainController(
     MediaController* aController) {
+  MOZ_ASSERT(NS_IsMainThread());
   mMainController = aController;
+  
+  
+  mPlayStateChangedListener.DisconnectIfExists();
+
   if (!mMainController) {
     LOG_MAINCONTROLLER("Clear main controller");
+    mSource->SetPlaybackState(PlaybackState::eStopped);
     return;
   }
   LOG_MAINCONTROLLER("Set controller %" PRId64 " as main controller",
                      mMainController->Id());
   
+  mPlayStateChangedListener =
+      mMainController->PlaybackStateChangedEvent().Connect(
+          AbstractThread::MainThread(), this,
+          &ControllerManager::ControllerPlaybackStateChanged);
+  mSource->SetPlaybackState(mMainController->GetState());
 }
 
 MediaController* MediaControlService::ControllerManager::GetMainController()
