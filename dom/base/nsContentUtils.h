@@ -1734,26 +1734,13 @@ class nsContentUtils {
 
 
 
-
-
-
-
-
-
   static nsresult ParseFragmentHTML(const nsAString& aSourceBuffer,
                                     nsIContent* aTargetNode,
                                     nsAtom* aContextLocalName,
                                     int32_t aContextNamespace, bool aQuirks,
-                                    bool aPreventScriptExecution,
-                                    int32_t aFlags = -1);
+                                    bool aPreventScriptExecution);
 
   
-
-
-
-
-
-
 
 
 
@@ -1771,7 +1758,7 @@ class nsContentUtils {
   static nsresult ParseFragmentXML(const nsAString& aSourceBuffer,
                                    Document* aDocument,
                                    nsTArray<nsString>& aTagStack,
-                                   bool aPreventScriptExecution, int32_t aFlags,
+                                   bool aPreventScriptExecution,
                                    mozilla::dom::DocumentFragment** aReturn);
 
   

@@ -2285,10 +2285,6 @@ pref("security.notification_enable_delay", 500);
   
   
   pref("csp.skip_about_page_csp_allowlist_and_assert", false);
-  
-  
-  
-  pref("domsecurity.skip_html_fragment_assertion", false);
 #endif
 
 #ifdef EARLY_BETA_OR_EARLIER
