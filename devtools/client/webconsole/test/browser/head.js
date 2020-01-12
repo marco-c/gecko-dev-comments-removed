@@ -1174,7 +1174,8 @@ async function waitForEagerEvaluationResult(hud, text) {
 
 async function waitForNoEagerEvaluationResult(hud) {
   await waitUntil(() => {
-    return !hud.ui.outputNode.querySelector(".eager-evaluation-result");
+    const elem = hud.ui.outputNode.querySelector(".eager-evaluation-result");
+    return elem && elem.innerText == "";
   });
   ok(true, `Eager evaluation result disappeared`);
 }

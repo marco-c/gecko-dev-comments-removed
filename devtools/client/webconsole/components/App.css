@@ -120,12 +120,16 @@ body {
   padding-block-start: 2px;
   overflow-y: auto;
   overflow-x: hidden;
-  flex-grow: 1;
   
   display: grid;
   grid-template-columns: 1fr auto;
   
   grid-auto-flow: column;
+}
+
+
+.webconsole-app:not(.eager-evaluation) .jsterm-input-container {
+  flex-grow: 1;
 }
 
 .webconsole-app:not(.jsterm-editor) .jsterm-input-container {
