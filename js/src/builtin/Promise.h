@@ -224,21 +224,6 @@ MOZ_MUST_USE JSObject* GetWaitForAllPromise(JSContext* cx,
 
 
 
-enum class CreateDependentPromise {
-  
-  Always,
-
-  
-  SkipIfCtorUnobservable,
-
-  
-  
-  Never
-};
-
-
-
-
 
 
 MOZ_MUST_USE JSObject* OriginalPromiseThen(JSContext* cx,

@@ -4188,14 +4188,15 @@ static bool IsPromiseSpecies(JSContext* cx, JSFunction* species) {
   return species->maybeNative() == Promise_static_species;
 }
 
+
+
+
+enum class CreateDependentPromise { Always, SkipIfCtorUnobservable };
+
 static bool PromiseThenNewPromiseCapability(
     JSContext* cx, HandleObject promiseObj,
     CreateDependentPromise createDependent,
     MutableHandle<PromiseCapability> resultCapability) {
-  if (createDependent == CreateDependentPromise::Never) {
-    return true;
-  }
-
   
   RootedObject C(cx, SpeciesConstructor(cx, promiseObj, JSProto_Promise,
                                         IsPromiseSpecies));
