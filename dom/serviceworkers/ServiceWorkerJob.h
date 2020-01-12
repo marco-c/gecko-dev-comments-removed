@@ -22,6 +22,7 @@ namespace dom {
 class ServiceWorkerJob {
  public:
   
+  
   class Callback {
    public:
     
@@ -29,6 +30,10 @@ class ServiceWorkerJob {
     
     
     virtual void JobFinished(ServiceWorkerJob* aJob, ErrorResult& aStatus) = 0;
+
+    
+    
+    virtual void JobDiscarded(ErrorResult& aStatus) = 0;
 
     NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
   };
