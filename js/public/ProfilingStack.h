@@ -370,6 +370,8 @@ typedef ProfilingStack* (*RegisterThreadCallback)(const char* threadName,
 
 typedef void (*UnregisterThreadCallback)();
 
+
+
 JS_FRIEND_API void SetProfilingThreadCallbacks(
     RegisterThreadCallback registerThread,
     UnregisterThreadCallback unregisterThread);
