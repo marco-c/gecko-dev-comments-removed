@@ -31,11 +31,6 @@ class gfxWindowsNativeDrawing {
 
     CAN_COMPLEX_TRANSFORM = 1 << 2,
     CANNOT_COMPLEX_TRANSFORM = 0 << 2,
-
-    
-
-    DO_NEAREST_NEIGHBOR_FILTERING = 1 << 3,
-    DO_BILINEAR_FILTERING = 0 << 3
   };
 
   
@@ -62,7 +57,7 @@ class gfxWindowsNativeDrawing {
                           uint32_t nativeDrawFlags =
                               CANNOT_DRAW_TO_COLOR_ALPHA |
                               CANNOT_AXIS_ALIGNED_SCALE |
-                              CANNOT_COMPLEX_TRANSFORM | DO_BILINEAR_FILTERING);
+                              CANNOT_COMPLEX_TRANSFORM);
 
   
 
