@@ -2659,13 +2659,6 @@
             pinned,
             bulkOrderedOpen,
           });
-        } else {
-          
-          
-          
-          
-          
-          t._tPos = this.tabs.length;
         }
 
         
@@ -2871,11 +2864,12 @@
       return t;
     },
 
-    addMultipleTabs(restoreTabsLazily, window, selectTab, aPropertiesTabs) {
+    addMultipleTabs(restoreTabsLazily, selectTab, aPropertiesTabs) {
       let tabs = [];
       let tabsFragment = document.createDocumentFragment();
       let tabToSelect = null;
       let hiddenTabs = new Map();
+      let shouldUpdateForPinnedTabs = false;
 
       
       
@@ -2887,18 +2881,19 @@
         let userContextId = tabData.userContextId;
         let select = i == selectTab - 1;
         let tab;
+        let tabWasReused = false;
 
         
         
         if (select && this.selectedTab.userContextId == userContextId) {
+          tabWasReused = true;
           tab = this.selectedTab;
           if (!tabData.pinned) {
             this.unpinTab(tab);
+          } else {
+            this.pinTab(tab);
           }
-          if (
-            window.gMultiProcessBrowser &&
-            !tab.linkedBrowser.isRemoteBrowser
-          ) {
+          if (gMultiProcessBrowser && !tab.linkedBrowser.isRemoteBrowser) {
             this.updateBrowserRemoteness(tab.linkedBrowser, {
               remoteType: E10SUtils.DEFAULT_REMOTE_TYPE,
             });
@@ -2942,19 +2937,32 @@
 
         tabs.push(tab);
 
-        if (tab.pinned) {
-          tabData.hidden = false;
-        }
-
-        if (tab.hidden) {
-          tab.setAttribute("hidden", "true");
-          hiddenTabs.set(tab, tabData.extData && tabData.extData.hiddenBy);
-        }
-
         if (tabData.pinned) {
-          this.pinTab(tab); 
+          
+          
+          
+          if (!tab.parentNode) {
+            tab._tPos = this._numPinnedTabs;
+            this.tabContainer.insertBefore(tab, this.tabs[this._numPinnedTabs]);
+            tab.setAttribute("pinned", "true");
+            this._invalidateCachedTabs();
+            
+            this._fireOpenTab(tab, {});
+            this._notifyPinnedStatus(tab);
+            
+            
+            shouldUpdateForPinnedTabs = true;
+          }
         } else {
+          if (tab.hidden) {
+            tab.setAttribute("hidden", "true");
+            hiddenTabs.set(tab, tabData.extData && tabData.extData.hiddenBy);
+          }
+
           tabsFragment.appendChild(tab);
+          if (tabWasReused) {
+            this._invalidateCachedTabs();
+          }
         }
 
         tab.initialize();
@@ -2973,6 +2981,9 @@
       }
 
       this._invalidateCachedTabs();
+      if (shouldUpdateForPinnedTabs) {
+        this._updateTabBarForPinnedTabs();
+      }
 
       
       
@@ -2990,7 +3001,7 @@
         
         
         for (let tab of tabs) {
-          if (tabToSelect || !tab.selected) {
+          if (!tab.pinned && (tabToSelect || !tab.selected)) {
             this._fireOpenTab(tab, {});
           }
         }
