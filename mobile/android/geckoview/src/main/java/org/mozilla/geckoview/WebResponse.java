@@ -12,7 +12,11 @@ import android.support.annotation.AnyThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 
 
 
@@ -45,6 +49,11 @@ public class WebResponse extends WebMessage {
     
 
 
+    public final @Nullable X509Certificate certificate;
+
+    
+
+
     public final @Nullable InputStream body;
 
     protected WebResponse(final @NonNull Builder builder) {
@@ -53,6 +62,7 @@ public class WebResponse extends WebMessage {
         this.redirected = builder.mRedirected;
         this.body = builder.mBody;
         this.isSecure = builder.mIsSecure;
+        this.certificate = builder.mCertificate;
 
         this.setReadTimeoutMillis(DEFAULT_READ_TIMEOUT_MS);
     }
@@ -81,6 +91,7 @@ public class WebResponse extends WebMessage {
          boolean mRedirected;
          InputStream mBody;
          boolean mIsSecure;
+         X509Certificate mCertificate;
 
         
 
@@ -127,6 +138,29 @@ public class WebResponse extends WebMessage {
         public @NonNull Builder isSecure(final boolean isSecure) {
             mIsSecure = isSecure;
             return this;
+        }
+
+        
+
+
+
+        public @NonNull Builder certificate(final @NonNull X509Certificate certificate) {
+            mCertificate = certificate;
+            return this;
+        }
+
+        
+
+
+        @WrapForJNI(exceptionMode = "nsresult")
+        private void certificateBytes(final @NonNull byte[] encodedCert) {
+            try {
+                final CertificateFactory factory = CertificateFactory.getInstance("X.509");
+                final X509Certificate cert = (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(encodedCert));
+                certificate(cert);
+            } catch (CertificateException e) {
+                throw new IllegalArgumentException("Unable to parse DER certificate");
+            }
         }
 
         
