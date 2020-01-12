@@ -235,40 +235,6 @@ struct IsPointerHelper<T*> : TrueType {};
 template <typename T>
 struct IsPointer : detail::IsPointerHelper<typename RemoveCV<T>::Type> {};
 
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct IsLvalueReference : FalseType {};
-
-template <typename T>
-struct IsLvalueReference<T&> : TrueType {};
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct IsRvalueReference : FalseType {};
-
-template <typename T>
-struct IsRvalueReference<T&&> : TrueType {};
-
 namespace detail {
 
 
@@ -311,24 +277,6 @@ template <typename T>
 struct IsClass : detail::IsClassHelper<typename RemoveCV<T>::Type> {};
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct IsReference : IntegralConstant<bool, IsLvalueReference<T>::value ||
-                                                IsRvalueReference<T>::value> {};
 
 
 
