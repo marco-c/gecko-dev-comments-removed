@@ -2457,7 +2457,7 @@
       if (aTab._sharingState) {
         this.resetBrowserSharing(browser);
       }
-      webrtcUI.forgetStreamsFromBrowser(browser);
+      webrtcUI.forgetStreamsFromBrowserContext(browser.browsingContext);
 
       
       

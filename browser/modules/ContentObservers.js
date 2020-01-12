@@ -46,6 +46,7 @@ Services.obs.addObserver(gEMEUIObserver, "mediakeys-request");
 Services.obs.addObserver(gDecoderDoctorObserver, "decoder-doctor-notification");
 
 
+
 const kWebRTCObserverTopics = [
   "getUserMedia:request",
   "recording-device-stopped",
