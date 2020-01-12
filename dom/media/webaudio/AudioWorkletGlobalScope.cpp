@@ -119,25 +119,6 @@ void AudioWorkletGlobalScope::RegisterProcessor(
         "processorCtor.prototype"));
     return;
   }
-
-  
-
-
-
-  JS::Rooted<JS::Value> process(aCx);
-  JS::Rooted<JSObject*> prototypeObject(aCx, &prototype.toObject());
-  if (!JS_GetProperty(aCx, prototypeObject, "process", &process)) {
-    aRv.NoteJSContextException(aCx);
-    return;
-  }
-
-  if (!process.isObjectOrNull() || !JS::IsCallable(process.toObjectOrNull())) {
-    aRv.ThrowTypeError<MSG_NOT_CALLABLE>(NS_LITERAL_STRING(
-        "Argument 2 of AudioWorkletGlobalScope.registerProcessor "
-        "constructor.process"));
-    return;
-  }
-
   
 
 
@@ -148,8 +129,12 @@ void AudioWorkletGlobalScope::RegisterProcessor(
     aRv.NoteJSContextException(aCx);
     return;
   }
-
   
+
+
+
+
+
 
 
 

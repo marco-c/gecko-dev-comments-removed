@@ -1,5 +1,4 @@
 
-
 class EmptyWorkletProcessor extends AudioWorkletProcessor {}
 
 class NoProcessWorkletProcessor extends AudioWorkletProcessor {
@@ -249,20 +248,10 @@ try {
 }
 
 
-
-try {
-  registerProcessor("empty-worklet-processor", EmptyWorkletProcessor);
-} catch (e) {
-  console.log(e);
-}
+registerProcessor("empty-worklet-processor", EmptyWorkletProcessor);
 
 
-
-try {
-  registerProcessor("no-worklet-processor", NoProcessWorkletProcessor);
-} catch (e) {
-  console.log(e);
-}
+registerProcessor("no-worklet-processor", NoProcessWorkletProcessor);
 
 
 
