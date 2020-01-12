@@ -2426,19 +2426,16 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
   int32_t startOffset = range->StartOffset();
   int32_t endOffset = range->EndOffset();
 
-  
   bool shouldClearRange = false;
-  const Maybe<int32_t> result1 = nsContentUtils::ComparePoints(
+  const Maybe<int32_t> anchorOldFocusOrder = nsContentUtils::ComparePoints(
       anchorNode, anchorOffset, focusNode, focusOffset);
-  
-  shouldClearRange |= !result1;
-  const Maybe<int32_t> result2 = nsContentUtils::ComparePoints(
+  shouldClearRange |= !anchorOldFocusOrder;
+  const Maybe<int32_t> oldFocusNewFocusOrder = nsContentUtils::ComparePoints(
       focusNode, focusOffset, &aContainer, aOffset);
-  
-  shouldClearRange |= !result2;
-  const Maybe<int32_t> result3 = nsContentUtils::ComparePoints(
+  shouldClearRange |= !oldFocusNewFocusOrder;
+  const Maybe<int32_t> anchorNewFocusOrder = nsContentUtils::ComparePoints(
       anchorNode, anchorOffset, &aContainer, aOffset);
-  shouldClearRange |= !result3;
+  shouldClearRange |= !anchorNewFocusOrder;
 
   
   
@@ -2459,8 +2456,9 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
     }
   } else {
     RefPtr<nsRange> difRange = new nsRange(&aContainer);
-    if ((*result1 == 0 && *result3 < 0) ||
-        (*result1 <= 0 && *result2 < 0)) {  
+    if ((*anchorOldFocusOrder == 0 && *anchorNewFocusOrder < 0) ||
+        (*anchorOldFocusOrder <= 0 &&
+         *oldFocusNewFocusOrder < 0)) {  
       
       range->SetEnd(aContainer, aOffset, aRv);
       if (aRv.Failed()) {
@@ -2479,7 +2477,8 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
         aRv.Throw(res);
         return;
       }
-    } else if (*result1 == 0 && *result3 > 0) {  
+    } else if (*anchorOldFocusOrder == 0 &&
+               *anchorNewFocusOrder > 0) {  
       
       SetDirection(eDirPrevious);
       range->SetStart(aContainer, aOffset, aRv);
@@ -2492,8 +2491,8 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
         aRv.Throw(res);
         return;
       }
-    } else if (*result3 <= 0 &&
-               *result2 >= 0) {  
+    } else if (*anchorNewFocusOrder <= 0 &&
+               *oldFocusNewFocusOrder >= 0) {  
       
       res = difRange->SetStartAndEnd(&aContainer, aOffset, focusNode,
                                      focusOffset);
@@ -2515,8 +2514,8 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
       difRange->SetEnd(range->GetEndContainer(), range->EndOffset());
       SelectFrames(presContext, difRange, true);  
                                                   
-    } else if (*result1 >= 0 &&
-               *result3 <= 0) {  
+    } else if (*anchorOldFocusOrder >= 0 &&
+               *anchorNewFocusOrder <= 0) {  
       if (GetDirection() == eDirPrevious) {
         res = range->SetStart(endNode, endOffset);
         if (NS_FAILED(res)) {
@@ -2556,8 +2555,8 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
       }
       
       SelectFrames(presContext, range, true);
-    } else if (*result2 <= 0 &&
-               *result3 >= 0) {  
+    } else if (*oldFocusNewFocusOrder <= 0 &&
+               *anchorNewFocusOrder >= 0) {  
       
       res = difRange->SetStartAndEnd(focusNode, focusOffset, &aContainer,
                                      aOffset);
@@ -2579,8 +2578,8 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
       SelectFrames(presContext, difRange, false);
       difRange->SetStart(range->GetStartContainer(), range->StartOffset());
       SelectFrames(presContext, difRange, true);  
-    } else if (*result3 >= 0 &&
-               *result1 <= 0) {  
+    } else if (*anchorNewFocusOrder >= 0 &&
+               *anchorOldFocusOrder <= 0) {  
       if (GetDirection() == eDirNext) {
         range->SetEnd(startNode, startOffset);
       }
@@ -2612,8 +2611,8 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
       }
       
       SelectFrames(presContext, range, true);
-    } else if (*result2 >= 0 &&
-               *result1 >= 0) {  
+    } else if (*oldFocusNewFocusOrder >= 0 &&
+               *anchorOldFocusOrder >= 0) {  
       
       range->SetStart(aContainer, aOffset, aRv);
       if (aRv.Failed()) {
