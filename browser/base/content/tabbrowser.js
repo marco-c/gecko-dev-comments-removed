@@ -3328,6 +3328,16 @@
     },
 
     removeTabs(tabs) {
+      
+      
+      if (
+        this.tabs.length == tabs.length &&
+        Services.prefs.getBoolPref("browser.tabs.closeWindowWithLastTab")
+      ) {
+        window.closeWindow(true, window.warnAboutClosingWindow);
+        return;
+      }
+
       this._clearMultiSelectionLocked = true;
 
       
