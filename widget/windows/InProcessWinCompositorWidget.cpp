@@ -73,6 +73,13 @@ void InProcessWinCompositorWidget::OnDestroyWindow() {
   LeavePresentLock();
 }
 
+bool InProcessWinCompositorWidget::OnWindowResize(
+    const LayoutDeviceIntSize& aSize) {
+  return true;
+}
+
+void InProcessWinCompositorWidget::OnWindowModeChange(nsSizeMode aSizeMode) {}
+
 bool InProcessWinCompositorWidget::PreRender(WidgetRenderingContext* aContext) {
   
   
