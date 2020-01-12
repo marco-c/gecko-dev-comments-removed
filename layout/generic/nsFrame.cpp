@@ -9299,7 +9299,7 @@ static nsRect UnionBorderBoxes(
   
   const nsIFrame::ChildListIDs skip = {
       nsIFrame::kPopupList, nsIFrame::kSelectPopupList, nsIFrame::kAbsoluteList,
-      nsIFrame::kFixedList, nsIFrame::kFloatList};
+      nsIFrame::kFixedList, nsIFrame::kFloatList, nsIFrame::kOverflowList};
   for (nsIFrame::ChildListIterator childLists(aFrame); !childLists.IsDone();
        childLists.Next()) {
     if (skip.contains(childLists.CurrentID())) {
