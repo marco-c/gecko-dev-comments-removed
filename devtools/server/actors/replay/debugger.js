@@ -230,7 +230,7 @@ function ReplayDebugger() {
   this.replayingOnForcedPause = null;
 
   
-  this.replayingOnPositionChange = null;
+  this.replayingOnStatusUpdate = null;
 }
 
 
@@ -263,18 +263,6 @@ ReplayDebugger.prototype = {
 
   replayRecordingEndpoint() {
     return this._control.recordingEndpoint();
-  },
-
-  replayIsRecording() {
-    return this._control.childIsRecording();
-  },
-
-  replayUnscannedRegions() {
-    return this._control.unscannedRegions();
-  },
-
-  replayCachedPoints() {
-    return this._control.cachedPoints();
   },
 
   replayDebuggerRequests() {
@@ -417,11 +405,6 @@ ReplayDebugger.prototype = {
   
   _onPause() {
     
-    if (this.replayingOnPositionChange) {
-      this.replayingOnPositionChange();
-    }
-
-    
     
     this._cancelPerformPause = false;
     Services.tm.dispatchToMainThread(this._performPause.bind(this));
@@ -474,15 +457,6 @@ ReplayDebugger.prototype = {
           this.replayResumeBackward();
           break;
       }
-    }
-  },
-
-  
-  
-  
-  _callOnPositionChange() {
-    if (this.replayingOnPositionChange) {
-      this.replayingOnPositionChange();
     }
   },
 
@@ -539,7 +513,7 @@ ReplayDebugger.prototype = {
   },
 
   replayPaintCurrentPoint() {
-    if (this.replayIsRecording()) {
+    if (this._control.childIsRecording()) {
       return RecordReplayControl.restoreMainGraphics();
     }
 

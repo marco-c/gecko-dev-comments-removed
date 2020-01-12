@@ -556,7 +556,7 @@ function spawnTrunkChild() {
   assert(gLastSavedCheckpoint == InvalidCheckpointId);
 }
 
-function forkBranchChild(lastSavedCheckpoint, nextSavedCheckpoint) {
+async function forkBranchChild(lastSavedCheckpoint, nextSavedCheckpoint) {
   if (!RecordReplayControl.canRewind()) {
     return;
   }
@@ -574,7 +574,7 @@ function forkBranchChild(lastSavedCheckpoint, nextSavedCheckpoint) {
   gBranchChildren.push({ child, point });
 
   const endpoint = checkpointExecutionPoint(nextSavedCheckpoint);
-  gTrunkChild.sendManifest({
+  await gTrunkChild.sendManifest({
     kind: "runToPoint",
     endpoint,
 
@@ -582,6 +582,8 @@ function forkBranchChild(lastSavedCheckpoint, nextSavedCheckpoint) {
     
     flushExternalCalls: true,
   });
+
+  updateStatus();
 }
 
 function respawnCrashedChild(child) {
@@ -861,9 +863,7 @@ async function scanRecording(checkpoint) {
   gScannedSavedCheckpoints.add(checkpoint);
 
   
-  if (gDebugger) {
-    gDebugger._callOnPositionChange();
-  }
+  updateStatus();
 
   resolve(child);
   return child;
@@ -872,14 +872,24 @@ async function scanRecording(checkpoint) {
 function unscannedRegions() {
   const result = [];
 
+  const traversedCheckpoint =
+    gTrunkChild && gTrunkChild.lastPausePoint
+      ? gTrunkChild.lastPausePoint.checkpoint
+      : FirstCheckpointId;
+
   function addRegion(startCheckpoint, endCheckpoint) {
     const start = checkpointExecutionPoint(startCheckpoint).progress;
     const end = checkpointExecutionPoint(endCheckpoint).progress;
+    const traversed = endCheckpoint <= traversedCheckpoint;
 
-    if (result.length && result[result.length - 1].end == start) {
+    if (
+      result.length &&
+      result[result.length - 1].end == start &&
+      result[result.length - 1].traversed == traversed
+    ) {
       result[result.length - 1].end = end;
     } else {
-      result.push({ start, end });
+      result.push({ start, end, traversed });
     }
   }
 
@@ -1060,9 +1070,7 @@ function addPauseData(point, data, trackCached) {
 
   if (trackCached) {
     gCachedPoints.set(pointToString(point), point);
-    if (gDebugger) {
-      gDebugger._callOnPositionChange();
-    }
+    updateStatus();
   }
 }
 
@@ -1134,6 +1142,7 @@ function setReplayingPauseTarget(point) {
 
   const child = newLeafChild(point);
   setPauseState(PauseModes.PAUSED, point, child);
+  updateStatus();
 
   gDebugger._onPause();
   findFrameSteps(point);
@@ -1230,7 +1239,7 @@ async function finishResume() {
     assert(forward);
     RecordReplayControl.restoreMainGraphics();
     setPauseState(PauseModes.RUNNING, gMainChild.pausePoint(), gMainChild);
-    gDebugger._callOnPositionChange();
+    updateStatus();
     maybeResumeRecording();
   } else {
     
@@ -1720,6 +1729,7 @@ function maybeResumeRecording() {
 
       gPausePoint = gMainChild.pausePoint();
       if (gDebugger) {
+        updateStatus();
         gDebugger._onPause();
       } else {
         Services.tm.dispatchToMainThread(maybeResumeRecording);
@@ -1877,11 +1887,6 @@ const gControl = {
   },
 
   
-  childIsRecording() {
-    return gActiveChild && gActiveChild.recording;
-  },
-
-  
   waitUntilPaused() {
     
     assert(gActiveChild);
@@ -2007,9 +2012,6 @@ const gControl = {
 
   setActiveEventBreakpoints,
 
-  unscannedRegions,
-  cachedPoints,
-
   debuggerRequests() {
     return gDebuggerRequests;
   },
@@ -2059,6 +2061,17 @@ const gControl = {
     return false;
   },
 };
+
+function updateStatus() {
+  if (gDebugger && gDebugger.replayingOnStatusUpdate) {
+    gDebugger.replayingOnStatusUpdate({
+      recording: gActiveChild && gActiveChild.recording,
+      executionPoint: gPausePoint,
+      cachedPoints: cachedPoints(),
+      unscannedRegions: unscannedRegions(),
+    });
+  }
+}
 
 
 

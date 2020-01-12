@@ -357,7 +357,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this.dbg.onNewDebuggee = this._onNewDebuggee;
     if (this.dbg.replaying) {
       this.dbg.replayingOnForcedPause = this.replayingOnForcedPause.bind(this);
-      this.dbg.replayingOnPositionChange = this._makeReplayingOnPositionChange();
+      this.dbg.replayingOnStatusUpdate = this._makeReplayingOnStatusUpdate();
     }
 
     this._debuggerSourcesSeen = new WeakSet();
@@ -1948,19 +1948,10 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
 
-  _makeReplayingOnPositionChange() {
-    return throttle(() => {
+  _makeReplayingOnStatusUpdate() {
+    return throttle(status => {
       if (this.attached) {
-        const recording = this.dbg.replayIsRecording();
-        const executionPoint = this.dbg.replayCurrentExecutionPoint();
-        const unscannedRegions = this.dbg.replayUnscannedRegions();
-        const cachedPoints = this.dbg.replayCachedPoints();
-        this.emit("progress", {
-          recording,
-          executionPoint,
-          unscannedRegions,
-          cachedPoints,
-        });
+        this.emit("replayStatusUpdate", { status });
       }
     }, 100);
   },
