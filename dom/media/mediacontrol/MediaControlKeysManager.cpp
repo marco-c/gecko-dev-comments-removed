@@ -20,8 +20,6 @@
 namespace mozilla {
 namespace dom {
 
-using PlaybackState = MediaControlKeysEventSource::PlaybackState;
-
 bool MediaControlKeysManager::IsOpened() const {
   
   

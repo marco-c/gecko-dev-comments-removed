@@ -8,7 +8,6 @@
 #define DOM_MEDIA_MEDIACONTROL_MEDIACONTROLLER_H_
 
 #include "ContentMediaController.h"
-#include "MediaControlKeysEvent.h"
 #include "nsDataHashtable.h"
 #include "nsISupportsImpl.h"
 
@@ -16,6 +15,17 @@ namespace mozilla {
 namespace dom {
 
 class BrowsingContext;
+enum class MediaControlKeysEvent : uint32_t;
+
+
+
+
+
+enum class PlaybackState : uint8_t {
+  ePlaying,
+  ePaused,
+  eStopped,
+};
 
 
 
