@@ -282,6 +282,12 @@ extern MOZ_MUST_USE bool ReactIgnoringUnhandledRejection(
 MOZ_MUST_USE JSObject* PromiseResolve(JSContext* cx, HandleObject constructor,
                                       HandleValue value);
 
+
+
+
+
+
+
 MOZ_MUST_USE bool RejectPromiseWithPendingError(JSContext* cx,
                                                 Handle<PromiseObject*> promise);
 

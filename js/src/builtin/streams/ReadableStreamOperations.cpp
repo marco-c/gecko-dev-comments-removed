@@ -30,6 +30,7 @@
 #include "vm/ObjectOperations.h"  
 
 #include "builtin/streams/HandlerFunction-inl.h"  
+#include "builtin/streams/MiscellaneousOperations-inl.h"  
 #include "builtin/streams/ReadableStreamReader-inl.h"  
 #include "vm/Compartment-inl.h"  
 #include "vm/JSObject-inl.h"  
@@ -410,6 +411,10 @@ MOZ_MUST_USE JSObject* js::ReadableStreamTee_Cancel(
     }
   }
 
+  Rooted<PromiseObject*> unwrappedCancelPromise(
+      cx, unwrappedTeeState->cancelPromise());
+  MOZ_ASSERT(unwrappedCancelPromise != nullptr);
+
   
   if (bothBranchesCanceled) {
     
@@ -438,41 +443,30 @@ MOZ_MUST_USE JSObject* js::ReadableStreamTee_Cancel(
     
     
     
-    
-    
-    
-    
-    
     Rooted<JSObject*> cancelResult(
         cx, js::ReadableStreamCancel(cx, unwrappedStream, compositeReason));
-    {
-      Rooted<PromiseObject*> cancelPromise(cx,
-                                           unwrappedTeeState->cancelPromise());
-      AutoRealm ar(cx, cancelPromise);
-
-      if (!cancelResult) {
-        
-        if (!RejectPromiseWithPendingError(cx, cancelPromise)) {
-          return nullptr;
-        }
-      } else {
-        
-        Rooted<Value> resultVal(cx, ObjectValue(*cancelResult));
-        if (!cx->compartment()->wrap(cx, &resultVal)) {
-          return nullptr;
-        }
-        if (!PromiseObject::resolve(cx, cancelPromise, resultVal)) {
-          return nullptr;
-        }
+    if (!cancelResult) {
+      
+      AutoRealm ar(cx, unwrappedCancelPromise);
+      if (!RejectPromiseWithPendingError(cx, unwrappedCancelPromise)) {
+        return nullptr;
+      }
+    } else {
+      
+      Rooted<Value> cancelResultVal(cx, ObjectValue(*cancelResult));
+      if (!ResolveUnwrappedPromiseWithValue(cx, unwrappedCancelPromise,
+                                            cancelResultVal)) {
+        return nullptr;
       }
     }
   }
 
   
-  Rooted<JSObject*> cancelPromise(cx, unwrappedTeeState->cancelPromise());
+  Rooted<JSObject*> cancelPromise(cx, unwrappedCancelPromise);
   if (!cx->compartment()->wrap(cx, &cancelPromise)) {
     return nullptr;
   }
+
   return cancelPromise;
 }
 
