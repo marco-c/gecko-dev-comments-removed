@@ -78,7 +78,7 @@ bool PropOpEmitter::emitGet(JSAtom* prop) {
   } else {
     op = isLength_ ? JSOP_LENGTH : JSOP_GETPROP;
   }
-  if (!bce_->emitAtomOp(propAtomIndex_, op, ShouldInstrument::Yes)) {
+  if (!bce_->emitAtomOp(op, propAtomIndex_, ShouldInstrument::Yes)) {
     
     
     
@@ -161,7 +161,7 @@ bool PropOpEmitter::emitDelete(JSAtom* prop) {
     }
   } else {
     JSOp op = bce_->sc->strict() ? JSOP_STRICTDELPROP : JSOP_DELPROP;
-    if (!bce_->emitAtomOp(propAtomIndex_, op)) {
+    if (!bce_->emitAtomOp(op, propAtomIndex_)) {
       
       return false;
     }
@@ -190,7 +190,7 @@ bool PropOpEmitter::emitAssignment(JSAtom* prop) {
           : isSuper() ? bce_->sc->strict() ? JSOP_STRICTSETPROP_SUPER
                                            : JSOP_SETPROP_SUPER
                       : bce_->sc->strict() ? JSOP_STRICTSETPROP : JSOP_SETPROP;
-  if (!bce_->emitAtomOp(propAtomIndex_, setOp, ShouldInstrument::Yes)) {
+  if (!bce_->emitAtomOp(setOp, propAtomIndex_, ShouldInstrument::Yes)) {
     
     return false;
   }
@@ -237,7 +237,7 @@ bool PropOpEmitter::emitIncDec(JSAtom* prop) {
       isSuper()
           ? bce_->sc->strict() ? JSOP_STRICTSETPROP_SUPER : JSOP_SETPROP_SUPER
           : bce_->sc->strict() ? JSOP_STRICTSETPROP : JSOP_SETPROP;
-  if (!bce_->emitAtomOp(propAtomIndex_, setOp, ShouldInstrument::Yes)) {
+  if (!bce_->emitAtomOp(setOp, propAtomIndex_, ShouldInstrument::Yes)) {
     
     return false;
   }

@@ -119,7 +119,7 @@ bool ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos) {
     
     return false;
   }
-  if (!bce_->emitAtomOp(bce_->cx->names().done, JSOP_GETPROP)) {
+  if (!bce_->emitAtomOp(JSOP_GETPROP, bce_->cx->names().done)) {
     
     return false;
   }
@@ -136,7 +136,7 @@ bool ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos) {
   
   
   
-  if (!bce_->emitAtomOp(bce_->cx->names().value, JSOP_GETPROP)) {
+  if (!bce_->emitAtomOp(JSOP_GETPROP, bce_->cx->names().value)) {
     
     return false;
   }
