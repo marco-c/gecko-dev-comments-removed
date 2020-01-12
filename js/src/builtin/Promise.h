@@ -241,18 +241,10 @@ enum class CreateDependentPromise {
 
 
 
-
-
-
-
-
-
-
-MOZ_MUST_USE bool OriginalPromiseThen(JSContext* cx, HandleObject promiseObj,
-                                      HandleValue onFulfilled,
-                                      HandleValue onRejected,
-                                      MutableHandleObject dependent,
-                                      CreateDependentPromise createDependent);
+MOZ_MUST_USE JSObject* OriginalPromiseThen(JSContext* cx,
+                                           HandleObject promiseObj,
+                                           HandleObject onFulfilled,
+                                           HandleObject onRejected);
 
 enum class UnhandledRejectionBehavior { Ignore, Report };
 

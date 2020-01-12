@@ -417,6 +417,12 @@ extern JS_PUBLIC_API bool RejectPromise(JSContext* cx,
 
 
 
+
+
+
+
+
+
 extern JS_PUBLIC_API JSObject* CallOriginalPromiseThen(
     JSContext* cx, JS::HandleObject promise, JS::HandleObject onFulfilled,
     JS::HandleObject onRejected);
