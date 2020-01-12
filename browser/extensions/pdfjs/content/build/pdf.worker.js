@@ -123,8 +123,8 @@ return  (function(modules) {
 "use strict";
 
 
-const pdfjsVersion = '2.4.254';
-const pdfjsBuild = 'b833f843';
+const pdfjsVersion = '2.4.264';
+const pdfjsBuild = '4729fdc0';
 
 const pdfjsCoreWorker = __w_pdfjs_require__(1);
 
@@ -223,7 +223,7 @@ var WorkerMessageHandler = {
     var WorkerTasks = [];
     const verbosity = (0, _util.getVerbosityLevel)();
     const apiVersion = docParams.apiVersion;
-    const workerVersion = '2.4.254';
+    const workerVersion = '2.4.264';
 
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
