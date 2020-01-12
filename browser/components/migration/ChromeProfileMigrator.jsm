@@ -629,6 +629,10 @@ ChromeDevMigrator.prototype.classID = Components.ID(
   "{7370a02a-4886-42c3-a4ec-d48c726ec30a}"
 );
 
+if (AppConstants.platform != "win" && AppConstants.platform != "macosx") {
+  EXPORTED_SYMBOLS.push("ChromeDevMigrator");
+}
+
 function ChromeBetaMigrator() {
   this._chromeUserDataPathSuffix = "Chrome Beta";
 }
@@ -640,6 +644,6 @@ ChromeBetaMigrator.prototype.classID = Components.ID(
   "{47f75963-840b-4950-a1f0-d9c1864f8b8e}"
 );
 
-if (AppConstants.platform != "win" && AppConstants.platform != "macosx") {
-  EXPORTED_SYMBOLS.push("ChromeDevMigrator", "ChromeBetaMigrator");
+if (AppConstants.platform != "macosx") {
+  EXPORTED_SYMBOLS.push("ChromeBetaMigrator");
 }
