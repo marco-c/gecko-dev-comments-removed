@@ -340,6 +340,7 @@ void js::Nursery::disable() {
   
   currentEnd_ = 0;
   currentStringEnd_ = 0;
+  currentBigIntEnd_ = 0;
   position_ = 0;
   gc->storeBuffer().disable();
 
