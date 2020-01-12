@@ -17,7 +17,6 @@
 #include "mozilla/dom/AtomList.h"
 #include "mozilla/dom/Promise.h"
 #include "jsapi.h"
-#include "js/GCVector.h"
 #include "js/Promise.h"
 
 #include "nsCOMPtr.h"
@@ -264,9 +263,6 @@ class CycleCollectedJSContext
   class SavedMicroTaskQueue;
   js::UniquePtr<SavedJobQueue> saveJobQueue(JSContext*) override;
 
-  static void CleanupFinalizationGroupCallback(JSObject* aGroup, void* aData);
-  void QueueFinalizationGroupForCleanup(JSObject* aGroup);
-
  private:
   CycleCollectedJSRuntime* mRuntime;
 
@@ -340,15 +336,6 @@ class CycleCollectedJSContext
     CycleCollectedJSContext* mCx;
     PromiseArray mUnhandledRejections;
   };
-
-  
-  
-  
-  
-  
-  friend class CleanupFinalizationGroupsRunnable;
-  using ObjectVector = JS::GCVector<JSObject*, 0, InfallibleAllocPolicy>;
-  JS::PersistentRooted<ObjectVector> mFinalizationGroupsToCleanUp;
 };
 
 class MOZ_STACK_CLASS nsAutoMicroTask {
