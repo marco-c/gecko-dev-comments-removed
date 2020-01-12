@@ -165,6 +165,14 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   
   
+  void SetDelaySeekMode(bool aShouldDelaySeek);
+
+  
+  
+  
+  
+  
+  
 
   
   
@@ -663,6 +671,11 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   
   bool mIsBackgroundVideoDecodingAllowed;
+
+  
+  
+  bool mShouldDelaySeek = false;
+  Maybe<SeekTarget> mDelayedSeekTarget;
 
  public:
   AbstractCanonical<double>* CanonicalVolume() { return &mVolume; }
