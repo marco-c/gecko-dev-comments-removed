@@ -11,6 +11,7 @@
 #include "mozilla/DynamicallyLinkedFunctionPtr.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/NativeNt.h"
 #include "mozilla/Span.h"
 #include "mozilla/TypedEnumBits.h"
 #include "mozilla/Types.h"
@@ -429,6 +430,10 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyInProcess : public MMPolicyBase {
            mbi.State == MEM_COMMIT && mbi.Protect != PAGE_NOACCESS;
   }
 
+  FARPROC GetProcAddress(HMODULE aModule, const char* aName) const {
+    return ::GetProcAddress(aModule, aName);
+  }
+
   bool FlushInstructionCache() const {
     return !!::FlushInstructionCache(::GetCurrentProcess(), nullptr, 0);
   }
@@ -663,6 +668,37 @@ class MMPolicyOutOfProcess : public MMPolicyBase {
 
     return result && mbi.AllocationProtect && (mbi.Type & MEM_IMAGE) &&
            mbi.State == MEM_COMMIT && mbi.Protect != PAGE_NOACCESS;
+  }
+
+  
+
+
+
+
+
+
+  FARPROC GetProcAddress(HMODULE aModule, const char* aName) const {
+    nt::PEHeaders moduleHeaders(aModule);
+    const DWORD* funcEntry = moduleHeaders.FindExportAddressTableEntry(aName);
+    if (!funcEntry) {
+      
+      
+      
+      
+      return ::GetProcAddress(aModule, aName);
+    }
+
+    SIZE_T numBytes = 0;
+    DWORD rvaTargetFunction = 0;
+    BOOL ok = ::ReadProcessMemory(mProcess, funcEntry, &rvaTargetFunction,
+                                  sizeof(rvaTargetFunction), &numBytes);
+    if (!ok || numBytes != sizeof(rvaTargetFunction)) {
+      
+      
+      return ::GetProcAddress(aModule, aName);
+    }
+
+    return moduleHeaders.RVAToPtr<FARPROC>(rvaTargetFunction);
   }
 
   bool FlushInstructionCache() const {
