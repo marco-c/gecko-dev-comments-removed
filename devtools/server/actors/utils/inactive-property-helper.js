@@ -818,7 +818,7 @@ class InactivePropertyHelper {
         
         return null;
       }
-      if (this.isAbsolutelyPositioned || this.isFloated) {
+      if (this.isAbsolutelyPositioned) {
         
         return null;
       }
