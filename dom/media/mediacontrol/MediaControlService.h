@@ -36,8 +36,9 @@ class MediaControlService final : public nsIObserver {
 
   static RefPtr<MediaControlService> GetService();
 
-  MediaController* GetOrCreateControllerById(const uint64_t aId) const;
-  MediaController* GetControllerById(const uint64_t aId) const;
+  MediaController* GetOrCreateControllerById(uint64_t aId) const;
+  MediaController* GetControllerById(uint64_t aId) const;
+
   AudioFocusManager& GetAudioFocusManager() { return mAudioFocusManager; }
   MediaControlKeysEventSource* GetMediaControlKeysEventSource() {
     return mMediaControlKeysManager;
@@ -47,7 +48,9 @@ class MediaControlService final : public nsIObserver {
   void RemoveMediaController(MediaController* aController);
   uint64_t GetControllersNum() const;
 
-  MediaController* GetLastAddedController() const;
+  
+  
+  MediaController* GetMainController() const;
 
   
   
@@ -62,17 +65,53 @@ class MediaControlService final : public nsIObserver {
   MediaControlService();
   ~MediaControlService();
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  class ControllerManager final {
+   public:
+    ControllerManager() = default;
+    ~ControllerManager() = default;
+
+    void AddController(MediaController* aController);
+    void RemoveController(MediaController* aController);
+
+    void Shutdown();
+
+    MediaController* GetMainController() const;
+    MediaController* GetControllerById(uint64_t aId) const;
+    uint64_t GetControllersNum() const;
+
+   private:
+    void UpdateMainController(MediaController* aController);
+
+    
+    nsDataHashtable<nsUint64HashKey, RefPtr<MediaController>> mControllers;
+    nsTArray<uint64_t> mControllerHistory;
+    RefPtr<MediaController> mMainController;
+  };
+
   void Init();
   void Shutdown();
 
-  void ShutdownAllControllers() const;
-
-  nsDataHashtable<nsUint64HashKey, RefPtr<MediaController>> mControllers;
-  nsTArray<uint64_t> mControllerHistory;
   AudioFocusManager mAudioFocusManager;
   RefPtr<MediaControlKeysManager> mMediaControlKeysManager;
   RefPtr<MediaControlKeysEventListener> mMediaKeysHandler;
   MediaEventProducer<uint64_t> mMediaControllerAmountChangedEvent;
+  UniquePtr<ControllerManager> mControllerManager;
 };
 
 }  
