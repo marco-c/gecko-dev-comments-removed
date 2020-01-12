@@ -2193,7 +2193,7 @@ bool InlineFrameIterator::isConstructing() const {
     }
 
     
-    MOZ_ASSERT(IsCallOp(parentOp) && !IsSpreadCallOp(parentOp));
+    MOZ_ASSERT(IsInvokeOp(parentOp) && !IsSpreadCallOp(parentOp));
 
     return IsConstructorCallOp(parentOp);
   }

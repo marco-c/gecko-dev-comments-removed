@@ -221,7 +221,7 @@ inline bool IsIonInlinableGetterOrSetterOp(JSOp op) {
 inline bool IsIonInlinableOp(JSOp op) {
   
   
-  return (IsCallOp(op) && !IsSpreadCallOp(op)) ||
+  return (IsInvokeOp(op) && !IsSpreadCallOp(op)) ||
          IsIonInlinableGetterOrSetterOp(op);
 }
 
