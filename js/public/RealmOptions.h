@@ -185,6 +185,12 @@ class JS_PUBLIC_API RealmCreationOptions {
     return *this;
   }
 
+  bool getToSourceEnabled() const { return toSource_; }
+  RealmCreationOptions& setToSourceEnabled(bool flag) {
+    toSource_ = flag;
+    return *this;
+  }
+
   
   
   
@@ -223,6 +229,7 @@ class JS_PUBLIC_API RealmCreationOptions {
   bool fields_ = false;
   bool awaitFix_ = false;
   bool weakRefs_ = false;
+  bool toSource_ = false;
   bool secureContext_ = false;
 };
 

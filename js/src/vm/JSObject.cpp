@@ -3048,6 +3048,11 @@ extern bool PropertySpecNameToId(JSContext* cx, JSPropertySpec::Name name,
 
 JS_FRIEND_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
                                                       JSProtoKey key, jsid id) {
+  if (!cx->realm()->creationOptions().getToSourceEnabled()) {
+    return id == NameToId(cx->names().toSource) ||
+           id == NameToId(cx->names().uneval);
+  }
+
   return false;
 }
 
