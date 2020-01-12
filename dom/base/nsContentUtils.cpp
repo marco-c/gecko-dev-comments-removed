@@ -57,6 +57,7 @@
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/DOMExceptionBinding.h"
+#include "mozilla/dom/DOMSecurityMonitor.h"
 #include "mozilla/dom/DOMTypes.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"
@@ -4759,7 +4760,7 @@ already_AddRefed<DocumentFragment> nsContentUtils::CreateContextualFragment(
 
   RefPtr<DocumentFragment> frag;
   aRv = ParseFragmentXML(aFragment, document, tagStack, aPreventScriptExecution,
-                         getter_AddRefs(frag));
+                         -1, getter_AddRefs(frag));
   return frag.forget();
 }
 
@@ -4774,12 +4775,36 @@ void nsContentUtils::DropFragmentParsers() {
 void nsContentUtils::XPCOMShutdown() { nsContentUtils::DropFragmentParsers(); }
 
 
-nsresult nsContentUtils::ParseFragmentHTML(const nsAString& aSourceBuffer,
-                                           nsIContent* aTargetNode,
-                                           nsAtom* aContextLocalName,
-                                           int32_t aContextNamespace,
-                                           bool aQuirks,
-                                           bool aPreventScriptExecution) {
+uint32_t computeSanitizationFlags(nsIPrincipal* aPrincipal, int32_t aFlags) {
+  uint32_t sanitizationFlags = 0;
+  if (aPrincipal->IsSystemPrincipal()) {
+    if (aFlags < 0) {
+      
+      
+      sanitizationFlags = nsIParserUtils::SanitizerAllowStyle |
+                          nsIParserUtils::SanitizerAllowComments |
+                          nsIParserUtils::SanitizerDropForms |
+                          nsIParserUtils::SanitizerLogRemovals;
+    } else {
+      
+      
+      sanitizationFlags = aFlags | nsIParserUtils::SanitizerDropForms;
+    }
+  } else if (aFlags >= 0) {
+    
+    
+    
+    
+    sanitizationFlags = aFlags;
+  }
+  return sanitizationFlags;
+}
+
+
+nsresult nsContentUtils::ParseFragmentHTML(
+    const nsAString& aSourceBuffer, nsIContent* aTargetNode,
+    nsAtom* aContextLocalName, int32_t aContextNamespace, bool aQuirks,
+    bool aPreventScriptExecution, int32_t aFlags) {
   AutoTimelineMarker m(aTargetNode->OwnerDoc()->GetDocShell(), "Parse HTML");
 
   if (nsContentUtils::sFragmentParsingActive) {
@@ -4793,12 +4818,26 @@ nsresult nsContentUtils::ParseFragmentHTML(const nsAString& aSourceBuffer,
     
   }
 
+  nsCOMPtr<nsIPrincipal> nodePrincipal = aTargetNode->NodePrincipal();
+
+#ifdef DEBUG
+  
+  
+  
+  
+  if (aFlags < 0) {
+    DOMSecurityMonitor::AuditParsingOfHTMLXMLFragments(nodePrincipal,
+                                                       aSourceBuffer);
+  }
+#endif
+
   nsIContent* target = aTargetNode;
 
-  
-  
   RefPtr<DocumentFragment> fragment;
-  if (aTargetNode->NodePrincipal()->IsSystemPrincipal()) {
+  
+  
+  bool shouldSanitize = nodePrincipal->IsSystemPrincipal() || aFlags >= 0;
+  if (shouldSanitize) {
     fragment = new DocumentFragment(aTargetNode->OwnerDoc()->NodeInfoManager());
     target = fragment;
   }
@@ -4809,13 +4848,11 @@ nsresult nsContentUtils::ParseFragmentHTML(const nsAString& aSourceBuffer,
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (fragment) {
+    uint32_t sanitizationFlags =
+        computeSanitizationFlags(nodePrincipal, aFlags);
     
     nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
-
-    nsTreeSanitizer sanitizer(nsIParserUtils::SanitizerAllowStyle |
-                              nsIParserUtils::SanitizerAllowComments |
-                              nsIParserUtils::SanitizerDropForms |
-                              nsIParserUtils::SanitizerLogRemovals);
+    nsTreeSanitizer sanitizer(sanitizationFlags);
     sanitizer.Sanitize(fragment);
 
     ErrorResult error;
@@ -4852,6 +4889,7 @@ nsresult nsContentUtils::ParseFragmentXML(const nsAString& aSourceBuffer,
                                           Document* aDocument,
                                           nsTArray<nsString>& aTagStack,
                                           bool aPreventScriptExecution,
+                                          int32_t aFlags,
                                           DocumentFragment** aReturn) {
   AutoTimelineMarker m(aDocument->GetDocShell(), "Parse XML");
 
@@ -4890,16 +4928,29 @@ nsresult nsContentUtils::ParseFragmentXML(const nsAString& aSourceBuffer,
   sXMLFragmentParser->Reset();
   NS_ENSURE_SUCCESS(rv, rv);
 
+  nsCOMPtr<nsIPrincipal> nodePrincipal = aDocument->NodePrincipal();
+
+#ifdef DEBUG
   
   
-  if (aDocument->NodePrincipal()->IsSystemPrincipal()) {
+  
+  
+  if (aFlags < 0) {
+    DOMSecurityMonitor::AuditParsingOfHTMLXMLFragments(nodePrincipal,
+                                                       aSourceBuffer);
+  }
+#endif
+
+  
+  
+  bool shouldSanitize = nodePrincipal->IsSystemPrincipal() || aFlags >= 0;
+
+  if (shouldSanitize) {
+    uint32_t sanitizationFlags =
+        computeSanitizationFlags(nodePrincipal, aFlags);
     
     nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
-
-    nsTreeSanitizer sanitizer(nsIParserUtils::SanitizerAllowStyle |
-                              nsIParserUtils::SanitizerAllowComments |
-                              nsIParserUtils::SanitizerDropForms |
-                              nsIParserUtils::SanitizerLogRemovals);
+    nsTreeSanitizer sanitizer(sanitizationFlags);
     sanitizer.Sanitize(*aReturn);
   }
 
