@@ -577,7 +577,7 @@ tabmodalprompt {
 }
 
 
-label, button {
+label, button, image {
   display: -moz-inline-box;
 }
 
