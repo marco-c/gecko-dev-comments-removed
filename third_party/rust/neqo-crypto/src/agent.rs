@@ -26,6 +26,7 @@ use std::ffi::CString;
 use std::mem::{self, MaybeUninit};
 use std::ops::{Deref, DerefMut};
 use std::os::raw::{c_uint, c_void};
+use std::pin::Pin;
 use std::ptr::{null, null_mut, NonNull};
 use std::rc::Rc;
 use std::time::Instant;
@@ -41,9 +42,10 @@ pub enum HandshakeState {
 }
 
 impl HandshakeState {
+    #[must_use]
     pub fn connected(&self) -> bool {
         match self {
-            HandshakeState::Complete(_) => true,
+            Self::Complete(_) => true,
             _ => false,
         }
     }
@@ -86,6 +88,7 @@ pub struct SecretAgentPreInfo {
 
 macro_rules! preinfo_arg {
     ($v:ident, $m:ident, $f:ident: $t:ident $(,)?) => {
+        #[must_use]
         pub fn $v(&self) -> Option<$t> {
             match self.info.valuesSet & ssl::$m {
                 0 => None,
@@ -114,15 +117,15 @@ impl SecretAgentPreInfo {
 
     preinfo_arg!(version, ssl_preinfo_version, protocolVersion: Version);
     preinfo_arg!(cipher_suite, ssl_preinfo_cipher_suite, cipherSuite: Cipher);
-
+    #[must_use]
     pub fn early_data(&self) -> bool {
         self.info.canSendEarlyData != 0
     }
-
+    #[must_use]
     pub fn max_early_data(&self) -> usize {
         self.info.maxEarlyDataSize as usize
     }
-
+    #[must_use]
     pub fn alpn(&self) -> Option<&String> {
         self.alpn.as_ref()
     }
@@ -166,25 +169,31 @@ impl SecretAgentInfo {
             signature_scheme: SignatureScheme::try_from(info.signatureScheme)?,
         })
     }
-
+    #[must_use]
     pub fn version(&self) -> Version {
         self.version
     }
+    #[must_use]
     pub fn cipher_suite(&self) -> Cipher {
         self.cipher
     }
+    #[must_use]
     pub fn key_exchange(&self) -> Group {
         self.group
     }
+    #[must_use]
     pub fn resumed(&self) -> bool {
         self.resumed
     }
+    #[must_use]
     pub fn early_data_accepted(&self) -> bool {
         self.early_data
     }
+    #[must_use]
     pub fn alpn(&self) -> Option<&String> {
         self.alpn.as_ref()
     }
+    #[must_use]
     pub fn signature_scheme(&self) -> SignatureScheme {
         self.signature_scheme
     }
@@ -197,15 +206,15 @@ pub struct SecretAgent {
     fd: *mut ssl::PRFileDesc,
     secrets: SecretHolder,
     raw: Option<bool>,
-    io: Box<AgentIo>,
+    io: Pin<Box<AgentIo>>,
     state: HandshakeState,
 
     
-    auth_required: Box<bool>,
+    auth_required: Pin<Box<bool>>,
     
-    alert: Box<Option<Alert>>,
+    alert: Pin<Box<Option<Alert>>>,
     
-    now: Box<PRTime>,
+    now: Pin<Box<PRTime>>,
 
     extension_handlers: Vec<ExtensionTracker>,
     inf: Option<SecretAgentInfo>,
@@ -220,12 +229,12 @@ impl SecretAgent {
             fd: null_mut(),
             secrets: SecretHolder::default(),
             raw: None,
-            io: Box::new(AgentIo::new()),
+            io: Pin::new(Box::new(AgentIo::new())),
             state: HandshakeState::New,
 
-            auth_required: Box::new(false),
-            alert: Box::new(None),
-            now: Box::new(0),
+            auth_required: Pin::new(Box::new(false)),
+            alert: Pin::new(Box::new(None)),
+            now: Pin::new(Box::new(0)),
 
             extension_handlers: Vec::new(),
             inf: None,
@@ -478,6 +487,7 @@ impl SecretAgent {
     
     
     
+    #[must_use]
     pub fn info(&self) -> Option<&SecretAgentInfo> {
         match self.state {
             HandshakeState::Complete(ref info) => Some(info),
@@ -494,11 +504,13 @@ impl SecretAgent {
     }
 
     
+    #[must_use]
     pub fn peer_certificate(&self) -> Option<CertificateInfo> {
         CertificateInfo::new(self.fd)
     }
 
     
+    #[must_use]
     pub fn alert(&self) -> Option<&Alert> {
         (&*self.alert).as_ref()
     }
@@ -565,7 +577,7 @@ impl SecretAgent {
     }
 
     
-    fn setup_raw(&mut self) -> Res<Box<RecordList>> {
+    fn setup_raw(&mut self) -> Res<Pin<Box<RecordList>>> {
         self.set_raw(true)?;
         self.capture_error(RecordList::setup(self.fd))
     }
@@ -627,18 +639,19 @@ impl SecretAgent {
             records.remove_eoed();
         }
 
-        Ok(*records)
+        Ok(*Pin::into_inner(records))
     }
 
     
+    #[must_use]
     pub fn state(&self) -> &HandshakeState {
         &self.state
     }
-
+    #[must_use]
     pub fn read_secret(&self, epoch: Epoch) -> Option<&p11::SymKey> {
         self.secrets.read().get(epoch)
     }
-
+    #[must_use]
     pub fn write_secret(&self, epoch: Epoch) -> Option<&p11::SymKey> {
         self.secrets.write().get(epoch)
     }
@@ -656,7 +669,7 @@ pub struct Client {
     agent: SecretAgent,
 
     
-    resumption: Box<Option<Vec<u8>>>,
+    resumption: Pin<Box<Option<Vec<u8>>>>,
 }
 
 impl Client {
@@ -667,7 +680,7 @@ impl Client {
         agent.ready(false)?;
         let mut client = Self {
             agent,
-            resumption: Box::new(None),
+            resumption: Pin::new(Box::new(None)),
         };
         client.ready()?;
         Ok(client)
@@ -699,6 +712,7 @@ impl Client {
     }
 
     
+    #[must_use]
     pub fn resumption_token(&self) -> Option<&Vec<u8>> {
         (*self.resumption).as_ref()
     }
@@ -717,6 +731,7 @@ impl Client {
 
 impl Deref for Client {
     type Target = SecretAgent;
+    #[must_use]
     fn deref(&self) -> &SecretAgent {
         &self.agent
     }
@@ -742,19 +757,22 @@ pub enum ZeroRttCheckResult {
 }
 
 
-pub trait ZeroRttChecker: std::fmt::Debug {
+pub trait ZeroRttChecker: std::fmt::Debug + std::marker::Unpin {
     fn check(&self, token: &[u8]) -> ZeroRttCheckResult;
 }
 
 #[derive(Debug)]
 struct ZeroRttCheckState {
     fd: *mut ssl::PRFileDesc,
-    checker: Box<dyn ZeroRttChecker>,
+    checker: Pin<Box<dyn ZeroRttChecker>>,
 }
 
 impl ZeroRttCheckState {
-    pub fn new(fd: *mut ssl::PRFileDesc, checker: Box<dyn ZeroRttChecker>) -> Box<Self> {
-        Box::new(Self { fd, checker })
+    pub fn new(fd: *mut ssl::PRFileDesc, checker: Box<dyn ZeroRttChecker>) -> Self {
+        Self {
+            fd,
+            checker: Pin::new(checker),
+        }
     }
 }
 
@@ -762,7 +780,7 @@ impl ZeroRttCheckState {
 pub struct Server {
     agent: SecretAgent,
     
-    zero_rtt_check: Option<Box<ZeroRttCheckState>>,
+    zero_rtt_check: Option<Pin<Box<ZeroRttCheckState>>>,
 }
 
 impl Server {
@@ -841,7 +859,7 @@ impl Server {
         max_early_data: u32,
         checker: Box<dyn ZeroRttChecker>,
     ) -> Res<()> {
-        let mut check_state = ZeroRttCheckState::new(self.agent.fd, checker);
+        let mut check_state = Pin::new(Box::new(ZeroRttCheckState::new(self.agent.fd, checker)));
         let arg = &mut *check_state as *mut ZeroRttCheckState as *mut c_void;
         unsafe {
             ssl::SSL_HelloRetryRequestCallback(self.agent.fd, Some(Self::hello_retry_cb), arg)
@@ -864,12 +882,13 @@ impl Server {
             ssl::SSL_SendSessionTicket(self.fd, extra.as_ptr(), c_uint::try_from(extra.len())?)
         }?;
 
-        Ok(*records)
+        Ok(*Pin::into_inner(records))
     }
 }
 
 impl Deref for Server {
     type Target = SecretAgent;
+    #[must_use]
     fn deref(&self) -> &SecretAgent {
         &self.agent
     }
@@ -890,10 +909,11 @@ pub enum Agent {
 
 impl Deref for Agent {
     type Target = SecretAgent;
+    #[must_use]
     fn deref(&self) -> &SecretAgent {
         match self {
-            Agent::Client(c) => &*c,
-            Agent::Server(s) => &*s,
+            Self::Client(c) => &*c,
+            Self::Server(s) => &*s,
         }
     }
 }
@@ -901,20 +921,22 @@ impl Deref for Agent {
 impl DerefMut for Agent {
     fn deref_mut(&mut self) -> &mut SecretAgent {
         match self {
-            Agent::Client(c) => c.deref_mut(),
-            Agent::Server(s) => s.deref_mut(),
+            Self::Client(c) => c.deref_mut(),
+            Self::Server(s) => s.deref_mut(),
         }
     }
 }
 
 impl From<Client> for Agent {
+    #[must_use]
     fn from(c: Client) -> Self {
-        Agent::Client(c)
+        Self::Client(c)
     }
 }
 
 impl From<Server> for Agent {
+    #[must_use]
     fn from(s: Server) -> Self {
-        Agent::Server(s)
+        Self::Server(s)
     }
 }

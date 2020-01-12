@@ -48,6 +48,7 @@ impl<T> Timer<T> {
     }
 
     
+    #[must_use]
     pub fn next_time(&self) -> Option<Instant> {
         for i in 0..self.items.len() {
             let idx = self.bucket(i);
@@ -63,6 +64,7 @@ impl<T> Timer<T> {
     
     #[inline]
     #[allow(clippy::cast_possible_truncation)] 
+    #[must_use]
     pub fn span(&self) -> Duration {
         self.granularity * (self.items.len() as u32)
     }

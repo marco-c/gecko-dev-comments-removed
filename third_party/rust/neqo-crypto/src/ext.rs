@@ -15,6 +15,7 @@ use std::cell::RefCell;
 use std::convert::TryFrom;
 use std::ops::DerefMut;
 use std::os::raw::{c_uint, c_void};
+use std::pin::Pin;
 use std::rc::Rc;
 
 experimental_api!(SSL_InstallExtensionHooks(
@@ -52,9 +53,11 @@ pub trait ExtensionHandler {
     }
 }
 
+type BoxedExtensionHandler = Box<Rc<RefCell<dyn ExtensionHandler>>>;
+
 pub struct ExtensionTracker {
     extension: Extension,
-    handler: Box<Box<Rc<RefCell<dyn ExtensionHandler>>>>,
+    handler: Pin<Box<BoxedExtensionHandler>>,
 }
 
 impl ExtensionTracker {
@@ -64,7 +67,7 @@ impl ExtensionTracker {
     where
         F: FnOnce(&mut dyn ExtensionHandler) -> T,
     {
-        let handler_ptr = arg as *mut Box<Rc<RefCell<dyn ExtensionHandler>>>;
+        let handler_ptr = arg as *mut BoxedExtensionHandler;
         let rc = handler_ptr.as_mut().unwrap();
         f(rc.borrow_mut().deref_mut())
     }
@@ -113,6 +116,12 @@ impl ExtensionTracker {
         })
     }
 
+    
+    
+    
+    
+    
+    
     pub unsafe fn new(
         fd: *mut PRFileDesc,
         extension: Extension,
@@ -125,11 +134,15 @@ impl ExtensionTracker {
         
         
         
+        
+        
+        
+        
         let mut tracker = Self {
             extension,
-            handler: Box::new(Box::new(handler)),
+            handler: Pin::new(Box::new(Box::new(handler))),
         };
-        let p = &mut *tracker.handler as *mut Box<Rc<RefCell<dyn ExtensionHandler>>> as *mut c_void;
+        let p = &mut *tracker.handler as *mut BoxedExtensionHandler as *mut c_void;
         SSL_InstallExtensionHooks(
             fd,
             extension,

@@ -200,6 +200,10 @@ mod test {
     }
 
     #[test]
+    
+    
+    
+    #[allow(clippy::replace_consts)]
     fn overflow_interval() {
         init();
         let interval = Interval::from(Duration::from_micros(std::u64::MAX));

@@ -46,49 +46,56 @@ pub enum IncrementalDecoderResult {
 
 impl IncrementalDecoder {
     
+    #[must_use]
     pub fn decode(n: usize) -> Self {
-        IncrementalDecoder::InBuffer {
+        Self::InBuffer {
             v: Vec::new(),
             remaining: n,
         }
     }
 
     
+    #[must_use]
     pub fn decode_uint(n: usize) -> Self {
-        IncrementalDecoder::InUint { v: 0, remaining: n }
+        Self::InUint { v: 0, remaining: n }
     }
 
     
+    #[must_use]
     pub fn decode_varint() -> Self {
-        IncrementalDecoder::BeforeVarint
+        Self::BeforeVarint
     }
 
     
+    #[must_use]
     pub fn decode_vec(n: usize) -> Self {
-        IncrementalDecoder::InBufferLen(Box::new(Self::decode_uint(n)))
+        Self::InBufferLen(Box::new(Self::decode_uint(n)))
     }
 
     
+    #[must_use]
     pub fn decode_vvec() -> Self {
-        IncrementalDecoder::InBufferLen(Box::new(Self::decode_varint()))
+        Self::InBufferLen(Box::new(Self::decode_varint()))
     }
 
     
+    #[must_use]
     pub fn ignore(n: usize) -> Self {
-        IncrementalDecoder::Ignoring { remaining: n }
+        Self::Ignoring { remaining: n }
     }
 
     
     
     
     
+    #[must_use]
     pub fn min_remaining(&self) -> usize {
         match self {
-            IncrementalDecoder::BeforeVarint => 1,
-            IncrementalDecoder::InUint { remaining, .. }
-            | IncrementalDecoder::InBuffer { remaining, .. }
-            | IncrementalDecoder::Ignoring { remaining } => *remaining,
-            IncrementalDecoder::InBufferLen(in_len) => in_len.min_remaining(),
+            Self::BeforeVarint => 1,
+            Self::InUint { remaining, .. }
+            | Self::InBuffer { remaining, .. }
+            | Self::Ignoring { remaining } => *remaining,
+            Self::InBufferLen(in_len) => in_len.min_remaining(),
             _ => 0,
         }
     }
@@ -112,13 +119,13 @@ impl IncrementalDecoder {
     ) -> IncrementalDecoderResult {
         if remaining <= dv.remaining() {
             v = Self::consume_uint_part(v, remaining, dv);
-            *self = IncrementalDecoder::Idle;
+            *self = Self::Idle;
             IncrementalDecoderResult::Uint(v)
         } else {
             let r = dv.remaining();
             v = Self::consume_uint_part(v, r, dv);
             remaining -= r;
-            *self = IncrementalDecoder::InUint { v, remaining };
+            *self = Self::InUint { v, remaining };
             IncrementalDecoderResult::InProgress
         }
     }
@@ -132,12 +139,12 @@ impl IncrementalDecoder {
         if remaining <= dv.remaining() {
             let b = dv.decode(remaining).unwrap();
             v.extend_from_slice(b);
-            *self = IncrementalDecoder::Idle;
+            *self = Self::Idle;
             IncrementalDecoderResult::Buffer(v)
         } else {
             let b = dv.decode_remainder();
             v.extend_from_slice(b);
-            *self = IncrementalDecoder::InBuffer {
+            *self = Self::InBuffer {
                 v,
                 remaining: remaining - b.len(),
             };
@@ -147,14 +154,12 @@ impl IncrementalDecoder {
 
     
     pub fn consume(&mut self, dv: &mut Decoder) -> IncrementalDecoderResult {
-        match mem::replace(self, IncrementalDecoder::Idle) {
-            IncrementalDecoder::Idle => IncrementalDecoderResult::Error,
+        match mem::replace(self, Self::Idle) {
+            Self::Idle => IncrementalDecoderResult::Error,
 
-            IncrementalDecoder::InUint { v, remaining } => {
-                self.consume_uint_remainder(v, remaining, dv)
-            }
+            Self::InUint { v, remaining } => self.consume_uint_remainder(v, remaining, dv),
 
-            IncrementalDecoder::BeforeVarint => {
+            Self::BeforeVarint => {
                 let (v, remaining) = match dv.decode_byte() {
                     Some(b) => (
                         u64::from(b & 0x3f),
@@ -169,16 +174,16 @@ impl IncrementalDecoder {
                     None => return IncrementalDecoderResult::Error,
                 };
                 if remaining == 0 {
-                    *self = IncrementalDecoder::Idle;
+                    *self = Self::Idle;
                     IncrementalDecoderResult::Uint(v)
                 } else {
                     self.consume_uint_remainder(v, remaining, dv)
                 }
             }
 
-            IncrementalDecoder::InBufferLen(mut len_decoder) => match len_decoder.consume(dv) {
+            Self::InBufferLen(mut len_decoder) => match len_decoder.consume(dv) {
                 IncrementalDecoderResult::InProgress => {
-                    *self = IncrementalDecoder::InBufferLen(len_decoder);
+                    *self = Self::InBufferLen(len_decoder);
                     IncrementalDecoderResult::InProgress
                 }
                 IncrementalDecoderResult::Uint(n) => {
@@ -191,17 +196,15 @@ impl IncrementalDecoder {
                 _ => unreachable!(),
             },
 
-            IncrementalDecoder::InBuffer { v, remaining } => {
-                self.consume_buffer_remainder(v, remaining, dv)
-            }
+            Self::InBuffer { v, remaining } => self.consume_buffer_remainder(v, remaining, dv),
 
-            IncrementalDecoder::Ignoring { remaining } => {
+            Self::Ignoring { remaining } => {
                 if remaining <= dv.remaining() {
                     let _ = dv.decode(remaining);
-                    *self = IncrementalDecoder::Idle;
+                    *self = Self::Idle;
                     IncrementalDecoderResult::Ignored
                 } else {
-                    *self = IncrementalDecoder::Ignoring {
+                    *self = Self::Ignoring {
                         remaining: remaining - dv.remaining(),
                     };
                     let _ = dv.decode_remainder();
@@ -213,8 +216,9 @@ impl IncrementalDecoder {
 }
 
 impl Default for IncrementalDecoder {
+    #[must_use]
     fn default() -> Self {
-        IncrementalDecoder::Idle
+        Self::Idle
     }
 }
 
