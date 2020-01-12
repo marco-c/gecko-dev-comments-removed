@@ -71,7 +71,9 @@ struct CommonCursorDataBase {
 
   explicit CommonCursorDataBase(Key aKey);
 
-  Key mKey;
+  Key mKey;  
+             
+             
 };
 
 template <IDBCursorType CursorType>
@@ -99,8 +101,11 @@ struct IndexCursorDataBase : CommonCursorDataBase {
     return GetObjectStoreKey().GetBuffer().get();
   }
 
-  Key mLocaleAwareKey;
-  Key mObjectStoreKey;
+  Key mLocaleAwareKey;  
+                        
+  Key mObjectStoreKey;  
+                        
+  
 };
 
 struct ValueCursorDataBase {
