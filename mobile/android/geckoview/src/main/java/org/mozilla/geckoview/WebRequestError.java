@@ -11,9 +11,14 @@ import org.mozilla.gecko.annotation.WrapForJNI;
 import android.annotation.SuppressLint;
 import android.support.annotation.AnyThread;
 import android.support.annotation.IntDef;
+import android.support.annotation.Nullable;
 
+import java.io.ByteArrayInputStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 
 
 
@@ -221,11 +226,28 @@ public class WebRequestError extends Exception {
 
 
 
+    public final @Nullable X509Certificate certificate;
+
+    
+
+
+
 
     public WebRequestError(final @Error int code, final @ErrorCategory int category) {
+        this(code, category, null);
+    }
+
+    
+
+
+
+
+
+    public WebRequestError(final @Error int code, final @ErrorCategory int category, final X509Certificate certificate) {
         super(String.format("Request failed, error=0x%x, category=0x%x", code, category));
         this.code = code;
         this.category = category;
+        this.certificate = certificate;
     }
 
     @Override
@@ -236,6 +258,7 @@ public class WebRequestError extends Exception {
 
         final WebRequestError otherError = (WebRequestError)other;
 
+        
         return otherError.code == this.code &&
                 otherError.category == this.category;
     }
@@ -248,10 +271,21 @@ public class WebRequestError extends Exception {
     @WrapForJNI
      static WebRequestError fromGeckoError(final long geckoError,
                                                         final int geckoErrorModule,
-                                                        final int geckoErrorClass) {
+                                                        final int geckoErrorClass,
+                                                        final byte[] certificateBytes) {
         int code = convertGeckoError(geckoError, geckoErrorModule, geckoErrorClass);
         int category = getErrorCategory(geckoErrorModule, code);
-        return new WebRequestError(code, category);
+        X509Certificate certificate = null;
+        if (certificateBytes != null) {
+            try {
+                final CertificateFactory factory = CertificateFactory.getInstance("X.509");
+                certificate = (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(certificateBytes));
+            } catch (CertificateException e) {
+                throw new IllegalArgumentException("Unable to parse DER certificate");
+            }
+        }
+
+        return new WebRequestError(code, category, certificate);
     }
 
     @SuppressLint("WrongConstant")
