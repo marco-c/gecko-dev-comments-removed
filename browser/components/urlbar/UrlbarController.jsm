@@ -637,7 +637,23 @@ class TelemetryEvent {
 
 
 
+
   start(event, searchString = null) {
+    
+    
+    
+    
+    
+    
+    
+    if (
+      this._startEventInfo &&
+      this._startEventInfo.interactionType == "returned" &&
+      (!searchString || this._startEventInfo.searchString[0] != searchString[0])
+    ) {
+      this._startEventInfo.interactionType = "restarted";
+    }
+
     
     
     if (!this._category || this._startEventInfo) {
@@ -647,33 +663,26 @@ class TelemetryEvent {
       Cu.reportError("Must always provide an event");
       return;
     }
-    const validEvents = ["command", "drop", "input", "keydown", "mousedown"];
+    const validEvents = [
+      "command",
+      "drop",
+      "input",
+      "keydown",
+      "mousedown",
+      "urlbar-reopen",
+    ];
     if (!validEvents.includes(event.type)) {
       Cu.reportError("Can't start recording from event type: " + event.type);
       return;
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
     let interactionType = "topsites";
     if (event.type == "input") {
       interactionType = UrlbarUtils.isPasteEvent(event) ? "pasted" : "typed";
     } else if (event.type == "drop") {
       interactionType = "dropped";
+    } else if (event.type == "urlbar-reopen" && searchString) {
+      interactionType = "returned";
     } else if (searchString) {
       interactionType = "typed";
     }
@@ -681,6 +690,7 @@ class TelemetryEvent {
     this._startEventInfo = {
       timeStamp: event.timeStamp || Cu.now(),
       interactionType,
+      searchString,
     };
 
     this._controller.manager.notifyEngagementChange(this._isPrivate, "start");
