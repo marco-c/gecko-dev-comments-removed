@@ -37,12 +37,18 @@
 
 
 
+
 use once_cell::sync::OnceCell;
 use std::sync::Mutex;
 
-pub use glean_core::{Configuration, Error, Glean, Result};
+pub use configuration::Configuration;
+pub use core_metrics::ClientInfoMetrics;
+pub use glean_core::{CommonMetricData, Error, Glean, Lifetime, Result};
 
+mod configuration;
+mod core_metrics;
 pub mod metrics;
+mod system;
 
 static GLEAN: OnceCell<Mutex<Glean>> = OnceCell::new();
 
@@ -83,11 +89,44 @@ where
 
 
 
-pub fn initialize(cfg: Configuration) -> Result<()> {
+pub fn initialize(cfg: Configuration, client_info: ClientInfoMetrics) -> Result<()> {
+    let channel = cfg.channel;
+    let cfg = glean_core::Configuration {
+        upload_enabled: cfg.upload_enabled,
+        data_path: cfg.data_path,
+        application_id: cfg.application_id,
+        max_events: cfg.max_events,
+        delay_ping_lifetime_io: cfg.delay_ping_lifetime_io,
+    };
     let glean = Glean::new(cfg)?;
+
+    
+    initialize_core_metrics(&glean, client_info, channel);
+    
     setup_glean(glean)?;
 
     Ok(())
+}
+
+fn initialize_core_metrics(glean: &Glean, client_info: ClientInfoMetrics, channel: Option<String>) {
+    let core_metrics = core_metrics::InternalMetrics::new();
+
+    core_metrics.app_build.set(glean, client_info.app_build);
+    core_metrics
+        .app_display_version
+        .set(glean, client_info.app_display_version);
+    if let Some(app_channel) = channel {
+        core_metrics.app_channel.set(glean, app_channel);
+    }
+    core_metrics.os.set(glean, system::OS.to_string());
+    core_metrics.os_version.set(glean, "unknown".to_string());
+    core_metrics
+        .architecture
+        .set(glean, system::ARCH.to_string());
+    core_metrics
+        .device_manufacturer
+        .set(glean, "unknown".to_string());
+    core_metrics.device_model.set(glean, "unknown".to_string());
 }
 
 
@@ -121,8 +160,8 @@ pub fn register_ping_type(ping: &metrics::PingType) {
 
 
 
-pub fn send_ping(ping: &metrics::PingType) -> bool {
-    send_ping_by_name(&ping.name)
+pub fn submit_ping(ping: &metrics::PingType) -> bool {
+    submit_ping_by_name(&ping.name)
 }
 
 
@@ -132,8 +171,8 @@ pub fn send_ping(ping: &metrics::PingType) -> bool {
 
 
 
-pub fn send_ping_by_name(ping: &str) -> bool {
-    send_pings_by_name(&[ping.to_string()])
+pub fn submit_ping_by_name(ping: &str) -> bool {
+    submit_pings_by_name(&[ping.to_string()])
 }
 
 
@@ -141,6 +180,6 @@ pub fn send_ping_by_name(ping: &str) -> bool {
 
 
 
-pub fn send_pings_by_name(pings: &[String]) -> bool {
+pub fn submit_pings_by_name(pings: &[String]) -> bool {
     with_glean(|glean| glean.send_pings_by_name(pings))
 }
