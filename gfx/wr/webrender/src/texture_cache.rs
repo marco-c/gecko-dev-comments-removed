@@ -988,7 +988,7 @@ impl TextureCache {
             
             
             
-            let use_upload_format = !self.swizzle.is_some();
+            let use_upload_format = self.swizzle.is_none();
             let (layer_index, origin) = entry.details.describe();
             let op = TextureCacheUpdate::new_update(
                 data,
