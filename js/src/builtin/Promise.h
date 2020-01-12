@@ -254,6 +254,7 @@ MOZ_MUST_USE bool OriginalPromiseThen(JSContext* cx, HandleObject promiseObj,
                                       MutableHandleObject dependent,
                                       CreateDependentPromise createDependent);
 
+enum class UnhandledRejectionBehavior { Ignore, Report };
 
 
 
@@ -269,9 +270,18 @@ MOZ_MUST_USE bool OriginalPromiseThen(JSContext* cx, HandleObject promiseObj,
 
 
 
-extern MOZ_MUST_USE bool ReactIgnoringUnhandledRejection(
+
+
+
+
+
+
+
+
+extern MOZ_MUST_USE bool ReactToUnwrappedPromise(
     JSContext* cx, Handle<PromiseObject*> unwrappedPromise,
-    HandleObject onFulfilled_, HandleObject onRejected_);
+    HandleObject onFulfilled_, HandleObject onRejected_,
+    UnhandledRejectionBehavior behavior);
 
 
 
