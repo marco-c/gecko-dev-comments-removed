@@ -426,7 +426,7 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
             else:
                 
                 for bt, raptor in conversion:
-                    if bt not in measure:
+                    if measure is not None and bt not in measure:
                         continue
                     
                     if self.app and 'chrome' in self.app.lower() and bt in ('fnbpaint', 'dcf'):
@@ -544,7 +544,7 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                                                           test['page_cycles'],
                                                           test['cold'],
                                                           test['browser_cycles'],
-                                                          test['measure']):
+                                                          test.get('measure')):
 
                 def _new_pageload_result(new_result):
                     
