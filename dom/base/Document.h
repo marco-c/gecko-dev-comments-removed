@@ -4441,9 +4441,6 @@ class Document : public nsINode,
   
   bool IsPotentiallyScrollable(HTMLBodyElement* aBody);
 
-  
-  Document* GetSameTypeParentDocument();
-
   void MaybeAllowStorageForOpenerAfterUserInteraction();
 
   void MaybeStoreUserInteractionAsPermission();
