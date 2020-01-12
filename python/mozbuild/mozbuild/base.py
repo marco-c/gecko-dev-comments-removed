@@ -280,7 +280,7 @@ class MozbuildObject(ProcessExecutionMixin):
         
         
         
-        out = six.StringIO()
+        out = six.BytesIO()
         env = os.environ
         if path and path != MozconfigLoader.AUTODETECT:
             env = dict(env)
