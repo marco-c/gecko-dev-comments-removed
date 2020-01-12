@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 #ifndef mozilla_gfx_config_gfxVars_h
 #define mozilla_gfx_config_gfxVars_h
 
@@ -20,9 +20,9 @@ namespace gfx {
 
 class gfxVarReceiver;
 
-// Generator for graphics vars.
-#define GFX_VARS_LIST(_)                                           \
-  /* C++ Name,                  Data Type,        Default Value */ \
+
+#define GFX_VARS_LIST(_)
+ \
   _(BrowserTabsRemoteAutostart, bool, false)                       \
   _(ContentBackend, BackendType, BackendType::NONE)                \
   _(SoftwareBackend, BackendType, BackendType::NONE)               \
@@ -56,27 +56,28 @@ class gfxVarReceiver;
   _(LayersWindowRecordingPath, nsCString, nsCString())             \
   _(RemoteCanvasEnabled, bool, false)                              \
   _(UseDoubleBufferingWithCompositor, bool, false)                 \
-  _(UseGLSwizzle, bool, true)
+  _(UseGLSwizzle, bool, true)                                      \
+  _(AllowSacrificingSubpixelAA, bool, false)
 
-/* Add new entries above this line. */
 
-// Some graphics settings are computed on the UI process and must be
-// communicated to content and GPU processes. gfxVars helps facilitate
-// this. Its function is similar to StaticPrefs, except rather than hold
-// user preferences, it holds dynamically computed values.
-//
-// Each variable in GFX_VARS_LIST exposes the following static methods:
-//
-//    const DataType& CxxName();
-//    void SetCxxName(const DataType& aValue);
-//
-// Note that the setter may only be called in the UI process; a gfxVar must be
-// a variable that is determined in the UI process and pushed to child
-// processes.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class gfxVars final {
  public:
-  // These values will be used during the Initialize() call if set.  Any
-  // updates that come before initialization will get added to this array.
+  
+  
   static void SetValuesForInitialize(
       const nsTArray<GfxVarUpdate>& aInitUpdates);
 
@@ -87,11 +88,11 @@ class gfxVars final {
   static void AddReceiver(gfxVarReceiver* aReceiver);
   static void RemoveReceiver(gfxVarReceiver* aReceiver);
 
-  // Return a list of updates for all variables with non-default values.
+  
   static nsTArray<GfxVarUpdate> FetchNonDefaultVars();
 
  public:
-  // Each variable must expose Set and Get methods for IPDL.
+  
   class VarBase {
    public:
     VarBase();
@@ -123,7 +124,7 @@ class gfxVars final {
     }
     bool HasDefaultValue() const override { return mValue == Default(); }
     const T& Get() const { return mValue; }
-    // Return true if the value changed, false otherwise.
+    
     bool Set(const T& aValue) {
       MOZ_ASSERT(XRE_IsParentProcess());
       if (mValue == aValue) {
@@ -182,7 +183,7 @@ class gfxVars final {
 
 #undef GFX_VARS_LIST
 
-}  // namespace gfx
-}  // namespace mozilla
+}  
+}  
 
-#endif  // mozilla_gfx_config_gfxVars_h
+#endif  
