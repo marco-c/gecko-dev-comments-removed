@@ -3523,11 +3523,22 @@ nsresult Document::InitReferrerInfo(nsIChannel* aChannel) {
   if (ReferrerInfo::ShouldResponseInheritReferrerInfo(aChannel)) {
     
     
-    Document* parentDoc = GetSameTypeParentDocument();
-    if (parentDoc) {
-      mReferrerInfo = parentDoc->GetReferrerInfo();
-      mPreloadReferrerInfo = mReferrerInfo;
-      return NS_OK;
+    
+    
+    if (BrowsingContext* bc = GetBrowsingContext()) {
+      
+      
+      Document* parentDoc = bc->GetEmbedderElement()
+                                ? bc->GetEmbedderElement()->OwnerDoc()
+                                : nullptr;
+      if (parentDoc) {
+        mReferrerInfo = parentDoc->GetReferrerInfo();
+        mPreloadReferrerInfo = mReferrerInfo;
+        return NS_OK;
+      }
+
+      MOZ_ASSERT(NodePrincipal()->GetIsNullPrincipal(),
+                 "srcdoc without null principal as toplevel!");
     }
   }
 
