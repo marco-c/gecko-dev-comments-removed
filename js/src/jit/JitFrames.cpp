@@ -2025,7 +2025,7 @@ void InlineFrameIterator::findNextFrame() {
     }
 
     
-    bool skipNewTarget = IsConstructorCallPC(pc_);
+    bool skipNewTarget = IsConstructPC(pc_);
     unsigned skipCount =
         (si_.numAllocations() - 1) - numActualArgs_ - 1 - skipNewTarget;
     for (unsigned j = 0; j < skipCount; j++) {
@@ -2193,9 +2193,9 @@ bool InlineFrameIterator::isConstructing() const {
     }
 
     
-    MOZ_ASSERT(IsInvokeOp(parentOp) && !IsSpreadCallOp(parentOp));
+    MOZ_ASSERT(IsInvokeOp(parentOp) && !IsSpreadOp(parentOp));
 
-    return IsConstructorCallOp(parentOp);
+    return IsConstructOp(parentOp);
   }
 
   return frame_->isConstructing();

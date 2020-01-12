@@ -433,8 +433,8 @@ static inline void* GetStubReturnAddress(JSContext* cx, JSOp op) {
   }
 
   
-  MOZ_ASSERT(IsInvokeOp(op) && !IsSpreadCallOp(op));
-  if (IsConstructorCallOp(op)) {
+  MOZ_ASSERT(IsInvokeOp(op) && !IsSpreadOp(op));
+  if (IsConstructOp(op)) {
     return code.bailoutReturnAddr(BailoutReturnKind::New);
   }
   return code.bailoutReturnAddr(BailoutReturnKind::Call);
@@ -899,7 +899,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   const JSOp op = JSOp(*pc);
 
   
-  MOZ_ASSERT_IF(IsSpreadCallOp(op), !iter.moreFrames());
+  MOZ_ASSERT_IF(IsSpreadOp(op), !iter.moreFrames());
 
   
   
@@ -1228,7 +1228,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   
   
   MOZ_ASSERT(IsIonInlinableOp(op));
-  bool pushedNewTarget = IsConstructorCallPC(pc);
+  bool pushedNewTarget = IsConstructPC(pc);
   unsigned actualArgc;
   Value callee;
   if (needToSaveArgs) {

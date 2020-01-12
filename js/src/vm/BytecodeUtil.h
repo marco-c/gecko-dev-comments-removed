@@ -77,9 +77,11 @@ enum {
   JOF_CHECKSLOPPY = 1 << 10, 
   JOF_CHECKSTRICT = 1 << 11, 
   JOF_INVOKE = 1 << 12,      
-  JOF_GNAME = 1 << 13,       
-  JOF_TYPESET = 1 << 14,     
-  JOF_IC = 1 << 15,          
+  JOF_CONSTRUCT = 1 << 13,   
+  JOF_SPREAD = 1 << 14,      
+  JOF_GNAME = 1 << 15,       
+  JOF_TYPESET = 1 << 16,     
+  JOF_IC = 1 << 17,          
 };
 
 
@@ -636,23 +638,16 @@ inline bool IsStrictEvalPC(jsbytecode* pc) {
   return op == JSOP_STRICTEVAL || op == JSOP_STRICTSPREADEVAL;
 }
 
-inline bool IsConstructorCallOp(JSOp op) {
-  return op == JSOP_NEW || op == JSOP_SUPERCALL || op == JSOP_SPREADNEW ||
-         op == JSOP_SPREADSUPERCALL;
+inline bool IsConstructOp(JSOp op) {
+  return CodeSpec[op].format & JOF_CONSTRUCT;
 }
-inline bool IsConstructorCallPC(const jsbytecode* pc) {
-  return IsConstructorCallOp(JSOp(*pc));
-}
-
-inline bool IsSpreadCallOp(JSOp op) {
-  return op == JSOP_SPREADCALL || op == JSOP_SPREADNEW ||
-         op == JSOP_SPREADSUPERCALL || op == JSOP_SPREADEVAL ||
-         op == JSOP_STRICTSPREADEVAL;
+inline bool IsConstructPC(const jsbytecode* pc) {
+  return IsConstructOp(JSOp(*pc));
 }
 
-inline bool IsSpreadCallPC(const jsbytecode* pc) {
-  return IsSpreadCallOp(JSOp(*pc));
-}
+inline bool IsSpreadOp(JSOp op) { return CodeSpec[op].format & JOF_SPREAD; }
+
+inline bool IsSpreadPC(const jsbytecode* pc) { return IsSpreadOp(JSOp(*pc)); }
 
 static inline int32_t GetBytecodeInteger(jsbytecode* pc) {
   switch (JSOp(*pc)) {

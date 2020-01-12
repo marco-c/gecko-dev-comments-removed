@@ -4582,7 +4582,7 @@ bool BaselineCompilerCodeGen::emitCall(JSOp op) {
   }
 
   
-  bool construct = IsConstructorCallOp(op);
+  bool construct = IsConstructOp(op);
   frame.popn(2 + argc + construct);
   frame.push(R0);
   return true;
@@ -4601,7 +4601,7 @@ bool BaselineInterpreterCodeGen::emitCall(JSOp op) {
   
   
   Register scratch = R1.scratchReg();
-  uint32_t extraValuesToPop = IsConstructorCallOp(op) ? 3 : 2;
+  uint32_t extraValuesToPop = IsConstructOp(op) ? 3 : 2;
   Register spReg = AsRegister(masm.getStackPointer());
   LoadUint16Operand(masm, scratch);
   masm.computeEffectiveAddress(
