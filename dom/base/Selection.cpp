@@ -2340,30 +2340,6 @@ void Selection::AdjustAnchorFocusForMultiRange(nsDirection aDirection) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void Selection::ExtendJS(nsINode& aContainer, uint32_t aOffset,
                          ErrorResult& aRv) {
   AutoRestore<bool> calledFromJSRestorer(mCalledByJS);
@@ -2383,6 +2359,28 @@ nsresult Selection::Extend(nsINode* aContainer, int32_t aOffset) {
 
 void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
                        ErrorResult& aRv) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
   if (!mAnchorFocusRange) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
