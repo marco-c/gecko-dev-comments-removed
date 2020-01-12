@@ -6,10 +6,14 @@
 
 package org.mozilla.geckoview;
 
+import java.io.ByteArrayInputStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.AbstractSequentialList;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -2814,22 +2818,12 @@ public class GeckoSession implements Parcelable {
 
 
             public final @NonNull String host;
+
             
 
 
-            public final @NonNull String organization;
-            
+            public final @Nullable X509Certificate certificate;
 
-
-            public final @NonNull String subjectName;
-            
-
-
-            public final @NonNull String issuerCommonName;
-            
-
-
-            public final @NonNull String issuerOrganization;
             
 
 
@@ -2859,10 +2853,20 @@ public class GeckoSession implements Parcelable {
                 isException = identityData.getBoolean("securityException");
                 origin = identityData.getString("origin");
                 host = identityData.getString("host");
-                organization = identityData.getString("organization");
-                subjectName = identityData.getString("subjectName");
-                issuerCommonName = identityData.getString("issuerCommonName");
-                issuerOrganization = identityData.getString("issuerOrganization");
+
+                X509Certificate decodedCert = null;
+                try {
+                    final CertificateFactory factory = CertificateFactory.getInstance("X.509");
+                    final String certString = identityData.getString("certificate");
+                    if (certString != null) {
+                        final byte[] certBytes = Base64.decode(certString, Base64.NO_WRAP);
+                        decodedCert = (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(certBytes));
+                    }
+                } catch (CertificateException e) {
+                    Log.e(LOGTAG, "Failed to decode certificate", e);
+                }
+
+                certificate = decodedCert;
             }
 
             
@@ -2876,10 +2880,7 @@ public class GeckoSession implements Parcelable {
                 isException = false;
                 origin = "";
                 host = "";
-                organization = "";
-                subjectName = "";
-                issuerCommonName = "";
-                issuerOrganization = "";
+                certificate = null;
             }
         }
 
