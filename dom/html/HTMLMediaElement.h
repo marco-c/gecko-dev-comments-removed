@@ -1174,7 +1174,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
-  void SuspendOrResumeElement(bool aPauseElement, bool aSuspendEvents);
+  void SuspendOrResumeElement(bool aSuspendElement);
 
   
   
@@ -1223,9 +1223,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   void UpdateReadyStateInternal();
-
-  
-  bool ShouldElementBePaused();
 
   
   void AudioCaptureTrackChange(bool aCapture);
@@ -1615,8 +1612,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   bool mPlayingBeforeSeek = false;
 
   
-  
-  bool mPausedForInactiveDocumentOrChannel = false;
+  bool mSuspendedForInactiveDocument = false;
 
   
   
