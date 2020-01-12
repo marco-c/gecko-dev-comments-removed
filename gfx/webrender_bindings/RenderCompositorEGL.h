@@ -41,6 +41,10 @@ class RenderCompositorEGL : public RenderCompositor {
   void DestroyEGLSurface();
 
   EGLSurface mEGLSurface;
+#ifdef MOZ_WIDGET_ANDROID
+  
+  LayoutDeviceIntSize mEGLSurfaceSize;
+#endif
 };
 
 }  
