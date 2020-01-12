@@ -287,8 +287,13 @@ static PointerCapabilities GetPointerCapabilities(const Document* aDocument,
   }
 
   
+  
   const PointerCapabilities kDefaultCapabilities =
+#ifdef ANDROID
+      PointerCapabilities::Coarse;
+#else
       PointerCapabilities::Fine | PointerCapabilities::Hover;
+#endif
 
   if (nsContentUtils::ShouldResistFingerprinting(aDocument)) {
     return kDefaultCapabilities;
