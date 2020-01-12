@@ -195,7 +195,7 @@ void GVAutoplayPermissionRequestor::AskForPermissionIfNeeded(
 
   
   
-  if (XRE_IsParentProcess()) {
+  if (XRE_IsE10sParentProcess()) {
     return;
   }
 
