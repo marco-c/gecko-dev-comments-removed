@@ -782,13 +782,6 @@ var MigrationUtils = Object.freeze({
 
 
 
-
-
-
-
-
-
-
   getMigrator: async function MU_getMigrator(aKey) {
     let migrator = null;
     if (this._migrators.has(aKey)) {
@@ -1297,6 +1290,8 @@ var MigrationUtils = Object.freeze({
     edge: 3,
     ie: 4,
     chrome: 5,
+    "chrome-beta": 5,
+    "chrome-dev": 5,
     chromium: 6,
     canary: 7,
     safari: 8,
