@@ -547,7 +547,14 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     }
 
     #[cfg(feature = "gecko")]
-    fn should_suppress_linebreak(&self, layout_parent_style: &ComputedValues) -> bool {
+    fn should_suppress_linebreak<E>(
+        &self,
+        layout_parent_style: &ComputedValues,
+        element: Option<E>,
+    ) -> bool
+    where
+        E: TElement,
+    {
         
         if self.style.is_floating() || self.style.is_absolutely_positioned() {
             return false;
@@ -571,7 +578,14 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
             
             
             
-            Display::RubyBaseContainer | Display::RubyTextContainer => false,
+            
+            
+            
+            Display::RubyBaseContainer | Display::RubyTextContainer
+                if element.map_or(true, |e| e.is_html_element()) =>
+            {
+                false
+            },
             
             
             
@@ -593,7 +607,7 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
 
         let self_display = self.style.get_box().clone_display();
         
-        if self.should_suppress_linebreak(layout_parent_style) {
+        if self.should_suppress_linebreak(layout_parent_style, element) {
             self.style
                 .add_flags(ComputedValueFlags::SHOULD_SUPPRESS_LINEBREAK);
             
