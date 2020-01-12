@@ -64,7 +64,7 @@ var gTests = [
       );
       win.gIdentityHandler._identityPopup.hidden = true;
 
-      await disableObserverVerification(win.gBrowser.selectedBrowser);
+      await disableObserverVerification();
 
       
       let promises = [
