@@ -13,7 +13,6 @@
 
 #include "jsfriendapi.h"  
 
-#include "builtin/Promise.h"  
 #include "builtin/Stream.h"  
 #include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/QueueWithSizes.h"  
@@ -31,6 +30,7 @@
 #include "vm/JSContext.h"    
 #include "vm/JSObject.h"     
 #include "vm/List.h"         
+#include "vm/PromiseObject.h"  
 #include "vm/Runtime.h"      
 #include "vm/SavedFrame.h"   
 

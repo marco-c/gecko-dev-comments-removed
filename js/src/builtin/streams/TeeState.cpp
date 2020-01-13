@@ -8,11 +8,11 @@
 
 #include "builtin/streams/TeeState.h"
 
-#include "builtin/Promise.h"                 
 #include "builtin/streams/ReadableStream.h"  
 #include "js/Class.h"       
 #include "js/RootingAPI.h"  
 #include "vm/JSContext.h"   
+#include "vm/PromiseObject.h"  
 
 #include "vm/JSObject-inl.h"  
 

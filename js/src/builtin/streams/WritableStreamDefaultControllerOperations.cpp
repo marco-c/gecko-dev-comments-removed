@@ -13,7 +13,6 @@
 
 #include "jsapi.h"  
 
-#include "builtin/Promise.h"  
 #include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/QueueWithSizes.h"  
 #include "builtin/streams/WritableStream.h"  
@@ -27,6 +26,7 @@
 #include "vm/JSContext.h"    
 #include "vm/JSObject.h"     
 #include "vm/List.h"         
+#include "vm/PromiseObject.h"  
 #include "vm/Runtime.h"      
 
 #include "builtin/streams/HandlerFunction-inl.h"  

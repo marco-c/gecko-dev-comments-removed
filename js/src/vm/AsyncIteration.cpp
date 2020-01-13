@@ -8,11 +8,12 @@
 
 #include "builtin/Array.h"
 
-#include "builtin/Promise.h"
+#include "builtin/Promise.h"  
 #include "js/PropertySpec.h"
 #include "vm/GeneratorObject.h"
 #include "vm/GlobalObject.h"
 #include "vm/Interpreter.h"
+#include "vm/PromiseObject.h"  
 #include "vm/Realm.h"
 #include "vm/SelfHosting.h"
 

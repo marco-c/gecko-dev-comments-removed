@@ -8,7 +8,6 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/Move.h"
 #include "mozilla/TimeStamp.h"
 
 #include "jsapi.h"
@@ -18,7 +17,6 @@
 #include "js/Debug.h"
 #include "js/ForOfIterator.h"  
 #include "js/PropertySpec.h"
-#include "util/Poison.h"
 #include "vm/ArrayObject.h"
 #include "vm/AsyncFunction.h"
 #include "vm/AsyncIteration.h"
@@ -27,6 +25,8 @@
 #include "vm/Iteration.h"
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
+#include "vm/PromiseLookup.h"  
+#include "vm/PromiseObject.h"  
 #include "vm/SelfHosting.h"
 
 #include "debugger/DebugAPI-inl.h"
@@ -972,7 +972,6 @@ static MOZ_MUST_USE bool EnqueuePromiseResolveThenableJob(
 static MOZ_MUST_USE bool EnqueuePromiseResolveThenableBuiltinJob(
     JSContext* cx, HandleObject promiseToResolve, HandleObject thenable);
 
-static bool Promise_then(JSContext* cx, unsigned argc, Value* vp);
 static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
                               HandleValue onFulfilled, HandleValue onRejected,
                               MutableHandleValue rval, bool rvalUsed);
@@ -3991,7 +3990,7 @@ PromiseObject* PromiseObject::unforgeableReject(JSContext* cx,
 
 
 
-static bool Promise_static_resolve(JSContext* cx, unsigned argc, Value* vp) {
+bool js::Promise_static_resolve(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   HandleValue thisVal = args.thisv();
   HandleValue argVal = args.get(0);
@@ -4066,7 +4065,7 @@ PromiseObject* PromiseObject::unforgeableResolveWithNonPromise(
 
 
 
-static bool Promise_static_species(JSContext* cx, unsigned argc, Value* vp) {
+bool js::Promise_static_species(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -5213,7 +5212,7 @@ bool Promise_then_noRetVal(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
-static bool Promise_then(JSContext* cx, unsigned argc, Value* vp) {
+bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return Promise_then_impl(cx, args.thisv(), args.get(0), args.get(1),
                            args.rval(), true);
@@ -5642,248 +5641,6 @@ void PromiseObject::copyUserInteractionFlagsFrom(PromiseObject& rhs) {
   setHadUserInteractionUponCreation(rhs.hadUserInteractionUponCreation());
 }
 
-JSFunction* js::PromiseLookup::getPromiseConstructor(JSContext* cx) {
-  const Value& val = cx->global()->getConstructor(JSProto_Promise);
-  return val.isObject() ? &val.toObject().as<JSFunction>() : nullptr;
-}
-
-NativeObject* js::PromiseLookup::getPromisePrototype(JSContext* cx) {
-  const Value& val = cx->global()->getPrototype(JSProto_Promise);
-  return val.isObject() ? &val.toObject().as<NativeObject>() : nullptr;
-}
-
-bool js::PromiseLookup::isDataPropertyNative(JSContext* cx, NativeObject* obj,
-                                             uint32_t slot, JSNative native) {
-  JSFunction* fun;
-  if (!IsFunctionObject(obj->getSlot(slot), &fun)) {
-    return false;
-  }
-  return fun->maybeNative() == native && fun->realm() == cx->realm();
-}
-
-bool js::PromiseLookup::isAccessorPropertyNative(JSContext* cx, Shape* shape,
-                                                 JSNative native) {
-  JSObject* getter = shape->getterObject();
-  return getter && IsNativeFunction(getter, native) &&
-         getter->as<JSFunction>().realm() == cx->realm();
-}
-
-void js::PromiseLookup::initialize(JSContext* cx) {
-  MOZ_ASSERT(state_ == State::Uninitialized);
-
-  
-  NativeObject* promiseProto = getPromisePrototype(cx);
-
-  
-  
-  
-  if (!promiseProto) {
-    return;
-  }
-
-  
-  JSFunction* promiseCtor = getPromiseConstructor(cx);
-  MOZ_ASSERT(promiseCtor,
-             "The Promise constructor is initialized iff Promise.prototype is "
-             "initialized");
-
-  
-  
-  state_ = State::Disabled;
-
-  
-  
-  Shape* ctorShape = promiseProto->lookup(cx, cx->names().constructor);
-  if (!ctorShape || !ctorShape->isDataProperty()) {
-    return;
-  }
-
-  
-  
-  JSFunction* ctorFun;
-  if (!IsFunctionObject(promiseProto->getSlot(ctorShape->slot()), &ctorFun)) {
-    return;
-  }
-  if (ctorFun != promiseCtor) {
-    return;
-  }
-
-  
-  
-  Shape* thenShape = promiseProto->lookup(cx, cx->names().then);
-  if (!thenShape || !thenShape->isDataProperty()) {
-    return;
-  }
-
-  
-  
-  if (!isDataPropertyNative(cx, promiseProto, thenShape->slot(),
-                            Promise_then)) {
-    return;
-  }
-
-  
-  
-  Shape* speciesShape =
-      promiseCtor->lookup(cx, SYMBOL_TO_JSID(cx->wellKnownSymbols().species));
-  if (!speciesShape || !speciesShape->hasGetterObject()) {
-    return;
-  }
-
-  
-  
-  if (!isAccessorPropertyNative(cx, speciesShape, Promise_static_species)) {
-    return;
-  }
-
-  
-  
-  Shape* resolveShape = promiseCtor->lookup(cx, cx->names().resolve);
-  if (!resolveShape || !resolveShape->isDataProperty()) {
-    return;
-  }
-
-  
-  
-  if (!isDataPropertyNative(cx, promiseCtor, resolveShape->slot(),
-                            Promise_static_resolve)) {
-    return;
-  }
-
-  
-  
-  MOZ_ASSERT(!IsInsideNursery(promiseCtor->lastProperty()));
-  MOZ_ASSERT(!IsInsideNursery(speciesShape));
-  MOZ_ASSERT(!IsInsideNursery(promiseProto->lastProperty()));
-
-  state_ = State::Initialized;
-  promiseConstructorShape_ = promiseCtor->lastProperty();
-#ifdef DEBUG
-  promiseSpeciesShape_ = speciesShape;
-#endif
-  promiseProtoShape_ = promiseProto->lastProperty();
-  promiseResolveSlot_ = resolveShape->slot();
-  promiseProtoConstructorSlot_ = ctorShape->slot();
-  promiseProtoThenSlot_ = thenShape->slot();
-}
-
-void js::PromiseLookup::reset() {
-  AlwaysPoison(this, JS_RESET_VALUE_PATTERN, sizeof(*this),
-               MemCheckKind::MakeUndefined);
-  state_ = State::Uninitialized;
-}
-
-bool js::PromiseLookup::isPromiseStateStillSane(JSContext* cx) {
-  MOZ_ASSERT(state_ == State::Initialized);
-
-  NativeObject* promiseProto = getPromisePrototype(cx);
-  MOZ_ASSERT(promiseProto);
-
-  NativeObject* promiseCtor = getPromiseConstructor(cx);
-  MOZ_ASSERT(promiseCtor);
-
-  
-  if (promiseProto->lastProperty() != promiseProtoShape_) {
-    return false;
-  }
-
-  
-  if (promiseCtor->lastProperty() != promiseConstructorShape_) {
-    return false;
-  }
-
-  
-  if (promiseProto->getSlot(promiseProtoConstructorSlot_) !=
-      ObjectValue(*promiseCtor)) {
-    return false;
-  }
-
-  
-  if (!isDataPropertyNative(cx, promiseProto, promiseProtoThenSlot_,
-                            Promise_then)) {
-    return false;
-  }
-
-  
-  
-  
-  
-#ifdef DEBUG
-  MOZ_ASSERT(isAccessorPropertyNative(cx, promiseSpeciesShape_,
-                                      Promise_static_species));
-#endif
-
-  
-  if (!isDataPropertyNative(cx, promiseCtor, promiseResolveSlot_,
-                            Promise_static_resolve)) {
-    return false;
-  }
-
-  return true;
-}
-
-bool js::PromiseLookup::ensureInitialized(JSContext* cx,
-                                          Reinitialize reinitialize) {
-  if (state_ == State::Uninitialized) {
-    
-    initialize(cx);
-  } else if (state_ == State::Initialized) {
-    if (reinitialize == Reinitialize::Allowed) {
-      if (!isPromiseStateStillSane(cx)) {
-        
-        reset();
-        initialize(cx);
-      }
-    } else {
-      
-      
-      MOZ_ASSERT(isPromiseStateStillSane(cx));
-    }
-  }
-
-  
-  
-  if (state_ != State::Initialized) {
-    return false;
-  }
-
-  
-  MOZ_ASSERT(isPromiseStateStillSane(cx));
-
-  return true;
-}
-
-bool js::PromiseLookup::isDefaultPromiseState(JSContext* cx) {
-  
-  
-  return ensureInitialized(cx, Reinitialize::Allowed);
-}
-
-bool js::PromiseLookup::hasDefaultProtoAndNoShadowedProperties(
-    JSContext* cx, PromiseObject* promise) {
-  
-  if (promise->staticPrototype() != getPromisePrototype(cx)) {
-    return false;
-  }
-
-  
-  
-  
-  
-  return promise->lastProperty()->isEmptyShape();
-}
-
-bool js::PromiseLookup::isDefaultInstance(JSContext* cx, PromiseObject* promise,
-                                          Reinitialize reinitialize) {
-  
-  if (!ensureInitialized(cx, reinitialize)) {
-    return false;
-  }
-
-  
-  return hasDefaultProtoAndNoShadowedProperties(cx, promise);
-}
-
 
 
 
@@ -6000,269 +5757,6 @@ MOZ_MUST_USE bool js::TrySkipAwait(JSContext* cx, HandleValue val,
   return true;
 }
 
-OffThreadPromiseTask::OffThreadPromiseTask(JSContext* cx,
-                                           Handle<PromiseObject*> promise)
-    : runtime_(cx->runtime()), promise_(cx, promise), registered_(false) {
-  MOZ_ASSERT(runtime_ == promise_->zone()->runtimeFromMainThread());
-  MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
-  MOZ_ASSERT(cx->runtime()->offThreadPromiseState.ref().initialized());
-}
-
-OffThreadPromiseTask::~OffThreadPromiseTask() {
-  MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
-
-  OffThreadPromiseRuntimeState& state = runtime_->offThreadPromiseState.ref();
-  MOZ_ASSERT(state.initialized());
-
-  if (registered_) {
-    unregister(state);
-  }
-}
-
-bool OffThreadPromiseTask::init(JSContext* cx) {
-  MOZ_ASSERT(cx->runtime() == runtime_);
-  MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
-
-  OffThreadPromiseRuntimeState& state = runtime_->offThreadPromiseState.ref();
-  MOZ_ASSERT(state.initialized());
-
-  LockGuard<Mutex> lock(state.mutex_);
-
-  if (!state.live_.putNew(this)) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-
-  registered_ = true;
-  return true;
-}
-
-void OffThreadPromiseTask::unregister(OffThreadPromiseRuntimeState& state) {
-  MOZ_ASSERT(registered_);
-  LockGuard<Mutex> lock(state.mutex_);
-  state.live_.remove(this);
-  registered_ = false;
-}
-
-void OffThreadPromiseTask::run(JSContext* cx,
-                               MaybeShuttingDown maybeShuttingDown) {
-  MOZ_ASSERT(cx->runtime() == runtime_);
-  MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
-  MOZ_ASSERT(registered_);
-
-  
-  
-  
-  OffThreadPromiseRuntimeState& state = runtime_->offThreadPromiseState.ref();
-  MOZ_ASSERT(state.initialized());
-  unregister(state);
-
-  if (maybeShuttingDown == JS::Dispatchable::NotShuttingDown) {
-    
-    
-    
-    AutoRealm ar(cx, promise_);
-    if (!resolve(cx, promise_)) {
-      cx->clearPendingException();
-    }
-  }
-
-  js_delete(this);
-}
-
-void OffThreadPromiseTask::dispatchResolveAndDestroy() {
-  MOZ_ASSERT(registered_);
-
-  OffThreadPromiseRuntimeState& state = runtime_->offThreadPromiseState.ref();
-  MOZ_ASSERT(state.initialized());
-  MOZ_ASSERT((LockGuard<Mutex>(state.mutex_), state.live_.has(this)));
-
-  
-  
-  if (state.dispatchToEventLoopCallback_(state.dispatchToEventLoopClosure_,
-                                         this)) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  LockGuard<Mutex> lock(state.mutex_);
-  state.numCanceled_++;
-  if (state.numCanceled_ == state.live_.count()) {
-    state.allCanceled_.notify_one();
-  }
-}
-
-OffThreadPromiseRuntimeState::OffThreadPromiseRuntimeState()
-    : dispatchToEventLoopCallback_(nullptr),
-      dispatchToEventLoopClosure_(nullptr),
-      mutex_(mutexid::OffThreadPromiseState),
-      numCanceled_(0),
-      internalDispatchQueueClosed_(false) {}
-
-OffThreadPromiseRuntimeState::~OffThreadPromiseRuntimeState() {
-  MOZ_ASSERT(live_.empty());
-  MOZ_ASSERT(numCanceled_ == 0);
-  MOZ_ASSERT(internalDispatchQueue_.empty());
-  MOZ_ASSERT(!initialized());
-}
-
-void OffThreadPromiseRuntimeState::init(
-    JS::DispatchToEventLoopCallback callback, void* closure) {
-  MOZ_ASSERT(!initialized());
-
-  dispatchToEventLoopCallback_ = callback;
-  dispatchToEventLoopClosure_ = closure;
-
-  MOZ_ASSERT(initialized());
-}
-
-
-bool OffThreadPromiseRuntimeState::internalDispatchToEventLoop(
-    void* closure, JS::Dispatchable* d) {
-  OffThreadPromiseRuntimeState& state =
-      *reinterpret_cast<OffThreadPromiseRuntimeState*>(closure);
-  MOZ_ASSERT(state.usingInternalDispatchQueue());
-
-  LockGuard<Mutex> lock(state.mutex_);
-
-  if (state.internalDispatchQueueClosed_) {
-    return false;
-  }
-
-  
-  
-  AutoEnterOOMUnsafeRegion noOOM;
-  if (!state.internalDispatchQueue_.pushBack(d)) {
-    noOOM.crash("internalDispatchToEventLoop");
-  }
-
-  
-  state.internalDispatchQueueAppended_.notify_one();
-  return true;
-}
-
-bool OffThreadPromiseRuntimeState::usingInternalDispatchQueue() const {
-  return dispatchToEventLoopCallback_ == internalDispatchToEventLoop;
-}
-
-void OffThreadPromiseRuntimeState::initInternalDispatchQueue() {
-  init(internalDispatchToEventLoop, this);
-  MOZ_ASSERT(usingInternalDispatchQueue());
-}
-
-bool OffThreadPromiseRuntimeState::initialized() const {
-  return !!dispatchToEventLoopCallback_;
-}
-
-void OffThreadPromiseRuntimeState::internalDrain(JSContext* cx) {
-  MOZ_ASSERT(usingInternalDispatchQueue());
-  MOZ_ASSERT(!internalDispatchQueueClosed_);
-
-  for (;;) {
-    JS::Dispatchable* d;
-    {
-      LockGuard<Mutex> lock(mutex_);
-
-      MOZ_ASSERT_IF(!internalDispatchQueue_.empty(), !live_.empty());
-      if (live_.empty()) {
-        return;
-      }
-
-      
-      
-      while (internalDispatchQueue_.empty()) {
-        internalDispatchQueueAppended_.wait(lock);
-      }
-
-      d = internalDispatchQueue_.popCopyFront();
-    }
-
-    
-    d->run(cx, JS::Dispatchable::NotShuttingDown);
-  }
-}
-
-bool OffThreadPromiseRuntimeState::internalHasPending() {
-  MOZ_ASSERT(usingInternalDispatchQueue());
-  MOZ_ASSERT(!internalDispatchQueueClosed_);
-
-  LockGuard<Mutex> lock(mutex_);
-  MOZ_ASSERT_IF(!internalDispatchQueue_.empty(), !live_.empty());
-  return !live_.empty();
-}
-
-void OffThreadPromiseRuntimeState::shutdown(JSContext* cx) {
-  if (!initialized()) {
-    return;
-  }
-
-  
-  
-  
-  if (usingInternalDispatchQueue()) {
-    DispatchableFifo dispatchQueue;
-    {
-      LockGuard<Mutex> lock(mutex_);
-      mozilla::Swap(dispatchQueue, internalDispatchQueue_);
-      MOZ_ASSERT(internalDispatchQueue_.empty());
-      internalDispatchQueueClosed_ = true;
-    }
-
-    
-    for (JS::Dispatchable* d : dispatchQueue) {
-      d->run(cx, JS::Dispatchable::ShuttingDown);
-    }
-  }
-
-  {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    LockGuard<Mutex> lock(mutex_);
-    while (live_.count() != numCanceled_) {
-      MOZ_ASSERT(numCanceled_ < live_.count());
-      allCanceled_.wait(lock);
-    }
-  }
-
-  
-  
-  for (OffThreadPromiseTaskSet::Range r = live_.all(); !r.empty();
-       r.popFront()) {
-    OffThreadPromiseTask* task = r.front();
-
-    
-    
-    MOZ_ASSERT(task->registered_);
-    task->registered_ = false;
-    js_delete(task);
-  }
-  live_.clear();
-  numCanceled_ = 0;
-
-  
-  
-  dispatchToEventLoopCallback_ = nullptr;
-  MOZ_ASSERT(!initialized());
-}
-
 JS::AutoDebuggerJobQueueInterruption::AutoDebuggerJobQueueInterruption(
     MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM_IN_IMPL)
     : cx(nullptr) {
@@ -6315,7 +5809,7 @@ const JSJitInfo promise_catch_info = {
 };
 
 static const JSFunctionSpec promise_methods[] = {
-    JS_FNINFO("then", Promise_then, &promise_then_info, 2, 0),
+    JS_FNINFO("then", js::Promise_then, &promise_then_info, 2, 0),
     JS_FNINFO("catch", Promise_catch, &promise_catch_info, 1, 0),
     JS_SELF_HOSTED_FN("finally", "Promise_finally", 1, 0), JS_FS_END};
 
@@ -6330,11 +5824,11 @@ static const JSFunctionSpec promise_static_methods[] = {
 #endif
     JS_FN("race", Promise_static_race, 1, 0),
     JS_FN("reject", Promise_reject, 1, 0),
-    JS_FN("resolve", Promise_static_resolve, 1, 0),
+    JS_FN("resolve", js::Promise_static_resolve, 1, 0),
     JS_FS_END};
 
 static const JSPropertySpec promise_static_properties[] = {
-    JS_SYM_GET(species, Promise_static_species, 0), JS_PS_END};
+    JS_SYM_GET(species, js::Promise_static_species, 0), JS_PS_END};
 
 static const ClassSpec PromiseObjectClassSpec = {
     GenericCreateConstructor<PromiseConstructor, 1, gc::AllocKind::FUNCTION>,

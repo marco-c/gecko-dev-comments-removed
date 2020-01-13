@@ -26,7 +26,6 @@
 #include "jsnum.h"        
 
 #include "builtin/Array.h"      
-#include "builtin/Promise.h"    
 #include "debugger/Debugger.h"  
 #include "debugger/DebugScript.h"
 #include "debugger/Environment.h"          

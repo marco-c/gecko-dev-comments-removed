@@ -16,7 +16,6 @@
 
 #include "jstypes.h"  
 
-#include "builtin/Promise.h"                              
 #include "builtin/streams/WritableStreamDefaultWriter.h"  
 #include "js/RootingAPI.h"                                
 #include "js/Value.h"                                     

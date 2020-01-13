@@ -14,7 +14,6 @@
 #include "jsapi.h"        
 #include "jsfriendapi.h"  
 
-#include "builtin/Promise.h"                 
 #include "builtin/streams/ClassSpecMacro.h"  
 #include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/WritableStream.h"  
@@ -27,6 +26,7 @@
 #include "js/Value.h"        
 #include "vm/Compartment.h"  
 #include "vm/JSContext.h"    
+#include "vm/PromiseObject.h"  
 
 #include "builtin/streams/MiscellaneousOperations-inl.h"  
 #include "vm/Compartment-inl.h"  

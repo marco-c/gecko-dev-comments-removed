@@ -15,7 +15,6 @@
 
 #include "jsfriendapi.h"  
 
-#include "builtin/Promise.h"                           
 #include "builtin/streams/ReadableStreamController.h"  
 #include "builtin/streams/ReadableStreamReader.h"  
 #include "gc/AllocKind.h"   
@@ -30,6 +29,7 @@
 #include "vm/JSFunction.h"    
 #include "vm/NativeObject.h"  
 #include "vm/ObjectGroup.h"   
+#include "vm/PromiseObject.h"  
 #include "vm/Realm.h"         
 #include "vm/StringType.h"    
 

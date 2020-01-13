@@ -14,7 +14,6 @@
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
 
-#include "builtin/Promise.h"                 
 #include "builtin/streams/WritableStream.h"  
 #include "js/RootingAPI.h"                   
 #include "js/Value.h"                        

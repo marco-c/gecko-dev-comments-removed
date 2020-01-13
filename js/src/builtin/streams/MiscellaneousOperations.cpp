@@ -15,12 +15,12 @@
 #include "jsapi.h"        
 #include "jsfriendapi.h"  
 
-#include "builtin/Promise.h"      
 #include "js/Conversions.h"       
 #include "js/RootingAPI.h"        
 #include "vm/Interpreter.h"       
 #include "vm/JSContext.h"         
 #include "vm/ObjectOperations.h"  
+#include "vm/PromiseObject.h"     
 #include "vm/StringType.h"        
 
 #include "vm/JSContext-inl.h"  

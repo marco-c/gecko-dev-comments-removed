@@ -33,7 +33,6 @@
 #include "jstypes.h"      
 
 #include "builtin/Array.h"               
-#include "builtin/Promise.h"             
 #include "debugger/DebugAPI.h"           
 #include "debugger/DebuggerMemory.h"     
 #include "debugger/DebugScript.h"        
@@ -96,6 +95,7 @@
 #include "vm/JSObject.h"              
 #include "vm/ObjectGroup.h"           
 #include "vm/ObjectOperations.h"      
+#include "vm/PromiseObject.h"         
 #include "vm/ProxyObject.h"           
 #include "vm/Realm.h"                 
 #include "vm/Runtime.h"               

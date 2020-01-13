@@ -9,203 +9,33 @@
 
 #include "js/Promise.h"
 
-#include "builtin/SelfHostingDefines.h"
-#include "ds/Fifo.h"
-#include "threading/ConditionVariable.h"
-#include "threading/Mutex.h"
-#include "vm/NativeObject.h"
+#include "mozilla/Attributes.h"  
+
+#include "jsapi.h"    
+#include "jstypes.h"  
+
+#include "js/CallArgs.h"    
+#include "js/RootingAPI.h"  
+#include "js/TypeDecls.h"   
+#include "js/Value.h"       
+
+struct JS_PUBLIC_API JSContext;
+class JS_PUBLIC_API JSObject;
 
 namespace js {
 
 class AsyncFunctionGeneratorObject;
 class AsyncGeneratorObject;
-
-enum PromiseSlots {
-  
-  PromiseSlot_Flags = 0,
-
-  
-  
-  
-  
-  
-  
-  PromiseSlot_ReactionsOrResult,
-
-  
-  
-  
-  
-  PromiseSlot_RejectFunction,
-
-  
-  
-  
-  
-  
-  PromiseSlot_DebugInfo,
-
-  PromiseSlots,
-};
+class PromiseObject;
 
 
-
-#define PROMISE_FLAG_RESOLVED 0x1
-
+extern bool Promise_then(JSContext* cx, unsigned argc, JS::Value* vp);
 
 
-#define PROMISE_FLAG_FULFILLED 0x2
+extern bool Promise_static_species(JSContext* cx, unsigned argc, JS::Value* vp);
 
 
-
-#define PROMISE_FLAG_HANDLED 0x4
-
-
-
-#define PROMISE_FLAG_DEFAULT_RESOLVING_FUNCTIONS 0x08
-
-
-
-#define PROMISE_FLAG_ASYNC 0x10
-
-
-
-
-
-
-
-
-#define PROMISE_FLAG_REQUIRES_USER_INTERACTION_HANDLING 0x20
-
-
-
-
-
-
-
-#define PROMISE_FLAG_HAD_USER_INTERACTION_UPON_CREATION 0x40
-
-class AutoSetNewObjectMetadata;
-struct PromiseReactionRecordBuilder;
-
-class PromiseObject : public NativeObject {
- public:
-  static const unsigned RESERVED_SLOTS = PromiseSlots;
-  static const JSClass class_;
-  static const JSClass protoClass_;
-  static PromiseObject* create(JSContext* cx, HandleObject executor,
-                               HandleObject proto = nullptr,
-                               bool needsWrapping = false);
-
-  static PromiseObject* createSkippingExecutor(JSContext* cx);
-
-  
-  
-  static PromiseObject* unforgeableReject(JSContext* cx, HandleValue value);
-
-  
-  
-  
-  
-  
-  
-  static JSObject* unforgeableResolve(JSContext* cx, HandleValue value);
-
-  
-  
-  static PromiseObject* unforgeableResolveWithNonPromise(JSContext* cx,
-                                                         HandleValue value);
-
-  int32_t flags() { return getFixedSlot(PromiseSlot_Flags).toInt32(); }
-  void setHandled() {
-    setFixedSlot(PromiseSlot_Flags, Int32Value(flags() | PROMISE_FLAG_HANDLED));
-  }
-  JS::PromiseState state() {
-    int32_t flags = this->flags();
-    if (!(flags & PROMISE_FLAG_RESOLVED)) {
-      MOZ_ASSERT(!(flags & PROMISE_FLAG_FULFILLED));
-      return JS::PromiseState::Pending;
-    }
-    if (flags & PROMISE_FLAG_FULFILLED) {
-      return JS::PromiseState::Fulfilled;
-    }
-    return JS::PromiseState::Rejected;
-  }
-  Value reactions() {
-    MOZ_ASSERT(state() == JS::PromiseState::Pending);
-    return getFixedSlot(PromiseSlot_ReactionsOrResult);
-  }
-  Value value() {
-    MOZ_ASSERT(state() == JS::PromiseState::Fulfilled);
-    return getFixedSlot(PromiseSlot_ReactionsOrResult);
-  }
-  Value reason() {
-    MOZ_ASSERT(state() == JS::PromiseState::Rejected);
-    return getFixedSlot(PromiseSlot_ReactionsOrResult);
-  }
-  Value valueOrReason() {
-    MOZ_ASSERT(state() != JS::PromiseState::Pending);
-    return getFixedSlot(PromiseSlot_ReactionsOrResult);
-  }
-
-  static MOZ_MUST_USE bool resolve(JSContext* cx,
-                                   Handle<PromiseObject*> promise,
-                                   HandleValue resolutionValue);
-  static MOZ_MUST_USE bool reject(JSContext* cx, Handle<PromiseObject*> promise,
-                                  HandleValue rejectionValue);
-
-  static void onSettled(JSContext* cx, Handle<PromiseObject*> promise);
-
-  double allocationTime();
-  double resolutionTime();
-  JSObject* allocationSite();
-  JSObject* resolutionSite();
-  double lifetime();
-  double timeToResolution() {
-    MOZ_ASSERT(state() != JS::PromiseState::Pending);
-    return resolutionTime() - allocationTime();
-  }
-  MOZ_MUST_USE bool dependentPromises(JSContext* cx,
-                                      MutableHandle<GCVector<Value>> values);
-
-  
-  uint64_t getID();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  MOZ_MUST_USE bool forEachReactionRecord(
-      JSContext* cx, PromiseReactionRecordBuilder& builder);
-
-  bool isUnhandled() {
-    MOZ_ASSERT(state() == JS::PromiseState::Rejected);
-    return !(flags() & PROMISE_FLAG_HANDLED);
-  }
-
-  bool requiresUserInteractionHandling() {
-    return (flags() & PROMISE_FLAG_REQUIRES_USER_INTERACTION_HANDLING);
-  }
-
-  void setRequiresUserInteractionHandling(bool state);
-
-  bool hadUserInteractionUponCreation() {
-    return (flags() & PROMISE_FLAG_HAD_USER_INTERACTION_UPON_CREATION);
-  }
-
-  void setHadUserInteractionUponCreation(bool state);
-
-  void copyUserInteractionFlagsFrom(PromiseObject& rhs);
-};
+extern bool Promise_static_resolve(JSContext* cx, unsigned argc, JS::Value* vp);
 
 
 
@@ -226,10 +56,9 @@ MOZ_MUST_USE JSObject* GetWaitForAllPromise(JSContext* cx,
 
 
 
-MOZ_MUST_USE PromiseObject* OriginalPromiseThen(JSContext* cx,
-                                                HandleObject promiseObj,
-                                                HandleObject onFulfilled,
-                                                HandleObject onRejected);
+MOZ_MUST_USE PromiseObject* OriginalPromiseThen(
+    JSContext* cx, JS::Handle<JSObject*> promiseObj,
+    JS::Handle<JSObject*> onFulfilled, JS::Handle<JSObject*> onRejected);
 
 enum class UnhandledRejectionBehavior { Ignore, Report };
 
@@ -256,8 +85,8 @@ enum class UnhandledRejectionBehavior { Ignore, Report };
 
 
 extern MOZ_MUST_USE bool ReactToUnwrappedPromise(
-    JSContext* cx, Handle<PromiseObject*> unwrappedPromise,
-    HandleObject onFulfilled_, HandleObject onRejected_,
+    JSContext* cx, JS::Handle<PromiseObject*> unwrappedPromise,
+    JS::Handle<JSObject*> onFulfilled_, JS::Handle<JSObject*> onRejected_,
     UnhandledRejectionBehavior behavior);
 
 
@@ -266,8 +95,9 @@ extern MOZ_MUST_USE bool ReactToUnwrappedPromise(
 
 
 
-MOZ_MUST_USE JSObject* PromiseResolve(JSContext* cx, HandleObject constructor,
-                                      HandleValue value);
+MOZ_MUST_USE JSObject* PromiseResolve(JSContext* cx,
+                                      JS::Handle<JSObject*> constructor,
+                                      JS::Handle<JS::Value> value);
 
 
 
@@ -275,8 +105,8 @@ MOZ_MUST_USE JSObject* PromiseResolve(JSContext* cx, HandleObject constructor,
 
 
 
-MOZ_MUST_USE bool RejectPromiseWithPendingError(JSContext* cx,
-                                                Handle<PromiseObject*> promise);
+MOZ_MUST_USE bool RejectPromiseWithPendingError(
+    JSContext* cx, JS::Handle<PromiseObject*> promise);
 
 
 
@@ -290,356 +120,47 @@ MOZ_MUST_USE PromiseObject* CreatePromiseObjectForAsync(JSContext* cx);
 
 MOZ_MUST_USE bool IsPromiseForAsyncFunctionOrGenerator(JSObject* promise);
 
-class AsyncFunctionGeneratorObject;
-
-MOZ_MUST_USE bool AsyncFunctionReturned(JSContext* cx,
-                                        Handle<PromiseObject*> resultPromise,
-                                        HandleValue value);
+MOZ_MUST_USE bool AsyncFunctionReturned(
+    JSContext* cx, JS::Handle<PromiseObject*> resultPromise,
+    JS::Handle<JS::Value> value);
 
 MOZ_MUST_USE bool AsyncFunctionThrown(JSContext* cx,
-                                      Handle<PromiseObject*> resultPromise,
-                                      HandleValue reason);
+                                      JS::Handle<PromiseObject*> resultPromise,
+                                      JS::Handle<JS::Value> reason);
 
 
 
 MOZ_MUST_USE JSObject* AsyncFunctionAwait(
-    JSContext* cx, Handle<AsyncFunctionGeneratorObject*> genObj,
-    HandleValue value);
+    JSContext* cx, JS::Handle<AsyncFunctionGeneratorObject*> genObj,
+    JS::Handle<JS::Value> value);
 
 
 
 
-MOZ_MUST_USE bool TrySkipAwait(JSContext* cx, HandleValue val, bool* canSkip,
-                               MutableHandleValue resolved);
+MOZ_MUST_USE bool TrySkipAwait(JSContext* cx, JS::Handle<JS::Value> val,
+                               bool* canSkip,
+                               JS::MutableHandle<JS::Value> resolved);
 
-class AsyncGeneratorObject;
-
-MOZ_MUST_USE bool AsyncGeneratorAwait(JSContext* cx,
-                                      Handle<AsyncGeneratorObject*> asyncGenObj,
-                                      HandleValue value);
+MOZ_MUST_USE bool AsyncGeneratorAwait(
+    JSContext* cx, JS::Handle<AsyncGeneratorObject*> asyncGenObj,
+    JS::Handle<JS::Value> value);
 
 MOZ_MUST_USE bool AsyncGeneratorResolve(
-    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj, HandleValue value,
-    bool done);
+    JSContext* cx, JS::Handle<AsyncGeneratorObject*> asyncGenObj,
+    JS::Handle<JS::Value> value, bool done);
 
 MOZ_MUST_USE bool AsyncGeneratorReject(
-    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
-    HandleValue exception);
+    JSContext* cx, JS::Handle<AsyncGeneratorObject*> asyncGenObj,
+    JS::Handle<JS::Value> exception);
 
-MOZ_MUST_USE bool AsyncGeneratorEnqueue(JSContext* cx, HandleValue asyncGenVal,
+MOZ_MUST_USE bool AsyncGeneratorEnqueue(JSContext* cx,
+                                        JS::Handle<JS::Value> asyncGenVal,
                                         CompletionKind completionKind,
-                                        HandleValue completionValue,
-                                        MutableHandleValue result);
+                                        JS::Handle<JS::Value> completionValue,
+                                        JS::MutableHandle<JS::Value> result);
 
-bool AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
+bool AsyncFromSyncIteratorMethod(JSContext* cx, JS::CallArgs& args,
                                  CompletionKind completionKind);
-
-class MOZ_NON_TEMPORARY_CLASS PromiseLookup final {
-  
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-  
-  MOZ_INIT_OUTSIDE_CTOR Shape* promiseConstructorShape_;
-
-#ifdef DEBUG
-  
-  
-  MOZ_INIT_OUTSIDE_CTOR Shape* promiseSpeciesShape_;
-#endif
-
-  
-  MOZ_INIT_OUTSIDE_CTOR Shape* promiseProtoShape_;
-
-  
-  
-  MOZ_INIT_OUTSIDE_CTOR uint32_t promiseResolveSlot_;
-  MOZ_INIT_OUTSIDE_CTOR uint32_t promiseProtoConstructorSlot_;
-  MOZ_INIT_OUTSIDE_CTOR uint32_t promiseProtoThenSlot_;
-
-  enum class State : uint8_t {
-    
-    Uninitialized,
-    Initialized,
-
-    
-    
-    Disabled
-  };
-
-  State state_ = State::Uninitialized;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  void initialize(JSContext* cx);
-
-  
-  void reset();
-
-  
-  
-  bool isPromiseStateStillSane(JSContext* cx);
-
-  
-  
-  enum class Reinitialize : bool { Allowed, Disallowed };
-
-  
-  bool ensureInitialized(JSContext* cx, Reinitialize reinitialize);
-
-  
-  
-  
-  bool hasDefaultProtoAndNoShadowedProperties(JSContext* cx,
-                                              PromiseObject* promise);
-
-  
-  
-  bool isDefaultInstance(JSContext* cx, PromiseObject* promise,
-                         Reinitialize reinitialize);
-
-  
-  static JSFunction* getPromiseConstructor(JSContext* cx);
-
-  
-  static NativeObject* getPromisePrototype(JSContext* cx);
-
-  
-  static bool isDataPropertyNative(JSContext* cx, NativeObject* obj,
-                                   uint32_t slot, JSNative native);
-
-  
-  static bool isAccessorPropertyNative(JSContext* cx, Shape* shape,
-                                       JSNative native);
-
- public:
-  
-  PromiseLookup() { reset(); }
-
-  
-  
-  bool isDefaultPromiseState(JSContext* cx);
-
-  
-  
-  bool isDefaultInstance(JSContext* cx, PromiseObject* promise) {
-    return isDefaultInstance(cx, promise, Reinitialize::Allowed);
-  }
-
-  
-  
-  bool isDefaultInstanceWhenPromiseStateIsSane(JSContext* cx,
-                                               PromiseObject* promise) {
-    return isDefaultInstance(cx, promise, Reinitialize::Disallowed);
-  }
-
-  
-  void purge() {
-    if (state_ == State::Initialized) {
-      reset();
-    }
-  }
-};
-
-class OffThreadPromiseRuntimeState;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class OffThreadPromiseTask : public JS::Dispatchable {
-  friend class OffThreadPromiseRuntimeState;
-
-  JSRuntime* runtime_;
-  PersistentRooted<PromiseObject*> promise_;
-  bool registered_;
-
-  void operator=(const OffThreadPromiseTask&) = delete;
-  OffThreadPromiseTask(const OffThreadPromiseTask&) = delete;
-
-  void unregister(OffThreadPromiseRuntimeState& state);
-
- protected:
-  OffThreadPromiseTask(JSContext* cx, Handle<PromiseObject*> promise);
-
-  
-  virtual bool resolve(JSContext* cx, Handle<PromiseObject*> promise) = 0;
-
-  
-  void run(JSContext* cx, MaybeShuttingDown maybeShuttingDown) final;
-
- public:
-  ~OffThreadPromiseTask() override;
-
-  
-  
-  
-  bool init(JSContext* cx);
-
-  
-  
-  
-  
-  
-  void dispatchResolveAndDestroy();
-};
-
-using OffThreadPromiseTaskSet =
-    HashSet<OffThreadPromiseTask*, DefaultHasher<OffThreadPromiseTask*>,
-            SystemAllocPolicy>;
-
-using DispatchableFifo = Fifo<JS::Dispatchable*, 0, SystemAllocPolicy>;
-
-class OffThreadPromiseRuntimeState {
-  friend class OffThreadPromiseTask;
-
-  
-  
-  JS::DispatchToEventLoopCallback dispatchToEventLoopCallback_;
-  void* dispatchToEventLoopClosure_;
-
-  
-  Mutex mutex_;
-
-  
-  
-  OffThreadPromiseTaskSet live_;
-
-  
-  
-  
-  
-  
-  ConditionVariable allCanceled_;
-  size_t numCanceled_;
-
-  
-  
-  DispatchableFifo internalDispatchQueue_;
-  ConditionVariable internalDispatchQueueAppended_;
-  bool internalDispatchQueueClosed_;
-
-  static bool internalDispatchToEventLoop(void*, JS::Dispatchable*);
-  bool usingInternalDispatchQueue() const;
-
-  void operator=(const OffThreadPromiseRuntimeState&) = delete;
-  OffThreadPromiseRuntimeState(const OffThreadPromiseRuntimeState&) = delete;
-
- public:
-  OffThreadPromiseRuntimeState();
-  ~OffThreadPromiseRuntimeState();
-  void init(JS::DispatchToEventLoopCallback callback, void* closure);
-  void initInternalDispatchQueue();
-  bool initialized() const;
-
-  
-  
-  void internalDrain(JSContext* cx);
-  bool internalHasPending();
-
-  
-  void shutdown(JSContext* cx);
-};
 
 
 
@@ -656,8 +177,9 @@ struct PromiseReactionRecordBuilder {
   
   
   
-  virtual MOZ_MUST_USE bool then(JSContext* cx, HandleObject resolve,
-                                 HandleObject reject, HandleObject result) = 0;
+  virtual MOZ_MUST_USE bool then(JSContext* cx, JS::Handle<JSObject*> resolve,
+                                 JS::Handle<JSObject*> reject,
+                                 JS::Handle<JSObject*> result) = 0;
 
   
   
@@ -665,8 +187,8 @@ struct PromiseReactionRecordBuilder {
   
   
   
-  virtual MOZ_MUST_USE bool direct(JSContext* cx,
-                                   Handle<PromiseObject*> unwrappedPromise) = 0;
+  virtual MOZ_MUST_USE bool direct(
+      JSContext* cx, JS::Handle<PromiseObject*> unwrappedPromise) = 0;
 
   
   
@@ -676,7 +198,7 @@ struct PromiseReactionRecordBuilder {
   
   virtual MOZ_MUST_USE bool asyncFunction(
       JSContext* cx,
-      Handle<AsyncFunctionGeneratorObject*> unwrappedGenerator) = 0;
+      JS::Handle<AsyncFunctionGeneratorObject*> unwrappedGenerator) = 0;
 
   
   
@@ -685,9 +207,9 @@ struct PromiseReactionRecordBuilder {
   
   
   virtual MOZ_MUST_USE bool asyncGenerator(
-      JSContext* cx, Handle<AsyncGeneratorObject*> unwrappedGenerator) = 0;
+      JSContext* cx, JS::Handle<AsyncGeneratorObject*> unwrappedGenerator) = 0;
 };
 
 }  
 
-#endif 
+#endif  

@@ -14,7 +14,6 @@
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
 
-#include "builtin/Promise.h"  
 #include "js/Promise.h"       
 #include "js/RootingAPI.h"    
 #include "js/Value.h"         
@@ -22,6 +21,7 @@
 #include "vm/Interpreter.h"   
 #include "vm/JSContext.h"     
 #include "vm/JSObject.h"      
+#include "vm/PromiseObject.h"  
 
 #include "vm/Compartment-inl.h"  
 #include "vm/JSContext-inl.h"    

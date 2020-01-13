@@ -28,6 +28,7 @@
 #include "vm/JSContext.h"         
 #include "vm/NativeObject.h"      
 #include "vm/ObjectOperations.h"  
+#include "vm/PromiseObject.h"     
 
 #include "builtin/streams/HandlerFunction-inl.h"  
 #include "builtin/streams/MiscellaneousOperations-inl.h"  

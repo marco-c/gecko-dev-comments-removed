@@ -13,10 +13,10 @@
 
 #include "NamespaceImports.h"  
 
-#include "builtin/Promise.h"    
 #include "debugger/Debugger.h"  
 #include "js/Wrapper.h"         
 #include "vm/JSObject.h"        
+#include "vm/PromiseObject.h"   
 
 #include "debugger/Debugger-inl.h"  
 

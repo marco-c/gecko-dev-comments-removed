@@ -16,7 +16,6 @@
 #include "jsapi.h"        
 #include "jsfriendapi.h"  
 
-#include "builtin/Promise.h"                          
 #include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/WritableStream.h"  
 #include "builtin/streams/WritableStreamDefaultController.h"  
@@ -29,6 +28,7 @@
 #include "vm/Compartment.h"  
 #include "vm/JSContext.h"    
 #include "vm/List.h"         
+#include "vm/PromiseObject.h"  
 
 #include "builtin/streams/HandlerFunction-inl.h"  
 #include "builtin/streams/MiscellaneousOperations-inl.h"  

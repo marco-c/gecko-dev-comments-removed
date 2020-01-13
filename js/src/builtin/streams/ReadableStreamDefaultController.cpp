@@ -12,7 +12,6 @@
 #include "jsapi.h"        
 #include "jsfriendapi.h"  
 
-#include "builtin/Promise.h"                          
 #include "builtin/streams/ClassSpecMacro.h"           
 #include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/PullIntoDescriptor.h"       
@@ -30,6 +29,7 @@
 #include "js/PropertySpec.h"
 #include "vm/Interpreter.h"
 #include "vm/JSContext.h"
+#include "vm/PromiseObject.h"  
 #include "vm/SelfHosting.h"
 
 #include "builtin/streams/HandlerFunction-inl.h"  

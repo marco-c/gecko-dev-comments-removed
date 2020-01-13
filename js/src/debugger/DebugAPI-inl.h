@@ -10,6 +10,7 @@
 #include "debugger/DebugAPI.h"
 
 #include "vm/GeneratorObject.h"
+#include "vm/PromiseObject.h"  
 
 #include "vm/Stack-inl.h"
 
