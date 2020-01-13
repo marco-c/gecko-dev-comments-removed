@@ -72,6 +72,7 @@
 #include "mozilla/dom/LoadURIOptionsBinding.h"
 #include "mozilla/dom/JSWindowActorChild.h"
 
+#include "mozilla/net/DocumentChannel.h"
 #include "mozilla/net/DocumentChannelChild.h"
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "ReferrerInfo.h"
@@ -5828,7 +5829,7 @@ nsDocShell::OnStateChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
       
       
       
-      if (RefPtr<DocumentChannelChild> docChannel = do_QueryObject(aRequest)) {
+      if (RefPtr<DocumentChannel> docChannel = do_QueryObject(aRequest)) {
         docChannel->SetNavigationTiming(mTiming);
       }
     }
@@ -5922,7 +5923,7 @@ void nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
   
   
   
-  if (RefPtr<DocumentChannelChild> docChannel = do_QueryObject(aOldChannel)) {
+  if (RefPtr<DocumentChannel> docChannel = do_QueryObject(aOldChannel)) {
     nsCOMPtr<nsIURI> previousURI;
     uint32_t previousFlags = 0;
     docChannel->GetLastVisit(getter_AddRefs(previousURI), &previousFlags);
@@ -10229,8 +10230,8 @@ nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
 
   
   
-  RefPtr<net::DocumentChannelChild> docChannel = do_QueryObject(aChannel);
-  if (docChannel) {
+  RefPtr<net::DocumentChannel> docChannel = do_QueryObject(aChannel);
+  if (docChannel && XRE_IsContentProcess()) {
     bool pluginsAllowed = true;
     GetAllowPlugins(&pluginsAllowed);
     docChannel->SetDocumentOpenFlags(aOpenFlags, pluginsAllowed);
