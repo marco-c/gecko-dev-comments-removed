@@ -198,6 +198,12 @@ class HTMLTableAccessible : public HyperTextAccessibleWrap,
 #ifdef SHOW_LAYOUT_HEURISTIC
   nsString mLayoutHeuristic;
 #endif
+
+ private:
+  
+
+
+  nsTableWrapperFrame* GetTableWrapperFrame() const;
 };
 
 
