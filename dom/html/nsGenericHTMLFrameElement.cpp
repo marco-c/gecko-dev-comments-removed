@@ -8,7 +8,6 @@
 
 #include "mozilla/dom/HTMLIFrameElement.h"
 #include "mozilla/dom/XULFrameElement.h"
-#include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
@@ -292,15 +291,10 @@ nsresult nsGenericHTMLFrameElement::AfterSetAttr(
   if (aNameSpaceID == kNameSpaceID_None) {
     if (aName == nsGkAtoms::scrolling) {
       if (mFrameLoader) {
-        ScrollbarPreference pref = MapScrollingAttribute(aValue);
+        
         if (nsIDocShell* docshell = mFrameLoader->GetExistingDocShell()) {
-          nsDocShell::Cast(docshell)->SetScrollbarPreference(pref);
-        } else if (auto* child = mFrameLoader->GetBrowserBridgeChild()) {
-          
-          
-          
-          
-          child->SendScrollbarPreferenceChanged(pref);
+          nsDocShell::Cast(docshell)->SetScrollbarPreference(
+              MapScrollingAttribute(aValue));
         }
       }
     } else if (aName == nsGkAtoms::mozbrowser) {
