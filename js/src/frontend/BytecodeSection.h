@@ -206,7 +206,7 @@ class BytecodeSection {
   bool lastOpcodeIsJumpTarget() const {
     return lastTarget_.offset.valid() &&
            offset() - lastTarget_.offset ==
-               BytecodeOffsetDiff(JSOP_JUMPTARGET_LENGTH);
+               BytecodeOffsetDiff(JSOpLength_JumpTarget);
   }
 
   

@@ -373,7 +373,7 @@ bool BytecodeEmitter::emitJumpTarget(JumpTarget* target) {
   
   if (bytecodeSection().lastTargetOffset().valid() &&
       off == bytecodeSection().lastTargetOffset() +
-                 BytecodeOffsetDiff(JSOP_JUMPTARGET_LENGTH)) {
+                 BytecodeOffsetDiff(JSOpLength_JumpTarget)) {
     target->offset = bytecodeSection().lastTargetOffset();
     return true;
   }
@@ -5881,7 +5881,7 @@ bool BytecodeEmitter::emitReturn(UnaryNode* returnNode) {
     if (!emitReturnRval()) {
       return false;
     }
-  } else if (top + BytecodeOffsetDiff(JSOP_RETURN_LENGTH) !=
+  } else if (top + BytecodeOffsetDiff(JSOpLength_Return) !=
                  bytecodeSection().offset() ||
              
              
@@ -8464,7 +8464,7 @@ bool BytecodeEmitter::replaceNewInitWithNewObject(JSObject* obj,
   }
 
   static_assert(
-      JSOP_NEWINIT_LENGTH == JSOP_NEWOBJECT_LENGTH,
+      JSOpLength_NewInit == JSOpLength_NewObject,
       "newinit and newobject must have equal length to edit in-place");
 
   uint32_t index;
