@@ -401,16 +401,15 @@ class LexicalScope : public Scope {
   struct Data : public BaseScopeData {
     
     
+    uint32_t nextFrameSlot = 0;
+
+    
+    
     
     
     uint32_t constStart = 0;
     uint32_t length = 0;
 
-    
-    
-    uint32_t nextFrameSlot = 0;
-
-    
     
     TrailingNamesArray trailingNames;
 
@@ -500,8 +499,13 @@ class FunctionScope : public Scope {
 
     
     
+    uint32_t nextFrameSlot = 0;
+
+    
+    
     bool hasParameterExprs = false;
 
+    
     IsFieldInitializer isFieldInitializer = IsFieldInitializer::No;
 
     
@@ -535,11 +539,6 @@ class FunctionScope : public Scope {
     uint16_t varStart = 0;
     uint32_t length = 0;
 
-    
-    
-    uint32_t nextFrameSlot = 0;
-
-    
     
     TrailingNamesArray trailingNames;
 
@@ -629,13 +628,14 @@ class VarScope : public Scope {
   
   struct Data : public BaseScopeData {
     
-    uint32_t length = 0;
-
-    
     
     uint32_t nextFrameSlot = 0;
 
     
+    
+    
+    uint32_t length = 0;
+
     
     TrailingNamesArray trailingNames;
 
@@ -723,7 +723,6 @@ class GlobalScope : public Scope {
     uint32_t length = 0;
 
     
-    
     TrailingNamesArray trailingNames;
 
     explicit Data(size_t nameCount) : trailingNames(nameCount) {}
@@ -805,6 +804,10 @@ class EvalScope : public Scope {
   struct Data : public BaseScopeData {
     
     
+    uint32_t nextFrameSlot = 0;
+
+    
+    
     
     
     
@@ -812,11 +815,6 @@ class EvalScope : public Scope {
     
     uint32_t length = 0;
 
-    
-    
-    uint32_t nextFrameSlot = 0;
-
-    
     
     TrailingNamesArray trailingNames;
 
@@ -897,6 +895,10 @@ class ModuleScope : public Scope {
 
     
     
+    uint32_t nextFrameSlot = 0;
+
+    
+    
     
     
     
@@ -906,11 +908,6 @@ class ModuleScope : public Scope {
     uint32_t constStart = 0;
     uint32_t length = 0;
 
-    
-    
-    uint32_t nextFrameSlot = 0;
-
-    
     
     TrailingNamesArray trailingNames;
 
@@ -961,13 +958,21 @@ class WasmInstanceScope : public Scope {
 
  public:
   struct Data : public BaseScopeData {
-    uint32_t globalsStart = 0;
-    uint32_t length = 0;
-    uint32_t nextFrameSlot = 0;
-
     
     GCPtr<WasmInstanceObject*> instance = {};
 
+    
+    
+    uint32_t nextFrameSlot = 0;
+
+    
+    
+    
+    
+    uint32_t globalsStart = 0;
+    uint32_t length = 0;
+
+    
     TrailingNamesArray trailingNames;
 
     explicit Data(size_t nameCount) : trailingNames(nameCount) {}
@@ -1007,9 +1012,16 @@ class WasmFunctionScope : public Scope {
 
  public:
   struct Data : public BaseScopeData {
-    uint32_t length = 0;
+    
+    
     uint32_t nextFrameSlot = 0;
 
+    
+    
+    
+    uint32_t length = 0;
+
+    
     TrailingNamesArray trailingNames;
 
     explicit Data(size_t nameCount) : trailingNames(nameCount) {}
