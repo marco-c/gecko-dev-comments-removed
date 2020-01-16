@@ -1756,7 +1756,7 @@ AbortReasonOr<Ok> IonBuilder::startTraversingBlock(MBasicBlock* block) {
 }
 
 AbortReasonOr<Ok> IonBuilder::jsop_goto(bool* restarted) {
-  MOZ_ASSERT(*pc == JSOP_GOTO);
+  MOZ_ASSERT(JSOp(*pc) == JSOP_GOTO);
 
   if (IsBackedgePC(pc)) {
     return visitBackEdge(restarted);
@@ -1801,7 +1801,7 @@ AbortReasonOr<Ok> IonBuilder::jsop_loophead() {
   
   
 
-  MOZ_ASSERT(*pc == JSOP_LOOPHEAD);
+  MOZ_ASSERT(JSOp(*pc) == JSOP_LOOPHEAD);
 
   if (hasTerminatedBlock()) {
     
@@ -2101,7 +2101,7 @@ AbortReasonOr<Ok> IonBuilder::inspectOpcode(JSOp op, bool* restarted) {
       
       
       
-      if (pc[JSOP_POP_LENGTH] == JSOP_POP) {
+      if (JSOp(pc[JSOP_POP_LENGTH]) == JSOP_POP) {
         return Ok();
       }
       if (def->isConstant()) {
@@ -2180,8 +2180,8 @@ AbortReasonOr<Ok> IonBuilder::inspectOpcode(JSOp op, bool* restarted) {
     case JSOP_CALLITER:
     case JSOP_NEW:
       MOZ_TRY(jsop_call(GET_ARGC(pc),
-                        (JSOp)*pc == JSOP_NEW || (JSOp)*pc == JSOP_SUPERCALL,
-                        (JSOp)*pc == JSOP_CALL_IGNORES_RV));
+                        JSOp(*pc) == JSOP_NEW || JSOp(*pc) == JSOP_SUPERCALL,
+                        JSOp(*pc) == JSOP_CALL_IGNORES_RV));
       if (op == JSOP_CALLITER) {
         if (!outermostBuilder()->iterators_.append(current->peek(-1))) {
           return abort(AbortReason::Alloc);
@@ -2581,7 +2581,7 @@ AbortReasonOr<Ok> IonBuilder::inspectOpcode(JSOp op, bool* restarted) {
   
   trackActionableAbort("Unsupported bytecode");
 #ifdef DEBUG
-  return abort(AbortReason::Disable, "Unsupported opcode: %s", CodeName[op]);
+  return abort(AbortReason::Disable, "Unsupported opcode: %s", CodeName(op));
 #else
   return abort(AbortReason::Disable, "Unsupported opcode: %d", op);
 #endif
@@ -6199,7 +6199,7 @@ AbortReasonOr<Ok> IonBuilder::jsop_call(uint32_t argc, bool constructing,
   if (observed->empty()) {
     if (BytecodeFlowsToBitop(pc)) {
       observed->addType(TypeSet::Int32Type(), alloc_->lifoAlloc());
-    } else if (*GetNextPc(pc) == JSOP_POS) {
+    } else if (JSOp(*GetNextPc(pc)) == JSOP_POS) {
       
       
       
@@ -7281,7 +7281,7 @@ AbortReasonOr<Ok> IonBuilder::jsop_newobject() {
 }
 
 AbortReasonOr<Ok> IonBuilder::jsop_initelem() {
-  MOZ_ASSERT(*pc == JSOP_INITELEM || *pc == JSOP_INITHIDDENELEM);
+  MOZ_ASSERT(JSOp(*pc) == JSOP_INITELEM || JSOp(*pc) == JSOP_INITHIDDENELEM);
 
   MDefinition* value = current->pop();
   MDefinition* id = current->pop();
@@ -7289,7 +7289,7 @@ AbortReasonOr<Ok> IonBuilder::jsop_initelem() {
 
   bool emitted = false;
 
-  if (!forceInlineCaches() && *pc == JSOP_INITELEM) {
+  if (!forceInlineCaches() && JSOp(*pc) == JSOP_INITELEM) {
     MOZ_TRY(initOrSetElemTryDense(&emitted, obj, id, value,
                                    true));
     if (emitted) {
@@ -7323,7 +7323,8 @@ AbortReasonOr<Ok> IonBuilder::jsop_initelem_inc() {
 AbortReasonOr<Ok> IonBuilder::initArrayElement(MDefinition* obj,
                                                MDefinition* id,
                                                MDefinition* value) {
-  MOZ_ASSERT(*pc == JSOP_INITELEM_ARRAY || *pc == JSOP_INITELEM_INC);
+  MOZ_ASSERT(JSOp(*pc) == JSOP_INITELEM_ARRAY ||
+             JSOp(*pc) == JSOP_INITELEM_INC);
 
   bool emitted = false;
 
@@ -7357,7 +7358,8 @@ AbortReasonOr<Ok> IonBuilder::initArrayElemTryFastPath(bool* emitted,
                                                        MDefinition* id,
                                                        MDefinition* value) {
   MOZ_ASSERT(*emitted == false);
-  MOZ_ASSERT(*pc == JSOP_INITELEM_ARRAY || *pc == JSOP_INITELEM_INC);
+  MOZ_ASSERT(JSOp(*pc) == JSOP_INITELEM_ARRAY ||
+             JSOp(*pc) == JSOP_INITELEM_INC);
 
   
   
@@ -7979,7 +7981,7 @@ static bool ObjectHasExtraOwnProperty(CompileRealm* realm,
 }
 
 void IonBuilder::insertRecompileCheck(jsbytecode* pc) {
-  MOZ_ASSERT(pc == script()->code() || *pc == JSOP_LOOPHEAD);
+  MOZ_ASSERT(pc == script()->code() || JSOp(*pc) == JSOP_LOOPHEAD);
 
   
   
@@ -7994,7 +7996,7 @@ void IonBuilder::insertRecompileCheck(jsbytecode* pc) {
   
 
   MRecompileCheck::RecompileCheckType type;
-  if (*pc == JSOP_LOOPHEAD) {
+  if (JSOp(*pc) == JSOP_LOOPHEAD) {
     type = MRecompileCheck::RecompileCheckType::OptimizationLevelOSR;
   } else if (this != outermostBuilder()) {
     type = MRecompileCheck::RecompileCheckType::OptimizationLevelInlined;
@@ -11212,7 +11214,7 @@ MDefinition* IonBuilder::maybeUnboxForPropertyAccess(MDefinition* def) {
   
   
   
-  if (*pc == JSOP_CALLPROP || *pc == JSOP_CALLELEM) {
+  if (JSOp(*pc) == JSOP_CALLPROP || JSOp(*pc) == JSOP_CALLELEM) {
     uint32_t idx = current->stackDepth() - 1;
     MOZ_ASSERT(current->getSlot(idx) == def);
     current->setSlot(idx, unbox);
@@ -11381,7 +11383,7 @@ AbortReasonOr<Ok> IonBuilder::improveThisTypesForCall() {
   
   
 
-  MOZ_ASSERT(*pc == JSOP_CALLPROP || *pc == JSOP_CALLELEM);
+  MOZ_ASSERT(JSOp(*pc) == JSOP_CALLPROP || JSOp(*pc) == JSOP_CALLELEM);
 
   
   
@@ -12225,7 +12227,7 @@ AbortReasonOr<Ok> IonBuilder::getPropAddCache(MDefinition* obj,
   }
   load->setResultType(rvalType);
 
-  if (*pc != JSOP_CALLPROP || !IsNullOrUndefined(obj->type())) {
+  if (JSOp(*pc) != JSOP_CALLPROP || !IsNullOrUndefined(obj->type())) {
     
     
     

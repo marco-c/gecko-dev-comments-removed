@@ -3391,7 +3391,7 @@ static bool GetThisValueForDebuggerEnvironmentIterMaybeOptimizedOut(
       if (script->functionHasThisBinding()) {
         for (jsbytecode* it = script->code(); it < script->codeEnd();
              it = GetNextPc(it)) {
-          if (*it == JSOP_FUNCTIONTHIS) {
+          if (JSOp(*it) == JSOP_FUNCTIONTHIS) {
             
             executedInitThisOp = pc > GetNextPc(it);
             break;
