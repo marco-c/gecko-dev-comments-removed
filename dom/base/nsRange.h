@@ -366,8 +366,15 @@ class nsRange final : public mozilla::dom::AbstractRange,
   typedef nsTHashtable<nsPtrHashKey<nsRange>> RangeHashTable;
 
  protected:
-  void RegisterCommonAncestor(nsINode* aNode);
-  void UnregisterCommonAncestor(nsINode* aNode, bool aIsUnlinking);
+  
+
+
+  void RegisterClosestCommonInclusiveAncestor(nsINode* aNode);
+  
+
+
+  void UnregisterClosestCommonInclusiveAncestor(nsINode* aNode,
+                                                bool aIsUnlinking);
 
   
 
@@ -399,7 +406,9 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
 
 
-  nsINode* GetRegisteredCommonAncestor();
+
+
+  nsINode* GetRegisteredClosestCommonInclusiveAncestor();
 
   
   static bool IsNodeInSortedRanges(nsINode* aNode, uint32_t aStartOffset,
@@ -432,7 +441,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
         return;
       }
       sIsNested = true;
-      mCommonAncestor = mRange->GetRegisteredCommonAncestor();
+      mCommonAncestor = mRange->GetRegisteredClosestCommonInclusiveAncestor();
     }
     ~AutoInvalidateSelection();
     nsRange* mRange;
@@ -444,7 +453,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
   
   
   
-  nsINode* MOZ_NON_OWNING_REF mRegisteredCommonAncestor;
+  nsINode* MOZ_NON_OWNING_REF mRegisteredClosestCommonInclusiveAncestor;
   mozilla::WeakPtr<mozilla::dom::Selection> mSelection;
 
   
