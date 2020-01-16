@@ -30,6 +30,12 @@ namespace mozilla {
 
 MFBT_API Maybe<uint64_t> RandomUint64();
 
+
+
+
+
+MFBT_API uint64_t RandomUint64OrDie();
+
 }  
 
 #endif  
