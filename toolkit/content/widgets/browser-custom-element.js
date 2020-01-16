@@ -2089,6 +2089,14 @@
         : Promise.reject("docshell isn't available");
     }
 
+    getContentBlockingEvents() {
+      let windowGlobal = this.browsingContext.currentWindowGlobal;
+      if (!windowGlobal) {
+        return 0;
+      }
+      return windowGlobal.contentBlockingEvents;
+    }
+
     
     
     

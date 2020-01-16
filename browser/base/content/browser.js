@@ -5576,7 +5576,6 @@ var XULBrowserWindow = {
     if (this._event == aEvent && this._lastLocationForEvent == spec) {
       return;
     }
-    this._event = aEvent;
     this._lastLocationForEvent = spec;
 
     if (
@@ -5589,10 +5588,16 @@ var XULBrowserWindow = {
     }
 
     gProtectionsHandler.onContentBlockingEvent(
-      this._event,
+      aEvent,
       aWebProgress,
-      aIsSimulated
+      aIsSimulated,
+      this._event 
     );
+
+    
+    
+    this._event = aEvent;
+
     
     
     
