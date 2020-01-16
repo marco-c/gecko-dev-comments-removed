@@ -946,7 +946,17 @@ class UrlbarInput {
   }
 
   get openViewOnFocus() {
-    return this._openViewOnFocus && !this.isPrivate;
+    return (
+      this._openViewOnFocus &&
+      !this.isPrivate &&
+      
+      
+      
+      Services.prefs.getBoolPref(
+        "browser.newtabpage.activity-stream.feeds.topsites",
+        true
+      )
+    );
   }
 
   async updateLayoutBreakout() {
