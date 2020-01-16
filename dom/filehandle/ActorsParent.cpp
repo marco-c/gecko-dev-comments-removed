@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ActorsParent.h"
 
@@ -56,9 +56,9 @@ using namespace mozilla::ipc;
 
 namespace {
 
-
-
-
+/******************************************************************************
+ * Constants
+ ******************************************************************************/
 
 const uint32_t kThreadLimit = 5;
 const uint32_t kIdleThreadLimit = 1;
@@ -66,7 +66,7 @@ const uint32_t kIdleThreadTimeoutMs = 30000;
 
 const uint32_t kStreamCopyBlockSize = 32768;
 
-}  
+}  // namespace
 
 class FileHandleThreadPool::FileHandleQueue final : public Runnable {
   friend class FileHandleThreadPool;
@@ -155,9 +155,9 @@ struct FileHandleThreadPool::StoragesCompleteCallback final {
   ~StoragesCompleteCallback();
 };
 
-
-
-
+/******************************************************************************
+ * Actor class declarations
+ ******************************************************************************/
 
 class FileHandle : public PBackgroundFileHandleParent {
   friend class BackgroundMutableFileParentBase;
@@ -191,7 +191,7 @@ class FileHandle : public PBackgroundFileHandleParent {
     return mActorDestroyed;
   }
 
-  
+  // Must be called on the background thread.
   bool IsInvalidated() const {
     MOZ_ASSERT(IsOnBackgroundThread(), "Use IsInvalidatedOnAnyThread()");
     MOZ_ASSERT_IF(mInvalidated, mAborted);
@@ -199,7 +199,7 @@ class FileHandle : public PBackgroundFileHandleParent {
     return mInvalidated;
   }
 
-  
+  // May be called on any thread, but is more expensive than IsInvalidated().
   bool IsInvalidatedOnAnyThread() const { return mInvalidatedOnAnyThread; }
 
   void SetActive() {
@@ -245,29 +245,29 @@ class FileHandle : public PBackgroundFileHandleParent {
   void Invalidate();
 
  private:
-  
+  // This constructor is only called by BackgroundMutableFileParentBase.
   FileHandle(BackgroundMutableFileParentBase* aMutableFile, FileMode aMode);
 
-  
+  // Reference counted.
   ~FileHandle();
 
   void MaybeFinishOrAbort() {
     AssertIsOnBackgroundThread();
 
-    
+    // If we've already finished or aborted then there's nothing else to do.
     if (mFinishedOrAborted) {
       return;
     }
 
-    
-    
+    // If there are active requests then we have to wait for those requests to
+    // complete (see NoteFinishedRequest).
     if (mActiveRequestCount) {
       return;
     }
 
-    
-    
-    
+    // If we haven't yet received a finish or abort message then there could be
+    // additional requests coming so we should wait unless we're being forced to
+    // abort.
     if (!mFinishOrAbortReceived && !mForceAborted) {
       return;
     }
@@ -283,7 +283,7 @@ class FileHandle : public PBackgroundFileHandleParent {
 
   void FinishOrAbort();
 
-  
+  // IPDL methods are only called by IPDL.
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
   virtual mozilla::ipc::IPCResult RecvDeleteMe() override;
@@ -397,18 +397,18 @@ class NormalFileHandleOp : public FileHandleOp,
     return mActorDestroyed;
   }
 
-  
-  
+  // May be called on any thread, but you should call IsActorDestroyed() if
+  // you know you're on the background thread because it is slightly faster.
   bool OperationMayProceed() const { return mOperationMayProceed; }
 
-  
-  
-  
+  // May be overridden by subclasses if they need to perform work on the
+  // background thread before being enqueued. Returning false will kill the
+  // child actors and prevent enqueue.
   virtual bool Init(FileHandle* aFileHandle);
 
-  
-  
-  
+  // This callback will be called on the background thread before releasing the
+  // final reference to this request object. Subclasses may perform any
+  // additional cleanup here but must always call the base class implementation.
   virtual void Cleanup();
 
  protected:
@@ -428,13 +428,13 @@ class NormalFileHandleOp : public FileHandleOp,
 
   virtual ~NormalFileHandleOp();
 
-  
-  
-  
-  
+  // Must be overridden in subclasses. Called on the target thread to allow the
+  // subclass to perform necessary file operations. A successful return value
+  // will trigger a SendSuccessResult callback on the background thread while
+  // a failure value will trigger a SendFailureResult callback.
   virtual nsresult DoFileWork(FileHandle* aFileHandle) = 0;
 
-  
+  // Subclasses use this override to set the IPDL response value.
   virtual void GetResponse(FileRequestResponse& aResponse) = 0;
 
  private:
@@ -446,7 +446,7 @@ class NormalFileHandleOp : public FileHandleOp,
 
   virtual void RunOnOwningThread() override;
 
-  
+  // IPDL methods.
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 };
 
@@ -498,7 +498,7 @@ class GetMetadataOp : public NormalFileHandleOp {
   FileRequestMetadata mMetadata;
 
  protected:
-  
+  // Only created by FileHandle.
   GetMetadataOp(FileHandle* aFileHandle, const FileRequestParams& aParams);
 
   ~GetMetadataOp() {}
@@ -514,7 +514,7 @@ class ReadOp final : public CopyFileHandleOp {
   const FileRequestReadParams mParams;
 
  private:
-  
+  // Only created by FileHandle.
   ReadOp(FileHandle* aFileHandle, const FileRequestParams& aParams);
 
   ~ReadOp() {}
@@ -530,7 +530,7 @@ class WriteOp final : public CopyFileHandleOp {
   const FileRequestWriteParams mParams;
 
  private:
-  
+  // Only created by FileHandle.
   WriteOp(FileHandle* aFileHandle, const FileRequestParams& aParams);
 
   ~WriteOp() {}
@@ -546,7 +546,7 @@ class TruncateOp final : public NormalFileHandleOp {
   const FileRequestTruncateParams mParams;
 
  private:
-  
+  // Only created by FileHandle.
   TruncateOp(FileHandle* aFileHandle, const FileRequestParams& aParams);
 
   ~TruncateOp() {}
@@ -562,7 +562,7 @@ class FlushOp final : public NormalFileHandleOp {
   const FileRequestFlushParams mParams;
 
  private:
-  
+  // Only created by FileHandle.
   FlushOp(FileHandle* aFileHandle, const FileRequestParams& aParams);
 
   ~FlushOp() {}
@@ -578,7 +578,7 @@ class GetFileOp final : public GetMetadataOp {
   PBackgroundParent* mBackgroundParent;
 
  private:
-  
+  // Only created by FileHandle.
   GetFileOp(FileHandle* aFileHandle, const FileRequestParams& aParams);
 
   ~GetFileOp() {}
@@ -588,9 +588,9 @@ class GetFileOp final : public GetMetadataOp {
 
 namespace {
 
-
-
-
+/*******************************************************************************
+ * Helper Functions
+ ******************************************************************************/
 
 FileHandleThreadPool* GetFileHandleThreadPoolFor(FileHandleStorage aStorage) {
   switch (aStorage) {
@@ -602,11 +602,11 @@ FileHandleThreadPool* GetFileHandleThreadPoolFor(FileHandleStorage aStorage) {
   }
 }
 
-}  
+}  // namespace
 
-
-
-
+/*******************************************************************************
+ * FileHandleThreadPool implementation
+ ******************************************************************************/
 
 FileHandleThreadPool::FileHandleThreadPool()
     : mOwningEventTarget(GetCurrentThreadSerialEventTarget()),
@@ -625,7 +625,7 @@ FileHandleThreadPool::~FileHandleThreadPool() {
   MOZ_ASSERT(mShutdownComplete);
 }
 
-
+// static
 already_AddRefed<FileHandleThreadPool> FileHandleThreadPool::Create() {
   AssertIsOnBackgroundThread();
 
@@ -657,7 +657,7 @@ nsIEventTarget* FileHandleThreadPool::GetThreadPoolEventTarget() const {
   return mThreadPool;
 }
 
-#endif  
+#endif  // DEBUG
 
 void FileHandleThreadPool::Enqueue(FileHandle* aFileHandle,
                                    FileHandleOp* aFileHandleOp, bool aFinish) {
@@ -797,7 +797,7 @@ void FileHandleThreadPool::Cleanup() {
   MOZ_ALWAYS_SUCCEEDS(mThreadPool->Shutdown());
 
   if (!mCompleteCallbacks.IsEmpty()) {
-    
+    // Run all callbacks manually now.
     for (uint32_t count = mCompleteCallbacks.Length(), index = 0; index < count;
          index++) {
       nsAutoPtr<StoragesCompleteCallback> completeCallback(
@@ -810,7 +810,7 @@ void FileHandleThreadPool::Cleanup() {
 
     mCompleteCallbacks.Clear();
 
-    
+    // And make sure they get processed.
     nsIThread* currentThread = NS_GetCurrentThread();
     MOZ_ASSERT(currentThread);
 
@@ -838,7 +838,7 @@ void FileHandleThreadPool::FinishFileHandle(FileHandle* aFileHandle) {
   if (!directoryInfo->HasRunningFileHandles()) {
     mDirectoryInfos.Remove(directoryId);
 
-    
+    // See if we need to fire any complete callbacks.
     uint32_t index = 0;
     while (index < mCompleteCallbacks.Length()) {
       if (MaybeFireCallback(mCompleteCallbacks[index])) {
@@ -910,7 +910,7 @@ void FileHandleThreadPool::FileHandleQueue::ProcessQueue() {
     if (mShouldFinish) {
       mOwningFileHandleThreadPool->FinishFileHandle(mFileHandle);
 
-      
+      // Make sure this is released on this thread.
       mOwningFileHandleThreadPool = nullptr;
     }
 
@@ -980,9 +980,9 @@ void FileHandleThreadPool::DirectoryInfo::RemoveFileHandleQueue(
 
   uint32_t fileHandleCount = mFileHandleQueues.Length();
 
-  
-  
-  
+  // We can't just remove entries from lock hash tables, we have to rebuild
+  // them instead. Multiple FileHandle objects may lock the same file
+  // (one entry can represent multiple locks).
 
   mFilesReading.Clear();
   mFilesWriting.Clear();
@@ -1052,9 +1052,9 @@ FileHandleThreadPool::StoragesCompleteCallback::~StoragesCompleteCallback() {
   MOZ_COUNT_DTOR(FileHandleThreadPool::StoragesCompleteCallback);
 }
 
-
-
-
+/*******************************************************************************
+ * BackgroundMutableFileParentBase
+ ******************************************************************************/
 
 BackgroundMutableFileParentBase::BackgroundMutableFileParentBase(
     FileHandleStorage aStorage, const nsACString& aDirectoryId,
@@ -1165,8 +1165,8 @@ void BackgroundMutableFileParentBase::SetActorAlive() {
 
   mActorWasAlive = true;
 
-  
-  
+  // This reference will be absorbed by IPDL and released when the actor is
+  // destroyed.
   AddRef();
 }
 
@@ -1234,13 +1234,13 @@ BackgroundMutableFileParentBase::RecvPBackgroundFileHandleConstructor(
 
   auto* fileHandle = static_cast<FileHandle*>(aActor);
 
-  
+  // Add a placeholder for this file handle immediately.
   fileHandleThreadPool->Enqueue(fileHandle, nullptr, false);
 
   fileHandle->SetActive();
 
   if (NS_WARN_IF(!RegisterFileHandle(fileHandle))) {
-    fileHandle->Abort( false);
+    fileHandle->Abort(/* aForce */ false);
     return IPC_OK();
   }
 
@@ -1275,9 +1275,9 @@ mozilla::ipc::IPCResult BackgroundMutableFileParentBase::RecvGetFileId(
   return IPC_OK();
 }
 
-
-
-
+/*******************************************************************************
+ * FileHandle
+ ******************************************************************************/
 
 FileHandle::FileHandle(BackgroundMutableFileParentBase* aMutableFile,
                        FileMode aMode)
@@ -1373,7 +1373,7 @@ void FileHandle::Invalidate() {
     mInvalidated = true;
     mInvalidatedOnAnyThread = true;
 
-    Abort( true);
+    Abort(/* aForce */ true);
   }
 }
 
@@ -1395,11 +1395,6 @@ bool FileHandle::VerifyRequestParams(const FileRequestParams& aParams) const {
           aParams.get_FileRequestGetMetadataParams();
 
       if (NS_WARN_IF(!params.size() && !params.lastModified())) {
-        ASSERT_UNLESS_FUZZING();
-        return false;
-      }
-
-      if (NS_WARN_IF(params.size() > UINT32_MAX)) {
         ASSERT_UNLESS_FUZZING();
         return false;
       }
@@ -1579,7 +1574,7 @@ mozilla::ipc::IPCResult FileHandle::RecvAbort() {
 
   mFinishOrAbortReceived = true;
 
-  Abort( false);
+  Abort(/* aForce */ false);
   return IPC_OK();
 }
 
@@ -1589,7 +1584,7 @@ PBackgroundFileRequestParent* FileHandle::AllocPBackgroundFileRequestParent(
   MOZ_ASSERT(aParams.type() != FileRequestParams::T__None);
 
 #ifdef DEBUG
-  
+  // Always verify parameters in DEBUG builds!
   bool trustParams = false;
 #else
   PBackgroundParent* backgroundActor = GetBackgroundParent();
@@ -1641,7 +1636,7 @@ PBackgroundFileRequestParent* FileHandle::AllocPBackgroundFileRequestParent(
 
   MOZ_ASSERT(actor);
 
-  
+  // Transfer ownership to IPDL.
   return actor.forget().take();
 }
 
@@ -1667,15 +1662,15 @@ bool FileHandle::DeallocPBackgroundFileRequestParent(
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aActor);
 
-  
+  // Transfer ownership back from IPDL.
   RefPtr<NormalFileHandleOp> actor =
       dont_AddRef(static_cast<NormalFileHandleOp*>(aActor));
   return true;
 }
 
-
-
-
+/*******************************************************************************
+ * Local class implementations
+ ******************************************************************************/
 
 void FileHandleOp::Enqueue() {
   AssertIsOnOwningThread();
@@ -1797,17 +1792,17 @@ void NormalFileHandleOp::RunOnThreadPool() {
   MOZ_ASSERT(mFileHandle);
   MOZ_ASSERT(NS_SUCCEEDED(mResultCode));
 
-  
+  // There are several cases where we don't actually have to to any work here.
 
   if (mFileHandleIsAborted) {
-    
+    // This transaction is already set to be aborted.
     mResultCode = NS_ERROR_DOM_FILEHANDLE_ABORT_ERR;
   } else if (mFileHandle->IsInvalidatedOnAnyThread()) {
-    
+    // This file handle is being invalidated.
     mResultCode = NS_ERROR_DOM_FILEHANDLE_UNKNOWN_ERR;
   } else if (!OperationMayProceed()) {
-    
-    
+    // The operation was canceled in some way, likely because the child process
+    // has crashed.
     mResultCode = NS_ERROR_DOM_FILEHANDLE_UNKNOWN_ERR;
   } else {
     nsresult rv = DoFileWork(mFileHandle);
@@ -1822,7 +1817,7 @@ void NormalFileHandleOp::RunOnOwningThread() {
   MOZ_ASSERT(mFileHandle);
 
   if (NS_WARN_IF(IsActorDestroyed())) {
-    
+    // Don't send any notifications if the actor was destroyed already.
     if (NS_SUCCEEDED(mResultCode)) {
       mResultCode = NS_ERROR_DOM_FILEHANDLE_UNKNOWN_ERR;
     }
@@ -1830,19 +1825,19 @@ void NormalFileHandleOp::RunOnOwningThread() {
     if (mFileHandle->IsInvalidated()) {
       mResultCode = NS_ERROR_DOM_FILEHANDLE_UNKNOWN_ERR;
     } else if (mFileHandle->IsAborted()) {
-      
-      
+      // Aborted file handles always see their requests fail with ABORT_ERR,
+      // even if the request succeeded or failed with another error.
       mResultCode = NS_ERROR_DOM_FILEHANDLE_ABORT_ERR;
     } else if (NS_SUCCEEDED(mResultCode)) {
-      
+      // This may release the IPDL reference.
       mResultCode = SendSuccessResult();
     }
 
     if (NS_FAILED(mResultCode)) {
-      
+      // This should definitely release the IPDL reference.
       if (!SendFailureResult(mResultCode)) {
-        
-        mFileHandle->Abort( false);
+        // Abort the file handle.
+        mFileHandle->Abort(/* aForce */ false);
       }
     }
   }
@@ -1979,8 +1974,8 @@ nsresult GetMetadataOp::DoFileWork(FileHandle* aFileHandle) {
   nsresult rv;
 
   if (mFileHandle->Mode() == FileMode::Readwrite) {
-    
-    
+    // Force a flush (so all pending writes are flushed to the disk and file
+    // metadata is updated too).
 
     nsCOMPtr<nsIOutputStream> ostream = do_QueryInterface(mFileStream);
     MOZ_ASSERT(ostream);
@@ -2203,7 +2198,7 @@ void GetFileOp::GetResponse(FileRequestResponse& aResponse) {
   PendingIPCBlobParent* actor =
       PendingIPCBlobParent::Create(mBackgroundParent, blobImpl);
   if (NS_WARN_IF(!actor)) {
-    
+    // This can only fail if the child has crashed.
     aResponse = NS_ERROR_DOM_FILEHANDLE_UNKNOWN_ERR;
     return;
   }
@@ -2215,5 +2210,5 @@ void GetFileOp::GetResponse(FileRequestResponse& aResponse) {
   aResponse = response;
 }
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla

@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "IDBFileHandle.h"
 
@@ -34,10 +34,10 @@ RefPtr<IDBFileRequest> GenerateFileRequest(IDBFileHandle* aFileHandle) {
   MOZ_ASSERT(aFileHandle);
   aFileHandle->AssertIsOnOwningThread();
 
-  return IDBFileRequest::Create(aFileHandle,  false);
+  return IDBFileRequest::Create(aFileHandle, /* aWrapAsDOMRequest */ false);
 }
 
-}  
+}  // namespace
 
 IDBFileHandle::IDBFileHandle(IDBMutableFile* aMutableFile, FileMode aMode)
     : mMutableFile(aMutableFile),
@@ -74,7 +74,7 @@ IDBFileHandle::~IDBFileHandle() {
   }
 }
 
-
+// static
 RefPtr<IDBFileHandle> IDBFileHandle::Create(IDBMutableFile* aMutableFile,
                                             FileMode aMode) {
   MOZ_ASSERT(aMutableFile);
@@ -85,7 +85,7 @@ RefPtr<IDBFileHandle> IDBFileHandle::Create(IDBMutableFile* aMutableFile,
 
   fileHandle->BindToOwner(aMutableFile);
 
-  
+  // XXX Fix!
   MOZ_ASSERT(NS_IsMainThread(), "This won't work on non-main threads!");
 
   nsCOMPtr<nsIRunnable> runnable = do_QueryObject(fileHandle);
@@ -98,7 +98,7 @@ RefPtr<IDBFileHandle> IDBFileHandle::Create(IDBMutableFile* aMutableFile,
   return fileHandle;
 }
 
-
+// static
 IDBFileHandle* IDBFileHandle::GetCurrent() {
   MOZ_ASSERT(BackgroundChild::GetForCurrentThread());
 
@@ -116,7 +116,7 @@ void IDBFileHandle::AssertIsOnOwningThread() const {
   mMutableFile->AssertIsOnOwningThread();
 }
 
-#endif  
+#endif  // DEBUG
 
 void IDBFileHandle::SetBackgroundActor(BackgroundFileHandleChild* aActor) {
   AssertIsOnOwningThread();
@@ -137,7 +137,7 @@ void IDBFileHandle::StartRequest(IDBFileRequest* aFileRequest,
 
   mBackgroundActor->SendPBackgroundFileRequestConstructor(actor, aParams);
 
-  
+  // Balanced in BackgroundFileRequestChild::Recv__delete__().
   OnNewRequest();
 }
 
@@ -168,8 +168,8 @@ void IDBFileHandle::OnRequestFinished(bool aActorDestroyedNormally) {
         SendAbort();
       }
     } else {
-      
-      
+      // Don't try to send any more messages to the parent if the request actor
+      // was killed.
 #ifdef DEBUG
       MOZ_ASSERT(!mSentFinishOrAbort);
       mSentFinishOrAbort = true;
@@ -188,7 +188,7 @@ void IDBFileHandle::FireCompleteOrAbortEvents(bool aAborted) {
   mFiredCompleteOrAbort = true;
 #endif
 
-  
+  // TODO: Why is it necessary to create the Event on the heap at all?
   const auto event = CreateGenericEvent(
       this,
       aAborted ? nsDependentString(kAbortEventType)
@@ -206,16 +206,16 @@ void IDBFileHandle::FireCompleteOrAbortEvents(bool aAborted) {
 bool IDBFileHandle::IsOpen() const {
   AssertIsOnOwningThread();
 
-  
+  // If we haven't started anything then we're open.
   if (mReadyState == INITIAL) {
     return true;
   }
 
-  
-  
-  
-  
-  
+  // If we've already started then we need to check to see if we still have the
+  // mCreating flag set. If we do (i.e. we haven't returned to the event loop
+  // from the time we were created) then we are open. Otherwise check the
+  // currently running file handles to see if it's the same. We only allow other
+  // requests to be made if this file handle is currently running.
   if (mReadyState == LOADING && (mCreating || GetCurrent() == this)) {
     return true;
   }
@@ -227,8 +227,8 @@ void IDBFileHandle::Abort() {
   AssertIsOnOwningThread();
 
   if (IsFinishingOrDone()) {
-    
-    
+    // Already started (and maybe finished) the finish or abort so there is
+    // nothing to do here.
     return;
   }
 
@@ -244,8 +244,8 @@ void IDBFileHandle::Abort() {
   mAborted = true;
   mReadyState = DONE;
 
-  
-  
+  // Fire the abort event if there are no outstanding requests. Otherwise the
+  // abort event will be fired when all outstanding requests finish.
   if (needToSendAbort) {
     SendAbort();
   }
@@ -255,18 +255,18 @@ RefPtr<IDBFileRequest> IDBFileHandle::GetMetadata(
     const IDBFileMetadataParameters& aParameters, ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  
+  // Common state checking
   if (!CheckState(aRv)) {
     return nullptr;
   }
 
-  
+  // Argument checking for get metadata.
   if (!aParameters.mSize && !aParameters.mLastModified) {
     aRv.ThrowTypeError(u"Either size or lastModified should be true.");
     return nullptr;
   }
 
-  
+  // Do nothing if the window is closed
   if (!CheckWindow()) {
     return nullptr;
   }
@@ -286,15 +286,15 @@ RefPtr<IDBFileRequest> IDBFileHandle::Truncate(const Optional<uint64_t>& aSize,
                                                ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  
+  // State checking for write
   if (!CheckStateForWrite(aRv)) {
     return nullptr;
   }
 
-  
+  // Getting location and additional state checking for truncate
   uint64_t location;
   if (aSize.WasPassed()) {
-    
+    // Just in case someone calls us from C++
     MOZ_ASSERT(aSize.Value() != UINT64_MAX, "Passed wrong size!");
     location = aSize.Value();
   } else {
@@ -305,7 +305,7 @@ RefPtr<IDBFileRequest> IDBFileHandle::Truncate(const Optional<uint64_t>& aSize,
     location = mLocation;
   }
 
-  
+  // Do nothing if the window is closed
   if (!CheckWindow()) {
     return nullptr;
   }
@@ -327,12 +327,12 @@ RefPtr<IDBFileRequest> IDBFileHandle::Truncate(const Optional<uint64_t>& aSize,
 RefPtr<IDBFileRequest> IDBFileHandle::Flush(ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  
+  // State checking for write
   if (!CheckStateForWrite(aRv)) {
     return nullptr;
   }
 
-  
+  // Do nothing if the window is closed
   if (!CheckWindow()) {
     return nullptr;
   }
@@ -349,7 +349,7 @@ RefPtr<IDBFileRequest> IDBFileHandle::Flush(ErrorResult& aRv) {
 void IDBFileHandle::Abort(ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  
+  // This method is special enough for not using generic state checking methods.
 
   if (IsFinishingOrDone()) {
     aRv.Throw(NS_ERROR_DOM_FILEHANDLE_NOT_ALLOWED_ERR);
@@ -370,25 +370,20 @@ bool IDBFileHandle::CheckState(ErrorResult& aRv) {
 
 bool IDBFileHandle::CheckStateAndArgumentsForRead(uint64_t aSize,
                                                   ErrorResult& aRv) {
-  
+  // Common state checking
   if (!CheckState(aRv)) {
     return false;
   }
 
-  
+  // Additional state checking for read
   if (mLocation == UINT64_MAX) {
     aRv.Throw(NS_ERROR_DOM_FILEHANDLE_NOT_ALLOWED_ERR);
     return false;
   }
 
-  
+  // Argument checking for read
   if (!aSize) {
     aRv.ThrowTypeError(u"0 (Zero) is not a valid read size.");
-    return false;
-  }
-
-  if (aSize > UINT32_MAX) {
-    aRv.ThrowTypeError(u"Data size for read is too large.");
     return false;
   }
 
@@ -396,12 +391,12 @@ bool IDBFileHandle::CheckStateAndArgumentsForRead(uint64_t aSize,
 }
 
 bool IDBFileHandle::CheckStateForWrite(ErrorResult& aRv) {
-  
+  // Common state checking
   if (!CheckState(aRv)) {
     return false;
   }
 
-  
+  // Additional state checking for write
   if (mMode != FileMode::Readwrite) {
     aRv.Throw(NS_ERROR_DOM_FILEHANDLE_READ_ONLY_ERR);
     return false;
@@ -411,12 +406,12 @@ bool IDBFileHandle::CheckStateForWrite(ErrorResult& aRv) {
 }
 
 bool IDBFileHandle::CheckStateForWriteOrAppend(bool aAppend, ErrorResult& aRv) {
-  
+  // State checking for write
   if (!CheckStateForWrite(aRv)) {
     return false;
   }
 
-  
+  // Additional state checking for write
   if (!aAppend && mLocation == UINT64_MAX) {
     aRv.Throw(NS_ERROR_DOM_FILEHANDLE_NOT_ALLOWED_ERR);
     return false;
@@ -436,12 +431,12 @@ RefPtr<IDBFileRequest> IDBFileHandle::Read(uint64_t aSize, bool aHasEncoding,
                                            ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  
+  // State and argument checking for read
   if (!CheckStateAndArgumentsForRead(aSize, aRv)) {
     return nullptr;
   }
 
-  
+  // Do nothing if the window is closed
   if (!CheckWindow()) {
     return nullptr;
   }
@@ -488,7 +483,7 @@ RefPtr<IDBFileRequest> IDBFileHandle::WriteOrAppend(const nsAString& aValue,
                                                     ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  
+  // State checking for write or append
   if (!CheckStateForWriteOrAppend(aAppend, aRv)) {
     return nullptr;
   }
@@ -503,7 +498,7 @@ RefPtr<IDBFileRequest> IDBFileHandle::WriteOrAppend(const nsAString& aValue,
 
   FileRequestStringData stringData(cstr);
 
-  
+  // Do nothing if the window is closed
   if (!CheckWindow()) {
     return nullptr;
   }
@@ -516,7 +511,7 @@ RefPtr<IDBFileRequest> IDBFileHandle::WriteOrAppend(const ArrayBuffer& aValue,
                                                     ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  
+  // State checking for write or append
   if (!CheckStateForWriteOrAppend(aAppend, aRv)) {
     return nullptr;
   }
@@ -538,7 +533,7 @@ RefPtr<IDBFileRequest> IDBFileHandle::WriteOrAppend(const ArrayBuffer& aValue,
     return nullptr;
   }
 
-  
+  // Do nothing if the window is closed
   if (!CheckWindow()) {
     return nullptr;
   }
@@ -550,7 +545,7 @@ RefPtr<IDBFileRequest> IDBFileHandle::WriteOrAppend(
     const ArrayBufferView& aValue, bool aAppend, ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  
+  // State checking for write or append
   if (!CheckStateForWriteOrAppend(aAppend, aRv)) {
     return nullptr;
   }
@@ -572,7 +567,7 @@ RefPtr<IDBFileRequest> IDBFileHandle::WriteOrAppend(
     return nullptr;
   }
 
-  
+  // Do nothing if the window is closed
   if (!CheckWindow()) {
     return nullptr;
   }
@@ -584,7 +579,7 @@ RefPtr<IDBFileRequest> IDBFileHandle::WriteOrAppend(Blob& aValue, bool aAppend,
                                                     ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  
+  // State checking for write or append
   if (!CheckStateForWriteOrAppend(aAppend, aRv)) {
     return nullptr;
   }
@@ -614,7 +609,7 @@ RefPtr<IDBFileRequest> IDBFileHandle::WriteOrAppend(Blob& aValue, bool aAppend,
   FileRequestBlobData blobData;
   blobData.blob() = ipcBlob;
 
-  
+  // Do nothing if the window is closed
   if (!CheckWindow()) {
     return nullptr;
   }
@@ -698,17 +693,17 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(IDBFileHandle,
                                                 DOMEventTargetHelper)
-  
+  // Don't unlink mMutableFile!
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMETHODIMP
 IDBFileHandle::Run() {
   AssertIsOnOwningThread();
 
-  
+  // We're back at the event loop, no longer newborn.
   mCreating = false;
 
-  
+  // Maybe finish if there were no requests generated.
   if (mReadyState == INITIAL) {
     mReadyState = DONE;
 
@@ -725,7 +720,7 @@ void IDBFileHandle::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   aVisitor.SetParentTarget(mMutableFile, false);
 }
 
-
+// virtual
 JSObject* IDBFileHandle::WrapObject(JSContext* aCx,
                                     JS::Handle<JSObject*> aGivenProto) {
   AssertIsOnOwningThread();
@@ -733,5 +728,5 @@ JSObject* IDBFileHandle::WrapObject(JSContext* aCx,
   return IDBFileHandle_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
