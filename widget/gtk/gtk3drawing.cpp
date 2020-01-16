@@ -2205,7 +2205,7 @@ static gint moz_gtk_header_bar_paint(WidgetNodeType widgetType, cairo_t* cr,
   
   if (widgetType == MOZ_GTK_HEADER_BAR) {
     GtkStyleContext* windowStyle =
-        GetStyleContext(MOZ_GTK_WINDOW, state->scale);
+        GetStyleContext(MOZ_GTK_HEADERBAR_WINDOW, state->scale);
     bool solidDecorations =
         gtk_style_context_has_class(windowStyle, "solid-csd");
     GtkStyleContext* decorationStyle =
@@ -2960,22 +2960,17 @@ const ScrollbarGTKMetrics* GetActiveScrollbarMetrics(
 
 void InitWindowDecorationSize(CSDWindowDecorationSize* sWindowDecorationSize,
                               bool aPopupWindow) {
+  bool solidDecorations = gtk_style_context_has_class(
+      GetStyleContext(MOZ_GTK_HEADERBAR_WINDOW, 1), "solid-csd");
   
-  static auto sGtkRenderBackgroundGetClip = (void (*)(
-      GtkStyleContext*, gdouble, gdouble, gdouble, gdouble,
-      GdkRectangle*))dlsym(RTLD_DEFAULT, "gtk_render_background_get_clip");
-
-  if (!sGtkRenderBackgroundGetClip) {
+  if (solidDecorations) {
     sWindowDecorationSize->decorationSize = {0, 0, 0, 0};
     return;
   }
 
   
   
-  GtkStyleContext* context = GetStyleContext(MOZ_GTK_WINDOW, 1);
-  bool solidDecorations = gtk_style_context_has_class(context, "solid-csd");
-  context = GetStyleContext(solidDecorations ? MOZ_GTK_WINDOW_DECORATION_SOLID
-                                             : MOZ_GTK_WINDOW_DECORATION);
+  GtkStyleContext* context = GetStyleContext(MOZ_GTK_WINDOW_DECORATION);
 
   
   GtkBorder padding;
@@ -2985,10 +2980,14 @@ void InitWindowDecorationSize(CSDWindowDecorationSize* sWindowDecorationSize,
   gtk_style_context_get_padding(context, state, &padding);
   sWindowDecorationSize->decorationSize += padding;
 
-  GtkBorder margin;
-  gtk_style_context_get_margin(context, state, &margin);
-
   
+  static auto sGtkRenderBackgroundGetClip = (void (*)(
+      GtkStyleContext*, gdouble, gdouble, gdouble, gdouble,
+      GdkRectangle*))dlsym(RTLD_DEFAULT, "gtk_render_background_get_clip");
+
+  if (!sGtkRenderBackgroundGetClip) {
+    return;
+  }
 
   GdkRectangle clip;
   sGtkRenderBackgroundGetClip(context, 0, 0, 0, 0, &clip);
@@ -3001,7 +3000,11 @@ void InitWindowDecorationSize(CSDWindowDecorationSize* sWindowDecorationSize,
 
   
   
+  
   if (!aPopupWindow) {
+    GtkBorder margin;
+    gtk_style_context_get_margin(context, state, &margin);
+
     extents.top = MAX(extents.top, margin.top);
     extents.right = MAX(extents.right, margin.right);
     extents.bottom = MAX(extents.bottom, margin.bottom);
