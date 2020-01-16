@@ -183,19 +183,6 @@ nsresult UrlClassifierCommon::SetTrackingInfo(
   NS_ENSURE_ARG(!aLists.IsEmpty());
 
   
-  nsCOMPtr<nsIParentChannel> parentChannel;
-  NS_QueryNotificationCallbacks(aChannel, parentChannel);
-  if (parentChannel) {
-    
-    
-    nsAutoCString strLists, strHashes;
-    TablesToString(aLists, strLists);
-    TablesToString(aFullHashes, strHashes);
-
-    parentChannel->SetClassifierMatchedTrackingInfo(strLists, strHashes);
-    return NS_OK;
-  }
-
   nsresult rv;
   nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
       do_QueryInterface(aChannel, &rv);
@@ -203,6 +190,21 @@ nsresult UrlClassifierCommon::SetTrackingInfo(
 
   if (classifiedChannel) {
     classifiedChannel->SetMatchedTrackingInfo(aLists, aFullHashes);
+  }
+
+  nsCOMPtr<nsIParentChannel> parentChannel;
+  NS_QueryNotificationCallbacks(aChannel, parentChannel);
+  if (parentChannel) {
+    
+    
+    
+    
+    
+    nsAutoCString strLists, strHashes;
+    TablesToString(aLists, strLists);
+    TablesToString(aFullHashes, strHashes);
+
+    parentChannel->SetClassifierMatchedTrackingInfo(strLists, strHashes);
   }
 
   return NS_OK;
@@ -260,6 +262,15 @@ nsresult UrlClassifierCommon::SetBlockedContent(nsIChannel* channel,
   }
 
   
+  nsresult rv;
+  nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
+      do_QueryInterface(channel, &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (classifiedChannel) {
+    classifiedChannel->SetMatchedInfo(aList, aProvider, aFullHash);
+  }
+
   nsCOMPtr<nsIParentChannel> parentChannel;
   NS_QueryNotificationCallbacks(channel, parentChannel);
   nsCOMPtr<nsIURI> uriBeingLoaded =
@@ -274,19 +285,13 @@ nsresult UrlClassifierCommon::SetBlockedContent(nsIChannel* channel,
   if (parentChannel) {
     
     
+    
+    
+    
     parentChannel->SetClassifierMatchedInfo(aList, aProvider, aFullHash);
 
     UrlClassifierCommon::NotifyChannelBlocked(channel, uriBeingLoaded, state);
     return NS_OK;
-  }
-
-  nsresult rv;
-  nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
-      do_QueryInterface(channel, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (classifiedChannel) {
-    classifiedChannel->SetMatchedInfo(aList, aProvider, aFullHash);
   }
 
   nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil = services::GetThirdPartyUtil();
