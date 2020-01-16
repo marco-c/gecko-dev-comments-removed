@@ -6340,8 +6340,7 @@ void nsGlobalWindowOuter::NotifyWindowIDDestroyed(const char* aTopic) {
   Dispatch(TaskCategory::Other, runnable.forget());
 }
 
-Element* nsGlobalWindowOuter::GetFrameElementOuter(
-    nsIPrincipal& aSubjectPrincipal) {
+Element* nsGlobalWindowOuter::GetFrameElement(nsIPrincipal& aSubjectPrincipal) {
   
   Element* element = GetFrameElement();
   if (!element) {
