@@ -219,10 +219,20 @@ function terminalInputChanged(expression) {
       return;
     }
 
+    const { terminalInput = "" } = getState().history;
+    
+    if (
+      terminalInput &&
+      expression &&
+      expression.trim() === terminalInput.trim()
+    ) {
+      return;
+    }
+
     const originalExpression = expression;
     dispatch({
       type: SET_TERMINAL_INPUT,
-      expression,
+      expression: expression.trim(),
     });
 
     let mapped;
