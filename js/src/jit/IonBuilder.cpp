@@ -2571,9 +2571,6 @@ AbortReasonOr<Ok> IonBuilder::inspectOpcode(JSOp op, bool* restarted) {
     case JSOP_FORCEINTERPRETER:
       
       break;
-
-    case JSOP_LIMIT:
-      break;
   }
 
   
