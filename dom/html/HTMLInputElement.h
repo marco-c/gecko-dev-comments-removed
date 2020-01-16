@@ -838,6 +838,7 @@ class HTMLInputElement final : public TextControlElement,
 
 
   MOZ_CAN_RUN_SCRIPT nsIEditor* GetEditor();
+  bool HasEditor();
 
   bool IsInputEventTarget() const { return IsSingleLineTextControl(false); }
 
