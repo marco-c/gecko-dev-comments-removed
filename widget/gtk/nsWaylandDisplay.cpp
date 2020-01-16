@@ -541,9 +541,10 @@ bool nsGbmLib::IsAvailable() {
 }
 
 bool nsGbmLib::IsModifierAvailable() {
-  
-  
-  return false;
+  if (!Load()) {
+    return false;
+  }
+  return sDrmPrimeHandleToFD != nullptr;
 }
 
 bool nsGbmLib::Load() {
