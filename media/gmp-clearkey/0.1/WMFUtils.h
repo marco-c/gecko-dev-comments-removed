@@ -232,7 +232,7 @@ CreateMFT(const CLSID& clsid, const char* aDllName,
 
 
 
-const char* WMFDecoderDllName() { return "msmpeg2vdec.dll"; }
+const char* WMFDecoderDllName();
 
 
 

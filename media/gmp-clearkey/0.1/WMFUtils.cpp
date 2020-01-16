@@ -66,6 +66,16 @@ static bool LinkMfplat() {
   return sInitOk;
 }
 
+const char* WMFDecoderDllName() {
+  
+  
+  if (IsWindows7OrGreater()) {
+    return "msmpeg2vdec.dll";
+  } else {
+    return "mfh264dec.dll";
+  }
+}
+
 bool EnsureLibs() {
   static bool sInitDone = false;
   static bool sInitOk = false;
