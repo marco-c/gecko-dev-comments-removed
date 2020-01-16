@@ -38,7 +38,10 @@ _build_url_list()
 async def heavy(session, options):
     metadata = {}
     max = options.get("max_urls", 150)
-
+    
+    platform = options.get("platform", "")
+    if "gecko" in platform:
+        max = 30
     tabs = TabSwitcher(session, options)
     await tabs.create_windows()
     visited = 0
