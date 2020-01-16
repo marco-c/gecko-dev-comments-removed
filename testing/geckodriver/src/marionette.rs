@@ -208,7 +208,7 @@ impl MarionetteHandler {
             format!("Failed to set preferences: {}", e),
         ))?;
 
-        handler.prepare(&profile).map_err(|e| WebDriverError::new(
+        handler.prepare(&profile, options.env.unwrap_or_default()).map_err(|e| WebDriverError::new(
             ErrorStatus::UnknownError,
             e.to_string()
         ))?;
@@ -250,12 +250,6 @@ impl MarionetteHandler {
         let mut runner = FirefoxRunner::new(&binary, profile);
 
         
-        runner
-            .env("MOZ_CRASHREPORTER", "1")
-            .env("MOZ_CRASHREPORTER_NO_REPORT", "1")
-            .env("MOZ_CRASHREPORTER_SHUTDOWN", "1");
-
-        
         runner.arg("-marionette");
         if self.settings.jsdebugger {
             runner.arg("-jsdebugger");
@@ -263,6 +257,15 @@ impl MarionetteHandler {
         if let Some(args) = options.args.as_ref() {
             runner.args(args);
         }
+        if let Some(env) = options.env {
+            runner.envs(env);
+        }
+
+        
+        runner
+            .env("MOZ_CRASHREPORTER", "1")
+            .env("MOZ_CRASHREPORTER_NO_REPORT", "1")
+            .env("MOZ_CRASHREPORTER_SHUTDOWN", "1");
 
         let browser_proc = runner.start().map_err(|e| {
             WebDriverError::new(
