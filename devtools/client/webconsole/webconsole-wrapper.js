@@ -129,38 +129,8 @@ class WebConsoleWrapper {
     });
   }
 
-  dispatchMessageAdd(packet, waitForResponse) {
-    
-    
-    
-    
-    let promise;
-    
-    if (waitForResponse && document.visibilityState === "visible") {
-      const timeStampToMatch = packet.message
-        ? packet.message.timeStamp
-        : packet.timestamp;
-
-      promise = new Promise(resolve => {
-        this.webConsoleUI.on(
-          "new-messages",
-          function onThisMessage(messages) {
-            for (const m of messages) {
-              if (m.timeStamp === timeStampToMatch) {
-                resolve(m.node);
-                this.webConsoleUI.off("new-messages", onThisMessage);
-                return;
-              }
-            }
-          }.bind(this)
-        );
-      });
-    } else {
-      promise = Promise.resolve();
-    }
-
-    this.batchedMessageAdd(packet);
-    return promise;
+  dispatchMessageAdd(packet) {
+    this.batchedMessagesAdd([packet]);
   }
 
   dispatchMessagesAdd(messages) {
@@ -175,7 +145,7 @@ class WebConsoleWrapper {
     this.queuedMessageUpdates = [];
     this.queuedRequestUpdates = [];
     store.dispatch(actions.messagesClear());
-    this.webConsoleUI.emit("messages-cleared");
+    this.webConsoleUI.emitForTests("messages-cleared");
   }
 
   dispatchPrivateMessagesClear() {
@@ -305,11 +275,6 @@ class WebConsoleWrapper {
     return this.setTimeoutIfNeeded();
   }
 
-  batchedMessageAdd(message) {
-    this.queuedMessageAdds.push(message);
-    this.setTimeoutIfNeeded();
-  }
-
   batchedMessagesAdd(messages) {
     this.queuedMessageAdds = this.queuedMessageAdds.concat(messages);
     this.setTimeoutIfNeeded();
@@ -384,7 +349,7 @@ class WebConsoleWrapper {
             await store.dispatch(
               actions.networkMessageUpdate(message, null, res)
             );
-            this.webConsoleUI.emit("network-message-updated", res);
+            this.webConsoleUI.emitForTests("network-message-updated", res);
           }
           this.queuedMessageUpdates = [];
         }
@@ -401,7 +366,7 @@ class WebConsoleWrapper {
           
           
           
-          this.webConsoleUI.emit("network-request-payload-ready");
+          this.webConsoleUI.emitForTests("network-request-payload-ready");
         }
         done();
       }, 50);
