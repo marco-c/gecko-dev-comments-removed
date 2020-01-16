@@ -281,6 +281,11 @@ impl Device {
     }
 
     
+    pub fn default_color(&self) -> RGBA {
+        convert_nscolor_to_rgba(self.pref_sheet_prefs().mDefaultColor)
+    }
+
+    
     #[inline]
     fn effective_text_zoom(&self) -> f32 {
         let pc = match self.pres_context() {
