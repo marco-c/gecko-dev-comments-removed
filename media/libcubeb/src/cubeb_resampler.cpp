@@ -66,41 +66,19 @@ long passthrough_resampler<T>::fill(void * input_buffer, long * input_frames_cou
          (output_buffer && !input_buffer && (!input_frames_count || *input_frames_count == 0)) ||
          (input_buffer && !output_buffer && output_frames == 0));
 
-  
-  
-  
-  void * in_buf = input_buffer;
-  unsigned long pop_input_count = 0u;
-  if (input_buffer && !output_buffer) {
+  if (input_buffer) {
+    if (!output_buffer) {
       output_frames = *input_frames_count;
-  } else if(input_buffer) {
-    if (internal_input_buffer.length() != 0) {
-      
-      
-      
-      internal_input_buffer.push(static_cast<T*>(input_buffer),
-                                 frames_to_samples(*input_frames_count));
-      in_buf = internal_input_buffer.data();
-      pop_input_count = frames_to_samples(output_frames);
-    } else if(*input_frames_count > output_frames) {
-      
-      
-      
-      
-      assert(pop_input_count == 0);
-      unsigned long samples_off = frames_to_samples(output_frames);
-      internal_input_buffer.push(static_cast<T*>(input_buffer) + samples_off,
-                                 frames_to_samples(*input_frames_count - output_frames));
     }
+    internal_input_buffer.push(static_cast<T*>(input_buffer),
+                               frames_to_samples(*input_frames_count));
   }
 
-  long rv = data_callback(stream, user_ptr, in_buf, output_buffer, output_frames);
+  long rv = data_callback(stream, user_ptr, internal_input_buffer.data(),
+                          output_buffer, output_frames);
 
   if (input_buffer) {
-    if (pop_input_count) {
-      internal_input_buffer.pop(nullptr, pop_input_count);
-    }
-
+    internal_input_buffer.pop(nullptr, frames_to_samples(output_frames));
     *input_frames_count = output_frames;
     drop_audio_if_needed();
   }
