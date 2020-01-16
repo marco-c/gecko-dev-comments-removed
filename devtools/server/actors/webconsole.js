@@ -1298,16 +1298,20 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       }
     }
 
-    if (!awaitResult) {
-      this._lastConsoleInputEvaluation = result;
-    } else {
-      
-      
-      
-      
-      awaitResult.then(res => {
-        this._lastConsoleInputEvaluation = this.makeDebuggeeValue(res);
-      });
+    
+    
+    if (!request.eager) {
+      if (!awaitResult) {
+        this._lastConsoleInputEvaluation = result;
+      } else {
+        
+        
+        
+        
+        awaitResult.then(res => {
+          this._lastConsoleInputEvaluation = this.makeDebuggeeValue(res);
+        });
+      }
     }
 
     return {
