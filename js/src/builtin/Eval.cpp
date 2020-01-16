@@ -572,8 +572,6 @@ JS_FRIEND_API bool js::ExecuteInJSMEnvironment(JSContext* cx,
     
     
     
-    
-    
 
     
     if (!js::CreateObjectsForEnvironmentChain(cx, targetObj, env, &env)) {
