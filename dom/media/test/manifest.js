@@ -301,6 +301,8 @@ var gPlayTests = [
     duration: 1.108,
   },
   
+  { name: "wavedata_float.wav", type: "audio/x-wav", duration: 1.0 },
+  
   { name: "wavedata_s24.wav", type: "audio/x-wav", duration: 1.0 },
   
   { name: "wavedata_alaw.wav", type: "audio/x-wav", duration: 1.0 },
