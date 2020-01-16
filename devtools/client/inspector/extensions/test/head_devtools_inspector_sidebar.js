@@ -58,7 +58,7 @@ function waitForObjectInspector(panelDoc, waitForNodeWithType = "object") {
   const selector = `.object-inspector .objectBox-${waitForNodeWithType}`;
   return ContentTaskUtils.waitForCondition(() => {
     return panelDoc.querySelectorAll(selector).length > 0;
-  });
+  }, `Wait for objectInspector's node type "${waitForNodeWithType}" to be loaded`);
 }
 
 
@@ -100,10 +100,9 @@ async function testSetExpressionSidebarPanel(panel, expected) {
   );
   const [objectInspector] = objectInspectors;
 
-  
   await ContentTaskUtils.waitForCondition(() => {
     return objectInspector.querySelectorAll(".node").length >= nodesLength;
-  });
+  }, "Wait the objectInspector to have been fully rendered");
 
   const oiNodes = objectInspector.querySelectorAll(".node");
 

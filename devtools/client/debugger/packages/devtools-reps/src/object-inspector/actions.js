@@ -63,7 +63,7 @@ function nodeLoadProperties(node: Node, actor) {
 
       
       
-      if (!client.releaseActor) {
+      if (!client || !client.releaseActor) {
         actor = null;
       }
 
@@ -165,7 +165,7 @@ function rootsChanged(props: Props) {
 
 async function releaseActors(state, client, dispatch) {
   const actors = getActors(state);
-  if (!client.releaseActor || actors.size === 0) {
+  if (!client || !client.releaseActor || actors.size === 0) {
     return;
   }
 

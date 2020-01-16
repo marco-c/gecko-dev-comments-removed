@@ -9,7 +9,7 @@ const promise = require("promise");
 const EventEmitter = require("devtools/shared/event-emitter");
 const { executeSoon } = require("devtools/shared/DevToolsUtils");
 const { Toolbox } = require("devtools/client/framework/toolbox");
-const Store = require("devtools/client/inspector/store");
+const createStore = require("devtools/client/inspector/store");
 const InspectorStyleChangeTracker = require("devtools/client/inspector/shared/style-change-tracker");
 
 
@@ -64,12 +64,6 @@ loader.lazyRequireGetter(
   this,
   "saveScreenshot",
   "devtools/shared/screenshot/save"
-);
-loader.lazyRequireGetter(
-  this,
-  "ObjectFront",
-  "devtools/shared/fronts/object",
-  true
 );
 
 
@@ -153,29 +147,7 @@ function Inspector(toolbox) {
   this.panelWin = window;
   this.panelWin.inspector = this;
   this.telemetry = toolbox.telemetry;
-  this.store = Store({
-    createObjectFront: object => {
-      return new ObjectFront(
-        this.inspectorFront.conn,
-        this.inspectorFront.targetFront,
-        this.inspectorFront,
-        object
-      );
-    },
-    releaseActor: actor => {
-      if (!actor) {
-        return;
-      }
-      const objFront = toolbox.target.client.getFrontByID(actor);
-      if (objFront) {
-        objFront.release();
-        return;
-      }
-
-      
-      toolbox.target.client.release(actor).catch(() => {});
-    },
-  });
+  this.store = createStore();
 
   
   

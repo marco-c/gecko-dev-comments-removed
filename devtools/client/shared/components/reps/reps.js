@@ -1,7 +1,7 @@
 
 
 
- 
+
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("devtools/client/shared/vendor/react-prop-types"), require("devtools/client/shared/vendor/react-dom-factories"), require("devtools/client/shared/vendor/react"), require("Services"), require("devtools/client/shared/vendor/react-redux"));
@@ -8033,7 +8033,7 @@ function nodeLoadProperties(node, actor) {
       const properties = await loadItemProperties(node, client, loadedProperties); 
       
 
-      if (!client.releaseActor) {
+      if (!client || !client.releaseActor) {
         actor = null;
       }
 
@@ -8163,7 +8163,7 @@ function rootsChanged(props) {
 async function releaseActors(state, client, dispatch) {
   const actors = getActors(state);
 
-  if (!client.releaseActor || actors.size === 0) {
+  if (!client || !client.releaseActor || actors.size === 0) {
     return;
   }
 

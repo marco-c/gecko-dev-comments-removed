@@ -13,6 +13,10 @@ const {
   registerFront,
 } = require("devtools/shared/protocol");
 
+const {
+  getAdHocFrontOrPrimitiveGrip,
+} = require("devtools/shared/fronts/object");
+
 
 
 
@@ -24,6 +28,68 @@ class WebExtensionInspectedWindowFront extends FrontClassWithSpec(
 
     
     this.formAttributeName = "webExtensionInspectedWindowActor";
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async eval(webExtensionCallerInfo, expression, options = {}) {
+    const { consoleFront } = options;
+
+    if (consoleFront) {
+      options.evalResultAsGrip = true;
+      options.toolboxConsoleActorID = consoleFront.actor;
+      delete options.consoleFront;
+    }
+
+    const response = await super.eval(
+      webExtensionCallerInfo,
+      expression,
+      options
+    );
+
+    
+    if (!consoleFront) {
+      return response;
+    }
+
+    if (
+      !response.hasOwnProperty("exceptionInfo") &&
+      !response.hasOwnProperty("valueGrip")
+    ) {
+      throw new Error(
+        "Response does not have `exceptionInfo` or `valueGrip` property"
+      );
+    }
+
+    if (response.exceptionInfo) {
+      console.error(
+        response.exceptionInfo.description,
+        ...(response.exceptionInfo.details || [])
+      );
+      return response;
+    }
+
+    
+    
+    
+    return getAdHocFrontOrPrimitiveGrip(
+      response.valueGrip,
+      consoleFront || this
+    );
   }
 }
 

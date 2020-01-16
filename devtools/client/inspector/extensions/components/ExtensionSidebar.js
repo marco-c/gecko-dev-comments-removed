@@ -18,8 +18,8 @@ const ExtensionPage = createFactory(
 const ObjectTreeView = createFactory(
   require("devtools/client/inspector/extensions/components/ObjectTreeView")
 );
-const ObjectValueGripView = createFactory(
-  require("devtools/client/inspector/extensions/components/ObjectValueGripView")
+const ExpressionResultView = createFactory(
+  require("devtools/client/inspector/extensions/components/ExpressionResultView")
 );
 const Types = require("devtools/client/inspector/extensions/types");
 
@@ -58,7 +58,7 @@ class ExtensionSidebar extends PureComponent {
     const {
       iframeURL,
       object,
-      objectValueGrip,
+      expressionResult,
       rootTitle,
       viewMode = "empty-sidebar",
     } = extensionsSidebar[id] || {};
@@ -70,8 +70,8 @@ class ExtensionSidebar extends PureComponent {
         sidebarContentEl = ObjectTreeView({ object });
         break;
       case "object-value-grip-view":
-        sidebarContentEl = ObjectValueGripView({
-          objectValueGrip,
+        sidebarContentEl = ExpressionResultView({
+          expressionResult,
           rootTitle,
           serviceContainer,
         });

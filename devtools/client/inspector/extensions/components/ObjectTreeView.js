@@ -19,7 +19,7 @@ const TreeView = createFactory(TreeViewClass);
 
 
 
-class ObjectTreeView extends PureComponent {
+class ExpressionResultView extends PureComponent {
   static get propTypes() {
     return {
       object: PropTypes.object.isRequired,
@@ -61,4 +61,4 @@ class ObjectTreeView extends PureComponent {
   }
 }
 
-module.exports = ObjectTreeView;
+module.exports = ExpressionResultView;

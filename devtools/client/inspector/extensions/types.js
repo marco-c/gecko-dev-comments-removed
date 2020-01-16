@@ -9,8 +9,6 @@ const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 
 exports.serviceContainer = {
-  createObjectFront: PropTypes.func.isRequired,
-  releaseActor: PropTypes.func.isRequired,
   highlightDomElement: PropTypes.func.isRequired,
   unHighlightDomElement: PropTypes.func.isRequired,
   openNodeInInspector: PropTypes.func.isRequired,
