@@ -5182,25 +5182,6 @@ nsresult QuotaManager::InitializeOrigin(PersistenceType aPersistenceType,
     if (!ok) {
       
       
-      
-      
-      
-      
-      
-      
-      
-      
-      if (Client::IsDeprecatedClient(leafName)) {
-        rv = file->Remove(true);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          CONTINUE_IN_NIGHTLY_RETURN_IN_OTHERS(rv);
-        }
-
-        MOZ_DIAGNOSTIC_ASSERT(false, "Found a deprecated client");
-      }
-
-      
-      
       UNKNOWN_FILE_WARNING(leafName);
       continue;
     }
@@ -11839,6 +11820,9 @@ nsresult UpgradeStorageFrom2_1To2_2Helper::PrepareClientDirectory(
   AssertIsOnIOThread();
 
   if (Client::IsDeprecatedClient(aLeafName)) {
+    QM_WARNING("Deleting deprecated %s client!",
+               NS_ConvertUTF16toUTF8(aLeafName).get());
+
     nsresult rv = aFile->Remove(true);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;

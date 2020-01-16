@@ -16760,6 +16760,8 @@ nsresult QuotaClient::UpgradeStorageFrom2_1To2_2(nsIFile* aDirectory) {
     
     
     if (StringEndsWith(leafName, NS_LITERAL_STRING(".tmp"))) {
+      IDB_WARNING("Deleting unknown temporary file!");
+
       rv = file->Remove(false);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
