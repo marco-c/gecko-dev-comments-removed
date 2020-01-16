@@ -25,10 +25,6 @@
 
 namespace js {
 
-namespace frontend {
-class ScopeCreationData;
-};
-
 class BaseScopeData;
 class ModuleObject;
 class AbstractScope;
@@ -243,7 +239,7 @@ class WrappedPtrOperations<Scope*, Wrapper> {
 
 class Scope : public js::gc::TenuredCell {
   friend class GCMarker;
-  friend class frontend::ScopeCreationData;
+  friend class ScopeCreationData;
 
   
   const GCPtrScope enclosing_;
@@ -397,7 +393,7 @@ class LexicalScope : public Scope {
   friend class Scope;
   friend class BindingIter;
   friend class GCMarker;
-  friend class frontend::ScopeCreationData;
+  friend class ScopeCreationData;
 
  public:
   
@@ -625,7 +621,7 @@ class VarScope : public Scope {
   friend class GCMarker;
   friend class BindingIter;
   friend class Scope;
-  friend class frontend::ScopeCreationData;
+  friend class ScopeCreationData;
 
  public:
   
@@ -800,7 +796,7 @@ class EvalScope : public Scope {
   friend class Scope;
   friend class BindingIter;
   friend class GCMarker;
-  friend class frontend::ScopeCreationData;
+  friend class ScopeCreationData;
 
  public:
   
@@ -887,7 +883,7 @@ class ModuleScope : public Scope {
   friend class BindingIter;
   friend class Scope;
   friend class AbstractScope;
-  friend class frontend::ScopeCreationData;
+  friend class ScopeCreationData;
   static const ScopeKind classScopeKind_ = ScopeKind::Module;
 
  public:
