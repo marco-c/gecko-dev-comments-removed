@@ -226,7 +226,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
       aRv.Throw(NS_ERROR_NOT_INITIALIZED);
       return nullptr;
     }
-    return GetCommonAncestor();
+    return GetClosestCommonInclusiveAncestor();
   }
   void InsertNode(nsINode& aNode, ErrorResult& aErr);
   bool IntersectsNode(nsINode& aNode, ErrorResult& aRv);

@@ -399,7 +399,10 @@ class nsContentUtils {
 
 
 
-  static nsINode* GetCommonAncestor(nsINode* aNode1, nsINode* aNode2) {
+
+
+  static nsINode* GetClosestCommonInclusiveAncestor(nsINode* aNode1,
+                                                    nsINode* aNode2) {
     if (aNode1 == aNode2) {
       return aNode1;
     }
