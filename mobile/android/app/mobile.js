@@ -746,14 +746,7 @@ pref("dom.serviceWorkers.enabled", true);
 pref("dom.serviceWorkers.disable_open_click_delay", 5000);
 
 pref("dom.push.debug", false);
-
-
-pref("dom.push.serverURL", "https://updates.push.services.mozilla.com/v1/gcm/@MOZ_ANDROID_GCM_SENDERID@");
 pref("dom.push.maxRecentMessageIDsPerSubscription", 0);
-
-#ifdef MOZ_ANDROID_GCM
-  pref("dom.push.enabled", true);
-#endif
 
 
 pref("identity.fxaccounts.remote.webchannel.uri", "https://accounts.firefox.com");
