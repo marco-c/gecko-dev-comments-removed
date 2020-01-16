@@ -149,6 +149,13 @@ exports.evalWithDebugger = function(string, options = {}, webConsole) {
     allowSideEffects(dbg, sideEffectData);
   }
 
+  
+  
+  
+  if (!frame && result && "throw" in result) {
+    parseErrorOutput(dbgWindow, string);
+  }
+
   const { helperResult } = helpers;
 
   
@@ -170,18 +177,11 @@ function getEvalResult(string, evalOptions, bindings, frame, dbgWindow) {
   if (frame) {
     return frame.evalWithBindings(string, bindings, evalOptions);
   }
-  const result = dbgWindow.executeInGlobalWithBindings(
+  return dbgWindow.executeInGlobalWithBindings(
     string,
     bindings,
     evalOptions
   );
-  
-  
-  
-  if (result && "throw" in result) {
-    parseErrorOutput(dbgWindow, string);
-  }
-  return result;
 }
 
 function parseErrorOutput(dbgWindow, string) {
