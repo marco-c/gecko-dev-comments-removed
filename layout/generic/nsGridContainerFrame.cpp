@@ -7833,14 +7833,24 @@ nsFrameState nsGridContainerFrame::ComputeSelfSubgridBits() const {
   
   
   
-  auto* display = StyleDisplay();
-  if (display->IsContainLayout() || display->IsContainPaint()) {
-    return nsFrameState(0);
+  
+  {
+    const auto* display = StyleDisplay();
+    if (display->IsContainLayout() || display->IsContainPaint()) {
+      return nsFrameState(0);
+    }
   }
 
   
   auto* parent = GetParent();
   while (parent && parent->GetContent() == GetContent()) {
+    
+    
+    
+    const auto* parentDisplay = parent->StyleDisplay();
+    if (parentDisplay->IsContainLayout() || parentDisplay->IsContainPaint()) {
+      return nsFrameState(0);
+    }
     parent = parent->GetParent();
   }
   nsFrameState bits = nsFrameState(0);
