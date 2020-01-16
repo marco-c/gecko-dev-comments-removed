@@ -136,6 +136,8 @@ XMLStylesheetProcessingInstruction::GetStyleSheetInfo() {
       CORS_NONE,
       title,
       media,
+       EmptyString(),
+       EmptyString(),
       alternate ? HasAlternateRel::Yes : HasAlternateRel::No,
       IsInline::No,
       IsExplicitlyEnabled::No,

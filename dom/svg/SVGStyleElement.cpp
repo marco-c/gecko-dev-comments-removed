@@ -195,6 +195,10 @@ Maybe<nsStyleLinkElement::SheetInfo> SVGStyleElement::GetStyleSheetInfo() {
       AttrValueToCORSMode(GetParsedAttr(nsGkAtoms::crossorigin)),
       title,
       media,
+       EmptyString(),
+      
+
+       EmptyString(),
       HasAlternateRel::No,
       IsInline::Yes,
       IsExplicitlyEnabled::No,
