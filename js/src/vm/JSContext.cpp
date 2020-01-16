@@ -62,6 +62,7 @@
 #include "vm/Realm.h"
 #include "vm/Shape.h"
 #include "vm/StringType.h"  
+#include "vm/ToSource.h"    
 
 #include "vm/Compartment-inl.h"
 #include "vm/JSObject-inl.h"

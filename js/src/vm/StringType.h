@@ -1680,12 +1680,6 @@ static MOZ_ALWAYS_INLINE JSString* ToString(JSContext* cx, JS::HandleValue v) {
 inline bool ValueToStringBuffer(JSContext* cx, const Value& v,
                                 StringBuffer& sb);
 
-
-
-
-
-extern JSString* ValueToSource(JSContext* cx, HandleValue v);
-
 } 
 
 MOZ_ALWAYS_INLINE bool JSString::getChar(JSContext* cx, size_t index,

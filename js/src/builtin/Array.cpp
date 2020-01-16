@@ -38,6 +38,7 @@
 #include "vm/JSObject.h"
 #include "vm/SelfHosting.h"
 #include "vm/Shape.h"
+#include "vm/ToSource.h"  
 #include "vm/TypedArrayObject.h"
 #include "vm/WrapperObject.h"
 

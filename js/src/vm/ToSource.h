@@ -1,0 +1,20 @@
+
+
+
+
+
+
+#ifndef vm_ToSource_h
+#define vm_ToSource_h
+
+#include "js/TypeDecls.h"
+
+namespace js {
+
+
+
+JSString* ValueToSource(JSContext* cx, JS::HandleValue v);
+
+}  
+
+#endif 
