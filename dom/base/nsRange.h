@@ -411,12 +411,6 @@ class nsRange final : public mozilla::dom::AbstractRange,
   nsINode* GetRegisteredClosestCommonInclusiveAncestor();
 
   
-  static bool IsNodeInSortedRanges(nsINode* aNode, uint32_t aStartOffset,
-                                   uint32_t aEndOffset,
-                                   const nsTArray<const nsRange*>& aRanges,
-                                   size_t aRangeStart, size_t aRangeEnd);
-
-  
   
   
   class MOZ_RAII AutoCalledByJSRestore final {
