@@ -32,8 +32,6 @@ var gExceptionPaths = [
 
   
   "resource://payments/",
-  "resource://normandy-content/shield-content-frame.js",
-  "resource://normandy-content/shield-content-process.js",
 
   
   "resource://activity-stream/data/content/tippytop/images/",
