@@ -1739,7 +1739,7 @@ nsresult PresShell::Initialize() {
       
       
       mFrameConstructor->ContentInserted(
-          root, nullptr, nsCSSFrameConstructor::InsertionKind::Sync);
+          root, nsCSSFrameConstructor::InsertionKind::Sync);
 
       
       
@@ -4283,7 +4283,7 @@ void PresShell::ContentInserted(nsIContent* aChild) {
   mPresContext->RestyleManager()->ContentInserted(aChild);
 
   mFrameConstructor->ContentInserted(
-      aChild, nullptr, nsCSSFrameConstructor::InsertionKind::Async);
+      aChild, nsCSSFrameConstructor::InsertionKind::Async);
 }
 
 void PresShell::ContentRemoved(nsIContent* aChild,

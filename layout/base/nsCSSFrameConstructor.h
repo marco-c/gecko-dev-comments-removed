@@ -242,8 +242,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
   
   
-  void ContentInserted(nsIContent* aChild, nsILayoutHistoryState* aFrameState,
-                       InsertionKind aInsertionKind);
+  void ContentInserted(nsIContent* aChild, InsertionKind);
 
   
   
@@ -253,7 +252,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   void ContentRangeInserted(nsIContent* aStartChild, nsIContent* aEndChild,
-                            nsILayoutHistoryState* aFrameState,
                             InsertionKind aInsertionKind);
 
   enum RemoveFlags {
@@ -411,8 +409,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   
-  nsIFrame* ConstructDocElementFrame(Element* aDocElement,
-                                     nsILayoutHistoryState* aFrameState);
+  nsIFrame* ConstructDocElementFrame(Element* aDocElement);
 
   
   
@@ -2119,7 +2116,13 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   bool mHasRootAbsPosContainingBlock : 1;
   bool mAlwaysCreateFramesForIgnorableWhitespace : 1;
 
-  nsCOMPtr<nsILayoutHistoryState> mTempFrameTreeState;
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsILayoutHistoryState> mFrameTreeState;
 };
 
 #endif 
