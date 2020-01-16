@@ -4866,7 +4866,11 @@ nsresult nsContentUtils::ParseFragmentHTML(
   RefPtr<DocumentFragment> fragment;
   
   
-  bool shouldSanitize = nodePrincipal->IsSystemPrincipal() || aFlags >= 0;
+  
+  
+  
+  bool shouldSanitize = nodePrincipal->IsSystemPrincipal() ||
+                        nodePrincipal->SchemeIs("about") || aFlags >= 0;
   if (shouldSanitize) {
     fragment = new DocumentFragment(aTargetNode->OwnerDoc()->NodeInfoManager());
     target = fragment;
@@ -4973,7 +4977,11 @@ nsresult nsContentUtils::ParseFragmentXML(const nsAString& aSourceBuffer,
 
   
   
-  bool shouldSanitize = nodePrincipal->IsSystemPrincipal() || aFlags >= 0;
+  
+  
+  
+  bool shouldSanitize = nodePrincipal->IsSystemPrincipal() ||
+                        nodePrincipal->SchemeIs("about") || aFlags >= 0;
 
   if (shouldSanitize) {
     uint32_t sanitizationFlags =
