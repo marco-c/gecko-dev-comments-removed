@@ -64,7 +64,7 @@ this.add_task = function(taskFn, opts = {}) {
       
       await getDiscoveredTargets(client.Target);
 
-      await taskFn(client, CDP, tab);
+      await taskFn({ client, CDP, tab });
 
       if (createTab) {
         

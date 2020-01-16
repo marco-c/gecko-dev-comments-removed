@@ -5,7 +5,7 @@
 
 
 
-add_task(async function(_client, CDP) {
+add_task(async function({ CDP }) {
   const { mainProcessTarget } = RemoteAgent.targets;
   ok(
     mainProcessTarget,
