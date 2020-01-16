@@ -612,23 +612,58 @@ already_AddRefed<dom::Promise> StyleSheet::Replace(const nsAString& aText,
 }
 
 
-void StyleSheet::ReplaceSync(const nsAString& aText, ErrorResult& aRv) {
-  
-  
-
+void StyleSheet::ReplaceSync(const nsACString& aText, ErrorResult& aRv) {
   
 
   
   if (!mConstructorDocument) {
-    aRv.ThrowDOMException(NS_ERROR_DOM_NOT_ALLOWED_ERR,
-                          "The replaceSync() method can only be called on "
-                          "constructed style sheets");
-    return;
+    return aRv.ThrowDOMException(
+        NS_ERROR_DOM_NOT_ALLOWED_ERR,
+        "The replaceSync() method can only be called on "
+        "constructed style sheets");
   }
+
+  
+  if (ModificationDisallowed()) {
+    return aRv.ThrowDOMException(
+        NS_ERROR_DOM_NOT_ALLOWED_ERR,
+        "The replaceSync() method can only be called on "
+        "modifiable style sheets");
+  }
+
+  
+  
+  
+  auto disabledLoader = MakeRefPtr<css::Loader>();
+  disabledLoader->SetEnabled(false);
+  SetURLExtraData();
+  RefPtr<const RawServoStyleSheetContents> rawContent =
+      Servo_StyleSheet_FromUTF8Bytes(
+          disabledLoader, this,
+           nullptr, &aText, mParsingMode, Inner().mURLData,
+           0,
+          mConstructorDocument->GetCompatibilityMode(),
+           nullptr,
+          mConstructorDocument->GetStyleUseCounters(),
+          StyleSanitizationKind::None,
+           nullptr)
+          .Consume();
+
   
   
   
   
+  if (Servo_StyleSheet_HasImportRules(rawContent)) {
+    return aRv.ThrowDOMException(
+        NS_ERROR_DOM_NOT_ALLOWED_ERR,
+        "The replaceSync() method does not support @import "
+        "rules. Use the async replace() method instead.");
+  }
+
+  
+  DropRuleList();
+  Inner().mContents = rawContent.forget();
+  FinishParse();
 }
 
 nsresult StyleSheet::DeleteRuleFromGroup(css::GroupRule* aGroup,

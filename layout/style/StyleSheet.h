@@ -75,6 +75,10 @@ enum class StyleSheetState : uint8_t {
   
   
   ModifiedRulesForDevtools = 1 << 4,
+  
+  
+  
+  ModificationDisallowed = 1 << 5,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(StyleSheetState)
@@ -364,7 +368,10 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
                   const dom::Optional<uint32_t>& aIndex,
                   nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv);
   already_AddRefed<dom::Promise> Replace(const nsAString& aText, ErrorResult&);
-  void ReplaceSync(const nsAString& aText, ErrorResult&);
+  void ReplaceSync(const nsACString& aText, ErrorResult&);
+  bool ModificationDisallowed() const {
+    return bool(mState & State::ModificationDisallowed);
+  }
 
   
   inline dom::ParentObject GetParentObject() const;
