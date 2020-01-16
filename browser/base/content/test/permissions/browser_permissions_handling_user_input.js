@@ -53,15 +53,13 @@ add_task(async function testNotificationPermission() {
   
 
   await assertShown(function() {
-    E10SUtils.wrapHandlingUserInput(content, true, function() {
-      content.document.getElementById("desktop-notification").click();
-    });
+    content.document.notifyUserGestureActivation();
+    content.document.getElementById("desktop-notification").click();
   });
 
   await assertShown(function() {
-    E10SUtils.wrapHandlingUserInput(content, true, function() {
-      content.document.getElementById("push").click();
-    });
+    content.document.notifyUserGestureActivation();
+    content.document.getElementById("push").click();
   });
 
   
