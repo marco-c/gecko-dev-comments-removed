@@ -94,7 +94,60 @@ class Network extends Domain {
 
 
 
+
+
+
+  async deleteCookies(options = {}) {
+    const { domain, name, path = "/", url } = options;
+
+    if (typeof name != "string") {
+      throw new TypeError("name: string value expected");
+    }
+
+    if (!url && !domain) {
+      throw new TypeError(
+        "At least one of the url and domain needs to be specified"
+      );
+    }
+
+    
+    let hostname = domain || "";
+    if (hostname.length == 0) {
+      const cookieURL = new URL(url);
+      if (!["http:", "https:"].includes(cookieURL.protocol)) {
+        throw new TypeError("An http or https url must be specified");
+      }
+      hostname = cookieURL.hostname;
+    }
+
+    const cookiesFound = Services.cookies.getCookiesWithOriginAttributes(
+      JSON.stringify({}),
+      hostname
+    );
+
+    for (const cookie of cookiesFound) {
+      if (cookie.name == name && cookie.path.startsWith(path)) {
+        Services.cookies.remove(
+          cookie.host,
+          cookie.name,
+          cookie.path,
+          cookie.originAttributes
+        );
+      }
+    }
+  }
+
   
+
+
+
+
+
+
+
+
+
+
   async getCookies(options = {}) {
     
     const urls = [this.session.target.url];
