@@ -51,6 +51,8 @@ using namespace mozilla::net;
 
 #define PREFLIGHT_CACHE_SIZE 100
 
+#define PREFLIGHT_DEFAULT_EXPIRY_SECONDS 5
+
 static void LogBlockedRequest(nsIRequest* aRequest, const char* aProperty,
                               const char16_t* aParam, uint32_t aBlockingReason,
                               nsIHttpChannel* aCreatingChannel) {
@@ -1112,27 +1114,27 @@ void nsCORSPreflightListener::AddResultToCache(nsIRequest* aRequest) {
 
   
   nsAutoCString headerVal;
+  uint32_t age = 0;
   Unused << http->GetResponseHeader(
       NS_LITERAL_CSTRING("Access-Control-Max-Age"), headerVal);
   if (headerVal.IsEmpty()) {
-    return;
-  }
-
-  
-  
-  
-  uint32_t age = 0;
-  nsACString::const_char_iterator iter, end;
-  headerVal.BeginReading(iter);
-  headerVal.EndReading(end);
-  while (iter != end) {
-    if (*iter < '0' || *iter > '9') {
-      return;
-    }
-    age = age * 10 + (*iter - '0');
+    age = PREFLIGHT_DEFAULT_EXPIRY_SECONDS;
+  } else {
     
-    age = std::min(age, 86400U);
-    ++iter;
+    
+    
+    nsACString::const_char_iterator iter, end;
+    headerVal.BeginReading(iter);
+    headerVal.EndReading(end);
+    while (iter != end) {
+      if (*iter < '0' || *iter > '9') {
+        return;
+      }
+      age = age * 10 + (*iter - '0');
+      
+      age = std::min(age, 86400U);
+      ++iter;
+    }
   }
 
   if (!age || !EnsurePreflightCache()) {
