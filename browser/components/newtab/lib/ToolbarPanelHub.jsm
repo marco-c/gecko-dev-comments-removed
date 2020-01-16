@@ -247,12 +247,17 @@ class _ToolbarPanelHub {
   
 
 
-  _attachClickListener(win, element, message) {
+  _attachCommandListener(win, element, message) {
     
     
     
     element.addEventListener("mouseup", () => {
       this._dispatchUserAction(win, message);
+    });
+    element.addEventListener("keyup", e => {
+      if (e.key === "Enter" || e.key === " ") {
+        this._dispatchUserAction(win, message);
+      }
     });
   }
 
@@ -304,7 +309,7 @@ class _ToolbarPanelHub {
     }
 
     
-    this._attachClickListener(win, messageEl, message);
+    this._attachCommandListener(win, messageEl, message);
 
     return messageEl;
   }
@@ -371,10 +376,11 @@ class _ToolbarPanelHub {
         classList: "text-link",
         content: message.content.link_text,
       });
+      linkEl.disabled = true;
       wrapperEl.appendChild(linkEl);
-      this._attachClickListener(win, linkEl, message);
+      this._attachCommandListener(win, linkEl, message);
     } else {
-      this._attachClickListener(win, wrapperEl, message);
+      this._attachCommandListener(win, wrapperEl, message);
     }
 
     return messageEl;
@@ -537,9 +543,13 @@ class _ToolbarPanelHub {
     const infoButton = doc.getElementById("protections-popup-info-button");
     const panelContainer = doc.getElementById("protections-popup");
     const toggleMessage = () => {
+      const learnMoreLink = doc.querySelector(
+        "#messaging-system-message-container .text-link"
+      );
       container.toggleAttribute("disabled");
       infoButton.toggleAttribute("checked");
       panelContainer.toggleAttribute("infoMessageShowing");
+      learnMoreLink.disabled = !learnMoreLink.disabled;
     };
     if (!container.childElementCount) {
       const message = await this._getMessages({
