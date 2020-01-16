@@ -100,7 +100,12 @@ def main(request, response):
       return video
 
     
-    if key.startswith("style") or key.startswith("embed") or key.startswith("object"):
+    if key.startswith("style"):
+      response.headers.set("Content-Type", "text/css")
+      return "div { }"
+
+    
+    if key.startswith("embed") or key.startswith("object"):
       response.headers.set("Content-Type", "text/html")
       return "<html>EMBED!</html>"
 
