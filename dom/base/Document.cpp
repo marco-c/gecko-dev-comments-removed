@@ -60,7 +60,6 @@
 #include "nsITextControlFrame.h"
 #include "nsCommandManager.h"
 #include "nsCommandParams.h"
-#include "nsNumberControlFrame.h"
 #include "nsUnicharUtils.h"
 #include "nsContentList.h"
 #include "nsCSSPseudoElements.h"
@@ -12344,9 +12343,7 @@ already_AddRefed<nsDOMCaretPosition> Document::CaretPositionFromPoint(
     nsIContent* nonanon = node->FindFirstNonChromeOnlyAccessContent();
     HTMLTextAreaElement* textArea = HTMLTextAreaElement::FromNode(nonanon);
     nsITextControlFrame* textFrame = do_QueryFrame(nonanon->GetPrimaryFrame());
-    nsNumberControlFrame* numberFrame =
-        do_QueryFrame(nonanon->GetPrimaryFrame());
-    if (textFrame || numberFrame) {
+    if (textFrame) {
       
       
       

@@ -206,11 +206,6 @@ class HTMLInputElement final : public TextControlElement,
 
   virtual EventStates IntrinsicState() const override;
 
-  
- private:
-  virtual void AddStates(EventStates aStates) override;
-  virtual void RemoveStates(EventStates aStates) override;
-
  public:
   
   virtual nsresult SetValueChanged(bool aValueChanged) override;
@@ -808,8 +803,6 @@ class HTMLInputElement final : public TextControlElement,
   double GetMinimumAsDouble() { return GetMinimum().toDouble(); }
   double GetMaximumAsDouble() { return GetMaximum().toDouble(); }
 
-  HTMLInputElement* GetOwnerNumberControl();
-
   void StartNumberControlSpinnerSpin();
   enum SpinnerStopState { eAllowDispatchingEvents, eDisallowDispatchingEvents };
   void StopNumberControlSpinnerSpin(
@@ -1393,6 +1386,13 @@ class HTMLInputElement final : public TextControlElement,
 
 
   static bool IsDateTimeInputType(uint8_t aType);
+
+  
+
+
+
+
+  bool SanitizesOnValueGetter() const;
 
   
 
