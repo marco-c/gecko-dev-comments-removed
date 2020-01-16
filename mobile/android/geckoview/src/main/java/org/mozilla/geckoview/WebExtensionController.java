@@ -425,14 +425,13 @@ public class WebExtensionController {
         public final static int USER = 1;
 
         
+        
 
-        public final static int APP = 2;
+        final static int APP = 2;
 
         static String toString(final @EnableSources int flag) {
             if (flag == USER) {
                 return  "user";
-            } else if (flag == APP) {
-                return "app";
             } else {
                 throw new IllegalArgumentException("Value provided in flags is not valid.");
             }
