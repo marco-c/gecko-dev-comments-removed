@@ -102,7 +102,7 @@ input {
   overflow-clip-box: padding-box content-box;
 }
 
-input > .anonymous-div,
+input .anonymous-div,
 input::placeholder {
   word-wrap: normal;
   
@@ -144,12 +144,12 @@ textarea > scrollbar {
   cursor: default;
 }
 
-textarea > .anonymous-div,
-input > .anonymous-div,
+textarea .anonymous-div,
+input .anonymous-div,
 input::placeholder,
 textarea::placeholder,
-input > .preview-div
-textarea > .preview-div {
+input .preview-div
+textarea .preview-div {
   overflow: auto;
   border: 0px;
   padding: inherit;
@@ -163,14 +163,14 @@ textarea > .preview-div {
   overflow-clip-box: inherit;
 }
 
-input > .anonymous-div,
+input .anonymous-div,
 input::placeholder,
-input > .preview-div {
+input .preview-div {
   white-space: pre;
 }
 
-input[type=password] > .anonymous-div,
-input[type=password] > .preview-div {
+input[type=password] .anonymous-div,
+input[type=password] .preview-div {
   
 
 
@@ -191,8 +191,8 @@ textarea > .anonymous-div.inherit-overflow {
 
 input::placeholder,
 textarea::placeholder,
-input > .preview-div,
-textarea > .preview-div {
+input .preview-div,
+textarea .preview-div {
   
 
 
@@ -218,7 +218,7 @@ textarea::placeholder {
 }
 
 textarea::placeholder,
-textarea > .preview-div {
+textarea .preview-div {
   white-space: pre-wrap !important;
 }
 
@@ -993,27 +993,12 @@ input[type=number]::-moz-number-wrapper {
   block-size: 100%;
 }
 
-input[type=number]::-moz-number-text {
+input[type=number] .anonymous-div {
   display: block; 
 
 
-  -moz-appearance: none;
-  
-  -moz-user-modify: read-write;
-  
-
-
-
-
-
-  text-align: unset;
-  text-decoration: inherit;
-  ime-mode: inherit;
   flex: 1;
   min-inline-size: 0;
-  padding: unset;
-  border: 0;
-  margin: 0;
 }
 
 input[type=number]::-moz-number-spin-box {

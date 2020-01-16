@@ -37,7 +37,6 @@
 #include "BrowserChild.h"
 #include "nsFrameLoader.h"
 #include "nsHTMLDocument.h"
-#include "nsNumberControlFrame.h"
 #include "nsNetUtil.h"
 #include "nsRange.h"
 
@@ -316,24 +315,6 @@ Element* nsFocusManager::GetFocusedDescendant(
 
 
 Element* nsFocusManager::GetRedirectedFocus(nsIContent* aContent) {
-  
-  if (aContent->IsHTMLElement(nsGkAtoms::input)) {
-    bool typeIsNumber =
-        static_cast<dom::HTMLInputElement*>(aContent)->ControlType() ==
-        NS_FORM_INPUT_NUMBER;
-
-    if (typeIsNumber) {
-      nsNumberControlFrame* numberControlFrame =
-          do_QueryFrame(aContent->GetPrimaryFrame());
-
-      if (numberControlFrame) {
-        HTMLInputElement* textControl =
-            numberControlFrame->GetAnonTextControl();
-        return textControl;
-      }
-    }
-  }
-
 #ifdef MOZ_XUL
   if (aContent->IsXULElement()) {
     nsCOMPtr<nsIDOMXULMenuListElement> menulist =
@@ -1479,8 +1460,7 @@ Element* nsFocusManager::FlushAndCheckIfFocusable(Element* aElement,
 
   
   
-  RefPtr<Element> redirectedFocus = GetRedirectedFocus(aElement);
-  if (redirectedFocus) {
+  if (RefPtr<Element> redirectedFocus = GetRedirectedFocus(aElement)) {
     return FlushAndCheckIfFocusable(redirectedFocus, aFlags);
   }
 

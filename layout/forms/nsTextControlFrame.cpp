@@ -108,8 +108,9 @@ class nsTextControlFrame::nsAnonDivObserver final
 };
 
 nsTextControlFrame::nsTextControlFrame(ComputedStyle* aStyle,
-                                       nsPresContext* aPresContext)
-    : nsContainerFrame(aStyle, aPresContext, kClassID),
+                                       nsPresContext* aPresContext,
+                                       nsIFrame::ClassID aClassID)
+    : nsContainerFrame(aStyle, aPresContext, aClassID),
       mFirstBaseline(NS_INTRINSIC_ISIZE_UNKNOWN),
       mEditorHasBeenInitialized(false),
       mIsProcessing(false)
@@ -122,6 +123,13 @@ nsTextControlFrame::nsTextControlFrame(ComputedStyle* aStyle,
 }
 
 nsTextControlFrame::~nsTextControlFrame() {}
+
+nsIScrollableFrame* nsTextControlFrame::GetScrollTargetFrame() {
+  if (!mRootNode) {
+    return nullptr;
+  }
+  return do_QueryFrame(mRootNode->GetPrimaryFrame());
+}
 
 void nsTextControlFrame::DestroyFrom(nsIFrame* aDestructRoot,
                                      PostDestroyData& aPostDestroyData) {
@@ -144,7 +152,14 @@ void nsTextControlFrame::DestroyFrom(nsIFrame* aDestructRoot,
   }
 
   
-  aPostDestroyData.AddAnonymousContent(mRootNode.forget());
+  
+  if (mClass == kClassID) {
+    aPostDestroyData.AddAnonymousContent(mRootNode.forget());
+  } else {
+    MOZ_ASSERT(!mRootNode || !mRootNode->IsRootOfAnonymousSubtree());
+    mRootNode = nullptr;
+  }
+
   aPostDestroyData.AddAnonymousContent(mPlaceholderDiv.forget());
   aPostDestroyData.AddAnonymousContent(mPreviewDiv.forget());
 
@@ -212,9 +227,7 @@ LogicalSize nsTextControlFrame::CalcIntrinsicSize(
 
   
   if (IsTextArea()) {
-    nsIFrame* first = PrincipalChildList().FirstChild();
-
-    nsIScrollableFrame* scrollableFrame = do_QueryFrame(first);
+    nsIScrollableFrame* scrollableFrame = GetScrollTargetFrame();
     NS_ASSERTION(scrollableFrame, "Child must be scrollable");
 
     if (scrollableFrame) {
@@ -332,8 +345,6 @@ already_AddRefed<Element> nsTextControlFrame::CreateEmptyAnonymousDiv(
   RefPtr<Element> divElement = NS_NewHTMLDivElement(nodeInfo.forget());
   switch (aAnonymousDivType) {
     case AnonymousDivType::Root: {
-      divElement->SetIsNativeAnonymousRoot();
-
       
       divElement->SetFlags(NODE_IS_EDITABLE);
 
@@ -410,12 +421,26 @@ nsresult nsTextControlFrame::CreateAnonymousContent(
   RefPtr<TextControlElement> textControlElement =
       TextControlElement::FromNode(GetContent());
   MOZ_ASSERT(textControlElement);
-  nsresult rv = CreateRootNode();
-  NS_ENSURE_SUCCESS(rv, rv);
+  mRootNode = CreateEmptyAnonymousDiv(AnonymousDivType::Root);
+  if (NS_WARN_IF(!mRootNode)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  mMutationObserver = new nsAnonDivObserver(*this);
+  mRootNode->AddMutationObserver(mMutationObserver);
 
   
-  rv = textControlElement->BindToFrame(this);
-  NS_ENSURE_SUCCESS(rv, rv);
+  
+  
+  
+  
+  nsresult rv = textControlElement->BindToFrame(this);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    mRootNode->RemoveMutationObserver(mMutationObserver);
+    mMutationObserver = nullptr;
+    mRootNode = nullptr;
+    return rv;
+  }
 
   aElements.AppendElement(mRootNode);
   CreatePlaceholderIfNeeded();
@@ -475,18 +500,6 @@ void nsTextControlFrame::InitializeEagerlyIfNeeded() {
   EditorInitializer* initializer = new EditorInitializer(this);
   SetProperty(TextControlInitializer(), initializer);
   nsContentUtils::AddScriptRunner(initializer);
-}
-
-nsresult nsTextControlFrame::CreateRootNode() {
-  MOZ_ASSERT(!mRootNode);
-
-  mRootNode = CreateEmptyAnonymousDiv(AnonymousDivType::Root);
-  if (NS_WARN_IF(!mRootNode)) {
-    return NS_ERROR_FAILURE;
-  }
-  mMutationObserver = new nsAnonDivObserver(*this);
-  mRootNode->AddMutationObserver(mMutationObserver);
-  return NS_OK;
 }
 
 void nsTextControlFrame::CreatePlaceholderIfNeeded() {
@@ -589,6 +602,30 @@ LogicalSize nsTextControlFrame::ComputeAutoSize(
   return autoSize;
 }
 
+void nsTextControlFrame::ComputeBaseline(const ReflowInput& aReflowInput,
+                                         ReflowOutput& aDesiredSize) {
+  
+  if (aReflowInput.mStyleDisplay->IsContainLayout()) {
+    mFirstBaseline = NS_INTRINSIC_ISIZE_UNKNOWN;
+    return;
+  }
+  WritingMode wm = aReflowInput.GetWritingMode();
+
+  
+  nscoord lineHeight = aReflowInput.ComputedBSize();
+  float inflation = nsLayoutUtils::FontSizeInflationFor(this);
+  if (!IsSingleLineTextControl()) {
+    lineHeight = ReflowInput::CalcLineHeight(
+        GetContent(), Style(), PresContext(), NS_UNCONSTRAINEDSIZE, inflation);
+  }
+  RefPtr<nsFontMetrics> fontMet =
+      nsLayoutUtils::GetFontMetricsForFrame(this, inflation);
+  mFirstBaseline = nsLayoutUtils::GetCenteredFontBaseline(fontMet, lineHeight,
+                                                          wm.IsLineInverted()) +
+                   aReflowInput.ComputedLogicalBorderPadding().BStart(wm);
+  aDesiredSize.SetBlockStartAscent(mFirstBaseline);
+}
+
 void nsTextControlFrame::Reflow(nsPresContext* aPresContext,
                                 ReflowOutput& aDesiredSize,
                                 const ReflowInput& aReflowInput,
@@ -613,22 +650,7 @@ void nsTextControlFrame::Reflow(nsPresContext* aPresContext,
           aReflowInput.ComputedLogicalBorderPadding().BStartEnd(wm));
   aDesiredSize.SetSize(wm, finalSize);
 
-  if (!aReflowInput.mStyleDisplay->IsContainLayout()) {
-    
-    nscoord lineHeight = aReflowInput.ComputedBSize();
-    float inflation = nsLayoutUtils::FontSizeInflationFor(this);
-    if (!IsSingleLineTextControl()) {
-      lineHeight =
-          ReflowInput::CalcLineHeight(GetContent(), Style(), PresContext(),
-                                      NS_UNCONSTRAINEDSIZE, inflation);
-    }
-    RefPtr<nsFontMetrics> fontMet =
-        nsLayoutUtils::GetFontMetricsForFrame(this, inflation);
-    mFirstBaseline = nsLayoutUtils::GetCenteredFontBaseline(
-                         fontMet, lineHeight, wm.IsLineInverted()) +
-                     aReflowInput.ComputedLogicalBorderPadding().BStart(wm);
-    aDesiredSize.SetBlockStartAscent(mFirstBaseline);
-  }  
+  ComputeBaseline(aReflowInput, aDesiredSize);
 
   
   aDesiredSize.SetOverflowAreasToDesiredBounds();
@@ -1182,6 +1204,21 @@ bool nsTextControlFrame::GetMaxLength(int32_t* aSize) {
 
 
 
+
+
+static nsIFrame* FindRootNodeFrame(const nsFrameList& aChildList,
+                                   const nsIContent* aRoot) {
+  for (nsIFrame* f : aChildList) {
+    if (f->GetContent() == aRoot) {
+      return f;
+    }
+    if (nsIFrame* root = FindRootNodeFrame(f->PrincipalChildList(), aRoot)) {
+      return root;
+    }
+  }
+  return nullptr;
+}
+
 void nsTextControlFrame::SetInitialChildList(ChildListID aListID,
                                              nsFrameList& aChildList) {
   nsContainerFrame::SetInitialChildList(aListID, aChildList);
@@ -1192,19 +1229,17 @@ void nsTextControlFrame::SetInitialChildList(ChildListID aListID,
   
   
   
-  if (nsIFrame* first = PrincipalChildList().FirstChild()) {
-    first->AddStateBits(NS_FRAME_REFLOW_ROOT);
+  if (nsIFrame* frame = FindRootNodeFrame(PrincipalChildList(), mRootNode)) {
+    frame->AddStateBits(NS_FRAME_REFLOW_ROOT);
 
-    TextControlElement* textControlElement =
-        TextControlElement::FromNode(GetContent());
+    auto* textControlElement = TextControlElement::FromNode(GetContent());
     MOZ_ASSERT(textControlElement);
     textControlElement->InitializeKeyboardEventListeners();
 
-    nsPoint* contentScrollPos = GetProperty(ContentScrollPos());
-    if (contentScrollPos) {
+    if (nsPoint* contentScrollPos = GetProperty(ContentScrollPos())) {
       
       
-      nsIStatefulFrame* statefulFrame = do_QueryFrame(first);
+      nsIStatefulFrame* statefulFrame = do_QueryFrame(frame);
       NS_ASSERTION(statefulFrame,
                    "unexpected type of frame for the anonymous div");
       UniquePtr<PresState> fakePresState = NewPresState();
@@ -1213,12 +1248,13 @@ void nsTextControlFrame::SetInitialChildList(ChildListID aListID,
       RemoveProperty(ContentScrollPos());
       delete contentScrollPos;
     }
+  } else {
+    MOZ_ASSERT(!mRootNode || PrincipalChildList().IsEmpty());
   }
 }
 
 void nsTextControlFrame::SetValueChanged(bool aValueChanged) {
-  TextControlElement* textControlElement =
-      TextControlElement::FromNode(GetContent());
+  auto* textControlElement = TextControlElement::FromNode(GetContent());
   MOZ_ASSERT(textControlElement);
 
   if (mPlaceholderDiv) {
@@ -1283,8 +1319,7 @@ nsresult nsTextControlFrame::UpdateValueDisplay(bool aNotify,
   }
 
   if (aBeforeEditorInit && value.IsEmpty()) {
-    nsIContent* node = mRootNode->GetFirstChild();
-    if (node) {
+    if (nsIContent* node = mRootNode->GetFirstChild()) {
       mRootNode->RemoveChildNode(node, true);
     }
     return NS_OK;
@@ -1309,20 +1344,15 @@ nsTextControlFrame::GetOwnedSelectionController(
 }
 
 nsFrameSelection* nsTextControlFrame::GetOwnedFrameSelection() {
-  TextControlElement* textControlElement =
-      TextControlElement::FromNode(GetContent());
+  auto* textControlElement = TextControlElement::FromNode(GetContent());
   MOZ_ASSERT(textControlElement);
   return textControlElement->GetConstFrameSelection();
 }
 
 UniquePtr<PresState> nsTextControlFrame::SaveState() {
-  if (mRootNode) {
-    
-    nsIStatefulFrame* scrollStateFrame =
-        do_QueryFrame(mRootNode->GetPrimaryFrame());
-    if (scrollStateFrame) {
-      return scrollStateFrame->SaveState();
-    }
+  if (nsIStatefulFrame* scrollStateFrame =
+          do_QueryFrame(GetScrollTargetFrame())) {
+    return scrollStateFrame->SaveState();
   }
 
   return nullptr;
@@ -1332,13 +1362,10 @@ NS_IMETHODIMP
 nsTextControlFrame::RestoreState(PresState* aState) {
   NS_ENSURE_ARG_POINTER(aState);
 
-  if (mRootNode) {
-    
-    nsIStatefulFrame* scrollStateFrame =
-        do_QueryFrame(mRootNode->GetPrimaryFrame());
-    if (scrollStateFrame) {
-      return scrollStateFrame->RestoreState(aState);
-    }
+  
+  if (nsIStatefulFrame* scrollStateFrame =
+          do_QueryFrame(GetScrollTargetFrame())) {
+    return scrollStateFrame->RestoreState(aState);
   }
 
   
@@ -1362,29 +1389,42 @@ void nsTextControlFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   DO_GLOBAL_REFLOW_COUNT_DSP("nsTextControlFrame");
 
-  TextControlElement* textControlElement =
-      TextControlElement::FromNode(GetContent());
-  MOZ_ASSERT(textControlElement);
+  auto* control = TextControlElement::FromNode(GetContent());
+  MOZ_ASSERT(control);
 
   DisplayBorderBackgroundOutline(aBuilder, aLists);
 
-  nsIFrame* kid = mFrames.FirstChild();
   
   
   
   nsDisplayList* content = aLists.Content();
   nsDisplayListSet set(content, content, content, content, content, content);
 
-  while (kid) {
-    
-    
-    if (!((kid->GetContent() == mPlaceholderDiv &&
-           !textControlElement->GetPlaceholderVisibility()) ||
-          (kid->GetContent() == mPreviewDiv &&
-           !textControlElement->GetPreviewVisibility()))) {
-      BuildDisplayListForChild(aBuilder, kid, set, 0);
+  for (nsIFrame* kid = mFrames.FirstChild(); kid; kid = kid->GetNextSibling()) {
+    nsIContent* kidContent = kid->GetContent();
+    Maybe<DisplayListClipState::AutoSaveRestore> overlayTextClip;
+    if (kidContent == mPlaceholderDiv && !control->GetPlaceholderVisibility()) {
+      continue;
     }
-    kid = kid->GetNextSibling();
+    if (kidContent == mPreviewDiv && !control->GetPreviewVisibility()) {
+      continue;
+    }
+    
+    
+    
+    
+    
+    
+    if (kidContent == mPlaceholderDiv || kidContent == mPreviewDiv) {
+      if (mRootNode) {
+        if (auto* root = mRootNode->GetPrimaryFrame()) {
+          overlayTextClip.emplace(aBuilder);
+          nsRect rootBox(aBuilder->ToReferenceFrame(root), root->GetSize());
+          overlayTextClip->ClipContentDescendants(rootBox);
+        }
+      }
+    }
+    BuildDisplayListForChild(aBuilder, kid, set, 0);
   }
 }
 

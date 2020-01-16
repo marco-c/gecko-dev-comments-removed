@@ -492,7 +492,7 @@ ROLE(SPINBUTTON,
      NSAccessibilityIncrementorRole,  
      ROLE_SYSTEM_SPINBUTTON,
      ROLE_SYSTEM_SPINBUTTON,
-     java::SessionAccessibility::CLASSNAME_VIEW, 
+     java::SessionAccessibility::CLASSNAME_EDITTEXT,
      eNameFromValueRule)
 
 ROLE(DIAGRAM,

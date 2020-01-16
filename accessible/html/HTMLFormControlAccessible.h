@@ -63,7 +63,7 @@ class HTMLButtonAccessible : public HyperTextAccessibleWrap {
 
 
 
-class HTMLTextFieldAccessible final : public HyperTextAccessibleWrap {
+class HTMLTextFieldAccessible : public HyperTextAccessibleWrap {
  public:
   enum { eAction_Click = 0 };
 
@@ -103,7 +103,6 @@ class HTMLTextFieldAccessible final : public HyperTextAccessibleWrap {
 
 
 
-
   nsIContent* BindingOrWidgetParent() const {
     if (auto* el = mContent->GetClosestNativeAnonymousSubtreeRootParent()) {
       return el;
@@ -129,10 +128,10 @@ class HTMLFileInputAccessible : public HyperTextAccessibleWrap {
 
 
 
-class HTMLSpinnerAccessible : public AccessibleWrap {
+class HTMLSpinnerAccessible final : public HTMLTextFieldAccessible {
  public:
   HTMLSpinnerAccessible(nsIContent* aContent, DocAccessible* aDoc)
-      : AccessibleWrap(aContent, aDoc) {
+      : HTMLTextFieldAccessible(aContent, aDoc) {
     mStateFlags |= eHasNumericValue;
   }
 
