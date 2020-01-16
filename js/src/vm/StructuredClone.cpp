@@ -2655,7 +2655,13 @@ bool JSStructuredCloneReader::readHeader() {
     storedScope = JS::StructuredCloneScope::DifferentProcessForIndexedDB;
   }
 
-  if (storedScope < JS::StructuredCloneScope::SameProcessSameThread ||
+  
+  
+  if ((int)storedScope == 0) {
+    storedScope = JS::StructuredCloneScope::SameProcessDifferentThread;
+  }
+
+  if (storedScope < JS::StructuredCloneScope::SameProcessDifferentThread ||
       storedScope > JS::StructuredCloneScope::DifferentProcessForIndexedDB) {
     JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr,
                               JSMSG_SC_BAD_SERIALIZED_DATA,
@@ -3085,7 +3091,7 @@ JS_PUBLIC_API bool JS_StructuredClone(
   const JSStructuredCloneCallbacks* callbacks = optionalCallbacks;
 
   JSAutoStructuredCloneBuffer buf(
-      JS::StructuredCloneScope::SameProcessSameThread, callbacks, closure);
+      JS::StructuredCloneScope::SameProcessDifferentThread, callbacks, closure);
   {
     if (value.isObject()) {
       RootedObject obj(cx, &value.toObject());
