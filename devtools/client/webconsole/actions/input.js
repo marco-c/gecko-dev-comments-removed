@@ -229,6 +229,11 @@ function terminalInputChanged(expression) {
       return;
     }
 
+    
+    if (expression.startsWith("$_")) {
+      return;
+    }
+
     const originalExpression = expression;
     dispatch({
       type: SET_TERMINAL_INPUT,
@@ -239,18 +244,24 @@ function terminalInputChanged(expression) {
     ({ expression, mapped } = await getMappedExpression(hud, expression));
 
     const { frameActor, webConsoleFront } = webConsoleUI.getFrameActor();
-
-    const response = await client.evaluateJSAsync(expression, {
-      frameActor,
-      selectedNodeFront: webConsoleUI.getSelectedNodeFront(),
-      webConsoleFront,
-      mapped,
-      eager: true,
-    });
-
-    const result = response.exception || response.result;
+    let response;
+    try {
+      response = await client.evaluateJSAsync(expression, {
+        frameActor,
+        selectedNodeFront: webConsoleUI.getSelectedNodeFront(),
+        webConsoleFront,
+        mapped,
+        eager: true,
+      });
+    } catch (e) {}
 
     
+    if (!response) {
+      return;
+    }
+
+    
+    const result = response.exception || response.result;
     if (result.isSyntaxError || result.type == "undefined") {
       return;
     }

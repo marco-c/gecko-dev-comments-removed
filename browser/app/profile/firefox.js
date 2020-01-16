@@ -2145,7 +2145,11 @@ pref("devtools.webconsole.input.autocomplete",true);
 
 
 
+#if defined(NIGHTLY_BUILD)
+pref("devtools.webconsole.input.eagerEvaluation", true);
+#else
 pref("devtools.webconsole.input.eagerEvaluation", false);
+#endif
 
 
 pref("devtools.browserconsole.filter.error", true);
