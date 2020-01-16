@@ -242,6 +242,11 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   bool mDestroyed;
 
   
+  
+  std::map<std::string, std::string> mMDNSHostnamesToRegister;
+  bool mCanRegisterMDNSHostnamesDirectly = false;
+
+  
   std::set<std::string> mRegisteredMDNSHostnames;
 
   
