@@ -103,6 +103,7 @@ const PENDING_INSTALL_METADATA = [
   "targetApplications",
   "userDisabled",
   "softDisabled",
+  "embedderDisabled",
   "existingAddonID",
   "sourceURI",
   "releaseNotesURI",
@@ -129,6 +130,7 @@ const PROP_JSON_FIELDS = [
   "active",
   "userDisabled",
   "appDisabled",
+  "embedderDisabled",
   "pendingUninstall",
   "installDate",
   "updateDate",
@@ -275,6 +277,7 @@ class AddonInternal {
     this.userDisabled = false;
     this.appDisabled = false;
     this.softDisabled = false;
+    this.embedderDisabled = false;
     this.blocklistState = Ci.nsIBlocklistService.STATE_NOT_BLOCKED;
     this.blocklistURL = null;
     this.sourceURI = null;
@@ -453,7 +456,12 @@ class AddonInternal {
   }
 
   get disabled() {
-    return this.userDisabled || this.appDisabled || this.softDisabled;
+    return (
+      this.userDisabled ||
+      this.appDisabled ||
+      this.softDisabled ||
+      this.embedderDisabled
+    );
   }
 
   get isPlatformCompatible() {
@@ -742,6 +750,7 @@ class AddonInternal {
   propagateDisabledState(oldAddon) {
     if (oldAddon) {
       this.userDisabled = oldAddon.userDisabled;
+      this.embedderDisabled = oldAddon.embedderDisabled;
       this.softDisabled = oldAddon.softDisabled;
       this.blocklistState = oldAddon.blocklistState;
     }
@@ -1066,6 +1075,57 @@ AddonWrapper = class {
   get userDisabled() {
     let addon = addonFor(this);
     return addon.softDisabled || addon.userDisabled;
+  }
+
+  
+
+
+
+
+
+
+
+  get embedderDisabled() {
+    if (!AddonSettings.IS_EMBEDDED) {
+      return undefined;
+    }
+
+    return addonFor(this).embedderDisabled;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async setEmbedderDisabled(val) {
+    if (!AddonSettings.IS_EMBEDDED) {
+      throw new Error("Setting embedder disabled while not embedding.");
+    }
+
+    let addon = addonFor(this);
+    if (addon.embedderDisabled == val) {
+      return val;
+    }
+
+    if (addon.inDatabase) {
+      await XPIDatabase.updateAddonDisabledState(addon, {
+        embedderDisabled: val,
+      });
+    } else {
+      addon.embedderDisabled = val;
+    }
+
+    return val;
   }
 
   enable(options = {}) {
@@ -2416,9 +2476,12 @@ this.XPIDatabase = {
 
 
 
+
+
+
   async updateAddonDisabledState(
     aAddon,
-    { userDisabled, softDisabled, becauseSelecting } = {}
+    { userDisabled, softDisabled, embedderDisabled, becauseSelecting } = {}
   ) {
     if (!aAddon.inDatabase) {
       throw new Error("Can only update addon states for installed addons.");
@@ -2442,18 +2505,28 @@ this.XPIDatabase = {
       softDisabled = aAddon.softDisabled;
     }
 
+    if (!AddonSettings.IS_EMBEDDED) {
+      
+      
+      embedderDisabled = false;
+    } else if (embedderDisabled === undefined) {
+      embedderDisabled = aAddon.embedderDisabled;
+    }
+
     let appDisabled = !this.isUsableAddon(aAddon);
     
     if (
       aAddon.userDisabled == userDisabled &&
       aAddon.appDisabled == appDisabled &&
-      aAddon.softDisabled == softDisabled
+      aAddon.softDisabled == softDisabled &&
+      aAddon.embedderDisabled == embedderDisabled
     ) {
       return undefined;
     }
 
     let wasDisabled = aAddon.disabled;
-    let isDisabled = userDisabled || softDisabled || appDisabled;
+    let isDisabled =
+      userDisabled || softDisabled || appDisabled || embedderDisabled;
 
     
     
@@ -2464,6 +2537,7 @@ this.XPIDatabase = {
       userDisabled,
       appDisabled,
       softDisabled,
+      embedderDisabled,
     });
 
     let wrapper = aAddon.wrapper;
