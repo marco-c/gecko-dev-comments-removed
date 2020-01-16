@@ -155,12 +155,28 @@ nsresult nsJSThunk::EvaluateScript(
   }
 
   NS_ENSURE_ARG_POINTER(aChannel);
+  MOZ_ASSERT(aOriginalInnerWindow,
+             "We should not have gotten here if this was null!");
+
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIURI> docURI = aOriginalInnerWindow->GetDocumentURI();
+  if (!docURI) {
+    
+    
+    return NS_ERROR_DOM_RETVAL_UNDEFINED;
+  }
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  loadInfo->SetResultPrincipalURI(docURI);
 
   
   nsCOMPtr<nsISupports> owner;
   aChannel->GetOwner(getter_AddRefs(owner));
   nsCOMPtr<nsIPrincipal> principal = do_QueryInterface(owner);
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   if (!principal) {
     if (loadInfo->GetForceInheritPrincipal()) {
       principal = loadInfo->FindPrincipalToInherit(aChannel);
