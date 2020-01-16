@@ -18,7 +18,6 @@ use crate::values::specified::length::{AbsoluteLength, FontBaseSize, FontRelativ
 use crate::values::{specified, CSSFloat};
 use crate::Zero;
 use app_units::Au;
-use ordered_float::NotNan;
 use std::fmt::{self, Write};
 use std::ops::{Add, AddAssign, Div, Mul, Neg, Sub};
 use style_traits::values::specified::AllowedNumericType;
@@ -54,13 +53,13 @@ impl ToComputedValue for specified::NoCalcLength {
 }
 
 impl ToComputedValue for specified::Length {
-    type ComputedValue = CSSPixelLength;
+    type ComputedValue = Length;
 
     #[inline]
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
         match *self {
             specified::Length::NoCalc(l) => l.to_computed_value(context),
-            specified::Length::Calc(ref calc) => calc.to_computed_value(context).length(),
+            specified::Length::Calc(ref calc) => calc.to_computed_value(context).length_component(),
         }
     }
 
@@ -73,15 +72,32 @@ impl ToComputedValue for specified::Length {
 
 
 
+/// cbindgen:private-default-tagged-enum-constructor=false
+/// cbindgen:derive-mut-casts=true
+
 
 #[allow(missing_docs)]
-#[derive(Clone, Debug, Deserialize, MallocSizeOf, Serialize, ToAnimatedZero, ToResolvedValue)]
+#[derive(Clone, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize, ToAnimatedZero, ToResolvedValue)]
+#[repr(u8)]
+pub enum LengthPercentage {
+    Length(Length),
+    Percentage(Percentage),
+    Calc(Box<CalcLengthPercentage>),
+}
+
+
+#[derive(
+    Clone, Debug, Deserialize, MallocSizeOf, Serialize, ToAnimatedZero, ToResolvedValue,
+)]
 #[repr(C)]
-pub struct LengthPercentage {
+pub struct CalcLengthPercentage {
     length: Length,
+
     percentage: Percentage,
+
     #[animation(constant)]
-    pub clamping_mode: AllowedNumericType,
+    clamping_mode: AllowedNumericType,
+
     
     #[animation(constant)]
     pub has_percentage: bool,
@@ -99,7 +115,7 @@ pub struct LengthPercentage {
 
 
 
-impl PartialEq for LengthPercentage {
+impl PartialEq for CalcLengthPercentage {
     fn eq(&self, other: &Self) -> bool {
         self.length == other.length &&
             self.percentage == other.percentage &&
@@ -115,123 +131,8 @@ impl ComputeSquaredDistance for LengthPercentage {
         Ok(self
             .unclamped_length()
             .compute_squared_distance(&other.unclamped_length())? +
-            self.percentage
-                .compute_squared_distance(&other.percentage)?)
-    }
-}
-
-impl LengthPercentage {
-    
-    #[inline]
-    pub fn new(length: Length, percentage: Option<Percentage>) -> Self {
-        Self::with_clamping_mode(length, percentage, AllowedNumericType::All)
-    }
-
-    
-    pub fn new_percent(percentage: Percentage) -> Self {
-        Self::new(Length::zero(), Some(percentage))
-    }
-
-    
-    #[inline]
-    pub fn with_clamping_mode(
-        length: Length,
-        percentage: Option<Percentage>,
-        clamping_mode: AllowedNumericType,
-    ) -> Self {
-        Self {
-            clamping_mode,
-            length,
-            percentage: percentage.unwrap_or_default(),
-            has_percentage: percentage.is_some(),
-        }
-    }
-
-    
-    
-    
-    #[inline]
-    pub fn length(&self) -> CSSPixelLength {
-        debug_assert!(!self.has_percentage);
-        self.length_component()
-    }
-
-    
-    #[inline]
-    pub fn length_component(&self) -> CSSPixelLength {
-        CSSPixelLength::new(self.clamping_mode.clamp(self.length.px()))
-    }
-
-    
-    #[inline]
-    pub fn unclamped_length(&self) -> CSSPixelLength {
-        self.length
-    }
-
-    
-    #[inline]
-    pub fn percentage_component(&self) -> Percentage {
-        Percentage(self.clamping_mode.clamp(self.percentage.0))
-    }
-
-    
-    #[inline]
-    pub fn percentage(&self) -> CSSFloat {
-        self.percentage.0
-    }
-
-    
-    #[inline]
-    pub fn specified_percentage(&self) -> Option<Percentage> {
-        if self.has_percentage {
-            Some(self.percentage)
-        } else {
-            None
-        }
-    }
-
-    
-    
-    pub fn as_length(&self) -> Option<Length> {
-        if !self.has_percentage {
-            Some(self.length_component())
-        } else {
-            None
-        }
-    }
-
-    
-    
-    pub fn as_percentage(&self) -> Option<Percentage> {
-        if !self.has_percentage || self.length.px() != 0. {
-            return None;
-        }
-
-        Some(Percentage(self.clamping_mode.clamp(self.percentage.0)))
-    }
-
-    
-    #[inline]
-    pub fn percentage_relative_to(&self, basis: Length) -> Length {
-        let length = self.unclamped_length().0 + basis.0 * self.percentage.0;
-        Length::new(self.clamping_mode.clamp(length))
-    }
-
-    
-    #[inline]
-    pub fn maybe_to_used_value(&self, container_len: Option<Length>) -> Option<Au> {
-        self.maybe_percentage_relative_to(container_len)
-            .map(Au::from)
-    }
-
-    
-    
-    
-    pub fn maybe_percentage_relative_to(&self, container_len: Option<Length>) -> Option<Length> {
-        if self.has_percentage {
-            return Some(self.percentage_relative_to(container_len?));
-        }
-        Some(self.length())
+            self.percentage()
+                .compute_squared_distance(&other.percentage())?)
     }
 }
 
@@ -251,7 +152,7 @@ impl specified::CalcLengthPercentage {
         context: &Context,
         zoom_fn: F,
         base_size: FontBaseSize,
-    ) -> LengthPercentage
+    ) -> CalcLengthPercentage
     where
         F: Fn(Length) -> Length,
     {
@@ -285,7 +186,7 @@ impl specified::CalcLengthPercentage {
             }
         }
 
-        LengthPercentage::with_clamping_mode(
+        CalcLengthPercentage::with_clamping_mode(
             Length::new(length.min(f32::MAX).max(f32::MIN)),
             self.percentage,
             self.clamping_mode,
@@ -297,7 +198,7 @@ impl specified::CalcLengthPercentage {
         &self,
         context: &Context,
         base_size: FontBaseSize,
-    ) -> LengthPercentage {
+    ) -> CalcLengthPercentage {
         self.to_computed_value_with_zoom(
             context,
             |abs| context.maybe_zoom_text(abs.into()),
@@ -329,18 +230,14 @@ impl specified::CalcLengthPercentage {
             },
         }
     }
-}
 
-impl ToComputedValue for specified::CalcLengthPercentage {
-    type ComputedValue = LengthPercentage;
-
-    fn to_computed_value(&self, context: &Context) -> LengthPercentage {
+    fn to_computed_value(&self, context: &Context) -> CalcLengthPercentage {
         
         self.to_computed_value_with_zoom(context, |abs| abs, FontBaseSize::CurrentStyle)
     }
 
     #[inline]
-    fn from_computed_value(computed: &LengthPercentage) -> Self {
+    fn from_computed_value(computed: &CalcLengthPercentage) -> Self {
         specified::CalcLengthPercentage {
             clamping_mode: computed.clamping_mode,
             absolute: Some(AbsoluteLength::from_computed_value(&computed.length)),
@@ -353,50 +250,262 @@ impl ToComputedValue for specified::CalcLengthPercentage {
 impl LengthPercentage {
     
     #[inline]
-    pub fn one() -> LengthPercentage {
-        LengthPercentage::new(Length::new(1.), None)
+    pub fn one() -> Self {
+        Self::Length(Length::new(1.))
+    }
+
+    
+    #[inline]
+    pub fn new_length(l: Length) -> Self {
+        Self::Length(l)
+    }
+
+    
+    #[inline]
+    pub fn new_percent(p: Percentage) -> Self {
+        Self::Percentage(p)
+    }
+
+    
+    #[inline]
+    pub fn new_calc(l: Length, percentage: Percentage) -> Self {
+        CalcLengthPercentage::new(l, Some(percentage)).to_length_percentge()
     }
 
     
     #[inline]
     pub fn is_definitely_zero(&self) -> bool {
-        self.unclamped_length().px() == 0.0 && self.percentage.0 == 0.0
+        match *self {
+            Self::Length(l) => l.px() == 0.0,
+            Self::Percentage(p) => p.0 == 0.0,
+            Self::Calc(ref c) => c.is_definitely_zero(),
+        }
+    }
+
+    
+    #[inline]
+    pub fn unclamped_length(&self) -> Length {
+        match *self {
+            Self::Length(l) => l,
+            Self::Percentage(..) => Zero::zero(),
+            Self::Calc(ref c) => c.unclamped_length(),
+        }
     }
 
     
     
-    #[allow(missing_docs)]
-    pub fn to_hash_key(&self) -> (Au, NotNan<f32>) {
-        (
-            Au::from(self.unclamped_length()),
-            NotNan::new(self.percentage.0).unwrap(),
-        )
+    
+    #[inline]
+    fn length(&self) -> Length {
+        debug_assert!(!self.has_percentage());
+        self.length_component()
     }
 
     
+    #[inline]
+    pub fn length_component(&self) -> Length {
+        match *self {
+            Self::Length(l) => l,
+            Self::Percentage(..) => Zero::zero(),
+            Self::Calc(ref c) => c.length_component(),
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn percentage(&self) -> CSSFloat {
+        match *self {
+            Self::Length(..) => 0.,
+            Self::Percentage(p) => p.0,
+            Self::Calc(ref c) => c.percentage.0,
+        }
+    }
+
+    
+    #[inline]
+    pub fn as_percentage(&self) -> Option<Percentage> {
+        match *self {
+            Self::Length(..) => None,
+            Self::Percentage(p) => Some(p),
+            Self::Calc(ref c) => c.as_percentage(),
+        }
+    }
+
+    
+    #[inline]
+    pub fn resolve(&self, basis: Length) -> Length {
+        match *self {
+            Self::Length(l) => l,
+            Self::Percentage(p) => Length::new(basis.0 * p.0),
+            Self::Calc(ref c) => c.resolve(basis),
+        }
+    }
+
+    
+    #[inline]
+    pub fn percentage_relative_to(&self, basis: Length) -> Length {
+        self.resolve(basis)
+    }
+
+    
+    #[inline]
+    pub fn has_percentage(&self) -> bool {
+        match *self {
+            Self::Length(..) => false,
+            Self::Percentage(..) => true,
+            Self::Calc(ref c) => c.has_percentage,
+        }
+    }
+
+    
+    #[inline]
+    pub fn specified_percentage(&self) -> Option<Percentage> {
+        match *self {
+            Self::Length(..) => None,
+            Self::Percentage(p) => Some(p),
+            Self::Calc(ref c) => c.specified_percentage(),
+        }
+    }
+
+    
+    #[inline]
     pub fn to_used_value(&self, containing_length: Au) -> Au {
         Au::from(self.to_pixel_length(containing_length))
     }
 
     
+    #[inline]
     pub fn to_pixel_length(&self, containing_length: Au) -> Length {
-        self.percentage_relative_to(containing_length.into())
+        self.resolve(containing_length.into())
+    }
+
+    
+    #[inline]
+    fn maybe_to_used_value(&self, container_len: Option<Length>) -> Option<Au> {
+        self.maybe_percentage_relative_to(container_len).map(Au::from)
+    }
+
+    
+    
+    
+    pub fn maybe_percentage_relative_to(&self, container_len: Option<Length>) -> Option<Length> {
+        if self.has_percentage() {
+            return Some(self.resolve(container_len?));
+        }
+        Some(self.length())
     }
 
     
     #[inline]
     pub fn clamp_to_non_negative(self) -> Self {
-        if let Some(p) = self.specified_percentage() {
+        match self {
+            Self::Length(l) => Self::Length(l.clamp_to_non_negative()),
+            Self::Percentage(p) => Self::Percentage(p.clamp_to_non_negative()),
+            Self::Calc(c) => c.clamp_to_non_negative().to_length_percentge(),
+        }
+    }
+}
+
+impl CalcLengthPercentage {
+    
+    #[inline]
+    pub fn new(length: Length, percentage: Option<Percentage>) -> Self {
+        Self::with_clamping_mode(length, percentage, AllowedNumericType::All)
+    }
+
+    
+    #[inline]
+    pub fn to_length_percentge(self) -> LengthPercentage {
+        if !self.has_percentage {
+            return LengthPercentage::Length(self.length_component())
+        }
+        if self.length.is_zero() {
+            return LengthPercentage::Percentage(Percentage(self.clamping_mode.clamp(self.percentage.0)));
+        }
+        LengthPercentage::Calc(Box::new(self))
+    }
+
+    fn specified_percentage(&self) -> Option<Percentage> {
+        if self.has_percentage {
+            Some(self.percentage)
+        } else {
+            None
+        }
+    }
+
+    
+    #[inline]
+    fn with_clamping_mode(
+        length: Length,
+        percentage: Option<Percentage>,
+        clamping_mode: AllowedNumericType,
+    ) -> Self {
+        Self {
+            clamping_mode,
+            length,
+            percentage: percentage.unwrap_or_default(),
+            has_percentage: percentage.is_some(),
+        }
+    }
+
+    
+    #[inline]
+    fn length_component(&self) -> CSSPixelLength {
+        Length::new(self.clamping_mode.clamp(self.length.px()))
+    }
+
+    
+    
+    fn as_percentage(&self) -> Option<Percentage> {
+        if !self.has_percentage || self.length.px() != 0. {
+            return None;
+        }
+
+        Some(Percentage(self.clamping_mode.clamp(self.percentage.0)))
+    }
+
+    
+    #[inline]
+    pub fn resolve(&self, basis: Length) -> Length {
+        let length = self.length.0 + basis.0 * self.percentage.0;
+        Length::new(self.clamping_mode.clamp(length))
+    }
+
+    
+    #[inline]
+    pub fn percentage_relative_to(&self, basis: Length) -> Length {
+        self.resolve(basis)
+    }
+
+    
+    #[inline]
+    pub fn unclamped_length(&self) -> Length {
+        self.length
+    }
+
+    
+    #[inline]
+    fn is_definitely_zero(&self) -> bool {
+        self.length.px() == 0.0 && self.percentage.0 == 0.0
+    }
+
+    
+    #[inline]
+    fn clamp_to_non_negative(self) -> Self {
+        if self.has_percentage {
             
             if self.length.is_zero() {
                 return Self::with_clamping_mode(
                     Length::zero(),
-                    Some(p.clamp_to_non_negative()),
+                    Some(self.percentage.clamp_to_non_negative()),
                     AllowedNumericType::NonNegative,
                 );
             }
-
-            return Self::with_clamping_mode(self.length, Some(p), AllowedNumericType::NonNegative);
+            return Self::with_clamping_mode(self.length, Some(self.percentage), AllowedNumericType::NonNegative);
         }
 
         Self::with_clamping_mode(
@@ -413,31 +522,41 @@ impl ToComputedValue for specified::LengthPercentage {
     fn to_computed_value(&self, context: &Context) -> LengthPercentage {
         match *self {
             specified::LengthPercentage::Length(ref value) => {
-                LengthPercentage::new(value.to_computed_value(context), None)
+                LengthPercentage::Length(value.to_computed_value(context))
             },
-            specified::LengthPercentage::Percentage(value) => LengthPercentage::new_percent(value),
-            specified::LengthPercentage::Calc(ref calc) => (**calc).to_computed_value(context),
+            specified::LengthPercentage::Percentage(value) => {
+                LengthPercentage::Percentage(value)
+            },
+            specified::LengthPercentage::Calc(ref calc) => {
+                (**calc).to_computed_value(context).to_length_percentge()
+            },
         }
     }
 
     fn from_computed_value(computed: &LengthPercentage) -> Self {
-        if let Some(p) = computed.as_percentage() {
-            return specified::LengthPercentage::Percentage(p);
+        match *computed {
+            LengthPercentage::Length(ref l) => {
+                specified::LengthPercentage::Length(ToComputedValue::from_computed_value(l))
+            }
+            LengthPercentage::Percentage(p) => {
+                specified::LengthPercentage::Percentage(p)
+            }
+            LengthPercentage::Calc(ref c) => {
+                if let Some(p) = c.as_percentage() {
+                    return specified::LengthPercentage::Percentage(p)
+                }
+                if !c.has_percentage {
+                    return specified::LengthPercentage::Length(ToComputedValue::from_computed_value(&c.length_component()))
+                }
+                specified::LengthPercentage::Calc(Box::new(specified::CalcLengthPercentage::from_computed_value(c)))
+            }
         }
-
-        if !computed.has_percentage {
-            return specified::LengthPercentage::Length(ToComputedValue::from_computed_value(
-                &computed.length(),
-            ));
-        }
-
-        specified::LengthPercentage::Calc(Box::new(ToComputedValue::from_computed_value(computed)))
     }
 }
 
 impl Zero for LengthPercentage {
     fn zero() -> Self {
-        LengthPercentage::new(Length::zero(), None)
+        LengthPercentage::Length(Length::zero())
     }
 
     #[inline]
@@ -541,7 +660,7 @@ impl ToAnimatedValue for NonNegativeLengthPercentage {
 impl From<NonNegativeLength> for NonNegativeLengthPercentage {
     #[inline]
     fn from(length: NonNegativeLength) -> Self {
-        NonNegative(LengthPercentage::new(length.0, None))
+        NonNegative(LengthPercentage::new_length(length.0))
     }
 }
 
@@ -557,7 +676,7 @@ impl From<LengthPercentage> for NonNegativeLengthPercentage {
 impl From<Au> for LengthPercentage {
     #[inline]
     fn from(length: Au) -> Self {
-        LengthPercentage::new(length.into(), None)
+        LengthPercentage::new_length(length.into())
     }
 }
 
@@ -572,7 +691,7 @@ impl NonNegativeLengthPercentage {
     #[inline]
     pub fn to_used_value(&self, containing_length: Au) -> Au {
         let resolved = self.0.to_used_value(containing_length);
-        ::std::cmp::max(resolved, Au(0))
+        std::cmp::max(resolved, Au(0))
     }
 
     
@@ -581,7 +700,7 @@ impl NonNegativeLengthPercentage {
         let resolved = self
             .0
             .maybe_to_used_value(containing_length.map(|v| v.into()))?;
-        Some(::std::cmp::max(resolved, Au(0)))
+        Some(std::cmp::max(resolved, Au(0)))
     }
 }
 

@@ -5,7 +5,7 @@
 
 
 use super::{Animate, Procedure};
-use crate::values::computed::length::LengthPercentage;
+use crate::values::computed::length::{LengthPercentage, CalcLengthPercentage};
 use crate::values::computed::Percentage;
 
 
@@ -26,10 +26,9 @@ impl Animate for LengthPercentage {
             .animate(&other.unclamped_length(), procedure)?;
         let percentage =
             animate_percentage_half(self.specified_percentage(), other.specified_percentage())?;
-        Ok(Self::with_clamping_mode(
-            length,
-            percentage,
-            self.clamping_mode,
-        ))
+
+        
+        
+        Ok(CalcLengthPercentage::new(length, percentage).to_length_percentge())
     }
 }

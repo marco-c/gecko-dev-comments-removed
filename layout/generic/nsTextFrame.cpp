@@ -1765,8 +1765,8 @@ static nscoord LetterSpacing(nsIFrame* aFrame,
     
     
     
-    StyleCSSPixelLength spacing = aStyleText->mLetterSpacing;
-    spacing._0 *= GetSVGFontSizeScaleFactor(aFrame);
+    Length spacing = aStyleText->mLetterSpacing;
+    spacing.ScaleBy(GetSVGFontSizeScaleFactor(aFrame));
     return spacing.ToAppUnits();
   }
 
@@ -1791,7 +1791,7 @@ static nscoord WordSpacing(nsIFrame* aFrame, const gfxTextRun* aTextRun,
       return 0;
     }
     auto spacing = aStyleText->mWordSpacing;
-    spacing.length._0 *= GetSVGFontSizeScaleFactor(aFrame);
+    spacing.ScaleLengthsBy(GetSVGFontSizeScaleFactor(aFrame));
     return spacing.Resolve([&] { return GetSpaceWidthAppUnits(aTextRun); });
   }
 
