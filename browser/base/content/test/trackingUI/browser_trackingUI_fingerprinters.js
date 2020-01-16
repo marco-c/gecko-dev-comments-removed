@@ -199,7 +199,24 @@ async function testSubview(hasException) {
   let categoryItem = document.getElementById(
     "protections-popup-category-fingerprinters"
   );
+
+  
+  await TestUtils.waitForCondition(() => {
+    return BrowserTestUtils.is_visible(categoryItem);
+  });
+
   ok(BrowserTestUtils.is_visible(categoryItem), "TP category item is visible");
+
+  
+  
+  
+  
+  
+  await new Promise(resolve => {
+    setTimeout(resolve, 500);
+  });
+  
+
   let subview = document.getElementById("protections-popup-fingerprintersView");
   let viewShown = BrowserTestUtils.waitForEvent(subview, "ViewShown");
   categoryItem.click();

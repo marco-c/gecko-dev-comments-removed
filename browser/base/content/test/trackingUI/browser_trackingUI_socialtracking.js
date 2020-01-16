@@ -128,11 +128,28 @@ async function testSubview(hasException) {
   let categoryItem = document.getElementById(
     "protections-popup-category-socialblock"
   );
+
+  
+  await TestUtils.waitForCondition(() => {
+    return BrowserTestUtils.is_visible(categoryItem);
+  });
+
   ok(BrowserTestUtils.is_visible(categoryItem), "STP category item is visible");
   ok(
     categoryItem.classList.contains("blocked"),
     "STP category item is blocked"
   );
+
+  
+  
+  
+  
+  
+  await new Promise(resolve => {
+    setTimeout(resolve, 500);
+  });
+  
+
   let subview = document.getElementById("protections-popup-socialblockView");
   let viewShown = BrowserTestUtils.waitForEvent(subview, "ViewShown");
   categoryItem.click();
