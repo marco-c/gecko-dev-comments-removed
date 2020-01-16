@@ -1526,7 +1526,10 @@ nsLocalFile::IsExecutable(bool* aResult) {
     
     static const char* const executableExts[] = {
         "air",  
-        "jar"   
+#ifdef MOZ_WIDGET_COCOA
+        "fileloc",  
+#endif
+        "jar"  
     };
     nsDependentSubstring ext = Substring(path, dotIdx + 1);
     for (auto executableExt : executableExts) {
