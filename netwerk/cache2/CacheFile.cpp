@@ -2290,7 +2290,7 @@ void CacheFile::NotifyListenersAboutOutputRemoval() {
   
   for (auto iter = mChunkListeners.Iter(); !iter.Done(); iter.Next()) {
     uint32_t idx = iter.Key();
-    nsAutoPtr<ChunkListeners>& listeners = iter.Data();
+    auto listeners = iter.UserData();
 
     LOG(
         ("CacheFile::NotifyListenersAboutOutputRemoval() - fail "

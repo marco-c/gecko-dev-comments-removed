@@ -166,7 +166,7 @@ void AsyncImagePipelineManager::RemoveAsyncImagePipeline(
 
   uint64_t id = wr::AsUint64(aPipelineId);
   if (auto entry = mAsyncImagePipelines.Lookup(id)) {
-    AsyncImagePipeline* holder = entry.Data();
+    const auto& holder = entry.Data();
     wr::Epoch epoch = GetNextImageEpoch();
     aTxn.ClearDisplayList(epoch, aPipelineId);
     for (wr::ImageKey key : holder->mKeys) {
@@ -320,7 +320,7 @@ void AsyncImagePipelineManager::ApplyAsyncImagesOfImageBridge(
   
   for (auto iter = mAsyncImagePipelines.Iter(); !iter.Done(); iter.Next()) {
     wr::PipelineId pipelineId = wr::AsPipelineId(iter.Key());
-    AsyncImagePipeline* pipeline = iter.Data();
+    AsyncImagePipeline* pipeline = iter.UserData();
     
     if (!pipeline->mImageHost->GetAsyncRef()) {
       continue;
@@ -591,7 +591,7 @@ void AsyncImagePipelineManager::ProcessPipelineRendered(
     const wr::PipelineId& aPipelineId, const wr::Epoch& aEpoch,
     wr::RenderedFrameId aRenderedFrameId) {
   if (auto entry = mPipelineTexturesHolders.Lookup(wr::AsUint64(aPipelineId))) {
-    PipelineTexturesHolder* holder = entry.Data();
+    const auto& holder = entry.Data();
     
     
     auto firstSubmittedHostToKeep = std::find_if(
@@ -641,7 +641,7 @@ void AsyncImagePipelineManager::ProcessPipelineRemoved(
   }
   if (auto entry = mPipelineTexturesHolders.Lookup(
           wr::AsUint64(aRemovedPipeline.pipeline_id))) {
-    PipelineTexturesHolder* holder = entry.Data();
+    const auto& holder = entry.Data();
     if (holder->mDestroyedEpoch.isSome()) {
       if (!holder->mTextureHostsUntilRenderCompleted.empty()) {
         

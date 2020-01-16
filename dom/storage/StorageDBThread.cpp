@@ -1292,7 +1292,7 @@ void StorageDBThread::PendingOperations::Add(
       
       
       for (auto iter = mUpdates.Iter(); !iter.Done(); iter.Next()) {
-        nsAutoPtr<DBOperation>& pendingTask = iter.Data();
+        const auto& pendingTask = iter.Data();
 
         if (aOperation->Type() == DBOperation::opClear &&
             (pendingTask->OriginNoSuffix() != aOperation->OriginNoSuffix() ||
@@ -1341,12 +1341,12 @@ bool StorageDBThread::PendingOperations::Prepare() {
   
   
   for (auto iter = mClears.Iter(); !iter.Done(); iter.Next()) {
-    mExecList.AppendElement(iter.Data().forget());
+    mExecList.AppendElement(iter.Data().release());
   }
   mClears.Clear();
 
   for (auto iter = mUpdates.Iter(); !iter.Done(); iter.Next()) {
-    mExecList.AppendElement(iter.Data().forget());
+    mExecList.AppendElement(iter.Data().release());
   }
   mUpdates.Clear();
 

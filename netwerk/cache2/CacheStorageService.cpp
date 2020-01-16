@@ -25,7 +25,6 @@
 #include "nsIURI.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
-#include "nsAutoPtr.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
 #include "nsServiceManagerUtils.h"
@@ -1903,7 +1902,7 @@ nsresult CacheStorageService::DoomStorageEntries(
     
     
     
-    nsAutoPtr<CacheEntryTable> memoryEntries;
+    mozilla::UniquePtr<CacheEntryTable> memoryEntries;
     sGlobalEntryTables->Remove(memoryStorageID, &memoryEntries);
 
     CacheEntryTable* diskEntries;

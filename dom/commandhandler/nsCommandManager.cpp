@@ -79,7 +79,7 @@ nsCommandManager::AddCommandObserver(nsIObserver* aCommandObserver,
   
 
   
-  ObserverList* commandObservers =
+  const auto& commandObservers =
       mObserversTable.LookupForAdd(aCommandToObserve).OrInsert([]() {
         return new ObserverList;
       });

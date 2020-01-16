@@ -153,7 +153,7 @@ Http2Session::Http2Session(nsISocketTransport* aSocketTransport,
 
 void Http2Session::Shutdown() {
   for (auto iter = mStreamTransactionHash.Iter(); !iter.Done(); iter.Next()) {
-    nsAutoPtr<Http2Stream>& stream = iter.Data();
+    auto stream = iter.UserData();
 
     
     
@@ -2312,7 +2312,7 @@ nsresult Http2Session::RecvGoAway(Http2Session* self) {
     
     
     
-    nsAutoPtr<Http2Stream>& stream = iter.Data();
+    auto stream = iter.UserData();
     if ((stream->StreamID() > self->mGoAwayID && (stream->StreamID() & 1)) ||
         !stream->HasRegisteredID()) {
       self->mGoAwayStreamsToRestart.Push(stream);
@@ -2449,7 +2449,7 @@ nsresult Http2Session::RecvWindowUpdate(Http2Session* self) {
            iter.Next()) {
         MOZ_ASSERT(self->mServerSessionWindow > 0);
 
-        nsAutoPtr<Http2Stream>& stream = iter.Data();
+        auto stream = iter.UserData();
         if (!stream->BlockedOnRwin() || stream->ServerReceiveWindow() <= 0) {
           continue;
         }
@@ -3279,7 +3279,7 @@ nsresult Http2Session::WriteSegmentsAgain(nsAHttpSegmentWriter* writer,
       
       for (auto iter = mStreamTransactionHash.Iter(); !iter.Done();
            iter.Next()) {
-        nsAutoPtr<Http2Stream>& stream = iter.Data();
+        auto stream = iter.UserData();
         stream->Transaction()->DisableSpdy();
         CloseStream(stream, NS_ERROR_NET_RESET);
       }

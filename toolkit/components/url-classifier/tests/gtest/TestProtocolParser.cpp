@@ -132,7 +132,7 @@ TEST(UrlClassifierProtocolParser, SingleValueEncoding)
 
     
     
-    nsCString* prefix = iter.Data();
+    nsCString* prefix = iter.UserData();
     ASSERT_TRUE(prefix->Equals(nsCString(expectedPrefix, 4)));
   }
 

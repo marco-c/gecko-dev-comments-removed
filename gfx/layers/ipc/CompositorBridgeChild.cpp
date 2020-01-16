@@ -35,7 +35,6 @@
 #include "mozilla/mozalloc.h"  
 #include "mozilla/Telemetry.h"
 #include "gfxConfig.h"
-#include "nsAutoPtr.h"
 #include "nsDebug.h"          
 #include "nsISupportsImpl.h"  
 #include "nsTArray.h"         
@@ -1094,7 +1093,7 @@ bool CompositorBridgeChild::DeallocPWebGPUChild(webgpu::PWebGPUChild* aActor) {
 
 void CompositorBridgeChild::ClearSharedFrameMetricsData(LayersId aLayersId) {
   for (auto iter = mFrameMetricsTable.Iter(); !iter.Done(); iter.Next()) {
-    nsAutoPtr<SharedFrameMetricsData>& data = iter.Data();
+    auto data = iter.UserData();
     if (data->GetLayersId() == aLayersId) {
       iter.Remove();
     }
