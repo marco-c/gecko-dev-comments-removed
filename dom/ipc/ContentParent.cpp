@@ -970,30 +970,33 @@ ContentParent::GetNewOrUsedBrowserProcessAsync(Element* aFrameElement,
   RefPtr<LaunchPromise> launchPromise = p->LaunchSubprocessAsync(aPriority);
   MOZ_ASSERT(launchPromise);
 
+  
+  
+  
+  
+  PreallocatedProcessManager::AddBlocker(p);
+
+  nsAutoString remoteType(aRemoteType);
   return launchPromise->Then(
       GetCurrentThreadSerialEventTarget(), __func__,
       
-      [&p, &recordReplayState, &aRemoteType,
-       launchPromise =
-           std::move(launchPromise)](const RefPtr<ContentParent>& subProcess) {
-        
-        
-        PreallocatedProcessManager::AddBlocker(p);
-
+      [p, recordReplayState, remoteType,
+       launchPromise](const RefPtr<ContentParent>& subProcess) {
         if (recordReplayState == eNotRecordingOrReplaying) {
           
           
           nsTArray<ContentParent*>& contentParents =
-              GetOrCreatePool(aRemoteType);
+              GetOrCreatePool(remoteType);
           contentParents.AppendElement(p);
         }
 
         p->mActivateTS = TimeStamp::Now();
         return launchPromise;
       },
-      [launchPromise = std::move(launchPromise)]() { return launchPromise; }
-      
-  );
+      [p, launchPromise]() {
+        PreallocatedProcessManager::RemoveBlocker(p);
+        return launchPromise;
+      });
 }
 
 
