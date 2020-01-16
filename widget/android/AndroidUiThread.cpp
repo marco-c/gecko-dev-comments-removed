@@ -249,7 +249,7 @@ void EnqueueTask(already_AddRefed<nsIRunnable> aTask, int aDelayMs) {
     
     
     
-    GeckoThread::RequestUiThreadCallback(int64_t(aDelayMs));
+    java::GeckoThread::RequestUiThreadCallback(int64_t(aDelayMs));
   }
 }
 
