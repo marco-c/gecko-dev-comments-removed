@@ -2336,15 +2336,15 @@ void nsWindow::UpdateDynamicToolbarOffset(ScreenIntCoord aOffset) {
 }
 
 nsresult nsWindow::SetPrefersReducedMotionOverrideForTest(bool aValue) {
-  nsXPLookAndFeel::GetInstance()->SetPrefersReducedMotionOverrideForTest(
-      aValue);
+  LookAndFeel::SetPrefersReducedMotionOverrideForTest(aValue);
 
+  
   java::GeckoSystemStateListener::NotifyPrefersReducedMotionChangedForTest();
   return NS_OK;
 }
 
 nsresult nsWindow::ResetPrefersReducedMotionOverrideForTest() {
-  nsXPLookAndFeel::GetInstance()->ResetPrefersReducedMotionOverrideForTest();
+  LookAndFeel::ResetPrefersReducedMotionOverrideForTest();
   return NS_OK;
 }
 
