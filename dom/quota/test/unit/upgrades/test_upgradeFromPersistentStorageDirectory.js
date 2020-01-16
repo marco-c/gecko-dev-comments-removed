@@ -3,6 +3,11 @@
 
 
 
+
+
+
+
+
 var testGenerator = testSteps();
 
 function* testSteps() {
@@ -211,14 +216,13 @@ function* testSteps() {
 
   let metadataBuffers = [];
 
-  
-  
-  
-
   clear(continueToNextStepSync);
   yield undefined;
 
-  installPackage("defaultStorageUpgrade_profile");
+  
+  
+  
+  installPackage("persistentStorageDirectory_profile");
 
   info("Checking origin directories");
 
