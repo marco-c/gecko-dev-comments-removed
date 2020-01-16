@@ -114,6 +114,7 @@ static void CloseLiveIteratorIon(JSContext* cx,
 
   if (isDestructuring) {
     RootedValue doneValue(cx, si.read());
+    MOZ_RELEASE_ASSERT(!doneValue.isMagic());
     bool done = ToBoolean(doneValue);
     
     
@@ -399,7 +400,10 @@ static bool ProcessTryNotesBaseline(JSContext* cx, const JSJitFrameIter& frame,
         uint8_t* stackPointer;
         BaselineFrameAndStackPointersFromTryNote(tn, frame, &framePointer,
                                                  &stackPointer);
+        
+        
         RootedValue doneValue(cx, *(reinterpret_cast<Value*>(stackPointer)));
+        MOZ_RELEASE_ASSERT(!doneValue.isMagic());
         bool done = ToBoolean(doneValue);
         if (!done) {
           Value iterValue(*(reinterpret_cast<Value*>(stackPointer) + 1));
