@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+
+
+
+Services.obs.notifyObservers(this, "tab-content-frameloader-created");
