@@ -450,23 +450,24 @@ class MachBrowsertime(MachCommandBase):
         if not specifies_har:
             extra_args.append('--skipHar')
 
-        
-        
-        
-        specifies_binaryPath = matches(args, '--firefox.binaryPath',
-                                       '--firefox.release', '--firefox.nightly',
-                                       '--firefox.beta', '--firefox.developer')
+        if not matches(args, "--android"):
+            
+            
+            
+            specifies_binaryPath = matches(args, '--firefox.binaryPath',
+                                           '--firefox.release', '--firefox.nightly',
+                                           '--firefox.beta', '--firefox.developer')
 
-        if not specifies_binaryPath:
-            specifies_binaryPath = extract_browser_name(args) == 'chrome'
+            if not specifies_binaryPath:
+                specifies_binaryPath = extract_browser_name(args) == 'chrome'
 
-        if not specifies_binaryPath:
-            try:
-                extra_args.extend(('--firefox.binaryPath', self.get_binary_path()))
-            except Exception:
-                print('Please run |./mach build| '
-                      'or specify a Firefox binary with --firefox.binaryPath.')
-                return 1
+            if not specifies_binaryPath:
+                try:
+                    extra_args.extend(('--firefox.binaryPath', self.get_binary_path()))
+                except Exception:
+                    print('Please run |./mach build| '
+                          'or specify a Firefox binary with --firefox.binaryPath.')
+                    return 1
 
         if extra_args:
             self.log(
