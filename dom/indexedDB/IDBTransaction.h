@@ -108,8 +108,6 @@ class IDBTransaction final
   FlippedOnce<false> mStarted;
   const Mode mMode;
 
-  bool mCreating;    
-                     
   bool mRegistered;  
                      
                      
@@ -315,6 +313,8 @@ class IDBTransaction final
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIRUNNABLE
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(IDBTransaction, DOMEventTargetHelper)
+
+  void CommitIfNotStarted();
 
   
   JSObject* WrapObject(JSContext* aCx,
