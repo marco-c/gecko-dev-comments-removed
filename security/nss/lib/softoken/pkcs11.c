@@ -3104,6 +3104,9 @@ sftk_closePeer(PRBool isFIPS)
     return;
 }
 
+extern void sftk_PBELockInit(void);
+extern void sftk_PBELockShutdown(void);
+
 
 CK_RV
 nsc_CommonInitialize(CK_VOID_PTR pReserved, PRBool isFIPS)
@@ -3119,6 +3122,8 @@ nsc_CommonInitialize(CK_VOID_PTR pReserved, PRBool isFIPS)
     }
 
     ENABLE_FORK_CHECK();
+
+    sftk_PBELockInit();
 
     rv = SECOID_Init();
     if (rv != SECSuccess) {
@@ -3299,6 +3304,8 @@ nsc_CommonFinalize(CK_VOID_PTR pReserved, PRBool isFIPS)
 
     
     SECOID_Shutdown();
+
+    sftk_PBELockShutdown();
 
     
     UTIL_SetForkState(PR_FALSE);
