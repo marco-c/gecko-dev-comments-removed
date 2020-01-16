@@ -92,7 +92,6 @@ var SearchUtils = {
 
   log(text) {
     if (SearchUtils.loggingEnabled) {
-      dump("*** Search: " + text + "\n");
       Services.console.logStringMessage(text);
     }
   },
