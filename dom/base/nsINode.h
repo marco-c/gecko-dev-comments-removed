@@ -1192,7 +1192,10 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-    mozilla::UniquePtr<mozilla::LinkedList<nsRange>> mCommonAncestorRanges;
+
+
+    mozilla::UniquePtr<mozilla::LinkedList<nsRange>>
+        mClosestCommonInclusiveAncestorRanges;
   };
 
   
@@ -1990,23 +1993,34 @@ class nsINode : public mozilla::dom::EventTarget {
       const ConvertCoordinateOptions& aOptions, CallerType aCallerType,
       ErrorResult& aRv);
 
-  const mozilla::LinkedList<nsRange>* GetExistingCommonAncestorRanges() const {
+  
+
+
+  const mozilla::LinkedList<nsRange>*
+  GetExistingClosestCommonInclusiveAncestorRanges() const {
     if (!HasSlots()) {
       return nullptr;
     }
-    return GetExistingSlots()->mCommonAncestorRanges.get();
+    return GetExistingSlots()->mClosestCommonInclusiveAncestorRanges.get();
   }
 
-  mozilla::LinkedList<nsRange>* GetExistingCommonAncestorRanges() {
+  
+
+
+  mozilla::LinkedList<nsRange>*
+  GetExistingClosestCommonInclusiveAncestorRanges() {
     if (!HasSlots()) {
       return nullptr;
     }
-    return GetExistingSlots()->mCommonAncestorRanges.get();
+    return GetExistingSlots()->mClosestCommonInclusiveAncestorRanges.get();
   }
+
+  
+
 
   mozilla::UniquePtr<mozilla::LinkedList<nsRange>>&
-  GetCommonAncestorRangesPtr() {
-    return Slots()->mCommonAncestorRanges;
+  GetClosestCommonInclusiveAncestorRangesPtr() {
+    return Slots()->mClosestCommonInclusiveAncestorRanges;
   }
 
   nsIWeakReference* GetExistingWeakReference() {
