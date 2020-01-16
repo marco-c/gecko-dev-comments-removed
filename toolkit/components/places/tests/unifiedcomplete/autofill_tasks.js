@@ -897,10 +897,30 @@ function addAutofillTasks(origins) {
   
   
   add_task(async function suggestHistoryFalse_bookmark_0() {
-    Services.prefs.setBoolPref("browser.urlbar.suggest.history", false);
+    
     await addBookmark({
       uri: "http://" + url,
     });
+
+    
+    
+    
+    let meetsThreshold = true;
+    while (meetsThreshold) {
+      
+      await PlacesTestUtils.addVisits("http://foo-" + url);
+      let originFrecency = await getOriginFrecency("http://", host);
+      let threshold = await getOriginAutofillThreshold();
+      meetsThreshold = threshold <= originFrecency;
+    }
+
+    
+    
+    let originFrecency = await getOriginFrecency("http://", host);
+    let threshold = await getOriginAutofillThreshold();
+    Assert.ok(originFrecency < threshold);
+
+    Services.prefs.setBoolPref("browser.urlbar.suggest.history", false);
     await check_autocomplete({
       search,
       autofilled: url,
@@ -959,6 +979,29 @@ function addAutofillTasks(origins) {
   
   
   add_task(async function suggestHistoryFalse_bookmark_prefix_0() {
+    
+    await addBookmark({
+      uri: "http://" + url,
+    });
+
+    
+    
+    
+    let meetsThreshold = true;
+    while (meetsThreshold) {
+      
+      await PlacesTestUtils.addVisits("http://foo-" + url);
+      let originFrecency = await getOriginFrecency("http://", host);
+      let threshold = await getOriginAutofillThreshold();
+      meetsThreshold = threshold <= originFrecency;
+    }
+
+    
+    
+    let originFrecency = await getOriginFrecency("http://", host);
+    let threshold = await getOriginAutofillThreshold();
+    Assert.ok(originFrecency < threshold);
+
     Services.prefs.setBoolPref("browser.urlbar.suggest.history", false);
     await addBookmark({
       uri: "http://" + url,
