@@ -309,7 +309,10 @@ class MachBrowsertime(MachCommandBase):
         
         
         if 'win64' in host_platform() and path_to_imagemagick:
-            path.insert(0, path_to_imagemagick)
+            
+            
+            
+            path.insert(2, path_to_imagemagick)
 
         
         
