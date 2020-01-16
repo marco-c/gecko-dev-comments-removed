@@ -1,0 +1,45 @@
+
+
+
+
+
+
+
+
+
+async function testSteps() {
+  function verifyDatabaseTable(shouldExist) {
+    let file = getRelativeFile("storage.sqlite");
+    let conn = Services.storage.openUnsharedDatabase(file);
+
+    let exists = conn.tableExists("database");
+    if (shouldExist) {
+      ok(exists, "Database table does exist");
+    } else {
+      ok(!exists, "Database table does not exist");
+    }
+
+    conn.close();
+  }
+
+  info("Clearing");
+
+  let request = clear();
+  await requestFinished(request);
+
+  
+  installPackage("version2_2_profile");
+
+  verifyDatabaseTable( false);
+
+  info("Initializing");
+
+  
+  request = init();
+  await requestFinished(request);
+
+  request = reset();
+  await requestFinished(request);
+
+  verifyDatabaseTable( true);
+}
