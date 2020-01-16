@@ -7,9 +7,22 @@
 
 
 add_task(async function() {
-  await openTabAndSetupStorage(MAIN_DOMAIN + "storage-cache-error.html");
+  
+  const win = await BrowserTestUtils.openNewBrowserWindow({ private: true });
+  const tab = win.gBrowser.selectedBrowser;
+  const systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+  tab.loadURI(MAIN_DOMAIN + "storage-cache-error.html", {
+    triggeringPrincipal: systemPrincipal,
+  });
+  await BrowserTestUtils.browserLoaded(tab);
 
-  const cacheItemId = ["Cache", "javascript:parent.frameContent"];
+  
+  
+  
+  const target = await TargetFactory.forTab(win.gBrowser.selectedTab);
+  await openStoragePanel(null, target);
+
+  const cacheItemId = ["Cache", "http://test2.example.org"];
 
   await selectTreeItem(cacheItemId);
   ok(
@@ -17,5 +30,6 @@ add_task(async function() {
     `The item ${cacheItemId.join(" > ")} is present in the tree`
   );
 
+  await BrowserTestUtils.closeWindow(win);
   await finishTests();
 });

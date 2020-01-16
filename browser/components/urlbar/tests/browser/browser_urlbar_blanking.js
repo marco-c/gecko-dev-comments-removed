@@ -21,6 +21,12 @@ add_task(async function() {
 });
 
 add_task(async function() {
+  
+  
+  
+  
+  
+  
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
   is(gURLBar.value, TEST_URL, "The URL bar should match the URI");
   let browserLoaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
@@ -28,18 +34,21 @@ add_task(async function() {
     content.document.querySelector("a").click();
   });
   await browserLoaded;
-  ok(
-    gURLBar.value.startsWith("javascript"),
-    "The URL bar should have the JS URI"
+  is(
+    gURLBar.value,
+    TEST_URL,
+    "The URL bar should be the previous active document's URI."
   );
-  
-  
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
     
     content.location.reload();
   }).catch(e => {
     
   });
-  ok(!!gURLBar.value, "URL bar should not be blank.");
+  is(
+    gURLBar.value,
+    TEST_URL,
+    "The URL bar should still be the previous active document's URI."
+  );
   BrowserTestUtils.removeTab(tab);
 });
