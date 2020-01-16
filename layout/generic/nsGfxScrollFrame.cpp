@@ -4813,16 +4813,18 @@ already_AddRefed<Element> ScrollFrameHelper::MakeScrollbar(
 }
 
 bool ScrollFrameHelper::IsForTextControlWithNoScrollbars() const {
+  nsIFrame* parent = mOuter->GetParent();
   
-  
-  
-  
-  auto* content = mOuter->GetContent();
-  if (!content) {
-    return false;
+  nsITextControlFrame* textFrame = do_QueryFrame(parent);
+  if (textFrame) {
+    
+    HTMLTextAreaElement* textAreaElement =
+        HTMLTextAreaElement::FromNode(parent->GetContent());
+    if (!textAreaElement) {
+      return true;
+    }
   }
-  auto* input = content->GetClosestNativeAnonymousSubtreeRootParent();
-  return input && input->IsHTMLElement(nsGkAtoms::input);
+  return false;
 }
 
 nsresult ScrollFrameHelper::CreateAnonymousContent(

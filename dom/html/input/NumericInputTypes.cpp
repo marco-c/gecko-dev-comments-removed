@@ -8,7 +8,7 @@
 
 #include "mozilla/TextControlState.h"
 #include "mozilla/dom/HTMLInputElement.h"
-#include "ICUUtils.h"
+#include "nsNumberControlFrame.h"
 
 bool NumericInputTypeBase::IsRangeOverflow() const {
   mozilla::Decimal maximum = mInputElement->GetMaximum();
@@ -94,15 +94,11 @@ nsresult NumericInputTypeBase::GetRangeUnderflowMessage(nsAString& aMessage) {
 
 bool NumericInputTypeBase::ConvertStringToNumber(
     nsAString& aValue, mozilla::Decimal& aResultValue) const {
-  
-  
-  ICUUtils::LanguageTagIterForContent langTagIter(mInputElement);
-  aResultValue =
-      mozilla::Decimal::fromDouble(ICUUtils::ParseNumber(aValue, langTagIter));
+  aResultValue = mozilla::dom::HTMLInputElement::StringToDecimal(aValue);
   if (!aResultValue.isFinite()) {
-    aResultValue = mozilla::dom::HTMLInputElement::StringToDecimal(aValue);
+    return false;
   }
-  return aResultValue.isFinite();
+  return true;
 }
 
 bool NumericInputTypeBase::ConvertNumberToString(
@@ -136,7 +132,19 @@ bool NumberInputType::IsValueMissing() const {
 bool NumberInputType::HasBadInput() const {
   nsAutoString value;
   GetNonFileValueInternal(value);
-  return !value.IsEmpty() && mInputElement->GetValueAsDecimal().isNaN();
+  if (!value.IsEmpty()) {
+    
+    
+    NS_ASSERTION(!mInputElement->GetValueAsDecimal().isNaN(),
+                 "Should have sanitized");
+    return false;
+  }
+  nsNumberControlFrame* numberControlFrame = do_QueryFrame(GetPrimaryFrame());
+  if (numberControlFrame && !numberControlFrame->AnonTextControlIsEmpty()) {
+    
+    return true;
+  }
+  return false;
 }
 
 nsresult NumberInputType::GetValueMissingMessage(nsAString& aMessage) {

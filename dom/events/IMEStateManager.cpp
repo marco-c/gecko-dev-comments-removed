@@ -1122,7 +1122,7 @@ void IMEStateManager::SetInputContextForChildProcess(
   SetInputContext(widget, aInputContext, aAction);
 }
 
-static bool IsNextFocusableElementTextControl(Element* aInputContent) {
+static bool IsNextFocusableElementTextOrNumberControl(Element* aInputContent) {
   nsFocusManager* fm = nsFocusManager::GetFocusManager();
   if (!fm) {
     return false;
@@ -1136,7 +1136,7 @@ static bool IsNextFocusableElementTextControl(Element* aInputContent) {
   }
   nextContent = nextContent->FindFirstNonChromeOnlyAccessContent();
   nsCOMPtr<nsIFormControl> nextControl = do_QueryInterface(nextContent);
-  if (!nextControl || !nextControl->IsTextControl(false)) {
+  if (!nextControl || !nextControl->IsTextOrNumberControl(false)) {
     return false;
   }
 
@@ -1217,7 +1217,8 @@ static void GetActionHint(nsIContent& aContent, nsAString& aActionHint) {
     if (!isLastElement && formElement) {
       
       
-      if (IsNextFocusableElementTextControl(inputContent->AsElement())) {
+      if (IsNextFocusableElementTextOrNumberControl(
+              inputContent->AsElement())) {
         
         
         aActionHint.AssignLiteral("next");
@@ -1273,8 +1274,22 @@ void IMEStateManager::SetIMEState(const IMEState& aState,
   if (aContent &&
       aContent->IsAnyOfHTMLElements(nsGkAtoms::input, nsGkAtoms::textarea)) {
     if (!aContent->IsHTMLElement(nsGkAtoms::textarea)) {
-      aContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::type,
-                                     context.mHTMLInputType);
+      
+      
+      
+      
+      Element* element = aContent->AsElement();
+      HTMLInputElement* inputElement =
+          HTMLInputElement::FromNodeOrNull(aContent);
+      if (inputElement) {
+        HTMLInputElement* ownerNumberControl =
+            inputElement->GetOwnerNumberControl();
+        if (ownerNumberControl) {
+          element = ownerNumberControl;  
+        }
+      }
+      element->GetAttr(kNameSpaceID_None, nsGkAtoms::type,
+                       context.mHTMLInputType);
     } else {
       context.mHTMLInputType.Assign(nsGkAtoms::textarea->GetUTF16String());
     }

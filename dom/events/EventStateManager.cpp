@@ -1580,7 +1580,7 @@ void EventStateManager::FireContextClick() {
 
       if (formCtrl) {
         allowedToDispatch =
-            formCtrl->IsTextControl( false) ||
+            formCtrl->IsTextOrNumberControl( false) ||
             formCtrl->ControlType() == NS_FORM_INPUT_FILE;
       } else if (mGestureDownContent->IsAnyOfHTMLElements(
                      nsGkAtoms::embed, nsGkAtoms::object, nsGkAtoms::label)) {

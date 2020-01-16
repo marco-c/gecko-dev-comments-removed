@@ -190,7 +190,21 @@ class nsIFormControl : public nsISupports {
 
 
 
+  inline bool IsTextOrNumberControl(bool aExcludePassword) const;
+
+  
+
+
+
+
   inline bool IsSingleLineTextControl(bool aExcludePassword) const;
+
+  
+
+
+
+
+  inline bool IsSingleLineTextOrNumberControl(bool aExcludePassword) const;
 
   
 
@@ -249,8 +263,19 @@ bool nsIFormControl::IsTextControl(bool aExcludePassword) const {
          IsSingleLineTextControl(aExcludePassword, type);
 }
 
+bool nsIFormControl::IsTextOrNumberControl(bool aExcludePassword) const {
+  return IsTextControl(aExcludePassword) ||
+         ControlType() == NS_FORM_INPUT_NUMBER;
+}
+
 bool nsIFormControl::IsSingleLineTextControl(bool aExcludePassword) const {
   return IsSingleLineTextControl(aExcludePassword, ControlType());
+}
+
+bool nsIFormControl::IsSingleLineTextOrNumberControl(
+    bool aExcludePassword) const {
+  return IsSingleLineTextControl(aExcludePassword) ||
+         ControlType() == NS_FORM_INPUT_NUMBER;
 }
 
 
@@ -258,7 +283,7 @@ bool nsIFormControl::IsSingleLineTextControl(bool aExcludePassword,
                                              uint32_t aType) {
   return aType == NS_FORM_INPUT_TEXT || aType == NS_FORM_INPUT_EMAIL ||
          aType == NS_FORM_INPUT_SEARCH || aType == NS_FORM_INPUT_TEL ||
-         aType == NS_FORM_INPUT_URL || aType == NS_FORM_INPUT_NUMBER ||
+         aType == NS_FORM_INPUT_URL ||
          
          aType == NS_FORM_INPUT_MONTH || aType == NS_FORM_INPUT_WEEK ||
          aType == NS_FORM_INPUT_DATETIME_LOCAL ||
