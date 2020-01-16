@@ -6,56 +6,51 @@
 
 
 
-var gDebuggee;
-var gThreadFront;
 
 var gNumTimesSourcesSent = 0;
 
 add_task(
-  threadFrontTest(
-    async ({ threadFront, debuggee, client }) => {
-      gThreadFront = threadFront;
-      gDebuggee = debuggee;
-      client.request = (function(origRequest) {
-        return function(request, onResponse) {
-          if (request.type === "sources") {
-            ++gNumTimesSourcesSent;
-          }
-          return origRequest.call(this, request, onResponse);
-        };
-      })(client.request);
-      test_simple_listsources();
-    },
-    { waitForFinish: true }
-  )
+  threadFrontTest(async ({ threadFront, debuggee, client }) => {
+    client.request = (function(origRequest) {
+      return function(request, onResponse) {
+        if (request.type === "sources") {
+          ++gNumTimesSourcesSent;
+        }
+        return origRequest.call(this, request, onResponse);
+      };
+    })(client.request);
+
+    await executeOnNextTickAndWaitForPause(
+      () => evalCode(debuggee),
+      threadFront
+    );
+
+    const response = await threadFront.getSources();
+
+    Assert.ok(
+      response.sources.some(function(s) {
+        return s.url && s.url.match(/test_listsources-01.js/);
+      })
+    );
+
+    Assert.ok(
+      gNumTimesSourcesSent <= 1,
+      "Should only send one sources request at most, even though we" +
+        " might have had to send one to determine feature support."
+    );
+
+    threadFront.resume();
+  })
 );
 
-function test_simple_listsources() {
-  gThreadFront.once("paused", function(packet) {
-    gThreadFront.getSources().then(function(response) {
-      Assert.ok(
-        response.sources.some(function(s) {
-          return s.url && s.url.match(/test_listsources-01.js/);
-        })
-      );
-
-      Assert.ok(
-        gNumTimesSourcesSent <= 1,
-        "Should only send one sources request at most, even though we" +
-          " might have had to send one to determine feature support."
-      );
-
-      gThreadFront.resume().then(function() {
-        threadFrontTestFinished();
-      });
-    });
-  });
-
+function evalCode(debuggee) {
   
-  Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
-                  "debugger;\n" +   
-                  "var a = 1;\n" +  
-                  "var b = 2;\n",   
-                  gDebuggee);
+  Cu.evalInSandbox(
+    "var line0 = Error().lineNumber;\n" +
+    "debugger;\n" + 
+    "var a = 1;\n" + 
+      "var b = 2;\n", 
+    debuggee
+  );
   
 }

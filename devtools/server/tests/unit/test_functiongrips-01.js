@@ -3,87 +3,81 @@
 
 "use strict";
 
-var gDebuggee;
-var gThreadFront;
-
 add_task(
-  threadFrontTest(
-    async ({ threadFront, debuggee }) => {
-      gThreadFront = threadFront;
-      gDebuggee = debuggee;
-      test_named_function();
-    },
-    { waitForFinish: true }
-  )
+  threadFrontTest(async ({ threadFront, debuggee }) => {
+    
+    function evalCode() {
+      debuggee.eval(
+        function stopMe(arg1) {
+          debugger;
+        }.toString()
+      );
+      debuggee.eval("stopMe(stopMe)");
+    }
+
+    const packet1 = await executeOnNextTickAndWaitForPause(
+      () => evalCode(),
+      threadFront
+    );
+
+    const args1 = packet1.frame.arguments;
+
+    Assert.equal(args1[0].class, "Function");
+    Assert.equal(args1[0].name, "stopMe");
+    Assert.equal(args1[0].displayName, "stopMe");
+
+    const objClient1 = threadFront.pauseGrip(args1[0]);
+    const response1 = await objClient1.getParameterNames();
+    Assert.equal(response1.parameterNames.length, 1);
+    Assert.equal(response1.parameterNames[0], "arg1");
+
+    await threadFront.resume();
+
+    
+    const packet2 = await executeOnNextTickAndWaitForPause(
+      () =>
+        debuggee.eval(
+          "var o = { m: function(foo, bar, baz) { } }; stopMe(o.m)"
+        ),
+      threadFront
+    );
+
+    const args2 = packet2.frame.arguments;
+
+    Assert.equal(args2[0].class, "Function");
+    
+    Assert.equal(args2[0].name, undefined);
+    Assert.equal(args2[0].displayName, "m");
+
+    const objClient2 = threadFront.pauseGrip(args2[0]);
+    const response2 = await objClient2.getParameterNames();
+    Assert.equal(response2.parameterNames.length, 3);
+    Assert.equal(response2.parameterNames[0], "foo");
+    Assert.equal(response2.parameterNames[1], "bar");
+    Assert.equal(response2.parameterNames[2], "baz");
+
+    await threadFront.resume();
+
+    
+    const packet3 = await executeOnNextTickAndWaitForPause(
+      () => debuggee.eval("stopMe(function(foo, bar, baz) { })"),
+      threadFront
+    );
+
+    const args3 = packet3.frame.arguments;
+
+    Assert.equal(args3[0].class, "Function");
+    
+    Assert.equal(args3[0].name, undefined);
+    Assert.equal(args3[0].displayName, undefined);
+
+    const objClient3 = threadFront.pauseGrip(args3[0]);
+    const response3 = await objClient3.getParameterNames();
+    Assert.equal(response3.parameterNames.length, 3);
+    Assert.equal(response3.parameterNames[0], "foo");
+    Assert.equal(response3.parameterNames[1], "bar");
+    Assert.equal(response3.parameterNames[2], "baz");
+
+    await threadFront.resume();
+  })
 );
-
-function test_named_function() {
-  gThreadFront.once("paused", async function(packet) {
-    const args = packet.frame.arguments;
-
-    Assert.equal(args[0].class, "Function");
-    Assert.equal(args[0].name, "stopMe");
-    Assert.equal(args[0].displayName, "stopMe");
-
-    const objClient = gThreadFront.pauseGrip(args[0]);
-    const response = await objClient.getParameterNames();
-    Assert.equal(response.parameterNames.length, 1);
-    Assert.equal(response.parameterNames[0], "arg1");
-
-    await gThreadFront.resume();
-    test_inferred_name_function();
-  });
-
-  gDebuggee.eval(
-    function stopMe(arg1) {
-      debugger;
-    }.toString()
-  );
-  gDebuggee.eval("stopMe(stopMe)");
-}
-
-function test_inferred_name_function() {
-  gThreadFront.once("paused", async function(packet) {
-    const args = packet.frame.arguments;
-
-    Assert.equal(args[0].class, "Function");
-    
-    Assert.equal(args[0].name, undefined);
-    Assert.equal(args[0].displayName, "m");
-
-    const objClient = gThreadFront.pauseGrip(args[0]);
-    const response = await objClient.getParameterNames();
-    Assert.equal(response.parameterNames.length, 3);
-    Assert.equal(response.parameterNames[0], "foo");
-    Assert.equal(response.parameterNames[1], "bar");
-    Assert.equal(response.parameterNames[2], "baz");
-
-    await gThreadFront.resume();
-    test_anonymous_function();
-  });
-
-  gDebuggee.eval("var o = { m: function(foo, bar, baz) { } }; stopMe(o.m)");
-}
-
-function test_anonymous_function() {
-  gThreadFront.once("paused", async function(packet) {
-    const args = packet.frame.arguments;
-
-    Assert.equal(args[0].class, "Function");
-    
-    Assert.equal(args[0].name, undefined);
-    Assert.equal(args[0].displayName, undefined);
-
-    const objClient = gThreadFront.pauseGrip(args[0]);
-    const response = await objClient.getParameterNames();
-    Assert.equal(response.parameterNames.length, 3);
-    Assert.equal(response.parameterNames[0], "foo");
-    Assert.equal(response.parameterNames[1], "bar");
-    Assert.equal(response.parameterNames[2], "baz");
-
-    await gThreadFront.resume();
-    threadFrontTestFinished();
-  });
-
-  gDebuggee.eval("stopMe(function(foo, bar, baz) { })");
-}

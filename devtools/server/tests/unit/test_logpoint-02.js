@@ -8,62 +8,54 @@
 
 
 
-var gDebuggee;
-var gClient;
-var gThreadFront;
-
 add_task(
-  threadFrontTest(
-    async ({ threadFront, debuggee, client }) => {
-      gThreadFront = threadFront;
-      gDebuggee = debuggee;
-      gClient = client;
-      test_simple_breakpoint();
-    },
-    { waitForFinish: true }
-  )
-);
+  threadFrontTest(async ({ threadFront, debuggee, client }) => {
+    const rootActor = client.transport._serverConnection.rootActor;
+    const threadActor =
+      rootActor._parameters.tabList._targetActors[0].threadActor;
 
-function test_simple_breakpoint() {
-  const rootActor = gClient.transport._serverConnection.rootActor;
-  const threadActor =
-    rootActor._parameters.tabList._targetActors[0].threadActor;
+    let lastMessage;
+    threadActor._parent._consoleActor = {
+      onConsoleAPICall(message) {
+        lastMessage = message;
+      },
+    };
 
-  let lastMessage;
-  threadActor._parent._consoleActor = {
-    onConsoleAPICall(message) {
-      lastMessage = message;
-    },
-  };
+    const packet = await executeOnNextTickAndWaitForPause(
+      () => evalCode(debuggee),
+      threadFront
+    );
 
-  gThreadFront.once("paused", async function(packet) {
-    const source = await getSourceById(gThreadFront, packet.frame.where.actor);
+    const source = await getSourceById(threadFront, packet.frame.where.actor);
 
     
-    gThreadFront.setBreakpoint(
+    threadFront.setBreakpoint(
       {
         sourceUrl: source.url,
         line: 4,
       },
       { logValue: "a", condition: "a === 5" }
     );
-    await gClient.waitForRequestsToSettle();
+    await client.waitForRequestsToSettle();
 
     
-    await gThreadFront.resume();
+    await threadFront.resume();
     Assert.equal(lastMessage.arguments[0], 5);
-    threadFrontTestFinished();
-  });
+  })
+);
 
+function evalCode(debuggee) {
   
-  Cu.evalInSandbox("debugger;\n" + 
-                   "var a = 1;\n" +  
-                   "while (a < 10) {\n" + 
-                   "  a++;\n" + 
-                   "}",
-                   gDebuggee,
-                   "1.8",
-                   "test.js",
-                   1);
+  Cu.evalInSandbox(
+    "debugger;\n" + 
+    "var a = 1;\n" + 
+    "while (a < 10) {\n" + 
+    "  a++;\n" + 
+      "}",
+    debuggee,
+    "1.8",
+    "test.js",
+    1
+  );
   
 }

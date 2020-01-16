@@ -10,9 +10,11 @@
 
 
 add_task(
-  threadFrontTest(({ threadFront, client, debuggee, targetFront }) => {
+  threadFrontTest(({ threadFront, debuggee, targetFront }) => {
     return new Promise(resolve => {
-      threadFront.once("paused", async function(packet) {
+      (async () => {
+        await executeOnNextTickAndWaitForPause(evalCode, threadFront);
+
         ok(true, "The page is paused");
         ok(!debuggee.foo, "foo is still false after we hit the breakpoint");
 
@@ -20,26 +22,21 @@ add_task(
 
         
         
-        
-        
-        await new Promise(executeSoon);
-
-        
-        
         ok(debuggee.foo, "foo is true after target's detach request");
 
-        executeSoon(resolve);
-      });
+        resolve();
+      })();
 
-      
-      Cu.evalInSandbox(
-        "var foo = false;\n" +
-        "debugger;\n" +
-        "foo = true;\n",
-        debuggee
-      );
-      
-      ok(debuggee.foo, "foo is false at startup");
+      function evalCode() {
+        
+        Cu.evalInSandbox("var foo = false;\n", debuggee);
+        
+        ok(!debuggee.foo, "foo is false at startup");
+
+        
+        Cu.evalInSandbox("debugger;\n" + "foo = true;\n", debuggee);
+        
+      }
     });
   })
 );
@@ -47,7 +44,9 @@ add_task(
 add_task(
   threadFrontTest(({ threadFront, client, debuggee }) => {
     return new Promise(resolve => {
-      threadFront.once("paused", async function(packet) {
+      (async () => {
+        await executeOnNextTickAndWaitForPause(evalCode, threadFront);
+
         ok(true, "The page is paused");
         ok(!debuggee.foo, "foo is still false after we hit the breakpoint");
 
@@ -62,20 +61,20 @@ add_task(
         
         
         ok(debuggee.foo, "foo is true after client close");
-
         executeSoon(resolve);
         dump("resolved\n");
-      });
+      })();
 
-      
-      Cu.evalInSandbox(
-        "var foo = false;\n" +
-        "debugger;\n" +
-        "foo = true;\n",
-        debuggee
-      );
-      
-      ok(debuggee.foo, "foo is false at startup");
+      function evalCode() {
+        
+        Cu.evalInSandbox("var foo = false;\n", debuggee);
+        
+        ok(!debuggee.foo, "foo is false at startup");
+
+        
+        Cu.evalInSandbox("debugger;\n" + "foo = true;\n", debuggee);
+        
+      }
     });
   })
 );
