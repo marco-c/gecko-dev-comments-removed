@@ -9629,10 +9629,11 @@ RegExpLiteral* Parser<FullParseHandler, Unit>::newRegExp() {
   RegExpFlags flags = anyChars.currentToken().regExpFlags();
 
   if (this->getParseInfo().isDeferred()) {
-    {
+    if (!handler_.canSkipRegexpSyntaxParse()) {
+      
+      
+      
       LifoAllocScope allocScope(&cx_->tempLifoAlloc());
-      
-      
       if (!irregexp::ParsePatternSyntax(anyChars, allocScope.alloc(), range,
                                         flags.unicode())) {
         return nullptr;
