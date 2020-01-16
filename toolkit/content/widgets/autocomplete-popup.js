@@ -547,25 +547,6 @@
           this._normalMaxRows = this.mInput.maxRows;
         }
 
-        
-        let inputID = "";
-        if (
-          this.mInput &&
-          this.mInput.ownerDocument &&
-          this.mInput.ownerDocument.documentURIObject.schemeIs("chrome")
-        ) {
-          inputID = this.mInput.id;
-          
-          
-          if (!inputID) {
-            let shadow = this.mInput.containingShadowRoot;
-            if (shadow) {
-              inputID = shadow.host.id;
-            }
-          }
-        }
-        this.setAttribute("autocompleteinput", inputID);
-
         this.mPopupOpen = true;
       });
 
@@ -583,7 +564,6 @@
         }
         this.input.controller.stopSearch();
 
-        this.removeAttribute("autocompleteinput");
         this.mPopupOpen = false;
 
         
