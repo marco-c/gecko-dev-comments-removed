@@ -16,6 +16,7 @@ const {
   ON_NEW_DEVICE_ID,
   ON_DEVICE_CONNECTED_NOTIFICATION,
   ON_DEVICE_DISCONNECTED_NOTIFICATION,
+  ONVERIFIED_NOTIFICATION,
   PREF_ACCOUNT_ROOT,
 } = ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js");
 
@@ -64,20 +65,15 @@ class FxAccountsDevice {
     
     Services.obs.addObserver(this, ON_DEVICE_CONNECTED_NOTIFICATION, true);
     Services.obs.addObserver(this, ON_DEVICE_DISCONNECTED_NOTIFICATION, true);
+    
+    
+    Services.obs.addObserver(this, ONVERIFIED_NOTIFICATION, true);
   }
 
   async getLocalId() {
-    let data = await this._fxai.currentAccountState.getUserAccountData();
-    if (!data) {
-      
-      return null;
-    }
-    const { device } = data;
-    if (await this.checkDeviceUpdateNeeded(device)) {
-      return this._registerOrUpdateDevice(data);
-    }
     
-    return device.id;
+    
+    return this._updateDeviceRegistrationIfNecessary();
   }
 
   
@@ -173,7 +169,7 @@ class FxAccountsDevice {
     return DEVICE_TYPE_DESKTOP;
   }
 
-  async checkDeviceUpdateNeeded(device) {
+  async _checkDeviceUpdateNeeded(device) {
     
     
     
@@ -269,8 +265,10 @@ class FxAccountsDevice {
         };
 
         
+        
+        
         const ourDevice = devices.find(device => device.isCurrentDevice);
-        if (ourDevice.pushEndpointExpired) {
+        if (ourDevice && ourDevice.pushEndpointExpired) {
           await this._fxai.fxaPushService.unsubscribe();
           await this._registerOrUpdateDevice(accountData);
         }
@@ -291,6 +289,20 @@ class FxAccountsDevice {
     } catch (error) {
       await this._logErrorAndResetDeviceRegistrationVersion(error);
     }
+  }
+
+  async _updateDeviceRegistrationIfNecessary() {
+    let data = await this._fxai.currentAccountState.getUserAccountData();
+    if (!data) {
+      
+      return null;
+    }
+    const { device } = data;
+    if (await this._checkDeviceUpdateNeeded(device)) {
+      return this._registerOrUpdateDevice(data);
+    }
+    
+    return device.id;
   }
 
   
@@ -321,6 +333,7 @@ class FxAccountsDevice {
       const availableCommandsKeys = Object.keys(
         deviceOptions.availableCommands
       ).sort();
+      log.info("registering with available commands", availableCommandsKeys);
 
       let device;
       if (currentDevice && currentDevice.id) {
@@ -482,6 +495,14 @@ class FxAccountsDevice {
             );
           });
         }
+        break;
+      case ONVERIFIED_NOTIFICATION:
+        this._updateDeviceRegistrationIfNecessary().catch(error => {
+          log.warn(
+            "_updateDeviceRegistrationIfNecessary failed after verification",
+            error
+          );
+        });
         break;
     }
   }

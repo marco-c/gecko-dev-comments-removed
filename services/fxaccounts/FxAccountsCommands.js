@@ -282,13 +282,13 @@ class SendTab {
     return urlsafeBase64Encode(encrypted);
   }
 
-  async _getKeys() {
+  async _getPersistedKeys() {
     const { device } = await this._fxai.getUserAccountData(["device"]);
     return device && device.sendTabKeys;
   }
 
   async _decrypt(ciphertext) {
-    let { privateKey, publicKey, authSecret } = await this._getKeys();
+    let { privateKey, publicKey, authSecret } = await this._getPersistedKeys();
     publicKey = urlsafeBase64Decode(publicKey);
     authSecret = urlsafeBase64Decode(authSecret);
     ciphertext = new Uint8Array(urlsafeBase64Decode(ciphertext));
@@ -325,7 +325,7 @@ class SendTab {
   }
 
   async getEncryptedKey() {
-    let sendTabKeys = await this._getKeys();
+    let sendTabKeys = await this._getPersistedKeys();
     if (!sendTabKeys) {
       sendTabKeys = await this._generateAndPersistKeys();
     }
@@ -338,8 +338,23 @@ class SendTab {
     
     
     
-    const { kSync, kXCS } = await this._fxai.getUserAccountData();
-    if (!kSync || !kXCS) {
+    
+    
+    if (!(await this._fxai.keys.canGetKeys())) {
+      log.info("Can't fetch keys, so unable to determine sendtab keys");
+      return null;
+    }
+    let kSync, kXCS;
+    try {
+      ({ kSync, kXCS } = await this._fxai.keys.getKeys());
+      if (!kSync || !kXCS) {
+        log.warn(
+          "Fetched the keys but didn't get any, so unable to determine sendtab keys"
+        );
+        return null;
+      }
+    } catch (ex) {
+      log.warn("Failed to fetch keys, so unable to determine sendtab keys", ex);
       return null;
     }
     const wrapper = new CryptoWrapper();

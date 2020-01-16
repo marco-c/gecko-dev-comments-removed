@@ -89,7 +89,7 @@ class FxAccountsKeys {
           });
           userData = await currentState.getUserAccountData();
         }
-        if (DERIVED_KEYS_NAMES.every(k => userData[k])) {
+        if (DERIVED_KEYS_NAMES.every(k => !!userData[k])) {
           return userData;
         }
         if (!currentState.whenKeysReadyDeferred) {
@@ -186,9 +186,6 @@ class FxAccountsKeys {
       }
 
       await currentState.updateUserAccountData(updateData);
-      
-      
-      await this._fxia.updateDeviceRegistration();
       data = await currentState.getUserAccountData();
       return data;
     });
