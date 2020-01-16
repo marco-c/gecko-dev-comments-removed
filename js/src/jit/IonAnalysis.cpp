@@ -1124,7 +1124,7 @@ static void EliminateTriviallyDeadResumePointOperands(MIRGraph& graph,
                                                       MResumePoint* rp) {
   
   
-  if (rp->mode() != MResumePoint::ResumeAt || JSOp(*rp->pc()) != JSOP_POP) {
+  if (rp->mode() != MResumePoint::ResumeAt || JSOp(*rp->pc()) != JSOp::Pop) {
     return;
   }
 
@@ -2368,11 +2368,11 @@ static bool CanCompareRegExp(MCompare* compare, MDefinition* def) {
 
   JSOp op = compare->jsop();
   
-  if (op == JSOP_STRICTEQ || op == JSOP_STRICTNE) {
+  if (op == JSOp::StrictEq || op == JSOp::StrictNe) {
     return true;
   }
 
-  if (op != JSOP_EQ && op != JSOP_NE) {
+  if (op != JSOp::Eq && op != JSOp::Ne) {
     
     MOZ_ASSERT(IsRelationalOp(op));
     return false;
@@ -3578,20 +3578,20 @@ bool jit::ExtractLinearInequality(MTest* test, BranchDirection direction,
 
   
   switch (jsop) {
-    case JSOP_LE:
+    case JSOp::Le:
       *plessEqual = true;
       break;
-    case JSOP_LT:
+    case JSOp::Lt:
       
       if (!SafeAdd(lsum.constant, 1, &lsum.constant)) {
         return false;
       }
       *plessEqual = true;
       break;
-    case JSOP_GE:
+    case JSOp::Ge:
       *plessEqual = false;
       break;
-    case JSOP_GT:
+    case JSOp::Gt:
       
       if (!SafeSub(lsum.constant, 1, &lsum.constant)) {
         return false;
@@ -4328,7 +4328,7 @@ MCompare* jit::ConvertLinearInequality(TempAllocator& alloc, MBasicBlock* block,
   }
 
   MDefinition* lhsDef = nullptr;
-  JSOp op = JSOP_GE;
+  JSOp op = JSOp::Ge;
 
   do {
     if (!lhs.numTerms()) {
@@ -4344,7 +4344,7 @@ MCompare* jit::ConvertLinearInequality(TempAllocator& alloc, MBasicBlock* block,
     }
 
     if (lhs.constant() == -1) {
-      op = JSOP_GT;
+      op = JSOp::Gt;
       break;
     }
 
@@ -4742,7 +4742,7 @@ static bool ArgumentsUseCanBeLazy(JSContext* cx, JSScript* script,
                                   bool* argumentsContentsObserved) {
   
   if (ins->isCall()) {
-    if (JSOp(*ins->toCall()->resumePoint()->pc()) == JSOP_FUNAPPLY &&
+    if (JSOp(*ins->toCall()->resumePoint()->pc()) == JSOp::FunApply &&
         ins->toCall()->numActualArgs() == 2 &&
         index == MCall::IndexOfArgument(1)) {
       *argumentsContentsObserved = true;

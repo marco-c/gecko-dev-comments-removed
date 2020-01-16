@@ -209,10 +209,10 @@ bool RangeAnalysis::addBetaNodes() {
                right->type() == MIRType::Int32) {
       MDefinition* smaller = nullptr;
       MDefinition* greater = nullptr;
-      if (jsop == JSOP_LT) {
+      if (jsop == JSOp::Lt) {
         smaller = left;
         greater = right;
-      } else if (jsop == JSOP_GT) {
+      } else if (jsop == JSOp::Gt) {
         smaller = right;
         greater = left;
       }
@@ -248,10 +248,10 @@ bool RangeAnalysis::addBetaNodes() {
 
     Range comp;
     switch (jsop) {
-      case JSOP_LE:
+      case JSOp::Le:
         comp.setDouble(conservativeLower, bound);
         break;
-      case JSOP_LT:
+      case JSOp::Lt:
         
         if (val->type() == MIRType::Int32) {
           int32_t intbound;
@@ -267,10 +267,10 @@ bool RangeAnalysis::addBetaNodes() {
           comp.refineToExcludeNegativeZero();
         }
         break;
-      case JSOP_GE:
+      case JSOp::Ge:
         comp.setDouble(bound, conservativeUpper);
         break;
-      case JSOP_GT:
+      case JSOp::Gt:
         
         if (val->type() == MIRType::Int32) {
           int32_t intbound;
@@ -286,24 +286,24 @@ bool RangeAnalysis::addBetaNodes() {
           comp.refineToExcludeNegativeZero();
         }
         break;
-      case JSOP_STRICTEQ:
+      case JSOp::StrictEq:
         
         if (!compare->isNumericComparison()) {
           continue;
         }
         
         [[fallthrough]];
-      case JSOP_EQ:
+      case JSOp::Eq:
         comp.setDouble(bound, bound);
         break;
-      case JSOP_STRICTNE:
+      case JSOp::StrictNe:
         
         if (!compare->isNumericComparison()) {
           continue;
         }
         
         [[fallthrough]];
-      case JSOP_NE:
+      case JSOp::Ne:
         
         if (bound == 0) {
           comp.refineToExcludeNegativeZero();

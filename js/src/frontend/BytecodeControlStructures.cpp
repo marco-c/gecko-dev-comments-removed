@@ -58,7 +58,7 @@ bool LoopControl::emitLoopHead(BytecodeEmitter* bce,
   
   
   if (bce->bytecodeSection().offset().toUint32() == 0) {
-    if (!bce->emit1(JSOP_NOP)) {
+    if (!bce->emit1(JSOp::Nop)) {
       return false;
     }
   }
@@ -74,7 +74,7 @@ bool LoopControl::emitLoopHead(BytecodeEmitter* bce,
   head_ = {bce->bytecodeSection().offset()};
 
   BytecodeOffset off;
-  if (!bce->emitJumpTargetOp(JSOP_LOOPHEAD, &off)) {
+  if (!bce->emitJumpTargetOp(JSOp::LoopHead, &off)) {
     return false;
   }
   SetLoopHeadDepthHint(bce->bytecodeSection().code(off), loopDepth_);

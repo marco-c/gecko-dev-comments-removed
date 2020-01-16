@@ -30,7 +30,7 @@ bool DoWhileEmitter::emitBody(const Maybe<uint32_t>& doPos,
   }
 
   
-  if (!bce_->emit1(JSOP_NOP)) {
+  if (!bce_->emit1(JSOp::Nop)) {
     return false;
   }
 
@@ -62,7 +62,7 @@ bool DoWhileEmitter::emitCond() {
 bool DoWhileEmitter::emitEnd() {
   MOZ_ASSERT(state_ == State::Cond);
 
-  if (!loopInfo_->emitLoopEnd(bce_, JSOP_IFNE, JSTRY_LOOP)) {
+  if (!loopInfo_->emitLoopEnd(bce_, JSOp::IfNe, JSTRY_LOOP)) {
     return false;
   }
 
