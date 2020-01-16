@@ -760,6 +760,11 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
     
     return true;
   }
+  if (filenameU.Equals(NS_LITERAL_STRING("about:sync-log"))) {
+    
+    
+    return true;
+  }
 
   
   MOZ_LOG(sCSMLog, LogLevel::Info,
