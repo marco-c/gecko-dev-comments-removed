@@ -43,6 +43,7 @@
 #include "nsIJARURI.h"
 #include "nsLayoutCID.h"
 #include "nsReadableUtils.h"
+#include "nsSandboxFlags.h"
 
 #include "nsIURI.h"
 #include "nsIURIMutator.h"
@@ -2376,11 +2377,12 @@ nsresult XMLHttpRequestMainThread::CreateChannel() {
 
   nsSecurityFlags secFlags;
   nsLoadFlags loadFlags = nsIRequest::LOAD_BACKGROUND;
+  uint32_t sandboxFlags = 0;
   if (mPrincipal->IsSystemPrincipal()) {
     
     
-    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL |
-               nsILoadInfo::SEC_SANDBOXED;
+    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL;
+    sandboxFlags = SANDBOXED_ORIGIN;
   } else if (IsSystemXHR()) {
     
     
@@ -2411,7 +2413,7 @@ nsresult XMLHttpRequestMainThread::CreateChannel() {
                        nullptr,  
                        loadGroup,
                        nullptr,  
-                       loadFlags);
+                       loadFlags, nullptr, sandboxFlags);
   } else if (mClientInfo.isSome()) {
     rv = NS_NewChannel(getter_AddRefs(mChannel), mRequestURL, mPrincipal,
                        mClientInfo.ref(), mController, secFlags,
@@ -2420,7 +2422,7 @@ nsresult XMLHttpRequestMainThread::CreateChannel() {
                        mPerformanceStorage,  
                        loadGroup,
                        nullptr,  
-                       loadFlags);
+                       loadFlags, nullptr, sandboxFlags);
   } else {
     
     rv = NS_NewChannel(getter_AddRefs(mChannel), mRequestURL, mPrincipal,
@@ -2429,7 +2431,7 @@ nsresult XMLHttpRequestMainThread::CreateChannel() {
                        mPerformanceStorage,  
                        loadGroup,
                        nullptr,  
-                       loadFlags);
+                       loadFlags, nullptr, sandboxFlags);
   }
   NS_ENSURE_SUCCESS(rv, rv);
 
