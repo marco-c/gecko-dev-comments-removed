@@ -778,6 +778,7 @@ impl PropertyDeclarationBlock {
         dest: &mut CssStringWriter,
         computed_values: Option<&ComputedValues>,
         custom_properties_block: Option<&PropertyDeclarationBlock>,
+        environment: &CssEnvironment,
     ) -> fmt::Result {
         if let Ok(shorthand) = property.as_shorthand() {
             return self.shorthand_to_css(shorthand, dest);
@@ -790,19 +791,13 @@ impl PropertyDeclarationBlock {
             None => return Err(fmt::Error),
         };
 
-        
-        
-        
-        
-        let env = CssEnvironment;
-
         let custom_properties = if let Some(cv) = computed_values {
             
             
             if let Some(block) = custom_properties_block {
                 
                 
-                block.cascade_custom_properties(cv.custom_properties(), &env)
+                block.cascade_custom_properties(cv.custom_properties(), environment)
             } else {
                 cv.custom_properties().cloned()
             }
@@ -825,7 +820,7 @@ impl PropertyDeclarationBlock {
                         declaration.id,
                         custom_properties.as_ref(),
                         QuirksMode::NoQuirks,
-                        &env,
+                        environment,
                     )
                     .to_css(dest)
             },

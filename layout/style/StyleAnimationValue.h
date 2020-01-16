@@ -96,6 +96,7 @@ struct AnimationValue {
 
   
   void SerializeSpecifiedValue(nsCSSPropertyID aProperty,
+                               const RawServoStyleSet* aRawSet,
                                nsAString& aString) const;
 
   
