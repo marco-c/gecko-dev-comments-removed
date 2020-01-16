@@ -14,6 +14,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
+#include "mozilla/TimeStamp.h"
 
 
 
@@ -136,6 +137,9 @@ class LogModule {
   void Printv(LogLevel aLevel, const char* aFmt, va_list aArgs) const
       MOZ_FORMAT_PRINTF(3, 0);
 
+  void Printv(LogLevel aLevel, const TimeStamp* aStart, const char* aFmt,
+              va_list aArgs) const MOZ_FORMAT_PRINTF(4, 0);
+
   
 
 
@@ -206,6 +210,9 @@ inline bool log_test(const LogModule* module, LogLevel level) {
 
 void log_print(const LogModule* aModule, LogLevel aLevel, const char* aFmt, ...)
     MOZ_FORMAT_PRINTF(3, 4);
+
+void log_print(const LogModule* aModule, LogLevel aLevel, TimeStamp* aStart,
+               const char* aFmt, ...) MOZ_FORMAT_PRINTF(4, 5);
 }  
 
 }  
@@ -265,6 +272,11 @@ void log_print(const LogModule* aModule, LogLevel aLevel, const char* aFmt, ...)
 
 
 
+
+
+
+
+
 #if MOZ_LOGGING_ENABLED
 #  define MOZ_LOG(_module, _level, _args)                      \
     do {                                                       \
@@ -274,11 +286,26 @@ void log_print(const LogModule* aModule, LogLevel aLevel, const char* aFmt, ...)
                                    MOZ_LOG_EXPAND_ARGS _args); \
       }                                                        \
     } while (0)
+#  define MOZ_LOG_DURATION(_module, _level, start, _args)          \
+    do {                                                           \
+      const ::mozilla::LogModule* moz_real_module = _module;       \
+      if (MOZ_LOG_TEST(moz_real_module, _level)) {                 \
+        mozilla::detail::log_print(moz_real_module, _level, start, \
+                                   MOZ_LOG_EXPAND_ARGS _args);     \
+      }                                                            \
+    } while (0)
 #else
 #  define MOZ_LOG(_module, _level, _args)                      \
     do {                                                       \
       if (MOZ_LOG_TEST(_module, _level)) {                     \
         mozilla::detail::log_print(_module, _level,            \
+                                   MOZ_LOG_EXPAND_ARGS _args); \
+      }                                                        \
+    } while (0)
+#  define MOZ_LOG_DURATION(_module, _level, start, _args)      \
+    do {                                                       \
+      if (MOZ_LOG_TEST(_module, _level)) {                     \
+        mozilla::detail::log_print(_module, _level, start,     \
                                    MOZ_LOG_EXPAND_ARGS _args); \
       }                                                        \
     } while (0)
