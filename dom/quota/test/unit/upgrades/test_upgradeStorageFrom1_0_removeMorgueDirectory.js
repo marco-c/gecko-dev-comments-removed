@@ -3,6 +3,10 @@
 
 
 
+
+
+
+
 var testGenerator = testSteps();
 
 function* testSteps() {
@@ -15,7 +19,8 @@ function* testSteps() {
 
   info("Installing package");
 
-  installPackage("morgueCleanup_profile");
+  
+  installPackage("version1_0_morgueDirectory_profile");
 
   info("Checking morgue file");
 

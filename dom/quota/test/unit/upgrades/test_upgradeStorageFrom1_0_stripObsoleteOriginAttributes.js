@@ -3,6 +3,10 @@
 
 
 
+
+
+
+
 var testGenerator = testSteps();
 
 function* testSteps() {
@@ -46,7 +50,9 @@ function* testSteps() {
 
   info("Installing package");
 
-  installPackage("obsoleteOriginAttributes_profile");
+  
+  
+  installPackage("version1_0_obsoleteOriginAttributes_profile");
 
   info("Checking origin directories");
 
