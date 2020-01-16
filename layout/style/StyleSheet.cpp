@@ -990,11 +990,6 @@ already_AddRefed<StyleSheet> StyleSheet::CreateEmptyChildSheet(
 
 static bool AllowParallelParse(css::Loader& aLoader, nsIURI* aSheetURI) {
   
-  if (!StaticPrefs::layout_css_parsing_parallel()) {
-    return false;
-  }
-
-  
   
   Document* doc = aLoader.GetDocument();
   if (doc && css::ErrorReporter::ShouldReportErrors(*doc)) {
