@@ -193,6 +193,16 @@ void HTMLImageElement::GetDecoding(nsAString& aValue) {
   GetEnumAttr(nsGkAtoms::decoding, kDecodingTableDefault->tag, aValue);
 }
 
+
+static const nsAttrValue::EnumTable kLoadingTable[] = {
+    {"eager", HTMLImageElement::Loading::Eager},
+    {"lazy", HTMLImageElement::Loading::Lazy},
+    {nullptr, 0}};
+
+void HTMLImageElement::GetLoading(nsAString& aValue) const {
+  GetEnumAttr(nsGkAtoms::loading, kLoadingTable[0].tag, aValue);
+}
+
 already_AddRefed<Promise> HTMLImageElement::Decode(ErrorResult& aRv) {
   return nsImageLoadingContent::QueueDecodeAsync(aRv);
 }
@@ -210,8 +220,14 @@ bool HTMLImageElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
       return true;
     }
     if (aAttribute == nsGkAtoms::decoding) {
-      return aResult.ParseEnumValue(aValue, kDecodingTable, false,
+      return aResult.ParseEnumValue(aValue, kDecodingTable,
+                                     false,
                                     kDecodingTableDefault);
+    }
+    if (aAttribute == nsGkAtoms::loading) {
+      return aResult.ParseEnumValue(aValue, kLoadingTable,
+                                     false,
+                                    kLoadingTable);
     }
     if (ParseImageAttribute(aAttribute, aValue, aResult)) {
       return true;
