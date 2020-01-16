@@ -1082,9 +1082,14 @@ var Impl = {
 
         
         this._log.trace("_onUploadPrefChange - Sending deletion-request ping.");
+        const scalars = Telemetry.getSnapshotForScalars(
+          "deletion-request",
+           true
+        );
+
         this.submitExternalPing(
           PING_TYPE_DELETION_REQUEST,
-          {},
+          { scalars },
           { overrideClientId: oldClientId }
         );
         this._deletionRequestPingSubmittedPromise = null;
