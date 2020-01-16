@@ -729,9 +729,6 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   mozilla::ipc::IPCResult RecvSetWidgetNativeData(
       const WindowsHandle& aWidgetNativeData);
 
-  mozilla::ipc::IPCResult RecvGetContentBlockingLog(
-      GetContentBlockingLogResolver&& aResolve);
-
  private:
   
   
