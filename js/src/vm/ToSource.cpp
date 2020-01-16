@@ -28,6 +28,9 @@
 #include "vm/JSContext.h"       
 #include "vm/JSFunction.h"      
 #include "vm/Printer.h"         
+#include "vm/RegExpObject.h"    
+#include "vm/SelfHosting.h"     
+#include "vm/Stack.h"           
 #include "vm/StringType.h"      
 #include "vm/SymbolType.h"      
 
@@ -130,6 +133,16 @@ JSString* js::ValueToSource(JSContext* cx, HandleValue v) {
 
   if (obj->is<ErrorObject>()) {
     return ErrorToSource(cx, obj);
+  }
+
+  if (obj->is<RegExpObject>()) {
+    FixedInvokeArgs<0> args(cx);
+    RootedValue rval(cx);
+    if (!CallSelfHostedFunction(cx, cx->names().RegExpToString, v, args,
+                                &rval)) {
+      return nullptr;
+    }
+    return ToString<CanGC>(cx, rval);
   }
 
   return ObjectToSource(cx, obj);
