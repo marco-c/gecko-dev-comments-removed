@@ -103,6 +103,14 @@ const ContentBlockingAllowList = {
   
 
 
+  removeByPrincipal(principal) {
+    Services.perms.removeFromPrincipal(principal, "trackingprotection");
+    Services.perms.removeFromPrincipal(principal, "trackingprotection-pb");
+  },
+
+  
+
+
 
   includes(browser) {
     let prin = this._basePrincipalForAntiTrackingCommon(browser);
