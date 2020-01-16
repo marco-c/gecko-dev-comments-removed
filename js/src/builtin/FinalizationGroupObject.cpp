@@ -585,6 +585,24 @@ bool FinalizationGroupObject::cleanupSome(JSContext* cx, unsigned argc,
 }
 
 
+bool FinalizationGroupObject::hasRegisteredRecordsToBeCleanedUp(
+    HandleFinalizationGroupObject group) {
+  FinalizationRecordVector* records = group->recordsToBeCleanedUp();
+  size_t initialLength = records->length();
+  if (initialLength == 0) {
+    return false;
+  }
+
+  for (FinalizationRecordObject* record : *records) {
+    if (!record->wasCleared()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
 
 
 bool FinalizationGroupObject::cleanupQueuedRecords(
@@ -593,9 +611,7 @@ bool FinalizationGroupObject::cleanupQueuedRecords(
   MOZ_ASSERT(cx->compartment() == group->compartment());
 
   
-  FinalizationRecordVector* records = group->recordsToBeCleanedUp();
-  size_t initialLength = records->length();
-  if (initialLength == 0) {
+  if (!hasRegisteredRecordsToBeCleanedUp(group)) {
     return true;
   }
 
@@ -620,6 +636,11 @@ bool FinalizationGroupObject::cleanupQueuedRecords(
 
   
   group->setCleanupJobActive(true);
+
+  FinalizationRecordVector* records = group->recordsToBeCleanedUp();
+#ifdef DEBUG
+  size_t initialLength = records->length();
+#endif
 
   
   RootedValue iteratorVal(cx, ObjectValue(*iterator));
