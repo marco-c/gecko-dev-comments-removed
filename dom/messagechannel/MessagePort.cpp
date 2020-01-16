@@ -31,7 +31,6 @@
 #include "nsGlobalWindow.h"
 #include "nsPresContext.h"
 #include "SharedMessagePortMessage.h"
-#include "RefMessageBodyService.h"
 
 #include "nsIBFCacheEntry.h"
 #include "mozilla/dom/Document.h"
@@ -123,7 +122,7 @@ class PostMessageRunnable final : public CancelableRunnable {
           MarkerTracingType::START);
     }
 
-    mData->Read(cx, &value, mPort->mRefMessageBodyService, rv);
+    mData->Read(cx, &value, rv);
 
     if (isTimelineRecording) {
       end = MakeUnique<MessagePortTimelineMarker>(
@@ -197,7 +196,6 @@ NS_IMPL_RELEASE_INHERITED(MessagePort, DOMEventTargetHelper)
 
 MessagePort::MessagePort(nsIGlobalObject* aGlobal, State aState)
     : DOMEventTargetHelper(aGlobal),
-      mRefMessageBodyService(RefMessageBodyService::GetOrCreate()),
       mState(aState),
       mMessageQueueEnabled(false),
       mIsKeptAlive(false),
@@ -342,8 +340,7 @@ void MessagePort::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
         MarkerTracingType::START);
   }
 
-  data->Write(aCx, aMessage, transferable, mIdentifier->uuid(),
-              mRefMessageBodyService, aRv);
+  data->Write(aCx, aMessage, transferable, aRv);
 
   if (isTimelineRecording) {
     end = MakeUnique<MessagePortTimelineMarker>(
@@ -390,7 +387,7 @@ void MessagePort::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
   AutoTArray<RefPtr<SharedMessagePortMessage>, 1> array;
   array.AppendElement(data);
 
-  AutoTArray<MessageData, 1> messages;
+  AutoTArray<ClonedMessageData, 1> messages;
   
   
   
@@ -492,10 +489,6 @@ void MessagePort::CloseInternal(bool aSoftly) {
     mMessages.Clear();
   }
 
-  
-  
-  mRefMessageBodyService->ForgetPort(mIdentifier->uuid());
-
   if (mState == eStateUnshippedEntangled) {
     MOZ_DIAGNOSTIC_ASSERT(mUnshippedEntangledPort);
 
@@ -560,7 +553,7 @@ void MessagePort::SetOnmessage(EventHandlerNonNull* aCallback) {
 
 
 
-void MessagePort::Entangled(nsTArray<MessageData>& aMessages) {
+void MessagePort::Entangled(nsTArray<ClonedMessageData>& aMessages) {
   MOZ_ASSERT(mState == eStateEntangling ||
              mState == eStateEntanglingForDisentangle ||
              mState == eStateEntanglingForClose);
@@ -571,7 +564,7 @@ void MessagePort::Entangled(nsTArray<MessageData>& aMessages) {
   
   if (!mMessagesForTheOtherPort.IsEmpty()) {
     {
-      nsTArray<MessageData> messages;
+      nsTArray<ClonedMessageData> messages;
       SharedMessagePortMessage::FromSharedToMessagesChild(
           mActor, mMessagesForTheOtherPort, messages);
       mActor->SendPostMessages(messages);
@@ -621,7 +614,7 @@ void MessagePort::StartDisentangling() {
   mActor->SendStopSendingData();
 }
 
-void MessagePort::MessagesReceived(nsTArray<MessageData>& aMessages) {
+void MessagePort::MessagesReceived(nsTArray<ClonedMessageData>& aMessages) {
   MOZ_ASSERT(mState == eStateEntangled || mState == eStateDisentangling ||
              
              
@@ -659,16 +652,11 @@ void MessagePort::Disentangle() {
   mState = eStateDisentangled;
 
   {
-    nsTArray<MessageData> messages;
+    nsTArray<ClonedMessageData> messages;
     SharedMessagePortMessage::FromSharedToMessagesChild(mActor, mMessages,
                                                         messages);
     mActor->SendDisentangle(messages);
   }
-
-  
-  
-  mRefMessageBodyService->ForgetPort(mIdentifier->uuid());
-
   
   
   mMessages.Clear();
