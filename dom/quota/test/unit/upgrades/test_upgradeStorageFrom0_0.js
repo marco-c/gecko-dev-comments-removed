@@ -3,6 +3,10 @@
 
 
 
+
+
+
+
 var testGenerator = testSteps();
 
 function* testSteps() {
@@ -29,14 +33,14 @@ function* testSteps() {
   const metadataFileName = ".metadata";
   const metadata2FileName = ".metadata-v2";
 
-  
-
   info("Clearing");
 
   clear(continueToNextStepSync);
   yield undefined;
 
-  installPackage("originAttributesUpgrade_profile");
+  
+  
+  installPackage("version0_0_profile");
 
   info("Checking storage file");
 
