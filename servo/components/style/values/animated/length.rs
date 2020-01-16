@@ -5,7 +5,7 @@
 
 
 use super::{Animate, Procedure};
-use crate::values::computed::length::{LengthPercentage, CalcLengthPercentage};
+use crate::values::computed::length::LengthPercentage;
 use crate::values::computed::Percentage;
 
 
@@ -29,6 +29,6 @@ impl Animate for LengthPercentage {
 
         
         
-        Ok(CalcLengthPercentage::new(length, percentage).to_length_percentge())
+        Ok(LengthPercentage::new_calc(length, percentage))
     }
 }
