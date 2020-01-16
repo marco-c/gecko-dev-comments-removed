@@ -589,34 +589,25 @@ template <typename Unit>
 void ScriptParseTask<Unit>::parse(JSContext* cx) {
   MOZ_ASSERT(cx->isHelperThreadContext());
 
-  JSScript* script;
-  Rooted<ScriptSourceObject*> sourceObject(cx);
-
-  {
-    ScopeKind scopeKind =
-        options.nonSyntacticScope ? ScopeKind::NonSyntactic : ScopeKind::Global;
-    LifoAllocScope allocScope(&cx->tempLifoAlloc());
-    frontend::ParseInfo parseInfo(cx, allocScope);
-    if (!parseInfo.initFromOptions(cx, options)) {
-      return;
-    }
-
-    frontend::GlobalScriptInfo info(cx, parseInfo, options, scopeKind);
-    script = frontend::CompileGlobalScript(
-        info, data,
-         &sourceObject.get());
+  ScopeKind scopeKind =
+      options.nonSyntacticScope ? ScopeKind::NonSyntactic : ScopeKind::Global;
+  LifoAllocScope allocScope(&cx->tempLifoAlloc());
+  frontend::ParseInfo parseInfo(cx, allocScope);
+  if (!parseInfo.initFromOptions(cx, options)) {
+    return;
   }
+
+  
+  
+  
+  
+  sourceObjects.infallibleAppend(parseInfo.sourceObject);
+
+  frontend::GlobalScriptInfo info(cx, parseInfo, options, scopeKind);
+  JSScript* script = frontend::CompileGlobalScript(info, data);
 
   if (script) {
     scripts.infallibleAppend(script);
-  }
-
-  
-  
-  
-  
-  if (sourceObject) {
-    sourceObjects.infallibleAppend(sourceObject);
   }
 }
 
