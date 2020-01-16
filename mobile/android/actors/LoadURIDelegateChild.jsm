@@ -19,6 +19,18 @@ class LoadURIDelegateChild extends GeckoViewActorChild {
       return false;
     }
 
+    
+    
+    
+    const browser = this.browsingContext.top.embedderElement;
+    if (browser) {
+      const viewType = browser.getAttribute("webextension-view-type");
+      if (viewType) {
+        debug`webextension-view-type: ${viewType}`;
+        return false;
+      }
+    }
+
     return this.docShell.itemType == this.docShell.typeContent;
   }
 
