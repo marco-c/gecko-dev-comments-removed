@@ -19,20 +19,23 @@ namespace widget {
 
 
 
-#define DMABUF_PREF "widget.wayland_dmabuf_backend.enabled"
+#define DMABUF_TEXTURE_PREF "widget.wayland_dmabuf_textures.enabled"
 
 
 
 #define DMABUF_BASIC_PREF "widget.wayland_dmabuf_basic_compositor.enabled"
 
+#define DMABUF_WEBGL_PREF "widget.wayland_dmabuf_webgl.enabled"
+
 #define CACHE_MODE_PREF "widget.wayland_cache_mode"
 
-bool nsWaylandDisplay::mIsDMABufEnabled = false;
-
-int nsWaylandDisplay::mIsDMABufPrefState = -1;
-int nsWaylandDisplay::mIsDMABufPrefBasicCompositorState = -1;
-bool nsWaylandDisplay::mIsDMABufConfigured = false;
-int nsWaylandDisplay::mRenderingCacheModePref = -1;
+bool nsWaylandDisplay::sIsDMABufEnabled = false;
+int nsWaylandDisplay::sIsDMABufPrefTextState = false;
+int nsWaylandDisplay::sIsDMABufPrefBasicCompositorState = false;
+int nsWaylandDisplay::sIsDMABufPrefWebGLState = false;
+bool nsWaylandDisplay::sIsDMABufConfigured = false;
+int nsWaylandDisplay::sRenderingCacheModePref = -1;
+bool nsWaylandDisplay::sIsPrefLoaded = false;
 
 wl_display* WaylandDisplayGetWLDisplay(GdkDisplay* aGdkDisplay) {
   if (!aGdkDisplay) {
@@ -415,13 +418,13 @@ nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
   if (NS_IsMainThread()) {
     
     
-    if (mIsDMABufPrefState == -1) {
-      mIsDMABufPrefState = Preferences::GetBool(DMABUF_PREF, false);
-      mIsDMABufPrefBasicCompositorState =
+    if (!sIsPrefLoaded) {
+      sIsDMABufPrefTextState = Preferences::GetBool(DMABUF_TEXTURE_PREF, false);
+      sIsDMABufPrefBasicCompositorState =
           Preferences::GetBool(DMABUF_BASIC_PREF, false);
-    }
-    if (mRenderingCacheModePref == -1) {
-      mRenderingCacheModePref = Preferences::GetInt(CACHE_MODE_PREF, 0);
+      sIsDMABufPrefWebGLState = Preferences::GetBool(DMABUF_WEBGL_PREF, false);
+      sRenderingCacheModePref = Preferences::GetInt(CACHE_MODE_PREF, 0);
+      sIsPrefLoaded = true;
     }
 
     
@@ -453,8 +456,8 @@ nsWaylandDisplay::~nsWaylandDisplay() {
 }
 
 bool nsWaylandDisplay::IsDMABufEnabled() {
-  if (mIsDMABufConfigured) {
-    return mIsDMABufEnabled;
+  if (sIsDMABufConfigured) {
+    return sIsDMABufEnabled;
   }
 
   
@@ -463,14 +466,16 @@ bool nsWaylandDisplay::IsDMABufEnabled() {
     return false;
   }
 
-  if (nsWaylandDisplay::mIsDMABufPrefState == -1) {
+  if (!sIsPrefLoaded) {
     MOZ_ASSERT(false,
                "We're missing nsWaylandDisplay preference configuration!");
     return false;
   }
 
-  mIsDMABufConfigured = true;
-  if (!nsWaylandDisplay::mIsDMABufPrefState) {
+  sIsDMABufConfigured = true;
+  if (!nsWaylandDisplay::sIsDMABufPrefTextState &&
+      !nsWaylandDisplay::sIsDMABufPrefBasicCompositorState &&
+      !nsWaylandDisplay::sIsDMABufPrefWebGLState) {
     
     return false;
   }
@@ -487,12 +492,18 @@ bool nsWaylandDisplay::IsDMABufEnabled() {
     return false;
   }
 
-  mIsDMABufEnabled = true;
+  sIsDMABufEnabled = true;
   return true;
 }
 
 bool nsWaylandDisplay::IsDMABufBasicEnabled() {
-  return IsDMABufEnabled() && mIsDMABufPrefBasicCompositorState;
+  return IsDMABufEnabled() && sIsDMABufPrefBasicCompositorState;
+}
+bool nsWaylandDisplay::IsDMABufTexturesEnabled() {
+  return IsDMABufEnabled() && sIsDMABufPrefTextState;
+}
+bool nsWaylandDisplay::IsDMABufWebGLEnabled() {
+  return IsDMABufEnabled() && sIsDMABufPrefWebGLState;
 }
 
 void* nsGbmLib::sGbmLibHandle = nullptr;
