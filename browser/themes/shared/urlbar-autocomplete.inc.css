@@ -52,6 +52,9 @@
   width: calc(100% - 2 * @urlbarViewMarginInline@);
   
   border-inline: 1px solid transparent;
+  
+
+  margin-block-start: -@urlbarBreakoutExtend@;
 }
 
 .urlbarView {
