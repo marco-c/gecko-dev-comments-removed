@@ -304,7 +304,7 @@ class GCMarker : public JSTracer {
   
   void setMainStackColor(gc::MarkColor newColor);
 
-  void enterWeakMarkingMode();
+  bool enterWeakMarkingMode();
   void leaveWeakMarkingMode();
 
   

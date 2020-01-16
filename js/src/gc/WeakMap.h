@@ -130,6 +130,8 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   
   
   gc::CellColor mapColor;
+
+  friend class JS::Zone;
 };
 
 namespace detail {
