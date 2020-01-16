@@ -3398,8 +3398,14 @@ class HTMLEditor final : public TextEditor,
 
 
 
+
+
+
+
+  enum class RemoveRelatedElements { Yes, No };
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
-  RemoveInlinePropertyInternal(nsAtom* aProperty, nsAtom* aAttribute);
+  RemoveInlinePropertyInternal(nsAtom* aProperty, nsAtom* aAttribute,
+                               RemoveRelatedElements aRemoveRelatedElements);
 
   
 

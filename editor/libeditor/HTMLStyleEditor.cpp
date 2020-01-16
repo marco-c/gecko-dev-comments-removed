@@ -83,19 +83,41 @@ nsresult HTMLEditor::SetInlinePropertyAsAction(nsAtom& aProperty,
       break;
   }
 
-  AutoTransactionBatch treatAsOneTransaction(*this);
+  AutoPlaceholderBatch treatAsOneTransaction(*this);
 
   if (&aProperty == nsGkAtoms::sup) {
     
-    nsresult rv = RemoveInlinePropertyInternal(nsGkAtoms::sub, nullptr);
+    nsresult rv = RemoveInlinePropertyInternal(nsGkAtoms::sub, nullptr,
+                                               RemoveRelatedElements::No);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return EditorBase::ToGenericNSResult(rv);
     }
   } else if (&aProperty == nsGkAtoms::sub) {
     
-    nsresult rv = RemoveInlinePropertyInternal(nsGkAtoms::sup, nullptr);
+    nsresult rv = RemoveInlinePropertyInternal(nsGkAtoms::sup, nullptr,
+                                               RemoveRelatedElements::No);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return EditorBase::ToGenericNSResult(rv);
+    }
+  }
+  
+  
+  
+  
+  
+  else if (!aPrincipal) {
+    if (&aProperty == nsGkAtoms::tt) {
+      nsresult rv = RemoveInlinePropertyInternal(
+          nsGkAtoms::font, nsGkAtoms::face, RemoveRelatedElements::No);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return EditorBase::ToGenericNSResult(rv);
+      }
+    } else if (&aProperty == nsGkAtoms::font && aAttribute == nsGkAtoms::face) {
+      nsresult rv = RemoveInlinePropertyInternal(nsGkAtoms::tt, nullptr,
+                                                 RemoveRelatedElements::No);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return EditorBase::ToGenericNSResult(rv);
+      }
     }
   }
   nsresult rv = SetInlinePropertyInternal(aProperty, aAttribute, aValue);
@@ -1423,7 +1445,8 @@ nsresult HTMLEditor::RemoveAllInlinePropertiesAsAction(
       !ignoredError.Failed(),
       "OnStartToHandleTopLevelEditSubAction() failed, but ignored");
 
-  nsresult rv = RemoveInlinePropertyInternal(nullptr, nullptr);
+  nsresult rv =
+      RemoveInlinePropertyInternal(nullptr, nullptr, RemoveRelatedElements::No);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "RemoveInlinePropertyInternal() failed");
   return EditorBase::ToGenericNSResult(rv);
@@ -1451,7 +1474,9 @@ nsresult HTMLEditor::RemoveInlinePropertyAsAction(nsAtom& aProperty,
     default:
       break;
   }
-  nsresult rv = RemoveInlinePropertyInternal(&aProperty, aAttribute);
+
+  nsresult rv = RemoveInlinePropertyInternal(&aProperty, aAttribute,
+                                             RemoveRelatedElements::Yes);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "RemoveInlinePropertyInternal() failed");
   return EditorBase::ToGenericNSResult(rv);
@@ -1481,14 +1506,16 @@ HTMLEditor::RemoveInlineProperty(const nsAString& aProperty,
     default:
       break;
   }
-  nsresult rv = RemoveInlinePropertyInternal(property, attribute);
+  nsresult rv = RemoveInlinePropertyInternal(property, attribute,
+                                             RemoveRelatedElements::No);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "RemoveInlinePropertyInternal() failed");
   return EditorBase::ToGenericNSResult(rv);
 }
 
-nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
-                                                  nsAtom* aAttribute) {
+nsresult HTMLEditor::RemoveInlinePropertyInternal(
+    nsAtom* aProperty, nsAtom* aAttribute,
+    RemoveRelatedElements aRemoveRelatedElements) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(aAttribute != nsGkAtoms::_empty);
 
@@ -1498,17 +1525,55 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
 
   CommitComposition();
 
+  
+  struct HTMLStyle final {
+    
+    nsAtom* mProperty = nullptr;
+    
+    nsAtom* mAttribute = nullptr;
+
+    explicit HTMLStyle(nsAtom* aProperty, nsAtom* aAttribute = nullptr)
+        : mProperty(aProperty), mAttribute(aAttribute) {}
+  };
+  AutoTArray<HTMLStyle, 3> removeStyles;
+  if (aRemoveRelatedElements == RemoveRelatedElements::Yes) {
+    if (aProperty == nsGkAtoms::b) {
+      removeStyles.AppendElement(HTMLStyle(nsGkAtoms::strong));
+    } else if (aProperty == nsGkAtoms::i) {
+      removeStyles.AppendElement(HTMLStyle(nsGkAtoms::em));
+    } else if (aProperty == nsGkAtoms::strike) {
+      removeStyles.AppendElement(HTMLStyle(nsGkAtoms::s));
+    } else if (aProperty == nsGkAtoms::font) {
+      if (aAttribute == nsGkAtoms::size) {
+        removeStyles.AppendElement(HTMLStyle(nsGkAtoms::big));
+        removeStyles.AppendElement(HTMLStyle(nsGkAtoms::small));
+      }
+      
+      
+      
+      
+      
+      
+      else if (aAttribute == nsGkAtoms::face && !GetEditActionPrincipal()) {
+        removeStyles.AppendElement(HTMLStyle(nsGkAtoms::tt));
+      }
+    }
+  }
+  removeStyles.AppendElement(HTMLStyle(aProperty, aAttribute));
+
   if (SelectionRefPtr()->IsCollapsed()) {
     
     
-
-    
-    if (aProperty == nsGkAtoms::href || aProperty == nsGkAtoms::name) {
-      aProperty = nsGkAtoms::a;
-    }
-
-    if (aProperty) {
-      mTypeInState->ClearProp(aProperty, aAttribute);
+    if (removeStyles[0].mProperty) {
+      for (HTMLStyle& style : removeStyles) {
+        MOZ_ASSERT(style.mProperty);
+        if (style.mProperty == nsGkAtoms::href ||
+            style.mProperty == nsGkAtoms::name) {
+          mTypeInState->ClearProp(nsGkAtoms::a, nullptr);
+        } else {
+          mTypeInState->ClearProp(style.mProperty, style.mAttribute);
+        }
+      }
     } else {
       mTypeInState->ClearAllProps();
     }
@@ -1541,182 +1606,195 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
     AutoSelectionRestorer restoreSelectionLater(*this);
     AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
-    
-    
-    
-    
-    
-    AutoRangeArray arrayOfRanges(SelectionRefPtr());
-    for (auto& range : arrayOfRanges.mRanges) {
-      if (aProperty == nsGkAtoms::name) {
-        
-        
-        nsresult rv = PromoteRangeIfStartsOrEndsInNamedAnchor(*range);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
-        }
-      } else {
-        
-        
-        nsresult rv = PromoteInlineRange(*range);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
-        }
-      }
-
-      
-      
-      SplitRangeOffResult splitRangeOffResult =
-          SplitAncestorStyledInlineElementsAtRangeEdges(
-              EditorDOMPoint(range->StartRef()),
-              EditorDOMPoint(range->EndRef()), aProperty, aAttribute);
-      if (NS_WARN_IF(splitRangeOffResult.Failed())) {
-        return splitRangeOffResult.Rv();
-      }
-
+    for (HTMLStyle& style : removeStyles) {
       
       
       
       
-      EditorDOMPoint startOfRange(splitRangeOffResult.SplitPointAtStart());
-      EditorDOMPoint endOfRange(splitRangeOffResult.SplitPointAtEnd());
-      if (NS_WARN_IF(!startOfRange.IsSet()) ||
-          NS_WARN_IF(!endOfRange.IsSet())) {
-        continue;
-      }
-
-      nsresult rv = range->SetStartAndEnd(startOfRange.ToRawRangeBoundary(),
-                                          endOfRange.ToRawRangeBoundary());
       
-      
-      if (NS_WARN_IF(Destroyed())) {
-        return NS_ERROR_EDITOR_DESTROYED;
-      }
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-
-      
-      AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfContents;
-      if (startOfRange.GetContainer() == endOfRange.GetContainer() &&
-          startOfRange.IsInTextNode()) {
-        if (!IsEditable(startOfRange.GetContainer())) {
-          continue;
-        }
-        arrayOfContents.AppendElement(*startOfRange.GetContainerAsText());
-      } else if (startOfRange.IsInTextNode() && endOfRange.IsInTextNode() &&
-                 startOfRange.GetContainer()->GetNextSibling() ==
-                     endOfRange.GetContainer()) {
-        if (IsEditable(startOfRange.GetContainer())) {
-          arrayOfContents.AppendElement(*startOfRange.GetContainerAsText());
-        }
-        if (IsEditable(endOfRange.GetContainer())) {
-          arrayOfContents.AppendElement(*endOfRange.GetContainerAsText());
-        }
-        if (arrayOfContents.IsEmpty()) {
-          continue;
-        }
-      } else {
-        
-        if (startOfRange.IsInTextNode() && !startOfRange.IsStartOfContainer() &&
-            IsEditable(startOfRange.GetContainer())) {
-          arrayOfContents.AppendElement(*startOfRange.GetContainerAsText());
-        }
-        
-        ContentSubtreeIterator subtreeIter;
-        if (NS_SUCCEEDED(subtreeIter.Init(range))) {
-          for (; !subtreeIter.IsDone(); subtreeIter.Next()) {
-            nsCOMPtr<nsINode> node = subtreeIter.GetCurrentNode();
-            if (NS_WARN_IF(!node)) {
-              return NS_ERROR_FAILURE;
-            }
-            if (node->IsContent() && IsEditable(node)) {
-              arrayOfContents.AppendElement(*node->AsContent());
-            }
+      AutoRangeArray arrayOfRanges(SelectionRefPtr());
+      for (auto& range : arrayOfRanges.mRanges) {
+        if (style.mProperty == nsGkAtoms::name) {
+          
+          
+          nsresult rv = PromoteRangeIfStartsOrEndsInNamedAnchor(*range);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return rv;
           }
-        }
-        
-        if (startOfRange.GetContainer() != endOfRange.GetContainer() &&
-            endOfRange.IsInTextNode() && !endOfRange.IsEndOfContainer() &&
-            IsEditable(endOfRange.GetContainer())) {
-          arrayOfContents.AppendElement(*endOfRange.GetContainerAsText());
-        }
-      }
-
-      for (auto& content : arrayOfContents) {
-        if (content->IsElement()) {
-          nsresult rv = RemoveStyleInside(MOZ_KnownLive(*content->AsElement()),
-                                          aProperty, aAttribute);
+        } else {
+          
+          
+          nsresult rv = PromoteInlineRange(*range);
           if (NS_WARN_IF(NS_FAILED(rv))) {
             return rv;
           }
         }
 
-        if (!HTMLEditor::IsRemovableParentStyleWithNewSpanElement(
-                content, aProperty, aAttribute)) {
-          continue;
-        }
-
-        if (!content->IsText()) {
-          
-          
-          DebugOnly<nsresult> rvIgnored = SetInlinePropertyOnNode(
-              content, *aProperty, aAttribute,
-              NS_LITERAL_STRING("-moz-editor-invert-value"));
-          if (NS_WARN_IF(Destroyed())) {
-            return NS_ERROR_EDITOR_DESTROYED;
-          }
-          NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                               "SetInlinePropertyOnNode() "
-                               "failed, but ignored");
-          continue;
+        
+        
+        SplitRangeOffResult splitRangeOffResult =
+            SplitAncestorStyledInlineElementsAtRangeEdges(
+                EditorDOMPoint(range->StartRef()),
+                EditorDOMPoint(range->EndRef()), MOZ_KnownLive(style.mProperty),
+                MOZ_KnownLive(style.mAttribute));
+        if (NS_WARN_IF(splitRangeOffResult.Failed())) {
+          return splitRangeOffResult.Rv();
         }
 
         
         
         
         
+        const EditorDOMPoint& startOfRange(
+            splitRangeOffResult.SplitPointAtStart());
+        const EditorDOMPoint& endOfRange(splitRangeOffResult.SplitPointAtEnd());
+        if (NS_WARN_IF(!startOfRange.IsSet()) ||
+            NS_WARN_IF(!endOfRange.IsSet())) {
+          continue;
+        }
+
+        nsresult rv = range->SetStartAndEnd(startOfRange.ToRawRangeBoundary(),
+                                            endOfRange.ToRawRangeBoundary());
         
-        uint32_t startOffset =
-            content == startOfRange.GetContainer() ? startOfRange.Offset() : 0;
-        uint32_t endOffset = content == endOfRange.GetContainer()
-                                 ? endOfRange.Offset()
-                                 : content->Length();
-        nsresult rv = SetInlinePropertyOnTextNode(
-            MOZ_KnownLive(*content->AsText()), startOffset, endOffset,
-            *aProperty, aAttribute,
-            NS_LITERAL_STRING("-moz-editor-invert-value"));
+        
+        if (NS_WARN_IF(Destroyed())) {
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
-      }
 
-      
-      
-      if (aProperty && CSSEditUtils::IsCSSInvertible(*aProperty, aAttribute)) {
         
-        
-        AutoTArray<OwningNonNull<Text>, 32> leafTextNodes;
-        for (auto& content : arrayOfContents) {
-          if (content->IsElement()) {
-            CollectEditableLeafTextNodes(*content->AsElement(), leafTextNodes);
-          }
-        }
-        for (auto& textNode : leafTextNodes) {
-          if (!HTMLEditor::IsRemovableParentStyleWithNewSpanElement(
-                  textNode, aProperty, aAttribute)) {
+        AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfContents;
+        if (startOfRange.GetContainer() == endOfRange.GetContainer() &&
+            startOfRange.IsInTextNode()) {
+          if (!IsEditable(startOfRange.GetContainer())) {
             continue;
           }
+          arrayOfContents.AppendElement(*startOfRange.GetContainerAsText());
+        } else if (startOfRange.IsInTextNode() && endOfRange.IsInTextNode() &&
+                   startOfRange.GetContainer()->GetNextSibling() ==
+                       endOfRange.GetContainer()) {
+          if (IsEditable(startOfRange.GetContainer())) {
+            arrayOfContents.AppendElement(*startOfRange.GetContainerAsText());
+          }
+          if (IsEditable(endOfRange.GetContainer())) {
+            arrayOfContents.AppendElement(*endOfRange.GetContainerAsText());
+          }
+          if (arrayOfContents.IsEmpty()) {
+            continue;
+          }
+        } else {
+          
+          if (startOfRange.IsInTextNode() &&
+              !startOfRange.IsStartOfContainer() &&
+              IsEditable(startOfRange.GetContainer())) {
+            arrayOfContents.AppendElement(*startOfRange.GetContainerAsText());
+          }
+          
+          ContentSubtreeIterator subtreeIter;
+          if (NS_SUCCEEDED(subtreeIter.Init(range))) {
+            for (; !subtreeIter.IsDone(); subtreeIter.Next()) {
+              nsCOMPtr<nsINode> node = subtreeIter.GetCurrentNode();
+              if (NS_WARN_IF(!node)) {
+                return NS_ERROR_FAILURE;
+              }
+              if (node->IsContent() && IsEditable(node)) {
+                arrayOfContents.AppendElement(*node->AsContent());
+              }
+            }
+          }
+          
+          if (startOfRange.GetContainer() != endOfRange.GetContainer() &&
+              endOfRange.IsInTextNode() && !endOfRange.IsEndOfContainer() &&
+              IsEditable(endOfRange.GetContainer())) {
+            arrayOfContents.AppendElement(*endOfRange.GetContainerAsText());
+          }
+        }
+
+        for (auto& content : arrayOfContents) {
+          if (content->IsElement()) {
+            nsresult rv =
+                RemoveStyleInside(MOZ_KnownLive(*content->AsElement()),
+                                  MOZ_KnownLive(style.mProperty),
+                                  MOZ_KnownLive(style.mAttribute));
+            if (NS_WARN_IF(NS_FAILED(rv))) {
+              return rv;
+            }
+          }
+
+          if (!HTMLEditor::IsRemovableParentStyleWithNewSpanElement(
+                  content, style.mProperty, style.mAttribute)) {
+            continue;
+          }
+
+          if (!content->IsText()) {
+            
+            
+            DebugOnly<nsresult> rvIgnored = SetInlinePropertyOnNode(
+                content, MOZ_KnownLive(*style.mProperty),
+                MOZ_KnownLive(style.mAttribute),
+                NS_LITERAL_STRING("-moz-editor-invert-value"));
+            if (NS_WARN_IF(Destroyed())) {
+              return NS_ERROR_EDITOR_DESTROYED;
+            }
+            NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                                 "SetInlinePropertyOnNode() "
+                                 "failed, but ignored");
+            continue;
+          }
+
+          
+          
+          
+          
+          
+          uint32_t startOffset = content == startOfRange.GetContainer()
+                                     ? startOfRange.Offset()
+                                     : 0;
+          uint32_t endOffset = content == endOfRange.GetContainer()
+                                   ? endOfRange.Offset()
+                                   : content->Length();
           nsresult rv = SetInlinePropertyOnTextNode(
-              textNode, 0, textNode->TextLength(), *aProperty, aAttribute,
+              MOZ_KnownLive(*content->AsText()), startOffset, endOffset,
+              MOZ_KnownLive(*style.mProperty), MOZ_KnownLive(style.mAttribute),
               NS_LITERAL_STRING("-moz-editor-invert-value"));
           if (NS_WARN_IF(NS_FAILED(rv))) {
             return rv;
           }
         }
-      }
-    }
-  }
+
+        
+        
+        if (style.mProperty &&
+            CSSEditUtils::IsCSSInvertible(*style.mProperty, style.mAttribute)) {
+          
+          
+          AutoTArray<OwningNonNull<Text>, 32> leafTextNodes;
+          for (auto& content : arrayOfContents) {
+            if (content->IsElement()) {
+              CollectEditableLeafTextNodes(*content->AsElement(),
+                                           leafTextNodes);
+            }
+          }
+          for (auto& textNode : leafTextNodes) {
+            if (!HTMLEditor::IsRemovableParentStyleWithNewSpanElement(
+                    textNode, style.mProperty, style.mAttribute)) {
+              continue;
+            }
+            nsresult rv = SetInlinePropertyOnTextNode(
+                textNode, 0, textNode->TextLength(),
+                MOZ_KnownLive(*style.mProperty),
+                MOZ_KnownLive(style.mAttribute),
+                NS_LITERAL_STRING("-moz-editor-invert-value"));
+            if (NS_WARN_IF(NS_FAILED(rv))) {
+              return rv;
+            }
+          }
+        }
+      }  
+    }    
+  }      
 
   
   return NS_WARN_IF(Destroyed()) ? NS_ERROR_EDITOR_DESTROYED : NS_OK;

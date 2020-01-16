@@ -784,6 +784,7 @@ class EditorBase : public nsIEditor,
     bool CanHandle() const { return mSelection && mEditorBase.IsInitialized(); }
 
     const RefPtr<Selection>& SelectionRefPtr() const { return mSelection; }
+    nsIPrincipal* GetPrincipal() const { return mPrincipal; }
     EditAction GetEditAction() const { return mEditAction; }
 
     template <typename PT, typename CT>
@@ -948,6 +949,7 @@ class EditorBase : public nsIEditor,
    private:
     EditorBase& mEditorBase;
     RefPtr<Selection> mSelection;
+    nsCOMPtr<nsIPrincipal> mPrincipal;
     
     
     
@@ -1030,6 +1032,11 @@ class EditorBase : public nsIEditor,
   const RefPtr<Selection>& SelectionRefPtr() const {
     MOZ_ASSERT(mEditActionData);
     return mEditActionData->SelectionRefPtr();
+  }
+
+  nsIPrincipal* GetEditActionPrincipal() const {
+    MOZ_ASSERT(mEditActionData);
+    return mEditActionData->GetPrincipal();
   }
 
   
@@ -2421,6 +2428,10 @@ class EditorBase : public nsIEditor,
   
 
 
+
+
+
+
   class MOZ_RAII AutoTransactionBatch final {
    public:
     MOZ_CAN_RUN_SCRIPT explicit AutoTransactionBatch(
@@ -2440,6 +2451,8 @@ class EditorBase : public nsIEditor,
   };
 
   
+
+
 
 
 

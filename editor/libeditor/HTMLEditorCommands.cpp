@@ -196,30 +196,6 @@ nsresult StyleUpdatingCommand::ToggleState(nsAtom* aTagName,
   }
 
   if (doTagRemoval) {
-    
-    
-    
-    
-    if (aTagName == nsGkAtoms::b) {
-      nsresult rv = aHTMLEditor->RemoveInlinePropertyAsAction(
-          *nsGkAtoms::strong, nullptr, aPrincipal);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-    } else if (aTagName == nsGkAtoms::i) {
-      nsresult rv = aHTMLEditor->RemoveInlinePropertyAsAction(
-          *nsGkAtoms::em, nullptr, aPrincipal);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-    } else if (aTagName == nsGkAtoms::strike) {
-      nsresult rv = aHTMLEditor->RemoveInlinePropertyAsAction(
-          *nsGkAtoms::s, nullptr, aPrincipal);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-    }
-
     nsresult rv = aHTMLEditor->RemoveInlinePropertyAsAction(*aTagName, nullptr,
                                                             aPrincipal);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -615,35 +591,6 @@ nsresult FontFaceStateCommand::SetState(HTMLEditor* aHTMLEditor,
     return NS_ERROR_INVALID_ARG;
   }
 
-  
-  
-  
-  
-  
-  if (!aPrincipal) {
-    if (aNewState.EqualsLiteral("tt")) {
-      
-      nsresult rv = aHTMLEditor->SetInlinePropertyAsAction(
-          *nsGkAtoms::tt, nullptr, EmptyString(), aPrincipal);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-      
-      rv = aHTMLEditor->RemoveInlinePropertyAsAction(
-          *nsGkAtoms::font, nsGkAtoms::face, aPrincipal);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "RemoveInlinePropertyAsAction() failed");
-      return rv;
-    }
-
-    
-    nsresult rv = aHTMLEditor->RemoveInlinePropertyAsAction(
-        *nsGkAtoms::tt, nullptr, aPrincipal);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-  }
-
   if (aNewState.IsEmpty() || aNewState.EqualsLiteral("normal")) {
     nsresult rv = aHTMLEditor->RemoveInlinePropertyAsAction(
         *nsGkAtoms::font, nsGkAtoms::face, aPrincipal);
@@ -714,18 +661,6 @@ nsresult FontSizeStateCommand::SetState(HTMLEditor* aHTMLEditor,
   
   nsresult rv = aHTMLEditor->RemoveInlinePropertyAsAction(
       *nsGkAtoms::font, nsGkAtoms::size, aPrincipal);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  rv = aHTMLEditor->RemoveInlinePropertyAsAction(*nsGkAtoms::big, nullptr,
-                                                 aPrincipal);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  rv = aHTMLEditor->RemoveInlinePropertyAsAction(*nsGkAtoms::small, nullptr,
-                                                 aPrincipal);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "RemoveInlinePropertyAsAction() failed");
   return rv;

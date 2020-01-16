@@ -5460,6 +5460,7 @@ EditorBase::AutoEditActionDataSetter::AutoEditActionDataSetter(
     const EditorBase& aEditorBase, EditAction aEditAction,
     nsIPrincipal* aPrincipal )
     : mEditorBase(const_cast<EditorBase&>(aEditorBase)),
+      mPrincipal(aPrincipal),
       mParentData(aEditorBase.mEditActionData),
       mData(VoidString()),
       mTopLevelEditSubAction(EditSubAction::eNone),
