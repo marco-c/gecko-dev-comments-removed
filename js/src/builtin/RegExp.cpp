@@ -1775,7 +1775,7 @@ bool js::intrinsic_GetElemBaseForLambda(JSContext* cx, unsigned argc,
 
 
 
-  if (JSOp(*pc) != JSOP_GETALIASEDVAR || fun->needsSomeEnvironmentObject()) {
+  if (JSOp(*pc) != JSOp::GetAliasedVar || fun->needsSomeEnvironmentObject()) {
     return true;
   }
   EnvironmentCoordinate ec(pc);
@@ -1787,19 +1787,19 @@ bool js::intrinsic_GetElemBaseForLambda(JSContext* cx, unsigned argc,
   pc += JSOpLength_GetAliasedVar;
 
   
-  if (JSOp(*pc) != JSOP_GETARG || GET_ARGNO(pc) != 0) {
+  if (JSOp(*pc) != JSOp::GetArg || GET_ARGNO(pc) != 0) {
     return true;
   }
   pc += JSOpLength_GetArg;
 
   
-  if (JSOp(*pc) != JSOP_GETELEM) {
+  if (JSOp(*pc) != JSOp::GetElem) {
     return true;
   }
   pc += JSOpLength_GetElem;
 
   
-  if (JSOp(*pc) != JSOP_RETURN) {
+  if (JSOp(*pc) != JSOp::Return) {
     return true;
   }
 

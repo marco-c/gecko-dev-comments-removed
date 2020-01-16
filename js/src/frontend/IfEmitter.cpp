@@ -30,7 +30,7 @@ bool BranchEmitterBase::emitThenInternal() {
   }
 
   
-  if (!bce_->emitJump(JSOP_IFEQ, &jumpAroundThen_)) {
+  if (!bce_->emitJump(JSOp::IfEq, &jumpAroundThen_)) {
     return false;
   }
 
@@ -69,7 +69,7 @@ bool BranchEmitterBase::emitElseInternal() {
   
   
   
-  if (!bce_->emitJump(JSOP_GOTO, &jumpsAroundElse_)) {
+  if (!bce_->emitJump(JSOp::Goto, &jumpsAroundElse_)) {
     return false;
   }
 

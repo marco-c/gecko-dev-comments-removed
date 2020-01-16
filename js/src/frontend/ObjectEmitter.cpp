@@ -56,7 +56,7 @@ bool PropertyEmitter::emitMutateProto() {
 
   
 
-  if (!bce_->emit1(JSOP_MUTATEPROTO)) {
+  if (!bce_->emit1(JSOp::MutateProto)) {
     
     return false;
   }
@@ -79,7 +79,7 @@ bool PropertyEmitter::prepareForSpreadOperand(
       return false;
     }
   }
-  if (!bce_->emit1(JSOP_DUP)) {
+  if (!bce_->emit1(JSOp::Dup)) {
     
     return false;
   }
@@ -120,11 +120,11 @@ MOZ_ALWAYS_INLINE bool PropertyEmitter::prepareForProp(
   }
 
   if (isStatic_) {
-    if (!bce_->emit1(JSOP_DUP2)) {
+    if (!bce_->emit1(JSOp::Dup2)) {
       
       return false;
     }
-    if (!bce_->emit1(JSOP_POP)) {
+    if (!bce_->emit1(JSOp::Pop)) {
       
       return false;
     }
@@ -209,7 +209,7 @@ bool PropertyEmitter::prepareForComputedPropValue() {
 
   
 
-  if (!bce_->emit1(JSOP_TOID)) {
+  if (!bce_->emit1(JSOp::ToId)) {
     
     return false;
   }
@@ -244,7 +244,7 @@ bool PropertyEmitter::emitInitHomeObject() {
     
     return false;
   }
-  if (!bce_->emit1(JSOP_INITHOMEOBJECT)) {
+  if (!bce_->emit1(JSOp::InitHomeObject)) {
     
     return false;
   }
@@ -262,56 +262,56 @@ bool PropertyEmitter::emitInitHomeObject() {
 }
 
 bool PropertyEmitter::emitInitProp(JS::Handle<JSAtom*> key) {
-  return emitInit(isClass_ ? JSOP_INITHIDDENPROP : JSOP_INITPROP, key);
+  return emitInit(isClass_ ? JSOp::InitHiddenProp : JSOp::InitProp, key);
 }
 
 bool PropertyEmitter::emitInitGetter(JS::Handle<JSAtom*> key) {
-  return emitInit(isClass_ ? JSOP_INITHIDDENPROP_GETTER : JSOP_INITPROP_GETTER,
+  return emitInit(isClass_ ? JSOp::InitHiddenPropGetter : JSOp::InitPropGetter,
                   key);
 }
 
 bool PropertyEmitter::emitInitSetter(JS::Handle<JSAtom*> key) {
-  return emitInit(isClass_ ? JSOP_INITHIDDENPROP_SETTER : JSOP_INITPROP_SETTER,
+  return emitInit(isClass_ ? JSOp::InitHiddenPropSetter : JSOp::InitPropSetter,
                   key);
 }
 
 bool PropertyEmitter::emitInitIndexProp() {
-  return emitInitIndexOrComputed(isClass_ ? JSOP_INITHIDDENELEM
-                                          : JSOP_INITELEM);
+  return emitInitIndexOrComputed(isClass_ ? JSOp::InitHiddenElem
+                                          : JSOp::InitElem);
 }
 
 bool PropertyEmitter::emitInitIndexGetter() {
-  return emitInitIndexOrComputed(isClass_ ? JSOP_INITHIDDENELEM_GETTER
-                                          : JSOP_INITELEM_GETTER);
+  return emitInitIndexOrComputed(isClass_ ? JSOp::InitHiddenElemGetter
+                                          : JSOp::InitElemGetter);
 }
 
 bool PropertyEmitter::emitInitIndexSetter() {
-  return emitInitIndexOrComputed(isClass_ ? JSOP_INITHIDDENELEM_SETTER
-                                          : JSOP_INITELEM_SETTER);
+  return emitInitIndexOrComputed(isClass_ ? JSOp::InitHiddenElemSetter
+                                          : JSOp::InitElemSetter);
 }
 
 bool PropertyEmitter::emitInitComputedProp() {
-  return emitInitIndexOrComputed(isClass_ ? JSOP_INITHIDDENELEM
-                                          : JSOP_INITELEM);
+  return emitInitIndexOrComputed(isClass_ ? JSOp::InitHiddenElem
+                                          : JSOp::InitElem);
 }
 
 bool PropertyEmitter::emitInitComputedGetter() {
-  return emitInitIndexOrComputed(isClass_ ? JSOP_INITHIDDENELEM_GETTER
-                                          : JSOP_INITELEM_GETTER);
+  return emitInitIndexOrComputed(isClass_ ? JSOp::InitHiddenElemGetter
+                                          : JSOp::InitElemGetter);
 }
 
 bool PropertyEmitter::emitInitComputedSetter() {
-  return emitInitIndexOrComputed(isClass_ ? JSOP_INITHIDDENELEM_SETTER
-                                          : JSOP_INITELEM_SETTER);
+  return emitInitIndexOrComputed(isClass_ ? JSOp::InitHiddenElemSetter
+                                          : JSOp::InitElemSetter);
 }
 
 bool PropertyEmitter::emitInit(JSOp op, JS::Handle<JSAtom*> key) {
   MOZ_ASSERT(propertyState_ == PropertyState::PropValue ||
              propertyState_ == PropertyState::InitHomeObj);
 
-  MOZ_ASSERT(op == JSOP_INITPROP || op == JSOP_INITHIDDENPROP ||
-             op == JSOP_INITPROP_GETTER || op == JSOP_INITHIDDENPROP_GETTER ||
-             op == JSOP_INITPROP_SETTER || op == JSOP_INITHIDDENPROP_SETTER);
+  MOZ_ASSERT(op == JSOp::InitProp || op == JSOp::InitHiddenProp ||
+             op == JSOp::InitPropGetter || op == JSOp::InitHiddenPropGetter ||
+             op == JSOp::InitPropSetter || op == JSOp::InitHiddenPropSetter);
 
   
 
@@ -341,9 +341,9 @@ bool PropertyEmitter::emitInitIndexOrComputed(JSOp op) {
              propertyState_ == PropertyState::ComputedValue ||
              propertyState_ == PropertyState::InitHomeObjForComputed);
 
-  MOZ_ASSERT(op == JSOP_INITELEM || op == JSOP_INITHIDDENELEM ||
-             op == JSOP_INITELEM_GETTER || op == JSOP_INITHIDDENELEM_GETTER ||
-             op == JSOP_INITELEM_SETTER || op == JSOP_INITHIDDENELEM_SETTER);
+  MOZ_ASSERT(op == JSOp::InitElem || op == JSOp::InitHiddenElem ||
+             op == JSOp::InitElemGetter || op == JSOp::InitHiddenElemGetter ||
+             op == JSOp::InitElemSetter || op == JSOp::InitHiddenElemSetter);
 
   
 
@@ -366,7 +366,7 @@ bool PropertyEmitter::emitPopClassConstructor() {
   if (isStatic_) {
     
 
-    if (!bce_->emit1(JSOP_POP)) {
+    if (!bce_->emit1(JSOp::Pop)) {
       
       return false;
     }
@@ -507,21 +507,21 @@ bool ClassEmitter::emitDerivedClass(JS::Handle<JSAtom*> name,
   InternalIfEmitter ifThenElse(bce_);
 
   
-  if (!bce_->emit1(JSOP_CHECKCLASSHERITAGE)) {
+  if (!bce_->emit1(JSOp::CheckClassHeritage)) {
     
     return false;
   }
 
   
-  if (!bce_->emit1(JSOP_DUP)) {
+  if (!bce_->emit1(JSOp::Dup)) {
     
     return false;
   }
-  if (!bce_->emit1(JSOP_NULL)) {
+  if (!bce_->emit1(JSOp::Null)) {
     
     return false;
   }
-  if (!bce_->emit1(JSOP_STRICTNE)) {
+  if (!bce_->emit1(JSOp::StrictNe)) {
     
     return false;
   }
@@ -530,11 +530,11 @@ bool ClassEmitter::emitDerivedClass(JS::Handle<JSAtom*> name,
   if (!ifThenElse.emitThenElse()) {
     return false;
   }
-  if (!bce_->emit1(JSOP_DUP)) {
+  if (!bce_->emit1(JSOp::Dup)) {
     
     return false;
   }
-  if (!bce_->emitAtomOp(JSOP_GETPROP, bce_->cx->names().prototype)) {
+  if (!bce_->emitAtomOp(JSOp::GetProp, bce_->cx->names().prototype)) {
     
     return false;
   }
@@ -543,15 +543,15 @@ bool ClassEmitter::emitDerivedClass(JS::Handle<JSAtom*> name,
   if (!ifThenElse.emitElse()) {
     return false;
   }
-  if (!bce_->emit1(JSOP_POP)) {
+  if (!bce_->emit1(JSOp::Pop)) {
     
     return false;
   }
-  if (!bce_->emit2(JSOP_BUILTINPROTO, JSProto_Function)) {
+  if (!bce_->emit2(JSOp::BuiltinProto, JSProto_Function)) {
     
     return false;
   }
-  if (!bce_->emit1(JSOP_NULL)) {
+  if (!bce_->emit1(JSOp::Null)) {
     
     return false;
   }
@@ -561,11 +561,11 @@ bool ClassEmitter::emitDerivedClass(JS::Handle<JSAtom*> name,
     return false;
   }
 
-  if (!bce_->emit1(JSOP_OBJWITHPROTO)) {
+  if (!bce_->emit1(JSOp::ObjWithProto)) {
     
     return false;
   }
-  if (!bce_->emit1(JSOP_SWAP)) {
+  if (!bce_->emit1(JSOp::Swap)) {
     
     return false;
   }
@@ -588,7 +588,7 @@ bool ClassEmitter::emitInitConstructor(bool needsHomeObject) {
       
       return false;
     }
-    if (!bce_->emit1(JSOP_INITHOMEOBJECT)) {
+    if (!bce_->emit1(JSOp::InitHomeObject)) {
       
       return false;
     }
@@ -632,13 +632,13 @@ bool ClassEmitter::emitInitDefaultConstructor(uint32_t classStart,
   BytecodeOffset off;
   if (isDerived_) {
     
-    if (!bce_->emitN(JSOP_DERIVEDCONSTRUCTOR, 12, &off)) {
+    if (!bce_->emitN(JSOp::DerivedConstructor, 12, &off)) {
       
       return false;
     }
   } else {
     
-    if (!bce_->emitN(JSOP_CLASSCONSTRUCTOR, 12, &off)) {
+    if (!bce_->emitN(JSOp::ClassConstructor, 12, &off)) {
       
       return false;
     }
@@ -665,25 +665,25 @@ bool ClassEmitter::initProtoAndCtor() {
       
       return false;
     }
-    if (!bce_->emit2(JSOP_SETFUNNAME, uint8_t(FunctionPrefixKind::None))) {
+    if (!bce_->emit2(JSOp::SetFunName, uint8_t(FunctionPrefixKind::None))) {
       
       return false;
     }
   }
 
-  if (!bce_->emit1(JSOP_SWAP)) {
+  if (!bce_->emit1(JSOp::Swap)) {
     
     return false;
   }
-  if (!bce_->emit1(JSOP_DUP2)) {
+  if (!bce_->emit1(JSOp::Dup2)) {
     
     return false;
   }
-  if (!bce_->emitAtomOp(JSOP_INITLOCKEDPROP, bce_->cx->names().prototype)) {
+  if (!bce_->emitAtomOp(JSOp::InitLockedProp, bce_->cx->names().prototype)) {
     
     return false;
   }
-  if (!bce_->emitAtomOp(JSOP_INITHIDDENPROP, bce_->cx->names().constructor)) {
+  if (!bce_->emitAtomOp(JSOp::InitHiddenProp, bce_->cx->names().constructor)) {
     
     return false;
   }
@@ -704,7 +704,7 @@ bool ClassEmitter::prepareForFieldInitializers(size_t numFields) {
     return false;
   }
 
-  if (!bce_->emitUint32Operand(JSOP_NEWARRAY, numFields)) {
+  if (!bce_->emitUint32Operand(JSOp::NewArray, numFields)) {
     
     return false;
   }
@@ -725,7 +725,7 @@ bool ClassEmitter::emitFieldInitializerHomeObject() {
     
     return false;
   }
-  if (!bce_->emit1(JSOP_INITHOMEOBJECT)) {
+  if (!bce_->emit1(JSOp::InitHomeObject)) {
     
     return false;
   }
@@ -742,7 +742,7 @@ bool ClassEmitter::emitStoreFieldInitializer() {
   MOZ_ASSERT(fieldIndex_ < numFields_);
   
 
-  if (!bce_->emitUint32Operand(JSOP_INITELEM_ARRAY, fieldIndex_)) {
+  if (!bce_->emitUint32Operand(JSOp::InitElemArray, fieldIndex_)) {
     
     return false;
   }
@@ -767,7 +767,7 @@ bool ClassEmitter::emitFieldInitializersEnd() {
   }
   initializersAssignment_.reset();
 
-  if (!bce_->emit1(JSOP_POP)) {
+  if (!bce_->emit1(JSOp::Pop)) {
     
     return false;
   }
@@ -785,7 +785,7 @@ bool ClassEmitter::emitEnd(Kind kind) {
              classState_ == ClassState::FieldInitializersEnd);
   
 
-  if (!bce_->emit1(JSOP_POP)) {
+  if (!bce_->emit1(JSOp::Pop)) {
     
     return false;
   }
@@ -811,7 +811,7 @@ bool ClassEmitter::emitEnd(Kind kind) {
       }
       
       
-      if (!bce_->emit1(JSOP_POP)) {
+      if (!bce_->emit1(JSOp::Pop)) {
         
         return false;
       }

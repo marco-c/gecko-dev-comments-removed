@@ -36,7 +36,7 @@ bool ForInEmitter::emitInitialize() {
   MOZ_ASSERT(state_ == State::Iterated);
   tdzCacheForIteratedValue_.reset();
 
-  if (!bce_->emit1(JSOP_ITER)) {
+  if (!bce_->emit1(JSOp::Iter)) {
     
     return false;
   }
@@ -48,15 +48,15 @@ bool ForInEmitter::emitInitialize() {
     return false;
   }
 
-  if (!bce_->emit1(JSOP_MOREITER)) {
+  if (!bce_->emit1(JSOp::MoreIter)) {
     
     return false;
   }
-  if (!bce_->emit1(JSOP_ISNOITER)) {
+  if (!bce_->emit1(JSOp::IsNoIter)) {
     
     return false;
   }
-  if (!bce_->emitJump(JSOP_IFNE, &loopInfo_->breaks)) {
+  if (!bce_->emitJump(JSOp::IfNe, &loopInfo_->breaks)) {
     
     return false;
   }
@@ -75,7 +75,7 @@ bool ForInEmitter::emitInitialize() {
                ScopeKind::Lexical);
 
     if (headLexicalEmitterScope_->hasEnvironment()) {
-      if (!bce_->emit1(JSOP_RECREATELEXICALENV)) {
+      if (!bce_->emit1(JSOp::RecreateLexicalEnv)) {
         
         return false;
       }
@@ -92,7 +92,7 @@ bool ForInEmitter::emitInitialize() {
 #endif
   MOZ_ASSERT(loopDepth_ >= 2);
 
-  if (!bce_->emit1(JSOP_ITERNEXT)) {
+  if (!bce_->emit1(JSOp::IterNext)) {
     
     return false;
   }
@@ -130,11 +130,11 @@ bool ForInEmitter::emitEnd(const Maybe<uint32_t>& forPos) {
     return false;
   }
 
-  if (!bce_->emit1(JSOP_POP)) {
+  if (!bce_->emit1(JSOp::Pop)) {
     
     return false;
   }
-  if (!loopInfo_->emitLoopEnd(bce_, JSOP_GOTO, JSTRY_FOR_IN)) {
+  if (!loopInfo_->emitLoopEnd(bce_, JSOp::Goto, JSTRY_FOR_IN)) {
     
     return false;
   }
@@ -148,7 +148,7 @@ bool ForInEmitter::emitEnd(const Maybe<uint32_t>& forPos) {
   
 
   
-  if (!bce_->emit1(JSOP_ENDITER)) {
+  if (!bce_->emit1(JSOp::EndIter)) {
     
     return false;
   }

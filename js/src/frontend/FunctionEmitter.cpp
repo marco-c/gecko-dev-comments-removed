@@ -186,7 +186,7 @@ bool FunctionEmitter::emitAgain() {
     return false;
   }
 
-  if (!bce_->emit1(JSOP_POP)) {
+  if (!bce_->emit1(JSOp::Pop)) {
     
     return false;
   }
@@ -273,7 +273,7 @@ bool FunctionEmitter::emitNonHoisted(unsigned index) {
 
   if (syntaxKind_ == FunctionSyntaxKind::DerivedClassConstructor) {
     
-    if (!bce_->emitIndexOp(JSOP_FUNWITHPROTO, index)) {
+    if (!bce_->emitIndexOp(JSOp::FunWithProto, index)) {
       
       return false;
     }
@@ -282,8 +282,8 @@ bool FunctionEmitter::emitNonHoisted(unsigned index) {
 
   
   
-  JSOp op = syntaxKind_ == FunctionSyntaxKind::Arrow ? JSOP_LAMBDA_ARROW
-                                                     : JSOP_LAMBDA;
+  JSOp op = syntaxKind_ == FunctionSyntaxKind::Arrow ? JSOp::LambdaArrow
+                                                     : JSOp::Lambda;
   if (!bce_->emitIndexOp(op, index)) {
     
     return false;
@@ -306,7 +306,7 @@ bool FunctionEmitter::emitHoisted(unsigned index) {
     return false;
   }
 
-  if (!bce_->emitIndexOp(JSOP_LAMBDA, index)) {
+  if (!bce_->emitIndexOp(JSOp::Lambda, index)) {
     
     return false;
   }
@@ -316,7 +316,7 @@ bool FunctionEmitter::emitHoisted(unsigned index) {
     return false;
   }
 
-  if (!bce_->emit1(JSOP_POP)) {
+  if (!bce_->emit1(JSOp::Pop)) {
     
     return false;
   }
@@ -343,11 +343,11 @@ bool FunctionEmitter::emitTopLevelFunction(unsigned index) {
   MOZ_ASSERT(syntaxKind_ == FunctionSyntaxKind::Statement);
   MOZ_ASSERT(bce_->inPrologue());
 
-  if (!bce_->emitIndexOp(JSOP_LAMBDA, index)) {
+  if (!bce_->emitIndexOp(JSOp::Lambda, index)) {
     
     return false;
   }
-  if (!bce_->emit1(JSOP_DEFFUN)) {
+  if (!bce_->emit1(JSOp::DefFun)) {
     
     return false;
   }
@@ -358,12 +358,12 @@ bool FunctionEmitter::emitNewTargetForArrow() {
   
 
   if (bce_->sc->allowNewTarget()) {
-    if (!bce_->emit1(JSOP_NEWTARGET)) {
+    if (!bce_->emit1(JSOp::NewTarget)) {
       
       return false;
     }
   } else {
-    if (!bce_->emit1(JSOP_NULL)) {
+    if (!bce_->emit1(JSOp::Null)) {
       
       return false;
     }
@@ -513,12 +513,12 @@ bool FunctionScriptEmitter::emitAsyncFunctionRejectEpilogue() {
     
     return false;
   }
-  if (!bce_->emit2(JSOP_ASYNCRESOLVE,
+  if (!bce_->emit2(JSOp::AsyncResolve,
                    uint8_t(AsyncFunctionResolveKind::Reject))) {
     
     return false;
   }
-  if (!bce_->emit1(JSOP_SETRVAL)) {
+  if (!bce_->emit1(JSOp::SetRval)) {
     
     return false;
   }
@@ -526,7 +526,7 @@ bool FunctionScriptEmitter::emitAsyncFunctionRejectEpilogue() {
     
     return false;
   }
-  if (!bce_->emitYieldOp(JSOP_FINALYIELDRVAL)) {
+  if (!bce_->emitYieldOp(JSOp::FinalYieldRval)) {
     
     return false;
   }
@@ -594,7 +594,7 @@ bool FunctionScriptEmitter::emitExtraBodyVarScope() {
       return false;
     }
 
-    if (!bce_->emit1(JSOP_POP)) {
+    if (!bce_->emit1(JSOp::Pop)) {
       
       return false;
     }
@@ -618,7 +618,7 @@ bool FunctionScriptEmitter::emitEndBody() {
       }
     }
 
-    if (!bce_->emit1(JSOP_UNDEFINED)) {
+    if (!bce_->emit1(JSOp::Undefined)) {
       
       return false;
     }
@@ -636,14 +636,14 @@ bool FunctionScriptEmitter::emitEndBody() {
         return false;
       }
 
-      if (!bce_->emit2(JSOP_ASYNCRESOLVE,
+      if (!bce_->emit2(JSOp::AsyncResolve,
                        uint8_t(AsyncFunctionResolveKind::Fulfill))) {
         
         return false;
       }
     }
 
-    if (!bce_->emit1(JSOP_SETRVAL)) {
+    if (!bce_->emit1(JSOp::SetRval)) {
       
       return false;
     }
@@ -654,7 +654,7 @@ bool FunctionScriptEmitter::emitEndBody() {
     }
 
     
-    if (!bce_->emitYieldOp(JSOP_FINALYIELDRVAL)) {
+    if (!bce_->emitYieldOp(JSOp::FinalYieldRval)) {
       
       return false;
     }
@@ -665,11 +665,11 @@ bool FunctionScriptEmitter::emitEndBody() {
     
     
     if (bce_->hasTryFinally) {
-      if (!bce_->emit1(JSOP_UNDEFINED)) {
+      if (!bce_->emit1(JSOp::Undefined)) {
         
         return false;
       }
-      if (!bce_->emit1(JSOP_SETRVAL)) {
+      if (!bce_->emit1(JSOp::SetRval)) {
         
         return false;
       }
@@ -765,7 +765,7 @@ bool FunctionParamsEmitter::emitSimple(JS::Handle<JSAtom*> paramName) {
   
 
   if (funbox_->hasParameterExprs) {
-    if (!bce_->emitArgOp(JSOP_GETARG, argSlot_)) {
+    if (!bce_->emitArgOp(JSOp::GetArg, argSlot_)) {
       
       return false;
     }
@@ -834,7 +834,7 @@ bool FunctionParamsEmitter::prepareForDestructuring() {
     return false;
   }
 
-  if (!bce_->emitArgOp(JSOP_GETARG, argSlot_)) {
+  if (!bce_->emitArgOp(JSOp::GetArg, argSlot_)) {
     
     return false;
   }
@@ -850,7 +850,7 @@ bool FunctionParamsEmitter::emitDestructuringEnd() {
 
   
 
-  if (!bce_->emit1(JSOP_POP)) {
+  if (!bce_->emit1(JSOp::Pop)) {
     
     return false;
   }
@@ -907,7 +907,7 @@ bool FunctionParamsEmitter::emitDestructuringDefaultEnd() {
 
   
 
-  if (!bce_->emit1(JSOP_POP)) {
+  if (!bce_->emit1(JSOp::Pop)) {
     
     return false;
   }
@@ -968,7 +968,7 @@ bool FunctionParamsEmitter::emitDestructuringRestEnd() {
 
   
 
-  if (!bce_->emit1(JSOP_POP)) {
+  if (!bce_->emit1(JSOp::Pop)) {
     
     return false;
   }
@@ -1018,7 +1018,7 @@ bool FunctionParamsEmitter::prepareForInitializer() {
   
   
   MOZ_ASSERT(funbox_->hasParameterExprs);
-  if (!bce_->emitArgOp(JSOP_GETARG, argSlot_)) {
+  if (!bce_->emitArgOp(JSOp::GetArg, argSlot_)) {
     
     return false;
   }
@@ -1044,7 +1044,7 @@ bool FunctionParamsEmitter::emitInitializerEnd() {
 bool FunctionParamsEmitter::emitRestArray() {
   
 
-  if (!bce_->emit1(JSOP_REST)) {
+  if (!bce_->emit1(JSOp::Rest)) {
     
     return false;
   }
@@ -1074,7 +1074,7 @@ bool FunctionParamsEmitter::emitAssignment(JS::Handle<JSAtom*> paramName) {
     return false;
   }
 
-  if (!bce_->emit1(JSOP_POP)) {
+  if (!bce_->emit1(JSOp::Pop)) {
     
     return false;
   }

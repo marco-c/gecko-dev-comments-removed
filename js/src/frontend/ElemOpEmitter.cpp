@@ -29,13 +29,13 @@ bool ElemOpEmitter::prepareForKey() {
   MOZ_ASSERT(state_ == State::Obj);
 
   if (!isSuper() && isIncDec()) {
-    if (!bce_->emit1(JSOP_CHECKOBJCOERCIBLE)) {
+    if (!bce_->emit1(JSOp::CheckObjCoercible)) {
       
       return false;
     }
   }
   if (isCall()) {
-    if (!bce_->emit1(JSOP_DUP)) {
+    if (!bce_->emit1(JSOp::Dup)) {
       
       
       
@@ -54,7 +54,7 @@ bool ElemOpEmitter::emitGet() {
   MOZ_ASSERT(state_ == State::Key);
 
   if (isIncDec() || isCompoundAssignment()) {
-    if (!bce_->emit1(JSOP_TOID)) {
+    if (!bce_->emit1(JSOp::ToId)) {
       
       
       
@@ -75,7 +75,7 @@ bool ElemOpEmitter::emitGet() {
         return false;
       }
     } else {
-      if (!bce_->emit1(JSOP_DUP2)) {
+      if (!bce_->emit1(JSOp::Dup2)) {
         
         return false;
       }
@@ -84,11 +84,11 @@ bool ElemOpEmitter::emitGet() {
 
   JSOp op;
   if (isSuper()) {
-    op = JSOP_GETELEM_SUPER;
+    op = JSOp::GetElemSuper;
   } else if (isCall()) {
-    op = JSOP_CALLELEM;
+    op = JSOp::CallElem;
   } else {
-    op = JSOP_GETELEM;
+    op = JSOp::GetElem;
   }
   if (!bce_->emitElemOpBase(op, ShouldInstrument::Yes)) {
     
@@ -102,7 +102,7 @@ bool ElemOpEmitter::emitGet() {
     return false;
   }
   if (isCall()) {
-    if (!bce_->emit1(JSOP_SWAP)) {
+    if (!bce_->emit1(JSOp::Swap)) {
       
       return false;
     }
@@ -150,7 +150,7 @@ bool ElemOpEmitter::emitDelete() {
   MOZ_ASSERT(isDelete());
 
   if (isSuper()) {
-    if (!bce_->emit1(JSOP_TOID)) {
+    if (!bce_->emit1(JSOp::ToId)) {
       
       return false;
     }
@@ -160,7 +160,7 @@ bool ElemOpEmitter::emitDelete() {
     }
 
     
-    if (!bce_->emitUint16Operand(JSOP_THROWMSG, JSMSG_CANT_DELETE_SUPER)) {
+    if (!bce_->emitUint16Operand(JSOp::ThrowMsg, JSMSG_CANT_DELETE_SUPER)) {
       
       return false;
     }
@@ -172,7 +172,7 @@ bool ElemOpEmitter::emitDelete() {
       return false;
     }
   } else {
-    JSOp op = bce_->sc->strict() ? JSOP_STRICTDELELEM : JSOP_DELELEM;
+    JSOp op = bce_->sc->strict() ? JSOp::StrictDelElem : JSOp::DelElem;
     if (!bce_->emitElemOpBase(op)) {
       
       return false;
@@ -191,12 +191,12 @@ bool ElemOpEmitter::emitAssignment() {
 
   MOZ_ASSERT_IF(isPropInit(), !isSuper());
 
-  JSOp setOp =
-      isPropInit()
-          ? JSOP_INITELEM
-          : isSuper() ? bce_->sc->strict() ? JSOP_STRICTSETELEM_SUPER
-                                           : JSOP_SETELEM_SUPER
-                      : bce_->sc->strict() ? JSOP_STRICTSETELEM : JSOP_SETELEM;
+  JSOp setOp = isPropInit()
+                   ? JSOp::InitElem
+                   : isSuper() ? bce_->sc->strict() ? JSOp::StrictSetElemSuper
+                                                    : JSOp::SetElemSuper
+                               : bce_->sc->strict() ? JSOp::StrictSetElem
+                                                    : JSOp::SetElem;
   if (!bce_->emitElemOpBase(setOp, ShouldInstrument::Yes)) {
     
     return false;
@@ -219,18 +219,18 @@ bool ElemOpEmitter::emitIncDec() {
 
   MOZ_ASSERT(state_ == State::Get);
 
-  JSOp incOp = isInc() ? JSOP_INC : JSOP_DEC;
-  if (!bce_->emit1(JSOP_TONUMERIC)) {
+  JSOp incOp = isInc() ? JSOp::Inc : JSOp::Dec;
+  if (!bce_->emit1(JSOp::ToNumeric)) {
     
     return false;
   }
   if (isPostIncDec()) {
     
-    if (!bce_->emit1(JSOP_DUP)) {
+    if (!bce_->emit1(JSOp::Dup)) {
       
       return false;
     }
-    if (!bce_->emit2(JSOP_UNPICK, 3 + isSuper())) {
+    if (!bce_->emit2(JSOp::Unpick, 3 + isSuper())) {
       
       return false;
     }
@@ -242,14 +242,14 @@ bool ElemOpEmitter::emitIncDec() {
 
   JSOp setOp =
       isSuper()
-          ? (bce_->sc->strict() ? JSOP_STRICTSETELEM_SUPER : JSOP_SETELEM_SUPER)
-          : (bce_->sc->strict() ? JSOP_STRICTSETELEM : JSOP_SETELEM);
+          ? (bce_->sc->strict() ? JSOp::StrictSetElemSuper : JSOp::SetElemSuper)
+          : (bce_->sc->strict() ? JSOp::StrictSetElem : JSOp::SetElem);
   if (!bce_->emitElemOpBase(setOp, ShouldInstrument::Yes)) {
     
     return false;
   }
   if (isPostIncDec()) {
-    if (!bce_->emit1(JSOP_POP)) {
+    if (!bce_->emit1(JSOp::Pop)) {
       
       return false;
     }
