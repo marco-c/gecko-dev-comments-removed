@@ -8,6 +8,7 @@
 #define nsITextControlFrame_h___
 
 #include "nsIFormControlFrame.h"
+#include "mozilla/AlreadyAddRefed.h"
 
 class nsISelectionController;
 class nsFrameSelection;
@@ -16,13 +17,14 @@ namespace mozilla {
 class TextEditor;
 }  
 
+
 class nsITextControlFrame : public nsIFormControlFrame {
  public:
   NS_DECL_QUERYFRAME_TARGET(nsITextControlFrame)
 
   enum SelectionDirection { eNone, eForward, eBackward };
 
-  NS_IMETHOD_(already_AddRefed<mozilla::TextEditor>) GetTextEditor() = 0;
+  virtual already_AddRefed<mozilla::TextEditor> GetTextEditor() = 0;
 
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD
   SetSelectionRange(uint32_t aSelectionStart, uint32_t aSelectionEnd,
