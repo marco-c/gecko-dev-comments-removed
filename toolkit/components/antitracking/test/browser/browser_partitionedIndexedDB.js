@@ -50,6 +50,7 @@ PartitionedStorageHelper.runTest(
 
 PartitionedStorageHelper.runPartitioningTest(
   "Partitioned tabs - IndexedDB",
+  "indexeddb",
 
   
   async win => {

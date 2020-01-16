@@ -83,6 +83,7 @@ PartitionedStorageHelper.runTestInNormalAndPrivateMode(
 
 PartitionedStorageHelper.runPartitioningTestInNormalAndPrivateMode(
   "Partitioned tabs - DOM Cookies",
+  "cookies",
 
   
   async win => {
@@ -107,6 +108,7 @@ PartitionedStorageHelper.runPartitioningTestInNormalAndPrivateMode(
 
 PartitionedStorageHelper.runPartitioningTestInNormalAndPrivateMode(
   "Partitioned tabs - Network Cookies",
+  "cookies",
 
   
   async win => {
