@@ -431,6 +431,9 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                     
                     if self.app and 'chrome' in self.app.lower() and bt in ('fnbpaint', 'dcf'):
                         continue
+                    
+                    if self.app and 'fennec' in self.app.lower() and bt == 'fcp':
+                        continue
 
                     
                     if raptor in chrome_raptor_conversion and \

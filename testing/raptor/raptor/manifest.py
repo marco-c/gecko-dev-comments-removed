@@ -454,6 +454,13 @@ def get_raptor_test_list(args, oskey):
             LOG.info("using live sites so using page timeout of %dms" % next_test['page_timeout'])
 
         
+        
+        
+        
+        if args.browsertime is not None and next_test.get('measure') is None:
+            next_test['measure'] = "fnbpaint, fcp, dcf, loadtime"
+
+        
         if next_test.get('measure') is not None:
             _measures = []
             for m in [m.strip() for m in next_test['measure'].split(',')]:
