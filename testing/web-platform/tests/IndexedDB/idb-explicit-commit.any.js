@@ -197,8 +197,8 @@ promise_test(async testCase => {
 
   
   
-  const txn3 = db.transaction(['not_books'], 'readonly');
-  txn3.objectStore('not_books').getAllKeys();
+  const txn3 = db.transaction(['not_books'], 'readwrite');
+  txn3.objectStore('not_books').put({'title': 'not_title'}, 'key');
   txn3.oncomplete = function() {
     releaseTxnFunction();
   }
