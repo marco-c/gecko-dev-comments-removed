@@ -149,7 +149,26 @@ void PauseMainThreadAndInvokeCallback(const std::function<void()>& aCallback) {
   }
 }
 
+
+
+
+
+
+static bool gNeedRespawnThreads;
+
+void EnsureNonMainThreadsAreSpawned() {
+  if (gNeedRespawnThreads) {
+    AutoPassThroughThreadEvents pt;
+    Thread::RespawnAllThreadsAfterFork();
+    Thread::OperateOnIdleThreadLocks(Thread::OwnedLockState::NeedAcquire);
+    Thread::ResumeIdleThreads();
+    gNeedRespawnThreads = false;
+  }
+}
+
 void ResumeExecution() {
+  EnsureNonMainThreadsAreSpawned();
+
   MonitorAutoLock lock(*gMainThreadCallbackMonitor);
   gMainThreadShouldPause = false;
   gMainThreadCallbackMonitor->Notify();
@@ -158,19 +177,23 @@ void ResumeExecution() {
 bool ForkProcess() {
   MOZ_RELEASE_ASSERT(IsReplaying());
 
-  Thread::WaitForIdleThreads();
+  if (!gNeedRespawnThreads) {
+    Thread::WaitForIdleThreads();
 
-  
-  
-  
-  Thread::OperateOnIdleThreadLocks(Thread::OwnedLockState::NeedRelease);
+    
+    
+    
+    Thread::OperateOnIdleThreadLocks(Thread::OwnedLockState::NeedRelease);
+  }
 
   AutoEnsurePassThroughThreadEvents pt;
   pid_t pid = fork();
 
   if (pid > 0) {
-    Thread::OperateOnIdleThreadLocks(Thread::OwnedLockState::NeedAcquire);
-    Thread::ResumeIdleThreads();
+    if (!gNeedRespawnThreads) {
+      Thread::OperateOnIdleThreadLocks(Thread::OwnedLockState::NeedAcquire);
+      Thread::ResumeIdleThreads();
+    }
     return true;
   }
 
@@ -182,9 +205,7 @@ bool ForkProcess() {
 
   ResetPid();
 
-  Thread::RespawnAllThreadsAfterFork();
-  Thread::OperateOnIdleThreadLocks(Thread::OwnedLockState::NeedAcquire);
-  Thread::ResumeIdleThreads();
+  gNeedRespawnThreads = true;
   return false;
 }
 

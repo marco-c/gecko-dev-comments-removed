@@ -786,6 +786,8 @@ bool Repaint(nsACString& aData) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(HasDivergedFromRecording());
 
+  EnsureNonMainThreadsAreSpawned();
+
   
   if (!gCompositorThreadId) {
     return false;

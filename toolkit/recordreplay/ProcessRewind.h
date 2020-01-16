@@ -92,6 +92,9 @@ size_t GetLastCheckpoint();
 bool ForkProcess();
 
 
+void EnsureNonMainThreadsAreSpawned();
+
+
 
 void ResumeExecution();
 
