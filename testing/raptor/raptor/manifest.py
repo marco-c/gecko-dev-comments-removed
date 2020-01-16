@@ -457,7 +457,7 @@ def get_raptor_test_list(args, oskey):
         
         
         
-        if args.browsertime is not None and next_test.get('measure') is None:
+        if args.browsertime and next_test.get('measure') is None:
             next_test['measure'] = "fnbpaint, fcp, dcf, loadtime"
 
         
