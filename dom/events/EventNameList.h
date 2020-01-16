@@ -526,13 +526,17 @@ EVENT(webkitAnimationStart, eWebkitAnimationStart, EventNameType_All,
 EVENT(webkitTransitionEnd, eWebkitTransitionEnd, EventNameType_All,
       eTransitionEventClass)
 #ifndef MESSAGE_TO_EVENT
-EVENT(webkitanimationend, eWebkitAnimationEnd, EventNameType_All,
+
+
+
+
+EVENT(webkitanimationend, eUnidentifiedEvent, EventNameType_All,
       eAnimationEventClass)
-EVENT(webkitanimationiteration, eWebkitAnimationIteration, EventNameType_All,
+EVENT(webkitanimationiteration, eUnidentifiedEvent, EventNameType_All,
       eAnimationEventClass)
-EVENT(webkitanimationstart, eWebkitAnimationStart, EventNameType_All,
+EVENT(webkitanimationstart, eUnidentifiedEvent, EventNameType_All,
       eAnimationEventClass)
-EVENT(webkittransitionend, eWebkitTransitionEnd, EventNameType_All,
+EVENT(webkittransitionend, eUnidentifiedEvent, EventNameType_All,
       eTransitionEventClass)
 #endif
 

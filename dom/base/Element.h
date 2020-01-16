@@ -1919,6 +1919,14 @@ class Element : public FragmentOrElement {
   nsresult CopyInnerTo(Element* aDest,
                        ReparseAttributes = ReparseAttributes::Yes);
 
+  
+
+
+
+
+
+  static nsAtom* GetEventNameForAttr(nsAtom* aAttr);
+
  private:
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   void AssertInvariantsOnNodeInfoChange();
