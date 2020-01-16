@@ -1493,7 +1493,7 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
     
     
     bool ignoresReturnValue =
-        op == JSOp::CallIgnoresRv && calleeFunc->hasJitInfo() &&
+        op == JSOP_CALL_IGNORES_RV && calleeFunc->hasJitInfo() &&
         calleeFunc->jitInfo()->type() == JSJitInfo::IgnoresReturnValueNative;
 
 #ifdef JS_SIMULATOR

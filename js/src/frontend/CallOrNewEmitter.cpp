@@ -31,8 +31,8 @@ CallOrNewEmitter::CallOrNewEmitter(BytecodeEmitter* bce, JSOp op,
                                    ArgumentsKind argumentsKind,
                                    ValueUsage valueUsage)
     : bce_(bce), op_(op), argumentsKind_(argumentsKind) {
-  if (op_ == JSOp::Call && valueUsage == ValueUsage::IgnoreValue) {
-    op_ = JSOp::CallIgnoresRv;
+  if (op_ == JSOP_CALL && valueUsage == ValueUsage::IgnoreValue) {
+    op_ = JSOP_CALL_IGNORES_RV;
   }
 
   MOZ_ASSERT(isCall() || isNew() || isSuperCall());
@@ -105,11 +105,11 @@ bool CallOrNewEmitter::emitSuperCallee() {
     
     return false;
   }
-  if (!bce_->emit1(JSOp::SuperFun)) {
+  if (!bce_->emit1(JSOP_SUPERFUN)) {
     
     return false;
   }
-  if (!bce_->emit1(JSOp::IsConstructing)) {
+  if (!bce_->emit1(JSOP_IS_CONSTRUCTING)) {
     
     return false;
   }
@@ -162,12 +162,12 @@ bool CallOrNewEmitter::emitThis() {
   }
   if (needsThis) {
     if (isNew() || isSuperCall()) {
-      if (!bce_->emit1(JSOp::IsConstructing)) {
+      if (!bce_->emit1(JSOP_IS_CONSTRUCTING)) {
         
         return false;
       }
     } else {
-      if (!bce_->emit1(JSOp::Undefined)) {
+      if (!bce_->emit1(JSOP_UNDEFINED)) {
         
         return false;
       }
@@ -223,11 +223,11 @@ bool CallOrNewEmitter::emitSpreadArgumentsTest() {
     
 
     ifNotOptimizable_.emplace(bce_);
-    if (!bce_->emit1(JSOp::OptimizeSpreadCall)) {
+    if (!bce_->emit1(JSOP_OPTIMIZE_SPREADCALL)) {
       
       return false;
     }
-    if (!bce_->emit1(JSOp::Not)) {
+    if (!bce_->emit1(JSOP_NOT)) {
       
       return false;
     }
@@ -235,7 +235,7 @@ bool CallOrNewEmitter::emitSpreadArgumentsTest() {
       
       return false;
     }
-    if (!bce_->emit1(JSOp::Pop)) {
+    if (!bce_->emit1(JSOP_POP)) {
       
       return false;
     }
@@ -258,7 +258,7 @@ bool CallOrNewEmitter::emitEnd(uint32_t argc, const Maybe<uint32_t>& beginPos) {
   }
   if (isNew() || isSuperCall()) {
     if (isSuperCall()) {
-      if (!bce_->emit1(JSOp::NewTarget)) {
+      if (!bce_->emit1(JSOP_NEWTARGET)) {
         
         return false;
       }
@@ -293,7 +293,7 @@ bool CallOrNewEmitter::emitEnd(uint32_t argc, const Maybe<uint32_t>& beginPos) {
 
   if (isEval() && beginPos) {
     uint32_t lineNum = bce_->parser->errorReporter().lineAt(*beginPos);
-    if (!bce_->emitUint32Operand(JSOp::Lineno, lineNum)) {
+    if (!bce_->emitUint32Operand(JSOP_LINENO, lineNum)) {
       return false;
     }
   }

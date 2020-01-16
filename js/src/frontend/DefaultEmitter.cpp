@@ -29,15 +29,15 @@ bool DefaultEmitter::prepareForDefault() {
     return false;
   }
 
-  if (!bce_->emit1(JSOp::Dup)) {
+  if (!bce_->emit1(JSOP_DUP)) {
     
     return false;
   }
-  if (!bce_->emit1(JSOp::Undefined)) {
+  if (!bce_->emit1(JSOP_UNDEFINED)) {
     
     return false;
   }
-  if (!bce_->emit1(JSOp::StrictEq)) {
+  if (!bce_->emit1(JSOP_STRICTEQ)) {
     
     return false;
   }
@@ -47,7 +47,7 @@ bool DefaultEmitter::prepareForDefault() {
     return false;
   }
 
-  if (!bce_->emit1(JSOp::Pop)) {
+  if (!bce_->emit1(JSOP_POP)) {
     
     return false;
   }

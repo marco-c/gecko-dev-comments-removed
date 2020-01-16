@@ -82,7 +82,7 @@ bool ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos) {
                ScopeKind::Lexical);
 
     if (headLexicalEmitterScope_->hasEnvironment()) {
-      if (!bce_->emit1(JSOp::RecreateLexicalEnv)) {
+      if (!bce_->emit1(JSOP_RECREATELEXICALENV)) {
         
         return false;
       }
@@ -105,7 +105,7 @@ bool ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos) {
     }
   }
 
-  if (!bce_->emit1(JSOp::Dup2)) {
+  if (!bce_->emit1(JSOP_DUP2)) {
     
     return false;
   }
@@ -115,11 +115,11 @@ bool ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos) {
     return false;
   }
 
-  if (!bce_->emit1(JSOp::Dup)) {
+  if (!bce_->emit1(JSOP_DUP)) {
     
     return false;
   }
-  if (!bce_->emitAtomOp(JSOp::GetProp, bce_->cx->names().done)) {
+  if (!bce_->emitAtomOp(JSOP_GETPROP, bce_->cx->names().done)) {
     
     return false;
   }
@@ -127,7 +127,7 @@ bool ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos) {
   
   MOZ_ASSERT(bce_->innermostNestableControl == loopInfo_.ptr(),
              "must be at the top-level of the loop");
-  if (!bce_->emitJump(JSOp::IfNe, &loopInfo_->breaks)) {
+  if (!bce_->emitJump(JSOP_IFNE, &loopInfo_->breaks)) {
     
     return false;
   }
@@ -136,7 +136,7 @@ bool ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos) {
   
   
   
-  if (!bce_->emitAtomOp(JSOp::GetProp, bce_->cx->names().value)) {
+  if (!bce_->emitAtomOp(JSOP_GETPROP, bce_->cx->names().value)) {
     
     return false;
   }
@@ -190,12 +190,12 @@ bool ForOfEmitter::emitEnd(const Maybe<uint32_t>& iteratedPos) {
     }
   }
 
-  if (!bce_->emit1(JSOp::Pop)) {
+  if (!bce_->emit1(JSOP_POP)) {
     
     return false;
   }
 
-  if (!loopInfo_->emitLoopEnd(bce_, JSOp::Goto, JSTRY_FOR_OF)) {
+  if (!loopInfo_->emitLoopEnd(bce_, JSOP_GOTO, JSTRY_FOR_OF)) {
     
     return false;
   }

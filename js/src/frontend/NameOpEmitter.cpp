@@ -30,37 +30,37 @@ bool NameOpEmitter::emitGet() {
 
   switch (loc_.kind()) {
     case NameLocation::Kind::Dynamic:
-      if (!bce_->emitAtomOp(JSOp::GetName, name_)) {
+      if (!bce_->emitAtomOp(JSOP_GETNAME, name_)) {
         
         return false;
       }
       break;
     case NameLocation::Kind::Global:
-      if (!bce_->emitAtomOp(JSOp::GetGName, name_)) {
+      if (!bce_->emitAtomOp(JSOP_GETGNAME, name_)) {
         
         return false;
       }
       break;
     case NameLocation::Kind::Intrinsic:
-      if (!bce_->emitAtomOp(JSOp::GetIntrinsic, name_)) {
+      if (!bce_->emitAtomOp(JSOP_GETINTRINSIC, name_)) {
         
         return false;
       }
       break;
     case NameLocation::Kind::NamedLambdaCallee:
-      if (!bce_->emit1(JSOp::Callee)) {
+      if (!bce_->emit1(JSOP_CALLEE)) {
         
         return false;
       }
       break;
     case NameLocation::Kind::Import:
-      if (!bce_->emitAtomOp(JSOp::GetImport, name_)) {
+      if (!bce_->emitAtomOp(JSOP_GETIMPORT, name_)) {
         
         return false;
       }
       break;
     case NameLocation::Kind::ArgumentSlot:
-      if (!bce_->emitArgOp(JSOp::GetArg, loc_.argumentSlot())) {
+      if (!bce_->emitArgOp(JSOP_GETARG, loc_.argumentSlot())) {
         
         return false;
       }
@@ -71,7 +71,7 @@ bool NameOpEmitter::emitGet() {
           return false;
         }
       }
-      if (!bce_->emitLocalOp(JSOp::GetLocal, loc_.frameSlot())) {
+      if (!bce_->emitLocalOp(JSOP_GETLOCAL, loc_.frameSlot())) {
         
         return false;
       }
@@ -82,7 +82,7 @@ bool NameOpEmitter::emitGet() {
           return false;
         }
       }
-      if (!bce_->emitEnvCoordOp(JSOp::GetAliasedVar,
+      if (!bce_->emitEnvCoordOp(JSOP_GETALIASEDVAR,
                                 loc_.environmentCoordinate())) {
         
         return false;
@@ -97,8 +97,8 @@ bool NameOpEmitter::emitGet() {
   if (isCall()) {
     switch (loc_.kind()) {
       case NameLocation::Kind::Dynamic: {
-        JSOp thisOp = bce_->needsImplicitThis() ? JSOp::ImplicitThis
-                                                : JSOp::GImplicitThis;
+        JSOp thisOp =
+            bce_->needsImplicitThis() ? JSOP_IMPLICITTHIS : JSOP_GIMPLICITTHIS;
         if (!bce_->emitAtomOp(thisOp, name_)) {
           
           return false;
@@ -106,7 +106,7 @@ bool NameOpEmitter::emitGet() {
         break;
       }
       case NameLocation::Kind::Global:
-        if (!bce_->emitAtomOp(JSOp::GImplicitThis, name_)) {
+        if (!bce_->emitAtomOp(JSOP_GIMPLICITTHIS, name_)) {
           
           return false;
         }
@@ -117,7 +117,7 @@ bool NameOpEmitter::emitGet() {
       case NameLocation::Kind::ArgumentSlot:
       case NameLocation::Kind::FrameSlot:
       case NameLocation::Kind::EnvironmentCoordinate:
-        if (!bce_->emit1(JSOp::Undefined)) {
+        if (!bce_->emit1(JSOP_UNDEFINED)) {
           
           return false;
         }
@@ -149,12 +149,12 @@ bool NameOpEmitter::prepareForRhs() {
         
         
         
-        if (!bce_->emit1(JSOp::BindVar)) {
+        if (!bce_->emit1(JSOP_BINDVAR)) {
           
           return false;
         }
       } else {
-        if (!bce_->emitAtomOp(JSOp::BindName, atomIndex_)) {
+        if (!bce_->emitAtomOp(JSOP_BINDNAME, atomIndex_)) {
           
           return false;
         }
@@ -170,7 +170,7 @@ bool NameOpEmitter::prepareForRhs() {
         
         MOZ_ASSERT(bce_->innermostScope().is<GlobalScope>());
       } else {
-        if (!bce_->emitAtomOp(JSOp::BindGName, atomIndex_)) {
+        if (!bce_->emitAtomOp(JSOP_BINDGNAME, atomIndex_)) {
           
           return false;
         }
@@ -212,11 +212,11 @@ bool NameOpEmitter::prepareForRhs() {
       
       
       
-      if (!bce_->emit1(JSOp::Dup)) {
+      if (!bce_->emit1(JSOP_DUP)) {
         
         return false;
       }
-      if (!bce_->emitAtomOp(JSOp::GetBoundName, name_)) {
+      if (!bce_->emitAtomOp(JSOP_GETBOUNDNAME, name_)) {
         
         return false;
       }
@@ -241,7 +241,7 @@ bool NameOpEmitter::emitAssignment() {
     case NameLocation::Kind::Dynamic:
     case NameLocation::Kind::Import:
     case NameLocation::Kind::DynamicAnnexBVar:
-      if (!bce_->emitAtomOp(bce_->strictifySetNameOp(JSOp::SetName),
+      if (!bce_->emitAtomOp(bce_->strictifySetNameOp(JSOP_SETNAME),
                             atomIndex_)) {
         return false;
       }
@@ -249,9 +249,9 @@ bool NameOpEmitter::emitAssignment() {
     case NameLocation::Kind::Global: {
       JSOp op;
       if (emittedBindOp_) {
-        op = bce_->strictifySetNameOp(JSOp::SetGName);
+        op = bce_->strictifySetNameOp(JSOP_SETGNAME);
       } else {
-        op = JSOp::InitGLexical;
+        op = JSOP_INITGLEXICAL;
       }
       if (!bce_->emitAtomOp(op, atomIndex_)) {
         return false;
@@ -259,7 +259,7 @@ bool NameOpEmitter::emitAssignment() {
       break;
     }
     case NameLocation::Kind::Intrinsic:
-      if (!bce_->emitAtomOp(JSOp::SetIntrinsic, name_)) {
+      if (!bce_->emitAtomOp(JSOP_SETINTRINSIC, name_)) {
         return false;
       }
       break;
@@ -267,24 +267,24 @@ bool NameOpEmitter::emitAssignment() {
       
       
       if (bce_->sc->strict()) {
-        if (!bce_->emit1(JSOp::ThrowSetCallee)) {
+        if (!bce_->emit1(JSOP_THROWSETCALLEE)) {
           return false;
         }
       }
       break;
     case NameLocation::Kind::ArgumentSlot:
-      if (!bce_->emitArgOp(JSOp::SetArg, loc_.argumentSlot())) {
+      if (!bce_->emitArgOp(JSOP_SETARG, loc_.argumentSlot())) {
         return false;
       }
       break;
     case NameLocation::Kind::FrameSlot: {
-      JSOp op = JSOp::SetLocal;
+      JSOp op = JSOP_SETLOCAL;
       if (loc_.isLexical()) {
         if (isInitialize()) {
-          op = JSOp::InitLexical;
+          op = JSOP_INITLEXICAL;
         } else {
           if (loc_.isConst()) {
-            op = JSOp::ThrowSetConst;
+            op = JSOP_THROWSETCONST;
           }
 
           if (!bce_->emitTDZCheckIfNeeded(name_, loc_)) {
@@ -295,7 +295,7 @@ bool NameOpEmitter::emitAssignment() {
       if (!bce_->emitLocalOp(op, loc_.frameSlot())) {
         return false;
       }
-      if (op == JSOp::InitLexical) {
+      if (op == JSOP_INITLEXICAL) {
         if (!bce_->innermostTDZCheckCache->noteTDZCheck(bce_, name_,
                                                         DontCheckTDZ)) {
           return false;
@@ -304,13 +304,13 @@ bool NameOpEmitter::emitAssignment() {
       break;
     }
     case NameLocation::Kind::EnvironmentCoordinate: {
-      JSOp op = JSOp::SetAliasedVar;
+      JSOp op = JSOP_SETALIASEDVAR;
       if (loc_.isLexical()) {
         if (isInitialize()) {
-          op = JSOp::InitAliasedLexical;
+          op = JSOP_INITALIASEDLEXICAL;
         } else {
           if (loc_.isConst()) {
-            op = JSOp::ThrowSetAliasedConst;
+            op = JSOP_THROWSETALIASEDCONST;
           }
 
           if (!bce_->emitTDZCheckIfNeeded(name_, loc_)) {
@@ -321,7 +321,7 @@ bool NameOpEmitter::emitAssignment() {
       if (loc_.bindingKind() == BindingKind::NamedLambdaCallee) {
         
         
-        op = JSOp::ThrowSetAliasedConst;
+        op = JSOP_THROWSETALIASEDCONST;
         if (bce_->sc->strict()) {
           if (!bce_->emitEnvCoordOp(op, loc_.environmentCoordinate())) {
             return false;
@@ -332,7 +332,7 @@ bool NameOpEmitter::emitAssignment() {
           return false;
         }
       }
-      if (op == JSOp::InitAliasedLexical) {
+      if (op == JSOP_INITALIASEDLEXICAL) {
         if (!bce_->innermostTDZCheckCache->noteTDZCheck(bce_, name_,
                                                         DontCheckTDZ)) {
           return false;
@@ -351,17 +351,17 @@ bool NameOpEmitter::emitAssignment() {
 bool NameOpEmitter::emitIncDec() {
   MOZ_ASSERT(state_ == State::Start);
 
-  JSOp incOp = isInc() ? JSOp::Inc : JSOp::Dec;
+  JSOp incOp = isInc() ? JSOP_INC : JSOP_DEC;
   if (!prepareForRhs()) {
     
     return false;
   }
-  if (!bce_->emit1(JSOp::ToNumeric)) {
+  if (!bce_->emit1(JSOP_TONUMERIC)) {
     
     return false;
   }
   if (isPostIncDec()) {
-    if (!bce_->emit1(JSOp::Dup)) {
+    if (!bce_->emit1(JSOP_DUP)) {
       
       return false;
     }
@@ -371,11 +371,11 @@ bool NameOpEmitter::emitIncDec() {
     return false;
   }
   if (isPostIncDec() && emittedBindOp()) {
-    if (!bce_->emit2(JSOp::Pick, 2)) {
+    if (!bce_->emit2(JSOP_PICK, 2)) {
       
       return false;
     }
-    if (!bce_->emit1(JSOp::Swap)) {
+    if (!bce_->emit1(JSOP_SWAP)) {
       
       return false;
     }
@@ -385,7 +385,7 @@ bool NameOpEmitter::emitIncDec() {
     return false;
   }
   if (isPostIncDec()) {
-    if (!bce_->emit1(JSOp::Pop)) {
+    if (!bce_->emit1(JSOP_POP)) {
       
       return false;
     }

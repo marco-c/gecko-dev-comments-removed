@@ -54,11 +54,11 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
   
   
   
-  if (!bce->emit1(JSOp::Undefined)) {
+  if (!bce->emit1(JSOP_UNDEFINED)) {
     
     return false;
   }
-  if (!bce->emit1(JSOp::StrictNe)) {
+  if (!bce->emit1(JSOP_STRICTNE)) {
     
     return false;
   }
@@ -85,7 +85,7 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
     return false;
   }
 
-  if (!bce->emit1(JSOp::Throw)) {
+  if (!bce->emit1(JSOP_THROW)) {
     
     return false;
   }
@@ -100,7 +100,7 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
     }
 
     InternalIfEmitter ifGeneratorClosing(bce);
-    if (!bce->emit1(JSOp::IsGenClosing)) {
+    if (!bce->emit1(JSOP_ISGENCLOSING)) {
       
       return false;
     }
@@ -168,28 +168,28 @@ bool ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(
   
   
   
-  if (!bce->emit1(JSOp::Pop)) {
+  if (!bce->emit1(JSOP_POP)) {
     
     return false;
   }
 
   
-  if (!bce->emit1(JSOp::Swap)) {
+  if (!bce->emit1(JSOP_SWAP)) {
     
     return false;
   }
-  if (!bce->emit1(JSOp::Pop)) {
+  if (!bce->emit1(JSOP_POP)) {
     
     return false;
   }
 
   
   
-  if (!bce->emit1(JSOp::Undefined)) {
+  if (!bce->emit1(JSOP_UNDEFINED)) {
     
     return false;
   }
-  if (!bce->emit1(JSOp::Swap)) {
+  if (!bce->emit1(JSOP_SWAP)) {
     
     return false;
   }
@@ -204,16 +204,16 @@ bool ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(
     
     
     
-    if (!bce->emit1(JSOp::Undefined)) {
+    if (!bce->emit1(JSOP_UNDEFINED)) {
       
       return false;
     }
-    if (!bce->emit1(JSOp::Undefined)) {
+    if (!bce->emit1(JSOP_UNDEFINED)) {
       
       return false;
     }
   } else {
-    if (!bce->emit1(JSOp::Pop)) {
+    if (!bce->emit1(JSOP_POP)) {
       
       return false;
     }

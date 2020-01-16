@@ -175,20 +175,20 @@ class BytecodeLocation {
 
   BytecodeLocation getJumpTarget() const {
     
-    MOZ_ASSERT(isJump() || is(JSOp::TableSwitch));
+    MOZ_ASSERT(isJump() || is(JSOP_TABLESWITCH));
     return BytecodeLocation(*this,
                             rawBytecode_ + GET_JUMP_OFFSET(rawBytecode_));
   }
 
   
   int32_t getTableSwitchLow() const {
-    MOZ_ASSERT(is(JSOp::TableSwitch));
+    MOZ_ASSERT(is(JSOP_TABLESWITCH));
     return GET_JUMP_OFFSET(rawBytecode_ + JUMP_OFFSET_LEN);
   }
 
   
   int32_t getTableSwitchHigh() const {
-    MOZ_ASSERT(is(JSOp::TableSwitch));
+    MOZ_ASSERT(is(JSOP_TABLESWITCH));
     return GET_JUMP_OFFSET(rawBytecode_ + (2 * JUMP_OFFSET_LEN));
   }
 

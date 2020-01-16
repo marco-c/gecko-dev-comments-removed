@@ -206,11 +206,11 @@ bool ObjectGroup::useSingletonForNewObject(JSContext* cx, JSScript* script,
   if (script->isGenerator() || script->isAsync()) {
     return false;
   }
-  if (JSOp(*pc) != JSOp::New) {
+  if (JSOp(*pc) != JSOP_NEW) {
     return false;
   }
-  pc += JSOpLength_New;
-  if (JSOp(*pc) != JSOp::SetProp) {
+  pc += JSOP_NEW_LENGTH;
+  if (JSOp(*pc) != JSOP_SETPROP) {
     return false;
   }
   return script->getName(pc) == cx->names().prototype;
@@ -1454,7 +1454,7 @@ ObjectGroup* ObjectGroup::allocationSiteGroup(
     return nullptr;
   }
 
-  if (JSOp(*pc) == JSOp::NewObject) {
+  if (JSOp(*pc) == JSOP_NEWOBJECT) {
     
     
     Shape* shape = script->getObject(pc)->as<PlainObject>().lastProperty();

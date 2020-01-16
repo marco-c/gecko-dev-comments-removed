@@ -42,7 +42,7 @@ bool PropOpEmitter::emitGet(JSAtom* prop) {
     return false;
   }
   if (isCall()) {
-    if (!bce_->emit1(JSOp::Dup)) {
+    if (!bce_->emit1(JSOP_DUP)) {
       
       
       
@@ -58,12 +58,12 @@ bool PropOpEmitter::emitGet(JSAtom* prop) {
   }
   if (isIncDec() || isCompoundAssignment()) {
     if (isSuper()) {
-      if (!bce_->emit1(JSOp::Dup2)) {
+      if (!bce_->emit1(JSOP_DUP2)) {
         
         return false;
       }
     } else {
-      if (!bce_->emit1(JSOp::Dup)) {
+      if (!bce_->emit1(JSOP_DUP)) {
         
         return false;
       }
@@ -72,11 +72,11 @@ bool PropOpEmitter::emitGet(JSAtom* prop) {
 
   JSOp op;
   if (isSuper()) {
-    op = JSOp::GetPropSuper;
+    op = JSOP_GETPROP_SUPER;
   } else if (isCall()) {
-    op = JSOp::CallProp;
+    op = JSOP_CALLPROP;
   } else {
-    op = isLength_ ? JSOp::Length : JSOp::GetProp;
+    op = isLength_ ? JSOP_LENGTH : JSOP_GETPROP;
   }
   if (!bce_->emitAtomOp(op, propAtomIndex_, ShouldInstrument::Yes)) {
     
@@ -90,7 +90,7 @@ bool PropOpEmitter::emitGet(JSAtom* prop) {
     return false;
   }
   if (isCall()) {
-    if (!bce_->emit1(JSOp::Swap)) {
+    if (!bce_->emit1(JSOP_SWAP)) {
       
       return false;
     }
@@ -148,19 +148,19 @@ bool PropOpEmitter::emitDelete(JSAtom* prop) {
     }
 
     
-    if (!bce_->emitUint16Operand(JSOp::ThrowMsg, JSMSG_CANT_DELETE_SUPER)) {
+    if (!bce_->emitUint16Operand(JSOP_THROWMSG, JSMSG_CANT_DELETE_SUPER)) {
       
       return false;
     }
 
     
     
-    if (!bce_->emit1(JSOp::Pop)) {
+    if (!bce_->emit1(JSOP_POP)) {
       
       return false;
     }
   } else {
-    JSOp op = bce_->sc->strict() ? JSOp::StrictDelProp : JSOp::DelProp;
+    JSOp op = bce_->sc->strict() ? JSOP_STRICTDELPROP : JSOP_DELPROP;
     if (!bce_->emitAtomOp(op, propAtomIndex_)) {
       
       return false;
@@ -184,12 +184,12 @@ bool PropOpEmitter::emitAssignment(JSAtom* prop) {
   }
 
   MOZ_ASSERT_IF(isPropInit(), !isSuper());
-  JSOp setOp = isPropInit()
-                   ? JSOp::InitProp
-                   : isSuper() ? bce_->sc->strict() ? JSOp::StrictSetPropSuper
-                                                    : JSOp::SetPropSuper
-                               : bce_->sc->strict() ? JSOp::StrictSetProp
-                                                    : JSOp::SetProp;
+  JSOp setOp =
+      isPropInit()
+          ? JSOP_INITPROP
+          : isSuper() ? bce_->sc->strict() ? JSOP_STRICTSETPROP_SUPER
+                                           : JSOP_SETPROP_SUPER
+                      : bce_->sc->strict() ? JSOP_STRICTSETPROP : JSOP_SETPROP;
   if (!bce_->emitAtomOp(setOp, propAtomIndex_, ShouldInstrument::Yes)) {
     
     return false;
@@ -211,19 +211,19 @@ bool PropOpEmitter::emitIncDec(JSAtom* prop) {
 
   MOZ_ASSERT(state_ == State::Get);
 
-  JSOp incOp = isInc() ? JSOp::Inc : JSOp::Dec;
+  JSOp incOp = isInc() ? JSOP_INC : JSOP_DEC;
 
-  if (!bce_->emit1(JSOp::ToNumeric)) {
+  if (!bce_->emit1(JSOP_TONUMERIC)) {
     
     return false;
   }
   if (isPostIncDec()) {
     
-    if (!bce_->emit1(JSOp::Dup)) {
+    if (!bce_->emit1(JSOP_DUP)) {
       
       return false;
     }
-    if (!bce_->emit2(JSOp::Unpick, 2 + isSuper())) {
+    if (!bce_->emit2(JSOP_UNPICK, 2 + isSuper())) {
       
       return false;
     }
@@ -235,14 +235,14 @@ bool PropOpEmitter::emitIncDec(JSAtom* prop) {
 
   JSOp setOp =
       isSuper()
-          ? bce_->sc->strict() ? JSOp::StrictSetPropSuper : JSOp::SetPropSuper
-          : bce_->sc->strict() ? JSOp::StrictSetProp : JSOp::SetProp;
+          ? bce_->sc->strict() ? JSOP_STRICTSETPROP_SUPER : JSOP_SETPROP_SUPER
+          : bce_->sc->strict() ? JSOP_STRICTSETPROP : JSOP_SETPROP;
   if (!bce_->emitAtomOp(setOp, propAtomIndex_, ShouldInstrument::Yes)) {
     
     return false;
   }
   if (isPostIncDec()) {
-    if (!bce_->emit1(JSOp::Pop)) {
+    if (!bce_->emit1(JSOP_POP)) {
       
       return false;
     }

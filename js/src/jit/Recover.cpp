@@ -83,12 +83,12 @@ bool MResumePoint::writeRecoverData(CompactBufferWriter& writer) const {
 
     if (reachablePC) {
       JSOp bailOp = JSOp(*bailPC);
-      if (bailOp == JSOp::FunCall) {
+      if (bailOp == JSOP_FUNCALL) {
         
         
         
         MOZ_ASSERT(stackDepth - exprStack <= 1);
-      } else if (bailOp != JSOp::FunApply &&
+      } else if (bailOp != JSOP_FUNAPPLY &&
                  !IsIonInlinableGetterOrSetterOp(bailOp)) {
         
         
