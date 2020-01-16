@@ -15,6 +15,7 @@
 #include "nsTObserverArray.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/IntegerTypeTraits.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/SynchronizedEventQueue.h"
@@ -40,6 +41,107 @@ class nsThreadEnumerator;
 
 
 #define LONGTASK_BUSY_WINDOW_MS 50
+
+
+namespace mozilla {
+class PerformanceCounterState {
+ public:
+  explicit PerformanceCounterState(const uint32_t& aNestedEventLoopDepthRef,
+                                   bool aIsMainThread)
+      : mNestedEventLoopDepth(aNestedEventLoopDepthRef),
+        mIsMainThread(aIsMainThread),
+        
+        
+        mLastLongTaskEnd(TimeStamp::Now()),
+        mLastLongNonIdleTaskEnd(mLastLongTaskEnd) {}
+
+  class Snapshot {
+   public:
+    Snapshot(uint32_t aOldEventLoopDepth, PerformanceCounter* aCounter,
+             bool aOldIsIdleRunnable)
+        : mOldEventLoopDepth(aOldEventLoopDepth),
+          mOldPerformanceCounter(aCounter),
+          mOldIsIdleRunnable(aOldIsIdleRunnable) {}
+
+    Snapshot(const Snapshot&) = default;
+    Snapshot(Snapshot&&) = default;
+
+   private:
+    friend class PerformanceCounterState;
+
+    const uint32_t mOldEventLoopDepth;
+    
+    RefPtr<PerformanceCounter> mOldPerformanceCounter;
+    const bool mOldIsIdleRunnable;
+  };
+
+  
+  
+  
+  
+  
+  
+  Snapshot RunnableWillRun(PerformanceCounter* Counter, TimeStamp aNow,
+                           bool aIsIdleRunnable);
+
+  
+  
+  
+  
+  void RunnableDidRun(Snapshot&& aSnapshot);
+
+  const TimeStamp& LastLongTaskEnd() const { return mLastLongTaskEnd; }
+  const TimeStamp& LastLongNonIdleTaskEnd() const {
+    return mLastLongNonIdleTaskEnd;
+  }
+
+ private:
+  
+  
+  void MaybeReportAccumulatedTime(TimeStamp aNow);
+
+  
+  
+  
+  
+  
+  bool IsNestedRunnable() const {
+    return mNestedEventLoopDepth > mCurrentEventLoopDepth;
+  }
+
+  
+  
+  
+  uint32_t mCurrentEventLoopDepth = std::numeric_limits<uint32_t>::max();
+
+  
+  
+  const uint32_t& mNestedEventLoopDepth;
+
+  
+  
+  
+  bool mCurrentRunnableIsIdleRunnable = false;
+
+  
+  bool mIsMainThread;
+
+  
+  
+  
+  TimeStamp mCurrentTimeSliceStart;
+
+  
+  TimeStamp mLastLongTaskEnd;
+  TimeStamp mLastLongNonIdleTaskEnd;
+
+  
+  
+  
+  
+  RefPtr<PerformanceCounter> mCurrentPerformanceCounter;
+};
+}  
 
 
 class nsThread : public nsIThreadInternal,
@@ -140,11 +242,6 @@ class nsThread : public nsIThreadInternal,
 
   static uint32_t MaxActiveThreads();
 
-  const mozilla::TimeStamp& LastLongTaskEnd() { return mLastLongTaskEnd; }
-  const mozilla::TimeStamp& LastLongNonIdleTaskEnd() {
-    return mLastLongNonIdleTaskEnd;
-  }
-
   
   
   
@@ -226,10 +323,6 @@ class nsThread : public nsIThreadInternal,
   uint32_t mThreadId;
 
   uint32_t mNestedEventLoopDepth;
-  uint32_t mCurrentEventLoopDepth;
-
-  mozilla::TimeStamp mLastLongTaskEnd;
-  mozilla::TimeStamp mLastLongNonIdleTaskEnd;
 
   mozilla::Atomic<bool> mShutdownRequired;
 
@@ -244,14 +337,6 @@ class nsThread : public nsIThreadInternal,
   bool mHasTLSEntry = false;
 
   
-  nsCOMPtr<nsIRunnable> mCurrentEvent;
-
-  
-  
-  
-  mozilla::TimeStamp mCurrentEventStart;
-
-  
   
   
   mozilla::TimeDuration mLastEventDelay;
@@ -263,7 +348,7 @@ class nsThread : public nsIThreadInternal,
   uint32_t mWakeupCount = 0;
 #endif
 
-  RefPtr<mozilla::PerformanceCounter> mCurrentPerformanceCounter;
+  mozilla::PerformanceCounterState mPerformanceCounterState;
 
   bool mIsInLocalExecutionMode = false;
 };

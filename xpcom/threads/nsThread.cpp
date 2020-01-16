@@ -25,7 +25,6 @@
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/Logging.h"
 #include "nsIObserverService.h"
-#include "mozilla/IntegerTypeTraits.h"
 #include "mozilla/IOInterposer.h"
 #include "mozilla/ipc/MessageChannel.h"
 #include "mozilla/ipc/BackgroundChild.h"
@@ -606,20 +605,15 @@ nsThread::nsThread(NotNull<SynchronizedEventQueue*> aQueue,
       mScriptObserver(nullptr),
       mStackSize(aStackSize),
       mNestedEventLoopDepth(0),
-      mCurrentEventLoopDepth(std::numeric_limits<uint32_t>::max()),
       mShutdownRequired(false),
       mPriority(PRIORITY_NORMAL),
       mIsMainThread(aMainThread == MAIN_THREAD),
       mIsAPoolThreadFree(nullptr),
       mCanInvokeJS(false),
-      mCurrentEvent(nullptr),
-      mCurrentEventStart(TimeStamp::Now()),
 #ifdef EARLY_BETA_OR_EARLIER
-      mLastWakeupCheckTime(mCurrentEventStart),
+      mLastWakeupCheckTime(TimeStamp::Now()),
 #endif
-      mCurrentPerformanceCounter(nullptr) {
-  mLastLongTaskEnd = mCurrentEventStart;
-  mLastLongNonIdleTaskEnd = mCurrentEventStart;
+      mPerformanceCounterState(mNestedEventLoopDepth, mIsMainThread) {
 }
 
 nsThread::nsThread()
@@ -629,19 +623,14 @@ nsThread::nsThread()
       mScriptObserver(nullptr),
       mStackSize(0),
       mNestedEventLoopDepth(0),
-      mCurrentEventLoopDepth(std::numeric_limits<uint32_t>::max()),
       mShutdownRequired(false),
       mPriority(PRIORITY_NORMAL),
       mIsMainThread(false),
       mCanInvokeJS(false),
-      mCurrentEvent(nullptr),
-      mCurrentEventStart(TimeStamp::Now()),
 #ifdef EARLY_BETA_OR_EARLIER
-      mLastWakeupCheckTime(mCurrentEventStart),
+      mLastWakeupCheckTime(TimeStamp::Now()),
 #endif
-      mCurrentPerformanceCounter(nullptr) {
-  mLastLongTaskEnd = mCurrentEventStart;
-  mLastLongNonIdleTaskEnd = mCurrentEventStart;
+      mPerformanceCounterState(mNestedEventLoopDepth, mIsMainThread) {
   MOZ_ASSERT(!NS_IsMainThread());
 }
 
@@ -801,13 +790,13 @@ nsThread::SetCanInvokeJS(bool aCanInvokeJS) {
 
 NS_IMETHODIMP
 nsThread::GetLastLongTaskEnd(TimeStamp* _retval) {
-  *_retval = mLastLongTaskEnd;
+  *_retval = mPerformanceCounterState.LastLongTaskEnd();
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsThread::GetLastLongNonIdleTaskEnd(TimeStamp* _retval) {
-  *_retval = mLastLongNonIdleTaskEnd;
+  *_retval = mPerformanceCounterState.LastLongNonIdleTaskEnd();
   return NS_OK;
 }
 
@@ -1059,9 +1048,6 @@ size_t nsThread::ShallowSizeOfIncludingThis(
 
 size_t nsThread::SizeOfEventQueues(mozilla::MallocSizeOf aMallocSizeOf) const {
   size_t n = 0;
-  if (mCurrentPerformanceCounter) {
-    n += aMallocSizeOf(mCurrentPerformanceCounter);
-  }
   if (mEventTarget) {
     
     n += mEventTarget->SizeOfIncludingThis(aMallocSizeOf);
@@ -1193,15 +1179,6 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
         BackgroundHangMonitor().NotifyActivity();
       }
 
-      if (mNestedEventLoopDepth > mCurrentEventLoopDepth &&
-          mCurrentPerformanceCounter) {
-        
-        
-        mozilla::TimeDuration duration = now - mCurrentEventStart;
-        mCurrentPerformanceCounter->IncrementExecutionDuration(
-            duration.ToMicroseconds());
-      }
-
 #ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
       
       
@@ -1233,61 +1210,18 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
         timeDurationHelper.emplace();
       }
 
-      
-      bool recursiveEvent = mNestedEventLoopDepth > mCurrentEventLoopDepth;
-      mCurrentEventLoopDepth = mNestedEventLoopDepth;
-      if (mIsMainThread && !recursiveEvent) {
-        mCurrentEventStart = now;
-      }
-      RefPtr<mozilla::PerformanceCounter> currentPerformanceCounter;
+      PerformanceCounterState::Snapshot snapshot =
+          mPerformanceCounterState.RunnableWillRun(
+              GetPerformanceCounter(event), now,
+              priority == EventQueuePriority::Idle);
+
       mLastEventStart = now;
-      mCurrentEvent = event;
-      mCurrentPerformanceCounter = GetPerformanceCounter(event);
-      currentPerformanceCounter = mCurrentPerformanceCounter;
 
       event->Run();
+
       mEvents->DidRunEvent();
 
-      mozilla::TimeDuration duration;
-      
-      if (mIsMainThread && !recursiveEvent) {
-        TimeStamp now = TimeStamp::Now();
-        duration = now - mCurrentEventStart;
-        if (duration.ToMilliseconds() > LONGTASK_BUSY_WINDOW_MS) {
-          
-          if (priority != EventQueuePriority::Idle) {
-            mLastLongNonIdleTaskEnd = now;
-          }
-          mLastLongTaskEnd = now;
-#ifdef MOZ_GECKO_PROFILER
-          if (profiler_thread_is_being_profiled()) {
-            PROFILER_ADD_MARKER_WITH_PAYLOAD(
-                (priority != EventQueuePriority::Idle) ? "LongTask"
-                                                       : "LongIdleTask",
-                OTHER, LongTaskMarkerPayload, (mCurrentEventStart, now));
-          }
-#endif
-        }
-      }
-
-      
-      if (recursiveEvent) {
-        
-        
-        mCurrentEventStart = mozilla::TimeStamp::Now();
-        mCurrentPerformanceCounter = currentPerformanceCounter;
-      } else {
-        
-        if (currentPerformanceCounter) {
-          mozilla::TimeDuration duration =
-              TimeStamp::Now() - mCurrentEventStart;
-          currentPerformanceCounter->IncrementExecutionDuration(
-              duration.ToMicroseconds());
-        }
-        mCurrentEvent = nullptr;
-        mCurrentEventLoopDepth = std::numeric_limits<uint32_t>::max();
-        mCurrentPerformanceCounter = nullptr;
-      }
+      mPerformanceCounterState.RunnableDidRun(std::move(snapshot));
     } else {
       mLastEventDelay = TimeDuration();
       mLastEventStart = TimeStamp();
@@ -1502,3 +1436,86 @@ nsLocalExecutionGuard::~nsLocalExecutionGuard() {
   mLocalExecutionFlag = false;
   mEventQueueStack.PopEventQueue(mLocalEventTarget);
 }
+
+namespace mozilla {
+PerformanceCounterState::Snapshot PerformanceCounterState::RunnableWillRun(
+    PerformanceCounter* aCounter, TimeStamp aNow, bool aIsIdleRunnable) {
+  if (IsNestedRunnable()) {
+    
+    
+    MaybeReportAccumulatedTime(aNow);
+  }
+
+  Snapshot snapshot(mCurrentEventLoopDepth, mCurrentPerformanceCounter,
+                    mCurrentRunnableIsIdleRunnable);
+
+  mCurrentEventLoopDepth = mNestedEventLoopDepth;
+  mCurrentPerformanceCounter = aCounter;
+  mCurrentRunnableIsIdleRunnable = aIsIdleRunnable;
+  mCurrentTimeSliceStart = aNow;
+
+  return snapshot;
+}
+
+void PerformanceCounterState::RunnableDidRun(Snapshot&& aSnapshot) {
+  
+  
+  mCurrentEventLoopDepth = aSnapshot.mOldEventLoopDepth;
+
+  
+  
+  TimeStamp now;
+  if (mCurrentPerformanceCounter || mIsMainThread || IsNestedRunnable()) {
+    now = TimeStamp::Now();
+  }
+  if (mCurrentPerformanceCounter || mIsMainThread) {
+    MaybeReportAccumulatedTime(now);
+  }
+
+  
+  mCurrentPerformanceCounter = std::move(aSnapshot.mOldPerformanceCounter);
+  mCurrentRunnableIsIdleRunnable = aSnapshot.mOldIsIdleRunnable;
+  if (IsNestedRunnable()) {
+    
+    
+    mCurrentTimeSliceStart = now;
+  } else {
+    
+    mCurrentTimeSliceStart = TimeStamp();
+  }
+}
+
+void PerformanceCounterState::MaybeReportAccumulatedTime(TimeStamp aNow) {
+  MOZ_ASSERT(mCurrentTimeSliceStart,
+             "How did we get here if we're not in a timeslice?");
+
+  if (!mCurrentPerformanceCounter && !mIsMainThread) {
+    
+    return;
+  }
+
+  TimeDuration duration = aNow - mCurrentTimeSliceStart;
+  if (mCurrentPerformanceCounter) {
+    mCurrentPerformanceCounter->IncrementExecutionDuration(
+        duration.ToMicroseconds());
+  }
+
+  
+  if (mIsMainThread && duration.ToMilliseconds() > LONGTASK_BUSY_WINDOW_MS) {
+    
+    if (!mCurrentRunnableIsIdleRunnable) {
+      mLastLongNonIdleTaskEnd = aNow;
+    }
+    mLastLongTaskEnd = aNow;
+
+#ifdef MOZ_GECKO_PROFILER
+    if (profiler_thread_is_being_profiled()) {
+      PROFILER_ADD_MARKER_WITH_PAYLOAD(
+          mCurrentRunnableIsIdleRunnable ? "LongIdleTask" : "LongTask", OTHER,
+          LongTaskMarkerPayload, (mCurrentTimeSliceStart, aNow));
+    }
+#endif
+  }
+}
+
+}  
