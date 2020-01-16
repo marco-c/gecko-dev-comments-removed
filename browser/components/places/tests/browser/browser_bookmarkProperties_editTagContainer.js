@@ -67,22 +67,9 @@ add_task(async function() {
         }
       );
 
-      let promiseTagRemoveNotification = PlacesTestUtils.waitForNotification(
-        "bookmark-removed",
-        events =>
-          events.some(
-            event => event.parentGuid == PlacesUtils.bookmarks.tagsGuid
-          ),
-        "places"
-      );
       fillBookmarkTextField("editBMPanel_namePicker", "tag2", dialogWin);
 
       await promiseTagChangeNotification;
-      await promiseTagRemoveNotification;
-
-      
-      
-      await new Promise(resolve => Services.tm.dispatchToMainThread(resolve));
 
       Assert.equal(
         namepicker.value,
