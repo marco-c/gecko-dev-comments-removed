@@ -5597,11 +5597,6 @@ var XULBrowserWindow = {
     
     
     this._event = aEvent;
-
-    
-    
-    
-    gBrowser.selectedBrowser.updateSecurityUIForContentBlockingEvent(aEvent);
   },
 
   
@@ -6029,14 +6024,6 @@ const AccessibilityRefreshBlocker = {
 };
 
 var TabsProgressListener = {
-  onContentBlockingEvent(aBrowser, aWebProgress, aRequest, aEvent) {
-    
-    
-    if (aBrowser != gBrowser.selectedBrowser) {
-      aBrowser.updateSecurityUIForContentBlockingEvent(aEvent);
-    }
-  },
-
   onStateChange(aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
     
     if (

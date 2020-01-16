@@ -1464,16 +1464,6 @@
       }
     }
 
-    updateSecurityUIForContentBlockingEvent(aEvent) {
-      if (this.isRemoteBrowser && this.messageManager) {
-        
-        
-        
-        void this.securityUI;
-        this._securityUI._updateContentBlockingEvent(aEvent);
-      }
-    }
-
     get remoteWebProgressManager() {
       return this._remoteWebProgressManager;
     }
