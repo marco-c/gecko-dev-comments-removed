@@ -1124,7 +1124,7 @@ static void EliminateTriviallyDeadResumePointOperands(MIRGraph& graph,
                                                       MResumePoint* rp) {
   
   
-  if (rp->mode() != MResumePoint::ResumeAt || JSOp(*rp->pc()) != JSOP_POP) {
+  if (rp->mode() != MResumePoint::ResumeAt || *rp->pc() != JSOP_POP) {
     return;
   }
 
@@ -4742,7 +4742,7 @@ static bool ArgumentsUseCanBeLazy(JSContext* cx, JSScript* script,
                                   bool* argumentsContentsObserved) {
   
   if (ins->isCall()) {
-    if (JSOp(*ins->toCall()->resumePoint()->pc()) == JSOP_FUNAPPLY &&
+    if (*ins->toCall()->resumePoint()->pc() == JSOP_FUNAPPLY &&
         ins->toCall()->numActualArgs() == 2 &&
         index == MCall::IndexOfArgument(1)) {
       *argumentsContentsObserved = true;
