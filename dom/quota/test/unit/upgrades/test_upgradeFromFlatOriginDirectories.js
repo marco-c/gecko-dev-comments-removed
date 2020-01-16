@@ -3,58 +3,76 @@
 
 
 
+
+
+
+
 var testGenerator = testSteps();
 
 function* testSteps() {
-  const origins = [
-    [
-      {
-        oldPath: "indexedDB/1007+f+app+++system.gaiamobile.org",
-      },
+  const setups = [
+    {
+      
+      
+      
+      
+      package: "indexedDBDirectory_flatOriginDirectories_profile",
+      origins: [
+        {
+          oldPath: "indexedDB/1007+f+app+++system.gaiamobile.org",
+        },
 
-      {
-        oldPath: "indexedDB/1007+t+https+++developer.cdn.mozilla.net",
-      },
+        {
+          oldPath: "indexedDB/1007+t+https+++developer.cdn.mozilla.net",
+        },
 
-      {
-        oldPath: "indexedDB/http+++www.mozilla.org",
-        newPath: "storage/default/http+++www.mozilla.org",
-        url: "http://www.mozilla.org",
-        persistence: "default",
-      },
-    ],
+        {
+          oldPath: "indexedDB/http+++www.mozilla.org",
+          newPath: "storage/default/http+++www.mozilla.org",
+          url: "http://www.mozilla.org",
+          persistence: "default",
+        },
+      ],
+    },
 
-    [
-      {
-        oldPath: "storage/persistent/1007+f+app+++system.gaiamobile.org",
-      },
+    {
+      
+      
+      
+      
+      
+      package: "persistentStorageDirectory_flatOriginDirectories_profile",
+      origins: [
+        {
+          oldPath: "storage/persistent/1007+f+app+++system.gaiamobile.org",
+        },
 
-      {
-        oldPath: "storage/persistent/1007+t+https+++developer.cdn.mozilla.net",
-      },
+        {
+          oldPath:
+            "storage/persistent/1007+t+https+++developer.cdn.mozilla.net",
+        },
 
-      {
-        oldPath: "storage/persistent/http+++www.mozilla.org",
-        newPath: "storage/default/http+++www.mozilla.org",
-        url: "http://www.mozilla.org",
-        persistence: "default",
-      },
-    ],
+        {
+          oldPath: "storage/persistent/http+++www.mozilla.org",
+          newPath: "storage/default/http+++www.mozilla.org",
+          url: "http://www.mozilla.org",
+          persistence: "default",
+        },
+      ],
+    },
   ];
 
   const metadataFileName = ".metadata";
 
-  
-
-  for (let i = 1; i <= 2; i++) {
+  for (const setup of setups) {
     clear(continueToNextStepSync);
     yield undefined;
 
-    installPackage("idbSubdirUpgrade" + i + "_profile");
+    installPackage(setup.package);
 
     info("Checking origin directories");
 
-    for (let origin of origins[i - 1]) {
+    for (const origin of setup.origins) {
       let originDir = getRelativeFile(origin.oldPath);
       let exists = originDir.exists();
       ok(exists, "Origin directory does exist");
@@ -87,7 +105,7 @@ function* testSteps() {
 
     info("Checking origin directories");
 
-    for (let origin of origins[i - 1]) {
+    for (const origin of setup.origins) {
       let originDir = getRelativeFile(origin.oldPath);
       let exists = originDir.exists();
       ok(!exists, "Origin directory doesn't exist");
