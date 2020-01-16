@@ -258,9 +258,6 @@ void nsXPLookAndFeel::Shutdown() {
   sInstance = nullptr;
 }
 
-nsXPLookAndFeel::nsXPLookAndFeel()
-    : LookAndFeel(), mShouldRetainCacheForTest(false) {}
-
 
 void nsXPLookAndFeel::IntPrefChanged(nsLookAndFeelIntPref* data) {
   if (!data) {
@@ -1091,6 +1088,28 @@ void LookAndFeel::SetIntCache(
 
 void LookAndFeel::SetShouldRetainCacheForTest(bool aValue) {
   nsLookAndFeel::GetInstance()->SetShouldRetainCacheImplForTest(aValue);
+}
+
+
+void LookAndFeel::SetPrefersReducedMotionOverrideForTest(bool aValue) {
+  
+  
+  
+  
+  SetShouldRetainCacheForTest(true);
+
+  int32_t value = aValue ? 1 : 0;
+
+  AutoTArray<LookAndFeelInt, 1> lookAndFeelCache;
+  lookAndFeelCache.AppendElement(
+      LookAndFeelInt{.id = eIntID_PrefersReducedMotion, {.value = value}});
+
+  SetIntCache(lookAndFeelCache);
+}
+
+
+void LookAndFeel::ResetPrefersReducedMotionOverrideForTest() {
+  SetShouldRetainCacheForTest(false);
 }
 
 }  
