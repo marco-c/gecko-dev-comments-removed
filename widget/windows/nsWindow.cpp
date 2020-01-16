@@ -570,6 +570,7 @@ nsWindow::nsWindow(bool aIsChildWindow)
   mIconSmall = nullptr;
   mIconBig = nullptr;
   mWnd = nullptr;
+  mLastKillFocusWindow = nullptr;
   mTransitionWnd = nullptr;
   mPaintDC = nullptr;
   mPrevWndProc = nullptr;
@@ -4504,25 +4505,32 @@ bool nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
   return result;
 }
 
-void nsWindow::DispatchFocusToTopLevelWindow(bool aIsActivate) {
-  if (aIsActivate) sJustGotActivate = false;
-  sJustGotDeactivate = false;
-
+HWND nsWindow::GetTopLevelForFocus(HWND aCurWnd) {
   
-  HWND curWnd = mWnd;
   HWND toplevelWnd = nullptr;
-  while (curWnd) {
-    toplevelWnd = curWnd;
-
-    nsWindow* win = WinUtils::GetNSWindowPtr(curWnd);
+  while (aCurWnd) {
+    toplevelWnd = aCurWnd;
+    nsWindow* win = WinUtils::GetNSWindowPtr(aCurWnd);
     if (win) {
-      nsWindowType wintype = win->WindowType();
-      if (wintype == eWindowType_toplevel || wintype == eWindowType_dialog)
+      if (win->mWindowType == eWindowType_toplevel ||
+          win->mWindowType == eWindowType_dialog) {
         break;
+      }
     }
 
-    curWnd = ::GetParent(curWnd);  
+    aCurWnd = ::GetParent(aCurWnd);  
   }
+  return toplevelWnd;
+}
+
+void nsWindow::DispatchFocusToTopLevelWindow(bool aIsActivate) {
+  if (aIsActivate) {
+    sJustGotActivate = false;
+  }
+  sJustGotDeactivate = false;
+  mLastKillFocusWindow = nullptr;
+
+  HWND toplevelWnd = GetTopLevelForFocus(mWnd);
 
   if (toplevelWnd) {
     nsWindow* win = WinUtils::GetNSWindowPtr(toplevelWnd);
@@ -5823,14 +5831,19 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
         if (WA_INACTIVE == fActive) {
           
           
-          if (HIWORD(wParam))
+          
+          
+          
+          if (HIWORD(wParam) ||
+              (mLastKillFocusWindow &&
+               (GetTopLevelForFocus(mLastKillFocusWindow) == mWnd))) {
             DispatchFocusToTopLevelWindow(false);
-          else
+          } else {
             sJustGotDeactivate = true;
-
-          if (mIsTopWidgetWindow)
+          }
+          if (mIsTopWidgetWindow) {
             mLastKeyboardLayout = KeyboardLayout::GetInstance()->GetLayout();
-
+          }
         } else {
           StopFlashing();
 
@@ -5896,6 +5909,8 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
     case WM_KILLFOCUS:
       if (sJustGotDeactivate) {
         DispatchFocusToTopLevelWindow(false);
+      } else {
+        mLastKillFocusWindow = mWnd;
       }
       break;
 
@@ -7180,6 +7195,9 @@ void nsWindow::OnDestroy() {
   mWidgetListener = nullptr;
   mAttachedWidgetListener = nullptr;
 
+  if (mWnd == mLastKillFocusWindow) {
+    mLastKillFocusWindow = nullptr;
+  }
   
   ::WTSUnRegisterSessionNotification(mWnd);
 
