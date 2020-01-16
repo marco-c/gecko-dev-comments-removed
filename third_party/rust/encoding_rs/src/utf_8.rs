@@ -68,9 +68,6 @@ pub static UTF8_DATA: Utf8Data = Utf8Data {
 
 
 pub fn utf8_valid_up_to(src: &[u8]) -> usize {
-    
-    
-    
     let mut read = 0;
     'outer: loop {
         let mut byte = {
@@ -93,9 +90,6 @@ pub fn utf8_valid_up_to(src: &[u8]) -> usize {
         
         if unsafe { likely(read + 4 <= src.len()) } {
             'inner: loop {
-                
-                
-                
                 
                 
                 
@@ -236,9 +230,6 @@ pub fn utf8_valid_up_to(src: &[u8]) -> usize {
 
 #[cfg_attr(feature = "cargo-clippy", allow(never_loop, cyclomatic_complexity))]
 pub fn convert_utf8_to_utf16_up_to_invalid(src: &[u8], dst: &mut [u16]) -> (usize, usize) {
-    
-    
-    
     let mut read = 0;
     let mut written = 0;
     'outer: loop {
