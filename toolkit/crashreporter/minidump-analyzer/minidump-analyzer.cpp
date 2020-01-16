@@ -406,13 +406,18 @@ static bool UpdateExtraDataFile(const string& aDumpPath,
 
   bool res = false;
   if (f.is_open()) {
-    extra["StackTraces"] = aStackTraces;
-    if (!!aCertSubjects) {
-      extra["ModuleSignatureInfo"] = aCertSubjects;
-    }
-
     Json::StreamWriterBuilder builder;
     builder["indentation"] = "";
+
+    
+    
+    
+    extra["StackTraces"] = aStackTraces;
+
+    if (!!aCertSubjects) {
+      extra["ModuleSignatureInfo"] = Json::writeString(builder, aCertSubjects);
+    }
+
     std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
     writer->write(extra, &f);
     f << "\n";
