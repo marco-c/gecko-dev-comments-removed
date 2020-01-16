@@ -4,10 +4,7 @@
 "use strict";
 
 async function checkOpensOnFocus(win = window) {
-  Assert.ok(
-    win.gURLBar.openViewOnFocusForCurrentTab,
-    "openViewOnFocusForCurrentTab should be true"
-  );
+  Assert.ok(win.gURLBar.openViewOnFocus, "openViewOnFocus should be true");
   
   
   win.gURLBar.blur();
@@ -35,10 +32,7 @@ async function checkOpensOnFocus(win = window) {
 }
 
 async function checkDoesNotOpenOnFocus(win = window) {
-  Assert.ok(
-    !win.gURLBar.openViewOnFocusForCurrentTab,
-    "openViewOnFocusForCurrentTab should be false"
-  );
+  Assert.ok(!win.gURLBar.openViewOnFocus, "openViewOnFocus should be false");
   
   win.gURLBar.blur();
   win.gURLBar.focus();
@@ -99,22 +93,17 @@ add_task(async function newtabAndHome() {
           () => window.gBrowser.currentURI.spec == url,
           "Ensure we're on the expected page"
         );
-        
-        
-        await checkDoesNotOpenOnFocus();
-        
+        await checkOpensOnFocus();
         await BrowserTestUtils.withNewTab(
           { gBrowser, url: "http://example.com/" },
           async otherBrowser => {
-            
             await checkOpensOnFocus();
-            
             
             await BrowserTestUtils.switchTab(
               gBrowser,
               gBrowser.getTabForBrowser(browser)
             );
-            await checkDoesNotOpenOnFocus();
+            await checkOpensOnFocus();
             
             await BrowserTestUtils.switchTab(
               gBrowser,
@@ -124,9 +113,7 @@ add_task(async function newtabAndHome() {
           }
         );
         
-        
-        await checkDoesNotOpenOnFocus();
-        
+        await checkOpensOnFocus();
         
         await BrowserTestUtils.loadURI(
           gBrowser.selectedBrowser,
