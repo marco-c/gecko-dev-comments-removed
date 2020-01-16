@@ -209,6 +209,12 @@ var whitelist = [
   },
   { file: "chrome://devtools/skin/images/next.svg", isFromDevTools: true },
   
+  { file: "resource://featuregates/FeatureGate.jsm" },
+  {
+    file: "resource://featuregates/FeatureGateImplementation.jsm",
+  },
+  { file: "resource://featuregates/feature_definitions.json" },
+  
   {
     file: "resource://app/localization/en-US/browser/touchbar/touchbar.ftl",
     platforms: ["linux", "win"],
