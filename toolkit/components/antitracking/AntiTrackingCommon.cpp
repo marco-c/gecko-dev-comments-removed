@@ -1011,9 +1011,13 @@ AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(
     }
 
     if (!GetParentPrincipalAndTrackingOrigin(
-            parentWindow, behavior, getter_AddRefs(topLevelStoragePrincipal),
-            trackingOrigin, getter_AddRefs(trackingURI),
-            getter_AddRefs(trackingPrincipal))) {
+            parentWindow,
+            
+            
+            
+            nsICookieService::BEHAVIOR_ACCEPT,
+            getter_AddRefs(topLevelStoragePrincipal), trackingOrigin,
+            getter_AddRefs(trackingURI), getter_AddRefs(trackingPrincipal))) {
       LOG(
           ("Error while computing the parent principal and tracking origin, "
            "bailing out early"));
