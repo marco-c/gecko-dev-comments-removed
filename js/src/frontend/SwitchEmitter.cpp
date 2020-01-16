@@ -185,7 +185,7 @@ bool SwitchEmitter::emitTable(const TableGenerator& tableGen) {
 
   MOZ_ASSERT(top_ == bce_->bytecodeSection().offset());
   if (!bce_->emitN(JSOP_TABLESWITCH,
-                   JSOP_TABLESWITCH_LENGTH - sizeof(jsbytecode))) {
+                   JSOpLength_TableSwitch - sizeof(jsbytecode))) {
     return false;
   }
 

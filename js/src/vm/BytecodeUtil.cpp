@@ -908,7 +908,7 @@ bool BytecodeParser::parse() {
         
         
         for (const JSTryNote& tn : script_->trynotes()) {
-          if (tn.start == offset + JSOP_TRY_LENGTH) {
+          if (tn.start == offset + JSOpLength_Try) {
             uint32_t catchOffset = tn.start + tn.length;
             if (tn.kind == JSTRY_CATCH) {
               if (!addJump(catchOffset, stackDepth, offsetStack, pc,
