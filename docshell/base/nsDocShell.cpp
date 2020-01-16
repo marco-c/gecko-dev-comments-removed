@@ -7732,8 +7732,7 @@ nsresult nsDocShell::CreateContentViewer(const nsACString& aContentType,
     
     aOpenedChannel->GetLoadFlags(&loadFlags);
     loadFlags |= nsIChannel::LOAD_DOCUMENT_URI;
-    nsCOMPtr<nsILoadInfo> loadInfo = aOpenedChannel->LoadInfo();
-    if (SandboxFlagsImplyCookies(loadInfo->GetSandboxFlags())) {
+    if (SandboxFlagsImplyCookies(mBrowsingContext->GetSandboxFlags())) {
       loadFlags |= nsIRequest::LOAD_DOCUMENT_NEEDS_COOKIE;
     }
 
@@ -8279,7 +8278,7 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState,
     
     nsCOMPtr<nsILoadInfo> secCheckLoadInfo = new LoadInfo(
         mScriptGlobal, aLoadState->TriggeringPrincipal(), requestingContext,
-        nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK, 0);
+        nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK);
 
     
     
@@ -9827,6 +9826,8 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
     return NS_ERROR_FAILURE;
   }
 
+  bool isSandBoxed = mBrowsingContext->GetSandboxFlags() & SANDBOXED_ORIGIN;
+
   
   
   
@@ -9848,7 +9849,6 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   nsLoadFlags loadFlags = mDefaultLoadFlags;
   nsSecurityFlags securityFlags =
       nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL;
-  uint32_t sandboxFlags = mBrowsingContext->GetSandboxFlags();
 
   if (aLoadState->FirstParty()) {
     
@@ -9864,16 +9864,16 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   if (inheritPrincipal) {
     securityFlags |= nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
   }
+  if (isSandBoxed) {
+    securityFlags |= nsILoadInfo::SEC_SANDBOXED;
+  }
 
   RefPtr<LoadInfo> loadInfo =
       (contentPolicyType == nsIContentPolicy::TYPE_DOCUMENT)
           ? new LoadInfo(loadingWindow, aLoadState->TriggeringPrincipal(),
-                         topLevelLoadingContext, securityFlags, sandboxFlags)
+                         topLevelLoadingContext, securityFlags)
           : new LoadInfo(loadingPrincipal, aLoadState->TriggeringPrincipal(),
-                         loadingNode, securityFlags, contentPolicyType,
-                         Maybe<mozilla::dom::ClientInfo>(),
-                         Maybe<mozilla::dom::ServiceWorkerDescriptor>(),
-                         sandboxFlags);
+                         loadingNode, securityFlags, contentPolicyType);
 
   if (aLoadState->PrincipalToInherit()) {
     loadInfo->SetPrincipalToInherit(aLoadState->PrincipalToInherit());
@@ -9953,14 +9953,14 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   
   bool canUseDocumentChannel =
       aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_IS_SRCDOC)
-          ? (sandboxFlags & SANDBOXED_ORIGIN)
+          ? isSandBoxed
           : SchemeUsesDocChannel(aLoadState->URI());
 
   if (StaticPrefs::browser_tabs_documentchannel() && XRE_IsContentProcess() &&
       canUseDocumentChannel) {
-    channel = new DocumentChannelChild(aLoadState, loadInfo, initiatorType,
-                                       loadFlags, mLoadType, cacheKey, isActive,
-                                       isTopLevelDoc, sandboxFlags);
+    channel = new DocumentChannelChild(
+        aLoadState, loadInfo, initiatorType, loadFlags, mLoadType, cacheKey,
+        isActive, isTopLevelDoc, mBrowsingContext->GetSandboxFlags());
     channel->SetNotificationCallbacks(this);
   } else if (!CreateAndConfigureRealChannelForLoadState(
                  aLoadState, loadInfo, this, this, initiatorType, loadFlags,
