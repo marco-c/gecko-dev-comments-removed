@@ -980,9 +980,9 @@ var DebuggerEnvironmentSupport = {
 
     
     if (
-      result === undefined ||
-      result.optimizedOut ||
-      result.missingArguments
+      result == null ||
+      (typeof result == "object" &&
+        (result.optimizedOut || result.missingArguments))
     ) {
       return null;
     }
