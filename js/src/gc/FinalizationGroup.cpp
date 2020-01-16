@@ -50,7 +50,18 @@ void GCRuntime::markFinalizationGroupData(JSTracer* trc) {
   }
 }
 
-void GCRuntime::sweepFinalizationGroups(Zone* zone) {
+static FinalizationRecordObject* UnwrapFinalizationRecord(JSObject* obj) {
+  obj = UncheckedUnwrapWithoutExpose(obj);
+  if (!obj->is<FinalizationRecordObject>()) {
+    MOZ_ASSERT(JS_IsDeadWrapper(obj));
+    
+    
+    return nullptr;
+  }
+  return &obj->as<FinalizationRecordObject>();
+}
+
+void GCRuntime::sweepFinalizationGroups(Zone* zone, bool isShuttingDown) {
   
   
 
@@ -60,18 +71,12 @@ void GCRuntime::sweepFinalizationGroups(Zone* zone) {
     if (IsAboutToBeFinalized(&e.front().mutableKey())) {
       
       for (JSObject* obj : records) {
-        obj = UncheckedUnwrapWithoutExpose(obj);
-        if (!obj->is<FinalizationRecordObject>()) {
-          MOZ_ASSERT(JS_IsDeadWrapper(obj));
-          
-          
-          continue;
-        }
-        auto record = &obj->as<FinalizationRecordObject>();
-        FinalizationGroupObject* group = record->group();
-        if (group) {
-          group->queueRecordToBeCleanedUp(record);
-          queueFinalizationGroupForCleanup(group);
+        if (FinalizationRecordObject* record = UnwrapFinalizationRecord(obj)) {
+          FinalizationGroupObject* group = record->group();
+          if (group && !isShuttingDown) {
+            group->queueRecordToBeCleanedUp(record);
+            queueFinalizationGroupForCleanup(group);
+          }
         }
       }
       e.removeFront();
@@ -80,15 +85,8 @@ void GCRuntime::sweepFinalizationGroups(Zone* zone) {
       records.sweep();
       
       records.eraseIf([](JSObject* obj) {
-        obj = UncheckedUnwrapWithoutExpose(obj);
-        if (!obj->is<FinalizationRecordObject>()) {
-          MOZ_ASSERT(JS_IsDeadWrapper(obj));
-          
-          
-          return true;
-        }
-        auto record = &obj->as<FinalizationRecordObject>();
-        return !record->group();
+        FinalizationRecordObject* record = UnwrapFinalizationRecord(obj);
+        return !record || !record->group();
       });
     }
   }
