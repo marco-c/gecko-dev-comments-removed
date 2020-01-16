@@ -188,6 +188,9 @@ class VirtualenvManager(object):
         This should be the main API used from this class as it is the
         highest-level.
         """
+        
+        
+        os.environ.pop('__PYVENV_LAUNCHER__', None)
         if self.up_to_date(python):
             return self.virtualenv_root
         return self.build(python)
