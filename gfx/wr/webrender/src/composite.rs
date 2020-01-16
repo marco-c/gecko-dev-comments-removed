@@ -122,16 +122,6 @@ pub enum CompositorKind {
     },
 }
 
-impl CompositorKind {
-    
-    pub fn is_native(&self) -> bool {
-        match self {
-            CompositorKind::Draw { .. } => false,
-            CompositorKind::Native { .. } => true,
-        }
-    }
-}
-
 impl Default for CompositorKind {
     
     fn default() -> Self {
@@ -311,16 +301,7 @@ impl CompositeState {
 
             let device_rect = (tile.world_rect * global_device_pixel_scale).round();
             let dirty_rect = (tile.world_dirty_rect * global_device_pixel_scale).round();
-            let valid_rect = (tile.world_valid_rect * global_device_pixel_scale).round_out();
             let surface = tile.surface.as_ref().expect("no tile surface set!");
-
-            
-            
-            
-            let clip_rect = match valid_rect.intersection(&device_clip_rect) {
-                Some(clip_rect) => clip_rect,
-                None => continue,
-            };
 
             let (surface, is_opaque) = match surface {
                 TileSurface::Color { color } => {
@@ -342,7 +323,7 @@ impl CompositeState {
                 surface,
                 rect: device_rect,
                 dirty_rect,
-                clip_rect,
+                clip_rect: device_clip_rect,
                 z_id,
                 tile_id: tile.id,
             };
