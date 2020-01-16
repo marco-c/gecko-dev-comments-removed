@@ -412,28 +412,18 @@ class LoginManagerStorage_json {
 
     let realMatchData = {};
     let options = {};
-
-    matchData.QueryInterface(Ci.nsIPropertyBag2);
-    if (matchData.hasKey("guid")) {
-      
-      
-      
-      realMatchData = { guid: matchData.getProperty("guid") };
-    } else {
-      
-      for (let prop of matchData.enumerator) {
-        switch (prop.name) {
-          
-          
-          case "acceptDifferentSubdomains":
-          case "schemeUpgrades": {
-            options[prop.name] = prop.value;
-            break;
-          }
-          default: {
-            realMatchData[prop.name] = prop.value;
-            break;
-          }
+    
+    for (let prop of matchData.enumerator) {
+      switch (prop.name) {
+        
+        case "acceptDifferentSubdomains":
+        case "schemeUpgrades": {
+          options[prop.name] = prop.value;
+          break;
+        }
+        default: {
+          realMatchData[prop.name] = prop.value;
+          break;
         }
       }
     }
