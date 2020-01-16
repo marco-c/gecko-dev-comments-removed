@@ -1806,7 +1806,7 @@ Completion Completion::fromJSFramePop(JSContext* cx, AbstractFramePtr frame,
   
   Rooted<AbstractGeneratorObject*> generatorObj(
       cx, GetGeneratorObjectForFrame(cx, frame));
-  switch (JSOp(*pc)) {
+  switch (*pc) {
     case JSOP_INITIALYIELD:
       MOZ_ASSERT(!generatorObj->isClosed());
       return Completion(InitialYield(generatorObj));
@@ -2120,7 +2120,7 @@ ResumeMode Debugger::fireEnterFrame(JSContext* cx, MutableHandleValue vp) {
 
 #if DEBUG
   
-  if (iter.hasScript() && JSOp(*iter.pc()) == JSOP_AFTERYIELD) {
+  if (iter.hasScript() && *iter.pc() == JSOP_AFTERYIELD) {
     auto* genObj = GetGeneratorObjectForFrame(cx, iter.abstractFramePtr());
     MOZ_ASSERT(genObj->isRunning());
   }
