@@ -1477,10 +1477,21 @@ class nsContentUtils {
 
 
 
+
+
+
+
+
+
+
+
+
+
   MOZ_CAN_RUN_SCRIPT
   static nsresult DispatchInputEvent(Element* aEventTarget) {
-    return DispatchInputEvent(aEventTarget, mozilla::EditorInputType::eUnknown,
-                              nullptr, InputEventOptions());
+    return DispatchInputEvent(aEventTarget, mozilla::eEditorInput,
+                              mozilla::EditorInputType::eUnknown, nullptr,
+                              InputEventOptions());
   }
   struct MOZ_STACK_CLASS InputEventOptions final {
     InputEventOptions() = default;
@@ -1493,9 +1504,11 @@ class nsContentUtils {
   };
   MOZ_CAN_RUN_SCRIPT
   static nsresult DispatchInputEvent(Element* aEventTarget,
+                                     mozilla::EventMessage aEventMessage,
                                      mozilla::EditorInputType aEditorInputType,
                                      mozilla::TextEditor* aTextEditor,
-                                     const InputEventOptions& aOptions);
+                                     const InputEventOptions& aOptions,
+                                     nsEventStatus* aEventStatus = nullptr);
 
   
 

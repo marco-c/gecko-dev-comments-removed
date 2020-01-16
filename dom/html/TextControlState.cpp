@@ -2957,12 +2957,15 @@ bool TextControlState::SetValueWithoutTextEditor(
     
     
     
+    
+    
+    
     if (aHandlingSetValue.GetSetValueFlags() & eSetValue_BySetUserInput) {
       MOZ_ASSERT(aHandlingSetValue.GetTextControlElement());
       MOZ_ASSERT(!aHandlingSetValue.GetSettingValue().IsVoid());
       DebugOnly<nsresult> rvIgnored = nsContentUtils::DispatchInputEvent(
           MOZ_KnownLive(aHandlingSetValue.GetTextControlElement()),
-          EditorInputType::eInsertReplacementText, nullptr,
+          eEditorInput, EditorInputType::eInsertReplacementText, nullptr,
           nsContentUtils::InputEventOptions(
               aHandlingSetValue.GetSettingValue()));
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
