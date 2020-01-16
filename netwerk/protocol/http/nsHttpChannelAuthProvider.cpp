@@ -677,7 +677,6 @@ nsresult nsHttpChannelAuthProvider::GetCredentialsForChallenge(
     if (mIdent.IsEmpty()) {
       GetIdentityFromURI(authFlags, mIdent);
       identFromURI = !mIdent.IsEmpty();
-      Telemetry::Accumulate(Telemetry::HTTP_AUTH_USERINFO_URI, identFromURI);
     }
 
     if ((loadFlags & nsIRequest::LOAD_ANONYMOUS) && !identFromURI) {
@@ -1427,16 +1426,6 @@ nsresult nsHttpChannelAuthProvider::ContinueOnAuthAvailable(
   return NS_OK;
 }
 
-void nsHttpChannelAuthProvider::RecordConfirmAuthTelemetry(const char* aType) {
-  if (nsCRT::strcmp(aType, "SuperfluousAuth")) {
-    Telemetry::AccumulateCategorical(
-        Telemetry::LABELS_HTTP_AUTH_CONFIRM_PROMPT::Superfluous);
-  } else if (nsCRT::strcmp(aType, "AutomaticAuth")) {
-    Telemetry::AccumulateCategorical(
-        Telemetry::LABELS_HTTP_AUTH_CONFIRM_PROMPT::Automatic);
-  }
-}
-
 bool nsHttpChannelAuthProvider::ConfirmAuth(const char* bundleKey,
                                             bool doYesNoPrompt) {
   
@@ -1444,6 +1433,10 @@ bool nsHttpChannelAuthProvider::ConfirmAuth(const char* bundleKey,
   
   
   
+
+  if (!StaticPrefs::network_auth_confirmAuth_enabled()) {
+    return true;
+  }
 
   uint32_t loadFlags;
   nsresult rv = mAuthChannel->GetLoadFlags(&loadFlags);
@@ -1458,12 +1451,6 @@ bool nsHttpChannelAuthProvider::ConfirmAuth(const char* bundleKey,
   if (NS_FAILED(rv) ||
       (userPass.Length() < gHttpHandler->PhishyUserPassLength()))
     return true;
-
-  if (!StaticPrefs::network_auth_confirmAuth_enabled()) {
-    
-    RecordConfirmAuthTelemetry(bundleKey);
-    return true;
-  }
 
   
   
@@ -1550,8 +1537,6 @@ bool nsHttpChannelAuthProvider::ConfirmAuth(const char* bundleKey,
     rv = prompt->Confirm(nullptr, msg.get(), &confirmed);
     if (NS_FAILED(rv)) return true;
   }
-
-  RecordConfirmAuthTelemetry(bundleKey);
 
   return confirmed;
 }
