@@ -3286,7 +3286,10 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult PasteInternal(int32_t aClipboardType);
+
+
+  MOZ_CAN_RUN_SCRIPT
+  nsresult PasteInternal(int32_t aClipboardType, bool aDispatchPasteEvent);
 
   
 
@@ -3395,14 +3398,8 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
-
-
-
-  enum class RemoveRelatedElements { Yes, No };
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
-  RemoveInlinePropertyInternal(nsAtom* aProperty, nsAtom* aAttribute,
-                               RemoveRelatedElements aRemoveRelatedElements);
+  RemoveInlinePropertyInternal(nsAtom* aProperty, nsAtom* aAttribute);
 
   
 

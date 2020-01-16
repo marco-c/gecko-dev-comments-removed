@@ -1209,19 +1209,6 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
     mTextInputListener->SetValueChanged(mSetValueFlags &
                                         TextControlState::eSetValue_Notify);
     mEditActionHandled = false;
-    
-    
-    
-    
-    WillDispatchBeforeInputEvent();
-  }
-
-  
-
-
-
-  void WillDispatchBeforeInputEvent() {
-    mBeforeInputEventHasBeenDispatched = true;
   }
 
   
@@ -1295,9 +1282,6 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
         ->mTextControlFrame.IsAlive();
   }
   bool HasEditActionHandled() const { return mEditActionHandled; }
-  bool HasBeforeInputEventDispatched() const {
-    return mBeforeInputEventHasBeenDispatched;
-  }
   bool Is(TextControlAction aTextControlAction) const {
     return mTextControlAction == aTextControlAction;
   }
@@ -1362,7 +1346,6 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
   bool mTextControlStateDestroyed = false;
   bool mEditActionHandled = false;
   bool mPreareEditorLater = false;
-  bool mBeforeInputEventHasBeenDispatched = false;
 };
 
 
@@ -2668,11 +2651,6 @@ bool TextControlState::SetValue(const nsAString& aValue,
   
   
   
-  
-  
-  
-  
-  
   if (aFlags & (eSetValue_BySetUserInput | eSetValue_ByContent)) {
     if (EditorHasComposition()) {
       
@@ -2940,97 +2918,41 @@ bool TextControlState::SetValueWithoutTextEditor(
   
   if (!mValue->Equals(aHandlingSetValue.GetSettingValue()) ||
       !StaticPrefs::dom_input_skip_cursor_move_for_same_value_set()) {
-    bool handleSettingValue = true;
-    
-    
-    
-    nsString inputEventData(aHandlingSetValue.GetSettingValue());
-    if ((aHandlingSetValue.GetSetValueFlags() & eSetValue_BySetUserInput) &&
-        StaticPrefs::dom_input_events_beforeinput_enabled() &&
-        !aHandlingSetValue.HasBeforeInputEventDispatched()) {
-      
-      
-      
-      
-      
-      
-      MOZ_ASSERT(aHandlingSetValue.GetTextControlElement());
-      MOZ_ASSERT(!aHandlingSetValue.GetSettingValue().IsVoid());
-      aHandlingSetValue.WillDispatchBeforeInputEvent();
-      nsEventStatus status = nsEventStatus_eIgnore;
-      DebugOnly<nsresult> rvIgnored = nsContentUtils::DispatchInputEvent(
-          MOZ_KnownLive(aHandlingSetValue.GetTextControlElement()),
-          eEditorBeforeInput, EditorInputType::eInsertReplacementText, nullptr,
-          nsContentUtils::InputEventOptions(inputEventData), &status);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                           "Failed to dispatch beforeinput event");
-      if (status == nsEventStatus_eConsumeNoDefault) {
-        return true;  
-      }
-      
-      
-      if (aHandlingSetValue.IsTextControlStateDestroyed()) {
-        return true;
-      }
-      
-      
-      
-      
-      
-      if (mTextEditor && mBoundFrame) {
-        AutoInputEventSuppresser suppressInputEvent(mTextEditor);
-        if (!SetValueWithTextEditor(aHandlingSetValue)) {
-          return false;
-        }
-        
-        
-        if (aHandlingSetValue.IsTextControlStateDestroyed()) {
-          return true;
-        }
-        handleSettingValue = false;
-      }
+    if (!mValue->Assign(aHandlingSetValue.GetSettingValue(), fallible)) {
+      return false;
     }
 
-    if (handleSettingValue) {
-      if (!mValue->Assign(aHandlingSetValue.GetSettingValue(), fallible)) {
-        return false;
-      }
+    
+    if (IsSelectionCached()) {
+      MOZ_ASSERT(AreFlagsNotDemandingContradictingMovements(
+          aHandlingSetValue.GetSetValueFlags()));
 
-      
-      if (IsSelectionCached()) {
-        MOZ_ASSERT(AreFlagsNotDemandingContradictingMovements(
-            aHandlingSetValue.GetSetValueFlags()));
-
-        SelectionProperties& props = GetSelectionProperties();
-        if (aHandlingSetValue.GetSetValueFlags() &
-            eSetValue_MoveCursorToEndIfValueChanged) {
-          props.SetStart(aHandlingSetValue.GetSettingValue().Length());
-          props.SetEnd(aHandlingSetValue.GetSettingValue().Length());
-          props.SetDirection(nsITextControlFrame::eForward);
-        } else if (aHandlingSetValue.GetSetValueFlags() &
-                   eSetValue_MoveCursorToBeginSetSelectionDirectionForward) {
-          props.SetStart(0);
-          props.SetEnd(0);
-          props.SetDirection(nsITextControlFrame::eForward);
-        } else {
-          
-          
-          props.SetStart(std::min(
-              props.GetStart(), aHandlingSetValue.GetSettingValue().Length()));
-          props.SetEnd(std::min(props.GetEnd(),
+      SelectionProperties& props = GetSelectionProperties();
+      if (aHandlingSetValue.GetSetValueFlags() &
+          eSetValue_MoveCursorToEndIfValueChanged) {
+        props.SetStart(aHandlingSetValue.GetSettingValue().Length());
+        props.SetEnd(aHandlingSetValue.GetSettingValue().Length());
+        props.SetDirection(nsITextControlFrame::eForward);
+      } else if (aHandlingSetValue.GetSetValueFlags() &
+                 eSetValue_MoveCursorToBeginSetSelectionDirectionForward) {
+        props.SetStart(0);
+        props.SetEnd(0);
+        props.SetDirection(nsITextControlFrame::eForward);
+      } else {
+        
+        
+        props.SetStart(std::min(props.GetStart(),
                                 aHandlingSetValue.GetSettingValue().Length()));
-        }
-      }
-
-      
-      if (mBoundFrame) {
-        mBoundFrame->UpdateValueDisplay(true);
+        props.SetEnd(std::min(props.GetEnd(),
+                              aHandlingSetValue.GetSettingValue().Length()));
       }
     }
 
     
-    
-    
+    if (mBoundFrame) {
+      mBoundFrame->UpdateValueDisplay(true);
+    }
+
     
     
     
@@ -3040,8 +2962,9 @@ bool TextControlState::SetValueWithoutTextEditor(
       MOZ_ASSERT(!aHandlingSetValue.GetSettingValue().IsVoid());
       DebugOnly<nsresult> rvIgnored = nsContentUtils::DispatchInputEvent(
           MOZ_KnownLive(aHandlingSetValue.GetTextControlElement()),
-          eEditorInput, EditorInputType::eInsertReplacementText, nullptr,
-          nsContentUtils::InputEventOptions(inputEventData));
+          EditorInputType::eInsertReplacementText, nullptr,
+          nsContentUtils::InputEventOptions(
+              aHandlingSetValue.GetSettingValue()));
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                            "Failed to dispatch input event");
     }

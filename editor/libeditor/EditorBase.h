@@ -779,61 +779,11 @@ class EditorBase : public nsIEditor,
                              nsIPrincipal* aPrincipal = nullptr);
     ~AutoEditActionDataSetter();
 
-    void UpdateEditAction(EditAction aEditAction) {
-      MOZ_ASSERT(!mHasTriedToDispatchedBeforeInputEvent,
-                 "It's too late to update EditAction since this may have "
-                 "already dispatched a beforeinput event");
-      mEditAction = aEditAction;
-    }
+    void UpdateEditAction(EditAction aEditAction) { mEditAction = aEditAction; }
 
-    
-
-
-
-
-
-
-
-
-    MOZ_MUST_USE bool CanHandle() const {
-#ifdef DEBUG
-      mHasCanHandleChecked = true;
-#endif  
-      return mSelection && mEditorBase.IsInitialized();
-    }
-    MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
-    CanHandleAndMaybeDispatchBeforeInputEvent() {
-      if (NS_WARN_IF(!CanHandle())) {
-        return NS_ERROR_NOT_INITIALIZED;
-      }
-      return MaybeDispatchBeforeInputEvent();
-    }
-
-    
-
-
-
-
-
-
-
-
-    MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult MaybeDispatchBeforeInputEvent();
-
-    
-
-
-
-
-    bool NeedsToDispatchBeforeInputEvent() const {
-      return !mHasTriedToDispatchedBeforeInputEvent &&
-             NeedsBeforeInputEventHandling(mEditAction);
-    }
-
-    bool IsCanceled() const { return mBeforeInputEventCanceled; }
+    bool CanHandle() const { return mSelection && mEditorBase.IsInitialized(); }
 
     const RefPtr<Selection>& SelectionRefPtr() const { return mSelection; }
-    nsIPrincipal* GetPrincipal() const { return mPrincipal; }
     EditAction GetEditAction() const { return mEditAction; }
 
     template <typename PT, typename CT>
@@ -851,12 +801,7 @@ class EditorBase : public nsIEditor,
       return mSpellCheckRestartPoint;
     }
 
-    void SetData(const nsAString& aData) {
-      MOZ_ASSERT(!mHasTriedToDispatchedBeforeInputEvent,
-                 "It's too late to set data since this may have already "
-                 "dispatched a beforeinput event");
-      mData = aData;
-    }
+    void SetData(const nsAString& aData) { mData = aData; }
     const nsString& GetData() const { return mData; }
 
     void SetColorData(const nsAString& aData);
@@ -1001,54 +946,8 @@ class EditorBase : public nsIEditor,
     }
 
    private:
-    static bool NeedsBeforeInputEventHandling(EditAction aEditAction) {
-      MOZ_ASSERT(aEditAction != EditAction::eNone);
-      switch (aEditAction) {
-        case EditAction::eNone:
-        
-        
-        case EditAction::eNotEditing:
-        
-        
-        case EditAction::eUnknown:
-        
-        
-        case EditAction::eHidePassword:
-        
-        
-        case EditAction::eStartComposition:
-        
-        case EditAction::eAddOverrideStyleSheet:
-        case EditAction::eRemoveOverrideStyleSheet:
-        case EditAction::eReplaceOverrideStyleSheet:
-        
-        case EditAction::eEnableStyleSheet:
-        case EditAction::eEnableOrDisableCSS:
-        case EditAction::eEnableOrDisableAbsolutePositionEditor:
-        case EditAction::eEnableOrDisableResizer:
-        case EditAction::eEnableOrDisableInlineTableEditingUI:
-        
-        
-        case EditAction::eSetWrapWidth:
-        case EditAction::eRewrap:
-        
-        
-        
-        case EditAction::eResizingElement:
-        case EditAction::eMovingElement:
-        
-        
-        
-        case EditAction::eCreatePaddingBRElementForEmptyEditor:
-          return false;
-        default:
-          return true;
-      }
-    }
-
     EditorBase& mEditorBase;
     RefPtr<Selection> mSelection;
-    nsCOMPtr<nsIPrincipal> mPrincipal;
     
     
     
@@ -1091,17 +990,6 @@ class EditorBase : public nsIEditor,
 
     bool mAborted;
 
-    
-    
-    
-    bool mHasTriedToDispatchedBeforeInputEvent;
-    
-    bool mBeforeInputEventCanceled;
-
-#ifdef DEBUG
-    mutable bool mHasCanHandleChecked = false;
-#endif  
-
     AutoEditActionDataSetter() = delete;
     AutoEditActionDataSetter(const AutoEditActionDataSetter& aOther) = delete;
   };
@@ -1117,21 +1005,6 @@ class EditorBase : public nsIEditor,
 
 
 
-
-  bool IsEditActionCanceled() const {
-    MOZ_ASSERT(mEditActionData);
-    return mEditActionData->IsCanceled();
-  }
-
-  bool NeedsToDispatchBeforeInputEvent() const {
-    MOZ_ASSERT(mEditActionData);
-    return mEditActionData->NeedsToDispatchBeforeInputEvent();
-  }
-
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult MaybeDispatchBeforeInputEvent() {
-    MOZ_ASSERT(mEditActionData);
-    return mEditActionData->MaybeDispatchBeforeInputEvent();
-  }
 
   bool IsEditActionDataAvailable() const {
     return mEditActionData && mEditActionData->CanHandle();
@@ -1157,11 +1030,6 @@ class EditorBase : public nsIEditor,
   const RefPtr<Selection>& SelectionRefPtr() const {
     MOZ_ASSERT(mEditActionData);
     return mEditActionData->SelectionRefPtr();
-  }
-
-  nsIPrincipal* GetEditActionPrincipal() const {
-    MOZ_ASSERT(mEditActionData);
-    return mEditActionData->GetPrincipal();
   }
 
   
@@ -2349,6 +2217,9 @@ class EditorBase : public nsIEditor,
 
 
   MOZ_CAN_RUN_SCRIPT void DispatchInputEvent();
+  MOZ_CAN_RUN_SCRIPT void DispatchInputEvent(EditAction aEditAction,
+                                             const nsAString& aData,
+                                             dom::DataTransfer* aDataTransfer);
 
   
 
@@ -2550,10 +2421,6 @@ class EditorBase : public nsIEditor,
   
 
 
-
-
-
-
   class MOZ_RAII AutoTransactionBatch final {
    public:
     MOZ_CAN_RUN_SCRIPT explicit AutoTransactionBatch(
@@ -2573,8 +2440,6 @@ class EditorBase : public nsIEditor,
   };
 
   
-
-
 
 
 

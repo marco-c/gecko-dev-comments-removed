@@ -136,15 +136,7 @@ enum class EditAction {
 
   
   
-  eResizingElement,
-
-  
-  
   eResizeElement,
-
-  
-  
-  eMovingElement,
 
   
   

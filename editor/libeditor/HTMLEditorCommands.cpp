@@ -1,38 +1,38 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/EditorCommands.h"
 
-#include "mozilla/Assertions.h"  
-#include "mozilla/EditorBase.h"  
+#include "mozilla/Assertions.h"  // for MOZ_ASSERT, etc
+#include "mozilla/EditorBase.h"  // for EditorBase
 #include "mozilla/ErrorResult.h"
-#include "mozilla/HTMLEditor.h"  
+#include "mozilla/HTMLEditor.h"  // for HTMLEditor
 #include "mozilla/dom/Element.h"
 #include "nsAString.h"
-#include "nsAtom.h"                   
-#include "nsCommandParams.h"          
-#include "nsComponentManagerUtils.h"  
-#include "nsGkAtoms.h"                
-#include "nsIClipboard.h"             
+#include "nsAtom.h"                   // for nsAtom, nsStaticAtom, etc
+#include "nsCommandParams.h"          // for nsCommandParams, etc
+#include "nsComponentManagerUtils.h"  // for do_CreateInstance
+#include "nsGkAtoms.h"                // for nsGkAtoms, nsGkAtoms::font, etc
+#include "nsIClipboard.h"             // for nsIClipboard, etc
 #include "nsIEditingSession.h"
-#include "nsIPrincipal.h"     
-#include "nsLiteralString.h"  
-#include "nsReadableUtils.h"  
-#include "nsString.h"         
-#include "nsStringFwd.h"      
+#include "nsIPrincipal.h"     // for nsIPrincipal
+#include "nsLiteralString.h"  // for NS_LITERAL_STRING
+#include "nsReadableUtils.h"  // for EmptyString
+#include "nsString.h"         // for nsAutoString, nsString, etc
+#include "nsStringFwd.h"      // for nsString
 
 class nsISupports;
 
 namespace mozilla {
 using dom::Element;
 
-
+// prototype
 static nsresult GetListState(HTMLEditor* aHTMLEditor, bool* aMixed,
                              nsAString& aLocalName);
 
-
+// defines
 #define STATE_ENABLED "state_enabled"
 #define STATE_ALL "state_all"
 #define STATE_ANY "state_any"
@@ -42,9 +42,9 @@ static nsresult GetListState(HTMLEditor* aHTMLEditor, bool* aMixed,
 #define STATE_ATTRIBUTE "state_attribute"
 #define STATE_DATA "state_data"
 
-
-
-
+/*****************************************************************************
+ * mozilla::StateUpdatingCommandBase
+ *****************************************************************************/
 
 bool StateUpdatingCommandBase::IsCommandEnabled(Command aCommand,
                                                 TextEditor* aTextEditor) const {
@@ -97,9 +97,9 @@ nsresult StateUpdatingCommandBase::GetCommandStateParams(
                          aParams);
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::PasteNoFormattingCommand
+ *****************************************************************************/
 
 StaticRefPtr<PasteNoFormattingCommand> PasteNoFormattingCommand::sInstance;
 
@@ -122,7 +122,7 @@ nsresult PasteNoFormattingCommand::DoCommand(Command aCommand,
   if (NS_WARN_IF(!htmlEditor)) {
     return NS_ERROR_FAILURE;
   }
-  
+  // Known live because we hold a ref above in "editor"
   nsresult rv = MOZ_KnownLive(htmlEditor)
                     ->PasteNoFormattingAsAction(nsIClipboard::kGlobalClipboard,
                                                 aPrincipal);
@@ -137,9 +137,9 @@ nsresult PasteNoFormattingCommand::GetCommandStateParams(
                          IsCommandEnabled(aCommand, aTextEditor));
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::StyleUpdatingCommand
+ *****************************************************************************/
 
 StaticRefPtr<StyleUpdatingCommand> StyleUpdatingCommand::sInstance;
 
@@ -163,7 +163,7 @@ nsresult StyleUpdatingCommand::GetCurrentState(nsAtom* aTagName,
   aParams.SetBool(STATE_ANY, anyOfSelectionHasProp);
   aParams.SetBool(STATE_MIXED, anyOfSelectionHasProp && !allOfSelectionHasProp);
   aParams.SetBool(STATE_BEGIN, firstOfSelectionHasProp);
-  aParams.SetBool(STATE_END, allOfSelectionHasProp);  
+  aParams.SetBool(STATE_END, allOfSelectionHasProp);  // not completely accurate
   return NS_OK;
 }
 
@@ -176,14 +176,14 @@ nsresult StyleUpdatingCommand::ToggleState(nsAtom* aTagName,
 
   RefPtr<nsCommandParams> params = new nsCommandParams();
 
-  
-  
-  
+  // tags "href" and "name" are special cases in the core editor
+  // they are used to remove named anchor/link and shouldn't be used for
+  // insertion
   bool doTagRemoval;
   if (aTagName == nsGkAtoms::href || aTagName == nsGkAtoms::name) {
     doTagRemoval = true;
   } else {
-    
+    // check current selection; set doTagRemoval if formatting should be removed
     nsresult rv = GetCurrentState(aTagName, aHTMLEditor, *params);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
@@ -196,6 +196,30 @@ nsresult StyleUpdatingCommand::ToggleState(nsAtom* aTagName,
   }
 
   if (doTagRemoval) {
+    // Also remove equivalent properties (bug 317093)
+    // XXX Why don't we make the following two transactions as an atomic
+    //     transaction?  If the element is <b>, <i> or <strike>, user
+    //     needs to undo twice.
+    if (aTagName == nsGkAtoms::b) {
+      nsresult rv = aHTMLEditor->RemoveInlinePropertyAsAction(
+          *nsGkAtoms::strong, nullptr, aPrincipal);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    } else if (aTagName == nsGkAtoms::i) {
+      nsresult rv = aHTMLEditor->RemoveInlinePropertyAsAction(
+          *nsGkAtoms::em, nullptr, aPrincipal);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    } else if (aTagName == nsGkAtoms::strike) {
+      nsresult rv = aHTMLEditor->RemoveInlinePropertyAsAction(
+          *nsGkAtoms::s, nullptr, aPrincipal);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    }
+
     nsresult rv = aHTMLEditor->RemoveInlinePropertyAsAction(*aTagName, nullptr,
                                                             aPrincipal);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -209,9 +233,9 @@ nsresult StyleUpdatingCommand::ToggleState(nsAtom* aTagName,
   return rv;
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::ListCommand
+ *****************************************************************************/
 
 StaticRefPtr<ListCommand> ListCommand::sInstance;
 
@@ -266,9 +290,9 @@ nsresult ListCommand::ToggleState(nsAtom* aTagName, HTMLEditor* aHTMLEditor,
   return rv;
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::ListItemCommand
+ *****************************************************************************/
 
 StaticRefPtr<ListItemCommand> ListItemCommand::sInstance;
 
@@ -310,7 +334,7 @@ nsresult ListItemCommand::ToggleState(nsAtom* aTagName, HTMLEditor* aHTMLEditor,
     return NS_ERROR_INVALID_ARG;
   }
 
-  
+  // Need to use aTagName????
   RefPtr<nsCommandParams> params = new nsCommandParams();
   GetCurrentState(aTagName, aHTMLEditor, *params);
   ErrorResult error;
@@ -320,7 +344,7 @@ nsresult ListItemCommand::ToggleState(nsAtom* aTagName, HTMLEditor* aHTMLEditor,
   }
 
   if (inList) {
-    
+    // To remove a list, first get what kind of list we're in
     bool bMixed;
     nsAutoString localName;
     nsresult rv = GetListState(aHTMLEditor, &bMixed, localName);
@@ -335,19 +359,19 @@ nsresult ListItemCommand::ToggleState(nsAtom* aTagName, HTMLEditor* aHTMLEditor,
     return rv;
   }
 
-  
-  
-  
-  
+  // Set to the requested paragraph type
+  // XXX Note: This actually doesn't work for "LI",
+  //    but we currently don't use this for non DL lists anyway.
+  // Problem: won't this replace any current block paragraph style?
   nsresult rv = aHTMLEditor->SetParagraphFormatAsAction(
       nsDependentAtomString(aTagName), aPrincipal);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "SetParagraphFormatAsAction() failed");
   return rv;
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::RemoveListCommand
+ *****************************************************************************/
 
 StaticRefPtr<RemoveListCommand> RemoveListCommand::sInstance;
 
@@ -366,7 +390,7 @@ bool RemoveListCommand::IsCommandEnabled(Command aCommand,
     return false;
   }
 
-  
+  // It is enabled if we are in any list type
   bool bMixed;
   nsAutoString localName;
   nsresult rv = GetListState(MOZ_KnownLive(htmlEditor), &bMixed, localName);
@@ -382,7 +406,7 @@ nsresult RemoveListCommand::DoCommand(Command aCommand, TextEditor& aTextEditor,
   if (NS_WARN_IF(!htmlEditor)) {
     return NS_OK;
   }
-  
+  // This removes any list type
   nsresult rv =
       MOZ_KnownLive(htmlEditor)->RemoveListAsAction(EmptyString(), aPrincipal);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "RemoveListAsAction() failed");
@@ -396,9 +420,9 @@ nsresult RemoveListCommand::GetCommandStateParams(
                          IsCommandEnabled(aCommand, aTextEditor));
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::IndentCommand
+ *****************************************************************************/
 
 StaticRefPtr<IndentCommand> IndentCommand::sInstance;
 
@@ -432,9 +456,9 @@ nsresult IndentCommand::GetCommandStateParams(
                          IsCommandEnabled(aCommand, aTextEditor));
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::OutdentCommand
+ *****************************************************************************/
 
 StaticRefPtr<OutdentCommand> OutdentCommand::sInstance;
 
@@ -468,9 +492,9 @@ nsresult OutdentCommand::GetCommandStateParams(
                          IsCommandEnabled(aCommand, aTextEditor));
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::MultiStateCommandBase
+ *****************************************************************************/
 
 bool MultiStateCommandBase::IsCommandEnabled(Command aCommand,
                                              TextEditor* aTextEditor) const {
@@ -481,7 +505,7 @@ bool MultiStateCommandBase::IsCommandEnabled(Command aCommand,
   if (!htmlEditor) {
     return false;
   }
-  
+  // should be disabled sometimes, like if the current selection is an image
   return htmlEditor->IsSelectionEditable();
 }
 
@@ -522,9 +546,9 @@ nsresult MultiStateCommandBase::GetCommandStateParams(
   return GetCurrentState(MOZ_KnownLive(htmlEditor), aParams);
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::ParagraphStateCommand
+ *****************************************************************************/
 
 StaticRefPtr<ParagraphStateCommand> ParagraphStateCommand::sInstance;
 
@@ -541,10 +565,10 @@ nsresult ParagraphStateCommand::GetCurrentState(
   }
   aParams.SetBool(STATE_MIXED, state.IsMixed());
   if (NS_WARN_IF(!state.GetFirstParagraphStateAtSelection())) {
-    
+    // XXX This is odd behavior, we should fix this later.
     aParams.SetCString(STATE_ATTRIBUTE, NS_LITERAL_CSTRING("x"));
   } else {
-    nsCString paragraphState;  
+    nsCString paragraphState;  // Don't use `nsAutoCString` for avoiding copy.
     state.GetFirstParagraphStateAtSelection()->ToUTF8String(paragraphState);
     aParams.SetCString(STATE_ATTRIBUTE, paragraphState);
   }
@@ -562,9 +586,9 @@ nsresult ParagraphStateCommand::SetState(HTMLEditor* aHTMLEditor,
   return rv;
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::FontFaceStateCommand
+ *****************************************************************************/
 
 StaticRefPtr<FontFaceStateCommand> FontFaceStateCommand::sInstance;
 
@@ -591,6 +615,35 @@ nsresult FontFaceStateCommand::SetState(HTMLEditor* aHTMLEditor,
     return NS_ERROR_INVALID_ARG;
   }
 
+  // Handling `<tt>` element code was implemented for composer (bug 115922).
+  // This shouldn't work with `Document.execCommand()`.  Currently, aPrincipal
+  // is set only when the root caller is Document::ExecCommand() so that
+  // we should handle `<tt>` element only when aPrincipal is nullptr that
+  // must be only when XUL command is executed on composer.
+  if (!aPrincipal) {
+    if (aNewState.EqualsLiteral("tt")) {
+      // The old "teletype" attribute
+      nsresult rv = aHTMLEditor->SetInlinePropertyAsAction(
+          *nsGkAtoms::tt, nullptr, EmptyString(), aPrincipal);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+      // Clear existing font face
+      rv = aHTMLEditor->RemoveInlinePropertyAsAction(
+          *nsGkAtoms::font, nsGkAtoms::face, aPrincipal);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "RemoveInlinePropertyAsAction() failed");
+      return rv;
+    }
+
+    // Remove any existing `<tt>` elements before setting new font face.
+    nsresult rv = aHTMLEditor->RemoveInlinePropertyAsAction(
+        *nsGkAtoms::tt, nullptr, aPrincipal);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+
   if (aNewState.IsEmpty() || aNewState.EqualsLiteral("normal")) {
     nsresult rv = aHTMLEditor->RemoveInlinePropertyAsAction(
         *nsGkAtoms::font, nsGkAtoms::face, aPrincipal);
@@ -605,9 +658,9 @@ nsresult FontFaceStateCommand::SetState(HTMLEditor* aHTMLEditor,
   return rv;
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::FontSizeStateCommand
+ *****************************************************************************/
 
 StaticRefPtr<FontSizeStateCommand> FontSizeStateCommand::sInstance;
 
@@ -633,15 +686,15 @@ nsresult FontSizeStateCommand::GetCurrentState(HTMLEditor* aHTMLEditor,
   return rv;
 }
 
-
-
-
-
-
-
-
-
-
+// acceptable values for "aNewState" are:
+//   -2
+//   -1
+//    0
+//   +1
+//   +2
+//   +3
+//   medium
+//   normal
 nsresult FontSizeStateCommand::SetState(HTMLEditor* aHTMLEditor,
                                         const nsAString& aNewState,
                                         nsIPrincipal* aPrincipal) const {
@@ -658,17 +711,29 @@ nsresult FontSizeStateCommand::SetState(HTMLEditor* aHTMLEditor,
     return rv;
   }
 
-  
+  // remove any existing font size, big or small
   nsresult rv = aHTMLEditor->RemoveInlinePropertyAsAction(
       *nsGkAtoms::font, nsGkAtoms::size, aPrincipal);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  rv = aHTMLEditor->RemoveInlinePropertyAsAction(*nsGkAtoms::big, nullptr,
+                                                 aPrincipal);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  rv = aHTMLEditor->RemoveInlinePropertyAsAction(*nsGkAtoms::small, nullptr,
+                                                 aPrincipal);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "RemoveInlinePropertyAsAction() failed");
   return rv;
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::FontColorStateCommand
+ *****************************************************************************/
 
 StaticRefPtr<FontColorStateCommand> FontColorStateCommand::sInstance;
 
@@ -713,9 +778,9 @@ nsresult FontColorStateCommand::SetState(HTMLEditor* aHTMLEditor,
   return rv;
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::HighlightColorStateCommand
+ *****************************************************************************/
 
 StaticRefPtr<HighlightColorStateCommand> HighlightColorStateCommand::sInstance;
 
@@ -758,9 +823,9 @@ nsresult HighlightColorStateCommand::SetState(HTMLEditor* aHTMLEditor,
   return rv;
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::BackgroundColorStateCommand
+ *****************************************************************************/
 
 StaticRefPtr<BackgroundColorStateCommand>
     BackgroundColorStateCommand::sInstance;
@@ -794,9 +859,9 @@ nsresult BackgroundColorStateCommand::SetState(HTMLEditor* aHTMLEditor,
   return rv;
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::AlignCommand
+ *****************************************************************************/
 
 StaticRefPtr<AlignCommand> AlignCommand::sInstance;
 
@@ -811,7 +876,7 @@ nsresult AlignCommand::GetCurrentState(HTMLEditor* aHTMLEditor,
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();
   }
-  nsCString alignment;  
+  nsCString alignment;  // Don't use `nsAutoCString` to avoid copying string.
   switch (state.AlignmentAtSelectionStart()) {
     default:
     case nsIHTMLEditor::eLeft:
@@ -843,9 +908,9 @@ nsresult AlignCommand::SetState(HTMLEditor* aHTMLEditor,
   return rv;
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::AbsolutePositioningCommand
+ *****************************************************************************/
 
 StaticRefPtr<AbsolutePositioningCommand> AbsolutePositioningCommand::sInstance;
 
@@ -884,9 +949,9 @@ nsresult AbsolutePositioningCommand::ToggleState(
   return rv;
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::DecreaseZIndexCommand
+ *****************************************************************************/
 
 StaticRefPtr<DecreaseZIndexCommand> DecreaseZIndexCommand::sInstance;
 
@@ -928,9 +993,9 @@ nsresult DecreaseZIndexCommand::GetCommandStateParams(
                          IsCommandEnabled(aCommand, aTextEditor));
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::IncreaseZIndexCommand
+ *****************************************************************************/
 
 StaticRefPtr<IncreaseZIndexCommand> IncreaseZIndexCommand::sInstance;
 
@@ -968,9 +1033,9 @@ nsresult IncreaseZIndexCommand::GetCommandStateParams(
                          IsCommandEnabled(aCommand, aTextEditor));
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::RemoveStylesCommand
+ *****************************************************************************/
 
 StaticRefPtr<RemoveStylesCommand> RemoveStylesCommand::sInstance;
 
@@ -983,7 +1048,7 @@ bool RemoveStylesCommand::IsCommandEnabled(Command aCommand,
   if (!htmlEditor) {
     return false;
   }
-  
+  // test if we have any styles?
   return htmlEditor->IsSelectionEditable();
 }
 
@@ -1008,9 +1073,9 @@ nsresult RemoveStylesCommand::GetCommandStateParams(
                          IsCommandEnabled(aCommand, aTextEditor));
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::IncreaseFontSizeCommand
+ *****************************************************************************/
 
 StaticRefPtr<IncreaseFontSizeCommand> IncreaseFontSizeCommand::sInstance;
 
@@ -1023,7 +1088,7 @@ bool IncreaseFontSizeCommand::IsCommandEnabled(Command aCommand,
   if (!htmlEditor) {
     return false;
   }
-  
+  // test if we are at max size?
   return htmlEditor->IsSelectionEditable();
 }
 
@@ -1046,9 +1111,9 @@ nsresult IncreaseFontSizeCommand::GetCommandStateParams(
                          IsCommandEnabled(aCommand, aTextEditor));
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::DecreaseFontSizeCommand
+ *****************************************************************************/
 
 StaticRefPtr<DecreaseFontSizeCommand> DecreaseFontSizeCommand::sInstance;
 
@@ -1061,7 +1126,7 @@ bool DecreaseFontSizeCommand::IsCommandEnabled(Command aCommand,
   if (!htmlEditor) {
     return false;
   }
-  
+  // test if we are at min size?
   return htmlEditor->IsSelectionEditable();
 }
 
@@ -1084,9 +1149,9 @@ nsresult DecreaseFontSizeCommand::GetCommandStateParams(
                          IsCommandEnabled(aCommand, aTextEditor));
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::InsertHTMLCommand
+ *****************************************************************************/
 
 StaticRefPtr<InsertHTMLCommand> InsertHTMLCommand::sInstance;
 
@@ -1104,9 +1169,9 @@ bool InsertHTMLCommand::IsCommandEnabled(Command aCommand,
 
 nsresult InsertHTMLCommand::DoCommand(Command aCommand, TextEditor& aTextEditor,
                                       nsIPrincipal* aPrincipal) const {
-  
-  
-  
+  // If InsertHTMLCommand is called with no parameters, it was probably called
+  // with an empty string parameter ''. In this case, it should act the same as
+  // the delete command
   HTMLEditor* htmlEditor = aTextEditor.AsHTMLEditor();
   if (NS_WARN_IF(!htmlEditor)) {
     return NS_ERROR_FAILURE;
@@ -1142,9 +1207,9 @@ nsresult InsertHTMLCommand::GetCommandStateParams(
                          IsCommandEnabled(aCommand, aTextEditor));
 }
 
-
-
-
+/*****************************************************************************
+ * mozilla::InsertTagCommand
+ *****************************************************************************/
 
 StaticRefPtr<InsertTagCommand> InsertTagCommand::sInstance;
 
@@ -1160,7 +1225,7 @@ bool InsertTagCommand::IsCommandEnabled(Command aCommand,
   return htmlEditor->IsSelectionEditable();
 }
 
-
+// corresponding STATE_ATTRIBUTE is: src (img) and href (a)
 nsresult InsertTagCommand::DoCommand(Command aCommand, TextEditor& aTextEditor,
                                      nsIPrincipal* aPrincipal) const {
   nsAtom* tagName = GetTagName(aCommand);
@@ -1206,7 +1271,7 @@ nsresult InsertTagCommand::DoCommandParam(Command aCommand,
     return NS_ERROR_FAILURE;
   }
 
-  
+  // filter out tags we don't know how to insert
   nsAtom* attribute = nullptr;
   if (tagName == nsGkAtoms::a) {
     attribute = nsGkAtoms::href;
@@ -1229,7 +1294,7 @@ nsresult InsertTagCommand::DoCommandParam(Command aCommand,
     return err.StealNSResult();
   }
 
-  
+  // do actual insertion
   if (tagName == nsGkAtoms::a) {
     nsresult rv =
         MOZ_KnownLive(htmlEditor)
@@ -1254,9 +1319,9 @@ nsresult InsertTagCommand::GetCommandStateParams(
                          IsCommandEnabled(aCommand, aTextEditor));
 }
 
-
-
-
+/*****************************************************************************
+ * Helper methods
+ *****************************************************************************/
 
 static nsresult GetListState(HTMLEditor* aHTMLEditor, bool* aMixed,
                              nsAString& aLocalName) {
@@ -1286,4 +1351,4 @@ static nsresult GetListState(HTMLEditor* aHTMLEditor, bool* aMixed,
   return NS_OK;
 }
 
-}  
+}  // namespace mozilla

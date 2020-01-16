@@ -4059,8 +4059,7 @@ nsresult nsContentUtils::DispatchTrustedEvent(
     Document* aDoc, nsISupports* aTarget, const nsAString& aEventName,
     CanBubble aCanBubble, Cancelable aCancelable, Composed aComposed,
     bool* aDefaultAction) {
-  MOZ_ASSERT(!aEventName.EqualsLiteral("input") &&
-                 !aEventName.EqualsLiteral("beforeinput"),
+  MOZ_ASSERT(!aEventName.EqualsLiteral("input"),
              "Use DispatchInputEvent() instead");
   return DispatchEvent(aDoc, aTarget, aEventName, aCanBubble, aCancelable,
                        aComposed, Trusted::eYes, aDefaultAction);
@@ -4142,19 +4141,14 @@ nsContentUtils::InputEventOptions::InputEventOptions(
 }
 
 
-nsresult nsContentUtils::DispatchInputEvent(
-    Element* aEventTargetElement, EventMessage aEventMessage,
-    EditorInputType aEditorInputType, TextEditor* aTextEditor,
-    const InputEventOptions& aOptions,
-    nsEventStatus* aEventStatus ) {
-  MOZ_ASSERT(aEventMessage == eEditorInput ||
-             aEventMessage == eEditorBeforeInput);
-
+nsresult nsContentUtils::DispatchInputEvent(Element* aEventTargetElement,
+                                            EditorInputType aEditorInputType,
+                                            TextEditor* aTextEditor,
+                                            const InputEventOptions& aOptions) {
   if (NS_WARN_IF(!aEventTargetElement)) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  
   
   
   
@@ -4183,18 +4177,15 @@ nsresult nsContentUtils::DispatchInputEvent(
   
   
   
-  if (aEventMessage == eEditorInput) {
-    HTMLInputElement* inputElement =
-        HTMLInputElement::FromNode(aEventTargetElement);
-    if (inputElement) {
-      MOZ_KnownLive(inputElement)->MaybeUpdateAllValidityStates(true);
-      
-      
-    }
+  HTMLInputElement* inputElement =
+      HTMLInputElement::FromNode(aEventTargetElement);
+  if (inputElement) {
+    MOZ_KnownLive(inputElement)->MaybeUpdateAllValidityStates(true);
+    
+    
   }
 
   if (!useInputEvent) {
-    MOZ_ASSERT(aEventMessage == eEditorInput);
     MOZ_ASSERT(aEditorInputType == EditorInputType::eUnknown);
     
     WidgetEvent widgetEvent(true, eUnidentifiedEvent);
@@ -4236,12 +4227,7 @@ nsresult nsContentUtils::DispatchInputEvent(
   }
 
   
-  InternalEditorInputEvent inputEvent(true, aEventMessage, widget);
-
-  inputEvent.mFlags.mCancelable =
-      aEventMessage == eEditorBeforeInput &&
-      IsCancelableBeforeInputEvent(aEditorInputType);
-  MOZ_ASSERT(!inputEvent.mFlags.mCancelable || aEventStatus);
+  InternalEditorInputEvent inputEvent(true, eEditorInput, widget);
 
   
   
@@ -4253,7 +4239,8 @@ nsresult nsContentUtils::DispatchInputEvent(
   
   
   
-  inputEvent.mIsComposing = aTextEditor && aTextEditor->GetComposition();
+  inputEvent.mIsComposing =
+      aTextEditor ? !!aTextEditor->GetComposition() : false;
 
   if (!aTextEditor || !aTextEditor->AsHTMLEditor()) {
     if (IsDataAvailableOnTextEditor(aEditorInputType)) {
@@ -4292,27 +4279,9 @@ nsresult nsContentUtils::DispatchInputEvent(
 
   inputEvent.mInputType = aEditorInputType;
 
-  if (!IsSafeToRunScript()) {
-    
-    NS_ASSERTION(
-        !inputEvent.mFlags.mCancelable,
-        "Cancelable beforeinput event dispatcher should run when it's safe");
-    inputEvent.mFlags.mCancelable = false;
-    (new AsyncEventDispatcher(aEventTargetElement, inputEvent))
-        ->RunDOMEventWhenSafe();
-    return NS_OK;
-  }
-
-  RefPtr<nsPresContext> presContext =
-      aEventTargetElement->OwnerDoc()->GetPresContext();
-  if (NS_WARN_IF(!presContext)) {
-    return NS_ERROR_FAILURE;
-  }
-  nsresult rv = EventDispatcher::Dispatch(aEventTargetElement, presContext,
-                                          &inputEvent, nullptr, aEventStatus);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "Dispatching `beforeinput` or `input` event failed");
-  return rv;
+  (new AsyncEventDispatcher(aEventTargetElement, inputEvent))
+      ->RunDOMEventWhenSafe();
+  return NS_OK;
 }
 
 nsresult nsContentUtils::DispatchChromeEvent(
