@@ -6,9 +6,6 @@
 const TAB_URL = URL_ROOT + "resources/service-workers/simple.html";
 
 
-requestLongerTimeout(4);
-
-
 
 
 add_task(async function() {
