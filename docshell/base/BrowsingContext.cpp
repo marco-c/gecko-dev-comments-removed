@@ -676,7 +676,7 @@ bool BrowsingContext::CanAccess(BrowsingContext* aTarget,
 
   
   for (BrowsingContext* bc = aTarget; bc; bc = bc->GetParent()) {
-    if (bc && nsDocShell::ValidateOrigin(this, bc)) {
+    if (bc->mDocShell && nsDocShell::ValidateOrigin(mDocShell, bc->mDocShell)) {
       return true;
     }
   }
