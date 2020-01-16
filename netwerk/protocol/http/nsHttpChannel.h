@@ -35,6 +35,7 @@
 
 class nsDNSPrefetch;
 class nsICancelable;
+class nsIDNSRecord;
 class nsIHttpChannelAuthProvider;
 class nsInputStreamPump;
 class nsITransportSecurityInfo;
@@ -45,6 +46,8 @@ namespace net {
 class nsChannelClassifier;
 class Http2PushedStream;
 class HttpChannelSecurityWarningReporter;
+
+using DNSPromise = MozPromise<nsCOMPtr<nsIDNSRecord>, nsresult, false>;
 
 
 
@@ -305,7 +308,23 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   nsresult MaybeResolveProxyAndBeginConnect();
-  void MaybeStartDNSPrefetch();
+  nsresult MaybeStartDNSPrefetch();
+
+  
+  
+  static uint16_t const DNS_PREFETCH_ORIGIN = 1 << 0;
+  
+  static uint16_t const DNS_PREFETCH_PROXY = 1 << 1;
+  
+  static uint16_t const DNS_PROXY_IS_HTTP = 1 << 2;
+  
+  
+  static uint16_t const DNS_BLOCK_ON_ORIGIN_RESOLVE = 1 << 3;
+
+  
+  
+  
+  uint16_t GetProxyDNSStrategy();
 
   
   
@@ -434,6 +453,8 @@ class nsHttpChannel final : public HttpBaseChannel,
                           aContinueOnStopRequestFunc);
   MOZ_MUST_USE nsresult
   DoConnect(HttpTransactionShell* aTransWithStickyConn = nullptr);
+  MOZ_MUST_USE nsresult
+  DoConnectActual(HttpTransactionShell* aTransWithStickyConn);
   MOZ_MUST_USE nsresult ContinueOnStopRequestAfterAuthRetry(
       nsresult aStatus, bool aAuthRetry, bool aIsFromNet, bool aContentComplete,
       HttpTransactionShell* aTransWithStickyConn);
@@ -821,6 +842,14 @@ class nsHttpChannel final : public HttpBaseChannel,
   mozilla::Mutex mRCWNLock;
 
   TimeStamp mNavigationStartTimeStamp;
+
+  
+  
+  
+  MozPromiseHolder<DNSPromise> mDNSBlockingPromise;
+  
+  
+  RefPtr<DNSPromise> mDNSBlockingThenable;
 
   
   

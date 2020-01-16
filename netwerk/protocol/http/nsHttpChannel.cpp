@@ -832,8 +832,45 @@ nsresult nsHttpChannel::ContinueConnect() {
 }
 
 nsresult nsHttpChannel::DoConnect(HttpTransactionShell* aTransWithStickyConn) {
-  LOG(("nsHttpChannel::DoConnect [this=%p, aTransWithStickyConn=%p]\n", this,
-       aTransWithStickyConn));
+  LOG(("nsHttpChannel::DoConnect [this=%p]\n", this));
+
+  if (!mDNSBlockingPromise.IsEmpty()) {
+    LOG(("  waiting for DNS prefetch"));
+
+    
+    
+    
+    MOZ_ASSERT(!aTransWithStickyConn);
+    MOZ_ASSERT(mDNSBlockingThenable);
+
+    nsCOMPtr<nsISerialEventTarget> target(do_GetMainThread());
+    RefPtr<nsHttpChannel> self(this);
+    mDNSBlockingThenable->Then(
+        target, __func__,
+        [self](const nsCOMPtr<nsIDNSRecord>& aRec) {
+          nsresult rv = self->DoConnectActual(nullptr);
+          if (NS_FAILED(rv)) {
+            self->CloseCacheEntry(false);
+            Unused << self->AsyncAbort(rv);
+          }
+        },
+        [self](nsresult err) {
+          self->CloseCacheEntry(false);
+          Unused << self->AsyncAbort(err);
+        });
+
+    
+    
+    return NS_OK;
+  }
+
+  return DoConnectActual(aTransWithStickyConn);
+}
+
+nsresult nsHttpChannel::DoConnectActual(
+    HttpTransactionShell* aTransWithStickyConn) {
+  LOG(("nsHttpChannel::DoConnectActual [this=%p, aTransWithStickyConn=%p]\n",
+       this, aTransWithStickyConn));
 
   nsresult rv = SetupTransaction();
   if (NS_FAILED(rv)) {
@@ -6606,6 +6643,26 @@ nsHttpChannel::GetOrCreateChannelClassifier() {
   return classifier.forget();
 }
 
+uint16_t nsHttpChannel::GetProxyDNSStrategy() {
+  
+  
+
+  if (!mProxyInfo) {
+    return DNS_PREFETCH_ORIGIN;
+  }
+
+  nsAutoCString type;
+  mProxyInfo->GetType(type);
+
+  if (!StaticPrefs::network_proxy_socks_remote_dns()) {
+    if (type.EqualsLiteral("socks")) {
+      return DNS_PREFETCH_ORIGIN;
+    }
+  }
+
+  return 0;
+}
+
 
 
 
@@ -6815,7 +6872,16 @@ nsresult nsHttpChannel::BeginConnect() {
     ReEvaluateReferrerAfterTrackingStatusIsKnown();
   }
 
-  MaybeStartDNSPrefetch();
+  rv = MaybeStartDNSPrefetch();
+  if (NS_FAILED(rv)) {
+    auto dnsStrategy = GetProxyDNSStrategy();
+    if (dnsStrategy & DNS_BLOCK_ON_ORIGIN_RESOLVE) {
+      
+      return rv;
+    }
+    
+    return NS_OK;
+  }
 
   rv = ContinueBeginConnectWithResult();
   if (NS_FAILED(rv)) {
@@ -6834,30 +6900,55 @@ nsresult nsHttpChannel::BeginConnect() {
   return NS_OK;
 }
 
-void nsHttpChannel::MaybeStartDNSPrefetch() {
-  if (!mConnectionInfo->UsingHttpProxy() &&
-      !(mLoadFlags & (LOAD_NO_NETWORK_IO | LOAD_ONLY_FROM_CACHE))) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    LOG(("nsHttpChannel::MaybeStartDNSPrefetch [this=%p] prefetching%s\n", this,
-         mCaps & NS_HTTP_REFRESH_DNS ? ", refresh requested" : ""));
+nsresult nsHttpChannel::MaybeStartDNSPrefetch() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mLoadFlags & (LOAD_NO_NETWORK_IO | LOAD_ONLY_FROM_CACHE)) {
+    return NS_OK;
+  }
+
+  auto dnsStrategy = GetProxyDNSStrategy();
+
+  LOG(
+      ("nsHttpChannel::MaybeStartDNSPrefetch [this=%p, strategy=%u] "
+       "prefetching%s\n",
+       this, dnsStrategy,
+       mCaps & NS_HTTP_REFRESH_DNS ? ", refresh requested" : ""));
+
+  if (dnsStrategy & DNS_PREFETCH_ORIGIN) {
     OriginAttributes originAttributes;
     NS_GetOriginAttributes(this, originAttributes);
+
     mDNSPrefetch = new nsDNSPrefetch(
         mURI, originAttributes, nsIRequest::GetTRRMode(), this, mTimingEnabled);
-    mDNSPrefetch->PrefetchHigh(mCaps & NS_HTTP_REFRESH_DNS);
+    nsresult rv = mDNSPrefetch->PrefetchHigh(mCaps & NS_HTTP_REFRESH_DNS);
+
+    if (dnsStrategy & DNS_BLOCK_ON_ORIGIN_RESOLVE) {
+      LOG(("  blocking on prefetching origin"));
+
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        LOG(("  lookup failed with 0x%08" PRIx32 ", aborting request",
+             static_cast<uint32_t>(rv)));
+        return rv;
+      }
+
+      
+      mDNSBlockingThenable = mDNSBlockingPromise.Ensure(__func__);
+    }
   }
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -7668,6 +7759,7 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
     if (mFirstResponseSource == RESPONSE_PENDING) {
       
       
+      
       MOZ_ASSERT(request == mTransactionPump);
       LOG(("  First response from network\n"));
       {
@@ -7916,6 +8008,7 @@ nsHttpChannel::OnStopRequest(nsIRequest* request, nsresult status) {
   
   bool contentComplete = NS_SUCCEEDED(status);
 
+  
   
   if (mCanceled || NS_FAILED(mStatus)) status = mStatus;
 
@@ -8198,6 +8291,7 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
         static_cast<ChannelDisposition>(chanDisposition + kHttpsCanceled);
   } else if (mLoadInfo && mLoadInfo->GetBrowserWouldUpgradeInsecureRequests()) {
     
+    
     upgradeKey = NS_LITERAL_CSTRING("disabledUpgrade");
   } else {
     
@@ -8258,6 +8352,7 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
   
   if (mCacheEntry && mRequestTimeInitialized) {
     bool writeAccess;
+    
     
     
     mCacheEntry->HasWriteAccess(!mCacheEntryIsReadOnly, &writeAccess);
@@ -9254,6 +9349,15 @@ nsHttpChannel::OnLookupComplete(nsICancelable* request, nsIDNSRecord* rec,
     }
   }
 
+  if (!mDNSBlockingPromise.IsEmpty()) {
+    if (NS_SUCCEEDED(status)) {
+      nsCOMPtr<nsIDNSRecord> record(rec);
+      mDNSBlockingPromise.Resolve(record, __func__);
+    } else {
+      mDNSBlockingPromise.Reject(status, __func__);
+    }
+  }
+
   return NS_OK;
 }
 
@@ -9646,7 +9750,8 @@ nsHttpChannel::ResumeInternal() {
             if (transactionPump != self->mTransactionPump &&
                 self->mTransactionPump) {
               LOG(
-                  ("nsHttpChannel::CallOnResume async-resuming new transaction "
+                  ("nsHttpChannel::CallOnResume async-resuming new "
+                   "transaction "
                    "pump %p, this=%p",
                    self->mTransactionPump.get(), self.get()));
 
