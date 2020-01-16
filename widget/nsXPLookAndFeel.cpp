@@ -226,6 +226,8 @@ int32_t nsXPLookAndFeel::sCachedColors[size_t(LookAndFeel::ColorID::End)] = {0};
 int32_t nsXPLookAndFeel::sCachedColorBits[COLOR_CACHE_SIZE] = {0};
 
 bool nsXPLookAndFeel::sInitialized = false;
+bool nsXPLookAndFeel::sIsInPrefersReducedMotionForTest = false;
+bool nsXPLookAndFeel::sPrefersReducedMotionForTest = false;
 
 nsXPLookAndFeel* nsXPLookAndFeel::sInstance = nullptr;
 bool nsXPLookAndFeel::sShutdown = false;
@@ -255,6 +257,9 @@ void nsXPLookAndFeel::Shutdown() {
   delete sInstance;
   sInstance = nullptr;
 }
+
+nsXPLookAndFeel::nsXPLookAndFeel()
+    : LookAndFeel(), mShouldRetainCacheForTest(false) {}
 
 
 void nsXPLookAndFeel::IntPrefChanged(nsLookAndFeelIntPref* data) {
@@ -1086,28 +1091,6 @@ void LookAndFeel::SetIntCache(
 
 void LookAndFeel::SetShouldRetainCacheForTest(bool aValue) {
   nsLookAndFeel::GetInstance()->SetShouldRetainCacheImplForTest(aValue);
-}
-
-
-void LookAndFeel::SetPrefersReducedMotionOverrideForTest(bool aValue) {
-  
-  
-  
-  
-  SetShouldRetainCacheForTest(true);
-
-  int32_t value = aValue ? 1 : 0;
-
-  AutoTArray<LookAndFeelInt, 1> lookAndFeelCache;
-  lookAndFeelCache.AppendElement(
-      LookAndFeelInt{eIntID_PrefersReducedMotion, .value = value});
-
-  SetIntCache(lookAndFeelCache);
-}
-
-
-void LookAndFeel::ResetPrefersReducedMotionOverrideForTest() {
-  SetShouldRetainCacheForTest(false);
 }
 
 }  

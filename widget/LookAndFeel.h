@@ -534,10 +534,6 @@ class LookAndFeel {
 
 
   static void SetShouldRetainCacheForTest(bool aValue);
-
-  static void SetPrefersReducedMotionOverrideForTest(bool aValue);
-
-  static void ResetPrefersReducedMotionOverrideForTest();
 };
 
 }  
