@@ -12,8 +12,34 @@
 #include "nsTHashtable.h"
 #include "nsDebug.h"
 
-template <class KeyClass, class DataType, class UserDataType>
+template <class KeyClass, class DataType, class UserDataType, class Converter>
 class nsBaseHashtable;  
+
+
+
+
+
+template <class DataType, class UserDataType>
+class nsDefaultConverter {
+ public:
+  
+
+
+  static UserDataType Unwrap(DataType& src) { return UserDataType(src); }
+
+  
+
+
+  static DataType Wrap(const UserDataType& src) { return DataType(src); }
+
+  
+
+
+  template <typename U>
+  static DataType Wrap(U&& src) {
+    return std::move(src);
+  }
+};
 
 
 
@@ -33,7 +59,8 @@ class nsBaseHashtableET : public KeyClass {
  private:
   DataType mData;
   friend class nsTHashtable<nsBaseHashtableET<KeyClass, DataType>>;
-  template <typename KeyClassX, typename DataTypeX, typename UserDataTypeX>
+  template <typename KeyClassX, typename DataTypeX, typename UserDataTypeX,
+            typename ConverterX>
   friend class nsBaseHashtable;
 
   typedef typename KeyClass::KeyType KeyType;
@@ -56,7 +83,10 @@ class nsBaseHashtableET : public KeyClass {
 
 
 
-template <class KeyClass, class DataType, class UserDataType>
+
+
+template <class KeyClass, class DataType, class UserDataType,
+          class Converter = nsDefaultConverter<DataType, UserDataType>>
 class nsBaseHashtable
     : protected nsTHashtable<nsBaseHashtableET<KeyClass, DataType>> {
   typedef mozilla::fallible_t fallible_t;
@@ -102,7 +132,7 @@ class nsBaseHashtable
     }
 
     if (aData) {
-      *aData = ent->mData;
+      *aData = Converter::Unwrap(ent->mData);
     }
 
     return true;
@@ -124,7 +154,7 @@ class nsBaseHashtable
       return UserDataType{};
     }
 
-    return ent->mData;
+    return Converter::Unwrap(ent->mData);
   }
 
   
@@ -155,7 +185,7 @@ class nsBaseHashtable
       return false;
     }
 
-    ent->mData = aData;
+    ent->mData = Converter::Wrap(aData);
 
     return true;
   }
@@ -177,7 +207,7 @@ class nsBaseHashtable
       return false;
     }
 
-    ent->mData = std::move(aData);
+    ent->mData = Converter::Wrap(std::move(aData));
 
     return true;
   }
@@ -305,7 +335,7 @@ class nsBaseHashtable
       MOZ_ASSERT(mTableGeneration == mTable.GetGeneration());
       MOZ_ASSERT(mEntry);
       if (!mExistingEntry) {
-        mEntry->mData = func();
+        mEntry->mData = Converter::Wrap(func());
 #ifdef DEBUG
         mDidInitNewEntry = true;
 #endif
@@ -379,7 +409,7 @@ class nsBaseHashtable
 
     KeyType Key() const { return static_cast<EntryType*>(Get())->GetKey(); }
     UserDataType UserData() const {
-      return static_cast<EntryType*>(Get())->mData;
+      return Converter::Unwrap(static_cast<EntryType*>(Get())->mData);
     }
     DataType& Data() const { return static_cast<EntryType*>(Get())->mData; }
 
