@@ -149,6 +149,9 @@ class StructuredCloneData : public StructuredCloneHolder {
 
   StructuredCloneData(StructuredCloneData&& aOther);
 
+  
+  explicit StructuredCloneData(StructuredCloneScope aScope);
+
   ~StructuredCloneData();
 
   StructuredCloneData& operator=(const StructuredCloneData& aOther) = delete;

@@ -387,7 +387,7 @@ void MessagePort::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
   AutoTArray<RefPtr<SharedMessagePortMessage>, 1> array;
   array.AppendElement(data);
 
-  AutoTArray<ClonedMessageData, 1> messages;
+  AutoTArray<MessageData, 1> messages;
   
   
   
@@ -553,7 +553,7 @@ void MessagePort::SetOnmessage(EventHandlerNonNull* aCallback) {
 
 
 
-void MessagePort::Entangled(nsTArray<ClonedMessageData>& aMessages) {
+void MessagePort::Entangled(nsTArray<MessageData>& aMessages) {
   MOZ_ASSERT(mState == eStateEntangling ||
              mState == eStateEntanglingForDisentangle ||
              mState == eStateEntanglingForClose);
@@ -564,7 +564,7 @@ void MessagePort::Entangled(nsTArray<ClonedMessageData>& aMessages) {
   
   if (!mMessagesForTheOtherPort.IsEmpty()) {
     {
-      nsTArray<ClonedMessageData> messages;
+      nsTArray<MessageData> messages;
       SharedMessagePortMessage::FromSharedToMessagesChild(
           mActor, mMessagesForTheOtherPort, messages);
       mActor->SendPostMessages(messages);
@@ -614,7 +614,7 @@ void MessagePort::StartDisentangling() {
   mActor->SendStopSendingData();
 }
 
-void MessagePort::MessagesReceived(nsTArray<ClonedMessageData>& aMessages) {
+void MessagePort::MessagesReceived(nsTArray<MessageData>& aMessages) {
   MOZ_ASSERT(mState == eStateEntangled || mState == eStateDisentangling ||
              
              
@@ -652,7 +652,7 @@ void MessagePort::Disentangle() {
   mState = eStateDisentangled;
 
   {
-    nsTArray<ClonedMessageData> messages;
+    nsTArray<MessageData> messages;
     SharedMessagePortMessage::FromSharedToMessagesChild(mActor, mMessages,
                                                         messages);
     mActor->SendDisentangle(messages);
