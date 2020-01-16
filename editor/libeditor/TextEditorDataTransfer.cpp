@@ -133,6 +133,11 @@ nsresult TextEditor::InsertTextFromTransferable(
     
     UpdateEditActionData(stuffToPaste);
 
+    nsresult rv = MaybeDispatchBeforeInputEvent();
+    if (rv == NS_ERROR_EDITOR_ACTION_CANCELED || NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
     if (!stuffToPaste.IsEmpty()) {
       
       nsContentUtils::PlatformToDOMLineBreaks(stuffToPaste);
@@ -160,6 +165,8 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
   CommitComposition();
 
   AutoEditActionDataSetter editActionData(*this, EditAction::eDrop);
+  
+  
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_NOT_INITIALIZED;
   }
@@ -327,7 +334,8 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
         (rv == NS_ERROR_NOT_INITIALIZED || rv == NS_ERROR_EDITOR_DESTROYED)) {
       rv = NS_OK;
     }
-    if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    if (rv != NS_ERROR_EDITOR_ACTION_CANCELED && NS_WARN_IF(NS_FAILED(rv))) {
       editActionData.Abort();
       return EditorBase::ToGenericNSResult(rv);
     }
@@ -438,6 +446,11 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
     
     editActionData.SetData(data);
 
+    nsresult rv = editActionData.MaybeDispatchBeforeInputEvent();
+    if (rv == NS_ERROR_EDITOR_ACTION_CANCELED || NS_WARN_IF(NS_FAILED(rv))) {
+      return EditorBase::ToGenericNSResult(rv);
+    }
+
     
     
     
@@ -448,6 +461,10 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
     }
   } else {
     editActionData.InitializeDataTransfer(dataTransfer);
+    nsresult rv = editActionData.MaybeDispatchBeforeInputEvent();
+    if (rv == NS_ERROR_EDITOR_ACTION_CANCELED || NS_WARN_IF(NS_FAILED(rv))) {
+      return EditorBase::ToGenericNSResult(rv);
+    }
     RefPtr<HTMLEditor> htmlEditor(AsHTMLEditor());
     for (uint32_t i = 0; i < numItems; ++i) {
       htmlEditor->InsertFromDataTransfer(dataTransfer, i, srcdoc, droppedAt,
@@ -470,20 +487,20 @@ nsresult TextEditor::DeleteSelectionByDragAsAction(bool aDispatchInputEvent) {
   
   
   
+  bool requestedByAnotherEditor = GetEditAction() != EditAction::eDrop;
+  AutoEditActionDataSetter editActionData(*this, EditAction::eDeleteByDrag);
+  MOZ_ASSERT(!SelectionRefPtr()->IsCollapsed());
+  nsresult rv = editActionData.CanHandleAndMaybeDispatchBeforeInputEvent();
+  if (rv == NS_ERROR_EDITOR_ACTION_CANCELED || NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
   
-  Maybe<AutoEditActionDataSetter> editActionData;
   Maybe<AutoPlaceholderBatch> treatAsOneTransaction;
-  if (GetEditAction() != EditAction::eDrop) {
-    editActionData.emplace(*this, EditAction::eDeleteByDrag);
-    if (NS_WARN_IF(!editActionData->CanHandle())) {
-      return NS_ERROR_NOT_INITIALIZED;
-    }
+  if (requestedByAnotherEditor) {
     treatAsOneTransaction.emplace(*this);
   }
 
-  MOZ_ASSERT(!SelectionRefPtr()->IsCollapsed());
-
-  nsresult rv = DeleteSelectionAsSubAction(eNone, eStrip);
+  rv = DeleteSelectionAsSubAction(eNone, eStrip);
   if (NS_WARN_IF(Destroyed())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
@@ -495,8 +512,8 @@ nsresult TextEditor::DeleteSelectionByDragAsAction(bool aDispatchInputEvent) {
     return NS_OK;
   }
 
-  if (editActionData.isNothing()) {
-    DispatchInputEvent(EditAction::eDeleteByDrag, VoidString(), nullptr);
+  if (treatAsOneTransaction.isNothing()) {
+    DispatchInputEvent();
   }
   return NS_WARN_IF(Destroyed()) ? NS_ERROR_EDITOR_DESTROYED : NS_OK;
 }
@@ -510,21 +527,25 @@ nsresult TextEditor::PasteAsAction(int32_t aClipboardType,
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  if (AsHTMLEditor()) {
-    editActionData.InitializeDataTransferWithClipboard(
-        SettingDataTransfer::eWithFormat, aClipboardType);
-    
-    nsresult rv = MOZ_KnownLive(AsHTMLEditor())
-                      ->PasteInternal(aClipboardType, aDispatchPasteEvent);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return EditorBase::ToGenericNSResult(rv);
-    }
-    return NS_OK;
-  }
-
   if (aDispatchPasteEvent && !FireClipboardEvent(ePaste, aClipboardType)) {
     return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
   }
+
+  if (AsHTMLEditor()) {
+    editActionData.InitializeDataTransferWithClipboard(
+        SettingDataTransfer::eWithFormat, aClipboardType);
+    nsresult rv = editActionData.CanHandleAndMaybeDispatchBeforeInputEvent();
+    if (rv == NS_ERROR_EDITOR_ACTION_CANCELED || NS_WARN_IF(NS_FAILED(rv))) {
+      return EditorBase::ToGenericNSResult(rv);
+    }
+    rv = MOZ_KnownLive(AsHTMLEditor())->PasteInternal(aClipboardType);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "HTMLEditor::PasteInternal() failed");
+    return EditorBase::ToGenericNSResult(rv);
+  }
+
+  
+  
 
   
   nsresult rv;
@@ -563,6 +584,8 @@ nsresult TextEditor::PasteTransferableAsAction(nsITransferable* aTransferable,
                                                nsIPrincipal* aPrincipal) {
   AutoEditActionDataSetter editActionData(*this, EditAction::ePaste,
                                           aPrincipal);
+  
+  
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_NOT_INITIALIZED;
   }
