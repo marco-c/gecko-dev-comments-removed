@@ -1602,7 +1602,7 @@ var BookmarkingUI = {
     if (this._hasBookmarksObserver) {
       PlacesUtils.bookmarks.removeObserver(this);
       PlacesUtils.observers.removeListener(
-        ["bookmark-added"],
+        ["bookmark-added", "bookmark-removed"],
         this.handlePlacesEvents
       );
     }
@@ -1653,7 +1653,7 @@ var BookmarkingUI = {
             PlacesUtils.bookmarks.addObserver(this);
             this.handlePlacesEvents = this.handlePlacesEvents.bind(this);
             PlacesUtils.observers.addListener(
-              ["bookmark-added"],
+              ["bookmark-added", "bookmark-removed"],
               this.handlePlacesEvents
             );
             this._hasBookmarksObserver = true;
@@ -1946,28 +1946,30 @@ var BookmarkingUI = {
   },
 
   handlePlacesEvents(aEvents) {
-    
-    if (this._itemGuids.size == 0) {
-      for (let { url, guid } of aEvents) {
-        if (url && url == this._uri.spec) {
+    for (let ev of aEvents) {
+      switch (ev.type) {
+        case "bookmark-added":
           
-          if (!this._itemGuids.has(guid)) {
-            this._itemGuids.add(guid);
-            this._updateStar();
+          if (this._itemGuids.size == 0) {
+            if (ev.url && ev.url == this._uri.spec) {
+              
+              if (!this._itemGuids.has(ev.guid)) {
+                this._itemGuids.add(ev.guid);
+                this._updateStar();
+              }
+            }
           }
-        }
-      }
-    }
-  },
-
-  
-  onItemRemoved(aItemId, aParentId, aIndex, aItemType, aURI, aGuid) {
-    
-    if (this._itemGuids.has(aGuid)) {
-      this._itemGuids.delete(aGuid);
-      
-      if (this._itemGuids.size == 0) {
-        this._updateStar();
+          break;
+        case "bookmark-removed":
+          
+          if (this._itemGuids.has(ev.guid)) {
+            this._itemGuids.delete(ev.guid);
+            
+            if (this._itemGuids.size == 0) {
+              this._updateStar();
+            }
+          }
+          break;
       }
     }
   },
