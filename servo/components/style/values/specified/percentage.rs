@@ -117,14 +117,14 @@ impl Percentage {
             {
                 Ok(Percentage::new(unit_value))
             },
-            Token::Function(ref name) if name.eq_ignore_ascii_case("calc") => {
-                let result =
-                    input.parse_nested_block(|i| CalcNode::parse_percentage(context, i))?;
+            Token::Function(ref name) => {
+                let function = CalcNode::math_function(name, location)?;
+                let value = CalcNode::parse_percentage(context, input, function)?;
 
                 
                 
                 Ok(Percentage {
-                    value: result,
+                    value,
                     calc_clamping_mode: Some(num_context),
                 })
             },
