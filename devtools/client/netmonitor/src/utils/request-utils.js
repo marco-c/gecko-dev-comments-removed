@@ -508,6 +508,24 @@ function getResponseHeader(item, header) {
 
 
 
+
+function getRequestHeader(item, header) {
+  const { requestHeaders } = item;
+  if (!requestHeaders || !requestHeaders.headers.length) {
+    return null;
+  }
+  header = header.toLowerCase();
+  for (const requestHeader of requestHeaders.headers) {
+    if (requestHeader.name.toLowerCase() == header) {
+      return requestHeader.value;
+    }
+  }
+  return null;
+}
+
+
+
+
 async function updateFormDataSections(props) {
   const { connector, request = {}, updateRequest } = props;
   let {
@@ -647,6 +665,7 @@ module.exports = {
   getEndTime,
   getFormattedProtocol,
   getFramePayload,
+  getRequestHeader,
   getResponseHeader,
   getResponseTime,
   getStartTime,
