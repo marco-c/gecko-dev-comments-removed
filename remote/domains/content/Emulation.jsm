@@ -22,7 +22,31 @@ class Emulation extends ContentProcessDomain {
 
 
 
+  
+
+
+  async _awaitViewportDimensions({ width, height }) {
+    const win = this.content;
+
+    if (win.innerWidth === width && win.innerHeight === height) {
+      return;
+    }
+
+    await new Promise(resolve => {
+      win.addEventListener("resize", function resized() {
+        if (win.innerWidth === width && win.innerHeight === height) {
+          win.removeEventListener("resize", resized);
+          resolve();
+        }
+      });
+    });
+  }
+
   _setCustomUserAgent(userAgent) {
     this.docShell.customUserAgent = userAgent;
+  }
+
+  _setDPPXOverride(dppx) {
+    this.docShell.contentViewer.overrideDPPX = dppx;
   }
 }
