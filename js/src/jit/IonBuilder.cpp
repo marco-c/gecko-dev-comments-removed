@@ -685,6 +685,7 @@ AbortReasonOr<Ok> IonBuilder::analyzeNewLoopTypesForLocation(
   }
 
   
+  
   if (last->is(JSOP_GETLOCAL) || last->is(JSOP_GETARG)) {
     uint32_t slot = (last->is(JSOP_GETLOCAL))
                         ? info().localSlot(last->local())
