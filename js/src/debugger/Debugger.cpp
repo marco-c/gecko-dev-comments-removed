@@ -42,7 +42,6 @@
 #include "debugger/Object.h"             
 #include "debugger/Script.h"             
 #include "debugger/Source.h"             
-#include "frontend/BytecodeCompiler.h"   
 #include "frontend/NameAnalysisTypes.h"  
 #include "frontend/ParseContext.h"       
 #include "frontend/Parser.h"             
@@ -5924,17 +5923,15 @@ bool Debugger::isCompilableUnit(JSContext* cx, unsigned argc, Value* vp) {
   CompileOptions options(cx);
   LifoAllocScope allocScope(&cx->tempLifoAlloc());
   frontend::ParseInfo parseInfo(cx, allocScope);
-
-  RootedScriptSourceObject sourceObject(
-      cx, frontend::CreateScriptSourceObject(cx, options));
-  if (!sourceObject) {
+  if (!parseInfo.initFromOptions(cx, options)) {
     return false;
   }
 
   JS::AutoSuppressWarningReporter suppressWarnings(cx);
   frontend::Parser<frontend::FullParseHandler, char16_t> parser(
       cx, options, chars.twoByteChars(), length,
-       true, parseInfo, nullptr, nullptr, sourceObject);
+       true, parseInfo, nullptr, nullptr,
+      parseInfo.sourceObject);
   if (!parser.checkOptions() || !parser.parse()) {
     
     
