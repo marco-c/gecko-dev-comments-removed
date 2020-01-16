@@ -990,6 +990,9 @@ input[type=number]::-moz-number-wrapper {
 }
 
 input[type=number] .anonymous-div {
+  display: block; 
+
+
   flex: 1;
   min-inline-size: 0;
 }
