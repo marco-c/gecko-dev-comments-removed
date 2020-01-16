@@ -202,7 +202,7 @@ typedef struct ZydisFormatterBuffer_
 
 
 ZYDIS_EXPORT ZyanStatus ZydisFormatterTokenGetValue(const ZydisFormatterToken* token,
-    ZydisTokenType* type, char** value);
+    ZydisTokenType* type, ZyanConstCharPointer* value);
 
 
 

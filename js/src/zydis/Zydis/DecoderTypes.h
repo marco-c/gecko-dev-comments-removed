@@ -129,7 +129,7 @@ typedef struct ZydisDecodedOperand_
     
 
 
-    struct
+    struct ZydisDecodedOperandReg_
     {
         
 
@@ -140,7 +140,7 @@ typedef struct ZydisDecodedOperand_
     
 
 
-    struct
+    struct ZydisDecodedOperandMem_
     {
         
 
@@ -165,7 +165,7 @@ typedef struct ZydisDecodedOperand_
         
 
 
-        struct
+        struct ZydisDecodedOperandMemDisp_
         {
             
 
@@ -180,7 +180,7 @@ typedef struct ZydisDecodedOperand_
     
 
 
-    struct
+    struct ZydisDecodedOperandPtr_
     {
         ZyanU16 segment;
         ZyanU32 offset;
@@ -188,7 +188,7 @@ typedef struct ZydisDecodedOperand_
     
 
 
-    struct
+    struct ZydisDecodedOperandImm_
     {
         
 
@@ -202,7 +202,7 @@ typedef struct ZydisDecodedOperand_
         
 
 
-        union
+        union ZydisDecodedOperandImmValue_
         {
             ZyanU64 u;
             ZyanI64 s;
@@ -945,7 +945,7 @@ typedef struct ZydisDecodedInstruction_
     
 
 
-    struct
+    struct ZydisDecodedInstructionAccessedFlags_
     {
         
 
@@ -958,7 +958,7 @@ typedef struct ZydisDecodedInstruction_
     
 
 
-    struct
+    struct ZydisDecodedInstructionAvx_
     {
         
 
@@ -967,7 +967,7 @@ typedef struct ZydisDecodedInstruction_
         
 
 
-        struct
+        struct ZydisDecodedInstructionAvxMask_
         {
             
 
@@ -981,7 +981,7 @@ typedef struct ZydisDecodedInstruction_
         
 
 
-        struct
+        struct ZydisDecodedInstructionAvxBroadcast_
         {
             
 
@@ -998,7 +998,7 @@ typedef struct ZydisDecodedInstruction_
         
 
 
-        struct
+        struct ZydisDecodedInstructionAvxRounding_
         {
             
 
@@ -1008,7 +1008,7 @@ typedef struct ZydisDecodedInstruction_
         
 
 
-        struct
+        struct ZydisDecodedInstructionAvxSwizzle_
         {
             
 
@@ -1018,7 +1018,7 @@ typedef struct ZydisDecodedInstruction_
         
 
 
-        struct
+        struct ZydisDecodedInstructionAvxConversion_
         {
             
 
@@ -1039,7 +1039,7 @@ typedef struct ZydisDecodedInstruction_
     
 
 
-    struct
+    struct ZydisDecodedInstructionMeta_
     {
         
 
@@ -1066,7 +1066,7 @@ typedef struct ZydisDecodedInstruction_
 
 
 
-    struct
+    struct ZydisDecodedInstructionRaw_
     {
         
 
@@ -1075,7 +1075,7 @@ typedef struct ZydisDecodedInstruction_
         
 
 
-        struct
+        struct ZydisDecodedInstructionRawPrefixes_
         {
             
 
@@ -1089,7 +1089,7 @@ typedef struct ZydisDecodedInstruction_
         
 
 
-        struct
+        struct ZydisDecodedInstructionRawRex_
         {
             
 
@@ -1123,7 +1123,7 @@ typedef struct ZydisDecodedInstruction_
         
 
 
-        struct
+        struct ZydisDecodedInstructionRawXop_
         {
             
 
@@ -1167,7 +1167,7 @@ typedef struct ZydisDecodedInstruction_
         
 
 
-        struct
+        struct ZydisDecodedInstructionRawVex_
         {
             
 
@@ -1215,7 +1215,7 @@ typedef struct ZydisDecodedInstruction_
         
 
 
-        struct
+        struct ZydisDecodedInstructionRawEvex_
         {
             
 
@@ -1283,7 +1283,7 @@ typedef struct ZydisDecodedInstruction_
         
 
 
-        struct
+        struct ZydisDecodedInstructionRawMvex_
         {
             
 
@@ -1343,7 +1343,7 @@ typedef struct ZydisDecodedInstruction_
         
 
 
-        struct
+        struct ZydisDecodedInstructionModRm_
         {
             
 
@@ -1366,7 +1366,7 @@ typedef struct ZydisDecodedInstruction_
         
 
 
-        struct
+        struct ZydisDecodedInstructionRawSib_
         {
             
 
@@ -1389,7 +1389,7 @@ typedef struct ZydisDecodedInstruction_
         
 
 
-        struct
+        struct ZydisDecodedInstructionRawDisp_
         {
             
 
@@ -1409,7 +1409,7 @@ typedef struct ZydisDecodedInstruction_
         
 
 
-        struct
+        struct ZydisDecodedInstructionRawImm_
         {
             
 
@@ -1423,7 +1423,7 @@ typedef struct ZydisDecodedInstruction_
             
 
 
-            union
+            union ZydisDecodedInstructionRawImmValue_
             {
                 ZyanU64 u;
                 ZyanI64 s;

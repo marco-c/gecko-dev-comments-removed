@@ -58,6 +58,13 @@ extern "C" {
 
 
 
+
+
+
+
+
+
+
 typedef enum ZydisRegisterClass_
 {
     ZYDIS_REGCLASS_INVALID,

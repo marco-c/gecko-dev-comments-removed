@@ -47,6 +47,18 @@ extern "C" {
 
 
 
+
+#define ZYDIS_MAX_INSTRUCTION_SEGMENT_COUNT 9
+
+
+
+
+
+
+
+
+
+
 typedef enum ZydisInstructionSegment_
 {
     ZYDIS_INSTR_SEGMENT_NONE,
@@ -128,7 +140,7 @@ typedef struct ZydisInstructionSegments_
 
 
         ZyanU8 size;
-    } segments[8];
+    } segments[ZYDIS_MAX_INSTRUCTION_SEGMENT_COUNT];
 } ZydisInstructionSegments;
 
 

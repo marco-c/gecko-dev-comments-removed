@@ -238,7 +238,7 @@ ZYAN_INLINE ZyanStatus ZydisStringAppendShort(ZyanString* destination,
     }
 
     ZYAN_MEMCPY((char*)destination->vector.data + destination->vector.size - 1, source->data,
-        1 + source->size);
+        (ZyanUSize)source->size + 1);
 
     destination->vector.size += source->size;
     ZYDIS_STRING_ASSERT_NULLTERMINATION(destination);
@@ -269,7 +269,7 @@ ZYAN_INLINE ZyanStatus ZydisStringAppendShortCase(ZyanString* destination,
     }
 
     ZYAN_MEMCPY((char*)destination->vector.data + destination->vector.size - 1, source->data,
-        1 + source->size);
+        (ZyanUSize)source->size + 1);
 
     switch (letter_case)
     {
@@ -371,7 +371,8 @@ ZYAN_INLINE ZyanStatus ZydisStringAppendDecS(ZyanString* string, ZyanI64 value,
         {
             ZYAN_CHECK(ZydisStringAppend(string, prefix));
         }
-        return ZydisStringAppendDecU(string, -value, padding_length, ZYAN_NULL, suffix);
+        return ZydisStringAppendDecU(string, -value, padding_length, 
+            (const ZyanStringView*)ZYAN_NULL, suffix);
     }
 
     if (force_sign)
@@ -439,7 +440,8 @@ ZYAN_INLINE ZyanStatus ZydisStringAppendHexS(ZyanString* string, ZyanI64 value,
         {
             ZYAN_CHECK(ZydisStringAppend(string, prefix));
         }
-        return ZydisStringAppendHexU(string, -value, padding_length, uppercase, ZYAN_NULL, suffix);
+        return ZydisStringAppendHexU(string, -value, padding_length, uppercase, 
+            (const ZyanStringView*)ZYAN_NULL, suffix);
     }
 
     if (force_sign)

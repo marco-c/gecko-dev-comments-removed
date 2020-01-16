@@ -153,10 +153,10 @@ typedef struct ZyanStringView_
 
 
 
-#define ZYAN_STRING_UNINITIALIZED \
+#define ZYAN_STRING_INITIALIZER \
     { \
         /* flags  */ 0, \
-        /* vector */ ZYAN_VECTOR_UNINITIALIZED \
+        /* vector */ ZYAN_VECTOR_INITIALIZER \
     }
 
 
@@ -186,6 +186,7 @@ typedef struct ZyanStringView_
                 /* size             */ sizeof(string), \
                 /* capacity         */ sizeof(string), \
                 /* element_size     */ sizeof(char), \
+                /* destructor       */ ZYAN_NULL, \
                 /* data             */ (char*)(string) \
             } \
         } \
@@ -524,6 +525,18 @@ ZYCORE_EXPORT ZyanStatus ZyanStringViewInsideBufferEx(ZyanStringView* view, cons
 
 
 ZYCORE_EXPORT ZyanStatus ZyanStringViewGetSize(const ZyanStringView* view, ZyanUSize* size);
+
+
+
+
+
+
+
+
+
+
+
+ZYCORE_EXPORT ZyanStatus ZyanStringViewGetData(const ZyanStringView* view, const char** buffer);
 
 
 

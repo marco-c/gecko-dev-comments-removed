@@ -102,6 +102,10 @@ typedef struct ZyanVector_
     
 
 
+    ZyanMemberProcedure destructor;
+    
+
+
     void* data;
 } ZyanVector;
 
@@ -116,7 +120,7 @@ typedef struct ZyanVector_
 
 
 
-#define ZYAN_VECTOR_UNINITIALIZED \
+#define ZYAN_VECTOR_INITIALIZER \
     { \
         /* allocator        */ ZYAN_NULL, \
         /* growth_factor    */ 0.0f, \
@@ -124,6 +128,7 @@ typedef struct ZyanVector_
         /* size             */ 0, \
         /* capacity         */ 0, \
         /* element_size     */ 0, \
+        /* destructor       */ ZYAN_NULL, \
         /* data             */ ZYAN_NULL \
     }
 
@@ -141,13 +146,58 @@ typedef struct ZyanVector_
 
 
 
+
 #ifdef __cplusplus
-#define ZYAN_VECTOR_GET(vector, index, type) \
+#define ZYAN_VECTOR_GET(type, vector, index) \
     (*reinterpret_cast<const type*>(ZyanVectorGet(vector, index)))
 #else
-#define ZYAN_VECTOR_GET(vector, index, type) \
+#define ZYAN_VECTOR_GET(type, vector, index) \
     (*(const type*)ZyanVectorGet(vector, index))
 #endif
+
+
+
+
+
+
+
+
+
+#define ZYAN_VECTOR_FOREACH(type, vector, item_name, body) \
+    { \
+        const ZyanUSize ZYAN_MACRO_CONCAT_EXPAND(size_d50d3303, item_name) = (vector)->size; \
+        for (ZyanUSize ZYAN_MACRO_CONCAT_EXPAND(i_bfd62679, item_name) = 0; \
+            ZYAN_MACRO_CONCAT_EXPAND(i_bfd62679, item_name) < \
+            ZYAN_MACRO_CONCAT_EXPAND(size_d50d3303, item_name); \
+            ++ZYAN_MACRO_CONCAT_EXPAND(i_bfd62679, item_name)) \
+        { \
+            const type item_name = ZYAN_VECTOR_GET(type, vector, \
+                ZYAN_MACRO_CONCAT_EXPAND(i_bfd62679, item_name)); \
+            body \
+        } \
+    }
+
+
+
+
+
+
+
+
+
+#define ZYAN_VECTOR_FOREACH_MUTABLE(type, vector, item_name, body) \
+    { \
+        const ZyanUSize ZYAN_MACRO_CONCAT_EXPAND(size_d50d3303, item_name) = (vector)->size; \
+        for (ZyanUSize ZYAN_MACRO_CONCAT_EXPAND(i_bfd62679, item_name) = 0; \
+            ZYAN_MACRO_CONCAT_EXPAND(i_bfd62679, item_name) < \
+            ZYAN_MACRO_CONCAT_EXPAND(size_d50d3303, item_name); \
+            ++ZYAN_MACRO_CONCAT_EXPAND(i_bfd62679, item_name)) \
+        { \
+            type* const item_name = ZyanVectorGetMutable(vector, \
+                ZYAN_MACRO_CONCAT_EXPAND(i_bfd62679, item_name)); \
+            body \
+        } \
+    }
 
 
 
@@ -175,8 +225,10 @@ typedef struct ZyanVector_
 
 
 
+
+
 ZYCORE_EXPORT ZYAN_REQUIRES_LIBC ZyanStatus ZyanVectorInit(ZyanVector* vector,
-    ZyanUSize element_size, ZyanUSize capacity);
+    ZyanUSize element_size, ZyanUSize capacity, ZyanMemberProcedure destructor);
 
 #endif 
 
@@ -198,8 +250,13 @@ ZYCORE_EXPORT ZYAN_REQUIRES_LIBC ZyanStatus ZyanVectorInit(ZyanVector* vector,
 
 
 
+
+
 ZYCORE_EXPORT ZyanStatus ZyanVectorInitEx(ZyanVector* vector, ZyanUSize element_size,
-    ZyanUSize capacity, ZyanAllocator* allocator, float growth_factor, float shrink_threshold);
+    ZyanUSize capacity, ZyanMemberProcedure destructor, ZyanAllocator* allocator, 
+    float growth_factor, float shrink_threshold);
+
+
 
 
 
@@ -215,7 +272,7 @@ ZYCORE_EXPORT ZyanStatus ZyanVectorInitEx(ZyanVector* vector, ZyanUSize element_
 
 
 ZYCORE_EXPORT ZyanStatus ZyanVectorInitCustomBuffer(ZyanVector* vector, ZyanUSize element_size,
-    void* buffer, ZyanUSize capacity);
+    void* buffer, ZyanUSize capacity, ZyanMemberProcedure destructor);
 
 
 
@@ -224,9 +281,7 @@ ZYCORE_EXPORT ZyanStatus ZyanVectorInitCustomBuffer(ZyanVector* vector, ZyanUSiz
 
 
 
-
-
-ZYCORE_EXPORT ZyanStatus ZyanVectorDestroy(ZyanVector* vector, ZyanMemberProcedure destructor);
+ZYCORE_EXPORT ZyanStatus ZyanVectorDestroy(ZyanVector* vector);
 
 
 
@@ -391,7 +446,7 @@ ZYCORE_EXPORT ZyanStatus ZyanVectorSet(ZyanVector* vector, ZyanUSize index,
 
 
 
-ZYCORE_EXPORT ZyanStatus ZyanVectorPush(ZyanVector* vector, const void* element);
+ZYCORE_EXPORT ZyanStatus ZyanVectorPushBack(ZyanVector* vector, const void* element);
 
 
 
@@ -415,10 +470,10 @@ ZYCORE_EXPORT ZyanStatus ZyanVectorInsert(ZyanVector* vector, ZyanUSize index,
 
 
 
-ZYCORE_EXPORT ZyanStatus ZyanVectorInsertEx(ZyanVector* vector, ZyanUSize index,
+ZYCORE_EXPORT ZyanStatus ZyanVectorInsertRange(ZyanVector* vector, ZyanUSize index,
     const void* elements, ZyanUSize count);
 
- 
+
 
 
 
@@ -487,7 +542,8 @@ ZYCORE_EXPORT ZyanStatus ZyanVectorDelete(ZyanVector* vector, ZyanUSize index);
 
 
 
-ZYCORE_EXPORT ZyanStatus ZyanVectorDeleteEx(ZyanVector* vector, ZyanUSize index, ZyanUSize count);
+ZYCORE_EXPORT ZyanStatus ZyanVectorDeleteRange(ZyanVector* vector, ZyanUSize index, 
+    ZyanUSize count);
 
 
 
@@ -496,7 +552,7 @@ ZYCORE_EXPORT ZyanStatus ZyanVectorDeleteEx(ZyanVector* vector, ZyanUSize index,
 
 
 
-ZYCORE_EXPORT ZyanStatus ZyanVectorPop(ZyanVector* vector);
+ZYCORE_EXPORT ZyanStatus ZyanVectorPopBack(ZyanVector* vector);
 
 
 
@@ -600,6 +656,18 @@ ZYCORE_EXPORT ZyanStatus ZyanVectorBinarySearchEx(const ZyanVector* vector, cons
 
 
 ZYCORE_EXPORT ZyanStatus ZyanVectorResize(ZyanVector* vector, ZyanUSize size);
+
+
+
+
+
+
+
+
+
+
+ZYCORE_EXPORT ZyanStatus ZyanVectorResizeEx(ZyanVector* vector, ZyanUSize size, 
+    const void* initializer);
 
 
 

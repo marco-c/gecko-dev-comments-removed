@@ -38,7 +38,8 @@
 
 
 
-#if !defined(ZYAN_NO_LIBC) && (!defined(ZYAN_MSVC) && defined(ZYAN_KERNEL)) 
+#if !defined(ZYAN_NO_LIBC) && \
+    (!defined(ZYAN_MSVC) && defined(ZYAN_KERNEL)) 
     
 #   include <stdint.h>
 #   include <stddef.h>
@@ -134,7 +135,13 @@ ZYAN_STATIC_ASSERT((ZyanI64)-1 >> 1 < (ZyanI64)((ZyanU64)-1 >> 1));
 
 
 
+
+
+
 typedef ZyanU8 ZyanBool;
+
+
+
 
 
 
@@ -148,6 +155,30 @@ typedef ZyanI8 ZyanTernary;
 #define ZYAN_TERNARY_FALSE    (-1)
 #define ZYAN_TERNARY_UNKNOWN  0x00
 #define ZYAN_TERNARY_TRUE     0x01
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef char* ZyanCharPointer;
+
+
+
+
+
+
+typedef const char* ZyanConstCharPointer;
+
+
 
 
 
