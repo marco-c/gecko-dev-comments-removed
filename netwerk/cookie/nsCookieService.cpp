@@ -2655,7 +2655,15 @@ OpenDBResult nsCookieService::Read() {
     if (!hasResult) break;
 
     
-    stmt->GetUTF8String(IDX_BASE_DOMAIN, baseDomain);
+    
+    stmt->GetUTF8String(IDX_HOST, host);
+
+    rv = GetBaseDomainFromHost(mTLDService, host, baseDomain);
+    if (NS_FAILED(rv)) {
+      COOKIE_LOGSTRING(LogLevel::Debug,
+                       ("Read(): Ignoring invalid host '%s'", host.get()));
+      continue;
+    }
 
     nsAutoCString suffix;
     OriginAttributes attrs;
