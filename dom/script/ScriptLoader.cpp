@@ -3512,6 +3512,9 @@ void ScriptLoader::HandleLoadError(ScriptLoadRequest* aRequest,
       if (aRequest->isInList()) {
         RefPtr<ScriptLoadRequest> req = mDynamicImportRequests.Steal(aRequest);
         modReq->Cancel();
+        
+        
+        
         FinishDynamicImport(modReq, aResult);
       }
     } else {
@@ -3714,8 +3717,12 @@ void ScriptLoader::ParsingComplete(bool aTerminated) {
     for (ScriptLoadRequest* req = mDynamicImportRequests.getFirst(); req;
          req = req->getNext()) {
       req->Cancel();
+      
+      
+      
       FinishDynamicImport(req->AsModuleRequest(), NS_ERROR_ABORT);
     }
+    mDynamicImportRequests.Clear();
 
     if (mParserBlockingRequest) {
       mParserBlockingRequest->Cancel();
