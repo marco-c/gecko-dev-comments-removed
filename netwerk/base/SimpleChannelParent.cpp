@@ -29,6 +29,25 @@ SimpleChannelParent::SetParentListener(ParentChannelListener* aListener) {
 }
 
 NS_IMETHODIMP
+SimpleChannelParent::NotifyChannelClassifierProtectionDisabled(
+    uint32_t aAcceptedReason) {
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+SimpleChannelParent::NotifyCookieAllowed() {
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+SimpleChannelParent::NotifyCookieBlocked(uint32_t aRejectedReason) {
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 SimpleChannelParent::NotifyClassificationFlags(uint32_t aClassificationFlags,
                                                bool aIsThirdParty) {
   

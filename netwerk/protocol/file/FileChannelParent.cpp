@@ -29,6 +29,25 @@ FileChannelParent::SetParentListener(ParentChannelListener* aListener) {
 }
 
 NS_IMETHODIMP
+FileChannelParent::NotifyChannelClassifierProtectionDisabled(
+    uint32_t aAcceptedReason) {
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+FileChannelParent::NotifyCookieAllowed() {
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+FileChannelParent::NotifyCookieBlocked(uint32_t aRejectedReason) {
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 FileChannelParent::NotifyClassificationFlags(uint32_t aClassificationFlags,
                                              bool aIsThirdParty) {
   

@@ -120,6 +120,14 @@ class nsDocLoader : public nsIDocumentLoader,
 
 
   void OnSecurityChange(nsISupports* aContext, uint32_t aState);
+  
+
+
+
+
+
+
+  void OnContentBlockingEvent(nsISupports* aContext, uint32_t aEvent);
 
   void SetDocumentOpenedButNotLoaded() { mDocumentOpenedButNotLoaded = true; }
 

@@ -396,6 +396,23 @@ NS_IMETHODIMP nsExtProtocolChannel::SetParentListener(
   return NS_OK;
 }
 
+NS_IMETHODIMP nsExtProtocolChannel::NotifyChannelClassifierProtectionDisabled(
+    uint32_t aAcceptedReason) {
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsExtProtocolChannel::NotifyCookieAllowed() {
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsExtProtocolChannel::NotifyCookieBlocked(
+    uint32_t aRejectedReason) {
+  
+  return NS_OK;
+}
+
 NS_IMETHODIMP nsExtProtocolChannel::SetClassifierMatchedInfo(
     const nsACString& aList, const nsACString& aProvider,
     const nsACString& aFullHash) {

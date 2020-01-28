@@ -45,6 +45,8 @@ class nsSecureBrowserUIImpl : public nsISecureBrowserUI,
   
   void CheckForMixedContent();
   
+  void CheckForContentBlockingEvents();
+  
   
   nsresult UpdateStateAndSecurityInfo(nsIChannel* channel, nsIURI* uri);
 
