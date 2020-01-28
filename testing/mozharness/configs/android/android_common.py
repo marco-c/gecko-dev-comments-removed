@@ -6,6 +6,11 @@
 import os
 
 
+NODEJS_PATH = None
+if 'MOZ_FETCHES_DIR' in os.environ:
+    NODEJS_PATH = os.path.join(os.environ["MOZ_FETCHES_DIR"], "node/bin/node")
+
+
 def WebglSuite(name):
     return {
         "run_filename": "runtestsremote.py",
@@ -53,6 +58,7 @@ config = {
     
     
     
+    "nodejs_path": NODEJS_PATH,
 
     "suite_definitions": {
         "mochitest-plain": {
