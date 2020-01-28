@@ -1293,6 +1293,10 @@ class SpecialPowersChild extends JSWindowActorChild {
     );
   }
 
+  async generateMediaControlKeyTestEvent(event) {
+    await this.sendQuery("SPGenerateMediaControlKeyTestEvent", { event });
+  }
+
   
   
   
