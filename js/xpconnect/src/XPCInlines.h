@@ -188,10 +188,6 @@ inline XPCNativeMember* XPCNativeInterface::FindMember(jsid name) const {
   return nullptr;
 }
 
-inline bool XPCNativeInterface::HasAncestor(const nsIID* iid) const {
-  return mInfo->HasAncestor(*iid);
-}
-
 
 inline size_t XPCNativeInterface::OffsetOfMembers() {
   return offsetof(XPCNativeInterface, mMembers);
@@ -304,28 +300,6 @@ inline bool XPCNativeSet::HasInterface(XPCNativeInterface* aInterface) const {
       return true;
     }
   }
-  return false;
-}
-
-inline bool XPCNativeSet::HasInterfaceWithAncestor(
-    XPCNativeInterface* aInterface) const {
-  return HasInterfaceWithAncestor(aInterface->GetIID());
-}
-
-inline bool XPCNativeSet::HasInterfaceWithAncestor(const nsIID* iid) const {
-  
-  XPCNativeInterface* const* pp = mInterfaces + 1;
-  for (int i = (int)mInterfaceCount; i > 1; i--, pp++) {
-    if ((*pp)->HasAncestor(iid)) {
-      return true;
-    }
-  }
-
-  
-  if (iid == &NS_GET_IID(nsISupports)) {
-    return true;
-  }
-
   return false;
 }
 
