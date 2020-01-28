@@ -22,14 +22,19 @@ module.exports = {
   "overrides": [{
     files: [
       
-      "chrome/**",
-      
       "components/extensions/**",
     ],
     rules: {
       "no-unused-vars": "off",
       "no-undef": "off",
     }
+  }, {
+    files: [
+      "chrome/geckoview/*Child.js",
+    ],
+    env: {
+      "mozilla/frame-script": true,
+    },
   }, {
     files: [
       "chrome/geckoview/**",
