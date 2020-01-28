@@ -1,0 +1,16 @@
+let singleton;
+class Singleton extends AudioWorkletProcessor {
+  constructor() {
+    if (!singleton) {
+      singleton = new AudioWorkletProcessor();
+      singleton.process = function() {
+        this.port.postMessage({message: "process called"});
+        
+        
+        return false;
+      }
+    }
+    return singleton;
+  }
+}
+registerProcessor("singleton", Singleton);
