@@ -47,6 +47,8 @@ const ignorePatterns = [
 module.exports = {
   ignorePatterns,
   
+  "root": true,
+  
   
   
   "extends": [
