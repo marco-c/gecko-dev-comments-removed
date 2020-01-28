@@ -1426,12 +1426,15 @@ Column.prototype = {
     }
     if (checked) {
       this.wrapper.removeAttribute("hidden");
+      this.tbody.insertBefore(this.splitter, this.wrapper.nextSibling);
     } else {
       this.wrapper.setAttribute("hidden", "true");
+      this.splitter.remove();
     }
   },
 
   
+
 
 
   remove: function(item) {
