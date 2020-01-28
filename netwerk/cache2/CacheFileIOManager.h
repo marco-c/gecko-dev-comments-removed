@@ -122,7 +122,10 @@ class CacheFileHandle final : public nsISupports {
   PinningStatus mPinning;
 
   nsCOMPtr<nsIFile> mFile;
-  int64_t mFileSize;
+
+  
+  
+  Atomic<int64_t, Relaxed> mFileSize;
   PRFileDesc* mFD;  
   nsCString mKey;
 };
