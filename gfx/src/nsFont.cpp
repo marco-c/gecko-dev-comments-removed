@@ -248,6 +248,15 @@ void nsFont::AddFontFeaturesToStyle(gfxFontStyle* aStyle,
       (variantPosition == NS_FONT_VARIANT_POSITION_NORMAL);
 
   
+  
+  
+  
+  
+  if (!aStyle->featureSettings.IsEmpty() || !fontFeatureSettings.IsEmpty()) {
+    aStyle->featureSettings.AppendElement(gfxFontFeature{0, 0});
+  }
+
+  
   aStyle->featureSettings.AppendElements(fontFeatureSettings);
 
   

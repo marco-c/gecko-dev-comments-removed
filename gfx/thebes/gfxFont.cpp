@@ -462,13 +462,6 @@ void gfxFontShaper::MergeFontFeatures(
   nsDataHashtable<nsUint32HashKey, uint32_t> mergedFeatures;
 
   
-  
-  if (aDisableLigatures) {
-    mergedFeatures.Put(HB_TAG('l', 'i', 'g', 'a'), 0);
-    mergedFeatures.Put(HB_TAG('c', 'l', 'i', 'g'), 0);
-  }
-
-  
   for (const gfxFontFeature& feature : aFontFeatures) {
     mergedFeatures.Put(feature.mTag, feature.mValue);
   }
@@ -546,8 +539,29 @@ void gfxFontShaper::MergeFontFeatures(
   }
 
   
-  for (const gfxFontFeature& feature : styleRuleFeatures) {
-    mergedFeatures.Put(feature.mTag, feature.mValue);
+  if (styleRuleFeatures.IsEmpty()) {
+    
+    if (aDisableLigatures) {
+      mergedFeatures.Put(HB_TAG('l', 'i', 'g', 'a'), 0);
+      mergedFeatures.Put(HB_TAG('c', 'l', 'i', 'g'), 0);
+    }
+  } else {
+    for (const gfxFontFeature& feature : styleRuleFeatures) {
+      
+      
+      
+      
+      
+      
+      if (feature.mTag) {
+        mergedFeatures.Put(feature.mTag, feature.mValue);
+      } else if (aDisableLigatures) {
+        
+        
+        mergedFeatures.Put(HB_TAG('l', 'i', 'g', 'a'), 0);
+        mergedFeatures.Put(HB_TAG('c', 'l', 'i', 'g'), 0);
+      }
+    }
   }
 
   if (mergedFeatures.Count() != 0) {
