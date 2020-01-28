@@ -338,6 +338,7 @@ class nsTextFrame : public nsFrame {
 
 
 
+
   void SetSelectedRange(uint32_t aStart, uint32_t aEnd, bool aSelected,
                         SelectionType aSelectionType);
 
