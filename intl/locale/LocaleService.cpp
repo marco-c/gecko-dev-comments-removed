@@ -58,12 +58,21 @@ static bool SanitizeForBCP47(nsACString& aLocale, bool strict) {
     return true;
   }
 
+  nsAutoCString locale(aLocale);
+  locale.Trim(" ");
+
+  
+  
+  
+  int32_t pos = locale.FindChar('.');
+  if (pos != -1) {
+    locale.Cut(pos, locale.Length() - pos);
+  }
+
   
   
   const int32_t LANG_TAG_CAPACITY = 128;
   char langTag[LANG_TAG_CAPACITY];
-  nsAutoCString locale(aLocale);
-  locale.Trim(" ");
   UErrorCode err = U_ZERO_ERROR;
   
   
