@@ -167,9 +167,11 @@ CustomElementData::CustomElementData(nsAtom* aType, State aState)
 
 void CustomElementData::SetCustomElementDefinition(
     CustomElementDefinition* aDefinition) {
-  MOZ_ASSERT(mState == State::eCustom);
-  MOZ_ASSERT(!mCustomElementDefinition);
-  MOZ_ASSERT(aDefinition->mType == mType);
+  
+  
+  MOZ_ASSERT(aDefinition ? !mCustomElementDefinition
+                         : mState == State::eFailed);
+  MOZ_ASSERT_IF(aDefinition, aDefinition->mType == mType);
 
   mCustomElementDefinition = aDefinition;
 }
@@ -181,8 +183,9 @@ void CustomElementData::AttachedInternals() {
 }
 
 CustomElementDefinition* CustomElementData::GetCustomElementDefinition() {
-  MOZ_ASSERT(mCustomElementDefinition ? mState == State::eCustom
-                                      : mState != State::eCustom);
+  
+  
+  MOZ_ASSERT_IF(mCustomElementDefinition, mState != State::eUndefined);
 
   return mCustomElementDefinition;
 }
@@ -1137,10 +1140,15 @@ void CustomElementRegistry::Upgrade(Element* aElement,
   MOZ_ASSERT(data, "CustomElementData should exist");
 
   
-  if (data->mState == CustomElementData::State::eCustom ||
-      data->mState == CustomElementData::State::eFailed) {
+  if (data->mState != CustomElementData::State::eUndefined) {
     return;
   }
+
+  
+  aElement->SetCustomElementDefinition(aDefinition);
+
+  
+  data->mState = CustomElementData::State::eFailed;
 
   
   if (!aDefinition->mObservedAttributes.IsEmpty()) {
@@ -1180,7 +1188,8 @@ void CustomElementRegistry::Upgrade(Element* aElement,
   DoUpgrade(aElement, aDefinition, MOZ_KnownLive(aDefinition->mConstructor),
             aRv);
   if (aRv.Failed()) {
-    data->mState = CustomElementData::State::eFailed;
+    MOZ_ASSERT(data->mState == CustomElementData::State::eFailed);
+    aElement->SetCustomElementDefinition(nullptr);
     
     data->mReactionQueue.Clear();
     return;
@@ -1189,9 +1198,6 @@ void CustomElementRegistry::Upgrade(Element* aElement,
   
   data->mState = CustomElementData::State::eCustom;
   aElement->SetDefined(true);
-
-  
-  aElement->SetCustomElementDefinition(aDefinition);
 }
 
 already_AddRefed<nsISupports> CustomElementRegistry::CallGetCustomInterface(
