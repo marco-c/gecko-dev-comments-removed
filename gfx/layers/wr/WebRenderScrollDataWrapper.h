@@ -374,6 +374,35 @@ class MOZ_STACK_CLASS WebRenderScrollDataWrapper final {
     return mLayer->GetFixedPositionSides();
   }
 
+  bool GetIsStickyPosition() const {
+    MOZ_ASSERT(IsValid());
+
+    
+    return false;
+  }
+
+  ScrollableLayerGuid::ViewID GetStickyScrollContainerId() const {
+    MOZ_ASSERT(IsValid());
+
+    
+    return ScrollableLayerGuid::NULL_SCROLL_ID;
+  }
+
+  const LayerRectAbsolute& GetStickyScrollRangeOuter() const {
+    MOZ_ASSERT(IsValid());
+    static const LayerRectAbsolute dummy;
+
+    
+    return dummy;
+  }
+  const LayerRectAbsolute& GetStickyScrollRangeInner() const {
+    MOZ_ASSERT(IsValid());
+    static const LayerRectAbsolute dummy;
+
+    
+    return dummy;
+  }
+
   Maybe<uint64_t> GetZoomAnimationId() const {
     MOZ_ASSERT(IsValid());
     return mLayer->GetZoomAnimationId();

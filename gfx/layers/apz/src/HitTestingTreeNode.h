@@ -133,6 +133,14 @@ class HitTestingTreeNode {
   Maybe<uint64_t> GetFixedPositionAnimationId() const;
 
   
+  void SetStickyPosData(ScrollableLayerGuid::ViewID aStickyPosTarget,
+                        const LayerRectAbsolute& aScrollRangeOuter,
+                        const LayerRectAbsolute& aScrollRangeInner);
+  ScrollableLayerGuid::ViewID GetStickyPosTarget() const;
+  const LayerRectAbsolute& GetStickyScrollRangeOuter() const;
+  const LayerRectAbsolute& GetStickyScrollRangeInner() const;
+
+  
 
 
   Maybe<LayerPoint> Untransform(
@@ -192,6 +200,10 @@ class HitTestingTreeNode {
 
   ScrollableLayerGuid::ViewID mFixedPosTarget;
   SideBits mFixedPosSides;
+
+  ScrollableLayerGuid::ViewID mStickyPosTarget;
+  LayerRectAbsolute mStickyScrollRangeOuter;
+  LayerRectAbsolute mStickyScrollRangeInner;
 
   
 
