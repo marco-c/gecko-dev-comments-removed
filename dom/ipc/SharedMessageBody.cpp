@@ -58,7 +58,27 @@ void SharedMessageBody::Read(JSContext* aCx,
   MOZ_ASSERT(aRefMessageBodyService);
 
   if (mCloneData) {
-    return mCloneData->Read(aCx, aValue, aRv);
+    
+    
+    return mCloneData->Read(aCx, aValue, JS::CloneDataPolicy(), aRv);
+  }
+
+  JS::CloneDataPolicy cloneDataPolicy;
+
+  
+  
+  if (mAgentClusterId.isSome()) {
+    nsIGlobalObject* global = xpc::CurrentNativeGlobal(aCx);
+    MOZ_ASSERT(global);
+
+    Maybe<ClientInfo> clientInfo = global->GetClientInfo();
+    if (clientInfo) {
+      Maybe<nsID> agentClusterId = clientInfo->AgentClusterId();
+      if (agentClusterId.isSome() &&
+          mAgentClusterId.value().Equals(agentClusterId.value())) {
+        cloneDataPolicy.allowIntraClusterClonableSharedObjects();
+      }
+    }
   }
 
   MOZ_ASSERT(!mRefData);
@@ -76,7 +96,7 @@ void SharedMessageBody::Read(JSContext* aCx,
     return;
   }
 
-  mRefData->CloneData()->Read(aCx, aValue, aRv);
+  mRefData->CloneData()->Read(aCx, aValue, cloneDataPolicy, aRv);
 }
 
 bool SharedMessageBody::TakeTransferredPortsAsSequence(
