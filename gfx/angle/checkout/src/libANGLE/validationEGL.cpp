@@ -2628,6 +2628,8 @@ Error ValidateStreamConsumerGLTextureExternalAttribsNV(const Display *display,
         return EglBadAccess() << "Stream consumer extension not active";
     }
 
+    ANGLE_TRY(ValidateContext(display, context));
+
     
     
     
@@ -2640,13 +2642,6 @@ Error ValidateStreamConsumerGLTextureExternalAttribsNV(const Display *display,
     {
         return EglBadStream() << "Invalid stream";
     }
-
-    if (!context)
-    {
-        return EglBadAccess() << "No GL context current to calling thread.";
-    }
-
-    ANGLE_TRY(ValidateContext(display, context));
 
     if (stream->getState() != EGL_STREAM_STATE_CREATED_KHR)
     {
