@@ -380,7 +380,11 @@ class nsContentUtils {
 
 
 
-  static nsresult GetAncestors(nsINode* aNode, nsTArray<nsINode*>& aArray);
+
+
+
+  static nsresult GetInclusiveAncestors(nsINode* aNode,
+                                        nsTArray<nsINode*>& aArray);
 
   
 
@@ -390,9 +394,11 @@ class nsContentUtils {
 
 
 
-  static nsresult GetAncestorsAndOffsets(nsINode* aNode, int32_t aOffset,
-                                         nsTArray<nsIContent*>* aAncestorNodes,
-                                         nsTArray<int32_t>* aAncestorOffsets);
+
+
+  static nsresult GetInclusiveAncestorsAndOffsets(
+      nsINode* aNode, int32_t aOffset, nsTArray<nsIContent*>* aAncestorNodes,
+      nsTArray<int32_t>* aAncestorOffsets);
 
   
 
