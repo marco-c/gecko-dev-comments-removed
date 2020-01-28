@@ -2238,18 +2238,14 @@ class MOZ_STACK_CLASS PositionTracker {
 
   
   
-  void EnterMargin(const nsMargin& aMargin) {
-    mozilla::Side side =
-        kAxisOrientationToSidesMap[mPhysicalAxis][eAxisEdge_Start];
-    mPosition += aMargin.Side(side);
+  void EnterMargin(const LogicalMargin& aMargin) {
+    mPosition += aMargin.Side(StartSide(), mWM);
   }
 
   
   
-  void ExitMargin(const nsMargin& aMargin) {
-    mozilla::Side side =
-        kAxisOrientationToSidesMap[mPhysicalAxis][eAxisEdge_End];
-    mPosition += aMargin.Side(side);
+  void ExitMargin(const LogicalMargin& aMargin) {
+    mPosition += aMargin.Side(EndSide(), mWM);
   }
 
   
@@ -2366,8 +2362,8 @@ class MOZ_STACK_CLASS CrossAxisPositionTracker : public PositionTracker {
   
   
   
-  void EnterMargin(const nsMargin& aMargin) = delete;
-  void ExitMargin(const nsMargin& aMargin) = delete;
+  void EnterMargin(const LogicalMargin& aMargin) = delete;
+  void ExitMargin(const LogicalMargin& aMargin) = delete;
   void EnterChildFrame(nscoord aChildFrameSize) = delete;
   void ExitChildFrame(nscoord aChildFrameSize) = delete;
 
@@ -4204,13 +4200,13 @@ void FlexLine::PositionItemsInMainAxis(uint8_t aJustifyContent,
 
     
     
-    mainAxisPosnTracker.EnterMargin(item->GetPhysicalMargin());
+    mainAxisPosnTracker.EnterMargin(item->GetMargin());
     mainAxisPosnTracker.EnterChildFrame(itemMainBorderBoxSize);
 
     item->SetMainPosition(mainAxisPosnTracker.GetPosition());
 
     mainAxisPosnTracker.ExitChildFrame(itemMainBorderBoxSize);
-    mainAxisPosnTracker.ExitMargin(item->GetPhysicalMargin());
+    mainAxisPosnTracker.ExitMargin(item->GetMargin());
     mainAxisPosnTracker.TraversePackingSpace();
     if (item->getNext()) {
       mainAxisPosnTracker.TraverseGap(mMainGapSize);
@@ -4303,7 +4299,7 @@ void FlexLine::PositionItemsInCrossAxis(
     nscoord itemCrossBorderBoxSize =
         item->GetCrossSize() + item->GetBorderPaddingSizeInCrossAxis();
     lineCrossAxisPosnTracker.EnterAlignPackingSpace(*this, *item, aAxisTracker);
-    lineCrossAxisPosnTracker.EnterMargin(item->GetPhysicalMargin());
+    lineCrossAxisPosnTracker.EnterMargin(item->GetMargin());
     lineCrossAxisPosnTracker.EnterChildFrame(itemCrossBorderBoxSize);
 
     item->SetCrossPosition(aLineStartPosition +
