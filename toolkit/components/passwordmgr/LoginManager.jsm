@@ -388,6 +388,17 @@ LoginManager.prototype = {
   
 
 
+  recordPasswordUse(login) {
+    log.debug(
+      "Recording password use",
+      login.QueryInterface(Ci.nsILoginMetaInfo).guid
+    );
+    this._storage.recordPasswordUse(login);
+  },
+
+  
+
+
 
 
   getAllLogins() {
