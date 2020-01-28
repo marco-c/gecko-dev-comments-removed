@@ -668,10 +668,8 @@ class UrlbarProvider {
 
 
 
-
-  getPriority(queryContext) {
-    
-    return 0;
+  isRestricting(queryContext) {
+    throw new Error("Trying to access the base class, must be overridden");
   }
 
   

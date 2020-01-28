@@ -115,11 +115,10 @@ class UrlbarProviderExtension extends UrlbarProvider {
 
 
 
-  getPriority(context) {
-    
-    
-    
-    return this.behavior == "restricting" ? 999 : 0;
+
+
+  isRestricting(context) {
+    return this.behavior == "restricting";
   }
 
   

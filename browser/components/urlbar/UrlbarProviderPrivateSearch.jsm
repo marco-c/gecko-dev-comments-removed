@@ -91,6 +91,17 @@ class ProviderPrivateSearch extends UrlbarProvider {
 
 
 
+  isRestricting(queryContext) {
+    return false;
+  }
+
+  
+
+
+
+
+
+
   async startQuery(queryContext, addCallback) {
     logger.info(`Starting query for ${queryContext.searchString}`);
 

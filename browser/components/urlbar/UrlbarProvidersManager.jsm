@@ -287,23 +287,14 @@ class Query {
     this.started = true;
 
     
-    let providers = [];
-    let maxPriority = -1;
-    for (let provider of this.providers) {
-      if (provider.isActive(this.context)) {
-        let priority = provider.getPriority(this.context);
-        if (priority >= maxPriority) {
-          
-          if (priority > maxPriority) {
-            
-            
-            
-            providers.length = 0;
-            maxPriority = priority;
-          }
-          providers.push(provider);
-        }
-      }
+    let providers = this.providers.filter(p => p.isActive(this.context));
+
+    
+    let restrictProviders = providers.filter(p =>
+      p.isRestricting(this.context)
+    );
+    if (restrictProviders.length) {
+      providers = restrictProviders;
     }
 
     

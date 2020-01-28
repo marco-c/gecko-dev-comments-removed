@@ -75,9 +75,10 @@ class ProviderTopSites extends UrlbarProvider {
 
 
 
-  getPriority(queryContext) {
-    
-    return 1;
+
+
+  isRestricting(queryContext) {
+    return true;
   }
 
   
