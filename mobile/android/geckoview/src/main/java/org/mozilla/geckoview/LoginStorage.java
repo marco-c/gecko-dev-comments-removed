@@ -6,7 +6,11 @@
 
 package org.mozilla.geckoview;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
 import android.support.annotation.AnyThread;
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
@@ -16,6 +20,20 @@ import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -269,6 +287,22 @@ public class LoginStorage {
         }
     }
 
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef(flag = true,
+            value = { UsedField.PASSWORD })
+     @interface LSUsedField {}
+
+    
+    
+
+
+    public static class UsedField {
+        
+
+
+        public static final int PASSWORD = 1;
+    }
+
     
 
 
@@ -307,6 +341,21 @@ public class LoginStorage {
 
         @UiThread
         default void onLoginSave(@NonNull LoginEntry login) {}
+
+        
+
+
+
+
+
+
+
+
+
+        @UiThread
+        default void onLoginUsed(
+                @NonNull LoginEntry login,
+                @LSUsedField int usedFields) {}
     }
 
      final static class Proxy implements BundleEventListener {
@@ -314,6 +363,7 @@ public class LoginStorage {
 
         private static final String FETCH_EVENT = "GeckoView:LoginStorage:Fetch";
         private static final String SAVE_EVENT = "GeckoView:LoginStorage:Save";
+        private static final String USED_EVENT = "GeckoView:LoginStorage:Used";
 
         private @Nullable Delegate mDelegate;
 
@@ -323,14 +373,16 @@ public class LoginStorage {
             EventDispatcher.getInstance().registerUiThreadListener(
                     this,
                     FETCH_EVENT,
-                    SAVE_EVENT);
+                    SAVE_EVENT,
+                    USED_EVENT);
         }
 
         private void unregisterListener() {
             EventDispatcher.getInstance().unregisterUiThreadListener(
                     this,
                     FETCH_EVENT,
-                    SAVE_EVENT);
+                    SAVE_EVENT,
+                    USED_EVENT);
         }
 
         public synchronized void setDelegate(final @Nullable Delegate delegate) {
@@ -394,6 +446,12 @@ public class LoginStorage {
                 final LoginEntry login = new LoginEntry(loginBundle);
 
                 mDelegate.onLoginSave(login);
+            } else if (USED_EVENT.equals(event)) {
+                final GeckoBundle loginBundle = message.getBundle("login");
+                final LoginEntry login = new LoginEntry(loginBundle);
+                final int fields = message.getInt("usedFields");
+
+                mDelegate.onLoginUsed(login, fields);
             }
         }
     }
