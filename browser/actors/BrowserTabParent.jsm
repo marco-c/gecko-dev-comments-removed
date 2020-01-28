@@ -12,6 +12,10 @@ class BrowserTabParent extends JSWindowActorParent {
       return; 
     }
 
+    if (browser.outerBrowser) {
+      browser = browser.outerBrowser; 
+    }
+
     let gBrowser = browser.ownerGlobal.gBrowser;
 
     if (!gBrowser) {
@@ -40,6 +44,11 @@ class BrowserTabParent extends JSWindowActorParent {
 
       case "Browser:FirstPaint": {
         browser.ownerGlobal.gBrowserInit._firstBrowserPaintDeferred.resolve();
+        break;
+      }
+
+      case "Browser:LoadURI": {
+        gBrowser.ownerGlobal.RedirectLoad(browser, message.data);
         break;
       }
 
