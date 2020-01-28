@@ -455,8 +455,8 @@ nsresult Selection::GetTableCellLocationFromRange(
   return cellLayout->GetCellIndexes(*aRow, *aCol);
 }
 
-nsresult Selection::AddTableCellRange(nsRange* aRange, bool* aDidAddRange,
-                                      int32_t* aOutIndex) {
+nsresult Selection::MaybeAddTableCellRange(nsRange* aRange, bool* aDidAddRange,
+                                           int32_t* aOutIndex) {
   if (!aDidAddRange || !aOutIndex) return NS_ERROR_NULL_POINTER;
 
   *aDidAddRange = false;
@@ -1928,7 +1928,7 @@ void Selection::AddRangeAndSelectFramesAndNotifyListeners(nsRange& aRange,
   
   bool didAddRange;
   int32_t rangeIndex;
-  nsresult result = AddTableCellRange(range, &didAddRange, &rangeIndex);
+  nsresult result = MaybeAddTableCellRange(range, &didAddRange, &rangeIndex);
   if (NS_FAILED(result)) {
     aRv.Throw(result);
     return;
