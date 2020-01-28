@@ -227,6 +227,7 @@ export const SessionPing = Joi.object().keys(
     page: baseKeys.page.required(),
     session_duration: Joi.number().integer(),
     action: Joi.valid("activity_stream_session").required(),
+    profile_creation_date: Joi.number().integer(),
     perf: Joi.object()
       .keys({
         
@@ -238,7 +239,7 @@ export const SessionPing = Joi.object().keys(
         
         
         load_trigger_ts: Joi.number()
-          .positive()
+          .integer()
           .notes(["server counter", "server counter alert"]),
 
         
@@ -261,7 +262,7 @@ export const SessionPing = Joi.object().keys(
         
         
         topsites_first_painted_ts: Joi.number()
-          .positive()
+          .integer()
           .notes(["server counter", "server counter alert"]),
 
         
@@ -287,7 +288,7 @@ export const SessionPing = Joi.object().keys(
         
         
         visibility_event_rcvd_ts: Joi.number()
-          .positive()
+          .integer()
           .notes(["server counter", "server counter alert"]),
 
         
