@@ -2277,24 +2277,6 @@ pref("security.directory",              "");
 pref("security.dialog_enable_delay", 1000);
 pref("security.notification_enable_delay", 500);
 
-#if defined(DEBUG)
-  
-  
-  pref("csp.skip_about_page_has_csp_assert", false);
-  
-  
-  
-  pref("csp.skip_about_page_csp_allowlist_and_assert", false);
-  
-  
-  
-  pref("domsecurity.skip_html_fragment_assertion", false);
-  
-  
-  
-  pref("domsecurity.skip_remote_script_assertion_in_system_priv_context", false);
-#endif
-
 #ifdef EARLY_BETA_OR_EARLIER
   
   pref("security.disallow_non_local_systemprincipal_in_tests", false);
