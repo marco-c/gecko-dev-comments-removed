@@ -770,6 +770,10 @@ class Selection final : public nsSupportsWeakReference,
   
 
 
+
+
+
+
   nsresult MaybeAddRangeAndTruncateOverlaps(nsRange* aRange,
                                             int32_t* aOutIndex);
 
