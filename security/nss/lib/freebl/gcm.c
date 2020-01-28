@@ -21,10 +21,7 @@
 #if defined(__aarch64__) && defined(IS_LITTLE_ENDIAN) && \
     (defined(__clang__) || defined(__GNUC__) && __GNUC__ > 6)
 #define USE_ARM_GCM
-#elif defined(__arm__) && defined(IS_LITTLE_ENDIAN) && \
-    (defined(__ARM_NEON__) || defined(__ARM_NEON))
-
-
+#elif defined(__arm__) && defined(IS_LITTLE_ENDIAN)
 
 #define USE_ARM_GCM
 #endif

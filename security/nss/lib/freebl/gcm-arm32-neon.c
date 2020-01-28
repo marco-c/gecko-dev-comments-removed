@@ -11,7 +11,7 @@
 #include "secerr.h"
 #include "prtypes.h"
 
-#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+#if defined(IS_LITTLE_ENDIAN)
 
 #include <arm_neon.h>
 
