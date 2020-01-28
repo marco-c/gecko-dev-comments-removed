@@ -1212,7 +1212,7 @@ class WebKitGTKMiniBrowser(WebKit):
         gcc = find_executable("gcc")
         if gcc:
             try:
-                triplet = call(gcc, "-dumpmachine").strip()
+                triplet = call(gcc, "-dumpmachine").decode().strip()
             except subprocess.CalledProcessError:
                 pass
         
@@ -1231,7 +1231,7 @@ class WebKitGTKMiniBrowser(WebKit):
         if binary is None:
             return None
         try:  
-            output = call(binary, "--version").strip()
+            output = call(binary, "--version").decode().strip()
         except subprocess.CalledProcessError:
             return None
         
