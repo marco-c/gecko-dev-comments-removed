@@ -97,7 +97,8 @@ add_task(async function test_no_show_hide_for_private_window() {
   );
 
   
-  await openContextMenu();
+  await openContextMenu("body");
+
   
   ok(document.getElementById(extMenuId), `menu exists ${extMenuId}`);
   ok(document.getElementById(pb_extMenuId), `menu exists ${pb_extMenuId}`);
