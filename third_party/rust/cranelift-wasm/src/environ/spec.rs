@@ -140,6 +140,12 @@ pub trait TargetEnvironment {
 pub trait FuncEnvironment: TargetEnvironment {
     
     
+    fn is_wasm_parameter(&self, signature: &ir::Signature, index: usize) -> bool {
+        signature.params[index].purpose == ir::ArgumentPurpose::Normal
+    }
+
+    
+    
     
     fn return_mode(&self) -> ReturnMode {
         ReturnMode::NormalReturns
@@ -302,6 +308,7 @@ pub trait FuncEnvironment: TargetEnvironment {
     
     
     
+    #[allow(clippy::too_many_arguments)]
     fn translate_memory_init(
         &mut self,
         pos: FuncCursor,
@@ -325,6 +332,7 @@ pub trait FuncEnvironment: TargetEnvironment {
     ) -> WasmResult<ir::Value>;
 
     
+    #[allow(clippy::too_many_arguments)]
     fn translate_table_copy(
         &mut self,
         pos: FuncCursor,
@@ -338,6 +346,7 @@ pub trait FuncEnvironment: TargetEnvironment {
     ) -> WasmResult<()>;
 
     
+    #[allow(clippy::too_many_arguments)]
     fn translate_table_init(
         &mut self,
         pos: FuncCursor,

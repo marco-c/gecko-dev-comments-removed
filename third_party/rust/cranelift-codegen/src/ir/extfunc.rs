@@ -102,6 +102,24 @@ impl Signature {
             .count()
             > 1
     }
+
+    
+    pub fn param_types(&self) -> Vec<Type> {
+        self.params
+            .iter()
+            .filter(|ap| ap.purpose == ArgumentPurpose::Normal)
+            .map(|ap| ap.value_type)
+            .collect()
+    }
+
+    
+    pub fn return_types(&self) -> Vec<Type> {
+        self.returns
+            .iter()
+            .filter(|ap| ap.purpose == ArgumentPurpose::Normal)
+            .map(|ap| ap.value_type)
+            .collect()
+    }
 }
 
 

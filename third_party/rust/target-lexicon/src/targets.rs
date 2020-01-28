@@ -1,7 +1,10 @@
 
 
 use crate::triple::{Endianness, PointerWidth, Triple};
+use alloc::boxed::Box;
+use alloc::string::String;
 use core::fmt;
+use core::hash::{Hash, Hasher};
 use core::str::FromStr;
 
 
@@ -292,7 +295,40 @@ impl Aarch64Architecture {
 
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, Eq)]
+pub enum CustomVendor {
+    
+    Owned(Box<String>),
+    
+    
+    Static(&'static str),
+}
+
+impl CustomVendor {
+    
+    pub fn as_str(&self) -> &str {
+        match self {
+            CustomVendor::Owned(s) => s,
+            CustomVendor::Static(s) => s,
+        }
+    }
+}
+
+impl PartialEq for CustomVendor {
+    fn eq(&self, other: &Self) -> bool {
+        self.as_str() == other.as_str()
+    }
+}
+
+impl Hash for CustomVendor {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.as_str().hash(state)
+    }
+}
+
+
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[allow(missing_docs)]
 pub enum Vendor {
     Unknown,
@@ -306,6 +342,15 @@ pub enum Vendor {
     Sun,
     Uwp,
     Wrs,
+
+    
+    
+    
+    
+    
+    
+    
+    Custom(CustomVendor),
 }
 
 
@@ -717,6 +762,7 @@ impl fmt::Display for Vendor {
             Vendor::Sun => "sun",
             Vendor::Uwp => "uwp",
             Vendor::Wrs => "wrs",
+            Vendor::Custom(ref name) => name.as_str(),
         };
         f.write_str(s)
     }
@@ -738,7 +784,43 @@ impl FromStr for Vendor {
             "sun" => Vendor::Sun,
             "uwp" => Vendor::Uwp,
             "wrs" => Vendor::Wrs,
-            _ => return Err(()),
+            custom => {
+                use alloc::borrow::ToOwned;
+
+                
+                
+                
+                
+
+                
+                if custom.is_empty() {
+                    return Err(());
+                }
+
+                
+                
+                if Architecture::from_str(custom).is_ok()
+                    || OperatingSystem::from_str(custom).is_ok()
+                    || Environment::from_str(custom).is_ok()
+                    || BinaryFormat::from_str(custom).is_ok()
+                {
+                    return Err(());
+                }
+
+                
+                if !custom.chars().nth(0).unwrap().is_ascii_lowercase() {
+                    return Err(());
+                }
+
+                
+                if custom.chars().any(|c: char| {
+                    !(c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' || c == '.')
+                }) {
+                    return Err(());
+                }
+
+                Vendor::Custom(CustomVendor::Owned(Box::new(custom.to_owned())))
+            }
         })
     }
 }
@@ -1119,5 +1201,88 @@ mod tests {
         assert_eq!(t.operating_system, OperatingSystem::None_);
         assert_eq!(t.environment, Environment::Eabihf);
         assert_eq!(t.binary_format, BinaryFormat::Elf);
+    }
+
+    #[test]
+    fn custom_vendors() {
+        
+        assert!(Triple::from_str("x86_64--linux").is_err());
+        assert!(Triple::from_str("x86_64-42-linux").is_err());
+        assert!(Triple::from_str("x86_64-__customvendor__-linux").is_err());
+        assert!(Triple::from_str("x86_64-^-linux").is_err());
+        assert!(Triple::from_str("x86_64- -linux").is_err());
+        assert!(Triple::from_str("x86_64-CustomVendor-linux").is_err());
+        assert!(Triple::from_str("x86_64-linux-linux").is_err());
+        assert!(Triple::from_str("x86_64-x86_64-linux").is_err());
+        assert!(Triple::from_str("x86_64-elf-linux").is_err());
+        assert!(Triple::from_str("x86_64-gnu-linux").is_err());
+        assert!(Triple::from_str("x86_64-linux-customvendor").is_err());
+        assert!(Triple::from_str("customvendor").is_err());
+        assert!(Triple::from_str("customvendor-x86_64").is_err());
+        assert!(Triple::from_str("x86_64-").is_err());
+        assert!(Triple::from_str("x86_64--").is_err());
+
+        
+        assert!(
+            Triple::from_str("x86_64-𝓬𝓾𝓼𝓽𝓸𝓶𝓿𝓮𝓷𝓭𝓸𝓻-linux").is_err(),
+            "unicode font hazard"
+        );
+        assert!(
+            Triple::from_str("x86_64-ćúśtőḿvéńdőŕ-linux").is_err(),
+            "diacritical mark stripping hazard"
+        );
+        assert!(
+            Triple::from_str("x86_64-customvendοr-linux").is_err(),
+            "homoglyph hazard"
+        );
+        assert!(Triple::from_str("x86_64-customvendor-linux").is_ok());
+        assert!(
+            Triple::from_str("x86_64-ﬃ-linux").is_err(),
+            "normalization hazard"
+        );
+        assert!(Triple::from_str("x86_64-ffi-linux").is_ok());
+        assert!(
+            Triple::from_str("x86_64-custom‍vendor-linux").is_err(),
+            "zero-width character hazard"
+        );
+        assert!(
+            Triple::from_str("x86_64-﻿customvendor-linux").is_err(),
+            "BOM hazard"
+        );
+
+        
+        let t = Triple::from_str("x86_64-customvendor-linux")
+            .expect("can't parse target with custom vendor");
+        assert_eq!(t.architecture, Architecture::X86_64);
+        assert_eq!(
+            t.vendor,
+            Vendor::Custom(CustomVendor::Static("customvendor"))
+        );
+        assert_eq!(t.operating_system, OperatingSystem::Linux);
+        assert_eq!(t.environment, Environment::Unknown);
+        assert_eq!(t.binary_format, BinaryFormat::Elf);
+        assert_eq!(t.to_string(), "x86_64-customvendor-linux");
+
+        let t =
+            Triple::from_str("x86_64-customvendor").expect("can't parse target with custom vendor");
+        assert_eq!(t.architecture, Architecture::X86_64);
+        assert_eq!(
+            t.vendor,
+            Vendor::Custom(CustomVendor::Static("customvendor"))
+        );
+        assert_eq!(t.operating_system, OperatingSystem::Unknown);
+        assert_eq!(t.environment, Environment::Unknown);
+        assert_eq!(t.binary_format, BinaryFormat::Unknown);
+
+        assert_eq!(
+            Triple::from_str("unknown-foo"),
+            Ok(Triple {
+                architecture: Architecture::Unknown,
+                vendor: Vendor::Custom(CustomVendor::Static("foo")),
+                operating_system: OperatingSystem::Unknown,
+                environment: Environment::Unknown,
+                binary_format: BinaryFormat::Unknown,
+            })
+        );
     }
 }

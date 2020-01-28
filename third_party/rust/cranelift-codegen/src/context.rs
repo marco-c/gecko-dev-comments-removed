@@ -10,8 +10,8 @@
 
 
 use crate::binemit::{
-    relax_branches, shrink_instructions, CodeInfo, MemoryCodeSink, RelocSink, StackmapSink,
-    TrapSink,
+    relax_branches, shrink_instructions, CodeInfo, FrameUnwindKind, FrameUnwindSink,
+    MemoryCodeSink, RelocSink, StackmapSink, TrapSink,
 };
 use crate::dce::do_dce;
 use crate::dominator_tree::DominatorTree;
@@ -201,8 +201,13 @@ impl Context {
     
     
     
-    pub fn emit_unwind_info(&self, isa: &dyn TargetIsa, mem: &mut Vec<u8>) {
-        isa.emit_unwind_info(&self.func, mem);
+    pub fn emit_unwind_info(
+        &self,
+        isa: &dyn TargetIsa,
+        kind: FrameUnwindKind,
+        sink: &mut dyn FrameUnwindSink,
+    ) {
+        isa.emit_unwind_info(&self.func, kind, sink);
     }
 
     

@@ -63,7 +63,6 @@ use crate::settings::SetResult;
 use crate::timing;
 use alloc::borrow::Cow;
 use alloc::boxed::Box;
-use alloc::vec::Vec;
 use core::fmt;
 use target_lexicon::{triple, Architecture, PointerWidth, Triple};
 use thiserror::Error;
@@ -198,7 +197,7 @@ impl TargetFrontendConfig {
 
 
 
-pub trait TargetIsa: fmt::Display + Sync {
+pub trait TargetIsa: fmt::Display + Send + Sync {
     
     fn name(&self) -> &'static str;
 
@@ -382,7 +381,12 @@ pub trait TargetIsa: fmt::Display + Sync {
     
     
     
-    fn emit_unwind_info(&self, _func: &ir::Function, _mem: &mut Vec<u8>) {
+    fn emit_unwind_info(
+        &self,
+        _func: &ir::Function,
+        _kind: binemit::FrameUnwindKind,
+        _sink: &mut dyn binemit::FrameUnwindSink,
+    ) {
         
     }
 }

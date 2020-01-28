@@ -62,13 +62,19 @@ fn rex3(rm: RegUnit, reg: RegUnit, index: RegUnit) -> u8 {
 }
 
 
+#[inline]
+fn needs_rex(bits: u16, rex: u8) -> bool {
+    rex != BASE_REX || EncodingBits::from(bits).rex_w() == 1
+}
+
+
 
 
 
 fn rex_prefix<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
     debug_assert_eq!(rex & 0xf8, BASE_REX);
     let w = EncodingBits::from(bits).rex_w();
-    sink.put1(rex | (u8::from(w) << 3));
+    sink.put1(rex | (w << 3));
 }
 
 
@@ -80,8 +86,17 @@ fn put_op1<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
 
 
 fn put_rexop1<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
-    debug_assert_eq!(bits & 0x0f00, 0, "Invalid encoding bits for Op1*");
+    debug_assert_eq!(bits & 0x0f00, 0, "Invalid encoding bits for RexOp1*");
     rex_prefix(bits, rex, sink);
+    sink.put1(bits as u8);
+}
+
+
+fn put_dynrexop1<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
+    debug_assert_eq!(bits & 0x0f00, 0, "Invalid encoding bits for DynRexOp1*");
+    if needs_rex(bits, rex) {
+        rex_prefix(bits, rex, sink);
+    }
     sink.put1(bits as u8);
 }
 
@@ -102,6 +117,20 @@ fn put_rexop2<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
 }
 
 
+fn put_dynrexop2<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
+    debug_assert_eq!(
+        bits & 0x0f00,
+        0x0400,
+        "Invalid encoding bits for DynRexOp2*"
+    );
+    if needs_rex(bits, rex) {
+        rex_prefix(bits, rex, sink);
+    }
+    sink.put1(0x0f);
+    sink.put1(bits as u8);
+}
+
+
 fn put_mp1<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
     debug_assert_eq!(bits & 0x8c00, 0, "Invalid encoding bits for Mp1*");
     let enc = EncodingBits::from(bits);
@@ -112,7 +141,7 @@ fn put_mp1<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
 
 
 fn put_rexmp1<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
-    debug_assert_eq!(bits & 0x0c00, 0, "Invalid encoding bits for Mp1*");
+    debug_assert_eq!(bits & 0x0c00, 0, "Invalid encoding bits for RexMp1*");
     let enc = EncodingBits::from(bits);
     sink.put1(PREFIX[(enc.pp() - 1) as usize]);
     rex_prefix(bits, rex, sink);
@@ -131,10 +160,26 @@ fn put_mp2<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
 
 
 fn put_rexmp2<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
-    debug_assert_eq!(bits & 0x0c00, 0x0400, "Invalid encoding bits for Mp2*");
+    debug_assert_eq!(bits & 0x0c00, 0x0400, "Invalid encoding bits for RexMp2*");
     let enc = EncodingBits::from(bits);
     sink.put1(PREFIX[(enc.pp() - 1) as usize]);
     rex_prefix(bits, rex, sink);
+    sink.put1(0x0f);
+    sink.put1(bits as u8);
+}
+
+
+fn put_dynrexmp2<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
+    debug_assert_eq!(
+        bits & 0x0c00,
+        0x0400,
+        "Invalid encoding bits for DynRexMp2*"
+    );
+    let enc = EncodingBits::from(bits);
+    sink.put1(PREFIX[(enc.pp() - 1) as usize]);
+    if needs_rex(bits, rex) {
+        rex_prefix(bits, rex, sink);
+    }
     sink.put1(0x0f);
     sink.put1(bits as u8);
 }
@@ -152,7 +197,7 @@ fn put_mp3<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
 
 
 fn put_rexmp3<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
-    debug_assert_eq!(bits & 0x0800, 0x0800, "Invalid encoding bits for Mp3*");
+    debug_assert_eq!(bits & 0x0800, 0x0800, "Invalid encoding bits for RexMp3*");
     let enc = EncodingBits::from(bits);
     sink.put1(PREFIX[(enc.pp() - 1) as usize]);
     rex_prefix(bits, rex, sink);

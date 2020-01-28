@@ -156,6 +156,36 @@ pub trait CodeSink {
 }
 
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum FrameUnwindKind {
+    
+    Fastcall,
+    
+    Libunwind,
+}
+
+
+pub type FrameUnwindOffset = usize;
+
+
+pub trait FrameUnwindSink {
+    
+    fn len(&self) -> FrameUnwindOffset;
+
+    
+    fn bytes(&mut self, _: &[u8]);
+
+    
+    fn reserve(&mut self, _len: usize) {}
+
+    
+    fn reloc(&mut self, _: Reloc, _: FrameUnwindOffset);
+
+    
+    fn set_entry_offset(&mut self, _: FrameUnwindOffset);
+}
+
+
 #[cold]
 pub fn bad_encoding(func: &Function, inst: Inst) -> ! {
     panic!(

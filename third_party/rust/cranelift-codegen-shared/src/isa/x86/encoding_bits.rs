@@ -59,6 +59,22 @@ impl EncodingBits {
 
     
     #[inline]
+    pub fn with_rrr(mut self, rrr: u8) -> Self {
+        debug_assert_eq!(self.rrr(), 0);
+        self.write(RRR, rrr.into());
+        self
+    }
+
+    
+    #[inline]
+    pub fn with_rex_w(mut self) -> Self {
+        debug_assert_eq!(self.rex_w(), 0);
+        self.write(REX_W, 1);
+        self
+    }
+
+    
+    #[inline]
     pub fn bits(self) -> u16 {
         self.0
     }

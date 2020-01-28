@@ -202,7 +202,7 @@ fn make_funcref(
     func.import_function(ExtFuncData {
         name: ExternalName::LibCall(libcall),
         signature: sigref,
-        colocated: isa.flags().colocated_libcalls(),
+        colocated: isa.flags().use_colocated_libcalls(),
     })
 }
 

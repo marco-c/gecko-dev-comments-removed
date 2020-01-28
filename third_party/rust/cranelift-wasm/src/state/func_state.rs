@@ -308,27 +308,36 @@ impl FuncTranslationState {
 
     
     
-    
-    pub(crate) fn popn(&mut self, n: usize) {
+    #[inline]
+    fn ensure_length_is_at_least(&self, n: usize) {
         debug_assert!(
             n <= self.stack.len(),
-            "popn({}) but stack only has {} values",
+            "attempted to access {} values but stack only has {} values",
             n,
             self.stack.len()
-        );
+        )
+    }
+
+    
+    
+    
+    pub(crate) fn popn(&mut self, n: usize) {
+        self.ensure_length_is_at_least(n);
         let new_len = self.stack.len() - n;
         self.stack.truncate(new_len);
     }
 
     
     pub(crate) fn peekn(&self, n: usize) -> &[Value] {
-        debug_assert!(
-            n <= self.stack.len(),
-            "peekn({}) but stack only has {} values",
-            n,
-            self.stack.len()
-        );
+        self.ensure_length_is_at_least(n);
         &self.stack[self.stack.len() - n..]
+    }
+
+    
+    pub(crate) fn peekn_mut(&mut self, n: usize) -> &mut [Value] {
+        self.ensure_length_is_at_least(n);
+        let len = self.stack.len();
+        &mut self.stack[len - n..]
     }
 
     
@@ -465,7 +474,7 @@ impl FuncTranslationState {
             Occupied(entry) => Ok(*entry.get()),
             Vacant(entry) => {
                 let sig = environ.make_indirect_sig(func, index)?;
-                Ok(*entry.insert((sig, normal_args(&func.dfg.signatures[sig]))))
+                Ok(*entry.insert((sig, num_wasm_parameters(environ, &func.dfg.signatures[sig]))))
             }
         }
     }
@@ -486,17 +495,20 @@ impl FuncTranslationState {
             Vacant(entry) => {
                 let fref = environ.make_direct_func(func, index)?;
                 let sig = func.dfg.ext_funcs[fref].signature;
-                Ok(*entry.insert((fref, normal_args(&func.dfg.signatures[sig]))))
+                Ok(*entry.insert((
+                    fref,
+                    num_wasm_parameters(environ, &func.dfg.signatures[sig]),
+                )))
             }
         }
     }
 }
 
-
-
-fn normal_args(sig: &ir::Signature) -> usize {
-    sig.params
-        .iter()
-        .filter(|arg| arg.purpose == ir::ArgumentPurpose::Normal)
+fn num_wasm_parameters<FE: FuncEnvironment + ?Sized>(
+    environ: &FE,
+    signature: &ir::Signature,
+) -> usize {
+    (0..signature.params.len())
+        .filter(|index| environ.is_wasm_parameter(signature, *index))
         .count()
 }
