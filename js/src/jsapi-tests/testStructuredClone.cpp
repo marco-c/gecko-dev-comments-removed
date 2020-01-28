@@ -137,7 +137,6 @@ BEGIN_TEST(testStructuredClone_externalArrayBuffer) {
 END_TEST(testStructuredClone_externalArrayBuffer)
 
 BEGIN_TEST(testStructuredClone_externalArrayBufferDifferentThreadOrProcess) {
-  
   CHECK(testStructuredCloneCopy(
       JS::StructuredCloneScope::SameProcessDifferentThread));
   CHECK(testStructuredCloneCopy(JS::StructuredCloneScope::DifferentProcess));
