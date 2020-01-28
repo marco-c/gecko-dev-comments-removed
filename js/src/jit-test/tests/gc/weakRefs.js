@@ -44,17 +44,17 @@ var that = this;
 gc();
 
 let wr1;
-(function() {
-  let obj = {};
+
+
+function allocObj() { return {}; }
+
+(function () {
+  let obj = allocObj();
   wr1 = new WeakRef(obj);
   obj = null;
 })();
 
-
-
-
-
-
+assertEq(undefined === wr1.deref(), false);
 
 gc();
 
