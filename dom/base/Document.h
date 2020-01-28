@@ -1123,11 +1123,6 @@ class Document : public nsINode,
   
 
 
-  ContentBlockingLog* GetContentBlockingLog() { return &mContentBlockingLog; }
-
-  
-
-
   bool GetHasTrackingContentBlocked() {
     return mContentBlockingLog.HasBlockedAnyOfType(
         nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT);
