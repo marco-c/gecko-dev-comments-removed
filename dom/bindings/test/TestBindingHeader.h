@@ -1,9 +1,9 @@
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 
 #ifndef TestBindingHeader_h
 #define TestBindingHeader_h
@@ -17,21 +17,21 @@
 #include "nsGenericHTMLElement.h"
 #include "nsWrapperCache.h"
 
-
-
-
+// Forward declare this before we include TestCodeGenBinding.h, because that
+// header relies on including this one for it, for ParentDict. Hopefully it
+// won't begin to rely on it in more fundamental ways.
 namespace mozilla {
 namespace dom {
 class DocGroup;
 class TestExternalInterface;
 class Promise;
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
-
+// We don't export TestCodeGenBinding.h, but it's right in our parent dir.
 #ifdef XP_WIN
-
-
+// If we're on windows, simulate including windows.h. This step will cause
+// compilation failure if NeedsWindowsUndef is not defined.
 #  define NO_ERROR 0x1
 #endif
 #include "../TestCodeGenBinding.h"
@@ -41,7 +41,7 @@ extern bool TestFuncControlledMember(JSContext*, JSObject*);
 namespace mozilla {
 namespace dom {
 
-
+// IID for nsRenamedInterface
 #define NS_RENAMED_INTERFACE_IID                     \
   {                                                  \
     0xd4b19ef3, 0xe68b, 0x4e3f, {                    \
@@ -54,13 +54,13 @@ class nsRenamedInterface : public nsISupports, public nsWrapperCache {
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_RENAMED_INTERFACE_IID)
   NS_DECL_ISUPPORTS
 
-  
+  // We need a GetParentObject to make binding codegen happy
   virtual nsISupports* GetParentObject();
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsRenamedInterface, NS_RENAMED_INTERFACE_IID)
 
-
+// IID for the TestExternalInterface
 #define NS_TEST_EXTERNAL_INTERFACE_IID               \
   {                                                  \
     0xd5ba0c99, 0x9b1d, 0x4e71, {                    \
@@ -87,7 +87,7 @@ class TestNonWrapperCacheInterface : public nsISupports {
 class OnlyForUseInConstructor : public nsISupports, public nsWrapperCache {
  public:
   NS_DECL_ISUPPORTS
-  
+  // We need a GetParentObject to make binding codegen happy
   virtual nsISupports* GetParentObject();
 };
 
@@ -95,12 +95,12 @@ class TestInterface : public nsISupports, public nsWrapperCache {
  public:
   NS_DECL_ISUPPORTS
 
-  
+  // We need a GetParentObject and GetDocGroup to make binding codegen happy
   virtual nsISupports* GetParentObject();
   DocGroup* GetDocGroup() const;
 
-  
-  
+  // And now our actual WebIDL API
+  // Constructors
   static already_AddRefed<TestInterface> Constructor(const GlobalObject&);
   static already_AddRefed<TestInterface> Constructor(const GlobalObject&,
                                                      const nsAString&);
@@ -118,11 +118,11 @@ class TestInterface : public nsISupports, public nsWrapperCache {
                                                      const ArrayBuffer&);
   static already_AddRefed<TestInterface> Constructor(const GlobalObject&,
                                                      const Uint8Array&);
-  
-
-
-
-
+  /*  static
+  already_AddRefed<TestInterface>
+    Constructor(const GlobalObject&, uint32_t, uint32_t,
+                const TestInterfaceOrOnlyForUseInConstructor&);
+  */
 
   static already_AddRefed<TestInterface> Test(const GlobalObject&,
                                               ErrorResult&);
@@ -160,7 +160,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
           Sequence<Sequence<Record<nsCString, Record<nsString, JS::Value>>>>>>&,
       ErrorResult&);
 
-  
+  // Integer types
   int8_t ReadonlyByte();
   int8_t WritableByte();
   void SetWritableByte(int8_t);
@@ -288,7 +288,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void PassUnrestricted(float arg1, float arg2, float arg3, float arg4,
                         double arg5, double arg6, double arg7, double arg8);
 
-  
+  // Interface types
   already_AddRefed<TestInterface> ReceiveSelf();
   already_AddRefed<TestInterface> ReceiveNullableSelf();
   TestInterface* ReceiveWeakSelf();
@@ -347,7 +347,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
       const Optional<OwningNonNull<TestCallbackInterface>>&);
   void PassOptionalCallbackInterfaceWithDefault(TestCallbackInterface*);
 
-  
+  // Sequence types
   void GetReadonlySequence(nsTArray<int32_t>&);
   void GetReadonlySequenceOfDictionaries(JSContext*, nsTArray<Dict>&);
   void GetReadonlyNullableSequenceOfDictionaries(JSContext*,
@@ -428,7 +428,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void ReceiveSequenceOfSequencesOfSequences(
       nsTArray<nsTArray<nsTArray<int32_t>>>&);
 
-  
+  // Record types
   void PassRecord(const Record<nsString, int32_t>&);
   void PassNullableRecord(const Nullable<Record<nsString, int32_t>>&);
   void PassRecordOfNullableInts(const Record<nsString, Nullable<int32_t>>&);
@@ -467,7 +467,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void ReceiveRecordOfRecords(Record<nsString, Record<nsString, int32_t>>&);
   void ReceiveAnyRecord(JSContext*, Record<nsString, JS::Value>&);
 
-  
+  // Typed array types
   void PassArrayBuffer(const ArrayBuffer&);
   void PassNullableArrayBuffer(const Nullable<ArrayBuffer>&);
   void PassOptionalArrayBuffer(const Optional<ArrayBuffer>&);
@@ -496,7 +496,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void SetUint8ArrayAttr(const Uint8Array&);
   void GetUint8ArrayAttr(JSContext*, JS::MutableHandle<JSObject*>);
 
-  
+  // DOMString types
   void PassString(const nsAString&);
   void PassNullableString(const nsAString&);
   void PassOptionalString(const Optional<nsAString>&);
@@ -506,7 +506,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void PassVariadicString(const Sequence<nsString>&);
   void ReceiveString(DOMString&);
 
-  
+  // ByteString types
   void PassByteString(const nsCString&);
   void PassNullableByteString(const nsCString&);
   void PassOptionalByteString(const Optional<nsCString>&);
@@ -517,7 +517,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void PassOptionalUnionByteString(const Optional<ByteStringOrLong>&);
   void PassOptionalUnionByteStringWithDefaultValue(const ByteStringOrLong&);
 
-  
+  // UTF8String types
   void PassUTF8String(const nsACString&);
   void PassNullableUTF8String(const nsACString&);
   void PassOptionalUTF8String(const Optional<nsACString>&);
@@ -528,7 +528,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void PassOptionalUnionUTF8String(const Optional<UTF8StringOrLong>&);
   void PassOptionalUnionUTF8StringWithDefaultValue(const UTF8StringOrLong&);
 
-  
+  // USVString types
   void PassUSVS(const nsAString&);
   void PassNullableUSVS(const nsAString&);
   void PassOptionalUSVS(const Optional<nsAString>&);
@@ -538,7 +538,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void PassVariadicUSVS(const Sequence<nsString>&);
   void ReceiveUSVS(DOMString&);
 
-  
+  // JSString types
   void PassJSString(JSContext*, JS::Handle<JSString*>);
   void PassOptionalJSStringWithDefaultValue(JSContext*, JS::Handle<JSString*>);
   void ReceiveJSString(JSContext*, JS::MutableHandle<JSString*>);
@@ -546,7 +546,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void GetJsStringAttr(JSContext*, JS::MutableHandle<JSString*>);
   void SetJsStringAttr(JSContext*, JS::Handle<JSString*>);
 
-  
+  // Enumerated types
   void PassEnum(TestEnum);
   void PassNullableEnum(const Nullable<TestEnum>&);
   void PassOptionalEnum(const Optional<TestEnum>&);
@@ -560,7 +560,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   TestEnum ReadonlyEnumAttribute();
   void SetEnumAttribute(TestEnum);
 
-  
+  // Callback types
   void PassCallback(TestCallback&);
   void PassNullableCallback(TestCallback*);
   void PassOptionalCallback(const Optional<OwningNonNull<TestCallback>>&);
@@ -596,7 +596,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
       TestCallbackConstruction&, TestObjectConstruction&,
       TestTypedArrayConstruction&, TestSequenceConstruction&);
 
-  
+  // Any types
   void PassAny(JSContext*, JS::Handle<JS::Value>);
   void PassVariadicAny(JSContext*, const Sequence<JS::Value>&);
   void PassOptionalAny(JSContext*, JS::Handle<JS::Value>);
@@ -650,7 +650,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
           Nullable<Sequence<Nullable<Record<nsString, JS::Value>>>>>&);
   void ReceiveAny(JSContext*, JS::MutableHandle<JS::Value>);
 
-  
+  // object types
   void PassObject(JSContext*, JS::Handle<JSObject*>);
   void PassVariadicObject(JSContext*, const Sequence<JSObject*>&);
   void PassNullableObject(JSContext*, JS::Handle<JSObject*>);
@@ -674,7 +674,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void ReceiveObject(JSContext*, JS::MutableHandle<JSObject*>);
   void ReceiveNullableObject(JSContext*, JS::MutableHandle<JSObject*>);
 
-  
+  // Union types
   void PassUnion(JSContext*, const ObjectOrLong& arg);
   void PassUnionWithNullable(JSContext* cx, const ObjectOrNullOrLong& arg) {
     OwningObjectOrLong returnValue;
@@ -733,13 +733,13 @@ class TestInterface : public nsISupports, public nsWrapperCache {
                                  const Optional<Nullable<ObjectOrLong>>&);
   void PassOptionalNullableUnionWithDefaultValue(JSContext*,
                                                  const Nullable<ObjectOrLong>&);
-  
-  
-  
+  // void PassUnionWithInterfaces(const TestInterfaceOrTestExternalInterface&
+  // arg); void PassUnionWithInterfacesAndNullable(const
+  // TestInterfaceOrNullOrTestExternalInterface& arg);
   void PassUnionWithArrayBuffer(const ArrayBufferOrLong&);
   void PassUnionWithString(JSContext*, const StringOrObject&);
   void PassUnionWithEnum(JSContext*, const SupportedTypeOrObject&);
-  
+  // void PassUnionWithCallback(JSContext*, const TestCallbackOrLong&);
   void PassUnionWithObject(JSContext*, const ObjectOrLong&);
 
   void PassUnionWithDefaultValue1(const DoubleOrString& arg);
@@ -847,7 +847,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void GetWritableNullableUnion(Nullable<OwningCanvasPatternOrCanvasGradient>&);
   void SetWritableNullableUnion(const Nullable<CanvasPatternOrCanvasGradient>&);
 
-  
+  // Date types
   void PassDate(Date);
   void PassNullableDate(const Nullable<Date>&);
   void PassOptionalDate(const Optional<Date>&);
@@ -859,7 +859,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   Date ReceiveDate();
   Nullable<Date> ReceiveNullableDate();
 
-  
+  // Promise types
   void PassPromise(Promise&);
   void PassOptionalPromise(const Optional<OwningNonNull<Promise>>&);
   void PassPromiseSequence(const Sequence<OwningNonNull<Promise>>&);
@@ -867,14 +867,14 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   Promise* ReceivePromise();
   already_AddRefed<Promise> ReceiveAddrefedPromise();
 
-  
+  // binaryNames tests
   void MethodRenamedTo();
   void MethodRenamedTo(int8_t);
   int8_t AttributeGetterRenamedTo();
   int8_t AttributeRenamedTo();
   void SetAttributeRenamedTo(int8_t);
 
-  
+  // Dictionary tests
   void PassDictionary(JSContext*, const Dict&);
   void PassDictionary2(JSContext*, const Dict&);
   void GetReadonlyDictionary(JSContext*, Dict&);
@@ -897,32 +897,32 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void ReceiveDictContainingSequence(JSContext*, DictContainingSequence&);
   void PassVariadicDictionary(JSContext*, const Sequence<Dict>&);
 
-  
+  // Typedefs
   void ExerciseTypedefInterfaces1(TestInterface&);
   already_AddRefed<TestInterface> ExerciseTypedefInterfaces2(TestInterface*);
   void ExerciseTypedefInterfaces3(TestInterface&);
 
-  
+  // Deprecated methods and attributes
   int8_t DeprecatedAttribute();
   void SetDeprecatedAttribute(int8_t);
   int8_t DeprecatedMethod();
   int8_t DeprecatedMethodWithContext(JSContext*, const JS::Value&);
 
-  
+  // Static methods and attributes
   static void StaticMethod(const GlobalObject&, bool);
   static void StaticMethodWithContext(const GlobalObject&, const JS::Value&);
   static bool StaticAttribute(const GlobalObject&);
   static void SetStaticAttribute(const GlobalObject&, bool);
   static void Assert(const GlobalObject&, bool);
 
-  
+  // Deprecated static methods and attributes
   static int8_t StaticDeprecatedAttribute(const GlobalObject&);
   static void SetStaticDeprecatedAttribute(const GlobalObject&, int8_t);
   static void StaticDeprecatedMethod(const GlobalObject&);
   static void StaticDeprecatedMethodWithContext(const GlobalObject&,
                                                 const JS::Value&);
 
-  
+  // Overload resolution tests
   bool Overload1(TestInterface&);
   TestInterface* Overload1(const nsAString&, TestInterface&);
   void Overload2(TestInterface&);
@@ -970,11 +970,11 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void Overload20(JSContext*, const Dict&);
   void Overload20(const Sequence<int32_t>&);
 
-  
+  // Variadic handling
   void PassVariadicThirdArg(const nsAString&, int32_t,
                             const Sequence<OwningNonNull<TestInterface>>&);
 
-  
+  // Conditionally exposed methods/attributes
   bool Prefable1();
   bool Prefable2();
   bool Prefable3();
@@ -1000,7 +1000,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void Prefable23();
   void Prefable24();
 
-  
+  // Conditionally exposed methods/attributes involving [SecureContext]
   bool ConditionalOnSecureContext1();
   bool ConditionalOnSecureContext2();
   bool ConditionalOnSecureContext3();
@@ -1010,7 +1010,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void ConditionalOnSecureContext7();
   void ConditionalOnSecureContext8();
 
-  
+  // Miscellania
   int32_t AttrWithLenientThis();
   void SetAttrWithLenientThis(int32_t);
   uint32_t UnforgeableAttr();
@@ -1069,12 +1069,12 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void SetNonEnumerableAttr(bool);
   void NonEnumerableMethod();
 
-  
+  // Methods and properties imported via "includes"
   bool MixedInProperty();
   void SetMixedInProperty(bool);
   void MixedInMethod();
 
-  
+  // Test EnforceRange/Clamp
   void DontEnforceRangeOrClamp(int8_t);
   void DoEnforceRange(int8_t);
   void DoEnforceRangeNullable(const Nullable<int8_t>&);
@@ -1089,10 +1089,34 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void SetClampedByte(int8_t);
   int8_t ClampedByte();
 
+  // Test AllowShared
+  void SetAllowSharedArrayBufferViewTypedef(const ArrayBufferView&);
+  void GetAllowSharedArrayBufferViewTypedef(JSContext*,
+                                            JS::MutableHandle<JSObject*>);
+  void SetAllowSharedArrayBufferView(const ArrayBufferView&);
+  void GetAllowSharedArrayBufferView(JSContext*, JS::MutableHandle<JSObject*>);
+  void SetAllowSharedNullableArrayBufferView(const Nullable<ArrayBufferView>&);
+  void GetAllowSharedNullableArrayBufferView(JSContext*,
+                                             JS::MutableHandle<JSObject*>);
+  void SetAllowSharedArrayBuffer(const ArrayBuffer&);
+  void GetAllowSharedArrayBuffer(JSContext*, JS::MutableHandle<JSObject*>);
+  void SetAllowSharedNullableArrayBuffer(const Nullable<ArrayBuffer>&);
+  void GetAllowSharedNullableArrayBuffer(JSContext*,
+                                         JS::MutableHandle<JSObject*>);
+
+  void PassAllowSharedArrayBufferViewTypedef(const ArrayBufferView&);
+  void PassAllowSharedArrayBufferView(const ArrayBufferView&);
+  void PassAllowSharedNullableArrayBufferView(const Nullable<ArrayBufferView>&);
+  void PassAllowSharedArrayBuffer(const ArrayBuffer&);
+  void PassAllowSharedNullableArrayBuffer(const Nullable<ArrayBuffer>&);
+  void PassUnionArrayBuffer(const StringOrArrayBuffer& foo);
+  void PassUnionAllowSharedArrayBuffer(
+      const StringOrMaybeSharedArrayBuffer& foo);
+
  private:
-  
-  
-  
+  // We add signatures here that _could_ start matching if the codegen
+  // got data types wrong.  That way if it ever does we'll have a call
+  // to these private deleted methods and compilation will fail.
   void SetReadonlyByte(int8_t) = delete;
   template <typename T>
   void SetWritableByte(T) = delete;
@@ -1175,7 +1199,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   template <typename T>
   void PassOptionalUnsignedLongLongWithDefault(T) = delete;
 
-  
+  // Enforce that only const things are passed for sequences
   void PassSequence(Sequence<int32_t>&) = delete;
   void PassNullableSequence(Nullable<Sequence<int32_t>>&) = delete;
   void PassOptionalNullableSequenceWithDefaultValue(
@@ -1207,7 +1231,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
       JSContext*,
       Optional<Nullable<Sequence<Nullable<Sequence<JSObject*>>>>>&) = delete;
 
-  
+  // Enforce that only const things are passed for optional
   void PassOptionalByte(Optional<int8_t>&) = delete;
   void PassOptionalNullableByte(Optional<Nullable<int8_t>>&) = delete;
   void PassOptionalShort(Optional<int16_t>&) = delete;
@@ -1235,7 +1259,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
                                     Optional<RefPtr<TestCallback>>&) = delete;
   void PassOptionalAny(Optional<JS::Handle<JS::Value>>&) = delete;
 
-  
+  // And test that string stuff is always const
   void PassString(nsAString&) = delete;
   void PassNullableString(nsAString&) = delete;
   void PassOptionalString(Optional<nsAString>&) = delete;
@@ -1244,7 +1268,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void PassOptionalNullableStringWithDefaultValue(nsAString&) = delete;
   void PassVariadicString(Sequence<nsString>&) = delete;
 
-  
+  // cstrings should be const as well
   void PassByteString(nsCString&) = delete;
   void PassNullableByteString(nsCString&) = delete;
   void PassOptionalByteString(Optional<nsCString>&) = delete;
@@ -1253,7 +1277,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void PassOptionalNullableByteStringWithDefaultValue(nsCString&) = delete;
   void PassVariadicByteString(Sequence<nsCString>&) = delete;
 
-  
+  // cstrings should be const as well
   void PassUTF8String(nsACString&) = delete;
   void PassNullableUTF8String(nsACString&) = delete;
   void PassOptionalUTF8String(Optional<nsACString>&) = delete;
@@ -1262,7 +1286,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void PassOptionalNullableUTF8StringWithDefaultValue(nsACString&) = delete;
   void PassVariadicUTF8String(Sequence<nsCString>&) = delete;
 
-  
+  // Make sure dictionary arguments are always const
   void PassDictionary(JSContext*, Dict&) = delete;
   void PassOtherDictionary(GrandparentDict&) = delete;
   void PassSequenceOfDictionaries(JSContext*, Sequence<Dict>&) = delete;
@@ -1270,10 +1294,10 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void PassDictContainingDict(JSContext*, DictContainingDict&) = delete;
   void PassDictContainingSequence(DictContainingSequence&) = delete;
 
-  
+  // Make sure various nullable things are always const
   void PassNullableEnum(Nullable<TestEnum>&) = delete;
 
-  
+  // Make sure unions are always const
   void PassUnion(JSContext*, ObjectOrLong& arg) = delete;
   void PassUnionWithNullable(JSContext*, ObjectOrNullOrLong& arg) = delete;
   void PassNullableUnion(JSContext*, Nullable<ObjectOrLong>&) = delete;
@@ -1283,7 +1307,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void PassOptionalNullableUnionWithDefaultValue(
       JSContext*, Nullable<ObjectOrLong>&) = delete;
 
-  
+  // Make sure various date stuff is const as needed
   void PassNullableDate(Nullable<Date>&) = delete;
   void PassOptionalDate(Optional<Date>&) = delete;
   void PassOptionalNullableDate(Optional<Nullable<Date>>&) = delete;
@@ -1291,12 +1315,12 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void PassDateSequence(Sequence<Date>&) = delete;
   void PassNullableDateSequence(Sequence<Nullable<Date>>&) = delete;
 
-  
+  // Make sure variadics are const as needed
   void PassVariadicAny(JSContext*, Sequence<JS::Value>&) = delete;
   void PassVariadicObject(JSContext*, Sequence<JSObject*>&) = delete;
   void PassVariadicNullableObject(JSContext*, Sequence<JSObject*>&) = delete;
 
-  
+  // Ensure NonNull does not leak in
   void PassSelf(NonNull<TestInterface>&) = delete;
   void PassSelf(OwningNonNull<TestInterface>&) = delete;
   void PassSelf(const NonNull<TestInterface>&) = delete;
@@ -1320,7 +1344,7 @@ class TestIndexedGetterInterface : public nsISupports, public nsWrapperCache {
  public:
   NS_DECL_ISUPPORTS
 
-  
+  // We need a GetParentObject to make binding codegen happy
   virtual nsISupports* GetParentObject();
 
   uint32_t IndexedGetter(uint32_t, bool&);
@@ -1337,7 +1361,7 @@ class TestNamedGetterInterface : public nsISupports, public nsWrapperCache {
  public:
   NS_DECL_ISUPPORTS
 
-  
+  // We need a GetParentObject to make binding codegen happy
   virtual nsISupports* GetParentObject();
 
   void NamedGetter(const nsAString&, bool&, nsAString&);
@@ -1350,7 +1374,7 @@ class TestIndexedGetterAndSetterAndNamedGetterInterface
  public:
   NS_DECL_ISUPPORTS
 
-  
+  // We need a GetParentObject to make binding codegen happy
   virtual nsISupports* GetParentObject();
 
   void NamedGetter(const nsAString&, bool&, nsAString&);
@@ -1365,7 +1389,7 @@ class TestIndexedAndNamedGetterInterface : public nsISupports,
  public:
   NS_DECL_ISUPPORTS
 
-  
+  // We need a GetParentObject to make binding codegen happy
   virtual nsISupports* GetParentObject();
 
   uint32_t IndexedGetter(uint32_t, bool&);
@@ -1379,7 +1403,7 @@ class TestIndexedSetterInterface : public nsISupports, public nsWrapperCache {
  public:
   NS_DECL_ISUPPORTS
 
-  
+  // We need a GetParentObject to make binding codegen happy
   virtual nsISupports* GetParentObject();
 
   void IndexedSetter(uint32_t, const nsAString&);
@@ -1392,7 +1416,7 @@ class TestNamedSetterInterface : public nsISupports, public nsWrapperCache {
  public:
   NS_DECL_ISUPPORTS
 
-  
+  // We need a GetParentObject to make binding codegen happy
   virtual nsISupports* GetParentObject();
 
   void NamedSetter(const nsAString&, TestIndexedSetterInterface&);
@@ -1405,7 +1429,7 @@ class TestIndexedAndNamedSetterInterface : public nsISupports,
  public:
   NS_DECL_ISUPPORTS
 
-  
+  // We need a GetParentObject to make binding codegen happy
   virtual nsISupports* GetParentObject();
 
   void IndexedSetter(uint32_t, TestIndexedSetterInterface&);
@@ -1437,7 +1461,7 @@ class TestCppKeywordNamedMethodsInterface : public nsISupports,
  public:
   NS_DECL_ISUPPORTS
 
-  
+  // We need a GetParentObject to make binding codegen happy
   virtual nsISupports* GetParentObject();
 
   bool Continue();
@@ -1449,7 +1473,7 @@ class TestNamedDeleterInterface : public nsISupports, public nsWrapperCache {
  public:
   NS_DECL_ISUPPORTS
 
-  
+  // We need a GetParentObject to make binding codegen happy
   virtual nsISupports* GetParentObject();
 
   void NamedDeleter(const nsAString&, bool&);
@@ -1462,7 +1486,7 @@ class TestNamedDeleterWithRetvalInterface : public nsISupports,
  public:
   NS_DECL_ISUPPORTS
 
-  
+  // We need a GetParentObject to make binding codegen happy
   virtual nsISupports* GetParentObject();
 
   bool NamedDeleter(const nsAString&, bool&);
@@ -1477,7 +1501,7 @@ class TestParentInterface : public nsISupports, public nsWrapperCache {
  public:
   NS_DECL_ISUPPORTS
 
-  
+  // We need a GetParentObject to make binding codegen happy
   virtual nsISupports* GetParentObject();
 };
 
@@ -1533,7 +1557,7 @@ class TestWorkerExposedInterface : public nsISupports, public nsWrapperCache {
  public:
   NS_DECL_ISUPPORTS
 
-  
+  // We need a GetParentObject to make binding codegen happy
   nsISupports* GetParentObject();
 
   void NeedsSubjectPrincipalMethod(Maybe<nsIPrincipal*>);
@@ -1572,11 +1596,11 @@ class TestThrowingConstructorInterface : public nsISupports,
       const GlobalObject&, const ArrayBuffer&, ErrorResult&);
   static already_AddRefed<TestThrowingConstructorInterface> Constructor(
       const GlobalObject&, const Uint8Array&, ErrorResult&);
-  
-
-
-
-
+  /*  static
+  already_AddRefed<TestThrowingConstructorInterface>
+    Constructor(const GlobalObject&, uint32_t, uint32_t,
+                const TestInterfaceOrOnlyForUseInConstructor&, ErrorResult&);
+  */
 
   virtual nsISupports* GetParentObject();
 };
@@ -1585,7 +1609,7 @@ class TestCEReactionsInterface : public nsISupports, public nsWrapperCache {
  public:
   NS_DECL_ISUPPORTS
 
-  
+  // We need a GetParentObject and GetDocGroup to make binding codegen happy
   virtual nsISupports* GetParentObject();
   DocGroup* GetDocGroup() const;
 
@@ -1603,7 +1627,7 @@ class TestAttributesOnTypes : public nsISupports, public nsWrapperCache {
  public:
   NS_DECL_ISUPPORTS
 
-  
+  // We need a GetParentObject and GetDocGroup to make binding codegen happy
   virtual nsISupports* GetParentObject();
 
   void Foo(uint8_t arg);
@@ -1620,8 +1644,8 @@ class TestPrefConstructorForInterface : public nsISupports,
   NS_DECL_ISUPPORTS
   virtual nsISupports* GetParentObject();
 
-  
-  
+  // Since only the constructor is under a pref,
+  // the generated constructor should check for the pref.
   static already_AddRefed<TestPrefConstructorForInterface> Constructor(
       const GlobalObject&);
 };
@@ -1632,8 +1656,8 @@ class TestConstructorForPrefInterface : public nsISupports,
   NS_DECL_ISUPPORTS
   virtual nsISupports* GetParentObject();
 
-  
-  
+  // Since the interface itself is under a Pref, there should be no
+  // check for the pref in the generated constructor.
   static already_AddRefed<TestConstructorForPrefInterface> Constructor(
       const GlobalObject&);
 };
@@ -1644,8 +1668,8 @@ class TestPrefConstructorForDifferentPrefInterface : public nsISupports,
   NS_DECL_ISUPPORTS
   virtual nsISupports* GetParentObject();
 
-  
-  
+  // Since the constructor's pref is different than the interface pref
+  // there should still be a check for the pref in the generated constructor.
   static already_AddRefed<TestPrefConstructorForDifferentPrefInterface>
   Constructor(const GlobalObject&);
 };
@@ -1656,8 +1680,8 @@ class TestConstructorForSCInterface : public nsISupports,
   NS_DECL_ISUPPORTS
   virtual nsISupports* GetParentObject();
 
-  
-  
+  // Since the interface itself is SecureContext, there should be no
+  // check for SecureContext in the constructor.
   static already_AddRefed<TestConstructorForSCInterface> Constructor(
       const GlobalObject&);
 };
@@ -1668,8 +1692,8 @@ class TestSCConstructorForInterface : public nsISupports,
   NS_DECL_ISUPPORTS
   virtual nsISupports* GetParentObject();
 
-  
-  
+  // Since the interface context is unspecified but the constructor is
+  // SecureContext, the generated constructor should check for SecureContext.
   static already_AddRefed<TestSCConstructorForInterface> Constructor(
       const GlobalObject&);
 };
@@ -1680,8 +1704,8 @@ class TestConstructorForFuncInterface : public nsISupports,
   NS_DECL_ISUPPORTS
   virtual nsISupports* GetParentObject();
 
-  
-  
+  // Since the interface has a Func attribute, but the constructor does not,
+  // the generated constructor should not check for the Func.
   static already_AddRefed<TestConstructorForFuncInterface> Constructor(
       const GlobalObject&);
 };
@@ -1692,8 +1716,8 @@ class TestFuncConstructorForInterface : public nsISupports,
   NS_DECL_ISUPPORTS
   virtual nsISupports* GetParentObject();
 
-  
-  
+  // Since the constructor has a Func attribute, but the interface does not,
+  // the generated constructor should check for the Func.
   static already_AddRefed<TestFuncConstructorForInterface> Constructor(
       const GlobalObject&);
 };
@@ -1704,8 +1728,8 @@ class TestFuncConstructorForDifferentFuncInterface : public nsISupports,
   NS_DECL_ISUPPORTS
   virtual nsISupports* GetParentObject();
 
-  
-  
+  // Since the constructor has a different Func attribute from the interface,
+  // the generated constructor should still check for its conditional func.
   static already_AddRefed<TestFuncConstructorForDifferentFuncInterface>
   Constructor(const GlobalObject&);
 };
@@ -1716,13 +1740,13 @@ class TestPrefChromeOnlySCFuncConstructorForInterface : public nsISupports,
   NS_DECL_ISUPPORTS
   virtual nsISupports* GetParentObject();
 
-  
-  
+  // There should be checks for all Pref/ChromeOnly/SecureContext/Func
+  // in the generated constructor.
   static already_AddRefed<TestPrefChromeOnlySCFuncConstructorForInterface>
   Constructor(const GlobalObject&);
 };
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
-#endif 
+#endif /* TestBindingHeader_h */
