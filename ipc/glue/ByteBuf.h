@@ -11,7 +11,12 @@
 #ifndef mozilla_ipc_ByteBuf_h
 #define mozilla_ipc_ByteBuf_h
 
-#include "ipc/IPCMessageUtils.h"
+#include "mozilla/Assertions.h"
+
+namespace IPC {
+template <typename T>
+struct ParamTraits;
+}
 
 namespace mozilla {
 
@@ -61,41 +66,6 @@ class ByteBuf final {
 };
 
 }  
-}  
-
-namespace IPC {
-
-template <>
-struct ParamTraits<mozilla::ipc::ByteBuf> {
-  typedef mozilla::ipc::ByteBuf paramType;
-
-  
-  
-  static void Write(Message* aMsg, paramType&& aParam) {
-    WriteParam(aMsg, aParam.mLen);
-    
-    aMsg->WriteBytesZeroCopy(aParam.mData, aParam.mLen, aParam.mCapacity);
-    aParam.mData = nullptr;
-    aParam.mCapacity = 0;
-    aParam.mLen = 0;
-  }
-
-  static bool Read(const Message* aMsg, PickleIterator* aIter,
-                   paramType* aResult) {
-    
-    
-    
-    
-    size_t length;
-    return ReadParam(aMsg, aIter, &length) && aResult->Allocate(length) &&
-           aMsg->ReadBytesInto(aIter, aResult->mData, length);
-  }
-
-  static void Log(const paramType& aParam, std::wstring* aLog) {
-    aLog->append(L"(byte buf)");
-  }
-};
-
 }  
 
 #endif  

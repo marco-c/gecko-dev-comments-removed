@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+
 
 use super::error_reporter::ErrorReporter;
 use super::stylesheet_loader::{AsyncStylesheetParser, StylesheetLoader};
@@ -49,6 +49,7 @@ use style::gecko_bindings::bindings::Gecko_GetOrCreateKeyframeAtStart;
 use style::gecko_bindings::bindings::Gecko_HaveSeenPtr;
 use style::gecko_bindings::structs;
 use style::gecko_bindings::structs::gfxFontFeatureValueSet;
+use style::gecko_bindings::structs::ipc::ByteBuf;
 use style::gecko_bindings::structs::nsAtom;
 use style::gecko_bindings::structs::nsCSSCounterDesc;
 use style::gecko_bindings::structs::nsCSSFontDesc;
@@ -153,16 +154,16 @@ impl ClosureHelper for DeclarationBlockMutationClosure {
     }
 }
 
-/*
- * For Gecko->Servo function calls, we need to redeclare the same signature that was declared in
- * the C header in Gecko. In order to catch accidental mismatches, we run rust-bindgen against
- * those signatures as well, giving us a second declaration of all the Servo_* functions in this
- * crate. If there's a mismatch, LLVM will assert and abort, which is a rather awful thing to
- * depend on but good enough for our purposes.
- */
 
-// A dummy url data for where we don't pass url data in.
-// We need to get rid of this sooner than later.
+
+
+
+
+
+
+
+
+
 static mut DUMMY_URL_DATA: *mut URLExtraData = 0 as *mut _;
 
 #[no_mangle]
@@ -170,10 +171,10 @@ pub unsafe extern "C" fn Servo_Initialize(dummy_url_data: *mut URLExtraData) {
     use style::gecko_bindings::sugar::origin_flags;
     use style::properties::computed_value_flags;
 
-    // Pretend that we're a Servo Layout thread, to make some assertions happy.
+    
     thread_state::initialize(thread_state::ThreadState::LAYOUT);
 
-    // Perform some debug-only runtime assertions.
+    
     origin_flags::assert_flags_match();
     parser::assert_parsing_mode_match();
     computed_value_flags::assert_match();
@@ -261,10 +262,10 @@ fn traverse_subtree(
     driver::traverse_dom(&traversal, token, thread_pool);
 }
 
-/// Traverses the subtree rooted at `root` for restyling.
-///
-/// Returns whether the root was restyled. Whether anything else was restyled or
-/// not can be inferred from the dirty bits in the rest of the tree.
+
+
+
+
 #[no_mangle]
 pub extern "C" fn Servo_TraverseSubtree(
     root: &RawGeckoElement,
@@ -345,8 +346,8 @@ pub extern "C" fn Servo_TraverseSubtree(
     }
 }
 
-/// Checks whether the rule tree has crossed its threshold for unused nodes, and
-/// if so, frees them.
+
+
 #[no_mangle]
 pub extern "C" fn Servo_MaybeGCRuleTree(raw_data: &RawServoStyleSet) {
     let per_doc_data = PerDocumentStyleData::from_ffi(raw_data).borrow_mut();
@@ -430,19 +431,19 @@ pub extern "C" fn Servo_AnimationValues_ComputeDistance(
 ) -> f64 {
     let from_value = AnimationValue::as_arc(&from);
     let to_value = AnimationValue::as_arc(&to);
-    // If compute_squared_distance() failed, this function will return negative value
-    // in order to check whether we support the specified paced animation values.
+    
+    
     from_value
         .compute_squared_distance(to_value)
         .map(|d| d.sqrt())
         .unwrap_or(-1.0)
 }
 
-/// Compute one of the endpoints for the interpolation interval, compositing it with the
-/// underlying value if needed.
-/// An None returned value means, "Just use endpoint_value as-is."
-/// It is the responsibility of the caller to ensure that |underlying_value| is provided
-/// when it will be used.
+
+
+
+
+
 fn composite_endpoint(
     endpoint_value: Option<&RawOffsetArc<AnimationValue>>,
     composite: CompositeOperation,
@@ -464,8 +465,8 @@ fn composite_endpoint(
     }
 }
 
-/// Accumulate one of the endpoints of the animation interval.
-/// A returned value of None means, "Just use endpoint_value as-is."
+
+
 fn accumulate_endpoint(
     endpoint_value: Option<&RawOffsetArc<AnimationValue>>,
     composited_value: Option<AnimationValue>,
@@ -489,10 +490,10 @@ fn accumulate_endpoint(
     }
 }
 
-/// Compose the animation segment. We composite it with the underlying_value and last_value if
-/// needed.
-/// The caller is responsible for providing an underlying value and last value
-/// in all situations where there are needed.
+
+
+
+
 fn compose_animation_segment(
     segment: &structs::AnimationPropertySegment,
     underlying_value: Option<&AnimationValue>,
@@ -502,7 +503,7 @@ fn compose_animation_segment(
     total_progress: f64,
     segment_progress: f64,
 ) -> AnimationValue {
-    // Extract keyframe values.
+    
     let raw_from_value;
     let keyframe_from_value = if !segment.mFromValue.mServo.mRawPtr.is_null() {
         raw_from_value = unsafe { &*segment.mFromValue.mServo.mRawPtr };
@@ -536,7 +537,7 @@ fn compose_animation_segment(
         "Should have a suitable to value to use"
     );
 
-    // Apply iteration composite behavior.
+    
     if iteration_composite == IterationCompositeOperation::Accumulate && current_iteration > 0 {
         let last_value = last_value
             .unwrap_or_else(|| underlying_value.expect("Should have a valid underlying value"));
@@ -555,7 +556,7 @@ fn compose_animation_segment(
         );
     }
 
-    // Use the composited value if there is one, otherwise, use the original keyframe value.
+    
     let from = composited_from_value
         .as_ref()
         .unwrap_or_else(|| keyframe_from_value.unwrap());
@@ -631,21 +632,21 @@ pub extern "C" fn Servo_AnimationCompose(
     };
     let value_map = AnimationValueMap::from_ffi_mut(raw_value_map);
 
-    // We will need an underlying value if either of the endpoints is null...
+    
     let need_underlying_value = segment.mFromValue.mServo.mRawPtr.is_null() ||
                                 segment.mToValue.mServo.mRawPtr.is_null() ||
-                                // ... or if they have a non-replace composite mode ...
+                                
                                 segment.mFromComposite != CompositeOperation::Replace ||
                                 segment.mToComposite != CompositeOperation::Replace ||
-                                // ... or if we accumulate onto the last value and it is null.
+                                
                                 (iteration_composite == IterationCompositeOperation::Accumulate &&
                                  computed_timing.mCurrentIteration > 0 &&
                                  last_segment.mToValue.mServo.mRawPtr.is_null());
 
-    // If either of the segment endpoints are null, get the underlying value to
-    // use from the current value in the values map (set by a lower-priority
-    // effect), or, if there is no current value, look up the cached base value
-    // for this property.
+    
+    
+    
+    
     let underlying_value = if need_underlying_value {
         let previous_composed_value = value_map.get(&property).cloned();
         previous_composed_value.or_else(|| {
@@ -674,8 +675,8 @@ pub extern "C" fn Servo_AnimationCompose(
 
     let progress = unsafe { Gecko_GetProgressFromComputedTiming(computed_timing) };
     let position = if segment.mToKey == segment.mFromKey {
-        // Note: compose_animation_segment doesn't use this value
-        // if segment.mFromKey == segment.mToKey, so assigning |progress| directly is fine.
+        
+        
         progress
     } else {
         unsafe { Gecko_GetPositionInSegment(segment, progress, computed_timing.mBeforeFlag) }
@@ -718,13 +719,13 @@ pub extern "C" fn Servo_AnimationValue_Serialize(
             &get_property_id_from_nscsspropertyid!(property, ()),
             buffer,
             None,
-            None, /* No extra custom properties */
+            None, 
             &data.stylist.device(),
         );
     debug_assert!(rv.is_ok());
 }
 
-/// Debug: MOZ_DBG for AnimationValue.
+
 #[no_mangle]
 pub extern "C" fn Servo_AnimationValue_Dump(
     value: &RawServoAnimationValue,
@@ -968,65 +969,42 @@ pub extern "C" fn Servo_AnimationValue_Uncompute(
     .into_strong()
 }
 
-// This is an intermediate type for passing Vec<u8> through FFI.
-// We convert this type into ByteBuf when passing it through IPC.
-#[repr(C)]
-pub struct VecU8 {
-    data: *mut u8,
-    length: usize,
-    capacity: usize,
+#[inline]
+fn create_byte_buf_from_vec(mut v: Vec<u8>) -> ByteBuf {
+    let w = ByteBuf {
+        mData: v.as_mut_ptr(),
+        mLen: v.len(),
+        mCapacity: v.capacity(),
+    };
+    std::mem::forget(v);
+    w
 }
 
-impl VecU8 {
-    #[inline]
-    fn from_vec(mut v: Vec<u8>) -> Self {
-        let w = VecU8 {
-            data: v.as_mut_ptr(),
-            length: v.len(),
-            capacity: v.capacity(),
-        };
-        std::mem::forget(v);
-        w
+#[inline]
+fn view_byte_buf(b: &ByteBuf) -> &[u8] {
+    if b.mData.is_null() {
+        debug_assert_eq!(b.mCapacity, 0);
+        return &[];
     }
-
-    #[inline]
-    fn flush_into_vec(&mut self) -> Vec<u8> {
-        if self.data.is_null() {
-            debug_assert_eq!(self.capacity, 0);
-            return Vec::new();
-        }
-
-        let vec = unsafe { Vec::from_raw_parts(self.data, self.length, self.capacity) };
-        self.data = ptr::null_mut();
-        self.length = 0;
-        self.capacity = 0;
-        vec
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn Servo_VecU8_Free(v: &mut VecU8) {
-    if !v.data.is_null() {
-        v.flush_into_vec();
-    }
+    unsafe { std::slice::from_raw_parts(b.mData, b.mLen) }
 }
 
 macro_rules! impl_basic_serde_funcs {
     ($ser_name:ident, $de_name:ident, $computed_type:ty) => {
         #[no_mangle]
-        pub extern "C" fn $ser_name(v: &$computed_type, output: &mut VecU8) -> bool {
+        pub extern "C" fn $ser_name(v: &$computed_type, output: &mut ByteBuf) -> bool {
             let buf = match serialize(v) {
                 Ok(buf) => buf,
                 Err(..) => return false,
             };
 
-            *output = VecU8::from_vec(buf);
+            *output = create_byte_buf_from_vec(buf);
             true
         }
 
         #[no_mangle]
-        pub extern "C" fn $de_name(input: &mut VecU8, v: &mut $computed_type) -> bool {
-            let buf = match deserialize(&input.flush_into_vec()) {
+        pub extern "C" fn $de_name(input: &ByteBuf, v: &mut $computed_type) -> bool {
+            let buf = match deserialize(view_byte_buf(input)) {
                 Ok(buf) => buf,
                 Err(..) => return false,
             };
@@ -1093,7 +1071,7 @@ pub extern "C" fn Servo_SVGPathData_Normalize(
     *output = input.normalize();
 }
 
-// Return the ComputedValues by a base ComputedValues and the rules.
+
 fn resolve_rules_for_element_with_context<'a>(
     element: GeckoElement<'a>,
     mut context: StyleContext<GeckoElement<'a>>,
@@ -1101,14 +1079,14 @@ fn resolve_rules_for_element_with_context<'a>(
 ) -> Arc<ComputedValues> {
     use style::style_resolver::{PseudoElementResolution, StyleResolverForElement};
 
-    // This currently ignores visited styles, which seems acceptable, as
-    // existing browsers don't appear to animate visited styles.
+    
+    
     let inputs = CascadeInputs {
         rules: Some(rules),
         visited_rules: None,
     };
 
-    // Actually `PseudoElementResolution` doesn't matter.
+    
     let mut resolver = StyleResolverForElement::new(
         element,
         &mut context,
@@ -1347,7 +1325,7 @@ pub unsafe extern "C" fn Servo_Property_SupportsType(
     prop_id.supports_type(ty)
 }
 
-// TODO(emilio): We could use ThinVec instead of nsTArray.
+
 #[no_mangle]
 pub unsafe extern "C" fn Servo_Property_GetCSSValuesForProperty(
     prop_name: &nsACString,
@@ -1355,14 +1333,14 @@ pub unsafe extern "C" fn Servo_Property_GetCSSValuesForProperty(
     result: &mut nsTArray<nsString>,
 ) {
     let prop_id = parse_enabled_property_name!(prop_name, found, ());
-    // Use B-tree set for unique and sorted result.
+    
     let mut values = BTreeSet::<&'static str>::new();
     prop_id.collect_property_completion_keywords(&mut |list| values.extend(list.iter()));
 
     let mut extras = vec![];
     if values.contains("transparent") {
-        // This is a special value devtools use to avoid inserting the
-        // long list of color keywords. We need to prepend it to values.
+        
+        
         extras.push("COLOR");
     }
 
@@ -1458,11 +1436,11 @@ pub extern "C" fn Servo_Element_IsDisplayNone(element: &RawGeckoElement) -> bool
         .get_data()
         .expect("Invoking Servo_Element_IsDisplayNone on unstyled element");
 
-    // This function is hot, so we bypass the AtomicRefCell.
-    //
-    // It would be nice to also assert that we're not in the servo traversal,
-    // but this function is called at various intermediate checkpoints when
-    // managing the traversal on the Gecko side.
+    
+    
+    
+    
+    
     debug_assert!(is_main_thread());
     unsafe { &*data.as_ptr() }.styles.is_display_none()
 }
@@ -1513,19 +1491,19 @@ pub extern "C" fn Servo_StyleSheet_Empty(
         unsafe { dummy_url_data() }.clone(),
         origin,
         shared_lock,
-        /* loader = */ None,
+         None,
         None,
         QuirksMode::NoQuirks,
         0,
-        /* use_counters = */ None,
-        /* sanitization_data = */ None,
+         None,
+         None,
     ))
     .into_strong()
 }
 
-/// Note: The load_data corresponds to this sheet, and is passed as the parent
-/// load data for child sheet loads. It may be null for certain cases where we
-/// know we won't have child loads.
+
+
+
 #[no_mangle]
 pub unsafe extern "C" fn Servo_StyleSheet_FromUTF8Bytes(
     loader: *mut Loader,
@@ -1561,7 +1539,7 @@ pub unsafe extern "C" fn Servo_StyleSheet_FromUTF8Bytes(
         ))
     };
 
-    // FIXME(emilio): loader.as_ref() doesn't typecheck for some reason?
+    
     let loader: Option<&dyn StyleStylesheetLoader> = match loader {
         None => None,
         Some(ref s) => Some(s),
@@ -1726,7 +1704,7 @@ pub unsafe extern "C" fn Servo_AuthorStyles_Flush(
     document_set: &RawServoStyleSet,
 ) {
     let styles = AuthorStyles::<GeckoStyleSheet>::from_ffi_mut(styles);
-    // Try to avoid the atomic borrow below if possible.
+    
     if !styles.stylesheets.dirty() {
         return;
     }
@@ -1738,8 +1716,8 @@ pub unsafe extern "C" fn Servo_AuthorStyles_Flush(
 
     let stylist = &document_data.stylist;
 
-    // TODO(emilio): This is going to need an element or something to do proper
-    // invalidation in Shadow roots.
+    
+    
     styles.flush::<GeckoElement>(stylist.device(), stylist.quirks_mode(), &guard);
 }
 
@@ -1775,9 +1753,9 @@ pub unsafe extern "C" fn Servo_AuthorStyles_SizeOfIncludingThis(
     malloc_enclosing_size_of: GeckoMallocSizeOf,
     styles: &RawServoAuthorStyles,
 ) -> usize {
-    // We cannot `use` MallocSizeOf at the top level, otherwise the compiler
-    // would complain in `Servo_StyleSheet_SizeOfIncludingThis` for `size_of`
-    // there.
+    
+    
+    
     use malloc_size_of::MallocSizeOf;
     let malloc_size_of = malloc_size_of.unwrap();
     let malloc_size_of_this =
@@ -1801,13 +1779,13 @@ pub unsafe extern "C" fn Servo_StyleSet_MediumFeaturesChanged(
     let global_style_data = &*GLOBAL_STYLE_DATA;
     let guard = global_style_data.shared_lock.read();
 
-    // NOTE(emilio): We don't actually need to flush the stylist here and ensure
-    // it's up to date.
-    //
-    // In case it isn't we would trigger a rebuild + restyle as needed too.
-    //
-    // We need to ensure the default computed values are up to date though,
-    // because those can influence the result of media query evaluation.
+    
+    
+    
+    
+    
+    
+    
     let mut document_data = PerDocumentStyleData::from_ffi(document_set).borrow_mut();
 
     if may_affect_default_style {
@@ -1918,8 +1896,8 @@ pub unsafe extern "C" fn Servo_StyleSet_FlushStyleSheets(
     let have_invalidations = data.flush_stylesheets(&guard, doc_element, snapshots.as_ref());
 
     if have_invalidations && doc_element.is_some() {
-        // The invalidation machinery propagates the bits up, but we still need
-        // to tell the Gecko restyle root machinery about it.
+        
+        
         bindings::Gecko_NoteDirtySubtreeForInvalidation(doc_element.unwrap().0);
     }
 }
@@ -2013,8 +1991,8 @@ pub extern "C" fn Servo_StyleSheet_SizeOfIncludingThis(
         Some(malloc_enclosing_size_of.unwrap()),
         None,
     );
-    // TODO(emilio): We're not measuring the size of the Arc<StyleSheetContents>
-    // allocation itself here.
+    
+    
     StylesheetContents::as_arc(&sheet).size_of(&guard, &mut ops)
 }
 
@@ -2396,8 +2374,8 @@ pub extern "C" fn Servo_StyleRule_SelectorMatchesElement(
 
         match PseudoElement::from_pseudo_type(pseudo_type) {
             Some(pseudo) => {
-                // We need to make sure that the requested pseudo element type
-                // matches the selector pseudo element type before proceeding.
+                
+                
                 match selector.pseudo_element() {
                     Some(selector_pseudo) if *selector_pseudo == pseudo => {
                         matching_mode = MatchingMode::ForStatelessPseudoElement
@@ -2406,8 +2384,8 @@ pub extern "C" fn Servo_StyleRule_SelectorMatchesElement(
                 };
             },
             None => {
-                // Do not attempt to match if a pseudo element is requested and
-                // this is not a pseudo element selector, or vice versa.
+                
+                
                 if selector.has_pseudo_element() {
                     return false;
                 }
@@ -2545,8 +2523,8 @@ pub unsafe extern "C" fn Servo_SelectorList_QueryAll(
     );
 
     if !result.is_empty() {
-        // NOTE(emilio): This relies on a slice of GeckoElement having the same
-        // memory representation than a slice of element pointers.
+        
+        
         bindings::Gecko_ContentList_AppendAll(
             content_list,
             result.as_ptr() as *mut *const _,
@@ -2783,10 +2761,10 @@ pub extern "C" fn Servo_FontFeatureValuesRule_GetValueText(
 #[no_mangle]
 pub extern "C" fn Servo_FontFaceRule_CreateEmpty() -> Strong<RawServoFontFaceRule> {
     let global_style_data = &*GLOBAL_STYLE_DATA;
-    // XXX This is not great. We should split FontFace descriptor data
-    // from the rule, so that we don't need to create the rule like this
-    // and the descriptor data itself can be hold in UniquePtr from the
-    // Gecko side. See bug 1450904.
+    
+    
+    
+    
     Arc::new(
         global_style_data
             .shared_lock
@@ -2951,8 +2929,8 @@ pub unsafe extern "C" fn Servo_FontFaceRule_GetFamilyName(
     rule: &RawServoFontFaceRule,
 ) -> *mut nsAtom {
     read_locked_arc(rule, |rule: &FontFaceRule| {
-        // TODO(emilio): font-family is a mandatory descriptor, can't we unwrap
-        // here, and remove the null-checks in Gecko?
+        
+        
         rule.family
             .as_ref()
             .map_or(ptr::null_mut(), |f| f.name.as_ptr())
@@ -2988,7 +2966,7 @@ pub unsafe extern "C" fn Servo_FontFaceRule_GetSources(
         };
         let len = sources.iter().fold(0, |acc, src| {
             acc + match *src {
-                // Each format hint takes one position in the array of mSrc.
+                
                 Source::Url(ref url) => url.format_hints.len() + 1,
                 Source::Local(_) => 1,
             }
@@ -3213,7 +3191,7 @@ fn symbol_to_string(s: &counter_style::Symbol) -> nsString {
     }
 }
 
-// TODO(emilio): Cbindgen could be used to simplify a bunch of code here.
+
 #[no_mangle]
 pub unsafe extern "C" fn Servo_CounterStyleRule_GetPad(
     rule: &RawServoCounterStyleRule,
@@ -3552,8 +3530,8 @@ pub unsafe extern "C" fn Servo_ComputedValues_GetForAnonymousBox(
 
     let metrics = get_metrics_provider_for_product();
 
-    // If the pseudo element is PageContent, we should append the precomputed
-    // pseudo element declerations with specified page rules.
+    
+    
     let page_decls = match pseudo {
         PseudoElement::PageContent => {
             let mut declarations = vec![];
@@ -3614,13 +3592,13 @@ pub extern "C" fn Servo_ResolvePseudoStyle(
     let data = match data.as_ref() {
         Some(data) if data.has_styles() => data,
         _ => {
-            // FIXME(bholley, emilio): Assert against this.
-            //
-            // Known offender is nsMathMLmoFrame::MarkIntrinsicISizesDirty,
-            // which goes and does a bunch of work involving style resolution.
-            //
-            // Bug 1403865 tracks fixing it, and potentially adding an assert
-            // here instead.
+            
+            
+            
+            
+            
+            
+            
             warn!("Calling Servo_ResolvePseudoStyle on unstyled element");
             return if is_probe {
                 Strong::null()
@@ -3644,7 +3622,7 @@ pub extern "C" fn Servo_ResolvePseudoStyle(
         inherited_style,
         &*doc_data,
         is_probe,
-        /* matching_func = */ None,
+         None,
     );
 
     match style {
@@ -3716,7 +3694,7 @@ pub extern "C" fn Servo_ComputedValues_ResolveXULTreePseudoStyle(
         &data.styles,
         Some(inherited_style),
         &*doc_data,
-        /* is_probe = */ false,
+         false,
         Some(&matching_fn),
     )
     .unwrap()
@@ -3727,8 +3705,8 @@ pub extern "C" fn Servo_ComputedValues_ResolveXULTreePseudoStyle(
 pub extern "C" fn Servo_SetExplicitStyle(element: &RawGeckoElement, style: &ComputedValues) {
     let element = GeckoElement(element);
     debug!("Servo_SetExplicitStyle: {:?}", element);
-    // We only support this API for initial styling. There's no reason it couldn't
-    // work for other things, we just haven't had a reason to do so.
+    
+    
     debug_assert!(element.get_data().is_none());
     let mut data = unsafe { element.ensure_data() };
     data.styles.primary = Some(unsafe { ArcBorrow::from_ref(style) }.clone_arc());
@@ -3775,11 +3753,11 @@ fn get_pseudo_style(
             match *pseudo {
                 PseudoElement::FirstLetter => {
                     styles.pseudos.get(&pseudo).map(|pseudo_styles| {
-                        // inherited_styles can be None when doing lazy resolution
-                        // (e.g. for computed style) or when probing.  In that case
-                        // we just inherit from our element, which is what Gecko
-                        // does in that situation.  What should actually happen in
-                        // the computed style case is a bit unclear.
+                        
+                        
+                        
+                        
+                        
                         let inherited_styles = inherited_styles.unwrap_or(styles.primary());
                         let guards = StylesheetGuards::same(guard);
                         let metrics = get_metrics_provider_for_product();
@@ -3795,27 +3773,27 @@ fn get_pseudo_style(
                     })
                 },
                 _ => {
-                    // Unfortunately, we can't assert that inherited_styles, if
-                    // present, is pointer-equal to styles.primary(), or even
-                    // equal in any meaningful way.  The way it can fail is as
-                    // follows.  Say we append an element with a ::before,
-                    // ::after, or ::first-line to a parent with a ::first-line,
-                    // such that the element ends up on the first line of the
-                    // parent (e.g. it's an inline-block in the case it has a
-                    // ::first-line, or any container in the ::before/::after
-                    // cases).  Then gecko will update its frame's style to
-                    // inherit from the parent's ::first-line.  The next time we
-                    // try to get the ::before/::after/::first-line style for
-                    // the kid, we'll likely pass in the frame's style as
-                    // inherited_styles, but that's not pointer-identical to
-                    // styles.primary(), because it got reparented.
-                    //
-                    // Now in practice this turns out to be OK, because all the
-                    // cases in which there's a mismatch go ahead and reparent
-                    // styles again as needed to make sure the ::first-line
-                    // affects all the things it should affect.  But it makes it
-                    // impossible to assert anything about the two styles
-                    // matching here, unfortunately.
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     styles.pseudos.get(&pseudo).cloned()
                 },
             }
@@ -3908,10 +3886,10 @@ pub extern "C" fn Servo_ComputedValues_GetStyleRuleList(
             _ => continue,
         };
 
-        // For the rules with any important declaration, we insert them into
-        // rule tree twice, one for normal level and another for important
-        // level. So, we skip the important one to keep the specificity order of
-        // rules.
+        
+        
+        
+        
         if node.importance().important() {
             continue;
         }
@@ -3926,8 +3904,8 @@ pub extern "C" fn Servo_ComputedValues_GetStyleRuleList(
     }))
 }
 
-/// println_stderr!() calls Gecko's printf_stderr(), which, unlike eprintln!(),
-/// will funnel output to Android logcat.
+
+
 #[cfg(feature = "gecko_debug")]
 macro_rules! println_stderr {
     ($($e:expr),+) => {
@@ -3975,27 +3953,27 @@ pub extern "C" fn Servo_ComputedValues_EqualForCachedAnonymousContentStyle(
 ) -> bool {
     let mut differing_properties = a.differing_properties(b);
 
-    // Ignore any difference in -x-lang, which we can't override in the
-    // rules in minimal-xul.css, but which makes no difference for the
-    // anonymous content subtrees we cache style for.
+    
+    
+    
     differing_properties.remove(LonghandId::XLang);
 
-    // Ignore any difference in pref-controlled, inherited properties.  These
-    // properties may or may not be set by the 'all' declaration in the
-    // minimal-xul.css rule, depending on whether the pref was enabled at the
-    // time the UA sheets were parsed.
-    //
-    // If you add a new pref-controlled, inherited property, it must be defined
-    // with `has_effect_on_gecko_scrollbars=False` to declare that
-    // different values of this property on a <scrollbar> element or its
-    // descendant scrollbar part elements should have no effect on their
-    // rendering and behavior.
-    //
-    // If you do need a pref-controlled, inherited property to have an effect
-    // on these elements, then you will need to add some checks to the
-    // nsIAnonymousContentCreator::CreateAnonymousContent implementations of
-    // ScrollFrameHelper and nsScrollbarFrame to clear the AnonymousContentKey
-    // if a non-initial value is used.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     differing_properties.remove_all(&LonghandIdSet::has_no_effect_on_gecko_scrollbars());
 
     if !differing_properties.is_empty() {
@@ -4097,7 +4075,7 @@ pub extern "C" fn Servo_ParseEasing(
 ) -> bool {
     use style::properties::longhands::transition_timing_function;
 
-    // FIXME Dummy URL data would work fine here.
+    
     let url_data = unsafe { UrlExtraData::from_ptr_ref(&data) };
     let context = ParserContext::new(
         Origin::Author,
@@ -4115,7 +4093,7 @@ pub extern "C" fn Servo_ParseEasing(
         parser.parse_entirely(|p| transition_timing_function::single_value::parse(&context, p));
     match result {
         Ok(parsed_easing) => {
-            // We store as computed value in nsTimingFunction.
+            
             (*output).mTiming = parsed_easing.to_computed_value_without_context();
             true
         },
@@ -4350,9 +4328,9 @@ unsafe fn get_property_value(
     property_id: PropertyId,
     value: &mut nsAString,
 ) {
-    // This callsite is hot enough that the lock acquisition shows up in profiles.
-    // Using an unchecked read here improves our performance by ~10% on the
-    // microbenchmark in bug 1355599.
+    
+    
+    
     read_locked_arc_unchecked(declarations, |decls: &PropertyDeclarationBlock| {
         decls.property_value_to_css(&property_id, value).unwrap();
     })
@@ -4631,11 +4609,11 @@ pub unsafe extern "C" fn Servo_MediaList_SetText(
     let mut parser = Parser::new(&mut input);
     let url_data = dummy_url_data();
 
-    // TODO(emilio): If the need for `CallerType` appears in more places,
-    // consider adding an explicit member in `ParserContext` instead of doing
-    // this (or adding a dummy "chrome://" url data).
-    //
-    // For media query parsing it's effectively the same, so for now...
+    
+    
+    
+    
+    
     let origin = match caller_type {
         CallerType::System => Origin::UserAgent,
         CallerType::NonSystem => Origin::Author,
@@ -4647,7 +4625,7 @@ pub unsafe extern "C" fn Servo_MediaList_SetText(
         Some(CssRuleType::Media),
         ParsingMode::DEFAULT,
         QuirksMode::NoQuirks,
-        // TODO(emilio): Looks like error reporting could be useful here?
+        
         None,
         None,
     );
@@ -5268,8 +5246,8 @@ pub extern "C" fn Servo_CSSSupports(cond: &nsACString) -> bool {
 
     let url_data = unsafe { dummy_url_data() };
 
-    // NOTE(emilio): The supports API is not associated to any stylesheet,
-    // so the fact that there is no namespace map here is fine.
+    
+    
     let context = ParserContext::new_for_cssom(
         url_data,
         Some(CssRuleType::Style),
@@ -5313,9 +5291,9 @@ pub extern "C" fn Servo_TakeChangeHint(element: &RawGeckoElement, was_restyled: 
     };
 
     debug!("Servo_TakeChangeHint: {:?}, damage={:?}", element, damage);
-    // We'd like to return `nsChangeHint` here, but bindgen bitfield enums don't
-    // work as return values with the Linux 32-bit ABI at the moment because
-    // they wrap the value in a struct, so for now just unwrap it.
+    
+    
+    
     damage.as_change_hint().0
 }
 
@@ -5361,10 +5339,10 @@ pub extern "C" fn Servo_ResolveStyleLazily(
                     pseudo,
                     rule_inclusion,
                     styles,
-                    /* inherited_styles = */ None,
+                     None,
                     &*data,
                     is_probe,
-                    /* matching_func = */ None,
+                     None,
                 )
             },
             None => Some(styles.primary().clone()),
@@ -5373,12 +5351,12 @@ pub extern "C" fn Servo_ResolveStyleLazily(
 
     let is_before_or_after = pseudo.as_ref().map_or(false, |p| p.is_before_or_after());
 
-    // In the common case we already have the style. Check that before setting
-    // up all the computation machinery.
-    //
-    // Also, only probe in the ::before or ::after case, since their styles may
-    // not be in the `ElementData`, given they may exist but not be applicable
-    // to generate an actual pseudo-element (like, having a `content: none`).
+    
+    
+    
+    
+    
+    
     if rule_inclusion == RuleInclusion::All {
         let styles = element.mutate_data().and_then(|d| {
             if d.has_styles() {
@@ -5392,7 +5370,7 @@ pub extern "C" fn Servo_ResolveStyleLazily(
         }
     }
 
-    // We don't have the style ready. Go ahead and compute it as necessary.
+    
     let shared = create_shared_context(
         &global_style_data,
         &guard,
@@ -5408,7 +5386,7 @@ pub extern "C" fn Servo_ResolveStyleLazily(
 
     let styles = resolve_style(&mut context, element, rule_inclusion, pseudo.as_ref());
 
-    finish(&styles, /* is_probe = */ false)
+    finish(&styles,  false)
         .expect("We're not probing, so we should always get a style back")
         .into()
 }
@@ -5441,7 +5419,7 @@ pub extern "C" fn Servo_ReparentStyle(
             Some(parent_style_ignoring_first_line),
             Some(layout_parent_style),
             &metrics,
-            /* rule_cache = */ None,
+             None,
             &mut RuleCacheConditions::default(),
         )
         .into()
@@ -5495,9 +5473,9 @@ impl<'a> PrioritizedPropertyIter<'a> {
     fn new(properties: &'a [PropertyValuePair]) -> PrioritizedPropertyIter {
         use style::values::animated::compare_property_priority;
 
-        // If we fail to convert a nsCSSPropertyID into a PropertyId we
-        // shouldn't fail outright but instead by treating that property as the
-        // 'all' property we make it sort last.
+        
+        
+        
         let mut sorted_property_indices: Vec<PropertyAndIndex> = properties
             .iter()
             .enumerate()
@@ -5555,7 +5533,7 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
         &metrics,
         &style,
         parent_style,
-        /* for_smil_animation = */ false,
+         false,
         &mut conditions,
     );
 
@@ -5563,11 +5541,11 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
     let guard = global_style_data.shared_lock.read();
     let default_values = data.default_computed_values();
 
-    let mut raw_custom_properties_block; // To make the raw block alive in the scope.
+    let mut raw_custom_properties_block; 
     for (index, keyframe) in keyframes.iter().enumerate() {
         let mut custom_properties = None;
         for property in keyframe.mPropertyValues.iter() {
-            // Find the block for custom properties first.
+            
             if property.mProperty == nsCSSPropertyID::eCSSPropertyExtra_variable {
                 raw_custom_properties_block =
                     unsafe { &*property.mServoDeclarationBlock.mRawPtr.clone() };
@@ -5575,7 +5553,7 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
                     Locked::<PropertyDeclarationBlock>::as_arc(&raw_custom_properties_block)
                         .read_with(&guard);
                 custom_properties = guard.cascade_custom_properties_with_context(&context);
-                // There should be one PropertyDeclarationBlock for custom properties.
+                
                 break;
             }
         }
@@ -5595,7 +5573,7 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
                     debug_assert!(!property.is_logical());
                     debug_assert!(property.is_animatable());
 
-                    // 'display' is only animatable from SMIL
+                    
                     if property == LonghandId::Display {
                         return;
                     }
@@ -5605,7 +5583,7 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
                     }
                     seen.insert(property);
 
-                    // This is safe since we immediately write to the uninitialized values.
+                    
                     unsafe { animation_values.set_len((property_index + 1) as u32) };
                     animation_values[property_index].mProperty = property.to_nscsspropertyid();
                     match value {
@@ -5673,7 +5651,7 @@ pub extern "C" fn Servo_GetAnimationValues(
         &metrics,
         &style,
         parent_style,
-        /* for_smil_animation = */ true,
+         true,
         &mut conditions,
     );
 
@@ -5686,7 +5664,7 @@ pub extern "C" fn Servo_GetAnimationValues(
     let iter = guard.to_animation_value_iter(
         &mut context,
         &default_values,
-        None, // SMIL has no extra custom properties.
+        None, 
     );
     for (index, anim) in iter.enumerate() {
         unsafe { animation_values.set_len((index + 1) as u32) };
@@ -5726,7 +5704,7 @@ pub extern "C" fn Servo_AnimationValue_Compute(
         &metrics,
         style,
         parent_style,
-        /* for_smil_animation = */ false,
+         false,
         &mut conditions,
     );
 
@@ -5734,7 +5712,7 @@ pub extern "C" fn Servo_AnimationValue_Compute(
     let global_style_data = &*GLOBAL_STYLE_DATA;
     let guard = global_style_data.shared_lock.read();
     let declarations = Locked::<PropertyDeclarationBlock>::as_arc(&declarations);
-    // We only compute the first element in declarations.
+    
     match declarations
         .read_with(&guard)
         .declaration_importance_iter()
@@ -5744,7 +5722,7 @@ pub extern "C" fn Servo_AnimationValue_Compute(
             let animation = AnimationValue::from_declaration(
                 decl,
                 &mut context,
-                None, // No extra custom properties for devtools.
+                None, 
                 default_values,
             );
             animation.map_or(Strong::null(), |value| Arc::new(value).into_strong())
@@ -5798,7 +5776,7 @@ fn fill_in_missing_keyframe_values(
     offset: Offset,
     keyframes: &mut nsTArray<structs::Keyframe>,
 ) {
-    // Return early if all animated properties are already set.
+    
     if longhands_at_offset.contains_all(all_properties) {
         return;
     }
@@ -5808,7 +5786,7 @@ fn fill_in_missing_keyframe_values(
         Offset::One => unsafe { Gecko_GetOrCreateFinalKeyframe(keyframes, timing_function) },
     };
 
-    // Append properties that have not been set at this offset.
+    
     for property in all_properties.iter() {
         if !longhands_at_offset.contains(property) {
             unsafe {
@@ -5853,16 +5831,16 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
 
     let writing_mode = style.writing_mode;
 
-    // Iterate over the keyframe rules backwards so we can drop overridden
-    // properties (since declarations in later rules override those in earlier
-    // ones).
+    
+    
+    
     for step in animation.steps.iter().rev() {
         if step.start_percentage.0 != current_offset {
             properties_set_at_current_offset.clear();
             current_offset = step.start_percentage.0;
         }
 
-        // Override timing_function if the keyframe has an animation-timing-function.
+        
         let timing_function = nsTimingFunction {
             mTiming: match step.get_animation_timing_function(&guard) {
                 Some(val) => val.to_computed_value_without_context(),
@@ -5870,9 +5848,9 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
             },
         };
 
-        // Look for an existing keyframe with the same offset and timing
-        // function or else add a new keyframe at the beginning of the keyframe
-        // array.
+        
+        
+        
         let keyframe = Gecko_GetOrCreateKeyframeAtStart(
             keyframes,
             step.start_percentage.0 as f32,
@@ -5881,11 +5859,11 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
 
         match step.value {
             KeyframesStepValue::ComputedValues => {
-                // In KeyframesAnimation::from_keyframes if there is no 0% or
-                // 100% keyframe at all, we will create a 'ComputedValues' step
-                // to represent that all properties animated by the keyframes
-                // animation should be set to the underlying computed value for
-                // that keyframe.
+                
+                
+                
+                
+                
                 let mut seen = LonghandIdSet::new();
                 for property in animation.properties_changed.iter() {
                     let property = property.to_physical(writing_mode);
@@ -5910,19 +5888,19 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
 
                 let mut custom_properties = PropertyDeclarationBlock::new();
 
-                // Filter out non-animatable properties and properties with
-                // !important.
-                //
-                // Also, iterate in reverse to respect the source order in case
-                // there are logical and physical longhands in the same block.
+                
+                
+                
+                
+                
                 for declaration in guard.normal_declaration_iter().rev() {
                     let id = declaration.id();
 
                     let id = match id {
                         PropertyDeclarationId::Longhand(id) => {
-                            // Skip the 'display' property because although it
-                            // is animatable from SMIL, it should not be
-                            // animatable from CSS Animations.
+                            
+                            
+                            
                             if id == LonghandId::Display {
                                 continue;
                             }
@@ -5984,7 +5962,7 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
         properties_changed.insert(property.to_physical(writing_mode));
     }
 
-    // Append property values that are missing in the initial or the final keyframes.
+    
     if !has_complete_initial_keyframe {
         fill_in_missing_keyframe_values(
             &properties_changed,
@@ -6020,8 +5998,8 @@ pub extern "C" fn Servo_StyleSet_GetFontFaceRules(
         .map(|(d, _)| d.font_faces.len() as u32)
         .sum();
 
-    // Reversed iterator because Gecko expects rules to appear sorted
-    // UserAgent first, Author last.
+    
+    
     let font_face_iter = data
         .stylist
         .iter_extra_data_origins_rev()
@@ -6034,10 +6012,10 @@ pub extern "C" fn Servo_StyleSet_GetFontFaceRules(
     }
 }
 
-// XXX Ideally this should return a Option<&RawServoCounterStyleRule>,
-// but we cannot, because the value from AtomicRefCell::borrow() can only
-// live in this function, and thus anything derived from it cannot get the
-// same lifetime as raw_data in parameter. See bug 1451543.
+
+
+
+
 #[no_mangle]
 pub unsafe extern "C" fn Servo_StyleSet_GetCounterStyleRule(
     raw_data: &RawServoStyleSet,
@@ -6200,10 +6178,10 @@ pub unsafe extern "C" fn Servo_GetPropertyValue(
     let shorthand =
         ShorthandId::from_nscsspropertyid(prop).expect("Not a shorthand nor a longhand?");
     let mut block = PropertyDeclarationBlock::new();
-    // NOTE(emilio): We reuse the animation value machinery to avoid blowing up
-    // code size, but may need to come up with something different if ever care
-    // about supporting the cases that assert below. Fortunately we don't right
-    // now.
+    
+    
+    
+    
     for longhand in shorthand.longhands() {
         debug_assert!(
             !longhand.is_logical(),
@@ -6301,8 +6279,8 @@ pub extern "C" fn Servo_ProcessInvalidations(
     let mut data = data.as_mut().map(|d| &mut **d);
 
     if let Some(ref mut data) = data {
-        // FIXME(emilio): Ideally we could share the nth-index-cache across all
-        // the elements?
+        
+        
         let result = data.invalidate_style_if_needed(
             element,
             &shared_style_context,
@@ -6338,12 +6316,12 @@ pub extern "C" fn Servo_HasPendingRestyleAncestor(
             return true;
         }
 
-        // If the element needs a frame, it means that we haven't styled it yet
-        // after it got inserted in the document, and thus we may need to do
-        // that for transitions and animations to trigger.
-        //
-        // This is a fast path in the common case, but `has_yet_to_be_styled` is
-        // the real check for this.
+        
+        
+        
+        
+        
+        
         if e.needs_frame() {
             return true;
         }
@@ -6356,16 +6334,16 @@ pub extern "C" fn Servo_HasPendingRestyleAncestor(
             if has_yet_to_be_styled && !data.styles.is_display_none() {
                 return true;
             }
-            // Ideally, DOM mutations wouldn't affect layout trees of siblings.
-            //
-            // In practice, this can happen because Gecko deals pretty badly
-            // with some kinds of content insertion and removals.
-            //
-            // If we may need to flush layout, we need frames to accurately
-            // determine whether we'll actually flush, so if we have to
-            // reconstruct we need to flush style, which is what will take care
-            // of ensuring that frames are constructed, even if the style itself
-            // is up-to-date.
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             if may_need_to_flush_layout && data.damage.contains(GeckoRestyleDamage::reconstruct()) {
                 return true;
             }
@@ -6428,9 +6406,9 @@ fn parse_color(
                         );
                         context.log_css_error(location, error);
                     },
-                    // Ignore other kinds of errors that might be reported, such as
-                    // ParseErrorKind::Basic(BasicParseErrorKind::UnexpectedToken),
-                    // since Gecko doesn't report those to the error console.
+                    
+                    
+                    
                     _ => {},
                 }
             }
@@ -6456,7 +6434,7 @@ pub unsafe extern "C" fn Servo_ComputeColor(
     let current_color = gecko::values::convert_nscolor_to_rgba(current_color);
 
     let reporter = loader.as_mut().and_then(|loader| {
-        // Make an ErrorReporter that will report errors as being "from DOM".
+        
         ErrorReporter::new(ptr::null_mut(), loader, ptr::null_mut())
     });
 
@@ -6608,7 +6586,7 @@ pub unsafe extern "C" fn Servo_ParseFontShorthandForMatching(
         Err(..) => return false,
     };
 
-    // The system font is not acceptable, so we return false.
+    
     match font.font_family {
         FontFamily::Values(FontFamilyList::SharedFontList(list)) => family.set_move(list),
         FontFamily::Values(list) => family.set_move(list.shared_font_list().clone()),
@@ -6637,8 +6615,8 @@ pub unsafe extern "C" fn Servo_ParseFontShorthandForMatching(
 
     *weight = match font.font_weight {
         FontWeight::Absolute(w) => w.compute().0,
-        // Resolve relative font weights against the initial of font-weight
-        // (normal, which is equivalent to 400).
+        
+        
         FontWeight::Bolder => ComputedFontWeight::normal().bolder().0,
         FontWeight::Lighter => ComputedFontWeight::normal().lighter().0,
         FontWeight::System(_) => return false,
@@ -6665,7 +6643,7 @@ pub unsafe extern "C" fn Servo_SourceSizeList_Parse(
         None,
     );
 
-    // NB: Intentionally not calling parse_entirely.
+    
     let list = SourceSizeList::parse(&context, &mut parser);
     Box::new(list).into_ffi()
 }
@@ -6721,7 +6699,7 @@ pub unsafe extern "C" fn Servo_InvalidateStyleForDocStateChanges(
     );
 
     let result =
-        TreeStyleInvalidator::new(root, /* stack_limit_checker = */ None, &mut processor)
+        TreeStyleInvalidator::new(root,  None, &mut processor)
             .invalidate();
 
     debug_assert!(!result.has_invalidated_siblings(), "How in the world?");
@@ -6737,7 +6715,7 @@ pub unsafe extern "C" fn Servo_PseudoClass_GetStates(name: &nsACString) -> u64 {
     let name = name.as_str_unchecked();
     match NonTSPseudoClass::parse_non_functional(name) {
         None => 0,
-        // Ignore :any-link since it contains both visited and unvisited state.
+        
         Some(NonTSPseudoClass::AnyLink) => 0,
         Some(pseudo_class) => pseudo_class.state_flag().bits(),
     }
@@ -6809,9 +6787,9 @@ pub unsafe extern "C" fn Servo_SharedMemoryBuilder_Create(
 ) -> *mut RawServoSharedMemoryBuilder {
     let mut builder = Box::new(SharedMemoryBuilder::new(buffer, len));
 
-    // We have Arc<UnparsedValue>s in style sheets due to CSS variables being
-    // used in shorthand property declarations.  There aren't many, though,
-    // and they aren't big, so we just allow their duplication for now.
+    
+    
+    
     builder.add_allowed_duplication_type::<UnparsedValue>();
 
     Box::into_raw(builder) as *mut _
@@ -6825,8 +6803,8 @@ pub unsafe extern "C" fn Servo_SharedMemoryBuilder_AddStylesheet(
     let builder = SharedMemoryBuilder::from_ffi_mut(builder);
     let contents = StylesheetContents::as_arc(&raw_contents);
 
-    // Assert some things we assume when we create a style sheet from shared
-    // memory.
+    
+    
     debug_assert_eq!(contents.origin, Origin::UserAgent);
     debug_assert_eq!(contents.quirks_mode, QuirksMode::NoQuirks);
     debug_assert!(contents.source_map_url.read().is_none());
@@ -6851,9 +6829,9 @@ pub unsafe extern "C" fn Servo_SharedMemoryBuilder_Drop(builder: *mut RawServoSh
     SharedMemoryBuilder::drop_ffi(builder)
 }
 
-/// Returns a unique pointer to a clone of the shape image.
-///
-/// Probably temporary, as we move more stuff to cbindgen.
+
+
+
 #[no_mangle]
 #[must_use]
 pub unsafe extern "C" fn Servo_CloneBasicShape(
