@@ -165,6 +165,23 @@ impl fmt::Display for StackSlotData {
 
 
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
+pub struct StackLayoutInfo {
+    
+    
+    
+    
+    
+    pub frame_size: StackSize,
+
+    
+    pub inbound_args_size: StackSize,
+}
+
+
+
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct StackSlots {
@@ -178,13 +195,7 @@ pub struct StackSlots {
     emergency: Vec<StackSlot>,
 
     
-    
-    
-    
-    
-    
-    
-    pub frame_size: Option<StackSize>,
+    pub layout_info: Option<StackLayoutInfo>,
 }
 
 
@@ -195,7 +206,7 @@ impl StackSlots {
             slots: PrimaryMap::new(),
             outgoing: Vec::new(),
             emergency: Vec::new(),
-            frame_size: None,
+            layout_info: None,
         }
     }
 
@@ -204,7 +215,7 @@ impl StackSlots {
         self.slots.clear();
         self.outgoing.clear();
         self.emergency.clear();
-        self.frame_size = None;
+        self.layout_info = None;
     }
 
     
