@@ -1671,6 +1671,9 @@ var UITour = {
       case "fxa":
         this.getFxA(aBrowser, aCallbackID);
         break;
+      case "fxaConnections":
+        this.getFxAConnections(aBrowser, aCallbackID);
+        break;
 
       
       
@@ -1727,7 +1730,52 @@ var UITour = {
     }
   },
 
+  
+  
+  
   getFxA(aBrowser, aCallbackID) {
+    (async () => {
+      let setup = !!(await fxAccounts.getSignedInUser());
+      let result = { setup };
+      if (!setup) {
+        this.sendPageCallback(aBrowser, aCallbackID, result);
+        return;
+      }
+      
+      
+      result.browserServices = {};
+      let hasSync = Services.prefs.prefHasUserValue("services.sync.username");
+      if (hasSync) {
+        result.browserServices.sync = {
+          
+          setup: true,
+          desktopDevices: Services.prefs.getIntPref(
+            "services.sync.clients.devices.desktop",
+            0
+          ),
+          mobileDevices: Services.prefs.getIntPref(
+            "services.sync.clients.devices.mobile",
+            0
+          ),
+          totalDevices: Services.prefs.getIntPref(
+            "services.sync.numClients",
+            0
+          ),
+        };
+      }
+      
+      result.accountStateOK = await fxAccounts.hasLocalSession();
+      this.sendPageCallback(aBrowser, aCallbackID, result);
+    })().catch(err => {
+      log.error(err);
+      this.sendPageCallback(aBrowser, aCallbackID, {});
+    });
+  },
+
+  
+  
+  
+  getFxAConnections(aBrowser, aCallbackID) {
     (async () => {
       let setup = !!(await fxAccounts.getSignedInUser());
       let result = { setup };
@@ -1761,27 +1809,6 @@ var UITour = {
           }, {});
       }
 
-      
-      result.browserServices = {};
-      let hasSync = Services.prefs.prefHasUserValue("services.sync.username");
-      if (hasSync) {
-        result.browserServices.sync = {
-          
-          setup: true,
-          desktopDevices: Services.prefs.getIntPref(
-            "services.sync.clients.devices.desktop",
-            0
-          ),
-          mobileDevices: Services.prefs.getIntPref(
-            "services.sync.clients.devices.mobile",
-            0
-          ),
-          totalDevices: Services.prefs.getIntPref(
-            "services.sync.numClients",
-            0
-          ),
-        };
-      }
       try {
         
         let attachedClients = await fxAccounts.listAttachedOAuthClients();
@@ -1799,9 +1826,6 @@ var UITour = {
       } catch (ex) {
         log.warn("Failed to build the attached clients list", ex);
       }
-      
-      
-      result.accountStateOK = await fxAccounts.hasLocalSession();
       this.sendPageCallback(aBrowser, aCallbackID, result);
     })().catch(err => {
       log.error(err);
