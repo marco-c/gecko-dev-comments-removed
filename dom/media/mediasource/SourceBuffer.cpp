@@ -336,7 +336,7 @@ void SourceBuffer::ChangeType(const nsAString& aType, ErrorResult& aRv) {
   
   
   if (aType.IsEmpty()) {
-    aRv.Throw(NS_ERROR_DOM_TYPE_ERR);
+    aRv.ThrowTypeError(u"Type must not be empty");
     return;
   }
 
