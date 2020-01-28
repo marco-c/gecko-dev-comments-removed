@@ -660,7 +660,7 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter,
           
           
           static const bool preSymbolicate = []() {
-            const char* symbolicate = getenv("MOZ_BASE_PROFILER_SYMBOLICATE");
+            const char* symbolicate = getenv("MOZ_PROFILER_SYMBOLICATE");
             return symbolicate && symbolicate[0] != '\0';
           }();
           if (preSymbolicate) {
