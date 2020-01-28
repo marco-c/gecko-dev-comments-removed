@@ -574,11 +574,11 @@ impl KeywordInfo {
 
     
     
-    pub fn compose(self, factor: f32, offset: CSSPixelLength) -> Self {
+    fn compose(self, factor: f32) -> Self {
         KeywordInfo {
             kw: self.kw,
             factor: self.factor * factor,
-            offset: self.offset * factor + offset,
+            offset: self.offset * factor,
         }
     }
 }
@@ -901,7 +901,7 @@ impl FontSize {
                 .get_parent_font()
                 .clone_font_size()
                 .keyword_info
-                .map(|i| i.compose(factor, CSSPixelLength::new(0.)))
+                .map(|i| i.compose(factor))
         };
         let mut info = None;
         let size = match *self {
@@ -927,42 +927,8 @@ impl FontSize {
                 base_size.resolve(context) * pc.0
             },
             FontSize::Length(LengthPercentage::Calc(ref calc)) => {
-                let parent = context.style().get_parent_font().clone_font_size();
-                
-                
-                if (calc.em.is_some() || calc.percentage.is_some()) && parent.keyword_info.is_some()
-                {
-                    let ratio = calc.em.unwrap_or(0.) + calc.percentage.map_or(0., |pc| pc.0);
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    let abs = calc
-                        .to_computed_value_zoomed(
-                            context,
-                            FontBaseSize::InheritedStyleButStripEmUnits,
-                        )
-                        .unclamped_length();
-
-                    info = parent.keyword_info.map(|i| i.compose(ratio, abs));
-                }
                 let calc = calc.to_computed_value_zoomed(context, base_size);
-                
-                
-                
-                
-                
-                calc.percentage_relative_to(base_size.resolve(context))
-                    .clamp_to_non_negative()
+                calc.resolve(base_size.resolve(context))
             },
             FontSize::Keyword(i) => {
                 
