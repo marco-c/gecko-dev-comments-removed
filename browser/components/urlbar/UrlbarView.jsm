@@ -420,22 +420,14 @@ class UrlbarView {
     }
     this._updateResults(queryContext);
 
-    let isHeuristicResult = false;
-    if (queryContext.lastResultCount == 0) {
-      let firstResult = queryContext.results[0];
+    let firstResult = queryContext.results[0];
 
-      if (firstResult.heuristic) {
-        isHeuristicResult = true;
-        this._selectElement(this._getFirstSelectableElement(), {
-          updateInput: false,
-          setAccessibleFocus: this.controller._userSelectionBehavior == "arrow",
-        });
-      } else {
-        
-        this._selectElement(null, {
-          updateInput: false,
-        });
-      }
+    if (queryContext.lastResultCount == 0) {
+      
+      this._selectElement(null, {
+        updateInput: false,
+      });
+
       
       
       
@@ -452,9 +444,19 @@ class UrlbarView {
       this.input.maybeClearAutofillPlaceholder(firstResult);
     }
 
+    if (firstResult.heuristic) {
+      
+      
+      
+      this._selectElement(this._getFirstSelectableElement(), {
+        updateInput: false,
+        setAccessibleFocus: this.controller._userSelectionBehavior == "arrow",
+      });
+    }
+
     this._openPanel();
 
-    if (isHeuristicResult) {
+    if (firstResult.heuristic) {
       
       
       
