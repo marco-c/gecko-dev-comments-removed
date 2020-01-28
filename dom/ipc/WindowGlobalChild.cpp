@@ -226,19 +226,20 @@ void WindowGlobalChild::BeforeUnloadRemoved() {
 void WindowGlobalChild::Destroy() {
   
   
+  nsTArray<RefPtr<JSWindowActorChild>> windowActors(mWindowActors.Count());
+  for (auto iter = mWindowActors.Iter(); !iter.Done(); iter.Next()) {
+    windowActors.AppendElement(iter.UserData());
+  }
+
+  for (auto& windowActor : windowActors) {
+    windowActor->StartDestroy();
+  }
+
+  
+  
   
   RefPtr<BrowserChild> browserChild = GetBrowserChild();
   if (!browserChild || !browserChild->IsDestroyed()) {
-    
-    
-    nsTArray<RefPtr<JSWindowActorChild>> windowActors(mWindowActors.Count());
-    for (auto iter = mWindowActors.Iter(); !iter.Done(); iter.Next()) {
-      windowActors.AppendElement(iter.UserData());
-    }
-
-    for (auto& windowActor : windowActors) {
-      windowActor->StartDestroy();
-    }
     SendDestroy();
   }
 }

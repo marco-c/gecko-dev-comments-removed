@@ -248,19 +248,20 @@ IPCResult WindowGlobalParent::RecvSetHasBeforeUnload(bool aHasBeforeUnload) {
 }
 
 IPCResult WindowGlobalParent::RecvDestroy() {
+  
+  
+  nsTArray<RefPtr<JSWindowActorParent>> windowActors(mWindowActors.Count());
+  for (auto iter = mWindowActors.Iter(); !iter.Done(); iter.Next()) {
+    windowActors.AppendElement(iter.UserData());
+  }
+
+  for (auto& windowActor : windowActors) {
+    windowActor->StartDestroy();
+  }
+
   if (CanSend()) {
     RefPtr<BrowserParent> browserParent = GetBrowserParent();
     if (!browserParent || !browserParent->IsDestroyed()) {
-      
-      
-      nsTArray<RefPtr<JSWindowActorParent>> windowActors(mWindowActors.Count());
-      for (auto iter = mWindowActors.Iter(); !iter.Done(); iter.Next()) {
-        windowActors.AppendElement(iter.UserData());
-      }
-
-      for (auto& windowActor : windowActors) {
-        windowActor->StartDestroy();
-      }
       Unused << Send__delete__(this);
     }
   }
