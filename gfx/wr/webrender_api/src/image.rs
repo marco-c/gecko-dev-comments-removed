@@ -251,10 +251,6 @@ bitflags! {
         ///
         /// See https://github.com/servo/webrender/pull/2555/
         const ALLOW_MIPMAPS = 2;
-        /// This is used as a performance hint - this image may be promoted to a native
-        /// compositor surface under certain (implementation specific) conditions. This
-        /// is typically used for large videos, and canvas elements.
-        const PREFER_COMPOSITOR_SURFACE = 4;
     }
 }
 
@@ -324,12 +320,6 @@ impl ImageDescriptor {
     
     pub fn allow_mipmaps(&self) -> bool {
         self.flags.contains(ImageDescriptorFlags::ALLOW_MIPMAPS)
-    }
-
-    
-    
-    pub fn prefer_compositor_surface(&self) -> bool {
-        self.flags.contains(ImageDescriptorFlags::PREFER_COMPOSITOR_SURFACE)
     }
 }
 
