@@ -122,7 +122,7 @@ fn make_shared_flags(
 
     
     
-    sb.enable("allones_funcaddrs")?;
+    sb.enable("emit_all_ones_funcaddrs")?;
 
     
     
@@ -131,7 +131,7 @@ fn make_shared_flags(
     }
 
     
-    sb.set("probestack_enabled", "false")?;
+    sb.set("enable_probestack", "false")?;
 
     
     let opt_level = match env_flags {
@@ -142,14 +142,14 @@ fn make_shared_flags(
     sb.set("opt_level", opt_level)?;
 
     
-    let jump_tables_enabled = match env_flags {
+    let enable_jump_tables = match env_flags {
         Some(env_flags) => env_flags.jump_tables,
         None => None,
     }
     .unwrap_or(true);
     sb.set(
-        "jump_tables_enabled",
-        if jump_tables_enabled { "true" } else { "false" },
+        "enable_jump_tables",
+        if enable_jump_tables { "true" } else { "false" },
     )?;
 
     if cfg!(feature = "cranelift_x86") && cfg!(target_pointer_width = "64") {
