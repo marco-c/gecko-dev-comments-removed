@@ -4465,6 +4465,80 @@ void nsFlexContainerFrame::CreateOrClearFlexContainerInfo() {
   }
 }
 
+void nsFlexContainerFrame::CreateFlexLineAndFlexItemInfo(
+    ComputedFlexContainerInfo& aContainerInfo,
+    const mozilla::LinkedList<FlexLine>& aLines) {
+  for (const FlexLine* line = aLines.getFirst(); line; line = line->getNext()) {
+    ComputedFlexLineInfo* lineInfo = aContainerInfo.mLines.AppendElement();
+    
+    
+    
+    
+    for (const FlexItem* item = line->GetFirstItem(); item;
+         item = item->getNext()) {
+      nsIFrame* frame = item->Frame();
+
+      
+      
+      
+      
+      nsIFrame* targetFrame = GetFirstNonAnonBoxDescendant(frame);
+      nsIContent* content = targetFrame->GetContent();
+
+      
+      
+      
+      while (content && content->TextIsOnlyWhitespace()) {
+        
+        targetFrame = targetFrame->GetNextSibling();
+        if (targetFrame) {
+          content = targetFrame->GetContent();
+        } else {
+          content = nullptr;
+        }
+      }
+
+      ComputedFlexItemInfo* itemInfo = lineInfo->mItems.AppendElement();
+
+      itemInfo->mNode = content;
+
+      
+      
+      
+    }
+  }
+}
+
+void nsFlexContainerFrame::ComputeFlexDirections(
+    ComputedFlexContainerInfo& aContainerInfo,
+    const FlexboxAxisTracker& aAxisTracker) {
+  AxisOrientationType mainAxis = aAxisTracker.GetMainAxis();
+  AxisOrientationType crossAxis = aAxisTracker.GetCrossAxis();
+  if (aAxisTracker.AreAxesInternallyReversed()) {
+    mainAxis = GetReverseAxis(mainAxis);
+    crossAxis = GetReverseAxis(crossAxis);
+  }
+
+  auto ConvertAxisOrientationTypeToAPIEnum =
+      [](AxisOrientationType aAxisOrientation) {
+        switch (aAxisOrientation) {
+          case eAxis_LR:
+            return mozilla::dom::FlexPhysicalDirection::Horizontal_lr;
+          case eAxis_RL:
+            return mozilla::dom::FlexPhysicalDirection::Horizontal_rl;
+          case eAxis_TB:
+            return mozilla::dom::FlexPhysicalDirection::Vertical_tb;
+          default:
+            return mozilla::dom::FlexPhysicalDirection::Vertical_bt;
+        }
+      };
+
+  aContainerInfo.mMainAxisDirection =
+      ConvertAxisOrientationTypeToAPIEnum(mainAxis);
+  aContainerInfo.mCrossAxisDirection =
+      ConvertAxisOrientationTypeToAPIEnum(crossAxis);
+}
+
 nsFlexContainerFrame* nsFlexContainerFrame::GetFlexFrameWithComputedInfo(
     nsIFrame* aFrame) {
   
@@ -4562,20 +4636,6 @@ bool nsFlexContainerFrame::IsUsedFlexBasisContent(
   return aFlexBasis.IsAuto() && aMainSize.IsAuto();
 }
 
-static mozilla::dom::FlexPhysicalDirection ConvertAxisOrientationTypeToAPIEnum(
-    AxisOrientationType aAxisOrientation) {
-  switch (aAxisOrientation) {
-    case eAxis_LR:
-      return mozilla::dom::FlexPhysicalDirection::Horizontal_lr;
-    case eAxis_RL:
-      return mozilla::dom::FlexPhysicalDirection::Horizontal_rl;
-    case eAxis_TB:
-      return mozilla::dom::FlexPhysicalDirection::Vertical_tb;
-    default:
-      return mozilla::dom::FlexPhysicalDirection::Vertical_bt;
-  }
-}
-
 void nsFlexContainerFrame::DoFlexLayout(
     nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
     const ReflowInput& aReflowInput, nsReflowStatus& aStatus,
@@ -4618,59 +4678,8 @@ void nsFlexContainerFrame::DoFlexLayout(
       MOZ_ASSERT(containerInfo->mLines.IsEmpty(), "Shouldn't have lines yet.");
     }
 
-    
-    AxisOrientationType mainAxis = aAxisTracker.GetMainAxis();
-    AxisOrientationType crossAxis = aAxisTracker.GetCrossAxis();
-    if (aAxisTracker.AreAxesInternallyReversed()) {
-      mainAxis = GetReverseAxis(mainAxis);
-      crossAxis = GetReverseAxis(crossAxis);
-    }
-
-    containerInfo->mMainAxisDirection =
-        ConvertAxisOrientationTypeToAPIEnum(mainAxis);
-    containerInfo->mCrossAxisDirection =
-        ConvertAxisOrientationTypeToAPIEnum(crossAxis);
-
-    for (const FlexLine* line = lines.getFirst(); line;
-         line = line->getNext()) {
-      ComputedFlexLineInfo* lineInfo = containerInfo->mLines.AppendElement();
-      
-      
-      
-      
-      for (const FlexItem* item = line->GetFirstItem(); item;
-           item = item->getNext()) {
-        nsIFrame* frame = item->Frame();
-
-        
-        
-        
-        
-        nsIFrame* targetFrame = GetFirstNonAnonBoxDescendant(frame);
-        nsIContent* content = targetFrame->GetContent();
-
-        
-        
-        
-        while (content && content->TextIsOnlyWhitespace()) {
-          
-          targetFrame = targetFrame->GetNextSibling();
-          if (targetFrame) {
-            content = targetFrame->GetContent();
-          } else {
-            content = nullptr;
-          }
-        }
-
-        ComputedFlexItemInfo* itemInfo = lineInfo->mItems.AppendElement();
-
-        itemInfo->mNode = content;
-
-        
-        
-        
-      }
-    }
+    CreateFlexLineAndFlexItemInfo(*containerInfo, lines);
+    ComputeFlexDirections(*containerInfo, aAxisTracker);
   }
 
   aContentBoxMainSize = ResolveFlexContainerMainSize(
