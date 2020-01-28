@@ -82,7 +82,9 @@ void RemoteDecoderParent::DecodeNextSample(nsTArray<MediaRawDataIPDL>&& aData,
       rawData.buffer().get<uint8_t>(),
       std::min((unsigned long)rawData.bufferSize(),
                (unsigned long)rawData.buffer().Size<uint8_t>()));
-  if (rawData.buffer().Size<uint8_t>() && !data->Data()) {
+  
+  
+  if ((int64_t)data->Size() < rawData.bufferSize()) {
     
     ReleaseUsedShmems();
     aResolver(MediaResult(NS_ERROR_OUT_OF_MEMORY, __func__));
