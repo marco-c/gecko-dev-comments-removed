@@ -1,20 +1,20 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
- * Copyright 2015 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "wasm/WasmCompile.h"
 
@@ -98,10 +98,10 @@ SharedCompileArgs CompileArgs::build(JSContext* cx,
   bool bigInt = false;
 #endif
 
-  // Debug information such as source view or debug traps will require
-  // additional memory and permanently stay in baseline code, so we try to
-  // only enable it when a developer actually cares: when the debugger tab
-  // is open.
+  
+  
+  
+  
   bool debug = cx->realm()->debuggerObservesAsmJS();
 
   bool sharedMemory =
@@ -119,23 +119,23 @@ SharedCompileArgs CompileArgs::build(JSContext* cx,
   }
 
   if (forceTiering && (!baseline || (!cranelift && !ion))) {
-    // This can happen only in testing, and in this case we don't have a
-    // proper way to signal the error, so just silently override the default,
-    // instead of adding a skip-if directive to every test using debug/gc.
+    
+    
+    
     forceTiering = false;
   }
 
 #ifdef ENABLE_WASM_CRANELIFT
   if (!baseline && !ion && !cranelift) {
     if (cx->options().wasmCranelift() && !CraneliftCanCompile()) {
-      // We're forcing to use Cranelift on a platform that doesn't support it.
+      
       JS_ReportErrorASCII(cx, "cranelift isn't supported on this platform");
       return nullptr;
     }
   }
 #endif
 
-  // HasCompilerSupport() should prevent failure here.
+  
   MOZ_RELEASE_ASSERT(baseline || ion || cranelift);
 
   CompileArgs* target = cx->new_<CompileArgs>(std::move(scriptedCaller));
@@ -156,21 +156,21 @@ SharedCompileArgs CompileArgs::build(JSContext* cx,
   return target;
 }
 
-// Classify the current system as one of a set of recognizable classes.  This
-// really needs to get our tier-1 systems right.
-//
-// TODO: We don't yet have a good measure of how fast a system is.  We
-// distinguish between mobile and desktop because these are very different kinds
-// of systems, but we could further distinguish between low / medium / high end
-// within those major classes.  If we do so, then constants below would be
-// provided for each (class, architecture, system-tier) combination, not just
-// (class, architecture) as now.
-//
-// CPU clock speed is not by itself a good predictor of system performance, as
-// there are high-performance systems with slow clocks (recent Intel) and
-// low-performance systems with fast clocks (older AMD).  We can also use
-// physical memory, core configuration, OS details, CPU class and family, and
-// CPU manufacturer to disambiguate.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 enum class SystemClass {
   DesktopX86,
@@ -218,11 +218,11 @@ static SystemClass ClassifySystem() {
   }
 }
 
-// Code sizes in machine code bytes per bytecode byte, again empirical except
-// where marked.
-//
-// The Ion estimate for ARM64 is the measured Baseline value scaled by a
-// plausible factor for optimized code.
+
+
+
+
+
 
 static const double x64Tox86Inflation = 1.25;
 
@@ -230,7 +230,7 @@ static const double x64IonBytesPerBytecode = 2.45;
 static const double x86IonBytesPerBytecode =
     x64IonBytesPerBytecode * x64Tox86Inflation;
 static const double arm32IonBytesPerBytecode = 3.3;
-static const double arm64IonBytesPerBytecode = 3.0 / 1.4;  // Estimate
+static const double arm64IonBytesPerBytecode = 3.0 / 1.4;  
 
 static const double x64BaselineBytesPerBytecode = x64IonBytesPerBytecode * 1.43;
 static const double x86BaselineBytesPerBytecode =
@@ -290,36 +290,36 @@ double wasm::EstimateCompiledCodeSize(Tier tier, size_t bytecodeSize) {
   MOZ_CRASH("bad tier");
 }
 
-// If parallel Ion compilation is going to take longer than this, we should
-// tier.
+
+
 
 static const double tierCutoffMs = 10;
 
-// Compilation rate values are empirical except when noted, the reference
-// systems are:
-//
-// Late-2013 MacBook Pro (2.6GHz 4 x hyperthreaded Haswell, Mac OS X)
-// Late-2015 Nexus 5X (1.4GHz 4 x Cortex-A53 + 1.8GHz 2 x Cortex-A57, Android)
-// Ca-2016 SoftIron Overdrive 1000 (1.7GHz 4 x Cortex-A57, Fedora)
-//
-// The rates are always per core.
-//
-// The estimate for ARM64 is the Baseline compilation rate on the SoftIron
-// (because we have no Ion yet), divided by 5 to estimate Ion compile rate and
-// then divided by 2 to make it more reasonable for consumer ARM64 systems.
+
+
+
+
+
+
+
+
+
+
+
+
 
 static const double x64IonBytecodesPerMs = 2100;
 static const double x86IonBytecodesPerMs = 1500;
 static const double arm32IonBytecodesPerMs = 450;
-static const double arm64IonBytecodesPerMs = 750;  // Estimate
+static const double arm64IonBytecodesPerMs = 750;  
 
-// Tiering cutoff values: if code section sizes are below these values (when
-// divided by the effective number of cores) we do not tier, because we guess
-// that parallel Ion compilation will be fast enough.
+
+
+
 
 static const double x64DesktopTierCutoff = x64IonBytecodesPerMs * tierCutoffMs;
 static const double x86DesktopTierCutoff = x86IonBytecodesPerMs * tierCutoffMs;
-static const double x86MobileTierCutoff = x86DesktopTierCutoff / 2;  // Guess
+static const double x86MobileTierCutoff = x86DesktopTierCutoff / 2;  
 static const double arm32MobileTierCutoff =
     arm32IonBytecodesPerMs * tierCutoffMs;
 static const double arm64MobileTierCutoff =
@@ -346,15 +346,15 @@ static double CodesizeCutoff(SystemClass cls) {
   }
 }
 
-// As the number of cores grows the effectiveness of each core dwindles (on the
-// systems we care about for SpiderMonkey).
-//
-// The data are empirical, computed from the observed compilation time of the
-// Tanks demo code on a variable number of cores.
-//
-// The heuristic may fail on NUMA systems where the core count is high but the
-// performance increase is nil or negative once the program moves beyond one
-// socket.  However, few browser users have such systems.
+
+
+
+
+
+
+
+
+
 
 static double EffectiveCores(uint32_t cores) {
   if (cores <= 3) {
@@ -364,23 +364,23 @@ static double EffectiveCores(uint32_t cores) {
 }
 
 #ifndef JS_64BIT
-// Don't tier if tiering will fill code memory to more to more than this
-// fraction.
+
+
 
 static const double spaceCutoffPct = 0.9;
 #endif
 
-// Figure out whether we should use tiered compilation or not.
+
 static bool TieringBeneficial(uint32_t codeSize) {
   uint32_t cpuCount = HelperThreadState().cpuCount;
   MOZ_ASSERT(cpuCount > 0);
 
-  // It's mostly sensible not to background compile when there's only one
-  // hardware thread as we want foreground computation to have access to that.
-  // However, if wasm background compilation helper threads can be given lower
-  // priority then background compilation on single-core systems still makes
-  // some kind of sense.  That said, this is a non-issue: as of September 2017
-  // 1-core was down to 3.5% of our population and falling.
+  
+  
+  
+  
+  
+  
 
   if (cpuCount == 1) {
     return false;
@@ -388,20 +388,20 @@ static bool TieringBeneficial(uint32_t codeSize) {
 
   MOZ_ASSERT(HelperThreadState().threadCount >= cpuCount);
 
-  // Compute the max number of threads available to do actual background
-  // compilation work.
+  
+  
 
   uint32_t workers = HelperThreadState().maxWasmCompilationThreads();
 
-  // The number of cores we will use is bounded both by the CPU count and the
-  // worker count.
+  
+  
 
   uint32_t cores = std::min(cpuCount, workers);
 
   SystemClass cls = ClassifySystem();
 
-  // Ion compilation on available cores must take long enough to be worth the
-  // bother.
+  
+  
 
   double cutoffSize = CodesizeCutoff(cls);
   double effectiveCores = EffectiveCores(cores);
@@ -410,18 +410,18 @@ static bool TieringBeneficial(uint32_t codeSize) {
     return false;
   }
 
-  // Do not implement a size cutoff for 64-bit systems since the code size
-  // budget for 64 bit is so large that it will hardly ever be an issue.
-  // (Also the cutoff percentage might be different on 64-bit.)
+  
+  
+  
 
 #ifndef JS_64BIT
-  // If the amount of executable code for baseline compilation jeopardizes the
-  // availability of executable memory for ion code then do not tier, for now.
-  //
-  // TODO: For now we consider this module in isolation.  We should really
-  // worry about what else is going on in this process and might be filling up
-  // the code memory.  It's like we need some kind of code memory reservation
-  // system or JIT compilation for large modules.
+  
+  
+  
+  
+  
+  
+  
 
   double ionRatio = OptimizedBytesPerBytecode(cls);
   double baselineRatio = BaselineBytesPerBytecode(cls);
@@ -429,8 +429,8 @@ static bool TieringBeneficial(uint32_t codeSize) {
   double availMemory = LikelyAvailableExecutableMemory();
   double cutoff = spaceCutoffPct * MaxCodeBytesPerProcess;
 
-  // If the sum of baseline and ion code makes us exceeds some set percentage
-  // of the executable memory then disable tiering.
+  
+  
 
   if ((MaxCodeBytesPerProcess - availMemory) + needMemory > cutoff) {
     return false;
@@ -491,7 +491,7 @@ void CompilerEnvironment::computeParameters(Decoder& d, bool gcFeatureOptIn) {
   MOZ_ASSERT_IF(gcEnabled || debugEnabled, baselineEnabled);
   MOZ_ASSERT_IF(forceTiering, baselineEnabled && hasSecondTier);
 
-  // HasCompilerSupport() should prevent failure here
+  
   MOZ_RELEASE_ASSERT(baselineEnabled || ionEnabled || craneliftEnabled);
 
   uint32_t codeSectionSize = 0;
@@ -515,11 +515,7 @@ void CompilerEnvironment::computeParameters(Decoder& d, bool gcFeatureOptIn) {
 
   debug_ = debugEnabled ? DebugEnabled::True : DebugEnabled::False;
   gcTypes_ = gcEnabled;
-#ifdef ENABLE_WASM_REFTYPES
-  refTypes_ = !craneliftEnabled;
-#else
-  refTypes_ = false;
-#endif
+  refTypes_ = true;
 #ifdef ENABLE_WASM_MULTI_VALUE
   multiValues_ = !craneliftEnabled;
 #else
@@ -544,8 +540,8 @@ static bool DecodeFunctionBody(DecoderT& d, ModuleGenerator& mg,
 
   const size_t offsetInModule = d.currentOffset();
 
-  // Skip over the function body; it will be validated by the compilation
-  // thread.
+  
+  
   const uint8_t* bodyBegin;
   if (!d.readBytes(bodySize, &bodyBegin)) {
     return d.fail("function body length too big");
@@ -625,9 +621,9 @@ void wasm::CompileTier2(const CompileArgs& args, const Bytes& bytecode,
   UniqueChars error;
   Decoder d(bytecode, 0, &error);
 
-  bool gcTypesConfigured = false;  // No optimized backend support yet
+  bool gcTypesConfigured = false;  
 #ifdef ENABLE_WASM_REFTYPES
-  bool refTypesConfigured = !args.craneliftEnabled;
+  bool refTypesConfigured = true;
 #else
   bool refTypesConfigured = false;
 #endif
@@ -671,8 +667,8 @@ void wasm::CompileTier2(const CompileArgs& args, const Bytes& bytecode,
     return;
   }
 
-  // The caller doesn't care about success or failure; only that compilation
-  // is inactive, so there is no success to return here.
+  
+  
 }
 
 class StreamingDecoder {
