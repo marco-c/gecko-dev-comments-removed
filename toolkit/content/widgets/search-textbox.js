@@ -129,7 +129,6 @@
       this._timer = null;
 
       
-      
       this.searchButton = this.searchButton;
 
       this.initializeAttributeInheritance();

@@ -4,7 +4,6 @@ const xpcshellTestConfig = require("eslint-plugin-mozilla/lib/configs/xpcshell-t
 const browserTestConfig = require("eslint-plugin-mozilla/lib/configs/browser-test.js");
 const mochitestTestConfig = require("eslint-plugin-mozilla/lib/configs/mochitest-test.js");
 const chromeTestConfig = require("eslint-plugin-mozilla/lib/configs/chrome-test.js");
-const fs = require("fs");
 
 
 
@@ -33,19 +32,7 @@ const chromeTestPaths = [
   "**/test*/chrome/",
 ];
 
-const ignorePatterns = [
-  ...fs.readFileSync("tools/rewriting/ThirdPartyPaths.txt")
-    .toString("utf-8")
-    .split("\n"),
-  ...fs.readFileSync("devtools/client/debugger/.eslintignore")
-    .toString("utf-8")
-    .split("\n")
-    .filter(p => p && !p.startsWith("#"))
-    .map(p => `devtools/client/debugger/${p}`),
-]
-
 module.exports = {
-  ignorePatterns,
   
   
   

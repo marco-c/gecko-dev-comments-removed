@@ -135,7 +135,6 @@
 
       
       if (this.place) {
-        
         this.place = this.place;
       }
     }
@@ -184,7 +183,6 @@
         this.setAttribute("flatList", val);
         
         if (this.place) {
-          
           this.place = this.place;
         }
       }
