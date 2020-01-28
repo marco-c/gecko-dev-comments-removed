@@ -870,6 +870,9 @@ void MediaPipelineTransmit::SetDescription() {
 RefPtr<GenericPromise> MediaPipelineTransmit::Stop() {
   ASSERT_ON_THREAD(mMainThread);
 
+  
+  mAsyncStartRequested = false;
+
   if (!mTransmitting) {
     return GenericPromise::CreateAndResolve(true, __func__);
   }
@@ -896,6 +899,9 @@ bool MediaPipelineTransmit::Transmitting() const {
 
 void MediaPipelineTransmit::Start() {
   ASSERT_ON_THREAD(mMainThread);
+
+  
+  mAsyncStartRequested = false;
 
   if (mTransmitting) {
     return;
@@ -981,6 +987,28 @@ void MediaPipelineTransmit::TransportReady_s() {
   mListener->SetActive(true);
 }
 
+void MediaPipelineTransmit::AsyncStart(const RefPtr<GenericPromise>& aPromise) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  if (mAsyncStartRequested) {
+    return;
+  }
+
+  mAsyncStartRequested = true;
+  RefPtr<MediaPipelineTransmit> self = this;
+  aPromise->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [self](bool) {
+        
+        if (!self->mAsyncStartRequested) {
+          return;
+        }
+        self->Start();
+      },
+      [](nsresult aRv) { MOZ_CRASH("Never get here!"); });
+}
+
 nsresult MediaPipelineTransmit::SetTrack(RefPtr<MediaStreamTrack> aDomTrack) {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -1003,7 +1031,6 @@ nsresult MediaPipelineTransmit::SetTrack(RefPtr<MediaStreamTrack> aDomTrack) {
     mSendPort = nullptr;
   }
 
-  bool wasTransmitting = false;
   if (aDomTrack && mDomTrack && !aDomTrack->Ended() && !mDomTrack->Ended() &&
       aDomTrack->Graph() != mDomTrack->Graph() && mSendTrack) {
     
@@ -1014,16 +1041,11 @@ nsresult MediaPipelineTransmit::SetTrack(RefPtr<MediaStreamTrack> aDomTrack) {
     
     
     
-    wasTransmitting = mTransmitting;
-    RefPtr<MediaPipelineTransmit> self = this;
-    Stop()->Then(
-        GetMainThreadSerialEventTarget(), __func__,
-        [wasTransmitting, self](bool) {
-          if (wasTransmitting) {
-            self->Start();
-          }
-        },
-        [](nsresult aRv) { MOZ_CRASH("Never get here!"); });
+    
+    if (mTransmitting) {
+      RefPtr<GenericPromise> p = Stop();
+      AsyncStart(p);
+    }
     mSendTrack->Destroy();
     mSendTrack = nullptr;
   }

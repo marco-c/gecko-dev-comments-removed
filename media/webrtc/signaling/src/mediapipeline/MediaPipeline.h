@@ -317,6 +317,8 @@ class MediaPipelineTransmit : public MediaPipeline {
   void SetDescription();
 
  private:
+  void AsyncStart(const RefPtr<GenericPromise>& aPromise);
+
   const bool mIsVideo;
   const RefPtr<PipelineListener> mListener;
   
@@ -332,6 +334,11 @@ class MediaPipelineTransmit : public MediaPipeline {
   RefPtr<ProcessedMediaTrack> mSendTrack;
   
   bool mTransmitting;
+  
+  
+  
+  
+  bool mAsyncStartRequested;
 };
 
 
