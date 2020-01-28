@@ -134,18 +134,12 @@ void MediaKeySystemAccessManager::CheckDoesWindowSupportProtectedMedia(
   RefPtr<BrowserChild> browser(BrowserChild::GetFrom(mWindow));
   if (!browser) {
     if (!XRE_IsParentProcess() || XRE_IsE10sParentProcess()) {
-      
-      
-      aRequest->mPromise->MaybeRejectWithTypeError(
-          u"Browsing context is no longer available");
-    } else {
-      
-      
-      MKSAM_LOG_DEBUG("Allowing protected media on Windows with e10s off.");
-
-      OnDoesWindowSupportProtectedMedia(true, std::move(aRequest));
+      MOZ_CRASH("BrowserChild should only be unavailable with e10s off");
     }
 
+    MKSAM_LOG_DEBUG("Allowing protected media on Windows with e10s off.");
+
+    OnDoesWindowSupportProtectedMedia(true, std::move(aRequest));
     return;
   }
 
