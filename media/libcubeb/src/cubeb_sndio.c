@@ -128,7 +128,7 @@ s16_to_float(void *ptr, long nsamp)
 static const char *
 sndio_get_device()
 {
-#ifndef __OpenBSD__
+#ifdef __linux__
   
 
 
