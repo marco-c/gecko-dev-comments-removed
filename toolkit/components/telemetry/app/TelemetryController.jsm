@@ -942,6 +942,11 @@ var Impl = {
       
       await this._connectionsBarrier.wait();
 
+      if (AppConstants.platform !== "android") {
+        
+        TelemetrySend.flushPingSenderBatch();
+      }
+
       
       await TelemetryStorage.shutdown();
     } finally {

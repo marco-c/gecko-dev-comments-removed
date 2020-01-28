@@ -226,6 +226,15 @@ var TelemetrySend = {
 
 
 
+  flushPingSenderBatch() {
+    TelemetrySendImpl.flushPingSenderBatch();
+  },
+
+  
+
+
+
+
 
 
 
@@ -675,6 +684,8 @@ var TelemetrySendImpl = {
   _isOSShutdown: false,
   
   _tooLateToSend: false,
+  
+  _pingSenderBatch: [],
 
   OBSERVER_TOPICS: [
     TOPIC_IDLE_DAILY,
@@ -863,6 +874,13 @@ var TelemetrySendImpl = {
     await this._persistCurrentPings();
   },
 
+  flushPingSenderBatch() {
+    this._log.trace(
+      `flushPingSenderBatch - Sending ${this._pingSenderBatch.length} pings.`
+    );
+    this.runPingSender(this._pingSenderBatch);
+  },
+
   reset() {
     this._log.trace("reset");
 
@@ -953,6 +971,12 @@ var TelemetrySendImpl = {
     );
     try {
       const pingPath = OS.Path.join(TelemetryStorage.pingDirectoryPath, pingId);
+      if (this._tooLateToSend) {
+        
+        this._log.trace("_sendWithPingSender - too late to send. Batching.");
+        this._pingSenderBatch.push({ url: submissionURL, path: pingPath });
+        return;
+      }
       this.runPingSender([{ url: submissionURL, path: pingPath }]);
     } catch (e) {
       this._log.error("_sendWithPingSender - failed to submit ping", e);
