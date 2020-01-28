@@ -1347,7 +1347,10 @@
         }
       }
 
-      if (this._controller) {
+      
+      
+      
+      if (this._controller && this.controllers.getControllerCount()) {
         try {
           this.controllers.removeController(this._controller);
         } catch (ex) {
