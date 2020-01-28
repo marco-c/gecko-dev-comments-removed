@@ -37,6 +37,7 @@ fn main() {
         .whitelist_function("global_.*")
         .whitelist_function("table_.*")
         .whitelist_function("funcType_.*")
+        .whitelist_function("stackmaps_.*")
         .whitelist_type("Cranelift.*")
         
         .rustified_enum("BD_.*|Trap|TypeCode|FuncTypeIdDescKind")

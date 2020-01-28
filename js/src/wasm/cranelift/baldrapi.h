@@ -67,6 +67,7 @@ struct CraneliftStaticEnvironment {
   bool hasBmi2;
   bool hasLzcnt;
   bool platformIsWindows;
+  bool refTypesEnabled;
   size_t staticMemoryBound;
   size_t memoryGuardSize;
   size_t memoryBaseTlsOffset;
@@ -94,6 +95,8 @@ struct CraneliftModuleEnvironment {
       const js::wasm::ModuleEnvironment& env);
 };
 
+struct BD_Stackmaps;
+
 
 
 
@@ -103,6 +106,9 @@ struct CraneliftFuncCompileInput {
   size_t bytecodeSize;
   uint32_t index;
   uint32_t offset_in_module;
+
+  
+  BD_Stackmaps* stackmaps;
 
   
   explicit inline CraneliftFuncCompileInput(const js::wasm::FuncCompileInput&);
@@ -239,6 +245,10 @@ const BD_ValType* funcType_results(const js::wasm::FuncTypeWithId*);
 js::wasm::FuncTypeIdDescKind funcType_idKind(const js::wasm::FuncTypeWithId*);
 size_t funcType_idImmediate(const js::wasm::FuncTypeWithId*);
 size_t funcType_idTlsOffset(const js::wasm::FuncTypeWithId*);
+
+void stackmaps_add(BD_Stackmaps* sink, const uint32_t* bitMap,
+                   size_t mappedWords, size_t argsSize, size_t codeOffset);
+
 }  
 
 #endif  
