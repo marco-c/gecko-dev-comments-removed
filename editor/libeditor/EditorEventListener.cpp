@@ -330,19 +330,15 @@ EditorEventListener::HandleEvent(Event* aEvent) {
       return DragEnter(dragEvent);
     }
     
-    case eDragOver: {
+    case eDragOver:
+    case eDrop: {
       RefPtr<DragEvent> dragEvent = aEvent->AsDragEvent();
-      return DragOver(dragEvent);
+      return DragOverOrDrop(dragEvent);
     }
     
     case eDragExit: {
       RefPtr<DragEvent> dragEvent = aEvent->AsDragEvent();
       return DragExit(dragEvent);
-    }
-    
-    case eDrop: {
-      RefPtr<DragEvent> dragEvent = aEvent->AsDragEvent();
-      return Drop(dragEvent);
     }
 #ifdef HANDLE_NATIVE_TEXT_DIRECTION_SWITCH
     
@@ -718,64 +714,129 @@ nsresult EditorEventListener::DragEnter(DragEvent* aDragEvent) {
 
   presShell->SetCaret(mCaret);
 
-  return DragOver(aDragEvent);
+  return DragOverOrDrop(aDragEvent);
 }
 
-nsresult EditorEventListener::DragOver(DragEvent* aDragEvent) {
-  if (NS_WARN_IF(!aDragEvent) ||
-      DetachedFromEditorOrDefaultPrevented(aDragEvent->WidgetEventPtr())) {
+void EditorEventListener::RefuseToDropAndHideCaret(DragEvent* aDragEvent) {
+  MOZ_ASSERT(aDragEvent->WidgetEventPtr()->mFlags.mInSystemGroup);
+
+  aDragEvent->PreventDefault();
+  aDragEvent->StopImmediatePropagation();
+  MOZ_ASSERT(aDragEvent->GetDataTransfer());
+  aDragEvent->GetDataTransfer()->SetDropEffectInt(
+      nsIDragService::DRAGDROP_ACTION_NONE);
+  if (mCaret) {
+    mCaret->SetVisible(false);
+  }
+}
+
+nsresult EditorEventListener::DragOverOrDrop(DragEvent* aDragEvent) {
+  MOZ_ASSERT(aDragEvent);
+  MOZ_ASSERT(aDragEvent->WidgetEventPtr()->mMessage == eDrop ||
+             aDragEvent->WidgetEventPtr()->mMessage == eDragOver ||
+             aDragEvent->WidgetEventPtr()->mMessage == eDragEnter);
+
+  if (aDragEvent->WidgetEventPtr()->mMessage == eDrop) {
+    CleanupDragDropCaret();
+    MOZ_ASSERT(!mCaret);
+  }
+
+  if (DetachedFromEditorOrDefaultPrevented(aDragEvent->WidgetEventPtr())) {
     return NS_OK;
   }
 
   int32_t dropOffset = -1;
   nsCOMPtr<nsIContent> dropParentContent =
       aDragEvent->GetRangeParentContentAndOffset(&dropOffset);
-  if (NS_WARN_IF(!dropParentContent)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  if (dropParentContent->IsEditable() && CanDrop(aDragEvent)) {
-    aDragEvent->PreventDefault();  
-
-    
-    
-    
-    
-    DataTransfer* dataTransfer = aDragEvent->GetDataTransfer();
-    MOZ_ASSERT(dataTransfer);
-    if (dataTransfer->DropEffectInt() == nsIDragService::DRAGDROP_ACTION_MOVE) {
-      nsCOMPtr<nsINode> dragSource = dataTransfer->GetMozSourceNode();
-      if (dragSource && !dragSource->IsEditable()) {
-        
-        
-        dataTransfer->SetDropEffectInt(nsContentUtils::FilterDropEffect(
-            nsIDragService::DRAGDROP_ACTION_COPY,
-            dataTransfer->EffectAllowedInt()));
-      }
-    }
-
-    if (!mCaret) {
-      return NS_OK;
-    }
-
-    mCaret->SetVisible(true);
-    mCaret->SetCaretPosition(dropParentContent, dropOffset);
-
+  if (DetachedFromEditor()) {
+    RefuseToDropAndHideCaret(aDragEvent);
     return NS_OK;
   }
 
-  if (!IsFileControlTextBox()) {
-    
-    
-    aDragEvent->StopPropagation();
-    DataTransfer* dataTransfer = aDragEvent->GetDataTransfer();
-    MOZ_ASSERT(dataTransfer);
-    dataTransfer->SetDropEffectInt(nsIDragService::DRAGDROP_ACTION_NONE);
-  }
+  bool notEditable = !dropParentContent->IsEditable() ||
+                     mEditorBase->IsReadonly() || mEditorBase->IsDisabled();
 
-  if (mCaret) {
+  
+  
+  if (mCaret && (IsFileControlTextBox() || notEditable)) {
     mCaret->SetVisible(false);
   }
+
+  
+  
+  if (IsFileControlTextBox()) {
+    return NS_OK;
+  }
+
+  
+  
+  if (notEditable) {
+    
+    
+    if (!mEditorBase->AsHTMLEditor()) {
+      RefuseToDropAndHideCaret(aDragEvent);
+      return NS_OK;
+    }
+    
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  
+  if (!DragEventHasSupportingData(aDragEvent)) {
+    RefuseToDropAndHideCaret(aDragEvent);
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  if (!CanInsertAtDropPosition(aDragEvent)) {
+    RefuseToDropAndHideCaret(aDragEvent);
+    return NS_OK;
+  }
+
+  aDragEvent->PreventDefault();
+  aDragEvent->StopImmediatePropagation();
+
+  if (aDragEvent->WidgetEventPtr()->mMessage == eDrop) {
+    RefPtr<TextEditor> textEditor = mEditorBase->AsTextEditor();
+    nsresult rv = textEditor->OnDrop(aDragEvent);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "TextEditor::OnDrop() failed");
+    return rv;
+  }
+
+  MOZ_ASSERT(aDragEvent->WidgetEventPtr()->mMessage == eDragOver ||
+             aDragEvent->WidgetEventPtr()->mMessage == eDragEnter);
+
+  
+  
+  
+  
+  MOZ_ASSERT(aDragEvent->GetDataTransfer());
+  DataTransfer* dataTransfer = aDragEvent->GetDataTransfer();
+  if (dataTransfer->DropEffectInt() == nsIDragService::DRAGDROP_ACTION_MOVE) {
+    nsCOMPtr<nsINode> dragSource = dataTransfer->GetMozSourceNode();
+    if (dragSource && !dragSource->IsEditable()) {
+      
+      
+      dataTransfer->SetDropEffectInt(
+          nsContentUtils::FilterDropEffect(nsIDragService::DRAGDROP_ACTION_COPY,
+                                           dataTransfer->EffectAllowedInt()));
+    }
+  }
+
+  if (!mCaret) {
+    return NS_OK;
+  }
+
+  mCaret->SetVisible(true);
+  mCaret->SetCaretPosition(dropParentContent, dropOffset);
+
   return NS_OK;
 }
 
@@ -810,68 +871,33 @@ nsresult EditorEventListener::DragExit(DragEvent* aDragEvent) {
   return NS_OK;
 }
 
-nsresult EditorEventListener::Drop(DragEvent* aDragEvent) {
-  CleanupDragDropCaret();
+bool EditorEventListener::DragEventHasSupportingData(
+    DragEvent* aDragEvent) const {
+  MOZ_ASSERT(
+      !DetachedFromEditorOrDefaultPrevented(aDragEvent->WidgetEventPtr()));
+  MOZ_ASSERT(aDragEvent->GetDataTransfer());
 
-  if (NS_WARN_IF(!aDragEvent) ||
-      DetachedFromEditorOrDefaultPrevented(aDragEvent->WidgetEventPtr())) {
-    return NS_OK;
-  }
-
-  nsCOMPtr<nsIContent> dropParentContent = aDragEvent->GetRangeParentContent();
-  if (NS_WARN_IF(!dropParentContent)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  if (!dropParentContent->IsEditable() || !CanDrop(aDragEvent)) {
-    if ((mEditorBase->IsReadonly() || mEditorBase->IsDisabled()) &&
-        !IsFileControlTextBox()) {
-      
-      
-      
-      
-      aDragEvent->StopPropagation();
-    }
-    return NS_OK;
-  }
-
-  aDragEvent->StopPropagation();
-  aDragEvent->PreventDefault();
-
-  RefPtr<TextEditor> textEditor = mEditorBase->AsTextEditor();
-  nsresult rv = textEditor->OnDrop(aDragEvent);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  return NS_OK;
+  
+  
+  DataTransfer* dataTransfer = aDragEvent->GetDataTransfer();
+  return dataTransfer->HasType(NS_LITERAL_STRING(kTextMime)) ||
+         dataTransfer->HasType(NS_LITERAL_STRING(kMozTextInternal)) ||
+         (!mEditorBase->IsPlaintextEditor() &&
+          (dataTransfer->HasType(NS_LITERAL_STRING(kHTMLMime)) ||
+           dataTransfer->HasType(NS_LITERAL_STRING(kFileMime))));
 }
 
-bool EditorEventListener::CanDrop(DragEvent* aEvent) {
-  MOZ_ASSERT(!DetachedFromEditorOrDefaultPrevented(aEvent->WidgetEventPtr()));
-
-  
-  RefPtr<EditorBase> editorBase(mEditorBase);
-  if (editorBase->IsReadonly() || editorBase->IsDisabled()) {
-    return false;
-  }
-
-  RefPtr<DataTransfer> dataTransfer = aEvent->GetDataTransfer();
-  NS_ENSURE_TRUE(dataTransfer, false);
-
-  
-  
-  if (!dataTransfer->HasType(NS_LITERAL_STRING(kTextMime)) &&
-      !dataTransfer->HasType(NS_LITERAL_STRING(kMozTextInternal)) &&
-      (editorBase->IsPlaintextEditor() ||
-       (!dataTransfer->HasType(NS_LITERAL_STRING(kHTMLMime)) &&
-        !dataTransfer->HasType(NS_LITERAL_STRING(kFileMime))))) {
-    return false;
-  }
+bool EditorEventListener::CanInsertAtDropPosition(DragEvent* aDragEvent) {
+  MOZ_ASSERT(
+      !DetachedFromEditorOrDefaultPrevented(aDragEvent->WidgetEventPtr()));
+  MOZ_ASSERT(!mEditorBase->IsReadonly() && !mEditorBase->IsDisabled());
+  MOZ_ASSERT(DragEventHasSupportingData(aDragEvent));
 
   
   
   
-  nsCOMPtr<nsINode> sourceNode = dataTransfer->GetMozSourceNode();
+  nsCOMPtr<nsINode> sourceNode =
+      aDragEvent->GetDataTransfer()->GetMozSourceNode();
   if (!sourceNode) {
     return true;
   }
@@ -879,25 +905,27 @@ bool EditorEventListener::CanDrop(DragEvent* aEvent) {
   
   
 
-  RefPtr<Document> domdoc = editorBase->GetDocument();
-  NS_ENSURE_TRUE(domdoc, false);
+  RefPtr<Document> targetDocument = mEditorBase->GetDocument();
+  if (NS_WARN_IF(!targetDocument)) {
+    return false;
+  }
 
-  RefPtr<Document> sourceDoc = sourceNode->OwnerDoc();
+  RefPtr<Document> sourceDocument = sourceNode->OwnerDoc();
 
   
-  if (domdoc != sourceDoc) {
+  if (targetDocument != sourceDocument) {
     return true;
   }
 
   
   
-  nsCOMPtr<nsIContent> sourceContent = do_QueryInterface(sourceNode);
+  nsIContent* sourceContent = nsIContent::FromNode(sourceNode);
   BrowserParent* tp = BrowserParent::GetFrom(sourceContent);
   if (tp) {
     return true;
   }
 
-  RefPtr<Selection> selection = editorBase->GetSelection();
+  RefPtr<Selection> selection = mEditorBase->GetSelection();
   if (!selection) {
     return false;
   }
@@ -909,8 +937,8 @@ bool EditorEventListener::CanDrop(DragEvent* aEvent) {
 
   int32_t dropOffset = -1;
   nsCOMPtr<nsIContent> dropParentContent =
-      aEvent->GetRangeParentContentAndOffset(&dropOffset);
-  if (!dropParentContent) {
+      aDragEvent->GetRangeParentContentAndOffset(&dropOffset);
+  if (!dropParentContent || NS_WARN_IF(DetachedFromEditor())) {
     return false;
   }
 
