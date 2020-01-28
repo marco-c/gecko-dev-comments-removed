@@ -18,6 +18,7 @@
 #include "builtin/Boolean.h"  
 #include "builtin/Object.h"   
 #include "gc/Allocator.h"     
+#include "js/Class.h"         
 #include "js/Symbol.h"        
 #include "js/TypeDecls.h"  
 #include "js/Utility.h"         
@@ -29,7 +30,6 @@
 #include "vm/JSContext.h"       
 #include "vm/JSFunction.h"      
 #include "vm/Printer.h"         
-#include "vm/RegExpObject.h"    
 #include "vm/SelfHosting.h"     
 #include "vm/Stack.h"           
 #include "vm/StringType.h"      
@@ -143,30 +143,35 @@ JSString* js::ValueToSource(JSContext* cx, HandleValue v) {
         return ToString<CanGC>(cx, v);
       }
 
-      if (obj->is<JSFunction>()) {
-        RootedFunction fun(cx, &obj->as<JSFunction>());
-        return FunctionToString(cx, fun, true);
+      ESClass cls;
+      if (!GetBuiltinClass(cx, obj, &cls)) {
+        return nullptr;
       }
 
-      if (obj->is<ArrayObject>()) {
-        return ArrayToSource(cx, obj);
-      }
+      
+      switch (cls) {
+        case ESClass::Function:
+          return fun_toStringHelper(cx, obj, true);
 
-      if (obj->is<ErrorObject>()) {
-        return ErrorToSource(cx, obj);
-      }
+        case ESClass::Array:
+          return ArrayToSource(cx, obj);
 
-      if (obj->is<RegExpObject>()) {
-        FixedInvokeArgs<0> args(cx);
-        RootedValue rval(cx);
-        if (!CallSelfHostedFunction(cx, cx->names().RegExpToString, v, args,
-                                    &rval)) {
-          return nullptr;
+        case ESClass::Error:
+          return ErrorToSource(cx, obj);
+
+        case ESClass::RegExp: {
+          FixedInvokeArgs<0> args(cx);
+          RootedValue rval(cx);
+          if (!CallSelfHostedFunction(cx, cx->names().RegExpToString, v, args,
+                                      &rval)) {
+            return nullptr;
+          }
+          return ToString<CanGC>(cx, rval);
         }
-        return ToString<CanGC>(cx, rval);
-      }
 
-      return ObjectToSource(cx, obj);
+        default:
+          return ObjectToSource(cx, obj);
+      }
     }
 
     case JS::ValueType::PrivateGCThing:
