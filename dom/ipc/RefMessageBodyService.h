@@ -9,19 +9,56 @@
 
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/StaticMutex.h"
 #include "nsRefPtrHashtable.h"
 
 namespace mozilla {
 namespace dom {
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class RefMessageBody final {
+  friend class RefMessageBodyService;
+
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RefMessageBody)
 
-  RefMessageBody(nsID& aPortID,
+  RefMessageBody(const nsID& aPortID,
                  UniquePtr<ipc::StructuredCloneData>&& aCloneData)
-      : mPortID(aPortID), mCloneData(std::move(aCloneData)) {}
+      : mPortID(aPortID),
+        mCloneData(std::move(aCloneData)),
+        mMaxCount(Nothing()),
+        mCount(0) {}
 
   const nsID& PortID() const { return mPortID; }
 
@@ -30,8 +67,12 @@ class RefMessageBody final {
  private:
   ~RefMessageBody() = default;
 
-  nsID mPortID;
+  const nsID mPortID;
   UniquePtr<ipc::StructuredCloneData> mCloneData;
+
+  
+  Maybe<uint32_t> mMaxCount;
+  uint32_t mCount;
 };
 
 class RefMessageBodyService final {
@@ -40,11 +81,15 @@ class RefMessageBodyService final {
 
   static already_AddRefed<RefMessageBodyService> GetOrCreate();
 
-  void ForgetPort(nsID& aPortID);
+  void ForgetPort(const nsID& aPortID);
 
-  nsID Register(already_AddRefed<RefMessageBody> aBody, ErrorResult& aRv);
+  const nsID Register(already_AddRefed<RefMessageBody> aBody, ErrorResult& aRv);
 
-  already_AddRefed<RefMessageBody> Steal(nsID& aID);
+  already_AddRefed<RefMessageBody> Steal(const nsID& aID);
+
+  already_AddRefed<RefMessageBody> GetAndCount(const nsID& aID);
+
+  void SetMaxCount(const nsID& aID, uint32_t aMaxCount);
 
  private:
   RefMessageBodyService();

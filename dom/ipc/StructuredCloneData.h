@@ -150,7 +150,8 @@ class StructuredCloneData : public StructuredCloneHolder {
   StructuredCloneData(StructuredCloneData&& aOther);
 
   
-  explicit StructuredCloneData(StructuredCloneScope aScope);
+  StructuredCloneData(StructuredCloneScope aScope,
+                      TransferringSupport aSupportsTransferring);
 
   ~StructuredCloneData();
 
@@ -271,8 +272,6 @@ class StructuredCloneData : public StructuredCloneHolder {
   bool ReadIPCParams(const IPC::Message* aMessage, PickleIterator* aIter);
 
  protected:
-  explicit StructuredCloneData(TransferringSupport aSupportsTransferring);
-
   already_AddRefed<SharedJSAllocatedData> TakeSharedData();
 
  private:
@@ -283,15 +282,6 @@ class StructuredCloneData : public StructuredCloneHolder {
   
   FallibleTArray<mozilla::ipc::AutoIPCStream> mIPCStreams;
   bool mInitialized;
-};
-
-
-
-
-class StructuredCloneDataNoTransfers : public StructuredCloneData {
- public:
-  StructuredCloneDataNoTransfers()
-      : StructuredCloneData(StructuredCloneHolder::TransferringNotSupported) {}
 };
 
 }  

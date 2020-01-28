@@ -27,24 +27,22 @@ class BroadcastChannelChild final : public PBroadcastChannelChild {
 
   void SetParent(BroadcastChannel* aBC) { mBC = aBC; }
 
-  virtual mozilla::ipc::IPCResult RecvNotify(
-      const ClonedMessageData& aData) override;
+  virtual mozilla::ipc::IPCResult RecvNotify(const MessageData& aData) override;
+
+  virtual mozilla::ipc::IPCResult RecvRefMessageDelivered(
+      const nsID& aMessageID, const uint32_t& aOtherBCs) override;
 
   bool IsActorDestroyed() const { return mActorDestroyed; }
 
  private:
-  explicit BroadcastChannelChild(const nsACString& aOrigin);
+  BroadcastChannelChild();
   ~BroadcastChannelChild();
 
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  void DispatchError(JSContext* aCx);
-
   
   
   BroadcastChannel* mBC;
-
-  nsString mOrigin;
 
   bool mActorDestroyed;
 };
