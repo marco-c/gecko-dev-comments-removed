@@ -266,7 +266,10 @@ function terminalInputChanged(expression) {
 function getEagerEvaluationResult(response) {
   const result = response.exception || response.result;
   
-  if (!result || result.isSyntaxError || result.type == "undefined") {
+  if (
+    (result && result.isSyntaxError) ||
+    (result && result.type == "undefined")
+  ) {
     return null;
   }
 
