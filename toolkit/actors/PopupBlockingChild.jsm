@@ -7,153 +7,147 @@
 
 var EXPORTED_SYMBOLS = ["PopupBlockingChild"];
 
-const { ActorChild } = ChromeUtils.import(
-  "resource://gre/modules/ActorChild.jsm"
-);
+
+const MAX_SENT_POPUPS = 15;
+
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-class PopupBlockingChild extends ActorChild {
-  constructor(dispatcher) {
-    super(dispatcher);
+class PopupBlockingChild extends JSWindowActorChild {
+  constructor() {
+    super();
+    this.weakDocStates = new WeakMap();
+  }
 
-    this.popupData = null;
-    this.popupDataInternal = null;
+  actorCreated() {
+    this.contentWindow.addEventListener("pageshow", this);
+  }
 
-    this.mm.addEventListener("pageshow", this, true);
-    this.mm.addEventListener("pagehide", this, true);
+  willDestroy() {
+    this.contentWindow.removeEventListener("pageshow", this);
+  }
 
-    this.mm.addMessageListener("PopupBlocking:UnblockPopup", this);
-    this.mm.addMessageListener("PopupBlocking:GetBlockedPopupList", this);
+  
+
+
+
+
+  get docState() {
+    let state = this.weakDocStates.get(this.document);
+    if (!state) {
+      state = {
+        popupData: [],
+      };
+      this.weakDocStates.set(this.document, state);
+    }
+
+    return state;
   }
 
   receiveMessage(msg) {
     switch (msg.name) {
-      case "PopupBlocking:UnblockPopup": {
+      case "UnblockPopup": {
         let i = msg.data.index;
-        if (this.popupData && this.popupData[i]) {
-          let data = this.popupData[i];
-          let internals = this.popupDataInternal[i];
-          let dwi = internals.requestingWindow;
+        let state = this.docState;
+        let popupData = state.popupData[i];
+        if (popupData) {
+          let dwi = popupData.requestingWindow;
 
           
           
-          if (dwi && dwi.document == internals.requestingDocument) {
+          if (dwi && dwi.document == popupData.requestingDocument) {
             dwi.open(
-              data.popupWindowURIspec,
-              data.popupWindowName,
-              data.popupWindowFeatures
+              popupData.popupWindowURISpec,
+              popupData.popupWindowName,
+              popupData.popupWindowFeatures
             );
           }
         }
         break;
       }
 
-      case "PopupBlocking:GetBlockedPopupList": {
-        let popupData = [];
-        let length = this.popupData ? this.popupData.length : 0;
+      case "GetBlockedPopupList": {
+        let state = this.docState;
+        let length = Math.min(state.popupData.length, MAX_SENT_POPUPS);
 
-        
-        length = Math.min(length, 15);
+        let result = [];
 
-        for (let i = 0; i < length; i++) {
-          let popupWindowURIspec = this.popupData[i].popupWindowURIspec;
+        for (let i = 0; i < length; ++i) {
+          let popup = state.popupData[i];
 
-          if (popupWindowURIspec == this.mm.content.location.href) {
-            popupWindowURIspec = "<self>";
+          let popupWindowURISpec = popup.popupWindowURISpec;
+
+          if (this.contentWindow.location.href == popupWindowURISpec) {
+            popupWindowURISpec = "<self>";
           } else {
             
             
-            popupWindowURIspec = popupWindowURIspec.substring(0, 500);
+            popupWindowURISpec = popupWindowURISpec.substring(0, 500);
           }
 
-          popupData.push({ popupWindowURIspec });
+          result.push({
+            popupWindowURISpec,
+          });
         }
 
-        this.mm.sendAsyncMessage("PopupBlocking:ReplyGetBlockedPopupList", {
-          popupData,
-        });
+        return result;
+      }
+    }
+
+    return null;
+  }
+
+  handleEvent(event) {
+    switch (event.type) {
+      case "DOMPopupBlocked":
+        this.onPopupBlocked(event);
+        break;
+      case "pageshow": {
+        this.onPageShow(event);
         break;
       }
     }
   }
 
-  handleEvent(ev) {
-    switch (ev.type) {
-      case "DOMPopupBlocked":
-        return this.onPopupBlocked(ev);
-      case "pageshow":
-        return this._removeIrrelevantPopupData();
-      case "pagehide":
-        return this._removeIrrelevantPopupData(ev.target);
-    }
-    return undefined;
-  }
-
-  onPopupBlocked(ev) {
-    if (!this.popupData) {
-      this.popupData = [];
-      this.popupDataInternal = [];
-    }
-
-    
-    if (this.popupData.length >= PopupBlockingChild.maxReportedPopups) {
+  onPopupBlocked(event) {
+    if (event.target != this.document) {
       return;
     }
 
-    let obj = {
-      popupWindowURIspec: ev.popupWindowURI
-        ? ev.popupWindowURI.spec
+    let state = this.docState;
+
+    
+    if (state.popupData.length >= PopupBlockingChild.maxReportedPopups) {
+      return;
+    }
+
+    let popup = {
+      popupWindowURISpec: event.popupWindowURI
+        ? event.popupWindowURI.spec
         : "about:blank",
-      popupWindowFeatures: ev.popupWindowFeatures,
-      popupWindowName: ev.popupWindowName,
+      popupWindowFeatures: event.popupWindowFeatures,
+      popupWindowName: event.popupWindowName,
+      requestingWindow: event.requestingWindow,
+      requestingDocument: event.requestingWindow.document,
     };
 
-    let internals = {
-      requestingWindow: ev.requestingWindow,
-      requestingDocument: ev.requestingWindow.document,
-    };
-
-    this.popupData.push(obj);
-    this.popupDataInternal.push(internals);
+    state.popupData.push(popup);
     this.updateBlockedPopups(true);
   }
 
-  _removeIrrelevantPopupData(removedDoc = null) {
-    if (this.popupData) {
-      let i = 0;
-      let oldLength = this.popupData.length;
-      while (i < this.popupData.length) {
-        let { requestingWindow, requestingDocument } = this.popupDataInternal[
-          i
-        ];
-        
-        if (
-          requestingWindow &&
-          requestingWindow.document == requestingDocument &&
-          requestingDocument != removedDoc
-        ) {
-          i++;
-        } else {
-          this.popupData.splice(i, 1);
-          this.popupDataInternal.splice(i, 1);
-        }
-      }
-      if (!this.popupData.length) {
-        this.popupData = null;
-        this.popupDataInternal = null;
-      }
-      if (!this.popupData || oldLength > this.popupData.length) {
-        this.updateBlockedPopups(false);
-      }
+  onPageShow(event) {
+    if (event.target != this.document) {
+      return;
     }
+
+    this.updateBlockedPopups(false);
   }
 
-  updateBlockedPopups(freshPopup) {
-    this.mm.sendAsyncMessage("PopupBlocking:UpdateBlockedPopups", {
-      count: this.popupData ? this.popupData.length : 0,
-      freshPopup,
+  updateBlockedPopups(shouldNotify) {
+    this.sendAsyncMessage("UpdateBlockedPopups", {
+      shouldNotify,
+      count: this.docState.popupData.length,
     });
   }
 }
