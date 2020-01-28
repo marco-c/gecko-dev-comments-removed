@@ -649,20 +649,23 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
 
   
   
-  const nsMargin& GetPhysicalMargin() const { return mMargin; }
-
-  
-  nscoord GetMarginComponentForSide(mozilla::Side aSide) const {
-    return mMargin.Side(aSide);
+  LogicalMargin GetMargin() const { return mMargin; }
+  nsMargin GetPhysicalMargin() const {
+    return mMargin.GetPhysicalMargin(mCBWM);
   }
 
   
-  nscoord GetMarginSizeInAxis(AxisOrientationType aAxis) const {
-    mozilla::Side startSide =
-        kAxisOrientationToSidesMap[aAxis][eAxisEdge_Start];
-    mozilla::Side endSide = kAxisOrientationToSidesMap[aAxis][eAxisEdge_End];
-    return GetMarginComponentForSide(startSide) +
-           GetMarginComponentForSide(endSide);
+  
+  nscoord GetMarginComponentForSide(LogicalSide aSide) const {
+    return mMargin.Side(aSide, mCBWM);
+  }
+
+  
+  nscoord GetMarginSizeInMainAxis() const {
+    return mMargin.StartEnd(MainAxis(), mCBWM);
+  }
+  nscoord GetMarginSizeInCrossAxis() const {
+    return mMargin.StartEnd(CrossAxis(), mCBWM);
   }
 
   
@@ -684,11 +687,11 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
   
   nscoord GetMarginBorderPaddingSizeInMainAxis(
       AxisOrientationType aAxis) const {
-    return GetMarginSizeInAxis(aAxis) + GetBorderPaddingSizeInMainAxis();
+    return GetMarginSizeInMainAxis() + GetBorderPaddingSizeInMainAxis();
   }
   nscoord GetMarginBorderPaddingSizeInCrossAxis(
       AxisOrientationType aAxis) const {
-    return GetMarginSizeInAxis(aAxis) + GetBorderPaddingSizeInCrossAxis();
+    return GetMarginSizeInCrossAxis() + GetBorderPaddingSizeInCrossAxis();
   }
 
   
@@ -838,9 +841,9 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
   }
 
   
-  void SetMarginComponentForSide(mozilla::Side aSide, nscoord aLength) {
+  void SetMarginComponentForSide(LogicalSide aSide, nscoord aLength) {
     MOZ_ASSERT(mIsFrozen, "main size should be resolved before this");
-    mMargin.Side(aSide) = aLength;
+    mMargin.Side(aSide, mCBWM) = aLength;
   }
 
   void ResolveStretchedCrossSize(nscoord aLineCrossSize,
@@ -880,8 +883,10 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
 
   
   const LogicalMargin mBorderPadding;
+
   
-  nsMargin mMargin;
+  
+  LogicalMargin mMargin;
 
   
   
@@ -1925,7 +1930,8 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
       mBorderPadding(
           aFlexItemReflowInput.ComputedLogicalBorderPadding().ConvertTo(mCBWM,
                                                                         mWM)),
-      mMargin(aFlexItemReflowInput.ComputedPhysicalMargin()),
+      mMargin(
+          aFlexItemReflowInput.ComputedLogicalMargin().ConvertTo(mCBWM, mWM)),
       mMainMinSize(aMainMinSize),
       mMainMaxSize(aMainMaxSize),
       mCrossMinSize(aCrossMinSize),
@@ -2025,15 +2031,16 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
   CheckForMinSizeAuto(aFlexItemReflowInput, aAxisTracker);
 
   const nsStyleMargin* styleMargin = aFlexItemReflowInput.mStyleMargin;
-  mHasAnyAutoMargin =
-      styleMargin->HasInlineAxisAuto(mWM) || styleMargin->HasBlockAxisAuto(mWM);
+  mHasAnyAutoMargin = styleMargin->HasInlineAxisAuto(mCBWM) ||
+                      styleMargin->HasBlockAxisAuto(mCBWM);
 
   
   
 #ifdef DEBUG
   {
-    NS_FOR_CSS_SIDES(side) {
-      if (styleMargin->mMargin.Get(side).IsAuto()) {
+    for (const auto side : {eLogicalSideBStart, eLogicalSideBEnd,
+                            eLogicalSideIStart, eLogicalSideIEnd}) {
+      if (styleMargin->mMargin.Get(mCBWM, side).IsAuto()) {
         MOZ_ASSERT(GetMarginComponentForSide(side) == 0,
                    "Someone else tried to resolve our auto margin");
       }
@@ -2066,6 +2073,7 @@ FlexItem::FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize,
       mWM(aContainerWM),
       mCBWM(aContainerWM),
       mBorderPadding(mCBWM),
+      mMargin(mCBWM),
       mCrossSize(aCrossSize),
       
       
@@ -2218,6 +2226,16 @@ class MOZ_STACK_CLASS PositionTracker {
   inline nscoord GetPosition() const { return mPosition; }
   inline LogicalAxis GetAxis() const { return mAxis; }
   inline AxisOrientationType GetPhysicalAxis() const { return mPhysicalAxis; }
+
+  inline LogicalSide StartSide() {
+    return MakeLogicalSide(
+        mAxis, mIsAxisReversed ? eLogicalEdgeEnd : eLogicalEdgeStart);
+  }
+
+  inline LogicalSide EndSide() {
+    return MakeLogicalSide(
+        mAxis, mIsAxisReversed ? eLogicalEdgeStart : eLogicalEdgeEnd);
+  }
 
   
   
@@ -3098,9 +3116,8 @@ MainAxisPositionTracker::MainAxisPositionTracker(
 void MainAxisPositionTracker::ResolveAutoMarginsInMainAxis(FlexItem& aItem) {
   if (mNumAutoMarginsInMainAxis) {
     const auto& styleMargin = aItem.Frame()->StyleMargin()->mMargin;
-    for (uint32_t i = 0; i < eNumAxisEdges; i++) {
-      mozilla::Side side = kAxisOrientationToSidesMap[mPhysicalAxis][i];
-      if (styleMargin.Get(side).IsAuto()) {
+    for (const auto side : {StartSide(), EndSide()}) {
+      if (styleMargin.Get(mWM, side).IsAuto()) {
         
         
         nscoord curAutoMarginSize =
@@ -3498,9 +3515,8 @@ void SingleLineCrossAxisPositionTracker::ResolveAutoMarginsInCrossAxis(
   
   
   const auto& styleMargin = aItem.Frame()->StyleMargin()->mMargin;
-  for (uint32_t i = 0; i < eNumAxisEdges; i++) {
-    mozilla::Side side = kAxisOrientationToSidesMap[mPhysicalAxis][i];
-    if (styleMargin.Get(side).IsAuto()) {
+  for (const auto side : {StartSide(), EndSide()}) {
+    if (styleMargin.Get(mWM, side).IsAuto()) {
       MOZ_ASSERT(aItem.GetMarginComponentForSide(side) == 0,
                  "Expecting auto margins to have value '0' before we "
                  "update them");
