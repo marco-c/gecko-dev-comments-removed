@@ -39,16 +39,46 @@ function makeTestCase(property, value, position, isActive) {
   };
 }
 
-function makeTestCases() {
-  const tests = [];
 
-  for (const { property, value } of PROPERTIES) {
-    for (const { position, isActive } of POSITIONS) {
-      tests.push(makeTestCase(property, value, position, isActive));
-    }
+const mainTests = [];
+
+for (const { property, value } of PROPERTIES) {
+  for (const { position, isActive } of POSITIONS) {
+    mainTests.push(makeTestCase(property, value, position, isActive));
   }
-
-  return tests;
 }
 
-export default makeTestCases();
+
+mainTests.push({
+  info:
+    "z-index is active even on unpositioned elements if they are grid items",
+  property: "z-index",
+  createTestElement: rootNode => {
+    const container = document.createElement("div");
+    const element = document.createElement("span");
+    container.append(element);
+    rootNode.append(container);
+    return element;
+  },
+  rules: ["div { display: grid; }", "span { z-index: 3; }"],
+  ruleIndex: 1,
+  isActive: true,
+});
+
+mainTests.push({
+  info:
+    "z-index is active even on unpositioned elements if they are flex items",
+  property: "z-index",
+  createTestElement: rootNode => {
+    const container = document.createElement("div");
+    const element = document.createElement("span");
+    container.append(element);
+    rootNode.append(container);
+    return element;
+  },
+  rules: ["div { display: flex; }", "span { z-index: 3; }"],
+  ruleIndex: 1,
+  isActive: true,
+});
+
+export default mainTests;

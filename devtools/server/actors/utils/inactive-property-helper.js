@@ -255,8 +255,16 @@ class InactivePropertyHelper {
       },
       
       {
-        invalidProperties: ["top", "right", "bottom", "left", "z-index"],
+        invalidProperties: ["top", "right", "bottom", "left"],
         when: () => !this.isPositioned,
+        fixId: "inactive-css-position-property-on-unpositioned-box-fix",
+        msgId: "inactive-css-position-property-on-unpositioned-box",
+        numFixProps: 1,
+      },
+      
+      {
+        invalidProperties: ["z-index"],
+        when: () => !this.isPositioned && !this.gridItem && !this.flexItem,
         fixId: "inactive-css-position-property-on-unpositioned-box-fix",
         msgId: "inactive-css-position-property-on-unpositioned-box",
         numFixProps: 1,
