@@ -35,7 +35,7 @@ var FirstStartup = {
   SUCCESS: 3,
   UNSUPPORTED: 4,
 
-  _state: this.NOT_STARTED,
+  _state: 0, 
   
 
 
