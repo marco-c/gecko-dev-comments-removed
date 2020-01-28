@@ -81,8 +81,6 @@ BottomHost.prototype = {
     this._browserContainer.appendChild(this.frame);
 
     focusTab(this.hostTab);
-    this.emit("ready", this.frame);
-
     return this.frame;
   },
 
@@ -168,8 +166,6 @@ class SidebarHost {
     }
 
     focusTab(this.hostTab);
-    this.emit("ready", this.frame);
-
     return this.frame;
   }
 
@@ -345,8 +341,6 @@ BrowserToolboxHost.prototype = {
     );
 
     this.doc.body.appendChild(this.frame);
-
-    this.emit("ready", this.frame);
 
     return this.frame;
   },
