@@ -12,6 +12,8 @@
 #include "nsIPrincipal.h"
 #include "nsIURI.h"
 
+#include "mozilla/StaticPrefs_dom.h"
+
 
 void DOMSecurityMonitor::AuditParsingOfHTMLXMLFragments(
     nsIPrincipal* aPrincipal, const nsAString& aFragment) {
@@ -39,7 +41,7 @@ void DOMSecurityMonitor::AuditParsingOfHTMLXMLFragments(
 
   
   
-  if (Preferences::GetBool("domsecurity.skip_html_fragment_assertion")) {
+  if (StaticPrefs::dom_security_skip_html_fragment_assertion()) {
     return;
   }
 
