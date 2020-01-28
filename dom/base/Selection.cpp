@@ -973,9 +973,7 @@ nsresult Selection::MaybeAddRangeAndTruncateOverlaps(nsRange* aRange,
   }
 
   
-  bool sameRange = EqualsRangeAtPoint(
-      aRange->GetStartContainer(), aRange->StartOffset(),
-      aRange->GetEndContainer(), aRange->EndOffset(), startIndex);
+  const bool sameRange = HasEqualRangeBoundariesAt(*aRange, startIndex);
   if (sameRange) {
     *aOutIndex = startIndex;
     return NS_OK;
@@ -1095,20 +1093,11 @@ nsresult Selection::Clear(nsPresContext* aPresContext) {
   return NS_OK;
 }
 
-
-
-
-
-bool Selection::EqualsRangeAtPoint(const nsINode* aBeginNode,
-                                   int32_t aBeginOffset,
-                                   const nsINode* aEndNode, int32_t aEndOffset,
-                                   int32_t aRangeIndex) const {
+bool Selection::HasEqualRangeBoundariesAt(const nsRange& aRange,
+                                          int32_t aRangeIndex) const {
   if (aRangeIndex >= 0 && aRangeIndex < (int32_t)mRanges.Length()) {
     const nsRange* range = mRanges[aRangeIndex].mRange;
-    if (range->StartRef().Equals(aBeginNode, aBeginOffset) &&
-        range->EndRef().Equals(aEndNode, aEndOffset)) {
-      return true;
-    }
+    return range->HasEqualBoundaries(aRange);
   }
   return false;
 }
