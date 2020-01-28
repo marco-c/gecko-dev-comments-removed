@@ -190,6 +190,11 @@ class BrowsingContext : public nsISupports, public nsWrapperCache {
 
   
   
+  
+  void Embed();
+
+  
+  
   nsPIDOMWindowOuter* GetDOMWindow() const {
     return mDocShell ? mDocShell->GetWindow() : nullptr;
   }

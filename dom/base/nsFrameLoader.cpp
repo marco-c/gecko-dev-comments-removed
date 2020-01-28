@@ -2012,6 +2012,7 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   mDocShell = docShell;
 
   mBrowsingContext->SetEmbedderElement(mOwnerContent);
+  mBrowsingContext->Embed();
 
   mIsTopLevelContent =
       mBrowsingContext->IsContent() && !mBrowsingContext->GetParent();
@@ -2633,6 +2634,8 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
     return false;
   }
 
+  mRemoteBrowser->GetBrowsingContext()->Embed();
+
   
   RefPtr<BrowserParent> browserParent = GetBrowserParent();
 
@@ -2792,6 +2795,7 @@ nsresult nsFrameLoader::CreateStaticClone(nsFrameLoader* aDest) {
 
   
   aDest->mBrowsingContext->SetEmbedderElement(aDest->mOwnerContent);
+  aDest->mBrowsingContext->Embed();
   aDest->mStaticCloneOf = this;
   return NS_OK;
 }
