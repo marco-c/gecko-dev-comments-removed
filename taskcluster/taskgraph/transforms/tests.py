@@ -537,7 +537,9 @@ def set_defaults(config, tests):
             
             
             test['loopback-video'] = True
-        test['mozharness']['set-moz-node-path'] = True
+        else:
+            
+            test['mozharness']['set-moz-node-path'] = True
 
         
         if test['test-platform'].startswith('linux') and test['suite'] not in ['talos', 'raptor']:
