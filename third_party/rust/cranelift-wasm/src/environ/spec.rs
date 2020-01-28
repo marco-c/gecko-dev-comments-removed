@@ -36,6 +36,9 @@ pub enum GlobalVariable {
         
         ty: ir::Type,
     },
+
+    
+    Custom,
 }
 
 
@@ -338,6 +341,32 @@ pub trait FuncEnvironment: TargetEnvironment {
     ) -> WasmResult<ir::Value>;
 
     
+    fn translate_table_grow(
+        &mut self,
+        pos: FuncCursor,
+        table_index: u32,
+        delta: ir::Value,
+        init_value: ir::Value,
+    ) -> WasmResult<ir::Value>;
+
+    
+    fn translate_table_get(
+        &mut self,
+        pos: FuncCursor,
+        table_index: u32,
+        index: ir::Value,
+    ) -> WasmResult<ir::Value>;
+
+    
+    fn translate_table_set(
+        &mut self,
+        pos: FuncCursor,
+        table_index: u32,
+        value: ir::Value,
+        index: ir::Value,
+    ) -> WasmResult<()>;
+
+    
     #[allow(clippy::too_many_arguments)]
     fn translate_table_copy(
         &mut self,
@@ -348,6 +377,16 @@ pub trait FuncEnvironment: TargetEnvironment {
         src_table: ir::Table,
         dst: ir::Value,
         src: ir::Value,
+        len: ir::Value,
+    ) -> WasmResult<()>;
+
+    
+    fn translate_table_fill(
+        &mut self,
+        pos: FuncCursor,
+        table_index: u32,
+        dst: ir::Value,
+        val: ir::Value,
         len: ir::Value,
     ) -> WasmResult<()>;
 
@@ -366,6 +405,26 @@ pub trait FuncEnvironment: TargetEnvironment {
 
     
     fn translate_elem_drop(&mut self, pos: FuncCursor, seg_index: u32) -> WasmResult<()>;
+
+    
+    fn translate_ref_func(&mut self, pos: FuncCursor, func_index: u32) -> WasmResult<ir::Value>;
+
+    
+    
+    fn translate_custom_global_get(
+        &mut self,
+        pos: FuncCursor,
+        global_index: GlobalIndex,
+    ) -> WasmResult<ir::Value>;
+
+    
+    
+    fn translate_custom_global_set(
+        &mut self,
+        pos: FuncCursor,
+        global_index: GlobalIndex,
+        val: ir::Value,
+    ) -> WasmResult<()>;
 
     
     
