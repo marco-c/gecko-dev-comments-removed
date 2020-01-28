@@ -19,7 +19,6 @@
 #include "XrayWrapper.h"
 #include "WrapperFactory.h"
 #include "mozJSComponentLoader.h"
-#include "nsAutoPtr.h"
 #include "nsNetUtil.h"
 #include "nsContentSecurityUtils.h"
 
@@ -632,7 +631,8 @@ static void CompartmentDestroyedCallback(JSFreeOp* fop,
 
   
   
-  nsAutoPtr<CompartmentPrivate> priv(CompartmentPrivate::Get(compartment));
+  mozilla::UniquePtr<CompartmentPrivate> priv(
+      CompartmentPrivate::Get(compartment));
   JS_SetCompartmentPrivate(compartment, nullptr);
 }
 
