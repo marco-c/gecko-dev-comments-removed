@@ -15,7 +15,7 @@ const { AppConstants } = ChromeUtils.import(
 
 const PREF_SIGNATURES_REQUIRED = "xpinstall.signatures.required";
 const PREF_LANGPACK_SIGNATURES = "extensions.langpacks.signatures.required";
-const PREF_ALLOW_LEGACY = "extensions.legacy.enabled";
+const PREF_ALLOW_EXPERIMENTS = "extensions.experiments.enabled";
 const PREF_IS_EMBEDDED = "extensions.isembedded";
 
 var AddonSettings = {};
@@ -61,15 +61,40 @@ if (Cu.isInAutomation) {
   makeConstant("IS_EMBEDDED", AppConstants.platform === "android");
 }
 
-if (AppConstants.MOZ_ALLOW_LEGACY_EXTENSIONS || Cu.isInAutomation) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if (
+  !AppConstants.MOZ_REQUIRE_SIGNING ||
+  AppConstants.NIGHTLY_BUILD ||
+  AppConstants.MOZ_DEV_EDITION ||
+  Cu.isInAutomation
+) {
   XPCOMUtils.defineLazyPreferenceGetter(
     AddonSettings,
-    "ALLOW_LEGACY_EXTENSIONS",
-    PREF_ALLOW_LEGACY,
+    "EXPERIMENTS_ENABLED",
+    PREF_ALLOW_EXPERIMENTS,
     true
   );
 } else {
-  makeConstant("ALLOW_LEGACY_EXTENSIONS", false);
+  makeConstant("EXPERIMENTS_ENABLED", false);
 }
 
 if (AppConstants.MOZ_DEV_EDITION) {

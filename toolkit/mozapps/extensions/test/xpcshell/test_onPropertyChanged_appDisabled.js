@@ -1,6 +1,9 @@
 
 
 
+
+Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, true);
+
 const ID = "addon1@tests.mozilla.org";
 add_task(async function run_test() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");

@@ -162,8 +162,6 @@ const PROP_JSON_FIELDS = [
   "rootURI",
 ];
 
-const LEGACY_TYPES = new Set(["extension"]);
-
 const SIGNED_TYPES = new Set(["extension", "locale", "theme"]);
 
 
@@ -2148,17 +2146,15 @@ this.XPIDatabase = {
 
 
   isDisabledLegacy(addon) {
+    
+    
+    if (!Cu.isInAutomation) {
+      return !addon.isWebExtension;
+    }
+
     return (
-      !AddonSettings.ALLOW_LEGACY_EXTENSIONS &&
       !addon.isWebExtension &&
-      LEGACY_TYPES.has(addon.type) &&
-      
-      !addon.location.isSystem &&
-      
-      
-      !(
-        AppConstants.MOZ_ALLOW_LEGACY_EXTENSIONS && addon.location.isTemporary
-      ) &&
+      addon.type === "extension" &&
       
       addon.signedState !== AddonManager.SIGNEDSTATE_PRIVILEGED
     );

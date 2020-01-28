@@ -1170,7 +1170,7 @@ Services.prefs.setBoolPref("extensions.strictCompatibility", true);
 
 Services.prefs.setBoolPref(PREF_XPI_SIGNATURES_REQUIRED, true);
 
-Services.prefs.setBoolPref("extensions.legacy.enabled", true);
+Services.prefs.setBoolPref("extensions.experiments.enabled", true);
 
 
 function copyBlocklistToProfile(blocklistFile) {

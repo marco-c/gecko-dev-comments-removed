@@ -36,7 +36,7 @@ user_pref("dom.send_after_paint_to_content", true);
 
 
 user_pref("extensions.enabledScopes", 5);
-user_pref("extensions.legacy.enabled", true);
+user_pref("extensions.experiments.enabled", true);
 
 user_pref("extensions.update.enabled", false);
 
