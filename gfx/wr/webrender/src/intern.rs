@@ -52,7 +52,7 @@ struct Epoch(u64);
 
 pub struct UpdateList<S> {
     
-    pub updates: Vec<Update>,
+    updates: Vec<Update>,
     
     data: Vec<S>,
 }
@@ -122,8 +122,8 @@ pub enum UpdateKind {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(MallocSizeOf)]
 pub struct Update {
-    pub index: usize,
-    pub kind: UpdateKind,
+    index: usize,
+    kind: UpdateKind,
 }
 
 pub trait InternDebug {
