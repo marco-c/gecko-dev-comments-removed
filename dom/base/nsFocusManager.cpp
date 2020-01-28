@@ -3495,6 +3495,15 @@ nsresult nsFocusManager::GetNextTabbableContent(
         
         
         
+        
+        if (aOriginalStartContent &&
+            currentTopLevelScopeOwner ==
+                GetTopLevelScopeOwner(aOriginalStartContent)) {
+          
+          
+          NS_ADDREF(*aResultContent = aOriginalStartContent);
+          return NS_OK;
+        }
         continue;
       }
 
@@ -3598,6 +3607,9 @@ nsresult nsFocusManager::GetNextTabbableContent(
         }
       } else if (aOriginalStartContent &&
                  currentContent == aOriginalStartContent) {
+        
+        
+        
         
         
         
