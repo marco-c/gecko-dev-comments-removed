@@ -1032,7 +1032,7 @@ XPCOMUtils.defineConstant(this, "PanelUI", PanelUI);
 
 
 function getLocale() {
-  return Services.locale.appLocaleAsLangTag;
+  return Services.locale.appLocaleAsBCP47;
 }
 
 

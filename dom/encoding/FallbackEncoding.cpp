@@ -82,7 +82,7 @@ NotNull<const Encoding*> FallbackEncoding::Get() {
   }
 
   nsAutoCString locale;
-  LocaleService::GetInstance()->GetAppLocaleAsLangTag(locale);
+  LocaleService::GetInstance()->GetAppLocaleAsBCP47(locale);
 
   
   

@@ -118,7 +118,7 @@ function getSystemInfo() {
     geckoversion: geckoVersion,
 
     
-    locale: Services.locale.appLocaleAsLangTag,
+    locale: Services.locale.appLocaleAsBCP47,
 
     
 

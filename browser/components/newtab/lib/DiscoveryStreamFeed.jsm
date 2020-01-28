@@ -81,7 +81,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
     
     this.cache = new PersistentCache(CACHE_KEY, true);
-    this.locale = Services.locale.appLocaleAsLangTag;
+    this.locale = Services.locale.appLocaleAsBCP47;
     this._impressionId = this.getOrCreateImpressionId();
     
     this._prefCache = {};

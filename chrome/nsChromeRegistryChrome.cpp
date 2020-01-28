@@ -150,7 +150,7 @@ nsresult nsChromeRegistryChrome::GetSelectedLocale(const nsACString& aPackage,
                                                    nsACString& aLocale) {
   nsAutoCString reqLocale;
   if (aPackage.EqualsLiteral("global")) {
-    LocaleService::GetInstance()->GetAppLocaleAsLangTag(reqLocale);
+    LocaleService::GetInstance()->GetAppLocaleAsBCP47(reqLocale);
   } else {
     AutoTArray<nsCString, 10> requestedLocales;
     LocaleService::GetInstance()->GetRequestedLocales(requestedLocales);
@@ -274,7 +274,7 @@ void nsChromeRegistryChrome::SendRegisteredChrome(
   }
 
   nsAutoCString appLocale;
-  LocaleService::GetInstance()->GetAppLocaleAsLangTag(appLocale);
+  LocaleService::GetInstance()->GetAppLocaleAsBCP47(appLocale);
 
   if (aParent) {
     bool success = aParent->SendRegisterChrome(packages, resources, overrides,
@@ -299,7 +299,7 @@ void nsChromeRegistryChrome::ChromePackageFromPackageEntry(
     const nsACString& aPackageName, PackageEntry* aPackage,
     ChromePackage* aChromePackage, const nsCString& aSelectedSkin) {
   nsAutoCString appLocale;
-  LocaleService::GetInstance()->GetAppLocaleAsLangTag(appLocale);
+  LocaleService::GetInstance()->GetAppLocaleAsBCP47(appLocale);
 
   SerializeURI(aPackage->baseURI, aChromePackage->contentBaseURI);
   SerializeURI(aPackage->locales.GetBase(appLocale, nsProviderArray::LOCALE),
