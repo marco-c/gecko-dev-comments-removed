@@ -15,11 +15,14 @@ use crate::{
 use hal;
 use rendy_memory::MemoryBlock;
 use smallvec::SmallVec;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use std::{borrow::Borrow, fmt};
 
 bitflags::bitflags! {
     #[repr(transparent)]
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
     pub struct BufferUsage: u32 {
         const MAP_READ = 1;
         const MAP_WRITE = 2;
@@ -46,6 +49,7 @@ bitflags::bitflags! {
 }
 
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct BufferDescriptor {
     pub size: BufferAddress,
@@ -62,8 +66,8 @@ pub enum BufferMapAsyncStatus {
 }
 
 pub enum BufferMapOperation {
-    Read(std::ops::Range<u64>, Box<dyn FnOnce(BufferMapAsyncStatus, *const u8)>),
-    Write(std::ops::Range<u64>, Box<dyn FnOnce(BufferMapAsyncStatus, *mut u8)>),
+    Read(Box<dyn FnOnce(BufferMapAsyncStatus, *const u8)>),
+    Write(Box<dyn FnOnce(BufferMapAsyncStatus, *mut u8)>),
 }
 
 //TODO: clarify if/why this is needed here
@@ -72,27 +76,35 @@ unsafe impl Sync for BufferMapOperation {}
 
 impl fmt::Debug for BufferMapOperation {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let (op, range) = match *self {
-            BufferMapOperation::Read(ref range, _) => ("read", range),
-            BufferMapOperation::Write(ref range, _) => ("write", range),
+        let op = match *self {
+            BufferMapOperation::Read(_) => "read",
+            BufferMapOperation::Write(_) => "write",
         };
-        write!(fmt, "BufferMapOperation <{}> of range {:?}", op, range)
+        write!(fmt, "BufferMapOperation <{}>", op)
     }
 }
 
 impl BufferMapOperation {
     pub(crate) fn call_error(self) {
         match self {
-            BufferMapOperation::Read(_, callback) => {
+            BufferMapOperation::Read(callback) => {
                 log::error!("wgpu_buffer_map_read_async failed: buffer mapping is pending");
                 callback(BufferMapAsyncStatus::Error, std::ptr::null());
             }
-            BufferMapOperation::Write(_, callback) => {
+            BufferMapOperation::Write(callback) => {
                 log::error!("wgpu_buffer_map_write_async failed: buffer mapping is pending");
                 callback(BufferMapAsyncStatus::Error, std::ptr::null_mut());
             }
         }
     }
+}
+
+#[derive(Debug)]
+pub struct BufferPendingMapping {
+    pub range: std::ops::Range<BufferAddress>,
+    pub op: BufferMapOperation,
+    // hold the parent alive while the mapping is active
+    pub parent_ref_count: RefCount,
 }
 
 #[derive(Debug)]
@@ -103,14 +115,14 @@ pub struct Buffer<B: hal::Backend> {
     pub(crate) memory: MemoryBlock<B>,
     pub(crate) size: BufferAddress,
     pub(crate) full_range: (),
-    pub(crate) mapped_write_ranges: Vec<std::ops::Range<u64>>,
-    pub(crate) pending_map_operation: Option<BufferMapOperation>,
+    pub(crate) mapped_write_ranges: Vec<std::ops::Range<BufferAddress>>,
+    pub(crate) pending_mapping: Option<BufferPendingMapping>,
     pub(crate) life_guard: LifeGuard,
 }
 
 impl<B: hal::Backend> Borrow<RefCount> for Buffer<B> {
     fn borrow(&self) -> &RefCount {
-        &self.life_guard.ref_count
+        self.life_guard.ref_count.as_ref().unwrap()
     }
 }
 
@@ -131,13 +143,13 @@ pub enum TextureDimension {
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 pub enum TextureFormat {
-    
+    // Normal 8 bit formats
     R8Unorm = 0,
     R8Snorm = 1,
     R8Uint = 2,
     R8Sint = 3,
 
-    
+    // Normal 16 bit formats
     R16Unorm = 4,
     R16Snorm = 5,
     R16Uint = 6,
@@ -149,7 +161,7 @@ pub enum TextureFormat {
     Rg8Uint = 11,
     Rg8Sint = 12,
 
-    
+    // Normal 32 bit formats
     R32Uint = 13,
     R32Sint = 14,
     R32Float = 15,
@@ -166,11 +178,11 @@ pub enum TextureFormat {
     Bgra8Unorm = 26,
     Bgra8UnormSrgb = 27,
 
-    
+    // Packed 32 bit formats
     Rgb10a2Unorm = 28,
     Rg11b10Float = 29,
 
-    
+    // Normal 64 bit formats
     Rg32Uint = 30,
     Rg32Sint = 31,
     Rg32Float = 32,
@@ -180,12 +192,12 @@ pub enum TextureFormat {
     Rgba16Sint = 36,
     Rgba16Float = 37,
 
-    
+    // Normal 128 bit formats
     Rgba32Uint = 38,
     Rgba32Sint = 39,
     Rgba32Float = 40,
 
-    
+    // Depth and stencil formats
     Depth32Float = 41,
     Depth24Plus = 42,
     Depth24PlusStencil8 = 43,
@@ -200,13 +212,13 @@ bitflags::bitflags! {
         const STORAGE = 8;
         const OUTPUT_ATTACHMENT = 16;
         const NONE = 0;
-        
+        /// The combination of all read-only usages.
         const READ_ALL = Self::COPY_SRC.bits | Self::SAMPLED.bits;
-        
+        /// The combination of all write-only and read-write usages.
         const WRITE_ALL = Self::COPY_DST.bits | Self::STORAGE.bits | Self::OUTPUT_ATTACHMENT.bits;
-        
-        
-        
+        /// The combination of all usages that the are guaranteed to be be ordered by the hardware.
+        /// If a usage is not ordered, then even if it doesn't change between draw calls, there
+        /// still need to be pipeline barriers inserted for synchronization.
         const ORDERED = Self::READ_ALL.bits | Self::OUTPUT_ATTACHMENT.bits;
         const UNINITIALIZED = 0xFFFF;
     }
@@ -238,7 +250,7 @@ pub struct Texture<B: hal::Backend> {
 
 impl<B: hal::Backend> Borrow<RefCount> for Texture<B> {
     fn borrow(&self) -> &RefCount {
-        &self.life_guard.ref_count
+        self.life_guard.ref_count.as_ref().unwrap()
     }
 }
 
@@ -264,6 +276,7 @@ impl Default for TextureAspect {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum TextureViewDimension {
     D1,
     D2,
@@ -311,7 +324,7 @@ pub struct TextureView<B: hal::Backend> {
 
 impl<B: hal::Backend> Borrow<RefCount> for TextureView<B> {
     fn borrow(&self) -> &RefCount {
-        &self.life_guard.ref_count
+        self.life_guard.ref_count.as_ref().unwrap()
     }
 }
 
@@ -393,7 +406,7 @@ pub struct Sampler<B: hal::Backend> {
 
 impl<B: hal::Backend> Borrow<RefCount> for Sampler<B> {
     fn borrow(&self) -> &RefCount {
-        &self.life_guard.ref_count
+        self.life_guard.ref_count.as_ref().unwrap()
     }
 }
 

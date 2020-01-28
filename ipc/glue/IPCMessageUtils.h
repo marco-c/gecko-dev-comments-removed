@@ -1313,6 +1313,10 @@ static bool ReadParams(const Message* aMsg, PickleIterator* aIter, T0& aArg,
     }                                                                        \
   };
 
+#define DEFINE_IPC_SERIALIZER_WITHOUT_FIELDS(Type) \
+  template <>                                      \
+  struct ParamTraits<Type> : public EmptyStructSerializer<Type> {};
+
 } 
 
 #endif 
