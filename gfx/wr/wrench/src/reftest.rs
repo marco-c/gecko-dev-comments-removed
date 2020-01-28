@@ -150,20 +150,9 @@ impl Reftest {
     }
 
     
-    fn check_and_report_inequality_failure(
-        &self,
-        comparison: ReftestImageComparison,
-    ) -> bool {
-        match comparison {
-            ReftestImageComparison::Equal => {
-                println!("REFTEST TEST-UNEXPECTED-FAIL | {} | image comparison", self);
-                println!("REFTEST TEST-END | {}", self);
-                false
-            }
-            ReftestImageComparison::NotEqual { .. } => {
-                true
-            }
-        }
+    fn report_unexpected_equality(&self) {
+        println!("REFTEST TEST-UNEXPECTED-FAIL | {} | image comparison", self);
+        println!("REFTEST TEST-END | {}", self);
     }
 }
 
@@ -704,7 +693,15 @@ impl<'a> ReftestHarness<'a> {
                 
                 let test = images.pop().unwrap();
                 let comparison = test.compare(&reference);
-                t.check_and_report_inequality_failure(comparison)
+                match comparison {
+                    ReftestImageComparison::Equal => {
+                        t.report_unexpected_equality();
+                        false
+                    }
+                    ReftestImageComparison::NotEqual { .. } => {
+                        true
+                    }
+                }
             }
             ReftestOp::Accurate => {
                 
@@ -724,14 +721,18 @@ impl<'a> ReftestHarness<'a> {
             }
             ReftestOp::Inaccurate => {
                 
-                let mut found_mismatch = false;
+                let all_same = images.iter().all(|image| {
+                    match image.compare(&reference) {
+                        ReftestImageComparison::Equal => true,
+                        ReftestImageComparison::NotEqual { .. } => false,
+                    }
+                });
 
-                for test in images.drain(..) {
-                    let comparison = test.compare(&reference);
-                    found_mismatch |= t.check_and_report_inequality_failure(comparison);
+                if all_same {
+                    t.report_unexpected_equality();
                 }
 
-                found_mismatch
+                !all_same
             }
         }
     }
