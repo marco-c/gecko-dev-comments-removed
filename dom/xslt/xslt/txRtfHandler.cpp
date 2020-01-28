@@ -4,6 +4,7 @@
 
 
 #include "txRtfHandler.h"
+
 #include <utility>
 
 txResultTreeFragment::txResultTreeFragment(nsAutoPtr<txResultBuffer>&& aBuffer)

@@ -6,33 +6,34 @@
 
 #include "mozilla/KeyframeUtils.h"
 
+#include <algorithm>  
+#include <utility>
+
+#include "js/ForOfIterator.h"  
+#include "jsapi.h"             
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/ErrorResult.h"
-#include <utility>
 #include "mozilla/RangedArray.h"
-#include "mozilla/ServoBindings.h"
 #include "mozilla/ServoBindingTypes.h"
+#include "mozilla/ServoBindings.h"
 #include "mozilla/ServoCSSParser.h"
-#include "mozilla/StyleAnimationValue.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StyleAnimationValue.h"
 #include "mozilla/TimingParams.h"
 #include "mozilla/dom/BaseKeyframeTypesBinding.h"  
 #include "mozilla/dom/Document.h"  
 #include "mozilla/dom/Element.h"
-#include "mozilla/dom/KeyframeEffectBinding.h"
 #include "mozilla/dom/KeyframeEffect.h"  
+#include "mozilla/dom/KeyframeEffectBinding.h"
 #include "mozilla/dom/Nullable.h"
-#include "jsapi.h"             
-#include "js/ForOfIterator.h"  
-#include "nsClassHashtable.h"
-#include "nsContentUtils.h"  
 #include "nsCSSPropertyIDSet.h"
 #include "nsCSSProps.h"
 #include "nsCSSPseudoElements.h"  
+#include "nsClassHashtable.h"
+#include "nsContentUtils.h"  
 #include "nsIScriptError.h"
 #include "nsPresContextInlines.h"
 #include "nsTArray.h"
-#include <algorithm>  
 
 using mozilla::dom::Nullable;
 

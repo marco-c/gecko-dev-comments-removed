@@ -2,16 +2,15 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include <algorithm>
 #include <cstdint>
+#include <utility>
 
 #include "Common.h"
-#include <utility>
-#include "nsIInputStream.h"
 #include "SourceBuffer.h"
 #include "SurfaceCache.h"
+#include "gtest/gtest.h"
+#include "nsIInputStream.h"
 
 using namespace mozilla;
 using namespace mozilla::image;

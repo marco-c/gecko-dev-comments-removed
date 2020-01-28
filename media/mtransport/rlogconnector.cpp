@@ -7,18 +7,18 @@
 
 
 
-#include <cstdarg>
-
 #include "rlogconnector.h"
 
+#include <cstdarg>
 #include <deque>
 #include <string>
+#include <utility>  
+#include <vector>
+
 #include "logging.h"
 #include "mozilla/Assertions.h"
-#include <utility>  
 #include "mozilla/Mutex.h"
 #include "mozilla/Sprintf.h"
-#include <vector>
 
 extern "C" {
 #include <csi_platform.h>

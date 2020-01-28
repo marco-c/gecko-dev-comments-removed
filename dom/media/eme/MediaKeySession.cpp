@@ -4,24 +4,26 @@
 
 
 
-#include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/MediaKeySession.h"
-#include "mozilla/dom/MediaKeyError.h"
-#include "mozilla/dom/MediaKeyMessageEvent.h"
-#include "mozilla/dom/MediaEncryptedEvent.h"
-#include "mozilla/dom/MediaKeyStatusMap.h"
-#include "mozilla/dom/MediaKeySystemAccess.h"
-#include "mozilla/dom/KeyIdsInitDataBinding.h"
-#include "nsCycleCollectionParticipant.h"
-#include "mozilla/CDMProxy.h"
-#include "mozilla/AsyncEventDispatcher.h"
+
+#include <ctime>
 #include <utility>
+
+#include "GMPUtils.h"
+#include "mozilla/AsyncEventDispatcher.h"
+#include "mozilla/CDMProxy.h"
 #include "mozilla/EMEUtils.h"
 #include "mozilla/Encoding.h"
-#include "GMPUtils.h"
+#include "mozilla/dom/HTMLMediaElement.h"
+#include "mozilla/dom/KeyIdsInitDataBinding.h"
+#include "mozilla/dom/MediaEncryptedEvent.h"
+#include "mozilla/dom/MediaKeyError.h"
+#include "mozilla/dom/MediaKeyMessageEvent.h"
+#include "mozilla/dom/MediaKeyStatusMap.h"
+#include "mozilla/dom/MediaKeySystemAccess.h"
+#include "nsCycleCollectionParticipant.h"
 #include "nsPrintfCString.h"
 #include "psshparser/PsshParser.h"
-#include <ctime>
 
 namespace mozilla {
 namespace dom {

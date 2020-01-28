@@ -4,10 +4,10 @@
 
 
 
-#include "mozilla/NonDereferenceable.h"
+#include <utility>
 
 #include "mozilla/Assertions.h"
-#include <utility>
+#include "mozilla/NonDereferenceable.h"
 
 using mozilla::NonDereferenceable;
 

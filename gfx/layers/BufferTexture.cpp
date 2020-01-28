@@ -5,8 +5,10 @@
 
 
 #include "BufferTexture.h"
-#include "libyuv.h"
+
 #include <utility>
+
+#include "libyuv.h"
 #include "mozilla/fallible.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"

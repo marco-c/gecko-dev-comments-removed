@@ -6,16 +6,17 @@
 
 #include "WebRenderImageHost.h"
 
-#include "LayersLogging.h"
 #include <utility>
+
+#include "LayersLogging.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/layers/AsyncImagePipelineManager.h"
 #include "mozilla/layers/Compositor.h"                
 #include "mozilla/layers/CompositorVsyncScheduler.h"  
 #include "mozilla/layers/Effects.h"  
 #include "mozilla/layers/LayerManagerComposite.h"  
 #include "mozilla/layers/WebRenderBridgeParent.h"
 #include "mozilla/layers/WebRenderTextureHost.h"
-#include "mozilla/layers/AsyncImagePipelineManager.h"
 #include "nsAString.h"
 #include "nsDebug.h"          
 #include "nsPrintfCString.h"  

@@ -4,15 +4,16 @@
 
 
 
+#include <stddef.h>
+
+#include <utility>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/Compiler.h"
-#include <utility>
 #include "mozilla/TypeTraits.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/Vector.h"
-
-#include <stddef.h>
 
 using mozilla::DefaultDelete;
 using mozilla::IsSame;

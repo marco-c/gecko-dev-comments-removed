@@ -7,16 +7,18 @@
 #ifndef mozilla_BufferList_h
 #define mozilla_BufferList_h
 
+#include <string.h>
+
 #include <algorithm>
+#include <utility>
+
 #include "mozilla/AllocPolicy.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
-#include <utility>
 #include "mozilla/ScopeExit.h"
-#include "mozilla/Types.h"
 #include "mozilla/TypeTraits.h"
+#include "mozilla/Types.h"
 #include "mozilla/Vector.h"
-#include <string.h>
 
 
 

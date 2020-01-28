@@ -2,19 +2,20 @@
 
 
 
-#include "CacheLog.h"
 #include "CacheFile.h"
+
+#include <algorithm>
+#include <utility>
 
 #include "CacheFileChunk.h"
 #include "CacheFileInputStream.h"
 #include "CacheFileOutputStream.h"
-#include "nsThreadUtils.h"
+#include "CacheLog.h"
 #include "mozilla/DebugOnly.h"
-#include <utility>
-#include <algorithm>
+#include "mozilla/Telemetry.h"
 #include "nsComponentManagerUtils.h"
 #include "nsProxyRelease.h"
-#include "mozilla/Telemetry.h"
+#include "nsThreadUtils.h"
 
 
 

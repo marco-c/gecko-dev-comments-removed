@@ -3,10 +3,10 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include <utility>
+
 #include "AnimationFrameBuffer.h"
+#include "gtest/gtest.h"
 
 using namespace mozilla;
 using namespace mozilla::image;

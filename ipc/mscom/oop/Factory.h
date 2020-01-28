@@ -11,15 +11,16 @@
 #  error This code is NOT for internal Gecko use!
 #endif  
 
-#include "mozilla/Attributes.h"
-#include "mozilla/DebugOnly.h"
-#include <utility>
-#include "mozilla/RefPtr.h"
-#include "mozilla/StaticPtr.h"
-#include "Module.h"
-
 #include <objbase.h>
 #include <unknwn.h>
+
+#include <utility>
+
+#include "Module.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/DebugOnly.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/StaticPtr.h"
 
 
 

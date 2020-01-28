@@ -4,11 +4,13 @@
 
 
 
+#include "nsQueryContentEventResult.h"
+
+#include <utility>
+
+#include "mozilla/TextEvents.h"
 #include "nsIWidget.h"
 #include "nsPoint.h"
-#include "nsQueryContentEventResult.h"
-#include <utility>
-#include "mozilla/TextEvents.h"
 
 using namespace mozilla;
 

@@ -16,13 +16,15 @@
 
 #include "PsshParser.h"
 
+#include <assert.h>
+#include <memory.h>
+
+#include <algorithm>
+#include <limits>
+#include <utility>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/EndianUtils.h"
-#include <utility>
-#include <memory.h>
-#include <algorithm>
-#include <assert.h>
-#include <limits>
 
 
 

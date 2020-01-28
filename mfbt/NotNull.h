@@ -62,9 +62,11 @@
 
 
 
-#include "mozilla/Assertions.h"
-#include <utility>
 #include <stddef.h>
+
+#include <utility>
+
+#include "mozilla/Assertions.h"
 
 namespace mozilla {
 

@@ -5,9 +5,11 @@
 
 
 #include "mozilla/ShmemPool.h"
+
+#include <utility>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/Logging.h"
-#include <utility>
 
 mozilla::LazyLogModule sShmemPoolLog("ShmemPool");
 

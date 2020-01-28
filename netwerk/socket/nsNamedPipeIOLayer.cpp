@@ -3,24 +3,25 @@
 
 
 
+#include "nsNamedPipeIOLayer.h"
+
 #include <algorithm>
 #include <utility>
+
 #include "mozilla/Atomics.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Logging.h"
-#include <utility>
-#include "mozilla/net/DNS.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Unused.h"
-#include "nsNamedPipeService.h"
+#include "mozilla/net/DNS.h"
 #include "nsISupportsImpl.h"
-#include "nsNamedPipeIOLayer.h"
+#include "nsNamedPipeService.h"
 #include "nsNetCID.h"
-#include "nspr.h"
 #include "nsServiceManagerUtils.h"
 #include "nsSocketTransportService2.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
+#include "nspr.h"
 #include "private/pprio.h"
 
 namespace mozilla {

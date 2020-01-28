@@ -6,18 +6,19 @@
 
 #include "imgRequestProxy.h"
 
-#include "ImageLogging.h"
-#include "imgLoader.h"
+#include <utility>
+
 #include "Image.h"
+#include "ImageLogging.h"
 #include "ImageOps.h"
 #include "ImageTypes.h"
-#include "nsError.h"
-#include "nsCRTGlue.h"
 #include "imgINotificationObserver.h"
-#include "mozilla/dom/TabGroup.h"  
+#include "imgLoader.h"
+#include "mozilla/Telemetry.h"     
 #include "mozilla/dom/DocGroup.h"  
-#include <utility>
-#include "mozilla/Telemetry.h"  
+#include "mozilla/dom/TabGroup.h"  
+#include "nsCRTGlue.h"
+#include "nsError.h"
 
 using namespace mozilla;
 using namespace mozilla::image;

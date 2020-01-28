@@ -20,17 +20,16 @@
 
 
 
+#include <utility>
+
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
-#include <utility>
+#include "mozilla/RefPtr.h"
 #include "mozilla/TypeTraits.h"
-
+#include "nsCycleCollectionNoteChild.h"
 #include "nsDebug.h"  
 #include "nsISupportsUtils.h"  
-#include "mozilla/RefPtr.h"
-
-#include "nsCycleCollectionNoteChild.h"
 
 
 

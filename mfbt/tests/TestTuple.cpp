@@ -4,16 +4,16 @@
 
 
 
-#include "mozilla/Assertions.h"
+#include <stddef.h>
+
 #include <utility>
+
+#include "mozilla/Assertions.h"
 #include "mozilla/Pair.h"
 #include "mozilla/Tuple.h"
 #include "mozilla/TypeTraits.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
-
-#include <stddef.h>
-#include <utility>
 
 using mozilla::Get;
 using mozilla::IsSame;

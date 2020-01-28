@@ -7,9 +7,11 @@
 
 
 #include "nsDOMCSSValueList.h"
-#include "nsString.h"
-#include "mozilla/ErrorResult.h"
+
 #include <utility>
+
+#include "mozilla/ErrorResult.h"
+#include "nsString.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

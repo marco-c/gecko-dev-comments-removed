@@ -3,18 +3,19 @@
 
 
 
-#include "mozilla/FloatingPoint.h"
+#include "txStylesheet.h"
+
 #include <utility>
 
-#include "txStylesheet.h"
+#include "mozilla/FloatingPoint.h"
 #include "txExpr.h"
-#include "txXSLTPatterns.h"
-#include "txToplevelItems.h"
 #include "txInstructions.h"
-#include "txXSLTFunctions.h"
-#include "txLog.h"
 #include "txKey.h"
+#include "txLog.h"
+#include "txToplevelItems.h"
 #include "txXPathTreeWalker.h"
+#include "txXSLTFunctions.h"
+#include "txXSLTPatterns.h"
 
 using mozilla::LogLevel;
 

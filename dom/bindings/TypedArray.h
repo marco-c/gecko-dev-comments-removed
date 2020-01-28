@@ -7,13 +7,14 @@
 #ifndef mozilla_dom_TypedArray_h
 #define mozilla_dom_TypedArray_h
 
-#include "jsfriendapi.h"  
+#include <utility>
+
 #include "js/ArrayBuffer.h"
-#include "js/SharedArrayBuffer.h"
 #include "js/GCAPI.h"       
 #include "js/RootingAPI.h"  
+#include "js/SharedArrayBuffer.h"
+#include "jsfriendapi.h"  
 #include "mozilla/Attributes.h"
-#include <utility>
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/SpiderMonkeyInterface.h"
 #include "nsWrapperCache.h"

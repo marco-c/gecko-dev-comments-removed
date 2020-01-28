@@ -5,30 +5,33 @@
 
 
 #include "RotatedBuffer.h"
-#include <sys/types.h>              
-#include <algorithm>                
-#include "BasicImplData.h"          
-#include "BasicLayersImpl.h"        
-#include "GeckoProfiler.h"          
-#include "Layers.h"                 
-#include "gfxPlatform.h"            
-#include "gfxUtils.h"               
-#include "mozilla/ArrayUtils.h"     
+
+#include <sys/types.h>  
+
+#include <algorithm>  
+#include <utility>    
+
+#include "BasicImplData.h"    
+#include "BasicLayersImpl.h"  
+#include "GeckoProfiler.h"    
+#include "Layers.h"           
+#include "PaintThread.h"
+#include "gfx2DGlue.h"
+#include "gfxPlatform.h"         
+#include "gfxUtils.h"            
+#include "mozilla/ArrayUtils.h"  
+#include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/gfx/BasePoint.h"  
 #include "mozilla/gfx/BaseRect.h"   
 #include "mozilla/gfx/BaseSize.h"   
 #include "mozilla/gfx/Matrix.h"     
 #include "mozilla/gfx/Point.h"      
+#include "mozilla/gfx/Point.h"      
 #include "mozilla/gfx/Rect.h"       
 #include "mozilla/gfx/Types.h"      
 #include "mozilla/layers/ShadowLayers.h"   
 #include "mozilla/layers/TextureClient.h"  
-#include <utility>                         
-#include "mozilla/StaticPrefs_layers.h"
-#include "mozilla/gfx/Point.h"  
-#include "gfx2DGlue.h"
-#include "nsLayoutUtils.h"  
-#include "PaintThread.h"
+#include "nsLayoutUtils.h"                 
 
 namespace mozilla {
 

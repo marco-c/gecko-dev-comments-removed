@@ -5,9 +5,11 @@
 
 
 #include "base/logging.h"
+
+#include <utility>
+
 #include "base/string_util.h"
 #include "nsXPCOM.h"
-#include <utility>
 
 namespace mozilla {
 

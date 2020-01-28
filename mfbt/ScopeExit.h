@@ -80,9 +80,10 @@
 
 
 
+#include <utility>
+
 #include "mozilla/Attributes.h"
 #include "mozilla/GuardObjects.h"
-#include <utility>
 
 namespace mozilla {
 

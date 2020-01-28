@@ -4,11 +4,13 @@
 
 
 
-#include <utility>
 #include "mozilla/mscom/DispatchForwarder.h"
-#include "mozilla/mscom/MainThreadInvoker.h"
 
 #include <oleauto.h>
+
+#include <utility>
+
+#include "mozilla/mscom/MainThreadInvoker.h"
 
 namespace mozilla {
 namespace mscom {

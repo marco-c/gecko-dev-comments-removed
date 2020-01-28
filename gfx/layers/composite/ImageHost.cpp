@@ -6,12 +6,13 @@
 
 #include "ImageHost.h"
 
+#include <utility>
+
 #include "LayersLogging.h"               
 #include "composite/CompositableHost.h"  
 #include "ipc/IPCMessageUtils.h"         
-#include <utility>
-#include "mozilla/layers/Compositor.h"  
-#include "mozilla/layers/Effects.h"     
+#include "mozilla/layers/Compositor.h"   
+#include "mozilla/layers/Effects.h"      
 #include "mozilla/layers/LayerManagerComposite.h"  
 #include "nsAString.h"
 #include "nsDebug.h"          

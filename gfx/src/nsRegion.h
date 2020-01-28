@@ -10,21 +10,22 @@
 #include <stddef.h>     
 #include <stdint.h>     
 #include <sys/types.h>  
-#include <ostream>      
-#include "nsCoord.h"    
-#include "nsError.h"    
-#include "nsPoint.h"    
-#include "nsRect.h"     
-#include "nsRectAbsolute.h"
-#include "nsMargin.h"               
-#include "nsRegionFwd.h"            
-#include "nsString.h"               
-#include "mozilla/ArrayView.h"      
-#include <utility>                  
-#include "mozilla/gfx/MatrixFwd.h"  
-#include "mozilla/gfx/Logging.h"
-#include "nsTArray.h"
 
+#include <ostream>  
+#include <utility>  
+
+#include "mozilla/ArrayView.h"  
+#include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/MatrixFwd.h"  
+#include "nsCoord.h"                
+#include "nsError.h"                
+#include "nsMargin.h"               
+#include "nsPoint.h"                
+#include "nsRect.h"                 
+#include "nsRectAbsolute.h"
+#include "nsRegionFwd.h"  
+#include "nsString.h"     
+#include "nsTArray.h"
 #include "pixman.h"
 
 

@@ -6,30 +6,27 @@
 
 #include "LulMain.h"
 
-#include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>  
 
 #include <algorithm>  
 #include <string>
+#include <utility>
 
-#include "mozilla/Assertions.h"
+#include "GeckoProfiler.h"  
+#include "LulCommonExt.h"
+#include "LulElfExt.h"
+#include "LulMainInt.h"
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MemoryChecking.h"
-#include <utility>
 #include "mozilla/Sprintf.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
-
-#include "LulCommonExt.h"
-#include "LulElfExt.h"
-
-#include "LulMainInt.h"
-
-#include "GeckoProfiler.h"  
 
 
 #define DEBUG_MAIN 0

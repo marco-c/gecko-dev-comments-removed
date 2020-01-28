@@ -6,22 +6,20 @@
 #include "ClippedImage.h"
 
 #include <algorithm>
-#include <new>  
 #include <cmath>
+#include <new>  
 #include <utility>
-
-#include "gfxDrawable.h"
-#include "gfxPlatform.h"
-#include "gfxUtils.h"
-#include "mozilla/gfx/2D.h"
-#include <utility>
-#include "mozilla/RefPtr.h"
-#include "mozilla/Pair.h"
-#include "mozilla/Tuple.h"
 
 #include "ImageRegion.h"
 #include "Orientation.h"
 #include "SVGImageContext.h"
+#include "gfxDrawable.h"
+#include "gfxPlatform.h"
+#include "gfxUtils.h"
+#include "mozilla/Pair.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/Tuple.h"
+#include "mozilla/gfx/2D.h"
 
 namespace mozilla {
 

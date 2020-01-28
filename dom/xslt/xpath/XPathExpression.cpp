@@ -3,19 +3,21 @@
 
 
 
-#include <utility>
 #include "XPathExpression.h"
-#include "txExpr.h"
-#include "txExprResult.h"
-#include "txIXPathContext.h"
-#include "nsError.h"
-#include "nsINode.h"
+
+#include <utility>
+
 #include "XPathResult.h"
-#include "txURIUtils.h"
-#include "txXPathTreeWalker.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/dom/XPathResultBinding.h"
+#include "nsError.h"
+#include "nsINode.h"
+#include "txExpr.h"
+#include "txExprResult.h"
+#include "txIXPathContext.h"
+#include "txURIUtils.h"
+#include "txXPathTreeWalker.h"
 
 namespace mozilla {
 namespace dom {
