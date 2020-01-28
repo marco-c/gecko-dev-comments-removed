@@ -196,12 +196,6 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin,
                 v = v.format(**interpolation)
             prefs[k] = Preferences.cast(v)
 
-        
-        
-        
-        
-        prefs["browser.tabs.remote.autostart"] = False
-
         outputdir = self.config.get('output_directory', '/sdcard/pgo_profile')
         jarlog = posixpath.join(outputdir, 'en-US.log')
         profdata = posixpath.join(outputdir, 'default_%p_random_%m.profraw')

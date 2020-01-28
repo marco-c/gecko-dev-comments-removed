@@ -66,6 +66,9 @@ pref("browser.safebrowsing.features.cryptomining.update", true);
 pref("browser.safebrowsing.features.fingerprinting.update", true);
 
 
+pref("browser.tabs.remote.autostart", true);
+
+
 pref("ui.android.mouse_as_touch", 2);
 
 
