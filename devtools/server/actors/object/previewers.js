@@ -189,9 +189,13 @@ const previewers = {
             let value = Cu.unwaiveXrays(desc.value);
             value = ObjectUtils.makeDebuggeeValueIfNeeded(obj, value);
             items.push(hooks.createValueGrip(value));
+          } else if (!desc) {
+            items.push(null);
           } else {
             items.push(hooks.createValueGrip(undefined));
           }
+        } else if (raw && !Object.getOwnPropertyDescriptor(raw, i)) {
+          items.push(null);
         } else {
           
           
