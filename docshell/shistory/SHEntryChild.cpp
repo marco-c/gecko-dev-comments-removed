@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SHEntryChild.h"
 #include "SHistoryChild.h"
@@ -24,14 +24,14 @@ StaticAutoPtr<nsRefPtrHashtable<nsUint64HashKey, SHEntryChildShared>>
 
 uint64_t SHEntryChildShared::sNextSharedID = 0;
 
-
+/* static */
 void SHEntryChildShared::Init() {
   sSHEntryChildSharedTable =
       new nsRefPtrHashtable<nsUint64HashKey, SHEntryChildShared>();
   ClearOnShutdown(&sSHEntryChildSharedTable);
 }
 
-
+/* static */
 SHEntryChildShared* SHEntryChildShared::GetOrCreate(SHistoryChild* aSHistory,
                                                     uint64_t aSharedID) {
   MOZ_DIAGNOSTIC_ASSERT(
@@ -61,8 +61,8 @@ void SHEntryChildShared::EvictContentViewers(
        iter != aToEvictSharedStateIDs.end(); ++iter) {
     RefPtr<SHEntryChildShared> shared = sSHEntryChildSharedTable->Get(*iter);
     if (!shared) {
-      
-      
+      // This can happen if we've created an entry in the parent, and have never
+      // sent it over IPC to the child.
       continue;
     }
     nsCOMPtr<nsIContentViewer> viewer = shared->mContentViewer;
@@ -74,9 +74,9 @@ void SHEntryChildShared::EvictContentViewers(
     }
     if (std::next(iter) == aToEvictSharedStateIDs.end() &&
         numEvictedSoFar > 0) {
-      
-      
-      
+      // This is the last shared object, so we should notify our
+      // listeners about any content viewers that were evicted.
+      // It does not matter which shared entry we will use for notifying.
       shared->NotifyListenersContentViewerEvicted(numEvictedSoFar);
     }
   }
@@ -86,17 +86,17 @@ SHEntryChildShared::SHEntryChildShared(SHistoryChild* aSHistory, uint64_t aID)
     : mID(aID), mSHistory(aSHistory) {}
 
 SHEntryChildShared::~SHEntryChildShared() {
-  
-  
-  
-  
+  // The destruction can be caused by either the entry is removed from session
+  // history and no one holds the reference, or the whole session history is on
+  // destruction. We want to ensure that we invoke
+  // shistory->RemoveFromExpirationTracker for the former case.
   RemoveFromExpirationTracker();
 
-  
-  
-  
-  
-  
+  // Calling RemoveDynEntriesForBFCacheEntry on destruction is unnecessary since
+  // there couldn't be any SHEntry holding this shared entry, and we noticed
+  // that calling RemoveDynEntriesForBFCacheEntry in the middle of
+  // nsSHistory::Release can cause a crash, so set mSHistory to null explicitly
+  // before RemoveFromBFCacheSync.
   mSHistory = nullptr;
   if (mContentViewer) {
     RemoveFromBFCacheSync();
@@ -120,7 +120,7 @@ void SHEntryChildShared::RemoveFromExpirationTracker() {
 
 void SHEntryChildShared::SyncPresentationState() {
   if (mContentViewer && mWindowState) {
-    
+    // If we have a content viewer and a window state, we should be ok.
     return;
   }
 
@@ -141,11 +141,11 @@ void SHEntryChildShared::DropPresentationState() {
 
   RemoveFromExpirationTracker();
   mContentViewer = nullptr;
-  
-  
+  // FIXME Bug 1547735
+  // mSticky = true;
   mWindowState = nullptr;
-  
-  
+  // FIXME Bug 1547735
+  // mViewerBounds.SetRect(0, 0, 0, 0);
   mChildShells.Clear();
   mRefreshURIList = nullptr;
   mEditorData = nullptr;
@@ -166,22 +166,22 @@ nsresult SHEntryChildShared::SetContentViewer(nsIContentViewer* aViewer) {
     DropPresentationState();
   }
 
-  
-  
-  
+  // If we're setting mContentViewer to null, state should already be cleared
+  // in the DropPresentationState() call above; If we're setting it to a
+  // non-null content viewer, the entry shouldn't have been tracked either.
   MOZ_ASSERT(!GetExpirationState()->IsTracked());
   mContentViewer = aViewer;
 
   if (mContentViewer) {
-    
-    
-    
+    // mSHistory is only set for root entries, but in general bfcache only
+    // applies to root entries as well. BFCache for subframe navigation has been
+    // disabled since 2005 in bug 304860.
     if (mSHistory) {
       mSHistory->AddToExpirationTracker(this);
     }
 
-    
-    
+    // Store observed document in strong pointer in case it is removed from
+    // the contentviewer
     mDocument = mContentViewer->GetDocument();
     if (mDocument) {
       mDocument->SetBFCacheEntry(this);
@@ -195,11 +195,11 @@ nsresult SHEntryChildShared::SetContentViewer(nsIContentViewer* aViewer) {
 NS_IMETHODIMP SHEntryChildShared::RemoveFromBFCacheSync() {
   MOZ_ASSERT(mContentViewer && mDocument, "we're not in the bfcache!");
 
-  
-  
+  // The call to DropPresentationState could drop the last reference, so hold
+  // |this| until RemoveDynEntriesForBFCacheEntry finishes.
   RefPtr<SHEntryChildShared> kungFuDeathGrip = this;
 
-  
+  // DropPresentationState would clear mContentViewer.
   nsCOMPtr<nsIContentViewer> viewer = mContentViewer;
   DropPresentationState();
 
@@ -207,8 +207,8 @@ NS_IMETHODIMP SHEntryChildShared::RemoveFromBFCacheSync() {
     viewer->Destroy();
   }
 
-  
-  
+  // Now that we've dropped the viewer, we have to clear associated dynamic
+  // subframe entries.
   if (mSHistory) {
     mSHistory->RemoveDynEntriesForBFCacheEntry(this);
   }
@@ -219,14 +219,14 @@ NS_IMETHODIMP SHEntryChildShared::RemoveFromBFCacheSync() {
 NS_IMETHODIMP SHEntryChildShared::RemoveFromBFCacheAsync() {
   MOZ_ASSERT(mContentViewer && mDocument, "we're not in the bfcache!");
 
-  
+  // Check it again to play safe in release builds.
   if (!mDocument) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  
-  
-  
+  // DropPresentationState would clear mContentViewer & mDocument. Capture and
+  // release the references asynchronously so that the document doesn't get
+  // nuked mid-mutation.
   nsCOMPtr<nsIContentViewer> viewer = mContentViewer;
   RefPtr<dom::Document> _document = mDocument;
   RefPtr<SHEntryChildShared> self = this;
@@ -234,8 +234,8 @@ NS_IMETHODIMP SHEntryChildShared::RemoveFromBFCacheAsync() {
       mozilla::TaskCategory::Other,
       NS_NewRunnableFunction(
           "SHEntryChildShared::RemoveFromBFCacheAsync",
-          
-          
+          // _document isn't used in the closure, but just keeps mDocument
+          // alive until the closure runs.
           [self, viewer, _document]() {
             if (viewer) {
               viewer->Destroy();
@@ -249,9 +249,9 @@ NS_IMETHODIMP SHEntryChildShared::RemoveFromBFCacheAsync() {
   if (NS_FAILED(rv)) {
     NS_WARNING("Failed to dispatch RemoveFromBFCacheAsync runnable.");
   } else {
-    
-    
-    
+    // Drop presentation. Only do this if we succeeded in posting the event
+    // since otherwise the document could be torn down mid-mutation, causing
+    // crashes.
     DropPresentationState();
   }
 
@@ -290,7 +290,7 @@ NS_IMETHODIMP_(MozExternalRefCountType) SHEntryChild::Release() {
   nsrefcnt count = --mRefCnt;
   NS_LOG_RELEASE(this, count, "SHEntryChild");
   if (count == 0) {
-    mRefCnt = 1; 
+    mRefCnt = 1; /* stabilize */
     delete this;
     return 0;
   }
@@ -734,7 +734,7 @@ SHEntryChild::AdoptBFCacheEntry(nsISHEntry* aEntry) {
 NS_IMETHODIMP
 SHEntryChild::SharesDocumentWith(nsISHEntry* aEntry, bool* aOut) {
   nsresult rv;
-  
+  // FIXME Maybe check local shared state instead?
   return SendSharesDocumentWith(static_cast<SHEntryChild*>(aEntry), aOut, &rv)
              ? rv
              : NS_ERROR_FAILURE;
@@ -854,8 +854,8 @@ SHEntryChild::ReplaceChild(nsISHEntry* aNewEntry) {
 
 NS_IMETHODIMP_(void)
 SHEntryChild::ClearEntry() {
-  
-  
+  // We want to call AbandonBFCacheEntry in SHEntryParent,
+  // hence the need for duplciating the shared entry here
   RefPtr<SHEntryChildShared> shared = mShared->Duplicate();
   SendClearEntry(shared->GetID());
   shared.swap(mShared);
@@ -877,14 +877,14 @@ SHEntryChild::ClearChildShells() { mShared->mChildShells.Clear(); }
 
 NS_IMETHODIMP
 SHEntryChild::GetRefreshURIList(nsIMutableArray** aList) {
-  
+  // FIXME Move to parent.
   NS_IF_ADDREF(*aList = mShared->mRefreshURIList);
   return NS_OK;
 }
 
 NS_IMETHODIMP
 SHEntryChild::SetRefreshURIList(nsIMutableArray* aList) {
-  
+  // FIXME Move to parent.
   mShared->mRefreshURIList = aList;
   return NS_OK;
 }
@@ -893,14 +893,14 @@ NS_IMETHODIMP_(void)
 SHEntryChild::SyncPresentationState() { mShared->SyncPresentationState(); }
 
 nsDocShellEditorData* SHEntryChild::ForgetEditorData() {
-  return mShared->mEditorData.forget();
+  return mShared->mEditorData.release();
 }
 
 void SHEntryChild::SetEditorData(nsDocShellEditorData* aData) {
   NS_ASSERTION(!(aData && mShared->mEditorData),
                "We're going to overwrite an owning ref!");
   if (mShared->mEditorData != aData) {
-    mShared->mEditorData = aData;
+    mShared->mEditorData = WrapUnique(aData);
   }
 }
 
@@ -914,7 +914,7 @@ SHEntryChild::GetStateData(nsIStructuredCloneContainer** aContainer) {
   if (!SendGetStateData(&data)) {
     return NS_ERROR_FAILURE;
   }
-  
+  // FIXME Should we signal null separately from the ClonedMessageData?
   if (data.data().data.Size() == 0) {
     *aContainer = nullptr;
   } else {
@@ -928,7 +928,7 @@ SHEntryChild::GetStateData(nsIStructuredCloneContainer** aContainer) {
 
 NS_IMETHODIMP
 SHEntryChild::SetStateData(nsIStructuredCloneContainer* aContainer) {
-  
+  // FIXME nsIStructuredCloneContainer is not builtin_class
   ClonedMessageData data;
   if (aContainer) {
     static_cast<nsStructuredCloneContainer*>(aContainer)
@@ -1012,8 +1012,8 @@ SHEntryChild::GetBfcacheID(uint64_t* aBFCacheID) {
 void SHEntryChild::EvictContentViewer() {
   nsCOMPtr<nsIContentViewer> viewer = GetContentViewer();
   if (viewer) {
-    
-    
+    // Drop the presentation state before destroying the viewer, so that
+    // document teardown is able to correctly persist the state.
     mShared->NotifyListenersContentViewerEvicted();
     SetContentViewer(nullptr);
     SyncPresentationState();
@@ -1021,5 +1021,5 @@ void SHEntryChild::EvictContentViewer() {
   }
 }
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla

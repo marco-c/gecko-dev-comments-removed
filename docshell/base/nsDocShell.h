@@ -1159,7 +1159,7 @@ class nsDocShell final : public nsDocLoader,
   nsRevocableEventPtr<RestorePresentationEvent> mRestorePresentationEvent;
 
   
-  nsAutoPtr<nsDocShellEditorData> mEditorData;
+  mozilla::UniquePtr<nsDocShellEditorData> mEditorData;
 
   
   nsCOMPtr<nsISecureBrowserUI> mSecurityUI;
