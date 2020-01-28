@@ -1,5 +1,21 @@
 
 
-self.addEventListener('message', msg_event => {
-  import(msg_event.data).catch(e => postMessage(e.name));
-});
+if ('DedicatedWorkerGlobalScope' in self &&
+    self instanceof DedicatedWorkerGlobalScope) {
+  self.onmessage = msg_event => {
+    import(msg_event.data)
+        .then(module => postMessage(module.meta_url))
+        .catch(e => postMessage(e.name));
+  };
+} else if (
+    'SharedWorkerGlobalScope' in self &&
+    self instanceof SharedWorkerGlobalScope) {
+  self.onconnect = connect_event => {
+    const port = connect_event.ports[0];
+    port.onmessage = msg_event => {
+      import(msg_event.data)
+          .then(module => port.postMessage(module.meta_url))
+          .catch(e => port.postMessage(e.name));
+    };
+  };
+}
