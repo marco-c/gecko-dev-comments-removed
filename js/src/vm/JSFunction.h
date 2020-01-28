@@ -539,6 +539,15 @@ class JSFunction : public js::NativeObject {
   bool needsPrototypeProperty();
 
   
+  
+  
+  bool constructorNeedsUninitializedThis() const {
+    MOZ_ASSERT(isConstructor());
+    MOZ_ASSERT(isInterpreted());
+    return isBoundFunction() || isDerivedClassConstructor();
+  }
+
+  
   bool strict() const { return baseScript()->strict(); }
 
   void setFlags(uint16_t flags) { flags_ = FunctionFlags(flags); }
@@ -908,7 +917,7 @@ class JSFunction : public js::NativeObject {
     return u.native.extra.wasmJitEntry_;
   }
 
-  bool isDerivedClassConstructor();
+  bool isDerivedClassConstructor() const;
 
   static unsigned offsetOfNative() {
     return offsetof(JSFunction, u.native.func_);

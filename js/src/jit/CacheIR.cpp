@@ -5108,6 +5108,11 @@ bool CallIRGenerator::getTemplateObjectForScripted(HandleFunction calleeFunc,
   MOZ_ASSERT(!*skipAttach);
 
   
+  if (calleeFunc->constructorNeedsUninitializedThis()) {
+    return true;
+  }
+
+  
   
   
   bool isSuper = op_ == JSOp::SuperCall || op_ == JSOp::SpreadSuperCall;
