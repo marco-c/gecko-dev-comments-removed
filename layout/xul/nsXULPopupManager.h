@@ -414,8 +414,8 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
   
   
-  nsINode* GetMouseLocationParent();
-  int32_t MouseLocationOffset();
+  nsIContent* GetMouseLocationParent() const { return mRangeParentContent; }
+  int32_t MouseLocationOffset() const { return mRangeOffset; }
 
   
 
@@ -795,7 +795,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   nsCOMPtr<nsIWidget> mWidget;
 
   
-  nsCOMPtr<nsINode> mRangeParent;
+  nsCOMPtr<nsIContent> mRangeParentContent;
   int32_t mRangeOffset;
   
   

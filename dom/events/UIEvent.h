@@ -70,11 +70,28 @@ class UIEvent : public Event {
     return 0;
   }
 
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<nsINode> GetRangeParent();
+  
 
-  MOZ_CAN_RUN_SCRIPT
-  int32_t RangeOffset() const;
+
+
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<nsINode> GetRangeParent() {
+    return GetRangeParentContent();
+  }
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<nsIContent> GetRangeParentContent() {
+    return GetRangeParentContentAndOffset(nullptr);
+  }
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<nsIContent>
+  GetRangeParentContentAndOffset(int32_t* aOffset);
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT int32_t RangeOffset() const;
 
  protected:
   ~UIEvent() {}

@@ -210,8 +210,10 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
 
   
   
-  EditorDOMPoint droppedAt(aDropEvent->GetRangeParent(),
-                           aDropEvent->RangeOffset());
+  int32_t dropOffset = -1;
+  nsCOMPtr<nsIContent> dropParentContent =
+      aDropEvent->GetRangeParentContentAndOffset(&dropOffset);
+  EditorDOMPoint droppedAt(dropParentContent, dropOffset);
   if (NS_WARN_IF(!droppedAt.IsSet()) ||
       NS_WARN_IF(!droppedAt.GetContainerAsContent())) {
     return NS_ERROR_FAILURE;
