@@ -128,15 +128,6 @@ class FaviconLoad {
       iconInfo.node.ownerGlobal.document.documentLoadGroup;
     this.channel.notificationCallbacks = this;
 
-    if (this.channel instanceof Ci.nsIHttpChannel) {
-      try {
-        let acceptHeader = Services.prefs.getCharPref("image.http.accept");
-        this.channel.setRequestHeader("Accept", acceptHeader, false);
-      } catch (e) {
-        
-      }
-    }
-
     if (this.channel instanceof Ci.nsIHttpChannelInternal) {
       this.channel.blockAuthPrompt = true;
     }
