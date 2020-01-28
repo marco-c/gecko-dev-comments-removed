@@ -75,7 +75,7 @@ const gNSURLStore = new Map();
 const COOKIE_SAMESITE = {
   LAX: "Lax",
   STRICT: "Strict",
-  UNSET: "Unset",
+  NONE: "None",
 };
 
 
@@ -364,7 +364,7 @@ var NetworkHelper = {
         case COOKIE_SAMESITE.STRICT:
           return COOKIE_SAMESITE.STRICT;
         default:
-          return COOKIE_SAMESITE.UNSET;
+          return COOKIE_SAMESITE.NONE;
       }
     }
 

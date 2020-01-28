@@ -44,7 +44,7 @@ loader.lazyRequireGetter(
 const COOKIE_SAMESITE = {
   LAX: "Lax",
   STRICT: "Strict",
-  UNSET: "Unset",
+  NONE: "None",
 };
 
 
@@ -598,7 +598,7 @@ StorageActors.createActor(
           return COOKIE_SAMESITE.STRICT;
       }
       
-      return COOKIE_SAMESITE.UNSET;
+      return COOKIE_SAMESITE.NONE;
     },
 
     populateStoresForHost(host) {
