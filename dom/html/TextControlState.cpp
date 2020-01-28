@@ -3036,6 +3036,12 @@ bool TextControlState::SetValueWithoutTextEditor(
     
     if (aHandlingSetValue.GetSetValueFlags() & eSetValue_BySetUserInput) {
       MOZ_ASSERT(aHandlingSetValue.GetTextControlElement());
+
+      
+      
+      aHandlingSetValue.GetTextControlElement()->OnValueChanged(
+          true, ValueChangeKind::UserInteraction);
+
       MOZ_ASSERT(!aHandlingSetValue.GetSettingValue().IsVoid());
       DebugOnly<nsresult> rvIgnored = nsContentUtils::DispatchInputEvent(
           MOZ_KnownLive(aHandlingSetValue.GetTextControlElement()),
