@@ -109,6 +109,11 @@ use crate::util::{TransformedRectKind, MatrixHelpers, MaxRect, scale_factors, Ve
 use crate::filterdata::{FilterDataHandle};
 #[cfg(feature = "capture")]
 use ron;
+#[cfg(feature = "capture")]
+use crate::scene_builder_thread::InternerUpdates;
+#[cfg(feature = "capture")]
+use crate::intern::Update;
+
 
 #[cfg(feature = "capture")]
 use std::fs::File;
@@ -1493,13 +1498,133 @@ pub struct TileCacheLoggerSlice {
     pub local_to_world_transform: DeviceRect
 }
 
+#[cfg(any(feature = "capture", feature = "replay"))]
+macro_rules! declare_tile_cache_logger_updatelists {
+    ( $( $name:ident : $ty:ty, )+ ) => {
+        #[cfg_attr(feature = "capture", derive(Serialize))]
+        #[cfg_attr(feature = "replay", derive(Deserialize))]
+        struct TileCacheLoggerUpdateListsSerializer {
+            pub ron_string: Vec<String>,
+        }
+
+        pub struct TileCacheLoggerUpdateLists {
+            $(
+                
+                
+                
+                
+                
+                
+                
+                pub $name: (String, Vec<Update>),
+            )+
+        }
+
+        impl TileCacheLoggerUpdateLists {
+            pub fn new() -> Self {
+                TileCacheLoggerUpdateLists {
+                    $(
+                        $name : ( String::new(), Vec::<Update>::new() ),
+                    )+
+                }
+            }
+
+            /// serialize all interners in updates to .ron
+            fn serialize_updates(
+                &mut self,
+                updates: &InternerUpdates
+            ) {
+                $(
+                    self.$name.0 = ron::ser::to_string_pretty(&updates.$name.updates, Default::default()).unwrap();
+                )+
+            }
+
+            fn is_empty(&self) -> bool {
+                $(
+                    if !self.$name.0.is_empty() { return false; }
+                )+
+                true
+            }
+
+            #[cfg(feature = "capture")]
+            fn to_ron(&self) -> String {
+                let mut serializer =
+                    TileCacheLoggerUpdateListsSerializer { ron_string: Vec::new() };
+                $(
+                    serializer.ron_string.push(
+                        if self.$name.0.is_empty() {
+                            "[]".to_string()
+                        } else {
+                            self.$name.0.clone()
+                        });
+                )+
+                ron::ser::to_string_pretty(&serializer, Default::default()).unwrap()
+            }
+
+            #[cfg(feature = "replay")]
+            pub fn from_ron(&mut self, text: &str) {
+                let serializer : TileCacheLoggerUpdateListsSerializer = 
+                    match ron::de::from_str(&text) {
+                        Ok(data) => { data }
+                        Err(e) => {
+                            println!("ERROR: failed to deserialize updatelist: {:?}\n{:?}", &text, e);
+                            return;
+                        }
+                    };
+                let mut index = 0;
+                $(
+                    self.$name.1 = ron::de::from_str(&serializer.ron_string[index]).unwrap();
+                    index = index + 1;
+                )+
+            }
+        }
+    }
+}
+
+#[cfg(feature = "capture")]
+enumerate_interners!(declare_tile_cache_logger_updatelists);
+
+#[cfg(not(feature = "capture"))]
+#[derive(Clone)]
+pub struct TileCacheLoggerUpdateLists {
+}
+
+#[cfg(not(feature = "capture"))]
+impl TileCacheLoggerUpdateLists {
+    pub fn new() -> Self { TileCacheLoggerUpdateLists {} }
+    fn is_empty(&self) -> bool { true }
+}
+
+
+
+
+
+pub struct TileCacheLoggerFrame {
+    
+    pub slices: Vec<TileCacheLoggerSlice>,
+    
+    pub update_lists: TileCacheLoggerUpdateLists
+}
+
+impl TileCacheLoggerFrame {
+    pub fn new() -> Self {
+        TileCacheLoggerFrame {
+            slices: Vec::new(),
+            update_lists: TileCacheLoggerUpdateLists::new()
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.slices.is_empty() && self.update_lists.is_empty()
+    }
+}
+
 
 pub struct TileCacheLogger {
     
     pub write_index : usize,
     
-    
-    pub frames: Vec<Vec<TileCacheLoggerSlice>>
+    pub frames: Vec<TileCacheLoggerFrame>
 }
 
 impl TileCacheLogger {
@@ -1507,8 +1632,9 @@ impl TileCacheLogger {
         num_frames: usize
     ) -> Self {
         let mut frames = Vec::with_capacity(num_frames);
-        let empty_element = Vec::new();
-        frames.resize(num_frames, empty_element);
+        for _i in 0..num_frames { 
+            frames.push(TileCacheLoggerFrame::new());
+        }
         TileCacheLogger {
             write_index: 0,
             frames
@@ -1524,10 +1650,18 @@ impl TileCacheLogger {
         if !self.is_enabled() {
             return;
         }
-        self.frames[self.write_index].push(
+        self.frames[self.write_index].slices.push(
             TileCacheLoggerSlice {
                 serialized_slice,
                 local_to_world_transform });
+    }
+
+    #[cfg(feature = "capture")]
+    pub fn serialize_updates(&mut self, updates: &InternerUpdates) {
+        if !self.is_enabled() {
+            return;
+        }
+        self.frames[self.write_index].update_lists.serialize_updates(updates);
     }
 
     
@@ -1541,7 +1675,7 @@ impl TileCacheLogger {
         if self.write_index >= self.frames.len() {
             self.write_index = 0;
         }
-        self.frames[self.write_index] = Vec::new();
+        self.frames[self.write_index] = TileCacheLoggerFrame::new();
     }
 
     #[cfg(feature = "capture")]
@@ -1571,10 +1705,10 @@ impl TileCacheLogger {
             }
 
             let filename = path_tile_cache.join(format!("frame{:05}.ron", files_written));
-            files_written = files_written + 1;
             let mut output = File::create(filename).unwrap();
+            output.write_all(b"// slice data\n").unwrap();
             output.write_all(b"[\n").unwrap();
-            for item in &self.frames[index] {
+            for item in &self.frames[index].slices {
                 output.write_all(format!("( x: {}, y: {},\n",
                                          item.local_to_world_transform.origin.x,
                                          item.local_to_world_transform.origin.y)
@@ -1583,7 +1717,14 @@ impl TileCacheLogger {
                 output.write_all(item.serialized_slice.as_bytes()).unwrap();
                 output.write_all(b"\n),\n").unwrap();
             }
-            output.write_all(b"]\n").unwrap();
+            output.write_all(b"]\n\n").unwrap();
+
+            output.write_all(b"// @@@ chunk @@@\n\n").unwrap();
+
+            output.write_all(b"// interning data\n").unwrap();
+            output.write_all(self.frames[index].update_lists.to_ron().as_bytes()).unwrap();
+
+            files_written = files_written + 1;
         }
     }
 }
