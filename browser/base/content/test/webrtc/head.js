@@ -607,10 +607,7 @@ async function reloadAndAssertClosedStreams() {
   
   await disableObserverVerification();
 
-  let loadedPromise = BrowserTestUtils.browserLoaded(
-    gBrowser.selectedBrowser,
-    true
-  );
+  let loadedPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
   await ContentTask.spawn(gBrowser.selectedBrowser, null, () =>
     content.location.reload()
   );
