@@ -119,10 +119,6 @@ this.addEventListener("message", function(event) {
 
       
       
-      parent._consoleActor = consoleActor;
-
-      
-      
       postMessage(
         JSON.stringify({
           type: "connected",
