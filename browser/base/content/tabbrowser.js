@@ -2640,7 +2640,7 @@
         userContextId = openerTab.getAttribute("usercontextid") || 0;
       }
 
-      this.setTabAttributes(t, {
+      this._setTabAttributes(t, {
         animate,
         noInitialLabel,
         aURI,
@@ -2657,7 +2657,7 @@
         if (!batchInsertingTabs) {
           
           
-          this.updateTabPosition(t, {
+          this._insertTabAtIndex(t, {
             index,
             ownerTab,
             openerTab,
@@ -2786,7 +2786,7 @@
 
       if (!batchInsertingTabs) {
         
-        this._fireOpenTab(t, eventDetail);
+        this._fireTabOpen(t, eventDetail);
 
         if (
           !usingPreloadedContent &&
@@ -2952,7 +2952,7 @@
             tab.setAttribute("pinned", "true");
             this._invalidateCachedTabs();
             
-            this._fireOpenTab(tab, {});
+            this._fireTabOpen(tab, {});
             this._notifyPinnedStatus(tab);
             
             
@@ -3007,7 +3007,7 @@
         
         for (let tab of tabs) {
           if (!tab.pinned && (tabToSelect || !tab.selected)) {
-            this._fireOpenTab(tab, {});
+            this._fireTabOpen(tab, {});
           }
         }
       }
@@ -3109,7 +3109,7 @@
       return reallyClose;
     },
 
-    setTabAttributes(
+    _setTabAttributes(
       tab,
       {
         animate,
@@ -3165,7 +3165,7 @@
     
 
 
-    updateTabPosition(
+    _insertTabAtIndex(
       tab,
       { index, ownerTab, openerTab, pinned, bulkOrderedOpen } = {}
     ) {
@@ -3239,10 +3239,9 @@
     
 
 
-    _fireOpenTab(tab, eventDetail) {
-      
-      
-      
+
+
+    _fireTabOpen(tab, eventDetail) {
       delete tab.initializingTab;
       let evt = new CustomEvent("TabOpen", {
         bubbles: true,
