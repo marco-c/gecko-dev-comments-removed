@@ -1369,6 +1369,19 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
+
+
+
+
+
+
+  bool IsSelected(uint32_t aStartOffset, uint32_t aEndOffset) const;
+
+  
+
+
+
+
   nsIContent* GetTextEditorRootContent(
       mozilla::TextEditor** aTextEditor = nullptr);
 
