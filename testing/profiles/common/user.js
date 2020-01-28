@@ -67,3 +67,6 @@ user_pref("media.block-autoplay-until-in-foreground", false);
 user_pref("toolkit.telemetry.coverage.endpoint.base", "http://localhost");
 
 user_pref("media.geckoview.autoplay.request", false);
+
+
+user_pref("dom.media.mediasession.enabled", true);
