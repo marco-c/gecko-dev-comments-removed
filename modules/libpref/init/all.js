@@ -569,13 +569,6 @@ pref("media.video-queue.send-to-compositor-size", 9999);
 
 pref("media.cubeb.logging_level", "");
 
-
-#if defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
-  pref("media.audioipc.pool_size", 1);
-  
-  pref("media.audioipc.stack_size", 262144);
-#endif
-
 #if defined(XP_MACOSX)
   pref("media.cubeb.backend", "audiounit-rust");
 #endif
