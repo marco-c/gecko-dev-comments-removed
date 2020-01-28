@@ -1,213 +1,11 @@
 
 
 
-
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-	typeof define === 'function' && define.amd ? define(['exports'], factory) :
-	(factory((global.Redux = global.Redux || {})));
-}(this, (function (exports) { 'use strict';
-
-
-var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
-
-
-var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
-
-
-var root = freeGlobal || freeSelf || globalThis;
-
-
-var Symbol = root.Symbol;
-
-
-var objectProto$1 = Object.prototype;
-
-
-var hasOwnProperty$1 = objectProto$1.hasOwnProperty;
-
-
-
-
-
-
-var nativeObjectToString = objectProto$1.toString;
-
-
-var symToStringTag$1 = Symbol ? Symbol.toStringTag : undefined;
-
-
-
-
-
-
-
-
-function getRawTag(value) {
-  var isOwn = hasOwnProperty$1.call(value, symToStringTag$1),
-      tag = value[symToStringTag$1];
-
-  try {
-    value[symToStringTag$1] = undefined;
-    var unmasked = true;
-  } catch (e) {}
-
-  var result = nativeObjectToString.call(value);
-  if (unmasked) {
-    if (isOwn) {
-      value[symToStringTag$1] = tag;
-    } else {
-      delete value[symToStringTag$1];
-    }
-  }
-  return result;
-}
-
-
-var objectProto$2 = Object.prototype;
-
-
-
-
-
-
-var nativeObjectToString$1 = objectProto$2.toString;
-
-
-
-
-
-
-
-
-function objectToString(value) {
-  return nativeObjectToString$1.call(value);
-}
-
-
-var nullTag = '[object Null]';
-var undefinedTag = '[object Undefined]';
-
-
-var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
-
-
-
-
-
-
-
-
-function baseGetTag(value) {
-  if (value == null) {
-    return value === undefined ? undefinedTag : nullTag;
-  }
-  return (symToStringTag && symToStringTag in Object(value))
-    ? getRawTag(value)
-    : objectToString(value);
-}
-
-
-
-
-
-
-
-
-
-function overArg(func, transform) {
-  return function(arg) {
-    return func(transform(arg));
-  };
-}
-
-
-var getPrototype = overArg(Object.getPrototypeOf, Object);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isObjectLike(value) {
-  return value != null && typeof value == 'object';
-}
-
-
-var objectTag = '[object Object]';
-
-
-var funcProto = Function.prototype;
-var objectProto = Object.prototype;
-
-
-var funcToString = funcProto.toString;
-
-
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-
-var objectCtorString = funcToString.call(Object);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isPlainObject(value) {
-  if (!isObjectLike(value) || baseGetTag(value) != objectTag) {
-    return false;
-  }
-  var proto = getPrototype(value);
-  if (proto === null) {
-    return true;
-  }
-  var Ctor = hasOwnProperty.call(proto, 'constructor') && proto.constructor;
-  return typeof Ctor == 'function' && Ctor instanceof Ctor &&
-    funcToString.call(Ctor) == objectCtorString;
-}
+typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+typeof define === 'function' && define.amd ? define(['exports'], factory) :
+(global = global || self, factory(global.Redux = {}));
+}(this, function (exports) { 'use strict';
 
 function symbolObservablePonyfill(root) {
 	var result;
@@ -228,42 +26,55 @@ function symbolObservablePonyfill(root) {
 }
 
 
-var root$2;
+
+var root;
 
 if (typeof self !== 'undefined') {
-  root$2 = self;
+  root = self;
 } else if (typeof window !== 'undefined') {
-  root$2 = window;
+  root = window;
 } else if (typeof global !== 'undefined') {
-  root$2 = global;
+  root = global;
 } else if (typeof module !== 'undefined') {
-  root$2 = module;
+  root = module;
 } else {
-  root$2 = Function('return this')();
+  root = globalThis;
 }
 
-var result = symbolObservablePonyfill(root$2);
+var result = symbolObservablePonyfill(root);
 
 
 
 
 
 
+
+var randomString = function randomString() {
+  return Math.random().toString(36).substring(7).split('').join('.');
+};
 
 var ActionTypes = {
-  INIT: '@@redux/INIT'
-
-  
-
-
-
-
-
+  INIT: "@@redux/INIT" + randomString(),
+  REPLACE: "@@redux/REPLACE" + randomString(),
+  PROBE_UNKNOWN_ACTION: function PROBE_UNKNOWN_ACTION() {
+    return "@@redux/PROBE_UNKNOWN_ACTION" + randomString();
+  }
+};
 
 
 
 
 
+function isPlainObject(obj) {
+  if (typeof obj !== 'object' || obj === null) return false;
+  var proto = obj;
+
+  while (Object.getPrototypeOf(proto) !== null) {
+    proto = Object.getPrototypeOf(proto);
+  }
+
+  return Object.getPrototypeOf(obj) === proto;
+}
 
 
 
@@ -278,8 +89,25 @@ var ActionTypes = {
 
 
 
-};function createStore(reducer, preloadedState, enhancer) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+function createStore(reducer, preloadedState, enhancer) {
   var _ref2;
+
+  if (typeof preloadedState === 'function' && typeof enhancer === 'function' || typeof enhancer === 'function' && typeof arguments[3] === 'function') {
+    throw new Error('It looks like you are passing several store enhancers to ' + 'createStore(). This is not supported. Instead, compose them ' + 'together to a single function.');
+  }
 
   if (typeof preloadedState === 'function' && typeof enhancer === 'undefined') {
     enhancer = preloadedState;
@@ -303,23 +131,36 @@ var ActionTypes = {
   var currentListeners = [];
   var nextListeners = currentListeners;
   var isDispatching = false;
+  
+
+
+
+
+
+
 
   function ensureCanMutateNextListeners() {
     if (nextListeners === currentListeners) {
       nextListeners = currentListeners.slice();
     }
   }
-
   
+
+
 
 
 
 
   function getState() {
+    if (isDispatching) {
+      throw new Error('You may not call store.getState() while the reducer is executing. ' + 'The reducer has already received the state as an argument. ' + 'Pass it down from the top reducer instead of reading it from the store.');
+    }
+
     return currentState;
   }
-
   
+
+
 
 
 
@@ -344,28 +185,35 @@ var ActionTypes = {
 
   function subscribe(listener) {
     if (typeof listener !== 'function') {
-      throw new Error('Expected listener to be a function.');
+      throw new Error('Expected the listener to be a function.');
+    }
+
+    if (isDispatching) {
+      throw new Error('You may not call store.subscribe() while the reducer is executing. ' + 'If you would like to be notified after the store has been updated, subscribe from a ' + 'component and invoke store.getState() in the callback to access the latest state. ' + 'See https://redux.js.org/api-reference/store#subscribelistener for more details.');
     }
 
     var isSubscribed = true;
-
     ensureCanMutateNextListeners();
     nextListeners.push(listener);
-
     return function unsubscribe() {
       if (!isSubscribed) {
         return;
       }
 
-      isSubscribed = false;
+      if (isDispatching) {
+        throw new Error('You may not unsubscribe from a store listener while the reducer is executing. ' + 'See https://redux.js.org/api-reference/store#subscribelistener for more details.');
+      }
 
+      isSubscribed = false;
       ensureCanMutateNextListeners();
       var index = nextListeners.indexOf(listener);
       nextListeners.splice(index, 1);
+      currentListeners = null;
     };
   }
-
   
+
+
 
 
 
@@ -411,6 +259,7 @@ var ActionTypes = {
     }
 
     var listeners = currentListeners = nextListeners;
+
     for (var i = 0; i < listeners.length; i++) {
       var listener = listeners[i];
       listener();
@@ -418,8 +267,9 @@ var ActionTypes = {
 
     return action;
   }
-
   
+
+
 
 
 
@@ -434,11 +284,18 @@ var ActionTypes = {
       throw new Error('Expected the nextReducer to be a function.');
     }
 
-    currentReducer = nextReducer;
-    dispatch({ type: ActionTypes.INIT });
-  }
+    currentReducer = nextReducer; 
+    
+    
+    
 
+    dispatch({
+      type: ActionTypes.REPLACE
+    });
+  }
   
+
+
 
 
 
@@ -458,7 +315,7 @@ var ActionTypes = {
 
 
       subscribe: function subscribe(observer) {
-        if (typeof observer !== 'object') {
+        if (typeof observer !== 'object' || observer === null) {
           throw new TypeError('Expected the observer to be an object.');
         }
 
@@ -470,18 +327,21 @@ var ActionTypes = {
 
         observeState();
         var unsubscribe = outerSubscribe(observeState);
-        return { unsubscribe: unsubscribe };
+        return {
+          unsubscribe: unsubscribe
+        };
       }
     }, _ref[result] = function () {
       return this;
     }, _ref;
-  }
+  } 
+  
+  
 
-  
-  
-  
-  dispatch({ type: ActionTypes.INIT });
 
+  dispatch({
+    type: ActionTypes.INIT
+  });
   return _ref2 = {
     dispatch: dispatch,
     subscribe: subscribe,
@@ -502,21 +362,21 @@ function warning(message) {
     console.error(message);
   }
   
+
+
   try {
     
     
     
     throw new Error(message);
-    
-  } catch (e) {}
-  
+  } catch (e) {} 
+
 }
 
 function getUndefinedStateErrorMessage(key, action) {
   var actionType = action && action.type;
-  var actionName = actionType && '"' + actionType.toString() + '"' || 'an action';
-
-  return 'Given action ' + actionName + ', reducer "' + key + '" returned undefined. ' + 'To ignore an action, you must explicitly return the previous state. ' + 'If you want this reducer to hold no value, you can return null instead of undefined.';
+  var actionDescription = actionType && "action \"" + String(actionType) + "\"" || 'an action';
+  return "Given " + actionDescription + ", reducer \"" + key + "\" returned undefined. " + "To ignore an action, you must explicitly return the previous state. " + "If you want this reducer to hold no value, you can return null instead of undefined.";
 }
 
 function getUnexpectedStateShapeWarningMessage(inputState, reducers, action, unexpectedKeyCache) {
@@ -528,37 +388,41 @@ function getUnexpectedStateShapeWarningMessage(inputState, reducers, action, une
   }
 
   if (!isPlainObject(inputState)) {
-    return 'The ' + argumentName + ' has unexpected type of "' + {}.toString.call(inputState).match(/\s([a-z|A-Z]+)/)[1] + '". Expected argument to be an object with the following ' + ('keys: "' + reducerKeys.join('", "') + '"');
+    return "The " + argumentName + " has unexpected type of \"" + {}.toString.call(inputState).match(/\s([a-z|A-Z]+)/)[1] + "\". Expected argument to be an object with the following " + ("keys: \"" + reducerKeys.join('", "') + "\"");
   }
 
   var unexpectedKeys = Object.keys(inputState).filter(function (key) {
     return !reducers.hasOwnProperty(key) && !unexpectedKeyCache[key];
   });
-
   unexpectedKeys.forEach(function (key) {
     unexpectedKeyCache[key] = true;
   });
+  if (action && action.type === ActionTypes.REPLACE) return;
 
   if (unexpectedKeys.length > 0) {
-    return 'Unexpected ' + (unexpectedKeys.length > 1 ? 'keys' : 'key') + ' ' + ('"' + unexpectedKeys.join('", "') + '" found in ' + argumentName + '. ') + 'Expected to find one of the known reducer keys instead: ' + ('"' + reducerKeys.join('", "') + '". Unexpected keys will be ignored.');
+    return "Unexpected " + (unexpectedKeys.length > 1 ? 'keys' : 'key') + " " + ("\"" + unexpectedKeys.join('", "') + "\" found in " + argumentName + ". ") + "Expected to find one of the known reducer keys instead: " + ("\"" + reducerKeys.join('", "') + "\". Unexpected keys will be ignored.");
   }
 }
 
 function assertReducerShape(reducers) {
   Object.keys(reducers).forEach(function (key) {
     var reducer = reducers[key];
-    var initialState = reducer(undefined, { type: ActionTypes.INIT });
+    var initialState = reducer(undefined, {
+      type: ActionTypes.INIT
+    });
 
     if (typeof initialState === 'undefined') {
-      throw new Error('Reducer "' + key + '" returned undefined during initialization. ' + 'If the state passed to the reducer is undefined, you must ' + 'explicitly return the initial state. The initial state may ' + 'not be undefined. If you don\'t want to set a value for this reducer, ' + 'you can use null instead of undefined.');
+      throw new Error("Reducer \"" + key + "\" returned undefined during initialization. " + "If the state passed to the reducer is undefined, you must " + "explicitly return the initial state. The initial state may " + "not be undefined. If you don't want to set a value for this reducer, " + "you can use null instead of undefined.");
     }
 
-    var type = '@@redux/PROBE_UNKNOWN_ACTION_' + Math.random().toString(36).substring(7).split('').join('.');
-    if (typeof reducer(undefined, { type: type }) === 'undefined') {
-      throw new Error('Reducer "' + key + '" returned undefined when probed with a random type. ' + ('Don\'t try to handle ' + ActionTypes.INIT + ' or other actions in "redux/*" ') + 'namespace. They are considered private. Instead, you must return the ' + 'current state for any unknown actions, unless it is undefined, ' + 'in which case you must return the initial state, regardless of the ' + 'action type. The initial state may not be undefined, but can be null.');
+    if (typeof reducer(undefined, {
+      type: ActionTypes.PROBE_UNKNOWN_ACTION()
+    }) === 'undefined') {
+      throw new Error("Reducer \"" + key + "\" returned undefined when probed with a random type. " + ("Don't try to handle " + ActionTypes.INIT + " or other actions in \"redux/*\" ") + "namespace. They are considered private. Instead, you must return the " + "current state for any unknown actions, unless it is undefined, " + "in which case you must return the initial state, regardless of the " + "action type. The initial state may not be undefined, but can be null.");
     }
   });
 }
+
 
 
 
@@ -579,12 +443,13 @@ function assertReducerShape(reducers) {
 function combineReducers(reducers) {
   var reducerKeys = Object.keys(reducers);
   var finalReducers = {};
+
   for (var i = 0; i < reducerKeys.length; i++) {
     var key = reducerKeys[i];
 
     {
       if (typeof reducers[key] === 'undefined') {
-        warning('No reducer provided for key "' + key + '"');
+        warning("No reducer provided for key \"" + key + "\"");
       }
     }
 
@@ -592,23 +457,28 @@ function combineReducers(reducers) {
       finalReducers[key] = reducers[key];
     }
   }
-  var finalReducerKeys = Object.keys(finalReducers);
 
-  var unexpectedKeyCache = void 0;
+  var finalReducerKeys = Object.keys(finalReducers); 
+  
+
+  var unexpectedKeyCache;
+
   {
     unexpectedKeyCache = {};
   }
 
-  var shapeAssertionError = void 0;
+  var shapeAssertionError;
+
   try {
     assertReducerShape(finalReducers);
   } catch (e) {
     shapeAssertionError = e;
   }
 
-  return function combination() {
-    var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    var action = arguments[1];
+  return function combination(state, action) {
+    if (state === void 0) {
+      state = {};
+    }
 
     if (shapeAssertionError) {
       throw shapeAssertionError;
@@ -616,6 +486,7 @@ function combineReducers(reducers) {
 
     {
       var warningMessage = getUnexpectedStateShapeWarningMessage(state, finalReducers, action, unexpectedKeyCache);
+
       if (warningMessage) {
         warning(warningMessage);
       }
@@ -623,27 +494,33 @@ function combineReducers(reducers) {
 
     var hasChanged = false;
     var nextState = {};
+
     for (var _i = 0; _i < finalReducerKeys.length; _i++) {
       var _key = finalReducerKeys[_i];
       var reducer = finalReducers[_key];
       var previousStateForKey = state[_key];
       var nextStateForKey = reducer(previousStateForKey, action);
+
       if (typeof nextStateForKey === 'undefined') {
         var errorMessage = getUndefinedStateErrorMessage(_key, action);
         throw new Error(errorMessage);
       }
+
       nextState[_key] = nextStateForKey;
       hasChanged = hasChanged || nextStateForKey !== previousStateForKey;
     }
+
+    hasChanged = hasChanged || finalReducerKeys.length !== Object.keys(state).length;
     return hasChanged ? nextState : state;
   };
 }
 
 function bindActionCreator(actionCreator, dispatch) {
   return function () {
-    return dispatch(actionCreator.apply(undefined, arguments));
+    return dispatch(actionCreator.apply(this, arguments));
   };
 }
+
 
 
 
@@ -672,19 +549,68 @@ function bindActionCreators(actionCreators, dispatch) {
   }
 
   if (typeof actionCreators !== 'object' || actionCreators === null) {
-    throw new Error('bindActionCreators expected an object or a function, instead received ' + (actionCreators === null ? 'null' : typeof actionCreators) + '. ' + 'Did you write "import ActionCreators from" instead of "import * as ActionCreators from"?');
+    throw new Error("bindActionCreators expected an object or a function, instead received " + (actionCreators === null ? 'null' : typeof actionCreators) + ". " + "Did you write \"import ActionCreators from\" instead of \"import * as ActionCreators from\"?");
   }
 
-  var keys = Object.keys(actionCreators);
   var boundActionCreators = {};
-  for (var i = 0; i < keys.length; i++) {
-    var key = keys[i];
+
+  for (var key in actionCreators) {
     var actionCreator = actionCreators[key];
+
     if (typeof actionCreator === 'function') {
       boundActionCreators[key] = bindActionCreator(actionCreator, dispatch);
     }
   }
+
   return boundActionCreators;
+}
+
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
+
+function ownKeys(object, enumerableOnly) {
+  var keys = Object.keys(object);
+
+  if (Object.getOwnPropertySymbols) {
+    keys.push.apply(keys, Object.getOwnPropertySymbols(object));
+  }
+
+  if (enumerableOnly) keys = keys.filter(function (sym) {
+    return Object.getOwnPropertyDescriptor(object, sym).enumerable;
+  });
+  return keys;
+}
+
+function _objectSpread2(target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i] != null ? arguments[i] : {};
+
+    if (i % 2) {
+      ownKeys(source, true).forEach(function (key) {
+        _defineProperty(target, key, source[key]);
+      });
+    } else if (Object.getOwnPropertyDescriptors) {
+      Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
+    } else {
+      ownKeys(source).forEach(function (key) {
+        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
+      });
+    }
+  }
+
+  return target;
 }
 
 
@@ -697,9 +623,8 @@ function bindActionCreators(actionCreators, dispatch) {
 
 
 
-
 function compose() {
-  for (var _len = arguments.length, funcs = Array(_len), _key = 0; _key < _len; _key++) {
+  for (var _len = arguments.length, funcs = new Array(_len), _key = 0; _key < _len; _key++) {
     funcs[_key] = arguments[_key];
   }
 
@@ -715,12 +640,11 @@ function compose() {
 
   return funcs.reduce(function (a, b) {
     return function () {
-      return a(b.apply(undefined, arguments));
+      return a(b.apply(void 0, arguments));
     };
   });
 }
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
 
@@ -739,28 +663,29 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 
 function applyMiddleware() {
-  for (var _len = arguments.length, middlewares = Array(_len), _key = 0; _key < _len; _key++) {
+  for (var _len = arguments.length, middlewares = new Array(_len), _key = 0; _key < _len; _key++) {
     middlewares[_key] = arguments[_key];
   }
 
   return function (createStore) {
-    return function (reducer, preloadedState, enhancer) {
-      var store = createStore(reducer, preloadedState, enhancer);
-      var _dispatch = store.dispatch;
-      var chain = [];
+    return function () {
+      var store = createStore.apply(void 0, arguments);
+
+      var _dispatch = function dispatch() {
+        throw new Error('Dispatching while constructing your middleware is not allowed. ' + 'Other middleware would not be applied to this dispatch.');
+      };
 
       var middlewareAPI = {
         getState: store.getState,
-        dispatch: function dispatch(action) {
-          return _dispatch(action);
+        dispatch: function dispatch() {
+          return _dispatch.apply(void 0, arguments);
         }
       };
-      chain = middlewares.map(function (middleware) {
+      var chain = middlewares.map(function (middleware) {
         return middleware(middlewareAPI);
       });
-      _dispatch = compose.apply(undefined, chain)(store.dispatch);
-
-      return _extends({}, store, {
+      _dispatch = compose.apply(void 0, chain)(store.dispatch);
+      return _objectSpread2({}, store, {
         dispatch: _dispatch
       });
     };
@@ -771,18 +696,20 @@ function applyMiddleware() {
 
 
 
+
 function isCrushed() {}
 
-if ("development" !== 'production' && typeof isCrushed.name === 'string' && isCrushed.name !== 'isCrushed') {
-  warning('You are currently using minified code outside of NODE_ENV === \'production\'. ' + 'This means that you are running a slower development build of Redux. ' + 'You can use loose-envify (https://github.com/zertosh/loose-envify) for browserify ' + 'or DefinePlugin for webpack (http://stackoverflow.com/questions/30030031) ' + 'to ensure you have the correct code for your production build.');
+if ( typeof isCrushed.name === 'string' && isCrushed.name !== 'isCrushed') {
+  warning('You are currently using minified code outside of NODE_ENV === "production". ' + 'This means that you are running a slower development build of Redux. ' + 'You can use loose-envify (https://github.com/zertosh/loose-envify) for browserify ' + 'or setting mode to production in webpack (https://webpack.js.org/concepts/mode/) ' + 'to ensure you have the correct code for your production build.');
 }
 
-exports.createStore = createStore;
-exports.combineReducers = combineReducers;
-exports.bindActionCreators = bindActionCreators;
+exports.__DO_NOT_USE__ActionTypes = ActionTypes;
 exports.applyMiddleware = applyMiddleware;
+exports.bindActionCreators = bindActionCreators;
+exports.combineReducers = combineReducers;
 exports.compose = compose;
+exports.createStore = createStore;
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-})));
+}));
