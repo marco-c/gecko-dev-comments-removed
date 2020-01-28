@@ -2,7 +2,7 @@
 
 
 
-use api::{BuiltDisplayList, ColorF, DynamicProperties, Epoch, FontRenderMode};
+use api::{BuiltDisplayList, DisplayItemCache, ColorF, DynamicProperties, Epoch, FontRenderMode};
 use api::{PipelineId, PropertyBinding, PropertyBindingId, MixBlendMode, StackingContext};
 use api::units::*;
 use crate::composite::CompositorKind;
@@ -127,19 +127,18 @@ impl SceneProperties {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Clone)]
 pub struct ScenePipeline {
     pub pipeline_id: PipelineId,
     pub viewport_size: LayoutSize,
     pub content_size: LayoutSize,
     pub background_color: Option<ColorF>,
     pub display_list: BuiltDisplayList,
+    pub display_list_cache: DisplayItemCache,
 }
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Clone)]
 pub struct Scene {
     pub root_pipeline_id: Option<PipelineId>,
     pub pipelines: FastHashMap<PipelineId, ScenePipeline>,
@@ -168,12 +167,20 @@ impl Scene {
         viewport_size: LayoutSize,
         content_size: LayoutSize,
     ) {
+        let pipeline = self.pipelines.remove(&pipeline_id);
+        let mut display_list_cache = pipeline.map_or(Default::default(), |p| {
+            p.display_list_cache
+        });
+
+        display_list_cache.update(&display_list);
+
         let new_pipeline = ScenePipeline {
             pipeline_id,
             viewport_size,
             content_size,
             background_color,
             display_list,
+            display_list_cache,
         };
 
         self.pipelines.insert(pipeline_id, new_pipeline);
