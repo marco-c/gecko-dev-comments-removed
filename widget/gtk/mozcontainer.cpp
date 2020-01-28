@@ -6,6 +6,7 @@
 
 
 #include "mozcontainer.h"
+#include <glib.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
 #ifdef MOZ_WAYLAND
