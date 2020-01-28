@@ -14,7 +14,6 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/GeckoViewTab.jsm"
 );
 
-
 var { EventDispatcher } = ChromeUtils.import(
   "resource://gre/modules/Messaging.jsm"
 );

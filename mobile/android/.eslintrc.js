@@ -1,14 +1,6 @@
 "use strict";
 
 module.exports = {
-  rules: {
-    
-    
-    "consistent-return": "off",
-    "no-empty": "off",
-    "no-redeclare": "off",
-  },
-
   "overrides": [{
     files: [
       
