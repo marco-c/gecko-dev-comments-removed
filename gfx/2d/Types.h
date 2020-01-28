@@ -32,6 +32,7 @@ enum class SurfaceType : int8_t {
   DUAL_DT,                
   D2D1_1_IMAGE,           
   RECORDING,              
+  WRAP_AND_RECORD,        
   TILED,                  
   DATA_SHARED,            
   CAPTURE,                
