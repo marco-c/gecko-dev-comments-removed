@@ -118,7 +118,7 @@ fn get_hid_short_item<'a>(buf: &'a [u8]) -> Option<(u8, usize, &'a [u8])> {
     
     
     let len = match buf[0] & HID_MASK_SHORT_ITEM_SIZE {
-        s @ 0...2 => s as usize,
+        s @ 0..=2 => s as usize,
         _ => 4, 
     };
 
