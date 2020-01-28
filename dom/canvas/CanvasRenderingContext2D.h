@@ -879,11 +879,9 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
 
 
 
-
-
-  TextMetrics* DrawOrMeasureText(const nsAString& aText, float aX, float aY,
-                                 const Optional<double>& aMaxWidth,
-                                 TextDrawOperation aOp, ErrorResult& aError);
+  nsresult DrawOrMeasureText(const nsAString& aText, float aX, float aY,
+                             const Optional<double>& aMaxWidth,
+                             TextDrawOperation aOp, float* aWidth);
 
   
   struct ClipState {
