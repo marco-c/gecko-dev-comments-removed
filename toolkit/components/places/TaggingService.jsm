@@ -22,7 +22,7 @@ function TaggingService() {
   
   PlacesUtils.bookmarks.addObserver(this);
   PlacesUtils.observers.addListener(
-    ["bookmark-added"],
+    ["bookmark-added", "bookmark-removed"],
     this.handlePlacesEvents
   );
 
@@ -104,7 +104,6 @@ TaggingService.prototype = {
     }
     return -1;
   },
-
   
 
 
@@ -328,7 +327,7 @@ TaggingService.prototype = {
     if (aTopic == TOPIC_SHUTDOWN) {
       PlacesUtils.bookmarks.removeObserver(this);
       PlacesUtils.observers.removeListener(
-        ["bookmark-added"],
+        ["bookmark-added", "bookmark-removed"],
         this.handlePlacesEvents
       );
       Services.obs.removeObserver(this, TOPIC_SHUTDOWN);
@@ -347,7 +346,7 @@ TaggingService.prototype = {
 
 
   _getTaggedItemIdsIfUnbookmarkedURI: function TS__getTaggedItemIdsIfUnbookmarkedURI(
-    aURI
+    url
   ) {
     var itemIds = [];
     var isBookmarked = false;
@@ -360,7 +359,7 @@ TaggingService.prototype = {
        FROM moz_bookmarks
        WHERE fk = (SELECT id FROM moz_places WHERE url_hash = hash(:page_url) AND url = :page_url)`
     );
-    stmt.params.page_url = aURI.spec;
+    stmt.params.page_url = url;
     try {
       while (stmt.executeStep() && !isBookmarked) {
         if (this._tagFolders[stmt.row.parent]) {
@@ -380,45 +379,46 @@ TaggingService.prototype = {
 
   handlePlacesEvents(events) {
     for (let event of events) {
-      if (
-        !event.isTagging ||
-        event.itemType != PlacesUtils.bookmarks.TYPE_FOLDER
-      ) {
-        continue;
-      }
+      switch (event.type) {
+        case "bookmark-added":
+          if (
+            !event.isTagging ||
+            event.itemType != PlacesUtils.bookmarks.TYPE_FOLDER
+          ) {
+            continue;
+          }
 
-      this._tagFolders[event.id] = event.title;
-    }
-  },
+          this._tagFolders[event.id] = event.title;
+          break;
+        case "bookmark-removed":
+          
+          if (
+            event.parentId == PlacesUtils.tagsFolderId &&
+            this._tagFolders[event.id]
+          ) {
+            delete this._tagFolders[event.id];
+            break;
+          }
 
-  
-  onItemRemoved: function TS_onItemRemoved(
-    aItemId,
-    aFolderId,
-    aIndex,
-    aItemType,
-    aURI,
-    aGuid,
-    aParentGuid,
-    aSource
-  ) {
-    
-    if (aFolderId == PlacesUtils.tagsFolderId && this._tagFolders[aItemId]) {
-      delete this._tagFolders[aItemId];
-    } else if (aURI && !this._tagFolders[aFolderId]) {
-      
-      
-      
-      
-      let itemIds = this._getTaggedItemIdsIfUnbookmarkedURI(aURI);
-      for (let i = 0; i < itemIds.length; i++) {
-        try {
-          PlacesUtils.bookmarks.removeItem(itemIds[i], aSource);
-        } catch (ex) {}
+          Services.tm.dispatchToMainThread(() => {
+            if (event.url && !this._tagFolders[event.parentId]) {
+              
+              
+              
+              
+              let itemIds = this._getTaggedItemIdsIfUnbookmarkedURI(event.url);
+              for (let i = 0; i < itemIds.length; i++) {
+                try {
+                  PlacesUtils.bookmarks.removeItem(itemIds[i], event.source);
+                } catch (ex) {}
+              }
+            } else if (event.url && this._tagFolders[event.parentId]) {
+              
+              this._removeTagIfEmpty(event.parentId, event.source);
+            }
+          });
+          break;
       }
-    } else if (aURI && this._tagFolders[aFolderId]) {
-      
-      this._removeTagIfEmpty(aFolderId, aSource);
     }
   },
 

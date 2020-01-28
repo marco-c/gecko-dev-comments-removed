@@ -120,6 +120,9 @@ add_task(async function() {
   await PlacesUtils.bookmarks.remove(bm2);
 
   
+  await PlacesTestUtils.promiseAsyncUpdates();
+
+  
   for (let i = tags.length - 1; i >= 0; i -= 2) {
     tagsSelector.selectedIndex = i;
     let listItem = tagsSelector.selectedItem;
