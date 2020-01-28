@@ -80,8 +80,10 @@ class MediaSource final : public DOMEventTargetHelper,
   void ClearLiveSeekableRange(ErrorResult& aRv);
 
   static bool IsTypeSupported(const GlobalObject&, const nsAString& aType);
-  static nsresult IsTypeSupported(const nsAString& aType,
-                                  DecoderDoctorDiagnostics* aDiagnostics);
+  
+  static void IsTypeSupported(const nsAString& aType,
+                              DecoderDoctorDiagnostics* aDiagnostics,
+                              ErrorResult& aRv);
 
   IMPL_EVENT_HANDLER(sourceopen);
   IMPL_EVENT_HANDLER(sourceended);

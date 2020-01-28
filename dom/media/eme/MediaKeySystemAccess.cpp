@@ -411,12 +411,14 @@ static bool CanDecryptAndDecode(
       continue;
     }
 
-    if (aContainerSupport.Decrypts(codec) &&
-        NS_SUCCEEDED(
-            MediaSource::IsTypeSupported(aContentType, aDiagnostics))) {
-      
-      
-      continue;
+    if (aContainerSupport.Decrypts(codec)) {
+      IgnoredErrorResult rv;
+      MediaSource::IsTypeSupported(aContentType, aDiagnostics, rv);
+      if (!rv.Failed()) {
+        
+        
+        continue;
+      }
     }
 
     
