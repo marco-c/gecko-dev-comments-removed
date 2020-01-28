@@ -34,7 +34,8 @@ class EnumeratedIterator {
   typedef typename std::underlying_type<EnumTypeT>::type IntTypeT;
 
   template <typename EnumType>
-  explicit EnumeratedIterator(EnumType aCurrent) : mCurrent(aCurrent) {}
+  constexpr explicit EnumeratedIterator(EnumType aCurrent)
+      : mCurrent(aCurrent) {}
 
   template <typename EnumType>
   explicit EnumeratedIterator(const EnumeratedIterator<EnumType>& aOther)
@@ -133,7 +134,7 @@ class EnumeratedRange {
   typedef ReverseIterator<const_iterator> const_reverse_iterator;
 
   template <typename EnumType>
-  EnumeratedRange(EnumType aBegin, EnumType aEnd)
+  constexpr EnumeratedRange(EnumType aBegin, EnumType aEnd)
       : mBegin(aBegin), mEnd(aEnd) {}
 
   iterator begin() const { return iterator(mBegin); }
@@ -162,8 +163,8 @@ class EnumeratedRange {
 
 
 template <typename EnumType>
-inline detail::EnumeratedRange<EnumType> MakeEnumeratedRange(EnumType aBegin,
-                                                             EnumType aEnd) {
+constexpr detail::EnumeratedRange<EnumType> MakeEnumeratedRange(EnumType aBegin,
+                                                                EnumType aEnd) {
   MOZ_ASSERT(aBegin <= aEnd, "Cannot generate invalid, unbounded range!");
   return detail::EnumeratedRange<EnumType>(aBegin, aEnd);
 }
@@ -171,7 +172,7 @@ inline detail::EnumeratedRange<EnumType> MakeEnumeratedRange(EnumType aBegin,
 
 
 template <typename EnumType>
-inline detail::EnumeratedRange<EnumType> MakeEnumeratedRange(EnumType aEnd) {
+constexpr detail::EnumeratedRange<EnumType> MakeEnumeratedRange(EnumType aEnd) {
   return MakeEnumeratedRange(EnumType(0), aEnd);
 }
 
