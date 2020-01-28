@@ -98,7 +98,7 @@ function do_corrupt_db(file) {
   
   
   let size = file.fileSize;
-  Assert.ok(size > 450e3);
+  Assert.ok(size > 320e3);
 
   
   
@@ -113,7 +113,7 @@ function do_corrupt_db(file) {
   );
   ostream.init(file, 2, -1, 0);
   let sstream = ostream.QueryInterface(Ci.nsISeekableStream);
-  let n = size - 450e3 + 20e3;
+  let n = size - 320e3 + 20e3;
   sstream.seek(Ci.nsISeekableStream.NS_SEEK_SET, size - n);
   for (let i = 0; i < n; ++i) {
     ostream.write("a", 1);
@@ -136,27 +136,12 @@ function* run_test_1(generator) {
 
   
   
-  
-  
-  
-  let db2 = new CookieDatabaseConnection(do_get_cookie_file(profile), 2);
-  db2.db.executeSimpleSQL("INSERT INTO moz_cookies (baseDomain) VALUES (NULL)");
-  db2.close();
-  let db = new CookieDatabaseConnection(do_get_cookie_file(profile), 4);
-  Assert.equal(do_count_cookies_in_db(db.db), 2);
+  let db = new CookieDatabaseConnection(do_get_cookie_file(profile), 11);
+  Assert.equal(do_count_cookies_in_db(db.db), 1);
 
   
   do_load_profile(sub_generator);
   yield;
-
-  
-  while (do_count_cookies_in_db(db.db) == 2) {
-    executeSoon(function() {
-      do_run_generator(sub_generator);
-    });
-    yield;
-  }
-  Assert.equal(do_count_cookies_in_db(db.db), 1);
 
   
   db.insertCookie(cookie);
@@ -490,7 +475,7 @@ function* run_test_5(generator) {
 
   
   
-  let db = new CookieDatabaseConnection(do_get_cookie_file(profile), 4);
+  let db = new CookieDatabaseConnection(do_get_cookie_file(profile), 11);
   db.insertCookie(cookie);
   Assert.equal(do_count_cookies_in_db(db.db, "bar.com"), 1);
   Assert.equal(do_count_cookies_in_db(db.db), 1);
