@@ -1,0 +1,7 @@
+
+
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+WIN64_DUMP_SYMS = 'win64-dump-syms'
