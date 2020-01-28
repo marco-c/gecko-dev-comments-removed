@@ -517,12 +517,14 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
   
   
   
+  
+  
   nscoord GetOuterMainSize(AxisOrientationType aMainAxis) const {
-    return mMainSize + GetMarginBorderPaddingSizeInAxis(aMainAxis);
+    return mMainSize + GetMarginBorderPaddingSizeInMainAxis(aMainAxis);
   }
 
   nscoord GetOuterCrossSize(AxisOrientationType aCrossAxis) const {
-    return mCrossSize + GetMarginBorderPaddingSizeInAxis(aCrossAxis);
+    return mCrossSize + GetMarginBorderPaddingSizeInCrossAxis(aCrossAxis);
   }
 
   
@@ -665,29 +667,28 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
 
   
   
-  const nsMargin& GetBorderPadding() const { return mBorderPadding; }
-
   
-  nscoord GetBorderPaddingComponentForSide(mozilla::Side aSide) const {
-    return mBorderPadding.Side(aSide);
+  
+  nscoord GetBorderPaddingSizeInMainAxis() const {
+    return mBorderPadding.StartEnd(MainAxis(), mCBWM);
   }
-
-  
-  
-  nscoord GetBorderPaddingSizeInAxis(AxisOrientationType aAxis) const {
-    mozilla::Side startSide =
-        kAxisOrientationToSidesMap[aAxis][eAxisEdge_Start];
-    mozilla::Side endSide = kAxisOrientationToSidesMap[aAxis][eAxisEdge_End];
-    return GetBorderPaddingComponentForSide(startSide) +
-           GetBorderPaddingComponentForSide(endSide);
+  nscoord GetBorderPaddingSizeInCrossAxis() const {
+    return mBorderPadding.StartEnd(CrossAxis(), mCBWM);
   }
 
   
   
   
   
-  nscoord GetMarginBorderPaddingSizeInAxis(AxisOrientationType aAxis) const {
-    return GetMarginSizeInAxis(aAxis) + GetBorderPaddingSizeInAxis(aAxis);
+  
+  
+  nscoord GetMarginBorderPaddingSizeInMainAxis(
+      AxisOrientationType aAxis) const {
+    return GetMarginSizeInAxis(aAxis) + GetBorderPaddingSizeInMainAxis();
+  }
+  nscoord GetMarginBorderPaddingSizeInCrossAxis(
+      AxisOrientationType aAxis) const {
+    return GetMarginSizeInAxis(aAxis) + GetBorderPaddingSizeInCrossAxis();
   }
 
   
@@ -877,7 +878,8 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
   
   const LogicalAxis mMainAxis = eLogicalAxisInline;
 
-  const nsMargin mBorderPadding;
+  
+  const LogicalMargin mBorderPadding;
   
   nsMargin mMargin;
 
@@ -1920,7 +1922,9 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
       mWM(aFlexItemReflowInput.GetWritingMode()),
       mCBWM(aAxisTracker.GetWritingMode()),
       mMainAxis(aAxisTracker.MainAxis()),
-      mBorderPadding(aFlexItemReflowInput.ComputedPhysicalBorderPadding()),
+      mBorderPadding(
+          aFlexItemReflowInput.ComputedLogicalBorderPadding().ConvertTo(mCBWM,
+                                                                        mWM)),
       mMargin(aFlexItemReflowInput.ComputedPhysicalMargin()),
       mMainMinSize(aMainMinSize),
       mMainMaxSize(aMainMaxSize),
@@ -2061,6 +2065,7 @@ FlexItem::FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize,
     : mFrame(aChildFrame),
       mWM(aContainerWM),
       mCBWM(aContainerWM),
+      mBorderPadding(mCBWM),
       mCrossSize(aCrossSize),
       
       
@@ -3448,7 +3453,7 @@ void FlexItem::ResolveStretchedCrossSize(
   
   
   nscoord stretchedSize =
-      aLineCrossSize - GetMarginBorderPaddingSizeInAxis(crossAxis);
+      aLineCrossSize - GetMarginBorderPaddingSizeInCrossAxis(crossAxis);
 
   stretchedSize = NS_CSS_MINMAX(stretchedSize, mCrossMinSize, mCrossMaxSize);
 
@@ -4186,8 +4191,7 @@ void FlexLine::PositionItemsInMainAxis(uint8_t aJustifyContent,
       aAxisTracker, this, aJustifyContent, aContentBoxMainSize);
   for (FlexItem* item = mItems.getFirst(); item; item = item->getNext()) {
     nscoord itemMainBorderBoxSize =
-        item->GetMainSize() +
-        item->GetBorderPaddingSizeInAxis(mainAxisPosnTracker.GetPhysicalAxis());
+        item->GetMainSize() + item->GetBorderPaddingSizeInMainAxis();
 
     
     mainAxisPosnTracker.ResolveAutoMarginsInMainAxis(*item);
@@ -4223,9 +4227,9 @@ static nscoord ComputePhysicalAscentFromFlexRelativeAscent(
              aAxisTracker.GetPhysicalCrossAxis());
 }
 
-void nsFlexContainerFrame::SizeItemInCrossAxis(
-    nsPresContext* aPresContext, const FlexboxAxisTracker& aAxisTracker,
-    ReflowInput& aChildReflowInput, FlexItem& aItem) {
+void nsFlexContainerFrame::SizeItemInCrossAxis(nsPresContext* aPresContext,
+                                               ReflowInput& aChildReflowInput,
+                                               FlexItem& aItem) {
   
   
   if (aItem.IsInlineAxisCrossAxis()) {
@@ -4259,8 +4263,7 @@ void nsFlexContainerFrame::SizeItemInCrossAxis(
   
   
   
-  nscoord crossAxisBorderPadding =
-      aItem.GetBorderPaddingSizeInAxis(aAxisTracker.GetPhysicalCrossAxis());
+  nscoord crossAxisBorderPadding = aItem.GetBorderPaddingSizeInCrossAxis();
   if (reflowResult.BSize() < crossAxisBorderPadding) {
     
     
@@ -4292,8 +4295,7 @@ void FlexLine::PositionItemsInCrossAxis(
 
     
     nscoord itemCrossBorderBoxSize =
-        item->GetCrossSize() +
-        item->GetBorderPaddingSizeInAxis(aAxisTracker.GetPhysicalCrossAxis());
+        item->GetCrossSize() + item->GetBorderPaddingSizeInCrossAxis();
     lineCrossAxisPosnTracker.EnterAlignPackingSpace(*this, *item, aAxisTracker);
     lineCrossAxisPosnTracker.EnterMargin(item->GetMargin());
     lineCrossAxisPosnTracker.EnterChildFrame(itemCrossBorderBoxSize);
@@ -4405,9 +4407,8 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
 
 class MOZ_RAII AutoFlexItemMainSizeOverride final {
  public:
-  explicit AutoFlexItemMainSizeOverride(FlexItem& aItem,
-                                        const FlexboxAxisTracker& aAxisTracker
-                                            MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+  explicit AutoFlexItemMainSizeOverride(
+      FlexItem& aItem MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
       : mItemFrame(aItem.Frame()) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
 
@@ -4423,8 +4424,7 @@ class MOZ_RAII AutoFlexItemMainSizeOverride final {
     
     
     if (aItem.Frame()->StylePosition()->mBoxSizing == StyleBoxSizing::Border) {
-      mainSizeOverrideVal +=
-          aItem.GetBorderPaddingSizeInAxis(aAxisTracker.GetPhysicalMainAxis());
+      mainSizeOverrideVal += aItem.GetBorderPaddingSizeInMainAxis();
     }
 
     mItemFrame->SetProperty(nsIFrame::FlexItemMainSizeOverride(),
@@ -4792,7 +4792,7 @@ void nsFlexContainerFrame::DoFlexLayout(
           
           
           
-          sizeOverride.emplace(*item, aAxisTracker);
+          sizeOverride.emplace(*item);
         }
 
         WritingMode wm = item->Frame()->GetWritingMode();
@@ -4813,8 +4813,7 @@ void nsFlexContainerFrame::DoFlexLayout(
           }
         }
 
-        SizeItemInCrossAxis(aPresContext, aAxisTracker, childReflowInput,
-                            *item);
+        SizeItemInCrossAxis(aPresContext, childReflowInput, *item);
       }
     }
     
