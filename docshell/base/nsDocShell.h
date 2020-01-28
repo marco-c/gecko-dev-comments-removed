@@ -513,16 +513,6 @@ class nsDocShell final : public nsDocLoader,
       nsIChannel** aChannel);
 
   
-  
-  
-  
-  static nsresult ConfigureChannel(nsIChannel* aChannel,
-                                   nsDocShellLoadState* aLoadState,
-                                   const nsString* aInitiatorType,
-                                   uint32_t aLoadType, uint32_t aCacheKey,
-                                   bool aHasNonEmptySandboxingFlags);
-
-  
   static void MaybeNotifyKeywordSearchLoading(const nsString& aProvider,
                                               const nsString& aKeyword);
 
