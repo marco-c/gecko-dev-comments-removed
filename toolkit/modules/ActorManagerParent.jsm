@@ -300,6 +300,35 @@ let ACTORS = {
     allFrames: true,
   },
 
+  
+  
+  
+  
+  ViewSource: {
+    child: {
+      moduleURI: "resource://gre/actors/ViewSourceChild.jsm",
+    },
+
+    allFrames: true,
+  },
+
+  
+  ViewSourcePage: {
+    parent: {
+      moduleURI: "resource://gre/actors/ViewSourcePageParent.jsm",
+    },
+    child: {
+      moduleURI: "resource://gre/actors/ViewSourcePageChild.jsm",
+      events: {
+        pageshow: { capture: true },
+        click: {},
+      },
+    },
+
+    matches: ["view-source:*"],
+    allFrames: true,
+  },
+
   WebChannel: {
     parent: {
       moduleURI: "resource://gre/actors/WebChannelParent.jsm",
@@ -482,13 +511,6 @@ let LEGACY_ACTORS = {
         "Printing:Preview:ParseDocument",
         "Printing:Print",
       ],
-    },
-  },
-
-  SelectionSource: {
-    child: {
-      module: "resource://gre/actors/SelectionSourceChild.jsm",
-      messages: ["ViewSource:GetSelection"],
     },
   },
 

@@ -3,28 +3,183 @@
 
 
 
-var EXPORTED_SYMBOLS = ["SelectionSourceChild"];
+var EXPORTED_SYMBOLS = ["ViewSourceChild"];
 
-const { ActorChild } = ChromeUtils.import(
-  "resource://gre/modules/ActorChild.jsm"
-);
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-class SelectionSourceChild extends ActorChild {
-  receiveMessage(message) {
-    const global = message.target;
+ChromeUtils.defineModuleGetter(
+  this,
+  "ViewSourcePageChild",
+  "resource://gre/actors/ViewSourcePageChild.jsm"
+);
 
-    if (message.name == "ViewSource:GetSelection") {
-      let selectionDetails;
-      try {
-        selectionDetails = this.getSelection(global);
-      } finally {
-        global.sendAsyncMessage(
-          "ViewSource:GetSelectionDone",
-          selectionDetails
+class ViewSourceChild extends JSWindowActorChild {
+  receiveMessage(message) {
+    let data = message.data;
+    switch (message.name) {
+      case "ViewSource:LoadSource":
+        this.viewSource(
+          data.URL,
+          data.outerWindowID,
+          data.lineNumber,
+          data.shouldWrap
         );
+        break;
+      case "ViewSource:LoadSourceWithSelection":
+        this.viewSourceWithSelection(
+          data.URL,
+          data.drawSelection,
+          data.baseURI
+        );
+        break;
+      case "ViewSource:GetSelection":
+        let selectionDetails;
+        try {
+          selectionDetails = this.getSelection(this.document.ownerGlobal);
+        } catch (e) {}
+        return selectionDetails;
+    }
+
+    return undefined;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  viewSource(URL, outerWindowID, lineNumber) {
+    let pageDescriptor, forcedCharSet;
+
+    if (outerWindowID) {
+      let contentWindow = Services.wm.getOuterWindowWithId(outerWindowID);
+      if (contentWindow) {
+        let otherDocShell = contentWindow.docShell;
+
+        try {
+          pageDescriptor = otherDocShell.QueryInterface(Ci.nsIWebPageDescriptor)
+            .currentDescriptor;
+        } catch (e) {
+          
+          
+        }
+
+        let utils = contentWindow.windowUtils;
+        let doc = contentWindow.document;
+        forcedCharSet = utils.docCharsetIsForced ? doc.characterSet : null;
       }
     }
+
+    this.loadSource(URL, pageDescriptor, lineNumber, forcedCharSet);
+  }
+
+  
+
+
+
+
+
+
+
+  viewSourceWithSelection(uri, drawSelection, baseURI) {
+    
+    
+    
+    
+    ViewSourcePageChild.setNeedsDrawSelection(drawSelection);
+
+    
+    let loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
+    let webNav = this.docShell.QueryInterface(Ci.nsIWebNavigation);
+    let loadURIOptions = {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      loadFlags,
+      baseURI: Services.io.newURI(baseURI),
+    };
+    webNav.loadURI(uri, loadURIOptions);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  loadSource(URL, pageDescriptor, lineNumber, forcedCharSet) {
+    const viewSrcURL = "view-source:" + URL;
+
+    if (forcedCharSet) {
+      try {
+        this.docShell.charset = forcedCharSet;
+      } catch (e) {
+        
+      }
+    }
+
+    ViewSourcePageChild.setInitialLineNumber(lineNumber);
+
+    if (!pageDescriptor) {
+      this.loadSourceFromURL(viewSrcURL);
+      return;
+    }
+
+    try {
+      let pageLoader = this.docShell.QueryInterface(Ci.nsIWebPageDescriptor);
+      pageLoader.loadPage(
+        pageDescriptor,
+        Ci.nsIWebPageDescriptor.DISPLAY_AS_SOURCE
+      );
+    } catch (e) {
+      
+      this.loadSourceFromURL(viewSrcURL);
+      return;
+    }
+
+    let shEntrySource = pageDescriptor.QueryInterface(Ci.nsISHEntry);
+    let shistory = this.docShell.QueryInterface(Ci.nsIWebNavigation)
+      .sessionHistory.legacySHistory;
+    let shEntry = shistory.createEntry();
+    shEntry.URI = Services.io.newURI(viewSrcURL);
+    shEntry.title = viewSrcURL;
+    let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+    shEntry.triggeringPrincipal = systemPrincipal;
+    shEntry.setLoadTypeAsHistory();
+    shEntry.cacheKey = shEntrySource.cacheKey;
+    shistory.addEntry(shEntry, true);
+  }
+
+  
+
+
+
+
+
+  loadSourceFromURL(URL) {
+    let loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
+    let webNav = this.docShell.QueryInterface(Ci.nsIWebNavigation);
+    let loadURIOptions = {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      loadFlags,
+    };
+    webNav.loadURI(URL, loadURIOptions);
   }
 
   
@@ -213,7 +368,7 @@ class SelectionSourceChild extends ActorChild {
     tmpNode.appendChild(ancestorContainer);
 
     return {
-      uri:
+      URL:
         (isHTML
           ? "view-source:data:text/html;charset=utf-8,"
           : "view-source:data:application/xml;charset=utf-8,") +

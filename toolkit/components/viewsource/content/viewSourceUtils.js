@@ -16,11 +16,6 @@ var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 ChromeUtils.defineModuleGetter(
   this,
-  "ViewSourceBrowser",
-  "resource://gre/modules/ViewSourceBrowser.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
   "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );
@@ -29,6 +24,11 @@ var gViewSourceUtils = {
   mnsIWebBrowserPersist: Ci.nsIWebBrowserPersist,
   mnsIWebProgress: Ci.nsIWebProgress,
   mnsIWebPageDescriptor: Ci.nsIWebPageDescriptor,
+
+  
+  getViewSourceActor(aBrowsingContext) {
+    return aBrowsingContext.currentWindowGlobal.getActor("ViewSource");
+  },
 
   
 
@@ -106,9 +106,41 @@ var gViewSourceUtils = {
 
 
 
-  viewSourceInBrowser(aArgs) {
-    let viewSourceBrowser = new ViewSourceBrowser(aArgs.viewSourceBrowser);
-    viewSourceBrowser.loadViewSource(aArgs);
+  viewSourceInBrowser({
+    URL,
+    viewSourceBrowser,
+    browser,
+    outerWindowID,
+    lineNumber,
+  }) {
+    if (!URL) {
+      throw new Error("Must supply a URL when opening view source.");
+    }
+
+    if (browser) {
+      viewSourceBrowser.sameProcessAsFrameLoader = browser.frameLoader;
+
+      
+      
+      if (viewSourceBrowser.remoteType != browser.remoteType) {
+        
+        
+        
+        
+        throw new Error("View source browser's remoteness mismatch");
+      }
+    } else if (outerWindowID) {
+      throw new Error("Must supply the browser if passing the outerWindowID");
+    }
+
+    let viewSourceActor = this.getViewSourceActor(
+      viewSourceBrowser.browsingContext
+    );
+    viewSourceActor.sendAsyncMessage("ViewSource:LoadSource", {
+      URL,
+      outerWindowID,
+      lineNumber,
+    });
   },
 
   
@@ -121,26 +153,16 @@ var gViewSourceUtils = {
 
 
 
-  viewPartialSourceInBrowser(aViewSourceInBrowser, aGetBrowserFn) {
-    let mm = aViewSourceInBrowser.messageManager;
-    mm.addMessageListener("ViewSource:GetSelectionDone", function gotSelection(
-      message
-    ) {
-      mm.removeMessageListener("ViewSource:GetSelectionDone", gotSelection);
+  async viewPartialSourceInBrowser(aBrowsingContext, aGetBrowserFn) {
+    let sourceActor = this.getViewSourceActor(aBrowsingContext);
+    if (sourceActor) {
+      let data = await sourceActor.sendQuery("ViewSource:GetSelection", {});
 
-      if (!message.data) {
-        return;
-      }
-
-      let viewSourceBrowser = new ViewSourceBrowser(aGetBrowserFn());
-      viewSourceBrowser.loadViewSourceFromSelection(
-        message.data.uri,
-        message.data.drawSelection,
-        message.data.baseURI
+      let targetActor = this.getViewSourceActor(
+        aGetBrowserFn().browsingContext
       );
-    });
-
-    mm.sendAsyncMessage("ViewSource:GetSelection");
+      targetActor.sendAsyncMessage("ViewSource:LoadSourceWithSelection", data);
+    }
   },
 
   buildEditorArgs(aPath, aLineNumber) {

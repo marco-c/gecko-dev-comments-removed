@@ -9,11 +9,7 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "DeferredTask",
-  "resource://gre/modules/DeferredTask.jsm"
-);
+var EXPORTED_SYMBOLS = ["ViewSourcePageChild"];
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["NodeFilter"]);
 
@@ -28,280 +24,105 @@ const BUNDLE_URL = "chrome://global/locale/viewSource.properties";
 const MARK_SELECTION_START = "\uFDD0";
 const MARK_SELECTION_END = "\uFDEF";
 
-var global = this;
 
 
 
 
 
-var ViewSourceContent = {
-  
+let gNeedsDrawSelection = false;
 
 
 
 
-  messages: [
-    "ViewSource:LoadSource",
-    "ViewSource:LoadSourceWithSelection",
-    "ViewSource:GoToLine",
-  ],
-
-  
+let gInitialLineNumber = -1;
 
 
 
 
-  needsDrawSelection: false,
-
-  get isViewSource() {
-    let uri = content.document.documentURI;
-    return uri.startsWith("view-source:");
+let gContextMenuItems = [
+  {
+    id: "goToLine",
+    accesskey: true,
+    handler(actor) {
+      actor.sendAsyncMessage("ViewSource:PromptAndGoToLine");
+    },
   },
-
-  get isAboutBlank() {
-    let uri = content.document.documentURI;
-    return uri == "about:blank";
+  {
+    id: "wrapLongLines",
+    get checked() {
+      return Services.prefs.getBoolPref("view_source.wrap_long_lines");
+    },
+    handler(actor) {
+      actor.toggleWrapping();
+    },
   },
+  {
+    id: "highlightSyntax",
+    get checked() {
+      return Services.prefs.getBoolPref("view_source.syntax_highlight");
+    },
+    handler(actor) {
+      actor.toggleSyntaxHighlighting();
+    },
+  },
+];
 
-  
+class ViewSourcePageChild extends JSWindowActorChild {
+  constructor() {
+    super();
 
-
-  init() {
-    this.messages.forEach(msgName => {
-      addMessageListener(msgName, this);
+    XPCOMUtils.defineLazyGetter(this, "bundle", function() {
+      return Services.strings.createBundle(BUNDLE_URL);
     });
+  }
 
-    addEventListener("pagehide", this, true);
-    addEventListener("pageshow", this, true);
-    addEventListener("click", this);
-    addEventListener("unload", this);
-    Services.els.addSystemEventListener(global, "contextmenu", this, false);
-  },
+  static setNeedsDrawSelection(value) {
+    gNeedsDrawSelection = value;
+  }
 
-  
-
-
-
-  uninit() {
-    this.messages.forEach(msgName => {
-      removeMessageListener(msgName, this);
-    });
-
-    removeEventListener("pagehide", this, true);
-    removeEventListener("pageshow", this, true);
-    removeEventListener("click", this);
-    removeEventListener("unload", this);
-
-    Services.els.removeSystemEventListener(global, "contextmenu", this, false);
-  },
-
-  
-
-
+  static setInitialLineNumber(value) {
+    gInitialLineNumber = value;
+  }
 
   receiveMessage(msg) {
-    if (!this.isViewSource && !this.isAboutBlank) {
-      return;
+    if (msg.name == "ViewSource:GoToLine") {
+      this.goToLine(msg.data.lineNumber);
     }
-    let data = msg.data;
-    switch (msg.name) {
-      case "ViewSource:LoadSource":
-        this.viewSource(
-          data.URL,
-          data.outerWindowID,
-          data.lineNumber,
-          data.shouldWrap
-        );
-        break;
-      case "ViewSource:LoadSourceWithSelection":
-        this.viewSourceWithSelection(
-          data.URL,
-          data.drawSelection,
-          data.baseURI
-        );
-        break;
-      case "ViewSource:GoToLine":
-        this.goToLine(data.lineNumber);
-        break;
-    }
-  },
+  }
 
   
 
 
 
   handleEvent(event) {
-    if (!this.isViewSource) {
-      return;
-    }
     switch (event.type) {
-      case "pagehide":
-        this.onPageHide(event);
-        break;
       case "pageshow":
         this.onPageShow(event);
         break;
       case "click":
         this.onClick(event);
         break;
-      case "unload":
-        this.uninit();
-        break;
-      case "contextmenu":
-        this.onContextMenu(event);
-        break;
     }
-  },
-
-  
-
-
-  get bundle() {
-    delete this.bundle;
-    this.bundle = Services.strings.createBundle(BUNDLE_URL);
-    return this.bundle;
-  },
+  }
 
   
 
 
   get selectionController() {
-    return docShell
+    return this.docShell
       .QueryInterface(Ci.nsIInterfaceRequestor)
       .getInterface(Ci.nsISelectionDisplay)
       .QueryInterface(Ci.nsISelectionController);
-  },
+  }
 
   
 
 
   get webBrowserFind() {
-    return docShell
+    return this.docShell
       .QueryInterface(Ci.nsIInterfaceRequestor)
       .getInterface(Ci.nsIWebBrowserFind);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  viewSource(URL, outerWindowID, lineNumber) {
-    let pageDescriptor, forcedCharSet;
-
-    if (outerWindowID) {
-      let contentWindow = Services.wm.getOuterWindowWithId(outerWindowID);
-      let otherDocShell = contentWindow.docShell;
-
-      try {
-        pageDescriptor = otherDocShell.QueryInterface(Ci.nsIWebPageDescriptor)
-          .currentDescriptor;
-      } catch (e) {
-        
-        
-      }
-
-      let utils = contentWindow.windowUtils;
-      let doc = contentWindow.document;
-      forcedCharSet = utils.docCharsetIsForced ? doc.characterSet : null;
-    }
-
-    this.loadSource(URL, pageDescriptor, lineNumber, forcedCharSet);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  loadSource(URL, pageDescriptor, lineNumber, forcedCharSet) {
-    const viewSrcURL = "view-source:" + URL;
-
-    if (forcedCharSet) {
-      try {
-        docShell.charset = forcedCharSet;
-      } catch (e) {
-        
-      }
-    }
-
-    if (lineNumber && lineNumber > 0) {
-      let doneLoading = event => {
-        
-        if (this.isAboutBlank || !content.document.body) {
-          return;
-        }
-        this.goToLine(lineNumber);
-        removeEventListener("pageshow", doneLoading);
-      };
-
-      addEventListener("pageshow", doneLoading);
-    }
-
-    if (!pageDescriptor) {
-      this.loadSourceFromURL(viewSrcURL);
-      return;
-    }
-
-    try {
-      let pageLoader = docShell.QueryInterface(Ci.nsIWebPageDescriptor);
-      pageLoader.loadPage(
-        pageDescriptor,
-        Ci.nsIWebPageDescriptor.DISPLAY_AS_SOURCE
-      );
-    } catch (e) {
-      
-      this.loadSourceFromURL(viewSrcURL);
-      return;
-    }
-
-    let shEntrySource = pageDescriptor.QueryInterface(Ci.nsISHEntry);
-    let shistory = docShell.QueryInterface(Ci.nsIWebNavigation).sessionHistory
-      .legacySHistory;
-    let shEntry = shistory.createEntry();
-    shEntry.URI = Services.io.newURI(viewSrcURL);
-    shEntry.title = viewSrcURL;
-    let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
-    shEntry.triggeringPrincipal = systemPrincipal;
-    shEntry.setLoadTypeAsHistory();
-    shEntry.cacheKey = shEntrySource.cacheKey;
-    shistory.addEntry(shEntry, true);
-  },
-
-  
-
-
-
-
-
-  loadSourceFromURL(URL) {
-    let loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
-    let webNav = docShell.QueryInterface(Ci.nsIWebNavigation);
-    let loadURIOptions = {
-      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-      loadFlags,
-    };
-    webNav.loadURI(URL, loadURIOptions);
-  },
+  }
 
   
 
@@ -313,11 +134,11 @@ var ViewSourceContent = {
     let target = event.originalTarget;
     
     if (target.id) {
-      this.contextMenuItems.forEach(itemSpec => {
+      gContextMenuItems.forEach(itemSpec => {
         if (itemSpec.id !== target.id) {
           return;
         }
-        itemSpec.handler.call(this, event);
+        itemSpec.handler(this);
         event.stopPropagation();
       });
     }
@@ -334,10 +155,10 @@ var ViewSourceContent = {
 
       if (target == errorDoc.getElementById("goBackButton")) {
         
-        sendAsyncMessage("ViewSource:Close");
+        this.sendAsyncMessage("ViewSource:Close");
       }
     }
-  },
+  }
 
   
 
@@ -346,57 +167,27 @@ var ViewSourceContent = {
 
 
   onPageShow(event) {
-    content.focus();
+    this.contentWindow.focus();
 
     
     
     if (
-      this.needsDrawSelection &&
-      content.document.documentURI.startsWith("view-source:")
+      gNeedsDrawSelection &&
+      this.document.documentURI.startsWith("view-source:")
     ) {
-      this.needsDrawSelection = false;
+      gNeedsDrawSelection = false;
       this.drawSelection();
     }
 
-    if (content.document.body) {
+    if (gInitialLineNumber >= 0) {
+      this.goToLine(gInitialLineNumber);
+      gInitialLineNumber = -1;
+    }
+
+    if (this.document.body) {
       this.injectContextMenu();
     }
-
-    sendAsyncMessage("ViewSource:SourceLoaded");
-  },
-
-  
-
-
-
-
-
-  onPageHide(event) {
-    sendAsyncMessage("ViewSource:SourceUnloaded");
-  },
-
-  onContextMenu(event) {
-    let node = event.target;
-
-    let result = {
-      isEmail: false,
-      isLink: false,
-      href: "",
-      
-      
-      
-      screenX: event.screenX,
-      screenY: event.screenY,
-    };
-
-    if (node && node.localName == "a") {
-      result.isLink = node.href.startsWith("view-source:");
-      result.isEmail = node.href.startsWith("mailto:");
-      result.href = node.href.substring(node.href.indexOf(":") + 1);
-    }
-
-    sendSyncMessage("ViewSource:ContextMenuOpening", result);
-  },
+  }
 
   
 
@@ -409,7 +200,7 @@ var ViewSourceContent = {
 
 
   goToLine(lineNumber) {
-    let body = content.document.body;
+    let body = this.document.body;
 
     
     
@@ -439,11 +230,11 @@ var ViewSourceContent = {
     let found = this.findLocation(pre, lineNumber, null, -1, false, result);
 
     if (!found) {
-      sendAsyncMessage("ViewSource:GoToLine:Failed");
+      this.sendAsyncMessage("ViewSource:GoToLine:Failed");
       return;
     }
 
-    let selection = content.getSelection();
+    let selection = this.document.defaultView.getSelection();
     selection.removeAllRanges();
 
     
@@ -484,8 +275,8 @@ var ViewSourceContent = {
       true
     );
 
-    sendAsyncMessage("ViewSource:GoToLine:Success", { lineNumber });
-  },
+    this.sendAsyncMessage("ViewSource:GoToLine:Success", { lineNumber });
+  }
 
   
 
@@ -514,7 +305,7 @@ var ViewSourceContent = {
     let curLine = pre.id ? parseInt(pre.id.substring(4)) : 1;
 
     
-    let treewalker = content.document.createTreeWalker(
+    let treewalker = this.document.createTreeWalker(
       pre,
       NodeFilter.SHOW_TEXT,
       null
@@ -573,7 +364,7 @@ var ViewSourceContent = {
             break;
           }
         } else if (curLine == lineNumber && !("range" in result)) {
-          result.range = content.document.createRange();
+          result.range = this.document.createRange();
           result.range.setStart(textNode, curPos);
 
           
@@ -589,17 +380,17 @@ var ViewSourceContent = {
     }
 
     return found || "range" in result;
-  },
+  }
 
   
 
 
 
   toggleWrapping() {
-    let body = content.document.body;
+    let body = this.document.body;
     let state = body.classList.toggle("wrap");
-    sendAsyncMessage("ViewSource:StoreWrapping", { state });
-  },
+    this.sendAsyncMessage("ViewSource:StoreWrapping", { state });
+  }
 
   
 
@@ -607,32 +398,10 @@ var ViewSourceContent = {
 
 
   toggleSyntaxHighlighting() {
-    let body = content.document.body;
+    let body = this.document.body;
     let state = body.classList.toggle("highlight");
-    sendAsyncMessage("ViewSource:StoreSyntaxHighlighting", { state });
-  },
-
-  
-
-
-
-
-
-
-
-  viewSourceWithSelection(uri, drawSelection, baseURI) {
-    this.needsDrawSelection = drawSelection;
-
-    
-    let loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
-    let webNav = docShell.QueryInterface(Ci.nsIWebNavigation);
-    let loadURIOptions = {
-      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-      loadFlags,
-      baseURI: Services.io.newURI(baseURI),
-    };
-    webNav.loadURI(uri, loadURIOptions);
-  },
+    this.sendAsyncMessage("ViewSource:StoreSyntaxHighlighting", { state });
+  }
 
   
 
@@ -640,7 +409,7 @@ var ViewSourceContent = {
 
 
   drawSelection() {
-    content.document.title = this.bundle.GetStringFromName(
+    this.document.title = this.bundle.GetStringFromName(
       "viewSelectionSourceTitle"
     );
 
@@ -677,7 +446,7 @@ var ViewSourceContent = {
     var startLength = MARK_SELECTION_START.length;
     findInst.findNext();
 
-    var selection = content.getSelection();
+    var selection = this.document.defaultView.getSelection();
     if (!selection.rangeCount) {
       return;
     }
@@ -732,44 +501,13 @@ var ViewSourceContent = {
     findInst.wrapFind = wrapFind;
     findInst.findBackwards = findBackwards;
     findInst.searchString = searchString;
-  },
-
-  
-
-
-  contextMenuItems: [
-    {
-      id: "goToLine",
-      accesskey: true,
-      handler() {
-        sendAsyncMessage("ViewSource:PromptAndGoToLine");
-      },
-    },
-    {
-      id: "wrapLongLines",
-      get checked() {
-        return Services.prefs.getBoolPref("view_source.wrap_long_lines");
-      },
-      handler() {
-        this.toggleWrapping();
-      },
-    },
-    {
-      id: "highlightSyntax",
-      get checked() {
-        return Services.prefs.getBoolPref("view_source.syntax_highlight");
-      },
-      handler() {
-        this.toggleSyntaxHighlighting();
-      },
-    },
-  ],
+  }
 
   
 
 
   injectContextMenu() {
-    let doc = content.document;
+    let doc = this.document;
 
     let menu = doc.createElementNS(NS_XHTML, "menu");
     menu.setAttribute("type", "context");
@@ -777,7 +515,7 @@ var ViewSourceContent = {
     doc.body.appendChild(menu);
     doc.body.setAttribute("contextmenu", "actions");
 
-    this.contextMenuItems.forEach(itemSpec => {
+    gContextMenuItems.forEach(itemSpec => {
       let item = doc.createElementNS(NS_XHTML, "menuitem");
       item.setAttribute("id", itemSpec.id);
       let labelName = `context_${itemSpec.id}_label`;
@@ -797,14 +535,14 @@ var ViewSourceContent = {
     });
 
     this.updateContextMenu();
-  },
+  }
 
   
 
 
   updateContextMenu() {
-    let doc = content.document;
-    this.contextMenuItems.forEach(itemSpec => {
+    let doc = this.document;
+    gContextMenuItems.forEach(itemSpec => {
       if (!("checked" in itemSpec)) {
         return;
       }
@@ -815,6 +553,5 @@ var ViewSourceContent = {
         item.removeAttribute("checked");
       }
     });
-  },
-};
-ViewSourceContent.init();
+  }
+}
