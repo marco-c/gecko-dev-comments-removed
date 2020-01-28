@@ -244,7 +244,11 @@ class TestCase {
 
 
     testFails(t, testDesc, expectedErr) {
-        return promise_rejects(t, expectedErr, this.doIt(), "Expected bad parameters to fail");
+        if (typeof expectedErr == "string") {
+            return promise_rejects_dom(t, expectedErr, this.doIt(), "Expected  bad parameters to fail");
+        }
+
+        return promise_rejects_js(t, expectedErr, this.doIt(), "Expected bad parameters to fail");
     }
 
     
