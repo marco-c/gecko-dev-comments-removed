@@ -171,12 +171,6 @@ enum class EditAction {
   eRemoveNode,
 
   
-  eSplitNode,
-
-  
-  eJoinNodes,
-
-  
   
   eInsertBlockElement,
 
