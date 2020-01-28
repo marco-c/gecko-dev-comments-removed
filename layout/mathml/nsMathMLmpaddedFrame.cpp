@@ -397,23 +397,21 @@ nsresult nsMathMLmpaddedFrame::Place(DrawTarget* aDrawTarget, bool aPlaceOrigin,
   
   
 
-  if ((StyleVisibility()->mDirection ? mWidthSign : mLeadingSpaceSign) !=
-      NS_MATHML_SIGN_INVALID) {
+  const bool isRTL = StyleVisibility()->mDirection == StyleDirection::Rtl;
+  if ((isRTL ? mWidthSign : mLeadingSpaceSign) != NS_MATHML_SIGN_INVALID) {
     
     
     mBoundingMetrics.leftBearing = 0;
   }
 
-  if ((StyleVisibility()->mDirection ? mLeadingSpaceSign : mWidthSign) !=
-      NS_MATHML_SIGN_INVALID) {
+  if ((isRTL ? mLeadingSpaceSign : mWidthSign) != NS_MATHML_SIGN_INVALID) {
     
     
     mBoundingMetrics.width = width;
     mBoundingMetrics.rightBearing = mBoundingMetrics.width;
   }
 
-  nscoord dx =
-      (StyleVisibility()->mDirection ? width - initialWidth - lspace : lspace);
+  nscoord dx = (isRTL ? width - initialWidth - lspace : lspace);
 
   aDesiredSize.SetBlockStartAscent(height);
   aDesiredSize.Width() = mBoundingMetrics.width;

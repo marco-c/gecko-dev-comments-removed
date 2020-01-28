@@ -914,7 +914,7 @@ nsresult nsTreeBodyFrame::GetCoordsForCellItem(int32_t aRow, nsTreeColumn* aCol,
   *aWidth = 0;
   *aHeight = 0;
 
-  bool isRTL = StyleVisibility()->mDirection == NS_STYLE_DIRECTION_RTL;
+  bool isRTL = StyleVisibility()->mDirection == StyleDirection::Rtl;
   nscoord currX = mInnerBox.x - mHorzPosition;
 
   
@@ -1309,7 +1309,7 @@ nsCSSAnonBoxPseudoStaticAtom* nsTreeBodyFrame::GetItemWithinCellAt(
   nscoord remainingWidth = cellRect.width;
 
   
-  bool isRTL = StyleVisibility()->mDirection == NS_STYLE_DIRECTION_RTL;
+  bool isRTL = StyleVisibility()->mDirection == StyleDirection::Rtl;
 
   nsPresContext* presContext = PresContext();
   RefPtr<gfxContext> rc =
@@ -2949,7 +2949,7 @@ ImgDrawResult nsTreeBodyFrame::PaintCell(
   ComputedStyle* cellContext =
       GetPseudoComputedStyle(nsCSSAnonBoxes::mozTreeCell());
 
-  bool isRTL = StyleVisibility()->mDirection == NS_STYLE_DIRECTION_RTL;
+  bool isRTL = StyleVisibility()->mDirection == StyleDirection::Rtl;
 
   
   
@@ -3117,7 +3117,7 @@ ImgDrawResult nsTreeBodyFrame::PaintTwisty(
     const nsRect& aDirtyRect, nscoord& aRemainingWidth, nscoord& aCurrX) {
   MOZ_ASSERT(aColumn && aColumn->GetFrame(), "invalid column passed");
 
-  bool isRTL = StyleVisibility()->mDirection == NS_STYLE_DIRECTION_RTL;
+  bool isRTL = StyleVisibility()->mDirection == StyleDirection::Rtl;
   nscoord rightEdge = aCurrX + aRemainingWidth;
   
   bool shouldPaint = false;
@@ -3214,7 +3214,7 @@ ImgDrawResult nsTreeBodyFrame::PaintImage(
     nsDisplayListBuilder* aBuilder) {
   MOZ_ASSERT(aColumn && aColumn->GetFrame(), "invalid column passed");
 
-  bool isRTL = StyleVisibility()->mDirection == NS_STYLE_DIRECTION_RTL;
+  bool isRTL = StyleVisibility()->mDirection == StyleDirection::Rtl;
   nscoord rightEdge = aCurrX + aRemainingWidth;
   
   ComputedStyle* imageContext =
@@ -3384,7 +3384,7 @@ ImgDrawResult nsTreeBodyFrame::PaintText(
     const nsRect& aDirtyRect, nscoord& aCurrX) {
   MOZ_ASSERT(aColumn && aColumn->GetFrame(), "invalid column passed");
 
-  bool isRTL = StyleVisibility()->mDirection == NS_STYLE_DIRECTION_RTL;
+  bool isRTL = StyleVisibility()->mDirection == StyleDirection::Rtl;
 
   
   nsAutoString text;
@@ -3526,13 +3526,16 @@ ImgDrawResult nsTreeBodyFrame::PaintCheckbox(int32_t aRowIndex,
 
   nsRect imageSize = GetImageSize(aRowIndex, aColumn, true, checkboxContext);
 
-  if (imageSize.height > checkboxRect.height)
+  if (imageSize.height > checkboxRect.height) {
     imageSize.height = checkboxRect.height;
-  if (imageSize.width > checkboxRect.width)
+  }
+  if (imageSize.width > checkboxRect.width) {
     imageSize.width = checkboxRect.width;
+  }
 
-  if (StyleVisibility()->mDirection == NS_STYLE_DIRECTION_RTL)
+  if (StyleVisibility()->mDirection == StyleDirection::Rtl) {
     checkboxRect.x = rightEdge - checkboxRect.width;
+  }
 
   
   ImgDrawResult result =

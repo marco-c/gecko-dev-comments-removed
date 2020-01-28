@@ -4909,7 +4909,7 @@ nsresult EditorBase::DetermineCurrentDirection() {
 
     
     
-    if (frame->StyleVisibility()->mDirection == NS_STYLE_DIRECTION_RTL) {
+    if (frame->StyleVisibility()->mDirection == StyleDirection::Rtl) {
       mFlags |= nsIEditor::eEditorRightToLeft;
     } else {
       mFlags |= nsIEditor::eEditorLeftToRight;

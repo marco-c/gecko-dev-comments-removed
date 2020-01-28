@@ -1259,7 +1259,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleVisibility {
   nsChangeHint CalcDifference(const nsStyleVisibility& aNewData) const;
 
   mozilla::StyleImageOrientation mImageOrientation;
-  uint8_t mDirection;  
+  mozilla::StyleDirection mDirection;
   mozilla::StyleVisibility mVisible;
   uint8_t mImageRendering;  
   uint8_t mWritingMode;     

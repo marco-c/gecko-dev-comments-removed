@@ -307,8 +307,9 @@ void nsBoxFrame::GetInitialDirection(bool& aIsNormal) {
     
     
     
-    aIsNormal = (StyleVisibility()->mDirection ==
-                 NS_STYLE_DIRECTION_LTR);  
+    
+    
+    aIsNormal = StyleVisibility()->mDirection == StyleDirection::Ltr;
     if (GetContent()->IsElement()) {
       Element* element = GetContent()->AsElement();
 

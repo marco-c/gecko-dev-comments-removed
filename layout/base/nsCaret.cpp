@@ -645,8 +645,6 @@ nsresult nsCaret::GetCaretFrameForNodeOffset(
   
   
   
-  
-  
   if (theFrame->PresContext()->BidiEnabled()) {
     
     
@@ -853,7 +851,7 @@ void nsCaret::ComputeCaretRects(nsIFrame* aFrame, int32_t aFrameOffset,
 
   
   const nsStyleVisibility* vis = aFrame->StyleVisibility();
-  if (NS_STYLE_DIRECTION_RTL == vis->mDirection) {
+  if (StyleDirection::Rtl == vis->mDirection) {
     if (isVertical) {
       aCaretRect->y -= aCaretRect->height;
     } else {

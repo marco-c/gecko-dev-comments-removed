@@ -308,7 +308,7 @@ void nsMathMLmfencedFrame::Reflow(nsPresContext* aPresContext,
   GetPreferredStretchSize(drawTarget, STRETCH_CONSIDER_EMBELLISHMENTS,
                           stretchDir, containerSize);
 
-  bool isRTL = StyleVisibility()->mDirection;
+  bool isRTL = StyleVisibility()->mDirection == StyleDirection::Rtl;
 
   
   

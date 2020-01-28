@@ -713,11 +713,10 @@ class nsLayoutUtils {
 
 
 
-
   static nsRect GetScrolledRect(nsIFrame* aScrolledFrame,
                                 const nsRect& aScrolledFrameOverflowArea,
                                 const nsSize& aScrollPortSize,
-                                uint8_t aDirection);
+                                mozilla::StyleDirection);
 
   
 

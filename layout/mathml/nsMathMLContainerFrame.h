@@ -139,9 +139,9 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
   
   nscoord MirrorIfRTL(nscoord aParentWidth, nscoord aChildWidth,
                       nscoord aChildLeading) {
-    return (StyleVisibility()->mDirection
-                ? aParentWidth - aChildWidth - aChildLeading
-                : aChildLeading);
+    return StyleVisibility()->mDirection == mozilla::StyleDirection::Rtl
+               ? aParentWidth - aChildWidth - aChildLeading
+               : aChildLeading;
   }
 
   

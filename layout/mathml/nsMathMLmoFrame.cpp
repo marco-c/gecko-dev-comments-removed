@@ -719,7 +719,8 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
     
     nsresult res = mMathMLChar.Stretch(
         this, aDrawTarget, fontSizeInflation, aStretchDirection, container,
-        charSize, stretchHint, StyleVisibility()->mDirection);
+        charSize, stretchHint,
+        StyleVisibility()->mDirection == StyleDirection::Rtl);
     if (NS_FAILED(res)) {
       
       
@@ -844,7 +845,9 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
     aDesiredStretchSize.Width() = mBoundingMetrics.width;
     aDesiredStretchSize.mBoundingMetrics.width = mBoundingMetrics.width;
 
-    nscoord dx = (StyleVisibility()->mDirection ? trailingSpace : leadingSpace);
+    nscoord dx = StyleVisibility()->mDirection == StyleDirection::Rtl
+                     ? trailingSpace
+                     : leadingSpace;
     if (dx) {
       
       mBoundingMetrics.leftBearing += dx;
@@ -946,7 +949,8 @@ nsresult nsMathMLmoFrame::Place(DrawTarget* aDrawTarget, bool aPlaceOrigin,
     rv = mMathMLChar.Stretch(
         this, aDrawTarget, nsLayoutUtils::FontSizeInflationFor(this),
         NS_STRETCH_DIRECTION_VERTICAL, aDesiredSize.mBoundingMetrics,
-        newMetrics, NS_STRETCH_LARGEOP, StyleVisibility()->mDirection);
+        newMetrics, NS_STRETCH_LARGEOP,
+        StyleVisibility()->mDirection == StyleDirection::Rtl);
 
     if (NS_FAILED(rv)) {
       
@@ -1011,7 +1015,7 @@ void nsMathMLmoFrame::GetIntrinsicISizeMetrics(gfxContext* aRenderingContext,
   
   
   
-  bool isRTL = StyleVisibility()->mDirection;
+  bool isRTL = StyleVisibility()->mDirection == StyleDirection::Rtl;
   aDesiredSize.Width() +=
       mEmbellishData.leadingSpace + mEmbellishData.trailingSpace;
   aDesiredSize.mBoundingMetrics.width = aDesiredSize.Width();
