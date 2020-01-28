@@ -4,7 +4,7 @@
 
 
 #include "mozilla/dom/XPathEvaluator.h"
-#include "mozilla/Move.h"
+#include <utility>
 #include "nsCOMPtr.h"
 #include "nsAtom.h"
 #include "mozilla/dom/XPathExpression.h"

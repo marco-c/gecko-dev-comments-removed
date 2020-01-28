@@ -23,7 +23,7 @@
 #include "mozilla/gfx/Types.h"      
 #include "mozilla/layers/ShadowLayers.h"   
 #include "mozilla/layers/TextureClient.h"  
-#include "mozilla/Move.h"                  
+#include <utility>                         
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/gfx/Point.h"  
 #include "gfx2DGlue.h"

@@ -8,7 +8,7 @@
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/HashTable.h"   
-#include "mozilla/Move.h"        
+#include <utility>               
 #include "mozilla/UniquePtr.h"   
 
 #include "jsapi.h"

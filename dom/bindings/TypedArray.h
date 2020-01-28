@@ -13,7 +13,7 @@
 #include "js/GCAPI.h"       
 #include "js/RootingAPI.h"  
 #include "mozilla/Attributes.h"
-#include "mozilla/Move.h"
+#include <utility>
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/SpiderMonkeyInterface.h"
 #include "nsWrapperCache.h"

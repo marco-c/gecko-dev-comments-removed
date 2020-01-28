@@ -4,7 +4,7 @@
 
 
 #include "mozilla/ArrayUtils.h"
-#include "mozilla/Move.h"
+#include <utility>
 #include "mozilla/UniquePtr.h"
 
 #include "txStylesheetCompiler.h"

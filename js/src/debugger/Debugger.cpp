@@ -12,7 +12,7 @@
 #include "mozilla/GuardObjects.h"      
 #include "mozilla/HashTable.h"         
 #include "mozilla/Maybe.h"             
-#include "mozilla/Move.h"              
+#include <utility>                     
 #include "mozilla/RecordReplay.h"      
 #include "mozilla/ScopeExit.h"         
 #include "mozilla/ThreadLocal.h"       

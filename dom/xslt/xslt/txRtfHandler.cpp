@@ -4,7 +4,7 @@
 
 
 #include "txRtfHandler.h"
-#include "mozilla/Move.h"
+#include <utility>
 
 txResultTreeFragment::txResultTreeFragment(nsAutoPtr<txResultBuffer>&& aBuffer)
     : txAExprResult(nullptr), mBuffer(std::move(aBuffer)) {}

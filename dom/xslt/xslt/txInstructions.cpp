@@ -3,7 +3,7 @@
 
 
 
-#include "mozilla/Move.h"
+#include <utility>
 #include "txInstructions.h"
 #include "nsError.h"
 #include "txExpr.h"

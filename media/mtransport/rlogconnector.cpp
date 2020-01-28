@@ -15,7 +15,7 @@
 #include <string>
 #include "logging.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/Move.h"  
+#include <utility>  
 #include "mozilla/Mutex.h"
 #include "mozilla/Sprintf.h"
 #include <vector>

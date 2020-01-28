@@ -16,7 +16,7 @@
 #include "imgINotificationObserver.h"
 #include "mozilla/dom/TabGroup.h"  
 #include "mozilla/dom/DocGroup.h"  
-#include "mozilla/Move.h"
+#include <utility>
 #include "mozilla/Telemetry.h"  
 
 using namespace mozilla;

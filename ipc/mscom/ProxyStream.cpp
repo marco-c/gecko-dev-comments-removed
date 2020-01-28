@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/Move.h"
+#include <utility>
 #if defined(ACCESSIBILITY)
 #  include "HandlerData.h"
 #  include "mozilla/a11y/Platform.h"

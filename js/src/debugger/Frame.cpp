@@ -9,7 +9,7 @@
 #include "mozilla/Assertions.h"   
 #include "mozilla/HashTable.h"    
 #include "mozilla/Maybe.h"        
-#include "mozilla/Move.h"         
+#include <utility>                
 #include "mozilla/Range.h"        
 #include "mozilla/RangedPtr.h"    
 #include "mozilla/Result.h"       

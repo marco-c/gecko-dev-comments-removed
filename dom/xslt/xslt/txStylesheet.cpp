@@ -4,7 +4,7 @@
 
 
 #include "mozilla/FloatingPoint.h"
-#include "mozilla/Move.h"
+#include <utility>
 
 #include "txStylesheet.h"
 #include "txExpr.h"

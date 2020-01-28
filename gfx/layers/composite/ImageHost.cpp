@@ -9,7 +9,7 @@
 #include "LayersLogging.h"               
 #include "composite/CompositableHost.h"  
 #include "ipc/IPCMessageUtils.h"         
-#include "mozilla/Move.h"
+#include <utility>
 #include "mozilla/layers/Compositor.h"  
 #include "mozilla/layers/Effects.h"     
 #include "mozilla/layers/LayerManagerComposite.h"  

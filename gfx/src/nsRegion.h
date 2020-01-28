@@ -20,7 +20,7 @@
 #include "nsRegionFwd.h"            
 #include "nsString.h"               
 #include "mozilla/ArrayView.h"      
-#include "mozilla/Move.h"           
+#include <utility>                  
 #include "mozilla/gfx/MatrixFwd.h"  
 #include "mozilla/gfx/Logging.h"
 #include "nsTArray.h"

@@ -4,7 +4,7 @@
 
 
 #include "AnimationFrameBuffer.h"
-#include "mozilla/Move.h"  
+#include <utility>  
 
 namespace mozilla {
 namespace image {

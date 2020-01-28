@@ -3,7 +3,7 @@
 
 
 
-#include "mozilla/Move.h"
+#include <utility>
 #include "XPathExpression.h"
 #include "txExpr.h"
 #include "txExprResult.h"

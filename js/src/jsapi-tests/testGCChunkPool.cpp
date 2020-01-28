@@ -5,7 +5,7 @@
 
 
 
-#include "mozilla/Move.h"
+#include <utility>
 
 #include "gc/GCLock.h"
 #include "gc/GCRuntime.h"

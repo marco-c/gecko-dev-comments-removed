@@ -5,7 +5,7 @@
 
 
 #include "WebMDecoder.h"
-#include "mozilla/Move.h"
+#include <utility>
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_media.h"
 #ifdef MOZ_AV1

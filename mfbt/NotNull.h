@@ -63,7 +63,7 @@
 
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Move.h"
+#include <utility>
 #include <stddef.h>
 
 namespace mozilla {

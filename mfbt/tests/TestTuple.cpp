@@ -5,7 +5,7 @@
 
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Move.h"
+#include <utility>
 #include "mozilla/Pair.h"
 #include "mozilla/Tuple.h"
 #include "mozilla/TypeTraits.h"

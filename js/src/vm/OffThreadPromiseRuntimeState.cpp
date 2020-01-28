@@ -7,7 +7,7 @@
 #include "vm/OffThreadPromiseRuntimeState.h"
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Move.h"        
+#include <utility>               
 
 #include "jspubtd.h"  
 

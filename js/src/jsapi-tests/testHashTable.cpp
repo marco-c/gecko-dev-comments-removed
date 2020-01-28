@@ -3,7 +3,7 @@
 
 
 #include "mozilla/HashFunctions.h"
-#include "mozilla/Move.h"
+#include <utility>
 
 #include "ds/OrderedHashTable.h"
 #include "js/HashTable.h"

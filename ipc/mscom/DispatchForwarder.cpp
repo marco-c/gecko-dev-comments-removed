@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/Move.h"
+#include <utility>
 #include "mozilla/mscom/DispatchForwarder.h"
 #include "mozilla/mscom/MainThreadInvoker.h"
 

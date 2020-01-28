@@ -11,7 +11,7 @@
 #include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Monitor.h"
-#include "mozilla/Move.h"
+#include <utility>
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"  
 #include "mozilla/TypeTraits.h"

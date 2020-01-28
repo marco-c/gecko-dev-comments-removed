@@ -13,7 +13,7 @@
 #include "mozilla/HashTable.h"         
 #include "mozilla/LinkedList.h"        
 #include "mozilla/Maybe.h"             
-#include "mozilla/Move.h"              
+#include <utility>                     
 #include "mozilla/Range.h"             
 #include "mozilla/Result.h"            
 #include "mozilla/TimeStamp.h"         
