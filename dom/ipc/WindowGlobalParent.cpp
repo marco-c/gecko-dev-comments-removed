@@ -316,7 +316,8 @@ void WindowGlobalParent::NotifyContentBlockingEvent(
   MOZ_ASSERT_IF(!isCookiesBlockedTracker, aReason.isNothing());
   MOZ_ASSERT_IF(isCookiesBlockedTracker && !aBlocked, aReason.isSome());
   MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess());
-  MOZ_DIAGNOSTIC_ASSERT_IF(XRE_IsE10sParentProcess(), !IsInProcess());
+  
+  
 
   
   if (IsInProcess()) {
