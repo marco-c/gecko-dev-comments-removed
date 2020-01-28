@@ -445,6 +445,9 @@ class nsGridContainerFrame final : public nsContainerFrame {
 
   nsFrameState ComputeSelfSubgridBits() const;
 
+  
+  bool WillHaveAtLeastOneTrackInAxis(LogicalAxis aAxis) const;
+
  private:
   
   struct Fragmentainer {
