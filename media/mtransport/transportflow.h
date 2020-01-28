@@ -17,6 +17,7 @@
 #include "mozilla/UniquePtr.h"
 #include "transportlayer.h"
 #include "m_cpp_utils.h"
+#include "nsAutoPtr.h"
 
 
 
@@ -91,7 +92,7 @@ class TransportFlow final : public nsISupports {
 
   void EnsureSameThread(TransportLayer* layer);
 
-  static void DestroyFinal(UniquePtr<std::deque<TransportLayer*>> layers);
+  static void DestroyFinal(nsAutoPtr<std::deque<TransportLayer*>> layers);
 
   
   static void ClearLayers(std::deque<TransportLayer*>* layers);

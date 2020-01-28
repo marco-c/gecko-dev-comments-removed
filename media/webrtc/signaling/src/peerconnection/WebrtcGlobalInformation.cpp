@@ -19,6 +19,7 @@
 #include "mozilla/dom/WebrtcGlobalInformationBinding.h"
 #include "mozilla/dom/ContentChild.h"
 
+#include "nsAutoPtr.h"
 #include "nsNetCID.h"               
 #include "nsServiceManagerUtils.h"  
 #include "mozilla/ErrorResult.h"

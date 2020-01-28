@@ -29,14 +29,15 @@ TransportFlow::~TransportFlow() {
   
   
   MOZ_RELEASE_ASSERT(target_);
+  nsAutoPtr<std::deque<TransportLayer*>> layers_tmp(layers_.release());
   DebugOnly<nsresult> rv = target_->Dispatch(
-      WrapRunnableNM(&TransportFlow::DestroyFinal, std::move(layers_)),
+      WrapRunnableNM(&TransportFlow::DestroyFinal, layers_tmp),
       NS_DISPATCH_NORMAL);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 }
 
 void TransportFlow::DestroyFinal(
-    UniquePtr<std::deque<TransportLayer*>> layers) {
+    nsAutoPtr<std::deque<TransportLayer*>> layers) {
   ClearLayers(layers.get());
 }
 

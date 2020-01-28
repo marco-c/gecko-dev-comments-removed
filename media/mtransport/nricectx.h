@@ -61,6 +61,7 @@
 
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "nsAutoPtr.h"
 #include "nsIEventTarget.h"
 #include "nsTArray.h"
 

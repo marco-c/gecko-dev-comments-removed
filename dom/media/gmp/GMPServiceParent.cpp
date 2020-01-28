@@ -917,7 +917,7 @@ void GeckoMediaPluginServiceParent::RemoveOnGMPThread(
 }
 
 
-static void Dummy(RefPtr<GMPParent> aOnDeathsDoor) {
+static void Dummy(RefPtr<GMPParent>& aOnDeathsDoor) {
   
   
 }
