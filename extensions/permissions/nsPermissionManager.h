@@ -357,12 +357,6 @@ class nsPermissionManager final : public nsIPermissionManager,
   void WhenPermissionsAvailable(nsIPrincipal* aPrincipal,
                                 nsIRunnable* aRunnable);
 
-  
-
-
-
-  bool HasPreloadPermissions();
-
  private:
   virtual ~nsPermissionManager();
 

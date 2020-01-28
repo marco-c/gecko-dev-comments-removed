@@ -90,33 +90,10 @@ namespace {
 
 
 
-static int32_t sPreloadPermissionCount = 0;
-
-
-
-
-
 
 
 
 static const nsLiteralCString kPreloadPermissions[] = {
-    
-    
-    
-    
-    NS_LITERAL_CSTRING("other"), NS_LITERAL_CSTRING("script"),
-    NS_LITERAL_CSTRING("image"), NS_LITERAL_CSTRING("stylesheet"),
-    NS_LITERAL_CSTRING("object"), NS_LITERAL_CSTRING("document"),
-    NS_LITERAL_CSTRING("subdocument"), NS_LITERAL_CSTRING("refresh"),
-    NS_LITERAL_CSTRING("xbl"), NS_LITERAL_CSTRING("ping"),
-    NS_LITERAL_CSTRING("xmlhttprequest"),
-    NS_LITERAL_CSTRING("objectsubrequest"), NS_LITERAL_CSTRING("dtd"),
-    NS_LITERAL_CSTRING("font"), NS_LITERAL_CSTRING("media"),
-    NS_LITERAL_CSTRING("websocket"), NS_LITERAL_CSTRING("csp_report"),
-    NS_LITERAL_CSTRING("xslt"), NS_LITERAL_CSTRING("beacon"),
-    NS_LITERAL_CSTRING("fetch"), NS_LITERAL_CSTRING("image"),
-    NS_LITERAL_CSTRING("manifest"), NS_LITERAL_CSTRING("speculative"),
-
     
     
     
@@ -1866,12 +1843,6 @@ nsresult nsPermissionManager::AddInternal(
           PermissionEntry(id, typeIndex, aPermission, aExpireType, aExpireTime,
                           aModificationTime));
 
-      
-      
-      if (IsPreloadPermission(mTypeArray[typeIndex])) {
-        sPreloadPermissionCount++;
-      }
-
       if (aDBOperation == eWriteToDB &&
           IsPersistentExpire(aExpireType, aType)) {
         UpdateDB(op, mStmtInsert, id, origin, aType, aPermission, aExpireType,
@@ -1899,12 +1870,6 @@ nsresult nsPermissionManager::AddInternal(
       }
 
       entry->GetPermissions().RemoveElementAt(index);
-
-      
-      
-      if (IsPreloadPermission(mTypeArray[typeIndex])) {
-        sPreloadPermissionCount--;
-      }
 
       if (aDBOperation == eWriteToDB)
         
@@ -3338,8 +3303,4 @@ void nsPermissionManager::WhenPermissionsAvailable(nsIPrincipal* aPrincipal,
                 "nsPermissionManager permission promise rejected. We're "
                 "probably shutting down.");
           });
-}
-
-bool nsPermissionManager::HasPreloadPermissions() {
-  return sPreloadPermissionCount > 0;
 }
