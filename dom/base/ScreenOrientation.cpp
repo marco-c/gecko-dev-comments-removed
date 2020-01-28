@@ -454,8 +454,7 @@ ScreenOrientation::GetLockOrientationPermission(bool aCheckSandbox) const {
   }
 
   
-  nsIDocShell* docShell = owner->GetDocShell();
-  if (docShell && docShell->ItemType() == nsIDocShellTreeItem::typeChrome) {
+  if (owner->GetBrowsingContext()->IsChrome()) {
     return LOCK_ALLOWED;
   }
 
