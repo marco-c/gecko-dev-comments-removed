@@ -2,9 +2,9 @@
 
 
 
-import { poptions } from '../../framework/index.js';
+export const textureFormatInfo =
 
-export const textureFormatInfo = {
+{
   
   
   
@@ -168,4 +168,34 @@ export const textureFormatInfo = {
   }
 };
 export const textureFormats = Object.keys(textureFormatInfo);
-export const textureFormatParams = Array.from(poptions('format', textureFormats));
+export const bindingTypeInfo =
+
+{
+  'uniform-buffer': {
+    type: 'buffer',
+    maxDynamicCount: 8
+  },
+  'storage-buffer': {
+    type: 'buffer',
+    maxDynamicCount: 4
+  },
+  'readonly-storage-buffer': {
+    type: 'buffer',
+    maxDynamicCount: 4
+  },
+  'sampler': {
+    type: 'sampler',
+    maxDynamicCount: 0
+  },
+  'sampled-texture': {
+    type: 'texture',
+    maxDynamicCount: 0
+  },
+  'storage-texture': {
+    type: 'texture',
+    maxDynamicCount: 0
+  }
+};
+export const bindingTypes = Object.keys(bindingTypeInfo);
+export const shaderStages = [1, 2, 4];
+export const shaderStageCombinations = [0, 1, 2, 3, 4, 5, 6, 7];

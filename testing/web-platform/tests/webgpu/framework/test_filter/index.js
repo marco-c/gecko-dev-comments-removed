@@ -2,4 +2,4 @@
 
 
 
-export { loadFilter } from './load_filter.js'; 
+export { loadFilter, makeFilter } from './load_filter.js'; 

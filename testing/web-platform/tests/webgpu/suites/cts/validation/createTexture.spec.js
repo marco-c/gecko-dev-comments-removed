@@ -5,8 +5,8 @@
 export const description = `
 createTexture validation tests.
 `;
-import { TestGroup } from '../../../framework/index.js';
-import { textureFormatInfo, textureFormatParams } from '../format_info.js';
+import { TestGroup, poptions } from '../../../framework/index.js';
+import { textureFormatInfo, textureFormats } from '../format_info.js';
 import { ValidationTest } from './validation_test.js';
 
 class F extends ValidationTest {
@@ -127,6 +127,18 @@ g.test('validation of mipLevelCount', async t => {
 {
   width: 31,
   height: 32,
+  mipLevelCount: 6,
+  _success: true
+}, 
+{
+  width: 32,
+  height: 31,
+  mipLevelCount: 6,
+  _success: true
+}, 
+{
+  width: 31,
+  height: 32,
   mipLevelCount: 7,
   _success: false
 }, 
@@ -210,9 +222,7 @@ g.test('it is invalid to submit a destroyed texture before and after encode', as
   _success: false
 }]);
 g.test('it is invalid to have an output attachment texture with non renderable format', async t => {
-  const {
-    format
-  } = t.params;
+  const format = t.params.format;
   const info = textureFormatInfo[format];
   const descriptor = t.getDescriptor({
     width: 1,
@@ -222,4 +232,4 @@ g.test('it is invalid to have an output attachment texture with non renderable f
   t.expectValidationError(() => {
     t.device.createTexture(descriptor);
   }, !info.renderable);
-}).params(textureFormatParams); 
+}).params(poptions('format', textureFormats)); 

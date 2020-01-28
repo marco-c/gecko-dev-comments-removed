@@ -3,7 +3,15 @@
 
 
 import { timeout } from './timeout.js';
-export * from './stack.js'; 
+export * from './stack.js';
+export function assert(condition, msg) {
+  if (!condition) {
+    throw new Error(msg);
+  }
+}
+export function unreachable(msg) {
+  throw new Error(msg);
+} 
 
 const perf = typeof performance !== 'undefined' ? performance : require('perf_hooks').performance;
 export function now() {
