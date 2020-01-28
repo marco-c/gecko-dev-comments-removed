@@ -45,7 +45,7 @@ impl PingType {
     
     
     
-    pub fn send(&self, glean: &Glean) -> Result<bool> {
-        glean.send_ping(self)
+    pub fn submit(&self, glean: &Glean) -> Result<bool> {
+        glean.submit_ping(self)
     }
 }

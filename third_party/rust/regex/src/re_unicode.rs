@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
-use std::ops::Index;
+use std::ops::{Index, Range};
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -46,9 +46,16 @@ impl<'t> Match<'t> {
     }
 
     
+    
+    #[inline]
+    pub fn range(&self) -> Range<usize> {
+        self.start..self.end
+    }
+
+    
     #[inline]
     pub fn as_str(&self) -> &'t str {
-        &self.text[self.start..self.end]
+        &self.text[self.range()]
     }
 
     
@@ -61,6 +68,12 @@ impl<'t> Match<'t> {
 impl<'t> From<Match<'t>> for &'t str {
     fn from(m: Match<'t>) -> &'t str {
         m.as_str()
+    }
+}
+
+impl<'t> From<Match<'t>> for Range<usize> {
+    fn from(m: Match<'t>) -> Range<usize> {
+        m.range()
     }
 }
 
@@ -766,11 +779,11 @@ impl<'r, 't> Iterator for Split<'r, 't> {
         let text = self.finder.0.text();
         match self.finder.next() {
             None => {
-                if self.last >= text.len() {
+                if self.last > text.len() {
                     None
                 } else {
                     let s = &text[self.last..];
-                    self.last = text.len();
+                    self.last = text.len() + 1; 
                     Some(s)
                 }
             }
@@ -801,12 +814,19 @@ impl<'r, 't> Iterator for SplitN<'r, 't> {
         if self.n == 0 {
             return None;
         }
+
         self.n -= 1;
-        if self.n == 0 {
-            let text = self.splits.finder.0.text();
-            Some(&text[self.splits.last..])
+        if self.n > 0 {
+            return self.splits.next();
+        }
+
+        let text = self.splits.finder.0.text();
+        if self.splits.last > text.len() {
+            
+            None
         } else {
-            self.splits.next()
+            
+            Some(&text[self.splits.last..])
         }
     }
 }

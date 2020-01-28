@@ -3,8 +3,8 @@
 
 
 
-use std::ops::{Add, Sub};
-use std::fmt;
+use core::ops::{Add, Sub};
+use core::fmt;
 use oldtime::Duration as OldDuration;
 
 use Timelike;
@@ -86,11 +86,13 @@ impl FixedOffset {
     }
 
     
+    #[inline]
     pub fn local_minus_utc(&self) -> i32 {
         self.local_minus_utc
     }
 
     
+    #[inline]
     pub fn utc_minus_local(&self) -> i32 {
         -self.local_minus_utc
     }

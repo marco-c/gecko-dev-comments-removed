@@ -1,6 +1,6 @@
 use error::Result;
 use serde;
-use std::io;
+use std::{io, slice};
 
 
 
@@ -136,16 +136,32 @@ where
     R: io::Read,
 {
     fn fill_buffer(&mut self, length: usize) -> Result<()> {
+        
         let current_length = self.temp_buffer.len();
         if length > current_length {
             self.temp_buffer.reserve_exact(length - current_length);
         }
 
+        
+        
+        
+        let buf = unsafe {
+            slice::from_raw_parts_mut(self.temp_buffer.as_mut_ptr(), length)
+        };
+
+        
+        
+        
+        self.reader.read_exact(buf)?;
+
+        
+        
+        
+        
         unsafe {
             self.temp_buffer.set_len(length);
         }
 
-        self.reader.read_exact(&mut self.temp_buffer)?;
         Ok(())
     }
 }

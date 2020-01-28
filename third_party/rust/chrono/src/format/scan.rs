@@ -5,6 +5,8 @@
 
 
 
+#![allow(deprecated)]
+
 use Weekday;
 use super::{ParseResult, TOO_SHORT, INVALID, OUT_OF_RANGE};
 
@@ -28,23 +30,35 @@ fn equals(s: &str, pattern: &str) -> bool {
 
 
 
+#[inline]
 pub fn number(s: &str, min: usize, max: usize) -> ParseResult<(&str, i64)> {
     assert!(min <= max);
 
     
-    let mut window = s.as_bytes();
-    if window.len() > max { window = &window[..max]; }
-
     
-    let upto = window.iter().position(|&c| c < b'0' || b'9' < c)
-        .unwrap_or_else(|| window.len());
-    if upto < min {
-        return Err(if window.is_empty() {TOO_SHORT} else {INVALID});
+    
+    let bytes = s.as_bytes();
+    if bytes.len() < min {
+        return Err(TOO_SHORT);
     }
 
-    
-    let v: i64 = try!(s[..upto].parse().map_err(|_| OUT_OF_RANGE));
-    Ok((&s[upto..], v))
+    let mut n = 0i64;
+    for (i, c) in bytes.iter().take(max).cloned().enumerate() { 
+        if c < b'0' || b'9' < c {
+            if i < min {
+                return Err(INVALID);
+            } else {
+                return Ok((&s[i..], n));
+            }
+        }
+
+        n = match n.checked_mul(10).and_then(|n| n.checked_add((c - b'0') as i64)) {
+            Some(n) => n,
+            None => return Err(OUT_OF_RANGE),
+        };
+    }
+
+    Ok((&s[::core::cmp::min(max, bytes.len())..], n))
 }
 
 
@@ -52,13 +66,13 @@ pub fn number(s: &str, min: usize, max: usize) -> ParseResult<(&str, i64)> {
 pub fn nanosecond(s: &str) -> ParseResult<(&str, i64)> {
     
     let origlen = s.len();
-    let (s, v) = try!(number(s, 1, 9));
+    let (s, v) = number(s, 1, 9)?;
     let consumed = origlen - s.len();
 
     
     static SCALE: [i64; 10] = [0, 100_000_000, 10_000_000, 1_000_000, 100_000, 10_000,
                                1_000, 100, 10, 1];
-    let v = try!(v.checked_mul(SCALE[consumed]).ok_or(OUT_OF_RANGE));
+    let v = v.checked_mul(SCALE[consumed]).ok_or(OUT_OF_RANGE)?;
 
     
     let s = s.trim_left_matches(|c: char| '0' <= c && c <= '9');
@@ -70,12 +84,12 @@ pub fn nanosecond(s: &str) -> ParseResult<(&str, i64)> {
 
 pub fn nanosecond_fixed(s: &str, digits: usize) -> ParseResult<(&str, i64)> {
     
-    let (s, v) = try!(number(s, digits, digits));
+    let (s, v) = number(s, digits, digits)?;
 
     
     static SCALE: [i64; 10] = [0, 100_000_000, 10_000_000, 1_000_000, 100_000, 10_000,
                                1_000, 100, 10, 1];
-    let v = try!(v.checked_mul(SCALE[digits]).ok_or(OUT_OF_RANGE));
+    let v = v.checked_mul(SCALE[digits]).ok_or(OUT_OF_RANGE)?;
 
     Ok((s, v))
 }
@@ -126,7 +140,7 @@ pub fn short_or_long_month0(s: &str) -> ParseResult<(&str, u8)> {
     static LONG_MONTH_SUFFIXES: [&'static str; 12] =
         ["uary", "ruary", "ch", "il", "", "e", "y", "ust", "tember", "ober", "ember", "ember"];
 
-    let (mut s, month0) = try!(short_month0(s));
+    let (mut s, month0) = short_month0(s)?;
 
     
     let suffix = LONG_MONTH_SUFFIXES[month0 as usize];
@@ -144,7 +158,7 @@ pub fn short_or_long_weekday(s: &str) -> ParseResult<(&str, Weekday)> {
     static LONG_WEEKDAY_SUFFIXES: [&'static str; 7] =
         ["day", "sday", "nesday", "rsday", "day", "urday", "day"];
 
-    let (mut s, weekday) = try!(short_weekday(s));
+    let (mut s, weekday) = short_weekday(s)?;
 
     
     let suffix = LONG_WEEKDAY_SUFFIXES[weekday.num_days_from_monday() as usize];
@@ -211,14 +225,14 @@ fn timezone_offset_internal<F>(mut s: &str, mut consume_colon: F, allow_missing_
     s = &s[1..];
 
     
-    let hours = match try!(digits(s)) {
+    let hours = match digits(s)? {
         (h1 @ b'0'...b'9', h2 @ b'0'...b'9') => i32::from((h1 - b'0') * 10 + (h2 - b'0')),
         _ => return Err(INVALID),
     };
     s = &s[2..];
 
     
-    s = try!(consume_colon(s));
+    s = consume_colon(s)?;
 
     
     
@@ -293,7 +307,7 @@ pub fn timezone_offset_2822(s: &str) -> ParseResult<(&str, Option<i32>)> {
             Ok((s, None)) 
         }
     } else {
-        let (s_, offset) = try!(timezone_offset(s, |s| Ok(s)));
+        let (s_, offset) = timezone_offset(s, |s| Ok(s))?;
         if offset == 0 && s.starts_with('-') { 
             Ok((s_, None))
         } else {

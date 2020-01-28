@@ -95,6 +95,7 @@ enum EndianOption {
 
 
 
+#[derive(Clone)]
 pub struct Config {
     limit: LimitOption,
     endian: EndianOption,

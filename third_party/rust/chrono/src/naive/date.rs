@@ -3,8 +3,10 @@
 
 
 
-use std::{str, fmt};
-use std::ops::{Add, Sub, AddAssign, SubAssign};
+#[cfg(any(feature = "alloc", feature = "std", test))]
+use core::borrow::Borrow;
+use core::{str, fmt};
+use core::ops::{Add, Sub, AddAssign, SubAssign};
 use num_traits::ToPrimitive;
 use oldtime::Duration as OldDuration;
 
@@ -12,7 +14,9 @@ use {Weekday, Datelike};
 use div::div_mod_floor;
 use naive::{NaiveTime, NaiveDateTime, IsoWeek};
 use format::{Item, Numeric, Pad};
-use format::{parse, Parsed, ParseError, ParseResult, DelayedFormat, StrftimeItems};
+use format::{parse, Parsed, ParseError, ParseResult, StrftimeItems};
+#[cfg(any(feature = "alloc", feature = "std", test))]
+use format::DelayedFormat;
 
 use super::isoweek;
 use super::internals::{self, DateImpl, Of, Mdf, YearFlags};
@@ -451,7 +455,7 @@ impl NaiveDate {
     
     pub fn parse_from_str(s: &str, fmt: &str) -> ParseResult<NaiveDate> {
         let mut parsed = Parsed::new();
-        try!(parse(&mut parsed, s, StrftimeItems::new(fmt)));
+        parse(&mut parsed, s, StrftimeItems::new(fmt))?;
         parsed.to_naive_date()
     }
 
@@ -916,9 +920,10 @@ impl NaiveDate {
     
     
     
+    #[cfg(any(feature = "alloc", feature = "std", test))]
     #[inline]
-    pub fn format_with_items<'a, I>(&self, items: I) -> DelayedFormat<I>
-            where I: Iterator<Item=Item<'a>> + Clone {
+    pub fn format_with_items<'a, I, B>(&self, items: I) -> DelayedFormat<I>
+            where I: Iterator<Item=B> + Clone, B: Borrow<Item<'a>> {
         DelayedFormat::new(Some(*self), None, items)
     }
 
@@ -954,6 +959,7 @@ impl NaiveDate {
     
     
     
+    #[cfg(any(feature = "alloc", feature = "std", test))]
     #[inline]
     pub fn format<'a>(&self, fmt: &'a str) -> DelayedFormat<StrftimeItems<'a>> {
         self.format_with_items(StrftimeItems::new(fmt))
@@ -1503,16 +1509,16 @@ impl str::FromStr for NaiveDate {
 
     fn from_str(s: &str) -> ParseResult<NaiveDate> {
         const ITEMS: &'static [Item<'static>] = &[
-            Item::Space(""), Item::Numeric(Numeric::Year, Pad::Zero),
+                             Item::Numeric(Numeric::Year, Pad::Zero),
             Item::Space(""), Item::Literal("-"),
-            Item::Space(""), Item::Numeric(Numeric::Month, Pad::Zero),
+                             Item::Numeric(Numeric::Month, Pad::Zero),
             Item::Space(""), Item::Literal("-"),
-            Item::Space(""), Item::Numeric(Numeric::Day, Pad::Zero),
+                             Item::Numeric(Numeric::Day, Pad::Zero),
             Item::Space(""),
         ];
 
         let mut parsed = Parsed::new();
-        try!(parse(&mut parsed, s, ITEMS.iter().cloned()));
+        parse(&mut parsed, s, ITEMS.iter())?;
         parsed.to_naive_date()
     }
 }
@@ -1600,7 +1606,7 @@ mod rustc_serialize {
 
 #[cfg(feature = "serde")]
 mod serde {
-    use std::fmt;
+    use core::fmt;
     use super::NaiveDate;
     use serdelib::{ser, de};
 
@@ -1629,15 +1635,23 @@ mod serde {
     impl<'de> de::Visitor<'de> for NaiveDateVisitor {
         type Value = NaiveDate;
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result 
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result
         {
             write!(formatter, "a formatted date string")
         }
 
+        #[cfg(any(feature = "std", test))]
         fn visit_str<E>(self, value: &str) -> Result<NaiveDate, E>
             where E: de::Error
         {
-            value.parse().map_err(|err| E::custom(format!("{}", err)))
+            value.parse().map_err(E::custom)
+        }
+
+        #[cfg(not(any(feature = "std", test)))]
+        fn visit_str<E>(self, value: &str) -> Result<NaiveDate, E>
+            where E: de::Error
+        {
+            value.parse().map_err(E::custom)
         }
     }
 

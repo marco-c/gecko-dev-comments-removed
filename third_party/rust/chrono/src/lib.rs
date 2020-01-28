@@ -381,13 +381,14 @@
 
 
 
-
-
 #![doc(html_root_url = "https://docs.rs/chrono/latest/")]
 
-#![cfg_attr(bench, feature(test))] 
+#![cfg_attr(feature = "bench", feature(test))] 
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
+#![deny(dead_code)]
+
+#![cfg_attr(not(any(feature = "std", test)), no_std)]
 
 
 
@@ -405,6 +406,13 @@
     trivially_copy_pass_by_ref,
 ))]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+#[cfg(any(feature = "std", test))]
+extern crate std as core;
+#[cfg(all(feature = "std", not(feature="alloc")))]
+extern crate std as alloc;
+
 #[cfg(feature="clock")]
 extern crate time as oldtime;
 extern crate num_integer;
@@ -413,6 +421,18 @@ extern crate num_traits;
 extern crate rustc_serialize;
 #[cfg(feature = "serde")]
 extern crate serde as serdelib;
+#[cfg(test)]
+#[macro_use]
+extern crate doc_comment;
+#[cfg(all(target_arch = "wasm32", feature="wasmbind"))]
+extern crate wasm_bindgen;
+#[cfg(all(target_arch = "wasm32", feature="wasmbind"))]
+extern crate js_sys;
+#[cfg(feature = "bench")]
+extern crate test;
+
+#[cfg(test)]
+doctest!("../README.md");
 
 
 pub use oldtime::Duration;
@@ -501,6 +521,41 @@ mod round;
 #[cfg(feature = "serde")]
 pub mod serde {
     pub use super::datetime::serde::*;
+}
+
+
+
+#[cfg(feature = "serde")]
+enum SerdeError<V: fmt::Display, D: fmt::Display> {
+    NonExistent { timestamp: V },
+    Ambiguous { timestamp: V, min: D, max: D },
+}
+
+
+#[cfg(feature = "serde")]
+fn ne_timestamp<T: fmt::Display>(ts: T) -> SerdeError<T, u8> {
+    SerdeError::NonExistent::<T, u8> { timestamp: ts }
+}
+
+#[cfg(feature = "serde")]
+impl<V: fmt::Display, D: fmt::Display> fmt::Debug for SerdeError<V, D> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "ChronoSerdeError({})", self)
+    }
+}
+
+
+#[cfg(feature = "serde")]
+impl<V: fmt::Display, D: fmt::Display> fmt::Display for SerdeError<V, D> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &SerdeError::NonExistent { ref timestamp } => write!(
+                f, "value is not a legal timestamp: {}", timestamp),
+            &SerdeError::Ambiguous { ref timestamp, ref min, ref max } => write!(
+                f, "value is an ambiguous timestamp: {}, could be either of {}, {}",
+                timestamp, min, max),
+        }
+    }
 }
 
 
@@ -637,6 +692,20 @@ impl Weekday {
     }
 }
 
+impl fmt::Display for Weekday {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str(match *self {
+            Weekday::Mon => "Mon",
+            Weekday::Tue => "Tue",
+            Weekday::Wed => "Wed",
+            Weekday::Thu => "Thu",
+            Weekday::Fri => "Fri",
+            Weekday::Sat => "Sat",
+            Weekday::Sun => "Sun",
+        })
+    }
+}
+
 
 
 
@@ -670,7 +739,7 @@ impl num_traits::FromPrimitive for Weekday {
     }
 }
 
-use std::fmt;
+use core::fmt;
 
 
 #[derive(Clone, PartialEq)]
@@ -689,14 +758,14 @@ impl fmt::Debug for ParseWeekdayError {
 #[cfg(feature = "serde")]
 mod weekday_serde {
     use super::Weekday;
-    use std::fmt;
+    use core::fmt;
     use serdelib::{ser, de};
 
     impl ser::Serialize for Weekday {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
             where S: ser::Serializer
         {
-            serializer.serialize_str(&format!("{:?}", self))
+            serializer.collect_str(&self)
         }
     }
 
@@ -880,6 +949,8 @@ pub trait Datelike: Sized {
     
     fn with_ordinal0(&self, ordinal0: u32) -> Option<Self>;
 
+    
+    
     
     
     

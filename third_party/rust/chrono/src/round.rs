@@ -2,7 +2,7 @@
 
 
 use Timelike;
-use std::ops::{Add, Sub};
+use core::ops::{Add, Sub};
 use oldtime::Duration;
 
 

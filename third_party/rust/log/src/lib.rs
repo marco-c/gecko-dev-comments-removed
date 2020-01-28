@@ -264,23 +264,20 @@
 
 
 
-
-
-
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
     html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-    html_root_url = "https://docs.rs/log/0.4.6"
+    html_root_url = "https://docs.rs/log/0.4.8"
 )]
 #![warn(missing_docs)]
 #![deny(missing_debug_implementations)]
-#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(all(not(feature = "std"), not(test)), no_std)]
 
 
 #![cfg_attr(rustbuild, feature(staged_api, rustc_private))]
 #![cfg_attr(rustbuild, unstable(feature = "rustc_private", issue = "27812"))]
 
-#[cfg(not(feature = "std"))]
+#[cfg(all(not(feature = "std"), not(test)))]
 extern crate core as std;
 
 #[macro_use]
@@ -292,15 +289,26 @@ use std::error;
 use std::fmt;
 use std::mem;
 use std::str::FromStr;
-use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+
+
+
+#[allow(deprecated)]
+use std::sync::atomic::ATOMIC_USIZE_INIT;
 
 #[macro_use]
 mod macros;
 mod serde;
 
+#[cfg(feature = "kv_unstable")]
+pub mod kv;
+
 
 
 static mut LOGGER: &'static Log = &NopLogger;
+
+#[allow(deprecated)]
 static STATE: AtomicUsize = ATOMIC_USIZE_INIT;
 
 
@@ -310,6 +318,7 @@ const UNINITIALIZED: usize = 0;
 const INITIALIZING: usize = 1;
 const INITIALIZED: usize = 2;
 
+#[allow(deprecated)]
 static MAX_LOG_LEVEL_FILTER: AtomicUsize = ATOMIC_USIZE_INIT;
 
 static LOG_LEVEL_NAMES: [&'static str; 6] = ["OFF", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"];
@@ -629,7 +638,7 @@ impl FromStr for LevelFilter {
 
 impl fmt::Display for LevelFilter {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "{}", LOG_LEVEL_NAMES[*self as usize])
+        fmt.pad(LOG_LEVEL_NAMES[*self as usize])
     }
 }
 
@@ -660,6 +669,21 @@ impl LevelFilter {
     }
 }
 
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+enum MaybeStaticStr<'a> {
+    Static(&'static str),
+    Borrowed(&'a str),
+}
+
+impl<'a> MaybeStaticStr<'a> {
+    #[inline]
+    fn get(&self) -> &'a str {
+        match *self {
+            MaybeStaticStr::Static(s) => s,
+            MaybeStaticStr::Borrowed(s) => s,
+        }
+    }
+}
 
 
 
@@ -710,9 +734,28 @@ impl LevelFilter {
 pub struct Record<'a> {
     metadata: Metadata<'a>,
     args: fmt::Arguments<'a>,
-    module_path: Option<&'a str>,
-    file: Option<&'a str>,
+    module_path: Option<MaybeStaticStr<'a>>,
+    file: Option<MaybeStaticStr<'a>>,
     line: Option<u32>,
+    #[cfg(feature = "kv_unstable")]
+    key_values: KeyValues<'a>,
+}
+
+
+
+
+
+#[cfg(feature = "kv_unstable")]
+#[derive(Clone)]
+struct KeyValues<'a>(&'a kv::Source);
+
+#[cfg(feature = "kv_unstable")]
+impl<'a> fmt::Debug for KeyValues<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut visitor = f.debug_map();
+        self.0.visit(&mut visitor)?;
+        visitor.finish()
+    }
 }
 
 impl<'a> Record<'a> {
@@ -749,19 +792,63 @@ impl<'a> Record<'a> {
     
     #[inline]
     pub fn module_path(&self) -> Option<&'a str> {
-        self.module_path
+        self.module_path.map(|s| s.get())
+    }
+
+    
+    #[inline]
+    pub fn module_path_static(&self) -> Option<&'static str> {
+        match self.module_path {
+            Some(MaybeStaticStr::Static(s)) => Some(s),
+            _ => None,
+        }
     }
 
     
     #[inline]
     pub fn file(&self) -> Option<&'a str> {
-        self.file
+        self.file.map(|s| s.get())
+    }
+
+    
+    #[inline]
+    pub fn file_static(&self) -> Option<&'static str> {
+        match self.file {
+            Some(MaybeStaticStr::Static(s)) => Some(s),
+            _ => None,
+        }
     }
 
     
     #[inline]
     pub fn line(&self) -> Option<u32> {
         self.line
+    }
+
+    
+    #[cfg(feature = "kv_unstable")]
+    #[inline]
+    pub fn key_values(&self) -> &kv::Source {
+        self.key_values.0
+    }
+
+    
+    #[cfg(feature = "kv_unstable")]
+    #[inline]
+    pub fn to_builder(&self) -> RecordBuilder {
+        RecordBuilder {
+            record: Record {
+                metadata: Metadata {
+                    level: self.metadata.level,
+                    target: self.metadata.target,
+                },
+                args: self.args,
+                module_path: self.module_path,
+                file: self.file,
+                line: self.line,
+                key_values: self.key_values.clone(),
+            }
+        }
     }
 }
 
@@ -825,7 +912,20 @@ impl<'a> RecordBuilder<'a> {
     
     #[inline]
     pub fn new() -> RecordBuilder<'a> {
-        RecordBuilder {
+        #[cfg(feature = "kv_unstable")]
+        return RecordBuilder {
+            record: Record {
+                args: format_args!(""),
+                metadata: Metadata::builder().build(),
+                module_path: None,
+                file: None,
+                line: None,
+                key_values: KeyValues(&Option::None::<(kv::Key, kv::Value)>),
+            },
+        };
+
+        #[cfg(not(feature = "kv_unstable"))]
+        return RecordBuilder {
             record: Record {
                 args: format_args!(""),
                 metadata: Metadata::builder().build(),
@@ -833,7 +933,7 @@ impl<'a> RecordBuilder<'a> {
                 file: None,
                 line: None,
             },
-        }
+        };
     }
 
     
@@ -867,14 +967,28 @@ impl<'a> RecordBuilder<'a> {
     
     #[inline]
     pub fn module_path(&mut self, path: Option<&'a str>) -> &mut RecordBuilder<'a> {
-        self.record.module_path = path;
+        self.record.module_path = path.map(MaybeStaticStr::Borrowed);
+        self
+    }
+
+    
+    #[inline]
+    pub fn module_path_static(&mut self, path: Option<&'static str>) -> &mut RecordBuilder<'a> {
+        self.record.module_path = path.map(MaybeStaticStr::Static);
         self
     }
 
     
     #[inline]
     pub fn file(&mut self, file: Option<&'a str>) -> &mut RecordBuilder<'a> {
-        self.record.file = file;
+        self.record.file = file.map(MaybeStaticStr::Borrowed);
+        self
+    }
+
+    
+    #[inline]
+    pub fn file_static(&mut self, file: Option<&'static str>) -> &mut RecordBuilder<'a> {
+        self.record.file = file.map(MaybeStaticStr::Static);
         self
     }
 
@@ -886,14 +1000,19 @@ impl<'a> RecordBuilder<'a> {
     }
 
     
+    #[cfg(feature = "kv_unstable")]
+    #[inline]
+    pub fn key_values(&mut self, kvs: &'a kv::Source) -> &mut RecordBuilder<'a> {
+        self.record.key_values = KeyValues(kvs);
+        self
+    }
+
+    
     #[inline]
     pub fn build(&self) -> Record<'a> {
         self.record.clone()
     }
 }
-
-
-
 
 
 
@@ -1090,7 +1209,7 @@ pub fn max_level() -> LevelFilter {
 
 
 
-#[cfg(feature = "std")]
+#[cfg(all(feature = "std", atomic_cas))]
 pub fn set_boxed_logger(logger: Box<Log>) -> Result<(), SetLoggerError> {
     set_logger_inner(|| unsafe { &*Box::into_raw(logger) })
 }
@@ -1142,10 +1261,18 @@ pub fn set_boxed_logger(logger: Box<Log>) -> Result<(), SetLoggerError> {
 
 
 
+
+
+
+
+
+
+#[cfg(atomic_cas)]
 pub fn set_logger(logger: &'static Log) -> Result<(), SetLoggerError> {
     set_logger_inner(|| logger)
 }
 
+#[cfg(atomic_cas)]
 fn set_logger_inner<F>(make_logger: F) -> Result<(), SetLoggerError>
 where
     F: FnOnce() -> &'static Log,
@@ -1163,6 +1290,40 @@ where
             }
             _ => Err(SetLoggerError(())),
         }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub unsafe fn set_logger_racy(logger: &'static Log) -> Result<(), SetLoggerError> {
+    match STATE.load(Ordering::SeqCst) {
+        UNINITIALIZED => {
+            LOGGER = logger;
+            STATE.store(INITIALIZED, Ordering::SeqCst);
+            Ok(())
+        }
+        INITIALIZING => {
+            
+            unreachable!("set_logger_racy must not be used with other initialization functions")
+        }
+        _ => Err(SetLoggerError(())),
     }
 }
 
@@ -1227,15 +1388,15 @@ pub fn logger() -> &'static Log {
 pub fn __private_api_log(
     args: fmt::Arguments,
     level: Level,
-    &(target, module_path, file, line): &(&str, &str, &str, u32),
+    &(target, module_path, file, line): &(&str, &'static str, &'static str, u32),
 ) {
     logger().log(
         &Record::builder()
             .args(args)
             .level(level)
             .target(target)
-            .module_path(Some(module_path))
-            .file(Some(file))
+            .module_path_static(Some(module_path))
+            .file_static(Some(file))
             .line(Some(line))
             .build(),
     );
@@ -1465,5 +1626,43 @@ mod tests {
         assert_eq!(record_test.module_path(), Some("foo"));
         assert_eq!(record_test.file(), Some("bar"));
         assert_eq!(record_test.line(), Some(30));
+    }
+
+    #[test]
+    #[cfg(feature = "kv_unstable")]
+    fn test_record_key_values_builder() {
+        use super::Record;
+        use kv::{self, Visitor};
+
+        struct TestVisitor {
+            seen_pairs: usize,
+        }
+
+        impl<'kvs> Visitor<'kvs> for TestVisitor {
+            fn visit_pair(
+                &mut self,
+                _: kv::Key<'kvs>,
+                _: kv::Value<'kvs>
+            ) -> Result<(), kv::Error> {
+                self.seen_pairs += 1;
+                Ok(())
+            }
+        }
+
+        let kvs: &[(&str, i32)] = &[
+            ("a", 1),
+            ("b", 2)
+        ];
+        let record_test = Record::builder()
+            .key_values(&kvs)
+            .build();
+
+        let mut visitor = TestVisitor {
+            seen_pairs: 0,
+        };
+
+        record_test.key_values().visit(&mut visitor).unwrap();
+
+        assert_eq!(2, visitor.seen_pairs);
     }
 }

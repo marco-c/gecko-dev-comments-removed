@@ -3,7 +3,7 @@
 
 
 
-use std::fmt;
+use core::fmt;
 
 use super::internals::{DateImpl, Of, YearFlags};
 

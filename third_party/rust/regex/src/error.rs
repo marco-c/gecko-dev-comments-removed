@@ -19,6 +19,8 @@ pub enum Error {
 }
 
 impl ::std::error::Error for Error {
+    
+    #[allow(deprecated)]
     fn description(&self) -> &str {
         match *self {
             Error::Syntax(ref err) => err,

@@ -75,7 +75,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde/1.0.102")]
+#![doc(html_root_url = "https://docs.rs/serde/1.0.104")]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 

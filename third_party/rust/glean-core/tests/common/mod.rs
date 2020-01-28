@@ -45,8 +45,11 @@ pub const GLOBAL_APPLICATION_ID: &str = "org.mozilla.glean.test.app";
 
 
 
-pub fn new_glean() -> (Glean, tempfile::TempDir) {
-    let dir = tempfile::tempdir().unwrap();
+pub fn new_glean(tempdir: Option<tempfile::TempDir>) -> (Glean, tempfile::TempDir) {
+    let dir = match tempdir {
+        Some(tempdir) => tempdir,
+        None => tempfile::tempdir().unwrap(),
+    };
     let tmpname = dir.path().display().to_string();
 
     let cfg = glean_core::Configuration {

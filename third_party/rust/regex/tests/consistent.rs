@@ -231,7 +231,6 @@ macro_rules! checker {
                     TestResult::from_bool(true)
                 }
             }
-
         } // mod
     }; 
 } 

@@ -23,7 +23,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/bincode/1.2.0")]
+#![doc(html_root_url = "https://docs.rs/bincode/1.2.1")]
 #![crate_name = "bincode"]
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]

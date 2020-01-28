@@ -570,7 +570,7 @@ impl BoyerMooreSearch {
     
     
     fn new(pattern: Vec<u8>) -> Self {
-        debug_assert!(pattern.len() > 0);
+        debug_assert!(!pattern.is_empty());
 
         let (g, gi) = Self::select_guard(pattern.as_slice());
         let skip_table = Self::compile_skip_table(pattern.as_slice());

@@ -3,8 +3,6 @@ use std::fmt::{self, Display};
 use std::io;
 use std::result;
 
-use failure::{self, Backtrace, Context, Fail};
-
 use ffi_support::{handle_map::HandleError, ExternError};
 
 use rkv::error::StoreError;
@@ -24,49 +22,40 @@ pub type Result<T> = result::Result<T, Error>;
 
 
 
-
-
-#[derive(Debug, Fail)]
+#[derive(Debug)]
 pub enum ErrorKind {
     
-    #[fail(display = "Lifetime conversion from {} failed", _0)]
     Lifetime(i32),
 
     
-    #[fail(display = "Invalid handle: {}", _0)]
     Handle(HandleError),
 
     
-    #[fail(display = "An I/O error occurred: {}", _0)]
     IoError(io::Error),
 
     
-    #[fail(display = "An Rkv error occurred: {}", _0)]
     Rkv(StoreError),
 
     
-    #[fail(display = "A JSON error occurred: {}", _0)]
     Json(serde_json::error::Error),
 
     
-    #[fail(display = "TimeUnit conversion from {} failed", _0)]
     TimeUnit(i32),
 
     
-    #[fail(display = "MemoryUnit conversion from {} failed", _0)]
     MemoryUnit(i32),
 
     
-    #[fail(display = "HistogramType conversion from {} failed", _0)]
     HistogramType(i32),
 
     
-    #[fail(display = "OsString conversion from {:?} failed", _0)]
     OsString(OsString),
 
     
-    #[fail(display = "Invalid  UTF-8 byte sequence in string.")]
     Utf8Error,
+
+    #[doc(hidden)]
+    __NonExhaustive,
 }
 
 
@@ -74,60 +63,51 @@ pub enum ErrorKind {
 
 #[derive(Debug)]
 pub struct Error {
-    inner: Context<ErrorKind>,
+    kind: ErrorKind,
 }
 
 impl Error {
     
     
     
-    pub fn kind(&self) -> &ErrorKind {
-        &*self.inner.get_context()
-    }
-
-    
-    
-    
     pub fn utf8_error() -> Error {
         Error {
-            inner: Context::new(ErrorKind::Utf8Error),
+            kind: ErrorKind::Utf8Error,
         }
     }
 }
 
-impl Fail for Error {
-    fn cause(&self) -> Option<&dyn Fail> {
-        self.inner.cause()
-    }
-
-    fn backtrace(&self) -> Option<&Backtrace> {
-        self.inner.backtrace()
-    }
-}
+impl std::error::Error for Error {}
 
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Display::fmt(&self.inner, f)
+        use ErrorKind::*;
+        match &self.kind {
+            Lifetime(l) => write!(f, "Lifetime conversion from {} failed", l),
+            Handle(e) => write!(f, "Invalid handle: {}", e),
+            IoError(e) => write!(f, "An I/O error occurred: {}", e),
+            Rkv(e) => write!(f, "An Rkv error occurred: {}", e),
+            Json(e) => write!(f, "A JSON error occurred: {}", e),
+            TimeUnit(t) => write!(f, "TimeUnit conversion from {} failed", t),
+            MemoryUnit(m) => write!(f, "MemoryUnit conversion from {} failed", m),
+            HistogramType(h) => write!(f, "HistogramType conversion from {} failed", h),
+            OsString(s) => write!(f, "OsString conversion from {:?} failed", s),
+            Utf8Error => write!(f, "Invalid  UTF-8 byte sequence in string."),
+            __NonExhaustive => write!(f, "Unknown error"),
+        }
     }
 }
 
 impl From<ErrorKind> for Error {
     fn from(kind: ErrorKind) -> Error {
-        let inner = Context::new(kind);
-        Error { inner }
-    }
-}
-
-impl From<Context<ErrorKind>> for Error {
-    fn from(inner: Context<ErrorKind>) -> Error {
-        Error { inner }
+        Error { kind }
     }
 }
 
 impl From<HandleError> for Error {
     fn from(error: HandleError) -> Error {
         Error {
-            inner: Context::new(ErrorKind::Handle(error)),
+            kind: ErrorKind::Handle(error),
         }
     }
 }
@@ -135,7 +115,7 @@ impl From<HandleError> for Error {
 impl From<io::Error> for Error {
     fn from(error: io::Error) -> Error {
         Error {
-            inner: Context::new(ErrorKind::IoError(error)),
+            kind: ErrorKind::IoError(error),
         }
     }
 }
@@ -143,7 +123,7 @@ impl From<io::Error> for Error {
 impl From<StoreError> for Error {
     fn from(error: StoreError) -> Error {
         Error {
-            inner: Context::new(ErrorKind::Rkv(error)),
+            kind: ErrorKind::Rkv(error),
         }
     }
 }
@@ -157,7 +137,7 @@ impl From<Error> for ExternError {
 impl From<serde_json::error::Error> for Error {
     fn from(error: serde_json::error::Error) -> Error {
         Error {
-            inner: Context::new(ErrorKind::Json(error)),
+            kind: ErrorKind::Json(error),
         }
     }
 }
@@ -165,7 +145,7 @@ impl From<serde_json::error::Error> for Error {
 impl From<OsString> for Error {
     fn from(error: OsString) -> Error {
         Error {
-            inner: Context::new(ErrorKind::OsString(error)),
+            kind: ErrorKind::OsString(error),
         }
     }
 }

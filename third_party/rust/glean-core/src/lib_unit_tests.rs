@@ -43,9 +43,9 @@ fn experiment_id_and_branch_get_truncated_if_too_long() {
     glean.set_experiment_active(very_long_id.clone(), very_long_branch_id.clone(), None);
 
     
-    let mut expected_id = very_long_id.clone();
+    let mut expected_id = very_long_id;
     expected_id.truncate(100);
-    let mut expected_branch_id = very_long_branch_id.clone();
+    let mut expected_branch_id = very_long_branch_id;
     expected_branch_id.truncate(100);
 
     assert!(
@@ -54,7 +54,7 @@ fn experiment_id_and_branch_get_truncated_if_too_long() {
     );
 
     
-    let experiment_data = glean.test_get_experiment_data_as_json(expected_id.clone());
+    let experiment_data = glean.test_get_experiment_data_as_json(expected_id);
     assert!(
         !experiment_data.is_none(),
         "Experiment data must be available"
@@ -84,7 +84,7 @@ fn limits_on_experiments_extras_are_applied_correctly() {
     }
 
     
-    glean.set_experiment_active(experiment_id.clone(), branch_id.clone(), Some(extras));
+    glean.set_experiment_active(experiment_id.clone(), branch_id, Some(extras));
 
     
     assert!(
@@ -93,7 +93,7 @@ fn limits_on_experiments_extras_are_applied_correctly() {
     );
 
     
-    let experiment_data = glean.test_get_experiment_data_as_json(experiment_id.clone());
+    let experiment_data = glean.test_get_experiment_data_as_json(experiment_id);
     assert!(
         !experiment_data.is_none(),
         "Experiment data must be available"
@@ -135,11 +135,7 @@ fn experiments_status_is_correctly_toggled() {
         .collect();
 
     
-    glean.set_experiment_active(
-        experiment_id.clone(),
-        branch_id.clone(),
-        Some(extra.clone()),
-    );
+    glean.set_experiment_active(experiment_id.clone(), branch_id, Some(extra.clone()));
 
     
     assert!(
@@ -156,12 +152,12 @@ fn experiments_status_is_correctly_toggled() {
 
     let parsed_data: RecordedExperimentData =
         ::serde_json::from_str(&experiment_data.unwrap()).unwrap();
-    assert_eq!(parsed_data.extra.unwrap(), extra.clone());
+    assert_eq!(parsed_data.extra.unwrap(), extra);
 
     
     glean.set_experiment_inactive(experiment_id.clone());
     assert!(
-        !glean.test_is_experiment_active(experiment_id.clone()),
+        !glean.test_is_experiment_active(experiment_id),
         "The experiment must not be available any more."
     );
 }
@@ -334,27 +330,6 @@ fn disabling_when_already_disabled_is_a_noop() {
     assert!(!glean.set_upload_enabled(false));
 }
 
-#[test]
-fn glean_inits_with_migration_when_no_db_dir_exists() {
-    let dir = tempfile::tempdir().unwrap();
-    let tmpname = dir.path().display().to_string();
-
-    let cfg = Configuration {
-        data_path: tmpname,
-        application_id: GLOBAL_APPLICATION_ID.to_string(),
-        upload_enabled: false,
-        max_events: None,
-        delay_ping_lifetime_io: false,
-    };
-
-    let mut ac_seq_numbers = HashMap::new();
-    ac_seq_numbers.insert(String::from("custom_seq"), 3);
-
-    let mut glean = Glean::with_sequence_numbers(cfg, ac_seq_numbers).unwrap();
-
-    assert!(!glean.set_upload_enabled(false));
-}
-
 
 
 
@@ -416,5 +391,22 @@ fn correct_order() {
             TimingDistribution(..)            => assert_eq!(11, disc),
             MemoryDistribution(..)            => assert_eq!(12, disc),
         }
+    }
+}
+
+#[test]
+fn test_first_run() {
+    let dir = tempfile::tempdir().unwrap();
+    let tmpname = dir.path().display().to_string();
+    {
+        let glean = Glean::with_options(&tmpname, GLOBAL_APPLICATION_ID, true).unwrap();
+        
+        assert!(glean.is_first_run());
+    }
+
+    {
+        
+        let glean = Glean::with_options(&tmpname, GLOBAL_APPLICATION_ID, true).unwrap();
+        assert!(!glean.is_first_run());
     }
 }

@@ -23,6 +23,9 @@ use crate::Glean;
 use crate::Lifetime;
 
 
+
+
+
 #[derive(Debug)]
 pub enum ErrorType {
     
@@ -31,6 +34,8 @@ pub enum ErrorType {
     InvalidLabel,
     
     InvalidState,
+    
+    InvalidOverflow,
 }
 
 impl ErrorType {
@@ -40,6 +45,7 @@ impl ErrorType {
             ErrorType::InvalidValue => "invalid_value",
             ErrorType::InvalidLabel => "invalid_label",
             ErrorType::InvalidState => "invalid_state",
+            ErrorType::InvalidOverflow => "invalid_overflow",
         }
     }
 }
@@ -52,6 +58,7 @@ impl TryFrom<i32> for ErrorType {
             0 => Ok(ErrorType::InvalidValue),
             1 => Ok(ErrorType::InvalidLabel),
             2 => Ok(ErrorType::InvalidState),
+            4 => Ok(ErrorType::InvalidOverflow),
             e => Err(ErrorKind::Lifetime(e).into()),
         }
     }
