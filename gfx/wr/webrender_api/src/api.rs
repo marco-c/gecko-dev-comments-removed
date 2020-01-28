@@ -968,8 +968,6 @@ pub enum DebugCommand {
     
     ClearCaches(ClearCache),
     
-    EnableNativeCompositor(bool),
-    
     InvalidateGpuCache,
     
     

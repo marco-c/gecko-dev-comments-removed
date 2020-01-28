@@ -32,14 +32,14 @@ class RendererScreenshotGrabber final {
 
 
 
-  void MaybeGrabScreenshot(RendererOGL* aRendererOGL,
+  void MaybeGrabScreenshot(Renderer* aRenderer,
                            const gfx::IntSize& aWindowSize);
 
   
 
 
 
-  void MaybeProcessQueue(RendererOGL* aRenderer);
+  void MaybeProcessQueue(Renderer* aRenderer);
 
  private:
   
