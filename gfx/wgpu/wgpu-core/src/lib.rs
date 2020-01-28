@@ -55,6 +55,7 @@ pub enum Backend {
 }
 
 pub type BufferAddress = u64;
+pub type DynamicOffset = u32;
 pub type RawString = *const c_char;
 
 

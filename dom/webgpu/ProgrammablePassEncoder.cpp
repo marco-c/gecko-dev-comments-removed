@@ -4,6 +4,7 @@
 
 
 #include "ProgrammablePassEncoder.h"
+#include "BindGroup.h"
 
 namespace mozilla {
 namespace webgpu {

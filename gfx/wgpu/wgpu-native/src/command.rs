@@ -82,6 +82,11 @@ pub extern "C" fn wgpu_command_encoder_copy_texture_to_texture(
 }
 
 
+
+
+
+
+
 #[no_mangle]
 pub unsafe extern "C" fn wgpu_render_pass_end_pass(pass_id: id::RenderPassId) {
     let (pass_data, encoder_id, targets) = Box::from_raw(pass_id).finish_render();
@@ -112,6 +117,11 @@ pub unsafe extern "C" fn wgpu_render_pass_end_pass(pass_id: id::RenderPassId) {
     };
     gfx_select!(encoder_id => GLOBAL.command_encoder_run_render_pass(encoder_id, &color_attachments, depth_stencil_attachment, &pass_data))
 }
+
+
+
+
+
 
 #[no_mangle]
 pub unsafe extern "C" fn wgpu_command_encoder_begin_compute_pass(
