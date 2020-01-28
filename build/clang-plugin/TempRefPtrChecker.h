@@ -1,0 +1,21 @@
+
+
+
+
+#ifndef TempRefPtrChecker_h__
+#define TempRefPtrChecker_h__
+
+#include "plugin.h"
+
+class TempRefPtrChecker final : public BaseCheck {
+public:
+  TempRefPtrChecker(StringRef CheckName, ContextType *Context = nullptr)
+      : BaseCheck(CheckName, Context) {}
+  void registerMatchers(MatchFinder *AstMatcher) override;
+  void check(const MatchFinder::MatchResult &Result) override;
+
+private:
+  CompilerInstance *CI;
+};
+
+#endif

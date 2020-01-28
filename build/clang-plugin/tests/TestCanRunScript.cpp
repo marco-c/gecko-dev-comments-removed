@@ -375,7 +375,7 @@ struct DisallowConstNonRefPtrMemberArgs {
 };
 
 MOZ_CAN_RUN_SCRIPT void test_temporary_1() {
-  RefPtr<RefCountedBase>(new RefCountedBase())->method_test();
+  RefPtr<RefCountedBase>(new RefCountedBase())->method_test(); 
 }
 
 MOZ_CAN_RUN_SCRIPT void test_temporary_2() {
