@@ -377,6 +377,8 @@ CustomizeMode.prototype = {
 
       this._wrapToolbarItemSync(CustomizableUI.AREA_TABSTRIP);
 
+      this.document.documentElement.setAttribute("customizing", true);
+
       let customizableToolbars = document.querySelectorAll(
         "toolbar[customizable=true]:not([autohide=true]):not([collapsed=true])"
       );
@@ -385,8 +387,6 @@ CustomizeMode.prototype = {
       }
 
       this._updateOverflowPanelArrowOffset();
-
-      await this._doTransition(true);
 
       
       CustomizableUI.dispatchToolboxEvent("customizationstarting", {}, window);
@@ -489,7 +489,12 @@ CustomizeMode.prototype = {
     (async () => {
       await this.depopulatePalette();
 
-      await this._doTransition(false);
+      
+      
+      
+      
+      this._customizing = false;
+      this.document.documentElement.removeAttribute("customizing");
 
       if (this.browser.selectedTab == gTab) {
         if (gTab.linkedBrowser.currentURI.spec == "about:blank") {
@@ -498,6 +503,7 @@ CustomizeMode.prototype = {
           unregisterGlobalTab();
         }
       }
+
       let customizer = document.getElementById("customization-container");
       let browser = document.getElementById("browser");
       customizer.hidden = true;
@@ -525,11 +531,6 @@ CustomizeMode.prototype = {
       let panelContextMenu = document.getElementById(kPanelItemContextMenu);
       this._previousPanelContextMenuParent.appendChild(panelContextMenu);
 
-      
-      
-      
-      this._customizing = false;
-
       let customizableToolbars = document.querySelectorAll(
         "toolbar[customizable=true]:not([autohide=true])"
       );
@@ -553,40 +554,6 @@ CustomizeMode.prototype = {
       log.error("Error exiting customize mode", e);
       this._handler.isExitingCustomizeMode = false;
     });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _doTransition(aEntering) {
-    let docEl = this.document.documentElement;
-    if (aEntering) {
-      docEl.setAttribute("customizing", true);
-      docEl.setAttribute("customize-entered", true);
-    } else {
-      docEl.removeAttribute("customizing");
-      docEl.removeAttribute("customize-entered");
-    }
-    return Promise.resolve();
   },
 
   
