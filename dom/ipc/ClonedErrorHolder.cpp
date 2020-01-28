@@ -279,6 +279,15 @@ bool ClonedErrorHolder::ToErrorValue(JSContext* aCx,
   if (mType == Type::JSError) {
     JS::Rooted<JSString*> filename(aCx);
     JS::Rooted<JSString*> message(aCx);
+
+    
+    
+    
+    
+    if (mFilename.IsVoid()) {
+      mFilename.Assign(EmptyCString());
+    }
+
     if (!ToJSString(aCx, mFilename, &filename) ||
         !ToJSString(aCx, mMessage, &message)) {
       return false;
