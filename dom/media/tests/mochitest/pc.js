@@ -878,7 +878,6 @@ function PeerConnectionWrapper(label, configuration) {
     label = label + "_" + configuration.label_suffix;
   }
   this.label = label;
-  this.whenCreated = Date.now();
 
   this.constraints = [];
   this.offerOptions = {};
@@ -2079,9 +2078,6 @@ PeerConnectionWrapper.prototype = {
 
 
   checkStats(stats, twoMachines) {
-    
-    const isWin7 = navigator.userAgent.includes("Windows NT 6.1");
-    const clockDriftAllowanceMs = isWin7 ? 1000 : 250;
     const isRemote = ({ type }) =>
       ["remote-outbound-rtp", "remote-inbound-rtp"].includes(type);
     var counters = {};
@@ -2089,10 +2085,8 @@ PeerConnectionWrapper.prototype = {
       info("Checking stats for " + key + " : " + res);
       
       ok(res.id == key, "Coherent stats id");
-      
-      
-      const nowish = Date.now() + clockDriftAllowanceMs;
-      const minimum = this.whenCreated - clockDriftAllowanceMs;
+      const now = performance.timeOrigin + performance.now();
+      const minimum = performance.timeOrigin;
       const type = isRemote(res) ? "rtcp" : "rtp";
       if (!twoMachines) {
         ok(
@@ -2101,9 +2095,9 @@ PeerConnectionWrapper.prototype = {
               ${res.timestamp - minimum} ms)`
         );
         ok(
-          res.timestamp <= nowish,
-          `Valid ${type} timestamp ${res.timestamp} <= ${nowish} (
-              ${res.timestamp - nowish} ms)`
+          res.timestamp <= now,
+          `Valid ${type} timestamp ${res.timestamp} <= ${now} (
+              ${res.timestamp - now} ms)`
         );
       }
       if (isRemote(res)) {
