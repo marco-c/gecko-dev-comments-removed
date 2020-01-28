@@ -2093,7 +2093,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG {
   mozilla::StyleSVGPaintOrder mPaintOrder;
   mozilla::StyleShapeRendering mShapeRendering;
   mozilla::StyleStrokeLinecap mStrokeLinecap;
-  uint8_t mStrokeLinejoin;    
+  mozilla::StyleStrokeLinejoin mStrokeLinejoin;
   uint8_t mDominantBaseline;  
   mozilla::StyleTextAnchor mTextAnchor;
 
