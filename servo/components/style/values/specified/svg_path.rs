@@ -42,7 +42,6 @@ impl SVGPathData {
     
     #[inline]
     pub fn commands(&self) -> &[PathCommand] {
-        debug_assert!(!self.0.is_empty());
         &self.0
     }
 
@@ -92,10 +91,6 @@ impl Parse for SVGPathData {
     ) -> Result<Self, ParseError<'i>> {
         let location = input.current_source_location();
         let path_string = input.expect_string()?.as_ref();
-        if path_string.is_empty() {
-            
-            return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
-        }
 
         
         let mut path_parser = PathParser::new(path_string);
