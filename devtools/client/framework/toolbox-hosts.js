@@ -419,14 +419,8 @@ function focusTab(tab) {
 
 
 function createDevToolsFrame(doc, className) {
-  let frame;
-  if (Services.prefs.getBoolPref("devtools.toolbox.content-frame", false)) {
-    frame = doc.createXULElement("browser");
-    frame.setAttribute("type", "content");
-  } else {
-    frame = doc.createXULElement("iframe");
-  }
-
+  const frame = doc.createXULElement("browser");
+  frame.setAttribute("type", "content");
   frame.flex = 1; 
   frame.className = className;
   frame.tooltip = "aHTMLTooltip";
