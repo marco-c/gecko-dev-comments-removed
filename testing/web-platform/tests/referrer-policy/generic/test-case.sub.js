@@ -22,110 +22,77 @@ function invokeScenario(scenario) {
   return invokeRequest(subresource, scenario.source_context_list);
 }
 
+const referrerUrlResolver = {
+  "omitted": function(sourceUrl) {
+    return undefined;
+  },
+  "origin": function(sourceUrl) {
+    return new URL(sourceUrl).origin + "/";
+  },
+  "stripped-referrer": function(sourceUrl) {
+    return stripUrlForUseAsReferrer(sourceUrl);
+  }
+};
+
+function checkResult(scenario, expectation, result) {
+
+  let referrerSource = result.sourceContextUrl;
+  const sentFromSrcdoc = scenario.source_context_list.length > 0 &&
+      scenario.source_context_list[scenario.source_context_list.length - 1]
+      .sourceContextType === 'srcdoc';
+  if (sentFromSrcdoc) {
+    
+    
+    
+
+    
+    
+    
+    
+    
+    referrerSource = location.toString();
+  }
+  const expectedReferrerUrl =
+    referrerUrlResolver[expectation](referrerSource);
+
+  
+  assert_equals(result.referrer,
+                expectedReferrerUrl,
+                "Reported Referrer URL is '" +
+                expectation + "'.");
+  assert_equals(result.headers.referer,
+                expectedReferrerUrl,
+                "Reported Referrer URL from HTTP header is '" +
+                expectedReferrerUrl + "'");
+}
+
+function runLengthTest(scenario, urlLength, expectation, testDescription) {
+  
+  
+  
+  history.pushState(null, null, "/");
+  history.replaceState(null, null,
+      "A".repeat(urlLength - location.href.length));
+
+  promise_test(t => {
+    assert_equals(scenario.expectation, "stripped-referrer");
+    
+    assert_equals(scenario.source_context_list.length, 0);
+
+    return invokeScenario(scenario)
+      .then(result => checkResult(scenario, expectation, result));
+  }, testDescription);
+}
+
 function TestCase(scenario, testDescription, sanityChecker) {
   
   sanityChecker.checkScenario(scenario);
 
-  const referrerUrlResolver = {
-    "omitted": function(sourceUrl) {
-      return undefined;
-    },
-    "origin": function(sourceUrl) {
-      return new URL(sourceUrl).origin + "/";
-    },
-    "stripped-referrer": function(sourceUrl) {
-      return stripUrlForUseAsReferrer(sourceUrl);
-    }
-  };
-
-  const checkResult = (expectation, result) => {
-    
-    let referrerSource = result.sourceContextUrl;
-    const sentFromSrcdoc = scenario.source_context_list.length > 0 &&
-        scenario.source_context_list[scenario.source_context_list.length - 1]
-        .sourceContextType === 'srcdoc';
-    if (sentFromSrcdoc) {
-      
-      
-      
-
-      
-      
-      
-      
-      
-      referrerSource = location.toString();
-    }
-    const expectedReferrerUrl =
-      referrerUrlResolver[expectation](referrerSource);
-
-    
-    assert_equals(result.referrer,
-                  expectedReferrerUrl,
-                  "Reported Referrer URL is '" +
-                  expectation + "'.");
-    assert_equals(result.headers.referer,
-                  expectedReferrerUrl,
-                  "Reported Referrer URL from HTTP header is '" +
-                  expectedReferrerUrl + "'");
-  };
-
   function runTest() {
-    function historyBackPromise(t, scenario) {
-      history.back();
-      return new Promise(resolve => {
-          
-          
-          
-          window.addEventListener('popstate', resolve, {once: true});
-
-          
-          
-          
-          if (scenario.subresource === 'a-tag') {
-            t.step_timeout(resolve, 1000);
-          }
-        });
-    }
-
     promise_test(_ => {
       return invokeScenario(scenario)
-        .then(result => checkResult(scenario.expectation, result));
+        .then(result => checkResult(scenario, scenario.expectation, result));
     }, testDescription);
-
-    
-    
-    
-    
-    
-    
-    
-    if (scenario.expectation == "stripped-referrer" &&
-        scenario.source_context_list.length == 0) {
-      promise_test(t => {
-        history.pushState(null, null, "/");
-        history.replaceState(null, null, "A".repeat(4096 - location.href.length - 1));
-        return invokeScenario(scenario)
-          .then(result => checkResult(scenario.expectation, result))
-          .finally(_ => historyBackPromise(t, scenario));
-      }, "`Referer` header with length < 4k is not stripped to an origin.");
-
-      promise_test(t => {
-        history.pushState(null, null, "/");
-        history.replaceState(null, null, "A".repeat(4096 - location.href.length));
-        return invokeScenario(scenario)
-          .then(result => checkResult(scenario.expectation, result))
-          .finally(_ => historyBackPromise(t, scenario));
-      }, "`Referer` header with length == 4k is not stripped to an origin.");
-
-      promise_test(t => {
-        history.pushState(null, null, "/");
-        history.replaceState(null, null, "A".repeat(4096 - location.href.length + 1));
-        return invokeScenario(scenario)
-          .then(result => checkResult("origin", result))
-          .finally(_ => historyBackPromise(t, scenario));
-      }, "`Referer` header with length > 4k is stripped to an origin.");
-    }
   }
 
   return {start: runTest};
