@@ -16,8 +16,7 @@
 #include "mozilla/layers/TextureForwarder.h"
 #include "mozilla/X11Util.h"
 
-namespace mozilla {
-namespace gl {
+namespace mozilla::gl {
 
 
 UniquePtr<SharedSurface_GLXDrawable> SharedSurface_GLXDrawable::Create(
@@ -119,5 +118,4 @@ UniquePtr<SharedSurface> SurfaceFactory_GLXDrawable::CreateShared(
                                            mAllocator->IsSameProcess());
 }
 
-}  
 }  

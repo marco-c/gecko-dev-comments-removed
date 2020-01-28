@@ -154,8 +154,7 @@ static bool IsTypeInList(const nsCString& aMimeType, nsCString aTypeList) {
   return FindInReadable(commaSeparated, start, end);
 }
 
-namespace mozilla {
-namespace plugins {
+namespace mozilla::plugins {
 class BlocklistPromiseHandler final
     : public mozilla::dom::PromiseNativeHandler {
  public:
@@ -260,7 +259,6 @@ NS_IMPL_ISUPPORTS0(BlocklistPromiseHandler)
 bool BlocklistPromiseHandler::sPluginBlocklistStatesChangedSinceLastWrite =
     false;
 uint32_t BlocklistPromiseHandler::sPendingBlocklistStateRequests = 0;
-}  
 }  
 
 nsPluginHost::nsPluginHost()

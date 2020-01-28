@@ -26,8 +26,7 @@
 #include "vm/JSAtom.h"               
 #include "vm/JSScript.h"             
 
-namespace js {
-namespace frontend {
+namespace js::frontend {
 
 #ifdef BINAST_CX_MAGIC_HEADER  
                                
@@ -3268,7 +3267,5 @@ mozilla::detail::IntegerRange<size_t> HuffmanLookup::suffixes(
   const size_t last = first + (size_t(-1) >> (8 * sizeof(size_t) - padding));
   return mozilla::IntegerRange<size_t>(first, last + 1);
 }
-
-}  
 
 }  

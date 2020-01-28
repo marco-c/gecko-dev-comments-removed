@@ -35,8 +35,7 @@
 
 #define EINTR_RETRY(x) MOZ_TEMP_FAILURE_RETRY(x)
 
-namespace mozilla {
-namespace net {
+namespace mozilla::net {
 
 
 
@@ -1799,5 +1798,4 @@ void NetlinkService::GetIsLinkUp(bool* aIsUp) {
   *aIsUp = mLinkUp;
 }
 
-}  
 }  
