@@ -26,10 +26,6 @@
 #endif 
 #endif
 
-typedef void AESBlockFunc(AESContext *cx,
-                          unsigned char *output,
-                          const unsigned char *input);
-
 
 
 
