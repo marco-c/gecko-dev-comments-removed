@@ -196,6 +196,7 @@ class StackMaps {
   }
   bool empty() const { return mapping_.empty(); }
   size_t length() const { return mapping_.length(); }
+  Maplet* getRef(size_t i) { return &mapping_[i]; }
   Maplet get(size_t i) const { return mapping_[i]; }
   Maplet move(size_t i) {
     Maplet m = mapping_[i];
@@ -293,6 +294,38 @@ template <class T>
 static inline size_t StackArgAreaSizeAligned(const T& argTypes) {
   return AlignStackArgAreaSize(StackArgAreaSizeUnaligned(argTypes));
 }
+
+
+
+
+typedef Vector<bool, 128, SystemAllocPolicy> StackMapBoolVector;
+
+wasm::StackMap* ConvertStackMapBoolVectorToStackMap(
+    const StackMapBoolVector& vec, bool hasRefs);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+MOZ_MUST_USE bool CreateStackMapForFunctionEntryTrap(
+    const ArgTypeVector& argTypes, const MachineState& trapExitLayout,
+    size_t trapExitLayoutWords, size_t nBytesReservedBeforeTrap,
+    size_t nInboundStackArgBytes, wasm::StackMap** result);
 
 
 
