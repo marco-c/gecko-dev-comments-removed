@@ -94,7 +94,6 @@ InternalRequest::InternalRequest(const nsACString& aURL,
       mResponseTainting(LoadTainting::Basic),
       mCacheMode(RequestCache::Default),
       mRedirectMode(RequestRedirect::Follow),
-      mAuthenticationFlag(false),
       mPreserveContentCodings(false)
       
       
@@ -128,7 +127,6 @@ InternalRequest::InternalRequest(
       mCacheMode(aCacheMode),
       mRedirectMode(aRequestRedirect),
       mIntegrity(aIntegrity),
-      mAuthenticationFlag(false),
       mPreserveContentCodings(false)
       
       ,
@@ -156,7 +154,6 @@ InternalRequest::InternalRequest(const InternalRequest& aOther)
       mIntegrity(aOther.mIntegrity),
       mMozErrors(aOther.mMozErrors),
       mFragment(aOther.mFragment),
-      mAuthenticationFlag(aOther.mAuthenticationFlag),
       mPreserveContentCodings(aOther.mPreserveContentCodings),
       mSameOriginDataURL(aOther.mSameOriginDataURL),
       mSkipServiceWorker(aOther.mSkipServiceWorker),
