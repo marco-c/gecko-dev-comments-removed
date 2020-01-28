@@ -3890,12 +3890,30 @@ void GetProfilerEnvVarsForChildProcess(
   std::string filtersString;
   const Vector<std::string>& filters = ActivePS::Filters(lock);
   for (uint32_t i = 0; i < filters.length(); ++i) {
-    if (i != 0) {
+    filtersString += filters[i];
+    if (i != filters.length() - 1) {
       filtersString += ",";
     }
-    filtersString += filters[i];
   }
   aSetEnv("MOZ_PROFILER_STARTUP_FILTERS", filtersString.c_str());
+
+#ifdef MOZ_BASE_PROFILER
+  
+  auto copyEnv = [&](const char* aName) {
+    const char* env = getenv(aName);
+    if (!env) {
+      return;
+    }
+    aSetEnv(aName, env);
+  };
+  copyEnv("MOZ_BASE_PROFILER_STARTUP");
+  copyEnv("MOZ_BASE_PROFILER_STARTUP_ENTRIES");
+  copyEnv("MOZ_BASE_PROFILER_STARTUP_DURATION");
+  copyEnv("MOZ_BASE_PROFILER_STARTUP_INTERVAL");
+  copyEnv("MOZ_BASE_PROFILER_STARTUP_FEATURES_BITFIELD");
+  copyEnv("MOZ_BASE_PROFILER_STARTUP_FEATURES");
+  copyEnv("MOZ_BASE_PROFILER_STARTUP_FILTERS");
+#endif
 }
 
 }  
