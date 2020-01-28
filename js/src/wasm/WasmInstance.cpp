@@ -1006,13 +1006,6 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
   return FuncRef::fromJSFunction(fun).forCompiledCode();
 }
 
- void Instance::preBarrierFiltering(Instance* instance,
-                                                gc::Cell** location) {
-  MOZ_ASSERT(SASigPreBarrierFiltering.failureMode == FailureMode::Infallible);
-  MOZ_ASSERT(location);
-  JSObject::writeBarrierPre(*reinterpret_cast<JSObject**>(location));
-}
-
  void Instance::postBarrier(Instance* instance,
                                         gc::Cell** location) {
   MOZ_ASSERT(SASigPostBarrier.failureMode == FailureMode::Infallible);
