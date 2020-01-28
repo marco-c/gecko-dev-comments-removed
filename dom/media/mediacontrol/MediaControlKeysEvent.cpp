@@ -58,10 +58,16 @@ void MediaControlKeysHandler::OnKeyPressed(MediaControlKeysEvent aKeyEvent) {
       return;
     }
     case MediaControlKeysEvent::ePrevTrack:
+      controller->PrevTrack();
+      return;
     case MediaControlKeysEvent::eNextTrack:
+      controller->NextTrack();
+      return;
     case MediaControlKeysEvent::eSeekBackward:
+      controller->SeekBackward();
+      return;
     case MediaControlKeysEvent::eSeekForward:
-      
+      controller->SeekForward();
       return;
     case MediaControlKeysEvent::eStop:
       controller->Stop();
