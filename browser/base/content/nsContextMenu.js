@@ -909,86 +909,73 @@ class nsContextMenu {
   }
 
   initPasswordManagerItems() {
-    let showFill = false;
-    let showGenerate = false;
-    try {
-      let loginFillInfo = this.contentData && this.contentData.loginFillInfo;
-      let documentURI = this.contentData.documentURIObject;
+    let loginFillInfo = this.contentData && this.contentData.loginFillInfo;
+    let documentURI = this.contentData.documentURIObject;
 
-      
-      
-      if (
-        !loginFillInfo ||
-        !loginFillInfo.passwordField.found ||
-        documentURI.schemeIs("about")
-      ) {
-        
-        return;
-      }
-      showFill = true;
+    
+    
+    let showFill =
+      loginFillInfo &&
+      loginFillInfo.passwordField.found &&
+      !documentURI.schemeIs("about");
 
-      
-      
-      
-      let disableFill =
-        !loginFillInfo ||
-        !Services.logins ||
-        !Services.logins.isLoggedIn ||
-        loginFillInfo.passwordField.disabled ||
-        (!this.onPassword && loginFillInfo.usernameField.disabled);
+    
+    
+    
+    let disableFill =
+      !loginFillInfo ||
+      !Services.logins ||
+      !Services.logins.isLoggedIn ||
+      loginFillInfo.passwordField.disabled ||
+      (!this.onPassword && loginFillInfo.usernameField.disabled);
 
-      this.setItemAttr("fill-login", "disabled", disableFill);
+    this.showItem("fill-login-separator", showFill);
+    this.showItem("fill-login", showFill);
+    this.setItemAttr("fill-login", "disabled", disableFill);
 
-      
-      let fillMenu = document.getElementById("fill-login");
-      if (this.onPassword) {
-        fillMenu.setAttribute("label", fillMenu.getAttribute("label-password"));
-        fillMenu.setAttribute(
-          "accesskey",
-          fillMenu.getAttribute("accesskey-password")
-        );
-      } else {
-        fillMenu.setAttribute("label", fillMenu.getAttribute("label-login"));
-        fillMenu.setAttribute(
-          "accesskey",
-          fillMenu.getAttribute("accesskey-login")
-        );
-      }
-
-      let formOrigin = LoginHelper.getLoginOrigin(documentURI.spec);
-      let isGeneratedPasswordEnabled =
-        LoginHelper.generationAvailable && LoginHelper.generationEnabled;
-      showGenerate =
-        this.onPassword &&
-        isGeneratedPasswordEnabled &&
-        Services.logins.getLoginSavingEnabled(formOrigin);
-
-      if (disableFill) {
-        
-        return;
-      }
-
-      
-      let fragment = nsContextMenu.LoginManagerContextMenu.addLoginsToMenu(
-        this.targetIdentifier,
-        this.browser,
-        formOrigin
+    
+    let fillMenu = document.getElementById("fill-login");
+    if (this.onPassword) {
+      fillMenu.setAttribute("label", fillMenu.getAttribute("label-password"));
+      fillMenu.setAttribute(
+        "accesskey",
+        fillMenu.getAttribute("accesskey-password")
       );
-
-      this.showItem("fill-login-no-logins", !fragment);
-
-      if (!fragment) {
-        return;
-      }
-      let popup = document.getElementById("fill-login-popup");
-      let insertBeforeElement = document.getElementById("fill-login-no-logins");
-      popup.insertBefore(fragment, insertBeforeElement);
-    } finally {
-      this.showItem("fill-login-separator", showFill);
-      this.showItem("fill-login", showFill);
-      this.showItem("fill-login-generated-password", showGenerate);
-      this.showItem("generated-password-separator", showGenerate);
+    } else {
+      fillMenu.setAttribute("label", fillMenu.getAttribute("label-login"));
+      fillMenu.setAttribute(
+        "accesskey",
+        fillMenu.getAttribute("accesskey-login")
+      );
     }
+
+    if (!showFill || disableFill) {
+      return;
+    }
+
+    let formOrigin = LoginHelper.getLoginOrigin(documentURI.spec);
+    let fragment = nsContextMenu.LoginManagerContextMenu.addLoginsToMenu(
+      this.targetIdentifier,
+      this.browser,
+      formOrigin
+    );
+    let isGeneratedPasswordEnabled =
+      LoginHelper.generationAvailable && LoginHelper.generationEnabled;
+    let canFillGeneratedPassword =
+      this.onPassword &&
+      isGeneratedPasswordEnabled &&
+      Services.logins.getLoginSavingEnabled(formOrigin);
+
+    this.showItem("fill-login-no-logins", !fragment);
+    this.showItem("fill-login-generated-password", canFillGeneratedPassword);
+    this.showItem("generated-password-separator", canFillGeneratedPassword);
+
+    if (!fragment) {
+      return;
+    }
+    let popup = document.getElementById("fill-login-popup");
+    let insertBeforeElement = document.getElementById("fill-login-no-logins");
+    popup.insertBefore(fragment, insertBeforeElement);
   }
 
   initSyncItems() {
