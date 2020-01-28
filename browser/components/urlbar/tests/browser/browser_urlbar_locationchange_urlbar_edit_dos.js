@@ -18,7 +18,13 @@ async function checkURLBarValueStays(browser) {
         );
         gBrowser.selectedBrowser.removeProgressListener(filter);
         filter = null;
-        resolve();
+        
+        
+        
+        
+        
+        
+        executeSoon(resolve);
       },
     };
     let filter = Cc[
@@ -46,15 +52,16 @@ add_task(async function() {
       url: TEST_URL,
     },
     async function(browser) {
-      await SpecialPowers.spawn(browser, [""], function() {
+      let promise1 = checkURLBarValueStays(browser);
+      SpecialPowers.spawn(browser, [""], function() {
         content.wrappedJSObject.dos_hash();
       });
-      await checkURLBarValueStays(browser);
-      await SpecialPowers.spawn(browser, [""], function() {
-        content.clearTimeout(content.wrappedJSObject.dos_timeout);
+      await promise1;
+      let promise2 = checkURLBarValueStays(browser);
+      SpecialPowers.spawn(browser, [""], function() {
         content.wrappedJSObject.dos_pushState();
       });
-      await checkURLBarValueStays(browser);
+      await promise2;
     }
   );
 });
