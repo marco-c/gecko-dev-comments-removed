@@ -85,11 +85,7 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
 
 
 
-
-
-
-
-  async _doResume(resumeLimit, rewind) {
+  async _doResume(resumeLimit) {
     this._assertPaused("resume");
 
     
@@ -97,7 +93,7 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
     this._previousState = this._state;
     this._state = "resuming";
     try {
-      await super.resume(resumeLimit, rewind);
+      await super.resume(resumeLimit);
     } catch (e) {
       if (this._state == "resuming") {
         
@@ -118,7 +114,7 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
 
 
   resume() {
-    return this._doResume(null, false);
+    return this._doResume(null);
   }
 
   
@@ -126,47 +122,28 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
 
 
   resumeThenPause() {
-    return this._doResume({ type: "break" }, false);
-  }
-
-  
-
-
-  async rewind() {
-    if (!this.paused) {
-      this.interrupt();
-      await this.once("paused");
-    }
-
-    this._doResume(null, true);
+    return this._doResume({ type: "break" });
   }
 
   
 
 
   stepOver() {
-    return this._doResume({ type: "next" }, false);
+    return this._doResume({ type: "next" });
   }
 
   
 
 
   stepIn() {
-    return this._doResume({ type: "step" }, false);
+    return this._doResume({ type: "step" });
   }
 
   
 
 
   stepOut() {
-    return this._doResume({ type: "finish" }, false);
-  }
-
-  
-
-
-  reverseStepOver() {
-    return this._doResume({ type: "next" }, true);
+    return this._doResume({ type: "finish" });
   }
 
   

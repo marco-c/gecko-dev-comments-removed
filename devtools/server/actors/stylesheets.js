@@ -39,16 +39,6 @@ loader.lazyRequireGetter(
   "devtools/shared/layout/utils",
   true
 );
-loader.lazyRequireGetter(
-  this,
-  "ReplayDebugger",
-  "devtools/server/actors/replay/debugger"
-);
-loader.lazyRequireGetter(
-  this,
-  "ReplayInspector",
-  "devtools/server/actors/replay/inspector"
-);
 
 var TRANSITION_PSEUDO_CLASS = ":-moz-styleeditor-transitioning";
 var TRANSITION_DURATION_MS = 500;
@@ -209,13 +199,6 @@ async function fetchStylesheet(sheet, consoleActor) {
     }
   }
 
-  
-  
-  if (isReplaying) {
-    const dbg = new ReplayDebugger();
-    return dbg.replayingContent(href);
-  }
-
   const options = {
     loadFromCache: true,
     policy: Ci.nsIContentPolicy.TYPE_INTERNAL_STYLESHEET,
@@ -267,7 +250,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
   get window() {
-    return isReplaying ? ReplayInspector.window : this.parentActor.window;
+    return this.parentActor.window;
   },
 
   
@@ -726,9 +709,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
   async getStyleSheets() {
     let actors = [];
 
-    const windows = isReplaying
-      ? [ReplayInspector.window]
-      : this.parentActor.windows;
+    const windows = this.parentActor.windows;
     for (const win of windows) {
       const sheets = await this._addStyleSheets(win);
       actors = actors.concat(sheets);

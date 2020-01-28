@@ -21,7 +21,6 @@ const {
 } = require("devtools/shared/inspector/css-logic");
 const InspectorUtils = require("InspectorUtils");
 const Debugger = require("Debugger");
-const ReplayInspector = require("devtools/server/actors/replay/inspector");
 
 
 
@@ -305,11 +304,6 @@ var TestActor = (exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
   },
 
   get content() {
-    
-    
-    if (Debugger.recordReplayProcessKind() == "Middleman") {
-      return ReplayInspector.window;
-    }
     return this.targetActor.window;
   },
 
