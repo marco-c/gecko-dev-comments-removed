@@ -41,8 +41,11 @@ class MediaControlService final : public nsIObserver {
     return mMediaControlKeysManager;
   }
 
-  void RegisterActiveMediaController(MediaController* aController);
-  void UnregisterActiveMediaController(MediaController* aController);
+  
+  
+  
+  bool RegisterActiveMediaController(MediaController* aController);
+  bool UnregisterActiveMediaController(MediaController* aController);
   uint64_t GetActiveControllersNum() const;
 
   
@@ -83,8 +86,8 @@ class MediaControlService final : public nsIObserver {
     explicit ControllerManager(MediaControlService* aService);
     ~ControllerManager() = default;
 
-    void AddController(MediaController* aController);
-    void RemoveController(MediaController* aController);
+    bool AddController(MediaController* aController);
+    bool RemoveController(MediaController* aController);
 
     void Shutdown();
 
