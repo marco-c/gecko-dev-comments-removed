@@ -142,31 +142,37 @@
     
     
     
-    sendMessageToActor(messageName, args, actorName, all) {
+    
+    
+    
+    
+    sendMessageToActor(messageName, args, actorName, scope) {
       if (!this.frameLoader) {
         return;
       }
 
-      let windowGlobal = this.browsingContext.currentWindowGlobal;
-      if (!windowGlobal) {
-        return;
-      }
-
-      function sendToChildren(browsingContext, checkRoot) {
+      function sendToChildren(browsingContext, childScope) {
         let windowGlobal = browsingContext.currentWindowGlobal;
-        if (windowGlobal && (!checkRoot || windowGlobal.isProcessRoot)) {
+        
+        if (
+          windowGlobal &&
+          (childScope != "roots" || windowGlobal.isProcessRoot)
+        ) {
           windowGlobal.getActor(actorName).sendAsyncMessage(messageName, args);
         }
 
-        if (all) {
+        
+        
+        if (scope) {
           let contexts = browsingContext.getChildren();
           for (let context of contexts) {
-            sendToChildren(context, true);
+            sendToChildren(context, scope);
           }
         }
       }
 
-      sendToChildren(this.browsingContext, false);
+      
+      sendToChildren(this.browsingContext);
     }
 
     get outerWindowID() {

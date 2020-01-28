@@ -789,7 +789,7 @@
 
         if (changed) {
           this._fullZoom = val;
-          this.sendMessageToActor("FullZoom", { value: val }, "Zoom", true);
+          this.sendMessageToActor("FullZoom", { value: val }, "Zoom", "roots");
 
           let event = new Event("FullZoomChange", { bubbles: true });
           this.dispatchEvent(event);
@@ -818,7 +818,7 @@
 
         if (changed) {
           this._textZoom = val;
-          this.sendMessageToActor("TextZoom", { value: val }, "Zoom", true);
+          this.sendMessageToActor("TextZoom", { value: val }, "Zoom", "roots");
 
           let event = new Event("TextZoomChange", { bubbles: true });
           this.dispatchEvent(event);
@@ -1179,7 +1179,7 @@
         "AudioPlayback",
         { type: suspendedReason },
         "AudioPlayback",
-        true
+        "roots"
       );
     }
 
@@ -1188,7 +1188,7 @@
         "AudioPlayback",
         { type: "mediaControlStopped" },
         "AudioPlayback",
-        true
+        "roots"
       );
     }
 
@@ -1546,7 +1546,7 @@
           "Browser:PurgeSessionHistory",
           {},
           "PurgeSessionHistory",
-          true
+          "roots"
         );
       } catch (ex) {
         
@@ -2090,45 +2090,45 @@
     
     
     
-    sendMessageToActor(messageName, args, actorName, all) {
+    
+    
+    
+    
+    sendMessageToActor(messageName, args, actorName, scope) {
       if (!this.frameLoader) {
         return;
       }
 
-      let windowGlobal = this.browsingContext.currentWindowGlobal;
-      if (!windowGlobal) {
-        
-        if (messageName == "Browser:AppTab") {
-          setTimeout(() => {
-            this.sendMessageToActor(messageName, args, actorName);
-          }, 0);
-        }
-        return;
-      }
-
-      function sendToChildren(browsingContext, checkRoot) {
+      function sendToChildren(browsingContext, childScope) {
         let windowGlobal = browsingContext.currentWindowGlobal;
-        if (windowGlobal && (!checkRoot || windowGlobal.isProcessRoot)) {
+        
+        if (
+          windowGlobal &&
+          (childScope != "roots" || windowGlobal.isProcessRoot)
+        ) {
           windowGlobal.getActor(actorName).sendAsyncMessage(messageName, args);
         }
 
-        if (all) {
+        
+        
+        if (scope) {
           let contexts = browsingContext.getChildren();
           for (let context of contexts) {
-            sendToChildren(context, true);
+            sendToChildren(context, scope);
           }
         }
       }
 
-      sendToChildren(this.browsingContext, false);
+      
+      sendToChildren(this.browsingContext);
     }
 
     enterModalState() {
-      this.sendMessageToActor("EnterModalState", {}, "BrowserElement", true);
+      this.sendMessageToActor("EnterModalState", {}, "BrowserElement", "roots");
     }
 
     leaveModalState() {
-      this.sendMessageToActor("LeaveModalState", {}, "BrowserElement", true);
+      this.sendMessageToActor("LeaveModalState", {}, "BrowserElement", "roots");
     }
 
     getDevicePermissionOrigins(key) {
