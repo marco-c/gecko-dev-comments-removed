@@ -272,7 +272,8 @@ function preventSideEffects(dbg) {
     },
   };
 
-  dbg.addAllGlobalsAsDebuggees();
+  
+  
 
   dbg.onEnterFrame = frame => {
     const script = frame.script;
