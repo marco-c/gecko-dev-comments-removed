@@ -32,13 +32,15 @@ class AudioFocusManagmentPrefSetterRAII {
 
 TEST(AudioFocusManager, TestRequestAudioFocus)
 {
-  AudioFocusManager manager(nullptr);
+  AudioFocusManager manager;
   ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
 
-  manager.RequestAudioFocus(FIRST_CONTROLLER_ID);
+  RefPtr<MediaController> controller = new MediaController(FIRST_CONTROLLER_ID);
+
+  manager.RequestAudioFocus(controller);
   ASSERT_TRUE(manager.GetAudioFocusNums() == 1);
 
-  manager.RevokeAudioFocus(FIRST_CONTROLLER_ID);
+  manager.RevokeAudioFocus(controller);
   ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
 }
 
@@ -50,29 +52,25 @@ TEST(AudioFocusManager, TestAudioFocusNumsWhenEnableAudioFocusManagement)
   
   AudioFocusManagmentPrefSetterRAII prefSetter(true);
 
-  RefPtr<MediaControlService> service = MediaControlService::GetService();
-  AudioFocusManager& manager = service->GetAudioFocusManager();
+  AudioFocusManager manager;
   ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
 
   RefPtr<MediaController> controller1 =
       new MediaController(FIRST_CONTROLLER_ID);
-  service->RegisterActiveMediaController(controller1);
-  manager.RequestAudioFocus(FIRST_CONTROLLER_ID);
-  ASSERT_TRUE(manager.GetAudioFocusNums() == 1);
 
-  
-  
   RefPtr<MediaController> controller2 =
       new MediaController(SECOND_CONTROLLER_ID);
-  service->RegisterActiveMediaController(controller2);
-  manager.RequestAudioFocus(SECOND_CONTROLLER_ID);
+
+  manager.RequestAudioFocus(controller1);
   ASSERT_TRUE(manager.GetAudioFocusNums() == 1);
 
-  manager.RevokeAudioFocus(SECOND_CONTROLLER_ID);
-  ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
+  
+  
+  manager.RequestAudioFocus(controller2);
+  ASSERT_TRUE(manager.GetAudioFocusNums() == 1);
 
-  service->UnregisterActiveMediaController(controller1);
-  service->UnregisterActiveMediaController(controller2);
+  manager.RevokeAudioFocus(controller2);
+  ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
 }
 
 TEST(AudioFocusManager, TestAudioFocusNumsWhenDisableAudioFocusManagement)
@@ -81,67 +79,85 @@ TEST(AudioFocusManager, TestAudioFocusNumsWhenDisableAudioFocusManagement)
   
   AudioFocusManagmentPrefSetterRAII prefSetter(false);
 
-  AudioFocusManager manager(nullptr);
+  AudioFocusManager manager;
   ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
 
-  manager.RequestAudioFocus(FIRST_CONTROLLER_ID);
+  RefPtr<MediaController> controller1 =
+      new MediaController(FIRST_CONTROLLER_ID);
+
+  RefPtr<MediaController> controller2 =
+      new MediaController(SECOND_CONTROLLER_ID);
+
+  manager.RequestAudioFocus(controller1);
   ASSERT_TRUE(manager.GetAudioFocusNums() == 1);
 
-  manager.RequestAudioFocus(SECOND_CONTROLLER_ID);
+  manager.RequestAudioFocus(controller2);
   ASSERT_TRUE(manager.GetAudioFocusNums() == 2);
 
-  manager.RevokeAudioFocus(FIRST_CONTROLLER_ID);
+  manager.RevokeAudioFocus(controller1);
   ASSERT_TRUE(manager.GetAudioFocusNums() == 1);
 
-  manager.RevokeAudioFocus(SECOND_CONTROLLER_ID);
+  manager.RevokeAudioFocus(controller2);
   ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
 }
 
 TEST(AudioFocusManager, TestRequestAudioFocusRepeatedly)
 {
-  AudioFocusManager manager(nullptr);
+  AudioFocusManager manager;
   ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
 
-  manager.RequestAudioFocus(FIRST_CONTROLLER_ID);
+  RefPtr<MediaController> controller = new MediaController(FIRST_CONTROLLER_ID);
+
+  manager.RequestAudioFocus(controller);
   ASSERT_TRUE(manager.GetAudioFocusNums() == 1);
 
-  manager.RequestAudioFocus(FIRST_CONTROLLER_ID);
+  manager.RequestAudioFocus(controller);
   ASSERT_TRUE(manager.GetAudioFocusNums() == 1);
 }
 
 TEST(AudioFocusManager, TestRevokeAudioFocusRepeatedly)
 {
-  AudioFocusManager manager(nullptr);
+  AudioFocusManager manager;
   ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
 
-  manager.RequestAudioFocus(FIRST_CONTROLLER_ID);
+  RefPtr<MediaController> controller = new MediaController(FIRST_CONTROLLER_ID);
+
+  manager.RequestAudioFocus(controller);
   ASSERT_TRUE(manager.GetAudioFocusNums() == 1);
 
-  manager.RevokeAudioFocus(FIRST_CONTROLLER_ID);
+  manager.RevokeAudioFocus(controller);
   ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
 
-  manager.RevokeAudioFocus(FIRST_CONTROLLER_ID);
+  manager.RevokeAudioFocus(controller);
   ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
 }
 
 TEST(AudioFocusManager, TestRevokeAudioFocusWithoutRequestAudioFocus)
 {
-  AudioFocusManager manager(nullptr);
+  AudioFocusManager manager;
   ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
 
-  manager.RevokeAudioFocus(FIRST_CONTROLLER_ID);
+  RefPtr<MediaController> controller = new MediaController(FIRST_CONTROLLER_ID);
+
+  manager.RevokeAudioFocus(controller);
   ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
 }
 
 TEST(AudioFocusManager,
      TestRevokeAudioFocusForControllerWithoutOwningAudioFocus)
 {
-  AudioFocusManager manager(nullptr);
+  AudioFocusManager manager;
   ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
 
-  manager.RequestAudioFocus(FIRST_CONTROLLER_ID);
+  RefPtr<MediaController> controller1 =
+      new MediaController(FIRST_CONTROLLER_ID);
+
+  RefPtr<MediaController> controller2 =
+      new MediaController(SECOND_CONTROLLER_ID);
+
+  manager.RequestAudioFocus(controller1);
   ASSERT_TRUE(manager.GetAudioFocusNums() == 1);
 
-  manager.RevokeAudioFocus(SECOND_CONTROLLER_ID);
+  manager.RevokeAudioFocus(controller2);
   ASSERT_TRUE(manager.GetAudioFocusNums() == 1);
 }
