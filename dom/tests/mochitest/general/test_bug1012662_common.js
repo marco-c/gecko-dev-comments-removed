@@ -38,6 +38,9 @@ function selectInputNode(aSelector, aCb) {
   synthesizeMouse(dn, 10, 10, {});
   SimpleTest.executeSoon(function() {
     synthesizeKey("A", { accelKey: true });
+    
+    
+    SpecialPowers.wrap(document).clearUserGestureActivation();
     SimpleTest.executeSoon(aCb);
   });
 }
@@ -127,6 +130,9 @@ function cutCopyAll(
     function nextStep() {
       step(n + 1);
     }
+
+    
+    SpecialPowers.wrap(document).clearUserGestureActivation();
 
     document.querySelector("span").textContent = "span text";
     document.querySelector("input[type=text]").value = "text text";
