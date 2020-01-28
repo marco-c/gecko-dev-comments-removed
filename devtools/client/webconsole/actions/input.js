@@ -222,9 +222,10 @@ function terminalInputChanged(expression) {
     const { terminalInput = "" } = getState().history;
     
     if (
-      terminalInput &&
-      expression &&
-      expression.trim() === terminalInput.trim()
+      (!terminalInput && !expression) ||
+      (typeof terminalInput === "string" &&
+        typeof expression === "string" &&
+        expression.trim() === terminalInput.trim())
     ) {
       return;
     }
@@ -234,6 +235,11 @@ function terminalInputChanged(expression) {
       type: SET_TERMINAL_INPUT,
       expression: expression.trim(),
     });
+
+    
+    if (!expression.trim()) {
+      return;
+    }
 
     let mapped;
     ({ expression, mapped } = await getMappedExpression(hud, expression));
