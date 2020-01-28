@@ -838,10 +838,15 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
     mMargin.Side(aSide, mCBWM) = aLength;
   }
 
-  void ResolveStretchedCrossSize(nscoord aLineCrossSize,
-                                 const FlexboxAxisTracker& aAxisTracker);
+  void ResolveStretchedCrossSize(nscoord aLineCrossSize);
 
-  uint32_t GetNumAutoMarginsInAxis(AxisOrientationType aAxis) const;
+  uint32_t GetNumAutoMarginsInMainAxis() const {
+    return GetNumAutoMarginsInAxis(MainAxis());
+  };
+
+  uint32_t GetNumAutoMarginsInCrossAxis() const {
+    return GetNumAutoMarginsInAxis(CrossAxis());
+  };
 
   
   
@@ -856,6 +861,8 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
   
   void CheckForMinSizeAuto(const ReflowInput& aFlexItemReflowInput,
                            const FlexboxAxisTracker& aAxisTracker);
+
+  uint32_t GetNumAutoMarginsInAxis(LogicalAxis aAxis) const;
 
   
   
@@ -1642,7 +1649,7 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
         containerCrossSize != NS_UNCONSTRAINEDSIZE) {
       
       
-      aFlexItem.ResolveStretchedCrossSize(containerCrossSize, aAxisTracker);
+      aFlexItem.ResolveStretchedCrossSize(containerCrossSize);
     }
   }
 
@@ -2141,12 +2148,12 @@ bool FlexItem::IsCrossSizeAuto() const {
                                  : stylePos->BSize(mWM).IsAuto();
 }
 
-uint32_t FlexItem::GetNumAutoMarginsInAxis(AxisOrientationType aAxis) const {
+uint32_t FlexItem::GetNumAutoMarginsInAxis(LogicalAxis aAxis) const {
   uint32_t numAutoMargins = 0;
   const auto& styleMargin = mFrame->StyleMargin()->mMargin;
-  for (uint32_t i = 0; i < eNumAxisEdges; i++) {
-    mozilla::Side side = kAxisOrientationToSidesMap[aAxis][i];
-    if (styleMargin.Get(side).IsAuto()) {
+  for (const auto edge : {eLogicalEdgeStart, eLogicalEdgeEnd}) {
+    const auto side = MakeLogicalSide(aAxis, edge);
+    if (styleMargin.Get(mCBWM, side).IsAuto()) {
       numAutoMargins++;
     }
   }
@@ -2997,7 +3004,7 @@ MainAxisPositionTracker::MainAxisPositionTracker(
   for (const FlexItem* item = aLine->GetFirstItem(); item;
        item = item->getNext()) {
     mPackingSpaceRemaining -= item->GetOuterMainSize();
-    mNumAutoMarginsInMainAxis += item->GetNumAutoMarginsInAxis(mPhysicalAxis);
+    mNumAutoMarginsInMainAxis += item->GetNumAutoMarginsInMainAxis();
   }
 
   
@@ -3358,8 +3365,7 @@ void FlexLine::ComputeCrossSizeAndBaseline(
 
     if ((item->GetAlignSelf() == NS_STYLE_ALIGN_BASELINE ||
          item->GetAlignSelf() == NS_STYLE_ALIGN_LAST_BASELINE) &&
-        item->GetNumAutoMarginsInAxis(aAxisTracker.GetPhysicalCrossAxis()) ==
-            0) {
+        item->GetNumAutoMarginsInCrossAxis() == 0) {
       const bool useFirst = (item->GetAlignSelf() == NS_STYLE_ALIGN_BASELINE);
       
       
@@ -3441,14 +3447,12 @@ void FlexLine::ComputeCrossSizeAndBaseline(
       largestOuterCrossSize);
 }
 
-void FlexItem::ResolveStretchedCrossSize(
-    nscoord aLineCrossSize, const FlexboxAxisTracker& aAxisTracker) {
-  AxisOrientationType crossAxis = aAxisTracker.GetPhysicalCrossAxis();
+void FlexItem::ResolveStretchedCrossSize(nscoord aLineCrossSize) {
   
   
   
   if (mAlignSelf != NS_STYLE_ALIGN_STRETCH ||
-      GetNumAutoMarginsInAxis(crossAxis) != 0 || !IsCrossSizeAuto()) {
+      GetNumAutoMarginsInCrossAxis() != 0 || !IsCrossSizeAuto()) {
     return;
   }
 
@@ -3498,7 +3502,7 @@ void SingleLineCrossAxisPositionTracker::ResolveAutoMarginsInCrossAxis(
     return;  
   }
 
-  uint32_t numAutoMargins = aItem.GetNumAutoMarginsInAxis(mPhysicalAxis);
+  uint32_t numAutoMargins = aItem.GetNumAutoMarginsInCrossAxis();
   if (numAutoMargins == 0) {
     return;  
   }
@@ -3527,7 +3531,7 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
     const FlexboxAxisTracker& aAxisTracker) {
   
   
-  if (aItem.GetNumAutoMarginsInAxis(mPhysicalAxis)) {
+  if (aItem.GetNumAutoMarginsInCrossAxis()) {
     return;
   }
 
@@ -4292,7 +4296,7 @@ void FlexLine::PositionItemsInCrossAxis(
   for (FlexItem* item = mItems.getFirst(); item; item = item->getNext()) {
     
     
-    item->ResolveStretchedCrossSize(mLineCrossSize, aAxisTracker);
+    item->ResolveStretchedCrossSize(mLineCrossSize);
     lineCrossAxisPosnTracker.ResolveAutoMarginsInCrossAxis(*this, *item);
 
     
