@@ -282,17 +282,6 @@ static void AccumulateLayerTransforms(Layer* aLayer, Layer* aAncestor,
   }
 }
 
-static gfxFloat IntervalOverlap(gfxFloat aTranslation, gfxFloat aMin,
-                                gfxFloat aMax) {
-  
-  
-  if (aTranslation > 0) {
-    return std::max(0.0, std::min(aMax, aTranslation) - std::max(aMin, 0.0));
-  } else {
-    return std::min(0.0, std::max(aMin, aTranslation) - std::min(aMax, 0.0));
-  }
-}
-
 
 
 
@@ -460,11 +449,22 @@ void AsyncCompositionManager::AdjustFixedOrStickyLayer(
   
   LayerPoint anchor = layer->GetFixedPositionAnchor();
 
+  SideBits sideBits = layer->GetFixedPositionSides();
+  if (layer->GetIsStickyPosition()) {
+    
+    
+    
+    sideBits &= SideBits::eBottom;
+  }
+
   
   
-  ScreenPoint offset = ComputeFixedMarginsOffset(aFixedLayerMargins,
-                                                 layer->GetFixedPositionSides(),
-                                                 aGeckoFixedLayerMargins);
+  ScreenPoint offset = ComputeFixedMarginsOffset(
+      aFixedLayerMargins, sideBits,
+      
+      
+      
+      layer->GetIsStickyPosition() ? ScreenMargin() : aGeckoFixedLayerMargins);
 
   
   
@@ -504,12 +504,14 @@ void AsyncCompositionManager::AdjustFixedOrStickyLayer(
     const LayerRectAbsolute& stickyInner = layer->GetStickyScrollRangeInner();
 
     LayerPoint originalTranslation = translation;
-    translation.y =
-        IntervalOverlap(translation.y, stickyOuter.Y(), stickyOuter.YMost()) -
-        IntervalOverlap(translation.y, stickyInner.Y(), stickyInner.YMost());
-    translation.x =
-        IntervalOverlap(translation.x, stickyOuter.X(), stickyOuter.XMost()) -
-        IntervalOverlap(translation.x, stickyInner.X(), stickyInner.XMost());
+    translation.y = apz::IntervalOverlap(translation.y, stickyOuter.Y(),
+                                         stickyOuter.YMost()) -
+                    apz::IntervalOverlap(translation.y, stickyInner.Y(),
+                                         stickyInner.YMost());
+    translation.x = apz::IntervalOverlap(translation.x, stickyOuter.X(),
+                                         stickyOuter.XMost()) -
+                    apz::IntervalOverlap(translation.x, stickyInner.X(),
+                                         stickyInner.XMost());
     unconsumedTranslation = translation - originalTranslation;
   }
 
@@ -1213,6 +1215,43 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
             rootContent.mLayersId == currentLayersId;
           };
 
+          auto IsStuckToZoomContainerAtBottom = [&](Layer* aLayer) {
+            if (!zoomedMetrics) {
+              return false;
+            }
+            if (!aLayer->GetIsStickyPosition()) {
+              return false;
+            }
+
+            
+            if ((aLayer->GetFixedPositionSides() & SideBits::eBottom) ==
+                SideBits::eNone) {
+              return false;
+            }
+
+            ScrollableLayerGuid::ViewID targetId =
+                aLayer->GetStickyScrollContainerId();
+            if (targetId == ScrollableLayerGuid::NULL_SCROLL_ID) {
+              return false;
+            }
+
+            ScrollableLayerGuid rootContent = sampler->GetGuid(*zoomedMetrics);
+            if (rootContent.mScrollId != targetId ||
+                rootContent.mLayersId != currentLayersId) {
+              return false;
+            }
+
+            ParentLayerPoint translation =
+                sampler
+                    ->GetCurrentAsyncTransform(
+                        *zoomedMetrics, {AsyncTransformComponent::eLayout})
+                    .mTranslation;
+
+            return apz::IsStuckAtBottom(translation.y,
+                                        aLayer->GetStickyScrollRangeInner(),
+                                        aLayer->GetStickyScrollRangeOuter());
+          };
+
           
           
           
@@ -1220,9 +1259,10 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
           
           
           
-          if (zoomedMetrics && layer->GetIsFixedPosition() &&
-              !layer->GetParent()->GetIsFixedPosition() &&
-              IsFixedToZoomContainer(layer)) {
+          if (zoomedMetrics && ((layer->GetIsFixedPosition() &&
+                                 !layer->GetParent()->GetIsFixedPosition() &&
+                                 IsFixedToZoomContainer(layer)) ||
+                                IsStuckToZoomContainerAtBottom(layer))) {
             LayerToParentLayerMatrix4x4 emptyTransform;
             ScreenMargin marginsForFixedLayer = GetFixedLayerMargins();
             AdjustFixedOrStickyLayer(zoomContainer, layer,

@@ -8,6 +8,7 @@
 #define mozilla_layers_APZUtils_h
 
 #include <stdint.h>  
+#include "gfxTypes.h"
 #include "FrameMetrics.h"
 #include "LayersTypes.h"
 #include "UnitTransforms.h"
@@ -157,6 +158,16 @@ bool IsCloseToHorizontal(float aAngle, float aThreshold);
 
 
 bool IsCloseToVertical(float aAngle, float aThreshold);
+
+
+
+gfxFloat IntervalOverlap(gfxFloat aTranslation, gfxFloat aMin, gfxFloat aMax);
+
+
+
+bool IsStuckAtBottom(gfxFloat aTranslation,
+                     const LayerRectAbsolute& aInnerRange,
+                     const LayerRectAbsolute& aOuterRange);
 
 }  
 
