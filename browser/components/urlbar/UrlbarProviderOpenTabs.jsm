@@ -115,17 +115,6 @@ class ProviderOpenTabs extends UrlbarProvider {
 
 
 
-
-
-  isRestricting(queryContext) {
-    return false;
-  }
-
-  
-
-
-
-
   async registerOpenTab(url, userContextId = 0) {
     if (!this.openTabs.has(userContextId)) {
       this.openTabs.set(userContextId, []);

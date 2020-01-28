@@ -24,6 +24,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   setTimeout: "resource://gre/modules/Timer.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
+  UrlbarProviderTopSites: "resource:///modules/UrlbarProviderTopSites.jsm",
   UrlbarResult: "resource:///modules/UrlbarResult.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
@@ -95,6 +96,12 @@ class ProviderSearchTips extends UrlbarProvider {
     this._l10n = new Localization(["browser/browser.ftl"]);
   }
 
+  get PRIORITY() {
+    
+    
+    return UrlbarProviderTopSites.PRIORITY + 1;
+  }
+
   
 
 
@@ -126,11 +133,8 @@ class ProviderSearchTips extends UrlbarProvider {
 
 
 
-
-
-
-  isRestricting(queryContext) {
-    return true;
+  getPriority(queryContext) {
+    return this.PRIORITY;
   }
 
   

@@ -158,11 +158,19 @@ add_task(async function test_registerProvider() {
       provider.isActive(queryContext),
       "Check active callback"
     );
-    Assert.equal(
-      restricting,
-      provider.isRestricting(queryContext),
-      "Check restrict callback"
-    );
+    if (restricting) {
+      Assert.notEqual(
+        provider.getPriority(queryContext),
+        0,
+        "Check provider priority"
+      );
+    } else {
+      Assert.equal(
+        provider.getPriority(queryContext),
+        0,
+        "Check provider priority"
+      );
+    }
   }
 
   await ext.unload();
@@ -259,7 +267,7 @@ add_task(async function test_onProviderResultsRequested() {
 
   
   Assert.ok(provider.isActive(context));
-  Assert.ok(!provider.isRestricting(context));
+  Assert.equal(provider.getPriority(context), 0);
 
   
   let expectedResults = [
@@ -589,8 +597,8 @@ add_task(async function test_activeAndInactiveProviders() {
   
   Assert.ok(active.isActive(context));
   Assert.ok(!inactive.isActive(context));
-  Assert.ok(!active.isRestricting(context));
-  Assert.ok(!inactive.isRestricting(context));
+  Assert.equal(active.getPriority(context), 0);
+  Assert.equal(inactive.getPriority(context), 0);
 
   
   Assert.equal(context.results.length, 2);
@@ -653,7 +661,7 @@ add_task(async function test_threeActiveProviders() {
   
   for (let provider of providers) {
     Assert.ok(provider.isActive(context));
-    Assert.ok(!provider.isRestricting(context));
+    Assert.equal(provider.getPriority(context), 0);
   }
 
   
@@ -711,7 +719,7 @@ add_task(async function test_threeInactiveProviders() {
   
   for (let provider of providers) {
     Assert.ok(!provider.isActive(context));
-    Assert.ok(!provider.isRestricting(context));
+    Assert.equal(provider.getPriority(context), 0);
   }
 
   
@@ -777,11 +785,11 @@ add_task(async function test_activeInactiveAndRestrictingProviders() {
 
   
   Assert.ok(providers.active.isActive(context));
-  Assert.ok(!providers.active.isRestricting(context));
+  Assert.equal(providers.active.getPriority(context), 0);
   Assert.ok(!providers.inactive.isActive(context));
-  Assert.ok(!providers.inactive.isRestricting(context));
+  Assert.equal(providers.inactive.getPriority(context), 0);
   Assert.ok(providers.restricting.isActive(context));
-  Assert.ok(providers.restricting.isRestricting(context));
+  Assert.notEqual(providers.restricting.getPriority(context), 0);
 
   
   Assert.equal(context.results.length, 1);
@@ -934,7 +942,7 @@ add_task(async function test_onResultsRequestedNotImplemented() {
 
   
   Assert.ok(provider.isActive(context));
-  Assert.ok(!provider.isRestricting(context));
+  Assert.equal(provider.getPriority(context), 0);
 
   
   Assert.equal(context.results.length, 1);
@@ -1084,7 +1092,7 @@ add_task(async function test_onBehaviorRequestedTimeout() {
 
   
   Assert.ok(!provider.isActive(context));
-  Assert.ok(!provider.isRestricting(context));
+  Assert.equal(provider.getPriority(context), 0);
 
   
   Assert.equal(context.results.length, 1);
@@ -1149,7 +1157,7 @@ add_task(async function test_onResultsRequestedTimeout() {
 
   
   Assert.ok(provider.isActive(context));
-  Assert.ok(!provider.isRestricting(context));
+  Assert.equal(provider.getPriority(context), 0);
 
   
   Assert.equal(context.results.length, 1);
@@ -1244,7 +1252,7 @@ add_task(async function test_privateBrowsing_not_allowed_onQueryCanceled() {
 
   
   Assert.ok(!provider.isActive(context));
-  Assert.ok(!provider.isRestricting(context));
+  Assert.equal(provider.getPriority(context), 0);
 
   await ext.unload();
 });
@@ -1291,7 +1299,7 @@ add_task(async function test_privateBrowsing_allowed() {
 
   
   Assert.ok(provider.isActive(context));
-  Assert.ok(!provider.isRestricting(context));
+  Assert.equal(provider.getPriority(context), 0);
 
   
   await Promise.all(
@@ -1346,7 +1354,7 @@ add_task(async function test_privateBrowsing_allowed_onQueryCanceled() {
 
   
   Assert.ok(provider.isActive(context));
-  Assert.ok(!provider.isRestricting(context));
+  Assert.equal(provider.getPriority(context), 0);
 
   
   await Promise.all(
@@ -1403,7 +1411,7 @@ add_task(async function test_nonPrivateBrowsing() {
 
   
   Assert.ok(provider.isActive(context));
-  Assert.ok(!provider.isRestricting(context));
+  Assert.equal(provider.getPriority(context), 0);
 
   
   Assert.equal(context.results.length, 2);

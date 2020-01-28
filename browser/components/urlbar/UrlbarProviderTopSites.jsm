@@ -40,6 +40,12 @@ class ProviderTopSites extends UrlbarProvider {
     
     this.queries = new Map();
   }
+
+  get PRIORITY() {
+    
+    return 1;
+  }
+
   
 
 
@@ -75,10 +81,8 @@ class ProviderTopSites extends UrlbarProvider {
 
 
 
-
-
-  isRestricting(queryContext) {
-    return true;
+  getPriority(queryContext) {
+    return this.PRIORITY;
   }
 
   
