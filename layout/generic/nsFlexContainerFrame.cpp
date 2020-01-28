@@ -403,12 +403,12 @@ class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
     return mIsRowOriented != mWM.IsVertical();
   }
 
- private:
   
   
   FlexboxAxisTracker(const FlexboxAxisTracker&) = delete;
   FlexboxAxisTracker& operator=(const FlexboxAxisTracker&) = delete;
 
+ private:
   
   
   
@@ -2227,15 +2227,15 @@ class MOZ_STACK_CLASS PositionTracker {
     }
   }
 
- protected:
-  
-  PositionTracker(AxisOrientationType aAxis, bool aIsAxisReversed)
-      : mAxis(aAxis), mIsAxisReversed(aIsAxisReversed) {}
-
   
   
   PositionTracker(const PositionTracker&) = delete;
   PositionTracker& operator=(const PositionTracker&) = delete;
+
+ protected:
+  
+  PositionTracker(AxisOrientationType aAxis, bool aIsAxisReversed)
+      : mAxis(aAxis), mIsAxisReversed(aIsAxisReversed) {}
 
   
   
@@ -2308,7 +2308,6 @@ class MOZ_STACK_CLASS CrossAxisPositionTracker : public PositionTracker {
 
   inline void SetCrossGapSize(nscoord aNewSize) { mCrossGapSize = aNewSize; }
 
- private:
   
   
   
@@ -2318,6 +2317,7 @@ class MOZ_STACK_CLASS CrossAxisPositionTracker : public PositionTracker {
   void EnterChildFrame(nscoord aChildFrameSize) = delete;
   void ExitChildFrame(nscoord aChildFrameSize) = delete;
 
+ private:
   nscoord mPackingSpaceRemaining = 0;
   uint32_t mNumPackingSpacesRemaining = 0;
   
