@@ -107,15 +107,6 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::texture_cache::TextureCacheHandle;
 use crate::util::{TransformedRectKind, MatrixHelpers, MaxRect, scale_factors, VecHelper, RectHelpers};
 use crate::filterdata::{FilterDataHandle};
-#[cfg(feature = "capture")]
-use ron;
-
-#[cfg(feature = "capture")]
-use std::fs::File;
-#[cfg(feature = "capture")]
-use std::io::prelude::*;
-#[cfg(feature = "capture")]
-use std::path::PathBuf;
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -309,7 +300,7 @@ fn clampf(value: f32, low: f32, high: f32) -> f32 {
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct PrimitiveDependencyIndex(u32);
+struct PrimitiveDependencyIndex(u32);
 
 
 #[derive(Debug)]
@@ -322,8 +313,6 @@ pub struct OpacityBindingInfo {
 
 
 #[derive(Debug, PartialEq, Clone)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum OpacityBinding {
     Value(f32),
     Binding(PropertyBindingId),
@@ -543,10 +532,8 @@ impl TileSurface {
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
 #[repr(u8)]
-pub enum PrimitiveCompareResult {
+enum PrimitiveCompareResult {
     
     Equal,
     
@@ -562,10 +549,8 @@ pub enum PrimitiveCompareResult {
 }
 
 
-#[derive(Debug,Copy,Clone)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub enum InvalidationReason {
+#[derive(Debug)]
+enum InvalidationReason {
     
     FractionalOffset,
     
@@ -583,29 +568,6 @@ pub enum InvalidationReason {
         
         prim_compare_result: PrimitiveCompareResult,
     },
-}
-
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct TileSerializer {
-    pub rect: PictureRect,
-    pub current_descriptor: TileDescriptor,
-    pub fract_offset: PictureVector2D,
-    pub id: TileId,
-    pub root: TileNode,
-    pub background_color: Option<ColorF>,
-    pub invalidation_reason: Option<InvalidationReason>
-}
-
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct TileCacheInstanceSerializer {
-    pub slice: usize,
-    pub tiles: FastHashMap<TileOffset, TileSerializer>,
-    pub background_color: Option<ColorF>,
-    pub fract_offset: PictureVector2D,
 }
 
 
@@ -1061,8 +1023,6 @@ impl Tile {
 
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct PrimitiveDescriptor {
     
     prim_uid: ItemUid,
@@ -1071,7 +1031,7 @@ pub struct PrimitiveDescriptor {
     
     
     
-    pub prim_clip_rect: RectangleKey,
+    prim_clip_rect: RectangleKey,
     
     transform_dep_count: u8,
     image_dep_count: u8,
@@ -1193,9 +1153,6 @@ impl<'a, T> CompareHelper<'a, T> where T: PartialEq {
 
 
 
-#[cfg_attr(any(feature="capture",feature="replay"), derive(Clone))]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct TileDescriptor {
     
     
@@ -1265,7 +1222,7 @@ impl TileDescriptor {
             pt.new_level("images".to_string());
             for info in &self.images {
                 pt.new_level(format!("key={:?}", info.key));
-                pt.add_item(format!("generation={:?}", info.generation));
+                pt.new_level(format!("generation={:?}", info.generation));
                 pt.end_level();
             }
             pt.end_level();
@@ -1458,107 +1415,6 @@ impl BackdropInfo {
             kind: BackdropKind::Color {
                 color: ColorF::BLACK,
             },
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct TileCacheLoggerSlice {
-    pub serialized_slice: String,
-    pub local_to_world_transform: DeviceRect
-}
-
-
-pub struct TileCacheLogger {
-    
-    pub write_index : usize,
-    
-    
-    pub frames: Vec<Vec<TileCacheLoggerSlice>>
-}
-
-impl TileCacheLogger {
-    pub fn new(
-        num_frames: usize
-    ) -> Self {
-        let mut frames = Vec::with_capacity(num_frames);
-        let empty_element = Vec::new();
-        frames.resize(num_frames, empty_element);
-        TileCacheLogger {
-            write_index: 0,
-            frames
-        }
-    }
-
-    pub fn is_enabled(&self) -> bool {
-        !self.frames.is_empty()
-    }
-
-    #[cfg(feature = "capture")]
-    pub fn add(&mut self, serialized_slice: String, local_to_world_transform: DeviceRect) {
-        if !self.is_enabled() {
-            return;
-        }
-        self.frames[self.write_index].push(
-            TileCacheLoggerSlice {
-                serialized_slice,
-                local_to_world_transform });
-    }
-
-    
-    
-    
-    pub fn advance(&mut self) {
-        if !self.is_enabled() || self.frames[self.write_index].is_empty() {
-            return;
-        }
-        self.write_index = self.write_index + 1;
-        if self.write_index >= self.frames.len() {
-            self.write_index = 0;
-        }
-        self.frames[self.write_index] = Vec::new();
-    }
-
-    #[cfg(feature = "capture")]
-    pub fn save_capture(
-        &self, root: &PathBuf
-    ) {
-        if !self.is_enabled() {
-            return;
-        }
-        use std::fs;
-
-        info!("saving tile cache log");
-        let path_tile_cache = root.join("tile_cache");
-        if !path_tile_cache.is_dir() {
-            fs::create_dir(&path_tile_cache).unwrap();
-        }
-
-        let mut files_written = 0;
-        for ix in 0..self.frames.len() {
-            
-            
-            
-            
-            let index = (self.write_index + 1 + ix) % self.frames.len();
-            if self.frames[index].is_empty() {
-                continue;
-            }
-
-            let filename = path_tile_cache.join(format!("frame{:05}.ron", files_written));
-            files_written = files_written + 1;
-            let mut output = File::create(filename).unwrap();
-            output.write_all(b"[\n").unwrap();
-            for item in &self.frames[index] {
-                output.write_all(format!("( x: {}, y: {},\n",
-                                         item.local_to_world_transform.origin.x,
-                                         item.local_to_world_transform.origin.y)
-                                 .as_bytes()).unwrap();
-                output.write_all(b"tile_cache:\n").unwrap();
-                output.write_all(item.serialized_slice.as_bytes()).unwrap();
-                output.write_all(b"\n),\n").unwrap();
-            }
-            output.write_all(b"]\n").unwrap();
         }
     }
 }
@@ -3419,7 +3275,6 @@ impl PicturePrimitive {
         frame_state: &mut FrameBuildingState,
         frame_context: &FrameBuildingContext,
         scratch: &mut PrimitiveScratchBuffer,
-        tile_cache_logger: &mut TileCacheLogger,
     ) -> Option<(PictureContext, PictureState, PrimitiveList)> {
         if !self.is_visible() {
             return None;
@@ -3483,7 +3338,6 @@ impl PicturePrimitive {
             }
         };
 
-        let unclipped =
         match self.raster_config {
             Some(ref raster_config) => {
                 let pic_rect = PictureRect::from_untyped(&self.precise_local_rect.to_untyped());
@@ -4072,45 +3926,9 @@ impl PicturePrimitive {
                         root,
                     );
                 }
-
-                unclipped
             }
-            None => DeviceRect::zero()
+            None => {}
         };
-
-        #[cfg(feature = "capture")]
-        {
-            if frame_context.debug_flags.contains(DebugFlags::TILE_CACHE_LOGGING_DBG) {
-                if let Some(ref tile_cache) = self.tile_cache
-                {
-                    
-                    let mut tile_cache_tiny = TileCacheInstanceSerializer {
-                        slice: tile_cache.slice,
-                        tiles: FastHashMap::default(),
-                        background_color: tile_cache.background_color,
-                        fract_offset: tile_cache.fract_offset
-                    };
-                    for (key, tile) in &tile_cache.tiles {
-                        tile_cache_tiny.tiles.insert(*key, TileSerializer {
-                            rect: tile.rect,
-                            current_descriptor: tile.current_descriptor.clone(),
-                            fract_offset: tile.fract_offset,
-                            id: tile.id,
-                            root: tile.root.clone(),
-                            background_color: tile.background_color,
-                            invalidation_reason: tile.invalidation_reason.clone()
-                        });
-                    }
-                    let text = ron::ser::to_string_pretty(&tile_cache_tiny, Default::default()).unwrap();
-                    tile_cache_logger.add(text, unclipped);
-                }
-            }
-        }
-        #[cfg(not(feature = "capture"))]
-        {
-            let _tile_cache_logger = tile_cache_logger;   
-            let _unclipped = unclipped;
-        }
 
         let state = PictureState {
             
@@ -4864,8 +4682,6 @@ struct PrimitiveComparisonKey {
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
 struct ImageDependency {
     key: ImageKey,
     generation: ImageGeneration,
@@ -5014,22 +4830,15 @@ impl<'a> PrimitiveComparer<'a> {
 }
 
 
-#[cfg_attr(any(feature="capture",feature="replay"), derive(Clone))]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub enum TileNodeKind {
+enum TileNodeKind {
     Leaf {
         
-        #[cfg_attr(any(feature = "capture", feature = "replay"), serde(skip))]
         prev_indices: Vec<PrimitiveDependencyIndex>,
         
-        #[cfg_attr(any(feature = "capture", feature = "replay"), serde(skip))]
         curr_indices: Vec<PrimitiveDependencyIndex>,
         
-        #[cfg_attr(any(feature = "capture", feature = "replay"), serde(skip))]
         dirty_tracker: u64,
         
-        #[cfg_attr(any(feature = "capture", feature = "replay"), serde(skip))]
         frames_since_modified: usize,
     },
     Node {
@@ -5046,14 +4855,11 @@ enum TileModification {
 }
 
 
-#[cfg_attr(any(feature="capture",feature="replay"), derive(Clone))]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct TileNode {
+struct TileNode {
     
-    pub kind: TileNodeKind,
+    kind: TileNodeKind,
     
-    pub rect: PictureRect,
+    rect: PictureRect,
 }
 
 impl TileNode {
