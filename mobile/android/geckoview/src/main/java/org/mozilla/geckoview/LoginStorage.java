@@ -104,7 +104,6 @@ import org.mozilla.gecko.util.GeckoBundle;
 
 
 
-
 public class LoginStorage {
     private static final String LOGTAG = "LoginStorage";
     private static final boolean DEBUG = false;
