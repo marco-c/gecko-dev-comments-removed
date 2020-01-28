@@ -137,7 +137,7 @@ void ContentMediaController::NotifyAudibleStateChanged(
     
     
     RefPtr<MediaController> controller =
-        MediaControlService::GetService()->GetControllerById(bc->Id());
+        MediaControlService::GetService()->GetActiveControllerById(bc->Id());
     if (controller) {
       controller->NotifyMediaAudibleChanged(aAudible);
     }
