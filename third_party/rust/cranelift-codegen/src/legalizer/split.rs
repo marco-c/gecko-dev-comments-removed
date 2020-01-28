@@ -189,6 +189,19 @@ fn perform_repairs(pos: &mut FuncCursor, cfg: &ControlFlowGraph, mut repairs: Ve
 
             
             pos.goto_inst(inst);
+            #[cfg(feature = "basic-blocks")]
+            {
+                let inst_ebb = pos.func.layout.inst_ebb(inst).expect("inst in ebb");
+
+                
+                let canonical = pos
+                    .func
+                    .layout
+                    .canonical_branch_inst(&pos.func.dfg, inst_ebb);
+                if let Some(first_branch) = canonical {
+                    pos.goto_inst(first_branch);
+                }
+            }
             let (lo, hi) = split_value(pos, old_arg, repair.concat, &mut repairs);
 
             

@@ -31,6 +31,8 @@ use serde::{Deserialize, Serialize};
 
 
 
+
+
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Ebb(u32);
 entity_impl!(Ebb, "ebb");
@@ -47,6 +49,8 @@ impl Ebb {
         }
     }
 }
+
+
 
 
 
@@ -91,6 +95,8 @@ impl Value {
 
 
 
+
+
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Inst(u32);
 entity_impl!(Inst, "inst");
@@ -107,7 +113,9 @@ entity_impl!(Inst, "inst");
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct StackSlot(u32);
 entity_impl!(StackSlot, "ss");
@@ -142,7 +150,9 @@ impl StackSlot {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct GlobalValue(u32);
 entity_impl!(GlobalValue, "gv");
 
@@ -158,6 +168,9 @@ impl GlobalValue {
         }
     }
 }
+
+
+
 
 
 
@@ -187,7 +200,9 @@ impl Constant {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Immediate(u32);
 entity_impl!(Immediate, "imm");
 
@@ -214,7 +229,9 @@ impl Immediate {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct JumpTable(u32);
 entity_impl!(JumpTable, "jt");
@@ -248,7 +265,9 @@ impl JumpTable {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct FuncRef(u32);
 entity_impl!(FuncRef, "fn");
 
@@ -277,7 +296,9 @@ impl FuncRef {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct SigRef(u32);
 entity_impl!(SigRef, "sig");
 
@@ -300,7 +321,9 @@ impl SigRef {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Heap(u32);
 entity_impl!(Heap, "heap");
 
@@ -324,7 +347,9 @@ impl Heap {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Table(u32);
 entity_impl!(Table, "table");
 
@@ -342,7 +367,7 @@ impl Table {
 }
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum AnyEntity {
     
     Function,

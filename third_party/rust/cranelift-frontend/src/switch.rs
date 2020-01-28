@@ -63,6 +63,11 @@ impl Switch {
     }
 
     
+    pub fn entries(&self) -> &HashMap<EntryIndex, Ebb> {
+        &self.cases
+    }
+
+    
     
     
     

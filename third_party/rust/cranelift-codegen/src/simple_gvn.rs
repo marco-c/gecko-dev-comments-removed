@@ -124,8 +124,13 @@ pub fn do_simple_gvn(func: &mut Function, domtree: &mut DominatorTree) {
             use crate::scoped_hash_map::Entry::*;
             match visible_values.entry(key) {
                 Occupied(entry) => {
-                    let layout = &func.layout;
-                    debug_assert!(domtree.dominates(*entry.get(), inst, layout));
+                    #[allow(clippy::debug_assert_with_mut_call)]
+                    {
+                        
+                        
+                        debug_assert!(domtree.dominates(*entry.get(), inst, &func.layout));
+                    }
+
                     
                     
                     let old = scope_stack.last_mut().unwrap();

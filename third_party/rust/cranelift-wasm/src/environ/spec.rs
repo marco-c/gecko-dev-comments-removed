@@ -146,6 +146,12 @@ pub trait FuncEnvironment: TargetEnvironment {
 
     
     
+    fn is_wasm_return(&self, signature: &ir::Signature, index: usize) -> bool {
+        signature.returns[index].purpose == ir::ArgumentPurpose::Normal
+    }
+
+    
+    
     
     fn return_mode(&self) -> ReturnMode {
         ReturnMode::NormalReturns

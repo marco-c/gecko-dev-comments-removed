@@ -4,6 +4,7 @@
 
 
 use crate::entity::SecondaryMap;
+use crate::ir::dfg::DataFlowGraph;
 use crate::ir::progpoint::{ExpandedProgramPoint, ProgramOrder};
 use crate::ir::{Ebb, Inst};
 use crate::packed_option::PackedOption;
@@ -571,6 +572,19 @@ impl Layout {
     
     pub fn prev_inst(&self, inst: Inst) -> Option<Inst> {
         self.insts[inst].prev.expand()
+    }
+
+    
+    pub fn canonical_branch_inst(&self, dfg: &DataFlowGraph, ebb: Ebb) -> Option<Inst> {
+        
+        
+        let last = self.last_inst(ebb)?;
+        if let Some(prev) = self.prev_inst(last) {
+            if dfg[prev].opcode().is_branch() {
+                return Some(prev);
+            }
+        }
+        Some(last)
     }
 
     

@@ -1173,7 +1173,7 @@ fn convert_insertlane(
             
             match value_type {
                 F32X4 => {
-                    assert!(lane > 0 && lane <= 3);
+                    assert!(lane <= 3);
                     let immediate = 0b00_00_00_00 | lane << 4;
                     
                     
