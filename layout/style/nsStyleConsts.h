@@ -872,8 +872,10 @@ enum class StyleColorAdjust : uint8_t {
 #define NS_STYLE_COUNTER_SPEAKAS_OTHER 255  // refer to another style
 
 
-#define NS_STYLE_SCROLL_BEHAVIOR_AUTO 0
-#define NS_STYLE_SCROLL_BEHAVIOR_SMOOTH 1
+enum class StyleScrollBehavior : uint8_t {
+  Auto,
+  Smooth,
+};
 
 }  
 
