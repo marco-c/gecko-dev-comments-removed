@@ -1616,6 +1616,9 @@ class Document : public nsINode,
                               ViewportMetaData&& aData);
   void RemoveMetaViewportElement(HTMLMetaElement* aElement);
 
+  
+  ViewportMetaData GetViewportMetaData() const;
+
   void UpdateForScrollAnchorAdjustment(nscoord aLength);
 
   
@@ -4066,9 +4069,6 @@ class Document : public nsINode,
   
   
   already_AddRefed<mozilla::dom::FeaturePolicy> GetParentFeaturePolicy();
-
-  
-  ViewportMetaData GetViewportMetaData() const;
 
   FlashClassification DocumentFlashClassificationInternal();
 
