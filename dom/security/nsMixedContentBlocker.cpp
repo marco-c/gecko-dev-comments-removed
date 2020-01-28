@@ -793,6 +793,14 @@ nsresult nsMixedContentBlocker::ShouldLoad(
 
   nsCOMPtr<nsIDocShell> docShell =
       NS_CP_GetDocShellFromContext(aRequestingContext);
+  
+  
+  if (XRE_IsParentProcess() && !docShell &&
+      (aContentType == TYPE_IMAGE || aContentType == TYPE_MEDIA)) {
+    *aDecision = ACCEPT;
+    return NS_OK;
+  }
+  
   NS_ENSURE_TRUE(docShell, NS_OK);
 
   
