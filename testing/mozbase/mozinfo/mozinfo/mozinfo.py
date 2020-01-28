@@ -114,16 +114,13 @@ elif system == "Linux":
 
     if not processor:
         processor = machine
-    version = "%s %s" % (distribution, os_version)
-
-    
-    
-    
-    
-    if not distribution and not os_version and not codename:
+    if not distribution:
         distribution = 'lfs'
-        version = release
+    if not os_version:
         os_version = release
+    if not codename:
+        codename = 'unknown'
+    version = "%s %s" % (distribution, os_version)
 
     info['os'] = 'linux'
     info['linux_distro'] = distribution
