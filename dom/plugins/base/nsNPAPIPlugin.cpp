@@ -456,7 +456,9 @@ void PopException() {
 
 
 
-namespace mozilla::plugins::parent {
+namespace mozilla {
+namespace plugins {
+namespace parent {
 
 NPError _geturl(NPP npp, const char* relativeURL, const char* target) {
   if (!NS_IsMainThread()) {
@@ -1881,4 +1883,6 @@ void _setcurrentasyncsurface(NPP instance, NPAsyncSurface* surface,
   inst->SetCurrentAsyncSurface(surface, changed);
 }
 
-}  
+} 
+} 
+} 

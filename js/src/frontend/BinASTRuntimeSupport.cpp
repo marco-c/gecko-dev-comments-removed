@@ -12,7 +12,8 @@
 #include "js/Utility.h"     
 #include "vm/StringType.h"  
 
-namespace js::frontend {
+namespace js {
+namespace frontend {
 
 BinASTSourceMetadata::~BinASTSourceMetadata() {
   if (isMultipart()) {
@@ -109,5 +110,7 @@ void BinASTSourceMetadataContext::release() {
     dictionary_ = nullptr;
   }
 }
+
+}  
 
 }  

@@ -74,7 +74,8 @@
 
 
 
-namespace js::frontend {
+namespace js {
+namespace frontend {
 
 using UsedNamePtr = UsedNameTracker::UsedNameMap::Ptr;
 
@@ -810,4 +811,5 @@ BinASTParserPerTokenizer<Tok>::asFinalParser() const {
 template class BinASTParserPerTokenizer<BinASTTokenReaderContext>;
 template class BinASTParserPerTokenizer<BinASTTokenReaderMultipart>;
 
+}  
 }  

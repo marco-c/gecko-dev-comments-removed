@@ -10,7 +10,8 @@
 #include "js/Array.h"  
 #include "mozilla/HangAnnotations.h"
 
-namespace mozilla::Telemetry {
+namespace mozilla {
+namespace Telemetry {
 
 
 const size_t kMaxChromeStacksKept = 50;
@@ -224,4 +225,5 @@ JSObject* CreateJSStackObject(JSContext* cx, const CombinedStacks& stacks) {
   return ret;
 }
 
+}  
 }  

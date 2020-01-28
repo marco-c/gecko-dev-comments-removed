@@ -1194,11 +1194,11 @@ static void internal_initFogotype(bool aUseTelemetry) {
     NS_WARNING("Couldn't find pingsender. Bailing on FOGotype");
     return;
   }
-#  ifdef XP_WIN
+#ifdef XP_WIN
   pingsender->Append(NS_LITERAL_STRING("pingsender.exe"));
-#  else
+#else
   pingsender->Append(NS_LITERAL_STRING("pingsender"));
-#  endif
+#endif
   nsAutoString pingsenderPath;
   rv = pingsender->GetPath(pingsenderPath);
   if (NS_FAILED(rv)) {
@@ -1986,7 +1986,8 @@ void RecordShutdownEndTimeStamp() {
 
 
 
-namespace mozilla::Telemetry {
+namespace mozilla {
+namespace Telemetry {
 
 
 void SetHistogramRecordingEnabled(HistogramID aID, bool aEnabled) {
@@ -2206,6 +2207,7 @@ void RecordOrigin(mozilla::Telemetry::OriginMetricID aId,
 
 void ShutdownTelemetry() { TelemetryImpl::ShutdownTelemetry(); }
 
+}  
 }  
 
 NS_IMPL_COMPONENT_FACTORY(nsITelemetry) {

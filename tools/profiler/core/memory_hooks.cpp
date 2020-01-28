@@ -61,7 +61,8 @@ static ProfilerCounterTotal* sCounter;
 
 static mozilla::FastBernoulliTrial* gBernoulli;
 
-namespace mozilla::profiler {
+namespace mozilla {
+namespace profiler {
 
 
 
@@ -448,6 +449,7 @@ static void FreeCallback(void* aPtr) {
 }
 
 }  
+}  
 
 
 
@@ -554,7 +556,8 @@ void replace_init(malloc_table_t* aMallocTable, ReplaceMallocBridge** aBridge) {
 
 void profiler_replace_remove() {}
 
-namespace mozilla::profiler {
+namespace mozilla {
+namespace profiler {
 
 
 
@@ -616,4 +619,5 @@ void disable_native_allocations() {
   }
 }
 
+}  
 }  

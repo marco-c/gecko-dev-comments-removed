@@ -20,7 +20,8 @@
 
 #include "js/Result.h"
 
-namespace js::frontend {
+namespace js {
+namespace frontend {
 
 
 const char MAGIC_HEADER[] = "BINJS";
@@ -472,5 +473,7 @@ JS::Result<Ok> BinASTTokenReaderMultipart::AutoTaggedTuple::done() {
 
   return Ok();
 }
+
+}  
 
 }  

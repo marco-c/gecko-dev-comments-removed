@@ -33,7 +33,8 @@
 using JS::RegExpFlag;
 using JS::RegExpFlags;
 
-namespace js::frontend {
+namespace js {
+namespace frontend {
 
 
 
@@ -5035,4 +5036,5 @@ JS::Result<ParseNode*> BinASTParser<Tok>::parseOptionalStatement(
 template class BinASTParser<BinASTTokenReaderContext>;
 template class BinASTParser<BinASTTokenReaderMultipart>;
 
+}  
 }  

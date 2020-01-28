@@ -1,21 +1,22 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "frontend/BinASTTokenReaderBase.h"
 
 #include "frontend/BinAST-macros.h"
 #include "js/Result.h"
 
-namespace js::frontend {
+namespace js {
+namespace frontend {
 
 template <typename T>
 using ErrorResult = mozilla::GenericErrorResult<T>;
 
-// We use signalling NaN (which doesn't exist in the JS syntax)
-// to represent a `null` number.
+
+
 const uint64_t NULL_FLOAT_REPRESENTATION = 0x7FF0000000000001;
 
 void BinASTTokenReaderBase::updateLatestKnownGood() {
@@ -57,8 +58,8 @@ ErrorResult<JS::Error&> BinASTTokenReaderBase::raiseInvalidField(
 
 bool BinASTTokenReaderBase::hasRaisedError() const {
   if (cx_->isHelperThreadContext()) {
-    // When performing off-main-thread parsing, we don't set a pending
-    // exception but instead add a pending compile error.
+    
+    
     return cx_->isCompileErrorPending();
   }
 
@@ -104,4 +105,5 @@ JS::Result<uint8_t> BinASTTokenReaderBase::readByte() {
   return *current_++;
 }
 
-}  // namespace js::frontend
+}  
+}  

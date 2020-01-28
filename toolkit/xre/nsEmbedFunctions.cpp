@@ -248,8 +248,10 @@ const char* XRE_ChildProcessTypeToAnnotation(GeckoProcessType aProcessType) {
   }
 }
 
-namespace mozilla::startup {
+namespace mozilla {
+namespace startup {
 GeckoProcessType sChildProcessType = GeckoProcessType_Default;
+}  
 }  
 
 #if defined(MOZ_WIDGET_ANDROID)

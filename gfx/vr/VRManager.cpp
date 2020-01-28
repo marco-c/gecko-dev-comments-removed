@@ -48,7 +48,8 @@ using namespace mozilla::gfx;
 using namespace mozilla::layers;
 using namespace mozilla::gl;
 
-namespace mozilla::gfx {
+namespace mozilla {
+namespace gfx {
 
 
 
@@ -1530,4 +1531,5 @@ VRManager::Observe(nsISupports* subject, const char* topic,
 
 NS_IMPL_ISUPPORTS(VRManager, nsIObserver)
 
+}  
 }  

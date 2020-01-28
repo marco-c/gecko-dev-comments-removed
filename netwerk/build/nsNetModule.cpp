@@ -81,7 +81,8 @@ nsresult nsCacheServiceConstructor(nsISupports* aOuter, const nsIID& aIID,
 
 #include "WebSocketChannel.h"
 #include "WebSocketChannelChild.h"
-namespace mozilla::net {
+namespace mozilla {
+namespace net {
 static BaseWebSocketChannel* WebSocketChannelConstructor(bool aSecure) {
   if (IsNeckoChild()) {
     return new WebSocketChannelChild(aSecure);
@@ -112,6 +113,7 @@ static BaseWebSocketChannel* WebSocketChannelConstructor(bool aSecure) {
 WEB_SOCKET_HANDLER_CONSTRUCTOR(WebSocketChannel, false)
 WEB_SOCKET_HANDLER_CONSTRUCTOR(WebSocketSSLChannel, true)
 #undef WEB_SOCKET_HANDLER_CONSTRUCTOR
+}  
 }  
 
 
