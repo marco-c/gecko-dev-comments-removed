@@ -424,6 +424,8 @@ class nsFrameLoader final : public nsStubMutationObserver,
   nsresult ReallyLoadFrameScripts();
   nsDocShell* GetDocShell() const { return mDocShell; }
 
+  void AssertSafeToInit();
+
   
   
   void UpdateBaseWindowPositionAndSize(nsSubDocumentFrame* aIFrame);
