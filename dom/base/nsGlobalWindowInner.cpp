@@ -2691,7 +2691,6 @@ const InterfaceShimEntry kInterfaceShimMap[] = {
     {"nsIDOMUIEvent", "UIEvent"},
     {"nsIDOMHTMLMediaElement", "HTMLMediaElement"},
     {"nsIDOMRange", "Range"},
-    {"nsIDOMSVGLength", "SVGLength"},
     
     {"nsIDOMNodeFilter", "NodeFilter"},
     {"nsIDOMXPathResult", "XPathResult"}};
