@@ -42,7 +42,9 @@ var gRootItems = new Map();
 var gShownMenuItems = new DefaultMap(() => []);
 
 
-var gOnShownSubscribers = new Set();
+
+
+var gOnShownSubscribers = new DefaultMap(() => new Set());
 
 
 var gNextMenuItemID = 0;
@@ -571,7 +573,9 @@ var gMenuBuilder = {
     if (contextData.onBrowserAction || contextData.onPageAction) {
       dispatchOnShownEvent(contextData.extension);
     } else {
-      gOnShownSubscribers.forEach(dispatchOnShownEvent);
+      for (const extension of gOnShownSubscribers.keys()) {
+        dispatchOnShownEvent(extension);
+      }
     }
 
     this.contextData = contextData;
@@ -1270,10 +1274,14 @@ this.menusInternal = class extends ExtensionAPI {
             let tab = nativeTab && extension.tabManager.convert(nativeTab);
             fire.sync(info, tab);
           };
-          gOnShownSubscribers.add(extension);
+          gOnShownSubscribers.get(extension).add(context);
           extension.on("webext-menu-shown", listener);
           return () => {
-            gOnShownSubscribers.delete(extension);
+            const contexts = gOnShownSubscribers.get(extension);
+            contexts.delete(context);
+            if (contexts.size === 0) {
+              gOnShownSubscribers.delete(extension);
+            }
             extension.off("webext-menu-shown", listener);
           };
         },
