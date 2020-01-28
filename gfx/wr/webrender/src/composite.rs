@@ -94,6 +94,19 @@ pub enum CompositorConfig {
     }
 }
 
+impl CompositorConfig {
+    pub fn compositor(&mut self) -> Option<&mut Box<dyn Compositor>> {
+        match self {
+            CompositorConfig::Native { ref mut compositor, .. } => {
+                Some(compositor)
+            }
+            CompositorConfig::Draw { .. } => {
+                None
+            }
+        }
+    }
+}
+
 impl Default for CompositorConfig {
     
     fn default() -> Self {
@@ -506,6 +519,9 @@ pub trait Compositor {
     
     
     fn end_frame(&mut self);
+
+    
+    fn enable_native_compositor(&mut self, enable: bool);
 }
 
 
