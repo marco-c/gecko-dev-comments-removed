@@ -555,6 +555,14 @@ void BufferTextureHost::SetTextureSourceProvider(
 
 void BufferTextureHost::DeallocateDeviceData() {
   if (mFirstSource && mFirstSource->NumCompositableRefs() > 0) {
+    
+    
+    
+    if (mFirstSource->AsWrappingTextureSourceYCbCrBasic() &&
+        mFirstSource->IsOwnedBy(this)) {
+      mFirstSource->SetOwner(nullptr);
+      mFirstSource->DeallocateDeviceData();
+    }
     return;
   }
 
