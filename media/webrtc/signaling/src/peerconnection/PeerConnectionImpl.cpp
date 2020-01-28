@@ -1117,7 +1117,7 @@ PeerConnectionImpl::CreateDataChannel(
 
   
   if (recordreplay::IsRecordingOrReplaying()) {
-    return NS_ERROR_NOT_AVAILABLE;
+    return NS_ERROR_UNEXPECTED;
   }
 
   RefPtr<DataChannel> dataChannel;
@@ -1138,7 +1138,7 @@ PeerConnectionImpl::CreateDataChannel(
           : (aType == DataChannelConnection::PARTIAL_RELIABLE_TIMED ? aMaxTime
                                                                     : 0),
       nullptr, nullptr, aExternalNegotiated, aStream);
-  NS_ENSURE_TRUE(dataChannel, NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE(dataChannel, NS_ERROR_NOT_AVAILABLE);
 
   CSFLogDebug(LOGTAG, "%s: making DOMDataChannel", __FUNCTION__);
 
