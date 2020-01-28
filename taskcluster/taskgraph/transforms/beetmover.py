@@ -9,6 +9,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from voluptuous import Optional, Required
 
+from six import text_type
 from taskgraph.loader.single_dep import schema
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.transforms.task import task_description_schema
@@ -25,10 +26,10 @@ transforms = TransformSequence()
 
 beetmover_description_schema = schema.extend({
     
-    Required('depname', default='build'): basestring,
+    Required('depname', default='build'): text_type,
 
     
-    Optional('label'): basestring,
+    Optional('label'): text_type,
 
     
     
@@ -36,7 +37,7 @@ beetmover_description_schema = schema.extend({
     Optional('treeherder'): task_description_schema['treeherder'],
 
     
-    Optional('locale'): basestring,
+    Optional('locale'): text_type,
 
     Required('shipping-phase'): task_description_schema['shipping-phase'],
     Optional('shipping-product'): task_description_schema['shipping-product'],
@@ -130,9 +131,9 @@ def craft_release_properties(config, job):
 
     return {
         'app-name': app_name,
-        'app-version': str(params['app_version']),
+        'app-version': params['app_version'],
         'branch': params['project'],
-        'build-id': str(params['moz_build_date']),
+        'build-id': params['moz_build_date'],
         'hash-type': 'sha512',
         'platform': build_platform,
     }

@@ -8,6 +8,7 @@ defined in kind.yml
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from six import text_type
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.transforms.task import task_description_schema
 from taskgraph.util.schema import (
@@ -21,19 +22,19 @@ from voluptuous import (
 )
 
 index_or_string = Any(
-    basestring,
-    {Required('index-search'): basestring},
+    text_type,
+    {Required('index-search'): text_type},
 )
 
 diff_description_schema = Schema({
     
-    Required('name'): basestring,
+    Required('name'): text_type,
 
     
-    Required('symbol'): basestring,
+    Required('symbol'): text_type,
 
     
-    Optional('job-from'): basestring,
+    Optional('job-from'): text_type,
 
     
     Required('original'): index_or_string,
@@ -41,10 +42,10 @@ diff_description_schema = Schema({
 
     
     
-    Optional('args'): basestring,
+    Optional('args'): text_type,
 
     
-    Optional('extra-args'): basestring,
+    Optional('extra-args'): text_type,
 
     
     Optional('fail-on-diff'): bool,
@@ -55,7 +56,7 @@ diff_description_schema = Schema({
     Optional('unpack'): bool,
 
     
-    Optional('pre-diff-commands'): [basestring],
+    Optional('pre-diff-commands'): [text_type],
 
     
     Optional('run-on-projects'): task_description_schema['run-on-projects'],
@@ -77,7 +78,7 @@ def fill_template(config, tasks):
         previous_artifact = None
         for k in ('original', 'new'):
             value = task[k]
-            if isinstance(value, basestring):
+            if isinstance(value, text_type):
                 deps[k] = value
                 dep_name = k
                 os_hint = value

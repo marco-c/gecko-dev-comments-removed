@@ -6,6 +6,7 @@ Transform the `release-generate-checksums-beetmover` task to also append `build`
 """
 from __future__ import absolute_import, print_function, unicode_literals
 
+from six import text_type
 from taskgraph.loader.single_dep import schema
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.attributes import copy_attributes_from_dependent_job
@@ -23,10 +24,10 @@ transforms = TransformSequence()
 
 release_generate_checksums_beetmover_schema = schema.extend({
     
-    Required('depname', default='build'): basestring,
+    Required('depname', default='build'): text_type,
 
     
-    Optional('label'): basestring,
+    Optional('label'): text_type,
 
     
     

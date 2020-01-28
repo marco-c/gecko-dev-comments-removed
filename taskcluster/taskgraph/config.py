@@ -19,45 +19,45 @@ logger = logging.getLogger(__name__)
 graph_config_schema = Schema({
     
     
-    Required('trust-domain'): basestring,
+    Required('trust-domain'): text_type,
     
     
     
     
-    Required('project-repo-param-prefix'): basestring,
+    Required('project-repo-param-prefix'): text_type,
     
     
-    Required('product-dir'): basestring,
+    Required('product-dir'): text_type,
     Required('treeherder'): {
         
-        Required('group-names'): {basestring: basestring}
+        Required('group-names'): {text_type: text_type}
     },
     Required('index'): {
-        Required('products'): [basestring]
+        Required('products'): [text_type]
     },
     Required('try'): {
         
         
         
         
-        Required('ridealong-builds'): {basestring: [basestring]},
+        Required('ridealong-builds'): {text_type: [text_type]},
     },
     Required('release-promotion'): {
-        Required('products'): [basestring],
-        Required('flavors'): {basestring: {
-            Required('product'): basestring,
-            Required('target-tasks-method'): basestring,
+        Required('products'): [text_type],
+        Required('flavors'): {text_type: {
+            Required('product'): text_type,
+            Required('target-tasks-method'): text_type,
             Optional('is-rc'): bool,
-            Optional('rebuild-kinds'): [basestring],
+            Optional('rebuild-kinds'): [text_type],
             Optional('version-bump'): bool,
             Optional('partial-updates'): bool,
         }},
     },
     Required('scriptworker'): {
         
-        Required('scope-prefix'): basestring,
+        Required('scope-prefix'): text_type,
         
-        Required('worker-types'): {basestring: [basestring]}
+        Required('worker-types'): {text_type: [text_type]}
     },
     Required('task-priority'): optionally_keyed_by('project', Any(
         'highest',
@@ -71,10 +71,10 @@ graph_config_schema = Schema({
     Required('partner-urls'): {
         Required('release-partner-repack'):
             optionally_keyed_by('release-product', 'release-level', 'release-type',
-                                Any(basestring, None)),
+                                Any(text_type, None)),
         Required('release-eme-free-repack'):
             optionally_keyed_by('release-product', 'release-level', 'release-type',
-                                Any(basestring, None)),
+                                Any(text_type, None)),
     },
     Required('workers'): {
         Required('aliases'): {

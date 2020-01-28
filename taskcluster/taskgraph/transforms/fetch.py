@@ -9,8 +9,10 @@ from __future__ import absolute_import, unicode_literals
 
 from mozbuild.shellutil import quote as shell_quote
 
+import io
 import os
 import re
+from six import text_type
 
 from voluptuous import (
     Any,
@@ -38,24 +40,24 @@ CACHE_TYPE = 'content.v1'
 
 FETCH_SCHEMA = Schema({
     
-    Required('name'): basestring,
+    Required('name'): text_type,
 
     
     
-    Optional('job-from'): basestring,
+    Optional('job-from'): text_type,
 
     
-    Required('description'): basestring,
+    Required('description'): text_type,
 
     Required('fetch'): Any(
         {
             'type': 'static-url',
 
             
-            Required('url'): basestring,
+            Required('url'): text_type,
 
             
-            Required('sha256'): basestring,
+            Required('sha256'): text_type,
 
             
             Required('size'): int,
@@ -65,17 +67,17 @@ FETCH_SCHEMA = Schema({
                 
                 
                 
-                Required('sig-url'): basestring,
+                Required('sig-url'): text_type,
                 
                 
-                Required('key-path'): basestring,
+                Required('key-path'): text_type,
             },
 
             
             
             
             
-            Optional('artifact-name'): basestring,
+            Optional('artifact-name'): text_type,
 
             
             
@@ -84,7 +86,7 @@ FETCH_SCHEMA = Schema({
 
             
             
-            Optional('add-prefix'): basestring,
+            Optional('add-prefix'): text_type,
 
             
             
@@ -92,23 +94,23 @@ FETCH_SCHEMA = Schema({
         {
             'type': 'chromium-fetch',
 
-            Required('script'): basestring,
+            Required('script'): text_type,
 
             
-            Required('platform'): basestring,
+            Required('platform'): text_type,
 
             
-            Optional('revision'): basestring,
+            Optional('revision'): text_type,
 
             
-            Required('artifact-name'): basestring
+            Required('artifact-name'): text_type
         },
         {
             'type': 'git',
-            Required('repo'): basestring,
-            Required('revision'): basestring,
-            Optional('artifact-name'): basestring,
-            Optional('path-prefix'): basestring,
+            Required('repo'): text_type,
+            Required('revision'): text_type,
+            Optional('artifact-name'): text_type,
+            Optional('path-prefix'): text_type,
         }
     ),
 })
@@ -205,7 +207,7 @@ def create_fetch_url_task(config, job):
         key_path = os.path.join(taskgraph.GECKO, fetch['gpg-signature'][
             'key-path'])
 
-        with open(key_path, 'rb') as fh:
+        with io.open(key_path, 'r') as fh:
             gpg_key = fh.read()
 
         env['FETCH_GPG_KEY'] = gpg_key

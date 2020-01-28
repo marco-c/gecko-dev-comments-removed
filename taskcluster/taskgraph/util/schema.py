@@ -56,7 +56,7 @@ def optionally_keyed_by(*arguments):
     for _ in arguments:
         options = [schema]
         for field in fields:
-            options.append({'by-' + field: {basestring: schema}})
+            options.append({'by-' + field: {text_type: schema}})
         schema = voluptuous.Any(*options)
     return schema
 
@@ -142,9 +142,9 @@ def check_schema(schema):
 
     def iter(path, sch):
         def check_identifier(path, k):
-            if k in (basestring, text_type, voluptuous.Extra):
+            if k in (text_type, text_type, voluptuous.Extra):
                 pass
-            elif isinstance(k, basestring):
+            elif isinstance(k, text_type):
                 if not identifier_re.match(k) and not whitelisted(path):
                     raise RuntimeError(
                         'YAML schemas should use dashed lower-case identifiers, '
@@ -198,11 +198,11 @@ OptimizationSchema = voluptuous.Any(
     None,
     
     
-    {'index-search': [basestring]},
+    {'index-search': [text_type]},
     
     {'seta': None},
     
-    {'skip-unless-changed': [basestring]},
+    {'skip-unless-changed': [text_type]},
     
     {'skip-unless-schedules': list(schedules.ALL_COMPONENTS)},
     
@@ -213,7 +213,7 @@ OptimizationSchema = voluptuous.Any(
 
 
 taskref_or_string = voluptuous.Any(
-    basestring,
-    {voluptuous.Required('task-reference'): basestring},
-    {voluptuous.Required('artifact-reference'): basestring},
+    text_type,
+    {voluptuous.Required('task-reference'): text_type},
+    {voluptuous.Required('artifact-reference'): text_type},
 )

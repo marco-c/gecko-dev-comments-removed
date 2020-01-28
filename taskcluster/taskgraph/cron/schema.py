@@ -7,6 +7,8 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from six import text_type
+
 from voluptuous import Any, Required, All, Optional
 from taskgraph.util.schema import (
     optionally_keyed_by,
@@ -23,7 +25,7 @@ def even_15_minutes(minutes):
 cron_yml_schema = Schema({
     'jobs': [{
         
-        Required('name'): basestring,
+        Required('name'): text_type,
 
         
 
@@ -32,10 +34,10 @@ cron_yml_schema = Schema({
             Required('type'): 'decision-task',
 
             
-            Required('treeherder-symbol'): basestring,
+            Required('treeherder-symbol'): text_type,
 
             
-            Required('target-tasks-method'): basestring,
+            Required('target-tasks-method'): text_type,
 
             Optional(
                 'optimize-target-tasks',
@@ -51,7 +53,7 @@ cron_yml_schema = Schema({
             Optional(
                 'rebuild-kinds',
                 description='Kinds that should not be re-used from the on-push graph.',
-            ): [basestring],
+            ): [text_type],
         },
 
         
@@ -60,7 +62,7 @@ cron_yml_schema = Schema({
         
         
         
-        'run-on-projects': [basestring],
+        'run-on-projects': [text_type],
 
         
         

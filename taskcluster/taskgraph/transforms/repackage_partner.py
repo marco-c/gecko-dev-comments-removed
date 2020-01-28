@@ -9,6 +9,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import copy
 
+from six import text_type
 from taskgraph.loader.single_dep import schema
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.attributes import copy_attributes_from_dependent_job
@@ -37,13 +38,13 @@ PACKAGE_FORMATS['installer-stub']['args'].extend(["--package-name", "{package-na
 
 packaging_description_schema = schema.extend({
     
-    Required('depname', default='build'): basestring,
+    Required('depname', default='build'): text_type,
 
     
-    Optional('label'): basestring,
+    Optional('label'): text_type,
 
     
-    Optional('routes'): [basestring],
+    Optional('routes'): [text_type],
 
     
     Optional('extra'): task_description_schema['extra'],
@@ -52,16 +53,16 @@ packaging_description_schema = schema.extend({
     Optional('shipping-product'): task_description_schema['shipping-product'],
     Optional('shipping-phase'): task_description_schema['shipping-phase'],
 
-    Required('package-formats'): _by_platform([basestring]),
+    Required('package-formats'): _by_platform([text_type]),
 
     
     Required('mozharness'): {
         
-        Required('config'): _by_platform([basestring]),
+        Required('config'): _by_platform([text_type]),
 
         
         
-        Optional('config-paths'): [basestring],
+        Optional('config-paths'): [text_type],
 
         
         
