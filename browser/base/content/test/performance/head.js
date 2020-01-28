@@ -775,12 +775,14 @@ async function runUrlbarTest(
         
         
         
+        
+        
         return rects.filter(
           r =>
             !(
-              r.x1 >= urlbarRect.left - SHADOW_SIZE &&
-              r.x2 <= urlbarRect.right + SHADOW_SIZE &&
-              r.y1 >= urlbarRect.top - SHADOW_SIZE
+              r.x1 >= Math.floor(urlbarRect.left) - SHADOW_SIZE &&
+              r.x2 <= Math.ceil(urlbarRect.right) + SHADOW_SIZE &&
+              r.y1 >= Math.floor(urlbarRect.top) - SHADOW_SIZE
             )
         );
       },
@@ -800,16 +802,16 @@ async function runUrlbarTest(
           r =>
             !
             (
-              (r.x1 >= textBoxRect.left &&
-                r.x2 <= textBoxRect.right &&
-                r.y1 >= textBoxRect.top &&
-                r.y2 <= textBoxRect.bottom) ||
+              (r.x1 >= Math.floor(textBoxRect.left) &&
+                r.x2 <= Math.ceil(textBoxRect.right) &&
+                r.y1 >= Math.floor(textBoxRect.top) &&
+                r.y2 <= Math.ceil(textBoxRect.bottom)) ||
               
               
-              (r.x1 >= dropmarkerRect.left - 1 &&
-                r.x2 <= dropmarkerRect.right + 1 &&
-                r.y1 >= dropmarkerRect.top &&
-                r.y2 <= dropmarkerRect.bottom)
+              (r.x1 >= Math.floor(dropmarkerRect.left) &&
+                r.x2 <= Math.ceil(dropmarkerRect.right) &&
+                r.y1 >= Math.floor(dropmarkerRect.top) &&
+                r.y2 <= Math.ceil(dropmarkerRect.bottom))
             )
         ),
     };
