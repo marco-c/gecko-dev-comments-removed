@@ -274,8 +274,7 @@ TEST(Jemalloc, PtrInfo)
     jemalloc_ptr_info(&chunk[i], &info);
   }
 
-  
-  
+  moz_dispose_arena(arenaId);
 }
 
 size_t sSizes[] = {1,      42,      79,      918,     1.5_KiB,
@@ -293,8 +292,7 @@ TEST(Jemalloc, Arenas)
   ptr = moz_arena_calloc(arena, 24, 2);
   
   free(ptr);
-  
-  
+  moz_dispose_arena(arena);
 
 #ifdef HAS_GDB_SLEEP_DURATION
   
@@ -331,10 +329,8 @@ TEST(Jemalloc, Arenas)
     }
   }
 
-  
-  
-  
-  
+  moz_dispose_arena(arena2);
+  moz_dispose_arena(arena);
 
 #ifdef HAS_GDB_SLEEP_DURATION
   _gdb_sleep_duration = old_gdb_sleep_duration;
@@ -450,8 +446,7 @@ TEST(Jemalloc, InPlace)
     }
   }
 
-  
-  
+  moz_dispose_arena(arena);
 }
 
 
@@ -649,13 +644,12 @@ TEST(Jemalloc, JunkPoison)
     }
   }
 
-  
-  
+  moz_dispose_arena(arena);
 
   moz_arena_free(buf_arena, poison_buf);
   moz_arena_free(buf_arena, junk_buf);
-  
-  
+  moz_arena_free(buf_arena, fill_buf);
+  moz_dispose_arena(buf_arena);
 
 #  ifdef HAS_GDB_SLEEP_DURATION
   _gdb_sleep_duration = old_gdb_sleep_duration;
@@ -706,8 +700,57 @@ TEST(Jemalloc, GuardRegion)
   }
   moz_arena_free(arena, extra_ptr);
 
+  moz_dispose_arena(arena);
+
+#  ifdef HAS_GDB_SLEEP_DURATION
+  _gdb_sleep_duration = old_gdb_sleep_duration;
+#  endif
+}
+
+TEST(Jemalloc, DisposeArena)
+{
+  jemalloc_stats_t stats;
+  jemalloc_stats(&stats);
+
+#  ifdef HAS_GDB_SLEEP_DURATION
+  
+  unsigned int old_gdb_sleep_duration = _gdb_sleep_duration;
+  _gdb_sleep_duration = 0;
+#  endif
+
+  arena_id_t arena = moz_create_arena();
+  void* ptr = moz_arena_malloc(arena, 42);
+  
+  ASSERT_DEATH_WRAP(moz_dispose_arena(arena), "");
+  moz_arena_free(arena, ptr);
+  moz_dispose_arena(arena);
+
+  arena = moz_create_arena();
+  ptr = moz_arena_malloc(arena, stats.page_size * 2);
+  
+  ASSERT_DEATH_WRAP(moz_dispose_arena(arena), "");
+  moz_arena_free(arena, ptr);
+  moz_dispose_arena(arena);
+
+  arena = moz_create_arena();
+  ptr = moz_arena_malloc(arena, stats.chunksize * 2);
+#  ifdef MOZ_DEBUG
+  
+  ASSERT_DEATH_WRAP(moz_dispose_arena(arena), "");
+  moz_arena_free(arena, ptr);
+  moz_dispose_arena(arena);
+#  else
   
   
+  moz_dispose_arena(arena);
+  
+  ASSERT_DEATH_WRAP(free(ptr), "");
+  
+  ASSERT_DEATH_WRAP(ptr = realloc(ptr, stats.chunksize * 3), "");
+#  endif
+
+  
+  ASSERT_DEATH_WRAP(moz_arena_malloc(arena, 42), "");
 
 #  ifdef HAS_GDB_SLEEP_DURATION
   _gdb_sleep_duration = old_gdb_sleep_duration;
