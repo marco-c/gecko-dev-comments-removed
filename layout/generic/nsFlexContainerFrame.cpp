@@ -581,6 +581,9 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
   
   bool IsStrut() const { return mIsStrut; }
 
+  LogicalAxis MainAxis() const { return mMainAxis; }
+  LogicalAxis CrossAxis() const { return GetOrthogonalAxis(mMainAxis); }
+
   
   
   
@@ -864,6 +867,16 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
   const float mFlexGrow = 0.0f;
   const float mFlexShrink = 0.0f;
   const AspectRatio mIntrinsicRatio;
+
+  
+  const WritingMode mWM;
+
+  
+  const WritingMode mCBWM;
+
+  
+  const LogicalAxis mMainAxis = eLogicalAxisInline;
+
   const nsMargin mBorderPadding;
   
   nsMargin mMargin;
@@ -895,8 +908,6 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
   
   float mShareOfWeightSoFar = 0.0f;
 
-  
-  const WritingMode mWM;
   bool mIsFrozen = false;
   bool mHadMinViolation = false;
   bool mHadMaxViolation = false;
@@ -1906,6 +1917,9 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
       mFlexGrow(aFlexGrow),
       mFlexShrink(aFlexShrink),
       mIntrinsicRatio(mFrame->GetIntrinsicRatio()),
+      mWM(aFlexItemReflowInput.GetWritingMode()),
+      mCBWM(aAxisTracker.GetWritingMode()),
+      mMainAxis(aAxisTracker.MainAxis()),
       mBorderPadding(aFlexItemReflowInput.ComputedPhysicalBorderPadding()),
       mMargin(aFlexItemReflowInput.ComputedPhysicalMargin()),
       mMainMinSize(aMainMinSize),
@@ -1913,7 +1927,6 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
       mCrossMinSize(aCrossMinSize),
       mCrossMaxSize(aCrossMaxSize),
       mCrossSize(aTentativeCrossSize),
-      mWM(aFlexItemReflowInput.GetWritingMode()),
       mIsInlineAxisMainAxis(aAxisTracker.IsRowOriented() !=
                             aAxisTracker.GetWritingMode().IsOrthogonalTo(mWM))
 
@@ -2046,13 +2059,13 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
 FlexItem::FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize,
                    WritingMode aContainerWM)
     : mFrame(aChildFrame),
+      mWM(aContainerWM),
+      mCBWM(aContainerWM),
       mCrossSize(aCrossSize),
       
       
-      mWM(aContainerWM),
       mIsFrozen(true),
       mIsStrut(true),  
-      mIsInlineAxisMainAxis(true),  
       mAlignSelf(NS_STYLE_ALIGN_FLEX_START) {
   MOZ_ASSERT(mFrame, "expecting a non-null child frame");
   MOZ_ASSERT(StyleVisibility::Collapse == mFrame->StyleVisibility()->mVisible,
