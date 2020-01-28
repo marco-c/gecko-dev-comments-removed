@@ -3,8 +3,10 @@
 const { WebVTT } = ChromeUtils.import("resource://gre/modules/vtt.jsm");
 
 let fakeWindow = {
-  VTTCue() {},
-  VTTRegion() {},
+  
+  VTTCue: function() {},
+  VTTRegion: function() {},
+  
 };
 
 
