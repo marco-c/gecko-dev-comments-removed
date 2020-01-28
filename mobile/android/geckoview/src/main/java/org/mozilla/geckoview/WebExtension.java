@@ -695,8 +695,44 @@ public class WebExtension {
                     }
                     continue;
                 }
-                mIconUris.put(intKey, bundle.getString(key));
+
+                final String value = getIconValue(bundle.get(key));
+                if (value != null) {
+                    mIconUris.put(intKey, value);
+                }
             }
+        }
+
+        private String getIconValue(final Object value) {
+            
+            if (value instanceof GeckoBundle) {
+                
+                final GeckoBundle themeIcons = (GeckoBundle) value;
+                final Object defaultIcon = themeIcons.get("default");
+
+                if (!(defaultIcon instanceof String)) {
+                    if (BuildConfig.DEBUG) {
+                        throw new RuntimeException("Unexpected themed_icon value.");
+                    }
+                    Log.e(LOGTAG, "Unexpected themed_icon value.");
+                    return null;
+                }
+
+                return (String) defaultIcon;
+            }
+
+            
+            if (value instanceof String) {
+                return (String) value;
+            }
+
+            
+            if (BuildConfig.DEBUG) {
+                throw new RuntimeException("Unexpected icon value: " + value);
+            }
+
+            Log.e(LOGTAG, "Unexpected icon value.");
+            return null;
         }
 
         
