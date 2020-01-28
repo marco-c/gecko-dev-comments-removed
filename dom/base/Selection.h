@@ -729,12 +729,21 @@ class Selection final : public nsSupportsWeakReference,
   nsresult MaybeAddTableCellRange(nsRange* aRange, bool* aDidAddRange,
                                   int32_t* aOutIndex);
 
+  
+
+
+
+
+
+
+
   static nsresult FindInsertionPoint(
       const nsTArray<RangeData>* aElementArray, const nsINode* aPointNode,
       int32_t aPointOffset,
       nsresult (*aComparator)(const nsINode*, int32_t, const nsRange*,
                               int32_t*),
-      int32_t* aPoint);
+      int32_t* aInsertionPoint);
+
   bool EqualsRangeAtPoint(const nsINode* aBeginNode, int32_t aBeginOffset,
                           const nsINode* aEndNode, int32_t aEndOffset,
                           int32_t aRangeIndex) const;

@@ -710,21 +710,12 @@ static nsresult CompareToRangeEnd(const nsINode* aCompareNode,
   return NS_OK;
 }
 
-
-
-
-
-
-
-
-
-
 nsresult Selection::FindInsertionPoint(
     const nsTArray<RangeData>* aElementArray, const nsINode* aPointNode,
     int32_t aPointOffset,
     nsresult (*aComparator)(const nsINode*, int32_t, const nsRange*, int32_t*),
-    int32_t* aPoint) {
-  *aPoint = 0;
+    int32_t* aInsertionPoint) {
+  *aInsertionPoint = 0;
   int32_t beginSearch = 0;
   int32_t endSearch = aElementArray->Length();  
 
@@ -749,7 +740,7 @@ nsresult Selection::FindInsertionPoint(
     } while (endSearch - beginSearch > 0);
   }
 
-  *aPoint = beginSearch;
+  *aInsertionPoint = beginSearch;
   return NS_OK;
 }
 
