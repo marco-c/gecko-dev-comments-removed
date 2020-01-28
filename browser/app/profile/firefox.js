@@ -1647,7 +1647,6 @@ pref("privacy.usercontext.about_newtab_segregation.enabled", true);
 pref("privacy.userContext.extension", "");
 
 
-pref("browser.tabs.remote.autostart", true);
 pref("browser.tabs.remote.desktopbehavior", true);
 
 
