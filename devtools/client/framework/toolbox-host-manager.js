@@ -11,6 +11,7 @@ const L10N = new LocalizationHelper(
 );
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const Telemetry = require("devtools/client/shared/telemetry");
+const { DOMHelpers } = require("devtools/shared/dom-helpers");
 
 
 const WIDTH_CHEVRON_AND_MEATBALL = 50;
@@ -235,6 +236,14 @@ ToolboxHostManager.prototype = {
     const iframe = this.host.frame;
     const newHost = this.createHost(hostType);
     const newIframe = await newHost.create();
+
+    
+    
+    await new Promise(resolve => {
+      newIframe.setAttribute("src", "about:blank");
+      DOMHelpers.onceDOMReady(newIframe.contentWindow, resolve);
+    });
+
     
     newIframe.swapFrameLoaders(iframe);
 
