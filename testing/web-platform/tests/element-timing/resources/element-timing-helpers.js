@@ -6,9 +6,11 @@ function checkElementInternal(entry, expectedUrl, expectedIdentifier, expectedID
   assert_equals(entry.identifier, expectedIdentifier, 'identifier does not match');
   if (beforeRender != 0) {
     
+    assert_greater_than(entry.renderTime, 0, 'renderTime should be nonzero');
     assert_equals(entry.startTime, entry.renderTime, 'startTime should equal renderTime');
   } else {
     
+    assert_equals(entry.renderTime, 0, 'renderTime should be zero');
     assert_equals(entry.startTime, entry.loadTime, 'startTime should equal loadTime');
   }
   assert_equals(entry.duration, 0, 'duration should be 0');
