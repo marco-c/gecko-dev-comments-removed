@@ -36,6 +36,17 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 
+const { AddonTestUtils } = ChromeUtils.import(
+  "resource://testing-common/AddonTestUtils.jsm"
+);
+AddonTestUtils.init(this, false);
+AddonTestUtils.createAppInfo(
+  "xpcshell@tests.mozilla.org",
+  "XPCShell",
+  "42",
+  "42"
+);
+
 
 
 
@@ -215,7 +226,7 @@ async function addTestEngine(basename, httpServer = undefined) {
 
 
 
-function addTestSuggestionsEngine(suggestionsFn = null) {
+async function addTestSuggestionsEngine(suggestionsFn = null) {
   
   let server = makeTestServer(9000);
   server.registerPathHandler("/suggest", (req, resp) => {
