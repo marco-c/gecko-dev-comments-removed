@@ -16,7 +16,7 @@ const { EventEmitter } = ChromeUtils.import(
 );
 
 const {
-  ExtensionUtils: { ExtensionError },
+  ExtensionUtils: { ExtensionError, promiseTimeout },
 } = ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
@@ -26,8 +26,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   OS: "resource://gre/modules/osfile.jsm",
   Services: "resource://gre/modules/Services.jsm",
   Subprocess: "resource://gre/modules/Subprocess.jsm",
-  clearTimeout: "resource://gre/modules/Timer.jsm",
-  setTimeout: "resource://gre/modules/Timer.jsm",
 });
 
 
@@ -71,7 +69,7 @@ var NativeApp = class extends EventEmitter {
     this.readPromise = null;
     this.sendQueue = [];
     this.writePromise = null;
-    this.sentDisconnect = false;
+    this.cleanupStarted = false;
 
     this.startupPromise = NativeManifests.lookupManifest(
       "stdio",
@@ -271,55 +269,67 @@ var NativeApp = class extends EventEmitter {
 
   
   
-  _cleanup(err, fromExtension = false) {
+  async _cleanup(err, fromExtension = false) {
+    if (this.cleanupStarted) {
+      return;
+    }
+    this.cleanupStarted = true;
     this.context.forgetOnClose(this);
 
-    let doCleanup = () => {
-      
-      
-      let timer = setTimeout(() => {
-        if (this.proc) {
-          this.proc.kill(GRACEFUL_SHUTDOWN_TIME);
-        }
-      }, GRACEFUL_SHUTDOWN_TIME);
-
-      let promise = Promise.all([
-        this.proc.stdin.close().catch(err => {
-          if (err.errorCode != Subprocess.ERROR_END_OF_FILE) {
-            throw err;
-          }
-        }),
-        this.proc.wait(),
-      ]).then(() => {
-        this.proc = null;
-        clearTimeout(timer);
-      });
-
-      AsyncShutdown.profileBeforeChange.addBlocker(
-        `Native Messaging: Wait for application ${this.name} to exit`,
-        promise
-      );
-
-      promise.then(() => {
-        AsyncShutdown.profileBeforeChange.removeBlocker(promise);
-      });
-
-      return promise;
-    };
-
-    if (this.proc) {
-      doCleanup();
-    } else if (this.startupPromise) {
-      this.startupPromise.then(doCleanup);
-    }
-
-    if (!this.sentDisconnect && !fromExtension) {
+    if (!fromExtension) {
       if (err && err.errorCode == Subprocess.ERROR_END_OF_FILE) {
         err = null;
       }
       this.emit("disconnect", err);
     }
-    this.sentDisconnect = true;
+
+    await this.startupPromise;
+
+    if (!this.proc) {
+      
+      return;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    this.proc.stdin.close().catch(err => {
+      if (err.errorCode != Subprocess.ERROR_END_OF_FILE) {
+        Cu.reportError(err);
+      }
+    });
+    let exitPromise = Promise.race([
+      
+      this.proc.wait().then(() => {
+        this.proc = null;
+      }),
+      promiseTimeout(GRACEFUL_SHUTDOWN_TIME).then(() => {
+        if (this.proc) {
+          
+          this.proc.kill(GRACEFUL_SHUTDOWN_TIME);
+
+          
+          
+          
+          
+          
+          
+          return promiseTimeout(2 * GRACEFUL_SHUTDOWN_TIME);
+        }
+      }),
+    ]);
+
+    AsyncShutdown.profileBeforeChange.addBlocker(
+      `Native Messaging: Wait for application ${this.name} to exit`,
+      exitPromise
+    );
   }
 
   
