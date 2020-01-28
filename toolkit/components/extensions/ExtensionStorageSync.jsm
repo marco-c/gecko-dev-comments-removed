@@ -1196,7 +1196,7 @@ class ExtensionStorageSync {
       ) {
         
         
-        const isSessionValid = await this._fxaService.sessionStatus();
+        const isSessionValid = await this._fxaService.checkAccountStatus();
         if (isSessionValid) {
           log.error(
             "Couldn't decipher old keyring; deleting the default bucket and resetting sync status"
