@@ -146,7 +146,6 @@ const kDocumentChannelDeniedURIs = [
 ];
 
 
-
 function documentChannelPermittedForURI(aURI) {
   return (
     !kDocumentChannelDeniedSchemes.includes(aURI.scheme) &&
