@@ -26,17 +26,9 @@ namespace frontend {
 
 
 struct MOZ_RAII ParseInfo {
-  
-  
-  
-  
-  
-  enum Mode { Eager, Deferred };
-
   UsedNameTracker usedNames;
   LifoAllocScope& allocScope;
   FunctionTreeHolder treeHolder;
-  Mode mode;
   
   
   Vector<RegExpCreationData> regExpData;
@@ -60,9 +52,6 @@ struct MOZ_RAII ParseInfo {
       : usedNames(cx),
         allocScope(alloc),
         treeHolder(cx),
-        mode(cx->realm()->behaviors().deferredParserAlloc()
-                 ? ParseInfo::Mode::Deferred
-                 : ParseInfo::Mode::Eager),
         regExpData(cx),
         bigIntData(cx),
         scopeCreationData(cx),
@@ -79,9 +68,6 @@ struct MOZ_RAII ParseInfo {
   ParseInfo(ParseInfo&&) = delete;
   ParseInfo& operator=(const ParseInfo&) = delete;
   ParseInfo& operator=(ParseInfo&&) = delete;
-
-  bool isEager() { return mode == Mode::Eager; }
-  bool isDeferred() { return mode == Mode::Deferred; }
 };
 
 }  
