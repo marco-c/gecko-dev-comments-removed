@@ -19,7 +19,6 @@ const TEST_STARTING_ORDER = [
   "netmonitor",
   "storage",
   "accessibility",
-  "application",
   EXTENSION,
 ];
 
@@ -27,8 +26,6 @@ add_task(async function() {
   
   
   await pushPref("devtools.whatsnew.enabled", false);
-  
-  await pushPref("devtools.application.enabled", true);
 
   const extension = ExtensionTestUtils.loadExtension({
     useAddonManager: "temporary",
@@ -98,7 +95,6 @@ add_task(async function() {
     "netmonitor",
     "storage",
     "accessibility",
-    "application",
   ];
   prepareToolTabReorderTest(toolbox, TEST_STARTING_ORDER);
   await dndToolTab(toolbox, dragTarget, dropTarget);
@@ -122,7 +118,6 @@ add_task(async function() {
     "memory",
     "netmonitor",
     "accessibility",
-    "application",
     EXTENSION,
   ];
   await dndToolTab(toolbox, dragTarget, dropTarget);
@@ -144,7 +139,6 @@ add_task(async function() {
     "netmonitor",
     "storage",
     "accessibility",
-    "application",
   ];
   await dndToolTab(toolbox, dragTarget, dropTarget);
   assertToolTabPreferenceOrder(expectedOrder);

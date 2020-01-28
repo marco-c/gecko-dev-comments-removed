@@ -1,5 +1,5 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
@@ -32,8 +32,8 @@ async function openToolboxOptionsInNewTab() {
     toolbox,
     doc,
     panelWin: panel.panelWin,
-    
-    
+    // This is a getter becuse toolbox tools list gets re-setup every time there
+    // is a tool-registered or tool-undregistered event.
     get checkbox() {
       return panel.panelDoc.getElementById(id);
     },
@@ -45,7 +45,7 @@ async function testToggleTools() {
 
   const toolId = tab1.checkbox.id;
   const testTool = gDevTools.getDefaultTools().find(tool => tool.id === toolId);
-  
+  // Store modified pref names so that they can be cleared on error.
   modifiedPref = testTool.visibilityswitch;
 
   info(`Registering tool ${toolId} in the first tab.`);
@@ -79,13 +79,13 @@ async function toggleTool({ doc, panelWin, checkbox, tab }, toolId) {
   const id = await onToggleTool;
 
   is(id, toolId, `Correct event for ${toolId} was fired`);
-  
+  // await new Promise(resolve => setTimeout(resolve, 60000));
   (prevChecked ? checkUnregistered : checkRegistered)(toolId);
 }
 
 async function checkUnregistered(toolId) {
   ok(
-    !getToolboxTab(toolId),
+    !tab1.doc.getElementById("toolbox-tab-" + toolId),
     `Tab for unregistered tool ${toolId} is not present in first toolbox`
   );
   ok(
@@ -93,7 +93,7 @@ async function checkUnregistered(toolId) {
     `Checkbox for unregistered tool ${toolId} is not checked in first toolbox`
   );
   ok(
-    !getToolboxTab(toolId),
+    !tab2.doc.getElementById("toolbox-tab-" + toolId),
     `Tab for unregistered tool ${toolId} is not present in second toolbox`
   );
   ok(
@@ -104,7 +104,7 @@ async function checkUnregistered(toolId) {
 
 function checkRegistered(toolId) {
   ok(
-    getToolboxTab(toolId),
+    tab1.doc.getElementById("toolbox-tab-" + toolId),
     `Tab for registered tool ${toolId} is present in first toolbox`
   );
   ok(
@@ -112,20 +112,12 @@ function checkRegistered(toolId) {
     `Checkbox for registered tool ${toolId} is checked in first toolbox`
   );
   ok(
-    getToolboxTab(toolId),
+    tab2.doc.getElementById("toolbox-tab-" + toolId),
     `Tab for registered tool ${toolId} is present in second toolbox`
   );
   ok(
     tab2.checkbox.checked,
     `Checkbox for registered tool ${toolId} is checked in second toolbox`
-  );
-}
-
-function getToolboxTab(toolId) {
-  
-  return (
-    tab1.doc.getElementById(`toolbox-tab-${toolId}`) ||
-    tab1.doc.getElementById(`tools-chevron-menupopup-${toolId}`)
   );
 }
 
