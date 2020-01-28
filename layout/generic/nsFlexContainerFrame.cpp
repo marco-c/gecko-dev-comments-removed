@@ -311,6 +311,9 @@ class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
   }
   
 
+  LogicalAxis MainAxis() const { return mMainAxis; }
+  LogicalAxis CrossAxis() const { return GetOrthogonalAxis(mMainAxis); }
+
   
   WritingMode GetWritingMode() const { return mWM; }
 
@@ -422,6 +425,8 @@ class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
   AxisOrientationType mPhysicalMainAxis = eAxis_LR;
   AxisOrientationType mPhysicalCrossAxis = eAxis_TB;
   
+
+  LogicalAxis mMainAxis = eLogicalAxisInline;
 
   const WritingMode mWM;  
 
@@ -3669,6 +3674,7 @@ void FlexboxAxisTracker::InitAxesFromLegacyProps(
   
   
   mIsRowOriented = (boxOrientIsVertical == wmIsVertical);
+  mMainAxis = mIsRowOriented ? eLogicalAxisInline : eLogicalAxisBlock;
 
   
   if (boxOrientIsVertical) {
@@ -3721,21 +3727,25 @@ void FlexboxAxisTracker::InitAxesFromModernProps(
   switch (flexDirection) {
     case StyleFlexDirection::Row:
       mPhysicalMainAxis = inlineDimension;
+      mMainAxis = eLogicalAxisInline;
       mIsRowOriented = true;
       mIsMainAxisReversed = false;
       break;
     case StyleFlexDirection::RowReverse:
       mPhysicalMainAxis = GetReverseAxis(inlineDimension);
+      mMainAxis = eLogicalAxisInline;
       mIsRowOriented = true;
       mIsMainAxisReversed = true;
       break;
     case StyleFlexDirection::Column:
       mPhysicalMainAxis = blockDimension;
+      mMainAxis = eLogicalAxisBlock;
       mIsRowOriented = false;
       mIsMainAxisReversed = false;
       break;
     case StyleFlexDirection::ColumnReverse:
       mPhysicalMainAxis = GetReverseAxis(blockDimension);
+      mMainAxis = eLogicalAxisBlock;
       mIsRowOriented = false;
       mIsMainAxisReversed = true;
       break;
@@ -3746,12 +3756,14 @@ void FlexboxAxisTracker::InitAxesFromModernProps(
   
   
   
+  
   if (flexDirection == StyleFlexDirection::Column ||
       flexDirection == StyleFlexDirection::ColumnReverse) {
     mPhysicalCrossAxis = inlineDimension;
   } else {
     mPhysicalCrossAxis = blockDimension;
   }
+  
 
   
   if (stylePos->mFlexWrap == StyleFlexWrap::WrapReverse) {
