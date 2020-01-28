@@ -24,6 +24,5 @@ config = {
     "env": {
         "DISPLAY": ":0.0",
         "PATH": "%(PATH)s:%(abs_work_dir)s/android-sdk-linux/emulator:%(abs_work_dir)s/android-sdk-linux/tools:%(abs_work_dir)s/android-sdk-linux/platform-tools",
-        "MINIDUMP_SAVEPATH": "%(abs_work_dir)s/minidumps",
     },
 }
