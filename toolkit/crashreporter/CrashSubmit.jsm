@@ -236,9 +236,9 @@ Submitter.prototype = {
       return false;
     }
     let serverURL = this.extraKeyVals.ServerURL;
+    delete this.extraKeyVals.ServerURL;
 
     
-
     let envOverride = Cc["@mozilla.org/process/environment;1"]
       .getService(Ci.nsIEnvironment)
       .get("MOZ_CRASHREPORTER_URL");
@@ -252,9 +252,6 @@ Submitter.prototype = {
     let formData = new FormData();
 
     
-    delete this.extraKeyVals.ServerURL;
-    delete this.extraKeyVals.StackTraces;
-
     let payload = Object.assign({}, this.extraKeyVals);
     if (this.noThrottle) {
       
@@ -373,6 +370,22 @@ Submitter.prototype = {
     }
   },
 
+  readAnnotations: async function Submitter_readAnnotations(extra) {
+    
+    
+    const strippedAnnotations = [
+      "StackTraces",
+      "TelemetryClientId",
+      "TelemetryServerURL",
+    ];
+    let decoder = new TextDecoder();
+    let extraData = await OS.File.read(extra);
+    let extraKeyVals = JSON.parse(decoder.decode(extraData));
+
+    this.extraKeyVals = { ...this.extraKeyVals, ...extraKeyVals };
+    strippedAnnotations.forEach(key => delete this.extraKeyVals[key]);
+  },
+
   submit: async function Submitter_submit() {
     if (this.recordSubmission) {
       await Services.crashmanager.ensureCrashIsPresent(this.id);
@@ -398,16 +411,7 @@ Submitter.prototype = {
     this.dump = dump;
     this.extra = extra;
     this.memory = memoryExists ? memory : null;
-
-    let decoder = new TextDecoder();
-    let extraData = await OS.File.read(extra);
-    let extraKeyVals = JSON.parse(decoder.decode(extraData));
-
-    for (let key in extraKeyVals) {
-      if (!(key in this.extraKeyVals)) {
-        this.extraKeyVals[key] = extraKeyVals[key];
-      }
-    }
+    await this.readAnnotations(extra);
 
     let additionalDumps = [];
 
