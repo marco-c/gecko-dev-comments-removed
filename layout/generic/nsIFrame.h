@@ -3349,6 +3349,15 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+  void SelectionStateChanged() {
+    MOZ_ASSERT(!IsTextFrame());
+    InvalidateFrameSubtree();  
+  }
+
+  
+
+
+
 
 
 

@@ -339,8 +339,8 @@ class nsTextFrame : public nsFrame {
 
 
 
-  void SetSelectedRange(uint32_t aStart, uint32_t aEnd, bool aSelected,
-                        SelectionType aSelectionType);
+  void SelectionStateChanged(uint32_t aStart, uint32_t aEnd, bool aSelected,
+                             SelectionType aSelectionType);
 
   FrameSearchResult PeekOffsetNoAmount(bool aForward, int32_t* aOffset) final;
   FrameSearchResult PeekOffsetCharacter(
