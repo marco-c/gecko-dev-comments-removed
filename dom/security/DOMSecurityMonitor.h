@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_DOMSecurityMonitor_h
 #define mozilla_dom_DOMSecurityMonitor_h
 
+class nsIChannel;
 class nsIPrincipal;
 
 class DOMSecurityMonitor final {
@@ -22,6 +23,15 @@ class DOMSecurityMonitor final {
 
   static void AuditParsingOfHTMLXMLFragments(nsIPrincipal* aPrincipal,
                                              const nsAString& aFragment);
+
+  
+
+
+
+
+
+
+  static void AuditUseOfJavaScriptURI(nsIChannel* aChannel);
 
  private:
   DOMSecurityMonitor() = default;

@@ -7,6 +7,8 @@
 #include "DOMSecurityMonitor.h"
 #include "nsContentUtils.h"
 
+#include "nsIChannel.h"
+#include "nsILoadInfo.h"
 #include "nsIPrincipal.h"
 #include "nsIURI.h"
 
@@ -101,4 +103,28 @@ void DOMSecurityMonitor::AuditParsingOfHTMLXMLFragments(
           uriSpec.get(), NS_ConvertUTF16toUTF8(filename).get(), lineNum,
           columnNum, NS_ConvertUTF16toUTF8(aFragment).get());
   MOZ_ASSERT(false);
+}
+
+
+void DOMSecurityMonitor::AuditUseOfJavaScriptURI(nsIChannel* aChannel) {
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  nsCOMPtr<nsIPrincipal> loadingPrincipal = loadInfo->LoadingPrincipal();
+
+  
+  
+  
+  
+  if (!loadingPrincipal) {
+    return;
+  }
+
+  
+  
+  if (!loadingPrincipal->IsSystemPrincipal() &&
+      !loadingPrincipal->SchemeIs("about")) {
+    return;
+  }
+
+  MOZ_ASSERT(false,
+             "Do not use javascript: URIs in chrome code or in about: pages");
 }
