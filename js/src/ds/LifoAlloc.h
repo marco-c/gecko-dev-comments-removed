@@ -11,7 +11,6 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/MemoryChecking.h"
 #include "mozilla/MemoryReporting.h"
-#include <utility>
 #include "mozilla/PodOperations.h"
 #include "mozilla/TemplateLib.h"
 #include "mozilla/TypeTraits.h"
@@ -19,6 +18,7 @@
 #include <algorithm>
 #include <new>
 #include <stddef.h>  
+#include <utility>
 
 
 

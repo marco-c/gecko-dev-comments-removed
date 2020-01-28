@@ -13,7 +13,6 @@
 #include "mozilla/HashTable.h"         
 #include "mozilla/LinkedList.h"        
 #include "mozilla/Maybe.h"             
-#include <utility>                     
 #include "mozilla/Range.h"             
 #include "mozilla/Result.h"            
 #include "mozilla/TimeStamp.h"         
@@ -21,11 +20,12 @@
 
 #include <stddef.h>  
 #include <stdint.h>  
+#include <utility>   
 
 #include "jsapi.h"    
 #include "jstypes.h"  
-
 #include "NamespaceImports.h"       
+
 #include "debugger/DebugAPI.h"      
 #include "debugger/Object.h"        
 #include "ds/TraceableFifo.h"       

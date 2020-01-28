@@ -7,9 +7,8 @@
 #ifndef vm_ErrorReporting_h
 #define vm_ErrorReporting_h
 
-#include <utility>
-
 #include <stdarg.h>
+#include <utility>
 
 #include "jsapi.h"        
 #include "jsfriendapi.h"  

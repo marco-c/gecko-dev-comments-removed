@@ -12,7 +12,6 @@
 #include "mozilla/GuardObjects.h"      
 #include "mozilla/HashTable.h"         
 #include "mozilla/Maybe.h"             
-#include <utility>                     
 #include "mozilla/RecordReplay.h"      
 #include "mozilla/ScopeExit.h"         
 #include "mozilla/ThreadLocal.h"       
@@ -27,6 +26,7 @@
 #include <stddef.h>    
 #include <stdint.h>    
 #include <string.h>    
+#include <utility>     
 
 #include "jsapi.h"        
 #include "jsfriendapi.h"  

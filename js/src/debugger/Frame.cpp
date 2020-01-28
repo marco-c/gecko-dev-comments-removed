@@ -9,7 +9,6 @@
 #include "mozilla/Assertions.h"   
 #include "mozilla/HashTable.h"    
 #include "mozilla/Maybe.h"        
-#include <utility>                
 #include "mozilla/Range.h"        
 #include "mozilla/RangedPtr.h"    
 #include "mozilla/Result.h"       
@@ -20,6 +19,7 @@
 #include <stddef.h>  
 #include <stdint.h>  
 #include <string.h>  
+#include <utility>   
 
 #include "jsapi.h"        
 #include "jsfriendapi.h"  
