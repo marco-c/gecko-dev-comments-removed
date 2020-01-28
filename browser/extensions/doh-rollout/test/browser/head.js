@@ -59,10 +59,50 @@ async function setup() {
   Services.telemetry.canRecordExtended = true;
   Services.telemetry.clearEvents();
 
-  registerCleanupFunction(() => {
+  registerCleanupFunction(async () => {
     Services.telemetry.canRecordExtended = oldCanRecord;
     Services.telemetry.clearEvents();
+    await resetPrefsAndRestartAddon();
   });
+}
+
+async function checkHeuristicsTelemetry(decision, evaluateReason) {
+  let events;
+  await BrowserTestUtils.waitForCondition(() => {
+    events = Services.telemetry.snapshotEvents(
+      Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS
+    ).dynamic;
+    return events;
+  });
+  events = events.filter(
+    e => e[1] == "doh" && e[2] == "evaluate" && e[3] == "heuristics"
+  );
+  is(events.length, 1, "Found the expected heuristics event.");
+  is(events[0][4], decision, "The event records the expected decision");
+  if (evaluateReason) {
+    is(events[0][5].evaluateReason, evaluateReason, "Got the expected reason.");
+  }
+
+  
+  
+  
+  
+  
+  Services.telemetry.clearEvents();
+}
+
+function ensureNoHeuristicsTelemetry() {
+  let events = Services.telemetry.snapshotEvents(
+    Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS
+  ).dynamic;
+  if (!events) {
+    ok(true, "Found no heuristics events.");
+    return;
+  }
+  events = events.filter(
+    e => e[1] == "doh" && e[2] == "evaluate" && e[3] == "heuristics"
+  );
+  is(events.length, 0, "Found no heuristics events.");
 }
 
 function setPassingHeuristics() {
@@ -101,7 +141,12 @@ async function waitForDoorhanger() {
 }
 
 function simulateNetworkChange() {
-  Services.obs.notifyObservers(null, "network:link-status-changed", "down");
+  
+  
+  
+  
+  
+  
   Services.obs.notifyObservers(null, "network:link-status-changed", "up");
 }
 
