@@ -13,8 +13,6 @@ namespace mozilla {
 namespace dom {
 template <typename T>
 class Sequence;
-template <typename T>
-class Optional;
 }  
 namespace webgpu {
 
@@ -34,6 +32,12 @@ class ProgrammablePassEncoder : public nsISupports, public ObjectBase {
  protected:
   ~ProgrammablePassEncoder() = default;
   void Cleanup() {}
+
+ public:
+  
+  
+  virtual void SetBindGroup(uint32_t aSlot, const BindGroup& aBindGroup,
+                            const dom::Sequence<uint32_t>& aDynamicOffsets) = 0;
 };
 
 }  

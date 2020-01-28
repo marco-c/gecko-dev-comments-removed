@@ -34,11 +34,12 @@ class Buffer final : public ObjectBase, public ChildOf<Device> {
   Buffer(Device* const aParent, RawId aId, BufferAddress aSize);
   void InitMapping(ipc::Shmem&& aShmem, JSObject* aArrayBuffer);
 
+  const RawId mId;
+
  private:
   virtual ~Buffer();
   void Cleanup();
 
-  const RawId mId;
   
   
   
