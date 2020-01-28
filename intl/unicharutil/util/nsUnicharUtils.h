@@ -144,10 +144,15 @@ uint32_t GetLowerUTF8Codepoint(const char* aStr, const char* aEnd,
 
 
 
+
+
+
+
 bool CaseInsensitiveUTF8CharsEqual(const char* aLeft, const char* aRight,
                                    const char* aLeftEnd, const char* aRightEnd,
                                    const char** aLeftNext,
-                                   const char** aRightNext, bool* aErr);
+                                   const char** aRightNext, bool* aErr,
+                                   bool aMatchDiacritics = true);
 
 namespace mozilla {
 

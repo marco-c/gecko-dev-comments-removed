@@ -124,10 +124,13 @@ static MOZ_ALWAYS_INLINE bool isOnBoundary(const_char_iterator aPos) {
 
 
 
+
+
 static MOZ_ALWAYS_INLINE bool stringMatch(const_char_iterator aTokenStart,
                                           const_char_iterator aTokenEnd,
                                           const_char_iterator aSourceStart,
-                                          const_char_iterator aSourceEnd) {
+                                          const_char_iterator aSourceEnd,
+                                          bool aMatchDiacritics) {
   const_char_iterator tokenCur = aTokenStart, sourceCur = aSourceStart;
 
   while (tokenCur < aTokenEnd) {
@@ -137,8 +140,8 @@ static MOZ_ALWAYS_INLINE bool stringMatch(const_char_iterator aTokenStart,
 
     bool error;
     if (!CaseInsensitiveUTF8CharsEqual(sourceCur, tokenCur, aSourceEnd,
-                                       aTokenEnd, &sourceCur, &tokenCur,
-                                       &error)) {
+                                       aTokenEnd, &sourceCur, &tokenCur, &error,
+                                       aMatchDiacritics)) {
       return false;
     }
   }
@@ -174,6 +177,9 @@ static bool findInString(const nsDependentCSubstring& aToken,
     return false;
   }
 
+  const nsNavHistory* history = nsNavHistory::GetConstHistoryService();
+  bool matchDiacritics = history && history->MatchDiacritics();
+
   const_char_iterator tokenStart(aToken.BeginReading()),
       tokenEnd(aToken.EndReading()), tokenNext,
       sourceStart(aSourceString.BeginReading()),
@@ -184,10 +190,15 @@ static bool findInString(const nsDependentCSubstring& aToken,
   if (tokenFirstChar == uint32_t(-1)) {
     return false;
   }
+  if (!matchDiacritics) {
+    tokenFirstChar = ToNaked(tokenFirstChar);
+  }
 
   for (;;) {
-    
-    goToNextSearchCandidate(sourceCur, sourceEnd, tokenFirstChar);
+    if (matchDiacritics) {
+      
+      goToNextSearchCandidate(sourceCur, sourceEnd, tokenFirstChar);
+    }
     if (sourceCur == sourceEnd) {
       break;
     }
@@ -200,11 +211,15 @@ static bool findInString(const nsDependentCSubstring& aToken,
     if (sourceFirstChar == uint32_t(-1)) {
       return false;
     }
+    if (!matchDiacritics) {
+      sourceFirstChar = ToNaked(sourceFirstChar);
+    }
 
     if (sourceFirstChar == tokenFirstChar &&
         (aBehavior != eFindOnBoundary || sourceCur == sourceStart ||
          isOnBoundary(sourceCur)) &&
-        stringMatch(tokenNext, tokenEnd, sourceNext, sourceEnd)) {
+        stringMatch(tokenNext, tokenEnd, sourceNext, sourceEnd,
+                    matchDiacritics)) {
       return true;
     }
 

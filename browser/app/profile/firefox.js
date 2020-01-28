@@ -887,6 +887,9 @@ pref("accessibility.blockautorefresh", false);
 pref("places.history.enabled", true);
 
 
+pref("places.search.matchDiacritics", false);
+
+
 
 pref("places.frecency.numVisits", 10);
 

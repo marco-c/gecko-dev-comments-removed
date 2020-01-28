@@ -177,6 +177,9 @@ class nsNavHistory final : public nsSupportsWeakReference,
   bool IsHistoryDisabled() { return !mHistoryEnabled; }
 
   
+  bool MatchDiacritics() const { return mMatchDiacritics; }
+
+  
   static const int32_t kGetInfoIndex_PageID;
   static const int32_t kGetInfoIndex_URL;
   static const int32_t kGetInfoIndex_Title;
@@ -482,6 +485,10 @@ class nsNavHistory final : public nsSupportsWeakReference,
   
   
   bool mHistoryEnabled;
+
+  
+  
+  bool mMatchDiacritics;
 
   
   int32_t mNumVisitsForFrecency;
