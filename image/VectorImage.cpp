@@ -1131,12 +1131,15 @@ already_AddRefed<SourceSurface> VectorImage::CreateSurface(
   NotNull<RefPtr<ISurfaceProvider>> provider =
       MakeNotNull<SimpleSurfaceProvider*>(ImageKey(this), surfaceKey, frame);
 
-  if (SurfaceCache::Insert(provider) == InsertOutcome::SUCCESS &&
-      aParams.size != aParams.drawSize) {
-    
-    
-    
-    SurfaceCache::PruneImage(ImageKey(this));
+  if (SurfaceCache::Insert(provider) == InsertOutcome::SUCCESS) {
+    if (aParams.size != aParams.drawSize) {
+      
+      
+      
+      SurfaceCache::PruneImage(ImageKey(this));
+    }
+  } else {
+    aWillCache = false;
   }
 
   return surface.forget();
