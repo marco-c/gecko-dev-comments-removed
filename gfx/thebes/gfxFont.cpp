@@ -710,15 +710,18 @@ void gfxShapedText::AdjustAdvancesForSyntheticBold(float aSynBoldOffset,
     CompressedGlyph* glyphData = charGlyphs + i;
     if (glyphData->IsSimpleGlyph()) {
       
-      int32_t advance = glyphData->GetSimpleAdvance() + synAppUnitOffset;
-      if (CompressedGlyph::IsSimpleAdvance(advance)) {
-        glyphData->SetSimpleGlyph(advance, glyphData->GetSimpleGlyph());
-      } else {
-        
-        uint32_t glyphIndex = glyphData->GetSimpleGlyph();
-        glyphData->SetComplex(true, true, 1);
-        DetailedGlyph detail = {glyphIndex, advance, gfx::Point()};
-        SetGlyphs(i, *glyphData, &detail);
+      int32_t advance = glyphData->GetSimpleAdvance();
+      if (advance > 0) {
+        advance += synAppUnitOffset;
+        if (CompressedGlyph::IsSimpleAdvance(advance)) {
+          glyphData->SetSimpleGlyph(advance, glyphData->GetSimpleGlyph());
+        } else {
+          
+          uint32_t glyphIndex = glyphData->GetSimpleGlyph();
+          glyphData->SetComplex(true, true, 1);
+          DetailedGlyph detail = {glyphIndex, advance, gfx::Point()};
+          SetGlyphs(i, *glyphData, &detail);
+        }
       }
     } else {
       
@@ -729,9 +732,13 @@ void gfxShapedText::AdjustAdvancesForSyntheticBold(float aSynBoldOffset,
           continue;
         }
         if (IsRightToLeft()) {
-          details[0].mAdvance += synAppUnitOffset;
+          if (details[0].mAdvance > 0) {
+            details[0].mAdvance += synAppUnitOffset;
+          }
         } else {
-          details[detailedLength - 1].mAdvance += synAppUnitOffset;
+          if (details[detailedLength - 1].mAdvance > 0) {
+            details[detailedLength - 1].mAdvance += synAppUnitOffset;
+          }
         }
       }
     }
