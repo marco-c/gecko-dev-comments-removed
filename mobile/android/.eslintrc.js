@@ -4,18 +4,9 @@ module.exports = {
   rules: {
     
     
-    "complexity": ["error", 31],
-
-    
-    
     "consistent-return": "off",
     "no-empty": "off",
-    "no-nested-ternary": "off",
-    "no-new-object": "off",
-    "no-octal": "off",
     "no-redeclare": "off",
-    "no-useless-call": "off",
-    "no-useless-concat": "off",
     "object-shorthand": "off",
   },
 
