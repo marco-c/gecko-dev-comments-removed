@@ -804,13 +804,14 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
 #ifdef DEBUG
   if (NS_IsMainThread() && aEvent->mMessage != eVoidEvent &&
       !nsContentUtils::IsSafeToRunScript()) {
-    nsCOMPtr<nsINode> node = do_QueryInterface(target);
-    if (!node) {
-      
-      
-      
-      MOZ_CRASH("This is unsafe! Fix the caller!");
-    } else {
+    static const auto warn = [](bool aIsSystem) {
+      if (aIsSystem) {
+        NS_WARNING("Fix the caller!");
+      } else {
+        MOZ_CRASH("This is unsafe! Fix the caller!");
+      }
+    };
+    if (nsCOMPtr<nsINode> node = do_QueryInterface(target)) {
       
       
       
@@ -822,12 +823,10 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
       nsIGlobalObject* global =
           doc->GetScriptHandlingObject(hasHadScriptHandlingObject);
       if (global || hasHadScriptHandlingObject) {
-        if (nsContentUtils::IsChromeDoc(doc)) {
-          NS_WARNING("Fix the caller!");
-        } else {
-          MOZ_CRASH("This is unsafe! Fix the caller!");
-        }
+        warn(nsContentUtils::IsChromeDoc(doc));
       }
+    } else if (nsCOMPtr<nsIGlobalObject> global = target->GetOwnerGlobal()) {
+      warn(global->PrincipalOrNull()->IsSystemPrincipal());
     }
   }
 
