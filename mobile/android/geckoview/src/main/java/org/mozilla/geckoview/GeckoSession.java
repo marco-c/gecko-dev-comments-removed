@@ -423,6 +423,7 @@ public class GeckoSession implements Parcelable {
                 "GeckoView:ContentCrash",
                 "GeckoView:ContentKill",
                 "GeckoView:ContextMenu",
+                "GeckoView:DOMMetaViewportFit",
                 "GeckoView:DOMTitleChanged",
                 "GeckoView:DOMWindowClose",
                 "GeckoView:ExternalResponse",
@@ -459,6 +460,9 @@ public class GeckoSession implements Parcelable {
                                            message.getInt("screenY"),
                                            elem);
 
+                } else if ("GeckoView:DOMMetaViewportFit".equals(event)) {
+                    delegate.onMetaViewportFitChange(GeckoSession.this,
+                                                     message.getString("viewportfit"));
                 } else if ("GeckoView:DOMTitleChanged".equals(event)) {
                     delegate.onTitleChange(GeckoSession.this,
                                            message.getString("title"));
@@ -3013,6 +3017,16 @@ public class GeckoSession implements Parcelable {
 
         @UiThread
         default void onFullScreen(@NonNull GeckoSession session, boolean fullScreen) {}
+
+        
+
+
+
+
+
+
+        @UiThread
+        default void onMetaViewportFitChange(@NonNull GeckoSession session, @NonNull String viewportFit) {}
 
         
 
