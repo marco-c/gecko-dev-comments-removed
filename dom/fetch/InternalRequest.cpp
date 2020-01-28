@@ -99,8 +99,7 @@ InternalRequest::InternalRequest(const nsACString& aURL,
       
       
       ,
-      mSameOriginDataURL(true),
-      mSkipServiceWorker(false) {
+      mSameOriginDataURL(true) {
   MOZ_ASSERT(!aURL.IsEmpty());
   AddURL(aURL, aFragment);
 }
@@ -126,8 +125,7 @@ InternalRequest::InternalRequest(
       mPreserveContentCodings(false)
       
       ,
-      mSameOriginDataURL(true),
-      mSkipServiceWorker(false) {
+      mSameOriginDataURL(true) {
   MOZ_ASSERT(!aURL.IsEmpty());
   AddURL(aURL, aFragment);
 }
