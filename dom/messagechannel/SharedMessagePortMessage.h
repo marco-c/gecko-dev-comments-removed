@@ -20,7 +20,8 @@ class SharedMessagePortMessage final : public ipc::StructuredCloneData {
  public:
   NS_INLINE_DECL_REFCOUNTING(SharedMessagePortMessage)
 
-  SharedMessagePortMessage() : ipc::StructuredCloneData() {}
+  SharedMessagePortMessage()
+      : ipc::StructuredCloneData(StructuredCloneScope::UnknownDestination) {}
 
   
   
@@ -29,10 +30,10 @@ class SharedMessagePortMessage final : public ipc::StructuredCloneData {
   static void FromSharedToMessagesChild(
       MessagePortChild* aActor,
       const nsTArray<RefPtr<SharedMessagePortMessage>>& aData,
-      nsTArray<ClonedMessageData>& aArray);
+      nsTArray<MessageData>& aArray);
 
   static bool FromMessagesToSharedChild(
-      nsTArray<ClonedMessageData>& aArray,
+      nsTArray<MessageData>& aArray,
       FallibleTArray<RefPtr<SharedMessagePortMessage>>& aData);
 
   
@@ -42,14 +43,14 @@ class SharedMessagePortMessage final : public ipc::StructuredCloneData {
   static bool FromSharedToMessagesParent(
       MessagePortParent* aActor,
       const nsTArray<RefPtr<SharedMessagePortMessage>>& aData,
-      FallibleTArray<ClonedMessageData>& aArray);
+      FallibleTArray<MessageData>& aArray);
 
   static bool FromMessagesToSharedParent(
-      nsTArray<ClonedMessageData>& aArray,
+      nsTArray<MessageData>& aArray,
       FallibleTArray<RefPtr<SharedMessagePortMessage>>& aData);
 
  private:
-  ~SharedMessagePortMessage() {}
+  ~SharedMessagePortMessage() = default;
 };
 
 }  
