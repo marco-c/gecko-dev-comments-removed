@@ -7,7 +7,6 @@
 use super::{Animate, Procedure};
 use crate::values::computed::length::LengthPercentage;
 use crate::values::computed::Percentage;
-use style_traits::values::specified::AllowedNumericType;
 
 
 impl Animate for LengthPercentage {
@@ -30,6 +29,6 @@ impl Animate for LengthPercentage {
 
         
         
-        Ok(LengthPercentage::new_calc(length, percentage, AllowedNumericType::All))
+        Ok(LengthPercentage::new_calc(length, percentage))
     }
 }

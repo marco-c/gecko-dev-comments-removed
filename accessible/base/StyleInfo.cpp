@@ -37,7 +37,7 @@ void StyleInfo::TextIndent(nsAString& aValue) {
 
   const auto& textIndent = mComputedStyle->StyleText()->mTextIndent;
   if (textIndent.ConvertsToLength()) {
-    aValue.AppendFloat(textIndent.ToLengthInCSSPixels());
+    aValue.AppendFloat(textIndent.LengthInCSSPixels());
     aValue.AppendLiteral("px");
     return;
   }
@@ -46,7 +46,6 @@ void StyleInfo::TextIndent(nsAString& aValue) {
     aValue.AppendLiteral("%");
     return;
   }
-  
   
   aValue.AppendLiteral("0px");
 }

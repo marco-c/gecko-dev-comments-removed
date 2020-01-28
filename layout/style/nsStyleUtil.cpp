@@ -256,15 +256,18 @@ static bool ObjectPositionCoordMightCauseOverflow(
   
   
   
-  if (!aCoord.ConvertsToPercentage()) {
-    return !aCoord.ConvertsToLength() || aCoord.ToLengthInCSSPixels() != 0.0f;
+  if (aCoord.LengthInCSSPixels() != 0.) {
+    return true;
   }
 
   
   
   
-  float percentage = aCoord.ToPercentage();
-  return percentage < 0.0f || percentage > 1.0f;
+  if (aCoord.HasPercent() &&
+      (aCoord.Percentage() < 0.0f || aCoord.Percentage() > 1.0f)) {
+    return true;
+  }
+  return false;
 }
 
 

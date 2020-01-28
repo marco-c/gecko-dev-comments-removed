@@ -377,7 +377,7 @@ impl ToAbsoluteLength for ComputedLengthPercentage {
             
             
             
-            None => Ok(self.resolve(Zero::zero()).px()),
+            None => Ok(self.length_component().px()),
         }
     }
 }

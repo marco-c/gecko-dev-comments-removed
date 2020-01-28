@@ -614,6 +614,12 @@ pub enum FontSize {
     System(SystemFont),
 }
 
+impl From<LengthPercentage> for FontSize {
+    fn from(other: LengthPercentage) -> Self {
+        FontSize::Length(other)
+    }
+}
+
 
 #[derive(Clone, Debug, Eq, PartialEq, ToCss, ToShmem)]
 #[cfg_attr(feature = "servo", derive(Hash))]
