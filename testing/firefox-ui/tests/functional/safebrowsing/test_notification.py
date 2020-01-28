@@ -18,26 +18,14 @@ class TestSafeBrowsingNotificationBar(PuppeteerMixin, MarionetteTestCase):
         self.test_data = [
             
             {
-                
-                
-                'button_property': None,
-                'report_page': None,
                 'unsafe_page': 'https://www.itisatrap.org/firefox/unwanted.html'
             },
             
             {
-                
-                
-                'button_property': None,
-                'report_page': None,
                 'unsafe_page': 'https://www.itisatrap.org/firefox/its-a-trap.html'
             },
             
             {
-                
-                
-                'button_property': None,
-                'report_page': None,
                 'unsafe_page': 'https://www.itisatrap.org/firefox/its-an-attack.html'
             }
         ]
@@ -66,18 +54,7 @@ class TestSafeBrowsingNotificationBar(PuppeteerMixin, MarionetteTestCase):
     def test_notification_bar(self):
         with self.marionette.using_context('content'):
             for item in self.test_data:
-                button_property = item['button_property']
-                report_page, unsafe_page = item['report_page'], item['unsafe_page']
-
-                
-                
-                
-                if button_property is not None:
-                    self.marionette.navigate(unsafe_page)
-                    
-                    time.sleep(1)
-                    self.check_ignore_warning_link(unsafe_page)
-                    self.check_not_badware_button(button_property, report_page)
+                unsafe_page = item['unsafe_page']
 
                 
                 
@@ -111,30 +88,10 @@ class TestSafeBrowsingNotificationBar(PuppeteerMixin, MarionetteTestCase):
         
         self.puppeteer.utils.permissions.remove('https://www.itisatrap.org', 'safe-browsing')
 
-    
-    def check_not_badware_button(self, button_property, report_page):
-        with self.marionette.using_context('chrome'):
-            
-            label = self.browser.localize_property(button_property)
-            button = (self.marionette.find_element(By.ID, 'tabbrowser-tabbox')
-                      .find_element(By.CSS_SELECTOR, 'button[label="' + label + '"]'))
-
-            self.browser.tabbar.open_tab(lambda _: button.click())
-
-        Wait(self.marionette, timeout=self.marionette.timeout.page_load).until(
-            lambda mn: report_page in mn.get_url(),
-            message='The expected safe-browsing report page has not been opened',
-        )
-
-        with self.marionette.using_context('chrome'):
-            self.browser.tabbar.close_tab()
-
     def check_get_me_out_of_here_button(self):
         with self.marionette.using_context('chrome'):
-            
-            label = self.browser.localize_property('safebrowsing.getMeOutOfHereButton.label')
             button = (self.marionette.find_element(By.ID, 'tabbrowser-tabbox')
-                      .find_element(By.CSS_SELECTOR, 'button[label="' + label + '"]'))
+                      .find_element(By.CSS_SELECTOR, 'button[label="Get me out of here!"]'))
             button.click()
 
         Wait(self.marionette, timeout=self.marionette.timeout.page_load).until(
@@ -144,7 +101,6 @@ class TestSafeBrowsingNotificationBar(PuppeteerMixin, MarionetteTestCase):
 
     def check_x_button(self):
         with self.marionette.using_context('chrome'):
-            
             button = (self.marionette.find_element(By.ID, 'tabbrowser-tabbox')
                       .find_element(By.CSS_SELECTOR, 'notification[value=blocked-badware-page]')
                       .find_element(By.CSS_SELECTOR, '.messageCloseButton'))

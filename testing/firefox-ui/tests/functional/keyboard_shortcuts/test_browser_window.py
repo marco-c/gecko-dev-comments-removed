@@ -17,8 +17,7 @@ class TestBrowserWindowShortcuts(PuppeteerMixin, MarionetteTestCase):
 
         
         def opener(tab):
-            tab.window.send_shortcut(tab.window.localize_entity('addons.commandkey'),
-                                     accel=True, shift=True)
+            tab.window.send_shortcut('a', accel=True, shift=True)
         self.browser.tabbar.open_tab(opener)
 
         
@@ -40,12 +39,8 @@ class TestBrowserWindowShortcuts(PuppeteerMixin, MarionetteTestCase):
         
         self.assertNotEqual(current_name, "input")
 
-        
-        if self.marionette.session_capabilities['platformName'] == 'linux':
-            key = 'searchFocusUnix.commandkey'
-        else:
-            key = 'searchFocus.commandkey'
-        self.browser.send_shortcut(self.browser.localize_entity(key),
+        is_linux = self.marionette.session_capabilities['platformName'] == 'linux'
+        self.browser.send_shortcut('j' if is_linux else 'k',
                                    accel=True)
 
         
