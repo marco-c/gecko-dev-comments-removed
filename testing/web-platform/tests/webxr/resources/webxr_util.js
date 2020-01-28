@@ -105,6 +105,18 @@ function xr_session_promise_test(
 
 
 
+function promise_simulate_user_activation(func) {
+  return new Promise((resolve, reject) => {
+    navigator.xr.test.simulateUserActivation(() => {
+      try { let a = func(); resolve(a); } catch(e) { reject(e); }
+    });
+  });
+}
+
+
+
+
+
 
 
 
