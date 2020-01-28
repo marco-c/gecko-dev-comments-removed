@@ -2,11 +2,8 @@
 
 
 
-#![allow(clippy::unreadable_literal)]
-
 pub mod device;
 pub mod transaction;
 
 mod hidraw;
-mod hidwrapper;
 mod monitor;

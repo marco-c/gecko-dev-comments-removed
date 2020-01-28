@@ -32,9 +32,6 @@ unsafe fn from_raw(ptr: *const u8, len: usize) -> Vec<u8> {
     slice::from_raw_parts(ptr, len).to_vec()
 }
 
-
-
-
 #[no_mangle]
 pub extern "C" fn rust_u2f_mgr_new() -> *mut U2FManager {
     if let Ok(mgr) = U2FManager::new() {
@@ -44,10 +41,6 @@ pub extern "C" fn rust_u2f_mgr_new() -> *mut U2FManager {
     }
 }
 
-
-
-
-
 #[no_mangle]
 pub unsafe extern "C" fn rust_u2f_mgr_free(mgr: *mut U2FManager) {
     if !mgr.is_null() {
@@ -55,16 +48,10 @@ pub unsafe extern "C" fn rust_u2f_mgr_free(mgr: *mut U2FManager) {
     }
 }
 
-
-
-
 #[no_mangle]
 pub unsafe extern "C" fn rust_u2f_app_ids_new() -> *mut U2FAppIds {
     Box::into_raw(Box::new(vec![]))
 }
-
-
-
 
 #[no_mangle]
 pub unsafe extern "C" fn rust_u2f_app_ids_add(
@@ -75,10 +62,6 @@ pub unsafe extern "C" fn rust_u2f_app_ids_add(
     (*ids).push(from_raw(id_ptr, id_len));
 }
 
-
-
-
-
 #[no_mangle]
 pub unsafe extern "C" fn rust_u2f_app_ids_free(ids: *mut U2FAppIds) {
     if !ids.is_null() {
@@ -86,16 +69,10 @@ pub unsafe extern "C" fn rust_u2f_app_ids_free(ids: *mut U2FAppIds) {
     }
 }
 
-
-
-
 #[no_mangle]
 pub unsafe extern "C" fn rust_u2f_khs_new() -> *mut U2FKeyHandles {
     Box::into_raw(Box::new(vec![]))
 }
-
-
-
 
 #[no_mangle]
 pub unsafe extern "C" fn rust_u2f_khs_add(
@@ -110,19 +87,12 @@ pub unsafe extern "C" fn rust_u2f_khs_add(
     });
 }
 
-
-
-
-
 #[no_mangle]
 pub unsafe extern "C" fn rust_u2f_khs_free(khs: *mut U2FKeyHandles) {
     if !khs.is_null() {
         Box::from_raw(khs);
     }
 }
-
-
-
 
 #[no_mangle]
 pub unsafe extern "C" fn rust_u2f_result_error(res: *const U2FResult) -> u8 {
@@ -136,9 +106,6 @@ pub unsafe extern "C" fn rust_u2f_result_error(res: *const U2FResult) -> u8 {
 
     0 
 }
-
-
-
 
 #[no_mangle]
 pub unsafe extern "C" fn rust_u2f_resbuf_length(
@@ -160,10 +127,6 @@ pub unsafe extern "C" fn rust_u2f_resbuf_length(
     false
 }
 
-
-
-
-
 #[no_mangle]
 pub unsafe extern "C" fn rust_u2f_resbuf_copy(
     res: *const U2FResult,
@@ -184,19 +147,12 @@ pub unsafe extern "C" fn rust_u2f_resbuf_copy(
     false
 }
 
-
-
-
-
 #[no_mangle]
 pub unsafe extern "C" fn rust_u2f_res_free(res: *mut U2FResult) {
     if !res.is_null() {
         Box::from_raw(res);
     }
 }
-
-
-
 
 #[no_mangle]
 pub unsafe extern "C" fn rust_u2f_mgr_register(
@@ -252,9 +208,6 @@ pub unsafe extern "C" fn rust_u2f_mgr_register(
     }
 }
 
-
-
-
 #[no_mangle]
 pub unsafe extern "C" fn rust_u2f_mgr_sign(
     mgr: *mut U2FManager,
@@ -307,9 +260,6 @@ pub unsafe extern "C" fn rust_u2f_mgr_sign(
         0
     }
 }
-
-
-
 
 #[no_mangle]
 pub unsafe extern "C" fn rust_u2f_mgr_cancel(mgr: *mut U2FManager) {
