@@ -1336,34 +1336,6 @@ IPCResult BrowserParent::RecvNewWindowGlobal(
   return IPC_OK();
 }
 
-IPCResult BrowserParent::RecvPBrowserBridgeConstructor(
-    PBrowserBridgeParent* aActor, const nsString& aName,
-    const nsString& aRemoteType, BrowsingContext* aBrowsingContext,
-    const uint32_t& aChromeFlags, const TabId& aTabId) {
-  
-  
-  
-  nsCOMPtr<nsIPrincipal> initialPrincipal =
-      NullPrincipal::CreateWithInheritedAttributes(OriginAttributesRef(),
-                                                    false);
-  WindowGlobalInit windowInit = WindowGlobalActor::AboutBlankInitializer(
-      aBrowsingContext, initialPrincipal);
-
-  nsresult rv = static_cast<BrowserBridgeParent*>(aActor)->Init(
-      aName, aRemoteType, windowInit, aChromeFlags, aTabId);
-  if (NS_FAILED(rv)) {
-    return IPC_FAIL(this, "Failed to construct BrowserBridgeParent");
-  }
-  return IPC_OK();
-}
-
-already_AddRefed<PBrowserBridgeParent> BrowserParent::AllocPBrowserBridgeParent(
-    const nsString& aName, const nsString& aRemoteType,
-    BrowsingContext* aBrowsingContext, const uint32_t& aChromeFlags,
-    const TabId& aTabId) {
-  return do_AddRef(new BrowserBridgeParent());
-}
-
 void BrowserParent::SendMouseEvent(const nsAString& aType, float aX, float aY,
                                    int32_t aButton, int32_t aClickCount,
                                    int32_t aModifiers,
