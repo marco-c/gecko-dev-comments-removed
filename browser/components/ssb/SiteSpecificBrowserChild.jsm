@@ -59,7 +59,9 @@ class SiteSpecificBrowserChild extends JSWindowActorChild {
 }
 
 function getActor(docShell) {
-  return docShell.domWindow.windowGlobalChild.getActor("SiteSpecificBrowser");
+  return docShell.domWindow
+    .getWindowGlobalChild()
+    .getActor("SiteSpecificBrowser");
 }
 
 

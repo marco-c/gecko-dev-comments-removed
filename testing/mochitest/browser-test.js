@@ -181,7 +181,7 @@ function Tester(aTests, structuredLogger, aCallback) {
   
   
   
-  void window.windowGlobalChild.getActor("SpecialPowers");
+  window.getWindowGlobalChild().getActor("SpecialPowers");
 
   var simpleTestScope = {};
   this._scriptLoader.loadSubScript(
