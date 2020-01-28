@@ -459,7 +459,7 @@ class PeerConnectionImpl final
   
   dom::RTCSignalingState GetSignalingState() const;
 
-  void OnOfferAnswerComplete(bool rollback);
+  void OnSetDescriptionSuccess(bool rollback);
 
   bool IsClosed() const;
   
