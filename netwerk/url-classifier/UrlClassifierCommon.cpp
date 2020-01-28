@@ -55,78 +55,6 @@ bool UrlClassifierCommon::AddonMayLoad(nsIChannel* aChannel, nsIURI* aURI) {
 void UrlClassifierCommon::NotifyChannelClassifierProtectionDisabled(
     nsIChannel* aChannel, uint32_t aEvent) {
   
-  nsCOMPtr<nsIParentChannel> parentChannel;
-  NS_QueryNotificationCallbacks(aChannel, parentChannel);
-  if (parentChannel) {
-    
-    
-    parentChannel->NotifyChannelClassifierProtectionDisabled(aEvent);
-  }
-
-  nsCOMPtr<nsIURI> uriBeingLoaded =
-      AntiTrackingCommon::MaybeGetDocumentURIBeingLoaded(aChannel);
-  NotifyChannelBlocked(aChannel, uriBeingLoaded, aEvent);
-}
-
-
-void UrlClassifierCommon::NotifyChannelBlocked(nsIChannel* aChannel,
-                                               nsIURI* aURIBeingLoaded,
-                                               unsigned aBlockedReason) {
-  MOZ_ASSERT(aChannel);
-
-  nsCOMPtr<nsIURI> uri;
-  aChannel->GetURI(getter_AddRefs(uri));
-
-  
-  
-  if (XRE_IsParentProcess()) {
-    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-    RefPtr<dom::BrowsingContext> bc;
-    loadInfo->GetBrowsingContext(getter_AddRefs(bc));
-
-    if (!bc || bc->IsDiscarded()) {
-      return;
-    }
-
-    
-    bc = bc->Top();
-    RefPtr<dom::WindowGlobalParent> wgp =
-        bc->Canonical()->GetCurrentWindowGlobal();
-
-    NS_ENSURE_TRUE_VOID(wgp);
-    nsTArray<nsCString> trackingFullHashes;
-    nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
-        do_QueryInterface(aChannel);
-
-    if (classifiedChannel) {
-      Unused << classifiedChannel->GetMatchedTrackingFullHashes(
-          trackingFullHashes);
-    }
-
-    wgp->NotifyContentBlockingEvent(aBlockedReason, aChannel, true, uri,
-                                    trackingFullHashes);
-    return;
-  }
-
-  nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil = services::GetThirdPartyUtil();
-  if (NS_WARN_IF(!thirdPartyUtil)) {
-    return;
-  }
-
-  nsCOMPtr<mozIDOMWindowProxy> win;
-  nsresult rv = thirdPartyUtil->GetTopWindowForChannel(
-      aChannel, aURIBeingLoaded, getter_AddRefs(win));
-  NS_ENSURE_SUCCESS_VOID(rv);
-  auto* pwin = nsPIDOMWindowOuter::From(win);
-  nsCOMPtr<nsIDocShell> docShell = pwin->GetDocShell();
-  if (!docShell) {
-    return;
-  }
-  RefPtr<dom::Document> doc = docShell->GetDocument();
-  NS_ENSURE_TRUE_VOID(doc);
-
-  pwin->NotifyContentBlockingEvent(aBlockedReason, aChannel, true, uri,
-                                   aChannel);
 }
 
 
@@ -271,26 +199,25 @@ nsresult UrlClassifierCommon::SetBlockedContent(nsIChannel* channel,
     classifiedChannel->SetMatchedInfo(aList, aProvider, aFullHash);
   }
 
-  nsCOMPtr<nsIParentChannel> parentChannel;
-  NS_QueryNotificationCallbacks(channel, parentChannel);
-  nsCOMPtr<nsIURI> uriBeingLoaded =
-      AntiTrackingCommon::MaybeGetDocumentURIBeingLoaded(channel);
+  if (XRE_IsParentProcess()) {
+    nsCOMPtr<nsIParentChannel> parentChannel;
+    NS_QueryNotificationCallbacks(channel, parentChannel);
+    if (parentChannel) {
+      
+      
+      
+      
+      
+      parentChannel->SetClassifierMatchedInfo(aList, aProvider, aFullHash);
+    }
 
-  unsigned state =
-      UrlClassifierFeatureFactory::GetClassifierBlockingEventCode(aErrorCode);
-  if (!state) {
-    state = nsIWebProgressListener::STATE_BLOCKED_UNSAFE_CONTENT;
-  }
+    unsigned state =
+        UrlClassifierFeatureFactory::GetClassifierBlockingEventCode(aErrorCode);
+    if (!state) {
+      state = nsIWebProgressListener::STATE_BLOCKED_UNSAFE_CONTENT;
+    }
+    AntiTrackingCommon::NotifyContentBlockingEvent(channel, state);
 
-  if (parentChannel) {
-    
-    
-    
-    
-    
-    parentChannel->SetClassifierMatchedInfo(aList, aProvider, aFullHash);
-
-    UrlClassifierCommon::NotifyChannelBlocked(channel, uriBeingLoaded, state);
     return NS_OK;
   }
 
@@ -299,6 +226,8 @@ nsresult UrlClassifierCommon::SetBlockedContent(nsIChannel* channel,
     return NS_OK;
   }
 
+  nsCOMPtr<nsIURI> uriBeingLoaded =
+      AntiTrackingCommon::MaybeGetDocumentURIBeingLoaded(channel);
   nsCOMPtr<mozIDOMWindowProxy> win;
   rv = thirdPartyUtil->GetTopWindowForChannel(channel, uriBeingLoaded,
                                               getter_AddRefs(win));
@@ -310,8 +239,6 @@ nsresult UrlClassifierCommon::SetBlockedContent(nsIChannel* channel,
   }
   RefPtr<dom::Document> doc = docShell->GetDocument();
   NS_ENSURE_TRUE(doc, NS_OK);
-
-  UrlClassifierCommon::NotifyChannelBlocked(channel, uriBeingLoaded, state);
 
   
   nsCOMPtr<nsIURI> uri;
@@ -488,6 +415,7 @@ void LowerPriorityHelper(nsIChannel* aChannel) {
 void UrlClassifierCommon::AnnotateChannel(nsIChannel* aChannel,
                                           uint32_t aClassificationFlags,
                                           uint32_t aLoadingState) {
+  MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(aChannel);
 
   nsCOMPtr<nsIURI> chanURI;
@@ -515,8 +443,7 @@ void UrlClassifierCommon::AnnotateChannel(nsIChannel* aChannel,
       IsCryptominingClassificationFlag(aClassificationFlags);
 
   if (validClassificationFlags && isThirdPartyWithTopLevelWinURI) {
-    UrlClassifierCommon::NotifyChannelClassifierProtectionDisabled(
-        aChannel, aLoadingState);
+    AntiTrackingCommon::NotifyContentBlockingEvent(aChannel, aLoadingState);
   }
 
   if (isThirdPartyWithTopLevelWinURI &&
