@@ -975,9 +975,6 @@ pref("security.certerrors.mitm.auto_enable_enterprise_roots", true);
 pref("security.aboutcertificate.enabled", true);
 
 
-pref("browser.privatebrowsing.autostart", false);
-
-
 pref("browser.bookmarks.editDialog.showForNewBookmarks", true);
 
 
