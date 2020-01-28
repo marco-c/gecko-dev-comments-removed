@@ -485,10 +485,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
     mTrackOrderDirty = true;
   }
 
-  
   uint32_t AudioOutputChannelCount() const;
-  
-  void SetMaxOutputChannelCount(uint32_t aMaxChannelCount);
 
   double AudioOutputLatency();
 
@@ -1000,14 +997,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   double mAudioOutputLatency;
-
-  
-
-
-
-
-
-  uint32_t mMaxOutputChannelCount;
 };
 
 }  

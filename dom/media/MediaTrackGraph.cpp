@@ -880,11 +880,6 @@ void MediaTrackGraphImpl::DeviceChangedImpl() {
   }
 }
 
-void MediaTrackGraphImpl::SetMaxOutputChannelCount(uint32_t aMaxChannelCount) {
-  MOZ_ASSERT(OnGraphThread());
-  mMaxOutputChannelCount = aMaxChannelCount;
-}
-
 void MediaTrackGraphImpl::DeviceChanged() {
   
   
@@ -921,33 +916,6 @@ void MediaTrackGraphImpl::DeviceChanged() {
   
   MOZ_ASSERT(NS_IsMainThread());
   mAudioOutputLatency = 0.0;
-
-  
-  
-  
-  NS_DispatchBackgroundTask(NS_NewRunnableFunction(
-      "MaxChannelCountUpdateOnBgThread", [self{std::move(this)}]() {
-        uint32_t maxChannelCount = CubebUtils::MaxNumberOfChannels();
-        self->Dispatch(NS_NewRunnableFunction(
-            "MaxChannelCountUpdateToMainThread",
-            [self{self}, maxChannelCount]() {
-              class MessageToGraph : public ControlMessage {
-               public:
-                explicit MessageToGraph(MediaTrackGraph* aGraph,
-                                        uint32_t aMaxChannelCount)
-                    : ControlMessage(nullptr),
-                      mGraphImpl(static_cast<MediaTrackGraphImpl*>(aGraph)),
-                      mMaxChannelCount(aMaxChannelCount) {}
-                void Run() override {
-                  mGraphImpl->SetMaxOutputChannelCount(mMaxChannelCount);
-                }
-                MediaTrackGraphImpl* mGraphImpl;
-                uint32_t mMaxChannelCount;
-              };
-              self->AppendMessage(
-                  MakeUnique<MessageToGraph>(self, maxChannelCount));
-            }));
-      }));
 
   AppendMessage(MakeUnique<Message>(this));
 }
@@ -2965,8 +2933,7 @@ MediaTrackGraphImpl::MediaTrackGraphImpl(GraphDriverType aDriverRequested,
 #endif
       ,
       mMainThreadGraphTime(0, "MediaTrackGraphImpl::mMainThreadGraphTime"),
-      mAudioOutputLatency(0.0),
-      mMaxOutputChannelCount(std::min(8u, CubebUtils::MaxNumberOfChannels())) {
+      mAudioOutputLatency(0.0) {
   if (aRunTypeRequested == SINGLE_THREAD && !mGraphRunner) {
     
     mLifecycleState = LIFECYCLE_WAITING_FOR_TRACK_DESTRUCTION;
@@ -3580,7 +3547,6 @@ uint32_t MediaTrackGraphImpl::AudioOutputChannelCount() const {
   MOZ_ASSERT(OnGraphThread());
   
   
-  
   uint32_t channelCount = 0;
   for (auto& tkv : mAudioOutputs) {
     MediaTrack* t = tkv.mTrack;
@@ -3594,7 +3560,6 @@ uint32_t MediaTrackGraphImpl::AudioOutputChannelCount() const {
           std::max<uint32_t>(channelCount, segment->MaxChannelCount());
     }
   }
-  channelCount = std::min(channelCount, mMaxOutputChannelCount);
   if (channelCount) {
     return channelCount;
   } else {
