@@ -205,7 +205,7 @@ class AddTest(MachCommandBase):
                 except OSError:
                     pass
 
-                with open(path, "w") as f:
+                with open(path, "w", newline='\n') as f:
                     f.write(template)
             else:
                 
