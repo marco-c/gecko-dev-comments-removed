@@ -152,20 +152,6 @@ class FullParseHandler {
     return new_<NumericLiteral>(value, decimalPoint, pos);
   }
 
-  
-  
-  
-  template <class Boxer>
-  BigIntLiteralType newBigInt(BigInt* bi, const TokenPos& pos, Boxer& boxer) {
-    BigIntBox* box = boxer.newBigIntBox(bi);
-    if (!box) {
-      return null();
-    }
-    return new_<BigIntLiteral>(box, pos);
-  }
-
-  
-  
   BigIntLiteralType newBigInt(BigIntIndex index, ParseInfo& parseInfo,
                               const TokenPos& pos) {
     return new_<BigIntLiteral>(index, parseInfo, pos);
