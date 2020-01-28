@@ -1099,33 +1099,16 @@ nsresult Selection::Clear(nsPresContext* aPresContext) {
 
 
 
-
-static inline bool RangeMatchesBeginPoint(const nsRange* aRange,
-                                          const nsINode* aNode,
-                                          int32_t aOffset) {
-  return aRange->GetStartContainer() == aNode &&
-         static_cast<int32_t>(aRange->StartOffset()) == aOffset;
-}
-
-static inline bool RangeMatchesEndPoint(const nsRange* aRange,
-                                        const nsINode* aNode, int32_t aOffset) {
-  return aRange->GetEndContainer() == aNode &&
-         static_cast<int32_t>(aRange->EndOffset()) == aOffset;
-}
-
-
-
-
-
 bool Selection::EqualsRangeAtPoint(const nsINode* aBeginNode,
                                    int32_t aBeginOffset,
                                    const nsINode* aEndNode, int32_t aEndOffset,
                                    int32_t aRangeIndex) const {
   if (aRangeIndex >= 0 && aRangeIndex < (int32_t)mRanges.Length()) {
     const nsRange* range = mRanges[aRangeIndex].mRange;
-    if (RangeMatchesBeginPoint(range, aBeginNode, aBeginOffset) &&
-        RangeMatchesEndPoint(range, aEndNode, aEndOffset))
+    if (range->StartRef().Equals(aBeginNode, aBeginOffset) &&
+        range->EndRef().Equals(aEndNode, aEndOffset)) {
       return true;
+    }
   }
   return false;
 }
@@ -1194,7 +1177,9 @@ nsresult Selection::GetIndicesForInterval(
 
     
     
-    if (!RangeMatchesBeginPoint(endRange, aEndNode, aEndOffset)) return NS_OK;
+    if (!endRange->StartRef().Equals(aEndNode, aEndOffset)) {
+      return NS_OK;
+    }
 
     
     
@@ -1227,7 +1212,9 @@ nsresult Selection::GetIndicesForInterval(
     
     while (endsBeforeIndex < (int32_t)mRanges.Length()) {
       const nsRange* endRange = mRanges[endsBeforeIndex].mRange;
-      if (!RangeMatchesBeginPoint(endRange, aEndNode, aEndOffset)) break;
+      if (!endRange->StartRef().Equals(aEndNode, aEndOffset)) {
+        break;
+      }
       endsBeforeIndex++;
     }
 
@@ -1244,10 +1231,11 @@ nsresult Selection::GetIndicesForInterval(
     
     const nsRange* beginRange = mRanges[beginsAfterIndex].mRange;
     if (beginsAfterIndex > 0 && beginRange->Collapsed() &&
-        RangeMatchesEndPoint(beginRange, aBeginNode, aBeginOffset)) {
+        beginRange->EndRef().Equals(aBeginNode, aBeginOffset)) {
       beginRange = mRanges[beginsAfterIndex - 1].mRange;
-      if (RangeMatchesEndPoint(beginRange, aBeginNode, aBeginOffset))
+      if (beginRange->EndRef().Equals(aBeginNode, aBeginOffset)) {
         beginsAfterIndex--;
+      }
     }
   } else {
     
@@ -1255,9 +1243,10 @@ nsresult Selection::GetIndicesForInterval(
     
     
     const nsRange* beginRange = mRanges[beginsAfterIndex].mRange;
-    if (RangeMatchesEndPoint(beginRange, aBeginNode, aBeginOffset) &&
-        !beginRange->Collapsed())
+    if (beginRange->EndRef().Equals(aBeginNode, aBeginOffset) &&
+        !beginRange->Collapsed()) {
       beginsAfterIndex++;
+    }
 
     
     
@@ -1265,9 +1254,10 @@ nsresult Selection::GetIndicesForInterval(
     
     if (endsBeforeIndex < (int32_t)mRanges.Length()) {
       const nsRange* endRange = mRanges[endsBeforeIndex].mRange;
-      if (RangeMatchesBeginPoint(endRange, aEndNode, aEndOffset) &&
-          endRange->Collapsed())
+      if (endRange->StartRef().Equals(aEndNode, aEndOffset) &&
+          endRange->Collapsed()) {
         endsBeforeIndex++;
+      }
     }
   }
 
