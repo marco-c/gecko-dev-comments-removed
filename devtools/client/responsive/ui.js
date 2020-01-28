@@ -109,6 +109,8 @@ class ResponsiveUI {
     this.onResizeStart = this.onResizeStart.bind(this);
     this.onResizeStop = this.onResizeStop.bind(this);
 
+    this.onTargetAvailable = this.onTargetAvailable.bind(this);
+
     
     this.inited = this.init();
 
@@ -222,11 +224,7 @@ class ResponsiveUI {
     await this.connectToServer();
 
     
-    await this.restoreState();
-
-    if (this.isBrowserUIEnabled) {
-      await this.responsiveFront.setDocumentInRDMPane(true);
-    }
+    await this.restoreUIState();
 
     if (!this.isBrowserUIEnabled) {
       
@@ -325,6 +323,11 @@ class ResponsiveUI {
       return false;
     }
     this.destroying = true;
+
+    this.targetList.unwatchTargets(
+      [this.targetList.TYPES.FRAME],
+      this.onTargetAvailable
+    );
 
     
     
@@ -436,7 +439,10 @@ class ResponsiveUI {
 
     const targetFront = await this.client.mainRoot.getTab();
     this.targetList = new TargetList(this.client.mainRoot, targetFront);
-    this.responsiveFront = await targetFront.getFront("responsive");
+    await this.targetList.watchTargets(
+      [this.targetList.TYPES.FRAME],
+      this.onTargetAvailable
+    );
   }
 
   
@@ -479,6 +485,8 @@ class ResponsiveUI {
         }
         break;
       case "BeforeTabRemotenessChange":
+        this.onRemotenessChange(event);
+        break;
       case "TabClose":
       case "unload":
         this.manager.closeIfNeeded(browserWindow, tab, {
@@ -750,10 +758,17 @@ class ResponsiveUI {
     );
   }
 
+  async hasDeviceState() {
+    const deviceState = await asyncStorage.getItem(
+      "devtools.responsive.deviceState"
+    );
+    return !!deviceState;
+  }
+
   
 
 
-  async restoreState() {
+  async restoreUIState() {
     
     if (this.isBrowserUIEnabled) {
       const leftAlignmentEnabled = Services.prefs.getBoolPref(
@@ -764,10 +779,38 @@ class ResponsiveUI {
       this.updateUIAlignment(leftAlignmentEnabled);
     }
 
-    const deviceState = await asyncStorage.getItem(
-      "devtools.responsive.deviceState"
+    const hasDeviceState = await this.hasDeviceState();
+    if (hasDeviceState) {
+      
+      
+      return;
+    }
+
+    const height = Services.prefs.getIntPref(
+      "devtools.responsive.viewport.height",
+      0
     );
-    if (deviceState) {
+    const width = Services.prefs.getIntPref(
+      "devtools.responsive.viewport.width",
+      0
+    );
+    this.updateViewportSize(width, height);
+  }
+
+  
+
+
+  async restoreActorState() {
+    if (this.isBrowserUIEnabled) {
+      
+      
+      
+      
+      await this.responsiveFront.setDocumentInRDMPane(true);
+    }
+
+    const hasDeviceState = await this.hasDeviceState();
+    if (hasDeviceState) {
       
       
       return;
@@ -794,16 +837,15 @@ class ResponsiveUI {
       0
     );
 
-    let reloadNeeded = false;
     const { type, angle } = this.getInitialViewportOrientation({
       width,
       height,
     });
 
-    this.updateViewportSize(width, height);
     await this.updateDPPX(pixelRatio);
     await this.updateScreenOrientation(type, angle);
 
+    let reloadNeeded = false;
     if (touchSimulationEnabled) {
       reloadNeeded |=
         (await this.updateTouchSimulation(touchSimulationEnabled)) &&
@@ -1035,6 +1077,30 @@ class ResponsiveUI {
     }
 
     return this.browserWindow;
+  }
+
+  async onTargetAvailable({ targetFront }) {
+    this.responsiveFront = await targetFront.getFront("responsive");
+    await this.restoreActorState();
+  }
+
+  async onRemotenessChange(event) {
+    const isTargetSwitchingEnabled = Services.prefs.getBoolPref(
+      "devtools.target-switching.enabled",
+      false
+    );
+
+    
+    
+    if (isTargetSwitchingEnabled && this.isBrowserUIEnabled) {
+      const newTarget = await this.client.mainRoot.getTab();
+      await this.targetList.switchToTarget(newTarget);
+    } else {
+      const { browserWindow, tab } = this;
+      this.manager.closeIfNeeded(browserWindow, tab, {
+        reason: event.type,
+      });
+    }
   }
 }
 
