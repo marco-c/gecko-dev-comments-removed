@@ -104,7 +104,6 @@ IDBTransaction::IDBTransaction(IDBDatabase* const aDatabase,
       mLineNo(aLineNo),
       mColumn(aColumn),
       mMode(aMode),
-      mCreating(false),
       mRegistered(false),
       mNotedActiveTransaction(false) {
   MOZ_ASSERT(aDatabase);
@@ -133,7 +132,7 @@ IDBTransaction::IDBTransaction(IDBDatabase* const aDatabase,
 IDBTransaction::~IDBTransaction() {
   AssertIsOnOwningThread();
   MOZ_ASSERT(!mPendingRequestCount);
-  MOZ_ASSERT(!mCreating);
+  MOZ_ASSERT(mReadyState == ReadyState::Finished);
   MOZ_ASSERT(!mNotedActiveTransaction);
   MOZ_ASSERT(mSentCommitOrAbort);
   MOZ_ASSERT_IF(HasTransactionChild(), mFiredCompleteOrAbort);
@@ -239,8 +238,6 @@ RefPtr<IDBTransaction> IDBTransaction::Create(
 
   nsCOMPtr<nsIRunnable> runnable = do_QueryObject(transaction);
   nsContentUtils::AddPendingIDBTransaction(runnable.forget());
-
-  transaction->mCreating = true;
 
   aDatabase->RegisterTransaction(transaction);
   transaction->mRegistered = true;
@@ -436,14 +433,7 @@ void IDBTransaction::MaybeNoteInactiveTransaction() {
 bool IDBTransaction::CanAcceptRequests() const {
   AssertIsOnOwningThread();
 
-  
-  
-  
-  
-  
-  
-  return mReadyState == ReadyState::Active &&
-         (!mStarted || mCreating || GetCurrent() == this);
+  return mReadyState == ReadyState::Active;
 }
 
 IDBTransaction::AutoRestoreState<IDBTransaction::ReadyState::Inactive,
@@ -970,20 +960,37 @@ IDBTransaction::Run() {
   AssertIsOnOwningThread();
 
   
-  mCreating = false;
+  
+  
 
-  MOZ_ASSERT_IF(mReadyState == ReadyState::Finished, IsAborted());
+  if (ReadyState::Finished == mReadyState) {
+    MOZ_ASSERT(IsAborted());
+    return NS_OK;
+  }
 
   
-  if (!mStarted && mReadyState != ReadyState::Finished) {
-    MOZ_ASSERT(mReadyState == ReadyState::Inactive ||
-               mReadyState == ReadyState::Active);
+  
+  
+  MOZ_ASSERT(ReadyState::Active == mReadyState);
+  mReadyState = ReadyState::Inactive;
+
+  CommitIfNotStarted();
+
+  return NS_OK;
+}
+
+void IDBTransaction::CommitIfNotStarted() {
+  AssertIsOnOwningThread();
+
+  MOZ_ASSERT(ReadyState::Inactive == mReadyState);
+
+  
+  if (!mStarted) {
+    MOZ_ASSERT(!mPendingRequestCount);
     mReadyState = ReadyState::Finished;
 
     SendCommit();
   }
-
-  return NS_OK;
 }
 
 }  
