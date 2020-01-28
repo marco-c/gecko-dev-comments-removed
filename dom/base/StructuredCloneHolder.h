@@ -57,7 +57,8 @@ class StructuredCloneHolderBase {
 
   virtual bool CustomWriteHandler(JSContext* aCx,
                                   JSStructuredCloneWriter* aWriter,
-                                  JS::Handle<JSObject*> aObj) = 0;
+                                  JS::Handle<JSObject*> aObj,
+                                  bool* aSameProcessScopeRequired) = 0;
 
   
   
@@ -87,7 +88,8 @@ class StructuredCloneHolderBase {
                                          void* aContent, uint64_t aExtraData);
 
   virtual bool CustomCanTransferHandler(JSContext* aCx,
-                                        JS::Handle<JSObject*> aObj);
+                                        JS::Handle<JSObject*> aObj,
+                                        bool* aSameProcessScopeRequired);
 
   
 
@@ -198,7 +200,14 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
     return mInputStreamArray;
   }
 
-  StructuredCloneScope CloneScope() const { return mStructuredCloneScope; }
+  
+  
+  StructuredCloneScope CloneScope() const {
+    if (mStructuredCloneScope == StructuredCloneScope::UnknownDestination) {
+      return StructuredCloneScope::DifferentProcess;
+    }
+    return mStructuredCloneScope;
+  }
 
   
   
@@ -235,7 +244,8 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
 
   virtual bool CustomWriteHandler(JSContext* aCx,
                                   JSStructuredCloneWriter* aWriter,
-                                  JS::Handle<JSObject*> aObj) override;
+                                  JS::Handle<JSObject*> aObj,
+                                  bool* aSameProcessScopeRequired) override;
 
   virtual bool CustomReadTransferHandler(
       JSContext* aCx, JSStructuredCloneReader* aReader, uint32_t aTag,
@@ -254,8 +264,9 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
                                          void* aContent,
                                          uint64_t aExtraData) override;
 
-  virtual bool CustomCanTransferHandler(JSContext* aCx,
-                                        JS::Handle<JSObject*> aObj) override;
+  virtual bool CustomCanTransferHandler(
+      JSContext* aCx, JS::Handle<JSObject*> aObj,
+      bool* aSameProcessScopeRequired) override;
 
   
   
@@ -287,6 +298,8 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
                       JSStructuredCloneData& aBuffer,
                       uint32_t aAlgorithmVersion,
                       JS::MutableHandle<JS::Value> aValue, ErrorResult& aRv);
+
+  void SameProcessScopeRequired(bool* aSameProcessScopeRequired);
 
   bool mSupportsCloning;
   bool mSupportsTransferring;
