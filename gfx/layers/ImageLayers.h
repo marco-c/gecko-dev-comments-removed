@@ -11,8 +11,7 @@
 #include "mozilla/gfx/BaseSize.h"  
 #include "mozilla/gfx/Point.h"     
 #include "mozilla/layers/LayersTypes.h"
-#include "nsAutoPtr.h"  
-#include "nscore.h"     
+#include "nscore.h"  
 
 namespace mozilla {
 namespace layers {

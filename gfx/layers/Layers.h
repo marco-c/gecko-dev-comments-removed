@@ -41,7 +41,6 @@
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "mozilla/mozalloc.h"        
-#include "nsAutoPtr.h"               
 #include "nsCOMPtr.h"                
 #include "nsCSSPropertyID.h"         
 #include "nsDebug.h"                 
@@ -1201,7 +1200,7 @@ class Layer {
 
 
   void SetBaseTransformForNextTransaction(const gfx::Matrix4x4& aMatrix) {
-    mPendingTransform = new gfx::Matrix4x4(aMatrix);
+    mPendingTransform = mozilla::MakeUnique<gfx::Matrix4x4>(aMatrix);
   }
 
   void SetPostScale(float aXScale, float aYScale) {
@@ -1407,7 +1406,7 @@ class Layer {
   }
   bool IsScrollbarContainer() const;
   Layer* GetMaskLayer() const { return mMaskLayer; }
-  bool HasPendingTransform() const { return mPendingTransform; }
+  bool HasPendingTransform() const { return !!mPendingTransform; }
 
   void CheckCanary() const { mCanary.Check(); }
 
@@ -1976,7 +1975,7 @@ class Layer {
   
   
   
-  nsAutoPtr<gfx::Matrix4x4> mPendingTransform;
+  UniquePtr<gfx::Matrix4x4> mPendingTransform;
   gfx::Matrix4x4 mEffectiveTransform;
   AnimationInfo mAnimationInfo;
   Maybe<ParentLayerIntRect> mClipRect;

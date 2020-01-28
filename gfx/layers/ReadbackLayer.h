@@ -12,7 +12,6 @@
 #include "mozilla/gfx/Rect.h"   
 #include "mozilla/gfx/Point.h"  
 #include "mozilla/mozalloc.h"   
-#include "nsAutoPtr.h"          
 #include "nsCOMPtr.h"           
 #include "nsDebug.h"            
 #include "nsPoint.h"            
@@ -110,9 +109,9 @@ class ReadbackLayer : public Layer {
 
   void SetSink(ReadbackSink* aSink) {
     SetUnknown();
-    mSink = aSink;
+    mSink = mozilla::WrapUnique(aSink);
   }
-  ReadbackSink* GetSink() { return mSink; }
+  ReadbackSink* GetSink() { return mSink.get(); }
 
   
 
@@ -176,7 +175,7 @@ class ReadbackLayer : public Layer {
                           const void* aParent) override;
 
   uint64_t mSequenceCounter;
-  nsAutoPtr<ReadbackSink> mSink;
+  UniquePtr<ReadbackSink> mSink;
   gfx::IntSize mSize;
 
   

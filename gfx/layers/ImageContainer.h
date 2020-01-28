@@ -20,7 +20,6 @@
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/mozalloc.h"  
-#include "nsAutoPtr.h"         
 #include "nsAutoRef.h"         
 #include "nsCOMPtr.h"          
 #include "nsDebug.h"           
@@ -199,10 +198,10 @@ class Image {
   }
 
   ImageBackendData* GetBackendData(LayersBackend aBackend) {
-    return mBackendData[aBackend];
+    return mBackendData[aBackend].get();
   }
   void SetBackendData(LayersBackend aBackend, ImageBackendData* aData) {
-    mBackendData[aBackend] = aData;
+    mBackendData[aBackend] = mozilla::WrapUnique(aData);
   }
 
   int32_t GetSerial() const { return mSerial; }
@@ -240,7 +239,7 @@ class Image {
 
   mozilla::EnumeratedArray<mozilla::layers::LayersBackend,
                            mozilla::layers::LayersBackend::LAYERS_LAST,
-                           nsAutoPtr<ImageBackendData>>
+                           UniquePtr<ImageBackendData>>
       mBackendData;
 
   void* mImplData;
