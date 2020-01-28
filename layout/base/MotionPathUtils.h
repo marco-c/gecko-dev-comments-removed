@@ -192,8 +192,7 @@ class MotionPathUtils final {
 
 
 
-  static nsTArray<layers::PathCommand> NormalizeAndConvertToPathCommands(
-      const StyleSVGPathData& aPath);
+  static StyleSVGPathData NormalizeSVGPathData(const StyleSVGPathData& aPath);
 
   
 
