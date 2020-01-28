@@ -2634,12 +2634,17 @@
         this.tabContainer.getAttribute("overflow") != "true" &&
         this.animationsEnabled;
 
+      
+      
+      if (userContextId == null && openerTab) {
+        userContextId = openerTab.getAttribute("usercontextid") || 0;
+      }
+
       this.setTabAttributes(t, {
         animate,
         noInitialLabel,
         aURI,
         userContextId,
-        openerTab,
         skipBackgroundNotify,
         pinned,
         skipAnimation,
@@ -3111,7 +3116,6 @@
         noInitialLabel,
         aURI,
         userContextId,
-        openerTab,
         skipBackgroundNotify,
         pinned,
         skipAnimation,
@@ -3124,12 +3128,6 @@
           
           this.setInitialTabTitle(tab, aURI, { beforeTabOpen: true });
         }
-      }
-
-      
-      
-      if (userContextId == null && openerTab) {
-        userContextId = openerTab.getAttribute("usercontextid") || 0;
       }
 
       if (userContextId) {
