@@ -1,8 +1,8 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this file,
+# You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
-
-
-
+# This modules provides functionality for dealing with code completion.
 
 from __future__ import absolute_import, print_function
 
@@ -33,10 +33,10 @@ class CompileDBBackend(CommonBackend):
     def _init(self):
         CommonBackend._init(self)
 
-        
+        # The database we're going to dump out to.
         self._db = OrderedDict()
 
-        
+        # The cache for per-directory flags
         self._flags = {}
 
         self._envs = {}
@@ -44,7 +44,7 @@ class CompileDBBackend(CommonBackend):
         self._per_source_flags = defaultdict(list)
 
     def consume_object(self, obj):
-        
+        # Those are difficult directories, that will be handled later.
         if obj.relsrcdir in (
                 'build/unix/elfhack',
                 'build/unix/elfhack/inject',
@@ -61,7 +61,7 @@ class CompileDBBackend(CommonBackend):
             self._envs[obj.objdir] = obj.config
 
         elif isinstance(obj, (Sources, GeneratedSources)):
-            
+            # For other sources, include each source file.
             for f in obj.files:
                 self._build_db_line(obj.objdir, obj.relsrcdir, obj.config, f,
                                     obj.canonical_suffix)
@@ -102,13 +102,26 @@ class CompileDBBackend(CommonBackend):
             variables.update(self._local_flags[directory])
             c = []
             for a in cmd:
-                a = expand_variables(a, variables).split()
-                if not a:
-                    continue
-                if isinstance(a, types.StringTypes):
-                    c.append(a)
-                else:
-                    c.extend(a)
+                accum = ''
+                for word in expand_variables(a, variables).split():
+                    # We can't just split() the output of expand_variables since
+                    # there can be spaces enclosed by quotes, e.g. '"foo bar"'.
+                    # Handle that case by checking whether there are an even
+                    # number of double-quotes in the word and appending it to
+                    # the accumulator if not. Meanwhile, shlex.split() and
+                    # mozbuild.shellutil.split() aren't able to properly handle
+                    # this and break in various ways, so we can't use something
+                    # off-the-shelf.
+                    has_quote = bool(word.count('"') % 2)
+                    if accum and has_quote:
+                        c.append(accum + ' ' + word)
+                        accum = ''
+                    elif accum and not has_quote:
+                        accum += ' ' + word
+                    elif not accum and has_quote:
+                        accum = word
+                    else:
+                        c.append(word)
             per_source_flags = self._per_source_flags.get(filename)
             if per_source_flags is not None:
                 c.extend(per_source_flags)
@@ -119,7 +132,7 @@ class CompileDBBackend(CommonBackend):
             })
 
         import json
-        
+        # Output the database (a JSON file) to objdir/compile_commands.json
         outputfile = os.path.join(self.environment.topobjdir, 'compile_commands.json')
         with self._write_file(outputfile) as jsonout:
             json.dump(db, jsonout, indent=0)
@@ -131,8 +144,8 @@ class CompileDBBackend(CommonBackend):
                                     obj.canonical_suffix)
             return
 
-        
-        
+        # For unified sources, only include the unified source file.
+        # Note that unified sources are never used for host sources.
         for f in obj.unified_source_mapping:
             self._build_db_line(obj.objdir, obj.relsrcdir, obj.config, f[0],
                                 obj.canonical_suffix)
