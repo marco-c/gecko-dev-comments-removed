@@ -136,27 +136,12 @@ function* run_test_1(generator) {
 
   
   
-  
-  
-  
-  let db2 = new CookieDatabaseConnection(do_get_cookie_file(profile), 2);
-  db2.db.executeSimpleSQL("INSERT INTO moz_cookies (baseDomain) VALUES (NULL)");
-  db2.close();
-  let db = new CookieDatabaseConnection(do_get_cookie_file(profile), 4);
-  Assert.equal(do_count_cookies_in_db(db.db), 2);
+  let db = new CookieDatabaseConnection(do_get_cookie_file(profile), 11);
+  Assert.equal(do_count_cookies_in_db(db.db), 1);
 
   
   do_load_profile(sub_generator);
   yield;
-
-  
-  while (do_count_cookies_in_db(db.db) == 2) {
-    executeSoon(function() {
-      do_run_generator(sub_generator);
-    });
-    yield;
-  }
-  Assert.equal(do_count_cookies_in_db(db.db), 1);
 
   
   db.insertCookie(cookie);
@@ -270,23 +255,18 @@ function* run_test_2(generator) {
   
   Assert.ok(!do_get_backup_file(profile).exists());
 
-  
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 0);
-  Assert.equal(do_count_cookies(), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
+  Assert.equal(do_count_cookies(), 3000);
 
   
   do_close_profile(sub_generator);
   yield;
 
-  
-  Assert.ok(do_get_backup_file(profile).exists());
-  Assert.equal(do_get_backup_file(profile).fileSize, size);
-  let db = Services.storage.openDatabase(do_get_cookie_file(profile));
-  db.close();
+  Assert.ok(!do_get_backup_file(profile).exists());
 
   do_load_profile();
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 0);
-  Assert.equal(do_count_cookies(), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
+  Assert.equal(do_count_cookies(), 3000);
 
   
   do_close_profile(sub_generator);
@@ -294,7 +274,6 @@ function* run_test_2(generator) {
 
   
   do_get_cookie_file(profile).remove(false);
-  do_get_backup_file(profile).remove(false);
   Assert.ok(!do_get_cookie_file(profile).exists());
   Assert.ok(!do_get_backup_file(profile).exists());
   do_run_generator(generator);
@@ -343,46 +322,22 @@ function* run_test_3(generator) {
   Assert.ok(!do_get_backup_file(profile).exists());
 
   
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("hither.com"), 0);
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("haithur.com"), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("hither.com"), 10);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("haithur.com"), 2990);
 
   
   do_close_profile(sub_generator);
   yield;
   let db = Services.storage.openDatabase(do_get_cookie_file(profile));
-  Assert.equal(do_count_cookies_in_db(db, "hither.com"), 0);
-  Assert.equal(do_count_cookies_in_db(db), 0);
+  Assert.equal(do_count_cookies_in_db(db, "hither.com"), 10);
+  Assert.equal(do_count_cookies_in_db(db), 3000);
   db.close();
 
-  
-  Assert.ok(do_get_backup_file(profile).exists());
-  Assert.equal(do_get_backup_file(profile).fileSize, size);
-
-  
-  do_get_backup_file(profile).moveTo(null, "cookies.sqlite");
-  do_load_profile();
-
-  
   
   Assert.ok(!do_get_backup_file(profile).exists());
 
   
-  Assert.equal(do_count_cookies(), 0);
-
-  
-  do_close_profile(sub_generator);
-  yield;
-  db = Services.storage.openDatabase(do_get_cookie_file(profile));
-  Assert.equal(do_count_cookies_in_db(db), 0);
-  db.close();
-
-  
-  Assert.ok(do_get_backup_file(profile).exists());
-  Assert.equal(do_get_backup_file(profile).fileSize, size);
-
-  
   do_get_cookie_file(profile).remove(false);
-  do_get_backup_file(profile).remove(false);
   Assert.ok(!do_get_cookie_file(profile).exists());
   Assert.ok(!do_get_backup_file(profile).exists());
   do_run_generator(generator);
@@ -413,7 +368,7 @@ function* run_test_4(generator) {
   Assert.ok(!do_get_backup_file(profile).exists());
 
   
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
 
   
   
@@ -421,21 +376,20 @@ function* run_test_4(generator) {
   Services.cookies.setCookieString(uri, null, "oh2=hai; max-age=1000", null);
 
   
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
-  Assert.equal(do_count_cookies(), 1);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 2);
+  Assert.equal(do_count_cookies(), 3001);
 
   
   do_close_profile(sub_generator);
   yield;
 
   
-  Assert.ok(do_get_backup_file(profile).exists());
-  Assert.equal(do_get_backup_file(profile).fileSize, size);
+  Assert.ok(!do_get_backup_file(profile).exists());
 
   
   do_load_profile();
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
-  Assert.equal(do_count_cookies(), 1);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 2);
+  Assert.equal(do_count_cookies(), 3001);
 
   
   do_close_profile(sub_generator);
@@ -443,7 +397,6 @@ function* run_test_4(generator) {
 
   
   do_get_cookie_file(profile).remove(false);
-  do_get_backup_file(profile).remove(false);
   Assert.ok(!do_get_cookie_file(profile).exists());
   Assert.ok(!do_get_backup_file(profile).exists());
   do_run_generator(generator);
@@ -481,28 +434,26 @@ function* run_test_5(generator) {
   Assert.ok(!do_get_backup_file(profile).exists());
 
   
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("bar.com"), 0);
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 0);
-  Assert.equal(do_count_cookies(), 0);
-  Assert.ok(do_get_backup_file(profile).exists());
-  Assert.equal(do_get_backup_file(profile).fileSize, size);
-  Assert.ok(!do_get_rebuild_backup_file(profile).exists());
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("bar.com"), 1);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
+  Assert.equal(do_count_cookies(), 3001);
+  Assert.ok(!do_get_backup_file(profile).exists());
 
   
   
-  let db = new CookieDatabaseConnection(do_get_cookie_file(profile), 4);
-  db.insertCookie(cookie);
+  let db = new CookieDatabaseConnection(do_get_cookie_file(profile), 11);
+  try {
+    db.insertCookie(cookie);
+  } catch (e) {}
   Assert.equal(do_count_cookies_in_db(db.db, "bar.com"), 1);
-  Assert.equal(do_count_cookies_in_db(db.db), 1);
+  Assert.equal(do_count_cookies_in_db(db.db), 3001);
   db.close();
 
-  
-  Assert.ok(do_get_backup_file(profile).exists());
-  Assert.equal(do_get_backup_file(profile).fileSize, size);
+  Assert.ok(!do_get_backup_file(profile).exists());
 
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("bar.com"), 0);
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 0);
-  Assert.equal(do_count_cookies(), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("bar.com"), 1);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
+  Assert.equal(do_count_cookies(), 3001);
 
   
   
@@ -511,7 +462,6 @@ function* run_test_5(generator) {
 
   
   do_get_cookie_file(profile).remove(false);
-  do_get_backup_file(profile).remove(false);
   Assert.ok(!do_get_cookie_file(profile).exists());
   Assert.ok(!do_get_backup_file(profile).exists());
   do_run_generator(generator);

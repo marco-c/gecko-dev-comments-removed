@@ -34,7 +34,10 @@ function* do_run_test() {
   do_get_cookie_file(profile).remove(false);
 
   
-  let schema3db = new CookieDatabaseConnection(do_get_cookie_file(profile), 3);
+  let schema10db = new CookieDatabaseConnection(
+    do_get_cookie_file(profile),
+    10
+  );
 
   let now = Date.now() * 1000;
   let futureExpiry = Math.round(now / 1e6 + 1000);
@@ -56,7 +59,7 @@ function* do_run_test() {
       false
     );
 
-    schema3db.insertCookie(cookie);
+    schema10db.insertCookie(cookie);
   }
 
   
@@ -74,7 +77,7 @@ function* do_run_test() {
       false
     );
 
-    schema3db.insertCookie(cookie);
+    schema10db.insertCookie(cookie);
   }
 
   
@@ -93,7 +96,9 @@ function* do_run_test() {
       false
     );
 
-    schema3db.insertCookie(cookie);
+    try {
+      schema10db.insertCookie(cookie);
+    } catch (e) {}
   }
   for (let i = 45; i < 50; ++i) {
     let cookie = new Cookie(
@@ -109,7 +114,9 @@ function* do_run_test() {
       false
     );
 
-    schema3db.insertCookie(cookie);
+    try {
+      schema10db.insertCookie(cookie);
+    } catch (e) {}
   }
   for (let i = 50; i < 55; ++i) {
     let cookie = new Cookie(
@@ -125,7 +132,9 @@ function* do_run_test() {
       false
     );
 
-    schema3db.insertCookie(cookie);
+    try {
+      schema10db.insertCookie(cookie);
+    } catch (e) {}
   }
   for (let i = 55; i < 60; ++i) {
     let cookie = new Cookie(
@@ -141,12 +150,14 @@ function* do_run_test() {
       false
     );
 
-    schema3db.insertCookie(cookie);
+    try {
+      schema10db.insertCookie(cookie);
+    } catch (e) {}
   }
 
   
-  schema3db.close();
-  schema3db = null;
+  schema10db.close();
+  schema10db = null;
 
   
   
@@ -163,7 +174,7 @@ function* do_run_test() {
   Assert.equal(Services.cookiemgr.countCookiesFromHost("baz.com"), 1);
   let cookies = Services.cookiemgr.getCookiesFromHost("baz.com", {});
   let cookie = cookies[0];
-  Assert.equal(cookie.expiry, futureExpiry + 44);
+  Assert.equal(cookie.expiry, futureExpiry + 40);
 
   finish_test();
 }
