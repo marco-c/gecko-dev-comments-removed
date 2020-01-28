@@ -5,15 +5,19 @@
 
 #include "gzguts.h"
 
+#if defined(_WIN32) && !defined(__BORLANDC__) && !defined(__MINGW32__)
+#  define LSEEK _lseeki64
+#else
 #if defined(_LARGEFILE64_SOURCE) && _LFS64_LARGEFILE-0
 #  define LSEEK lseek64
 #else
 #  define LSEEK lseek
 #endif
+#endif
 
 
 local void gz_reset OF((gz_statep));
-local gzFile gz_open OF((const char *, int, const char *));
+local gzFile gz_open OF((const void *, int, const char *));
 
 #if defined UNDER_CE
 
@@ -71,28 +75,40 @@ char ZLIB_INTERNAL *gz_strwinerror (error)
 local void gz_reset(state)
     gz_statep state;
 {
+    state->x.have = 0;              
     if (state->mode == GZ_READ) {   
-        state->have = 0;            
         state->eof = 0;             
+        state->past = 0;            
         state->how = LOOK;          
-        state->direct = 1;          
     }
     state->seek = 0;                
     gz_error(state, Z_OK, NULL);    
-    state->pos = 0;                 
+    state->x.pos = 0;               
     state->strm.avail_in = 0;       
 }
 
 
 local gzFile gz_open(path, fd, mode)
-    const char *path;
+    const void *path;
     int fd;
     const char *mode;
 {
     gz_statep state;
+    z_size_t len;
+    int oflag;
+#ifdef O_CLOEXEC
+    int cloexec = 0;
+#endif
+#ifdef O_EXCL
+    int exclusive = 0;
+#endif
 
     
-    state = malloc(sizeof(gz_state));
+    if (path == NULL)
+        return NULL;
+
+    
+    state = (gz_statep)malloc(sizeof(gz_state));
     if (state == NULL)
         return NULL;
     state->size = 0;            
@@ -103,6 +119,7 @@ local gzFile gz_open(path, fd, mode)
     state->mode = GZ_NONE;
     state->level = Z_DEFAULT_COMPRESSION;
     state->strategy = Z_DEFAULT_STRATEGY;
+    state->direct = 0;
     while (*mode) {
         if (*mode >= '0' && *mode <= '9')
             state->level = *mode - '0';
@@ -124,6 +141,16 @@ local gzFile gz_open(path, fd, mode)
                 return NULL;
             case 'b':       
                 break;
+#ifdef O_CLOEXEC
+            case 'e':
+                cloexec = 1;
+                break;
+#endif
+#ifdef O_EXCL
+            case 'x':
+                exclusive = 1;
+                break;
+#endif
             case 'f':
                 state->strategy = Z_FILTERED;
                 break;
@@ -135,6 +162,10 @@ local gzFile gz_open(path, fd, mode)
                 break;
             case 'F':
                 state->strategy = Z_FIXED;
+                break;
+            case 'T':
+                state->direct = 1;
+                break;
             default:        
                 ;
             }
@@ -148,36 +179,79 @@ local gzFile gz_open(path, fd, mode)
     }
 
     
-    state->path = malloc(strlen(path) + 1);
+    if (state->mode == GZ_READ) {
+        if (state->direct) {
+            free(state);
+            return NULL;
+        }
+        state->direct = 1;      
+    }
+
+    
+#ifdef WIDECHAR
+    if (fd == -2) {
+        len = wcstombs(NULL, path, 0);
+        if (len == (z_size_t)-1)
+            len = 0;
+    }
+    else
+#endif
+        len = strlen((const char *)path);
+    state->path = (char *)malloc(len + 1);
     if (state->path == NULL) {
         free(state);
         return NULL;
     }
-    strcpy(state->path, path);
+#ifdef WIDECHAR
+    if (fd == -2)
+        if (len)
+            wcstombs(state->path, path, len + 1);
+        else
+            *(state->path) = 0;
+    else
+#endif
+#if !defined(NO_snprintf) && !defined(NO_vsnprintf)
+        (void)snprintf(state->path, len + 1, "%s", (const char *)path);
+#else
+        strcpy(state->path, path);
+#endif
 
     
-    state->fd = fd != -1 ? fd :
-        open(path,
+    oflag =
 #ifdef O_LARGEFILE
-            O_LARGEFILE |
+        O_LARGEFILE |
 #endif
 #ifdef O_BINARY
-            O_BINARY |
+        O_BINARY |
 #endif
-            (state->mode == GZ_READ ?
-                O_RDONLY :
-                (O_WRONLY | O_CREAT | (
-                    state->mode == GZ_WRITE ?
-                        O_TRUNC :
-                        O_APPEND))),
-            0666);
+#ifdef O_CLOEXEC
+        (cloexec ? O_CLOEXEC : 0) |
+#endif
+        (state->mode == GZ_READ ?
+         O_RDONLY :
+         (O_WRONLY | O_CREAT |
+#ifdef O_EXCL
+          (exclusive ? O_EXCL : 0) |
+#endif
+          (state->mode == GZ_WRITE ?
+           O_TRUNC :
+           O_APPEND)));
+
+    
+    state->fd = fd > -1 ? fd : (
+#ifdef WIDECHAR
+        fd == -2 ? _wopen(path, oflag, 0666) :
+#endif
+        open((const char *)path, oflag, 0666));
     if (state->fd == -1) {
         free(state->path);
         free(state);
         return NULL;
     }
-    if (state->mode == GZ_APPEND)
+    if (state->mode == GZ_APPEND) {
+        LSEEK(state->fd, 0, SEEK_END);  
         state->mode = GZ_WRITE;         
+    }
 
     
     if (state->mode == GZ_READ) {
@@ -216,13 +290,27 @@ gzFile ZEXPORT gzdopen(fd, mode)
     char *path;         
     gzFile gz;
 
-    if (fd == -1 || (path = malloc(7 + 3 * sizeof(int))) == NULL)
+    if (fd == -1 || (path = (char *)malloc(7 + 3 * sizeof(int))) == NULL)
         return NULL;
+#if !defined(NO_snprintf) && !defined(NO_vsnprintf)
+    (void)snprintf(path, 7 + 3 * sizeof(int), "<fd:%d>", fd);
+#else
     sprintf(path, "<fd:%d>", fd);   
+#endif
     gz = gz_open(path, fd, mode);
     free(path);
     return gz;
 }
+
+
+#ifdef WIDECHAR
+gzFile ZEXPORT gzopen_w(path, mode)
+    const wchar_t *path;
+    const char *mode;
+{
+    return gz_open(path, -2, mode);
+}
+#endif
 
 
 int ZEXPORT gzbuffer(file, size)
@@ -243,8 +331,10 @@ int ZEXPORT gzbuffer(file, size)
         return -1;
 
     
-    if (size == 0)
-        return -1;
+    if ((size << 1) < size)
+        return -1;              
+    if (size < 2)
+        size = 2;               
     state->want = size;
     return 0;
 }
@@ -261,7 +351,8 @@ int ZEXPORT gzrewind(file)
     state = (gz_statep)file;
 
     
-    if (state->mode != GZ_READ || state->err != Z_OK)
+    if (state->mode != GZ_READ ||
+            (state->err != Z_OK && state->err != Z_BUF_ERROR))
         return -1;
 
     
@@ -289,7 +380,7 @@ z_off64_t ZEXPORT gzseek64(file, offset, whence)
         return -1;
 
     
-    if (state->err != Z_OK)
+    if (state->err != Z_OK && state->err != Z_BUF_ERROR)
         return -1;
 
     
@@ -298,31 +389,32 @@ z_off64_t ZEXPORT gzseek64(file, offset, whence)
 
     
     if (whence == SEEK_SET)
-        offset -= state->pos;
+        offset -= state->x.pos;
     else if (state->seek)
         offset += state->skip;
     state->seek = 0;
 
     
     if (state->mode == GZ_READ && state->how == COPY &&
-        state->pos + offset >= state->raw) {
-        ret = LSEEK(state->fd, offset - state->have, SEEK_CUR);
+            state->x.pos + offset >= 0) {
+        ret = LSEEK(state->fd, offset - state->x.have, SEEK_CUR);
         if (ret == -1)
             return -1;
-        state->have = 0;
+        state->x.have = 0;
         state->eof = 0;
+        state->past = 0;
         state->seek = 0;
         gz_error(state, Z_OK, NULL);
         state->strm.avail_in = 0;
-        state->pos += offset;
-        return state->pos;
+        state->x.pos += offset;
+        return state->x.pos;
     }
 
     
     if (offset < 0) {
         if (state->mode != GZ_READ)         
             return -1;
-        offset += state->pos;
+        offset += state->x.pos;
         if (offset < 0)                     
             return -1;
         if (gzrewind(file) == -1)           
@@ -331,11 +423,11 @@ z_off64_t ZEXPORT gzseek64(file, offset, whence)
 
     
     if (state->mode == GZ_READ) {
-        n = GT_OFF(state->have) || (z_off64_t)state->have > offset ?
-            (unsigned)offset : state->have;
-        state->have -= n;
-        state->next += n;
-        state->pos += n;
+        n = GT_OFF(state->x.have) || (z_off64_t)state->x.have > offset ?
+            (unsigned)offset : state->x.have;
+        state->x.have -= n;
+        state->x.next += n;
+        state->x.pos += n;
         offset -= n;
     }
 
@@ -344,7 +436,7 @@ z_off64_t ZEXPORT gzseek64(file, offset, whence)
         state->seek = 1;
         state->skip = offset;
     }
-    return state->pos + offset;
+    return state->x.pos + offset;
 }
 
 
@@ -373,7 +465,7 @@ z_off64_t ZEXPORT gztell64(file)
         return -1;
 
     
-    return state->pos + (state->seek ? state->skip : 0);
+    return state->x.pos + (state->seek ? state->skip : 0);
 }
 
 
@@ -433,8 +525,7 @@ int ZEXPORT gzeof(file)
         return 0;
 
     
-    return state->mode == GZ_READ ?
-        (state->eof && state->strm.avail_in == 0 && state->have == 0) : 0;
+    return state->mode == GZ_READ ? state->past : 0;
 }
 
 
@@ -454,7 +545,8 @@ const char * ZEXPORT gzerror(file, errnum)
     
     if (errnum != NULL)
         *errnum = state->err;
-    return state->msg == NULL ? "" : state->msg;
+    return state->err == Z_MEM_ERROR ? "out of memory" :
+                                       (state->msg == NULL ? "" : state->msg);
 }
 
 
@@ -471,8 +563,10 @@ void ZEXPORT gzclearerr(file)
         return;
 
     
-    if (state->mode == GZ_READ)
+    if (state->mode == GZ_READ) {
         state->eof = 0;
+        state->past = 0;
+    }
     gz_error(state, Z_OK, NULL);
 }
 
@@ -495,26 +589,32 @@ void ZLIB_INTERNAL gz_error(state, err, msg)
     }
 
     
+    if (err != Z_OK && err != Z_BUF_ERROR)
+        state->x.have = 0;
+
+    
     state->err = err;
     if (msg == NULL)
         return;
 
     
-    if (err == Z_MEM_ERROR) {
-        state->msg = (char *)msg;
+    if (err == Z_MEM_ERROR)
         return;
-    }
 
     
-    if ((state->msg = malloc(strlen(state->path) + strlen(msg) + 3)) == NULL) {
+    if ((state->msg = (char *)malloc(strlen(state->path) + strlen(msg) + 3)) ==
+            NULL) {
         state->err = Z_MEM_ERROR;
-        state->msg = (char *)"out of memory";
         return;
     }
+#if !defined(NO_snprintf) && !defined(NO_vsnprintf)
+    (void)snprintf(state->msg, strlen(state->path) + strlen(msg) + 3,
+                   "%s%s%s", state->path, ": ", msg);
+#else
     strcpy(state->msg, state->path);
     strcat(state->msg, ": ");
     strcat(state->msg, msg);
-    return;
+#endif
 }
 
 #ifndef INT_MAX

@@ -13,7 +13,7 @@
 #ifndef ZUTIL_H
 #define ZUTIL_H
 
-#if ((__GNUC__-0) * 10 + __GNUC_MINOR__-0 >= 33) && !defined(NO_VIZ)
+#ifdef HAVE_HIDDEN
 #  define ZLIB_INTERNAL __attribute__((visibility ("hidden")))
 #else
 #  define ZLIB_INTERNAL
@@ -21,7 +21,7 @@
 
 #include "zlib.h"
 
-#ifdef STDC
+#if defined(STDC) && !defined(Z_SOLO)
 #  if !(defined(_WIN32_WCE) && defined(_MSC_VER))
 #    include <stddef.h>
 #  endif
@@ -29,9 +29,15 @@
 #  include <stdlib.h>
 #endif
 
+#ifdef Z_SOLO
+   typedef long ptrdiff_t;  
+#endif
+
 #ifndef local
 #  define local static
 #endif
+
+
 
 
 typedef unsigned char  uch;
@@ -40,13 +46,13 @@ typedef unsigned short ush;
 typedef ush FAR ushf;
 typedef unsigned long  ulg;
 
-extern const char * const z_errmsg[10]; 
+extern z_const char * const z_errmsg[10]; 
 
 
 #define ERR_MSG(err) z_errmsg[Z_NEED_DICT-(err)]
 
 #define ERR_RETURN(strm,err) \
-  return (strm->msg = (char*)ERR_MSG(err), (err))
+  return (strm->msg = ERR_MSG(err), (err))
 
 
         
@@ -78,63 +84,83 @@ extern const char * const z_errmsg[10];
 
 #if defined(MSDOS) || (defined(WINDOWS) && !defined(WIN32))
 #  define OS_CODE  0x00
-#  if defined(__TURBOC__) || defined(__BORLANDC__)
-#    if (__STDC__ == 1) && (defined(__LARGE__) || defined(__COMPACT__))
-       
-       void _Cdecl farfree( void *block );
-       void *_Cdecl farmalloc( unsigned long nbytes );
-#    else
-#      include <alloc.h>
+#  ifndef Z_SOLO
+#    if defined(__TURBOC__) || defined(__BORLANDC__)
+#      if (__STDC__ == 1) && (defined(__LARGE__) || defined(__COMPACT__))
+         
+         void _Cdecl farfree( void *block );
+         void *_Cdecl farmalloc( unsigned long nbytes );
+#      else
+#        include <alloc.h>
+#      endif
+#    else 
+#      include <malloc.h>
 #    endif
-#  else 
-#    include <malloc.h>
 #  endif
 #endif
 
 #ifdef AMIGA
-#  define OS_CODE  0x01
+#  define OS_CODE  1
 #endif
 
 #if defined(VAXC) || defined(VMS)
-#  define OS_CODE  0x02
+#  define OS_CODE  2
 #  define F_OPEN(name, mode) \
      fopen((name), (mode), "mbc=60", "ctx=stm", "rfm=fix", "mrs=512")
 #endif
 
+#ifdef __370__
+#  if __TARGET_LIB__ < 0x20000000
+#    define OS_CODE 4
+#  elif __TARGET_LIB__ < 0x40000000
+#    define OS_CODE 11
+#  else
+#    define OS_CODE 8
+#  endif
+#endif
+
 #if defined(ATARI) || defined(atarist)
-#  define OS_CODE  0x05
+#  define OS_CODE  5
 #endif
 
 #ifdef OS2
-#  define OS_CODE  0x06
-#  ifdef M_I86
+#  define OS_CODE  6
+#  if defined(M_I86) && !defined(Z_SOLO)
 #    include <malloc.h>
 #  endif
 #endif
 
 #if defined(MACOS) || defined(TARGET_OS_MAC)
-#  define OS_CODE  0x07
-#  if defined(__MWERKS__) && __dest_os != __be_os && __dest_os != __win32_os
-#    include <unix.h> 
-#  else
-#    ifndef fdopen
-#      define fdopen(fd,mode) NULL /* No fdopen() */
+#  define OS_CODE  7
+#  ifndef Z_SOLO
+#    if defined(__MWERKS__) && __dest_os != __be_os && __dest_os != __win32_os
+#      include <unix.h> 
+#    else
+#      ifndef fdopen
+#        define fdopen(fd,mode) NULL /* No fdopen() */
+#      endif
 #    endif
 #  endif
 #endif
 
-#ifdef TOPS20
-#  define OS_CODE  0x0a
+#ifdef __acorn
+#  define OS_CODE 13
 #endif
 
-#ifdef WIN32
-#  ifndef __CYGWIN__  
-#    define OS_CODE  0x0b
-#  endif
+#if defined(WIN32) && !defined(__CYGWIN__)
+#  define OS_CODE  10
 #endif
 
-#ifdef __50SERIES 
-#  define OS_CODE  0x0f
+#ifdef _BEOS_
+#  define OS_CODE  16
+#endif
+
+#ifdef __TOS_OS400__
+#  define OS_CODE 18
+#endif
+
+#ifdef __APPLE__
+#  define OS_CODE 19
 #endif
 
 #if defined(_BEOS_) || defined(RISCOS)
@@ -153,14 +179,15 @@ extern const char * const z_errmsg[10];
 #  endif
 #endif
 
-#if defined(__BORLANDC__)
+#if defined(__BORLANDC__) && !defined(MSDOS)
   #pragma warn -8004
   #pragma warn -8008
   #pragma warn -8066
 #endif
 
 
-#if !defined(_LARGEFILE64_SOURCE) || _LFS64_LARGEFILE-0 == 0
+#if !defined(_WIN32) && \
+    (!defined(_LARGEFILE64_SOURCE) || _LFS64_LARGEFILE-0 == 0)
     ZEXTERN uLong ZEXPORT adler32_combine64 OF((uLong, uLong, z_off_t));
     ZEXTERN uLong ZEXPORT crc32_combine64 OF((uLong, uLong, z_off_t));
 #endif
@@ -168,7 +195,7 @@ extern const char * const z_errmsg[10];
         
 
 #ifndef OS_CODE
-#  define OS_CODE  0x03  /* assume Unix */
+#  define OS_CODE  3     /* assume Unix */
 #endif
 
 #ifndef F_OPEN
@@ -177,43 +204,7 @@ extern const char * const z_errmsg[10];
 
          
 
-#if defined(STDC99) || (defined(__TURBOC__) && __TURBOC__ >= 0x550) || \
-   (defined(_MSC_VER) && _MSC_VER >= 1500)
-#  ifndef HAVE_VSNPRINTF
-#    define HAVE_VSNPRINTF
-#  endif
-#endif
-#if defined(__CYGWIN__)
-#  ifndef HAVE_VSNPRINTF
-#    define HAVE_VSNPRINTF
-#  endif
-#endif
-#ifndef HAVE_VSNPRINTF
-#  ifdef MSDOS
-     
-
-#    define NO_vsnprintf
-#  endif
-#  ifdef __TURBOC__
-#    define NO_vsnprintf
-#  endif
-#  ifdef WIN32
-     
-#    if !defined(vsnprintf) && !defined(NO_vsnprintf)
-#      if !defined(_MSC_VER) || ( defined(_MSC_VER) && _MSC_VER < 1500 )
-#         define vsnprintf _vsnprintf
-#      endif
-#    endif
-#  endif
-#  ifdef __SASC
-#    define NO_vsnprintf
-#  endif
-#endif
-#ifdef VMS
-#  define NO_vsnprintf
-#endif
-
-#if defined(pyr)
+#if defined(pyr) || defined(Z_SOLO)
 #  define NO_MEMCPY
 #endif
 #if defined(SMALL_MEDIUM) && !defined(_MSC_VER) && !defined(__SC__)
@@ -243,7 +234,7 @@ extern const char * const z_errmsg[10];
 #endif
 
 
-#ifdef DEBUG
+#ifdef ZLIB_DEBUG
 #  include <stdio.h>
    extern int ZLIB_INTERNAL z_verbose;
    extern void ZLIB_INTERNAL z_error OF((char *m));
@@ -262,14 +253,19 @@ extern const char * const z_errmsg[10];
 #  define Tracecv(c,x)
 #endif
 
-
-voidpf ZLIB_INTERNAL zcalloc OF((voidpf opaque, unsigned items,
-                        unsigned size));
-void ZLIB_INTERNAL zcfree  OF((voidpf opaque, voidpf ptr));
+#ifndef Z_SOLO
+   voidpf ZLIB_INTERNAL zcalloc OF((voidpf opaque, unsigned items,
+                                    unsigned size));
+   void ZLIB_INTERNAL zcfree  OF((voidpf opaque, voidpf ptr));
+#endif
 
 #define ZALLOC(strm, items, size) \
            (*((strm)->zalloc))((strm)->opaque, (items), (size))
 #define ZFREE(strm, addr)  (*((strm)->zfree))((strm)->opaque, (voidpf)(addr))
 #define TRY_FREE(s, p) {if (p) ZFREE(s, p);}
+
+
+#define ZSWAP32(q) ((((q) >> 24) & 0xff) + (((q) >> 8) & 0xff00) + \
+                    (((q) & 0xff00) << 8) + (((q) & 0xff) << 24))
 
 #endif 

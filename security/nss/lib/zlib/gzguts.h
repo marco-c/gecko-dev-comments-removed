@@ -12,7 +12,7 @@
 #  endif
 #endif
 
-#if ((__GNUC__-0) * 10 + __GNUC_MINOR__-0 >= 33) && !defined(NO_VIZ)
+#ifdef HAVE_HIDDEN
 #  define ZLIB_INTERNAL __attribute__((visibility ("hidden")))
 #else
 #  define ZLIB_INTERNAL
@@ -25,20 +25,96 @@
 #  include <stdlib.h>
 #  include <limits.h>
 #endif
+
+#ifndef _POSIX_SOURCE
+#  define _POSIX_SOURCE
+#endif
 #include <fcntl.h>
+
+#ifdef _WIN32
+#  include <stddef.h>
+#endif
+
+#if defined(__TURBOC__) || defined(_MSC_VER) || defined(_WIN32)
+#  include <io.h>
+#endif
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+#  define WIDECHAR
+#endif
+
+#ifdef WINAPI_FAMILY
+#  define open _open
+#  define read _read
+#  define write _write
+#  define close _close
+#endif
 
 #ifdef NO_DEFLATE       
 #  define NO_GZCOMPRESS
 #endif
 
-#ifdef _MSC_VER
-#  include <io.h>
-#  define vsnprintf _vsnprintf
+#if defined(STDC99) || (defined(__TURBOC__) && __TURBOC__ >= 0x550)
+#  ifndef HAVE_VSNPRINTF
+#    define HAVE_VSNPRINTF
+#  endif
+#endif
+
+#if defined(__CYGWIN__)
+#  ifndef HAVE_VSNPRINTF
+#    define HAVE_VSNPRINTF
+#  endif
+#endif
+
+#if defined(MSDOS) && defined(__BORLANDC__) && (BORLANDC > 0x410)
+#  ifndef HAVE_VSNPRINTF
+#    define HAVE_VSNPRINTF
+#  endif
+#endif
+
+#ifndef HAVE_VSNPRINTF
+#  ifdef MSDOS
+
+
+#    define NO_vsnprintf
+#  endif
+#  ifdef __TURBOC__
+#    define NO_vsnprintf
+#  endif
+#  ifdef WIN32
+
+#    if !defined(vsnprintf) && !defined(NO_vsnprintf)
+#      if !defined(_MSC_VER) || ( defined(_MSC_VER) && _MSC_VER < 1500 )
+#         define vsnprintf _vsnprintf
+#      endif
+#    endif
+#  endif
+#  ifdef __SASC
+#    define NO_vsnprintf
+#  endif
+#  ifdef VMS
+#    define NO_vsnprintf
+#  endif
+#  ifdef __OS400__
+#    define NO_vsnprintf
+#  endif
+#  ifdef __MVS__
+#    define NO_vsnprintf
+#  endif
+#endif
+
+
+
+
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#  define snprintf _snprintf
 #endif
 
 #ifndef local
 #  define local static
 #endif
+
+
 
 
 
@@ -52,7 +128,7 @@
 #  include <windows.h>
 #  define zstrerror() gz_strwinerror((DWORD)GetLastError())
 #else
-#  ifdef STDC
+#  ifndef NO_STRERROR
 #    include <errno.h>
 #    define zstrerror() strerror(errno)
 #  else
@@ -67,6 +143,14 @@
     ZEXTERN z_off64_t ZEXPORT gztell64 OF((gzFile));
     ZEXTERN z_off64_t ZEXPORT gzoffset64 OF((gzFile));
 #endif
+
+
+#if MAX_MEM_LEVEL >= 8
+#  define DEF_MEM_LEVEL 8
+#else
+#  define DEF_MEM_LEVEL  MAX_MEM_LEVEL
+#endif
+
 
 
 #define GZBUFSIZE 8192
@@ -85,22 +169,24 @@
 
 typedef struct {
         
+    struct gzFile_s x;      
+                            
+                            
+                            
+        
     int mode;               
     int fd;                 
     char *path;             
-    z_off64_t pos;          
     unsigned size;          
     unsigned want;          
     unsigned char *in;      
     unsigned char *out;     
-    unsigned char *next;    
-        
-    unsigned have;          
-    int eof;                
-    z_off64_t start;        
-    z_off64_t raw;          
-    int how;                
     int direct;             
+        
+    int how;                
+    z_off64_t start;        
+    int eof;                
+    int past;               
         
     int level;              
     int strategy;           

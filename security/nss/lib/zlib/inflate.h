@@ -18,7 +18,7 @@
 
 
 typedef enum {
-    HEAD,       
+    HEAD = 16180,   
     FLAGS,      
     TIME,       
     OS,         
@@ -78,10 +78,13 @@ typedef enum {
 
 
 
+
 struct inflate_state {
+    z_streamp strm;             
     inflate_mode mode;          
     int last;                   
     int wrap;                   
+
     int havedict;               
     int flags;                  
     unsigned dmax;              
