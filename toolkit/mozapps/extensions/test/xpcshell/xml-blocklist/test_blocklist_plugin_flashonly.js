@@ -22,6 +22,13 @@ add_task(async function checkFlashOnlyPluginState() {
   copyBlocklistToProfile(do_get_file("../data/test_bug514327_2.xml"));
 
   Services.prefs.setBoolPref("plugin.load_flash_only", false);
+  
+  
+  
+  Services.prefs.setBoolPref(
+    "security.turn_off_all_security_so_that_viruses_can_take_over_this_computer",
+    true
+  );
 
   var plugin = get_test_plugintag();
   if (!plugin) {

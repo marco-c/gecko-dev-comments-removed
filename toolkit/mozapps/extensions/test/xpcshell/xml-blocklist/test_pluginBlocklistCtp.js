@@ -71,6 +71,13 @@ add_task(async function setup() {
     "extensions.blocklist.url",
     "http://example.com/data/test_pluginBlocklistCtp.xml"
   );
+  
+  
+  
+  Services.prefs.setBoolPref(
+    "security.turn_off_all_security_so_that_viruses_can_take_over_this_computer",
+    true
+  );
   Services.prefs.setBoolPref("plugin.load_flash_only", false);
   await promiseStartupManager();
 
