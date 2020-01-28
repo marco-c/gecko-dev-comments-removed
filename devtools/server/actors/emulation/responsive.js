@@ -227,8 +227,10 @@ const ResponsiveActor = protocol.ActorClassWithSpec(responsiveSpec, {
 
 
 
-  setElementPickerState(state) {
-    this.touchSimulator.setElementPickerState(state);
+
+
+  setElementPickerState(state, pickerType) {
+    this.touchSimulator.setElementPickerState(state, pickerType);
   },
 
   setTouchEventsOverride(flag) {

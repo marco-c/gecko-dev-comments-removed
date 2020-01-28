@@ -7,6 +7,11 @@
 const { Services } = require("resource://gre/modules/Services.jsm");
 
 loader.lazyRequireGetter(this, "InspectorUtils", "InspectorUtils");
+loader.lazyRequireGetter(
+  this,
+  "PICKER_TYPES",
+  "devtools/shared/picker-constants"
+);
 
 var systemAppOrigin = (function() {
   let systemOrigin = "_";
@@ -33,6 +38,7 @@ const kStateHover = 0x00000004;
 
 function TouchSimulator(simulatorTarget) {
   this.simulatorTarget = simulatorTarget;
+  this._currentPickerMap = new Map();
 }
 
 
@@ -67,6 +73,7 @@ TouchSimulator.prototype = {
       
       this.simulatorTarget.addEventListener(evt, this, true, false);
     });
+
     this.enabled = true;
   },
 
@@ -81,6 +88,11 @@ TouchSimulator.prototype = {
     this.enabled = false;
   },
 
+  _isPicking() {
+    const types = Object.values(PICKER_TYPES);
+    return types.some(type => this._currentPickerMap.get(type));
+  },
+
   
 
 
@@ -88,14 +100,25 @@ TouchSimulator.prototype = {
 
 
 
-  setElementPickerState(state) {
-    this._isPicking = state;
+
+
+
+
+
+
+  setElementPickerState(state, pickerType) {
+    if (!Object.values(PICKER_TYPES).includes(pickerType)) {
+      throw new Error(
+        "Unsupported type in setElementPickerState: " + pickerType
+      );
+    }
+    this._currentPickerMap.set(pickerType, state);
   },
 
   
   handleEvent(evt) {
     
-    if (this._isPicking) {
+    if (this._isPicking()) {
       return;
     }
 

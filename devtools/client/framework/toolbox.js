@@ -182,6 +182,12 @@ loader.lazyRequireGetter(
   true
 );
 
+loader.lazyRequireGetter(
+  this,
+  "PICKER_TYPES",
+  "devtools/shared/picker-constants"
+);
+
 
 
 
@@ -1898,7 +1904,7 @@ Toolbox.prototype = {
   },
 
   _onPickerStarting: async function() {
-    this.tellRDMAboutPickerState(true);
+    this.tellRDMAboutPickerState(true, PICKER_TYPES.ELEMENT);
     this.pickerButton.isChecked = true;
     await this.selectTool("inspector", "inspect_dom");
     
@@ -1911,7 +1917,7 @@ Toolbox.prototype = {
   },
 
   _onPickerStopped: function() {
-    this.tellRDMAboutPickerState(false);
+    this.tellRDMAboutPickerState(false, PICKER_TYPES.ELEMENT);
     this.off("select", this.nodePicker.stop);
     this.doc.removeEventListener("keypress", this._onPickerKeypress, true);
     this.pickerButton.isChecked = false;
@@ -1942,7 +1948,9 @@ Toolbox.prototype = {
 
 
 
-  tellRDMAboutPickerState: async function(state) {
+
+
+  tellRDMAboutPickerState: async function(state, pickerType) {
     const { localTab } = this.target;
 
     if (
@@ -1953,7 +1961,7 @@ Toolbox.prototype = {
     }
 
     const ui = ResponsiveUIManager.getResponsiveUIForTab(localTab);
-    await ui.responsiveFront.setElementPickerState(state);
+    await ui.responsiveFront.setElementPickerState(state, pickerType);
   },
 
   
