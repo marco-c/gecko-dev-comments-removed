@@ -1949,8 +1949,7 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
   }
 
   
-  HTMLInputElement* number = GetParentNumberControl(mBoundFrame);
-  if (number ? number->IsSelectionCached() : mSelectionCached) {
+  if (mSelectionCached) {
     if (mRestoringSelection) {  
       mRestoringSelection->Revoke();
     }
@@ -1967,11 +1966,7 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
   
   
   
-  if (number) {
-    number->ClearSelectionCached();
-  } else {
-    mSelectionCached = false;
-  }
+  mSelectionCached = false;
 
   return preparingEditor.IsTextControlStateDestroyed()
              ? NS_ERROR_NOT_INITIALIZED
@@ -1980,27 +1975,6 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
 
 void TextControlState::FinishedRestoringSelection() {
   mRestoringSelection = nullptr;
-}
-
-bool TextControlState::IsSelectionCached() const {
-  if (mBoundFrame) {
-    HTMLInputElement* number = GetParentNumberControl(mBoundFrame);
-    if (number) {
-      return number->IsSelectionCached();
-    }
-  }
-  return mSelectionCached;
-}
-
-TextControlState::SelectionProperties&
-TextControlState::GetSelectionProperties() {
-  if (mBoundFrame) {
-    HTMLInputElement* number = GetParentNumberControl(mBoundFrame);
-    if (number) {
-      return number->GetSelectionProperties();
-    }
-  }
-  return mSelectionProperties;
 }
 
 void TextControlState::SyncUpSelectionPropertiesBeforeDestruction() {
@@ -2370,31 +2344,6 @@ void TextControlState::SetRangeText(const nsAString& aReplacement,
   
 }
 
-HTMLInputElement* TextControlState::GetParentNumberControl(
-    nsFrame* aFrame) const {
-  MOZ_ASSERT(aFrame);
-  nsIContent* content = aFrame->GetContent();
-  MOZ_ASSERT(content);
-  nsIContent* parent = content->GetParent();
-  if (!parent) {
-    return nullptr;
-  }
-  nsIContent* parentOfParent = parent->GetParent();
-  if (!parentOfParent) {
-    return nullptr;
-  }
-  HTMLInputElement* input = HTMLInputElement::FromNode(parentOfParent);
-  if (!input) {
-    return nullptr;
-  }
-  
-  
-  
-  
-  
-  return (input->ControlType() == NS_FORM_INPUT_NUMBER) ? input : nullptr;
-}
-
 void TextControlState::DestroyEditor() {
   
   if (mEditorInitialized) {
@@ -2449,15 +2398,7 @@ void TextControlState::UnbindFromFrame(nsTextControlFrame* aFrame) {
     props.SetStart(start);
     props.SetEnd(end);
     props.SetDirection(direction);
-    HTMLInputElement* number = GetParentNumberControl(aFrame);
-    if (number) {
-      
-      
-      
-      number->SetSelectionCached();
-    } else {
-      mSelectionCached = true;
-    }
+    mSelectionCached = true;
   }
 
   
