@@ -30,11 +30,6 @@ ChromeUtils.defineModuleGetter(
   "perfService",
   "resource://activity-stream/common/PerfService.jsm"
 );
-ChromeUtils.defineModuleGetter(
-  this,
-  "UserDomainAffinityProvider",
-  "resource://activity-stream/lib/UserDomainAffinityProvider.jsm"
-);
 const { actionTypes: at, actionCreators: ac } = ChromeUtils.import(
   "resource://activity-stream/common/Actions.jsm"
 );
@@ -70,7 +65,6 @@ const PREF_SHOW_SPONSORED = "showSponsored";
 const PREF_SPOC_IMPRESSIONS = "discoverystream.spoc.impressions";
 const PREF_FLIGHT_BLOCKS = "discoverystream.flight.blocks";
 const PREF_REC_IMPRESSIONS = "discoverystream.rec.impressions";
-const PREF_PERSONALIZATION_VERSION = "discoverystream.personalization.version";
 
 let getHardcodedLayout;
 
@@ -185,7 +179,17 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
   }
 
   get personalized() {
-    return this.config.personalized;
+    return this.config.personalized && !!this.providerSwitcher;
+  }
+
+  get providerSwitcher() {
+    if (this._providerSwitcher) {
+      return this._providerSwitcher;
+    }
+    this._providerSwitcher = this.store.feeds.get(
+      "feeds.recommendationproviderswitcher"
+    );
+    return this._providerSwitcher;
   }
 
   setupPrefs() {
@@ -556,6 +560,8 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     });
   }
 
+  
+  
   placementsForEach(callback) {
     const { placements } = this.store.getState().DiscoveryStream.spocs;
     
@@ -704,11 +710,16 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     });
   }
 
+  
+
+
+
+
   async loadAffinityScoresCache() {
     const cachedData = (await this.cache.get()) || {};
     const { affinities } = cachedData;
     if (this.personalized && affinities && affinities.scores) {
-      this.affinityProvider = new UserDomainAffinityProvider(
+      this.providerSwitcher.setAffinityProvider(
         affinities.timeSegments,
         affinities.parameterSets,
         affinities.maxHistoryQueryResults,
@@ -729,7 +740,16 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     }
   }
 
-  updateDomainAffinityScores() {
+  
+
+
+
+
+
+
+
+
+  async updateDomainAffinityScores() {
     if (
       !this.personalized ||
       !this.affinities ||
@@ -740,7 +760,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       return;
     }
 
-    this.affinityProvider = new UserDomainAffinityProvider(
+    this.providerSwitcher.setAffinityProvider(
       this.affinities.timeSegments,
       this.affinities.parameterSets,
       this.affinities.maxHistoryQueryResults,
@@ -748,7 +768,9 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       undefined
     );
 
-    const affinities = this.affinityProvider.getAffinities();
+    await this.providerSwitcher.init();
+
+    const affinities = this.providerSwitcher.getAffinities();
     this.domainAffinitiesLastUpdated = Date.now();
 
     this.store.dispatch(
@@ -787,17 +809,8 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       
       .sort((a, b) => b.score - a.score);
 
-    if (this.affinityProvider) {
-      if (this.affinityProvider.dispatchRelevanceScoreDuration) {
-        this.affinityProvider.dispatchRelevanceScoreDuration(scoreStart);
-      } else {
-        this.store.dispatch(
-          ac.PerfEvent({
-            event: "PERSONALIZATION_V1_ITEM_RELEVANCE_SCORE_DURATION",
-            value: Math.round(perfService.absNow() - scoreStart),
-          })
-        );
-      }
+    if (this.personalized) {
+      this.providerSwitcher.dispatchRelevanceScoreDuration(scoreStart);
     }
     return { data, filtered };
   }
@@ -808,13 +821,8 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     if (item.score !== 0 && !item.score) {
       item.score = 1;
     }
-    if (this.personalized && this.affinityProvider) {
-      const scoreResult = this.affinityProvider.calculateItemRelevanceScore(
-        item
-      );
-      if (scoreResult === 0 || scoreResult) {
-        item.score = scoreResult;
-      }
+    if (this.personalized) {
+      this.providerSwitcher.calculateItemRelevanceScore(item);
     }
     return item;
   }
@@ -1063,8 +1071,120 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
 
   async refreshAll(options = {}) {
-    this.loadAffinityScoresCache();
+    const affinityCacheLoadPromise = this.loadAffinityScoresCache();
+    let expirationPerComponent = {};
+    if (this.personalized) {
+      
+      
+      
+      expirationPerComponent = await this._checkExpirationPerComponent();
+    }
     await this.refreshContent(options);
+
+    if (this.personalized) {
+      
+      
+      affinityCacheLoadPromise.then(() => {
+        
+        
+        
+        
+        const initPromise = this.providerSwitcher.init();
+        initPromise.then(() => {
+          
+          
+          
+          const { feeds, spocs } = this.store.getState().DiscoveryStream;
+          if (feeds.loaded && expirationPerComponent.feeds) {
+            this.scoreFeeds(feeds);
+          }
+          if (spocs.loaded && expirationPerComponent.spocs) {
+            this.scoreSpocs(spocs);
+          }
+        });
+      });
+    }
+  }
+
+  async scoreFeeds(feedsState) {
+    if (feedsState.data) {
+      const feedsResult = Object.keys(feedsState.data).reduce((feeds, url) => {
+        let feed = feedsState.data[url];
+        const { data: scoredItems } = this.scoreItems(
+          feed.data.recommendations
+        );
+        const { recsExpireTime } = feed.data.settings;
+        const recommendations = this.rotate(scoredItems, recsExpireTime);
+
+        feed = {
+          ...feed,
+          data: {
+            ...feed.data,
+            recommendations,
+          },
+        };
+
+        feeds[url] = feed;
+
+        this.store.dispatch(
+          ac.AlsoToPreloaded({
+            type: at.DISCOVERY_STREAM_FEED_UPDATE,
+            data: {
+              feed,
+              url,
+            },
+          })
+        );
+        return feeds;
+      }, {});
+      await this.cache.set("feeds", feedsResult);
+    }
+  }
+
+  async scoreSpocs(spocsState) {
+    let belowMinScore = [];
+    this.placementsForEach(placement => {
+      const items = spocsState.data[placement.name];
+
+      if (!items || !items.length) {
+        return;
+      }
+
+      const { data: scoreResult, filtered: minScoreFilter } = this.scoreItems(
+        items
+      );
+
+      belowMinScore = [...belowMinScore, ...minScoreFilter];
+
+      spocsState.data = {
+        ...spocsState.data,
+        [placement.name]: scoreResult,
+      };
+    });
+
+    
+    
+    await this.cache.set("spocs", {
+      lastUpdated: spocsState.lastUpdated,
+      spocs: spocsState.data,
+    });
+    this.store.dispatch(
+      ac.AlsoToPreloaded({
+        type: at.DISCOVERY_STREAM_SPOCS_UPDATE,
+        data: {
+          lastUpdated: spocsState.lastUpdated,
+          spocs: spocsState.data,
+        },
+      })
+    );
+    if (belowMinScore.length) {
+      this._sendSpocsFill(
+        {
+          below_min_score: belowMinScore,
+        },
+        false
+      );
+    }
   }
 
   async refreshContent(options = {}) {
@@ -1206,29 +1326,10 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     }
   }
 
-  
-
-
-  setAffinityProviderVersion() {
-    const version = this.store.getState().Prefs.values[
-      PREF_PERSONALIZATION_VERSION
-    ];
-
-    this.store.dispatch(
-      ac.BroadcastToContent({
-        type: at.DISCOVERY_STREAM_PERSONALIZATION_VERSION,
-        data: {
-          version,
-        },
-      })
-    );
-  }
-
   async enable() {
     
     await this.reportCacheAge();
     const start = perfService.absNow();
-    this.setAffinityProviderVersion();
     await this.refreshAll({ updateOpenTabs: true, isStartup: true });
     Services.obs.addObserver(this, "idle-daily");
     this.loaded = true;
@@ -1242,16 +1343,21 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     if (this.loaded) {
       Services.obs.removeObserver(this, "idle-daily");
     }
-    if (this.affinityProvider && this.affinityProvider.teardown) {
-      this.affinityProvider.teardown();
-    }
     this.resetState();
   }
 
   async resetCache() {
+    await this.resetAllCache();
+  }
+
+  async resetContentCache() {
     await this.cache.set("layout", {});
     await this.cache.set("feeds", {});
     await this.cache.set("spocs", {});
+  }
+
+  async resetAllCache() {
+    await this.resetContentCache();
     await this.cache.set("affinities", {});
   }
 
@@ -1281,6 +1387,20 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       
       await this.enable();
     }
+  }
+
+  
+  
+  
+  
+  configReset() {
+    this._prefCache.config = null;
+    this.store.dispatch(
+      ac.BroadcastToContent({
+        type: at.DISCOVERY_STREAM_CONFIG_CHANGE,
+        data: this.config,
+      })
+    );
   }
 
   recordFlightImpression(flightId) {
@@ -1374,15 +1494,8 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       case PREF_HARDCODED_BASIC_LAYOUT:
       case PREF_SPOCS_ENDPOINT:
       case PREF_LANG_LAYOUT_CONFIG:
-      case PREF_PERSONALIZATION_VERSION:
         
-        this._prefCache.config = null;
-        this.store.dispatch(
-          ac.BroadcastToContent({
-            type: at.DISCOVERY_STREAM_CONFIG_CHANGE,
-            data: this.config,
-          })
-        );
+        this.configReset();
         break;
       case PREF_TOPSTORIES:
         if (!action.data.value) {
@@ -1434,17 +1547,9 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
         RemoteSettings.pollChanges();
         break;
       case at.DISCOVERY_STREAM_DEV_EXPIRE_CACHE:
-        await this.resetCache();
-        break;
-      case at.DISCOVERY_STREAM_PERSONALIZATION_VERSION_TOGGLE:
-        let version = this.store.getState().Prefs.values[
-          PREF_PERSONALIZATION_VERSION
-        ];
-
         
-        this.store.dispatch(
-          ac.SetPref(PREF_PERSONALIZATION_VERSION, version === 1 ? 2 : 1)
-        );
+        
+        await this.resetContentCache();
         break;
       case at.DISCOVERY_STREAM_CONFIG_SET_VALUE:
         
@@ -1458,6 +1563,11 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
             })
           )
         );
+        break;
+
+      case at.DISCOVERY_STREAM_CONFIG_RESET:
+        
+        this.configReset();
         break;
       case at.DISCOVERY_STREAM_CONFIG_RESET_DEFAULTS:
         this.resetConfigDefauts();
@@ -1562,6 +1672,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       case at.UNINIT:
         
         this.uninitPrefs();
+        this._providerSwitcher = null;
         break;
       case at.BLOCK_URL: {
         

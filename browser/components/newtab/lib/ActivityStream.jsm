@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -11,8 +11,8 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/AppConstants.jsm"
 );
 
-
-
+// NB: Eagerly load modules that will be loaded/constructed/initialized in the
+// common case to avoid the overhead of wrapping and detecting lazy loading.
 const { actionCreators: ac, actionTypes: at } = ChromeUtils.import(
   "resource://activity-stream/common/Actions.jsm"
 );
@@ -35,6 +35,11 @@ ChromeUtils.defineModuleGetter(
   this,
   "SectionsFeed",
   "resource://activity-stream/lib/SectionsManager.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "RecommendationProviderSwitcher",
+  "resource://activity-stream/lib/RecommendationProviderSwitcher.jsm"
 );
 ChromeUtils.defineModuleGetter(
   this,
@@ -93,7 +98,7 @@ ChromeUtils.defineModuleGetter(
 );
 
 const DEFAULT_SITES = new Map([
-  
+  // This first item is the global list fallback for any unexpected geos
   [
     "",
     "https://www.youtube.com/,https://www.facebook.com/,https://www.wikipedia.org/,https://www.reddit.com/,https://www.amazon.com/,https://twitter.com/",
@@ -130,13 +135,13 @@ const DEFAULT_SITES = new Map([
 const GEO_PREF = "browser.search.region";
 const SPOCS_GEOS = ["US"];
 
-
+// Determine if spocs should be shown for a geo/locale
 function showSpocs({ geo }) {
   return SPOCS_GEOS.includes(geo);
 }
 
-
-
+// Configure default Activity Stream prefs with a plain `value` or a `getValue`
+// that computes a value. A `value_local_dev` is used for development defaults.
 const PREFS_CONFIG = new Map([
   [
     "default.sites",
@@ -151,11 +156,11 @@ const PREFS_CONFIG = new Map([
     "feeds.section.topstories.options",
     {
       title: "Configuration options for top stories feed",
-      
+      // This is a dynamic pref as it depends on the feed being shown or not
       getValue: args =>
         JSON.stringify({
           api_key_pref: "extensions.pocket.oAuthConsumerKey",
-          
+          // Use the opposite value as what default value the feed would have used
           hidden: !PREFS_CONFIG.get("feeds.section.topstories").getValue(args),
           provider_icon: "pocket",
           provider_name: "Pocket",
@@ -247,6 +252,14 @@ const PREFS_CONFIG = new Map([
       title:
         "Show sponsored cards in spoc experiment (show_spocs in topstories.options has to be set to true as well)",
       value: true,
+    },
+  ],
+  [
+    "discoverystream.personalization.modelKeys",
+    {
+      title: "",
+      value:
+        "nmf_model_animals, nmf_model_business, nmf_model_career, nmf_model_datascience, nmf_model_design, nmf_model_education, nmf_model_entertainment, nmf_model_environment, nmf_model_fashion, nmf_model_finance, nmf_model_food, nmf_model_health, nmf_model_home, nmf_model_life, nmf_model_marketing, nmf_model_politics, nmf_model_programming, nmf_model_science, nmf_model_shopping, nmf_model_sports, nmf_model_tech, nmf_model_travel, nb_model_animals, nb_model_books, nb_model_business, nb_model_career, nb_model_datascience, nb_model_design, nb_model_economics, nb_model_education, nb_model_entertainment, nb_model_environment, nb_model_fashion, nb_model_finance, nb_model_food, nb_model_game, nb_model_health, nb_model_history, nb_model_home, nb_model_life, nb_model_marketing, nb_model_military, nb_model_philosophy, nb_model_photography, nb_model_politics, nb_model_productivity, nb_model_programming, nb_model_psychology, nb_model_science, nb_model_shopping, nb_model_society, nb_model_space, nb_model_sports, nb_model_tech, nb_model_travel, nb_model_writing",
     },
   ],
   [
@@ -385,7 +398,7 @@ const PREFS_CONFIG = new Map([
     {
       title:
         "An ordered, comma-delimited list of search shortcuts that we should try and pin",
-      
+      // This pref is dynamic as the shortcuts vary depending on the region
       getValue: ({ geo }) => {
         if (!geo) {
           return "";
@@ -443,7 +456,7 @@ const PREFS_CONFIG = new Map([
         type: "local",
         localProvider: "OnboardingMessageProvider",
         enabled: true,
-        
+        // Block specific messages from this local provider
         exclude: [],
       }),
     },
@@ -462,7 +475,7 @@ const PREFS_CONFIG = new Map([
       }),
     },
   ],
-  
+  // See browser/app/profile/firefox.js for other ASR preferences. They must be defined there to enable roll-outs.
   [
     "discoverystream.flight.blocks",
     {
@@ -483,7 +496,7 @@ const PREFS_CONFIG = new Map([
           show_spocs: showSpocs({ geo }),
           hardcoded_layout: true,
           personalized: true,
-          
+          // This is currently an exmple layout used for dev purposes.
           layout_endpoint:
             "https://getpocket.cdn.mozilla.net/v3/newtab/layout?version=1&consumer_key=$apiKey&layout_variant=basic",
         });
@@ -532,7 +545,7 @@ const PREFS_CONFIG = new Map([
   ],
 ]);
 
-
+// Array of each feed's FEEDS_CONFIG factory and values to add to PREFS_CONFIG
 const FEEDS_DATA = [
   {
     name: "aboutpreferences",
@@ -576,7 +589,7 @@ const FEEDS_DATA = [
       new TopStoriesFeed(PREFS_CONFIG.get("discoverystream.config")),
     title:
       "Fetches content recommendations from a configurable content provider",
-    
+    // Dynamically determine if Pocket should be shown for a geo / locale
     getValue: ({ geo, locale }) => {
       const locales = {
         US: ["en-CA", "en-GB", "en-US", "en-ZA"],
@@ -617,6 +630,12 @@ const FEEDS_DATA = [
     value: true,
   },
   {
+    name: "recommendationproviderswitcher",
+    factory: () => new RecommendationProviderSwitcher(),
+    title: "Handles switching between two types of personality providers",
+    value: true,
+  },
+  {
     name: "discoverystreamfeed",
     factory: () => new DiscoveryStreamFeed(),
     title: "Handles new pocket ui for the new tab page",
@@ -632,9 +651,9 @@ for (const config of FEEDS_DATA) {
 }
 
 this.ActivityStream = class ActivityStream {
-  
-
-
+  /**
+   * constructor - Initializes an instance of ActivityStream
+   */
   constructor() {
     this.initialized = false;
     this.store = new Store();
@@ -647,26 +666,26 @@ this.ActivityStream = class ActivityStream {
       this._updateDynamicPrefs();
       this._defaultPrefs.init();
 
-      
-      
-      
+      // Look for outdated user pref values that might have been accidentally
+      // persisted when restoring the original pref value at the end of an
+      // experiment across versions with a different default value.
       const DS_CONFIG =
         "browser.newtabpage.activity-stream.discoverystream.config";
       if (
         Services.prefs.prefHasUserValue(DS_CONFIG) &&
         [
-          
+          // Firefox 66
           `{"api_key_pref":"extensions.pocket.oAuthConsumerKey","enabled":false,"show_spocs":true,"layout_endpoint":"https://getpocket.com/v3/newtab/layout?version=1&consumer_key=$apiKey&layout_variant=basic"}`,
-          
+          // Firefox 67
           `{"api_key_pref":"extensions.pocket.oAuthConsumerKey","enabled":false,"show_spocs":true,"layout_endpoint":"https://getpocket.cdn.mozilla.net/v3/newtab/layout?version=1&consumer_key=$apiKey&layout_variant=basic"}`,
-          
+          // Firefox 68
           `{"api_key_pref":"extensions.pocket.oAuthConsumerKey","collapsible":true,"enabled":false,"show_spocs":true,"hardcoded_layout":true,"personalized":false,"layout_endpoint":"https://getpocket.cdn.mozilla.net/v3/newtab/layout?version=1&consumer_key=$apiKey&layout_variant=basic"}`,
         ].includes(Services.prefs.getStringPref(DS_CONFIG))
       ) {
         Services.prefs.clearUserPref(DS_CONFIG);
       }
 
-      
+      // Hook up the store and let all feeds and pages initialize
       this.store.init(
         this.feeds,
         ac.BroadcastToContent({
@@ -678,8 +697,8 @@ this.ActivityStream = class ActivityStream {
 
       this.initialized = true;
     } catch (e) {
-      
-      
+      // TelemetryFeed could be unavailable if the telemetry is disabled, or
+      // the telemetry feed is not yet initialized.
       const telemetryFeed = this.store.feeds.get("feeds.telemetry");
       if (telemetryFeed) {
         telemetryFeed.handleUndesiredEvent({
@@ -690,20 +709,20 @@ this.ActivityStream = class ActivityStream {
     }
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Check if an old pref has a custom value to migrate. Clears the pref so that
+   * it's the default after migrating (to avoid future need to migrate).
+   *
+   * @param oldPrefName {string} Pref to check and migrate
+   * @param cbIfNotDefault {function} Callback that gets the current pref value
+   */
   _migratePref(oldPrefName, cbIfNotDefault) {
-    
+    // Nothing to do if the user doesn't have a custom value
     if (!Services.prefs.prefHasUserValue(oldPrefName)) {
       return;
     }
 
-    
+    // Figure out what kind of pref getter to use
     let prefGetter;
     switch (Services.prefs.getPrefType(oldPrefName)) {
       case Services.prefs.PREF_BOOL:
@@ -717,7 +736,7 @@ this.ActivityStream = class ActivityStream {
         break;
     }
 
-    
+    // Give the callback the current value then clear the pref
     cbIfNotDefault(Services.prefs[prefGetter](oldPrefName));
     Services.prefs.clearUserPref(oldPrefName);
   }
@@ -732,45 +751,45 @@ this.ActivityStream = class ActivityStream {
   }
 
   _updateDynamicPrefs() {
-    
+    // Save the geo pref if we have it
     if (Services.prefs.prefHasUserValue(GEO_PREF)) {
       this.geo = Services.prefs.getStringPref(GEO_PREF);
     } else if (this.geo !== "") {
-      
+      // Watch for geo changes and use a dummy value for now
       Services.prefs.addObserver(GEO_PREF, this);
       this.geo = "";
     }
 
     this.locale = Services.locale.appLocaleAsBCP47;
 
-    
+    // Update the pref config of those with dynamic values
     for (const pref of PREFS_CONFIG.keys()) {
-      
+      // Only need to process dynamic prefs
       const prefConfig = PREFS_CONFIG.get(pref);
       if (!prefConfig.getValue) {
         continue;
       }
 
-      
-      
+      // Have the dynamic pref just reuse using existing default, e.g., those
+      // set via Autoconfig or policy
       try {
         const existingDefault = this._defaultPrefs.get(pref);
         if (existingDefault !== undefined && prefConfig.value === undefined) {
           prefConfig.getValue = () => existingDefault;
         }
       } catch (ex) {
-        
-        
+        // We get NS_ERROR_UNEXPECTED for prefs that have a user value (causing
+        // default branch to believe there's a type) but no actual default value
       }
 
-      
+      // Compute the dynamic value (potentially generic based on dummy geo)
       const newValue = prefConfig.getValue({
         geo: this.geo,
         locale: this.locale,
       });
 
-      
-      
+      // If there's an existing value and it has changed, that means we need to
+      // overwrite the default with the new value.
       if (prefConfig.value !== undefined && prefConfig.value !== newValue) {
         this._defaultPrefs.set(pref, newValue);
       }
@@ -782,7 +801,7 @@ this.ActivityStream = class ActivityStream {
   observe(subject, topic, data) {
     switch (topic) {
       case "nsPref:changed":
-        
+        // We should only expect one geo change, so update and stop observing
         if (data === GEO_PREF) {
           this._updateDynamicPrefs();
           Services.prefs.removeObserver(GEO_PREF, this);
