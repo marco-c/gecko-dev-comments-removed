@@ -495,6 +495,31 @@ void BrowsingContext::GetChildren(Children& aChildren) {
   MOZ_ALWAYS_TRUE(aChildren.AppendElements(mChildren));
 }
 
+void BrowsingContext::GetWindowContexts(
+    nsTArray<RefPtr<WindowContext>>& aWindows) {
+  aWindows.AppendElements(mWindowContexts);
+}
+
+void BrowsingContext::RegisterWindowContext(WindowContext* aWindow) {
+  MOZ_ASSERT(!mWindowContexts.Contains(aWindow),
+             "WindowContext already registered!");
+  mWindowContexts.AppendElement(aWindow);
+}
+
+void BrowsingContext::UnregisterWindowContext(WindowContext* aWindow) {
+  MOZ_ASSERT(mWindowContexts.Contains(aWindow),
+             "WindowContext not registered!");
+  mWindowContexts.RemoveElement(aWindow);
+
+  
+  
+  
+  
+  if (aWindow == mCurrentWindowContext) {
+    mCurrentWindowContext = nullptr;
+  }
+}
+
 
 
 
@@ -828,19 +853,15 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(BrowsingContext)
   }
 
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocShell, mChildren, mParent, mGroup,
-                                  mEmbedderElement, mSessionStorageManager)
-  if (XRE_IsParentProcess()) {
-    CanonicalBrowsingContext::Cast(tmp)->Unlink();
-  }
+                                  mEmbedderElement, mWindowContexts,
+                                  mCurrentWindowContext, mSessionStorageManager)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(BrowsingContext)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocShell, mChildren, mParent, mGroup,
-                                    mEmbedderElement, mSessionStorageManager)
-  if (XRE_IsParentProcess()) {
-    CanonicalBrowsingContext::Cast(tmp)->Traverse(cb);
-  }
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(
+      mDocShell, mChildren, mParent, mGroup, mEmbedderElement, mWindowContexts,
+      mCurrentWindowContext, mSessionStorageManager)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 class RemoteLocationProxy
@@ -1302,6 +1323,41 @@ bool BrowsingContext::CanSet(FieldIndex<IDX_EmbedderInnerWindowId>,
   }
 
   return true;
+}
+
+bool BrowsingContext::CanSet(FieldIndex<IDX_CurrentInnerWindowId>,
+                             const uint64_t& aValue, ContentParent* aSource) {
+  
+  
+  if (aValue == 0) {
+    return true;
+  }
+
+  if (aSource) {
+    MOZ_ASSERT(XRE_IsParentProcess());
+
+    
+    
+    RefPtr<WindowGlobalParent> wgp =
+        WindowGlobalParent::GetByInnerWindowId(aValue);
+    if (NS_WARN_IF(!wgp) || NS_WARN_IF(wgp->BrowsingContext() != this)) {
+      return false;
+    }
+
+    
+    if (!Canonical()->IsOwnedByProcess(aSource->ChildID()) &&
+        aSource->ChildID() != Canonical()->GetInFlightProcessId()) {
+      return false;
+    }
+  }
+
+  
+  RefPtr<WindowContext> window = WindowContext::GetById(aValue);
+  return window && window->GetBrowsingContext() == this;
+}
+
+void BrowsingContext::DidSet(FieldIndex<IDX_CurrentInnerWindowId>) {
+  mCurrentWindowContext = WindowContext::GetById(GetCurrentInnerWindowId());
 }
 
 bool BrowsingContext::CanSet(FieldIndex<IDX_IsPopupSpam>, const bool& aValue,

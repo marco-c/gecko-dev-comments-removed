@@ -20,6 +20,7 @@
 namespace mozilla {
 namespace dom {
 
+class WindowGlobalParent;
 class BrowserParent;
 class MediaController;
 class WindowGlobalParent;
@@ -29,6 +30,10 @@ class WindowGlobalParent;
 
 class CanonicalBrowsingContext final : public BrowsingContext {
  public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CanonicalBrowsingContext,
+                                           BrowsingContext)
+
   static already_AddRefed<CanonicalBrowsingContext> Get(uint64_t aId);
   static CanonicalBrowsingContext* Cast(BrowsingContext* aContext);
   static const CanonicalBrowsingContext* Cast(const BrowsingContext* aContext);
@@ -49,14 +54,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   void GetWindowGlobals(nsTArray<RefPtr<WindowGlobalParent>>& aWindows);
 
   
-  void RegisterWindowGlobal(WindowGlobalParent* aGlobal);
-  void UnregisterWindowGlobal(WindowGlobalParent* aGlobal);
-
-  
-  WindowGlobalParent* GetCurrentWindowGlobal() const {
-    return mCurrentWindowGlobal;
-  }
-  void SetCurrentWindowGlobal(WindowGlobalParent* aGlobal);
+  WindowGlobalParent* GetCurrentWindowGlobal() const;
 
   already_AddRefed<WindowGlobalParent> GetEmbedderWindowGlobal() const;
 
@@ -109,9 +107,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   MediaController* GetMediaController();
 
  protected:
-  void Traverse(nsCycleCollectionTraversalCallback& cb);
-  void Unlink();
-
   
   void CanonicalDiscard();
 
@@ -123,6 +118,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
  private:
   friend class BrowsingContext;
+
+  ~CanonicalBrowsingContext() = default;
 
   class PendingRemotenessChange {
    public:
@@ -155,10 +152,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   uint64_t mInFlightProcessId = 0;
-
-  
-  nsTHashtable<nsRefPtrHashKey<WindowGlobalParent>> mWindowGlobals;
-  RefPtr<WindowGlobalParent> mCurrentWindowGlobal;
 
   
   RefPtr<PendingRemotenessChange> mPendingRemotenessChange;

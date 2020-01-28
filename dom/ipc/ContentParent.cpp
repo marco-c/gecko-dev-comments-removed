@@ -6395,6 +6395,22 @@ PFileDescriptorSetParent* ContentParent::SendPFileDescriptorSetConstructor(
   return PContentParent::SendPFileDescriptorSetConstructor(aFD);
 }
 
+mozilla::ipc::IPCResult ContentParent::RecvCommitWindowContextTransaction(
+    WindowContext* aContext, WindowContext::BaseTransaction&& aTransaction,
+    uint64_t aEpoch) {
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(aEpoch == mBrowsingContextFieldEpoch + 1,
+             "Child process skipped an epoch?");
+  mBrowsingContextFieldEpoch = aEpoch;
+
+  return aTransaction.CommitFromIPC(aContext, this);
+}
+
 }  
 }  
 

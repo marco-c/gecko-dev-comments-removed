@@ -1,11 +1,12 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsPingListener.h"
 
+#include "mozilla/Encoding.h"
 #include "mozilla/Preferences.h"
 
 #include "mozilla/dom/DocGroup.h"
@@ -26,30 +27,30 @@ using namespace mozilla::dom;
 
 NS_IMPL_ISUPPORTS(nsPingListener, nsIStreamListener, nsIRequestObserver)
 
-
-
-
+//*****************************************************************************
+// <a ping> support
+//*****************************************************************************
 
 #define PREF_PINGS_ENABLED "browser.send_pings"
 #define PREF_PINGS_MAX_PER_LINK "browser.send_pings.max_per_link"
 #define PREF_PINGS_REQUIRE_SAME_HOST "browser.send_pings.require_same_host"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Check prefs to see if pings are enabled and if so what restrictions might
+// be applied.
+//
+// @param maxPerLink
+//   This parameter returns the number of pings that are allowed per link click
+//
+// @param requireSameHost
+//   This parameter returns true if pings are restricted to the same host as
+//   the document in which the click occurs.  If the same host restriction is
+//   imposed, then we still allow for pings to cross over to different
+//   protocols and ports for flexibility and because it is not possible to send
+//   a ping via FTP.
+//
+// @returns
+//   true if pings are enabled and false otherwise.
+//
 static bool PingsEnabled(int32_t* aMaxPerLink, bool* aRequireSameHost) {
   bool allow = Preferences::GetBool(PREF_PINGS_ENABLED, false);
 
@@ -64,7 +65,7 @@ static bool PingsEnabled(int32_t* aMaxPerLink, bool* aRequireSameHost) {
   return allow;
 }
 
-
+// We wait this many milliseconds before killing the ping channel...
 #define PING_TIMEOUT 10000
 
 static void OnPingTimeout(nsITimer* aTimer, void* aClosure) {
@@ -98,18 +99,18 @@ static void SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
                     ? nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED
                     : nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
                 nsIContentPolicy::TYPE_PING,
-                nullptr,                  
-                nullptr,                  
-                nullptr,                  
-                nsIRequest::LOAD_NORMAL,  
+                nullptr,                  // PerformanceStorage
+                nullptr,                  // aLoadGroup
+                nullptr,                  // aCallbacks
+                nsIRequest::LOAD_NORMAL,  // aLoadFlags,
                 aIOService);
 
   if (!chan) {
     return;
   }
 
-  
-  
+  // Don't bother caching the result of this URI load, but do not exempt
+  // it from Safe Browsing.
   chan->SetLoadFlags(nsIRequest::INHIBIT_CACHING);
 
   nsCOMPtr<nsIHttpChannel> httpChan = do_QueryInterface(chan);
@@ -117,7 +118,7 @@ static void SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
     return;
   }
 
-  
+  // This is needed in order for 3rd-party cookie blocking to work.
   nsCOMPtr<nsIHttpChannelInternal> httpInternal = do_QueryInterface(httpChan);
   nsresult rv;
   if (httpInternal) {
@@ -128,7 +129,7 @@ static void SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
   rv = httpChan->SetRequestMethod(NS_LITERAL_CSTRING("POST"));
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
-  
+  // Remove extraneous request headers (to reduce request size)
   rv = httpChan->SetRequestHeader(NS_LITERAL_CSTRING("accept"), EmptyCString(),
                                   false);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
@@ -139,7 +140,7 @@ static void SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
                                   EmptyCString(), false);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
-  
+  // Always send a Ping-To header.
   nsAutoCString pingTo;
   if (NS_SUCCEEDED(info->target->GetSpec(pingTo))) {
     rv = httpChan->SetRequestHeader(NS_LITERAL_CSTRING("Ping-To"), pingTo,
@@ -158,7 +159,7 @@ static void SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
       rv = NS_URIChainHasFlags(referrer, flags, &referrerIsSecure);
     }
 
-    
+    // Default to sending less data if NS_URIChainHasFlags() fails.
     referrerIsSecure = NS_FAILED(rv) || referrerIsSecure;
 
     bool isPrivateWin = false;
@@ -170,10 +171,10 @@ static void SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
     bool sameOrigin = NS_SUCCEEDED(
         sm->CheckSameOriginURI(referrer, aURI, false, isPrivateWin));
 
-    
-    
-    
-    
+    // If both the address of the document containing the hyperlink being
+    // audited and "ping URL" have the same origin or the document containing
+    // the hyperlink being audited was not retrieved over an encrypted
+    // connection, send a Ping-From header.
     if (sameOrigin || !referrerIsSecure) {
       nsAutoCString pingFrom;
       if (NS_SUCCEEDED(referrer->GetSpec(pingFrom))) {
@@ -183,9 +184,9 @@ static void SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
       }
     }
 
-    
-    
-    
+    // If the document containing the hyperlink being audited was not retrieved
+    // over an encrypted connection and its address does not have the same
+    // origin as "ping URL", send a referrer.
     if (!sameOrigin && !referrerIsSecure && info->referrerInfo) {
       rv = httpChan->SetReferrerInfo(info->referrerInfo);
       MOZ_ASSERT(NS_SUCCEEDED(rv));
@@ -209,8 +210,8 @@ static void SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
       uploadStream, NS_LITERAL_CSTRING("text/ping"), uploadData.Length(),
       NS_LITERAL_CSTRING("POST"), false);
 
-  
-  
+  // The channel needs to have a loadgroup associated with it, so that we can
+  // cancel the channel and any redirected channels it may create.
   nsCOMPtr<nsILoadGroup> loadGroup = do_CreateInstance(NS_LOADGROUP_CONTRACTID);
   if (!loadGroup) {
     return;
@@ -222,20 +223,20 @@ static void SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
   RefPtr<nsPingListener> pingListener = new nsPingListener();
   chan->AsyncOpen(pingListener);
 
-  
-  
-  
+  // Even if AsyncOpen failed, we still count this as a successful ping.  It's
+  // possible that AsyncOpen may have failed after triggering some background
+  // process that may have written something to the network.
   info->numPings++;
 
-  
+  // Prevent ping requests from stalling and never being garbage collected...
   if (NS_FAILED(pingListener->StartTimeout(doc->GetDocGroup()))) {
-    
-    
+    // If we failed to setup the timer, then we should just cancel the channel
+    // because we won't be able to ensure that it goes away in a timely manner.
     chan->Cancel(NS_ERROR_ABORT);
     return;
   }
-  
-  
+  // if the channel openend successfully, then make the pingListener hold
+  // a strong reference to the loadgroup which is released in ::OnStopRequest
   pingListener->SetLoadGroup(loadGroup);
 }
 
@@ -244,13 +245,13 @@ typedef void (*ForEachPingCallback)(void* closure, nsIContent* content,
 
 static void ForEachPing(nsIContent* aContent, ForEachPingCallback aCallback,
                         void* aClosure) {
-  
-  
-  
-  
+  // NOTE: Using nsIDOMHTMLAnchorElement::GetPing isn't really worth it here
+  //       since we'd still need to parse the resulting string.  Instead, we
+  //       just parse the raw attribute.  It might be nice if the content node
+  //       implemented an interface that exposed an enumeration of nsIURIs.
 
-  
-  
+  // Make sure we are dealing with either an <A> or <AREA> element in the HTML
+  // or XHTML namespace.
   if (!aContent->IsAnyOfHTMLElements(nsGkAtoms::a, nsGkAtoms::area)) {
     return;
   }
@@ -276,19 +277,19 @@ static void ForEachPing(nsIContent* aContent, ForEachPingCallback aCallback,
     nsCOMPtr<nsIURI> uri;
     NS_NewURI(getter_AddRefs(uri), tokenizer.nextToken(), charset.get(),
               aContent->GetBaseURI());
-    
+    // if we can't generate a valid URI, then there is nothing to do
     if (!uri) {
       continue;
     }
-    
+    // Explicitly not allow loading data: URIs
     if (!net::SchemeIsData(uri)) {
       aCallback(aClosure, aContent, uri, ios);
     }
   }
 }
 
-
- void nsPingListener::DispatchPings(nsIDocShell* aDocShell,
+// Spec: http://whatwg.org/specs/web-apps/current-work/#ping
+/*static*/ void nsPingListener::DispatchPings(nsIDocShell* aDocShell,
                                               nsIContent* aContent,
                                               nsIURI* aTarget,
                                               nsIReferrerInfo* aReferrerInfo) {
