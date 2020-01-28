@@ -573,10 +573,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   void SetCachedContentType();
 
-  
-  
-  void StoreSiteAccessToCacheEntry();
-
  private:
   
   
