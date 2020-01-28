@@ -104,7 +104,7 @@ bool DCLayerTree::Initialize(HWND aHwnd) {
   
   
   mRootVisual->SetBitmapInterpolationMode(
-      DCOMPOSITION_BITMAP_INTERPOLATION_MODE_LINEAR);
+      DCOMPOSITION_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
   return true;
 }
 
