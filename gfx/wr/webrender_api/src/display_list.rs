@@ -62,9 +62,20 @@ impl<'a, T> Default for ItemRange<'a, T> {
 }
 
 impl<'a, T> ItemRange<'a, T> {
+    pub fn new(bytes: &'a [u8]) -> Self {
+        Self {
+            bytes,
+            _boo: PhantomData
+        }
+    }
+
     pub fn is_empty(&self) -> bool {
         
         self.bytes.len() <= mem::size_of::<usize>()
+    }
+
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
     }
 }
 

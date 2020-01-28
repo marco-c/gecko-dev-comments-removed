@@ -33,6 +33,10 @@ pub const MAX_BLUR_RADIUS: f32 = 300.;
 
 pub type ItemTag = (u64, u16);
 
+
+
+pub type ItemKey = u16;
+
 bitflags! {
     #[repr(C)]
     #[derive(Deserialize, MallocSizeOf, Serialize, PeekPoke)]
@@ -74,6 +78,8 @@ pub struct CommonItemProperties {
     pub hit_info: Option<ItemTag>,
     
     pub flags: PrimitiveFlags,
+    
+    pub item_key: Option<ItemKey>
 }
 
 impl CommonItemProperties {
@@ -88,6 +94,7 @@ impl CommonItemProperties {
             clip_id: space_and_clip.clip_id,
             hit_info: None,
             flags: PrimitiveFlags::default(),
+            item_key: None,
         }
     }
 }
