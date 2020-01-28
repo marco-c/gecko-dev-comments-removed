@@ -1466,6 +1466,12 @@ impl RenderBackend {
         
         
         if let Some(updates) = interner_updates {
+            #[cfg(feature = "capture")]
+            {
+                if self.debug_flags.contains(DebugFlags::TILE_CACHE_LOGGING_DBG) {
+                    self.tile_cache_logger.serialize_updates(&updates);
+                }
+            }
             doc.data_stores.apply_updates(updates, profile_counters);
         }
 
