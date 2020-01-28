@@ -1028,18 +1028,9 @@
             !PrivateBrowsingUtils.isWindowPrivate(window);
 
           
-          let longPressBehavior = Services.prefs.getIntPref(
-            "privacy.userContext.longPressBehavior"
+          const newTabLeftClickOpensContainersMenu = Services.prefs.getBoolPref(
+            "privacy.userContext.newTabContainerOnLeftClick.enabled"
           );
-
-          
-          
-          if (
-            containersEnabled &&
-            (longPressBehavior <= 0 || longPressBehavior > 2)
-          ) {
-            containersEnabled = false;
-          }
 
           
           
@@ -1052,51 +1043,34 @@
               continue;
             }
 
-            gClickAndHoldListenersOnElement.remove(parent);
             parent.removeAttribute("type");
             if (parent.menupopup) {
               parent.menupopup.remove();
             }
 
             if (containersEnabled) {
-              let popup = document.createElementNS(
-                "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
-                "menupopup"
-              );
-              if (parent.id) {
-                popup.id = parent.id + "-popup";
+              parent.setAttribute("context", "new-tab-button-popup");
+
+              if (newTabLeftClickOpensContainersMenu) {
+                let popup = document
+                  .getElementById("new-tab-button-popup")
+                  .cloneNode(true);
+                popup.removeAttribute("id");
+                popup.className = "new-tab-popup";
+                popup.setAttribute("position", "after_end");
+                parent.prepend(popup);
+                parent.setAttribute("type", "menu");
+                
+                nodeToTooltipMap[parent.id] = "newTabAlwaysContainer.tooltip";
               } else {
-                popup.setAttribute("anonid", "newtab-popup");
+                nodeToTooltipMap[parent.id] = "newTabButton.tooltip";
               }
-              popup.className = "new-tab-popup";
-              popup.setAttribute("position", "after_end");
-              popup.addEventListener("popupshowing", event => {
-                createUserContextMenu(event, {
-                  useAccessKeys: false,
-                  showDefaultTab:
-                    Services.prefs.getIntPref(
-                      "privacy.userContext.longPressBehavior"
-                    ) == 1,
-                });
-              });
-              parent.prepend(popup);
-
-              
-              
-              if (longPressBehavior == 2) {
-                gClickAndHoldListenersOnElement.add(parent);
-              }
-
-              parent.setAttribute("type", "menu");
+            } else {
+              nodeToTooltipMap[parent.id] = "newTabButton.tooltip";
+              parent.removeAttribute("context", "new-tab-button-popup");
             }
 
             
-            if (containersEnabled) {
-              nodeToTooltipMap[parent.id] = "newTabContainer.tooltip";
-            } else {
-              nodeToTooltipMap[parent.id] = "newTabButton.tooltip";
-            }
-
             gDynamicTooltipCache.delete(parent.id);
           }
 
