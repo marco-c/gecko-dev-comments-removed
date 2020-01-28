@@ -8,6 +8,7 @@
 #define nsCharTraits_h___
 
 #include <ctype.h>   
+#include <stdint.h>  
 #include <string.h>  
 #include "mozilla/MemoryChecking.h"
 
