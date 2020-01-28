@@ -14,8 +14,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 import copy
 import logging
 import json
-import six
-from six import text_type
 
 import mozpack.path as mozpath
 
@@ -43,8 +41,8 @@ job_description_schema = Schema({
     
     
     
-    Optional('name'): text_type,
-    Optional('label'): text_type,
+    Optional('name'): basestring,
+    Optional('label'): basestring,
 
     
     
@@ -80,14 +78,14 @@ job_description_schema = Schema({
         
         
         
-        Optional('files-changed'): [text_type],
+        Optional('files-changed'): [basestring],
     },
 
     
     Optional('fetches'): {
-        text_type: [text_type, {
-            Required('artifact'): text_type,
-            Optional('dest'): text_type,
+        basestring: [basestring, {
+            Required('artifact'): basestring,
+            Optional('dest'): basestring,
             Optional('extract'): bool,
         }],
     },
@@ -95,10 +93,10 @@ job_description_schema = Schema({
     
     'run': {
         
-        'using': text_type,
+        'using': basestring,
 
         
-        Optional('workdir'): text_type,
+        Optional('workdir'): basestring,
 
         
         
@@ -261,7 +259,7 @@ def use_fetches(config, jobs):
                     prefix = get_artifact_prefix(dep_tasks[0])
 
                 for artifact in artifacts:
-                    if isinstance(artifact, text_type):
+                    if isinstance(artifact, basestring):
                         path = artifact
                         dest = None
                         extract = True
@@ -295,10 +293,7 @@ def use_fetches(config, jobs):
                     job["scopes"].append(scope)
 
         env = worker.setdefault('env', {})
-        env['MOZ_FETCHES'] = {
-            'task-reference': six.ensure_text(json.dumps(job_fetches,
-                                                         sort_keys=True))
-        }
+        env['MOZ_FETCHES'] = {'task-reference': json.dumps(job_fetches, sort_keys=True)}
         
         env.setdefault('MOZ_FETCHES_DIR', 'fetches')
 

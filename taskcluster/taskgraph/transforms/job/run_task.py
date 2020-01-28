@@ -42,7 +42,7 @@ run_task_schema = Schema({
 
     
     
-    Required('sparse-profile'): Any(text_type, None),
+    Required('sparse-profile'): Any(basestring, None),
 
     
     
@@ -54,7 +54,7 @@ run_task_schema = Schema({
     Required('command'): Any([taskref_or_string], taskref_or_string),
 
     
-    Required('workdir'): text_type,
+    Required('workdir'): basestring,
 
     
     
@@ -132,7 +132,7 @@ def docker_worker_run_task(config, job, taskdesc):
         )
 
     
-    if isinstance(run_command, (text_type, dict)):
+    if isinstance(run_command, (basestring, dict)):
         run_command = ['bash', '-cx', run_command]
     if run['comm-checkout']:
         command.append('--comm-checkout={}/comm'.format(
@@ -202,7 +202,7 @@ def generic_worker_run_task(config, job, taskdesc):
             )
         )
 
-    if isinstance(run_command, text_type):
+    if isinstance(run_command, basestring):
         if is_win:
             run_command = '"{}"'.format(run_command)
         run_command = ['bash', '-cx', run_command]

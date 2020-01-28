@@ -7,7 +7,6 @@ Transform the signing task into an actual task description.
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from six import text_type
 from taskgraph.loader.single_dep import schema
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.attributes import copy_attributes_from_dependent_job
@@ -30,23 +29,23 @@ signing_description_schema = schema.extend({
         Required('taskId'): taskref_or_string,
 
         
-        Required('taskType'): text_type,
+        Required('taskType'): basestring,
 
         
-        Required('paths'): [text_type],
+        Required('paths'): [basestring],
 
         
-        Required('formats'): [text_type],
+        Required('formats'): [basestring],
     }],
 
     
-    Required('depname'): text_type,
+    Required('depname'): basestring,
 
     
-    Optional('attributes'): {text_type: object},
+    Optional('attributes'): {basestring: object},
 
     
-    Optional('label'): text_type,
+    Optional('label'): basestring,
 
     
     
@@ -54,14 +53,14 @@ signing_description_schema = schema.extend({
     Optional('treeherder'): task_description_schema['treeherder'],
 
     
-    Optional('routes'): [text_type],
+    Optional('routes'): [basestring],
 
     Optional('shipping-phase'): task_description_schema['shipping-phase'],
     Optional('shipping-product'): task_description_schema['shipping-product'],
 
     
     Optional('max-run-time'): int,
-    Optional('extra'): {text_type: object},
+    Optional('extra'): {basestring: object},
 
     
     Optional('repacks-per-chunk'): int,

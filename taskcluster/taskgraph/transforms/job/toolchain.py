@@ -10,7 +10,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 from mozbuild.shellutil import quote as shell_quote
 from mozpack import path
 
-from six import text_type
 from taskgraph.util.schema import Schema
 from voluptuous import Optional, Required, Any
 
@@ -34,10 +33,10 @@ toolchain_run_schema = Schema({
     
     
     
-    Required('script'): text_type,
+    Required('script'): basestring,
 
     
-    Optional('arguments'): [text_type],
+    Optional('arguments'): [basestring],
 
     
     
@@ -52,21 +51,21 @@ toolchain_run_schema = Schema({
     
     
     
-    Required('sparse-profile'): Any(text_type, None),
+    Required('sparse-profile'): Any(basestring, None),
 
     
     
-    Optional('resources'): [text_type],
+    Optional('resources'): [basestring],
 
     
-    Required('toolchain-artifact'): text_type,
+    Required('toolchain-artifact'): basestring,
 
     
     
-    Optional('toolchain-alias'): text_type,
+    Optional('toolchain-alias'): basestring,
 
     
-    Required('workdir'): text_type,
+    Required('workdir'): basestring,
 })
 
 

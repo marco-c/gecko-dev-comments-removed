@@ -7,7 +7,6 @@ Support for running hazard jobs via dedicated scripts
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from six import text_type
 from taskgraph.util.schema import Schema
 from voluptuous import Required, Optional, Any
 
@@ -26,20 +25,20 @@ haz_run_schema = Schema({
     Required('using'): 'hazard',
 
     
-    Required('command'): text_type,
+    Required('command'): basestring,
 
     
-    Optional('mozconfig'): text_type,
+    Optional('mozconfig'): basestring,
 
     
     
     
     
     
-    Required('secrets', default=False): Any(bool, [text_type]),
+    Required('secrets', default=False): Any(bool, [basestring]),
 
     
-    Required('workdir'): text_type,
+    Required('workdir'): basestring,
 })
 
 

@@ -21,7 +21,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import copy
 import logging
-from six import text_type
 
 from mozbuild.schedules import INCLUSIVE_COMPONENTS
 from moztest.resolve import TEST_SUITES
@@ -215,42 +214,42 @@ transforms = TransformSequence()
 
 test_description_schema = Schema({
     
-    'description': text_type,
+    'description': basestring,
 
     
     Optional('suite'): Any(
-        text_type,
-        {Optional('category'): text_type, Optional('name'): text_type},
+        basestring,
+        {Optional('category'): basestring, Optional('name'): basestring},
     ),
 
     
     Optional('workdir'): optionally_keyed_by(
         'test-platform',
-        Any(text_type, 'default')),
+        Any(basestring, 'default')),
 
     
     
     
-    Optional('try-name'): text_type,
+    Optional('try-name'): basestring,
 
     
-    Optional('tags'): {text_type: object},
-
-    
-    
-    'treeherder-symbol': text_type,
+    Optional('tags'): {basestring: object},
 
     
     
-    
-    Optional('treeherder-machine-platform'): text_type,
+    'treeherder-symbol': basestring,
 
     
     
-    Optional('attributes'): {text_type: object},
+    
+    Optional('treeherder-machine-platform'): basestring,
 
     
-    Optional('job-from'): text_type,
+    
+    Optional('attributes'): {basestring: object},
+
+    
+    Optional('job-from'): basestring,
 
     
     
@@ -261,14 +260,14 @@ test_description_schema = Schema({
     
     Optional('run-on-projects'): optionally_keyed_by(
         'test-platform',
-        Any([text_type], 'built-projects')),
+        Any([basestring], 'built-projects')),
 
     
     
     
     Optional('fission-run-on-projects'): optionally_keyed_by(
         'test-platform',
-        Any([text_type], 'built-projects')),
+        Any([basestring], 'built-projects')),
 
     
     Optional('tier'): optionally_keyed_by(
@@ -290,7 +289,7 @@ test_description_schema = Schema({
 
     
     
-    Optional('expires-after'): text_type,
+    Optional('expires-after'): basestring,
 
     
     
@@ -338,11 +337,11 @@ test_description_schema = Schema({
         'test-platform',
         Any(
             
-            text_type,
+            basestring,
             
-            {'in-tree': text_type},
+            {'in-tree': basestring},
             
-            {'indexed': text_type},
+            {'indexed': basestring},
         )
     ),
 
@@ -367,29 +366,29 @@ test_description_schema = Schema({
         
         Required('script'): optionally_keyed_by(
             'test-platform',
-            text_type),
+            basestring),
 
         
         Required('config'): optionally_keyed_by(
             'test-platform',
-            [text_type]),
+            [basestring]),
 
         
-        Optional('mochitest-flavor'): text_type,
+        Optional('mochitest-flavor'): basestring,
 
         
-        Optional('actions'): [text_type],
+        Optional('actions'): [basestring],
 
         
         
         Required('extra-options'): optionally_keyed_by(
             'test-platform',
-            [text_type]),
+            [basestring]),
 
         
         
-        Optional('build-artifact-name'): text_type,
-        Optional('installer-url'): text_type,
+        Optional('build-artifact-name'): basestring,
+        Optional('installer-url'): basestring,
 
         
         
@@ -424,7 +423,7 @@ test_description_schema = Schema({
     },
 
     
-    Optional('test-manifests'): [text_type],
+    Optional('test-manifests'): [basestring],
 
     
     Optional('this-chunk'): int,
@@ -433,7 +432,7 @@ test_description_schema = Schema({
     
     Optional('os-groups'): optionally_keyed_by(
         'test-platform',
-        [text_type]),
+        [basestring]),
 
     Optional('run-as-administrator'): optionally_keyed_by(
         'test-platform',
@@ -442,37 +441,37 @@ test_description_schema = Schema({
     
 
     
-    'build-platform': text_type,
+    'build-platform': basestring,
 
     
-    'build-label': text_type,
+    'build-label': basestring,
 
     
     
-    Optional('build-signing-label'): text_type,
+    Optional('build-signing-label'): basestring,
 
     
-    'build-attributes': {text_type: object},
+    'build-attributes': {basestring: object},
 
     
-    'test-platform': text_type,
+    'test-platform': basestring,
 
     
     
     Optional('limit-platforms'): optionally_keyed_by(
         'app',
-        [text_type]
+        [basestring]
     ),
 
     
-    'test-name': text_type,
+    'test-name': basestring,
 
     
-    Optional('product'): text_type,
+    Optional('product'): basestring,
 
     
     Exclusive(Optional('when'), 'optimization'): {
-        Optional('files-changed'): [text_type],
+        Optional('files-changed'): [basestring],
     },
 
     
@@ -481,11 +480,11 @@ test_description_schema = Schema({
 
     
     
-    Exclusive(Optional('schedules-component'), 'optimization'): text_type,
+    Exclusive(Optional('schedules-component'), 'optimization'): basestring,
 
     Optional('worker-type'): optionally_keyed_by(
         'test-platform',
-        Any(text_type, None),
+        Any(basestring, None),
     ),
 
     Optional(
@@ -499,12 +498,12 @@ test_description_schema = Schema({
     
     Optional('target'): optionally_keyed_by(
         'test-platform',
-        Any(text_type, None, {'index': text_type, 'name': text_type}),
+        Any(basestring, None, {'index': basestring, 'name': basestring}),
     ),
 
     
     Optional('fetches'): {
-        text_type: optionally_keyed_by('test-platform', [text_type])
+        basestring: optionally_keyed_by('test-platform', [basestring])
     },
 }, required=True)
 
@@ -636,7 +635,7 @@ def handle_suite_category(config, tests):
     for test in tests:
         test.setdefault('suite', {})
 
-        if isinstance(test['suite'], text_type):
+        if isinstance(test['suite'], basestring):
             test['suite'] = {'name': test['suite']}
 
         suite = test['suite'].setdefault('name', test['test-name'])

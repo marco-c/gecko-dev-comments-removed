@@ -9,7 +9,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import re
-from six import text_type
 
 from taskgraph.util.schema import Schema
 from voluptuous import Any, Optional, Required
@@ -26,19 +25,19 @@ DSC_PACKAGE_RE = re.compile('.*(?=_)')
 SOURCE_PACKAGE_RE = re.compile('.*(?=[-_]\d)')
 
 source_definition = {
-    Required('url'): text_type,
-    Required('sha256'): text_type,
+    Required('url'): basestring,
+    Required('sha256'): basestring,
 }
 
 run_schema = Schema({
     Required('using'): 'debian-package',
     
-    Required('dist'): text_type,
+    Required('dist'): basestring,
 
     
     
     
-    Required('snapshot'): text_type,
+    Required('snapshot'): basestring,
 
     
     
@@ -47,19 +46,19 @@ run_schema = Schema({
     
     
     
-    Optional('name'): text_type,
+    Optional('name'): basestring,
 
     
-    Optional('patch'): text_type,
+    Optional('patch'): basestring,
 
     
-    Optional('pre-build-command'): text_type,
+    Optional('pre-build-command'): basestring,
 
     
-    Optional('arch'): text_type,
+    Optional('arch'): basestring,
 
     
-    Optional('packages'): [text_type],
+    Optional('packages'): [basestring],
 
     
     
@@ -68,7 +67,7 @@ run_schema = Schema({
     Optional('resolver'): Any('apt-get', 'aptitude'),
 
     
-    Required('workdir'): text_type,
+    Required('workdir'): basestring,
 })
 
 
