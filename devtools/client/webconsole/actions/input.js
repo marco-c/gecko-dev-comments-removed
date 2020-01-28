@@ -254,20 +254,23 @@ function terminalInputChanged(expression) {
       eager: true,
     });
 
-    const result = response.exception || response.result;
-
-    
-    if (result.isSyntaxError || result.type == "undefined") {
-      return;
-    }
-
     
     return dispatch({
       type: SET_TERMINAL_EAGER_RESULT,
       expression: originalExpression,
-      result,
+      result: getEagerEvaluationResult(response),
     });
   };
+}
+
+function getEagerEvaluationResult(response) {
+  const result = response.exception || response.result;
+  
+  if (!result || result.isSyntaxError || result.type == "undefined") {
+    return null;
+  }
+
+  return result;
 }
 
 module.exports = {
