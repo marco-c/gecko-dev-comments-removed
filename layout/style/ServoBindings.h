@@ -1,25 +1,25 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/* FFI functions for Gecko to call into Servo */
 
 #ifndef mozilla_ServoBindings_h
 #define mozilla_ServoBindings_h
 
 #include "mozilla/ServoStyleConsts.h"
 
-
+// These functions are defined via macros in Rust, so cbindgen doesn't see them.
 
 namespace mozilla {
 
-
-
-
-
-
+// The clang we use on windows complains about returning StyleStrong<> and
+// StyleOwned<>, since the template parameters are incomplete.
+//
+// But they only contain pointers so it is ok. Also, this warning hilariously
+// doesn't exist in GCC.
 #pragma GCC diagnostic push
 #ifdef __clang__
 #  pragma GCC diagnostic ignored "-Wreturn-type-c-linkage"
@@ -66,6 +66,9 @@ BASIC_RULE_FUNCS(CounterStyle)
 using RayFunction = StyleRayFunction<StyleAngle>;
 BASIC_SERDE_FUNCS(LengthPercentage)
 BASIC_SERDE_FUNCS(RayFunction)
+BASIC_SERDE_FUNCS(StyleRotate)
+BASIC_SERDE_FUNCS(StyleScale)
+BASIC_SERDE_FUNCS(StyleTranslate)
 
 #undef BASIC_SERDE_FUNCS
 
@@ -77,10 +80,10 @@ bool Servo_CounterStyleRule_SetDescriptor(const RawServoCounterStyleRule* rule,
                                           nsCSSCounterDesc desc,
                                           const nsACString* value);
 
-}  
+}  // extern "C"
 
 #pragma GCC diagnostic pop
 
-}  
+}  // namespace mozilla
 
-#endif  
+#endif  // mozilla_ServoBindings_h
