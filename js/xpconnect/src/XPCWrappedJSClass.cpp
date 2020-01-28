@@ -149,14 +149,6 @@ JSObject* nsXPCWrappedJS::CallQueryInterfaceOnJSObject(JSContext* cx,
     return nullptr;
   }
 
-  
-  if (!aIID.Equals(NS_GET_IID(nsISupports))) {
-    const nsXPTInterfaceInfo* info = nsXPTInterfaceInfo::ByIID(aIID);
-    if (!info || info->IsBuiltinClass()) {
-      return nullptr;
-    }
-  }
-
   dom::MozQueryInterface* mozQI = nullptr;
   if (NS_SUCCEEDED(UNWRAP_OBJECT(MozQueryInterface, &fun, mozQI))) {
     if (mozQI->QueriesTo(aIID)) {
@@ -315,10 +307,25 @@ nsresult nsXPCWrappedJS::DelegatedQueryInterface(REFNSIID aIID,
   }
 
   
-  if (aIID.Equals(NS_GET_IID(nsWrapperCache))) {
-    *aInstancePtr = nullptr;
-    return NS_NOINTERFACE;
+  
+  
+  
+  if (!aIID.Equals(NS_GET_IID(nsISupports))) {
+    const nsXPTInterfaceInfo* info = nsXPTInterfaceInfo::ByIID(aIID);
+    if (!info || info->IsBuiltinClass()) {
+      MOZ_ASSERT(!aIID.Equals(NS_GET_IID(nsISupportsWeakReference)),
+                 "Later code for nsISupportsWeakReference is being skipped");
+      MOZ_ASSERT(!aIID.Equals(NS_GET_IID(nsISimpleEnumerator)),
+                 "Later code for nsISimpleEnumerator is being skipped");
+      MOZ_ASSERT(!aIID.Equals(NS_GET_IID(nsINamed)),
+                 "Later code for nsINamed is being skipped");
+      *aInstancePtr = nullptr;
+      return NS_NOINTERFACE;
+    }
   }
+
+  MOZ_ASSERT(!aIID.Equals(NS_GET_IID(nsWrapperCache)),
+             "Where did we get non-builtinclass interface info for this??");
 
   
   
