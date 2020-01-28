@@ -487,6 +487,10 @@ class nsSocketTransport final : public nsASocketHandler,
   
   
   bool mUsingQuic;
+
+  
+  
+  bool mPortRemappingApplied = false;
 };
 
 }  

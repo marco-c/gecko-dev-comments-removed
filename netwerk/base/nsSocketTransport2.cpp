@@ -776,6 +776,13 @@ nsresult nsSocketTransport::Init(const nsTArray<nsCString>& types,
     mPort = port;
   }
 
+  
+  
+  
+#ifndef MOZ_TSAN
+  MOZ_ASSERT(!mPortRemappingApplied);
+#endif  
+
   if (proxyInfo) {
     mHttpsProxy = proxyInfo->IsHTTPS();
   }
@@ -2171,6 +2178,17 @@ void nsSocketTransport::OnSocketEvent(uint32_t type, nsresult status,
   switch (type) {
     case MSG_ENSURE_CONNECT:
       SOCKET_LOG(("  MSG_ENSURE_CONNECT\n"));
+
+      
+      
+      
+      if (!mPortRemappingApplied) {
+        mPortRemappingApplied = true;
+
+        mSocketTransportService->ApplyPortRemap(&mPort);
+        mSocketTransportService->ApplyPortRemap(&mOriginPort);
+      }
+
       
       
       

@@ -19,6 +19,7 @@
 #include "mozilla/net/DashboardTypes.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/Tuple.h"
 #include "nsITimer.h"
 #include "mozilla/UniquePtr.h"
 #include "PollableEvent.h"
@@ -122,6 +123,15 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   }
 
   void SetNotTrustedMitmDetected() { mNotTrustedMitmDetected = true; }
+
+  
+  
+  void ApplyPortRemap(uint16_t* aPort);
+
+  
+  
+  
+  bool UpdatePortRemapPreference(nsACString const& aPortMappingPref);
 
  protected:
   virtual ~nsSocketTransportService();
@@ -273,6 +283,19 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
   Atomic<bool, Relaxed> mSleepPhase;
   nsCOMPtr<nsITimer> mAfterWakeUpTimer;
+
+  
+  
+  
+  
+  
+  
+  typedef nsTArray<Tuple<uint16_t, uint16_t, uint16_t>> TPortRemapping;
+  Maybe<TPortRemapping> mPortRemapping;
+
+  
+  
+  void ApplyPortRemapPreference(TPortRemapping const& portRemapping);
 
   void OnKeepaliveEnabledPrefChange();
   void NotifyKeepaliveEnabledPrefChange(SocketContext* sock);
