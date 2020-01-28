@@ -236,19 +236,6 @@ GeckoViewPermission.prototype = {
     }
 
     let perm = types.queryElementAt(0, Ci.nsIContentPermissionType);
-    if (
-      perm.type === "desktop-notification" &&
-      !aRequest.isHandlingUserInput &&
-      Services.prefs.getBoolPref(
-        "dom.webnotifications.requireuserinteraction",
-        true
-      )
-    ) {
-      
-      aRequest.cancel();
-      return;
-    }
-
     let dispatcher = GeckoViewUtils.getDispatcherForWindow(
       aRequest.window ? aRequest.window : aRequest.element.ownerGlobal
     );
