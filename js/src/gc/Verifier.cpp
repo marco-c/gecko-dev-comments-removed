@@ -6,7 +6,6 @@
 
 #include "mozilla/DebugOnly.h"
 #include "mozilla/IntegerPrintfMacros.h"
-#include "mozilla/PodOperations.h"
 #include "mozilla/Sprintf.h"
 
 #include <algorithm>
@@ -197,11 +196,10 @@ void gc::GCRuntime::startVerifyPreBarriers() {
 
   AutoPrepareForTracing prep(cx);
 
-  for (ZonesIter zone(this, WithAtoms); !zone.done(); zone.next()) {
-    for (auto kind : AllAllocKinds()) {
-      for (ArenaIter arena(zone, kind); !arena.done(); arena.next()) {
-        arena.get()->unmarkAll();
-      }
+  {
+    AutoLockGC lock(this);
+    for (auto chunk = allNonEmptyChunks(lock); !chunk.done(); chunk.next()) {
+      chunk->bitmap.clear();
     }
   }
 
@@ -476,10 +474,9 @@ class js::gc::MarkingValidator {
   GCRuntime* gc;
   bool initialized;
 
-  using MarkBits = UniquePtr<uint8_t>;
-  using MarkBitsMap =
-      HashMap<Arena*, MarkBits, DefaultHasher<Arena*>, SystemAllocPolicy>;
-  MarkBitsMap map;
+  using BitmapMap =
+      HashMap<Chunk*, UniquePtr<ChunkBitmap>, GCChunkHasher, SystemAllocPolicy>;
+  BitmapMap map;
 };
 
 js::gc::MarkingValidator::MarkingValidator(GCRuntime* gc)
@@ -505,20 +502,21 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
   HelperThreadState().waitForAllThreads();
 
   
-  for (GCZonesIter zone(gc); !zone.done(); zone.next()) {
-    for (auto thingKind : AllAllocKinds()) {
-      for (ArenaIter aiter(zone, thingKind); !aiter.done(); aiter.next()) {
-        Arena* arena = aiter.get();
-        size_t thingCount = arena->getThingsPerArena();
-        MarkBits markBits(js_pod_malloc<uint8_t>(thingCount));
-        if (!markBits) {
-          return;
-        }
+  {
+    AutoLockGC lock(gc);
+    for (auto chunk = gc->allNonEmptyChunks(lock); !chunk.done();
+         chunk.next()) {
+      ChunkBitmap* bitmap = &chunk->bitmap;
+      auto entry = MakeUnique<ChunkBitmap>();
+      if (!entry) {
+        return;
+      }
 
-        mozilla::PodCopy(markBits.get(), arena->markBits(), thingCount);
-        if (!map.putNew(arena, std::move(markBits))) {
-          return;
-        }
+      memcpy((void*)entry->bitmap, (void*)bitmap->bitmap,
+             sizeof(bitmap->bitmap));
+
+      if (!map.putNew(chunk, std::move(entry))) {
+        return;
       }
     }
   }
@@ -582,12 +580,10 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
       MOZ_ASSERT(gcmarker->isDrained());
       gcmarker->reset();
 
-      for (GCZonesIter zone(gc); !zone.done(); zone.next()) {
-        for (auto thingKind : AllAllocKinds()) {
-          for (ArenaIter aiter(zone, thingKind); !aiter.done(); aiter.next()) {
-            aiter.get()->unmarkAll();
-          }
-        }
+      AutoLockGC lock(gc);
+      for (auto chunk = gc->allNonEmptyChunks(lock); !chunk.done();
+           chunk.next()) {
+        chunk->bitmap.clear();
       }
     }
   }
@@ -628,18 +624,13 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
   }
 
   
-  const size_t maxThingsPerArena = ArenaSize / MinCellSize;
-  uint8_t temp[maxThingsPerArena];
-  for (GCZonesIter zone(gc); !zone.done(); zone.next()) {
-    for (auto thingKind : AllAllocKinds()) {
-      for (ArenaIter aiter(zone, thingKind); !aiter.done(); aiter.next()) {
-        Arena* arena = aiter.get();
-        size_t thingCount = arena->getThingsPerArena();
-        uint8_t* savedMarkBits = map.lookup(arena)->value().get();
-        mozilla::PodCopy(temp, arena->markBits(), thingCount);
-        mozilla::PodCopy(arena->markBits(), savedMarkBits, thingCount);
-        mozilla::PodCopy(savedMarkBits, temp, thingCount);
-      }
+  {
+    AutoLockGC lock(gc);
+    for (auto chunk = gc->allNonEmptyChunks(lock); !chunk.done();
+         chunk.next()) {
+      ChunkBitmap* bitmap = &chunk->bitmap;
+      ChunkBitmap* entry = map.lookup(chunk)->value().get();
+      std::swap(*entry, *bitmap);
     }
   }
 
@@ -680,40 +671,52 @@ void js::gc::MarkingValidator::validate() {
 
   gc->waitBackgroundSweepEnd();
 
-  for (SweepGroupZonesIter zone(gc); !zone.done(); zone.next()) {
-    for (auto thingKind : AllAllocKinds()) {
-      for (ArenaIter aiter(zone, thingKind); !aiter.done(); aiter.next()) {
-        Arena* arena = aiter.get();
+  AutoLockGC lock(gc->rt);
+  for (auto chunk = gc->allNonEmptyChunks(lock); !chunk.done(); chunk.next()) {
+    BitmapMap::Ptr ptr = map.lookup(chunk);
+    if (!ptr) {
+      continue; 
+    }
 
-        MarkBitsMap::Ptr ptr = map.lookup(arena);
-        if (!ptr) {
-          continue; 
+    ChunkBitmap* bitmap = ptr->value().get();
+    ChunkBitmap* incBitmap = &chunk->bitmap;
+
+    for (size_t i = 0; i < ArenasPerChunk; i++) {
+      if (chunk->decommittedArenas.get(i)) {
+        continue;
+      }
+      Arena* arena = &chunk->arenas[i];
+      if (!arena->allocated()) {
+        continue;
+      }
+      if (!arena->zone->isGCSweeping()) {
+        continue;
+      }
+
+      AllocKind kind = arena->getAllocKind();
+      uintptr_t thing = arena->thingsStart();
+      uintptr_t end = arena->thingsEnd();
+      while (thing < end) {
+        auto cell = reinterpret_cast<TenuredCell*>(thing);
+
+        
+
+
+
+        if (bitmap->isMarkedAny(cell)) {
+          MOZ_RELEASE_ASSERT(incBitmap->isMarkedAny(cell));
         }
 
-        uint8_t* markBits = ptr->value().get();
-        uint8_t* incMarkBits = arena->markBits();
-
-        size_t thingCount = arena->getThingsPerArena();
-
-        for (size_t i = 0; i < thingCount; i++) {
-          
-
-
-
-          if (markBits[i] & MarkBitMaskBothBits) {
-            MOZ_RELEASE_ASSERT(incMarkBits[i] & MarkBitMaskBothBits);
-          }
-
-          
+        
 
 
 
 
-          if ((markBits[i] & MarkBitMaskBothBits) != MarkBitMaskGrayOrBlack) {
-            MOZ_RELEASE_ASSERT((incMarkBits[i] & MarkBitMaskBothBits) !=
-                               MarkBitMaskGrayOrBlack);
-          }
+        if (!bitmap->isMarkedGray(cell)) {
+          MOZ_RELEASE_ASSERT(!incBitmap->isMarkedGray(cell));
         }
+
+        thing += Arena::thingSize(kind);
       }
     }
   }
