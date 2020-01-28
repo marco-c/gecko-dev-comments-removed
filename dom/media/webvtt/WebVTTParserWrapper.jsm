@@ -2,22 +2,18 @@
 
 
 
-const {WebVTT} = ChromeUtils.import("resource://gre/modules/vtt.jsm");
+const { WebVTT } = ChromeUtils.import("resource://gre/modules/vtt.jsm");
 
-function WebVTTParserWrapper()
-{
+function WebVTTParserWrapper() {
   
 }
 
-WebVTTParserWrapper.prototype =
-{
-  loadParser: function(window)
-  {
-    this.parser = new WebVTT.Parser(window,  new TextDecoder("utf8"));
+WebVTTParserWrapper.prototype = {
+  loadParser(window) {
+    this.parser = new WebVTT.Parser(window, new TextDecoder("utf8"));
   },
 
-  parse: function(data)
-  {
+  parse(data) {
     
     
     var buffer = new Uint8Array(data.length);
@@ -28,34 +24,30 @@ WebVTTParserWrapper.prototype =
     this.parser.parse(buffer);
   },
 
-  flush: function()
-  {
+  flush() {
     this.parser.flush();
   },
 
-  watch: function(callback)
-  {
+  watch(callback) {
     this.parser.oncue = callback.onCue;
     this.parser.onregion = callback.onRegion;
     this.parser.onparsingerror = function(e) {
       
-      callback.onParsingError(("code" in e) ? e.code : -1);
+      callback.onParsingError("code" in e ? e.code : -1);
     };
   },
 
-  cancel: function() {
+  cancel() {
     this.parser.oncue = null;
     this.parser.onregion = null;
     this.parser.onparsingerror = null;
   },
 
-  convertCueToDOMTree: function(window, cue)
-  {
+  convertCueToDOMTree(window, cue) {
     return WebVTT.convertCueToDOMTree(window, cue.text);
   },
 
-  processCues: function(window, cues, overlay, controls)
-  {
+  processCues(window, cues, overlay, controls) {
     WebVTT.processCues(window, cues, overlay, controls);
   },
 
