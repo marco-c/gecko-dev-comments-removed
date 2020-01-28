@@ -3634,15 +3634,13 @@ bool IsWaylandDisabled() {
 }
 #endif
 
-namespace mozilla {
-namespace startup {
+namespace mozilla::startup {
 Result<nsCOMPtr<nsIFile>, nsresult> GetIncompleteStartupFile(nsIFile* aProfLD) {
   nsCOMPtr<nsIFile> crashFile;
   MOZ_TRY(aProfLD->Clone(getter_AddRefs(crashFile)));
   MOZ_TRY(crashFile->Append(FILE_STARTUP_INCOMPLETE));
   return std::move(crashFile);
 }
-}  
 }  
 
 

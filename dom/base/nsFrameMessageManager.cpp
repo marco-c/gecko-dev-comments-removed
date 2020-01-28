@@ -990,8 +990,7 @@ struct MessageManagerReferentCount {
 
 }  
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class MessageManagerReporter final : public nsIMemoryReporter {
   ~MessageManagerReporter() = default;
@@ -1125,7 +1124,6 @@ MessageManagerReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
   return NS_OK;
 }
 
-}  
 }  
 
 already_AddRefed<ChromeMessageBroadcaster>

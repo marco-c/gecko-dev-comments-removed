@@ -57,8 +57,7 @@ bool IsKeyValid(const nsACString& aKey) {
 
 }  
 
-namespace mozilla {
-namespace Telemetry {
+namespace mozilla::Telemetry {
 
 void KeyedStackCapturer::Capture(const nsACString& aKey) {
   MutexAutoLock captureStackMutex(mStackCapturerMutex);
@@ -162,5 +161,4 @@ size_t KeyedStackCapturer::SizeOfExcludingThis(
   return n;
 }
 
-}  
 }  

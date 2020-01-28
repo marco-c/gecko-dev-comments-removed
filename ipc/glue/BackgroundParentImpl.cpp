@@ -112,8 +112,7 @@ class TestParent final : public mozilla::ipc::PBackgroundTestParent {
 
 }  
 
-namespace mozilla {
-namespace ipc {
+namespace mozilla::ipc {
 
 using mozilla::dom::BroadcastChannelParent;
 using mozilla::dom::ContentParent;
@@ -1305,7 +1304,6 @@ BackgroundParentImpl::SendPFileDescriptorSetConstructor(
   return PBackgroundParent::SendPFileDescriptorSetConstructor(aFD);
 }
 
-}  
 }  
 
 void TestParent::ActorDestroy(ActorDestroyReason aWhy) {

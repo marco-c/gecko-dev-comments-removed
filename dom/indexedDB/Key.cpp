@@ -27,9 +27,7 @@
 #include "unicode/ucol.h"
 #include "xpcpublic.h"
 
-namespace mozilla {
-namespace dom {
-namespace indexedDB {
+namespace mozilla::dom::indexedDB {
 
 
 
@@ -887,6 +885,4 @@ nsresult Key::SetFromSource(T* aSource, uint32_t aIndex) {
   return NS_OK;
 }
 
-}  
-}  
 }  

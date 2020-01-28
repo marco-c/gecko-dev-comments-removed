@@ -22,8 +22,7 @@
 #  include <dlfcn.h>
 #endif
 
-namespace mozilla {
-namespace recordreplay {
+namespace mozilla::recordreplay {
 
 
 #define FOR_EACH_INTERFACE(Macro)                                              \
@@ -180,5 +179,4 @@ bool gIsMiddleman;
 
 #undef ENABLE_RECORD_REPLAY
 
-}  
 }  

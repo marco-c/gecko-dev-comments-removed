@@ -17,8 +17,7 @@
 
 using JS::AutoStableStringChars;
 
-namespace js {
-namespace ctypes {
+namespace js::ctypes {
 
 
 
@@ -403,5 +402,4 @@ bool Library::Declare(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-}  
 }  

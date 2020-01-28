@@ -16,8 +16,7 @@
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/layers/SyncObject.h"  
 
-namespace mozilla {
-namespace gfx {
+namespace mozilla::gfx {
 
 VRLayerChild::VRLayerChild()
     : mCanvasElement(nullptr), mIPCOpen(false), mLastSubmittedFrameId(0) {
@@ -140,5 +139,4 @@ void VRLayerChild::ReleaseIPDLReference() {
   Release();
 }
 
-}  
 }  
