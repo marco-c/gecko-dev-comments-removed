@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_TypedArray_h
 #define mozilla_dom_TypedArray_h
@@ -10,10 +10,11 @@
 #include <utility>
 
 #include "js/ArrayBuffer.h"
-#include "js/GCAPI.h"       
-#include "js/RootingAPI.h"  
+#include "js/ArrayBufferMaybeShared.h"
+#include "js/GCAPI.h"       // JS::AutoCheckCannotGC
+#include "js/RootingAPI.h"  // JS::Rooted
 #include "js/SharedArrayBuffer.h"
-#include "jsfriendapi.h"  
+#include "jsfriendapi.h"  // js::Scalar
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/SpiderMonkeyInterface.h"
@@ -22,12 +23,12 @@
 namespace mozilla {
 namespace dom {
 
-
-
-
-
-
-
+/*
+ * Various typed array classes for argument conversion.  We have a base class
+ * that has a way of initializing a TypedArray from an existing typed array, and
+ * a subclass of the base class that supports creation of a relevant typed array
+ * or array buffer object.
+ */
 template <typename T, JSObject* UnwrapArray(JSObject*),
           void GetLengthAndDataAndSharedness(JSObject*, uint32_t*, bool*, T**)>
 struct TypedArray_base : public SpiderMonkeyInterfaceObjectStorage,
@@ -62,46 +63,46 @@ struct TypedArray_base : public SpiderMonkeyInterfaceObjectStorage,
     return inited();
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // About shared memory:
+  //
+  // Any DOM TypedArray as well as any DOM ArrayBufferView can map the
+  // memory of either a JS ArrayBuffer or a JS SharedArrayBuffer.  If
+  // the TypedArray maps a SharedArrayBuffer the Length() and Data()
+  // accessors on the DOM view will return zero and nullptr; to get
+  // the actual length and data, call the LengthAllowShared() and
+  // DataAllowShared() accessors instead.
+  //
+  // Two methods are available for determining if a DOM view maps
+  // shared memory.  The IsShared() method is cheap and can be called
+  // if the view has been computed; the JS_GetTypedArraySharedness()
+  // method is slightly more expensive and can be called on the Obj()
+  // value if the view may not have been computed and if the value is
+  // known to represent a JS TypedArray.
+  //
+  // (Just use JS::IsSharedArrayBuffer() to test if any object is of
+  // that type.)
+  //
+  // Code that elects to allow views that map shared memory to be used
+  // -- ie, code that "opts in to shared memory" -- should generally
+  // not access the raw data buffer with standard C++ mechanisms as
+  // that creates the possibility of C++ data races, which is
+  // undefined behavior.  The JS engine will eventually export (bug
+  // 1225033) a suite of methods that avoid undefined behavior.
+  //
+  // Callers of Obj() that do not opt in to shared memory can produce
+  // better diagnostics by checking whether the JSObject in fact maps
+  // shared memory and throwing an error if it does.  However, it is
+  // safe to use the value of Obj() without such checks.
+  //
+  // The DOM TypedArray abstraction prevents the underlying buffer object
+  // from being accessed directly, but JS_GetArrayBufferViewBuffer(Obj())
+  // will obtain the buffer object.  Code that calls that function must
+  // not assume the returned buffer is an ArrayBuffer.  That is guarded
+  // against by an out parameter on that call that communicates the
+  // sharedness of the buffer.
+  //
+  // Finally, note that the buffer memory of a SharedArrayBuffer is
+  // not detachable.
 
   inline bool IsShared() const {
     MOZ_ASSERT(mComputed);
@@ -173,7 +174,7 @@ struct TypedArray
 
   static inline JSObject* Create(JSContext* cx, nsWrapperCache* creator,
                                  Span<const T> data) {
-    
+    // Span<> uses size_t as a length, and we use uint32_t instead.
     if (MOZ_UNLIKELY(data.Length() > UINT32_MAX)) {
       JS_ReportOutOfMemory(cx);
       return nullptr;
@@ -182,7 +183,7 @@ struct TypedArray
   }
 
   static inline JSObject* Create(JSContext* cx, Span<const T> data) {
-    
+    // Span<> uses size_t as a length, and we use uint32_t instead.
     if (MOZ_UNLIKELY(data.Length() > UINT32_MAX)) {
       JS_ReportOutOfMemory(cx);
       return nullptr;
@@ -201,8 +202,8 @@ struct TypedArray
       JS::AutoCheckCannotGC nogc;
       bool isShared;
       T* buf = static_cast<T*>(GetData(obj, &isShared, nogc));
-      
-      
+      // Data will not be shared, until a construction protocol exists
+      // for constructing shared data.
       MOZ_ASSERT(!isShared);
       memcpy(buf, data, length * sizeof(T));
     }
@@ -282,19 +283,16 @@ typedef ArrayBufferView_base<js::UnwrapArrayBufferView,
                              js::GetArrayBufferViewLengthAndData,
                              JS_GetArrayBufferViewType>
     ArrayBufferView;
-typedef TypedArray<uint8_t, JS::UnwrapArrayBuffer, JS::GetArrayBufferData,
-                   JS::GetArrayBufferLengthAndData, JS::NewArrayBuffer>
+typedef TypedArray<uint8_t, JS::UnwrapArrayBufferMaybeShared,
+                   JS::GetArrayBufferMaybeSharedData,
+                   JS::GetArrayBufferMaybeSharedLengthAndData,
+                   JS::NewArrayBuffer>
     ArrayBuffer;
 
-typedef TypedArray<
-    uint8_t, JS::UnwrapSharedArrayBuffer, JS::GetSharedArrayBufferData,
-    JS::GetSharedArrayBufferLengthAndData, JS::NewSharedArrayBuffer>
-    SharedArrayBuffer;
-
-
-
-
-
+// A class for converting an nsTArray to a TypedArray
+// Note: A TypedArrayCreator must not outlive the nsTArray it was created from.
+//       So this is best used to pass from things that understand nsTArray to
+//       things that understand TypedArray, as with ToJSValue.
 template <typename TypedArrayType>
 class TypedArrayCreator {
   typedef nsTArray<typename TypedArrayType::element_type> ArrayType;
@@ -310,7 +308,7 @@ class TypedArrayCreator {
   const ArrayType& mArray;
 };
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
-#endif 
+#endif /* mozilla_dom_TypedArray_h */
