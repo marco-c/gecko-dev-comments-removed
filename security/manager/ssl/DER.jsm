@@ -83,7 +83,7 @@ class BitString {
 }
 
 
-class DER {
+class DERDecoder {
   
 
 
@@ -299,7 +299,7 @@ class DER {
   }
 }
 
-this.DER = {
+const DER = {
   UNIVERSAL,
   CONSTRUCTED,
   CONTEXT_SPECIFIC,
@@ -315,6 +315,6 @@ this.DER = {
   UTF8String,
   SEQUENCE,
   SET,
-  DER,
+  DERDecoder,
 };
-this.EXPORTED_SYMBOLS = ["DER"];
+var EXPORTED_SYMBOLS = ["DER"];

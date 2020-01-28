@@ -4,7 +4,7 @@
 
 "use strict";
 
-var { DER } = ChromeUtils.import("resource://gre/modules/psm/DER.jsm", null);
+var { DER } = ChromeUtils.import("resource://gre/modules/psm/DER.jsm");
 
 const ERROR_UNSUPPORTED_ASN1 = "unsupported asn.1";
 const ERROR_TIME_NOT_VALID = "Time not valid";
@@ -118,7 +118,7 @@ class DecodedDER {
 
 
   parse(bytes) {
-    this._der = new DER.DER(bytes);
+    this._der = new DER.DERDecoder(bytes);
     try {
       this.parseOverride();
     } catch (e) {
@@ -134,7 +134,7 @@ class DecodedDER {
 
 
 function readSEQUENCEAndMakeDER(der) {
-  return new DER.DER(der.readTagAndGetContents(DER.SEQUENCE));
+  return new DER.DERDecoder(der.readTagAndGetContents(DER.SEQUENCE));
 }
 
 
@@ -145,7 +145,7 @@ function readSEQUENCEAndMakeDER(der) {
 
 
 function readTagAndMakeDER(der, tag) {
-  return new DER.DER(der.readTagAndGetContents(tag));
+  return new DER.DERDecoder(der.readTagAndGetContents(tag));
 }
 
 
