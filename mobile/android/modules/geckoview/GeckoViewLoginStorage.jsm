@@ -115,6 +115,13 @@ const GeckoViewLoginStorage = {
     });
   },
 
+  
+
+
+
+
+
+
   onLoginSave(aLogin) {
     debug`onLoginSave ${aLogin}`;
 
@@ -123,6 +130,14 @@ const GeckoViewLoginStorage = {
       login: aLogin,
     });
   },
+
+  
+
+
+
+
+
+
 
   onLoginPasswordUsed(aLogin) {
     debug`onLoginUsed ${aLogin}`;
