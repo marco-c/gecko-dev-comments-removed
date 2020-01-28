@@ -2587,6 +2587,11 @@ void SizeComputationInput::InitOffsets(WritingMode aWM, nscoord aPercentBasis,
       }
       mComputedPadding.Side(wm.PhysicalSide(side)) += val;
       needPaddingProp = true;
+      if (aAxis == eLogicalAxisBlock && val > 0) {
+        
+        
+        this->mFrame->AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
+      }
     }
   };
   if (!aFlags.mUseAutoBSize) {
