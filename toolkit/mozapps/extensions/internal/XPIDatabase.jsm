@@ -705,23 +705,14 @@ class AddonInternal {
 
     
     
-    
-    let changesAllowed = !this.location.locked && !this.pendingUninstall;
-    if (changesAllowed) {
+    if (!this.location.locked && !this.pendingUninstall) {
       
       let isSystem = this.location.isSystem;
       
       if (!this.location.isLinkedAddon(this.id) && !isSystem) {
         permissions |= AddonManager.PERM_CAN_UPGRADE;
       }
-    }
 
-    
-    
-    let isLegacySideload =
-      this.foreignInstall &&
-      !(this.location.scope & AddonSettings.SCOPES_SIDELOAD);
-    if (changesAllowed || isLegacySideload) {
       permissions |= AddonManager.PERM_API_CAN_UNINSTALL;
       if (!this.location.isBuiltin) {
         permissions |= AddonManager.PERM_CAN_UNINSTALL;
