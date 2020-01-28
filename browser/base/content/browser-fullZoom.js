@@ -48,8 +48,7 @@ var FullZoom = {
   
 
   init: function FullZoom_init() {
-    gBrowser.addEventListener("DoZoomEnlargeBy10", this);
-    gBrowser.addEventListener("DoZoomReduceBy10", this);
+    gBrowser.addEventListener("ZoomChangeUsingMouseWheel", this);
 
     
     this._cps2 = Cc["@mozilla.org/content-pref/service;1"].getService(
@@ -84,8 +83,7 @@ var FullZoom = {
   destroy: function FullZoom_destroy() {
     Services.prefs.removeObserver("browser.zoom.", this);
     this._cps2.removeObserverForName(this.name, this);
-    gBrowser.removeEventListener("DoZoomEnlargeBy10", this);
-    gBrowser.removeEventListener("DoZoomReduceBy10", this);
+    gBrowser.removeEventListener("ZoomChangeUsingMouseWheel", this);
   },
 
   
@@ -94,11 +92,10 @@ var FullZoom = {
 
   handleEvent: function FullZoom_handleEvent(event) {
     switch (event.type) {
-      case "DoZoomEnlargeBy10":
-        this.changeZoomBy(this._getTargetedBrowser(event), 0.1);
-        break;
-      case "DoZoomReduceBy10":
-        this.changeZoomBy(this._getTargetedBrowser(event), -0.1);
+      case "ZoomChangeUsingMouseWheel":
+        let browser = this._getTargetedBrowser(event);
+        this._ignorePendingZoomAccesses(browser);
+        this._applyZoomToPref(browser);
         break;
     }
   },
@@ -364,35 +361,6 @@ var FullZoom = {
 
 
 
-
-
-
-  changeZoomBy(aBrowser, aValue) {
-    if (aBrowser.currentURI.spec.startsWith("about:reader")) {
-      const message = aValue > 0 ? "Reader::ZoomIn" : "Reader:ZoomOut";
-      aBrowser.messageManager.sendAsyncMessage(message);
-      return;
-    } else if (this._isPDFViewer(aBrowser)) {
-      const message = aValue > 0 ? "PDFJS::ZoomIn" : "PDFJS:ZoomOut";
-      aBrowser.messageManager.sendAsyncMessage(message);
-      return;
-    }
-    let zoom = ZoomManager.getZoomForBrowser(aBrowser);
-    zoom += aValue;
-    if (zoom < ZoomManager.MIN) {
-      zoom = ZoomManager.MIN;
-    } else if (zoom > ZoomManager.MAX) {
-      zoom = ZoomManager.MAX;
-    }
-    ZoomManager.setZoomForBrowser(aBrowser, zoom);
-    this._ignorePendingZoomAccesses(aBrowser);
-    this._applyZoomToPref(aBrowser);
-  },
-
-  
-
-
-
   setZoom(value, browser = gBrowser.selectedBrowser) {
     if (this._isPDFViewer(browser)) {
       return;
@@ -592,7 +560,7 @@ var FullZoom = {
       return target.ownerGlobal.docShell.chromeEventHandler;
     }
 
-    throw new Error("Unexpected zoom event source");
+    throw new Error("Unexpected ZoomChangeUsingMouseWheel event source");
   },
 
   
