@@ -409,6 +409,17 @@ void nsRubyBaseContainerFrame::Reflow(nsPresContext* aPresContext,
     textContainer->SetISize(rtcISize);
     lineLayout->EndLineReflow();
   }
+
+  
+  
+  if (mFrames.IsEmpty()) {
+    
+    
+    WritingMode frameWM = aReflowInput.GetWritingMode();
+    LogicalMargin borderPadding(frameWM);
+    nsLayoutUtils::SetBSizeFromFontMetrics(this, aDesiredSize, borderPadding,
+                                           lineWM, frameWM);
+  }
 }
 
 

@@ -137,14 +137,13 @@ void nsRubyTextContainerFrame::Reflow(nsPresContext* aPresContext,
     maxBCoord = std::max(maxBCoord, blockEnd);
   }
 
-  LogicalSize size(rtcWM, mISize, 0);
   if (!mFrames.IsEmpty()) {
     if (MOZ_UNLIKELY(minBCoord > maxBCoord)) {
       
       NS_WARNING("bad block coord");
       minBCoord = maxBCoord = 0;
     }
-    size.BSize(rtcWM) = maxBCoord - minBCoord;
+    LogicalSize size(rtcWM, mISize, maxBCoord - minBCoord);
     nsSize containerSize = size.GetPhysicalSize(rtcWM);
     for (nsFrameList::Enumerator e(mFrames); !e.AtEnd(); e.Next()) {
       nsIFrame* child = e.get();
@@ -159,7 +158,15 @@ void nsRubyTextContainerFrame::Reflow(nsPresContext* aPresContext,
       child->SetPosition(rtcWM, pos, containerSize);
       nsContainerFrame::PlaceFrameView(child);
     }
+    aDesiredSize.SetSize(rtcWM, size);
+  } else {
+    
+    
+    
+    
+    aDesiredSize.ISize(rtcWM) = mISize;
+    LogicalMargin borderPadding(rtcWM);
+    nsLayoutUtils::SetBSizeFromFontMetrics(this, aDesiredSize, borderPadding,
+                                           rtcWM, rtcWM);
   }
-
-  aDesiredSize.SetSize(rtcWM, size);
 }
