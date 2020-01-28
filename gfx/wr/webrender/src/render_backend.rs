@@ -1,12 +1,12 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
+//! The high-level module responsible for managing the pipeline and preparing
+//! commands to be issued by the `Renderer`.
+//!
+//! See the comment at the top of the `renderer` module for a description of
+//! how these two pieces interact.
 
 use api::{ApiMsg, BuiltDisplayList, ClearCache, DebugCommand, DebugFlags};
 use api::{DocumentId, DocumentLayer, ExternalScrollId, FrameMsg, HitTestFlags, HitTestResult};
@@ -101,29 +101,29 @@ impl DocumentView {
 pub struct FrameId(usize);
 
 impl FrameId {
-    
-    
-    
-    
-    
-    
-    
+    /// Returns a FrameId corresponding to the first frame.
+    ///
+    /// Note that we use 0 as the internal id here because the current code
+    /// increments the frame id at the beginning of the frame, rather than
+    /// at the end, and we want the first frame to be 1. It would probably
+    /// be sensible to move the advance() call to after frame-building, and
+    /// then make this method return FrameId(1).
     pub fn first() -> Self {
         FrameId(0)
     }
 
-    
+    /// Returns the backing usize for this FrameId.
     pub fn as_usize(&self) -> usize {
         self.0
     }
 
-    
+    /// Advances this FrameId to the next frame.
     pub fn advance(&mut self) {
         self.0 += 1;
     }
 
-    
-    
+    /// An invalid sentinel FrameId, which will always compare less than
+    /// any valid FrameId.
     pub const INVALID: FrameId = FrameId(0);
 }
 
@@ -153,13 +153,13 @@ enum RenderBackendStatus {
     ShutDown(Option<MsgSender<()>>),
 }
 
-
-
-
-
-
-
-
+/// Identifier to track a sequence of frames.
+///
+/// This is effectively a `FrameId` with a ridealong timestamp corresponding
+/// to when advance() was called, which allows for more nuanced cache eviction
+/// decisions. As such, we use the `FrameId` for equality and comparison, since
+/// we should never have two `FrameStamps` with the same id but different
+/// timestamps.
 #[derive(Copy, Clone, Debug, MallocSizeOf)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -173,7 +173,7 @@ impl Eq for FrameStamp {}
 
 impl PartialEq for FrameStamp {
     fn eq(&self, other: &Self) -> bool {
-        
+        // We should not be checking equality unless the documents are the same
         debug_assert!(self.document_id == other.document_id);
         self.id == other.id
     }
@@ -186,29 +186,29 @@ impl PartialOrd for FrameStamp {
 }
 
 impl FrameStamp {
-    
+    /// Gets the FrameId in this stamp.
     pub fn frame_id(&self) -> FrameId {
         self.id
     }
 
-    
+    /// Gets the time associated with this FrameStamp.
     pub fn time(&self) -> SystemTime {
         self.time
     }
 
-    
+    /// Gets the DocumentId in this stamp.
     pub fn document_id(&self) -> DocumentId {
         self.document_id
     }
 
     pub fn is_valid(&self) -> bool {
-        
+        // If any fields are their default values, the whole struct should equal INVALID
         debug_assert!((self.time != UNIX_EPOCH && self.id != FrameId(0) && self.document_id != DocumentId::INVALID) ||
                       *self == Self::INVALID);
         self.document_id != DocumentId::INVALID
     }
 
-    
+    /// Returns a FrameStamp corresponding to the first frame.
     pub fn first(document_id: DocumentId) -> Self {
         FrameStamp {
             id: FrameId::first(),
@@ -217,13 +217,13 @@ impl FrameStamp {
         }
     }
 
-    
+    /// Advances to a new frame.
     pub fn advance(&mut self) {
         self.id.advance();
         self.time = SystemTime::now();
     }
 
-    
+    /// An invalid sentinel FrameStamp.
     pub const INVALID: FrameStamp = FrameStamp {
         id: FrameId(0),
         time: UNIX_EPOCH,
@@ -330,60 +330,60 @@ impl DataStores {
 }
 
 struct Document {
-    
+    /// The id of this document
     id: DocumentId,
 
-    
-    
+    /// Temporary list of removed pipelines received from the scene builder
+    /// thread and forwarded to the renderer.
     removed_pipelines: Vec<(PipelineId, DocumentId)>,
 
     view: DocumentView,
 
-    
+    /// The id and time of the current frame.
     stamp: FrameStamp,
 
-    
-    
+    /// The latest built scene, usable to build frames.
+    /// received from the scene builder thread.
     scene: BuiltScene,
 
-    
+    /// The builder object that prodces frames, kept around to preserve some retained state.
     frame_builder: FrameBuilder,
 
-    
-    
+    /// A set of pipelines that the caller has requested be
+    /// made available as output textures.
     output_pipelines: FastHashSet<PipelineId>,
 
-    
-    
+    /// A data structure to allow hit testing against rendered frames. This is updated
+    /// every time we produce a fully rendered frame.
     hit_tester: Option<HitTester>,
 
-    
-    
+    /// Properties that are resolved during frame building and can be changed at any time
+    /// without requiring the scene to be re-built.
     dynamic_properties: SceneProperties,
 
-    
-    
+    /// Track whether the last built frame is up to date or if it will need to be re-built
+    /// before rendering again.
     frame_is_valid: bool,
     hit_tester_is_valid: bool,
     rendered_frame_is_valid: bool,
-    
-    
+    /// We track this information to be able to display debugging information from the
+    /// renderer.
     has_built_scene: bool,
 
     data_stores: DataStores,
 
-    
-    
-    
+    /// Contains various vecs of data that is used only during frame building,
+    /// where we want to recycle the memory each new display list, to avoid constantly
+    /// re-allocating and moving memory around.
     scratch: PrimitiveScratchBuffer,
-    
-    
+    /// Keep track of the size of render task graph to pre-allocate memory up-front
+    /// the next frame.
     render_task_counters: RenderTaskGraphCounters,
 
     #[cfg(feature = "replay")]
     loaded_scene: Scene,
 
-    
+    /// Tracks the state of the picture cache tiles that were composited on the previous frame.
     prev_composite_descriptor: CompositeDescriptor,
 }
 
@@ -446,8 +446,8 @@ impl Document {
 
                 let node_index = match self.hit_tester {
                     Some(ref hit_tester) => {
-                        
-                        
+                        // Ideally we would call self.scroll_nearest_scrolling_ancestor here, but
+                        // we need have to avoid a double-borrow.
                         let test = HitTest::new(None, cursor, HitTestFlags::empty());
                         hit_tester.find_node_under_point(test)
                     }
@@ -463,8 +463,8 @@ impl Document {
                 }
 
                 return DocumentOps {
-                    
-                    
+                    // TODO: Does it make sense to track this as a scrolling even if we
+                    // ended up not scrolling anything?
                     scroll: true,
                     ..DocumentOps::nop()
                 };
@@ -541,11 +541,12 @@ impl Document {
         resource_profile: &mut ResourceProfileCounters,
         debug_flags: DebugFlags,
         tile_cache_logger: &mut TileCacheLogger,
+        config: FrameBuilderConfig,
     ) -> RenderedDocument {
         let accumulated_scale_factor = self.view.accumulated_scale_factor();
         let pan = self.view.pan.to_f32() / accumulated_scale_factor;
 
-        
+        // Advance to the next frame.
         self.stamp.advance();
 
         assert!(self.stamp.frame_id() != FrameId::INVALID,
@@ -568,6 +569,7 @@ impl Document {
                 &mut self.render_task_counters,
                 debug_flags,
                 tile_cache_logger,
+                config,
             );
             self.hit_tester = Some(self.scene.create_hit_tester(&self.data_stores.clip));
             frame
@@ -613,7 +615,7 @@ impl Document {
             .discard_frame_state_for_pipeline(pipeline_id);
     }
 
-    
+    /// Returns true if any nodes actually changed position or false otherwise.
     pub fn scroll_nearest_scrolling_ancestor(
         &mut self,
         scroll_location: ScrollLocation,
@@ -622,7 +624,7 @@ impl Document {
         self.scene.clip_scroll_tree.scroll_nearest_scrolling_ancestor(scroll_location, scroll_node_index)
     }
 
-    
+    /// Returns true if the node actually changed position or false otherwise.
     pub fn scroll_node(
         &mut self,
         origin: LayoutPoint,
@@ -640,21 +642,21 @@ impl Document {
         self.frame_is_valid = false;
         self.hit_tester_is_valid = false;
 
-        
-        
-        
-        
-        
-        
-        
+        // Give the old scene a chance to destroy any resources.
+        // Right now, all this does is build a hash map of any cached
+        // surface tiles, that can be provided to the next scene.
+        // TODO(nical) - It's a bit awkward how these retained tiles live
+        // in the scene's prim store then temporarily in the frame builder
+        // and then presumably back in the prim store during the next frame
+        // build.
         let mut retained_tiles = RetainedTiles::new();
         self.scene.prim_store.destroy(&mut retained_tiles);
         let old_scrolling_states = self.scene.clip_scroll_tree.drain();
 
         self.scene = built_scene;
 
-        
-        
+        // Provide any cached tiles from the previous scene to
+        // the newly built one.
         self.frame_builder.set_retained_resources(retained_tiles);
 
         self.scratch.recycle(recycler);
@@ -675,8 +677,8 @@ impl DocumentOps {
     }
 }
 
-
-
+/// The unique id for WR resource identification.
+/// The namespace_id should start from 1.
 static NEXT_NAMESPACE_ID: AtomicUsize = AtomicUsize::new(1);
 
 #[cfg(any(feature = "capture", feature = "replay"))]
@@ -689,10 +691,10 @@ struct PlainRenderBackend {
     resources: PlainResources,
 }
 
-
-
-
-
+/// The render backend is responsible for transforming high level display lists into
+/// GPU-friendly work which is then submitted to the renderer in the form of a frame::Frame.
+///
+/// The render backend operates on its own thread.
 pub struct RenderBackend {
     api_rx: MsgReceiver<ApiMsg>,
     payload_rx: Receiver<Payload>,
@@ -844,9 +846,9 @@ impl RenderBackend {
                     content_size,
                 });
 
-                
-                
-                
+                // Note: this isn't quite right as auxiliary values will be
+                // pulled out somewhere in the prim_store, but aux values are
+                // really simple and cheap to access, so it's not a big deal.
                 let display_list_consumed_time = precise_time_ns();
 
                 ipc_profile_counters.set(
@@ -923,16 +925,16 @@ impl RenderBackend {
                                 if let Some(ref tx) = result_tx {
                                     let (resume_tx, resume_rx) = channel();
                                     tx.send(SceneSwapResult::Complete(resume_tx)).unwrap();
-                                    
-                                    
-                                    
-                                    
+                                    // Block until the post-swap hook has completed on
+                                    // the scene builder thread. We need to do this before
+                                    // we can sample from the sampler hook which might happen
+                                    // in the update_document call below.
                                     resume_rx.recv().ok();
                                 }
                             } else {
-                                
-                                
-                                
+                                // The document was removed while we were building it, skip it.
+                                // TODO: we might want to just ensure that removed documents are
+                                // always forwarded to the scene builder thread to avoid this case.
                                 if let Some(ref tx) = result_tx {
                                     tx.send(SceneSwapResult::Aborted).unwrap();
                                 }
@@ -1000,14 +1002,14 @@ impl RenderBackend {
         }
 
         let _ = self.low_priority_scene_tx.send(SceneBuilderRequest::Stop);
-        
-        
+        // Ensure we read everything the scene builder is sending us from
+        // inflight messages, otherwise the scene builder might panic.
         while let Ok(msg) = self.scene_rx.recv() {
             match msg {
                 SceneBuilderResult::FlushComplete(tx) => {
-                    
-                    
-                    
+                    // If somebody's blocked waiting for a flush, how did they
+                    // trigger the RB thread to shut down? This shouldn't happen
+                    // but handle it gracefully anyway.
                     debug_assert!(false);
                     tx.send(()).ok();
                 }
@@ -1104,14 +1106,14 @@ impl RenderBackend {
                 self.low_priority_scene_tx.send(SceneBuilderRequest::ClearNamespace(id)).unwrap();
             }
             ApiMsg::MemoryPressure => {
-                
-                
-                
-                
-                
-                
-                
-                
+                // This is drastic. It will basically flush everything out of the cache,
+                // and the next frame will have to rebuild all of its resources.
+                // We may want to look into something less extreme, but on the other hand this
+                // should only be used in situations where are running low enough on memory
+                // that we risk crashing if we don't do something about it.
+                // The advantage of clearing the cache completely is that it gets rid of any
+                // remaining fragmentation that could have persisted if we kept around the most
+                // recently used resources.
                 self.resource_cache.clear(ClearCache::all());
 
                 self.gpu_cache.clear();
@@ -1130,8 +1132,8 @@ impl RenderBackend {
             ApiMsg::DebugCommand(option) => {
                 let msg = match option {
                     DebugCommand::EnableDualSourceBlending(enable) => {
-                        
-                        
+                        // Set in the config used for any future documents
+                        // that are created.
                         self.frame_config
                             .dual_source_blending_is_enabled = enable;
 
@@ -1139,12 +1141,17 @@ impl RenderBackend {
                             self.frame_config.clone()
                         )).unwrap();
 
-                        
+                        // We don't want to forward this message to the renderer.
+                        return RenderBackendStatus::Continue;
+                    }
+                    DebugCommand::SetPictureTileSize(tile_size) => {
+                        self.frame_config.tile_size_override = tile_size;
+
                         return RenderBackendStatus::Continue;
                     }
                     DebugCommand::FetchDocuments => {
-                        
-                        
+                        // Ask SceneBuilderThread to send JSON presentation of the documents,
+                        // that will be forwarded to Renderer.
                         self.scene_tx.send(SceneBuilderRequest::DocumentsForDebugger).unwrap();
                         return RenderBackendStatus::Continue;
                     }
@@ -1171,7 +1178,7 @@ impl RenderBackend {
                             };
                             tx.send(captured).unwrap();
 
-                            
+                            // notify the active recorder
                             if let Some(ref mut r) = self.recorder {
                                 let pipeline_id = doc.loaded_scene.root_pipeline_id.unwrap();
                                 let epoch =  doc.loaded_scene.pipeline_epochs[&pipeline_id];
@@ -1195,8 +1202,8 @@ impl RenderBackend {
                             }
                         }
 
-                        
-                        
+                        // Note: we can't pass `LoadCapture` here since it needs to arrive
+                        // before the `PublishDocument` messages sent by `load_capture`.
                         return RenderBackendStatus::Continue;
                     }
                     DebugCommand::SetTransactionLogging(value) => {
@@ -1232,15 +1239,15 @@ impl RenderBackend {
                         self.resource_cache.set_debug_flags(flags);
                         self.gpu_cache.set_debug_flags(flags);
 
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
+                        // If we're toggling on the GPU cache debug display, we
+                        // need to blow away the cache. This is because we only
+                        // send allocation/free notifications to the renderer
+                        // thread when the debug display is enabled, and thus
+                        // enabling it when the cache is partially populated will
+                        // give the renderer an incomplete view of the world.
+                        // And since we might as well drop all the debugging state
+                        // from the renderer when we disable the debug display,
+                        // we just clear the cache on toggle.
                         let changed = self.debug_flags ^ flags;
                         if changed.contains(DebugFlags::GPU_CACHE_DBG) {
                             self.gpu_cache.clear();
@@ -1394,12 +1401,12 @@ impl RenderBackend {
         tx.send(SceneBuilderRequest::Transactions(txns)).unwrap();
     }
 
-    
-    
-    
-    
-    
-    
+    /// In certain cases, resources shared by multiple documents have to run
+    /// maintenance operations, like cleaning up unused cache items. In those
+    /// cases, we are forced to build frames for all documents, however we
+    /// may not have a transaction ready for every document - this method
+    /// calls update_document with the details of a fake, nop transaction just
+    /// to force a frame build.
     fn maybe_force_nop_documents<F>(&mut self,
                                     frame_counter: &mut u32,
                                     profile_counters: &mut BackendProfileCounters,
@@ -1441,11 +1448,11 @@ impl RenderBackend {
     ) {
         let requested_frame = render_frame;
 
-        
-        
-        
-        
-        
+        // If we have a sampler, get more frame ops from it and add them
+        // to the transaction. This is a hook to allow the WR user code to
+        // fiddle with things after a potentially long scene build, but just
+        // before rendering. This is useful for rendering with the latest
+        // async transforms.
         if requested_frame || has_built_scene {
             if let Some(ref sampler) = self.sampler {
                 frame_ops.append(&mut sampler.sample(document_id));
@@ -1456,14 +1463,14 @@ impl RenderBackend {
         let doc = self.documents.get_mut(&document_id).unwrap();
         doc.has_built_scene |= has_built_scene;
 
-        
-        
+        // If there are any additions or removals of clip modes
+        // during the scene build, apply them to the data store now.
         if let Some(updates) = interner_updates {
             doc.data_stores.apply_updates(updates, profile_counters);
         }
 
-        
-        
+        // TODO: this scroll variable doesn't necessarily mean we scrolled. It is only used
+        // for something wrench specific and we should remove it.
         let mut scroll = false;
         for frame_msg in frame_ops {
             let _timer = profile_counters.total_time.timer();
@@ -1488,27 +1495,27 @@ impl RenderBackend {
         }
 
         if !doc.can_render() {
-            
-            
-            
+            // TODO: this happens if we are building the first scene asynchronously and
+            // scroll at the same time. we should keep track of the fact that we skipped
+            // composition here and do it as soon as we receive the scene.
             render_frame = false;
         }
 
-        
-        
-        
-        
-        
+        // Avoid re-building the frame if the current built frame is still valid.
+        // However, if the resource_cache requires a frame build, _always_ do that, unless
+        // doc.can_render() is false, as in that case a frame build can't happen anyway.
+        // We want to ensure we do this because even if the doc doesn't have pixels it
+        // can still try to access stale texture cache items.
         let build_frame = (render_frame && !doc.frame_is_valid && doc.has_pixels()) ||
             (requires_frame_build && doc.can_render());
 
-        
-        
-        
+        // Request composite is true when we want to composite frame even when
+        // there is no frame update. This happens when video frame is updated under
+        // external image with NativeTexture or when platform requested to composite frame.
         if invalidate_rendered_frame {
             doc.rendered_frame_is_valid = false;
             if let CompositorKind::Draw { max_partial_present_rects } = self.frame_config.compositor_kind {
-              
+              // When partial present is enabled, we need to force redraw.
               if max_partial_present_rects > 0 {
                   let msg = ResultMsg::ForceRedraw;
                   self.result_tx.send(msg).unwrap();
@@ -1523,7 +1530,7 @@ impl RenderBackend {
             *frame_counter += 1;
             doc.rendered_frame_is_valid = false;
 
-            
+            // borrow ck hack for profile_counters
             let (pending_update, rendered_document) = {
                 let _timer = profile_counters.total_time.timer();
                 let frame_build_start_time = precise_time_ns();
@@ -1534,6 +1541,7 @@ impl RenderBackend {
                     &mut profile_counters.resources,
                     self.debug_flags,
                     &mut self.tile_cache_logger,
+                    self.frame_config,
                 );
 
                 debug!("generated frame for document {:?} with {} passes",
@@ -1548,16 +1556,16 @@ impl RenderBackend {
                 (pending_update, rendered_document)
             };
 
-            
+            // Build a small struct that represents the state of the tiles to be composited.
             let composite_descriptor = rendered_document
                 .frame
                 .composite_state
                 .descriptor
                 .clone();
 
-            
-            
-            
+            // If there are no texture cache updates to apply, and if the produced
+            // frame is a no-op, and the compositor state is equal, then we can skip
+            // compositing this frame completely.
             if pending_update.is_nop() &&
                rendered_document.frame.is_nop() &&
                composite_descriptor == doc.prev_composite_descriptor {
@@ -1568,7 +1576,7 @@ impl RenderBackend {
             let msg = ResultMsg::PublishPipelineInfo(doc.updated_pipeline_info());
             self.result_tx.send(msg).unwrap();
 
-            
+            // Publish the frame
             let msg = ResultMsg::PublishDocument(
                 document_id,
                 rendered_document,
@@ -1578,10 +1586,10 @@ impl RenderBackend {
             self.result_tx.send(msg).unwrap();
             profile_counters.reset();
         } else if requested_frame {
-            
-            
-            
-            
+            // WR-internal optimization to avoid doing a bunch of render work if
+            // there's no pixels. We still want to pretend to render and request
+            // a render to make sure that the callbacks (particularly the
+            // new_frame_ready callback below) has the right flags.
             let msg = ResultMsg::PublishPipelineInfo(doc.updated_pipeline_info());
             self.result_tx.send(msg).unwrap();
         }
@@ -1596,11 +1604,11 @@ impl RenderBackend {
             self.result_tx.send(ResultMsg::AppendNotificationRequests(notifications)).unwrap();
         }
 
-        
-        
-        
+        // Always forward the transaction to the renderer if a frame was requested,
+        // otherwise gecko can get into a state where it waits (forever) for the
+        // transaction to complete before sending new work.
         if requested_frame {
-            
+            // If rendered frame is already valid, there is no need to render frame.
             if doc.rendered_frame_is_valid {
                 render_frame = false;
             } else if render_frame {
@@ -1651,9 +1659,9 @@ impl RenderBackend {
 
         (*report) += self.resource_cache.report_memory(op);
 
-        
-        
-        
+        // Send a message to report memory on the scene-builder thread, which
+        // will add its report to this one and send the result back to the original
+        // thread waiting on the request.
         self.scene_tx.send(SceneBuilderRequest::ReportMemory(report, tx)).unwrap();
     }
 }
@@ -1680,7 +1688,7 @@ fn get_blob_image_updates(updates: &[ResourceUpdate]) -> Vec<BlobImageKey> {
 
 impl RenderBackend {
     #[cfg(feature = "capture")]
-    
+    // Note: the mutable `self` is only needed here for resolving blob images
     fn save_capture(
         &mut self,
         root: PathBuf,
@@ -1712,15 +1720,16 @@ impl RenderBackend {
                     &mut profile_counters.resources,
                     self.debug_flags,
                     &mut self.tile_cache_logger,
+                    self.frame_config,
                 );
-                
-                
-                
+                // After we rendered the frames, there are pending updates to both
+                // GPU cache and resources. Instead of serializing them, we are going to make sure
+                // they are applied on the `Renderer` side.
                 let msg_update_gpu_cache = ResultMsg::UpdateGpuCache(self.gpu_cache.extract_updates());
                 self.result_tx.send(msg_update_gpu_cache).unwrap();
-                
-                
-                
+                //TODO: write down doc's pipeline info?
+                // it has `pipeline_epoch_map`,
+                // which may capture necessary details for some cases.
                 let file_name = format!("frame-{}-{}", id.namespace_id.0, id.id);
                 config.serialize(&rendered_document.frame, file_name);
                 let file_name = format!("clip-scroll-{}-{}", id.namespace_id.0, id.id);
@@ -1746,9 +1755,9 @@ impl RenderBackend {
         }
 
         if config.bits.contains(CaptureBits::FRAME) {
-            
-            
-            
+            // TODO: there is no guarantee that we won't hit this case, but we want to
+            // report it here if we do. If we don't, it will simply crash in
+            // Renderer::render_impl and give us less information about the source.
             assert!(!self.requires_frame_build(), "Caches were cleared during a capture.");
             self.bookkeep_after_frames();
         }
@@ -1783,7 +1792,7 @@ impl RenderBackend {
                 memory_pressure: false,
             };
             self.result_tx.send(msg_update_resources).unwrap();
-            
+            // Save the texture/glyph/image caches.
             info!("\tresource cache");
             let caches = self.resource_cache.save_caches(&config.root);
             config.serialize(&caches, "resource_cache");
@@ -1807,9 +1816,9 @@ impl RenderBackend {
             .expect("Unable to open backend.ron");
         let caches_maybe = CaptureConfig::deserialize::<PlainCacheOwn, _>(root, "resource_cache");
 
-        
-        
-        
+        // Note: it would be great to have `RenderBackend` to be split
+        // rather explicitly on what's used before and after scene building
+        // so that, for example, we never miss anything in the code below:
 
         let plain_externals = self.resource_cache.load_capture(
             backend.resources,
@@ -1887,8 +1896,8 @@ impl RenderBackend {
 
                     self.notifier.new_frame_ready(id, false, true, None);
 
-                    
-                    
+                    // We deserialized the state of the frame so we don't want to build
+                    // it (but we do want to update the scene builder's state)
                     false
                 }
                 None => true,

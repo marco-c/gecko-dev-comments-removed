@@ -44,9 +44,16 @@ impl ReftestOptions {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
 pub enum ReftestOp {
+    
     Equal,
+    
     NotEqual,
+    
+    Accurate,
+    
+    Inaccurate,
 }
 
 impl Display for ReftestOp {
@@ -57,6 +64,8 @@ impl Display for ReftestOp {
             match *self {
                 ReftestOp::Equal => "==".to_owned(),
                 ReftestOp::NotEqual => "!=".to_owned(),
+                ReftestOp::Accurate => "**".to_owned(),
+                ReftestOp::Inaccurate => "!*".to_owned(),
             }
         )
     }
@@ -102,6 +111,62 @@ pub struct Reftest {
     allow_sacrificing_subpixel_aa: Option<bool>,
 }
 
+impl Reftest {
+    
+    fn check_and_report_equality_failure(
+        &self,
+        comparison: ReftestImageComparison,
+        test: &ReftestImage,
+        reference: &ReftestImage,
+    ) -> bool {
+        match comparison {
+            ReftestImageComparison::Equal => {
+                true
+            }
+            ReftestImageComparison::NotEqual { max_difference, count_different } => {
+                if max_difference > self.max_difference || count_different > self.num_differences {
+                    println!(
+                        "{} | {} | {}: {}, {}: {}",
+                        "REFTEST TEST-UNEXPECTED-FAIL",
+                        self,
+                        "image comparison, max difference",
+                        max_difference,
+                        "number of differing pixels",
+                        count_different
+                    );
+                    println!("REFTEST   IMAGE 1 (TEST): {}", test.clone().create_data_uri());
+                    println!(
+                        "REFTEST   IMAGE 2 (REFERENCE): {}",
+                        reference.clone().create_data_uri()
+                    );
+                    println!("REFTEST TEST-END | {}", self);
+
+                    false
+                } else {
+                    true
+                }
+            }
+        }
+    }
+
+    
+    fn check_and_report_inequality_failure(
+        &self,
+        comparison: ReftestImageComparison,
+    ) -> bool {
+        match comparison {
+            ReftestImageComparison::Equal => {
+                println!("REFTEST TEST-UNEXPECTED-FAIL | {} | image comparison", self);
+                println!("REFTEST TEST-END | {}", self);
+                false
+            }
+            ReftestImageComparison::NotEqual { .. } => {
+                true
+            }
+        }
+    }
+}
+
 impl Display for Reftest {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         let paths: Vec<String> = self.test.iter().map(|t| t.display().to_string()).collect();
@@ -115,10 +180,13 @@ impl Display for Reftest {
     }
 }
 
+#[derive(Clone)]
 pub struct ReftestImage {
     pub data: Vec<u8>,
     pub size: DeviceIntSize,
 }
+
+#[derive(Debug, Copy, Clone)]
 pub enum ReftestImageComparison {
     Equal,
     NotEqual {
@@ -212,7 +280,7 @@ impl ReftestManifest {
 
             let mut max_difference = 0;
             let mut max_count = 0;
-            let mut op = ReftestOp::Equal;
+            let mut op = None;
             let mut font_render_mode = None;
             let mut extra_checks = vec![];
             let mut disable_dual_source_blending = false;
@@ -299,10 +367,16 @@ impl ReftestManifest {
                         }
                     }
                     "==" => {
-                        op = ReftestOp::Equal;
+                        op = Some(ReftestOp::Equal);
                     }
                     "!=" => {
-                        op = ReftestOp::NotEqual;
+                        op = Some(ReftestOp::NotEqual);
+                    }
+                    "**" => {
+                        op = Some(ReftestOp::Accurate);
+                    }
+                    "!*" => {
+                        op = Some(ReftestOp::Inaccurate);
                     }
                     _ => {
                         paths.push(dir.join(*token));
@@ -311,10 +385,13 @@ impl ReftestManifest {
             }
 
             
-            if paths.len() < 2 {
-                assert_eq!(paths.len(), 0, "Only one path provided: {:?}", paths[0]);
-                continue;
-            }
+            let op = match op {
+                Some(op) => op,
+                None => {
+                    assert!(paths.is_empty(), format!("paths = {:?}", paths));
+                    continue;
+                }
+            };
 
             
             
@@ -530,15 +607,52 @@ impl<'a> ReftestHarness<'a> {
         let mut images = vec![];
         let mut results = vec![];
 
-        for filename in t.test.iter() {
-            let output = self.render_yaml(
-                &filename,
-                test_size,
-                t.font_render_mode,
-                t.allow_mipmaps,
-            );
-            images.push(output.image);
-            results.push(output.results);
+        match t.op {
+            ReftestOp::Equal | ReftestOp::NotEqual => {
+                
+                for filename in t.test.iter() {
+                    let output = self.render_yaml(
+                        &filename,
+                        test_size,
+                        t.font_render_mode,
+                        t.allow_mipmaps,
+                    );
+                    images.push(output.image);
+                    results.push(output.results);
+                }
+            }
+            ReftestOp::Accurate | ReftestOp::Inaccurate => {
+                
+                
+                let tile_sizes = [
+                    DeviceIntSize::new(128, 128),
+                    DeviceIntSize::new(256, 256),
+                    DeviceIntSize::new(512, 512),
+                ];
+
+                for tile_size in &tile_sizes {
+                    self.wrench
+                        .api
+                        .send_debug_cmd(
+                            DebugCommand::SetPictureTileSize(Some(*tile_size))
+                        );
+
+                    let output = self.render_yaml(
+                        &t.reference,
+                        test_size,
+                        t.font_render_mode,
+                        t.allow_mipmaps,
+                    );
+                    images.push(output.image);
+                    results.push(output.results);
+                }
+
+                self.wrench
+                    .api
+                    .send_debug_cmd(
+                        DebugCommand::SetPictureTileSize(None)
+                    );
+            }
         }
 
         let reference = match reference_image {
@@ -575,44 +689,50 @@ impl<'a> ReftestHarness<'a> {
             }
         }
 
-        let test = images.pop().unwrap();
-        let comparison = test.compare(&reference);
-        match (&t.op, comparison) {
-            (&ReftestOp::Equal, ReftestImageComparison::Equal) => true,
-            (
-                &ReftestOp::Equal,
-                ReftestImageComparison::NotEqual {
-                    max_difference,
-                    count_different,
-                },
-            ) => if max_difference > t.max_difference || count_different > t.num_differences {
-                println!(
-                    "{} | {} | {}: {}, {}: {}",
-                    "REFTEST TEST-UNEXPECTED-FAIL",
-                    t,
-                    "image comparison, max difference",
-                    max_difference,
-                    "number of differing pixels",
-                    count_different
-                );
-                println!("REFTEST   IMAGE 1 (TEST): {}", test.create_data_uri());
-                println!(
-                    "REFTEST   IMAGE 2 (REFERENCE): {}",
-                    reference.create_data_uri()
-                );
-                println!("REFTEST TEST-END | {}", t);
-
-                false
-            } else {
-                true
-            },
-            (&ReftestOp::NotEqual, ReftestImageComparison::Equal) => {
-                println!("REFTEST TEST-UNEXPECTED-FAIL | {} | image comparison", t);
-                println!("REFTEST TEST-END | {}", t);
-
-                false
+        match t.op {
+            ReftestOp::Equal => {
+                
+                let test = images.pop().unwrap();
+                let comparison = test.compare(&reference);
+                t.check_and_report_equality_failure(
+                    comparison,
+                    &test,
+                    &reference,
+                )
             }
-            (&ReftestOp::NotEqual, ReftestImageComparison::NotEqual { .. }) => true,
+            ReftestOp::NotEqual => {
+                
+                let test = images.pop().unwrap();
+                let comparison = test.compare(&reference);
+                t.check_and_report_inequality_failure(comparison)
+            }
+            ReftestOp::Accurate => {
+                
+                for test in images.drain(..) {
+                    let comparison = test.compare(&reference);
+
+                    if !t.check_and_report_equality_failure(
+                        comparison,
+                        &test,
+                        &reference,
+                    ) {
+                        return false;
+                    }
+                }
+
+                true
+            }
+            ReftestOp::Inaccurate => {
+                
+                let mut found_mismatch = false;
+
+                for test in images.drain(..) {
+                    let comparison = test.compare(&reference);
+                    found_mismatch |= t.check_and_report_inequality_failure(comparison);
+                }
+
+                found_mismatch
+            }
         }
     }
 

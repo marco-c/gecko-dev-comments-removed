@@ -278,13 +278,38 @@ pub const TILE_SIZE_SCROLLBAR_VERTICAL: DeviceIntSize = DeviceIntSize {
     _unit: marker::PhantomData,
 };
 
+const TILE_SIZE_FOR_TESTS: [DeviceIntSize; 6] = [
+    DeviceIntSize {
+        width: 128,
+        height: 128,
+        _unit: marker::PhantomData,
+    },
+    DeviceIntSize {
+        width: 256,
+        height: 256,
+        _unit: marker::PhantomData,
+    },
+    DeviceIntSize {
+        width: 512,
+        height: 512,
+        _unit: marker::PhantomData,
+    },
+    TILE_SIZE_DEFAULT,
+    TILE_SIZE_SCROLLBAR_VERTICAL,
+    TILE_SIZE_SCROLLBAR_HORIZONTAL,
+];
 
-pub fn tile_cache_sizes() -> &'static [DeviceIntSize] {
-    &[
-        TILE_SIZE_DEFAULT,
-        TILE_SIZE_SCROLLBAR_HORIZONTAL,
-        TILE_SIZE_SCROLLBAR_VERTICAL,
-    ]
+
+pub fn tile_cache_sizes(testing: bool) -> &'static [DeviceIntSize] {
+    if testing {
+        &TILE_SIZE_FOR_TESTS
+    } else {
+        &[
+            TILE_SIZE_DEFAULT,
+            TILE_SIZE_SCROLLBAR_HORIZONTAL,
+            TILE_SIZE_SCROLLBAR_VERTICAL,
+        ]
+    }
 }
 
 
@@ -1654,6 +1679,9 @@ pub struct TileCacheInstance {
     pub device_position: DevicePoint,
     
     is_opaque: bool,
+    
+    
+    tile_size_override: Option<DeviceIntSize>,
 }
 
 impl TileCacheInstance {
@@ -1704,6 +1732,7 @@ impl TileCacheInstance {
             native_surface_id: None,
             device_position: DevicePoint::zero(),
             is_opaque: true,
+            tile_size_override: None,
         }
     }
 
@@ -1861,22 +1890,28 @@ impl TileCacheInstance {
         
         
         
-        if self.frames_until_size_eval == 0 {
+        if self.frames_until_size_eval == 0 ||
+           self.tile_size_override != frame_context.config.tile_size_override {
             const TILE_SIZE_TINY: f32 = 32.0;
 
             
-            let desired_tile_size;
-
-            
-            
-            
-            if pic_rect.size.width <= TILE_SIZE_TINY {
-                desired_tile_size = TILE_SIZE_SCROLLBAR_VERTICAL;
-            } else if pic_rect.size.height <= TILE_SIZE_TINY {
-                desired_tile_size = TILE_SIZE_SCROLLBAR_HORIZONTAL;
-            } else {
-                desired_tile_size = TILE_SIZE_DEFAULT;
-            }
+            let desired_tile_size = match frame_context.config.tile_size_override {
+                Some(tile_size_override) => {
+                    tile_size_override
+                }
+                None => {
+                    
+                    
+                    
+                    if pic_rect.size.width <= TILE_SIZE_TINY {
+                        TILE_SIZE_SCROLLBAR_VERTICAL
+                    } else if pic_rect.size.height <= TILE_SIZE_TINY {
+                        TILE_SIZE_SCROLLBAR_HORIZONTAL
+                    } else {
+                        TILE_SIZE_DEFAULT
+                    }
+                }
+            };
 
             
             
@@ -1893,6 +1928,7 @@ impl TileCacheInstance {
             
             
             self.frames_until_size_eval = 120;
+            self.tile_size_override = frame_context.config.tile_size_override;
         }
 
         
