@@ -1498,6 +1498,8 @@ pref("media.autoplay.default", 1);
 pref("media.videocontrols.picture-in-picture.enabled", true);
 pref("media.videocontrols.picture-in-picture.video-toggle.enabled", true);
 
+pref("media.videocontrols.picture-in-picture.keyboard-controls.enabled", true);
+
 
 #ifdef NIGHTLY_BUILD
   pref("media.videocontrols.picture-in-picture.audio-toggle.enabled", true);
