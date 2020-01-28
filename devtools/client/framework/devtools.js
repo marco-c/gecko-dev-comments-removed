@@ -730,8 +730,7 @@ DevTools.prototype = {
     
     
     const onNewNode = inspector.selection.once("new-node-front");
-
-    const nodeFront = await inspector.walker.getNodeActorFromContentDomReference(
+    const nodeFront = await inspector.inspectorFront.getNodeActorFromContentDomReference(
       domReference
     );
 
@@ -771,7 +770,7 @@ DevTools.prototype = {
       startTime
     );
     const inspectorFront = await toolbox.target.getFront("inspector");
-    const nodeFront = await inspectorFront.walker.getNodeActorFromContentDomReference(
+    const nodeFront = await inspectorFront.getNodeActorFromContentDomReference(
       domReference
     );
     
