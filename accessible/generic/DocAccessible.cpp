@@ -1743,7 +1743,7 @@ bool DocAccessible::UpdateAccessibleOnAttrChange(dom::Element* aElement,
     
     
     if (mContent == aElement) {
-      SetRoleMapEntry(aria::GetRoleMap(aElement));
+      SetRoleMapEntryForDoc(aElement);
       if (mIPCDoc) {
         mIPCDoc->SendRoleChangedEvent(Role());
       }
@@ -1796,7 +1796,7 @@ void DocAccessible::UpdateRootElIfNeeded() {
   }
   if (rootEl != mContent) {
     mContent = rootEl;
-    SetRoleMapEntry(aria::GetRoleMap(rootEl));
+    SetRoleMapEntryForDoc(rootEl);
     if (mIPCDoc) {
       mIPCDoc->SendRoleChangedEvent(Role());
     }
@@ -2579,4 +2579,15 @@ void DocAccessible::ARIAActiveDescendantIDMaybeMoved(dom::Element* aElm) {
   
   mNotificationController->ScheduleNotification<DocAccessible, Accessible>(
       this, &DocAccessible::ARIAActiveDescendantChanged, acc);
+}
+
+void DocAccessible::SetRoleMapEntryForDoc(dom::Element* aElement) {
+  const nsRoleMapEntry* entry = aria::GetRoleMap(aElement);
+  if (!entry || entry->role == roles::APPLICATION ||
+      entry->role == roles::DIALOG) {
+    SetRoleMapEntry(entry);
+    return;
+  }
+  
+  SetRoleMapEntry(nullptr);
 }

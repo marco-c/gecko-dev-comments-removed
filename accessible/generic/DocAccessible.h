@@ -728,6 +728,8 @@ class DocAccessible : public HyperTextAccessibleWrap,
   friend class NotificationController;
 
  private:
+  void SetRoleMapEntryForDoc(dom::Element* aElement);
+
   PresShell* mPresShell;
 
   
