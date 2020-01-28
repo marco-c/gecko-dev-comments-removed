@@ -205,12 +205,12 @@ enum TransferableOwnership {
 };
 
 class CloneDataPolicy {
-  bool allowIntraClusterClonableSharedObjects_;
+  bool sharedArrayBuffer_;
 
  public:
   
 
-  CloneDataPolicy() : allowIntraClusterClonableSharedObjects_(false) {}
+  CloneDataPolicy() : sharedArrayBuffer_(false) {}
 
   
   
@@ -219,15 +219,10 @@ class CloneDataPolicy {
   
   
   
-  
 
-  void allowIntraClusterClonableSharedObjects() {
-    allowIntraClusterClonableSharedObjects_ = true;
-  }
+  void allowSharedMemory() { sharedArrayBuffer_ = true; }
 
-  bool areIntraClusterClonableSharedObjectsAllowed() const {
-    return allowIntraClusterClonableSharedObjects_;
-  }
+  bool isSharedArrayBufferAllowed() const { return sharedArrayBuffer_; }
 };
 
 } 
@@ -241,10 +236,10 @@ class CloneDataPolicy {
 
 
 
-typedef JSObject* (*ReadStructuredCloneOp)(
-    JSContext* cx, JSStructuredCloneReader* r,
-    const JS::CloneDataPolicy& cloneDataPolicy, uint32_t tag, uint32_t data,
-    void* closure);
+typedef JSObject* (*ReadStructuredCloneOp)(JSContext* cx,
+                                           JSStructuredCloneReader* r,
+                                           uint32_t tag, uint32_t data,
+                                           void* closure);
 
 
 

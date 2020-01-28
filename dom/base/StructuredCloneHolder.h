@@ -51,10 +51,9 @@ class StructuredCloneHolderBase {
   
   
 
-  virtual JSObject* CustomReadHandler(
-      JSContext* aCx, JSStructuredCloneReader* aReader,
-      const JS::CloneDataPolicy& aCloneDataPolicy, uint32_t aTag,
-      uint32_t aIndex) = 0;
+  virtual JSObject* CustomReadHandler(JSContext* aCx,
+                                      JSStructuredCloneReader* aReader,
+                                      uint32_t aTag, uint32_t aIndex) = 0;
 
   virtual bool CustomWriteHandler(JSContext* aCx,
                                   JSStructuredCloneWriter* aWriter,
@@ -239,10 +238,9 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   
   
 
-  virtual JSObject* CustomReadHandler(
-      JSContext* aCx, JSStructuredCloneReader* aReader,
-      const JS::CloneDataPolicy& aCloneDataPolicy, uint32_t aTag,
-      uint32_t aIndex) override;
+  virtual JSObject* CustomReadHandler(JSContext* aCx,
+                                      JSStructuredCloneReader* aReader,
+                                      uint32_t aTag, uint32_t aIndex) override;
 
   virtual bool CustomWriteHandler(JSContext* aCx,
                                   JSStructuredCloneWriter* aWriter,
@@ -294,14 +292,12 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   
   void ReadFromBuffer(nsIGlobalObject* aGlobal, JSContext* aCx,
                       JSStructuredCloneData& aBuffer,
-                      JS::MutableHandle<JS::Value> aValue,
-                      JS::CloneDataPolicy aCloneDataPolicy, ErrorResult& aRv);
+                      JS::MutableHandle<JS::Value> aValue, ErrorResult& aRv);
 
   void ReadFromBuffer(nsIGlobalObject* aGlobal, JSContext* aCx,
                       JSStructuredCloneData& aBuffer,
                       uint32_t aAlgorithmVersion,
-                      JS::MutableHandle<JS::Value> aValue,
-                      JS::CloneDataPolicy aCloneDataPolicy, ErrorResult& aRv);
+                      JS::MutableHandle<JS::Value> aValue, ErrorResult& aRv);
 
   void SameProcessScopeRequired(bool* aSameProcessScopeRequired);
 

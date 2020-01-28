@@ -39,7 +39,7 @@ enum StructuredCloneTags {
   SCTAG_DOM_FILE,
   
   
-  SCTAG_DOM_WASM_MODULE,
+  SCTAG_DOM_WASM,
 
   
   
