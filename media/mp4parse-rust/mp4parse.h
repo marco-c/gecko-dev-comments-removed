@@ -62,11 +62,38 @@ typedef struct {
 } Mp4parseFragmentInfo;
 
 typedef struct {
+  
+
+
   uint64_t start_offset;
+  
+
+
+
+
+
   uint64_t end_offset;
+  
+
+
+
   int64_t start_composition;
+  
+
+
+
+
   int64_t end_composition;
+  
+
+
+
   int64_t start_decode;
+  
+
+
+
+
   bool sync;
 } Mp4parseIndice;
 
@@ -140,16 +167,46 @@ typedef struct {
 
 
 
+
+
+
+
+
+
 void mp4parse_free(Mp4parseParser *parser);
+
+
+
+
+
+
+
 
 
 
 
 Mp4parseStatus mp4parse_get_fragment_info(Mp4parseParser *parser, Mp4parseFragmentInfo *info);
 
+
+
+
+
+
+
+
+
+
+
 Mp4parseStatus mp4parse_get_indice_table(Mp4parseParser *parser,
                                          uint32_t track_id,
                                          Mp4parseByteData *indices);
+
+
+
+
+
+
+
 
 
 
@@ -165,6 +222,13 @@ Mp4parseStatus mp4parse_get_pssh_info(Mp4parseParser *parser, Mp4parsePsshInfo *
 
 
 
+
+
+
+
+
+
+
 Mp4parseStatus mp4parse_get_track_audio_info(Mp4parseParser *parser,
                                              uint32_t track_index,
                                              Mp4parseTrackAudioInfo *info);
@@ -172,7 +236,21 @@ Mp4parseStatus mp4parse_get_track_audio_info(Mp4parseParser *parser,
 
 
 
+
+
+
+
+
+
+
 Mp4parseStatus mp4parse_get_track_count(const Mp4parseParser *parser, uint32_t *count);
+
+
+
+
+
+
+
 
 
 
@@ -184,9 +262,24 @@ Mp4parseStatus mp4parse_get_track_info(Mp4parseParser *parser,
 
 
 
+
+
+
+
+
+
+
 Mp4parseStatus mp4parse_get_track_video_info(Mp4parseParser *parser,
                                              uint32_t track_index,
                                              Mp4parseTrackVideoInfo *info);
+
+
+
+
+
+
+
+
 
 
 
@@ -198,7 +291,21 @@ Mp4parseStatus mp4parse_is_fragmented(Mp4parseParser *parser,
 
 
 
+
+
+
+
+
+
+
+
 Mp4parseParser *mp4parse_new(const Mp4parseIo *io);
+
+
+
+
+
+
 
 
 
