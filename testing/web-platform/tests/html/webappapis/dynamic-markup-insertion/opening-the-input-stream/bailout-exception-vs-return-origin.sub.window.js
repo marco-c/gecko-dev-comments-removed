@@ -14,7 +14,7 @@ async_test(t => {
   iframe.onload = t.step_func_done(() => {
     
     
-    assert_throws("InvalidStateError", () => {
+    assert_throws_dom("InvalidStateError", () => {
       iframe.contentDocument.open();
     }, "opening an XML document should throw an InvalidStateError");
   });
@@ -39,7 +39,7 @@ async_test(t => {
     
     
     setEntryToTopLevel(t.step_func_done(() => {
-      assert_throws("InvalidStateError", () => {
+      assert_throws_dom("InvalidStateError", () => {
         iframe.contentDocument.open();
       }, "opening a document when the throw-on-dynamic-markup-insertion counter is incremented should throw an InvalidStateError");
     }));
@@ -60,7 +60,7 @@ async_test(t => {
     
     
     setEntryToTopLevel(t.step_func_done(() => {
-      assert_throws("SecurityError", () => {
+      assert_throws_dom("SecurityError", () => {
         iframe.contentDocument.open();
       }, "opening a same origin-domain (but not same origin) document should throw a SecurityError");
     }));
@@ -85,7 +85,7 @@ for (const ev of ["beforeunload", "pagehide", "unload"]) {
         
         
         setEntryToTopLevel(t.step_func_done(() => {
-          assert_throws("SecurityError", () => {
+          assert_throws_dom("SecurityError", () => {
             iframe.contentDocument.open();
           }, "opening a same origin-domain (but not same origin) document should throw a SecurityError");
         }));

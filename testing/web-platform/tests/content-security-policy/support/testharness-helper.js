@@ -96,7 +96,7 @@ function assert_worker_is_blocked(url, description) {
 
     
     
-    assert_throws("SecurityError", function () {
+    assert_throws_dom("SecurityError", function () {
       var w = new Worker(url);
     });
   }, description);
@@ -115,7 +115,7 @@ function assert_shared_worker_is_blocked(url, description) {
 
     
     
-    assert_throws("SecurityError", function () {
+    assert_throws_dom("SecurityError", function () {
       var w = new SharedWorker(url);
     });
   }, description);
