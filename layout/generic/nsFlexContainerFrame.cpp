@@ -2198,19 +2198,21 @@ class MOZ_STACK_CLASS PositionTracker {
  public:
   
   inline nscoord GetPosition() const { return mPosition; }
-  inline AxisOrientationType GetAxis() const { return mAxis; }
+  inline AxisOrientationType GetPhysicalAxis() const { return mPhysicalAxis; }
 
   
   
   void EnterMargin(const nsMargin& aMargin) {
-    mozilla::Side side = kAxisOrientationToSidesMap[mAxis][eAxisEdge_Start];
+    mozilla::Side side =
+        kAxisOrientationToSidesMap[mPhysicalAxis][eAxisEdge_Start];
     mPosition += aMargin.Side(side);
   }
 
   
   
   void ExitMargin(const nsMargin& aMargin) {
-    mozilla::Side side = kAxisOrientationToSidesMap[mAxis][eAxisEdge_End];
+    mozilla::Side side =
+        kAxisOrientationToSidesMap[mPhysicalAxis][eAxisEdge_End];
     mPosition += aMargin.Side(side);
   }
 
@@ -2241,15 +2243,15 @@ class MOZ_STACK_CLASS PositionTracker {
 
  protected:
   
-  PositionTracker(AxisOrientationType aAxis, bool aIsAxisReversed)
-      : mAxis(aAxis), mIsAxisReversed(aIsAxisReversed) {}
+  PositionTracker(AxisOrientationType aPhysicalAxis, bool aIsAxisReversed)
+      : mPhysicalAxis(aPhysicalAxis), mIsAxisReversed(aIsAxisReversed) {}
 
   
   
   nscoord mPosition = 0;
   
   
-  const AxisOrientationType mAxis = eAxis_LR;
+  const AxisOrientationType mPhysicalAxis = eAxis_LR;
   
 
   
@@ -2955,8 +2957,8 @@ MainAxisPositionTracker::MainAxisPositionTracker(
   
   for (const FlexItem* item = aLine->GetFirstItem(); item;
        item = item->getNext()) {
-    mPackingSpaceRemaining -= item->GetOuterMainSize(mAxis);
-    mNumAutoMarginsInMainAxis += item->GetNumAutoMarginsInAxis(mAxis);
+    mPackingSpaceRemaining -= item->GetOuterMainSize(mPhysicalAxis);
+    mNumAutoMarginsInMainAxis += item->GetNumAutoMarginsInAxis(mPhysicalAxis);
   }
 
   
@@ -3068,7 +3070,7 @@ void MainAxisPositionTracker::ResolveAutoMarginsInMainAxis(FlexItem& aItem) {
   if (mNumAutoMarginsInMainAxis) {
     const auto& styleMargin = aItem.Frame()->StyleMargin()->mMargin;
     for (uint32_t i = 0; i < eNumAxisEdges; i++) {
-      mozilla::Side side = kAxisOrientationToSidesMap[mAxis][i];
+      mozilla::Side side = kAxisOrientationToSidesMap[mPhysicalAxis][i];
       if (styleMargin.Get(side).IsAuto()) {
         
         
@@ -3451,13 +3453,13 @@ void SingleLineCrossAxisPositionTracker::ResolveAutoMarginsInCrossAxis(
   
   
   nscoord spaceForAutoMargins =
-      aLine.GetLineCrossSize() - aItem.GetOuterCrossSize(mAxis);
+      aLine.GetLineCrossSize() - aItem.GetOuterCrossSize(mPhysicalAxis);
 
   if (spaceForAutoMargins <= 0) {
     return;  
   }
 
-  uint32_t numAutoMargins = aItem.GetNumAutoMarginsInAxis(mAxis);
+  uint32_t numAutoMargins = aItem.GetNumAutoMarginsInAxis(mPhysicalAxis);
   if (numAutoMargins == 0) {
     return;  
   }
@@ -3466,7 +3468,7 @@ void SingleLineCrossAxisPositionTracker::ResolveAutoMarginsInCrossAxis(
   
   const auto& styleMargin = aItem.Frame()->StyleMargin()->mMargin;
   for (uint32_t i = 0; i < eNumAxisEdges; i++) {
-    mozilla::Side side = kAxisOrientationToSidesMap[mAxis][i];
+    mozilla::Side side = kAxisOrientationToSidesMap[mPhysicalAxis][i];
     if (styleMargin.Get(side).IsAuto()) {
       MOZ_ASSERT(aItem.GetMarginComponentForSide(side) == 0,
                  "Expecting auto margins to have value '0' before we "
@@ -3487,7 +3489,7 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
     const FlexboxAxisTracker& aAxisTracker) {
   
   
-  if (aItem.GetNumAutoMarginsInAxis(mAxis)) {
+  if (aItem.GetNumAutoMarginsInAxis(mPhysicalAxis)) {
     return;
   }
 
@@ -3533,7 +3535,7 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
   
   
   
-  if (aLine.GetLineCrossSize() < aItem.GetOuterCrossSize(mAxis) &&
+  if (aLine.GetLineCrossSize() < aItem.GetOuterCrossSize(mPhysicalAxis) &&
       (aItem.GetAlignSelfFlags() & NS_STYLE_ALIGN_SAFE)) {
     alignSelf = NS_STYLE_ALIGN_FLEX_START;
   }
@@ -3543,12 +3545,14 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
       
       break;
     case NS_STYLE_ALIGN_FLEX_END:
-      mPosition += aLine.GetLineCrossSize() - aItem.GetOuterCrossSize(mAxis);
+      mPosition +=
+          aLine.GetLineCrossSize() - aItem.GetOuterCrossSize(mPhysicalAxis);
       break;
     case NS_STYLE_ALIGN_CENTER:
       
       mPosition +=
-          (aLine.GetLineCrossSize() - aItem.GetOuterCrossSize(mAxis)) / 2;
+          (aLine.GetLineCrossSize() - aItem.GetOuterCrossSize(mPhysicalAxis)) /
+          2;
       break;
     case NS_STYLE_ALIGN_BASELINE:
     case NS_STYLE_ALIGN_LAST_BASELINE: {
@@ -3578,7 +3582,8 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
 
       if (aAxisTracker.AreAxesInternallyReversed() == useFirst) {
         
-        mPosition += aLine.GetLineCrossSize() - aItem.GetOuterCrossSize(mAxis);
+        mPosition +=
+            aLine.GetLineCrossSize() - aItem.GetOuterCrossSize(mPhysicalAxis);
         
         mPosition -= baselineDiff;
       } else {
@@ -4156,7 +4161,7 @@ void FlexLine::PositionItemsInMainAxis(uint8_t aJustifyContent,
   for (FlexItem* item = mItems.getFirst(); item; item = item->getNext()) {
     nscoord itemMainBorderBoxSize =
         item->GetMainSize() +
-        item->GetBorderPaddingSizeInAxis(mainAxisPosnTracker.GetAxis());
+        item->GetBorderPaddingSizeInAxis(mainAxisPosnTracker.GetPhysicalAxis());
 
     
     mainAxisPosnTracker.ResolveAutoMarginsInMainAxis(*item);
