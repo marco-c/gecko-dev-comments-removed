@@ -113,8 +113,14 @@ class ReadWriteSpinLock {
 
   
   
-  bool tryWriteLock() {
-    return mCounter.compareExchange(0, std::numeric_limits<CounterType>::min());
+  
+  void writeLock() {
+    while (true) {
+      if (mCounter.compareExchange(0,
+                                   std::numeric_limits<CounterType>::min())) {
+        return;
+      }
+    }
   }
 
   
@@ -169,12 +175,11 @@ class ThreadSafeWeakReference
   
   
   void tryDetach(const SupportsThreadSafeWeakPtr<T>* aOwner) {
-    if (mLock.tryWriteLock()) {
-      if (aOwner->hasOneRef()) {
-        mPtr = nullptr;
-      }
-      mLock.writeUnlock();
+    mLock.writeLock();
+    if (aOwner->hasOneRef()) {
+      mPtr = nullptr;
     }
+    mLock.writeUnlock();
   }
 
   ReadWriteSpinLock mLock;
