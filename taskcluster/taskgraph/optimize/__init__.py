@@ -314,6 +314,12 @@ register_strategy('test-try', args=('skip-unless-schedules',))(Alias)
 
 
 
+
+relevant_tests = {
+    'test': Either('skip-unless-schedules', 'skip-unless-has-relevant-tests'),
+}
+
+
 seta_15_180 = {
     'seta': Alias('seta_15_180'),
     'test': Either('skip-unless-schedules', 'seta_15_180'),
