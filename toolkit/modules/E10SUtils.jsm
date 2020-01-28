@@ -137,21 +137,7 @@ const kSafeSchemes = [
   "xmpp",
 ];
 
-const kDocumentChannelDeniedSchemes = ["javascript"];
-const kDocumentChannelDeniedURIs = [
-  "about:blank",
-  "about:printpreview",
-  "about:privatebrowsing",
-  "about:crashcontent",
-];
-
-
-function documentChannelPermittedForURI(aURI) {
-  return (
-    !kDocumentChannelDeniedSchemes.includes(aURI.scheme) &&
-    !kDocumentChannelDeniedURIs.includes(aURI.spec)
-  );
-}
+const kDocumentChannelAllowedSchemes = ["http", "https", "ftp", "data"];
 
 
 
@@ -738,10 +724,9 @@ var E10SUtils = {
     
     if (
       currentRemoteType != NOT_REMOTE &&
-      requiredRemoteType != NOT_REMOTE &&
       uriObject &&
       (remoteSubframes || documentChannel) &&
-      documentChannelPermittedForURI(uriObject)
+      kDocumentChannelAllowedSchemes.includes(uriObject.scheme)
     ) {
       mustChangeProcess = false;
     }
@@ -807,6 +792,20 @@ var E10SUtils = {
     
     
     
+    
+    
+    if (
+      Services.appinfo.remoteType != NOT_REMOTE &&
+      (useRemoteSubframes || documentChannel) &&
+      kDocumentChannelAllowedSchemes.includes(aURI.scheme)
+    ) {
+      return true;
+    }
+
+    
+    
+    
+    
     let isOnlyToplevelBrowsingContext =
       !aDocShell.browsingContext.parent &&
       aDocShell.browsingContext.group.getToplevels().length == 1;
@@ -842,25 +841,6 @@ var E10SUtils = {
           webNav.currentURI
         )
       );
-    }
-
-    
-    
-    
-    let wantRemoteType = this.getRemoteTypeForURIObject(
-      aURI,
-      true,
-      useRemoteSubframes,
-      Services.appinfo.remoteType,
-      webNav.currentURI
-    );
-    if (
-      (useRemoteSubframes || documentChannel) &&
-      Services.appinfo.remoteType != NOT_REMOTE &&
-      wantRemoteType != NOT_REMOTE &&
-      documentChannelPermittedForURI(aURI)
-    ) {
-      return true;
     }
 
     
