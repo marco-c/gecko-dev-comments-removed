@@ -122,7 +122,7 @@ bool nsInlineFrame::IsSelfEmpty() {
       
       
       if (wm.IsBidiRTL()) {
-        Swap(haveStart, haveEnd);
+        std::swap(haveStart, haveEnd);
       }
       
       

@@ -859,8 +859,8 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
                         metrics.mBoundingBox.height + above + below);
   if (textRun->IsVertical()) {
     
-    Swap(fillInAppUnits.x, fillInAppUnits.y);
-    Swap(fillInAppUnits.width, fillInAppUnits.height);
+    std::swap(fillInAppUnits.x, fillInAppUnits.y);
+    std::swap(fillInAppUnits.width, fillInAppUnits.height);
   }
 
   
@@ -4499,7 +4499,7 @@ void SVGTextFrame::AdjustPositionsForClusters() {
       gfxPoint direction = gfxPoint(cos(angle), sin(angle)) *
                            (it.TextRun()->IsRightToLeft() ? -1.0 : 1.0);
       if (it.TextRun()->IsVertical()) {
-        Swap(direction.x, direction.y);
+        std::swap(direction.x, direction.y);
       }
       mPositions[charIndex].mPosition =
           mPositions[startIndex].mPosition + direction * advance;

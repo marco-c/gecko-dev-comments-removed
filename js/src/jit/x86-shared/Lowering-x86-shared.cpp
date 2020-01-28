@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jit/x86-shared/Lowering-x86-shared.h"
 
@@ -18,7 +18,6 @@ using namespace js::jit;
 
 using mozilla::Abs;
 using mozilla::FloorLog2;
-using mozilla::Swap;
 
 LTableSwitch* LIRGeneratorX86Shared::newLTableSwitch(
     const LAllocation& in, const LDefinition& inputCopy,
@@ -44,8 +43,8 @@ void LIRGeneratorX86Shared::lowerForShift(LInstructionHelper<1, 2, 0>* ins,
                                           MDefinition* rhs) {
   ins->setOperand(0, useRegisterAtStart(lhs));
 
-  // shift operator should be constant or in register ecx
-  // x86 can't shift a non-ecx register
+  
+  
   if (rhs->isConstant()) {
     ins->setOperand(1, useOrConstantAtStart(rhs));
   } else {
@@ -72,14 +71,14 @@ void LIRGeneratorX86Shared::lowerForShiftInt64(
   static_assert(LRotateI64::Count == INT64_PIECES,
                 "Assume Count is located at INT64_PIECES.");
 
-  // shift operator should be constant or in register ecx
-  // x86 can't shift a non-ecx register
+  
+  
   if (rhs->isConstant()) {
     ins->setOperand(INT64_PIECES, useOrConstantAtStart(rhs));
   } else {
-    // The operands are int64, but we only care about the lower 32 bits of
-    // the RHS. On 32-bit, the code below will load that part in ecx and
-    // will discard the upper half.
+    
+    
+    
     ensureDefined(rhs);
     LUse use(ecx);
     use.setVirtualRegister(rhs->virtualRegister());
@@ -115,8 +114,8 @@ template <size_t Temps>
 void LIRGeneratorX86Shared::lowerForFPU(LInstructionHelper<1, 2, Temps>* ins,
                                         MDefinition* mir, MDefinition* lhs,
                                         MDefinition* rhs) {
-  // Without AVX, we'll need to use the x86 encodings where one of the
-  // inputs must be the same location as the output.
+  
+  
   if (!Assembler::HasAVX()) {
     ins->setOperand(0, useRegisterAtStart(lhs));
     ins->setOperand(1, lhs != rhs ? use(rhs) : useAtStart(rhs));
@@ -146,7 +145,7 @@ void LIRGeneratorX86Shared::lowerForBitAndAndBranch(LBitAndAndBranch* baab,
 
 void LIRGeneratorX86Shared::lowerMulI(MMul* mul, MDefinition* lhs,
                                       MDefinition* rhs) {
-  // Note: If we need a negative zero check, lhs is used twice.
+  
   LAllocation lhsCopy = mul->canBeNegativeZero() ? use(lhs) : LAllocation();
   LMulI* lir =
       new (alloc()) LMulI(useRegisterAtStart(lhs), useOrConstant(rhs), lhsCopy);
@@ -162,27 +161,27 @@ void LIRGeneratorX86Shared::lowerDivI(MDiv* div) {
     return;
   }
 
-  // Division instructions are slow. Division by constant denominators can be
-  // rewritten to use other instructions.
+  
+  
   if (div->rhs()->isConstant()) {
     int32_t rhs = div->rhs()->toConstant()->toInt32();
 
-    // Division by powers of two can be done by shifting, and division by
-    // other numbers can be done by a reciprocal multiplication technique.
+    
+    
     int32_t shift = FloorLog2(Abs(rhs));
     if (rhs != 0 && uint32_t(1) << shift == Abs(rhs)) {
       LAllocation lhs = useRegisterAtStart(div->lhs());
       LDivPowTwoI* lir;
-      // When truncated with maybe a non-zero remainder, we have to round the
-      // result toward 0. This requires an extra register to round up/down
-      // whether the left-hand-side is signed.
+      
+      
+      
       bool needRoundNeg = div->canBeNegativeDividend() && div->isTruncated();
       if (!needRoundNeg) {
-        // Numerator is unsigned, so does not need adjusting.
+        
         lir = new (alloc()) LDivPowTwoI(lhs, lhs, shift, rhs < 0);
       } else {
-        // Numerator might be signed, and needs adjusting, and an extra lhs copy
-        // is needed to round the result of the integer division towards zero.
+        
+        
         lir = new (alloc())
             LDivPowTwoI(lhs, useRegister(div->lhs()), shift, rhs < 0);
       }
@@ -277,10 +276,10 @@ void LIRGenerator::visitAsmJSLoadHeap(MAsmJSLoadHeap* ins) {
   MOZ_ASSERT_IF(ins->needsBoundsCheck(),
                 boundsCheckLimit->type() == MIRType::Int32);
 
-  // For simplicity, require a register if we're going to emit a bounds-check
-  // branch, so that we don't have special cases for constants. This should
-  // only happen in rare constant-folding cases since asm.js sets the minimum
-  // heap size based when accessed via constant.
+  
+  
+  
+  
   LAllocation baseAlloc = ins->needsBoundsCheck()
                               ? useRegisterAtStart(base)
                               : useRegisterOrZeroAtStart(base);
@@ -305,10 +304,10 @@ void LIRGenerator::visitAsmJSStoreHeap(MAsmJSStoreHeap* ins) {
   MOZ_ASSERT_IF(ins->needsBoundsCheck(),
                 boundsCheckLimit->type() == MIRType::Int32);
 
-  // For simplicity, require a register if we're going to emit a bounds-check
-  // branch, so that we don't have special cases for constants. This should
-  // only happen in rare constant-folding cases since asm.js sets the minimum
-  // heap size based when accessed via constant.
+  
+  
+  
+  
   LAllocation baseAlloc = ins->needsBoundsCheck()
                               ? useRegisterAtStart(base)
                               : useRegisterOrZeroAtStart(base);
@@ -325,7 +324,7 @@ void LIRGenerator::visitAsmJSStoreHeap(MAsmJSStoreHeap* ins) {
     case Scalar::Int8:
     case Scalar::Uint8:
 #ifdef JS_CODEGEN_X86
-      // See comment for LIRGeneratorX86::useByteOpRegister.
+      
       lir = new (alloc()) LAsmJSStoreHeap(
           baseAlloc, useFixed(ins->value(), eax), limitAlloc, memoryBaseAlloc);
       break;
@@ -336,8 +335,8 @@ void LIRGenerator::visitAsmJSStoreHeap(MAsmJSStoreHeap* ins) {
     case Scalar::Uint32:
     case Scalar::Float32:
     case Scalar::Float64:
-      // For now, don't allow constant values. The immediate operand affects
-      // instruction layout which affects patching.
+      
+      
       lir = new (alloc())
           LAsmJSStoreHeap(baseAlloc, useRegisterAtStart(ins->value()),
                           limitAlloc, memoryBaseAlloc);
@@ -464,20 +463,20 @@ void LIRGeneratorX86Shared::lowerCompareExchangeTypedArrayElement(
   const LUse elements = useRegister(ins->elements());
   const LAllocation index = useRegisterOrConstant(ins->index());
 
-  // If the target is a floating register then we need a temp at the
-  // lower level; that temp must be eax.
-  //
-  // Otherwise the target (if used) is an integer register, which
-  // must be eax.  If the target is not used the machine code will
-  // still clobber eax, so just pretend it's used.
-  //
-  // oldval must be in a register.
-  //
-  // newval must be in a register.  If the source is a byte array
-  // then newval must be a register that has a byte size: on x86
-  // this must be ebx, ecx, or edx (eax is taken for the output).
-  //
-  // Bug #1077036 describes some further optimization opportunities.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   bool fixedOutput = false;
   LDefinition tempDef = LDefinition::BogusTemp();
@@ -518,19 +517,19 @@ void LIRGeneratorX86Shared::lowerAtomicExchangeTypedArrayElement(
   const LAllocation index = useRegisterOrConstant(ins->index());
   const LAllocation value = useRegister(ins->value());
 
-  // The underlying instruction is XCHG, which can operate on any
-  // register.
-  //
-  // If the target is a floating register (for Uint32) then we need
-  // a temp into which to exchange.
-  //
-  // If the source is a byte array then we need a register that has
-  // a byte size; in this case -- on x86 only -- pin the output to
-  // an appropriate register and use that as a temp in the back-end.
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   LDefinition tempDef = LDefinition::BogusTemp();
   if (ins->arrayType() == Scalar::Uint32) {
-    // This restriction is bug 1077305.
+    
     MOZ_ASSERT(ins->type() == MIRType::Double);
     tempDef = temp();
   }
@@ -557,10 +556,10 @@ void LIRGeneratorX86Shared::lowerAtomicTypedArrayElementBinop(
   const LUse elements = useRegister(ins->elements());
   const LAllocation index = useRegisterOrConstant(ins->index());
 
-  // Case 1: the result of the operation is not used.
-  //
-  // We'll emit a single instruction: LOCK ADD, LOCK SUB, LOCK AND,
-  // LOCK OR, or LOCK XOR.  We can do this even for the Uint32 case.
+  
+  
+  
+  
 
   if (!ins->hasUses()) {
     LAllocation value;
@@ -578,39 +577,39 @@ void LIRGeneratorX86Shared::lowerAtomicTypedArrayElementBinop(
     return;
   }
 
-  // Case 2: the result of the operation is used.
-  //
-  // For ADD and SUB we'll use XADD:
-  //
-  //    movl       src, output
-  //    lock xaddl output, mem
-  //
-  // For the 8-bit variants XADD needs a byte register for the output.
-  //
-  // For AND/OR/XOR we need to use a CMPXCHG loop:
-  //
-  //    movl          *mem, eax
-  // L: mov           eax, temp
-  //    andl          src, temp
-  //    lock cmpxchg  temp, mem  ; reads eax also
-  //    jnz           L
-  //    ; result in eax
-  //
-  // Note the placement of L, cmpxchg will update eax with *mem if
-  // *mem does not have the expected value, so reloading it at the
-  // top of the loop would be redundant.
-  //
-  // If the array is not a uint32 array then:
-  //  - eax should be the output (one result of the cmpxchg)
-  //  - there is a temp, which must have a byte register if
-  //    the array has 1-byte elements elements
-  //
-  // If the array is a uint32 array then:
-  //  - eax is the first temp
-  //  - we also need a second temp
-  //
-  // There are optimization opportunities:
-  //  - better register allocation in the x86 8-bit case, Bug #1077036.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   bool bitOp = !(ins->operation() == AtomicFetchAddOp ||
                  ins->operation() == AtomicFetchSubOp);
@@ -677,7 +676,7 @@ void LIRGenerator::visitCopySign(MCopySign* ins) {
     lir = new (alloc()) LCopySignF();
   }
 
-  // As lowerForFPU, but we want rhs to be in a FP register too.
+  
   lir->setOperand(0, useRegisterAtStart(lhs));
   if (!Assembler::HasAVX()) {
     lir->setOperand(1, lhs != rhs ? useRegister(rhs) : useRegisterAtStart(rhs));

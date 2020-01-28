@@ -2376,7 +2376,7 @@ nsresult nsUrlClassifierDBService::Shutdown() {
   
   
   nsIThread* backgroundThread = nullptr;
-  Swap(backgroundThread, gDbBackgroundThread);
+  std::swap(backgroundThread, gDbBackgroundThread);
 
   
   if (backgroundThread) {

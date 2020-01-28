@@ -282,7 +282,7 @@ bool TimeoutManager::IsInvalidFiringId(uint32_t aFiringId) const {
     
     
     
-    Swap(low, high);
+    std::swap(low, high);
   }
   MOZ_DIAGNOSTIC_ASSERT(low < high);
 

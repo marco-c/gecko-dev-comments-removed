@@ -53,7 +53,7 @@ already_AddRefed<PrintTargetPS> PrintTargetPS::CreateOrNull(
   
   
   if (aOrientation == LANDSCAPE) {
-    Swap(aSizeInPoints.width, aSizeInPoints.height);
+    std::swap(aSizeInPoints.width, aSizeInPoints.height);
   }
 
   cairo_surface_t* surface = cairo_ps_surface_create_for_stream(

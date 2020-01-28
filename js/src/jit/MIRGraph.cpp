@@ -15,7 +15,6 @@
 
 using namespace js;
 using namespace js::jit;
-using mozilla::Swap;
 
 MIRGenerator::MIRGenerator(CompileRealm* realm,
                            const JitCompileOptions& options,
@@ -1222,7 +1221,7 @@ void MBasicBlock::setLoopHeader(MBasicBlock* newBackedge) {
   }
 
   
-  Swap(predecessors_[oldIndex], predecessors_[lastIndex]);
+  std::swap(predecessors_[oldIndex], predecessors_[lastIndex]);
 
   
   if (!phisEmpty()) {

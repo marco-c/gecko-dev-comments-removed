@@ -547,9 +547,13 @@ class Atomic<bool, Order, Recording>
   Atomic(Atomic& aOther) = delete;
 };
 
+}  
 
-template <typename T, MemoryOrdering Order>
-void Swap(Atomic<T, Order>&, Atomic<T, Order>&) = delete;
+namespace std {
+
+
+template <typename T, mozilla::MemoryOrdering Order>
+void swap(mozilla::Atomic<T, Order>&, mozilla::Atomic<T, Order>&) = delete;
 
 }  
 

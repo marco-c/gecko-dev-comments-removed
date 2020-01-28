@@ -1256,7 +1256,7 @@ class ADAM7InterpolatingFilter final : public SurfaceFilter {
     }
 
     
-    Swap(mPreviousRow, mCurrentRow);
+    std::swap(mPreviousRow, mCurrentRow);
 
     MOZ_ASSERT(mRow < InputSize().height,
                "Reached the end of the surface without "

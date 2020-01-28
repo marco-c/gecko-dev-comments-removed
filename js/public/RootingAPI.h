@@ -531,6 +531,22 @@ class TenuredHeap : public js::HeapBase<T, TenuredHeap<T>> {
   uintptr_t bits;
 };
 
+
+
+template <typename T>
+void swap(TenuredHeap<T>& aX, TenuredHeap<T>& aY) {
+  T tmp = aX;
+  aX = aY;
+  aY = tmp;
+}
+
+template <typename T>
+void swap(Heap<T>& aX, Heap<T>& aY) {
+  T tmp = aX;
+  aX = aY;
+  aY = tmp;
+}
+
 static MOZ_ALWAYS_INLINE bool ObjectIsMarkedGray(
     const JS::TenuredHeap<JSObject*>& obj) {
   return ObjectIsMarkedGray(obj.unbarrieredGetPtr());
@@ -1424,29 +1440,7 @@ void CallTraceCallbackOnNonHeap(T* v, const TraceCallbacks& aCallbacks,
 }
 
 } 
-} 
 
-
-
-namespace mozilla {
-
-template <typename T>
-inline void Swap(JS::Heap<T>& aX, JS::Heap<T>& aY) {
-  T tmp = aX;
-  aX = aY;
-  aY = tmp;
-}
-
-template <typename T>
-inline void Swap(JS::TenuredHeap<T>& aX, JS::TenuredHeap<T>& aY) {
-  T tmp = aX;
-  aX = aY;
-  aY = tmp;
-}
-
-} 
-
-namespace js {
 namespace detail {
 
 

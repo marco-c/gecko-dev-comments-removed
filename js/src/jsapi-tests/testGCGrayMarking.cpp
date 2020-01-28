@@ -210,6 +210,8 @@ bool TestInternalWeakMaps() {
 bool TestJSWeakMap(MarkKeyOrDelegate markKey, CellColor weakMapMarkColor,
                    CellColor keyOrDelegateMarkColor,
                    CellColor expectedValueColor) {
+  using std::swap;
+
   
   
   
@@ -237,8 +239,8 @@ bool TestJSWeakMap(MarkKeyOrDelegate markKey, CellColor weakMapMarkColor,
                grayRoots.grayRoot2);
 
     if (markOrder != 0) {
-      mozilla::Swap(blackRoot1.get(), blackRoot2.get());
-      mozilla::Swap(grayRoots.grayRoot1, grayRoots.grayRoot2);
+      swap(blackRoot1.get(), blackRoot2.get());
+      swap(grayRoots.grayRoot1, grayRoots.grayRoot2);
     }
 
     JS_GC(cx);
@@ -341,6 +343,8 @@ bool CreateJSWeakMapObjects(JSObject** weakMapOut, JSObject** keyOut,
 
 bool TestInternalWeakMap(CellColor keyMarkColor, CellColor delegateMarkColor,
                          CellColor expectedColor) {
+  using std::swap;
+
   
   
   
@@ -366,8 +370,8 @@ bool TestInternalWeakMap(CellColor keyMarkColor, CellColor delegateMarkColor,
     RootObject(delegate, delegateMarkColor, blackRoot2, grayRoots.grayRoot2);
 
     if (markOrder != 0) {
-      mozilla::Swap(blackRoot1.get(), blackRoot2.get());
-      mozilla::Swap(grayRoots.grayRoot1, grayRoots.grayRoot2);
+      swap(blackRoot1.get(), blackRoot2.get());
+      swap(grayRoots.grayRoot1, grayRoots.grayRoot2);
     }
 
     JS_GC(cx);

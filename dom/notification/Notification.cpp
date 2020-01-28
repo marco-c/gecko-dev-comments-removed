@@ -1308,7 +1308,7 @@ void Notification::ShowInternal() {
   
   
   UniquePtr<NotificationRef> ownership;
-  mozilla::Swap(ownership, mTempRef);
+  std::swap(ownership, mTempRef);
   MOZ_ASSERT(ownership->GetNotification() == this);
 
   nsresult rv = PersistNotification();
@@ -1847,7 +1847,7 @@ void Notification::CloseInternal() {
   
   
   UniquePtr<NotificationRef> ownership;
-  mozilla::Swap(ownership, mTempRef);
+  std::swap(ownership, mTempRef);
 
   SetAlertName();
   UnpersistNotification();

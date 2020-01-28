@@ -4617,8 +4617,8 @@ gfxRect nsCSSRendering::GetTextDecorationRectInternal(
   
   
   if (aParams.vertical) {
-    Swap(r.x, r.y);
-    Swap(r.width, r.height);
+    std::swap(r.x, r.y);
+    std::swap(r.width, r.height);
     
     
     

@@ -643,8 +643,8 @@ nsresult nsSplitterFrameInner::MouseDown(Event* aMouseEvent) {
     Reverse(mChildInfosAfter, mChildInfosAfterCount);
 
     
-    Swap(mChildInfosBeforeCount, mChildInfosAfterCount);
-    Swap(mChildInfosBefore, mChildInfosAfter);
+    std::swap(mChildInfosBeforeCount, mChildInfosAfterCount);
+    std::swap(mChildInfosBefore, mChildInfosAfter);
   }
 
   

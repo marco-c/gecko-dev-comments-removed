@@ -502,11 +502,6 @@ class DefaultDelete<T[]> {
   void operator()(U* aPtr) const = delete;
 };
 
-template <typename T, class D>
-void Swap(UniquePtr<T, D>& aX, UniquePtr<T, D>& aY) {
-  aX.swap(aY);
-}
-
 template <typename T, class D, typename U, class E>
 bool operator==(const UniquePtr<T, D>& aX, const UniquePtr<U, E>& aY) {
   return aX.get() == aY.get();
@@ -644,6 +639,15 @@ typename detail::UniqueSelector<T>::KnownBound MakeUnique(Args&&... aArgs) =
 template <typename T>
 typename detail::UniqueSelector<T>::SingleObject WrapUnique(T* aPtr) {
   return UniquePtr<T>(aPtr);
+}
+
+}  
+
+namespace std {
+
+template <typename T, class D>
+void swap(mozilla::UniquePtr<T, D>& aX, mozilla::UniquePtr<T, D>& aY) {
+  aX.swap(aY);
 }
 
 }  
