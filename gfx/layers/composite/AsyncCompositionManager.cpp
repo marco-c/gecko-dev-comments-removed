@@ -896,6 +896,8 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
     Layer* aLayer, bool* aOutFoundRoot) {
   bool appliedTransform = false;
   std::stack<Maybe<ParentLayerIntRect>> stackDeferredClips;
+  std::stack<LayersId> layersIds;
+  layersIds.push(mCompositorBridge->RootLayerTreeId());
 
   
   
@@ -908,6 +910,10 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
   ForEachNode<ForwardIterator>(
       aLayer,
       [&](Layer* layer) {
+        if (layer->AsRefLayer()) {
+          layersIds.push(layer->AsRefLayer()->GetReferentId());
+        }
+
         stackDeferredClips.push(Maybe<ParentLayerIntRect>());
 
         
@@ -1273,6 +1279,11 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
         if (layer->GetScrollbarData().mScrollbarLayerType ==
             layers::ScrollbarLayerType::Thumb) {
           ApplyAsyncTransformToScrollbar(layer);
+        }
+
+        if (layer->AsRefLayer()) {
+          MOZ_ASSERT(layersIds.size() > 1);
+          layersIds.pop();
         }
       });
 
