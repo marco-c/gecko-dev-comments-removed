@@ -134,7 +134,7 @@ async function updateZoomUI(aBrowser, aAnimate = false) {
   
   
 
-  let defaultZoom = (await ZoomUI.getGlobalValue()) * 100;
+  let defaultZoom = Math.round((await ZoomUI.getGlobalValue()) * 100);
 
   if (!win.gBrowser || win.gBrowser.selectedBrowser != aBrowser) {
     
