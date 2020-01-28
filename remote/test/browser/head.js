@@ -265,9 +265,11 @@ function toDataURL(src, doctype = "html") {
 
 
 
-async function loadURL(url) {
+async function loadURL(url, expectedURL = undefined) {
+  expectedURL = expectedURL || url;
+
   const browser = gBrowser.selectedTab.linkedBrowser;
-  const loaded = BrowserTestUtils.browserLoaded(browser, false, url);
+  const loaded = BrowserTestUtils.browserLoaded(browser, false, expectedURL);
 
   BrowserTestUtils.loadURI(browser, url);
   await loaded;
