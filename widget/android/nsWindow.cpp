@@ -1805,8 +1805,7 @@ nsWindow* nsWindow::FindTopLevel() {
   return this;
 }
 
-void nsWindow::SetFocus(Raise) {
-  
+void nsWindow::SetFocus(Raise, mozilla::dom::CallerType aCallerType) {
   FindTopLevel()->BringToFront();
 }
 

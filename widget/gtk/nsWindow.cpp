@@ -1,9 +1,9 @@
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:expandtab:shiftwidth=2:tabstop=2:
+ */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsWindow.h"
 
@@ -49,7 +49,7 @@
 
 #ifdef MOZ_WAYLAND
 #  include <gdk/gdkwayland.h>
-#endif 
+#endif /* MOZ_WAYLAND */
 
 #ifdef MOZ_X11
 #  include <gdk/gdkx.h>
@@ -57,7 +57,7 @@
 #  include <X11/extensions/XShm.h>
 #  include <X11/extensions/shape.h>
 #  include <gdk/gdkkeysyms-compat.h>
-#endif 
+#endif /* MOZ_X11 */
 
 #include <gdk/gdkkeysyms.h>
 
@@ -87,12 +87,12 @@ using namespace mozilla;
 using namespace mozilla::widget;
 #endif
 
-
+/* For SetIcon */
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsString.h"
 #include "nsIFile.h"
 
-
+/* SetCursor(imgIContainer*) */
 #include <gdk/gdk.h>
 #include <wchar.h>
 #include "imgIContainer.h"
@@ -118,13 +118,13 @@ using namespace mozilla::widget;
 #include "mozilla/layers/IAPZCTreeManager.h"
 
 #ifdef MOZ_X11
-#  include "GLContextGLX.h"  
+#  include "GLContextGLX.h"  // for GLContextGLX::FindVisual()
 #  include "GtkCompositorWidget.h"
 #  include "gfxXlibSurface.h"
 #  include "WindowSurfaceX11Image.h"
 #  include "WindowSurfaceX11SHM.h"
 #  include "WindowSurfaceXRender.h"
-#endif  
+#endif  // MOZ_X11
 #ifdef MOZ_WAYLAND
 #  include "nsIClipboard.h"
 #endif
@@ -143,12 +143,12 @@ using namespace mozilla::layers;
 using mozilla::gl::GLContext;
 using mozilla::gl::GLContextGLX;
 
-
-
+// Don't put more than this many rects in the dirty region, just fluff
+// out to the bounding-box if there are more
 #define MAX_RECTS_IN_REGION 100
 
-
-
+// We need to shape only a few pixels of the titlebar as we care about
+// the corners only
 #define TITLEBAR_SHAPE_MASK_HEIGHT 10
 
 const gint kEvents =
@@ -178,7 +178,7 @@ typedef enum {
 #  define GDK_WINDOW_STATE_TILED (1 << 8)
 #endif
 
-
+/* utility functions */
 static bool is_mouse_in_window(GdkWindow* aWindow, gdouble aMouseX,
                                gdouble aMouseY);
 static nsWindow* get_window_for_gtk_widget(GtkWidget* widget);
@@ -192,7 +192,7 @@ static GdkWindow* get_inner_gdk_window(GdkWindow* aWindow, gint x, gint y,
 static int is_parent_ungrab_enter(GdkEventCrossing* aEvent);
 static int is_parent_grab_leave(GdkEventCrossing* aEvent);
 
-
+/* callbacks from widgets */
 static gboolean expose_event_cb(GtkWidget* widget, cairo_t* rect);
 static gboolean configure_event_cb(GtkWidget* widget, GdkEventConfigure* event);
 static void container_unrealize_cb(GtkWidget* widget);
@@ -235,14 +235,14 @@ static nsWindow* GetFirstNSWindowForGDKWindow(GdkWindow* aGdkWindow);
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 #ifdef MOZ_X11
 static GdkFilterReturn popup_take_focus_filter(GdkXEvent* gdk_xevent,
                                                GdkEvent* event, gpointer data);
-#endif 
+#endif /* MOZ_X11 */
 #ifdef __cplusplus
 }
-#endif 
+#endif /* __cplusplus */
 
 static gboolean drag_motion_event_cb(GtkWidget* aWidget,
                                      GdkDragContext* aDragContext, gint aX,
@@ -260,7 +260,7 @@ static void drag_data_received_event_cb(GtkWidget* aWidget,
                                         guint aInfo, guint32 aTime,
                                         gpointer aData);
 
-
+/* initialization static functions */
 static nsresult initialize_prefs(void);
 
 static guint32 sLastUserInputTime = GDK_CURRENT_TIME;
@@ -283,7 +283,7 @@ class CurrentX11TimeGetter {
   guint32 GetCurrentTime() const { return gdk_x11_get_server_time(mWindow); }
 
   void GetTimeAsyncForPossibleBackwardsSkew(const TimeStamp& aNow) {
-    
+    // Check for in-flight request
     if (!mAsyncUpdateStart.IsNull()) {
       return;
     }
@@ -317,17 +317,17 @@ class CurrentX11TimeGetter {
                                                  "GDK_TIMESTAMP_PROP");
   }
 
-  
-  
+  // This is safe because this class is stored as a member of mWindow and
+  // won't outlive it.
   GdkWindow* mWindow;
   TimeStamp mAsyncUpdateStart;
 };
 
-}  
+}  // namespace mozilla
 
 static NS_DEFINE_IID(kCDragServiceCID, NS_DRAGSERVICE_CID);
 
-
+// The window from which the focus manager asks us to dispatch key events.
 static nsWindow* gFocusWindow = nullptr;
 static bool gBlockActivateEvent = false;
 static bool gGlobalsInitialized = false;
@@ -341,22 +341,22 @@ static uint32_t gLastTouchID = 0;
 
 #define NS_WINDOW_TITLE_MAX_LENGTH 4095
 
+// If after selecting profile window, the startup fail, please refer to
+// http://bugzilla.gnome.org/show_bug.cgi?id=88940
 
-
-
-
-
+// needed for imgIContainer cursors
+// GdkDisplay* was added in 2.2
 typedef struct _GdkDisplay GdkDisplay;
 
 #define kWindowPositionSlop 20
 
-
+// cursor cache
 static GdkCursor* gCursorCache[eCursorCount];
 
 static GtkWidget* gInvisibleContainer = nullptr;
 
-
-
+// Sometimes this actually also includes the state of the modifier keys, but
+// only the button state bits are used.
 static guint gButtonState;
 
 static inline int32_t GetBitmapStride(int32_t width) {
@@ -368,8 +368,8 @@ static inline int32_t GetBitmapStride(int32_t width) {
 }
 
 static inline bool TimestampIsNewerThan(guint32 a, guint32 b) {
-  
-  
+  // Timestamps are just the least significant bits of a monotonically
+  // increasing function, and so the use of unsigned overflow arithmetic.
   return a - b <= G_MAXUINT32 / 2;
 }
 
@@ -422,7 +422,7 @@ nsWindow::nsWindow() {
   mXWindow = X11None;
   mXVisual = nullptr;
   mXDepth = 0;
-#endif 
+#endif /* MOZ_X11 */
 
 #ifdef MOZ_WAYLAND
   mNeedsCompositorResume = false;
@@ -432,13 +432,13 @@ nsWindow::nsWindow() {
   if (!gGlobalsInitialized) {
     gGlobalsInitialized = true;
 
-    
+    // It's OK if either of these fail, but it may not be one day.
     initialize_prefs();
 
 #ifdef MOZ_WAYLAND
-    
-    
-    
+    // Wayland provides clipboard data to application on focus-in event
+    // so we need to init our clipboard hooks before we create window
+    // and get focus.
     if (!mIsX11Display) {
       nsCOMPtr<nsIClipboard> clipboard =
           do_GetService("@mozilla.org/widget/clipboard;1");
@@ -485,7 +485,7 @@ nsWindow::~nsWindow() {
   Destroy();
 }
 
-
+/* static */
 void nsWindow::ReleaseGlobals() {
   for (auto& cursor : gCursorCache) {
     if (cursor) {
@@ -507,7 +507,7 @@ void nsWindow::DispatchActivateEvent(void) {
 
 #ifdef ACCESSIBILITY
   DispatchActivateEventAccessible();
-#endif  
+#endif  // ACCESSIBILITY
 
   if (mWidgetListener) mWidgetListener->WindowActivated();
 }
@@ -517,7 +517,7 @@ void nsWindow::DispatchDeactivateEvent(void) {
 
 #ifdef ACCESSIBILITY
   DispatchDeactivateEventAccessible();
-#endif  
+#endif  // ACCESSIBILITY
 }
 
 void nsWindow::DispatchResized() {
@@ -559,13 +559,13 @@ void nsWindow::OnDestroy(void) {
 
   mOnDestroyCalled = true;
 
-  
+  // Prevent deletion.
   nsCOMPtr<nsIWidget> kungFuDeathGrip = this;
 
-  
+  // release references to children, device context, toolkit + app shell
   nsBaseWidget::OnDestroy();
 
-  
+  // Remove association between this object and its parent and siblings.
   nsBaseWidget::Destroy();
   mParent = nullptr;
 
@@ -580,10 +580,10 @@ bool nsWindow::AreBoundsSane(void) {
 
 static GtkWidget* EnsureInvisibleContainer() {
   if (!gInvisibleContainer) {
-    
-    
-    
-    
+    // GtkWidgets need to be anchored to a GtkWindow to be realized (to
+    // have a window).  Using GTK_WINDOW_POPUP rather than
+    // GTK_WINDOW_TOPLEVEL in the hope that POPUP results in less
+    // initialization and window manager interaction.
     GtkWidget* window = gtk_window_new(GTK_WINDOW_POPUP);
     gInvisibleContainer = moz_container_new();
     gtk_container_add(GTK_CONTAINER(window), gInvisibleContainer);
@@ -596,16 +596,16 @@ static void CheckDestroyInvisibleContainer() {
   MOZ_ASSERT(gInvisibleContainer, "oh, no");
 
   if (!gdk_window_peek_children(gtk_widget_get_window(gInvisibleContainer))) {
-    
-    
+    // No children, so not in use.
+    // Make sure to destroy the GtkWindow also.
     gtk_widget_destroy(gtk_widget_get_parent(gInvisibleContainer));
     gInvisibleContainer = nullptr;
   }
 }
 
-
-
-
+// Change the containing GtkWidget on a sub-hierarchy of GdkWindows belonging
+// to aOldWidget and rooted at aWindow, and reparent any child GtkWidgets of
+// the GdkWindow hierarchy to aNewWidget.
 static void SetWidgetForHierarchy(GdkWindow* aWindow, GtkWidget* aOldWidget,
                                   GtkWidget* aNewWidget) {
   gpointer data;
@@ -617,8 +617,8 @@ static void SetWidgetForHierarchy(GdkWindow* aWindow, GtkWidget* aOldWidget,
     auto* widget = static_cast<GtkWidget*>(data);
     if (gtk_widget_get_parent(widget) != aOldWidget) return;
 
-    
-    
+    // This window belongs to a child widget, which will no longer be a
+    // child of aOldWidget.
     gtk_widget_reparent(widget, aNewWidget);
 
     return;
@@ -633,7 +633,7 @@ static void SetWidgetForHierarchy(GdkWindow* aWindow, GtkWidget* aOldWidget,
   gdk_window_set_user_data(aWindow, aNewWidget);
 }
 
-
+// Walk the list of child windows and call destroy on them.
 void nsWindow::DestroyChildWindows() {
   if (!mGdkWindow) return;
 
@@ -643,8 +643,8 @@ void nsWindow::DestroyChildWindows() {
     if (kid) {
       kid->Destroy();
     } else {
-      
-      
+      // This child is not an nsWindow.
+      // Destroy the child GtkWidget.
       gpointer data;
       gdk_window_get_user_data(child, &data);
       if (GTK_IS_WIDGET(data)) {
@@ -661,30 +661,30 @@ void nsWindow::Destroy() {
   mIsDestroyed = true;
   mCreated = false;
 
-  
+  /** Need to clean our LayerManager up while still alive */
   if (mLayerManager) {
     mLayerManager->Destroy();
   }
   mLayerManager = nullptr;
 
 #ifdef MOZ_WAYLAND
-  
+  // Shut down our local vsync source
   if (mWaylandVsyncSource) {
     mWaylandVsyncSource->Shutdown();
     mWaylandVsyncSource = nullptr;
   }
 #endif
 
-  
-  
-  
-  
-  
+  // It is safe to call DestroyeCompositor several times (here and
+  // in the parent class) since it will take effect only once.
+  // The reason we call it here is because on gtk platforms we need
+  // to destroy the compositor before we destroy the gdk window (which
+  // destroys the the gl context attached to it).
   DestroyCompositor();
 
 #ifdef MOZ_X11
-  
-  
+  // Ensure any resources assigned to the window get cleaned up first
+  // to avoid double-freeing.
   mSurfaceProvider.CleanupResources();
 #endif
 
@@ -701,7 +701,7 @@ void nsWindow::Destroy() {
     }
   }
 
-  
+  // dragService will be null after shutdown of the service manager.
   RefPtr<nsDragService> dragService = nsDragService::GetInstance();
   if (dragService && this == dragService->GetMostRecentDestWindow()) {
     dragService->ScheduleLeaveEvent();
@@ -713,7 +713,7 @@ void nsWindow::Destroy() {
     mIMContext->OnDestroyWindow(this);
   }
 
-  
+  // make sure that we remove ourself as the focus window
   if (gFocusWindow == this) {
     LOGFOCUS(("automatically losing focus...\n"));
     gFocusWindow = nullptr;
@@ -732,10 +732,10 @@ void nsWindow::Destroy() {
     MOZ_ASSERT(!mGdkWindow,
                "mGdkWindow should be NULL when mContainer is destroyed");
   } else if (mGdkWindow) {
-    
-    
-    
-    
+    // Destroy child windows to ensure that their mThebesSurfaces are
+    // released and to remove references from GdkWindows back to their
+    // container widget.  (OnContainerUnrealize() does this when the
+    // MozContainer widget is destroyed.)
     DestroyChildWindows();
 
     gdk_window_set_user_data(mGdkWindow, nullptr);
@@ -754,7 +754,7 @@ void nsWindow::Destroy() {
   }
 #endif
 
-  
+  // Save until last because OnDestroy() may cause us to be deleted.
   OnDestroy();
 }
 
@@ -780,18 +780,18 @@ DesktopToLayoutDeviceScale nsWindow::GetDesktopToDeviceScale() {
   }
 #endif
 
-  
+  // In Gtk/X11, we manage windows using device pixels.
   return DesktopToLayoutDeviceScale(1.0);
 }
 
 DesktopToLayoutDeviceScale nsWindow::GetDesktopToDeviceScaleByScreen() {
 #ifdef MOZ_WAYLAND
-  
-  
-  
-  
-  
-  
+  // In Wayland there's no way to get absolute position of the window and use it
+  // to determine the screen factor of the monitor on which the window is
+  // placed. The window is notified of the current scale factor but not at this
+  // point, so the GdkScaleFactor can return wrong value which can lead to wrong
+  // popup placement. We need to use parent's window scale factor for the new
+  // one.
   if (!mIsX11Display) {
     nsView* view = nsView::GetViewFor(this);
     if (view) {
@@ -820,7 +820,7 @@ void nsWindow::SetParent(nsIWidget* aNewParent) {
   }
 
   if (mContainer) {
-    
+    // FIXME bug 1469183
     NS_ERROR("nsWindow should not have a container here");
     return;
   }
@@ -833,8 +833,8 @@ void nsWindow::SetParent(nsIWidget* aNewParent) {
 
   GtkWidget* oldContainer = GetMozContainerWidget();
   if (!oldContainer) {
-    
-    
+    // The GdkWindows have been destroyed so there is nothing else to
+    // reparent.
     MOZ_ASSERT(gdk_window_is_destroyed(mGdkWindow),
                "live GdkWindow with no widget");
     return;
@@ -848,16 +848,16 @@ void nsWindow::SetParent(nsIWidget* aNewParent) {
     newParentWindow = newParent->mGdkWindow;
     newContainer = newParent->GetMozContainerWidget();
   } else {
-    
-    
-    
-    
+    // aNewParent is nullptr, but reparent to a hidden window to avoid
+    // destroying the GdkWindow and its descendants.
+    // An invisible container widget is needed to hold descendant
+    // GtkWidgets.
     newContainer = EnsureInvisibleContainer();
     newParentWindow = gtk_widget_get_window(newContainer);
   }
 
   if (!newContainer) {
-    
+    // The new parent GdkWindow has been destroyed.
     MOZ_ASSERT(!newParentWindow || gdk_window_is_destroyed(newParentWindow),
                "live GdkWindow with no widget");
     Destroy();
@@ -912,7 +912,7 @@ void nsWindow::SetModal(bool aModal) {
   gtk_window_set_modal(GTK_WINDOW(mShell), aModal ? TRUE : FALSE);
 }
 
-
+// nsIWidget method, which means IsShown.
 bool nsWindow::IsVisible() const { return mIsShown; }
 
 void nsWindow::RegisterTouchWindow() {
@@ -927,12 +927,12 @@ void nsWindow::ConstrainPosition(bool aAllowSlop, int32_t* aX, int32_t* aY) {
 
   double dpiScale = GetDefaultScale().scale;
 
-  
+  // we need to use the window size in logical screen pixels
   int32_t logWidth = std::max(NSToIntRound(mBounds.width / dpiScale), 1);
   int32_t logHeight = std::max(NSToIntRound(mBounds.height / dpiScale), 1);
 
-  
-
+  /* get our playing field. use the current screen, or failing that
+    for any reason, use device caps for the default screen. */
   nsCOMPtr<nsIScreen> screen;
   nsCOMPtr<nsIScreenManager> screenmgr =
       do_GetService("@mozilla.org/gfx/screenmanager;1");
@@ -941,16 +941,16 @@ void nsWindow::ConstrainPosition(bool aAllowSlop, int32_t* aX, int32_t* aY) {
                              getter_AddRefs(screen));
   }
 
-  
+  // We don't have any screen so leave the coordinates as is
   if (!screen) return;
 
   nsIntRect screenRect;
   if (mSizeMode != nsSizeMode_Fullscreen) {
-    
+    // For normalized windows, use the desktop work area.
     screen->GetAvailRectDisplayPix(&screenRect.x, &screenRect.y,
                                    &screenRect.width, &screenRect.height);
   } else {
-    
+    // For full screen windows, use the desktop.
     screen->GetRectDisplayPix(&screenRect.x, &screenRect.y, &screenRect.width,
                               &screenRect.height);
   }
@@ -1020,7 +1020,7 @@ void nsWindow::ApplySizeConstraints(void) {
 void nsWindow::Show(bool aState) {
   if (aState == mIsShown) return;
 
-  
+  // Clear our cached resources when the window is hidden.
   if (mIsShown && !aState) {
     ClearCachedResources();
   }
@@ -1030,21 +1030,21 @@ void nsWindow::Show(bool aState) {
   LOG(("nsWindow::Show [%p] state %d\n", (void*)this, aState));
 
   if (aState) {
-    
-    
+    // Now that this window is shown, mHasMappedToplevel needs to be
+    // tracked on viewable descendants.
     SetHasMappedToplevel(mHasMappedToplevel);
   }
 
-  
-  
-  
+  // Ok, someone called show on a window that isn't sized to a sane
+  // value.  Mark this window as needing to have Show() called on it
+  // and return.
   if ((aState && !AreBoundsSane()) || !mCreated) {
     LOG(("\tbounds are insane or window hasn't been created yet\n"));
     mNeedsShow = true;
     return;
   }
 
-  
+  // If someone is hiding this widget, clear any needing show flag.
   if (!aState) mNeedsShow = false;
 
 #ifdef ACCESSIBILITY
@@ -1066,16 +1066,16 @@ void nsWindow::ResizeInt(int aX, int aY, int aWidth, int aHeight, bool aMove,
     mBounds.y = aY;
   }
 
-  
-  
-  
+  // For top-level windows, aWidth and aHeight should possibly be
+  // interpreted as frame bounds, but NativeResize treats these as window
+  // bounds (Bug 581866).
   mBounds.SizeTo(aWidth, aHeight);
 
-  
-  
+  // We set correct mBounds in advance here. This can be invalided by state
+  // event.
   mBoundsAreValid = true;
 
-  
+  // Recalculate aspect ratio when resized from DOM
   if (mAspectRatio != 0.0) {
     LockAspectRatio(true);
   }
@@ -1090,7 +1090,7 @@ void nsWindow::ResizeInt(int aX, int aY, int aWidth, int aHeight, bool aMove,
 
   NotifyRollupGeometryChange();
 
-  
+  // send a resize notification if this is a toplevel
   if (mIsTopLevel || mListenForResizes) {
     DispatchResized();
   }
@@ -1105,7 +1105,7 @@ void nsWindow::Resize(double aWidth, double aHeight, bool aRepaint) {
   int32_t width = NSToIntRound(scale * aWidth);
   int32_t height = NSToIntRound(scale * aHeight);
 
-  ResizeInt(0, 0, width, height,  false, aRepaint);
+  ResizeInt(0, 0, width, height, /* aMove */ false, aRepaint);
 }
 
 void nsWindow::Resize(double aX, double aY, double aWidth, double aHeight,
@@ -1121,7 +1121,7 @@ void nsWindow::Resize(double aX, double aY, double aWidth, double aHeight,
   int32_t x = NSToIntRound(scale * aX);
   int32_t y = NSToIntRound(scale * aY);
 
-  ResizeInt(x, y, width, height,  true, aRepaint);
+  ResizeInt(x, y, width, height, /* aMove */ true, aRepaint);
 }
 
 void nsWindow::Enable(bool aState) { mEnabled = aState; }
@@ -1141,13 +1141,13 @@ void nsWindow::Move(double aX, double aY) {
     SetSizeMode(nsSizeMode_Normal);
   }
 
-  
-  
-  
+  // Since a popup window's x/y coordinates are in relation to to
+  // the parent, the parent might have moved so we always move a
+  // popup window.
   if (x == mBounds.x && y == mBounds.y && mWindowType != eWindowType_popup)
     return;
 
-  
+  // XXX Should we do some AreBoundsSane check here?
 
   mBounds.x = x;
   mBounds.y = y;
@@ -1182,8 +1182,8 @@ void nsWindow::HideWaylandOpenedPopups() {
   }
 }
 
-
-
+// Hide popup nsWindows which are no longer in the nsXULPopupManager widget
+// chain list.
 void nsWindow::CleanupWaylandPopups() {
   LOG(("nsWindow::CleanupWaylandPopups...\n"));
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
@@ -1212,8 +1212,8 @@ void nsWindow::CleanupWaylandPopups() {
   }
 }
 
-
-
+// The MenuList popups are used as dropdown menus for example in WebRTC
+// microphone/camera chooser or autocomplete widgets.
 bool nsWindow::IsMainMenuWindow() {
   nsIFrame* frame = GetFrame();
   if (frame) {
@@ -1229,10 +1229,10 @@ bool nsWindow::IsMainMenuWindow() {
   return false;
 }
 
-
-
-
-
+// Wayland keeps strong popup window hierarchy. We need to track active
+// (visible) popup windows and make sure we hide popup on the same level
+// before we open another one on that level. It means that every open
+// popup needs to have an unique parent.
 GtkWidget* nsWindow::ConfigureWaylandPopupWindows() {
   MOZ_ASSERT(this->mWindowType == eWindowType_popup);
   LOG(
@@ -1247,28 +1247,28 @@ GtkWidget* nsWindow::ConfigureWaylandPopupWindows() {
   }
 #endif
 
-  
+  // Check if we're already configured.
   if (gVisibleWaylandPopupWindows &&
       g_list_find(gVisibleWaylandPopupWindows, this)) {
     LOG(("  [%p] is already configured.\n", (void*)this));
     return GTK_WIDGET(gtk_window_get_transient_for(GTK_WINDOW(mShell)));
   }
 
-  
-  
+  // If we're opening a new window we don't want to attach it to a tooltip
+  // as it's short lived temporary window.
   HideWaylandTooltips();
 
   GtkWindow* parentGtkWindow = nullptr;
 
   if (IsMainMenuWindow()) {
-    
-    
+    // Remove and hide already closed popups from the
+    // gVisibleWaylandPopupWindows which were not yet been hidden.
     CleanupWaylandPopups();
-    
-    
-    
-    
-    
+    // Since the popups are shown by unknown order it can happen that child
+    // popup is shown before parent popup.
+    // We look for the current window parent in nsXULPopupManager since it
+    // always has correct popup hierarchy while gVisibleWaylandPopupWindows may
+    // not.
     nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
     AutoTArray<nsIWidget*, 5> widgetChain;
     pm->GetSubmenuWidgetChain(&widgetChain);
@@ -1284,31 +1284,31 @@ GtkWidget* nsWindow::ConfigureWaylandPopupWindows() {
       }
     }
   } else {
-    
+    // Panels usually ends there
     if (gVisibleWaylandPopupWindows && HasRemoteContent()) {
-      
-      
-      
+      // If the new panel is remote content, we need to close all other popups
+      // before to keep the correct hierarchy because the remote content popup
+      // can replace the overflow-widget panel.
       HideWaylandOpenedPopups();
     } else if (gVisibleWaylandPopupWindows) {
-      
-      
+      // If there is any remote content panel currently opened, close all
+      // opened popups to keep the correct hierarchy.
       GList* popupList = gVisibleWaylandPopupWindows;
       while (popupList) {
         nsWindow* waylandWnd = static_cast<nsWindow*>(popupList->data);
         LOG(("  Checking [%p] IsRemoteContent %d\n", popupList->data,
              waylandWnd->IsRemoteContent()));
         if (waylandWnd->IsRemoteContent()) {
-          
-          
+          // close all popups including remote content before showing our panel
+          // Most likely returning from addon panel to overflow-widget.
           HideWaylandOpenedPopups();
           break;
         }
         popupList = popupList->next;
       }
     }
-    
-    
+    // For popups in panels use the last opened popup window as parent,
+    // panels are not stored in nsXULPopupManager.
     if (gVisibleWaylandPopupWindows) {
       nsWindow* parentWindow =
           static_cast<nsWindow*>(gVisibleWaylandPopupWindows->data);
@@ -1321,11 +1321,11 @@ GtkWidget* nsWindow::ConfigureWaylandPopupWindows() {
     gtk_window_set_transient_for(GTK_WINDOW(mShell),
                                  GTK_WINDOW(parentGtkWindow));
   } else {
-    
-    
+    // Fallback to the parent given in nsWindow::Create (most likely the
+    // toplevel window).
     parentGtkWindow = gtk_window_get_transient_for(GTK_WINDOW(mShell));
   }
-  
+  // Add current window to the visible popup list
   gVisibleWaylandPopupWindows =
       g_list_prepend(gVisibleWaylandPopupWindows, this);
 
@@ -1360,9 +1360,9 @@ void nsWindow::NativeMoveResizeWaylandPopupCB(const GdkRectangle* aFinalSize,
     return;
   }
 
-  
-  
-  
+  // The position of the menu in GTK is relative to it's parent window while
+  // in mBounds we have position relative to toplevel window. We need to check
+  // and update mBounds in the toplevel coordinates.
   int x_parent, y_parent;
   gdk_window_get_origin(gtk_widget_get_window(GTK_WIDGET(parentGtkWindow)),
                         &x_parent, &y_parent);
@@ -1397,14 +1397,14 @@ void nsWindow::NativeMoveResizeWaylandPopupCB(const GdkRectangle* aFinalSize,
 
 void nsWindow::NativeMoveResizeWaylandPopup(GdkPoint* aPosition,
                                             GdkRectangle* aSize) {
-  
+  // Available as of GTK 3.24+
   static auto sGdkWindowMoveToRect = (void (*)(
       GdkWindow*, const GdkRectangle*, GdkGravity, GdkGravity, GdkAnchorHints,
       gint, gint))dlsym(RTLD_DEFAULT, "gdk_window_move_to_rect");
   LOG(("nsWindow::NativeMoveResizeWaylandPopup [%p]\n", (void*)this));
 
-  
-  
+  // Compositor may be confused by windows with width/height = 0
+  // and positioning such windows leads to Bug 1555866.
   if (!AreBoundsSane()) {
     LOG(("  Bounds are not sane (width: %d height: %d)\n", mBounds.width,
          mBounds.height));
@@ -1417,9 +1417,9 @@ void nsWindow::NativeMoveResizeWaylandPopup(GdkPoint* aPosition,
 
   GdkWindow* gdkWindow = gtk_widget_get_window(GTK_WIDGET(mShell));
 
-  
-  
-  
+  // Use standard gtk_window_move() instead of gdk_window_move_to_rect() when:
+  // - gdk_window_move_to_rect() is not available
+  // - the widget doesn't have a valid GdkWindow
   if (!sGdkWindowMoveToRect || !gdkWindow) {
     LOG(("  use gtk_window_move(%d, %d)\n", aPosition->x, aPosition->y));
     gtk_window_move(GTK_WINDOW(mShell), aPosition->x, aPosition->y);
@@ -1462,8 +1462,8 @@ void nsWindow::NativeMoveResizeWaylandPopup(GdkPoint* aPosition,
     hints = GdkAnchorHints(hints | GDK_ANCHOR_RESIZE);
   }
 
-  
-  
+  // A workaround for https://gitlab.gnome.org/GNOME/gtk/issues/1986
+  // gdk_window_move_to_rect() does not reposition visible windows.
   static auto sGtkWidgetIsVisible =
       (gboolean(*)(GtkWidget*))dlsym(RTLD_DEFAULT, "gtk_widget_is_visible");
 
@@ -1484,8 +1484,8 @@ void nsWindow::NativeMoveResizeWaylandPopup(GdkPoint* aPosition,
   sGdkWindowMoveToRect(gdkWindow, &rect, rectAnchor, menuAnchor, hints, 0, 0);
 
   if (isWidgetVisible) {
-    
-    
+    // We show the popup with the same configuration so no need to call
+    // ConfigureWaylandPopupWindows() before gtk_widget_show().
     gtk_widget_show(mShell);
   }
 }
@@ -1516,14 +1516,14 @@ void nsWindow::SetZIndex(int32_t aZIndex) {
 
   NS_ASSERTION(!mContainer, "Expected Mozilla child widget");
 
-  
-  
+  // We skip the nsWindows that don't have mGdkWindows.
+  // These are probably in the process of being destroyed.
 
   if (!GetNextSibling()) {
-    
+    // We're to be on top.
     if (mGdkWindow) gdk_window_raise(mGdkWindow);
   } else {
-    
+    // All the siblings before us need to be below our widget.
     for (nsWindow* w = this; w;
          w = static_cast<nsWindow*>(w->GetPrevSibling())) {
       if (w->mGdkWindow) gdk_window_lower(w->mGdkWindow);
@@ -1534,11 +1534,11 @@ void nsWindow::SetZIndex(int32_t aZIndex) {
 void nsWindow::SetSizeMode(nsSizeMode aMode) {
   LOG(("nsWindow::SetSizeMode [%p] %d\n", (void*)this, aMode));
 
-  
+  // Save the requested state.
   nsBaseWidget::SetSizeMode(aMode);
 
-  
-  
+  // return if there's no shell or our current state is the same as
+  // the mode we were just set to.
   if (!mShell || mSizeState == mSizeMode) {
     LOG(("    already set"));
     return;
@@ -1560,7 +1560,7 @@ void nsWindow::SetSizeMode(nsSizeMode aMode) {
 
     default:
       LOG(("    set normal"));
-      
+      // nsSizeMode_Normal, really.
       if (mSizeState == nsSizeMode_Minimized)
         gtk_window_deiconify(GTK_WINDOW(mShell));
       else if (mSizeState == nsSizeMode_Maximized)
@@ -1568,8 +1568,8 @@ void nsWindow::SetSizeMode(nsSizeMode aMode) {
       break;
   }
 
-  
-  
+  // Request mBounds update from configure event as we may not get
+  // OnSizeAllocate for size state changes (Bug 1489463).
   mBoundsAreValid = false;
 
   mSizeState = mSizeMode;
@@ -1584,10 +1584,10 @@ static void SetUserTimeAndStartupIDForActivatedWindow(GtkWidget* aWindow) {
   nsAutoCString desktopStartupID;
   GTKToolkit->GetDesktopStartupID(&desktopStartupID);
   if (desktopStartupID.IsEmpty()) {
-    
-    
-    
-    
+    // We don't have the data we need. Fall back to an
+    // approximation ... using the timestamp of the remote command
+    // being received as a guess for the timestamp of the user event
+    // that triggered it.
     uint32_t timestamp = GTKToolkit->GetFocusTimestamp();
     if (timestamp) {
       gdk_window_focus(gtk_widget_get_window(aWindow), timestamp);
@@ -1598,20 +1598,20 @@ static void SetUserTimeAndStartupIDForActivatedWindow(GtkWidget* aWindow) {
 
   gtk_window_set_startup_id(GTK_WINDOW(aWindow), desktopStartupID.get());
 
-  
-  
+  // If we used the startup ID, that already contains the focus timestamp;
+  // we don't want to reuse the timestamp next time we raise the window
   GTKToolkit->SetFocusTimestamp(0);
   GTKToolkit->SetDesktopStartupID(EmptyCString());
 }
 
-
+/* static */
 guint32 nsWindow::GetLastUserInputTime() {
-  
-  
-  
-  
-  
-  
+  // gdk_x11_display_get_user_time/gtk_get_current_event_time tracks
+  // button and key presses, DESKTOP_STARTUP_ID used to start the app,
+  // drop events from external drags,
+  // WM_DELETE_WINDOW delete events, but not usually mouse motion nor
+  // button and key releases.  Therefore use the most recent of
+  // gdk_x11_display_get_user_time and the last time that we have seen.
   GdkDisplay* gdkDisplay = gdk_display_get_default();
   guint32 timestamp = GDK_IS_X11_DISPLAY(gdkDisplay)
                           ? gdk_x11_display_get_user_time(gdkDisplay)
@@ -1625,17 +1625,17 @@ guint32 nsWindow::GetLastUserInputTime() {
   return timestamp;
 }
 
-void nsWindow::SetFocus(Raise aRaise) {
-  
-  
+void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
+  // Make sure that our owning widget has focus.  If it doesn't try to
+  // grab it.  Note that we don't set our focus flag in this case.
 
   LOGFOCUS(("  SetFocus %d [%p]\n", aRaise == Raise::Yes, (void*)this));
 
   GtkWidget* owningWidget = GetMozContainerWidget();
   if (!owningWidget) return;
 
-  
-  
+  // Raise the window if someone passed in true and the prefs are
+  // set properly.
   GtkWidget* toplevelWidget = gtk_widget_get_toplevel(owningWidget);
 
   if (gRaiseWindows && aRaise == Raise::Yes && toplevelWidget &&
@@ -1644,7 +1644,7 @@ void nsWindow::SetFocus(Raise aRaise) {
     GtkWidget* top_window = GetToplevelWidget();
     if (top_window && (gtk_widget_get_visible(top_window))) {
       gdk_window_show_unraised(gtk_widget_get_window(top_window));
-      
+      // Unset the urgency hint if possible.
       SetUrgencyHint(top_window, false);
     }
   }
@@ -1653,11 +1653,11 @@ void nsWindow::SetFocus(Raise aRaise) {
   if (!owningWindow) return;
 
   if (aRaise == Raise::Yes) {
-    
+    // means request toplevel activation.
 
-    
-    
-    
+    // This is asynchronous.
+    // If and when the window manager accepts the request, then the focus
+    // widget will get a focus-in-event signal.
     if (gRaiseWindows && owningWindow->mIsShown && owningWindow->mShell &&
         !gtk_window_is_active(GTK_WINDOW(owningWindow->mShell))) {
       uint32_t timestamp = GDK_CURRENT_TIME;
@@ -1675,30 +1675,30 @@ void nsWindow::SetFocus(Raise aRaise) {
     return;
   }
 
-  
-  
+  // aRaise == No means that keyboard events should be dispatched from this
+  // widget.
 
-  
-  
-  
-  
+  // Ensure owningWidget is the focused GtkWidget within its toplevel window.
+  //
+  // For eWindowType_popup, this GtkWidget may not actually be the one that
+  // receives the key events as it may be the parent window that is active.
   if (!gtk_widget_is_focus(owningWidget)) {
-    
-    
-    
-    
+    // This is synchronous.  It takes focus from a plugin or from a widget
+    // in an embedder.  The focus manager already knows that this window
+    // is active so gBlockActivateEvent avoids another (unnecessary)
+    // activate notification.
     gBlockActivateEvent = true;
     gtk_widget_grab_focus(owningWidget);
     gBlockActivateEvent = false;
   }
 
-  
+  // If this is the widget that already has focus, return.
   if (gFocusWindow == this) {
     LOGFOCUS(("  already have focus [%p]\n", (void*)this));
     return;
   }
 
-  
+  // Set this window to be the focused child window
   gFocusWindow = this;
 
   if (mIMContext) {
@@ -1711,7 +1711,7 @@ void nsWindow::SetFocus(Raise aRaise) {
 LayoutDeviceIntRect nsWindow::GetScreenBounds() {
   LayoutDeviceIntRect rect;
   if (mIsTopLevel && mContainer) {
-    
+    // use the point including window decorations
     gint x, y;
     gdk_window_get_root_origin(gtk_widget_get_window(GTK_WIDGET(mContainer)),
                                &x, &y);
@@ -1719,10 +1719,10 @@ LayoutDeviceIntRect nsWindow::GetScreenBounds() {
   } else {
     rect.MoveTo(WidgetToScreenOffset());
   }
-  
-  
-  
-  
+  // mBounds.Size() is the window bounds, not the window-manager frame
+  // bounds (bug 581863).  gdk_window_get_frame_extents would give the
+  // frame bounds, but mBounds.Size() is returned here for consistency
+  // with Resize.
   rect.SizeTo(mBounds.Size());
 #if MOZ_LOGGING
   gint scale = GdkScaleFactor();
@@ -1738,9 +1738,9 @@ LayoutDeviceIntSize nsWindow::GetClientSize() {
 }
 
 LayoutDeviceIntRect nsWindow::GetClientBounds() {
-  
-  
-  
+  // GetBounds returns a rect whose top left represents the top left of the
+  // outer bounds, but whose width/height represent the size of the inner
+  // bounds (which is messed up).
   LayoutDeviceIntRect rect = GetBounds();
   rect.MoveBy(GetClientOffset());
   return rect;
@@ -1765,15 +1765,15 @@ void nsWindow::UpdateClientOffsetFromFrameExtents() {
   if (!gdk_property_get(gtk_widget_get_window(mShell),
                         gdk_atom_intern("_NET_FRAME_EXTENTS", FALSE),
                         cardinal_atom,
-                        0,      
-                        4 * 4,  
-                        FALSE,  
+                        0,      // offset
+                        4 * 4,  // length
+                        FALSE,  // delete
                         &type_returned, &format_returned, &length_returned,
                         (guchar**)&frame_extents) ||
       length_returned / sizeof(glong) != 4) {
     mClientOffset = nsIntPoint(0, 0);
   } else {
-    
+    // data returned is in the order left, right, top, bottom
     auto left = int32_t(frame_extents[0]);
     auto top = int32_t(frame_extents[2]);
     g_free(frame_extents);
@@ -1781,9 +1781,9 @@ void nsWindow::UpdateClientOffsetFromFrameExtents() {
     mClientOffset = nsIntPoint(left, top);
   }
 
-  
-  
-  
+  // Send a WindowMoved notification. This ensures that BrowserParent
+  // picks up the new client offset and sends it to the child process
+  // if appropriate.
   NotifyWindowMoved(mBounds.x, mBounds.y);
 
   LOG(("nsWindow::UpdateClientOffsetFromFrameExtents [%p] %d,%d\n", (void*)this,
@@ -1825,20 +1825,20 @@ static GdkCursor* GetCursorForImage(imgIContainer* aCursorImage,
   auto CleanupPixBuf =
       mozilla::MakeScopeExit([&]() { g_object_unref(pixbuf); });
 
-  
-  
-  
-  
-  
-  
-  
+  // Reject cursors greater than 128 pixels in some direction, to prevent
+  // spoofing.
+  // XXX ideally we should rescale. Also, we could modify the API to
+  // allow trusted content to set larger cursors.
+  //
+  // TODO(emilio, bug 1445844): Unify the solution for this with other
+  // platforms.
   if (width > 128 || height > 128) {
     return nullptr;
   }
 
-  
-  
-  
+  // Looks like all cursors need an alpha channel (tested on Gtk 2.4.4). This
+  // is of course not documented anywhere...
+  // So add one if there isn't one yet
   if (!gdk_pixbuf_get_has_alpha(pixbuf)) {
     GdkPixbuf* alphaBuf = gdk_pixbuf_add_alpha(pixbuf, FALSE, 0, 0, 0);
     g_object_unref(pixbuf);
@@ -1854,8 +1854,8 @@ static GdkCursor* GetCursorForImage(imgIContainer* aCursorImage,
 
 void nsWindow::SetCursor(nsCursor aDefaultCursor, imgIContainer* aCursorImage,
                          uint32_t aHotspotX, uint32_t aHotspotY) {
-  
-  
+  // if we're not the toplevel window pass up the cursor request to
+  // the toplevel window to handle it.
   if (!mContainer && mGdkWindow) {
     nsWindow* window = GetContainerWindow();
     if (!window) return;
@@ -1864,7 +1864,7 @@ void nsWindow::SetCursor(nsCursor aDefaultCursor, imgIContainer* aCursorImage,
     return;
   }
 
-  
+  // Only change cursor if it's actually been changed
   if (!aCursorImage && aDefaultCursor == mCursor && !mUpdateCursor) {
     return;
   }
@@ -1872,7 +1872,7 @@ void nsWindow::SetCursor(nsCursor aDefaultCursor, imgIContainer* aCursorImage,
   mUpdateCursor = false;
   mCursor = eCursorInvalid;
 
-  
+  // Try to set the cursor image first, and fall back to the numeric cursor.
   GdkCursor* newCursor = GetCursorForImage(aCursorImage, aHotspotX, aHotspotY);
   if (!newCursor) {
     newCursor = get_gtk_cursor(aDefaultCursor);
@@ -1882,7 +1882,7 @@ void nsWindow::SetCursor(nsCursor aDefaultCursor, imgIContainer* aCursorImage,
   }
 
   auto CleanupCursor = mozilla::MakeScopeExit([&]() {
-    
+    // get_gtk_cursor returns a weak reference, which we shouldn't unref.
     if (newCursor && mCursor == eCursorInvalid) {
       g_object_unref(newCursor);
     }
@@ -1921,9 +1921,9 @@ void* nsWindow::GetNativeData(uint32_t aDataType) {
       if (gdkDisplay && GDK_IS_X11_DISPLAY(gdkDisplay)) {
         return GDK_DISPLAY_XDISPLAY(gdkDisplay);
       }
-#endif 
-      
-      
+#endif /* MOZ_X11 */
+      // Don't bother to return native display on Wayland as it's for
+      // X11 only NPAPI plugins.
       return nullptr;
     }
     case NS_NATIVE_SHELLWIDGET:
@@ -1942,8 +1942,8 @@ void* nsWindow::GetNativeData(uint32_t aDataType) {
       if (pseudoIMEContext) {
         return pseudoIMEContext;
       }
-      
-      
+      // If IME context isn't available on this widget, we should set |this|
+      // instead of nullptr.
       if (!mIMContext) {
         return this;
       }
@@ -1954,7 +1954,7 @@ void* nsWindow::GetNativeData(uint32_t aDataType) {
 #ifdef MOZ_X11
     case NS_NATIVE_COMPOSITOR_DISPLAY:
       return gfxPlatformGtk::GetPlatform()->GetCompositorDisplay();
-#endif  
+#endif  // MOZ_X11
     case NS_NATIVE_EGL_WINDOW: {
       if (mIsX11Display) {
         return mGdkWindow ? (void*)GDK_WINDOW_XID(mGdkWindow) : nullptr;
@@ -1975,12 +1975,12 @@ void* nsWindow::GetNativeData(uint32_t aDataType) {
 nsresult nsWindow::SetTitle(const nsAString& aTitle) {
   if (!mShell) return NS_OK;
 
-    
+    // convert the string into utf8 and set the title.
 #define UTF8_FOLLOWBYTE(ch) (((ch)&0xC0) == 0x80)
   NS_ConvertUTF16toUTF8 titleUTF8(aTitle);
   if (titleUTF8.Length() > NS_WINDOW_TITLE_MAX_LENGTH) {
-    
-    
+    // Truncate overlong titles (bug 167315). Make sure we chop after a
+    // complete sequence by making sure the next char isn't a follow-byte.
     uint32_t len = NS_WINDOW_TITLE_MAX_LENGTH;
     while (UTF8_FOLLOWBYTE(titleUTF8[len])) --len;
     titleUTF8.Truncate(len);
@@ -2016,16 +2016,16 @@ void nsWindow::SetIcon(const nsAString& aIconSpec) {
   g_free(iconSizes);
 
   if (!foundIcon) {
-    
-    
-    
+    // Look for icons with the following suffixes appended to the base name
+    // The last two entries (for the old XPM format) will be ignored unless
+    // no icons are found using other suffixes. XPM icons are deprecated.
 
     const char16_t extensions[9][8] = {u".png",    u"16.png", u"32.png",
                                        u"48.png",  u"64.png", u"128.png",
                                        u"256.png", u".xpm",   u"16.xpm"};
 
     for (uint32_t i = 0; i < ArrayLength(extensions); i++) {
-      
+      // Don't bother looking for XPM versions if we found a PNG.
       if (i == ArrayLength(extensions) - 2 && foundIcon) break;
 
       ResolveIconName(aIconSpec, nsDependentString(extensions[i]),
@@ -2043,7 +2043,7 @@ void nsWindow::SetIcon(const nsAString& aIconSpec) {
     }
   }
 
-  
+  // leave the default icon intact if no matching icons were found
   if (foundIcon) {
     gtk_window_set_icon_name(GTK_WINDOW(mShell), iconName.get());
   }
@@ -2085,8 +2085,8 @@ void nsWindow::CaptureRollupEvents(nsIRollupListener* aListener,
 
   if (aDoCapture) {
     gRollupListener = aListener;
-    
-    
+    // Don't add a grab if a drag is in progress, or if the widget is a drag
+    // feedback popup. (panels with type="drag").
     if (!mIsDragPopup && !nsWindow::DragInProgress()) {
       gtk_grab_add(GTK_WIDGET(mContainer));
       GrabPointer(GetLastUserInputTime());
@@ -2095,9 +2095,9 @@ void nsWindow::CaptureRollupEvents(nsIRollupListener* aListener,
     if (!nsWindow::DragInProgress()) {
       ReleaseGrabs();
     }
-    
-    
-    
+    // There may not have been a drag in process when aDoCapture was set,
+    // so make sure to remove any added grab.  This is a no-op if the grab
+    // was not added to this widget.
     gtk_grab_remove(GTK_WIDGET(mContainer));
     gRollupListener = nullptr;
   }
@@ -2110,7 +2110,7 @@ nsresult nsWindow::GetAttention(int32_t aCycleCount) {
   GtkWidget* top_focused_window =
       gFocusWindow ? gFocusWindow->GetToplevelWidget() : nullptr;
 
-  
+  // Don't get attention if the window is focused anyway.
   if (top_window && (gtk_widget_get_visible(top_window)) &&
       top_window != top_focused_window) {
     SetUrgencyHint(top_window, true);
@@ -2120,11 +2120,11 @@ nsresult nsWindow::GetAttention(int32_t aCycleCount) {
 }
 
 bool nsWindow::HasPendingInputEvent() {
-  
-  
-  
-  
-  
+  // This sucks, but gtk/gdk has no way to answer the question we want while
+  // excluding paint events, and there's no X API that will let us peek
+  // without blocking or removing.  To prevent event reordering, peek
+  // anything except expose events.  Reordering expose and others should be
+  // ok, hopefully.
   bool haveEvent = false;
 #ifdef MOZ_X11
   XEvent ev;
@@ -2151,7 +2151,7 @@ bool nsWindow::HasPendingInputEvent() {
 
 #if 0
 #  ifdef DEBUG
-
+// Paint flashing code (disabled for cairo - see below)
 
 #    define CAPS_LOCK_IS_ON \
       (KeymapWrapper::AreModifiersCurrentlyActive(KeymapWrapper::CAPS_LOCK))
@@ -2162,7 +2162,7 @@ bool nsWindow::HasPendingInputEvent() {
 static void
 gdk_window_flash(GdkWindow *    aGdkWindow,
                  unsigned int   aTimes,
-                 unsigned int   aInterval,  
+                 unsigned int   aInterval,  // Milliseconds
                  GdkRegion *    aRegion)
 {
   gint         x;
@@ -2190,10 +2190,10 @@ gdk_window_flash(GdkWindow *    aGdkWindow,
   gdk_region_offset(aRegion, x, y);
   gdk_gc_set_clip_region(gc, aRegion);
 
-  
-
-
-
+  /*
+   * Need to do this twice so that the XOR effect can replace
+   * the original window contents.
+   */
   for (i = 0; i < aTimes * 2; i++)
   {
     gdk_draw_rectangle(gdk_get_default_root_window(),
@@ -2213,8 +2213,8 @@ gdk_window_flash(GdkWindow *    aGdkWindow,
 
   gdk_region_offset(aRegion, -x, -y);
 }
-#    endif 
-#  endif   
+#    endif /* MOZ_X11 */
+#  endif   // DEBUG
 #endif
 
 #ifdef cairo_copy_clip_rectangle_list
@@ -2278,15 +2278,15 @@ void nsWindow::CreateCompositorVsyncDispatcher() {
 #endif
 
 gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
-  
-  
+  // Send any pending resize events so that layout can update.
+  // May run event loop.
   MaybeDispatchResized();
 
   if (mIsDestroyed) {
     return FALSE;
   }
 
-  
+  // Windows that are not visible will be painted after they become visible.
   if (!mGdkWindow || mIsFullyObscured || !mHasMappedToplevel) return FALSE;
 #ifdef MOZ_WAYLAND
   if (mContainer && !mContainer->ready_to_draw) return FALSE;
@@ -2307,25 +2307,25 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   region.ScaleRoundOut(scale, scale);
 
   if (GetLayerManager()->AsKnowsCompositor() && mCompositorSession) {
-    
-    
+    // We need to paint to the screen even if nothing changed, since if we
+    // don't have a compositing window manager, our pixels could be stale.
     GetLayerManager()->SetNeedsComposite(true);
     GetLayerManager()->SendInvalidRegion(region.ToUnknownRegion());
   }
 
   RefPtr<nsWindow> strongThis(this);
 
-  
-  
+  // Dispatch WillPaintWindow notification to allow scripts etc. to run
+  // before we paint
   {
     listener->WillPaintWindow(this);
 
-    
-    
+    // If the window has been destroyed during the will paint notification,
+    // there is nothing left to do.
     if (!mGdkWindow) return TRUE;
 
-    
-    
+    // Re-get the listener since the will paint notification might have
+    // killed it.
     listener = GetListener();
     if (!listener) return FALSE;
   }
@@ -2336,9 +2336,9 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
     GetLayerManager()->SetNeedsComposite(false);
   }
 
-  
-  
-  
+  // Our bounds may have changed after calling WillPaintWindow.  Clip
+  // to the new bounds here.  The region is relative to this
+  // window.
   region.And(region, LayoutDeviceIntRect(0, 0, mBounds.width, mBounds.height));
 
   bool shaped = false;
@@ -2352,8 +2352,8 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
       }
     } else {
       if (mHasAlphaVisual) {
-        
-        
+        // Remove possible shape mask from when window manger was not
+        // previously compositing.
         window->ClearTransparencyBitmap();
       } else {
         shaped = true;
@@ -2383,13 +2383,13 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
     return TRUE;
   }
 
-  
+  // If this widget uses OMTC...
   if (GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_CLIENT ||
       GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_WR) {
     listener->PaintWindow(this, region);
 
-    
-    
+    // Re-get the listener since the will paint notification might have
+    // killed it.
     listener = GetListener();
     if (!listener) return TRUE;
 
@@ -2412,15 +2412,15 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
 
 #ifdef MOZ_X11
   if (shaped) {
-    
-    
-    
-    
+    // Collapse update area to the bounding box. This is so we only have to
+    // call UpdateTranslucentWindowAlpha once. After we have dropped
+    // support for non-Thebes graphics, UpdateTranslucentWindowAlpha will be
+    // our private interface so we can rework things to avoid this.
     dt->PushClipRect(Rect(boundsRect));
 
-    
-    
-    
+    // The double buffering is done here to extract the shape mask.
+    // (The shape mask won't be necessary when a visual with an alpha
+    // channel is used on compositing window managers.)
     layerBuffering = BufferMode::BUFFER_NONE;
     RefPtr<DrawTarget> destDT =
         dt->CreateSimilarDrawTarget(boundsRect.Size(), SurfaceFormat::B8G8R8A8);
@@ -2433,44 +2433,44 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
     gfxUtils::ClipToRegion(dt, region.ToUnknownRegion());
     ctx = gfxContext::CreatePreservingTransformOrNull(dt);
   }
-  MOZ_ASSERT(ctx);  
+  MOZ_ASSERT(ctx);  // checked both dt and destDT valid draw target above
 
 #  if 0
-    
-    
-    
+    // NOTE: Paint flashing region would be wrong for cairo, since
+    // cairo inflates the update region, etc.  So don't paint flash
+    // for cairo.
 #    ifdef DEBUG
-    
+    // XXX aEvent->region may refer to a newly-invalid area.  FIXME
     if (0 && WANT_PAINT_FLASHING && gtk_widget_get_window(aEvent))
         gdk_window_flash(mGdkWindow, 1, 100, aEvent->region);
 #    endif
 #  endif
 
-#endif  
+#endif  // MOZ_X11
 
   bool painted = false;
   {
     if (GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_BASIC) {
       if (GetTransparencyMode() == eTransparencyTransparent &&
           layerBuffering == BufferMode::BUFFER_NONE && mHasAlphaVisual) {
-        
-        
-        
+        // If our draw target is unbuffered and we use an alpha channel,
+        // clear the image beforehand to ensure we don't get artifacts from a
+        // reused SHM image. See bug 1258086.
         dt->ClearRect(Rect(boundsRect));
       }
       AutoLayerManagerSetup setupLayerManager(this, ctx, layerBuffering);
       painted = listener->PaintWindow(this, region);
 
-      
-      
+      // Re-get the listener since the will paint notification might have
+      // killed it.
       listener = GetListener();
       if (!listener) return TRUE;
     }
   }
 
 #ifdef MOZ_X11
-  
-  
+  // PaintWindow can Destroy us (bug 378273), avoid doing any paint
+  // operations below if that happened - it will lead to XError and exit().
   if (shaped) {
     if (MOZ_LIKELY(!mIsDestroyed)) {
       if (painted) {
@@ -2489,13 +2489,13 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   ctx = nullptr;
   dt->PopClip();
 
-#endif  
+#endif  // MOZ_X11
 
   EndRemoteDrawingInRegion(dt, region);
 
   listener->DidPaintWindow();
 
-  
+  // Synchronously flush any new dirty areas
   cairo_region_t* dirtyArea = gdk_window_get_update_area(mGdkWindow);
 
   if (dirtyArea) {
@@ -2504,14 +2504,14 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
     gdk_window_process_updates(mGdkWindow, false);
   }
 
-  
+  // check the return value!
   return TRUE;
 }
 
 void nsWindow::UpdateAlpha(SourceSurface* aSourceSurface,
                            nsIntRect aBoundsRect) {
-  
-  
+  // We need to create our own buffer to force the stride to match the
+  // expected stride.
   int32_t stride =
       GetAlignedStride<4>(aBoundsRect.width, BytesPerPixel(SurfaceFormat::A8));
   if (stride == 0) {
@@ -2537,22 +2537,22 @@ void nsWindow::UpdateAlpha(SourceSurface* aSourceSurface,
 
 gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
                                     GdkEventConfigure* aEvent) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // These events are only received on toplevel windows.
+  //
+  // GDK ensures that the coordinates are the client window top-left wrt the
+  // root window.
+  //
+  //   GDK calculates the cordinates for real ConfigureNotify events on
+  //   managed windows (that would normally be relative to the parent
+  //   window).
+  //
+  //   Synthetic ConfigureNotify events are from the window manager and
+  //   already relative to the root window.  GDK creates all X windows with
+  //   border_width = 0, so synthetic events also indicate the top-left of
+  //   the client window.
+  //
+  //   Override-redirect windows are children of the root window so parent
+  //   coordinates are root coordinates.
 
   LOG(("configure event [%p] %d %d %d %d\n", (void*)this, aEvent->x, aEvent->y,
        aEvent->width, aEvent->height));
@@ -2565,8 +2565,8 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
 
   if (mWindowType == eWindowType_toplevel ||
       mWindowType == eWindowType_dialog) {
-    
-    
+    // This check avoids unwanted rollup on spurious configure events from
+    // Cygwin/X (bug 672103).
     if (mBounds.x != screenBounds.x || mBounds.y != screenBounds.y) {
       CheckForRollup(0, 0, false, true);
     }
@@ -2575,41 +2575,41 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
   NS_ASSERTION(GTK_IS_WINDOW(aWidget),
                "Configure event on widget that is not a GtkWindow");
   if (gtk_window_get_window_type(GTK_WINDOW(aWidget)) == GTK_WINDOW_POPUP) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // Override-redirect window
+    //
+    // These windows should not be moved by the window manager, and so any
+    // change in position is a result of our direction.  mBounds has
+    // already been set in std::move() or Resize(), and that is more
+    // up-to-date than the position in the ConfigureNotify event if the
+    // event is from an earlier window move.
+    //
+    // Skipping the WindowMoved call saves context menus from an infinite
+    // loop when nsXULPopupManager::PopupMoved moves the window to the new
+    // position and nsMenuPopupFrame::SetPopupPosition adds
+    // offsetForContextMenu on each iteration.
     return FALSE;
   }
 
   mBounds.MoveTo(screenBounds.TopLeft());
 
-  
-  
+  // XXX mozilla will invalidate the entire window after this move
+  // complete.  wtf?
   NotifyWindowMoved(mBounds.x, mBounds.y);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // A GTK app would usually update its client area size in response to
+  // a "size-allocate" signal.
+  // However, we need to set mBounds in advance at Resize()
+  // as JS code expects immediate window size change.
+  // If Gecko requests a resize from GTK, but subsequently,
+  // before a corresponding "size-allocate" signal is emitted, the window is
+  // resized to its former size via other means, such as maximizing,
+  // then there is no "size-allocate" signal from which to update
+  // the value of mBounds. Similarly, if Gecko's resize request is refused
+  // by the window manager, then there will be no "size-allocate" signal.
+  // In the refused request case, the window manager is required to dispatch
+  // a ConfigureNotify event. mBounds can then be updated here.
+  // This seems to also be sufficient to update mBounds when Gecko resizes
+  // the window from maximized size and then immediately maximizes again.
   if (!mBoundsAreValid) {
     GtkAllocation allocation = {-1, -1, 0, 0};
     gtk_window_get_size(GTK_WINDOW(mShell), &allocation.width,
@@ -2617,10 +2617,10 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
     OnSizeAllocate(&allocation);
   }
 
-  
-  
-  
-  
+  // Client offset are upated by _NET_FRAME_EXTENTS on X11 when system titlebar
+  // is enabled. In ither cases (Wayland or system titlebar is off on X11)
+  // we don't get _NET_FRAME_EXTENTS X11 property notification so we derive
+  // it from mContainer position.
   if (mCSDSupportLevel == CSD_SUPPORT_CLIENT) {
     if (!mIsX11Display || (mIsX11Display && mDrawInTitlebar)) {
       UpdateClientOffsetFromCSDWindow();
@@ -2631,9 +2631,9 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
 }
 
 void nsWindow::OnContainerUnrealize() {
-  
-  
-  
+  // The GdkWindows are about to be destroyed (but not deleted), so remove
+  // their references back to their container widget while the GdkWindow
+  // hierarchy is still available.
 
   if (mGdkWindow) {
     DestroyChildWindows();
@@ -2650,13 +2650,13 @@ void nsWindow::OnSizeAllocate(GtkAllocation* aAllocation) {
 
   LayoutDeviceIntSize size = GdkRectToDevicePixels(*aAllocation).Size();
   if (mBounds.Size() == size) {
-    
+    // We were already resized at nsWindow::OnConfigureEvent() so skip it.
     return;
   }
 
-  
-  
-  
+  // Invalidate the new part of the window now for the pending paint to
+  // minimize background flashes (GDK does not do this for external resizes
+  // of toplevels.)
   if (mBounds.width < size.width) {
     GdkRectangle rect = DevicePixelsToGdkRectRoundOut(LayoutDeviceIntRect(
         mBounds.width, 0, size.width - mBounds.width, size.height));
@@ -2671,15 +2671,15 @@ void nsWindow::OnSizeAllocate(GtkAllocation* aAllocation) {
   mBounds.SizeTo(size);
 
 #ifdef MOZ_X11
-  
+  // Notify the GtkCompositorWidget of a ClientSizeChange
   if (mCompositorWidgetDelegate) {
     mCompositorWidgetDelegate->NotifyClientSizeChanged(GetClientSize());
   }
 #endif
 
-  
-  
-  
+  // Gecko permits running nested event loops during processing of events,
+  // GtkWindow callers of gtk_widget_size_allocate expect the signal
+  // handlers to return sometime in the near future.
   mNeedsDispatchResized = true;
   NS_DispatchToCurrentThread(NewRunnableMethod(
       "nsWindow::MaybeDispatchResized", this, &nsWindow::MaybeDispatchResized));
@@ -2690,15 +2690,15 @@ void nsWindow::OnDeleteEvent() {
 }
 
 void nsWindow::OnEnterNotifyEvent(GdkEventCrossing* aEvent) {
-  
-  
-  
-  
-  
+  // This skips NotifyVirtual and NotifyNonlinearVirtual enter notify events
+  // when the pointer enters a child window.  If the destination window is a
+  // Gecko window then we'll catch the corresponding event on that window,
+  // but we won't notice when the pointer directly enters a foreign (plugin)
+  // child window without passing over a visible portion of a Gecko window.
   if (aEvent->subwindow != nullptr) return;
 
-  
-  
+  // Check before is_parent_ungrab_enter() as the button state may have
+  // changed while a non-Gecko ancestor window had a pointer grab.
   DispatchMissedButtonReleases(aEvent);
 
   if (is_parent_ungrab_enter(aEvent)) return;
@@ -2714,7 +2714,7 @@ void nsWindow::OnEnterNotifyEvent(GdkEventCrossing* aEvent) {
   DispatchInputEvent(&event);
 }
 
-
+// XXX Is this the right test for embedding cases?
 static bool is_top_level_mouse_exit(GdkWindow* aWindow,
                                     GdkEventCrossing* aEvent) {
   auto x = gint(aEvent->x_root);
@@ -2728,14 +2728,14 @@ static bool is_top_level_mouse_exit(GdkWindow* aWindow,
 }
 
 void nsWindow::OnLeaveNotifyEvent(GdkEventCrossing* aEvent) {
-  
-  
-  
-  
-  
-  
-  
-  
+  // This ignores NotifyVirtual and NotifyNonlinearVirtual leave notify
+  // events when the pointer leaves a child window.  If the destination
+  // window is a Gecko window then we'll catch the corresponding event on
+  // that window.
+  //
+  // XXXkt However, we will miss toplevel exits when the pointer directly
+  // leaves a foreign (plugin) child window without passing over a visible
+  // portion of a Gecko window.
   if (aEvent->subwindow != nullptr) return;
 
   WidgetMouseEvent event(true, eMouseExitFromWidget, this,
@@ -2756,13 +2756,13 @@ void nsWindow::OnLeaveNotifyEvent(GdkEventCrossing* aEvent) {
 template <typename Event>
 static LayoutDeviceIntPoint GetRefPoint(nsWindow* aWindow, Event* aEvent) {
   if (aEvent->window == aWindow->GetGdkWindow()) {
-    
-    
+    // we are the window that the event happened on so no need for expensive
+    // WidgetToScreenOffset
     return aWindow->GdkEventCoordsToDevicePixels(aEvent->x, aEvent->y);
   }
-  
-  
-  
+  // XXX we're never quite sure which GdkWindow the event came from due to our
+  // custom bubbling in scroll_event_cb(), so use ScreenToWidget to translate
+  // the screen root coordinates into coordinates relative to this widget.
   return aWindow->GdkEventCoordsToDevicePixels(aEvent->x_root, aEvent->y_root) -
          aWindow->WidgetToScreenOffset();
 }
@@ -2770,15 +2770,15 @@ static LayoutDeviceIntPoint GetRefPoint(nsWindow* aWindow, Event* aEvent) {
 void nsWindow::OnMotionNotifyEvent(GdkEventMotion* aEvent) {
   if (mWindowShouldStartDragging) {
     mWindowShouldStartDragging = false;
-    
+    // find the top-level window
     GdkWindow* gdk_window = gdk_window_get_toplevel(mGdkWindow);
     MOZ_ASSERT(gdk_window, "gdk_window_get_toplevel should not return null");
 
     bool canDrag = true;
     if (mIsX11Display) {
-      
-      
-      
+      // Workaround for https://bugzilla.gnome.org/show_bug.cgi?id=789054
+      // To avoid crashes disable double-click on WM without _NET_WM_MOVERESIZE.
+      // See _should_perform_ewmh_drag() at gdkwindow-x11.c
       GdkScreen* screen = gdk_window_get_screen(gdk_window);
       GdkAtom atom = gdk_atom_intern("_NET_WM_MOVERESIZE", FALSE);
       if (!gdk_x11_screen_supports_net_wm_hint(screen, atom)) {
@@ -2793,9 +2793,9 @@ void nsWindow::OnMotionNotifyEvent(GdkEventMotion* aEvent) {
     }
   }
 
-  
-  
-  
+  // see if we can compress this event
+  // XXXldb Why skip every other motion event when we have multiple,
+  // but not more than that?
   bool synthEvent = false;
 #ifdef MOZ_X11
   XEvent xevent;
@@ -2812,14 +2812,14 @@ void nsWindow::OnMotionNotifyEvent(GdkEventMotion* aEvent) {
       XNextEvent(GDK_WINDOW_XDISPLAY(aEvent->window), &xevent);
     }
   }
-#endif 
+#endif /* MOZ_X11 */
 
   WidgetMouseEvent event(true, eMouseMove, this, WidgetMouseEvent::eReal);
 
   gdouble pressure = 0;
   gdk_event_get_axis((GdkEvent*)aEvent, GDK_AXIS_PRESSURE, &pressure);
-  
-  
+  // Sometime gdk generate 0 pressure value between normal values
+  // We have to ignore that and use last valid value
   if (pressure) mLastMotionPressure = pressure;
   event.mPressure = mLastMotionPressure;
 
@@ -2838,7 +2838,7 @@ void nsWindow::OnMotionNotifyEvent(GdkEventMotion* aEvent) {
     modifierState = aEvent->state;
 
     event.AssignEventTime(GetWidgetEventTime(aEvent->time));
-#endif 
+#endif /* MOZ_X11 */
   } else {
     event.mRefPoint = GetRefPoint(this, aEvent);
 
@@ -2852,22 +2852,22 @@ void nsWindow::OnMotionNotifyEvent(GdkEventMotion* aEvent) {
   DispatchInputEvent(&event);
 }
 
-
-
-
-
-
-
-
+// If the automatic pointer grab on ButtonPress has deactivated before
+// ButtonRelease, and the mouse button is released while the pointer is not
+// over any a Gecko window, then the ButtonRelease event will not be received.
+// (A similar situation exists when the pointer is grabbed with owner_events
+// True as the ButtonRelease may be received on a foreign [plugin] window).
+// Use this method to check for released buttons when the pointer returns to a
+// Gecko window.
 void nsWindow::DispatchMissedButtonReleases(GdkEventCrossing* aGdkEvent) {
   guint changed = aGdkEvent->state ^ gButtonState;
-  
-  
+  // Only consider button releases.
+  // (Ignore button presses that occurred outside Gecko.)
   guint released = changed & gButtonState;
   gButtonState = aGdkEvent->state;
 
-  
-  
+  // Loop over each button, excluding mouse wheel buttons 4 and 5 for which
+  // GDK ignores releases.
   for (guint buttonMask = GDK_BUTTON1_MASK; buttonMask <= GDK_BUTTON3_MASK;
        buttonMask <<= 1) {
     if (released & buttonMask) {
@@ -2888,10 +2888,10 @@ void nsWindow::DispatchMissedButtonReleases(GdkEventCrossing* aGdkEvent) {
       LOG(("Synthesized button %u release on %p\n", guint(buttonType + 1),
            (void*)this));
 
-      
-      
-      
-      
+      // Dispatch a synthesized button up event to tell Gecko about the
+      // change in state.  This event is marked as synthesized so that
+      // it is not dispatched as a DOM event, because we don't know the
+      // position, widget, modifiers, or time/order.
       WidgetMouseEvent synthEvent(true, eMouseUp, this,
                                   WidgetMouseEvent::eSynthesized);
       synthEvent.mButton = buttonType;
@@ -2905,9 +2905,9 @@ void nsWindow::InitButtonEvent(WidgetMouseEvent& aEvent,
   aEvent.mRefPoint = GetRefPoint(this, aGdkEvent);
 
   guint modifierState = aGdkEvent->state;
-  
-  
-  
+  // aEvent's state includes the button state from immediately before this
+  // event.  If aEvent is a mousedown or mouseup event, we need to update
+  // the button state.
   guint buttonMask = 0;
   switch (aGdkEvent->button) {
     case 1:
@@ -2937,7 +2937,7 @@ void nsWindow::InitButtonEvent(WidgetMouseEvent& aEvent,
     case GDK_3BUTTON_PRESS:
       aEvent.mClickCount = 3;
       break;
-      
+      // default is one click
     default:
       aEvent.mClickCount = 1;
   }
@@ -2961,12 +2961,12 @@ void nsWindow::DispatchContextMenuEventFromMouseEvent(uint16_t domButton,
 void nsWindow::OnButtonPressEvent(GdkEventButton* aEvent) {
   LOG(("Button %u press on %p\n", aEvent->button, (void*)this));
 
-  
-  
-  
-  
-  
-  
+  // If you double click in GDK, it will actually generate a second
+  // GDK_BUTTON_PRESS before sending the GDK_2BUTTON_PRESS, and this is
+  // different than the DOM spec.  GDK puts this in the queue
+  // programatically, so it's safe to assume that if there's a
+  // double click in the queue, it was generated so we can just drop
+  // this click.
   GdkEvent* peekedEvent = gdk_event_peek();
   if (peekedEvent) {
     GdkEventType type = peekedEvent->any.type;
@@ -2979,7 +2979,7 @@ void nsWindow::OnButtonPressEvent(GdkEventButton* aEvent) {
     containerWindow->DispatchActivateEvent();
   }
 
-  
+  // check to see if we should rollup
   if (CheckForRollup(aEvent->x_root, aEvent->y_root, false, false)) return;
 
   gdouble pressure = 0;
@@ -2997,12 +2997,12 @@ void nsWindow::OnButtonPressEvent(GdkEventButton* aEvent) {
     case 3:
       domButton = MouseButton::eRight;
       break;
-    
+    // These are mapped to horizontal scroll
     case 6:
     case 7:
       NS_WARNING("We're not supporting legacy horizontal scroll event");
       return;
-    
+    // Map buttons 8-9 to back/forward
     case 8:
       DispatchCommandEvent(nsGkAtoms::Back);
       return;
@@ -3030,7 +3030,7 @@ void nsWindow::OnButtonPressEvent(GdkEventButton* aEvent) {
     mWindowShouldStartDragging = true;
   }
 
-  
+  // right menu click on linux should also pop up a context menu
   if (!StaticPrefs::ui_context_menus_after_mouseup()) {
     DispatchContextMenuEventFromMouseEvent(domButton, aEvent);
   }
@@ -3067,15 +3067,15 @@ void nsWindow::OnButtonReleaseEvent(GdkEventButton* aEvent) {
   gdk_event_get_axis((GdkEvent*)aEvent, GDK_AXIS_PRESSURE, &pressure);
   event.mPressure = pressure ? pressure : mLastMotionPressure;
 
-  
-  
+  // The mRefPoint is manipulated in DispatchInputEvent, we're saving it
+  // to use it for the doubleclick position check.
   LayoutDeviceIntPoint pos = event.mRefPoint;
 
   nsEventStatus eventStatus = DispatchInputEvent(&event);
 
   bool defaultPrevented = (eventStatus == nsEventStatus_eConsumeNoDefault);
-  
-  
+  // Check if mouse position in titlebar and doubleclick happened to
+  // trigger restore/maximize.
   if (!defaultPrevented && mDrawInTitlebar &&
       event.mButton == MouseButton::eLeft && event.mClickCount == 2 &&
       mDraggableRegion.Contains(pos.x, pos.y)) {
@@ -3087,13 +3087,13 @@ void nsWindow::OnButtonReleaseEvent(GdkEventButton* aEvent) {
   }
   mLastMotionPressure = pressure;
 
-  
+  // right menu click on linux should also pop up a context menu
   if (StaticPrefs::ui_context_menus_after_mouseup()) {
     DispatchContextMenuEventFromMouseEvent(domButton, aEvent);
   }
 
-  
-  
+  // Open window manager menu on PIP window to allow user
+  // to place it on top / all workspaces.
   if (mIsPIPWindow && aEvent->button == 3) {
     static auto sGdkWindowShowWindowMenu =
         (gboolean(*)(GdkWindow * window, GdkEvent*))
@@ -3107,29 +3107,29 @@ void nsWindow::OnButtonReleaseEvent(GdkEventButton* aEvent) {
 void nsWindow::OnContainerFocusInEvent(GdkEventFocus* aEvent) {
   LOGFOCUS(("OnContainerFocusInEvent [%p]\n", (void*)this));
 
-  
+  // Unset the urgency hint, if possible
   GtkWidget* top_window = GetToplevelWidget();
   if (top_window && (gtk_widget_get_visible(top_window)))
     SetUrgencyHint(top_window, false);
 
-  
-  
+  // Return if being called within SetFocus because the focus manager
+  // already knows that the window is active.
   if (gBlockActivateEvent) {
     LOGFOCUS(("activated notification is blocked [%p]\n", (void*)this));
     return;
   }
 
-  
-  
+  // If keyboard input will be accepted, the focus manager will call
+  // SetFocus to set the correct window.
   gFocusWindow = nullptr;
 
   DispatchActivateEvent();
 
   if (!gFocusWindow) {
-    
-    
-    
-    
+    // We don't really have a window for dispatching key events, but
+    // setting a non-nullptr value here prevents OnButtonPressEvent() from
+    // dispatching an activation notification if the widget is already
+    // active.
     gFocusWindow = this;
   }
 
@@ -3145,12 +3145,12 @@ void nsWindow::OnContainerFocusOutEvent(GdkEventFocus* aEvent) {
     nsCOMPtr<nsIDragSession> dragSession;
     dragService->GetCurrentSession(getter_AddRefs(dragSession));
 
-    
-    
-    
+    // Rollup popups when a window is focused out unless a drag is occurring.
+    // This check is because drags grab the keyboard and cause a focus out on
+    // versions of GTK before 2.18.
     bool shouldRollup = !dragSession;
     if (!shouldRollup) {
-      
+      // we also roll up when a drag is from a different application
       nsCOMPtr<nsINode> sourceNode;
       dragSession->GetSourceNode(getter_AddRefs(sourceNode));
       shouldRollup = (sourceNode == nullptr);
@@ -3172,10 +3172,10 @@ void nsWindow::OnContainerFocusOutEvent(GdkEventFocus* aEvent) {
   DispatchDeactivateEvent();
 
   if (mDrawInTitlebar) {
-    
-    
-    
-    
+    // DispatchDeactivateEvent() ultimately results in a call to
+    // nsGlobalWindowOuter::ActivateOrDeactivate(), which resets
+    // the mIsActive flag.  We call UpdateMozWindowActive() to keep
+    // the flag in sync with GDK_WINDOW_STATE_FOCUSED.
     UpdateMozWindowActive();
   }
 
@@ -3202,20 +3202,20 @@ WidgetEventTime nsWindow::GetWidgetEventTime(guint32 aEventTime) {
 
 TimeStamp nsWindow::GetEventTimeStamp(guint32 aEventTime) {
   if (MOZ_UNLIKELY(!mGdkWindow)) {
-    
+    // nsWindow has been Destroy()ed.
     return TimeStamp::Now();
   }
   if (aEventTime == 0) {
-    
-    
-    
+    // Some X11 and GDK events may be received with a time of 0 to indicate
+    // that they are synthetic events. Some input method editors do this.
+    // In this case too, just return the current timestamp.
     return TimeStamp::Now();
   }
 
   TimeStamp eventTimeStamp;
 
   if (!mIsX11Display) {
-    
+    // Wayland compositors use monotonic time to set timestamps.
     int64_t timestampTime = g_get_monotonic_time() / 1000;
     guint32 refTimeTruncated = guint32(timestampTime);
 
@@ -3260,10 +3260,10 @@ gboolean nsWindow::OnKeyReleaseEvent(GdkEventKey* aEvent) {
 }
 
 void nsWindow::OnScrollEvent(GdkEventScroll* aEvent) {
-  
+  // check to see if we should rollup
   if (CheckForRollup(aEvent->x_root, aEvent->y_root, true, false)) return;
 #if GTK_CHECK_VERSION(3, 4, 0)
-  
+  // check for duplicate legacy scroll event, see GNOME bug 726878
   if (aEvent->direction != GDK_SCROLL_SMOOTH &&
       mLastScrollEventTime == aEvent->time) {
     LOG(("[%d] duplicate legacy scroll event %d\n", aEvent->time,
@@ -3276,12 +3276,12 @@ void nsWindow::OnScrollEvent(GdkEventScroll* aEvent) {
   switch (aEvent->direction) {
 #if GTK_CHECK_VERSION(3, 4, 0)
     case GDK_SCROLL_SMOOTH: {
-      
-      
+      // As of GTK 3.4, all directional scroll events are provided by
+      // the GDK_SCROLL_SMOOTH direction on XInput2 and Wayland devices.
       mLastScrollEventTime = aEvent->time;
 
-      
-      
+      // Special handling for touchpads to support flings
+      // (also known as kinetic/inertial/momentum scrolling)
       GdkDevice* device = gdk_event_get_source_device((GdkEvent*)aEvent);
       GdkInputSource source = gdk_device_get_source(device);
       if (source == GDK_SOURCE_TOUCHSCREEN || source == GDK_SOURCE_TOUCHPAD) {
@@ -3317,12 +3317,12 @@ void nsWindow::OnScrollEvent(GdkEventScroll* aEvent) {
           return;
         }
 
-        
+        // Older GTK doesn't support stop events, so we can't support fling
         wheelEvent.mScrollType = WidgetWheelEvent::SCROLL_ASYNCHRONOUSELY;
       }
 
-      
-      
+      // TODO - use a more appropriate scrolling unit than lines.
+      // Multiply event deltas by 3 to emulate legacy behaviour.
       wheelEvent.mDeltaX = aEvent->delta_x * 3;
       wheelEvent.mDeltaY = aEvent->delta_y * 3;
       wheelEvent.mIsNoLineOrPageDelta = true;
@@ -3363,17 +3363,17 @@ void nsWindow::OnVisibilityNotifyEvent(GdkEventVisibility* aEvent) {
     case GDK_VISIBILITY_UNOBSCURED:
     case GDK_VISIBILITY_PARTIAL:
       if (mIsFullyObscured && mHasMappedToplevel) {
-        
-        
+        // GDK_EXPOSE events have been ignored, so make sure GDK
+        // doesn't think that the window has already been painted.
         gdk_window_invalidate_rect(mGdkWindow, nullptr, FALSE);
       }
 
       mIsFullyObscured = false;
 
-      
+      // if we have to retry the grab, retry it.
       EnsureGrabs();
       break;
-    default:  
+    default:  // includes GDK_VISIBILITY_FULLY_OBSCURED
       mIsFullyObscured = true;
       break;
   }
@@ -3387,16 +3387,16 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
        (void*)this, aWidget, aEvent->changed_mask, aEvent->new_window_state));
 
   if (IS_MOZ_CONTAINER(aWidget)) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // This event is notifying the container widget of changes to the
+    // toplevel window.  Just detect changes affecting whether windows are
+    // viewable.
+    //
+    // (A visibility notify event is sent to each window that becomes
+    // viewable when the toplevel is mapped, but we can't rely on that for
+    // setting mHasMappedToplevel because these toplevel window state
+    // events are asynchronous.  The windows in the hierarchy now may not
+    // be the same windows as when the toplevel was mapped, so they may
+    // not get VisibilityNotify events.)
     bool mapped = !(aEvent->new_window_state &
                     (GDK_WINDOW_STATE_ICONIFIED | GDK_WINDOW_STATE_WITHDRAWN));
     if (mHasMappedToplevel != mapped) {
@@ -3405,28 +3405,28 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
     LOG(("\tquick return because IS_MOZ_CONTAINER(aWidget) is true\n"));
     return;
   }
-  
+  // else the widget is a shell widget.
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // The block below is a bit evil.
+  //
+  // When a window is resized before it is shown, gtk_window_resize() delays
+  // resizes until the window is shown.  If gtk_window_state_event() sees a
+  // GDK_WINDOW_STATE_MAXIMIZED change [1] before the window is shown, then
+  // gtk_window_compute_configure_request_size() ignores the values from the
+  // resize [2].  See bug 1449166 for an example of how this could happen.
+  //
+  // [1] https://gitlab.gnome.org/GNOME/gtk/blob/3.22.30/gtk/gtkwindow.c#L7967
+  // [2] https://gitlab.gnome.org/GNOME/gtk/blob/3.22.30/gtk/gtkwindow.c#L9377
+  //
+  // In order to provide a sensible size for the window when the user exits
+  // maximized state, we hide the GDK_WINDOW_STATE_MAXIMIZED change from
+  // gtk_window_state_event() so as to trick GTK into using the values from
+  // gtk_window_resize() in its configure request.
+  //
+  // We instead notify gtk_window_state_event() of the maximized state change
+  // once the window is shown.
+  //
+  // See https://gitlab.gnome.org/GNOME/gtk/issues/1044
   if (!mIsShown) {
     aEvent->changed_mask = static_cast<GdkWindowState>(
         aEvent->changed_mask & ~GDK_WINDOW_STATE_MAXIMIZED);
@@ -3436,29 +3436,29 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
         aEvent->changed_mask | GDK_WINDOW_STATE_MAXIMIZED);
   }
 
-  
-  
+  // This is a workaround for https://gitlab.gnome.org/GNOME/gtk/issues/1395
+  // Gtk+ controls window active appearance by window-state-event signal.
   if (mDrawInTitlebar && (aEvent->changed_mask & GDK_WINDOW_STATE_FOCUSED)) {
-    
-    
-    
+    // Emulate what Gtk+ does at gtk_window_state_event().
+    // We can't check GTK_STATE_FLAG_BACKDROP directly as it's set by Gtk+
+    // *after* this window-state-event handler.
     mTitlebarBackdropState =
         !(aEvent->new_window_state & GDK_WINDOW_STATE_FOCUSED);
 
-    
+    // keep mIsActive in sync with GDK_WINDOW_STATE_FOCUSED
     UpdateMozWindowActive();
 
     ForceTitlebarRedraw();
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // We don't care about anything but changes in the maximized/icon/fullscreen
+  // states but we need a workaround for bug in Wayland:
+  // https://gitlab.gnome.org/GNOME/gtk/issues/67
+  // Under wayland the gtk_window_iconify implementation does NOT synthetize
+  // window_state_event where the GDK_WINDOW_STATE_ICONIFIED is set.
+  // During restore we  won't get aEvent->changed_mask with
+  // the GDK_WINDOW_STATE_ICONIFIED so to detect that change we use the stored
+  // mSizeState and obtaining a focus.
   bool waylandWasIconified =
       (!mIsX11Display && aEvent->changed_mask & GDK_WINDOW_STATE_FOCUSED &&
        aEvent->new_window_state & GDK_WINDOW_STATE_FOCUSED &&
@@ -3476,7 +3476,7 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
     mSizeState = nsSizeMode_Minimized;
 #ifdef ACCESSIBILITY
     DispatchMinimizeEventAccessible();
-#endif  
+#endif  // ACCESSIBILITY
   } else if (aEvent->new_window_state & GDK_WINDOW_STATE_FULLSCREEN) {
     LOG(("\tFullscreen\n"));
     mSizeState = nsSizeMode_Fullscreen;
@@ -3485,13 +3485,13 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
     mSizeState = nsSizeMode_Maximized;
 #ifdef ACCESSIBILITY
     DispatchMaximizeEventAccessible();
-#endif  
+#endif  // ACCESSIBILITY
   } else {
     LOG(("\tNormal\n"));
     mSizeState = nsSizeMode_Normal;
 #ifdef ACCESSIBILITY
     DispatchRestoreEventAccessible();
-#endif  
+#endif  // ACCESSIBILITY
   }
 
   if (aEvent->new_window_state & GDK_WINDOW_STATE_TILED) {
@@ -3526,14 +3526,14 @@ void nsWindow::ThemeChanged() {
 
   if (!mGdkWindow || MOZ_UNLIKELY(mIsDestroyed)) return;
 
-  
+  // Dispatch theme change notification to all child windows
   GList* children = gdk_window_peek_children(mGdkWindow);
   while (children) {
     GdkWindow* gdkWin = GDK_WINDOW(children->data);
 
     auto* win = (nsWindow*)g_object_get_data(G_OBJECT(gdkWin), "nsWindow");
 
-    if (win && win != this) {  
+    if (win && win != this) {  // guard against infinite recursion
       RefPtr<nsWindow> kungFuDeathGrip = win;
       win->ThemeChanged();
     }
@@ -3548,7 +3548,7 @@ void nsWindow::OnDPIChanged() {
   if (mWidgetListener) {
     if (PresShell* presShell = mWidgetListener->GetPresShell()) {
       presShell->BackingScaleFactorChanged();
-      
+      // Update menu's font size etc
       presShell->ThemeChanged();
     }
     mWidgetListener->UIResolutionChanged();
@@ -3560,7 +3560,7 @@ void nsWindow::OnCheckResize() { mPendingConfigures++; }
 void nsWindow::OnCompositedChanged() {
   if (mWidgetListener) {
     if (PresShell* presShell = mWidgetListener->GetPresShell()) {
-      
+      // Update CSD after the change in alpha visibility
       presShell->ThemeChanged();
     }
   }
@@ -3571,14 +3571,14 @@ void nsWindow::OnScaleChanged(GtkAllocation* aAllocation) {
        aAllocation->x, aAllocation->y, aAllocation->width,
        aAllocation->height));
 
-  
+  // Force scale factor recalculation
   mWindowScaleFactorChanged = true;
 
-  
+  // This eventually propagate new scale to the PuppetWidgets
   OnDPIChanged();
 
-  
-  
+  // configure_event is already fired before scale-factor signal,
+  // but size-allocate isn't fired by changing scale
   OnSizeAllocate(aAllocation);
 }
 
@@ -3626,11 +3626,11 @@ bool nsWindow::IsHandlingTouchSequence(GdkEventSequence* aSequence) {
 #if GTK_CHECK_VERSION(3, 4, 0)
 gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
   if (!mHandleTouchEvent) {
-    
-    
-    
-    
-    
+    // If a popup window was spawned (e.g. as the result of a long-press)
+    // and touch events got diverted to that window within a touch sequence,
+    // ensure the touch event gets sent to the original window instead. We
+    // keep the checks here very conservative so that we only redirect
+    // events in this specific scenario.
     nsWindow* targetWindow = GetTransientForWindowIfPopup();
     if (targetWindow &&
         targetWindow->IsHandlingTouchSequence(aEvent->sequence)) {
@@ -3677,7 +3677,7 @@ gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
 
   if (aEvent->type == GDK_TOUCH_BEGIN || aEvent->type == GDK_TOUCH_UPDATE) {
     mTouches.Put(aEvent->sequence, touch.forget());
-    
+    // add all touch points to event object
     for (auto iter = mTouches.Iter(); !iter.Done(); iter.Next()) {
       event.mTouches.AppendElement(new dom::Touch(*iter.UserData()));
     }
@@ -3720,8 +3720,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
          nodeName.get()));
   }
 #endif
-  
-  
+  // only set the base parent if we're going to be a dialog or a
+  // toplevel
   nsIWidget* baseParent =
       aInitData && (aInitData->mWindowType == eWindowType_dialog ||
                     aInitData->mWindowType == eWindowType_toplevel ||
@@ -3730,26 +3730,26 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
           : aParent;
 
 #ifdef ACCESSIBILITY
-  
+  // Send a DBus message to check whether a11y is enabled
   a11y::PreInit();
 #endif
 
-  
+  // Ensure that the toolkit is created.
   nsGTKToolkit::GetToolkit();
 
-  
+  // initialize all the common bits of this class
   BaseCreate(baseParent, aInitData);
 
-  
+  // Do we need to listen for resizes?
   bool listenForResizes = false;
   ;
   if (aNativeParent || (aInitData && aInitData->mListenForResizes))
     listenForResizes = true;
 
-  
+  // and do our common creation
   CommonCreate(aParent, listenForResizes);
 
-  
+  // save our bounds
   mBounds = aRect;
   ConstrainSize(&mBounds.width, &mBounds.height);
 
@@ -3757,7 +3757,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   bool needsAlphaVisual = (mWindowType == eWindowType_popup &&
                            (aInitData && aInitData->mSupportTranslucency));
 
-  
+  // Figure out our parent window - only used for eWindowType_child
   GtkWidget* parentMozContainer = nullptr;
   GtkContainer* parentGtkContainer = nullptr;
   GdkWindow* parentGdkWindow = nullptr;
@@ -3776,27 +3776,27 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   }
 
   if (parentGdkWindow) {
-    
+    // get the widget for the window - it should be a moz container
     parentMozContainer = parentnsWindow->GetMozContainerWidget();
     if (!parentMozContainer) return NS_ERROR_FAILURE;
   }
-  
+  // ^^ only used for eWindowType_child
 
   if (!mIsX11Display) {
     if (mWindowType == eWindowType_child) {
-      
-      
+      // eWindowType_child is not supported on Wayland. Just switch to toplevel
+      // as a workaround.
       mWindowType = eWindowType_toplevel;
     } else if (mWindowType == eWindowType_popup && !aNativeParent && !aParent) {
-      
-      
+      // Workaround for Wayland where the popup windows always need to have
+      // parent window. For example webrtc ui is a popup window without parent.
       mWindowType = eWindowType_toplevel;
     }
   }
 
   mIsPIPWindow = aInitData && aInitData->mPIPWindow;
 
-  
+  // ok, create our windows
   switch (mWindowType) {
     case eWindowType_dialog:
     case eWindowType_popup:
@@ -3804,15 +3804,15 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     case eWindowType_invisible: {
       mIsTopLevel = true;
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // Popups that are not noautohide are only temporary. The are used
+      // for menus and the like and disappear when another window is used.
+      // For most popups, use the standard GtkWindowType GTK_WINDOW_POPUP,
+      // which will use a Window with the override-redirect attribute
+      // (for temporary windows).
+      // For long-lived windows, their stacking order is managed by the
+      // window manager, as indicated by GTK_WINDOW_TOPLEVEL.
+      // For Wayland we have to always use GTK_WINDOW_POPUP to control
+      // popup window position.
       GtkWindowType type = GTK_WINDOW_TOPLEVEL;
       if (mWindowType == eWindowType_popup) {
         type = (mIsX11Display && aInitData->mNoAutoHide) ? GTK_WINDOW_TOPLEVEL
@@ -3820,8 +3820,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       }
       mShell = gtk_window_new(type);
 
-      
-      
+      // Ensure gfxPlatform is initialized, since that is what initializes
+      // gfxVars, used below.
       Unused << gfxPlatform::GetPlatform();
 
       bool useWebRender =
@@ -3831,34 +3831,34 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       MOZ_ASSERT(shouldAccelerate | !useWebRender);
 
       if (mWindowType == eWindowType_toplevel) {
-        
+        // We enable titlebar rendering for toplevel windows only.
         mCSDSupportLevel = GetSystemCSDSupportLevel();
 
-        
-        
-        
+        // There's no point to configure transparency
+        // on non-composited screens.
+        // Also disable transparency for PictureInPicture windows.
         GdkScreen* screen = gdk_screen_get_default();
         if (gdk_screen_is_composited(screen) && !mIsPIPWindow) {
-          
-          
-          
-          
-          
+          // Some Gtk+ themes use non-rectangular toplevel windows. To fully
+          // support such themes we need to make toplevel window transparent
+          // with ARGB visual.
+          // It may cause performanance issue so make it configurable
+          // and enable it by default for selected window managers.
           if (Preferences::HasUserValue("mozilla.widget.use-argb-visuals")) {
-            
+            // argb visual is explicitly required so use it
             needsAlphaVisual =
                 Preferences::GetBool("mozilla.widget.use-argb-visuals");
           } else if (!mIsX11Display) {
-            
+            // Wayland uses ARGB visual by default
             needsAlphaVisual = true;
           } else if (mCSDSupportLevel != CSD_SUPPORT_NONE) {
             if (shouldAccelerate) {
               needsAlphaVisual = true;
             } else {
-              
-              
-              
-              
+              // We want to draw a transparent titlebar but we can't use
+              // ARGB visual due to Bug 1516224.
+              // If we're on Mutter/X.org (Bug 1530252) just give up
+              // and don't render transparent corners at all.
               mTransparencyBitmapForTitlebar = TitlebarCanUseShapeMask();
             }
           }
@@ -3866,26 +3866,26 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       }
 
       bool isSetVisual = false;
-      
-      
-      
+      // If using WebRender on X11, we need to select a visual with a depth
+      // buffer, as well as an alpha channel if transparency is requested. This
+      // must be done before the widget is realized.
 
-      
-      
+      // Use GL/WebRender compatible visual only when it is necessary, since
+      // the visual consumes more memory.
       if (mIsX11Display && shouldAccelerate) {
         auto display = GDK_DISPLAY_XDISPLAY(gtk_widget_get_display(mShell));
         auto screen = gtk_widget_get_screen(mShell);
         int screenNumber = GDK_SCREEN_XNUMBER(screen);
         int visualId = 0;
         if (useWebRender) {
-          
-          
+          // WebRender rquests AlphaVisual for making readback to work
+          // correctly.
           needsAlphaVisual = true;
         }
         if (GLContextGLX::FindVisual(display, screenNumber, useWebRender,
                                      needsAlphaVisual, &visualId)) {
-          
-          
+          // If we're using CSD, rendering will go through mContainer, but
+          // it will inherit this visual as it is a child of mShell.
           gtk_widget_set_visual(mShell,
                                 gdk_x11_screen_lookup_visual(screen, visualId));
           mHasAlphaVisual = needsAlphaVisual;
@@ -3906,18 +3906,18 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
         }
       }
 
-      
-      
-      
-      
+      // We have a toplevel window with transparency.
+      // Calls to UpdateTitlebarTransparencyBitmap() from OnExposeEvent()
+      // occur before SetTransparencyMode() receives eTransparencyTransparent
+      // from layout, so set mIsTransparent here.
       if (mWindowType == eWindowType_toplevel &&
           (mHasAlphaVisual || mTransparencyBitmapForTitlebar)) {
         mIsTransparent = true;
       }
 
-      
-      
-      
+      // We only move a general managed toplevel window if someone has
+      // actually placed the window somewhere.  If no placement has taken
+      // place, we just let the window manager Do The Right Thing.
       NativeResize();
 
       if (mWindowType == eWindowType_dialog) {
@@ -3939,8 +3939,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
         mGtkWindowRoleName = "Popup";
 
         if (aInitData->mNoAutoHide) {
-          
-          
+          // ... but the window manager does not decorate this window,
+          // nor provide a separate taskbar icon.
           if (mBorderStyle == eBorderStyle_default) {
             gtk_window_set_decorated(GTK_WINDOW(mShell), FALSE);
           } else {
@@ -3952,13 +3952,13 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
             }
           }
           gtk_window_set_skip_taskbar_hint(GTK_WINDOW(mShell), TRUE);
-          
-          
-          
+          // Element focus is managed by the parent window so the
+          // WM_HINTS input field is set to False to tell the window
+          // manager not to set input focus to this window ...
           gtk_window_set_accept_focus(GTK_WINDOW(mShell), FALSE);
 #ifdef MOZ_X11
-          
-          
+          // ... but when the window manager offers focus through
+          // WM_TAKE_FOCUS, focus is requested on the parent window.
           if (mIsX11Display) {
             gtk_widget_realize(mShell);
             gdk_window_add_filter(gtk_widget_get_window(mShell),
@@ -3992,14 +3992,14 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
               GTK_WINDOW(mShell), GTK_WINDOW(parentnsWindow->GetGtkWidget()));
         }
 
-        
+        // We need realized mShell at NativeMove().
         gtk_widget_realize(mShell);
 
-        
-        
-        
+        // With popup windows, we want to control their position, so don't
+        // wait for the window manager to place them (which wouldn't
+        // happen with override-redirect windows anyway).
         NativeMove();
-      } else {  
+      } else {  // must be eWindowType_toplevel
         mGtkWindowRoleName = "Toplevel";
         SetDefaultIcon();
 
@@ -4008,7 +4008,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
                                    GDK_WINDOW_TYPE_HINT_UTILITY);
         }
 
-        
+        // each toplevel window gets its own window group
         GtkWindowGroup* group = gtk_window_group_new();
         gtk_window_group_add_window(group, GTK_WINDOW(mShell));
         g_object_unref(group);
@@ -4018,7 +4018,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
         gtk_window_set_keep_above(GTK_WINDOW(mShell), TRUE);
       }
 
-      
+      // Create a container to hold child windows and child GtkWidgets.
       GtkWidget* container = moz_container_new();
       mContainer = MOZ_CONTAINER(container);
 #ifdef MOZ_WAYLAND
@@ -4032,28 +4032,28 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       }
 #endif
 
-      
-      
+      // "csd" style is set when widget is realized so we need to call
+      // it explicitly now.
       gtk_widget_realize(mShell);
 
-      
-
-
-
-
-
-
-
-
-
-
+      /* There are several cases here:
+       *
+       * 1) We're running on Gtk+ without client side decorations.
+       *    Content is rendered to mShell window and we listen
+       *    to the Gtk+ events on mShell
+       * 2) We're running on Gtk+ and client side decorations
+       *    are drawn by Gtk+ to mShell. Content is rendered to mContainer
+       *    and we listen to the Gtk+ events on mContainer.
+       * 3) We're running on Wayland. All gecko content is rendered
+       *    to mContainer and we listen to the Gtk+ events on mContainer.
+       */
       GtkStyleContext* style = gtk_widget_get_style_context(mShell);
       mDrawToContainer = !mIsX11Display ||
                          (mCSDSupportLevel == CSD_SUPPORT_CLIENT) ||
                          gtk_style_context_has_class(style, "csd");
       eventWidget = (mDrawToContainer) ? container : mShell;
 
-      
+      // Prevent GtkWindow from painting a background to avoid flickering.
       gtk_widget_set_app_paintable(eventWidget, TRUE);
 
       gtk_widget_add_events(eventWidget, kEvents);
@@ -4065,28 +4065,28 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
         moz_container_force_default_visual(mContainer);
       }
 
-      
-      
+      // If we draw to mContainer window then configure it now because
+      // gtk_container_add() realizes the child widget.
       gtk_widget_set_has_window(container, mDrawToContainer);
 
       gtk_container_add(GTK_CONTAINER(mShell), container);
       gtk_widget_realize(container);
 
-      
+      // make sure this is the focus widget in the container
       gtk_widget_show(container);
       gtk_widget_grab_focus(container);
 
-      
+      // the drawing window
       mGdkWindow = gtk_widget_get_window(eventWidget);
 
       if (mWindowType == eWindowType_popup) {
-        
-        
+        // gdk does not automatically set the cursor for "temporary"
+        // windows, which are what gtk uses for popups.
 
-        mCursor = eCursor_wait;  
-                                 
-                                 
-                                 
+        mCursor = eCursor_wait;  // force SetCursor to actually set the
+                                 // cursor, even though our internal state
+                                 // indicates that we already have the
+                                 // standard cursor.
         SetCursor(eCursor_standard, nullptr, 0, 0);
 
         if (aInitData->mNoAutoHide) {
@@ -4095,7 +4095,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
             gdk_window_set_decorations(mGdkWindow, (GdkWMDecoration)wmd);
         }
 
-        
+        // If the popup ignores mouse events, set an empty input shape.
         SetWindowMouseTransparent(aInitData->mMouseTransparent);
       }
     } break;
@@ -4111,9 +4111,9 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
         mGdkWindow = CreateGdkWindow(parentGdkWindow, parentMozContainer);
         mHasMappedToplevel = parentnsWindow->mHasMappedToplevel;
       } else if (parentGtkContainer) {
-        
-        
-        
+        // This MozContainer has its own window for drawing and receives
+        // events because there is no mShell widget (corresponding to this
+        // nsWindow).
         GtkWidget* container = moz_container_new();
         mContainer = MOZ_CONTAINER(container);
         eventWidget = container;
@@ -4132,11 +4132,11 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       break;
   }
 
-  
+  // label the drawing window with this object so we can find our way home
   g_object_set_data(G_OBJECT(mGdkWindow), "nsWindow", this);
   if (mDrawToContainer) {
-    
-    
+    // Also label mShell toplevel window,
+    // property_notify_event_cb callback also needs to find its way home
     g_object_set_data(G_OBJECT(gtk_widget_get_window(mShell)), "nsWindow",
                       this);
   }
@@ -4145,7 +4145,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 
   if (mShell) g_object_set_data(G_OBJECT(mShell), "nsWindow", this);
 
-  
+  // attach listeners for events
   if (mShell) {
     g_signal_connect(mShell, "configure_event", G_CALLBACK(configure_event_cb),
                      nullptr);
@@ -4180,7 +4180,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   }
 
   if (mContainer) {
-    
+    // Widget signals
     g_signal_connect(mContainer, "unrealize",
                      G_CALLBACK(container_unrealize_cb), nullptr);
     g_signal_connect_after(mContainer, "size_allocate",
@@ -4189,10 +4189,10 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
                      G_CALLBACK(hierarchy_changed_cb), nullptr);
     g_signal_connect(mContainer, "notify::scale-factor",
                      G_CALLBACK(scale_changed_cb), nullptr);
-    
+    // Initialize mHasMappedToplevel.
     hierarchy_changed_cb(GTK_WIDGET(mContainer), nullptr);
-    
-    
+    // Expose, focus, key, and drag events are sent even to GTK_NO_WINDOW
+    // widgets.
     g_signal_connect(G_OBJECT(mContainer), "draw", G_CALLBACK(expose_event_cb),
                      nullptr);
     g_signal_connect(mContainer, "focus_in_event",
@@ -4219,19 +4219,19 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     GtkWidget* widgets[] = {GTK_WIDGET(mContainer),
                             !mDrawToContainer ? mShell : nullptr};
     for (size_t i = 0; i < ArrayLength(widgets) && widgets[i]; ++i) {
-      
-      
-      
+      // Visibility events are sent to the owning widget of the relevant
+      // window but do not propagate to parent widgets so connect on
+      // mShell (if it exists) as well as mContainer.
       g_signal_connect(widgets[i], "visibility-notify-event",
                        G_CALLBACK(visibility_notify_event_cb), nullptr);
-      
-      
-      
+      // Similarly double buffering is controlled by the window's owning
+      // widget.  Disable double buffering for painting directly to the
+      // X Window.
       gtk_widget_set_double_buffered(widgets[i], FALSE);
     }
 
-    
-    
+    // We create input contexts for all containers, except for
+    // toplevel popup windows
     if (mWindowType != eWindowType_popup) {
       mIMContext = new IMContextWrapper(this);
     }
@@ -4243,10 +4243,10 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   }
 
   if (eventWidget) {
-    
-    
-    
-    
+    // These events are sent to the owning widget of the relevant window
+    // and propagate up to the first widget that handles the events, so we
+    // need only connect on mShell, if it exists, to catch events on its
+    // window and windows of mContainer.
     g_signal_connect(eventWidget, "enter-notify-event",
                      G_CALLBACK(enter_notify_event_cb), nullptr);
     g_signal_connect(eventWidget, "leave-notify-event",
@@ -4277,7 +4277,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
          gdk_window_get_parent(mGdkWindow)));
   }
 
-  
+  // resize so that everything is set to the right dimensions
   if (!mIsTopLevel)
     Resize(mBounds.x, mBounds.y, mBounds.width, mBounds.height, false);
 
@@ -4294,11 +4294,11 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     mSurfaceProvider.Initialize(mXDisplay, mXWindow, mXVisual, mXDepth, shaped);
 
     if (mIsTopLevel) {
-      
-      
-      
-      
-      
+      // Set window manager hint to keep fullscreen windows composited.
+      //
+      // If the window were to get unredirected, there could be visible
+      // tearing because Gecko does not align its framebuffer updates with
+      // vblank.
       SetCompositorHint(GTK_WIDGET_COMPOSIDED_ENABLED);
     }
   }
@@ -4310,7 +4310,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 #  endif
 #endif
 
-  
+  // Set default application name when it's empty.
   if (mGtkWindowAppName.IsEmpty()) {
     mGtkWindowAppName = gAppData->name;
   }
@@ -4341,14 +4341,14 @@ void nsWindow::RefreshWindowClass(void) {
     class_hint->res_name = const_cast<char*>(mGtkWindowAppName.get());
     class_hint->res_class = const_cast<char*>(res_class);
 
-    
-    
+    // Can't use gtk_window_set_wmclass() for this; it prints
+    // a warning & refuses to make the change.
     GdkDisplay* display = gdk_display_get_default();
     XSetClassHint(GDK_DISPLAY_XDISPLAY(display),
                   gdk_x11_window_get_xid(gdkWindow), class_hint);
     XFree(class_hint);
   }
-#endif 
+#endif /* MOZ_X11 */
 }
 
 void nsWindow::SetWindowClass(const nsAString& xulWinType) {
@@ -4359,10 +4359,10 @@ void nsWindow::SetWindowClass(const nsAString& xulWinType) {
 
   const char* role = nullptr;
 
-  
-  
-  
-  
+  // Parse res_name into a name and role. Characters other than
+  // [A-Za-z0-9_-] are converted to '_'. Anything after the first
+  // colon is assigned to role; if there's no colon, assign the
+  // whole thing to both role and res_name.
   for (char* c = res_name; *c; c++) {
     if (':' == *c) {
       *c = 0;
@@ -4382,12 +4382,12 @@ void nsWindow::SetWindowClass(const nsAString& xulWinType) {
 
 void nsWindow::NativeResize() {
   if (!AreBoundsSane()) {
-    
-    
-    
-    
-    
-    
+    // If someone has set this so that the needs show flag is false
+    // and it needs to be hidden, update the flag and hide the
+    // window.  This flag will be cleared the next time someone
+    // hides the window or shows it.  It also prevents us from
+    // calling NativeShow(false) excessively on the window which
+    // causes unneeded X traffic.
     if (!mNeedsShow && mIsShown) {
       mNeedsShow = true;
       NativeShow(false);
@@ -4418,14 +4418,14 @@ void nsWindow::NativeResize() {
   }
 
 #ifdef MOZ_X11
-  
-  
+  // Notify the GtkCompositorWidget of a ClientSizeChange
+  // This is different than OnSizeAllocate to catch initial sizing
   if (mCompositorWidgetDelegate) {
     mCompositorWidgetDelegate->NotifyClientSizeChanged(GetClientSize());
   }
 #endif
 
-  
+  // Does it need to be shown because bounds were previously insane?
   if (mNeedsShow && mIsShown) {
     NativeShow(true);
   }
@@ -4433,12 +4433,12 @@ void nsWindow::NativeResize() {
 
 void nsWindow::NativeMoveResize() {
   if (!AreBoundsSane()) {
-    
-    
-    
-    
-    
-    
+    // If someone has set this so that the needs show flag is false
+    // and it needs to be hidden, update the flag and hide the
+    // window.  This flag will be cleared the next time someone
+    // hides the window or shows it.  It also prevents us from
+    // calling NativeShow(false) excessively on the window which
+    // causes unneeded X traffic.
     if (!mNeedsShow && mIsShown) {
       mNeedsShow = true;
       NativeShow(false);
@@ -4458,9 +4458,9 @@ void nsWindow::NativeMoveResize() {
     NativeMoveResizeWaylandPopup(&topLeft, &size);
   } else {
     if (mIsTopLevel) {
-      
+      // x and y give the position of the window manager frame top-left.
       gtk_window_move(GTK_WINDOW(mShell), topLeft.x, topLeft.y);
-      
+      // This sets the client window size.
       MOZ_ASSERT(size.width > 0 && size.height > 0,
                  "Can't resize window smaller than 1x1.");
       gtk_window_resize(GTK_WINDOW(mShell), size.width, size.height);
@@ -4478,14 +4478,14 @@ void nsWindow::NativeMoveResize() {
   }
 
 #ifdef MOZ_X11
-  
-  
+  // Notify the GtkCompositorWidget of a ClientSizeChange
+  // This is different than OnSizeAllocate to catch initial sizing
   if (mCompositorWidgetDelegate) {
     mCompositorWidgetDelegate->NotifyClientSizeChanged(GetClientSize());
   }
 #endif
 
-  
+  // Does it need to be shown because bounds were previously insane?
   if (mNeedsShow && mIsShown) {
     NativeShow(true);
   }
@@ -4503,15 +4503,15 @@ void nsWindow::HideWaylandWindow() {
   }
   if (!mIsDestroyed) {
     if (mContainer && moz_container_has_wl_egl_window(mContainer)) {
-      
-      
-      
-      
+      // Because wl_egl_window is destroyed on moz_container_unmap(),
+      // the current compositor cannot use it anymore. To avoid crash,
+      // pause the compositor and destroy EGLSurface & resume the compositor
+      // and re-create EGLSurface on next expose event.
       MOZ_ASSERT(GetRemoteRenderer());
       if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
-        
+        // XXX slow sync IPC
         remoteRenderer->SendPause();
-        
+        // Re-request initial draw callback
         RefPtr<nsWindow> self(this);
         moz_container_add_initial_draw_callback(mContainer, [self]() -> void {
           self->mNeedsCompositorResume = true;
@@ -4542,8 +4542,8 @@ void nsWindow::WaylandStartVsync() {
     }
   }
 
-  
-  
+  // The widget is going to be shown, so reconfigure the surface
+  // of our vsync source.
   RefPtr<nsWindow> self(this);
   moz_container_add_initial_draw_callback(mContainer, [self]() -> void {
     WaylandVsyncSource::WaylandDisplay& display =
@@ -4560,8 +4560,8 @@ void nsWindow::WaylandStartVsync() {
 void nsWindow::WaylandStopVsync() {
 #ifdef MOZ_WAYLAND
   if (mWaylandVsyncSource) {
-    
-    
+    // The widget is going to be hidden, so clear the surface of our
+    // vsync source.
     WaylandVsyncSource::WaylandDisplay& display =
         static_cast<WaylandVsyncSource::WaylandDisplay&>(
             mWaylandVsyncSource->GetGlobalDisplay());
@@ -4572,15 +4572,15 @@ void nsWindow::WaylandStopVsync() {
 
 void nsWindow::NativeShow(bool aAction) {
   if (aAction) {
-    
+    // unset our flag now that our window has been shown
     mNeedsShow = false;
 
     if (mIsTopLevel) {
-      
+      // Set up usertime/startupID metadata for the created window.
       if (mWindowType != eWindowType_invisible) {
         SetUserTimeAndStartupIDForActivatedWindow(mShell);
       }
-      
+      // Update popup window hierarchy run-time on Wayland.
       if (IsWaylandPopup()) {
         if (!ConfigureWaylandPopupWindows()) {
           mNeedsShow = true;
@@ -4604,9 +4604,9 @@ void nsWindow::NativeShow(bool aAction) {
       }
       HideWaylandWindow();
     } else if (mIsTopLevel) {
-      
-      
-      
+      // Workaround window freezes on GTK versions before 3.21.2 by
+      // ensuring that configure events get dispatched to windows before
+      // they are unmapped. See bug 1225044.
       if (gtk_check_version(3, 21, 2) != nullptr && mPendingConfigures > 0) {
         GtkAllocation allocation;
         gtk_widget_get_allocation(GTK_WIDGET(mShell), &allocation);
@@ -4629,7 +4629,7 @@ void nsWindow::NativeShow(bool aAction) {
       }
       gtk_widget_hide(mShell);
 
-      ClearTransparencyBitmap();  
+      ClearTransparencyBitmap();  // Release some resources
     } else if (mContainer) {
       gtk_widget_hide(GTK_WIDGET(mContainer));
     } else if (mGdkWindow) {
@@ -4639,29 +4639,29 @@ void nsWindow::NativeShow(bool aAction) {
 }
 
 void nsWindow::SetHasMappedToplevel(bool aState) {
-  
-  
-  
+  // Even when aState == mHasMappedToplevel (as when this method is called
+  // from Show()), child windows need to have their state checked, so don't
+  // return early.
   bool oldState = mHasMappedToplevel;
   mHasMappedToplevel = aState;
 
-  
-  
-  
-  
-  
-  
-  
+  // mHasMappedToplevel is not updated for children of windows that are
+  // hidden; GDK knows not to send expose events for these windows.  The
+  // state is recorded on the hidden window itself, but, for child trees of
+  // hidden windows, their state essentially becomes disconnected from their
+  // hidden parent.  When the hidden parent gets shown, the child trees are
+  // reconnected, and the state of the window being shown can be easily
+  // propagated.
   if (!mIsShown || !mGdkWindow) return;
 
   if (aState && !oldState && !mIsFullyObscured) {
-    
-    
-    
+    // GDK_EXPOSE events have been ignored but the window is now visible,
+    // so make sure GDK doesn't think that the window has already been
+    // painted.
     gdk_window_invalidate_rect(mGdkWindow, nullptr, FALSE);
 
-    
-    
+    // Check that a grab didn't fail due to the window not being
+    // viewable.
     EnsureGrabs();
   }
 
@@ -4677,12 +4677,12 @@ void nsWindow::SetHasMappedToplevel(bool aState) {
 }
 
 LayoutDeviceIntSize nsWindow::GetSafeWindowSize(LayoutDeviceIntSize aSize) {
-  
-  
-  
-  
-  
-  
+  // The X protocol uses CARD32 for window sizes, but the server (1.11.3)
+  // reads it as CARD16.  Sizes of pixmaps, used for drawing, are (unsigned)
+  // CARD16 in the protocol, but the server's ProcCreatePixmap returns
+  // BadAlloc if dimensions cannot be represented by signed shorts.
+  // Because we are creating Cairo surfaces to represent window buffers,
+  // we also must ensure that the window can fit in a Cairo surface.
   LayoutDeviceIntSize result = aSize;
   int32_t maxSize = 32767;
   if (mLayerManager && mLayerManager->AsKnowsCompositor()) {
@@ -4721,7 +4721,7 @@ void nsWindow::CleanLayerManagerRecursive(void) {
 
 void nsWindow::SetTransparencyMode(nsTransparencyMode aMode) {
   if (!mShell) {
-    
+    // Pass the request to the toplevel window
     GtkWidget* topWidget = GetToplevelWidget();
     if (!topWidget) return;
 
@@ -4739,10 +4739,10 @@ void nsWindow::SetTransparencyMode(nsTransparencyMode aMode) {
   }
 
   if (mWindowType != eWindowType_popup) {
-    
-    
-    
-    
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1344839 reported
+    // problems cleaning the layer manager for toplevel windows.
+    // Ignore the request so as to workaround that.
+    // mIsTransparent is set in Create() if transparency may be required.
     if (isTransparent) {
       NS_WARNING("Transparent mode not supported on non-popup windows.");
     }
@@ -4751,22 +4751,22 @@ void nsWindow::SetTransparencyMode(nsTransparencyMode aMode) {
 
   if (!isTransparent) {
     ClearTransparencyBitmap();
-  }  
-  
+  }  // else the new default alpha values are "all 1", so we don't
+  // need to change anything yet
 
   mIsTransparent = isTransparent;
 
   if (!mHasAlphaVisual) {
-    
-    
-    
+    // The choice of layer manager depends on
+    // GtkCompositorWidgetInitData::Shaped(), which will need to change, so
+    // clean out the old layer manager.
     CleanLayerManagerRecursive();
   }
 }
 
 nsTransparencyMode nsWindow::GetTransparencyMode() {
   if (!mShell) {
-    
+    // Pass the request to the toplevel window
     GtkWidget* topWidget = GetToplevelWidget();
     if (!topWidget) {
       return eTransparencyOpaque;
@@ -4798,8 +4798,8 @@ void nsWindow::SetWindowMouseTransparent(bool aIsTransparent) {
   }
 }
 
-
-
+// For setting the draggable titlebar region from CSS
+// with -moz-window-dragging: drag.
 void nsWindow::UpdateWindowDraggingRegion(
     const LayoutDeviceIntRegion& aRegion) {
   if (mDraggableRegion != aRegion) {
@@ -4828,8 +4828,8 @@ void nsWindow::UpdateTopLevelOpaqueRegionWayland(bool aSubtractCorners) {
     return;
   }
 
-  
-  
+  // Set opaque region to mShell. It's moved to mClientOffset.x/mClientOffset.y
+  // from origin as we need transparent shadows around a window.
   int x = DevicePixelsToGdkCoordRoundDown(mClientOffset.x);
   int y = DevicePixelsToGdkCoordRoundDown(mClientOffset.y);
   int width = DevicePixelsToGdkCoordRoundDown(mBounds.width);
@@ -4856,7 +4856,7 @@ void nsWindow::UpdateTopLevelOpaqueRegionWayland(bool aSubtractCorners) {
 
 static void GdkWindowSetOpaqueRegion(GdkWindow* aGdkWindow,
                                      cairo_region_t* aRegion) {
-  
+  // Available as of GTK 3.10+
   static auto sGdkWindowSetOpaqueRegion =
       (void (*)(GdkWindow*, cairo_region_t*))dlsym(
           RTLD_DEFAULT, "gdk_window_set_opaque_region");
@@ -4869,10 +4869,10 @@ static void GdkWindowSetOpaqueRegion(GdkWindow* aGdkWindow,
   (*sGdkWindowSetOpaqueRegion)(aGdkWindow, aRegion);
 }
 
-
-
-
-
+// See subtract_corners_from_region() at gtk/gtkwindow.c
+// We need to subtract corners from toplevel window opaque region
+// to draw transparent corners of default Gtk titlebar.
+// Both implementations (cairo_region_t and wl_region) needs to be synced.
 static void SubtractTitlebarCorners(cairo_region_t* aRegion, int aX, int aY,
                                     int aWindowWidth) {
   cairo_rectangle_int_t rect = {aX, aY, TITLEBAR_SHAPE_MASK_HEIGHT,
@@ -4936,23 +4936,23 @@ void nsWindow::UpdatePopupOpaqueRegion(
 }
 
 void nsWindow::UpdateOpaqueRegion(const LayoutDeviceIntRegion& aOpaqueRegion) {
-  
+  // Don't set shape mask if we use transparency bitmap.
   if (mTransparencyBitmapForTitlebar) {
     return;
   }
 
   if (mWindowType != eWindowType_toplevel) {
-    
-    
+    // We don't tweak opaque regions for non-toplevel windows
+    // (popup, panels etc.) as they can be transparent by gecko.
     UpdatePopupOpaqueRegion(aOpaqueRegion);
   } else {
-    
-    
-    
+    // Gecko does not use transparent toplevel windows (see Bug 1469716),
+    // however we need to make it transparent to draw round corners of
+    // Gtk titlebar.
 
-    
-    
-    
+    // Subtract transparent corners which are used by
+    // various Gtk themes for toplevel windows when titlebar
+    // is rendered by gecko.
     bool drawTilebarCorners = (mDrawInTitlebar && !mIsPIPWindow) &&
                               (mSizeState == nsSizeMode_Normal && !mIsTiled);
     if (mIsX11Display) {
@@ -4968,9 +4968,9 @@ void nsWindow::UpdateOpaqueRegion(const LayoutDeviceIntRegion& aOpaqueRegion) {
 
 nsresult nsWindow::ConfigureChildren(
     const nsTArray<Configuration>& aConfigurations) {
-  
-  
-  
+  // If this is a remotely updated widget we receive clipping, position, and
+  // size information from a source other than our owner. Don't let our parent
+  // update this information.
   if (mWindowType == eWindowType_plugin_ipc_chrome) {
     return NS_OK;
   }
@@ -5006,8 +5006,8 @@ nsresult nsWindow::SetWindowClipRegion(
     LayoutDeviceIntRegion intersectRegion;
     intersectRegion.And(newRegion, existingRegion);
 
-    
-    
+    // If mClipRects is null we haven't set a clip rect yet, so we
+    // need to set the clip even if it is equal.
     if (mClipRects && intersectRegion.IsEqual(existingRegion)) {
       return NS_OK;
     }
@@ -5047,10 +5047,10 @@ void nsWindow::ResizeTransparencyBitmap() {
   int32_t newRowBytes = GetBitmapStride(mBounds.width);
   int32_t newSize = newRowBytes * mBounds.height;
   auto* newBits = new gchar[newSize];
-  
+  // fill new mask with "transparent", first
   memset(newBits, 0, newSize);
 
-  
+  // Now copy the intersection of the old and new areas into the new mask
   int32_t copyWidth = std::min(mBounds.width, mTransparencyBitmapWidth);
   int32_t copyHeight = std::min(mBounds.height, mTransparencyBitmapHeight);
   int32_t oldRowBytes = GetBitmapStride(mTransparencyBitmapWidth);
@@ -5110,7 +5110,7 @@ static void UpdateMaskBits(gchar* aMaskBits, int32_t aMaskWidth,
 
       gchar mask = 1 << (x & 7);
       gchar maskByte = maskBytes[x >> 3];
-      
+      // Note: '-newBit' turns 0 into 00...00 and 1 into 11...11
       maskBytes[x >> 3] = (maskByte & ~mask) | (-newBit & mask);
     }
     aAlphas += aStride;
@@ -5119,9 +5119,9 @@ static void UpdateMaskBits(gchar* aMaskBits, int32_t aMaskWidth,
 
 void nsWindow::ApplyTransparencyBitmap() {
 #ifdef MOZ_X11
-  
-  
-  
+  // We use X11 calls where possible, because GDK handles expose events
+  // for shaped windows in a way that's incompatible with us (Bug 635903).
+  // It doesn't occur when the shapes are set through X.
   Display* xDisplay = GDK_WINDOW_XDISPLAY(mGdkWindow);
   Window xDrawable = GDK_WINDOW_XID(mGdkWindow);
   Pixmap maskPixmap = XCreateBitmapFromData(
@@ -5142,7 +5142,7 @@ void nsWindow::ApplyTransparencyBitmap() {
   gtk_widget_shape_combine_region(mShell, maskRegion);
   cairo_region_destroy(maskRegion);
   cairo_surface_destroy(maskBitmap);
-#endif  
+#endif  // MOZ_X11
 }
 
 void nsWindow::ClearTransparencyBitmap() {
@@ -5169,7 +5169,7 @@ nsresult nsWindow::UpdateTranslucentWindowAlphaInternal(const nsIntRect& aRect,
                                                         uint8_t* aAlphas,
                                                         int32_t aStride) {
   if (!mShell) {
-    
+    // Pass the request to the toplevel window
     GtkWidget* topWidget = GetToplevelWidget();
     if (!topWidget) return NS_ERROR_FAILURE;
 
@@ -5199,8 +5199,8 @@ nsresult nsWindow::UpdateTranslucentWindowAlphaInternal(const nsIntRect& aRect,
 
   if (!ChangedMaskBits(mTransparencyBitmap, mBounds.width, mBounds.height, rect,
                        aAlphas, aStride))
-    
-    
+    // skip the expensive stuff if the mask bits haven't changed; hopefully
+    // this is the common case
     return NS_OK;
 
   UpdateMaskBits(mTransparencyBitmap, mBounds.width, mBounds.height, rect,
@@ -5300,9 +5300,9 @@ void nsWindow::GrabPointer(guint32 aTime) {
   mRetryPointerGrab = false;
   sRetryGrabTime = aTime;
 
-  
-  
-  
+  // If the window isn't visible, just set the flag to retry the
+  // grab.  When this window becomes visible, the grab will be
+  // retried.
   if (!mHasMappedToplevel || mIsFullyObscured) {
     LOG(("GrabPointer: window not visible\n"));
     mRetryPointerGrab = true;
@@ -5312,15 +5312,15 @@ void nsWindow::GrabPointer(guint32 aTime) {
   if (!mGdkWindow) return;
 
   if (!mIsX11Display) {
-    
-    
+    // Don't to the grab on Wayland as it causes a regression
+    // from Bug 1377084.
     return;
   }
 
   gint retval;
-  
-  
-  
+  // Note that we need GDK_TOUCH_MASK below to work around a GDK/X11 bug that
+  // causes touch events that would normally be received by this client on
+  // other windows to be discarded during the grab.
   retval = gdk_pointer_grab(
       mGdkWindow, TRUE,
       (GdkEventMask)(GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK |
@@ -5333,11 +5333,11 @@ void nsWindow::GrabPointer(guint32 aTime) {
     mRetryPointerGrab = true;
   } else if (retval != GDK_GRAB_SUCCESS) {
     LOG(("GrabPointer: pointer grab failed: %i\n", retval));
-    
-    
-    
-    
-    
+    // A failed grab indicates that another app has grabbed the pointer.
+    // Check for rollup now, because, without the grab, we likely won't
+    // get subsequent button press events. Do this with an event so that
+    // popups don't rollup while potentially adjusting the grab for
+    // this popup.
     nsCOMPtr<nsIRunnable> event =
         NewRunnableMethod("nsWindow::CheckForRollupDuringGrab", this,
                           &nsWindow::CheckForRollupDuringGrab);
@@ -5351,8 +5351,8 @@ void nsWindow::ReleaseGrabs(void) {
   mRetryPointerGrab = false;
 
   if (!mIsX11Display) {
-    
-    
+    // Don't to the ungrab on Wayland as it causes a regression
+    // from Bug 1377084.
     return;
   }
 
@@ -5401,7 +5401,7 @@ gint nsWindow::ConvertBorderStyles(nsBorderStyle aStyle) {
 
   if (aStyle == eBorderStyle_default) return -1;
 
-  
+  // note that we don't handle eBorderStyle_close yet
   if (aStyle & eBorderStyle_all) w |= GDK_DECOR_ALL;
   if (aStyle & eBorderStyle_border) w |= GDK_DECOR_BORDER;
   if (aStyle & eBorderStyle_resizeh) w |= GDK_DECOR_RESIZEH;
@@ -5469,7 +5469,7 @@ class FullscreenTransitionData {
         mCallback(aCallback),
         mWindow(aWindow) {}
 
-  static const guint sInterval = 1000 / 30;  
+  static const guint sInterval = 1000 / 30;  // 30fps
   static gboolean TimeoutCallback(gpointer aData);
 
  private:
@@ -5480,7 +5480,7 @@ class FullscreenTransitionData {
   RefPtr<FullscreenTransitionWindow> mWindow;
 };
 
-
+/* static */
 gboolean FullscreenTransitionData::TimeoutCallback(gpointer aData) {
   bool finishing = false;
   auto data = static_cast<FullscreenTransitionData*>(aData);
@@ -5502,7 +5502,7 @@ gboolean FullscreenTransitionData::TimeoutCallback(gpointer aData) {
   return FALSE;
 }
 
-
+/* virtual */
 bool nsWindow::PrepareForFullscreenTransition(nsISupports** aData) {
   GdkScreen* screen = gtk_widget_get_screen(mShell);
   if (!gdk_screen_is_composited(screen)) {
@@ -5512,13 +5512,13 @@ bool nsWindow::PrepareForFullscreenTransition(nsISupports** aData) {
   return true;
 }
 
-
+/* virtual */
 void nsWindow::PerformFullscreenTransition(FullscreenTransitionStage aStage,
                                            uint16_t aDuration,
                                            nsISupports* aData,
                                            nsIRunnable* aCallback) {
   auto data = static_cast<FullscreenTransitionWindow*>(aData);
-  
+  // This will be released at the end of the last timeout callback for it.
   auto transitionData =
       new FullscreenTransitionData(aStage, aDuration, aCallback, data);
   g_timeout_add_full(G_PRIORITY_HIGH, FullscreenTransitionData::sInterval,
@@ -5533,8 +5533,8 @@ already_AddRefed<nsIScreen> nsWindow::GetWidgetScreen() {
     return nullptr;
   }
 
-  
-  
+  // GetScreenBounds() is slow for the GTK port so we override and use
+  // mBounds directly.
   LayoutDeviceIntRect bounds = mBounds;
   if (!mIsTopLevel) {
     bounds.MoveTo(WidgetToScreenOffset());
@@ -5596,7 +5596,7 @@ void nsWindow::SetWindowDecoration(nsBorderStyle aStyle) {
        aStyle));
 
   if (!mShell) {
-    
+    // Pass the request to the toplevel window
     GtkWidget* topWidget = GetToplevelWidget();
     if (!topWidget) return;
 
@@ -5607,13 +5607,13 @@ void nsWindow::SetWindowDecoration(nsBorderStyle aStyle) {
     return;
   }
 
-  
-  
+  // We can't use mGdkWindow directly here as it can be
+  // derived from mContainer which is not a top-level GdkWindow.
   GdkWindow* window = gtk_widget_get_window(mShell);
 
-  
-  
-  
+  // Sawfish, metacity, and presumably other window managers get
+  // confused if we change the window decorations while the window
+  // is visible.
   bool wasVisible = false;
   if (gdk_window_is_visible(window)) {
     gdk_window_hide(window);
@@ -5625,16 +5625,16 @@ void nsWindow::SetWindowDecoration(nsBorderStyle aStyle) {
 
   if (wasVisible) gdk_window_show(window);
 
-    
-    
-    
-    
-    
+    // For some window managers, adding or removing window decorations
+    // requires unmapping and remapping our toplevel window.  Go ahead
+    // and flush the queue here so that we don't end up with a BadWindow
+    // error later when this happens (when the persistence timer fires
+    // and GetWindowPos is called)
 #ifdef MOZ_X11
   if (mIsX11Display) {
     XSync(GDK_DISPLAY_XDISPLAY(gdk_display_get_default()), X11False);
   } else
-#endif 
+#endif /* MOZ_X11 */
   {
     gdk_flush();
   }
@@ -5665,9 +5665,9 @@ bool nsWindow::CheckForRollup(gdouble aMouseX, gdouble aMouseY, bool aIsWheel,
       rollup = rollupListener->ShouldRollupOnMouseWheelEvent();
       retVal = rollupListener->ShouldConsumeOnMouseWheelEvent();
     }
-    
-    
-    
+    // if we're dealing with menus, we probably have submenus and
+    // we don't want to rollup if the click is in a parent menu of
+    // the current submenu
     uint32_t popupsToRollup = UINT32_MAX;
     if (!aAlwaysRollup) {
       AutoTArray<nsIWidget*, 5> widgetChain;
@@ -5677,11 +5677,11 @@ bool nsWindow::CheckForRollup(gdouble aMouseX, gdouble aMouseY, bool aIsWheel,
         nsIWidget* widget = widgetChain[i];
         auto* currWindow = (GdkWindow*)widget->GetNativeData(NS_NATIVE_WINDOW);
         if (is_mouse_in_window(currWindow, aMouseX, aMouseY)) {
-          
-          
-          
-          
-          
+          // don't roll up if the mouse event occurred within a
+          // menu of the same type. If the mouse event occurred
+          // in a menu higher than that, roll up, but pass the
+          // number of popups to Rollup so that only those of the
+          // same type close up.
           if (i < sameTypeCount) {
             rollup = false;
           } else {
@@ -5689,10 +5689,10 @@ bool nsWindow::CheckForRollup(gdouble aMouseX, gdouble aMouseY, bool aIsWheel,
           }
           break;
         }
-      }  
-    }    
+      }  // foreach parent menu widget
+    }    // if rollup listener knows about menus
 
-    
+    // if we've determined that we should still rollup, do it.
     bool usePoint = !aIsWheel && !aAlwaysRollup;
     IntPoint point;
     if (usePoint) {
@@ -5708,7 +5708,7 @@ bool nsWindow::CheckForRollup(gdouble aMouseX, gdouble aMouseY, bool aIsWheel,
   return retVal;
 }
 
-
+/* static */
 bool nsWindow::DragInProgress(void) {
   nsCOMPtr<nsIDragService> dragService = do_GetService(kCDragServiceCID);
 
@@ -5738,8 +5738,8 @@ static bool is_mouse_in_window(GdkWindow* aWindow, gdouble aMouseX,
     gdk_window_get_position(window, &tmpX, &tmpY);
     GtkWidget* widget = get_gtk_widget_for_gdk_window(window);
 
-    
-    
+    // if this is a window, compute x and y given its origin and our
+    // offset
     if (GTK_IS_WINDOW(widget)) {
       x = tmpX + offsetX;
       y = tmpY + offsetY;
@@ -5789,9 +5789,9 @@ static GdkCursor* get_gtk_cursor(nsCursor aCursor) {
 
   GdkDisplay* defaultDisplay = gdk_display_get_default();
 
-  
-  
-  
+  // The strategy here is to use standard GDK cursors, and, if not available,
+  // load by standard name with gdk_cursor_new_from_name.
+  // Spec is here: http://www.freedesktop.org/wiki/Specifications/cursor-spec/
   switch (aCursor) {
     case eCursor_standard:
       gdkcursor = gdk_cursor_new_for_display(defaultDisplay, GDK_LEFT_PTR);
@@ -5843,7 +5843,7 @@ static GdkCursor* get_gtk_cursor(nsCursor aCursor) {
       gdkcursor =
           gdk_cursor_new_for_display(defaultDisplay, GDK_QUESTION_ARROW);
       break;
-    case eCursor_copy:  
+    case eCursor_copy:  // CSS3
       gdkcursor = gdk_cursor_new_from_name(defaultDisplay, "copy");
       if (!gdkcursor) newType = MOZ_CURSOR_COPY;
       break;
@@ -5858,7 +5858,7 @@ static GdkCursor* get_gtk_cursor(nsCursor aCursor) {
     case eCursor_cell:
       gdkcursor = gdk_cursor_new_for_display(defaultDisplay, GDK_PLUS);
       break;
-    
+    // Those two aren’t standardized. Trying both KDE’s and GNOME’s names
     case eCursor_grab:
       gdkcursor = gdk_cursor_new_from_name(defaultDisplay, "openhand");
       if (!gdkcursor) newType = MOZ_CURSOR_HAND_GRAB;
@@ -5883,14 +5883,14 @@ static GdkCursor* get_gtk_cursor(nsCursor aCursor) {
       break;
     case eCursor_not_allowed:
       gdkcursor = gdk_cursor_new_from_name(defaultDisplay, "not-allowed");
-      if (!gdkcursor)  
+      if (!gdkcursor)  // nonstandard, yet common
         gdkcursor = gdk_cursor_new_from_name(defaultDisplay, "crossed_circle");
       if (!gdkcursor) newType = MOZ_CURSOR_NOT_ALLOWED;
       break;
     case eCursor_no_drop:
       gdkcursor = gdk_cursor_new_from_name(defaultDisplay, "no-drop");
-      if (!gdkcursor)  
-                       
+      if (!gdkcursor)  // this nonstandard sequence makes it work on KDE and
+                       // GNOME
         gdkcursor = gdk_cursor_new_from_name(defaultDisplay, "forbidden");
       if (!gdkcursor)
         gdkcursor = gdk_cursor_new_from_name(defaultDisplay, "circle");
@@ -5918,8 +5918,8 @@ static GdkCursor* get_gtk_cursor(nsCursor aCursor) {
       gdkcursor =
           gdk_cursor_new_for_display(defaultDisplay, GDK_SB_H_DOUBLE_ARROW);
       break;
-    
-    
+    // Here, two better fitting cursors exist in some cursor themes. Try those
+    // first
     case eCursor_row_resize:
       gdkcursor = gdk_cursor_new_from_name(defaultDisplay, "split_v");
       if (!gdkcursor)
@@ -5941,16 +5941,16 @@ static GdkCursor* get_gtk_cursor(nsCursor aCursor) {
       break;
   }
 
-  
-  
-  
-  
+  // If by now we don't have a xcursor, this means we have to make a custom
+  // one. First, we try creating a named cursor based on the hash of our
+  // custom bitmap, as libXcursor has some magic to convert bitmapped cursors
+  // to themed cursors
   if (newType != 0xFF && GtkCursors[newType].hash) {
     gdkcursor =
         gdk_cursor_new_from_name(defaultDisplay, GtkCursors[newType].hash);
   }
 
-  
+  // If we still don't have a xcursor, we now really create a bitmap cursor
   if (newType != 0xff && !gdkcursor) {
     GdkPixbuf* cursor_pixbuf =
         gdk_pixbuf_new(GDK_COLORSPACE_RGB, TRUE, 8, 32, 32);
@@ -5958,10 +5958,10 @@ static GdkCursor* get_gtk_cursor(nsCursor aCursor) {
 
     guchar* data = gdk_pixbuf_get_pixels(cursor_pixbuf);
 
-    
-    
-    
-    
+    // Read data from GtkCursors and compose RGBA surface from 1bit bitmap and
+    // mask GtkCursors bits and mask are 32x32 monochrome bitmaps (1 bit for
+    // each pixel) so it's 128 byte array (4 bytes for are one bitmap row and
+    // there are 32 rows here).
     const unsigned char* bits = GtkCursors[newType].bits;
     const unsigned char* mask_bits = GtkCursors[newType].mask_bits;
 
@@ -5989,7 +5989,7 @@ static GdkCursor* get_gtk_cursor(nsCursor aCursor) {
   return gdkcursor;
 }
 
-
+// gtk callbacks
 
 void draw_window_of_widget(GtkWidget* widget, GdkWindow* aWindow, cairo_t* cr) {
   if (gtk_cairo_should_draw_window(cr, aWindow)) {
@@ -5999,8 +5999,8 @@ void draw_window_of_widget(GtkWidget* widget, GdkWindow* aWindow, cairo_t* cr) {
     } else {
       cairo_save(cr);
       gtk_cairo_transform_to_window(cr, widget, aWindow);
-      
-      
+      // TODO - window->OnExposeEvent() can destroy this or other windows,
+      // do we need to handle it somehow?
       window->OnExposeEvent(cr);
       cairo_restore(cr);
     }
@@ -6020,13 +6020,13 @@ void draw_window_of_widget(GtkWidget* widget, GdkWindow* aWindow, cairo_t* cr) {
   g_list_free(children);
 }
 
-
+/* static */
 gboolean expose_event_cb(GtkWidget* widget, cairo_t* cr) {
   draw_window_of_widget(widget, gtk_widget_get_window(widget), cr);
 
-  
-  
-  
+  // A strong reference is already held during "draw" signal emission,
+  // but GTK+ 3.4 wants the object to live a little longer than that
+  // (bug 1225970).
   g_object_ref(widget);
   g_idle_add(
       [](gpointer data) -> gboolean {
@@ -6085,8 +6085,8 @@ static gboolean leave_notify_event_cb(GtkWidget* widget,
     return TRUE;
   }
 
-  
-  
+  // bug 369599: Suppress LeaveNotify events caused by pointer grabs to
+  // avoid generating spurious mouse exit events.
   auto x = gint(event->x_root);
   auto y = gint(event->y_root);
   GdkDisplay* display = gtk_widget_get_display(widget);
@@ -6106,10 +6106,10 @@ static gboolean leave_notify_event_cb(GtkWidget* widget,
 static nsWindow* GetFirstNSWindowForGDKWindow(GdkWindow* aGdkWindow) {
   nsWindow* window;
   while (!(window = get_window_for_gdk_window(aGdkWindow))) {
-    
-    
-    
-    
+    // The event has bubbled to the moz_container widget as passed into each
+    // caller's *widget parameter, but its corresponding nsWindow is an ancestor
+    // of the window that we need.  Instead, look at event->window and find the
+    // first ancestor nsWindow of it because event->window may be in a plugin.
     aGdkWindow = gdk_window_get_parent(aGdkWindow);
     if (!aGdkWindow) {
       window = nullptr;
@@ -6174,23 +6174,23 @@ static gboolean focus_out_event_cb(GtkWidget* widget, GdkEventFocus* event) {
 }
 
 #ifdef MOZ_X11
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// For long-lived popup windows that don't really take focus themselves but
+// may have elements that accept keyboard input when the parent window is
+// active, focus is handled specially.  These windows include noautohide
+// panels.  (This special handling is not necessary for temporary popups where
+// the keyboard is grabbed.)
+//
+// Mousing over or clicking on these windows should not cause them to steal
+// focus from their parent windows, so, the input field of WM_HINTS is set to
+// False to request that the window manager not set the input focus to this
+// window.  http://tronche.com/gui/x/icccm/sec-4.html#s-4.1.7
+//
+// However, these windows can still receive WM_TAKE_FOCUS messages from the
+// window manager, so they can still detect when the user has indicated that
+// they wish to direct keyboard input at these windows.  When the window
+// manager offers focus to these windows (after a mouse over or click, for
+// example), a request to make the parent window active is issued.  When the
+// parent window becomes active, keyboard events will be received.
 
 static GdkFilterReturn popup_take_focus_filter(GdkXEvent* gdk_xevent,
                                                GdkEvent* event, gpointer data) {
@@ -6214,42 +6214,42 @@ static GdkFilterReturn popup_take_focus_filter(GdkXEvent* gdk_xevent,
   if (!parent) return GDK_FILTER_CONTINUE;
 
   if (gtk_window_is_active(parent))
-    return GDK_FILTER_REMOVE;  
+    return GDK_FILTER_REMOVE;  // leave input focus on the parent
 
   GdkWindow* parent_window = gtk_widget_get_window(GTK_WIDGET(parent));
   if (!parent_window) return GDK_FILTER_CONTINUE;
 
-  
+  // In case the parent has not been deconified.
   gdk_window_show_unraised(parent_window);
 
-  
-  
-  
+  // Request focus on the parent window.
+  // Use gdk_window_focus rather than gtk_window_present to avoid
+  // raising the parent window.
   gdk_window_focus(parent_window, timestamp);
   return GDK_FILTER_REMOVE;
 }
-#endif 
+#endif /* MOZ_X11 */
 
 static gboolean key_press_event_cb(GtkWidget* widget, GdkEventKey* event) {
   LOG(("key_press_event_cb\n"));
 
   UpdateLastInputEventTime(event);
 
-  
+  // find the window with focus and dispatch this event to that widget
   nsWindow* window = get_window_for_gtk_widget(widget);
   if (!window) return FALSE;
 
   RefPtr<nsWindow> focusWindow = gFocusWindow ? gFocusWindow : window;
 
 #ifdef MOZ_X11
-  
-  
-  
-  
-  
-  
+  // Keyboard repeat can cause key press events to queue up when there are
+  // slow event handlers (bug 301029).  Throttle these events by removing
+  // consecutive pending duplicate KeyPress events to the same window.
+  // We use the event time of the last one.
+  // Note: GDK calls XkbSetDetectableAutorepeat so that KeyRelease events
+  // are generated only when the key is physically released.
 #  define NS_GDKEVENT_MATCH_MASK 0x1FFF  // GDK_SHIFT_MASK .. GDK_BUTTON5_MASK
-  
+  // Our headers undefine X11 KeyPress - let's redefine it here.
 #  ifndef KeyPress
 #    define KeyPress 2
 #  endif
@@ -6280,7 +6280,7 @@ static gboolean key_release_event_cb(GtkWidget* widget, GdkEventKey* event) {
 
   UpdateLastInputEventTime(event);
 
-  
+  // find the window with focus and dispatch this event to that widget
   nsWindow* window = get_window_for_gtk_widget(widget);
   if (!window) return FALSE;
 
@@ -6379,10 +6379,10 @@ static void check_resize_cb(GtkContainer* container, gpointer user_data) {
 
 static void screen_composited_changed_cb(GdkScreen* screen,
                                          gpointer user_data) {
-  
-  
-  
-  
+  // This callback can run before gfxPlatform::Init() in rare
+  // cases involving the profile manager. When this happens,
+  // we have no reason to reset any compositors as graphics
+  // hasn't been initialized yet.
   if (GPUProcessManager::Get()) {
     GPUProcessManager::Get()->ResetCompositors();
   }
@@ -6422,11 +6422,11 @@ static gboolean touch_event_cb(GtkWidget* aWidget, GdkEventTouch* aEvent) {
 }
 #endif
 
-
-
+//////////////////////////////////////////////////////////////////////
+// These are all of our drag and drop operations
 
 void nsWindow::InitDragEvent(WidgetDragEvent& aEvent) {
-  
+  // set the keyboard modifiers
   guint modifierState = KeymapWrapper::GetCurrentModifierState();
   KeymapWrapper::InitInputEvent(aEvent, modifierState);
 }
@@ -6438,7 +6438,7 @@ gboolean WindowDragMotionHandler(GtkWidget* aWidget,
   RefPtr<nsWindow> window = get_window_for_gtk_widget(aWidget);
   if (!window) return FALSE;
 
-  
+  // figure out which internal widget this drag motion actually happened on
   nscoord retx = 0;
   nscoord rety = 0;
 
@@ -6473,19 +6473,19 @@ void WindowDragLeaveHandler(GtkWidget* aWidget) {
 
   nsWindow* mostRecentDragWindow = dragService->GetMostRecentDestWindow();
   if (!mostRecentDragWindow) {
-    
-    
-    
-    
-    
+    // This can happen when the target will not accept a drop.  A GTK drag
+    // source sends the leave message to the destination before the
+    // drag-failed signal on the source widget, but the leave message goes
+    // via the X server, and so doesn't get processed at least until the
+    // event loop runs again.
     return;
   }
 
   GtkWidget* mozContainer = mostRecentDragWindow->GetMozContainerWidget();
   if (aWidget != mozContainer) {
-    
-    
-    
+    // When the drag moves between widgets, GTK can send leave signal for
+    // the old widget after the motion or drop signal for the new widget.
+    // We'll send the leave event when the motion or drop event is run.
     return;
   }
 
@@ -6506,7 +6506,7 @@ gboolean WindowDragDropHandler(GtkWidget* aWidget, GdkDragContext* aDragContext,
   RefPtr<nsWindow> window = get_window_for_gtk_widget(aWidget);
   if (!window) return FALSE;
 
-  
+  // figure out which internal widget this drag motion actually happened on
   nscoord retx = 0;
   nscoord rety = 0;
 
@@ -6604,7 +6604,7 @@ void nsWindow::DispatchEventToRootAccessible(uint32_t aEventType) {
     return;
   }
 
-  
+  // Get the root document accessible and fire event to it.
   a11y::Accessible* acc = GetRootAccessible();
   if (acc) {
     accService->FireAccessibleEvent(aEventType, acc);
@@ -6631,7 +6631,7 @@ void nsWindow::DispatchRestoreEventAccessible(void) {
   DispatchEventToRootAccessible(nsIAccessibleEvent::EVENT_WINDOW_RESTORE);
 }
 
-#endif 
+#endif /* #ifdef ACCESSIBILITY */
 
 void nsWindow::SetInputContext(const InputContext& aContext,
                                const InputContextAction& aAction) {
@@ -6664,9 +6664,9 @@ void nsWindow::GetEditCommandsRemapped(NativeKeyBindingsType aType,
                                        nsTArray<CommandInt>& aCommands,
                                        uint32_t aGeckoKeyCode,
                                        uint32_t aNativeKeyCode) {
-  
-  
-  
+  // If aEvent.mNativeKeyEvent is nullptr, the event was created by chrome
+  // script.  In such case, we shouldn't expose the OS settings to it.
+  // So, just ignore such events here.
   if (!aEvent.mNativeKeyEvent) {
     return;
   }
@@ -6682,15 +6682,15 @@ void nsWindow::GetEditCommandsRemapped(NativeKeyBindingsType aType,
 bool nsWindow::GetEditCommands(NativeKeyBindingsType aType,
                                const WidgetKeyboardEvent& aEvent,
                                nsTArray<CommandInt>& aCommands) {
-  
+  // Validate the arguments.
   if (NS_WARN_IF(!nsIWidget::GetEditCommands(aType, aEvent, aCommands))) {
     return false;
   }
 
   if (aEvent.mKeyCode >= NS_VK_LEFT && aEvent.mKeyCode <= NS_VK_DOWN) {
-    
-    
-    
+    // Check if we're targeting content with vertical writing mode,
+    // and if so remap the arrow keys.
+    // XXX This may be expensive.
     WidgetQueryContentEvent query(true, eQuerySelectedText, this);
     nsEventStatus status;
     DispatchEvent(&query, status);
@@ -6751,30 +6751,30 @@ void nsWindow::EndRemoteDrawingInRegion(
   mSurfaceProvider.EndRemoteDrawingInRegion(aDrawTarget, aInvalidRegion);
 }
 
-
+// Code shared begin BeginMoveDrag and BeginResizeDrag
 bool nsWindow::GetDragInfo(WidgetMouseEvent* aMouseEvent, GdkWindow** aWindow,
                            gint* aButton, gint* aRootX, gint* aRootY) {
   if (aMouseEvent->mButton != MouseButton::eLeft) {
-    
+    // we can only begin a move drag with the left mouse button
     return false;
   }
   *aButton = 1;
 
-  
+  // get the gdk window for this widget
   GdkWindow* gdk_window = mGdkWindow;
   if (!gdk_window) {
     return false;
   }
 #ifdef DEBUG
-  
-  
-  
+  // GDK_IS_WINDOW(...) expands to a statement-expression, and
+  // statement-expressions are not allowed in template-argument lists. So we
+  // have to make the MOZ_ASSERT condition indirect.
   if (!GDK_IS_WINDOW(gdk_window)) {
     MOZ_ASSERT(false, "must really be window");
   }
 #endif
 
-  
+  // find the top-level window
   gdk_window = gdk_window_get_toplevel(gdk_window);
   MOZ_ASSERT(gdk_window, "gdk_window_get_toplevel should not return null");
   *aWindow = gdk_window;
@@ -6784,9 +6784,9 @@ bool nsWindow::GetDragInfo(WidgetMouseEvent* aMouseEvent, GdkWindow** aWindow,
   }
 
   if (mIsX11Display) {
-    
-    
-    
+    // Workaround for https://bugzilla.gnome.org/show_bug.cgi?id=789054
+    // To avoid crashes disable double-click on WM without _NET_WM_MOVERESIZE.
+    // See _should_perform_ewmh_drag() at gdkwindow-x11.c
     GdkScreen* screen = gdk_window_get_screen(gdk_window);
     GdkAtom atom = gdk_atom_intern("_NET_WM_MOVERESIZE", FALSE);
     if (!gdk_x11_screen_supports_net_wm_hint(screen, atom)) {
@@ -6799,11 +6799,11 @@ bool nsWindow::GetDragInfo(WidgetMouseEvent* aMouseEvent, GdkWindow** aWindow,
     }
   }
 
-  
-  
-  
-  
-  
+  // FIXME: It would be nice to have the widget position at the time
+  // of the event, but it's relatively unlikely that the widget has
+  // moved since the mousedown.  (On the other hand, it's quite likely
+  // that the mouse has moved, which is why we use the mouse position
+  // from the event.)
   LayoutDeviceIntPoint offset = aMouseEvent->mWidget->WidgetToScreenOffset();
   *aRootX = aMouseEvent->mRefPoint.x + offset.x;
   *aRootY = aMouseEvent->mRefPoint.y + offset.y;
@@ -6816,7 +6816,7 @@ nsresult nsWindow::BeginResizeDrag(WidgetGUIEvent* aEvent, int32_t aHorizontal,
   NS_ENSURE_ARG_POINTER(aEvent);
 
   if (aEvent->mClass != eMouseEventClass) {
-    
+    // you can only begin a resize drag with a mouse event
     return NS_ERROR_INVALID_ARG;
   }
 
@@ -6827,7 +6827,7 @@ nsresult nsWindow::BeginResizeDrag(WidgetGUIEvent* aEvent, int32_t aHorizontal,
     return NS_ERROR_FAILURE;
   }
 
-  
+  // work out what GdkWindowEdge we're talking about
   GdkWindowEdge window_edge;
   if (aVertical < 0) {
     if (aHorizontal < 0) {
@@ -6855,7 +6855,7 @@ nsresult nsWindow::BeginResizeDrag(WidgetGUIEvent* aEvent, int32_t aHorizontal,
     }
   }
 
-  
+  // tell the window manager to start the resize
   gdk_window_begin_resize_drag(gdk_window, window_edge, button, screenX,
                                screenY, aEvent->mTime);
 
@@ -6866,9 +6866,9 @@ nsIWidget::LayerManager* nsWindow::GetLayerManager(
     PLayerTransactionChild* aShadowManager, LayersBackend aBackendHint,
     LayerManagerPersistence aPersistence) {
   if (mIsDestroyed) {
-    
-    
-    
+    // Prevent external code from triggering the re-creation of the
+    // LayerManager/Compositor during shutdown. Just return what we currently
+    // have, which is most likely null.
     return mLayerManager;
   }
 
@@ -6905,11 +6905,11 @@ void nsWindow::ClearCachedResources() {
   }
 }
 
-
-
-
-
-
+/* nsWindow::UpdateClientOffsetFromCSDWindow() is designed to be called from
+ * nsWindow::OnConfigureEvent() when mContainer window is already positioned.
+ *
+ * It works only for CSD decorated GtkWindow.
+ */
 void nsWindow::UpdateClientOffsetFromCSDWindow() {
   int x, y;
   gdk_window_get_position(mGdkWindow, &x, &y);
@@ -6923,9 +6923,9 @@ void nsWindow::UpdateClientOffsetFromCSDWindow() {
     LOG(("nsWindow::UpdateClientOffsetFromCSDWindow [%p] %d, %d\n", (void*)this,
          mClientOffset.x, mClientOffset.y));
 
-    
-    
-    
+    // Send a WindowMoved notification. This ensures that BrowserParent
+    // picks up the new client offset and sends it to the child process
+    // if appropriate.
     NotifyWindowMoved(mBounds.x, mBounds.y);
   }
 }
@@ -6949,48 +6949,48 @@ void nsWindow::SetDrawsInTitlebar(bool aState) {
   } else if (mCSDSupportLevel == CSD_SUPPORT_CLIENT) {
     LOG(("    Using CSD mode\n"));
 
-    
-
-
-
-
-
-
-
-
-
+    /* Window manager does not support GDK_DECOR_BORDER,
+     * emulate it by CSD.
+     *
+     * gtk_window_set_titlebar() works on unrealized widgets only,
+     * we need to handle mShell carefully here.
+     * When CSD is enabled mGdkWindow is owned by mContainer which is good
+     * as we can't delete our mGdkWindow. To make mShell unrealized while
+     * mContainer is preserved we temporary reparent mContainer to an
+     * invisible GtkWindow.
+     */
     NativeShow(false);
 
-    
-    
-    
+    // Using GTK_WINDOW_POPUP rather than
+    // GTK_WINDOW_TOPLEVEL in the hope that POPUP results in less
+    // initialization and window manager interaction.
     GtkWidget* tmpWindow = gtk_window_new(GTK_WINDOW_POPUP);
     gtk_widget_realize(tmpWindow);
 
     gtk_widget_reparent(GTK_WIDGET(mContainer), tmpWindow);
     gtk_widget_unrealize(GTK_WIDGET(mShell));
 
-    
+    // Available as of GTK 3.10+
     static auto sGtkWindowSetTitlebar = (void (*)(GtkWindow*, GtkWidget*))dlsym(
         RTLD_DEFAULT, "gtk_window_set_titlebar");
     MOZ_ASSERT(sGtkWindowSetTitlebar,
                "Missing gtk_window_set_titlebar(), old Gtk+ library?");
 
     if (aState) {
-      
-      
-      
-      
+      // Add a hidden titlebar widget to trigger CSD, but disable the default
+      // titlebar.  GtkFixed is a somewhat random choice for a simple unused
+      // widget. gtk_window_set_titlebar() takes ownership of the titlebar
+      // widget.
       sGtkWindowSetTitlebar(GTK_WINDOW(mShell), gtk_fixed_new());
     } else {
       sGtkWindowSetTitlebar(GTK_WINDOW(mShell), nullptr);
     }
 
-    
-
-
-
-
+    /* A workaround for https://bugzilla.gnome.org/show_bug.cgi?id=791081
+     * gtk_widget_realize() throws:
+     * "In pixman_region32_init_rect: Invalid rectangle passed"
+     * when mShell has default 1x1 size.
+     */
     GtkAllocation allocation = {0, 0, 0, 0};
     gtk_widget_get_preferred_width(GTK_WIDGET(mShell), nullptr,
                                    &allocation.width);
@@ -7003,8 +7003,8 @@ void nsWindow::SetDrawsInTitlebar(bool aState) {
     mNeedsShow = true;
     NativeResize();
 
-    
-    
+    // Label mShell toplevel window so property_notify_event_cb callback
+    // can find its way home.
     g_object_set_data(G_OBJECT(gtk_widget_get_window(mShell)), "nsWindow",
                       this);
 #ifdef MOZ_X11
@@ -7037,19 +7037,19 @@ GtkWindow* nsWindow::GetCurrentTopmostWindow() {
 }
 
 gint nsWindow::GdkScaleFactor() {
-  
-  
+  // We depend on notify::scale-factor callback which is reliable for toplevel
+  // windows only, so don't use scale cache for popup windows.
   if (mWindowType == eWindowType_toplevel && !mWindowScaleFactorChanged) {
     return mWindowScaleFactor;
   }
 
   GdkWindow* scaledGdkWindow = mGdkWindow;
   if (!mIsX11Display) {
-    
-    
-    
+    // For popup windows/dialogs with parent window we need to get scale factor
+    // of the topmost window. Otherwise the scale factor of the popup is
+    // not updated during it's hidden.
     if (mWindowType == eWindowType_popup || mWindowType == eWindowType_dialog) {
-      
+      // Get toplevel window for scale factor:
       GtkWindow* topmostParentWindow = GetCurrentTopmostWindow();
       if (topmostParentWindow) {
         scaledGdkWindow =
@@ -7057,14 +7057,14 @@ gint nsWindow::GdkScaleFactor() {
       } else {
         NS_WARNING("Popup/Dialog has no parent.");
       }
-      
+      // Fallback for windows which parent has been unrealized.
       if (!scaledGdkWindow) {
         scaledGdkWindow = mGdkWindow;
       }
     }
   }
 
-  
+  // Available as of GTK 3.10+
   static auto sGdkWindowGetScaleFactorPtr =
       (gint(*)(GdkWindow*))dlsym(RTLD_DEFAULT, "gdk_window_get_scale_factor");
   if (sGdkWindowGetScaleFactorPtr && scaledGdkWindow) {
@@ -7142,11 +7142,11 @@ nsresult nsWindow::SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
 
   GdkDisplay* display = gdk_window_get_display(mGdkWindow);
 
-  
-  
-  
-  
-  
+  // When a button-press/release event is requested, create it here and put it
+  // in the event queue. This will not emit a motion event - this needs to be
+  // done explicitly *before* requesting a button-press/release. You will also
+  // need to wait for the motion event to be dispatched before requesting a
+  // button-press/release event to maintain the desired event order.
   if (aNativeMessage == GDK_BUTTON_PRESS ||
       aNativeMessage == GDK_BUTTON_RELEASE) {
     GdkEvent event;
@@ -7156,7 +7156,7 @@ nsresult nsWindow::SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
     event.button.window = mGdkWindow;
     event.button.time = GDK_CURRENT_TIME;
 
-    
+    // Get device for event source
     GdkDeviceManager* device_manager = gdk_display_get_device_manager(display);
     event.button.device = gdk_device_manager_get_client_pointer(device_manager);
 
@@ -7169,9 +7169,9 @@ nsresult nsWindow::SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
 
     gdk_event_put(&event);
   } else {
-    
-    
-    
+    // We don't support specific events other than button-press/release. In all
+    // other cases we'll synthesize a motion event that will be emitted by
+    // gdk_display_warp_pointer().
     GdkScreen* screen = gdk_window_get_screen(mGdkWindow);
     GdkPoint point = DevicePixelsToGdkPointRoundDown(aPoint);
     gdk_display_warp_pointer(display, screen, point.x, point.y);
@@ -7195,7 +7195,7 @@ nsresult nsWindow::SynthesizeNativeMouseScrollEvent(
   event.type = GDK_SCROLL;
   event.scroll.window = mGdkWindow;
   event.scroll.time = GDK_CURRENT_TIME;
-  
+  // Get device for event source
   GdkDisplay* display = gdk_window_get_display(mGdkWindow);
   GdkDeviceManager* device_manager = gdk_display_get_device_manager(display);
   event.scroll.device = gdk_device_manager_get_client_pointer(device_manager);
@@ -7206,10 +7206,10 @@ nsresult nsWindow::SynthesizeNativeMouseScrollEvent(
   event.scroll.x = DevicePixelsToGdkCoordRoundDown(pointInWindow.x);
   event.scroll.y = DevicePixelsToGdkCoordRoundDown(pointInWindow.y);
 
-  
-  
+  // The delta values are backwards on Linux compared to Windows and Cocoa,
+  // hence the negation.
 #if GTK_CHECK_VERSION(3, 4, 0)
-  
+  // TODO: is this correct? I don't have GTK 3.4+ so I can't check
   event.scroll.direction = GDK_SCROLL_SMOOTH;
   event.scroll.delta_x = -aDeltaX;
   event.scroll.delta_y = -aDeltaY;
@@ -7254,10 +7254,10 @@ nsresult nsWindow::SynthesizeNativeTouchPoint(uint32_t aPointerId,
   switch (aPointerState) {
     case TOUCH_CONTACT:
       if (result == sKnownPointers.end()) {
-        
-        
-        
-        
+        // GdkEventSequence isn't a thing we can instantiate, and never gets
+        // dereferenced in the gtk code. It's an opaque pointer, the only
+        // requirement is that it be distinct from other instances of
+        // GdkEventSequence*.
         event.touch.sequence = (GdkEventSequence*)((uintptr_t)aPointerId);
         sKnownPointers[aPointerId] = event.touch.sequence;
         event.type = GDK_TOUCH_BEGIN;
@@ -7314,13 +7314,13 @@ nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel() {
     return sCSDSupportLevel;
   }
 
-  
+  // Require GTK 3.10 for GtkHeaderBar support and compatible window manager.
   if (gtk_check_version(3, 10, 0) != nullptr) {
     sCSDSupportLevel = CSD_SUPPORT_NONE;
     return sCSDSupportLevel;
   }
 
-  
+  // Allow MOZ_GTK_TITLEBAR_DECORATION to override our heuristics
   const char* decorationOverride = getenv("MOZ_GTK_TITLEBAR_DECORATION");
   if (decorationOverride) {
     if (strcmp(decorationOverride, "none") == 0) {
@@ -7333,7 +7333,7 @@ nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel() {
     return sCSDSupportLevel;
   }
 
-  
+  // We use CSD titlebar mode on Wayland only
   if (gfxPlatformGtk::GetPlatform()->IsWaylandDisplay()) {
     sCSDSupportLevel = CSD_SUPPORT_CLIENT;
     return sCSDSupportLevel;
@@ -7341,17 +7341,17 @@ nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel() {
 
   const char* currentDesktop = getenv("XDG_CURRENT_DESKTOP");
   if (currentDesktop) {
-    
+    // GNOME Flashback (fallback)
     if (strstr(currentDesktop, "GNOME-Flashback:GNOME") != nullptr) {
       sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
-      
+      // gnome-shell
     } else if (strstr(currentDesktop, "GNOME") != nullptr) {
       sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
     } else if (strstr(currentDesktop, "XFCE") != nullptr) {
       sCSDSupportLevel = CSD_SUPPORT_CLIENT;
     } else if (strstr(currentDesktop, "X-Cinnamon") != nullptr) {
       sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
-      
+      // KDE Plasma
     } else if (strstr(currentDesktop, "KDE") != nullptr) {
       sCSDSupportLevel = CSD_SUPPORT_CLIENT;
     } else if (strstr(currentDesktop, "Enlightenment") != nullptr) {
@@ -7364,10 +7364,10 @@ nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel() {
       sCSDSupportLevel = CSD_SUPPORT_NONE;
     } else if (strstr(currentDesktop, "MATE") != nullptr) {
       sCSDSupportLevel = CSD_SUPPORT_CLIENT;
-      
+      // Ubuntu Unity
     } else if (strstr(currentDesktop, "Unity") != nullptr) {
       sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
-      
+      // Elementary OS
     } else if (strstr(currentDesktop, "Pantheon") != nullptr) {
       sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
     } else if (strstr(currentDesktop, "LXQt") != nullptr) {
@@ -7375,8 +7375,8 @@ nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel() {
     } else if (strstr(currentDesktop, "Deepin") != nullptr) {
       sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
     } else {
-
-
+// Release or beta builds are not supposed to be broken
+// so disable titlebar rendering on untested/unknown systems.
 #if defined(RELEASE_OR_BETA)
       sCSDSupportLevel = CSD_SUPPORT_NONE;
 #else
@@ -7387,9 +7387,9 @@ nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel() {
     sCSDSupportLevel = CSD_SUPPORT_NONE;
   }
 
-  
-  
-  
+  // GTK_CSD forces CSD mode - use also CSD because window manager
+  // decorations does not work with CSD.
+  // We check GTK_CSD as well as gtk_window_should_use_csd() does.
   if (sCSDSupportLevel == CSD_SUPPORT_SYSTEM) {
     const char* csdOverride = getenv("GTK_CSD");
     if (csdOverride && g_strcmp0(csdOverride, "1") == 0) {
@@ -7400,9 +7400,9 @@ nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel() {
   return sCSDSupportLevel;
 }
 
-
-
-
+// Check for Mutter regression on X.org (Bug 1530252). In that case we
+// don't hide system titlebar by default as we can't draw transparent
+// corners reliably.
 bool nsWindow::TitlebarCanUseShapeMask() {
   static int canUseShapeMask = -1;
   if (canUseShapeMask != -1) {
@@ -7430,8 +7430,8 @@ bool nsWindow::HideTitlebarByDefault() {
     return hideTitlebar;
   }
 
-  
-  
+  // When user defined widget.default-hidden-titlebar don't do any
+  // heuristics and just follow it.
   if (Preferences::HasUserValue("widget.default-hidden-titlebar")) {
     hideTitlebar =
         Preferences::GetBool("widget.default-hidden-titlebar", false);
@@ -7442,15 +7442,15 @@ bool nsWindow::HideTitlebarByDefault() {
   hideTitlebar =
       (currentDesktop && GetSystemCSDSupportLevel() != CSD_SUPPORT_NONE);
 
-  
-  
+  // Disable system titlebar for Gnome only for now. It uses window
+  // manager decorations and does not suffer from CSD Bugs #1525850, #1527837.
   if (hideTitlebar) {
     hideTitlebar =
         (strstr(currentDesktop, "GNOME-Flashback:GNOME") != nullptr ||
          strstr(currentDesktop, "GNOME") != nullptr);
   }
 
-  
+  // We use shape mask to render the titlebar by default so check for it.
   if (hideTitlebar) {
     hideTitlebar = TitlebarCanUseShapeMask();
   }
@@ -7462,8 +7462,8 @@ int32_t nsWindow::RoundsWidgetCoordinatesTo() { return GdkScaleFactor(); }
 
 void nsWindow::GetCompositorWidgetInitData(
     mozilla::widget::CompositorWidgetInitData* aInitData) {
-  
-  
+  // Make sure the window XID is propagated to X server, we can fail otherwise
+  // in GPU process (Bug 1401634).
   if (mXDisplay && mXWindow != X11None) {
     XFlush(mXDisplay);
   }
@@ -7501,16 +7501,16 @@ bool nsWindow::WaylandSurfaceNeedsClear() {
 #endif
 
 #ifdef MOZ_X11
-
-
-
-
-
-
-
-
-
-
+/* XApp progress support currently works by setting a property
+ * on a window with this Atom name.  A supporting window manager
+ * will notice this and pass it along to whatever handling has
+ * been implemented on that end (e.g. passing it on to a taskbar
+ * widget.)  There is no issue if WM support is lacking, this is
+ * simply ignored in that case.
+ *
+ * See https://github.com/linuxmint/xapps/blob/master/libxapp/xapp-gtk-window.c
+ * for further details.
+ */
 
 #  define PROGRESS_HINT "_NET_WM_XAPP_PROGRESS"
 
@@ -7529,7 +7529,7 @@ static void set_window_hint_cardinal(Window xid, const gchar* atom_name,
                     gdk_x11_get_xatom_by_name_for_display(display, atom_name));
   }
 }
-#endif  
+#endif  // MOZ_X11
 
 void nsWindow::SetProgress(unsigned long progressPercent) {
 #ifdef MOZ_X11
@@ -7546,7 +7546,7 @@ void nsWindow::SetProgress(unsigned long progressPercent) {
 
   set_window_hint_cardinal(GDK_WINDOW_XID(gtk_widget_get_window(mShell)),
                            PROGRESS_HINT, progressPercent);
-#endif  
+#endif  // MOZ_X11
 }
 
 #ifdef MOZ_X11
@@ -7559,7 +7559,7 @@ void nsWindow::SetCompositorHint(WindowComposeRequest aState) {
     gdk_property_change(gtk_widget_get_window(mShell),
                         gdk_atom_intern("_NET_WM_BYPASS_COMPOSITOR", FALSE),
                         cardinal_atom,
-                        32,  
+                        32,  // format
                         GDK_PROP_MODE_REPLACE, (guchar*)&value, 1);
   }
 }
@@ -7627,8 +7627,8 @@ nsresult nsWindow::GetScreenRect(LayoutDeviceIntRect* aRect) {
   if (monitor) {
     GdkRectangle workArea;
     s_gdk_monitor_get_workarea(monitor, &workArea);
-    
-    
+    // The monitor offset won't help us in Wayland, because we can't get the
+    // absolute position of our window.
     aRect->x = aRect->y = 0;
     aRect->width = workArea.width;
     aRect->height = workArea.height;
@@ -7641,24 +7641,24 @@ nsresult nsWindow::GetScreenRect(LayoutDeviceIntRect* aRect) {
 #endif
 
 bool nsWindow::GetTopLevelWindowActiveState(nsIFrame* aFrame) {
-  
-  
-  
+  // Used by window frame and button box rendering. We can end up in here in
+  // the content process when rendering one of these moz styles freely in a
+  // page. Fail in this case, there is no applicable window focus state.
   if (!XRE_IsParentProcess()) {
     return false;
   }
-  
+  // All headless windows are considered active so they are painted.
   if (gfxPlatform::IsHeadless()) {
     return true;
   }
-  
-  
+  // Get the widget. nsIFrame's GetNearestWidget walks up the view chain
+  // until it finds a real window.
   nsWindow* window = static_cast<nsWindow*>(aFrame->GetNearestWidget());
   if (!window) {
     return false;
   }
 
-  
+  // Get our toplevel nsWindow.
   if (!window->mIsTopLevel) {
     GtkWidget* widget = window->GetMozContainerWidget();
     if (!widget) {
@@ -7699,9 +7699,9 @@ nsIFrame* nsWindow::GetFrame(void) {
 }
 
 void nsWindow::UpdateMozWindowActive() {
-  
-  
-  
+  // Update activation state for the :-moz-window-inactive pseudoclass.
+  // Normally, this follows focus; we override it here to follow
+  // GDK_WINDOW_STATE_FOCUSED.
   mozilla::dom::Document* document = GetDocument();
   if (document) {
     nsPIDOMWindowOuter* window = document->GetWindow();
@@ -7748,8 +7748,8 @@ void nsWindow::LockAspectRatio(bool aShouldLock) {
     float width = (float)DevicePixelsToGdkCoordRoundDown(mBounds.width);
     float height = (float)DevicePixelsToGdkCoordRoundDown(mBounds.height);
 
-    
-    
+    // TODO - compare mShell GdkWindow size and mContainer GdkWindow size
+    // instead of GetCSDDecorationSize() call.
     if (mCSDSupportLevel == CSD_SUPPORT_CLIENT) {
       GtkBorder decorationSize = GetCSDDecorationSize(
           gtk_window_get_window_type(GTK_WINDOW(mShell)) == GTK_WINDOW_POPUP);
@@ -7772,7 +7772,7 @@ void nsWindow::LockAspectRatio(bool aShouldLock) {
 nsresult nsWindow::SetPrefersReducedMotionOverrideForTest(bool aValue) {
   LookAndFeel::SetPrefersReducedMotionOverrideForTest(aValue);
 
-  
+  // Notify as if the corresponding setting changed.
   g_object_notify(G_OBJECT(gtk_settings_get_default()),
                   "gtk-enable-animations");
 

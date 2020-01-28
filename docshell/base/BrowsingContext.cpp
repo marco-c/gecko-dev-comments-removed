@@ -949,7 +949,7 @@ nsresult BrowsingContext::InternalLoad(BrowsingContext* aAccessor,
     
     nsCOMPtr<nsPIDOMWindowOuter> domWin = GetDOMWindow();
     if (isActive && domWin) {
-      nsFocusManager::FocusWindow(domWin);
+      nsFocusManager::FocusWindow(domWin, CallerType::System);
     }
 
     
@@ -1023,11 +1023,11 @@ void BrowsingContext::Close(CallerType aCallerType, ErrorResult& aError) {
   }
 }
 
-void BrowsingContext::Focus(ErrorResult& aError) {
+void BrowsingContext::Focus(CallerType aCallerType, ErrorResult& aError) {
   if (ContentChild* cc = ContentChild::GetSingleton()) {
-    cc->SendWindowFocus(this);
+    cc->SendWindowFocus(this, aCallerType);
   } else if (ContentParent* cp = Canonical()->GetContentParent()) {
-    Unused << cp->SendWindowFocus(this);
+    Unused << cp->SendWindowFocus(this, aCallerType);
   }
 }
 
