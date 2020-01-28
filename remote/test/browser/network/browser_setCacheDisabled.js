@@ -37,10 +37,12 @@ add_task(async function cacheDisabled({ client }) {
 });
 
 function checkLoadFlags(flags, url) {
-  return SpecialPowers.spawn(
+  return ContentTask.spawn(
     gBrowser.selectedBrowser,
-    [flags, url],
-    async (flags, url) => {
+    { flags, url },
+    async (options = {}) => {
+      const { flags, url } = options;
+
       
       
       var RequestWatcher = {
