@@ -168,7 +168,14 @@ enum class StructuredCloneScope : uint32_t {
 
 
 
-  Unassigned
+  Unassigned,
+
+  
+
+
+
+
+  UnknownDestination,
 };
 
 enum TransferableOwnership {
@@ -248,7 +255,9 @@ typedef JSObject* (*ReadStructuredCloneOp)(JSContext* cx,
 
 typedef bool (*WriteStructuredCloneOp)(JSContext* cx,
                                        JSStructuredCloneWriter* w,
-                                       JS::HandleObject obj, void* closure);
+                                       JS::HandleObject obj,
+                                       bool* sameProcessScopeRequired,
+                                       void* closure);
 
 
 
@@ -306,6 +315,7 @@ typedef void (*FreeTransferStructuredCloneOp)(
 
 typedef bool (*CanTransferStructuredCloneOp)(JSContext* cx,
                                              JS::Handle<JSObject*> obj,
+                                             bool* sameProcessScopeRequired,
                                              void* closure);
 
 struct JSStructuredCloneCallbacks {
@@ -433,7 +443,18 @@ class MOZ_NON_MEMMOVABLE JS_PUBLIC_API JSStructuredCloneData {
     return bufList_.Init(0, initialCapacity);
   }
 
-  JS::StructuredCloneScope scope() const { return scope_; }
+  JS::StructuredCloneScope scope() const {
+    if (scope_ == JS::StructuredCloneScope::UnknownDestination) {
+      return JS::StructuredCloneScope::DifferentProcess;
+    }
+    return scope_;
+  }
+
+  void sameProcessScopeRequired() {
+    if (scope_ == JS::StructuredCloneScope::UnknownDestination) {
+      scope_ = JS::StructuredCloneScope::SameProcess;
+    }
+  }
 
   void initScope(JS::StructuredCloneScope newScope) {
     MOZ_ASSERT(Size() == 0, "initScope() of nonempty JSStructuredCloneData");
