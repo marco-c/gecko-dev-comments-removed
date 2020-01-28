@@ -89,6 +89,13 @@ class BrowserProgressListener {
   }
 
   onLocationChange(webProgress, request, locationURI, flags) {
+    const window = this.browser.ownerGlobal;
+    
+    
+    if (!windowTracker.isBrowserWindow(window)) {
+      return;
+    }
+
     this.delegate("onLocationChange", webProgress, request, locationURI, flags);
   }
   onStateChange(webProgress, request, stateFlags, status) {
