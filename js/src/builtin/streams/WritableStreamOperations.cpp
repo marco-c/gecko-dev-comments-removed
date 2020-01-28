@@ -25,9 +25,9 @@
 #include "js/Promise.h"     
 #include "js/RootingAPI.h"  
 #include "js/Value.h"  
-#include "vm/Compartment.h"  
-#include "vm/JSContext.h"    
-#include "vm/List.h"         
+#include "vm/Compartment.h"    
+#include "vm/JSContext.h"      
+#include "vm/List.h"           
 #include "vm/PromiseObject.h"  
 
 #include "builtin/streams/HandlerFunction-inl.h"  

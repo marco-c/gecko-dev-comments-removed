@@ -45,7 +45,7 @@ namespace recordreplay {
 
 
 
-                      \
+                                     \
   _Macro(Introduction)                                         \
                                                                \
   /* An error occurred in the cloud server. */                 \
@@ -162,10 +162,8 @@ struct Message {
     return mType == MessageType::CreateCheckpoint ||
            mType == MessageType::SetDebuggerRunsInMiddleman ||
            mType == MessageType::ExternalCallResponse ||
-           mType == MessageType::Ping ||
-           mType == MessageType::Terminate ||
-           mType == MessageType::Crash ||
-           mType == MessageType::Introduction ||
+           mType == MessageType::Ping || mType == MessageType::Terminate ||
+           mType == MessageType::Crash || mType == MessageType::Introduction ||
            mType == MessageType::RecordingData;
   }
 
@@ -286,7 +284,8 @@ struct ErrorMessage : public Message {
 typedef ErrorMessage<MessageType::FatalError> FatalErrorMessage;
 typedef ErrorMessage<MessageType::CloudError> CloudErrorMessage;
 
-typedef EmptyMessage<MessageType::UnhandledDivergence> UnhandledDivergenceMessage;
+typedef EmptyMessage<MessageType::UnhandledDivergence>
+    UnhandledDivergenceMessage;
 
 
 
@@ -426,7 +425,7 @@ class Channel {
 
   
   
-  bool IsParent()  {
+  bool IsParent() {
     switch (mKind) {
       case Kind::MiddlemanRecord:
       case Kind::MiddlemanReplay:

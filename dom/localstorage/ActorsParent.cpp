@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ActorsParent.h"
 
@@ -92,20 +92,20 @@ class Snapshot;
 typedef nsClassHashtable<nsCStringHashKey, ArchivedOriginInfo>
     ArchivedOriginHashtable;
 
+/*******************************************************************************
+ * Constants
+ ******************************************************************************/
 
-
-
-
-
+// Major schema version. Bump for almost everything.
 const uint32_t kMajorSchemaVersion = 4;
 
-
-
+// Minor schema version. Should almost always be 0 (maybe bump on release
+// branches if we have to).
 const uint32_t kMinorSchemaVersion = 0;
 
-
-
-
+// The schema version we store in the SQLite database is a (signed) 32-bit
+// integer. The major version is left-shifted 4 bits so the max value is
+// 0xFFFFFFF. The minor version occupies the lower 4 bits and its max is 0xF.
 static_assert(kMajorSchemaVersion <= 0xFFFFFFF,
               "Major version needs to fit in 28 bits.");
 static_assert(kMinorSchemaVersion <= 0xF,
@@ -114,9 +114,9 @@ static_assert(kMinorSchemaVersion <= 0xF,
 const int32_t kSQLiteSchemaVersion =
     int32_t((kMajorSchemaVersion << 4) + kMinorSchemaVersion);
 
-
-
-
+// Changing the value here will override the page size of new databases only.
+// A journal mode change and VACUUM are needed to change existing databases, so
+// the best way to do that is to use the schema version upgrade mechanism.
 const uint32_t kSQLitePageSizeOverride =
 #ifdef LS_MOBILE
     512;
@@ -124,13 +124,13 @@ const uint32_t kSQLitePageSizeOverride =
     1024;
 #endif
 
-static_assert(kSQLitePageSizeOverride ==  0 ||
+static_assert(kSQLitePageSizeOverride == /* mozStorage default */ 0 ||
                   (kSQLitePageSizeOverride % 2 == 0 &&
                    kSQLitePageSizeOverride >= 512 &&
                    kSQLitePageSizeOverride <= 65536),
               "Must be 0 (disabled) or a power of 2 between 512 and 65536!");
 
-
+// Set to some multiple of the page size to grow the database in larger chunks.
 const uint32_t kSQLiteGrowthIncrement = kSQLitePageSizeOverride * 2;
 
 static_assert(kSQLiteGrowthIncrement >= 0 &&
@@ -138,56 +138,56 @@ static_assert(kSQLiteGrowthIncrement >= 0 &&
                   kSQLiteGrowthIncrement < uint32_t(INT32_MAX),
               "Must be 0 (disabled) or a positive multiple of the page size!");
 
-
-
-
+/**
+ * The database name for LocalStorage data in a per-origin directory.
+ */
 #define DATA_FILE_NAME "data.sqlite"
-
-
-
+/**
+ * The journal corresponding to DATA_FILE_NAME.  (We don't use WAL mode.)
+ */
 #define JOURNAL_FILE_NAME "data.sqlite-journal"
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This file contains the current usage of the LocalStorage database as defined
+ * by the mozLength totals of all keys and values for the database, which
+ * differs from the actual size on disk.  We store this value in a separate
+ * file as a cache so that we can initialize the QuotaClient faster.
+ * In the future, this file will be eliminated and the information will be
+ * stored in PROFILE/storage.sqlite or similar QuotaManager-wide storage.
+ *
+ * The file contains a binary verification cookie (32-bits) followed by the
+ * actual usage (64-bits).
+ */
 #define USAGE_FILE_NAME "usage"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Following a QuotaManager idiom, this journal file's existence is a marker
+ * that the usage file was in the process of being updated and is currently
+ * invalid.  This file is created prior to updating the usage file and only
+ * deleted after the usage file has been written and closed and any pending
+ * database transactions have been committed.  Note that this idiom is expected
+ * to work if Gecko crashes in the middle of a write, but is not expected to be
+ * foolproof in the face of a system crash, as we do not explicitly attempt to
+ * fsync the directory containing the journal file.
+ *
+ * If the journal file is found to exist at origin initialization time, the
+ * usage will be re-computed from the current state of DATA_FILE_NAME.
+ */
 #define USAGE_JOURNAL_FILE_NAME "usage-journal"
 
 static const uint32_t kUsageFileSize = 12;
 static const uint32_t kUsageFileCookie = 0x420a420a;
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * How long between the first moment we know we have data to be written on a
+ * `Connection` and when we should actually perform the write.  This helps
+ * limit disk churn under silly usage patterns and is historically consistent
+ * with the previous, legacy implementation.
+ *
+ * Note that flushing happens downstream of Snapshot checkpointing and its
+ * batch mechanism which helps avoid wasteful IPC in the case of silly content
+ * code.
+ */
 const uint32_t kFlushTimeoutMs = 5000;
 
 const char kPrivateBrowsingObserverTopic[] = "last-pb-context-exited";
@@ -197,97 +197,97 @@ const uint32_t kDefaultShadowWrites = true;
 const uint32_t kDefaultSnapshotPrefill = 16384;
 const uint32_t kDefaultSnapshotGradualPrefill = 4096;
 const uint32_t kDefaultClientValidation = true;
-
-
-
+/**
+ *
+ */
 const char kNextGenPref[] = "dom.storage.next_gen";
-
-
-
-
-
-
-
-
+/**
+ * Should all mutations also be reflected in the "shadow" database, which is
+ * the legacy webappsstore.sqlite database.  When this is enabled, users can
+ * downgrade their version of Firefox and/or otherwise fall back to the legacy
+ * implementation without loss of data.  (Older versions of Firefox will
+ * recognize the presence of ls-archive.sqlite and purge it and the other
+ * LocalStorage directories so privacy is maintained.)
+ */
 const char kShadowWritesPref[] = "dom.storage.shadow_writes";
-
-
-
-
-
-
+/**
+ * Byte budget for sending data down to the LSSnapshot instance when it is first
+ * created.  If there is less data than this (measured by tallying the string
+ * length of the keys and values), all data is sent, otherwise partial data is
+ * sent.  See `Snapshot`.
+ */
 const char kSnapshotPrefillPref[] = "dom.storage.snapshot_prefill";
-
-
-
-
-
-
-
-
-
+/**
+ * When a specific value is requested by an LSSnapshot that is not already fully
+ * populated, gradual prefill is used. This preference specifies the number of
+ * bytes to be used to send values beyond the specific value that is requested.
+ * (The size of the explicitly requested value does not impact this preference.)
+ * Setting the value to 0 disables gradual prefill. Tests may set this value to
+ * -1 which is converted to INT_MAX in order to cause gradual prefill to send
+ * all values not previously sent.
+ */
 const char kSnapshotGradualPrefillPref[] =
     "dom.storage.snapshot_gradual_prefill";
 
 const char kClientValidationPref[] = "dom.storage.client_validation";
 
-
-
-
-
-
+/**
+ * The amount of time a PreparedDatastore instance should stick around after a
+ * preload is triggered in order to give time for the page to use LocalStorage
+ * without triggering worst-case synchronous jank.
+ */
 const uint32_t kPreparedDatastoreTimeoutMs = 20000;
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Cold storage for LocalStorage data extracted from webappsstore.sqlite at
+ * LSNG first-run that has not yet been migrated to its own per-origin directory
+ * by use.
+ *
+ * In other words, at first run, LSNG copies the contents of webappsstore.sqlite
+ * into this database.  As requests are made for that LocalStorage data, the
+ * contents are removed from this database and placed into per-origin QM
+ * storage.  So the contents of this database are always old, unused
+ * LocalStorage data that we can potentially get rid of at some point in the
+ * future.
+ */
 #define LS_ARCHIVE_FILE_NAME "ls-archive.sqlite"
-
-
-
-
+/**
+ * The legacy LocalStorage database.  Its contents are maintained as our
+ * "shadow" database so that LSNG can be disabled without loss of user data.
+ */
 #define WEB_APPS_STORE_FILE_NAME "webappsstore.sqlite"
 
-
+// Shadow database Write Ahead Log's maximum size is 512KB
 const uint32_t kShadowMaxWALSize = 512 * 1024;
 
 const uint32_t kShadowJournalSizeLimit = kShadowMaxWALSize * 3;
 
-
-
-
+/**
+ * Automatically kill database actors if LocalStorage shutdown takes this long.
+ */
 #define SHUTDOWN_FORCE_KILL_TIMEOUT_MS 5000
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Automatically crash the browser if LocalStorage shutdown takes this long.
+ * We've chosen a value that is longer than the value for QuotaManager shutdown
+ * timer which is currently set to 30 seconds.  We've also chosen a value that
+ * is long enough that it is unlikely for the problem to be falsely triggered by
+ * slow system I/O.  We've also chosen a value long enough so that automated
+ * tests should time out and fail if LocalStorage shutdown hangs.  Also, this
+ * value is long enough so that testers can notice the LocalStorage shutdown
+ * hang; we want to know about the hangs, not hide them.  On the other hand this
+ * value is less than 60 seconds which is used by nsTerminator to crash a hung
+ * main process.
+ */
 #define SHUTDOWN_FORCE_CRASH_TIMEOUT_MS 45000
 
 bool IsOnConnectionThread();
 
 void AssertIsOnConnectionThread();
 
-
-
-
+/*******************************************************************************
+ * SQLite functions
+ ******************************************************************************/
 
 int32_t MakeSchemaVersion(uint32_t aMajorSchemaVersion,
                           uint32_t aMinorSchemaVersion) {
@@ -303,7 +303,7 @@ nsresult CreateTables(mozIStorageConnection* aConnection) {
   MOZ_ASSERT(IsOnIOThread() || IsOnConnectionThread());
   MOZ_ASSERT(aConnection);
 
-  
+  // Table `database`
   nsresult rv = aConnection->ExecuteSimpleSQL(
       NS_LITERAL_CSTRING("CREATE TABLE database"
                          "( origin TEXT NOT NULL"
@@ -316,7 +316,7 @@ nsresult CreateTables(mozIStorageConnection* aConnection) {
     return rv;
   }
 
-  
+  // Table `data`
   rv = aConnection->ExecuteSimpleSQL(
       NS_LITERAL_CSTRING("CREATE TABLE data"
                          "( key TEXT PRIMARY KEY"
@@ -411,15 +411,15 @@ nsresult SetDefaultPragmas(mozIStorageConnection* aConnection) {
 
 #ifndef LS_MOBILE
   if (kSQLiteGrowthIncrement) {
-    
-    
+    // This is just an optimization so ignore the failure if the disk is
+    // currently too full.
     rv =
         aConnection->SetGrowthIncrement(kSQLiteGrowthIncrement, EmptyCString());
     if (rv != NS_ERROR_FILE_TOO_BIG && NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
   }
-#endif  
+#endif  // LS_MOBILE
 
   return NS_OK;
 }
@@ -434,7 +434,7 @@ nsresult CreateStorageConnection(nsIFile* aDBFile, nsIFile* aUsageFile,
   MOZ_ASSERT(aConnection);
   MOZ_ASSERT(aRemovedUsageFile);
 
-  
+  // aRemovedUsageFile has to be initialized even when this method fails.
   *aRemovedUsageFile = false;
 
   nsresult rv;
@@ -448,16 +448,16 @@ nsresult CreateStorageConnection(nsIFile* aDBFile, nsIFile* aUsageFile,
   nsCOMPtr<mozIStorageConnection> connection;
   rv = ss->OpenDatabase(aDBFile, getter_AddRefs(connection));
   if (rv == NS_ERROR_FILE_CORRUPTED) {
-    
+    // Remove the usage file first.
     rv = aUsageFile->Remove(false);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
 
-    
+    // Let the caller know that the usage file has been removed.
     *aRemovedUsageFile = true;
 
-    
+    // Nuke the database file.
     rv = aDBFile->Remove(false);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
@@ -475,7 +475,7 @@ nsresult CreateStorageConnection(nsIFile* aDBFile, nsIFile* aUsageFile,
     return rv;
   }
 
-  
+  // Check to make sure that the database schema is correct.
   int32_t schemaVersion;
   rv = connection->GetSchemaVersion(&schemaVersion);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -491,7 +491,7 @@ nsresult CreateStorageConnection(nsIFile* aDBFile, nsIFile* aUsageFile,
     const bool newDatabase = !schemaVersion;
 
     if (newDatabase) {
-      
+      // Set the page size first.
       if (kSQLitePageSizeOverride) {
         rv = connection->ExecuteSimpleSQL(nsPrintfCString(
             "PRAGMA page_size = %" PRIu32 ";", kSQLitePageSizeOverride));
@@ -500,14 +500,14 @@ nsresult CreateStorageConnection(nsIFile* aDBFile, nsIFile* aUsageFile,
         }
       }
 
-      
+      // We have to set the auto_vacuum mode before opening a transaction.
       rv = connection->ExecuteSimpleSQL(
 #ifdef LS_MOBILE
-          
-          
+          // Turn on full auto_vacuum mode to reclaim disk space on mobile
+          // devices (at the cost of some COMMIT speed).
           NS_LITERAL_CSTRING("PRAGMA auto_vacuum = FULL;")
 #else
-          
+          // Turn on incremental auto_vacuum mode on desktop builds.
           NS_LITERAL_CSTRING("PRAGMA auto_vacuum = INCREMENTAL;")
 #endif
       );
@@ -547,7 +547,7 @@ nsresult CreateStorageConnection(nsIFile* aDBFile, nsIFile* aUsageFile,
         return rv;
       }
     } else {
-      
+      // This logic needs to change next time we change the schema!
       static_assert(kSQLiteSchemaVersion == int32_t((4 << 4) + 0),
                     "Upgrade function needed due to schema version increase.");
 
@@ -584,7 +584,7 @@ nsresult CreateStorageConnection(nsIFile* aDBFile, nsIFile* aUsageFile,
     }
 
     if (newDatabase) {
-      
+      // Windows caches the file size, let's force it to stat the file again.
       bool dummy;
       rv = aDBFile->Exists(&dummy);
       if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -713,7 +713,7 @@ nsresult CreateArchiveStorageConnection(const nsAString& aStoragePath,
     return rv;
   }
 
-  
+  // QuotaManager ensures this file always exists.
   DebugOnly<bool> exists;
   MOZ_ASSERT(NS_SUCCEEDED(archiveFile->Exists(&exists)));
   MOZ_ASSERT(exists);
@@ -739,7 +739,7 @@ nsresult CreateArchiveStorageConnection(const nsAString& aStoragePath,
   nsCOMPtr<mozIStorageConnection> connection;
   rv = ss->OpenUnsharedDatabase(archiveFile, getter_AddRefs(connection));
   if (rv == NS_ERROR_FILE_CORRUPTED) {
-    
+    // Don't throw an error, leave a corrupted ls-archive database as it is.
     *aConnection = nullptr;
     return NS_OK;
   }
@@ -749,8 +749,8 @@ nsresult CreateArchiveStorageConnection(const nsAString& aStoragePath,
 
   rv = StorageDBUpdater::Update(connection);
   if (NS_FAILED(rv)) {
-    
-    
+    // Don't throw an error, leave a non-updateable ls-archive database as
+    // it is.
     *aConnection = nullptr;
     return NS_OK;
   }
@@ -845,8 +845,8 @@ nsresult SetShadowJournalMode(mozIStorageConnection* aConnection) {
   MOZ_ASSERT(IsOnIOThread() || IsOnConnectionThread());
   MOZ_ASSERT(aConnection);
 
-  
-  
+  // Try enabling WAL mode. This can fail in various circumstances so we have to
+  // check the results here.
   NS_NAMED_LITERAL_CSTRING(journalModeQueryStart, "PRAGMA journal_mode = ");
   NS_NAMED_LITERAL_CSTRING(journalModeWAL, "wal");
 
@@ -872,10 +872,10 @@ nsresult SetShadowJournalMode(mozIStorageConnection* aConnection) {
   }
 
   if (journalMode.Equals(journalModeWAL)) {
-    
+    // WAL mode successfully enabled. Set limits on its size here.
 
-    
-    
+    // Set the threshold for auto-checkpointing the WAL. We don't want giant
+    // logs slowing down us.
     rv = aConnection->CreateStatement(NS_LITERAL_CSTRING("PRAGMA page_size;"),
                                       getter_AddRefs(stmt));
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -907,8 +907,8 @@ nsresult SetShadowJournalMode(mozIStorageConnection* aConnection) {
       return rv;
     }
 
-    
-    
+    // Set the maximum WAL log size to reduce footprint on mobile (large empty
+    // WAL files will be truncated)
     nsAutoCString sizeLimit;
     sizeLimit.AppendInt(kShadowJournalSizeLimit);
 
@@ -1243,40 +1243,40 @@ nsresult LoadUsageFile(nsIFile* aUsageFile, int64_t* aUsage) {
   return NS_OK;
 }
 
+/*******************************************************************************
+ * Non-actor class declarations
+ ******************************************************************************/
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Coalescing manipulation queue used by `Datastore`.  Used by `Datastore` to
+ * update `Datastore::mOrderedItems` efficiently/for code simplification.
+ * (Datastore does not actually depend on the coalescing, as mutations are
+ * applied atomically when a Snapshot Checkpoints, and with `Datastore::mValues`
+ * being updated at the same time the mutations are applied to Datastore's
+ * mWriteOptimizer.)
+ */
 class DatastoreWriteOptimizer final : public LSWriteOptimizer<LSValue> {
  public:
   void ApplyAndReset(nsTArray<LSItemInfo>& aOrderedItems);
 };
 
-
-
-
-
-
+/**
+ * Coalescing manipulation queue used by `Connection`.  Used by `Connection` to
+ * buffer and coalesce manipulations applied to the Datastore in batches by
+ * Snapshot Checkpointing until flushed to disk.
+ */
 class ConnectionWriteOptimizer final : public LSWriteOptimizer<LSValue> {
  public:
   nsresult Perform(Connection* aConnection, bool aShadowWrites,
                    int64_t& aOutUsage);
 
  private:
-  
-
-
-
-
-
+  /**
+   * Handlers for specific mutations.  Each method knows how to `Perform` the
+   * manipulation against a `Connection` and the "shadow" database (legacy
+   * webappsstore.sqlite database that exists so LSNG can be disabled/safely
+   * downgraded from.)
+   */
   nsresult PerformInsertOrUpdate(Connection* aConnection, bool aShadowWrites,
                                  const nsAString& aKey, const LSValue& aValue);
 
@@ -1342,8 +1342,8 @@ class DatastoreOperationBase : public Runnable {
     return mMayProceed;
   }
 
-  
-  
+  // May be called on any thread, but you should call MayProceed() if you know
+  // you're on the background thread because it is slightly faster.
   bool MayProceedOnNonOwningThread() const {
     return mMayProceedOnNonOwningThread;
   }
@@ -1362,15 +1362,15 @@ class DatastoreOperationBase : public Runnable {
 class ConnectionDatastoreOperationBase : public DatastoreOperationBase {
  protected:
   RefPtr<Connection> mConnection;
-  
-
-
+  /**
+   * This boolean flag is used by the CloseOp to avoid creating empty databases.
+   */
   const bool mEnsureStorageConnection;
 
  public:
-  
-  
-  
+  // This callback will be called on the background thread before releasing the
+  // final reference to this request object. Subclasses may perform any
+  // additional cleanup here but must always call the base class implementation.
   virtual void Cleanup();
 
  protected:
@@ -1379,13 +1379,13 @@ class ConnectionDatastoreOperationBase : public DatastoreOperationBase {
 
   ~ConnectionDatastoreOperationBase();
 
-  
-  
-  
-  
+  // Must be overridden in subclasses. Called on the target thread to allow the
+  // subclass to perform necessary datastore operations. A successful return
+  // value will trigger an OnSuccess callback on the background thread while
+  // while a failure value will trigger an OnFailure callback.
   virtual nsresult DoDatastoreWork() = 0;
 
-  
+  // Methods that subclasses may implement.
   virtual void OnSuccess();
 
   virtual void OnFailure(nsresult aResultCode);
@@ -1395,7 +1395,7 @@ class ConnectionDatastoreOperationBase : public DatastoreOperationBase {
 
   void RunOnOwningThread();
 
-  
+  // Not to be overridden by subclasses.
   NS_DECL_NSIRUNNABLE
 };
 
@@ -1423,14 +1423,14 @@ class Connection final {
   const nsCString mGroup;
   const nsCString mOrigin;
   nsString mDirectoryPath;
-  
-
-
-
-
-
-
-
+  /**
+   * Propagated from PrepareDatastoreOp. PrepareDatastoreOp may defer the
+   * creation of the localstorage client directory and database on the
+   * QuotaManager IO thread in its DatabaseWork method to
+   * Connection::EnsureStorageConnection, in which case the method needs to know
+   * it is responsible for taking those actions (without redundantly performing
+   * the existence checks).
+   */
   const bool mDatabaseWasNotAvailable;
   bool mHasCreatedDatabase;
   bool mFlushScheduled;
@@ -1467,15 +1467,15 @@ class Connection final {
     aHasCreatedDatabase = mHasCreatedDatabase;
   }
 
-  
-  
+  //////////////////////////////////////////////////////////////////////////////
+  // Methods which can only be called on the owning thread.
 
-  
-  
+  // This method is used to asynchronously execute a connection datastore
+  // operation on the connection thread.
   void Dispatch(ConnectionDatastoreOperationBase* aOp);
 
-  
-  
+  // This method is used to asynchronously close the storage connection on the
+  // connection thread.
   void Close(nsIRunnable* aCallback);
 
   void SetItem(const nsString& aKey, const LSValue& aValue, int64_t aDelta,
@@ -1489,8 +1489,8 @@ class Connection final {
 
   void EndUpdateBatch();
 
-  
-  
+  //////////////////////////////////////////////////////////////////////////////
+  // Methods which can only be called on the connection thread.
 
   nsresult EnsureStorageConnection();
 
@@ -1512,7 +1512,7 @@ class Connection final {
   nsresult RollbackWriteTransaction();
 
  private:
-  
+  // Only created by ConnectionThread.
   Connection(ConnectionThread* aConnectionThread, const nsACString& aSuffix,
              const nsACString& aGroup, const nsACString& aOrigin,
              nsAutoPtr<ArchivedOriginScope>&& aArchivedOriginScope,
@@ -1542,25 +1542,25 @@ class Connection::CachedStatement final {
   mozIStorageStatement* operator->() const MOZ_NO_ADDREF_RELEASE_ON_RETURN;
 
  private:
-  
+  // Only called by Connection.
   void Assign(Connection* aConnection,
               already_AddRefed<mozIStorageStatement> aStatement);
 
-  
+  // No funny business allowed.
   CachedStatement(const CachedStatement&) = delete;
   CachedStatement& operator=(const CachedStatement&) = delete;
 };
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Helper to invoke EnsureStorageAndOriginIsInitialized on the QuotaManager IO
+ * thread from the LocalStorage connection thread when creating a database
+ * connection on demand. This is necessary because we attempt to defer the
+ * creation of the origin directory and the database until absolutely needed,
+ * but the directory creation and origin initialization must happen on the QM
+ * IO thread for invariant reasons. (We can't just use a mutex because there
+ * could be logic on the IO thread that also wants to deal with the same
+ * origin, so we need to queue a runnable and wait our turn.)
+ */
 class Connection::InitStorageAndOriginHelper final : public Runnable {
   mozilla::Monitor mMonitor;
   const nsCString mSuffix;
@@ -1613,7 +1613,7 @@ class Connection::CloseOp final : public ConnectionDatastoreOperationBase {
  public:
   CloseOp(Connection* aConnection, nsIRunnable* aCallback)
       : ConnectionDatastoreOperationBase(aConnection,
-                                          false),
+                                         /* aEnsureStorageConnection */ false),
         mCallback(aCallback) {}
 
  private:
@@ -1653,54 +1653,54 @@ class ConnectionThread final {
   ~ConnectionThread();
 };
 
-
-
-
-
-
-
-
-
+/**
+ * Canonical state of Storage for an origin, containing all keys and their
+ * values in the parent process.  Specifically, this is the state that will
+ * be handed out to freshly created Snapshots and that will be persisted to disk
+ * when the Connection's flush completes.  State is mutated in batches as
+ * Snapshot instances Checkpoint their mutations locally accumulated in the
+ * child LSSnapshots.
+ */
 class Datastore final
     : public SupportsCheckedUnsafePtr<CheckIf<DiagnosticAssertEnabled>> {
   RefPtr<DirectoryLock> mDirectoryLock;
   RefPtr<Connection> mConnection;
   RefPtr<QuotaObject> mQuotaObject;
   nsCOMPtr<nsIRunnable> mCompleteCallback;
-  
-
-
-
+  /**
+   * PrepareDatastoreOps register themselves with the Datastore at
+   * and unregister in PrepareDatastoreOp::Cleanup.
+   */
   nsTHashtable<nsPtrHashKey<PrepareDatastoreOp>> mPrepareDatastoreOps;
-  
-
-
-
-
-
-
+  /**
+   * PreparedDatastore instances register themselves with their associated
+   * Datastore at construction time and unregister at destruction time.  They
+   * hang around for kPreparedDatastoreTimeoutMs in order to keep the Datastore
+   * from closing itself via MaybeClose(), thereby giving the document enough
+   * time to load and access LocalStorage.
+   */
   nsTHashtable<nsPtrHashKey<PreparedDatastore>> mPreparedDatastores;
-  
-
-
-
-
+  /**
+   * A database is live (and in this hashtable) if it has a live LSDatabase
+   * actor.  There is at most one Database per origin per content process.  Each
+   * Database corresponds to an LSDatabase in its associated content process.
+   */
   nsTHashtable<nsPtrHashKey<Database>> mDatabases;
-  
-
-
-
-
+  /**
+   * A database is active if it has a non-null `mSnapshot`.  As long as there
+   * are any active databases final deltas can't be calculated and
+   * `UpdateUsage()` can't be invoked.
+   */
   nsTHashtable<nsPtrHashKey<Database>> mActiveDatabases;
-  
-
-
-
+  /**
+   * Non-authoritative hashtable representation of mOrderedItems for efficient
+   * lookup.
+   */
   nsDataHashtable<nsStringHashKey, LSValue> mValues;
-  
-
-
-
+  /**
+   * The authoritative ordered state of the Datastore; mValue also exists as an
+   * unordered hashtable for efficient lookup.
+   */
   nsTArray<LSItemInfo> mOrderedItems;
   nsTArray<int64_t> mPendingUsageDeltas;
   DatastoreWriteOptimizer mWriteOptimizer;
@@ -1715,7 +1715,7 @@ class Datastore final
   bool mInUpdateBatch;
 
  public:
-  
+  // Created by PrepareDatastoreOp.
   Datastore(const nsACString& aGroup, const nsACString& aOrigin,
             uint32_t aPrivateBrowsingId, int64_t aUsage, int64_t aSizeOfKeys,
             int64_t aSizeOfItems,
@@ -1730,9 +1730,9 @@ class Datastore final
   uint32_t PrivateBrowsingId() const { return mPrivateBrowsingId; }
 
   bool IsPersistent() const {
-    
-    
-    
+    // Private-browsing is forbidden from touching disk, but
+    // StorageAccess::eSessionScoped is allowed to touch disk because
+    // QuotaManager's storage for such origins is wiped at shutdown.
     return mPrivateBrowsingId == 0;
   }
 
@@ -1776,15 +1776,15 @@ class Datastore final
 
   void GetKeys(nsTArray<nsString>& aKeys) const;
 
-  
-  
-  
-  
+  //////////////////////////////////////////////////////////////////////////////
+  // Mutation Methods
+  //
+  // These are only called during Snapshot::RecvCheckpoint
 
-  
-
-
-
+  /**
+   * Used by Snapshot::RecvCheckpoint to set a key/value pair as part of a an
+   * explicit batch.
+   */
   void SetItem(Database* aDatabase, const nsString& aKey,
                const LSValue& aValue);
 
@@ -1815,7 +1815,7 @@ class Datastore final
   NS_INLINE_DECL_REFCOUNTING(Datastore)
 
  private:
-  
+  // Reference counted.
   ~Datastore();
 
   bool UpdateUsage(int64_t aDelta);
@@ -1834,8 +1834,8 @@ class PreparedDatastore {
   RefPtr<Datastore> mDatastore;
   nsCOMPtr<nsITimer> mTimer;
   const Maybe<ContentParentId> mContentParentId;
-  
-  
+  // Strings share buffers if possible, so it's not a problem to duplicate the
+  // origin here.
   const nsCString mOrigin;
   uint64_t mDatastoreId;
   bool mForPreload;
@@ -1912,9 +1912,9 @@ class PreparedDatastore {
   static void TimerCallback(nsITimer* aTimer, void* aClosure);
 };
 
-
-
-
+/*******************************************************************************
+ * Actor class declarations
+ ******************************************************************************/
 
 class Database final
     : public PBackgroundLSDatabaseParent,
@@ -1923,8 +1923,8 @@ class Database final
   Snapshot* mSnapshot;
   const PrincipalInfo mPrincipalInfo;
   const Maybe<ContentParentId> mContentParentId;
-  
-  
+  // Strings share buffers if possible, so it's not a problem to duplicate the
+  // origin here.
   nsCString mOrigin;
   uint32_t mPrivateBrowsingId;
   bool mAllowedToClose;
@@ -1935,7 +1935,7 @@ class Database final
 #endif
 
  public:
-  
+  // Created in AllocPBackgroundLSDatabaseParent.
   Database(const PrincipalInfo& aPrincipalInfo,
            const Maybe<ContentParentId>& aContentParentId,
            const nsACString& aOrigin, uint32_t aPrivateBrowsingId);
@@ -1975,12 +1975,12 @@ class Database final
   NS_INLINE_DECL_REFCOUNTING(mozilla::dom::Database)
 
  private:
-  
+  // Reference counted.
   ~Database();
 
   void AllowToClose();
 
-  
+  // IPDL methods are only called by IPDL.
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
   mozilla::ipc::IPCResult RecvDeleteMe() override;
@@ -2002,114 +2002,114 @@ class Database final
       PBackgroundLSSnapshotParent* aActor) override;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Attempts to capture the state of the underlying Datastore at the time of its
+ * creation so run-to-completion semantics can be honored.
+ *
+ * Rather than simply duplicate the contents of `DataStore::mValues` and
+ * `Datastore::mOrderedItems` at the time of their creation, the Snapshot tracks
+ * mutations to the Datastore as they happen, saving off the state of values as
+ * they existed when the Snapshot was created.  In other words, given an initial
+ * Datastore state of { foo: 'bar', bar: 'baz' }, the Snapshot won't store those
+ * values until it hears via `SaveItem` that "foo" is being over-written.  At
+ * that time, it will save off foo='bar' in mValues.
+ *
+ * ## Quota Allocation ##
+ *
+ * ## States ##
+ *
+ */
 class Snapshot final : public PBackgroundLSSnapshotParent {
-  
-
-
-
+  /**
+   * The Database that owns this snapshot.  There is a 1:1 relationship between
+   * snapshots and databases.
+   */
   RefPtr<Database> mDatabase;
   RefPtr<Datastore> mDatastore;
-  
-
-
-
-
-
-
+  /**
+   * The set of keys for which values have been sent to the child LSSnapshot.
+   * Cleared once all values have been sent as indicated by
+   * mLoadedItems.Count()==mTotalLength and therefore mLoadedAllItems should be
+   * true.  No requests should be received for keys already in this set, and
+   * this is enforced by fatal IPC error (unless fuzzing).
+   */
   nsTHashtable<nsStringHashKey> mLoadedItems;
-  
-
-
-
-
-
-
-
-
+  /**
+   * The set of keys for which a RecvLoadValueAndMoreItems request was received
+   * but there was no such key, and so null was returned.  The child LSSnapshot
+   * will also cache these values, so redundant requests are also handled with
+   * fatal process termination just like for mLoadedItems.  Also cleared when
+   * mLoadedAllItems becomes true because then the child can infer that all
+   * other values must be null.  (Note: this could also be done when
+   * mLoadKeysReceived is true as a further optimization, but is not.)
+   */
   nsTHashtable<nsStringHashKey> mUnknownItems;
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Values that have changed in mDatastore as reported by SaveItem
+   * notifications that are not yet known to the child LSSnapshot.
+   *
+   * The naive way to snapshot the state of mDatastore would be to duplicate its
+   * internal mValues at the time of our creation, but that is wasteful if few
+   * changes are made to the Datastore's state.  So we only track values that
+   * are changed/evicted from the Datastore as they happen, as reported to us by
+   * SaveItem notifications.
+   */
   nsDataHashtable<nsStringHashKey, LSValue> mValues;
-  
-
-
-
-
-
+  /**
+   * Latched state of mDatastore's keys during a SaveItem notification with
+   * aAffectsOrder=true.  The ordered keys needed to be saved off so that a
+   * consistent ordering could be presented to the child LSSnapshot when it asks
+   * for them via RecvLoadKeys.
+   */
   nsTArray<nsString> mKeys;
   nsString mDocumentURI;
-  
-
-
-
+  /**
+   * The index used for restoring iteration over not yet sent key/value pairs to
+   * the child LSSnapshot.
+   */
   uint32_t mNextLoadIndex;
-  
-
-
-
-
-
-
-
+  /**
+   * The number of key/value pairs that were present in the Datastore at the
+   * time the snapshot was created.  Once we have sent this many values to the
+   * child LSSnapshot, we can infer that it has received all of the keys/values
+   * and set mLoadedAllItems to true and clear mLoadedItems and mUnknownItems.
+   * Note that knowing the keys/values is not the same as knowing their ordering
+   * and so mKeys may be retained.
+   */
   uint32_t mTotalLength;
   int64_t mUsage;
   int64_t mPeakUsage;
-  
-
-
-
+  /**
+   * True if SaveItem has saved mDatastore's keys into mKeys because a SaveItem
+   * notification with aAffectsOrder=true was received.
+   */
   bool mSavedKeys;
   bool mActorDestroyed;
   bool mFinishReceived;
   bool mLoadedReceived;
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * True if LSSnapshot's mLoadState should be LoadState::AllOrderedItems or
+   * LoadState::AllUnorderedItems.  It will be AllOrderedItems if the initial
+   * snapshot contained all the data or if the state was AllOrderedKeys and
+   * successive RecvLoadValueAndMoreItems requests have resulted in the
+   * LSSnapshot being told all of the key/value pairs.  It will be
+   * AllUnorderedItems if the state was LoadState::Partial and successive
+   * RecvLoadValueAndMoreItem requests got all the keys/values but the key
+   * ordering was not retrieved.
+   */
   bool mLoadedAllItems;
-  
-
-
-
-
+  /**
+   * True if LSSnapshot's mLoadState should be LoadState::AllOrderedItems or
+   * AllOrderedKeys.  This can occur because of the initial snapshot, or because
+   * a RecvLoadKeys request was received.
+   */
   bool mLoadKeysReceived;
   bool mSentMarkDirty;
 
   bool mHasOtherProcessObservers;
 
  public:
-  
+  // Created in AllocPBackgroundLSSnapshotParent.
   Snapshot(Database* aDatabase, const nsAString& aDocumentURI);
 
   void Init(nsTHashtable<nsStringHashKey>& aLoadedItems,
@@ -2146,11 +2146,11 @@ class Snapshot final : public PBackgroundLSSnapshotParent {
     mHasOtherProcessObservers = aHasOtherProcessObservers;
   }
 
-  
-
-
-
-
+  /**
+   * Called via NotifySnapshots by Datastore whenever it is updating its
+   * internal state so that snapshots can save off the state of a value at the
+   * time of their creation.
+   */
   void SaveItem(const nsAString& aKey, const LSValue& aOldValue,
                 bool aAffectsOrder);
 
@@ -2171,12 +2171,12 @@ class Snapshot final : public PBackgroundLSSnapshotParent {
   NS_INLINE_DECL_REFCOUNTING(mozilla::dom::Snapshot)
 
  private:
-  
+  // Reference counted.
   ~Snapshot();
 
   void Finish();
 
-  
+  // IPDL methods are only called by IPDL.
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
   mozilla::ipc::IPCResult RecvDeleteMe() override;
@@ -2209,7 +2209,7 @@ class Observer final : public PBackgroundLSObserverParent {
   bool mActorDestroyed;
 
  public:
-  
+  // Created in AllocPBackgroundLSObserverParent.
   explicit Observer(const nsACString& aOrigin);
 
   const nsCString& Origin() const { return mOrigin; }
@@ -2221,10 +2221,10 @@ class Observer final : public PBackgroundLSObserverParent {
   NS_INLINE_DECL_REFCOUNTING(mozilla::dom::Observer)
 
  private:
-  
+  // Reference counted.
   ~Observer();
 
-  
+  // IPDL methods are only called by IPDL.
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
   mozilla::ipc::IPCResult RecvDeleteMe() override;
@@ -2234,30 +2234,30 @@ class LSRequestBase : public DatastoreOperationBase,
                       public PBackgroundLSRequestParent {
  protected:
   enum class State {
-    
+    // Just created on the PBackground thread. Next step is StartingRequest.
     Initial,
 
-    
-    
-    
+    // Waiting to start/starting request on the PBackground thread. Next step is
+    // either Nesting if a subclass needs to process more nested states or
+    // SendingReadyMessage if a subclass doesn't need any nested processing.
     StartingRequest,
 
-    
+    // Doing nested processing.
     Nesting,
 
-    
-    
+    // Waiting to send/sending the ready message on the PBackground thread. Next
+    // step is WaitingForFinish.
     SendingReadyMessage,
 
-    
-    
+    // Waiting for the finish message on the PBackground thread. Next step is
+    // SendingResults.
     WaitingForFinish,
 
-    
-    
+    // Waiting to send/sending results on the PBackground thread. Next step is
+    // Completed.
     SendingResults,
 
-    
+    // All done.
     Completed
   };
 
@@ -2307,11 +2307,11 @@ class LSRequestBase : public DatastoreOperationBase,
   void SendResults();
 
  protected:
-  
+  // Common nsIRunnable implementation that subclasses may not override.
   NS_IMETHOD
   Run() final;
 
-  
+  // IPDL methods.
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
  private:
@@ -2330,50 +2330,50 @@ class PrepareDatastoreOp
   class CompressibleFunction;
 
   enum class NestedState {
-    
-    
+    // The nesting has not yet taken place. Next step is
+    // CheckExistingOperations.
     BeforeNesting,
 
-    
-    
+    // Checking if a prepare datastore operation is already running for given
+    // origin on the PBackground thread. Next step is CheckClosingDatastore.
     CheckExistingOperations,
 
-    
-    
+    // Checking if a datastore is closing the connection for given origin on
+    // the PBackground thread. Next step is PreparationPending.
     CheckClosingDatastore,
 
-    
-    
-    
-    
-    
-    
+    // Opening directory or initializing quota manager on the PBackground
+    // thread. Next step is either DirectoryOpenPending if quota manager is
+    // already initialized or QuotaManagerPending if quota manager needs to be
+    // initialized.
+    // If a datastore already exists for given origin then the next state is
+    // SendingReadyMessage.
     PreparationPending,
 
-    
-    
-    
+    // Waiting for quota manager initialization to complete on the PBackground
+    // thread. Next step is either SendingReadyMessage if initialization failed
+    // or DirectoryOpenPending if initialization succeeded.
     QuotaManagerPending,
 
-    
-    
-    
+    // Waiting for directory open allowed on the PBackground thread. The next
+    // step is either SendingReadyMessage if directory lock failed to acquire,
+    // or DatabaseWorkOpen if directory lock is acquired.
     DirectoryOpenPending,
 
-    
-    
+    // Waiting to do/doing work on the QuotaManager IO thread. Its next step is
+    // BeginLoadData.
     DatabaseWorkOpen,
 
-    
-    
+    // Starting a load data operation on the PBackground thread. Next step is
+    // DatabaseWorkLoadData.
     BeginLoadData,
 
-    
-    
-    
+    // Waiting to do/doing work on the connection thread. This involves waiting
+    // for the LoadDataOp to do its work. Eventually the state will transition
+    // to SendingReadyMessage.
     DatabaseWorkLoadData,
 
-    
+    // The nesting has completed.
     AfterNesting
   };
 
@@ -2494,10 +2494,10 @@ class PrepareDatastoreOp
 
   NS_DECL_ISUPPORTS_INHERITED
 
-  
+  // IPDL overrides.
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  
+  // OpenDirectoryListener overrides.
   void DirectoryLockAcquired(DirectoryLock* aLock) override;
 
   void DirectoryLockFailed() override;
@@ -2559,18 +2559,18 @@ class LSSimpleRequestBase : public DatastoreOperationBase,
                             public PBackgroundLSSimpleRequestParent {
  protected:
   enum class State {
-    
+    // Just created on the PBackground thread. Next step is StartingRequest.
     Initial,
 
-    
-    
+    // Waiting to start/starting request on the PBackground thread. Next step is
+    // SendingResults.
     StartingRequest,
 
-    
-    
+    // Waiting to send/sending results on the PBackground thread. Next step is
+    // Completed.
     SendingResults,
 
-    
+    // All done.
     Completed
   };
 
@@ -2598,11 +2598,11 @@ class LSSimpleRequestBase : public DatastoreOperationBase,
 
   void SendResults();
 
-  
+  // Common nsIRunnable implementation that subclasses may not override.
   NS_IMETHOD
   Run() final;
 
-  
+  // IPDL methods.
   void ActorDestroy(ActorDestroyReason aWhy) override;
 };
 
@@ -2619,9 +2619,9 @@ class PreloadedOp : public LSSimpleRequestBase {
   void GetResponse(LSSimpleRequestResponse& aResponse) override;
 };
 
-
-
-
+/*******************************************************************************
+ * Other class declarations
+ ******************************************************************************/
 
 struct ArchivedOriginInfo {
   OriginAttributes mOriginAttributes;
@@ -2727,7 +2727,7 @@ class ArchivedOriginScope {
   void RemoveMatches(ArchivedOriginHashtable* aHashtable) const;
 
  private:
-  
+  // Move constructors
   explicit ArchivedOriginScope(const Origin&& aOrigin) : mData(aOrigin) {}
 
   explicit ArchivedOriginScope(const Pattern&& aPattern) : mData(aPattern) {}
@@ -2864,9 +2864,9 @@ class QuotaClient::MatchFunction final : public mozIStorageFunction {
   NS_DECL_MOZISTORAGEFUNCTION
 };
 
-
-
-
+/*******************************************************************************
+ * Helper classes
+ ******************************************************************************/
 
 class MOZ_STACK_CLASS AutoWriteTransaction final {
   Connection* mConnection;
@@ -2888,9 +2888,9 @@ class MOZ_STACK_CLASS AutoWriteTransaction final {
   nsresult DetachShadowDatabaseAndUnlock();
 };
 
-
-
-
+/*******************************************************************************
+ * Globals
+ ******************************************************************************/
 
 #ifdef DEBUG
 bool gLocalStorageInitialized = false;
@@ -2900,7 +2900,7 @@ typedef nsTArray<CheckedUnsafePtr<PrepareDatastoreOp>> PrepareDatastoreOpArray;
 
 StaticAutoPtr<PrepareDatastoreOpArray> gPrepareDatastoreOps;
 
-
+// nsCStringHashKey with disabled memmove
 class nsCStringHashKeyDM : public nsCStringHashKey {
  public:
   explicit nsCStringHashKeyDM(const nsCStringHashKey::KeyTypePointer aKey)
@@ -2908,9 +2908,9 @@ class nsCStringHashKeyDM : public nsCStringHashKey {
   enum { ALLOW_MEMMOVE = false };
 };
 
-
-
-
+// When CheckedUnsafePtr's checking is enabled, it's necessary to ensure that
+// the hashtable uses the copy constructor instead of memmove for moving entries
+// since memmove will break CheckedUnsafePtr in a memory-corrupting way.
 typedef std::conditional<DiagnosticAssertEnabled::value, nsCStringHashKeyDM,
                          nsCStringHashKey>::type DatastoreHashKey;
 
@@ -2954,7 +2954,7 @@ typedef nsDataHashtable<nsCStringHashKey, int64_t> UsageHashtable;
 
 StaticAutoPtr<ArchivedOriginHashtable> gArchivedOrigins;
 
-
+// Can only be touched on the Quota Manager I/O thread.
 bool gInitializedShadowStorage = false;
 
 bool IsOnConnectionThread() {
@@ -2990,7 +2990,7 @@ nsresult LoadArchivedOrigins() {
   QuotaManager* quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
 
-  
+  // Ensure that the webappsstore.sqlite is moved to new place.
   nsresult rv = quotaManager->EnsureStorageIsInitialized();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -3121,7 +3121,7 @@ void SnapshotPrefillPrefChangedCallback(const char* aPrefName, void* aClosure) {
   int32_t snapshotPrefill =
       Preferences::GetInt(aPrefName, kDefaultSnapshotPrefill);
 
-  
+  // The magic -1 is for use only by tests.
   if (snapshotPrefill == -1) {
     snapshotPrefill = INT32_MAX;
   }
@@ -3138,7 +3138,7 @@ void SnapshotGradualPrefillPrefChangedCallback(const char* aPrefName,
   int32_t snapshotGradualPrefill =
       Preferences::GetInt(aPrefName, kDefaultSnapshotGradualPrefill);
 
-  
+  // The magic -1 is for use only by tests.
   if (snapshotGradualPrefill == -1) {
     snapshotGradualPrefill = INT32_MAX;
   }
@@ -3260,11 +3260,11 @@ bool VerifyOriginKey(const nsACString& aOriginKey,
   return true;
 }
 
-}  
+}  // namespace
 
-
-
-
+/*******************************************************************************
+ * Exported functions
+ ******************************************************************************/
 
 void InitializeLocalStorage() {
   MOZ_ASSERT(XRE_IsParentProcess());
@@ -3272,7 +3272,7 @@ void InitializeLocalStorage() {
   MOZ_ASSERT(!gLocalStorageInitialized);
 
   if (!QuotaManager::IsRunningGTests()) {
-    
+    // This service has to be started on the main thread currently.
     nsCOMPtr<mozIStorageService> ss;
     if (NS_WARN_IF(!(ss = do_GetService(MOZ_STORAGE_SERVICE_CONTRACTID)))) {
       NS_WARNING("Failed to get storage service!");
@@ -3324,17 +3324,17 @@ PBackgroundLSDatabaseParent* AllocPBackgroundLSDatabaseParent(
     return nullptr;
   }
 
-  
-  
-  
-  
-  
+  // If we ever decide to return null from this point on, we need to make sure
+  // that the datastore is closed and the prepared datastore is removed from the
+  // gPreparedDatastores hashtable.
+  // We also assume that IPDL must call RecvPBackgroundLSDatabaseConstructor
+  // once we return a valid actor in this method.
 
   RefPtr<Database> database =
       new Database(aPrincipalInfo, preparedDatastore->GetContentParentId(),
                    preparedDatastore->Origin(), aPrivateBrowsingId);
 
-  
+  // Transfer ownership to IPDL.
   return database.forget().take();
 }
 
@@ -3348,9 +3348,9 @@ bool RecvPBackgroundLSDatabaseConstructor(PBackgroundLSDatabaseParent* aActor,
   MOZ_ASSERT(gPreparedDatastores->Get(aDatastoreId));
   MOZ_ASSERT(!QuotaClient::IsShuttingDownOnBackgroundThread());
 
-  
-  
-  
+  // The actor is now completely built (it has a manager, channel and it's
+  // registered as a subprotocol).
+  // ActorDestroy will be called if we fail here.
 
   mozilla::UniquePtr<PreparedDatastore> preparedDatastore;
   gPreparedDatastores->Remove(aDatastoreId, &preparedDatastore);
@@ -3360,9 +3360,9 @@ bool RecvPBackgroundLSDatabaseConstructor(PBackgroundLSDatabaseParent* aActor,
 
   database->SetActorAlive(preparedDatastore->GetDatastore());
 
-  
-  
-  
+  // It's possible that AbortOperations was called before the database actor
+  // was created and became live. Let the child know that the database in no
+  // longer valid.
   if (preparedDatastore->IsInvalidated()) {
     database->RequestAllowToClose();
   }
@@ -3374,7 +3374,7 @@ bool DeallocPBackgroundLSDatabaseParent(PBackgroundLSDatabaseParent* aActor) {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aActor);
 
-  
+  // Transfer ownership back from IPDL.
   RefPtr<Database> actor = dont_AddRef(static_cast<Database*>(aActor));
 
   return true;
@@ -3399,9 +3399,9 @@ PBackgroundLSObserverParent* AllocPBackgroundLSObserverParent(
     return nullptr;
   }
 
-  
+  // observer->SetObject(this);
 
-  
+  // Transfer ownership to IPDL.
   return observer.forget().take();
 }
 
@@ -3442,7 +3442,7 @@ bool DeallocPBackgroundLSObserverParent(PBackgroundLSObserverParent* aActor) {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aActor);
 
-  
+  // Transfer ownership back from IPDL.
   RefPtr<Observer> actor = dont_AddRef(static_cast<Observer*>(aActor));
 
   return true;
@@ -3464,8 +3464,8 @@ PBackgroundLSRequestParent* AllocPBackgroundLSRequestParent(
     contentParentId = Some(ContentParentId(childID));
   }
 
-  
-  
+  // If we're in the same process as the actor, we need to get the target event
+  // queue from the current RequestHelper.
   nsCOMPtr<nsIEventTarget> mainEventTarget;
   if (!BackgroundParent::IsOtherProcessActor(aBackgroundActor)) {
     mainEventTarget = LSObject::GetSyncLoopEventTarget();
@@ -3502,7 +3502,7 @@ PBackgroundLSRequestParent* AllocPBackgroundLSRequestParent(
       MOZ_CRASH("Should never get here!");
   }
 
-  
+  // Transfer ownership to IPDL.
   return actor.forget().take();
 }
 
@@ -3513,7 +3513,7 @@ bool RecvPBackgroundLSRequestConstructor(PBackgroundLSRequestParent* aActor,
   MOZ_ASSERT(aParams.type() != LSRequestParams::T__None);
   MOZ_ASSERT(!QuotaClient::IsShuttingDownOnBackgroundThread());
 
-  
+  // The actor is now completely built.
 
   auto* op = static_cast<LSRequestBase*>(aActor);
 
@@ -3525,7 +3525,7 @@ bool RecvPBackgroundLSRequestConstructor(PBackgroundLSRequestParent* aActor,
 bool DeallocPBackgroundLSRequestParent(PBackgroundLSRequestParent* aActor) {
   AssertIsOnBackgroundThread();
 
-  
+  // Transfer ownership back from IPDL.
   RefPtr<LSRequestBase> actor =
       dont_AddRef(static_cast<LSRequestBase*>(aActor));
 
@@ -3564,7 +3564,7 @@ PBackgroundLSSimpleRequestParent* AllocPBackgroundLSSimpleRequestParent(
       MOZ_CRASH("Should never get here!");
   }
 
-  
+  // Transfer ownership to IPDL.
   return actor.forget().take();
 }
 
@@ -3576,7 +3576,7 @@ bool RecvPBackgroundLSSimpleRequestConstructor(
   MOZ_ASSERT(aParams.type() != LSSimpleRequestParams::T__None);
   MOZ_ASSERT(!QuotaClient::IsShuttingDownOnBackgroundThread());
 
-  
+  // The actor is now completely built.
 
   auto* op = static_cast<LSSimpleRequestBase*>(aActor);
 
@@ -3589,7 +3589,7 @@ bool DeallocPBackgroundLSSimpleRequestParent(
     PBackgroundLSSimpleRequestParent* aActor) {
   AssertIsOnBackgroundThread();
 
-  
+  // Transfer ownership back from IPDL.
   RefPtr<LSSimpleRequestBase> actor =
       dont_AddRef(static_cast<LSSimpleRequestBase*>(aActor));
 
@@ -3623,24 +3623,24 @@ already_AddRefed<mozilla::dom::quota::Client> CreateQuotaClient() {
   return client.forget();
 }
 
-}  
+}  // namespace localstorage
 
-
-
-
+/*******************************************************************************
+ * DatastoreWriteOptimizer
+ ******************************************************************************/
 
 void DatastoreWriteOptimizer::ApplyAndReset(
     nsTArray<LSItemInfo>& aOrderedItems) {
   AssertIsOnOwningThread();
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // The mWriteInfos hash table contains all write infos, but it keeps them in
+  // an arbitrary order, which means write infos need to be sorted before being
+  // processed. However, the order is not important for deletions and normal
+  // updates. Usually, filtering out deletions and updates would require extra
+  // work, but we have to check the hash table for each ordered item anyway, so
+  // we can remove the write info if it is a deletion or update without adding
+  // extra overhead. In the end, only insertions need to be sorted before being
+  // processed.
 
   if (mTruncateInfo) {
     aOrderedItems.Clear();
@@ -3662,13 +3662,13 @@ void DatastoreWriteOptimizer::ApplyAndReset(
         case WriteInfo::UpdateItem: {
           auto updateItemInfo = static_cast<UpdateItemInfo*>(writeInfo);
           if (updateItemInfo->UpdateWithMove()) {
-            
-            
+            // See the comment in LSWriteOptimizer::InsertItem for more details
+            // about the UpdateWithMove flag.
 
             aOrderedItems.RemoveElementAt(index);
-            entry.Data() = MakeUnique<InsertItemInfo>(updateItemInfo->SerialNumber(),
-                                              updateItemInfo->GetKey(),
-                                              updateItemInfo->GetValue());
+            entry.Data() = MakeUnique<InsertItemInfo>(
+                updateItemInfo->SerialNumber(), updateItemInfo->GetKey(),
+                updateItemInfo->GetValue());
           } else {
             item.value() = updateItemInfo->GetValue();
             entry.Remove();
@@ -3701,9 +3701,9 @@ void DatastoreWriteOptimizer::ApplyAndReset(
   mWriteInfos.Clear();
 }
 
-
-
-
+/*******************************************************************************
+ * ConnectionWriteOptimizer
+ ******************************************************************************/
 
 nsresult ConnectionWriteOptimizer::Perform(Connection* aConnection,
                                            bool aShadowWrites,
@@ -3711,8 +3711,8 @@ nsresult ConnectionWriteOptimizer::Perform(Connection* aConnection,
   AssertIsOnConnectionThread();
   MOZ_ASSERT(aConnection);
 
-  
-  
+  // The order of elements is not stored in the database, so write infos don't
+  // need to be sorted before being processed.
 
   nsresult rv;
 
@@ -4003,13 +4003,13 @@ nsresult ConnectionWriteOptimizer::PerformTruncate(Connection* aConnection,
   return NS_OK;
 }
 
+/*******************************************************************************
+ * DatastoreOperationBase
+ ******************************************************************************/
 
-
-
-
-
-
-
+/*******************************************************************************
+ * ConnectionDatastoreOperationBase
+ ******************************************************************************/
 
 ConnectionDatastoreOperationBase::ConnectionDatastoreOperationBase(
     Connection* aConnection, bool aEnsureStorageConnection)
@@ -4050,8 +4050,8 @@ void ConnectionDatastoreOperationBase::RunOnConnectionThread() {
   } else {
     nsresult rv = NS_OK;
 
-    
-    
+    // The boolean flag is only used by the CloseOp to avoid creating empty
+    // databases.
     if (mEnsureStorageConnection) {
       rv = mConnection->EnsureStorageConnection();
       if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -4100,9 +4100,9 @@ ConnectionDatastoreOperationBase::Run() {
   return NS_OK;
 }
 
-
-
-
+/*******************************************************************************
+ * Connection implementation
+ ******************************************************************************/
 
 Connection::Connection(ConnectionThread* aConnectionThread,
                        const nsACString& aSuffix, const nsACString& aGroup,
@@ -4465,8 +4465,8 @@ nsresult Connection::RollbackWriteTransaction() {
     return rv;
   }
 
-  
-  
+  // This may fail if SQLite already rolled back the transaction so ignore any
+  // errors.
   Unused << stmt->Execute();
 
   return NS_OK;
@@ -4502,7 +4502,7 @@ void Connection::Flush() {
   mFlushScheduled = false;
 }
 
-
+// static
 void Connection::FlushTimerCallback(nsITimer* aTimer, void* aClosure) {
   MOZ_ASSERT(aClosure);
 
@@ -4710,9 +4710,9 @@ void Connection::CloseOp::Cleanup() {
   ConnectionDatastoreOperationBase::Cleanup();
 }
 
-
-
-
+/*******************************************************************************
+ * ConnectionThread implementation
+ ******************************************************************************/
 
 ConnectionThread::ConnectionThread() {
   AssertIsOnOwningThread();
@@ -4761,9 +4761,9 @@ void ConnectionThread::Shutdown() {
   mThread->Shutdown();
 }
 
-
-
-
+/*******************************************************************************
+ * Datastore
+ ******************************************************************************/
 
 Datastore::Datastore(const nsACString& aGroup, const nsACString& aOrigin,
                      uint32_t aPrivateBrowsingId, int64_t aUsage,
@@ -4810,8 +4810,8 @@ void Datastore::Close() {
     MOZ_ASSERT(mConnection);
     MOZ_ASSERT(mQuotaObject);
 
-    
-    
+    // We can't release the directory lock and unregister itself from the
+    // hashtable until the connection is fully closed.
     nsCOMPtr<nsIRunnable> callback =
         NewRunnableMethod("dom::Datastore::ConnectionClosedCallback", this,
                           &Datastore::ConnectionClosedCallback);
@@ -4820,8 +4820,8 @@ void Datastore::Close() {
     MOZ_ASSERT(!mConnection);
     MOZ_ASSERT(!mQuotaObject);
 
-    
-    
+    // There's no connection, so it's safe to release the directory lock and
+    // unregister itself from the hashtable.
 
     mDirectoryLock = nullptr;
 
@@ -4968,10 +4968,10 @@ void Datastore::GetSnapshotLoadInfo(const nsString& aKey,
   MOZ_ASSERT(mSizeOfItems == sizeOfItems);
 #endif
 
-  
-  
-  
-  
+  // Computes load state optimized for current size of keys and items.
+  // Zero key length and value can be passed to do a quick initial estimation.
+  // If computed load state is already AllOrderedItems then excluded key length
+  // and value length can't make it any better.
   auto GetLoadState = [&](auto aKeyLength, auto aValueLength) {
     if (mSizeOfKeys - aKeyLength <= gSnapshotPrefill) {
       if (mSizeOfItems - aKeyLength - aValueLength <= gSnapshotPrefill) {
@@ -4984,39 +4984,39 @@ void Datastore::GetSnapshotLoadInfo(const nsString& aKey,
     return LSSnapshot::LoadState::Partial;
   };
 
-  
-  
+  // Value for given aKey if aKey is not void (can be void too if value doesn't
+  // exist for given aKey).
   LSValue value;
-  
-  
-  
-  
+  // If aKey and value are not void, checkKey will be set to true. Once we find
+  // an item for given aKey in one of the loops below, checkKey is set to false
+  // to prevent additional comparison of strings (string implementation compares
+  // string lengths first to avoid char by char comparison if possible).
   bool checkKey = false;
 
-  
-  
-  LSSnapshot::LoadState loadState = GetLoadState( 0,
-                                                  0);
+  // Avoid additional hash lookup if all ordered items fit into initial prefill
+  // already.
+  LSSnapshot::LoadState loadState = GetLoadState(/* aKeyLength */ 0,
+                                                 /* aValueLength */ 0);
   if (loadState != LSSnapshot::LoadState::AllOrderedItems && !aKey.IsVoid()) {
     GetItem(aKey, value);
     if (!value.IsVoid()) {
-      
+      // Ok, we have a non void aKey and value.
 
-      
-      
-      
+      // We have to watch for aKey during one of the loops below to exclude it
+      // from the size computation. The super fast mode (AllOrderedItems)
+      // doesn't have to do that though.
       checkKey = true;
 
-      
-      
+      // We have to compute load state again because aKey length and value
+      // length is excluded from the size in this case.
       loadState = GetLoadState(aKey.Length(), value.Length());
     }
   }
 
   switch (loadState) {
     case LSSnapshot::LoadState::AllOrderedItems: {
-      
-      
+      // We're sending all ordered items, we don't need to check keys because
+      // mOrderedItems must contain a value for aKey if checkKey is true.
 
       aItemInfos.AppendElements(mOrderedItems);
 
@@ -5029,24 +5029,24 @@ void Datastore::GetSnapshotLoadInfo(const nsString& aKey,
     }
 
     case LSSnapshot::LoadState::AllOrderedKeys: {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // We don't have enough snapshot budget to send all items, but we do have
+      // enough to send all of the keys and to make a best effort to populate as
+      // many values as possible. We send void string values once we run out of
+      // budget. A complicating factor is that we want to make sure that we send
+      // the value for aKey which is a localStorage read that's triggering this
+      // request. Since that key can happen anywhere in the list of items, we
+      // need to handle it specially.
+      //
+      // The loop is effectively doing 2 things in parallel:
+      //
+      //   1. Looking for the `aKey` to send. This is tracked by `checkKey`
+      //      which is true if there was an `aKey` specified and until we
+      //      populate its value, and false thereafter.
+      //   2. Sending values until we run out of `size` budget and switch to
+      //      sending void values. `doneSendingValues` tracks when we've run out
+      //      of size budget, with `setVoidValue` tracking whether a value
+      //      should be sent for each turn of the event loop but can be
+      //      overridden when `aKey` is found.
 
       int64_t size = mSizeOfKeys;
       bool setVoidValue = false;
@@ -5070,9 +5070,9 @@ void Datastore::GetSnapshotLoadInfo(const nsString& aKey,
               setVoidValue = true;
               doneSendingValues = true;
 
-              
-              
-              
+              // We set doneSendingValues to true and that will guard against
+              // entering this branch during next iterations. So aNextLoadIndex
+              // is set only once.
               aNextLoadIndex = index;
             }
           }
@@ -5126,7 +5126,7 @@ void Datastore::GetSnapshotLoadInfo(const nsString& aKey,
         if (value.IsVoid()) {
           aAddKeyToUnknownItems = true;
         } else if (checkKey) {
-          
+          // The item wasn't added in the loop above, add it here.
 
           LSItemInfo* itemInfo = aItemInfos.AppendElement();
           itemInfo->key() = aKey;
@@ -5177,7 +5177,7 @@ void Datastore::SetItem(Database* aDatabase, const nsString& aKey,
   if (oldValue != aValue) {
     bool isNewItem = oldValue.IsVoid();
 
-    NotifySnapshots(aDatabase, aKey, oldValue,  isNewItem);
+    NotifySnapshots(aDatabase, aKey, oldValue, /* affectsOrder */ isNewItem);
 
     mValues.Put(aKey, aValue);
 
@@ -5222,7 +5222,7 @@ void Datastore::RemoveItem(Database* aDatabase, const nsString& aKey) {
   GetItem(aKey, oldValue);
 
   if (!oldValue.IsVoid()) {
-    NotifySnapshots(aDatabase, aKey, oldValue,  true);
+    NotifySnapshots(aDatabase, aKey, oldValue, /* aAffectsOrder */ true);
 
     mValues.Remove(aKey);
 
@@ -5256,7 +5256,7 @@ void Datastore::Clear(Database* aDatabase) {
       delta += -static_cast<int64_t>(key.Length()) -
                static_cast<int64_t>(value.UTF16Length());
 
-      NotifySnapshots(aDatabase, key, value,  true);
+      NotifySnapshots(aDatabase, key, value, /* aAffectsOrder */ true);
     }
 
     mValues.Clear();
@@ -5310,10 +5310,10 @@ int64_t Datastore::EndUpdateBatch(int64_t aSnapshotPeakUsage) {
     int64_t delta = mUpdateBatchUsage - aSnapshotPeakUsage;
 
     if (mActiveDatabases.Count()) {
-      
-      
-      
-      
+      // We can't apply deltas while other databases are still active.
+      // The final delta must be zero or negative, but individual deltas can
+      // be positive. A positive delta can't be applied asynchronously since
+      // there's no way to fire the quota exceeded error event.
 
       mPendingUsageDeltas.AppendElement(delta);
     } else {
@@ -5399,8 +5399,8 @@ void Datastore::NotifyOtherProcessObservers(Database* aDatabase,
 
   MOZ_ASSERT(array);
 
-  
-  
+  // We do not want to send information about events back to the content process
+  // that caused the change.
   PBackgroundParent* databaseBackgroundActor = aDatabase->Manager();
 
   for (Observer* observer : *array) {
@@ -5487,7 +5487,7 @@ void Datastore::Stringify(nsACString& aResult) const {
 bool Datastore::UpdateUsage(int64_t aDelta) {
   AssertIsOnBackgroundThread();
 
-  
+  // Check internal LocalStorage origin limit.
   int64_t newUsage = mUsage + aDelta;
 
   MOZ_ASSERT(newUsage >= 0);
@@ -5496,16 +5496,16 @@ bool Datastore::UpdateUsage(int64_t aDelta) {
     return false;
   }
 
-  
+  // Check QuotaManager limits (group and global limit).
   if (IsPersistent()) {
     MOZ_ASSERT(mQuotaObject);
 
-    if (!mQuotaObject->MaybeUpdateSize(newUsage,  true)) {
+    if (!mQuotaObject->MaybeUpdateSize(newUsage, /* aTruncate */ true)) {
       return false;
     }
   }
 
-  
+  // Quota checks passed, set new usage.
   mUsage = newUsage;
 
   return true;
@@ -5527,7 +5527,7 @@ void Datastore::ConnectionClosedCallback() {
   MOZ_ASSERT(mQuotaObject);
   MOZ_ASSERT(mClosed);
 
-  
+  // Release the quota object first.
   mQuotaObject = nullptr;
 
   bool databaseWasNotAvailable;
@@ -5546,8 +5546,8 @@ void Datastore::ConnectionClosedCallback() {
 
   mConnection = nullptr;
 
-  
-  
+  // Now it's safe to release the directory lock and unregister itself from
+  // the hashtable.
 
   mDirectoryLock = nullptr;
 
@@ -5590,9 +5590,9 @@ void Datastore::NotifySnapshots(Database* aDatabase, const nsAString& aKey,
   }
 }
 
-
-
-
+/*******************************************************************************
+ * PreparedDatastore
+ ******************************************************************************/
 
 void PreparedDatastore::Destroy() {
   AssertIsOnBackgroundThread();
@@ -5601,7 +5601,7 @@ void PreparedDatastore::Destroy() {
   MOZ_ASSERT(removed);
 }
 
-
+// static
 void PreparedDatastore::TimerCallback(nsITimer* aTimer, void* aClosure) {
   AssertIsOnBackgroundThread();
 
@@ -5611,9 +5611,9 @@ void PreparedDatastore::TimerCallback(nsITimer* aTimer, void* aClosure) {
   self->Destroy();
 }
 
-
-
-
+/*******************************************************************************
+ * Database
+ ******************************************************************************/
 
 Database::Database(const PrincipalInfo& aPrincipalInfo,
                    const Maybe<ContentParentId>& aContentParentId,
@@ -5665,7 +5665,7 @@ void Database::RegisterSnapshot(Snapshot* aSnapshot) {
   MOZ_ASSERT(!mSnapshot);
   MOZ_ASSERT(!mAllowedToClose);
 
-  
+  // Only one snapshot at a time is currently supported.
   mSnapshot = aSnapshot;
 
   mDatastore->NoteActiveDatabase(this);
@@ -5689,18 +5689,18 @@ void Database::RequestAllowToClose() {
 
   mRequestedAllowToClose = true;
 
-  
-  
+  // Send the RequestAllowToClose message to the child to avoid racing with the
+  // child actor. Except the case when the actor was already destroyed.
   if (mActorDestroyed) {
     MOZ_ASSERT(mAllowedToClose);
     return;
   }
 
   if (NS_WARN_IF(!SendRequestAllowToClose()) && !mSnapshot) {
-    
-    
-    
-    
+    // This is not necessary, because there should be a runnable scheduled that
+    // will call ActorDestroy which calls AllowToClose. However we can speedup
+    // the shutdown a bit if we do it here directly, but only if there's no
+    // registered snapshot.
     AllowToClose();
   }
 }
@@ -5825,7 +5825,7 @@ PBackgroundLSSnapshotParent* Database::AllocPBackgroundLSSnapshotParent(
 
   RefPtr<Snapshot> snapshot = new Snapshot(this, aDocumentURI);
 
-  
+  // Transfer ownership to IPDL.
   return snapshot.forget().take();
 }
 
@@ -5889,15 +5889,15 @@ bool Database::DeallocPBackgroundLSSnapshotParent(
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aActor);
 
-  
+  // Transfer ownership back from IPDL.
   RefPtr<Snapshot> actor = dont_AddRef(static_cast<Snapshot*>(aActor));
 
   return true;
 }
 
-
-
-
+/*******************************************************************************
+ * Snapshot
+ ******************************************************************************/
 
 Snapshot::Snapshot(Database* aDatabase, const nsAString& aDocumentURI)
     : mDatabase(aDatabase),
@@ -6198,11 +6198,11 @@ mozilla::ipc::IPCResult Snapshot::RecvLoadValueAndMoreItems(
   } else {
     mLoadedItems.PutEntry(aKey);
 
-    
+    // mLoadedItems.Count()==mTotalLength is checked below.
   }
 
-  
-  
+  // Load some more key/value pairs (as many as the snapshot gradual prefill
+  // byte budget allows).
 
   if (gSnapshotGradualPrefill > 0) {
     const nsTArray<LSItemInfo>& orderedItems = mDatastore->GetOrderedItems();
@@ -6216,10 +6216,10 @@ mozilla::ipc::IPCResult Snapshot::RecvLoadValueAndMoreItems(
 
     int64_t size = 0;
     while (mNextLoadIndex < length) {
-      
-      
-      
-      
+      // If the datastore's ordering has changed, mSavedKeys will be true and
+      // mKeys contains an ordered list of the keys. Otherwise we can use the
+      // datastore's key ordering which is still the same as when the snapshot
+      // was created.
 
       nsString key;
       if (mSavedKeys) {
@@ -6228,26 +6228,26 @@ mozilla::ipc::IPCResult Snapshot::RecvLoadValueAndMoreItems(
         key = orderedItems[mNextLoadIndex].key();
       }
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // Normally we would do this:
+      // if (!mLoadedItems.GetEntry(key)) {
+      //   ...
+      //   mLoadedItems.PutEntry(key);
+      // }
+      // but that requires two hash lookups. We can reduce that to just one
+      // hash lookup if we always call PutEntry and check the number of entries
+      // before and after the put (which is very cheap). However, if we reach
+      // the prefill limit, we need to call RemoveEntry, but that is also cheap
+      // because we pass the entry (not the key).
 
       uint32_t countBeforePut = mLoadedItems.Count();
       auto loadedItemEntry = mLoadedItems.PutEntry(key);
       if (countBeforePut != mLoadedItems.Count()) {
-        
-        
-        
-        
-        
-        
+        // Check mValues first since that contains values as they existed when
+        // our snapshot was created, but have since been changed/removed in the
+        // datastore. If it's not there, then the datastore has the
+        // still-current value. However, if the datastore's key ordering has
+        // changed, we need to do a hash lookup rather than being able to do an
+        // optimized direct access to the index.
 
         LSValue value;
         auto valueEntry = mValues.Lookup(key);
@@ -6259,7 +6259,7 @@ mozilla::ipc::IPCResult Snapshot::RecvLoadValueAndMoreItems(
           value = orderedItems[mNextLoadIndex].value();
         }
 
-        
+        // All not loaded keys must have a value.
         MOZ_ASSERT(!value.IsVoid());
 
         size += static_cast<int64_t>(key.Length()) +
@@ -6268,8 +6268,8 @@ mozilla::ipc::IPCResult Snapshot::RecvLoadValueAndMoreItems(
         if (size > gSnapshotGradualPrefill) {
           mLoadedItems.RemoveEntry(loadedItemEntry);
 
-          
-          
+          // mNextLoadIndex is not incremented, so we will resume at the same
+          // position next time.
           break;
         }
 
@@ -6364,15 +6364,15 @@ mozilla::ipc::IPCResult Snapshot::RecvIncreasePeakUsage(
 mozilla::ipc::IPCResult Snapshot::RecvPing() {
   AssertIsOnBackgroundThread();
 
-  
-  
+  // Do nothing here. This is purely a sync message allowing the child to
+  // confirm that the actor has received previous async message.
 
   return IPC_OK();
 }
 
-
-
-
+/*******************************************************************************
+ * Observer
+ ******************************************************************************/
 
 Observer::Observer(const nsACString& aOrigin)
     : mOrigin(aOrigin), mActorDestroyed(false) {
@@ -6430,9 +6430,9 @@ mozilla::ipc::IPCResult Observer::RecvDeleteMe() {
   return IPC_OK();
 }
 
-
-
-
+/*******************************************************************************
+ * LSRequestBase
+ ******************************************************************************/
 
 LSRequestBase::LSRequestBase(nsIEventTarget* aMainEventTarget,
                              const LSRequestParams& aParams,
@@ -6600,7 +6600,7 @@ nsresult LSRequestBase::StartRequest() {
   }
 
 #ifdef DEBUG
-  
+  // Always verify parameters in DEBUG builds!
   bool trustParams = false;
 #else
   bool trustParams = !BackgroundParent::IsOtherProcessActor(Manager());
@@ -6670,8 +6670,8 @@ void LSRequestBase::FinishInternal() {
 
   mState = State::SendingResults;
 
-  
-  
+  // This LSRequestBase can only be held alive by the IPDL. Run() can end up
+  // with clearing that last reference. So we need to add a self reference here.
   RefPtr<LSRequestBase> kungFuDeathGrip = this;
 
   MOZ_ALWAYS_SUCCEEDS(this->Run());
@@ -6739,8 +6739,8 @@ LSRequestBase::Run() {
   if (NS_WARN_IF(NS_FAILED(rv)) && mState != State::SendingReadyMessage) {
     MaybeSetFailureCode(rv);
 
-    
-    
+    // Must set mState before dispatching otherwise we will race with the owning
+    // thread.
     mState = State::SendingReadyMessage;
 
     if (IsOnOwningThread()) {
@@ -6759,22 +6759,22 @@ void LSRequestBase::ActorDestroy(ActorDestroyReason aWhy) {
 
   NoteComplete();
 
-  
-  
-  
-  
-  
-  
-  
+  // Assume ActorDestroy can happen at any time, so we can't probe the current
+  // state since mState can be modified on any thread (only one thread at a time
+  // based on the state machine).  However we can use mWaitingForFinish which is
+  // only touched on the owning thread.  If mWaitingForFinisg is true, we can
+  // also modify mState since we are guaranteed that there are no pending
+  // runnables which would probe mState to decide what code needs to run (there
+  // shouldn't be any running runnables on other threads either).
 
   if (mWaitingForFinish) {
     Finish();
   }
 
-  
-  
-  
-  
+  // We don't have to handle the case when mWaitingForFinish is not true since
+  // it means that either nothing has been initialized yet, so nothing to
+  // cleanup or there are pending runnables that will detect that the actor has
+  // been destroyed and cleanup accordingly.
 }
 
 mozilla::ipc::IPCResult LSRequestBase::RecvCancel() {
@@ -6803,9 +6803,9 @@ mozilla::ipc::IPCResult LSRequestBase::RecvFinish() {
   return IPC_OK();
 }
 
-
-
-
+/*******************************************************************************
+ * PrepareDatastoreOp
+ ******************************************************************************/
 
 PrepareDatastoreOp::PrepareDatastoreOp(
     nsIEventTarget* aMainEventTarget, const LSRequestParams& aParams,
@@ -7023,12 +7023,12 @@ nsresult PrepareDatastoreOp::CheckExistingOperations() {
       originAttrSuffix, commonParams.originKey());
   MOZ_ASSERT(mArchivedOriginScope);
 
-  
-  
-  
-  
-  
-  
+  // Normally it's safe to access member variables without a mutex because even
+  // though we hop between threads, the variables are never accessed by multiple
+  // threads at the same time.
+  // However, the methods OriginIsKnown and Origin can be called at any time.
+  // So we have to make sure the member variable is set on the same thread as
+  // those methods are called.
   mOrigin = mMainThreadOrigin;
 
   MOZ_ASSERT(!mOrigin.IsEmpty());
@@ -7037,7 +7037,7 @@ nsresult PrepareDatastoreOp::CheckExistingOperations() {
 
   mNestedState = NestedState::CheckClosingDatastore;
 
-  
+  // See if this PrepareDatastoreOp needs to wait.
   bool foundThis = false;
   for (uint32_t index = gPrepareDatastoreOps->Length(); index > 0; index--) {
     PrepareDatastoreOp* existingOp = (*gPrepareDatastoreOps)[index - 1];
@@ -7048,7 +7048,7 @@ nsresult PrepareDatastoreOp::CheckExistingOperations() {
     }
 
     if (foundThis && existingOp->Origin() == mOrigin) {
-      
+      // Only one op can be delayed.
       MOZ_ASSERT(!existingOp->mDelayedOp);
       existingOp->mDelayedOp = this;
 
@@ -7194,7 +7194,7 @@ nsresult PrepareDatastoreOp::OpenDirectory() {
       QuotaManager::Get()->CreateDirectoryLock(PERSISTENCE_TYPE_DEFAULT, mGroup,
                                                mOrigin,
                                                mozilla::dom::quota::Client::LS,
-                                                false, this);
+                                               /* aExclusive */ false, this);
   MOZ_ASSERT(pendingDirectoryLock);
 
   if (mNestedState == NestedState::DirectoryOpenPending) {
@@ -7213,15 +7213,15 @@ void PrepareDatastoreOp::SendToIOThread() {
   MOZ_ASSERT(!QuotaClient::IsShuttingDownOnBackgroundThread());
   MOZ_ASSERT(MayProceed());
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Skip all disk related stuff and transition to SendingReadyMessage if we
+  // are preparing a datastore for private browsing.
+  // Note that we do use a directory lock for private browsing even though we
+  // don't do any stuff on disk. The thing is that without a directory lock,
+  // quota manager wouldn't call AbortOperations for our private browsing
+  // origin when a clear origin operation is requested. AbortOperations
+  // requests all databases to close and the datastore is destroyed in the end.
+  // Any following LocalStorage API call will trigger preparation of a new
+  // (empty) datastore.
   if (mPrivateBrowsingId) {
     FinishNesting();
 
@@ -7231,7 +7231,7 @@ void PrepareDatastoreOp::SendToIOThread() {
   QuotaManager* quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
 
-  
+  // Must set this before dispatching otherwise we will race with the IO thread.
   mNestedState = NestedState::DatabaseWorkOpen;
 
   MOZ_ALWAYS_SUCCEEDS(
@@ -7253,14 +7253,14 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
   QuotaManager* quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
 
-  
+  // This must be called before EnsureTemporaryStorageIsInitialized.
   nsresult rv = quotaManager->EnsureStorageIsInitialized();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
-  
-  
+  // This ensures that usages for existings origin directories are cached in
+  // memory.
   rv = quotaManager->EnsureTemporaryStorageIsInitialized();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -7281,19 +7281,19 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
 
   bool hasDataForMigration = mArchivedOriginScope->HasMatches(gArchivedOrigins);
 
-  
-  
-  
-  
+  // If there's nothing to preload (except the case when we want to migrate data
+  // during preloading), then we can finish the operation without creating a
+  // datastore in GetResponse (GetResponse won't create a datastore if
+  // mDatatabaseNotAvailable and mForPreload are both true).
   if (mForPreload && !hasUsage && !hasDataForMigration) {
     return DatabaseNotAvailable();
   }
 
-  
-  
-  
-  
-  
+  // The origin directory doesn't need to be created when we don't have data for
+  // migration. It will be created on the connection thread in
+  // Connection::EnsureStorageConnection.
+  // However, origin quota must be initialized, GetQuotaObject in GetResponse
+  // would fail otherwise.
   nsCOMPtr<nsIFile> directoryEntry;
   if (hasDataForMigration) {
     rv = quotaManager->EnsureStorageAndOriginIsInitialized(
@@ -7324,12 +7324,12 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
     return rv;
   }
 
-  
-  
-  
+  // The ls directory doesn't need to be created when we don't have data for
+  // migration. It will be created on the connection thread in
+  // Connection::EnsureStorageConnection.
   rv = EnsureDirectoryEntry(directoryEntry,
-                             hasDataForMigration,
-                             true);
+                            /* aCreateIfNotExists */ hasDataForMigration,
+                            /* aIsDirectory */ true);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -7344,36 +7344,36 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
     return rv;
   }
 
-  
-  
-  
+  // The database doesn't need to be created when we don't have data for
+  // migration. It will be created on the connection thread in
+  // Connection::EnsureStorageConnection.
   bool alreadyExisted;
   rv = EnsureDirectoryEntry(directoryEntry,
-                             hasDataForMigration,
-                             false, &alreadyExisted);
+                            /* aCreateIfNotExists */ hasDataForMigration,
+                            /* aIsDirectory */ false, &alreadyExisted);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
   if (alreadyExisted) {
-    
+    // The database does exist.
     MOZ_ASSERT(hasUsage);
     mUsage = usage;
   } else {
-    
+    // The database doesn't exist.
     MOZ_ASSERT(!hasUsage);
 
     if (!hasDataForMigration) {
-      
-      
-      
-      
+      // The database doesn't exist and we don't have data for migration.
+      // Finish the operation, but create an empty datastore in GetResponse
+      // (GetResponse will create an empty datastore if mDatabaseNotAvailable
+      // is true and mForPreload is false).
       return DatabaseNotAvailable();
     }
   }
 
-  
-  
+  // We initialized mDatabaseFilePath and mUsage, GetQuotaObject can be called
+  // from now on.
   RefPtr<QuotaObject> quotaObject;
 
   nsCOMPtr<nsIFile> usageFile;
@@ -7394,8 +7394,8 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
   rv = CreateStorageConnection(directoryEntry, usageFile, mOrigin,
                                getter_AddRefs(connection), &removedUsageFile);
 
-  
-  
+  // removedUsageFile must be checked before rv since we may need to reset usage
+  // even when CreateStorageConnection failed.
   if (removedUsageFile) {
     if (!quotaObject) {
       quotaObject = GetQuotaObject();
@@ -7404,7 +7404,7 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
       }
     }
 
-    MOZ_ALWAYS_TRUE(quotaObject->MaybeUpdateSize(0,  true));
+    MOZ_ALWAYS_TRUE(quotaObject->MaybeUpdateSize(0, /* aTruncate */ true));
 
     mUsage = 0;
   }
@@ -7439,12 +7439,12 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
       }
     }
 
-    if (!quotaObject->MaybeUpdateSize(newUsage,  true)) {
+    if (!quotaObject->MaybeUpdateSize(newUsage, /* aTruncate */ true)) {
       return NS_ERROR_FILE_NO_DEVICE_SPACE;
     }
 
     auto autoUpdateSize = MakeScopeExit([&quotaObject] {
-      MOZ_ALWAYS_TRUE(quotaObject->MaybeUpdateSize(0,  true));
+      MOZ_ALWAYS_TRUE(quotaObject->MaybeUpdateSize(0, /* aTruncate */ true));
     });
 
     mozStorageTransaction transaction(
@@ -7578,16 +7578,16 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
     gInitializedShadowStorage = true;
   }
 
-  
-  
+  // Must close connections before dispatching otherwise we might race with the
+  // connection thread which needs to open the same databases.
   MOZ_ALWAYS_SUCCEEDS(connection->Close());
 
   if (shadowConnection) {
     MOZ_ALWAYS_SUCCEEDS(shadowConnection->Close());
   }
 
-  
-  
+  // Must set this before dispatching otherwise we will race with the owning
+  // thread.
   mNestedState = NestedState::BeginLoadData;
 
   rv = OwningEventTarget()->Dispatch(this, NS_DISPATCH_NORMAL);
@@ -7730,22 +7730,22 @@ nsresult PrepareDatastoreOp::BeginLoadData() {
 
   mConnection = gConnectionThread->CreateConnection(
       mSuffix, mGroup, mOrigin, std::move(mArchivedOriginScope),
-       false);
+      /* aDatabaseWasNotAvailable */ false);
   MOZ_ASSERT(mConnection);
 
-  
-  
+  // Must set this before dispatching otherwise we will race with the
+  // connection thread.
   mNestedState = NestedState::DatabaseWorkLoadData;
 
-  
-  
+  // Can't assign to mLoadDataOp directly since that's a weak reference and
+  // LoadDataOp is reference counted.
   RefPtr<LoadDataOp> loadDataOp = new LoadDataOp(this);
 
-  
+  // This add refs loadDataOp.
   mConnection->Dispatch(loadDataOp);
 
-  
-  
+  // This is cleared in LoadDataOp::Cleanup() before the load data op is
+  // destroyed.
   mLoadDataOp = loadDataOp;
 
   return NS_OK;
@@ -7755,8 +7755,8 @@ void PrepareDatastoreOp::FinishNesting() {
   AssertIsOnOwningThread();
   MOZ_ASSERT(mState == State::Nesting);
 
-  
-  
+  // The caller holds a strong reference to us, no need for a self reference
+  // before calling Run().
 
   mState = State::SendingReadyMessage;
   mNestedState = NestedState::AfterNesting;
@@ -7768,8 +7768,8 @@ nsresult PrepareDatastoreOp::FinishNestingOnNonOwningThread() {
   MOZ_ASSERT(!IsOnOwningThread());
   MOZ_ASSERT(mState == State::Nesting);
 
-  
-  
+  // Must set mState before dispatching otherwise we will race with the owning
+  // thread.
   mState = State::SendingReadyMessage;
   mNestedState = NestedState::AfterNesting;
 
@@ -7829,8 +7829,8 @@ void PrepareDatastoreOp::GetResponse(LSRequestResponse& aResponse) {
   MOZ_ASSERT(!QuotaClient::IsShuttingDownOnBackgroundThread());
   MOZ_ASSERT(MayProceed());
 
-  
-  
+  // A datastore is not created when we are just trying to preload data and
+  // there's no database file.
   if (mDatabaseNotAvailable && mForPreload) {
     LSRequestPreloadDatastoreResponse preloadDatastoreResponse;
 
@@ -7846,18 +7846,18 @@ void PrepareDatastoreOp::GetResponse(LSRequestResponse& aResponse) {
 
     if (mPrivateBrowsingId == 0) {
       if (!mConnection) {
-        
+        // This can happen when there's no database file.
         MOZ_ASSERT(mDatabaseNotAvailable);
 
-        
-        
+        // Even though there's no database file, we need to create a connection
+        // and pass it to datastore.
         if (!gConnectionThread) {
           gConnectionThread = new ConnectionThread();
         }
 
         mConnection = gConnectionThread->CreateConnection(
             mSuffix, mGroup, mOrigin, std::move(mArchivedOriginScope),
-             true);
+            /* aDatabaseWasNotAvailable */ true);
         MOZ_ASSERT(mConnection);
       }
 
@@ -7887,7 +7887,7 @@ void PrepareDatastoreOp::GetResponse(LSRequestResponse& aResponse) {
 
   nsAutoPtr<PreparedDatastore> preparedDatastore(
       new PreparedDatastore(mDatastore, mContentParentId, mOrigin, mDatastoreId,
-                             mForPreload));
+                            /* aForPreload */ mForPreload));
 
   if (!gPreparedDatastores) {
     gPreparedDatastores = new PreparedDatastoreHashtable();
@@ -7920,15 +7920,15 @@ void PrepareDatastoreOp::Cleanup() {
     MOZ_ASSERT(!mConnection);
 
     if (NS_FAILED(ResultCode()) && mDatastoreId > 0) {
-      
-      
-      
+      // Just in case we failed to send datastoreId to the child, we need to
+      // destroy prepared datastore, otherwise it won't be destroyed until the
+      // timer fires (after 20 seconds).
       MOZ_ASSERT(gPreparedDatastores);
       DebugOnly<bool> removed = gPreparedDatastores->Remove(mDatastoreId);
       MOZ_ASSERT(removed);
     }
 
-    
+    // Make sure to release the datastore on this thread.
 
     mDatastore->NoteFinishedPrepareDatastoreOp(this);
 
@@ -7936,27 +7936,27 @@ void PrepareDatastoreOp::Cleanup() {
 
     CleanupMetadata();
   } else if (mConnection) {
-    
-    
+    // If we have a connection then the operation must have failed and there
+    // must be a directory lock too.
     MOZ_ASSERT(NS_FAILED(ResultCode()));
     MOZ_ASSERT(mDirectoryLock);
 
-    
-    
+    // We must close the connection on the connection thread before releasing
+    // it on this thread. The directory lock can't be released either.
     nsCOMPtr<nsIRunnable> callback =
         NewRunnableMethod("dom::OpenDatabaseOp::ConnectionClosedCallback", this,
                           &PrepareDatastoreOp::ConnectionClosedCallback);
 
     mConnection->Close(callback);
   } else {
-    
-    
-    
+    // If we don't have a connection, but we do have a directory lock then the
+    // operation must have failed or we were preloading a datastore and there
+    // was no physical database on disk.
     MOZ_ASSERT_IF(mDirectoryLock,
                   NS_FAILED(ResultCode()) || mDatabaseNotAvailable);
 
-    
-    
+    // There's no connection, so it's safe to release the directory lock and
+    // unregister itself from the array.
 
     mDirectoryLock = nullptr;
 
@@ -8208,9 +8208,9 @@ PrepareDatastoreOp::CompressibleFunction::OnFunctionCall(
   return NS_OK;
 }
 
-
-
-
+/*******************************************************************************
+ * PrepareObserverOp
+ ******************************************************************************/
 
 PrepareObserverOp::PrepareObserverOp(
     nsIEventTarget* aMainEventTarget, const LSRequestParams& aParams,
@@ -8269,10 +8269,10 @@ void PrepareObserverOp::GetResponse(LSRequestResponse& aResponse) {
   aResponse = prepareObserverResponse;
 }
 
-
-
-
-
+/*******************************************************************************
++ * LSSimpleRequestBase
++
+******************************************************************************/
 
 LSSimpleRequestBase::LSSimpleRequestBase(
     const LSSimpleRequestParams& aParams,
@@ -8329,7 +8329,7 @@ nsresult LSSimpleRequestBase::StartRequest() {
   }
 
 #ifdef DEBUG
-  
+  // Always verify parameters in DEBUG builds!
   bool trustParams = false;
 #else
   bool trustParams = !BackgroundParent::IsOtherProcessActor(Manager());
@@ -8391,8 +8391,8 @@ LSSimpleRequestBase::Run() {
   if (NS_WARN_IF(NS_FAILED(rv)) && mState != State::SendingResults) {
     MaybeSetFailureCode(rv);
 
-    
-    
+    // Must set mState before dispatching otherwise we will race with the owning
+    // thread.
     mState = State::SendingResults;
 
     if (IsOnOwningThread()) {
@@ -8412,9 +8412,9 @@ void LSSimpleRequestBase::ActorDestroy(ActorDestroyReason aWhy) {
   NoteComplete();
 }
 
-
-
-
+/*******************************************************************************
+ * PreloadedOp
+ ******************************************************************************/
 
 PreloadedOp::PreloadedOp(const LSSimpleRequestParams& aParams,
                          const Maybe<ContentParentId>& aContentParentId)
@@ -8471,30 +8471,30 @@ void PreloadedOp::GetResponse(LSSimpleRequestResponse& aResponse) {
   aResponse = preloadedResponse;
 }
 
+/*******************************************************************************
+ * ArchivedOriginScope
+ ******************************************************************************/
 
-
-
-
-
+// static
 ArchivedOriginScope* ArchivedOriginScope::CreateFromOrigin(
     const nsACString& aOriginAttrSuffix, const nsACString& aOriginKey) {
   return new ArchivedOriginScope(
       std::move(Origin(aOriginAttrSuffix, aOriginKey)));
 }
 
-
+// static
 ArchivedOriginScope* ArchivedOriginScope::CreateFromPrefix(
     const nsACString& aOriginKey) {
   return new ArchivedOriginScope(std::move(Prefix(aOriginKey)));
 }
 
-
+// static
 ArchivedOriginScope* ArchivedOriginScope::CreateFromPattern(
     const OriginAttributesPattern& aPattern) {
   return new ArchivedOriginScope(std::move(Pattern(aPattern)));
 }
 
-
+// static
 ArchivedOriginScope* ArchivedOriginScope::CreateFromNull() {
   return new ArchivedOriginScope(std::move(Null()));
 }
@@ -8680,9 +8680,9 @@ void ArchivedOriginScope::RemoveMatches(
   mData.match(Matcher(aHashtable));
 }
 
-
-
-
+/*******************************************************************************
+ * QuotaClient
+ ******************************************************************************/
 
 QuotaClient* QuotaClient::sInstance = nullptr;
 
@@ -8702,7 +8702,7 @@ QuotaClient::~QuotaClient() {
   sInstance = nullptr;
 }
 
-
+// static
 nsresult QuotaClient::Initialize() {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -8866,7 +8866,7 @@ nsresult QuotaClient::InitOrigin(PersistenceType aPersistenceType,
         return rv;
       }
 
-      rv = GetUsage(connection,  nullptr, &usage);
+      rv = GetUsage(connection, /* aArchivedOriginScope */ nullptr, &usage);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         REPORT_TELEMETRY_INIT_ERR(kQuotaExternalError, LS_GetUsage);
         return rv;
@@ -8896,7 +8896,7 @@ nsresult QuotaClient::InitOrigin(PersistenceType aPersistenceType,
     }
   }
 
-  
+  // Report unknown files in debug builds, but don't fail, just warn.
 
 #ifdef DEBUG
   nsCOMPtr<nsIDirectoryEnumerator> directoryEntries;
@@ -8933,11 +8933,11 @@ nsresult QuotaClient::InitOrigin(PersistenceType aPersistenceType,
       return rv;
     }
 
-    
-    
+    // Don't need to check for USAGE_JOURNAL_FILE_NAME. We removed it above
+    // (if there was any).
     if (leafName.EqualsLiteral(DATA_FILE_NAME) ||
         leafName.EqualsLiteral(USAGE_FILE_NAME)) {
-      
+      // Don't need to check if it is a directory or file. We did that above.
       continue;
     }
 
@@ -8971,8 +8971,8 @@ nsresult QuotaClient::GetUsageForOrigin(PersistenceType aPersistenceType,
   MOZ_ASSERT(aPersistenceType == PERSISTENCE_TYPE_DEFAULT);
   MOZ_ASSERT(aUsageInfo);
 
-  
-  
+  // We can't open the database at this point, since it can be already used
+  // by the connection thread. Use the cached value instead.
 
   QuotaManager* quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
@@ -8991,19 +8991,19 @@ nsresult QuotaClient::AboutToClearOrigins(
     const OriginScope& aOriginScope) {
   AssertIsOnIOThread();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // This method is not called when the clearing is triggered by the eviction
+  // process. It's on purpose to avoid a problem with the origin access time
+  // which can be described as follows:
+  // When there's a storage pressure condition and quota manager starts
+  // collecting origins for eviction, there can be an origin that hasn't been
+  // touched for long time. However, the old implementation of local storage
+  // could have touched the origin only recently and the new implementation
+  // hasn't had a chance to create a new per origin database for it yet (the
+  // data is still in the archive database), so the origin access time hasn't
+  // been updated either. In the end, the origin would be evicted despite the
+  // fact that there was recent local storage activity.
+  // So this method clears the archived data and shadow database entries for
+  // given origin scope, but only if it's a privacy-related origin clearing.
 
   if (!aPersistenceType.IsNull() &&
       aPersistenceType.Value() != PERSISTENCE_TYPE_DEFAULT) {
@@ -9159,8 +9159,8 @@ void QuotaClient::OnOriginClearCompleted(PersistenceType aPersistenceType,
 void QuotaClient::ReleaseIOThreadObjects() {
   AssertIsOnIOThread();
 
-  
-  
+  // Delete archived origins hashtable since QuotaManager clears the whole
+  // storage directory including ls-archive.sqlite.
 
   gArchivedOrigins = nullptr;
 }
@@ -9168,30 +9168,30 @@ void QuotaClient::ReleaseIOThreadObjects() {
 void QuotaClient::AbortOperations(const nsACString& aOrigin) {
   AssertIsOnBackgroundThread();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // A PrepareDatastoreOp object could already acquire a directory lock for
+  // the given origin. Its last step is creation of a Datastore object (which
+  // will take ownership of the directory lock) and a PreparedDatastore object
+  // which keeps the Datastore alive until a database actor is created.
+  // We need to invalidate the PreparedDatastore object when it's created,
+  // otherwise the Datastore object can block the origin clear operation for
+  // long time. It's not a problem that we don't fail the PrepareDatastoreOp
+  // immediatelly (avoiding the creation of the Datastore and PreparedDatastore
+  // object). We will call RequestAllowToClose on the database actor once it's
+  // created and the child actor will respond by sending AllowToClose which
+  // will close the Datastore on the parent side (the closing releases the
+  // directory lock).
 
   if (gPrepareDatastoreOps) {
     for (PrepareDatastoreOp* prepareDatastoreOp : *gPrepareDatastoreOps) {
       MOZ_ASSERT(prepareDatastoreOp);
 
-      
-      
-      
-      
-      
-      
-      
+      // Explicitely check if a directory lock has been requested.
+      // Origin clearing can't be blocked by this PrepareDatastoreOp if it
+      // hasn't requested a directory lock yet, so we can just ignore it.
+      // This will also guarantee that PrepareDatastoreOp has a known origin.
+      // And it also ensures that the ordering is right. Without the check we
+      // could invalidate ops whose directory locks were requested after we
+      // requested a directory lock for origin clearing.
       if (!prepareDatastoreOp->RequestedDirectoryLock()) {
         continue;
       }
@@ -9243,13 +9243,13 @@ void QuotaClient::ShutdownWorkThreads() {
 
   mShutdownRequested = true;
 
-  
-  
-  
-  
-  
-  
-  
+  // gPrepareDatastoreOps are short lived objects running a state machine.
+  // The shutdown flag is checked between states, so we don't have to notify
+  // all the objects here.
+  // Allocation of a new PrepareDatastoreOp object is prevented once the
+  // shutdown flag is set.
+  // When the last PrepareDatastoreOp finishes, the gPrepareDatastoreOps array
+  // is destroyed.
 
   if (gPreparedDatastores) {
     gPreparedDatastores->Clear();
@@ -9281,16 +9281,16 @@ void QuotaClient::ShutdownWorkThreads() {
       this, SHUTDOWN_FORCE_KILL_TIMEOUT_MS, nsITimer::TYPE_ONE_SHOT,
       "localstorage::QuotaClient::ShutdownWorkThreads::ForceKillTimer"));
 
-  
-  
+  // This should release any local storage related quota objects or directory
+  // locks.
   MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() {
-    
+    // Don't have to check gPreparedDatastores since we nulled it out above.
     return !gPrepareDatastoreOps && !gDatastores && !gLiveDatabases;
   }));
 
   MOZ_ALWAYS_SUCCEEDS(timer->Cancel());
 
-  
+  // And finally, shutdown the connection thread.
   if (gConnectionThread) {
     gConnectionThread->Shutdown();
 
@@ -9477,7 +9477,7 @@ nsresult QuotaClient::PerformDelete(
   return NS_OK;
 }
 
-
+// static
 nsresult QuotaClient::Observer::Initialize() {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -9524,11 +9524,11 @@ nsresult QuotaClient::Observer::Shutdown() {
   MOZ_ALWAYS_SUCCEEDS(obs->RemoveObserver(this, kPrivateBrowsingObserverTopic));
   MOZ_ALWAYS_SUCCEEDS(obs->RemoveObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID));
 
-  
-  
-  
-  
-  
+  // In general, the instance will have died after the latter removal call, so
+  // it's not safe to do anything after that point.
+  // However, Shutdown is currently called from Observe which is called by the
+  // Observer Service which holds a strong reference to the observer while the
+  // Observe method is being called.
 
   return NS_OK;
 }
@@ -9601,9 +9601,9 @@ QuotaClient::MatchFunction::OnFunctionCall(
   return NS_OK;
 }
 
-
-
-
+/*******************************************************************************
+ * AutoWriteTransaction
+ ******************************************************************************/
 
 AutoWriteTransaction::AutoWriteTransaction(bool aShadowWrites)
     : mConnection(nullptr), mShadowWrites(aShadowWrites) {
@@ -9720,5 +9720,5 @@ nsresult AutoWriteTransaction::DetachShadowDatabaseAndUnlock() {
   return NS_OK;
 }
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla

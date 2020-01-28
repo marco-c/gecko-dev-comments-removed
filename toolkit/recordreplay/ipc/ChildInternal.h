@@ -62,14 +62,14 @@ bool DebuggerRunsInMiddleman();
 void ManifestFinished(const js::CharBuffer& aResponse);
 
 
-void SendExternalCallRequest(ExternalCallId aId,
-                             const char* aInputData, size_t aInputSize,
+void SendExternalCallRequest(ExternalCallId aId, const char* aInputData,
+                             size_t aInputSize,
                              InfallibleVector<char>* aOutputData);
 
 
 
-void SendExternalCallOutput(ExternalCallId aId,
-                            const char* aOutputData, size_t aOutputSize);
+void SendExternalCallOutput(ExternalCallId aId, const char* aOutputData,
+                            size_t aOutputSize);
 
 
 

@@ -191,8 +191,8 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
 
   bool IsTopLevelContentDocumentInContentProcess() const;
 
-
-
+  
+  
   mozilla::WeakPtr<nsDocShell> mDocShell;
 
   nsCOMPtr<nsIURI> mUnloadedURI;

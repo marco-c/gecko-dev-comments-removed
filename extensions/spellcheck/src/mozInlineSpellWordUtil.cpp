@@ -43,7 +43,7 @@ inline bool IsIgnorableCharacter(char16_t ch) {
 
 
 inline bool IsConditionalPunctuation(char ch) {
-  return (ch == '\'' ||       
+  return (ch == '\'' ||                    
           ch == static_cast<char>(0xB7));  
 }
 
@@ -610,7 +610,8 @@ bool WordSplitState<T>::ShouldSkipWord(int32_t aStart, int32_t aLength) const {
 
   
   for (int32_t i = aStart; i < last; i++) {
-    if (mozilla::unicode::GetGenCategory(GetUnicharAt(i)) == nsUGenCategory::kNumber) {
+    if (mozilla::unicode::GetGenCategory(GetUnicharAt(i)) ==
+        nsUGenCategory::kNumber) {
       return true;
     }
   }

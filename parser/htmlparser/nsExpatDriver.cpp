@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsExpatDriver.h"
 #include "nsCOMPtr.h"
@@ -42,12 +42,12 @@ static const char16_t kUTF16[] = {'U', 'T', 'F', '-', '1', '6', '\0'};
 
 static mozilla::LazyLogModule gExpatDriverLog("expatdriver");
 
-
-
+// Use the same maximum tree depth as Chromium (see
+// https://chromium.googlesource.com/chromium/src/+/f464165c1dedff1c955d3c051c5a9a1c6a0e8f6b/third_party/WebKit/Source/core/xml/parser/XMLDocumentParser.cpp#85).
 static const uint16_t sMaxXMLTreeDepth = 5000;
 
-
-
+/***************************** EXPAT CALL BACKS ******************************/
+// The callback handlers that get called from the expat parser.
 
 static void Driver_HandleXMLDeclaration(void* aUserData,
                                         const XML_Char* aVersion,
@@ -145,23 +145,23 @@ static int Driver_HandleExternalEntityRef(void* aExternalEntityRefHandler,
                                          aPublicId);
 }
 
+/***************************** END CALL BACKS ********************************/
 
+/***************************** CATALOG UTILS *********************************/
 
-
-
-
-
-
-
-
-
+// Initially added for bug 113400 to switch from the remote "XHTML 1.0 plus
+// MathML 2.0" DTD to the the lightweight customized version that Mozilla uses.
+// Since Mozilla is not validating, no need to fetch a *huge* file at each
+// click.
+// XXX The cleanest solution here would be to fix Bug 98413: Implement XML
+// Catalogs.
 struct nsCatalogData {
   const char* mPublicID;
   const char* mLocalDTD;
   const char* mAgentSheet;
 };
 
-
+// The order of this table is guestimated to be in the optimum order
 static const nsCatalogData kCatalogTable[] = {
     {"-//W3C//DTD XHTML 1.0 Transitional//EN", "htmlmathml-f.ent", nullptr},
     {"-//W3C//DTD XHTML 1.1//EN", "htmlmathml-f.ent", nullptr},
@@ -178,9 +178,9 @@ static const nsCatalogData kCatalogTable[] = {
 static const nsCatalogData* LookupCatalogData(const char16_t* aPublicID) {
   nsDependentString publicID(aPublicID);
 
-  
-  
-  
+  // linear search for now since the number of entries is going to
+  // be negligible, and the fix for bug 98413 would get rid of this
+  // code anyway
   const nsCatalogData* data = kCatalogTable;
   while (data->mPublicID) {
     if (publicID.EqualsASCII(data->mPublicID)) {
@@ -192,29 +192,29 @@ static const nsCatalogData* LookupCatalogData(const char16_t* aPublicID) {
   return nullptr;
 }
 
-
-
-
-
-
-
+// This function provides a resource URI to a local DTD
+// in resource://gre/res/dtd/ which may or may not exist.
+// If aCatalogData is provided, it is used to remap the
+// DTD instead of taking the filename from the URI.  aDTD
+// may be null in some cases that are relying on
+// aCatalogData working for them.
 static void GetLocalDTDURI(const nsCatalogData* aCatalogData, nsIURI* aDTD,
                            nsIURI** aResult) {
   nsAutoCString fileName;
   if (aCatalogData) {
-    
+    // remap the DTD to a known local DTD
     fileName.Assign(aCatalogData->mLocalDTD);
   }
 
   if (fileName.IsEmpty()) {
-    
-    
-    
-    
+    // Try to see if the user has installed the DTD file -- we extract the
+    // filename.ext of the DTD here. Hence, for any DTD for which we have
+    // no predefined mapping, users just have to copy the DTD file to our
+    // special DTD directory and it will be picked.
     nsCOMPtr<nsIURL> dtdURL = do_QueryInterface(aDTD);
     if (!dtdURL) {
-      
-      
+      // Not a URL with a filename, or maybe it was null.  Either way, nothing
+      // else we can do here.
       return;
     }
 
@@ -229,7 +229,7 @@ static void GetLocalDTDURI(const nsCatalogData* aCatalogData, nsIURI* aDTD,
   NS_NewURI(aResult, respath);
 }
 
-
+/***************************** END CATALOG UTILS *****************************/
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsExpatDriver)
   NS_INTERFACE_MAP_ENTRY(nsITokenizer)
@@ -261,28 +261,29 @@ nsExpatDriver::~nsExpatDriver() {
   }
 }
 
-
+/* static */
 void nsExpatDriver::HandleStartElement(void* aUserData, const char16_t* aName,
                                        const char16_t** aAtts) {
   nsExpatDriver* self = static_cast<nsExpatDriver*>(aUserData);
 
   NS_ASSERTION(self->mSink, "content sink not found!");
 
-  
-  
-  
-  
+  // Calculate the total number of elements in aAtts.
+  // XML_GetSpecifiedAttributeCount will only give us the number of specified
+  // attrs (twice that number, actually), so we have to check for default attrs
+  // ourselves.
   uint32_t attrArrayLength;
   for (attrArrayLength = XML_GetSpecifiedAttributeCount(self->mExpatParser);
        aAtts[attrArrayLength]; attrArrayLength += 2) {
-    
+    // Just looping till we find out what the length is
   }
 
   if (self->mSink) {
-    
-    
-    static_assert(sMaxXMLTreeDepth <=
-                  std::numeric_limits<decltype(nsExpatDriver::mTagDepth)>::max());
+    // We store the tagdepth in a PRUint16, so make sure the limit fits in a
+    // PRUint16.
+    static_assert(
+        sMaxXMLTreeDepth <=
+        std::numeric_limits<decltype(nsExpatDriver::mTagDepth)>::max());
 
     if (++self->mTagDepth > sMaxXMLTreeDepth) {
       self->MaybeStopParser(NS_ERROR_HTMLPARSER_HIERARCHYTOODEEP);
@@ -297,7 +298,7 @@ void nsExpatDriver::HandleStartElement(void* aUserData, const char16_t* aName,
   }
 }
 
-
+/* static */
 void nsExpatDriver::HandleStartElementForSystemPrincipal(
     void* aUserData, const char16_t* aName, const char16_t** aAtts) {
   nsExpatDriver* self = static_cast<nsExpatDriver*>(aUserData);
@@ -308,7 +309,7 @@ void nsExpatDriver::HandleStartElementForSystemPrincipal(
     nsCOMPtr<Document> doc =
         do_QueryInterface(self->mOriginalSink->GetTarget());
 
-    
+    // Adjust the column number so that it is one based rather than zero based.
     uint32_t colNumber = XML_GetCurrentColumnNumber(self->mExpatParser) + 1;
     uint32_t lineNumber = XML_GetCurrentLineNumber(self->mExpatParser);
 
@@ -332,7 +333,7 @@ void nsExpatDriver::HandleStartElementForSystemPrincipal(
   }
 }
 
-
+/* static */
 void nsExpatDriver::HandleEndElement(void* aUserData, const char16_t* aName) {
   nsExpatDriver* self = static_cast<nsExpatDriver*>(aUserData);
 
@@ -347,7 +348,7 @@ void nsExpatDriver::HandleEndElement(void* aUserData, const char16_t* aName) {
   }
 }
 
-
+/* static */
 void nsExpatDriver::HandleEndElementForSystemPrincipal(void* aUserData,
                                                        const char16_t* aName) {
   nsExpatDriver* self = static_cast<nsExpatDriver*>(aUserData);
@@ -377,7 +378,7 @@ nsresult nsExpatDriver::HandleComment(const char16_t* aValue) {
   NS_ASSERTION(mSink, "content sink not found!");
 
   if (mInExternalDTD) {
-    
+    // Ignore comments from external DTDs
     return NS_OK;
   }
 
@@ -398,8 +399,8 @@ nsresult nsExpatDriver::HandleProcessingInstruction(const char16_t* aTarget,
   NS_ASSERTION(mSink, "content sink not found!");
 
   if (mInExternalDTD) {
-    
-    
+    // Ignore PIs in external DTDs for now.  Eventually we want to
+    // pass them to the sink in a way that doesn't put them in the DOM
     return NS_OK;
   }
 
@@ -433,7 +434,7 @@ nsresult nsExpatDriver::HandleDefault(const char16_t* aValue,
   NS_ASSERTION(mSink, "content sink not found!");
 
   if (mInExternalDTD) {
-    
+    // Ignore newlines in external DTDs
     return NS_OK;
   }
 
@@ -482,13 +483,13 @@ nsresult nsExpatDriver::HandleStartDoctypeDecl(const char16_t* aDoctypeName,
   mPublicID = aPubid;
 
   if (aHasInternalSubset) {
-    
-    
-    
+    // Consuming a huge internal subset translates to numerous
+    // allocations. In an effort to avoid too many allocations
+    // setting mInternalSubset's capacity to be 1K ( just a guesstimate! ).
     mInInternalSubset = true;
     mInternalSubset.SetCapacity(1024);
   } else {
-    
+    // Distinguish missing internal subset from an empty one
     mInternalSubset.SetIsVoid(true);
   }
 
@@ -501,9 +502,9 @@ nsresult nsExpatDriver::HandleEndDoctypeDecl() {
   mInInternalSubset = false;
 
   if (mSink) {
-    
-    
-    
+    // let the sink know any additional knowledge that we have about the
+    // document (currently, from bug 124570, we only expect to pass additional
+    // agent sheets needed to layout the XML vocabulary of the document)
     nsCOMPtr<nsIURI> data;
 #if 0
     if (mCatalogData && mCatalogData->mAgentSheet) {
@@ -511,12 +512,12 @@ nsresult nsExpatDriver::HandleEndDoctypeDecl() {
     }
 #endif
 
-    
-    
+    // The unused support for "catalog style sheets" was removed. It doesn't
+    // look like we'll ever fix bug 98413 either.
     MOZ_ASSERT(!mCatalogData || !mCatalogData->mAgentSheet,
                "Need to add back support for catalog style sheets");
 
-    
+    // Note: mInternalSubset already doesn't include the [] around it.
     nsresult rv = mSink->HandleDoctypeDecl(mInternalSubset, mDoctypeName,
                                            mSystemID, mPublicID, data);
     MaybeStopParser(rv);
@@ -532,7 +533,7 @@ static nsresult ExternalDTDStreamReaderFunc(nsIUnicharInputStream* aIn,
                                             const char16_t* aFromSegment,
                                             uint32_t aToOffset, uint32_t aCount,
                                             uint32_t* aWriteCount) {
-  
+  // Pass the buffer to expat for parsing.
   if (XML_Parse((XML_Parser)aClosure, (const char*)aFromSegment,
                 aCount * sizeof(char16_t), 0) == XML_STATUS_OK) {
     *aWriteCount = aCount;
@@ -555,7 +556,7 @@ int nsExpatDriver::HandleExternalEntityRef(const char16_t* openEntityNames,
     mInternalSubset.Append(char16_t(';'));
   }
 
-  
+  // Load the external entity into a buffer.
   nsCOMPtr<nsIInputStream> in;
   nsAutoString absURL;
   nsresult rv = OpenInputStreamFromExternalDTD(publicId, systemId, base,
@@ -619,15 +620,15 @@ nsresult nsExpatDriver::OpenInputStreamFromExternalDTD(const char16_t* aFPIStr,
   nsCOMPtr<nsIURI> uri;
   rv = NS_NewURI(getter_AddRefs(uri), NS_ConvertUTF16toUTF8(aURLStr), nullptr,
                  baseURI);
-  
-  
-  
-  
+  // Even if the URI is malformed (most likely because we have a
+  // non-hierarchical base URI and a relative DTD URI, with the latter
+  // being the normal XHTML DTD case), we can try to see whether we
+  // have catalog data for aFPIStr.
   if (NS_WARN_IF(NS_FAILED(rv) && rv != NS_ERROR_MALFORMED_URI)) {
     return rv;
   }
 
-  
+  // make sure the URI, if we have one, is allowed to be loaded in sync
   bool isUIResource = false;
   if (uri) {
     rv = NS_URIChainHasFlags(uri, nsIProtocolHandler::URI_IS_UI_RESOURCE,
@@ -637,10 +638,10 @@ nsresult nsExpatDriver::OpenInputStreamFromExternalDTD(const char16_t* aFPIStr,
 
   nsCOMPtr<nsIURI> localURI;
   if (!isUIResource) {
-    
-    
+    // Check to see if we can map the DTD to a known local DTD, or if a DTD
+    // file of the same name exists in the special DTD directory
     if (aFPIStr) {
-      
+      // see if the Formal Public Identifier (FPI) maps to a catalog entry
       mCatalogData = LookupCatalogData(aFPIStr);
       GetLocalDTDURI(mCatalogData, uri, getter_AddRefs(localURI));
     }
@@ -710,7 +711,7 @@ static nsresult CreateErrorText(const char16_t* aDescription,
       "XMLParsingError", msg);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // XML Parsing Error: %1$S\nLocation: %2$S\nLine Number %3$u, Column %4$u:
   nsTextFormatter::ssprintf(aErrorString, msg.get(), aDescription, aSourceURL,
                             aLineNumber, aColNumber);
   return NS_OK;
@@ -721,13 +722,13 @@ static nsresult AppendErrorPointer(const int32_t aColNumber,
                                    nsString& aSourceString) {
   aSourceString.Append(char16_t('\n'));
 
-  
+  // Last character will be '^'.
   int32_t last = aColNumber - 1;
   int32_t i;
   uint32_t minuses = 0;
   for (i = 0; i < last; ++i) {
     if (aSourceLine[i] == '\t') {
-      
+      // Since this uses |white-space: pre;| a tab stop equals 8 spaces.
       uint32_t add = 8 - (minuses % 8);
       aSourceString.AppendASCII("--------", add);
       minuses += add;
@@ -745,8 +746,8 @@ nsresult nsExpatDriver::HandleError() {
   int32_t code = XML_GetErrorCode(mExpatParser);
   NS_ASSERTION(code > XML_ERROR_NONE, "unexpected XML error code");
 
-  
-  
+  // Map Expat error code to an error string
+  // XXX Deal with error returns.
   nsAutoString description;
   nsCOMPtr<Document> doc;
   if (mOriginalSink) {
@@ -759,15 +760,15 @@ nsresult nsExpatDriver::HandleError() {
       description);
 
   if (code == XML_ERROR_TAG_MISMATCH) {
-    
-
-
-
-
-
-
-
-
+    /**
+     *  Expat can send the following:
+     *    localName
+     *    namespaceURI<separator>localName
+     *    namespaceURI<separator>localName<separator>prefix
+     *
+     *  and we use 0xFFFF for the <separator>.
+     *
+     */
     const char16_t* mismatch = MOZ_XML_GetMismatchedTag(mExpatParser);
     const char16_t* uriEnd = nullptr;
     const char16_t* nameEnd = nullptr;
@@ -784,7 +785,7 @@ nsresult nsExpatDriver::HandleError() {
 
     nsAutoString tagName;
     if (uriEnd && nameEnd) {
-      
+      // We have a prefix.
       tagName.Append(nameEnd + 1, pos - nameEnd - 1);
       tagName.Append(char16_t(':'));
     }
@@ -796,13 +797,13 @@ nsresult nsExpatDriver::HandleError() {
         spoofEnglish ? XMLPARSER_PROPERTIES_en_US : XMLPARSER_PROPERTIES,
         "Expected", msg);
 
-    
+    // . Expected: </%S>.
     nsAutoString message;
     nsTextFormatter::ssprintf(message, msg.get(), tagName.get());
     description.Append(message);
   }
 
-  
+  // Adjust the column number so that it is one based rather than zero based.
   uint32_t colNumber = XML_GetCurrentColumnNumber(mExpatParser) + 1;
   uint32_t lineNumber = XML_GetCurrentLineNumber(mExpatParser);
 
@@ -813,7 +814,7 @@ nsresult nsExpatDriver::HandleError() {
   nsAutoString sourceText(mLastLine);
   AppendErrorPointer(colNumber, mLastLine.get(), sourceText);
 
-  
+  // Try to create and initialize the script error.
   nsCOMPtr<nsIScriptError> serr(do_CreateInstance(NS_SCRIPTERROR_CONTRACTID));
   nsresult rv = NS_ERROR_FAILURE;
   if (serr) {
@@ -822,10 +823,10 @@ nsresult nsExpatDriver::HandleError() {
                                 "malformed-xml", mInnerWindowID);
   }
 
-  
+  // If it didn't initialize, we can't do any logging.
   bool shouldReportError = NS_SUCCEEDED(rv);
 
-  
+  // mSink might be null here if our parser was terminated.
   if (mSink && shouldReportError) {
     rv = mSink->ReportError(errorText.get(), sourceText.get(), serr,
                             &shouldReportError);
@@ -834,7 +835,7 @@ nsresult nsExpatDriver::HandleError() {
     }
   }
 
-  
+  // mOriginalSink might be null here if our parser was terminated.
   if (mOriginalSink) {
     nsCOMPtr<Document> doc = do_QueryInterface(mOriginalSink->GetTarget());
     if (doc && doc->SuppressParserErrorConsoleMessages()) {
@@ -868,7 +869,7 @@ void nsExpatDriver::ParseBuffer(const char16_t* aBuffer, uint32_t aLength,
 
     XML_Status status;
     if (BlockedOrInterrupted()) {
-      mInternalState = NS_OK;  
+      mInternalState = NS_OK;  // Resume in case we're blocked.
       status = XML_ResumeParser(mExpatParser);
     } else {
       status = XML_Parse(mExpatParser, reinterpret_cast<const char*>(aBuffer),
@@ -883,7 +884,7 @@ void nsExpatDriver::ParseBuffer(const char16_t* aBuffer, uint32_t aLength,
     NS_ASSERTION(parserBytesConsumed % sizeof(char16_t) == 0,
                  "Consumed part of a char16_t?");
 
-    
+    // Consumed something.
     *aConsumed = (parserBytesConsumed - parserBytesBefore) / sizeof(char16_t);
     NS_ASSERTION(*aConsumed <= aLength + mExpatBuffered,
                  "Too many bytes consumed?");
@@ -901,17 +902,17 @@ void nsExpatDriver::ParseBuffer(const char16_t* aBuffer, uint32_t aLength,
 
 NS_IMETHODIMP
 nsExpatDriver::ConsumeToken(nsScanner& aScanner, bool& aFlushTokens) {
-  
-  
+  // We keep the scanner pointing to the position where Expat will start
+  // parsing.
   nsScannerIterator currentExpatPosition;
   aScanner.CurrentPosition(currentExpatPosition);
 
-  
+  // This is the start of the first buffer that we need to pass to Expat.
   nsScannerIterator start = currentExpatPosition;
   start.advance(mExpatBuffered);
 
-  
-  
+  // This is the end of the last buffer (at this point, more data could come in
+  // later).
   nsScannerIterator end;
   aScanner.EndReading(end);
 
@@ -919,9 +920,9 @@ nsExpatDriver::ConsumeToken(nsScanner& aScanner, bool& aFlushTokens) {
           ("Remaining in expat's buffer: %i, remaining in scanner: %zu.",
            mExpatBuffered, Distance(start, end)));
 
-  
-  
-  
+  // We want to call Expat if we have more buffers, or if we know there won't
+  // be more buffers (and so we want to flush the remaining data), or if we're
+  // currently blocked and there's data in Expat's buffer.
   while (start != end || (mIsFinalChunk && !mMadeFinalCallToExpat) ||
          (BlockedOrInterrupted() && mExpatBuffered > 0)) {
     bool noMoreBuffers = start == end && mIsFinalChunk;
@@ -930,8 +931,8 @@ nsExpatDriver::ConsumeToken(nsScanner& aScanner, bool& aFlushTokens) {
     const char16_t* buffer;
     uint32_t length;
     if (blocked || noMoreBuffers) {
-      
-      
+      // If we're blocked we just resume Expat so we don't need a buffer, if
+      // there aren't any more buffers we pass a null buffer to Expat.
       buffer = nullptr;
       length = 0;
 
@@ -971,25 +972,25 @@ nsExpatDriver::ConsumeToken(nsScanner& aScanner, bool& aFlushTokens) {
       nsScannerIterator oldExpatPosition = currentExpatPosition;
       currentExpatPosition.advance(consumed);
 
-      
-      
-      
+      // We consumed some data, we want to store the last line of data that
+      // was consumed in case we run into an error (to show the line in which
+      // the error occurred).
 
-      
+      // The length of the last line that Expat has parsed.
       XML_Size lastLineLength = XML_GetCurrentColumnNumber(mExpatParser);
 
       if (lastLineLength <= consumed) {
-        
-        
-        
+        // The length of the last line was less than what expat consumed, so
+        // there was at least one line break in the consumed data. Store the
+        // last line until the point where we stopped parsing.
         nsScannerIterator startLastLine = currentExpatPosition;
         startLastLine.advance(-((ptrdiff_t)lastLineLength));
         if (!CopyUnicodeTo(startLastLine, currentExpatPosition, mLastLine)) {
           return (mInternalState = NS_ERROR_OUT_OF_MEMORY);
         }
       } else {
-        
-        
+        // There was no line break in the consumed data, append the consumed
+        // data.
         if (!AppendUnicodeTo(oldExpatPosition, currentExpatPosition,
                              mLastLine)) {
           return (mInternalState = NS_ERROR_OUT_OF_MEMORY);
@@ -1019,7 +1020,7 @@ nsExpatDriver::ConsumeToken(nsScanner& aScanner, bool& aFlushTokens) {
         NS_ASSERTION(mInternalState == NS_ERROR_HTMLPARSER_STOPPARSING,
                      "Unexpected error");
 
-        
+        // Look for the next newline after the last one we consumed
         nsScannerIterator lastLine = currentExpatPosition;
         while (lastLine != end) {
           length = uint32_t(lastLine.size_forward());
@@ -1031,7 +1032,7 @@ nsExpatDriver::ConsumeToken(nsScanner& aScanner, bool& aFlushTokens) {
           }
           mLastLine.Append(Substring(buffer, buffer + endOffset));
           if (endOffset < length) {
-            
+            // We found a newline.
             break;
           }
 
@@ -1044,17 +1045,17 @@ nsExpatDriver::ConsumeToken(nsScanner& aScanner, bool& aFlushTokens) {
       return mInternalState;
     }
 
-    
-    
+    // Either we have more buffers, or we were blocked (and we'll flush in the
+    // next iteration), or we should have emptied Expat's buffer.
     NS_ASSERTION(!noMoreBuffers || blocked ||
                      (mExpatBuffered == 0 && currentExpatPosition == end),
                  "Unreachable data left in Expat's buffer");
 
     start.advance(length);
 
-    
-    
-    
+    // It's possible for start to have passed end if we received more data
+    // (e.g. if we spun the event loop in an inline script). Reload end now
+    // to compensate.
     aScanner.EndReading(end);
   }
 
@@ -1074,7 +1075,7 @@ nsExpatDriver::WillBuildModel(const CParserContext& aParserContext,
   mSink = do_QueryInterface(aSink);
   if (!mSink) {
     NS_ERROR("nsExpatDriver didn't get an nsIExpatSink");
-    
+    // Make sure future calls to us bail out as needed
     mInternalState = NS_ERROR_UNEXPECTED;
     return mInternalState;
   }
@@ -1117,7 +1118,7 @@ nsExpatDriver::WillBuildModel(const CParserContext& aParserContext,
     }
   }
 
-  
+  // Set up the callbacks
   XML_SetXmlDeclHandler(mExpatParser, Driver_HandleXMLDeclaration);
   if (doc && doc->NodePrincipal()->IsSystemPrincipal()) {
     XML_SetElementHandler(mExpatParser, HandleStartElementForSystemPrincipal,
@@ -1142,7 +1143,7 @@ nsExpatDriver::WillBuildModel(const CParserContext& aParserContext,
   XML_SetDoctypeDeclHandler(mExpatParser, Driver_HandleStartDoctypeDecl,
                             Driver_HandleEndDoctypeDecl);
 
-  
+  // Set up the user data.
   XML_SetUserData(mExpatParser, this);
 
   return mInternalState;
@@ -1168,7 +1169,7 @@ nsExpatDriver::WillTokenize(bool aIsFinalChunk) {
 
 NS_IMETHODIMP_(void)
 nsExpatDriver::Terminate() {
-  
+  // XXX - not sure what happens to the unparsed data.
   if (mExpatParser) {
     XML_StopParser(mExpatParser, XML_FALSE);
   }
@@ -1181,7 +1182,7 @@ nsExpatDriver::GetType() { return NS_IPARSER_FLAG_XML; }
 NS_IMETHODIMP_(nsDTDMode)
 nsExpatDriver::GetMode() const { return eDTDMode_full_standards; }
 
-
+/*************************** Unused methods **********************************/
 
 NS_IMETHODIMP_(bool)
 nsExpatDriver::IsContainer(int32_t aTag) const { return true; }
@@ -1193,9 +1194,9 @@ nsExpatDriver::CanContain(int32_t aParent, int32_t aChild) const {
 
 void nsExpatDriver::MaybeStopParser(nsresult aState) {
   if (NS_FAILED(aState)) {
-    
-    
-    
+    // If we had a failure we want to override NS_ERROR_HTMLPARSER_INTERRUPTED
+    // and we want to override NS_ERROR_HTMLPARSER_BLOCK but not with
+    // NS_ERROR_HTMLPARSER_INTERRUPTED.
     if (NS_SUCCEEDED(mInternalState) ||
         mInternalState == NS_ERROR_HTMLPARSER_INTERRUPTED ||
         (mInternalState == NS_ERROR_HTMLPARSER_BLOCK &&
@@ -1206,14 +1207,14 @@ void nsExpatDriver::MaybeStopParser(nsresult aState) {
                            : NS_ERROR_HTMLPARSER_STOPPARSING;
     }
 
-    
-    
-    
-    
+    // If we get an error then we need to stop Expat (by calling XML_StopParser
+    // with false as the last argument). If the parser should be blocked or
+    // interrupted we need to pause Expat (by calling XML_StopParser with
+    // true as the last argument).
     XML_StopParser(mExpatParser, BlockedOrInterrupted());
   } else if (NS_SUCCEEDED(mInternalState)) {
-    
-    
+    // Only clobber mInternalState with the success code if we didn't block or
+    // interrupt before.
     mInternalState = aState;
   }
 }

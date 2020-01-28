@@ -12,10 +12,10 @@
 #ifndef mozilla_Utf8_h
 #define mozilla_Utf8_h
 
-#include "mozilla/Casting.h"            
-#include "mozilla/Likely.h"             
-#include "mozilla/Maybe.h"              
-#include "mozilla/Span.h"               
+#include "mozilla/Casting.h"    
+#include "mozilla/Likely.h"     
+#include "mozilla/Maybe.h"      
+#include "mozilla/Span.h"       
 #include "mozilla/TextUtils.h"  
                                 
 #include "mozilla/Tuple.h"      

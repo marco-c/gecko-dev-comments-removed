@@ -170,9 +170,7 @@ struct ExternalCallContext {
 
   ExternalCallContext(ExternalCall* aCall, CallArguments* aArguments,
                       ExternalCallPhase aPhase)
-      : mCall(aCall),
-        mArguments(aArguments),
-        mPhase(aPhase) {
+      : mCall(aCall), mArguments(aArguments), mPhase(aPhase) {
     switch (mPhase) {
       case ExternalCallPhase::SaveInput:
         mInputStream.emplace(&mCall->mInput);
@@ -218,7 +216,8 @@ struct ExternalCallContext {
 
   bool AccessInput() { return mInputStream.isSome(); }
 
-  void ReadOrWriteInputBytes(void* aBuffer, size_t aSize, bool aExcludeInput = false) {
+  void ReadOrWriteInputBytes(void* aBuffer, size_t aSize,
+                             bool aExcludeInput = false) {
     switch (mPhase) {
       case ExternalCallPhase::SaveInput:
         
@@ -298,8 +297,7 @@ struct ExternalCallContext {
 
 
 
-bool OnExternalCall(size_t aCallId, CallArguments* aArguments,
-                    bool aDiverged);
+bool OnExternalCall(size_t aCallId, CallArguments* aArguments, bool aDiverged);
 
 
 
@@ -375,9 +373,8 @@ template <size_t StringArg>
 static inline void EX_CString(ExternalCallContext& aCx) {
   if (aCx.AccessInput()) {
     auto& buffer = aCx.mArguments->Arg<StringArg, char*>();
-    size_t len = (aCx.mPhase == ExternalCallPhase::SaveInput)
-                     ? strlen(buffer) + 1
-                     : 0;
+    size_t len =
+        (aCx.mPhase == ExternalCallPhase::SaveInput) ? strlen(buffer) + 1 : 0;
     aCx.ReadOrWriteInputBytes(&len, sizeof(len));
     aCx.ReadOrWriteInputBuffer((void**)&buffer, len);
   }
@@ -425,9 +422,9 @@ static inline void EX_SkipExecuting(ExternalCallContext& aCx) {
 
 static inline void EX_NoOp(ExternalCallContext& aCx) {}
 
-template <ExternalCallFn Fn0, ExternalCallFn Fn1,
-          ExternalCallFn Fn2 = EX_NoOp, ExternalCallFn Fn3 = EX_NoOp,
-          ExternalCallFn Fn4 = EX_NoOp, ExternalCallFn Fn5 = EX_NoOp>
+template <ExternalCallFn Fn0, ExternalCallFn Fn1, ExternalCallFn Fn2 = EX_NoOp,
+          ExternalCallFn Fn3 = EX_NoOp, ExternalCallFn Fn4 = EX_NoOp,
+          ExternalCallFn Fn5 = EX_NoOp>
 static inline void EX_Compose(ExternalCallContext& aCx) {
   Fn0(aCx);
   Fn1(aCx);

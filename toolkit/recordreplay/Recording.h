@@ -177,7 +177,8 @@ class Stream {
 
   
   
-  void RecordOrReplayThreadEvent(ThreadEvent aEvent, const char* aExtra = nullptr);
+  void RecordOrReplayThreadEvent(ThreadEvent aEvent,
+                                 const char* aExtra = nullptr);
 
   
   ThreadEvent ReplayThreadEvent();

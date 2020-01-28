@@ -14,11 +14,11 @@
 
 #include "jsfriendapi.h"  
 
-#include "builtin/Array.h"   
+#include "builtin/Array.h"    
 #include "builtin/Boolean.h"  
-#include "builtin/Object.h"  
-#include "gc/Allocator.h"    
-#include "js/Symbol.h"       
+#include "builtin/Object.h"   
+#include "gc/Allocator.h"     
+#include "js/Symbol.h"        
 #include "js/TypeDecls.h"  
 #include "js/Utility.h"         
 #include "js/Value.h"           

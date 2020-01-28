@@ -682,11 +682,13 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   
   
   
-  static nsresult UpdateEntry(
-      const SHA1Sum::Hash* aHash, const uint32_t* aFrecency,
-      const bool* aHasAltData, const uint16_t* aOnStartTime,
-      const uint16_t* aOnStopTime, const uint8_t* aContentType,
-      const uint32_t* aSize);
+  static nsresult UpdateEntry(const SHA1Sum::Hash* aHash,
+                              const uint32_t* aFrecency,
+                              const bool* aHasAltData,
+                              const uint16_t* aOnStartTime,
+                              const uint16_t* aOnStopTime,
+                              const uint8_t* aContentType,
+                              const uint32_t* aSize);
 
   
   static nsresult RemoveAll();
@@ -789,11 +791,13 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
                           OriginAttrsHash aOriginAttrsHash, bool aAnonymous);
 
   
-  static bool HasEntryChanged(
-      CacheIndexEntry* aEntry, const uint32_t* aFrecency,
-      const bool* aHasAltData, const uint16_t* aOnStartTime,
-      const uint16_t* aOnStopTime, const uint8_t* aContentType,
-      const uint32_t* aSize);
+  static bool HasEntryChanged(CacheIndexEntry* aEntry,
+                              const uint32_t* aFrecency,
+                              const bool* aHasAltData,
+                              const uint16_t* aOnStartTime,
+                              const uint16_t* aOnStopTime,
+                              const uint8_t* aContentType,
+                              const uint32_t* aSize);
 
   
   void ProcessPendingOperations();

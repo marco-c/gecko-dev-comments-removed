@@ -95,7 +95,8 @@ bool OnExternalCall(size_t aCallId, CallArguments* aArguments, bool aDiverged) {
   }
 
   if (aDiverged) {
-    PrintSpew("OnExternalCall Diverged %s %s\n", redirection.mName, messageName);
+    PrintSpew("OnExternalCall Diverged %s %s\n", redirection.mName,
+              messageName);
   }
 
   MonitorAutoLock lock(*gMonitor);
@@ -106,8 +107,7 @@ bool OnExternalCall(size_t aCallId, CallArguments* aArguments, bool aDiverged) {
 
   
   {
-    ExternalCallContext cx(call, aArguments,
-                           ExternalCallPhase::SaveInput);
+    ExternalCallContext cx(call, aArguments, ExternalCallPhase::SaveInput);
     redirection.mExternalCall(cx);
     if (cx.mFailed) {
       delete call;
@@ -145,8 +145,7 @@ bool OnExternalCall(size_t aCallId, CallArguments* aArguments, bool aDiverged) {
   
   
   if (!aDiverged) {
-    ExternalCallContext cx(call, aArguments,
-                           ExternalCallPhase::SaveOutput);
+    ExternalCallContext cx(call, aArguments, ExternalCallPhase::SaveOutput);
     redirection.mExternalCall(cx);
     if (isNewCall) {
       gUnflushedCalls.append(call);
@@ -169,9 +168,8 @@ bool OnExternalCall(size_t aCallId, CallArguments* aArguments, bool aDiverged) {
 
   
   InfallibleVector<char> outputData;
-  child::SendExternalCallRequest(call->mId,
-                                 inputData.begin(), inputData.length(),
-                                 &outputData);
+  child::SendExternalCallRequest(call->mId, inputData.begin(),
+                                 inputData.length(), &outputData);
 
   
   BufferStream outputStream(outputData.begin(), outputData.length());

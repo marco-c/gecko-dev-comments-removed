@@ -53,11 +53,11 @@ class gfxWindowsNativeDrawing {
 
 
 
-  gfxWindowsNativeDrawing(gfxContext* ctx, const gfxRect& nativeRect,
-                          uint32_t nativeDrawFlags =
-                              CANNOT_DRAW_TO_COLOR_ALPHA |
-                              CANNOT_AXIS_ALIGNED_SCALE |
-                              CANNOT_COMPLEX_TRANSFORM);
+  gfxWindowsNativeDrawing(
+      gfxContext* ctx, const gfxRect& nativeRect,
+      uint32_t nativeDrawFlags = CANNOT_DRAW_TO_COLOR_ALPHA |
+                                 CANNOT_AXIS_ALIGNED_SCALE |
+                                 CANNOT_COMPLEX_TRANSFORM);
 
   
 

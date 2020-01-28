@@ -89,9 +89,8 @@ struct nsCounterUseNode : public nsCounterNode {
   }
 
   
-  nsCounterUseNode(mozilla::CounterStylePtr aCounterStyle,
-                   nsString aSeparator, uint32_t aContentIndex,
-                   bool aAllCounters)
+  nsCounterUseNode(mozilla::CounterStylePtr aCounterStyle, nsString aSeparator,
+                   uint32_t aContentIndex, bool aAllCounters)
       : nsCounterNode(aContentIndex, USE),
         mCounterStyle(std::move(aCounterStyle)),
         mSeparator(std::move(aSeparator)),

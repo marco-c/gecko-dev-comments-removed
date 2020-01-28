@@ -37,8 +37,8 @@
 #include "mozilla/Unused.h"
 
 #ifdef MOZ_WAYLAND
-#include "nsAppRunner.h"  
-#include "mozilla/widget/mozwayland.h"
+#  include "nsAppRunner.h"  
+#  include "mozilla/widget/mozwayland.h"
 #endif
 
 
@@ -551,6 +551,7 @@ bool fire_glxtest_process() {
     close(pfd[0]);
     write_end_of_the_pipe = pfd[1];
     close_logging();
+    
     
     
 #ifdef MOZ_WAYLAND

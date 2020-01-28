@@ -173,7 +173,6 @@ class Thread {
   uint8_t* AllocateStorage(size_t aSize);
 
  public:
-
   
   
   uintptr_t mRedirectionValue;
@@ -236,9 +235,7 @@ class Thread {
   }
 
   
-  uintptr_t GetMachId() const {
-    return mMachId;
-  }
+  uintptr_t GetMachId() const { return mMachId; }
 
   
   
