@@ -862,6 +862,9 @@ pref("devtools.performance.recording.ui-base-url", "https://profiler.firefox.com
 
 
 
+pref("devtools.performance.recording.preset", "web-developer");
+
+
 pref("devtools.performance.recording.entries", 10000000);
 
 pref("devtools.performance.recording.interval", 1000);

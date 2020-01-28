@@ -28,6 +28,7 @@ const { AppConstants } = ChromeUtils.import(
 
 
 
+
 const ENTRIES_PREF = "devtools.performance.recording.entries";
 
 const INTERVAL_PREF = "devtools.performance.recording.interval";
@@ -39,6 +40,8 @@ const THREADS_PREF = "devtools.performance.recording.threads";
 const OBJDIRS_PREF = "devtools.performance.recording.objdirs";
 
 const DURATION_PREF = "devtools.performance.recording.duration";
+
+const PRESET_PREF = "devtools.performance.recording.preset";
 
 
 
@@ -262,16 +265,26 @@ function _getArrayOfStringsHostPref(prefName) {
 function getRecordingPreferencesFromBrowser() {
   
   
+  const objdirs = _getArrayOfStringsHostPref(OBJDIRS_PREF);
+  const presetName = Services.prefs.getCharPref(PRESET_PREF);
+
+  
+  const recordingPrefs = getRecordingPrefsFromPreset(presetName, objdirs);
+  if (recordingPrefs) {
+    return recordingPrefs;
+  }
+
+  
   const entries = Services.prefs.getIntPref(ENTRIES_PREF);
   const interval = Services.prefs.getIntPref(INTERVAL_PREF);
   const features = _getArrayOfStringsPref(FEATURES_PREF);
   const threads = _getArrayOfStringsPref(THREADS_PREF);
-  const objdirs = _getArrayOfStringsHostPref(OBJDIRS_PREF);
   const duration = Services.prefs.getIntPref(DURATION_PREF);
 
   const supportedFeatures = new Set(Services.profiler.GetFeatures());
 
   return {
+    presetName: "custom",
     entries,
     interval,
     
@@ -285,7 +298,42 @@ function getRecordingPreferencesFromBrowser() {
 
 
 
+
+
+function getRecordingPrefsFromPreset(presetName, objdirs) {
+  const { presets } = lazyRecordingUtils();
+
+  if (presetName === "custom") {
+    return null;
+  }
+
+  const preset = presets[presetName];
+  if (!preset) {
+    console.error(`Unknown profiler preset was encountered: "${presetName}"`);
+    return null;
+  }
+
+  const supportedFeatures = new Set(Services.profiler.GetFeatures());
+
+  return {
+    presetName,
+    entries: preset.entries,
+    
+    
+    interval: preset.interval * 1000,
+    
+    features: preset.features.filter(feature => supportedFeatures.has(feature)),
+    threads: preset.threads,
+    objdirs,
+    duration: preset.duration,
+  };
+}
+
+
+
+
 function setRecordingPreferencesOnBrowser(prefs) {
+  Services.prefs.setCharPref(PRESET_PREF, prefs.presetName);
   Services.prefs.setIntPref(ENTRIES_PREF, prefs.entries);
   
   Services.prefs.setIntPref(INTERVAL_PREF, prefs.interval);
@@ -300,6 +348,7 @@ const platform = AppConstants.platform;
 
 
 function revertRecordingPreferences() {
+  Services.prefs.clearUserPref(PRESET_PREF);
   Services.prefs.clearUserPref(ENTRIES_PREF);
   Services.prefs.clearUserPref(INTERVAL_PREF);
   Services.prefs.clearUserPref(FEATURES_PREF);
@@ -326,6 +375,7 @@ let _defaultPrefsForOlderFirefox;
 function getDefaultRecordingPreferencesForOlderFirefox() {
   if (!_defaultPrefsForOlderFirefox) {
     _defaultPrefsForOlderFirefox = {
+      presetName: "custom",
       entries: 10000000, 
       
       duration: 0,

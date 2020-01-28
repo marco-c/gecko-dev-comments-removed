@@ -37,6 +37,9 @@ const {
 const Settings = createFactory(
   require("devtools/client/performance-new/components/Settings.js")
 );
+const Presets = createFactory(
+  require("devtools/client/performance-new/components/Presets")
+);
 
 const selectors = require("devtools/client/performance-new/store/selectors");
 const {
@@ -112,7 +115,7 @@ class AboutProfiling extends PureComponent {
       ),
       
       
-      div({ className: "perf-presets" }),
+      Presets(),
       Settings()
     );
   }

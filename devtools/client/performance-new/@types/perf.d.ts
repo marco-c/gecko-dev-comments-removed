@@ -110,6 +110,7 @@ export interface State {
   features: string[];
   threads: string[];
   objdirs: string[];
+  presetName: string;
   initializedValues: InitializedValues | null;
   promptEnvRestart: null | string
 }
@@ -189,6 +190,7 @@ interface GeckoProfilerFrameScriptInterface {
 }
 
 export interface RecordingStateFromPreferences {
+  presetName: string;
   entries: number;
   interval: number;
   features: string[];
@@ -268,6 +270,11 @@ export type Action =
       recordingSettingsFromPreferences: RecordingStateFromPreferences;
       getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
       supportedFeatures: string[] | null;
+    }
+  | {
+      type: "CHANGE_PRESET";
+      presetName: string;
+      preset: PresetDefinition | undefined;
     };
 
 export interface InitializeStoreValues {
@@ -306,6 +313,11 @@ export interface ContentFrameMessageManager {
 
 
 export interface PerformancePref {
+  
+
+
+
+  Preset: "devtools.performance.recording.preset";
   
 
 
@@ -377,4 +389,18 @@ export interface ScaleFunctions {
   fromFractionToValue: NumberScaler,
   fromValueToFraction: NumberScaler,
   fromFractionToSingleDigitValue: NumberScaler,
+}
+
+export interface PresetDefinition {
+  label: string;
+  description: string;
+  entries: number;
+  interval: number;
+  features: string[];
+  threads: string[];
+  duration: number;
+}
+
+export interface PresetDefinitions {
+  [presetName: string]: PresetDefinition;
 }
