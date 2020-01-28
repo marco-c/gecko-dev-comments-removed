@@ -737,6 +737,8 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
+
+
   static nsresult FindInsertionPoint(
       const nsTArray<RangeData>* aElementArray, const nsINode* aPointNode,
       int32_t aPointOffset,
