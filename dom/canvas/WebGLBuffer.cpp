@@ -74,34 +74,46 @@ static bool ValidateBufferUsageEnum(WebGLContext* webgl, GLenum usage) {
   return false;
 }
 
-void WebGLBuffer::BufferData(GLenum target, uint64_t size, const void* data,
-                             GLenum usage) {
+void WebGLBuffer::BufferData(const GLenum target, const uint64_t size,
+                             const void* const maybeData, const GLenum usage) {
   
+  bool sizeValid = CheckedInt<GLsizeiptr>(size).isValid();
+
+  if (mContext->gl->WorkAroundDriverBugs()) {
+    
+#if defined(XP_MACOSX) || defined(MOZ_WIDGET_GTK)
+    sizeValid &= CheckedInt<int32_t>(size).isValid();
+#endif
+
+    
+    if (mContext->gl->IsANGLE()) {
+      
+      
+      sizeValid &= CheckedInt<int32_t>(size).isValid();
+    }
+  }
+
+  if (!sizeValid) {
+    mContext->ErrorOutOfMemory("Size not valid for platform: %" PRIu64, size);
+    return;
+  }
+
   
-  if (!CheckedInt<GLsizeiptr>(size).isValid())
-    return mContext->ErrorOutOfMemory("bad size");
 
   if (!ValidateBufferUsageEnum(mContext, usage)) return;
 
-#if defined(XP_MACOSX) || defined(MOZ_WIDGET_GTK)
-  
-  if (mContext->gl->WorkAroundDriverBugs() && size > INT32_MAX) {
-    mContext->ErrorOutOfMemory("Allocation size too large.");
-    return;
-  }
-#endif
-
+  const void* uploadData = maybeData;
   UniqueBuffer maybeCalloc;
-  if (!data) {
+  if (!uploadData) {
     maybeCalloc = calloc(1, AssertedCast<size_t>(size));
     if (!maybeCalloc) {
       mContext->ErrorOutOfMemory("Failed to alloc zeros.");
       return;
     }
-    data = maybeCalloc.get();
+    uploadData = maybeCalloc.get();
   }
+  MOZ_ASSERT(uploadData);
 
-  const void* uploadData = data;
   UniqueBuffer newIndexCache;
   if (target == LOCAL_GL_ELEMENT_ARRAY_BUFFER &&
       mContext->mNeedsIndexValidation) {
@@ -116,7 +128,7 @@ void WebGLBuffer::BufferData(GLenum target, uint64_t size, const void* data,
     
     
     
-    memcpy(newIndexCache.get(), data, size);
+    memcpy(newIndexCache.get(), uploadData, size);
     uploadData = newIndexCache.get();
   }
 
