@@ -5114,7 +5114,6 @@ bool CallIRGenerator::getTemplateObjectForScripted(HandleFunction calleeFunc,
 
   
   
-  
   bool isSuper = op_ == JSOp::SuperCall || op_ == JSOp::SpreadSuperCall;
   if (isSuper) {
     return true;
@@ -5268,7 +5267,6 @@ bool CallIRGenerator::getTemplateObjectForNative(HandleFunction calleeFunc,
                                                  MutableHandleObject res) {
   AutoRealm ar(cx_, calleeFunc);
 
-  
   
   
   bool isSuper = op_ == JSOp::SuperCall || op_ == JSOp::SpreadSuperCall;
@@ -5437,7 +5435,6 @@ bool CallIRGenerator::getTemplateObjectForClassHook(
   MOZ_ASSERT(IsConstructPC(pc_));
   JSNative hook = calleeObj->constructHook();
 
-  
   
   
   bool isSuper = op_ == JSOp::SuperCall || op_ == JSOp::SpreadSuperCall;

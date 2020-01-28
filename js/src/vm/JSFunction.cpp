@@ -432,6 +432,27 @@ bool JSFunction::needsPrototypeProperty() {
   return !isBuiltin() && (isConstructor() || isGenerator());
 }
 
+bool JSFunction::hasNonConfigurablePrototypeDataProperty() {
+  if (!isBuiltin()) {
+    return needsPrototypeProperty();
+  }
+
+  if (isSelfHostedBuiltin()) {
+    
+    
+    return isConstructor();
+  }
+
+  if (!isConstructor()) {
+    
+    return false;
+  }
+
+  PropertyName* prototypeName = runtimeFromMainThread()->commonNames->prototype;
+  Shape* shape = lookupPure(prototypeName);
+  return shape && shape->isDataProperty() && !shape->configurable();
+}
+
 static bool fun_mayResolve(const JSAtomState& names, jsid id, JSObject*) {
   if (!JSID_IS_ATOM(id)) {
     return false;

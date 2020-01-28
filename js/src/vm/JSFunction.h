@@ -541,6 +541,11 @@ class JSFunction : public js::NativeObject {
   
   
   
+  bool hasNonConfigurablePrototypeDataProperty();
+
+  
+  
+  
   bool constructorNeedsUninitializedThis() const {
     MOZ_ASSERT(isConstructor());
     MOZ_ASSERT(isInterpreted());
