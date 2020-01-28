@@ -1014,6 +1014,8 @@ void WebrtcAudioConduit::DeleteRecvStream() {
     mCall->Call()->DestroyAudioReceiveStream(mRecvStream);
     mRecvStream = nullptr;
   }
+  mRecvChannelProxy->SetRtcpEventObserver(nullptr);
+
   
   mRecvChannelProxy->RegisterTransport(nullptr);
 }
