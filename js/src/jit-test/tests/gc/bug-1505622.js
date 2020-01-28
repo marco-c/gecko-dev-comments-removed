@@ -22,7 +22,9 @@ function allocUntilFail() {
 gczeal(0);
 
 
-gcparam("maxBytes", 1024 * 1024);
+gc();
+let currentSize = gcparam("gcBytes");
+gcparam("maxBytes", currentSize + 16 * 1024);
 
 
 gcparam("minLastDitchGCPeriod", 5);
