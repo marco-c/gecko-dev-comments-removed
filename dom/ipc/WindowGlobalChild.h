@@ -57,7 +57,7 @@ class WindowGlobalChild final : public WindowGlobalActor,
 
   
   
-  bool IsInProcess() { return XRE_IsParentProcess(); }
+  bool IsInProcess() override { return XRE_IsParentProcess(); }
 
   nsIURI* GetDocumentURI() override { return mDocumentURI; }
   void SetDocumentURI(nsIURI* aDocumentURI);
