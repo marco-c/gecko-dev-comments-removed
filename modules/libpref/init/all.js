@@ -2288,6 +2288,10 @@ pref("security.notification_enable_delay", 500);
   
   
   pref("domsecurity.skip_html_fragment_assertion", false);
+  
+  
+  
+  pref("domsecurity.skip_remote_script_assertion_in_system_priv_context", false);
 #endif
 
 #ifdef EARLY_BETA_OR_EARLIER
