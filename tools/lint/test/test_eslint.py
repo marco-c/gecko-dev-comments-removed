@@ -12,8 +12,13 @@ def test_lint_with_global_exclude(lint, config, paths):
 
 
 def test_no_files_to_lint(lint, config, paths):
-    ret = lint(paths('nolint'), root=build.topsrcdir)
-    assert ret == []
+    
+    results = lint(paths('nolint'), root=build.topsrcdir)
+    assert results == []
+
+    
+    results = lint(paths('nolint', 'subdir/bad.js'), root=build.topsrcdir)
+    assert len(results) == 1
 
 
 if __name__ == '__main__':
