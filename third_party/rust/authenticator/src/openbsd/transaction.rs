@@ -2,9 +2,8 @@
 
 
 
-use platform::monitor::Monitor;
+use platform::monitor::{FidoDev, Monitor};
 use runloop::RunLoop;
-use std::ffi::OsString;
 use util::OnceCallback;
 
 pub struct Transaction {
@@ -19,7 +18,7 @@ impl Transaction {
         new_device_cb: F,
     ) -> Result<Self, ::Error>
     where
-        F: Fn(OsString, &dyn Fn() -> bool) + Sync + Send + 'static,
+        F: Fn(FidoDev, &dyn Fn() -> bool) + Sync + Send + 'static,
         T: 'static,
     {
         let thread = RunLoop::new_with_timeout(
