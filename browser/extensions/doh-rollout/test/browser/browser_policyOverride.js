@@ -38,25 +38,28 @@ add_task(async function testPolicyOverride() {
     "Breadcrumb not saved."
   );
   await ensureNoTRRModeChange(0);
+  checkHeuristicsTelemetry("policy_without_doh", "first_run");
 
   
   simulateNetworkChange();
   await ensureNoTRRModeChange(0);
+  ensureNoHeuristicsTelemetry();
 
   
   await restartAddon();
   await ensureNoTRRModeChange(0);
+  checkHeuristicsTelemetry("policy_without_doh", "startup");
 
   
   simulateNetworkChange();
   await ensureNoTRRModeChange(0);
+  ensureNoHeuristicsTelemetry();
 
   
   await EnterprisePolicyTesting.setupPolicyEngineWithJson({
     policies: {},
   });
   EnterprisePolicyTesting.resetRunOnceState();
-  await resetPrefsAndRestartAddon();
 
   is(
     Services.policies.status,

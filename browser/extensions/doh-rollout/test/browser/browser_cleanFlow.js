@@ -27,6 +27,7 @@ add_task(async function testCleanFlow() {
   await promise;
 
   await ensureTRRMode(2);
+  checkHeuristicsTelemetry("enable_doh", "startup");
 
   await BrowserTestUtils.waitForCondition(() => {
     return Preferences.get(prefs.DOH_DOORHANGER_SHOWN_PREF);
@@ -51,24 +52,26 @@ add_task(async function testCleanFlow() {
   setFailingHeuristics();
   simulateNetworkChange();
   await ensureTRRMode(0);
+  checkHeuristicsTelemetry("disable_doh", "netchange");
 
   
   simulateNetworkChange();
   await ensureNoTRRModeChange(0);
+  checkHeuristicsTelemetry("disable_doh", "netchange");
 
   
   await restartAddon();
   await ensureNoTRRModeChange(0);
+  checkHeuristicsTelemetry("disable_doh", "startup");
 
   
   setPassingHeuristics();
   simulateNetworkChange();
   await ensureTRRMode(2);
+  checkHeuristicsTelemetry("enable_doh", "netchange");
 
   
   simulateNetworkChange();
   await ensureNoTRRModeChange(2);
-
-  
-  await resetPrefsAndRestartAddon();
+  checkHeuristicsTelemetry("enable_doh", "netchange");
 });

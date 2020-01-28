@@ -21,6 +21,7 @@ add_task(async function testDoorhangerUserReject() {
   );
 
   await ensureTRRMode(2);
+  checkHeuristicsTelemetry("enable_doh", "startup");
 
   
   let button = panel.querySelector(".popup-notification-secondary-button");
@@ -49,20 +50,21 @@ add_task(async function testDoorhangerUserReject() {
   );
 
   await ensureTRRMode(5);
+  checkHeuristicsTelemetry("disable_doh", "doorhangerDecline");
 
   
   simulateNetworkChange();
   await ensureNoTRRModeChange(5);
+  ensureNoHeuristicsTelemetry();
 
   
   await restartAddon();
   await ensureNoTRRModeChange(5);
+  ensureNoHeuristicsTelemetry();
 
   
   setFailingHeuristics();
   simulateNetworkChange();
   await ensureNoTRRModeChange(5);
-
-  
-  await resetPrefsAndRestartAddon();
+  ensureNoHeuristicsTelemetry();
 });
