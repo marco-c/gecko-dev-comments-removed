@@ -896,10 +896,16 @@ fn unconditionally_remove_file(path: &Path) -> Result<(), SecurityStateError> {
 }
 
 fn remove_db(path: &Path) -> Result<(), SecurityStateError> {
+    
     let db = path.join("data.mdb");
     unconditionally_remove_file(&db)?;
     let lock = path.join("lock.mdb");
     unconditionally_remove_file(&lock)?;
+
+    
+    let db = path.join("data.safe.bin");
+    unconditionally_remove_file(&db)?;
+
     Ok(())
 }
 
