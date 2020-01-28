@@ -23,7 +23,7 @@
   function get_last_visited(prePath) {
     return EventDispatcher.instance.sendRequestForResult({
       type: "History:GetPrePathLastVisitedTimeMilliseconds",
-      prePath: prePath,
+      prePath,
     });
   }
 
