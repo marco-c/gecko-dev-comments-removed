@@ -259,7 +259,7 @@ class MOZ_STACK_CLASS FunctionScriptEmitter {
   
   
   
-  MOZ_MUST_USE bool initScript();
+  MOZ_MUST_USE bool initScript(const FieldInitializers& fieldInitializers);
 
  private:
   MOZ_MUST_USE bool emitExtraBodyVarScope();
