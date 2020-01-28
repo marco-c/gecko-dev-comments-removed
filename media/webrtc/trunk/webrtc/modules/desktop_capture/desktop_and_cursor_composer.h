@@ -46,12 +46,22 @@ class DesktopAndCursorComposer : public DesktopCapturer,
   ~DesktopAndCursorComposer() override;
 
   
+  
+  static std::unique_ptr<DesktopAndCursorComposer>
+  CreateWithoutMouseCursorMonitor(
+      std::unique_ptr<DesktopCapturer> desktop_capturer);
+
+  
   void Start(DesktopCapturer::Callback* callback) override;
   void SetSharedMemoryFactory(
       std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override;
   void CaptureFrame() override;
   void SetExcludedWindow(WindowId window) override;
   bool FocusOnSelectedSource() override;
+
+  
+  void OnMouseCursor(MouseCursor* cursor) override;
+  void OnMouseCursorPosition(const DesktopVector& position) override;
 
  private:
   
@@ -67,10 +77,6 @@ class DesktopAndCursorComposer : public DesktopCapturer,
   
   void OnCaptureResult(DesktopCapturer::Result result,
                        std::unique_ptr<DesktopFrame> frame) override;
-
-  
-  void OnMouseCursor(MouseCursor* cursor) override;
-  void OnMouseCursorPosition(const DesktopVector& position) override;
 
   const std::unique_ptr<DesktopCapturer> desktop_capturer_;
   const std::unique_ptr<MouseCursorMonitor> mouse_monitor_;
