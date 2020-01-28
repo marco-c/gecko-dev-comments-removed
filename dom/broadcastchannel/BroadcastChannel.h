@@ -25,6 +25,7 @@ namespace dom {
 
 class BroadcastChannelChild;
 class BroadcastChannelMessage;
+class RefMessageBodyService;
 class WorkerRef;
 
 class BroadcastChannel final : public DOMEventTargetHelper {
@@ -57,7 +58,8 @@ class BroadcastChannel final : public DOMEventTargetHelper {
   void Shutdown();
 
  private:
-  BroadcastChannel(nsIGlobalObject* aGlobal, const nsAString& aChannel);
+  BroadcastChannel(nsIGlobalObject* aGlobal, const nsAString& aChannel,
+                   const nsID& aPortUUID);
 
   ~BroadcastChannel();
 
@@ -67,11 +69,17 @@ class BroadcastChannel final : public DOMEventTargetHelper {
 
   RefPtr<BroadcastChannelChild> mActor;
 
+  RefPtr<RefMessageBodyService> mRefMessageBodyService;
+
   RefPtr<WorkerRef> mWorkerRef;
 
   nsString mChannel;
 
   enum { StateActive, StateClosed } mState;
+
+  
+  
+  nsID mPortUUID;
 };
 
 }  
