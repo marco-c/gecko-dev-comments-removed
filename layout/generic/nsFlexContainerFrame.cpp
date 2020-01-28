@@ -52,44 +52,6 @@ static mozilla::LazyLogModule gFlexContainerLog("FlexContainer");
 
 
 
-
-
-
-
-
-enum AxisOrientationType {
-  eAxis_LR,
-  eAxis_RL,
-  eAxis_TB,
-  eAxis_BT,
-  eNumAxisOrientationTypes  
-                            
-};
-
-
-
-
-
-enum AxisEdgeType {
-  eAxisEdge_Start,
-  eAxisEdge_End,
-  eNumAxisEdges  
-};
-
-
-
-static const mozilla::Side
-    kAxisOrientationToSidesMap[eNumAxisOrientationTypes][eNumAxisEdges] = {
-        {eSideLeft, eSideRight},  
-        {eSideRight, eSideLeft},  
-        {eSideTop, eSideBottom},  
-        {eSideBottom, eSideTop}   
-};
-
-
-
-
-
 static inline bool IsDisplayValueLegacyBox(const nsStyleDisplay* aStyleDisp) {
   return aStyleDisp->mDisplay == mozilla::StyleDisplay::WebkitBox ||
          aStyleDisp->mDisplay == mozilla::StyleDisplay::WebkitInlineBox ||
@@ -199,25 +161,6 @@ static nsIFrame* GetFirstNonAnonBoxDescendant(nsIFrame* aFrame) {
 
 
 
-static inline AxisOrientationType GetReverseAxis(AxisOrientationType aAxis) {
-  AxisOrientationType reversedAxis;
-
-  if (aAxis % 2 == 0) {
-    
-    reversedAxis = AxisOrientationType(aAxis + 1);
-  } else {
-    
-    reversedAxis = AxisOrientationType(aAxis - 1);
-  }
-
-  
-  MOZ_ASSERT(reversedAxis >= eAxis_LR && reversedAxis <= eAxis_BT);
-
-  return reversedAxis;
-}
-
-
-
 
 
 
@@ -296,15 +239,6 @@ class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
                      AxisTrackerFlags aFlags = eNoFlags);
 
   
-  
-  
-  
-  AxisOrientationType GetPhysicalMainAxis() const { return mPhysicalMainAxis; }
-  AxisOrientationType GetPhysicalCrossAxis() const {
-    return mPhysicalCrossAxis;
-  }
-  
-
   LogicalAxis MainAxis() const { return mMainAxis; }
   LogicalAxis CrossAxis() const { return GetOrthogonalAxis(mMainAxis); }
 
@@ -438,11 +372,6 @@ class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
   
   void InitAxesFromLegacyProps(const nsFlexContainerFrame* aFlexContainer);
   void InitAxesFromModernProps(const nsFlexContainerFrame* aFlexContainer);
-
-  
-  AxisOrientationType mPhysicalMainAxis = eAxis_LR;
-  AxisOrientationType mPhysicalCrossAxis = eAxis_TB;
-  
 
   LogicalAxis mMainAxis = eLogicalAxisInline;
 
@@ -3640,41 +3569,6 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
   }
 }
 
-
-static inline AxisOrientationType InlineDirToAxisOrientation(
-    WritingMode::InlineDir aInlineDir) {
-  switch (aInlineDir) {
-    case WritingMode::eInlineLTR:
-      return eAxis_LR;
-    case WritingMode::eInlineRTL:
-      return eAxis_RL;
-    case WritingMode::eInlineTTB:
-      return eAxis_TB;
-    case WritingMode::eInlineBTT:
-      return eAxis_BT;
-  }
-
-  MOZ_ASSERT_UNREACHABLE("Unhandled InlineDir");
-  return eAxis_LR;  
-}
-
-
-static inline AxisOrientationType BlockDirToAxisOrientation(
-    WritingMode::BlockDir aBlockDir) {
-  switch (aBlockDir) {
-    case WritingMode::eBlockLR:
-      return eAxis_LR;
-    case WritingMode::eBlockRL:
-      return eAxis_RL;
-    case WritingMode::eBlockTB:
-      return eAxis_TB;
-      
-  }
-
-  MOZ_ASSERT_UNREACHABLE("Unhandled BlockDir");
-  return eAxis_TB;  
-}
-
 FlexboxAxisTracker::FlexboxAxisTracker(
     const nsFlexContainerFrame* aFlexContainer, const WritingMode& aWM,
     AxisTrackerFlags aFlags)
@@ -3699,8 +3593,6 @@ FlexboxAxisTracker::FlexboxAxisTracker(
     
     if (MainAxisPhysicalStartSide() == eSideBottom ||
         CrossAxisPhysicalStartSide() == eSideBottom) {
-      mPhysicalMainAxis = GetReverseAxis(mPhysicalMainAxis);
-      mPhysicalCrossAxis = GetReverseAxis(mPhysicalCrossAxis);
       mAreAxesInternallyReversed = true;
       mIsMainAxisReversed = !mIsMainAxisReversed;
       mIsCrossAxisReversed = !mIsCrossAxisReversed;
@@ -3724,28 +3616,8 @@ void FlexboxAxisTracker::InitAxesFromLegacyProps(
   mMainAxis = mIsRowOriented ? eLogicalAxisInline : eLogicalAxisBlock;
 
   
-  if (boxOrientIsVertical) {
-    mPhysicalMainAxis = eAxis_TB;
-    mPhysicalCrossAxis = eAxis_LR;
-  } else {
-    mPhysicalMainAxis = eAxis_LR;
-    mPhysicalCrossAxis = eAxis_TB;
-  }
-  
-  
-  
-  
-  if (mWM.IsBidiRTL()) {
-    AxisOrientationType& axisToFlip =
-        mIsRowOriented ? mPhysicalMainAxis : mPhysicalCrossAxis;
-    axisToFlip = GetReverseAxis(axisToFlip);
-  }
-  
-
-  
   
   if (styleXUL->mBoxDirection == StyleBoxDirection::Reverse) {
-    mPhysicalMainAxis = GetReverseAxis(mPhysicalMainAxis);
     mIsMainAxisReversed = true;
   } else {
     mIsMainAxisReversed = false;
@@ -3762,36 +3634,23 @@ void FlexboxAxisTracker::InitAxesFromModernProps(
   StyleFlexDirection flexDirection = stylePos->mFlexDirection;
 
   
-  
-  
-  
-  AxisOrientationType inlineDimension =
-      InlineDirToAxisOrientation(mWM.GetInlineDir());
-  AxisOrientationType blockDimension =
-      BlockDirToAxisOrientation(mWM.GetBlockDir());
-
-  
   switch (flexDirection) {
     case StyleFlexDirection::Row:
-      mPhysicalMainAxis = inlineDimension;
       mMainAxis = eLogicalAxisInline;
       mIsRowOriented = true;
       mIsMainAxisReversed = false;
       break;
     case StyleFlexDirection::RowReverse:
-      mPhysicalMainAxis = GetReverseAxis(inlineDimension);
       mMainAxis = eLogicalAxisInline;
       mIsRowOriented = true;
       mIsMainAxisReversed = true;
       break;
     case StyleFlexDirection::Column:
-      mPhysicalMainAxis = blockDimension;
       mMainAxis = eLogicalAxisBlock;
       mIsRowOriented = false;
       mIsMainAxisReversed = false;
       break;
     case StyleFlexDirection::ColumnReverse:
-      mPhysicalMainAxis = GetReverseAxis(blockDimension);
       mMainAxis = eLogicalAxisBlock;
       mIsRowOriented = false;
       mIsMainAxisReversed = true;
@@ -3801,20 +3660,7 @@ void FlexboxAxisTracker::InitAxesFromModernProps(
   }
 
   
-  
-  
-  
-  if (flexDirection == StyleFlexDirection::Column ||
-      flexDirection == StyleFlexDirection::ColumnReverse) {
-    mPhysicalCrossAxis = inlineDimension;
-  } else {
-    mPhysicalCrossAxis = blockDimension;
-  }
-  
-
-  
   if (stylePos->mFlexWrap == StyleFlexWrap::WrapReverse) {
-    mPhysicalCrossAxis = GetReverseAxis(mPhysicalCrossAxis);
     mIsCrossAxisReversed = true;
   } else {
     mIsCrossAxisReversed = false;
