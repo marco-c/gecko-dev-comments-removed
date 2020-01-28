@@ -4,12 +4,12 @@
 
 
 
-#include "RefMessageBodyService.h"
 #include "SharedMessagePortMessage.h"
 #include "MessagePort.h"
 #include "MessagePortChild.h"
 #include "MessagePortParent.h"
 #include "mozilla/dom/File.h"
+#include "mozilla/dom/RefMessageBodyService.h"
 #include "mozilla/dom/PMessagePort.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/BackgroundParent.h"
