@@ -54,8 +54,9 @@ class MouseCursorMonitor {
     
     
     virtual void OnMouseCursorPosition(CursorState state,
-                                       const DesktopVector& position) {}
+                                       const DesktopVector& position) = 0;
 
+    
     
     
     
