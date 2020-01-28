@@ -2134,6 +2134,11 @@ void AntiTrackingCommon::NotifyBlockingDecision(nsPIDOMWindowInner* aWindow,
 
 
 void AntiTrackingCommon::StoreUserInteractionFor(nsIPrincipal* aPrincipal) {
+  if (!aPrincipal) {
+    
+    return;
+  }
+
   if (XRE_IsParentProcess()) {
     nsCOMPtr<nsIURI> uri;
     Unused << aPrincipal->GetURI(getter_AddRefs(uri));
