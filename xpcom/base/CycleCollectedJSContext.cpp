@@ -480,6 +480,15 @@ void CycleCollectedJSContext::AfterProcessMicrotasks() {
   
   
   CleanupIDBTransactions(RecursionDepth());
+
+  
+  
+  
+  
+  
+  
+  
+  JS::ClearKeptObjects(mJSContext);
 }
 
 void CycleCollectedJSContext::IsIdleGCTaskNeeded() const {

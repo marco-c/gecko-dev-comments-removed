@@ -1100,6 +1100,12 @@ extern JS_PUBLIC_API void RunIdleTimeGCTask(JSRuntime* rt);
 extern JS_PUBLIC_API void SetHostCleanupFinalizationGroupCallback(
     JSContext* cx, JSHostCleanupFinalizationGroupCallback cb, void* data);
 
+
+
+
+
+extern JS_PUBLIC_API void ClearKeptObjects(JSContext* cx);
+
 }  
 
 namespace js {
