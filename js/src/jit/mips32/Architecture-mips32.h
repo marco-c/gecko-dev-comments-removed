@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_mips32_Architecture_mips32_h
 #define jit_mips32_Architecture_mips32_h
@@ -22,9 +22,9 @@ namespace jit {
 
 static const uint32_t ShadowStackSpace = 4 * sizeof(uintptr_t);
 
-
-
-
+// These offsets are specific to nunboxing, and capture offsets into the
+// components of a js::Value.
+// Size of MIPS32 general purpose registers is 32 bits.
 #if MOZ_LITTLE_ENDIAN()
 static const int32_t NUNBOX32_TYPE_OFFSET = 4;
 static const int32_t NUNBOX32_PAYLOAD_OFFSET = 0;
@@ -33,24 +33,24 @@ static const int32_t NUNBOX32_TYPE_OFFSET = 0;
 static const int32_t NUNBOX32_PAYLOAD_OFFSET = 4;
 #endif
 
-
-
+// Size of each bailout table entry.
+// For MIPS this is 2 instructions relative call.
 static const uint32_t BAILOUT_TABLE_ENTRY_SIZE = 2 * sizeof(void*);
 
+// MIPS32 can have two types of floating-point coprocessors modes:
+// - FR=0 mode/ 32-bit FPRs - Historical default, there are 32 single
+// precision registers and pairs of even and odd float registers are used as
+// double precision registers. Example: f0 (double) is composed of
+// f0 and f1 (single). Loongson3A FPU running in this mode doesn't allow
+// use of odd registers for single precision arithmetic.
+// - FR=1 mode/ 64-bit FPRs - In this case, there are 32 double precision
+// register which can also be used as single precision registers. More info
+// https://dmz-portal.imgtec.com/wiki/MIPS_O32_ABI_-_FR0_and_FR1_Interlinking
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Currently we enable 16 even single precision registers which can be also can
+// be used as double precision registers. It enables jit code to run even on
+// Loongson3A. It does not support FR=1 mode because MacroAssembler threats odd
+// single precision registers as high parts of even double precision registers.
 #ifdef __mips_fpr
 static_assert(__mips_fpr == 32, "MIPS32 jit only supports FR=0 fpu mode.");
 #endif
@@ -75,7 +75,7 @@ class FloatRegisters : public FloatRegistersMIPSShared {
                                        << TotalSingle;
   static const SetType AllMask = AllDoubleMask | AllSingleMask;
 
-  
+  // When saving all registers we only need to do is save double registers.
   static const uint32_t TotalPhys = 16;
   static const uint32_t RegisterIdLimit = 32;
 
@@ -137,6 +137,7 @@ class FloatRegister : public FloatRegisterMIPSShared {
 
   bool isSingle() const { return kind_ == Single; }
   bool isDouble() const { return kind_ == Double; }
+  bool isInvalid() const { return code_ == FloatRegisters::invalid_freg; }
 
   FloatRegister doubleOverlay() const;
   FloatRegister singleOverlay() const;
@@ -261,9 +262,9 @@ FloatRegister::LiveAsIndexableSet<RegTypeName::Any>(SetType set) {
 template <>
 inline FloatRegister::SetType
 FloatRegister::AllocatableAsIndexableSet<RegTypeName::Float32>(SetType set) {
-  
-  
-  
+  // Single registers are not dominating any smaller registers, thus masking
+  // is enough to convert an allocatable set into a set of register list all
+  // single register available.
   return set & FloatRegisters::AllSingleMask;
 }
 
@@ -273,13 +274,13 @@ FloatRegister::AllocatableAsIndexableSet<RegTypeName::Float64>(SetType set) {
   return set & FloatRegisters::AllDoubleMask;
 }
 
-
-
-
-
+// In order to handle functions such as int(*)(int, double) where the first
+// argument is a general purpose register, and the second argument is a floating
+// point register, we have to store the double content into 2 general purpose
+// registers, namely a2 and a3.
 #define JS_CODEGEN_REGISTER_PAIR 1
 
-}  
-}  
+}  // namespace jit
+}  // namespace js
 
-#endif 
+#endif /* jit_mips32_Architecture_mips32_h */
