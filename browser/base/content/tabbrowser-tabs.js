@@ -808,6 +808,11 @@
       }
 
       
+      if (!Services.prefs.getBoolPref("browser.tabs.allowTabDetach")) {
+        return;
+      }
+
+      
       var eX = event.screenX;
       var eY = event.screenY;
       var wX = window.screenX;
