@@ -24,35 +24,11 @@ var MathMLFeatureDetection = {
     },
 
     "has_menclose": function() {
-        if (!this.hasOwnProperty("_has_menclose")) {
-            document.body.insertAdjacentHTML("beforeend", "<math>\
-<mrow style='font-size: 20px !important'>\
-  <mrow>\
-    <mrow>\
-      <mrow>\
-        <mtext>A</mtext>\
-      </mrow>\
-    </mrow>\
-  </mrow>\
-</mrow>\
-<menclose notation='box' style='font-size: 20px !important'>\
-  <menclose notation='box'>\
-    <menclose notation='box'>\
-      <menclose notation='box'>\
-        <mtext>A</mtext>\
-      </menclose>\
-    </menclose>\
-  </menclose>\
-</menclose>\
-</math>");
-            var math = document.body.lastElementChild;
-            
-            this._has_menclose =
-                math.lastElementChild.getBoundingClientRect().width -
-                math.firstElementChild.getBoundingClientRect().width > 5;
-            document.body.removeChild(math);
-        }
-        return this._has_menclose;
+        
+        
+        
+        
+        return this.has_mrow();
     },
 
     "has_merror": function() {
