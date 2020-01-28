@@ -48,17 +48,6 @@
     get handleCtrlTab() {
       return this.getAttribute("handleCtrlTab") != "false";
     }
-    
-
-
-
-    get _tabs() {
-      return this.tabs;
-    }
-
-    get _tabpanels() {
-      return this.tabpanels;
-    }
 
     get tabs() {
       if (this.hasAttribute("tabcontainer")) {
