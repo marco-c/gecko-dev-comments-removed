@@ -11,6 +11,8 @@ way, and certainly anything using mozharness should use this approach.
 from __future__ import absolute_import, print_function, unicode_literals
 import json
 
+import six
+from six import text_type
 from textwrap import dedent
 
 from taskgraph.util.schema import Schema
@@ -37,16 +39,16 @@ mozharness_run_schema = Schema({
 
     
     
-    Required('script'): basestring,
+    Required('script'): text_type,
 
     
     
-    Optional('config-paths'): [basestring],
+    Optional('config-paths'): [text_type],
 
     
     
     
-    Required('config'): [basestring],
+    Required('config'): [text_type],
 
     
     Optional('actions'): [Match(
@@ -61,14 +63,14 @@ mozharness_run_schema = Schema({
     )],
 
     
-    Optional('custom-build-variant-cfg'): basestring,
+    Optional('custom-build-variant-cfg'): text_type,
 
     
     Optional('extra-config'): dict,
 
     
     
-    Optional('extra-workspace-cache-key'): basestring,
+    Optional('extra-workspace-cache-key'): text_type,
 
     
     
@@ -83,7 +85,7 @@ mozharness_run_schema = Schema({
     
     
     
-    Required('secrets'): Any(bool, [basestring]),
+    Required('secrets'): Any(bool, [text_type]),
 
     
     
@@ -97,7 +99,7 @@ mozharness_run_schema = Schema({
     Required('keep-artifacts'): bool,
 
     
-    Optional('job-script'): basestring,
+    Optional('job-script'): text_type,
 
     Required('requires-signed-builds'): bool,
 
@@ -117,7 +119,7 @@ mozharness_run_schema = Schema({
     Required('comm-checkout'): bool,
 
     
-    Required('workdir'): basestring,
+    Required('workdir'): text_type,
 })
 
 
@@ -190,7 +192,8 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
         env['MH_CUSTOM_BUILD_VARIANT_CFG'] = run.pop('custom-build-variant-cfg')
 
     if 'extra-config' in run:
-        env['EXTRA_MOZHARNESS_CONFIG'] = json.dumps(run.pop('extra-config'))
+        env['EXTRA_MOZHARNESS_CONFIG'] = six.ensure_text(
+            json.dumps(run.pop('extra-config')))
 
     if 'job-script' in run:
         env['JOB_SCRIPT'] = run['job-script']
@@ -276,7 +279,8 @@ def mozharness_on_generic_worker(config, job, taskdesc):
         env.update({'MOZ_SIMPLE_PACKAGE_NAME': 'target'})
 
     if 'extra-config' in run:
-        env['EXTRA_MOZHARNESS_CONFIG'] = json.dumps(run.pop('extra-config'))
+        env['EXTRA_MOZHARNESS_CONFIG'] = six.ensure_text(
+            json.dumps(run.pop('extra-config')))
 
     
     

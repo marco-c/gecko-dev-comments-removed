@@ -8,9 +8,11 @@ Do transforms specific to l10n kind
 from __future__ import absolute_import, print_function, unicode_literals
 
 import copy
+import io
 import json
 
 from mozbuild.chunkify import chunkify
+from six import text_type
 from taskgraph.loader.multi_dep import schema
 from taskgraph.transforms.base import (
     TransformSequence,
@@ -38,34 +40,34 @@ def _by_platform(arg):
 
 l10n_description_schema = schema.extend({
     
-    Required('name'): basestring,
+    Required('name'): text_type,
 
     
-    Required('build-platform'): basestring,
+    Required('build-platform'): text_type,
 
     
     Required('run-time'): _by_platform(int),
 
     
-    Required('ignore-locales'): _by_platform([basestring]),
+    Required('ignore-locales'): _by_platform([text_type]),
 
     
     Required('mozharness'): {
         
-        Required('script'): _by_platform(basestring),
+        Required('script'): _by_platform(text_type),
 
         
-        Required('config'): _by_platform([basestring]),
+        Required('config'): _by_platform([text_type]),
 
         
         
-        Optional('config-paths'): [basestring],
+        Optional('config-paths'): [text_type],
 
         
-        Optional('options'): _by_platform([basestring]),
+        Optional('options'): _by_platform([text_type]),
 
         
-        Required('actions'): _by_platform([basestring]),
+        Required('actions'): _by_platform([text_type]),
 
         
         
@@ -74,24 +76,24 @@ l10n_description_schema = schema.extend({
     
     Optional('index'): {
         
-        Required('product'): _by_platform(basestring),
+        Required('product'): _by_platform(text_type),
 
         
-        Required('job-name'): _by_platform(basestring),
+        Required('job-name'): _by_platform(text_type),
 
         
-        Optional('type'): _by_platform(basestring),
+        Optional('type'): _by_platform(text_type),
     },
     
-    Required('description'): _by_platform(basestring),
+    Required('description'): _by_platform(text_type),
 
     Optional('run-on-projects'): job_description_schema['run-on-projects'],
 
     
-    Required('worker-type'): _by_platform(basestring),
+    Required('worker-type'): _by_platform(text_type),
 
     
-    Required('locales-file'): _by_platform(basestring),
+    Required('locales-file'): _by_platform(text_type),
 
     
     Required('tooltool'): _by_platform(Any('internal', 'public')),
@@ -100,12 +102,12 @@ l10n_description_schema = schema.extend({
     
     Required('docker-image', default=None): _by_platform(Any(
         
-        {'in-tree': basestring},
+        {'in-tree': text_type},
         None,
     )),
 
     Optional('fetches'): {
-        basestring: _by_platform([basestring]),
+        text_type: _by_platform([text_type]),
     },
 
     
@@ -113,33 +115,33 @@ l10n_description_schema = schema.extend({
     
     
     
-    Required('secrets', default=False): _by_platform(Any(bool, [basestring])),
+    Required('secrets', default=False): _by_platform(Any(bool, [text_type])),
 
     
     Required('treeherder'): {
         
-        Required('platform'): _by_platform(basestring),
+        Required('platform'): _by_platform(text_type),
 
         
-        Required('symbol'): basestring,
+        Required('symbol'): text_type,
 
         
         Required('tier'): _by_platform(int),
     },
 
     
-    Optional('env'): _by_platform({basestring: taskref_or_string}),
+    Optional('env'): _by_platform({text_type: taskref_or_string}),
 
     
     Optional('locales-per-chunk'): _by_platform(int),
 
     
     
-    Optional('dependencies'): {basestring: basestring},
+    Optional('dependencies'): {text_type: text_type},
 
     
     Optional('when'): {
-        'files-changed': [basestring]
+        'files-changed': [text_type]
     },
 
     
@@ -159,13 +161,12 @@ def parse_locales_file(locales_file, platform=None):
     """
     locales = []
 
-    with open(locales_file, mode='r') as f:
+    with io.open(locales_file, mode='r') as f:
         if locales_file.endswith('json'):
             all_locales = json.load(f)
             
             locales = {
-                locale: data['revision']
-                for locale, data in all_locales.items()
+                locale: data['revision'] for locale, data in all_locales.items()
                 if platform is None or platform in data['platforms']
             }
         else:
@@ -264,7 +265,7 @@ def handle_artifact_prefix(config, jobs):
     for job in jobs:
         artifact_prefix = get_artifact_prefix(job)
         for k1, v1 in job.get('env', {}).iteritems():
-            if isinstance(v1, basestring):
+            if isinstance(v1, text_type):
                 job['env'][k1] = v1.format(
                     artifact_prefix=artifact_prefix
                 )

@@ -7,6 +7,7 @@ Support for running mach python-test tasks (via run-task)
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from six import text_type
 from taskgraph.transforms.job import run_job_using, configure_taskdesc_for_run
 from taskgraph.util.schema import Schema
 from voluptuous import Required
@@ -18,10 +19,10 @@ python_test_schema = Schema({
     Required('python-version'): int,
 
     
-    Required('subsuite'): basestring,
+    Required('subsuite'): text_type,
 
     
-    Required('workdir'): basestring,
+    Required('workdir'): text_type,
 })
 
 

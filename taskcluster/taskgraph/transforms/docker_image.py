@@ -8,6 +8,7 @@ import os
 import re
 
 from collections import deque
+from six import text_type
 import taskgraph
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.transforms.task import _run_task_suffix
@@ -31,27 +32,27 @@ transforms = TransformSequence()
 
 docker_image_schema = Schema({
     
-    Required('name'): basestring,
+    Required('name'): text_type,
 
     
-    Optional('parent'): basestring,
+    Optional('parent'): text_type,
 
     
-    Required('symbol'): basestring,
-
-    
-    
-    Optional('job-from'): basestring,
-
-    
-    Optional('args'): {basestring: basestring},
+    Required('symbol'): text_type,
 
     
     
-    Optional('definition'): basestring,
+    Optional('job-from'): text_type,
 
     
-    Optional('packages'): [basestring],
+    Optional('args'): {text_type: text_type},
+
+    
+    
+    Optional('definition'): text_type,
+
+    
+    Optional('packages'): [text_type],
 
     Optional(
         "index",

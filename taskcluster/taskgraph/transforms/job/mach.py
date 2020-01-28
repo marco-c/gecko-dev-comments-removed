@@ -7,6 +7,7 @@ Support for running mach tasks (via run-task)
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from six import text_type
 from taskgraph.transforms.job import run_job_using, configure_taskdesc_for_run
 from taskgraph.util.schema import (
     Schema,
@@ -22,14 +23,14 @@ mach_schema = Schema({
 
     
     
-    Optional('sparse-profile'): Any(basestring, None),
+    Optional('sparse-profile'): Any(text_type, None),
 
     
     
     Required('comm-checkout'): bool,
 
     
-    Required('workdir'): basestring,
+    Required('workdir'): text_type,
 })
 
 
