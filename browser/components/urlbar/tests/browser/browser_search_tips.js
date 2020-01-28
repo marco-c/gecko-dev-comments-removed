@@ -44,7 +44,7 @@ add_task(async function init() {
 
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.urlbar.searchTips", true],
+      ["browser.urlbar.update1.searchTips", true],
       ["browser.urlbar.searchTips.shownCount", 0],
       
       

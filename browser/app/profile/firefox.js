@@ -307,10 +307,6 @@ pref("browser.urlbar.decodeURLsOnCopy", false);
 
 
 
-pref("browser.urlbar.searchTips", false);
-
-
-
 pref("browser.urlbar.switchTabs.adoptIntoActiveWindow", false);
 
 
@@ -335,6 +331,10 @@ pref("browser.urlbar.usepreloadedtopurls.expire_days", 14);
 
 
 pref("browser.urlbar.update1.expandTextOnFocus", false);
+
+
+
+pref("browser.urlbar.update1.searchTips", false);
 
 pref("browser.urlbar.eventTelemetry.enabled", false);
 

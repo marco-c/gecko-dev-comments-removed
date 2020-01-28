@@ -118,7 +118,7 @@ class ProviderSearchTips extends UrlbarProvider {
 
 
   isActive(queryContext) {
-    return UrlbarPrefs.get("searchTips") && this.currentTip;
+    return UrlbarPrefs.get("update1.searchTips") && this.currentTip;
   }
 
   
