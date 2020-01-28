@@ -479,12 +479,7 @@ def write_interface(iface, fd):
     if iface.namemap is None:
         raise Exception("Interface was not resolved.")
 
-    
-    
-    if iface.base is None and iface.name != "nsISupports":
-        assert len([m for m in iface.members
-                    if type(m) == xpidl.Attribute or type(m) == xpidl.Method]) == 0
-        return
+    assert iface.base or (iface.name == "nsISupports")
 
     
     names = uuid_decoder.match(iface.attributes.uuid).groupdict()
