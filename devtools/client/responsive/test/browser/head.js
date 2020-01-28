@@ -144,17 +144,33 @@ var closeRDM = async function(tab, options) {
 
 
 
-function addRDMTask(rdmUrl, rdmTask, includeBrowserEmbeddedUI) {
+
+
+
+
+
+
+
+function addRDMTaskWithPreAndPost(
+  rdmURL,
+  rdmPreTask,
+  rdmTask,
+  rdmPostTask,
+  includeBrowserEmbeddedUI
+) {
   
   
-  function taskSetup(url, task) {
+  function taskSetup(url, preTask, task, postTask) {
     add_task(async function() {
-      const tab = await addTab(url);
-      const { ui, manager } = await openRDM(tab);
       const usingBrowserUI = Services.prefs.getBoolPref(
         "devtools.responsive.browserUI.enabled"
       );
+      const tab = await addTab(url);
       const browser = tab.linkedBrowser;
+      if (preTask) {
+        await preTask({ browser, usingBrowserUI });
+      }
+      const { ui, manager } = await openRDM(tab);
       try {
         await task({ ui, manager, browser, usingBrowserUI });
       } catch (err) {
@@ -168,6 +184,9 @@ function addRDMTask(rdmUrl, rdmTask, includeBrowserEmbeddedUI) {
       }
 
       await closeRDM(tab);
+      if (postTask) {
+        await postTask({ browser, usingBrowserUI });
+      }
       await removeTab(tab);
     });
   }
@@ -178,18 +197,45 @@ function addRDMTask(rdmUrl, rdmTask, includeBrowserEmbeddedUI) {
   );
   Services.prefs.setBoolPref("devtools.responsive.browserUI.enabled", false);
 
-  taskSetup(rdmUrl, rdmTask);
+  taskSetup(rdmURL, rdmPreTask, rdmTask, rdmPostTask);
 
   if (includeBrowserEmbeddedUI) {
     
     Services.prefs.setBoolPref("devtools.responsive.browserUI.enabled", true);
 
-    taskSetup(rdmUrl, rdmTask);
+    taskSetup(rdmURL, rdmPreTask, rdmTask, rdmPostTask);
   }
 
   Services.prefs.setBoolPref(
     "devtools.responsive.browserUI.enabled",
     oldPrefValue
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function addRDMTask(rdmURL, rdmTask, includeBrowserEmbeddedUI) {
+  addRDMTaskWithPreAndPost(
+    rdmURL,
+    undefined,
+    rdmTask,
+    undefined,
+    includeBrowserEmbeddedUI
   );
 }
 
