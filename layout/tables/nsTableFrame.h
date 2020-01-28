@@ -692,12 +692,6 @@ class nsTableFrame : public nsContainerFrame {
                       nsTableRowGroupFrame** aFoot = nullptr) const;
 
   
-  nsTableRowGroupFrame* GetTHead() const;
-
-  
-  nsTableRowGroupFrame* GetTFoot() const;
-
-  
   
   
   bool RowIsSpannedInto(int32_t aRowIndex, int32_t aNumEffCols);
