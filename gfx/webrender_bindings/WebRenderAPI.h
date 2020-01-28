@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef MOZILLA_LAYERS_WEBRENDERAPI_H
 #define MOZILLA_LAYERS_WEBRENDERAPI_H
@@ -42,7 +42,7 @@ class CompositorBridgeParent;
 class WebRenderBridgeParent;
 class RenderRootStateManager;
 struct RenderRootDisplayListData;
-}  // namespace layers
+}  
 
 namespace layout {
 class TextDrawTarget;
@@ -54,8 +54,8 @@ class DisplayListBuilder;
 class RendererOGL;
 class RendererEvent;
 
-// This isn't part of WR's API, but we define it here to simplify layout's
-// logic and data plumbing.
+
+
 struct Line {
   wr::LayoutRect bounds;
   float wavyLineThickness;
@@ -64,13 +64,13 @@ struct Line {
   wr::LineStyle style;
 };
 
-/// A handler that can be bundled into a transaction and notified at specific
-/// points in the rendering pipeline, such as after scene building or after
-/// frame building.
-///
-/// If for any reason the handler is dropped before reaching the requested
-/// point, it is notified with the value Checkpoint::TransactionDropped.
-/// So it is safe to assume that the handler will be notified "at some point".
+
+
+
+
+
+
+
 class NotificationHandler {
  public:
   virtual void Notify(wr::Checkpoint aCheckpoint) = 0;
@@ -214,7 +214,7 @@ class WebRenderAPI final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebRenderAPI);
 
  public:
-  /// This can be called on the compositor thread only.
+  
   static already_AddRefed<WebRenderAPI> Create(
       layers::CompositorBridgeParent* aBridge,
       RefPtr<widget::CompositorWidget>&& aWidget,
@@ -276,20 +276,20 @@ class WebRenderAPI final {
   typedef MozPromise<layers::CollectedFrames, nsresult, true>
       GetCollectedFramesPromise;
 
-  /**
-   * Write the frames collected by the |WebRenderCompositionRecorder| to disk.
-   *
-   * If there is not currently a recorder, this is a no-op.
-   */
+  
+
+
+
+
   RefPtr<WriteCollectedFramesPromise> WriteCollectedFrames();
 
-  /**
-   * Return the frames collected by the |WebRenderCompositionRecorder| encoded
-   * as data URIs.
-   *
-   * If there is not currently a recorder, this is a no-op and the promise will
-   * be rejected.
-   */
+  
+
+
+
+
+
+
   RefPtr<GetCollectedFramesPromise> GetCollectedFrames();
 
  protected:
@@ -299,7 +299,7 @@ class WebRenderAPI final {
                wr::RenderRoot aRenderRoot);
 
   ~WebRenderAPI();
-  // Should be used only for shutdown handling
+  
   void WaitFlushed();
 
   void UpdateDebugFlags(uint32_t aFlags);
@@ -313,14 +313,14 @@ class WebRenderAPI final {
   layers::SyncHandle mSyncHandle;
   wr::RenderRoot mRenderRoot;
 
-  // We maintain alive the root api to know when to shut the render backend
-  // down, and the root api for the document to know when to delete the
-  // document. mRootApi is null for the api object that owns the channel (and is
-  // responsible for shutting it down), and mRootDocumentApi is null for the api
-  // object owning (and responsible for destroying) a given document. All api
-  // objects in the same window use the same channel, and some api objects write
-  // to the same document (but there is only one owner for each channel and for
-  // each document).
+  
+  
+  
+  
+  
+  
+  
+  
   RefPtr<wr::WebRenderAPI> mRootApi;
   RefPtr<wr::WebRenderAPI> mRootDocumentApi;
 
@@ -328,13 +328,13 @@ class WebRenderAPI final {
   friend class layers::WebRenderBridgeParent;
 };
 
-// This is a RAII class that automatically sends the transaction on
-// destruction. This is useful for code that has multiple exit points and we
-// want to ensure that the stuff accumulated in the transaction gets sent
-// regardless of which exit we take. Note that if the caller explicitly calls
-// mApi->SendTransaction() that's fine too because that empties out the
-// TransactionBuilder and leaves it as a valid empty transaction, so calling
-// SendTransaction on it again ends up being a no-op.
+
+
+
+
+
+
+
 class MOZ_RAII AutoTransactionSender {
  public:
   AutoTransactionSender(WebRenderAPI* aApi, TransactionBuilder* aTxn)
@@ -347,9 +347,9 @@ class MOZ_RAII AutoTransactionSender {
   TransactionBuilder* mTxn;
 };
 
-/**
- * A set of optional parameters for stacking context creation.
- */
+
+
+
 struct MOZ_STACK_CLASS StackingContextParams : public WrStackingContextParams {
   StackingContextParams()
       : WrStackingContextParams{
@@ -359,10 +359,10 @@ struct MOZ_STACK_CLASS StackingContextParams : public WrStackingContextParams {
             wr::TransformStyle::Flat,
             wr::WrReferenceFrameKind::Transform,
             nullptr,
-            /* prim_flags = */ wr::PrimitiveFlags::IS_BACKFACE_VISIBLE,
-            /* cache_tiles = */ false,
+             wr::PrimitiveFlags::IS_BACKFACE_VISIBLE,
+             false,
             wr::MixBlendMode::Normal,
-            /* is_backdrop_root = */ false} {}
+             false} {}
 
   void SetPreserve3D(bool aPreserve) {
     transform_style =
@@ -375,19 +375,19 @@ struct MOZ_STACK_CLASS StackingContextParams : public WrStackingContextParams {
   const gfx::Matrix4x4* mBoundTransform = nullptr;
   const gfx::Matrix4x4* mTransformPtr = nullptr;
   Maybe<nsDisplayTransform*> mDeferredTransformItem;
-  // Whether the stacking context is possibly animated. This alters how
-  // coordinates are transformed/snapped to invalidate less when transforms
-  // change frequently.
+  
+  
+  
   bool mAnimated = false;
-  // Whether items should be rasterized in a local space that is (mostly)
-  // invariant to transforms, i.e. disabling subpixel AA and screen space pixel
-  // snapping on text runs that would only make sense in screen space.
+  
+  
+  
   bool mRasterizeLocally = false;
 };
 
-/// This is a simple C++ wrapper around WrState defined in the rust bindings.
-/// We may want to turn this into a direct wrapper on top of
-/// WebRenderFrameBuilder instead, so the interface may change a bit.
+
+
+
 class DisplayListBuilder final {
  public:
   DisplayListBuilder(wr::PipelineId aId, const wr::LayoutSize& aContentSize,
@@ -400,7 +400,6 @@ class DisplayListBuilder final {
   void Save();
   void Restore();
   void ClearSave();
-
   usize Dump(usize aIndent, const Maybe<usize>& aStart,
              const Maybe<usize>& aEnd);
 
@@ -526,8 +525,8 @@ class DisplayListBuilder final {
   void PushIFrame(const wr::LayoutRect& aBounds, bool aIsBackfaceVisible,
                   wr::PipelineId aPipeline, bool aIgnoreMissingPipeline);
 
-  // XXX WrBorderSides are passed with Range.
-  // It is just to bypass compiler bug. See Bug 1357734.
+  
+  
   void PushBorder(const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
                   bool aIsBackfaceVisible, const wr::LayoutSideOffsets& aWidths,
                   const Range<const wr::BorderSide>& aSides,
@@ -579,34 +578,23 @@ class DisplayListBuilder final {
                      const wr::BorderRadius& aBorderRadius,
                      const wr::BoxShadowClipMode& aClipMode);
 
-  void StartCachedItem(wr::ItemKey aKey);
-  void EndCachedItem(wr::ItemKey aKey);
-  void ReuseItem(wr::ItemKey aKey);
-  void SetDisplayListCacheSize(const size_t aCacheSize);
-
   uint64_t CurrentClipChainId() const {
     return mCurrentSpaceAndClipChain.clip_chain;
   }
 
-  const wr::WrSpaceAndClipChain& CurrentSpaceAndClipChain() const {
-    return mCurrentSpaceAndClipChain;
-  }
-
-  const wr::PipelineId& CurrentPipelineId() const { return mPipelineId; }
-
-  // Checks to see if the innermost enclosing fixed pos item has the same
-  // ASR. If so, it returns the scroll target for that fixed-pos item.
-  // Otherwise, it returns Nothing().
+  
+  
+  
   Maybe<layers::ScrollableLayerGuid::ViewID> GetContainingFixedPosScrollTarget(
       const ActiveScrolledRoot* aAsr);
 
   Maybe<SideBits> GetContainingFixedPosSideBits(const ActiveScrolledRoot* aAsr);
 
-  // Set the hit-test info to be used for all display items until the next call
-  // to SetHitTestInfo or ClearHitTestInfo.
+  
+  
   void SetHitTestInfo(const layers::ScrollableLayerGuid::ViewID& aScrollId,
                       gfx::CompositorHitTestInfo aHitInfo, SideBits aSideBits);
-  // Clears the hit-test info so that subsequent display items will not have it.
+  
   void ClearHitTestInfo();
 
   already_AddRefed<gfxContext> GetTextContext(
@@ -615,16 +603,16 @@ class DisplayListBuilder final {
       layers::RenderRootStateManager* aManager, nsDisplayItem* aItem,
       nsRect& aBounds, const gfx::Point& aDeviceOffset);
 
-  // Try to avoid using this when possible.
+  
   wr::WrState* Raw() { return mWrState; }
 
   void SetClipChainLeaf(const Maybe<wr::LayoutRect>& aClipRect) {
     mClipChainLeaf = aClipRect;
   }
 
-  // A chain of RAII objects, each holding a (ASR, ViewID, SideBits) tuple of
-  // data. The topmost object is pointed to by the mActiveFixedPosTracker
-  // pointer in the wr::DisplayListBuilder.
+  
+  
+  
   class MOZ_RAII FixedPosScrollTargetTracker final {
    public:
     FixedPosScrollTargetTracker(DisplayListBuilder& aBuilder,
@@ -652,27 +640,27 @@ class DisplayListBuilder final {
     return aClip;
   }
 
-  // See the implementation of PushShadow for details on these methods.
+  
   void SuspendClipLeafMerging();
   void ResumeClipLeafMerging();
 
   wr::WrState* mWrState;
 
-  // Track each scroll id that we encountered. We use this structure to
-  // ensure that we don't define a particular scroll layer multiple times,
-  // as that results in undefined behaviour in WR.
+  
+  
+  
   std::unordered_map<layers::ScrollableLayerGuid::ViewID, wr::WrSpaceAndClip>
       mScrollIds;
 
   wr::WrSpaceAndClipChain mCurrentSpaceAndClipChain;
 
-  // Contains the current leaf of the clip chain to be merged with the
-  // display item's clip rect when pushing an item. May be set to Nothing() if
-  // there is no clip rect to merge with.
+  
+  
+  
   Maybe<wr::LayoutRect> mClipChainLeaf;
 
-  // Versions of the above that are on hold while SuspendClipLeafMerging is on
-  // (see the implementation of PushShadow for details).
+  
+  
   Maybe<wr::WrSpaceAndClipChain> mSuspendedSpaceAndClipChain;
   Maybe<wr::LayoutRect> mSuspendedClipChainLeaf;
 
@@ -693,8 +681,8 @@ class DisplayListBuilder final {
   friend class SpaceAndClipChainHelper;
 };
 
-// This is a RAII class that overrides the current Wr's SpatialId and
-// ClipChainId.
+
+
 class MOZ_RAII SpaceAndClipChainHelper final {
  public:
   SpaceAndClipChainHelper(DisplayListBuilder& aBuilder,
@@ -736,7 +724,7 @@ class MOZ_RAII SpaceAndClipChainHelper final {
 
 Maybe<wr::ImageFormat> SurfaceFormatToImageFormat(gfx::SurfaceFormat aFormat);
 
-}  // namespace wr
-}  // namespace mozilla
+}  
+}  
 
 #endif

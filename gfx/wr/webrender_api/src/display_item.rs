@@ -33,10 +33,6 @@ pub const MAX_BLUR_RADIUS: f32 = 300.;
 
 pub type ItemTag = (u64, u16);
 
-
-
-pub type ItemKey = u16;
-
 bitflags! {
     #[repr(C)]
     #[derive(Deserialize, MallocSizeOf, Serialize, PeekPoke)]
@@ -78,8 +74,6 @@ pub struct CommonItemProperties {
     pub hit_info: Option<ItemTag>,
     
     pub flags: PrimitiveFlags,
-    
-    pub item_key: Option<ItemKey>
 }
 
 impl CommonItemProperties {
@@ -94,7 +88,6 @@ impl CommonItemProperties {
             clip_id: space_and_clip.clip_id,
             hit_info: None,
             flags: PrimitiveFlags::default(),
-            item_key: None,
         }
     }
 }
@@ -163,8 +156,6 @@ pub enum DisplayItem {
     PopReferenceFrame,
     PopStackingContext,
     PopAllShadows,
-
-    ReuseItem(ItemKey),
 }
 
 
@@ -205,8 +196,6 @@ pub enum DebugDisplayItem {
     PopReferenceFrame,
     PopStackingContext,
     PopAllShadows,
-
-    ReuseItem(ItemKey),
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
@@ -1480,7 +1469,6 @@ impl DisplayItem {
             DisplayItem::Rectangle(..) => "rectangle",
             DisplayItem::ScrollFrame(..) => "scroll_frame",
             DisplayItem::SetGradientStops => "set_gradient_stops",
-            DisplayItem::ReuseItem(..) => "reuse_item",
             DisplayItem::StickyFrame(..) => "sticky_frame",
             DisplayItem::Text(..) => "text",
             DisplayItem::YuvImage(..) => "yuv_image",
