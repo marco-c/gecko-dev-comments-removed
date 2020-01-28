@@ -1734,6 +1734,15 @@ void WebRenderBridgeParent::FlushFramePresentation() {
   mApis[wr::RenderRoot::Default]->WaitFlushed();
 }
 
+void WebRenderBridgeParent::DisableNativeCompositor() {
+  
+  mApis[wr::RenderRoot::Default]->FlushSceneBuilder();
+  
+  mApis[wr::RenderRoot::Default]->EnableNativeCompositor(false);
+  
+  ScheduleForcedGenerateFrame();
+}
+
 void WebRenderBridgeParent::UpdateQualitySettings() {
   for (auto& api : mApis) {
     if (!api) {
