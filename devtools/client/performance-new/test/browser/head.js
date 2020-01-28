@@ -374,10 +374,23 @@ function activeConfigurationHasThread(thread) {
 
 
 
-function getFeatureInputFromLabel(featureTextElement) {
-  const input = featureTextElement.parentElement.querySelector("input");
-  if (!input) {
-    throw new Error("Could not find the input near text element.");
+
+
+
+
+async function getNearestInputFromText(document, text) {
+  const textElement = await getElementFromDocumentByText(document, text);
+  if (textElement.control) {
+    
+    return textElement.control;
   }
-  return input;
+  
+  let next = textElement;
+  while ((next = next.parentElement)) {
+    const input = next.querySelector("input");
+    if (input) {
+      return input;
+    }
+  }
+  throw new Error("Could not find an input near text element.");
 }
