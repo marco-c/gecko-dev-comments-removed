@@ -12,7 +12,6 @@
 
 
 
-
 function fn () {
   return {a: 33};
 };

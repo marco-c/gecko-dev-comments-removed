@@ -10,7 +10,6 @@
 
 
 
-
 const nul = null;
 const undf = undefined;
 assert.sameValue(undefined, nul?.a);
