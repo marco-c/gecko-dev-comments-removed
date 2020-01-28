@@ -135,7 +135,7 @@ enum class SplitAtEdges {
 
 
 
-class EditorBase : public nsIEditor,
+class EditorBase : public nsIPlaintextEditor,
                    public nsISelectionListener,
                    public nsSupportsWeakReference {
  public:
@@ -429,6 +429,14 @@ class EditorBase : public nsIEditor,
   
 
 
+
+
+
+  void SetWrapColumn(int32_t aWrapColumn) { mWrapColumn = aWrapColumn; }
+
+  
+
+
   uint32_t Flags() const { return mFlags; }
 
   nsresult AddFlags(uint32_t aFlags) {
@@ -459,60 +467,58 @@ class EditorBase : public nsIEditor,
   }
 
   bool IsPlaintextEditor() const {
-    return (mFlags & nsIPlaintextEditor::eEditorPlaintextMask) != 0;
+    return (mFlags & nsIEditor::eEditorPlaintextMask) != 0;
   }
 
   bool IsSingleLineEditor() const {
-    return (mFlags & nsIPlaintextEditor::eEditorSingleLineMask) != 0;
+    return (mFlags & nsIEditor::eEditorSingleLineMask) != 0;
   }
 
   bool IsPasswordEditor() const {
-    return (mFlags & nsIPlaintextEditor::eEditorPasswordMask) != 0;
+    return (mFlags & nsIEditor::eEditorPasswordMask) != 0;
   }
 
   
   
   bool IsRightToLeft() const {
-    return (mFlags & nsIPlaintextEditor::eEditorRightToLeft) != 0;
+    return (mFlags & nsIEditor::eEditorRightToLeft) != 0;
   }
   bool IsLeftToRight() const {
-    return (mFlags & nsIPlaintextEditor::eEditorLeftToRight) != 0;
+    return (mFlags & nsIEditor::eEditorLeftToRight) != 0;
   }
 
   bool IsReadonly() const {
-    return (mFlags & nsIPlaintextEditor::eEditorReadonlyMask) != 0;
+    return (mFlags & nsIEditor::eEditorReadonlyMask) != 0;
   }
 
   bool IsDisabled() const {
-    return (mFlags & nsIPlaintextEditor::eEditorDisabledMask) != 0;
+    return (mFlags & nsIEditor::eEditorDisabledMask) != 0;
   }
 
   bool IsInputFiltered() const {
-    return (mFlags & nsIPlaintextEditor::eEditorFilterInputMask) != 0;
+    return (mFlags & nsIEditor::eEditorFilterInputMask) != 0;
   }
 
   bool IsMailEditor() const {
-    return (mFlags & nsIPlaintextEditor::eEditorMailMask) != 0;
+    return (mFlags & nsIEditor::eEditorMailMask) != 0;
   }
 
   bool IsWrapHackEnabled() const {
-    return (mFlags & nsIPlaintextEditor::eEditorEnableWrapHackMask) != 0;
+    return (mFlags & nsIEditor::eEditorEnableWrapHackMask) != 0;
   }
 
   bool IsFormWidget() const {
-    return (mFlags & nsIPlaintextEditor::eEditorWidgetMask) != 0;
+    return (mFlags & nsIEditor::eEditorWidgetMask) != 0;
   }
 
-  bool NoCSS() const {
-    return (mFlags & nsIPlaintextEditor::eEditorNoCSSMask) != 0;
-  }
+  bool NoCSS() const { return (mFlags & nsIEditor::eEditorNoCSSMask) != 0; }
 
   bool IsInteractionAllowed() const {
-    return (mFlags & nsIPlaintextEditor::eEditorAllowInteraction) != 0;
+    return (mFlags & nsIEditor::eEditorAllowInteraction) != 0;
   }
 
   bool ShouldSkipSpellCheck() const {
-    return (mFlags & nsIPlaintextEditor::eEditorSkipSpellCheck) != 0;
+    return (mFlags & nsIEditor::eEditorSkipSpellCheck) != 0;
   }
 
   bool IsTabbable() const {
@@ -604,6 +610,20 @@ class EditorBase : public nsIEditor,
 
 
   void ReinitializeSelection(Element& aElement);
+
+  
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult InsertTextAsAction(
+      const nsAString& aStringToInsert, nsIPrincipal* aPrincipal = nullptr);
 
  protected:  
   class AutoEditActionDataSetter;
@@ -1311,6 +1331,15 @@ class EditorBase : public nsIEditor,
 
   EditorRawDOMPoint GetCompositionStartPoint() const;
   EditorRawDOMPoint GetCompositionEndPoint() const;
+
+  
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  InsertTextAsSubAction(const nsAString& aStringToInsert);
 
   
 
@@ -2339,6 +2368,8 @@ class EditorBase : public nsIEditor,
 
   virtual ~EditorBase();
 
+  int32_t WrapWidth() const { return mWrapColumn; }
+
   
 
 
@@ -2572,6 +2603,12 @@ class EditorBase : public nsIEditor,
 
   MOZ_CAN_RUN_SCRIPT EditorDOMPoint
   PrepareToInsertBRElement(const EditorDOMPoint& aPointToInsert);
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult InsertLineBreakAsSubAction();
 
  private:
   nsCOMPtr<nsISelectionController> mSelectionController;
@@ -2820,6 +2857,9 @@ class EditorBase : public nsIEditor,
 
   
   int32_t mPlaceholderBatch;
+
+  int32_t mWrapColumn;
+  int32_t mNewlineHandling;
 
   
   int8_t mDocDirtyState;

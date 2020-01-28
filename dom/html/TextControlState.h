@@ -129,7 +129,6 @@ class HTMLInputElement;
 
 
 
-
 class RestoreSelectionState;
 
 class TextControlState final : public SupportsWeakPtr<TextControlState> {

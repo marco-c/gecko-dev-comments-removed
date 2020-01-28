@@ -36,7 +36,6 @@
 #include "mozilla/dom/Document.h"  
 #include "nsIFormControl.h"        
 #include "nsINode.h"               
-#include "nsIPlaintextEditor.h"    
 #include "nsIWidget.h"             
 #include "nsLiteralString.h"       
 #include "nsPIWindowRoot.h"        
@@ -1092,7 +1091,7 @@ void EditorEventListener::SpellCheckIfNeeded() {
   
   RefPtr<EditorBase> editorBase(mEditorBase);
   if (editorBase->ShouldSkipSpellCheck()) {
-    editorBase->RemoveFlags(nsIPlaintextEditor::eEditorSkipSpellCheck);
+    editorBase->RemoveFlags(nsIEditor::eEditorSkipSpellCheck);
   }
 }
 

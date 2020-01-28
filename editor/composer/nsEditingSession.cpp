@@ -29,7 +29,6 @@
 #include "mozilla/dom/Document.h"        
 #include "nsIEditor.h"                   
 #include "nsIInterfaceRequestorUtils.h"  
-#include "nsIPlaintextEditor.h"          
 #include "nsIRefreshURI.h"               
 #include "nsIRequest.h"                  
 #include "nsITimer.h"                    
@@ -302,20 +301,20 @@ nsresult nsEditingSession::SetupEditorOnWindow(nsPIDOMWindowOuter& aWindow) {
   bool needHTMLController = false;
 
   if (mEditorType.EqualsLiteral("textmail")) {
-    mEditorFlags = nsIPlaintextEditor::eEditorPlaintextMask |
-                   nsIPlaintextEditor::eEditorEnableWrapHackMask |
-                   nsIPlaintextEditor::eEditorMailMask;
+    mEditorFlags = nsIEditor::eEditorPlaintextMask |
+                   nsIEditor::eEditorEnableWrapHackMask |
+                   nsIEditor::eEditorMailMask;
   } else if (mEditorType.EqualsLiteral("text")) {
-    mEditorFlags = nsIPlaintextEditor::eEditorPlaintextMask |
-                   nsIPlaintextEditor::eEditorEnableWrapHackMask;
+    mEditorFlags =
+        nsIEditor::eEditorPlaintextMask | nsIEditor::eEditorEnableWrapHackMask;
   } else if (mEditorType.EqualsLiteral("htmlmail")) {
     if (mimeCType.EqualsLiteral("text/html")) {
       needHTMLController = true;
-      mEditorFlags = nsIPlaintextEditor::eEditorMailMask;
+      mEditorFlags = nsIEditor::eEditorMailMask;
     } else {
       
-      mEditorFlags = nsIPlaintextEditor::eEditorPlaintextMask |
-                     nsIPlaintextEditor::eEditorEnableWrapHackMask;
+      mEditorFlags = nsIEditor::eEditorPlaintextMask |
+                     nsIEditor::eEditorEnableWrapHackMask;
     }
   } else {
     
@@ -323,7 +322,7 @@ nsresult nsEditingSession::SetupEditorOnWindow(nsPIDOMWindowOuter& aWindow) {
   }
 
   if (mInteractive) {
-    mEditorFlags |= nsIPlaintextEditor::eEditorAllowInteraction;
+    mEditorFlags |= nsIEditor::eEditorAllowInteraction;
   }
 
   

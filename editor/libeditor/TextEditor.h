@@ -10,7 +10,6 @@
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsINamed.h"
-#include "nsIPlaintextEditor.h"
 #include "nsISupportsImpl.h"
 #include "nsITimer.h"
 #include "nscore.h"
@@ -36,10 +35,7 @@ class Selection;
 
 
 
-class TextEditor : public EditorBase,
-                   public nsIPlaintextEditor,
-                   public nsITimerCallback,
-                   public nsINamed {
+class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
  public:
   
 
@@ -56,7 +52,6 @@ class TextEditor : public EditorBase,
 
   TextEditor();
 
-  NS_DECL_NSIPLAINTEXTEDITOR
   NS_DECL_NSITIMERCALLBACK
   NS_DECL_NSINAMED
 
@@ -69,6 +64,8 @@ class TextEditor : public EditorBase,
 
   MOZ_CAN_RUN_SCRIPT
   NS_IMETHOD SetDocumentCharacterSet(const nsACString& characterSet) override;
+
+  NS_IMETHOD GetTextLength(int32_t* aCount) override;
 
   
 
@@ -206,20 +203,6 @@ class TextEditor : public EditorBase,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult InsertTextAsAction(
-      const nsAString& aStringToInsert, nsIPrincipal* aPrincipal = nullptr);
-
-  
-
-
-
-
-
-
-
-
-
-
 
 
   MOZ_CAN_RUN_SCRIPT virtual nsresult PasteAsQuotationAsAction(
@@ -345,14 +328,6 @@ class TextEditor : public EditorBase,
 
 
 
-
-  void SetWrapColumn(int32_t aWrapColumn) { mWrapColumn = aWrapColumn; }
-
-  
-
-
-
-
   bool IsAllMasked() const {
     MOZ_ASSERT(IsPasswordEditor());
     return mUnmaskedStart == UINT32_MAX && mUnmaskedLength == 0;
@@ -406,15 +381,6 @@ class TextEditor : public EditorBase,
                                             bool aSuppressTransaction) override;
   using EditorBase::RemoveAttributeOrEquivalent;
   using EditorBase::SetAttributeOrEquivalent;
-
-  
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
-  InsertTextAsSubAction(const nsAString& aStringToInsert);
 
   
 
@@ -720,8 +686,6 @@ class TextEditor : public EditorBase,
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult InitEditorContentAndSelection();
 
-  int32_t WrapWidth() const { return mWrapColumn; }
-
   
 
 
@@ -742,12 +706,6 @@ class TextEditor : public EditorBase,
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   OnInputText(const nsAString& aStringToInsert);
-
-  
-
-
-
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult InsertLineBreakAsSubAction();
 
   
 
@@ -901,9 +859,7 @@ class TextEditor : public EditorBase,
 
   mutable nsString mCachedDocumentEncoderType;
 
-  int32_t mWrapColumn;
   int32_t mMaxTextLength;
-  int32_t mNewlineHandling;
   int32_t mCaretStyle;
 
   

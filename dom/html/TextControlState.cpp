@@ -215,9 +215,9 @@ class MOZ_RAII AutoRestoreEditorState final {
     
     
     uint32_t flags = mSavedFlags;
-    flags &= ~(nsIPlaintextEditor::eEditorDisabledMask);
-    flags &= ~(nsIPlaintextEditor::eEditorReadonlyMask);
-    flags |= nsIPlaintextEditor::eEditorDontEchoPassword;
+    flags &= ~(nsIEditor::eEditorDisabledMask);
+    flags &= ~(nsIEditor::eEditorReadonlyMask);
+    flags |= nsIEditor::eEditorDontEchoPassword;
     if (mSavedFlags != flags) {
       mTextEditor->SetFlags(flags);
     }
@@ -1719,20 +1719,20 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
   PresShell* presShell = presContext->GetPresShell();
 
   
-  uint32_t editorFlags = nsIPlaintextEditor::eEditorPlaintextMask;
+  uint32_t editorFlags = nsIEditor::eEditorPlaintextMask;
   if (IsSingleLineTextControl()) {
-    editorFlags |= nsIPlaintextEditor::eEditorSingleLineMask;
+    editorFlags |= nsIEditor::eEditorSingleLineMask;
   }
   if (IsPasswordTextControl()) {
-    editorFlags |= nsIPlaintextEditor::eEditorPasswordMask;
+    editorFlags |= nsIEditor::eEditorPasswordMask;
   }
 
   
-  editorFlags |= nsIPlaintextEditor::eEditorWidgetMask;
+  editorFlags |= nsIEditor::eEditorWidgetMask;
 
   
   
-  editorFlags |= nsIPlaintextEditor::eEditorSkipSpellCheck;
+  editorFlags |= nsIEditor::eEditorSkipSpellCheck;
 
   bool shouldInitializeEditor = false;
   RefPtr<TextEditor> newTextEditor;  
@@ -1766,7 +1766,7 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
 
     
     if (newTextEditor->IsMailEditor()) {
-      editorFlags |= nsIPlaintextEditor::eEditorMailMask;
+      editorFlags |= nsIEditor::eEditorMailMask;
     }
   }
 
@@ -1871,13 +1871,13 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
 
   
   if (mTextCtrlElement->HasAttr(kNameSpaceID_None, nsGkAtoms::readonly)) {
-    editorFlags |= nsIPlaintextEditor::eEditorReadonlyMask;
+    editorFlags |= nsIEditor::eEditorReadonlyMask;
   }
 
   
   
   if (mTextCtrlElement->HasAttr(kNameSpaceID_None, nsGkAtoms::disabled)) {
-    editorFlags |= nsIPlaintextEditor::eEditorDisabledMask;
+    editorFlags |= nsIEditor::eEditorDisabledMask;
   }
 
   
