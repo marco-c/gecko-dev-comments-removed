@@ -2769,6 +2769,10 @@ bool JSRuntime::initSelfHosting(JSContext* cx) {
     return false;
   }
 
+  
+  
+  cx->runtime()->gc.freezeSelfHostingZone();
+
   return true;
 }
 

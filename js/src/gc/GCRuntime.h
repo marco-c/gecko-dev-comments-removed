@@ -261,6 +261,9 @@ class GCRuntime {
 
   JS::HeapState heapState() const { return heapState_; }
 
+  void freezeSelfHostingZone();
+  bool isSelfHostingZoneFrozen() const { return selfHostingZoneFrozen; }
+
   inline bool hasZealMode(ZealMode mode);
   inline void clearZealMode(ZealMode mode);
   inline bool upcomingZealousGC();
@@ -734,6 +737,7 @@ class GCRuntime {
   void endCompactPhase();
   void sweepTypesAfterCompacting(Zone* zone);
   void sweepZoneAfterCompacting(MovingTracer* trc, Zone* zone);
+  bool canRelocateZone(Zone* zone) const;
   MOZ_MUST_USE bool relocateArenas(Zone* zone, JS::GCReason reason,
                                    Arena*& relocatedListOut,
                                    SliceBudget& sliceBudget);
@@ -861,6 +865,12 @@ class GCRuntime {
   mozilla::Atomic<size_t, mozilla::ReleaseAcquire,
                   mozilla::recordreplay::Behavior::DontPreserve>
       numActiveZoneIters;
+
+  
+
+
+
+  WriteOnceData<bool> selfHostingZoneFrozen;
 
   
   MainThreadData<bool> cleanUpEverything;
