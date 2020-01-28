@@ -59,6 +59,7 @@ Http3Session::Http3Session()
       mCleanShutdown(false),
       mGoawayReceived(false),
       mShouldClose(false),
+      mIsClosedByNeqo(false),
       mError(NS_OK),
       mBeforeConnectedError(false) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
@@ -331,8 +332,9 @@ nsresult Http3Session::ProcessEvents(uint32_t count, uint32_t* countWritten,
         if (NS_SUCCEEDED(mError) && !IsClosing()) {
           mError = NS_ERROR_NET_HTTP3_PROTOCOL_ERROR;
         }
-        CloseInternal(false);
-        mState = CLOSED;
+        mIsClosedByNeqo = true;
+        
+        return mError;
         break;
       default:
         break;
@@ -430,6 +432,7 @@ nsresult Http3Session::ProcessOutput() {
 
 nsresult Http3Session::ProcessOutputAndEvents() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  mHttp3Connection->ProcessTimer();
   nsresult rv = ProcessOutput();
   if (NS_FAILED(rv)) {
     return rv;
@@ -437,8 +440,8 @@ nsresult Http3Session::ProcessOutputAndEvents() {
   mHttp3Connection->ProcessHttp3();
   bool notUsed;
   uint32_t n = 0;
-  Unused << ProcessEvents(nsIOService::gDefaultSegmentSize, &n, &notUsed);
-  if (mState == CLOSED) {
+  rv = ProcessEvents(nsIOService::gDefaultSegmentSize, &n, &notUsed);
+  if (NS_FAILED(rv)) {
     
     if (mTimer) {
       mTimer->Cancel();
@@ -446,6 +449,7 @@ nsresult Http3Session::ProcessOutputAndEvents() {
     mConnection = nullptr;
     mSocketTransport = nullptr;
     mSegmentReaderWriter = nullptr;
+    mState = CLOSED;
   }
   return NS_OK;
 }
@@ -794,6 +798,14 @@ nsresult Http3Session::WriteSegmentsAgain(nsAHttpSegmentWriter* writer,
   if (NS_SUCCEEDED(rv)) {
     Unused << mConnection->ResumeRecv();
   }
+
+  uint64_t timeout = mHttp3Connection->ProcessOutput();
+
+  
+  if (mConnection && mHttp3Connection->HasDataToSend()) {
+    Unused << mConnection->ResumeSend();
+  }
+  SetupTimer(timeout);
   return rv;
 }
 
@@ -802,7 +814,9 @@ void Http3Session::Close(nsresult aReason) {
   mError = aReason;
   CloseInternal(true);
 
-  if (mCleanShutdown) {
+  if (mCleanShutdown || mIsClosedByNeqo) {
+    
+    
     
     
     if (mTimer) {
@@ -811,6 +825,7 @@ void Http3Session::Close(nsresult aReason) {
     mConnection = nullptr;
     mSocketTransport = nullptr;
     mSegmentReaderWriter = nullptr;
+    mState = CLOSED;
   }
 }
 
