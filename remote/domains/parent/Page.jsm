@@ -30,6 +30,9 @@ const { WindowManager } = ChromeUtils.import(
   "chrome://remote/content/WindowManager.jsm"
 );
 
+const MAX_CANVAS_DIMENSION = 32767;
+const MAX_CANVAS_AREA = 472907776;
+
 const PRINT_MAX_SCALE_VALUE = 2.0;
 const PRINT_MIN_SCALE_VALUE = 0.1;
 
@@ -72,53 +75,88 @@ class Page extends Domain {
 
 
   async captureScreenshot(options = {}) {
-    const { format = "png", quality = 80 } = options;
+    const { clip, format = "png", quality = 80 } = options;
 
-    if (options.clip) {
-      throw new UnsupportedError("clip not supported");
-    }
     if (options.fromSurface) {
       throw new UnsupportedError("fromSurface not supported");
     }
 
-    const MAX_CANVAS_DIMENSION = 32767;
-    const MAX_CANVAS_AREA = 472907776;
+    let rect;
+    let scale = await this.executeInChild("_devicePixelRatio");
 
-    
-    const { browsingContext, window } = this.session.target;
-    const scale = window.devicePixelRatio;
+    if (clip) {
+      for (const prop of ["x", "y", "width", "height", "scale"]) {
+        if (clip[prop] == undefined) {
+          throw new TypeError(`clip.${prop}: double value expected`);
+        }
+      }
 
-    const rect = await this.executeInChild("_layoutViewport");
+      const contentRect = await this.executeInChild("_contentRect");
 
-    let canvasWidth = rect.clientWidth * scale;
-    let canvasHeight = rect.clientHeight * scale;
+      
+      if (clip.scale <= 0) {
+        Object.assign(clip, {
+          x: 0,
+          y: 0,
+          width: contentRect.width,
+          height: contentRect.height,
+          scale: 1,
+        });
+      } else {
+        if (clip.x < 0 || clip.x > contentRect.width - 1) {
+          clip.x = 0;
+        }
+        if (clip.y < 0 || clip.y > contentRect.height - 1) {
+          clip.y = 0;
+        }
+        if (clip.width <= 0) {
+          clip.width = contentRect.width;
+        }
+        if (clip.height <= 0) {
+          clip.height = contentRect.height;
+        }
+      }
+
+      rect = new DOMRect(clip.x, clip.y, clip.width, clip.height);
+      scale *= clip.scale;
+    } else {
+      
+      
+      
+      const {
+        pageX,
+        pageY,
+        clientWidth,
+        clientHeight,
+      } = await this.executeInChild("_layoutViewport");
+
+      rect = new DOMRect(pageX, pageY, clientWidth, clientHeight);
+    }
+
+    let canvasWidth = rect.width * scale;
+    let canvasHeight = rect.height * scale;
 
     
     
     
     
     if (canvasWidth > MAX_CANVAS_DIMENSION) {
-      rect.clientWidth = Math.floor(MAX_CANVAS_DIMENSION / scale);
-      canvasWidth = rect.clientWidth * scale;
+      rect.width = Math.floor(MAX_CANVAS_DIMENSION / scale);
+      canvasWidth = rect.width * scale;
     }
     if (canvasHeight > MAX_CANVAS_DIMENSION) {
-      rect.clientHeight = Math.floor(MAX_CANVAS_DIMENSION / scale);
-      canvasHeight = rect.clientHeight * scale;
+      rect.height = Math.floor(MAX_CANVAS_DIMENSION / scale);
+      canvasHeight = rect.height * scale;
     }
     
     if (canvasWidth * canvasHeight > MAX_CANVAS_AREA) {
-      rect.clientHeight = Math.floor(MAX_CANVAS_AREA / (canvasWidth * scale));
-      canvasHeight = rect.clientHeight * scale;
+      rect.height = Math.floor(MAX_CANVAS_AREA / (canvasWidth * scale));
+      canvasHeight = rect.height * scale;
     }
 
-    const captureRect = new DOMRect(
-      rect.pageX,
-      rect.pageY,
-      rect.clientWidth,
-      rect.clientHeight
-    );
+    const { browsingContext, window } = this.session.target;
     const snapshot = await browsingContext.currentWindowGlobal.drawSnapshot(
-      captureRect,
+      rect,
       scale,
       "rgb(255,255,255)"
     );
