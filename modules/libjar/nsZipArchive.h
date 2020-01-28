@@ -216,6 +216,10 @@ class nsZipArchive final {
   
   nsCString mURI;
 
+  
+  
+  bool mUseZipLog;
+
  private:
   
   nsZipItem* CreateZipItem();
