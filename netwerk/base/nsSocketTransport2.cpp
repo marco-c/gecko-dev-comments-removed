@@ -765,11 +765,6 @@ nsresult nsSocketTransport::Init(const nsTArray<nsCString>& types,
   }
 
   
-  mSocketTransportService->ApplyPortRemap(&port);
-  
-  mSocketTransportService->ApplyPortRemap(&portRoute);
-
-  
 
   mOriginHost = host;
   mOriginPort = port;
