@@ -48,7 +48,6 @@ config = {
     
     "log_tbpl_level": "info",
     "log_raw_level": "info",
-    "minidump_stackwalk_path": "linux64-minidump_stackwalk",
     
     
     
