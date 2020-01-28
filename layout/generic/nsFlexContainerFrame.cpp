@@ -4299,21 +4299,7 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
 
   
   
-  if (HasAnyStateBits(NS_STATE_FLEX_GENERATE_COMPUTED_VALUES)) {
-    
-    
-    
-
-    
-    ComputedFlexContainerInfo* info = GetProperty(FlexContainerInfo());
-    if (info) {
-      
-      info->mLines.Clear();
-    } else {
-      info = new ComputedFlexContainerInfo();
-      SetProperty(FlexContainerInfo(), info);
-    }
-  }
+  CreateOrClearFlexContainerInfo();
 
   
   
@@ -4457,6 +4443,26 @@ void nsFlexContainerFrame::CalculatePackingSpace(
   
   
   *aPackingSpaceRemaining -= totalEdgePackingSpace;
+}
+
+void nsFlexContainerFrame::CreateOrClearFlexContainerInfo() {
+  if (!HasAnyStateBits(NS_STATE_FLEX_GENERATE_COMPUTED_VALUES)) {
+    return;
+  }
+
+  
+  
+  
+
+  
+  ComputedFlexContainerInfo* info = GetProperty(FlexContainerInfo());
+  if (info) {
+    
+    info->mLines.Clear();
+  } else {
+    info = new ComputedFlexContainerInfo();
+    SetProperty(FlexContainerInfo(), info);
+  }
 }
 
 nsFlexContainerFrame* nsFlexContainerFrame::GetFlexFrameWithComputedInfo(

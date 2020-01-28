@@ -203,6 +203,12 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
+  void CreateOrClearFlexContainerInfo();
+
+  
+
+
+
 
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
