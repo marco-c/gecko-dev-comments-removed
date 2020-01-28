@@ -902,14 +902,14 @@ class nsFlexContainerFrame::FlexLine : public LinkedListElement<FlexLine> {
  public:
   explicit FlexLine(nscoord aMainGapSize) : mMainGapSize(aMainGapSize) {}
 
-  nscoord GetSumOfGaps() const {
+  nscoord SumOfGaps() const {
     return mNumItems > 0 ? (mNumItems - 1) * mMainGapSize : 0;
   }
 
   
   
   
-  nscoord GetTotalOuterHypotheticalMainSize() const {
+  nscoord TotalOuterHypotheticalMainSize() const {
     return mTotalOuterHypotheticalMainSize;
   }
 
@@ -1000,7 +1000,7 @@ class nsFlexContainerFrame::FlexLine : public LinkedListElement<FlexLine> {
   void ComputeCrossSizeAndBaseline(const FlexboxAxisTracker& aAxisTracker);
 
   
-  nscoord GetLineCrossSize() const { return mLineCrossSize; }
+  nscoord LineCrossSize() const { return mLineCrossSize; }
 
   
   
@@ -1018,7 +1018,7 @@ class nsFlexContainerFrame::FlexLine : public LinkedListElement<FlexLine> {
 
 
 
-  nscoord GetFirstBaselineOffset() const { return mFirstBaselineOffset; }
+  nscoord FirstBaselineOffset() const { return mFirstBaselineOffset; }
 
   
 
@@ -1030,19 +1030,13 @@ class nsFlexContainerFrame::FlexLine : public LinkedListElement<FlexLine> {
 
 
 
-  nscoord GetLastBaselineOffset() const { return mLastBaselineOffset; }
+  nscoord LastBaselineOffset() const { return mLastBaselineOffset; }
 
   
 
 
 
-  uint32_t GetNumItems() const { return mNumItems; }
-
-  
-
-
-
-  nscoord GetMainGapSize() const { return mMainGapSize; }
+  nscoord MainGapSize() const { return mMainGapSize; }
 
   inline void SetMainGapSize(nscoord aNewSize) { mMainGapSize = aNewSize; }
 
@@ -1120,7 +1114,7 @@ static void BuildStrutInfoFromCollapsedItems(const FlexLine* aFirstLine,
           item->Frame()->StyleVisibility()->mVisible) {
         
         aStruts.AppendElement(
-            StrutInfo(itemIdxInContainer, line->GetLineCrossSize()));
+            StrutInfo(itemIdxInContainer, line->LineCrossSize()));
       }
       itemIdxInContainer++;
     }
@@ -2290,7 +2284,7 @@ class MOZ_STACK_CLASS CrossAxisPositionTracker : public PositionTracker {
   void TraversePackingSpace();
 
   
-  void TraverseLine(FlexLine& aLine) { mPosition += aLine.GetLineCrossSize(); }
+  void TraverseLine(FlexLine& aLine) { mPosition += aLine.LineCrossSize(); }
 
   inline void SetCrossGapSize(nscoord aNewSize) { mCrossGapSize = aNewSize; }
 
@@ -2641,7 +2635,7 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
   
   
   nscoord spaceAvailableForFlexItemsContentBoxes =
-      aFlexContainerMainSize - (mTotalItemMBP + GetSumOfGaps());
+      aFlexContainerMainSize - (mTotalItemMBP + SumOfGaps());
 
   nscoord origAvailableFreeSpace;
   bool isOrigAvailFreeSpaceInitialized = false;
@@ -2939,7 +2933,7 @@ MainAxisPositionTracker::MainAxisPositionTracker(
   }
 
   
-  mPackingSpaceRemaining -= aLine->GetSumOfGaps();
+  mPackingSpaceRemaining -= aLine->SumOfGaps();
 
   if (mPackingSpaceRemaining <= 0) {
     
@@ -3128,7 +3122,7 @@ CrossAxisPositionTracker::CrossAxisPositionTracker(
     
     
     aFirstLine->SetLineCrossSize(NS_CSS_MINMAX(
-        aFirstLine->GetLineCrossSize(), aReflowInput.ComputedMinBSize(),
+        aFirstLine->LineCrossSize(), aReflowInput.ComputedMinBSize(),
         aReflowInput.ComputedMaxBSize()));
   }
 
@@ -3143,7 +3137,7 @@ CrossAxisPositionTracker::CrossAxisPositionTracker(
   mPackingSpaceRemaining = aContentBoxCrossSize;
   uint32_t numLines = 0;
   for (FlexLine* line = aFirstLine; line; line = line->getNext()) {
-    mPackingSpaceRemaining -= line->GetLineCrossSize();
+    mPackingSpaceRemaining -= line->LineCrossSize();
     numLines++;
   }
 
@@ -3240,7 +3234,7 @@ CrossAxisPositionTracker::CrossAxisPositionTracker(
           
           MOZ_ASSERT(numLinesLeft > 0, "miscalculated num lines");
           nscoord shareOfExtraSpace = mPackingSpaceRemaining / numLinesLeft;
-          nscoord newSize = line->GetLineCrossSize() + shareOfExtraSpace;
+          nscoord newSize = line->LineCrossSize() + shareOfExtraSpace;
           line->SetLineCrossSize(newSize);
 
           mPackingSpaceRemaining -= shareOfExtraSpace;
@@ -3423,8 +3417,7 @@ void SingleLineCrossAxisPositionTracker::ResolveAutoMarginsInCrossAxis(
     const FlexLine& aLine, FlexItem& aItem) {
   
   
-  nscoord spaceForAutoMargins =
-      aLine.GetLineCrossSize() - aItem.OuterCrossSize();
+  nscoord spaceForAutoMargins = aLine.LineCrossSize() - aItem.OuterCrossSize();
 
   if (spaceForAutoMargins <= 0) {
     return;  
@@ -3505,7 +3498,7 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
   
   
   
-  if (aLine.GetLineCrossSize() < aItem.OuterCrossSize() &&
+  if (aLine.LineCrossSize() < aItem.OuterCrossSize() &&
       (aItem.AlignSelfFlags() & NS_STYLE_ALIGN_SAFE)) {
     alignSelf = NS_STYLE_ALIGN_FLEX_START;
   }
@@ -3515,11 +3508,11 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
       
       break;
     case NS_STYLE_ALIGN_FLEX_END:
-      mPosition += aLine.GetLineCrossSize() - aItem.OuterCrossSize();
+      mPosition += aLine.LineCrossSize() - aItem.OuterCrossSize();
       break;
     case NS_STYLE_ALIGN_CENTER:
       
-      mPosition += (aLine.GetLineCrossSize() - aItem.OuterCrossSize()) / 2;
+      mPosition += (aLine.LineCrossSize() - aItem.OuterCrossSize()) / 2;
       break;
     case NS_STYLE_ALIGN_BASELINE:
     case NS_STYLE_ALIGN_LAST_BASELINE: {
@@ -3538,8 +3531,8 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
       nscoord itemBaselineOffset = aItem.BaselineOffsetFromOuterCrossEdge(
           baselineAlignStartSide, aAxisTracker, useFirst);
 
-      nscoord lineBaselineOffset = useFirst ? aLine.GetFirstBaselineOffset()
-                                            : aLine.GetLastBaselineOffset();
+      nscoord lineBaselineOffset =
+          useFirst ? aLine.FirstBaselineOffset() : aLine.LastBaselineOffset();
 
       NS_ASSERTION(lineBaselineOffset >= itemBaselineOffset,
                    "failed at finding largest baseline offset");
@@ -3550,7 +3543,7 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
 
       if (aAxisTracker.AreAxesInternallyReversed() == useFirst) {
         
-        mPosition += aLine.GetLineCrossSize() - aItem.OuterCrossSize();
+        mPosition += aLine.LineCrossSize() - aItem.OuterCrossSize();
         
         mPosition -= baselineDiff;
       } else {
@@ -3843,7 +3836,7 @@ void nsFlexContainerFrame::GenerateFlexLines(
       
       
       nscoord newOuterSize =
-          AddChecked(curLine->GetTotalOuterHypotheticalMainSize(),
+          AddChecked(curLine->TotalOuterHypotheticalMainSize(),
                      itemOuterHypotheticalMainSize);
       
       newOuterSize = AddChecked(newOuterSize, aMainGapSize);
@@ -3892,8 +3885,8 @@ nscoord nsFlexContainerFrame::GetMainSizeFromReflowInput(
 static nscoord GetLargestLineMainSize(const FlexLine* aFirstLine) {
   nscoord largestLineOuterSize = 0;
   for (const FlexLine* line = aFirstLine; line; line = line->getNext()) {
-    largestLineOuterSize = std::max(largestLineOuterSize,
-                                    line->GetTotalOuterHypotheticalMainSize());
+    largestLineOuterSize =
+        std::max(largestLineOuterSize, line->TotalOuterHypotheticalMainSize());
   }
   return largestLineOuterSize;
 }
@@ -4459,9 +4452,9 @@ void nsFlexContainerFrame::UpdateFlexLineAndItemInfo(
        line = line->getNext(), ++lineIndex) {
     ComputedFlexLineInfo& lineInfo = aContainerInfo.mLines[lineIndex];
 
-    lineInfo.mCrossSize = line->GetLineCrossSize();
-    lineInfo.mFirstBaselineOffset = line->GetFirstBaselineOffset();
-    lineInfo.mLastBaselineOffset = line->GetLastBaselineOffset();
+    lineInfo.mCrossSize = line->LineCrossSize();
+    lineInfo.mFirstBaselineOffset = line->FirstBaselineOffset();
+    lineInfo.mLastBaselineOffset = line->LastBaselineOffset();
 
     uint32_t itemIndex = 0;
     for (const FlexItem* item = line->GetFirstItem(); item;
@@ -4683,7 +4676,7 @@ void nsFlexContainerFrame::DoFlexLayout(
     }
     
     line->ComputeCrossSizeAndBaseline(aAxisTracker);
-    sumLineCrossSizes += line->GetLineCrossSize();
+    sumLineCrossSizes += line->LineCrossSize();
 
     
     if (line->getNext()) {
@@ -4721,8 +4714,7 @@ void nsFlexContainerFrame::DoFlexLayout(
   
   nscoord flexContainerAscent;
   if (!aAxisTracker.AreAxesInternallyReversed()) {
-    nscoord firstLineBaselineOffset =
-        lines.getFirst()->GetFirstBaselineOffset();
+    nscoord firstLineBaselineOffset = lines.getFirst()->FirstBaselineOffset();
     if (firstLineBaselineOffset == nscoord_MIN) {
       
       
@@ -4789,7 +4781,7 @@ void nsFlexContainerFrame::DoFlexLayout(
   
   
   if (aAxisTracker.AreAxesInternallyReversed()) {
-    nscoord lastLineBaselineOffset = lines.getLast()->GetFirstBaselineOffset();
+    nscoord lastLineBaselineOffset = lines.getLast()->FirstBaselineOffset();
     if (lastLineBaselineOffset == nscoord_MIN) {
       
       
@@ -4982,7 +4974,7 @@ void nsFlexContainerFrame::DoFlexLayout(
 
   
   mBaselineFromLastReflow = flexContainerAscent;
-  mLastBaselineFromLastReflow = lines.getLast()->GetLastBaselineOffset();
+  mLastBaselineFromLastReflow = lines.getLast()->LastBaselineOffset();
   if (mLastBaselineFromLastReflow == nscoord_MIN) {
     
     
