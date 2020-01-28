@@ -2204,7 +2204,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVGReset {
   float mFloodOpacity;
 
   uint8_t mVectorEffect;  
-  uint8_t mMaskType;      
+  mozilla::StyleMaskType mMaskType;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleEffects {
