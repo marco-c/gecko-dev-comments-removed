@@ -675,12 +675,17 @@ class MMPolicyOutOfProcess : public MMPolicyBase {
 
 
 
-
-
   FARPROC GetProcAddress(HMODULE aModule, const char* aName) const {
     nt::PEHeaders moduleHeaders(aModule);
-    const DWORD* funcEntry = moduleHeaders.FindExportAddressTableEntry(aName);
-    if (!funcEntry) {
+    auto funcEntry = moduleHeaders.FindExportAddressTableEntry(aName);
+    if (funcEntry.isErr()) {
+      
+      
+      
+      
+      return nullptr;
+    }
+    if (!funcEntry.inspect()) {
       
       
       
@@ -690,8 +695,9 @@ class MMPolicyOutOfProcess : public MMPolicyBase {
 
     SIZE_T numBytes = 0;
     DWORD rvaTargetFunction = 0;
-    BOOL ok = ::ReadProcessMemory(mProcess, funcEntry, &rvaTargetFunction,
-                                  sizeof(rvaTargetFunction), &numBytes);
+    BOOL ok =
+        ::ReadProcessMemory(mProcess, funcEntry.inspect(), &rvaTargetFunction,
+                            sizeof(rvaTargetFunction), &numBytes);
     if (!ok || numBytes != sizeof(rvaTargetFunction)) {
       
       
