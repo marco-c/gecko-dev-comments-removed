@@ -447,25 +447,21 @@ nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
   RefPtr<nsMIMEInfoWin> mi;
 
   
-  if (fileExtension.IsEmpty() && !haveMeaningfulMimeType) {
+  nsAutoString extensionFromMimeType;
+  if (haveMeaningfulMimeType) {
+    GetExtensionFromWindowsMimeDatabase(aMIMEType, extensionFromMimeType);
+  }
+  if (fileExtension.IsEmpty() && extensionFromMimeType.IsEmpty()) {
+    
+    
     mi = new nsMIMEInfoWin(flatType.get());
+    if (!aFileExt.IsEmpty()) {
+      mi->AppendExtension(aFileExt);
+    }
     mi.forget(aMIMEInfo);
     return NS_OK;
   }
 
-  nsAutoString extensionFromMimeType;
-  if (haveMeaningfulMimeType) {
-    GetExtensionFromWindowsMimeDatabase(aMIMEType, extensionFromMimeType);
-    if (extensionFromMimeType.IsEmpty()) {
-      
-      mi = new nsMIMEInfoWin(flatType.get());
-      if (!aFileExt.IsEmpty()) {
-        mi->AppendExtension(aFileExt);
-      }
-      mi.forget(aMIMEInfo);
-      return NS_OK;
-    }
-  }
   
 
   *aFound = true;
@@ -476,7 +472,7 @@ nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
   
   bool usedMimeTypeExtensionForLookup = false;
   if (fileExtension.IsEmpty() ||
-      (haveMeaningfulMimeType &&
+      (!extensionFromMimeType.IsEmpty() &&
        !typeFromExtEquals(fileExtension.get(), flatType.get()))) {
     usedMimeTypeExtensionForLookup = true;
     fileExtension = extensionFromMimeType;
