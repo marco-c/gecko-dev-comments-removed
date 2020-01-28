@@ -2241,7 +2241,6 @@ class MOZ_STACK_CLASS PositionTracker {
   
   inline nscoord GetPosition() const { return mPosition; }
   inline LogicalAxis GetAxis() const { return mAxis; }
-  inline AxisOrientationType GetPhysicalAxis() const { return mPhysicalAxis; }
 
   inline LogicalSide StartSide() {
     return MakeLogicalSide(
@@ -2292,12 +2291,8 @@ class MOZ_STACK_CLASS PositionTracker {
 
  protected:
   
-  PositionTracker(WritingMode aWM, LogicalAxis aAxis,
-                  AxisOrientationType aPhysicalAxis, bool aIsAxisReversed)
-      : mWM(aWM),
-        mAxis(aAxis),
-        mPhysicalAxis(aPhysicalAxis),
-        mIsAxisReversed(aIsAxisReversed) {}
+  PositionTracker(WritingMode aWM, LogicalAxis aAxis, bool aIsAxisReversed)
+      : mWM(aWM), mAxis(aAxis), mIsAxisReversed(aIsAxisReversed) {}
 
   
   
@@ -2308,9 +2303,6 @@ class MOZ_STACK_CLASS PositionTracker {
 
   
   const LogicalAxis mAxis = eLogicalAxisInline;
-  
-  const AxisOrientationType mPhysicalAxis = eAxis_LR;
-  
 
   
   
@@ -2992,7 +2984,6 @@ MainAxisPositionTracker::MainAxisPositionTracker(
     const FlexboxAxisTracker& aAxisTracker, const FlexLine* aLine,
     uint8_t aJustifyContent, nscoord aContentBoxMainSize)
     : PositionTracker(aAxisTracker.GetWritingMode(), aAxisTracker.MainAxis(),
-                      aAxisTracker.GetPhysicalMainAxis(),
                       aAxisTracker.IsMainAxisReversed()),
       
       mPackingSpaceRemaining(aContentBoxMainSize),
@@ -3174,7 +3165,6 @@ CrossAxisPositionTracker::CrossAxisPositionTracker(
     nscoord aContentBoxCrossSize, bool aIsCrossSizeDefinite,
     const FlexboxAxisTracker& aAxisTracker, const nscoord aCrossGapSize)
     : PositionTracker(aAxisTracker.GetWritingMode(), aAxisTracker.CrossAxis(),
-                      aAxisTracker.GetPhysicalCrossAxis(),
                       aAxisTracker.IsCrossAxisReversed()),
       mAlignContent(aReflowInput.mStylePosition->mAlignContent),
       mCrossGapSize(aCrossGapSize) {
@@ -3363,7 +3353,6 @@ void CrossAxisPositionTracker::TraversePackingSpace() {
 SingleLineCrossAxisPositionTracker::SingleLineCrossAxisPositionTracker(
     const FlexboxAxisTracker& aAxisTracker)
     : PositionTracker(aAxisTracker.GetWritingMode(), aAxisTracker.CrossAxis(),
-                      aAxisTracker.GetPhysicalCrossAxis(),
                       aAxisTracker.IsCrossAxisReversed()) {}
 
 void FlexLine::ComputeCrossSizeAndBaseline(
