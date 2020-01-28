@@ -286,5 +286,19 @@ ipc::IPCResult DocAccessibleChild::RecvRestoreFocus() {
   return IPC_OK();
 }
 
+void DocAccessibleChild::SetEmbedderOnBridge(dom::BrowserBridgeChild* aBridge,
+                                             uint64_t aID) {
+  if (CanSend()) {
+    aBridge->SendSetEmbedderAccessible(this, aID);
+  } else {
+    
+    
+    
+    
+    MOZ_ASSERT(!IsConstructedInParentProcess());
+    PushDeferredEvent(MakeUnique<SerializedSetEmbedder>(aBridge, this, aID));
+  }
+}
+
 }  
 }  
