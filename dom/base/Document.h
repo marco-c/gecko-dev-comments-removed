@@ -2026,13 +2026,13 @@ class Document : public nsINode,
   
 
 
-  void RemoveStyleSheet(StyleSheet* aSheet);
+  void RemoveStyleSheet(StyleSheet*);
 
   
 
 
 
-  void SetStyleSheetApplicableState(StyleSheet&, bool aApplicable);
+  void StyleSheetApplicableStateChanged(StyleSheet&);
 
   enum additionalSheetType {
     eAgentSheet,

@@ -400,8 +400,7 @@ void ShadowRoot::InsertSheetIntoAuthorData(size_t aIndex, StyleSheet& aSheet) {
 
 
 
-void ShadowRoot::StyleSheetApplicableStateChanged(StyleSheet& aSheet,
-                                                  bool aApplicable) {
+void ShadowRoot::StyleSheetApplicableStateChanged(StyleSheet& aSheet) {
   int32_t index = IndexOfSheet(aSheet);
   if (index < 0) {
     
@@ -413,7 +412,7 @@ void ShadowRoot::StyleSheetApplicableStateChanged(StyleSheet& aSheet,
                           "It'd better be an @import sheet");
     return;
   }
-  if (aApplicable) {
+  if (aSheet.IsApplicable()) {
     InsertSheetIntoAuthorData(size_t(index), aSheet);
   } else {
     MOZ_ASSERT(mServoStyles);
