@@ -1,6 +1,5 @@
 
 
-
 var WATCH_TIMEOUT = 300;
 
 
@@ -373,6 +372,7 @@ function allMechanisms(aCb, aClipOverride, aNegateAll) {
   function testStep(n) {
     gTestN1 = n;
     switch (n) {
+      
       case 0:
         
         cutCopyAll(
@@ -439,12 +439,7 @@ function allMechanisms(aCb, aClipOverride, aNegateAll) {
 
       default:
         aCb();
-        return;
     }
-
-    SimpleTest.executeSoon(function() {
-      testStep(n + 1);
-    });
   }
   testStep(0);
 }
