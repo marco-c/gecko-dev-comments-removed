@@ -1155,7 +1155,6 @@ static void* base_pages;
 static void* base_next_addr;
 static void* base_next_decommitted;
 static void* base_past_addr;  
-static extent_node_t* base_nodes;
 static Mutex base_mtx;
 static size_t base_mapped;
 static size_t base_committed;
@@ -1406,33 +1405,46 @@ static void* base_calloc(size_t aNumber, size_t aSize) {
   return ret;
 }
 
-static extent_node_t* base_node_alloc(void) {
-  extent_node_t* ret;
 
-  base_mtx.Lock();
-  if (base_nodes) {
-    ret = base_nodes;
-    base_nodes = *(extent_node_t**)ret;
-    base_mtx.Unlock();
-  } else {
-    base_mtx.Unlock();
-    ret = (extent_node_t*)base_alloc(sizeof(extent_node_t));
+template <typename T>
+struct TypedBaseAlloc {
+  static T* sFirstFree;
+
+  static T* alloc() {
+    T* ret;
+
+    base_mtx.Lock();
+    if (sFirstFree) {
+      ret = sFirstFree;
+      sFirstFree = *(T**)ret;
+      base_mtx.Unlock();
+    } else {
+      base_mtx.Unlock();
+      ret = (T*)base_alloc(sizeof(T));
+    }
+
+    return ret;
   }
 
-  return ret;
-}
-
-static void base_node_dealloc(extent_node_t* aNode) {
-  MutexAutoLock lock(base_mtx);
-  *(extent_node_t**)aNode = base_nodes;
-  base_nodes = aNode;
-}
-
-struct BaseNodeFreePolicy {
-  void operator()(extent_node_t* aPtr) { base_node_dealloc(aPtr); }
+  static void dealloc(T* aNode) {
+    MutexAutoLock lock(base_mtx);
+    *(T**)aNode = sFirstFree;
+    sFirstFree = aNode;
+  }
 };
 
-using UniqueBaseNode = UniquePtr<extent_node_t, BaseNodeFreePolicy>;
+using ExtentAlloc = TypedBaseAlloc<extent_node_t>;
+
+template <>
+extent_node_t* ExtentAlloc::sFirstFree = nullptr;
+
+template <typename T>
+struct BaseAllocFreePolicy {
+  void operator()(T* aPtr) { TypedBaseAlloc<T>::dealloc(aPtr); }
+};
+
+using UniqueBaseNode =
+    UniquePtr<extent_node_t, BaseAllocFreePolicy<extent_node_t>>;
 
 
 
@@ -1799,7 +1811,7 @@ static void* chunk_recycle(size_t aSize, size_t aAlignment, bool* aZeroed) {
       
       
       chunks_mtx.Unlock();
-      node = base_node_alloc();
+      node = ExtentAlloc::alloc();
       if (!node) {
         chunk_dealloc(ret, aSize, chunk_type);
         return nullptr;
@@ -1819,7 +1831,7 @@ static void* chunk_recycle(size_t aSize, size_t aAlignment, bool* aZeroed) {
   chunks_mtx.Unlock();
 
   if (node) {
-    base_node_dealloc(node);
+    ExtentAlloc::dealloc(node);
   }
   if (!pages_commit(ret, aSize)) {
     return nullptr;
@@ -1908,7 +1920,7 @@ static void chunk_record(void* aChunk, size_t aSize, ChunkType aType) {
   
   
   
-  UniqueBaseNode xnode(base_node_alloc());
+  UniqueBaseNode xnode(ExtentAlloc::alloc());
   
   UniqueBaseNode xprev;
 
@@ -3591,7 +3603,7 @@ void* arena_t::PallocHuge(size_t aSize, size_t aAlignment, bool aZero) {
   }
 
   
-  node = base_node_alloc();
+  node = ExtentAlloc::alloc();
   if (!node) {
     return nullptr;
   }
@@ -3599,7 +3611,7 @@ void* arena_t::PallocHuge(size_t aSize, size_t aAlignment, bool aZero) {
   
   ret = chunk_alloc(csize, aAlignment, false, &zeroed);
   if (!ret) {
-    base_node_dealloc(node);
+    ExtentAlloc::dealloc(node);
     return nullptr;
   }
   psize = PAGE_CEILING(aSize);
@@ -3747,7 +3759,7 @@ static void huge_dalloc(void* aPtr, arena_t* aArena) {
   
   chunk_dealloc(node->mAddr, mapped, HUGE_CHUNK);
 
-  base_node_dealloc(node);
+  ExtentAlloc::dealloc(node);
 }
 
 static size_t GetKernelPageSize() {
@@ -3889,7 +3901,6 @@ static bool malloc_init_hard() {
   
   base_mapped = 0;
   base_committed = 0;
-  base_nodes = nullptr;
   base_mtx.Init();
 
   
