@@ -2576,6 +2576,27 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent,
                                                   aEvent.mLocalPanStartPoint);
     logicalPanDisplacement.x *= scrollUnitWidth;
     logicalPanDisplacement.y *= scrollUnitHeight;
+
+    
+    
+    
+    
+    
+    if (mX.GetVelocity() != 0) {
+      float absVelocity = std::abs(mX.GetVelocity());
+      logicalPanDisplacement.x *=
+          std::pow(absVelocity,
+                   StaticPrefs::apz_touch_acceleration_factor_x()) /
+          absVelocity;
+    }
+
+    if (mY.GetVelocity() != 0) {
+      float absVelocity = std::abs(mY.GetVelocity());
+      logicalPanDisplacement.y *=
+          std::pow(absVelocity,
+                   StaticPrefs::apz_touch_acceleration_factor_y()) /
+          absVelocity;
+    }
   }
 
   MOZ_ASSERT(GetCurrentPanGestureBlock());
