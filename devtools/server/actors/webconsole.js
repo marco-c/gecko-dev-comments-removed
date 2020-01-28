@@ -635,7 +635,30 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
 
+
+
+
+
+  preprocessDebuggerObject(dbgObj) {
+    
+    if (dbgObj && dbgObj.isBoundFunction && dbgObj.boundTargetFunction) {
+      return dbgObj.boundTargetFunction;
+    }
+
+    return dbgObj;
+  },
+
+  
+
+
+
+
+
+
+
+
   inspectObject(dbgObj, inspectFromAnnotation) {
+    dbgObj = this.preprocessDebuggerObject(dbgObj);
     this.emit("inspectObject", {
       objectActor: this.createValueGrip(dbgObj),
       inspectFromAnnotation,
@@ -1568,6 +1591,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       chromeWindow: this.chromeWindow.bind(this),
       makeDebuggeeValue: debuggerGlobal.makeDebuggeeValue.bind(debuggerGlobal),
       createValueGrip: this.createValueGrip.bind(this),
+      preprocessDebuggerObject: this.preprocessDebuggerObject.bind(this),
       sandbox: Object.create(null),
       helperResult: null,
       consoleActor: this,
