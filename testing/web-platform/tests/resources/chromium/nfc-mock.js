@@ -76,7 +76,7 @@ function compareNDEFRecords(providedRecord, receivedRecord) {
 
 
 
-function assertNDEFPushOptionsEqual(provided, received) {
+function assertNDEFWriteOptionsEqual(provided, received) {
   if (provided.ignoreRead !== undefined)
     assert_equals(provided.ignoreRead, !!received.ignoreRead);
   else
@@ -149,7 +149,7 @@ var WebNFCTest = (() => {
 
       this.hw_status_ = NFCHWStatus.ENABLED;
       this.pushed_message_ = null;
-      this.pending_push_options_ = null;
+      this.pending_write_options_ = null;
       this.pending_promise_func_ = null;
       this.push_completed_ = true;
       this.client_ = null;
@@ -171,7 +171,7 @@ var WebNFCTest = (() => {
       }
 
       this.pushed_message_ = message;
-      this.pending_push_options_ = options;
+      this.pending_write_options_ = options;
       return new Promise(resolve => {
         if (this.operations_suspended_ || !this.push_completed_) {
           
@@ -256,8 +256,8 @@ var WebNFCTest = (() => {
       return this.pushed_message_;
     }
 
-    pushOptions() {
-      return this.pending_push_options_;
+    writeOptions() {
+      return this.pending_write_options_;
     }
 
     watchOptions() {
@@ -287,7 +287,7 @@ var WebNFCTest = (() => {
       }
 
       this.pushed_message_ = null;
-      this.pending_push_options_ = null;
+      this.pending_write_options_ = null;
       this.push_completed_ = true;
     }
 
@@ -297,7 +297,7 @@ var WebNFCTest = (() => {
       
       if(this.operations_suspended_) return;
       
-      if (this.pending_push_options_ && this.pending_push_options_.ignoreRead)
+      if (this.pending_write_options_ && this.pending_write_options_.ignoreRead)
         return;
       
       for (let watcher of this.watchers_) {
