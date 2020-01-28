@@ -598,13 +598,13 @@ class _ToolbarPanelHub {
 
 
 
-  forceShowMessage(browser, message) {
+  forceShowMessage(browser, messages) {
     const win = browser.browser.ownerGlobal;
     const doc = browser.browser.ownerDocument;
     this.removeMessages(win, WHATS_NEW_PANEL_SELECTOR);
     this.renderMessages(win, doc, WHATS_NEW_PANEL_SELECTOR, {
       force: true,
-      messages: [message],
+      messages: Array.isArray(messages) ? messages : [messages],
     });
     win.PanelUI.panel.addEventListener("popuphidden", event =>
       this.removeMessages(event.target.ownerGlobal, WHATS_NEW_PANEL_SELECTOR)

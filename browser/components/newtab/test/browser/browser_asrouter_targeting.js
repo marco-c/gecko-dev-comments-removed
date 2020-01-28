@@ -43,7 +43,7 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/AppConstants.jsm"
 );
 
-
+// ASRouterTargeting.isMatch
 add_task(async function should_do_correct_targeting() {
   is(
     await ASRouterTargeting.isMatch("FOO", { FOO: true }),
@@ -70,7 +70,7 @@ add_task(async function should_handle_async_getters() {
   );
 });
 
-
+// ASRouterTargeting.findMatchingMessage
 add_task(async function find_matching_message() {
   const messages = [
     { id: "foo", targeting: "FOO" },
@@ -119,8 +119,8 @@ add_task(async function check_syntax_error_handling() {
     undefined,
     "should return nothing since no valid matching message exists"
   );
-  
-  
+  // Note that in order for the following test to pass, we are expecting a particular filepath for mozjexl.
+  // If the location of this file has changed, the MOZ_JEXL_FILEPATH constant should be updated om ASRouterTargeting.jsm
   is(
     result[0],
     ASRouterTargeting.ERROR_TYPES.MALFORMED_EXPRESSION,
@@ -153,8 +153,8 @@ add_task(async function check_other_error_handling() {
     undefined,
     "should return nothing since no valid matching message exists"
   );
-  
-  
+  // Note that in order for the following test to pass, we are expecting a particular filepath for mozjexl.
+  // If the location of this file has changed, the MOZ_JEXL_FILEPATH constant should be updated om ASRouterTargeting.jsm
   is(
     result[0],
     ASRouterTargeting.ERROR_TYPES.ATTRIBUTE_ERROR,
@@ -168,7 +168,7 @@ add_task(async function check_other_error_handling() {
   is(result[2], "foo", "should call onError with the invalid attribute");
 });
 
-
+// ASRouterTargeting.Environment
 add_task(async function check_locale() {
   ok(
     Services.locale.appLocaleAsBCP47,
@@ -314,7 +314,7 @@ add_task(async function check_isFxAEnabled() {
 });
 
 add_task(async function check_totalBookmarksCount() {
-  
+  // Make sure we remove default bookmarks so they don't interfere
   await clearHistoryAndBookmarks();
   const message = { id: "foo", targeting: "totalBookmarksCount > 0" };
 
@@ -341,7 +341,7 @@ add_task(async function check_totalBookmarksCount() {
     "Should select correct item after bookmarks are added."
   );
 
-  
+  // Cleanup
   await PlacesUtils.bookmarks.remove(bookmark.guid);
 });
 
@@ -528,8 +528,8 @@ add_task(async function checkAddonsInfo() {
     "should correctly provide `isWebExtension` property"
   );
 
-  
-  
+  // As we installed our test addon the addons database must be initialised, so
+  // (in this test environment) we expect to receive "full" data
 
   ok(isFullData, "should receive full data");
 
@@ -558,14 +558,14 @@ add_task(async function checkFrecentSites() {
 
   const visits = [];
   for (const [uri, count, visitDate] of [
-    ["https://mozilla1.com/", 10, timeDaysAgo(0)], 
-    ["https://mozilla2.com/", 5, timeDaysAgo(1)], 
-    ["https://mozilla3.com/", 1, timeDaysAgo(2)], 
+    ["https://mozilla1.com/", 10, timeDaysAgo(0)], // frecency 1000
+    ["https://mozilla2.com/", 5, timeDaysAgo(1)], // frecency 500
+    ["https://mozilla3.com/", 1, timeDaysAgo(2)], // frecency 100
   ]) {
     [...Array(count).keys()].forEach(() =>
       visits.push({
         uri,
-        visitDate: visitDate * 1000, 
+        visitDate: visitDate * 1000, // Places expects microseconds
       })
     );
   }
@@ -651,7 +651,7 @@ add_task(async function checkFrecentSites() {
     "should select correct item when filtering by frecency and lastVisitDate with multiple candidate domains"
   );
 
-  
+  // Cleanup
   await clearHistoryAndBookmarks();
 });
 
@@ -666,7 +666,7 @@ add_task(async function check_pinned_sites() {
     NewTabUtils.pinnedLinks.pin(site, NewTabUtils.pinnedLinks.links.length)
   );
 
-  
+  // Unpinning adds null to the list of pinned sites, which we should test that we handle gracefully for our targeting
   NewTabUtils.pinnedLinks.unpin(sitesToPin[1]);
   ok(
     NewTabUtils.pinnedLinks.links.includes(null),
@@ -706,7 +706,7 @@ add_task(async function check_pinned_sites() {
     "should select correct item by host and searchTopSite in pinnedSites"
   );
 
-  
+  // Cleanup
   sitesToPin.forEach(site => NewTabUtils.pinnedLinks.unpin(site));
 
   await clearHistoryAndBookmarks();
@@ -790,12 +790,12 @@ add_task(async function check_provider_cohorts() {
 });
 
 add_task(async function check_xpinstall_enabled() {
-  
+  // should default to true if pref doesn't exist
   is(await ASRouterTargeting.Environment.xpinstallEnabled, true);
-  
+  // flip to false, check targeting reflects that
   await pushPrefs(["xpinstall.enabled", false]);
   is(await ASRouterTargeting.Environment.xpinstallEnabled, false);
-  
+  // flip to true, check targeting reflects that
   await pushPrefs(["xpinstall.enabled", true]);
   is(await ASRouterTargeting.Environment.xpinstallEnabled, true);
 });
@@ -837,22 +837,6 @@ add_task(async function check_hasAccessedFxAPanel() {
     await ASRouterTargeting.Environment.hasAccessedFxAPanel,
     true,
     "Should detect panel access"
-  );
-});
-
-add_task(async function check_isWhatsNewPanelEnabled() {
-  is(
-    await ASRouterTargeting.Environment.isWhatsNewPanelEnabled,
-    true,
-    "Enabled by default"
-  );
-
-  await pushPrefs(["browser.messaging-system.whatsNewPanel.enabled", false]);
-
-  is(
-    await ASRouterTargeting.Environment.isWhatsNewPanelEnabled,
-    false,
-    "Should update based on pref, e.g., for holdback"
   );
 });
 
