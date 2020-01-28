@@ -40,6 +40,13 @@ this.selectorLoader = (function() {
     "selector/uicontrol.js",
   ];
 
+  
+  const onboardingScripts = [
+    "build/onboardingCss.js",
+    "build/onboardingHtml.js",
+    "onboarding/slides.js",
+  ];
+
   exports.unloadIfLoaded = function(tabId) {
     return browser.tabs.executeScript(tabId, {
       code: "this.selectorLoader && this.selectorLoader.unloadModules()",
@@ -63,15 +70,32 @@ this.selectorLoader = (function() {
 
   const loadingTabs = new Set();
 
-  exports.loadModules = function(tabId) {
-    loadingTabs.add(tabId);
-    catcher.watchPromise(browser.tabs.executeScript(tabId, {
-      code: `window.hasAnyShots = ${!!main.hasAnyShots()};`,
-      runAt: "document_start",
-    }).then(() => {
-      return executeModules(tabId, standardScripts.concat(selectorScripts));
-    }).finally(() => {
-      loadingTabs.delete(tabId);
+  exports.loadModules = function(tabId, hasSeenOnboarding) {
+    catcher.watchPromise(hasSeenOnboarding.then(onboarded => {
+      loadingTabs.add(tabId);
+      let promise = Promise.resolve();
+      promise = promise.then(() => {
+        browser.tabs.executeScript(tabId, {
+          code: `window.hasAnyShots = ${!!main.hasAnyShots()};`,
+          runAt: "document_start",
+        });
+      });
+      if (onboarded) {
+        promise = promise.then(() => {
+          return executeModules(tabId, standardScripts.concat(selectorScripts));
+        });
+      } else {
+        promise = promise.then(() => {
+          return executeModules(tabId, standardScripts.concat(onboardingScripts).concat(selectorScripts));
+        });
+      }
+      return promise.then((result) => {
+        loadingTabs.delete(tabId);
+        return result;
+      }, (error) => {
+        loadingTabs.delete(tabId);
+        throw error;
+      });
     }));
   };
 
@@ -101,7 +125,7 @@ this.selectorLoader = (function() {
 
   exports.unloadModules = function() {
     const watchFunction = catcher.watchFunction;
-    const allScripts = standardScripts.concat(selectorScripts);
+    const allScripts = standardScripts.concat(onboardingScripts).concat(selectorScripts);
     const moduleNames = allScripts.map((filename) =>
       filename.replace(/^.*\//, "").replace(/\.js$/, ""));
     moduleNames.reverse();
@@ -119,11 +143,11 @@ this.selectorLoader = (function() {
     return true;
   };
 
-  exports.toggle = function(tabId) {
+  exports.toggle = function(tabId, hasSeenOnboarding) {
     return exports.unloadIfLoaded(tabId)
       .then(wasLoaded => {
         if (!wasLoaded) {
-          exports.loadModules(tabId);
+          exports.loadModules(tabId, hasSeenOnboarding);
         }
         return !wasLoaded;
       });
