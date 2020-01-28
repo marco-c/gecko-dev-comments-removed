@@ -2605,9 +2605,20 @@ already_AddRefed<Element> HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
     
     
     
-    if (lastElementInRange->GetNextSibling() &&
-        lastElementInRange->GetNextSibling()->IsHTMLElement(nsGkAtoms::br)) {
-      return nullptr;
+    
+    
+    
+    
+    
+    if (nsIContent* nextSibling = lastElementInRange->GetNextSibling()) {
+      if (nextSibling->IsHTMLElement(nsGkAtoms::br)) {
+        return nullptr;
+      }
+      nsIContent* firstEditableLeaf = GetLeftmostChild(nextSibling);
+      if (firstEditableLeaf &&
+          firstEditableLeaf->IsHTMLElement(nsGkAtoms::br)) {
+        return nullptr;
+      }
     }
 
     if (!aTagName) {
