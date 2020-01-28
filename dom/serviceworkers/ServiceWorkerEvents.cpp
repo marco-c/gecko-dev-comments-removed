@@ -782,7 +782,7 @@ void RespondWithHandler::CancelRequest(nsresult aStatus) {
 }  
 
 void FetchEvent::RespondWith(JSContext* aCx, Promise& aArg, ErrorResult& aRv) {
-  if (EventPhase() == Event_Binding::NONE || mWaitToRespond) {
+  if (!GetDispatchFlag() || mWaitToRespond) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
@@ -951,6 +951,27 @@ NS_IMPL_ISUPPORTS0(WaitUntilHandler)
 
 }  
 
+ExtendableEvent::ExtensionsHandler::~ExtensionsHandler() {
+  MOZ_ASSERT(!mExtendableEvent);
+}
+
+bool ExtendableEvent::ExtensionsHandler::GetDispatchFlag() const {
+  
+  
+  
+  
+  if (!mExtendableEvent) {
+    return false;
+  }
+
+  return mExtendableEvent->GetDispatchFlag();
+}
+
+void ExtendableEvent::ExtensionsHandler::SetExtendableEvent(
+    const ExtendableEvent* const aExtendableEvent) {
+  mExtendableEvent = aExtendableEvent;
+}
+
 NS_IMPL_ADDREF_INHERITED(FetchEvent, ExtendableEvent)
 NS_IMPL_RELEASE_INHERITED(FetchEvent, ExtendableEvent)
 
@@ -976,6 +997,7 @@ void ExtendableEvent::SetKeepAliveHandler(
   MOZ_ASSERT(worker);
   worker->AssertIsOnWorkerThread();
   mExtensionsHandler = aExtensionsHandler;
+  mExtensionsHandler->SetExtendableEvent(this);
 }
 
 void ExtendableEvent::WaitUntil(JSContext* aCx, Promise& aPromise,
