@@ -1,6 +1,15 @@
 try {
   importScripts('empty-worker.js');
-  postMessage('LOADED');
+  if ('DedicatedWorkerGlobalScope' in self &&
+      self instanceof DedicatedWorkerGlobalScope) {
+    postMessage('LOADED');
+  } else if (
+      'SharedWorkerGlobalScope' in self &&
+      self instanceof SharedWorkerGlobalScope) {
+    onconnect = e => {
+      e.ports[0].postMessage('LOADED');
+    };
+  }
 } catch (e) {
   
   
@@ -11,5 +20,14 @@ try {
   
   
   
-  postMessage(e.name);
+  if ('DedicatedWorkerGlobalScope' in self &&
+      self instanceof DedicatedWorkerGlobalScope) {
+    postMessage(e.name);
+  } else if (
+      'SharedWorkerGlobalScope' in self &&
+      self instanceof SharedWorkerGlobalScope) {
+    onconnect = connectEvent => {
+      connectEvent.ports[0].postMessage(e.name);
+    };
+  }
 }

@@ -1,18 +1,29 @@
 
 
-const code =
-  "const sourcePromise = new Promise(resolve => {" +
-  "  self.onmessage = e => {" +
-  "    const source = e.source ? e.source : e.target;" +
-  "    resolve(source);" +
-  "  };" +
-  "});" +
-  "const importedModulesPromise =" +
-  "  import('./export-on-load-script.js')" +
-  "    .then(module => module.importedModules)" +
-  "    .catch(error => `Failed to do dynamic import: ${error}`);" +
-  "Promise.all([sourcePromise, importedModulesPromise]).then(results => {" +
-  "  const [source, importedModules] = results;" +
-  "  source.postMessage(importedModules);" +
-  "});";
+const code = 'const sourcePromise = new Promise(resolve => {' +
+    '  if (\'DedicatedWorkerGlobalScope\' in self &&' +
+    '      self instanceof DedicatedWorkerGlobalScope) {' +
+    '    self.onmessage = e => {' +
+    '      resolve(e.target);' +
+    '    };' +
+    '  } else if (\'SharedWorkerGlobalScope\' in self &&' +
+    '             self instanceof SharedWorkerGlobalScope) {' +
+    '    self.onconnect = e => {' +
+    '      resolve(e.ports[0]);' +
+    '    };' +
+    '  } else if (\'ServiceWorkerGlobalScope\' in self &&' +
+    '             self instanceof ServiceWorkerGlobalScope) {' +
+    '    self.onmessage = e => {' +
+    '      resolve(e.source);' +
+    '    };' +
+    '  }' +
+    '});' +
+    'const importedModulesPromise =' +
+    '  import(\'./export-on-load-script.js\')' +
+    '    .then(module => module.importedModules)' +
+    '    .catch(error => `Failed to do dynamic import: ${error}`);' +
+    'Promise.all([sourcePromise, importedModulesPromise]).then(results => {' +
+    '  const [source, importedModules] = results;' +
+    '  source.postMessage(importedModules);' +
+    '});';
 eval(code);
