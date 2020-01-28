@@ -224,6 +224,9 @@ var whitelist = [
 
   
   { file: "chrome://browser/content/aboutlogins/aboutLoginsUtils.js" },
+
+  
+  { file: "resource://app/localization/en-US/browser/screenshots.ftl" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {
