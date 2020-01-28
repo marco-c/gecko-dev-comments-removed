@@ -620,9 +620,7 @@ void WebRenderAPI::WaitFlushed() {
 }
 
 void WebRenderAPI::Capture() {
-  
-  
-  uint8_t bits = 7;                 
+  uint8_t bits = 3;                 
   const char* path = "wr-capture";  
   wr_api_capture(mDocHandle, path, bits);
 }
