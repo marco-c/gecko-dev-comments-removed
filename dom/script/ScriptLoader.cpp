@@ -2702,8 +2702,8 @@ nsresult ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest) {
 #endif
   nsAutoCString profilerLabelString;
   GetProfilerLabelForRequest(aRequest, profilerLabelString);
-  AUTO_PROFILER_TEXT_MARKER_DOCSHELL("Script", profilerLabelString, JS,
-                                     docShell);
+  AUTO_PROFILER_TEXT_MARKER_DOCSHELL("ScriptEvaluation", profilerLabelString,
+                                     JS, docShell);
 
   
   
