@@ -976,17 +976,16 @@ ContentParent::GetNewOrUsedBrowserProcessAsync(Element* aFrameElement,
   
   PreallocatedProcessManager::AddBlocker(p);
 
-  nsAutoString remoteType(aRemoteType);
   return launchPromise->Then(
       GetCurrentThreadSerialEventTarget(), __func__,
       
-      [p, recordReplayState, remoteType,
+      [p, recordReplayState,
        launchPromise](const RefPtr<ContentParent>& subProcess) {
         if (recordReplayState == eNotRecordingOrReplaying) {
           
           
           nsTArray<ContentParent*>& contentParents =
-              GetOrCreatePool(remoteType);
+              GetOrCreatePool(p->GetRemoteType());
           contentParents.AppendElement(p);
         }
 
