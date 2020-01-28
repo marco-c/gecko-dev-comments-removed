@@ -89,6 +89,40 @@ already_AddRefed<StyleSheet> DocumentOrShadowRoot::RemoveSheet(
   return sheet.forget();
 }
 
+
+void DocumentOrShadowRoot::SetAdoptedStyleSheets(
+    const Sequence<OwningNonNull<StyleSheet>>& aAdoptedStyleSheets,
+    ErrorResult& aRv) {
+  
+  
+
+  
+
+  for (const OwningNonNull<StyleSheet>& sheet : aAdoptedStyleSheets) {
+    
+    if (!sheet->IsConstructed()) {
+      return aRv.ThrowDOMException(
+          NS_ERROR_DOM_NOT_ALLOWED_ERR,
+          "Each adopted style sheet must be created through the "
+          "Constructable StyleSheets API");
+    }
+    
+    
+    if (!sheet->ConstructorDocumentMatches(AsNode().OwnerDoc())) {
+      return aRv.ThrowDOMException(
+          NS_ERROR_DOM_NOT_ALLOWED_ERR,
+          "Each adopted style sheet's constructor document must match the "
+          "document or shadow root's node document");
+    }
+  }
+  
+  mAdoptedStyleSheets.ClearAndRetainStorage();
+  mAdoptedStyleSheets.SetCapacity(aAdoptedStyleSheets.Length());
+  for (const OwningNonNull<StyleSheet>& sheet : aAdoptedStyleSheets) {
+    mAdoptedStyleSheets.AppendElement(sheet.get());
+  }
+}
+
 Element* DocumentOrShadowRoot::GetElementById(const nsAString& aElementId) {
   if (MOZ_UNLIKELY(aElementId.IsEmpty())) {
     nsContentUtils::ReportEmptyGetElementByIdArg(AsNode().OwnerDoc());
@@ -615,14 +649,18 @@ nsRadioGroupStruct* DocumentOrShadowRoot::GetRadioGroup(
 
 nsRadioGroupStruct* DocumentOrShadowRoot::GetOrCreateRadioGroup(
     const nsAString& aName) {
-  return mRadioGroups.LookupForAdd(aName).OrInsert(
-      []() { return new nsRadioGroupStruct(); }).get();
+  return mRadioGroups.LookupForAdd(aName)
+      .OrInsert([]() { return new nsRadioGroupStruct(); })
+      .get();
 }
 
 void DocumentOrShadowRoot::Traverse(DocumentOrShadowRoot* tmp,
                                     nsCycleCollectionTraversalCallback& cb) {
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mStyleSheets)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDOMStyleSheets)
+  
+  
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAdoptedStyleSheets)
   for (StyleSheet* sheet : tmp->mStyleSheets) {
     if (!sheet->IsApplicable()) {
       continue;
@@ -658,6 +696,9 @@ void DocumentOrShadowRoot::Traverse(DocumentOrShadowRoot* tmp,
 
 void DocumentOrShadowRoot::Unlink(DocumentOrShadowRoot* tmp) {
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDOMStyleSheets)
+  
+  
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mAdoptedStyleSheets)
   tmp->mIdentifierMap.Clear();
   tmp->mRadioGroups.Clear();
 }

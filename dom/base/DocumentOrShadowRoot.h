@@ -76,6 +76,15 @@ class DocumentOrShadowRoot {
 
   StyleSheetList* StyleSheets();
 
+  void GetAdoptedStyleSheets(nsTArray<RefPtr<StyleSheet>>& aAdoptedStyleSheets,
+                             ErrorResult& aRv) const {
+    aAdoptedStyleSheets = mAdoptedStyleSheets;
+  }
+
+  void SetAdoptedStyleSheets(
+      const Sequence<OwningNonNull<StyleSheet>>& aAdoptedStyleSheets,
+      ErrorResult& aRv);
+
   Element* GetElementById(const nsAString& aElementId);
 
   
@@ -227,6 +236,12 @@ class DocumentOrShadowRoot {
 
   nsTArray<RefPtr<StyleSheet>> mStyleSheets;
   RefPtr<StyleSheetList> mDOMStyleSheets;
+
+  
+  
+  
+  
+  nsTArray<RefPtr<StyleSheet>> mAdoptedStyleSheets;
 
   
 

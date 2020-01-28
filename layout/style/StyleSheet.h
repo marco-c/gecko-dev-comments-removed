@@ -374,6 +374,14 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   }
 
   
+  bool IsConstructed() const { return !!mConstructorDocument; }
+
+  
+  bool ConstructorDocumentMatches(dom::Document* document) const {
+    return mConstructorDocument == document;
+  }
+
+  
   inline dom::ParentObject GetParentObject() const;
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) final;
 
