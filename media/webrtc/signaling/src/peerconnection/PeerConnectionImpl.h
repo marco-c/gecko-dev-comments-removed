@@ -395,14 +395,11 @@ class PeerConnectionImpl final
     delete[] tmp;
   }
 
-  void GetCurrentLocalDescription(nsAString& aSDP) const;
-  void GetPendingLocalDescription(nsAString& aSDP) const;
+  void GetCurrentLocalDescription(nsAString& aSDP);
+  void GetPendingLocalDescription(nsAString& aSDP);
 
-  void GetCurrentRemoteDescription(nsAString& aSDP) const;
-  void GetPendingRemoteDescription(nsAString& aSDP) const;
-
-  dom::Nullable<bool> GetCurrentOfferer() const;
-  dom::Nullable<bool> GetPendingOfferer() const;
+  void GetCurrentRemoteDescription(nsAString& aSDP);
+  void GetPendingRemoteDescription(nsAString& aSDP);
 
   NS_IMETHODIMP SignalingState(mozilla::dom::RTCSignalingState* aState);
 
@@ -457,9 +454,11 @@ class PeerConnectionImpl final
   const std::vector<std::string>& GetSdpParseErrors();
 
   
-  dom::RTCSignalingState GetSignalingState() const;
+  void SetSignalingState_m(mozilla::dom::RTCSignalingState aSignalingState,
+                           bool rollback = false);
 
-  void OnSetDescriptionSuccess(bool rollback);
+  
+  void UpdateSignalingState(bool rollback = false);
 
   bool IsClosed() const;
   
@@ -570,13 +569,6 @@ class PeerConnectionImpl final
   
   std::string mLocalRequestedSDP;
   std::string mRemoteRequestedSDP;
-
-  std::string mPendingLocalDescription;
-  std::string mPendingRemoteDescription;
-  std::string mCurrentLocalDescription;
-  std::string mCurrentRemoteDescription;
-  Maybe<bool> mPendingOfferer;
-  Maybe<bool> mCurrentOfferer;
 
   
   std::string mFingerprint;
