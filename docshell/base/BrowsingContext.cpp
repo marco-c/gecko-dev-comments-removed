@@ -26,6 +26,7 @@
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/WindowProxyHolder.h"
+#include "mozilla/dom/SyncedContextInlines.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
@@ -67,6 +68,10 @@ struct ParamTraits<mozilla::dom::OrientationType>
 
 namespace mozilla {
 namespace dom {
+
+
+
+template class syncedcontext::Transaction<BrowsingContext>;
 
 extern mozilla::LazyLogModule gUserInteractionPRLog;
 
@@ -142,30 +147,34 @@ already_AddRefed<BrowsingContext> BrowsingContext::Create(
   RefPtr<BrowsingContext> context;
   if (XRE_IsParentProcess()) {
     context = new CanonicalBrowsingContext(aParent, group, id,
-                                            0, aType);
+                                            0, aType, {});
   } else {
-    context = new BrowsingContext(aParent, group, id, aType);
+    context = new BrowsingContext(aParent, group, id, aType, {});
   }
 
   
   
-  context->mName = aName;
+  context->mFields.SetWithoutSyncing<IDX_Name>(aName);
   if (aOpener) {
     MOZ_DIAGNOSTIC_ASSERT(aOpener->Group() == context->Group());
     MOZ_DIAGNOSTIC_ASSERT(aOpener->mType == context->mType);
-    context->mOpenerId = aOpener->Id();
-    context->mHadOriginalOpener = true;
+    context->mFields.SetWithoutSyncing<IDX_OpenerId>(aOpener->Id());
+    context->mFields.SetWithoutSyncing<IDX_HadOriginalOpener>(true);
   }
-  context->mEmbedderPolicy = nsILoadInfo::EMBEDDER_POLICY_NULL;
+  context->mFields.SetWithoutSyncing<IDX_EmbedderPolicy>(
+      nsILoadInfo::EMBEDDER_POLICY_NULL);
 
   BrowsingContext* inherit = aParent ? aParent : aOpener;
   if (inherit) {
-    context->mOpenerPolicy = inherit->Top()->mOpenerPolicy;
+    context->mFields.SetWithoutSyncing<IDX_OpenerPolicy>(
+        inherit->Top()->GetOpenerPolicy());
     
-    context->mEmbedderPolicy = inherit->mEmbedderPolicy;
+    context->mFields.SetWithoutSyncing<IDX_EmbedderPolicy>(
+        inherit->GetEmbedderPolicy());
     
-    context->mAncestorLoading = aParent ? aParent->mAncestorLoading : false;
-    if (!context->mAncestorLoading && aParent) {
+    bool ancestorLoading = aParent ? aParent->GetAncestorLoading() : false;
+    if (!ancestorLoading && aParent) {
+      
       
       nsPIDOMWindowOuter* outer = aParent->GetDOMWindow();
       if (outer) {
@@ -173,13 +182,17 @@ already_AddRefed<BrowsingContext> BrowsingContext::Create(
         auto readystate = document->GetReadyStateEnum();
         if (readystate == Document::ReadyState::READYSTATE_LOADING ||
             readystate == Document::ReadyState::READYSTATE_INTERACTIVE) {
-          context->mAncestorLoading = true;
+          ancestorLoading = true;
         }
       }
     }
+    context->mFields.SetWithoutSyncing<IDX_AncestorLoading>(ancestorLoading);
   }
 
-  nsContentUtils::GenerateUUIDInPlace(context->mHistoryID);
+  nsContentUtils::GenerateUUIDInPlace(
+      context->mFields.GetNonSyncingReference<IDX_HistoryID>());
+
+  context->mFields.SetWithoutSyncing<IDX_IsActive>(true);
 
   Register(context);
 
@@ -210,18 +223,15 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateFromIPC(
 
   RefPtr<BrowsingContext> context;
   if (XRE_IsParentProcess()) {
-    context = new CanonicalBrowsingContext(parent, aGroup, aInit.mId, originId,
-                                           Type::Content);
+    context =
+        new CanonicalBrowsingContext(parent, aGroup, aInit.mId, originId,
+                                     Type::Content, std::move(aInit.mFields));
   } else {
-    context = new BrowsingContext(parent, aGroup, aInit.mId, Type::Content);
+    context = new BrowsingContext(parent, aGroup, aInit.mId, Type::Content,
+                                  std::move(aInit.mFields));
   }
 
   Register(context);
-
-  
-  
-#define MOZ_BC_FIELD(name, ...) context->m##name = aInit.m##name;
-#include "mozilla/dom/BrowsingContextFieldList.h"
 
   
 
@@ -230,8 +240,10 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateFromIPC(
 
 BrowsingContext::BrowsingContext(BrowsingContext* aParent,
                                  BrowsingContextGroup* aGroup,
-                                 uint64_t aBrowsingContextId, Type aType)
-    : mType(aType),
+                                 uint64_t aBrowsingContextId, Type aType,
+                                 FieldTuple&& aFields)
+    : mFields(std::move(aFields)),
+      mType(aType),
       mBrowsingContextId(aBrowsingContextId),
       mGroup(aGroup),
       mParent(aParent),
@@ -242,8 +254,6 @@ BrowsingContext::BrowsingContext(BrowsingContext* aParent,
   MOZ_RELEASE_ASSERT(!mParent || mParent->Group() == mGroup);
   MOZ_RELEASE_ASSERT(mBrowsingContextId != 0);
   MOZ_RELEASE_ASSERT(mGroup);
-
-  mIsActive = true;
 }
 
 void BrowsingContext::SetDocShell(nsIDocShell* aDocShell) {
@@ -327,7 +337,7 @@ void BrowsingContext::Attach(bool aFromIPC) {
 
   children->AppendElement(this);
 
-  if (mIsPopupSpam) {
+  if (GetIsPopupSpam()) {
     PopupBlocker::RegisterOpenPopupSpam();
   }
 
@@ -385,13 +395,13 @@ void BrowsingContext::Detach(bool aFromIPC) {
 
   
   
-  mClosed = true;
+  mFields.SetWithoutSyncing<IDX_Closed>(true);
 
-  if (mIsPopupSpam) {
+  if (GetIsPopupSpam()) {
     PopupBlocker::UnregisterOpenPopupSpam();
     
     
-    mIsPopupSpam = false;
+    mFields.SetWithoutSyncing<IDX_IsPopupSpam>(false);
   }
 
   if (XRE_IsParentProcess()) {
@@ -474,11 +484,11 @@ void BrowsingContext::RestoreChildren(Children&& aChildren, bool aFromIPC) {
 bool BrowsingContext::IsCached() { return mGroup->IsContextCached(this); }
 
 bool BrowsingContext::IsTargetable() {
-  return !mClosed && !mIsDiscarded && !IsCached();
+  return !GetClosed() && !mIsDiscarded && !IsCached();
 }
 
 bool BrowsingContext::HasOpener() const {
-  return sBrowsingContexts->Contains(mOpenerId);
+  return sBrowsingContexts->Contains(GetOpenerId());
 }
 
 void BrowsingContext::GetChildren(Children& aChildren) {
@@ -750,13 +760,13 @@ void BrowsingContext::NotifyResetUserGestureActivation() {
 }
 
 bool BrowsingContext::HasBeenUserGestureActivated() {
-  return mUserActivationState != UserActivation::State::None;
+  return GetUserActivationState() != UserActivation::State::None;
 }
 
 bool BrowsingContext::HasValidTransientUserGestureActivation() {
   MOZ_ASSERT(mIsInProcess);
 
-  if (mUserActivationState != UserActivation::State::FullActivated) {
+  if (GetUserActivationState() != UserActivation::State::FullActivated) {
     MOZ_ASSERT(mUserGestureStart.IsNull(),
                "mUserGestureStart should be null if the document hasn't ever "
                "been activated by user gesture");
@@ -810,11 +820,11 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(BrowsingContext)
     sBrowsingContexts->Remove(tmp->Id());
   }
 
-  if (tmp->mIsPopupSpam) {
+  if (tmp->GetIsPopupSpam()) {
     PopupBlocker::UnregisterOpenPopupSpam();
     
     
-    tmp->mIsPopupSpam = false;
+    tmp->mFields.SetWithoutSyncing<IDX_IsPopupSpam>(false);
   }
 
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocShell, mChildren, mParent, mGroup,
@@ -918,7 +928,7 @@ nsresult BrowsingContext::InternalLoad(BrowsingContext* aAccessor,
   }
 
   bool isActive =
-      aAccessor && aAccessor->GetIsActive() && !mIsActive &&
+      aAccessor && aAccessor->GetIsActive() && !GetIsActive() &&
       !Preferences::GetBool("browser.tabs.loadDivertedInBackground", false);
   if (mDocShell) {
     nsresult rv = nsDocShell::Cast(mDocShell)->InternalLoad(
@@ -1140,85 +1150,16 @@ void BrowsingContext::PostMessageMoz(JSContext* aCx,
                  aSubjectPrincipal, aError);
 }
 
-nsresult BrowsingContext::Transaction::Commit(
-    BrowsingContext* aBrowsingContext) {
-  if (NS_WARN_IF(aBrowsingContext->IsDiscarded())) {
-    return NS_ERROR_FAILURE;
-  }
-
-  if (!Validate(aBrowsingContext, nullptr)) {
-    MOZ_CRASH("Cannot commit invalid BrowsingContext transaction");
-  }
-
-  if (XRE_IsContentProcess()) {
-    ContentChild* cc = ContentChild::GetSingleton();
-
-    
-    
-    uint64_t epoch = cc->NextBrowsingContextFieldEpoch();
-#define MOZ_BC_FIELD(name, ...)             \
-  if (m##name) {                            \
-    aBrowsingContext->mEpochs.name = epoch; \
-  }
-#include "mozilla/dom/BrowsingContextFieldList.h"
-
-    cc->SendCommitBrowsingContextTransaction(aBrowsingContext, *this, epoch);
-  } else {
-    MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess());
-
-    aBrowsingContext->Group()->EachParent([&](ContentParent* aParent) {
-      Unused << aParent->SendCommitBrowsingContextTransaction(
-          aBrowsingContext, *this, aParent->GetBrowsingContextFieldEpoch());
-    });
-  }
-
-  Apply(aBrowsingContext);
-  return NS_OK;
+void BrowsingContext::SendCommitTransaction(ContentParent* aParent,
+                                            const BaseTransaction& aTxn,
+                                            uint64_t aEpoch) {
+  Unused << aParent->SendCommitBrowsingContextTransaction(this, aTxn, aEpoch);
 }
 
-bool BrowsingContext::Transaction::Validate(BrowsingContext* aBrowsingContext,
-                                            ContentParent* aSource) {
-#define MOZ_BC_FIELD(name, ...)                                        \
-  if (m##name && !aBrowsingContext->MaySet##name(*m##name, aSource)) { \
-    NS_WARNING("Invalid attempt to set BC field " #name);              \
-    return false;                                                      \
-  }
-#include "mozilla/dom/BrowsingContextFieldList.h"
-
-  mValidated = true;
-  return true;
-}
-
-bool BrowsingContext::Transaction::ValidateEpochs(
-    BrowsingContext* aBrowsingContext, uint64_t aEpoch) {
-  MOZ_DIAGNOSTIC_ASSERT(XRE_IsContentProcess(),
-                        "Should only be called in content process");
-
-  
-#define MOZ_BC_FIELD(name, ...)                             \
-  if (m##name && aBrowsingContext->mEpochs.name > aEpoch) { \
-    m##name.reset();                                        \
-  }
-#include "mozilla/dom/BrowsingContextFieldList.h"
-
-  
-  
-  
-  mValidated = true;
-  return true;
-}
-
-void BrowsingContext::Transaction::Apply(BrowsingContext* aBrowsingContext) {
-  MOZ_RELEASE_ASSERT(mValidated,
-                     "Must validate BrowsingContext Transaction before Apply");
-
-#define MOZ_BC_FIELD(name, ...)                      \
-  if (m##name) {                                     \
-    aBrowsingContext->m##name = std::move(*m##name); \
-    aBrowsingContext->DidSet##name();                \
-    m##name.reset();                                 \
-  }
-#include "mozilla/dom/BrowsingContextFieldList.h"
+void BrowsingContext::SendCommitTransaction(ContentChild* aChild,
+                                            const BaseTransaction& aTxn,
+                                            uint64_t aEpoch) {
+  aChild->SendCommitBrowsingContextTransaction(this, aTxn, aEpoch);
 }
 
 BrowsingContext::IPCInitializer BrowsingContext::GetIPCInitializer() {
@@ -1228,9 +1169,7 @@ BrowsingContext::IPCInitializer BrowsingContext::GetIPCInitializer() {
   init.mId = Id();
   init.mParentId = mParent ? mParent->Id() : 0;
   init.mCached = IsCached();
-
-#define MOZ_BC_FIELD(name, type) init.m##name = m##name;
-#include "mozilla/dom/BrowsingContextFieldList.h"
+  init.mFields = mFields.Fields();
   return init;
 }
 
@@ -1245,8 +1184,8 @@ already_AddRefed<BrowsingContext> BrowsingContext::IPCInitializer::GetParent() {
 
 already_AddRefed<BrowsingContext> BrowsingContext::IPCInitializer::GetOpener() {
   RefPtr<BrowsingContext> opener;
-  if (mOpenerId != 0) {
-    opener = BrowsingContext::Get(mOpenerId);
+  if (GetOpenerId() != 0) {
+    opener = BrowsingContext::Get(GetOpenerId());
     MOZ_RELEASE_ASSERT(opener);
   }
   return opener.forget();
@@ -1269,39 +1208,40 @@ void BrowsingContext::ResetGVAutoplayRequestStatus() {
   SetGVInaudibleAutoplayRequestStatus(GVAutoplayRequestStatus::eUNKNOWN);
 }
 
-void BrowsingContext::DidSetGVAudibleAutoplayRequestStatus() {
+void BrowsingContext::DidSet(FieldIndex<IDX_GVAudibleAutoplayRequestStatus>) {
   MOZ_ASSERT(IsTop(),
              "Should only set GVAudibleAutoplayRequestStatus in the top-level "
              "browsing context");
 }
 
-void BrowsingContext::DidSetGVInaudibleAutoplayRequestStatus() {
+void BrowsingContext::DidSet(FieldIndex<IDX_GVInaudibleAutoplayRequestStatus>) {
   MOZ_ASSERT(IsTop(),
              "Should only set GVAudibleAutoplayRequestStatus in the top-level "
              "browsing context");
 }
 
-void BrowsingContext::DidSetUserActivationState() {
+void BrowsingContext::DidSet(FieldIndex<IDX_UserActivationState>) {
   MOZ_ASSERT_IF(!mIsInProcess, mUserGestureStart.IsNull());
   USER_ACTIVATION_LOG("Set user gesture activation %" PRIu8
                       " for %s browsing context 0x%08" PRIx64,
-                      static_cast<uint8_t>(mUserActivationState),
+                      static_cast<uint8_t>(GetUserActivationState()),
                       XRE_IsParentProcess() ? "Parent" : "Child", Id());
   if (mIsInProcess) {
     USER_ACTIVATION_LOG(
         "Set user gesture start time for %s browsing context 0x%08" PRIx64,
         XRE_IsParentProcess() ? "Parent" : "Child", Id());
     mUserGestureStart =
-        (mUserActivationState == UserActivation::State::FullActivated)
+        (GetUserActivationState() == UserActivation::State::FullActivated)
             ? TimeStamp::Now()
             : TimeStamp();
   }
 }
 
-void BrowsingContext::DidSetMuted() {
+void BrowsingContext::DidSet(FieldIndex<IDX_Muted>) {
   MOZ_ASSERT(!mParent, "Set muted flag on non top-level context!");
   USER_ACTIVATION_LOG("Set audio muted %d for %s browsing context 0x%08" PRIx64,
-                      mMuted, XRE_IsParentProcess() ? "Parent" : "Child", Id());
+                      GetMuted(), XRE_IsParentProcess() ? "Parent" : "Child",
+                      Id());
   PreOrderWalk([&](BrowsingContext* aContext) {
     nsPIDOMWindowOuter* win = aContext->GetDOMWindow();
     if (win) {
@@ -1310,28 +1250,8 @@ void BrowsingContext::DidSetMuted() {
   });
 }
 
-
-
-void BrowsingContext::DidSetAncestorLoading() {
-  nsPIDOMWindowOuter* outer = GetDOMWindow();
-  if (!outer) {
-    MOZ_LOG(gTimeoutDeferralLog, mozilla::LogLevel::Debug,
-            ("DidSetAncestorLoading BC: %p -- No outer window", (void*)this));
-    return;
-  }
-  Document* document = nsGlobalWindowOuter::Cast(outer)->GetExtantDoc();
-  if (document) {
-    MOZ_LOG(gTimeoutDeferralLog, mozilla::LogLevel::Debug,
-            ("DidSetAncestorLoading BC: %p -- NotifyLoading(%d, %d, %d)",
-             (void*)this, mAncestorLoading, document->GetReadyStateEnum(),
-             document->GetReadyStateEnum()));
-    document->NotifyLoading(mAncestorLoading, document->GetReadyStateEnum(),
-                            document->GetReadyStateEnum());
-  }
-}
-
-bool BrowsingContext::MaySetEmbedderInnerWindowId(const uint64_t& aValue,
-                                                  ContentParent* aSource) {
+bool BrowsingContext::CanSet(FieldIndex<IDX_EmbedderInnerWindowId>,
+                             const uint64_t& aValue, ContentParent* aSource) {
   
   
   if (aValue == 0) {
@@ -1384,15 +1304,15 @@ bool BrowsingContext::MaySetEmbedderInnerWindowId(const uint64_t& aValue,
   return true;
 }
 
-bool BrowsingContext::MaySetIsPopupSpam(const bool& aValue,
-                                        ContentParent* aSource) {
+bool BrowsingContext::CanSet(FieldIndex<IDX_IsPopupSpam>, const bool& aValue,
+                             ContentParent* aSource) {
   
   
-  return aValue && !mIsPopupSpam;
+  return aValue && !GetIsPopupSpam();
 }
 
-void BrowsingContext::DidSetIsPopupSpam() {
-  if (mIsPopupSpam) {
+void BrowsingContext::DidSet(FieldIndex<IDX_IsPopupSpam>) {
+  if (GetIsPopupSpam()) {
     PopupBlocker::RegisterOpenPopupSpam();
   }
 }
@@ -1413,8 +1333,8 @@ bool BrowsingContext::IsLoading() {
   return false;
 }
 
-void BrowsingContext::DidSetLoading() {
-  if (mLoading) {
+void BrowsingContext::DidSet(FieldIndex<IDX_Loading>) {
+  if (mFields.Get<IDX_Loading>()) {
     return;
   }
 
@@ -1426,6 +1346,26 @@ void BrowsingContext::DidSetLoading() {
   if (StaticPrefs::dom_separate_event_queue_for_post_message_enabled() &&
       Top() == this) {
     Group()->FlushPostMessageEvents();
+  }
+}
+
+
+
+void BrowsingContext::DidSet(FieldIndex<IDX_AncestorLoading>) {
+  nsPIDOMWindowOuter* outer = GetDOMWindow();
+  if (!outer) {
+    MOZ_LOG(gTimeoutDeferralLog, mozilla::LogLevel::Debug,
+            ("DidSetAncestorLoading BC: %p -- No outer window", (void*)this));
+    return;
+  }
+  Document* document = nsGlobalWindowOuter::Cast(outer)->GetExtantDoc();
+  if (document) {
+    MOZ_LOG(gTimeoutDeferralLog, mozilla::LogLevel::Debug,
+            ("DidSetAncestorLoading BC: %p -- NotifyLoading(%d, %d, %d)",
+             (void*)this, GetAncestorLoading(), document->GetReadyStateEnum(),
+             document->GetReadyStateEnum()));
+    document->NotifyLoading(GetAncestorLoading(), document->GetReadyStateEnum(),
+                            document->GetReadyStateEnum());
   }
 }
 
@@ -1506,44 +1446,14 @@ bool IPDLParamTraits<dom::BrowsingContext*>::Read(
   return true;
 }
 
-void IPDLParamTraits<dom::BrowsingContext::Transaction>::Write(
-    IPC::Message* aMessage, IProtocol* aActor,
-    const dom::BrowsingContext::Transaction& aTransaction) {
-  MOZ_RELEASE_ASSERT(
-      aTransaction.mValidated,
-      "Must validate BrowsingContext Transaction before sending");
-
-#define MOZ_BC_FIELD(name, ...) \
-  WriteIPDLParam(aMessage, aActor, aTransaction.m##name);
-#include "mozilla/dom/BrowsingContextFieldList.h"
-}
-
-bool IPDLParamTraits<dom::BrowsingContext::Transaction>::Read(
-    const IPC::Message* aMessage, PickleIterator* aIterator, IProtocol* aActor,
-    dom::BrowsingContext::Transaction* aTransaction) {
-  aTransaction->mValidated = false;
-
-#define MOZ_BC_FIELD(name, ...)                                              \
-  if (!ReadIPDLParam(aMessage, aIterator, aActor, &aTransaction->m##name)) { \
-    return false;                                                            \
-  }
-#include "mozilla/dom/BrowsingContextFieldList.h"
-
-  return true;
-}
-
 void IPDLParamTraits<dom::BrowsingContext::IPCInitializer>::Write(
     IPC::Message* aMessage, IProtocol* aActor,
     const dom::BrowsingContext::IPCInitializer& aInit) {
   
   WriteIPDLParam(aMessage, aActor, aInit.mId);
   WriteIPDLParam(aMessage, aActor, aInit.mParentId);
-
   WriteIPDLParam(aMessage, aActor, aInit.mCached);
-
-  
-#define MOZ_BC_FIELD(name, ...) WriteIPDLParam(aMessage, aActor, aInit.m##name);
-#include "mozilla/dom/BrowsingContextFieldList.h"
+  WriteIPDLParam(aMessage, aActor, aInit.mFields);
 }
 
 bool IPDLParamTraits<dom::BrowsingContext::IPCInitializer>::Read(
@@ -1551,23 +1461,15 @@ bool IPDLParamTraits<dom::BrowsingContext::IPCInitializer>::Read(
     dom::BrowsingContext::IPCInitializer* aInit) {
   
   if (!ReadIPDLParam(aMessage, aIterator, aActor, &aInit->mId) ||
-      !ReadIPDLParam(aMessage, aIterator, aActor, &aInit->mParentId)) {
+      !ReadIPDLParam(aMessage, aIterator, aActor, &aInit->mParentId) ||
+      !ReadIPDLParam(aMessage, aIterator, aActor, &aInit->mCached) ||
+      !ReadIPDLParam(aMessage, aIterator, aActor, &aInit->mFields)) {
     return false;
   }
-
-  if (!ReadIPDLParam(aMessage, aIterator, aActor, &aInit->mCached)) {
-    return false;
-  }
-
-  
-#define MOZ_BC_FIELD(name, ...)                                       \
-  if (!ReadIPDLParam(aMessage, aIterator, aActor, &aInit->m##name)) { \
-    return false;                                                     \
-  }
-#include "mozilla/dom/BrowsingContextFieldList.h"
-
   return true;
 }
+
+template struct IPDLParamTraits<dom::BrowsingContext::BaseTransaction>;
 
 }  
 }  
