@@ -2672,7 +2672,7 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
   
   using Fn =
       bool (*)(JSContext*, HandleObject, HandleObject, MutableHandleValue);
-  callVM<Fn, CreateThis>(masm);
+  callVM<Fn, CreateThisFromIC>(masm);
 
 #ifdef DEBUG
   Label createdThisOK;
