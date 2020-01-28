@@ -454,11 +454,9 @@ class PeerConnectionImpl final
   const std::vector<std::string>& GetSdpParseErrors();
 
   
-  void SetSignalingState_m(mozilla::dom::RTCSignalingState aSignalingState,
-                           bool rollback = false);
+  dom::RTCSignalingState GetSignalingState() const;
 
-  
-  void UpdateSignalingState(bool rollback = false);
+  void OnOfferAnswerComplete(bool rollback);
 
   bool IsClosed() const;
   
