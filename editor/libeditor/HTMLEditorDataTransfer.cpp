@@ -977,15 +977,21 @@ HTMLEditor::BlobReader::BlobReader(BlobImpl* aBlob, HTMLEditor* aHTMLEditor,
                                    bool aDoDeleteSelection)
     : mBlob(aBlob),
       mHTMLEditor(aHTMLEditor),
+      
+      
+      mDataTransfer(mHTMLEditor->GetInputEventDataTransfer()),
       mSourceDoc(aSourceDoc),
       mPointToInsert(aPointToInsert),
       mEditAction(aHTMLEditor->GetEditAction()),
       mIsSafe(aIsSafe),
-      mDoDeleteSelection(aDoDeleteSelection) {
+      mDoDeleteSelection(aDoDeleteSelection),
+      mNeedsToDispatchBeforeInputEvent(
+          !mHTMLEditor->HasTriedToDispatchBeforeInputEvent()) {
   MOZ_ASSERT(mBlob);
   MOZ_ASSERT(mHTMLEditor);
   MOZ_ASSERT(mHTMLEditor->IsEditActionDataAvailable());
   MOZ_ASSERT(aPointToInsert.IsSet());
+  MOZ_ASSERT(mDataTransfer);
 
   
   AutoEditorDOMPointChildInvalidator storeOnlyWithOffset(mPointToInsert);
@@ -993,17 +999,31 @@ HTMLEditor::BlobReader::BlobReader(BlobImpl* aBlob, HTMLEditor* aHTMLEditor,
 
 nsresult HTMLEditor::BlobReader::OnResult(const nsACString& aResult) {
   AutoEditActionDataSetter editActionData(*mHTMLEditor, mEditAction);
-  nsresult rv = editActionData.CanHandleAndMaybeDispatchBeforeInputEvent();
-  if (rv == NS_ERROR_EDITOR_ACTION_CANCELED || NS_WARN_IF(NS_FAILED(rv))) {
-    return EditorBase::ToGenericNSResult(rv);
+  editActionData.InitializeDataTransfer(mDataTransfer);
+  if (NS_WARN_IF(!editActionData.CanHandle())) {
+    return EditorBase::ToGenericNSResult(NS_ERROR_FAILURE);
+  }
+
+  if (NS_WARN_IF(mNeedsToDispatchBeforeInputEvent)) {
+    nsresult rv = editActionData.MaybeDispatchBeforeInputEvent();
+    if (rv == NS_ERROR_EDITOR_ACTION_CANCELED || NS_WARN_IF(NS_FAILED(rv))) {
+      return EditorBase::ToGenericNSResult(rv);
+    }
+  } else {
+    editActionData.MarkAsBeforeInputHasBeenDispatched();
   }
 
   nsString blobType;
   mBlob->GetType(blobType);
 
+  
+  
+  
+  
+  
   NS_ConvertUTF16toUTF8 type(blobType);
   nsAutoString stuffToPaste;
-  rv = ImgFromData(type, aResult, stuffToPaste);
+  nsresult rv = ImgFromData(type, aResult, stuffToPaste);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return EditorBase::ToGenericNSResult(rv);
   }

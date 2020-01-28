@@ -780,7 +780,7 @@ class EditorBase : public nsIEditor,
     ~AutoEditActionDataSetter();
 
     void UpdateEditAction(EditAction aEditAction) {
-      MOZ_ASSERT(!mHasTriedToDispatchedBeforeInputEvent,
+      MOZ_ASSERT(!mHasTriedToDispatchBeforeInputEvent,
                  "It's too late to update EditAction since this may have "
                  "already dispatched a beforeinput event");
       mEditAction = aEditAction;
@@ -825,9 +825,31 @@ class EditorBase : public nsIEditor,
 
 
 
+
+    void MarkAsBeforeInputHasBeenDispatched() {
+      MOZ_ASSERT(!HasTriedToDispatchBeforeInputEvent());
+      MOZ_ASSERT(mEditAction == EditAction::ePaste ||
+                 mEditAction == EditAction::ePasteAsQuotation ||
+                 mEditAction == EditAction::eDrop);
+      mHasTriedToDispatchBeforeInputEvent = true;
+    }
+
+    
+
+
+
+
     bool NeedsToDispatchBeforeInputEvent() const {
-      return !mHasTriedToDispatchedBeforeInputEvent &&
+      return !HasTriedToDispatchBeforeInputEvent() &&
              NeedsBeforeInputEventHandling(mEditAction);
+    }
+
+    
+
+
+
+    bool HasTriedToDispatchBeforeInputEvent() const {
+      return mHasTriedToDispatchBeforeInputEvent;
     }
 
     bool IsCanceled() const { return mBeforeInputEventCanceled; }
@@ -852,7 +874,7 @@ class EditorBase : public nsIEditor,
     }
 
     void SetData(const nsAString& aData) {
-      MOZ_ASSERT(!mHasTriedToDispatchedBeforeInputEvent,
+      MOZ_ASSERT(!mHasTriedToDispatchBeforeInputEvent,
                  "It's too late to set data since this may have already "
                  "dispatched a beforeinput event");
       mData = aData;
@@ -1094,7 +1116,7 @@ class EditorBase : public nsIEditor,
     
     
     
-    bool mHasTriedToDispatchedBeforeInputEvent;
+    bool mHasTriedToDispatchBeforeInputEvent;
     
     bool mBeforeInputEventCanceled;
 
@@ -1131,6 +1153,16 @@ class EditorBase : public nsIEditor,
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult MaybeDispatchBeforeInputEvent() {
     MOZ_ASSERT(mEditActionData);
     return mEditActionData->MaybeDispatchBeforeInputEvent();
+  }
+
+  void MarkAsBeforeInputHasBeenDispatched() {
+    MOZ_ASSERT(mEditActionData);
+    return mEditActionData->MarkAsBeforeInputHasBeenDispatched();
+  }
+
+  bool HasTriedToDispatchBeforeInputEvent() const {
+    return mEditActionData &&
+           mEditActionData->HasTriedToDispatchBeforeInputEvent();
   }
 
   bool IsEditActionDataAvailable() const {
