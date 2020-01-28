@@ -412,7 +412,7 @@ async function lastBrowserUpdateDate() {
   
   
   
-  if (updateManager.updateCount) {
+  if (updateManager && updateManager.updateCount) {
     let update = updateManager.getUpdateAt(0);
     return update.installDate;
   }
