@@ -248,6 +248,16 @@ already_AddRefed<XPCNativeInterface> XPCNativeInterface::NewInstance(
 
   uint16_t methodCount = aInfo->MethodCount();
   uint16_t constCount = aInfo->ConstantCount();
+
+  
+  
+  
+  
+  
+  if (!nsXPConnect::IsISupportsDescendant(aInfo)) {
+    methodCount = 0;
+  }
+
   totalCount = methodCount + constCount;
 
   if (totalCount > MAX_LOCAL_MEMBER_COUNT) {
