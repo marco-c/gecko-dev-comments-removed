@@ -486,7 +486,7 @@ function prompt(aActor, aBrowser, aRequest) {
     requestMessages = [
       
       "getUserMedia.shareCameraUnsafeDelegation.message",
-      "getUserMedia.shareMicrophoneUnsafeDelegation.message",
+      "getUserMedia.shareMicrophoneUnsafeDelegations.message",
       "getUserMedia.shareScreenUnsafeDelegation.message",
       "getUserMedia.shareAudioCaptureUnsafeDelegation.message",
       
