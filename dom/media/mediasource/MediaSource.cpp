@@ -391,7 +391,7 @@ void MediaSource::SetLiveSeekableRange(double aStart, double aEnd,
   
   
   if (aStart < 0 || aStart > aEnd) {
-    aRv.Throw(NS_ERROR_DOM_TYPE_ERR);
+    aRv.ThrowTypeError(u"Invalid start value");
     return;
   }
 
