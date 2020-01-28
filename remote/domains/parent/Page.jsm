@@ -266,6 +266,29 @@ class Page extends Domain {
 
 
 
+  async navigateToHistoryEntry(options = {}) {
+    const { entryId } = options;
+
+    const index = await this.executeInChild(
+      "_getIndexForHistoryEntryId",
+      entryId
+    );
+
+    if (index == null) {
+      throw new Error("No entry with passed id");
+    }
+
+    const { window } = this.session.target;
+    window.gBrowser.gotoIndex(index);
+  }
+
+  
+
+
+
+
+
+
 
 
 
