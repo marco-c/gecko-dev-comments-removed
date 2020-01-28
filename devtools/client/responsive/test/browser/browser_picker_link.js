@@ -9,49 +9,48 @@
 
 const TEST_URI = `${URL_ROOT}doc_picker_link.html`;
 
+addRDMTask(
+  TEST_URI,
+  async function({ ui, manager }) {
+    info("Open the rule-view and select the test node before opening RDM");
+    const { inspector, toolbox } = await openRuleView();
+    await selectNode("body", inspector);
 
-addRDMTask(TEST_URI, runPickerLinkTest, true);
+    info("Open RDM");
 
-addRDMTask(TEST_URI, runPickerLinkTest, false);
+    
+    
+    info("Toggle Touch simulation");
+    const { document } = ui.getBrowserWindow();
+    const touchButton = document.getElementById("touch-simulation-button");
+    const changed = once(ui, "touch-simulation-changed");
+    touchButton.click();
+    await changed;
 
-async function runPickerLinkTest({ ui, manager }) {
-  info("Open the rule-view and select the test node before opening RDM");
-  const { inspector, toolbox } = await openRuleView();
-  await selectNode("body", inspector);
+    info("Waiting for element picker to become active.");
+    await startPicker(toolbox, ui);
 
-  info("Open RDM");
+    info("Move mouse over the pick-target");
+    await hoverElement(inspector, ui, ".picker-link", 15, 15);
 
-  
-  
-  info("Toggle Touch simulation");
-  const { document } = ui.getBrowserWindow();
-  const touchButton = document.getElementById("touch-simulation-button");
-  const changed = once(ui, "touch-simulation-changed");
-  touchButton.click();
-  await changed;
+    
+    let hasNavigated = false;
+    toolbox.target.once("navigate").then(() => {
+      hasNavigated = true;
+    });
 
-  info("Waiting for element picker to become active.");
-  await startPicker(toolbox, ui);
+    info("Click and pick the link");
+    await pickElement(inspector, ui, ".picker-link");
 
-  info("Move mouse over the pick-target");
-  await hoverElement(inspector, ui, ".picker-link", 15, 15);
-
-  
-  let hasNavigated = false;
-  toolbox.target.once("navigate").then(() => {
-    hasNavigated = true;
-  });
-
-  info("Click and pick the link");
-  await pickElement(inspector, ui, ".picker-link");
-
-  
-  await wait(2000);
-  ok(
-    !hasNavigated,
-    "The page should not have navigated when picking the <a> element"
-  );
-}
+    
+    await wait(2000);
+    ok(
+      !hasNavigated,
+      "The page should not have navigated when picking the <a> element"
+    );
+  },
+  true
+);
 
 
 
