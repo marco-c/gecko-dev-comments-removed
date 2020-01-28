@@ -37,7 +37,6 @@ already_AddRefed<InternalRequest> InternalRequest::GetRequestConstructorCopy(
   
   
   
-  copy->mSameOriginDataURL = true;
   copy->mPreserveContentCodings = true;
   copy->mReferrer = mReferrer;
   copy->mReferrerPolicy = mReferrerPolicy;
@@ -93,13 +92,7 @@ InternalRequest::InternalRequest(const nsACString& aURL,
       mCredentialsMode(RequestCredentials::Omit),
       mCacheMode(RequestCache::Default),
       mRedirectMode(RequestRedirect::Follow),
-      mPreserveContentCodings(false)
-      
-      
-      
-      
-      ,
-      mSameOriginDataURL(true) {
+      mPreserveContentCodings(false) {
   MOZ_ASSERT(!aURL.IsEmpty());
   AddURL(aURL, aFragment);
 }
@@ -122,10 +115,7 @@ InternalRequest::InternalRequest(
       mCacheMode(aCacheMode),
       mRedirectMode(aRequestRedirect),
       mIntegrity(aIntegrity),
-      mPreserveContentCodings(false)
-      
-      ,
-      mSameOriginDataURL(true) {
+      mPreserveContentCodings(false) {
   MOZ_ASSERT(!aURL.IsEmpty());
   AddURL(aURL, aFragment);
 }
@@ -147,7 +137,6 @@ InternalRequest::InternalRequest(const InternalRequest& aOther)
       mMozErrors(aOther.mMozErrors),
       mFragment(aOther.mFragment),
       mPreserveContentCodings(aOther.mPreserveContentCodings),
-      mSameOriginDataURL(aOther.mSameOriginDataURL),
       mSkipServiceWorker(aOther.mSkipServiceWorker),
       mSynchronous(aOther.mSynchronous),
       mUnsafeRequest(aOther.mUnsafeRequest),
