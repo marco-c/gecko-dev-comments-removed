@@ -69,10 +69,16 @@ void MediaController::UpdateMediaControlKeysEventToContentMediaIfNeeded(
 
 void MediaController::Shutdown() {
   SetPlayState(PlaybackState::eStopped);
+  
+  
+  
+  
+  
+  
+  
+  Deactivate();
   mControlledMediaNum = 0;
-  RefPtr<MediaControlService> service = MediaControlService::GetService();
-  MOZ_ASSERT(service);
-  service->GetAudioFocusManager().RevokeAudioFocus(Id());
+  mPlayingControlledMediaNum = 0;
 }
 
 void MediaController::NotifyMediaStateChanged(ControlledMediaState aState) {

@@ -20,8 +20,9 @@
 namespace mozilla {
 namespace dom {
 
-class WindowGlobalParent;
 class BrowserParent;
+class MediaController;
+class WindowGlobalParent;
 
 
 
@@ -102,9 +103,17 @@ class CanonicalBrowsingContext final : public BrowsingContext {
                                                   uint64_t aPendingSwitchId,
                                                   ErrorResult& aRv);
 
+  
+  
+  
+  MediaController* GetMediaController();
+
  protected:
   void Traverse(nsCycleCollectionTraversalCallback& cb);
   void Unlink();
+
+  
+  void CanonicalDiscard();
 
   using Type = BrowsingContext::Type;
   CanonicalBrowsingContext(BrowsingContext* aParent,
@@ -155,6 +164,11 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   RefPtr<PendingRemotenessChange> mPendingRemotenessChange;
 
   nsCOMPtr<nsISHistory> mSessionHistory;
+
+  
+  
+  
+  RefPtr<MediaController> mTabMediaController;
 };
 
 }  
