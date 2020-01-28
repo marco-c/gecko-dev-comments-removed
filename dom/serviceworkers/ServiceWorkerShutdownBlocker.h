@@ -11,9 +11,7 @@
 #include "nsIAsyncShutdown.h"
 #include "nsISupportsImpl.h"
 
-#include "ServiceWorkerShutdownState.h"
 #include "mozilla/MozPromise.h"
-#include "mozilla/HashTable.h"
 
 namespace mozilla {
 namespace dom {
@@ -23,9 +21,6 @@ namespace dom {
 
 class ServiceWorkerShutdownBlocker final : public nsIAsyncShutdownBlocker {
  public:
-  using Progress = ServiceWorkerShutdownState::Progress;
-  static const uint32_t kInvalidShutdownStateId = 0;
-
   NS_DECL_ISUPPORTS
   NS_DECL_NSIASYNCSHUTDOWNBLOCKER
 
@@ -43,11 +38,7 @@ class ServiceWorkerShutdownBlocker final : public nsIAsyncShutdownBlocker {
 
 
 
-
-
-
-  void WaitOnPromise(GenericNonExclusivePromise* aPromise,
-                     uint32_t aShutdownStateId);
+  void WaitOnPromise(GenericNonExclusivePromise* aPromise);
 
   
 
@@ -55,17 +46,6 @@ class ServiceWorkerShutdownBlocker final : public nsIAsyncShutdownBlocker {
 
 
   void StopAcceptingPromises();
-
-  
-
-
-
-
-
-
-  uint32_t CreateShutdownState();
-
-  void ReportShutdownProgress(uint32_t aShutdownStateId, Progress aProgress);
 
  private:
   ServiceWorkerShutdownBlocker();
@@ -104,8 +84,6 @@ class ServiceWorkerShutdownBlocker final : public nsIAsyncShutdownBlocker {
   Variant<AcceptingPromises, NotAcceptingPromises> mState;
 
   nsCOMPtr<nsIAsyncShutdownClient> mShutdownClient;
-
-  HashMap<uint32_t, ServiceWorkerShutdownState> mShutdownStates;
 };
 
 }  
