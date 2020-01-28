@@ -816,9 +816,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
                         nsDocShellLoadState* aLoadState, bool aForceNoOpener,
                         mozilla::dom::BrowsingContext** aReturn);
 
-  
-  static bool SameLoadingURI(Document* aDoc, nsIChannel* aChannel);
-
  public:
   
   already_AddRefed<nsIDocShellTreeOwner> GetTreeOwner();

@@ -18,11 +18,6 @@ RemoteSecurityUI.prototype = {
   get state() {
     return this._state;
   },
-  
-  
-  get contentBlockingEvent() {
-    return 0;
-  },
   get secInfo() {
     return this._secInfo;
   },
