@@ -160,11 +160,11 @@ function addRDMTaskWithPreAndPost(
 ) {
   
   
-  function taskSetup(url, preTask, task, postTask) {
+  function taskSetup(url, preTask, task, postTask, usingBrowserUI) {
     add_task(async function() {
-      const usingBrowserUI = Services.prefs.getBoolPref(
-        "devtools.responsive.browserUI.enabled"
-      );
+      await SpecialPowers.pushPrefEnv({
+        set: [["devtools.responsive.browserUI.enabled", usingBrowserUI]],
+      });
       const tab = await addTab(url);
       const browser = tab.linkedBrowser;
       if (preTask) {
@@ -188,28 +188,20 @@ function addRDMTaskWithPreAndPost(
         await postTask({ browser, usingBrowserUI });
       }
       await removeTab(tab);
+
+      
+      
+      await SpecialPowers.flushPrefEnv();
     });
   }
 
   
-  const oldPrefValue = Services.prefs.getBoolPref(
-    "devtools.responsive.browserUI.enabled"
-  );
-  Services.prefs.setBoolPref("devtools.responsive.browserUI.enabled", false);
-
-  taskSetup(rdmURL, rdmPreTask, rdmTask, rdmPostTask);
+  taskSetup(rdmURL, rdmPreTask, rdmTask, rdmPostTask, false);
 
   if (includeBrowserEmbeddedUI) {
     
-    Services.prefs.setBoolPref("devtools.responsive.browserUI.enabled", true);
-
-    taskSetup(rdmURL, rdmPreTask, rdmTask, rdmPostTask);
+    taskSetup(rdmURL, rdmPreTask, rdmTask, rdmPostTask, true);
   }
-
-  Services.prefs.setBoolPref(
-    "devtools.responsive.browserUI.enabled",
-    oldPrefValue
-  );
 }
 
 
