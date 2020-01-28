@@ -245,6 +245,7 @@ class XPCShellRemote(xpcshell.XPCShellTests, object):
         
         
         mozinfo.info['android_version'] = str(self.device.version)
+        mozinfo.info['is_emulator'] = self.device._device_serial.startswith('emulator-')
 
         self.localBin = options['localBin']
         self.pathMapping = []
