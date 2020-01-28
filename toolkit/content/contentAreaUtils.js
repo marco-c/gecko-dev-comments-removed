@@ -466,6 +466,7 @@ function internalSave(
   var saveMode = GetSaveModeForContentType(aContentType, aDocument);
 
   var file, sourceURI, saveAsType;
+  let contentPolicyType = Ci.nsIContentPolicy.TYPE_SAVEAS_DOWNLOAD;
   
   
   if (aChosenData) {
@@ -490,6 +491,9 @@ function internalSave(
     );
     sourceURI = fileInfo.uri;
 
+    if (aContentType && aContentType.startsWith("image/")) {
+      contentPolicyType = Ci.nsIContentPolicy.TYPE_IMAGE;
+    }
     var fpParams = {
       fpTitleKey: aFilePickerTitleKey,
       fileInfo,
@@ -558,6 +562,7 @@ function internalSave(
       sourceCacheKey: aCacheKey,
       sourcePostData: nonCPOWDocument ? getPostData(aDocument) : null,
       bypassCache: aShouldBypassCache,
+      contentPolicyType,
       isPrivate,
     };
 
@@ -565,6 +570,9 @@ function internalSave(
     internalPersist(persistArgs);
   }
 }
+
+
+
 
 
 
@@ -671,6 +679,7 @@ function internalPersist(persistArgs) {
       persistArgs.sourcePostData,
       null,
       targetFileURL,
+      persistArgs.contentPolicyType || Ci.nsIContentPolicy.TYPE_SAVEAS_DOWNLOAD,
       persistArgs.isPrivate
     );
   }

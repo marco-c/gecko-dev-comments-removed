@@ -1285,7 +1285,7 @@ class nsContextMenu {
         false, 
         referrerInfo, 
         null, 
-        null, 
+        "image/jpeg", 
         null, 
         isPrivate,
         this.principal
@@ -1593,7 +1593,7 @@ class nsContextMenu {
           false,
           referrerInfo,
           null,
-          null,
+          "image/png", 
           null,
           isPrivate,
           document.nodePrincipal 
