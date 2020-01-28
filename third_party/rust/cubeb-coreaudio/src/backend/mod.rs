@@ -392,7 +392,7 @@ extern "C" fn audiounit_input_callback(
             stm.core_stream_data.input_desc.mChannelsPerFrame;
         input_buffer_list.mNumberBuffers = 1;
 
-        assert!(!stm.core_stream_data.input_unit.is_null());
+        debug_assert!(!stm.core_stream_data.input_unit.is_null());
         let status = audio_unit_render(
             stm.core_stream_data.input_unit,
             flags,
@@ -524,7 +524,8 @@ extern "C" fn audiounit_input_callback(
     
     
     if stm.draining.load(Ordering::SeqCst) {
-        assert!(stop_audiounit(stm.core_stream_data.input_unit).is_ok());
+        let r = stop_audiounit(stm.core_stream_data.input_unit);
+        assert!(r.is_ok());
         
         
         if stm.core_stream_data.output_unit.is_null() {
@@ -611,7 +612,8 @@ extern "C" fn audiounit_output_callback(
     if stm.draining.load(Ordering::SeqCst) {
         
         
-        assert!(stop_audiounit(stm.core_stream_data.output_unit).is_ok());
+        let r = stop_audiounit(stm.core_stream_data.output_unit);
+        assert!(r.is_ok());
         stm.notify_state_changed(State::Drained);
         audiounit_make_silent(&mut buffers[0]);
         return NO_ERR;
@@ -932,7 +934,7 @@ fn audiounit_get_preferred_channel_layout(output_unit: AudioUnit) -> Vec<mixer::
         );
         return Vec::new();
     }
-    assert!(size > 0);
+    debug_assert!(size > 0);
 
     let mut layout = make_sized_audio_channel_layout(size);
     rv = audio_unit_get_property(
@@ -975,7 +977,7 @@ fn audiounit_get_current_channel_layout(output_unit: AudioUnit) -> Vec<mixer::Ch
         
         return audiounit_get_preferred_channel_layout(output_unit);
     }
-    assert!(size > 0);
+    debug_assert!(size > 0);
 
     let mut layout = make_sized_audio_channel_layout(size);
     rv = audio_unit_get_property(
@@ -1645,7 +1647,7 @@ fn audiounit_get_devices_of_type(devtype: DeviceType) -> Vec<AudioObjectID> {
     devices.retain(|&device| {
         if let Ok(uid) = get_device_global_uid(device) {
             let uid = uid.into_string();
-            uid != PRIVATE_AGGREGATE_DEVICE_NAME
+            !uid.contains(PRIVATE_AGGREGATE_DEVICE_NAME)
         } else {
             
             true
@@ -2343,7 +2345,7 @@ impl<'ctx> CoreStreamData<'ctx> {
     fn start_audiounits(&self) -> Result<()> {
         
         
-        assert!(!self.input_unit.is_null() || !self.output_unit.is_null());
+        debug_assert!(!self.input_unit.is_null() || !self.output_unit.is_null());
 
         if !self.input_unit.is_null() {
             start_audiounit(self.input_unit)?;
@@ -2356,10 +2358,12 @@ impl<'ctx> CoreStreamData<'ctx> {
 
     fn stop_audiounits(&self) {
         if !self.input_unit.is_null() {
-            assert!(stop_audiounit(self.input_unit).is_ok());
+            let r = stop_audiounit(self.input_unit);
+            assert!(r.is_ok());
         }
         if !self.output_unit.is_null() {
-            assert!(stop_audiounit(self.output_unit).is_ok());
+            let r = stop_audiounit(self.output_unit);
+            assert!(r.is_ok());
         }
     }
 
@@ -3136,7 +3140,7 @@ impl<'ctx> AudioUnitStream<'ctx> {
             self.core_stream_data.stop_audiounits();
         }
 
-        assert!(
+        debug_assert!(
             !self.core_stream_data.input_unit.is_null()
                 || !self.core_stream_data.output_unit.is_null()
         );
