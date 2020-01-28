@@ -1,3 +1,3 @@
 
 
-execfile("wpt")
+exec(compile(open("wpt", "r").read(), "wpt", 'exec'))
