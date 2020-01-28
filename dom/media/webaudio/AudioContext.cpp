@@ -604,13 +604,6 @@ already_AddRefed<Promise> AudioContext::DecodeAudioData(
 
   aBuffer.ComputeLengthAndData();
 
-  if (aBuffer.IsShared()) {
-    
-    aRv.ThrowTypeError<MSG_TYPEDARRAY_IS_SHARED>(
-        NS_LITERAL_STRING("Argument of AudioContext.decodeAudioData"));
-    return nullptr;
-  }
-
   if (!aBuffer.Data()) {
     
     aRv.ThrowTypeError<MSG_TYPEDARRAY_IS_DETACHED>(
