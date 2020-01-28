@@ -12,6 +12,7 @@
 #include "nsWindowsHelpers.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
+#include "mozilla/WindowsVersion.h"
 #include "nsNativeCharsetUtils.h"
 #include "nsPrintfCString.h"
 #include "nsReadableUtils.h"
@@ -129,11 +130,7 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
   }
 
   for (unsigned int i = 0; i < modulesNum; i++) {
-    nsAutoString pdbPathStr;
-    nsAutoString pdbNameStr;
-    char* pdbName = NULL;
     WCHAR modulePath[MAX_PATH + 1];
-
     if (!GetModuleFileNameEx(hProcess, hMods[i], modulePath,
                              sizeof(modulePath) / sizeof(WCHAR))) {
       continue;
@@ -142,6 +139,37 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
     MODULEINFO module = {0};
     if (!GetModuleInformation(hProcess, hMods[i], &module,
                               sizeof(MODULEINFO))) {
+      continue;
+    }
+
+    nsAutoString modulePathStr(modulePath);
+    nsAutoString moduleNameStr = modulePathStr;
+    int32_t pos = moduleNameStr.RFindChar('\\');
+    if (pos != kNotFound) {
+      moduleNameStr.Cut(0, pos + 1);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (moduleNameStr.LowerCaseEqualsLiteral("detoured.dll") &&
+        !mozilla::IsWin8OrLater() && ::GetModuleHandle(L"nvd3d9wrapx.dll") &&
+        !::GetModuleHandle(L"nvinitx.dll")) {
+      NS_NAMED_LITERAL_STRING(pdbNameStr, "detoured.pdb");
+      SharedLibrary shlib(
+          (uintptr_t)module.lpBaseOfDll,
+          (uintptr_t)module.lpBaseOfDll + module.SizeOfImage,
+          0,  
+          NS_LITERAL_CSTRING("000000000000000000000000000000000"),
+          moduleNameStr, modulePathStr, pdbNameStr, pdbNameStr,
+          GetVersion(modulePath), "");
+      sharedLibraryInfo.AddSharedLibrary(shlib);
       continue;
     }
 
@@ -162,6 +190,9 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
     MEMORY_BASIC_INFORMATION vmemInfo = {0};
     nsID pdbSig;
     uint32_t pdbAge;
+    nsAutoString pdbPathStr;
+    nsAutoString pdbNameStr;
+    char* pdbName = nullptr;
     if (handleLock &&
         sizeof(vmemInfo) ==
             VirtualQuery(module.lpBaseOfDll, &vmemInfo, sizeof(vmemInfo)) &&
@@ -183,13 +214,6 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
       if (pos != kNotFound) {
         pdbNameStr.Cut(0, pos + 1);
       }
-    }
-
-    nsAutoString modulePathStr(modulePath);
-    nsAutoString moduleNameStr = modulePathStr;
-    int32_t pos = moduleNameStr.RFindChar('\\');
-    if (pos != kNotFound) {
-      moduleNameStr.Cut(0, pos + 1);
     }
 
     SharedLibrary shlib((uintptr_t)module.lpBaseOfDll,
