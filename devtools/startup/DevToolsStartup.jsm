@@ -94,6 +94,28 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcutsBundle", function() {
   return Services.strings.createBundle(url);
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getLocalizedKeyShortcut(id) {
+  try {
+    return KeyShortcutsBundle.GetStringFromName(id);
+  } catch (e) {
+    console.error("Failed to retrieve DevTools localized shortcut for id", id);
+    return null;
+  }
+}
+
 XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
   const isMac = AppConstants.platform == "macosx";
 
@@ -110,41 +132,31 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
     
     {
       id: "toggleToolbox",
-      shortcut: KeyShortcutsBundle.GetStringFromName(
-        "toggleToolbox.commandkey"
-      ),
+      shortcut: getLocalizedKeyShortcut("toggleToolbox.commandkey"),
       modifiers,
     },
     
     {
       id: "toggleToolboxF12",
-      shortcut: KeyShortcutsBundle.GetStringFromName(
-        "toggleToolboxF12.commandkey"
-      ),
+      shortcut: getLocalizedKeyShortcut("toggleToolboxF12.commandkey"),
       modifiers: "", 
     },
     
     {
       id: "browserToolbox",
-      shortcut: KeyShortcutsBundle.GetStringFromName(
-        "browserToolbox.commandkey"
-      ),
+      shortcut: getLocalizedKeyShortcut("browserToolbox.commandkey"),
       modifiers: "accel,alt,shift",
     },
     
     {
       id: "browserConsole",
-      shortcut: KeyShortcutsBundle.GetStringFromName(
-        "browserConsole.commandkey"
-      ),
+      shortcut: getLocalizedKeyShortcut("browserConsole.commandkey"),
       modifiers: "accel,shift",
     },
     
     {
       id: "responsiveDesignMode",
-      shortcut: KeyShortcutsBundle.GetStringFromName(
-        "responsiveDesignMode.commandkey"
-      ),
+      shortcut: getLocalizedKeyShortcut("responsiveDesignMode.commandkey"),
       modifiers,
     },
     
@@ -153,57 +165,55 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
     
     {
       toolId: "inspector",
-      shortcut: KeyShortcutsBundle.GetStringFromName("inspector.commandkey"),
+      shortcut: getLocalizedKeyShortcut("inspector.commandkey"),
       modifiers,
     },
     
     {
       toolId: "webconsole",
-      shortcut: KeyShortcutsBundle.GetStringFromName("webconsole.commandkey"),
+      shortcut: getLocalizedKeyShortcut("webconsole.commandkey"),
       modifiers,
     },
     
     {
       toolId: "jsdebugger",
-      shortcut: KeyShortcutsBundle.GetStringFromName("jsdebugger.commandkey2"),
+      shortcut: getLocalizedKeyShortcut("jsdebugger.commandkey2"),
       modifiers,
     },
     
     {
       toolId: "netmonitor",
-      shortcut: KeyShortcutsBundle.GetStringFromName("netmonitor.commandkey"),
+      shortcut: getLocalizedKeyShortcut("netmonitor.commandkey"),
       modifiers,
     },
     
     {
       toolId: "styleeditor",
-      shortcut: KeyShortcutsBundle.GetStringFromName("styleeditor.commandkey"),
+      shortcut: getLocalizedKeyShortcut("styleeditor.commandkey"),
       modifiers: "shift",
     },
     
     {
       toolId: "performance",
-      shortcut: KeyShortcutsBundle.GetStringFromName("performance.commandkey"),
+      shortcut: getLocalizedKeyShortcut("performance.commandkey"),
       modifiers: "shift",
     },
     
     {
       toolId: "storage",
-      shortcut: KeyShortcutsBundle.GetStringFromName("storage.commandkey"),
+      shortcut: getLocalizedKeyShortcut("storage.commandkey"),
       modifiers: "shift",
     },
     
     {
       toolId: "dom",
-      shortcut: KeyShortcutsBundle.GetStringFromName("dom.commandkey"),
+      shortcut: getLocalizedKeyShortcut("dom.commandkey"),
       modifiers,
     },
     
     {
       toolId: "accessibility",
-      shortcut: KeyShortcutsBundle.GetStringFromName(
-        "accessibilityF12.commandkey"
-      ),
+      shortcut: getLocalizedKeyShortcut("accessibilityF12.commandkey"),
       modifiers: "shift",
     },
   ];
@@ -214,7 +224,7 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
     shortcuts.push({
       id: "inspectorMac",
       toolId: "inspector",
-      shortcut: KeyShortcutsBundle.GetStringFromName("inspector.commandkey"),
+      shortcut: getLocalizedKeyShortcut("inspector.commandkey"),
       modifiers: "accel,shift",
     });
   }
@@ -231,17 +241,13 @@ function getProfilerKeyShortcuts() {
     
     {
       id: "profilerStartStop",
-      shortcut: KeyShortcutsBundle.GetStringFromName(
-        "profilerStartStop.commandkey"
-      ),
+      shortcut: getLocalizedKeyShortcut("profilerStartStop.commandkey"),
       modifiers: "control,shift",
     },
     
     {
       id: "profilerCapture",
-      shortcut: KeyShortcutsBundle.GetStringFromName(
-        "profilerCapture.commandkey"
-      ),
+      shortcut: getLocalizedKeyShortcut("profilerCapture.commandkey"),
       modifiers: "control,shift",
     },
   ];
@@ -682,6 +688,12 @@ DevToolsStartup.prototype = {
   attachKeys(doc, keyShortcuts, keyset = doc.getElementById("devtoolsKeyset")) {
     const window = doc.defaultView;
     for (const key of keyShortcuts) {
+      if (!key.shortcut) {
+        
+        
+        
+        continue;
+      }
       const xulKey = this.createKey(doc, key, () => this.onKey(window, key));
       keyset.appendChild(xulKey);
     }
