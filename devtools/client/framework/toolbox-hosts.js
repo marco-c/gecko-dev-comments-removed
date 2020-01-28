@@ -28,6 +28,8 @@ loader.lazyRequireGetter(
 
 const MIN_PAGE_SIZE = 25;
 
+const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+
 
 
 
@@ -411,7 +413,15 @@ function createDevToolsFrame(doc, className) {
   frame.setAttribute("type", "content");
   frame.flex = 1; 
   frame.className = className;
-  frame.tooltip = "aHTMLTooltip";
+
+  const inXULDocument = doc.documentElement.namespaceURI === XUL_NS;
+  if (inXULDocument) {
+    
+    
+    
+    
+    frame.tooltip = "aHTMLTooltip";
+  }
   return frame;
 }
 
