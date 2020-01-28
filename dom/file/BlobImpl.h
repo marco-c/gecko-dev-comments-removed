@@ -105,9 +105,6 @@ class BlobImpl : public nsISupports {
   
   virtual bool IsDirectory() const { return false; }
 
-  
-  virtual bool MayBeClonedToOtherThreads() const { return true; }
-
  protected:
   virtual ~BlobImpl() {}
 };
