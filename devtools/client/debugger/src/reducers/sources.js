@@ -375,9 +375,21 @@ function removeSourceActors(state: SourcesState, action) {
 
 
 function updateProjectDirectoryRoot(state: SourcesState, root: string) {
-  prefs.projectDirectoryRoot = root;
+  
+  
+  if (actorType(root) !== "thread") {
+    prefs.projectDirectoryRoot = root;
+  }
 
   return updateRootRelativeValues(state, undefined, root);
+}
+
+
+
+
+function actorType(actor: string) {
+  const match = actor.match(/\/([a-z]+)\d+/);
+  return match ? match[1] : null;
 }
 
 function updateRootRelativeValues(
