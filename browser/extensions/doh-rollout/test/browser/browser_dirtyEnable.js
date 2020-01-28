@@ -1,7 +1,5 @@
 "use strict";
 
-add_task(setup);
-
 add_task(async function testDirtyEnable() {
   
   
@@ -22,20 +20,19 @@ add_task(async function testDirtyEnable() {
     "Breadcrumb not saved."
   );
   await ensureNoTRRModeChange(2);
-  checkHeuristicsTelemetry("prefHasUserValue", "first_run");
 
   
   simulateNetworkChange();
   await ensureNoTRRModeChange(2);
-  ensureNoHeuristicsTelemetry();
 
   
   await restartAddon();
   await ensureNoTRRModeChange(2);
-  ensureNoHeuristicsTelemetry();
 
   
   simulateNetworkChange();
   await ensureNoTRRModeChange(2);
-  ensureNoHeuristicsTelemetry();
+
+  
+  await resetPrefsAndRestartAddon();
 });

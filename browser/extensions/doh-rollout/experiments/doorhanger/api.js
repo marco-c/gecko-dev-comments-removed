@@ -7,8 +7,6 @@
 
 
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
-ChromeUtils.import("resource://gre/modules/Preferences.jsm", this);
-ChromeUtils.import("resource:///modules/EveryWindow.jsm", this);
 
 var { EventManager, EventEmitter } = ExtensionCommon;
 const {
@@ -99,65 +97,7 @@ this.doorhanger = class doorhanger extends ExtensionAPI {
       experiments: {
         doorhanger: {
           async show(properties) {
-            let profileAge = await ChromeUtils.import(
-              "resource://gre/modules/ProfileAge.jsm",
-              {}
-            ).ProfileAge();
-
-            let creationDate = await profileAge.created;
-            let firstUse = await profileAge.firstUse;
-            let resetDate = await profileAge.reset;
-            let profileDate = resetDate || firstUse || creationDate;
-
-            
-            
-            
-            let profileCreationThreshold = parseInt(
-              Preferences.get("doh-rollout.profileCreationThreshold")
-            );
-            if (
-              !isNaN(profileCreationThreshold) &&
-              profileDate > profileCreationThreshold
-            ) {
-              return false;
-            }
-
-            
-            let tabsProgressListener = {
-              onLocationChange(
-                aBrowser,
-                aWebProgress,
-                aRequest,
-                aLocationURI,
-                aFlags
-              ) {
-                let topWindow = getMostRecentBrowserWindow();
-                
-                if (
-                  aBrowser != topWindow.gBrowser.selectedBrowser ||
-                  aFlags &
-                    Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT ||
-                  !aWebProgress.isTopLevel
-                ) {
-                  return;
-                }
-                doorhangerEventEmitter.emitShow(properties);
-                EveryWindow.unregisterCallback("doh-rollout");
-              },
-            };
-            EveryWindow.registerCallback(
-              "doh-rollout",
-              win => {
-                win.gBrowser.addTabsProgressListener(tabsProgressListener);
-              },
-              (win, closing) => {
-                if (closing) {
-                  return;
-                }
-                win.gBrowser.removeTabsProgressListener(tabsProgressListener);
-              }
-            );
-            return true;
+            await doorhangerEventEmitter.emitShow(properties);
           },
           onDoorhangerAccept: new EventManager({
             context,

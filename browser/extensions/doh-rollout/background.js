@@ -189,10 +189,16 @@ const stateManager = {
     return !doorhangerShown;
   },
 
-  async showDoorhanger() {
-    rollout.addDoorhangerListeners();
+  async showDoorHangerAndEnableDoH() {
+    browser.experiments.doorhanger.onDoorhangerAccept.addListener(
+      rollout.doorhangerAcceptListener
+    );
 
-    let doorhangerShown = await browser.experiments.doorhanger.show({
+    browser.experiments.doorhanger.onDoorhangerDecline.addListener(
+      rollout.doorhangerDeclineListener
+    );
+
+    await browser.experiments.doorhanger.show({
       name: browser.i18n.getMessage("doorhangerName"),
       text: "<> " + browser.i18n.getMessage("doorhangerBody"),
       okLabel: browser.i18n.getMessage("doorhangerButtonOk"),
@@ -203,15 +209,9 @@ const stateManager = {
       ),
     });
 
-    if (!doorhangerShown) {
-      
-      
-      log("Profile is new, doorhanger not shown.");
-      await stateManager.setState("UIOk");
-      await stateManager.rememberDoorhangerDecision("NewProfile");
-      await stateManager.rememberDoorhangerShown();
-      rollout.removeDoorhangerListeners();
-    }
+    
+    
+    await stateManager.setState("enabled");
   },
 };
 
@@ -227,32 +227,11 @@ const rollout = {
     return this._isTesting;
   },
 
-  addDoorhangerListeners() {
-    browser.experiments.doorhanger.onDoorhangerAccept.addListener(
-      rollout.doorhangerAcceptListener
-    );
-
-    browser.experiments.doorhanger.onDoorhangerDecline.addListener(
-      rollout.doorhangerDeclineListener
-    );
-  },
-
-  removeDoorhangerListeners() {
-    browser.experiments.doorhanger.onDoorhangerAccept.removeListener(
-      rollout.doorhangerAcceptListener
-    );
-
-    browser.experiments.doorhanger.onDoorhangerDecline.removeListener(
-      rollout.doorhangerDeclineListener
-    );
-  },
-
   async doorhangerAcceptListener(tabId) {
     log("Doorhanger accepted on tab", tabId);
     await stateManager.setState("UIOk");
     await stateManager.rememberDoorhangerDecision("UIOk");
     await stateManager.rememberDoorhangerShown();
-    rollout.removeDoorhangerListeners();
   },
 
   async doorhangerDeclineListener(tabId) {
@@ -264,23 +243,16 @@ const rollout = {
     browser.experiments.heuristics.sendHeuristicsPing("disable_doh", results);
     await stateManager.rememberDisableHeuristics();
     await stateManager.rememberDoorhangerShown();
-    rollout.removeDoorhangerListeners();
   },
 
   async heuristics(evaluateReason) {
-    let shouldRunHeuristics = await stateManager.shouldRunHeuristics();
-
-    if (!shouldRunHeuristics) {
-      return;
-    }
-
     
     let results;
 
     if (await rollout.isTesting()) {
       results = await browser.experiments.preferences.getCharPref(
         MOCK_HEURISTICS_PREF,
-        `{ "test": "disable_doh" }`
+        "disable_doh"
       );
       results = JSON.parse(results);
     } else {
@@ -298,14 +270,7 @@ const rollout = {
     results.evaluateReason = evaluateReason;
     browser.experiments.heuristics.sendHeuristicsPing(decision, results);
 
-    if (decision === "disable_doh") {
-      await stateManager.setState("disabled");
-    } else {
-      await stateManager.setState("enabled");
-      if (await stateManager.shouldShowDoorhanger()) {
-        await stateManager.showDoorhanger();
-      }
-    }
+    return decision;
   },
 
   async getSetting(name, defaultValue) {
@@ -507,67 +472,81 @@ const rollout = {
       await this.enterprisePolicyCheck("startup", results);
     }
 
-    if (!(await stateManager.shouldRunHeuristics())) {
-      return;
-    }
-
-    let networkStatus = (await browser.networkStatus.getLinkInfo()).status;
-    let captiveState = "unknown";
-    try {
-      captiveState = await browser.captivePortal.getState();
-    } catch (e) {
-      
-    }
-
-    if (networkStatus == "up" && captiveState != "locked_portal") {
-      await rollout.heuristics("startup");
+    if (await stateManager.shouldRunHeuristics()) {
+      await this.runStartupHeuristics();
     }
 
     
-    browser.networkStatus.onConnectionChanged.addListener(
-      rollout.onConnectionChanged
-    );
+    browser.networkStatus.onConnectionChanged.addListener(async () => {
+      log("onConnectionChanged");
+
+      let linkInfo = await browser.networkStatus.getLinkInfo();
+      if (linkInfo.status !== "up") {
+        log("Link down.");
+        if (rollout.networkSettledTimeout) {
+          log("Canceling queued heuristics run.");
+          clearTimeout(rollout.networkSettledTimeout);
+          rollout.networkSettledTimeout = null;
+        }
+        return;
+      }
+
+      log("Queing a heuristics run in 60s, will cancel if network fluctuates.");
+      let gracePeriod = (await rollout.isTesting()) ? 0 : 60000;
+      rollout.networkSettledTimeout = setTimeout(async () => {
+        log("No network fluctuation for 60 seconds, running heuristics.");
+        
+        let shouldRunHeuristics = await stateManager.shouldRunHeuristics();
+        let shouldShowDoorhanger = await stateManager.shouldShowDoorhanger();
+
+        if (!shouldRunHeuristics) {
+          return;
+        }
+
+        const netChangeDecision = await rollout.heuristics("netChange");
+
+        if (netChangeDecision === "disable_doh") {
+          await stateManager.setState("disabled");
+        } else if (shouldShowDoorhanger) {
+          await stateManager.showDoorHangerAndEnableDoH();
+        } else {
+          await stateManager.setState("enabled");
+        }
+      }, gracePeriod);
+    });
 
     
-    try {
-      browser.captivePortal.onStateChange.addListener(
-        rollout.onCaptiveStateChanged
-      );
-    } catch (e) {
-      
-    }
+    browser.captivePortal.onConnectivityAvailable.addListener(async () => {
+      log("Captive portal onConnectivityAvailable, running heuristics.");
+      if (rollout.networkSettledTimeout) {
+        log("Canceling queued heuristics run.");
+        clearTimeout(rollout.networkSettledTimeout);
+        rollout.networkSettledTimeout = null;
+      }
+
+      let shouldRunHeuristics = await stateManager.shouldRunHeuristics();
+
+      if (!shouldRunHeuristics) {
+        return;
+      }
+
+      await this.runStartupHeuristics();
+    });
   },
 
-  async onConnectionChanged({ status }) {
-    log("onConnectionChanged", status);
+  async runStartupHeuristics() {
+    let decision = await this.heuristics("startup");
+    let shouldShowDoorhanger = await stateManager.shouldShowDoorhanger();
+    if (decision === "disable_doh") {
+      await stateManager.setState("disabled");
 
-    if (status != "up") {
-      return;
-    }
-
-    let captiveState = "unknown";
-    try {
-      captiveState = await browser.captivePortal.getState();
-    } catch (e) {
       
-    }
-
-    if (captiveState == "locked_portal") {
-      return;
-    }
-
-    
-    
-    
-    await rollout.heuristics("netchange");
-  },
-
-  async onCaptiveStateChanged({ state }) {
-    log("onCaptiveStateChanged", state);
-    
-    
-    if (state == "unlocked_portal") {
-      await rollout.heuristics("netchange");
+      
+    } else if (shouldShowDoorhanger) {
+      await stateManager.showDoorHangerAndEnableDoH();
+    } else {
+      
+      await stateManager.setState("enabled");
     }
   },
 };
