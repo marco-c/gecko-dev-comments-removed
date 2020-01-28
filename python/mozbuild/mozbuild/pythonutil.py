@@ -2,9 +2,10 @@
 
 
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import os
+import six
 import subprocess
 import sys
 
@@ -36,62 +37,70 @@ def python_executable_version(exe):
     May raise ``subprocess.CalledProcessError`` or ``ValueError`` on failure.
     """
     program = "import sys; print('.'.join(map(str, sys.version_info[0:3])))"
-    out = subprocess.check_output([exe, '-c', program]).rstrip()
+    out = six.ensure_text(subprocess.check_output(
+        [exe, '-c', program], universal_newlines=True)).rstrip()
     return StrictVersion(out)
 
 
-def find_python3_executable(min_version='3.5.0'):
-    """Find a Python 3 executable.
+def _find_python_executable(major):
+    if major not in (2, 3):
+        raise ValueError('Expected a Python major version of 2 or 3')
+    min_versions = {2: '2.7.0', 3: '3.5.0'}
 
-    Returns a tuple containing the the path to an executable binary and a
-    version tuple. Both tuple entries will be None if a Python executable
-    could not be resolved.
-    """
-    from mozfile import which
+    def ret(min_version=min_versions[major]):
+        from mozfile import which
 
-    if not min_version.startswith('3.'):
-        raise ValueError('min_version expected a 3.x string, got %s' %
-                         min_version)
+        prefix = min_version[0] + '.'
+        if not min_version.startswith(prefix):
+            raise ValueError('min_version expected a %sx string, got %s' %
+                             (prefix, min_version))
 
-    min_version = StrictVersion(min_version)
+        min_version = StrictVersion(min_version)
+        major = min_version.version[0]
 
-    if sys.version_info.major >= 3:
-        our_version = StrictVersion('%s.%s.%s' % (sys.version_info[0:3]))
+        if sys.version_info.major == major:
+            our_version = StrictVersion('%s.%s.%s' % (sys.version_info[0:3]))
 
-        if our_version >= min_version:
+            if our_version >= min_version:
+                
+                
+                return sys.executable, our_version.version
+
+            
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        names = ['python%d' % major]
+
+        
+        for minor in range(9, min_version.version[1] - 1, -1):
+            names.append('python%d.%d' % (major, minor))
+
+        for name in names:
+            exe = which(name)
+            if not exe:
+                continue
+
             
             
-            return sys.executable, our_version.version
+            try:
+                version = python_executable_version(exe)
+            except (subprocess.CalledProcessError, ValueError):
+                continue
 
-        
+            if version >= min_version:
+                return exe, version.version
 
-    
-    
-    
-    
-    
-    
-    
-    
-    names = ['python3']
+        return None, None
+    return ret
 
-    
-    for minor in range(9, min_version.version[1] - 1, -1):
-        names.append('python3.%d' % minor)
 
-    for name in names:
-        exe = which(name)
-        if not exe:
-            continue
-
-        
-        
-        try:
-            version = python_executable_version(exe)
-        except (subprocess.CalledProcessError, ValueError):
-            continue
-
-        if version >= min_version:
-            return exe, version.version
-
-    return None, None
+find_python2_executable = _find_python_executable(2)
+find_python3_executable = _find_python_executable(3)
