@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CacheLog.h"
 #include "CacheFileContextEvictor.h"
@@ -104,9 +104,9 @@ nsresult CacheFileContextEvictor::AddContext(
       }
     }
   } else {
-    
-    
-    
+    // Not providing load context info means we want to delete everything,
+    // so let's not bother with any currently running context cleanups
+    // for the same pinning state.
     for (uint32_t i = mEntries.Length(); i > 0;) {
       --i;
       if (mEntries[i]->mInfo && mEntries[i]->mPinned == aPinned) {
@@ -130,8 +130,8 @@ nsresult CacheFileContextEvictor::AddContext(
   PersistEvictionInfoToDisk(aLoadContextInfo, aPinned, aOrigin);
 
   if (mIndexIsUpToDate) {
-    
-    
+    // Already existing context could be added again, in this case the iterator
+    // would be recreated. Close the old iterator explicitely.
     if (entry->mIterator) {
       entry->mIterator->Close();
       entry->mIterator = nullptr;
@@ -140,9 +140,9 @@ nsresult CacheFileContextEvictor::AddContext(
     rv = CacheIndex::GetIterator(aLoadContextInfo, false,
                                  getter_AddRefs(entry->mIterator));
     if (NS_FAILED(rv)) {
-      
-      
-      
+      // This could probably happen during shutdown. Remove the entry from
+      // the array, but leave the info on the disk. No entry can be opened
+      // during shutdown and we'll load the eviction info on next start.
       LOG(
           ("CacheFileContextEvictor::AddContext() - Cannot get an iterator. "
            "[rv=0x%08" PRIx32 "]",
@@ -165,23 +165,23 @@ void CacheFileContextEvictor::CacheIndexStateChanged() {
   bool isUpToDate = false;
   CacheIndex::IsUpToDate(&isUpToDate);
   if (mEntries.Length() == 0) {
-    
+    // Just save the state and exit, since there is nothing to do
     mIndexIsUpToDate = isUpToDate;
     return;
   }
 
   if (!isUpToDate && !mIndexIsUpToDate) {
-    
+    // Index is outdated and status has not changed, nothing to do.
     return;
   }
 
   if (isUpToDate && mIndexIsUpToDate) {
-    
+    // Status has not changed, but make sure the eviction is running.
     if (mEvicting) {
       return;
     }
 
-    
+    // We're not evicting, but we should be evicting?!
     LOG(
         ("CacheFileContextEvictor::CacheIndexStateChanged() - Index is up to "
          "date, we have some context to evict but eviction is not running! "
@@ -232,7 +232,7 @@ void CacheFileContextEvictor::WasEvicted(const nsACString& aKey, nsIFile* aFile,
     }
 
     if (lastModifiedTime > entry->mTimeStamp) {
-      
+      // File has been modified since context eviction.
       continue;
     }
 
@@ -392,7 +392,7 @@ nsresult CacheFileContextEvictor::LoadEvictInfoFromDisk() {
       decoded = Substring(decoded, 1);
     }
 
-    
+    // Let's see if we have an origin.
     nsAutoCString origin;
     if (decoded.Contains('\t')) {
       auto split = decoded.Split('\t');
@@ -404,8 +404,8 @@ nsresult CacheFileContextEvictor::LoadEvictInfoFromDisk() {
 
     nsCOMPtr<nsILoadContextInfo> info;
     if (!NS_LITERAL_CSTRING("*").Equals(decoded)) {
-      
-      
+      // "*" is indication of 'delete all', info left null will pass
+      // to CacheFileContextEvictor::AddContext and clear all the cache data.
       info = CacheFileUtils::ParseKey(decoded);
       if (!info) {
         LOG(
@@ -444,8 +444,8 @@ nsresult CacheFileContextEvictor::GetContextFile(
 
   nsAutoCString keyPrefix;
   if (aPinned) {
-    
-    
+    // Mark pinned context files with a tab char at the start.
+    // Tab is chosen because it can never be used as a context key tag.
     keyPrefix.Append('\t');
   }
   if (aLoadContextInfo) {
@@ -464,7 +464,7 @@ nsresult CacheFileContextEvictor::GetContextFile(
     return rv;
   }
 
-  
+  // Replace '/' with '-' since '/' cannot be part of the filename.
   data64.ReplaceChar('/', '-');
 
   leafName.Append(data64);
@@ -572,8 +572,8 @@ void CacheFileContextEvictor::EvictEntries() {
           ("CacheFileContextEvictor::EvictEntries() - Stopping evicting due to "
            "shutdown."));
       mEvicting =
-          true;  
-                 
+          true;  // We don't want to start eviction again during shutdown
+                 // process. Setting this flag to true ensures it.
       return;
     }
 
@@ -590,8 +590,8 @@ void CacheFileContextEvictor::EvictEntries() {
           ("CacheFileContextEvictor::EvictEntries() - Stopping evicting, there "
            "is no context to evict."));
 
-      
-      
+      // Allow index to notify AsyncGetDiskConsumption callbacks.  The size is
+      // actual again.
       CacheIndex::OnAsyncEviction(false);
       return;
     }
@@ -627,8 +627,8 @@ void CacheFileContextEvictor::EvictEntries() {
     CacheFileIOManager::gInstance->mHandles.GetHandle(&hash,
                                                       getter_AddRefs(handle));
     if (handle) {
-      
-      
+      // We doom any active handle in CacheFileIOManager::EvictByContext(), so
+      // this must be a new one. Skip it.
       LOG(
           ("CacheFileContextEvictor::EvictEntries() - Skipping entry since we "
            "found an active handle. [handle=%p]",
@@ -642,8 +642,8 @@ void CacheFileContextEvictor::EvictEntries() {
       pinned = aEntry->IsPinned();
     };
     rv = CacheIndex::HasEntry(hash, &status, callback);
-    
-    
+    // This must never fail, since eviction (this code) happens only when the
+    // index is up-to-date and thus the informatin is known.
     MOZ_ASSERT(NS_SUCCEEDED(rv));
 
     if (pinned != mEntries[0]->mPinned) {
@@ -659,14 +659,14 @@ void CacheFileContextEvictor::EvictEntries() {
       nsCOMPtr<nsIFile> file;
       CacheFileIOManager::gInstance->GetFile(&hash, getter_AddRefs(file));
 
-      
+      // Read metadata from the file synchronously
       RefPtr<CacheFileMetadata> metadata = new CacheFileMetadata();
       rv = metadata->SyncReadMetadata(file);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         continue;
       }
 
-      
+      // Now get the context + enhance id + URL from the key.
       nsAutoCString uriSpec;
       RefPtr<nsILoadContextInfo> info =
           CacheFileUtils::ParseKey(metadata->GetKey(), nullptr, &uriSpec);
@@ -687,7 +687,7 @@ void CacheFileContextEvictor::EvictEntries() {
 
       nsAutoCString urlOrigin;
       url->Origin(urlOrigin);
-      if (urlOrigin.Equals(NS_ConvertUTF16toUTF8(mEntries[0]->mOrigin))) {
+      if (!urlOrigin.Equals(NS_ConvertUTF16toUTF8(mEntries[0]->mOrigin))) {
         LOG(
             ("CacheFileContextEvictor::EvictEntries() - Skipping entry since "
              "origin "
@@ -731,5 +731,5 @@ void CacheFileContextEvictor::EvictEntries() {
   MOZ_ASSERT_UNREACHABLE("We should never get here");
 }
 
-}  
-}  
+}  // namespace net
+}  // namespace mozilla
