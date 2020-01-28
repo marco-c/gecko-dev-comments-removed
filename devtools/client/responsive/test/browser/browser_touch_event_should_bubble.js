@@ -44,6 +44,7 @@ addRDMTask(
     info("Toggling off touch simulation.");
     await toggleTouchSimulation(ui);
     reloadOnTouchChange(false);
-  },
-  true
+  }
+  
+  
 );
