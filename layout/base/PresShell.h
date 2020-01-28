@@ -2297,11 +2297,8 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-
-
     MOZ_CAN_RUN_SCRIPT
-    bool MaybeHandleEventWithAccessibleCaret(nsIFrame* aFrameForPresShell,
-                                             WidgetGUIEvent* aGUIEvent,
+    bool MaybeHandleEventWithAccessibleCaret(WidgetGUIEvent* aGUIEvent,
                                              nsEventStatus* aEventStatus);
 
     
