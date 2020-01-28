@@ -716,6 +716,19 @@ public class WebExtensionController {
         });
     }
 
+    
+
+
+
+
+
+    @AnyThread
+    public void setTabActive(@NonNull final GeckoSession session, final boolean active) {
+        final GeckoBundle bundle = new GeckoBundle(1);
+        bundle.putString("sessionId", session.getId());
+        bundle.putBoolean("active", active);
+        EventDispatcher.getInstance().dispatch("GeckoView:WebExtension:SetTabActive", bundle);
+    }
 
      void unregisterWebExtension(final WebExtension webExtension) {
         mExtensions.remove(webExtension.id);
