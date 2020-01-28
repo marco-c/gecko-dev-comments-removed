@@ -237,35 +237,24 @@ impl ImageData {
                                     
                                     
                                     
-                                    let cache_to_target_task = if false {
-                                        
-                                        RenderTask::new_blit_with_padding(
-                                            *size,
-                                            padding,
-                                            BlitSource::Image { key: image_cache_key },
-                                        )
-                                    } else {
-                                        RenderTask::new_scaling_with_padding(
-                                            BlitSource::Image { key: image_cache_key },
-                                            render_tasks,
-                                            target_kind,
-                                            *size,
-                                            padding,
-                                        )
-                                    };
-                                    let cache_to_target_task_id = render_tasks.add(cache_to_target_task);
+                                    
+                                    let cache_to_target_task_id = RenderTask::new_scaling_with_padding(
+                                        BlitSource::Image { key: image_cache_key },
+                                        render_tasks,
+                                        target_kind,
+                                        *size,
+                                        padding,
+                                    );
 
                                     
                                     
                                     
-                                    let target_to_cache_task = RenderTask::new_blit(
+                                    render_tasks.add().init(RenderTask::new_blit(
                                         *size,
                                         BlitSource::RenderTask {
                                             task_id: cache_to_target_task_id,
                                         },
-                                    );
-
-                                    render_tasks.add(target_to_cache_task)
+                                    ))
                                 }
                             ));
                         }
