@@ -407,7 +407,7 @@ class InternalRequest final {
   MOZ_INIT_OUTSIDE_CTOR bool mSkipServiceWorker;
   MOZ_INIT_OUTSIDE_CTOR bool mSynchronous;
   MOZ_INIT_OUTSIDE_CTOR bool mUnsafeRequest;
-  MOZ_INIT_OUTSIDE_CTOR bool mUseURLCredentials;
+  bool mUseURLCredentials = false;
   
   
   
