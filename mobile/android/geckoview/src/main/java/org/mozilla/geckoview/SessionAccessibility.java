@@ -751,13 +751,6 @@ public class SessionAccessibility {
             return;
         }
 
-        if (!Settings.isPlatformEnabled() && !isInTest()) {
-            
-            
-            
-            return;
-        }
-
         GeckoBundle cachedBundle = getMostRecentBundle(sourceId);
         if (cachedBundle == null && sourceId != View.NO_ID) {
             
@@ -857,7 +850,12 @@ public class SessionAccessibility {
                 break;
         }
 
-        ((ViewParent) mView).requestSendAccessibilityEvent(mView, event);
+        try {
+            ((ViewParent) mView).requestSendAccessibilityEvent(mView, event);
+        } catch (IllegalStateException ex) {
+            
+            
+        }
     }
 
     private synchronized GeckoBundle getMostRecentBundle(final int virtualViewId) {
