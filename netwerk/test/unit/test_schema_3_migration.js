@@ -165,5 +165,43 @@ function* do_run_test() {
   let cookie = cookies[0];
   Assert.equal(cookie.expiry, futureExpiry + 44);
 
+  do_close_profile(test_generator);
+  yield;
+
+  
+  schema3db = new CookieDatabaseConnection(do_get_cookie_file(profile), 3);
+
+  
+  for (let i = 60; i < 80; ++i) {
+    let cookie = new Cookie(
+      "oh" + i,
+      "hai",
+      "cat.com",
+      "/",
+      futureExpiry,
+      now,
+      now + i,
+      false,
+      false,
+      false
+    );
+
+    schema3db.insertCookie(cookie);
+  }
+
+  
+  schema3db.close();
+  schema3db = null;
+
+  
+  
+  do_load_profile();
+
+  
+  Assert.equal(Services.cookiemgr.countCookiesFromHost("cat.com"), 20);
+  cookies = Services.cookiemgr.getCookiesFromHost("cat.com", {});
+  cookie = cookies[0];
+  Assert.equal(cookie.creationTime, 0);
+
   finish_test();
 }

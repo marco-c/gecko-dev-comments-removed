@@ -18,7 +18,7 @@
 
 
 
-var COOKIE_DATABASE_SCHEMA_CURRENT = 11;
+var COOKIE_DATABASE_SCHEMA_CURRENT = 10;
 
 var test_generator = do_run_test();
 
