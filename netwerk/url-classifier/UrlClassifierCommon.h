@@ -81,11 +81,6 @@ class UrlClassifierCommon final {
       const std::vector<ClassificationData>& aData, uint32_t aDefaultFlag);
 
  private:
-  
-  static void NotifyChannelBlocked(nsIChannel* aChannel,
-                                   nsIURI* aURIBeingLoaded,
-                                   unsigned aBlockedReason);
-
   static uint32_t TableToClassificationFlag(
       const nsACString& aTable, const std::vector<ClassificationData>& aData);
 };
