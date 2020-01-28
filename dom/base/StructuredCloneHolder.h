@@ -39,8 +39,7 @@ class StructuredCloneHolderBase {
   typedef JS::StructuredCloneScope StructuredCloneScope;
 
   StructuredCloneHolderBase(
-      StructuredCloneScope aScope =
-          StructuredCloneScope::SameProcessDifferentThread);
+      StructuredCloneScope aScope = StructuredCloneScope::SameProcess);
   virtual ~StructuredCloneHolderBase();
 
   

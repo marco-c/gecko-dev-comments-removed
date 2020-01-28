@@ -137,7 +137,7 @@ enum class StructuredCloneScope : uint32_t {
 
 
 
-  SameProcessDifferentThread = 1,
+  SameProcess = 1,
 
   
 

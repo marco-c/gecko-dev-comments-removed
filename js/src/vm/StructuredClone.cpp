@@ -1267,7 +1267,7 @@ bool JSStructuredCloneWriter::writeSharedArrayBuffer(HandleObject obj) {
   
   
 
-  if (output().scope() > JS::StructuredCloneScope::SameProcessDifferentThread) {
+  if (output().scope() > JS::StructuredCloneScope::SameProcess) {
     JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr,
                               JSMSG_SC_SHMEM_POLICY);
     return false;
@@ -2658,10 +2658,10 @@ bool JSStructuredCloneReader::readHeader() {
   
   
   if ((int)storedScope == 0) {
-    storedScope = JS::StructuredCloneScope::SameProcessDifferentThread;
+    storedScope = JS::StructuredCloneScope::SameProcess;
   }
 
-  if (storedScope < JS::StructuredCloneScope::SameProcessDifferentThread ||
+  if (storedScope < JS::StructuredCloneScope::SameProcess ||
       storedScope > JS::StructuredCloneScope::DifferentProcessForIndexedDB) {
     JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr,
                               JSMSG_SC_BAD_SERIALIZED_DATA,
@@ -3090,8 +3090,8 @@ JS_PUBLIC_API bool JS_StructuredClone(
 
   const JSStructuredCloneCallbacks* callbacks = optionalCallbacks;
 
-  JSAutoStructuredCloneBuffer buf(
-      JS::StructuredCloneScope::SameProcessDifferentThread, callbacks, closure);
+  JSAutoStructuredCloneBuffer buf(JS::StructuredCloneScope::SameProcess,
+                                  callbacks, closure);
   {
     if (value.isObject()) {
       RootedObject obj(cx, &value.toObject());
