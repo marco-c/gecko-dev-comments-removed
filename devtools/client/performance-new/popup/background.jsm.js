@@ -361,6 +361,26 @@ function revertRecordingPreferences() {
 
 
 
+
+function changePreset(presetName) {
+  const objdirs = _getArrayOfStringsHostPref(OBJDIRS_PREF);
+  let recordingPrefs = getRecordingPrefsFromPreset(presetName, objdirs);
+
+  if (!recordingPrefs) {
+    
+    
+    
+    Services.prefs.setCharPref(PRESET_PREF, presetName);
+    recordingPrefs = getRecordingPreferencesFromBrowser();
+  }
+
+  setRecordingPreferencesOnBrowser(recordingPrefs);
+}
+
+
+
+
+
 let _defaultPrefsForOlderFirefox;
 
 
@@ -408,6 +428,7 @@ module.exports = {
   getRecordingPreferencesFromBrowser,
   setRecordingPreferencesOnBrowser,
   revertRecordingPreferences,
+  changePreset,
   getDefaultRecordingPreferencesForOlderFirefox,
 };
 
