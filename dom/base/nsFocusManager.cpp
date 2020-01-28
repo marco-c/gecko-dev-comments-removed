@@ -1202,6 +1202,15 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
   }
 
   
+  if (!isElementInActiveWindow && aFlags & FLAG_RAISE) {
+    if (Document* doc = mActiveWindow ? mActiveWindow->GetDoc() : nullptr) {
+      if (doc->GetFullscreenElement()) {
+        Document::AsyncExitFullscreen(doc);
+      }
+    }
+  }
+
+  
   
   
   
