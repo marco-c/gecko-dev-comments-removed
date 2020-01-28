@@ -1351,38 +1351,43 @@ impl NinePatchDescriptor {
             repeat_horizontal: RepeatMode,
             repeat_vertical: RepeatMode
         ) {
-            if uv_rect.uv1.x > uv_rect.uv0.x &&
-               uv_rect.uv1.y > uv_rect.uv0.y {
-
-                
-                
-                let mut brush_flags =
-                    BrushFlags::SEGMENT_RELATIVE |
-                    BrushFlags::SEGMENT_TEXEL_RECT;
-
-                
-                if repeat_horizontal == RepeatMode::Repeat {
-                    brush_flags |= BrushFlags::SEGMENT_REPEAT_X;
-                }
-                if repeat_vertical == RepeatMode::Repeat {
-                    brush_flags |= BrushFlags::SEGMENT_REPEAT_Y;
-                }
-
-                let segment = BrushSegment::new(
-                    rect,
-                    true,
-                    EdgeAaSegmentMask::empty(),
-                    [
-                        uv_rect.uv0.x,
-                        uv_rect.uv0.y,
-                        uv_rect.uv1.x,
-                        uv_rect.uv1.y,
-                    ],
-                    brush_flags,
-                );
-
-                segments.push(segment);
+            if uv_rect.uv1.x < uv_rect.uv0.x || uv_rect.uv1.y < uv_rect.uv0.y {
+                return;
             }
+
+            
+            
+            let mut brush_flags =
+                BrushFlags::SEGMENT_RELATIVE |
+                BrushFlags::SEGMENT_TEXEL_RECT;
+
+            
+            if repeat_horizontal == RepeatMode::Repeat {
+                brush_flags |= BrushFlags::SEGMENT_REPEAT_X;
+            } else if repeat_horizontal == RepeatMode::Round {
+                brush_flags |= BrushFlags::SEGMENT_REPEAT_X | BrushFlags::SEGMENT_REPEAT_X_ROUND;
+            }
+
+            if repeat_vertical == RepeatMode::Repeat {
+                brush_flags |= BrushFlags::SEGMENT_REPEAT_Y;
+            } else if repeat_vertical == RepeatMode::Round {
+                brush_flags |= BrushFlags::SEGMENT_REPEAT_Y | BrushFlags::SEGMENT_REPEAT_Y_ROUND;
+            }
+
+            let segment = BrushSegment::new(
+                rect,
+                true,
+                EdgeAaSegmentMask::empty(),
+                [
+                    uv_rect.uv0.x,
+                    uv_rect.uv0.y,
+                    uv_rect.uv1.x,
+                    uv_rect.uv1.y,
+                ],
+                brush_flags,
+            );
+
+            segments.push(segment);
         }
 
         
