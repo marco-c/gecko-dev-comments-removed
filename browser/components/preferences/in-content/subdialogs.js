@@ -431,7 +431,13 @@ SubDialog.prototype = {
       let contentPane =
         this._frame.contentDocument.querySelector(".contentPane") ||
         this._frame.contentDocument.querySelector("dialog");
-      contentPane.classList.add("doScroll");
+      if (contentPane) {
+        
+        
+        
+        
+        contentPane.classList.add("doScroll");
+      }
     }
 
     this._frame.style.height = frameHeight;

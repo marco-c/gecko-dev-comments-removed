@@ -1,13 +1,12 @@
 %if 0
-
-
-
+/* - This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this file,
+   - You can obtain one at http://mozilla.org/MPL/2.0/. */
 %endif
 @namespace html "http://www.w3.org/1999/xhtml";
 
 :root {
   --in-content-warning-container: var(--grey-20);
-  text-rendering: optimizeLegibility;
 }
 
 @supports -moz-bool-pref("browser.in-content.dark-mode") {
@@ -18,8 +17,12 @@
 }
 }
 
-:root,
-body {
+#preferences-root {
+  text-rendering: optimizeLegibility;
+}
+
+#preferences-root,
+#preferences-body {
   margin: 0;
   padding: 0;
   height: 100%;
@@ -28,7 +31,7 @@ body {
 }
 
 #preferences-body {
-  vertical-align: top; 
+  vertical-align: top; /* See bug 1606130 */
   display: -moz-box;
   -moz-box-orient: vertical;
 }
@@ -37,12 +40,12 @@ body {
   -moz-user-select: text;
 }
 
-
-
-
-
-
-
+/*
+  The stack has some very tall content but it shouldn't be taller than the
+  viewport (and we know the tall content will still be accessible via scrollbars
+  regardless if the stack has a shorter height). So we use min-height: 0 to allow
+  the stack to be smaller than its content height so it can fit the viewport size.
+*/
 #preferences-stack {
   min-height: 0;
 }
@@ -52,7 +55,7 @@ body {
 }
 
 .pane-container {
-  
+  /* A workaround to keep the container always float on the `top: 0` (Bug 1377009) */
   display: block;
   width: 664px;
 }
@@ -87,14 +90,14 @@ description.indent,
 button,
 treecol,
 html|option {
-  
+  /* override the * rule */
   -moz-user-select: none;
 }
 
-
-
-
-
+/* Buttons get a default min-width in XUL. When they also have flex, they will
+ * be large enough anyway, and we don't want them to become smaller than their inner
+ * text which would then overflow the button. Set min-width back to auto for that:
+ */
 button[flex] {
   min-width: auto;
 }
@@ -127,8 +130,8 @@ button > hbox > label {
   margin-inline: 0 10px;
 }
 
-
-
+/* Add a bit of space to the end of descriptions to
+ * leave margin with e.g. additional buttons on the side. */
 .description-with-side-element {
   margin-inline-end: 10px !important;
 }
@@ -150,7 +153,7 @@ button > hbox > label {
   outline: var(--blue-60) 1px dotted;
   -moz-outline-radius: 2px;
   animation: fade-out 0.5s ease-out 2s forwards;
-  
+  /* Show the border to spotlight the components in high-contrast mode. */
   border: 1px solid transparent;
   border-radius: 2px;
 }
@@ -171,11 +174,11 @@ button > hbox > label {
   display: -moz-box;
 }
 
+/* Subcategory title */
 
-
-
-
-
+/**
+ * The first subcategory title for each category should not have margin-top.
+ */
 
 .subcategory:not([hidden]) ~ .subcategory {
   margin-top: 16px;
@@ -183,11 +186,11 @@ button > hbox > label {
   border-top: 1px solid var(--in-content-border-color);
 }
 
-
+/* Category List */
 
 #categories {
-  overflow: visible !important; 
-  padding: 1px; 
+  overflow: visible !important; /* Cancel scrollbar and do not clip overflow content when window size goes very small */
+  padding: 1px; /* Adding padding around richlistitem in order to make entire keyboard focusing outline visible */
 }
 
 #category-general > .category-icon {
@@ -210,7 +213,7 @@ button > hbox > label {
   list-style-image: url("chrome://browser/skin/preferences/in-content/sync.svg");
 }
 
-
+/* header */
 .header {
   display: flex;
   align-items: center;
@@ -221,7 +224,7 @@ button > hbox > label {
   display: none;
 }
 
-
+/* All panes */
 
 .info-icon,
 .androidIcon,
@@ -233,7 +236,7 @@ button > hbox > label {
   fill: currentColor;
 }
 
-
+/* General Pane */
 
 #isDefaultLabel {
   font-weight: 600;
@@ -376,7 +379,7 @@ button > hbox > label {
   margin-inline-end: 8px !important;
 }
 
-
+/* Home Pane */
 
 #homepageGroup menulist,
 #homepageGroup html|input {
@@ -407,7 +410,7 @@ button > hbox > label {
   margin-inline-end: 0;
 }
 
-
+/* Search Pane */
 
 #engineList {
   margin: 2px 0 5px;
@@ -439,7 +442,7 @@ button > hbox > label {
   margin: 4px 0 0;
 }
 
-
+/* Privacy Pane */
 
 #locationBarGroup > .text-link {
   margin-top: 6px;
@@ -474,8 +477,8 @@ button > hbox > label {
   margin-top: 1.5em;
 }
 
-
-
+/* Collapse the non-active vboxes in decks to use only the height the
+   active vbox needs */
 #historyPane:not([selectedIndex="1"]) > #historyDontRememberPane,
 #historyPane:not([selectedIndex="2"]) > #historyCustomPane,
 #weavePrefsDeck:not([selectedIndex="1"]) > #hasFxaAccount,
@@ -486,7 +489,7 @@ button > hbox > label {
 }
 
 #tabsElement {
-  margin-inline-end: 4px; 
+  margin-inline-end: 4px; /* add the 4px end-margin of other elements */
 }
 
 .text-link {
@@ -501,9 +504,9 @@ button > hbox > label {
   margin-inline-start: 0;
 }
 
-
-
-
+/**
+ * Dialog
+ */
 
 .dialogOverlay {
   visibility: hidden;
@@ -517,8 +520,8 @@ button > hbox > label {
   background-color: var(--in-content-page-background);
   background-clip: content-box;
   color: var(--in-content-page-color);
-  
-
+  /* `transparent` will use the dialogText color in high-contrast themes and
+     when page colors are disabled */
   border: 1px solid transparent;
   border-radius: 3.5px;
   box-shadow: 0 2px 6px 0 rgba(0,0,0,0.3);
@@ -560,17 +563,17 @@ button > hbox > label {
 .dialogFrame {
   margin: 20px;
   -moz-box-flex: 1;
-  
+  /* Default dialog dimensions */
   width: 66ch;
 }
 
+/**
+ * End Dialog
+ */
 
-
-
-
-
-
-
+/**
+ * Font group and font dialog menulist fixes
+ */
 
 #defaultFont {
   width: 25ch;
@@ -583,9 +586,9 @@ button > hbox > label {
   min-width: 30ch;
 }
 
-
-
-
+/**
+ * Sync
+ */
 
 .fxaProfileImage {
   width: 80px;
@@ -855,7 +858,7 @@ image.update-throbber {
   background-color: var(--in-content-page-background);
   top: 0;
   z-index: 1;
-  
+  /* The sticky-container should have the capability to cover all spotlight area. */
   width: calc(100% + 8px);
   margin-inline: -4px;
   padding-inline: 4px;
@@ -922,7 +925,7 @@ menulist {
 
 menulist[indicator=true] > menupopup menuitem:not([image]) > .menu-iconic-left {
   display: -moz-box;
-  min-width: auto; 
+  min-width: auto; /* Override the min-width defined in menu.css */
   margin-inline-end: 6px;
 }
 
@@ -941,7 +944,7 @@ menulist[indicator=true] > menupopup menuitem[indicator=true]:not([image]) > .me
 }
 
 .menu-iconic-highlightable-text {
-  margin: 0; 
+  margin: 0; /* Align with the margin of xul:label.menu-iconic-text */
 }
 
 #no-results-message > label {
@@ -970,10 +973,10 @@ menulist[indicator=true] > menupopup menuitem[indicator=true]:not([image]) > .me
   visibility: hidden;
 }
 
-
+/* Proxy port input */
 
 .proxy-port-input {
-  width: calc(5ch + 18px); 
+  width: calc(5ch + 18px); /* 5 chars + (8px padding + 1px border) on both sides */
   margin-inline-start: 4px;
 }
 
@@ -1010,7 +1013,7 @@ menulist[indicator=true] > menupopup menuitem[indicator=true]:not([image]) > .me
   margin-inline-end: 0;
 }
 
-
+/* Menulist styles */
 .label-item {
   font-size: 0.8em;
 }
