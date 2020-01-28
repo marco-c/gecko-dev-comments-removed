@@ -111,11 +111,7 @@ function createPendingCrashReports(howMany, accessDate) {
   );
   
   
-  let extraFileContents = JSON.stringify({
-    ServerURL: SERVER_URL,
-    TelemetryServerURL: "http://telemetry.mozilla.org/",
-    TelemetryClientId: "c69e7487-df10-4c98-ab1a-c85660feecf3",
-  });
+  let extraFileContents = JSON.stringify({ ServerURL: SERVER_URL });
 
   return (async function() {
     let uuids = [];
@@ -151,21 +147,6 @@ function waitForSubmittedReports(reportIDs) {
           let dumpID = propBag.getPropertyAsAString("minidumpID");
           if (dumpID == reportID) {
             return true;
-          }
-          let extra = propBag.getPropertyAsInterface(
-            "extra",
-            Ci.nsIPropertyBag2
-          );
-          const blockedAnnotations = [
-            "ServerURL",
-            "TelemetryClientId",
-            "TelemetryServerURL",
-          ];
-          for (const key of blockedAnnotations) {
-            Assert.ok(
-              !extra.hasKey(key),
-              "The " + key + " annotation should have been stripped away"
-            );
           }
         }
         return false;
