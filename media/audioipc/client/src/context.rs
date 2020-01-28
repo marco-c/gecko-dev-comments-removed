@@ -372,7 +372,7 @@ impl ContextOps for ClientContext {
                                  ContextSetupDeviceCollectionCallback())?;
 
             let stream =
-                unsafe { audioipc::MessageStream::from_raw_fd(fds.platform_handles[0].into_raw()) };
+                unsafe { audioipc::MessageStream::from_raw_fd(fds.platform_handles[0].as_raw()) };
 
             
             
