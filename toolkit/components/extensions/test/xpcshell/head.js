@@ -1,6 +1,9 @@
 "use strict";
 
 
+options("strict"); 
+
+
 
 
 

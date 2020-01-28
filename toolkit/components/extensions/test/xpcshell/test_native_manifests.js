@@ -282,19 +282,6 @@ add_task(async function test_no_allowed_extensions() {
   );
 });
 
-add_task(async function test_invalid_context_envType() {
-  let manifest = Object.assign({}, templateManifest);
-  await writeManifest(USER_TEST_JSON, manifest);
-  for (let type of ["stdio", "pkcs11"]) {
-    let badContext = { ...context, type, envType: "content_parent" };
-    let result = await lookupApplication("test", badContext);
-    equal(result, null, `lookupApplication ignores bad envType for "${type}"`);
-  }
-  
-  
-  
-});
-
 const GLOBAL_TEST_JSON = OS.Path.join(globalDir.path, TYPE_SLUG, "test.json");
 let globalManifest = Object.assign({}, templateManifest);
 globalManifest.description = "This manifest is from the systemwide directory";

@@ -51,7 +51,15 @@ function promiseTimeout(delay) {
 
 
 
-class ExtensionError extends Error {}
+class ExtensionError extends DOMException {
+  constructor(message) {
+    super(message, "ExtensionError");
+  }
+  
+  static [Symbol.hasInstance](e) {
+    return e instanceof DOMException && e.name === "ExtensionError";
+  }
+}
 
 function filterStack(error) {
   return String(error.stack).replace(
