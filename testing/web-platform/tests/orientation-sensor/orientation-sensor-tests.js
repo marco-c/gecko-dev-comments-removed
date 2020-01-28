@@ -33,7 +33,7 @@ async function checkPopulateMatrix(t, sensorProvider, sensorType) {
   const eventWatcher = new EventWatcher(t, sensor, ["reading", "error"]);
 
   
-  assert_throws({ name: 'TypeError' },
+  assert_throws_js(TypeError,
       () => sensor.populateMatrix(new Float32Array(15)));
 
   
@@ -41,7 +41,7 @@ async function checkPopulateMatrix(t, sensorProvider, sensorType) {
       () => sensor.populateMatrix(new Float32Array(16)));
 
   
-  assert_throws({ name: 'TypeError' },
+  assert_throws_js(TypeError,
       () => sensor.populateMatrix(new Float32Array(new SharedArrayBuffer(16))));
 
   sensor.start();
