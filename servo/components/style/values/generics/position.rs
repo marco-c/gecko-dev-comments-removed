@@ -12,8 +12,10 @@
     ComputeSquaredDistance,
     Copy,
     Debug,
+    Deserialize,
     MallocSizeOf,
     PartialEq,
+    Serialize,
     SpecifiedValueInfo,
     ToAnimatedValue,
     ToAnimatedZero,
@@ -44,15 +46,18 @@ impl<H, V> Position<H, V> {
 
 
 
+/// cbindgen:private-default-tagged-enum-constructor=false
 #[derive(
     Animate,
     Clone,
     ComputeSquaredDistance,
     Copy,
     Debug,
+    Deserialize,
     MallocSizeOf,
     Parse,
     PartialEq,
+    Serialize,
     SpecifiedValueInfo,
     ToAnimatedZero,
     ToComputedValue,
