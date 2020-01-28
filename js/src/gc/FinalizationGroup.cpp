@@ -61,7 +61,7 @@ static FinalizationRecordObject* UnwrapFinalizationRecord(JSObject* obj) {
   return &obj->as<FinalizationRecordObject>();
 }
 
-void GCRuntime::sweepFinalizationGroups(Zone* zone, bool isShuttingDown) {
+void GCRuntime::sweepFinalizationGroups(Zone* zone) {
   
   
 
@@ -73,7 +73,7 @@ void GCRuntime::sweepFinalizationGroups(Zone* zone, bool isShuttingDown) {
       for (JSObject* obj : records) {
         if (FinalizationRecordObject* record = UnwrapFinalizationRecord(obj)) {
           FinalizationGroupObject* group = record->group();
-          if (group && !isShuttingDown) {
+          if (group) {
             group->queueRecordToBeCleanedUp(record);
             queueFinalizationGroupForCleanup(group);
           }

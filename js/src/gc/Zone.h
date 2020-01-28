@@ -652,6 +652,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   void deleteEmptyCompartment(JS::Compartment* comp);
 
+  void clearRootsForShutdownGC();
   void finishRoots();
 
  private:
