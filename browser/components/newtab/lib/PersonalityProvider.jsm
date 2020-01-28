@@ -105,9 +105,19 @@ this.PersonalityProvider = class PersonalityProvider {
     this.scores = scores || {};
     this.interestConfig = this.scores.interestConfig;
     this.interestVector = this.scores.interestVector;
+    this.taggers = this.scores.taggers;
     this.onSync = this.onSync.bind(this);
+    this.setup();
+  }
+
+  setup() {
     this.setupSyncAttachment(RECIPE_NAME);
     this.setupSyncAttachment(MODELS_NAME);
+  }
+
+  teardown() {
+    this.teardownSyncAttachment(RECIPE_NAME);
+    this.teardownSyncAttachment(MODELS_NAME);
   }
 
   async onSync(event) {
@@ -128,6 +138,10 @@ this.PersonalityProvider = class PersonalityProvider {
 
   setupSyncAttachment(collection) {
     RemoteSettings(collection).on("sync", this.onSync);
+  }
+
+  teardownSyncAttachment(collection) {
+    RemoteSettings(collection).off("sync", this.onSync);
   }
 
   
@@ -253,6 +267,22 @@ this.PersonalityProvider = class PersonalityProvider {
     this.initialized = true;
     if (callback) {
       callback();
+    }
+  }
+
+  dispatchRelevanceScoreDuration(start) {
+    
+    
+    
+    
+    
+    if (this.initialized) {
+      this.dispatch(
+        ac.PerfEvent({
+          event: "PERSONALIZATION_V2_ITEM_RELEVANCE_SCORE_DURATION",
+          value: Math.round(perfService.absNow() - start),
+        })
+      );
     }
   }
 
