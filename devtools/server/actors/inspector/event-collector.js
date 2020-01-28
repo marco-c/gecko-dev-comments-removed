@@ -16,6 +16,7 @@ const {
   isNativeAnonymous,
 } = require("devtools/shared/layout/utils");
 const Debugger = require("Debugger");
+const ReplayInspector = require("devtools/server/actors/replay/inspector");
 const {
   EXCLUDED_LISTENER,
 } = require("devtools/server/actors/inspector/constants");
@@ -907,13 +908,18 @@ class EventCollector {
     try {
       const { capturing, handler } = listener;
 
-      const global = Cu.getGlobalForObject(handler);
+      let listenerDO;
+      if (isReplaying) {
+        listenerDO = ReplayInspector.getDebuggerObject(handler);
+      } else {
+        const global = Cu.getGlobalForObject(handler);
 
-      
-      
-      
-      globalDO = dbg.addDebuggee(global);
-      let listenerDO = globalDO.makeDebuggeeValue(handler);
+        
+        
+        
+        globalDO = dbg.addDebuggee(global);
+        listenerDO = globalDO.makeDebuggeeValue(handler);
+      }
 
       const { normalizeListener } = listener;
 

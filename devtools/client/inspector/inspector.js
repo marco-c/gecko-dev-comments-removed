@@ -182,6 +182,8 @@ function Inspector(toolbox) {
   this.onSidebarSelect = this.onSidebarSelect.bind(this);
   this.onSidebarShown = this.onSidebarShown.bind(this);
   this.onSidebarToggle = this.onSidebarToggle.bind(this);
+  this.handleThreadPaused = this.handleThreadPaused.bind(this);
+  this.handleThreadResumed = this.handleThreadResumed.bind(this);
   this.onReflowInSelection = this.onReflowInSelection.bind(this);
 }
 
@@ -194,6 +196,18 @@ Inspector.prototype = {
   async init() {
     
     localizeMarkup(this.panelDoc);
+
+    
+    if (this.currentTarget.isReplayEnabled()) {
+      let dbg = this._toolbox.getPanel("jsdebugger");
+      if (!dbg) {
+        dbg = await this._toolbox.loadTool("jsdebugger");
+      }
+      this._replayResumed = !dbg.isPaused();
+
+      this.currentTarget.threadFront.on("paused", this.handleThreadPaused);
+      this.currentTarget.threadFront.on("resumed", this.handleThreadResumed);
+    }
 
     await this.toolbox.targetList.watchTargets(
       [this.toolbox.targetList.TYPES.FRAME],
@@ -453,8 +467,10 @@ Inspector.prototype = {
 
     
     
+    
+    
     const hasNavigated = () => {
-      return pendingSelection !== this._pendingSelection;
+      return pendingSelection !== this._pendingSelection || this._replayResumed;
     };
 
     
@@ -1349,6 +1365,22 @@ Inspector.prototype = {
       onNodeSelected,
       this._handleRejectionIfNotDestroyed
     );
+  },
+
+  
+
+
+  handleThreadPaused() {
+    this._replayResumed = false;
+    this.onNewRoot();
+  },
+
+  
+
+
+  handleThreadResumed() {
+    this._replayResumed = true;
+    this.onNewRoot();
   },
 
   

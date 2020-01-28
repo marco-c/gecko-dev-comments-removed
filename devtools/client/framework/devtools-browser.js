@@ -146,6 +146,12 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     );
 
     
+    const recordReplayEnabled = Services.prefs.getBoolPref(
+      "devtools.recordreplay.enabled"
+    );
+    toggleMenuItem("menu_webreplay", recordReplayEnabled);
+
+    
     
     
     

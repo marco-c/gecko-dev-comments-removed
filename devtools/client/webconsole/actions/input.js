@@ -214,6 +214,11 @@ function terminalInputChanged(expression) {
       return;
     }
 
+    
+    if (hud.currentTarget.isReplayEnabled()) {
+      return;
+    }
+
     const { terminalInput = "" } = getState().history;
     
     if (

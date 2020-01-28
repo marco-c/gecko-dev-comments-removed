@@ -1,0 +1,15 @@
+
+
+
+
+"use strict";
+
+
+add_task(async function() {
+  const recordingTab = await openRecordingTab("doc_rr_basic.html");
+  await once(Services.ppmm, "RecordingFinished");
+
+  await gBrowser.removeTab(recordingTab);
+
+  ok(true, "Finished");
+});

@@ -257,6 +257,10 @@ function enumObjectProperties(objectActor, options) {
 }
 
 function getMapEntries(obj, forPreview) {
+  if (isReplaying) {
+    return obj.containerContents(forPreview);
+  }
+
   
   
   
@@ -348,6 +352,10 @@ function enumStorageEntries(objectActor) {
 }
 
 function getWeakMapEntries(obj, forPreview) {
+  if (isReplaying) {
+    return obj.containerContents(forPreview);
+  }
+
   
   
   
@@ -394,6 +402,10 @@ function enumWeakMapEntries(objectActor, forPreview = false) {
 }
 
 function getSetValues(obj, forPreview) {
+  if (isReplaying) {
+    return obj.containerContents(forPreview);
+  }
+
   
   
   
@@ -437,6 +449,10 @@ function enumSetEntries(objectActor, forPreview = false) {
 }
 
 function getWeakSetEntries(obj, forPreview) {
+  if (isReplaying) {
+    return obj.containerContents(forPreview);
+  }
+
   
   
   

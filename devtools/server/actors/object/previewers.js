@@ -198,6 +198,8 @@ const previewers = {
           items.push(null);
         } else {
           
+          
+          
           const value = DevToolsUtils.getProperty(obj, i);
           items.push(hooks.createValueGrip(value));
         }
@@ -513,7 +515,10 @@ function GenericObject(
     }
   }
 
-  if (i < OBJECT_PREVIEW_MAX_ITEMS) {
+  
+  
+  
+  if (i < OBJECT_PREVIEW_MAX_ITEMS && !isReplaying) {
     preview.safeGetterValues = objectActor._findSafeGetterValues(
       Object.keys(preview.ownProperties),
       OBJECT_PREVIEW_MAX_ITEMS - i
@@ -856,6 +861,12 @@ previewers.Object = [
     
     
     
+
+    
+    
+    if (isReplaying) {
+      return false;
+    }
 
     let keys;
     try {
