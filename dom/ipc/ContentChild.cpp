@@ -4114,9 +4114,10 @@ mozilla::ipc::IPCResult ContentChild::RecvWindowPostMessage(
   
   
   RefPtr<BrowsingContext> sourceBc = aData.source();
-  RefPtr<PostMessageEvent> event = new PostMessageEvent(
-      sourceBc, aData.origin(), window, providedPrincipal,
-      aData.callerDocumentURI(), aData.isFromPrivateWindow());
+  RefPtr<PostMessageEvent> event =
+      new PostMessageEvent(sourceBc, aData.origin(), window, providedPrincipal,
+                           aData.innerWindowId(), aData.callerURI(),
+                           aData.scriptLocation(), aData.isFromPrivateWindow());
   event->UnpackFrom(aMessage);
 
   event->DispatchToTargetThread(IgnoredErrorResult());

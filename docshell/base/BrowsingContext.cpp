@@ -1098,6 +1098,7 @@ void BrowsingContext::PostMessageMoz(JSContext* aCx,
   data.targetOrigin() = aTargetOrigin;
   data.subjectPrincipal() = &aSubjectPrincipal;
   RefPtr<nsGlobalWindowInner> callerInnerWindow;
+  nsAutoCString scriptLocation;
   
   
   
@@ -1105,9 +1106,8 @@ void BrowsingContext::PostMessageMoz(JSContext* aCx,
           aCx, aTargetOrigin, getter_AddRefs(sourceBc), data.origin(),
           getter_AddRefs(data.targetOriginURI()),
           getter_AddRefs(data.callerPrincipal()),
-          getter_AddRefs(callerInnerWindow),
-          getter_AddRefs(data.callerDocumentURI()),
-           nullptr, aError)) {
+          getter_AddRefs(callerInnerWindow), getter_AddRefs(data.callerURI()),
+           nullptr, &scriptLocation, aError)) {
     return;
   }
   if (sourceBc && sourceBc->IsDiscarded()) {
@@ -1117,7 +1117,8 @@ void BrowsingContext::PostMessageMoz(JSContext* aCx,
   data.isFromPrivateWindow() =
       callerInnerWindow &&
       nsScriptErrorBase::ComputeIsFromPrivateWindow(callerInnerWindow);
-
+  data.innerWindowId() = callerInnerWindow ? callerInnerWindow->WindowID() : 0;
+  data.scriptLocation() = scriptLocation;
   JS::Rooted<JS::Value> transferArray(aCx);
   aError = nsContentUtils::CreateJSValueFromSequenceOfObject(aCx, aTransfer,
                                                              &transferArray);

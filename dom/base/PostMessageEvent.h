@@ -38,21 +38,21 @@ class PostMessageEvent final : public Runnable {
   PostMessageEvent(BrowsingContext* aSource, const nsAString& aCallerOrigin,
                    nsGlobalWindowOuter* aTargetWindow,
                    nsIPrincipal* aProvidedPrincipal, uint64_t aCallerWindowID,
-                   nsIURI* aCallerDocumentURI,
+                   nsIURI* aCallerURI, const nsCString& aScriptLocation,
                    const Maybe<nsID>& aCallerAgentClusterId)
       : PostMessageEvent(aSource, aCallerOrigin, aTargetWindow,
-                         aProvidedPrincipal, Some(aCallerWindowID),
-                         aCallerDocumentURI, false, aCallerAgentClusterId) {}
+                         aProvidedPrincipal, aCallerWindowID, aCallerURI,
+                         aScriptLocation, false, aCallerAgentClusterId) {}
 
-  
   
   PostMessageEvent(BrowsingContext* aSource, const nsAString& aCallerOrigin,
                    nsGlobalWindowOuter* aTargetWindow,
-                   nsIPrincipal* aProvidedPrincipal, nsIURI* aCallerDocumentURI,
+                   nsIPrincipal* aProvidedPrincipal, uint64_t aCallerWindowID,
+                   nsIURI* aCallerURI, const nsCString& aScriptLocation,
                    bool aIsFromPrivateWindow)
       : PostMessageEvent(aSource, aCallerOrigin, aTargetWindow,
-                         aProvidedPrincipal, Nothing(), aCallerDocumentURI,
-                         aIsFromPrivateWindow, Nothing()) {}
+                         aProvidedPrincipal, aCallerWindowID, aCallerURI,
+                         aScriptLocation, aIsFromPrivateWindow, Nothing()) {}
 
   void Write(JSContext* aCx, JS::Handle<JS::Value> aMessage,
              JS::Handle<JS::Value> aTransfer, JS::CloneDataPolicy aClonePolicy,
@@ -77,9 +77,9 @@ class PostMessageEvent final : public Runnable {
  private:
   PostMessageEvent(BrowsingContext* aSource, const nsAString& aCallerOrigin,
                    nsGlobalWindowOuter* aTargetWindow,
-                   nsIPrincipal* aProvidedPrincipal,
-                   const Maybe<uint64_t>& aCallerWindowID,
-                   nsIURI* aCallerDocumentURI, bool aIsFromPrivateWindow,
+                   nsIPrincipal* aProvidedPrincipal, uint64_t aCallerWindowID,
+                   nsIURI* aCallerURI, const nsCString& aScriptLocation,
+                   bool aIsFromPrivateWindow,
                    const Maybe<nsID>& aCallerAgentClusterId);
   ~PostMessageEvent();
 
@@ -96,9 +96,12 @@ class PostMessageEvent final : public Runnable {
   
   
   MaybeOneOf<StructuredCloneHolder, ipc::StructuredCloneData> mHolder;
-  Maybe<uint64_t> mCallerWindowID;
+  uint64_t mCallerWindowID;
   const Maybe<nsID> mCallerAgentClusterId;
-  nsCOMPtr<nsIURI> mCallerDocumentURI;
+  nsCOMPtr<nsIURI> mCallerURI;
+  
+  
+  const Maybe<nsCString> mScriptLocation;
   
   
   bool mIsFromPrivateWindow;
