@@ -431,6 +431,21 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
     EnsureTimerStarted();
   }
 
+  void IntersectionObservationAdded() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    EnsureTimerStarted();
+    mNeedToUpdateIntersectionObservations = true;
+  }
+
  private:
   typedef nsTObserverArray<nsARefreshObserver*> ObserverArray;
   typedef nsTArray<RefPtr<VVPResizeEvent>> VisualViewportResizeEventArray;
@@ -512,32 +527,36 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   
   const mozilla::TimeDuration mMinRecomputeVisibilityInterval;
 
-  bool mThrottled;
-  bool mNeedToRecomputeVisibility;
-  bool mTestControllingRefreshes;
-  bool mViewManagerFlushIsPending;
+  bool mThrottled : 1;
+  bool mNeedToRecomputeVisibility : 1;
+  bool mTestControllingRefreshes : 1;
+  bool mViewManagerFlushIsPending : 1;
 
   
   
-  bool mHasScheduleFlush;
+  bool mHasScheduleFlush : 1;
 
-  bool mInRefresh;
-
-  
-  
-  bool mWaitingForTransaction;
-  
-  
-  
-  bool mSkippedPaints;
+  bool mInRefresh : 1;
 
   
   
+  bool mWaitingForTransaction : 1;
   
-  bool mResizeSuppressed;
+  
+  
+  bool mSkippedPaints : 1;
 
   
-  bool mNotifyDOMContentFlushed;
+  
+  
+  bool mResizeSuppressed : 1;
+
+  
+  bool mNotifyDOMContentFlushed : 1;
+
+  
+  
+  bool mNeedToUpdateIntersectionObservations : 1;
 
   
   
