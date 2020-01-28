@@ -56,8 +56,6 @@ graph_config_schema = Schema({
     Required('scriptworker'): {
         
         Required('scope-prefix'): text_type,
-        
-        Required('worker-types'): {text_type: [text_type]}
     },
     Required('task-priority'): optionally_keyed_by('project', Any(
         'highest',
