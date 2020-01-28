@@ -397,6 +397,16 @@ function getElementByToolIdOrExtensionIdOrSelector(toolbox, idOrSelector) {
   return tabEl ? tabEl : toolbox.doc.querySelector(idOrSelector);
 }
 
+
+
+
+function getToolboxTab(doc, toolId) {
+  return (
+    doc.getElementById(`toolbox-tab-${toolId}`) ||
+    doc.getElementById(`tools-chevron-menupopup-${toolId}`)
+  );
+}
+
 function getWindow(toolbox) {
   return toolbox.topWindow;
 }

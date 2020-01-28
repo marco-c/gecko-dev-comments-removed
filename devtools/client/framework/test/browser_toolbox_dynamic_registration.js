@@ -33,7 +33,7 @@ function toolRegistered(toolId) {
 
   
   const doc = toolbox.doc;
-  const tab = doc.getElementById("toolbox-tab-" + toolId);
+  const tab = getToolboxTab(doc, toolId);
   ok(tab, "new tool's tab exists in toolbox UI");
 
   const panel = doc.getElementById("toolbox-panel-" + toolId);
@@ -65,7 +65,7 @@ function toolUnregistered(toolId) {
 
   
   const doc = toolbox.doc;
-  const tab = doc.getElementById("toolbox-tab-" + toolId);
+  const tab = getToolboxTab(doc, toolId);
   ok(!tab, "tool's tab was removed from the toolbox UI");
 
   const panel = doc.getElementById("toolbox-panel-" + toolId);
