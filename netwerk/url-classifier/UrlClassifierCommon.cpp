@@ -52,12 +52,6 @@ bool UrlClassifierCommon::AddonMayLoad(nsIChannel* aChannel, nsIURI* aURI) {
 }
 
 
-void UrlClassifierCommon::NotifyChannelClassifierProtectionDisabled(
-    nsIChannel* aChannel, uint32_t aEvent) {
-  
-}
-
-
 bool UrlClassifierCommon::ShouldEnableClassifier(nsIChannel* aChannel) {
   MOZ_ASSERT(aChannel);
 

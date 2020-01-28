@@ -220,21 +220,9 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
     bool mIsThirdParty;
   };
 
-  struct NotifyChannelClassifierProtectionDisabledParams {
-    uint32_t mAcceptedReason;
-  };
-
-  struct NotifyCookieAllowedParams {};
-
-  struct NotifyCookieBlockedParams {
-    uint32_t mRejectedReason;
-  };
-
   typedef mozilla::Variant<
       nsIHttpChannel::FlashPluginState, ClassifierMatchedInfoParams,
-      ClassifierMatchedTrackingInfoParams, ClassificationFlagsParams,
-      NotifyChannelClassifierProtectionDisabledParams,
-      NotifyCookieAllowedParams, NotifyCookieBlockedParams>
+      ClassifierMatchedTrackingInfoParams, ClassificationFlagsParams>
       IParentChannelFunction;
 
   
