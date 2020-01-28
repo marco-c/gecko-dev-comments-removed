@@ -112,11 +112,6 @@ class ProviderTopSites extends UrlbarProvider {
       
       
       title: link.label || link.title || link.hostname || "",
-      
-      
-      
-      
-      
       favicon: link.favicon || link.tippyTopIcon || null,
     }));
 
