@@ -51,7 +51,7 @@ struct gfxFontFeature;
 namespace mozilla {
 namespace gfx {
 struct FontVariation;
-}
+}  
 }  
 typedef mozilla::gfx::FontVariation gfxFontVariation;
 
@@ -115,6 +115,10 @@ enum class CallerType : uint32_t;
 
 class Element;
 class Document;
+}  
+
+namespace ipc {
+class ByteBuf;
 }  
 
 
