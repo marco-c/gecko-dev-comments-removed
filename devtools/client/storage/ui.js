@@ -58,23 +58,52 @@ const REASON = {
   UPDATE: "update",
 };
 
-const COOKIE_KEY_MAP = {
-  path: "Path",
-  host: "Domain",
-  expires: "Expires",
-  hostOnly: "HostOnly",
-  isSecure: "Secure",
-  isHttpOnly: "HttpOnly",
-  creationTime: "CreationTime",
-  lastAccessed: "LastAccessed",
-  sameSite: "SameSite",
-};
-
 const SAFE_HOSTS_PREFIXES_REGEX = /^(about:|https?:|file:|moz-extension:)/;
 
 
 
 const ITEM_NAME_MAX_LENGTH = 32;
+
+
+
+
+const NON_L10N_STRINGS = new Map([
+  ["Cache.url", "URL"],
+  ["cookies.host", "Domain"],
+  ["cookies.hostOnly", "HostOnly"],
+  ["cookies.isHttpOnly", "HttpOnly"],
+  ["cookies.isSecure", "Secure"],
+  ["cookies.path", "Path"],
+  ["cookies.sameSite", "SameSite"],
+  ["cookies.uniqueKey", "Unique key"],
+  ["extensionStorage.name", "Key"],
+  ["extensionStorage.value", "Value"],
+  ["indexedDB.autoIncrement", "Auto Increment"],
+  ["indexedDB.db", "Database Name"],
+  ["indexedDB.indexes", "Indexes"],
+  ["indexedDB.keyPath", "Key Path"],
+  ["indexedDB.name", "Key"],
+  ["indexedDB.objectStore", "Object Store Name"],
+  ["indexedDB.objectStores", "Object Stores"],
+  ["indexedDB.origin", "Origin"],
+  ["indexedDB.storage", "Storage"],
+  ["indexedDB.uniqueKey", "Unique key"],
+  ["indexedDB.value", "Value"],
+  ["indexedDB.version", "Version"],
+  ["localStorage.name", "Key"],
+  ["localStorage.value", "Value"],
+  ["sessionStorage.name", "Key"],
+  ["sessionStorage.value", "Value"],
+]);
+
+
+
+const NON_ORIGINAL_L10N_IDS = new Map([
+  ["cookies.expires", "cookies.expires2"],
+  ["cookies.lastAccessed", "cookies.lastAccessed2"],
+  ["cookies.creationTime", "cookies.creationTime2"],
+  ["indexedDB.keyPath", "indexedDB.keyPath2"],
+]);
 
 
 
@@ -918,8 +947,8 @@ class StorageUI {
             continue;
           }
 
-          const cookieProp = COOKIE_KEY_MAP[prop] || prop;
-          rawObject[cookieProp] = item[prop];
+          const fieldName = getColumnName(this.table.datatype, prop);
+          rawObject[fieldName] = item[prop];
         }
         itemVar.populate(rawObject, { sorted: true });
         itemVar.twisty = true;
@@ -1078,34 +1107,16 @@ class StorageUI {
         privateFields.push(f.name);
       }
 
-      columns[f.name] = f.name;
-      let columnName;
-      try {
-        let name = f.name;
-
-        
-        switch (f.name) {
-          case "creationTime":
-          case "keyPath":
-            name = `${f.name}2`;
-            break;
-        }
-
-        columnName = L10N.getStr("table.headers." + type + "." + name);
-      } catch (e) {
-        columnName = COOKIE_KEY_MAP[f.name];
-      }
-
-      if (!columnName) {
-        
-        
-        if (!f.private) {
-          console.error(
-            "Unable to localize table header type:" + type + " key:" + f.name
-          );
-        }
-      } else {
+      const columnName = getColumnName(type, f.name);
+      if (columnName) {
         columns[f.name] = columnName;
+      } else if (!f.private) {
+        
+        
+        columns[f.name] = f.name;
+        console.error(
+          `No string defined in NON_L10N_STRINGS for '${type}.${f.name}'`
+        );
       }
     });
 
@@ -1518,4 +1529,34 @@ function addEllipsis(name) {
   }
 
   return name;
+}
+
+
+
+
+
+
+
+
+
+
+function getColumnName(type, name) {
+  
+  
+  let id = `${type}.${name}`;
+  id = NON_ORIGINAL_L10N_IDS.get(id) || id;
+
+  
+  
+  
+  let columnName = NON_L10N_STRINGS.get(id);
+  if (!columnName) {
+    try {
+      columnName = L10N.getStr(`table.headers.${id}`);
+    } catch (e) {
+      columnName = name;
+    }
+  }
+
+  return columnName;
 }
