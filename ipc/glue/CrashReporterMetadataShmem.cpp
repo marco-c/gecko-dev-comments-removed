@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CrashReporterMetadataShmem.h"
 #include "mozilla/Attributes.h"
@@ -48,14 +48,14 @@ class MOZ_STACK_CLASS MetadataShmemWriter {
   }
 
   MOZ_MUST_USE bool WriteAnnotation(Annotation aKey, const nsCString& aValue) {
-    
-    
+    // This shouldn't happen because Commit() guarantees mCursor < mEnd. But
+    // we might as well be safe.
     if (mCursor >= mEnd) {
       return false;
     }
 
-    
-    
+    // Save the current position so we can write the entry type if the entire
+    // entry fits.
     uint8_t* start = mCursor++;
     if (!Write(aKey) || !Write(aValue)) {
       return false;
@@ -64,26 +64,26 @@ class MOZ_STACK_CLASS MetadataShmemWriter {
   }
 
  private:
-  
+  // On success, append a new terminal byte. On failure, rollback the cursor.
   MOZ_MUST_USE bool Commit(uint8_t* aStart, EntryType aType) {
     MOZ_ASSERT(aStart < mEnd);
     MOZ_ASSERT(EntryType(*aStart) == EntryType::None);
 
     if (mCursor >= mEnd) {
-      
+      // No room for a terminating byte - rollback.
       mCursor = aStart;
       return false;
     }
 
-    
+    // Commit the entry and write a new terminal byte.
     *aStart = uint8_t(aType);
     *mCursor = uint8_t(EntryType::None);
     return true;
   }
 
   MOZ_MUST_USE bool Write(const nsCString& aString) {
-    
-    
+    // 32-bit length is okay since our shmems are very small (16K),
+    // a huge write would fail anyway.
     return Write(static_cast<uint32_t>(aString.Length())) &&
            Write(aString.get(), aString.Length());
   }
@@ -103,14 +103,14 @@ class MOZ_STACK_CLASS MetadataShmemWriter {
   }
 
  private:
-  
-  
-  
-  
-  
-  
-  
-  
+  // The cursor (beginning at start) always points to a single byte
+  // representing the next EntryType. An EntryType is either None,
+  // indicating there are no more entries, or Annotation, meaning
+  // two strings follow.
+  //
+  // Strings are written as a 32-bit length and byte sequence. After each new
+  // entry, a None entry is always appended, and a subsequent entry will
+  // overwrite this byte.
   uint8_t* mCursor;
   uint8_t* mEnd;
 };
@@ -127,7 +127,7 @@ void CrashReporterMetadataShmem::SyncNotesToShmem() {
   }
 }
 
-
+// Helper class to iterate over metadata entries encoded in shmem.
 class MOZ_STACK_CLASS MetadataShmemReader {
  public:
   explicit MetadataShmemReader(const Shmem& aShmem)
@@ -135,7 +135,7 @@ class MOZ_STACK_CLASS MetadataShmemReader {
     mCursor = aShmem.get<uint8_t>();
     mEnd = mCursor + aShmem.Size<uint8_t>();
 
-    
+    // Advance to the first item, if any.
     Next();
   }
 
@@ -179,8 +179,8 @@ class MOZ_STACK_CLASS MetadataShmemReader {
     return true;
   }
 
-  
-  
+  // If buffer has |aLength| bytes, return cursor and then advance it.
+  // Otherwise, return null.
   const uint8_t* Read(size_t aLength) {
     if (size_t(mEnd - mCursor) < aLength) {
       return nullptr;
@@ -207,6 +207,10 @@ void CrashReporterMetadataShmem::ReadAppNotes(const Shmem& aShmem,
           return;
         }
 
+        if (key >= Annotation::Count) {
+          return;
+        }
+
         aNotes[key] = value;
         break;
       }
@@ -217,5 +221,5 @@ void CrashReporterMetadataShmem::ReadAppNotes(const Shmem& aShmem,
   }
 }
 
-}  
-}  
+}  // namespace ipc
+}  // namespace mozilla
