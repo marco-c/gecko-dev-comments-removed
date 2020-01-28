@@ -3611,6 +3611,10 @@ void nsCookieService::AddInternal(const nsCookieKey& aKey, nsCookie* aCookie,
 
 
 
+
+
+
+
 static inline bool iswhitespace(char c) { return c == ' ' || c == '\t'; }
 static inline bool isterminator(char c) { return c == '\n' || c == '\r'; }
 static inline bool isvalueseparator(char c) {
@@ -3719,16 +3723,18 @@ bool nsCookieService::ParseAttributes(nsCString& aCookieHeader,
   
   
   
+  
   newCookie = GetTokenValue(cookieStart, cookieEnd, tokenString, tokenValue,
                             equalsFound);
   if (equalsFound) {
     aCookieData.name() = tokenString;
     aCookieData.value() = tokenValue;
+  } else {
+    aCookieData.value() = tokenString;
   }
 
   
   while (cookieStart != cookieEnd && !newCookie) {
-    bool equalsFound;
     newCookie = GetTokenValue(cookieStart, cookieEnd, tokenString, tokenValue,
                               equalsFound);
 
@@ -3782,11 +3788,6 @@ bool nsCookieService::ParseAttributes(nsCString& aCookieHeader,
       StaticPrefs::network_cookie_sameSite_noneRequiresSecure() &&
       !aCookieData.isSecure() &&
       aCookieData.sameSite() == nsICookie::SAMESITE_NONE) {
-    return newCookie;
-  }
-
-  
-  if (!equalsFound) {
     return newCookie;
   }
 
