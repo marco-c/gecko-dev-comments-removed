@@ -4,182 +4,177 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["Census"];
+const EXPORTED_SYMBOLS = ["Census"];
 
-this.Census = (function() {
-  const Census = {};
+const Census = {};
+function dumpn(msg) {
+  dump("DBG-TEST: Census.jsm: " + msg + "\n");
+}
 
-  function dumpn(msg) {
-    dump("DBG-TEST: Census.jsm: " + msg + "\n");
-  }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  Census.walkCensus = (subject, name, walker) => walk(subject, name, walker, 0);
-  function walk(subject, name, walker, count) {
-    if (typeof subject === "object") {
-      dumpn(name);
-      for (const prop in subject) {
-        count = walk(
-          subject[prop],
-          name + "[" + uneval(prop) + "]",
-          walker.enter(prop),
-          count
-        );
-      }
-      walker.done();
-    } else {
-      dumpn(name + " = " + uneval(subject));
-      walker.check(subject);
-      count++;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Census.walkCensus = (subject, name, walker) => walk(subject, name, walker, 0);
+function walk(subject, name, walker, count) {
+  if (typeof subject === "object") {
+    dumpn(name);
+    for (const prop in subject) {
+      count = walk(
+        subject[prop],
+        name + "[" + uneval(prop) + "]",
+        walker.enter(prop),
+        count
+      );
     }
-
-    return count;
+    walker.done();
+  } else {
+    dumpn(name + " = " + uneval(subject));
+    walker.check(subject);
+    count++;
   }
 
-  
-  Census.walkAnything = {
-    enter: () => Census.walkAnything,
-    done: () => undefined,
-    check: () => undefined,
-  };
+  return count;
+}
 
-  
-  Census.assertAllZeros = {
-    enter: () => Census.assertAllZeros,
-    done: () => undefined,
-    check: elt => {
-      if (elt !== 0) {
-        throw new Error("Census mismatch: expected zero, found " + elt);
-      }
-    },
-  };
 
-  function expectedObject() {
-    throw new Error(
-      "Census mismatch: subject has leaf where basis has nested object"
-    );
-  }
+Census.walkAnything = {
+  enter: () => Census.walkAnything,
+  done: () => undefined,
+  check: () => undefined,
+};
 
-  function expectedLeaf() {
-    throw new Error(
-      "Census mismatch: subject has nested object where basis has leaf"
-    );
-  }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  function makeBasisChecker({ compare, missing, extra }) {
-    return function makeWalker(basis) {
-      if (typeof basis === "object") {
-        const unvisited = new Set(Object.getOwnPropertyNames(basis));
-        return {
-          enter: prop => {
-            unvisited.delete(prop);
-            if (prop in basis) {
-              return makeWalker(basis[prop]);
-            }
+Census.assertAllZeros = {
+  enter: () => Census.assertAllZeros,
+  done: () => undefined,
+  check: elt => {
+    if (elt !== 0) {
+      throw new Error("Census mismatch: expected zero, found " + elt);
+    }
+  },
+};
 
-            return extra(prop);
-          },
+function expectedObject() {
+  throw new Error(
+    "Census mismatch: subject has leaf where basis has nested object"
+  );
+}
 
-          done: () => unvisited.forEach(prop => missing(prop, basis[prop])),
-          check: expectedObject,
-        };
-      }
+function expectedLeaf() {
+  throw new Error(
+    "Census mismatch: subject has nested object where basis has leaf"
+  );
+}
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+function makeBasisChecker({ compare, missing, extra }) {
+  return function makeWalker(basis) {
+    if (typeof basis === "object") {
+      const unvisited = new Set(Object.getOwnPropertyNames(basis));
       return {
-        enter: expectedLeaf,
-        done: expectedLeaf,
-        check: elt => compare(elt, basis),
+        enter: prop => {
+          unvisited.delete(prop);
+          if (prop in basis) {
+            return makeWalker(basis[prop]);
+          }
+
+          return extra(prop);
+        },
+
+        done: () => unvisited.forEach(prop => missing(prop, basis[prop])),
+        check: expectedObject,
       };
-    };
-  }
-
-  function missingProp(prop) {
-    throw new Error(
-      "Census mismatch: subject lacks property present in basis: " + prop
-    );
-  }
-
-  function extraProp(prop) {
-    throw new Error(
-      "Census mismatch: subject has property not present in basis: " + prop
-    );
-  }
-
-  
-  
-  Census.assertAllEqual = makeBasisChecker({
-    compare: (a, b) => {
-      if (a !== b) {
-        throw new Error("Census mismatch: expected " + a + " got " + b);
-      }
-    },
-    missing: missingProp,
-    extra: extraProp,
-  });
-
-  function ok(val) {
-    if (!val) {
-      throw new Error("Census mismatch: expected truthy, got " + val);
     }
-  }
 
-  
-  
-  Census.assertAllNotLessThan = makeBasisChecker({
-    compare: (subject, basis) => ok(subject >= basis),
-    missing: missingProp,
-    extra: () => Census.walkAnything,
-  });
-
-  
-  
-  Census.assertAllNotMoreThan = makeBasisChecker({
-    compare: (subject, basis) => ok(subject <= basis),
-    missing: missingProp,
-    extra: () => Census.walkAnything,
-  });
-
-  
-  
-  Census.assertAllWithin = function(fudge, basis) {
-    return makeBasisChecker({
-      compare: (subject, base) => ok(Math.abs(subject - base) <= fudge),
-      missing: missingProp,
-      extra: () => Census.walkAnything,
-    })(basis);
+    return {
+      enter: expectedLeaf,
+      done: expectedLeaf,
+      check: elt => compare(elt, basis),
+    };
   };
+}
 
-  return Census;
-})();
+function missingProp(prop) {
+  throw new Error(
+    "Census mismatch: subject lacks property present in basis: " + prop
+  );
+}
+
+function extraProp(prop) {
+  throw new Error(
+    "Census mismatch: subject has property not present in basis: " + prop
+  );
+}
+
+
+
+Census.assertAllEqual = makeBasisChecker({
+  compare: (a, b) => {
+    if (a !== b) {
+      throw new Error("Census mismatch: expected " + a + " got " + b);
+    }
+  },
+  missing: missingProp,
+  extra: extraProp,
+});
+
+function ok(val) {
+  if (!val) {
+    throw new Error("Census mismatch: expected truthy, got " + val);
+  }
+}
+
+
+
+Census.assertAllNotLessThan = makeBasisChecker({
+  compare: (subject, basis) => ok(subject >= basis),
+  missing: missingProp,
+  extra: () => Census.walkAnything,
+});
+
+
+
+Census.assertAllNotMoreThan = makeBasisChecker({
+  compare: (subject, basis) => ok(subject <= basis),
+  missing: missingProp,
+  extra: () => Census.walkAnything,
+});
+
+
+
+Census.assertAllWithin = function(fudge, basis) {
+  return makeBasisChecker({
+    compare: (subject, base) => ok(Math.abs(subject - base) <= fudge),
+    missing: missingProp,
+    extra: () => Census.walkAnything,
+  })(basis);
+};

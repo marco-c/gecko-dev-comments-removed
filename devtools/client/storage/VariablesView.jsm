@@ -38,7 +38,7 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIClipboardHelper"
 );
 
-this.EXPORTED_SYMBOLS = ["VariablesView", "escapeHTML"];
+const EXPORTED_SYMBOLS = ["VariablesView", "escapeHTML"];
 
 
 
@@ -56,7 +56,7 @@ this.EXPORTED_SYMBOLS = ["VariablesView", "escapeHTML"];
 
 
 
-this.VariablesView = function VariablesView(aParentNode, aFlags = {}) {
+function VariablesView(aParentNode, aFlags = {}) {
   this._store = []; 
   this._itemsByElement = new WeakMap();
   this._prevHierarchy = new Map();
@@ -82,7 +82,7 @@ this.VariablesView = function VariablesView(aParentNode, aFlags = {}) {
   }
 
   EventEmitter.decorate(this);
-};
+}
 
 VariablesView.prototype = {
   

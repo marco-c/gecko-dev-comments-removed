@@ -38,7 +38,7 @@ XPCOMUtils.defineLazyGetter(this, "EventEmitter", function() {
 
 const Services = require("Services");
 
-this.EXPORTED_SYMBOLS = ["BrowserToolboxLauncher"];
+const EXPORTED_SYMBOLS = ["BrowserToolboxLauncher"];
 
 var processes = new Set();
 
@@ -53,7 +53,7 @@ var processes = new Set();
 
 
 
-this.BrowserToolboxLauncher = function BrowserToolboxLauncher(
+function BrowserToolboxLauncher(
   onClose,
   onRun,
   overwritePreferences,
@@ -85,7 +85,7 @@ this.BrowserToolboxLauncher = function BrowserToolboxLauncher(
   this._create(binaryPath);
 
   processes.add(this);
-};
+}
 
 EventEmitter.decorate(BrowserToolboxLauncher);
 
