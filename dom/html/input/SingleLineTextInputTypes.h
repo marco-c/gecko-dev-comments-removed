@@ -17,7 +17,7 @@ class SingleLineTextInputTypeBase : public ::InputType {
   bool IsTooShort() const override;
   bool IsValueMissing() const override;
   
-  Maybe<bool> HasPatternMismatch() const override;
+  mozilla::Maybe<bool> HasPatternMismatch() const override;
 
  protected:
   explicit SingleLineTextInputTypeBase(
