@@ -515,16 +515,12 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
   }
 
   
-  
-  
-  
-  
-  nscoord GetOuterMainSize(AxisOrientationType aMainAxis) const {
-    return mMainSize + GetMarginBorderPaddingSizeInMainAxis(aMainAxis);
+  nscoord GetOuterMainSize() const {
+    return mMainSize + GetMarginBorderPaddingSizeInMainAxis();
   }
 
-  nscoord GetOuterCrossSize(AxisOrientationType aCrossAxis) const {
-    return mCrossSize + GetMarginBorderPaddingSizeInCrossAxis(aCrossAxis);
+  nscoord GetOuterCrossSize() const {
+    return mCrossSize + GetMarginBorderPaddingSizeInCrossAxis();
   }
 
   
@@ -683,14 +679,10 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
   
   
   
-  
-  
-  nscoord GetMarginBorderPaddingSizeInMainAxis(
-      AxisOrientationType aAxis) const {
+  nscoord GetMarginBorderPaddingSizeInMainAxis() const {
     return GetMarginSizeInMainAxis() + GetBorderPaddingSizeInMainAxis();
   }
-  nscoord GetMarginBorderPaddingSizeInCrossAxis(
-      AxisOrientationType aAxis) const {
+  nscoord GetMarginBorderPaddingSizeInCrossAxis() const {
     return GetMarginSizeInCrossAxis() + GetBorderPaddingSizeInCrossAxis();
   }
 
@@ -2137,7 +2129,7 @@ nscoord FlexItem::GetBaselineOffsetFromOuterCrossEdge(
 
   return (physSideMeasuringFrom == itemBlockStartSide)
              ? marginBStartToBaseline
-             : GetOuterCrossSize(crossAxis) - marginBStartToBaseline;
+             : GetOuterCrossSize() - marginBStartToBaseline;
 }
 
 bool FlexItem::IsCrossSizeAuto() const {
@@ -3004,7 +2996,7 @@ MainAxisPositionTracker::MainAxisPositionTracker(
   
   for (const FlexItem* item = aLine->GetFirstItem(); item;
        item = item->getNext()) {
-    mPackingSpaceRemaining -= item->GetOuterMainSize(mPhysicalAxis);
+    mPackingSpaceRemaining -= item->GetOuterMainSize();
     mNumAutoMarginsInMainAxis += item->GetNumAutoMarginsInAxis(mPhysicalAxis);
   }
 
@@ -3362,8 +3354,7 @@ void FlexLine::ComputeCrossSizeAndBaseline(
   nscoord crossEndToFurthestLastBaseline = nscoord_MIN;
   nscoord largestOuterCrossSize = 0;
   for (const FlexItem* item = mItems.getFirst(); item; item = item->getNext()) {
-    nscoord curOuterCrossSize =
-        item->GetOuterCrossSize(aAxisTracker.GetPhysicalCrossAxis());
+    nscoord curOuterCrossSize = item->GetOuterCrossSize();
 
     if ((item->GetAlignSelf() == NS_STYLE_ALIGN_BASELINE ||
          item->GetAlignSelf() == NS_STYLE_ALIGN_LAST_BASELINE) &&
@@ -3470,7 +3461,7 @@ void FlexItem::ResolveStretchedCrossSize(
   
   
   nscoord stretchedSize =
-      aLineCrossSize - GetMarginBorderPaddingSizeInCrossAxis(crossAxis);
+      aLineCrossSize - GetMarginBorderPaddingSizeInCrossAxis();
 
   stretchedSize = NS_CSS_MINMAX(stretchedSize, mCrossMinSize, mCrossMaxSize);
 
@@ -3501,7 +3492,7 @@ void SingleLineCrossAxisPositionTracker::ResolveAutoMarginsInCrossAxis(
   
   
   nscoord spaceForAutoMargins =
-      aLine.GetLineCrossSize() - aItem.GetOuterCrossSize(mPhysicalAxis);
+      aLine.GetLineCrossSize() - aItem.GetOuterCrossSize();
 
   if (spaceForAutoMargins <= 0) {
     return;  
@@ -3582,7 +3573,7 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
   
   
   
-  if (aLine.GetLineCrossSize() < aItem.GetOuterCrossSize(mPhysicalAxis) &&
+  if (aLine.GetLineCrossSize() < aItem.GetOuterCrossSize() &&
       (aItem.GetAlignSelfFlags() & NS_STYLE_ALIGN_SAFE)) {
     alignSelf = NS_STYLE_ALIGN_FLEX_START;
   }
@@ -3592,14 +3583,11 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
       
       break;
     case NS_STYLE_ALIGN_FLEX_END:
-      mPosition +=
-          aLine.GetLineCrossSize() - aItem.GetOuterCrossSize(mPhysicalAxis);
+      mPosition += aLine.GetLineCrossSize() - aItem.GetOuterCrossSize();
       break;
     case NS_STYLE_ALIGN_CENTER:
       
-      mPosition +=
-          (aLine.GetLineCrossSize() - aItem.GetOuterCrossSize(mPhysicalAxis)) /
-          2;
+      mPosition += (aLine.GetLineCrossSize() - aItem.GetOuterCrossSize()) / 2;
       break;
     case NS_STYLE_ALIGN_BASELINE:
     case NS_STYLE_ALIGN_LAST_BASELINE: {
@@ -3629,8 +3617,7 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
 
       if (aAxisTracker.AreAxesInternallyReversed() == useFirst) {
         
-        mPosition +=
-            aLine.GetLineCrossSize() - aItem.GetOuterCrossSize(mPhysicalAxis);
+        mPosition += aLine.GetLineCrossSize() - aItem.GetOuterCrossSize();
         
         mPosition -= baselineDiff;
       } else {
@@ -3979,8 +3966,7 @@ void nsFlexContainerFrame::GenerateFlexLines(
     }
 
     nscoord itemInnerHypotheticalMainSize = item->GetMainSize();
-    nscoord itemOuterHypotheticalMainSize =
-        item->GetOuterMainSize(aAxisTracker.GetPhysicalMainAxis());
+    nscoord itemOuterHypotheticalMainSize = item->GetOuterMainSize();
 
     
     
