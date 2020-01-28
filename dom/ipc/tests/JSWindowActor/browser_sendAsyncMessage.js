@@ -9,7 +9,7 @@ declTest("asyncMessage testing", {
     ok(actorParent, "JSWindowActorParent should have value.");
 
     await ContentTask.spawn(browser, {}, async function() {
-      let child = content.window.getWindowGlobalChild();
+      let child = content.windowGlobalChild;
       let actorChild = child.getActor("Test");
       ok(actorChild, "JSWindowActorChild should have value.");
 
@@ -32,7 +32,7 @@ declTest("asyncMessage without both sides", {
     
     
     await ContentTask.spawn(browser, {}, async function() {
-      let child = content.window.getWindowGlobalChild();
+      let child = content.windowGlobalChild;
       let actorChild = child.getActor("Test");
       ok(actorChild, "JSWindowActorChild should have value.");
 
