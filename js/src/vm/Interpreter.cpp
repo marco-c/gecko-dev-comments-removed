@@ -1656,16 +1656,8 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
 
 
 
-
-
-
-
-#if (defined(__GNUC__) || (__IBMC__ >= 700 && defined __IBM_COMPUTED_GOTO) || \
-     __SUNPRO_C >= 0x570)
-
 #  define INTERPRETER_LOOP()
 #  define CASE(OP) label_##OP:
-#  define PSEUDO_CASE(NAME) CASE(NAME)
 #  define DEFAULT() \
   label_default:
 #  define DISPATCH_TO(OP) goto* addresses[(OP)]
@@ -1684,23 +1676,6 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
           FOR_EACH_TRAILING_UNUSED_OPCODE(TRAILING_LABEL)
 #  undef TRAILING_LABEL
   };
-#else
-
-#  define INTERPRETER_LOOP() \
-  the_switch:                \
-    switch (switchOp)
-#  define CASE(OP) case jsbytecode(JSOp::OP):
-#  define PSEUDO_CASE(NAME) case NAME:
-#  define DEFAULT() default:
-#  define DISPATCH_TO(OP) \
-    JS_BEGIN_MACRO        \
-      switchOp = (OP);    \
-      goto the_switch;    \
-    JS_END_MACRO
-
-  
-  jsbytecode switchOp;
-#endif
 
   
 
@@ -1860,7 +1835,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
   ADVANCE_AND_DISPATCH(0);
 
   INTERPRETER_LOOP() {
-    PSEUDO_CASE(EnableInterruptsPseudoOpcode) {
+    CASE(EnableInterruptsPseudoOpcode) {
       bool moreInterrupts = false;
       jsbytecode op = *REGS.pc;
 
