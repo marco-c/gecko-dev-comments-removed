@@ -4562,6 +4562,31 @@ void nsFlexContainerFrame::UpdateClampState(
   }
 }
 
+void nsFlexContainerFrame::UpdateFlexLineAndItemInfo(
+    ComputedFlexContainerInfo& aContainerInfo,
+    const mozilla::LinkedList<FlexLine>& aLines) {
+  uint32_t lineIndex = 0;
+  for (const FlexLine* line = aLines.getFirst(); line;
+       line = line->getNext(), ++lineIndex) {
+    ComputedFlexLineInfo& lineInfo = aContainerInfo.mLines[lineIndex];
+
+    lineInfo.mCrossSize = line->GetLineCrossSize();
+    lineInfo.mFirstBaselineOffset = line->GetFirstBaselineOffset();
+    lineInfo.mLastBaselineOffset = line->GetLastBaselineOffset();
+
+    uint32_t itemIndex = 0;
+    for (const FlexItem* item = line->GetFirstItem(); item;
+         item = item->getNext(), ++itemIndex) {
+      ComputedFlexItemInfo& itemInfo = lineInfo.mItems[itemIndex];
+      itemInfo.mFrameRect = item->Frame()->GetRect();
+      itemInfo.mMainMinSize = item->GetMainMinSize();
+      itemInfo.mMainMaxSize = item->GetMainMaxSize();
+      itemInfo.mCrossMinSize = item->GetCrossMinSize();
+      itemInfo.mCrossMaxSize = item->GetCrossMaxSize();
+    }
+  }
+}
+
 nsFlexContainerFrame* nsFlexContainerFrame::GetFlexFrameWithComputedInfo(
     nsIFrame* aFrame) {
   
@@ -5092,26 +5117,7 @@ void nsFlexContainerFrame::DoFlexLayout(
 
   
   if (MOZ_UNLIKELY(containerInfo)) {
-    lineIndex = 0;
-    for (const FlexLine* line = lines.getFirst(); line;
-         line = line->getNext(), ++lineIndex) {
-      ComputedFlexLineInfo& lineInfo = containerInfo->mLines[lineIndex];
-
-      lineInfo.mCrossSize = line->GetLineCrossSize();
-      lineInfo.mFirstBaselineOffset = line->GetFirstBaselineOffset();
-      lineInfo.mLastBaselineOffset = line->GetLastBaselineOffset();
-
-      uint32_t itemIndex = 0;
-      for (const FlexItem* item = line->GetFirstItem(); item;
-           item = item->getNext(), ++itemIndex) {
-        ComputedFlexItemInfo& itemInfo = lineInfo.mItems[itemIndex];
-        itemInfo.mFrameRect = item->Frame()->GetRect();
-        itemInfo.mMainMinSize = item->GetMainMinSize();
-        itemInfo.mMainMaxSize = item->GetMainMaxSize();
-        itemInfo.mCrossMinSize = item->GetCrossMinSize();
-        itemInfo.mCrossMaxSize = item->GetCrossMaxSize();
-      }
-    }
+    UpdateFlexLineAndItemInfo(*containerInfo, lines);
   }
 }
 
