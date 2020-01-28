@@ -324,8 +324,10 @@ var TelemetrySend = {
 
 
 
-  testRunPingSender(url, pingPath, observer) {
-    return TelemetrySendImpl.runPingSender(url, pingPath, observer);
+
+
+  testRunPingSender(pings, observer) {
+    return TelemetrySendImpl.runPingSender(pings, observer);
   },
 };
 
@@ -951,7 +953,7 @@ var TelemetrySendImpl = {
     );
     try {
       const pingPath = OS.Path.join(TelemetryStorage.pingDirectoryPath, pingId);
-      this.runPingSender(submissionURL, pingPath);
+      this.runPingSender([{ url: submissionURL, path: pingPath }]);
     } catch (e) {
       this._log.error("_sendWithPingSender - failed to submit ping", e);
     }
@@ -1545,7 +1547,7 @@ var TelemetrySendImpl = {
     };
   },
 
-  runPingSender(url, pingPath, observer) {
+  runPingSender(pings, observer) {
     if (AppConstants.platform === "android") {
       throw Cr.NS_ERROR_NOT_IMPLEMENTED;
     }
@@ -1556,12 +1558,13 @@ var TelemetrySendImpl = {
     let exe = Services.dirsvc.get("GreBinD", Ci.nsIFile);
     exe.append(exeName);
 
+    let params = pings.flatMap(ping => [ping.url, ping.path]);
     let process = Cc["@mozilla.org/process/util;1"].createInstance(
       Ci.nsIProcess
     );
     process.init(exe);
     process.startHidden = true;
     process.noShell = true;
-    process.runAsync([url, pingPath], 2, observer);
+    process.runAsync(params, params.length, observer);
   },
 };
