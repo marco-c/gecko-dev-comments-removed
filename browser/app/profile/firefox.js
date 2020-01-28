@@ -2085,7 +2085,11 @@ pref("devtools.netmonitor.features.search", true);
 pref("devtools.netmonitor.features.requestBlocking", true);
 
 
-pref("devtools.application.enabled", false);
+#if defined(NIGHTLY_BUILD)
+  pref("devtools.application.enabled", true);
+#else
+  pref("devtools.application.enabled", false);
+#endif
 
 
 pref("devtools.netmonitor.panes-network-details-width", 550);
