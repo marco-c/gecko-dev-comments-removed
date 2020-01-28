@@ -183,8 +183,9 @@ class WebExtensionDesktop(PerftestDesktop, WebExtension):
     def run_test_teardown(self, test):
         
         if not self.debug_mode:
-            if self.runner.is_running():
-                self.runner.stop()
+            
+            
+            self.runner.stop()
         else:
             
             if self.config["run_local"]:
