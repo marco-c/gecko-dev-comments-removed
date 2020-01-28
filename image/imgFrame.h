@@ -355,8 +355,11 @@ class DrawableFrameRef final {
         mFrame = nullptr;
         mRef.reset();
       }
-    } else {
-      MOZ_ASSERT(aFrame->mOptSurface);
+    } else if (!aFrame->mOptSurface || !aFrame->mOptSurface->IsValid()) {
+      
+      
+      
+      mFrame = nullptr;
     }
   }
 
