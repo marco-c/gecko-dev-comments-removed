@@ -3656,6 +3656,28 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
         break;
       }
 
+      if (mFill) {
+        float epsilon = 0.0001;
+        bool noVerticalBorders = widths[0] <= epsilon && widths[2] < epsilon;
+        bool noHorizontalBorders = widths[1] <= epsilon && widths[3] < epsilon;
+
+        
+        
+        
+        if (noVerticalBorders && noHorizontalBorders) {
+          aBuilder.PushImage(dest, clip, !aItem->BackfaceIsHidden(), rendering, key.value());
+          break;
+        }
+
+        
+        
+        
+        
+        if (noHorizontalBorders || noVerticalBorders) {
+          return ImgDrawResult::NOT_SUPPORTED;
+        }
+      }
+
       wr::WrBorderImage params{
           wr::ToBorderWidths(widths[0], widths[1], widths[2], widths[3]),
           key.value(),
