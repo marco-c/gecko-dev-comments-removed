@@ -8,7 +8,7 @@ from talos import filter
 test definitions for Talos
 """
 
-_TESTS = {}  
+_TESTS = {}  # internal dict of Talos test classes
 
 
 def register_test():
@@ -29,9 +29,9 @@ def test_dict():
 
 class Test(object):
     """abstract base class for a Talos test case"""
-    __test__ = False  
+    __test__ = False  # not pytest
 
-    cycles = None  
+    cycles = None  # number of cycles
     keys = []
     desktop = True
     filters = filter.ignore_first.prepare(1) + filter.median.prepare()
@@ -82,9 +82,9 @@ class Test(object):
         return '\n'.join(lines)
 
 
-
-
-
+# ts-style startup tests (ts, twinopen, ts_cold, etc)
+# The overall test number is calculated by excluding the max opening time
+# and taking an average of the remaining numbers.
 class TsBase(Test):
     """abstract base class for ts-style tests"""
     keys = [
@@ -92,11 +92,11 @@ class TsBase(Test):
         'url_timestamp',
         'timeout',
         'cycles',
-        'profile_path',  
-                         
-                         
-                         
-                         
+        'profile_path',  # The path containing the template profile. This
+                         # directory is copied to the temporary profile during
+                         # initialization of the test. If some of the files may
+                         # be overwritten by Firefox and need to be reinstalled
+                         # before each pass, use key |reinstall|
         'gecko_profile',
         'gecko_profile_interval',
         'gecko_profile_entries',
@@ -121,13 +121,13 @@ class TsBase(Test):
         'cleanup',
         'webextensions',
         'webextensions_folder',
-        'reinstall',     
-                         
-                         
-                         
-                         
-                         
-                         
+        'reinstall',     # A list of files from the profile directory that
+                         # should be copied to the temporary profile prior to
+                         # running each cycle, to avoid one cycle overwriting
+                         # the data used by the next another cycle (may be used
+                         # e.g. for sessionstore.js to ensure that all cycles
+                         # use the exact same sessionstore.js, rather than a
+                         # more recent copy).
     ]
 
 
@@ -207,8 +207,8 @@ class sessionrestore(TsBase):
     gecko_profile_entries = 10000000
     profile_path = '${talos}/startup_test/sessionrestore/profile'
     reinstall = ['sessionstore.jsonlz4', 'sessionstore.js', 'sessionCheckpoints.json']
-    
-    
+    # Restore the session. We have to provide a URL, otherwise Talos
+    # asks for a manifest URL.
     url = 'about:home'
     preferences = {'browser.startup.page': 3}
     unit = 'ms'
@@ -241,20 +241,20 @@ class sessionrestore_many_windows(sessionrestore):
     profile_path = '${talos}/startup_test/sessionrestore/profile-manywindows'
 
 
+# pageloader tests(tp5, etc)
 
-
-
-
-
-
-
+# The overall test number is determined by first calculating the median
+# page load time for each page in the set (excluding the max page load
+# per individual page). The max median from that set is then excluded and
+# the average is taken; that becomes the number reported to the tinderbox
+# waterfall.
 
 
 class PageloaderTest(Test):
     """abstract base class for a Talos Pageloader test"""
     extensions = ['${talos}/pageloader']
-    tpmanifest = None  
-    tpcycles = 1  
+    tpmanifest = None  # test manifest
+    tpcycles = 1  # number of time to run each page
     cycles = None
     timeout = None
 
@@ -337,11 +337,11 @@ class cpstartup(PageloaderTest):
     tploadnocache = True
     unit = 'ms'
     preferences = {
-        
-        
-        
-        
-        
+        # By default, Talos is configured to open links from
+        # content in new windows. We're overriding them so that
+        # they open in new tabs instead.
+        # See http://kb.mozillazine.org/Browser.link.open_newwindow
+        # and http://kb.mozillazine.org/Browser.link.open_newwindow.restriction
         'browser.link.open_newwindow': 3,
         'browser.link.open_newwindow.restriction': 2,
     }
@@ -360,11 +360,11 @@ class tabpaint(PageloaderTest):
     tploadnocache = True
     unit = 'ms'
     preferences = {
-        
-        
-        
-        
-        
+        # By default, Talos is configured to open links from
+        # content in new windows. We're overriding them so that
+        # they open in new tabs instead.
+        # See http://kb.mozillazine.org/Browser.link.open_newwindow
+        # and http://kb.mozillazine.org/Browser.link.open_newwindow.restriction
         'browser.link.open_newwindow': 3,
         'browser.link.open_newwindow.restriction': 2,
         'browser.newtab.preload': False,
@@ -855,19 +855,19 @@ class WebkitBenchmark(PageloaderTest):
 
 @register_test()
 class stylebench(WebkitBenchmark):
-    
+    # StyleBench benchmark used by many browser vendors (from webkit)
     tpmanifest = '${talos}/tests/stylebench/stylebench.manifest'
 
 
 @register_test()
 class motionmark_animometer(WebkitBenchmark):
-    
+    # MotionMark benchmark used by many browser vendors (from webkit)
     tpmanifest = '${talos}/tests/motionmark/animometer.manifest'
 
 
 @register_test()
 class ARES6(WebkitBenchmark):
-    
+    # ARES-6 benchmark used by many browser vendors (from webkit)
     tpmanifest = '${talos}/tests/ares6/ares6.manifest'
     tppagecycles = 1
     lower_is_better = True
@@ -875,13 +875,13 @@ class ARES6(WebkitBenchmark):
 
 @register_test()
 class motionmark_htmlsuite(WebkitBenchmark):
-    
+    # MotionMark benchmark used by many browser vendors (from webkit)
     tpmanifest = '${talos}/tests/motionmark/htmlsuite.manifest'
 
 
 @register_test()
 class JetStream(WebkitBenchmark):
-    
+    # JetStream benchmark used by many browser vendors (from webkit)
     tpmanifest = '${talos}/tests/jetstream/jetstream.manifest'
     tppagecycles = 1
 
@@ -891,7 +891,7 @@ class perf_reftest(PageloaderTest):
     """
     Style perf-reftest a set of tests where the result is the difference of base vs ref pages
     """
-    base_vs_ref = True  
+    base_vs_ref = True  # compare the two test pages with eachother and report comparison
     tpmanifest = '${talos}/tests/perf-reftest/perf_reftest.manifest'
     tpcycles = 1
     tppagecycles = 10
@@ -999,9 +999,9 @@ class about_preferences_basic(PageloaderTest):
     Base class for about_preferences test
     """
     tpmanifest = '${talos}/tests/about-preferences/about_preferences_basic.manifest'
-    
-    
-    
+    # this test uses 'about:blank' as a dummy page (see manifest) so that the pages
+    # that just change url categories (i.e. about:preferences#search) will get a load event
+    # also any of the url category pages cannot have more than one tppagecycle
     tpcycles = 25
     tppagecycles = 1
     gecko_profile_interval = 1
@@ -1010,3 +1010,28 @@ class about_preferences_basic(PageloaderTest):
     unit = 'ms'
     lower_is_better = True
     fnbpaint = True
+
+
+@register_test()
+class about_newtab_with_snippets(PageloaderTest):
+    """
+    Load about ActivityStream (about:home and about:newtab) with snippets enabled
+    """
+    tpmanifest = '${talos}/tests/about-newtab/about_newtab.manifest'
+    tpcycles = 25
+    tppagecycles = 1
+    responsiveness = True
+    gecko_profile_interval = 1
+    gecko_profile_entries = 2000000
+    filters = filter.ignore_first.prepare(5) + filter.median.prepare()
+    unit = 'ms'
+    lower_is_better = True
+    fnbpaint = True
+    preferences = {
+            # ensure that snippets are turned on and load the json messages
+            'browser.newtabpage.activity-stream.asrouter.providers.snippets':\
+            '{"id":"snippets","enabled":true,"type":"json","location":\
+            "http://fakedomain/tests/about-newtab/snippets.json",\
+            "updateCycleInMs":14400000}',
+            'browser.newtabpage.activity-stream.feeds.snippets': True
+            }
