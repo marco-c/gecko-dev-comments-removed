@@ -493,7 +493,7 @@ JSScript* frontend::ScriptCompiler<Unit>::compileScript(
 
   
   
-  info.script->scriptSource()->recordParseStarted();
+  info.parseInfo.sourceObject->source()->recordParseStarted();
 
   TokenStreamPosition startPosition(info.keepAtoms, parser->tokenStream);
 
@@ -517,7 +517,7 @@ JSScript* frontend::ScriptCompiler<Unit>::compileScript(
     if (pn) {
       
       
-      info.script->scriptSource()->recordEmitStarted();
+      info.parseInfo.sourceObject->source()->recordEmitStarted();
 
       
       if (!parser->publishDeferredFunctions()) {
@@ -549,7 +549,7 @@ JSScript* frontend::ScriptCompiler<Unit>::compileScript(
 
   
   
-  info.script->scriptSource()->recordParseEnded();
+  info.parseInfo.sourceObject->source()->recordParseEnded();
 
   
   if (!info.scriptSource()->tryCompressOffThread(cx)) {
@@ -1199,7 +1199,7 @@ static bool CompileStandaloneFunction(JSContext* cx, MutableHandleFunction fun,
   
   if (info.getScript()) {
     if (parameterListEnd) {
-      info.getScript()->scriptSource()->setParameterListEnd(*parameterListEnd);
+      parseInfo.sourceObject->source()->setParameterListEnd(*parameterListEnd);
     }
     tellDebuggerAboutCompiledScript(cx, info.getScript());
   }
