@@ -22,6 +22,7 @@ loader.lazyImporter(
   "PlacesUtils",
   "resource://gre/modules/PlacesUtils.jsm"
 );
+const { AppConstants } = require("resource://gre/modules/AppConstants.jsm");
 
 
 
@@ -99,6 +100,11 @@ exports.FrameTargetActorProxy = protocol.ActorClassWithSpec(proxySpec, {
   },
 
   async getFaviconData() {
+    if (!AppConstants.MOZ_PLACES) {
+      
+      return null;
+    }
+
     try {
       const { data } = await PlacesUtils.promiseFaviconData(this._form.url);
       return data;
