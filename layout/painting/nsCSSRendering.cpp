@@ -4100,9 +4100,17 @@ void nsCSSRendering::PaintDecorationLine(
       continue;
     }
 
+    gfxFont* font = iter.GetGlyphRun()->mFont;
     
-    SkFont font;
-    if (!GetSkFontFromGfxFont(aDrawTarget, iter.GetGlyphRun()->mFont, font)) {
+    
+    
+    if (font->GetFontEntry()->HasFontTable(TRUETYPE_TAG('s', 'b', 'i', 'x'))) {
+      continue;
+    }
+
+    
+    SkFont skiafont;
+    if (!GetSkFontFromGfxFont(aDrawTarget, font, skiafont)) {
       PaintDecorationLineInternal(aFrame, aDrawTarget, aParams, rect);
       return;
     }
@@ -4110,7 +4118,7 @@ void nsCSSRendering::PaintDecorationLine(
     
     
     sk_sp<const SkTextBlob> textBlob =
-        CreateTextBlob(textRun, characterGlyphs, font, spacing.Elements(),
+        CreateTextBlob(textRun, characterGlyphs, skiafont, spacing.Elements(),
                        iter.GetStringStart(), iter.GetStringEnd(),
                        (float)appUnitsPerDevPixel, textPos, spacingOffset);
 
@@ -4123,8 +4131,7 @@ void nsCSSRendering::PaintDecorationLine(
       
       
       
-      gfxFont::Metrics metrics =
-          iter.GetGlyphRun()->mFont->GetMetrics(nsFontMetrics::eHorizontal);
+      gfxFont::Metrics metrics = font->GetMetrics(nsFontMetrics::eHorizontal);
       Float centerToBaseline = (metrics.emAscent - metrics.emDescent) / 2.0f;
       GetPositioning(aParams, rect, oneCSSPixel, centerToBaseline, bounds);
     }
