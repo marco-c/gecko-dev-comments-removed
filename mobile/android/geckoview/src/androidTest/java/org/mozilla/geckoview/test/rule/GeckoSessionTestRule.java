@@ -1324,6 +1324,13 @@ public class GeckoSessionTestRule implements TestRule {
     
 
 
+    public void waitForRoundTrip(final GeckoSession session) {
+        waitForJS(session, "true");
+    }
+
+    
+
+
 
     public void waitForPageStop() {
         waitForPageStop( null);
