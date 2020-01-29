@@ -132,16 +132,21 @@ extern "C" {
 
 
 
-#ifdef __ANDROID__
-  
 
-# pragma push_macro("stat64")
-# pragma push_macro("fstat64")
-# pragma push_macro("lstat64")
-# undef stat64
-# undef fstat64
-# undef lstat64
-#endif
+
+
+
+
+#pragma push_macro("stat64")
+#pragma push_macro("fstat64")
+#pragma push_macro("lstat64")
+#pragma push_macro("pread64")
+#pragma push_macro("pwrite64")
+#undef stat64
+#undef fstat64
+#undef lstat64
+#undef pread64
+#undef pwrite64
 
 #if defined(__ANDROID__) && defined(__x86_64__)
 
@@ -4519,13 +4524,13 @@ struct kernel_statfs {
 # endif
 #endif
 
-#ifdef __ANDROID__
-  
 
-# pragma pop_macro("stat64")
-# pragma pop_macro("fstat64")
-# pragma pop_macro("lstat64")
-#endif
+
+#pragma pop_macro("stat64")
+#pragma pop_macro("fstat64")
+#pragma pop_macro("lstat64")
+#pragma pop_macro("pread64")
+#pragma pop_macro("pwrite64")
 
 #if defined(__cplusplus) && !defined(SYS_CPLUSPLUS)
 }
