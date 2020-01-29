@@ -338,6 +338,10 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   mozilla::dom::TabGroup* TabGroup();
 
+  
+  
+  mozilla::dom::TabGroup* MaybeTabGroup();
+
   virtual mozilla::dom::CustomElementRegistry* CustomElements() = 0;
 
   
@@ -754,6 +758,10 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   bool HadOriginalOpener() const;
 
   mozilla::dom::TabGroup* TabGroup();
+
+  
+  
+  mozilla::dom::TabGroup* MaybeTabGroup();
 
   virtual nsPIDOMWindowOuter* GetPrivateRoot() = 0;
 

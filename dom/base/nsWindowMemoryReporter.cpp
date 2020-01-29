@@ -846,8 +846,8 @@ void nsWindowMemoryReporter::CheckForGhostWindows(
     }
 
     TimeStamp& timeStamp = iter.Data();
-
-    if (nonDetachedTabGroups.GetEntry(window->TabGroup())) {
+    TabGroup* tabGroup = window->MaybeTabGroup();
+    if (tabGroup && nonDetachedTabGroups.GetEntry(tabGroup)) {
       
       
       timeStamp = TimeStamp();

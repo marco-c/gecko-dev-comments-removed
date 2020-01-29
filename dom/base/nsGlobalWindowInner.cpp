@@ -7066,24 +7066,19 @@ already_AddRefed<Promise> nsGlobalWindowInner::CreateImageBitmap(
                              Some(gfx::IntRect(aSx, aSy, aSw, aSh)), aRv);
 }
 
-mozilla::dom::TabGroup* nsGlobalWindowInner::TabGroupInner() {
+mozilla::dom::TabGroup* nsGlobalWindowInner::MaybeTabGroupInner() {
   
   
   if (!mTabGroup) {
     nsGlobalWindowOuter* outer = GetOuterWindowInternal();
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_RELEASE_ASSERT(
-        outer, "Inner window without outer window has no cached tab group!");
-    mTabGroup = outer->TabGroup();
+    if (!outer) {
+      return nullptr;
+    }
+    mTabGroup = outer->MaybeTabGroup();
+    if (!mTabGroup) {
+      return nullptr;
+    }
   }
-  MOZ_ASSERT(mTabGroup);
 
 #ifdef DEBUG
   nsGlobalWindowOuter* outer = GetOuterWindowInternal();
@@ -7091,6 +7086,24 @@ mozilla::dom::TabGroup* nsGlobalWindowInner::TabGroupInner() {
 #endif
 
   return mTabGroup;
+}
+
+mozilla::dom::TabGroup* nsGlobalWindowInner::TabGroupInner() {
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_RELEASE_ASSERT(
+      mTabGroup || GetOuterWindowInternal(),
+      "Inner window without outer window has no cached tab group!");
+
+  mozilla::dom::TabGroup* tabGroup = MaybeTabGroupInner();
+  MOZ_RELEASE_ASSERT(tabGroup);
+  return tabGroup;
 }
 
 nsresult nsGlobalWindowInner::Dispatch(
@@ -7218,6 +7231,10 @@ void nsGlobalWindowInner::StorageAccessGranted() {
 
 mozilla::dom::TabGroup* nsPIDOMWindowInner::TabGroup() {
   return nsGlobalWindowInner::Cast(this)->TabGroupInner();
+}
+
+mozilla::dom::TabGroup* nsPIDOMWindowInner::MaybeTabGroup() {
+  return nsGlobalWindowInner::Cast(this)->MaybeTabGroupInner();
 }
 
 
