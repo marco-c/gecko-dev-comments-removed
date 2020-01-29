@@ -319,10 +319,6 @@ class MOZ_STACK_CLASS FunctionParamsEmitter {
   
   mozilla::Maybe<DefaultEmitter> default_;
 
-  
-  
-  mozilla::Maybe<EmitterScope> paramExprVarEmitterScope_;
-
 #ifdef DEBUG
   
   
@@ -443,10 +439,6 @@ class MOZ_STACK_CLASS FunctionParamsEmitter {
   MOZ_MUST_USE DestructuringFlavor getDestructuringFlavor();
 
  private:
-  
-  MOZ_MUST_USE bool enterParameterExpressionVarScope();
-  MOZ_MUST_USE bool leaveParameterExpressionVarScope();
-
   MOZ_MUST_USE bool prepareForInitializer();
   MOZ_MUST_USE bool emitInitializerEnd();
 

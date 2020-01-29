@@ -957,35 +957,6 @@ bool FunctionParamsEmitter::emitDestructuringRestEnd() {
   return true;
 }
 
-bool FunctionParamsEmitter::enterParameterExpressionVarScope() {
-  if (!funbox_->hasDirectEvalInParameterExpr) {
-    return true;
-  }
-
-  
-  
-  
-  
-  paramExprVarEmitterScope_.emplace(bce_);
-  if (!paramExprVarEmitterScope_->enterParameterExpressionVar(bce_)) {
-    return false;
-  }
-  return true;
-}
-
-bool FunctionParamsEmitter::leaveParameterExpressionVarScope() {
-  if (!paramExprVarEmitterScope_) {
-    return true;
-  }
-
-  if (!paramExprVarEmitterScope_->leave(bce_)) {
-    return false;
-  }
-  paramExprVarEmitterScope_.reset();
-
-  return true;
-}
-
 bool FunctionParamsEmitter::prepareForInitializer() {
   
 
