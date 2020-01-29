@@ -108,6 +108,14 @@ const STRUCTURED_INGESTION_NAMESPACE_MS = "messaging-system";
 
 const TIMESTAMP_MISSING_VALUE = -1;
 
+
+
+const ONBOARDING_ALLOWED_PAGE_VALUES = [
+  "about:welcome",
+  "about:home",
+  "about:newtab",
+];
+
 this.TelemetryFeed = class TelemetryFeed {
   constructor(options) {
     this.sessions = new Map();
@@ -589,6 +597,7 @@ this.TelemetryFeed = class TelemetryFeed {
       addon_version: Services.appinfo.appBuildID,
       locale: Services.locale.appLocaleAsBCP47,
     };
+    const session = this.sessions.get(au.getPortIdOfSender(action));
     if (event.event_context && typeof event.event_context === "object") {
       event.event_context = JSON.stringify(event.event_context);
     }
@@ -603,7 +612,7 @@ this.TelemetryFeed = class TelemetryFeed {
       
       case "whats-new-panel_user_event":
       case "onboarding_user_event":
-        event = await this.applyOnboardingPolicy(event);
+        event = await this.applyOnboardingPolicy(event, session);
         break;
       case "asrouter_undesired_event":
         event = this.applyUndesiredEventPolicy(event);
@@ -649,8 +658,29 @@ this.TelemetryFeed = class TelemetryFeed {
 
 
 
-  async applyOnboardingPolicy(ping) {
+  async applyOnboardingPolicy(ping, session) {
     ping.client_id = await this.telemetryClientId;
+    
+    if (ping.action === "onboarding_user_event" && session && session.page) {
+      let event_context;
+
+      try {
+        event_context = ping.event_context
+          ? JSON.parse(ping.event_context)
+          : {};
+      } catch (e) {
+        
+        
+        event_context = { value: ping.event_context };
+      }
+
+      if (ONBOARDING_ALLOWED_PAGE_VALUES.includes(session.page)) {
+        event_context.page = session.page;
+      } else {
+        Cu.reportError(`Invalid 'page' for Onboarding event: ${session.page}`);
+      }
+      ping.event_context = JSON.stringify(event_context);
+    }
     delete ping.action;
     return { ping, pingType: "onboarding" };
   }
