@@ -1219,6 +1219,10 @@ bool PosixProcessLauncher::DoFinishLaunch() {
 
 #ifdef XP_MACOSX
 bool MacProcessLauncher::DoFinishLaunch() {
+  if (!PosixProcessLauncher::DoFinishLaunch()) {
+    return false;
+  }
+
   
   const int kTimeoutMs = 10000;
 
