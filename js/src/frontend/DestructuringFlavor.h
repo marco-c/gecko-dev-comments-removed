@@ -15,13 +15,6 @@ enum class DestructuringFlavor {
   Declaration,
 
   
-  
-  
-  
-  
-  FormalParameterInVarScope,
-
-  
   Assignment
 };
 
