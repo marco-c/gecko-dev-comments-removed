@@ -7,7 +7,7 @@ use api::PipelineId;
 use api::units::*;
 use crate::clip::{ClipChainId, ClipDataStore, ClipNode, ClipItemKind, ClipStore};
 use crate::clip::{rounded_rectangle_contains_point};
-use crate::clip_scroll_tree::{SpatialNodeIndex, ClipScrollTree};
+use crate::spatial_tree::{SpatialNodeIndex, SpatialTree};
 use crate::internal_types::{FastHashMap, LayoutPrimitiveInfo};
 use std::{ops, u32};
 use std::sync::Arc;
@@ -218,7 +218,7 @@ pub struct HitTester {
 impl HitTester {
     pub fn new(
         scene: Arc<HitTestingScene>,
-        clip_scroll_tree: &ClipScrollTree,
+        spatial_tree: &SpatialTree,
         clip_store: &ClipStore,
         clip_data_store: &ClipDataStore,
     ) -> HitTester {
@@ -228,25 +228,25 @@ impl HitTester {
             clip_chains: Vec::new(),
             pipeline_root_nodes: FastHashMap::default(),
         };
-        hit_tester.read_clip_scroll_tree(
-            clip_scroll_tree,
+        hit_tester.read_spatial_tree(
+            spatial_tree,
             clip_store,
             clip_data_store,
         );
         hit_tester
     }
 
-    fn read_clip_scroll_tree(
+    fn read_spatial_tree(
         &mut self,
-        clip_scroll_tree: &ClipScrollTree,
+        spatial_tree: &SpatialTree,
         clip_store: &ClipStore,
         clip_data_store: &ClipDataStore,
     ) {
         self.spatial_nodes.clear();
         self.clip_chains.clear();
 
-        self.spatial_nodes.reserve(clip_scroll_tree.spatial_nodes.len());
-        for (index, node) in clip_scroll_tree.spatial_nodes.iter().enumerate() {
+        self.spatial_nodes.reserve(spatial_tree.spatial_nodes.len());
+        for (index, node) in spatial_tree.spatial_nodes.iter().enumerate() {
             let index = SpatialNodeIndex::new(index);
 
             
@@ -259,13 +259,13 @@ impl HitTester {
 
             self.spatial_nodes.push(HitTestSpatialNode {
                 pipeline_id: node.pipeline_id,
-                world_content_transform: clip_scroll_tree
+                world_content_transform: spatial_tree
                     .get_world_transform(index)
                     .into_fast_transform(),
-                world_viewport_transform: clip_scroll_tree
+                world_viewport_transform: spatial_tree
                     .get_world_viewport_transform(index)
                     .into_fast_transform(),
-                external_scroll_offset: clip_scroll_tree.external_scroll_offset(index),
+                external_scroll_offset: spatial_tree.external_scroll_offset(index),
             });
         }
 

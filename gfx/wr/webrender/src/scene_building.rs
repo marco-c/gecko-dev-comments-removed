@@ -14,7 +14,7 @@ use api::{ClipMode, PrimitiveKeyKind, TransformStyle, YuvColorSpace, ColorRange,
 use api::units::*;
 use crate::clip::{ClipChainId, ClipRegion, ClipItemKey, ClipStore, ClipItemKeyKind};
 use crate::clip::{ClipInternData, ClipDataHandle, ClipNodeKind};
-use crate::clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, ClipScrollTree, SpatialNodeIndex};
+use crate::spatial_tree::{ROOT_SPATIAL_NODE_INDEX, SpatialTree, SpatialNodeIndex};
 use crate::frame_builder::{ChasePrimitive, FrameBuilderConfig};
 use crate::glyph_rasterizer::FontInstance;
 use crate::hit_test::{HitTestingItem, HitTestingScene};
@@ -157,11 +157,11 @@ impl ScrollOffsetMapper {
     fn external_scroll_offset(
         &mut self,
         spatial_node_index: SpatialNodeIndex,
-        clip_scroll_tree: &ClipScrollTree,
+        spatial_tree: &SpatialTree,
     ) -> LayoutVector2D {
         if spatial_node_index != self.current_spatial_node {
             self.current_spatial_node = spatial_node_index;
-            self.current_offset = clip_scroll_tree.external_scroll_offset(spatial_node_index);
+            self.current_offset = spatial_tree.external_scroll_offset(spatial_node_index);
         }
 
         self.current_offset
@@ -324,7 +324,7 @@ pub struct SceneBuilder<'a> {
     pipeline_clip_chain_stack: Vec<ClipChainId>,
 
     
-    pub clip_scroll_tree: ClipScrollTree,
+    pub spatial_tree: SpatialTree,
 
     
     pub prim_store: PrimitiveStore,
@@ -394,7 +394,7 @@ impl<'a> SceneBuilder<'a> {
 
         let mut builder = SceneBuilder {
             scene,
-            clip_scroll_tree: ClipScrollTree::new(),
+            spatial_tree: SpatialTree::new(),
             font_instances,
             config: *frame_builder_config,
             output_pipelines,
@@ -466,7 +466,7 @@ impl<'a> SceneBuilder<'a> {
             output_rect: view.device_rect.size.into(),
             background_color,
             hit_testing_scene: Arc::new(builder.hit_testing_scene),
-            clip_scroll_tree: builder.clip_scroll_tree,
+            spatial_tree: builder.spatial_tree,
             prim_store: builder.prim_store,
             clip_store: builder.clip_store,
             root_pic_index: builder.root_pic_index,
@@ -492,7 +492,7 @@ impl<'a> SceneBuilder<'a> {
             .external_scroll_mapper
             .external_scroll_offset(
                 spatial_node_index,
-                &self.clip_scroll_tree,
+                &self.spatial_tree,
             );
 
         rf_offset + scroll_offset
@@ -771,7 +771,7 @@ impl<'a> SceneBuilder<'a> {
             info.previously_applied_offset,
         );
 
-        let index = self.clip_scroll_tree.add_sticky_frame(
+        let index = self.spatial_tree.add_sticky_frame(
             parent_node_index,
             sticky_frame_info,
             info.id.pipeline_id(),
@@ -949,7 +949,7 @@ impl<'a> SceneBuilder<'a> {
         let snap_to_device = &mut self.sc_stack.last_mut().unwrap().snap_to_device;
         snap_to_device.set_target_spatial_node(
             spatial_node_index,
-            &self.clip_scroll_tree,
+            &self.spatial_tree,
         );
 
         let bounds = snap_to_device.snap_rect(
@@ -1035,7 +1035,7 @@ impl<'a> SceneBuilder<'a> {
         let snap_to_device = &mut self.sc_stack.last_mut().unwrap().snap_to_device;
         snap_to_device.set_target_spatial_node(
             clip_and_scroll.spatial_node_index,
-            &self.clip_scroll_tree
+            &self.spatial_tree
         );
 
         let unsnapped_clip_rect = common.clip_rect.translate(current_offset);
@@ -1081,7 +1081,7 @@ impl<'a> SceneBuilder<'a> {
         let snap_to_device = &mut self.sc_stack.last_mut().unwrap().snap_to_device;
         snap_to_device.set_target_spatial_node(
             target_spatial_node,
-            &self.clip_scroll_tree
+            &self.spatial_tree
         );
         snap_to_device.snap_rect(rect)
     }
@@ -1910,7 +1910,7 @@ impl<'a> SceneBuilder<'a> {
                         
                         if parent_sc.pipeline_id != stacking_context.pipeline_id && self.iframe_depth == 1 {
                             self.content_slice_count = stacking_context.init_picture_caching(
-                                &self.clip_scroll_tree,
+                                &self.spatial_tree,
                                 &self.clip_store,
                                 &self.interners,
                                 &self.quality_settings,
@@ -1943,7 +1943,7 @@ impl<'a> SceneBuilder<'a> {
             
             if !self.picture_caching_initialized {
                 self.content_slice_count = stacking_context.init_picture_caching(
-                    &self.clip_scroll_tree,
+                    &self.spatial_tree,
                     &self.clip_store,
                     &self.interners,
                     &self.quality_settings,
@@ -2197,7 +2197,7 @@ impl<'a> SceneBuilder<'a> {
         kind: ReferenceFrameKind,
         origin_in_parent_reference_frame: LayoutVector2D,
     ) -> SpatialNodeIndex {
-        let index = self.clip_scroll_tree.add_reference_frame(
+        let index = self.spatial_tree.add_reference_frame(
             parent_index,
             transform_style,
             source_transform,
@@ -2240,7 +2240,7 @@ impl<'a> SceneBuilder<'a> {
             spatial_node_index,
             ROOT_SPATIAL_NODE_INDEX,
             device_pixel_scale,
-            &self.clip_scroll_tree,
+            &self.spatial_tree,
         );
 
         let content_size = snap_to_device.snap_size(content_size);
@@ -2281,7 +2281,7 @@ impl<'a> SceneBuilder<'a> {
         let snap_to_device = &mut self.sc_stack.last_mut().unwrap().snap_to_device;
         snap_to_device.set_target_spatial_node(
             spatial_node_index,
-            &self.clip_scroll_tree,
+            &self.spatial_tree,
         );
 
         let snapped_clip_rect = snap_to_device.snap_rect(&clip_region.main);
@@ -2394,7 +2394,7 @@ impl<'a> SceneBuilder<'a> {
         frame_kind: ScrollFrameKind,
         external_scroll_offset: LayoutVector2D,
     ) -> SpatialNodeIndex {
-        let node_index = self.clip_scroll_tree.add_scroll_frame(
+        let node_index = self.spatial_tree.add_scroll_frame(
             parent_node_index,
             external_id,
             pipeline_id,
@@ -2627,7 +2627,7 @@ impl<'a> SceneBuilder<'a> {
         let snap_to_device = &mut self.sc_stack.last_mut().unwrap().snap_to_device;
         snap_to_device.set_target_spatial_node(
             pending_primitive.clip_and_scroll.spatial_node_index,
-            &self.clip_scroll_tree,
+            &self.spatial_tree,
         );
 
         
@@ -3603,7 +3603,7 @@ impl FlattenedStackingContext {
     
     fn init_picture_caching(
         &mut self,
-        clip_scroll_tree: &ClipScrollTree,
+        spatial_tree: &SpatialTree,
         clip_store: &ClipStore,
         interners: &Interners,
         quality_settings: &QualitySettings,
@@ -3618,7 +3618,7 @@ impl FlattenedStackingContext {
 
         
         for (cluster_index, cluster) in self.prim_list.clusters.iter().enumerate() {
-            let scroll_root = clip_scroll_tree.find_scroll_root(
+            let scroll_root = spatial_tree.find_scroll_root(
                 cluster.spatial_node_index,
             );
 
@@ -3659,8 +3659,8 @@ impl FlattenedStackingContext {
                                     let clip_chain_node = &clip_store
                                         .clip_chain_nodes[current_clip_chain_id.0 as usize];
                                     let clip_node_data = &interners.clip[clip_chain_node.handle];
-                                    let clip_scroll_root = clip_scroll_tree.find_scroll_root(clip_node_data.spatial_node_index);
-                                    if clip_scroll_root != ROOT_SPATIAL_NODE_INDEX {
+                                    let spatial_root = spatial_tree.find_scroll_root(clip_node_data.spatial_node_index);
+                                    if spatial_root != ROOT_SPATIAL_NODE_INDEX {
                                         return false;
                                     }
                                     current_clip_chain_id = clip_chain_node.parent_clip_chain_id;

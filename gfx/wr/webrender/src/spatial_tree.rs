@@ -94,7 +94,7 @@ impl ops::Not for VisibleFace {
     }
 }
 
-pub struct ClipScrollTree {
+pub struct SpatialTree {
     
     
     pub spatial_nodes: Vec<SpatialNode>,
@@ -218,9 +218,9 @@ enum TransformScroll {
     Unscrolled,
 }
 
-impl ClipScrollTree {
+impl SpatialTree {
     pub fn new() -> Self {
-        ClipScrollTree {
+        SpatialTree {
             spatial_nodes: Vec::new(),
             coord_systems: Vec::new(),
             pending_scroll_offsets: FastHashMap::default(),
@@ -685,13 +685,13 @@ impl ClipScrollTree {
     #[allow(dead_code)]
     pub fn print(&self) {
         if !self.spatial_nodes.is_empty() {
-            let mut pt = PrintTree::new("clip_scroll tree");
+            let mut pt = PrintTree::new("spatial tree");
             self.print_with(&mut pt);
         }
     }
 }
 
-impl PrintableTree for ClipScrollTree {
+impl PrintableTree for SpatialTree {
     fn print_with<T: PrintTreePrinter>(&self, pt: &mut T) {
         if !self.spatial_nodes.is_empty() {
             self.print_node(self.root_reference_frame_index(), pt);
@@ -701,7 +701,7 @@ impl PrintableTree for ClipScrollTree {
 
 #[cfg(test)]
 fn add_reference_frame(
-    cst: &mut ClipScrollTree,
+    cst: &mut SpatialTree,
     parent: Option<SpatialNodeIndex>,
     transform: LayoutTransform,
     origin_in_parent_reference_frame: LayoutVector2D,
@@ -720,7 +720,7 @@ fn add_reference_frame(
 fn test_pt(
     px: f32,
     py: f32,
-    cst: &ClipScrollTree,
+    cst: &SpatialTree,
     child: SpatialNodeIndex,
     parent: SpatialNodeIndex,
     expected_x: f32,
@@ -743,7 +743,7 @@ fn test_pt(
 fn test_cst_simple_translation() {
     
 
-    let mut cst = ClipScrollTree::new();
+    let mut cst = SpatialTree::new();
 
     let root = add_reference_frame(
         &mut cst,
@@ -785,7 +785,7 @@ fn test_cst_simple_translation() {
 fn test_cst_simple_scale() {
     
 
-    let mut cst = ClipScrollTree::new();
+    let mut cst = SpatialTree::new();
 
     let root = add_reference_frame(
         &mut cst,
@@ -828,7 +828,7 @@ fn test_cst_simple_scale() {
 fn test_cst_scale_translation() {
     
 
-    let mut cst = ClipScrollTree::new();
+    let mut cst = SpatialTree::new();
 
     let root = add_reference_frame(
         &mut cst,
@@ -883,7 +883,7 @@ fn test_cst_translation_rotate() {
     
     use euclid::Angle;
 
-    let mut cst = ClipScrollTree::new();
+    let mut cst = SpatialTree::new();
 
     let root = add_reference_frame(
         &mut cst,
