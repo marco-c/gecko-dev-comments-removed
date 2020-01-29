@@ -3733,12 +3733,8 @@ bool js::CheckGlobalOrEvalDeclarationConflicts(JSContext* cx,
     
     
     
-    
     if (!script->bodyScope()->hasEnvironment()) {
-      MOZ_ASSERT(
-          !script->strict() &&
-          (!script->enclosingScope()->is<FunctionScope>() ||
-           !script->enclosingScope()->as<FunctionScope>().hasParameterExprs()));
+      MOZ_ASSERT(!script->strict());
       if (!CheckEvalDeclarationConflicts(cx, script, envChain, varObj)) {
         return false;
       }

@@ -630,8 +630,7 @@ bool EmitterScope::enterFunction(BytecodeEmitter* bce, FunctionBox* funbox) {
   
   
   
-  
-  if (!funbox->hasParameterExprs && funbox->hasExtensibleScope()) {
+  if (funbox->hasExtensibleScope()) {
     fallbackFreeNameLocation_ = Some(NameLocation::Dynamic());
   }
 

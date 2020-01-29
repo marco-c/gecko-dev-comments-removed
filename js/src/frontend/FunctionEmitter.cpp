@@ -788,10 +788,6 @@ bool FunctionParamsEmitter::prepareForDefault() {
 
   
 
-  if (!enterParameterExpressionVarScope()) {
-    return false;
-  }
-
   if (!prepareForInitializer()) {
     
     return false;
@@ -816,9 +812,6 @@ bool FunctionParamsEmitter::emitDefaultEnd(JS::Handle<JSAtom*> paramName) {
     
     return false;
   }
-  if (!leaveParameterExpressionVarScope()) {
-    return false;
-  }
 
   argSlot_++;
 
@@ -832,10 +825,6 @@ bool FunctionParamsEmitter::prepareForDestructuring() {
   MOZ_ASSERT(state_ == State::Start);
 
   
-
-  if (!enterParameterExpressionVarScope()) {
-    return false;
-  }
 
   if (!bce_->emitArgOp(JSOp::GetArg, argSlot_)) {
     
@@ -858,10 +847,6 @@ bool FunctionParamsEmitter::emitDestructuringEnd() {
     return false;
   }
 
-  if (!leaveParameterExpressionVarScope()) {
-    return false;
-  }
-
   argSlot_++;
 
 #ifdef DEBUG
@@ -875,9 +860,6 @@ bool FunctionParamsEmitter::prepareForDestructuringDefaultInitializer() {
 
   
 
-  if (!enterParameterExpressionVarScope()) {
-    return false;
-  }
   if (!prepareForInitializer()) {
     
     return false;
@@ -915,10 +897,6 @@ bool FunctionParamsEmitter::emitDestructuringDefaultEnd() {
     return false;
   }
 
-  if (!leaveParameterExpressionVarScope()) {
-    return false;
-  }
-
   argSlot_++;
 
 #ifdef DEBUG
@@ -952,9 +930,6 @@ bool FunctionParamsEmitter::prepareForDestructuringRest() {
 
   
 
-  if (!enterParameterExpressionVarScope()) {
-    return false;
-  }
   if (!emitRestArray()) {
     
     return false;
@@ -973,10 +948,6 @@ bool FunctionParamsEmitter::emitDestructuringRestEnd() {
 
   if (!bce_->emit1(JSOp::Pop)) {
     
-    return false;
-  }
-
-  if (!leaveParameterExpressionVarScope()) {
     return false;
   }
 

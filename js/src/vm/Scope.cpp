@@ -643,9 +643,6 @@ template
                       HandleScope enclosing, MutableHandleScope scope);
 
 static inline uint32_t FunctionScopeEnvShapeFlags(bool hasParameterExprs) {
-  if (hasParameterExprs) {
-    return BaseShape::DELEGATE;
-  }
   return BaseShape::QUALIFIED_VAROBJ | BaseShape::DELEGATE;
 }
 
