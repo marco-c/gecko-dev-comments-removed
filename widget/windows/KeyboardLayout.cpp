@@ -1306,7 +1306,7 @@ NativeKey::NativeKey(nsWindowBase* aWidget, const MSG& aMessage,
 
   MOZ_LOG(sNativeKeyLogger, LogLevel::Info,
           ("%p   NativeKey::NativeKey(), mKeyboardLayout=0x%08X, "
-           "mFocusedWndBeforeDispatch=0x%p, mDOMKeyCode=0x%04X, "
+           "mFocusedWndBeforeDispatch=0x%p, mDOMKeyCode=%s, "
            "mKeyNameIndex=%s, mCodeNameIndex=%s, mModKeyState=%s, "
            "mVirtualKeyCode=%s, mOriginalVirtualKeyCode=%s, "
            "mCommittedCharsAndModifiers=%s, mInputtingStringAndModifiers=%s, "
@@ -3489,6 +3489,21 @@ void NativeKey::ComputeInputtingStringWithKeyboardLayout() {
     return;
   }
 
+  
+  
+  
+  
+  
+  
+  if (IsTypingUnicodeScalarValue()) {
+    MOZ_ASSERT(mMsg.message == WM_SYSKEYDOWN);
+    MOZ_ASSERT(!mCommittedCharsAndModifiers.IsEmpty());
+    char16_t num = mCommittedCharsAndModifiers.CharAt(0);
+    MOZ_ASSERT(num >= '0' && num <= '9');
+    mUnshiftedString.Append(num, MODIFIER_NONE);
+    return;
+  }
+
   ModifierKeyState capsLockState(mModKeyState.GetModifiers() &
                                  MODIFIER_CAPSLOCK);
 
@@ -3962,6 +3977,69 @@ void KeyboardLayout::InitNativeKey(NativeKey& aNativeKey) {
       aNativeKey.mCommittedCharsAndModifiers.Append(ch, modifiers);
       return;
     }
+  }
+
+  
+  
+  
+  
+  
+  if (aNativeKey.IsTypingUnicodeScalarValue()) {
+    
+    
+    
+    
+    
+    char16_t num = '0';
+    if (aNativeKey.mVirtualKeyCode >= VK_NUMPAD0 &&
+        aNativeKey.mVirtualKeyCode <= VK_NUMPAD9) {
+      num = '0' + aNativeKey.mVirtualKeyCode - VK_NUMPAD0;
+    }
+    
+    
+    else {
+      switch (aNativeKey.mScanCode) {
+        case 0x0052:  
+          num = '0';
+          break;
+        case 0x004F:  
+          num = '1';
+          break;
+        case 0x0050:  
+          num = '2';
+          break;
+        case 0x0051:  
+          num = '3';
+          break;
+        case 0x004B:  
+          num = '4';
+          break;
+        case 0x004C:  
+          num = '5';
+          break;
+        case 0x004D:  
+          num = '6';
+          break;
+        case 0x0047:  
+          num = '7';
+          break;
+        case 0x0048:  
+          num = '8';
+          break;
+        case 0x0049:  
+          num = '9';
+          break;
+        default:
+          MOZ_ASSERT_UNREACHABLE(
+              "IsTypingUnicodeScalarValue() must have returned true for wrong "
+              "scancode");
+          break;
+      }
+    }
+    aNativeKey.mCommittedCharsAndModifiers.Append(num,
+                                                  aNativeKey.GetModifiers());
+    aNativeKey.mKeyNameIndex = KEY_NAME_INDEX_USE_STRING;
+    return;
   }
 
   
