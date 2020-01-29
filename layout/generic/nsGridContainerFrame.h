@@ -64,7 +64,13 @@ struct ComputedGridTrackInfo {
   nsTArray<nscoord> mPositions;
   nsTArray<nscoord> mSizes;
   nsTArray<uint32_t> mStates;
+  
+  
+  
   nsTArray<bool> mRemovedRepeatTracks;
+  
+  
+  
   nsTArray<nsTArray<StyleCustomIdent>> mResolvedLineNames;
   uint32_t mRepeatFirstTrack;
   bool mIsSubgrid;
