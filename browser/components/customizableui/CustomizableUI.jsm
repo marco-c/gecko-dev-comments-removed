@@ -5156,9 +5156,15 @@ OverflowableToolbar.prototype = {
     if (!this._enabled) {
       return;
     }
-    log.debug("Checking overflow");
 
     let win = this._target.ownerGlobal;
+    if (win.document.documentElement.hasAttribute("inDOMFullscreen")) {
+      
+      
+      return;
+    }
+
+    log.debug("Checking overflow");
     let [isOverflowing, totalAvailWidth] = await this._getOverflowInfo();
     if (win.closed) {
       return;
