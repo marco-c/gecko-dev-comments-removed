@@ -224,19 +224,6 @@ elif platform.system() == 'Windows':
 else:
     compiler = 'gcc'
 
-
-if args.platform:
-    variant_platform = args.platform.split("-")[0]
-elif platform.system() == 'Windows':
-    variant_platform = 'win64' if word_bits == 64 else 'win32'
-elif platform.system() == 'Linux':
-    variant_platform = 'linux64' if word_bits == 64 else 'linux'
-elif platform.system() == 'Darwin':
-    variant_platform = 'macosx64'
-else:
-    variant_platform = 'other'
-
-
 info("using compiler '{}'".format(compiler))
 
 cxx = {'clang': 'clang++', 'gcc': 'g++', 'cl': 'cl'}.get(compiler)
@@ -306,12 +293,6 @@ else:
 
 if platform.system() == 'Linux' and AUTOMATION:
     CONFIGURE_ARGS = '--enable-stdcxx-compat --disable-gold ' + CONFIGURE_ARGS
-
-
-CONFIGURE_ARGS = "{} {}".format(
-    variant.get('conditional-configure-args', {}).get(variant_platform, ''),
-    CONFIGURE_ARGS
-)
 
 
 ACTIVE_PROCESSES = set()
@@ -466,6 +447,18 @@ def normalize_tests(tests):
         return default_test_suites
     return tests
 
+
+
+if args.platform:
+    variant_platform = args.platform.split("-")[0]
+elif platform.system() == 'Windows':
+    variant_platform = 'win64' if word_bits == 64 else 'win32'
+elif platform.system() == 'Linux':
+    variant_platform = 'linux64' if word_bits == 64 else 'linux'
+elif platform.system() == 'Darwin':
+    variant_platform = 'macosx64'
+else:
+    variant_platform = 'other'
 
 
 for k, v in variant.get('conditional-env', {}).get(variant_platform, {}).items():
