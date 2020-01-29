@@ -12,6 +12,7 @@
 #include "mozilla/FloatingPoint.h"
 
 #include "builtin/intl/CommonFunctions.h"
+#include "builtin/intl/LanguageTag.h"
 #include "builtin/intl/NumberFormat.h"
 #include "builtin/intl/ScopedICUObject.h"
 #include "gc/FreeOp.h"
@@ -165,7 +166,48 @@ static URelativeDateTimeFormatter* NewURelativeDateTimeFormatter(
   if (!GetProperty(cx, internals, internals, cx->names().locale, &value)) {
     return nullptr;
   }
-  UniqueChars locale = intl::EncodeLocale(cx, value.toString());
+
+  
+
+  intl::LanguageTag tag(cx);
+  {
+    JSLinearString* locale = value.toString()->ensureLinear(cx);
+    if (!locale) {
+      return nullptr;
+    }
+
+    if (!intl::LanguageTagParser::parse(cx, locale, tag)) {
+      return nullptr;
+    }
+  }
+
+  JS::RootedVector<intl::UnicodeExtensionKeyword> keywords(cx);
+
+  if (!GetProperty(cx, internals, internals, cx->names().numberingSystem,
+                   &value)) {
+    return nullptr;
+  }
+
+  {
+    JSLinearString* numberingSystem = value.toString()->ensureLinear(cx);
+    if (!numberingSystem) {
+      return nullptr;
+    }
+
+    if (!keywords.emplaceBack("nu", numberingSystem)) {
+      return nullptr;
+    }
+  }
+
+  
+  
+  
+  
+  if (!intl::ApplyUnicodeExtensionToTag(cx, tag, keywords)) {
+    return nullptr;
+  }
+
+  UniqueChars locale = tag.toStringZ(cx);
   if (!locale) {
     return nullptr;
   }

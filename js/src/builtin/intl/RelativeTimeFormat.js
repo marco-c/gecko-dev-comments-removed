@@ -128,6 +128,17 @@ function InitializeRelativeTimeFormat(relativeTimeFormat, locales, options) {
     let matcher = GetOption(options, "localeMatcher", "string", ["lookup", "best fit"], "best fit");
     opt.localeMatcher = matcher;
 
+    
+#ifdef NIGHTLY_BUILD
+    
+    let numberingSystem = GetOption(options, "numberingSystem", "string", undefined, undefined);
+    if (numberingSystem !== undefined) {
+        numberingSystem = intl_ValidateAndCanonicalizeUnicodeExtensionType(numberingSystem,
+                                                                           "numberingSystem");
+    }
+    opt.nu = numberingSystem;
+#endif
+
     lazyRelativeTimeFormatData.opt = opt;
 
     
