@@ -352,10 +352,6 @@ Maybe<DeclarationKind> ParseContext::isVarRedeclaredInEval(
 
   
   
-  
-  
-  
-  
   js::Scope* enclosingScope = sc()->compilationEnclosingScope();
   js::Scope* varScope = EvalScope::nearestVarScopeForDirectEval(enclosingScope);
   MOZ_ASSERT(varScope);
