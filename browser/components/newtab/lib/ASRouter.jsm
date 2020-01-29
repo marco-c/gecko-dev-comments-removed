@@ -68,12 +68,11 @@ const TRAILHEAD_CONFIG = {
 const INCOMING_MESSAGE_NAME = "ASRouter:child-to-parent";
 const OUTGOING_MESSAGE_NAME = "ASRouter:parent-to-child";
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
-const PREVIEW_SNIPPETS_ID = "snippets-preview";
 
 
 const DEFAULT_WHITELIST_HOSTS = {
   "activity-stream-icons.services.mozilla.com": "production",
-  "snippets-admin.mozilla.org": PREVIEW_SNIPPETS_ID,
+  "snippets-admin.mozilla.org": "preview",
 };
 const SNIPPETS_ENDPOINT_WHITELIST =
   "browser.newtab.activity-stream.asrouter.whitelistHosts";
@@ -604,7 +603,7 @@ class _ASRouter {
     const previousProviders = this.state.providers;
     const providers = [
       
-      ...previousProviders.filter(p => p.id === PREVIEW_SNIPPETS_ID),
+      ...previousProviders.filter(p => p.id === "preview"),
       
       ...ASRouterPreferences.providers.filter(
         p =>
@@ -699,9 +698,6 @@ class _ASRouter {
 
 
   hasGroupsEnabled(groups = []) {
-    if (groups.includes(PREVIEW_SNIPPETS_ID)) {
-      return true;
-    }
     return this.state.groups
       .filter(({ id }) => groups.includes(id))
       .every(({ enabled }) => enabled);
@@ -714,7 +710,10 @@ class _ASRouter {
 
   isExcludedByProvider(message) {
     const provider = this.state.providers.find(p => p.id === message.provider);
-    if (provider && provider.exclude) {
+    if (!provider) {
+      return true;
+    }
+    if (provider.exclude) {
       return provider.exclude.includes(message.id);
     }
     return false;
@@ -850,7 +849,7 @@ class _ASRouter {
       }
 
       
-      await this.setState(this._disablePreviewEndpoint(newState));
+      await this.setState(this._removePreviewEndpoint(newState));
       await this.cleanupImpressions();
     }
   }
@@ -1758,7 +1757,7 @@ class _ASRouter {
     
     return additionalHosts.reduce(
       (whitelist_hosts, host) => {
-        whitelist_hosts[host] = PREVIEW_SNIPPETS_ID;
+        whitelist_hosts[host] = "preview";
         Services.console.logStringMessage(`Adding ${host} to whitelist hosts.`);
         return whitelist_hosts;
       },
@@ -1778,38 +1777,27 @@ class _ASRouter {
     });
   }
 
-  _disablePreviewEndpoint(state) {
-    const previewProvider = this.state.providers.find(
-      p => p.id === PREVIEW_SNIPPETS_ID
-    );
-    if (previewProvider && previewProvider.enabled) {
-      const providers = this.state.providers.filter(
-        p => p.id !== PREVIEW_SNIPPETS_ID
-      );
-      previewProvider.url = "";
-      previewProvider.enabled = false;
-      providers.push(previewProvider);
-      state.providers = providers;
-    }
-
+  _removePreviewEndpoint(state) {
+    state.providers = state.providers.filter(p => p.id !== "preview");
     return state;
   }
 
   async _addPreviewEndpoint(url, portID) {
-    const providers = [...this.state.providers].filter(
-      p => p.id !== PREVIEW_SNIPPETS_ID
-    );
-    const previewProvider = this.state.providers.find(
-      p => p.id === PREVIEW_SNIPPETS_ID
-    );
-    if (this._validPreviewEndpoint(url)) {
+    
+    const providers = [...this.state.providers];
+    if (
+      this._validPreviewEndpoint(url) &&
+      !providers.find(p => p.url === url)
+    ) {
       this.dispatchToAS(
-        
         ac.OnlyToOneContent({ type: at.SNIPPETS_PREVIEW_MODE }, portID)
       );
-      previewProvider.enabled = true;
-      previewProvider.url = url;
-      providers.push(previewProvider);
+      providers.push({
+        id: "preview",
+        type: "remote",
+        url,
+        updateCycleInMs: 0,
+      });
       await this.setState({ providers });
     }
   }
@@ -2032,9 +2020,7 @@ class _ASRouter {
     await this.loadMessagesFromAllProviders();
 
     if (endpoint) {
-      message = await this.handleMessageRequest({
-        provider: PREVIEW_SNIPPETS_ID,
-      });
+      message = await this.handleMessageRequest({ provider: "preview" });
 
       
       if (message) {
@@ -2182,7 +2168,12 @@ class _ASRouter {
         await this.setMessageById(action.data.id, target, true, action);
         break;
       case "ADMIN_CONNECT_STATE":
-        await this._updateAdminState(target);
+        if (action.data && action.data.endpoint) {
+          this._addPreviewEndpoint(action.data.endpoint.url, target.portID);
+          await this.loadMessagesFromAllProviders();
+        } else {
+          await this._updateAdminState(target);
+        }
         break;
       case "IMPRESSION":
         await this.addImpression(action.data);
