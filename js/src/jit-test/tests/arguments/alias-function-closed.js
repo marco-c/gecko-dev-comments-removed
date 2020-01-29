@@ -89,8 +89,6 @@ function f4(a,
             
             b=a=()=>62,
             c=(assertEq(a(), 62)),
-            
-            d=eval("function a() { return 72; }"),
             e=(assertEq(a(), 62))) {
   function a() {
     return 52;
