@@ -468,6 +468,13 @@ ChromeProfileMigrator.prototype._GetPasswordsResource = async function(
         return;
       }
 
+      
+      
+      if (!rows.length) {
+        aCallback(true);
+        return;
+      }
+
       let crypto;
       try {
         if (AppConstants.platform == "win") {

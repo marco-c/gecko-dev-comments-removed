@@ -51,22 +51,34 @@ updateAppInfo();
 
 
 
-async function promiseMigration(migrator, resourceType, aProfile = null) {
+async function promiseMigration(
+  migrator,
+  resourceType,
+  aProfile = null,
+  succeeds = null
+) {
   
   let availableSources = await migrator.getMigrateData(aProfile, false);
   Assert.ok(
     (availableSources & resourceType) > 0,
     "Resource supported by migrator"
   );
+  let promises = [TestUtils.topicObserved("Migration:Ended")];
 
-  return new Promise(resolve => {
-    Services.obs.addObserver(function onMigrationEnded() {
-      Services.obs.removeObserver(onMigrationEnded, "Migration:Ended");
-      resolve();
-    }, "Migration:Ended");
+  if (succeeds !== null) {
+    
+    promises.push(
+      TestUtils.topicObserved(
+        succeeds ? "Migration:ItemAfterMigrate" : "Migration:ItemError",
+        (_, data) => data == resourceType
+      )
+    );
+  }
 
-    migrator.migrate(resourceType, null, aProfile);
-  });
+  
+  migrator.migrate(resourceType, null, aProfile);
+
+  return Promise.all(promises);
 }
 
 
