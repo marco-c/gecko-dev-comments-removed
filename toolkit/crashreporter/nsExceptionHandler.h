@@ -117,9 +117,6 @@ nsresult UnregisterAppMemory(void* ptr);
 
 void SetIncludeContextHeap(bool aValue);
 
-void GetAnnotation(uint32_t childPid, Annotation annotation,
-                   nsACString& outStr);
-
 
 typedef mozilla::EnumeratedArray<Annotation, Annotation::Count, nsCString>
     AnnotationTable;
