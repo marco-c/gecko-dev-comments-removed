@@ -2686,6 +2686,20 @@ extern JS_FRIEND_API void RemapRemoteWindowProxies(
     JSContext* cx, CompartmentTransplantCallback* callback,
     JS::MutableHandleObject newTarget);
 
+namespace gc {
+
+
+
+
+
+
+enum class PerformanceHint { Normal, InPageLoad };
+
+extern JS_FRIEND_API void SetPerformanceHint(JSContext* cx,
+                                             PerformanceHint hint);
+
+} 
+
 } 
 
 #endif 

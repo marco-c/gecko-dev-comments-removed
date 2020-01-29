@@ -426,9 +426,16 @@ size_t GCHeapThreshold::computeZoneTriggerBytes(
 void GCHeapThreshold::updateAfterGC(size_t lastBytes, JSGCInvocationKind gckind,
                                     const GCSchedulingTunables& tunables,
                                     const GCSchedulingState& state,
-                                    const AutoLockGC& lock) {
+                                    bool isAtomsZone, const AutoLockGC& lock) {
   float growthFactor =
       computeZoneHeapGrowthFactorForHeapSize(lastBytes, tunables, state);
+
+  
+  
+  if (isAtomsZone && state.inPageLoad) {
+    growthFactor *= 1.5;
+  }
+
   bytes_ =
       computeZoneTriggerBytes(growthFactor, lastBytes, gckind, tunables, lock);
 }

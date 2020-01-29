@@ -282,6 +282,8 @@ class GCRuntime {
   uint32_t getParameter(JSGCParamKey key);
   uint32_t getParameter(JSGCParamKey key, const AutoLockGC& lock);
 
+  void setPerformanceHint(PerformanceHint hint);
+
   MOZ_MUST_USE bool triggerGC(JS::GCReason reason);
   
   
@@ -1102,6 +1104,9 @@ class GCRuntime {
 
   
   MainThreadData<bool> alwaysPreserveCode;
+
+  
+  MainThreadData<size_t> inPageLoadCount;
 
   MainThreadData<bool> lowMemoryState;
 
