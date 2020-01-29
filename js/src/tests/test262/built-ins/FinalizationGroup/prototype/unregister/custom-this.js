@@ -20,7 +20,6 @@
 
 
 
-
 var fn = function() {};
 var unregister = FinalizationGroup.prototype.unregister;
 var fg = new FinalizationGroup(fn);

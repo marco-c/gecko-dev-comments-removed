@@ -29,7 +29,6 @@
 
 
 
-
 var fg = new FinalizationGroup(function() {});
 assert.sameValue(Object.getPrototypeOf(fg), FinalizationGroup.prototype);
 

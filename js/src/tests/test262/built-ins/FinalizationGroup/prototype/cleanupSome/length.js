@@ -24,7 +24,6 @@
 
 
 
-
 verifyProperty(FinalizationGroup.prototype.cleanupSome, 'length', {
   value: 0,
   writable: false,

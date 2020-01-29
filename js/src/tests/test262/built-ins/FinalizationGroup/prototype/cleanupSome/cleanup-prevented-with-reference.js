@@ -18,7 +18,6 @@
 
 
 
-
 var holdingsList;
 function cb(iterator) {
   holdingsList = [...iterator];

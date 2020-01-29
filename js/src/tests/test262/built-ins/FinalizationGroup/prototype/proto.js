@@ -10,7 +10,6 @@
 
 
 
-
 var proto = Object.getPrototypeOf(FinalizationGroup.prototype);
 assert.sameValue(proto, Object.prototype);
 

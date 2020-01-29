@@ -20,7 +20,6 @@
 
 
 
-
 var fn = function() {};
 var fg = new FinalizationGroup(fn);
 

@@ -15,7 +15,6 @@
 
 
 
-
 verifyProperty(FinalizationGroup.prototype, Symbol.toStringTag, {
   value: 'FinalizationGroup',
   writable: false,

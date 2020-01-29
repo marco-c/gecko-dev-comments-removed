@@ -15,7 +15,6 @@
 
 
 
-
 verifyProperty(this, 'FinalizationGroup', {
   enumerable: false,
   writable: true,

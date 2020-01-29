@@ -30,7 +30,6 @@
 
 
 
-
 var wr;
 function newTarget() {}
 

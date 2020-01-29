@@ -29,7 +29,6 @@
 
 
 
-
 var fg;
 
 fg = Reflect.construct(FinalizationGroup, [function() {}], Object);

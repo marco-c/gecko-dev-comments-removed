@@ -15,7 +15,6 @@
 
 
 
-
 assert.sameValue(typeof FinalizationGroup.prototype.cleanupSome, 'function');
 
 var fg = new FinalizationGroup(function() {});

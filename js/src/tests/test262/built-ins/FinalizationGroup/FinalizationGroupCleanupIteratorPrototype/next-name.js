@@ -38,7 +38,6 @@
 
 
 
-
 var FinalizationGroupCleanupIteratorPrototype;
 var called = 0;
 var fg = new FinalizationGroup(function() {});

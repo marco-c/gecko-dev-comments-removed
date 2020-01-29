@@ -16,7 +16,6 @@
 
 
 
-
 var fn = function() {};
 var cleanupSome = FinalizationGroup.prototype.cleanupSome;
 var fg = new FinalizationGroup(fn);

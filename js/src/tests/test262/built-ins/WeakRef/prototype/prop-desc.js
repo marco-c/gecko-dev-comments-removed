@@ -11,7 +11,6 @@
 
 
 
-
 verifyProperty(WeakRef, 'prototype', {
   writable: false,
   enumerable: false,

@@ -23,7 +23,6 @@
 
 
 
-
 verifyProperty(FinalizationGroup.prototype.cleanupSome, 'name', {
   value: 'cleanupSome',
   writable: false,

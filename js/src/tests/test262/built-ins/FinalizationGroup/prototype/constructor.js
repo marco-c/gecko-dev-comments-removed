@@ -15,7 +15,6 @@
 
 
 
-
 verifyProperty(FinalizationGroup.prototype, 'constructor', {
   value: FinalizationGroup,
   writable: true,

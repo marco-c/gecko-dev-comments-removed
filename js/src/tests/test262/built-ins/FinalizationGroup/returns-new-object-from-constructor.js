@@ -21,7 +21,6 @@
 
 
 
-
 var cleanupCallback = function() {};
 var fg = new FinalizationGroup(cleanupCallback);
 

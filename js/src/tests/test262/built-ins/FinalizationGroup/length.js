@@ -24,7 +24,6 @@
 
 
 
-
 verifyProperty(FinalizationGroup, 'length', {
   value: 1,
   writable: false,

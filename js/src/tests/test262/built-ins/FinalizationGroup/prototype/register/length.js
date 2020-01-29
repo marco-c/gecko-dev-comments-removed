@@ -24,7 +24,6 @@
 
 
 
-
 verifyProperty(FinalizationGroup.prototype.register, 'length', {
   value: 2,
   enumerable: false,

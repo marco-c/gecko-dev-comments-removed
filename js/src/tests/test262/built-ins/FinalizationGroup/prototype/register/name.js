@@ -23,7 +23,6 @@
 
 
 
-
 verifyProperty(FinalizationGroup.prototype.register, 'name', {
   value: 'register',
   enumerable: false,

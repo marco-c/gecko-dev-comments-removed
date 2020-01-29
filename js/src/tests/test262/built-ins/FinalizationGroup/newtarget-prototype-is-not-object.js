@@ -29,7 +29,6 @@
 
 
 
-
 var fg;
 function newTarget() {}
 function fn() {}

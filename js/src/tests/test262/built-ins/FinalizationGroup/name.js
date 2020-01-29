@@ -23,7 +23,6 @@
 
 
 
-
 verifyProperty(FinalizationGroup, 'name', {
   value: 'FinalizationGroup',
   writable: false,

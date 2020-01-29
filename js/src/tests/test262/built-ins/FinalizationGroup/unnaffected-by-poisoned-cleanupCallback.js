@@ -15,7 +15,6 @@
 
 
 
-
 var cleanupCallback = function() { throw new Test262Error('should not throw yet'); };
 var fg = new FinalizationGroup(cleanupCallback);
 

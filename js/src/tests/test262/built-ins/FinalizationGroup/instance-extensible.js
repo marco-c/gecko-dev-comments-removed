@@ -26,7 +26,6 @@
 
 
 
-
 var fg = new FinalizationGroup(function() {});
 assert.sameValue(Object.isExtensible(fg), true);
 

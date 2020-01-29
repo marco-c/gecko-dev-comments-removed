@@ -18,7 +18,6 @@
 
 
 
-
 var called = 0;
 var endOfCall = 0;
 var fg = new FinalizationGroup(function() {});

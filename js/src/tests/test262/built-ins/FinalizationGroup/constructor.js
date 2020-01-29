@@ -9,7 +9,6 @@
 
 
 
-
 assert.sameValue(
   typeof FinalizationGroup, 'function',
   'typeof FinalizationGroup is function'

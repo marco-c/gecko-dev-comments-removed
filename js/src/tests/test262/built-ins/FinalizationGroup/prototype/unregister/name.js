@@ -23,7 +23,6 @@
 
 
 
-
 verifyProperty(FinalizationGroup.prototype.unregister, 'name', {
   value: 'unregister',
   writable: false,

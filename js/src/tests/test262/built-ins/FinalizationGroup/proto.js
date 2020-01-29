@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(
   Object.getPrototypeOf(FinalizationGroup),
   Function.prototype,

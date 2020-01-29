@@ -11,7 +11,6 @@
 
 
 
-
 verifyProperty(FinalizationGroup, 'prototype', {
   writable: false,
   enumerable: false,
