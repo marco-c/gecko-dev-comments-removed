@@ -477,7 +477,8 @@ bool frontend::SourceAwareCompiler<Unit>::handleParseFailure(
     return false;
   }
 
-  parser->tokenStream.seek(startPosition);
+  
+  parser->tokenStream.rewind(startPosition);
 
   
   MOZ_ASSERT_IF(info.directives.strict(), newDirectives.strict());
