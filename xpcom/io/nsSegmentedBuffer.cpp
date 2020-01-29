@@ -162,8 +162,7 @@ void nsSegmentedBuffer::FreeOMT(void* aPtr) {
 
   
   
-  if (NS_WARN_IF(!mIOThread) ||
-      NS_WARN_IF(NS_FAILED(mIOThread->Dispatch(r.forget())))) {
+  if (!mIOThread || NS_FAILED(mIOThread->Dispatch(r.forget()))) {
     free(aPtr);
   }
 }
