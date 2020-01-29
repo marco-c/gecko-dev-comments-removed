@@ -50,11 +50,13 @@ struct Epoch(u64);
 
 
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct UpdateList<S> {
     
     pub updates: Vec<Update>,
     
-    data: Vec<S>,
+    pub data: Vec<S>,
 }
 
 lazy_static! {
