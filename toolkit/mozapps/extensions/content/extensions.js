@@ -789,9 +789,12 @@ var gCategories = {
       
       gViewController.loadView(this.node.selectedItem.value);
     });
-    this.node.addEventListener("click", () => {
-      
-      gViewController.loadView(this.node.selectedItem.value);
+    this.node.addEventListener("click", e => {
+      let item = e.target.closest("richlistitem");
+      if (item) {
+        
+        gViewController.loadView(item.value);
+      }
     });
   },
 
