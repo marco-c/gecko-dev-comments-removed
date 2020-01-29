@@ -16,8 +16,6 @@
 
 
 
-
-
 var x = 'outside';
 var probe1, probe2, probeBody;
 
@@ -29,7 +27,7 @@ var probe1, probe2, probeBody;
 }()).next();
 
 assert.sameValue(probe1(), 'inside');
-assert.sameValue(probe2(), 'outside');
-assert.sameValue(probeBody(), 'outside');
+assert.sameValue(probe2(), 'inside');
+assert.sameValue(probeBody(), 'inside');
 
 reportCompare(0, 0);

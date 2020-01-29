@@ -42,12 +42,7 @@ var values = [
   'language',
   'region',
   'script',
-  'currency',
-  'weekday',
-  'month',
-  'quarter',
-  'dayPeriod',
-  'dateTimeField'
+  'currency'
 ];
 
 for (let valid of values) {

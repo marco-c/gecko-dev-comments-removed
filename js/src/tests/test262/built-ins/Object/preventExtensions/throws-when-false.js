@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const p = new Proxy({}, {
+  preventExtensions() {
+    return false;
+  },
+});
+
+assert.throws(TypeError, () => {
+  Object.preventExtensions(p);
+});
+
+reportCompare(0, 0);

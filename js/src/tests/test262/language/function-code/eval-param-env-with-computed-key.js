@@ -16,12 +16,10 @@
 
 
 
-
-
 var x = "outer";
 
 function evalInComputedPropertyKey({[eval("var x = 'inner'")]: ignored}) {
-  assert.sameValue(x, "outer");
+  assert.sameValue(x, "inner");
 }
 evalInComputedPropertyKey({});
 

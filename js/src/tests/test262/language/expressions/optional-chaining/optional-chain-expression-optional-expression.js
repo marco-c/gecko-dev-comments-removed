@@ -9,6 +9,7 @@
 
 
 
+
 const a = undefined;
 const b = {e: 0};
 const c = {};

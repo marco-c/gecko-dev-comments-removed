@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var p = new Proxy({}, {
+  preventExtensions: function() {
+    throw new Test262Error();
+  },
+});
+
+assert.throws(Test262Error, function() {
+  Object.seal(p);
+});
+
+reportCompare(0, 0);

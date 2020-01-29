@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Object.prototype.isPrototypeOf.call(undefined, {});
+});
+
+reportCompare(0, 0);

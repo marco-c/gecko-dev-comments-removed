@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+const df = new Intl.DateTimeFormat("zh-u-ca-chinese", {year: "numeric"});
+const date = new Date(2019, 5, 1);
+assert.sameValue(df.format(date), "2019己亥年");
+
+reportCompare(0, 0);

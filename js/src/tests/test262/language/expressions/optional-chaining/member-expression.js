@@ -13,6 +13,7 @@
 
 
 
+
 const a = {b: 22};
 assert.sameValue(22, a?.b);
 

@@ -13,19 +13,19 @@
 
 
 assert.throws(TypeError, function() {
-  Reflect.isExtensible(1);
+  Reflect.preventExtensions(1);
 });
 
 assert.throws(TypeError, function() {
-  Reflect.isExtensible(null);
+  Reflect.preventExtensions(null);
 });
 
 assert.throws(TypeError, function() {
-  Reflect.isExtensible(undefined);
+  Reflect.preventExtensions(undefined);
 });
 
 assert.throws(TypeError, function() {
-  Reflect.isExtensible('');
+  Reflect.preventExtensions('');
 });
 
 reportCompare(0, 0);

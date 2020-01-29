@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+[undefined, null, 1, true, 'string', Symbol()].forEach((v) => {
+  assert.throws(TypeError, () => {
+    Error.prototype.toString.call(v);
+  }, `Error.prototype.toString.call(${String(v)})`);
+});
+
+reportCompare(0, 0);

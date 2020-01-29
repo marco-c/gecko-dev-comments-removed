@@ -55,7 +55,7 @@
 
 
 
-var types = ['language', 'region', 'script', 'currency', 'weekday', 'month', 'quarter', 'dayPeriod', 'dateTimeField'];
+var types = ['language', 'region', 'script', 'currency'];
 
 types.forEach(type => {
   var dn = new Intl.DisplayNames('en-US', { type });

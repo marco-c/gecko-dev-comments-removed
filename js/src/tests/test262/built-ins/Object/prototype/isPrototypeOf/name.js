@@ -19,10 +19,11 @@
 
 
 
-assert.sameValue(Object.prototype.isPrototypeOf.name, "isPrototypeOf");
-
-verifyNotEnumerable(Object.prototype.isPrototypeOf, "name");
-verifyNotWritable(Object.prototype.isPrototypeOf, "name");
-verifyConfigurable(Object.prototype.isPrototypeOf, "name");
+verifyProperty(Object.prototype.isPrototypeOf, "name", {
+  value: "isPrototypeOf",
+  writable: false,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

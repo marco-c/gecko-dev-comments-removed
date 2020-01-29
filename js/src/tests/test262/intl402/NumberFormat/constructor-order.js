@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(RangeError, () => {
+  new Intl.NumberFormat([], { style: "currency", unit: "test" })
+});
+
+assert.throws(RangeError, () => {
+  new Intl.NumberFormat([], { style: "unit", currency: "test" })
+});
+
+reportCompare(0, 0);
