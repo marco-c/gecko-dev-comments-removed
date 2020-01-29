@@ -12,6 +12,7 @@
 #  include <unistd.h>  
 #endif
 
+#include "mozilla/AppShutdown.h"
 #include "mozilla/ipc/IOThreadChild.h"
 #include "mozilla/ipc/ProcessChild.h"
 
@@ -32,16 +33,7 @@ ProcessChild::ProcessChild(ProcessId aParentPid)
 ProcessChild::~ProcessChild() { gProcessChild = nullptr; }
 
 
-void ProcessChild::QuickExit() {
-#ifdef XP_WIN
-  
-  
-  
-  TerminateProcess(GetCurrentProcess(), 0);
-#else
-  _exit(0);
-#endif
-}
+void ProcessChild::QuickExit() { AppShutdown::DoImmediateExit(); }
 
 }  
 }  

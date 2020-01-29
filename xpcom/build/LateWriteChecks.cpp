@@ -103,14 +103,12 @@ class LateWriteObserver final : public mozilla::IOInterposeObserver {
 
 void LateWriteObserver::Observe(
     mozilla::IOInterposeObserver::Observation& aOb) {
-  
-  if (mozilla::gShutdownChecks == mozilla::SCM_CRASH) {
-    MOZ_CRASH();
-  }
+#ifdef DEBUG
+  MOZ_CRASH();
+#endif
 
   
-  if (mozilla::gShutdownChecks == mozilla::SCM_NOTHING ||
-      !mozilla::Telemetry::CanRecordExtended()) {
+  if (!mozilla::Telemetry::CanRecordExtended()) {
     return;
   }
 

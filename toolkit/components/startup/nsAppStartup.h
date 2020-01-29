@@ -55,7 +55,6 @@ class nsAppStartup final : public nsIAppStartup,
   bool mShuttingDown;            
   bool mStartingUp;              
   bool mAttemptingQuit;          
-  bool mRestart;                 
   bool mInterrupted;  
   bool mIsSafeModeNecessary;        
   bool mStartupCrashTrackingEnded;  

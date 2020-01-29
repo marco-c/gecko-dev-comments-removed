@@ -7,6 +7,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 
+#include "mozilla/AppShutdown.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
@@ -341,12 +342,6 @@ static void SaveFileToEnv(const char* name, nsIFile* file) {
   file->GetNativePath(path);
   SaveWordToEnv(name, path);
 #endif
-}
-
-
-
-static void SaveFileToEnvIfUnset(const char* name, nsIFile* file) {
-  if (!EnvHasValue(name)) SaveFileToEnv(name, file);
 }
 
 static bool gIsExpectedExit = false;
@@ -1559,11 +1554,16 @@ static void SetupLauncherProcessPref() {
 
 #endif  
 
+void UnlockProfile() {
+  if (gProfileLock) {
+    gProfileLock->Unlock();
+  }
+}
 
 
 
-static nsresult LaunchChild(nsINativeAppSupport* aNative,
-                            bool aBlankCommandLine = false) {
+
+nsresult LaunchChild(bool aBlankCommandLine) {
   
   
 
@@ -1787,7 +1787,7 @@ static ReturnAbortOnError ProfileLockedDialog(nsIFile* aProfileDir,
         SaveFileToEnv("XRE_PROFILE_PATH", aProfileDir);
         SaveFileToEnv("XRE_PROFILE_LOCAL_PATH", aProfileLocalDir);
 
-        return LaunchChild(aNative);
+        return LaunchChild(false);
       }
     } else {
 #ifdef MOZ_WIDGET_ANDROID
@@ -1896,7 +1896,7 @@ static ReturnAbortOnError ShowProfileManager(
     gRestartArgv[gRestartArgc] = nullptr;
   }
 
-  return LaunchChild(aNative);
+  return LaunchChild(false);
 }
 
 static bool gDoMigration = false;
@@ -2296,7 +2296,7 @@ static ReturnAbortOnError CheckDowngrade(nsIFile* aProfileDir,
     SaveFileToEnv("XRE_PROFILE_PATH", profD);
     SaveFileToEnv("XRE_PROFILE_LOCAL_PATH", profLD);
 
-    return LaunchChild(aNative);
+    return LaunchChild(false);
   }
 
   
@@ -2635,28 +2635,6 @@ static bool RemoveComponentRegistries(nsIFile* aProfileDir,
   nsresult rv = file->Remove(true);
   return NS_SUCCEEDED(rv) || rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST ||
          rv == NS_ERROR_FILE_NOT_FOUND;
-}
-
-
-
-
-
-static struct SavedVar {
-  const char* name;
-  char* value;
-} gSavedVars[] = {{"XUL_APP_FILE", nullptr}};
-
-static void SaveStateForAppInitiatedRestart() {
-  for (auto& savedVar : gSavedVars) {
-    const char* s = PR_GetEnv(savedVar.name);
-    if (s) savedVar.value = Smprintf("%s=%s", savedVar.name, s).release();
-  }
-}
-
-static void RestoreStateForAppInitiatedRestart() {
-  for (auto& savedVar : gSavedVars) {
-    if (savedVar.value) PR_SetEnv(savedVar.value);
-  }
 }
 
 
@@ -3584,46 +3562,6 @@ static void PR_CALLBACK ReadAheadDlls_ThreadStart(void*) {
 }
 #endif
 
-namespace mozilla {
-ShutdownChecksMode gShutdownChecks = SCM_NOTHING;
-}  
-
-static void SetShutdownChecks() {
-  
-  
-  
-  
-
-#ifdef DEBUG
-#  if defined(MOZ_CODE_COVERAGE)
-  gShutdownChecks = SCM_NOTHING;
-#  else
-  gShutdownChecks = SCM_CRASH;
-#  endif  
-#else
-  const char* releaseChannel = MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL);
-  if (strcmp(releaseChannel, "nightly") == 0 ||
-      strcmp(releaseChannel, "default") == 0) {
-    gShutdownChecks = SCM_RECORD;
-  } else {
-    gShutdownChecks = SCM_NOTHING;
-  }
-#endif  
-
-  
-  
-  const char* mozShutdownChecksEnv = PR_GetEnv("MOZ_SHUTDOWN_CHECKS");
-  if (mozShutdownChecksEnv) {
-    if (strcmp(mozShutdownChecksEnv, "crash") == 0) {
-      gShutdownChecks = SCM_CRASH;
-    } else if (strcmp(mozShutdownChecksEnv, "record") == 0) {
-      gShutdownChecks = SCM_RECORD;
-    } else if (strcmp(mozShutdownChecksEnv, "nothing") == 0) {
-      gShutdownChecks = SCM_NOTHING;
-    }
-  }
-}
-
 #if defined(MOZ_WAYLAND)
 bool IsWaylandDisabled() {
   
@@ -3688,8 +3626,6 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 
   if (!aExitFlag) return 1;
   *aExitFlag = false;
-
-  SetShutdownChecks();
 
   
   
@@ -4487,7 +4423,7 @@ nsresult XREMain::XRE_mainRun() {
   }
 #endif
 
-  SaveStateForAppInitiatedRestart();
+  mozilla::AppShutdown::SaveEnvVarsForPotentialRestart();
 
   
   
@@ -4746,8 +4682,6 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   result = XRE_mainStartup(&exit);
   if (result != 0 || exit) return result;
 
-  bool appInitiatedRestart = false;
-
   
   
 
@@ -4765,16 +4699,6 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
 #endif
 
   gAbsoluteArgv0Path.Truncate();
-
-  
-  
-  if (rv == NS_SUCCESS_RESTART_APP) {
-    appInitiatedRestart = true;
-
-    
-    
-    gShutdownChecks = SCM_NOTHING;
-  }
 
 #if defined(MOZ_HAS_REMOTE)
   
@@ -4796,27 +4720,7 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   mProfileLock->Unlock();
   gProfileLock = nullptr;
 
-  
-  if (appInitiatedRestart) {
-    RestoreStateForAppInitiatedRestart();
-
-    
-    SaveFileToEnvIfUnset("XRE_PROFILE_PATH", mProfD);
-    SaveFileToEnvIfUnset("XRE_PROFILE_LOCAL_PATH", mProfLD);
-
-#ifdef MOZ_WIDGET_GTK
-    if (!gfxPlatform::IsHeadless()) {
-      MOZ_gdk_display_close(mGdkDisplay);
-    }
-#endif
-
-    { rv = LaunchChild(mNativeApp, true); }
-
-    if (mAppData->flags & NS_XRE_ENABLE_CRASH_REPORTER)
-      CrashReporter::UnsetExceptionHandler();
-
-    return rv == NS_ERROR_LAUNCHED_CHILD_PROCESS ? 0 : 1;
-  }
+  mozilla::AppShutdown::MaybeDoRestart();
 
 #ifdef MOZ_WIDGET_GTK
   

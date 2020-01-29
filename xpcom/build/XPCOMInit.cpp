@@ -8,6 +8,7 @@
 
 #include "base/basictypes.h"
 
+#include "mozilla/AppShutdown.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Poison.h"
 #include "mozilla/RemoteDecoderManagerChild.h"
@@ -607,6 +608,8 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 
     if (observerService) {
       mozilla::KillClearOnShutdown(ShutdownPhase::WillShutdown);
+      mozilla::AppShutdown::MaybeFastShutdown(
+          mozilla::ShutdownPhase::WillShutdown);
       observerService->NotifyObservers(
           nullptr, NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID, nullptr);
 
@@ -614,6 +617,8 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
       rv = NS_GetServiceManager(getter_AddRefs(mgr));
       if (NS_SUCCEEDED(rv)) {
         mozilla::KillClearOnShutdown(ShutdownPhase::Shutdown);
+        mozilla::AppShutdown::MaybeFastShutdown(
+            mozilla::ShutdownPhase::Shutdown);
         observerService->NotifyObservers(mgr, NS_XPCOM_SHUTDOWN_OBSERVER_ID,
                                          nullptr);
       }
@@ -654,11 +659,6 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 
     BackgroundHangMonitor().NotifyActivity();
 
-    
-    
-    
-    mozilla::InitLateWriteChecks();
-
     if (observerService) {
       mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownLoaders);
       observerService->Shutdown();
@@ -669,6 +669,8 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
   
   
   mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownFinal);
+  mozilla::AppShutdown::MaybeFastShutdown(
+      mozilla::ShutdownPhase::ShutdownFinal);
 
   
   
@@ -712,15 +714,10 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
   
   
   mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownPostLastCycleCollection);
+  mozilla::AppShutdown::MaybeFastShutdown(
+      mozilla::ShutdownPhase::ShutdownPostLastCycleCollection);
 
   PROFILER_ADD_MARKER("Shutdown xpcom", OTHER);
-  
-  if (gShutdownChecks != SCM_NOTHING) {
-#ifdef XP_MACOSX
-    mozilla::OnlyReportDirtyWrites();
-#endif 
-    mozilla::BeginLateWriteChecks();
-  }
 
   
   
