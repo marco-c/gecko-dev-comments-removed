@@ -17,7 +17,6 @@ enum class ScopeKind : uint8_t {
 
   
   FunctionBodyVar,
-  ParameterExpressionVar,
 
   
   Lexical,

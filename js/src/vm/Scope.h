@@ -59,8 +59,7 @@ static inline bool ScopeKindIsInBody(ScopeKind kind) {
   return kind == ScopeKind::Lexical || kind == ScopeKind::SimpleCatch ||
          kind == ScopeKind::Catch || kind == ScopeKind::With ||
          kind == ScopeKind::FunctionLexical ||
-         kind == ScopeKind::FunctionBodyVar ||
-         kind == ScopeKind::ParameterExpressionVar;
+         kind == ScopeKind::FunctionBodyVar;
 }
 
 const char* BindingKindString(BindingKind kind);
@@ -604,16 +603,6 @@ class FunctionScope : public Scope {
 
 
 
-
-
-
-
-
-
-
-
-
-
 class VarScope : public Scope {
   friend class GCMarker;
   friend class BindingIter;
@@ -672,8 +661,7 @@ class VarScope : public Scope {
 
 template <>
 inline bool Scope::is<VarScope>() const {
-  return kind_ == ScopeKind::FunctionBodyVar ||
-         kind_ == ScopeKind::ParameterExpressionVar;
+  return kind_ == ScopeKind::FunctionBodyVar;
 }
 
 
@@ -1035,7 +1023,6 @@ void Scope::applyScopeDataTyped(F&& f) {
       f(&as<FunctionScope>().data());
       break;
       case ScopeKind::FunctionBodyVar:
-      case ScopeKind::ParameterExpressionVar:
         f(&as<VarScope>().data());
         break;
       case ScopeKind::Lexical:
