@@ -64,6 +64,7 @@ const FEATURES_PREF = "devtools.performance.recording.features";
 
 const THREADS_PREF = "devtools.performance.recording.threads";
 
+const PRESET_PREF = "devtools.performance.recording.preset";
 
 const OBJDIRS_PREF = "devtools.performance.recording.objdirs";
 
@@ -239,13 +240,39 @@ async function _getIntPref(preferenceFront, prefName, defaultValue) {
 
 
 
+async function _getCharPref(preferenceFront, prefName, defaultValue) {
+  try {
+    return await preferenceFront.getCharPref(prefName);
+  } catch (error) {
+    return defaultValue;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 async function getRecordingPreferencesFromDebuggee(
   preferenceFront,
   defaultPrefs
 ) {
-  const [entries, interval, features, threads, objdirs] = await Promise.all([
+  const [
+    presetName,
+    entries,
+    interval,
+    features,
+    threads,
+    objdirs,
+  ] = await Promise.all([
+    _getCharPref(preferenceFront, PRESET_PREF, defaultPrefs.presetName),
     _getIntPref(preferenceFront, ENTRIES_PREF, defaultPrefs.entries),
     _getIntPref(preferenceFront, INTERVAL_PREF, defaultPrefs.interval),
     _getArrayOfStringsPref(
@@ -257,7 +284,7 @@ async function getRecordingPreferencesFromDebuggee(
     _getArrayOfStringsHostPref(OBJDIRS_PREF, defaultPrefs.objdirs),
   ]);
 
-  return { entries, interval, features, threads, objdirs };
+  return { presetName, entries, interval, features, threads, objdirs };
 }
 
 
