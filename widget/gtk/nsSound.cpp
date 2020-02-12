@@ -160,6 +160,13 @@ nsSound::Init() {
       ca_context_create = (ca_context_create_fn)PR_FindFunctionSymbol(
           libcanberra, "ca_context_create");
       if (!ca_context_create) {
+#ifdef MOZ_TSAN
+        
+        
+        
+        libcanberra = nullptr;
+        return NS_OK;
+#endif
         PR_UnloadLibrary(libcanberra);
         libcanberra = nullptr;
       } else {
@@ -188,10 +195,12 @@ nsSound::Init() {
 
 
 void nsSound::Shutdown() {
+#ifndef MOZ_TSAN
   if (libcanberra) {
     PR_UnloadLibrary(libcanberra);
     libcanberra = nullptr;
   }
+#endif
 }
 
 namespace mozilla {

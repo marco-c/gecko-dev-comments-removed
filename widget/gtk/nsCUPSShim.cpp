@@ -37,7 +37,13 @@ bool nsCUPSShim::Init() {
       msg.AppendLiteral(" not found in CUPS library");
       NS_WARNING(msg.get());
 #endif
+
+#ifndef MOZ_TSAN
+      
+      
+      
       PR_UnloadLibrary(mCupsLib);
+#endif
       mCupsLib = nullptr;
       return false;
     }

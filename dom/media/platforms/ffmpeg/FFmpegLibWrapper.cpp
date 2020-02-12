@@ -173,12 +173,17 @@ void FFmpegLibWrapper::Unlink() {
     
     av_lockmgr_register(nullptr);
   }
+#ifndef MOZ_TSAN
+  
+  
+  
   if (mAVUtilLib && mAVUtilLib != mAVCodecLib) {
     PR_UnloadLibrary(mAVUtilLib);
   }
   if (mAVCodecLib) {
     PR_UnloadLibrary(mAVCodecLib);
   }
+#endif
   PodZero(this);
 }
 

@@ -884,6 +884,10 @@ nsresult nsSystemInfo::Init() {
     secondaryLibrary.Append(nsDependentCSubstring(gtkver, gtkver_len));
   }
 
+#ifndef MOZ_TSAN
+  
+  
+  
   void* libpulse = dlopen("libpulse.so.0", RTLD_LAZY);
   const char* libpulseVersion = "not-available";
   if (libpulse) {
@@ -900,6 +904,7 @@ nsresult nsSystemInfo::Init() {
   if (libpulse) {
     dlclose(libpulse);
   }
+#endif
 
   rv = SetPropertyAsACString(NS_LITERAL_STRING("secondaryLibrary"),
                              secondaryLibrary);
