@@ -2335,9 +2335,7 @@ bool CacheFile::IsDoomed() {
 }
 
 bool CacheFile::IsWriteInProgress() {
-  
-  
-  
+  CacheFileAutoLock lock(this);
 
   bool result = false;
 
