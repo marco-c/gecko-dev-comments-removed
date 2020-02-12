@@ -415,8 +415,7 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
   
   
   
-  FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize, WritingMode aContainerWM,
-           const FlexboxAxisTracker& aAxisTracker);
+  FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize, WritingMode aContainerWM);
 
   
   nsIFrame* Frame() const { return mFrame; }
@@ -828,7 +827,7 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
   const WritingMode mCBWM;
 
   
-  const LogicalAxis mMainAxis;
+  const LogicalAxis mMainAxis = eLogicalAxisInline;
 
   
   const LogicalMargin mBorderPadding;
@@ -2012,12 +2011,10 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
 
 
 FlexItem::FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize,
-                   WritingMode aContainerWM,
-                   const FlexboxAxisTracker& aAxisTracker)
+                   WritingMode aContainerWM)
     : mFrame(aChildFrame),
       mWM(aContainerWM),
       mCBWM(aContainerWM),
-      mMainAxis(aAxisTracker.MainAxis()),
       mBorderPadding(mCBWM),
       mMargin(mCBWM),
       mCrossSize(aCrossSize),
@@ -3799,14 +3796,13 @@ void nsFlexContainerFrame::GenerateFlexLines(
          childFrame->StyleVisibility()->mVisible)) {
       
       
-      item = MakeUnique<FlexItem>(childFrame, 0, aReflowInput.GetWritingMode(),
-                                  aAxisTracker);
+      item = MakeUnique<FlexItem>(childFrame, 0, aReflowInput.GetWritingMode());
     } else if (nextStrutIdx < aStruts.Length() &&
                aStruts[nextStrutIdx].mItemIdx == itemIdxInContainer) {
       
       item = MakeUnique<FlexItem>(childFrame,
                                   aStruts[nextStrutIdx].mStrutCrossSize,
-                                  aReflowInput.GetWritingMode(), aAxisTracker);
+                                  aReflowInput.GetWritingMode());
       nextStrutIdx++;
     } else {
       item = GenerateFlexItemForChild(aPresContext, childFrame, aReflowInput,
