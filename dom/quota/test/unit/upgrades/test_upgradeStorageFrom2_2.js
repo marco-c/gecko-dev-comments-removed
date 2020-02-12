@@ -8,6 +8,12 @@
 
 
 async function testSteps() {
+  const packages = [
+    
+    "version2_2_profile",
+    "../defaultStorageDirectory_shared",
+  ];
+
   function verifyDatabaseTable(shouldExist) {
     let file = getRelativeFile("storage.sqlite");
     let conn = Services.storage.openUnsharedDatabase(file);
@@ -27,8 +33,13 @@ async function testSteps() {
   let request = clear();
   await requestFinished(request);
 
-  
-  installPackage("version2_2_profile");
+  info("Installing packages");
+
+  installPackages(packages);
+
+  info("Verifying storage");
+
+  verifyStorage(packages, "afterInstall");
 
   verifyDatabaseTable( false);
 
@@ -37,6 +48,10 @@ async function testSteps() {
   
   request = init();
   await requestFinished(request);
+
+  info("Verifying storage");
+
+  verifyStorage(packages, "afterInit");
 
   request = reset();
   await requestFinished(request);

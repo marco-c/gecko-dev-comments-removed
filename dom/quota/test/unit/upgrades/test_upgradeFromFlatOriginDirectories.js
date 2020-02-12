@@ -12,11 +12,14 @@ var testGenerator = testSteps();
 function* testSteps() {
   const setups = [
     {
-      
-      
-      
-      
-      package: "indexedDBDirectory_flatOriginDirectories_profile",
+      packages: [
+        
+        
+        
+        
+        "indexedDBDirectory_flatOriginDirectories_profile",
+        "../indexedDBDirectory_shared",
+      ],
       origins: [
         {
           oldPath: "indexedDB/1007+f+app+++system.gaiamobile.org",
@@ -36,13 +39,16 @@ function* testSteps() {
     },
 
     {
-      
-      
-      
-      
-      
-      
-      package: "persistentStorageDirectory_flatOriginDirectories_profile",
+      packages: [
+        
+        
+        
+        
+        
+        
+        "persistentStorageDirectory_flatOriginDirectories_profile",
+        "../persistentStorageDirectory_shared",
+      ],
       origins: [
         {
           oldPath: "storage/persistent/1007+f+app+++system.gaiamobile.org",
@@ -69,7 +75,13 @@ function* testSteps() {
     clear(continueToNextStepSync);
     yield undefined;
 
-    installPackage(setup.package);
+    info("Installing packages");
+
+    installPackages(setup.packages);
+
+    info("Verifying storage");
+
+    verifyStorage(setup.packages, "afterInstall");
 
     info("Checking origin directories");
 
@@ -103,6 +115,17 @@ function* testSteps() {
     yield undefined;
 
     ok(request.resultCode == NS_OK, "Initialization succeeded");
+
+    info("Verifying storage");
+
+    verifyStorage(setup.packages, "afterInit");
+
+    
+    
+    getRelativeFile("storage/default/invalid+++example.com").remove(false);
+    try {
+      getRelativeFile("storage/temporary/invalid+++example.com").remove(false);
+    } catch (ex) {}
 
     info("Checking origin directories");
 
