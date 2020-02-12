@@ -27,12 +27,12 @@ class ZoomChild extends JSWindowActorChild {
   }
 
   set fullZoom(value) {
-    this._cache.fullZoom = value;
+    this._cache.fullZoom = Number(value.toFixed(2));
     this._markupViewer.fullZoom = value;
   }
 
   set textZoom(value) {
-    this._cache.textZoom = value;
+    this._cache.textZoom = Number(value.toFixed(2));
     this._markupViewer.textZoom = value;
   }
 
@@ -75,8 +75,14 @@ class ZoomChild extends JSWindowActorChild {
   }
 
   handleEvent(event) {
-    if (event.type == "ZoomChangeUsingMouseWheel") {
-      this.sendAsyncMessage("ZoomChangeUsingMouseWheel", {});
+    
+    if (event.type == "DoZoomEnlargeBy10") {
+      this.sendAsyncMessage("DoZoomEnlargeBy10", {});
+      return;
+    }
+
+    if (event.type == "DoZoomReduceBy10") {
+      this.sendAsyncMessage("DoZoomReduceBy10", {});
       return;
     }
 
@@ -92,8 +98,6 @@ class ZoomChild extends JSWindowActorChild {
       if (this._resolutionBeforeFullZoomChange == 0) {
         this._resolutionBeforeFullZoomChange = this.contentWindow.windowUtils.getResolution();
       }
-
-      this.sendAsyncMessage("PreFullZoomChange", {});
       return;
     }
 
@@ -114,7 +118,7 @@ class ZoomChild extends JSWindowActorChild {
         this._resolutionBeforeFullZoomChange = 0;
       }
 
-      this.sendAsyncMessage("PostFullZoomChange", {});
+      this.sendAsyncMessage("FullZoomResolutionStable", {});
       return;
     }
 
