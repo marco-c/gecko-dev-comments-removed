@@ -11,46 +11,18 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "Kinto",
-  "resource://services-common/kinto-offline-client.js"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "KintoHttpClient",
-  "resource://services-common/kinto-http-client.js"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "UptakeTelemetry",
-  "resource://services-common/uptake-telemetry.js"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "ClientEnvironmentBase",
-  "resource://gre/modules/components-utils/ClientEnvironment.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "RemoteSettingsWorker",
-  "resource://services-settings/RemoteSettingsWorker.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "Utils",
-  "resource://services-settings/Utils.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "Downloader",
-  "resource://services-settings/Attachments.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "ObjectUtils",
-  "resource://gre/modules/ObjectUtils.jsm"
-);
+XPCOMUtils.defineLazyModuleGetters(this, {
+  ClientEnvironmentBase:
+    "resource://gre/modules/components-utils/ClientEnvironment.jsm",
+  Downloader: "resource://services-settings/Attachments.jsm",
+  Kinto: "resource://services-common/kinto-offline-client.js",
+  KintoHttpClient: "resource://services-common/kinto-http-client.js",
+  ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
+  PerformanceCounters: "resource://gre/modules/PerformanceCounters.jsm",
+  RemoteSettingsWorker: "resource://services-settings/RemoteSettingsWorker.jsm",
+  UptakeTelemetry: "resource://services-common/uptake-telemetry.js",
+  Utils: "resource://services-settings/Utils.jsm",
+});
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
@@ -60,6 +32,13 @@ const DB_NAME = "remote-settings";
 const TELEMETRY_COMPONENT = "remotesettings";
 
 XPCOMUtils.defineLazyGetter(this, "console", () => Utils.log);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gTimingEnabled",
+  "services.settings.enablePerformanceCounters",
+  false
+);
 
 
 
@@ -337,10 +316,7 @@ class RemoteSettingsClient extends EventEmitter {
         if (await Utils.hasLocalDump(this.bucketName, this.collectionName)) {
           
           console.debug(`${this.identifier} Local DB is empty, load JSON dump`);
-          await RemoteSettingsWorker.importJSONDump(
-            this.bucketName,
-            this.collectionName
-          );
+          await this._importJSONDump();
         } else {
           
           console.debug(
@@ -444,10 +420,7 @@ class RemoteSettingsClient extends EventEmitter {
       
       if (!collectionLastModified && loadDump) {
         try {
-          const imported = await RemoteSettingsWorker.importJSONDump(
-            this.bucketName,
-            this.collectionName
-          );
+          const imported = await this._importJSONDump();
           
           if (imported > 0) {
             console.debug(
@@ -541,11 +514,21 @@ class RemoteSettingsClient extends EventEmitter {
           
           
           const strategy = Kinto.syncStrategy.PULL_ONLY;
+          const startSyncDB = Cu.now() * 1000;
           syncResult = await kintoCollection.sync({
             remote: Utils.SERVER_URL,
             strategy,
             expectedTimestamp,
           });
+          if (gTimingEnabled) {
+            const endSyncDB = Cu.now() * 1000;
+            PerformanceCounters.storeExecutionTime(
+              `remotesettings/${this.identifier}`,
+              "syncDB",
+              endSyncDB - startSyncDB,
+              "duration"
+            );
+          }
           if (!syncResult.ok) {
             
             throw new Error("Sync failed");
@@ -663,6 +646,27 @@ class RemoteSettingsClient extends EventEmitter {
   
 
 
+  async _importJSONDump() {
+    const start = Cu.now() * 1000;
+    const result = await RemoteSettingsWorker.importJSONDump(
+      this.bucketName,
+      this.collectionName
+    );
+    if (gTimingEnabled) {
+      const end = Cu.now() * 1000;
+      PerformanceCounters.storeExecutionTime(
+        `remotesettings/${this.identifier}`,
+        "importJSONDump",
+        end - start,
+        "duration"
+      );
+    }
+    return result;
+  }
+
+  
+
+
 
 
 
@@ -678,6 +682,7 @@ class RemoteSettingsClient extends EventEmitter {
     options = {}
   ) {
     const { localRecords = [] } = options;
+    const start = Cu.now() * 1000;
 
     if (!metadata || !metadata.signature) {
       throw new RemoteSettingsClient.MissingSignatureError(this.identifier);
@@ -709,6 +714,15 @@ class RemoteSettingsClient extends EventEmitter {
       ))
     ) {
       throw new RemoteSettingsClient.InvalidSignatureError(this.identifier);
+    }
+    if (gTimingEnabled) {
+      const end = Cu.now() * 1000;
+      PerformanceCounters.storeExecutionTime(
+        `remotesettings/${this.identifier}`,
+        "validateCollectionSignature",
+        end - start,
+        "duration"
+      );
     }
   }
 
@@ -752,10 +766,20 @@ class RemoteSettingsClient extends EventEmitter {
     const localLastModified = await kintoCollection.db.getLastModified();
     if (timestamp >= localLastModified) {
       console.debug(`Import raw data from server for ${this.identifier}`);
+      const start = Cu.now() * 1000;
       await kintoCollection.clear();
       await kintoCollection.loadDump(remoteRecords);
       await kintoCollection.db.saveLastModified(timestamp);
       await kintoCollection.db.saveMetadata(metadata);
+      if (gTimingEnabled) {
+        const end = Cu.now() * 1000;
+        PerformanceCounters.storeExecutionTime(
+          `remotesettings/${this.identifier}`,
+          "loadRawData",
+          end - start,
+          "duration"
+        );
+      }
 
       
       const oldById = new Map(oldData.map(e => [e.id, e]));
@@ -827,9 +851,19 @@ class RemoteSettingsClient extends EventEmitter {
     if (!this.filterFunc) {
       return data;
     }
+    const start = Cu.now() * 1000;
     const environment = cacheProxy(ClientEnvironment);
     const dataPromises = data.map(e => this.filterFunc(e, environment));
     const results = await Promise.all(dataPromises);
+    if (gTimingEnabled) {
+      const end = Cu.now() * 1000;
+      PerformanceCounters.storeExecutionTime(
+        `remotesettings/${this.identifier}`,
+        "filterEntries",
+        end - start,
+        "duration"
+      );
+    }
     return results.filter(Boolean);
   }
 }
