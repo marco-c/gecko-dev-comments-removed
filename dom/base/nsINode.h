@@ -1082,18 +1082,10 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-
-
-
-
-
-
-
   static already_AddRefed<nsINode> CloneAndAdopt(
       nsINode* aNode, bool aClone, bool aDeep,
       nsNodeInfoManager* aNewNodeInfoManager,
-      JS::Handle<JSObject*> aReparentScope,
-      nsCOMArray<nsINode>* aNodesWithProperties, nsINode* aParent,
+      JS::Handle<JSObject*> aReparentScope, nsINode* aParent,
       mozilla::ErrorResult& aError);
 
  public:
@@ -1111,12 +1103,8 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-
-
-
   void Adopt(nsNodeInfoManager* aNewNodeInfoManager,
              JS::Handle<JSObject*> aReparentScope,
-             nsCOMArray<nsINode>& aNodesWithProperties,
              mozilla::ErrorResult& aError);
 
   
@@ -1134,14 +1122,8 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-
-
-
-
-
   already_AddRefed<nsINode> Clone(bool aDeep,
                                   nsNodeInfoManager* aNewNodeInfoManager,
-                                  nsCOMArray<nsINode>* aNodesWithProperties,
                                   mozilla::ErrorResult& aError);
 
   
