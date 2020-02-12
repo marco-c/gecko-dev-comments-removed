@@ -550,13 +550,6 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 
 
 
-
-
-
-#search-container {
-  min-width: 25ch;
-}
-
 #urlbar,
 #searchbar {
   
