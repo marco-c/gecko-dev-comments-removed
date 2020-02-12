@@ -296,7 +296,7 @@ test_description_schema = Schema({
     
     Optional('variants'): optionally_keyed_by(
         'test-platform', 'project',
-        Any(TEST_VARIANTS.keys())),
+        Any(list(TEST_VARIANTS))),
 
     
     
