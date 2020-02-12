@@ -89,13 +89,7 @@ enum class ImageFormat {
 
 
 
-  GPU_VIDEO,
-
-  
-
-
-
-  WAYLAND_DMABUF,
+  GPU_VIDEO
 };
 
 enum class StereoMode {
