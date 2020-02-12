@@ -83,8 +83,6 @@ using namespace mozilla::dom;
 
 
 
-static bool IsValidSelectionPoint(nsFrameSelection* aFrameSel, nsINode* aNode);
-
 static nsAtom* GetTag(nsINode* aNode);
 
 static nsINode* ParentOffset(nsINode* aNode, int32_t* aChildOffset);
@@ -167,17 +165,19 @@ inline int8_t GetIndexFromSelectionType(SelectionType aSelectionType) {
 
 
 
-bool IsValidSelectionPoint(nsFrameSelection* aFrameSel, nsINode* aNode) {
-  if (!aFrameSel || !aNode) return false;
+bool nsFrameSelection::IsValidSelectionPoint(nsINode* aNode) const {
+  if (!aNode) {
+    return false;
+  }
 
-  nsIContent* limiter = aFrameSel->GetLimiter();
+  nsIContent* limiter = GetLimiter();
   if (limiter && limiter != aNode && limiter != aNode->GetParent()) {
     
     
     return false;  
   }
 
-  limiter = aFrameSel->GetAncestorLimiter();
+  limiter = GetAncestorLimiter();
   return !limiter || aNode->IsInclusiveDescendantOf(limiter);
 }
 
@@ -1105,7 +1105,7 @@ nsresult nsFrameSelection::HandleClick(nsIContent* aNewFocus,
 
   if (!aContinueSelection) {
     mMaintainRange = nullptr;
-    if (!IsValidSelectionPoint(this, aNewFocus)) {
+    if (!IsValidSelectionPoint(aNewFocus)) {
       mAncestorLimiter = nullptr;
     }
   }
@@ -1232,7 +1232,9 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* aNewFocus,
 
   NS_ENSURE_STATE(mPresShell);
 
-  if (!IsValidSelectionPoint(this, aNewFocus)) return NS_ERROR_FAILURE;
+  if (!IsValidSelectionPoint(aNewFocus)) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   mSelectingTableCellMode = TableSelection::None;
@@ -1696,7 +1698,7 @@ nsresult nsFrameSelection::PageMove(bool aForward, bool aExtend,
   
   
   nsIFrame* frameToClick = scrolledFrame;
-  if (!IsValidSelectionPoint(this, scrolledFrame->GetContent())) {
+  if (!IsValidSelectionPoint(scrolledFrame->GetContent())) {
     frameToClick = GetFrameToPageSelect();
     if (NS_WARN_IF(!frameToClick)) {
       return NS_OK;
@@ -2724,7 +2726,7 @@ void nsFrameSelection::SetAncestorLimiter(nsIContent* aLimiter) {
     int8_t index = GetIndexFromSelectionType(SelectionType::eNormal);
     if (!mDomSelections[index]) return;
 
-    if (!IsValidSelectionPoint(this, mDomSelections[index]->GetFocusNode())) {
+    if (!IsValidSelectionPoint(mDomSelections[index]->GetFocusNode())) {
       ClearNormalSelection();
       if (mAncestorLimiter) {
         PostReason(nsISelectionListener::NO_REASON);

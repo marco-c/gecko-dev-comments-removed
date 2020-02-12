@@ -451,6 +451,8 @@ class nsFrameSelection final {
 
   nsresult RepaintSelection(mozilla::SelectionType aSelectionType);
 
+  bool IsValidSelectionPoint(nsINode* aNode) const;
+
   
 
 

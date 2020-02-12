@@ -80,8 +80,6 @@ using namespace mozilla::dom;
 
 
 
-static bool IsValidSelectionPoint(nsFrameSelection* aFrameSel, nsINode* aNode);
-
 #ifdef PRINT_RANGE
 static void printRange(nsRange* aDomRange);
 #  define DEBUG_OUT_RANGE(x) printRange(x)
@@ -249,33 +247,6 @@ class nsAutoScrollTimer final : public nsITimerCallback, public nsINamed {
 };
 
 NS_IMPL_ISUPPORTS(nsAutoScrollTimer, nsITimerCallback, nsINamed)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool IsValidSelectionPoint(nsFrameSelection* aFrameSel, nsINode* aNode) {
-  if (!aFrameSel || !aNode) return false;
-
-  nsIContent* limiter = aFrameSel->GetLimiter();
-  if (limiter && limiter != aNode && limiter != aNode->GetParent()) {
-    
-    
-    return false;  
-  }
-
-  limiter = aFrameSel->GetAncestorLimiter();
-  return !limiter || aNode->IsInclusiveDescendantOf(limiter);
-}
 
 #ifdef PRINT_RANGE
 void printRange(nsRange* aDomRange) {
@@ -2058,7 +2029,7 @@ void Selection::Collapse(const RawRangeBoundary& aPoint, ErrorResult& aRv) {
 
   RefPtr<nsFrameSelection> frameSelection = mFrameSelection;
   frameSelection->InvalidateDesiredPos();
-  if (!IsValidSelectionPoint(frameSelection, aPoint.Container())) {
+  if (!frameSelection->IsValidSelectionPoint(aPoint.Container())) {
     aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
@@ -2348,7 +2319,7 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
   }
 
   nsresult res;
-  if (!IsValidSelectionPoint(mFrameSelection, &aContainer)) {
+  if (!mFrameSelection->IsValidSelectionPoint(&aContainer)) {
     aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
@@ -3326,12 +3297,13 @@ void Selection::SetStartAndEndInternal(InLimiter aInLimiter,
   SelectionBatcher batch(this);
 
   if (aInLimiter == InLimiter::eYes) {
-    if (!IsValidSelectionPoint(mFrameSelection, aStartRef.Container())) {
+    if (!mFrameSelection ||
+        !mFrameSelection->IsValidSelectionPoint(aStartRef.Container())) {
       aRv.Throw(NS_ERROR_FAILURE);
       return;
     }
     if (aStartRef.Container() != aEndRef.Container() &&
-        !IsValidSelectionPoint(mFrameSelection, aEndRef.Container())) {
+        !mFrameSelection->IsValidSelectionPoint(aEndRef.Container())) {
       aRv.Throw(NS_ERROR_FAILURE);
       return;
     }
