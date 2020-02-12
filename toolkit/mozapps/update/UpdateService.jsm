@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: javascript; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -105,21 +105,21 @@ const STATE_SUCCEEDED = "succeeded";
 const STATE_DOWNLOAD_FAILED = "download-failed";
 const STATE_FAILED = "failed";
 
-
-
-
-
-const BITS_IDLE_NO_PROGRESS_TIMEOUT_SECS = 3600; 
+// BITS will keep retrying a download after transient errors, unless this much
+// time has passed since there has been download progress.
+// Similarly to ...POLL_RATE_MS below, we are much more aggressive when the user
+// is watching the download progress.
+const BITS_IDLE_NO_PROGRESS_TIMEOUT_SECS = 3600; // 1 hour
 const BITS_ACTIVE_NO_PROGRESS_TIMEOUT_SECS = 5;
 
-
-
-
-
+// These value control how frequently we get updates from the BITS client on
+// the progress made downloading. The difference between the two is that the
+// active interval is the one used when the user is watching. The idle interval
+// is the one used when no one is watching.
 const BITS_IDLE_POLL_RATE_MS = 1000;
 const BITS_ACTIVE_POLL_RATE_MS = 200;
 
-
+// The values below used by this code are from common/updatererrors.h
 const WRITE_ERROR = 7;
 const ELEVATION_CANCELED = 9;
 const SERVICE_UPDATER_COULD_NOT_BE_STARTED = 24;
@@ -151,7 +151,7 @@ const WRITE_ERROR_DIR_ACCESS_DENIED = 68;
 const WRITE_ERROR_DELETE_BACKUP = 69;
 const WRITE_ERROR_EXTRACT = 70;
 
-
+// Array of write errors to simplify checks for write errors
 const WRITE_ERRORS = [
   WRITE_ERROR,
   WRITE_ERROR_ACCESS_DENIED,
@@ -168,7 +168,7 @@ const WRITE_ERRORS = [
   WRITE_ERROR_EXTRACT,
 ];
 
-
+// Array of write errors to simplify checks for service errors
 const SERVICE_ERRORS = [
   SERVICE_UPDATER_COULD_NOT_BE_STARTED,
   SERVICE_NOT_ENOUGH_COMMAND_LINE_ARGS,
@@ -186,73 +186,73 @@ const SERVICE_ERRORS = [
   SERVICE_COULD_NOT_IMPERSONATE,
 ];
 
-
-
+// Error codes 80 through 99 are reserved for nsUpdateService.js and are not
+// defined in common/updatererrors.h
 const ERR_OLDER_VERSION_OR_SAME_BUILD = 90;
 const ERR_UPDATE_STATE_NONE = 91;
 const ERR_CHANNEL_CHANGE = 92;
 const INVALID_UPDATER_STATE_CODE = 98;
 const INVALID_UPDATER_STATUS_CODE = 99;
 
-
+// Custom update error codes
 const BACKGROUNDCHECK_MULTIPLE_FAILURES = 110;
 const NETWORK_ERROR_OFFLINE = 111;
 
-
+// Error codes should be < 1000. Errors above 1000 represent http status codes
 const HTTP_ERROR_OFFSET = 1000;
 
-
-
-
+// The is an HRESULT error that may be returned from the BITS interface
+// indicating that access was denied. Often, this error code is returned when
+// attempting to access a job created by a different user.
 const HRESULT_E_ACCESSDENIED = -2147024891;
 
-const DOWNLOAD_CHUNK_SIZE = 300000; 
+const DOWNLOAD_CHUNK_SIZE = 300000; // bytes
 
-
-
+// The number of consecutive failures when updating using the service before
+// setting the app.update.service.enabled preference to false.
 const DEFAULT_SERVICE_MAX_ERRORS = 10;
 
-
-
+// The number of consecutive socket errors to allow before falling back to
+// downloading a different MAR file or failing if already downloading the full.
 const DEFAULT_SOCKET_MAX_ERRORS = 10;
 
-
+// The number of milliseconds to wait before retrying a connection error.
 const DEFAULT_SOCKET_RETRYTIMEOUT = 2000;
 
-
-
+// Default maximum number of elevation cancelations per update version before
+// giving up.
 const DEFAULT_CANCELATIONS_OSX_MAX = 3;
 
-
-
+// This maps app IDs to their respective notification topic which signals when
+// the application's user interface has been displayed.
 const APPID_TO_TOPIC = {
-  
+  // Firefox
   "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}": "sessionstore-windows-restored",
-  
+  // SeaMonkey
   "{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}": "sessionstore-windows-restored",
-  
+  // Thunderbird
   "{3550f703-e582-4d05-9a08-453d09bdfdc6}": "mail-startup-done",
 };
 
-
+// The interval for the update xml write deferred task.
 const XML_SAVER_INTERVAL_MS = 200;
 
-
-
-
+// Object to keep track of the current phase of the update and whether there
+// has been a write failure for the phase so only one telemetry ping is made
+// for the phase.
 var gUpdateFileWriteInfo = { phase: null, failure: false };
 var gUpdateMutexHandle = null;
-
-
+// The permissions of the update directory should be fixed no more than once per
+// session
 var gUpdateDirPermissionFixAttempted = false;
-
+// This is used for serializing writes to the update log file
 var gLogfileWritePromise;
-
-
-
-
+// This value will be set to true if it appears that BITS is being used by
+// another user to download updates. We don't really want two users using BITS
+// at once. Computers with many users (ex: a school computer), should not end
+// up with dozens of BITS jobs.
 var gBITSInUseByAnotherUser = false;
-
+// The start time in milliseconds of the update check.
 var gCheckStartMs;
 
 XPCOMUtils.defineLazyGetter(this, "gLogEnabled", function aus_gLogEnabled() {
@@ -278,13 +278,13 @@ XPCOMUtils.defineLazyGetter(
   }
 );
 
-
-
-
-
-
-
-
+/**
+ * Tests to make sure that we can write to a given directory.
+ *
+ * @param updateTestFile a test file in the directory that needs to be tested.
+ * @param createDirectory whether a test directory should be created.
+ * @throws if we don't have right access to the directory.
+ */
 function testWriteAccess(updateTestFile, createDirectory) {
   const NORMAL_FILE_TYPE = Ci.nsIFile.NORMAL_FILE_TYPE;
   const DIRECTORY_TYPE = Ci.nsIFile.DIRECTORY_TYPE;
@@ -298,34 +298,34 @@ function testWriteAccess(updateTestFile, createDirectory) {
   updateTestFile.remove(false);
 }
 
-
-
-
-
-
+/**
+ * Windows only function that closes a Win32 handle.
+ *
+ * @param handle The handle to close
+ */
 function closeHandle(handle) {
   if (handle) {
     let lib = ctypes.open("kernel32.dll");
     let CloseHandle = lib.declare(
       "CloseHandle",
       ctypes.winapi_abi,
-      ctypes.int32_t ,
+      ctypes.int32_t /* success */,
       ctypes.void_t.ptr
-    ); 
+    ); /* handle */
     CloseHandle(handle);
     lib.close();
   }
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Windows only function that creates a mutex.
+ *
+ * @param  aName
+ *         The name for the mutex.
+ * @param  aAllowExisting
+ *         If false the function will close the handle and return null.
+ * @return The Win32 handle to the mutex.
+ */
 function createMutex(aName, aAllowExisting = true) {
   if (AppConstants.platform != "win") {
     throw Cr.NS_ERROR_NOT_IMPLEMENTED;
@@ -337,11 +337,11 @@ function createMutex(aName, aAllowExisting = true) {
   let CreateMutexW = lib.declare(
     "CreateMutexW",
     ctypes.winapi_abi,
-    ctypes.void_t.ptr ,
-    ctypes.void_t.ptr ,
-    ctypes.int32_t ,
+    ctypes.void_t.ptr /* return handle */,
+    ctypes.void_t.ptr /* security attributes */,
+    ctypes.int32_t /* initial owner */,
     ctypes.char16_t.ptr
-  ); 
+  ); /* name */
 
   let handle = CreateMutexW(null, INITIAL_OWN, aName);
   let alreadyExists = ctypes.winLastError == ERROR_ALREADY_EXISTS;
@@ -358,15 +358,15 @@ function createMutex(aName, aAllowExisting = true) {
   return handle;
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Windows only function that determines a unique mutex name for the
+ * installation.
+ *
+ * @param aGlobal
+ *        true if the function should return a global mutex. A global mutex is
+ *        valid across different sessions.
+ * @return Global mutex path
+ */
 function getPerInstallationMutexName(aGlobal = true) {
   if (AppConstants.platform != "win") {
     throw Cr.NS_ERROR_NOT_IMPLEMENTED;
@@ -391,14 +391,14 @@ function getPerInstallationMutexName(aGlobal = true) {
   );
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Whether or not the current instance has the update mutex. The update mutex
+ * gives protection against 2 applications from the same installation updating:
+ * 1) Running multiple profiles from the same installation path
+ * 2) Two applications running in 2 different user sessions from the same path
+ *
+ * @return true if this instance holds the update mutex
+ */
 function hasUpdateMutex() {
   if (AppConstants.platform != "win") {
     return true;
@@ -409,12 +409,12 @@ function hasUpdateMutex() {
   return !!gUpdateMutexHandle;
 }
 
-
-
-
-
-
-
+/**
+ * Determines whether or not all descendants of a directory are writeable.
+ * Note: Does not check the root directory itself for writeability.
+ *
+ * @return true if all descendants are writeable, false otherwise
+ */
 function areDirectoryEntriesWriteable(aDir) {
   let items = aDir.directoryEntries;
   while (items.hasMoreElements()) {
@@ -430,20 +430,20 @@ function areDirectoryEntriesWriteable(aDir) {
   return true;
 }
 
-
-
-
-
-
-
+/**
+ * OSX only function to determine if the user requires elevation to be able to
+ * write to the application bundle.
+ *
+ * @return true if elevation is required, false otherwise
+ */
 function getElevationRequired() {
   if (AppConstants.platform != "macosx") {
     return false;
   }
 
   try {
-    
-    
+    // Recursively check that the application bundle (and its descendants) can
+    // be written to.
     LOG(
       "getElevationRequired - recursively testing write access on " +
         getInstallDirRoot().path
@@ -473,20 +473,20 @@ function getElevationRequired() {
   return false;
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Determines whether or not an update can be applied. This is always true on
+ * Windows when the service is used. On Mac OS X and Linux, if the user has
+ * write access to the update directory this will return true because on OSX we
+ * offer users the option to perform an elevated update when necessary and on
+ * Linux the update directory is located in the application directory.
+ *
+ * @return true if an update can be applied, false otherwise
+ */
 function getCanApplyUpdates() {
   try {
-    
-    
-    
+    // Check if it is possible to write to the update directory so clients won't
+    // repeatedly try to apply an update without the ability to complete the
+    // update process which requires write access to the update directory.
     let updateTestFile = getUpdateFile([FILE_UPDATE_TEST]);
     LOG("getCanApplyUpdates - testing write access " + updateTestFile.path);
     testWriteAccess(updateTestFile, false);
@@ -496,9 +496,9 @@ function getCanApplyUpdates() {
         "access to the update directory. Exception: " +
         e
     );
-    
-    
-    
+    // Attempt to fix the update directory permissions. If successful the next
+    // time this function is called the write access check to the update
+    // directory will succeed.
     fixUpdateDirectoryPermissions();
     return false;
   }
@@ -521,15 +521,15 @@ function getCanApplyUpdates() {
 
   try {
     if (AppConstants.platform == "win") {
-      
-      
-      
-      
-      
+      // On Windows when the maintenance service isn't used updates can still be
+      // performed in a location requiring admin privileges by the client
+      // accepting a UAC prompt from an elevation request made by the updater.
+      // Whether the client can elevate (e.g. has a split token) is determined
+      // in nsXULAppInfo::GetUserCanElevate which is located in nsAppRunner.cpp.
       let userCanElevate = Services.appinfo.QueryInterface(Ci.nsIWinAppHelper)
         .userCanElevate;
       if (!userCanElevate) {
-        
+        // if we're unable to create the test file this will throw an exception.
         let appDirTestFile = getAppBaseDir();
         appDirTestFile.append(FILE_UPDATE_TEST);
         LOG("getCanApplyUpdates - testing write access " + appDirTestFile.path);
@@ -545,7 +545,7 @@ function getCanApplyUpdates() {
     }
   } catch (e) {
     LOG("getCanApplyUpdates - unable to apply updates. Exception: " + e);
-    
+    // No write access to the installation directory
     return false;
   }
 
@@ -553,12 +553,12 @@ function getCanApplyUpdates() {
   return true;
 }
 
-
-
-
-
-
-
+/**
+ * Whether or not the application can stage an update for the current session.
+ * These checks are only performed once per session due to using a lazy getter.
+ *
+ * @return true if updates can be staged for this session.
+ */
 XPCOMUtils.defineLazyGetter(
   this,
   "gCanStageUpdatesSession",
@@ -584,9 +584,9 @@ XPCOMUtils.defineLazyGetter(
       );
       testWriteAccess(updateTestFile, true);
       if (AppConstants.platform != "macosx") {
-        
-        
-        
+        // On all platforms except Mac, we need to test the parent directory as
+        // well, as we need to be able to move files in that directory during the
+        // replacing step.
         updateTestFile = getInstallDirRoot().parent;
         updateTestFile.append(FILE_UPDATE_TEST);
         LOG(
@@ -601,7 +601,7 @@ XPCOMUtils.defineLazyGetter(
       }
     } catch (e) {
       LOG("gCanStageUpdatesSession - unable to stage updates. Exception: " + e);
-      
+      // No write privileges
       return false;
     }
 
@@ -610,13 +610,13 @@ XPCOMUtils.defineLazyGetter(
   }
 );
 
-
-
-
-
-
+/**
+ * Whether or not the application can stage an update.
+ *
+ * @return true if updates can be staged.
+ */
 function getCanStageUpdates() {
-  
+  // If staging updates are disabled, then just bail out!
   if (!Services.prefs.getBoolPref(PREF_APP_UPDATE_STAGING_ENABLED, false)) {
     LOG(
       "getCanStageUpdates - staging updates is disabled by preference " +
@@ -626,8 +626,8 @@ function getCanStageUpdates() {
   }
 
   if (AppConstants.platform == "win" && shouldUseService()) {
-    
-    
+    // No need to perform directory write checks, the maintenance service will
+    // be able to write to all directories.
     LOG("getCanStageUpdates - able to stage updates using the service");
     return true;
   }
@@ -644,21 +644,21 @@ function getCanStageUpdates() {
   return gCanStageUpdatesSession;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Whether or not the application can use BITS to download updates.
+ *
+ * @return A string with one of these values:
+ *           CanUseBits
+ *           NoBits_NotWindows
+ *           NoBits_FeatureOff
+ *           NoBits_Pref
+ *           NoBits_Proxy
+ *           NoBits_OtherUser
+ *         These strings are directly compatible with the categories for
+ *         UPDATE_CAN_USE_BITS_EXTERNAL and UPDATE_CAN_USE_BITS_NOTIFY telemetry
+ *         probes. If this function is made to return other values, they should
+ *         also be added to the labels lists for those probes in Histograms.json
+ */
 function getCanUseBits() {
   if (AppConstants.platform != "win") {
     LOG("getCanUseBits - Not using BITS because this is not Windows");
@@ -677,9 +677,9 @@ function getCanUseBits() {
     LOG("getCanUseBits - Not using BITS. Already in use by another user");
     return "NoBits_OtherUser";
   }
-  
-  
-  
+  // Firefox support for passing proxies to BITS is still rudimentary.
+  // For now, disable BITS support on configurations that are not using the
+  // standard system proxy.
   let defaultProxy = Ci.nsIProtocolProxyService.PROXYCONFIG_SYSTEM;
   if (
     Services.prefs.getIntPref(PREF_NETWORK_PROXY_TYPE, defaultProxy) !=
@@ -693,12 +693,12 @@ function getCanUseBits() {
   return "CanUseBits";
 }
 
-
-
-
-
-
-
+/**
+ * Logs a string to the error console. If enabled, also logs to the update
+ * messages file.
+ * @param   string
+ *          The string to write to the error console.
+ */
 function LOG(string) {
   if (gLogEnabled) {
     dump("*** AUS:SVC " + string + "\n");
@@ -718,16 +718,16 @@ function LOG(string) {
           Services.console.logStringMessage(
             "AUS:SVC Unable to open messages file: " + error
           );
-          
-          
+          // Reject on failure so that writes are not attempted without a file
+          // handle.
           return Promise.reject(error);
         });
       }
       gLogfileWritePromise = gLogfileWritePromise.then(async logfile => {
-        
-        
-        
-        
+        // Catch failures from write promises and always return the logfile.
+        // This allows subsequent write attempts and ensures that the file
+        // handle keeps getting passed down the promise chain so that it will
+        // be properly closed on shutdown.
         try {
           let encoded = new TextEncoder().encode(string + "\n");
           await logfile.write(encoded);
@@ -744,18 +744,18 @@ function LOG(string) {
   }
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Gets the specified directory at the specified hierarchy under the
+ * update root directory and creates it if it doesn't exist.
+ * @param   pathArray
+ *          An array of path components to locate beneath the directory
+ *          specified by |key|
+ * @return  nsIFile object for the location specified.
+ */
 function getUpdateDirCreate(pathArray) {
   if (Cu.isInAutomation) {
-    
-    
+    // This allows tests to use an alternate updates directory so they can test
+    // startup behavior.
     const MAGIC_TEST_ROOT_PREFIX = "<test-root>";
     const PREF_TEST_ROOT = "mochitest.testRoot";
     let alternatePath = Services.prefs.getCharPref(
@@ -783,57 +783,57 @@ function getUpdateDirCreate(pathArray) {
   return FileUtils.getDir(KEY_UPDROOT, pathArray, true);
 }
 
-
-
-
-
-
+/**
+ * Gets the application base directory.
+ *
+ * @return  nsIFile object for the application base directory.
+ */
 function getAppBaseDir() {
   return Services.dirsvc.get(KEY_EXECUTABLE, Ci.nsIFile).parent;
 }
 
-
-
-
-
-
-
-
+/**
+ * Gets the root of the installation directory which is the application
+ * bundle directory on Mac OS X and the location of the application binary
+ * on all other platforms.
+ *
+ * @return nsIFile object for the directory
+ */
 function getInstallDirRoot() {
   let dir = getAppBaseDir();
   if (AppConstants.platform == "macosx") {
-    
+    // On Mac, we store the Updated.app directory inside the bundle directory.
     dir = dir.parent.parent;
   }
   return dir;
 }
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Gets the file at the specified hierarchy under the update root directory.
+ * @param   pathArray
+ *          An array of path components to locate beneath the directory
+ *          specified by |key|. The last item in this array must be the
+ *          leaf name of a file.
+ * @return  nsIFile object for the file specified. The file is NOT created
+ *          if it does not exist, however all required directories along
+ *          the way are.
+ */
 function getUpdateFile(pathArray) {
   let file = getUpdateDirCreate(pathArray.slice(0, -1));
   file.append(pathArray[pathArray.length - 1]);
   return file;
 }
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Returns human readable status text from the updates.properties bundle
+ * based on an error code
+ * @param   code
+ *          The error code to look up human readable status text for
+ * @param   defaultCode
+ *          The default code to look up should human readable status text
+ *          not exist for |code|
+ * @return  A human readable status text string
+ */
 function getStatusTextFromCode(code, defaultCode) {
   let reason;
   try {
@@ -842,7 +842,7 @@ function getStatusTextFromCode(code, defaultCode) {
       "getStatusTextFromCode - transfer error: " + reason + ", code: " + code
     );
   } catch (e) {
-    
+    // Use the default reason
     reason = gUpdateBundle.GetStringFromName("check_error-" + defaultCode);
     LOG(
       "getStatusTextFromCode - transfer error: " +
@@ -854,23 +854,23 @@ function getStatusTextFromCode(code, defaultCode) {
   return reason;
 }
 
-
-
-
-
+/**
+ * Get the Active Updates directory
+ * @return The active updates directory, as a nsIFile object
+ */
 function getUpdatesDir() {
-  
-  
+  // Right now, we only support downloading one patch at a time, so we always
+  // use the same target directory.
   return getUpdateDirCreate([DIR_UPDATES, "0"]);
 }
 
-
-
-
-
-
-
-
+/**
+ * Reads the update state from the update.status file in the specified
+ * directory.
+ * @param   dir
+ *          The dir to look for an update.status file in
+ * @return  The status value of the update.
+ */
 function readStatusFile(dir) {
   let statusFile = dir.clone();
   statusFile.append(FILE_UPDATE_STATUS);
@@ -879,15 +879,15 @@ function readStatusFile(dir) {
   return status;
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Reads the binary transparency result file from the given directory.
+ * Removes the file if it is present (so don't call this twice and expect a
+ * result the second time).
+ * @param   dir
+ *          The dir to look for an update.bt file in
+ * @return  A error code from verifying binary transparency information or null
+ *          if the file was not present (indicating there was no error).
+ */
 function readBinaryTransparencyResult(dir) {
   let binaryTransparencyResultFile = dir.clone();
   binaryTransparencyResultFile.append(FILE_BT_RESULT);
@@ -898,24 +898,24 @@ function readBinaryTransparencyResult(dir) {
       ", path: " +
       binaryTransparencyResultFile.path
   );
-  
-  
+  // If result is non-null, the file exists. We should remove it to avoid
+  // double-reporting this result.
   if (result) {
     binaryTransparencyResultFile.remove(false);
   }
   return result;
 }
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Writes the current update operation/state to a file in the patch
+ * directory, indicating to the patching system that operations need
+ * to be performed.
+ * @param   dir
+ *          The patch directory where the update.status file should be
+ *          written.
+ * @param   state
+ *          The state value to write.
+ */
 function writeStatusFile(dir, state) {
   let statusFile = dir.clone();
   statusFile.append(FILE_UPDATE_STATUS);
@@ -925,21 +925,21 @@ function writeStatusFile(dir, state) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Writes the update's application version to a file in the patch directory. If
+ * the update doesn't provide application version information via the
+ * appVersion attribute the string "null" will be written to the file.
+ * This value is compared during startup (in nsUpdateDriver.cpp) to determine if
+ * the update should be applied. Note that this won't provide protection from
+ * downgrade of the application for the nightly user case where the application
+ * version doesn't change.
+ * @param   dir
+ *          The patch directory where the update.version file should be
+ *          written.
+ * @param   version
+ *          The version value to write. Will be the string "null" when the
+ *          update doesn't provide the appVersion attribute in the update xml.
+ */
 function writeVersionFile(dir, version) {
   let versionFile = dir.clone();
   versionFile.append(FILE_UPDATE_VERSION);
@@ -949,18 +949,18 @@ function writeVersionFile(dir, version) {
   }
 }
 
-
-
-
-
-
-
+/**
+ * Determines if the service should be used to attempt an update
+ * or not.
+ *
+ * @return  true if the service should be used for updates.
+ */
 function shouldUseService() {
-  
-  
-  
-  
-  
+  // This function will return true if the mantenance service should be used if
+  // all of the following conditions are met:
+  // 1) This build was done with the maintenance service enabled
+  // 2) The maintenance service is installed
+  // 3) The pref for using the service is enabled
   if (
     !AppConstants.MOZ_MAINTENANCE_SERVICE ||
     !isServiceInstalled() ||
@@ -974,11 +974,11 @@ function shouldUseService() {
   return true;
 }
 
-
-
-
-
-
+/**
+ * Determines if the service is is installed.
+ *
+ * @return  true if the service is installed.
+ */
 function isServiceInstalled() {
   if (!AppConstants.MOZ_MAINTENANCE_SERVICE || AppConstants.platform != "win") {
     LOG("isServiceInstalled - returning false");
@@ -998,21 +998,21 @@ function isServiceInstalled() {
     installed = wrk.readIntValue("Installed");
     wrk.close();
   } catch (e) {}
-  installed = installed == 1; 
+  installed = installed == 1; // convert to bool
   LOG("isServiceInstalled - returning " + installed);
   return installed;
 }
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Removes the contents of the updates patch directory and rotates the update
+ * logs when present. If the update.log exists in the patch directory this will
+ * move the last-update.log if it exists to backup-update.log in the parent
+ * directory of the patch directory and then move the update.log in the patch
+ * directory to last-update.log in the parent directory of the patch directory.
+ *
+ * @param aRemovePatchFiles (optional, defaults to true)
+ *        When true the update's patch directory contents are removed.
+ */
 function cleanUpUpdatesDir(aRemovePatchFiles = true) {
   let updateDir;
   try {
@@ -1026,7 +1026,7 @@ function cleanUpUpdatesDir(aRemovePatchFiles = true) {
     return;
   }
 
-  
+  // Preserve the last update log file for debugging purposes.
   let updateLogFile = updateDir.clone();
   updateLogFile.append(FILE_UPDATE_LOG);
   if (updateLogFile.exists()) {
@@ -1062,10 +1062,10 @@ function cleanUpUpdatesDir(aRemovePatchFiles = true) {
     let dirEntries = updateDir.directoryEntries;
     while (dirEntries.hasMoreElements()) {
       let file = dirEntries.nextFile;
-      
-      
-      
-      
+      // Now, recursively remove this file.  The recursive removal is needed for
+      // Mac OSX because this directory will contain a copy of updater.app,
+      // which is itself a directory and the MozUpdater directory on platforms
+      // other than Windows.
       try {
         file.remove(true);
       } catch (e) {
@@ -1075,30 +1075,30 @@ function cleanUpUpdatesDir(aRemovePatchFiles = true) {
   }
 }
 
-
-
-
+/**
+ * Clean up updates list and the updates directory.
+ */
 function cleanupActiveUpdate() {
-  
+  // Move the update from the Active Update list into the Past Updates list.
   var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
     Ci.nsIUpdateManager
   );
-  
-  
+  // Setting |activeUpdate| to null will move the active update to the update
+  // history.
   um.activeUpdate = null;
   um.saveUpdates();
 
-  
+  // Now trash the updates directory, since we're done with it
   cleanUpUpdatesDir();
 }
 
-
-
-
-
-
-
-
+/**
+ * Writes a string of text to a file.  A newline will be appended to the data
+ * written to the file.  This function only works with ASCII text.
+ * @param file An nsIFile indicating what file to write to.
+ * @param text A string containing the text to write to the file.
+ * @return true on success, false on failure.
+ */
 function writeStringToFile(file, text) {
   try {
     let fos = FileUtils.openSafeFileOutputStream(file);
@@ -1124,10 +1124,10 @@ function readStringFromInputStream(inputStream) {
   return text;
 }
 
-
-
-
-
+/**
+ * Reads a string of text from a file.  A trailing newline will be removed
+ * before the result is returned.  This function only works with ASCII text.
+ */
 function readStringFromFile(file) {
   if (!file.exists()) {
     LOG("readStringFromFile - file doesn't exist: " + file.path);
@@ -1204,7 +1204,7 @@ function handleUpdateFailure(update, errorCode) {
         PREF_APP_UPDATE_CANCELATIONS_OSX_MAX,
         DEFAULT_CANCELATIONS_OSX_MAX
       );
-      
+      // Prevent the preference from setting a value greater than 5.
       maxCancels = Math.min(maxCancels, 5);
       if (osxCancelations >= maxCancels) {
         cleanupActiveUpdate();
@@ -1237,11 +1237,11 @@ function handleUpdateFailure(update, errorCode) {
       PREF_APP_UPDATE_SERVICE_MAXERRORS,
       DEFAULT_SERVICE_MAX_ERRORS
     );
-    
+    // Prevent the preference from setting a value greater than 10.
     maxFail = Math.min(maxFail, 10);
-    
-    
-    
+    // As a safety, when the service reaches maximum failures, it will
+    // disable itself and fallback to using the normal update mechanism
+    // without the service.
     if (failCount >= maxFail) {
       Services.prefs.setBoolPref(PREF_APP_UPDATE_SERVICE_ENABLED, false);
       Services.prefs.clearUserPref(PREF_APP_UPDATE_SERVICE_ERRORS);
@@ -1261,20 +1261,20 @@ function handleUpdateFailure(update, errorCode) {
   return false;
 }
 
-
-
-
-
-
-
+/**
+ * Fall back to downloading a complete update in case an update has failed.
+ *
+ * @param update the update object that has failed to apply.
+ * @param postStaging true if we have just attempted to stage an update.
+ */
 function handleFallbackToCompleteUpdate(update, postStaging) {
   cleanupActiveUpdate();
 
   update.statusText = gUpdateBundle.GetStringFromName("patchApplyFailure");
   var oldType = update.selectedPatch ? update.selectedPatch.type : "complete";
   if (update.selectedPatch && oldType == "partial" && update.patchCount == 2) {
-    
-    
+    // Partial patch application failed, try downloading the complete
+    // update in the background instead.
     LOG(
       "handleFallbackToCompleteUpdate - install of partial patch " +
         "failed, downloading complete patch"
@@ -1348,8 +1348,8 @@ function pingStateAndStatusCodes(aUpdate, aStartup, aStatus) {
       case STATE_PENDING_ELEVATE:
         stateCode = 13;
         break;
-      
-      
+      // Note: Do not use stateCode 14 here. It is defined in
+      // UpdateTelemetry.jsm
       default:
         stateCode = 1;
     }
@@ -1372,14 +1372,14 @@ function pingStateAndStatusCodes(aUpdate, aStartup, aStatus) {
   AUSTLMY.pingStateCode(suffix, stateCode);
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Asynchronously fixes the update directory permissions. This is currently only
+ * available on Windows.
+ *
+ * @return true if the permission-fixing process was started, and false if the
+ *         permission-fixing process was not started or the platform is not
+ *         supported.
+ */
 function fixUpdateDirectoryPermissions() {
   if (AppConstants.platform != "win") {
     LOG(
@@ -1390,7 +1390,7 @@ function fixUpdateDirectoryPermissions() {
   }
 
   if (!gUpdateDirPermissionFixAttempted) {
-    
+    // Never try to fix permissions more than one time during a session.
     gUpdateDirPermissionFixAttempted = true;
     AUSTLMY.pingFixUpdateDirectoryPermissionsAttempted();
 
@@ -1410,21 +1410,21 @@ function fixUpdateDirectoryPermissions() {
   return false;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This function should be called whenever we fail to write to a file required
+ * for update to function. This function will, if possible, attempt to fix the
+ * file permissions. If the file permissions cannot be fixed, the user will be
+ * prompted to reinstall.
+ *
+ * All functionality happens asynchronously.
+ *
+ * Returns false if the permission-fixing process cannot be started. Since this
+ * is asynchronous, a true return value does not mean that the permissions were
+ * actually fixed.
+ *
+ * @param path A string representing the path that could not be written. This
+ *             value will only be used for logging purposes.
+ */
 function handleCriticalWriteFailure(path) {
   LOG(
     "handleCriticalWriteFailure - Unable to write to critical update file: " +
@@ -1449,8 +1449,8 @@ function handleCriticalWriteFailure(path) {
       let updateServiceInstance = UpdateServiceFactory.createInstance();
       let pingSuffix = updateServiceInstance._pingSuffix;
       if (!pingSuffix) {
-        
-        
+        // If pingSuffix isn't defined then this this is a manual check which
+        // isn't recorded at this time.
         AUSTLMY.pingCheckCode(pingSuffix, AUSTLMY.CHK_ERR_WRITE_FAILURE);
       }
     } else if (gUpdateFileWriteInfo.phase == "download") {
@@ -1462,8 +1462,8 @@ function handleCriticalWriteFailure(path) {
       let suffix = patchType + "_" + AUSTLMY.STARTUP;
       AUSTLMY.pingStateCode(suffix, AUSTLMY.STATE_WRITE_FAILURE);
     } else {
-      
-      
+      // Temporary failure code to see if there are failures without an update
+      // phase.
       AUSTLMY.pingDownloadCode(
         patchType,
         AUSTLMY.DWNLD_UNKNOWN_PHASE_ERR_WRITE_FAILURE
@@ -1474,30 +1474,30 @@ function handleCriticalWriteFailure(path) {
   return fixUpdateDirectoryPermissions();
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This is a convenience function for calling the above function depending on a
+ * boolean success value.
+ *
+ * @param wroteSuccessfully A boolean representing whether or not the write was
+ *                          successful. When this is true, this function does
+ *                          nothing.
+ * @param path A string representing the path to the file that the operation
+ *             attempted to write to. This value is only used for logging
+ *             purposes.
+ */
 function handleCriticalWriteResult(wroteSuccessfully, path) {
   if (!wroteSuccessfully) {
     handleCriticalWriteFailure(path);
   }
 }
 
-
-
-
-
-
-
-
+/**
+ * Update Patch
+ * @param   patch
+ *          A <patch> element to initialize this object with
+ * @throws if patch has a size of 0
+ * @constructor
+ */
 function UpdatePatch(patch) {
   this._properties = {};
   this.errorCode = 0;
@@ -1506,14 +1506,14 @@ function UpdatePatch(patch) {
 
   for (let i = 0; i < patch.attributes.length; ++i) {
     var attr = patch.attributes.item(i);
-    
-    
+    // If an undefined value is saved to the xml file it will be a string when
+    // it is read from the xml file.
     if (attr.value == "undefined") {
       continue;
     }
     switch (attr.name) {
       case "xmlns":
-        
+        // Don't save the XML namespace.
         break;
       case "selected":
         this.selected = attr.value == "true";
@@ -1528,8 +1528,8 @@ function UpdatePatch(patch) {
       case "errorCode":
         if (attr.value) {
           let val = parseInt(attr.value);
-          
-          
+          // This will evaluate to false if the value is 0 but that's ok since
+          // this.errorCode is set to the default of 0 above.
           if (val) {
             this.errorCode = val;
           }
@@ -1543,7 +1543,7 @@ function UpdatePatch(patch) {
         break;
       default:
         if (!this._attrNames.includes(attr.name)) {
-          
+          // Set nsIPropertyBag properties that were read from the xml file.
           this.setProperty(attr.name, attr.value);
         }
         break;
@@ -1551,8 +1551,8 @@ function UpdatePatch(patch) {
   }
 }
 UpdatePatch.prototype = {
-  
-  
+  // nsIUpdatePatch attribute names used to prevent nsIWritablePropertyBag from
+  // over writing nsIUpdatePatch attributes.
   _attrNames: [
     "errorCode",
     "finalURL",
@@ -1563,24 +1563,24 @@ UpdatePatch.prototype = {
     "URL",
   ],
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   serialize: function UpdatePatch_serialize(updates) {
     var patch = updates.createElementNS(URI_UPDATE_NS, "patch");
     patch.setAttribute("size", this.size);
     patch.setAttribute("type", this.type);
     patch.setAttribute("URL", this.URL);
-    
-    
+    // Don't write an errorCode if it evaluates to false since 0 is the same as
+    // no error code.
     if (this.errorCode) {
       patch.setAttribute("errorCode", this.errorCode);
     }
-    
+    // finalURL is not available until after the download has started
     if (this.finalURL) {
       patch.setAttribute("finalURL", this.finalURL);
     }
-    
+    // The selected patch is the only patch that should have this attribute.
     if (this.selected) {
       patch.setAttribute("selected", this.selected);
     }
@@ -1596,9 +1596,9 @@ UpdatePatch.prototype = {
     return patch;
   },
 
-  
-
-
+  /**
+   * See nsIWritablePropertyBag.idl
+   */
   setProperty: function UpdatePatch_setProperty(name, value) {
     if (this._attrNames.includes(name)) {
       throw Components.Exception(
@@ -1612,9 +1612,9 @@ UpdatePatch.prototype = {
     this._properties[name] = { data: value, present: true };
   },
 
-  
-
-
+  /**
+   * See nsIWritablePropertyBag.idl
+   */
   deleteProperty: function UpdatePatch_deleteProperty(name) {
     if (this._attrNames.includes(name)) {
       throw Components.Exception(
@@ -1632,42 +1632,42 @@ UpdatePatch.prototype = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * See nsIPropertyBag.idl
+   *
+   * Note: this only contains the nsIPropertyBag name / value pairs and not the
+   *       nsIUpdatePatch name / value pairs.
+   */
   get enumerator() {
     return this.enumerate();
   },
 
   *enumerate() {
-    
-    
+    // An nsISupportsInterfacePointer is used so creating an array using
+    // Array.from will retain the QueryInterface for nsIProperty.
     let ip = Cc["@mozilla.org/supports-interface-pointer;1"].createInstance(
       Ci.nsISupportsInterfacePointer
     );
     let qi = ChromeUtils.generateQI([Ci.nsIProperty]);
     for (let [name, value] of Object.entries(this._properties)) {
       if (value.present && !this._attrNames.includes(name)) {
-        
-        
-        
-        
-        
+        // The nsIPropertyBag enumerator returns a nsISimpleEnumerator whose
+        // elements are nsIProperty objects. Calling QueryInterface for
+        // nsIProperty on the object doesn't return to the caller an object that
+        // is already queried to nsIProperty but do it just in case it is fixed
+        // at some point.
         ip.data = { name, value: value.data, QueryInterface: qi };
         yield ip.data.QueryInterface(Ci.nsIProperty);
       }
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * See nsIPropertyBag.idl
+   *
+   * Note: returns null instead of throwing when the property doesn't exist to
+   *       simplify code and to silence warnings in debug builds.
+   */
   getProperty: function UpdatePatch_getProperty(name) {
     if (this._attrNames.includes(name)) {
       throw Components.Exception(
@@ -1691,14 +1691,14 @@ UpdatePatch.prototype = {
   ]),
 };
 
-
-
-
-
-
-
-
-
+/**
+ * Update
+ * Implements nsIUpdate
+ * @param   update
+ *          An <update> element to initialize this object with
+ * @throws if the update contains no patches
+ * @constructor
+ */
 function Update(update) {
   this._patches = [];
   this._properties = {};
@@ -1710,8 +1710,8 @@ function Update(update) {
   );
   this.unsupported = false;
 
-  
-  
+  // Null <update>, assume this is a message container and do no
+  // further initialization
   if (!update) {
     return;
   }
@@ -1738,18 +1738,18 @@ function Update(update) {
     throw Cr.NS_ERROR_ILLEGAL_VALUE;
   }
 
-  
-  
-  
+  // Set the installDate value with the current time. If the update has an
+  // installDate attribute this will be replaced with that value if it doesn't
+  // equal 0.
   this.installDate = new Date().getTime();
   this.patchCount = this._patches.length;
 
   for (let i = 0; i < update.attributes.length; ++i) {
     let attr = update.attributes.item(i);
     if (attr.name == "xmlns" || attr.value == "undefined") {
-      
-      
-      
+      // Don't save the XML namespace or undefined values.
+      // If an undefined value is saved to the xml file it will be a string when
+      // it is read from the xml file.
       continue;
     } else if (attr.name == "detailsURL") {
       this.detailsURL = attr.value;
@@ -1761,9 +1761,9 @@ function Update(update) {
     } else if (attr.name == "errorCode" && attr.value) {
       let val = parseInt(attr.value);
       if (val) {
-        
-        
-        
+        // Set the value of |_errorCode| instead of |errorCode| since
+        // selectedPatch won't be available at this point and normally the
+        // nsIUpdatePatch will provide the errorCode.
         this._errorCode = val;
       }
     } else if (attr.name == "isCompleteUpdate") {
@@ -1790,7 +1790,7 @@ function Update(update) {
           break;
         default:
           if (!this._attrNames.includes(attr.name)) {
-            
+            // Set nsIPropertyBag properties that were read from the xml file.
             this.setProperty(attr.name, attr.value);
           }
           break;
@@ -1808,8 +1808,8 @@ function Update(update) {
 
   if (!this.detailsURL) {
     try {
-      
-      
+      // Try using a default details URL supplied by the distribution
+      // if the update XML does not supply one.
       this.detailsURL = Services.urlFormatter.formatURLPref(
         PREF_APP_UPDATE_URL_DETAILS
       );
@@ -1823,8 +1823,8 @@ function Update(update) {
   }
 
   if (!this.name) {
-    
-    
+    // When the update doesn't provide a name fallback to using
+    // "<App Name> <Update App Version>"
     let brandBundle = Services.strings.createBundle(URI_BRAND_PROPERTIES);
     let appName = brandBundle.GetStringFromName("brandShortName");
     this.name = gUpdateBundle.formatStringFromName("updateName", [
@@ -1834,8 +1834,8 @@ function Update(update) {
   }
 }
 Update.prototype = {
-  
-  
+  // nsIUpdate attribute names used to prevent nsIWritablePropertyBag from over
+  // writing nsIUpdate attributes.
   _attrNames: [
     "appVersion",
     "buildID",
@@ -1856,21 +1856,21 @@ Update.prototype = {
     "unsupported",
   ],
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   getPatchAt: function Update_getPatchAt(index) {
     return this._patches[index];
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * See nsIUpdateService.idl
+   *
+   * We use a copy of the state cached on this object in |_state| only when
+   * there is no selected patch, i.e. in the case when we could not load
+   * |activeUpdate| from the update manager for some reason but still have
+   * the update.status file to work with.
+   */
   _state: "",
   get state() {
     if (this.selectedPatch) {
@@ -1885,14 +1885,14 @@ Update.prototype = {
     this._state = state;
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * See nsIUpdateService.idl
+   *
+   * We use a copy of the errorCode cached on this object in |_errorCode| only
+   * when there is no selected patch, i.e. in the case when we could not load
+   * |activeUpdate| from the update manager for some reason but still have
+   * the update.status file to work with.
+   */
   _errorCode: 0,
   get errorCode() {
     if (this.selectedPatch) {
@@ -1907,9 +1907,9 @@ Update.prototype = {
     this._errorCode = errorCode;
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   get selectedPatch() {
     for (let i = 0; i < this.patchCount; ++i) {
       if (this._patches[i].selected) {
@@ -1919,12 +1919,12 @@ Update.prototype = {
     return null;
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   serialize: function Update_serialize(updates) {
-    
-    
+    // If appVersion isn't defined just return null. This happens when cleaning
+    // up invalid updates (e.g. incorrect channel).
     if (!this.appVersion) {
       return null;
     }
@@ -1966,9 +1966,9 @@ Update.prototype = {
     return update;
   },
 
-  
-
-
+  /**
+   * See nsIWritablePropertyBag.idl
+   */
   setProperty: function Update_setProperty(name, value) {
     if (this._attrNames.includes(name)) {
       throw Components.Exception(
@@ -1982,9 +1982,9 @@ Update.prototype = {
     this._properties[name] = { data: value, present: true };
   },
 
-  
-
-
+  /**
+   * See nsIWritablePropertyBag.idl
+   */
   deleteProperty: function Update_deleteProperty(name) {
     if (this._attrNames.includes(name)) {
       throw Components.Exception(
@@ -2002,41 +2002,41 @@ Update.prototype = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * See nsIPropertyBag.idl
+   *
+   * Note: this only contains the nsIPropertyBag name value / pairs and not the
+   *       nsIUpdate name / value pairs.
+   */
   get enumerator() {
     return this.enumerate();
   },
 
   *enumerate() {
-    
-    
+    // An nsISupportsInterfacePointer is used so creating an array using
+    // Array.from will retain the QueryInterface for nsIProperty.
     let ip = Cc["@mozilla.org/supports-interface-pointer;1"].createInstance(
       Ci.nsISupportsInterfacePointer
     );
     let qi = ChromeUtils.generateQI([Ci.nsIProperty]);
     for (let [name, value] of Object.entries(this._properties)) {
       if (value.present && !this._attrNames.includes(name)) {
-        
-        
-        
-        
-        
+        // The nsIPropertyBag enumerator returns a nsISimpleEnumerator whose
+        // elements are nsIProperty objects. Calling QueryInterface for
+        // nsIProperty on the object doesn't return to the caller an object that
+        // is already queried to nsIProperty but do it just in case it is fixed
+        // at some point.
         ip.data = { name, value: value.data, QueryInterface: qi };
         yield ip.data.QueryInterface(Ci.nsIProperty);
       }
     }
   },
 
-  
-
-
-
-
+  /**
+   * See nsIPropertyBag.idl
+   * Note: returns null instead of throwing when the property doesn't exist to
+   *       simplify code and to silence warnings in debug builds.
+   */
   getProperty: function Update_getProperty(name) {
     if (this._attrNames.includes(name)) {
       throw Components.Exception(
@@ -2072,77 +2072,77 @@ const UpdateServiceFactory = {
   },
 };
 
-
-
-
-
-
+/**
+ * UpdateService
+ * A Service for managing the discovery and installation of software updates.
+ * @constructor
+ */
 function UpdateService() {
   LOG("Creating UpdateService");
-  
-  
-  
+  // The observor notification to shut down the service must be before
+  // profile-before-change since nsIUpdateManager uses profile-before-change
+  // to shutdown and write the update xml files.
   Services.obs.addObserver(this, "quit-application");
-  
+  // This one call observes PREF_APP_UPDATE_LOG and PREF_APP_UPDATE_LOG_FILE
   Services.prefs.addObserver(PREF_APP_UPDATE_LOG, this);
 
   this._logStatus();
 }
 
 UpdateService.prototype = {
-  
-
-
-
+  /**
+   * The downloader we are using to download updates. There is only ever one of
+   * these.
+   */
   _downloader: null,
 
-  
-
-
+  /**
+   * Whether or not the service registered the "online" observer.
+   */
   _registeredOnlineObserver: false,
 
-  
-
-
+  /**
+   * The current number of consecutive socket errors
+   */
   _consecutiveSocketErrors: 0,
 
-  
-
-
+  /**
+   * A timer used to retry socket errors
+   */
   _retryTimer: null,
 
-  
-
-
-
+  /**
+   * Whether or not a background update check was initiated by the
+   * application update timer notification.
+   */
   _isNotify: true,
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Handle Observer Service notifications
+   * @param   subject
+   *          The subject of the notification
+   * @param   topic
+   *          The notification name
+   * @param   data
+   *          Additional data
+   */
   observe: async function AUS_observe(subject, topic, data) {
     switch (topic) {
       case "post-update-processing":
-        
-        
-        
+        // This pref was not cleared out of profiles after it stopped being used
+        // (Bug 1420514), so clear it out on the next update to avoid confusion
+        // regarding its use.
         Services.prefs.clearUserPref("app.update.enabled");
         Services.prefs.clearUserPref("app.update.BITS.inTrialGroup");
 
         if (Services.appinfo.ID in APPID_TO_TOPIC) {
-          
-          
-          
+          // Delay post-update processing to ensure that possible update
+          // dialogs are shown in front of the app window, if possible.
+          // See bug 311614.
           Services.obs.addObserver(this, APPID_TO_TOPIC[Services.appinfo.ID]);
           break;
         }
-      
+      // intentional fallthrough
       case "sessionstore-windows-restored":
       case "mail-startup-done":
         if (Services.appinfo.ID in APPID_TO_TOPIC) {
@@ -2151,9 +2151,9 @@ UpdateService.prototype = {
             APPID_TO_TOPIC[Services.appinfo.ID]
           );
         }
-      
+      // intentional fallthrough
       case "test-post-update-processing":
-        
+        // Clean up any extant updates
         this._postUpdateProcessing();
         break;
       case "network:offline-status-changed":
@@ -2161,14 +2161,14 @@ UpdateService.prototype = {
         break;
       case "nsPref:changed":
         if (data == PREF_APP_UPDATE_LOG || data == PREF_APP_UPDATE_LOG_FILE) {
-          gLogEnabled; 
+          gLogEnabled; // Assigning this before it is lazy-loaded is an error.
           gLogEnabled =
             Services.prefs.getBoolPref(PREF_APP_UPDATE_LOG, false) ||
             Services.prefs.getBoolPref(PREF_APP_UPDATE_LOG_FILE, false);
         }
         if (data == PREF_APP_UPDATE_LOG_FILE) {
-          gLogfileEnabled; 
-          
+          gLogfileEnabled; // Assigning this before it is lazy-loaded is an
+          // error.
           gLogfileEnabled = Services.prefs.getBoolPref(
             PREF_APP_UPDATE_LOG_FILE,
             false
@@ -2183,9 +2183,9 @@ UpdateService.prototype = {
         Services.prefs.removeObserver(PREF_APP_UPDATE_LOG, this);
 
         if (AppConstants.platform == "win" && gUpdateMutexHandle) {
-          
-          
-          
+          // If we hold the update mutex, let it go!
+          // The OS would clean this up sometime after shutdown,
+          // but that would have no guarantee on timing.
           closeHandle(gUpdateMutexHandle);
           gUpdateMutexHandle = null;
         }
@@ -2193,35 +2193,35 @@ UpdateService.prototype = {
           this._retryTimer.cancel();
         }
 
-        
-        
-        
-        
-        
-        
+        // When downloading an update with nsIIncrementalDownload the download
+        // is stopped when the quit-application observer notification is
+        // received and networking hasn't started to shutdown. The download will
+        // be resumed the next time the application starts. Downloads using
+        // Windows BITS are not stopped since they don't require Firefox to be
+        // running to perform the download.
         if (this._downloader) {
           if (!this._downloader.usingBits) {
             this.stopDownload();
           } else {
             this._downloader.cleanup();
-            
-            
-            
+            // The BITS downloader isn't stopped on exit so the
+            // active-update.xml needs to be saved for the values sent to
+            // telemetry to be saved to disk.
             Cc["@mozilla.org/updates/update-manager;1"]
               .getService(Ci.nsIUpdateManager)
               .saveUpdates();
           }
         }
-        
+        // Prevent leaking the downloader (bug 454964)
         this._downloader = null;
-        
+        // In case an update check is in progress.
         Cc["@mozilla.org/updates/update-checker;1"]
           .createInstance(Ci.nsIUpdateChecker)
           .stopCurrentCheck();
 
         if (gLogfileWritePromise) {
-          
-          
+          // Intentionally passing a null function for the failure case, which
+          // occurs when the file was not opened successfully.
           gLogfileWritePromise = gLogfileWritePromise.then(
             logfile => {
               logfile.close();
@@ -2243,21 +2243,21 @@ UpdateService.prototype = {
     }
   },
 
-  
+  /**
+   * The following needs to happen during the post-update-processing
+   * notification from nsUpdateServiceStub.js:
+   * 1. post update processing
+   * 2. resume of a download that was in progress during a previous session
+   * 3. start of a complete update download after the failure to apply a partial
+   *    update
+   */
 
-
-
-
-
-
-
-
-  
-
-
-
-
-
+  /**
+   * Perform post-processing on updates lingering in the updates directory
+   * from a previous application session - either report install failures (and
+   * optionally attempt to fetch a different version if appropriate) or
+   * notify the user of install success.
+   */
   _postUpdateProcessing: function AUS__postUpdateProcessing() {
     gUpdateFileWriteInfo = { phase: "startup", failure: false };
     if (!this.canCheckForUpdates) {
@@ -2273,8 +2273,8 @@ UpdateService.prototype = {
         "UpdateService:_postUpdateProcessing - unable to apply " +
           "updates... returning early"
       );
-      
-      
+      // If the update is present in the update directly somehow,
+      // it would prevent us from notifying the user of futher updates.
       cleanupActiveUpdate();
       return;
     }
@@ -2285,9 +2285,9 @@ UpdateService.prototype = {
     var update = um.activeUpdate;
     var status = readStatusFile(getUpdatesDir());
     if (status == STATE_NONE) {
-      
-      
-      
+      // A status of STATE_NONE in _postUpdateProcessing means that the
+      // update.status file is present but there isn't an update in progress so
+      // cleanup the update.
       LOG("UpdateService:_postUpdateProcessing - status is none");
       if (!update) {
         update = new Update(null);
@@ -2306,10 +2306,10 @@ UpdateService.prototype = {
         "UpdateService:_postUpdateProcessing - channel has changed, " +
           "reloading default preferences to workaround bug 802022"
       );
-      
-      
-      
-      
+      // Workaround to get the distribution preferences loaded (Bug 774618).
+      // This can be removed after bug 802022 is fixed. Now that this code runs
+      // later during startup this code may no longer be necessary but it
+      // shouldn't be removed until after bug 802022 is fixed.
       let prefSvc = Services.prefs.QueryInterface(Ci.nsIObserver);
       prefSvc.observe(null, "reload-default-prefs", null);
       if (update.channel != UpdateUtils.UpdateChannel) {
@@ -2321,8 +2321,8 @@ UpdateService.prototype = {
             ", expected channel: " +
             UpdateUtils.UpdateChannel
         );
-        
-        
+        // User switched channels, clear out the old active update and remove
+        // partial downloads
         update.state = STATE_FAILED;
         update.errorCode = ERR_CHANNEL_CHANGE;
         update.statusText = gUpdateBundle.GetStringFromName("statusFailed");
@@ -2333,10 +2333,10 @@ UpdateService.prototype = {
       }
     }
 
-    
-    
-    
-    
+    // Handle the case when the update is the same or older than the current
+    // version and nsUpdateDriver.cpp skipped updating due to the version being
+    // older than the current version. This also handles the general case when
+    // an update is for an older version or the same version and same build ID.
     if (
       update &&
       update.appVersion &&
@@ -2370,7 +2370,7 @@ UpdateService.prototype = {
         update.state = STATE_FAILED;
         update.statusText = gUpdateBundle.GetStringFromName("statusFailed");
         update.errorCode = ERR_OLDER_VERSION_OR_SAME_BUILD;
-        
+        // This could be split out to report telemetry for each case.
         let newStatus = STATE_FAILED + ": " + ERR_OLDER_VERSION_OR_SAME_BUILD;
         pingStateAndStatusCodes(update, true, newStatus);
         cleanupActiveUpdate();
@@ -2384,7 +2384,7 @@ UpdateService.prototype = {
         "UpdateService:_postUpdateProcessing - patch found in downloading " +
           "state"
       );
-      
+      // Resume download
       status = this.downloadUpdate(update, true);
       if (status == STATE_NONE) {
         cleanupActiveUpdate();
@@ -2393,19 +2393,19 @@ UpdateService.prototype = {
     }
 
     if (status == STATE_APPLYING) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // This indicates that the background updater service is in either of the
+      // following two states:
+      // 1. It is in the process of applying an update in the background, and
+      //    we just happen to be racing against that.
+      // 2. It has failed to apply an update for some reason, and we hit this
+      //    case because the updater process has set the update status to
+      //    applying, but has never finished.
+      // In order to differentiate between these two states, we look at the
+      // state field of the update object.  If it's "pending", then we know
+      // that this is the first time we're hitting this case, so we switch
+      // that state to "applying" and we just wait and hope for the best.
+      // If it's "applying", we know that we've already been here once, so
+      // we really want to start from a clean state.
       if (
         update &&
         (update.state == STATE_PENDING || update.state == STATE_PENDING_SERVICE)
@@ -2417,7 +2417,7 @@ UpdateService.prototype = {
         update.state = STATE_APPLYING;
         um.saveUpdates();
       } else {
-        
+        // We get here even if we don't have an update object
         LOG(
           "UpdateService:_postUpdateProcessing - patch found in applying " +
             "state for the second time"
@@ -2454,8 +2454,8 @@ UpdateService.prototype = {
     }
 
     if (status != STATE_SUCCEEDED) {
-      
-      
+      // Rotate the update logs so the update log isn't removed. By passing
+      // false the patch directory won't be removed.
       cleanUpUpdatesDir(false);
     }
 
@@ -2465,18 +2465,18 @@ UpdateService.prototype = {
       }
       update.statusText = gUpdateBundle.GetStringFromName("installSuccess");
 
-      
-      
+      // The only time that update is not a reference to activeUpdate is when
+      // activeUpdate is null.
       if (!um.activeUpdate) {
         um.activeUpdate = update;
       }
 
-      
+      // Done with this update. Clean it up.
       cleanupActiveUpdate();
 
       Services.prefs.setIntPref(PREF_APP_UPDATE_ELEVATE_ATTEMPTS, 0);
     } else if (status == STATE_PENDING_ELEVATE) {
-      
+      // In case the active-update.xml file is deleted.
       if (!um.activeUpdate) {
         LOG(
           "UpdateService:_postUpdateProcessing - status is pending-elevate " +
@@ -2490,24 +2490,24 @@ UpdateService.prototype = {
         Services.ww.openWindow(null, uri, "Update:Elevation", features, null);
       }
     } else {
-      
-      
-      
+      // If there was an I/O error it is assumed that the patch is not invalid
+      // and it is set to pending so an attempt to apply it again will happen
+      // when the application is restarted.
       if (update.state == STATE_FAILED && update.errorCode) {
         if (handleUpdateFailure(update, update.errorCode)) {
           return;
         }
       }
 
-      
+      // Something went wrong with the patch application process.
       handleFallbackToCompleteUpdate(update, false);
     }
   },
 
-  
-
-
-
+  /**
+   * Register an observer when the network comes online, so we can short-circuit
+   * the app.update.interval when there isn't connectivity
+   */
   _registerOnlineObserver: function AUS__registerOnlineObserver() {
     if (this._registeredOnlineObserver) {
       LOG(
@@ -2525,9 +2525,9 @@ UpdateService.prototype = {
     this._registeredOnlineObserver = true;
   },
 
-  
-
-
+  /**
+   * Called from the network:offline-status-changed observer.
+   */
   _offlineStatusChanged: function AUS__offlineStatusChanged(status) {
     if (status !== "online") {
       return;
@@ -2541,7 +2541,7 @@ UpdateService.prototype = {
         "another background check"
     );
 
-    
+    // the background checker is contained in notify
     this._attemptResume();
   },
 
@@ -2558,7 +2558,7 @@ UpdateService.prototype = {
     );
 
     if (update.errorCode == NETWORK_ERROR_OFFLINE) {
-      
+      // Register an online observer to try again
       this._registerOnlineObserver();
       if (this._pingSuffix) {
         AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_OFFLINE);
@@ -2566,7 +2566,7 @@ UpdateService.prototype = {
       return;
     }
 
-    
+    // Send the error code to telemetry
     AUSTLMY.pingCheckExError(this._pingSuffix, update.errorCode);
     update.errorCode = BACKGROUNDCHECK_MULTIPLE_FAILURES;
     let errCount = Services.prefs.getIntPref(
@@ -2575,7 +2575,7 @@ UpdateService.prototype = {
     );
     errCount++;
     Services.prefs.setIntPref(PREF_APP_UPDATE_BACKGROUNDERRORS, errCount);
-    
+    // Don't allow the preference to set a value greater than 20 for max errors.
     let maxErrors = Math.min(
       Services.prefs.getIntPref(PREF_APP_UPDATE_BACKGROUNDMAXERRORS, 10),
       20
@@ -2606,12 +2606,12 @@ UpdateService.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * Called when a connection should be resumed
+   */
   _attemptResume: function AUS_attemptResume() {
     LOG("UpdateService:_attemptResume");
-    
+    // If a download is in progress, then resume it.
     if (
       this._downloader &&
       this._downloader._patch &&
@@ -2622,7 +2622,7 @@ UpdateService.prototype = {
         "UpdateService:_attemptResume - _patch.state: " +
           this._downloader._patch.state
       );
-      
+      // Make sure downloading is the state for selectPatch to work correctly
       writeStatusFile(getUpdatesDir(), STATE_DOWNLOADING);
       var status = this.downloadUpdate(
         this._downloader._update,
@@ -2638,77 +2638,77 @@ UpdateService.prototype = {
     this.backgroundChecker.checkForUpdates(this, false);
   },
 
-  
-
-
-
-
+  /**
+   * Notified when a timer fires
+   * @param   timer
+   *          The timer that fired
+   */
   notify: function AUS_notify(timer) {
     this._checkForBackgroundUpdates(true);
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   checkForBackgroundUpdates: function AUS_checkForBackgroundUpdates() {
     this._checkForBackgroundUpdates(false);
   },
 
-  
+  // The suffix used for background update check telemetry histogram ID's.
   get _pingSuffix() {
     return this._isNotify ? AUSTLMY.NOTIFY : AUSTLMY.EXTERNAL;
   },
 
-  
-
-
-
-
-
+  /**
+   * Checks for updates in the background.
+   * @param   isNotify
+   *          Whether or not a background update check was initiated by the
+   *          application update timer notification.
+   */
   _checkForBackgroundUpdates: function AUS__checkForBackgroundUpdates(
     isNotify
   ) {
     this._isNotify = isNotify;
 
-    
-    
-    
+    // Histogram IDs:
+    // UPDATE_PING_COUNT_EXTERNAL
+    // UPDATE_PING_COUNT_NOTIFY
     AUSTLMY.pingGeneric("UPDATE_PING_COUNT_" + this._pingSuffix, true, false);
 
-    
-    
-    
+    // Histogram IDs:
+    // UPDATE_UNABLE_TO_APPLY_EXTERNAL
+    // UPDATE_UNABLE_TO_APPLY_NOTIFY
     AUSTLMY.pingGeneric(
       "UPDATE_UNABLE_TO_APPLY_" + this._pingSuffix,
       getCanApplyUpdates(),
       true
     );
-    
-    
-    
+    // Histogram IDs:
+    // UPDATE_CANNOT_STAGE_EXTERNAL
+    // UPDATE_CANNOT_STAGE_NOTIFY
     AUSTLMY.pingGeneric(
       "UPDATE_CANNOT_STAGE_" + this._pingSuffix,
       getCanStageUpdates(),
       true
     );
     if (AppConstants.platform == "win") {
-      
-      
-      
+      // Histogram IDs:
+      // UPDATE_CAN_USE_BITS_EXTERNAL
+      // UPDATE_CAN_USE_BITS_NOTIFY
       AUSTLMY.pingGeneric(
         "UPDATE_CAN_USE_BITS_" + this._pingSuffix,
         getCanUseBits()
       );
     }
-    
-    
-    
-    
-    
+    // Histogram IDs:
+    // UPDATE_INVALID_LASTUPDATETIME_EXTERNAL
+    // UPDATE_INVALID_LASTUPDATETIME_NOTIFY
+    // UPDATE_LAST_NOTIFY_INTERVAL_DAYS_EXTERNAL
+    // UPDATE_LAST_NOTIFY_INTERVAL_DAYS_NOTIFY
     AUSTLMY.pingLastUpdateTime(this._pingSuffix);
-    
-    
-    
+    // Histogram IDs:
+    // UPDATE_NOT_PREF_UPDATE_AUTO_EXTERNAL
+    // UPDATE_NOT_PREF_UPDATE_AUTO_NOTIFY
     UpdateUtils.getAppUpdateAutoEnabled().then(enabled => {
       AUSTLMY.pingGeneric(
         "UPDATE_NOT_PREF_UPDATE_AUTO_" + this._pingSuffix,
@@ -2716,9 +2716,9 @@ UpdateService.prototype = {
         true
       );
     });
-    
-    
-    
+    // Histogram IDs:
+    // UPDATE_NOT_PREF_UPDATE_STAGING_ENABLED_EXTERNAL
+    // UPDATE_NOT_PREF_UPDATE_STAGING_ENABLED_NOTIFY
     AUSTLMY.pingBoolPref(
       "UPDATE_NOT_PREF_UPDATE_STAGING_ENABLED_" + this._pingSuffix,
       PREF_APP_UPDATE_STAGING_ENABLED,
@@ -2726,9 +2726,9 @@ UpdateService.prototype = {
       true
     );
     if (AppConstants.platform == "win" || AppConstants.platform == "macosx") {
-      
-      
-      
+      // Histogram IDs:
+      // UPDATE_PREF_UPDATE_CANCELATIONS_EXTERNAL
+      // UPDATE_PREF_UPDATE_CANCELATIONS_NOTIFY
       AUSTLMY.pingIntPref(
         "UPDATE_PREF_UPDATE_CANCELATIONS_" + this._pingSuffix,
         PREF_APP_UPDATE_CANCELATIONS,
@@ -2737,9 +2737,9 @@ UpdateService.prototype = {
       );
     }
     if (AppConstants.platform == "macosx") {
-      
-      
-      
+      // Histogram IDs:
+      // UPDATE_PREF_UPDATE_CANCELATIONS_OSX_EXTERNAL
+      // UPDATE_PREF_UPDATE_CANCELATIONS_OSX_NOTIFY
       AUSTLMY.pingIntPref(
         "UPDATE_PREF_UPDATE_CANCELATIONS_OSX_" + this._pingSuffix,
         PREF_APP_UPDATE_CANCELATIONS_OSX,
@@ -2748,17 +2748,17 @@ UpdateService.prototype = {
       );
     }
     if (AppConstants.MOZ_MAINTENANCE_SERVICE) {
-      
-      
-      
+      // Histogram IDs:
+      // UPDATE_NOT_PREF_UPDATE_SERVICE_ENABLED_EXTERNAL
+      // UPDATE_NOT_PREF_UPDATE_SERVICE_ENABLED_NOTIFY
       AUSTLMY.pingBoolPref(
         "UPDATE_NOT_PREF_UPDATE_SERVICE_ENABLED_" + this._pingSuffix,
         PREF_APP_UPDATE_SERVICE_ENABLED,
         true
       );
-      
-      
-      
+      // Histogram IDs:
+      // UPDATE_PREF_SERVICE_ERRORS_EXTERNAL
+      // UPDATE_PREF_SERVICE_ERRORS_NOTIFY
       AUSTLMY.pingIntPref(
         "UPDATE_PREF_SERVICE_ERRORS_" + this._pingSuffix,
         PREF_APP_UPDATE_SERVICE_ERRORS,
@@ -2766,11 +2766,11 @@ UpdateService.prototype = {
         0
       );
       if (AppConstants.platform == "win") {
-        
-        
-        
-        
-        
+        // Histogram IDs:
+        // UPDATE_SERVICE_INSTALLED_EXTERNAL
+        // UPDATE_SERVICE_INSTALLED_NOTIFY
+        // UPDATE_SERVICE_MANUALLY_UNINSTALLED_EXTERNAL
+        // UPDATE_SERVICE_MANUALLY_UNINSTALLED_NOTIFY
         AUSTLMY.pingServiceInstallStatus(
           this._pingSuffix,
           isServiceInstalled()
@@ -2778,7 +2778,7 @@ UpdateService.prototype = {
       }
     }
 
-    
+    // If a download is in progress or the patch has been staged do nothing.
     if (this.isDownloading) {
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_IS_DOWNLOADING);
       return;
@@ -2805,8 +2805,8 @@ UpdateService.prototype = {
         validUpdateURL = false;
       })
       .then(() => {
-        
-        
+        // The following checks are done here so they can be differentiated from
+        // foreground checks.
         if (!UpdateUtils.OSVersion) {
           AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_OS_VERSION);
         } else if (!UpdateUtils.ABI) {
@@ -2831,34 +2831,34 @@ UpdateService.prototype = {
       });
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Determine the update from the specified updates that should be offered.
+   * If both valid major and minor updates are available the minor update will
+   * be offered.
+   * @param   updates
+   *          An array of available nsIUpdate items
+   * @return  The nsIUpdate to offer.
+   */
   selectUpdate: function AUS_selectUpdate(updates) {
     if (!updates.length) {
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_UPDATE_FOUND);
       return null;
     }
 
-    
+    // The ping for unsupported is sent after the call to showPrompt.
     if (updates.length == 1 && updates[0].unsupported) {
       return updates[0];
     }
 
-    
+    // Choose the newest of the available minor and major updates.
     var majorUpdate = null;
     var minorUpdate = null;
     var vc = Services.vc;
     let lastCheckCode = AUSTLMY.CHK_NO_COMPAT_UPDATE_FOUND;
 
     updates.forEach(function(aUpdate) {
-      
-      
+      // Ignore updates for older versions of the application and updates for
+      // the same version of the application with the same build ID.
       if (
         vc.compare(aUpdate.appVersion, Services.appinfo.version) < 0 ||
         (vc.compare(aUpdate.appVersion, Services.appinfo.version) == 0 &&
@@ -2965,9 +2965,9 @@ UpdateService.prototype = {
           }
         }
       } else {
-        
-        
-        
+        // Clear elevation-related prefs since they no longer apply (the user
+        // may have gained write access to the Firefox directory or an update
+        // was executed with a different profile).
         if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_ELEVATE_VERSION)) {
           Services.prefs.clearUserPref(PREF_APP_UPDATE_ELEVATE_VERSION);
         }
@@ -2985,15 +2985,15 @@ UpdateService.prototype = {
     return update;
   },
 
-  
-
-
-
-
-
+  /**
+   * Determine which of the specified updates should be installed and begin the
+   * download/installation process or notify the user about the update.
+   * @param   updates
+   *          An array of available updates
+   */
   _selectAndInstallUpdate: async function AUS__selectAndInstallUpdate(updates) {
-    
-    
+    // Return early if there's an active update. The user is already aware and
+    // is downloading or performed some user action to prevent notification.
     var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
       Ci.nsIUpdateManager
     );
@@ -3038,21 +3038,21 @@ UpdateService.prototype = {
       return;
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * From this point on there are two possible outcomes:
+     * 1. download and install the update automatically
+     * 2. notify the user about the availability of an update
+     *
+     * Notes:
+     * a) if the app.update.auto preference is false then automatic download and
+     *    install is disabled and the user will be notified.
+     *
+     * If the update when it is first read does not have an appVersion attribute
+     * the following deprecated behavior will occur:
+     * Update Type   Outcome
+     * Major         Notify
+     * Minor         Auto Install
+     */
     let updateAuto = await UpdateUtils.getAppUpdateAutoEnabled();
     if (!updateAuto) {
       LOG(
@@ -3073,14 +3073,14 @@ UpdateService.prototype = {
     AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_DOWNLOAD_UPDATE);
   },
 
-  
-
-
+  /**
+   * The Checker used for background update checks.
+   */
   _backgroundChecker: null,
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   get backgroundChecker() {
     if (!this._backgroundChecker) {
       this._backgroundChecker = new Checker();
@@ -3110,9 +3110,9 @@ UpdateService.prototype = {
     );
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   get canCheckForUpdates() {
     if (this.disabledByPolicy) {
       LOG(
@@ -3122,7 +3122,7 @@ UpdateService.prototype = {
       return false;
     }
 
-    
+    // If we don't know the binary platform we're updating, we can't update.
     if (!UpdateUtils.ABI) {
       LOG(
         "UpdateService.canCheckForUpdates - unable to check for updates, " +
@@ -3131,7 +3131,7 @@ UpdateService.prototype = {
       return false;
     }
 
-    
+    // If we don't know the OS version we're updating, we can't update.
     if (!UpdateUtils.OSVersion) {
       LOG(
         "UpdateService.canCheckForUpdates - unable to check for updates, " +
@@ -3152,37 +3152,37 @@ UpdateService.prototype = {
     return true;
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   get elevationRequired() {
     return getElevationRequired();
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   get canApplyUpdates() {
     return getCanApplyUpdates() && hasUpdateMutex();
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   get canStageUpdates() {
     return getCanStageUpdates();
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   get isOtherInstanceHandlingUpdates() {
     return !hasUpdateMutex();
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   addDownloadListener: function AUS_addDownloadListener(listener) {
     if (!this._downloader) {
       LOG("UpdateService:addDownloadListener - no downloader!");
@@ -3191,9 +3191,9 @@ UpdateService.prototype = {
     this._downloader.addDownloadListener(listener);
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   removeDownloadListener: function AUS_removeDownloadListener(listener) {
     if (!this._downloader) {
       LOG("UpdateService:removeDownloadListener - no downloader!");
@@ -3202,18 +3202,18 @@ UpdateService.prototype = {
     this._downloader.removeDownloadListener(listener);
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   downloadUpdate: function AUS_downloadUpdate(update, background) {
     if (!update) {
       throw Cr.NS_ERROR_NULL_POINTER;
     }
 
-    
-    
-    
-    
+    // Don't download the update if the update's version is less than the
+    // current application's version or the update's version is the same as the
+    // application's version and the build ID is the same as the application's
+    // build ID.
     if (
       update.appVersion &&
       (Services.vc.compare(update.appVersion, Services.appinfo.version) < 0 ||
@@ -3240,7 +3240,7 @@ UpdateService.prototype = {
       return STATE_NONE;
     }
 
-    
+    // If a download request is in progress vs. a download ready to resume
     if (this.isDownloading) {
       if (update.isCompleteUpdate == this._downloader.isCompleteUpdate) {
         LOG(
@@ -3256,15 +3256,15 @@ UpdateService.prototype = {
     return this._downloader.downloadUpdate(update);
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   stopDownload: function AUS_stopDownload() {
     if (this.isDownloading) {
       this._downloader.cancel();
     } else if (this._retryTimer) {
-      
-      
+      // Download status is still considered as 'downloading' during retry.
+      // We need to cancel both retry and download at this stage.
       this._retryTimer.cancel();
       this._retryTimer = null;
       if (this._downloader) {
@@ -3273,14 +3273,14 @@ UpdateService.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   getUpdatesDirectory: getUpdatesDir,
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   get isDownloading() {
     return this._downloader && this._downloader.isBusy;
   },
@@ -3289,8 +3289,17 @@ UpdateService.prototype = {
     if (!gLogEnabled) {
       return;
     }
+    if (this.disabledByPolicy) {
+      LOG("Current UpdateService status: disabledByPolicy");
+      // Return early if UpdateService is disabled by policy. Otherwise some of
+      // the getters we call to display status information may discover that the
+      // update directory is not writable, which automatically results in the
+      // permissions being fixed. Which we shouldn't really be doing if update
+      // is disabled by policy.
+      return;
+    }
     LOG("Logging current UpdateService status:");
-    
+    // These getters print their own logging
     this.canCheckForUpdates;
     this.canApplyUpdates;
     this.canStageUpdates;
@@ -3304,12 +3313,12 @@ UpdateService.prototype = {
       LOG("Downloading complete update: " + this._downloader.isCompleteUpdate);
       LOG("Downloader using BITS: " + this._downloader.usingBits);
       if (this._downloader._patch) {
-        
+        // This will print its own logging
         this._downloader._canUseBits(this._downloader._patch);
 
-        
-        
-        
+        // Downloader calls QueryInterface(Ci.nsIWritablePropertyBag) on
+        // its _patch member as soon as it is assigned, so no need to do so
+        // again here.
         let bitsResult = this._downloader._patch.getProperty("bitsResult");
         if (bitsResult != null) {
           LOG("Patch BITS result: " + bitsResult);
@@ -3336,23 +3345,23 @@ UpdateService.prototype = {
   ]),
 };
 
-
-
-
-
+/**
+ * A service to manage active and past updates.
+ * @constructor
+ */
 function UpdateManager() {
-  
+  // Load the active-update.xml file to see if there is an active update.
   let activeUpdates = this._loadXMLFileIntoArray(FILE_ACTIVE_UPDATE_XML);
   if (activeUpdates.length) {
-    
+    // Set the active update directly on the var used to cache the value.
     this._activeUpdate = activeUpdates[0];
-    
-    
+    // This check is performed here since UpdateService:_postUpdateProcessing
+    // won't be called when there isn't an update.status file.
     if (readStatusFile(getUpdatesDir()) == STATE_NONE) {
-      
-      
-      
-      
+      // Under some edgecases such as Windows system restore the
+      // active-update.xml will contain a pending update without the status
+      // file. To recover from this situation clean the updates dir and move
+      // the active update to the update history.
       this._activeUpdate.state = STATE_FAILED;
       this._activeUpdate.errorCode = ERR_UPDATE_STATE_NONE;
       this._activeUpdate.statusText = gUpdateBundle.GetStringFromName(
@@ -3360,8 +3369,8 @@ function UpdateManager() {
       );
       let newStatus = STATE_FAILED + ": " + ERR_UPDATE_STATE_NONE;
       pingStateAndStatusCodes(this._activeUpdate, true, newStatus);
-      
-      
+      // Setting |activeUpdate| to null will move the active update to the
+      // update history.
       this.activeUpdate = null;
       this.saveUpdates();
       cleanUpUpdatesDir();
@@ -3369,22 +3378,22 @@ function UpdateManager() {
   }
 }
 UpdateManager.prototype = {
-  
-
-
+  /**
+   * The current actively downloading/installing update, as a nsIUpdate object.
+   */
   _activeUpdate: null,
 
-  
-
-
-
+  /**
+   * Whether the update history stored in _updates has changed since it was
+   * loaded.
+   */
   _updatesDirty: false,
 
-  
-
-
+  /**
+   * See nsIObserver.idl
+   */
   observe: function UM_observe(subject, topic, data) {
-    
+    // Hack to be able to run and cleanup tests by reloading the update data.
     if (topic == "um-reload-update-data") {
       if (!Cu.isInAutomation) {
         return;
@@ -3413,12 +3422,12 @@ UpdateManager.prototype = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * Loads an updates.xml formatted file into an array of nsIUpdate items.
+   * @param   fileName
+   *          The file name in the updates directory to load.
+   * @return  The array of nsIUpdate items held in the file.
+   */
   _loadXMLFileIntoArray: function UM__loadXMLFileIntoArray(fileName) {
     let updates = [];
     let file = getUpdateFile([fileName]);
@@ -3431,11 +3440,11 @@ UpdateManager.prototype = {
       return updates;
     }
 
-    
-    
-    
-    
-    
+    // Open the active-update.xml file with both read and write access so
+    // opening it will fail if it isn't possible to also write to the file. When
+    // opening it fails it means that it isn't possible to update and the code
+    // below will return early without loading the active-update.xml. This will
+    // also make it so notifications to update manually will still be shown.
     let mode =
       fileName == FILE_ACTIVE_UPDATE_XML
         ? FileUtils.MODE_RDWR
@@ -3496,7 +3505,7 @@ UpdateManager.prototype = {
           fileName +
           " exists but doesn't contain any updates"
       );
-      
+      // The file exists but doesn't contain any updates so remove it.
       try {
         file.remove(false);
       } catch (e) {
@@ -3511,11 +3520,11 @@ UpdateManager.prototype = {
     return updates;
   },
 
-  
-
-
-
-
+  /**
+   * Loads the update history from the updates.xml file and then replaces
+   * |_updates| with an array of all previous updates so the file is only read
+   * once.
+   */
   get _updates() {
     delete this._updates;
     let updates = this._loadXMLFileIntoArray(FILE_UPDATES_XML);
@@ -3528,47 +3537,47 @@ UpdateManager.prototype = {
     return this._updates;
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   getUpdateAt: function UM_getUpdateAt(aIndex) {
     return this._updates[aIndex];
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   get updateCount() {
     return this._updates.length;
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   get activeUpdate() {
     return this._activeUpdate;
   },
   set activeUpdate(aActiveUpdate) {
     if (!aActiveUpdate && this._activeUpdate) {
       this._updatesDirty = true;
-      
+      // Add the current active update to the front of the update history.
       this._updates.unshift(this._activeUpdate);
-      
+      // Limit the update history to 10 updates.
       this._updates.splice(10);
     }
 
     this._activeUpdate = aActiveUpdate;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Serializes an array of updates to an XML file or removes the file if the
+   * array length is 0.
+   * @param   updates
+   *          An array of nsIUpdate objects
+   * @param   fileName
+   *          The file name in the updates directory to write to.
+   * @return  true on success, false on error
+   */
   _writeUpdatesToXMLFile: async function UM__writeUpdatesToXMLFile(
     updates,
     fileName
@@ -3619,9 +3628,9 @@ UpdateManager.prototype = {
         EMPTY_UPDATES_DOCUMENT_OPEN +
         doc.documentElement.innerHTML +
         EMPTY_UPDATES_DOCUMENT_CLOSE;
-      
-      
-      
+      // If the destination file existed and is removed while the following is
+      // being performed the copy of the tmp file to the destination file will
+      // fail.
       await OS.File.writeAtomic(file.path, xml, {
         encoding: "utf-8",
         tmpPath: file.path + ".tmp",
@@ -3638,9 +3647,9 @@ UpdateManager.prototype = {
 
   _updatesXMLSaver: null,
   _updatesXMLSaverCallback: null,
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   saveUpdates: function UM_saveUpdates() {
     if (!this._updatesXMLSaver) {
       this._updatesXMLSaverCallback = () => this._updatesXMLSaver.finalize();
@@ -3660,14 +3669,14 @@ UpdateManager.prototype = {
     this._updatesXMLSaver.arm();
   },
 
-  
-
-
-
+  /**
+   * Saves the active-updates.xml and updates.xml when the updates history has
+   * been modified files.
+   */
   _saveUpdatesXML: function UM__saveUpdatesXML() {
-    
-    
-    
+    // The active update stored in the active-update.xml file will change during
+    // the lifetime of an active update and the file should always be updated
+    // when saveUpdates is called.
     let updates = this._activeUpdate ? [this._activeUpdate] : [];
     let promises = [];
     promises[0] = this._writeUpdatesToXMLFile(
@@ -3676,9 +3685,9 @@ UpdateManager.prototype = {
     ).then(wroteSuccessfully =>
       handleCriticalWriteResult(wroteSuccessfully, FILE_ACTIVE_UPDATE_XML)
     );
-    
-    
-    
+    // The update history stored in the updates.xml file should only need to be
+    // updated when an active update has been added to it in which case
+    // |_updatesDirty| will be true.
     if (this._updatesDirty) {
       this._updatesDirty = false;
       promises[1] = this._writeUpdatesToXMLFile(
@@ -3691,9 +3700,9 @@ UpdateManager.prototype = {
     return Promise.all(promises);
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   refreshUpdateStatus: function UM_refreshUpdateStatus() {
     var update = this._activeUpdate;
     if (!update) {
@@ -3711,9 +3720,9 @@ UpdateManager.prototype = {
       update.errorCode = parseInt(parts[1]);
     }
 
-    
-    
-    
+    // Rotate the update logs so the update log isn't removed if a complete
+    // update is downloaded. By passing false the patch directory won't be
+    // removed.
     cleanUpUpdatesDir(false);
 
     if (update.state == STATE_FAILED && parts[1]) {
@@ -3744,13 +3753,13 @@ UpdateManager.prototype = {
       patch.setProperty("applyStart", Math.floor(Date.now() / 1000));
     }
 
-    
-    
-    
+    // Now that the active update's properties have been updated write the
+    // active-update.xml to disk. Since there have been no changes to the update
+    // history the updates.xml will not be written to disk.
     this.saveUpdates();
 
-    
-    
+    // Send an observer notification which the app update doorhanger uses to
+    // display a restart notification
     LOG(
       "UpdateManager:refreshUpdateStatus - Notifying observers that " +
         "the update was staged. topic: update-staged, status: " +
@@ -3759,11 +3768,11 @@ UpdateManager.prototype = {
     Services.obs.notifyObservers(update, "update-staged", update.state);
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   elevationOptedIn: function UM_elevationOptedIn() {
-    
+    // The user has been been made aware that the update requires elevation.
     let update = this._activeUpdate;
     if (!update) {
       return;
@@ -3772,22 +3781,22 @@ UpdateManager.prototype = {
     let parts = status.split(":");
     update.state = parts[0];
     if (update.state == STATE_PENDING_ELEVATE) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // Proceed with the pending update.
+      // Note: STATE_PENDING_ELEVATE stands for "pending user's approval to
+      // proceed with an elevated update". As long as we see this state, we will
+      // notify the user of the availability of an update that requires
+      // elevation. |elevationOptedIn| (this function) is called when the user
+      // gives us approval to proceed, so we want to switch to STATE_PENDING.
+      // The updater then detects whether or not elevation is required and
+      // displays the elevation prompt if necessary. This last step does not
+      // depend on the state in the status file.
       writeStatusFile(getUpdatesDir(), STATE_PENDING);
     }
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   cleanupActiveUpdate: function UM_cleanupActiveUpdate() {
     cleanupActiveUpdate();
   },
@@ -3796,21 +3805,21 @@ UpdateManager.prototype = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIUpdateManager, Ci.nsIObserver]),
 };
 
-
-
-
-
-
+/**
+ * Checker
+ * Checks for new Updates
+ * @constructor
+ */
 function Checker() {}
 Checker.prototype = {
-  
-
-
+  /**
+   * The XMLHttpRequest object that performs the connection.
+   */
   _request: null,
 
-  
-
-
+  /**
+   * The nsIUpdateCheckListener callback
+   */
   _callback: null,
 
   _getCanMigrate: function UC__getCanMigrate() {
@@ -3818,9 +3827,9 @@ Checker.prototype = {
       return false;
     }
 
-    
-    
-    
+    // The first element of the array is whether the build target is 32 or 64
+    // bit and the third element of the array is whether the client's Windows OS
+    // system processor is 32 or 64 bit.
     let aryABI = UpdateUtils.ABI.split("-");
     if (aryABI[0] != "x86" || aryABI[2] != "x64") {
       return false;
@@ -3844,8 +3853,8 @@ Checker.prototype = {
       "Never",
       wrk.WOW64_32
     );
-    
-    
+    // The Never registry key value allows configuring a system to never migrate
+    // any of the installations.
     if (regValHKCU === 1 || regValHKLM === 1) {
       LOG("Checker:_getCanMigrate - all installations should not be migrated");
       return false;
@@ -3864,16 +3873,16 @@ Checker.prototype = {
       appBaseDirPath,
       wrk.WOW64_32
     );
-    
-    
-    
+    // When the registry value is 1 for the installation directory path value
+    // name then the installation has already been migrated once or the system
+    // was configured to not migrate that installation.
     if (regValHKCU === 1 || regValHKLM === 1) {
       LOG("Checker:_getCanMigrate - this installation should not be migrated");
       return false;
     }
 
-    
-    
+    // When the registry value is 0 for the installation directory path value
+    // name then the installation has updated to Firefox 56 and can be migrated.
     if (regValHKCU === 0 || regValHKLM === 0) {
       LOG("Checker:_getCanMigrate - this installation can be migrated");
       return true;
@@ -3883,10 +3892,10 @@ Checker.prototype = {
     return false;
   },
 
-  
-
-
-
+  /**
+   * The URL of the update service XML file to connect to that contains details
+   * about available updates.
+   */
   getUpdateURL: async function UC_getUpdateURL(force) {
     this._forced = force;
 
@@ -3913,9 +3922,9 @@ Checker.prototype = {
     return url;
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   checkForUpdates: function UC_checkForUpdates(listener, force) {
     LOG("Checker: checkForUpdates, force: " + force);
     gUpdateFileWriteInfo = { phase: "check", failure: false };
@@ -3925,8 +3934,8 @@ Checker.prototype = {
 
     gCheckStartMs = Date.now();
     let UpdateServiceInstance = UpdateServiceFactory.createInstance();
-    
-    
+    // |force| can override |canCheckForUpdates| since |force| indicates a
+    // manual update check. But nothing should override enterprise policies.
     if (UpdateServiceInstance.disabledByPolicy) {
       LOG("Checker: checkForUpdates, disabled by policy");
       return;
@@ -3945,22 +3954,22 @@ Checker.prototype = {
       this._request.channel.notificationCallbacks = new CertUtils.BadCertHandler(
         false
       );
-      
+      // Prevent the request from reading from the cache.
       this._request.channel.loadFlags |= Ci.nsIRequest.LOAD_BYPASS_CACHE;
-      
+      // Prevent the request from writing to the cache.
       this._request.channel.loadFlags |= Ci.nsIRequest.INHIBIT_CACHING;
-      
+      // Disable cutting edge features, like TLS 1.3, where middleboxes might brick us
       this._request.channel.QueryInterface(
         Ci.nsIHttpChannelInternal
       ).beConservative = true;
 
       this._request.overrideMimeType("text/xml");
-      
-      
-      
+      // The Cache-Control header is only interpreted by proxies and the
+      // final destination. It does not help if a resource is already
+      // cached locally.
       this._request.setRequestHeader("Cache-Control", "no-cache");
-      
-      
+      // HTTP/1.0 servers might not implement Cache-Control and
+      // might only implement Pragma: no-cache
       this._request.setRequestHeader("Pragma", "no-cache");
 
       var self = this;
@@ -3978,10 +3987,10 @@ Checker.prototype = {
     });
   },
 
-  
-
-
-
+  /**
+   * Returns an array of nsIUpdate objects discovered by the update check.
+   * @throws if the XML document element node name is not updates.
+   */
   get _updates() {
     var updatesElement = this._request.responseXML.documentElement;
     if (!updatesElement) {
@@ -4022,9 +4031,9 @@ Checker.prototype = {
     return updates;
   },
 
-  
-
-
+  /**
+   * Returns the status code for the XMLHttpRequest
+   */
   _getChannelStatus: function UC__getChannelStatus(request) {
     var status = 0;
     try {
@@ -4041,23 +4050,23 @@ Checker.prototype = {
     return status >= 100 && status <= 599;
   },
 
-  
-
-
-
-
+  /**
+   * The XMLHttpRequest succeeded and the document was loaded.
+   * @param   event
+   *          The Event for the load
+   */
   onLoad: function UC_onLoad(event) {
     LOG("Checker:onLoad - request completed downloading document");
     Services.prefs.clearUserPref("security.pki.mitm_canary_issuer");
-    
-    
+    // Check whether there is a mitm, i.e. check whether the root cert is
+    // built-in or not.
     try {
       let sslStatus = request.channel
         .QueryInterface(Ci.nsIRequest)
         .securityInfo.QueryInterface(Ci.nsITransportSecurityInfo);
       if (sslStatus && sslStatus.succeededCertChain) {
         let rootCert = null;
-        
+        // The root cert is the last cert in the chain.
         if (sslStatus.succeededCertChain.length) {
           rootCert =
             sslStatus.succeededCertChain[
@@ -4076,7 +4085,7 @@ Checker.prototype = {
     }
 
     try {
-      
+      // Analyze the resulting DOM and determine the set of updates.
       var updates = this._updates;
       LOG("Checker:onLoad - number of updates available: " + updates.length);
 
@@ -4084,7 +4093,7 @@ Checker.prototype = {
         Services.prefs.clearUserPref(PREF_APP_UPDATE_BACKGROUNDERRORS);
       }
 
-      
+      // Tell the callback about the updates
       this._callback.onCheckComplete(event.target, updates);
     } catch (e) {
       LOG(
@@ -4110,17 +4119,17 @@ Checker.prototype = {
     this._request = null;
   },
 
-  
-
-
-
-
+  /**
+   * There was an error of some kind during the XMLHttpRequest
+   * @param   event
+   *          The Event for the error
+   */
   onError: function UC_onError(event) {
     var request = event.target;
     var status = this._getChannelStatus(request);
     LOG("Checker:onError - request.status: " + status);
 
-    
+    // Set MitM pref.
     try {
       var secInfo = request.channel.securityInfo.QueryInterface(
         Ci.nsITransportSecurityInfo
@@ -4135,15 +4144,15 @@ Checker.prototype = {
       LOG("Checker:onError - Getting secInfo failed.");
     }
 
-    
-    
-    
+    // If we can't find an error string specific to this status code,
+    // just use the 200 message from above, which means everything
+    // "looks" fine but there was probably an XML error or a bogus file.
     var update = new Update(null);
     update.errorCode = status;
     update.statusText = getStatusTextFromCode(status, 200);
 
     if (status == Cr.NS_ERROR_OFFLINE) {
-      
+      // We use a separate constant here because nsIUpdate.errorCode is signed
       update.errorCode = NETWORK_ERROR_OFFLINE;
     } else if (this._isHttpStatusCode(status)) {
       update.errorCode = HTTP_ERROR_OFFSET + status;
@@ -4153,11 +4162,11 @@ Checker.prototype = {
     this._request = null;
   },
 
-  
-
-
+  /**
+   * See nsIUpdateService.idl
+   */
   stopCurrentCheck: function UC_stopCurrentCheck() {
-    
+    // Always stop the current check
     if (this._request) {
       this._request.abort();
     }
@@ -4168,100 +4177,100 @@ Checker.prototype = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIUpdateChecker]),
 };
 
-
-
-
-
-
-
-
-
-
+/**
+ * Manages the download of updates
+ * @param   background
+ *          Whether or not this downloader is operating in background
+ *          update mode.
+ * @param   updateService
+ *          The update service that created this downloader.
+ * @constructor
+ */
 function Downloader(background, updateService) {
   LOG("Creating Downloader");
   this.background = background;
   this.updateService = updateService;
 }
 Downloader.prototype = {
-  
-
-
+  /**
+   * The nsIUpdatePatch that we are downloading
+   */
   _patch: null,
 
-  
-
-
+  /**
+   * The nsIUpdate that we are downloading
+   */
   _update: null,
 
-  
-
-
+  /**
+   * The nsIRequest object handling the download.
+   */
   _request: null,
 
-  
-
-
-
-
+  /**
+   * Whether or not the update being downloaded is a complete replacement of
+   * the user's existing installation or a patch representing the difference
+   * between the new version and the previous version.
+   */
   isCompleteUpdate: null,
 
-  
-
-
-
-
+  /**
+   * We get the nsIRequest from nsIBITS asynchronously. When downloadUpdate has
+   * been called, but this._request is not yet valid, _pendingRequest will be
+   * a promise that will resolve when this._request has been set.
+   */
   _pendingRequest: null,
 
-  
-
-
-
-
-
-
-
+  /**
+   * When using BITS, cancel actions happen asynchronously. This variable
+   * keeps track of any cancel action that is in-progress.
+   * If the cancel action fails, this will be set back to null so that the
+   * action can be attempted again. But if the cancel action succeeds, the
+   * resolved promise will remain stored in this variable to prevent cancel
+   * from being called twice (which, for BITS, is an error).
+   */
   _cancelPromise: null,
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * BITS receives progress notifications slowly, unless a user is watching.
+   * This tracks what frequency notifications are happening at.
+   *
+   * This is needed because BITS downloads are started asynchronously.
+   * Specifically, this is needed to prevent a situation where the download is
+   * still starting (Downloader._pendingRequest has not resolved) when the first
+   * observer registers itself. Without this variable, there is no way of
+   * knowing whether the download was started as Active or Idle and, therefore,
+   * we don't know if we need to start Active mode when _pendingRequest
+   * resolves.
+   */
   _bitsActiveNotifications: false,
 
-  
-
-
+  /**
+   * The start time of the first download attempt in milliseconds for telemetry.
+   */
   _startDownloadMs: null,
 
-  
-
-
-
+  /**
+   * The name of the downloader being used to download the update. This is used
+   * when setting property names on the update patch for telemetry.
+   */
   _downloaderName: null,
 
-  
-
-
-
-
-
-
+  /**
+   * Cancels the active download.
+   *
+   * For a BITS download, this will cancel and remove the download job. For
+   * an nsIIncrementalDownload, this will stop the download, but leaves the
+   * data around to allow the transfer to be resumed later.
+   */
   cancel: async function Downloader_cancel(cancelError) {
     LOG("Downloader: cancel");
     if (cancelError === undefined) {
       cancelError = Cr.NS_BINDING_ABORTED;
     }
     if (this.usingBits) {
-      
-      
+      // If a cancel action is already in progress, just return when that
+      // promise resolved. Trying to cancel the same request twice is an error.
       if (this._cancelPromise) {
         await this._cancelPromise;
         return;
@@ -4271,18 +4280,18 @@ Downloader.prototype = {
         await this._pendingRequest;
       }
       if (this._patch.getProperty("bitsId") != null) {
-        
-        
+        // Make sure that we don't try to resume this download after it was
+        // cancelled.
         this._patch.deleteProperty("bitsId");
       }
       try {
         this._cancelPromise = this._request.cancelAsync(cancelError);
         await this._cancelPromise;
       } catch (e) {
-        
-        
-        
-        
+        // On success, we will not set the cancel promise to null because
+        // we want to prevent two cancellations of the same request. But
+        // retrying after a failed cancel is not an error, so we will set the
+        // cancel promise to null in the failure case.
         this._cancelPromise = null;
         throw e;
       }
@@ -4291,14 +4300,14 @@ Downloader.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * Whether or not a patch has been downloaded and staged for installation.
+   */
   get patchIsStaged() {
     var readState = readStatusFile(getUpdatesDir());
-    
-    
-    
+    // Note that if we decide to download and apply new updates after another
+    // update has been successfully applied in the background, we need to stop
+    // checking for the APPLIED state here.
     return (
       readState == STATE_PENDING ||
       readState == STATE_PENDING_SERVICE ||
@@ -4308,10 +4317,10 @@ Downloader.prototype = {
     );
   },
 
-  
-
-
-
+  /**
+   * Verify the downloaded file.  We assume that the download is complete at
+   * this point.
+   */
   _verifyDownload: function Downloader__verifyDownload() {
     LOG("Downloader:_verifyDownload called");
     if (!this._request) {
@@ -4325,7 +4334,7 @@ Downloader.prototype = {
     let destination = getUpdatesDir();
     destination.append(FILE_UPDATE_MAR);
 
-    
+    // Ensure that the file size matches the expected file size.
     if (destination.fileSize != this._patch.size) {
       LOG("Downloader:_verifyDownload downloaded size != expected size.");
       AUSTLMY.pingDownloadCode(
@@ -4339,25 +4348,25 @@ Downloader.prototype = {
     return true;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Select the patch to use given the current state of updateDir and the given
+   * set of update patches.
+   * @param   update
+   *          A nsIUpdate object to select a patch from
+   * @param   updateDir
+   *          A nsIFile representing the update directory
+   * @return  A nsIUpdatePatch object to download
+   */
   _selectPatch: function Downloader__selectPatch(update, updateDir) {
-    
-    
+    // Given an update to download, we will always try to download the patch
+    // for a partial update over the patch for a full update.
 
-    
-
-
-
-
-
+    /**
+     * Return the first UpdatePatch with the given type.
+     * @param   type
+     *          The type of the patch ("complete" or "partial")
+     * @return  A nsIUpdatePatch object matching the type specified
+     */
     function getPatchOfType(type) {
       for (var i = 0; i < update.patchCount; ++i) {
         var patch = update.getPatchAt(i);
@@ -4368,15 +4377,15 @@ Downloader.prototype = {
       return null;
     }
 
-    
-    
-    
+    // Look to see if any of the patches in the Update object has been
+    // pre-selected for download, otherwise we must figure out which one
+    // to select ourselves.
     var selectedPatch = update.selectedPatch;
 
     var state = readStatusFile(updateDir);
 
-    
-    
+    // If this is a patch that we know about, then select it.  If it is a patch
+    // that we do not know about, then remove it and use our default logic.
     var useComplete = false;
     if (selectedPatch) {
       LOG(
@@ -4397,14 +4406,14 @@ Downloader.prototype = {
         return null;
       }
 
-      
-      
-      
-      
-      
-      
-      
-      
+      // When downloading the patch failed using BITS, there hasn't been an
+      // attempt to download the patch using the internal application download
+      // mechanism, and an attempt to stage or apply the patch hasn't failed
+      // which indicates that a different patch should be downloaded since
+      // re-downloading the same patch with the internal application download
+      // mechanism will likely also fail when trying to stage or apply it then
+      // try to download the same patch using the internal application download
+      // mechanism.
       selectedPatch.QueryInterface(Ci.nsIWritablePropertyBag);
       if (
         selectedPatch.getProperty("bitsResult") != null &&
@@ -4420,21 +4429,21 @@ Downloader.prototype = {
       }
 
       if (update && selectedPatch.type == "complete") {
-        
+        // This is a pretty fatal error.  Just bail.
         LOG("Downloader:_selectPatch - failed to apply complete patch!");
         writeStatusFile(updateDir, STATE_NONE);
         writeVersionFile(getUpdatesDir(), null);
         return null;
       }
 
-      
-      
+      // Something went wrong when we tried to apply the previous patch.
+      // Try the complete patch next time.
       useComplete = true;
       selectedPatch = null;
     }
 
-    
-    
+    // If we were not able to discover an update from a previous download, we
+    // select the best patch from the given set.
     var partialPatch = getPatchOfType("partial");
     if (!useComplete) {
       selectedPatch = partialPatch;
@@ -4446,20 +4455,20 @@ Downloader.prototype = {
       selectedPatch = getPatchOfType("complete");
     }
 
-    
+    // Restore the updateDir since we may have deleted it.
     updateDir = getUpdatesDir();
 
-    
-    
-    
+    // if update only contains a partial patch, selectedPatch == null here if
+    // the partial patch has been attempted and fails and we're trying to get a
+    // complete patch
     if (selectedPatch) {
       selectedPatch.selected = true;
     }
 
     update.isCompleteUpdate = selectedPatch.type == "complete";
 
-    
-    
+    // Reset the Active Update object on the Update Manager and flush the
+    // Active Update DB.
     var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
       Ci.nsIUpdateManager
     );
@@ -4468,9 +4477,9 @@ Downloader.prototype = {
     return selectedPatch;
   },
 
-  
-
-
+  /**
+   * Whether or not we are currently downloading something.
+   */
   get isBusy() {
     return this._request != null || this._pendingRequest != null;
   },
@@ -4479,16 +4488,16 @@ Downloader.prototype = {
     return this._pendingRequest != null || this._request instanceof BitsRequest;
   },
 
-  
-
-
+  /**
+   * Returns true if the specified patch can be downloaded with BITS.
+   */
   _canUseBits: function Downloader__canUseBits(patch) {
     if (getCanUseBits() != "CanUseBits") {
-      
+      // This will have printed its own logging. No need to print more.
       return false;
     }
-    
-    
+    // Regardless of success or failure, don't download the same patch with BITS
+    // twice.
     if (patch.getProperty("bitsResult") != null) {
       LOG(
         "Downloader:_canUseBits - Not using BITS because it was already tried"
@@ -4499,11 +4508,11 @@ Downloader.prototype = {
     return true;
   },
 
-  
-
-
-
-
+  /**
+   * Download and stage the given update.
+   * @param   update
+   *          A nsIUpdate object to download a patch for. Cannot be null.
+   */
   downloadUpdate: function Downloader_downloadUpdate(update) {
     LOG("UpdateService:_downloadUpdate");
     gUpdateFileWriteInfo = { phase: "download", failure: false };
@@ -4516,16 +4525,16 @@ Downloader.prototype = {
 
     this._update = update;
 
-    
-    
+    // This function may return null, which indicates that there are no patches
+    // to download.
     this._patch = this._selectPatch(update, updateDir);
     if (!this._patch) {
       LOG("Downloader:downloadUpdate - no patch to download");
       AUSTLMY.pingDownloadCode(undefined, AUSTLMY.DWNLD_ERR_NO_UPDATE_PATCH);
       return readStatusFile(updateDir);
     }
-    
-    
+    // QI the update and the patch to nsIWritablePropertyBag so it isn't
+    // necessary later in the download code.
     this._update.QueryInterface(Ci.nsIWritablePropertyBag);
     if (gCheckStartMs && !this._update.getProperty("checkInterval")) {
       let interval = Math.max(
@@ -4534,14 +4543,14 @@ Downloader.prototype = {
       );
       this._update.setProperty("checkInterval", interval);
     }
-    
-    
-    
+    // this._patch implements nsIWritablePropertyBag. Expose that interface
+    // immediately after a patch is assigned so that this._patch.getProperty
+    // and this._patch.setProperty can always safely be called.
     this._patch.QueryInterface(Ci.nsIWritablePropertyBag);
     this.isCompleteUpdate = this._patch.type == "complete";
 
     let canUseBits = false;
-    
+    // Allow the advertised update to disable BITS.
     if (this._update.getProperty("disableBITS") != null) {
       LOG(
         "Downloader:downloadUpdate - BITS downloads disabled by update " +
@@ -4563,7 +4572,7 @@ Downloader.prototype = {
       let patchFile = getUpdatesDir().clone();
       patchFile.append(FILE_UPDATE_MAR);
 
-      
+      // The interval is 0 since there is no need to throttle downloads.
       let interval = 0;
 
       LOG(
@@ -4586,10 +4595,10 @@ Downloader.prototype = {
       let noProgressTimeout = BITS_IDLE_NO_PROGRESS_TIMEOUT_SECS;
       let monitorInterval = BITS_IDLE_POLL_RATE_MS;
       this._bitsActiveNotifications = false;
-      
-      
-      
-      
+      // The monitor's timeout should be much greater than the longest monitor
+      // poll interval. If the timeout is too short, delay in the pipe to the
+      // update agent might cause BITS to falsely report an error, causing an
+      // unnecessary fallback to nsIIncrementalDownload.
       let monitorTimeout = Math.max(10 * monitorInterval, 10 * 60 * 1000);
       if (this.hasDownloadListeners) {
         noProgressTimeout = BITS_ACTIVE_NO_PROGRESS_TIMEOUT_SECS;
@@ -4674,21 +4683,21 @@ Downloader.prototype = {
               "Downloader:downloadUpdate - Failed to connect to existing " +
                 "BITS job. It is likely owned by another user."
             );
-            
-            
-            
+            // This isn't really a failure code since the BITS job may be working
+            // just fine on another account, so convert this to a code that
+            // indicates that. This will make it easier to identify in telemetry.
             error.type = Ci.nsIBits.ERROR_TYPE_ACCESS_DENIED_EXPECTED;
             error.codeType = Ci.nsIBits.ERROR_CODE_TYPE_NONE;
             error.code = null;
-            
-            
-            
-            
-            
-            
-            
-            
-            
+            // When we detect this situation, disable BITS until Firefox shuts
+            // down. There are a couple of reasons for this. First, without any
+            // kind of flag, we enter an infinite loop here where we keep trying
+            // BITS over and over again (normally setting bitsResult prevents
+            // this, but we don't know the result of the BITS job, so we don't
+            // want to set that). Second, since we are trying to update, this
+            // process must have the update mutex. We don't ever give up the
+            // update mutex, so even if the other user starts Firefox, they will
+            // not complete the BITS job while this Firefox instance is around.
             gBITSInUseByAnotherUser = true;
           } else {
             this._patch.setProperty("bitsResult", Cr.NS_ERROR_FAILURE);
@@ -4707,12 +4716,12 @@ Downloader.prototype = {
 
           AUSTLMY.pingBitsError(this.isCompleteUpdate, error);
 
-          
-          
-          
-          
-          
-          
+          // Try download again with nsIIncrementalDownload
+          // The update status file has already had STATE_DOWNLOADING written to
+          // it. If the downloadUpdate call below returns early, that status
+          // should probably be rewritten. However, the only conditions that might
+          // cause it to return early would have prevented this code from running.
+          // So it should be fine.
           this.downloadUpdate(this._update);
         }
       );
@@ -4728,18 +4737,18 @@ Downloader.prototype = {
     return STATE_DOWNLOADING;
   },
 
-  
-
-
-
+  /**
+   * An array of download listeners to notify when we receive
+   * nsIRequestObserver or nsIProgressEventSink method calls.
+   */
   _listeners: [],
 
-  
-
-
-
-
-
+  /**
+   * Adds a listener to the download process
+   * @param   listener
+   *          A download listener, implementing nsIRequestObserver and
+   *          nsIProgressEventSink
+   */
   addDownloadListener: function Downloader_addDownloadListener(listener) {
     for (var i = 0; i < this._listeners.length; ++i) {
       if (this._listeners[i] == listener) {
@@ -4748,21 +4757,21 @@ Downloader.prototype = {
     }
     this._listeners.push(listener);
 
-    
+    // Increase the status update frequency when someone starts listening
     this._maybeStartActiveNotifications();
   },
 
-  
-
-
-
-
+  /**
+   * Removes a download listener
+   * @param   listener
+   *          The listener to remove.
+   */
   removeDownloadListener: function Downloader_removeDownloadListener(listener) {
     for (let i = 0; i < this._listeners.length; ++i) {
       if (this._listeners[i] == listener) {
         this._listeners.splice(i, 1);
 
-        
+        // Decrease the status update frequency when no one is listening
         if (!this._listeners.length) {
           this._maybeStopActiveNotifications();
         }
@@ -4771,17 +4780,17 @@ Downloader.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * Returns a boolean indicating whether there are any download listeners
+   */
   get hasDownloadListeners() {
     return !!this._listeners.length;
   },
 
-  
-
-
-
+  /**
+   * This speeds up BITS progress notifications in response to a user watching
+   * the notifications.
+   */
   _maybeStartActiveNotifications: async function Downloader__maybeStartActiveNotifications() {
     if (
       this.usingBits &&
@@ -4817,10 +4826,10 @@ Downloader.prototype = {
     }
   },
 
-  
-
-
-
+  /**
+   * This slows down BITS progress notifications in response to a user no longer
+   * watching the notifications.
+   */
   _maybeStopActiveNotifications: async function Downloader__maybeStopActiveNotifications() {
     if (
       this.usingBits &&
@@ -4856,11 +4865,11 @@ Downloader.prototype = {
     }
   },
 
-  
-
-
-
-
+  /**
+   * When the async request begins
+   * @param   request
+   *          The nsIRequest object for the transfer
+   */
   onStartRequest: function Downloader_onStartRequest(request) {
     if (!this.usingBits) {
       LOG(
@@ -4869,7 +4878,7 @@ Downloader.prototype = {
           ", final URI spec: " +
           request.finalURI.spec
       );
-      
+      // Set finalURL in onStartRequest if it is different.
       if (this._patch.finalURL != request.finalURI.spec) {
         this._patch.finalURL = request.finalURI.spec;
         Cc["@mozilla.org/updates/update-manager;1"]
@@ -4877,13 +4886,13 @@ Downloader.prototype = {
           .saveUpdates();
       }
     }
-    
-    
-    
-    
-    
-    
-    
+    // Only record the download bytes per second when there isn't already a
+    // value for the bytes per second so downloads that are already in progess
+    // don't have their records overwritten. When the Update Agent is
+    // implemented this should be reworked so that telemetry receives the bytes
+    // and seconds it took to complete for the entire update download instead of
+    // just the sample that is currently recorded. Note: this._patch has already
+    // been QI'd to nsIWritablePropertyBag.
     if (
       !this._patch.getProperty("internalBytes") &&
       !this._patch.getProperty("bitsBytes")
@@ -4891,7 +4900,7 @@ Downloader.prototype = {
       this._startDownloadMs = Date.now();
     }
 
-    
+    // Make shallow copy in case listeners remove themselves when called.
     let listeners = this._listeners.concat();
     let listenerCount = listeners.length;
     for (let i = 0; i < listenerCount; ++i) {
@@ -4899,17 +4908,17 @@ Downloader.prototype = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * When new data has been downloaded
+   * @param   request
+   *          The nsIRequest object for the transfer
+   * @param   context
+   *          Additional data
+   * @param   progress
+   *          The current number of bytes transferred
+   * @param   maxProgress
+   *          The total number of bytes that must be transferred
+   */
   onProgress: function Downloader_onProgress(
     request,
     context,
@@ -4938,9 +4947,9 @@ Downloader.prototype = {
       return;
     }
 
-    
-    
-    
+    // Wait until the transfer has started (progress > 0) to verify maxProgress
+    // so that we don't check it before it is available (in which case, -1 would
+    // have been passed).
     if (progress > 0 && maxProgress != this._patch.size) {
       LOG(
         "Downloader:onProgress - maxProgress: " +
@@ -4956,7 +4965,7 @@ Downloader.prototype = {
       return;
     }
 
-    
+    // Make shallow copy in case listeners remove themselves when called.
     var listeners = this._listeners.concat();
     var listenerCount = listeners.length;
     for (var i = 0; i < listenerCount; ++i) {
@@ -4968,23 +4977,23 @@ Downloader.prototype = {
     this.updateService._consecutiveSocketErrors = 0;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * When we have new status text
+   * @param   request
+   *          The nsIRequest object for the transfer
+   * @param   context
+   *          Additional data
+   * @param   status
+   *          A status code
+   * @param   statusText
+   *          Human readable version of |status|
+   */
   onStatus: function Downloader_onStatus(request, context, status, statusText) {
     LOG(
       "Downloader:onStatus - status: " + status + ", statusText: " + statusText
     );
 
-    
+    // Make shallow copy in case listeners remove themselves when called.
     var listeners = this._listeners.concat();
     var listenerCount = listeners.length;
     for (var i = 0; i < listenerCount; ++i) {
@@ -4995,14 +5004,14 @@ Downloader.prototype = {
     }
   },
 
-  
-
-
-
-
-
-
-  
+  /**
+   * When data transfer ceases
+   * @param   request
+   *          The nsIRequest object for the transfer
+   * @param   status
+   *          Status code containing the reason for the cessation.
+   */
+  /* eslint-disable-next-line complexity */
   onStopRequest: async function Downloader_onStopRequest(request, status) {
     if (!this.usingBits) {
       LOG(
@@ -5031,22 +5040,22 @@ Downloader.prototype = {
           bitsCompletionError = e;
         }
       } else {
-        
-        
+        // BITS jobs that failed to complete should still have cancel called on
+        // them to remove the job.
         try {
           await this.cancel();
         } catch (e) {
-          
-          
-          
-          
-          
+          // This will fail if the job stopped because it was cancelled.
+          // Even if this is a "real" error, there isn't really anything to do
+          // about it, and it's not really a big problem. It just means that the
+          // BITS job will stay around until it is removed automatically
+          // (default of 90 days).
         }
       }
     }
 
-    
-    
+    // XXX ehsan shouldShowPrompt should always be false here.
+    // But what happens when there is already a UI showing?
     var state = this._patch.state;
     var shouldShowPrompt = false;
     var shouldRegisterOnlineObserver = false;
@@ -5056,13 +5065,13 @@ Downloader.prototype = {
       PREF_APP_UPDATE_SOCKET_RETRYTIMEOUT,
       DEFAULT_SOCKET_RETRYTIMEOUT
     );
-    
+    // Prevent the preference from setting a value greater than 10000.
     retryTimeout = Math.min(retryTimeout, 10000);
     var maxFail = Services.prefs.getIntPref(
       PREF_APP_UPDATE_SOCKET_MAXERRORS,
       DEFAULT_SOCKET_MAX_ERRORS
     );
-    
+    // Prevent the preference from setting a value greater than 20.
     maxFail = Math.min(maxFail, 20);
     let permissionFixingInProgress = false;
     LOG(
@@ -5096,7 +5105,7 @@ Downloader.prototype = {
         }
         AUSTLMY.pingDownloadCode(this.isCompleteUpdate, AUSTLMY.DWNLD_SUCCESS);
 
-        
+        // Tell the updater.exe we're ready to apply.
         writeStatusFile(getUpdatesDir(), state);
         writeVersionFile(getUpdatesDir(), this._update.appVersion);
         this._update.installDate = new Date().getTime();
@@ -5109,7 +5118,7 @@ Downloader.prototype = {
         state = STATE_DOWNLOAD_FAILED;
         status = Cr.NS_ERROR_CORRUPTED_CONTENT;
 
-        
+        // Yes, this code is a string.
         const vfCode = "verification_failed";
         var message = getStatusTextFromCode(vfCode, vfCode);
         this._update.statusText = message;
@@ -5118,14 +5127,14 @@ Downloader.prototype = {
           deleteActiveUpdate = true;
         }
 
-        
+        // Destroy the updates directory, since we're done with it.
         cleanUpUpdatesDir();
       }
     } else if (status == Cr.NS_ERROR_OFFLINE) {
-      
-      
-      
-      
+      // Register an online observer to try again.
+      // The online observer will continue the incremental download by
+      // calling downloadUpdate on the active update which continues
+      // downloading the file from where it was.
       LOG("Downloader:onStopRequest - offline, register online observer: true");
       AUSTLMY.pingDownloadCode(
         this.isCompleteUpdate,
@@ -5134,11 +5143,11 @@ Downloader.prototype = {
       shouldRegisterOnlineObserver = true;
       deleteActiveUpdate = false;
 
-      
-      
-      
-      
-      
+      // Each of NS_ERROR_NET_TIMEOUT, ERROR_CONNECTION_REFUSED,
+      // NS_ERROR_NET_RESET and NS_ERROR_DOCUMENT_NOT_CACHED can be returned
+      // when disconnecting the internet while a download of a MAR is in
+      // progress.  There may be others but I have not encountered them during
+      // testing.
     } else if (
       (status == Cr.NS_ERROR_NET_TIMEOUT ||
         status == Cr.NS_ERROR_CONNECTION_REFUSED ||
@@ -5164,8 +5173,8 @@ Downloader.prototype = {
         status == Cr.NS_ERROR_FILE_READ_ONLY
       ) {
         LOG("Downloader:onStopRequest - permission error");
-        
-        
+        // This will either fix the permissions, or asynchronously show the
+        // reinstall prompt if it cannot fix them.
         let patchFile = getUpdatesDir().clone();
         patchFile.append(FILE_UPDATE_MAR);
         permissionFixingInProgress = handleCriticalWriteFailure(patchFile.path);
@@ -5179,18 +5188,18 @@ Downloader.prototype = {
       }
       AUSTLMY.pingDownloadCode(this.isCompleteUpdate, dwnldCode);
 
-      
+      // Some sort of other failure, log this in the |statusText| property
       state = STATE_DOWNLOAD_FAILED;
 
-      
-      
+      // XXXben - if |request| (The Incremental Download) provided a means
+      // for accessing the http channel we could do more here.
 
       this._update.statusText = getStatusTextFromCode(
         status,
         Cr.NS_BINDING_FAILED
       );
 
-      
+      // Destroy the updates directory, since we're done with it.
       cleanUpUpdatesDir();
 
       deleteActiveUpdate = true;
@@ -5200,10 +5209,10 @@ Downloader.prototype = {
     } else {
       this._patch.setProperty("bitsResult", status);
 
-      
-      
-      
-      
+      // If we failed when using BITS, we want to override the retry decision
+      // since we need to retry with nsIncrementalDownload before we give up.
+      // However, if the download was cancelled, don't retry. If the transfer
+      // was cancelled, we don't want it to restart on its own.
       if (
         !Components.isSuccessCode(status) &&
         status != Cr.NS_BINDING_ABORTED &&
@@ -5213,7 +5222,7 @@ Downloader.prototype = {
         shouldRetrySoon = true;
       }
 
-      
+      // Send BITS Telemetry
       if (Components.isSuccessCode(status)) {
         AUSTLMY.pingBitsSuccess(this.isCompleteUpdate);
       } else {
@@ -5241,18 +5250,18 @@ Downloader.prototype = {
     );
     if (deleteActiveUpdate) {
       this._update.installDate = new Date().getTime();
-      
-      
+      // Setting |activeUpdate| to null will move the active update to the
+      // update history.
       um.activeUpdate = null;
     } else if (um.activeUpdate && um.activeUpdate.state != state) {
       um.activeUpdate.state = state;
     }
     um.saveUpdates();
 
-    
-    
+    // Only notify listeners about the stopped state if we
+    // aren't handling an internal retry.
     if (!shouldRetrySoon && !shouldRegisterOnlineObserver) {
-      
+      // Make shallow copy in case listeners remove themselves when called.
       var listeners = this._listeners.concat();
       var listenerCount = listeners.length;
       for (var i = 0; i < listenerCount; ++i) {
@@ -5264,7 +5273,7 @@ Downloader.prototype = {
 
     if (state == STATE_DOWNLOAD_FAILED) {
       var allFailed = true;
-      
+      // If we haven't already, attempt to download without BITS
       if (request instanceof BitsRequest) {
         LOG(
           "Downloader:onStopRequest - BITS download failed. Falling back " +
@@ -5278,7 +5287,7 @@ Downloader.prototype = {
         }
       }
 
-      
+      // Check if there is a complete update patch that can be downloaded.
       if (
         allFailed &&
         !this._update.isCompleteUpdate &&
@@ -5343,10 +5352,10 @@ Downloader.prototype = {
         }
       }
       if (allFailed) {
-        
+        // Prevent leaking the update object (bug 454964).
         this._update = null;
       }
-      
+      // A complete download has been initiated or the failure was handled.
       return;
     }
 
@@ -5362,14 +5371,14 @@ Downloader.prototype = {
         );
         gUpdateFileWriteInfo = { phase: "stage", failure: false };
         this._patch.setProperty("stageStart", Math.floor(Date.now() / 1000));
-        
+        // Stage the update
         try {
           Cc["@mozilla.org/updates/update-processor;1"]
             .createInstance(Ci.nsIUpdateProcessor)
             .processUpdate();
         } catch (e) {
-          
-          
+          // Fail gracefully in case the application does not support the update
+          // processor service.
           LOG(
             "Downloader:onStopRequest - failed to stage update. Exception: " + e
           );
@@ -5383,8 +5392,8 @@ Downloader.prototype = {
       }
     }
 
-    
-    
+    // Do this after *everything* else, since it will likely cause the app
+    // to shut down.
     if (shouldShowPrompt) {
       LOG(
         "UpdateManager:refreshUpdateStatus - Notifying observers that " +
@@ -5418,15 +5427,15 @@ Downloader.prototype = {
         Ci.nsITimer.TYPE_ONE_SHOT
       );
     } else {
-      
+      // Prevent leaking the update object (bug 454964)
       this._update = null;
     }
   },
 
-  
-
-
-
+  /**
+   * This function should be called when shutting down so that resources get
+   * freed properly.
+   */
   cleanup: function Downloader_cleanup() {
     if (this.usingBits) {
       if (this._pendingRequest) {
@@ -5437,12 +5446,12 @@ Downloader.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * See nsIInterfaceRequestor.idl
+   */
   getInterface: function Downloader_getInterface(iid) {
-    
-    
+    // The network request may require proxy authentication, so provide the
+    // default nsIAuthPrompt if requested.
     if (iid.equals(Ci.nsIAuthPrompt)) {
       var prompt = Cc[
         "@mozilla.org/network/default-auth-prompt;1"
