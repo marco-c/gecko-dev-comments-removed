@@ -210,13 +210,13 @@ static inline bool IsAutoOrEnumOnBSize(const StyleSize& aSize, bool aIsInline) {
 
 
 #define GET_MAIN_COMPONENT_LOGICAL(axisTracker_, wm_, isize_, bsize_) \
-  wm_.IsOrthogonalTo(axisTracker_.GetWritingMode()) !=                \
+  wm_.IsOrthogonalTo((axisTracker_).GetWritingMode()) !=              \
           (axisTracker_).IsRowOriented()                              \
       ? (isize_)                                                      \
       : (bsize_)
 
 #define GET_CROSS_COMPONENT_LOGICAL(axisTracker_, wm_, isize_, bsize_) \
-  wm_.IsOrthogonalTo(axisTracker_.GetWritingMode()) !=                 \
+  wm_.IsOrthogonalTo((axisTracker_).GetWritingMode()) !=               \
           (axisTracker_).IsRowOriented()                               \
       ? (bsize_)                                                       \
       : (isize_)
@@ -405,7 +405,7 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
  public:
   
   FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
-           float aFlexShrink, nscoord aMainBaseSize, nscoord aMainMinSize,
+           float aFlexShrink, nscoord aFlexBaseSize, nscoord aMainMinSize,
            nscoord aMainMaxSize, nscoord aTentativeCrossSize,
            nscoord aCrossMinSize, nscoord aCrossMaxSize,
            const FlexboxAxisTracker& aAxisTracker);
@@ -2347,7 +2347,7 @@ nsContainerFrame* NS_NewFlexContainerFrame(PresShell* aPresShell,
 
 
 
-nsFlexContainerFrame::~nsFlexContainerFrame() {}
+nsFlexContainerFrame::~nsFlexContainerFrame() = default;
 
 
 void nsFlexContainerFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
@@ -3596,11 +3596,7 @@ void FlexboxAxisTracker::InitAxesFromLegacyProps(
 
   
   
-  if (styleXUL->mBoxDirection == StyleBoxDirection::Reverse) {
-    mIsMainAxisReversed = true;
-  } else {
-    mIsMainAxisReversed = false;
-  }
+  mIsMainAxisReversed = styleXUL->mBoxDirection == StyleBoxDirection::Reverse;
 
   
   
@@ -3639,11 +3635,7 @@ void FlexboxAxisTracker::InitAxesFromModernProps(
   }
 
   
-  if (stylePos->mFlexWrap == StyleFlexWrap::WrapReverse) {
-    mIsCrossAxisReversed = true;
-  } else {
-    mIsCrossAxisReversed = false;
-  }
+  mIsCrossAxisReversed = stylePos->mFlexWrap == StyleFlexWrap::WrapReverse;
 }
 
 LogicalSide FlexboxAxisTracker::MainAxisStartSide() const {
