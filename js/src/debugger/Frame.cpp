@@ -33,6 +33,7 @@
 #include "debugger/Object.h"               
 #include "debugger/Script.h"               
 #include "frontend/BytecodeCompilation.h"  
+#include "frontend/SharedContext.h"        
 #include "gc/Barrier.h"                    
 #include "gc/FreeOp.h"                     
 #include "gc/GC.h"                         
@@ -1000,9 +1001,13 @@ static bool EvaluateInEnv(JSContext* cx, Handle<Env*> env,
     if (!compilationInfo.init(cx)) {
       return false;
     }
+    MOZ_ASSERT(scopeKind == ScopeKind::Global ||
+               scopeKind == ScopeKind::NonSyntactic);
 
-    frontend::GlobalScriptInfo info(cx, compilationInfo, options, scopeKind);
-    script = frontend::CompileGlobalScript(info, srcBuf);
+    frontend::GlobalSharedContext globalsc(
+        cx, scopeKind, compilationInfo, compilationInfo.directives,
+        compilationInfo.options.extraWarningsOption);
+    script = frontend::CompileGlobalScript(compilationInfo, globalsc, srcBuf);
     if (!script) {
       return false;
     }
