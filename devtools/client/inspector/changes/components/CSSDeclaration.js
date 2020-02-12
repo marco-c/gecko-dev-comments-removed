@@ -28,7 +28,6 @@ class CSSDeclaration extends PureComponent {
 
     return dom.div(
       { className: `changes__declaration ${className}` },
-      "  ", 
       dom.span(
         { className: "changes__declaration-name theme-fg-color3" },
         property
