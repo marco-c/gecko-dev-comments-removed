@@ -1777,8 +1777,15 @@ nsFlexContainerFrame::MeasureAscentAndBSizeForFlexItem(
   nsReflowStatus childReflowStatus;
 
   const ReflowChildFlags flags = ReflowChildFlags::NoMoveFrame;
+  const WritingMode outerWM = GetWritingMode();
+  const LogicalPoint dummyPosition(outerWM);
+  const nsSize dummyContainerSize;
+
+  
+  
   ReflowChild(aItem.Frame(), aPresContext, childDesiredSize, aChildReflowInput,
-              0, 0, flags, childReflowStatus);
+              outerWM, dummyPosition, dummyContainerSize, flags,
+              childReflowStatus);
   aItem.SetHadMeasuringReflow();
 
   
@@ -1791,7 +1798,8 @@ nsFlexContainerFrame::MeasureAscentAndBSizeForFlexItem(
   
   
   FinishReflowChild(aItem.Frame(), aPresContext, childDesiredSize,
-                    &aChildReflowInput, 0, 0, flags);
+                    &aChildReflowInput, outerWM, dummyPosition,
+                    dummyContainerSize, flags);
 
   auto result =
       new CachedMeasuringReflowResult(aChildReflowInput, childDesiredSize);
