@@ -681,7 +681,7 @@ static bool RecomputePosition(nsIFrame* aFrame) {
 
   const nsStyleDisplay* display = aFrame->StyleDisplay();
   
-  if (display->mPosition == NS_STYLE_POSITION_STATIC) {
+  if (display->mPosition == StylePositionProperty::Static) {
     return true;
   }
 
@@ -721,7 +721,7 @@ static bool RecomputePosition(nsIFrame* aFrame) {
       return false;
     }
     
-    if (display->mPosition == NS_STYLE_POSITION_STICKY) {
+    if (display->mPosition == StylePositionProperty::Sticky) {
       
       
       
@@ -739,7 +739,7 @@ static bool RecomputePosition(nsIFrame* aFrame) {
         ssc->PositionContinuations(firstContinuation);
       }
     } else {
-      MOZ_ASSERT(NS_STYLE_POSITION_RELATIVE == display->mPosition,
+      MOZ_ASSERT(StylePositionProperty::Relative == display->mPosition,
                  "Unexpected type of positioning");
       for (nsIFrame* cont = aFrame; cont;
            cont = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
@@ -936,7 +936,7 @@ static bool ContainingBlockChangeAffectsDescendants(
           const bool isContainingBlock =
               aIsFixedPosContainingBlock ||
               (aIsAbsPosContainingBlock &&
-               display->mPosition == NS_STYLE_POSITION_ABSOLUTE);
+               display->mPosition == StylePositionProperty::Absolute);
           
           
           nsIFrame* parent = outOfFlow->GetParent()->FirstContinuation();
