@@ -151,7 +151,9 @@ nsresult HttpTransactionParent::Init(
     uint64_t topLevelOuterContentWindowId, HttpTrafficCategory trafficCategory,
     nsIRequestContext* requestContext, uint32_t classOfService,
     uint32_t initialRwin, bool responseTimeoutEnabled, uint64_t channelId,
-    TransactionObserverFunc&& transactionObserver) {
+    TransactionObserverFunc&& transactionObserver,
+    OnPushCallback&& aOnPushCallback,
+    HttpTransactionShell* aTransWithPushedStream, uint32_t aPushedStreamId) {
   LOG(("HttpTransactionParent::Init [this=%p caps=%x]\n", this, caps));
 
   if (!CanSend()) {
@@ -162,6 +164,7 @@ nsresult HttpTransactionParent::Init(
   mTargetThread = GetCurrentThreadEventTarget();
   mChannelId = channelId;
   mTransactionObserver = std::move(transactionObserver);
+  mOnPushCallback = std::move(aOnPushCallback);
 
   HttpConnectionInfoCloneArgs infoArgs;
   GetStructFromInfo(cinfo, infoArgs);
@@ -174,6 +177,15 @@ nsresult HttpTransactionParent::Init(
 
   uint64_t requestContextID = requestContext ? requestContext->GetID() : 0;
 
+  Maybe<H2PushedStreamArg> pushedStreamArg;
+  if (aTransWithPushedStream && aPushedStreamId) {
+    MOZ_ASSERT(aTransWithPushedStream->AsHttpTransactionParent());
+    pushedStreamArg.emplace();
+    pushedStreamArg.ref().transWithPushedStreamParent() =
+        aTransWithPushedStream->AsHttpTransactionParent();
+    pushedStreamArg.ref().pushedStreamId() = aPushedStreamId;
+  }
+
   
   
   if (!SendInit(caps, infoArgs, *requestHead,
@@ -182,7 +194,7 @@ nsresult HttpTransactionParent::Init(
                 topLevelOuterContentWindowId,
                 static_cast<uint8_t>(trafficCategory), requestContextID,
                 classOfService, initialRwin, responseTimeoutEnabled, mChannelId,
-                !!mTransactionObserver)) {
+                !!mTransactionObserver, pushedStreamArg)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -316,10 +328,6 @@ void HttpTransactionParent::SetH2WSConnRefTaken() {
 void HttpTransactionParent::SetSecurityCallbacks(
     nsIInterfaceRequestor* aCallbacks) {
   
-  
-}
-
-void HttpTransactionParent::SetPushedStream(Http2PushedStreamWrapper* push) {
   
 }
 
@@ -561,6 +569,15 @@ mozilla::ipc::IPCResult HttpTransactionParent::RecvOnInitFailed(
   }
   return IPC_OK();
 }
+
+mozilla::ipc::IPCResult HttpTransactionParent::RecvOnH2PushStream(
+    const uint32_t& aPushedStreamId, const nsCString& aResourceUrl,
+    const nsCString& aRequestString) {
+  MOZ_ASSERT(mOnPushCallback);
+
+  mOnPushCallback(aPushedStreamId, aResourceUrl, aRequestString);
+  return IPC_OK();
+}  
 
 
 

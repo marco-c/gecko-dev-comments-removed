@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef HttpTransactionParent_h__
 #define HttpTransactionParent_h__
@@ -21,8 +21,8 @@ namespace net {
 class ChannelEventQueue;
 class nsHttpConnectionInfo;
 
-// HttpTransactionParent plays the role of nsHttpTransaction and delegates the
-// work to the nsHttpTransaction in socket process.
+
+
 class HttpTransactionParent final : public PHttpTransactionParent,
                                     public HttpTransactionShell,
                                     public nsIRequest,
@@ -58,6 +58,10 @@ class HttpTransactionParent final : public PHttpTransactionParent,
                                               const NetAddr& aPeerAddr,
                                               const bool& aResolvedByTRR);
   mozilla::ipc::IPCResult RecvOnInitFailed(const nsresult& aStatus);
+
+  mozilla::ipc::IPCResult RecvOnH2PushStream(const uint32_t& aPushedStreamId,
+                                             const nsCString& aResourceUrl,
+                                             const nsCString& aRequestString);
 
   already_AddRefed<nsIEventTarget> GetNeckoTarget();
 
@@ -115,9 +119,10 @@ class HttpTransactionParent final : public PHttpTransactionParent,
   TimeStamp mDomainLookupEnd;
   TransactionObserverFunc mTransactionObserver;
   TransactionObserverResult mTransactionObserverResult;
+  OnPushCallback mOnPushCallback;
 };
 
-}  // namespace net
-}  // namespace mozilla
+}  
+}  
 
-#endif  // nsHttpTransactionParent_h__
+#endif  
