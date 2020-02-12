@@ -9,9 +9,9 @@
 
 #include "mozilla/dom/StyledRange.h"
 #include "mozilla/AutoRestore.h"
+#include "mozilla/EventForwards.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/SelectionChangeEventDispatcher.h"
-#include "mozilla/TextRange.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "nsDirection.h"
@@ -45,6 +45,7 @@ class DocGroup;
 }  
 
 namespace mozilla {
+
 namespace dom {
 
 
