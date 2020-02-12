@@ -471,6 +471,7 @@ strong {
   fill: currentColor;
   background-image: var(--menuitem-icon-image);
   background-size: contain;
+  background-repeat: no-repeat;
   
 
 
