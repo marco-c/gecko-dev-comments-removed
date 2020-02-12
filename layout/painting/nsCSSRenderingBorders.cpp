@@ -3182,7 +3182,7 @@ void nsCSSBorderRenderer::DrawBorders() {
     
     
     
-    NS_FOR_CSS_FULL_CORNERS(corner) {
+    for (const auto corner : mozilla::AllPhysicalCorners()) {
       const mozilla::Side sides[2] = {mozilla::Side(corner), PREV_SIDE(corner)};
 
       if (!IsZeroSize(mBorderRadii[corner])) {
@@ -3199,7 +3199,7 @@ void nsCSSBorderRenderer::DrawBorders() {
     }
 
     
-    NS_FOR_CSS_FULL_CORNERS(corner) {
+    for (const auto corner : mozilla::AllPhysicalCorners()) {
       
       if (IsZeroSize(mBorderCornerDimensions[corner])) {
         continue;
