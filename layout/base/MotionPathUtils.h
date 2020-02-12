@@ -14,6 +14,10 @@
 
 class nsIFrame;
 
+namespace nsStyleTransformMatrix {
+class TransformReferenceBox;
+}
+
 namespace mozilla {
 
 using RayFunction = StyleRayFunction<StyleAngle>;
@@ -154,7 +158,17 @@ struct OffsetPathData {
 
 
 class MotionPathUtils final {
+  using TransformReferenceBox = nsStyleTransformMatrix::TransformReferenceBox;
+
  public:
+  
+  
+  
+  
+  
+  
+  static CSSPoint ComputeAnchorPointAdjustment(const nsIFrame& aFrame);
+
   
 
 
@@ -162,15 +176,15 @@ class MotionPathUtils final {
   static Maybe<ResolvedMotionPathData> ResolveMotionPath(
       const OffsetPathData& aPath, const LengthPercentage& aDistance,
       const StyleOffsetRotate& aRotate, const StylePositionOrAuto& aAnchor,
-      const CSSPoint& aTransformOrigin, const CSSSize& aFrameSize,
-      const Maybe<CSSPoint>& aFramePosition);
+      const CSSPoint& aTransformOrigin, TransformReferenceBox&,
+      const CSSPoint& aAnchorPointAdjustment);
 
   
 
 
 
   static Maybe<ResolvedMotionPathData> ResolveMotionPath(
-      const nsIFrame* aFrame);
+      const nsIFrame* aFrame, TransformReferenceBox&);
 
   
 
@@ -181,7 +195,7 @@ class MotionPathUtils final {
       const StyleOffsetPath* aPath, const StyleLengthPercentage* aDistance,
       const StyleOffsetRotate* aRotate, const StylePositionOrAuto* aAnchor,
       const Maybe<layers::MotionPathData>& aMotionPathData,
-      const CSSSize& aFrameSize, gfx::Path* aCachedMotionPath);
+      TransformReferenceBox&, gfx::Path* aCachedMotionPath);
 
   
 
