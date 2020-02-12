@@ -953,16 +953,6 @@ class MarkupContextMenu {
   }
 
   async _updateA11YMenuItem(menuItem) {
-    const hasMethod = await this.target
-      .actorHasMethod("domwalker", "hasAccessibilityProperties")
-      .catch(
-        
-        error => console.warn(error)
-      );
-    if (!hasMethod) {
-      return;
-    }
-
     const hasA11YProps = await this.walker.hasAccessibilityProperties(
       this.selection.nodeFront
     );
