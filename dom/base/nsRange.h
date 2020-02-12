@@ -137,16 +137,6 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
 
 
-  void ResetTemporarily() {
-    DoSetRange(RawRangeBoundary(), RawRangeBoundary(), mRoot);
-  }
-
-  
-
-
-
-
-
   nsresult SetStart(nsINode* aContainer, uint32_t aOffset) {
     ErrorResult error;
     SetStart(RawRangeBoundary(aContainer, aOffset), error);

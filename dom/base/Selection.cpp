@@ -608,7 +608,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Selection)
   tmp->StopNotifyingAccessibleCaretEventHub();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelectionChangeEventDispatcher)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelectionListeners)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mCachedRange)
   tmp->RemoveAllRanges(IgnoreErrors());
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFrameSelection)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
@@ -621,7 +620,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Selection)
     }
   }
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAnchorFocusRange)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCachedRange)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFrameSelection)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSelectionChangeEventDispatcher)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSelectionListeners)
@@ -1839,34 +1837,6 @@ void Selection::RemoveAllRanges(ErrorResult& aRv) {
   }
 }
 
-nsresult Selection::RemoveAllRangesTemporarily() {
-  if (!mCachedRange) {
-    
-    
-    
-    for (auto& rangeData : mRanges) {
-      auto& range = rangeData.mRange;
-      if (range->GetRefCount() == 1 ||
-          (range->GetRefCount() == 2 && range == mAnchorFocusRange)) {
-        mCachedRange = range;
-        break;
-      }
-    }
-  }
-
-  
-  ErrorResult result;
-  RemoveAllRanges(result);
-  if (result.Failed()) {
-    mCachedRange = nullptr;
-  } else if (mCachedRange) {
-    
-    
-    mCachedRange->ResetTemporarily();
-  }
-  return result.StealNSResult();
-}
-
 void Selection::AddRangeJS(nsRange& aRange, ErrorResult& aRv) {
   AutoRestore<bool> calledFromJSRestorer(mCalledByJS);
   mCalledByJS = true;
@@ -1888,16 +1858,7 @@ void Selection::AddRangeAndSelectFramesAndNotifyListeners(nsRange& aRange,
   if (aRange.IsInSelection() && aRange.GetSelection() != this) {
     
     
-    if (mCachedRange) {
-      range = std::move(mCachedRange);
-      nsresult rv = range->SetStartAndEnd(aRange.StartRef().AsRaw(),
-                                          aRange.EndRef().AsRaw());
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return;
-      }
-    } else {
-      range = aRange.CloneRange();
-    }
+    range = aRange.CloneRange();
   } else {
     range = &aRange;
   }
@@ -1910,10 +1871,6 @@ void Selection::AddRangeAndSelectFramesAndNotifyListeners(nsRange& aRange,
     
     return;
   }
-
-  
-  
-  mCachedRange = nullptr;
 
   
   RefPtr<Selection> kungFuDeathGrip(this);
@@ -2103,9 +2060,6 @@ void Selection::Collapse(const RawRangeBoundary& aPoint, ErrorResult& aRv) {
   }
 
   
-  RefPtr<nsRange> oldRange = !mRanges.IsEmpty() ? mRanges[0].mRange : nullptr;
-
-  
   Clear(presContext);
 
   
@@ -2136,16 +2090,7 @@ void Selection::Collapse(const RawRangeBoundary& aPoint, ErrorResult& aRv) {
     }
   }
 
-  RefPtr<nsRange> range;
-  
-  
-  if (oldRange && oldRange->GetRefCount() == 1) {
-    range = std::move(oldRange);
-  } else if (mCachedRange) {
-    range = std::move(mCachedRange);
-  } else {
-    range = nsRange::Create(aPoint.Container());
-  }
+  RefPtr<nsRange> range = nsRange::Create(aPoint.Container());
   result = range->CollapseTo(aPoint);
   if (NS_FAILED(result)) {
     aRv.Throw(result);
@@ -3370,37 +3315,9 @@ void Selection::SetStartAndEndInternal(InLimiter aInLimiter,
     }
   }
 
-  
-  
-  
-  
-  
-  
-  if (!mCalledByJS && !mCachedRange) {
-    nsresult rv = RemoveAllRangesTemporarily();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      aRv.Throw(rv);
-      return;
-    }
-  }
-
-  
-  
-  RefPtr<nsRange> newRange = std::move(mCachedRange);
-
-  
-  
-  if (newRange) {
-    nsresult rv = newRange->SetStartAndEnd(aStartRef, aEndRef);
-    if (NS_FAILED(rv)) {
-      aRv.Throw(rv);
-      return;
-    }
-  } else {
-    newRange = nsRange::Create(aStartRef, aEndRef, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
+  RefPtr<nsRange> newRange = nsRange::Create(aStartRef, aEndRef, aRv);
+  if (aRv.Failed()) {
+    return;
   }
 
   RemoveAllRanges(aRv);

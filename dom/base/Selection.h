@@ -316,14 +316,6 @@ class Selection final : public nsSupportsWeakReference,
   
 
 
-
-
-
-  nsresult RemoveAllRangesTemporarily();
-
-  
-
-
   enum class FlushFrames { No, Yes };
   MOZ_CAN_RUN_SCRIPT
   void Stringify(nsAString& aResult, FlushFrames = FlushFrames::Yes);
@@ -846,18 +838,6 @@ class Selection final : public nsSupportsWeakReference,
   AutoTArray<RangeData, 1> mRanges;
 
   RefPtr<nsRange> mAnchorFocusRange;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<nsRange> mCachedRange;
   RefPtr<nsFrameSelection> mFrameSelection;
   RefPtr<AccessibleCaretEventHub> mAccessibleCaretEventHub;
   RefPtr<SelectionChangeEventDispatcher> mSelectionChangeEventDispatcher;

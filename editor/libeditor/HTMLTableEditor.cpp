@@ -818,9 +818,10 @@ nsresult HTMLEditor::DeleteTableElementAndChildrenWithTransaction(
 
     
     if (SelectionRefPtr()->RangeCount()) {
-      nsresult rv = SelectionRefPtr()->RemoveAllRangesTemporarily();
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
+      ErrorResult error;
+      SelectionRefPtr()->RemoveAllRanges(error);
+      if (NS_WARN_IF(error.Failed())) {
+        return error.StealNSResult();
       }
     }
 

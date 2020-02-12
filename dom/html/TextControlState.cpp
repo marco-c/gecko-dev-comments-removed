@@ -2834,10 +2834,10 @@ bool TextControlState::SetValueWithTextEditor(
   if (selection) {
     
     
-    
-    
-    
-    selection->RemoveAllRangesTemporarily();
+    IgnoredErrorResult ignoredError;
+    selection->RemoveAllRanges(ignoredError);
+    NS_WARNING_ASSERTION(!ignoredError.Failed(),
+                         "Selection::RemoveAllRanges() failed, but ignored");
   }
 
   
