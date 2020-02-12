@@ -18,6 +18,7 @@
 #include "nsAtom.h"
 #include "nsServiceManagerUtils.h"
 #include "nsUnicharUtils.h"
+#include "nsUnicodeProperties.h"
 #include "nsCRT.h"
 #include "nsRange.h"
 #include "nsContentUtils.h"
@@ -32,6 +33,7 @@
 
 using namespace mozilla;
 using namespace mozilla::dom;
+using namespace mozilla::unicode;
 
 
 #define CHAR_TO_UNICHAR(c) ((char16_t)(unsigned char)c)
@@ -680,7 +682,12 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
     
     prevChar = c;
     
+    
+    
     c = (t2b ? DecodeChar(t2b, &findex) : CHAR_TO_UNICHAR(t1b[findex]));
+    if (!mMatchDiacritics && IsCombiningDiacritic(c)) {
+      continue;
+    }
     patc = DecodeChar(patStr, &pindex);
 
     DEBUG_FIND_PRINTF(

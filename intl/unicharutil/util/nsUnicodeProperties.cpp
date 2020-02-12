@@ -368,7 +368,7 @@ uint32_t GetNaked(uint32_t aCh) {
     } else {
       nextChar = combiners[0];
     }
-    if (u_getCombiningClass(nextChar) == 0) {
+    if (!IsCombiningDiacritic(nextChar)) {
       
       baseChar = aCh;
     }

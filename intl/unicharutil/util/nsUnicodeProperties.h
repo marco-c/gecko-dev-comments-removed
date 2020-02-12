@@ -230,6 +230,15 @@ class ClusterIterator {
 uint32_t CountGraphemeClusters(const char16_t* aText, uint32_t aLength);
 
 
+
+
+
+
+inline bool IsCombiningDiacritic(uint32_t aCh) {
+  return u_getCombiningClass(aCh) != 0;
+}
+
+
 uint32_t GetNaked(uint32_t aCh);
 
 
