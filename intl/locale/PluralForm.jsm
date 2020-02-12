@@ -2,7 +2,7 @@
 
 
 
-var EXPORTED_SYMBOLS = [ "PluralForm" ];
+var EXPORTED_SYMBOLS = ["PluralForm"];
 
 
 
@@ -38,45 +38,151 @@ const kIntlProperties = "chrome://global/locale/intl.properties";
 
 var gFunctions = [
   
-  [1, (n) => 0],
+  [1, n => 0],
   
-  [2, (n) => n!=1?1:0],
+  [2, n => (n != 1 ? 1 : 0)],
   
-  [2, (n) => n>1?1:0],
+  [2, n => (n > 1 ? 1 : 0)],
   
-  [3, (n) => n%10==1&&n%100!=11?1:n%10==0?0:2],
+  [3, n => (n % 10 == 1 && n % 100 != 11 ? 1 : n % 10 == 0 ? 0 : 2)],
   
-  [4, (n) => n==1||n==11?0:n==2||n==12?1:n>0&&n<20?2:3],
+  [
+    4,
+    n =>
+      n == 1 || n == 11 ? 0 : n == 2 || n == 12 ? 1 : n > 0 && n < 20 ? 2 : 3,
+  ],
   
-  [3, (n) => n==1?0:n==0||n%100>0&&n%100<20?1:2],
+  [3, n => (n == 1 ? 0 : n == 0 || (n % 100 > 0 && n % 100 < 20) ? 1 : 2)],
   
-  [3, (n) => n%10==1&&n%100!=11?0:n%10>=2&&(n%100<10||n%100>=20)?2:1],
+  [
+    3,
+    n =>
+      n % 10 == 1 && n % 100 != 11
+        ? 0
+        : n % 10 >= 2 && (n % 100 < 10 || n % 100 >= 20)
+        ? 2
+        : 1,
+  ],
   
-  [3, (n) => n%10==1&&n%100!=11?0:n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?1:2],
+  [
+    3,
+    n =>
+      n % 10 == 1 && n % 100 != 11
+        ? 0
+        : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)
+        ? 1
+        : 2,
+  ],
   
-  [3, (n) => n==1?0:n>=2&&n<=4?1:2],
+  [3, n => (n == 1 ? 0 : n >= 2 && n <= 4 ? 1 : 2)],
   
-  [3, (n) => n==1?0:n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?1:2],
+  [
+    3,
+    n =>
+      n == 1
+        ? 0
+        : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)
+        ? 1
+        : 2,
+  ],
   
-  [4, (n) => n%100==1?0:n%100==2?1:n%100==3||n%100==4?2:3],
+  [
+    4,
+    n =>
+      n % 100 == 1
+        ? 0
+        : n % 100 == 2
+        ? 1
+        : n % 100 == 3 || n % 100 == 4
+        ? 2
+        : 3,
+  ],
   
-  [5, (n) => n==1?0:n==2?1:n>=3&&n<=6?2:n>=7&&n<=10?3:4],
+  [
+    5,
+    n =>
+      n == 1
+        ? 0
+        : n == 2
+        ? 1
+        : n >= 3 && n <= 6
+        ? 2
+        : n >= 7 && n <= 10
+        ? 3
+        : 4,
+  ],
   
-  [6, (n) => n==0?5:n==1?0:n==2?1:n%100>=3&&n%100<=10?2:n%100>=11&&n%100<=99?3:4],
+  [
+    6,
+    n =>
+      n == 0
+        ? 5
+        : n == 1
+        ? 0
+        : n == 2
+        ? 1
+        : n % 100 >= 3 && n % 100 <= 10
+        ? 2
+        : n % 100 >= 11 && n % 100 <= 99
+        ? 3
+        : 4,
+  ],
   
-  [4, (n) => n==1?0:n==0||n%100>0&&n%100<=10?1:n%100>10&&n%100<20?2:3],
+  [
+    4,
+    n =>
+      n == 1
+        ? 0
+        : n == 0 || (n % 100 > 0 && n % 100 <= 10)
+        ? 1
+        : n % 100 > 10 && n % 100 < 20
+        ? 2
+        : 3,
+  ],
   
-  [3, (n) => n%10==1?0:n%10==2?1:2],
+  [3, n => (n % 10 == 1 ? 0 : n % 10 == 2 ? 1 : 2)],
   
-  [2, (n) => n%10==1&&n%100!=11?0:1],
+  [2, n => (n % 10 == 1 && n % 100 != 11 ? 0 : 1)],
   
-  [5, (n) => n%10==1&&n%100!=11&&n%100!=71&&n%100!=91?0:n%10==2&&n%100!=12&&n%100!=72&&n%100!=92?1:(n%10==3||n%10==4||n%10==9)&&n%100!=13&&n%100!=14&&n%100!=19&&n%100!=73&&n%100!=74&&n%100!=79&&n%100!=93&&n%100!=94&&n%100!=99?2:n%1000000==0&&n!=0?3:4],
+  [
+    5,
+    n =>
+      n % 10 == 1 && n % 100 != 11 && n % 100 != 71 && n % 100 != 91
+        ? 0
+        : n % 10 == 2 && n % 100 != 12 && n % 100 != 72 && n % 100 != 92
+        ? 1
+        : (n % 10 == 3 || n % 10 == 4 || n % 10 == 9) &&
+          n % 100 != 13 &&
+          n % 100 != 14 &&
+          n % 100 != 19 &&
+          n % 100 != 73 &&
+          n % 100 != 74 &&
+          n % 100 != 79 &&
+          n % 100 != 93 &&
+          n % 100 != 94 &&
+          n % 100 != 99
+        ? 2
+        : n % 1000000 == 0 && n != 0
+        ? 3
+        : 4,
+  ],
   
-  [2, (n) => n!=0?1:0],
+  [2, n => (n != 0 ? 1 : 0)],
   
-  [6, (n) => n==0?0:n==1?1:n==2?2:n==3?3:n==6?4:5],
+  [
+    6,
+    n => (n == 0 ? 0 : n == 1 ? 1 : n == 2 ? 2 : n == 3 ? 3 : n == 6 ? 4 : 5),
+  ],
   
-  [3, (n) => n%10==1&&n%100!=11?0:n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?1:2],
+  [
+    3,
+    n =>
+      n % 10 == 1 && n % 100 != 11
+        ? 0
+        : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)
+        ? 1
+        : 2,
+  ],
 ];
 
 var PluralForm = {
@@ -89,8 +195,7 @@ var PluralForm = {
 
 
 
-  get get()
-  {
+  get get() {
     
     
     
@@ -101,7 +206,9 @@ var PluralForm = {
     delete PluralForm.get;
 
     
-    [PluralForm.get, PluralForm.numForms] = PluralForm.makeGetter(PluralForm.ruleNum);
+    [PluralForm.get, PluralForm.numForms] = PluralForm.makeGetter(
+      PluralForm.ruleNum
+    );
     return PluralForm.get;
   },
 
@@ -113,8 +220,7 @@ var PluralForm = {
 
 
 
-  makeGetter: function(aRuleNum)
-  {
+  makeGetter(aRuleNum) {
     
     if (aRuleNum < 0 || aRuleNum >= gFunctions.length || isNaN(aRuleNum)) {
       log(["Invalid rule number: ", aRuleNum, " -- defaulting to 0"]);
@@ -126,29 +232,44 @@ var PluralForm = {
 
     
     
-    return [function(aNum, aWords) {
-      
-      let index = pluralFunc(aNum ? Number(aNum) : 0);
-      let words = aWords ? aWords.split(/;/) : [""];
-
-      
-      let ret = index < words.length ? words[index] : undefined;
-
-      
-      if ((ret == undefined) || (ret == "")) {
+    return [
+      function(aNum, aWords) {
         
-        let caller = Components.stack.caller ? Components.stack.caller.name : "top";
+        let index = pluralFunc(aNum ? Number(aNum) : 0);
+        let words = aWords ? aWords.split(/;/) : [""];
 
         
-        log(["Index #", index, " of '", aWords, "' for value ", aNum,
-            " is invalid -- plural rule #", aRuleNum, "; called by ", caller]);
+        let ret = index < words.length ? words[index] : undefined;
 
         
-        ret = words[0];
-      }
+        if (ret == undefined || ret == "") {
+          
+          let caller = Components.stack.caller
+            ? Components.stack.caller.name
+            : "top";
 
-      return ret;
-    }, () => numForms];
+          
+          log([
+            "Index #",
+            index,
+            " of '",
+            aWords,
+            "' for value ",
+            aNum,
+            " is invalid -- plural rule #",
+            aRuleNum,
+            "; called by ",
+            caller,
+          ]);
+
+          
+          ret = words[0];
+        }
+
+        return ret;
+      },
+      () => numForms,
+    ];
   },
 
   
@@ -156,8 +277,7 @@ var PluralForm = {
 
 
 
-  get numForms()
-  {
+  get numForms() {
     
     PluralForm.get();
     return PluralForm.numForms;
@@ -168,12 +288,14 @@ var PluralForm = {
 
 
 
-  get ruleNum()
-  {
-    return Number(Cc["@mozilla.org/intl/stringbundle;1"].
-      getService(Ci.nsIStringBundleService).createBundle(kIntlProperties).
-      GetStringFromName("pluralRule"));
-  }
+  get ruleNum() {
+    return Number(
+      Cc["@mozilla.org/intl/stringbundle;1"]
+        .getService(Ci.nsIStringBundleService)
+        .createBundle(kIntlProperties)
+        .GetStringFromName("pluralRule")
+    );
+  },
 };
 
 
@@ -182,10 +304,10 @@ var PluralForm = {
 
 
 
-function log(aMsg)
-{
+function log(aMsg) {
   let msg = "PluralForm.jsm: " + (aMsg.join ? aMsg.join("") : aMsg);
-  Cc["@mozilla.org/consoleservice;1"].getService(Ci.nsIConsoleService).
-    logStringMessage(msg);
+  Cc["@mozilla.org/consoleservice;1"]
+    .getService(Ci.nsIConsoleService)
+    .logStringMessage(msg);
   dump(msg + "\n");
 }

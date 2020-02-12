@@ -7,16 +7,21 @@
 
 
 
-const {PluralForm} = ChromeUtils.import("resource://gre/modules/PluralForm.jsm");
+const { PluralForm } = ChromeUtils.import(
+  "resource://gre/modules/PluralForm.jsm"
+);
 
-function run_test()
-{
+function run_test() {
   
   Assert.equal(2, PluralForm.numForms());
 
   
-  for (var num = 0; num <= 200; num++)
-    Assert.equal(num == 1 ? "word" : "words", PluralForm.get(num, "word;words"));
+  for (var num = 0; num <= 200; num++) {
+    Assert.equal(
+      num == 1 ? "word" : "words",
+      PluralForm.get(num, "word;words")
+    );
+  }
 
   
   Assert.equal("word", PluralForm.get(2, "word"));
