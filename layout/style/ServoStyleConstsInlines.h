@@ -531,6 +531,7 @@ bool LengthPercentage::IsCalc() const { return Tag() == TAG_CALC; }
 
 StyleCalcLengthPercentage& LengthPercentage::AsCalc() {
   MOZ_ASSERT(IsCalc());
+  
 #ifdef SERVO_32_BITS
   return *calc.ptr;
 #else
@@ -551,6 +552,8 @@ StyleLengthPercentageUnion::StyleLengthPercentageUnion(const Self& aOther) {
   } else {
     MOZ_ASSERT(aOther.IsCalc());
     auto* ptr = new StyleCalcLengthPercentage(aOther.AsCalc());
+    
+    
     calc = {
 #ifdef SERVO_32_BITS
         TAG_CALC,
