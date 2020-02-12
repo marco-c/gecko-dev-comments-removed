@@ -438,7 +438,7 @@ bool frontend::SourceAwareCompiler<Unit>::createSourceAndParser(
                   true, info.compilationInfo,
                  syntaxParser.ptrOr(nullptr), nullptr,
                  compilationInfo.sourceObject);
-  parser->ss = info.scriptSource();
+  parser->ss = compilationInfo.sourceObject->source();
   return parser->checkOptions();
 }
 
@@ -548,7 +548,7 @@ JSScript* frontend::ScriptCompiler<Unit>::compileScript(
   info.compilationInfo.sourceObject->source()->recordParseEnded();
 
   
-  if (!info.scriptSource()->tryCompressOffThread(cx)) {
+  if (!info.compilationInfo.sourceObject->source()->tryCompressOffThread(cx)) {
     return nullptr;
   }
 
@@ -605,7 +605,7 @@ ModuleObject* frontend::ModuleCompiler<Unit>::compile(
   }
 
   
-  if (!info.scriptSource()->tryCompressOffThread(cx)) {
+  if (!info.compilationInfo.sourceObject->source()->tryCompressOffThread(cx)) {
     return nullptr;
   }
 
@@ -681,7 +681,8 @@ bool frontend::StandaloneFunctionCompiler<Unit>::compile(
   }
 
   
-  return info.scriptSource()->tryCompressOffThread(info.compilationInfo.cx);
+  return info.compilationInfo.sourceObject->source()->tryCompressOffThread(
+      info.compilationInfo.cx);
 }
 
 ScriptSourceObject* frontend::CreateScriptSourceObject(
