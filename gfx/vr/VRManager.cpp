@@ -1119,22 +1119,6 @@ void VRManager::Shutdown() {
   
 }
 
-void VRManager::ShutdownVRManagerParents() {
-  
-  VRManagerParentSet vrManagerParents;
-  for (auto iter = mVRManagerParents.Iter(); !iter.Done(); iter.Next()) {
-    vrManagerParents.PutEntry(iter.Get()->GetKey());
-  }
-
-  for (auto iter = vrManagerParents.Iter(); !iter.Done(); iter.Next()) {
-    iter.Get()->GetKey()->Close();
-    iter.Remove();
-  }
-
-  MOZ_DIAGNOSTIC_ASSERT(mVRManagerParents.IsEmpty(),
-                        "Closing should have cleared all entries.");
-}
-
 void VRManager::CheckWatchDog() {
   
 
