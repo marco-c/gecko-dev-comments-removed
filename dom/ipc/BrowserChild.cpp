@@ -1135,15 +1135,6 @@ void BrowserChild::ApplyParentShowInfo(const ParentShowInfo& aInfo) {
 
   nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
   if (docShell) {
-    nsCOMPtr<nsIDocShellTreeItem> item = do_GetInterface(docShell);
-    if (IsMozBrowser()) {
-      
-      
-      
-      
-      
-      item->SetName(aInfo.name());
-    }
     docShell->SetFullscreenAllowed(aInfo.fullscreenAllowed());
     if (aInfo.isPrivate()) {
       nsCOMPtr<nsILoadContext> context = do_GetInterface(docShell);
