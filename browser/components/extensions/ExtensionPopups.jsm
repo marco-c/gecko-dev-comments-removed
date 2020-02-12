@@ -176,10 +176,10 @@ class BasePopup {
       mm.removeMessageListener("Extension:BrowserBackgroundChanged", this);
       mm.removeMessageListener("Extension:BrowserContentLoaded", this);
       mm.removeMessageListener("Extension:BrowserResized", this);
-      mm.removeMessageListener("Extension:DOMWindowClose", this);
     } else if (finalize) {
       this.receiveMessage = () => {};
     }
+    browser.removeEventListener("DOMWindowClose", this);
   }
 
   
@@ -231,10 +231,6 @@ class BasePopup {
           this.resizeBrowser(data);
         }
         break;
-
-      case "Extension:DOMWindowClose":
-        this.closePopup();
-        break;
     }
   }
 
@@ -262,6 +258,10 @@ class BasePopup {
               
             });
         }
+        break;
+
+      case "DOMWindowClose":
+        this.closePopup();
         break;
     }
   }
@@ -328,7 +328,7 @@ class BasePopup {
       mm.addMessageListener("Extension:BrowserBackgroundChanged", this);
       mm.addMessageListener("Extension:BrowserContentLoaded", this);
       mm.addMessageListener("Extension:BrowserResized", this);
-      mm.addMessageListener("Extension:DOMWindowClose", this, true);
+      browser.addEventListener("DOMWindowClose", this);
       return browser;
     };
 
