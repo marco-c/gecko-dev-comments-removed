@@ -113,7 +113,13 @@ nsresult ShadowRoot::Bind() {
   MOZ_ASSERT(!IsInComposedDoc(), "Forgot to unbind?");
   if (Host()->IsInComposedDoc()) {
     SetIsConnected(true);
-    OwnerDoc()->AddComposedDocShadowRoot(*this);
+    Document* doc = OwnerDoc();
+    doc->AddComposedDocShadowRoot(*this);
+    
+    
+    if (mServoStyles && Servo_AuthorStyles_IsDirty(mServoStyles.get())) {
+      doc->RecordShadowStyleChange(*this);
+    }
   }
 
   BindContext context(*this);
