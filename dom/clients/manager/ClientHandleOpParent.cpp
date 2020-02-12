@@ -23,12 +23,12 @@ void ClientHandleOpParent::ActorDestroy(ActorDestroyReason aReason) {
   mSourcePromiseRequestHolder.DisconnectIfExists();
 }
 
-void ClientHandleOpParent::Init(const ClientOpConstructorArgs& aArgs) {
+void ClientHandleOpParent::Init(ClientOpConstructorArgs&& aArgs) {
   auto handle = static_cast<ClientHandleParent*>(Manager());
   handle->EnsureSource()
       ->Then(
           GetCurrentThreadSerialEventTarget(), __func__,
-          [=](ClientSourceParent* source) {
+          [this, args = std::move(aArgs)](ClientSourceParent* source) mutable {
             mSourcePromiseRequestHolder.Complete();
             RefPtr<ClientOpPromise> p;
 
@@ -36,10 +36,10 @@ void ClientHandleOpParent::Init(const ClientOpConstructorArgs& aArgs) {
             
             
             
-            if (aArgs.type() ==
+            if (args.type() ==
                 ClientOpConstructorArgs::TClientPostMessageArgs) {
               const ClientPostMessageArgs& orig =
-                  aArgs.get_ClientPostMessageArgs();
+                  args.get_ClientPostMessageArgs();
 
               ClientPostMessageArgs rebuild;
               rebuild.serviceWorker() = orig.serviceWorker();
@@ -54,12 +54,12 @@ void ClientHandleOpParent::Init(const ClientOpConstructorArgs& aArgs) {
                 return;
               }
 
-              p = source->StartOp(rebuild);
+              p = source->StartOp(std::move(rebuild));
             }
 
             
             else {
-              p = source->StartOp(aArgs);
+              p = source->StartOp(std::move(args));
             }
 
             
