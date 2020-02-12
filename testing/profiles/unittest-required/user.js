@@ -128,10 +128,10 @@ user_pref("general.useragent.updates.url", "https://example.com/0/%APP_ID%");
 
 
 user_pref("geo.provider.testing", true);
-user_pref("geo.wifi.logging.enabled", true);
-user_pref("geo.wifi.scan", false);
-user_pref("geo.wifi.timeToWaitBeforeSending", 2000);
-user_pref("geo.wifi.uri", "http://{server}/tests/dom/tests/mochitest/geolocation/network_geolocation.sjs");
+user_pref("geo.provider.network.logging.enabled", true);
+user_pref("geo.provider.network.scan", false);
+user_pref("geo.provider.network.timeToWaitBeforeSending", 2000);
+user_pref("geo.provider.network.url", "http://{server}/tests/dom/tests/mochitest/geolocation/network_geolocation.sjs");
 user_pref("gfx.color_management.force_srgb", true);
 user_pref("gfx.logging.level", 1);
 

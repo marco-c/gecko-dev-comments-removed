@@ -18,7 +18,10 @@ add_task(async function() {
 
   
   
-  Services.prefs.setCharPref("geo.wifi.uri", BASE_GEO_URL + "?delay=100000");
+  Services.prefs.setCharPref(
+    "geo.provider.network.url",
+    BASE_GEO_URL + "?delay=100000"
+  );
 
   
   

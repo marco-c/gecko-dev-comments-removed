@@ -12,7 +12,10 @@ function set_geo_wifi_uri(uri, callback) {
   
   
   set_network_request_cache_enabled(false, () => {
-    SpecialPowers.pushPrefEnv({ set: [["geo.wifi.uri", uri]] }, callback);
+    SpecialPowers.pushPrefEnv(
+      { set: [["geo.provider.network.url", uri]] },
+      callback
+    );
   });
 }
 
@@ -56,7 +59,7 @@ function stop_geolocationProvider(callback) {
 
 function set_network_request_cache_enabled(enabled, callback) {
   SpecialPowers.pushPrefEnv(
-    { set: [["geo.wifi.debug.requestCache.enabled", enabled]] },
+    { set: [["geo.provider.network.debug.requestCache.enabled", enabled]] },
     callback
   );
 }
