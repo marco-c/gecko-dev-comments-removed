@@ -693,6 +693,9 @@ add_task(async function test_suggestion_arrowEnterSelection() {
 
 
 add_task(async function test_suggestion_tabEnterSelection() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.update1.restrictTabAfterKeyboardFocus", false]],
+  });
   Services.telemetry.clearScalars();
   let resultMethodHist = TelemetryTestUtils.getAndClearHistogram(
     "FX_URLBAR_SELECTED_RESULT_METHOD"
@@ -720,6 +723,7 @@ add_task(async function test_suggestion_tabEnterSelection() {
 
     BrowserTestUtils.removeTab(tab);
   });
+  await SpecialPowers.popPrefEnv();
 });
 
 

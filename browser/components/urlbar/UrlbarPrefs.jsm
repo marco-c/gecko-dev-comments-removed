@@ -165,6 +165,11 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["update1.searchTips", false],
 
   
+  
+  
+  ["update1.restrictTabAfterKeyboardFocus", true],
+
+  
   ["update2.searchButton", false],
 ]);
 const PREF_OTHER_DEFAULTS = new Map([
