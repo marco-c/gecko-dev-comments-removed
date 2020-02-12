@@ -59,12 +59,24 @@ loader.lazyRequireGetter(
   "devtools/client/webconsole/utils/messages",
   true
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "pointPrecedes",
+  "resource://devtools/shared/execution-point-utils.js"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "pointEquals",
+  "resource://devtools/shared/execution-point-utils.js"
+);
 
 const { UPDATE_REQUEST } = require("devtools/client/netmonitor/src/constants");
 
 const {
   processNetworkUpdates,
 } = require("devtools/client/netmonitor/src/utils/request-utils");
+
+const maxNumber = 100000;
 
 const MessageState = overrides =>
   Object.freeze(
@@ -97,6 +109,12 @@ const MessageState = overrides =>
         
         
         networkMessagesUpdateById: {},
+        
+        removedLogpointIds: new Set(),
+        
+        pausedExecutionPoint: null,
+        
+        hasExecutionPoints: false,
       },
       overrides
     )
@@ -114,6 +132,9 @@ function cloneState(state) {
     frontsToRelease: [...state.frontsToRelease],
     repeatById: { ...state.repeatById },
     networkMessagesUpdateById: { ...state.networkMessagesUpdateById },
+    removedLogpointIds: new Set(state.removedLogpointIds),
+    pausedExecutionPoint: state.pausedExecutionPoint,
+    hasExecutionPoints: state.hasExecutionPoints,
     warningGroupsById: new Map(state.warningGroupsById),
   };
 }
@@ -134,6 +155,16 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
 
   if (newMessage.type === constants.MESSAGE_TYPE.NULL_MESSAGE) {
     
+    return state;
+  }
+
+  
+  
+  if (
+    newMessage.logpointId &&
+    state.removedLogpointIds &&
+    state.removedLogpointIds.has(newMessage.logpointId)
+  ) {
     return state;
   }
 
@@ -162,7 +193,27 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
     newMessage.indent = parentGroups.length;
   }
 
+  ensureExecutionPoint(state, newMessage);
+
+  if (newMessage.executionPoint) {
+    state.hasExecutionPoints = true;
+  }
+
+  
+  
+  
   const removedIds = [];
+  if (newMessage.logpointId) {
+    const existingMessage = [...state.messagesById.values()].find(existing => {
+      return (
+        existing.logpointId == newMessage.logpointId &&
+        pointEquals(existing.executionPoint, newMessage.executionPoint)
+      );
+    });
+    if (existingMessage) {
+      removedIds.push(existingMessage.id);
+    }
+  }
 
   
   
@@ -330,6 +381,15 @@ function messages(
 
   let newState;
   switch (action.type) {
+    case constants.PAUSED_EXECUTION_POINT:
+      if (
+        state.pausedExecutionPoint &&
+        action.executionPoint &&
+        pointEquals(state.pausedExecutionPoint, action.executionPoint)
+      ) {
+        return state;
+      }
+      return { ...state, pausedExecutionPoint: action.executionPoint };
     case constants.MESSAGES_ADD:
       
       const list = [];
@@ -400,6 +460,26 @@ function messages(
       return removeMessagesFromState(
         {
           ...state,
+        },
+        removedIds
+      );
+    }
+
+    case constants.MESSAGES_CLEAR_LOGPOINT: {
+      const removedIds = [];
+      for (const [id, message] of messagesById) {
+        if (message.logpointId == action.logpointId) {
+          removedIds.push(id);
+        }
+      }
+
+      return removeMessagesFromState(
+        {
+          ...state,
+          removedLogpointIds: new Set([
+            ...state.removedLogpointIds,
+            action.logpointId,
+          ]),
         },
         removedIds
       );
@@ -1408,6 +1488,70 @@ function getDefaultFiltersCounter() {
 
 
 
+function ensureExecutionPoint(state, newMessage) {
+  if (newMessage.executionPoint) {
+    return;
+  }
+
+  
+  
+  
+  let point = { checkpoint: 0, progress: 0 },
+    messageCount = 1;
+  if (state.pausedExecutionPoint) {
+    point = state.pausedExecutionPoint;
+    const lastMessage = getLastMessageWithPoint(state, point);
+    if (lastMessage.lastExecutionPoint) {
+      messageCount = lastMessage.lastExecutionPoint.messageCount + 1;
+    }
+  } else if (state.visibleMessages.length) {
+    const lastId = state.visibleMessages[state.visibleMessages.length - 1];
+    const lastMessage = state.messagesById.get(lastId);
+    if (lastMessage.executionPoint) {
+      
+      
+      
+      point = lastMessage.executionPoint;
+      messageCount = maxNumber + 1;
+    } else {
+      point = lastMessage.lastExecutionPoint.point;
+      messageCount = lastMessage.lastExecutionPoint.messageCount + 1;
+    }
+  }
+
+  newMessage.lastExecutionPoint = { point, messageCount };
+}
+
+function getLastMessageWithPoint(state, point) {
+  
+  
+  const filteredMessageId = state.visibleMessages.filter(function(p) {
+    const currentMessage = state.messagesById.get(p);
+    if (currentMessage.executionPoint) {
+      return false;
+    }
+
+    return point.progress === currentMessage.lastExecutionPoint.point.progress;
+  });
+
+  const lastMessageId = filteredMessageId[filteredMessageId.length - 1];
+  return state.messagesById.get(lastMessageId) || {};
+}
+
+function messageExecutionPoint(state, id) {
+  const message = state.messagesById.get(id);
+  return message.executionPoint || message.lastExecutionPoint.point;
+}
+
+function messageCountSinceLastExecutionPoint(state, id) {
+  const message = state.messagesById.get(id);
+  return message.lastExecutionPoint
+    ? message.lastExecutionPoint.messageCount
+    : 0;
+}
+
+
+
 
 
 
@@ -1421,6 +1565,44 @@ function maybeSortVisibleMessages(
   sortWarningGroupMessage = false,
   timeStampSort = false
 ) {
+  
+  
+  
+  
+  
+  
+  if (state.hasExecutionPoints) {
+    state.visibleMessages.sort((a, b) => {
+      const pointA = messageExecutionPoint(state, a);
+      const pointB = messageExecutionPoint(state, b);
+      if (pointPrecedes(pointB, pointA)) {
+        return true;
+      } else if (pointPrecedes(pointA, pointB)) {
+        return false;
+      }
+
+      
+      
+      
+      let countA = messageCountSinceLastExecutionPoint(state, a);
+      let countB = messageCountSinceLastExecutionPoint(state, b);
+
+      
+      
+      
+      
+      if (pointA.progress === pointB.progress) {
+        if (!countA) {
+          countA = maxNumber;
+        } else if (!countB) {
+          countB = maxNumber;
+        }
+      }
+
+      return countA > countB;
+    });
+  }
+
   if (state.warningGroupsById.size > 0 && sortWarningGroupMessage) {
     function getNaturalOrder(messageA, messageB) {
       const aFirst = -1;
@@ -1534,3 +1716,6 @@ function shouldGroupWarningMessages(
 }
 
 exports.messages = messages;
+
+
+exports.ensureExecutionPoint = ensureExecutionPoint;

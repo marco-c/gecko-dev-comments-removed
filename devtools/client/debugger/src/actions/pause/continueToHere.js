@@ -7,13 +7,14 @@
 import {
   getSelectedSource,
   getSelectedFrame,
+  getCanRewind,
   getClosestBreakpointPosition,
   getBreakpoint,
 } from "../../selectors";
 import { addHiddenBreakpoint } from "../breakpoints";
 import { setBreakpointPositions } from "../breakpoints/breakpointPositions";
 
-import { resume } from "./commands";
+import { resume, rewind } from "./commands";
 
 import type { ThunkArgs } from "../types";
 import type { ThreadContext, SourceLocation } from "../../types";
@@ -48,6 +49,12 @@ export function continueToHere(cx: ThreadContext, location: SourceLocation) {
 
     
     
+    
+    const action =
+      getCanRewind(getState()) && line < debugLine ? rewind : resume;
+
+    
+    
     if (!getBreakpoint(getState(), pauseLocation)) {
       await dispatch(
         addHiddenBreakpoint(cx, {
@@ -58,6 +65,6 @@ export function continueToHere(cx: ThreadContext, location: SourceLocation) {
       );
     }
 
-    dispatch(resume(cx));
+    dispatch(action(cx));
   };
 }

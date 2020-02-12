@@ -134,3 +134,31 @@ export function resume(cx: ThreadContext) {
     }
   };
 }
+
+
+
+
+
+
+
+export function rewind(cx: ThreadContext) {
+  return ({ dispatch, getState }: ThunkArgs) => {
+    if (cx.isPaused) {
+      return dispatch(command(cx, "rewind"));
+    }
+  };
+}
+
+
+
+
+
+
+
+export function reverseStepOver(cx: ThreadContext) {
+  return ({ dispatch, getState }: ThunkArgs) => {
+    if (cx.isPaused) {
+      return dispatch(command(cx, "reverseStepOver"));
+    }
+  };
+}

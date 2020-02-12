@@ -29,6 +29,8 @@ loader.lazyRequireGetter(
 exports.setIgnoreLayoutChanges = (...args) =>
   this.setIgnoreLayoutChanges(...args);
 
+const ReplayInspector = require("devtools/server/actors/replay/inspector");
+
 
 
 
@@ -643,6 +645,13 @@ exports.getViewportDimensions = getViewportDimensions;
 
 
 function getWindowFor(node) {
+  
+  
+  if (isReplaying) {
+    
+    
+    return ReplayInspector.window;
+  }
   if (Node.isInstance(node)) {
     if (node.nodeType === node.DOCUMENT_NODE) {
       return node.defaultView;
