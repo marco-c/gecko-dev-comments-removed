@@ -73,10 +73,15 @@ add_task(async function init() {
     activeUpdateFile.remove(false);
   } catch (e) {}
 
+  let defaultEngine = await Services.search.getDefault();
+  let defaultEngineName = defaultEngine.name;
+  Assert.equal(defaultEngineName, "Google", "Default engine should be Google.");
+
   registerCleanupFunction(async () => {
     let age2 = await ProfileAge();
     age2._times = originalTimes;
     await age2.writeTimes();
+    await setDefaultEngine(defaultEngineName);
   });
 });
 
@@ -253,8 +258,14 @@ add_task(async function oncePerSession() {
 
 
 
+
 add_task(async function pickButton() {
   UrlbarProviderSearchTips.showedTipInCurrentSession = false;
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.eventTelemetry.enabled", true]],
+  });
+
+  Services.telemetry.clearEvents();
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     url: "about:newtab",
@@ -268,6 +279,18 @@ add_task(async function pickButton() {
   await UrlbarTestUtils.promisePopupClose(window, () => {
     EventUtils.synthesizeMouseAtCenter(button, {});
   });
+  gURLBar.blur();
+  TelemetryTestUtils.assertEvents(
+    [
+      {
+        category: "urlbar",
+        method: "engagement",
+        object: "click",
+        value: "typed",
+      },
+    ],
+    { category: "urlbar" }
+  );
 
   Assert.equal(
     UrlbarPrefs.get("searchTips.shownCount"),
@@ -278,6 +301,7 @@ add_task(async function pickButton() {
   resetProvider();
 
   BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
 });
 
 
@@ -345,6 +369,30 @@ add_task(async function tabSwitch() {
   await checkTip(window, TIPS.ONBOARD);
   BrowserTestUtils.removeTab(tab);
   resetProvider();
+});
+
+
+
+add_task(async function ignoreEndsEngagement() {
+  await setDefaultEngine("Google");
+  await BrowserTestUtils.withNewTab("about:blank", async () => {
+    await withDNSRedirect("www.google.com", "/", async url => {
+      await BrowserTestUtils.loadURI(gBrowser.selectedBrowser, url);
+      await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+      await checkTip(window, TIPS.REDIRECT,  false);
+      
+      let spring = gURLBar.inputField
+        .closest("#nav-bar")
+        .querySelector("toolbarspring");
+      await UrlbarTestUtils.promisePopupClose(window, async () => {
+        await EventUtils.synthesizeMouseAtCenter(spring, {});
+      });
+      Assert.ok(
+        !UrlbarProviderSearchTips.showedTipInCurrentEngagement,
+        "The engagement should have ended after the tip was ignored."
+      );
+    });
+  });
 });
 
 async function checkTip(win, expectedTip, closeView = true) {

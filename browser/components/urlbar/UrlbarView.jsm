@@ -339,7 +339,9 @@ class UrlbarView {
   
 
 
-  close() {
+
+
+  close(elementPicked = false) {
     this.controller.cancelQuery();
 
     if (!this.isOpen) {
@@ -355,6 +357,15 @@ class UrlbarView {
 
     if (!this.input.megabar && this.input._toolbar) {
       this.input._toolbar.removeAttribute("urlbar-exceeds-toolbar-bounds");
+    }
+
+    
+    
+    
+    
+    if (!this.input.focused && !elementPicked) {
+      this.input.controller.engagementEvent.discard();
+      this.input.controller.engagementEvent.record(null, {});
     }
 
     this.window.removeEventListener("resize", this);
