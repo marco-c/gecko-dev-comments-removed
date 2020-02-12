@@ -138,14 +138,6 @@ class RemoteAutomation(Automation):
         return status
 
     def checkForCrashes(self, symbolsPath):
-        logcat = self.device.get_logcat(
-            filter_out_regexps=fennecLogcatFilters)
-
-        javaException = mozcrash.check_for_java_exception(
-            logcat, test_name=self.lastTestSeen)
-        if javaException:
-            return True
-
         
         
         if not self.CRASHREPORTER:
