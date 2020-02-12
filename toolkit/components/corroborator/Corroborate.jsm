@@ -47,6 +47,18 @@ this.Corroborate = {
       "corroborate.omnijar_corrupted",
       corruptOmnijar
     );
+
+    
+    
+    
+    
+    let mismatchedOmnijar =
+      Services.appinfo.platformBuildID != AppConstants.MOZ_BUILDID;
+
+    Services.telemetry.scalarSet(
+      "corroborate.omnijar_mismatch",
+      mismatchedOmnijar
+    );
   },
 
   
