@@ -3117,11 +3117,6 @@ void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   }
 
   
-  if (!aVisitor.mPresContext) {
-    nsGenericHTMLFormElementWithState::GetEventTargetParent(aVisitor);
-    return;
-  }
-  
   
   
   
@@ -3316,9 +3311,6 @@ void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
 }
 
 nsresult HTMLInputElement::PreHandleEvent(EventChainVisitor& aVisitor) {
-  if (!aVisitor.mPresContext) {
-    return nsGenericHTMLFormElementWithState::PreHandleEvent(aVisitor);
-  }
   nsresult rv;
   if (aVisitor.mItemFlags & NS_PRE_HANDLE_BLUR_EVENT) {
     MOZ_ASSERT(aVisitor.mEvent->mMessage == eBlur);
@@ -3594,12 +3586,6 @@ static bool IgnoreInputEventWithModifier(WidgetInputEvent* aEvent,
 }
 
 nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
-  if (!aVisitor.mPresContext) {
-    
-    
-    return MaybeInitPickers(aVisitor);
-  }
-
   if (aVisitor.mEvent->mMessage == eFocus ||
       aVisitor.mEvent->mMessage == eBlur) {
     if (aVisitor.mEvent->mMessage == eBlur) {
@@ -3638,7 +3624,9 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
       InternalUIEvent actEvent(true, eLegacyDOMActivate, mouseEvent);
       actEvent.mDetail = 1;
 
-      if (RefPtr<PresShell> presShell = aVisitor.mPresContext->GetPresShell()) {
+      if (RefPtr<PresShell> presShell =
+              aVisitor.mPresContext ? aVisitor.mPresContext->GetPresShell()
+                                    : nullptr) {
         nsEventStatus status = nsEventStatus_eIgnore;
         mInInternalActivate = true;
         rv = presShell->HandleDOMEventWithTarget(this, &actEvent, &status);
@@ -3782,7 +3770,8 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
               case NS_FORM_INPUT_CHECKBOX:
               case NS_FORM_INPUT_RADIO: {
                 
-                if (keyEvent->mKeyCode != NS_VK_SPACE) {
+                if (keyEvent->mKeyCode != NS_VK_SPACE &&
+                    aVisitor.mPresContext) {
                   MaybeSubmitForm(MOZ_KnownLive(aVisitor.mPresContext));
 
                   break;  
@@ -3861,8 +3850,10 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
                mType == NS_FORM_INPUT_NUMBER ||
                IsExperimentalMobileType(mType) || IsDateTimeInputType(mType))) {
             FireChangeEventIfNeeded();
-            rv = MaybeSubmitForm(MOZ_KnownLive(aVisitor.mPresContext));
-            NS_ENSURE_SUCCESS(rv, rv);
+            if (aVisitor.mPresContext) {
+              rv = MaybeSubmitForm(MOZ_KnownLive(aVisitor.mPresContext));
+              NS_ENSURE_SUCCESS(rv, rv);
+            }
           }
 
           if (aVisitor.mEvent->mMessage == eKeyPress &&
