@@ -973,6 +973,8 @@ pub enum DebugCommand {
     
     EnableNativeCompositor(bool),
     
+    EnableMultithreading(bool),
+    
     InvalidateGpuCache,
     
     

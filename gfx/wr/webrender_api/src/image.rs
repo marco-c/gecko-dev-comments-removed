@@ -409,6 +409,9 @@ pub trait BlobImageHandler: Send {
     
     
     fn clear_namespace(&mut self, namespace: IdNamespace);
+
+    
+    fn enable_multithreading(&mut self, enable: bool);
 }
 
 
