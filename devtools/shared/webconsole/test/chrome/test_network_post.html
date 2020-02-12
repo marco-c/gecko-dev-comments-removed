@@ -2,16 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="utf8">
-  <title>Test for the network actor (GET request)</title>
+  <title>Test for the network actor (POST request)</title>
   <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
   <script type="text/javascript" src="common.js"></script>
   
 
 </head>
 <body>
-<p>Test for the network actor (GET request)</p>
+<p>Test for the network actor (POST request)</p>
 
-<iframe src="http://example.com/chrome/devtools/shared/webconsole/test/network_requests_iframe.html"></iframe>
+<iframe src="http://example.com/chrome/devtools/shared/webconsole/test/chrome/network_requests_iframe.html"></iframe>
 
 <script class="testbody" type="text/javascript">
 "use strict";
@@ -21,12 +21,13 @@ SimpleTest.waitForExplicitFinish();
 function startTest()
 {
   removeEventListener("load", startTest);
+
   attachConsoleToTab(["NetworkActivity"], onAttach);
 }
 
 function onAttach(aState, aResponse)
 {
-  info("test network GET request");
+  info("test network POST request");
 
   onNetworkEvent = onNetworkEvent.bind(null, aState);
   aState.webConsoleFront.on("serverNetworkEvent", onNetworkEvent);
@@ -34,7 +35,7 @@ function onAttach(aState, aResponse)
   aState.dbgClient.on("networkEventUpdate", onNetworkEventUpdate);
 
   const iframe = document.querySelector("iframe").contentWindow;
-  iframe.wrappedJSObject.testXhrGet();
+  iframe.wrappedJSObject.testXhrPost();
 }
 
 function onNetworkEvent(aState, aPacket)
@@ -47,7 +48,7 @@ function onNetworkEvent(aState, aPacket)
     actor: /[a-z]/,
     startedDateTime: /^\d+\-\d+\-\d+T.+$/,
     url: /data\.json/,
-    method: "GET",
+    method: "POST",
   });
 
   aState.netActor = netActor.actor;
@@ -78,7 +79,8 @@ function onNetworkEventUpdate(aState, aPacket)
       };
       break;
     case "requestPostData":
-      ok(false, "got unexpected requestPostData");
+      ok(aPacket.dataSize > 0, "dataSize > 0");
+      ok(!aPacket.discardRequestBody, "discardRequestBody");
       break;
     case "responseStart":
       expectedPacket = {
@@ -104,7 +106,7 @@ function onNetworkEventUpdate(aState, aPacket)
     case "responseContent":
       expectedPacket = {
         mimeType: "application/json",
-        contentSize: 1070,
+        contentSize: /^\d+$/,
         discardResponseBody: false,
       };
       break;
@@ -127,7 +129,7 @@ function onNetworkEventUpdate(aState, aPacket)
   if (updates.indexOf("responseContent") > -1 &&
       updates.indexOf("eventTimings") > -1) {
     aState.dbgClient.off("networkEventUpdate",
-                                    onNetworkEventUpdate);
+                                    onNetworkEvent);
 
     onRequestHeaders = onRequestHeaders.bind(null, aState);
     aState.webConsoleFront.getRequestHeaders(aState.netActor,
@@ -141,7 +143,7 @@ function onRequestHeaders(aState, aResponse)
 
   ok(aResponse.headers.length > 0, "request headers > 0");
   ok(aResponse.headersSize > 0, "request headersSize > 0");
-  ok(!!aResponse.rawHeaders, "request rawHeaders available");
+  ok(!!aResponse.rawHeaders.length, "request rawHeaders available");
 
   checkHeadersOrCookies(aResponse.headers, {
     Referer: /network_requests_iframe\.html/,
@@ -179,8 +181,14 @@ function onRequestPostData(aState, aResponse)
 {
   info("checking request POST data");
 
-  ok(!aResponse.postData.text, "no request POST data");
-  ok(!aResponse.postDataDiscarded, "request POST data was not discarded");
+  checkObject(aResponse, {
+    postData: {
+      text: /^Hello world! foobaz barr.+foobaz barr$/,
+    },
+    postDataDiscarded: false,
+  });
+
+  is(aResponse.postData.text.length, 552, "postData text length");
 
   onResponseHeaders = onResponseHeaders.bind(null, aState);
   aState.webConsoleFront.getResponseHeaders(aState.netActor,
@@ -225,8 +233,12 @@ function onResponseContent(aState, aResponse)
 {
   info("checking response content");
 
-  ok(aResponse.content.text, "response content text");
-  ok(!aResponse.contentDiscarded, "response content was not discarded");
+  checkObject(aResponse, {
+    content: {
+      text: /"test JSON data"/,
+    },
+    contentDiscarded: false,
+  });
 
   onEventTimings = onEventTimings.bind(null, aState);
   aState.webConsoleFront.getEventTimings(aState.netActor,

@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+Bug 960671 - Test attaching and detaching while in the wrong state.
+-->
 <head>
   <meta charset="utf-8">
   <title>Memory monitoring actor test</title>
@@ -20,10 +20,24 @@ window.onload = function() {
 
   (async function() {
     const { memory, target } = await startServerAndGetSelectedTabMemory();
+
+    let e = null;
+    try {
+      await memory.detach();
+    } catch (ee) {
+      e = ee;
+    }
+    ok(e, "Should have hit the wrongState error");
+
     await memory.attach();
 
-    const census = await memory.takeCensus();
-    is(typeof census, "object");
+    e = null;
+    try {
+      await memory.attach();
+    } catch (ee) {
+      e = ee;
+    }
+    ok(e, "Should have hit the wrongState error");
 
     await memory.detach();
     destroyServerAndFinish(target);
