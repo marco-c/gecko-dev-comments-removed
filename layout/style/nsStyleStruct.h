@@ -1886,7 +1886,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTable {
 
   nsChangeHint CalcDifference(const nsStyleTable& aNewData) const;
 
-  uint8_t mLayoutStrategy;  
+  mozilla::StyleTableLayout mLayoutStrategy;
   int32_t mXSpan;  
 };
 
