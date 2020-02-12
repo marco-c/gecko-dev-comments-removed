@@ -88,6 +88,11 @@ nsresult nsNumberControlFrame::CreateAnonymousContent(
   mOuterWrapper = MakeAnonymousElement(nullptr, nsGkAtoms::div,
                                        PseudoStyleType::mozNumberWrapper);
 
+  
+  
+  
+  mOuterWrapper->SetIsNativeAnonymousRoot();
+
   aElements.AppendElement(mOuterWrapper);
 
   nsTArray<ContentInfo> nestedContent;

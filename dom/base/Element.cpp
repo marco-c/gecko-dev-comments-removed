@@ -296,13 +296,26 @@ void Element::UpdateState(bool aNotify) {
 }  
 
 void nsIContent::UpdateEditableState(bool aNotify) {
-  nsIContent* parent = GetParent();
+  if (IsInNativeAnonymousSubtree()) {
+    
+    if (IsRootOfNativeAnonymousSubtree()) {
+      return;
+    }
 
-  
-  
-  
-  SetEditableFlag(parent && parent->HasFlag(NODE_IS_EDITABLE) &&
-                  !IsRootOfNativeAnonymousSubtree());
+    
+    
+    
+    
+    
+    
+    
+    if (HasFlag(NODE_IS_EDITABLE)) {
+      return;
+    }
+  }
+
+  nsIContent* parent = GetParent();
+  SetEditableFlag(parent && parent->HasFlag(NODE_IS_EDITABLE));
 }
 
 namespace mozilla {
