@@ -59,6 +59,10 @@ class MenuButton extends PureComponent {
       label: PropTypes.string,
 
       
+      
+      icon: PropTypes.string,
+
+      
       menuId: PropTypes.string,
 
       
@@ -416,6 +420,16 @@ class MenuButton extends PureComponent {
 
     if (this.props.menuId) {
       buttonProps["aria-controls"] = this.props.menuId;
+    }
+
+    if (this.props.icon) {
+      const iconClass = "menu-button--iconic";
+      buttonProps.className = buttonProps.className
+        ? `${buttonProps.className} ${iconClass}`
+        : iconClass;
+      buttonProps.style = {
+        "--menuitem-icon-image": "url(" + this.props.icon + ")",
+      };
     }
 
     if (this.state.isMenuInitialized) {
