@@ -552,6 +552,11 @@ class MOZ_NON_MEMMOVABLE JS_PUBLIC_API JSStructuredCloneData {
   }
 
   void discardTransferables();
+
+ private:
+  
+  
+  JS::StructuredCloneScope scopeForInternalWriting() const { return scope_; }
 };
 
 
