@@ -165,14 +165,16 @@
       let tracking =
         MouseEventShim.trackMouseMoves && !MouseEventShim.capturing;
 
+      let oldtarget;
+      let newtarget;
       if (tracking) {
         
         
         
         
         
-        var oldtarget = target;
-        var newtarget = document.elementFromPoint(touch.clientX, touch.clientY);
+        oldtarget = target;
+        newtarget = document.elementFromPoint(touch.clientX, touch.clientY);
         if (newtarget === null) {
           
           newtarget = oldtarget;
@@ -256,7 +258,7 @@
   }
 })();
 
-var MouseEventShim = {
+const MouseEventShim = {
   
   
   

@@ -1,3 +1,5 @@
+
+
 function success(position) {
   let message = document.getElementById("status");
   message.innerHTML =

@@ -8,7 +8,9 @@ const { Preferences } = ChromeUtils.import(
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
-
+const { WebDriverError } = ChromeUtils.import(
+  "chrome://marionette/content/error.js"
+);
 const { element, WebElement } = ChromeUtils.import(
   "chrome://marionette/content/element.js"
 );
@@ -24,6 +26,7 @@ const CONTEXT_MENU_DELAY_PREF = "ui.click_hold_context_menus.delay";
 const DEFAULT_CONTEXT_MENU_DELAY = 750; 
 
 this.EXPORTED_SYMBOLS = ["legacyaction"];
+
 
 
 this.legacyaction = this.action = {};
@@ -387,6 +390,7 @@ action.Chain.prototype.generateEvents = function(
   switch (type) {
     case "tap":
       if (this.mouseEventsOnly) {
+        let touch = this.touchProvider.createATouch(target, x, y, touchId);
         this.mouseTap(
           touch.target.ownerDocument,
           touch.clientX,
@@ -497,14 +501,11 @@ action.Chain.prototype.generateEvents = function(
         target = this.touchIds[touchId].target;
       }
 
-      let [
-        clientX,
-        clientY,
-        pageX,
-        pageY,
-        screenX,
-        screenY,
-      ] = this.getCoordinateInfo(target, x, y);
+      let [clientX, clientY, , , screenX, screenY] = this.getCoordinateInfo(
+        target,
+        x,
+        y
+      );
 
       event.initMouseEvent(
         "contextmenu",
@@ -529,6 +530,7 @@ action.Chain.prototype.generateEvents = function(
     default:
       throw new WebDriverError("Unknown event type: " + type);
   }
+  return null;
 };
 
 action.Chain.prototype.mouseTap = function(doc, x, y, button, count, mod) {
