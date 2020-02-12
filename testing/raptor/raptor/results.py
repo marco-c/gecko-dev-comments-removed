@@ -14,7 +14,7 @@ from abc import ABCMeta, abstractmethod
 from logger.logger import RaptorLogger
 from output import RaptorOutput, BrowsertimeOutput
 
-LOG = RaptorLogger(component='perftest-results-handler')
+LOG = RaptorLogger(component="perftest-results-handler")
 
 
 class PerftestResultsHandler(object):
@@ -22,9 +22,16 @@ class PerftestResultsHandler(object):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, gecko_profile=False, power_test=False,
-                 cpu_test=False, memory_test=False, app=None,
-                 no_conditioned_profile=False, **kwargs):
+    def __init__(
+        self,
+        gecko_profile=False,
+        power_test=False,
+        cpu_test=False,
+        memory_test=False,
+        app=None,
+        no_conditioned_profile=False,
+        **kwargs
+    ):
         self.gecko_profile = gecko_profile
         self.power_test = power_test
         self.cpu_test = cpu_test
@@ -34,7 +41,9 @@ class PerftestResultsHandler(object):
         self.page_timeout_list = []
         self.images = []
         self.supporting_data = None
-        self.fission_enabled = kwargs.get('extra_prefs', {}).get('fission.autostart', False)
+        self.fission_enabled = kwargs.get("extra_prefs", {}).get(
+            "fission.autostart", False
+        )
         self.browser_version = None
         self.browser_name = None
         self.no_conditioned_profile = no_conditioned_profile
@@ -51,21 +60,20 @@ class PerftestResultsHandler(object):
     def add_image(self, screenshot, test_name, page_cycle):
         
         LOG.info("received screenshot")
-        self.images.append({'screenshot': screenshot,
-                            'test_name': test_name,
-                            'page_cycle': page_cycle})
+        self.images.append(
+            {"screenshot": screenshot, "test_name": test_name, "page_cycle": page_cycle}
+        )
 
     def add_page_timeout(self, test_name, page_url, pending_metrics):
-        timeout_details = {'test_name': test_name,
-                           'url': page_url}
+        timeout_details = {"test_name": test_name, "url": page_url}
         if pending_metrics:
             pending_metrics = [key for key, value in pending_metrics.items() if value]
-            timeout_details['pending_metrics'] = ", ".join(pending_metrics)
+            timeout_details["pending_metrics"] = ", ".join(pending_metrics)
 
         self.page_timeout_list.append(timeout_details)
 
     def add_supporting_data(self, supporting_data):
-        ''' Supporting data is additional data gathered outside of the regular
+        """ Supporting data is additional data gathered outside of the regular
         Raptor test run (i.e. power data). Will arrive in a dict in the format of:
 
         supporting_data = {'type': 'data-type',
@@ -85,9 +93,11 @@ class PerftestResultsHandler(object):
                                'wifi': wifi,
                                'screen': screen,
                                'proportional': proportional}}
-        '''
-        LOG.info("RaptorResultsHandler.add_supporting_data received %s data"
-                 % supporting_data['type'])
+        """
+        LOG.info(
+            "RaptorResultsHandler.add_supporting_data received %s data"
+            % supporting_data["type"]
+        )
         if self.supporting_data is None:
             self.supporting_data = []
         self.supporting_data.append(supporting_data)
@@ -100,13 +110,13 @@ class PerftestResultsHandler(object):
 
         
         is_scenario = False
-        if (output.summarized_results or output.summarized_supporting_data):
+        if output.summarized_results or output.summarized_supporting_data:
             data = output.summarized_supporting_data
             if not data:
                 data = [output.summarized_results]
             for next_data_set in data:
-                data_type = next_data_set['suites'][0]['type']
-                if data_type == 'scenario':
+                data_type = next_data_set["suites"][0]["type"]
+                if data_type == "scenario":
                     is_scenario = True
                     break
 
@@ -142,13 +152,16 @@ class PerftestResultsHandler(object):
             )
             return True
         elif output_perfdata != expected_perfherder:
-            LOG.critical("PERFHERDER_DATA was seen %d times, expected %d."
-                         % (output_perfdata, expected_perfherder))
+            LOG.critical(
+                "PERFHERDER_DATA was seen %d times, expected %d."
+                % (output_perfdata, expected_perfherder)
+            )
             return False
 
-        external_tools_path = os.environ['EXTERNALTOOLSPATH']
-        schema_path = os.path.join(external_tools_path,
-                                   'performance-artifact-schema.json')
+        external_tools_path = os.environ["EXTERNALTOOLSPATH"]
+        schema_path = os.path.join(
+            external_tools_path, "performance-artifact-schema.json"
+        )
         LOG.info("Validating PERFHERDER_DATA against %s" % schema_path)
         try:
             with open(schema_path) as f:
@@ -174,18 +187,20 @@ class RaptorResultsHandler(PerftestResultsHandler):
 
     def add(self, new_result_json):
         
+        new_result_json["extra_options"] = []
         LOG.info("received results in RaptorResultsHandler.add")
-        new_result = RaptorTestResult(new_result_json)
         if self.no_conditioned_profile:
-            new_result.extra_options.append('nocondprof')
+            new_result_json["extra_options"].append("nocondprof")
         if self.fission_enabled:
-            new_result.extra_options.append('fission')
-        self.results.append(new_result)
+            new_result_json["extra_options"].append("fission")
+        self.results.append(new_result_json)
 
     def summarize_and_output(self, test_config, tests, test_names):
         
         LOG.info("summarizing raptor test results")
-        output = RaptorOutput(self.results, self.supporting_data, test_config['subtest_alert_on'])
+        output = RaptorOutput(
+            self.results, self.supporting_data, test_config["subtest_alert_on"]
+        )
         output.set_browser_meta(self.browser_name, self.browser_version)
         output.summarize(test_names)
         
@@ -205,21 +220,10 @@ class RaptorResultsHandler(PerftestResultsHandler):
         validate_success = True
         if not self.gecko_profile:
             validate_success = self._validate_treeherder_data(
-                output,
-                out_sup_perfdata + out_perfdata
+                output, out_sup_perfdata + out_perfdata
             )
 
         return sup_success and success and validate_success
-
-
-class RaptorTestResult():
-    """Single Raptor test result class"""
-
-    def __init__(self, test_result_json):
-        self.extra_options = []
-        
-        for key, value in test_result_json.iteritems():
-            setattr(self, key, value)
 
 
 class BrowsertimeResultsHandler(PerftestResultsHandler):
@@ -233,14 +237,15 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
         return self._root_results_dir
 
     def result_dir_for_test(self, test):
-        return os.path.join(self._root_results_dir, test['name'])
+        return os.path.join(self._root_results_dir, test["name"])
 
     def add(self, new_result_json):
         
         pass
 
-    def parse_browsertime_json(self, raw_btresults, page_cycles, cold,
-                               browser_cycles, measure):
+    def parse_browsertime_json(
+        self, raw_btresults, page_cycles, cold, browser_cycles, measure
+    ):
         """
         Receive a json blob that contains the results direct from the browsertime tool. Parse
         out the values that we wish to use and add those to our result object. That object will
@@ -353,13 +358,15 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
         LOG.info("parsing results from browsertime json")
 
         
-        conversion = (('fnbpaint', 'firstPaint'),
-                      ('fcp', 'timeToContentfulPaint'),
-                      ('dcf', 'timeToDomContentFlushed'),
-                      ('loadtime', 'loadEventEnd'))
+        conversion = (
+            ("fnbpaint", "firstPaint"),
+            ("fcp", "timeToContentfulPaint"),
+            ("dcf", "timeToDomContentFlushed"),
+            ("loadtime", "loadEventEnd"),
+        )
 
         chrome_raptor_conversion = {
-            'timeToContentfulPaint': ['paintTiming', 'first-contentful-paint']
+            "timeToContentfulPaint": ["paintTiming", "first-contentful-paint"]
         }
 
         def _get_raptor_val(mdict, mname, retval=False):
@@ -396,69 +403,81 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
         
         if cold:
             if len(raw_btresults) == 0:
-                raise MissingResultsError("Missing results for all cold browser cycles.")
+                raise MissingResultsError(
+                    "Missing results for all cold browser cycles."
+                )
         else:
             if len(raw_btresults) != int(page_cycles):
-                raise MissingResultsError("Missing results for at least 1 warm page-cycle.")
+                raise MissingResultsError(
+                    "Missing results for at least 1 warm page-cycle."
+                )
 
         
         for raw_result in raw_btresults:
-            if not raw_result['browserScripts']:
+            if not raw_result["browserScripts"]:
                 raise MissingResultsError("Browsertime cycle produced no measurements.")
 
-            if raw_result['browserScripts'][0].get('timings') is None:
+            if raw_result["browserScripts"][0].get("timings") is None:
                 raise MissingResultsError("Browsertime cycle is missing all timings")
 
             
-            bt_browser = raw_result['browserScripts'][0].get('browser', None)
-            bt_ver = raw_result['info']['browsertime']['version']
-            bt_url = raw_result['info']['url'],
-            bt_result = {'bt_ver': bt_ver,
-                         'browser': bt_browser,
-                         'url': bt_url,
-                         'measurements': {},
-                         'statistics': {}}
+            bt_browser = raw_result["browserScripts"][0].get("browser", None)
+            bt_ver = raw_result["info"]["browsertime"]["version"]
+            bt_url = (raw_result["info"]["url"],)
+            bt_result = {
+                "bt_ver": bt_ver,
+                "browser": bt_browser,
+                "url": bt_url,
+                "measurements": {},
+                "statistics": {},
+            }
 
-            if 'custom' in raw_result['browserScripts'][0]:
-                for custom_type in raw_result['browserScripts'][0]['custom']:
-                    bt_result['measurements'].update(
-                        raw_result['browserScripts'][0]['custom'][custom_type])
+            custom_types = raw_result["browserScripts"][0].get("custom")
+            if custom_types:
+                for custom_type in custom_types:
+                    bt_result["measurements"].update(
+                        {k: [v] for k, v in custom_types[custom_type].items()}
+                    )
             else:
                 
                 for bt, raptor in conversion:
                     if measure is not None and bt not in measure:
                         continue
                     
-                    if self.app and 'chrome' in self.app.lower() and bt in ('fnbpaint', 'dcf'):
+                    if (
+                        self.app
+                        and "chrome" in self.app.lower()
+                        and bt in ("fnbpaint", "dcf")
+                    ):
                         continue
                     
-                    if self.app and 'fennec' in self.app.lower() and bt == 'fcp':
+                    if self.app and "fennec" in self.app.lower() and bt == "fcp":
                         continue
 
                     
-                    if raptor in chrome_raptor_conversion and \
-                       _get_raptor_val(
-                        raw_result['browserScripts'][0]['timings'],
-                        chrome_raptor_conversion[raptor]
-                       ):
+                    if raptor in chrome_raptor_conversion and _get_raptor_val(
+                        raw_result["browserScripts"][0]["timings"],
+                        chrome_raptor_conversion[raptor],
+                    ):
                         raptor = chrome_raptor_conversion[raptor]
 
                     
-                    for cycle in raw_result['browserScripts']:
-                        if bt not in bt_result['measurements']:
-                            bt_result['measurements'][bt] = []
-                        val = _get_raptor_val(cycle['timings'], raptor)
+                    for cycle in raw_result["browserScripts"]:
+                        if bt not in bt_result["measurements"]:
+                            bt_result["measurements"][bt] = []
+                        val = _get_raptor_val(cycle["timings"], raptor)
                         if not val:
-                            raise MissingResultsError("Browsertime cycle missing {} measurement"
-                                                      .format(raptor))
-                        bt_result['measurements'][bt].append(val)
+                            raise MissingResultsError(
+                                "Browsertime cycle missing {} measurement".format(
+                                    raptor
+                                )
+                            )
+                        bt_result["measurements"][bt].append(val)
 
                     
                     
-                    bt_result['statistics'][bt] = _get_raptor_val(
-                        raw_result['statistics']['timings'],
-                        raptor,
-                        retval={}
+                    bt_result["statistics"][bt] = _get_raptor_val(
+                        raw_result["statistics"]["timings"], raptor, retval={}
                     )
 
             results.append(bt_result)
@@ -478,10 +497,14 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
             
             
             vfiles = res.get("files", {}).get("video", [])
-            return [{"json_location": _normalized_join(reldir, "browsertime.json"),
-                     "video_location": _normalized_join(reldir, vfile),
-                     "test_name": test_name}
-                    for vfile in vfiles]
+            return [
+                {
+                    "json_location": _normalized_join(reldir, "browsertime.json"),
+                    "video_location": _normalized_join(reldir, vfile),
+                    "test_name": test_name,
+                }
+                for vfile in vfiles
+            ]
 
         vmetrics = []
         for res in browsertime_results:
@@ -518,11 +541,13 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
         
         
         video_jobs = []
-        run_local = test_config.get('run_local', False)
+        run_local = test_config.get("run_local", False)
 
         for test in tests:
-            test_name = test['name']
-            bt_res_json = os.path.join(self.result_dir_for_test(test), 'browsertime.json')
+            test_name = test["name"]
+            bt_res_json = os.path.join(
+                self.result_dir_for_test(test), "browsertime.json"
+            )
             if os.path.exists(bt_res_json):
                 LOG.info("found browsertime results at %s" % bt_res_json)
             else:
@@ -530,7 +555,7 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                 return False
 
             try:
-                with open(bt_res_json, 'r') as f:
+                with open(bt_res_json, "r") as f:
                     raw_btresults = json.load(f)
             except Exception as e:
                 LOG.error("Exception reading %s" % bt_res_json)
@@ -539,38 +564,47 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                 raise
 
             if not run_local:
-                video_files = self._extract_vmetrics(test_name, bt_res_json, raw_btresults)
+                video_files = self._extract_vmetrics(
+                    test_name, bt_res_json, raw_btresults
+                )
                 if video_files:
                     video_jobs.extend(video_files)
 
-            for new_result in self.parse_browsertime_json(raw_btresults,
-                                                          test['page_cycles'],
-                                                          test['cold'],
-                                                          test['browser_cycles'],
-                                                          test.get('measure')):
+            for new_result in self.parse_browsertime_json(
+                raw_btresults,
+                test["page_cycles"],
+                test["cold"],
+                test["browser_cycles"],
+                test.get("measure"),
+            ):
 
                 def _new_pageload_result(new_result):
                     
-                    for field in ('name', 'unit', 'lower_is_better',
-                                  'alert_threshold', 'cold'):
+                    for field in (
+                        "name",
+                        "unit",
+                        "lower_is_better",
+                        "alert_threshold",
+                        "cold",
+                    ):
                         new_result[field] = test[field]
 
                     
                     
-                    new_result['type'] = "browsertime-pageload"
+                    new_result["type"] = "browsertime-pageload"
 
                     
-                    new_result['subtest_lower_is_better'] = True
-                    new_result['subtest_unit'] = 'ms'
+                    new_result["subtest_lower_is_better"] = True
+                    new_result["subtest_unit"] = "ms"
                     LOG.info("parsed new result: %s" % str(new_result))
 
                     
                     
-                    new_result['extra_options'] = []
+                    new_result["extra_options"] = []
                     if self.no_conditioned_profile:
-                        new_result['extra_options'].append('nocondprof')
+                        new_result["extra_options"].append("nocondprof")
                     if self.fission_enabled:
-                        new_result['extra_options'].append('fission')
+                        new_result["extra_options"].append("fission")
 
                     
                     
@@ -579,50 +613,56 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                     
                     
                     if self.app != "firefox":
-                        new_result['extra_options'].append(self.app)
+                        new_result["extra_options"].append(self.app)
 
                     return new_result
 
                 def _new_benchmark_result(new_result):
                     
-                    for field in ('name', 'unit', 'lower_is_better',
-                                  'alert_threshold', 'cold'):
+                    for field in (
+                        "name",
+                        "unit",
+                        "lower_is_better",
+                        "alert_threshold",
+                        "cold",
+                    ):
                         new_result[field] = test[field]
 
                     
                     
-                    new_result['type'] = "browsertime-%s" % test['type']
+                    new_result["type"] = "browsertime-%s" % test["type"]
 
                     
                     
-                    new_result['subtest_lower_is_better'] = bool(
-                        strtobool(
-                            test.get('subtest_lower_is_better', 'True')))
-                    new_result['subtest_unit'] = test.get('subtest_unit', 'ms')
+                    new_result["subtest_lower_is_better"] = bool(
+                        strtobool(test.get("subtest_lower_is_better", "True"))
+                    )
+                    new_result["subtest_unit"] = test.get("subtest_unit", "ms")
                     LOG.info("parsed new result: %s" % str(new_result))
 
                     
                     
-                    new_result['extra_options'] = []
+                    new_result["extra_options"] = []
                     return new_result
 
-                if test['type'] == 'pageload':
+                if test["type"] == "pageload":
                     self.results.append(_new_pageload_result(new_result))
-                elif test['type'] == 'benchmark':
+                elif test["type"] == "benchmark":
                     for i, item in enumerate(self.results):
-                        if item['name'] == test['name']:
+                        if item["name"] == test["name"]:
                             
-                            for measurement in new_result['measurements'].iteritems():
-                                self.results[i]['measurements'][measurement[0]].extend(
-                                    measurement[1])
+                            for measurement in new_result["measurements"].iteritems():
+                                self.results[i]["measurements"][measurement[0]].extend(
+                                    measurement[1]
+                                )
                             break
                     else:
                         self.results.append(_new_benchmark_result(new_result))
 
         
-        output = BrowsertimeOutput(self.results,
-                                   self.supporting_data,
-                                   test_config['subtest_alert_on'])
+        output = BrowsertimeOutput(
+            self.results, self.supporting_data, test_config["subtest_alert_on"]
+        )
         output.set_browser_meta(self.browser_name, self.browser_version)
         output.summarize(test_names)
         success, out_perfdata = output.output(test_names)
@@ -646,10 +686,10 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                 self.browser_version = "n/a"
 
             app_data = {
-                'application': {
-                    'name': self.browser_name,
-                    'version': self.browser_version,
-                },
+                "application": {
+                    "name": self.browser_name,
+                    "version": self.browser_version,
+                }
             }
 
             app_file = os.path.join(self.result_dir(), "application.json")
