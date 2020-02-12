@@ -1,24 +1,24 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * @licstart The following is the entire license notice for the
+ * Javascript code in this page
+ *
+ * Copyright 2020 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @licend The above is the entire license notice for the
+ * Javascript code in this page
+ */
 
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
@@ -30,101 +30,101 @@
 	else
 		root["pdfjs-dist/build/pdf"] = root.pdfjsLib = factory();
 })(this, function() {
-return  (function(modules) { 
- 	
- 	var installedModules = {};
-
- 	
- 	function __w_pdfjs_require__(moduleId) {
-
- 		
- 		if(installedModules[moduleId]) {
- 			return installedModules[moduleId].exports;
- 		}
- 		
- 		var module = installedModules[moduleId] = {
- 			i: moduleId,
- 			l: false,
- 			exports: {}
- 		};
-
- 		
- 		modules[moduleId].call(module.exports, module, module.exports, __w_pdfjs_require__);
-
- 		
- 		module.l = true;
-
- 		
- 		return module.exports;
- 	}
-
-
- 	
- 	__w_pdfjs_require__.m = modules;
-
- 	
- 	__w_pdfjs_require__.c = installedModules;
-
- 	
- 	__w_pdfjs_require__.d = function(exports, name, getter) {
- 		if(!__w_pdfjs_require__.o(exports, name)) {
- 			Object.defineProperty(exports, name, { enumerable: true, get: getter });
- 		}
- 	};
-
- 	
- 	__w_pdfjs_require__.r = function(exports) {
- 		if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
- 			Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
- 		}
- 		Object.defineProperty(exports, '__esModule', { value: true });
- 	};
-
- 	
- 	
- 	
- 	
- 	
- 	__w_pdfjs_require__.t = function(value, mode) {
- 		if(mode & 1) value = __w_pdfjs_require__(value);
- 		if(mode & 8) return value;
- 		if((mode & 4) && typeof value === 'object' && value && value.__esModule) return value;
- 		var ns = Object.create(null);
- 		__w_pdfjs_require__.r(ns);
- 		Object.defineProperty(ns, 'default', { enumerable: true, value: value });
- 		if(mode & 2 && typeof value != 'string') for(var key in value) __w_pdfjs_require__.d(ns, key, function(key) { return value[key]; }.bind(null, key));
- 		return ns;
- 	};
-
- 	
- 	__w_pdfjs_require__.n = function(module) {
- 		var getter = module && module.__esModule ?
- 			function getDefault() { return module['default']; } :
- 			function getModuleExports() { return module; };
- 		__w_pdfjs_require__.d(getter, 'a', getter);
- 		return getter;
- 	};
-
- 	
- 	__w_pdfjs_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
-
- 	
- 	__w_pdfjs_require__.p = "";
-
-
- 	
- 	return __w_pdfjs_require__(__w_pdfjs_require__.s = 0);
- })
-
- ([
-
- (function(module, exports, __w_pdfjs_require__) {
+return /******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+/******/
+/******/ 	// The require function
+/******/ 	function __w_pdfjs_require__(moduleId) {
+/******/
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId]) {
+/******/ 			return installedModules[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			i: moduleId,
+/******/ 			l: false,
+/******/ 			exports: {}
+/******/ 		};
+/******/
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __w_pdfjs_require__);
+/******/
+/******/ 		// Flag the module as loaded
+/******/ 		module.l = true;
+/******/
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/
+/******/
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__w_pdfjs_require__.m = modules;
+/******/
+/******/ 	// expose the module cache
+/******/ 	__w_pdfjs_require__.c = installedModules;
+/******/
+/******/ 	// define getter function for harmony exports
+/******/ 	__w_pdfjs_require__.d = function(exports, name, getter) {
+/******/ 		if(!__w_pdfjs_require__.o(exports, name)) {
+/******/ 			Object.defineProperty(exports, name, { enumerable: true, get: getter });
+/******/ 		}
+/******/ 	};
+/******/
+/******/ 	// define __esModule on exports
+/******/ 	__w_pdfjs_require__.r = function(exports) {
+/******/ 		if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 			Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 		}
+/******/ 		Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 	};
+/******/
+/******/ 	// create a fake namespace object
+/******/ 	// mode & 1: value is a module id, require it
+/******/ 	// mode & 2: merge all properties of value into the ns
+/******/ 	// mode & 4: return value when already ns object
+/******/ 	// mode & 8|1: behave like require
+/******/ 	__w_pdfjs_require__.t = function(value, mode) {
+/******/ 		if(mode & 1) value = __w_pdfjs_require__(value);
+/******/ 		if(mode & 8) return value;
+/******/ 		if((mode & 4) && typeof value === 'object' && value && value.__esModule) return value;
+/******/ 		var ns = Object.create(null);
+/******/ 		__w_pdfjs_require__.r(ns);
+/******/ 		Object.defineProperty(ns, 'default', { enumerable: true, value: value });
+/******/ 		if(mode & 2 && typeof value != 'string') for(var key in value) __w_pdfjs_require__.d(ns, key, function(key) { return value[key]; }.bind(null, key));
+/******/ 		return ns;
+/******/ 	};
+/******/
+/******/ 	// getDefaultExport function for compatibility with non-harmony modules
+/******/ 	__w_pdfjs_require__.n = function(module) {
+/******/ 		var getter = module && module.__esModule ?
+/******/ 			function getDefault() { return module['default']; } :
+/******/ 			function getModuleExports() { return module; };
+/******/ 		__w_pdfjs_require__.d(getter, 'a', getter);
+/******/ 		return getter;
+/******/ 	};
+/******/
+/******/ 	// Object.prototype.hasOwnProperty.call
+/******/ 	__w_pdfjs_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+/******/
+/******/ 	// __webpack_public_path__
+/******/ 	__w_pdfjs_require__.p = "";
+/******/
+/******/
+/******/ 	// Load entry module and return exports
+/******/ 	return __w_pdfjs_require__(__w_pdfjs_require__.s = 0);
+/******/ })
+/************************************************************************/
+/******/ ([
+/* 0 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
 
-var pdfjsVersion = '2.4.264';
-var pdfjsBuild = '4729fdc0';
+var pdfjsVersion = '2.4.292';
+var pdfjsBuild = '668a29aa';
 
 var pdfjsSharedUtil = __w_pdfjs_require__(1);
 
@@ -177,9 +177,9 @@ exports.PDFDateString = pdfjsDisplayDisplayUtils.PDFDateString;
 exports.GlobalWorkerOptions = pdfjsDisplayWorkerOptions.GlobalWorkerOptions;
 exports.apiCompatibilityParams = pdfjsDisplayAPICompatibility.apiCompatibilityParams;
 
- }),
-
- (function(module, exports, __w_pdfjs_require__) {
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -1015,18 +1015,18 @@ const createObjectURL = function createObjectURLClosure() {
 
 exports.createObjectURL = createObjectURL;
 
- }),
-
- (function(module, exports, __w_pdfjs_require__) {
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
 
 ;
 
- }),
-
- (function(module, exports, __w_pdfjs_require__) {
+/***/ }),
+/* 3 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -1234,7 +1234,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
 
   return worker.messageHandler.sendWithPromise("GetDocRequest", {
     docId,
-    apiVersion: '2.4.264',
+    apiVersion: '2.4.292',
     source: {
       data: source.data,
       url: source.url,
@@ -3173,14 +3173,14 @@ const InternalRenderTask = function InternalRenderTaskClosure() {
   return InternalRenderTask;
 }();
 
-const version = '2.4.264';
+const version = '2.4.292';
 exports.version = version;
-const build = '4729fdc0';
+const build = '668a29aa';
 exports.build = build;
 
- }),
-
- (function(module, exports, __w_pdfjs_require__) {
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -3645,9 +3645,9 @@ class PDFDateString {
 
 exports.PDFDateString = PDFDateString;
 
- }),
-
- (function(module, exports, __w_pdfjs_require__) {
+/***/ }),
+/* 5 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -3906,9 +3906,9 @@ class FontFaceObject {
 
 exports.FontFaceObject = FontFaceObject;
 
- }),
-
- (function(module, exports, __w_pdfjs_require__) {
+/***/ }),
+/* 6 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -3917,9 +3917,9 @@ let compatibilityParams = Object.create(null);
 ;
 exports.apiCompatibilityParams = Object.freeze(compatibilityParams);
 
- }),
-
- (function(module, exports, __w_pdfjs_require__) {
+/***/ }),
+/* 7 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -5143,10 +5143,24 @@ var CanvasGraphics = function CanvasGraphicsClosure() {
       }
 
       var name = fontObj.loadedName || "sans-serif";
-      var bold = fontObj.black ? "900" : fontObj.bold ? "bold" : "normal";
+      let bold = "normal";
+
+      if (fontObj.black) {
+        bold = "900";
+      } else if (fontObj.bold) {
+        bold = "bold";
+      }
+
       var italic = fontObj.italic ? "italic" : "normal";
       var typeface = `"${name}", ${fontObj.fallbackName}`;
-      var browserFontSize = size < MIN_FONT_SIZE ? MIN_FONT_SIZE : size > MAX_FONT_SIZE ? MAX_FONT_SIZE : size;
+      let browserFontSize = size;
+
+      if (size < MIN_FONT_SIZE) {
+        browserFontSize = MIN_FONT_SIZE;
+      } else if (size > MAX_FONT_SIZE) {
+        browserFontSize = MAX_FONT_SIZE;
+      }
+
       this.current.fontSizeScale = size / browserFontSize;
       this.ctx.font = `${italic} ${bold} ${browserFontSize}px ${typeface}`;
     },
@@ -5975,9 +5989,9 @@ var CanvasGraphics = function CanvasGraphicsClosure() {
 
 exports.CanvasGraphics = CanvasGraphics;
 
- }),
-
- (function(module, exports, __w_pdfjs_require__) {
+/***/ }),
+/* 8 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -6095,24 +6109,50 @@ var createMeshCanvas = function createMeshCanvasClosure() {
         maxY = Math.round(y3);
     var xa, car, cag, cab;
     var xb, cbr, cbg, cbb;
-    var k;
 
     for (var y = minY; y <= maxY; y++) {
       if (y < y2) {
-        k = y < y1 ? 0 : y1 === y2 ? 1 : (y1 - y) / (y1 - y2);
+        let k;
+
+        if (y < y1) {
+          k = 0;
+        } else if (y1 === y2) {
+          k = 1;
+        } else {
+          k = (y1 - y) / (y1 - y2);
+        }
+
         xa = x1 - (x1 - x2) * k;
         car = c1r - (c1r - c2r) * k;
         cag = c1g - (c1g - c2g) * k;
         cab = c1b - (c1b - c2b) * k;
       } else {
-        k = y > y3 ? 1 : y2 === y3 ? 0 : (y2 - y) / (y2 - y3);
+        let k;
+
+        if (y > y3) {
+          k = 1;
+        } else if (y2 === y3) {
+          k = 0;
+        } else {
+          k = (y2 - y) / (y2 - y3);
+        }
+
         xa = x2 - (x2 - x3) * k;
         car = c2r - (c2r - c3r) * k;
         cag = c2g - (c2g - c3g) * k;
         cab = c2b - (c2b - c3b) * k;
       }
 
-      k = y < y1 ? 0 : y > y3 ? 1 : (y1 - y) / (y1 - y3);
+      let k;
+
+      if (y < y1) {
+        k = 0;
+      } else if (y > y3) {
+        k = 1;
+      } else {
+        k = (y1 - y) / (y1 - y3);
+      }
+
       xb = x1 - (x1 - x3) * k;
       cbr = c1r - (c1r - c3r) * k;
       cbg = c1g - (c1g - c3g) * k;
@@ -6122,8 +6162,14 @@ var createMeshCanvas = function createMeshCanvasClosure() {
       var j = rowSize * y + x1_ * 4;
 
       for (var x = x1_; x <= x2_; x++) {
-        k = (xa - x) / (xa - xb);
-        k = k < 0 ? 0 : k > 1 ? 1 : k;
+        let k = (xa - x) / (xa - xb);
+
+        if (k < 0) {
+          k = 0;
+        } else if (k > 1) {
+          k = 1;
+        }
+
         bytes[j++] = car - (car - cbr) * k | 0;
         bytes[j++] = cag - (cag - cbg) * k | 0;
         bytes[j++] = cab - (cab - cbb) * k | 0;
@@ -6424,9 +6470,9 @@ var TilingPattern = function TilingPatternClosure() {
 
 exports.TilingPattern = TilingPattern;
 
- }),
-
- (function(module, exports, __w_pdfjs_require__) {
+/***/ }),
+/* 9 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -6440,9 +6486,9 @@ exports.GlobalWorkerOptions = GlobalWorkerOptions;
 GlobalWorkerOptions.workerPort = GlobalWorkerOptions.workerPort === undefined ? null : GlobalWorkerOptions.workerPort;
 GlobalWorkerOptions.workerSrc = GlobalWorkerOptions.workerSrc === undefined ? "" : GlobalWorkerOptions.workerSrc;
 
- }),
-
- (function(module, exports, __w_pdfjs_require__) {
+/***/ }),
+/* 10 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -6454,9 +6500,9 @@ exports.isNodeJS = void 0;
 const isNodeJS = typeof process === "object" && process + "" === "[object process]" && !process.versions["nw"] && !process.versions["electron"];
 exports.isNodeJS = isNodeJS;
 
- }),
-
- (function(module, exports, __w_pdfjs_require__) {
+/***/ }),
+/* 11 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -6933,8 +6979,8 @@ class MessageHandler {
   }
 
   async _deleteStreamController(streamId) {
-    await Promise.all([this.streamControllers[streamId].startCall, this.streamControllers[streamId].pullCall, this.streamControllers[streamId].cancelCall].map(function (capability) {
-      return capability && capability.promise.catch(function () {});
+    await Promise.allSettled([this.streamControllers[streamId].startCall, this.streamControllers[streamId].pullCall, this.streamControllers[streamId].cancelCall].map(function (capability) {
+      return capability && capability.promise;
     }));
     delete this.streamControllers[streamId];
   }
@@ -6955,9 +7001,9 @@ class MessageHandler {
 
 exports.MessageHandler = MessageHandler;
 
- }),
-
- (function(module, exports, __w_pdfjs_require__) {
+/***/ }),
+/* 12 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -7077,9 +7123,9 @@ class Metadata {
 
 exports.Metadata = Metadata;
 
- }),
-
- (function(module, exports, __w_pdfjs_require__) {
+/***/ }),
+/* 13 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -7523,9 +7569,9 @@ class SimpleXMLParser extends XMLParserBase {
 
 exports.SimpleXMLParser = SimpleXMLParser;
 
- }),
-
- (function(module, exports, __w_pdfjs_require__) {
+/***/ }),
+/* 14 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -7878,9 +7924,9 @@ class PDFDataTransportStreamRangeReader {
 
 }
 
- }),
-
- (function(module, exports, __w_pdfjs_require__) {
+/***/ }),
+/* 15 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -8325,9 +8371,9 @@ var WebGLUtils = function WebGLUtilsClosure() {
   };
 }();
 
- }),
-
- (function(module, exports, __w_pdfjs_require__) {
+/***/ }),
+/* 16 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -9013,9 +9059,9 @@ var renderTextLayer = function renderTextLayerClosure() {
 
 exports.renderTextLayer = renderTextLayer;
 
- }),
-
- (function(module, exports, __w_pdfjs_require__) {
+/***/ }),
+/* 17 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -9388,7 +9434,15 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       return;
     }
 
-    style.fontWeight = font.black ? font.bold ? "900" : "bold" : font.bold ? "bold" : "normal";
+    let bold = "normal";
+
+    if (font.black) {
+      bold = "900";
+    } else if (font.bold) {
+      bold = "bold";
+    }
+
+    style.fontWeight = bold;
     style.fontStyle = font.italic ? "italic" : "normal";
     const fontFamily = font.loadedName ? `"${font.loadedName}", ` : "";
     const fallbackName = font.fallbackName || "Helvetica, sans-serif";
@@ -10022,9 +10076,9 @@ class AnnotationLayer {
 
 exports.AnnotationLayer = AnnotationLayer;
 
- }),
-
- (function(module, exports, __w_pdfjs_require__) {
+/***/ }),
+/* 18 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -10047,6 +10101,6 @@ let SVGGraphics = function () {
 exports.SVGGraphics = SVGGraphics;
 ;
 
- })
- ]);
+/***/ })
+/******/ ]);
 });
