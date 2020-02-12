@@ -36,6 +36,7 @@
 #include "GLDefs.h"
 #include "GLLibraryLoader.h"
 #include "nsISupportsImpl.h"
+#include "nsRegionFwd.h"
 #include "plstr.h"
 #include "GLContextTypes.h"
 #include "SurfaceTypes.h"
@@ -3350,6 +3351,16 @@ class GLContext : public GenericAtomicRefCounted,
 
 
   virtual bool SwapBuffers() { return false; }
+
+  
+
+
+
+
+
+
+
+  virtual void SetDamage(const nsIntRegion& aDamageRegion) {}
 
   
 
