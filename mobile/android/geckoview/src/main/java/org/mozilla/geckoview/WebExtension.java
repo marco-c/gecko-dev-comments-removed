@@ -1343,16 +1343,14 @@ public class WebExtension {
 
 
 
+        public final @Nullable String optionsPageUrl;
         
-        final @Nullable String optionsPageUrl;
-        
 
 
 
 
 
-        
-        final boolean openOptionsPageInTab;
+        public final boolean openOptionsPageInTab;
         
 
 
@@ -1425,7 +1423,7 @@ public class WebExtension {
             creatorUrl = bundle.getString("creatorURL");
             homepageUrl = bundle.getString("homepageURL");
             name = bundle.getString("name");
-            optionsPageUrl = bundle.getString("optionsPageUrl");
+            optionsPageUrl = bundle.getString("optionsPageURL");
             openOptionsPageInTab = bundle.getBoolean("openOptionsPageInTab");
             isRecommended = bundle.getBoolean("isRecommended");
             blocklistState = bundle.getInt("blocklistState", BlocklistStateFlags.NOT_BLOCKED);
