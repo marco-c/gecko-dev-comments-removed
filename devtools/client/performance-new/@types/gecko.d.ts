@@ -1,26 +1,26 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * TS-TODO - Needs typing.
+ *
+ * This file contains type stubs for loading things from Gecko. All of these
+ * types should be used in the correct places eventually.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Namespace anything that has its types mocked out here. These definitions are
+ * only "good enough" to get the type checking to pass in this directory.
+ * Eventually some more structured solution should be found. This namespace is
+ * global and makes sure that all the definitions inside do not clash with
+ * naming.
+ */
 declare namespace MockedExports {
   interface ChromeUtils {
-    
-
-
+    /**
+     * Use a JSDoc import declaration to pull in the correct type.
+     */
     import: (path: string) => any;
     createObjectIn: (content: ContentWindow) => object;
     exportFunction: (fn: Function, scope: object, options?: object) => void;
@@ -61,6 +61,8 @@ declare namespace MockedExports {
   type GetPref<T> = (prefName: string, defaultValue?: T) => T;
   type SetPref<T> = (prefName: string, value?: T) => T;
 
+  interface nsIURI {}
+
   type Services = {
     prefs: {
       clearUserPref: (prefName: string) => void;
@@ -86,6 +88,9 @@ declare namespace MockedExports {
     focus: {
       activeWindow: ChromeWindow;
     };
+    io: {
+      newURI(url: string): nsIURI;
+    },
     scriptSecurityManager: any;
     startup: {
       quit: (optionsBitmask: number) => void,
@@ -137,21 +142,33 @@ declare namespace MockedExports {
     };
   };
 
-  
+  interface BrowsingContextStub {}
+  interface PrincipalStub {}
+
+  interface WebChannelTarget {
+    browsingContext: BrowsingContextStub,
+    browser: Browser,
+    eventTarget: null,
+    principal: PrincipalStub,
+  }
+
+  const WebChannelJSM: any;
+
+  // TS-TODO
   const CustomizableUIJSM: any;
 
   const CustomizableWidgetsJSM: any;
 
   const Services: Services;
 
-  
-  
+  // This class is needed by the Cc importing mechanism. e.g.
+  // Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
   class nsIFilePicker {}
 
   interface FilePicker {
     init: (window: Window, title: string, mode: number) => void;
     open: (callback: (rv: number) => unknown) => void;
-    
+    // The following are enum values.
     modeGetFolder: number;
     returnOK: number;
     file: {
@@ -159,8 +176,8 @@ declare namespace MockedExports {
     }
   }
 
-  
-  
+  // This class is needed by the Cc importing mechanism. e.g.
+  // Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
   class nsIEnvironment {}
 
   interface Environment {
@@ -233,6 +250,10 @@ declare module "resource://gre/modules/ProfilerGetSymbols.jsm" {
   export = MockedExports.ProfilerGetSymbolsJSM;
 }
 
+declare module "resource://gre/modules/WebChannel.jsm" {
+  export = MockedExports.WebChannelJSM;
+}
+
 declare module "resource://devtools/client/performance-new/popup/background.jsm.js" {
   import * as Background from "devtools/client/performance-new/popup/background.jsm.js";
   export = Background
@@ -249,21 +270,21 @@ declare module "resource:///modules/CustomizableWidgets.jsm" {
 declare var ChromeUtils: MockedExports.ChromeUtils;
 declare var Cu: MockedExports.ChromeUtils;
 
-
-
-
+/**
+ * This is a variant on the normal Document, as it contains chrome-specific properties.
+ */
 declare interface ChromeDocument extends Document {
-  
-
-
-
+  /**
+   * Create a XUL element of a specific type. Right now this function
+   * only refines iframes, but more tags could be added.
+   */
   createXULElement: ((type: "iframe") => XULIframeElement) &
     ((type: string) => XULElement);
 }
 
-
-
-
+/**
+ * This is a variant on the HTMLElement, as it contains chrome-specific properties.
+ */
 declare interface ChromeHTMLElement extends HTMLElement {
   ownerDocument: ChromeDocument;
 }

@@ -29,6 +29,8 @@ const { AppConstants } = ChromeUtils.import(
 
 
 
+
+
 const ENTRIES_PREF = "devtools.performance.recording.entries";
 
 const INTERVAL_PREF = "devtools.performance.recording.interval";
@@ -105,6 +107,13 @@ const lazyRecordingUtils = requireLazy(() => {
   const recordingUtils = require("devtools/shared/performance-new/recording-utils");
   return recordingUtils;
 });
+
+const lazyProfilerMenuButton = requireLazy(() =>
+  
+  (ChromeUtils.import(
+    "resource://devtools/client/performance-new/popup/menu-button.jsm.js"
+  ))
+);
 
 
 
@@ -415,6 +424,68 @@ function getDefaultRecordingPreferencesForOlderFirefox() {
 }
 
 
+
+
+
+
+
+
+
+function handleWebChannelMessage(channel, id, message, target) {
+  if (typeof message !== "object" || typeof message.type !== "string") {
+    console.error(
+      "An malformed message was received by the profiler's WebChannel handler.",
+      message
+    );
+    return;
+  }
+  const messageFromFrontend =  (message);
+  switch (messageFromFrontend.type) {
+    case "STATUS_QUERY": {
+      
+      
+      const { ProfilerMenuButton } = lazyProfilerMenuButton();
+      channel.send(
+        {
+          type: "STATUS_RESPONSE",
+          menuButtonIsEnabled: ProfilerMenuButton.isEnabled(),
+        },
+        target
+      );
+      break;
+    }
+    case "ENABLE_MENU_BUTTON": {
+      
+      const { ProfilerMenuButton } = lazyProfilerMenuButton();
+      if (!ProfilerMenuButton.isEnabled()) {
+        const { ownerDocument } = target.browser;
+        if (!ownerDocument) {
+          throw new Error(
+            "Could not find the owner document for the current browser while enabling " +
+              "the profiler menu button"
+          );
+        }
+        ProfilerMenuButton.toggle(ownerDocument);
+      }
+
+      
+      channel.send(
+        {
+          type: "ENABLE_MENU_BUTTON_DONE",
+        },
+        target
+      );
+      break;
+    }
+    default:
+      console.error(
+        "An unknown message type was received by the profiler's WebChannel handler.",
+        message
+      );
+  }
+}
+
+
  (this).module = { exports: {} };
 
 module.exports = {
@@ -430,6 +501,7 @@ module.exports = {
   revertRecordingPreferences,
   changePreset,
   getDefaultRecordingPreferencesForOlderFirefox,
+  handleWebChannelMessage,
 };
 
 

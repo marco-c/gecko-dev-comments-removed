@@ -71,6 +71,11 @@ ChromeUtils.defineModuleGetter(
   "ProfilerMenuButton",
   "resource://devtools/client/performance-new/popup/menu-button.jsm.js"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "WebChannel",
+  "resource://gre/modules/WebChannel.jsm"
+);
 
 
 
@@ -259,6 +264,51 @@ function getProfilerKeyShortcuts() {
 
 function isProfilerButtonEnabled() {
   return Services.prefs.getBoolPref(PROFILER_POPUP_ENABLED_PREF, false);
+}
+
+
+
+
+
+
+
+function validateProfilerWebChannelUrl(targetUrl) {
+  const frontEndUrl = "https://profiler.firefox.com";
+
+  if (targetUrl !== frontEndUrl) {
+    
+    
+    if (
+      
+      targetUrl === "http://example.com" ||
+      
+      
+      
+      
+      
+      /^http:\/\/localhost:\d+\/?$/.test(targetUrl) ||
+      
+      
+      
+      
+      /^https:\/\/deploy-preview-\d+--perf-html\.netlify\.com\/?$/.test(
+        targetUrl
+      )
+    ) {
+      
+      return targetUrl;
+    }
+
+    console.error(
+      `The preference "devtools.performance.recording.ui-base-url" was set to a ` +
+        "URL that is not allowed. No WebChannel messages will be sent between the " +
+        `browser and that URL. Falling back to ${frontEndUrl}. Only localhost ` +
+        "and deploy previews URLs are allowed.",
+      targetUrl
+    );
+  }
+
+  return frontEndUrl;
 }
 
 XPCOMUtils.defineLazyGetter(this, "ProfilerPopupBackground", function() {
@@ -572,8 +622,65 @@ DevToolsStartup.prototype = {
       return;
     }
     this.profilerRecordingButtonCreated = true;
+
+    const isPopupFeatureFlagEnabled = Services.prefs.getBoolPref(
+      "devtools.performance.popup.feature-flag",
+      AppConstants.NIGHTLY_BUILD
+    );
+
+    if (!isPopupFeatureFlagEnabled) {
+      
+      
+      
+      
+      
+      return;
+    }
+
+    
+    
+    this.initializeProfilerWebChannel();
+
     if (isProfilerButtonEnabled()) {
       ProfilerMenuButton.initialize();
+    }
+  },
+
+  
+
+
+
+
+  initializeProfilerWebChannel() {
+    let channel;
+
+    
+    
+    const urlPref = "devtools.performance.recording.ui-base-url";
+    Services.prefs.addObserver(urlPref, registerWebChannel);
+    registerWebChannel();
+
+    function registerWebChannel() {
+      if (channel) {
+        channel.stopListening();
+      }
+
+      const urlForWebChannel = Services.io.newURI(
+        validateProfilerWebChannelUrl(Services.prefs.getStringPref(urlPref))
+      );
+
+      channel = new WebChannel("profiler.firefox.com", urlForWebChannel);
+
+      channel.listen((id, message, target) => {
+        
+        
+        ProfilerPopupBackground.handleWebChannelMessage(
+          channel,
+          id,
+          message,
+          target
+        );
+      });
     }
   },
 
@@ -1249,4 +1356,4 @@ const JsonView = {
   },
 };
 
-var EXPORTED_SYMBOLS = ["DevToolsStartup"];
+var EXPORTED_SYMBOLS = ["DevToolsStartup", "validateProfilerWebChannelUrl"];
