@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 "use strict";
-/* globals Localization */
+
 ChromeUtils.defineModuleGetter(
   this,
   "AttributionCode",
@@ -290,8 +290,8 @@ const ONBOARDING_MESSAGES = () => [
         },
       },
     },
-    // Use service oauth client_id to identify 'Firefox Monitor' service attached to Firefox Account
-    // https://docs.telemetry.mozilla.org/datasets/fxa_metrics/attribution.html#service-attribution
+    
+    
     targeting: `trailheadTriplet in ['supercharge', 'static'] || ('dynamic' in trailheadTriplet && !("${FX_MONITOR_OAUTH_CLIENT_ID}" in attachedFxAOAuthClients|mapToProperty('id')))`,
     trigger: { id: "showOnboarding" },
   },
@@ -500,11 +500,11 @@ const ONBOARDING_MESSAGES = () => [
     id: "FXA_ACCOUNTS_BADGE",
     template: "toolbar_badge",
     content: {
-      delay: 10000, // delay for 10 seconds
+      delay: 10000, 
       target: "fxa-toolbar-menu-button",
     },
-    // Never accessed the FxA panel && doesn't use Firefox sync & has FxA enabled
-    targeting: `isFxABadgeEnabled && !hasAccessedFxAPanel && !usesFirefoxSync && isFxAEnabled == true`,
+    
+    targeting: `!hasAccessedFxAPanel && !usesFirefoxSync && isFxAEnabled == true`,
     trigger: { id: "toolbarBadgeUpdate" },
   },
   {
@@ -536,7 +536,7 @@ const OnboardingMessageProvider = {
     return messages;
   },
   async getUntranslatedMessages() {
-    // This is helpful for jsonSchema testing - since we are localizing in the provider
+    
     const messages = await ONBOARDING_MESSAGES();
     return messages;
   },
@@ -545,19 +545,19 @@ const OnboardingMessageProvider = {
     for (const msg of messages) {
       let translatedMessage = { ...msg };
 
-      // If the message has no content, do not attempt to translate it
+      
       if (!translatedMessage.content) {
         translatedMessages.push(translatedMessage);
         continue;
       }
 
-      // We need some addon info if we are showing return to amo overlay, so fetch
-      // that, and update the message accordingly
+      
+      
       if (msg.template === "return_to_amo_overlay") {
         try {
           const { name, iconURL, url } = await this.getAddonInfo();
-          // If we do not have all the data from the AMO api to indicate to the user
-          // what they are installing we don't want to show the message
+          
+          
           if (!name || !iconURL || !url) {
             continue;
           }
@@ -569,7 +569,7 @@ const OnboardingMessageProvider = {
           continue;
         }
 
-        // We know we want to show this message, so translate message strings
+        
         const [
           primary_button_string,
           title_string,
@@ -585,7 +585,7 @@ const OnboardingMessageProvider = {
         translatedMessage.content.text = text_string.value;
       }
 
-      // Translate any secondary buttons separately
+      
       if (msg.content.secondary_button) {
         const [secondary_button_string] = await L10N.formatMessages([
           { id: msg.content.secondary_button.label.string_id },
@@ -609,7 +609,7 @@ const OnboardingMessageProvider = {
       if (!content || source !== "addons.mozilla.org") {
         return null;
       }
-      // Attribution data can be double encoded
+      
       while (content.includes("%")) {
         try {
           const result = decodeURIComponent(content);

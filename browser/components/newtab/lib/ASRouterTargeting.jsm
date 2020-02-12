@@ -504,10 +504,6 @@ const TargetingGetters = {
   get isWhatsNewPanelEnabled() {
     return isWhatsNewPanelEnabled;
   },
-  get isFxABadgeEnabled() {
-    
-    return true;
-  },
   get userPrefs() {
     return {
       cfrFeatures: cfrFeaturesUserPref,
