@@ -742,6 +742,17 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
     max-width: 50px;
   }
 }
+
+
+
+@media (max-width: 680px) {
+  
+
+  #pageActionSeparator,
+  #pageActionButton ~ .urlbar-page-action {
+    display: none;
+  }
+}
 @media (max-width: 550px) {
   #urlbar-container {
     min-width: calc(225px + 24px + 2 * var(--toolbarbutton-inner-padding));
