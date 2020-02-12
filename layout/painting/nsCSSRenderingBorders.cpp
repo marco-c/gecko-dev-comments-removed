@@ -286,7 +286,7 @@ bool nsCSSBorderRenderer::AreBorderSideFinalStylesSame(
   
 
   int firstStyle = 0;
-  NS_FOR_CSS_SIDES(i) {
+  for (const auto i : mozilla::AllPhysicalSides()) {
     if (firstStyle == i) {
       if ((static_cast<mozilla::SideBits>(1 << i) & aSides) ==
           SideBits::eNone) {
@@ -1246,7 +1246,7 @@ void nsCSSBorderRenderer::DrawBorderSides(mozilla::SideBits aSides) {
   BorderColorStyle borderColorStyleTopLeft[3], borderColorStyleBottomRight[3];
   BorderColorStyle* borderColorStyle = nullptr;
 
-  NS_FOR_CSS_SIDES(i) {
+  for (const auto i : mozilla::AllPhysicalSides()) {
     if ((aSides & static_cast<mozilla::SideBits>(1 << i)) == SideBits::eNone) {
       continue;
     }
@@ -1380,10 +1380,12 @@ void nsCSSBorderRenderer::DrawBorderSides(mozilla::SideBits aSides) {
   Float borderWidths[3][4];
 
   if (borderColorStyleCount == 1) {
-    NS_FOR_CSS_SIDES(i) { borderWidths[0][i] = mBorderWidths[i]; }
+    for (const auto i : mozilla::AllPhysicalSides()) {
+      borderWidths[0][i] = mBorderWidths[i];
+    }
   } else if (borderColorStyleCount == 2) {
     
-    NS_FOR_CSS_SIDES(i) {
+    for (const auto i : mozilla::AllPhysicalSides()) {
       borderWidths[0][i] =
           int32_t(mBorderWidths[i]) / 2 + int32_t(mBorderWidths[i]) % 2;
       borderWidths[1][i] = int32_t(mBorderWidths[i]) / 2;
@@ -1391,7 +1393,7 @@ void nsCSSBorderRenderer::DrawBorderSides(mozilla::SideBits aSides) {
   } else if (borderColorStyleCount == 3) {
     
     
-    NS_FOR_CSS_SIDES(i) {
+    for (const auto i : mozilla::AllPhysicalSides()) {
       if (mBorderWidths[i] == 1.0) {
         borderWidths[0][i] = 1.f;
         borderWidths[1][i] = borderWidths[2][i] = 0.f;
@@ -2555,7 +2557,7 @@ bool nsCSSBorderRenderer::AllBordersSameWidth() {
 }
 
 bool nsCSSBorderRenderer::AllBordersSolid() {
-  NS_FOR_CSS_SIDES(i) {
+  for (const auto i : mozilla::AllPhysicalSides()) {
     if (mBorderStyles[i] == StyleBorderStyle::Solid ||
         mBorderStyles[i] == StyleBorderStyle::None ||
         mBorderStyles[i] == StyleBorderStyle::Hidden) {
@@ -2597,7 +2599,7 @@ void nsCSSBorderRenderer::DrawSingleWidthSolidBorder() {
 
   const twoFloats cornerAdjusts[4] = {
       {+0.5, 0}, {0, +0.5}, {-0.5, 0}, {0, -0.5}};
-  NS_FOR_CSS_SIDES(side) {
+  for (const auto side : mozilla::AllPhysicalSides()) {
     Point firstCorner = rect.CCWCorner(side) + cornerAdjusts[side];
     Point secondCorner = rect.CWCorner(side) + cornerAdjusts[side];
 
@@ -2892,7 +2894,7 @@ void nsCSSBorderRenderer::DrawSolidBorder() {
   strokeRect.Deflate(Margin(mBorderWidths[0] / 2.0, mBorderWidths[1] / 2.0,
                             mBorderWidths[2] / 2.0, mBorderWidths[3] / 2.0));
 
-  NS_FOR_CSS_SIDES(i) {
+  for (const auto i : mozilla::AllPhysicalSides()) {
     
     
     
@@ -3100,7 +3102,7 @@ void nsCSSBorderRenderer::DrawBorders() {
   SideBits dashedSides = SideBits::eNone;
   bool forceSeparateCorners = false;
 
-  NS_FOR_CSS_SIDES(i) {
+  for (const auto i : mozilla::AllPhysicalSides()) {
     StyleBorderStyle style = mBorderStyles[i];
     if (style == StyleBorderStyle::Dashed ||
         style == StyleBorderStyle::Dotted) {
@@ -3292,7 +3294,7 @@ void nsCSSBorderRenderer::DrawBorders() {
     }
 
     
-    NS_FOR_CSS_SIDES(side) {
+    for (const auto side : mozilla::AllPhysicalSides()) {
       
       if (alreadyDrawnSides & static_cast<mozilla::SideBits>(1 << side)) {
         continue;
@@ -3341,7 +3343,7 @@ void nsCSSBorderRenderer::CreateWebRenderCommands(
   wr::LayoutRect roundedRect = wr::ToLayoutRect(outerRect);
   wr::LayoutRect clipRect = roundedRect;
   wr::BorderSide side[4];
-  NS_FOR_CSS_SIDES(i) {
+  for (const auto i : mozilla::AllPhysicalSides()) {
     side[i] =
         wr::ToBorderSide(ToDeviceColor(mBorderColors[i]), mBorderStyles[i]);
   }
@@ -3584,7 +3586,7 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
   float outset[4];
   const int32_t appUnitsPerDevPixel =
       aForFrame->PresContext()->AppUnitsPerDevPixel();
-  NS_FOR_CSS_SIDES(i) {
+  for (const auto i : mozilla::AllPhysicalSides()) {
     slice[i] = (float)(mSlice.Side(i)) / appUnitsPerDevPixel;
     widths[i] = (float)(mWidths.Side(i)) / appUnitsPerDevPixel;
 
@@ -3815,7 +3817,7 @@ nsCSSBorderImageRenderer::nsCSSBorderImageRenderer(
   
   nsMargin slice;
   nsMargin border;
-  NS_FOR_CSS_SIDES(s) {
+  for (const auto s : mozilla::AllPhysicalSides()) {
     const auto& slice = aStyleBorder.mBorderImageSlice.offsets.Get(s);
     int32_t imgDimension =
         SideIsVertical(s) ? mImageSize.width : mImageSize.height;

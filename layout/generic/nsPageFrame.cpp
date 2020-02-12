@@ -96,7 +96,7 @@ void nsPageFrame::Reflow(nsPresContext* aPresContext,
     
     
     const auto& marginStyle = kidReflowInput.mStyleMargin->mMargin;
-    NS_FOR_CSS_SIDES(side) {
+    for (const auto side : mozilla::AllPhysicalSides()) {
       if (marginStyle.Get(side).IsAuto()) {
         mPageContentMargin.Side(side) = mPD->mReflowMargin.Side(side);
       } else {
@@ -117,7 +117,7 @@ void nsPageFrame::Reflow(nsPresContext* aPresContext,
     
     if (maxWidth < onePixelInTwips ||
         (maxHeight != NS_UNCONSTRAINEDSIZE && maxHeight < onePixelInTwips)) {
-      NS_FOR_CSS_SIDES(side) {
+      for (const auto side : mozilla::AllPhysicalSides()) {
         mPageContentMargin.Side(side) = mPD->mReflowMargin.Side(side);
       }
       maxWidth = maxSize.width - mPageContentMargin.LeftRight() / scale;

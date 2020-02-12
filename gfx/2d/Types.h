@@ -8,6 +8,7 @@
 #define MOZILLA_GFX_TYPES_H_
 
 #include "mozilla/EndianUtils.h"
+#include "mozilla/EnumeratedRange.h"
 #include "mozilla/MacroArgs.h"  
 #include "mozilla/TypedEnumBits.h"
 
@@ -515,6 +516,10 @@ namespace mozilla {
 
 enum Side { eSideTop, eSideRight, eSideBottom, eSideLeft };
 
+constexpr auto AllPhysicalSides() {
+  return mozilla::MakeInclusiveEnumeratedRange(eSideTop, eSideLeft);
+}
+
 enum class SideBits {
   eNone = 0,
   eTop = 1 << eSideTop,
@@ -527,24 +532,6 @@ enum class SideBits {
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(SideBits)
-
-
-
-
-
-#define NS_FOR_CSS_SIDES(var_)                                               \
-  int32_t MOZ_CONCAT(var_, __LINE__) = mozilla::eSideTop;                    \
-  for (mozilla::Side var_;                                                   \
-       MOZ_CONCAT(var_, __LINE__) <= mozilla::eSideLeft &&                   \
-       (static_cast<void>(var_ = mozilla::Side(MOZ_CONCAT(var_, __LINE__))), \
-        true);                                                               \
-       ++MOZ_CONCAT(var_, __LINE__))
-
-static inline Side& operator++(Side& side) {
-  MOZ_ASSERT(side >= eSideTop && side <= eSideLeft, "Out of range side");
-  side = Side(side + 1);
-  return side;
-}
 
 enum Corner {
   

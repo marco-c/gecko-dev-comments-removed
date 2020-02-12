@@ -373,7 +373,7 @@ nsStyleBorder::nsStyleBorder(const Document& aDocument)
   MOZ_COUNT_CTOR(nsStyleBorder);
 
   nscoord medium = kMediumBorderWidth;
-  NS_FOR_CSS_SIDES(side) {
+  for (const auto side : mozilla::AllPhysicalSides()) {
     mBorder.Side(side) = medium;
     mBorderStyle[side] = StyleBorderStyle::None;
   }
@@ -397,7 +397,9 @@ nsStyleBorder::nsStyleBorder(const nsStyleBorder& aSrc)
       mBorder(aSrc.mBorder),
       mTwipsPerPixel(aSrc.mTwipsPerPixel) {
   MOZ_COUNT_CTOR(nsStyleBorder);
-  NS_FOR_CSS_SIDES(side) { mBorderStyle[side] = aSrc.mBorderStyle[side]; }
+  for (const auto side : mozilla::AllPhysicalSides()) {
+    mBorderStyle[side] = aSrc.mBorderStyle[side];
+  }
 }
 
 nsStyleBorder::~nsStyleBorder() { MOZ_COUNT_DTOR(nsStyleBorder); }
@@ -415,7 +417,7 @@ nsMargin nsStyleBorder::GetImageOutset() const {
   
   
   nsMargin outset;
-  NS_FOR_CSS_SIDES(s) {
+  for (const auto s : mozilla::AllPhysicalSides()) {
     const auto& coord = mBorderImageOutset.Get(s);
     nscoord value;
     if (coord.IsLength()) {
@@ -446,7 +448,7 @@ nsChangeHint nsStyleBorder::CalcDifference(
     return NS_STYLE_HINT_REFLOW;
   }
 
-  NS_FOR_CSS_SIDES(ix) {
+  for (const auto ix : mozilla::AllPhysicalSides()) {
     
     
     
@@ -462,7 +464,7 @@ nsChangeHint nsStyleBorder::CalcDifference(
   
   
   
-  NS_FOR_CSS_SIDES(ix) {
+  for (const auto ix : mozilla::AllPhysicalSides()) {
     if (mBorderStyle[ix] != aNewData.mBorderStyle[ix] ||
         BorderColorFor(ix) != aNewData.BorderColorFor(ix)) {
       return nsChangeHint_RepaintFrame;
@@ -1256,7 +1258,7 @@ nsStylePosition::nsStylePosition(const nsStylePosition& aSource)
 
 static bool IsAutonessEqual(const StyleRect<LengthPercentageOrAuto>& aSides1,
                             const StyleRect<LengthPercentageOrAuto>& aSides2) {
-  NS_FOR_CSS_SIDES(side) {
+  for (const auto side : mozilla::AllPhysicalSides()) {
     if (aSides1.Get(side).IsAuto() != aSides2.Get(side).IsAuto()) {
       return false;
     }
