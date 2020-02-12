@@ -168,6 +168,8 @@ JSWindowActorProtocol::FromWebIDLOptions(const nsAString& aName,
 
 
 NS_IMETHODIMP JSWindowActorProtocol::HandleEvent(Event* aEvent) {
+  MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
+
   
   
   EventTarget* target = aEvent->GetOriginalTarget();
@@ -211,6 +213,8 @@ NS_IMETHODIMP JSWindowActorProtocol::HandleEvent(Event* aEvent) {
 NS_IMETHODIMP JSWindowActorProtocol::Observe(nsISupports* aSubject,
                                              const char* aTopic,
                                              const char16_t* aData) {
+  MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
+
   nsCOMPtr<nsPIDOMWindowInner> inner = do_QueryInterface(aSubject);
   RefPtr<WindowGlobalChild> wgc;
 

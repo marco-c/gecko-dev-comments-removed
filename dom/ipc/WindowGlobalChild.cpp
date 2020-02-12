@@ -226,22 +226,29 @@ void WindowGlobalChild::BeforeUnloadRemoved() {
 void WindowGlobalChild::Destroy() {
   
   
-  nsTArray<RefPtr<JSWindowActorChild>> windowActors(mWindowActors.Count());
-  for (auto iter = mWindowActors.Iter(); !iter.Done(); iter.Next()) {
-    windowActors.AppendElement(iter.UserData());
-  }
+  nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+      "WindowGlobalChild::Destroy", [self = RefPtr<WindowGlobalChild>(this)]() {
+        
+        
+        nsTArray<RefPtr<JSWindowActorChild>> windowActors(
+            self->mWindowActors.Count());
+        for (auto iter = self->mWindowActors.Iter(); !iter.Done();
+             iter.Next()) {
+          windowActors.AppendElement(iter.UserData());
+        }
 
-  for (auto& windowActor : windowActors) {
-    windowActor->StartDestroy();
-  }
+        for (auto& windowActor : windowActors) {
+          windowActor->StartDestroy();
+        }
 
-  
-  
-  
-  RefPtr<BrowserChild> browserChild = GetBrowserChild();
-  if (!browserChild || !browserChild->IsDestroyed()) {
-    SendDestroy();
-  }
+        
+        
+        
+        RefPtr<BrowserChild> browserChild = self->GetBrowserChild();
+        if (!browserChild || !browserChild->IsDestroyed()) {
+          self->SendDestroy();
+        }
+      }));
 }
 
 mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameLocal(
@@ -443,6 +450,9 @@ already_AddRefed<JSWindowActorChild> WindowGlobalChild::GetActor(
 }
 
 void WindowGlobalChild::ActorDestroy(ActorDestroyReason aWhy) {
+  MOZ_ASSERT(nsContentUtils::IsSafeToRunScript(),
+             "Destroying WindowGlobalChild can run script");
+
   gWindowGlobalChildById->Remove(mInnerWindowId);
 
 #ifdef MOZ_GECKO_PROFILER
