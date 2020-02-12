@@ -1032,7 +1032,9 @@ class UrlbarInput {
 
     
     
-    if (this.view.autoOpen({ event: new CustomEvent("urlbar-reopen") })) {
+    
+    
+    if (this.view.autoOpen({ event: new CustomEvent("tabswitch") })) {
       return;
     }
     

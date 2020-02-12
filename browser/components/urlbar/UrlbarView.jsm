@@ -420,6 +420,12 @@ class UrlbarView {
       return false;
     }
 
+    
+    
+    if (this.isOpen && queryOptions.event.type != "tabswitch") {
+      return false;
+    }
+
     if (
       this._rows.firstElementChild &&
       this._queryContext.searchString == this.input.value
