@@ -193,6 +193,10 @@ bool StructuredCloneHolderBase::Write(
     return false;
   }
 
+  
+  
+  MOZ_ASSERT(mStructuredCloneScope >= mBuffer->scope());
+  mStructuredCloneScope = mBuffer->scope();
   return true;
 }
 
