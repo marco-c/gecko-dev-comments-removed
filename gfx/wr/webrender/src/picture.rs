@@ -113,6 +113,8 @@ use ron;
 use crate::scene_builder_thread::InternerUpdates;
 #[cfg(any(feature = "capture", feature = "replay"))]
 use crate::intern::{Internable, UpdateList};
+#[cfg(any(feature = "replay"))]
+use crate::intern::{UpdateKind};
 #[cfg(any(feature = "capture", feature = "replay"))]
 use api::{ClipIntern, FilterDataIntern, PrimitiveKeyKind};
 #[cfg(any(feature = "capture", feature = "replay"))]
@@ -137,6 +139,10 @@ use std::io::prelude::*;
 #[cfg(feature = "capture")]
 use std::path::PathBuf;
 use crate::scene_building::{SliceFlags};
+
+#[cfg(feature = "replay")]
+
+use std::collections::HashMap;
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -355,7 +361,9 @@ fn clampf(value: f32, low: f32, high: f32) -> f32 {
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct PrimitiveDependencyIndex(u32);
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct PrimitiveDependencyIndex(pub u32);
 
 
 #[derive(Debug)]
@@ -367,7 +375,7 @@ pub struct OpacityBindingInfo {
 }
 
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum OpacityBinding {
@@ -587,6 +595,32 @@ impl TileSurface {
 
 
 
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub enum CompareHelperResult<T> {
+    
+    Equal,
+    
+    Count {
+        prev_count: u8,
+        curr_count: u8,
+    },
+    
+    Sentinel,
+    
+    NotEqual {
+        prev: T,
+        curr: T,
+    },
+    
+    PredicateTrue {
+        curr: T
+    },
+}
+
+
+
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -608,26 +642,69 @@ pub enum PrimitiveCompareResult {
 }
 
 
-#[derive(Debug,Copy,Clone)]
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub enum PrimitiveCompareResultDetail {
+    
+    Equal,
+    
+    Descriptor {
+        old: PrimitiveDescriptor,
+        new: PrimitiveDescriptor,
+    },
+    
+    Clip {
+        detail: CompareHelperResult<ItemUid>,
+    },
+    
+    Transform {
+        detail: CompareHelperResult<SpatialNodeIndex>,
+    },
+    
+    Image {
+        detail: CompareHelperResult<ImageDependency>,
+    },
+    
+    OpacityBinding {
+        detail: CompareHelperResult<OpacityBinding>,
+    }
+}
+
+
+#[derive(Debug,Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum InvalidationReason {
     
-    FractionalOffset,
+    FractionalOffset {
+        old: PictureVector2D,
+        new: PictureVector2D,
+    },
     
-    BackgroundColor,
+    BackgroundColor {
+        old: Option<ColorF>,
+        new: Option<ColorF>,
+    },
     
-    SurfaceOpacityChanged,
+    SurfaceOpacityChanged{
+        became_opaque: bool
+    },
     
     NoTexture,
     
     NoSurface,
     
-    PrimCount,
+    PrimCount {
+        old: Option<Vec<ItemUid>>,
+        new: Option<Vec<ItemUid>>,
+    },
     
     Content {
         
         prim_compare_result: PrimitiveCompareResult,
+        prim_compare_result_detail: Option<PrimitiveCompareResultDetail>,
     },
     
     CompositorKindChanged,
@@ -747,6 +824,7 @@ impl Tile {
         ctx: &TilePostUpdateContext,
         state: &mut TilePostUpdateState,
         invalidation_reason: &mut Option<InvalidationReason>,
+        frame_context: &FrameVisibilityContext,
     ) -> PictureRect {
         let mut prim_comparer = PrimitiveComparer::new(
             &self.prev_descriptor,
@@ -764,6 +842,7 @@ impl Tile {
             &mut dirty_rect,
             state.compare_cache,
             invalidation_reason,
+            frame_context,
         );
 
         dirty_rect
@@ -777,6 +856,7 @@ impl Tile {
         &mut self,
         ctx: &TilePostUpdateContext,
         state: &mut TilePostUpdateState,
+        frame_context: &FrameVisibilityContext,
     ) {
         
         
@@ -786,6 +866,7 @@ impl Tile {
             ctx,
             state,
             &mut invalidation_reason,
+            frame_context,
         );
         if !dirty_rect.is_empty() {
             self.invalidate(
@@ -864,12 +945,16 @@ impl Tile {
         let fract_changed = (self.fract_offset.x - ctx.fract_offset.x).abs() > 0.01 ||
                             (self.fract_offset.y - ctx.fract_offset.y).abs() > 0.01;
         if fract_changed {
-            self.invalidate(None, InvalidationReason::FractionalOffset);
+            self.invalidate(None, InvalidationReason::FractionalOffset {
+                                    old: self.fract_offset,
+                                    new: ctx.fract_offset });
             self.fract_offset = ctx.fract_offset;
         }
 
         if ctx.background_color != self.background_color {
-            self.invalidate(None, InvalidationReason::BackgroundColor);
+            self.invalidate(None, InvalidationReason::BackgroundColor {
+                                    old: self.background_color,
+                                    new: ctx.background_color });
             self.background_color = ctx.background_color;
         }
 
@@ -970,6 +1055,7 @@ impl Tile {
         &mut self,
         ctx: &TilePostUpdateContext,
         state: &mut TilePostUpdateState,
+        frame_context: &FrameVisibilityContext,
     ) -> bool {
         
         
@@ -979,7 +1065,7 @@ impl Tile {
         }
 
         
-        self.update_content_validity(ctx, state);
+        self.update_content_validity(ctx, state, frame_context);
 
         
         if self.current_descriptor.prims.is_empty() {
@@ -1126,14 +1212,14 @@ impl Tile {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct PrimitiveDescriptor {
     
-    prim_uid: ItemUid,
+    pub prim_uid: ItemUid,
     
-    origin: PointKey,
+    pub origin: PointKey,
     
     
     
@@ -1178,14 +1264,14 @@ impl PartialEq for PrimitiveDescriptor {
 }
 
 
-struct CompareHelper<'a, T> {
+struct CompareHelper<'a, T> where T: Copy {
     offset_curr: usize,
     offset_prev: usize,
     curr_items: &'a [T],
     prev_items: &'a [T],
 }
 
-impl<'a, T> CompareHelper<'a, T> where T: PartialEq {
+impl<'a, T> CompareHelper<'a, T> where T: Copy + PartialEq {
     
     fn new(
         prev_items: &'a [T],
@@ -1212,18 +1298,22 @@ impl<'a, T> CompareHelper<'a, T> where T: PartialEq {
         prev_count: u8,
         curr_count: u8,
         f: F,
+        opt_detail: Option<&mut CompareHelperResult<T>>,
     ) -> bool where F: Fn(&T) -> bool {
         
         if prev_count != curr_count {
+            if let Some(detail) = opt_detail { *detail = CompareHelperResult::Count{ prev_count, curr_count }; }
             return false;
         }
         
         if curr_count == 0 {
+            if let Some(detail) = opt_detail { *detail = CompareHelperResult::Equal; }
             return true;
         }
         
         
         if curr_count as usize == MAX_PRIM_SUB_DEPS {
+            if let Some(detail) = opt_detail { *detail = CompareHelperResult::Sentinel; }
             return false;
         }
 
@@ -1235,14 +1325,19 @@ impl<'a, T> CompareHelper<'a, T> where T: PartialEq {
 
         for (curr, prev) in curr_items.iter().zip(prev_items.iter()) {
             if prev != curr {
+                if let Some(detail) = opt_detail {
+                    *detail = CompareHelperResult::NotEqual{ prev: *prev, curr: *curr };
+                }
                 return false;
             }
 
             if f(curr) {
+                if let Some(detail) = opt_detail { *detail = CompareHelperResult::PredicateTrue{ curr: *curr }; }
                 return false;
             }
         }
 
+        if let Some(detail) = opt_detail { *detail = CompareHelperResult::Equal; }
         true
     }
 
@@ -1552,7 +1647,7 @@ macro_rules! declare_tile_cache_logger_updatelists {
                 
                 
                 
-                pub $name: (String, UpdateList<<$ty as Internable>::Key>),
+                pub $name: (Vec<String>, Vec<UpdateList<<$ty as Internable>::Key>>),
             )+
         }
 
@@ -1560,7 +1655,7 @@ macro_rules! declare_tile_cache_logger_updatelists {
             pub fn new() -> Self {
                 TileCacheLoggerUpdateLists {
                     $(
-                        $name : ( String::new(), UpdateList{ updates: Vec::new(), data: Vec::new()} ),
+                        $name : ( Vec::new(), Vec::new() ),
                     )+
                 }
             }
@@ -1572,7 +1667,7 @@ macro_rules! declare_tile_cache_logger_updatelists {
                 updates: &InternerUpdates
             ) {
                 $(
-                    self.$name.0 = ron::ser::to_string_pretty(&updates.$name, Default::default()).unwrap();
+                    self.$name.0.push(ron::ser::to_string_pretty(&updates.$name, Default::default()).unwrap());
                 )+
             }
 
@@ -1589,11 +1684,7 @@ macro_rules! declare_tile_cache_logger_updatelists {
                     TileCacheLoggerUpdateListsSerializer { ron_string: Vec::new() };
                 $(
                     serializer.ron_string.push(
-                        if self.$name.0.is_empty() {
-                            "( updates: [], data: [] )".to_string()
-                        } else {
-                            self.$name.0.clone()
-                        });
+                        ron::ser::to_string_pretty(&self.$name.0, Default::default()).unwrap());
                 )+
                 ron::ser::to_string_pretty(&serializer, Default::default()).unwrap()
             }
@@ -1610,11 +1701,45 @@ macro_rules! declare_tile_cache_logger_updatelists {
                     };
                 let mut index = 0;
                 $(
-                    self.$name.1 = ron::de::from_str(&serializer.ron_string[index]).unwrap();
+                    let ron_lists : Vec<String> = ron::de::from_str(&serializer.ron_string[index]).unwrap();
+                    self.$name.1 = ron_lists.iter()
+                                            .map( |list| ron::de::from_str(&list).unwrap() )
+                                            .collect();
                     index = index + 1;
                 )+
                 // error: value assigned to `index` is never read
                 let _ = index;
+            }
+
+            /// helper method to add a stringified version of all interned keys into
+            /// a lookup table based on ItemUid.  Use strings as a form of type erasure
+            /// so all UpdateLists can go into a single map.
+            /// Then during analysis, when we see an invalidation reason due to
+            /// "ItemUid such and such was added to the tile primitive list", the lookup
+            /// allows mapping that back into something readable.
+            #[cfg(feature = "replay")]
+            pub fn insert_in_lookup(
+                        &mut self,
+                        itemuid_to_string: &mut HashMap<ItemUid, String>)
+            {
+                $(
+                    {
+                        for list in &self.$name.1 {
+                            let mut insert_count = 0;
+                            for update in &list.updates {
+                                match update.kind {
+                                    UpdateKind::Insert => {
+                                        itemuid_to_string.insert(
+                                            update.uid,
+                                            format!("{:?}", list.data[insert_count]));
+                                        insert_count = insert_count + 1;
+                                    },
+                                    _ => {}
+                                }
+                            }
+                        }
+                    }
+                )+
             }
         }
     }
@@ -2762,7 +2887,7 @@ impl TileCacheInstance {
         
         let mut tile_cache_is_opaque = true;
         for (key, tile) in self.tiles.iter_mut() {
-            if tile.post_update(&ctx, &mut state) {
+            if tile.post_update(&ctx, &mut state, frame_context) {
                 self.tiles_to_draw.push(*key);
                 tile_cache_is_opaque &= tile.is_opaque;
             }
@@ -2785,7 +2910,8 @@ impl TileCacheInstance {
                         *id = None;
                     }
                     
-                    tile.invalidate(None, InvalidationReason::SurfaceOpacityChanged);
+                    tile.invalidate(None, InvalidationReason::SurfaceOpacityChanged {
+                                            became_opaque: tile_cache_is_opaque });
                 }
                 
                 
@@ -5128,7 +5254,7 @@ struct PrimitiveComparisonKey {
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-struct ImageDependency {
+pub struct ImageDependency {
     key: ImageKey,
     generation: ImageGeneration,
 }
@@ -5209,6 +5335,7 @@ impl<'a> PrimitiveComparer<'a> {
         &mut self,
         prev: &PrimitiveDescriptor,
         curr: &PrimitiveDescriptor,
+        opt_detail: Option<&mut PrimitiveCompareResultDetail>,
     ) -> PrimitiveCompareResult {
         let resource_cache = self.resource_cache;
         let spatial_nodes = self.spatial_nodes;
@@ -5216,43 +5343,60 @@ impl<'a> PrimitiveComparer<'a> {
 
         
         if prev != curr {
+            if let Some(detail) = opt_detail {
+                *detail = PrimitiveCompareResultDetail::Descriptor{ old: *prev, new: *curr };
+            }
             return PrimitiveCompareResult::Descriptor;
         }
 
         
+        let mut clip_result = CompareHelperResult::Equal;
         if !self.clip_comparer.is_same(
             prev.clip_dep_count,
             curr.clip_dep_count,
             |_| {
                 false
-            }
+            },
+            if opt_detail.is_some() { Some(&mut clip_result) } else { None }
         ) {
+            if let Some(detail) = opt_detail { *detail = PrimitiveCompareResultDetail::Clip{ detail: clip_result }; }
             return PrimitiveCompareResult::Clip;
         }
 
         
+        let mut transform_result = CompareHelperResult::Equal;
         if !self.transform_comparer.is_same(
             prev.transform_dep_count,
             curr.transform_dep_count,
             |curr| {
                 spatial_nodes[curr].changed
-            }
+            },
+            if opt_detail.is_some() { Some(&mut transform_result) } else { None },
         ) {
+            if let Some(detail) = opt_detail {
+                *detail = PrimitiveCompareResultDetail::Transform{ detail: transform_result };
+            }
             return PrimitiveCompareResult::Transform;
         }
 
         
+        let mut image_result = CompareHelperResult::Equal;
         if !self.image_comparer.is_same(
             prev.image_dep_count,
             curr.image_dep_count,
             |curr| {
                 resource_cache.get_image_generation(curr.key) != curr.generation
-            }
+            },
+            if opt_detail.is_some() { Some(&mut image_result) } else { None },
         ) {
+            if let Some(detail) = opt_detail {
+                *detail = PrimitiveCompareResultDetail::Image{ detail: image_result };
+            }
             return PrimitiveCompareResult::Image;
         }
 
         
+        let mut bind_result = CompareHelperResult::Equal;
         if !self.opacity_comparer.is_same(
             prev.opacity_binding_dep_count,
             curr.opacity_binding_dep_count,
@@ -5266,8 +5410,12 @@ impl<'a> PrimitiveComparer<'a> {
                 }
 
                 false
-            }
+            },
+            if opt_detail.is_some() { Some(&mut bind_result) } else { None },
         ) {
+            if let Some(detail) = opt_detail {
+                *detail = PrimitiveCompareResultDetail::OpacityBinding{ detail: bind_result };
+            }
             return PrimitiveCompareResult::OpacityBinding;
         }
 
@@ -5626,6 +5774,7 @@ impl TileNode {
         dirty_rect: &mut PictureRect,
         compare_cache: &mut FastHashMap<PrimitiveComparisonKey, PrimitiveCompareResult>,
         invalidation_reason: &mut Option<InvalidationReason>,
+        frame_context: &FrameVisibilityContext,
     ) {
         match self.kind {
             TileNodeKind::Node { ref mut children, .. } => {
@@ -5637,6 +5786,7 @@ impl TileNode {
                         dirty_rect,
                         compare_cache,
                         invalidation_reason,
+                        frame_context,
                     );
                 }
             }
@@ -5668,12 +5818,27 @@ impl TileNode {
                             curr_index: *curr_index,
                         };
 
+                        #[cfg(any(feature = "capture", feature = "replay"))]
+                        let mut compare_detail = PrimitiveCompareResultDetail::Equal;
+                        #[cfg(any(feature = "capture", feature = "replay"))]
+                        let prim_compare_result_detail =
+                            if frame_context.debug_flags.contains(DebugFlags::TILE_CACHE_LOGGING_DBG) {
+                                Some(&mut compare_detail)
+                            } else {
+                                None
+                            };
+
+                        #[cfg(not(any(feature = "capture", feature = "replay")))]
+                        let compare_detail = PrimitiveCompareResultDetail::Equal;
+                        #[cfg(not(any(feature = "capture", feature = "replay")))]
+                        let prim_compare_result_detail = None;
+
                         let prim_compare_result = *compare_cache
                             .entry(key)
                             .or_insert_with(|| {
                                 let prev = &prev_prims[i0];
                                 let curr = &curr_prims[i1];
-                                prim_comparer.compare_prim(prev, curr)
+                                prim_comparer.compare_prim(prev, curr, prim_compare_result_detail)
                             });
 
                         
@@ -5681,6 +5846,7 @@ impl TileNode {
                             if invalidation_reason.is_none() {
                                 *invalidation_reason = Some(InvalidationReason::Content {
                                     prim_compare_result,
+                                    prim_compare_result_detail: Some(compare_detail)
                                 });
                             }
                             *dirty_rect = self.rect.union(dirty_rect);
@@ -5693,7 +5859,29 @@ impl TileNode {
                     }
                 } else {
                     if invalidation_reason.is_none() {
-                        *invalidation_reason = Some(InvalidationReason::PrimCount);
+                        
+                        
+                        
+                        #[cfg(any(feature = "capture", feature = "replay"))]
+                        {
+                            if frame_context.debug_flags.contains(DebugFlags::TILE_CACHE_LOGGING_DBG) {
+                                let old = prev_indices.iter().map( |i| prev_prims[i.0 as usize].prim_uid ).collect();
+                                let new = curr_indices.iter().map( |i| curr_prims[i.0 as usize].prim_uid ).collect();
+                                *invalidation_reason = Some(InvalidationReason::PrimCount {
+                                                                old: Some(old),
+                                                                new: Some(new) });
+                            } else {
+                                *invalidation_reason = Some(InvalidationReason::PrimCount {
+                                                                old: None,
+                                                                new: None });
+                            }
+                        }
+                        #[cfg(not(any(feature = "capture", feature = "replay")))]
+                        {
+                            *invalidation_reason = Some(InvalidationReason::PrimCount {
+                                                                old: None,
+                                                                new: None });
+                        }
                     }
                     *dirty_rect = self.rect.union(dirty_rect);
                     *dirty_tracker = *dirty_tracker | 1;

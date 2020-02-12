@@ -612,7 +612,7 @@ impl From<WorldVector2D> for VectorKey {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, MallocSizeOf, PartialEq)]
+#[derive(Debug, Copy, Clone, MallocSizeOf, PartialEq)]
 pub struct PointKey {
     pub x: f32,
     pub y: f32,
