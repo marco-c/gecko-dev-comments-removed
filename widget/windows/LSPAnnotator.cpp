@@ -102,20 +102,11 @@ LSPAnnotationGatherer::Run() {
     
     
     
-    nsModuleHandle ws2_32(LoadLibraryW(L"ws2_32.dll"));
-    if (ws2_32) {
-      decltype(WSCGetProviderInfo)* pWSCGetProviderInfo =
-          reinterpret_cast<decltype(WSCGetProviderInfo)*>(
-              GetProcAddress(ws2_32, "WSCGetProviderInfo"));
-      if (pWSCGetProviderInfo) {
-        DWORD categoryInfo;
-        size_t categoryInfoSize = sizeof(categoryInfo);
-        if (!pWSCGetProviderInfo(
-                &providers[i].ProviderId, ProviderInfoLspCategories,
-                (PBYTE)&categoryInfo, &categoryInfoSize, 0, &err)) {
-          str.AppendPrintf("0x%x", categoryInfo);
-        }
-      }
+    DWORD categoryInfo;
+    size_t categoryInfoSize = sizeof(categoryInfo);
+    if (!WSCGetProviderInfo(&providers[i].ProviderId, ProviderInfoLspCategories,
+                            (PBYTE)&categoryInfo, &categoryInfoSize, 0, &err)) {
+      str.AppendPrintf("0x%lx", categoryInfo);
     }
 
     str.AppendLiteral(" : ");
