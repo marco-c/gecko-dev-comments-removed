@@ -18,24 +18,9 @@ class MozbaseMixin(object):
             'config',
             self.config.get('mozbase_requirements', 'mozbase_requirements.txt')
         )
-        if os.path.isfile(requirements):
-            self.register_virtualenv_module(requirements=[requirements],
-                                            two_pass=True)
-            return
-
-        
-        
-        
-        
-        mozbase_dir = os.path.join('tests', 'mozbase')
-        self.register_virtualenv_module(
-            'manifestparser',
-            url=os.path.join(mozbase_dir, 'manifestdestiny')
-        )
-
-        for m in ('mozfile', 'mozlog', 'mozinfo', 'moznetwork', 'mozhttpd',
-                  'mozcrash', 'mozinstall', 'mozdevice', 'mozprofile',
-                  'mozprocess', 'mozproxy', 'mozrunner'):
-            self.register_virtualenv_module(
-                m, url=os.path.join(mozbase_dir, m)
+        if not os.path.isfile(requirements):
+            self.fatal(
+                "Could not find mozbase requirements file: {}".format(requirements)
             )
+
+        self.register_virtualenv_module(requirements=[requirements], two_pass=True)
