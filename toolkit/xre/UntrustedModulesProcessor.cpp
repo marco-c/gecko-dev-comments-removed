@@ -91,7 +91,11 @@ bool UntrustedModulesProcessor::IsSupportedProcessType() {
   switch (XRE_GetProcessType()) {
     case GeckoProcessType_Default:
     case GeckoProcessType_Content:
+      return Telemetry::CanRecordReleaseData();
     case GeckoProcessType_RDD:
+      
+      
+      
       return true;
     default:
       return false;
@@ -101,7 +105,7 @@ bool UntrustedModulesProcessor::IsSupportedProcessType() {
 
 RefPtr<UntrustedModulesProcessor> UntrustedModulesProcessor::Create() {
 #if defined(EARLY_BETA_OR_EARLIER)
-  if (!IsSupportedProcessType() || !Telemetry::CanRecordReleaseData()) {
+  if (!IsSupportedProcessType()) {
     return nullptr;
   }
 
