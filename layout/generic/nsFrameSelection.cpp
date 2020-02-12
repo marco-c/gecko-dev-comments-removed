@@ -1977,9 +1977,8 @@ static bool IsCell(nsIContent* aContent) {
   return aContent->IsAnyOfHTMLElements(nsGkAtoms::td, nsGkAtoms::th);
 }
 
-nsITableCellLayout* nsFrameSelection::GetCellLayout(
-    nsIContent* aCellContent) const {
-  NS_ENSURE_TRUE(mPresShell, nullptr);
+
+nsITableCellLayout* nsFrameSelection::GetCellLayout(nsIContent* aCellContent) {
   nsITableCellLayout* cellLayoutObject =
       do_QueryFrame(aCellContent->GetPrimaryFrame());
   return cellLayoutObject;
@@ -2638,6 +2637,7 @@ nsRange* nsFrameSelection::GetNextCellRange() {
 
   return range;
 }
+
 
 nsresult nsFrameSelection::GetCellIndexes(nsIContent* aCell, int32_t& aRowIndex,
                                           int32_t& aColIndex) {

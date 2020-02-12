@@ -799,7 +799,7 @@ class nsFrameSelection final {
       mozilla::dom::Selection* aSel);
 
   
-  nsITableCellLayout* GetCellLayout(nsIContent* aCellContent) const;
+  static nsITableCellLayout* GetCellLayout(nsIContent* aCellContent);
 
   nsresult SelectBlockOfCells(nsIContent* aStartNode, nsIContent* aEndNode);
   nsresult SelectRowOrColumn(nsIContent* aCellContent,
@@ -809,8 +809,8 @@ class nsFrameSelection final {
                          int32_t aEndColumnIndex,
                          bool aRemoveOutsideOfCellRange);
 
-  nsresult GetCellIndexes(nsIContent* aCell, int32_t& aRowIndex,
-                          int32_t& aColIndex);
+  static nsresult GetCellIndexes(nsIContent* aCell, int32_t& aRowIndex,
+                                 int32_t& aColIndex);
 
   
   
