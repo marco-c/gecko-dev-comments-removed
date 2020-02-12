@@ -1,20 +1,20 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+// Local Includes
 #include "nsWebBrowser.h"
 
-
+// Helper Classes
 #include "nsGfxCIID.h"
 #include "nsWidgetsCID.h"
 
 #include "gfxUtils.h"
 #include "mozilla/gfx/2D.h"
 
-
+// Interfaces Needed
 #include "gfxContext.h"
 #include "nsReadableUtils.h"
 #include "nsIInterfaceRequestor.h"
@@ -35,16 +35,17 @@
 #include "mozilla/dom/LoadURIOptionsBinding.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 
-
+// for painting the background window
 #include "mozilla/LookAndFeel.h"
+#include "mozilla/ServoStyleConsts.h"
 
-
+// Printing Includes
 #ifdef NS_PRINTING
 #  include "nsIWebBrowserPrint.h"
 #  include "nsIContentViewer.h"
 #endif
 
-
+// PSM2 includes
 #include "nsISecureBrowserUI.h"
 #include "nsXULAppAPI.h"
 
@@ -92,20 +93,20 @@ nsIWidget* nsWebBrowser::EnsureWidget() {
   return mInternalWidget;
 }
 
-
+/* static */
 already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
     nsIWebBrowserChrome* aContainerWindow, nsIWidget* aParentWidget,
     const OriginAttributes& aOriginAttributes,
     dom::BrowsingContext* aBrowsingContext,
     dom::WindowGlobalChild* aInitialWindowChild,
-    bool aDisableHistory ) {
+    bool aDisableHistory /* = false */) {
   MOZ_ASSERT_IF(aInitialWindowChild,
                 aInitialWindowChild->BrowsingContext() == aBrowsingContext);
 
   RefPtr<nsWebBrowser> browser = new nsWebBrowser(
       aBrowsingContext->IsContent() ? typeContentWrapper : typeChromeWrapper);
 
-  
+  // nsWebBrowser::SetContainer also calls nsWebBrowser::EnsureDocShellTreeOwner
   NS_ENSURE_SUCCESS(browser->SetContainerWindow(aContainerWindow), nullptr);
   NS_ENSURE_SUCCESS(browser->SetParentWidget(aParentWidget), nullptr);
 
@@ -125,15 +126,15 @@ already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
   docShell->SetOriginAttributes(aOriginAttributes);
   browser->SetDocShell(docShell);
 
-  
+  // get the system default window background colour
   LookAndFeel::GetColor(LookAndFeel::ColorID::WindowBackground,
                         &browser->mBackgroundColor);
 
-  
-  
-  
-  
-  
+  // HACK ALERT - this registration registers the nsDocShellTreeOwner as a
+  // nsIWebBrowserListener so it can setup its MouseListener in one of the
+  // progress callbacks. If we can register the MouseListener another way, this
+  // registration can go away, and nsDocShellTreeOwner can stop implementing
+  // nsIWebProgressListener.
   RefPtr<nsDocShellTreeOwner> docShellTreeOwner = browser->mDocShellTreeOwner;
   NS_ASSERTION(
       browser->mWebProgress,
@@ -150,15 +151,15 @@ already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
 
   docShell->SetTreeOwner(docShellTreeOwner);
 
-  
-  
-  
-  
+  // If the webbrowser is a content docshell item then we won't hear any
+  // events from subframes. To solve that we install our own chrome event
+  // handler that always gets called (even for subframes) for any bubbling
+  // event.
 
   docShell->InitSessionHistory();
 
   if (XRE_IsParentProcess() && !aDisableHistory) {
-    
+    // Hook up global history. Do not fail if we can't - just warn.
     DebugOnly<nsresult> rv =
         browser->EnableGlobalHistory(browser->mShouldEnableHistory);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "EnableGlobalHistory() failed");
@@ -166,10 +167,10 @@ already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
 
   NS_ENSURE_SUCCESS(docShellAsWin->Create(), nullptr);
 
-  
-  
-  
-  
+  // Hook into the OnSecurityChange() notification for lock/unlock icon
+  // updates
+  // this works because the implementation of nsISecureBrowserUI
+  // (nsSecureBrowserUIImpl) calls docShell->SetSecurityUI(this);
   nsCOMPtr<nsISecureBrowserUI> securityUI =
       do_CreateInstance(NS_SECURE_BROWSER_UI_CONTRACTID);
   if (NS_WARN_IF(!securityUI)) {
@@ -177,7 +178,7 @@ already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
   }
   securityUI->Init(docShell);
 
-  docShellTreeOwner->AddToWatcher();  
+  docShellTreeOwner->AddToWatcher();  // evil twin of Remove in SetDocShell(0)
   docShellTreeOwner->AddChromeListeners();
 
   if (aInitialWindowChild) {
@@ -192,7 +193,7 @@ nsWebBrowser::InternalDestroy() {
   if (mInternalWidget) {
     mInternalWidget->SetWidgetListener(nullptr);
     mInternalWidget->Destroy();
-    mInternalWidget = nullptr;  
+    mInternalWidget = nullptr;  // Force release here.
   }
 
   SetDocShell(nullptr);
@@ -224,9 +225,9 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsWebBrowser)
   NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
 NS_INTERFACE_MAP_END
 
-
-
-
+///*****************************************************************************
+// nsWebBrowser::nsIInterfaceRequestor
+//*****************************************************************************
 
 NS_IMETHODIMP
 nsWebBrowser::GetInterface(const nsIID& aIID, void** aSink) {
@@ -259,9 +260,9 @@ nsWebBrowser::GetInterface(const nsIID& aIID, void** aSink) {
   return NS_NOINTERFACE;
 }
 
-
-
-
+//*****************************************************************************
+// nsWebBrowser::nsIWebBrowser
+//*****************************************************************************
 
 NS_IMETHODIMP
 nsWebBrowser::EnableGlobalHistory(bool aEnable) {
@@ -305,9 +306,9 @@ void nsWebBrowser::SetOriginAttributes(const OriginAttributes& aAttrs) {
   mOriginAttributes = aAttrs;
 }
 
-
-
-
+//*****************************************************************************
+// nsWebBrowser::nsIDocShellTreeItem
+//*****************************************************************************
 
 NS_IMETHODIMP
 nsWebBrowser::GetName(nsAString& aName) {
@@ -337,7 +338,7 @@ nsWebBrowser::NameEquals(const nsAString& aName, bool* aResult) {
   return NS_OK;
 }
 
-
+/* virtual */
 int32_t nsWebBrowser::ItemType() { return mContentType; }
 
 NS_IMETHODIMP
@@ -443,9 +444,9 @@ nsWebBrowser::SetTreeOwner(nsIDocShellTreeOwner* aTreeOwner) {
   return mDocShellTreeOwner->SetTreeOwner(aTreeOwner);
 }
 
-
-
-
+//*****************************************************************************
+// nsWebBrowser::nsIDocShellTreeItem
+//*****************************************************************************
 
 NS_IMETHODIMP
 nsWebBrowser::GetInProcessChildCount(int32_t* aChildCount) {
@@ -470,9 +471,9 @@ nsWebBrowser::GetInProcessChildAt(int32_t aIndex,
   return NS_ERROR_UNEXPECTED;
 }
 
-
-
-
+//*****************************************************************************
+// nsWebBrowser::nsIWebNavigation
+//*****************************************************************************
 
 NS_IMETHODIMP
 nsWebBrowser::GetCanGoBack(bool* aCanGoBack) {
@@ -517,7 +518,7 @@ NS_IMETHODIMP
 nsWebBrowser::LoadURIFromScript(const nsAString& aURI,
                                 JS::Handle<JS::Value> aLoadURIOptions,
                                 JSContext* aCx) {
-  
+  // generate dictionary for loadURIOptions and forward call
   dom::LoadURIOptions loadURIOptions;
   if (!loadURIOptions.Init(aCx, aLoadURIOptions)) {
     return NS_ERROR_INVALID_ARG;
@@ -566,8 +567,8 @@ nsWebBrowser::GetCurrentURI(nsIURI** aURI) {
   return mDocShellAsNav->GetCurrentURI(aURI);
 }
 
-
-
+// XXX(nika): Consider making the mozilla::dom::ChildSHistory version the
+// canonical one?
 NS_IMETHODIMP
 nsWebBrowser::GetSessionHistoryXPCOM(nsISupports** aSessionHistory) {
   NS_ENSURE_ARG_POINTER(aSessionHistory);
@@ -592,9 +593,9 @@ void nsWebBrowser::SetAllowDNSPrefetch(bool aAllowPrefetch) {
   mDocShell->SetAllowDNSPrefetch(aAllowPrefetch);
 }
 
-
-
-
+//*****************************************************************************
+// nsWebBrowser::nsIWebProgressListener
+//*****************************************************************************
 
 NS_IMETHODIMP
 nsWebBrowser::OnStateChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
@@ -669,9 +670,9 @@ nsWebBrowser::OnContentBlockingEvent(nsIWebProgress* aWebProgress,
   return NS_OK;
 }
 
-
-
-
+//*****************************************************************************
+// nsWebBrowser::nsIWebBrowserPersist
+//*****************************************************************************
 
 NS_IMETHODIMP
 nsWebBrowser::GetPersistFlags(uint32_t* aPersistFlags) {
@@ -756,7 +757,7 @@ nsWebBrowser::SavePrivacyAwareURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
     if (currentState == PERSIST_STATE_FINISHED) {
       mPersist = nullptr;
     } else {
-      
+      // You can't save again until the last save has completed
       return NS_ERROR_FAILURE;
     }
   }
@@ -771,7 +772,7 @@ nsWebBrowser::SavePrivacyAwareURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
     }
   }
 
-  
+  // Create a throwaway persistence object to do the work
   nsresult rv;
   mPersist = do_CreateInstance(NS_WEBBROWSERPERSIST_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -796,12 +797,12 @@ nsWebBrowser::SaveChannel(nsIChannel* aChannel, nsISupports* aFile) {
     if (currentState == PERSIST_STATE_FINISHED) {
       mPersist = nullptr;
     } else {
-      
+      // You can't save again until the last save has completed
       return NS_ERROR_FAILURE;
     }
   }
 
-  
+  // Create a throwaway persistence object to do the work
   nsresult rv;
   mPersist = do_CreateInstance(NS_WEBBROWSERPERSIST_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -826,13 +827,13 @@ nsWebBrowser::SaveDocument(nsISupports* aDocumentish, nsISupports* aFile,
     if (currentState == PERSIST_STATE_FINISHED) {
       mPersist = nullptr;
     } else {
-      
+      // You can't save again until the last save has completed
       return NS_ERROR_FAILURE;
     }
   }
 
-  
-  
+  // Use the specified DOM document, or if none is specified, the one
+  // attached to the web browser.
 
   nsCOMPtr<nsISupports> doc;
   if (aDocumentish) {
@@ -846,7 +847,7 @@ nsWebBrowser::SaveDocument(nsISupports* aDocumentish, nsISupports* aFile,
     return NS_ERROR_FAILURE;
   }
 
-  
+  // Create a throwaway persistence object to do the work
   nsresult rv;
   mPersist = do_CreateInstance(NS_WEBBROWSERPERSIST_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -877,24 +878,24 @@ nsWebBrowser::Cancel(nsresult aReason) {
   return NS_OK;
 }
 
-
-
-
+//*****************************************************************************
+// nsWebBrowser::nsIBaseWindow
+//*****************************************************************************
 
 NS_IMETHODIMP
 nsWebBrowser::InitWindow(nativeWindow aParentNativeWindow,
                          nsIWidget* aParentWidget, int32_t aX, int32_t aY,
                          int32_t aCX, int32_t aCY) {
-  
-  
+  // nsIBaseWindow::InitWindow and nsIBaseWindow::Create
+  // implementations have been merged into nsWebBrowser::Create
   MOZ_DIAGNOSTIC_ASSERT(false);
   return NS_ERROR_NULL_POINTER;
 }
 
 NS_IMETHODIMP
 nsWebBrowser::Create() {
-  
-  
+  // nsIBaseWindow::InitWindow and nsIBaseWindow::Create
+  // implementations have been merged into nsWebBrowser::Create
   MOZ_DIAGNOSTIC_ASSERT(false);
   return NS_ERROR_NULL_POINTER;
 }
@@ -921,13 +922,13 @@ nsWebBrowser::GetDevicePixelsPerDesktopPixel(double* aScale) {
 
 NS_IMETHODIMP
 nsWebBrowser::SetPositionDesktopPix(int32_t aX, int32_t aY) {
-  
-  
-  
-  
-  
-  
-  
+  // XXX jfkthame
+  // It's not clear to me whether this will be fully correct across
+  // potential multi-screen, mixed-DPI configurations for all platforms;
+  // we might need to add code paths that make it possible to pass the
+  // desktop-pix parameters all the way through to the native widget,
+  // to avoid the risk of device-pixel coords mapping to the wrong
+  // display on OS X with mixed retina/non-retina screens.
   double scale = 1.0;
   GetDevicePixelsPerDesktopPixel(&scale);
   return SetPosition(NSToIntRound(aX * scale), NSToIntRound(aY * scale));
@@ -970,15 +971,15 @@ nsWebBrowser::SetPositionAndSize(int32_t aX, int32_t aY, int32_t aCX,
   int32_t doc_x = aX;
   int32_t doc_y = aY;
 
-  
-  
-  
+  // If there is an internal widget we need to make the docShell coordinates
+  // relative to the internal widget rather than the calling app's parent.
+  // We also need to resize our widget then.
   if (mInternalWidget) {
     doc_x = doc_y = 0;
     mInternalWidget->Resize(aX, aY, aCX, aCY,
                             !!(aFlags & nsIBaseWindow::eRepaint));
   }
-  
+  // Now reposition/ resize the doc
   NS_ENSURE_SUCCESS(
       mDocShellAsWin->SetPositionAndSize(doc_x, doc_y, aCX, aCY, aFlags),
       NS_ERROR_FAILURE);
@@ -1006,8 +1007,8 @@ nsWebBrowser::GetPositionAndSize(int32_t* aX, int32_t* aY, int32_t* aCX,
     }
     return NS_OK;
   } else {
-    
-    
+    // Can directly return this as it is the
+    // same interface, thus same returns.
     return mDocShellAsWin->GetPositionAndSize(aX, aY, aCX, aCY);
   }
   return NS_OK;
@@ -1016,8 +1017,8 @@ nsWebBrowser::GetPositionAndSize(int32_t* aX, int32_t* aY, int32_t* aCX,
 NS_IMETHODIMP
 nsWebBrowser::Repaint(bool aForce) {
   NS_ENSURE_STATE(mDocShell);
-  
-  
+  // Can directly return this as it is the
+  // same interface, thus same returns.
   return mDocShellAsWin->Repaint(aForce);
 }
 
@@ -1066,7 +1067,7 @@ nsWebBrowser::SetParentNativeWindow(nativeWindow aParentNativeWindow) {
 
 NS_IMETHODIMP
 nsWebBrowser::GetNativeHandle(nsAString& aNativeHandle) {
-  
+  // the nativeHandle should be accessed from nsIAppWindow
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -1156,14 +1157,14 @@ nsWebBrowser::SetTitle(const nsAString& aTitle) {
   return NS_OK;
 }
 
-
-
-
+//*****************************************************************************
+// nsWebBrowser: Listener Helpers
+//*****************************************************************************
 
 NS_IMETHODIMP
 nsWebBrowser::SetDocShell(nsIDocShell* aDocShell) {
-  
-  
+  // We need to keep the docshell alive while we perform the changes, but we
+  // don't need to call any methods on it.
   nsCOMPtr<nsIDocShell> kungFuDeathGrip(mDocShell);
   mozilla::Unused << kungFuDeathGrip;
 
@@ -1182,12 +1183,12 @@ nsWebBrowser::SetDocShell(nsIDocShell* aDocShell) {
     mDocShellAsNav = nav;
     mWebProgress = progress;
 
-    
-    
+    // By default, do not allow DNS prefetch, so we don't break our frozen
+    // API.  Embeddors who decide to enable it should do so manually.
     mDocShell->SetAllowDNSPrefetch(false);
   } else {
     if (mDocShellTreeOwner) {
-      mDocShellTreeOwner->RemoveFromWatcher();  
+      mDocShellTreeOwner->RemoveFromWatcher();  // evil twin of Add in Create()
     }
     if (mDocShellAsWin) {
       mDocShellAsWin->Destroy();

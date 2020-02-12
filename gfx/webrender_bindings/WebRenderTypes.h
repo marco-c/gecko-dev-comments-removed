@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef GFX_WEBRENDERTYPES_H
 #define GFX_WEBRENDERTYPES_H
@@ -21,19 +21,21 @@
 #include "mozilla/TypeTraits.h"
 #include "mozilla/Variant.h"
 #include "Units.h"
-#include "nsStyleConsts.h"
 
 namespace mozilla {
 
+enum class StyleBorderStyle : uint8_t;
+enum class StyleBorderImageRepeat : uint8_t;
+
 namespace ipc {
 class ByteBuf;
-}  // namespace ipc
+}  
 
 namespace wr {
 
-// Using uintptr_t in C++ code for "size" types seems weird, so let's use a
-// better-sounding typedef. The name comes from the fact that we generally
-// have to deal with uintptr_t because that's what rust's usize maps to.
+
+
+
 typedef uintptr_t usize;
 
 typedef wr::WrWindowId WindowId;
@@ -60,35 +62,35 @@ struct ExternalImageKeyPair {
   ExternalImageId id;
 };
 
-/* Generate a brand new window id and return it. */
+
 WindowId NewWindowId();
 
 MOZ_DEFINE_ENUM_CLASS_WITH_BASE(
     RenderRoot, uint8_t,
     (
-        // The default render root - within the parent process, this refers
-        // to everything within the top chrome area (urlbar, tab strip, etc.).
-        // Within the content process, this refers to the content area. Any
-        // system that multiplexes data streams from different processes is
-        // responsible for converting RenderRoot::Default into
-        // RenderRoot::Content (or whatever value is appropriate)
+        
+        
+        
+        
+        
+        
         Default,
 
-        // Everything below the chrome - even if it is not coming from a content
-        // process. For example. the devtools, sidebars, and status panel are
-        // traditionally part of the "chrome," but are assigned a renderroot of
-        // RenderRoot::Content because they occupy screen space in the "content"
-        // area of the browser (visually situated below the "chrome" area).
+        
+        
+        
+        
+        
         Content,
 
-        // Currently used for the pointerlock and fullscreen warnings. This is
-        // intended to overlay both the Content and Default render roots when
-        // we need a piece of UI that straddles their border.
+        
+        
+        
         Popover));
 
 typedef EnumSet<RenderRoot, uint8_t> RenderRootSet;
 
-// For simple iteration of all render roots
+
 const Array<RenderRoot, kRenderRootCount> kRenderRoots(RenderRoot::Default,
                                                        RenderRoot::Content,
                                                        RenderRoot::Popover);
@@ -103,9 +105,9 @@ class RenderRootArray : public Array<T, kRenderRootCount> {
  public:
   RenderRootArray() {
     if (IsPod<T>::value) {
-      // Ensure primitive types get initialized to 0/false.
+      
       PodArrayZero(*this);
-    }  // else C++ will default-initialize the array elements for us
+    }  
   }
 
   T& operator[](wr::RenderRoot aIndex) {
@@ -126,7 +128,7 @@ class NonDefaultRenderRootArray : public Array<T, kRenderRootCount - 1> {
 
  public:
   NonDefaultRenderRootArray() {
-    // See RenderRootArray constructor
+    
     if (IsPod<T>::value) {
       PodArrayZero(*this);
     }
@@ -152,14 +154,14 @@ inline Maybe<wr::ImageFormat> SurfaceFormatToImageFormat(
     gfx::SurfaceFormat aFormat) {
   switch (aFormat) {
     case gfx::SurfaceFormat::R8G8B8X8:
-      // WebRender not support RGBX8. Assert here.
+      
       MOZ_ASSERT(false);
       return Nothing();
     case gfx::SurfaceFormat::R8G8B8A8:
       return Some(wr::ImageFormat::RGBA8);
     case gfx::SurfaceFormat::B8G8R8X8:
-      // TODO: WebRender will have a BGRA + opaque flag for this but does not
-      // have it yet (cf. issue #732).
+      
+      
     case gfx::SurfaceFormat::B8G8R8A8:
       return Some(wr::ImageFormat::BGRA8);
     case gfx::SurfaceFormat::A8:
@@ -190,7 +192,7 @@ inline gfx::SurfaceFormat ImageFormatToSurfaceFormat(ImageFormat aFormat) {
 }
 
 struct ImageDescriptor : public wr::WrImageDescriptor {
-  // We need a default constructor for ipdl serialization.
+  
   ImageDescriptor() {
     format = (ImageFormat)0;
     width = 0;
@@ -239,12 +241,12 @@ inline uint64_t AsUint64(const NativeSurfaceId& aId) {
   return static_cast<uint64_t>(aId._0);
 }
 
-// Whenever possible, use wr::WindowId instead of manipulating uint64_t.
+
 inline uint64_t AsUint64(const WindowId& aId) {
   return static_cast<uint64_t>(aId.mHandle);
 }
 
-// Whenever possible, use wr::ImageKey instead of manipulating uint64_t.
+
 inline uint64_t AsUint64(const ImageKey& aId) {
   return (static_cast<uint64_t>(aId.mNamespace.mHandle) << 32) +
          static_cast<uint64_t>(aId.mHandle);
@@ -257,7 +259,7 @@ inline ImageKey AsImageKey(const uint64_t& aId) {
   return imageKey;
 }
 
-// Whenever possible, use wr::FontKey instead of manipulating uint64_t.
+
 inline uint64_t AsUint64(const FontKey& aId) {
   return (static_cast<uint64_t>(aId.mNamespace.mHandle) << 32) +
          static_cast<uint64_t>(aId.mHandle);
@@ -270,7 +272,7 @@ inline FontKey AsFontKey(const uint64_t& aId) {
   return fontKey;
 }
 
-// Whenever possible, use wr::FontInstanceKey instead of manipulating uint64_t.
+
 inline uint64_t AsUint64(const FontInstanceKey& aId) {
   return (static_cast<uint64_t>(aId.mNamespace.mHandle) << 32) +
          static_cast<uint64_t>(aId.mHandle);
@@ -283,7 +285,7 @@ inline FontInstanceKey AsFontInstanceKey(const uint64_t& aId) {
   return instanceKey;
 }
 
-// Whenever possible, use wr::PipelineId instead of manipulating uint64_t.
+
 inline uint64_t AsUint64(const PipelineId& aId) {
   return (static_cast<uint64_t>(aId.mNamespace) << 32) +
          static_cast<uint64_t>(aId.mHandle);
@@ -440,7 +442,7 @@ static inline wr::DeviceIntRect ToDeviceIntRect(
   return r;
 }
 
-// TODO: should be const LayoutDeviceIntRect instead of ImageIntRect
+
 static inline wr::LayoutIntRect ToLayoutIntRect(
     const mozilla::ImageIntRect& rect) {
   wr::LayoutIntRect r;
@@ -539,36 +541,10 @@ static inline wr::LayoutTransform ToLayoutTransform(
   return transform;
 }
 
-static inline wr::BorderStyle ToBorderStyle(const StyleBorderStyle& style) {
-  switch (style) {
-    case StyleBorderStyle::None:
-      return wr::BorderStyle::None;
-    case StyleBorderStyle::Solid:
-      return wr::BorderStyle::Solid;
-    case StyleBorderStyle::Double:
-      return wr::BorderStyle::Double;
-    case StyleBorderStyle::Dotted:
-      return wr::BorderStyle::Dotted;
-    case StyleBorderStyle::Dashed:
-      return wr::BorderStyle::Dashed;
-    case StyleBorderStyle::Hidden:
-      return wr::BorderStyle::Hidden;
-    case StyleBorderStyle::Groove:
-      return wr::BorderStyle::Groove;
-    case StyleBorderStyle::Ridge:
-      return wr::BorderStyle::Ridge;
-    case StyleBorderStyle::Inset:
-      return wr::BorderStyle::Inset;
-    case StyleBorderStyle::Outset:
-      return wr::BorderStyle::Outset;
-    default:
-      MOZ_ASSERT(false);
-  }
-  return wr::BorderStyle::None;
-}
+wr::BorderStyle ToBorderStyle(StyleBorderStyle style);
 
 static inline wr::BorderSide ToBorderSide(const gfx::Color& color,
-                                          const StyleBorderStyle& style) {
+                                          StyleBorderStyle style) {
   wr::BorderSide bs;
   bs.color = ToColorF(color);
   bs.style = ToBorderStyle(style);
@@ -649,23 +625,7 @@ static inline wr::LayoutSideOffsets ToLayoutSideOffsets(float top, float right,
   return offset;
 }
 
-static inline wr::RepeatMode ToRepeatMode(
-    mozilla::StyleBorderImageRepeat repeatMode) {
-  switch (repeatMode) {
-    case mozilla::StyleBorderImageRepeat::Stretch:
-      return wr::RepeatMode::Stretch;
-    case mozilla::StyleBorderImageRepeat::Repeat:
-      return wr::RepeatMode::Repeat;
-    case mozilla::StyleBorderImageRepeat::Round:
-      return wr::RepeatMode::Round;
-    case mozilla::StyleBorderImageRepeat::Space:
-      return wr::RepeatMode::Space;
-    default:
-      MOZ_ASSERT(false);
-  }
-
-  return wr::RepeatMode::Stretch;
-}
+wr::RepeatMode ToRepeatMode(StyleBorderImageRepeat);
 
 template <class S, class T>
 static inline wr::WrTransformProperty ToWrTransformProperty(
@@ -684,7 +644,7 @@ static inline wr::WrOpacityProperty ToWrOpacityProperty(uint64_t id,
   return prop;
 }
 
-// Whenever possible, use wr::ExternalImageId instead of manipulating uint64_t.
+
 inline uint64_t AsUint64(const ExternalImageId& aId) {
   return static_cast<uint64_t>(aId._0);
 }
@@ -784,8 +744,8 @@ struct ByteBuffer {
   ByteBuffer(size_t aLength, uint8_t* aData)
       : mLength(aLength), mData(aData), mOwned(false) {}
 
-  // XXX: this is a bit of hack that assumes
-  // the allocators are the same
+  
+  
   explicit ByteBuffer(VecU8&& vec) {
     if (vec.inner.capacity) {
       mLength = vec.inner.length;
@@ -853,8 +813,8 @@ struct BuiltDisplayList {
   wr::BuiltDisplayListDescriptor dl_desc;
 };
 
-// Corresponds to a clip id for a clip chain in webrender. Similar to
-// WrClipId but a separate struct so we don't get them mixed up in C++.
+
+
 struct WrClipChainId {
   uint64_t id;
 
@@ -875,7 +835,7 @@ enum class WebRenderError : int8_t {
   RENDER,
   NEW_SURFACE,
 
-  Sentinel /* this must be last for serialization purposes. */
+  Sentinel 
 };
 
 static inline wr::WrYuvColorSpace ToWrYuvColorSpace(
@@ -928,8 +888,8 @@ static inline wr::SyntheticItalics DegreesToSyntheticItalics(float aDegrees) {
   return synthetic_italics;
 }
 
-}  // namespace wr
-}  // namespace mozilla
+}  
+}  
 
 namespace std {
 template <>
@@ -938,6 +898,6 @@ struct hash<mozilla::wr::WrSpatialId> {
     return std::hash<size_t>{}(aKey.id);
   }
 };
-}  // namespace std
+}  
 
-#endif /* GFX_WEBRENDERTYPES_H */
+#endif 
