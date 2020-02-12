@@ -32,26 +32,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::Deref;
 
-
-
-
-
-
-
-
-
-
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-#[cfg_attr(feature = "servo", derive(MallocSizeOf, Deserialize, Serialize))]
-pub struct OpaqueNode(pub usize);
-
-impl OpaqueNode {
-    
-    #[inline]
-    pub fn id(&self) -> usize {
-        self.0
-    }
-}
+pub use style_traits::dom::OpaqueNode;
 
 
 
