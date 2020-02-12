@@ -1525,6 +1525,7 @@ void nsPresContext::MediaFeatureValuesChangedAllDocuments(
 
   
   
+  mDocument->StyleImageLoader()->MediaFeatureValuesChangedAllDocuments(aChange);
   mDocument->ImageTracker()->MediaFeatureValuesChangedAllDocuments(aChange);
 
   

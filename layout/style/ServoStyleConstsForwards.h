@@ -115,8 +115,6 @@ enum class CallerType : uint32_t;
 
 class Element;
 class Document;
-class ImageTracker;
-
 }  
 
 namespace ipc {
@@ -177,7 +175,6 @@ struct StyleBox {
 
 
 
-using StyleImageTracker = dom::ImageTracker;
 using StyleLoader = css::Loader;
 using StyleLoaderReusableStyleSheets = css::LoaderReusableStyleSheets;
 using StyleCallerType = dom::CallerType;

@@ -19,6 +19,7 @@
 #include "imgIRequest.h"
 #include "imgINotificationObserver.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/MediaFeatureChange.h"
 
 class imgIContainer;
 class nsIFrame;
@@ -37,7 +38,7 @@ namespace css {
 
 
 
-class ImageLoader final {
+class ImageLoader final : public imgINotificationObserver {
  public:
   static void Init();
   static void Shutdown();
@@ -51,13 +52,16 @@ class ImageLoader final {
   };
 
   explicit ImageLoader(dom::Document* aDocument)
-      : mDocument(aDocument) {
+      : mDocument(aDocument), mInClone(false) {
     MOZ_ASSERT(mDocument);
   }
 
-  NS_INLINE_DECL_REFCOUNTING(ImageLoader)
+  NS_DECL_ISUPPORTS
+  NS_DECL_IMGINOTIFICATIONOBSERVER
 
   void DropDocumentReference();
+
+  imgRequestProxy* RegisterCSSImage(const StyleLoadData& aImage);
 
   void AssociateRequestToFrame(imgIRequest* aRequest, nsIFrame* aFrame,
                                FrameFlags aFlags);
@@ -69,23 +73,25 @@ class ImageLoader final {
   void SetAnimationMode(uint16_t aMode);
 
   
+
+
+
+  void MediaFeatureValuesChangedAllDocuments(const MediaFeatureChange& aChange);
+
+  
   
   
   void ClearFrames(nsPresContext* aPresContext);
 
-  static already_AddRefed<imgRequestProxy> LoadImage(
-      const StyleComputedImageUrl&, dom::Document&);
-
-  static void DeregisterImageFromAllLoaders(imgRequestProxy*);
+  static void LoadImage(const StyleComputedImageUrl& aImage, dom::Document&);
 
   
   
-  nsresult Notify(imgIRequest*, int32_t aType, const nsIntRect* aData);
+  
+  
+  static void DeregisterCSSImageFromAllLoaders(const StyleLoadData&);
 
  private:
-  
-  void DeregisterImageRequest(imgIRequest*, nsPresContext*);
-
   
   
   struct ImageReflowCallback final : public nsIReflowCallback {
@@ -156,6 +162,9 @@ class ImageLoader final {
   void RemoveFrameToRequestMapping(imgIRequest* aRequest, nsIFrame* aFrame);
 
   
+  static void DeregisterCSSImageFromAllLoaders(uint64_t aLoadID);
+
+  
   RequestToFrameMap mRequestToFrameMap;
 
   
@@ -163,6 +172,40 @@ class ImageLoader final {
 
   
   dom::Document* mDocument;
+
+  
+  
+  
+  
+  
+  
+  nsRefPtrHashtable<nsUint64HashKey, imgRequestProxy> mRegisteredImages;
+
+  
+  bool mInClone;
+
+  
+  struct ImageTableEntry {
+    
+    nsTHashtable<nsPtrHashKey<ImageLoader>> mImageLoaders;
+
+    
+    
+    
+    
+    
+    
+    RefPtr<imgRequestProxy> mCanonicalRequest;
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  static nsClassHashtable<nsUint64HashKey, ImageTableEntry>* sImages;
 };
 
 }  
