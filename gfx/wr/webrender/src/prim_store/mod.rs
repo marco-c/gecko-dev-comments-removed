@@ -4131,12 +4131,30 @@ pub fn get_raster_rects(
 
 
 
-pub fn get_line_decoration_sizes(
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn get_line_decoration_size(
     rect_size: &LayoutSize,
     orientation: LineOrientation,
     style: LineStyle,
     wavy_line_thickness: f32,
-) -> Option<(f32, f32)> {
+) -> Option<LayoutSize> {
     let h = match orientation {
         LineOrientation::Horizontal => rect_size.height,
         LineOrientation::Vertical => rect_size.width,
@@ -4148,20 +4166,20 @@ pub fn get_line_decoration_sizes(
     
     
 
-    match style {
+    let (parallel, perpendicular) = match style {
         LineStyle::Solid => {
-            None
+            return None;
         }
         LineStyle::Dashed => {
             let dash_length = (3.0 * h).min(64.0).max(1.0);
 
-            Some((2.0 * dash_length, 4.0))
+            (2.0 * dash_length, 4.0)
         }
         LineStyle::Dotted => {
             let diameter = h.min(64.0).max(1.0);
             let period = 2.0 * diameter;
 
-            Some((period, diameter))
+            (period, diameter)
         }
         LineStyle::Wavy => {
             let line_thickness = wavy_line_thickness.max(1.0);
@@ -4169,9 +4187,14 @@ pub fn get_line_decoration_sizes(
             let flat_length = ((line_thickness - 1.0) * 2.0).max(1.0);
             let approx_period = 2.0 * (slope_length + flat_length);
 
-            Some((approx_period, h))
+            (approx_period, h)
         }
-    }
+    };
+
+    Some(match orientation {
+        LineOrientation::Horizontal => LayoutSize::new(parallel, perpendicular),
+        LineOrientation::Vertical => LayoutSize::new(perpendicular, parallel),
+    })
 }
 
 fn update_opacity_binding(
