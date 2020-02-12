@@ -1,9 +1,9 @@
-# This file was copied from  mitmproxy/mitmproxy/addons/serverplayback.py release tag 4.0.4
-# and modified by Florin Strugariu
 
-# Altered features:
-# * returns 404 rather than dropping the whole HTTP/2 connection on the floor
-# * remove the replay packages that don't have any content in their response package
+
+
+
+
+
 from __future__ import absolute_import, print_function
 
 import os
@@ -11,6 +11,8 @@ import json
 import hashlib
 import urllib
 from collections import defaultdict
+import time
+import signal
 
 import typing
 from urllib import parse
@@ -19,7 +21,7 @@ from mitmproxy import ctx, http
 from mitmproxy import exceptions
 from mitmproxy import io
 
-# PATCHING AREA  - ALLOWS HTTP/2 WITH NO CERT SNIFFING
+
 from mitmproxy.proxy.protocol import tls
 from mitmproxy.proxy.protocol.http2 import Http2Layer, SafeH2Connection
 
@@ -43,7 +45,7 @@ tls.TlsLayer.alpn_for_client_connection = _alpn
 
 def _server_conn(self):
     if not self.server_conn.connected() and self.server_conn not in self.connections:
-        # we can't use ctx.log in this layer
+        
         print("Ignored CONNECT call on upstream server")
         return
     if self.server_conn.connected():
@@ -67,7 +69,7 @@ Http2Layer._initiate_server_conn = _server_conn
 
 def _remote_settings_changed(self, event, other_conn):
     if other_conn not in self.connections:
-        # we can't use ctx.log in this layer
+        
         print("Ignored remote settings upstream")
         return True
     new_settings = dict(
@@ -78,7 +80,7 @@ def _remote_settings_changed(self, event, other_conn):
 
 
 Http2Layer._handle_remote_settings_changed = _remote_settings_changed
-# END OF PATCHING
+
 
 
 class AlternateServerPlayback:
@@ -87,6 +89,8 @@ class AlternateServerPlayback:
         self.flowmap = {}
         self.configured = False
         self.netlocs = defaultdict(int)
+        self.calls = []
+        self._done = False
 
     def load(self, loader):
         loader.add_option(
@@ -148,8 +152,8 @@ class AlternateServerPlayback:
         """
         r = flow.request
 
-        # unquote url
-        # See Bug 1509835
+        
+        
         _, _, path, _, query, _ = urllib.parse.urlparse(parse.unquote(r.url))
         queriesArray = urllib.parse.parse_qsl(query, keep_blank_values=True)
 
@@ -178,29 +182,31 @@ class AlternateServerPlayback:
             self.load_files(ctx.options.server_replay_files)
 
     def done(self):
-        if not ctx.options.upload_dir:
+        if self._done or not ctx.options.upload_dir:
             return
-        netlocs = sorted(self.netlocs.items(), key=lambda item: -item[1])
-        path = os.path.join(ctx.options.upload_dir, "mitm_netlocs.log")
-        with open(path, "w") as f:
-            for url, count in netlocs:
-                f.write("%s: %d\n" % (url, count))
+        stats = {"totals": dict(self.netlocs),
+                 "calls": self.calls}
+        path = os.path.normpath(os.path.join(ctx.options.upload_dir,
+                                             "mitm_netlocs.json"))
+        try:
+            with open(path, "w") as f:
+                f.write(json.dumps(stats, indent=2, sort_keys=True))
+        finally:
+            self._done = True
 
     def request(self, f):
         if self.flowmap:
-            parsed_url = urllib.parse.urlparse(parse.unquote(f.request.url))
-            self.netlocs[parsed_url.netloc] += 1
             rflow = self.next_flow(f)
             if rflow:
                 response = rflow.response.copy()
                 response.is_replay = True
-                # Refresh server replay responses by adjusting date, expires and
-                # last-modified headers, as well as adjusting cookie expiration.
+                
+                
                 response.refresh()
 
                 f.response = response
             else:
-                # returns 404 rather than dropping the whole HTTP/2 connection
+                
                 ctx.log.warn(
                     "server_playback: killed non-replay request {}".format(
                         f.request.url
@@ -210,5 +216,25 @@ class AlternateServerPlayback:
                     404, b"", {"content-type": "text/plain"}
                 )
 
+            
+            if ctx.options.upload_dir:
+                parsed_url = urllib.parse.urlparse(parse.unquote(f.request.url))
+                self.netlocs[parsed_url.netloc] += 1
+                self.calls.append({'time': str(time.time()),
+                                   'url': f.request.url,
+                                   'response_status': f.response.status_code})
 
-addons = [AlternateServerPlayback()]
+
+playback = AlternateServerPlayback()
+
+if hasattr(signal, 'SIGBREAK'):
+    
+    
+    
+    
+    def _shutdown(sig, frame):
+        ctx.master.shutdown()
+
+    signal.signal(signal.SIGBREAK, _shutdown)
+
+addons = [playback]

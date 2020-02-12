@@ -11,6 +11,7 @@ import sys
 import time
 import socket
 from subprocess import PIPE
+import signal
 
 import mozinfo
 from mozprocess import ProcessHandler
@@ -42,6 +43,14 @@ except Exception:
 
 if os.name == "nt" and "/" in DEFAULT_CERT_PATH:
     DEFAULT_CERT_PATH = DEFAULT_CERT_PATH.replace("/", "\\")
+
+
+def normalize_path(path):
+    path = os.path.normpath(path)
+    if mozinfo.os == "win":
+        return path.replace("\\", "\\\\\\")
+    return path
+
 
 
 MITMDUMP_COMMAND_TIMEOUT = 30
@@ -79,7 +88,7 @@ class Mitmproxy(Playback):
         self.port = None
         self.mitmproxy_proc = None
         self.mitmdump_path = None
-        self.browser_path = config.get("binary")
+        self.browser_path = os.path.normpath(config.get("binary"))
         self.policies_dir = None
         self.ignore_mitmdump_exit_failure = config.get(
             "ignore_mitmdump_exit_failure", False
@@ -141,8 +150,10 @@ class Mitmproxy(Playback):
         transformed_manifest = transform_platform(_manifest, self.config["platform"])
 
         
-        self.mitmdump_path = os.path.join(self.mozproxy_dir, "mitmdump-%s" %
-                                          self.config["playback_version"], "mitmdump")
+        self.mitmdump_path = os.path.normpath(
+                os.path.join(self.mozproxy_dir, "mitmdump-%s" %
+                             self.config["playback_version"],
+                             "mitmdump"))
 
         
         if os.path.exists(self.mitmdump_path):
@@ -213,21 +224,18 @@ class Mitmproxy(Playback):
                 os.path.dirname(os.path.realpath(__file__)), "scripts",
                 "alternate-server-replay-{}.py".format(
                     self.config["playback_version"]))
-            recording_paths = self.config["playback_files"]
-            
-            if mozinfo.os == "win":
-                script = script.replace("\\", "\\\\\\")
-                recording_paths = [recording_path.replace("\\", "\\\\\\")
-                                   for recording_path in recording_paths]
+
+            recording_paths = [normalize_path(recording_path)
+                               for recording_path in self.config["playback_files"]]
 
             if self.config["playback_version"] == "4.0.4":
                 args = [
                     "-v",
                     "--set", "upstream_cert=false",
-                    "--set", "upload_dir=" + self.upload_dir,
+                    "--set", "upload_dir=" + normalize_path(self.upload_dir),
                     "--set", "websocket=false",
                     "--set", "server_replay_files={}".format(",".join(recording_paths)),
-                    "--scripts", script,
+                    "--scripts", normalize_path(script),
                 ]
                 command.extend(args)
             else:
@@ -241,7 +249,8 @@ class Mitmproxy(Playback):
         
         
         self.mitmproxy_proc = ProcessHandler(
-            command, logfile=os.path.join(self.upload_dir, "mitmproxy.log"), env=env
+            command, logfile=os.path.join(self.upload_dir, "mitmproxy.log"),
+            env=env, processStderrLine=LOG.error, storeOutput=False
         )
         self.mitmproxy_proc.run()
         end_time = time.time() + MITMDUMP_COMMAND_TIMEOUT
@@ -267,25 +276,35 @@ class Mitmproxy(Playback):
         LOG.info(
             "Stopping mitmproxy playback, killing process %d" % self.mitmproxy_proc.pid
         )
+        
+        
+        
+        
+        if mozinfo.os == "win":
+            LOG.info("Sending CTRL_BREAK_EVENT to mitmproxy")
+            os.kill(self.mitmproxy_proc.pid, signal.CTRL_BREAK_EVENT)
+            time.sleep(2)
 
         exit_code = self.mitmproxy_proc.kill()
+        self.mitmproxy_proc = None
+
         if exit_code != 0:
-            
-            
-            
             if exit_code is None:
                 LOG.error("Failed to kill the mitmproxy playback process")
-            elif exit_code == 572 and mozinfo.os == "win":
-                LOG.info("Successfully killed the mitmproxy playback process with exit code 572")
-            else:
-                log_func = LOG.error
-                if self.ignore_mitmdump_exit_failure:
-                    log_func = LOG.info
-                log_func("Mitmproxy exited with error code %d" % exit_code)
+                return
+
+            if mozinfo.os == "win":
+                from mozprocess.winprocess import ERROR_CONTROL_C_EXIT  
+                if exit_code == ERROR_CONTROL_C_EXIT:
+                    LOG.info("Successfully killed the mitmproxy playback process"
+                             " with exit code %d" % exit_code)
+                    return
+            log_func = LOG.error
+            if self.ignore_mitmdump_exit_failure:
+                log_func = LOG.info
+            log_func("Mitmproxy exited with error code %d" % exit_code)
         else:
             LOG.info("Successfully killed the mitmproxy playback process")
-
-        self.mitmproxy_proc = None
 
     def check_proxy(self, host, port):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
