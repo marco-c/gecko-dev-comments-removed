@@ -502,7 +502,14 @@ class ProviderInterventions extends UrlbarProvider {
 
     
     
-    this.checkForBrowserUpdate();
+    
+    
+    
+    try {
+      this.checkForBrowserUpdate();
+    } catch (ex) {
+      return false;
+    }
 
     
     
