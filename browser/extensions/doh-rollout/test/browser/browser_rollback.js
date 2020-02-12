@@ -1,5 +1,7 @@
 "use strict";
 
+requestLongerTimeout(2);
+
 add_task(setup);
 
 add_task(async function testRollback() {
@@ -66,6 +68,7 @@ add_task(async function testRollback() {
   setPassingHeuristics();
   Preferences.reset(prefs.DOH_ENABLED_PREF);
   await ensureTRRMode(0);
+  await ensureNoHeuristicsTelemetry();
   simulateNetworkChange();
   await ensureNoTRRModeChange(0);
   await ensureNoHeuristicsTelemetry();
@@ -84,7 +87,8 @@ add_task(async function testRollback() {
 
   
   Preferences.reset(prefs.DOH_ENABLED_PREF);
-  await ensureTRRMode(0);
+  await ensureNoTRRModeChange(0);
+  await ensureNoHeuristicsTelemetry();
   simulateNetworkChange();
   await ensureNoTRRModeChange(0);
   await ensureNoHeuristicsTelemetry();
@@ -104,6 +108,27 @@ add_task(async function testRollback() {
   
   Preferences.reset(prefs.DOH_ENABLED_PREF);
   await ensureTRRMode(0);
+  await ensureNoHeuristicsTelemetry();
+  simulateNetworkChange();
+  await ensureNoTRRModeChange(0);
+  await ensureNoHeuristicsTelemetry();
+
+  
+  Preferences.set(prefs.DOH_ENABLED_PREF, true);
+
+  await ensureTRRMode(2);
+  await checkHeuristicsTelemetry("enable_doh", "startup");
+  simulateNetworkChange();
+  await ensureNoTRRModeChange(2);
+  await checkHeuristicsTelemetry("enable_doh", "netchange");
+
+  
+  
+  await disableAddon();
+  Preferences.reset(prefs.DOH_ENABLED_PREF);
+  await enableAddon();
+  await ensureTRRMode(0);
+  await ensureNoHeuristicsTelemetry();
   simulateNetworkChange();
   await ensureNoTRRModeChange(0);
   await ensureNoHeuristicsTelemetry();

@@ -650,6 +650,13 @@ const setup = {
   });
 
   if (await rollout.getSetting(DOH_ENABLED_PREF, false)) {
-    setup.start();
+    await setup.start();
+  } else if (
+    (await rollout.getSetting(DOH_DONE_FIRST_RUN_PREF, false)) &&
+    (await stateManager.shouldRunHeuristics())
+  ) {
+    
+    
+    await stateManager.setState("disabled");
   }
 })();
