@@ -1268,7 +1268,16 @@ nsresult XPCJSContext::Initialize() {
   Preferences::RegisterCallback(ReloadPrefsCallback, "fuzzing.enabled", this);
 #endif
 
-  MOZ_RELEASE_ASSERT(JS::InitSelfHostedCode(cx), "InitSelfHostedCode failed");
+  if (!JS::InitSelfHostedCode(cx)) {
+    
+    if (!JS_IsExceptionPending(cx) || JS_IsThrowingOutOfMemory(cx)) {
+      NS_ABORT_OOM(0);  
+    }
+
+    
+    MOZ_CRASH("InitSelfHostedCode failed");
+  }
+
   MOZ_RELEASE_ASSERT(Runtime()->InitializeStrings(cx),
                      "InitializeStrings failed");
 
