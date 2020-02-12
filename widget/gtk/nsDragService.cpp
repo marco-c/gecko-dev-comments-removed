@@ -1976,8 +1976,7 @@ void nsDragService::UpdateDragAction() {
   }
 #ifdef MOZ_WAYLAND
   else if (mTargetWaylandDragContext) {
-    
-    gdkAction = mTargetWaylandDragContext->GetSelectedDragAction();
+    gdkAction = mTargetWaylandDragContext->GetAvailableDragActions();
   }
 #endif
 

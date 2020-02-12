@@ -44,7 +44,7 @@ static inline GdkDragAction wl_to_gdk_actions(uint32_t dnd_actions) {
 }
 
 static inline uint32_t gdk_to_wl_actions(GdkDragAction action) {
-  uint32_t dnd_actions = 0;
+  uint32_t dnd_actions = WL_DATA_DEVICE_MANAGER_DND_ACTION_NONE;
 
   if (action & (GDK_ACTION_COPY | GDK_ACTION_LINK | GDK_ACTION_PRIVATE))
     dnd_actions |= WL_DATA_DEVICE_MANAGER_DND_ACTION_COPY;
@@ -184,18 +184,20 @@ void WaylandDataOffer::DragOfferAccept(const char* aMimeType, uint32_t aTime) {
 
 
 
-void WaylandDataOffer::SetDragStatus(GdkDragAction aAction, uint32_t aTime) {
-  uint32_t dnd_actions = gdk_to_wl_actions(aAction);
-  uint32_t all_actions = WL_DATA_DEVICE_MANAGER_DND_ACTION_COPY |
-                         WL_DATA_DEVICE_MANAGER_DND_ACTION_MOVE;
+void WaylandDataOffer::SetDragStatus(GdkDragAction aPreferredAction,
+                                     uint32_t aTime) {
+  uint32_t preferredAction = gdk_to_wl_actions(aPreferredAction);
+  uint32_t allActions = WL_DATA_DEVICE_MANAGER_DND_ACTION_NONE;
 
   
 
-  if (dnd_actions == 0) {
-    all_actions = WL_DATA_DEVICE_MANAGER_DND_ACTION_MOVE;
+
+  if (preferredAction != WL_DATA_DEVICE_MANAGER_DND_ACTION_NONE) {
+    allActions = WL_DATA_DEVICE_MANAGER_DND_ACTION_COPY |
+                 WL_DATA_DEVICE_MANAGER_DND_ACTION_MOVE;
   }
 
-  wl_data_offer_set_actions(mWaylandDataOffer, all_actions, dnd_actions);
+  wl_data_offer_set_actions(mWaylandDataOffer, allActions, preferredAction);
 
   
 
@@ -219,11 +221,20 @@ GdkDragAction WaylandDataOffer::GetSelectedDragAction() {
 }
 
 void WaylandDataOffer::SetAvailableDragActions(uint32_t aWaylandActions) {
-  mAvailableDragAction = aWaylandActions;
+  mAvailableDragActions = aWaylandActions;
 }
 
 GdkDragAction WaylandDataOffer::GetAvailableDragActions() {
-  return wl_to_gdk_actions(mAvailableDragAction);
+  return wl_to_gdk_actions(mAvailableDragActions);
+}
+
+void WaylandDataOffer::SetWaylandDragContext(
+    nsWaylandDragContext* aDragContext) {
+  mDragContext = aDragContext;
+}
+
+nsWaylandDragContext* WaylandDataOffer::GetWaylandDragContext() {
+  return mDragContext;
 }
 
 static void data_offer_offer(void* data, struct wl_data_offer* wl_data_offer,
@@ -250,6 +261,17 @@ static void data_offer_action(void* data, struct wl_data_offer* wl_data_offer,
                               uint32_t dnd_action) {
   auto* offer = static_cast<WaylandDataOffer*>(data);
   offer->SetSelectedDragAction(dnd_action);
+
+  
+  nsWaylandDragContext* dropContext = offer->GetWaylandDragContext();
+  if (dropContext) {
+    uint32_t time;
+    nscoord x, y;
+    dropContext->GetLastDropInfo(&time, &x, &y);
+
+    WindowDragMotionHandler(dropContext->GetWidget(), nullptr, dropContext, x,
+                            y, time);
+  }
 }
 
 
@@ -265,7 +287,10 @@ static const moz_wl_data_offer_listener data_offer_listener = {
     data_offer_offer, data_offer_source_actions, data_offer_action};
 
 WaylandDataOffer::WaylandDataOffer(wl_data_offer* aWaylandDataOffer)
-    : mWaylandDataOffer(aWaylandDataOffer) {
+    : mWaylandDataOffer(aWaylandDataOffer),
+      mDragContext(nullptr),
+      mSelectedDragAction(0),
+      mAvailableDragActions(0) {
   wl_data_offer_add_listener(
       mWaylandDataOffer, (struct wl_data_offer_listener*)&data_offer_listener,
       this);
@@ -322,7 +347,9 @@ nsWaylandDragContext::nsWaylandDragContext(WaylandDataOffer* aDataOffer,
       mTime(0),
       mGtkWidget(nullptr),
       mX(0),
-      mY(0) {}
+      mY(0) {
+  aDataOffer->SetWaylandDragContext(this);
+}
 
 void nsWaylandDragContext::DropDataEnter(GtkWidget* aGtkWidget, uint32_t aTime,
                                          nscoord aX, nscoord aY) {
@@ -345,11 +372,11 @@ void nsWaylandDragContext::GetLastDropInfo(uint32_t* aTime, nscoord* aX,
   *aY = mY;
 }
 
-void nsWaylandDragContext::SetDragStatus(GdkDragAction aAction) {
-  mDataOffer->SetDragStatus(aAction, mTime);
+void nsWaylandDragContext::SetDragStatus(GdkDragAction aPreferredAction) {
+  mDataOffer->SetDragStatus(aPreferredAction, mTime);
 }
 
-GdkDragAction nsWaylandDragContext::GetSelectedDragAction() {
+GdkDragAction nsWaylandDragContext::GetAvailableDragActions() {
   GdkDragAction gdkAction = mDataOffer->GetSelectedDragAction();
 
   
