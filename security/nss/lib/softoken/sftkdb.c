@@ -2693,6 +2693,7 @@ sftkdb_ResetKeyDB(SFTKDBHandle *handle)
     return SECSuccess;
 }
 
+#ifndef NSS_DISABLE_DBM
 static PRBool
 sftk_oldVersionExists(const char *dir, int version)
 {
@@ -2796,6 +2797,7 @@ sftk_hasLegacyDB(const char *confdir, const char *certPrefix,
     PR_smprintf_free(dir);
     return exists;
 }
+#endif 
 
 
 
@@ -2819,7 +2821,9 @@ sftk_DBInit(const char *configdir, const char *certPrefix,
     CK_RV crv = CKR_OK;
     int flags = SDB_RDONLY;
     PRBool newInit = PR_FALSE;
+#ifndef NSS_DISABLE_DBM
     PRBool needUpdate = PR_FALSE;
+#endif 
     char *nconfdir = NULL;
     PRBool legacy = PR_TRUE;
 
@@ -2842,6 +2846,7 @@ sftk_DBInit(const char *configdir, const char *certPrefix,
 
 
     switch (dbType) {
+#ifndef NSS_DISABLE_DBM
         case NSS_DB_TYPE_LEGACY:
             crv = sftkdbCall_open(confdir, certPrefix, keyPrefix, 8, 3, flags,
                                   noCertDB ? NULL : &certSDB, noKeyDB ? NULL : &keySDB);
@@ -2850,10 +2855,13 @@ sftk_DBInit(const char *configdir, const char *certPrefix,
             crv = sftkdbCall_open(configdir, certPrefix, keyPrefix, 8, 3, flags,
                                   noCertDB ? NULL : &certSDB, noKeyDB ? NULL : &keySDB);
             break;
+#endif 
         case NSS_DB_TYPE_SQL:
         case NSS_DB_TYPE_EXTERN: 
             crv = s_open(confdir, certPrefix, keyPrefix, 9, 4, flags,
                          noCertDB ? NULL : &certSDB, noKeyDB ? NULL : &keySDB, &newInit);
+
+#ifndef NSS_DISABLE_DBM
             legacy = PR_FALSE;
 
             
@@ -2905,6 +2913,7 @@ sftk_DBInit(const char *configdir, const char *certPrefix,
                     needUpdate = PR_TRUE;
                 }
             }
+#endif 
             break;
         default:
             crv = CKR_GENERAL_ERROR; 
@@ -2933,6 +2942,7 @@ sftk_DBInit(const char *configdir, const char *certPrefix,
         (*keyDB)->peerDB = *certDB;
     }
 
+#ifndef NSS_DISABLE_DBM
     
 
 
@@ -2970,6 +2980,8 @@ sftk_DBInit(const char *configdir, const char *certPrefix,
             }
         }
     }
+#endif 
+
 done:
     if (appName) {
         PORT_Free(appName);
@@ -2984,6 +2996,8 @@ CK_RV
 sftkdb_Shutdown(void)
 {
     s_shutdown();
+#ifndef NSS_DISABLE_DBM
     sftkdbCall_Shutdown();
+#endif 
     return CKR_OK;
 }
