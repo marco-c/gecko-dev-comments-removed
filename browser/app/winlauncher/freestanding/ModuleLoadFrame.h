@@ -11,10 +11,14 @@
 #include "mozilla/NativeNt.h"
 #include "mozilla/ThreadLocal.h"
 
-#include "SafeThreadLocal.h"
-
 namespace mozilla {
 namespace freestanding {
+
+
+
+#if defined(__MINGW32__) && !defined(HAVE_THREAD_TLS_KEYWORD)
+#  error "This code requires the compiler to have native TLS support"
+#endif  
 
 
 
@@ -81,7 +85,7 @@ class MOZ_RAII ModuleLoadFrame final {
   ModuleLoadInfo mLoadInfo;
 
   
-  static SafeThreadLocal<ModuleLoadFrame*> sTopFrame;
+  static MOZ_THREAD_LOCAL(ModuleLoadFrame*) sTopFrame;
 };
 
 }  
