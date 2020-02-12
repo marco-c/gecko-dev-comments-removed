@@ -410,6 +410,63 @@ void Selection::SetCaretBidiLevel(const Nullable<int16_t>& aCaretBidiLevel,
   }
 }
 
+
+
+
+
+
+
+static nsresult GetTableSelectionType(nsRange* aRange,
+                                      TableSelection* aTableSelectionType) {
+  if (!aRange || !aTableSelectionType) {
+    return NS_ERROR_NULL_POINTER;
+  }
+
+  *aTableSelectionType = TableSelection::None;
+
+  nsINode* startNode = aRange->GetStartContainer();
+  if (!startNode) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsINode* endNode = aRange->GetEndContainer();
+  if (!endNode) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  if (startNode != endNode) {
+    return NS_OK;
+  }
+
+  nsIContent* child = aRange->GetChildAtStartOffset();
+
+  
+  if (!child || child->GetNextSibling() != aRange->GetChildAtEndOffset()) {
+    return NS_OK;
+  }
+
+  nsIContent* startContent = static_cast<nsIContent*>(startNode);
+  if (!(startNode->IsElement() && startContent->IsHTMLElement())) {
+    
+    
+    return NS_OK;
+  }
+
+  if (startContent->IsHTMLElement(nsGkAtoms::tr)) {
+    *aTableSelectionType = TableSelection::Cell;
+  } else  
+          
+  {
+    if (child->IsHTMLElement(nsGkAtoms::table))
+      *aTableSelectionType = TableSelection::Table;
+    else if (child->IsHTMLElement(nsGkAtoms::tr))
+      *aTableSelectionType = TableSelection::Row;
+  }
+
+  return NS_OK;
+}
+
 nsresult Selection::GetTableCellLocationFromRange(
     nsRange* aRange, TableSelection* aSelectionType, int32_t* aRow,
     int32_t* aCol) {
@@ -491,53 +548,6 @@ nsresult Selection::MaybeAddTableCellRange(nsRange* aRange, bool* aDidAddRange,
 
   *aDidAddRange = true;
   return AddRangesForSelectableNodes(aRange, aOutIndex);
-}
-
-
-nsresult Selection::GetTableSelectionType(nsRange* aRange,
-                                          TableSelection* aTableSelectionType) {
-  if (!aRange || !aTableSelectionType) return NS_ERROR_NULL_POINTER;
-
-  *aTableSelectionType = TableSelection::None;
-
-  
-  if (!mFrameSelection) return NS_OK;
-
-  nsINode* startNode = aRange->GetStartContainer();
-  if (!startNode) return NS_ERROR_FAILURE;
-
-  nsINode* endNode = aRange->GetEndContainer();
-  if (!endNode) return NS_ERROR_FAILURE;
-
-  
-  if (startNode != endNode) return NS_OK;
-
-  nsIContent* child = aRange->GetChildAtStartOffset();
-
-  
-  if (!child || child->GetNextSibling() != aRange->GetChildAtEndOffset()) {
-    return NS_OK;
-  }
-
-  nsIContent* startContent = static_cast<nsIContent*>(startNode);
-  if (!(startNode->IsElement() && startContent->IsHTMLElement())) {
-    
-    
-    return NS_OK;
-  }
-
-  if (startContent->IsHTMLElement(nsGkAtoms::tr)) {
-    *aTableSelectionType = TableSelection::Cell;
-  } else  
-          
-  {
-    if (child->IsHTMLElement(nsGkAtoms::table))
-      *aTableSelectionType = TableSelection::Table;
-    else if (child->IsHTMLElement(nsGkAtoms::tr))
-      *aTableSelectionType = TableSelection::Row;
-  }
-
-  return NS_OK;
 }
 
 Selection::Selection()
