@@ -1140,15 +1140,8 @@ class nsIFrame : public nsQueryFrame {
 
 
   inline nsPoint GetNormalPosition(bool* aHasProperty = nullptr) const;
-
-  mozilla::LogicalPoint GetLogicalNormalPosition(
-      mozilla::WritingMode aWritingMode, const nsSize& aContainerSize) const {
-    
-    
-    
-    return mozilla::LogicalPoint(aWritingMode, GetNormalPosition(),
-                                 aContainerSize - mRect.Size());
-  }
+  inline mozilla::LogicalPoint GetLogicalNormalPosition(
+      mozilla::WritingMode aWritingMode, const nsSize& aContainerSize) const;
 
   virtual nsPoint GetPositionOfChildIgnoringScrolling(const nsIFrame* aChild) {
     return aChild->GetPosition();
@@ -5061,22 +5054,6 @@ template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
 
   
   return true;
-}
-
-
-
-nsPoint nsIFrame::GetNormalPosition(bool* aHasProperty) const {
-  nsPoint* normalPosition = GetProperty(NormalPositionProperty());
-  if (normalPosition) {
-    if (aHasProperty) {
-      *aHasProperty = true;
-    }
-    return *normalPosition;
-  }
-  if (aHasProperty) {
-    *aHasProperty = false;
-  }
-  return GetPosition();
 }
 
 #endif 
