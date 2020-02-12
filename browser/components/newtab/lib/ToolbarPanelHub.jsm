@@ -120,12 +120,6 @@ class _ToolbarPanelHub {
   }
 
   
-  
-  disableAppmenuButton() {
-    EveryWindow.unregisterCallback(APPMENU_BUTTON_ID);
-  }
-
-  
   async enableToolbarButton() {
     if ((await this.messages).length) {
       EveryWindow.registerCallback(
