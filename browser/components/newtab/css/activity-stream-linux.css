@@ -1,8 +1,8 @@
 @charset "UTF-8";
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* This is the linux variant */
 html {
   box-sizing: border-box; }
 
@@ -1717,7 +1717,8 @@ main {
   .asrouter-admin h1 {
     font-weight: 200;
     font-size: 32px; }
-  .asrouter-admin h2 .button {
+  .asrouter-admin h2 .button,
+  .asrouter-admin p .button {
     font-size: 14px;
     padding: 6px 12px;
     margin-inline-start: 5px;
