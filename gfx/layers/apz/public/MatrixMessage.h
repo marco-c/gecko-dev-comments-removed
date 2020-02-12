@@ -20,18 +20,19 @@ class MatrixMessage {
   MatrixMessage() {}
 
   MatrixMessage(const Maybe<LayerToScreenMatrix4x4>& aMatrix,
-                const ScreenRect& aRemoteDocumentRect,
+                const ScreenRect& aTopLevelViewportVisibleRectInBrowserCoords,
                 const LayersId& aLayersId)
       : mMatrix(ToUnknownMatrix(aMatrix)),
-        mRemoteDocumentRect(aRemoteDocumentRect),
+        mTopLevelViewportVisibleRectInBrowserCoords(
+            aTopLevelViewportVisibleRectInBrowserCoords),
         mLayersId(aLayersId) {}
 
   inline Maybe<LayerToScreenMatrix4x4> GetMatrix() const {
     return LayerToScreenMatrix4x4::FromUnknownMatrix(mMatrix);
   }
 
-  inline ScreenRect GetRemoteDocumentRect() const {
-    return mRemoteDocumentRect;
+  inline ScreenRect GetTopLevelViewportVisibleRectInBrowserCoords() const {
+    return mTopLevelViewportVisibleRectInBrowserCoords;
   }
 
   inline const LayersId& GetLayersId() const { return mLayersId; }
@@ -43,7 +44,7 @@ class MatrixMessage {
   
   
   
-  ScreenRect mRemoteDocumentRect;
+  ScreenRect mTopLevelViewportVisibleRectInBrowserCoords;
   LayersId mLayersId;
 };
 };  
