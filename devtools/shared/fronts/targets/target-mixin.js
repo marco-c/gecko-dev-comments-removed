@@ -314,14 +314,6 @@ function TargetMixin(parentClass) {
       return !this.window;
     }
 
-    get canRewind() {
-      return this.traits && this.traits.canRewind;
-    }
-
-    isReplayEnabled() {
-      return this.canRewind && this.isLocalTab;
-    }
-
     getExtensionPathName(url) {
       
       if (!this.isWebExtension) {

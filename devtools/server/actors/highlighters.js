@@ -10,7 +10,6 @@ const ChromeUtils = require("ChromeUtils");
 const EventEmitter = require("devtools/shared/event-emitter");
 const protocol = require("devtools/shared/protocol");
 const Services = require("Services");
-const ReplayInspector = require("devtools/server/actors/replay/inspector");
 const {
   highlighterSpec,
   customHighlighterSpec,
@@ -453,9 +452,7 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
     
     
     
-    const node = isReplaying
-      ? ReplayInspector.findEventTarget(event)
-      : event.originalTarget || event.target;
+    const node = event.originalTarget || event.target;
     return this._walker.attachElement(node);
   },
 

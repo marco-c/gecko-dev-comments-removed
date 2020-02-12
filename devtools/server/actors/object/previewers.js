@@ -198,8 +198,6 @@ const previewers = {
           items.push(null);
         } else {
           
-          
-          
           const value = DevToolsUtils.getProperty(obj, i);
           items.push(hooks.createValueGrip(value));
         }
@@ -515,10 +513,7 @@ function GenericObject(
     }
   }
 
-  
-  
-  
-  if (i < OBJECT_PREVIEW_MAX_ITEMS && !isReplaying) {
+  if (i < OBJECT_PREVIEW_MAX_ITEMS) {
     preview.safeGetterValues = objectActor._findSafeGetterValues(
       Object.keys(preview.ownProperties),
       OBJECT_PREVIEW_MAX_ITEMS - i
@@ -851,6 +846,66 @@ previewers.Object = [
       lineNumber: hooks.createValueGrip(rawObj.lineNumber),
       columnNumber: hooks.createValueGrip(rawObj.columnNumber),
     };
+
+    return true;
+  },
+
+  function PseudoArray({ obj, hooks }, grip, rawObj) {
+    
+    
+    
+    
+    
+
+    let keys;
+    try {
+      keys = obj.getOwnPropertyNames();
+    } catch (err) {
+      
+      
+      return false;
+    }
+    let { length } = keys;
+    if (length === 0) {
+      return false;
+    }
+
+    
+    
+    if (keys[length - 1] === "length") {
+      --length;
+      if (length === 0 || length !== DevToolsUtils.getProperty(obj, "length")) {
+        return false;
+      }
+    }
+
+    
+    const lastKey = keys[length - 1];
+    if (!ObjectUtils.isArrayIndex(lastKey) || +lastKey !== length - 1) {
+      return false;
+    }
+
+    grip.preview = {
+      kind: "ArrayLike",
+      length: length,
+    };
+
+    
+    if (hooks.getGripDepth() > 1) {
+      return true;
+    }
+
+    const items = (grip.preview.items = []);
+    const numItems = Math.min(OBJECT_PREVIEW_MAX_ITEMS, length);
+
+    for (let i = 0; i < numItems; ++i) {
+      const desc = obj.getOwnPropertyDescriptor(i);
+      if (desc && "value" in desc) {
+        items.push(hooks.createValueGrip(desc.value));
+      } else {
+        items.push(null);
+      }
+    }
 
     return true;
   },

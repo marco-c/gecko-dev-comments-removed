@@ -221,9 +221,7 @@ function getArrayLength(object) {
   }
 
   
-  
-  
-  if (object.class === "Array" || isReplaying) {
+  if (object.class === "Array") {
     return DevToolsUtils.getProperty(object, "length");
   }
 
@@ -324,10 +322,6 @@ function getPropNamesFromObject(obj, rawObj) {
       for (let j = 0; j < rawObj.length; j++) {
         names.push(rawObj.key(j));
       }
-    } else if (isReplaying) {
-      
-      
-      names = obj.getEnumerableOwnPropertyNamesForPreview();
     } else {
       names = obj.getOwnPropertyNames();
     }
