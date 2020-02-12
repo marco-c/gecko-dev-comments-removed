@@ -25,6 +25,7 @@ static GtkStyleContext* GetCssNodeStyleInternal(WidgetNodeType aNodeType);
 
 static GtkWidget* CreateWindowWidget() {
   GtkWidget* widget = gtk_window_new(GTK_WINDOW_POPUP);
+  MOZ_RELEASE_ASSERT(widget, "We're missing GtkWindow widget!");
   gtk_widget_set_name(widget, "MozillaGtkWidget");
   return widget;
 }
@@ -758,7 +759,11 @@ GtkWidget* GetWidget(WidgetNodeType aAppearance) {
     widget = CreateWidget(aAppearance);
     
     
-    if (!widget) return nullptr;
+    
+    if (!widget) {
+      NS_WARNING(nsPrintfCString("Missing GtkWidget %d\n", aAppearance).get());
+      widget = CreateWindowWidget();
+    }
     
     
     
