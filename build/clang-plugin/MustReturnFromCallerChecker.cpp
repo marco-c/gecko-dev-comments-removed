@@ -56,6 +56,52 @@ void MustReturnFromCallerChecker::check(
   }
 }
 
+bool MustReturnFromCallerChecker::isIgnorable(const Stmt *S) {
+  auto AfterTrivials = IgnoreTrivials(S);
+
+  
+  
+  if (isa<ReturnStmt>(AfterTrivials) || isa<CXXConstructExpr>(AfterTrivials) ||
+      isa<DeclRefExpr>(AfterTrivials) || isa<MemberExpr>(AfterTrivials) ||
+      isa<IntegerLiteral>(AfterTrivials) ||
+      isa<FloatingLiteral>(AfterTrivials) ||
+      isa<CXXNullPtrLiteralExpr>(AfterTrivials) ||
+      isa<CXXBoolLiteralExpr>(AfterTrivials)) {
+    return true;
+  }
+
+  
+  if (auto TE = dyn_cast<CXXThisExpr>(AfterTrivials)) {
+    if (TE->child_begin() == TE->child_end()) {
+      return true;
+    }
+    return false;
+  }
+
+  
+  if (auto UO = dyn_cast<UnaryOperator>(AfterTrivials)) {
+    if (!UO->isArithmeticOp()) {
+      return false;
+    }
+    return isIgnorable(UO->getSubExpr());
+  }
+
+  
+  
+  
+  if (auto CE = dyn_cast<CallExpr>(AfterTrivials)) {
+    auto Callee = CE->getDirectCallee();
+    if (Callee && hasCustomAttribute<moz_may_call_after_must_return>(Callee)) {
+      return true;
+    }
+
+    if (Callee && isa<CXXConversionDecl>(Callee)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool MustReturnFromCallerChecker::immediatelyReturns(
     RecurseGuard<const CFGBlock *> Block, ASTContext *TheContext,
     size_t FromIdx) {
@@ -69,30 +115,9 @@ bool MustReturnFromCallerChecker::immediatelyReturns(
       continue;
     }
 
-    auto AfterTrivials = IgnoreTrivials(S->getStmt());
-
     
-    
-    
-    if (isa<ReturnStmt>(AfterTrivials) ||
-        isa<CXXConstructExpr>(AfterTrivials) ||
-        isa<DeclRefExpr>(AfterTrivials) || isa<MemberExpr>(AfterTrivials)) {
+    if (isIgnorable(S->getStmt())) {
       continue;
-    }
-
-    
-    
-    
-    if (auto CE = dyn_cast<CallExpr>(AfterTrivials)) {
-      auto Callee = CE->getDirectCallee();
-      if (Callee &&
-          hasCustomAttribute<moz_may_call_after_must_return>(Callee)) {
-        continue;
-      }
-
-      if (Callee && isa<CXXConversionDecl>(Callee)) {
-        continue;
-      }
     }
 
     
