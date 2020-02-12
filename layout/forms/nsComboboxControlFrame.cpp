@@ -439,7 +439,6 @@ void nsComboboxControlFrame::ReflowDropdown(nsPresContext* aPresContext,
   
   ReflowChildFlags flags = mDroppedDown ? ReflowChildFlags::Default
                                         : ReflowChildFlags::NoMoveFrame |
-                                              ReflowChildFlags::NoVisibility |
                                               ReflowChildFlags::NoSizeView;
 
   

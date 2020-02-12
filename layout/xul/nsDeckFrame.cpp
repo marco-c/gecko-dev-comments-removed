@@ -213,8 +213,7 @@ nsDeckFrame::DoXULLayout(nsBoxLayoutState& aState) {
   
   
   ReflowChildFlags oldFlags = aState.LayoutFlags();
-  aState.SetLayoutFlags(ReflowChildFlags::NoSizeView |
-                        ReflowChildFlags::NoVisibility);
+  aState.SetLayoutFlags(ReflowChildFlags::NoSizeView);
 
   
   nsresult rv = nsBoxFrame::DoXULLayout(aState);
