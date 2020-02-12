@@ -12,6 +12,7 @@
 #include "nsCommandManager.h"            
 #include "nsComponentManagerUtils.h"     
 #include "nsDebug.h"                     
+#include "nsDocShell.h"                  
 #include "nsError.h"                     
 #include "nsID.h"                        
 #include "nsIInterfaceRequestorUtils.h"  
