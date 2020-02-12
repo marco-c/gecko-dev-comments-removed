@@ -285,8 +285,6 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
   
 
 
-  enum ScrollUnit { DEVICE_PIXELS, LINES, PAGES, WHOLE };
-  
 
 
 
@@ -294,10 +292,8 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-
-
-  virtual void ScrollBy(nsIntPoint aDelta, ScrollUnit aUnit, ScrollMode aMode,
-                        nsIntPoint* aOverflow = nullptr,
+  virtual void ScrollBy(nsIntPoint aDelta, mozilla::ScrollUnit aUnit,
+                        ScrollMode aMode, nsIntPoint* aOverflow = nullptr,
                         nsAtom* aOrigin = nullptr,
                         ScrollMomentum aMomentum = NOT_MOMENTUM,
                         nsIScrollbarMediator::ScrollSnapMode aSnap =
