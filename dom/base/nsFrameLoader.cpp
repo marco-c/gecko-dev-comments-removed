@@ -2704,7 +2704,7 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
     nsAutoString frameName;
     mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::name, frameName);
     if (nsContentUtils::IsOverridingWindowName(frameName)) {
-      Unused << browserParent->SendSetWindowName(frameName);
+      mBrowsingContext->SetName(frameName);
     }
     
     if (mOwnerContent->AttrValueIs(kNameSpaceID_None,

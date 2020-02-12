@@ -5020,7 +5020,7 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
   
   
   if (nsContentUtils::IsOverridingWindowName(aName)) {
-    Unused << newBrowserParent->SendSetWindowName(aName);
+    newBrowserHost->GetBrowsingContext()->SetName(aName);
   }
 
   
