@@ -1,0 +1,11 @@
+
+
+
+
+
+
+"use strict";
+
+add_task(function() {
+  ok(true, "this is not a test");
+});
