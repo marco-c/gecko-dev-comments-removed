@@ -15,6 +15,19 @@ requestLongerTimeout(4);
 
 
 add_task(async function() {
+  
+  await pushPref("devtools.browsertoolbox.panel", "inspector");
+
+  
+  
+  
+  const tab = await addTab(
+    `data:text/html,<div id="my-div" style="color: red">Foo</div><div id="second-div" style="color: blue">Foo</div>`
+  );
+
+  
+  tab.linkedBrowser.setAttribute("test-tab", "true");
+
   const ToolboxTask = await initBrowserToolboxTask({
     enableBrowserToolboxFission: true,
   });
@@ -22,16 +35,9 @@ add_task(async function() {
     selectNodeFront,
   });
 
-  const tab = await addTab(
-    `data:text/html,<div id="my-div" style="color: red">Foo</div>`
-  );
-
-  
-  tab.linkedBrowser.setAttribute("test-tab", "true");
-
   const color = await ToolboxTask.spawn(null, async () => {
     
-    const inspector = await gToolbox.selectTool("inspector");
+    const inspector = gToolbox.getPanel("inspector");
     const onSidebarSelect = inspector.sidebar.once("select");
     inspector.sidebar.select("computedview");
     await onSidebarSelect;
@@ -63,6 +69,52 @@ add_task(async function() {
     color,
     "rgb(255, 0, 0)",
     "The color property of the <div> within a tab isn't red"
+  );
+
+  await ToolboxTask.spawn(null, async () => {
+    const onPickerStarted = gToolbox.nodePicker.once("picker-started");
+    gToolbox.nodePicker.start();
+    await onPickerStarted;
+
+    const inspector = gToolbox.getPanel("inspector");
+
+    
+    
+    this.onPickerStopped = gToolbox.nodePicker.once("picker-stopped");
+    this.onInspectorUpdated = inspector.once("inspector-updated");
+  });
+
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    "#second-div",
+    {},
+    tab.linkedBrowser
+  );
+
+  const secondColor = await ToolboxTask.spawn(null, async () => {
+    dump(" # Waiting for picker stop\n");
+    await this.onPickerStopped;
+    dump(" # Waiting for inspector-updated\n");
+    await this.onInspectorUpdated;
+
+    const inspector = gToolbox.getPanel("inspector");
+    const view = inspector.getPanel("computedview").computedView;
+    function getProperty(name) {
+      const propertyViews = view.propertyViews;
+      for (const propView of propertyViews) {
+        if (propView.name == name) {
+          return propView;
+        }
+      }
+      return null;
+    }
+    const prop = getProperty("color");
+    return prop.valueNode.textContent;
+  });
+
+  is(
+    secondColor,
+    "rgb(0, 0, 255)",
+    "The color property of the <div> within a tab isn't blue"
   );
 
   await ToolboxTask.destroy();
