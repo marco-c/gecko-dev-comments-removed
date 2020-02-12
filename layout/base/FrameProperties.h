@@ -225,9 +225,8 @@ class FrameProperties {
 
 
   template <typename T>
-  PropertyType<T> Remove(Descriptor<T> aProperty,
-                         bool* aFoundResult = nullptr) {
-    void* ptr = RemoveInternal(aProperty, aFoundResult);
+  PropertyType<T> Take(Descriptor<T> aProperty, bool* aFoundResult = nullptr) {
+    void* ptr = TakeInternal(aProperty, aFoundResult);
     return ReinterpretHelper<T>::FromPointer(ptr);
   }
 
@@ -294,7 +293,7 @@ class FrameProperties {
   inline void* GetInternal(UntypedDescriptor aProperty,
                            bool* aFoundResult) const;
 
-  inline void* RemoveInternal(UntypedDescriptor aProperty, bool* aFoundResult);
+  inline void* TakeInternal(UntypedDescriptor aProperty, bool* aFoundResult);
 
   inline void DeleteInternal(UntypedDescriptor aProperty,
                              const nsIFrame* aFrame);
@@ -406,8 +405,8 @@ inline void FrameProperties::AddInternal(UntypedDescriptor aProperty,
   mProperties.AppendElement(PropertyValue(aProperty, aValue));
 }
 
-inline void* FrameProperties::RemoveInternal(UntypedDescriptor aProperty,
-                                             bool* aFoundResult) {
+inline void* FrameProperties::TakeInternal(UntypedDescriptor aProperty,
+                                           bool* aFoundResult) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aProperty, "Null property?");
 
