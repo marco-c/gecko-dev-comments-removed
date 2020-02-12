@@ -66,7 +66,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   }
 
   nsIEventTarget* ConsumerTarget() { return mConsumerTarget; }
-  nsISupports* HttpChannel() { return mChannel; }
 
   
   void SetResponseIsComplete() { mResponseIsComplete = true; }
@@ -223,7 +222,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   nsCOMPtr<nsIAsyncOutputStream> mPipeOut;
   nsCOMPtr<nsIRequestContext> mRequestContext;
 
-  nsCOMPtr<nsISupports> mChannel;
   uint64_t mChannelId;
   nsCOMPtr<nsIHttpActivityObserver> mActivityDistributor;
 

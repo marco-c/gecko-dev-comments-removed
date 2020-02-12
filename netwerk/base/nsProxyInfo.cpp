@@ -5,6 +5,8 @@
 
 
 #include "nsProxyInfo.h"
+
+#include "mozilla/net/NeckoChannelParams.h"
 #include "nsCOMPtr.h"
 
 namespace mozilla {
@@ -148,6 +150,46 @@ bool nsProxyInfo::IsHTTPS() { return mType == kProxyType_HTTPS; }
 bool nsProxyInfo::IsSOCKS() {
   return mType == kProxyType_SOCKS || mType == kProxyType_SOCKS4 ||
          mType == kProxyType_SOCKS5;
+}
+
+
+void nsProxyInfo::SerializeProxyInfo(nsProxyInfo* aProxyInfo,
+                                     nsTArray<ProxyInfoCloneArgs>& aResult) {
+  for (nsProxyInfo* iter = aProxyInfo; iter; iter = iter->mNext) {
+    ProxyInfoCloneArgs* arg = aResult.AppendElement();
+    arg->type() = nsCString(iter->Type());
+    arg->host() = iter->Host();
+    arg->port() = iter->Port();
+    arg->username() = iter->Username();
+    arg->password() = iter->Password();
+    arg->proxyAuthorizationHeader() = iter->ProxyAuthorizationHeader();
+    arg->connectionIsolationKey() = iter->ConnectionIsolationKey();
+    arg->flags() = iter->Flags();
+    arg->timeout() = iter->Timeout();
+    arg->resolveFlags() = iter->ResolveFlags();
+  }
+}
+
+
+nsProxyInfo* nsProxyInfo::DeserializeProxyInfo(
+    const nsTArray<ProxyInfoCloneArgs>& aArgs) {
+  nsProxyInfo *pi = nullptr, *first = nullptr, *last = nullptr;
+  for (const ProxyInfoCloneArgs& info : aArgs) {
+    pi = new nsProxyInfo(info.type(), info.host(), info.port(), info.username(),
+                         info.password(), info.flags(), info.timeout(),
+                         info.resolveFlags(), info.proxyAuthorizationHeader(),
+                         info.connectionIsolationKey());
+    if (last) {
+      last->mNext = pi;
+      
+      NS_IF_ADDREF(last->mNext);
+    } else {
+      first = pi;
+    }
+    last = pi;
+  }
+
+  return first;
 }
 
 }  

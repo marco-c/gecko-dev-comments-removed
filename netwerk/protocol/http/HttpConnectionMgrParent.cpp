@@ -53,12 +53,18 @@ nsresult HttpConnectionMgrParent::UpdateRequestTokenBucket(
 }
 
 nsresult HttpConnectionMgrParent::DoShiftReloadConnectionCleanup(
-    nsHttpConnectionInfo* aNotUsed) {
+    nsHttpConnectionInfo* aCi) {
   if (!CanSend()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  Unused << SendDoShiftReloadConnectionCleanup();
+  Maybe<HttpConnectionInfoCloneArgs> optionArgs;
+  if (aCi) {
+    optionArgs.emplace();
+    nsHttpConnectionInfo::SerializeHttpConnectionInfo(aCi, optionArgs.ref());
+  }
+
+  Unused << SendDoShiftReloadConnectionCleanup(optionArgs);
   return NS_OK;
 }
 
@@ -204,6 +210,12 @@ nsresult HttpConnectionMgrParent::ClearConnectionHistory() {
 
   Unused << SendClearConnectionHistory();
   return NS_OK;
+}
+
+nsresult HttpConnectionMgrParent::CompleteUpgrade(
+    HttpTransactionShell* aTrans, nsIHttpUpgradeListener* aUpgradeListener) {
+  
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 nsHttpConnectionMgr* HttpConnectionMgrParent::AsHttpConnectionMgr() {

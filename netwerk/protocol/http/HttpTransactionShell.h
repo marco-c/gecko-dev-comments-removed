@@ -28,6 +28,7 @@ class nsHttpHeaderArray;
 class nsHttpRequestHead;
 class nsHttpTransaction;
 class TransactionObserverResult;
+union NetAddr;
 
 
 

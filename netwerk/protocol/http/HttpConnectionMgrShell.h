@@ -8,6 +8,7 @@
 #include "nsISupports.h"
 
 class nsIEventTarget;
+class nsIHttpUpgradeListener;
 class nsIInterfaceRequestor;
 
 namespace mozilla {
@@ -152,6 +153,16 @@ class HttpConnectionMgrShell : public nsISupports {
   
   MOZ_MUST_USE virtual nsresult ClearConnectionHistory() = 0;
 
+  
+  
+  
+  
+  
+  
+  MOZ_MUST_USE virtual nsresult CompleteUpgrade(
+      HttpTransactionShell* aTrans,
+      nsIHttpUpgradeListener* aUpgradeListener) = 0;
+
   virtual nsHttpConnectionMgr* AsHttpConnectionMgr() = 0;
 };
 
@@ -200,6 +211,9 @@ NS_DEFINE_STATIC_IID_ACCESSOR(HttpConnectionMgrShell,
   virtual nsresult VerifyTraffic() override;                                 \
   virtual void BlacklistSpdy(const nsHttpConnectionInfo* ci) override;       \
   virtual nsresult ClearConnectionHistory() override;                        \
+  virtual nsresult CompleteUpgrade(HttpTransactionShell* aTrans,             \
+                                   nsIHttpUpgradeListener* aUpgradeListener) \
+      override;                                                              \
   nsHttpConnectionMgr* AsHttpConnectionMgr() override;
 
 }  
