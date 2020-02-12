@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/Types.h"
 #include "mozilla/Assertions.h"
@@ -129,7 +129,6 @@ STUB(gdk_window_set_cursor)
 STUB(gdk_window_set_debug_updates)
 STUB(gdk_window_set_decorations)
 STUB(gdk_window_set_events)
-STUB(gdk_window_set_geometry_hints)
 STUB(gdk_window_set_role)
 STUB(gdk_window_set_urgency_hint)
 STUB(gdk_window_set_user_data)
@@ -526,6 +525,7 @@ STUB(gtk_window_set_accept_focus)
 STUB(gtk_window_set_decorated)
 STUB(gtk_window_set_deletable)
 STUB(gtk_window_set_destroy_with_parent)
+STUB(gtk_window_set_geometry_hints)
 STUB(gtk_window_set_icon_name)
 STUB(gtk_window_set_modal)
 STUB(gtk_window_set_skip_taskbar_hint)
@@ -657,15 +657,15 @@ STUB(gtk_object_get_type)
 #endif
 
 #ifndef GTK3_SYMBOLS
-// Only define the following workaround when using GTK3, which we detect
-// by checking if GTK3 stubs are not provided.
+
+
 #  include <X11/Xlib.h>
-// Bug 1271100
-// We need to trick system Cairo into not using the XShm extension due to
-// a race condition in it that results in frequent BadAccess errors. Cairo
-// relies upon XShmQueryExtension to initially detect if XShm is available.
-// So we define our own stub that always indicates XShm not being present.
-// mozgtk loads before libXext/libcairo and so this stub will take priority.
-// Our tree usage goes through xcb and remains unaffected by this.
+
+
+
+
+
+
+
 MOZ_EXPORT Bool XShmQueryExtension(Display* aDisplay) { return False; }
 #endif
