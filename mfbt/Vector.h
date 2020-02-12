@@ -213,31 +213,6 @@ struct VectorImpl<T, N, AP, true> {
     aV.mTail.mCapacity = aNewCap;
     return true;
   }
-
-  static inline void podResizeToFit(Vector<T, N, AP>& aV) {
-    if (aV.usingInlineStorage() || aV.mLength == aV.mTail.mCapacity) {
-      return;
-    }
-    if (!aV.mLength) {
-      aV.free_(aV.mBegin, aV.mTail.mCapacity);
-      aV.mBegin = aV.inlineStorage();
-      aV.mTail.mCapacity = aV.kInlineCapacity;
-#ifdef DEBUG
-      aV.mTail.mReserved = 0;
-#endif
-      return;
-    }
-    T* newbuf =
-        aV.template pod_realloc<T>(aV.mBegin, aV.mTail.mCapacity, aV.mLength);
-    if (MOZ_UNLIKELY(!newbuf)) {
-      return;
-    }
-    aV.mBegin = newbuf;
-    aV.mTail.mCapacity = aV.mLength;
-#ifdef DEBUG
-    aV.mTail.mReserved = aV.mLength;
-#endif
-  }
 };
 
 
@@ -269,7 +244,7 @@ template <typename T, size_t MinInlineCapacity = 0,
 class MOZ_NON_PARAM Vector final : private AllocPolicy {
   
 
-  static const bool kElemIsPod = IsPod<T>::value;
+  static constexpr bool kElemIsPod = IsPod<T>::value;
   typedef detail::VectorImpl<T, MinInlineCapacity, AllocPolicy, kElemIsPod>
       Impl;
   friend struct detail::VectorImpl<T, MinInlineCapacity, AllocPolicy,
@@ -653,7 +628,12 @@ class MOZ_NON_PARAM Vector final : private AllocPolicy {
 
 
 
-  void podResizeToFit();
+
+
+
+
+
+  bool shrinkStorageToFit();
 
   
 
@@ -1198,10 +1178,54 @@ inline void Vector<T, N, AP>::clearAndFree() {
 }
 
 template <typename T, size_t N, class AP>
-inline void Vector<T, N, AP>::podResizeToFit() {
-  
-  
-  Impl::podResizeToFit(*this);
+inline bool Vector<T, N, AP>::shrinkStorageToFit() {
+  MOZ_REENTRANCY_GUARD_ET_AL;
+
+  const auto length = this->length();
+  if (usingInlineStorage() || length == capacity()) {
+    return true;
+  }
+
+  if (!length) {
+    this->free_(beginNoCheck(), mTail.mCapacity);
+    mBegin = inlineStorage();
+    mTail.mCapacity = kInlineCapacity;
+#ifdef DEBUG
+    mTail.mReserved = 0;
+#endif
+    return true;
+  }
+
+  T* newBuf;
+  size_t newCap;
+  if (length <= kInlineCapacity) {
+    newBuf = inlineStorage();
+    newCap = kInlineCapacity;
+  } else {
+    if (kElemIsPod) {
+      newBuf = this->template pod_realloc<T>(beginNoCheck(), mTail.mCapacity,
+                                             length);
+    } else {
+      newBuf = this->template pod_malloc<T>(length);
+    }
+    if (MOZ_UNLIKELY(!newBuf)) {
+      return false;
+    }
+    newCap = length;
+  }
+  if (!kElemIsPod || newBuf == inlineStorage()) {
+    Impl::moveConstruct(newBuf, beginNoCheck(), endNoCheck());
+    Impl::destroy(beginNoCheck(), endNoCheck());
+  }
+  if (!kElemIsPod) {
+    this->free_(beginNoCheck(), mTail.mCapacity);
+  }
+  mBegin = newBuf;
+  mTail.mCapacity = newCap;
+#ifdef DEBUG
+  mTail.mReserved = length;
+#endif
+  return true;
 }
 
 template <typename T, size_t N, class AP>

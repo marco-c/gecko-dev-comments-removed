@@ -98,7 +98,7 @@ struct ModuleLoadInfo final {
     Unused << mBacktrace.resize(numCaptured);
     
     
-    mBacktrace.podResizeToFit();
+    mBacktrace.shrinkStorageToFit();
   }
 
 #endif  
