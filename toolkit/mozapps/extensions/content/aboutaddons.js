@@ -1890,24 +1890,6 @@ class InlineOptionsBrowser extends HTMLElement {
       browser.setAttribute("remoteType", E10SUtils.EXTENSION_REMOTE_TYPE);
 
       readyPromise = promiseEvent("XULFrameLoaderCreated", browser);
-
-      readyPromise.then(() => {
-        if (!browser.messageManager) {
-          
-          
-          
-          return;
-        }
-
-        
-        
-        
-        
-        
-        browser.messageManager.addMessageListener("contextmenu", message => {
-          windowRoot.ownerGlobal.openContextMenu(message);
-        });
-      });
     } else {
       readyPromise = promiseEvent("load", browser, true);
     }
