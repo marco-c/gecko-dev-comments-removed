@@ -319,6 +319,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
+
   mozilla::UniquePtr<FlexItem> GenerateFlexItemForChild(
       nsPresContext* aPresContext, nsIFrame* aChildFrame,
       const ReflowInput& aParentReflowInput,
@@ -370,6 +371,9 @@ class nsFlexContainerFrame final : public nsContainerFrame {
   bool ShouldUseMozBoxCollapseBehavior(const nsStyleDisplay* aFlexStyleDisp);
 
   
+
+
+
 
 
 

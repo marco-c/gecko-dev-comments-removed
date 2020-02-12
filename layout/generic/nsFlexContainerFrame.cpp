@@ -3908,6 +3908,9 @@ static bool FrameHasRelativeBSizeDependency(nsIFrame* aFrame) {
 
 
 
+
+
+
 static nscoord ResolveFlexContainerMainSize(
     const ReflowInput& aReflowInput, const FlexboxAxisTracker& aAxisTracker,
     nscoord aTentativeMainSize, nscoord aAvailableBSizeForContent,
@@ -4611,6 +4614,7 @@ void nsFlexContainerFrame::DoFlexLayout(
   
   
   
+  
 
   
   nscoord sumLineCrossSizes = 0;
@@ -4733,6 +4737,7 @@ void nsFlexContainerFrame::DoFlexLayout(
        line = line->getNext(), ++lineIndex) {
     
     
+    
     line->PositionItemsInMainAxis(justifyContent, aContentBoxMainSize,
                                   aAxisTracker);
 
@@ -4742,6 +4747,7 @@ void nsFlexContainerFrame::DoFlexLayout(
       lineInfo.mCrossStart = crossAxisPosnTracker.Position();
     }
 
+    
     
     
     line->PositionItemsInCrossAxis(crossAxisPosnTracker.Position(),
