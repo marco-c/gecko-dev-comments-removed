@@ -28,7 +28,7 @@ pub use crate::values::specified::{TextDecorationSkipInk, TextTransform};
 pub type InitialLetter = GenericInitialLetter<CSSFloat, CSSInteger>;
 
 
-pub type TextDecorationLength = GenericTextDecorationLength<LengthPercentage>;
+pub type TextDecorationLength = GenericTextDecorationLength<Length>;
 
 
 #[repr(transparent)]
