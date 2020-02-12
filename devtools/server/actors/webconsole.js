@@ -1177,11 +1177,11 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
     
     
-    this.parentActor.threadActor.insideClientEvaluation = true;
+    this.parentActor.threadActor.insideClientEvaluation = evalOptions;
 
     const evalInfo = evalWithDebugger(input, evalOptions, this);
 
-    this.parentActor.threadActor.insideClientEvaluation = false;
+    this.parentActor.threadActor.insideClientEvaluation = null;
 
     const evalResult = evalInfo.result;
     const helperResult = evalInfo.helperResult;
