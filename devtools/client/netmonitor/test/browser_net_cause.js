@@ -109,7 +109,7 @@ add_task(async function() {
   
   const { tab, monitor } = await initNetMonitor(SIMPLE_URL);
 
-  const { document, store, windowRequire, connector } = monitor.panelWin;
+  const { document, store, windowRequire } = monitor.panelWin;
   const Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
   const { getSortedRequests } = windowRequire(
     "devtools/client/netmonitor/src/selectors/index"
@@ -121,12 +121,25 @@ add_task(async function() {
   BrowserTestUtils.loadURI(tab.linkedBrowser, CAUSE_URL);
   await wait;
 
-  const requests = getSortedRequests(store.getState());
-  await Promise.all(
-    requests.map(requestItem =>
-      connector.requestData(requestItem.id, "stackTrace")
-    )
-  );
+  
+  for (const [index, { stack }] of EXPECTED_REQUESTS.entries()) {
+    if (!stack) {
+      continue;
+    }
+
+    
+    EventUtils.sendMouseEvent(
+      { type: "mousedown" },
+      document.querySelectorAll(".request-list-item")[index]
+    );
+
+    
+    const onStackTraceRendered = waitUntil(() =>
+      document.querySelector("#stack-trace-panel .stack-trace .frame-link")
+    );
+    document.querySelector("#stack-trace-tab").click();
+    await onStackTraceRendered;
+  }
 
   is(
     store.getState().requests.requests.length,
