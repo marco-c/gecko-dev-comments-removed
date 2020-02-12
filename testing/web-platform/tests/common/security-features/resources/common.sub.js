@@ -924,6 +924,11 @@ const subresourceMap = {
     path: "/common/security-features/subresource/shared-worker.py",
     invoker: url => requestViaSharedWorker(url, {type: "module"}),
   },
+  "sharedworker-import-data": {
+    path: "/common/security-features/subresource/shared-worker.py",
+    invoker: url =>
+        requestViaSharedWorker(workerUrlThatImports(url), {type: "module"}),
+  },
 
   "websocket": {
     path: "/stash_responder",
