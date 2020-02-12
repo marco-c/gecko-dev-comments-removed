@@ -60,7 +60,7 @@ test(() => {
 
   let writeCalled = false;
   let closeCalled = false;
-  assert_throws(passedError, () => {
+  assert_throws_exactly(passedError, () => {
     
     
     new WritableStream({
