@@ -317,15 +317,7 @@ int main(int argc, char* argv[], char* envp[]) {
   DllBlocklist_Initialize(gBlocklistInitFlags);
 #endif
 
-  
-  
-  
-#ifdef NIGHTLY_BUILD
-  nsresult rv = InitXPCOMGlue(LibLoadingStrategy::NoReadAhead);
-#else
   nsresult rv = InitXPCOMGlue(LibLoadingStrategy::ReadAhead);
-#endif
-
   if (NS_FAILED(rv)) {
     return 255;
   }
