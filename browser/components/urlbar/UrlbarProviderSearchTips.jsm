@@ -21,7 +21,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Log: "resource://gre/modules/Log.jsm",
   ProfileAge: "resource://gre/modules/ProfileAge.jsm",
   Services: "resource://gre/modules/Services.jsm",
-  setTimeout: "resource://gre/modules/Timer.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
   UrlbarProviderTopSites: "resource:///modules/UrlbarProviderTopSites.jsm",
@@ -76,10 +75,6 @@ const SUPPORTED_ENGINES = new Map([
 
 
 const MAX_SHOWN_COUNT = 4;
-
-
-
-const SHOW_TIP_DELAY_MS = 200;
 
 
 
@@ -308,6 +303,15 @@ class ProviderSearchTips extends UrlbarProvider {
       return;
     }
 
+    if (this._maybeShowTipForUrlInstance != instance) {
+      return;
+    }
+
+    this.currentTip = tip;
+    if (!this.isActive()) {
+      return;
+    }
+
     
     this.showedTipInCurrentSession = true;
 
@@ -318,19 +322,8 @@ class ProviderSearchTips extends UrlbarProvider {
     );
 
     
-    setTimeout(() => {
-      if (this._maybeShowTipForUrlInstance != instance) {
-        return;
-      }
-
-      this.currentTip = tip;
-      if (!this.isActive()) {
-        return;
-      }
-
-      let window = BrowserWindowTracker.getTopWindow();
-      window.gURLBar.search("", { focus: tip == TIPS.ONBOARD });
-    }, SHOW_TIP_DELAY_MS);
+    let window = BrowserWindowTracker.getTopWindow();
+    window.gURLBar.search("", { focus: tip == TIPS.ONBOARD });
   }
 }
 
