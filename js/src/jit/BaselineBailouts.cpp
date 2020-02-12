@@ -368,7 +368,7 @@ struct BaselineStackBuilder {
 #if defined(JS_CODEGEN_X86)
     
     
-    MOZ_ASSERT(BaselineFrameReg == FramePointer);
+    static_assert(BaselineFrameReg == FramePointer);
     priorOffset -= sizeof(void*);
     return virtualPointerAtStackOffset(priorOffset);
 #elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) ||   \

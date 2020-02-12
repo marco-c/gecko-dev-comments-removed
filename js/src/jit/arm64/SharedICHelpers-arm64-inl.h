@@ -17,7 +17,7 @@ namespace jit {
 inline void EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm,
                                    uint32_t argSize) {
   
-  MOZ_ASSERT(R2 == ValueOperand(r0));
+  static_assert(R2 == ValueOperand(r0));
 
   
   masm.Sub(x0, BaselineFrameReg64, masm.GetStackPointer64());
@@ -36,7 +36,7 @@ inline void EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm,
 #endif
 
   
-  MOZ_ASSERT(ICTailCallReg == lr);
+  static_assert(ICTailCallReg == lr);
   masm.makeFrameDescriptor(r0, FrameType::BaselineJS, ExitFrameLayout::Size());
   masm.push(r0);
 

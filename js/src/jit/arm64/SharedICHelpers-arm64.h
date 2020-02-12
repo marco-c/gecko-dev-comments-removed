@@ -35,7 +35,7 @@ inline void EmitCallIC(MacroAssembler& masm, const ICEntry* entry,
 
   
   
-  MOZ_ASSERT(R2 == ValueOperand(r0));
+  static_assert(R2 == ValueOperand(r0));
   masm.loadPtr(Address(ICStubReg, ICStub::offsetOfStubCode()), r0);
 
   
@@ -52,7 +52,7 @@ inline void EmitEnterTypeMonitorIC(
 
   
   
-  MOZ_ASSERT(R2 == ValueOperand(r0));
+  static_assert(R2 == ValueOperand(r0));
   masm.loadPtr(Address(ICStubReg, ICStub::offsetOfStubCode()), r0);
 
   
