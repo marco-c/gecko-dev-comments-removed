@@ -8,24 +8,13 @@
 
 
 
-var gDebuggee;
-var gClient;
-var gThreadFront;
-
 add_task(
-  threadFrontTest(
-    async ({ threadFront, debuggee, client }) => {
-      gThreadFront = threadFront;
-      gDebuggee = debuggee;
-      gClient = client;
-      test_pause_frame();
-    },
-    { waitForFinish: true }
-  )
-);
+  threadFrontTest(async ({ threadFront, debuggee, client }) => {
+    const packet = await executeOnNextTickAndWaitForPause(
+      () => evaluateTestCode(debuggee),
+      threadFront
+    );
 
-function test_pause_frame() {
-  gThreadFront.once("paused", async function(packet) {
     const args = packet.frame.arguments;
     const objActor = args[0].actor;
     Assert.equal(args[0].class, "Object");
@@ -34,28 +23,29 @@ function test_pause_frame() {
     
     
     try {
-      await gClient.request({ to: objActor, type: "bogusRequest" });
+      await client.request({ to: objActor, type: "bogusRequest" });
       ok(false, "bogusRequest should throw");
     } catch (e) {
       ok(true, "bogusRequest thrown");
       Assert.equal(e.error, "unrecognizedPacketType");
     }
 
-    gThreadFront.resume().then(async function() {
-      
-      
-      try {
-        await gClient.request({ to: objActor, type: "bogusRequest" });
-        ok(false, "bogusRequest should throw");
-      } catch (e) {
-        ok(true, "bogusRequest thrown");
-        Assert.equal(e.error, "noSuchActor");
-      }
-      threadFrontTestFinished();
-    });
-  });
+    threadFront.resume();
 
-  gDebuggee.eval(
+    
+    
+    try {
+      await client.request({ to: objActor, type: "bogusRequest" });
+      ok(false, "bogusRequest should throw");
+    } catch (e) {
+      ok(true, "bogusRequest thrown");
+      Assert.equal(e.error, "noSuchActor");
+    }
+  })
+);
+
+function evaluateTestCode(debuggee) {
+  debuggee.eval(
     "(" +
       function() {
         function stopMe(obj) {

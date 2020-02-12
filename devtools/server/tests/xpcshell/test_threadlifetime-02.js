@@ -8,70 +8,60 @@
 
 
 
-var gDebuggee;
-var gClient;
-var gThreadFront;
-
 add_task(
-  threadFrontTest(
-    async ({ threadFront, debuggee, client }) => {
-      gThreadFront = threadFront;
-      gClient = client;
-      gDebuggee = debuggee;
-      test_thread_lifetime();
-    },
-    { waitForFinish: true }
-  )
-);
+  threadFrontTest(async ({ threadFront, debuggee, client }) => {
+    const packet = await executeOnNextTickAndWaitForPause(
+      () => evaluateTestCode(debuggee),
+      threadFront
+    );
 
-function test_thread_lifetime() {
-  gThreadFront.once("paused", async function(packet) {
     const pauseGrip = packet.frame.arguments[0];
 
     
-    const response = await gClient.request({
+    const response = await client.request({
       to: pauseGrip.actor,
       type: "threadGrip",
     });
     
     Assert.equal(response.error, undefined);
-    gThreadFront.once("paused", async function(packet) {
-      
-      Assert.equal(pauseGrip.actor, packet.frame.arguments[0].actor);
-      
-      const objFront = new ObjectFront(
-        gThreadFront.conn,
-        gThreadFront.targetFront,
-        gThreadFront,
-        pauseGrip
-      );
-      await objFront.release();
-      const objFront2 = new ObjectFront(
-        gThreadFront.conn,
-        gThreadFront.targetFront,
-        gThreadFront,
-        pauseGrip
-      );
 
-      try {
-        await objFront2
-          .request({ to: pauseGrip.actor, type: "bogusRequest" })
-          .catch(function(error) {
-            Assert.ok(!!error.message.match(/noSuchActor/));
-            gThreadFront.resume().then(function() {
-              threadFrontTestFinished();
-            });
-            throw new Error();
-          });
-        ok(false, "bogusRequest should throw");
-      } catch (e) {
-        ok(true, "bogusRequest thrown");
-      }
-    });
-    gThreadFront.resume();
-  });
+    threadFront.resume();
+    const packet2 = await waitForPause(threadFront);
 
-  gDebuggee.eval(
+    
+    Assert.equal(pauseGrip.actor, packet2.frame.arguments[0].actor);
+    
+    const objFront = new ObjectFront(
+      threadFront.conn,
+      threadFront.targetFront,
+      threadFront,
+      pauseGrip
+    );
+    await objFront.release();
+    const objFront2 = new ObjectFront(
+      threadFront.conn,
+      threadFront.targetFront,
+      threadFront,
+      pauseGrip
+    );
+
+    try {
+      await objFront2
+        .request({ to: pauseGrip.actor, type: "bogusRequest" })
+        .catch(function(error) {
+          Assert.ok(!!error.message.match(/noSuchActor/));
+          threadFront.resume();
+          throw new Error();
+        });
+      ok(false, "bogusRequest should throw");
+    } catch (e) {
+      ok(true, "bogusRequest thrown");
+    }
+  })
+);
+
+function evaluateTestCode(debuggee) {
+  debuggee.eval(
     "(" +
       function() {
         function stopMe(arg1) {

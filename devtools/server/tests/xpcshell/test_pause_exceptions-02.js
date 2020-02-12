@@ -8,37 +8,30 @@
 
 
 
-var gDebuggee;
-var gThreadFront;
-
 add_task(
-  threadFrontTest(
-    async ({ threadFront, debuggee }) => {
-      gThreadFront = threadFront;
-      gDebuggee = debuggee;
-      test_pause_frame();
-    },
-    { waitForFinish: true }
-  )
+  threadFrontTest(async ({ threadFront, debuggee }) => {
+    threadFront.pauseOnExceptions(true, false);
+
+    const packet = await executeOnNextTickAndWaitForPause(
+      () => evaluateTestCode(debuggee),
+      threadFront
+    );
+
+    Assert.equal(packet.why.type, "exception");
+    Assert.equal(packet.why.exception, 42);
+    threadFront.resume();
+  })
 );
 
-function test_pause_frame() {
-  gThreadFront.pauseOnExceptions(true, false).then(function() {
-    gThreadFront.once("paused", function(packet) {
-      Assert.equal(packet.why.type, "exception");
-      Assert.equal(packet.why.exception, 42);
-      gThreadFront.resume().then(() => threadFrontTestFinished());
-    });
-
-    
-    gDebuggee.eval("(" + function () {   
-      function stopMe() {                
-        throw 42;                        
-      }                                  
-      try {                              
-        stopMe();                        
-      } catch (e) {}                     
-    } + ")()");
-    
-  });
+function evaluateTestCode(debuggee) {
+  
+  debuggee.eval("(" + function () {    
+    function stopMe() {                
+      throw 42;                        
+    }                                  
+    try {                              
+      stopMe();                        
+    } catch (e) {}                     
+  } + ")()");
+  
 }

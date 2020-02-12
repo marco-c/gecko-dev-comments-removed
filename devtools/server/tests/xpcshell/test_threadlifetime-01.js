@@ -8,53 +8,43 @@
 
 
 
-var gDebuggee;
-var gClient;
-var gThreadFront;
-
 add_task(
-  threadFrontTest(
-    async ({ threadFront, debuggee, client }) => {
-      gThreadFront = threadFront;
-      gClient = client;
-      gDebuggee = debuggee;
-      test_thread_lifetime();
-    },
-    { waitForFinish: true }
-  )
-);
+  threadFrontTest(async ({ threadFront, debuggee, client }) => {
+    const packet = await executeOnNextTickAndWaitForPause(
+      () => evaluateTestCode(debuggee),
+      threadFront
+    );
 
-function test_thread_lifetime() {
-  gThreadFront.once("paused", async function(packet) {
     const pauseGrip = packet.frame.arguments[0];
 
     
-    const response = await gClient.request({
+    const response = await client.request({
       to: pauseGrip.actor,
       type: "threadGrip",
     });
     
     Assert.equal(response.error, undefined);
-    gThreadFront.once("paused", async function(packet) {
-      
-      Assert.equal(pauseGrip.actor, packet.frame.arguments[0].actor);
-      
-      
-      try {
-        await gClient.request({ to: pauseGrip.actor, type: "bogusRequest" });
-        ok(false, "bogusRequest should throw");
-      } catch (e) {
-        Assert.equal(e.error, "unrecognizedPacketType");
-        ok(true, "bogusRequest thrown");
-      }
-      gThreadFront.resume().then(function() {
-        threadFrontTestFinished();
-      });
-    });
-    gThreadFront.resume();
-  });
 
-  gDebuggee.eval(
+    threadFront.resume();
+    const packet2 = await waitForPause(threadFront);
+
+    
+    Assert.equal(pauseGrip.actor, packet2.frame.arguments[0].actor);
+    
+    
+    try {
+      await client.request({ to: pauseGrip.actor, type: "bogusRequest" });
+      ok(false, "bogusRequest should throw");
+    } catch (e) {
+      Assert.equal(e.error, "unrecognizedPacketType");
+      ok(true, "bogusRequest thrown");
+    }
+    threadFront.resume();
+  })
+);
+
+function evaluateTestCode(debuggee) {
+  debuggee.eval(
     "(" +
       function() {
         function stopMe(arg1) {
