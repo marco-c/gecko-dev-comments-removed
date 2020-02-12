@@ -22,6 +22,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static org.mozilla.geckoview.WebExtension.InstallException.ErrorCodes.ERROR_USER_CANCELED;
+
 public class WebExtensionController {
     private final static String LOGTAG = "WebExtension";
 
@@ -270,6 +272,23 @@ public class WebExtensionController {
 
 
 
+
+        @Nullable
+        default GeckoResult<AllowOrDeny> onUpdatePrompt(
+                @NonNull WebExtension currentlyInstalled,
+                @NonNull WebExtension updatedExtension,
+                @NonNull String[] newPermissions,
+                @NonNull String[] newOrigins) {
+            return null;
+        }
+
+        
+
+
+
+
+
+
     }
 
     
@@ -311,6 +330,11 @@ public class WebExtensionController {
 
     private static class WebExtensionResult extends GeckoResult<WebExtension>
             implements EventCallback {
+        
+        private static class StateCodes {
+            public static final int STATE_CANCELED = 12;
+        }
+
         private final String mFieldName;
 
         public WebExtensionResult(final String fieldName) {
@@ -319,6 +343,10 @@ public class WebExtensionController {
 
         @Override
         public void sendSuccess(final Object response) {
+            if (response == null) {
+                complete(null);
+                return;
+            }
             final GeckoBundle bundle = (GeckoBundle) response;
             complete(new WebExtension(bundle.getBundle(mFieldName)));
         }
@@ -328,7 +356,11 @@ public class WebExtensionController {
             if (response instanceof GeckoBundle
                     && ((GeckoBundle) response).containsKey("installError")) {
                 final GeckoBundle bundle = (GeckoBundle) response;
-                final int errorCode = bundle.getInt("installError");
+                int errorCode = bundle.getInt("installError");
+                final int installState = bundle.getInt("state");
+                if (errorCode == 0 && installState == StateCodes.STATE_CANCELED) {
+                    errorCode = ERROR_USER_CANCELED;
+                }
                 completeExceptionally(new WebExtension.InstallException(errorCode));
             } else {
                 completeExceptionally(new Exception(response.toString()));
@@ -551,7 +583,30 @@ public class WebExtensionController {
     }
 
     
-    GeckoResult<WebExtension> update(final WebExtension extension) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @AnyThread
+    @NonNull
+    public GeckoResult<WebExtension> update(final @NonNull WebExtension extension) {
         final WebExtensionResult result = new WebExtensionResult("extension");
 
         final GeckoBundle bundle = new GeckoBundle(1);
@@ -561,7 +616,9 @@ public class WebExtensionController {
                 bundle, result);
 
         return result.then(newExtension -> {
-            registerWebExtension(newExtension);
+            if (newExtension != null) {
+                registerWebExtension(newExtension);
+            }
             return GeckoResult.fromValue(newExtension);
         });
     }
@@ -602,6 +659,9 @@ public class WebExtensionController {
             return;
         } else if ("GeckoView:WebExtension:InstallPrompt".equals(event)) {
             installPrompt(bundle, callback);
+            return;
+        } else if ("GeckoView:WebExtension:UpdatePrompt".equals(event)) {
+            updatePrompt(bundle, callback);
             return;
         }
 
@@ -667,12 +727,47 @@ public class WebExtensionController {
         }
 
         promptResponse.accept(allowOrDeny -> {
-            GeckoBundle response = new GeckoBundle(1);
-            if (AllowOrDeny.ALLOW.equals(allowOrDeny)) {
-                response.putBoolean("allow", true);
-            } else {
-                response.putBoolean("allow", false);
+            final GeckoBundle response = new GeckoBundle(1);
+            response.putBoolean("allow", AllowOrDeny.ALLOW.equals(allowOrDeny));
+            callback.sendSuccess(response);
+        });
+    }
+
+    private void updatePrompt(final GeckoBundle message, final EventCallback callback) {
+        final GeckoBundle currentBundle = message.getBundle("currentlyInstalled");
+        final GeckoBundle updatedBundle = message.getBundle("updatedExtension");
+        final String[] newPermissions = message.getStringArray("newPermissions");
+        final String[] newOrigins = message.getStringArray("newOrigins");
+        if (currentBundle == null || updatedBundle == null) {
+            if (BuildConfig.DEBUG) {
+                throw new RuntimeException("Missing bundle");
             }
+
+            Log.e(LOGTAG, "Missing bundle");
+            return;
+        }
+
+        final WebExtension currentExtension = new WebExtension(currentBundle);
+        currentExtension.setDelegateController(new DelegateController(currentExtension));
+
+        final WebExtension updatedExtension = new WebExtension(updatedBundle);
+        updatedExtension.setDelegateController(new DelegateController(updatedExtension));
+
+        if (mPromptDelegate == null) {
+            Log.e(LOGTAG, "Tried to update extension " + currentExtension.id +
+                    " but no delegate is registered");
+            return;
+        }
+
+        final GeckoResult<AllowOrDeny> promptResponse = mPromptDelegate.onUpdatePrompt(
+                currentExtension, updatedExtension, newPermissions, newOrigins);
+        if (promptResponse == null) {
+            return;
+        }
+
+        promptResponse.accept(allowOrDeny -> {
+            final GeckoBundle response = new GeckoBundle(1);
+            response.putBoolean("allow", AllowOrDeny.ALLOW.equals(allowOrDeny));
             callback.sendSuccess(response);
         });
     }
