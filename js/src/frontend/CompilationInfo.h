@@ -4,8 +4,8 @@
 
 
 
-#ifndef frontend_ParseInfo_h
-#define frontend_ParseInfo_h
+#ifndef frontend_CompilationInfo_h
+#define frontend_CompilationInfo_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Variant.h"
@@ -25,7 +25,7 @@ namespace frontend {
 
 
 
-struct MOZ_RAII ParseInfo {
+struct MOZ_RAII CompilationInfo {
   UsedNameTracker usedNames;
   LifoAllocScope& allocScope;
   FunctionTreeHolder treeHolder;
@@ -48,7 +48,7 @@ struct MOZ_RAII ParseInfo {
   JS::Rooted<ScriptSourceObject*> sourceObject;
 
   
-  ParseInfo(JSContext* cx, LifoAllocScope& alloc)
+  CompilationInfo(JSContext* cx, LifoAllocScope& alloc)
       : usedNames(cx),
         allocScope(alloc),
         treeHolder(cx),
@@ -64,10 +64,10 @@ struct MOZ_RAII ParseInfo {
 
   
   
-  ParseInfo(const ParseInfo&) = delete;
-  ParseInfo(ParseInfo&&) = delete;
-  ParseInfo& operator=(const ParseInfo&) = delete;
-  ParseInfo& operator=(ParseInfo&&) = delete;
+  CompilationInfo(const CompilationInfo&) = delete;
+  CompilationInfo(CompilationInfo&&) = delete;
+  CompilationInfo& operator=(const CompilationInfo&) = delete;
+  CompilationInfo& operator=(CompilationInfo&&) = delete;
 };
 
 }  

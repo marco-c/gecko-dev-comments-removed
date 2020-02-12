@@ -62,37 +62,37 @@
 #include "jit/BaselineJIT.h"           
 #include "jit/Ion.h"                   
 #include "jit/JitScript.h"             
-#include "jit/JSJitFrameIter.h"        
-#include "jit/RematerializedFrame.h"   
-#include "js/Conversions.h"            
-#include "js/Debug.h"                  
-#include "js/GCAPI.h"                  
-#include "js/HeapAPI.h"                
-#include "js/Promise.h"                
-#include "js/Proxy.h"                  
-#include "js/SourceText.h"             
-#include "js/StableStringChars.h"      
-#include "js/UbiNode.h"                
-#include "js/UbiNodeBreadthFirst.h"    
-#include "js/Warnings.h"               
-#include "js/Wrapper.h"                
-#include "util/Text.h"                 
-#include "vm/ArrayObject.h"            
-#include "vm/AsyncFunction.h"          
-#include "vm/AsyncIteration.h"         
-#include "vm/BytecodeUtil.h"           
-#include "vm/Compartment.h"            
-#include "vm/EnvironmentObject.h"      
-#include "vm/ErrorReporting.h"         
-#include "vm/GeneratorObject.h"        
-#include "vm/GlobalObject.h"           
-#include "vm/Interpreter.h"            
-#include "vm/Iteration.h"              
-#include "vm/JSAtom.h"                 
-#include "vm/JSContext.h"              
-#include "vm/JSFunction.h"             
-#include "vm/JSObject.h"               
-#include "vm/ObjectGroup.h"            
+#include "jit/JSJitFrameIter.h"       
+#include "jit/RematerializedFrame.h"  
+#include "js/Conversions.h"           
+#include "js/Debug.h"                 
+#include "js/GCAPI.h"                 
+#include "js/HeapAPI.h"               
+#include "js/Promise.h"               
+#include "js/Proxy.h"                 
+#include "js/SourceText.h"            
+#include "js/StableStringChars.h"     
+#include "js/UbiNode.h"               
+#include "js/UbiNodeBreadthFirst.h"   
+#include "js/Warnings.h"              
+#include "js/Wrapper.h"               
+#include "util/Text.h"                
+#include "vm/ArrayObject.h"           
+#include "vm/AsyncFunction.h"         
+#include "vm/AsyncIteration.h"        
+#include "vm/BytecodeUtil.h"          
+#include "vm/Compartment.h"           
+#include "vm/EnvironmentObject.h"     
+#include "vm/ErrorReporting.h"        
+#include "vm/GeneratorObject.h"       
+#include "vm/GlobalObject.h"          
+#include "vm/Interpreter.h"           
+#include "vm/Iteration.h"             
+#include "vm/JSAtom.h"                
+#include "vm/JSContext.h"             
+#include "vm/JSFunction.h"            
+#include "vm/JSObject.h"              
+#include "vm/ObjectGroup.h"           
 #include "vm/ObjectOperations.h"      
 #include "vm/PromiseObject.h"         
 #include "vm/ProxyObject.h"           
@@ -5922,16 +5922,16 @@ bool Debugger::isCompilableUnit(JSContext* cx, unsigned argc, Value* vp) {
 
   CompileOptions options(cx);
   LifoAllocScope allocScope(&cx->tempLifoAlloc());
-  frontend::ParseInfo parseInfo(cx, allocScope);
-  if (!parseInfo.initFromOptions(cx, options)) {
+  frontend::CompilationInfo compilationInfo(cx, allocScope);
+  if (!compilationInfo.initFromOptions(cx, options)) {
     return false;
   }
 
   JS::AutoSuppressWarningReporter suppressWarnings(cx);
   frontend::Parser<frontend::FullParseHandler, char16_t> parser(
       cx, options, chars.twoByteChars(), length,
-       true, parseInfo, nullptr, nullptr,
-      parseInfo.sourceObject);
+       true, compilationInfo, nullptr, nullptr,
+      compilationInfo.sourceObject);
   if (!parser.checkOptions() || !parser.parse()) {
     
     

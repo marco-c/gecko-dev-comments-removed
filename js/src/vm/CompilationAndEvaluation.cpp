@@ -18,9 +18,9 @@
 #include "jstypes.h"      
 
 #include "frontend/BytecodeCompilation.h"  
+#include "frontend/CompilationInfo.h"      
 #include "frontend/FullParseHandler.h"     
 #include "frontend/ParseContext.h"         
-#include "frontend/ParseInfo.h"            
 #include "frontend/Parser.h"       
 #include "js/CharacterEncoding.h"  
 #include "js/RootingAPI.h"         
@@ -67,12 +67,12 @@ static JSScript* CompileSourceBuffer(JSContext* cx,
   CHECK_THREAD(cx);
 
   LifoAllocScope allocScope(&cx->tempLifoAlloc());
-  frontend::ParseInfo parseInfo(cx, allocScope);
-  if (!parseInfo.initFromOptions(cx, options)) {
+  frontend::CompilationInfo compilationInfo(cx, allocScope);
+  if (!compilationInfo.initFromOptions(cx, options)) {
     return nullptr;
   }
 
-  frontend::GlobalScriptInfo info(cx, parseInfo, options, scopeKind);
+  frontend::GlobalScriptInfo info(cx, compilationInfo, options, scopeKind);
   return frontend::CompileGlobalScript(info, srcBuf);
 }
 
@@ -220,23 +220,23 @@ JS_PUBLIC_API bool JS_Utf8BufferIsCompilableUnit(JSContext* cx,
   
   bool result = true;
 
+  using frontend::CompilationInfo;
   using frontend::FullParseHandler;
   using frontend::ParseGoal;
-  using frontend::ParseInfo;
   using frontend::Parser;
 
   CompileOptions options(cx);
   LifoAllocScope allocScope(&cx->tempLifoAlloc());
-  ParseInfo parseInfo(cx, allocScope);
-  if (!parseInfo.initFromOptions(cx, options)) {
+  CompilationInfo compilationInfo(cx, allocScope);
+  if (!compilationInfo.initFromOptions(cx, options)) {
     return false;
   }
 
   JS::AutoSuppressWarningReporter suppressWarnings(cx);
   Parser<FullParseHandler, char16_t> parser(cx, options, chars.get(), length,
                                              true,
-                                            parseInfo, nullptr, nullptr,
-                                            parseInfo.sourceObject);
+                                            compilationInfo, nullptr, nullptr,
+                                            compilationInfo.sourceObject);
   if (!parser.checkOptions() || !parser.parse()) {
     
     
@@ -549,12 +549,12 @@ static bool EvaluateSourceBuffer(JSContext* cx, ScopeKind scopeKind,
   RootedScript script(cx);
   {
     LifoAllocScope allocScope(&cx->tempLifoAlloc());
-    frontend::ParseInfo parseInfo(cx, allocScope);
-    if (!parseInfo.initFromOptions(cx, options)) {
+    frontend::CompilationInfo compilationInfo(cx, allocScope);
+    if (!compilationInfo.initFromOptions(cx, options)) {
       return false;
     }
 
-    frontend::GlobalScriptInfo info(cx, parseInfo, options, scopeKind);
+    frontend::GlobalScriptInfo info(cx, compilationInfo, options, scopeKind);
     script = frontend::CompileGlobalScript(info, srcBuf);
     if (!script) {
       return false;

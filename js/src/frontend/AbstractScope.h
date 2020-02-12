@@ -23,7 +23,7 @@ class EvalScope;
 class GCMarker;
 
 namespace frontend {
-struct ParseInfo;
+struct CompilationInfo;
 class FunctionBox;
 class ScopeCreationData;
 }  
@@ -45,7 +45,7 @@ class AbstractScope {
   
   struct Deferred {
     ScopeIndex index;
-    frontend::ParseInfo& parseInfo;
+    frontend::CompilationInfo& compilationInfo;
   };
 
   
@@ -70,8 +70,8 @@ class AbstractScope {
 
   explicit AbstractScope(Scope* scope) : scope_(HeapPtrScope(scope)) {}
 
-  AbstractScope(frontend::ParseInfo& parseInfo, ScopeIndex scope)
-      : scope_(Deferred{scope, parseInfo}) {}
+  AbstractScope(frontend::CompilationInfo& compilationInfo, ScopeIndex scope)
+      : scope_(Deferred{scope, compilationInfo}) {}
 
   bool isNullptr() const {
     if (isScopeCreationData()) {

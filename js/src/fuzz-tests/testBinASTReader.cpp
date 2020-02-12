@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #include "mozilla/ScopeExit.h"
 
@@ -24,7 +24,7 @@ using namespace js;
 
 using JS::CompileOptions;
 
-// These are defined and pre-initialized by the harness (in tests.cpp).
+
 extern JS::PersistentRootedObject gGlobal;
 extern JSContext* gCx;
 
@@ -50,19 +50,19 @@ static int testBinASTReaderFuzz(const uint8_t* buf, size_t size) {
   }
 
   LifoAllocScope allocScope(&gCx->tempLifoAlloc());
-  ParseInfo binParseInfo(gCx, allocScope);
-  if (!binParseInfo.initFromOptions(gCx, options)) {
+  CompilationInfo binCompilationInfo(gCx, allocScope);
+  if (!binCompilationInfo.initFromOptions(gCx, options)) {
     return 0;
   }
 
   Directives directives(false);
-  GlobalSharedContext globalsc(gCx, ScopeKind::Global, binParseInfo, directives,
-                               false);
+  GlobalSharedContext globalsc(gCx, ScopeKind::Global, binCompilationInfo,
+                               directives, false);
 
   BinASTParser<js::frontend::BinASTTokenReaderMultipart> reader(
-      gCx, binParseInfo, options, binParseInfo.sourceObject);
+      gCx, binCompilationInfo, options, binCompilationInfo.sourceObject);
 
-  // Will be deallocated once `reader` goes out of scope.
+  
   auto binParsed = reader.parse(&globalsc, binSource);
   RootedValue binExn(gCx);
   if (binParsed.isErr()) {
@@ -70,14 +70,14 @@ static int testBinASTReaderFuzz(const uint8_t* buf, size_t size) {
     return 0;
   }
 
-#if defined(DEBUG)  // Dumping an AST is only defined in DEBUG builds
+#if defined(DEBUG)  
   Sprinter binPrinter(gCx);
   if (!binPrinter.init()) {
     ReportOutOfMemory(gCx);
     return 0;
   }
   DumpParseTree(binParsed.unwrap(), binPrinter);
-#endif  // defined(DEBUG)
+#endif  
 
   return 0;
 }
