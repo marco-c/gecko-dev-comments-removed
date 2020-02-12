@@ -3266,6 +3266,13 @@ impl PrimitiveCluster {
         spatial_node_index: SpatialNodeIndex,
         flags: ClusterFlags,
     ) -> bool {
+        
+        
+        
+        if self.flags.contains(ClusterFlags::SCROLLBAR_CONTAINER) {
+            return false;
+        }
+
         self.flags == flags && self.spatial_node_index == spatial_node_index
     }
 
