@@ -2458,7 +2458,7 @@ pref("mousewheel.with_win.delta_multiplier_z", 100);
 
 
 
-pref("mousewheel.min_line_scroll_amount", 5);
+pref("mousewheel.min_line_scroll_amount", 35);
 
 
 
@@ -2492,8 +2492,8 @@ pref("mousewheel.autodir.honourroot", false);
 
 
 
-pref("general.smoothScroll.scrollbars.durationMinMS", 150);
-pref("general.smoothScroll.scrollbars.durationMaxMS", 150);
+pref("general.smoothScroll.scrollbars.durationMinMS", 100);
+pref("general.smoothScroll.scrollbars.durationMaxMS", 100);
 
 pref("general.smoothScroll.pixels", true);
 pref("general.smoothScroll.lines", true);
