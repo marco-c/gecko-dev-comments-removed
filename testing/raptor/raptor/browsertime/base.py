@@ -79,13 +79,17 @@ class Browsertime(Perftest):
         
         
         
+        
 
         LOG.info("Removing mozprofile delimiters from browser profile")
         userjspath = os.path.join(self.profile.profile, "user.js")
         try:
             with open(userjspath) as userjsfile:
                 lines = userjsfile.readlines()
-            lines = [line for line in lines if not line.startswith("#MozRunner")]
+            lines = [
+                line for line in lines
+                if not line.startswith("#MozRunner") and line.strip()
+            ]
             with open(userjspath, "w") as userjsfile:
                 userjsfile.writelines(lines)
         except Exception as e:
