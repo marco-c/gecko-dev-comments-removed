@@ -39,9 +39,6 @@ static const size_t kSCTListLengthBytes = 2;
 static const size_t kSerializedSCTLengthBytes = 2;
 
 
-static const size_t kTreeSizeLength = 8;
-
-
 static const size_t kSthRootHashLength = 32;
 
 enum class SignatureType {
