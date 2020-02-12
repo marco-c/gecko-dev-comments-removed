@@ -131,6 +131,10 @@ const DOCUMENTS = {
 
 
 
+const UPDATE_CHECK_PERIOD_MS = 12 * 60 * 60 * 1000; 
+
+
+
 
 class Node {
   constructor(word) {
@@ -453,6 +457,10 @@ class ProviderInterventions extends UrlbarProvider {
 
     
     
+    this.checkForBrowserUpdate();
+
+    
+    
     if (topDocIDs.has("update")) {
       
       switch (appUpdater.status) {
@@ -623,6 +631,24 @@ class ProviderInterventions extends UrlbarProvider {
           "https://www.mozilla.org/firefox/new/"
         );
         break;
+    }
+  }
+
+  
+
+
+
+
+
+
+  checkForBrowserUpdate(force = false) {
+    if (
+      force ||
+      !this._lastUpdateCheckTime ||
+      Date.now() - this._lastUpdateCheckTime >= UPDATE_CHECK_PERIOD_MS
+    ) {
+      this._lastUpdateCheckTime = Date.now();
+      appUpdater.check();
     }
   }
 }
