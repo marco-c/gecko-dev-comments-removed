@@ -3891,6 +3891,12 @@
         return false;
       }
 
+      
+      
+      if (gFissionBrowser != aOtherTab.ownerGlobal.gFissionBrowser) {
+        return false;
+      }
+
       let ourBrowser = this.getBrowserForTab(aOurTab);
       let otherBrowser = aOtherTab.linkedBrowser;
 
