@@ -98,7 +98,10 @@ class AccessibleCaret {
     NotChanged,
 
     
-    Changed,
+    Position,
+
+    
+    Zoom,
 
     
     Invisible
