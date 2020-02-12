@@ -5193,6 +5193,11 @@ nscoord nsFlexContainerFrame::IntrinsicISize(gfxContext* aRenderingContext,
 
   for (nsIFrame* childFrame : mFrames) {
     
+    if (childFrame->IsPlaceholderFrame()) {
+      continue;
+    }
+
+    
     
     if (!useMozBoxCollapseBehavior ||
         (StyleVisibility::Collapse !=
