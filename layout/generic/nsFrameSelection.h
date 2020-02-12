@@ -459,9 +459,9 @@ class nsFrameSelection final {
 
 
 
-  nsIFrame* GetFrameForNodeOffset(nsIContent* aNode, int32_t aOffset,
-                                  CaretAssociateHint aHint,
-                                  int32_t* aReturnOffset) const;
+  static nsIFrame* GetFrameForNodeOffset(nsIContent* aNode, int32_t aOffset,
+                                         CaretAssociateHint aHint,
+                                         int32_t* aReturnOffset);
 
   
 
@@ -736,10 +736,10 @@ class nsFrameSelection final {
                          uint32_t aContentOffset, nsSelectionAmount aAmount,
                          CaretAssociateHint aHint);
   void BidiLevelFromClick(nsIContent* aNewFocus, uint32_t aContentOffset);
-  nsPrevNextBidiLevels GetPrevNextBidiLevels(nsIContent* aNode,
-                                             uint32_t aContentOffset,
-                                             CaretAssociateHint aHint,
-                                             bool aJumpLines) const;
+  static nsPrevNextBidiLevels GetPrevNextBidiLevels(nsIContent* aNode,
+                                                    uint32_t aContentOffset,
+                                                    CaretAssociateHint aHint,
+                                                    bool aJumpLines);
 
   bool AdjustForMaintainedSelection(nsIContent* aContent, int32_t aOffset);
 
@@ -820,11 +820,12 @@ class nsFrameSelection final {
   
   
   nsRange* GetNextCellRange();
-  nsIContent* GetFirstCellNodeInRange(nsRange* aRange) const;
+  static nsIContent* GetFirstCellNodeInRange(nsRange* aRange);
   
-  nsIContent* IsInSameTable(nsIContent* aContent1, nsIContent* aContent2) const;
+  static nsIContent* IsInSameTable(nsIContent* aContent1,
+                                   nsIContent* aContent2);
   
-  nsIContent* GetParentTable(nsIContent* aCellNode) const;
+  static nsIContent* GetParentTable(nsIContent* aCellNode);
   nsresult CreateAndAddRange(nsINode* aContainer, int32_t aOffset);
 
   
