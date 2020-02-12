@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+//! Computed types for text properties.
 
 #[cfg(feature = "servo")]
 use crate::properties::StyleBuilder;
@@ -24,13 +24,13 @@ pub use crate::values::specified::{LineBreak, OverflowWrap, WordBreak};
 pub use crate::values::specified::{TextDecorationLine, TextEmphasisPosition};
 pub use crate::values::specified::{TextDecorationSkipInk, TextTransform};
 
-
+/// A computed value for the `initial-letter` property.
 pub type InitialLetter = GenericInitialLetter<CSSFloat, CSSInteger>;
 
+/// Implements type for `text-underline-offset` and `text-decoration-thickness` properties
+pub type TextDecorationLength = GenericTextDecorationLength<LengthPercentage>;
 
-pub type TextDecorationLength = GenericTextDecorationLength<Length>;
-
-
+/// A computed value for the `letter-spacing` property.
 #[repr(transparent)]
 #[derive(
     Animate,
@@ -47,7 +47,7 @@ pub type TextDecorationLength = GenericTextDecorationLength<Length>;
 pub struct LetterSpacing(pub Length);
 
 impl LetterSpacing {
-    
+    /// Return the `normal` computed value, which is just zero.
     #[inline]
     pub fn normal() -> Self {
         LetterSpacing(Length::zero())
@@ -59,10 +59,10 @@ impl ToCss for LetterSpacing {
     where
         W: Write,
     {
-        
-        
-        
-        
+        // https://drafts.csswg.org/css-text/#propdef-letter-spacing
+        //
+        // For legacy reasons, a computed letter-spacing of zero yields a
+        // resolved value (getComputedStyle() return value) of normal.
         if self.0.is_zero() {
             return dest.write_str("normal");
         }
@@ -87,7 +87,7 @@ impl ToComputedValue for specified::LetterSpacing {
     }
 }
 
-
+/// A computed value for the `word-spacing` property.
 pub type WordSpacing = LengthPercentage;
 
 impl ToComputedValue for specified::WordSpacing {
@@ -105,30 +105,30 @@ impl ToComputedValue for specified::WordSpacing {
     }
 }
 
-
+/// A computed value for the `line-height` property.
 pub type LineHeight = GenericLineHeight<NonNegativeNumber, NonNegativeLength>;
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToResolvedValue)]
 #[repr(C)]
-
-
-
-
-
-
-
-
+/// text-overflow.
+/// When the specified value only has one side, that's the "second"
+/// side, and the sides are logical, so "second" means "end".  The
+/// start side is Clip in that case.
+///
+/// When the specified value has two sides, those are our "first"
+/// and "second" sides, and they are physical sides ("left" and
+/// "right").
 pub struct TextOverflow {
-    
+    /// First side
     pub first: TextOverflowSide,
-    
+    /// Second side
     pub second: TextOverflowSide,
-    
+    /// True if the specified value only has one side.
     pub sides_are_logical: bool,
 }
 
 impl TextOverflow {
-    
+    /// Returns the initial `text-overflow` value
     pub fn get_initial_value() -> TextOverflow {
         TextOverflow {
             first: TextOverflowSide::Clip,
@@ -155,30 +155,30 @@ impl ToCss for TextOverflow {
     }
 }
 
-
-
-
-
-
-
-
+/// A struct that represents the _used_ value of the text-decoration property.
+///
+/// FIXME(emilio): This is done at style resolution time, though probably should
+/// be done at layout time, otherwise we need to account for display: contents
+/// and similar stuff when we implement it.
+///
+/// FIXME(emilio): Also, should be just a bitfield instead of three bytes.
 #[derive(Clone, Copy, Debug, Default, MallocSizeOf, PartialEq, ToResolvedValue)]
 pub struct TextDecorationsInEffect {
-    
+    /// Whether an underline is in effect.
     pub underline: bool,
-    
+    /// Whether an overline decoration is in effect.
     pub overline: bool,
-    
+    /// Whether a line-through style is in effect.
     pub line_through: bool,
 }
 
 impl TextDecorationsInEffect {
-    
+    /// Computes the text-decorations in effect for a given style.
     #[cfg(feature = "servo")]
     pub fn from_style(style: &StyleBuilder) -> Self {
-        
-        
-        
+        // Start with no declarations if this is an atomic inline-level box;
+        // otherwise, start with the declarations in effect and add in the text
+        // decorations that this block specifies.
         let mut result = if style.get_box().clone_display().is_atomic_inline_level() {
             Self::default()
         } else {
@@ -198,19 +198,19 @@ impl TextDecorationsInEffect {
     }
 }
 
-
+/// Computed value for the text-emphasis-style property
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue)]
 #[allow(missing_docs)]
 #[repr(C, u8)]
 pub enum TextEmphasisStyle {
-    
+    /// [ <fill> || <shape> ]
     Keyword {
         #[css(skip_if = "TextEmphasisFillMode::is_filled")]
         fill: TextEmphasisFillMode,
         shape: TextEmphasisShapeKeyword,
     },
-    
+    /// `none`
     None,
-    
+    /// `<string>` (of which only the first grapheme cluster will be used).
     String(crate::OwnedStr),
 }

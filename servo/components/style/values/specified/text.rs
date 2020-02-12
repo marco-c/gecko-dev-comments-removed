@@ -1030,7 +1030,7 @@ pub enum TextDecorationSkipInk {
 }
 
 
-pub type TextDecorationLength = GenericTextDecorationLength<Length>;
+pub type TextDecorationLength = GenericTextDecorationLength<LengthPercentage>;
 
 impl TextDecorationLength {
     
