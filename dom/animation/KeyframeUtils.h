@@ -55,9 +55,12 @@ class KeyframeUtils {
 
 
 
+
+
+
   static nsTArray<Keyframe> GetKeyframesFromObject(
       JSContext* aCx, dom::Document* aDocument, JS::Handle<JSObject*> aFrames,
-      ErrorResult& aRv);
+      const char* aContext, ErrorResult& aRv);
 
   
 
