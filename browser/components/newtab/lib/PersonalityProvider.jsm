@@ -105,7 +105,6 @@ this.PersonalityProvider = class PersonalityProvider {
     this.scores = scores || {};
     this.interestConfig = this.scores.interestConfig;
     this.interestVector = this.scores.interestVector;
-    this.taggers = this.scores.taggers;
     this.onSync = this.onSync.bind(this);
     this.setup();
   }
@@ -482,9 +481,12 @@ this.PersonalityProvider = class PersonalityProvider {
       maxHistoryQueryResults: this.maxHistoryQueryResults,
       version: this.version,
       scores: {
+        
+        
+        
+        
         interestConfig: this.interestConfig,
         interestVector: this.interestVector,
-        taggers: this.taggers,
       },
     };
   }
