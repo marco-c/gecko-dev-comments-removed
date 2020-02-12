@@ -52,7 +52,13 @@ def relpath(path, start):
         
         path = cargo_workaround(path)
         start = cargo_workaround(start)
-    rel = normsep(os.path.relpath(path, start))
+    try:
+        rel = os.path.relpath(path, start)
+    except ValueError:
+        
+        
+        return abspath(path)
+    rel = normsep(rel)
     return '' if rel == '.' else rel
 
 
