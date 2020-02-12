@@ -694,7 +694,7 @@ class SyntaxParseHandler {
     
     
     
-    if (node != NodeDottedProperty) {
+    if (node != NodeDottedProperty && node != NodeOptionalDottedProperty) {
       return nullptr;
     }
     return lastAtom->asPropertyName();
