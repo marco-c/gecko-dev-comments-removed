@@ -1052,6 +1052,8 @@ var interfaceNamesInGlobalScope = [
   
   { name: "SubtleCrypto", insecureContext: true },
   
+  { name: "SubmitEvent", insecureContext: true },
+  
   { name: "SVGAElement", insecureContext: true },
   
   { name: "SVGAngle", insecureContext: true },

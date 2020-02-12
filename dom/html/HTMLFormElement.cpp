@@ -41,6 +41,7 @@
 #include "HTMLFormSubmissionConstants.h"
 #include "mozilla/dom/FormData.h"
 #include "mozilla/dom/FormDataEvent.h"
+#include "mozilla/dom/SubmitEvent.h"
 #include "mozilla/Telemetry.h"
 #include "nsIFormSubmitObserver.h"
 #include "nsIObserverService.h"
@@ -260,10 +261,16 @@ void HTMLFormElement::MaybeSubmit(Element* aSubmitter) {
   
   
   if (RefPtr<PresShell> presShell = doc->GetPresShell()) {
-    InternalFormEvent event(true, eFormSubmit);
-    event.mOriginator = aSubmitter;
+    SubmitEventInit init;
+    init.mBubbles = true;
+    init.mCancelable = true;
+    init.mSubmitter =
+        aSubmitter ? nsGenericHTMLElement::FromNode(aSubmitter) : nullptr;
+    RefPtr<SubmitEvent> event =
+        SubmitEvent::Constructor(this, NS_LITERAL_STRING("submit"), init);
+    event->SetTrusted(true);
     nsEventStatus status = nsEventStatus_eIgnore;
-    presShell->HandleDOMEventWithTarget(this, &event, &status);
+    presShell->HandleDOMEventWithTarget(this, event, &status);
   }
 }
 
@@ -290,7 +297,7 @@ void HTMLFormElement::Submit(ErrorResult& aRv) {
     mPendingSubmission = nullptr;
   }
 
-  aRv = DoSubmitOrReset(nullptr, eFormSubmit);
+  aRv = DoSubmit();
 }
 
 
@@ -541,9 +548,12 @@ nsresult HTMLFormElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
 
     if (aVisitor.mEventStatus == nsEventStatus_eIgnore) {
       switch (msg) {
-        case eFormReset:
+        case eFormReset: {
+          DoReset();
+          break;
+        }
         case eFormSubmit: {
-          if (mPendingSubmission && msg == eFormSubmit) {
+          if (mPendingSubmission) {
             
             
             
@@ -551,7 +561,7 @@ nsresult HTMLFormElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
             
             mPendingSubmission = nullptr;
           }
-          DoSubmitOrReset(aVisitor.mEvent, msg);
+          DoSubmit(aVisitor.mDOMEvent);
           break;
         }
         default:
@@ -576,36 +586,13 @@ nsresult HTMLFormElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
   return NS_OK;
 }
 
-nsresult HTMLFormElement::DoSubmitOrReset(WidgetEvent* aEvent,
-                                          EventMessage aMessage) {
+nsresult HTMLFormElement::DoReset() {
   
   Document* doc = GetComposedDoc();
   if (doc) {
     doc->FlushPendingNotifications(FlushType::ContentAndNotify);
   }
 
-  
-
-  
-  if (eFormReset == aMessage) {
-    return DoReset();
-  }
-
-  if (eFormSubmit == aMessage) {
-    
-    
-    if (mIsConstructingEntryList || !doc ||
-        (doc->GetSandboxFlags() & SANDBOXED_FORMS)) {
-      return NS_OK;
-    }
-    return DoSubmit(aEvent);
-  }
-
-  MOZ_ASSERT(false);
-  return NS_OK;
-}
-
-nsresult HTMLFormElement::DoReset() {
   mEverTriedInvalidSubmit = false;
   
   uint32_t numElements = GetElementCount();
@@ -626,8 +613,21 @@ nsresult HTMLFormElement::DoReset() {
     return rv;                       \
   }
 
-nsresult HTMLFormElement::DoSubmit(WidgetEvent* aEvent) {
-  NS_ASSERTION(GetComposedDoc(), "Should never get here without a current doc");
+nsresult HTMLFormElement::DoSubmit(Event* aEvent) {
+  Document* doc = GetComposedDoc();
+  NS_ASSERTION(doc, "Should never get here without a current doc");
+
+  
+  if (doc) {
+    doc->FlushPendingNotifications(FlushType::ContentAndNotify);
+  }
+
+  
+  
+  if (mIsConstructingEntryList || !doc ||
+      (doc->GetSandboxFlags() & SANDBOXED_FORMS)) {
+    return NS_OK;
+  }
 
   if (mIsSubmitting) {
     NS_WARNING("Preventing double form submission");
@@ -685,21 +685,15 @@ nsresult HTMLFormElement::DoSubmit(WidgetEvent* aEvent) {
 }
 
 nsresult HTMLFormElement::BuildSubmission(HTMLFormSubmission** aFormSubmission,
-                                          WidgetEvent* aEvent) {
+                                          Event* aEvent) {
   NS_ASSERTION(!mPendingSubmission, "tried to build two submissions!");
 
   
   nsGenericHTMLElement* originatingElement = nullptr;
   if (aEvent) {
-    InternalFormEvent* formEvent = aEvent->AsFormEvent();
-    if (formEvent) {
-      nsIContent* originator = formEvent->mOriginator;
-      if (originator) {
-        if (!originator->IsHTMLElement()) {
-          return NS_ERROR_UNEXPECTED;
-        }
-        originatingElement = static_cast<nsGenericHTMLElement*>(originator);
-      }
+    SubmitEvent* submitEvent = aEvent->AsSubmitEvent();
+    if (submitEvent) {
+      originatingElement = submitEvent->GetSubmitter();
     }
   }
 

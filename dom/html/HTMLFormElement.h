@@ -430,7 +430,6 @@ class HTMLFormElement final : public nsGenericHTMLElement,
     RefPtr<HTMLFormElement> mForm;
   };
 
-  nsresult DoSubmitOrReset(WidgetEvent* aEvent, EventMessage aMessage);
   nsresult DoReset();
 
   
@@ -446,8 +445,7 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
 
 
-
-  nsresult DoSubmit(WidgetEvent* aEvent);
+  nsresult DoSubmit(Event* aEvent = nullptr);
 
   
 
@@ -455,8 +453,7 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
 
 
-  nsresult BuildSubmission(HTMLFormSubmission** aFormSubmission,
-                           WidgetEvent* aEvent);
+  nsresult BuildSubmission(HTMLFormSubmission** aFormSubmission, Event* aEvent);
   
 
 
