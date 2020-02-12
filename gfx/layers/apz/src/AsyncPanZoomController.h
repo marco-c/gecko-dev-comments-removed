@@ -1144,6 +1144,9 @@ class AsyncPanZoomController {
 
 
 
+
+
+
   AsyncTransform GetCurrentAsyncTransform(
       AsyncTransformConsumer aMode,
       AsyncTransformComponents aComponents = LayoutAndVisual) const;
@@ -1167,6 +1170,11 @@ class AsyncPanZoomController {
   ParentLayerRect GetCompositionBounds() const {
     RecursiveMutexAutoLock lock(mRecursiveMutex);
     return mScrollMetadata.GetMetrics().GetCompositionBounds();
+  }
+
+  LayoutDeviceToLayerScale2D GetCumulativeResolution() const {
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    return mScrollMetadata.GetMetrics().GetCumulativeResolution();
   }
 
  private:
