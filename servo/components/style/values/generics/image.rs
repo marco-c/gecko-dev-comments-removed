@@ -14,21 +14,50 @@ use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
 
 
+#[derive(
+    Clone,
+    Debug,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+pub enum GenericImageLayer<Image> {
+    
+    None,
+    
+    Image(Image),
+}
+
+pub use self::GenericImageLayer as ImageLayer;
+
+impl<I> ImageLayer<I> {
+    
+    #[inline]
+    pub fn none() -> Self {
+        ImageLayer::None
+    }
+}
+
+
 
 
 #[derive(
     Clone, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToResolvedValue, ToShmem,
 )]
 #[repr(C, u8)]
-pub enum GenericImage<G, MozImageRect, ImageUrl> {
-    
-    None,
+pub enum GenericImage<Gradient, MozImageRect, ImageUrl> {
     
     Url(ImageUrl),
 
     
     
-    Gradient(Box<G>),
+    Gradient(Box<Gradient>),
+
     
     
     
@@ -256,7 +285,7 @@ impl ToCss for PaintWorklet {
 
 
 #[allow(missing_docs)]
-#[css(comma, function = "-moz-image-rect")]
+#[css(comma, function)]
 #[derive(
     Clone,
     Debug,
@@ -268,16 +297,13 @@ impl ToCss for PaintWorklet {
     ToResolvedValue,
     ToShmem,
 )]
-#[repr(C)]
-pub struct GenericMozImageRect<NumberOrPercentage, MozImageRectUrl> {
+pub struct MozImageRect<NumberOrPercentage, MozImageRectUrl> {
     pub url: MozImageRectUrl,
     pub top: NumberOrPercentage,
     pub right: NumberOrPercentage,
     pub bottom: NumberOrPercentage,
     pub left: NumberOrPercentage,
 }
-
-pub use self::GenericMozImageRect as MozImageRect;
 
 impl<G, R, U> fmt::Debug for Image<G, R, U>
 where
@@ -301,7 +327,6 @@ where
         W: Write,
     {
         match *self {
-            Image::None => dest.write_str("none"),
             Image::Url(ref url) => url.to_css(dest),
             Image::Gradient(ref gradient) => gradient.to_css(dest),
             Image::Rect(ref rect) => rect.to_css(dest),

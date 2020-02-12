@@ -33,6 +33,24 @@ use style_traits::{CssType, CssWriter, KeywordsCollectFn, ParseError};
 use style_traits::{SpecifiedValueInfo, StyleParseErrorKind, ToCss};
 
 
+pub type ImageLayer = generic::GenericImageLayer<Image>;
+
+impl ImageLayer {
+    
+    
+    pub fn parse_with_cors_anonymous<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        if let Ok(v) = input.try(|i| Image::parse_with_cors_anonymous(context, i)) {
+            return Ok(generic::GenericImageLayer::Image(v));
+        }
+        input.expect_ident_matching("none")?;
+        Ok(generic::GenericImageLayer::None)
+    }
+}
+
+
 
 pub type Image = generic::Image<Gradient, MozImageRect, SpecifiedImageUrl>;
 
@@ -100,8 +118,8 @@ pub type ColorStop = generic::ColorStop<Color, LengthPercentage>;
 
 
 
-#[cfg(all(feature = "gecko", not(feature = "cbindgen")))]
-pub type MozImageRect = generic::GenericMozImageRect<NumberOrPercentage, SpecifiedImageUrl>;
+#[cfg(feature = "gecko")]
+pub type MozImageRect = generic::MozImageRect<NumberOrPercentage, SpecifiedImageUrl>;
 
 #[cfg(not(feature = "gecko"))]
 #[derive(
@@ -123,9 +141,6 @@ impl Parse for Image {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Image, ParseError<'i>> {
-        if input.try(|i| i.expect_ident_matching("none")).is_ok() {
-            return Ok(generic::Image::None);
-        }
         if let Ok(url) = input.try(|input| SpecifiedImageUrl::parse(context, input)) {
             return Ok(generic::Image::Url(url));
         }
