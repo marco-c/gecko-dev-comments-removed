@@ -1904,11 +1904,7 @@ pref("identity.fxaccounts.service.sendLoginUrl", "https://send.firefox.com/login
 pref("identity.fxaccounts.service.monitorLoginUrl", "https://monitor.firefox.com/");
 
 
-#ifdef RELEASE_OR_BETA
-  pref("corroborator.enabled", false);
-#else
-  pref("corroborator.enabled", true);
-#endif
+pref("corroborator.enabled", true);
 
 
 pref("devtools.toolbox.footer.height", 250);
