@@ -455,7 +455,11 @@ class UrlbarView {
       this.input.maybeClearAutofillPlaceholder(firstResult);
     }
 
-    if (firstResult.heuristic) {
+    if (
+      firstResult.heuristic &&
+      !this.selectedElement &&
+      !this.oneOffSearchButtons.selectedButton
+    ) {
       
       
       
