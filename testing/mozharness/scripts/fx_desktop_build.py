@@ -47,8 +47,6 @@ class FxDesktopBuild(BuildScript, TryToolsMixin, object):
                 
                 "nightly_build": False,
                 
-                "tools_repo": "https://hg.mozilla.org/build/tools",
-                
                 
                 "clone_upstream_url": "https://hg.mozilla.org/mozilla-unified",
                 "repo_base": "https://hg.mozilla.org",
