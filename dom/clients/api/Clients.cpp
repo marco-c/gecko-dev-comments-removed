@@ -211,8 +211,10 @@ already_AddRefed<Promise> Clients::OpenWindow(const nsAString& aURL,
   }
 
   if (aURL.EqualsLiteral("about:blank")) {
-    
-    outerPromise->MaybeReject(NS_ERROR_DOM_TYPE_ERR);
+    CopyableErrorResult rv;
+    rv.ThrowTypeError(
+        u"Passing \"about:blank\" to Clients.openWindow is not allowed");
+    outerPromise->MaybeReject(rv);
     return outerPromise.forget();
   }
 
@@ -243,8 +245,8 @@ already_AddRefed<Promise> Clients::OpenWindow(const nsAString& aURL,
       },
       [outerPromise](const CopyableErrorResult& aResult) {
         
-        
-        outerPromise->MaybeReject(NS_ERROR_DOM_TYPE_ERR);
+        CopyableErrorResult result(aResult);
+        outerPromise->MaybeReject(result);
       });
 
   return outerPromise.forget();

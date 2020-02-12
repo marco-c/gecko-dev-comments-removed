@@ -23,6 +23,7 @@
 #include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
 #include "nsPIWindowWatcher.h"
+#include "nsPrintfCString.h"
 
 #include "mozilla/dom/nsCSPContext.h"
 
@@ -150,7 +151,8 @@ class WebProgressListener final : public nsIWebProgressListener,
 NS_IMPL_ISUPPORTS(WebProgressListener, nsIWebProgressListener,
                   nsISupportsWeakReference);
 
-nsresult OpenWindow(const ClientOpenWindowArgs& aArgs, BrowsingContext** aBC) {
+void OpenWindow(const ClientOpenWindowArgs& aArgs, BrowsingContext** aBC,
+                ErrorResult& aRv) {
   MOZ_DIAGNOSTIC_ASSERT(aBC);
 
   
@@ -160,14 +162,16 @@ nsresult OpenWindow(const ClientOpenWindowArgs& aArgs, BrowsingContext** aBC) {
   nsCOMPtr<nsIURI> baseURI;
   nsresult rv = NS_NewURI(getter_AddRefs(baseURI), aArgs.baseURL());
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    
-    return NS_ERROR_DOM_TYPE_ERR;
+    nsPrintfCString err("Invalid base URL \"%s\"", aArgs.baseURL().get());
+    aRv.ThrowTypeError(NS_ConvertUTF8toUTF16(err));
+    return;
   }
 
   rv = NS_NewURI(getter_AddRefs(uri), aArgs.url(), nullptr, baseURI);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    
-    return NS_ERROR_DOM_TYPE_ERR;
+    nsPrintfCString err("Invalid URL \"%s\"", aArgs.url().get());
+    aRv.ThrowTypeError(NS_ConvertUTF8toUTF16(err));
+    return;
   }
 
   nsCOMPtr<nsIPrincipal> principal =
@@ -194,8 +198,8 @@ nsresult OpenWindow(const ClientOpenWindowArgs& aArgs, BrowsingContext** aBC) {
     JS::Rooted<JSObject*> sandbox(cx);
     rv = xpc->CreateSandbox(cx, principal, sandbox.address());
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      
-      return NS_ERROR_DOM_TYPE_ERR;
+      aRv.ThrowTypeError(u"Unable to open window");
+      return;
     }
 
     JSAutoRealm ar(cx, sandbox);
@@ -204,18 +208,23 @@ nsresult OpenWindow(const ClientOpenWindowArgs& aArgs, BrowsingContext** aBC) {
     nsCOMPtr<nsIWindowWatcher> wwatch =
         do_GetService(NS_WINDOWWATCHER_CONTRACTID, &rv);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+      aRv.ThrowTypeError(u"Unable to open window");
+      return;
     }
     nsCOMPtr<nsPIWindowWatcher> pwwatch(do_QueryInterface(wwatch));
-    NS_ENSURE_STATE(pwwatch);
+    if (NS_WARN_IF(!pwwatch)) {
+      aRv.ThrowTypeError(u"Unable to open window");
+      return;
+    }
 
     nsCString spec;
     rv = uri->GetSpec(spec);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+      aRv.ThrowTypeError(u"Unable to open window");
+      return;
     }
 
-    MOZ_TRY(pwwatch->OpenWindow2(
+    rv = pwwatch->OpenWindow2(
         nullptr, spec.get(), nullptr, nullptr, false, false, true, nullptr,
         
          false,
@@ -224,9 +233,14 @@ nsresult OpenWindow(const ClientOpenWindowArgs& aArgs, BrowsingContext** aBC) {
         
          false,
          false,
-         nullptr, aBC));
+         nullptr, aBC);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      aRv.ThrowTypeError(u"Unable to open window");
+      return;
+    }
+
     MOZ_DIAGNOSTIC_ASSERT(*aBC);
-    return NS_OK;
+    return;
   }
 
   
@@ -236,23 +250,31 @@ nsresult OpenWindow(const ClientOpenWindowArgs& aArgs, BrowsingContext** aBC) {
     
     
     
-    return NS_ERROR_NOT_AVAILABLE;
+    aRv.ThrowTypeError(u"Unable to open window");
+    return;
   }
 
   nsCOMPtr<nsIDOMChromeWindow> chromeWin = do_QueryInterface(browserWindow);
   if (NS_WARN_IF(!chromeWin)) {
-    return NS_ERROR_FAILURE;
+    
+    aRv.ThrowTypeError(u"Unable to open window");
+    return;
   }
 
   nsCOMPtr<nsIBrowserDOMWindow> bwin;
   chromeWin->GetBrowserDOMWindow(getter_AddRefs(bwin));
 
   if (NS_WARN_IF(!bwin)) {
-    return NS_ERROR_FAILURE;
+    aRv.ThrowTypeError(u"Unable to open window");
+    return;
   }
 
-  return bwin->OpenURI(uri, nullptr, nsIBrowserDOMWindow::OPEN_DEFAULTWINDOW,
-                       nsIBrowserDOMWindow::OPEN_NEW, principal, csp, aBC);
+  rv = bwin->OpenURI(uri, nullptr, nsIBrowserDOMWindow::OPEN_DEFAULTWINDOW,
+                     nsIBrowserDOMWindow::OPEN_NEW, principal, csp, aBC);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    aRv.ThrowTypeError(u"Unable to open window");
+    return;
+  }
 }
 
 void WaitForLoad(const ClientOpenWindowArgs& aArgs,
@@ -416,11 +438,12 @@ RefPtr<ClientOpPromise> ClientOpenWindowInCurrentProcess(
 #endif  
 
   RefPtr<BrowsingContext> bc;
-  nsresult rv = OpenWindow(aArgs, getter_AddRefs(bc));
+  CopyableErrorResult rv;
+  OpenWindow(aArgs, getter_AddRefs(bc), rv);
 
   nsCOMPtr<nsPIDOMWindowOuter> outerWindow(bc->GetDOMWindow());
 
-  if (NS_WARN_IF(NS_FAILED(rv))) {
+  if (NS_WARN_IF(rv.Failed())) {
     promise->Reject(rv, __func__);
     return promise.forget();
   }
