@@ -257,7 +257,7 @@ promise_test(() => {
   const writer = stream.getWriter();
   const WritableStreamDefaultWriter = writer.constructor;
   assert_throws_js(TypeError, () => new WritableStreamDefaultWriter(stream),
-                'should not be able to construct on locked stream');
+                   'should not be able to construct on locked stream');
   
   
   return Promise.all([writer.close(), writer.closed]);

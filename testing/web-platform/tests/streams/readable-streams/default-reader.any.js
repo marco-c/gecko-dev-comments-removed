@@ -69,7 +69,7 @@ test(() => {
   const rs = new ReadableStream();
   new ReadableStreamDefaultReader(rs); 
   assert_throws_js(TypeError, () => new ReadableStreamDefaultReader(rs),
-                'constructing directly the second time should fail');
+                   'constructing directly the second time should fail');
 
 }, 'Constructing a ReadableStreamDefaultReader directly should fail if the stream is already locked (via direct ' +
    'construction)');
