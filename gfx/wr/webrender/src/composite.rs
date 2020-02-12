@@ -66,6 +66,7 @@ pub struct CompositeTile {
     pub rect: DeviceRect,
     pub clip_rect: DeviceRect,
     pub dirty_rect: DeviceRect,
+    pub valid_rect: DeviceRect,
     pub z_id: ZBufferId,
     pub tile_id: TileId,
 }
@@ -303,6 +304,14 @@ impl CompositeState {
     ) {
         let mut visible_tile_count = 0;
 
+        
+        
+        
+        
+        
+        
+        let mut combined_valid_rect = DeviceRect::zero();
+
         for key in &tile_cache.tiles_to_draw {
             let tile = &tile_cache.tiles[key];
             if !tile.is_visible {
@@ -314,6 +323,15 @@ impl CompositeState {
 
             let device_rect = (tile.world_tile_rect * global_device_pixel_scale).round();
             let dirty_rect = (tile.world_dirty_rect * global_device_pixel_scale).round();
+            
+            
+            
+            
+            let valid_rect = (tile.world_valid_rect * global_device_pixel_scale)
+                .round_out()
+                .intersection(&device_rect)
+                .unwrap_or_else(DeviceRect::zero);
+            combined_valid_rect = combined_valid_rect.union(&valid_rect);
             let surface = tile.surface.as_ref().expect("no tile surface set!");
 
             let (surface, is_opaque) = match surface {
@@ -335,6 +353,7 @@ impl CompositeState {
             let tile = CompositeTile {
                 surface,
                 rect: device_rect,
+                valid_rect,
                 dirty_rect,
                 clip_rect: device_clip_rect,
                 z_id,
@@ -345,14 +364,16 @@ impl CompositeState {
         }
 
         if visible_tile_count > 0 {
-            self.descriptor.surfaces.push(
-                CompositeSurfaceDescriptor {
-                    slice: tile_cache.slice,
-                    surface_id: tile_cache.native_surface_id,
-                    offset: tile_cache.device_position,
-                    clip_rect: device_clip_rect,
-                }
-            );
+            if let Some(clip_rect) = device_clip_rect.intersection(&combined_valid_rect) {
+                self.descriptor.surfaces.push(
+                    CompositeSurfaceDescriptor {
+                        slice: tile_cache.slice,
+                        surface_id: tile_cache.native_surface_id,
+                        offset: tile_cache.device_position,
+                        clip_rect,
+                    }
+                );
+            }
         }
     }
 
