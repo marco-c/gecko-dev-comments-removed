@@ -155,6 +155,10 @@ class SyntaxParseHandler {
     return node == NodeDottedProperty || node == NodeElement;
   }
 
+  bool isOptionalPropertyAccess(Node node) {
+    return node == NodeOptionalDottedProperty || node == NodeOptionalElement;
+  }
+
   bool isFunctionCall(Node node) {
     
     return node == NodeFunctionCall;
