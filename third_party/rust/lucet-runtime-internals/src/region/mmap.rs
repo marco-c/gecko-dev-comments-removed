@@ -4,9 +4,9 @@ use crate::error::Error;
 use crate::instance::{new_instance_handle, Instance, InstanceHandle};
 use crate::module::Module;
 use crate::region::{Region, RegionCreate, RegionInternal};
+use libc::c_void;
 #[cfg(not(target_os = "linux"))]
 use libc::memset;
-use libc::{c_void, SIGSTKSZ};
 use nix::sys::mman::{madvise, mmap, munmap, MapFlags, MmapAdvise, ProtFlags};
 use std::ptr;
 use std::sync::{Arc, Mutex, Weak};
@@ -87,7 +87,7 @@ impl RegionInternal for MmapRegion {
             
             (slot.globals, limits.globals_size),
             
-            (slot.sigstack, SIGSTKSZ),
+            (slot.sigstack, limits.signal_stack_size),
         ]
         .into_iter()
         {
@@ -136,7 +136,7 @@ impl RegionInternal for MmapRegion {
             (slot.heap, alloc.heap_accessible_size),
             (slot.stack, slot.limits.stack_size),
             (slot.globals, slot.limits.globals_size),
-            (slot.sigstack, SIGSTKSZ),
+            (slot.sigstack, slot.limits.signal_stack_size),
         ]
         .into_iter()
         {
@@ -272,10 +272,6 @@ impl MmapRegion {
     
     
     pub fn create(instance_capacity: usize, limits: &Limits) -> Result<Arc<Self>, Error> {
-        assert!(
-            SIGSTKSZ % host_page_size() == 0,
-            "signal stack size is a multiple of host page size"
-        );
         limits.validate()?;
 
         let region = Arc::new(MmapRegion {
@@ -305,10 +301,6 @@ impl MmapRegion {
         limits: &Limits,
         heap_alignment: usize,
     ) -> Result<Arc<Self>, Error> {
-        assert!(
-            SIGSTKSZ % host_page_size() == 0,
-            "signal stack size is a multiple of host page size"
-        );
         limits.validate()?;
 
         let is_power_of_2 = (heap_alignment & (heap_alignment - 1)) == 0;
@@ -372,9 +364,9 @@ impl MmapRegion {
 
         
         let heap = mem as usize + instance_heap_offset();
-        let stack = heap + region.limits.heap_address_space_size;
-        let globals = stack + region.limits.stack_size + host_page_size();
-        let sigstack = globals + host_page_size();
+        let stack = heap + region.limits.heap_address_space_size + host_page_size();
+        let globals = stack + region.limits.stack_size;
+        let sigstack = globals + region.limits.globals_size + host_page_size();
 
         Ok(Slot {
             start: mem,

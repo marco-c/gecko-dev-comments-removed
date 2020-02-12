@@ -61,7 +61,7 @@ impl Instance {
         let guest_sigstack = SigStack::new(
             self.alloc.slot().sigstack,
             SigStackFlags::empty(),
-            libc::SIGSTKSZ,
+            self.alloc.slot().limits.signal_stack_size,
         );
         let previous_sigstack = unsafe { sigaltstack(Some(guest_sigstack)) }
             .expect("enabling or changing the signal stack succeeds");
@@ -190,7 +190,7 @@ extern "C" fn handle_signal(signum: c_int, siginfo_ptr: *mut siginfo_t, ucontext
                 
                 
                 let outside_guard = (siginfo.si_signo == SIGSEGV || siginfo.si_signo == SIGBUS)
-                    && !inst.alloc.addr_in_heap_guard(siginfo.si_addr_ext());
+                    && !inst.alloc.addr_in_guard_page(siginfo.si_addr_ext());
 
                 
                 inst.state = State::Faulted {

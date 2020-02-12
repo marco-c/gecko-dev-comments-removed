@@ -122,6 +122,13 @@ struct lucet_alloc_limits {
 
 
     uint64_t globals_size;
+    
+
+
+
+
+
+    uint64_t signal_stack_size;
 };
 
 typedef enum lucet_signal_behavior (*lucet_signal_handler)(struct lucet_instance *   inst,

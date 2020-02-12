@@ -140,6 +140,16 @@ pub struct lucet_alloc_limits {
     pub stack_size: u64,
     
     pub globals_size: u64,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub signal_stack_size: u64,
 }
 
 impl From<Limits> for lucet_alloc_limits {
@@ -155,6 +165,7 @@ impl From<&Limits> for lucet_alloc_limits {
             heap_address_space_size: limits.heap_address_space_size as u64,
             stack_size: limits.stack_size as u64,
             globals_size: limits.globals_size as u64,
+            signal_stack_size: limits.signal_stack_size as u64,
         }
     }
 }
@@ -172,6 +183,7 @@ impl From<&lucet_alloc_limits> for Limits {
             heap_address_space_size: limits.heap_address_space_size as usize,
             stack_size: limits.stack_size as usize,
             globals_size: limits.globals_size as usize,
+            signal_stack_size: limits.signal_stack_size as usize,
         }
     }
 }
