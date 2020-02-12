@@ -2574,9 +2574,18 @@ class nsIFrame : public nsQueryFrame {
   
   enum class ReflowChildFlags : uint32_t {
     Default = 0,
+
+    
+    
     NoMoveView = 1 << 0,
+
+    
     NoMoveFrame = (1 << 1) | NoMoveView,
+
+    
     NoSizeView = 1 << 2,
+
+    
     NoVisibility = 1 << 3,
 
     

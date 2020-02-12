@@ -997,24 +997,6 @@ void nsContainerFrame::PositionChildViews(nsIFrame* aFrame) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #if defined(_MSC_VER) && !defined(__clang__) && defined(_M_AMD64)
 #  pragma optimize("g", off)
 #endif
