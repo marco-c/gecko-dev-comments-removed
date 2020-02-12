@@ -634,8 +634,8 @@ void TypeSet::addType(Type type, LifoAlloc* alloc) {
     
     
     if (objectCount >= TYPE_FLAG_OBJECT_COUNT_LIMIT) {
-      JS_STATIC_ASSERT(TYPE_FLAG_DOMOBJECT_COUNT_LIMIT >=
-                       TYPE_FLAG_OBJECT_COUNT_LIMIT);
+      static_assert(TYPE_FLAG_DOMOBJECT_COUNT_LIMIT >=
+                    TYPE_FLAG_OBJECT_COUNT_LIMIT);
       
       
       if (objectCount == TYPE_FLAG_OBJECT_COUNT_LIMIT) {

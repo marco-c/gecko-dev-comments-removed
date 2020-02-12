@@ -393,11 +393,11 @@ class ArgumentsObject : public NativeObject {
     
     
     
-    JS_STATIC_ASSERT(UINT32_MAX - JS_WHY_MAGIC_COUNT > ARGS_LENGTH_MAX);
+    static_assert(UINT32_MAX - JS_WHY_MAGIC_COUNT > ARGS_LENGTH_MAX);
     return JS::MagicValueUint32(slot + JS_WHY_MAGIC_COUNT);
   }
   static uint32_t SlotFromMagicScopeSlotValue(const Value& v) {
-    JS_STATIC_ASSERT(UINT32_MAX - JS_WHY_MAGIC_COUNT > ARGS_LENGTH_MAX);
+    static_assert(UINT32_MAX - JS_WHY_MAGIC_COUNT > ARGS_LENGTH_MAX);
     return v.magicUint32() - JS_WHY_MAGIC_COUNT;
   }
   static bool IsMagicScopeSlotValue(const Value& v) {

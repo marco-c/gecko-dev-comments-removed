@@ -1356,11 +1356,11 @@ again:
 
 
 
-JS_STATIC_ASSERT(JSOpLength_SetName == JSOpLength_SetProp);
+static_assert(JSOpLength_SetName == JSOpLength_SetProp);
 
 
-JS_STATIC_ASSERT(JSOpLength_IfNe == JSOpLength_IfEq);
-JS_STATIC_ASSERT(uint8_t(JSOp::IfNe) == uint8_t(JSOp::IfEq) + 1);
+static_assert(JSOpLength_IfNe == JSOpLength_IfEq);
+static_assert(uint8_t(JSOp::IfNe) == uint8_t(JSOp::IfEq) + 1);
 
 
 
