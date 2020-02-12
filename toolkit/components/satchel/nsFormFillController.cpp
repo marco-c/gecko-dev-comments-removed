@@ -213,9 +213,14 @@ nsFormFillController::AttachToDocument(Document* aDocument,
 
   mPopups.Put(aDocument, aPopup);
 
+  
+  
   nsFocusManager* fm = nsFocusManager::GetFocusManager();
   if (fm) {
     nsCOMPtr<nsIContent> focusedContent = fm->GetFocusedElement();
+    if (!focusedContent || focusedContent->GetComposedDoc() != aDocument)
+      return NS_OK;
+
     HandleFocus(
         MOZ_KnownLive(HTMLInputElement::FromNodeOrNull(focusedContent)));
   }
