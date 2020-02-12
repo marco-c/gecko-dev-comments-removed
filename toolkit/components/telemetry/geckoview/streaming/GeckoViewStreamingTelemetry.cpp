@@ -7,10 +7,12 @@
 #include "GeckoViewStreamingTelemetry.h"
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Services.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_toolkit.h"
 #include "mozilla/TimeStamp.h"
 #include "nsDataHashtable.h"
+#include "nsIObserverService.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
 
@@ -24,6 +26,12 @@ using mozilla::TimeStamp;
 
 
 namespace GeckoViewStreamingTelemetry {
+
+class LifecycleObserver;
+void SendBatch(const StaticMutexAutoLock& aLock);
+
+
+static const char* const kApplicationBackgroundTopic = "application-background";
 
 static StaticMutexNotRecorded gMutex;
 
@@ -46,7 +54,32 @@ UintScalarBatch gUintScalars;
 
 StaticRefPtr<StreamingTelemetryDelegate> gDelegate;
 
+StaticRefPtr<LifecycleObserver> gObserver;
 
+
+
+class LifecycleObserver final : public nsIObserver {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+
+  LifecycleObserver() = default;
+
+ protected:
+  ~LifecycleObserver() = default;
+};
+
+NS_IMPL_ISUPPORTS(LifecycleObserver, nsIObserver);
+
+NS_IMETHODIMP
+LifecycleObserver::Observe(nsISupports* aSubject, const char* aTopic,
+                           const char16_t* aData) {
+  if (!strcmp(aTopic, kApplicationBackgroundTopic)) {
+    StaticMutexAutoLock lock(gMutex);
+    SendBatch(lock);
+  }
+  return NS_OK;
+}
 
 void RegisterDelegate(const RefPtr<StreamingTelemetryDelegate>& aDelegate) {
   StaticMutexAutoLock lock(gMutex);
@@ -154,6 +187,13 @@ void SendBatch(const StaticMutexAutoLock& aLock) {
 
 
 void BatchCheck(const StaticMutexAutoLock& aLock) {
+  if (!gObserver) {
+    gObserver = new LifecycleObserver();
+    nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+    if (os) {
+      os->AddObserver(gObserver, kApplicationBackgroundTopic, false);
+    }
+  }
   if (gBatchBegan.IsNull()) {
     gBatchBegan = TimeStamp::Now();
   }
