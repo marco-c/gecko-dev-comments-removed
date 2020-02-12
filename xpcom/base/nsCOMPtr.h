@@ -534,6 +534,17 @@ class MOZ_IS_REFPTR nsCOMPtr final
 
   
   template <typename U>
+  MOZ_IMPLICIT nsCOMPtr(RefPtr<U>&& aSmartPtr)
+      : NSCAP_CTOR_BASE(aSmartPtr.forget().take()) {
+    assert_validity();
+    
+    static_assert(std::is_base_of<T, U>::value, "U is not a subclass of T");
+    NSCAP_LOG_ASSIGNMENT(this, mRawPtr);
+    NSCAP_ASSERT_NO_QUERY_NEEDED();
+  }
+
+  
+  template <typename U>
   MOZ_IMPLICIT nsCOMPtr(already_AddRefed<U>& aSmartPtr)
       : NSCAP_CTOR_BASE(static_cast<T*>(aSmartPtr.take())) {
     assert_validity();
@@ -690,6 +701,16 @@ class MOZ_IS_REFPTR nsCOMPtr final
     
     static_assert(std::is_base_of<T, U>::value, "U is not a subclass of T");
     assign_assuming_AddRef(static_cast<T*>(aRhs.take()));
+    NSCAP_ASSERT_NO_QUERY_NEEDED();
+    return *this;
+  }
+
+  
+  template <typename U>
+  nsCOMPtr<T>& operator=(RefPtr<U>&& aRhs) {
+    
+    static_assert(std::is_base_of<T, U>::value, "U is not a subclass of T");
+    assign_assuming_AddRef(static_cast<T*>(aRhs.forget().take()));
     NSCAP_ASSERT_NO_QUERY_NEEDED();
     return *this;
   }
@@ -1476,6 +1497,14 @@ inline already_AddRefed<T> do_AddRef(const nsCOMPtr<T>& aObj) {
 template <class T>
 std::ostream& operator<<(std::ostream& aOut, const nsCOMPtr<T>& aObj) {
   return mozilla::DebugValue(aOut, aObj.get());
+}
+
+
+
+
+template <class T>
+RefPtr<T> ToRefPtr(nsCOMPtr<T>&& aObj) {
+  return aObj.forget();
 }
 
 #endif  
