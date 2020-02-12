@@ -137,7 +137,8 @@ class SETA(object):
             low_value_tasks = set([x for x in low_value_tasks if not new_as_old_is_high_value(x)])
 
             
-            low_value_tasks = set([x for x in low_value_tasks if 'build' not in x])
+            low_value_tasks = set([x for x in low_value_tasks
+                                   if 'build' not in x or 'fuzzing' in x])
 
             
             low_value_tasks = list(set(low_value_tasks))
