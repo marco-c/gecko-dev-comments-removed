@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+// `data` comes from components/style/properties.mako.rs; see build.rs for more details.
 
 <%!
     from data import to_camel_case, to_camel_case_lower
@@ -53,7 +53,6 @@ use crate::values::computed::BorderStyle;
 use crate::values::computed::font::FontSize;
 use crate::values::generics::column::ColumnCount;
 use crate::values::generics::image::ImageLayer;
-use crate::values::generics::transform::TransformStyle;
 use crate::values::generics::url::UrlOrNone;
 
 
