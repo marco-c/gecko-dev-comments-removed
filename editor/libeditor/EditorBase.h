@@ -2841,7 +2841,6 @@ class EditorBase : public nsIEditor,
   
   
   
-  
   typedef AutoTArray<OwningNonNull<nsIDocumentStateListener>, 1>
       AutoDocumentStateListenerArray;
   AutoDocumentStateListenerArray mDocStateListeners;

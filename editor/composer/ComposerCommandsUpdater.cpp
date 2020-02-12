@@ -9,7 +9,6 @@
 #include "mozilla/mozalloc.h"            
 #include "mozilla/TransactionManager.h"  
 #include "mozilla/dom/Selection.h"
-#include "nsAString.h"
 #include "nsCommandManager.h"            
 #include "nsComponentManagerUtils.h"     
 #include "nsDebug.h"                     
@@ -40,11 +39,10 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(ComposerCommandsUpdater)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(ComposerCommandsUpdater)
 
 NS_INTERFACE_MAP_BEGIN(ComposerCommandsUpdater)
-  NS_INTERFACE_MAP_ENTRY(nsIDocumentStateListener)
   NS_INTERFACE_MAP_ENTRY(nsITransactionListener)
   NS_INTERFACE_MAP_ENTRY(nsITimerCallback)
   NS_INTERFACE_MAP_ENTRY(nsINamed)
-  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIDocumentStateListener)
+  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsITransactionListener)
   NS_INTERFACE_MAP_ENTRIES_CYCLE_COLLECTION(ComposerCommandsUpdater)
 NS_INTERFACE_MAP_END
 
@@ -55,58 +53,22 @@ NS_IMPL_CYCLE_COLLECTION(ComposerCommandsUpdater, mUpdateTimer, mDOMWindow,
 #  pragma mark -
 #endif
 
-NS_IMETHODIMP
-ComposerCommandsUpdater::NotifyDocumentCreated() {
-  
-  UpdateOneCommand("obs_documentCreated");
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-ComposerCommandsUpdater::NotifyDocumentWillBeDestroyed() {
-  
-  if (mUpdateTimer) {
-    mUpdateTimer->Cancel();
-    mUpdateTimer = nullptr;
-  }
-
-  
-  
-#if 0
-  
-  UpdateOneCommand("obs_documentWillBeDestroyed");
-#endif
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-ComposerCommandsUpdater::NotifyDocumentStateChanged(bool aNowDirty) {
-  
-  
-  return UpdateDirtyState(aNowDirty);
-}
-
-#if 0
-#  pragma mark -
-#endif
-
-NS_IMETHODIMP
-ComposerCommandsUpdater::WillDo(nsITransactionManager* aManager,
-                                nsITransaction* aTransaction,
-                                bool* aInterrupt) {
+NS_IMETHODIMP ComposerCommandsUpdater::WillDo(nsITransactionManager* aManager,
+                                              nsITransaction* aTransaction,
+                                              bool* aInterrupt) {
   *aInterrupt = false;
   return NS_OK;
 }
 
-NS_IMETHODIMP
-ComposerCommandsUpdater::DidDo(nsITransactionManager* aManager,
-                               nsITransaction* aTransaction,
-                               nsresult aDoResult) {
+MOZ_CAN_RUN_SCRIPT_BOUNDARY
+NS_IMETHODIMP ComposerCommandsUpdater::DidDo(nsITransactionManager* aManager,
+                                             nsITransaction* aTransaction,
+                                             nsresult aDoResult) {
   
   size_t undoCount = aManager->AsTransactionManager()->NumberOfUndoItems();
   if (undoCount == 1) {
     if (mFirstDoOfFirstUndo) {
-      UpdateCommandGroup(NS_LITERAL_STRING("undo"));
+      UpdateCommandGroup(CommandGroup::Undo);
     }
     mFirstDoOfFirstUndo = false;
   }
@@ -114,82 +76,73 @@ ComposerCommandsUpdater::DidDo(nsITransactionManager* aManager,
   return NS_OK;
 }
 
-NS_IMETHODIMP
-ComposerCommandsUpdater::WillUndo(nsITransactionManager* aManager,
-                                  nsITransaction* aTransaction,
-                                  bool* aInterrupt) {
+NS_IMETHODIMP ComposerCommandsUpdater::WillUndo(nsITransactionManager* aManager,
+                                                nsITransaction* aTransaction,
+                                                bool* aInterrupt) {
   *aInterrupt = false;
   return NS_OK;
 }
 
-NS_IMETHODIMP
-ComposerCommandsUpdater::DidUndo(nsITransactionManager* aManager,
-                                 nsITransaction* aTransaction,
-                                 nsresult aUndoResult) {
+MOZ_CAN_RUN_SCRIPT_BOUNDARY
+NS_IMETHODIMP ComposerCommandsUpdater::DidUndo(nsITransactionManager* aManager,
+                                               nsITransaction* aTransaction,
+                                               nsresult aUndoResult) {
   size_t undoCount = aManager->AsTransactionManager()->NumberOfUndoItems();
   if (!undoCount) {
     mFirstDoOfFirstUndo = true;  
   }
-  UpdateCommandGroup(NS_LITERAL_STRING("undo"));
+  UpdateCommandGroup(CommandGroup::Undo);
   return NS_OK;
 }
 
-NS_IMETHODIMP
-ComposerCommandsUpdater::WillRedo(nsITransactionManager* aManager,
-                                  nsITransaction* aTransaction,
-                                  bool* aInterrupt) {
+NS_IMETHODIMP ComposerCommandsUpdater::WillRedo(nsITransactionManager* aManager,
+                                                nsITransaction* aTransaction,
+                                                bool* aInterrupt) {
   *aInterrupt = false;
   return NS_OK;
 }
 
-NS_IMETHODIMP
-ComposerCommandsUpdater::DidRedo(nsITransactionManager* aManager,
-                                 nsITransaction* aTransaction,
-                                 nsresult aRedoResult) {
-  UpdateCommandGroup(NS_LITERAL_STRING("undo"));
+MOZ_CAN_RUN_SCRIPT_BOUNDARY
+NS_IMETHODIMP ComposerCommandsUpdater::DidRedo(nsITransactionManager* aManager,
+                                               nsITransaction* aTransaction,
+                                               nsresult aRedoResult) {
+  UpdateCommandGroup(CommandGroup::Undo);
   return NS_OK;
 }
 
-NS_IMETHODIMP
-ComposerCommandsUpdater::WillBeginBatch(nsITransactionManager* aManager,
-                                        bool* aInterrupt) {
+NS_IMETHODIMP ComposerCommandsUpdater::WillBeginBatch(
+    nsITransactionManager* aManager, bool* aInterrupt) {
   *aInterrupt = false;
   return NS_OK;
 }
 
-NS_IMETHODIMP
-ComposerCommandsUpdater::DidBeginBatch(nsITransactionManager* aManager,
-                                       nsresult aResult) {
+NS_IMETHODIMP ComposerCommandsUpdater::DidBeginBatch(
+    nsITransactionManager* aManager, nsresult aResult) {
   return NS_OK;
 }
 
-NS_IMETHODIMP
-ComposerCommandsUpdater::WillEndBatch(nsITransactionManager* aManager,
-                                      bool* aInterrupt) {
+NS_IMETHODIMP ComposerCommandsUpdater::WillEndBatch(
+    nsITransactionManager* aManager, bool* aInterrupt) {
   *aInterrupt = false;
   return NS_OK;
 }
 
-NS_IMETHODIMP
-ComposerCommandsUpdater::DidEndBatch(nsITransactionManager* aManager,
-                                     nsresult aResult) {
+NS_IMETHODIMP ComposerCommandsUpdater::DidEndBatch(
+    nsITransactionManager* aManager, nsresult aResult) {
   return NS_OK;
 }
 
-NS_IMETHODIMP
-ComposerCommandsUpdater::WillMerge(nsITransactionManager* aManager,
-                                   nsITransaction* aTopTransaction,
-                                   nsITransaction* aTransactionToMerge,
-                                   bool* aInterrupt) {
+NS_IMETHODIMP ComposerCommandsUpdater::WillMerge(
+    nsITransactionManager* aManager, nsITransaction* aTopTransaction,
+    nsITransaction* aTransactionToMerge, bool* aInterrupt) {
   *aInterrupt = false;
   return NS_OK;
 }
 
-NS_IMETHODIMP
-ComposerCommandsUpdater::DidMerge(nsITransactionManager* aManager,
-                                  nsITransaction* aTopTransaction,
-                                  nsITransaction* aTransactionToMerge,
-                                  bool aDidMerge, nsresult aMergeResult) {
+NS_IMETHODIMP ComposerCommandsUpdater::DidMerge(
+    nsITransactionManager* aManager, nsITransaction* aTopTransaction,
+    nsITransaction* aTransactionToMerge, bool aDidMerge,
+    nsresult aMergeResult) {
   return NS_OK;
 }
 
@@ -205,90 +158,66 @@ void ComposerCommandsUpdater::Init(nsPIDOMWindowOuter& aDOMWindow) {
 nsresult ComposerCommandsUpdater::PrimeUpdateTimer() {
   if (!mUpdateTimer) {
     mUpdateTimer = NS_NewTimer();
-    ;
-    NS_ENSURE_TRUE(mUpdateTimer, NS_ERROR_OUT_OF_MEMORY);
   }
-
   const uint32_t kUpdateTimerDelay = 150;
   return mUpdateTimer->InitWithCallback(static_cast<nsITimerCallback*>(this),
                                         kUpdateTimerDelay,
                                         nsITimer::TYPE_ONE_SHOT);
 }
 
+MOZ_CAN_RUN_SCRIPT_BOUNDARY
 void ComposerCommandsUpdater::TimerCallback() {
-  
-  bool isCollapsed = SelectionIsCollapsed();
-  if (static_cast<int8_t>(isCollapsed) != mSelectionCollapsed) {
-    UpdateCommandGroup(NS_LITERAL_STRING("select"));
-    mSelectionCollapsed = isCollapsed;
-  }
-
-  
-  
-  UpdateCommandGroup(NS_LITERAL_STRING("style"));
+  mSelectionCollapsed = SelectionIsCollapsed();
+  UpdateCommandGroup(CommandGroup::Style);
 }
 
-nsresult ComposerCommandsUpdater::UpdateDirtyState(bool aNowDirty) {
-  if (mDirtyState != static_cast<int8_t>(aNowDirty)) {
-    UpdateCommandGroup(NS_LITERAL_STRING("save"));
-    UpdateCommandGroup(NS_LITERAL_STRING("undo"));
-    mDirtyState = aNowDirty;
-  }
-
-  return NS_OK;
-}
-
-nsresult ComposerCommandsUpdater::UpdateCommandGroup(
-    const nsAString& aCommandGroup) {
+void ComposerCommandsUpdater::UpdateCommandGroup(CommandGroup aCommandGroup) {
   RefPtr<nsCommandManager> commandManager = GetCommandManager();
-  NS_ENSURE_TRUE(commandManager, NS_ERROR_FAILURE);
-
-  if (aCommandGroup.EqualsLiteral("undo")) {
-    commandManager->CommandStatusChanged("cmd_undo");
-    commandManager->CommandStatusChanged("cmd_redo");
-    return NS_OK;
+  if (NS_WARN_IF(!commandManager)) {
+    return;
   }
 
-  if (aCommandGroup.EqualsLiteral("select") ||
-      aCommandGroup.EqualsLiteral("style")) {
-    commandManager->CommandStatusChanged("cmd_bold");
-    commandManager->CommandStatusChanged("cmd_italic");
-    commandManager->CommandStatusChanged("cmd_underline");
-    commandManager->CommandStatusChanged("cmd_tt");
+  switch (aCommandGroup) {
+    case CommandGroup::Undo:
+      commandManager->CommandStatusChanged("cmd_undo");
+      commandManager->CommandStatusChanged("cmd_redo");
+      return;
+    case CommandGroup::Style:
+      commandManager->CommandStatusChanged("cmd_bold");
+      commandManager->CommandStatusChanged("cmd_italic");
+      commandManager->CommandStatusChanged("cmd_underline");
+      commandManager->CommandStatusChanged("cmd_tt");
 
-    commandManager->CommandStatusChanged("cmd_strikethrough");
-    commandManager->CommandStatusChanged("cmd_superscript");
-    commandManager->CommandStatusChanged("cmd_subscript");
-    commandManager->CommandStatusChanged("cmd_nobreak");
+      commandManager->CommandStatusChanged("cmd_strikethrough");
+      commandManager->CommandStatusChanged("cmd_superscript");
+      commandManager->CommandStatusChanged("cmd_subscript");
+      commandManager->CommandStatusChanged("cmd_nobreak");
 
-    commandManager->CommandStatusChanged("cmd_em");
-    commandManager->CommandStatusChanged("cmd_strong");
-    commandManager->CommandStatusChanged("cmd_cite");
-    commandManager->CommandStatusChanged("cmd_abbr");
-    commandManager->CommandStatusChanged("cmd_acronym");
-    commandManager->CommandStatusChanged("cmd_code");
-    commandManager->CommandStatusChanged("cmd_samp");
-    commandManager->CommandStatusChanged("cmd_var");
+      commandManager->CommandStatusChanged("cmd_em");
+      commandManager->CommandStatusChanged("cmd_strong");
+      commandManager->CommandStatusChanged("cmd_cite");
+      commandManager->CommandStatusChanged("cmd_abbr");
+      commandManager->CommandStatusChanged("cmd_acronym");
+      commandManager->CommandStatusChanged("cmd_code");
+      commandManager->CommandStatusChanged("cmd_samp");
+      commandManager->CommandStatusChanged("cmd_var");
 
-    commandManager->CommandStatusChanged("cmd_increaseFont");
-    commandManager->CommandStatusChanged("cmd_decreaseFont");
+      commandManager->CommandStatusChanged("cmd_increaseFont");
+      commandManager->CommandStatusChanged("cmd_decreaseFont");
 
-    commandManager->CommandStatusChanged("cmd_paragraphState");
-    commandManager->CommandStatusChanged("cmd_fontFace");
-    commandManager->CommandStatusChanged("cmd_fontColor");
-    commandManager->CommandStatusChanged("cmd_backgroundColor");
-    commandManager->CommandStatusChanged("cmd_highlight");
-    return NS_OK;
+      commandManager->CommandStatusChanged("cmd_paragraphState");
+      commandManager->CommandStatusChanged("cmd_fontFace");
+      commandManager->CommandStatusChanged("cmd_fontColor");
+      commandManager->CommandStatusChanged("cmd_backgroundColor");
+      commandManager->CommandStatusChanged("cmd_highlight");
+      return;
+    case CommandGroup::Save:
+      commandManager->CommandStatusChanged("cmd_setDocumentModified");
+      commandManager->CommandStatusChanged("cmd_save");
+      return;
+    default:
+      MOZ_ASSERT_UNREACHABLE("New command group hasn't been implemented yet");
   }
-
-  if (aCommandGroup.EqualsLiteral("save")) {
-    
-    commandManager->CommandStatusChanged("cmd_setDocumentModified");
-    commandManager->CommandStatusChanged("cmd_save");
-    return NS_OK;
-  }
-
-  return NS_OK;
 }
 
 nsresult ComposerCommandsUpdater::UpdateOneCommand(const char* aCommand) {
@@ -318,8 +247,7 @@ nsCommandManager* ComposerCommandsUpdater::GetCommandManager() {
   return mDocShell->GetCommandManager();
 }
 
-NS_IMETHODIMP
-ComposerCommandsUpdater::GetName(nsACString& aName) {
+NS_IMETHODIMP ComposerCommandsUpdater::GetName(nsACString& aName) {
   aName.AssignLiteral("ComposerCommandsUpdater");
   return NS_OK;
 }

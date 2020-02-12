@@ -335,7 +335,7 @@ nsresult nsEditingSession::SetupEditorOnWindow(nsPIDOMWindowOuter& aWindow) {
 
   if (mEditorStatus != eEditorCreationInProgress) {
     RefPtr<ComposerCommandsUpdater> updater = mComposerCommandsUpdater;
-    updater->NotifyDocumentCreated();
+    updater->OnHTMLEditorCreated();
 
     
     
@@ -411,8 +411,7 @@ nsresult nsEditingSession::SetupEditorOnWindow(nsPIDOMWindowOuter& aWindow) {
 
   
   
-  rv = htmlEditor->AddDocumentStateListener(mComposerCommandsUpdater);
-  NS_ENSURE_SUCCESS(rv, rv);
+  htmlEditor->SetComposerCommandsUpdater(mComposerCommandsUpdater);
 
   rv = htmlEditor->Init(*doc, nullptr , nullptr, mEditorFlags,
                         EmptyString());
@@ -422,8 +421,6 @@ nsresult nsEditingSession::SetupEditorOnWindow(nsPIDOMWindowOuter& aWindow) {
   if (NS_WARN_IF(!selection)) {
     return NS_ERROR_FAILURE;
   }
-
-  htmlEditor->SetComposerCommandsUpdater(mComposerCommandsUpdater);
 
   
   MOZ_ASSERT(mComposerCommandsUpdater);
@@ -452,7 +449,6 @@ void nsEditingSession::RemoveListenersAndControllers(
 
   
   aHTMLEditor->SetComposerCommandsUpdater(nullptr);
-  aHTMLEditor->RemoveDocumentStateListener(mComposerCommandsUpdater);
   DebugOnly<bool> removedTransactionListener =
       aHTMLEditor->RemoveTransactionListener(*mComposerCommandsUpdater);
   NS_WARNING_ASSERTION(removedTransactionListener,
