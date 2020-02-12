@@ -351,6 +351,51 @@ class SourceSurface : public external::AtomicRefCounted<SourceSurface> {
   
 
 
+  struct SizeOfInfo {
+    SizeOfInfo()
+        : mHeapBytes(0),
+          mNonHeapBytes(0),
+          mUnknownBytes(0),
+          mExternalHandles(0),
+          mExternalId(0),
+          mTypes(0) {}
+
+    void Accumulate(const SizeOfInfo& aOther) {
+      mHeapBytes += aOther.mHeapBytes;
+      mNonHeapBytes += aOther.mNonHeapBytes;
+      mUnknownBytes += aOther.mUnknownBytes;
+      mExternalHandles += aOther.mExternalHandles;
+      if (aOther.mExternalId) {
+        mExternalId = aOther.mExternalId;
+      }
+      mTypes |= aOther.mTypes;
+    }
+
+    void AddType(SurfaceType aType) { mTypes |= 1 << uint32_t(aType); }
+
+    size_t mHeapBytes;        
+    size_t mNonHeapBytes;     
+    size_t mUnknownBytes;     
+    size_t mExternalHandles;  
+    uint64_t mExternalId;     
+    uint32_t mTypes;          
+  };
+
+  
+
+
+  virtual void SizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
+                                   SizeOfInfo& aInfo) const {
+    
+    auto size = GetSize();
+    auto format = GetFormat();
+    aInfo.AddType(GetType());
+    aInfo.mUnknownBytes = size.width * size.height * BytesPerPixel(format);
+  }
+
+  
+
+
 
 
   virtual bool IsValid() const { return true; }
@@ -486,6 +531,11 @@ class DataSourceSurface : public SourceSurface {
       return &mMap;
     }
 
+    const DataSourceSurface* GetSurface() const {
+      MOZ_ASSERT(mIsMapped);
+      return mSurface;
+    }
+
     bool IsMapped() const { return mIsMapped; }
 
    private:
@@ -549,15 +599,6 @@ class DataSourceSurface : public SourceSurface {
 
 
   already_AddRefed<DataSourceSurface> GetDataSurface() override;
-
-  
-
-
-  virtual void AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
-                                      size_t& aHeapSizeOut,
-                                      size_t& aNonHeapSizeOut,
-                                      size_t& aExtHandlesOut,
-                                      uint64_t& aExtIdOut) const {}
 
   
 
