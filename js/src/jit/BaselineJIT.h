@@ -139,7 +139,7 @@ class RetAddrEntry {
     
     
     MOZ_ASSERT(pcOffset_ == pcOffset);
-    JS_STATIC_ASSERT(BaselineMaxScriptLength <= (1u << 28) - 1);
+    static_assert(BaselineMaxScriptLength <= (1u << 28) - 1);
     MOZ_ASSERT(pcOffset <= BaselineMaxScriptLength);
 
     MOZ_ASSERT(kind < Kind::Invalid);

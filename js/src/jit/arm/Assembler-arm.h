@@ -1934,7 +1934,7 @@ class Instruction {
 };  
 
 
-JS_STATIC_ASSERT(sizeof(Instruction) == 4);
+static_assert(sizeof(Instruction) == 4);
 
 inline void InstructionIterator::advanceRaw(ptrdiff_t instructions) {
   inst_ = inst_ + instructions;
@@ -1955,7 +1955,7 @@ class InstDTR : public Instruction {
   static bool IsTHIS(const Instruction& i);
   static InstDTR* AsTHIS(const Instruction& i);
 };
-JS_STATIC_ASSERT(sizeof(InstDTR) == sizeof(Instruction));
+static_assert(sizeof(InstDTR) == sizeof(Instruction));
 
 class InstLDR : public InstDTR {
  public:
@@ -1984,7 +1984,7 @@ class InstLDR : public InstDTR {
     return (uint32_t*)raw() + offset + 2;
   }
 };
-JS_STATIC_ASSERT(sizeof(InstDTR) == sizeof(InstLDR));
+static_assert(sizeof(InstDTR) == sizeof(InstLDR));
 
 class InstNOP : public Instruction {
  public:
@@ -2016,7 +2016,7 @@ class InstBranchReg : public Instruction {
   
   bool checkDest(Register dest);
 };
-JS_STATIC_ASSERT(sizeof(InstBranchReg) == sizeof(Instruction));
+static_assert(sizeof(InstBranchReg) == sizeof(Instruction));
 
 
 class InstBranchImm : public Instruction {
@@ -2034,7 +2034,7 @@ class InstBranchImm : public Instruction {
 
   void extractImm(BOffImm* dest);
 };
-JS_STATIC_ASSERT(sizeof(InstBranchImm) == sizeof(Instruction));
+static_assert(sizeof(InstBranchImm) == sizeof(Instruction));
 
 
 class InstBXReg : public InstBranchReg {
@@ -2088,7 +2088,7 @@ class InstMovWT : public Instruction {
   static bool IsTHIS(Instruction& i);
   static InstMovWT* AsTHIS(Instruction& i);
 };
-JS_STATIC_ASSERT(sizeof(InstMovWT) == sizeof(Instruction));
+static_assert(sizeof(InstMovWT) == sizeof(Instruction));
 
 class InstMovW : public InstMovWT {
  public:

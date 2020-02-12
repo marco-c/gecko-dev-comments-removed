@@ -2909,7 +2909,7 @@ void MacroAssemblerARMCompat::loadInt32OrDouble(Register base, Register index,
                                                 int32_t shift) {
   Label notInt32, end;
 
-  JS_STATIC_ASSERT(NUNBOX32_PAYLOAD_OFFSET == 0);
+  static_assert(NUNBOX32_PAYLOAD_OFFSET == 0);
 
   ScratchRegisterScope scratch(asMasm());
 
@@ -3180,7 +3180,7 @@ void MacroAssemblerARMCompat::storePayload(const Value& val,
   
   
   
-  JS_STATIC_ASSERT(NUNBOX32_PAYLOAD_OFFSET == 0);
+  static_assert(NUNBOX32_PAYLOAD_OFFSET == 0);
 
   
   
@@ -3207,7 +3207,7 @@ void MacroAssemblerARMCompat::storePayload(Register src,
   
   
   
-  JS_STATIC_ASSERT(NUNBOX32_PAYLOAD_OFFSET == 0);
+  static_assert(NUNBOX32_PAYLOAD_OFFSET == 0);
 
   
   if (dest.offset != 0) {

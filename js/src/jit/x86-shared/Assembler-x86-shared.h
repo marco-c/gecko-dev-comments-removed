@@ -381,9 +381,9 @@ class AssemblerX86Shared : public AssemblerShared {
 
   static void StaticAsserts() {
     
-    JS_STATIC_ASSERT(!((Equal | NotEqual | Above | AboveOrEqual | Below |
-                        BelowOrEqual | Parity | NoParity) &
-                       DoubleConditionBits));
+    static_assert(!((Equal | NotEqual | Above | AboveOrEqual | Below |
+                     BelowOrEqual | Parity | NoParity) &
+                    DoubleConditionBits));
   }
 
   static Condition InvertCondition(Condition cond);
