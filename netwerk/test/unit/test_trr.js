@@ -105,7 +105,7 @@ registerCleanupFunction(() => {
 
 
 const BAD_IP = (() => {
-  if (mozinfo.os == "linux") {
+  if (mozinfo.os == "linux" || mozinfo.os == "android") {
     return "127.9.9.9";
   }
   return "0.0.0.0";
