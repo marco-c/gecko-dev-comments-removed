@@ -7,8 +7,8 @@
 #ifndef mozilla_layers_KeyboardScrollAction_h
 #define mozilla_layers_KeyboardScrollAction_h
 
+#include "mozilla/ScrollTypes.h"
 #include "mozilla/DefineEnum.h"  
-#include "nsIScrollableFrame.h"  
 
 namespace mozilla {
 namespace layers {
@@ -29,8 +29,7 @@ struct KeyboardScrollAction final {
   ));
   
 
-  static nsIScrollableFrame::ScrollUnit GetScrollUnit(
-      KeyboardScrollActionType aDeltaType);
+  static ScrollUnit GetScrollUnit(KeyboardScrollActionType aDeltaType);
 
   KeyboardScrollAction();
   KeyboardScrollAction(KeyboardScrollActionType aType, bool aForward);
