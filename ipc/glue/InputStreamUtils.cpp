@@ -90,10 +90,13 @@ void SerializeInputStreamAsPipeInternal(nsIInputStream* aInputStream,
     length = -1;
   }
 
-  
-  
   nsCOMPtr<nsIAsyncInputStream> asyncStream = do_QueryInterface(aInputStream);
-  if (!asyncStream) {
+
+  
+  
+  bool nonBlocking = false;
+  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(aInputStream->IsNonBlocking(&nonBlocking)));
+  if (!nonBlocking || !asyncStream) {
     const uint32_t kBufferSize = 32768;  
     nsCOMPtr<nsIAsyncOutputStream> sink;
     nsresult rv = NS_NewPipe2(getter_AddRefs(asyncStream), getter_AddRefs(sink),
@@ -112,7 +115,7 @@ void SerializeInputStreamAsPipeInternal(nsIInputStream* aInputStream,
     }
   }
 
-  MOZ_ASSERT(asyncStream);
+  MOZ_DIAGNOSTIC_ASSERT(asyncStream);
 
   aParams = IPCRemoteStreamParams(
       aDelayedStart, IPCStreamSource::Create(asyncStream, aManager), length);
