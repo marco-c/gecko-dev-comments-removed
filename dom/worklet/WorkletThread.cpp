@@ -305,6 +305,32 @@ WorkletThread::DelayedDispatch(already_AddRefed<nsIRunnable>, uint32_t aFlags) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
+static bool DispatchToEventLoop(void* aClosure,
+                                JS::Dispatchable* aDispatchable) {
+  
+  
+
+  
+  
+  WorkletThread* workletThread = reinterpret_cast<WorkletThread*>(aClosure);
+
+  nsresult rv = workletThread->DispatchRunnable(NS_NewRunnableFunction(
+      "WorkletThread::DispatchToEventLoop", [aDispatchable]() {
+        CycleCollectedJSContext* ccjscx = CycleCollectedJSContext::Get();
+        if (!ccjscx) {
+          return;
+        }
+
+        WorkletJSContext* wjc = ccjscx->GetAsWorkletJSContext();
+        if (!wjc) {
+          return;
+        }
+
+        aDispatchable->run(wjc->Context(), JS::Dispatchable::NotShuttingDown);
+      }));
+
+  return NS_SUCCEEDED(rv);
+}
 
 void WorkletThread::EnsureCycleCollectedJSContext(JSRuntime* aParentRuntime) {
   CycleCollectedJSContext* ccjscx = CycleCollectedJSContext::Get();
@@ -327,6 +353,11 @@ void WorkletThread::EnsureCycleCollectedJSContext(JSRuntime* aParentRuntime) {
   
   
   
+
+  
+  
+  JS::InitDispatchToEventLoop(context->Context(), DispatchToEventLoop,
+                              (void*)this);
 
   JS_SetNativeStackQuota(context->Context(),
                          WORKLET_CONTEXT_NATIVE_STACK_LIMIT);
