@@ -23,9 +23,6 @@ use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
 
 
-pub type ImageLayer = generic::GenericImageLayer<Image>;
-
-
 
 pub type Image = generic::GenericImage<Gradient, MozImageRect, ComputedImageUrl>;
 
@@ -65,7 +62,7 @@ pub type ColorStop = generic::ColorStop<Color, LengthPercentage>;
 
 
 #[cfg(feature = "gecko")]
-pub type MozImageRect = generic::MozImageRect<NumberOrPercentage, ComputedImageUrl>;
+pub type MozImageRect = generic::GenericMozImageRect<NumberOrPercentage, ComputedImageUrl>;
 
 
 #[cfg(not(feature = "gecko"))]
