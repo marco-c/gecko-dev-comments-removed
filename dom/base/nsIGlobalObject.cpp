@@ -182,14 +182,6 @@ Maybe<ClientInfo> nsIGlobalObject::GetClientInfo() const {
   return Maybe<ClientInfo>();
 }
 
-Maybe<nsID> nsIGlobalObject::GetAgentClusterId() const {
-  Maybe<ClientInfo> ci = GetClientInfo();
-  if (ci.isSome()) {
-    return ci.value().AgentClusterId();
-  }
-  return Nothing();
-}
-
 Maybe<ServiceWorkerDescriptor> nsIGlobalObject::GetController() const {
   
   

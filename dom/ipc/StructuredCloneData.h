@@ -177,19 +177,12 @@ class StructuredCloneData : public StructuredCloneHolder {
             ErrorResult& aRv);
 
   void Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
-            const JS::CloneDataPolicy& aCloneDataPolicy, ErrorResult& aRv);
+            JS::CloneDataPolicy aCloneDataPolicy, ErrorResult& aRv);
 
-  
-  
-  
-  void Write(JSContext* aCx, JS::Handle<JS::Value> aValue,
-             ErrorResult& aRv) override;
+  void Write(JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv);
 
-  
   void Write(JSContext* aCx, JS::Handle<JS::Value> aValue,
-             JS::Handle<JS::Value> aTransfers,
-             const JS::CloneDataPolicy& aCloneDataPolicy,
-             ErrorResult& aRv) override;
+             JS::Handle<JS::Value> aTransfers, ErrorResult& aRv);
 
   
   

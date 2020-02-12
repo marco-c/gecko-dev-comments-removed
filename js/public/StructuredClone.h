@@ -206,15 +206,15 @@ enum TransferableOwnership {
 
 class CloneDataPolicy {
   bool allowIntraClusterClonableSharedObjects_;
-  bool allowSharedMemoryObjects_;
 
  public:
   
 
-  CloneDataPolicy()
-      : allowIntraClusterClonableSharedObjects_(false),
-        allowSharedMemoryObjects_(false) {}
+  CloneDataPolicy() : allowIntraClusterClonableSharedObjects_(false) {}
 
+  
+  
+  
   
   
   
@@ -227,12 +227,6 @@ class CloneDataPolicy {
 
   bool areIntraClusterClonableSharedObjectsAllowed() const {
     return allowIntraClusterClonableSharedObjects_;
-  }
-
-  void allowSharedMemoryObjects() { allowSharedMemoryObjects_ = true; }
-
-  bool areSharedMemoryObjectsAllowed() const {
-    return allowSharedMemoryObjects_;
   }
 };
 
@@ -558,11 +552,6 @@ class MOZ_NON_MEMMOVABLE JS_PUBLIC_API JSStructuredCloneData {
   }
 
   void discardTransferables();
-
- private:
-  
-  
-  JS::StructuredCloneScope scopeForInternalWriting() const { return scope_; }
 };
 
 
@@ -573,7 +562,7 @@ class MOZ_NON_MEMMOVABLE JS_PUBLIC_API JSStructuredCloneData {
 JS_PUBLIC_API bool JS_ReadStructuredClone(
     JSContext* cx, JSStructuredCloneData& data, uint32_t version,
     JS::StructuredCloneScope scope, JS::MutableHandleValue vp,
-    const JS::CloneDataPolicy& cloneDataPolicy,
+    JS::CloneDataPolicy cloneDataPolicy,
     const JSStructuredCloneCallbacks* optionalCallbacks, void* closure);
 
 
@@ -586,7 +575,7 @@ JS_PUBLIC_API bool JS_ReadStructuredClone(
 
 JS_PUBLIC_API bool JS_WriteStructuredClone(
     JSContext* cx, JS::HandleValue v, JSStructuredCloneData* data,
-    JS::StructuredCloneScope scope, const JS::CloneDataPolicy& cloneDataPolicy,
+    JS::StructuredCloneScope scope, JS::CloneDataPolicy cloneDataPolicy,
     const JSStructuredCloneCallbacks* optionalCallbacks, void* closure,
     JS::HandleValue transferable);
 
@@ -662,7 +651,7 @@ class JS_PUBLIC_API JSAutoStructuredCloneBuffer {
   }
 
   bool read(JSContext* cx, JS::MutableHandleValue vp,
-            const JS::CloneDataPolicy& cloneDataPolicy = JS::CloneDataPolicy(),
+            JS::CloneDataPolicy cloneDataPolicy = JS::CloneDataPolicy(),
             const JSStructuredCloneCallbacks* optionalCallbacks = nullptr,
             void* closure = nullptr);
 
@@ -671,7 +660,7 @@ class JS_PUBLIC_API JSAutoStructuredCloneBuffer {
              void* closure = nullptr);
 
   bool write(JSContext* cx, JS::HandleValue v, JS::HandleValue transferable,
-             const JS::CloneDataPolicy& cloneDataPolicy,
+             JS::CloneDataPolicy cloneDataPolicy,
              const JSStructuredCloneCallbacks* optionalCallbacks = nullptr,
              void* closure = nullptr);
 
