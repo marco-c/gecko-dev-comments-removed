@@ -13,10 +13,12 @@ function toMojoNDEFMessage(message) {
 
 function toMojoNDEFRecord(record) {
   let nfcRecord = new device.mojom.NDEFRecord();
-  if (record.recordType.search(':') != -1) {
-    
-    
-    
+  
+  
+  
+  if (record.recordType.startsWith(':')) {
+    nfcRecord.category = device.mojom.NDEFRecordTypeCategory.kLocal;
+  } else if (record.recordType.search(':') != -1) {
     nfcRecord.category = device.mojom.NDEFRecordTypeCategory.kExternal;
   } else {
     nfcRecord.category = device.mojom.NDEFRecordTypeCategory.kStandardized;
