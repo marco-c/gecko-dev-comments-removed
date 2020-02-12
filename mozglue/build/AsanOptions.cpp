@@ -143,6 +143,10 @@ extern "C" const char* __lsan_default_suppressions() {
 
          
          
+         "leak:RegisteredThread::RegisteredThread\n"
+
+         
+         
          
          
          
