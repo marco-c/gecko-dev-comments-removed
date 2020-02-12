@@ -181,6 +181,15 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  nsresult GetBackgroundColorState(bool* aMixed, nsAString& aOutColor);
+
+  
+
+
+
+
+
+
 
 
 
@@ -4369,9 +4378,6 @@ class HTMLEditor final : public TextEditor,
   
   
   mutable uint32_t mSelectedCellIndex;
-
-  nsString mLastStyleSheetURL;
-  nsString mLastOverrideStyleSheetURL;
 
   
   nsTArray<nsString> mStyleSheetURLs;

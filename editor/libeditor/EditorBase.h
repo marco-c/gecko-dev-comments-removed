@@ -1062,7 +1062,6 @@ class EditorBase : public nsIPlaintextEditor,
         
         case EditAction::eAddOverrideStyleSheet:
         case EditAction::eRemoveOverrideStyleSheet:
-        case EditAction::eReplaceOverrideStyleSheet:
         
         case EditAction::eEnableStyleSheet:
         case EditAction::eEnableOrDisableCSS:
