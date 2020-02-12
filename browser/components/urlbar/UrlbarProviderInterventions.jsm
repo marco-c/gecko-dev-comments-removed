@@ -435,21 +435,22 @@ class ProviderInterventions extends UrlbarProvider {
     this.currentTip = TIPS.NONE;
 
     
-    this.queryScorer = new QueryScorer({
-      variations: new Map([
-        
-        ["firefox", ["fire fox", "fox fire", "foxfire"]],
-        
-        
-        
-        ["mozilla", ["mozila"]],
-      ]),
+    XPCOMUtils.defineLazyGetter(this, "queryScorer", () => {
+      let queryScorer = new QueryScorer({
+        variations: new Map([
+          
+          ["firefox", ["fire fox", "fox fire", "foxfire"]],
+          
+          
+          
+          ["mozilla", ["mozila"]],
+        ]),
+      });
+      for (let [id, phrases] of Object.entries(DOCUMENTS)) {
+        queryScorer.addDocument({ id, phrases });
+      }
+      return queryScorer;
     });
-
-    
-    for (let [id, phrases] of Object.entries(DOCUMENTS)) {
-      this.queryScorer.addDocument({ id, phrases });
-    }
   }
 
   
