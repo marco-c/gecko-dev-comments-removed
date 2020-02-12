@@ -1,0 +1,27 @@
+
+
+
+
+"use strict";
+
+
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  Services: "resource://gre/modules/Services.jsm",
+});
+
+this.systemManufacturer = class extends ExtensionAPI {
+  getAPI(context) {
+    return {
+      systemManufacturer: {
+        getManufacturer() {
+          try {
+            return Services.sysinfo.getProperty("manufacturer");
+          } catch (_) {
+            return undefined;
+          }
+        },
+      },
+    };
+  }
+};

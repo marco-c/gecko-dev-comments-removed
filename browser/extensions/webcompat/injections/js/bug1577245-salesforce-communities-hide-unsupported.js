@@ -8,7 +8,6 @@
 
 
 
-
 console.info(
   "Unsupported message has been hidden for compatibility reasons. See https://webcompat.com/issues/38433 for details."
 );
