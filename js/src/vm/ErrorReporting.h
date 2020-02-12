@@ -83,15 +83,9 @@ extern void CallWarningReporter(JSContext* cx, JSErrorReport* report);
 
 
 
-extern void ReportCompileErrorLatin1(JSContext* cx, ErrorMetadata&& metadata,
-                                     UniquePtr<JSErrorNotes> notes,
-                                     unsigned flags, unsigned errorNumber,
-                                     va_list* args);
-
-extern void ReportCompileErrorUTF8(JSContext* cx, ErrorMetadata&& metadata,
-                                   UniquePtr<JSErrorNotes> notes,
-                                   unsigned flags, unsigned errorNumber,
-                                   va_list* args);
+extern void ReportCompileError(JSContext* cx, ErrorMetadata&& metadata,
+                               UniquePtr<JSErrorNotes> notes, unsigned flags,
+                               unsigned errorNumber, va_list* args);
 
 
 
