@@ -65,6 +65,10 @@ pub struct CalcVariant {
     ptr: *mut CalcLengthPercentage,
 }
 
+
+unsafe impl Send for CalcVariant {}
+unsafe impl Sync for CalcVariant {}
+
 #[doc(hidden)]
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -130,10 +134,14 @@ enum Tag {
 
 #[allow(unused)]
 unsafe fn static_assert() {
+    fn assert_send_and_sync<T: Send + Sync>() {}
     std::mem::transmute::<u64, LengthVariant>(0u64);
     std::mem::transmute::<u64, PercentageVariant>(0u64);
     std::mem::transmute::<u64, CalcVariant>(0u64);
     std::mem::transmute::<u64, LengthPercentage>(0u64);
+    assert_send_and_sync::<LengthVariant>();
+    assert_send_and_sync::<PercentageVariant>();
+    assert_send_and_sync::<CalcLengthPercentage>();
 }
 
 impl Drop for LengthPercentage {
@@ -391,6 +399,19 @@ impl LengthPercentage {
 
     
     #[inline]
+    pub fn to_percentage(&self) -> Option<Percentage> {
+        match self.unpack() {
+            Unpacked::Length(..) => None,
+            Unpacked::Percentage(p) => Some(p),
+            Unpacked::Calc(ref c) => {
+                debug_assert!(!c.length.is_zero());
+                None
+            }
+        }
+    }
+
+    
+    #[inline]
     pub fn specified_percentage(&self) -> Option<Percentage> {
         match self.unpack() {
             Unpacked::Length(..) => None,
@@ -416,7 +437,7 @@ impl LengthPercentage {
 
     
     #[inline]
-    fn maybe_to_used_value(&self, container_len: Option<Length>) -> Option<Au> {
+    pub fn maybe_to_used_value(&self, container_len: Option<Length>) -> Option<Au> {
         self.maybe_percentage_relative_to(container_len).map(Au::from)
     }
 

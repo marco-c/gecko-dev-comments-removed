@@ -113,6 +113,7 @@ impl Parse for Content {
     
     
     
+    #[cfg_attr(feature = "servo", allow(unused_mut))]
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
