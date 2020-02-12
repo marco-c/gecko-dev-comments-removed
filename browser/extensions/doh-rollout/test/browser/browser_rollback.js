@@ -67,6 +67,7 @@ add_task(async function testRollback() {
   
   setPassingHeuristics();
   Preferences.reset(prefs.DOH_ENABLED_PREF);
+  await waitForStateTelemetry();
   await ensureTRRMode(0);
   await ensureNoHeuristicsTelemetry();
   simulateNetworkChange();
@@ -87,6 +88,7 @@ add_task(async function testRollback() {
 
   
   Preferences.reset(prefs.DOH_ENABLED_PREF);
+  await waitForStateTelemetry();
   await ensureNoTRRModeChange(0);
   await ensureNoHeuristicsTelemetry();
   simulateNetworkChange();
@@ -107,6 +109,7 @@ add_task(async function testRollback() {
 
   
   Preferences.reset(prefs.DOH_ENABLED_PREF);
+  await waitForStateTelemetry();
   await ensureTRRMode(0);
   await ensureNoHeuristicsTelemetry();
   simulateNetworkChange();
