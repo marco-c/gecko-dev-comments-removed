@@ -105,10 +105,10 @@ static D2D1_RECT_L ConvertFloatToLongRect(const D2D1_VECTOR_4F& aRect) {
   
   
   
-  return D2D1::RectL(aRect.x <= LONG_MIN ? LONG_MIN : LONG(aRect.x),
-                     aRect.y <= LONG_MIN ? LONG_MIN : LONG(aRect.y),
-                     aRect.z >= LONG_MAX ? LONG_MAX : LONG(aRect.z),
-                     aRect.w >= LONG_MAX ? LONG_MAX : LONG(aRect.w));
+  return D2D1::RectL(aRect.x <= float(LONG_MIN) ? LONG_MIN : LONG(aRect.x),
+                     aRect.y <= float(LONG_MIN) ? LONG_MIN : LONG(aRect.y),
+                     aRect.z >= float(LONG_MAX) ? LONG_MAX : LONG(aRect.z),
+                     aRect.w >= float(LONG_MAX) ? LONG_MAX : LONG(aRect.w));
 }
 
 static D2D1_RECT_L IntersectRect(const D2D1_RECT_L& aRect1,
