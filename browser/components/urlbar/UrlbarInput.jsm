@@ -455,7 +455,7 @@ class UrlbarInput {
       allowInheritPrincipal: false,
     };
 
-    let selIndex = this.view.selectedRowIndex;
+    let selIndex = result.rowIndex;
     if (!result.payload.keywordOffer) {
       this.view.close( true);
     }
@@ -1572,20 +1572,18 @@ class UrlbarInput {
 
 
   _whereToOpen(event) {
-    let isMouseEvent = event instanceof MouseEvent;
-    let reuseEmpty = !isMouseEvent;
+    let isKeyboardEvent = event instanceof KeyboardEvent;
+    let reuseEmpty = isKeyboardEvent;
     let where = undefined;
     if (
-      !isMouseEvent &&
-      event &&
+      isKeyboardEvent &&
       (event.altKey || event.getModifierState("AltGraph"))
     ) {
       
       
       where = event.shiftKey ? "tabshifted" : "tab";
     } else if (
-      !isMouseEvent &&
-      event &&
+      isKeyboardEvent &&
       event.ctrlKey &&
       UrlbarPrefs.get("ctrlCanonizesURLs")
     ) {

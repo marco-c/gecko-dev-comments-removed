@@ -365,8 +365,8 @@ class UrlbarView {
     
     
     if (!this.input.focused && !elementPicked) {
-      this.input.controller.engagementEvent.discard();
-      this.input.controller.engagementEvent.record(null, {});
+      this.controller.engagementEvent.discard();
+      this.controller.engagementEvent.record(null, {});
     }
 
     this.window.removeEventListener("resize", this);
@@ -387,6 +387,10 @@ class UrlbarView {
 
 
   autoOpen(queryOptions = {}) {
+    if (this._pickSearchTipIfPresent(queryOptions.event)) {
+      return false;
+    }
+
     if (!this.input.openViewOnFocus || !queryOptions.event) {
       return false;
     }
@@ -1400,6 +1404,38 @@ class UrlbarView {
     } else {
       element.removeAttribute("title");
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  _pickSearchTipIfPresent(event) {
+    if (
+      !this.isOpen ||
+      !this._queryContext ||
+      this._queryContext.results.length != 1
+    ) {
+      return false;
+    }
+    let result = this._queryContext.results[0];
+    if (result.type != UrlbarUtils.RESULT_TYPE.TIP) {
+      return false;
+    }
+    let tipButton = this._rows.firstElementChild.querySelector(
+      ".urlbarView-tip-button"
+    );
+    if (!tipButton) {
+      throw new Error("Expected a tip button");
+    }
+    this.input.pickElement(tipButton, event);
+    return true;
   }
 
   
