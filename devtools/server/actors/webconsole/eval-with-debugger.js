@@ -275,11 +275,31 @@ function preventSideEffects(dbg) {
   
   
 
+  const timeoutDuration = 100;
+  const endTime = Date.now() + timeoutDuration;
+  let count = 0;
+  function shouldCancel() {
+    
+    
+    
+    return ++count % 100 === 0 && Date.now() > endTime;
+  }
+
   dbg.onEnterFrame = frame => {
+    if (shouldCancel()) {
+      return null;
+    }
+    frame.onStep = () => {
+      if (shouldCancel()) {
+        return null;
+      }
+      return undefined;
+    };
+
     const script = frame.script;
 
     if (data.executedScripts.has(script)) {
-      return;
+      return undefined;
     }
     data.executedScripts.add(script);
 
@@ -287,6 +307,8 @@ function preventSideEffects(dbg) {
     for (const offset of offsets) {
       script.setBreakpoint(offset, data.handler);
     }
+
+    return undefined;
   };
 
   dbg.onNativeCall = (callee, reason) => {
