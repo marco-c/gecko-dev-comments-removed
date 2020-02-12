@@ -86,6 +86,16 @@ ToolbarKeyboardNavigator = {
     return aRoot._toolbarKeyNavWalker;
   },
 
+  _initTabStops(aRoot) {
+    for (let stop of aRoot.getElementsByTagName("toolbartabstop")) {
+      
+      
+      
+      stop.setAttribute("aria-hidden", "true");
+      stop.addEventListener("focus", this);
+    }
+  },
+
   init() {
     for (let id of this.kToolbars) {
       let toolbar = document.getElementById(id);
@@ -93,16 +103,11 @@ ToolbarKeyboardNavigator = {
       
       
       toolbar.setAttribute("keyNav", "true");
-      for (let stop of toolbar.getElementsByTagName("toolbartabstop")) {
-        
-        
-        
-        stop.setAttribute("aria-hidden", "true");
-        stop.addEventListener("focus", this);
-      }
+      this._initTabStops(toolbar);
       toolbar.addEventListener("keydown", this);
       toolbar.addEventListener("keypress", this);
     }
+    CustomizableUI.addListener(this);
   },
 
   uninit() {
@@ -115,6 +120,19 @@ ToolbarKeyboardNavigator = {
       toolbar.removeEventListener("keypress", this);
       toolbar.removeAttribute("keyNav");
     }
+    CustomizableUI.removeListener(this);
+  },
+
+  
+  onWidgetAdded(aWidgetId, aArea, aPosition) {
+    if (!this.kToolbars.includes(aArea)) {
+      return;
+    }
+    let widget = document.getElementById(aWidgetId);
+    if (!widget) {
+      return;
+    }
+    this._initTabStops(widget);
   },
 
   _focusButton(aButton) {
