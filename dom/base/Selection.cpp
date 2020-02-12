@@ -1878,10 +1878,10 @@ void Selection::AddRangeAndSelectFramesAndNotifyListeners(nsRange& aRange,
     SetInterlinePosition(true, IgnoreErrors());
   }
 
+  if (!mFrameSelection) return;  
+
   RefPtr<nsPresContext> presContext = GetPresContext();
   SelectFrames(presContext, range, true);
-
-  if (!mFrameSelection) return;  
 
   
   
@@ -1910,6 +1910,16 @@ void Selection::RemoveRangeAndUnselectFramesAndNotifyListeners(
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
     return;
+  }
+
+  const int32_t cnt = mRanges.Length();
+  if (&aRange == mAnchorFocusRange) {
+    
+    SetAnchorFocusRange(cnt - 1);
+  }
+
+  if (!mFrameSelection) {
+    return;  
   }
 
   nsINode* beginNode = aRange.GetStartContainer();
@@ -1950,21 +1960,21 @@ void Selection::RemoveRangeAndUnselectFramesAndNotifyListeners(
     SelectFrames(presContext, affectedRanges[i], true);
   }
 
-  int32_t cnt = mRanges.Length();
   if (&aRange == mAnchorFocusRange) {
-    
-    SetAnchorFocusRange(cnt - 1);
-
     
     
     
     
     if (mSelectionType != SelectionType::eSpellCheck && cnt > 0) {
       ScrollIntoView(nsISelectionController::SELECTION_FOCUS_REGION);
+
+      
+      
+      if (NS_WARN_IF(!mFrameSelection)) {
+        return;
+      }
     }
   }
-
-  if (!mFrameSelection) return;  
 
   
   
