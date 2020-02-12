@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import traceback
 from abc import ABCMeta, abstractmethod
 
 import mozinfo
@@ -205,6 +206,12 @@ either Raptor or browsertime."""
             cond_prof_target_dir = get_profile(
                 temp_download_dir, platform, "settled", repo="try"
             )
+        except Exception:
+            
+            LOG.critical("Could not get the conditioned profile")
+            traceback.print_exc()
+            raise
+
         
         self.conditioned_profile_dir = os.path.join(
             temp_download_dir, cond_prof_target_dir
