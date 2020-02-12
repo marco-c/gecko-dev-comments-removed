@@ -90,15 +90,12 @@ void CacheOpChild::ActorDestroy(ActorDestroyReason aReason) {
 }
 
 mozilla::ipc::IPCResult CacheOpChild::Recv__delete__(
-    const ErrorResult& aRv, const CacheOpResult& aResult) {
+    ErrorResult&& aRv, const CacheOpResult& aResult) {
   NS_ASSERT_OWNINGTHREAD(CacheOpChild);
 
   if (NS_WARN_IF(aRv.Failed())) {
     MOZ_DIAGNOSTIC_ASSERT(aResult.type() == CacheOpResult::Tvoid_t);
-    
-    
-    
-    mPromise->MaybeReject(const_cast<ErrorResult&>(aRv));
+    mPromise->MaybeReject(aRv);
     mPromise = nullptr;
     return IPC_OK();
   }
