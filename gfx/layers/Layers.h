@@ -2683,16 +2683,16 @@ class RefLayer : public ContainerLayer {
 
 
 
-  void SetRemoteDocumentRect(const LayerIntRect& aRemoteDocumentRect) {
-    if (mRemoteDocumentRect.IsEqualEdges(aRemoteDocumentRect)) {
+  void SetRemoteDocumentSize(const LayerIntSize& aRemoteDocumentSize) {
+    if (mRemoteDocumentSize == aRemoteDocumentSize) {
       return;
     }
-    mRemoteDocumentRect = aRemoteDocumentRect;
+    mRemoteDocumentSize = aRemoteDocumentSize;
     Mutated();
   }
 
-  const LayerIntRect& GetRemoteDocumentRect() const {
-    return mRemoteDocumentRect;
+  const LayerIntSize& GetRemoteDocumentSize() const {
+    return mRemoteDocumentSize;
   }
 
   
@@ -2730,7 +2730,9 @@ class RefLayer : public ContainerLayer {
   
   LayersId mId;
   EventRegionsOverride mEventRegionsOverride;
-  LayerIntRect mRemoteDocumentRect;
+  
+  
+  LayerIntSize mRemoteDocumentSize;
 };
 
 void SetAntialiasingFlags(Layer* aLayer, gfx::DrawTarget* aTarget);
