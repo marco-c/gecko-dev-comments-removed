@@ -231,12 +231,12 @@ class JitRuntime {
   
   typedef mozilla::Atomic<size_t, mozilla::SequentiallyConsistent,
                           mozilla::recordreplay::Behavior::DontPreserve>
-      NumFinishedBuildersType;
-  NumFinishedBuildersType numFinishedBuilders_;
+      NumFinishedOffThreadTasksType;
+  NumFinishedOffThreadTasksType numFinishedOffThreadTasks_;
 
   
-  using IonBuilderList = mozilla::LinkedList<js::jit::IonBuilder>;
-  MainThreadData<IonBuilderList> ionLazyLinkList_;
+  using IonCompileTaskList = mozilla::LinkedList<js::jit::IonCompileTask>;
+  MainThreadData<IonCompileTaskList> ionLazyLinkList_;
   MainThreadData<size_t> ionLazyLinkListSize_;
 
   
@@ -417,18 +417,20 @@ class JitRuntime {
   void setIonBailAfter(uint32_t after) { ionBailAfter_ = after; }
 #endif
 
-  size_t numFinishedBuilders() const { return numFinishedBuilders_; }
-  NumFinishedBuildersType& numFinishedBuildersRef(
+  size_t numFinishedOffThreadTasks() const {
+    return numFinishedOffThreadTasks_;
+  }
+  NumFinishedOffThreadTasksType& numFinishedOffThreadTasksRef(
       const AutoLockHelperThreadState& locked) {
-    return numFinishedBuilders_;
+    return numFinishedOffThreadTasks_;
   }
 
-  IonBuilderList& ionLazyLinkList(JSRuntime* rt);
+  IonCompileTaskList& ionLazyLinkList(JSRuntime* rt);
 
   size_t ionLazyLinkListSize() const { return ionLazyLinkListSize_; }
 
-  void ionLazyLinkListRemove(JSRuntime* rt, js::jit::IonBuilder* builder);
-  void ionLazyLinkListAdd(JSRuntime* rt, js::jit::IonBuilder* builder);
+  void ionLazyLinkListRemove(JSRuntime* rt, js::jit::IonCompileTask* task);
+  void ionLazyLinkListAdd(JSRuntime* rt, js::jit::IonCompileTask* task);
 
   uint64_t nextDisambiguationId() { return disambiguationId_++; }
 };

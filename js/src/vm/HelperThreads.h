@@ -48,7 +48,7 @@ struct HelperThread;
 struct ParseTask;
 struct PromiseHelperTask;
 namespace jit {
-class IonBuilder;
+class IonCompileTask;
 }  
 namespace wasm {
 struct Tier2GeneratorTask;
@@ -95,7 +95,8 @@ class GlobalHelperThreadState {
   
   size_t threadCount;
 
-  typedef Vector<jit::IonBuilder*, 0, SystemAllocPolicy> IonBuilderVector;
+  typedef Vector<jit::IonCompileTask*, 0, SystemAllocPolicy>
+      IonCompileTaskVector;
   typedef Vector<ParseTask*, 0, SystemAllocPolicy> ParseTaskVector;
   typedef mozilla::LinkedList<ParseTask> ParseTaskList;
   typedef Vector<UniquePtr<SourceCompressionTask>, 0, SystemAllocPolicy>
@@ -117,7 +118,7 @@ class GlobalHelperThreadState {
   
 
   
-  IonBuilderVector ionWorklist_, ionFinishedList_, ionFreeList_;
+  IonCompileTaskVector ionWorklist_, ionFinishedList_, ionFreeList_;
 
   
   wasm::CompileTaskPtrFifo wasmWorklist_tier1_;
@@ -211,13 +212,13 @@ class GlobalHelperThreadState {
     vector.popBack();
   }
 
-  IonBuilderVector& ionWorklist(const AutoLockHelperThreadState&) {
+  IonCompileTaskVector& ionWorklist(const AutoLockHelperThreadState&) {
     return ionWorklist_;
   }
-  IonBuilderVector& ionFinishedList(const AutoLockHelperThreadState&) {
+  IonCompileTaskVector& ionFinishedList(const AutoLockHelperThreadState&) {
     return ionFinishedList_;
   }
-  IonBuilderVector& ionFreeList(const AutoLockHelperThreadState&) {
+  IonCompileTaskVector& ionFreeList(const AutoLockHelperThreadState&) {
     return ionFreeList_;
   }
 
@@ -297,7 +298,7 @@ class GlobalHelperThreadState {
   
   void startHandlingCompressionTasks(const AutoLockHelperThreadState&);
 
-  jit::IonBuilder* highestPriorityPendingIonCompile(
+  jit::IonCompileTask* highestPriorityPendingIonCompile(
       const AutoLockHelperThreadState& lock);
 
  private:
@@ -371,7 +372,7 @@ static inline GlobalHelperThreadState& HelperThreadState() {
   return *gHelperThreadState;
 }
 
-typedef mozilla::Variant<jit::IonBuilder*, wasm::CompileTask*,
+typedef mozilla::Variant<jit::IonCompileTask*, wasm::CompileTask*,
                          wasm::Tier2GeneratorTask*, PromiseHelperTask*,
                          ParseTask*, SourceCompressionTask*, GCParallelTask*>
     HelperTaskUnion;
@@ -392,8 +393,8 @@ struct HelperThread {
   bool idle() const { return currentTask.isNothing(); }
 
   
-  jit::IonBuilder* ionBuilder() {
-    return maybeCurrentTaskAs<jit::IonBuilder*>();
+  jit::IonCompileTask* ionCompileTask() {
+    return maybeCurrentTaskAs<jit::IonCompileTask*>();
   }
 
   
@@ -541,14 +542,13 @@ bool StartOffThreadPromiseHelperTask(PromiseHelperTask* task);
 
 
 
-
-bool StartOffThreadIonCompile(jit::IonBuilder* builder,
+bool StartOffThreadIonCompile(jit::IonCompileTask* task,
                               const AutoLockHelperThreadState& lock);
 
 
 
 
-bool StartOffThreadIonFree(jit::IonBuilder* builder,
+bool StartOffThreadIonFree(jit::IonCompileTask* task,
                            const AutoLockHelperThreadState& lock);
 
 struct ZonesInState {
