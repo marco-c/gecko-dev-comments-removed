@@ -351,6 +351,7 @@ class ResponsiveUI {
 
     if (this.isBrowserUIEnabled) {
       await this.responsiveFront.setDocumentInRDMPane(false);
+      await this.responsiveFront.setFloatingScrollbars(false);
     }
 
     this.tab.removeEventListener("TabClose", this);
@@ -807,6 +808,12 @@ class ResponsiveUI {
       
       
       await this.responsiveFront.setDocumentInRDMPane(true);
+
+      
+      await this.responsiveFront.setFloatingScrollbars(true);
+
+      
+      await this.currentTarget.attach();
     }
 
     const hasDeviceState = await this.hasDeviceState();
