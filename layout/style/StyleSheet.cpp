@@ -813,7 +813,7 @@ void StyleSheet::SubjectSubsumesInnerPrincipal(nsIPrincipal& aSubjectPrincipal,
   
   
   if (GetCORSMode() == CORS_NONE && !nsContentUtils::BypassCSSOMOriginCheck()) {
-    aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    aRv.ThrowSecurityError("Not allowed to access cross-origin stylesheet");
     return;
   }
 
@@ -829,7 +829,8 @@ void StyleSheet::SubjectSubsumesInnerPrincipal(nsIPrincipal& aSubjectPrincipal,
   
   
   if (!IsComplete()) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_ERR);
+    aRv.ThrowInvalidAccessError(
+        "Not allowed to access still-loading stylesheet");
     return;
   }
 
@@ -842,7 +843,8 @@ bool StyleSheet::AreRulesAvailable(nsIPrincipal& aSubjectPrincipal,
                                    ErrorResult& aRv) {
   
   if (!IsComplete()) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_ERR);
+    aRv.ThrowInvalidAccessError(
+        "Can't access rules of still-loading stylsheet");
     return false;
   }
   
@@ -1114,16 +1116,16 @@ void StyleSheet::FinishParse() {
   SetSourceURL(sourceURL);
 }
 
-nsresult StyleSheet::ReparseSheet(const nsACString& aInput) {
+void StyleSheet::ReparseSheet(const nsACString& aInput, ErrorResult& aRv) {
   if (!IsComplete()) {
-    return NS_ERROR_DOM_INVALID_ACCESS_ERR;
+    return aRv.ThrowInvalidAccessError("Cannot reparse still-loading sheet");
   }
 
   
   
   
   if (IsReadOnly()) {
-    return NS_OK;
+    return;
   }
 
   
@@ -1195,8 +1197,6 @@ nsresult StyleSheet::ReparseSheet(const nsACString& aInput) {
 
   
   mState &= ~State::ModifiedRulesForDevtools;
-
-  return NS_OK;
 }
 
 void StyleSheet::DropRuleList() {
@@ -1266,8 +1266,6 @@ void StyleSheet::DeleteRuleInternal(uint32_t aIndex, ErrorResult& aRv) {
   
   RefPtr<css::Rule> rule = mRuleList->GetRule(aIndex);
   aRv = mRuleList->DeleteRule(aIndex);
-  MOZ_ASSERT(!aRv.ErrorCodeIs(NS_ERROR_DOM_INDEX_SIZE_ERR),
-             "IndexSizeError should have been handled earlier");
   if (!aRv.Failed()) {
     RuleRemoved(*rule);
   }

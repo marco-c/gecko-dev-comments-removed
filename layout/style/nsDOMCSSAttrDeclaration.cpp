@@ -178,9 +178,9 @@ nsresult nsDOMCSSAttributeDeclaration::SetSMILValue(
   });
 }
 
-nsresult nsDOMCSSAttributeDeclaration::SetPropertyValue(
+void nsDOMCSSAttributeDeclaration::SetPropertyValue(
     const nsCSSPropertyID aPropID, const nsACString& aValue,
-    nsIPrincipal* aSubjectPrincipal) {
+    nsIPrincipal* aSubjectPrincipal, ErrorResult& aRv) {
   
   
   
@@ -204,8 +204,8 @@ nsresult nsDOMCSSAttributeDeclaration::SetPropertyValue(
                                                         this);
     }
   }
-  return nsDOMCSSDeclaration::SetPropertyValue(aPropID, aValue,
-                                               aSubjectPrincipal);
+  nsDOMCSSDeclaration::SetPropertyValue(aPropID, aValue, aSubjectPrincipal,
+                                        aRv);
 }
 
 void nsDOMCSSAttributeDeclaration::MutationClosureFunction(void* aData) {
