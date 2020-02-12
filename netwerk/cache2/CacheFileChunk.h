@@ -9,8 +9,8 @@
 #include "CacheStorageService.h"
 #include "CacheHashUtils.h"
 #include "CacheFileUtils.h"
-#include "nsAutoPtr.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/UniquePtr.h"
 
 namespace mozilla {
 namespace net {
@@ -217,7 +217,7 @@ class CacheFileChunk final : public CacheFileIOListener,
   nsTArray<RefPtr<CacheFileChunkBuffer>> mOldBufs;
 
   
-  nsAutoPtr<CacheFileChunkReadHandle> mWritingStateHandle;
+  UniquePtr<CacheFileChunkReadHandle> mWritingStateHandle;
 
   
   

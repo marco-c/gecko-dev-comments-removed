@@ -33,7 +33,7 @@ class InterceptedChannelBase : public nsIInterceptedChannel {
   nsCOMPtr<nsINetworkInterceptController> mController;
 
   
-  Maybe<nsAutoPtr<nsHttpResponseHead>> mSynthesizedResponseHead;
+  Maybe<UniquePtr<nsHttpResponseHead>> mSynthesizedResponseHead;
 
   nsCOMPtr<nsIConsoleReportCollector> mReportCollector;
   nsCOMPtr<nsISupports> mReleaseHandle;

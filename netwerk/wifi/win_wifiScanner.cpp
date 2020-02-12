@@ -64,7 +64,7 @@ WinWifiScanner::WinWifiScanner() {
   
   
   
-  mWlanLibrary = WinWLANLibrary::Load();
+  mWlanLibrary.reset(WinWLANLibrary::Load());
   if (!mWlanLibrary) {
     NS_WARNING("Could not initialize Windows Wi-Fi scanner");
   }
@@ -91,7 +91,7 @@ nsresult WinWifiScanner::GetAccessPointsFromWLAN(
   }
 
   
-  ScopedWLANObject scopedInterfaceList(mWlanLibrary, interface_list);
+  ScopedWLANObject scopedInterfaceList(*mWlanLibrary, interface_list);
 
   if (!interface_list->dwNumberOfItems) {
     return NS_OK;
@@ -145,7 +145,7 @@ nsresult WinWifiScanner::GetAccessPointsFromWLAN(
     }
 
     
-    ScopedWLANObject scopedBssList(mWlanLibrary, bss_list);
+    ScopedWLANObject scopedBssList(*mWlanLibrary, bss_list);
 
     
     for (int j = 0; j < static_cast<int>(bss_list->dwNumberOfItems); ++j) {

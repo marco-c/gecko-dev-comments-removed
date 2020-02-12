@@ -140,7 +140,7 @@ class nsHttpChannel final : public HttpBaseChannel,
                                const nsACString& aRequestString);
 
   static bool IsRedirectStatus(uint32_t status);
-  static bool WillRedirect(nsHttpResponseHead* response);
+  static bool WillRedirect(const nsHttpResponseHead& response);
 
   
   
@@ -632,7 +632,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   AutoClose<nsIInputStream> mCacheInputStream;
   RefPtr<nsInputStreamPump> mCachePump;
-  nsAutoPtr<nsHttpResponseHead> mCachedResponseHead;
+  UniquePtr<nsHttpResponseHead> mCachedResponseHead;
   nsCOMPtr<nsISupports> mCachedSecurityInfo;
   uint32_t mPostID;
   uint32_t mRequestTime;

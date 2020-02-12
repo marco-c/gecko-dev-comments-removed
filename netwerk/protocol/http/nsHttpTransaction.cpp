@@ -485,7 +485,7 @@ void nsHttpTransaction::SetH2WSConnRefTaken() {
   }
 }
 
-nsHttpResponseHead* nsHttpTransaction::TakeResponseHead() {
+UniquePtr<nsHttpResponseHead> nsHttpTransaction::TakeResponseHead() {
   MOZ_ASSERT(!mResponseHeadTaken, "TakeResponseHead called 2x");
 
   
@@ -500,19 +500,17 @@ nsHttpResponseHead* nsHttpTransaction::TakeResponseHead() {
     return nullptr;
   }
 
-  nsHttpResponseHead* head = mResponseHead;
-  mResponseHead = nullptr;
-  return head;
+  return WrapUnique(std::exchange(mResponseHead, nullptr));
 }
 
-nsHttpHeaderArray* nsHttpTransaction::TakeResponseTrailers() {
+UniquePtr<nsHttpHeaderArray> nsHttpTransaction::TakeResponseTrailers() {
   MOZ_ASSERT(!mResponseTrailersTaken, "TakeResponseTrailers called 2x");
 
   
   MutexAutoLock lock(*nsHttp::GetLock());
 
   mResponseTrailersTaken = true;
-  return mForTakeResponseTrailers.forget();
+  return std::move(mForTakeResponseTrailers);
 }
 
 void nsHttpTransaction::SetProxyConnectFailed() { mProxyConnectFailed = true; }
@@ -2464,7 +2462,7 @@ void nsHttpTransaction::SetHttpTrailers(nsCString& aTrailers) {
   LOG(("[\n    %s\n]", aTrailers.BeginReading()));
 
   
-  nsAutoPtr<nsHttpHeaderArray> httpTrailers(new nsHttpHeaderArray());
+  UniquePtr<nsHttpHeaderArray> httpTrailers(new nsHttpHeaderArray());
   
   if (mForTakeResponseTrailers) {
     MutexAutoLock lock(*nsHttp::GetLock());

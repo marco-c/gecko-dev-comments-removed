@@ -17,6 +17,7 @@
 #include <errno.h>
 #include "nsISupports.h"
 #include "nsCOMPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
@@ -257,10 +258,10 @@ class DataChannelConnection final : public net::NeckoTargetHolder
                              const nsACString& protocol, uint16_t stream,
                              bool unordered, uint16_t prPolicy,
                              uint32_t prValue);
-  bool SendBufferedMessages(nsTArray<nsAutoPtr<BufferedOutgoingMsg>>& buffer,
+  bool SendBufferedMessages(nsTArray<UniquePtr<BufferedOutgoingMsg>>& buffer,
                             size_t* aWritten);
   int SendMsgInternal(OutgoingMsg& msg, size_t* aWritten);
-  int SendMsgInternalOrBuffer(nsTArray<nsAutoPtr<BufferedOutgoingMsg>>& buffer,
+  int SendMsgInternalOrBuffer(nsTArray<UniquePtr<BufferedOutgoingMsg>>& buffer,
                               OutgoingMsg& msg, bool& buffered,
                               size_t* aWritten);
   int SendDataMsgInternalOrBuffer(DataChannel& channel, const uint8_t* data,
@@ -356,9 +357,9 @@ class DataChannelConnection final : public net::NeckoTargetHolder
   size_t mNegotiatedIdLimit = 0;  
   uint8_t mPendingType = PENDING_NONE;
   
-  nsTArray<nsAutoPtr<QueuedDataMessage>> mQueuedData;
+  nsTArray<UniquePtr<QueuedDataMessage>> mQueuedData;
   
-  nsTArray<nsAutoPtr<BufferedOutgoingMsg>>
+  nsTArray<UniquePtr<BufferedOutgoingMsg>>
       mBufferedControl;  
 
   
@@ -533,7 +534,7 @@ class DataChannel {
   
   size_t mBufferedAmount;
   nsCString mRecvBuffer;
-  nsTArray<nsAutoPtr<BufferedOutgoingMsg>>
+  nsTArray<UniquePtr<BufferedOutgoingMsg>>
       mBufferedData;  
   nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
 };

@@ -9,7 +9,6 @@
 #include <netinet/in.h>
 #include <linux/netlink.h>
 
-#include "nsAutoPtr.h"
 #include "nsIRunnable.h"
 #include "nsThreadUtils.h"
 #include "nsCOMPtr.h"
@@ -17,6 +16,7 @@
 #include "mozilla/TimeStamp.h"
 #include "nsClassHashtable.h"
 #include "mozilla/SHA1.h"
+#include "mozilla/UniquePtr.h"
 
 namespace mozilla {
 namespace net {
@@ -109,7 +109,7 @@ class NetlinkService : public nsIRunnable {
 
   class LinkInfo {
    public:
-    explicit LinkInfo(NetlinkLink* aLink);
+    explicit LinkInfo(UniquePtr<NetlinkLink>&& aLink);
     virtual ~LinkInfo();
 
     
@@ -117,16 +117,16 @@ class NetlinkService : public nsIRunnable {
     bool UpdateStatus();
 
     
-    nsAutoPtr<NetlinkLink> mLink;
+    UniquePtr<NetlinkLink> mLink;
 
     
-    nsTArray<nsAutoPtr<NetlinkAddress> > mAddresses;
+    nsTArray<UniquePtr<NetlinkAddress>> mAddresses;
 
     
     nsClassHashtable<nsCStringHashKey, NetlinkNeighbor> mNeighbors;
 
     
-    nsTArray<nsAutoPtr<NetlinkRoute> > mDefaultRoutes;
+    nsTArray<UniquePtr<NetlinkRoute>> mDefaultRoutes;
 
     
     
@@ -136,11 +136,11 @@ class NetlinkService : public nsIRunnable {
   nsClassHashtable<nsUint32HashKey, LinkInfo> mLinks;
 
   
-  nsAutoPtr<NetlinkRoute> mIPv4RouteCheckResult;
+  UniquePtr<NetlinkRoute> mIPv4RouteCheckResult;
   
-  nsAutoPtr<NetlinkRoute> mIPv6RouteCheckResult;
+  UniquePtr<NetlinkRoute> mIPv6RouteCheckResult;
 
-  nsTArray<nsAutoPtr<NetlinkMsg> > mOutgoingMessages;
+  nsTArray<UniquePtr<NetlinkMsg>> mOutgoingMessages;
 
   RefPtr<NetlinkServiceListener> mListener;
 };

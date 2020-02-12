@@ -152,7 +152,7 @@ void InterceptedHttpChannel::AsyncOpenInternal() {
 
 bool InterceptedHttpChannel::ShouldRedirect() const {
   
-  return nsHttpChannel::WillRedirect(mResponseHead) &&
+  return nsHttpChannel::WillRedirect(*mResponseHead) &&
          !mLoadInfo->GetDontFollowRedirects();
 }
 
@@ -233,7 +233,7 @@ nsresult InterceptedHttpChannel::RedirectForResponseURL(
   nsCOMPtr<nsIInterceptedBodyCallback> bodyCallback = mBodyCallback.forget();
 
   RefPtr<InterceptedHttpChannel> newChannel = CreateForSynthesis(
-      mResponseHead, mBodyReader, bodyCallback, mChannelCreationTime,
+      mResponseHead.get(), mBodyReader, bodyCallback, mChannelCreationTime,
       mChannelCreationTimestamp, mAsyncOpenTime);
 
   
@@ -452,7 +452,7 @@ InterceptedHttpChannel::CreateForSynthesis(
   RefPtr<InterceptedHttpChannel> ref = new InterceptedHttpChannel(
       aCreationTime, aCreationTimestamp, aAsyncOpenTimestamp);
 
-  ref->mResponseHead = new nsHttpResponseHead(*aHead);
+  ref->mResponseHead = MakeUnique<nsHttpResponseHead>(*aHead);
   ref->mBodyReader = aBody;
   ref->mBodyCallback = aBodyCallback;
 
@@ -741,7 +741,7 @@ InterceptedHttpChannel::StartSynthesizedResponse(
     mSynthesizedResponseHead.reset(new nsHttpResponseHead());
   }
 
-  mResponseHead = mSynthesizedResponseHead.release();
+  mResponseHead = std::move(mSynthesizedResponseHead);
 
   if (ShouldRedirect()) {
     rv = FollowSyntheticRedirect();

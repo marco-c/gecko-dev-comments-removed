@@ -336,7 +336,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   
   bool mResponseHeadTaken;
-  nsAutoPtr<nsHttpHeaderArray> mForTakeResponseTrailers;
+  UniquePtr<nsHttpHeaderArray> mForTakeResponseTrailers;
   bool mResponseTrailersTaken;
 
   
