@@ -206,15 +206,15 @@ enum TransferableOwnership {
 
 class CloneDataPolicy {
   bool allowIntraClusterClonableSharedObjects_;
+  bool allowSharedMemoryObjects_;
 
  public:
   
 
-  CloneDataPolicy() : allowIntraClusterClonableSharedObjects_(false) {}
+  CloneDataPolicy()
+      : allowIntraClusterClonableSharedObjects_(false),
+        allowSharedMemoryObjects_(false) {}
 
-  
-  
-  
   
   
   
@@ -227,6 +227,12 @@ class CloneDataPolicy {
 
   bool areIntraClusterClonableSharedObjectsAllowed() const {
     return allowIntraClusterClonableSharedObjects_;
+  }
+
+  void allowSharedMemoryObjects() { allowSharedMemoryObjects_ = true; }
+
+  bool areSharedMemoryObjectsAllowed() const {
+    return allowSharedMemoryObjects_;
   }
 };
 

@@ -179,6 +179,8 @@ PostMessageEvent::Run() {
     cloneDataPolicy.allowIntraClusterClonableSharedObjects();
   }
 
+  
+
   StructuredCloneHolder* holder;
   if (mHolder.constructed<StructuredCloneHolder>()) {
     mHolder.ref<StructuredCloneHolder>().Read(
