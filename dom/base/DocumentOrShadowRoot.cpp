@@ -101,16 +101,14 @@ void DocumentOrShadowRoot::SetAdoptedStyleSheets(
   for (const OwningNonNull<StyleSheet>& sheet : aAdoptedStyleSheets) {
     
     if (!sheet->IsConstructed()) {
-      return aRv.ThrowDOMException(
-          NS_ERROR_DOM_NOT_ALLOWED_ERR,
-          "Each adopted style sheet must be created through the "
-          "Constructable StyleSheets API");
+      return aRv.ThrowNotAllowedError(
+          "Each adopted style sheet must be created through the Constructable "
+          "StyleSheets API");
     }
     
     
     if (!sheet->ConstructorDocumentMatches(AsNode().OwnerDoc())) {
-      return aRv.ThrowDOMException(
-          NS_ERROR_DOM_NOT_ALLOWED_ERR,
+      return aRv.ThrowNotAllowedError(
           "Each adopted style sheet's constructor document must match the "
           "document or shadow root's node document");
     }

@@ -90,17 +90,15 @@ already_AddRefed<StyleSheet> StyleSheet::Constructor(
       do_QueryInterface(aGlobal.GetAsSupports());
 
   if (!window) {
-    aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
-                          "CSSStyleSheet constructor not supported when there "
-                          "is no document");
+    aRv.ThrowNotSupportedError(
+        "CSSStyleSheet constructor not supported when there is no document");
     return nullptr;
   }
 
   Document* constructorDocument = window->GetExtantDoc();
   if (!constructorDocument) {
-    aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
-                          "CSSStyleSheet constructor not supported when there "
-                          "is no document");
+    aRv.ThrowNotSupportedError(
+        "CSSStyleSheet constructor not supported when there is no document");
     return nullptr;
   }
 
@@ -586,8 +584,7 @@ already_AddRefed<dom::Promise> StyleSheet::Replace(const nsAString& aText,
 
   
   if (!mConstructorDocument) {
-    aRv.ThrowDOMException(
-        NS_ERROR_DOM_NOT_ALLOWED_ERR,
+    aRv.ThrowNotAllowedError(
         "The replace() method can only be called on constructed style sheets");
     return nullptr;
   }
@@ -617,16 +614,14 @@ void StyleSheet::ReplaceSync(const nsACString& aText, ErrorResult& aRv) {
 
   
   if (!mConstructorDocument) {
-    return aRv.ThrowDOMException(
-        NS_ERROR_DOM_NOT_ALLOWED_ERR,
+    return aRv.ThrowNotAllowedError(
         "The replaceSync() method can only be called on "
         "constructed style sheets");
   }
 
   
   if (ModificationDisallowed()) {
-    return aRv.ThrowDOMException(
-        NS_ERROR_DOM_NOT_ALLOWED_ERR,
+    return aRv.ThrowNotAllowedError(
         "The replaceSync() method can only be called on "
         "modifiable style sheets");
   }
@@ -654,8 +649,7 @@ void StyleSheet::ReplaceSync(const nsACString& aText, ErrorResult& aRv) {
   
   
   if (Servo_StyleSheet_HasImportRules(rawContent)) {
-    return aRv.ThrowDOMException(
-        NS_ERROR_DOM_NOT_ALLOWED_ERR,
+    return aRv.ThrowNotAllowedError(
         "The replaceSync() method does not support @import "
         "rules. Use the async replace() method instead.");
   }
@@ -1260,8 +1254,7 @@ void StyleSheet::DeleteRuleInternal(uint32_t aIndex, ErrorResult& aRv) {
   
   GetCssRulesInternal();
   if (aIndex >= mRuleList->Length()) {
-    aRv.ThrowDOMException(
-        NS_ERROR_DOM_INDEX_SIZE_ERR,
+    aRv.ThrowIndexSizeError(
         nsPrintfCString("Cannot delete rule at index %u"
                         " because the number of rules is only %u",
                         aIndex, mRuleList->Length()));

@@ -214,8 +214,8 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
 
   JSObject* wrappedCallback = aCallback->CallbackPreserveColor();
   if (!wrappedCallback) {
-    aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
-                          "Cannot execute callback from a nuked compartment.");
+    aRv.ThrowNotSupportedError(
+        "Cannot execute callback from a nuked compartment.");
     return;
   }
 
@@ -231,8 +231,7 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
       
       
       if (!xpc::Scriptability::Get(realCallback).Allowed()) {
-        aRv.ThrowDOMException(
-            NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+        aRv.ThrowNotSupportedError(
             "Refusing to execute function from global in which script is "
             "disabled.");
         return;
@@ -248,8 +247,7 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
       
       
       if (!win->HasActiveDocument()) {
-        aRv.ThrowDOMException(
-            NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+        aRv.ThrowNotSupportedError(
             "Refusing to execute function from window whose document is no "
             "longer active.");
         return;
@@ -264,8 +262,7 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
 
   
   if (!globalObject->HasJSGlobal()) {
-    aRv.ThrowDOMException(
-        NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+    aRv.ThrowNotSupportedError(
         "Refusing to execute function from global which is being torn down.");
     return;
   }
@@ -280,8 +277,7 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
     
     
     if (!incumbent->HasJSGlobal()) {
-      aRv.ThrowDOMException(
-          NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+      aRv.ThrowNotSupportedError(
           "Refusing to execute function because our incumbent global is being "
           "torn down.");
       return;

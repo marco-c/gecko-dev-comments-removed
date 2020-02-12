@@ -2288,14 +2288,18 @@ void ReportLoadError(ErrorResult& aRv, nsresult aLoadResult,
                      const nsAString& aScriptURL) {
   MOZ_ASSERT(!aRv.Failed());
 
+  nsPrintfCString err("Failed to load worker script at \"%s\"",
+                      NS_ConvertUTF16toUTF8(aScriptURL).get());
+
   switch (aLoadResult) {
     case NS_ERROR_FILE_NOT_FOUND:
     case NS_ERROR_NOT_AVAILABLE:
-      aLoadResult = NS_ERROR_DOM_NETWORK_ERR;
+      aRv.ThrowNetworkError(err);
       break;
 
     case NS_ERROR_MALFORMED_URI:
-      aLoadResult = NS_ERROR_DOM_SYNTAX_ERR;
+    case NS_ERROR_DOM_SYNTAX_ERR:
+      aRv.ThrowSyntaxError(err);
       break;
 
     case NS_BINDING_ABORTED:
@@ -2306,35 +2310,26 @@ void ReportLoadError(ErrorResult& aRv, nsresult aLoadResult,
       
       
       
+      
       aRv.Throw(aLoadResult);
       return;
 
-    case NS_ERROR_DOM_SECURITY_ERR:
-    case NS_ERROR_DOM_SYNTAX_ERR:
-      break;
-
     case NS_ERROR_DOM_BAD_URI:
       
-      aLoadResult = NS_ERROR_DOM_SECURITY_ERR;
+    case NS_ERROR_DOM_SECURITY_ERR:
+      aRv.ThrowSecurityError(err);
       break;
 
     default:
       
       
       
-      aRv.ThrowDOMException(
-          NS_ERROR_DOM_NETWORK_ERR,
-          nsPrintfCString(
-              "Failed to load worker script at %s (nsresult = 0x%" PRIx32 ")",
-              NS_ConvertUTF16toUTF8(aScriptURL).get(),
-              static_cast<uint32_t>(aLoadResult)));
+      aRv.ThrowNetworkError(nsPrintfCString(
+          "Failed to load worker script at %s (nsresult = 0x%" PRIx32 ")",
+          NS_ConvertUTF16toUTF8(aScriptURL).get(),
+          static_cast<uint32_t>(aLoadResult)));
       return;
   }
-
-  aRv.ThrowDOMException(
-      aLoadResult, NS_LITERAL_CSTRING("Failed to load worker script at \"") +
-                       NS_ConvertUTF16toUTF8(aScriptURL) +
-                       NS_LITERAL_CSTRING("\""));
 }
 
 void LoadMainScript(WorkerPrivate* aWorkerPrivate,
