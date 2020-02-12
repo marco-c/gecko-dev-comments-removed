@@ -1817,9 +1817,6 @@ class InlineOptionsBrowser extends HTMLElement {
         
         
         this.browser.frameLoader.requestUpdatePosition();
-        
-        
-        window.windowUtils.flushApzRepaints();
       }
     }, 100);
   }
