@@ -17,7 +17,6 @@
 #include "mozilla/Monitor.h"
 #include "mozilla/RecursiveMutex.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/ScrollTypes.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/UniquePtr.h"
 #include "InputData.h"
@@ -27,6 +26,7 @@
 #include "Layers.h"  
 #include "LayersTypes.h"
 #include "mozilla/gfx/Matrix.h"
+#include "nsIScrollableFrame.h"
 #include "nsRegion.h"
 #include "nsTArray.h"
 #include "PotentialCheckerboardDurationTracker.h"
@@ -1681,7 +1681,7 @@ class AsyncPanZoomController {
   
   
   
-  bool MaybeAdjustDeltaForScrollSnapping(ScrollUnit aUnit,
+  bool MaybeAdjustDeltaForScrollSnapping(nsIScrollableFrame::ScrollUnit aUnit,
                                          ParentLayerPoint& aDelta,
                                          CSSPoint& aStartPosition);
 
@@ -1710,7 +1710,7 @@ class AsyncPanZoomController {
   
   
   Maybe<CSSPoint> FindSnapPointNear(const CSSPoint& aDestination,
-                                    ScrollUnit aUnit);
+                                    nsIScrollableFrame::ScrollUnit aUnit);
 };
 
 }  

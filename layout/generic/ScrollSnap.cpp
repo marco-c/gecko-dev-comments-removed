@@ -23,8 +23,8 @@ using layers::ScrollSnapInfo;
 
 class CalcSnapPoints final {
  public:
-  CalcSnapPoints(ScrollUnit aUnit, const nsPoint& aDestination,
-                 const nsPoint& aStartPos);
+  CalcSnapPoints(nsIScrollableFrame::ScrollUnit aUnit,
+                 const nsPoint& aDestination, const nsPoint& aStartPos);
   void AddHorizontalEdge(nscoord aEdge);
   void AddVerticalEdge(nscoord aEdge);
   void AddEdge(nscoord aEdge, nscoord aDestination, nscoord aStartPos,
@@ -43,7 +43,7 @@ class CalcSnapPoints final {
   }
 
  protected:
-  ScrollUnit mUnit;
+  nsIScrollableFrame::ScrollUnit mUnit;
   nsPoint mDestination;  
                          
   nsPoint mStartPos;     
@@ -57,7 +57,8 @@ class CalcSnapPoints final {
                               
 };
 
-CalcSnapPoints::CalcSnapPoints(ScrollUnit aUnit, const nsPoint& aDestination,
+CalcSnapPoints::CalcSnapPoints(nsIScrollableFrame::ScrollUnit aUnit,
+                               const nsPoint& aDestination,
                                const nsPoint& aStartPos) {
   mUnit = aUnit;
   mDestination = aDestination;
@@ -107,7 +108,7 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
   
   
   
-  if (mUnit != ScrollUnit::DEVICE_PIXELS) {
+  if (mUnit != nsIScrollableFrame::DEVICE_PIXELS) {
     
     
     if (aScrollingDirection == 0) {
@@ -119,7 +120,7 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
     
     
     
-    if (mUnit != ScrollUnit::WHOLE) {
+    if (mUnit != nsIScrollableFrame::WHOLE) {
       
       
       nscoord direction = (aEdge - aStartPos) * aScrollingDirection;
@@ -150,11 +151,12 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
     }
   };
 
-  if (mUnit == ScrollUnit::DEVICE_PIXELS || mUnit == ScrollUnit::LINES) {
+  if (mUnit == nsIScrollableFrame::DEVICE_PIXELS ||
+      mUnit == nsIScrollableFrame::LINES) {
     nscoord distance = std::abs(aEdge - aDestination);
     updateBestEdges(distance < std::abs(*aBestEdge - aDestination),
                     distance < std::abs(*aSecondBestEdge - aDestination));
-  } else if (mUnit == ScrollUnit::PAGES) {
+  } else if (mUnit == nsIScrollableFrame::PAGES) {
     
     
     nscoord overshoot = (aEdge - aDestination) * aScrollingDirection;
@@ -176,7 +178,7 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
     if (overshoot > 0) {
       updateBestEdges(overshoot < curOvershoot, overshoot < secondOvershoot);
     }
-  } else if (mUnit == ScrollUnit::WHOLE) {
+  } else if (mUnit == nsIScrollableFrame::WHOLE) {
     
     
     if (aScrollingDirection > 0) {
@@ -238,7 +240,7 @@ static void ProcessSnapPositions(CalcSnapPoints& aCalcSnapPoints,
 }
 
 Maybe<nsPoint> ScrollSnapUtils::GetSnapPointForDestination(
-    const ScrollSnapInfo& aSnapInfo, ScrollUnit aUnit,
+    const ScrollSnapInfo& aSnapInfo, nsIScrollableFrame::ScrollUnit aUnit,
     const nsRect& aScrollRange, const nsPoint& aStartPos,
     const nsPoint& aDestination) {
   if (aSnapInfo.mScrollSnapStrictnessY == StyleScrollSnapStrictness::None &&
