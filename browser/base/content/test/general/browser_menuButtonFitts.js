@@ -2,9 +2,22 @@
 
 
 
-function test() {
-  waitForExplicitFinish();
+"use strict";
+
+
+
+
+add_task(async function test_clicking_hamburger_edge_fitts() {
+  let oldWidth = window.outerWidth;
+  let maximizeDone = BrowserTestUtils.waitForEvent(
+    window,
+    "resize",
+    false,
+    () => window.outerWidth >= screen.width - 1
+  );
   window.maximize();
+  
+  await maximizeDone;
 
   
   var navBar = document.getElementById("nav-bar");
@@ -12,10 +25,24 @@ function test() {
   var yPixel = boundingRect.top + Math.floor(boundingRect.height / 2);
   var xPixel = boundingRect.width - 1; 
 
-  function onPopupHidden() {
+  let popupHiddenResolve;
+  let popupHiddenPromise = new Promise(resolve => {
+    popupHiddenResolve = resolve;
+  });
+  async function onPopupHidden() {
     PanelUI.panel.removeEventListener("popuphidden", onPopupHidden);
+    let restoreDone = BrowserTestUtils.waitForEvent(
+      window,
+      "resize",
+      false,
+      () => {
+        let w = window.outerWidth;
+        return w > oldWidth - 5 && w < oldWidth + 5;
+      }
+    );
     window.restore();
-    finish();
+    await restoreDone;
+    popupHiddenResolve();
   }
   function onPopupShown() {
     PanelUI.panel.removeEventListener("popupshown", onPopupShown);
@@ -29,4 +56,5 @@ function test() {
   });
   PanelUI.panel.addEventListener("popupshown", onPopupShown);
   EventUtils.synthesizeMouseAtPoint(xPixel, yPixel, {}, window);
-}
+  await popupHiddenPromise;
+});
