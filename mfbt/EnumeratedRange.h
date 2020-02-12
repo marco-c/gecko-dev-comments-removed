@@ -178,6 +178,13 @@ constexpr detail::EnumeratedRange<EnumType> MakeEnumeratedRange(EnumType aEnd) {
 }
 
 
+
+
+
+
+
+
+
 template <typename EnumType>
 constexpr detail::EnumeratedRange<EnumType> MakeInclusiveEnumeratedRange(
     EnumType aBegin, EnumType aEnd) {
