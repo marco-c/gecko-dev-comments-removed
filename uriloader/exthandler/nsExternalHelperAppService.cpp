@@ -1526,16 +1526,18 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
     aChannel->GetContentLength(&mContentLength);
   }
 
-  mMaybeCloseWindowHelper = new MaybeCloseWindowHelper(mBrowsingContext);
-  mMaybeCloseWindowHelper->SetShouldCloseWindow(mShouldCloseWindow);
+  if (mBrowsingContext) {
+    mMaybeCloseWindowHelper = new MaybeCloseWindowHelper(mBrowsingContext);
+    mMaybeCloseWindowHelper->SetShouldCloseWindow(mShouldCloseWindow);
 
-  nsCOMPtr<nsIPropertyBag2> props(do_QueryInterface(request, &rv));
-  
-  if (props) {
-    bool tmp = false;
-    if (NS_SUCCEEDED(props->GetPropertyAsBool(
-            NS_LITERAL_STRING("docshell.newWindowTarget"), &tmp))) {
-      mMaybeCloseWindowHelper->SetShouldCloseWindow(tmp);
+    nsCOMPtr<nsIPropertyBag2> props(do_QueryInterface(request, &rv));
+    
+    if (props) {
+      bool tmp = false;
+      if (NS_SUCCEEDED(props->GetPropertyAsBool(
+              NS_LITERAL_STRING("docshell.newWindowTarget"), &tmp))) {
+        mMaybeCloseWindowHelper->SetShouldCloseWindow(tmp);
+      }
     }
   }
 
@@ -1552,7 +1554,7 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
   
   
   
-  if (!XRE_IsContentProcess()) {
+  if (!XRE_IsContentProcess() && mMaybeCloseWindowHelper) {
     mBrowsingContext = mMaybeCloseWindowHelper->MaybeCloseWindow();
   }
 
