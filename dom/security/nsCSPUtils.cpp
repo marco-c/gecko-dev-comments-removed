@@ -582,8 +582,21 @@ bool permitsPort(const nsAString& aEnforcementScheme,
 
   int32_t resourcePort;
   nsresult rv = aResourceURI->GetPort(&resourcePort);
-  NS_ENSURE_SUCCESS(rv, false);
+  if (NS_FAILED(rv) && aEnforcementPort.IsEmpty()) {
+    
+    
+    if (aEnforcementScheme.IsEmpty()) {
+      return false;
+    }
+    int defaultPortforScheme =
+        NS_GetDefaultPort(NS_ConvertUTF16toUTF8(aEnforcementScheme).get());
 
+    
+    
+    
+    
+    return (defaultPortforScheme == -1 || defaultPortforScheme == -0);
+  }
   
   
   
