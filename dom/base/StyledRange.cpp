@@ -1,0 +1,10 @@
+
+
+
+
+
+
+#include "mozilla/dom/StyledRange.h"
+#include "nsRange.h"
+
+StyledRange::StyledRange(nsRange* aRange) : mRange(aRange) {}
