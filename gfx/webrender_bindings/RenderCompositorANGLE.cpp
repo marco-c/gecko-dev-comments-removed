@@ -178,7 +178,6 @@ bool RenderCompositorANGLE::Initialize() {
     }
   }
 
-  
   mSyncObject = layers::SyncObjectHost::CreateSyncObjectHost(mDevice);
   if (!mSyncObject->Init()) {
     
@@ -435,6 +434,13 @@ bool RenderCompositorANGLE::BeginFrame() {
     return false;
   }
 
+  if (mSyncObject) {
+    if (!mSyncObject->Synchronize( true)) {
+      
+      RenderThread::Get()->HandleDeviceReset("SyncObject",  true);
+      return false;
+    }
+  }
   return true;
 }
 
