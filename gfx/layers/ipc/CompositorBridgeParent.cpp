@@ -1479,6 +1479,13 @@ void CompositorBridgeParent::InitializeLayerManager(
     if (!mCompositor) {
       return;
     }
+#ifdef XP_WIN
+    if (mCompositor->AsBasicCompositor() && XRE_IsGPUProcess()) {
+      
+      
+      mWidget->AsWindows()->DestroyCompositorWindow();
+    }
+#endif
     mLayerManager = new LayerManagerComposite(mCompositor);
   }
   mLayerManager->SetCompositorBridgeID(mCompositorBridgeID);
