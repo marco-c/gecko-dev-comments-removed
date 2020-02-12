@@ -154,7 +154,7 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver {
   
   
   
-  bool Open(Transport* aTransport, MessageLoop* aIOLoop = 0,
+  bool Open(UniquePtr<Transport> aTransport, MessageLoop* aIOLoop = 0,
             Side aSide = UnknownSide);
 
   

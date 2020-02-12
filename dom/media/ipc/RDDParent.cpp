@@ -54,7 +54,7 @@ RDDParent::~RDDParent() { sRDDParent = nullptr; }
 RDDParent* RDDParent::GetSingleton() { return sRDDParent; }
 
 bool RDDParent::Init(base::ProcessId aParentPid, const char* aParentBuildID,
-                     MessageLoop* aIOLoop, IPC::Channel* aChannel) {
+                     MessageLoop* aIOLoop, UniquePtr<IPC::Channel> aChannel) {
   
   
   if (NS_WARN_IF(NS_FAILED(nsThreadManager::get().Init()))) {
@@ -62,7 +62,7 @@ bool RDDParent::Init(base::ProcessId aParentPid, const char* aParentBuildID,
   }
 
   
-  if (NS_WARN_IF(!Open(aChannel, aParentPid, aIOLoop))) {
+  if (NS_WARN_IF(!Open(std::move(aChannel), aParentPid, aIOLoop))) {
     return false;
   }
 

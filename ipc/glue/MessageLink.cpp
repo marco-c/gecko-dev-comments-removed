@@ -10,6 +10,7 @@
 #include "mozilla/ipc/BrowserProcessSubThread.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "chrome/common/ipc_channel.h"
+#include "base/task.h"
 
 #include "mozilla/Assertions.h"
 #include "mozilla/DebugOnly.h"
@@ -46,28 +47,29 @@ MessageLink::~MessageLink() {
 }
 
 ProcessLink::ProcessLink(MessageChannel* aChan)
-    : MessageLink(aChan),
-      mTransport(nullptr),
-      mIOLoop(nullptr),
-      mExistingListener(nullptr) {}
+    : MessageLink(aChan), mIOLoop(nullptr), mExistingListener(nullptr) {}
 
 ProcessLink::~ProcessLink() {
+  
+  RefPtr<DeleteTask<IPC::Channel>> task =
+      new DeleteTask<IPC::Channel>(mTransport.release());
+  XRE_GetIOMessageLoop()->PostTask(task.forget());
+
 #ifdef DEBUG
-  mTransport = nullptr;
   mIOLoop = nullptr;
   mExistingListener = nullptr;
 #endif
 }
 
-void ProcessLink::Open(mozilla::ipc::Transport* aTransport,
-                       MessageLoop* aIOLoop, Side aSide) {
+void ProcessLink::Open(UniquePtr<Transport> aTransport, MessageLoop* aIOLoop,
+                       Side aSide) {
   mChan->AssertWorkerThread();
 
   MOZ_ASSERT(aTransport, "need transport layer");
 
   
 
-  mTransport = aTransport;
+  mTransport = std::move(aTransport);
 
   
   
@@ -157,7 +159,7 @@ void ProcessLink::SendMessage(Message* msg) {
   mChan->mMonitor->AssertCurrentThreadOwns();
 
   mIOLoop->PostTask(NewNonOwningRunnableMethod<Message*>(
-      "IPC::Channel::Send", mTransport, &Transport::Send, msg));
+      "IPC::Channel::Send", mTransport.get(), &Transport::Send, msg));
 }
 
 void ProcessLink::SendClose() {

@@ -28,9 +28,8 @@ class IOThreadChild : public ChildThread {
     return IOThreadChild::current()->Thread::message_loop();
   }
 
-  
-  static IPC::Channel* channel() {
-    return IOThreadChild::current()->ChildThread::channel();
+  static UniquePtr<IPC::Channel> TakeChannel() {
+    return IOThreadChild::current()->ChildThread::TakeChannel();
   }
 
  protected:

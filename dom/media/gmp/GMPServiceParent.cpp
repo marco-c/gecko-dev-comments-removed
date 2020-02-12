@@ -1692,45 +1692,12 @@ mozilla::ipc::IPCResult GMPServiceParent::RecvGetGMPNodeId(
   return IPC_OK();
 }
 
-void GMPServiceParent::CloseTransport(Monitor* aSyncMonitor, bool* aCompleted) {
-  MOZ_ASSERT(MessageLoop::current() == XRE_GetIOMessageLoop());
-
-  MonitorAutoLock lock(*aSyncMonitor);
-
+void GMPServiceParent::ActorDealloc() {
   
-  SetTransport(nullptr);
-
-  *aCompleted = true;
-  lock.NotifyAll();
-}
-
-void GMPServiceParent::ActorDestroy(ActorDestroyReason aWhy) {
-  Monitor monitor("DeleteGMPServiceParent");
-  bool completed = false;
-
-  
-  MonitorAutoLock lock(monitor);
-  RefPtr<Runnable> task = NewNonOwningRunnableMethod<Monitor*, bool*>(
-      "gmp::GMPServiceParent::CloseTransport", this,
-      &GMPServiceParent::CloseTransport, &monitor, &completed);
-  XRE_GetIOMessageLoop()->PostTask(task.forget());
-
-  while (!completed) {
-    lock.Wait();
-  }
-
-  
-  
-  
-  GMPServiceParent* self = this;
-  NS_DispatchToCurrentThread(
-      NS_NewRunnableFunction("gmp::GMPServiceParent::ActorDestroy", [self]() {
-        
-        self->mService->mMainThread->Dispatch(
-            NS_NewRunnableFunction("gmp::GMPServiceParent::ActorDestroy",
-                                   [self]() { delete self; }),
-            NS_DISPATCH_NORMAL);
-      }));
+  mService->mMainThread->Dispatch(
+      NS_NewRunnableFunction("gmp::GMPServiceParent::ActorDealloc",
+                             [this]() { delete this; }),
+      NS_DISPATCH_NORMAL);
 }
 
 class OpenPGMPServiceParent : public mozilla::Runnable {

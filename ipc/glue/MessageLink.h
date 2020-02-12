@@ -12,6 +12,7 @@
 #include "base/message_loop.h"
 
 #include "mozilla/WeakPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/ipc/Transport.h"
 
 namespace mozilla {
@@ -75,7 +76,7 @@ class ProcessLink : public MessageLink, public Transport::Listener {
   
   
   
-  void Open(Transport* aTransport, MessageLoop* aIOLoop, Side aSide);
+  void Open(UniquePtr<Transport> aTransport, MessageLoop* aIOLoop, Side aSide);
 
   
   
@@ -96,7 +97,7 @@ class ProcessLink : public MessageLink, public Transport::Listener {
   void OnChannelConnectError();
 
  protected:
-  Transport* mTransport;
+  UniquePtr<Transport> mTransport;
   MessageLoop* mIOLoop;                    
   Transport::Listener* mExistingListener;  
 };
