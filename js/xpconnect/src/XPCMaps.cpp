@@ -97,11 +97,6 @@ size_t JSObject2WrappedJSMap::SizeOfWrappedJS(
 
 
 
-
-Native2WrappedNativeMap* Native2WrappedNativeMap::newMap(int length) {
-  return new Native2WrappedNativeMap(length);
-}
-
 Native2WrappedNativeMap::Native2WrappedNativeMap(int length)
     : mTable(PLDHashTable::StubOps(), sizeof(Entry), length) {}
 
@@ -122,11 +117,6 @@ size_t Native2WrappedNativeMap::SizeOfIncludingThis(
 const struct PLDHashTableOps IID2NativeInterfaceMap::Entry::sOps = {
     HashIIDPtrKey, MatchIIDPtrKey, PLDHashTable::MoveEntryStub,
     PLDHashTable::ClearEntryStub};
-
-
-IID2NativeInterfaceMap* IID2NativeInterfaceMap::newMap(int length) {
-  return new IID2NativeInterfaceMap(length);
-}
 
 IID2NativeInterfaceMap::IID2NativeInterfaceMap(int length)
     : mTable(&Entry::sOps, sizeof(Entry), length) {}
@@ -165,11 +155,6 @@ const PLDHashTableOps ClassInfo2NativeSetMap::Entry::sOps = {
     PLDHashTable::HashVoidPtrKeyStub, Match, PLDHashTable::MoveEntryStub, Clear,
     nullptr};
 
-
-ClassInfo2NativeSetMap* ClassInfo2NativeSetMap::newMap(int length) {
-  return new ClassInfo2NativeSetMap(length);
-}
-
 ClassInfo2NativeSetMap::ClassInfo2NativeSetMap(int length)
     : mTable(&ClassInfo2NativeSetMap::Entry::sOps, sizeof(Entry), length) {}
 
@@ -182,12 +167,6 @@ size_t ClassInfo2NativeSetMap::ShallowSizeOfIncludingThis(
 
 
 
-
-
-ClassInfo2WrappedNativeProtoMap* ClassInfo2WrappedNativeProtoMap::newMap(
-    int length) {
-  return new ClassInfo2WrappedNativeProtoMap(length);
-}
 
 ClassInfo2WrappedNativeProtoMap::ClassInfo2WrappedNativeProtoMap(int length)
     : mTable(PLDHashTable::StubOps(), sizeof(Entry), length) {}
@@ -252,11 +231,6 @@ const struct PLDHashTableOps NativeSetMap::Entry::sOps = {
     HashNativeKey, Match, PLDHashTable::MoveEntryStub,
     PLDHashTable::ClearEntryStub};
 
-
-NativeSetMap* NativeSetMap::newMap(int length) {
-  return new NativeSetMap(length);
-}
-
 NativeSetMap::NativeSetMap(int length)
     : mTable(&Entry::sOps, sizeof(Entry), length) {}
 
@@ -273,11 +247,6 @@ size_t NativeSetMap::SizeOfIncludingThis(
 
 
 
-
-
-XPCWrappedNativeProtoMap* XPCWrappedNativeProtoMap::newMap(int length) {
-  return new XPCWrappedNativeProtoMap(length);
-}
 
 XPCWrappedNativeProtoMap::XPCWrappedNativeProtoMap(int length)
     : mTable(PLDHashTable::StubOps(), sizeof(PLDHashEntryStub), length) {}
