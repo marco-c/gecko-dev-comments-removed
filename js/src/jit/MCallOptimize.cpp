@@ -1101,7 +1101,7 @@ IonBuilder::InliningResult IonBuilder::inlineArrayPush(CallInfo& callInfo) {
 
     
     
-    MOZ_TRY(callInfo.pushPriorCallStack(this, current));
+    MOZ_TRY(callInfo.pushPriorCallStack(&mirGen_, current));
   }
 
   MInstruction* ins = nullptr;
