@@ -10,8 +10,4 @@ def main(request, response):
     else:
         
         value = request.server.stash.take(key, '/scroll-to-text-fragment/')
-        
-        while value is None:
-          time.sleep(.1)
-          value = request.server.stash.take(key, '/scroll-to-text-fragment/')
         return value

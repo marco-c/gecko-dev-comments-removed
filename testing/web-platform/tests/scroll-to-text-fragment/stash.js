@@ -1,8 +1,10 @@
 
-function stashResults(key, results) {
+function stashResultsThenClose(key, results) {
   fetch(`/scroll-to-text-fragment/stash.py?key=${key}`, {
     method: 'POST',
     body: JSON.stringify(results)
+  }).then(() => {
+    window.close();
   });
 }
 
@@ -18,6 +20,10 @@ function fetchResults(key, resolve, reject) {
       } catch(e) {
         reject();
       }
+    } else {
+      
+      
+      fetchResults(key, resolve, reject);
     }
   });
 }
