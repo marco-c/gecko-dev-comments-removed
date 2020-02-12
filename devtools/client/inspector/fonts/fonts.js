@@ -574,6 +574,9 @@ class FontInspector {
 
         case "slnt":
           
+          
+          
+          value = -value;
           value = `oblique ${value}deg`;
           
           condition = this.pageStyle.supportsFontStyleLevel4;
