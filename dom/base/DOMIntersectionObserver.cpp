@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "DOMIntersectionObserver.h"
 #include "nsCSSPropertyID.h"
@@ -11,8 +11,10 @@
 #include "nsLayoutUtils.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ServoBindings.h"
+#include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/DocumentInlines.h"
+#include "Units.h"
 
 namespace mozilla {
 namespace dom {
@@ -206,9 +208,9 @@ static Maybe<nsRect> EdgeInclusiveIntersection(const nsRect& aRect,
 
 enum class BrowsingContextOrigin { Similar, Different, Unknown };
 
-
-
-
+// FIXME(emilio): The whole concept of "units of related similar-origin browsing
+// contexts" is gone, but this is still in the spec, see
+// https://github.com/w3c/IntersectionObserver/issues/161
 static BrowsingContextOrigin SimilarOrigin(const Element& aTarget,
                                            const Element* aRoot) {
   if (!aRoot) {
@@ -232,7 +234,7 @@ static BrowsingContextOrigin SimilarOrigin(const Element& aTarget,
                                     : BrowsingContextOrigin::Different;
 }
 
-
+// NOTE: This returns nullptr if |aDocument| is in a cross process.
 static Document* GetTopLevelDocument(const Document& aDocument) {
   BrowsingContext* browsingContext = aDocument.GetBrowsingContext();
   if (!browsingContext) {
@@ -241,66 +243,70 @@ static Document* GetTopLevelDocument(const Document& aDocument) {
 
   nsPIDOMWindowOuter* topWindow = browsingContext->Top()->GetDOMWindow();
   if (!topWindow) {
-    
+    // If we don't have a DOMWindow, We are not in same origin.
     return nullptr;
   }
 
   return topWindow->GetExtantDoc();
 }
 
-
-
-
-
-
-
-
-
-
-
-static Maybe<nsRect> ComputeTheIntersection(nsIFrame* aTarget, nsIFrame* aRoot,
-                                            const nsRect& aRootBounds) {
+// https://w3c.github.io/IntersectionObserver/#compute-the-intersection
+//
+// TODO(emilio): Proof of this being equivalent to the spec welcome, seems
+// reasonably close.
+//
+// Also, it's unclear to me why the spec talks about browsing context while
+// discarding observations of targets of different documents.
+//
+// Both aRootBounds and the return value are relative to
+// nsLayoutUtils::GetContainingBlockForClientRect(aRoot).
+//
+// In case of out-of-process document, aRemoteDocumentVisibleRect is a rectangle
+// in the out-of-process document's coordinate system.
+static Maybe<nsRect> ComputeTheIntersection(
+    nsIFrame* aTarget, nsIFrame* aRoot, const nsRect& aRootBounds,
+    const Maybe<nsRect>& aRemoteDocumentVisibleRect) {
   nsIFrame* target = aTarget;
-  
-  
-  
-  
-  
-  
-  
+  // 1. Let intersectionRect be the result of running the
+  // getBoundingClientRect() algorithm on the target.
+  //
+  // FIXME(emilio, mstange): Spec uses `getBoundingClientRect()` (which is the
+  // union of all continuations), but this code doesn't handle continuations.
+  //
+  // `intersectionRect` is kept relative to `target` during the loop.
   Maybe<nsRect> intersectionRect = Some(target->GetRectRelativeToSelf());
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // 2. Let container be the containing block of the target.
+  // (We go through the parent chain and only look at scroll frames)
+  //
+  // FIXME(emilio): Spec uses containing blocks, we use scroll frames, but we
+  // only apply overflow-clipping, not clip-path, so it's ~fine. We do need to
+  // apply clip-path.
+  //
+  // 3. While container is not the intersection root:
   nsIFrame* containerFrame = nsLayoutUtils::GetCrossDocParentFrame(target);
   while (containerFrame && containerFrame != aRoot) {
-    
-    
-    
+    // FIXME(emilio): What about other scroll frames that inherit from
+    // nsHTMLScrollFrame but have a different type, like nsListControlFrame?
+    // This looks bogus in that case, but different bug.
     if (containerFrame->IsScrollFrame()) {
       nsIScrollableFrame* scrollFrame = do_QueryFrame(containerFrame);
-      
+      //
       nsRect subFrameRect = scrollFrame->GetScrollPortRect();
 
-      
+      // 3.1 Map intersectionRect to the coordinate space of container.
       nsRect intersectionRectRelativeToContainer =
           nsLayoutUtils::TransformFrameRectToAncestor(
               target, intersectionRect.value(), containerFrame);
 
-      
-      
-      
-      
-      
-      
-      
-      
+      // 3.2 If container has overflow clipping or a css clip-path property,
+      // update intersectionRect by applying container's clip.
+      //
+      // TODO: Apply clip-path.
+      //
+      // 3.3 is handled, looks like, by this same clipping, given the root
+      // scroll-frame cannot escape the viewport, probably?
+      //
       intersectionRect = EdgeInclusiveIntersection(
           intersectionRectRelativeToContainer, subFrameRect);
       if (!intersectionRect) {
@@ -313,25 +319,25 @@ static Maybe<nsRect> ComputeTheIntersection(nsIFrame* aTarget, nsIFrame* aRoot,
   }
   MOZ_ASSERT(intersectionRect);
 
-  
+  // 4. Map intersectionRect to the coordinate space of the intersection root.
   nsRect intersectionRectRelativeToRoot =
       nsLayoutUtils::TransformFrameRectToAncestor(
           target, intersectionRect.value(),
           nsLayoutUtils::GetContainingBlockForClientRect(aRoot));
 
-  
-  
+  // 5.Update intersectionRect by intersecting it with the root intersection
+  // rectangle.
   intersectionRect =
       EdgeInclusiveIntersection(intersectionRectRelativeToRoot, aRootBounds);
   if (intersectionRect.isNothing()) {
     return Nothing();
   }
-  
-  
-  
-  
-  
-  
+  // 6. Map intersectionRect to the coordinate space of the viewport of the
+  // Document containing the target.
+  //
+  // FIXME(emilio): I think this may not be correct if the root is explicit
+  // and in the same document, since then the rectangle may not be relative to
+  // the viewport already (but it's in the same document).
   nsRect rect = intersectionRect.value();
   if (aTarget->PresContext() != aRoot->PresContext()) {
     if (nsIFrame* rootScrollFrame =
@@ -339,29 +345,94 @@ static Maybe<nsRect> ComputeTheIntersection(nsIFrame* aTarget, nsIFrame* aRoot,
       nsLayoutUtils::TransformRect(aRoot, rootScrollFrame, rect);
     }
   }
+
+  // In out-of-process iframes we need to take an intersection with the remote
+  // document visble rect which was already clipped by ancestor document's
+  // viewports.
+  if (aRemoteDocumentVisibleRect) {
+    MOZ_ASSERT(aRoot->PresContext()->IsRootContentDocumentInProcess() &&
+               !aRoot->PresContext()->IsRootContentDocumentCrossProcess());
+
+    intersectionRect =
+        EdgeInclusiveIntersection(rect, *aRemoteDocumentVisibleRect);
+    if (intersectionRect.isNothing()) {
+      return Nothing();
+    }
+    rect = intersectionRect.value();
+  }
+
   return Some(rect);
 }
 
+struct OopIframeMetrics {
+  nsIFrame* mInProcessRootFrame = nullptr;
+  nsRect mInProcessRootRect;
+  nsRect mRemoteDocumentVisibleRect;
+};
 
+static Maybe<OopIframeMetrics> GetOopIframeMetrics(Document& aDocument) {
+  Document* rootDoc = nsContentUtils::GetRootDocument(&aDocument);
+  MOZ_ASSERT(rootDoc && !rootDoc->IsTopLevelContentDocument());
 
+  PresShell* rootPresShell = rootDoc->GetPresShell();
+  if (!rootPresShell) {
+    return Nothing();
+  }
+
+  nsIFrame* inProcessRootFrame = rootPresShell->GetRootFrame();
+  if (!inProcessRootFrame) {
+    return Nothing();
+  }
+
+  nsRect inProcessRootRect;
+  if (nsIScrollableFrame* scrollFrame =
+          rootPresShell->GetRootScrollFrameAsScrollable()) {
+    inProcessRootRect = scrollFrame->GetScrollPortRect();
+  }
+
+  nsIDocShell* docShell = rootDoc->GetDocShell();
+  BrowserChild* browserChild = BrowserChild::GetFrom(docShell);
+  MOZ_ASSERT(browserChild && !browserChild->IsTopLevel());
+
+  Maybe<LayoutDeviceRect> remoteDocumentVisibleRect =
+      browserChild->GetTopLevelViewportVisibleRectInSelfCoords();
+  if (!remoteDocumentVisibleRect) {
+    return Nothing();
+  }
+
+  return Some(OopIframeMetrics{
+      inProcessRootFrame,
+      inProcessRootRect,
+      LayoutDeviceRect::ToAppUnits(
+          *remoteDocumentVisibleRect,
+          rootPresShell->GetPresContext()->AppUnitsPerDevPixel()),
+  });
+}
+
+// https://w3c.github.io/IntersectionObserver/#update-intersection-observations-algo
+// (step 2)
 void DOMIntersectionObserver::Update(Document* aDocument,
                                      DOMHighResTimeStamp time) {
-  
-  
-  
+  // 1 - Let rootBounds be observer's root intersection rectangle.
+  //  ... but since the intersection rectangle depends on the target, we defer
+  //      the inflation until later.
+  // NOTE: |rootRect| and |rootFrame| will be root in the same process. In
+  // out-of-process iframes, they are NOT root ones of the top level content
+  // document.
   nsRect rootRect;
   nsIFrame* rootFrame = nullptr;
   Element* root = mRoot;
+  Maybe<nsRect> remoteDocumentVisibleRect;
   if (mRoot) {
     if ((rootFrame = mRoot->GetPrimaryFrame())) {
       nsRect rootRectRelativeToRootFrame;
       if (rootFrame->IsScrollFrame()) {
-        
-        
+        // rootRectRelativeToRootFrame should be the content rect of rootFrame,
+        // not including the scrollbars.
         nsIScrollableFrame* scrollFrame = do_QueryFrame(rootFrame);
         rootRectRelativeToRootFrame = scrollFrame->GetScrollPortRect();
       } else {
-        
+        // rootRectRelativeToRootFrame should be the border rect of rootFrame.
         rootRectRelativeToRootFrame = rootFrame->GetRectRelativeToSelf();
       }
       nsIFrame* containingBlock =
@@ -378,9 +449,16 @@ void DOMIntersectionObserver::Update(Document* aDocument,
         rootRect = scrollFrame->GetScrollPortRect();
       }
     }
+  } else if (Maybe<OopIframeMetrics> metrics =
+                 GetOopIframeMetrics(*aDocument)) {
+    // `implicit root` case in an out-of-process iframe.
+    rootFrame = metrics->mInProcessRootFrame;
+    rootRect = metrics->mInProcessRootRect;
+    remoteDocumentVisibleRect = Some(metrics->mRemoteDocumentVisibleRect);
   }
 
-  nsMargin rootMargin;
+  nsMargin rootMargin;  // This root margin is NOT applied in `implicit root`
+                        // case, e.g. in out-of-process iframes.
   for (const auto side : mozilla::AllPhysicalSides()) {
     nscoord basis = side == eSideTop || side == eSideBottom ? rootRect.Height()
                                                             : rootRect.Width();
@@ -388,24 +466,26 @@ void DOMIntersectionObserver::Update(Document* aDocument,
         mRootMargin.Get(side).Resolve(basis, NSToCoordRoundWithClamp);
   }
 
-  
-  
+  // 2. For each target in observer’s internal [[ObservationTargets]] slot,
+  // processed in the same order that observe() was called on each target:
   for (Element* target : mObservationTargets) {
     nsIFrame* targetFrame = target->GetPrimaryFrame();
-    
-    
-    
+    // 2.2. If the intersection root is not the implicit root, and target is not
+    // in the same Document as the intersection root, skip further processing
+    // for target.
     if (mRoot && mRoot->OwnerDoc() != target->OwnerDoc()) {
       continue;
     }
 
     nsRect rootBounds;
     if (rootFrame && targetFrame) {
-      
+      // FIXME(emilio): Why only if there are frames?
       rootBounds = rootRect;
     }
 
     BrowsingContextOrigin origin = SimilarOrigin(*target, root);
+    MOZ_ASSERT_IF(remoteDocumentVisibleRect,
+                  origin != BrowsingContextOrigin::Similar);
     if (origin == BrowsingContextOrigin::Similar) {
       rootBounds.Inflate(rootMargin);
     }
@@ -413,45 +493,45 @@ void DOMIntersectionObserver::Update(Document* aDocument,
     Maybe<nsRect> intersectionRect;
     nsRect targetRect;
     if (targetFrame && rootFrame) {
-      
-      
-      
+      // 2.1. If the intersection root is not the implicit root and target is
+      // not a descendant of the intersection root in the containing block
+      // chain, skip further processing for target.
       if (mRoot && !nsLayoutUtils::IsProperAncestorFrameCrossDoc(rootFrame,
                                                                  targetFrame)) {
         continue;
       }
 
-      
-      
+      // 2.3. Let targetRect be a DOMRectReadOnly obtained by running the
+      // getBoundingClientRect() algorithm on target.
       targetRect = nsLayoutUtils::GetAllInFlowRectsUnion(
           targetFrame,
           nsLayoutUtils::GetContainingBlockForClientRect(targetFrame),
           nsLayoutUtils::RECTS_ACCOUNT_FOR_TRANSFORMS);
 
-      
-      
-      intersectionRect =
-          ComputeTheIntersection(targetFrame, rootFrame, rootBounds);
+      // 2.4. Let intersectionRect be the result of running the compute the
+      // intersection algorithm on target.
+      intersectionRect = ComputeTheIntersection(
+          targetFrame, rootFrame, rootBounds, remoteDocumentVisibleRect);
     }
 
-    
+    // 2.5. Let targetArea be targetRect’s area.
     int64_t targetArea =
         (int64_t)targetRect.Width() * (int64_t)targetRect.Height();
-    
+    // 2.6. Let intersectionArea be intersectionRect’s area.
     int64_t intersectionArea = !intersectionRect
                                    ? 0
                                    : (int64_t)intersectionRect->Width() *
                                          (int64_t)intersectionRect->Height();
 
-    
-    
-    
-    
+    // 2.7. Let isIntersecting be true if targetRect and rootBounds intersect or
+    // are edge-adjacent, even if the intersection has zero area (because
+    // rootBounds or targetRect have zero area); otherwise, let isIntersecting
+    // be false.
     const bool isIntersecting = intersectionRect.isSome();
 
-    
-    
-    
+    // 2.8. If targetArea is non-zero, let intersectionRatio be intersectionArea
+    // divided by targetArea. Otherwise, let intersectionRatio be 1 if
+    // isIntersecting is true, or 0 if isIntersecting is false.
     double intersectionRatio;
     if (targetArea > 0.0) {
       intersectionRatio =
@@ -460,27 +540,27 @@ void DOMIntersectionObserver::Update(Document* aDocument,
       intersectionRatio = isIntersecting ? 1.0 : 0.0;
     }
 
-    
-    
-    
-    
+    // 2.9 Let thresholdIndex be the index of the first entry in
+    // observer.thresholds whose value is greater than intersectionRatio, or the
+    // length of observer.thresholds if intersectionRatio is greater than or
+    // equal to the last entry in observer.thresholds.
     int32_t thresholdIndex = -1;
-    
+    // FIXME(emilio): Why the isIntersecting check?
     if (isIntersecting) {
       thresholdIndex = mThresholds.IndexOfFirstElementGt(intersectionRatio);
       if (thresholdIndex == 0) {
-        
-        
-        
-        
-        
-        
-        
+        // Per the spec, we should leave threshold at 0 and distinguish between
+        // "less than all thresholds and intersecting" and "not intersecting"
+        // (queuing observer entries as both cases come to pass). However,
+        // neither Chrome nor the WPT tests expect this behavior, so treat these
+        // two cases as one.
+        //
+        // FIXME(emilio): Looks like a good candidate for a spec issue.
         thresholdIndex = -1;
       }
     }
 
-    
+    // Steps 2.10 - 2.15.
     if (target->UpdateIntersectionObservation(this, thresholdIndex)) {
       QueueIntersectionObserverEntry(
           target, time,
@@ -529,5 +609,5 @@ void DOMIntersectionObserver::Notify() {
   callback->Call(this, entries, *this);
 }
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla

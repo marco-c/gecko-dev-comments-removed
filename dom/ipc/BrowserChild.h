@@ -643,6 +643,10 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
   
   
+  Maybe<LayoutDeviceRect> GetTopLevelViewportVisibleRectInSelfCoords() const;
+
+  
+  
   
   
   
