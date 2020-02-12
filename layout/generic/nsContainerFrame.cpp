@@ -217,21 +217,19 @@ void nsContainerFrame::DestroyFrom(nsIFrame* aDestructRoot,
   
   if (HasAnyStateBits(NS_FRAME_PART_OF_IBSPLIT)) {
     
-    nsIFrame* prevSib = GetProperty(nsIFrame::IBSplitPrevSibling());
-    if (prevSib) {
+    if (nsIFrame* prevSib = GetProperty(nsIFrame::IBSplitPrevSibling())) {
       NS_WARNING_ASSERTION(
           this == prevSib->GetProperty(nsIFrame::IBSplitSibling()),
           "IB sibling chain is inconsistent");
-      prevSib->DeleteProperty(nsIFrame::IBSplitSibling());
+      prevSib->RemoveProperty(nsIFrame::IBSplitSibling());
     }
 
     
-    nsIFrame* nextSib = GetProperty(nsIFrame::IBSplitSibling());
-    if (nextSib) {
+    if (nsIFrame* nextSib = GetProperty(nsIFrame::IBSplitSibling())) {
       NS_WARNING_ASSERTION(
           this == nextSib->GetProperty(nsIFrame::IBSplitPrevSibling()),
           "IB sibling chain is inconsistent");
-      nextSib->DeleteProperty(nsIFrame::IBSplitPrevSibling());
+      nextSib->RemoveProperty(nsIFrame::IBSplitPrevSibling());
     }
 
 #ifdef DEBUG

@@ -169,7 +169,7 @@ void nsPlaceholderFrame::DestroyFrom(nsIFrame* aDestructRoot,
   nsIFrame* oof = mOutOfFlowFrame;
   if (oof) {
     mOutOfFlowFrame = nullptr;
-    oof->DeleteProperty(nsIFrame::PlaceholderFrameProperty());
+    oof->RemoveProperty(nsIFrame::PlaceholderFrameProperty());
 
     
     

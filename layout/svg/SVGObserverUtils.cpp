@@ -1408,7 +1408,7 @@ void SVGObserverUtils::InitiateResourceDocLoads(nsIFrame* aFrame) {
 }
 
 void SVGObserverUtils::RemoveTextPathObserver(nsIFrame* aTextPathFrame) {
-  aTextPathFrame->DeleteProperty(HrefAsTextPathProperty());
+  aTextPathFrame->RemoveProperty(HrefAsTextPathProperty());
 }
 
 nsIFrame* SVGObserverUtils::GetAndObserveTemplate(
@@ -1444,7 +1444,7 @@ nsIFrame* SVGObserverUtils::GetAndObserveTemplate(
 }
 
 void SVGObserverUtils::RemoveTemplateObserver(nsIFrame* aFrame) {
-  aFrame->DeleteProperty(HrefToTemplateProperty());
+  aFrame->RemoveProperty(HrefToTemplateProperty());
 }
 
 Element* SVGObserverUtils::GetAndObserveBackgroundImage(nsIFrame* aFrame,
@@ -1543,15 +1543,15 @@ void SVGObserverUtils::UpdateEffects(nsIFrame* aFrame) {
   NS_ASSERTION(aFrame->GetContent()->IsElement(),
                "aFrame's content should be an element");
 
-  aFrame->DeleteProperty(FilterProperty());
-  aFrame->DeleteProperty(MaskProperty());
-  aFrame->DeleteProperty(ClipPathProperty());
-  aFrame->DeleteProperty(MarkerStartProperty());
-  aFrame->DeleteProperty(MarkerMidProperty());
-  aFrame->DeleteProperty(MarkerEndProperty());
-  aFrame->DeleteProperty(FillProperty());
-  aFrame->DeleteProperty(StrokeProperty());
-  aFrame->DeleteProperty(BackgroundImageProperty());
+  aFrame->RemoveProperty(FilterProperty());
+  aFrame->RemoveProperty(MaskProperty());
+  aFrame->RemoveProperty(ClipPathProperty());
+  aFrame->RemoveProperty(MarkerStartProperty());
+  aFrame->RemoveProperty(MarkerMidProperty());
+  aFrame->RemoveProperty(MarkerEndProperty());
+  aFrame->RemoveProperty(FillProperty());
+  aFrame->RemoveProperty(StrokeProperty());
+  aFrame->RemoveProperty(BackgroundImageProperty());
 
   
   
@@ -1617,7 +1617,7 @@ void SVGObserverUtils::InvalidateRenderingObservers(nsIFrame* aFrame) {
   }
 
   
-  aFrame->DeleteProperty(nsSVGUtils::ObjectBoundingBoxProperty());
+  aFrame->RemoveProperty(nsSVGUtils::ObjectBoundingBoxProperty());
 
   SVGRenderingObserverSet* observers = GetObserverSet(content->AsElement());
   if (observers) {
@@ -1641,10 +1641,9 @@ void SVGObserverUtils::InvalidateRenderingObservers(nsIFrame* aFrame) {
 
 void SVGObserverUtils::InvalidateDirectRenderingObservers(
     Element* aElement, uint32_t aFlags ) {
-  nsIFrame* frame = aElement->GetPrimaryFrame();
-  if (frame) {
+  if (nsIFrame* frame = aElement->GetPrimaryFrame()) {
     
-    frame->DeleteProperty(nsSVGUtils::ObjectBoundingBoxProperty());
+    frame->RemoveProperty(nsSVGUtils::ObjectBoundingBoxProperty());
   }
 
   if (aElement->HasRenderingObservers()) {

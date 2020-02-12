@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef nsTextControlFrame_h___
 #define nsTextControlFrame_h___
@@ -25,8 +25,8 @@ class TextControlState;
 enum class PseudoStyleType : uint8_t;
 namespace dom {
 class Element;
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
 class nsTextControlFrame : public nsContainerFrame,
                            public nsIAnonymousContentCreator,
@@ -47,15 +47,15 @@ class nsTextControlFrame : public nsContainerFrame,
 
   virtual ~nsTextControlFrame();
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * DestroyFrom() causes preparing to destroy editor and that may cause
+   * running selection listeners of specllchecker selection and document
+   * state listeners.  Not sure whether the former does something or not,
+   * but nobody should run content script.  The latter is currently only
+   * FinderHighlighter to clean up its fields at destruction.  Thus, the
+   * latter won't run content script too.  Therefore, this won't run
+   * unsafe script.
+   */
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void DestroyFrom(nsIFrame* aDestructRoot,
                                                PostDestroyData&) override;
 
@@ -120,12 +120,12 @@ class nsTextControlFrame : public nsContainerFrame,
 
 #ifdef DEBUG
   void MarkIntrinsicISizesDirty() override {
-    
+    // Need another Reflow to have a correct baseline value again.
     mFirstBaseline = NS_INTRINSIC_ISIZE_UNKNOWN;
   }
 #endif
 
-  
+  // nsIAnonymousContentCreator
   nsresult CreateAnonymousContent(nsTArray<ContentInfo>& aElements) override;
   void AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
                                 uint32_t aFilter) override;
@@ -135,14 +135,14 @@ class nsTextControlFrame : public nsContainerFrame,
   void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                         const nsDisplayListSet& aLists) override;
 
-  
+  //==== BEGIN NSIFORMCONTROLFRAME
   void SetFocus(bool aOn, bool aRepaint) override;
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
   SetFormProperty(nsAtom* aName, const nsAString& aValue) override;
 
-  
+  //==== END NSIFORMCONTROLFRAME
 
-  
+  //==== NSITEXTCONTROLFRAME
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY already_AddRefed<mozilla::TextEditor>
   GetTextEditor() override;
@@ -153,35 +153,35 @@ class nsTextControlFrame : public nsContainerFrame,
       nsISelectionController** aSelCon) override;
   nsFrameSelection* GetOwnedFrameSelection() override;
 
-  
-
-
-
-
+  /**
+   * Ensure mEditor is initialized with the proper flags and the default value.
+   * @throws NS_ERROR_NOT_INITIALIZED if mEditor has not been created
+   * @throws various and sundry other things
+   */
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult EnsureEditorInitialized() override;
 
-  
+  //==== END NSITEXTCONTROLFRAME
 
-  
+  //==== NSISTATEFULFRAME
 
   mozilla::UniquePtr<mozilla::PresState> SaveState() override;
   NS_IMETHOD RestoreState(mozilla::PresState* aState) override;
 
-  
+  //=== END NSISTATEFULFRAME
 
-  
+  //==== OVERLOAD of nsIFrame
 
-  
+  /** handler for attribute changes to mContent */
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
                             int32_t aModType) override;
 
   void GetText(nsString& aText);
 
-  
-
-
-
-
+  /**
+   * TextEquals() is designed for internal use so that aValue shouldn't
+   * include \r character.  It should be handled before calling this with
+   * nsContentUtils::PlatformToDOMLineBreaks().
+   */
   bool TextEquals(const nsAString& aText) const;
 
   nsresult PeekOffset(nsPeekOffsetStruct* aPos) override;
@@ -189,9 +189,9 @@ class nsTextControlFrame : public nsContainerFrame,
   NS_DECL_QUERYFRAME
 
  protected:
-  
-
-
+  /**
+   * Launch the reflow on the child frames - see nsTextControlFrame::Reflow()
+   */
   void ReflowTextControlChild(nsIFrame* aFrame, nsPresContext* aPresContext,
                               const ReflowInput& aReflowInput,
                               nsReflowStatus& aStatus,
@@ -199,7 +199,7 @@ class nsTextControlFrame : public nsContainerFrame,
 
   void ComputeBaseline(const ReflowInput&, ReflowOutput&);
 
- public:  
+ public:  // for methods who access nsTextControlFrame directly
   void SetValueChanged(bool aValueChanged);
 
   mozilla::dom::Element* GetRootNode() const { return mRootNode; }
@@ -208,7 +208,7 @@ class nsTextControlFrame : public nsContainerFrame,
 
   mozilla::dom::Element* GetPlaceholderNode() const { return mPlaceholderDiv; }
 
-  
+  // called by the focus listener
   nsresult MaybeBeginSecureKeyboardInput();
   void MaybeEndSecureKeyboardInput();
 
@@ -230,11 +230,11 @@ class nsTextControlFrame : public nsContainerFrame,
  protected:
   class EditorInitializer;
   friend class EditorInitializer;
-  friend class mozilla::AutoTextControlHandlingState;  
-                                                       
-  friend class mozilla::TextControlState;  
+  friend class mozilla::AutoTextControlHandlingState;  // needs access to
+                                                       // CacheValue
+  friend class mozilla::TextControlState;  // needs access to UpdateValueDisplay
 
-  
+  // Temp reference to scriptrunner
   NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(TextControlInitializer, EditorInitializer,
                                       nsTextControlFrame::RevokeInitializer)
 
@@ -250,7 +250,7 @@ class nsTextControlFrame : public nsContainerFrame,
 
     NS_IMETHOD Run() override;
 
-    
+    // avoids use of AutoWeakFrame
     void Revoke() { mFrame = nullptr; }
 
    private:
@@ -277,39 +277,39 @@ class nsTextControlFrame : public nsContainerFrame,
   nsresult OffsetToDOMPoint(uint32_t aOffset, nsINode** aResult,
                             uint32_t* aPosition);
 
-  
-
-
-
-
+  /**
+   * Update the textnode under our anonymous div to show the new
+   * value. This should only be called when we have no editor yet.
+   * @throws NS_ERROR_UNEXPECTED if the div has no text content
+   */
   nsresult UpdateValueDisplay(bool aNotify, bool aBeforeEditorInit = false,
                               const nsAString* aValue = nullptr);
 
-  
-
-
-
-
+  /**
+   * Get the maxlength attribute
+   * @param aMaxLength the value of the max length attr
+   * @returns false if attr not defined
+   */
   bool GetMaxLength(int32_t* aMaxLength);
 
-  
-
-
-
-
+  /**
+   * Find out whether an attribute exists on the content or not.
+   * @param aAtt the attribute to determine the existence of
+   * @returns false if it does not exist
+   */
   bool AttributeExists(nsAtom* aAtt) const {
     return mContent && mContent->AsElement()->HasAttr(kNameSpaceID_None, aAtt);
   }
 
-  
-
-
-
+  /**
+   * We call this when we are being destroyed or removed from the PFM.
+   * @param aPresContext the current pres context
+   */
   void PreDestroy();
 
-  
-  
-  
+  // Compute our intrinsic size.  This does not include any borders, paddings,
+  // etc.  Just the size of our actual area for the text (and the scrollbars,
+  // for <textarea>).
   mozilla::LogicalSize CalcIntrinsicSize(gfxContext* aRenderingContext,
                                          mozilla::WritingMode aWM,
                                          float aFontSizeInflation) const;
@@ -317,7 +317,7 @@ class nsTextControlFrame : public nsContainerFrame,
   nsresult ScrollSelectionIntoView() override;
 
  private:
-  
+  // helper methods
   MOZ_CAN_RUN_SCRIPT nsresult SetSelectionInternal(
       nsINode* aStartNode, uint32_t aStartOffset, nsINode* aEndNode,
       uint32_t aEndOffset, SelectionDirection aDirection = eNone);
@@ -326,7 +326,7 @@ class nsTextControlFrame : public nsContainerFrame,
   SetSelectionEndPoints(uint32_t aSelStart, uint32_t aSelEnd,
                         SelectionDirection aDirection = eNone);
 
-  void FinishedInitializer() { DeleteProperty(TextControlInitializer()); }
+  void FinishedInitializer() { RemoveProperty(TextControlInitializer()); }
 
   const nsAString& CachedValue() const { return mCachedValue; }
 
@@ -366,21 +366,21 @@ class nsTextControlFrame : public nsContainerFrame,
   RefPtr<mozilla::dom::Element> mPlaceholderDiv;
   RefPtr<mozilla::dom::Element> mPreviewDiv;
   RefPtr<nsAnonDivObserver> mMutationObserver;
-  
-  
-  
-  
-  
-  
-  
+  // Cache of the |.value| of <input> or <textarea> element without hard-wrap.
+  // If its IsVoid() returns true, it doesn't cache |.value|.
+  // Otherwise, it's cached when setting specific value or getting value from
+  // TextEditor.  Additionally, when contents in the anonymous <div> element
+  // is modified, this is cleared.
+  //
+  // FIXME(bug 1402545): Consider using an nsAutoString here.
   nsString mCachedValue;
 
-  
-  
+  // Our first baseline, or NS_INTRINSIC_ISIZE_UNKNOWN if we have a pending
+  // Reflow (or if we're contain:layout, which means we have no baseline).
   nscoord mFirstBaseline;
 
-  
-  
+  // these packed bools could instead use the high order bits on mState, saving
+  // 4 bytes
   bool mEditorHasBeenInitialized;
   bool mIsProcessing;
 

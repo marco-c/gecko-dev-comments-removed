@@ -138,7 +138,7 @@ struct BlobItemData {
     if (mArray->IsEmpty()) {
       
       
-      mFrame->DeleteProperty(BlobGroupDataProperty());
+      mFrame->RemoveProperty(BlobGroupDataProperty());
     }
     mFrame = nullptr;
   }

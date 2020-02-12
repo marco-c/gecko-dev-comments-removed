@@ -39,9 +39,9 @@ nsresult nsBox::BeginXULLayout(nsBoxLayoutState& aState) {
 
   
   
-  DeleteProperty(UsedBorderProperty());
-  DeleteProperty(UsedPaddingProperty());
-  DeleteProperty(UsedMarginProperty());
+  RemoveProperty(UsedBorderProperty());
+  RemoveProperty(UsedPaddingProperty());
+  RemoveProperty(UsedMarginProperty());
 
   return NS_OK;
 }

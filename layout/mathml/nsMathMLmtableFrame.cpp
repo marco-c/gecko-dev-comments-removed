@@ -726,7 +726,7 @@ nsresult nsMathMLmtableWrapperFrame::AttributeChanged(int32_t aNameSpaceID,
              aAttribute == nsGkAtoms::columnalign_ ||
              aAttribute == nsGkAtoms::columnlines_) {
     
-    tableFrame->DeleteProperty(AttributeToProperty(aAttribute));
+    tableFrame->RemoveProperty(AttributeToProperty(aAttribute));
     
     ParseFrameAttribute(tableFrame, aAttribute, true);
   } else {
@@ -1061,7 +1061,7 @@ nsresult nsMathMLmtrFrame::AttributeChanged(int32_t aNameSpaceID,
     return NS_OK;
   }
 
-  DeleteProperty(AttributeToProperty(aAttribute));
+  RemoveProperty(AttributeToProperty(aAttribute));
 
   bool allowMultiValues = (aAttribute == nsGkAtoms::columnalign_);
 
@@ -1109,7 +1109,7 @@ nsresult nsMathMLmtdFrame::AttributeChanged(int32_t aNameSpaceID,
 
   if (aAttribute == nsGkAtoms::rowalign_ ||
       aAttribute == nsGkAtoms::columnalign_) {
-    DeleteProperty(AttributeToProperty(aAttribute));
+    RemoveProperty(AttributeToProperty(aAttribute));
 
     
     ParseFrameAttribute(this, aAttribute, false);

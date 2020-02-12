@@ -236,8 +236,8 @@ class FrameProperties {
 
 
   template <typename T>
-  void Delete(Descriptor<T> aProperty, const nsIFrame* aFrame) {
-    DeleteInternal(aProperty, aFrame);
+  void Remove(Descriptor<T> aProperty, const nsIFrame* aFrame) {
+    RemoveInternal(aProperty, aFrame);
   }
 
   
@@ -261,7 +261,7 @@ class FrameProperties {
   
 
 
-  void DeleteAll(const nsIFrame* aFrame) {
+  void RemoveAll(const nsIFrame* aFrame) {
     nsTArray<PropertyValue> toDelete;
     toDelete.SwapElements(mProperties);
     for (auto& prop : toDelete) {
@@ -295,7 +295,7 @@ class FrameProperties {
 
   inline void* TakeInternal(UntypedDescriptor aProperty, bool* aFoundResult);
 
-  inline void DeleteInternal(UntypedDescriptor aProperty,
+  inline void RemoveInternal(UntypedDescriptor aProperty,
                              const nsIFrame* aFrame);
 
   template <typename T>
@@ -428,7 +428,7 @@ inline void* FrameProperties::TakeInternal(UntypedDescriptor aProperty,
   return result;
 }
 
-inline void FrameProperties::DeleteInternal(UntypedDescriptor aProperty,
+inline void FrameProperties::RemoveInternal(UntypedDescriptor aProperty,
                                             const nsIFrame* aFrame) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aProperty, "Null property?");
