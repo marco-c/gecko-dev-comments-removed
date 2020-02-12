@@ -257,10 +257,7 @@ WorkletThread::WorkletThread(WorkletImpl* aWorkletImpl)
   nsContentUtils::RegisterShutdownObserver(this);
 }
 
-WorkletThread::~WorkletThread() {
-  
-  MOZ_ASSERT(mExitLoop);
-}
+WorkletThread::~WorkletThread() = default;
 
 
 already_AddRefed<WorkletThread> WorkletThread::Create(
