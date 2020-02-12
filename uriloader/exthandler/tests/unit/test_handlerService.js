@@ -180,11 +180,9 @@ function run_test() {
     
     
     
-    if (noMailto) {
-      Assert.ok(protoInfo.alwaysAskBeforeHandling);
-    } else {
-      Assert.ok(!protoInfo.alwaysAskBeforeHandling);
-    }
+    Assert.ok(protoInfo.alwaysAskBeforeHandling);
+    
+    
   } else {
     Assert.equal(0, protoInfo.possibleApplicationHandlers.length);
     Assert.ok(protoInfo.alwaysAskBeforeHandling);

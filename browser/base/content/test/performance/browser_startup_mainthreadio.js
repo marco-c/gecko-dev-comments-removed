@@ -359,13 +359,6 @@ const startupPhases = {
     },
     
     {
-      path: "*WindowsApps/microsoft.windowscommunicationsapps*",
-      condition: WIN,
-      ignoreIfUnused: true,
-      stat: 3,
-    },
-    
-    {
       path: "*Microsoft.MicrosoftEdge*",
       condition: WIN,
       ignoreIfUnused: true,
