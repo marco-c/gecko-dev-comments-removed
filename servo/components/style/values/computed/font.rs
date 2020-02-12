@@ -309,8 +309,10 @@ pub enum SingleFontFamily {
 #[allow(missing_docs)]
 pub enum GenericFontFamily {
     
+    
+    
     #[css(skip)]
-    None,
+    None = 0,
     Serif,
     SansSerif,
     #[parse(aliases = "-moz-fixed")]

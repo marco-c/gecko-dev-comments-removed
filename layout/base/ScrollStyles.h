@@ -8,13 +8,14 @@
 #define mozilla_ScrollStyles_h
 
 #include <stdint.h>
-#include "nsStyleConsts.h"
 #include "mozilla/dom/WindowBinding.h"
 
 
 struct nsStyleDisplay;
 
 namespace mozilla {
+
+enum class StyleOverflow : uint8_t;
 
 
 
@@ -33,10 +34,7 @@ struct ScrollStyles {
   bool operator!=(const ScrollStyles& aStyles) const {
     return !(*this == aStyles);
   }
-  bool IsHiddenInBothDirections() const {
-    return mHorizontal == StyleOverflow::Hidden &&
-           mVertical == StyleOverflow::Hidden;
-  }
+  bool IsHiddenInBothDirections() const;
 };
 
 }  
