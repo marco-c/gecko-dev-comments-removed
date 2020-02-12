@@ -1,22 +1,16 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
 const { Component } = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { L10N } = require("devtools/client/netmonitor/src/utils/l10n");
 
-const dateTimeFormat = new Intl.DateTimeFormat(undefined, {
-  formatMatcher: "basic",
-  hour12: false,
-});
-
-
-
-
+/**
+ * Renders the "Time" column of a WebSocket frame.
+ */
 class FrameListColumnTime extends Component {
   static get propTypes() {
     return {
@@ -31,18 +25,29 @@ class FrameListColumnTime extends Component {
     );
   }
 
-  
-
-
-
+  /**
+   * Format a DOMHighResTimeStamp (in microseconds) as HH:mm:ss.SSS
+   * @param {number} highResTimeStamp
+   */
   formatTime(highResTimeStamp) {
-    const timeStamp = Math.floor(highResTimeStamp / 1000);
-    const hoursMinutesSeconds = dateTimeFormat.format(new Date(timeStamp));
-    return L10N.getFormatStr(
-      "netmonitor.ws.time.format",
-      hoursMinutesSeconds,
-      String(timeStamp % 1000).padStart(3, "0")
-    );
+    const date = new Date(highResTimeStamp / 1000);
+    const hh = date
+      .getHours()
+      .toString()
+      .padStart(2, "0");
+    const mm = date
+      .getMinutes()
+      .toString()
+      .padStart(2, "0");
+    const ss = date
+      .getSeconds()
+      .toString()
+      .padStart(2, "0");
+    const mmm = date
+      .getMilliseconds()
+      .toString()
+      .padStart(3, "0");
+    return `${hh}:${mm}:${ss}.${mmm}`;
   }
 
   render() {
