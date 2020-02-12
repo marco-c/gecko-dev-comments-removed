@@ -137,23 +137,22 @@ void VRManagerChild::ShutDown() {
   MOZ_ASSERT(NS_IsMainThread());
   if (sVRManagerChildSingleton) {
     sVRManagerChildSingleton->Destroy();
-    sVRManagerChildSingleton = nullptr;
+    SpinEventLoopUntil([&]() { return !sVRManagerChildSingleton; });
   }
-}
-
-
-void VRManagerChild::DeferredDestroy(RefPtr<VRManagerChild> aVRManagerChild) {
-  aVRManagerChild->Close();
 }
 
 void VRManagerChild::Destroy() {
   
   RefPtr<VRManagerChild> selfRef = this;
+  MessageLoop::current()->PostTask(NewRunnableMethod(
+      "VRManagerChild::AfterDestroy", selfRef, &VRManagerChild::AfterDestroy));
+}
 
-  
-  
-  MessageLoop::current()->PostTask(NewRunnableFunction(
-      "VRManagerChildDestroyRunnable", DeferredDestroy, selfRef));
+void VRManagerChild::AfterDestroy() {
+  Close();
+  if (sVRManagerChildSingleton == this) {
+    sVRManagerChildSingleton = nullptr;
+  }
 }
 
 PVRLayerChild* VRManagerChild::AllocPVRLayerChild(const uint32_t& aDisplayID,
