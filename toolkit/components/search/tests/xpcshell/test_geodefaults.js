@@ -15,7 +15,7 @@ add_task(async function no_request_if_prefed_off() {
     
     Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
     await AddonTestUtils.promiseStartupManager();
-    await Services.search.init();
+    await Services.search.init(true);
     await promiseAfterCache();
 
     checkNoRequest(requests);
@@ -47,7 +47,7 @@ add_task(async function should_get_geo_defaults_only_once() {
     Assert.ok(Services.prefs.prefHasUserValue("browser.search.region"));
     Assert.equal(Services.prefs.getCharPref("browser.search.region"), "FR");
     await Promise.all([
-      asyncReInit({ waitForRegionFetch: true }),
+      asyncReInit({ awaitRegionFetch: true }),
       promiseAfterCache(),
     ]);
     checkRequest(requests);
@@ -63,7 +63,7 @@ add_task(async function should_get_geo_defaults_only_once() {
     Assert.equal(metadata.searchDefaultHash.length, 44);
 
     
-    await asyncReInit({ waitForRegionFetch: true });
+    await asyncReInit({ awaitRegionFetch: true });
     checkNoRequest(requests);
     Assert.equal((await Services.search.getDefault()).name, kTestEngineName);
   });
@@ -73,7 +73,7 @@ add_task(async function should_request_when_region_not_set() {
   await withGeoServer(async function cont(requests) {
     Services.prefs.clearUserPref("browser.search.region");
     await Promise.all([
-      asyncReInit({ waitForRegionFetch: true }),
+      asyncReInit({ awaitRegionFetch: true }),
       promiseAfterCache(),
     ]);
     checkRequest(requests);
@@ -86,7 +86,7 @@ add_task(async function should_recheck_if_interval_expired() {
 
     let date = Date.now();
     await Promise.all([
-      asyncReInit({ waitForRegionFetch: true }),
+      asyncReInit({ awaitRegionFetch: true }),
       promiseAfterCache(),
     ]);
     checkRequest(requests);
@@ -112,7 +112,7 @@ add_task(async function should_recheck_if_appversion_changed() {
     await promiseSaveCacheData(data);
 
     await Promise.all([
-      asyncReInit({ waitForRegionFetch: true }),
+      asyncReInit({ awaitRegionFetch: true }),
       promiseAfterCache(),
     ]);
     checkRequest(requests);
@@ -140,7 +140,7 @@ add_task(async function should_recheck_when_broken_hash() {
     let unInitPromise = SearchTestUtils.promiseSearchNotification(
       "uninit-complete"
     );
-    let reInitPromise = asyncReInit({ waitForRegionFetch: true });
+    let reInitPromise = asyncReInit({ awaitRegionFetch: true });
     await unInitPromise;
 
     await reInitPromise;
@@ -162,7 +162,7 @@ add_task(async function should_recheck_when_broken_hash() {
 
     
     
-    await asyncReInit({ waitForRegionFetch: true });
+    await asyncReInit({ awaitRegionFetch: true });
     checkNoRequest(requests);
     Assert.equal((await Services.search.getDefault()).name, kTestEngineName);
   });
@@ -184,7 +184,7 @@ add_task(async function should_remember_cohort_id() {
       
       await forceExpiration();
       let commitPromise = promiseAfterCache();
-      await asyncReInit({ waitForRegionFetch: true });
+      await asyncReInit({ awaitRegionFetch: true });
       checkRequest(requests);
       await commitPromise;
 
@@ -204,7 +204,7 @@ add_task(async function should_remember_cohort_id() {
     
     await forceExpiration();
     let commitPromise = promiseAfterCache();
-    await asyncReInit({ waitForRegionFetch: true });
+    await asyncReInit({ awaitRegionFetch: true });
     checkRequest(requests, cohort);
     await commitPromise;
     Assert.equal(
@@ -219,12 +219,12 @@ add_task(async function should_retry_after_failure() {
     async function cont(requests) {
       
       await forceExpiration();
-      await asyncReInit({ waitForRegionFetch: true });
+      await asyncReInit({ awaitRegionFetch: true });
       checkRequest(requests);
 
       
       
-      await asyncReInit({ waitForRegionFetch: true });
+      await asyncReInit({ awaitRegionFetch: true });
       checkRequest(requests);
     },
     { path: "lookup_fail" }
@@ -238,7 +238,7 @@ add_task(async function should_honor_retry_after_header() {
       await forceExpiration();
       let date = Date.now();
       let commitPromise = promiseAfterCache();
-      await asyncReInit({ waitForRegionFetch: true });
+      await asyncReInit({ awaitRegionFetch: true });
       await commitPromise;
       checkRequest(requests);
 
@@ -251,7 +251,7 @@ add_task(async function should_honor_retry_after_header() {
       );
 
       
-      await asyncReInit({ waitForRegionFetch: true });
+      await asyncReInit({ awaitRegionFetch: true });
       checkNoRequest(requests);
     },
     { path: "lookup_unavailable" }

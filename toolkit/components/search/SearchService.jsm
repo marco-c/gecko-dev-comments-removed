@@ -123,7 +123,7 @@ function isUSTimezone() {
 }
 
 
-var ensureKnownRegion = async function(ss) {
+var ensureKnownRegion = async function(ss, awaitRegionCheck) {
   
   let region = Services.prefs.getCharPref("browser.search.region", "");
   try {
@@ -131,7 +131,7 @@ var ensureKnownRegion = async function(ss) {
       
       
       
-      await fetchRegion(ss);
+      await fetchRegion(ss, awaitRegionCheck);
     } else if (gGeoSpecificDefaultsEnabled && !gModernConfig) {
       
       let expired = (ss.getGlobalAttr("searchDefaultExpir") || 0) <= Date.now();
@@ -159,7 +159,7 @@ var ensureKnownRegion = async function(ss) {
             clearTimeout(timerId);
             resolve();
           };
-          fetchRegionDefault(ss)
+          fetchRegionDefault(ss, awaitRegionCheck)
             .then(callback)
             .catch(err => {
               Cu.reportError(err);
@@ -246,7 +246,7 @@ async function storeRegion(region) {
 }
 
 
-function fetchRegion(ss) {
+function fetchRegion(ss, awaitRegionCheck) {
   
   const TELEMETRY_RESULT_ENUM = {
     SUCCESS: 0,
@@ -324,9 +324,9 @@ function fetchRegion(ss) {
       };
 
       if (result && gGeoSpecificDefaultsEnabled && gModernConfig) {
-        ss._maybeReloadEngines().then(callback);
+        ss._maybeReloadEngines(awaitRegionCheck).then(callback);
       } else if (result && gGeoSpecificDefaultsEnabled && !gModernConfig) {
-        fetchRegionDefault(ss)
+        fetchRegionDefault(ss, awaitRegionCheck)
           .then(callback)
           .catch(err => {
             Cu.reportError(err);
@@ -414,7 +414,7 @@ function convertGoogleEngines(engineNames) {
 
 
 
-var fetchRegionDefault = ss =>
+var fetchRegionDefault = (ss, awaitRegionCheck) =>
   new Promise(resolve => {
     let urlTemplate = Services.prefs
       .getDefaultBranch(SearchUtils.BROWSER_SEARCH_PREF)
@@ -491,7 +491,7 @@ var fetchRegionDefault = ss =>
       );
       
       
-      ss._maybeReloadEngines().finally(resolve);
+      ss._maybeReloadEngines(awaitRegionCheck).finally(resolve);
     };
     request.ontimeout = function(event) {
       SearchUtils.log("fetchRegionDefault: XHR finally timed-out");
@@ -700,6 +700,7 @@ SearchService.prototype = {
     this._searchPrivateDefault = null;
     this._searchOrder = [];
     this._metaData = {};
+    this._maybeReloadDebounce = false;
   },
 
   
@@ -737,7 +738,7 @@ SearchService.prototype = {
 
 
 
-  async _init(skipRegionCheck) {
+  async _init(awaitRegionCheck) {
     SearchUtils.log("_init start");
 
     XPCOMUtils.defineLazyPreferenceGetter(
@@ -763,12 +764,12 @@ SearchService.prototype = {
       
       
       
-      this._ensureKnownRegionPromise = ensureKnownRegion(this)
+      this._ensureKnownRegionPromise = ensureKnownRegion(this, awaitRegionCheck)
         .catch(ex =>
           SearchUtils.log("_init: failure determining region: " + ex)
         )
         .finally(() => (this._ensureKnownRegionPromise = null));
-      if (!skipRegionCheck) {
+      if (awaitRegionCheck) {
         await this._ensureKnownRegionPromise;
       }
 
@@ -1387,7 +1388,38 @@ SearchService.prototype = {
 
 
 
-  async _maybeReloadEngines() {
+
+
+  async _maybeReloadEngines(awaitRegionCheck) {
+    
+    
+    if (awaitRegionCheck) {
+      return;
+    }
+    if (!gInitialized) {
+      if (this._maybeReloadDebounce) {
+        SearchUtils.log(
+          "We're already waiting for init to finish and reload engines after."
+        );
+        return;
+      }
+      this._maybeReloadDebounce = true;
+      
+      
+      this._initObservers.promise.then(() => {
+        Services.tm.idleDispatchToMainThread(() => {
+          if (!this._maybeReloadDebounce) {
+            return;
+          }
+          delete this._maybeReloadDebounce;
+          this._maybeReloadEngines();
+        }, 10000);
+      });
+      SearchUtils.log(
+        "Post-poning maybeReloadEngines() as we're currently initializing."
+      );
+      return;
+    }
     
     
     if (!gInitialized) {
@@ -1445,7 +1477,7 @@ SearchService.prototype = {
     );
   },
 
-  _reInit(origin, skipRegionCheck = true) {
+  _reInit(origin, awaitRegionCheck = false) {
     SearchUtils.log("_reInit");
     
     if (gReinitializing) {
@@ -1488,13 +1520,16 @@ SearchService.prototype = {
         
         
         
-        this._ensureKnownRegionPromise = ensureKnownRegion(this)
+        this._ensureKnownRegionPromise = ensureKnownRegion(
+          this,
+          awaitRegionCheck
+        )
           .catch(ex =>
             SearchUtils.log("_reInit: failure determining region: " + ex)
           )
           .finally(() => (this._ensureKnownRegionPromise = null));
 
-        if (!skipRegionCheck) {
+        if (awaitRegionCheck) {
           await this._ensureKnownRegionPromise;
         }
 
@@ -2274,10 +2309,10 @@ SearchService.prototype = {
   },
 
   
-  async init(skipRegionCheck = false) {
-    SearchUtils.log("SearchService.init: " + skipRegionCheck);
+  async init(awaitRegionCheck = false) {
+    SearchUtils.log("SearchService.init: " + awaitRegionCheck);
     if (this._initStarted) {
-      if (!skipRegionCheck) {
+      if (awaitRegionCheck) {
         await this._ensureKnownRegionPromise;
       }
       return this._initObservers.promise;
@@ -2287,7 +2322,7 @@ SearchService.prototype = {
     this._initStarted = true;
     try {
       
-      await this._init(skipRegionCheck);
+      await this._init(awaitRegionCheck);
       TelemetryStopwatch.finish("SEARCH_SERVICE_INIT_MS");
     } catch (ex) {
       if (ex.result == Cr.NS_ERROR_ALREADY_INITIALIZED) {
@@ -2314,24 +2349,24 @@ SearchService.prototype = {
   },
 
   
-  async reInit(skipRegionCheck) {
-    return this._reInit("test", skipRegionCheck);
+  async reInit(awaitRegionCheck) {
+    return this._reInit("test", awaitRegionCheck);
   },
 
   async getEngines() {
-    await this.init(true);
+    await this.init();
     SearchUtils.log("getEngines: getting all engines");
     return this._getSortedEngines(true);
   },
 
   async getVisibleEngines() {
-    await this.init();
+    await this.init(true);
     SearchUtils.log("getVisibleEngines: getting all visible engines");
     return this._getSortedEngines(false);
   },
 
   async getDefaultEngines() {
-    await this.init(true);
+    await this.init();
     function isDefault(engine) {
       return engine._isDefault;
     }
@@ -2414,7 +2449,7 @@ SearchService.prototype = {
   },
 
   async getEnginesByExtensionID(extensionID) {
-    await this.init(true);
+    await this.init();
     SearchUtils.log("getEngines: getting all engines for " + extensionID);
     var engines = this._getSortedEngines(true).filter(function(engine) {
       return engine._extensionID == extensionID;
@@ -2481,7 +2516,7 @@ SearchService.prototype = {
     
     
     if (!gInitialized && !isBuiltin && !params.initEngine) {
-      await this.init(true);
+      await this.init();
     }
     if (!name) {
       SearchUtils.fail("Invalid name passed to addEngineWithDetails!");
@@ -2767,7 +2802,7 @@ SearchService.prototype = {
 
   async addEngine(engineURL, iconURL, confirm, extensionID) {
     SearchUtils.log('addEngine: Adding "' + engineURL + '".');
-    await this.init(true);
+    await this.init();
     let errCode;
     try {
       var engine = new SearchEngine({
@@ -2811,7 +2846,7 @@ SearchService.prototype = {
   },
 
   async removeEngine(engine) {
-    await this.init(true);
+    await this.init();
     if (!engine) {
       SearchUtils.fail("no engine passed to removeEngine!");
     }
@@ -2882,7 +2917,7 @@ SearchService.prototype = {
   },
 
   async moveEngine(engine, newIndex) {
-    await this.init(true);
+    await this.init();
     if (newIndex > this._sortedEngines.length || newIndex < 0) {
       SearchUtils.fail("moveEngine: Index out of bounds!");
     }
@@ -3145,22 +3180,22 @@ SearchService.prototype = {
   },
 
   async getDefault() {
-    await this.init(true);
+    await this.init();
     return this.defaultEngine;
   },
 
   async setDefault(engine) {
-    await this.init(true);
+    await this.init();
     return (this.defaultEngine = engine);
   },
 
   async getDefaultPrivate() {
-    await this.init(true);
+    await this.init();
     return this.defaultPrivateEngine;
   },
 
   async setDefaultPrivate(engine) {
-    await this.init(true);
+    await this.init();
     return (this.defaultPrivateEngine = engine);
   },
 
