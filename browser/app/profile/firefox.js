@@ -339,11 +339,12 @@ pref("browser.urlbar.usepreloadedtopurls.expire_days", 14);
 #endif
 
 
-pref("browser.urlbar.update1.expandTextOnFocus", false);
-
-
 
 pref("browser.urlbar.update1.searchTips", false);
+
+
+
+pref("browser.urlbar.update2.expandTextOnFocus", false);
 
 pref("browser.urlbar.eventTelemetry.enabled", false);
 
