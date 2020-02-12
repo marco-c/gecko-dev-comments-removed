@@ -3856,22 +3856,28 @@ void nsDocumentViewer::SetIsPrintingInDocShellTree(
 #endif  
 
 bool nsDocumentViewer::ShouldAttachToTopLevel() {
-  if (!mParentWidget) return false;
+  if (!mParentWidget) {
+    return false;
+  }
 
-  nsCOMPtr<nsIDocShellTreeItem> containerItem(mContainer);
-  if (!containerItem) return false;
+  if (!mContainer) {
+    return false;
+  }
 
   
-  if (nsIWidget::UsePuppetWidgets()) return true;
+  if (nsIWidget::UsePuppetWidgets()) {
+    return true;
+  }
 
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) || \
     defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_UIKIT)
+
   
   
   nsWindowType winType = mParentWidget->WindowType();
   if ((winType == eWindowType_toplevel || winType == eWindowType_dialog ||
        winType == eWindowType_invisible) &&
-      containerItem->ItemType() == nsIDocShellTreeItem::typeChrome) {
+      mPresContext->IsChrome()) {
     return true;
   }
 #endif
