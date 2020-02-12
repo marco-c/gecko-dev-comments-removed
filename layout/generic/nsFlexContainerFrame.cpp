@@ -479,9 +479,8 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
   
   
   
-  nscoord BaselineOffsetFromOuterCrossEdge(
-      mozilla::Side aStartSide, const FlexboxAxisTracker& aAxisTracker,
-      bool aUseFirstLineBaseline) const;
+  nscoord BaselineOffsetFromOuterCrossEdge(mozilla::Side aStartSide,
+                                           bool aUseFirstLineBaseline) const;
 
   float ShareOfWeightSoFar() const { return mShareOfWeightSoFar; }
 
@@ -800,8 +799,7 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
 
   
   
-  bool CanMainSizeInfluenceCrossSize(
-      const FlexboxAxisTracker& aAxisTracker) const;
+  bool CanMainSizeInfluenceCrossSize() const;
 
   
   
@@ -2060,8 +2058,7 @@ void FlexItem::CheckForMinSizeAuto(const ReflowInput& aFlexItemReflowInput,
 }
 
 nscoord FlexItem::BaselineOffsetFromOuterCrossEdge(
-    mozilla::Side aStartSide, const FlexboxAxisTracker& aAxisTracker,
-    bool aUseFirstLineBaseline) const {
+    mozilla::Side aStartSide, bool aUseFirstLineBaseline) const {
   
   
   
@@ -2110,8 +2107,7 @@ uint32_t FlexItem::NumAutoMarginsInAxis(LogicalAxis aAxis) const {
   return numAutoMargins;
 }
 
-bool FlexItem::CanMainSizeInfluenceCrossSize(
-    const FlexboxAxisTracker& aAxisTracker) const {
+bool FlexItem::CanMainSizeInfluenceCrossSize() const {
   if (mIsStretched) {
     
     
@@ -3319,7 +3315,7 @@ void FlexLine::ComputeCrossSizeAndBaseline(
       
 
       nscoord crossStartToBaseline = item->BaselineOffsetFromOuterCrossEdge(
-          aAxisTracker.CrossAxisPhysicalStartSide(), aAxisTracker, useFirst);
+          aAxisTracker.CrossAxisPhysicalStartSide(), useFirst);
       nscoord crossEndToBaseline = curOuterCrossSize - crossStartToBaseline;
 
       
@@ -3525,7 +3521,7 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
             : aAxisTracker.CrossAxisPhysicalStartSide();
 
     nscoord itemBaselineOffset = aItem.BaselineOffsetFromOuterCrossEdge(
-        baselineAlignStartSide, aAxisTracker, useFirst);
+        baselineAlignStartSide, useFirst);
 
     nscoord lineBaselineOffset =
         useFirst ? aLine.FirstBaselineOffset() : aLine.LastBaselineOffset();
@@ -4630,7 +4626,7 @@ void nsFlexContainerFrame::DoFlexLayout(
     for (FlexItem* item = line->GetFirstItem(); item; item = item->getNext()) {
       
       
-      if (item->CanMainSizeInfluenceCrossSize(aAxisTracker)) {
+      if (item->CanMainSizeInfluenceCrossSize()) {
         Maybe<AutoFlexItemMainSizeOverride> sizeOverride;
         if (item->HasIntrinsicRatio()) {
           
