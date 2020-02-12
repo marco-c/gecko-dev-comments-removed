@@ -37,7 +37,7 @@
 
 
 
-#define DAV1D_PICTURE_ALIGNMENT 32
+#define DAV1D_PICTURE_ALIGNMENT 64
 
 typedef struct Dav1dPictureParameters {
     int w; 
