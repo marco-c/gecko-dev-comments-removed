@@ -107,24 +107,7 @@ function promiseControllerNotification(
 
 
 
-class TestProvider extends UrlbarProvider {
-  constructor(
-    matches,
-    cancelCallback,
-    type = UrlbarUtils.PROVIDER_TYPE.PROFILE
-  ) {
-    super();
-    this._name = "TestProvider" + Math.floor(Math.random() * 100000);
-    this._cancelCallback = cancelCallback;
-    this._matches = matches;
-    this._type = type;
-  }
-  get name() {
-    return this._name;
-  }
-  get type() {
-    return this._type;
-  }
+class TestProvider extends UrlbarTestUtils.TestProvider {
   isActive(context) {
     Assert.ok(context, "context is passed-in");
     return true;
@@ -137,8 +120,8 @@ class TestProvider extends UrlbarProvider {
     Assert.ok(context, "context is passed-in");
     Assert.equal(typeof add, "function", "add is a callback");
     this._context = context;
-    for (const match of this._matches) {
-      add(this, match);
+    for (const result of this._results) {
+      add(this, result);
     }
   }
   cancelQuery(context) {
@@ -146,11 +129,10 @@ class TestProvider extends UrlbarProvider {
     if (this._context) {
       Assert.equal(this._context, context, "cancelQuery: context is the same");
     }
-    if (this._cancelCallback) {
-      this._cancelCallback();
+    if (this._onCancel) {
+      this._onCancel();
     }
   }
-  pickResult(result) {}
 }
 
 
@@ -163,8 +145,8 @@ class TestProvider extends UrlbarProvider {
 
 
 
-function registerBasicTestProvider(matches = [], cancelCallback, type) {
-  let provider = new TestProvider(matches, cancelCallback, type);
+function registerBasicTestProvider(results = [], onCancel, type) {
+  let provider = new TestProvider({ results, onCancel, type });
   UrlbarProvidersManager.registerProvider(provider);
   return provider.name;
 }
