@@ -4,6 +4,7 @@
 
 
 #include "nsCOMPtr.h"
+#include "nsDocShell.h"
 #include "nsMemory.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/ModuleUtils.h"
