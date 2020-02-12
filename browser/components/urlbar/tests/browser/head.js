@@ -103,6 +103,7 @@ async function checkIntervention({
   
   let [result, element] = await awaitTip(searchString);
   Assert.strictEqual(result.payload.type, tip);
+  await element.ownerDocument.l10n.translateFragment(element);
 
   let actualTitle = element._elements.get("title").textContent;
   if (typeof title == "string") {
