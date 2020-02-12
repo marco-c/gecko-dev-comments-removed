@@ -741,11 +741,11 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-  static nsresult FindInsertionPoint(
+
+  static int32_t FindInsertionPoint(
       const nsTArray<StyledRange>* aElementArray, const nsINode& aPointNode,
       int32_t aPointOffset,
-      int32_t (*aComparator)(const nsINode&, int32_t, const nsRange&),
-      int32_t* aInsertionPoint);
+      int32_t (*aComparator)(const nsINode&, int32_t, const nsRange&));
 
   bool HasEqualRangeBoundariesAt(const nsRange& aRange,
                                  int32_t aRangeIndex) const;
