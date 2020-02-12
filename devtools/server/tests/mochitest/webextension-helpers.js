@@ -56,12 +56,6 @@ SimpleTest.registerCleanupFunction(function() {
 
 
 
-function setWebExtensionOOPMode(oopMode) {
-  return SpecialPowers.pushPrefEnv({
-    set: [["extensions.webextensions.remote", oopMode]],
-  });
-}
-
 function waitForFramesUpdated(target, matchFn) {
   return new Promise(resolve => {
     const listener = data => {
