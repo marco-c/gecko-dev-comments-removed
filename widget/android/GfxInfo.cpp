@@ -560,14 +560,7 @@ nsresult GfxInfo::GetFeatureStatusImpl(
 
     if (aFeature == FEATURE_WEBRENDER) {
       bool isUnblocked = false;
-#ifndef NIGHTLY_BUILD
-      
-      NS_LossyConvertUTF16toASCII model(mModel);
-      isUnblocked |= model.Find("Pixel 2",  true) >=
-                         0 ||  
-                     model.Find("Pixel 3",  true) >=
-                         0;  
-#else
+#ifdef NIGHTLY_BUILD
       
       const nsCString& gpu = mGLStrings->Renderer();
       isUnblocked |= gpu.Find("Adreno (TM) 5",  true) >= 0 ||
