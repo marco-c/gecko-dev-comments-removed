@@ -115,6 +115,7 @@ void Worker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
     }
   }
 
+  
   runnable->Write(aCx, aMessage, transferable, clonePolicy, aRv);
 
   if (isTimelineRecording) {

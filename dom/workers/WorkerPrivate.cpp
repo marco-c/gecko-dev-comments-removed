@@ -4042,6 +4042,9 @@ void WorkerPrivate::PostMessageToParent(
   if (IsSharedMemoryAllowed()) {
     clonePolicy.allowIntraClusterClonableSharedObjects();
   }
+
+  
+
   runnable->Write(aCx, aMessage, transferable, clonePolicy, aRv);
 
   if (isTimelineRecording) {

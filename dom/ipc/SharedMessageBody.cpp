@@ -36,6 +36,8 @@ void SharedMessageBody::Write(JSContext* aCx, JS::Handle<JS::Value> aValue,
   
   cloneDataPolicy.allowIntraClusterClonableSharedObjects();
 
+  
+
   mCloneData = MakeUnique<ipc::StructuredCloneData>(
       JS::StructuredCloneScope::UnknownDestination, mSupportsTransferring);
   mCloneData->Write(aCx, aValue, aTransfers, cloneDataPolicy, aRv);
@@ -81,6 +83,8 @@ void SharedMessageBody::Read(JSContext* aCx,
       cloneDataPolicy.allowIntraClusterClonableSharedObjects();
     }
   }
+
+  
 
   MOZ_ASSERT(!mRefData);
   MOZ_ASSERT(mRefDataId.isSome());
