@@ -169,10 +169,23 @@ async function releaseActors(state, client, dispatch) {
     return;
   }
 
-  dispatch({
-    type: "RELEASED_ACTORS",
-    data: { actors },
-  });
+  const watchpoints = getWatchpoints(state);
+  let released = false;
+  for (const actor of actors) {
+    
+    
+    if (!watchpoints.has(actor)) {
+      await client.releaseActor(actor);
+      released = true;
+    }
+  }
+
+  if (released) {
+    dispatch({
+      type: "RELEASED_ACTORS",
+      data: { actors },
+    });
+  }
 }
 
 function invokeGetter(node: Node, receiverId: string | null) {
