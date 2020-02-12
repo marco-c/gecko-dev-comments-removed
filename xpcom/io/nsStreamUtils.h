@@ -11,6 +11,7 @@
 #include "nsStringFwd.h"
 #include "nsIInputStream.h"
 #include "nsTArray.h"
+#include "nsIRunnable.h"
 
 class nsIAsyncInputStream;
 class nsIOutputStream;
@@ -28,9 +29,12 @@ class nsIEventTarget;
 
 
 
+
+
+
 extern already_AddRefed<nsIInputStreamCallback> NS_NewInputStreamReadyEvent(
-    const char* aName, nsIInputStreamCallback* aNotify,
-    nsIEventTarget* aTarget);
+    const char* aName, nsIInputStreamCallback* aNotify, nsIEventTarget* aTarget,
+    uint32_t aPriority = nsIRunnablePriority::PRIORITY_NORMAL);
 
 
 
