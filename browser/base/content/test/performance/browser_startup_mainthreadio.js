@@ -291,13 +291,6 @@ const startupPhases = {
     },
     {
       
-      path: "/etc/mime.types",
-      condition: LINUX,
-      read: 3,
-      close: 3,
-    },
-    {
-      
       path: "ProfD:extensions",
       condition: WIN,
       stat: 1,
@@ -356,13 +349,6 @@ const startupPhases = {
       path: "XREAppDist:distribution.ini",
       condition: WIN,
       stat: 1,
-    },
-    
-    {
-      path: "*Microsoft.MicrosoftEdge*",
-      condition: WIN,
-      ignoreIfUnused: true,
-      stat: 3,
     },
     {
       

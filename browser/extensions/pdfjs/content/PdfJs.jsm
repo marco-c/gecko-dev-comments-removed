@@ -75,11 +75,31 @@ function initializeDefaultPreferences() {
   }
 }
 
+
+
+
+
+const gPdfFakeHandlerInfo = {
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIMIMEInfo]),
+  getFileExtensions() {
+    return ["pdf"];
+  },
+  possibleApplicationHandlers: Cc["@mozilla.org/array;1"].createInstance(
+    Ci.nsIMutableArray
+  ),
+  extensionExists(ext) {
+    return ext == "pdf";
+  },
+  alwaysAskBeforeHandling: false,
+  preferredAction: Ci.nsIHandlerInfo.handleInternally,
+  type: PDF_CONTENT_TYPE,
+};
+
 var PdfJs = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
   _initialized: false,
 
-  init: function init() {
+  init: function init(isNewProfile) {
     if (
       Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT
     ) {
@@ -90,13 +110,19 @@ var PdfJs = {
     PdfjsChromeUtils.init();
     this.initPrefs();
 
-    Services.ppmm.sharedData.set("pdfjs.enabled", this.checkEnabled());
+    Services.ppmm.sharedData.set(
+      "pdfjs.enabled",
+      this.checkEnabled(isNewProfile)
+    );
   },
 
-  earlyInit() {
+  earlyInit(isNewProfile) {
     
     
-    Services.ppmm.sharedData.set("pdfjs.enabled", this.checkEnabled());
+    Services.ppmm.sharedData.set(
+      "pdfjs.enabled",
+      this.checkEnabled(isNewProfile)
+    );
   },
 
   initPrefs: function initPrefs() {
@@ -145,23 +171,38 @@ var PdfJs = {
   },
 
   _becomeHandler: function _becomeHandler() {
-    let handlerInfo = Svc.mime.getFromTypeAndExtension(PDF_CONTENT_TYPE, "pdf");
-    let prefs = Services.prefs;
-    if (
-      handlerInfo.preferredAction !== Ci.nsIHandlerInfo.handleInternally &&
-      handlerInfo.alwaysAskBeforeHandling !== false
-    ) {
-      
-      
-      
-      prefs.setIntPref(PREF_PREVIOUS_ACTION, handlerInfo.preferredAction);
-      prefs.setBoolPref(PREF_PREVIOUS_ASK, handlerInfo.alwaysAskBeforeHandling);
-    }
-
     
-    handlerInfo.alwaysAskBeforeHandling = false;
-    handlerInfo.preferredAction = Ci.nsIHandlerInfo.handleInternally;
-    Svc.handlerService.store(handlerInfo);
+    
+    
+    
+    if (!Svc.handlerService.exists(gPdfFakeHandlerInfo)) {
+      
+      Svc.handlerService.store(gPdfFakeHandlerInfo);
+    } else {
+      let handlerInfo = Svc.mime.getFromTypeAndExtension(
+        PDF_CONTENT_TYPE,
+        "pdf"
+      );
+      let prefs = Services.prefs;
+      if (
+        handlerInfo.preferredAction !== Ci.nsIHandlerInfo.handleInternally &&
+        handlerInfo.alwaysAskBeforeHandling !== false
+      ) {
+        
+        
+        
+        prefs.setIntPref(PREF_PREVIOUS_ACTION, handlerInfo.preferredAction);
+        prefs.setBoolPref(
+          PREF_PREVIOUS_ASK,
+          handlerInfo.alwaysAskBeforeHandling
+        );
+      }
+
+      
+      handlerInfo.alwaysAskBeforeHandling = false;
+      handlerInfo.preferredAction = Ci.nsIHandlerInfo.handleInternally;
+      Svc.handlerService.store(handlerInfo);
+    }
   },
 
   _unbecomeHandler: function _unbecomeHandler() {
@@ -185,7 +226,13 @@ var PdfJs = {
     }
   },
 
-  _isEnabled: function _isEnabled() {
+  
+
+
+
+
+
+  _isEnabled(isNewProfile) {
     let { processType, PROCESS_TYPE_DEFAULT } = Services.appinfo;
     if (processType !== PROCESS_TYPE_DEFAULT) {
       throw new Error(
@@ -198,11 +245,19 @@ var PdfJs = {
     }
 
     
-    return PdfjsChromeUtils.isDefaultHandlerApp();
+    if (isNewProfile) {
+      return true;
+    }
+    
+    let handlerInfo = Svc.mime.getFromTypeAndExtension(PDF_CONTENT_TYPE, "pdf");
+    return (
+      !handlerInfo.alwaysAskBeforeHandling &&
+      handlerInfo.preferredAction === Ci.nsIHandlerInfo.handleInternally
+    );
   },
 
-  checkEnabled: function checkEnabled() {
-    let isEnabled = this._isEnabled();
+  checkEnabled(isNewProfile) {
+    let isEnabled = this._isEnabled(isNewProfile);
     
     
     Services.prefs.setBoolPref(PREF_ENABLED_CACHE_STATE, isEnabled);
