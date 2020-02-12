@@ -294,6 +294,16 @@ class TouchBarHelper {
       Ci.nsIMutableArray
     );
 
+    let window = TouchBarHelper.window;
+    if (
+      !window ||
+      !window.isChromeWindow ||
+      window.document.documentElement.getAttribute("windowtype") !=
+        "navigator:browser"
+    ) {
+      return layoutItems;
+    }
+
     
     
     
