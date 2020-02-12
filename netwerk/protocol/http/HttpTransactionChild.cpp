@@ -1,15 +1,16 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* vim:set ts=4 sw=4 sts=4 et cin: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// HttpLog.h should generally be included first
+
+
+
+
+
+
 #include "HttpLog.h"
 
 #include "HttpTransactionChild.h"
 
 #include "mozilla/ipc/IPCStreamUtils.h"
+#include "mozilla/net/InputChannelThrottleQueueChild.h"
 #include "mozilla/net/SocketProcessChild.h"
 #include "nsInputStreamPump.h"
 #include "nsHttpHandler.h"
@@ -20,11 +21,11 @@ namespace mozilla {
 namespace net {
 
 NS_IMPL_ISUPPORTS(HttpTransactionChild, nsIRequestObserver, nsIStreamListener,
-                  nsITransportEventSink);
+                  nsITransportEventSink, nsIThrottledInputChannel);
 
-//-----------------------------------------------------------------------------
-// HttpTransactionChild <public>
-//-----------------------------------------------------------------------------
+
+
+
 
 HttpTransactionChild::HttpTransactionChild()
     : mCanceled(false), mStatus(NS_OK), mChannelId(0) {
@@ -45,7 +46,7 @@ nsProxyInfo* HttpTransactionChild::ProxyInfoCloneArgsToProxyInfo(
                          info.connectionIsolationKey());
     if (last) {
       last->mNext = pi;
-      // |mNext| will be released in |last|'s destructor.
+      
       NS_IF_ADDREF(last->mNext);
     } else {
       first = pi;
@@ -56,7 +57,7 @@ nsProxyInfo* HttpTransactionChild::ProxyInfoCloneArgsToProxyInfo(
   return first;
 }
 
-// This function needs to be synced with nsHttpConnectionInfo::Clone.
+
 already_AddRefed<nsHttpConnectionInfo>
 HttpTransactionChild::DeserializeHttpConnectionInfoCloneArgs(
     const HttpConnectionInfoCloneArgs& aInfoArgs) {
@@ -77,7 +78,7 @@ HttpTransactionChild::DeserializeHttpConnectionInfoCloneArgs(
         aInfoArgs.routedPort(), aInfoArgs.isolated(), aInfoArgs.isHttp3());
   }
 
-  // Make sure the anonymous, insecure-scheme, and private flags are transferred
+  
   cinfo->SetAnonymous(aInfoArgs.anonymous());
   cinfo->SetPrivate(aInfoArgs.aPrivate());
   cinfo->SetInsecureScheme(aInfoArgs.insecureScheme());
@@ -150,7 +151,7 @@ nsresult HttpTransactionChild::InitInternal(
   nsresult rv = mTransaction->Init(
       caps, cinfo, requestHead, requestBody, requestContentLength,
       requestBodyHasHeaders, GetCurrentThreadEventTarget(),
-      nullptr,  // TODO: security callback, fix in bug 1512479.
+      nullptr,  
       this, topLevelOuterContentWindowId,
       static_cast<HttpTrafficCategory>(httpTrafficCategory), rc, classOfService,
       initialRwin, responseTimeoutEnabled, channelId,
@@ -206,7 +207,8 @@ mozilla::ipc::IPCResult HttpTransactionChild::RecvInit(
     const uint32_t& aClassOfService, const uint32_t& aInitialRwin,
     const bool& aResponseTimeoutEnabled, const uint64_t& aChannelId,
     const bool& aHasTransactionObserver,
-    const Maybe<H2PushedStreamArg>& aPushedStreamArg) {
+    const Maybe<H2PushedStreamArg>& aPushedStreamArg,
+    const mozilla::Maybe<PInputChannelThrottleQueueChild*>& aThrottleQueue) {
   mRequestHead = aReqHeaders;
   if (aRequestBody) {
     mUploadStream = mozilla::ipc::DeserializeIPCStream(aRequestBody);
@@ -226,6 +228,11 @@ mozilla::ipc::IPCResult HttpTransactionChild::RecvInit(
             handle->mTransactionObserverResult.ref());
       }
     };
+  }
+
+  if (aThrottleQueue.isSome()) {
+    mThrottleQueue =
+        static_cast<InputChannelThrottleQueueChild*>(aThrottleQueue.ref());
   }
 
   nsresult rv = InitInternal(
@@ -286,9 +293,9 @@ nsHttpTransaction* HttpTransactionChild::GetHttpTransaction() {
   return mTransaction.get();
 }
 
-//-----------------------------------------------------------------------------
-// HttpTransactionChild <nsIStreamListener>
-//-----------------------------------------------------------------------------
+
+
+
 
 NS_IMETHODIMP
 HttpTransactionChild::OnDataAvailable(nsIRequest* aRequest,
@@ -298,7 +305,7 @@ HttpTransactionChild::OnDataAvailable(nsIRequest* aRequest,
        " aCount=%" PRIu32 "]\n",
        this, aOffset, aCount));
 
-  // Don't bother sending IPC if already canceled.
+  
   if (mCanceled) {
     return mStatus;
   }
@@ -307,7 +314,7 @@ HttpTransactionChild::OnDataAvailable(nsIRequest* aRequest,
     return NS_ERROR_FAILURE;
   }
 
-  // TODO: send string data in chunks and handle errors. Bug 1600129.
+  
   nsCString data;
   nsresult rv = NS_ReadInputStreamToString(aInputStream, data, aCount);
   if (NS_FAILED(rv)) {
@@ -332,8 +339,8 @@ static TimingStructArgs ToTimingStructArgs(TimingStruct aTiming) {
   return args;
 }
 
-// The maximum number of bytes to consider when attempting to sniff.
-// See https://mimesniff.spec.whatwg.org/#reading-the-resource-header.
+
+
 static const uint32_t MAX_BYTES_SNIFFED = 1445;
 
 static void GetDataForSniffer(void* aClosure, const uint8_t* aData,
@@ -347,7 +354,7 @@ HttpTransactionChild::OnStartRequest(nsIRequest* aRequest) {
   LOG(("HttpTransactionChild::OnStartRequest start [this=%p] mTransaction=%p\n",
        this, mTransaction.get()));
 
-  // Don't bother sending IPC to parent process if already canceled.
+  
   if (mCanceled) {
     return mStatus;
   }
@@ -400,7 +407,7 @@ NS_IMETHODIMP
 HttpTransactionChild::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   LOG(("HttpTransactionChild::OnStopRequest [this=%p]\n", this));
 
-  // Don't bother sending IPC to parent process if already canceled.
+  
   if (mCanceled) {
     return mStatus;
   }
@@ -427,9 +434,9 @@ HttpTransactionChild::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   return NS_OK;
 }
 
-//-----------------------------------------------------------------------------
-// HttpTransactionChild <nsITransportEventSink>
-//-----------------------------------------------------------------------------
+
+
+
 
 NS_IMETHODIMP
 HttpTransactionChild::OnTransportStatus(nsITransport* aTransport,
@@ -466,5 +473,22 @@ HttpTransactionChild::OnTransportStatus(nsITransport* aTransport,
   return NS_OK;
 }
 
-}  // namespace net
-}  // namespace mozilla
+
+
+
+
+NS_IMETHODIMP
+HttpTransactionChild::SetThrottleQueue(nsIInputChannelThrottleQueue* aQueue) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+HttpTransactionChild::GetThrottleQueue(nsIInputChannelThrottleQueue** aQueue) {
+  nsCOMPtr<nsIInputChannelThrottleQueue> queue =
+      static_cast<nsIInputChannelThrottleQueue*>(mThrottleQueue.get());
+  queue.forget(aQueue);
+  return NS_OK;
+}
+
+}  
+}  

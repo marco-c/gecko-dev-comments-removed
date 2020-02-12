@@ -1,14 +1,15 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* vim:set ts=4 sw=4 sts=4 et cin: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// HttpLog.h should generally be included first
+
+
+
+
+
+
 #include "HttpLog.h"
 
 #include "HttpTransactionParent.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
+#include "mozilla/net/InputChannelThrottleQueueParent.h"
 #include "mozilla/net/ChannelEventQueue.h"
 #include "mozilla/net/SocketProcessParent.h"
 #include "nsHttpHandler.h"
@@ -40,14 +41,14 @@ NS_IMETHODIMP_(MozExternalRefCountType) HttpTransactionParent::Release(void) {
       NS_ASSERT_OWNINGTHREAD(HttpTransactionParent);
     }
 
-    mRefCnt = 1; /* stabilize */
+    mRefCnt = 1; 
     delete (this);
     return 0;
   }
 
-  // When ref count goes down to 1 (held internally by IPDL), it means that
-  // we are done with this transaction. We should send a delete message
-  // to delete the transaction child in socket process.
+  
+  
+  
   if (count == 1 && CanSend()) {
     mozilla::Unused << Send__delete__(this);
     return 1;
@@ -55,9 +56,9 @@ NS_IMETHODIMP_(MozExternalRefCountType) HttpTransactionParent::Release(void) {
   return count;
 }
 
-//-----------------------------------------------------------------------------
-// HttpTransactionParent <public>
-//-----------------------------------------------------------------------------
+
+
+
 
 HttpTransactionParent::HttpTransactionParent()
     : mResponseIsComplete(false),
@@ -142,11 +143,11 @@ void HttpTransactionParent::GetStructFromInfo(
   aArgs.proxyInfo() = proxyInfoArray;
 }
 
-//-----------------------------------------------------------------------------
-// HttpTransactionParent <nsAHttpTransactionShell>
-//-----------------------------------------------------------------------------
 
-// Let socket process init the *real* nsHttpTransaction.
+
+
+
+
 nsresult HttpTransactionParent::Init(
     uint32_t caps, nsHttpConnectionInfo* cinfo, nsHttpRequestHead* requestHead,
     nsIInputStream* requestBody, uint64_t requestContentLength,
@@ -190,15 +191,30 @@ nsresult HttpTransactionParent::Init(
     pushedStreamArg.ref().pushedStreamId() = aPushedStreamId;
   }
 
-  // TODO: Figure out if we have to implement nsIThreadRetargetableRequest in
-  // bug 1544378.
+  nsCOMPtr<nsIThrottledInputChannel> throttled = do_QueryInterface(mEventsink);
+  Maybe<PInputChannelThrottleQueueParent*> throttleQueue;
+  if (throttled) {
+    nsCOMPtr<nsIInputChannelThrottleQueue> queue;
+    nsresult rv = throttled->GetThrottleQueue(getter_AddRefs(queue));
+    
+    if (NS_SUCCEEDED(rv) && queue) {
+      LOG1(("HttpTransactionParent::Init %p using throttle queue %p\n", this,
+            queue.get()));
+      RefPtr<InputChannelThrottleQueueParent> tqParent = do_QueryObject(queue);
+      MOZ_ASSERT(tqParent);
+      throttleQueue.emplace(tqParent.get());
+    }
+  }
+
+  
+  
   if (!SendInit(caps, infoArgs, *requestHead,
                 requestBody ? Some(autoStream.TakeValue()) : Nothing(),
                 requestContentLength, requestBodyHasHeaders,
                 topLevelOuterContentWindowId,
                 static_cast<uint8_t>(trafficCategory), requestContextID,
                 classOfService, initialRwin, responseTimeoutEnabled, mChannelId,
-                !!mTransactionObserver, pushedStreamArg)) {
+                !!mTransactionObserver, pushedStreamArg, throttleQueue)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -264,7 +280,7 @@ void HttpTransactionParent::GetNetworkAddresses(NetAddr& self, NetAddr& peer,
   self = mSelfAddr;
   peer = mPeerAddr;
 
-  // TODO: will be implemented later in bug 1600254.
+  
   aResolvedByTRR = false;
 }
 
@@ -332,8 +348,8 @@ void HttpTransactionParent::SetH2WSConnRefTaken() {
 
 void HttpTransactionParent::SetSecurityCallbacks(
     nsIInterfaceRequestor* aCallbacks) {
-  // TODO: we might don't need to implement this.
-  // Will figure out in bug 1512479.
+  
+  
 }
 
 void HttpTransactionParent::SetDomainLookupStart(mozilla::TimeStamp timeStamp,
@@ -391,8 +407,8 @@ mozilla::ipc::IPCResult HttpTransactionParent::RecvOnStartRequest(
 
 static void TimingStructArgsToTimingsStruct(const TimingStructArgs& aArgs,
                                             TimingStruct& aTimings) {
-  // If domainLookupStart/End was set by the channel before, we use these
-  // timestamps instead the ones from the transaction.
+  
+  
   if (aTimings.domainLookupStart.IsNull() &&
       aTimings.domainLookupEnd.IsNull()) {
     aTimings.domainLookupStart = aArgs.domainLookupStart();
@@ -587,11 +603,11 @@ mozilla::ipc::IPCResult HttpTransactionParent::RecvOnH2PushStream(
 
   mOnPushCallback(aPushedStreamId, aResourceUrl, aRequestString);
   return IPC_OK();
-}  // namespace net
+}  
 
-//-----------------------------------------------------------------------------
-// HttpTransactionParent <nsIRequest>
-//-----------------------------------------------------------------------------
+
+
+
 
 NS_IMETHODIMP
 HttpTransactionParent::GetName(nsACString& aResult) {
@@ -631,11 +647,11 @@ HttpTransactionParent::Cancel(nsresult aStatus) {
     Unused << SendCancelPump(mStatus);
   }
 
-  // Put DoNotifyListener() in front of the queue to avoid OnDataAvailable
-  // being called after cancellation. Note that
-  // HttpTransactionParent::OnStart/StopRequest are driven by IPC messages and
-  // HttpTransactionChild won't send IPC if already canceled. That's why we have
-  // to call DoNotifyListener().
+  
+  
+  
+  
+  
   mEventQ->Suspend();
   mEventQ->PrependEvent(MakeUnique<NeckoTargetChannelFunctionEvent>(
       this, [self = UnsafePtr<HttpTransactionParent>(this)]() {
@@ -663,7 +679,7 @@ NS_IMETHODIMP
 HttpTransactionParent::Suspend() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  // SendSuspend only once, when suspend goes from 0 to 1.
+  
   if (!mSuspendCount++ && CanSend()) {
     Unused << SendSuspendPump();
   }
@@ -676,7 +692,7 @@ HttpTransactionParent::Resume() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mSuspendCount, "Resume called more than Suspend");
 
-  // SendResume only once, when suspend count drops to 0.
+  
   if (mSuspendCount && !--mSuspendCount && CanSend()) {
     Unused << SendResumePump();
   }
@@ -727,5 +743,5 @@ void HttpTransactionParent::ActorDestroy(ActorDestroyReason aWhy) {
   }
 }
 
-}  // namespace net
-}  // namespace mozilla
+}  
+}  
