@@ -46,10 +46,6 @@ add_task(async function init() {
     set: [
       ["browser.urlbar.update1.searchTips", true],
       ["browser.urlbar.searchTips.shownCount", 0],
-      
-      
-      
-      ["browser.urlbar.openViewOnFocus", false],
     ],
   });
 
@@ -82,6 +78,7 @@ add_task(async function init() {
     age2._times = originalTimes;
     await age2.writeTimes();
     await setDefaultEngine(defaultEngineName);
+    resetProvider();
   });
 });
 
@@ -458,7 +455,6 @@ add_task(async function openLocation_redirect() {
 
       
       await UrlbarTestUtils.promisePopupClose(window, () => {
-        EventUtils.synthesizeMouseAtCenter(gURLBar.textbox.parentNode, {});
         document.getElementById("Browser:OpenLocation").doCommand();
       });
       gURLBar.blur();
@@ -470,7 +466,7 @@ add_task(async function openLocation_redirect() {
       {
         category: "urlbar",
         method: "engagement",
-        object: "click",
+        object: "enter",
         value: "typed",
       },
     ],
