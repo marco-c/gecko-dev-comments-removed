@@ -407,7 +407,7 @@ nsresult nsCopySupport::GetTransferableForNode(
   
   
   RefPtr<Selection> selection = new Selection();
-  RefPtr<nsRange> range = new nsRange(aNode);
+  RefPtr<nsRange> range = nsRange::Create(aNode);
   ErrorResult result;
   range->SelectNode(*aNode, result);
   if (NS_WARN_IF(result.Failed())) {

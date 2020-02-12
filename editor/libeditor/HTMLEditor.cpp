@@ -3401,7 +3401,7 @@ void HTMLEditor::DoContentInserted(nsIContent* aChild,
 
     
     if (mInlineSpellChecker) {
-      RefPtr<nsRange> range = new nsRange(aChild);
+      RefPtr<nsRange> range = nsRange::Create(aChild);
       nsIContent* endContent = aChild;
       if (aInsertedOrAppended == eAppended) {
         

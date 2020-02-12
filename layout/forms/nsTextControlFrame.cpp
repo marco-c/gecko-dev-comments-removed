@@ -857,7 +857,6 @@ nsresult nsTextControlFrame::SetSelectionInternal(
   
   
 
-  RefPtr<nsRange> range = new nsRange(mContent);
   
   
   
@@ -865,9 +864,13 @@ nsresult nsTextControlFrame::SetSelectionInternal(
   
   
   
-  nsresult rv =
-      range->SetStartAndEnd(aStartNode, aStartOffset, aEndNode, aEndOffset);
-  NS_ENSURE_SUCCESS(rv, rv);
+  ErrorResult error;
+  RefPtr<nsRange> range =
+      nsRange::Create(aStartNode, aStartOffset, aEndNode, aEndOffset, error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
+  MOZ_ASSERT(range);
 
   
   TextControlElement* textControlElement =
@@ -888,20 +891,19 @@ nsresult nsTextControlFrame::SetSelectionInternal(
     direction = (aDirection == eBackward) ? eDirPrevious : eDirNext;
   }
 
-  ErrorResult err;
-  selection->RemoveAllRanges(err);
-  if (NS_WARN_IF(err.Failed())) {
-    return err.StealNSResult();
+  selection->RemoveAllRanges(error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
   }
 
   selection->AddRangeAndSelectFramesAndNotifyListeners(
-      *range, err);  
-  if (NS_WARN_IF(err.Failed())) {
-    return err.StealNSResult();
+      *range, error);  
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
   }
 
   selection->SetDirection(direction);
-  return rv;
+  return NS_OK;
 }
 
 nsresult nsTextControlFrame::ScrollSelectionIntoView() {

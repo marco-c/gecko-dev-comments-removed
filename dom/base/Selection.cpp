@@ -782,13 +782,13 @@ nsresult Selection::SubtractRange(RangeData* aRange, nsRange* aSubtract,
   if (cmp2 > 0) {
     
     
-    RefPtr<nsRange> postOverlap = new nsRange(aSubtract->GetEndContainer());
-    rv = postOverlap->SetStartAndEnd(
-        aSubtract->GetEndContainer(), aSubtract->EndOffset(),
-        range->GetEndContainer(), range->EndOffset());
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+    ErrorResult error;
+    RefPtr<nsRange> postOverlap =
+        nsRange::Create(aSubtract->EndRef(), range->EndRef(), error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
     }
+    MOZ_ASSERT(postOverlap);
     if (!postOverlap->Collapsed()) {
       if (!aOutput->InsertElementAt(0, RangeData(postOverlap)))
         return NS_ERROR_OUT_OF_MEMORY;
@@ -799,13 +799,13 @@ nsresult Selection::SubtractRange(RangeData* aRange, nsRange* aSubtract,
   if (cmp < 0) {
     
     
-    RefPtr<nsRange> preOverlap = new nsRange(range->GetStartContainer());
-    rv = preOverlap->SetStartAndEnd(
-        range->GetStartContainer(), range->StartOffset(),
-        aSubtract->GetStartContainer(), aSubtract->StartOffset());
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+    ErrorResult error;
+    RefPtr<nsRange> preOverlap =
+        nsRange::Create(range->StartRef(), aSubtract->StartRef(), error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
     }
+    MOZ_ASSERT(preOverlap);
     if (!preOverlap->Collapsed()) {
       if (!aOutput->InsertElementAt(0, RangeData(preOverlap)))
         return NS_ERROR_OUT_OF_MEMORY;
@@ -2144,7 +2144,7 @@ void Selection::Collapse(const RawRangeBoundary& aPoint, ErrorResult& aRv) {
   } else if (mCachedRange) {
     range = std::move(mCachedRange);
   } else {
-    range = new nsRange(aPoint.Container());
+    range = nsRange::Create(aPoint.Container());
   }
   result = range->CollapseTo(aPoint);
   if (NS_FAILED(result)) {
@@ -2446,7 +2446,7 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
       return;
     }
   } else {
-    RefPtr<nsRange> difRange = new nsRange(&aContainer);
+    RefPtr<nsRange> difRange = nsRange::Create(&aContainer);
     if ((*anchorOldFocusOrder == 0 && *anchorNewFocusOrder < 0) ||
         (*anchorOldFocusOrder <= 0 &&
          *oldFocusNewFocusOrder < 0)) {  

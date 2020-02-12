@@ -434,7 +434,7 @@ nsresult nsTypeAheadFind::FindItNow(uint32_t aMode, bool aIsLinksOnly,
   }
 
   if (!mStartPointRange) {
-    mStartPointRange = new nsRange(presShell->GetDocument());
+    mStartPointRange = nsRange::Create(presShell->GetDocument());
   }
 
   
@@ -705,7 +705,7 @@ nsresult nsTypeAheadFind::FindItNow(uint32_t aMode, bool aIsLinksOnly,
         
         RefPtr<nsRange> tempRange = mStartPointRange->CloneRange();
         if (!mEndPointRange) {
-          mEndPointRange = new nsRange(presShell->GetDocument());
+          mEndPointRange = nsRange::Create(presShell->GetDocument());
         }
 
         mStartPointRange = mEndPointRange;
@@ -789,24 +789,22 @@ nsresult nsTypeAheadFind::GetSearchContainers(
   }
 
   if (!mSearchRange) {
-    mSearchRange = new nsRange(doc);
+    mSearchRange = nsRange::Create(doc);
   }
   nsCOMPtr<nsINode> searchRootNode(rootContent);
 
   mSearchRange->SelectNodeContents(*searchRootNode, IgnoreErrors());
 
   if (!mStartPointRange) {
-    mStartPointRange = new nsRange(doc);
+    mStartPointRange = nsRange::Create(doc);
   }
-  mStartPointRange->SetStart(*searchRootNode, 0, IgnoreErrors());
-  mStartPointRange->Collapse(true);  
+  mStartPointRange->SetStartAndEnd(searchRootNode, 0, searchRootNode, 0);
 
   if (!mEndPointRange) {
-    mEndPointRange = new nsRange(doc);
+    mEndPointRange = nsRange::Create(doc);
   }
-  mEndPointRange->SetEnd(*searchRootNode, searchRootNode->Length(),
-                         IgnoreErrors());
-  mEndPointRange->Collapse(false);  
+  mEndPointRange->SetStartAndEnd(searchRootNode, searchRootNode->Length(),
+                                 searchRootNode, searchRootNode->Length());
 
   
   
