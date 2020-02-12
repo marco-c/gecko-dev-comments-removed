@@ -1844,7 +1844,7 @@ static AbortReason IonCompile(JSContext* cx, JSScript* script,
     if (reason == AbortReason::PreliminaryObjects) {
       
       
-      const MIRGenerator::ObjectGroupVector& groups =
+      const IonBuilder::ObjectGroupVector& groups =
           builder->abortedPreliminaryGroups();
       for (size_t i = 0; i < groups.length(); i++) {
         ObjectGroup* group = groups[i];
