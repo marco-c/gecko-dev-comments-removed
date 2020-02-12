@@ -2006,8 +2006,27 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  void AssociateImage(const nsStyleImage& aImage, nsPresContext* aPresContext,
-                      uint32_t aImageLoaderFlags);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE bool AssociateImage(const nsStyleImage&);
+
+  
+
+
+
+  void DisassociateImage(const nsStyleImage&);
 
   enum class AllowCustomCursorImage {
     No,

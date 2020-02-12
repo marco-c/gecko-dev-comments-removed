@@ -2541,21 +2541,6 @@ ImgDrawResult nsCSSRendering::PaintStyleImageLayerWithSC(
 
   MOZ_ASSERT((aParams.layer < 0) ||
              (layers.mImageCount > uint32_t(aParams.layer)));
-  bool drawAllLayers = (aParams.layer < 0);
-
-  
-  
-  
-  if (aBackgroundSC != aParams.frame->Style()) {
-    uint32_t startLayer =
-        drawAllLayers ? layers.mImageCount - 1 : aParams.layer;
-    uint32_t count = drawAllLayers ? layers.mImageCount : 1;
-    NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT_WITH_RANGE(i, layers, startLayer,
-                                                         count) {
-      aParams.frame->AssociateImage(layers.mLayers[i].mImage, &aParams.presCtx,
-                                    0);
-    }
-  }
 
   
   
@@ -2573,6 +2558,7 @@ ImgDrawResult nsCSSRendering::PaintStyleImageLayerWithSC(
 
   ImgDrawResult result = ImgDrawResult::SUCCESS;
   StyleGeometryBox currentBackgroundClip = StyleGeometryBox::BorderBox;
+  const bool drawAllLayers = (aParams.layer < 0);
   uint32_t count = drawAllLayers
                        ? layers.mImageCount  
                        : layers.mImageCount -
@@ -2691,11 +2677,6 @@ nsCSSRendering::BuildWebRenderDisplayItemsForStyleImageLayerWithSC(
       PrepareImageLayer(&aParams.presCtx, aParams.frame, aParams.paintFlags,
                         paintBorderArea, clipState.mBGClipArea, layer, nullptr);
   result &= state.mImageRenderer.PrepareResult();
-
-  
-  
-  
-  aParams.frame->AssociateImage(layer.mImage, &aParams.presCtx, 0);
 
   if (!state.mFillArea.IsEmpty()) {
     return state.mImageRenderer.BuildWebRenderDisplayItemsForLayer(
