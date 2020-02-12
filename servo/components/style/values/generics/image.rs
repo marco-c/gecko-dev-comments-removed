@@ -53,17 +53,24 @@ impl<I> ImageLayer<I> {
 pub enum GenericImage<Gradient, MozImageRect, ImageUrl> {
     
     Url(ImageUrl),
+
     
     
     Gradient(Box<Gradient>),
+
+    
+    
     
     Rect(Box<MozImageRect>),
+
     
+    #[cfg(feature = "gecko")]
     #[css(function = "-moz-element")]
     Element(Atom),
+
     
     
-    #[cfg(feature = "servo")]
+    #[cfg(feature = "servo-layout-2013")]
     PaintWorklet(PaintWorklet),
 }
 
@@ -323,8 +330,9 @@ where
             Image::Url(ref url) => url.to_css(dest),
             Image::Gradient(ref gradient) => gradient.to_css(dest),
             Image::Rect(ref rect) => rect.to_css(dest),
-            #[cfg(feature = "servo")]
+            #[cfg(feature = "servo-layout-2013")]
             Image::PaintWorklet(ref paint_worklet) => paint_worklet.to_css(dest),
+            #[cfg(feature = "gecko")]
             Image::Element(ref selector) => {
                 dest.write_str("-moz-element(#")?;
                 serialize_atom_identifier(selector, dest)?;
