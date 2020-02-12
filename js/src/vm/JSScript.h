@@ -665,19 +665,6 @@ class ScriptSource {
   
   
   
-  mozilla::TimeStamp parseStarted_;
-
-  
-  
-  
-  
-  mozilla::TimeStamp emitStarted_;
-
-  
-  
-  
-  
-  
   
   mozilla::TimeStamp parseEnded_;
 
@@ -1223,22 +1210,6 @@ class ScriptSource {
   bool xdrFinalizeEncoder(JS::TranscodeBuffer& buffer);
 
   const mozilla::TimeStamp parseEnded() const { return parseEnded_; }
-  const mozilla::TimeDuration parseTime() const {
-    return emitStarted_ - parseStarted_;
-  }
-  const mozilla::TimeDuration emitTime() const {
-    return parseEnded_ - emitStarted_;
-  }
-  
-  void recordParseStarted() {
-    MOZ_ASSERT(parseStarted_.IsNull());
-    parseStarted_ = ReallyNow();
-  }
-  
-  void recordEmitStarted() {
-    MOZ_ASSERT(emitStarted_.IsNull());
-    emitStarted_ = ReallyNow();
-  }
   
   void recordParseEnded() {
     MOZ_ASSERT(parseEnded_.IsNull());
