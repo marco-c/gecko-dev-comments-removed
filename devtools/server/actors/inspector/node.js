@@ -534,7 +534,6 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     
     
     if (Cu.getObjectPrincipal(global) == Cu.getObjectPrincipal(dbg)) {
-      dump("Ignored system principal in getEmbedderElement!\n");
       return undefined;
     }
 
