@@ -989,7 +989,7 @@ BrowserGlue.prototype = {
         
         
         
-        PdfJs.init();
+        PdfJs.init(this._isNewProfile);
         break;
       case "shield-init-complete":
         this._shieldInitComplete = true;
@@ -1123,15 +1123,6 @@ BrowserGlue.prototype = {
   _beforeUIStartup: function BG__beforeUIStartup() {
     SessionStartup.init();
 
-    if (Services.prefs.prefHasUserValue(PREF_PDFJS_ENABLED_CACHE_STATE)) {
-      Services.ppmm.sharedData.set(
-        "pdfjs.enabled",
-        Services.prefs.getBoolPref(PREF_PDFJS_ENABLED_CACHE_STATE)
-      );
-    } else {
-      PdfJs.earlyInit();
-    }
-
     
     if (Services.appinfo.inSafeMode) {
       Services.ww.openWindow(
@@ -1148,6 +1139,15 @@ BrowserGlue.prototype = {
 
     
     this._migrateUI();
+
+    if (Services.prefs.prefHasUserValue(PREF_PDFJS_ENABLED_CACHE_STATE)) {
+      Services.ppmm.sharedData.set(
+        "pdfjs.enabled",
+        Services.prefs.getBoolPref(PREF_PDFJS_ENABLED_CACHE_STATE)
+      );
+    } else {
+      PdfJs.earlyInit(this._isNewProfile);
+    }
 
     listeners.init();
 
