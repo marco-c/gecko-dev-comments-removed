@@ -89,7 +89,7 @@ void MediaControlKeysManager::OnKeyPressed(MediaControlKeysEvent aKeyEvent) {
 }
 
 void MediaControlKeysManager::SetPlaybackState(PlaybackState aState) {
-  if (mEventSource) {
+  if (mEventSource && mEventSource->IsOpened()) {
     mEventSource->SetPlaybackState(aState);
   } else {
     
