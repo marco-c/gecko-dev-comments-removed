@@ -1,14 +1,14 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef AddonManagerStartup_inlines_h
 #define AddonManagerStartup_inlines_h
 
 #include <utility>
 
-#include "js/Array.h"  
+#include "js/Array.h"  // JS::GetArrayLength, JS::IsArrayObject
 #include "jsapi.h"
 #include "mozilla/Maybe.h"
 #include "nsJSUtils.h"
@@ -18,16 +18,16 @@ namespace mozilla {
 class ArrayIterElem;
 class PropertyIterElem;
 
-
-
-
+/*****************************************************************************
+ * Object iterator base classes
+ *****************************************************************************/
 
 template <class T, class PropertyType>
 class MOZ_STACK_CLASS BaseIter {
  public:
   typedef T SelfType;
 
-  PropertyType begin() const { return elem(Self()); }
+  PropertyType begin() const { return PropertyType(Self()); }
 
   PropertyType end() const {
     PropertyType elem(Self());
@@ -100,9 +100,9 @@ class MOZ_STACK_CLASS BaseIterElem {
   uint32_t mIndex;
 };
 
-
-
-
+/*****************************************************************************
+ * Property iteration
+ *****************************************************************************/
 
 class MOZ_STACK_CLASS PropertyIter
     : public BaseIter<PropertyIter, PropertyIterElem> {
@@ -176,9 +176,9 @@ class MOZ_STACK_CLASS PropertyIterElem
   Maybe<nsAutoJSString> mName;
 };
 
-
-
-
+/*****************************************************************************
+ * Array iteration
+ *****************************************************************************/
 
 class MOZ_STACK_CLASS ArrayIter : public BaseIter<ArrayIter, ArrayIterElem> {
   friend class ArrayIterElem;
@@ -221,6 +221,6 @@ class MOZ_STACK_CLASS ArrayIterElem
   }
 };
 
-}  
+}  // namespace mozilla
 
-#endif  
+#endif  // AddonManagerStartup_inlines_h
