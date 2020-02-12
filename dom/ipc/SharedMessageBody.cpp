@@ -34,9 +34,15 @@ void SharedMessageBody::Write(JSContext* aCx, JS::Handle<JS::Value> aValue,
 
   JS::CloneDataPolicy cloneDataPolicy;
   
+  
   cloneDataPolicy.allowIntraClusterClonableSharedObjects();
 
-  
+  nsIGlobalObject* global = xpc::CurrentNativeGlobal(aCx);
+  MOZ_ASSERT(global);
+
+  if (global->IsSharedMemoryAllowed()) {
+    cloneDataPolicy.allowSharedMemoryObjects();
+  }
 
   mCloneData = MakeUnique<ipc::StructuredCloneData>(
       JS::StructuredCloneScope::UnknownDestination, mSupportsTransferring);
@@ -71,12 +77,12 @@ void SharedMessageBody::Read(JSContext* aCx,
 
   JS::CloneDataPolicy cloneDataPolicy;
 
+  nsIGlobalObject* global = xpc::CurrentNativeGlobal(aCx);
+  MOZ_ASSERT(global);
+
   
   
   if (mAgentClusterId.isSome()) {
-    nsIGlobalObject* global = xpc::CurrentNativeGlobal(aCx);
-    MOZ_ASSERT(global);
-
     Maybe<nsID> agentClusterId = global->GetAgentClusterId();
     if (agentClusterId.isSome() &&
         mAgentClusterId.value().Equals(agentClusterId.value())) {
@@ -84,7 +90,9 @@ void SharedMessageBody::Read(JSContext* aCx,
     }
   }
 
-  
+  if (global->IsSharedMemoryAllowed()) {
+    cloneDataPolicy.allowSharedMemoryObjects();
+  }
 
   MOZ_ASSERT(!mRefData);
   MOZ_ASSERT(mRefDataId.isSome());
