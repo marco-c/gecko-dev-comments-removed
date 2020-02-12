@@ -1093,19 +1093,13 @@ bool IsXrayWrapper(JSObject* obj) { return WrapperFactory::IsXrayWrapper(obj); }
 namespace mozilla {
 namespace dom {
 
-bool IsChromeOrXBL(JSContext* cx, JSObject* ) {
+bool IsChromeOrUAWidget(JSContext* cx, JSObject* ) {
   MOZ_ASSERT(NS_IsMainThread());
   JS::Realm* realm = JS::GetCurrentRealmOrNull(cx);
   MOZ_ASSERT(realm);
   JS::Compartment* c = JS::GetCompartmentForRealm(realm);
 
-  
-  
-  
-  
-  
-  
-  return AccessCheck::isChrome(c) || !AllowContentXBLScope(realm);
+  return AccessCheck::isChrome(c) || IsUAWidgetCompartment(c);
 }
 
 bool IsNotUAWidget(JSContext* cx, JSObject* ) {
@@ -1117,24 +1111,11 @@ bool IsNotUAWidget(JSContext* cx, JSObject* ) {
   return !IsUAWidgetCompartment(c);
 }
 
-bool IsChromeOrXBLOrUAWidget(JSContext* cx, JSObject* ) {
-  if (IsChromeOrXBL(cx, nullptr)) {
-    return true;
-  }
-
-  MOZ_ASSERT(NS_IsMainThread());
-  JS::Realm* realm = JS::GetCurrentRealmOrNull(cx);
-  MOZ_ASSERT(realm);
-  JS::Compartment* c = JS::GetCompartmentForRealm(realm);
-
-  return IsUAWidgetCompartment(c);
-}
-
 extern bool IsCurrentThreadRunningChromeWorker();
 
-bool ThreadSafeIsChromeOrXBLOrUAWidget(JSContext* cx, JSObject* obj) {
+bool ThreadSafeIsChromeOrUAWidget(JSContext* cx, JSObject* obj) {
   if (NS_IsMainThread()) {
-    return IsChromeOrXBLOrUAWidget(cx, obj);
+    return IsChromeOrUAWidget(cx, obj);
   }
   return IsCurrentThreadRunningChromeWorker();
 }

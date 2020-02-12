@@ -747,12 +747,6 @@ namespace dom {
 
 
 
-bool IsChromeOrXBL(JSContext* cx, JSObject* );
-
-
-
-
-
 
 bool IsNotUAWidget(JSContext* cx, JSObject* );
 
@@ -760,12 +754,12 @@ bool IsNotUAWidget(JSContext* cx, JSObject* );
 
 
 
-bool IsChromeOrXBLOrUAWidget(JSContext* cx, JSObject* );
+bool IsChromeOrUAWidget(JSContext* cx, JSObject* );
 
 
 
 
-bool ThreadSafeIsChromeOrXBLOrUAWidget(JSContext* cx, JSObject* obj);
+bool ThreadSafeIsChromeOrUAWidget(JSContext* cx, JSObject* obj);
 
 }  
 
