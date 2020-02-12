@@ -78,8 +78,10 @@ registerCleanupFunction(async function() {
 
 
 
-async function openNewTabAndConsole(url, clearJstermHistory = true) {
-  const toolbox = await openNewTabAndToolbox(url, "webconsole");
+
+
+async function openNewTabAndConsole(url, clearJstermHistory = true, hostId) {
+  const toolbox = await openNewTabAndToolbox(url, "webconsole", hostId);
   const hud = toolbox.getCurrentPanel().hud;
 
   if (clearJstermHistory) {
