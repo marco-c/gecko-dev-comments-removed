@@ -8,9 +8,6 @@ const host_info = get_host_info();
 const run_test = test => {
   
   
-
-  
-  
   promise_test(t => {
     return fetch(test.initial_url).then(r => {
       assert_equals(r.status, 200)
