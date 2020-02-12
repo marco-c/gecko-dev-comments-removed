@@ -68,7 +68,20 @@ bool SourceSurfaceCapture::IsValid() const {
   
   
   MutexAutoLock lock(mLock);
-  return (mOwner || mHasCommandList || mSurfToOptimize) || mResolved;
+
+  if (mSurfToOptimize) {
+    
+    
+    return mSurfToOptimize->IsValid();
+  }
+  if (mResolved) {
+    
+    
+    return mResolved->IsValid();
+  }
+
+  
+  return mOwner || mHasCommandList;
 }
 
 RefPtr<SourceSurface> SourceSurfaceCapture::Resolve(BackendType aBackendType) {
