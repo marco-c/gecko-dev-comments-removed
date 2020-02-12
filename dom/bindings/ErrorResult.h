@@ -50,6 +50,8 @@ namespace mozilla {
 
 namespace dom {
 
+class Promise;
+
 enum ErrNum {
 #define MSG_DEF(_name, _argc, _exn, _str) _name,
 #include "mozilla/dom/Errors.msg"
@@ -318,16 +320,6 @@ class TErrorResult {
     return ErrorCode() == NS_ERROR_INTERNAL_ERRORRESULT_JS_EXCEPTION;
   }
 
-  void MOZ_MUST_RETURN_FROM_CALLER_IF_THIS_IS_ARG
-  ThrowDOMException(nsresult rv, const nsACString& message);
-
-  
-  template <int N>
-  void MOZ_MUST_RETURN_FROM_CALLER_IF_THIS_IS_ARG
-  ThrowDOMException(nsresult rv, const char (&aMessage)[N]) {
-    ThrowDOMException(rv, nsLiteralCString(aMessage));
-  }
-
   
   
   
@@ -403,6 +395,25 @@ class TErrorResult {
 
  protected:
   nsresult ErrorCode() const { return mResult; }
+
+  
+  
+  
+  void MOZ_MUST_RETURN_FROM_CALLER_IF_THIS_IS_ARG
+  ThrowDOMException(nsresult rv, const nsACString& message);
+
+  
+  template <int N>
+  void MOZ_MUST_RETURN_FROM_CALLER_IF_THIS_IS_ARG
+  ThrowDOMException(nsresult rv, const char (&aMessage)[N]) {
+    ThrowDOMException(rv, nsLiteralCString(aMessage));
+  }
+
+  
+  
+  
+  
+  friend class dom::Promise;
 
  private:
 #ifdef DEBUG

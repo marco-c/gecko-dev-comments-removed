@@ -115,16 +115,20 @@ class Promise : public nsISupports, public SupportsWeakPtr<Promise> {
   void MaybeRejectWithClone(JSContext* aCx, JS::Handle<JS::Value> aValue);
 
   
-  inline void MaybeRejectWithDOMException(nsresult rv,
-                                          const nsACString& aMessage) {
-    ErrorResult res;
-    res.ThrowDOMException(rv, aMessage);
-    MaybeReject(res);
+#define DOMEXCEPTION(name, err)                                   \
+  inline void MaybeRejectWith##name(const nsACString& aMessage) { \
+    ErrorResult res;                                              \
+    res.Throw##name(aMessage);                                    \
+    MaybeReject(res);                                             \
+  }                                                               \
+  template <int N>                                                \
+  void MaybeRejectWith##name(const char(&aMessage)[N]) {          \
+    MaybeRejectWith##name(nsLiteralCString(aMessage));            \
   }
-  template <int N>
-  void MaybeRejectWithDOMException(nsresult rv, const char (&aMessage)[N]) {
-    MaybeRejectWithDOMException(rv, nsLiteralCString(aMessage));
-  }
+
+#include "mozilla/dom/DOMExceptionNames.h"
+
+#undef DOMEXCEPTION
 
   template <ErrNum errorNumber, typename... Ts>
   void MaybeRejectWithTypeError(Ts&&... aMessageArgs) {
@@ -273,6 +277,16 @@ class Promise : public nsISupports, public SupportsWeakPtr<Promise> {
   PromiseState State() const;
 
  protected:
+  
+  
+  
+  inline void MaybeRejectWithDOMException(nsresult rv,
+                                          const nsACString& aMessage) {
+    ErrorResult res;
+    res.ThrowDOMException(rv, aMessage);
+    MaybeReject(res);
+  }
+
   struct PromiseCapability;
 
   
