@@ -334,6 +334,10 @@ pref("browser.urlbar.update1.expandTextOnFocus", false);
 
 
 
+pref("browser.urlbar.update1.interventions", false);
+
+
+
 pref("browser.urlbar.update1.searchTips", false);
 
 pref("browser.urlbar.eventTelemetry.enabled", false);

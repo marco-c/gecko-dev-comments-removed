@@ -154,6 +154,10 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["update1", false],
 
   
+  
+  ["update1.interventions", false],
+
+  
   ["update1.view.stripHttps", false],
 
   
