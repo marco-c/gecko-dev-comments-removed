@@ -6,10 +6,25 @@ from __future__ import absolute_import
 
 from distutils.version import StrictVersion, LooseVersion
 import re
+from six import PY2
+
+
+def _cmp(cls, first, other):
+    
+    
+    
+    
+    if PY2:
+        return cls.__cmp__(first, other)
+    return cls._cmp(first, other)
 
 
 class MozillaVersionCompareMixin():
     def __cmp__(self, other):
+        
+        raise AssertionError()
+
+    def _cmp(self, other):
         has_esr = set()
         if isinstance(other, LooseModernMozillaVersion) and str(other).endswith('esr'):
             
@@ -25,12 +40,12 @@ class MozillaVersionCompareMixin():
                 isinstance(self, LooseModernMozillaVersion):
             
             
-            val = LooseVersion.__cmp__(
-                    LooseModernMozillaVersion(str(self)),
-                    LooseModernMozillaVersion(str(other)))
+            val = _cmp(LooseVersion,
+                       LooseModernMozillaVersion(str(self)),
+                       LooseModernMozillaVersion(str(other)))
         else:
             
-            val = StrictVersion.__cmp__(self, other)
+            val = _cmp(StrictVersion, self, other)
         if has_esr.isdisjoint(set(['other', 'self'])) or \
                 has_esr.issuperset(set(['other', 'self'])):
             
@@ -42,6 +57,22 @@ class MozillaVersionCompareMixin():
         elif 'other' in has_esr:
             return -1  
         return 1  
+
+    
+    def __eq__(self, other):
+        return self._cmp(other) == 0
+
+    def __lt__(self, other):
+        return self._cmp(other) < 0
+
+    def __le__(self, other):
+        return self._cmp(other) <= 0
+
+    def __gt__(self, other):
+        return self._cmp(other) > 0
+
+    def __ge__(self, other):
+        return self._cmp(other) >= 0
 
 
 class ModernMozillaVersion(MozillaVersionCompareMixin, StrictVersion):

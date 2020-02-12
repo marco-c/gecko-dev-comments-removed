@@ -54,11 +54,30 @@ class Version(LooseVersion):
             itertools.takewhile(lambda x: isinstance(x, int), self.version),
             (0, 0, 0)))[:3]
 
-    def __cmp__(self, other):
+    def _cmp(self, other):
         
-        if isinstance(other, six.text_type):
+        if six.PY2 and isinstance(other, six.text_type):
             other = other.encode('ascii')
-        return LooseVersion.__cmp__(self, other)
+        if six.PY2:
+            return LooseVersion.__cmp__(self, other)
+        return LooseVersion._cmp(self, other)
+
+    
+    
+    def __eq__(self, other):
+        return self._cmp(other) == 0
+
+    def __lt__(self, other):
+        return self._cmp(other) < 0
+
+    def __le__(self, other):
+        return self._cmp(other) <= 0
+
+    def __gt__(self, other):
+        return self._cmp(other) > 0
+
+    def __ge__(self, other):
+        return self._cmp(other) >= 0
 
 
 class ConfigureOutputHandler(logging.Handler):
