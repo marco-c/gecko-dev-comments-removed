@@ -4,8 +4,6 @@
 
 "use strict";
 
-const { Cu } = require("chrome");
-const { assert } = require("devtools/shared/DevToolsUtils");
 const { ActorPool } = require("devtools/server/actors/common");
 const { createValueGrip } = require("devtools/server/actors/object/utils");
 const { ActorClassWithSpec } = require("devtools/shared/protocol");
@@ -18,49 +16,6 @@ function formatDisplayName(frame) {
   }
 
   return `(${frame.type})`;
-}
-
-function isDeadSavedFrame(savedFrame) {
-  return Cu && Cu.isDeadWrapper(savedFrame);
-}
-function isValidSavedFrame(threadActor, savedFrame) {
-  return (
-    !isDeadSavedFrame(savedFrame) &&
-    
-    
-    
-    
-    
-    
-    
-    getSavedFrameSource(threadActor, savedFrame)
-  );
-}
-function getSavedFrameSource(threadActor, savedFrame) {
-  return threadActor.sources.getSourceActorByInternalSourceId(
-    savedFrame.sourceId
-  );
-}
-function getSavedFrameParent(threadActor, savedFrame) {
-  if (isDeadSavedFrame(savedFrame)) {
-    return null;
-  }
-
-  while (true) {
-    savedFrame = savedFrame.parent || savedFrame.asyncParent;
-
-    
-    
-    if (!savedFrame || isDeadSavedFrame(savedFrame)) {
-      savedFrame = null;
-      break;
-    }
-
-    if (isValidSavedFrame(threadActor, savedFrame)) {
-      break;
-    }
-  }
-  return savedFrame;
 }
 
 
@@ -126,41 +81,13 @@ const FrameActor = ActorClassWithSpec(frameSpec, {
 
 
   form: function() {
-    
-    if (!(this.frame instanceof Debugger.Frame)) {
-      
-      
-      
-      assert(!isDeadSavedFrame(this.frame));
-
-      const obj = {
-        actor: this.actorID,
-        
-        type: "dead",
-        asyncCause: this.frame.asyncCause,
-        state: "dead",
-        displayName: this.frame.functionDisplayName,
-        arguments: [],
-        where: {
-          
-          
-          actor: getSavedFrameSource(this.threadActor, this.frame).actorID,
-          line: this.frame.line,
-          
-          
-          column: this.frame.column - 1,
-        },
-        oldest: !getSavedFrameParent(this.threadActor, this.frame),
-      };
-
-      return obj;
-    }
-
     const threadActor = this.threadActor;
     const form = {
       actor: this.actorID,
       type: this.frame.type,
       asyncCause: this.frame.onStack ? null : "await",
+
+      
       state: this.frame.onStack ? "on-stack" : "suspended",
     };
 
@@ -212,5 +139,3 @@ const FrameActor = ActorClassWithSpec(frameSpec, {
 
 exports.FrameActor = FrameActor;
 exports.formatDisplayName = formatDisplayName;
-exports.getSavedFrameParent = getSavedFrameParent;
-exports.isValidSavedFrame = isValidSavedFrame;
