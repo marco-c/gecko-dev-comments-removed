@@ -3,6 +3,12 @@
 
 
 
+Services.prefs.setBoolPref(
+  "security.turn_off_all_security_so_that_viruses_can_take_over_this_computer",
+  true
+);
+
+
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
 
 
@@ -12,6 +18,8 @@ Services.prefs.setIntPref(
     AddonManager.SCOPE_USER +
     AddonManager.SCOPE_SYSTEM
 );
+
+Services.prefs.setIntPref("extensions.sideloadScopes", AddonManager.SCOPE_ALL);
 
 const ID1 = "addon1@tests.mozilla.org";
 const ID2 = "addon2@tests.mozilla.org";
