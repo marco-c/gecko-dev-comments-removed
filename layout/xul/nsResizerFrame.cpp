@@ -4,12 +4,12 @@
 
 
 
-#include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "nsResizerFrame.h"
 #include "nsIContent.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/UniquePtr.h"
 #include "nsGkAtoms.h"
 #include "nsNameSpaceManager.h"
 
@@ -458,10 +458,12 @@ void nsResizerFrame::MaybePersistOriginalSize(nsIContent* aContent,
   aContent->GetProperty(nsGkAtoms::_moz_original_size, &rv);
   if (rv != NS_PROPTABLE_PROP_NOT_THERE) return;
 
-  nsAutoPtr<SizeInfo> sizeInfo(new SizeInfo(aSizeInfo));
+  UniquePtr<SizeInfo> sizeInfo(new SizeInfo(aSizeInfo));
   rv = aContent->SetProperty(nsGkAtoms::_moz_original_size, sizeInfo.get(),
                              nsINode::DeleteProperty<nsResizerFrame::SizeInfo>);
-  if (NS_SUCCEEDED(rv)) sizeInfo.forget();
+  if (NS_SUCCEEDED(rv)) {
+    Unused << sizeInfo.release();
+  }
 }
 
 

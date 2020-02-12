@@ -8,7 +8,7 @@
 #define __NS_SVGOUTERSVGFRAME_H__
 
 #include "mozilla/Attributes.h"
-#include "nsAutoPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "nsISVGSVGFrame.h"
 #include "nsSVGContainerFrame.h"
 #include "nsRegion.h"
@@ -182,7 +182,7 @@ class nsSVGOuterSVGFrame final : public nsSVGDisplayContainerFrame,
   
   
   
-  nsAutoPtr<nsTHashtable<nsPtrHashKey<nsSVGForeignObjectFrame>>>
+  mozilla::UniquePtr<nsTHashtable<nsPtrHashKey<nsSVGForeignObjectFrame>>>
       mForeignObjectHash;
 
   nsRegion mInvalidRegion;

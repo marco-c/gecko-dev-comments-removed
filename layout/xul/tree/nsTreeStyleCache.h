@@ -9,7 +9,7 @@
 
 #include "mozilla/AtomArray.h"
 #include "mozilla/Attributes.h"
-#include "nsAutoPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "nsCOMArray.h"
 #include "nsDataHashtable.h"
 #include "nsRefPtrHashtable.h"
@@ -67,13 +67,13 @@ class nsTreeStyleCache {
   
   
   
-  nsAutoPtr<TransitionTable> mTransitionTable;
+  mozilla::UniquePtr<TransitionTable> mTransitionTable;
 
   
   
   typedef nsRefPtrHashtable<nsUint32HashKey, mozilla::ComputedStyle>
       ComputedStyleCache;
-  nsAutoPtr<ComputedStyleCache> mCache;
+  mozilla::UniquePtr<ComputedStyleCache> mCache;
 
   
   

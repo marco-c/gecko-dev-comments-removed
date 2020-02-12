@@ -198,7 +198,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
   
   
   nsresult GetUsedFontFaces(
-      nsTArray<nsAutoPtr<mozilla::dom::InspectorFontFace>>& aResult,
+      nsTArray<mozilla::UniquePtr<mozilla::dom::InspectorFontFace>>& aResult,
       uint32_t aMaxRanges, bool aSkipCollapsedWhitespace);
 
   

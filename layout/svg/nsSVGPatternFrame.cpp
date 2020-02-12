@@ -262,7 +262,7 @@ already_AddRefed<SourceSurface> nsSVGPatternFrame::PaintPattern(
   if (patternWithChildren->mCTM) {
     *patternWithChildren->mCTM = ctm;
   } else {
-    patternWithChildren->mCTM = new gfxMatrix(ctm);
+    patternWithChildren->mCTM = MakeUnique<gfxMatrix>(ctm);
   }
 
   

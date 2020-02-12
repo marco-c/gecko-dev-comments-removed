@@ -12,9 +12,9 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/MathAlgorithms.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 
-#include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "nsDeviceContext.h"
 #include "nsFontMetrics.h"
@@ -406,11 +406,11 @@ class nsOpenTypeTable final : public nsGlyphTable {
   
   
   
-  static nsOpenTypeTable* Create(gfxFont* aFont) {
+  static UniquePtr<nsOpenTypeTable> Create(gfxFont* aFont) {
     if (!aFont->TryGetMathTable()) {
       return nullptr;
     }
-    return new nsOpenTypeTable(aFont);
+    return WrapUnique(new nsOpenTypeTable(aFont));
   }
 
  private:
@@ -1299,7 +1299,7 @@ bool nsMathMLChar::StretchEnumContext::EnumCallback(
     return true;  
 
   
-  nsAutoPtr<nsOpenTypeTable> openTypeTable;
+  UniquePtr<nsOpenTypeTable> openTypeTable;
   nsGlyphTable* glyphTable;
   if (aGeneric) {
     
@@ -1308,7 +1308,7 @@ bool nsMathMLChar::StretchEnumContext::EnumCallback(
     
     openTypeTable = nsOpenTypeTable::Create(fontGroup->GetFirstValidFont());
     if (openTypeTable) {
-      glyphTable = openTypeTable;
+      glyphTable = openTypeTable.get();
     } else {
       
       

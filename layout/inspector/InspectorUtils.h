@@ -9,6 +9,7 @@
 #define mozilla_dom_InspectorUtils_h
 
 #include "mozilla/dom/InspectorUtilsBinding.h"
+#include "mozilla/UniquePtr.h"
 
 class nsAtom;
 class nsINode;
@@ -205,6 +206,8 @@ class InspectorUtils {
                                  ErrorResult& aRv);
   static uint64_t GetContentState(GlobalObject& aGlobal, Element& aElement);
 
+  
+  
   static void GetUsedFontFaces(GlobalObject& aGlobal, nsRange& aRange,
                                uint32_t aMaxRanges,  
                                                      

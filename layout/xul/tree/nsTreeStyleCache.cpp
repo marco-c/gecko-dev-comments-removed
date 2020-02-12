@@ -37,7 +37,7 @@ ComputedStyle* nsTreeStyleCache::GetComputedStyle(
   
   if (!mTransitionTable) {
     
-    mTransitionTable = new TransitionTable();
+    mTransitionTable = MakeUnique<TransitionTable>();
   }
 
   
@@ -92,7 +92,7 @@ ComputedStyle* nsTreeStyleCache::GetComputedStyle(
     
     
     if (!mCache) {
-      mCache = new ComputedStyleCache();
+      mCache = MakeUnique<ComputedStyleCache>();
     }
     result = newResult.get();
     mCache->Put(currState, newResult.forget());
