@@ -3612,13 +3612,18 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   
   
 
+  ErrorResult rv;
+  auto scopeExit =
+      MakeScopeExit([&]() { Unused << rv.MaybeSetPendingException(aCx); });
+
   
   nsCOMPtr<nsPIDOMWindowInner> window =
       do_QueryInterface(global.GetAsSupports());
   if (!window) {
     
     
-    return Throw(aCx, NS_ERROR_UNEXPECTED);
+    rv.Throw(NS_ERROR_UNEXPECTED);
+    return false;
   }
   RefPtr<mozilla::dom::CustomElementRegistry> registry(
       window->CustomElements());
@@ -3628,7 +3633,8 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   
   Document* doc = window->GetExtantDoc();
   if (!doc) {
-    return Throw(aCx, NS_ERROR_UNEXPECTED);
+    rv.Throw(NS_ERROR_UNEXPECTED);
+    return false;
   }
 
   
@@ -3643,7 +3649,8 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   JS::Rooted<JSObject*> newTarget(
       aCx, js::CheckedUnwrapStatic(&args.newTarget().toObject()));
   if (!newTarget) {
-    return ThrowErrorMessage(aCx, MSG_ILLEGAL_CONSTRUCTOR);
+    rv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
+    return false;
   }
 
   
@@ -3661,7 +3668,8 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
       return false;
     }
     if (newTarget == constructor) {
-      return ThrowErrorMessage(aCx, MSG_ILLEGAL_CONSTRUCTOR);
+      rv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
+      return false;
     }
   }
 
@@ -3669,7 +3677,8 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   CustomElementDefinition* definition =
       registry->LookupCustomElementDefinition(aCx, newTarget);
   if (!definition) {
-    return ThrowErrorMessage(aCx, MSG_ILLEGAL_CONSTRUCTOR);
+    rv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
+    return false;
   }
 
   
@@ -3719,7 +3728,8 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     
     
     if (constructor != js::CheckedUnwrapStatic(callee)) {
-      return ThrowErrorMessage(aCx, MSG_ILLEGAL_CONSTRUCTOR);
+      rv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
+      return false;
     }
   } else {
     if (ns == kNameSpaceID_XHTML) {
@@ -3729,7 +3739,8 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
       
       tag = nsHTMLTags::CaseSensitiveAtomTagToId(definition->mLocalName);
       if (tag == eHTMLTag_userdefined) {
-        return ThrowErrorMessage(aCx, MSG_ILLEGAL_CONSTRUCTOR);
+        rv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
+        return false;
       }
 
       MOZ_ASSERT(tag <= NS_HTML_TAG_MAX, "tag is out of bounds");
@@ -3740,7 +3751,8 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     }
 
     if (!cb) {
-      return ThrowErrorMessage(aCx, MSG_ILLEGAL_CONSTRUCTOR);
+      rv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
+      return false;
     }
 
     
@@ -3754,7 +3766,8 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     
     
     if (constructor != js::CheckedUnwrapStatic(callee)) {
-      return ThrowErrorMessage(aCx, MSG_ILLEGAL_CONSTRUCTOR);
+      rv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
+      return false;
     }
   }
 
@@ -3807,7 +3820,10 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
 
     
     if (element == ALREADY_CONSTRUCTED_MARKER) {
-      return Throw(aCx, NS_ERROR_DOM_INVALID_STATE_ERR);
+      rv.ThrowTypeError(
+          u"Cannot instantiate a custom element inside its own constructor "
+          u"during upgrades");
+      return false;
     }
 
     
