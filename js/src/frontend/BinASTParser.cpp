@@ -2548,6 +2548,10 @@ BinASTParser<Tok>::parseInterfaceEagerFunctionDeclaration(
 
   forceStrictIfNecessary(funbox, directives);
 
+  if (pc_->isFunctionBox()) {
+    pc_->functionBox()->setHasInnerFunctions();
+  }
+
   
   
   BinASTParseContext funpc(cx_, this, funbox,  nullptr);
@@ -2621,6 +2625,10 @@ JS::Result<ParseNode*> BinASTParser<Tok>::parseInterfaceEagerFunctionExpression(
 
   forceStrictIfNecessary(funbox, directives);
 
+  if (pc_->isFunctionBox()) {
+    pc_->functionBox()->setHasInnerFunctions();
+  }
+
   
   
   BinASTParseContext funpc(cx_, this, funbox,  nullptr);
@@ -2677,6 +2685,10 @@ JS::Result<ParseNode*> BinASTParser<Tok>::parseInterfaceEagerGetter(
                                           : nullptr));
 
   forceStrictIfNecessary(funbox, directives);
+
+  if (pc_->isFunctionBox()) {
+    pc_->functionBox()->setHasInnerFunctions();
+  }
 
   
   
@@ -2750,6 +2762,10 @@ JS::Result<ParseNode*> BinASTParser<Tok>::parseInterfaceEagerMethod(
 
   forceStrictIfNecessary(funbox, directives);
 
+  if (pc_->isFunctionBox()) {
+    pc_->functionBox()->setHasInnerFunctions();
+  }
+
   
   
   BinASTParseContext funpc(cx_, this, funbox,  nullptr);
@@ -2811,6 +2827,10 @@ JS::Result<ParseNode*> BinASTParser<Tok>::parseInterfaceEagerSetter(
                                           : nullptr));
 
   forceStrictIfNecessary(funbox, directives);
+
+  if (pc_->isFunctionBox()) {
+    pc_->functionBox()->setHasInnerFunctions();
+  }
 
   
   
@@ -3359,6 +3379,10 @@ JS::Result<ParseNode*> BinASTParser<Tok>::parseInterfaceLazyFunctionDeclaration(
 
   forceStrictIfNecessary(funbox, directives);
 
+  if (pc_->isFunctionBox()) {
+    pc_->functionBox()->setHasInnerFunctions();
+  }
+
   BINJS_MOZ_TRY_DECL(result, makeEmptyFunctionNode(start, syntax, funbox));
 
   auto skipStart = contentsSkip.startOffset();
@@ -3417,6 +3441,10 @@ JS::Result<ParseNode*> BinASTParser<Tok>::parseInterfaceLazyFunctionExpression(
                                       syntax, name));
 
   forceStrictIfNecessary(funbox, directives);
+
+  if (pc_->isFunctionBox()) {
+    pc_->functionBox()->setHasInnerFunctions();
+  }
 
   BINJS_MOZ_TRY_DECL(result, makeEmptyFunctionNode(start, syntax, funbox));
 
