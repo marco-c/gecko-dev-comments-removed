@@ -50,7 +50,7 @@
 #include "util/DoubleToString.h"
 #include "util/NativeStack.h"
 #include "util/Windows.h"
-#include "vm/BytecodeUtil.h" 
+#include "vm/BytecodeUtil.h"  
 #include "vm/ErrorObject.h"
 #include "vm/ErrorReporting.h"
 #include "vm/HelperThreads.h"
@@ -305,6 +305,12 @@ JS_FRIEND_API void js::ReportOutOfMemory(JSContext* cx) {
   
   if (JS::OutOfMemoryCallback oomCallback = cx->runtime()->oomCallback) {
     oomCallback(cx, cx->runtime()->oomCallbackData);
+  }
+
+  
+  
+  if (MOZ_UNLIKELY(!cx->runtime()->hasInitializedSelfHosting())) {
+    return;
   }
 
   RootedValue oomMessage(cx, StringValue(cx->names().outOfMemory));

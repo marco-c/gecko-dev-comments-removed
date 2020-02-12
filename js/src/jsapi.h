@@ -284,6 +284,9 @@ namespace JS {
 
 
 
+
+
+
 JS_PUBLIC_API bool InitSelfHostedCode(JSContext* cx);
 
 
