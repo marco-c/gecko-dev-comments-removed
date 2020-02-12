@@ -156,6 +156,17 @@ class BrowsingContext : public nsISupports, public nsWrapperCache {
                                                   Type aType);
 
   
+  
+  
+  static already_AddRefed<BrowsingContext> CreateDetached(
+      BrowsingContext* aParent, BrowsingContext* aOpener,
+      const nsAString& aName, Type aType);
+
+  void EnsureAttached();
+
+  bool EverAttached() const { return mEverAttached; }
+
+  
   CanonicalBrowsingContext* Canonical();
 
   
@@ -633,6 +644,9 @@ class BrowsingContext : public nsISupports, public nsWrapperCache {
   
   JS::Heap<JSObject*> mWindowProxy;
   LocationProxy mLocation;
+
+  
+  bool mEverAttached : 1;
 
   
   

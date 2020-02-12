@@ -281,16 +281,23 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
   nsAutoString frameName;
   GetFrameName(aOwner, frameName);
 
+  
+  
+  
+  
+  
+  
   if (IsTopContent(parentContext, aOwner)) {
     
-    return BrowsingContext::Create(nullptr, aOpener, frameName,
-                                   BrowsingContext::Type::Content);
+    return BrowsingContext::CreateDetached(nullptr, aOpener, frameName,
+                                           BrowsingContext::Type::Content);
   }
 
   auto type = parentContext->IsContent() ? BrowsingContext::Type::Content
                                          : BrowsingContext::Type::Chrome;
 
-  return BrowsingContext::Create(parentContext, aOpener, frameName, type);
+  return BrowsingContext::CreateDetached(parentContext, aOpener, frameName,
+                                         type);
 }
 
 static bool InitialLoadIsRemote(Element* aOwner) {
@@ -1899,7 +1906,7 @@ void nsFrameLoader::DestroyDocShell() {
     GetDocShell()->Destroy();
   }
 
-  if (!mWillChangeProcess) {
+  if (!mWillChangeProcess && mBrowsingContext->EverAttached()) {
     mBrowsingContext->Detach();
   }
 
@@ -2018,6 +2025,8 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   if (NS_WARN_IF(!parentDocShell)) {
     return NS_ERROR_UNEXPECTED;
   }
+
+  mBrowsingContext->EnsureAttached();
 
   
   
@@ -2507,6 +2516,8 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
   if (!parentDocShell) {
     return false;
   }
+
+  mBrowsingContext->EnsureAttached();
 
   RefPtr<ContentParent> openerContentParent;
   RefPtr<nsIPrincipal> openerContentPrincipal;
