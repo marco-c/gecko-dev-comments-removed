@@ -69,13 +69,6 @@ class MOZ_STACK_CLASS BytecodeCompiler {
     MOZ_ASSERT(compilationInfo.sourceObject->source() != nullptr);
   }
 
-  
-  
-  MOZ_MUST_USE bool internalCreateScript(HandleObject functionOrGlobal,
-                                         uint32_t toStringStart,
-                                         uint32_t toStringEnd,
-                                         uint32_t sourceBufferLength);
-
   MOZ_MUST_USE bool emplaceEmitter(mozilla::Maybe<BytecodeEmitter>& emitter,
                                    const EitherParser& parser,
                                    SharedContext* sharedContext);
