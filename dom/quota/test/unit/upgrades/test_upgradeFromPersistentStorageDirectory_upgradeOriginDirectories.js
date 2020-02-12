@@ -34,12 +34,24 @@ function* testSteps() {
 
   const metadataFileName = ".metadata";
 
+  const packages = [
+    
+    
+    
+    "persistentStorageDirectory_originDirectories_profile",
+    "../persistentStorageDirectory_shared",
+  ];
+
   clear(continueToNextStepSync);
   yield undefined;
 
-  
-  
-  installPackage("persistentStorageDirectory_originDirectories_profile");
+  info("Installing packages");
+
+  installPackages(packages);
+
+  info("Verifying storage");
+
+  verifyStorage(packages, "afterInstall");
 
   info("Checking origin directories");
 
@@ -81,6 +93,15 @@ function* testSteps() {
   yield undefined;
 
   ok(request.resultCode == NS_OK, "Initialization succeeded");
+
+  info("Verifying storage");
+
+  verifyStorage(packages, "afterInit");
+
+  
+  
+  getRelativeFile("storage/default/invalid+++example.com").remove(false);
+  getRelativeFile("storage/temporary/invalid+++example.com").remove(false);
 
   info("Checking origin directories");
 

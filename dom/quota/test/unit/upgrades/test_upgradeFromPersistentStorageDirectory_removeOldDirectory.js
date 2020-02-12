@@ -13,16 +13,25 @@ async function testSteps() {
   const persistence = "default";
   const lastAccessed = 0x0005330925e07841;
 
+  const packages = [
+    
+    
+    "persistentAndDefaultStorageDirectory_profile",
+    "../defaultStorageDirectory_shared",
+  ];
+
   info("Clearing");
 
   let request = clear();
   await requestFinished(request);
 
-  info("Installing package");
+  info("Installing packages");
 
-  
-  
-  installPackage("persistentAndDefaultStorageDirectory_profile");
+  installPackages(packages);
+
+  info("Verifying storage");
+
+  verifyStorage(packages, "afterInstall");
 
   info("Checking directories");
 
@@ -38,6 +47,16 @@ async function testSteps() {
 
   request = init();
   await requestFinished(request);
+
+  info("Verifying storage");
+
+  verifyStorage(packages, "afterInit");
+
+  
+  
+  getRelativeFile("storage/default/invalid+++example.com").remove(false);
+  getRelativeFile("storage/permanent/invalid+++example.com").remove(false);
+  getRelativeFile("storage/temporary/invalid+++example.com").remove(false);
 
   info("Checking directories");
 

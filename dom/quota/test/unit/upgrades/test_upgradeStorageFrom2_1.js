@@ -33,14 +33,25 @@ async function testSteps() {
     "storage/default/https+++example.com/idb/UUID123.tmp",
   ];
 
+  const packages = [
+    
+    
+    "version2_1_profile",
+    "../defaultStorageDirectory_shared",
+  ];
+
   info("Clearing");
 
   let request = clear();
   await requestFinished(request);
 
-  
-  
-  installPackage("version2_1_profile");
+  info("Installing packages");
+
+  installPackages(packages);
+
+  info("Verifying storage");
+
+  verifyStorage(packages, "afterInstall");
 
   info("Checking files and directories before upgrade (storage version 2.1)");
 
@@ -55,6 +66,10 @@ async function testSteps() {
   
   request = init();
   await requestFinished(request);
+
+  info("Verifying storage");
+
+  verifyStorage(packages, "afterInit");
 
   info("Checking files and directories after upgrade");
 
