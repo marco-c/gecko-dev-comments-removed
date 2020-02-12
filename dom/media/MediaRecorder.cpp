@@ -1611,8 +1611,7 @@ void MediaRecorder::Pause(ErrorResult& aResult) {
   
   
   if (mState == RecordingState::Inactive) {
-    aResult.ThrowInvalidStateError(
-        NS_LITERAL_CSTRING("The MediaRecorder is inactive"));
+    aResult.ThrowInvalidStateError("The MediaRecorder is inactive");
     return;
   }
 
@@ -1651,8 +1650,7 @@ void MediaRecorder::Resume(ErrorResult& aResult) {
   
   
   if (mState == RecordingState::Inactive) {
-    aResult.ThrowInvalidStateError(
-        NS_LITERAL_CSTRING("The MediaRecorder is inactive"));
+    aResult.ThrowInvalidStateError("The MediaRecorder is inactive");
     return;
   }
 
@@ -1696,8 +1694,7 @@ void MediaRecorder::RequestData(ErrorResult& aResult) {
   
   
   if (mState == RecordingState::Inactive) {
-    aResult.ThrowInvalidStateError(
-        NS_LITERAL_CSTRING("The MediaRecorder is inactive"));
+    aResult.ThrowInvalidStateError("The MediaRecorder is inactive");
     return;
   }
   MOZ_ASSERT(mSessions.Length() > 0);

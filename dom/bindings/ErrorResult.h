@@ -232,14 +232,19 @@ class TErrorResult {
   
   
   
+  
+  
+  
+  
   MOZ_MUST_USE
-  bool MaybeSetPendingException(JSContext* cx) {
+  bool MaybeSetPendingException(JSContext* cx,
+                                const char* description = nullptr) {
     WouldReportJSException();
     if (!Failed()) {
       return false;
     }
 
-    SetPendingException(cx);
+    SetPendingException(cx, description);
     return true;
   }
 
@@ -499,12 +504,14 @@ class TErrorResult {
 
   
   
-  void SetPendingException(JSContext* cx);
+  
+  void SetPendingException(JSContext* cx, const char* context);
 
   
-  void SetPendingExceptionWithMessage(JSContext* cx);
+  
+  void SetPendingExceptionWithMessage(JSContext* cx, const char* context);
   void SetPendingJSException(JSContext* cx);
-  void SetPendingDOMException(JSContext* cx);
+  void SetPendingDOMException(JSContext* cx, const char* context);
   void SetPendingGenericErrorException(JSContext* cx);
 
   MOZ_ALWAYS_INLINE void AssertReportedOrSuppressed() {
@@ -796,8 +803,8 @@ class OOMReporterInstantiator : public OOMReporter {
   
   
   
-  bool MaybeSetPendingException(JSContext* cx) {
-    return OOMReporter::MaybeSetPendingException(cx);
+  bool MaybeSetPendingException(JSContext* cx, const char* context = nullptr) {
+    return OOMReporter::MaybeSetPendingException(cx, context);
   }
 };
 }  
