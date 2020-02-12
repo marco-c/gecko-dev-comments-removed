@@ -1,14 +1,14 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-###
-# This script generates a web manifest JSON file based on the xpi-stage
-# directory structure. It extracts the data from defines.inc files from
-# the locale directory, chrome registry entries and other information
-# necessary to produce the complete manifest file for a language pack.
-###
-from __future__ import absolute_import, print_function, unicode_literals
+
+
+
+
+
+
+
+
+
+from __future__ import absolute_import, print_function
 
 import argparse
 import sys
@@ -36,20 +36,20 @@ def write_file(path, content):
 pushlog_api_url = "{0}/json-rev/{1}"
 
 
-###
-# Retrievers a UTC datetime of the push for the current commit
-# from a mercurial clone directory.
-#
-# Args:
-#    path (str) - path to a directory
-#
-# Returns:
-#    (datetime) - a datetime object
-#
-# Example:
-#    dt = get_dt_from_hg("/var/vcs/l10n-central/pl")
-#    dt == datetime(2017, 10, 11, 23, 31, 54, 0)
-###
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def get_dt_from_hg(path):
     with mozversioncontrol.get_repository_object(path=path) as repo:
         phase = repo._run("log", "-r", ".", "-T" "{phase}")
@@ -75,24 +75,24 @@ def get_dt_from_hg(path):
     return datetime.datetime.utcfromtimestamp(date)
 
 
-###
-# Generates timestamp for a locale based on its path.
-# If possible, will use the commit timestamp from HG repository,
-# and if that fails, will generate the timestamp for `now`.
-#
-# The timestamp format is "{year}{month}{day}{hour}{minute}{second}" and
-# the datetime stored in it is using UTC timezone.
-#
-# Args:
-#    path (str) - path to the locale directory
-#
-# Returns:
-#    (str) - a timestamp string
-#
-# Example:
-#    ts = get_timestamp_for_locale("/var/vcs/l10n-central/pl")
-#    ts == "20170914215617"
-###
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def get_timestamp_for_locale(path):
     dt = None
     if os.path.isdir(os.path.join(path, '.hg')):
@@ -105,23 +105,23 @@ def get_timestamp_for_locale(path):
     return dt.strftime("%Y%m%d%H%M%S")
 
 
-###
-# Parses multiple defines files into a single key-value pair object.
-#
-# Args:
-#    paths (str) - a comma separated list of paths to defines files
-#
-# Returns:
-#    (dict) - a key-value dict with defines
-#
-# Example:
-#    res = parse_defines('./toolkit/defines.inc,./browser/defines.inc')
-#    res == {
-#        'MOZ_LANG_TITLE': 'Polski',
-#        'MOZ_LANGPACK_CREATOR': 'Aviary.pl',
-#        'MOZ_LANGPACK_CONTRIBUTORS': 'Marek Stepien, Marek Wawoczny'
-#    }
-###
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def parse_defines(paths):
     pp = Preprocessor()
     for path in paths:
@@ -130,23 +130,23 @@ def parse_defines(paths):
     return pp.context
 
 
-###
-# Converts the list of contributors from the old RDF based list
-# of entries, into a comma separated list.
-#
-# Args:
-#    str (str) - a string with an RDF list of contributors entries
-#
-# Returns:
-#    (str) - a comma separated list of contributors
-#
-# Example:
-#    s = convert_contributors('
-#        <em:contributor>Marek Wawoczny</em:contributor>
-#        <em:contributor>Marek Stepien</em:contributor>
-#    ')
-#    s == 'Marek Wawoczny, Marek Stepien'
-###
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def convert_contributors(str):
     str = str.replace('<em:contributor>', '')
     tokens = str.split('</em:contributor>')
@@ -155,26 +155,26 @@ def convert_contributors(str):
     return ', '.join(tokens)
 
 
-###
-# Build the manifest author string based on the author string
-# and optionally adding the list of contributors, if provided.
-#
-# Args:
-#    author (str)       - a string with the name of the author
-#    contributors (str) - RDF based list of contributors from a chrome manifest
-#
-# Returns:
-#    (str) - a string to be placed in the author field of the manifest.json
-#
-# Example:
-#    s = build_author_string(
-#    'Aviary.pl',
-#    '
-#        <em:contributor>Marek Wawoczny</em:contributor>
-#        <em:contributor>Marek Stepien</em:contributor>
-#    ')
-#    s == 'Aviary.pl (contributors: Marek Wawoczny, Marek Stepien)'
-###
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def build_author_string(author, contributors):
     contrib = convert_contributors(contributors)
     if len(contrib) == 0:
@@ -182,26 +182,26 @@ def build_author_string(author, contributors):
     return '{0} (contributors: {1})'.format(author, contrib)
 
 
-##
-# Converts the list of chrome manifest entry flags to the list of platforms
-# for the langpack manifest.
-#
-# The list of result platforms is taken from AppConstants.platform.
-#
-# Args:
-#    flags (FlagList) - a list of Chrome Manifest entry flags
-#
-# Returns:
-#    (list) - a list of platform the entry applies to
-#
-# Example:
-#    str(flags) == "os==MacOS os==Windows"
-#    platforms = convert_entry_flags_to_platform_codes(flags)
-#    platforms == ['mac', 'win']
-#
-# The method supports only `os` flag name and equality operator.
-# It will throw if tried with other flags or operators.
-###
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def convert_entry_flags_to_platform_codes(flags):
     if not flags:
         return None
@@ -229,40 +229,40 @@ def convert_entry_flags_to_platform_codes(flags):
     return ret
 
 
-###
-# Recursively parse a chrome manifest file appending new entries
-# to the result list
-#
-# The function can handle two entry types: 'locale' and 'manifest'
-#
-# Args:
-#    path           (str)  - a path to a chrome manifest
-#    base_path      (str)  - a path to the base directory all chrome registry
-#                            entries will be relative to
-#    chrome_entries (list) - a list to which entries will be appended to
-#
-# Example:
-#
-#    chrome_entries = {}
-#    parse_manifest('./chrome.manifest', './', chrome_entries)
-#
-#    chrome_entries == [
-#        {
-#            'type': 'locale',
-#            'alias': 'devtools',
-#            'locale': 'pl',
-#            'platforms': null,
-#            'path': 'chrome/pl/locale/pl/devtools/'
-#        },
-#        {
-#            'type': 'locale',
-#            'alias': 'autoconfig',
-#            'locale': 'pl',
-#            'platforms': ['win', 'mac'],
-#            'path': 'chrome/pl/locale/pl/autoconfig/'
-#        },
-#    ]
-###
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def parse_chrome_manifest(path, base_path, chrome_entries):
     for entry in parse_manifest(None, path):
         if isinstance(entry, Manifest):
@@ -290,19 +290,19 @@ def parse_chrome_manifest(path, base_path, chrome_entries):
             raise Exception('Unknown type {0}'.format(entry.name))
 
 
-##
-# Gets the version to use in the langpack.
-#
-# This uses the env variable MOZ_BUILD_DATE if it exists to expand the version to be unique
-# in automation.
-#
-# Args:
-#    min_version - Application version
-#
-# Returns:
-#    str - Version to use, may include buildid
-#
-###
+
+
+
+
+
+
+
+
+
+
+
+
+
 def get_version_maybe_buildid(min_version):
     version = str(min_version)
     buildid = os.environ.get('MOZ_BUILD_DATE')
@@ -314,73 +314,73 @@ def get_version_maybe_buildid(min_version):
     return version
 
 
-###
-# Generates a new web manifest dict with values specific for a language pack.
-#
-# Args:
-#    locstr         (str)  - A string with a comma separated list of locales
-#                            for which resources are embedded in the
-#                            language pack
-#    min_app_ver    (str)  - A minimum version of the application the language
-#                            resources are for
-#    max_app_ver    (str)  - A maximum version of the application the language
-#                            resources are for
-#    app_name       (str)  - The name of the application the language
-#                            resources are for
-#    defines        (dict) - A dictionary of defines entries
-#    chrome_entries (dict) - A dictionary of chrome registry entries
-#
-# Returns:
-#    (dict) - a web manifest
-#
-# Example:
-#    manifest = create_webmanifest(
-#      'pl',
-#      '57.0',
-#      '57.0.*',
-#      'Firefox',
-#      '/var/vcs/l10n-central',
-#      {'MOZ_LANG_TITLE': 'Polski'},
-#      chrome_entries
-#    )
-#    manifest == {
-#        'languages': {
-#            'pl': {
-#                'version': '201709121481',
-#                'chrome_resources': {
-#                    'alert': 'chrome/pl/locale/pl/alert/',
-#                    'branding': 'browser/chrome/pl/locale/global/',
-#                    'global-platform': {
-#                      'macosx': 'chrome/pl/locale/pl/global-platform/mac/',
-#                      'win': 'chrome/pl/locale/pl/global-platform/win/',
-#                      'linux': 'chrome/pl/locale/pl/global-platform/unix/',
-#                      'android': 'chrome/pl/locale/pl/global-platform/unix/',
-#                    },
-#                    'forms': 'browser/chrome/pl/locale/forms/',
-#                    ...
-#                }
-#            }
-#        },
-#        'sources': {
-#            'browser': {
-#                'base_path': 'browser/'
-#            }
-#        },
-#        'applications': {
-#            'gecko':  {
-#                'strict_min_version': '57.0',
-#                'strict_max_version': '57.0.*',
-#                'id': 'langpack-pl@mozilla.org',
-#            }
-#        },
-#        'version': '57.0',
-#        'name': 'Polski Language Pack',
-#        ...
-#    }
-###
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def create_webmanifest(locstr, min_app_ver, max_app_ver, app_name,
                        l10n_basedir, langpack_eid, defines, chrome_entries):
-    locales = list(map(lambda loc: loc.strip(), locstr.split(',')))
+    locales = map(lambda loc: loc.strip(), locstr.split(','))
     main_locale = locales[0]
 
     author = build_author_string(
@@ -431,7 +431,7 @@ def create_webmanifest(locstr, min_app_ver, max_app_ver, app_name,
             'chrome_resources': cr
         }
 
-    return json.dumps(manifest, indent=2, ensure_ascii=False)
+    return json.dumps(manifest, indent=2, ensure_ascii=False, encoding='utf8')
 
 
 def main(args):
@@ -462,14 +462,14 @@ def main(args):
     defines = parse_defines(args.defines)
 
     min_app_version = args.min_app_ver
-    if 'a' not in min_app_version:  # Don't mangle alpha versions
+    if 'a' not in min_app_version:  
         v = Version(min_app_version)
         if args.app_name == "SeaMonkey":
-            # SeaMonkey is odd in that <major> hasn't changed for many years.
-            # So min is <major>.<minor>.0
+            
+            
             min_app_version = "{}.{}.0".format(v.major, v.minor)
         else:
-            # Language packs should be minversion of {major}.0
+            
             min_app_version = "{}.0".format(v.major)
 
     res = create_webmanifest(
