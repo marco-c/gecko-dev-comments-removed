@@ -114,11 +114,16 @@ void SerializeInputStreamAsPipeInternal(nsIInputStream* aInputStream,
       return;
     }
   }
-
   MOZ_DIAGNOSTIC_ASSERT(asyncStream);
 
-  aParams = IPCRemoteStreamParams(
-      aDelayedStart, IPCStreamSource::Create(asyncStream, aManager), length);
+  auto* streamSource = IPCStreamSource::Create(asyncStream, aManager);
+  if (NS_WARN_IF(!streamSource)) {
+    
+    
+    return;
+  }
+
+  aParams = IPCRemoteStreamParams(aDelayedStart, streamSource, length);
 }
 
 }  
