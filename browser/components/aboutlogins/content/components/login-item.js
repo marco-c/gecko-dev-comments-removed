@@ -749,6 +749,9 @@ export default class LoginItem extends HTMLElement {
       delete this.dataset.isNewLogin;
     }
 
+    
+    this._usernameInput.scrollLeft = 0;
+
     if (shouldEdit) {
       this._passwordInput.style.removeProperty("width");
       this._passwordDisplayInput.style.removeProperty("width");
