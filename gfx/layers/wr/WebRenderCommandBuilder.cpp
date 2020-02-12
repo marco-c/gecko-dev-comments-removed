@@ -2665,7 +2665,9 @@ void WebRenderCommandBuilder::RemoveUnusedAndResetWebRenderUserData() {
           WebRenderUserDataKey(data->GetDisplayItemKey(), data->GetType()));
 
       if (!userDataTable->Count()) {
-        frame->RemoveProperty(WebRenderUserDataProperty::Key());
+        
+        
+        Unused << frame->TakeProperty(WebRenderUserDataProperty::Key());
         delete userDataTable;
       }
 
