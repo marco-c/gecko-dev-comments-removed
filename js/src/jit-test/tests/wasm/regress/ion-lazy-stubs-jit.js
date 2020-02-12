@@ -1,3 +1,5 @@
+
+
 (function coerceinplace() {
     var { table } = wasmEvalText(`(module
         (func $add (result i32) (param i32) (param i32)
