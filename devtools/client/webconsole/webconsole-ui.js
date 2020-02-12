@@ -363,9 +363,19 @@ class WebConsoleUI {
       await this.proxy.connect();
       return;
     }
+
     
     
-    if (type != this.hud.targetList.TYPES.PROCESS) {
+    
+    
+    const isContentToolbox = this.hud.targetList.targetFront.isLocalTab;
+    const listenForFrames =
+      isContentToolbox &&
+      Services.prefs.getBoolPref("devtools.contenttoolbox.fission");
+    if (
+      type != this.hud.targetList.TYPES.PROCESS &&
+      (type != this.hud.targetList.TYPES.FRAME || !listenForFrames)
+    ) {
       return;
     }
     const proxy = new WebConsoleConnectionProxy(this, targetFront);
