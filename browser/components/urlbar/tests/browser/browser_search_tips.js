@@ -22,11 +22,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 const SHOW_TIP_DELAY_MS = 200;
 const MAX_SHOWN_COUNT = 4;
 const LAST_UPDATE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
-
 const TIPS = {
-  NONE: 0,
-  ONBOARD: 1,
-  REDIRECT: 2,
+  NONE: "",
+  ONBOARD: "onboard",
+  REDIRECT: "redirect",
 };
 
 
@@ -45,7 +44,8 @@ add_task(async function init() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.urlbar.update1.searchTips", true],
-      ["browser.urlbar.searchTips.shownCount", 0],
+      ["browser.urlbar.searchTips.redirect.shownCount", 0],
+      ["browser.urlbar.searchTips.onboard.shownCount", 0],
     ],
   });
 
@@ -256,8 +256,8 @@ add_task(async function oncePerSession() {
 
 
 
-add_task(async function pickButton() {
-  UrlbarProviderSearchTips.showedTipInCurrentSession = false;
+add_task(async function pickButton_onboard() {
+  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.eventTelemetry.enabled", true]],
   });
@@ -290,9 +290,9 @@ add_task(async function pickButton() {
   );
 
   Assert.equal(
-    UrlbarPrefs.get("searchTips.shownCount"),
+    UrlbarPrefs.get("searchTips.onboard.shownCount"),
     MAX_SHOWN_COUNT,
-    "Provider is disabled after tip button is picked."
+    "Onboarding tips are disabled after tip button is picked."
   );
   Assert.equal(gURLBar.value, "", "The Urlbar should be empty.");
   resetProvider();
@@ -303,8 +303,57 @@ add_task(async function pickButton() {
 
 
 
+
+add_task(async function pickButton_redirect() {
+  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.eventTelemetry.enabled", true]],
+  });
+  Services.telemetry.clearEvents();
+
+  await setDefaultEngine("Google");
+  await BrowserTestUtils.withNewTab("about:blank", async () => {
+    await withDNSRedirect("www.google.com", "/", async url => {
+      await BrowserTestUtils.loadURI(gBrowser.selectedBrowser, url);
+      await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+      await checkTip(window, TIPS.REDIRECT, false);
+
+      
+      let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+      let button = result.element.row._elements.get("tipButton");
+      await UrlbarTestUtils.promisePopupClose(window, () => {
+        EventUtils.synthesizeMouseAtCenter(button, {});
+      });
+      gURLBar.blur();
+    });
+  });
+
+  TelemetryTestUtils.assertEvents(
+    [
+      {
+        category: "urlbar",
+        method: "engagement",
+        object: "click",
+        value: "typed",
+      },
+    ],
+    { category: "urlbar" }
+  );
+
+  Assert.equal(
+    UrlbarPrefs.get("searchTips.redirect.shownCount"),
+    MAX_SHOWN_COUNT,
+    "Redirect tips are disabled after tip button is picked."
+  );
+  Assert.equal(gURLBar.value, "", "The Urlbar should be empty.");
+  resetProvider();
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
 add_task(async function clickInInput_onboard() {
-  UrlbarProviderSearchTips.showedTipInCurrentSession = false;
+  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.eventTelemetry.enabled", true]],
   });
@@ -335,9 +384,9 @@ add_task(async function clickInInput_onboard() {
   );
 
   Assert.equal(
-    UrlbarPrefs.get("searchTips.shownCount"),
+    UrlbarPrefs.get("searchTips.onboard.shownCount"),
     MAX_SHOWN_COUNT,
-    "Provider is disabled after tip button is picked."
+    "Onboarding tips are disabled after tip button is picked."
   );
   Assert.equal(gURLBar.value, "", "The Urlbar should be empty.");
   resetProvider();
@@ -349,7 +398,7 @@ add_task(async function clickInInput_onboard() {
 
 
 add_task(async function openLocation_onboard() {
-  UrlbarProviderSearchTips.showedTipInCurrentSession = false;
+  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.eventTelemetry.enabled", true]],
   });
@@ -380,9 +429,9 @@ add_task(async function openLocation_onboard() {
   );
 
   Assert.equal(
-    UrlbarPrefs.get("searchTips.shownCount"),
+    UrlbarPrefs.get("searchTips.onboard.shownCount"),
     MAX_SHOWN_COUNT,
-    "Provider is disabled after tip button is picked."
+    "Onboarding tips are disabled after tip button is picked."
   );
   Assert.equal(gURLBar.value, "", "The Urlbar should be empty.");
   resetProvider();
@@ -394,7 +443,7 @@ add_task(async function openLocation_onboard() {
 
 
 add_task(async function clickInInput_redirect() {
-  UrlbarProviderSearchTips.showedTipInCurrentSession = false;
+  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.eventTelemetry.enabled", true]],
   });
@@ -428,9 +477,9 @@ add_task(async function clickInInput_redirect() {
   );
 
   Assert.equal(
-    UrlbarPrefs.get("searchTips.shownCount"),
+    UrlbarPrefs.get("searchTips.redirect.shownCount"),
     MAX_SHOWN_COUNT,
-    "Provider is disabled after tip button is picked."
+    "Redirect tips are disabled after tip button is picked."
   );
   Assert.equal(gURLBar.value, "", "The Urlbar should be empty.");
   resetProvider();
@@ -440,7 +489,7 @@ add_task(async function clickInInput_redirect() {
 
 
 add_task(async function openLocation_redirect() {
-  UrlbarProviderSearchTips.showedTipInCurrentSession = false;
+  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.eventTelemetry.enabled", true]],
   });
@@ -474,18 +523,17 @@ add_task(async function openLocation_redirect() {
   );
 
   Assert.equal(
-    UrlbarPrefs.get("searchTips.shownCount"),
+    UrlbarPrefs.get("searchTips.redirect.shownCount"),
     MAX_SHOWN_COUNT,
-    "Provider is disabled after tip button is picked."
+    "Redirect tips are disabled after tip button is picked."
   );
   Assert.equal(gURLBar.value, "", "The Urlbar should be empty.");
   resetProvider();
   await SpecialPowers.popPrefEnv();
 });
 
-
-
-add_task(async function engage() {
+add_task(async function pickingTipDoesNotDisableOtherKinds() {
+  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     url: "about:newtab",
@@ -494,25 +542,39 @@ add_task(async function engage() {
   await checkTip(window, TIPS.ONBOARD, false);
 
   
-  
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "example.com",
-    waitForFocus,
-    fireInputEvent: true,
-  });
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+  let button = result.element.row._elements.get("tipButton");
   await UrlbarTestUtils.promisePopupClose(window, () => {
-    EventUtils.synthesizeKey("KEY_Enter");
+    EventUtils.synthesizeMouseAtCenter(button, {});
   });
 
+  gURLBar.blur();
   Assert.equal(
-    UrlbarPrefs.get("searchTips.shownCount"),
+    UrlbarPrefs.get("searchTips.onboard.shownCount"),
     MAX_SHOWN_COUNT,
-    "Provider is disabled after engagement."
+    "Onboarding tips are disabled after tip button is picked."
   );
-  resetProvider();
 
   BrowserTestUtils.removeTab(tab);
+
+  
+  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
+
+  
+  let tab2 = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    url: "about:newtab",
+    waitForLoad: false,
+  });
+  await checkTip(window, TIPS.NONE);
+
+  
+  await withDNSRedirect("www.google.com", "/", async url => {
+    await checkTab(window, url, TIPS.REDIRECT);
+  });
+
+  BrowserTestUtils.removeTab(tab2);
+  resetProvider();
 });
 
 
@@ -543,7 +605,7 @@ add_task(async function notification() {
 
 add_task(async function tabSwitch() {
   let tab = BrowserTestUtils.addTab(gBrowser, "about:newtab");
-  UrlbarProviderSearchTips.showedTipInCurrentSession = false;
+  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
   await BrowserTestUtils.switchTab(gBrowser, tab);
   await checkTip(window, TIPS.ONBOARD);
   BrowserTestUtils.removeTab(tab);
@@ -567,7 +629,7 @@ add_task(async function ignoreEndsEngagement() {
         await EventUtils.synthesizeMouseAtCenter(spring, {});
       });
       Assert.ok(
-        !UrlbarProviderSearchTips.showedTipInCurrentEngagement,
+        UrlbarProviderSearchTips.showedTipTypeInCurrentEngagement == TIPS.NONE,
         "The engagement should have ended after the tip was ignored."
       );
     });
@@ -725,8 +787,9 @@ async function withDNSRedirect(domain, path, callback) {
 }
 
 function resetProvider() {
-  Services.prefs.setIntPref("browser.urlbar.searchTips.shownCount", 0);
-  UrlbarProviderSearchTips.showedTipInCurrentSession = false;
+  Services.prefs.setIntPref("browser.urlbar.searchTips.onboard.shownCount", 0);
+  Services.prefs.setIntPref("browser.urlbar.searchTips.redirect.shownCount", 0);
+  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
 }
 
 async function setDefaultEngine(name) {

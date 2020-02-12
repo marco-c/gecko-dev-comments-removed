@@ -119,7 +119,10 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["restyleSearches", false],
 
   
-  ["searchTips.shownCount", 0],
+  ["searchTips.onboard.shownCount", 0],
+
+  
+  ["searchTips.redirect.shownCount", 0],
 
   
   ["speculativeConnect.enabled", true],

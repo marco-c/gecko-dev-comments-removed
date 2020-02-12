@@ -91,9 +91,17 @@ class ProviderSearchTips extends UrlbarProvider {
     this.queries = new Map();
 
     
-    this.showedTipInCurrentSession = false;
     
-    this.showedTipInCurrentEngagement = false;
+    this.disableTipsForCurrentSession = false;
+
+    if (
+      UrlbarPrefs.get("searchTips.onboard.shownCount") >= MAX_SHOWN_COUNT &&
+      UrlbarPrefs.get("searchTips.redirect.shownCount") >= MAX_SHOWN_COUNT
+    ) {
+      this.disableTipsForCurrentSession = true;
+    }
+    
+    this.showedTipTypeInCurrentEngagement = TIPS.NONE;
   }
 
   get PRIORITY() {
@@ -154,9 +162,8 @@ class ProviderSearchTips extends UrlbarProvider {
     this.queries.set(queryContext, instance);
 
     let tip = this.currentTip;
+    this.showedTipTypeInCurrentEngagement = this.currentTip;
     this.currentTip = TIPS.NONE;
-
-    this.showedTipInCurrentEngagement = true;
 
     let defaultEngine = await Services.search.getDefault();
 
@@ -228,17 +235,30 @@ class ProviderSearchTips extends UrlbarProvider {
 
 
   onEngagement(isPrivate, state) {
-    if (this.showedTipInCurrentEngagement && state == "engagement") {
+    if (
+      this.showedTipTypeInCurrentEngagement != TIPS.NONE &&
+      state == "engagement"
+    ) {
       
       
       
       
-      Services.prefs.setIntPref(
-        "browser.urlbar.searchTips.shownCount",
-        MAX_SHOWN_COUNT
-      );
+      switch (this.showedTipTypeInCurrentEngagement) {
+        case TIPS.ONBOARD:
+          Services.prefs.setIntPref(
+            "browser.urlbar.searchTips.onboard.shownCount",
+            MAX_SHOWN_COUNT
+          );
+          break;
+        case TIPS.REDIRECT:
+          Services.prefs.setIntPref(
+            "browser.urlbar.searchTips.redirect.shownCount",
+            MAX_SHOWN_COUNT
+          );
+          break;
+      }
     }
-    this.showedTipInCurrentEngagement = false;
+    this.showedTipTypeInCurrentEngagement = TIPS.NONE;
   }
 
   
@@ -251,10 +271,21 @@ class ProviderSearchTips extends UrlbarProvider {
     
     
     
-    if (this.showedTipInCurrentEngagement) {
+    
+    if (this.showedTipTypeInCurrentEngagement != TIPS.NONE) {
       window.gURLBar.view.close();
     }
-    this._maybeShowTipForUrl(uri.spec);
+
+    
+    if (
+      !UrlbarPrefs.get("update1.searchTips") ||
+      !cfrFeaturesUserPref ||
+      this.disableTipsForCurrentSession
+    ) {
+      return;
+    }
+
+    this._maybeShowTipForUrl(uri.spec).catch(Cu.reportError);
   }
 
   
@@ -266,18 +297,6 @@ class ProviderSearchTips extends UrlbarProvider {
   async _maybeShowTipForUrl(urlStr) {
     let instance = {};
     this._maybeShowTipForUrlInstance = instance;
-    
-    if (this.showedTipInCurrentSession) {
-      return;
-    }
-
-    
-    
-    let shownCount = UrlbarPrefs.get("searchTips.shownCount");
-
-    if (shownCount >= MAX_SHOWN_COUNT) {
-      return;
-    }
 
     
     if (isBrowserShowingNotification()) {
@@ -292,12 +311,15 @@ class ProviderSearchTips extends UrlbarProvider {
 
     
     let tip;
+    let shownCountPrefName;
     let isNewtab = ["about:newtab", "about:home"].includes(urlStr);
     let isSearchHomepage = !isNewtab && (await isDefaultEngineHomepage(urlStr));
     if (isNewtab) {
       tip = TIPS.ONBOARD;
+      shownCountPrefName = "searchTips.onboard.shownCount";
     } else if (isSearchHomepage) {
       tip = TIPS.REDIRECT;
+      shownCountPrefName = "searchTips.redirect.shownCount";
     } else {
       
       return;
@@ -307,19 +329,20 @@ class ProviderSearchTips extends UrlbarProvider {
       return;
     }
 
-    this.currentTip = tip;
-    if (!this.isActive()) {
+    
+    
+    let shownCount = UrlbarPrefs.get(shownCountPrefName);
+    if (shownCount >= MAX_SHOWN_COUNT) {
       return;
     }
 
-    
-    this.showedTipInCurrentSession = true;
+    this.currentTip = tip;
 
     
-    Services.prefs.setIntPref(
-      "browser.urlbar.searchTips.shownCount",
-      shownCount + 1
-    );
+    this.disableTipsForCurrentSession = true;
+
+    
+    Services.prefs.setIntPref(shownCountPrefName, shownCount + 1);
 
     
     let window = BrowserWindowTracker.getTopWindow();
