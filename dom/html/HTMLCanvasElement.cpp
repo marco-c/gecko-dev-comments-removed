@@ -460,14 +460,13 @@ void HTMLCanvasElement::AfterMaybeChangeAttr(int32_t aNamespaceID,
   }
 }
 
-void HTMLCanvasElement::HandlePrintCallback(
-    nsPresContext::nsPresContextType aType) {
+void HTMLCanvasElement::HandlePrintCallback(nsPresContext* aPresContext) {
   
   
   
   
-  if ((aType == nsPresContext::eContext_PageLayout ||
-       aType == nsPresContext::eContext_PrintPreview) &&
+  if ((aPresContext->Type() == nsPresContext::eContext_PageLayout ||
+       aPresContext->Type() == nsPresContext::eContext_PrintPreview) &&
       !mPrintState && GetMozPrintCallback()) {
     DispatchPrintCallback(nullptr);
   }
