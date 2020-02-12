@@ -23,6 +23,7 @@
         win.document.querySelector("textarea"),
         win.document.querySelector("input"),
         win.document.querySelector("search-textbox"),
+        win.document.querySelector("shadow-input").shadowRoot.querySelector("input"),
       ];
       for (const element of elements) {
         await testElement(element, win);
