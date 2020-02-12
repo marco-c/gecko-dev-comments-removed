@@ -391,10 +391,7 @@ void Animation::UpdatePlaybackRate(double aPlaybackRate) {
     
     
     
-    
-    
-    
-    UpdateRelevance();
+    UpdateEffect(PostRestyleMode::Never);
     if (IsRelevant()) {
       MutationObservers::NotifyAnimationChanged(this);
     }
