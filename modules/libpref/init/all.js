@@ -507,7 +507,11 @@ pref("media.videocontrols.picture-in-picture.video-toggle.always-show", false);
 
   
   pref("media.peerconnection.dtls.version.min", 770);
+#if defined(NIGHTLY_BUILD)
+  pref("media.peerconnection.dtls.version.max", 772);
+#else
   pref("media.peerconnection.dtls.version.max", 771);
+#endif
 
   
   
