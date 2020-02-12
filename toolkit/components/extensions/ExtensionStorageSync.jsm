@@ -1271,7 +1271,7 @@ class ExtensionStorageSync {
           changes[key] = {
             newValue: item,
           };
-          if (oldRecord && oldRecord.data) {
+          if (oldRecord) {
             
             
             changes[key].oldValue = oldRecord.data;
