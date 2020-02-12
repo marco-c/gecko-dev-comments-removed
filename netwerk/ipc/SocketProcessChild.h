@@ -71,6 +71,9 @@ class SocketProcessChild final
       const FileDescriptor& aFD) override;
   already_AddRefed<PHttpConnectionMgrChild> AllocPHttpConnectionMgrChild();
 
+  mozilla::ipc::IPCResult RecvOnHttpActivityDistributorActivated(
+      const bool& aIsActivated);
+
  private:
   
   
