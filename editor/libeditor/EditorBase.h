@@ -28,7 +28,6 @@
 #include "mozilla/dom/Document.h"
 #include "nsIContentInlines.h"       
 #include "nsIEditor.h"               
-#include "nsIPlaintextEditor.h"      
 #include "nsISelectionController.h"  
 #include "nsISelectionListener.h"    
 #include "nsISupportsImpl.h"         
@@ -135,7 +134,7 @@ enum class SplitAtEdges {
 
 
 
-class EditorBase : public nsIPlaintextEditor,
+class EditorBase : public nsIEditor,
                    public nsISelectionListener,
                    public nsSupportsWeakReference {
  public:
