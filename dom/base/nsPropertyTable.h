@@ -93,7 +93,7 @@ class nsPropertyTable {
 
 
 
-  void* UnsetProperty(const nsPropertyOwner& aObject,
+  void* TakeProperty(const nsPropertyOwner& aObject,
                       const nsAtom* aPropertyName,
                       nsresult* aStatus = nullptr) {
     return GetPropertyInternal(aObject, aPropertyName, true, aStatus);

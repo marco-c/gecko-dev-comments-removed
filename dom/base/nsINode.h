@@ -884,7 +884,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  void* UnsetProperty(const nsAtom* aPropertyName, nsresult* aStatus = nullptr);
+  void* TakeProperty(const nsAtom* aPropertyName, nsresult* aStatus = nullptr);
 
   bool HasProperties() const { return HasFlag(NODE_HAS_PROPERTIES); }
 
