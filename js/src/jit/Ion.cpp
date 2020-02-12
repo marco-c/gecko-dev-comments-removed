@@ -1273,7 +1273,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     
     
     
-    if (!mir->info().hadFrequentBailouts()) {
+    if (!mir->outerInfo().hadFrequentBailouts()) {
       if (!LICM(mir, graph)) {
         return false;
       }
@@ -1817,7 +1817,7 @@ static AbortReason IonCompile(JSContext* cx, JSScript* script,
   }
 
   IonBuilder* builder =
-      alloc->new_<IonBuilder>((JSContext*)nullptr, *mirGen, constraints,
+      alloc->new_<IonBuilder>((JSContext*)nullptr, *mirGen, info, constraints,
                               inspector, baselineFrameInspector);
   if (!builder) {
     return AbortReason::Alloc;
