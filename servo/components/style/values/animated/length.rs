@@ -30,6 +30,10 @@ impl Animate for LengthPercentage {
 
         
         
-        Ok(LengthPercentage::new_calc(length, percentage, AllowedNumericType::All))
+        Ok(LengthPercentage::new_calc(
+            length,
+            percentage,
+            AllowedNumericType::All,
+        ))
     }
 }
