@@ -48,36 +48,6 @@ using JS::SourceText;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-class MOZ_STACK_CLASS AutoInitializeSourceObject {
-  BytecodeCompiler& compiler_;
-  ScriptSourceObject** sourceObjectOut_;
-
- public:
-  AutoInitializeSourceObject(BytecodeCompiler& compiler,
-                             ScriptSourceObject** sourceObjectOut)
-      : compiler_(compiler), sourceObjectOut_(sourceObjectOut) {}
-
-  inline ~AutoInitializeSourceObject() {
-    if (sourceObjectOut_) {
-      *sourceObjectOut_ = compiler_.sourceObjectPtr();
-    }
-  }
-};
-
-
-
 class MOZ_RAII AutoAssertReportedException {
 #ifdef DEBUG
   JSContext* cx_;
@@ -825,9 +795,11 @@ static ModuleObject* InternalParseModule(
     return nullptr;
   }
 
-  ModuleInfo info(cx, compilationInfo, options);
+  if (sourceObjectOut) {
+    *sourceObjectOut = compilationInfo.sourceObject;
+  }
 
-  AutoInitializeSourceObject autoSSO(info, sourceObjectOut);
+  ModuleInfo info(cx, compilationInfo, options);
 
   ModuleCompiler<Unit> compiler(srcBuf);
   Rooted<ModuleObject*> module(cx, compiler.compile(allocScope, info));
