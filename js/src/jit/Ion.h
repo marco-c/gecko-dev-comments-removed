@@ -11,6 +11,7 @@
 #include "mozilla/Result.h"
 
 #include "jit/CompileWrappers.h"
+#include "jit/JitContext.h"
 #include "jit/JitOptions.h"
 #include "vm/JSContext.h"
 #include "vm/Realm.h"
@@ -18,124 +19,6 @@
 
 namespace js {
 namespace jit {
-
-class TempAllocator;
-
-enum MethodStatus {
-  Method_Error,
-  Method_CantCompile,
-  Method_Skipped,
-  Method_Compiled
-};
-
-enum class AbortReason : uint8_t {
-  Alloc,
-  Inlining,
-  PreliminaryObjects,
-  Disable,
-  Error,
-  NoAbort
-};
-
-template <typename V>
-using AbortReasonOr = mozilla::Result<V, AbortReason>;
-using mozilla::Err;
-using mozilla::Ok;
-
-static_assert(sizeof(AbortReasonOr<Ok>) <= sizeof(uintptr_t),
-              "Unexpected size of AbortReasonOr<Ok>");
-static_assert(sizeof(AbortReasonOr<bool>) <= sizeof(uintptr_t),
-              "Unexpected size of AbortReasonOr<bool>");
-
-
-
-
-
-
-class JitContext {
-  JitContext* prev_ = nullptr;
-  CompileRealm* realm_ = nullptr;
-  int assemblerCount_ = 0;
-
-#ifdef DEBUG
-  
-  
-  bool inIonBackend_ = false;
-
-  
-  
-  
-  bool inIonBackendSafeForMinorGC_ = false;
-
-  bool isCompilingWasm_ = false;
-  bool oom_ = false;
-#endif
-
- public:
-  
-  
-  JSContext* cx = nullptr;
-
-  
-  TempAllocator* temp = nullptr;
-
-  
-  
-  CompileRuntime* runtime = nullptr;
-
-  
-  JitContext(JSContext* cx, TempAllocator* temp);
-
-  
-  JitContext(CompileRuntime* rt, CompileRealm* realm, TempAllocator* temp);
-
-  
-  explicit JitContext(TempAllocator* temp);
-  JitContext();
-
-  ~JitContext();
-
-  int getNextAssemblerId() { return assemblerCount_++; }
-
-  CompileRealm* maybeRealm() const { return realm_; }
-  CompileRealm* realm() const {
-    MOZ_ASSERT(maybeRealm());
-    return maybeRealm();
-  }
-
-#ifdef DEBUG
-  bool isCompilingWasm() { return isCompilingWasm_; }
-  bool hasOOM() { return oom_; }
-  void setOOM() { oom_ = true; }
-
-  bool inIonBackend() const { return inIonBackend_; }
-
-  bool inIonBackendSafeForMinorGC() const {
-    return inIonBackendSafeForMinorGC_;
-  }
-
-  void enterIonBackend(bool safeForMinorGC) {
-    MOZ_ASSERT(!inIonBackend_);
-    MOZ_ASSERT(!inIonBackendSafeForMinorGC_);
-    inIonBackend_ = true;
-    inIonBackendSafeForMinorGC_ = safeForMinorGC;
-  }
-  void leaveIonBackend() {
-    MOZ_ASSERT(inIonBackend_);
-    inIonBackend_ = false;
-    inIonBackendSafeForMinorGC_ = false;
-  }
-#endif
-};
-
-
-MOZ_MUST_USE bool InitializeJit();
-
-
-JitContext* GetJitContext();
-JitContext* MaybeGetJitContext();
-
-void SetJitContext(JitContext* ctx);
 
 bool CanIonCompileScript(JSContext* cx, JSScript* script);
 bool CanIonInlineScript(JSScript* script);
@@ -164,23 +47,6 @@ MOZ_MUST_USE bool IonCompileScriptForBaselineOSR(JSContext* cx,
 MethodStatus CanEnterIon(JSContext* cx, RunState& state);
 
 MethodStatus Recompile(JSContext* cx, HandleScript script, bool force);
-
-enum JitExecStatus {
-  
-  
-  JitExec_Aborted,
-
-  
-  
-  JitExec_Error,
-
-  
-  JitExec_Ok
-};
-
-static inline bool IsErrorStatus(JitExecStatus status) {
-  return status == JitExec_Error || status == JitExec_Aborted;
-}
 
 struct EnterJitData;
 
@@ -270,9 +136,6 @@ bool OffThreadCompilationAvailable(JSContext* cx);
 void ForbidCompilation(JSContext* cx, JSScript* script);
 
 size_t SizeOfIonData(JSScript* script, mozilla::MallocSizeOf mallocSizeOf);
-
-bool JitSupportsSimd();
-bool JitSupportsAtomics();
 
 inline bool IsIonEnabled(JSContext* cx) {
   if (MOZ_UNLIKELY(!IsBaselineJitEnabled() || cx->options().disableIon())) {
