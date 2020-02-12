@@ -66,15 +66,13 @@ size_of_test!(
 size_of_test!(test_size_of_computed_image, computed::image::Image, 16);
 size_of_test!(test_size_of_specified_image, specified::image::Image, 16);
 
-
-
 size_of_test!(
     test_size_of_computed_image_layer,
-    computed::image::ImageLayer,
+    computed::image::Image,
     16
 );
 size_of_test!(
     test_size_of_specified_image_layer,
-    specified::image::ImageLayer,
+    specified::image::Image,
     16
 );

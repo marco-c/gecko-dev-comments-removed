@@ -297,6 +297,9 @@ struct nsStyleImage {
 
   
   
+  
+  
+  
   mozilla::UniquePtr<CachedBorderImageData> mCachedBIData;
 
   
