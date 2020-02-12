@@ -233,9 +233,6 @@ function run_test() {
 
     
     
-    
-    
-    
     function wrappingIsPossible(exportedKey, algorithmName) {
         if ("byteLength" in exportedKey && algorithmName === "AES-KW") {
             return exportedKey.byteLength % 8 === 0;
@@ -247,6 +244,10 @@ function run_test() {
             
             
             return exportedKey.byteLength <= 446;
+        }
+
+        if ("kty" in exportedKey && algorithmName === "AES-KW") {
+            return JSON.stringify(exportedKey).length % 8 == 0;
         }
 
         if ("kty" in exportedKey && algorithmName === "RSA-OAEP") {
