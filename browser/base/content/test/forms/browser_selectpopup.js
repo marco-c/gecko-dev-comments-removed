@@ -881,10 +881,11 @@ add_task(async function test_large_popup_in_small_window() {
     "resize",
     false,
     e => {
-      return newWin.innerHeight <= 400 && newWin.innerWidth <= 400;
+      info(`Got resize event (innerHeight: ${newWin.innerHeight})`);
+      return newWin.innerHeight <= 400;
     }
   );
-  newWin.resizeTo(400, 400);
+  newWin.resizeTo(600, 400);
   await resizePromise;
 
   const pageUrl = "data:text/html," + escape(PAGECONTENT_SMALL);

@@ -2,7 +2,7 @@
 
 
 
-const kForceOverflowWidthPx = 200;
+const kForceOverflowWidthPx = 450;
 
 registerCleanupFunction(async function() {
   
