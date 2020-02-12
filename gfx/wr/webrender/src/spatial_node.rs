@@ -700,7 +700,11 @@ impl SpatialNode {
 
                     
                     
-                    PropertyBinding::Binding(..) => ScaleOffset::identity(),
+                    
+                    PropertyBinding::Binding(..) => {
+                        let origin_offset = info.origin_in_parent_reference_frame;
+                        ScaleOffset::from_offset(origin_offset.to_untyped())
+                    }
                 }
             }
             _ => ScaleOffset::identity(),
