@@ -192,12 +192,6 @@ class IDBDatabase final : public DOMEventTargetHelper {
       JSContext* aCx, const StringOrStringSequence& aStoreNames,
       IDBTransactionMode aMode, ErrorResult& aRv);
 
-  
-  nsresult Transaction(JSContext* aCx,
-                       const StringOrStringSequence& aStoreNames,
-                       IDBTransactionMode aMode,
-                       RefPtr<IDBTransaction>* aTransaction);
-
   StorageType Storage() const;
 
   IMPL_EVENT_HANDLER(abort)
