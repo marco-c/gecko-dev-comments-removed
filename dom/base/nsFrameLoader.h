@@ -396,7 +396,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   virtual JSObject* WrapObject(JSContext* cx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
-  void SkipBrowsingContextDetach();
+  void SetWillChangeProcess();
 
   void MaybeNotifyCrashed(mozilla::dom::BrowsingContext* aBrowsingContext,
                           mozilla::ipc::MessageChannel* aChannel);
@@ -527,6 +527,9 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
   bool mRemoteBrowserShown : 1;
   bool mIsRemoteFrame : 1;
+  
+  
+  bool mWillChangeProcess : 1;
   bool mObservingOwnerContent : 1;
 
   

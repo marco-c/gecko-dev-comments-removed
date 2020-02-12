@@ -147,8 +147,10 @@ already_AddRefed<BrowsingContext> BrowsingContext::Create(
 
   RefPtr<BrowsingContext> context;
   if (XRE_IsParentProcess()) {
-    context = new CanonicalBrowsingContext(aParent, group, id,
-                                            0, aType, {});
+    context =
+        new CanonicalBrowsingContext(aParent, group, id,
+                                      0,
+                                      0, aType, {});
   } else {
     context = new BrowsingContext(aParent, group, id, aType, {});
   }
@@ -224,9 +226,13 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateFromIPC(
 
   RefPtr<BrowsingContext> context;
   if (XRE_IsParentProcess()) {
-    context =
-        new CanonicalBrowsingContext(parent, aGroup, aInit.mId, originId,
-                                     Type::Content, std::move(aInit.mFields));
+    
+    
+    
+    uint64_t embedderProcessId = parent ? originId : 0;
+    context = new CanonicalBrowsingContext(parent, aGroup, aInit.mId, originId,
+                                           embedderProcessId, Type::Content,
+                                           std::move(aInit.mFields));
   } else {
     context = new BrowsingContext(parent, aGroup, aInit.mId, Type::Content,
                                   std::move(aInit.mFields));
@@ -373,8 +379,6 @@ void BrowsingContext::Detach(bool aFromIPC) {
     return;
   }
 
-  RefPtr<BrowsingContext> self(this);
-
   if (!mGroup->EvictCachedContext(this)) {
     Children* children = nullptr;
     if (mParent) {
@@ -391,11 +395,31 @@ void BrowsingContext::Detach(bool aFromIPC) {
     mChildren.Clear();
   }
 
+  {
+    
+    
+    
+    RefPtr<BrowsingContext> self(this);
+    auto callback = [self](auto) {};
+    if (XRE_IsParentProcess()) {
+      Group()->EachParent([&](ContentParent* aParent) {
+        
+        
+        
+        if (!Canonical()->IsEmbeddedInProcess(aParent->ChildID())) {
+          aParent->SendDetachBrowsingContext(Id(), callback, callback);
+        }
+      });
+    } else if (!aFromIPC) {
+      ContentChild::GetSingleton()->SendDetachBrowsingContext(Id(), callback,
+                                                              callback);
+    }
+  }
+
   mGroup->Unregister(this);
   mIsDiscarded = true;
 
-  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
-  if (obs) {
+  if (nsCOMPtr<nsIObserverService> obs = services::GetObserverService()) {
     obs->NotifyObservers(ToSupports(this), "browsing-context-discarded",
                          nullptr);
   }
@@ -413,17 +437,6 @@ void BrowsingContext::Detach(bool aFromIPC) {
 
   if (XRE_IsParentProcess()) {
     Canonical()->CanonicalDiscard();
-  }
-
-  if (!aFromIPC && XRE_IsContentProcess()) {
-    auto cc = ContentChild::GetSingleton();
-    MOZ_DIAGNOSTIC_ASSERT(cc);
-    
-    
-    
-    auto resolve = [self](bool) {};
-    auto reject = [self](mozilla::ipc::ResponseRejectReason) {};
-    cc->SendDetachBrowsingContext(Id(), resolve, reject);
   }
 }
 

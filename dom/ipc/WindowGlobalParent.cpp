@@ -109,7 +109,9 @@ void WindowGlobalParent::Init(const WindowGlobalInit& aInit) {
 
   
   
-  mBrowsingContext->SetCurrentInnerWindowId(aInit.innerWindowId());
+  if (!mBrowsingContext->IsDiscarded()) {
+    mBrowsingContext->SetCurrentInnerWindowId(aInit.innerWindowId());
+  }
 
   nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
   if (obs) {

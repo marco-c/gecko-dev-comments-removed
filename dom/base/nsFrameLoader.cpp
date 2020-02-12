@@ -178,6 +178,7 @@ nsFrameLoader::nsFrameLoader(Element* aOwner, BrowsingContext* aBrowsingContext,
       mLoadingOriginalSrc(false),
       mRemoteBrowserShown(false),
       mIsRemoteFrame(!aRemoteType.IsEmpty()),
+      mWillChangeProcess(false),
       mObservingOwnerContent(false),
       mTabProcessCrashFired(false) {}
 
@@ -1898,6 +1899,10 @@ void nsFrameLoader::DestroyDocShell() {
     GetDocShell()->Destroy();
   }
 
+  if (!mWillChangeProcess) {
+    mBrowsingContext->Detach();
+  }
+
   mBrowsingContext = nullptr;
   mDocShell = nullptr;
 
@@ -2620,6 +2625,15 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
   if (!mRemoteBrowser) {
     return false;
   }
+  
+  
+  
+  
+  if (mBrowsingContext != mRemoteBrowser->GetBrowsingContext()) {
+    MOZ_DIAGNOSTIC_ASSERT(nextRemoteTabId);
+    mBrowsingContext->Detach();
+    mBrowsingContext = mRemoteBrowser->GetBrowsingContext();
+  }
 
   mRemoteBrowser->GetBrowsingContext()->Embed();
 
@@ -2991,6 +3005,7 @@ void nsFrameLoader::InitializeFromBrowserParent(BrowserParent* aBrowserParent) {
   MOZ_ASSERT(!mRemoteBrowser);
   mIsRemoteFrame = true;
   mRemoteBrowser = new BrowserHost(aBrowserParent);
+  mBrowsingContext = aBrowserParent->GetBrowsingContext();
   mChildID = aBrowserParent ? aBrowserParent->Manager()->ChildID() : 0;
   MaybeUpdatePrimaryBrowserParent(eBrowserParentChanged);
   ReallyLoadFrameScripts();
@@ -3220,13 +3235,14 @@ already_AddRefed<BrowsingContext> nsFrameLoader::GetBrowsingContext() {
 }
 
 already_AddRefed<BrowsingContext> nsFrameLoader::GetExtantBrowsingContext() {
+  RefPtr<BrowsingContext> browsingContext;
   if (mRemoteBrowser) {
-    return do_AddRef(mRemoteBrowser->GetBrowsingContext());
+    browsingContext = mRemoteBrowser->GetBrowsingContext();
+  } else if (mDocShell) {
+    browsingContext = mDocShell->GetBrowsingContext();
   }
-  if (mDocShell) {
-    return do_AddRef(mDocShell->GetBrowsingContext());
-  }
-  return nullptr;
+  MOZ_ASSERT_IF(browsingContext, browsingContext == mBrowsingContext);
+  return browsingContext.forget();
 }
 
 void nsFrameLoader::InitializeBrowserAPI() {
@@ -3412,11 +3428,12 @@ JSObject* nsFrameLoader::WrapObject(JSContext* cx,
   return result;
 }
 
-void nsFrameLoader::SkipBrowsingContextDetach() {
+void nsFrameLoader::SetWillChangeProcess() {
+  mWillChangeProcess = true;
+
   if (IsRemoteFrame()) {
     
     if (auto* browserParent = GetBrowserParent()) {
-      RefPtr<BrowsingContext> bc(GetBrowsingContext());
       
       
       
@@ -3432,17 +3449,16 @@ void nsFrameLoader::SkipBrowsingContextDetach() {
       
       
       
-      bc->Canonical()->SetInFlightProcessId(
-          browserParent->Manager()->ChildID());
-      browserParent->SendSkipBrowsingContextDetach(
-          [bc](bool aSuccess) { bc->Canonical()->SetInFlightProcessId(0); },
-          [bc](mozilla::ipc::ResponseRejectReason aReason) {
-            bc->Canonical()->SetInFlightProcessId(0);
-          });
+      MOZ_DIAGNOSTIC_ASSERT(mBrowsingContext ==
+                            RefPtr<BrowsingContext>(GetBrowsingContext()));
+      RefPtr<CanonicalBrowsingContext> bc(mBrowsingContext->Canonical());
+      bc->SetInFlightProcessId(browserParent->Manager()->ChildID());
+      auto callback = [bc](auto) { bc->SetInFlightProcessId(0); };
+      browserParent->SendWillChangeProcess(callback, callback);
     }
     
     else if (auto* browserBridgeChild = GetBrowserBridgeChild()) {
-      Unused << browserBridgeChild->SendSkipBrowsingContextDetach();
+      Unused << browserBridgeChild->SendWillChangeProcess();
     }
     return;
   }
@@ -3450,7 +3466,7 @@ void nsFrameLoader::SkipBrowsingContextDetach() {
   
   RefPtr<nsDocShell> docshell = GetDocShell();
   MOZ_ASSERT(docshell);
-  docshell->SkipBrowsingContextDetach();
+  docshell->SetWillChangeProcess();
 }
 
 void nsFrameLoader::MaybeNotifyCrashed(BrowsingContext* aBrowsingContext,

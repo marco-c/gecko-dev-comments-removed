@@ -321,11 +321,25 @@ class BrowserDestroyer final : public Runnable {
         mBrowser(aBrowser),
         mContainer(aContainer) {}
 
+  static nsresult Destroy(nsIWebBrowser* aBrowser) {
+    RefPtr<BrowsingContext> bc;
+    if (nsCOMPtr<nsIDocShell> docShell = do_GetInterface(aBrowser)) {
+      bc = docShell->GetBrowsingContext();
+    }
+
+    nsCOMPtr<nsIBaseWindow> window(do_QueryInterface(aBrowser));
+    nsresult rv = window->Destroy();
+    MOZ_ASSERT(bc);
+    if (bc) {
+      bc->Detach();
+    }
+    return rv;
+  }
+
   NS_IMETHOD
   Run() override {
     
-    nsCOMPtr<nsIBaseWindow> window = do_QueryInterface(mBrowser);
-    return window->Destroy();
+    return Destroy(mBrowser);
   }
 
  protected:
@@ -354,8 +368,8 @@ class WindowlessBrowser final : public nsIWindowlessBrowser,
   NS_FORWARD_SAFE_NSIWEBNAVIGATION(mWebNavigation)
   NS_FORWARD_SAFE_NSIINTERFACEREQUESTOR(mInterfaceRequestor)
 
- protected:
-  virtual ~WindowlessBrowser() {
+ private:
+  ~WindowlessBrowser() {
     if (mClosed) {
       return;
     }
@@ -366,11 +380,10 @@ class WindowlessBrowser final : public nsIWindowlessBrowser,
     
     
     
-    nsCOMPtr<nsIRunnable> runnable = new BrowserDestroyer(mBrowser, mContainer);
-    nsContentUtils::AddScriptRunner(runnable);
+    auto runnable = MakeRefPtr<BrowserDestroyer>(mBrowser, mContainer);
+    nsContentUtils::AddScriptRunner(runnable.forget());
   }
 
- private:
   nsCOMPtr<nsIWebBrowser> mBrowser;
   nsCOMPtr<nsIWebNavigation> mWebNavigation;
   nsCOMPtr<nsIInterfaceRequestor> mInterfaceRequestor;
@@ -393,9 +406,7 @@ WindowlessBrowser::Close() {
 
   mWebNavigation = nullptr;
   mInterfaceRequestor = nullptr;
-
-  nsCOMPtr<nsIBaseWindow> window = do_QueryInterface(mBrowser);
-  return window->Destroy();
+  return BrowserDestroyer::Destroy(mBrowser);
 }
 
 NS_IMETHODIMP
