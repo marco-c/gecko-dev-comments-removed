@@ -289,8 +289,19 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
   
   if (IsTopContent(parentContext, aOwner)) {
     
-    return BrowsingContext::CreateDetached(nullptr, aOpener, frameName,
-                                           BrowsingContext::Type::Content);
+    RefPtr<BrowsingContext> bc = BrowsingContext::CreateDetached(
+        nullptr, aOpener, frameName, BrowsingContext::Type::Content);
+
+    
+    
+    
+    if (nsCOMPtr<nsIMozBrowserFrame> mozbrowser =
+            aOwner->GetAsMozBrowserFrame()) {
+      if (mozbrowser->GetReallyIsBrowser()) {
+        bc->SetWindowless();
+      }
+    }
+    return bc.forget();
   }
 
   auto type = parentContext->IsContent() ? BrowsingContext::Type::Content

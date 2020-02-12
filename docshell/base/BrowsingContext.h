@@ -162,6 +162,15 @@ class BrowsingContext : public nsISupports, public nsWrapperCache {
       BrowsingContext* aParent, BrowsingContext* aOpener,
       const nsAString& aName, Type aType);
 
+  
+  
+  
+  
+  
+  static already_AddRefed<BrowsingContext> CreateWindowless(
+      BrowsingContext* aParent, BrowsingContext* aOpener,
+      const nsAString& aName, Type aType);
+
   void EnsureAttached();
 
   bool EverAttached() const { return mEverAttached; }
@@ -178,6 +187,9 @@ class BrowsingContext : public nsISupports, public nsWrapperCache {
   
   
   bool IsDiscarded() const { return mIsDiscarded; }
+
+  bool Windowless() const { return mWindowless; }
+  void SetWindowless();
 
   
   
@@ -489,6 +501,7 @@ class BrowsingContext : public nsISupports, public nsWrapperCache {
     uint64_t GetOpenerId() const { return mozilla::Get<IDX_OpenerId>(mFields); }
 
     bool mCached;
+    bool mWindowless;
 
     FieldTuple mFields;
   };
@@ -656,6 +669,10 @@ class BrowsingContext : public nsISupports, public nsWrapperCache {
   
   
   bool mIsDiscarded : 1;
+
+  
+  
+  bool mWindowless : 1;
 
   
   

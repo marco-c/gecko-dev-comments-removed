@@ -77,7 +77,7 @@ nsresult nsPrintObject::InitAsRootObject(nsIDocShell* aDocShell, Document* aDoc,
     
 
     
-    RefPtr<BrowsingContext> bc = BrowsingContext::Create(
+    RefPtr<BrowsingContext> bc = BrowsingContext::CreateWindowless(
          nullptr,
          nullptr, EmptyString(),
         aDocShell->ItemType() == nsIDocShellTreeItem::typeContent
