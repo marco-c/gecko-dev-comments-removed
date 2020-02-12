@@ -177,7 +177,7 @@ void ServiceWorkerJob::Finish(ErrorResult& aRv) {
   
   
   if (aRv.Failed() && !aRv.ErrorCodeIs(NS_ERROR_DOM_SECURITY_ERR) &&
-      !aRv.ErrorCodeIs(NS_ERROR_DOM_TYPE_ERR) &&
+      !aRv.ErrorCodeIs(NS_ERROR_INTERNAL_ERRORRESULT_TYPEERROR) &&
       !aRv.ErrorCodeIs(NS_ERROR_DOM_INVALID_STATE_ERR)) {
     
     aRv.SuppressException();
