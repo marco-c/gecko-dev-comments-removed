@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef frontend_EmitterScope_h
 #define frontend_EmitterScope_h
@@ -26,38 +26,40 @@ class Scope;
 
 namespace frontend {
 
+struct BytecodeEmitter;
 
+// A scope that introduces bindings.
 class EmitterScope : public Nestable<EmitterScope> {
-  
-  
-  
-  
+  // The cache of bound names that may be looked up in the
+  // scope. Initially populated as the set of names this scope binds. As
+  // names are looked up in enclosing scopes, they are cached on the
+  // current scope.
   PooledMapPtr<NameLocationMap> nameCache_;
 
-  
-  
+  // If this scope's cache does not include free names, such as the
+  // global scope, the NameLocation to return.
   mozilla::Maybe<NameLocation> fallbackFreeNameLocation_;
 
-  
-  
+  // True if there is a corresponding EnvironmentObject on the environment
+  // chain, false if all bindings are stored in frame slots on the stack.
   bool hasEnvironment_;
 
-  
+  // The number of enclosing environments. Used for error checking.
   uint8_t environmentChainLength_;
 
-  
-  
-  
-  
-  
+  // The next usable slot on the frame for not-closed over bindings.
+  //
+  // The initial frame slot when assigning slots to bindings is the
+  // enclosing scope's nextFrameSlot. For the first scope in a frame,
+  // the initial frame slot is 0.
   uint32_t nextFrameSlot_;
 
-  
-  
+  // The index in the BytecodeEmitter's interned scope vector, otherwise
+  // ScopeNote::NoScopeIndex.
   uint32_t scopeIndex_;
 
-  
-  
+  // If kind is Lexical, Catch, or With, the index in the BytecodeEmitter's
+  // block scope note list. Otherwise ScopeNote::NoScopeNote.
   uint32_t noteIndex_;
 
   MOZ_MUST_USE bool ensureCache(BytecodeEmitter* bce);
@@ -133,7 +135,7 @@ class EmitterScope : public Nestable<EmitterScope> {
 
   bool hasEnvironment() const { return hasEnvironment_; }
 
-  
+  // The first frame slot used.
   uint32_t frameSlotStart() const {
     if (EmitterScope* inFrame = enclosingInFrame()) {
       return inFrame->nextFrameSlot_;
@@ -141,7 +143,7 @@ class EmitterScope : public Nestable<EmitterScope> {
     return 0;
   }
 
-  
+  // The last frame slot used + 1.
   uint32_t frameSlotEnd() const { return nextFrameSlot_; }
 
   EmitterScope* enclosingInFrame() const {
@@ -154,7 +156,7 @@ class EmitterScope : public Nestable<EmitterScope> {
                                                     EmitterScope* target);
 };
 
-} 
-} 
+} /* namespace frontend */
+} /* namespace js */
 
-#endif 
+#endif /* frontend_EmitterScope_h */

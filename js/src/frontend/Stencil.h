@@ -7,18 +7,46 @@
 #ifndef frontend_Stencil_h
 #define frontend_Stencil_h
 
-#include "frontend/AbstractScope.h"
-#include "frontend/TypedIndex.h"
-#include "gc/AllocKind.h"
-#include "gc/Rooting.h"
-#include "js/RegExpFlags.h"
-#include "vm/BigIntType.h"
-#include "vm/JSFunction.h"
-#include "vm/JSScript.h"
-#include "vm/Scope.h"
+#include "mozilla/Assertions.h"  
+#include "mozilla/Maybe.h"       
+#include "mozilla/Range.h"       
+#include "mozilla/Span.h"        
+
+#include <stdint.h>  
+#include <stdlib.h>  
+
+#include "frontend/AbstractScope.h"      
+#include "frontend/NameAnalysisTypes.h"  
+#include "frontend/TypedIndex.h"         
+#include "gc/AllocKind.h"                
+#include "gc/Barrier.h"                  
+#include "gc/Rooting.h"  
+#include "js/RegExpFlags.h"  
+#include "js/RootingAPI.h"   
+#include "js/UniquePtr.h"    
+#include "js/Utility.h"      
+#include "js/Vector.h"       
+#include "util/Text.h"       
+#include "vm/BigIntType.h"   
+#include "vm/JSFunction.h"   
+#include "vm/JSScript.h"  
+#include "vm/Runtime.h"  
+#include "vm/Scope.h"  
+#include "vm/ScopeKind.h"  
+
+struct JSContext;
+class JSAtom;
+class JSFunction;
+class JSTracer;
 
 namespace js {
+
+class Shape;
+
 namespace frontend {
+
+struct ParseInfo;
+class FunctionBox;
 
 
 
@@ -333,6 +361,81 @@ class ScopeCreationData {
     }
     return data<SpecificScopeType>().nextFrameSlot;
   }
+};
+
+
+class ScriptStencil {
+ public:
+  
+  unsigned lineno = 0;
+  unsigned column = 0;
+
+  
+  uint32_t natoms = 0;
+
+  
+  uint32_t ngcthings = 0;
+
+  
+  uint32_t numResumeOffsets = 0;
+
+  
+  uint32_t numScopeNotes = 0;
+
+  
+  uint32_t numTryNotes = 0;
+
+  
+  uint32_t mainOffset = 0;
+  uint32_t nfixed = 0;
+  uint32_t nslots = 0;
+  uint32_t bodyScopeIndex = 0;
+  uint32_t numICEntries = 0;
+  uint32_t numBytecodeTypeSets = 0;
+
+  
+  bool strict = false;
+  bool bindingsAccessedDynamically = false;
+  bool hasCallSiteObj = false;
+  bool isForEval = false;
+  bool isModule = false;
+  bool isFunction = false;
+  bool hasNonSyntacticScope = false;
+  bool needsFunctionEnvironmentObjects = false;
+  bool hasModuleGoal = false;
+
+  
+  
+
+  mozilla::Span<const jsbytecode> code;
+  mozilla::Span<const jssrcnote> notes;
+
+  js::frontend::FunctionBox* functionBox = nullptr;
+
+  
+  
+  virtual bool finishGCThings(JSContext* cx,
+                              mozilla::Span<JS::GCCellPtr> gcthings) const = 0;
+
+  
+  
+  virtual void initAtomMap(GCPtrAtom* atoms) const = 0;
+
+  
+  
+  virtual void finishResumeOffsets(
+      mozilla::Span<uint32_t> resumeOffsets) const = 0;
+
+  
+  
+  virtual void finishScopeNotes(mozilla::Span<ScopeNote> scopeNotes) const = 0;
+
+  
+  
+  virtual void finishTryNotes(mozilla::Span<JSTryNote> tryNotes) const = 0;
+
+  
+  virtual void finishInnerFunctions() const = 0;
 };
 
 } 
