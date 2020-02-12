@@ -278,7 +278,8 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
 
 
-  bool GetSnapPointForDestination(mozilla::ScrollUnit aUnit, nsPoint aStartPos,
+  bool GetSnapPointForDestination(mozilla::ScrollUnit aUnit,
+                                  const nsPoint& aStartPos,
                                   nsPoint& aDestination);
 
   nsMargin GetScrollPadding() const;
