@@ -1055,10 +1055,28 @@ class UrlbarView {
     favicon.src = result.payload.icon || UrlbarUtils.ICON.TIP;
 
     let title = item._elements.get("title");
-    title.textContent = result.payload.text;
+    
+    if (result.payload.textData) {
+      this.document.l10n.setAttributes(
+        title,
+        result.payload.textData.id,
+        result.payload.textData.args
+      );
+    } else {
+      title.textContent = result.payload.text;
+    }
 
     let tipButton = item._elements.get("tipButton");
-    tipButton.textContent = result.payload.buttonText;
+    
+    if (result.payload.buttonTextData) {
+      this.document.l10n.setAttributes(
+        tipButton,
+        result.payload.buttonTextData.id,
+        result.payload.buttonTextData.args
+      );
+    } else {
+      tipButton.textContent = result.payload.buttonText;
+    }
 
     let helpIcon = item._elements.get("helpButton");
     helpIcon.style.display = result.payload.helpUrl ? "" : "none";

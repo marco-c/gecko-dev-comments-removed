@@ -92,6 +92,8 @@ var UrlbarUtils = {
     REMOTE_TAB: 6,
     
     
+    
+    
     TIP: 7,
   },
 
