@@ -3871,6 +3871,9 @@ bool nsDocumentViewer::ShouldAttachToTopLevel() {
 
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) || \
     defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_UIKIT)
+  if (!mPresContext) {
+    return false;
+  }
 
   
   
