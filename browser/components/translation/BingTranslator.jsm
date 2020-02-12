@@ -57,7 +57,7 @@ var BingTranslator = function(
   this._translatedCharacterCount = 0;
 };
 
-this.BingTranslator.prototype = {
+BingTranslator.prototype = {
   
 
 

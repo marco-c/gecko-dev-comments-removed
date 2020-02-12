@@ -4758,10 +4758,10 @@ AMTelemetry = {
   },
 };
 
-this.AddonManager.init();
+AddonManager.init();
 
 
-this.AddonManager.addManagerListener(AMTelemetry);
+AddonManager.addManagerListener(AMTelemetry);
 
 
 ChromeUtils.import(

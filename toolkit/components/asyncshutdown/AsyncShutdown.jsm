@@ -1050,30 +1050,24 @@ Barrier.prototype = Object.freeze({
 
 
 if (!isContent) {
-  this.AsyncShutdown.profileChangeTeardown = getPhase(
-    "profile-change-teardown"
-  );
-  this.AsyncShutdown.profileBeforeChange = getPhase("profile-before-change");
-  this.AsyncShutdown.sendTelemetry = getPhase(
-    "profile-before-change-telemetry"
-  );
+  AsyncShutdown.profileChangeTeardown = getPhase("profile-change-teardown");
+  AsyncShutdown.profileBeforeChange = getPhase("profile-before-change");
+  AsyncShutdown.sendTelemetry = getPhase("profile-before-change-telemetry");
 }
 
 
 
 if (!isContent) {
-  this.AsyncShutdown.quitApplicationGranted = getPhase(
-    "quit-application-granted"
-  );
+  AsyncShutdown.quitApplicationGranted = getPhase("quit-application-granted");
 }
 
 
 
 
 
-this.AsyncShutdown.webWorkersShutdown = getPhase("web-workers-shutdown");
-this.AsyncShutdown.xpcomWillShutdown = getPhase("xpcom-will-shutdown");
+AsyncShutdown.webWorkersShutdown = getPhase("web-workers-shutdown");
+AsyncShutdown.xpcomWillShutdown = getPhase("xpcom-will-shutdown");
 
-this.AsyncShutdown.Barrier = Barrier;
+AsyncShutdown.Barrier = Barrier;
 
-Object.freeze(this.AsyncShutdown);
+Object.freeze(AsyncShutdown);

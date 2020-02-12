@@ -64,7 +64,7 @@ function SearchSuggestionController(callback = null) {
   this._callback = callback;
 }
 
-this.SearchSuggestionController.prototype = {
+SearchSuggestionController.prototype = {
   
 
 
@@ -500,7 +500,7 @@ this.SearchSuggestionController.prototype = {
 
 
 
-this.SearchSuggestionController.engineOffersSuggestions = function(engine) {
+SearchSuggestionController.engineOffersSuggestions = function(engine) {
   return engine.supportsResponseType(SEARCH_RESPONSE_SUGGESTION_JSON);
 };
 
@@ -508,7 +508,7 @@ this.SearchSuggestionController.engineOffersSuggestions = function(engine) {
 
 
 XPCOMUtils.defineLazyPreferenceGetter(
-  this.SearchSuggestionController.prototype,
+  SearchSuggestionController.prototype,
   "remoteTimeout",
   REMOTE_TIMEOUT_PREF,
   REMOTE_TIMEOUT_DEFAULT
@@ -518,7 +518,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 
 XPCOMUtils.defineLazyPreferenceGetter(
-  this.SearchSuggestionController.prototype,
+  SearchSuggestionController.prototype,
   "suggestionsEnabled",
   BROWSER_SUGGEST_PREF,
   true
@@ -528,7 +528,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 
 XPCOMUtils.defineLazyPreferenceGetter(
-  this.SearchSuggestionController.prototype,
+  SearchSuggestionController.prototype,
   "suggestionsInPrivateBrowsingEnabled",
   BROWSER_SUGGEST_PRIVATE_PREF,
   false

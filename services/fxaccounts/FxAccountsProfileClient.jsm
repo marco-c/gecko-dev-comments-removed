@@ -72,7 +72,7 @@ var FxAccountsProfileClient = function(options) {
   log.debug("FxAccountsProfileClient: Initialized");
 };
 
-this.FxAccountsProfileClient.prototype = {
+FxAccountsProfileClient.prototype = {
   
 
 

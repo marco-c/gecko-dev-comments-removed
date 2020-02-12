@@ -49,7 +49,7 @@ var FxAccountsProfile = function(options = {}) {
   }
 };
 
-this.FxAccountsProfile.prototype = {
+FxAccountsProfile.prototype = {
   
   
   PROFILE_FRESHNESS_THRESHOLD: 120000, 

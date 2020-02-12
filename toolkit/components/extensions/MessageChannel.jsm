@@ -142,8 +142,8 @@ var _makeDeferred = (resolve, reject) => {
   
   
   
-  this._deferredResult.resolve = resolve;
-  this._deferredResult.reject = reject;
+  _deferredResult.resolve = resolve;
+  _deferredResult.reject = reject;
 };
 
 
@@ -169,7 +169,7 @@ var _makeDeferred = (resolve, reject) => {
 let Deferred = () => {
   let res = {};
   this._deferredResult = res;
-  res.promise = new Promise(this._makeDeferred);
+  res.promise = new Promise(_makeDeferred);
   this._deferredResult = null;
   return res;
 };

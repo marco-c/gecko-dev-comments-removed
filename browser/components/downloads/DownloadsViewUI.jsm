@@ -112,7 +112,7 @@ var DownloadsViewUI = {
   },
 };
 
-this.DownloadsViewUI.BaseView = class {
+DownloadsViewUI.BaseView = class {
   canClearDownloads(nodeContainer) {
     
     
@@ -142,9 +142,9 @@ this.DownloadsViewUI.BaseView = class {
 
 
 
-this.DownloadsViewUI.DownloadElementShell = function() {};
+DownloadsViewUI.DownloadElementShell = function() {};
 
-this.DownloadsViewUI.DownloadElementShell.prototype = {
+DownloadsViewUI.DownloadElementShell.prototype = {
   
 
 

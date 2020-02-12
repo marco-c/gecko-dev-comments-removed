@@ -126,7 +126,7 @@ this.LoginTestUtils = {
 
 
 
-this.LoginTestUtils.testData = {
+LoginTestUtils.testData = {
   
 
 
@@ -455,7 +455,7 @@ this.LoginTestUtils.testData = {
   },
 };
 
-this.LoginTestUtils.recipes = {
+LoginTestUtils.recipes = {
   getRecipeParent() {
     let { LoginManagerParent } = ChromeUtils.import(
       "resource://gre/modules/LoginManagerParent.jsm"
@@ -469,7 +469,7 @@ this.LoginTestUtils.recipes = {
   },
 };
 
-this.LoginTestUtils.masterPassword = {
+LoginTestUtils.masterPassword = {
   masterPassword: "omgsecret!",
 
   _set(enable) {
@@ -512,7 +512,7 @@ this.LoginTestUtils.masterPassword = {
 
 
 
-this.LoginTestUtils.loginField = {
+LoginTestUtils.loginField = {
   checkPasswordMasked(field, expected, msg) {
     let { editor } = field;
     let valueLength = field.value.length;
@@ -534,12 +534,12 @@ this.LoginTestUtils.loginField = {
   },
 };
 
-this.LoginTestUtils.generation = {
+LoginTestUtils.generation = {
   LENGTH: 15,
   REGEX: /^[a-km-np-zA-HJ-NP-Z2-9]{15}$/,
 };
 
-this.LoginTestUtils.telemetry = {
+LoginTestUtils.telemetry = {
   async waitForEventCount(count, process = "content", category = "pwmgr") {
     let events = await TestUtils.waitForCondition(() => {
       let events = Services.telemetry.snapshotEvents(

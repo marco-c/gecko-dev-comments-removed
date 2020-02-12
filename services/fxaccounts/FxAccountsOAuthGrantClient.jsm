@@ -72,7 +72,7 @@ var FxAccountsOAuthGrantClient = function(options = {}) {
   log.debug("FxAccountsOAuthGrantClient Initialized");
 };
 
-this.FxAccountsOAuthGrantClient.prototype = {
+FxAccountsOAuthGrantClient.prototype = {
   
 
 

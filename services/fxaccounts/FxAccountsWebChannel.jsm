@@ -166,7 +166,7 @@ this.FxAccountsWebChannel = function(options) {
   this._setupChannel();
 };
 
-this.FxAccountsWebChannel.prototype = {
+FxAccountsWebChannel.prototype = {
   
 
 
@@ -400,7 +400,7 @@ this.FxAccountsWebChannelHelpers = function(options) {
     options.privateBrowsingUtils || PrivateBrowsingUtils;
 };
 
-this.FxAccountsWebChannelHelpers.prototype = {
+FxAccountsWebChannelHelpers.prototype = {
   
   
   
@@ -738,7 +738,7 @@ var EnsureFxAccountsWebChannel = () => {
       if (contentUri) {
         
         
-        singleton = new this.FxAccountsWebChannel({
+        singleton = new FxAccountsWebChannel({
           content_uri: contentUri,
           channel_id: WEBCHANNEL_ID,
         });

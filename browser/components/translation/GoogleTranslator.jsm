@@ -55,7 +55,7 @@ var GoogleTranslator = function(
   this._translatedCharacterCount = 0;
 };
 
-this.GoogleTranslator.prototype = {
+GoogleTranslator.prototype = {
   
 
 

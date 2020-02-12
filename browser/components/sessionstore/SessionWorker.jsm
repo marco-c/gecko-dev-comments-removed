@@ -18,4 +18,4 @@ var SessionWorker = new BasePromiseWorker(
 );
 
 
-this.SessionWorker.ExceptionHandlers["OS.File.Error"] = OS.File.Error.fromMsg;
+SessionWorker.ExceptionHandlers["OS.File.Error"] = OS.File.Error.fromMsg;

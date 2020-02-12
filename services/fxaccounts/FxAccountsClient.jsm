@@ -49,7 +49,7 @@ var FxAccountsClient = function(host = Services.prefs.getCharPref(HOST_PREF)) {
   this.backoffError = null;
 };
 
-this.FxAccountsClient.prototype = {
+FxAccountsClient.prototype = {
   
 
 

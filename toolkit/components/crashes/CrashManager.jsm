@@ -159,7 +159,7 @@ var CrashManager = function(options) {
   this._storeProtectedCount = 0;
 };
 
-this.CrashManager.prototype = Object.freeze({
+CrashManager.prototype = Object.freeze({
   
   PROCESS_TYPE_MAIN: "main",
 
@@ -1523,7 +1523,7 @@ CrashRecord.prototype = Object.freeze({
 
 
 
-XPCOMUtils.defineLazyGetter(this.CrashManager, "Singleton", function() {
+XPCOMUtils.defineLazyGetter(CrashManager, "Singleton", function() {
   if (gCrashManager) {
     return gCrashManager;
   }

@@ -73,7 +73,7 @@ var YandexTranslator = function(
   this._translatedCharacterCount = 0;
 };
 
-this.YandexTranslator.prototype = {
+YandexTranslator.prototype = {
   
 
 

@@ -1173,7 +1173,7 @@ var DownloadHistoryObserver = function(aList) {
   PlacesUtils.history.addObserver(this);
 };
 
-this.DownloadHistoryObserver.prototype = {
+DownloadHistoryObserver.prototype = {
   
 
 
@@ -1225,7 +1225,7 @@ var DownloadAutoSaveView = function(aList, aStore) {
   );
 };
 
-this.DownloadAutoSaveView.prototype = {
+DownloadAutoSaveView.prototype = {
   
 
 
