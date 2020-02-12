@@ -85,12 +85,10 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
 
   
   nsIRequest::TRRMode TRRMode();
-  
-  
-  nsIRequest::TRRMode EffectiveTRRMode();
 
  protected:
   friend class nsHostResolver;
+  friend class mozilla::net::TRR;
 
   explicit nsHostRecord(const nsHostKey& key);
   virtual ~nsHostRecord() = default;
@@ -144,7 +142,12 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
   
   mozilla::TimeStamp mGraceStart;
 
-  mozilla::net::ResolverMode mResolverMode;
+  
+  
+  
+  
+  
+  nsIRequest::TRRMode mEffectiveTRRMode;
 
   uint16_t mResolving;  
 
@@ -498,7 +501,8 @@ class nsHostResolver : public nsISupports, public AHostResolver {
                                     uint32_t aTtl, bool pb) override;
   nsresult GetHostRecord(const nsACString& host, const nsACString& trrServer,
                          uint16_t type, uint16_t flags, uint16_t af, bool pb,
-                         const nsCString& originSuffix, nsHostRecord** result) override;
+                         const nsCString& originSuffix,
+                         nsHostRecord** result) override;
   nsresult TrrLookup_unlocked(nsHostRecord*,
                               mozilla::net::TRR* pushedTRR = nullptr) override;
 
