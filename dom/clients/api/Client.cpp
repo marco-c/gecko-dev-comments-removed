@@ -201,9 +201,8 @@ already_AddRefed<Promise> Client::Navigate(const nsAString& aURL,
         outerPromise->MaybeResolve(newClient);
       },
       [self, outerPromise](const CopyableErrorResult& aResult) {
-        
-        
-        outerPromise->MaybeReject(NS_ERROR_DOM_TYPE_ERR);
+        CopyableErrorResult result(aResult);
+        outerPromise->MaybeReject(result);
       });
 
   return outerPromise.forget();

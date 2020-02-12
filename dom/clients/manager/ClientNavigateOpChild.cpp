@@ -207,14 +207,17 @@ RefPtr<ClientOpPromise> ClientNavigateOpChild::DoNavigate(
   rv = NS_NewURI(getter_AddRefs(url), aArgs.url(), nullptr,
                  shouldUseBaseURL ? baseURL.get() : nullptr);
   if (NS_FAILED(rv)) {
+    
+    
+    nsPrintfCString err("Invalid URL \"%s\"", aArgs.url().get());
     CopyableErrorResult result;
-    result.Throw(rv);
+    result.ThrowTypeError(NS_ConvertUTF8toUTF16(err));
     return ClientOpPromise::CreateAndReject(result, __func__);
   }
 
   if (url->GetSpecOrDefault().EqualsLiteral("about:blank")) {
     CopyableErrorResult result;
-    result.Throw(NS_ERROR_FAILURE);
+    result.ThrowTypeError(u"Client.navigate to \"about:blank\" is not allowed");
     return ClientOpPromise::CreateAndReject(result, __func__);
   }
 
@@ -249,8 +252,14 @@ RefPtr<ClientOpPromise> ClientNavigateOpChild::DoNavigate(
   loadState->SetFirstParty(true);
   rv = docShell->LoadURI(loadState, false);
   if (NS_FAILED(rv)) {
+    
+    
+    
+    
+    
+    nsPrintfCString err("Invalid URL \"%s\"", aArgs.url().get());
     CopyableErrorResult result;
-    result.Throw(rv);
+    result.ThrowTypeError(NS_ConvertUTF8toUTF16(err));
     return ClientOpPromise::CreateAndReject(result, __func__);
   }
 
