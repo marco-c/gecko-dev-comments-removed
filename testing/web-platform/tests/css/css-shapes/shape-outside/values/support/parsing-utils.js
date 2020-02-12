@@ -803,19 +803,16 @@ var validPolygons = [
 ]
 
 
+
+
 var calcTestValues = [
-    ["calc(10in)", "calc(10in)", "960px"],
+    ["calc(10in)", "calc(960px)", "960px"],
     ["calc(10in + 20px)", "calc(980px)", "980px"],
     ["calc(30%)", "calc(30%)", "30%"],
     ["calc(100%/4)", "calc(25%)", "25%"],
     ["calc(25%*3)", "calc(75%)", "75%"],
-    
-    
-    
-    
-    
-    ["calc(25%*3 - 10in)", "calc(75% - 10in)", ["calc(75% - 960px)", "calc(-960px + 75%)"]],
-    ["calc((12.5%*6 + 10in) / 4)", "calc((75% + 10in) / 4)", ["calc((75% + 960px) / 4)", "calc(18.75% + 240px)"]]
+    ["calc(25%*3 - 10in)", "calc(75% - 960px)", "calc(75% - 960px)"],
+    ["calc((12.5%*6 + 10in) / 4)", "calc(18.75% + 240px)", "calc(18.75% + 240px)"]
 ]
 
 return {
