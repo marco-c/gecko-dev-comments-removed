@@ -112,7 +112,14 @@ const BAD_IP = (() => {
 })();
 
 class DNSListener {
-  constructor(name, expectedAnswer, expectedSuccess = true, delay) {
+  constructor(
+    name,
+    expectedAnswer,
+    expectedSuccess = true,
+    delay,
+    trrServer = "",
+    expectEarlyFail = false
+  ) {
     this.name = name;
     this.expectedAnswer = expectedAnswer;
     this.expectedSuccess = expectedSuccess;
@@ -120,13 +127,31 @@ class DNSListener {
     this.promise = new Promise(resolve => {
       this.resolve = resolve;
     });
-    this.request = dns.asyncResolve(
-      name,
-      0,
-      this,
-      mainThread,
-      defaultOriginAttributes
-    );
+    if (trrServer == "") {
+      this.request = dns.asyncResolve(
+        name,
+        0,
+        this,
+        mainThread,
+        defaultOriginAttributes
+      );
+    } else {
+      try {
+        this.request = dns.asyncResolveWithTrrServer(
+          name,
+          trrServer,
+          0,
+          this,
+          mainThread,
+          defaultOriginAttributes
+        );
+        Assert.ok(!expectEarlyFail);
+      } catch (e) {
+        Assert.ok(expectEarlyFail);
+        this.resolve([e]);
+        return;
+      }
+    }
   }
 
   onLookupComplete(inRequest, inRecord, inStatus) {
@@ -1408,6 +1433,200 @@ add_task(async function test_vpnDetection() {
     "network:link-status-changed",
     "changed"
   );
+});
+
+
+add_task(async function test_async_resolve_with_trr_server_1() {
+  dns.clearCache(true);
+  Services.prefs.setIntPref("network.trr.mode", 0); 
+
+  await new DNSListener(
+    "bar_with_trr1.example.com",
+    "2.2.2.2",
+    true,
+    undefined,
+    `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`
+  );
+
+  
+  await new DNSListener("bar_with_trr1.example.com", "127.0.0.1");
+});
+
+
+add_task(async function test_async_resolve_with_trr_server_2() {
+  dns.clearCache(true);
+  Services.prefs.setIntPref("network.trr.mode", 2); 
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`
+  );
+
+  await new DNSListener(
+    "bar_with_trr2.example.com",
+    "3.3.3.3",
+    true,
+    undefined,
+    `https://foo.example.com:${h2Port}/doh?responseIP=3.3.3.3`
+  );
+
+  
+  await new DNSListener("bar_with_trr2.example.com", "2.2.2.2");
+});
+
+
+add_task(async function test_async_resolve_with_trr_server_3() {
+  dns.clearCache(true);
+  Services.prefs.setIntPref("network.trr.mode", 3); 
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`
+  );
+
+  await new DNSListener(
+    "bar_with_trr3.example.com",
+    "3.3.3.3",
+    true,
+    undefined,
+    `https://foo.example.com:${h2Port}/doh?responseIP=3.3.3.3`
+  );
+
+  
+  await new DNSListener("bar_with_trr3.example.com", "2.2.2.2");
+});
+
+
+add_task(async function test_async_resolve_with_trr_server_5() {
+  dns.clearCache(true);
+  Services.prefs.setIntPref("network.trr.mode", 5); 
+
+  let [_] = await new DNSListener(
+    "bar_with_trr3.example.com",
+    undefined,
+    false,
+    undefined,
+    `https://foo.example.com:${h2Port}/doh?responseIP=3.3.3.3`,
+    true
+  );
+
+  
+  await new DNSListener("bar_with_trr3.example.com", "127.0.0.1");
+});
+
+
+add_task(async function test_async_resolve_with_trr_server_different_cache() {
+  dns.clearCache(true);
+  Services.prefs.setIntPref("network.trr.mode", 3); 
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`
+  );
+
+  await new DNSListener("bar_with_trr4.example.com", "2.2.2.2", true);
+
+  
+  await new DNSListener(
+    "bar_with_trr4.example.com",
+    "3.3.3.3",
+    true,
+    undefined,
+    `https://foo.example.com:${h2Port}/doh?responseIP=3.3.3.3`
+  );
+});
+
+
+add_task(async function test_async_resolve_with_trr_server_different_servers() {
+  dns.clearCache(true);
+  Services.prefs.setIntPref("network.trr.mode", 3); 
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`
+  );
+
+  await new DNSListener("bar_with_trr5.example.com", "2.2.2.2", true);
+
+  
+  await new DNSListener(
+    "bar_with_trr5.example.com",
+    "3.3.3.3",
+    true,
+    undefined,
+    `https://foo.example.com:${h2Port}/doh?responseIP=3.3.3.3`
+  );
+
+  
+  await new DNSListener(
+    "bar_with_trr5.example.com",
+    "4.4.4.4",
+    true,
+    undefined,
+    `https://foo.example.com:${h2Port}/doh?responseIP=4.4.4.4`
+  );
+});
+
+
+
+
+add_task(async function test_async_resolve_with_trr_server_no_blacklist() {
+  dns.clearCache(true);
+  Services.prefs.setIntPref("network.trr.mode", 2); 
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`
+  );
+
+  let [, , inStatus] = await new DNSListener(
+    "bar_with_trr6.example.com",
+    undefined,
+    false,
+    undefined,
+    `https://foo.example.com:${h2Port}/404`
+  );
+  Assert.ok(
+    !Components.isSuccessCode(inStatus),
+    `${inStatus} should be an error code`
+  );
+
+  await new DNSListener("bar_with_trr6.example.com", "2.2.2.2", true);
+});
+
+
+add_task(async function test_async_resolve_with_trr_server_no_push() {
+  dns.clearCache(true);
+  Services.prefs.setIntPref("network.trr.mode", 2); 
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`
+  );
+
+  await new DNSListener(
+    "bar_with_trr7.example.com",
+    "3.3.3.3",
+    true,
+    undefined,
+    `https://foo.example.com:${h2Port}/doh?responseIP=3.3.3.3&push=true`
+  );
+});
+
+add_task(async function test_async_resolve_with_trr_server_no_push_part_2() {
+  
+  
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/404`
+  );
+  dump(
+    "test_async_resolve_with_trr_server_no_push_part_2 - resolve push.example.org will not be in the cache.\n"
+  );
+
+  await new DNSListener(
+    "push.example.org",
+    "3.3.3.3",
+    true,
+    undefined,
+    `https://foo.example.com:${h2Port}/doh?responseIP=3.3.3.3&push=true`
+  );
+
+  await new DNSListener("push.example.org", "127.0.0.1");
 });
 
 
