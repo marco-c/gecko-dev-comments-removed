@@ -522,16 +522,17 @@ static nscoord OffsetToAlignedStaticPos(const ReflowInput& aKidReflowInput,
                                     : alignAreaSize.BSize(pcWM);
 
   AlignJustifyFlags flags = AlignJustifyFlags::IgnoreAutoMargins;
-  uint16_t alignConst = aPlaceholderContainer->CSSAlignmentForAbsPosChild(
-      aKidReflowInput, pcAxis);
+  StyleAlignFlags alignConst =
+      aPlaceholderContainer->CSSAlignmentForAbsPosChild(aKidReflowInput,
+                                                        pcAxis);
   
   
   
   
-  if (alignConst & NS_STYLE_ALIGN_SAFE) {
+  if (alignConst & StyleAlignFlags::SAFE) {
     flags |= AlignJustifyFlags::OverflowSafe;
   }
-  alignConst &= ~NS_STYLE_ALIGN_FLAG_BITS;
+  alignConst &= ~StyleAlignFlags::FLAG_BITS;
 
   
   

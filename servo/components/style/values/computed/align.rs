@@ -9,7 +9,7 @@
 use crate::values::computed::{Context, ToComputedValue};
 use crate::values::specified;
 
-pub use super::specified::{AlignContent, AlignItems, JustifyContent, SelfAlignment};
+pub use super::specified::{AlignContent, AlignItems, ContentDistribution, JustifyContent, SelfAlignment};
 pub use super::specified::{AlignSelf, JustifySelf};
 
 
@@ -34,7 +34,8 @@ pub use super::specified::{AlignSelf, JustifySelf};
 
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ToCss, ToResolvedValue)]
-pub struct JustifyItems {
+#[repr(C)]
+pub struct ComputedJustifyItems {
     
     
     #[css(skip)]
@@ -44,6 +45,8 @@ pub struct JustifyItems {
     
     pub computed: specified::JustifyItems,
 }
+
+pub use self::ComputedJustifyItems as JustifyItems;
 
 impl JustifyItems {
     

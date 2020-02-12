@@ -433,7 +433,7 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
-  virtual uint16_t CSSAlignmentForAbsPosChild(
+  virtual mozilla::StyleAlignFlags CSSAlignmentForAbsPosChild(
       const ReflowInput& aChildRI, mozilla::LogicalAxis aLogicalAxis) const;
 
 #ifdef ACCESSIBILITY

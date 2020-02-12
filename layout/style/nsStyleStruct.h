@@ -964,6 +964,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   using StyleFlexBasis = mozilla::StyleFlexBasis;
   using WritingMode = mozilla::WritingMode;
   using StyleImplicitGridTracks = mozilla::StyleImplicitGridTracks;
+  using ComputedStyle = mozilla::ComputedStyle;
+  using StyleAlignSelf = mozilla::StyleAlignSelf;
+  using StyleJustifySelf = mozilla::StyleJustifySelf;
 
   explicit nsStylePosition(const mozilla::dom::Document&);
   nsStylePosition(const nsStylePosition& aOther);
@@ -987,13 +990,13 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
 
 
 
-  uint8_t UsedAlignSelf(mozilla::ComputedStyle* aParent) const;
+  StyleAlignSelf UsedAlignSelf(const ComputedStyle*) const;
 
   
 
 
 
-  uint8_t UsedJustifySelf(mozilla::ComputedStyle* aParent) const;
+  StyleJustifySelf UsedJustifySelf(const ComputedStyle*) const;
 
   Position mObjectPosition;
   StyleRect<LengthPercentageOrAuto> mOffset;
@@ -1010,23 +1013,12 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   uint8_t mGridAutoFlow;  
   mozilla::StyleBoxSizing mBoxSizing;
 
-  
-  uint16_t mAlignContent;  
-  uint8_t mAlignItems;
-  uint8_t mAlignSelf;
-  uint16_t mJustifyContent;  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  uint8_t mSpecifiedJustifyItems;
-  uint8_t mJustifyItems;
-  uint8_t mJustifySelf;
+  mozilla::StyleAlignContent mAlignContent;
+  mozilla::StyleAlignItems mAlignItems;
+  mozilla::StyleAlignSelf mAlignSelf;
+  mozilla::StyleJustifyContent mJustifyContent;
+  mozilla::StyleComputedJustifyItems mJustifyItems;
+  mozilla::StyleJustifySelf mJustifySelf;
   mozilla::StyleFlexDirection mFlexDirection;
   mozilla::StyleFlexWrap mFlexWrap;
   mozilla::StyleObjectFit mObjectFit;

@@ -156,7 +156,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
   uint32_t GetLineClampValue() const;
 
   
-  uint16_t CSSAlignmentForAbsPosChild(
+  mozilla::StyleAlignFlags CSSAlignmentForAbsPosChild(
       const ReflowInput& aChildRI,
       mozilla::LogicalAxis aLogicalAxis) const override;
 
@@ -173,11 +173,12 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
-  static void CalculatePackingSpace(uint32_t aNumThingsToPack,
-                                    uint8_t aAlignVal,
-                                    nscoord* aFirstSubjectOffset,
-                                    uint32_t* aNumPackingSpacesRemaining,
-                                    nscoord* aPackingSpaceRemaining);
+
+  static void CalculatePackingSpace(
+      uint32_t aNumThingsToPack,
+      const mozilla::StyleContentDistribution& aAlignVal,
+      nscoord* aFirstSubjectOffset, uint32_t* aNumPackingSpacesRemaining,
+      nscoord* aPackingSpaceRemaining);
 
   
 
