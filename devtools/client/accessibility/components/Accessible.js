@@ -230,18 +230,20 @@ class Accessible extends Component {
       return;
     }
 
-    const accessibleWalkerFront = accessibleFront.parent();
-    if (!accessibleWalkerFront) {
+    const accessibilityWalkerFront = accessibleFront.parent();
+    if (!accessibilityWalkerFront) {
       return;
     }
 
-    accessibleWalkerFront.highlightAccessible(accessibleFront).catch(error => {
-      
-      
-      if (this.props.toolbox) {
-        console.error(error);
-      }
-    });
+    accessibilityWalkerFront
+      .highlightAccessible(accessibleFront)
+      .catch(error => {
+        
+        
+        if (this.props.toolbox) {
+          console.error(error);
+        }
+      });
   }
 
   hideAccessibleHighlighter(accessibleFront) {
@@ -250,12 +252,12 @@ class Accessible extends Component {
       return;
     }
 
-    const accessibleWalkerFront = accessibleFront.parent();
-    if (!accessibleWalkerFront) {
+    const accessibilityWalkerFront = accessibleFront.parent();
+    if (!accessibilityWalkerFront) {
       return;
     }
 
-    accessibleWalkerFront.unhighlight().catch(error => {
+    accessibilityWalkerFront.unhighlight().catch(error => {
       
       
       if (this.props.toolbox) {
@@ -282,7 +284,14 @@ class Accessible extends Component {
       return;
     }
 
-    await this.props.dispatch(select(accessibleFront));
+    const accessibilityWalkerFront = accessibleFront.parent();
+    if (!accessibilityWalkerFront) {
+      return;
+    }
+
+    await this.props.dispatch(
+      select(accessibilityWalkerFront, accessibleFront)
+    );
 
     const { props } = this.refs;
     if (props) {

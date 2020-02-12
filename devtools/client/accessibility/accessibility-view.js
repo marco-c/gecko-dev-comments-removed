@@ -70,44 +70,23 @@ AccessibilityView.prototype = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   async initialize({
     front,
+    walker,
     supports,
     fluentBundles,
+    simulator,
     toolbox,
-    getAccessibilityTreeRoot,
-    startListeningForAccessibilityEvents,
-    stopListeningForAccessibilityEvents,
-    audit,
-    simulate,
   }) {
     
     await this.store.dispatch(reset(front, supports));
     const container = document.getElementById("content");
     const mainFrame = MainFrame({
       accessibility: front,
+      accessibilityWalker: walker,
       fluentBundles,
+      simulator,
       toolbox,
-      getAccessibilityTreeRoot,
-      startListeningForAccessibilityEvents,
-      stopListeningForAccessibilityEvents,
-      audit,
-      simulate,
     });
     
     const provider = createElement(Provider, { store: this.store }, mainFrame);
@@ -119,20 +98,18 @@ AccessibilityView.prototype = {
     ReactDOM.unmountComponentAtNode(container);
   },
 
-  async selectAccessible(accessible) {
-    await this.store.dispatch(select(accessible));
+  async selectAccessible(walker, accessible) {
+    await this.store.dispatch(select(walker, accessible));
     window.emit(EVENTS.NEW_ACCESSIBLE_FRONT_INSPECTED);
   },
 
-  async highlightAccessible(accessible) {
-    await this.store.dispatch(highlight(accessible));
+  async highlightAccessible(walker, accessible) {
+    await this.store.dispatch(highlight(walker, accessible));
     window.emit(EVENTS.NEW_ACCESSIBLE_FRONT_HIGHLIGHTED);
   },
 
-  async selectNodeAccessible(node) {
-    const accessibilityFront = await node.targetFront.getFront("accessibility");
-    const accessibleWalkerFront = await accessibilityFront.getWalker();
-    let accessible = await accessibleWalkerFront.getAccessibleFor(node);
+  async selectNodeAccessible(walker, node) {
+    let accessible = await walker.getAccessibleFor(node);
     if (accessible) {
       await accessible.hydrate();
     }
@@ -145,7 +122,7 @@ AccessibilityView.prototype = {
       const { nodes: children } = await node.walkerFront.children(node);
       for (const child of children) {
         if (child.nodeType === nodeConstants.TEXT_NODE) {
-          accessible = await accessibleWalkerFront.getAccessibleFor(child);
+          accessible = await walker.getAccessibleFor(child);
           
           
           if (accessible) {
@@ -159,7 +136,7 @@ AccessibilityView.prototype = {
       }
     }
 
-    await this.store.dispatch(select(accessible));
+    await this.store.dispatch(select(walker, accessible));
     window.emit(EVENTS.NEW_ACCESSIBLE_FRONT_INSPECTED);
   },
 

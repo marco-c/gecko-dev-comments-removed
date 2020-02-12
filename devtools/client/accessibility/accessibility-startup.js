@@ -30,11 +30,7 @@ class AccessibilityStartup {
   }
 
   get walker() {
-    return this._accessibility.accessibleWalkerFront;
-  }
-
-  get simulator() {
-    return this._accessibility.simulatorFront;
+    return this._walker;
   }
 
   
@@ -42,8 +38,14 @@ class AccessibilityStartup {
 
 
 
+
+
   async prepareAccessibility() {
+    
+    
+    
     try {
+      this._walker = await this._accessibility.getWalker();
       this._supports = {};
       
       
@@ -52,6 +54,9 @@ class AccessibilityStartup {
       
       
       
+
+      await this._accessibility.bootstrap();
+
       return true;
     } catch (e) {
       
@@ -119,7 +124,9 @@ class AccessibilityStartup {
       this._accessibility.off("init", this._updateToolHighlight);
       this._accessibility.off("shutdown", this._updateToolHighlight);
 
+      await this._walker.destroy();
       this._accessibility = null;
+      this._walker = null;
     }.bind(this)();
     return this._destroyingAccessibility;
   }
