@@ -133,96 +133,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
   RefPtr<nsAtom> mLanguage;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class nsStyleImageRequest {
- public:
-  
-  
-  
-  
-  enum class Mode : uint8_t {
-    
-    
-    
-    
-    
-    
-    
-    Track = 0x1,
-
-    
-    
-    
-    
-    Discard = 0x2,
-  };
-
-  
-  
-  nsStyleImageRequest(Mode aModeFlags, const mozilla::StyleComputedImageUrl&);
-
-  void Resolve(mozilla::dom::Document&,
-               const nsStyleImageRequest* aOldImageRequest);
-  bool IsResolved() const { return mResolved; }
-
-  imgRequestProxy* get() {
-    MOZ_ASSERT(IsResolved(), "Resolve() must be called first");
-    MOZ_ASSERT(NS_IsMainThread());
-    return mRequestProxy.get();
-  }
-  const imgRequestProxy* get() const {
-    return const_cast<nsStyleImageRequest*>(this)->get();
-  }
-
-  
-  
-  bool DefinitelyEquals(const nsStyleImageRequest& aOther) const;
-
-  const mozilla::StyleComputedImageUrl& GetImageValue() const {
-    return mImageURL;
-  }
-
-  already_AddRefed<nsIURI> GetImageURI() const;
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsStyleImageRequest);
-
- private:
-  ~nsStyleImageRequest();
-  nsStyleImageRequest& operator=(const nsStyleImageRequest& aOther) = delete;
-
-  void MaybeTrackAndLock();
-
-  RefPtr<imgRequestProxy> mRequestProxy;
-  mozilla::StyleComputedImageUrl mImageURL;
-  RefPtr<mozilla::dom::ImageTracker> mImageTracker;
-
-  
-  RefPtr<mozilla::dom::DocGroup> mDocGroup;
-
-  Mode mModeFlags;
-  bool mResolved;
-};
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsStyleImageRequest::Mode)
-
 enum nsStyleImageType {
   eStyleImageType_Null,
   eStyleImageType_Image,
@@ -268,36 +178,34 @@ struct nsStyleImage {
   nsStyleImage& operator=(const nsStyleImage& aOther);
 
   void SetNull();
-  void SetImageRequest(already_AddRefed<nsStyleImageRequest> aImage);
+  void SetImageUrl(const mozilla::StyleComputedImageUrl&);
   void SetGradientData(mozilla::UniquePtr<mozilla::StyleGradient>);
   void SetElementId(already_AddRefed<nsAtom> aElementId);
   void SetCropRect(mozilla::UniquePtr<CropRect> aCropRect);
 
   void ResolveImage(mozilla::dom::Document& aDocument,
                     const nsStyleImage* aOldImage) {
-    MOZ_ASSERT(mType != eStyleImageType_Image || mImage);
-    if (mType == eStyleImageType_Image && !mImage->IsResolved()) {
-      const nsStyleImageRequest* oldRequest =
+    if (mType == eStyleImageType_Image && !mImage.IsImageResolved()) {
+      const auto* oldRequest =
           (aOldImage && aOldImage->GetType() == eStyleImageType_Image)
-              ? aOldImage->ImageRequest()
+              ? &aOldImage->ImageUrl()
               : nullptr;
-      mImage->Resolve(aDocument, oldRequest);
+      mImage.ResolveImage(aDocument, oldRequest);
     }
   }
 
   nsStyleImageType GetType() const { return mType; }
-  nsStyleImageRequest* ImageRequest() const {
+  const mozilla::StyleComputedImageUrl& ImageUrl() const {
     MOZ_ASSERT(mType == eStyleImageType_Image, "Data is not an image!");
-    MOZ_ASSERT(mImage);
     return mImage;
   }
-  imgRequestProxy* GetImageData() const { return ImageRequest()->get(); }
+  imgRequestProxy* GetImageData() const { return ImageUrl().GetImage(); }
   const mozilla::StyleGradient& GetGradient() const {
     NS_ASSERTION(mType == eStyleImageType_Gradient, "Data is not a gradient!");
     return *mGradient;
   }
   bool IsResolved() const {
-    return mType != eStyleImageType_Image || ImageRequest()->IsResolved();
+    return mType != eStyleImageType_Image || ImageUrl().IsImageResolved();
   }
   const nsAtom* GetElementId() const {
     NS_ASSERTION(mType == eStyleImageType_Element, "Data is not an element!");
@@ -391,15 +299,15 @@ struct nsStyleImage {
   
   mozilla::UniquePtr<CachedBorderImageData> mCachedBIData;
 
+  
+  mozilla::UniquePtr<CropRect> mCropRect;
+
   nsStyleImageType mType;
   union {
-    nsStyleImageRequest* mImage;
+    mozilla::StyleComputedImageUrl mImage;
     mozilla::StyleGradient* mGradient;
     nsAtom* mElementId;
   };
-
-  
-  mozilla::UniquePtr<CropRect> mCropRect;
 };
 
 struct nsStyleImageLayers {
@@ -920,6 +828,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList {
   nsStyleList(const nsStyleList& aStyleList);
   ~nsStyleList();
 
+ private:
+  nsStyleList& operator=(const nsStyleList& aOther) = delete;
+
+ public:
   void TriggerImageLoads(mozilla::dom::Document&, const nsStyleList*);
   static constexpr bool kHasTriggerImageLoads = true;
 
@@ -927,7 +839,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList {
                               const nsStyleDisplay& aOldDisplay) const;
 
   imgRequestProxy* GetListStyleImage() const {
-    return mListStyleImage ? mListStyleImage->get() : nullptr;
+    return mListStyleImage.IsUrl() ? mListStyleImage.AsUrl().GetImage()
+                                   : nullptr;
   }
 
   nsRect GetImageRegion() const {
@@ -940,18 +853,15 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList {
   already_AddRefed<nsIURI> GetListStyleImageURI() const;
 
   uint8_t mListStylePosition;
-  RefPtr<nsStyleImageRequest> mListStyleImage;
 
   mozilla::CounterStylePtr mCounterStyle;
-
- private:
-  nsStyleList& operator=(const nsStyleList& aOther) = delete;
-
- public:
   mozilla::StyleQuotes mQuotes;
-  mozilla::StyleClipRectOrAuto mImageRegion;  
-  mozilla::StyleMozListReversed
-      mMozListReversed;  
+  mozilla::StyleImageUrlOrNone mListStyleImage;
+
+  
+  mozilla::StyleClipRectOrAuto mImageRegion;
+  
+  mozilla::StyleMozListReversed mMozListReversed;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
@@ -1919,7 +1829,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleContent {
   explicit nsStyleContent(const mozilla::dom::Document&);
   nsStyleContent(const nsStyleContent& aContent);
   ~nsStyleContent();
-  static constexpr bool kHasTriggerImageLoads = false;
+
+  void TriggerImageLoads(mozilla::dom::Document&, const nsStyleContent*);
+  static constexpr bool kHasTriggerImageLoads = true;
 
   size_t ContentCount() const {
     return mContent.IsItems() ? mContent.AsItems().Length() : 0;
@@ -1959,10 +1871,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset {
 struct nsCursorImage {
   bool mHaveHotspot;
   float mHotspotX, mHotspotY;
-  RefPtr<nsStyleImageRequest> mImage;
+  mozilla::StyleComputedImageUrl mImage;
 
-  nsCursorImage();
-  nsCursorImage(const nsCursorImage& aOther);
+  explicit nsCursorImage(const mozilla::StyleComputedImageUrl&);
+  nsCursorImage(const nsCursorImage&);
 
   nsCursorImage& operator=(const nsCursorImage& aOther);
 
@@ -1971,7 +1883,7 @@ struct nsCursorImage {
     return !(*this == aOther);
   }
 
-  imgRequestProxy* GetImage() const { return mImage->get(); }
+  imgRequestProxy* GetImage() const { return mImage.GetImage(); }
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUI {

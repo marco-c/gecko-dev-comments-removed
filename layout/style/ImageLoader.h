@@ -19,7 +19,6 @@
 #include "imgIRequest.h"
 #include "imgINotificationObserver.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/MediaFeatureChange.h"
 
 class imgIContainer;
 class nsIFrame;
@@ -38,7 +37,7 @@ namespace css {
 
 
 
-class ImageLoader final : public imgINotificationObserver {
+class ImageLoader final {
  public:
   static void Init();
   static void Shutdown();
@@ -52,16 +51,13 @@ class ImageLoader final : public imgINotificationObserver {
   };
 
   explicit ImageLoader(dom::Document* aDocument)
-      : mDocument(aDocument), mInClone(false) {
+      : mDocument(aDocument) {
     MOZ_ASSERT(mDocument);
   }
 
-  NS_DECL_ISUPPORTS
-  NS_DECL_IMGINOTIFICATIONOBSERVER
+  NS_INLINE_DECL_REFCOUNTING(ImageLoader)
 
   void DropDocumentReference();
-
-  imgRequestProxy* RegisterCSSImage(const StyleLoadData& aImage);
 
   void AssociateRequestToFrame(imgIRequest* aRequest, nsIFrame* aFrame,
                                FrameFlags aFlags);
@@ -73,25 +69,33 @@ class ImageLoader final : public imgINotificationObserver {
   void SetAnimationMode(uint16_t aMode);
 
   
-
-
-
-  void MediaFeatureValuesChangedAllDocuments(const MediaFeatureChange& aChange);
-
-  
   
   
   void ClearFrames(nsPresContext* aPresContext);
 
-  static void LoadImage(const StyleComputedImageUrl& aImage, dom::Document&);
+  
+  static already_AddRefed<imgRequestProxy> LoadImage(
+      const StyleComputedImageUrl&, dom::Document&);
 
   
   
   
   
-  static void DeregisterCSSImageFromAllLoaders(const StyleLoadData&);
+  
+  
+  static void NoteSharedLoad(imgRequestProxy*);
+
+  
+  static void UnloadImage(imgRequestProxy*);
+
+  
+  
+  nsresult Notify(imgIRequest*, int32_t aType, const nsIntRect* aData);
 
  private:
+  
+  void DeregisterImageRequest(imgIRequest*, nsPresContext*);
+
   
   
   struct ImageReflowCallback final : public nsIReflowCallback {
@@ -162,9 +166,6 @@ class ImageLoader final : public imgINotificationObserver {
   void RemoveFrameToRequestMapping(imgIRequest* aRequest, nsIFrame* aFrame);
 
   
-  static void DeregisterCSSImageFromAllLoaders(uint64_t aLoadID);
-
-  
   RequestToFrameMap mRequestToFrameMap;
 
   
@@ -172,40 +173,6 @@ class ImageLoader final : public imgINotificationObserver {
 
   
   dom::Document* mDocument;
-
-  
-  
-  
-  
-  
-  
-  nsRefPtrHashtable<nsUint64HashKey, imgRequestProxy> mRegisteredImages;
-
-  
-  bool mInClone;
-
-  
-  struct ImageTableEntry {
-    
-    nsTHashtable<nsPtrHashKey<ImageLoader>> mImageLoaders;
-
-    
-    
-    
-    
-    
-    
-    RefPtr<imgRequestProxy> mCanonicalRequest;
-  };
-
-  
-  
-  
-  
-  
-  
-  
-  static nsClassHashtable<nsUint64HashKey, ImageTableEntry>* sImages;
 };
 
 }  
