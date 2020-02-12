@@ -1137,8 +1137,7 @@ bool Navigator::SendBeaconInternal(const nsAString& aUrl,
 
   
   if (!uri->SchemeIs("http") && !uri->SchemeIs("https")) {
-    aRv.ThrowTypeError<MSG_INVALID_URL_SCHEME>(NS_LITERAL_STRING("Beacon"),
-                                               aUrl);
+    aRv.ThrowTypeError<MSG_INVALID_URL_SCHEME>(u"Beacon", aUrl);
     return false;
   }
 

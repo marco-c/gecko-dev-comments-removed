@@ -481,9 +481,8 @@ RefPtr<IDBTransaction> IDBDatabase::Transaction(
     
     
     aRv.ThrowTypeError<MSG_INVALID_ENUM_VALUE>(
-        NS_LITERAL_STRING("Argument 2 of IDBDatabase.transaction"),
-        NS_LITERAL_STRING("readwriteflush"),
-        NS_LITERAL_STRING("IDBTransactionMode"));
+        u"Argument 2 of IDBDatabase.transaction", u"readwriteflush",
+        u"IDBTransactionMode");
     return nullptr;
   }
 
