@@ -2066,8 +2066,13 @@ StorageActors.createActor(
   },
   {
     async getCachesForHost(host) {
-      const win = this.storageActor.getWindowFromHost(host);
-      const principal = win.document.effectiveStoragePrincipal;
+      const uri = Services.io.newURI(host);
+      const attrs = this.storageActor.document.effectiveStoragePrincipal
+        .originAttributes;
+      const principal = Services.scriptSecurityManager.createContentPrincipal(
+        uri,
+        attrs
+      );
 
       
       
@@ -2075,10 +2080,10 @@ StorageActors.createActor(
       
       
       
-      const { CacheStorage } = win;
+      const { CacheStorage } = this.storageActor.window;
 
       if (!CacheStorage) {
-        return null;
+        return [];
       }
 
       const cache = new CacheStorage("content", principal);
