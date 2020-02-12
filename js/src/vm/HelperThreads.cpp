@@ -1449,13 +1449,13 @@ void GlobalHelperThreadState::addSizeOfIncludingThis(
 
   
   for (auto task : ionWorklist_) {
-    htStats.ionBuilder += task->sizeOfExcludingThis(mallocSizeOf);
+    htStats.ionCompileTask += task->sizeOfExcludingThis(mallocSizeOf);
   }
   for (auto task : ionFinishedList_) {
-    htStats.ionBuilder += task->sizeOfExcludingThis(mallocSizeOf);
+    htStats.ionCompileTask += task->sizeOfExcludingThis(mallocSizeOf);
   }
   for (auto task : ionFreeList_) {
-    htStats.ionBuilder += task->sizeOfExcludingThis(mallocSizeOf);
+    htStats.ionCompileTask += task->sizeOfExcludingThis(mallocSizeOf);
   }
 
   
