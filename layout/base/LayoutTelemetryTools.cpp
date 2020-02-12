@@ -1,22 +1,20 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/layout/LayoutTelemetryTools.h"
 
+#include "MainThreadUtils.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/EnumeratedArray.h"
-#include "mozilla/EnumeratedRange.h"
-#include "mozilla/FlushType.h"
 #include "mozilla/Telemetry.h"
 
 using namespace mozilla;
 using namespace mozilla::layout_telemetry;
 
-
-
+// Returns the key name expected by telemetry. Keep to date with
+// toolkits/components/telemetry/Histograms.json.
 static nsLiteralCString SubsystemTelemetryKey(LayoutSubsystem aSubsystem) {
   switch (aSubsystem) {
     default:
@@ -137,7 +135,7 @@ AutoRecord::AutoRecord(Data* aLayoutTelemetry, LayoutSubsystem aSubsystem)
       mDurationMs(0.0) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  
+  // If we're re-entering the same subsystem, don't update the current record.
   if (mParentRecord) {
     if (mParentRecord->mSubsystem == mSubsystem) {
       return;
@@ -146,8 +144,8 @@ AutoRecord::AutoRecord(Data* aLayoutTelemetry, LayoutSubsystem aSubsystem)
     mLayoutTelemetry = mParentRecord->mLayoutTelemetry;
     MOZ_ASSERT(mLayoutTelemetry);
 
-    
-    
+    // If we're entering a new subsystem, record the amount of time spent in the
+    // parent record before setting the new current record.
     mParentRecord->mDurationMs +=
         (mStartTime - mParentRecord->mStartTime).ToMilliseconds();
   }
@@ -157,7 +155,7 @@ AutoRecord::AutoRecord(Data* aLayoutTelemetry, LayoutSubsystem aSubsystem)
 
 AutoRecord::~AutoRecord() {
   if (sCurrentRecord != this) {
-    
+    // If this record is not head of the list, do nothing.
     return;
   }
 
@@ -166,13 +164,13 @@ AutoRecord::~AutoRecord() {
   mLayoutTelemetry->mLayoutSubsystemDurationMs[mSubsystem] += mDurationMs;
 
   if (mParentRecord) {
-    
+    // Restart the parent recording from this point
     mParentRecord->mStartTime = now;
   }
 
-  
+  // Unlink this record from the current record list
   sCurrentRecord = mParentRecord;
 }
 
-}  
-}  
+}  // namespace layout_telemetry
+}  // namespace mozilla
