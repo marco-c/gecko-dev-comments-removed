@@ -1118,42 +1118,20 @@ class IonBuilder {
 
   
   
-  bool scriptHasIonScript_;
-
-  
-  
-  
-  
-  CodeGenerator* backgroundCodegen_;
-
-  
-  
   
   
   JSScript* actionableAbortScript_;
   jsbytecode* actionableAbortPc_;
   const char* actionableAbortMessage_;
 
-  MRootList* rootList_;
-
  public:
   using ObjectGroupVector = Vector<ObjectGroup*, 0, JitAllocPolicy>;
 
-  void setRootList(MRootList& rootList) {
-    MOZ_ASSERT(!rootList_);
-    rootList_ = &rootList;
-  }
   void clearForBackEnd();
   void checkNurseryCell(gc::Cell* cell);
   JSObject* checkNurseryObject(JSObject* obj);
 
   JSScript* script() const { return script_; }
-  bool scriptHasIonScript() const { return scriptHasIonScript_; }
-
-  CodeGenerator* backgroundCodegen() const { return backgroundCodegen_; }
-  void setBackgroundCodegen(CodeGenerator* codegen) {
-    backgroundCodegen_ = codegen;
-  }
 
   TIOracle& tiOracle() { return tiOracle_; }
 
@@ -1177,8 +1155,6 @@ class IonBuilder {
     *abortPc = actionableAbortPc_;
     *abortMessage = actionableAbortMessage_;
   }
-
-  void trace(JSTracer* trc);
 
  private:
   AbortReasonOr<Ok> init();
@@ -1417,9 +1393,6 @@ class IonBuilder {
   }
 
   bool hasPendingEdgesMap() const { return pendingEdges_.isSome(); }
-
-  
-  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
 
 class CallInfo {
@@ -1620,24 +1593,42 @@ class CallInfo {
 
 class IonCompileTask final : public RunnableTask,
                              public mozilla::LinkedListElement<IonCompileTask> {
-  jit::IonBuilder* builder_;
+  MIRGenerator& mirGen_;
+
+  
+  
+  
+  
+  CodeGenerator* backgroundCodegen_ = nullptr;
+
+  CompilerConstraintList* constraints_ = nullptr;
+  MRootList* rootList_ = nullptr;
+
+  
+  
+  bool scriptHasIonScript_;
 
  public:
-  explicit IonCompileTask(jit::IonBuilder* builder) : builder_(builder) {}
+  explicit IonCompileTask(MIRGenerator& mirGen, bool scriptHasIonScript,
+                          CompilerConstraintList* constraints);
 
-  JSScript* script() { return builder_->script(); }
-  MIRGenerator& mirGen() { return builder_->mirGen(); }
-  TempAllocator& alloc() { return builder_->alloc(); }
-  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-    return builder_->sizeOfExcludingThis(mallocSizeOf);
+  JSScript* script() { return mirGen_.outerInfo().script(); }
+  MIRGenerator& mirGen() { return mirGen_; }
+  TempAllocator& alloc() { return mirGen_.alloc(); }
+  bool scriptHasIonScript() const { return scriptHasIonScript_; }
+  CompilerConstraintList* constraints() { return constraints_; }
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
+  void trace(JSTracer* trc);
+
+  void setRootList(MRootList& rootList) {
+    MOZ_ASSERT(!rootList_);
+    rootList_ = &rootList;
   }
-  bool scriptHasIonScript() const { return builder_->scriptHasIonScript(); }
-  void trace(JSTracer* trc) { builder_->trace(trc); }
-  bool hasPendingEdgesMap() const { return builder_->hasPendingEdgesMap(); }
-  CodeGenerator* backgroundCodegen() const {
-    return builder_->backgroundCodegen();
+  CodeGenerator* backgroundCodegen() const { return backgroundCodegen_; }
+  void setBackgroundCodegen(CodeGenerator* codegen) {
+    backgroundCodegen_ = codegen;
   }
-  CompilerConstraintList* constraints() { return builder_->constraints(); }
 
   ThreadType threadType() override { return THREAD_TYPE_ION; }
   void runTask() override;
