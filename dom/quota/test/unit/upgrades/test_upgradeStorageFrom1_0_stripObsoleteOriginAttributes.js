@@ -41,13 +41,6 @@ function* testSteps() {
 
   const metadataFileName = ".metadata-v2";
 
-  const packages = [
-    
-    
-    "version1_0_obsoleteOriginAttributes_profile",
-    "../defaultStorageDirectory_shared",
-  ];
-
   let metadataBuffers = [];
 
   info("Clearing");
@@ -55,13 +48,11 @@ function* testSteps() {
   clear(continueToNextStepSync);
   yield undefined;
 
-  info("Installing packages");
+  info("Installing package");
 
-  installPackages(packages);
-
-  info("Verifying storage");
-
-  verifyStorage(packages, "afterInstall");
+  
+  
+  installPackage("version1_0_obsoleteOriginAttributes_profile");
 
   info("Checking origin directories");
 
@@ -97,15 +88,6 @@ function* testSteps() {
   yield undefined;
 
   ok(request.resultCode == NS_OK, "Initialization succeeded");
-
-  info("Verifying storage");
-
-  verifyStorage(packages, "afterInit");
-
-  
-  
-  getRelativeFile("storage/default/invalid+++example.com").remove(false);
-  getRelativeFile("storage/temporary/invalid+++example.com").remove(false);
 
   info("Checking origin directories");
 

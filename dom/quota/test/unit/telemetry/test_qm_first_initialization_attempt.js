@@ -421,10 +421,7 @@ const testcases = [
       installPackage("version2_2_profile");
 
       if (!expectedInitResult) {
-        installPackage(
-          "version2_2_make_it_unusable",
-           true
-        );
+        installPackage("version2_2_make_it_unusable");
       }
     },
     initFunction: init,

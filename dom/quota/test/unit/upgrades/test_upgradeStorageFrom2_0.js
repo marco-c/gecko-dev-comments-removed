@@ -16,38 +16,27 @@ function* testSteps() {
   ];
   const paddingFilePath = "cache/.padding";
 
-  const packages = [
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    "version2_0_profile",
-    "../defaultStorageDirectory_shared",
-  ];
-
   info("Clearing");
 
   clear(continueToNextStepSync);
   yield undefined;
 
-  info("Installing packages");
-
-  installPackages(packages);
-
-  info("Verifying storage");
-
-  verifyStorage(packages, "afterInstall");
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  installPackage("version2_0_profile");
 
   info("Checking padding files before upgrade (storage version 2.0)");
 
@@ -64,10 +53,6 @@ function* testSteps() {
   yield undefined;
 
   ok(request.resultCode == NS_OK, "Initialization succeeded");
-
-  info("Verifying storage");
-
-  verifyStorage(packages, "afterInit");
 
   info("Checking padding files after upgrade");
 
