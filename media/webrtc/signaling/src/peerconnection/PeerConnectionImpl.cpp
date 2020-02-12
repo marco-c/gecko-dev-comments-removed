@@ -1351,62 +1351,14 @@ PeerConnectionImpl::SetLocalDescription(int32_t aAction, const char* aSDP) {
     std::string errorString = mJsepSession->GetLastError();
     CSFLogError(LOGTAG, "%s: pc = %s, error = %s", __FUNCTION__,
                 mHandle.c_str(), errorString.c_str());
-    mPCObserver->OnSetLocalDescriptionError(
-        *buildJSErrorData(result, errorString), rv);
+    mPCObserver->OnSetDescriptionError(*buildJSErrorData(result, errorString),
+                                       rv);
   } else {
     if (wasRestartingIce) {
       RecordIceRestartStatistics(sdpType);
     }
 
-    auto newSignalingState = GetSignalingState();
-    
-    mThread->Dispatch(NS_NewRunnableFunction(
-        __func__,
-        [this, self = RefPtr<PeerConnectionImpl>(this), newSignalingState] {
-          if (IsClosed()) {
-            return;
-          }
-          JSErrorResult jrv;
-          mPCObserver->SyncTransceivers(jrv);
-          if (NS_WARN_IF(jrv.Failed())) {
-            return;
-          }
-          mPendingRemoteDescription =
-              mJsepSession->GetRemoteDescription(kJsepDescriptionPending);
-          mCurrentRemoteDescription =
-              mJsepSession->GetRemoteDescription(kJsepDescriptionCurrent);
-          mPendingLocalDescription =
-              mJsepSession->GetLocalDescription(kJsepDescriptionPending);
-          mCurrentLocalDescription =
-              mJsepSession->GetLocalDescription(kJsepDescriptionCurrent);
-          mPendingOfferer = mJsepSession->IsPendingOfferer();
-          mCurrentOfferer = mJsepSession->IsCurrentOfferer();
-          if (newSignalingState != mSignalingState) {
-            mSignalingState = newSignalingState;
-            mPCObserver->OnStateChange(PCObserverStateType::SignalingState,
-                                       jrv);
-          }
-          mPCObserver->OnSetLocalDescriptionSuccess(jrv);
-        }));
-
-    
-    
-    
-    
-    
-    if (sdpType == mozilla::kJsepSdpOffer && wasRestartingIce) {
-      mMedia->ResetStunAddrsForIceRestart();
-    }
-
-    
-    
-    if (sdpType != mozilla::kJsepSdpRollback) {
-      mMedia->EnsureTransports(*mJsepSession);
-    }
-
-    if (mJsepSession->GetState() == kJsepStateStable) {
-      OnOfferAnswerComplete(sdpType == mozilla::kJsepSdpRollback);
-    }
+    OnSetDescriptionSuccess(sdpType == mozilla::kJsepSdpRollback);
   }
 
   return NS_OK;
@@ -1483,8 +1435,8 @@ PeerConnectionImpl::SetRemoteDescription(int32_t action, const char* aSDP) {
     std::string errorString = mJsepSession->GetLastError();
     CSFLogError(LOGTAG, "%s: pc = %s, error = %s", __FUNCTION__,
                 mHandle.c_str(), errorString.c_str());
-    mPCObserver->OnSetRemoteDescriptionError(
-        *buildJSErrorData(result, errorString), jrv);
+    mPCObserver->OnSetDescriptionError(*buildJSErrorData(result, errorString),
+                                       jrv);
   } else {
     
     for (size_t i = originalTransceiverCount;
@@ -1535,51 +1487,7 @@ PeerConnectionImpl::SetRemoteDescription(int32_t action, const char* aSDP) {
       RecordIceRestartStatistics(sdpType);
     }
 
-    
-    auto newSignalingState = GetSignalingState();
-    mThread->Dispatch(NS_NewRunnableFunction(
-        __func__,
-        [this, self = RefPtr<PeerConnectionImpl>(this), newSignalingState] {
-          if (IsClosed()) {
-            return;
-          }
-          JSErrorResult jrv;
-          mPCObserver->SyncTransceivers(jrv);
-          if (NS_WARN_IF(jrv.Failed())) {
-            return;
-          }
-          mPendingRemoteDescription =
-              mJsepSession->GetRemoteDescription(kJsepDescriptionPending);
-          mCurrentRemoteDescription =
-              mJsepSession->GetRemoteDescription(kJsepDescriptionCurrent);
-          mPendingLocalDescription =
-              mJsepSession->GetLocalDescription(kJsepDescriptionPending);
-          mCurrentLocalDescription =
-              mJsepSession->GetLocalDescription(kJsepDescriptionCurrent);
-          mPendingOfferer = mJsepSession->IsPendingOfferer();
-          mCurrentOfferer = mJsepSession->IsCurrentOfferer();
-          if (newSignalingState != mSignalingState) {
-            mSignalingState = newSignalingState;
-            mPCObserver->OnStateChange(PCObserverStateType::SignalingState,
-                                       jrv);
-          }
-          mPCObserver->OnSetRemoteDescriptionSuccess(jrv);
-        }));
-
-    
-    
-    
-    
-    
-    if (sdpType == mozilla::kJsepSdpOffer && wasRestartingIce) {
-      mMedia->ResetStunAddrsForIceRestart();
-    }
-
-    
-    
-    if (mJsepSession->GetState() == kJsepStateStable) {
-      OnOfferAnswerComplete(sdpType == mozilla::kJsepSdpRollback);
-    }
+    OnSetDescriptionSuccess(sdpType == kJsepSdpRollback);
 
     startCallTelem();
   }
@@ -2344,7 +2252,57 @@ void PeerConnectionImpl::ShutdownMedia() {
   mMedia.forget().take()->SelfDestruct();
 }
 
-void PeerConnectionImpl::OnOfferAnswerComplete(bool rollback) {
+void PeerConnectionImpl::OnSetDescriptionSuccess(bool rollback) {
+  
+  auto newSignalingState = GetSignalingState();
+
+  mThread->Dispatch(NS_NewRunnableFunction(
+      __func__,
+      [this, self = RefPtr<PeerConnectionImpl>(this), newSignalingState] {
+        if (IsClosed()) {
+          return;
+        }
+        JSErrorResult jrv;
+        mPCObserver->SyncTransceivers(jrv);
+        if (NS_WARN_IF(jrv.Failed())) {
+          return;
+        }
+        mPendingRemoteDescription =
+            mJsepSession->GetRemoteDescription(kJsepDescriptionPending);
+        mCurrentRemoteDescription =
+            mJsepSession->GetRemoteDescription(kJsepDescriptionCurrent);
+        mPendingLocalDescription =
+            mJsepSession->GetLocalDescription(kJsepDescriptionPending);
+        mCurrentLocalDescription =
+            mJsepSession->GetLocalDescription(kJsepDescriptionCurrent);
+        mPendingOfferer = mJsepSession->IsPendingOfferer();
+        mCurrentOfferer = mJsepSession->IsCurrentOfferer();
+        if (newSignalingState != mSignalingState) {
+          mSignalingState = newSignalingState;
+          mPCObserver->OnStateChange(PCObserverStateType::SignalingState, jrv);
+        }
+        mPCObserver->OnSetDescriptionSuccess(jrv);
+      }));
+
+  
+  
+  if (!rollback && (newSignalingState == RTCSignalingState::Have_local_offer ||
+                    mSignalingState == RTCSignalingState::Have_remote_offer)) {
+    
+    
+    
+    
+    
+    if (mJsepSession->IsIceRestarting()) {
+      mMedia->ResetStunAddrsForIceRestart();
+    }
+    mMedia->EnsureTransports(*mJsepSession);
+  }
+
+  if (mJsepSession->GetState() != kJsepStateStable) {
+    return;  
+  }
+
   
   
   
@@ -2352,7 +2310,7 @@ void PeerConnectionImpl::OnOfferAnswerComplete(bool rollback) {
   if (NS_FAILED(mMedia->UpdateMediaPipelines())) {
     CSFLogError(LOGTAG, "Error Updating MediaPipelines");
     NS_ASSERTION(false,
-                 "Error Updating MediaPipelines in OnOfferAnswerComplete()");
+                 "Error Updating MediaPipelines in OnSetDescriptionSuccess()");
     
     
   }
