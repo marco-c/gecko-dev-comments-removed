@@ -96,6 +96,7 @@ extern MOZ_MUST_USE bool intl_numberingSystem(JSContext* cx, unsigned argc,
 
 
 
+
 extern MOZ_MUST_USE bool intl_FormatNumber(JSContext* cx, unsigned argc,
                                            Value* vp);
 

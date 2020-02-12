@@ -698,7 +698,7 @@ function createNumberFormatFormat(nf) {
         var x = ToNumeric(value);
 
         
-        return intl_FormatNumber(nf, x,  false);
+        return intl_FormatNumber(nf, x,  false,  false);
     };
 }
 
@@ -746,14 +746,14 @@ function Intl_NumberFormat_formatToParts(value) {
                             "Intl_NumberFormat_formatToParts");
     }
 
-    
-    getNumberFormatInternals(nf);
+    var internals = getNumberFormatInternals(nf);
+    var unitStyle = internals.style === "unit";
 
     
     var x = ToNumeric(value);
 
     
-    return intl_FormatNumber(nf, x,  true);
+    return intl_FormatNumber(nf, x,  true, unitStyle);
 }
 
 
