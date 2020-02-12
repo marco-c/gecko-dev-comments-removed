@@ -657,10 +657,7 @@ function bindCommands(isCmd, dbgWindow, bindSelf, frame, helpers) {
   
   
   
-  
-  const availableHelpers = [
-    ...WebConsoleCommands._originalCommands.keys(),
-  ].filter(h => h !== "print");
+  const availableHelpers = [...WebConsoleCommands._originalCommands.keys()];
 
   let helpersToDisable = [];
   const helperCache = {};

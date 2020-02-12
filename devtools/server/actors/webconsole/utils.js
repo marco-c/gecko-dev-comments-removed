@@ -606,25 +606,6 @@ WebConsoleCommands._registerOriginal("inspect", function(
 
 
 
-WebConsoleCommands._registerOriginal("print", function(owner, value) {
-  owner.helperResult = { rawOutput: true };
-  if (typeof value === "symbol") {
-    return Symbol.prototype.toString.call(value);
-  }
-  
-  
-  
-  
-  return String(Cu.waiveXrays(value));
-});
-
-
-
-
-
-
-
-
 WebConsoleCommands._registerOriginal("copy", function(owner, value) {
   let payload;
   try {
