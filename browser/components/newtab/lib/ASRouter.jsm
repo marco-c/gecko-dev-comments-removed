@@ -709,6 +709,10 @@ class _ASRouter {
 
 
   isExcludedByProvider(message) {
+    
+    if (message.provider === "preview") {
+      return false;
+    }
     const provider = this.state.providers.find(p => p.id === message.provider);
     if (!provider) {
       return true;
