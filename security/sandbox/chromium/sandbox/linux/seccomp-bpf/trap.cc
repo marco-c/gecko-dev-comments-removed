@@ -165,10 +165,17 @@ void Trap::SigSys(int nr, LinuxSigInfo* info, ucontext_t* ctx) {
 
 
   
-  
-  
   struct arch_sigsys sigsys;
+#if defined(si_call_addr) && !defined(__native_client_nonsfi__)
+  sigsys.ip = info->si_call_addr;
+  sigsys.nr = info->si_syscall;
+  sigsys.arch = info->si_arch;
+#else
+  
+  
+  
   memcpy(&sigsys, &info->_sifields, sizeof(sigsys));
+#endif
 
 #if defined(__mips__)
   
