@@ -237,7 +237,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "Crypto", insecureContext: true },
   
-  { name: "CryptoKey", insecureContext: true },
+  { name: "CryptoKey" },
   
   { name: "CSS", insecureContext: true },
   
@@ -1050,7 +1050,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "StyleSheetList", insecureContext: true },
   
-  { name: "SubtleCrypto", insecureContext: true },
+  { name: "SubtleCrypto" },
   
   { name: "SubmitEvent", insecureContext: true },
   

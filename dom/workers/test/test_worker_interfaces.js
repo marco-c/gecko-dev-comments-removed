@@ -235,7 +235,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "StorageManager", fennec: false },
   
-  { name: "SubtleCrypto", insecureContext: true },
+  { name: "SubtleCrypto" },
   
   { name: "TextDecoder", insecureContext: true },
   
