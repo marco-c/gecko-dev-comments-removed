@@ -311,10 +311,15 @@ void profiler_init_threadmanager();
 
 #  define AUTO_PROFILER_INIT2 mozilla::AutoProfilerInit2 PROFILER_RAII
 
+enum class IsFastShutdown {
+  No,
+  Yes,
+};
 
 
 
-void profiler_shutdown();
+
+void profiler_shutdown(IsFastShutdown aIsFastShutdown = IsFastShutdown::No);
 
 
 
