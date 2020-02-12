@@ -2852,10 +2852,7 @@ static bool ScrollbarGenerationChanged(const nsStyleDisplay& aOld,
 
 nsChangeHint nsStyleDisplay::CalcDifference(
     const nsStyleDisplay& aNewData, const nsStylePosition& aOldPosition) const {
-  nsChangeHint hint = nsChangeHint(0);
-
-  if (mPosition != aNewData.mPosition || mDisplay != aNewData.mDisplay ||
-      mContain != aNewData.mContain ||
+  if (mDisplay != aNewData.mDisplay || mContain != aNewData.mContain ||
       (mFloat == StyleFloat::None) != (aNewData.mFloat == StyleFloat::None) ||
       mScrollBehavior != aNewData.mScrollBehavior ||
       mScrollSnapType != aNewData.mScrollSnapType ||
@@ -2874,6 +2871,35 @@ nsChangeHint nsStyleDisplay::CalcDifference(
     
     
     return nsChangeHint_ReconstructFrame;
+  }
+
+  auto hint = nsChangeHint(0);
+  if (mPosition != aNewData.mPosition) {
+    if (IsAbsolutelyPositionedStyle() ||
+        aNewData.IsAbsolutelyPositionedStyle()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      return nsChangeHint_ReconstructFrame;
+    }
+    
+    
+    if (IsRelativelyPositionedStyle() !=
+        aNewData.IsRelativelyPositionedStyle()) {
+      hint |= nsChangeHint_UpdateContainingBlock | nsChangeHint_RepaintFrame;
+    }
+    if (IsPositionForcingStackingContext() !=
+        aNewData.IsPositionForcingStackingContext()) {
+      hint |= nsChangeHint_RepaintFrame;
+    }
+    
+    
+    hint |= nsChangeHint_NeedReflow | nsChangeHint_ReflowChangesSizeOrPosition;
   }
 
   if (mScrollSnapAlign != aNewData.mScrollSnapAlign) {

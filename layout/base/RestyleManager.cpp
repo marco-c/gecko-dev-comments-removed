@@ -918,8 +918,9 @@ static bool HasBoxAncestor(nsIFrame* aFrame) {
 
 static bool ContainingBlockChangeAffectsDescendants(
     nsIFrame* aPossiblyChangingContainingBlock, nsIFrame* aFrame,
-    uint32_t aPositionMask, bool aIsContainingBlock) {
-  MOZ_ASSERT(aPositionMask & (1 << NS_STYLE_POSITION_FIXED));
+    bool aIsAbsPosContainingBlock, bool aIsFixedPosContainingBlock) {
+  
+  MOZ_ASSERT_IF(aIsFixedPosContainingBlock, aIsAbsPosContainingBlock);
 
   for (nsIFrame::ChildListIterator lists(aFrame); !lists.IsDone();
        lists.Next()) {
@@ -930,11 +931,16 @@ static bool ContainingBlockChangeAffectsDescendants(
         
         NS_ASSERTION(!nsSVGUtils::IsInSVGTextSubtree(outOfFlow),
                      "SVG text frames can't be out of flow");
-        if (aPositionMask & (1 << outOfFlow->StyleDisplay()->mPosition)) {
+        auto* display = outOfFlow->StyleDisplay();
+        if (display->IsAbsolutelyPositionedStyle()) {
+          const bool isContainingBlock =
+              aIsFixedPosContainingBlock ||
+              (aIsAbsPosContainingBlock &&
+               display->mPosition == NS_STYLE_POSITION_ABSOLUTE);
           
           
           nsIFrame* parent = outOfFlow->GetParent()->FirstContinuation();
-          if (aIsContainingBlock) {
+          if (isContainingBlock) {
             
             
             
@@ -961,8 +967,8 @@ static bool ContainingBlockChangeAffectsDescendants(
       
       
       if (ContainingBlockChangeAffectsDescendants(
-              aPossiblyChangingContainingBlock, f, aPositionMask,
-              aIsContainingBlock)) {
+              aPossiblyChangingContainingBlock, f, aIsAbsPosContainingBlock,
+              aIsFixedPosContainingBlock)) {
         return true;
       }
     }
@@ -971,40 +977,17 @@ static bool ContainingBlockChangeAffectsDescendants(
 }
 
 static bool NeedToReframeToUpdateContainingBlock(nsIFrame* aFrame) {
-  static_assert(
-      0 <= NS_STYLE_POSITION_ABSOLUTE && NS_STYLE_POSITION_ABSOLUTE < 32,
-      "Style constant out of range");
-  static_assert(0 <= NS_STYLE_POSITION_FIXED && NS_STYLE_POSITION_FIXED < 32,
-                "Style constant out of range");
-
-  uint32_t positionMask;
-  bool isContainingBlock;
   
-  
-  if (aFrame->IsAbsolutelyPositioned() || aFrame->IsRelativelyPositioned()) {
-    
-    
-    
-    
-    
-    positionMask = 1 << NS_STYLE_POSITION_FIXED;
-    isContainingBlock = aFrame->IsFixedPosContainingBlock();
-  } else {
-    
-    
-    positionMask =
-        (1 << NS_STYLE_POSITION_FIXED) | (1 << NS_STYLE_POSITION_ABSOLUTE);
-    isContainingBlock = aFrame->IsAbsPosContainingBlock() ||
-                        aFrame->IsFixedPosContainingBlock();
-  }
+  const bool isFixedContainingBlock = aFrame->IsFixedPosContainingBlock();
+  MOZ_ASSERT_IF(isFixedContainingBlock, aFrame->IsAbsPosContainingBlock());
 
-  MOZ_ASSERT(!aFrame->GetPrevContinuation(),
-             "We only process change hints on first continuations");
+  const bool isAbsPosContainingBlock =
+      isFixedContainingBlock || aFrame->IsAbsPosContainingBlock();
 
   for (nsIFrame* f = aFrame; f;
        f = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(f)) {
-    if (ContainingBlockChangeAffectsDescendants(aFrame, f, positionMask,
-                                                isContainingBlock)) {
+    if (ContainingBlockChangeAffectsDescendants(
+            aFrame, f, isAbsPosContainingBlock, isFixedContainingBlock)) {
       return true;
     }
   }
