@@ -17,6 +17,7 @@ const {
   TOGGLE_COLUMN,
   WATERFALL_RESIZE,
   SET_COLUMNS_WIDTH,
+  OPEN_ACTION_BAR,
 } = require("devtools/client/netmonitor/src/constants");
 
 const {
@@ -42,6 +43,18 @@ function openNetworkDetails(open) {
       open,
       defaultSelectedId,
     });
+  };
+}
+
+
+
+
+
+
+function openNetworkActionBar(open) {
+  return {
+    type: OPEN_ACTION_BAR,
+    open,
   };
 }
 
@@ -186,6 +199,14 @@ function toggleNetworkDetails() {
 
 
 
+function toggleNetworkActionBar() {
+  return (dispatch, getState) =>
+    dispatch(openNetworkActionBar(!getState().ui.networkActionOpen));
+}
+
+
+
+
 function togglePersistentLogs() {
   return (dispatch, getState) =>
     dispatch(enablePersistentLogs(!getState().ui.persistentLogsEnabled));
@@ -209,6 +230,7 @@ function toggleStatistics(connector) {
 
 module.exports = {
   openNetworkDetails,
+  openNetworkActionBar,
   resizeNetworkDetails,
   enablePersistentLogs,
   disableBrowserCache,
@@ -220,6 +242,7 @@ module.exports = {
   toggleColumn,
   setColumnsWidth,
   toggleNetworkDetails,
+  toggleNetworkActionBar,
   togglePersistentLogs,
   toggleBrowserCache,
   toggleStatistics,

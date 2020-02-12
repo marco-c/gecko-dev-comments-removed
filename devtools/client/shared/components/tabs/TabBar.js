@@ -48,6 +48,10 @@ class Tabbar extends Component {
         expandPaneTitle: PropTypes.string.isRequired,
         
         onClick: PropTypes.func.isRequired,
+        
+        alignRight: PropTypes.bool,
+        
+        canVerticalSplit: PropTypes.bool,
       }),
     };
   }
