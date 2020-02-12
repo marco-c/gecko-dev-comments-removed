@@ -23,7 +23,6 @@
 #include "js/CompileOptions.h"  
 #include "js/RootingAPI.h"      
 #include "js/SourceText.h"      
-#include "vm/JSContext.h"       
 #include "vm/JSScript.h"  
 #include "vm/Scope.h"     
 
@@ -49,8 +48,6 @@ class StandaloneFunctionCompiler;
 
 class MOZ_STACK_CLASS BytecodeCompiler {
  protected:
-  AutoKeepAtoms keepAtoms;
-
   CompilationInfo& compilationInfo;
 
   Directives directives;
