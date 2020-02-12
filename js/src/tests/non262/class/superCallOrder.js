@@ -8,11 +8,13 @@ class beforeSwizzle extends base {
 
 new beforeSwizzle();
 
+function MyError() {}
+
 
 
 class beforeThrow extends base {
     constructor() {
-        function thrower() { throw new Error(); }
+        function thrower() { throw new MyError(); }
         super(thrower());
     }
 }
@@ -20,7 +22,7 @@ class beforeThrow extends base {
 Object.setPrototypeOf(beforeThrow, Math.sin);
 
 
-assertThrowsInstanceOf(() => new beforeThrow(), TypeError);
+assertThrowsInstanceOf(() => new beforeThrow(), MyError);
 
 if (typeof reportCompare === 'function')
     reportCompare(0,0,"OK");
