@@ -61,14 +61,6 @@ class MenuItem extends PureComponent {
     };
   }
 
-  
-
-
-
-  static get DUMMY_ICON() {
-    return "dummy-icon.svg";
-  }
-
   constructor(props) {
     super(props);
     this.labelRef = createRef();
@@ -164,10 +156,7 @@ class MenuItem extends PureComponent {
     }
 
     return li(
-      {
-        className: "menuitem",
-        role: "presentation",
-      },
+      { className: "menuitem", role: "presentation" },
       button(attr, children)
     );
   }
