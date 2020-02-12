@@ -440,7 +440,19 @@ bool JSFunction::hasNonConfigurablePrototypeDataProperty() {
   if (isSelfHostedBuiltin()) {
     
     
-    return isConstructor();
+    
+    if (!isConstructor() || isBoundFunction()) {
+      return false;
+    }
+#ifdef DEBUG
+    PropertyName* prototypeName =
+        runtimeFromMainThread()->commonNames->prototype;
+    Shape* shape = lookupPure(prototypeName);
+    MOZ_ASSERT(shape);
+    MOZ_ASSERT(shape->isDataProperty());
+    MOZ_ASSERT(!shape->configurable());
+#endif
+    return true;
   }
 
   if (!isConstructor()) {
