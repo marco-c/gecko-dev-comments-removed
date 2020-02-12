@@ -1345,13 +1345,16 @@ PeerConnectionWrapper.prototype = {
 
   setRemoteDescription(desc) {
     this.observedNegotiationNeeded = undefined;
+    
+    
+    if (desc.type == "rollback") {
+      this.holdIceCandidates = new Promise(
+        r => (this.releaseIceCandidates = r)
+      );
+    }
     return this._pc.setRemoteDescription(desc).then(() => {
       info(this + ": Successfully set remote description");
-      if (desc.type == "rollback") {
-        this.holdIceCandidates = new Promise(
-          r => (this.releaseIceCandidates = r)
-        );
-      } else {
+      if (desc.type != "rollback") {
         this.releaseIceCandidates();
       }
     });
