@@ -1082,17 +1082,8 @@ class nsLayoutUtils {
 
 
 
-  static nsRect RoundGfxRectToAppRect(const Rect& aRect, float aFactor);
-
-  
-
-
-
-
-
-
-
-  static nsRect RoundGfxRectToAppRect(const gfxRect& aRect, float aFactor);
+  template <typename T>
+  static nsRect RoundGfxRectToAppRect(const T& aRect, const float aFactor);
 
   
 
@@ -3043,6 +3034,9 @@ class nsLayoutUtils {
                                     const std::string& aValue);
 
   static bool IsAPZTestLoggingEnabled();
+
+  static void ConstrainToCoordValues(gfxFloat& aStart, gfxFloat& aSize);
+  static void ConstrainToCoordValues(float& aStart, float& aSize);
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsLayoutUtils::PaintFrameFlags)
@@ -3101,6 +3095,31 @@ template <typename SizeType>
              NSCoordSaturatingNonnegativeMultiply(aSize.width, ratio));
   return SizeType(aSize.width,
                   NSCoordSaturatingNonnegativeMultiply(aSize.width, ratio));
+}
+
+template <typename T>
+nsRect nsLayoutUtils::RoundGfxRectToAppRect(const T& aRect,
+                                            const float aFactor) {
+  
+  
+  T scaledRect = aRect;
+  scaledRect.ScaleRoundOut(aFactor);
+
+  
+  ConstrainToCoordValues(scaledRect.x, scaledRect.width);
+  ConstrainToCoordValues(scaledRect.y, scaledRect.height);
+
+  if (!aRect.Width()) {
+    scaledRect.SetWidth(0);
+  }
+
+  if (!aRect.Height()) {
+    scaledRect.SetHeight(0);
+  }
+
+  
+  return nsRect(nscoord(scaledRect.X()), nscoord(scaledRect.Y()),
+                nscoord(scaledRect.Width()), nscoord(scaledRect.Height()));
 }
 
 namespace mozilla {
