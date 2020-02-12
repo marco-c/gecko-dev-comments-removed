@@ -108,6 +108,30 @@ const reducers = {
       axes.wdth = parseFloat(match[1]);
     }
 
+    
+    
+    const style = properties["font-style"];
+    const obliqueMatch = style.trim().match(/^oblique(?:\s*(\d+(.\d+)?)deg)?$/);
+    if (axes.slnt === undefined && obliqueMatch) {
+      if (obliqueMatch[1]) {
+        
+        axes.slnt = -parseFloat(obliqueMatch[1]);
+      } else {
+        
+        axes.slnt = -14;
+      }
+    }
+
+    
+    
+    if (axes.ital === undefined) {
+      if (style === "normal") {
+        axes.ital = 0;
+      } else if (style === "italic") {
+        axes.ital = 1;
+      }
+    }
+
     return { ...state, axes, fonts, properties, id };
   },
 
