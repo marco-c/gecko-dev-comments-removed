@@ -116,8 +116,6 @@ HandlerService.prototype = {
         this._store.data.defaultHandlersVersion[
           locale
         ] = prefsDefaultHandlersVersion;
-        
-        this._store.saveSoon();
       }
     } catch (ex) {
       Cu.reportError(ex);
@@ -153,41 +151,22 @@ HandlerService.prototype = {
       } catch (ex) {}
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
     for (let scheme of Object.keys(schemes)) {
-      let existingSchemeInfo = this._store.data.schemes[scheme];
-      if (!this._store.data.schemes[scheme]) {
-        
-        
-        existingSchemeInfo = {
-          
-          
-          stubEntry: true,
-          
-          
-          handlers: [null],
-        };
-        this._store.data.schemes[scheme] = existingSchemeInfo;
-      }
-      let { handlers } = existingSchemeInfo;
+      let protoInfo = gExternalProtocolService.getProtocolHandlerInfo(scheme);
+
+      
+      let possibleHandlers = protoInfo.possibleApplicationHandlers;
+
       for (let handlerNumber of Object.keys(schemes[scheme])) {
-        let newHandler = schemes[scheme][handlerNumber];
+        let handlerApp = this.handlerAppFromSerializable(
+          schemes[scheme][handlerNumber]
+        );
         
         
-        let matchingTemplate = handler =>
-          handler && handler.uriTemplate == newHandler.uriTemplate;
-        if (!handlers.some(matchingTemplate)) {
-          handlers.push(newHandler);
-        }
+        possibleHandlers.appendElement(handlerApp);
       }
+
+      this.store(protoInfo);
     }
   },
 
@@ -417,9 +396,6 @@ HandlerService.prototype = {
       }
     }
 
-    
-    delete storedHandlerInfo.stubEntry;
-
     this._store.saveSoon();
   },
 
@@ -436,65 +412,26 @@ HandlerService.prototype = {
       );
     }
 
-    let isStub = !!storedHandlerInfo.stubEntry;
+    handlerInfo.preferredAction = storedHandlerInfo.action;
+    handlerInfo.alwaysAskBeforeHandling = !!storedHandlerInfo.ask;
+
     
     
-    if (!isStub) {
-      handlerInfo.preferredAction = storedHandlerInfo.action;
-      handlerInfo.alwaysAskBeforeHandling = !!storedHandlerInfo.ask;
-    } else {
-      
-      gExternalProtocolService.setProtocolHandlerDefaults(
-        handlerInfo,
-        handlerInfo.hasDefaultHandler
-      );
-      if (
-        handlerInfo.preferredAction == Ci.nsIHandlerInfo.alwaysAsk &&
-        handlerInfo.alwaysAskBeforeHandling
-      ) {
-        
-        
-        
-        handlerInfo.preferredAction = Ci.nsIHandlerInfo.useHelperApp;
+    let isFirstItem = true;
+    for (let handler of storedHandlerInfo.handlers || [null]) {
+      let handlerApp = this.handlerAppFromSerializable(handler || {});
+      if (isFirstItem) {
+        isFirstItem = false;
+        handlerInfo.preferredApplicationHandler = handlerApp;
+      }
+      if (handlerApp) {
+        handlerInfo.possibleApplicationHandlers.appendElement(handlerApp);
       }
     }
-    
-    
-    
-    
-    this._appendStoredHandlers(handlerInfo, storedHandlerInfo.handlers, isStub);
 
     if (this._isMIMEInfo(handlerInfo) && storedHandlerInfo.extensions) {
       for (let extension of storedHandlerInfo.extensions) {
         handlerInfo.appendExtension(extension);
-      }
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-  _appendStoredHandlers(handlerInfo, storedHandlers, keepPreferredApp) {
-    
-    
-    let isFirstItem = true;
-    for (let handler of storedHandlers || [null]) {
-      let handlerApp = this.handlerAppFromSerializable(handler || {});
-      if (isFirstItem) {
-        isFirstItem = false;
-        
-        if (!keepPreferredApp) {
-          handlerInfo.preferredApplicationHandler = handlerApp;
-        }
-      }
-      if (handlerApp) {
-        handlerInfo.possibleApplicationHandlers.appendElement(handlerApp);
       }
     }
   },
