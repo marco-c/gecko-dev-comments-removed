@@ -33,13 +33,6 @@ add_task(async () => {
           await BrowserTestUtils.closeWindow(pipWin);
           await uaWidgetUpdate;
         }
-
-        
-        
-        
-        if (videoID !== "no-controls") {
-          await assertShowingMessage(browser, videoID, false);
-        }
       }
     );
   }
