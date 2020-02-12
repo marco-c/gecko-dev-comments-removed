@@ -41,7 +41,6 @@ const uint32_t kMinMaxVertexTextureImageUnits = 0;
 const uint32_t kMinMaxFragmentTextureImageUnits = 8;  
 const uint32_t kMinMaxCombinedTextureImageUnits = 8;  
 
-const uint32_t kMinMaxColorAttachments = 4;
 const uint32_t kMinMaxDrawBuffers = 4;
 
 
