@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/AbstractRange.h"
 #include "mozilla/dom/AbstractRangeBinding.h"
@@ -57,8 +57,8 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(AbstractRange)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(AbstractRange)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mOwner);
-  
-  
+  // mStart and mEnd may depend on or be depended on some other members in
+  // concrete classes so that they should be unlinked in sub classes.
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -70,6 +70,8 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_WRAPPERCACHE(AbstractRange)
 
+// NOTE: If you need to change default value of members of AbstractRange,
+//       update nsRange::Create(nsINode* aNode) too.
 AbstractRange::AbstractRange(nsINode* aNode)
     : mIsPositioned(false), mIsGenerated(false), mCalledByJS(false) {
   MOZ_ASSERT(aNode, "range isn't in a document!");
@@ -82,7 +84,7 @@ nsINode* AbstractRange::GetClosestCommonInclusiveAncestor() const {
                        : nullptr;
 }
 
-
+// static
 template <typename SPT, typename SRT, typename EPT, typename ERT,
           typename RangeType>
 nsresult AbstractRange::SetStartAndEndInternal(
@@ -106,9 +108,9 @@ nsresult AbstractRange::SetStartAndEndInternal(
     if (!aEndBoundary.IsSetAndValid()) {
       return NS_ERROR_DOM_INDEX_SIZE_ERR;
     }
-    
-    
-    
+    // XXX: Offsets - handle this more efficiently.
+    // If the end offset is less than the start offset, this should be
+    // collapsed at the end offset.
     if (*aStartBoundary.Offset(
             RangeBoundaryBase<SPT, SRT>::OffsetFilter::kValidOffsets) >
         *aEndBoundary.Offset(
@@ -128,7 +130,7 @@ nsresult AbstractRange::SetStartAndEndInternal(
     return NS_ERROR_DOM_INDEX_SIZE_ERR;
   }
 
-  
+  // If they have different root, this should be collapsed at the end point.
   if (newStartRoot != newEndRoot) {
     aRange->DoSetRange(aEndBoundary, aEndBoundary, newEndRoot);
     return NS_OK;
@@ -137,19 +139,19 @@ nsresult AbstractRange::SetStartAndEndInternal(
   const Maybe<int32_t> pointOrder =
       nsContentUtils::ComparePoints(aStartBoundary, aEndBoundary);
   if (!pointOrder) {
-    
+    // Safely return a value but also detected this in debug builds.
     MOZ_ASSERT_UNREACHABLE();
     return NS_ERROR_INVALID_ARG;
   }
 
-  
-  
+  // If the end point is before the start point, this should be collapsed at
+  // the end point.
   if (*pointOrder == 1) {
     aRange->DoSetRange(aEndBoundary, aEndBoundary, newEndRoot);
     return NS_OK;
   }
 
-  
+  // Otherwise, set the range as specified.
   aRange->DoSetRange(aStartBoundary, aEndBoundary, newStartRoot);
   return NS_OK;
 }
@@ -159,5 +161,5 @@ JSObject* AbstractRange::WrapObject(JSContext* aCx,
   MOZ_CRASH("Must be overridden");
 }
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla

@@ -122,6 +122,9 @@ static void InvalidateAllFrames(nsINode* aNode) {
 
 
 
+nsTArray<RefPtr<nsRange>>* nsRange::sCachedRanges = nullptr;
+bool nsRange::sHasShutDown = false;
+
 nsRange::~nsRange() {
   NS_ASSERTION(!IsInSelection(), "deleting nsRange that is in use");
 
@@ -137,6 +140,50 @@ nsRange::nsRange(nsINode* aNode)
   
   static_assert(sizeof(nsRange) <= 192,
                 "nsRange size shouldn't be increased as far as possible");
+}
+
+
+already_AddRefed<nsRange> nsRange::Create(nsINode* aNode) {
+  MOZ_ASSERT(aNode);
+  if (!sCachedRanges || sCachedRanges->IsEmpty()) {
+    return do_AddRef(new nsRange(aNode));
+  }
+  RefPtr<nsRange> range = sCachedRanges->PopLastElement().forget();
+  range->mOwner = aNode->OwnerDoc();
+  return range.forget();
+}
+
+bool nsRange::MaybeCacheToReuse() {
+  static const size_t kMaxRangeCache = 64;
+
+  
+  
+  if (sHasShutDown || GetWrapperMaybeDead() || GetFlags() ||
+      (sCachedRanges && sCachedRanges->Length() == kMaxRangeCache)) {
+    return false;
+  }
+
+  ClearForReuse();
+  MOZ_ASSERT(!mRoot);
+  MOZ_ASSERT(!mRegisteredClosestCommonInclusiveAncestor);
+  MOZ_ASSERT(!mNextStartRef);
+  MOZ_ASSERT(!mNextEndRef);
+
+  if (!sCachedRanges) {
+    sCachedRanges = new nsTArray<RefPtr<nsRange>>(16);
+  }
+  sCachedRanges->AppendElement(this);
+  return true;
+}
+
+
+void nsRange::Shutdown() {
+  sHasShutDown = true;
+  if (nsTArray<RefPtr<nsRange>>* cachedRanges = sCachedRanges) {
+    sCachedRanges = nullptr;
+    cachedRanges->Clear();
+    delete cachedRanges;
+  }
 }
 
 
@@ -159,8 +206,35 @@ already_AddRefed<nsRange> nsRange::Create(
 
 
 NS_IMPL_MAIN_THREAD_ONLY_CYCLE_COLLECTING_ADDREF(nsRange)
-NS_IMPL_MAIN_THREAD_ONLY_CYCLE_COLLECTING_RELEASE_WITH_LAST_RELEASE(
-    nsRange, DoSetRange(RawRangeBoundary(), RawRangeBoundary(), nullptr))
+NS_IMETHODIMP_(MozExternalRefCountType) nsRange::Release() {
+  MOZ_ASSERT(0 != mRefCnt, "dup release");
+  NS_ASSERT_OWNINGTHREAD(nsRange);
+  nsISupports* base = NS_CYCLE_COLLECTION_CLASSNAME(nsRange)::Upcast(this);
+  bool shouldDelete = false;
+  nsrefcnt count =
+      mRefCnt.decr<NS_CycleCollectorSuspectUsingNursery>(base, &shouldDelete);
+  NS_LOG_RELEASE(this, count, "nsRange");
+  if (count == 0) {
+    
+    
+    mRefCnt.incr<NS_CycleCollectorSuspectUsingNursery>(base);
+    DoSetRange(RawRangeBoundary(), RawRangeBoundary(), nullptr);
+    mRefCnt.decr<NS_CycleCollectorSuspectUsingNursery>(base);
+    
+    
+    if (MaybeCacheToReuse()) {
+      MOZ_ASSERT(mRefCnt.get() > 0);
+      return mRefCnt.get();
+    }
+    if (shouldDelete) {
+      mRefCnt.stabilizeForDeletion();
+      DeleteCycleCollectable();
+    }
+  }
+  return count;
+}
+
+NS_IMETHODIMP_(void) nsRange::DeleteCycleCollectable() { delete this; }
 
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsRange)

@@ -50,14 +50,19 @@ class nsRange final : public mozilla::dom::AbstractRange,
   virtual ~nsRange();
   explicit nsRange(nsINode* aNode);
 
+  bool MaybeCacheToReuse();
+
  public:
   
 
 
+  static void Shutdown();
 
-  static already_AddRefed<nsRange> Create(nsINode* aNode) {
-    return do_AddRef(new nsRange(aNode));
-  }
+  
+
+
+
+  static already_AddRefed<nsRange> Create(nsINode* aNode);
 
   
 
@@ -451,6 +456,9 @@ class nsRange final : public mozilla::dom::AbstractRange,
   
   nsIContent* MOZ_NON_OWNING_REF mNextStartRef;
   nsIContent* MOZ_NON_OWNING_REF mNextEndRef;
+
+  static nsTArray<RefPtr<nsRange>>* sCachedRanges;
+  static bool sHasShutDown;
 
   friend class mozilla::dom::AbstractRange;
 };
