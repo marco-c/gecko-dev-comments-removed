@@ -19,36 +19,38 @@
 
 
 
-'use strict';
+"use strict";
 
 (function() {
   
-  if (MouseEventShim)
+  if (MouseEventShim) {
     return;
+  }
 
   
   
   try {
-    document.createEvent('TouchEvent');
+    document.createEvent("TouchEvent");
   } catch (e) {
     return;
   }
 
-  var starttouch; 
-  var target; 
-  var emitclick; 
+  let starttouch; 
+  let target; 
+  let emitclick; 
 
   
-  window.addEventListener('mousedown', discardEvent, true);
-  window.addEventListener('mouseup', discardEvent, true);
-  window.addEventListener('mousemove', discardEvent, true);
-  window.addEventListener('click', discardEvent, true);
+  window.addEventListener("mousedown", discardEvent, true);
+  window.addEventListener("mouseup", discardEvent, true);
+  window.addEventListener("mousemove", discardEvent, true);
+  window.addEventListener("click", discardEvent, true);
 
   function discardEvent(e) {
     if (e.isTrusted) {
       e.stopImmediatePropagation(); 
-      if (e.type === 'click')
-        e.preventDefault(); 
+      if (e.type === "click") {
+        e.preventDefault();
+      } 
     }
   }
 
@@ -56,27 +58,28 @@
   
   
   
-  window.addEventListener('touchstart', handleTouchStart);
-  window.addEventListener('touchmove', handleTouchMove);
-  window.addEventListener('touchend', handleTouchEnd);
-  window.addEventListener('touchcancel', handleTouchEnd); 
+  window.addEventListener("touchstart", handleTouchStart);
+  window.addEventListener("touchmove", handleTouchMove);
+  window.addEventListener("touchend", handleTouchEnd);
+  window.addEventListener("touchcancel", handleTouchEnd); 
 
   function handleTouchStart(e) {
     
-    if (starttouch)
+    if (starttouch) {
       return;
+    }
 
     
-    if (e.defaultPrevented)
+    if (e.defaultPrevented) {
       return;
+    }
 
     
     
     
     try {
       e.changedTouches[0].target.ownerDocument;
-    }
-    catch (e) {
+    } catch (e) {
       
       return;
     }
@@ -87,10 +90,10 @@
     emitclick = true;
 
     
-    emitEvent('mousemove', target, starttouch);
+    emitEvent("mousemove", target, starttouch);
 
     
-    var result = emitEvent('mousedown', target, starttouch);
+    let result = emitEvent("mousedown", target, starttouch);
 
     
     
@@ -101,8 +104,9 @@
   }
 
   function handleTouchEnd(e) {
-    if (!starttouch)
+    if (!starttouch) {
       return;
+    }
 
     
     if (MouseEventShim.capturing) {
@@ -110,19 +114,21 @@
       MouseEventShim.captureTarget = null;
     }
 
-    for (var i = 0; i < e.changedTouches.length; i++) {
-      var touch = e.changedTouches[i];
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      let touch = e.changedTouches[i];
       
-      if (touch.identifier !== starttouch.identifier)
+      if (touch.identifier !== starttouch.identifier) {
         continue;
+      }
 
-      emitEvent('mouseup', target, touch);
+      emitEvent("mouseup", target, touch);
 
       
       
       
-      if (emitclick)
-        emitEvent('click', starttouch.target, touch);
+      if (emitclick) {
+        emitEvent("click", starttouch.target, touch);
+      }
 
       starttouch = null;
       return;
@@ -130,29 +136,34 @@
   }
 
   function handleTouchMove(e) {
-    if (!starttouch)
+    if (!starttouch) {
       return;
+    }
 
-    for (var i = 0; i < e.changedTouches.length; i++) {
-      var touch = e.changedTouches[i];
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      let touch = e.changedTouches[i];
       
-      if (touch.identifier !== starttouch.identifier)
+      if (touch.identifier !== starttouch.identifier) {
         continue;
+      }
 
       
-      if (e.defaultPrevented)
+      if (e.defaultPrevented) {
         return;
+      }
 
       
-      var dx = Math.abs(touch.screenX - starttouch.screenX);
-      var dy = Math.abs(touch.screenY - starttouch.screenY);
-      if (dx > MouseEventShim.dragThresholdX ||
-          dy > MouseEventShim.dragThresholdY) {
+      let dx = Math.abs(touch.screenX - starttouch.screenX);
+      let dy = Math.abs(touch.screenY - starttouch.screenY);
+      if (
+        dx > MouseEventShim.dragThresholdX ||
+        dy > MouseEventShim.dragThresholdY
+      ) {
         emitclick = false;
       }
 
-      var tracking = MouseEventShim.trackMouseMoves &&
-        !MouseEventShim.capturing;
+      let tracking =
+        MouseEventShim.trackMouseMoves && !MouseEventShim.capturing;
 
       if (tracking) {
         
@@ -170,12 +181,11 @@
           leave(oldtarget, newtarget, touch); 
           target = newtarget;
         }
-      }
-      else if (MouseEventShim.captureTarget) {
+      } else if (MouseEventShim.captureTarget) {
         target = MouseEventShim.captureTarget;
       }
 
-      emitEvent('mousemove', target, touch);
+      emitEvent("mousemove", target, touch);
 
       if (tracking && newtarget !== oldtarget) {
         enter(newtarget, oldtarget, touch); 
@@ -191,70 +201,72 @@
   
   
   function leave(oldtarget, newtarget, touch) {
-    emitEvent('mouseout', oldtarget, touch, newtarget);
+    emitEvent("mouseout", oldtarget, touch, newtarget);
 
     
     
     
-    for (var e = oldtarget; !contains(e, newtarget); e = e.parentNode) {
-      emitEvent('mouseleave', e, touch, newtarget);
+    for (let e = oldtarget; !contains(e, newtarget); e = e.parentNode) {
+      emitEvent("mouseleave", e, touch, newtarget);
     }
   }
 
   
   
   function enter(newtarget, oldtarget, touch) {
-    emitEvent('mouseover', newtarget, touch, oldtarget);
+    emitEvent("mouseover", newtarget, touch, oldtarget);
 
     
     
-    for (var e = newtarget; !contains(e, oldtarget); e = e.parentNode) {
-      emitEvent('mouseenter', e, touch, oldtarget);
+    for (let e = newtarget; !contains(e, oldtarget); e = e.parentNode) {
+      emitEvent("mouseenter", e, touch, oldtarget);
     }
   }
 
   function emitEvent(type, target, touch, relatedTarget) {
-    var synthetic = document.createEvent('MouseEvents');
-    var bubbles = (type !== 'mouseenter' && type !== 'mouseleave');
-    var count =
-      (type === 'mousedown' || type === 'mouseup' || type === 'click') ? 1 : 0;
+    let synthetic = document.createEvent("MouseEvents");
+    let bubbles = type !== "mouseenter" && type !== "mouseleave";
+    let count =
+      type === "mousedown" || type === "mouseup" || type === "click" ? 1 : 0;
 
-    synthetic.initMouseEvent(type,
-                             bubbles, 
-                             true, 
-                             window,
-                             count, 
-                             touch.screenX,
-                             touch.screenY,
-                             touch.clientX,
-                             touch.clientY,
-                             false, 
-                             false, 
-                             false, 
-                             false, 
-                             0, 
-                             relatedTarget || null);
+    synthetic.initMouseEvent(
+      type,
+      bubbles, 
+      true, 
+      window,
+      count, 
+      touch.screenX,
+      touch.screenY,
+      touch.clientX,
+      touch.clientY,
+      false, 
+      false, 
+      false, 
+      false, 
+      0, 
+      relatedTarget || null
+    );
 
     try {
       return target.dispatchEvent(synthetic);
-    }
-    catch (e) {
-      console.warn('Exception calling dispatchEvent', type, e);
+    } catch (e) {
+      console.warn("Exception calling dispatchEvent", type, e);
       return true;
     }
   }
-}());
+})();
 
 var MouseEventShim = {
   
   
   
   
-  getEventTimestamp: function(e) {
-    if (e.isTrusted) 
+  getEventTimestamp(e) {
+    if (e.isTrusted) {
+      
       return e.timeStamp;
-    else
-      return e.timeStamp / 1000;
+    }
+    return e.timeStamp / 1000;
   },
 
   
@@ -266,10 +278,11 @@ var MouseEventShim = {
   
   
   
-  setCapture: function(target) {
+  setCapture(target) {
     this.capturing = true; 
-    if (target)
+    if (target) {
       this.captureTarget = target;
+    }
   },
 
   capturing: false,
@@ -278,5 +291,5 @@ var MouseEventShim = {
   
   
   dragThresholdX: 25,
-  dragThresholdY: 25
+  dragThresholdY: 25,
 };
