@@ -1336,6 +1336,11 @@ class XPCShellTests(object):
         if not self.updateMozinfo(prefs, options):
             return False
 
+        if "tsan" in self.mozInfo and self.mozInfo["tsan"] and not options.get('threadCount'):
+            
+            
+            self.threadCount = self.threadCount / 2
+
         self.stack_fixer_function = None
         if self.utility_path and os.path.exists(self.utility_path):
             self.stack_fixer_function = get_stack_fixer_function(self.utility_path,
