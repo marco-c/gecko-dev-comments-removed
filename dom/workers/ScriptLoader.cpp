@@ -1712,10 +1712,9 @@ void CacheScriptLoader::ResolvedCallback(JSContext* aCx,
     
     
     
-    
-    
-    
-    if (NS_WARN_IF(mIsWorkerScript)) {
+    if (NS_WARN_IF(mIsWorkerScript ||
+                   (mState != ServiceWorkerState::Parsed &&
+                    mState != ServiceWorkerState::Installing))) {
       Fail(NS_ERROR_DOM_INVALID_STATE_ERR);
       return;
     }
