@@ -574,14 +574,6 @@ const rollout = {
 
 const setup = {
   async start() {
-    DEBUG = await browser.experiments.preferences.getBoolPref(
-      DOH_DEBUG_PREF,
-      false
-    );
-
-    
-    await rollout.migrateLocalStoragePrefs();
-
     const isAddonDisabled = await rollout.getSetting(DOH_DISABLED_PREF, false);
     const runAddonPref = await rollout.getSetting(DOH_ENABLED_PREF, false);
     const runAddonBypassPref = await rollout.getSetting(
@@ -617,21 +609,47 @@ const setup = {
     ) {
       rollout.init();
     } else {
-      log(
-        "Disabled, aborting! Watching `doh-rollout.enabled` pref for change event"
-      );
-      
-      
-      browser.experiments.preferences.onPrefChanged.addListener(
-        function listener() {
-          browser.experiments.preferences.onPrefChanged.removeListener(
-            listener
-          );
-          setup.start();
-        }
-      );
+      log("Disabled, aborting!");
     }
   },
 };
 
-setup.start();
+(async () => {
+  DEBUG = await browser.experiments.preferences.getBoolPref(
+    DOH_DEBUG_PREF,
+    false
+  );
+
+  
+  await rollout.migrateLocalStoragePrefs();
+
+  log("Watching `doh-rollout.enabled` pref");
+  browser.experiments.preferences.onPrefChanged.addListener(async () => {
+    let enabled = await rollout.getSetting(DOH_ENABLED_PREF, false);
+    if (enabled) {
+      setup.start();
+    } else {
+      
+      if (await stateManager.shouldRunHeuristics()) {
+        await stateManager.setState("disabled");
+      }
+
+      
+      browser.networkStatus.onConnectionChanged.removeListener(
+        rollout.onConnectionChanged
+      );
+
+      try {
+        browser.captivePortal.onStateChange.removeListener(
+          rollout.onCaptiveStateChanged
+        );
+      } catch (e) {
+        
+      }
+    }
+  });
+
+  if (await rollout.getSetting(DOH_ENABLED_PREF, false)) {
+    setup.start();
+  }
+})();
