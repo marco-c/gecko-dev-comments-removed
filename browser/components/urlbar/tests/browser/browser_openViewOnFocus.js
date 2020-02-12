@@ -4,7 +4,6 @@
 "use strict";
 
 async function checkOpensOnFocus(win = window) {
-  Assert.ok(win.gURLBar.openViewOnFocus, "openViewOnFocus should be true");
   
   
   win.gURLBar.blur();
@@ -32,7 +31,6 @@ async function checkOpensOnFocus(win = window) {
 }
 
 async function checkDoesNotOpenOnFocus(win = window) {
-  Assert.ok(!win.gURLBar.openViewOnFocus, "openViewOnFocus should be false");
   
   win.gURLBar.blur();
   win.gURLBar.focus();

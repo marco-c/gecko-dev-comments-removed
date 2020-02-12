@@ -7,15 +7,25 @@
 
 
 
-
-
-
-
-async function checkPanelRemainsClosed(win) {
+async function checkPanelStatePersists(win, isOpen) {
   
   
-  await new Promise(resolve => setTimeout(resolve, 500));
-  Assert.ok(!win.gURLBar.view.isOpen, "check urlbar panel is not open");
+  
+  function handler(event) {
+    Assert.ok(false, `Received unexpected event ${event.type}`);
+  }
+  win.gURLBar.addEventListener("popupshowing", handler);
+  win.gURLBar.addEventListener("popuphiding", handler);
+  
+  
+  await new Promise(resolve => setTimeout(resolve, 300));
+  win.gURLBar.removeEventListener("popupshowing", handler);
+  win.gURLBar.removeEventListener("popuphiding", handler);
+  Assert.equal(
+    isOpen,
+    win.gURLBar.view.isOpen,
+    `check urlbar remains ${isOpen ? "open" : "closed"}`
+  );
 }
 
 async function checkOpensOnFocus(win, state) {
@@ -45,25 +55,26 @@ async function checkOpensOnFocus(win, state) {
 }
 
 async function checkDoesNotOpenOnFocus(win) {
-  Assert.ok(!win.gURLBar.openViewOnFocus, "openViewOnFocus should be false");
   Assert.ok(!win.gURLBar.view.isOpen, "check urlbar panel is not open");
   win.gURLBar.blur();
 
   info("Check the keyboard shortcut.");
+  let promiseState = checkPanelStatePersists(win, false);
   win.document.getElementById("Browser:OpenLocation").doCommand();
-  await checkPanelRemainsClosed(win);
+  await promiseState;
   win.gURLBar.blur();
   info("Focus with the mouse.");
+  promiseState = checkPanelStatePersists(win, false);
   EventUtils.synthesizeMouseAtCenter(win.gURLBar.inputField, {}, win);
-  await checkPanelRemainsClosed(win);
+  await promiseState;
 }
 
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.urlbar.update1", true],
       ["browser.urlbar.autoFill", true],
       ["browser.urlbar.clickSelectsAll", true],
+      ["browser.urlbar.openViewOnFocus", true],
     ],
   });
   
@@ -93,11 +104,6 @@ async function test_window(win) {
           () => win.gBrowser.currentURI.spec == url,
           "Ensure we're on the expected page"
         );
-
-        if (!Services.prefs.getBoolPref("browser.urlbar.openViewOnFocus")) {
-          info("The panel should not open on the page by default");
-          await checkDoesNotOpenOnFocus(win);
-        }
 
         
         let autofill = url == "http://example.com/";
@@ -199,16 +205,17 @@ add_task(async function test_tabSwitch() {
     fireInputEvent: true,
   });
 
-  info("Switch to the first tab and check the panel closes");
-  await UrlbarTestUtils.promisePopupClose(win, async () => {
-    await BrowserTestUtils.switchTab(win.gBrowser, tab1);
-  });
-  await checkPanelRemainsClosed(win);
+  info("Switch to the first tab and check the panel remains open");
+  let promiseState = checkPanelStatePersists(win, true);
+  await BrowserTestUtils.switchTab(win.gBrowser, tab1);
+  await promiseState;
+  await UrlbarTestUtils.promiseSearchComplete(win);
+  await check_autofill();
 
-  info("Switch to the second tab and check the panel opens");
-  await UrlbarTestUtils.promisePopupOpen(win, async () => {
-    await BrowserTestUtils.switchTab(win.gBrowser, tab2);
-  });
+  info("Switch to the second tab and check the panel remains open");
+  promiseState = checkPanelStatePersists(win, true);
+  await BrowserTestUtils.switchTab(win.gBrowser, tab2);
+  await promiseState;
   await UrlbarTestUtils.promiseSearchComplete(win);
   Assert.equal(win.gURLBar.value, "xam", "check value");
   Assert.equal(win.gURLBar.selectionStart, 3);
@@ -222,27 +229,33 @@ add_task(async function test_tabSwitch() {
     fireInputEvent: true,
   });
   
+  await BrowserTestUtils.switchTab(win.gBrowser, tab1);
+  await UrlbarTestUtils.promiseSearchComplete(win);
+  await check_autofill();
+  tab2.click();
   selectionStart = 1;
-  await UrlbarTestUtils.promisePopupClose(win, async () => {
-    await BrowserTestUtils.switchTab(win.gBrowser, tab1);
-  });
-  await checkPanelRemainsClosed(win);
-  await UrlbarTestUtils.promisePopupOpen(win, () => {
-    info("click on tab2");
-    tab2.click();
-  });
   await check_autofill();
 
   info("Check we don't rerun a search if the shortcut is used on an open view");
   EventUtils.synthesizeKey("KEY_Backspace", {}, win);
+  await UrlbarTestUtils.promiseSearchComplete(win);
   Assert.ok(win.gURLBar.view.isOpen, "The view should be open");
   Assert.equal(win.gURLBar.value, "e", "The value should be the typed one");
   win.document.getElementById("Browser:OpenLocation").doCommand();
   
   
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await new Promise(resolve => setTimeout(resolve, 300));
   Assert.ok(win.gURLBar.view.isOpen, "The view should be open");
   Assert.equal(win.gURLBar.value, "e", "The value should not change");
+
+  info(
+    "Tab switch from an empty search tab with unfocused urlbar to a tab with a search string and a focused urlbar"
+  );
+  win.gURLBar.value = "";
+  win.gURLBar.blur();
+  await UrlbarTestUtils.promisePopupOpen(win, async () => {
+    await BrowserTestUtils.switchTab(win.gBrowser, tab1);
+  });
 
   await BrowserTestUtils.closeWindow(win);
 });
@@ -279,7 +292,7 @@ add_task(async function test_tabSwitch_pageproxystate() {
   await UrlbarTestUtils.promisePopupClose(win, async () => {
     await BrowserTestUtils.switchTab(win.gBrowser, tab1);
   });
-  await checkPanelRemainsClosed(win);
+  await checkPanelStatePersists(win, false);
   await UrlbarTestUtils.promisePopupOpen(win, async () => {
     win.gURLBar.focus();
     
@@ -294,12 +307,12 @@ add_task(async function test_tabSwitch_pageproxystate() {
   await UrlbarTestUtils.promisePopupClose(win, async () => {
     await BrowserTestUtils.switchTab(win.gBrowser, tab2);
   });
-  await checkPanelRemainsClosed(win);
+  await checkPanelStatePersists(win, false);
 
   info("Switching to the first tab should not reopen the search");
+  let promiseState = await checkPanelStatePersists(win, false);
   await BrowserTestUtils.switchTab(win.gBrowser, tab1);
-  await checkPanelRemainsClosed(win);
-
+  await promiseState;
   await BrowserTestUtils.closeWindow(win);
 });
 
@@ -335,11 +348,12 @@ add_task(async function test_tabSwitch_emptySearch() {
   await UrlbarTestUtils.promisePopupClose(win, async () => {
     await BrowserTestUtils.switchTab(win.gBrowser, tab1);
   });
-  await checkPanelRemainsClosed(win);
+  await checkPanelStatePersists(win, false);
 
   info("Switching to the second tab should not reopen the view");
+  let promiseState = await checkPanelStatePersists(win, false);
   await BrowserTestUtils.switchTab(win.gBrowser, tab2);
-  await checkPanelRemainsClosed(win);
+  await promiseState;
 
   await BrowserTestUtils.closeWindow(win);
 });
@@ -364,10 +378,6 @@ add_task(async function test_pageproxystate_valid() {
   Assert.ok(!win.gURLBar.focused, "The urlbar should not be focused");
   info("Focus the urlbar");
   win.document.getElementById("Browser:OpenLocation").doCommand();
-
-  if (!Services.prefs.getBoolPref("browser.urlbar.openViewOnFocus")) {
-    await checkPanelRemainsClosed(win);
-  }
 
   await BrowserTestUtils.closeWindow(win);
 });

@@ -56,6 +56,9 @@ class UrlbarView {
 
     this.controller.setView(this);
     this.controller.addQueryListener(this);
+    
+    
+    this._queryContextCache = new QueryContextCache(5);
   }
 
   get oneOffSearchButtons() {
@@ -374,34 +377,76 @@ class UrlbarView {
     this.controller.notify(this.controller.NOTIFICATIONS.VIEW_CLOSE);
   }
 
-  maybeReopen() {
-    
-    
-    
-    
-    
+  
+
+
+
+
+
+
+
+
+
+
+  autoOpen(queryOptions = {}) {
+    if (!this.input.openViewOnFocus || !queryOptions.event) {
+      return false;
+    }
+
     if (
-      this.input.megabar &&
-      this._rows.firstElementChild &&
-      this.input.focused &&
-      this.input.value &&
-      this._queryContext.searchString == this.input.value &&
-      this.input.getAttribute("pageproxystate") != "valid"
+      !this.input.value ||
+      this.input.getAttribute("pageproxystate") == "valid"
     ) {
       
-      if (!this.isOpen) {
-        this._openPanel();
+      
+      let canOpenTopSites =
+        !this.input.isPrivate &&
+        UrlbarPrefs.get("browser.newtabpage.activity-stream.feeds.topsites");
+      if (
+        canOpenTopSites &&
+        !this.isOpen &&
+        ["mousedown", "command"].includes(queryOptions.event.type)
+      ) {
+        this.input.startQuery(queryOptions);
+        return true;
       }
-      this.controller.engagementEvent.discard();
-      this.input.startQuery({
-        autofillIgnoresSelection: true,
-        searchString: this.input.value,
-        allowAutofill: this._queryContext.allowAutofill,
-        event: new CustomEvent("urlbar-reopen"),
-      });
-      return true;
+      return false;
     }
-    return false;
+
+    let urlbarFocused = this.input.focused;
+    if (queryOptions.event.type == "TabSelect") {
+      urlbarFocused = queryOptions.event.target.linkedBrowser._urlbarFocused;
+    }
+
+    
+    if (!urlbarFocused) {
+      return false;
+    }
+
+    if (
+      this._rows.firstElementChild &&
+      this._queryContext.searchString == this.input.value
+    ) {
+      
+      queryOptions.allowAutofill = this._queryContext.allowAutofill;
+    } else {
+      
+      let cachedQueryContext = this._queryContextCache.get(this.input.value);
+      if (cachedQueryContext) {
+        this.onQueryResults(cachedQueryContext);
+      }
+    }
+
+    this._openPanel();
+
+    this.controller.engagementEvent.discard();
+    queryOptions.searchString = this.input.value;
+    queryOptions.autofillIgnoresSelection = true;
+    queryOptions.event.interactionType = "returned";
+    
+    
+    this.input.startQuery(queryOptions);
+    return true;
   }
 
   
@@ -424,6 +469,7 @@ class UrlbarView {
   }
 
   onQueryResults(queryContext) {
+    this._queryContextCache.put(queryContext);
     this._queryContext = queryContext;
 
     if (!this.isOpen) {
@@ -1482,10 +1528,10 @@ class UrlbarView {
     this.close();
   }
 
-  _on_TabSelect() {
+  _on_TabSelect(event) {
     
     
-    if (this.maybeReopen()) {
+    if (this.autoOpen({ event })) {
       return;
     }
     
@@ -1495,3 +1541,46 @@ class UrlbarView {
 }
 
 UrlbarView.removeStaleRowsTimeout = DEFAULT_REMOVE_STALE_ROWS_TIMEOUT;
+
+
+
+
+
+class QueryContextCache {
+  
+
+
+
+  constructor(size) {
+    this.size = size;
+    this._cache = [];
+  }
+
+  
+
+
+
+
+
+  put(queryContext) {
+    let searchString = queryContext.searchString;
+    if (!searchString || !queryContext.results.length) {
+      return;
+    }
+
+    let index = this._cache.findIndex(e => e.searchString == searchString);
+    if (index != -1) {
+      if (this._cache[index] == queryContext) {
+        return;
+      }
+      this._cache.splice(index, 1);
+    }
+    if (this._cache.unshift(queryContext) > this.size) {
+      this._cache.length = this.size;
+    }
+  }
+
+  get(searchString) {
+    return this._cache.find(e => e.searchString == searchString);
+  }
+}

@@ -69,6 +69,9 @@ class ProviderTopSites extends UrlbarProvider {
 
 
   isActive(queryContext) {
+    
+    
+    
     return (
       UrlbarPrefs.get("update1") &&
       UrlbarPrefs.get("openViewOnFocus") &&

@@ -945,20 +945,6 @@ class UrlbarInput {
     return this._lastSearchString;
   }
 
-  get openViewOnFocus() {
-    return (
-      this._openViewOnFocus &&
-      !this.isPrivate &&
-      
-      
-      
-      Services.prefs.getBoolPref(
-        "browser.newtabpage.activity-stream.feeds.topsites",
-        true
-      )
-    );
-  }
-
   async updateLayoutBreakout() {
     if (!this.megabar) {
       return;
@@ -1066,10 +1052,10 @@ class UrlbarInput {
     
     
     
-    this._openViewOnFocus = Services.prefs.getBoolPref(
+    this.openViewOnFocus = Services.prefs.getBoolPref(
       "browser.urlbar.openViewOnFocus"
     );
-    this.dropmarker.hidden = this._openViewOnFocus;
+    this.dropmarker.hidden = this.openViewOnFocus;
   }
 
   _setValue(val, allowTrim) {
@@ -1774,7 +1760,7 @@ class UrlbarInput {
     
     if (this._focusedViaMousedown) {
       this._focusedViaMousedown = false;
-      this.view.maybeReopen();
+      this.view.autoOpen({ event });
     } else {
       this.startLayoutExtend();
       if (this.inputField.hasAttribute("refocused-by-panel")) {
@@ -1834,11 +1820,8 @@ class UrlbarInput {
         } else if (event.target.id == SEARCH_BUTTON_ID) {
           this._preventClickSelectsAll = true;
           this.search(UrlbarTokenizer.RESTRICT.SEARCH);
-        } else if (this.openViewOnFocus && !this.view.isOpen) {
-          this.startQuery({
-            allowAutofill: false,
-            event,
-          });
+        } else {
+          this.view.autoOpen({ event });
         }
         break;
       case this.dropmarker:
