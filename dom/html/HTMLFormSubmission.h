@@ -41,7 +41,7 @@ class HTMLFormSubmission {
 
 
   static nsresult GetFromForm(HTMLFormElement* aForm,
-                              nsGenericHTMLElement* aOriginatingElement,
+                              nsGenericHTMLElement* aSubmitter,
                               NotNull<const Encoding*>& aEncoding,
                               HTMLFormSubmission** aFormSubmission);
 
@@ -93,7 +93,7 @@ class HTMLFormSubmission {
 
   void GetCharset(nsACString& aCharset) { mEncoding->Name(aCharset); }
 
-  Element* GetOriginatingElement() const { return mOriginatingElement.get(); }
+  Element* GetSubmitterElement() const { return mSubmitter.get(); }
 
   
 
@@ -119,11 +119,11 @@ class HTMLFormSubmission {
 
   HTMLFormSubmission(nsIURI* aActionURL, const nsAString& aTarget,
                      mozilla::NotNull<const mozilla::Encoding*> aEncoding,
-                     Element* aOriginatingElement)
+                     Element* aSubmitter)
       : mActionURL(aActionURL),
         mTarget(aTarget),
         mEncoding(aEncoding),
-        mOriginatingElement(aOriginatingElement),
+        mSubmitter(aSubmitter),
         mInitiatedFromUserInput(UserActivation::IsHandlingUserInput()) {
     MOZ_COUNT_CTOR(HTMLFormSubmission);
   }
@@ -138,7 +138,7 @@ class HTMLFormSubmission {
   mozilla::NotNull<const mozilla::Encoding*> mEncoding;
 
   
-  RefPtr<Element> mOriginatingElement;
+  RefPtr<Element> mSubmitter;
 
   
   bool mInitiatedFromUserInput;
@@ -148,7 +148,7 @@ class EncodingFormSubmission : public HTMLFormSubmission {
  public:
   EncodingFormSubmission(nsIURI* aActionURL, const nsAString& aTarget,
                          mozilla::NotNull<const mozilla::Encoding*> aEncoding,
-                         Element* aOriginatingElement);
+                         Element* aSubmitter);
 
   virtual ~EncodingFormSubmission();
 
@@ -176,7 +176,7 @@ class FSMultipartFormData : public EncodingFormSubmission {
 
   FSMultipartFormData(nsIURI* aActionURL, const nsAString& aTarget,
                       mozilla::NotNull<const mozilla::Encoding*> aEncoding,
-                      Element* aOriginatingElement);
+                      Element* aSubmitter);
   ~FSMultipartFormData();
 
   virtual nsresult AddNameValuePair(const nsAString& aName,

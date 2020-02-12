@@ -302,7 +302,7 @@ HTMLButtonElement::SubmitNamesValues(HTMLFormSubmission* aFormSubmission) {
   
   
   
-  if (aFormSubmission->GetOriginatingElement() != this) {
+  if (aFormSubmission->GetSubmitterElement() != this) {
     return NS_OK;
   }
 
