@@ -29,7 +29,7 @@ class WorkletThread final : public nsThread, public nsIObserver {
   
   
   
-  static void EnsureCycleCollectedJSContext(JSRuntime* aParentRuntime);
+  void EnsureCycleCollectedJSContext(JSRuntime* aParentRuntime);
   static void DeleteCycleCollectedJSContext();
 
   static bool IsOnWorkletThread();
