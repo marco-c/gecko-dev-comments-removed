@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "ClientHandleOpParent.h"
 
@@ -23,23 +23,23 @@ void ClientHandleOpParent::ActorDestroy(ActorDestroyReason aReason) {
   mSourcePromiseRequestHolder.DisconnectIfExists();
 }
 
-void ClientHandleOpParent::Init(ClientOpConstructorArgs&& aArgs) {
+void ClientHandleOpParent::Init(const ClientOpConstructorArgs& aArgs) {
   auto handle = static_cast<ClientHandleParent*>(Manager());
   handle->EnsureSource()
       ->Then(
           GetCurrentThreadSerialEventTarget(), __func__,
-          [this, args = std::move(aArgs)](ClientSourceParent* source) mutable {
+          [=](ClientSourceParent* source) {
             mSourcePromiseRequestHolder.Complete();
             RefPtr<ClientOpPromise> p;
 
-            // ClientPostMessageArgs can contain PBlob actors.  This means we
-            // can't just forward the args from one PBackground manager to
-            // another.  Instead, unpack the structured clone data and repack
-            // it into a new set of arguments.
-            if (args.type() ==
+            
+            
+            
+            
+            if (aArgs.type() ==
                 ClientOpConstructorArgs::TClientPostMessageArgs) {
               const ClientPostMessageArgs& orig =
-                  args.get_ClientPostMessageArgs();
+                  aArgs.get_ClientPostMessageArgs();
 
               ClientPostMessageArgs rebuild;
               rebuild.serviceWorker() = orig.serviceWorker();
@@ -54,17 +54,17 @@ void ClientHandleOpParent::Init(ClientOpConstructorArgs&& aArgs) {
                 return;
               }
 
-              p = source->StartOp(std::move(rebuild));
+              p = source->StartOp(rebuild);
             }
 
-            // Other argument types can just be forwarded straight through.
+            
             else {
-              p = source->StartOp(std::move(args));
+              p = source->StartOp(aArgs);
             }
 
-            // Capturing 'this' is safe here because we disconnect the promise
-            // in ActorDestroy() which ensures neither lambda is called if the
-            // actor is destroyed before the source operation completes.
+            
+            
+            
             p->Then(
                  GetCurrentThreadSerialEventTarget(), __func__,
                  [this](const ClientOpResult& aResult) {
@@ -87,5 +87,5 @@ void ClientHandleOpParent::Init(ClientOpConstructorArgs&& aArgs) {
       ->Track(mSourcePromiseRequestHolder);
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
