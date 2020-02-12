@@ -89,12 +89,12 @@ AccessibilityView.prototype = {
     front,
     supports,
     fluentBundles,
-    simulator,
     toolbox,
     getAccessibilityTreeRoot,
     startListeningForAccessibilityEvents,
     stopListeningForAccessibilityEvents,
     audit,
+    simulate,
   }) {
     
     await this.store.dispatch(reset(front, supports));
@@ -102,12 +102,12 @@ AccessibilityView.prototype = {
     const mainFrame = MainFrame({
       accessibility: front,
       fluentBundles,
-      simulator,
       toolbox,
       getAccessibilityTreeRoot,
       startListeningForAccessibilityEvents,
       stopListeningForAccessibilityEvents,
       audit,
+      simulate,
     });
     
     const provider = createElement(Provider, { store: this.store }, mainFrame);
