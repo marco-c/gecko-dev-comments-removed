@@ -30,11 +30,11 @@ class ServiceWorkerOp : public RemoteWorkerChild::Op {
  public:
   
   static already_AddRefed<ServiceWorkerOp> Create(
-      const ServiceWorkerOpArgs& aArgs,
+      ServiceWorkerOpArgs&& aArgs,
       std::function<void(const ServiceWorkerOpResult&)>&& aCallback);
 
   ServiceWorkerOp(
-      const ServiceWorkerOpArgs& aArgs,
+      ServiceWorkerOpArgs&& aArgs,
       std::function<void(const ServiceWorkerOpResult&)>&& aCallback);
 
   ServiceWorkerOp(const ServiceWorkerOp&) = delete;
