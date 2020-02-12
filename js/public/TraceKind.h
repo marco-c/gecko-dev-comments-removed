@@ -206,31 +206,18 @@ struct MapTypeToRootKind<JSFunction*> : public MapTypeToRootKind<JSObject*> {};
 
 
 
-
-
-
-
-
-
-#if (defined(_MSC_VER) && _MSC_VER < 1910) && !defined(__clang__)
-#  define JS_DEPENDENT_TEMPLATE_HINT
-#else
-#  define JS_DEPENDENT_TEMPLATE_HINT template
-#endif
 template <typename F, typename... Args>
 auto DispatchTraceKindTyped(F f, JS::TraceKind traceKind, Args&&... args) {
   switch (traceKind) {
 #define JS_EXPAND_DEF(name, type, _, _1)                  \
   case JS::TraceKind::name:                               \
-    return f.JS_DEPENDENT_TEMPLATE_HINT operator()<type>( \
-        std::forward<Args>(args)...);
+    return f.template operator()<type>(std::forward<Args>(args)...);
     JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF);
 #undef JS_EXPAND_DEF
     default:
       MOZ_CRASH("Invalid trace kind in DispatchTraceKindTyped.");
   }
 }
-#undef JS_DEPENDENT_TEMPLATE_HINT
 
 
 

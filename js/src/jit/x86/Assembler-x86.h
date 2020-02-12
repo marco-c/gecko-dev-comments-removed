@@ -75,10 +75,8 @@ static constexpr Register CallTempReg4 = esi;
 static constexpr Register CallTempReg5 = edx;
 
 
-
-
-static const Register CallTempNonArgRegs[] = {edi, eax, ebx, ecx, esi, edx};
-static const uint32_t NumCallTempNonArgRegs =
+static constexpr Register CallTempNonArgRegs[] = {edi, eax, ebx, ecx, esi, edx};
+static constexpr uint32_t NumCallTempNonArgRegs =
     mozilla::ArrayLength(CallTempNonArgRegs);
 
 class ABIArgGenerator {
