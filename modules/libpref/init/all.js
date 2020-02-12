@@ -801,13 +801,13 @@ pref("toolkit.telemetry.debugSlowSql", false);
 
 pref("toolkit.telemetry.unified", true);
 
-#ifndef MOZ_ASAN
+#if !defined(MOZ_ASAN) && !defined(MOZ_TSAN)
   pref("toolkit.asyncshutdown.crash_timeout", 60000); 
 #else
   
   
   pref("toolkit.asyncshutdown.crash_timeout", 180000); 
-#endif // MOZ_ASAN
+#endif // !defined(MOZ_ASAN) && !defined(MOZ_TSAN)
 
 pref("toolkit.asyncshutdown.log", false);
 
@@ -2686,7 +2686,7 @@ pref("dom.ipc.plugins.reportCrashURL", true);
 pref("dom.ipc.plugins.forcedirect.enabled", true);
 
 
-#if !defined(MOZ_ASAN)
+#if !defined(MOZ_ASAN) && !defined(MOZ_TSAN)
   pref("dom.ipc.processCount", 8);
 #else
   pref("dom.ipc.processCount", 4);
