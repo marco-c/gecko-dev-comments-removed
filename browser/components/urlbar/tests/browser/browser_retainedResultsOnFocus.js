@@ -1,23 +1,23 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-
-
-
+// Tests "megabar" redesign approach with retained results.
+// When there is a pending search (user typed a search string and blurred
+// without picking a result), on focus we should the search results again.
 
 async function checkPanelStatePersists(win, isOpen) {
-  
-  
-  
+  // Check for popup events, we should not see any of them because the urlbar
+  // popup state should not change. This also ensures we don't cause flickering
+  // open/close actions.
   function handler(event) {
     Assert.ok(false, `Received unexpected event ${event.type}`);
   }
   win.gURLBar.addEventListener("popupshowing", handler);
   win.gURLBar.addEventListener("popuphiding", handler);
-  
-  
+  // Because the panel opening may not be immediate, we must wait a bit.
+  // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
   await new Promise(resolve => setTimeout(resolve, 300));
   win.gURLBar.removeEventListener("popupshowing", handler);
   win.gURLBar.removeEventListener("popuphiding", handler);
@@ -77,7 +77,7 @@ add_task(async function setup() {
       ["browser.urlbar.openViewOnFocus", true],
     ],
   });
-  
+  // Add some history for the empty panel and autofill.
   await PlacesTestUtils.addVisits([
     {
       uri: "http://example.com/",
@@ -95,8 +95,8 @@ add_task(async function setup() {
 
 async function test_window(win) {
   for (let url of ["about:newtab", "about:home", "http://example.com/"]) {
-    
-    
+    // withNewTab may hang on preloaded pages, thus instead of waiting for load
+    // we just wait for the expected currentURI value.
     await BrowserTestUtils.withNewTab(
       { gBrowser: win.gBrowser, url, waitForLoad: false },
       async browser => {
@@ -105,7 +105,7 @@ async function test_window(win) {
           "Ensure we're on the expected page"
         );
 
-        
+        // In one case use a value that triggers autofill.
         let autofill = url == "http://example.com/";
         await UrlbarTestUtils.promiseAutocompleteResultPopup({
           window: win,
@@ -133,7 +133,7 @@ async function test_window(win) {
 }
 
 add_task(async function test_normalWindow() {
-  
+  // The megabar works properly in a new window.
   let win = await BrowserTestUtils.openNewBrowserWindow();
   await test_window(win);
   await BrowserTestUtils.closeWindow(win);
@@ -167,8 +167,15 @@ add_task(async function test_tabSwitch() {
   let tab1 = win.gBrowser.selectedTab;
 
   async function check_autofill() {
+    // The urlbar code waits for both TabSelect and the focus change, thus
+    // we can't just wait for search completion here, we have to poll for a
+    // value.
+    await TestUtils.waitForCondition(
+      () => win.gURLBar.value == "example.com/",
+      "wait for autofill value"
+    );
+    // Ensure stable results.
     await UrlbarTestUtils.promiseSearchComplete(win);
-    Assert.equal(win.gURLBar.value, "example.com/", "Check autofill value");
     Assert.equal(selectionStart, win.gURLBar.selectionStart);
     Assert.equal(selectionEnd, win.gURLBar.selectionEnd);
   }
@@ -228,7 +235,7 @@ add_task(async function test_tabSwitch() {
     value: "e",
     fireInputEvent: true,
   });
-  
+  // Adjust selection start, we are using a different search string.
   await BrowserTestUtils.switchTab(win.gBrowser, tab1);
   await UrlbarTestUtils.promiseSearchComplete(win);
   await check_autofill();
@@ -242,8 +249,8 @@ add_task(async function test_tabSwitch() {
   Assert.ok(win.gURLBar.view.isOpen, "The view should be open");
   Assert.equal(win.gURLBar.value, "e", "The value should be the typed one");
   win.document.getElementById("Browser:OpenLocation").doCommand();
-  
-  
+  // A search should not run here, so there's nothing to wait for.
+  // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
   await new Promise(resolve => setTimeout(resolve, 300));
   Assert.ok(win.gURLBar.view.isOpen, "The view should be open");
   Assert.equal(win.gURLBar.value, "e", "The value should not change");
@@ -278,8 +285,8 @@ add_task(async function test_tabSwitch_pageproxystate() {
   let tab2 = await BrowserTestUtils.openNewForegroundTab(win.gBrowser);
   await UrlbarTestUtils.promisePopupOpen(win, async () => {
     win.gURLBar.focus();
-    
-    
+    // On Linux and Mac down moves caret to the end of the text unless it's
+    // there already.
     win.gURLBar.selectionStart = win.gURLBar.selectionEnd =
       win.gURLBar.value.length;
     EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
@@ -295,8 +302,8 @@ add_task(async function test_tabSwitch_pageproxystate() {
   await checkPanelStatePersists(win, false);
   await UrlbarTestUtils.promisePopupOpen(win, async () => {
     win.gURLBar.focus();
-    
-    
+    // On Linux and Mac down moves caret to the end of the text unless it's
+    // there already.
     win.gURLBar.selectionStart = win.gURLBar.selectionEnd =
       win.gURLBar.value.length;
     EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
@@ -324,8 +331,8 @@ add_task(async function test_tabSwitch_emptySearch() {
   let tab1 = win.gBrowser.selectedTab;
   await UrlbarTestUtils.promisePopupOpen(win, async () => {
     win.gURLBar.focus();
-    
-    
+    // On Linux and Mac down moves caret to the end of the text unless it's
+    // there already.
     win.gURLBar.selectionStart = win.gURLBar.selectionEnd =
       win.gURLBar.value.length;
     EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
@@ -336,8 +343,8 @@ add_task(async function test_tabSwitch_emptySearch() {
   let tab2 = await BrowserTestUtils.openNewForegroundTab(win.gBrowser);
   await UrlbarTestUtils.promisePopupOpen(win, async () => {
     win.gURLBar.focus();
-    
-    
+    // On Linux and Mac down moves caret to the end of the text unless it's
+    // there already.
     win.gURLBar.selectionStart = win.gURLBar.selectionEnd =
       win.gURLBar.value.length;
     EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);

@@ -1011,6 +1011,35 @@ class UrlbarInput {
 
   
 
+
+
+
+  afterTabSwitchFocusChange() {
+    this._gotFocusChange = true;
+    this._afterTabSelectAndFocusChange();
+  }
+
+  
+
+  _afterTabSelectAndFocusChange() {
+    
+    if (!this._gotFocusChange || !this._gotTabSelect) {
+      return;
+    }
+    this._gotFocusChange = this._gotTabSelect = false;
+
+    this._resetSearchState();
+
+    
+    
+    if (this.view.autoOpen({ event: new CustomEvent("urlbar-reopen") })) {
+      return;
+    }
+    
+    
+    this.view.close();
+  }
+
   async _updateLayoutBreakoutDimensions() {
     
     
@@ -2028,7 +2057,8 @@ class UrlbarInput {
   }
 
   _on_TabSelect(event) {
-    this._resetSearchState();
+    this._gotTabSelect = true;
+    this._afterTabSelectAndFocusChange();
   }
 
   _on_keydown(event) {

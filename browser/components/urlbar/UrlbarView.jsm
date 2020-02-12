@@ -52,8 +52,6 @@ class UrlbarView {
     this._rows.addEventListener("overflow", this);
     this._rows.addEventListener("underflow", this);
 
-    this.window.gBrowser.tabContainer.addEventListener("TabSelect", this);
-
     this.controller.setView(this);
     this.controller.addQueryListener(this);
     
@@ -413,13 +411,8 @@ class UrlbarView {
       return false;
     }
 
-    let urlbarFocused = this.input.focused;
-    if (queryOptions.event.type == "TabSelect") {
-      urlbarFocused = queryOptions.event.target.linkedBrowser._urlbarFocused;
-    }
-
     
-    if (!urlbarFocused) {
+    if (!this.input.focused) {
       return false;
     }
 
@@ -437,12 +430,13 @@ class UrlbarView {
       }
     }
 
-    this._openPanel();
-
     this.controller.engagementEvent.discard();
     queryOptions.searchString = this.input.value;
     queryOptions.autofillIgnoresSelection = true;
     queryOptions.event.interactionType = "returned";
+
+    this._openPanel();
+
     
     
     this.input.startQuery(queryOptions);
@@ -1523,17 +1517,6 @@ class UrlbarView {
       return;
     }
 
-    
-    
-    this.close();
-  }
-
-  _on_TabSelect(event) {
-    
-    
-    if (this.autoOpen({ event })) {
-      return;
-    }
     
     
     this.close();
