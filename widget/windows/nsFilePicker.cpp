@@ -45,25 +45,6 @@ typedef DWORD FILEOPENDIALOGOPTIONS;
 
 
 
-class AutoSuppressEvents {
- public:
-  explicit AutoSuppressEvents(nsIWidget* aWidget)
-      : mWindow(static_cast<nsWindow*>(aWidget)) {
-    SuppressWidgetEvents(true);
-  }
-
-  ~AutoSuppressEvents() { SuppressWidgetEvents(false); }
-
- private:
-  void SuppressWidgetEvents(bool aFlag) {
-    if (mWindow) {
-      mWindow->SuppressBlurEvents(aFlag);
-    }
-  }
-  RefPtr<nsWindow> mWindow;
-};
-
-
 class AutoRestoreWorkingPath {
  public:
   AutoRestoreWorkingPath() {
@@ -532,8 +513,6 @@ nsresult nsFilePicker::ShowW(int16_t* aReturnVal) {
   NS_ENSURE_ARG_POINTER(aReturnVal);
 
   *aReturnVal = returnCancel;
-
-  AutoSuppressEvents supress(mParentWidget);
 
   nsAutoString initialDir;
   if (mDisplayDirectory) mDisplayDirectory->GetPath(initialDir);
