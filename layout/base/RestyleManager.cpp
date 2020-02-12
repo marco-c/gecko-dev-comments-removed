@@ -1639,7 +1639,7 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
       
       if ((hint & nsChangeHint_UpdateUsesOpacity) &&
           frame->StyleDisplay()->mTransformStyle ==
-              StyleTransformStyle::Preserve3d) {
+              NS_STYLE_TRANSFORM_STYLE_PRESERVE_3D) {
         hint |= nsChangeHint_UpdateSubtreeOverflow;
       }
 
