@@ -842,8 +842,10 @@ void LogHeaders(const char* lineStart) {
 }
 
 nsresult HttpProxyResponseToErrorCode(uint32_t aStatusCode) {
-  MOZ_ASSERT(aStatusCode >= 300,
-             "Call HttpProxyResponseToErrorCode with successful status code!");
+  
+  
+  
+  MOZ_ASSERT(aStatusCode != 200);
 
   nsresult rv;
   switch (aStatusCode) {
