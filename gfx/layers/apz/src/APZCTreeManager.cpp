@@ -711,13 +711,12 @@ void APZCTreeManager::SampleForWebRender(wr::TransactionWrapper& aTxn,
         apzc->GetCurrentAsyncTransform(AsyncPanZoomController::eForCompositing,
                                        asyncTransformComponents)
             .mTranslation;
+    LayoutDeviceToParentLayerScale zoom =
+        apzc->GetCurrentPinchZoomScale(AsyncPanZoomController::eForCompositing);
 
     if (Maybe<uint64_t> zoomAnimationId = apzc->GetZoomAnimationId()) {
       
       MOZ_ASSERT(apzc->IsRootContent());
-
-      LayoutDeviceToParentLayerScale zoom =
-        apzc->GetCurrentPinchZoomScale(AsyncPanZoomController::eForCompositing);
 
       AsyncTransform asyncVisualTransform =
           apzc->GetCurrentAsyncTransform(AsyncPanZoomController::eForCompositing,
@@ -736,15 +735,7 @@ void APZCTreeManager::SampleForWebRender(wr::TransactionWrapper& aTxn,
     
     
     
-    
-    
-    LayoutDeviceToParentLayerScale resolution =
-        apzc->GetCumulativeResolution().ToScaleFactor() * LayerToParentLayerScale(1.0f);
-    
-    
-    
-    
-    LayoutDevicePoint asyncScrollDelta = -layerTranslation / resolution;
+    LayoutDevicePoint asyncScrollDelta = -layerTranslation / zoom;
     aTxn.UpdateScrollPosition(wr::AsPipelineId(apzc->GetGuid().mLayersId),
                               apzc->GetGuid().mScrollId,
                               wr::ToLayoutPoint(asyncScrollDelta));
