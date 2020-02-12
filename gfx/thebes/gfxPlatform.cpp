@@ -2918,7 +2918,7 @@ static void UpdateWRQualificationForAMD(FeatureState& aFeature,
           FeatureStatus::BlockedScreenUnknown, "Screen size unknown",
           NS_LITERAL_CSTRING("FEATURE_FAILURE_SCREEN_SIZE_UNKNOWN"));
     } else if (aScreenPixels <= kMaxPixelsBattery) {
-#    ifdef NIGHTLY_BUILD
+#    ifdef EARLY_BETA_OR_EARLIER
       
       *aOutGuardedByQualifiedPref = false;
 #    else
@@ -3110,7 +3110,8 @@ static void UpdateWRQualificationForIntel(FeatureState& aFeature,
     MOZ_ASSERT(false);
 #    endif
     if (aScreenPixels <= kMaxPixelsBattery) {
-#    ifdef NIGHTLY_BUILD
+#    ifdef EARLY_BETA_OR_EARLIER
+      
       
       *aOutGuardedByQualifiedPref = false;
 #    else
