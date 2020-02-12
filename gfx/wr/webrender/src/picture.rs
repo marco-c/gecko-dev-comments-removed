@@ -826,7 +826,19 @@ impl Tile {
         ctx: &TilePreUpdateContext,
     ) {
         self.local_tile_rect = local_tile_rect;
-        self.local_valid_rect = local_tile_rect.intersection(&ctx.local_rect).unwrap();
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        self.local_valid_rect = local_tile_rect
+            .intersection(&ctx.local_rect)
+            .unwrap_or_else(PictureRect::zero);
         self.invalidation_reason  = None;
 
         self.world_tile_rect = ctx.pic_to_world_mapper
