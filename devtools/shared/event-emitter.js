@@ -142,21 +142,25 @@ class EventEmitter {
         
         EventEmitter.off(target, type, newListener);
 
+        let rv;
         if (listener) {
           if (isEventHandler(listener)) {
             
             
             
             
-            listener[handler](type, first, ...rest);
+            rv = listener[handler](type, first, ...rest);
           } else {
             
-            listener.call(target, first, ...rest);
+            rv = listener.call(target, first, ...rest);
           }
         }
 
         
         resolve(first);
+
+        
+        return rv;
       };
 
       newListener[onceOriginalListener] = listener;
@@ -165,11 +169,37 @@ class EventEmitter {
   }
 
   static emit(target, type, ...rest) {
+    EventEmitter._emit(target, type, false, ...rest);
+  }
+
+  static emitAsync(target, type, ...rest) {
+    return EventEmitter._emit(target, type, true, ...rest);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static _emit(target, type, async, ...rest) {
     logEvent(type, rest);
 
     if (!(eventListeners in target)) {
-      return;
+      return undefined;
     }
+
+    const promises = async ? [] : null;
 
     if (target[eventListeners].has(type)) {
       
@@ -189,10 +219,22 @@ class EventEmitter {
         
         if (listeners && listeners.has(listener)) {
           try {
+            let promise;
             if (isEventHandler(listener)) {
-              listener[handler](type, ...rest);
+              promise = listener[handler](type, ...rest);
             } else {
-              listener.call(target, ...rest);
+              promise = listener.call(target, ...rest);
+            }
+            if (async) {
+              
+              
+              if (!promise || promise.constructor.name != "Promise") {
+                console.warn(
+                  `Listener for event '${type}' did not return a promise.`
+                );
+              } else {
+                promises.push(promise);
+              }
             }
           } catch (ex) {
             
@@ -212,6 +254,12 @@ class EventEmitter {
     if (type !== "*" && hasWildcardListeners) {
       EventEmitter.emit(target, "*", type, ...rest);
     }
+
+    if (async) {
+      return Promise.all(promises);
+    }
+
+    return undefined;
   }
 
   
@@ -274,6 +322,10 @@ class EventEmitter {
 
   emit(...args) {
     EventEmitter.emit(this, ...args);
+  }
+
+  emitAsync(...args) {
+    return EventEmitter.emitAsync(this, ...args);
   }
 
   emitForTests(...args) {
