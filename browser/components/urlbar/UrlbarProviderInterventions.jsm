@@ -651,6 +651,14 @@ class ProviderInterventions extends UrlbarProvider {
       appUpdater.check();
     }
   }
+
+  
+
+
+
+  resetAppUpdater() {
+    appUpdater = new AppUpdater();
+  }
 }
 
 var UrlbarProviderInterventions = new ProviderInterventions();
