@@ -1,5 +1,5 @@
 module.exports = {
-  
+  // When adding items to this file please check for effects on sub-directories.
   "parser": "babel-eslint",
   "parserOptions": {
     "ecmaVersion": 2018,
@@ -12,11 +12,9 @@ module.exports = {
     "node": true
   },
   "plugins": [
-    "import", 
-    "react", 
-    "jsx-a11y", 
-    
-    
+    "import", // require("eslint-plugin-import")
+    "react", // require("eslint-plugin-react")
+    "jsx-a11y", // require("eslint-plugin-jsx-a11y")
   ],
   "settings": {
     "react": {
@@ -25,22 +23,17 @@ module.exports = {
   },
   "extends": [
     "eslint:recommended",
-    "plugin:jsx-a11y/recommended", 
-    "plugin:mozilla/recommended", 
+    "plugin:jsx-a11y/recommended", // require("eslint-plugin-jsx-a11y")
+    "plugin:mozilla/recommended", // require("eslint-plugin-mozilla") require("eslint-plugin-fetch-options") require("eslint-plugin-html") require("eslint-plugin-no-unsanitized")
     "plugin:mozilla/browser-test",
     "plugin:mozilla/mochitest-test",
     "plugin:mozilla/xpcshell-test",
-    "plugin:prettier/recommended", 
-    "prettier/react", 
+    "plugin:prettier/recommended", // require("eslint-plugin-prettier")
+    "prettier/react", // require("eslint-config-prettier")
   ],
-  "globals": {
-    
-    "RPMSendAsyncMessage": true,
-    "NewTabPagePreloading": true,
-  },
   "overrides": [
     {
-      
+      // These files use fluent-dom to insert content
       "files": [
         "content-src/asrouter/templates/OnboardingMessage/**",
         "content-src/asrouter/templates/FirstRun/**",
@@ -59,7 +52,7 @@ module.exports = {
       }
     },
     {
-      
+      // Use a configuration that's more appropriate for JSMs
       "files": "**/*.jsm",
       "parserOptions": {
         "sourceType": "script"
@@ -73,8 +66,6 @@ module.exports = {
     }
   ],
   "rules": {
-    
-
     "fetch-options/no-fetch-credentials": 2,
 
     "react/jsx-boolean-value": [2, "always"],
@@ -189,11 +180,11 @@ module.exports = {
     "no-useless-rename": 2,
     "no-var": 2,
     "no-void": 2,
-    "no-warning-comments": 0, 
+    "no-warning-comments": 0, // TODO: Change to `1`?
     "one-var": [2, "never"],
     "operator-assignment": [2, "always"],
     "padding-line-between-statements": 0,
-    "prefer-const": 0, 
+    "prefer-const": 0, // TODO: Change to `1`?
     "prefer-destructuring": [2, {"AssignmentExpression": {"array": true}, "VariableDeclarator": {"array": true, "object": true}}],
     "prefer-numeric-literals": 2,
     "prefer-promise-reject-errors": 2,
