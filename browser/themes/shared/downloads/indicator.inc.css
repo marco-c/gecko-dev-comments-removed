@@ -171,6 +171,10 @@
 #downloads-notification-anchor {
   width: 42px; 
   height: 98px; 
+  
+
+
+  min-height: 98px;
   overflow: hidden;
   
   direction: ltr;
