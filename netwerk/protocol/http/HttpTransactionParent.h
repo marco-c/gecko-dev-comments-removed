@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef HttpTransactionParent_h__
 #define HttpTransactionParent_h__
@@ -21,8 +21,8 @@ namespace net {
 class ChannelEventQueue;
 class nsHttpConnectionInfo;
 
-
-
+// HttpTransactionParent plays the role of nsHttpTransaction and delegates the
+// work to the nsHttpTransaction in socket process.
 class HttpTransactionParent final : public PHttpTransactionParent,
                                     public HttpTransactionShell,
                                     public nsIRequest,
@@ -52,7 +52,8 @@ class HttpTransactionParent final : public PHttpTransactionParent,
       const nsresult& aStatus, const bool& aResponseIsComplete,
       const int64_t& aTransferSize, const TimingStructArgs& aTimings,
       const Maybe<nsHttpHeaderArray>& responseTrailers,
-      const bool& aHasStickyConn);
+      const bool& aHasStickyConn,
+      const Maybe<TransactionObserverResult>& aTransactionObserverResult);
   mozilla::ipc::IPCResult RecvOnNetAddrUpdate(const NetAddr& aSelfAddr,
                                               const NetAddr& aPeerAddr,
                                               const bool& aResolvedByTRR);
@@ -75,11 +76,12 @@ class HttpTransactionParent final : public PHttpTransactionParent,
                            const int64_t& aProgressMax);
   void DoOnDataAvailable(const nsCString& aData, const uint64_t& aOffset,
                          const uint32_t& aCount);
-  void DoOnStopRequest(const nsresult& aStatus, const bool& aResponseIsComplete,
-                       const int64_t& aTransferSize,
-                       const TimingStructArgs& aTimings,
-                       const Maybe<nsHttpHeaderArray>& responseTrailers,
-                       const bool& aHasStickyConn);
+  void DoOnStopRequest(
+      const nsresult& aStatus, const bool& aResponseIsComplete,
+      const int64_t& aTransferSize, const TimingStructArgs& aTimings,
+      const Maybe<nsHttpHeaderArray>& responseTrailers,
+      const bool& aHasStickyConn,
+      const Maybe<TransactionObserverResult>& aTransactionObserverResult);
   void DoNotifyListener();
 
   nsCOMPtr<nsITransportEventSink> mEventsink;
@@ -111,9 +113,11 @@ class HttpTransactionParent final : public PHttpTransactionParent,
   TimingStruct mTimings;
   TimeStamp mDomainLookupStart;
   TimeStamp mDomainLookupEnd;
+  TransactionObserverFunc mTransactionObserver;
+  TransactionObserverResult mTransactionObserverResult;
 };
 
-}  
-}  
+}  // namespace net
+}  // namespace mozilla
 
-#endif  
+#endif  // nsHttpTransactionParent_h__
