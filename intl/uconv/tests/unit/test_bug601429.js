@@ -1,6 +1,5 @@
 
 
-load("CharsetConversionTests.js");
 
 function run_test() {
   var failures = false;

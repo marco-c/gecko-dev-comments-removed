@@ -1,6 +1,4 @@
 
-load("CharsetConversionTests.js");
-
 const inString = "Hello\u000aWorld";
 const expectedString = "Hello\nWorld";
 

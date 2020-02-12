@@ -1,6 +1,4 @@
 
-load("CharsetConversionTests.js");
-
 const inString = "\uE5E5";
 const expectedString = "?";
 
