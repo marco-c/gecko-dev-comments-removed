@@ -86,7 +86,7 @@ class nsPropertyTable {
 
 
 
-  nsresult DeleteProperty(nsPropertyOwner aObject, const nsAtom* aPropertyName);
+  nsresult RemoveProperty(nsPropertyOwner aObject, const nsAtom* aPropertyName);
 
   
 
@@ -103,7 +103,7 @@ class nsPropertyTable {
 
 
 
-  void DeleteAllPropertiesFor(nsPropertyOwner aObject);
+  void RemoveAllPropertiesFor(nsPropertyOwner aObject);
 
   
 
@@ -112,7 +112,7 @@ class nsPropertyTable {
 
 
 
-  nsresult TransferOrDeleteAllPropertiesFor(nsPropertyOwner aObject,
+  nsresult TransferOrRemoveAllPropertiesFor(nsPropertyOwner aObject,
                                             nsPropertyTable& aOtherTable);
 
   
@@ -134,10 +134,10 @@ class nsPropertyTable {
 
 
 
-  void DeleteAllProperties();
+  void RemoveAllProperties();
 
   nsPropertyTable() : mPropertyList(nullptr) {}
-  ~nsPropertyTable() { DeleteAllProperties(); }
+  ~nsPropertyTable() { RemoveAllProperties(); }
 
   
 

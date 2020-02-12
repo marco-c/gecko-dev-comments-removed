@@ -869,7 +869,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  void DeleteProperty(const nsAtom* aPropertyName);
+  void RemoveProperty(const nsAtom* aPropertyName);
 
   
 

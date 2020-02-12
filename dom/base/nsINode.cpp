@@ -215,8 +215,8 @@ nsresult nsINode::SetProperty(nsAtom* aPropertyName, void* aValue,
   return rv;
 }
 
-void nsINode::DeleteProperty(const nsAtom* aPropertyName) {
-  OwnerDoc()->PropertyTable().DeleteProperty(this, aPropertyName);
+void nsINode::RemoveProperty(const nsAtom* aPropertyName) {
+  OwnerDoc()->PropertyTable().RemoveProperty(this, aPropertyName);
 }
 
 void* nsINode::TakeProperty(const nsAtom* aPropertyName, nsresult* aStatus) {
@@ -621,13 +621,13 @@ void nsINode::LastRelease() {
     
     
     
-    AsDocument()->DeleteAllProperties();
+    AsDocument()->RemoveAllProperties();
   } else {
     if (HasProperties()) {
       
       
       nsCOMPtr<Document> document = OwnerDoc();
-      document->DeleteAllPropertiesFor(this);
+      document->RemoveAllPropertiesFor(this);
     }
 
     
@@ -1380,8 +1380,8 @@ void nsINode::Unlink(nsINode* tmp) {
   }
 
   if (tmp->HasProperties()) {
-    tmp->DeleteProperty(nsGkAtoms::keepobjectsalive);
-    tmp->DeleteProperty(nsGkAtoms::accessiblenode);
+    tmp->RemoveProperty(nsGkAtoms::keepobjectsalive);
+    tmp->RemoveProperty(nsGkAtoms::accessiblenode);
   }
 }
 

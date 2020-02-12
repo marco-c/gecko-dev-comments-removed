@@ -31,7 +31,7 @@ CSSPseudoElement::CSSPseudoElement(dom::Element* aElement,
 CSSPseudoElement::~CSSPseudoElement() {
   
   if (mOriginatingElement) {
-    mOriginatingElement->DeleteProperty(
+    mOriginatingElement->RemoveProperty(
         GetCSSPseudoElementPropertyAtom(mPseudoType));
   }
 }

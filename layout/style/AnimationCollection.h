@@ -52,7 +52,7 @@ class AnimationCollection
     mCalledDestroy = true;
 
     
-    mElement->DeleteProperty(mElementProperty);
+    mElement->RemoveProperty(mElementProperty);
   }
 
   static void PropertyDtor(void* aObject, nsAtom* aPropertyName,

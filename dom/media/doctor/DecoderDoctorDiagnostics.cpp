@@ -170,7 +170,7 @@ void DecoderDoctorDocumentWatcher::RemovePropertyFromDocument() {
       "doc=%p]::RemovePropertyFromDocument()\n",
       watcher, watcher->mDocument);
   
-  mDocument->DeleteProperty(nsGkAtoms::decoderDoctor);
+  mDocument->RemoveProperty(nsGkAtoms::decoderDoctor);
 }
 
 
