@@ -155,7 +155,7 @@ if (!navigator.platform.includes("Mac")) {
 
 
 
-add_task(async function test_backspace() {
+add_task(async function test_backspace_delete() {
   await new Promise(resolve => {
     SpecialPowers.pushPrefEnv(
       { set: [["permissions.default.shortcuts", 2]] },
@@ -196,6 +196,33 @@ add_task(async function test_backspace() {
     }
   );
   is(fieldValue, "omething", "backspace not prevented");
+
+  
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
+    content.document.getElementById("field").focus();
+
+    
+    
+    content.keysPromise = new Promise(resolve => {
+      content.addEventListener("keyup", event => {
+        if (event.code == "Delete") {
+          resolve(content.document.getElementById("field").value);
+        }
+      });
+    });
+  });
+
+  
+  EventUtils.synthesizeKey("KEY_Delete", {});
+
+  fieldValue = await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [],
+    async function() {
+      return content.keysPromise;
+    }
+  );
+  is(fieldValue, "mething", "delete not prevented");
 
   BrowserTestUtils.removeTab(tab);
 });
