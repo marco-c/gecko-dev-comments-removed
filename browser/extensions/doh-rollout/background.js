@@ -617,39 +617,21 @@ const setup = {
     ) {
       rollout.init();
     } else {
-      log("Disabled, aborting!");
+      log(
+        "Disabled, aborting! Watching `doh-rollout.enabled` pref for change event"
+      );
+      
+      
+      browser.experiments.preferences.onPrefChanged.addListener(
+        function listener() {
+          browser.experiments.preferences.onPrefChanged.removeListener(
+            listener
+          );
+          setup.start();
+        }
+      );
     }
   },
 };
 
-log("Watching `doh-rollout.enabled` pref");
-browser.experiments.preferences.onPrefChanged.addListener(async () => {
-  let enabled = await rollout.getSetting(DOH_ENABLED_PREF, false);
-  if (enabled) {
-    setup.start();
-  } else {
-    
-    if (await stateManager.shouldRunHeuristics()) {
-      await stateManager.setState("disabled");
-    }
-
-    
-    browser.networkStatus.onConnectionChanged.removeListener(
-      rollout.onConnectionChanged
-    );
-
-    try {
-      browser.captivePortal.onStateChange.removeListener(
-        rollout.onCaptiveStateChanged
-      );
-    } catch (e) {
-      
-    }
-  }
-});
-
-rollout.getSetting(DOH_ENABLED_PREF, false).then(enabled => {
-  if (enabled) {
-    setup.start();
-  }
-});
+setup.start();
