@@ -1,6 +1,8 @@
 
 
 
+
+
 function getVideoURI(base)
 {
     var extension = '.mp4';
@@ -19,6 +21,8 @@ function getVideoURI(base)
 
 
 
+
+
 function getAudioURI(base)
 {
     var extension = '.mp3';
@@ -33,6 +37,11 @@ function getAudioURI(base)
 
     return base + extension;
 }
+
+
+
+
+
 
 function getMediaContentType(url) {
     var extension = new URL(url, location).pathname.split(".").pop();

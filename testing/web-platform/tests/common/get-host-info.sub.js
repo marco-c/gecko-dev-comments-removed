@@ -1,3 +1,7 @@
+
+
+
+
 function get_host_info() {
 
   var HTTP_PORT = '{{ports[http][0]}}';
@@ -38,10 +42,13 @@ function get_host_info() {
   };
 }
 
+
+
+
+
+
+
 function get_port(loc) {
-  
-  
-  
   if (loc.port) {
     return loc.port;
   }

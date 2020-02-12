@@ -1,9 +1,3 @@
-
-
-
-
-
-
 (function() {
   var subTestKeyPattern = null;
   var match;
@@ -48,6 +42,11 @@
       });
     }
   }
+  
+
+
+
+
   function shouldRunSubTest(key) {
     if (key && subTestKeyPattern) {
       var found = subTestKeyPattern.test(key);
@@ -58,7 +57,15 @@
     }
     return true;
   }
-  function subsetTestByKey(key, testFunc, ...args) {
+  
+
+
+
+
+
+
+
+   function subsetTestByKey(key, testFunc, ...args) {
     if (collectKeys) {
       if (collectCounts && key in keys) {
         keys[key]++;

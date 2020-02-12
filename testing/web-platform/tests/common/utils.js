@@ -1,3 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
 function make_absolute_url(options) {
     var loc = window.location;
     var protocol = get(options, "protocol", loc.protocol);
@@ -41,12 +52,17 @@ function make_absolute_url(options) {
     return url;
 }
 
+
 function get(obj, name, default_val) {
     if (obj.hasOwnProperty(name)) {
         return obj[name];
     }
     return default_val;
 }
+
+
+
+
 
 function token() {
     var uuid = [to_hex(rand_int(32), 8),
@@ -56,6 +72,7 @@ function token() {
                 to_hex(rand_int(48), 12)].join("-")
     return uuid;
 }
+
 
 function rand_int(bits) {
     if (bits < 1 || bits > 53) {
@@ -70,6 +87,7 @@ function rand_int(bits) {
         }
     }
 }
+
 
 function to_hex(x, length) {
     var rv = x.toString(16);

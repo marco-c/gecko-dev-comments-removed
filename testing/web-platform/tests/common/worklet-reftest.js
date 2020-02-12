@@ -2,6 +2,11 @@
 
 
 
+
+
+
+
+
 function importWorklet(worklet, code) {
     let url;
     if (typeof code === 'object') {
@@ -14,14 +19,21 @@ function importWorklet(worklet, code) {
     return worklet.addModule(url);
 }
 
+
 async function animationFrames(frames) {
   for (let i = 0; i < frames; i++)
     await new Promise(requestAnimationFrame);
 }
 
+
 async function workletPainted() {
     await animationFrames(2);
 }
+
+
+
+
+
 
 
 

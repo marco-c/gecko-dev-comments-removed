@@ -1,4 +1,9 @@
 
+
+
+
+
+
 function test_stringifier_attribute(aObject, aAttribute, aIsUnforgeable) {
   
   test(function() {

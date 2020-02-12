@@ -2,6 +2,10 @@
 
 
 
+
+
+
+
 window.testIsPerWindow = propertyName => {
   test(t => {
     const iframe = document.createElement("iframe");
