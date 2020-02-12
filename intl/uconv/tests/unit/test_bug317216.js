@@ -9,79 +9,111 @@
 
 
 
-const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 const test = [
+  
+  [
+    "%D8%35%DC%20%00%2D%00%2D",
+    
+    "\uD835\uDC20--",
+  ],
+  
+  [
+    "%D8%35%00%2D%00%2D",
+    
+    "\uFFFD--",
+  ],
+  
+  [
+    "%DC%20%00%2D%00%2D",
+    
+    "\uFFFD--",
+  ],
+  
+  [
+    "%D8%35%D8%35%00%2D%00%2D",
+    
+    "\uFFFD\uFFFD--",
+  ],
+  
+  [
+    "%DC%20%DC%20%00%2D%00%2D",
+    
+    "\uFFFD\uFFFD--",
+  ],
+  
+  [
+    "%DC%20%D8%35%00%2D%00%2D",
+    
+    "\uFFFD\uFFFD--",
+  ],
+  
+  [
+    "%D8%35%D8%35%DC%20%00%2D%00%2D",
+    
+    "\uFFFD\uD835\uDC20--",
+  ],
+  
+  [
+    "%DC%20%D8%35%DC%20%00%2D%00%2D",
+    
+    "\uFFFD\uD835\uDC20--",
+  ],
+  
+  [
+    "%D8%35%DC%20%D8%35%00%2D%00%2D",
+    
+    "\uD835\uDC20\uFFFD--",
+  ],
+  
+  [
+    "%D8%35%DC%20%DC%20%00%2D%00%2D",
+    
+    "\uD835\uDC20\uFFFD--",
+  ],
+  
+  [
+    "%D8%35%",
+    
+    "",
+  ],
+  
+  [
+    "%D8",
+    
+    "",
+  ],
+];
 
-              ["%D8%35%DC%20%00%2D%00%2D",
-
-               "\uD835\uDC20--"],
-
-              ["%D8%35%00%2D%00%2D",
-
-               "\uFFFD--"],
-
-              ["%DC%20%00%2D%00%2D",
-
-               "\uFFFD--"],
-
-              ["%D8%35%D8%35%00%2D%00%2D",
-
-               "\uFFFD\uFFFD--"],
-
-              ["%DC%20%DC%20%00%2D%00%2D",
-
-	       "\uFFFD\uFFFD--"],
-
-              ["%DC%20%D8%35%00%2D%00%2D",
-
-               "\uFFFD\uFFFD--"],
-
-              ["%D8%35%D8%35%DC%20%00%2D%00%2D",
-
-               "\uFFFD\uD835\uDC20--"],
-
-              ["%DC%20%D8%35%DC%20%00%2D%00%2D",
-
-               "\uFFFD\uD835\uDC20--"],
-
-              ["%D8%35%DC%20%D8%35%00%2D%00%2D",
-
-               "\uD835\uDC20\uFFFD--"],
-
-              ["%D8%35%DC%20%DC%20%00%2D%00%2D",
-
-               "\uD835\uDC20\uFFFD--"],
-
-              ["%D8%35%",
-
-               ""],
-
-              ["%D8",
-
-              ""]];
-
-const IOService = Components.Constructor("@mozilla.org/network/io-service;1",
-                                         "nsIIOService");
-const ConverterInputStream =
-      Components.Constructor("@mozilla.org/intl/converter-input-stream;1",
-                             "nsIConverterInputStream",
-                             "init");
+const IOService = Components.Constructor(
+  "@mozilla.org/network/io-service;1",
+  "nsIIOService"
+);
+const ConverterInputStream = Components.Constructor(
+  "@mozilla.org/intl/converter-input-stream;1",
+  "nsIConverterInputStream",
+  "init"
+);
 const ios = new IOService();
 
-function testCase(testText, expectedText, bufferLength, charset)
-{
+function testCase(testText, expectedText, bufferLength, charset) {
   var dataURI = "data:text/plain;charset=" + charset + "," + testText;
-  var channel = NetUtil.newChannel({uri: dataURI, loadUsingSystemPrincipal: true});
+  var channel = NetUtil.newChannel({
+    uri: dataURI,
+    loadUsingSystemPrincipal: true,
+  });
   var testInputStream = channel.open();
-  var testConverter = new ConverterInputStream(testInputStream,
-                                               charset,
-                                               bufferLength,
-                                               0xFFFD);
+  var testConverter = new ConverterInputStream(
+    testInputStream,
+    charset,
+    bufferLength,
+    0xfffd
+  );
 
-  if (!(testConverter instanceof
-        Ci.nsIUnicharLineInputStream))
+  if (!(testConverter instanceof Ci.nsIUnicharLineInputStream)) {
     throw "not line input stream";
+  }
 
   var outStr = "";
   var more;
@@ -98,9 +130,8 @@ function testCase(testText, expectedText, bufferLength, charset)
 
 
 
-const MINIMUM_BUFFER_SIZE=32;
-function padBytes(str)
-{
+const MINIMUM_BUFFER_SIZE = 32;
+function padBytes(str) {
   var padding = "";
   for (var i = 0; i < MINIMUM_BUFFER_SIZE; ++i) {
     padding += "%00%2D";
@@ -108,8 +139,7 @@ function padBytes(str)
   return padding + str;
 }
 
-function padUnichars(str)
-{
+function padUnichars(str) {
   var padding = "";
   for (var i = 0; i < MINIMUM_BUFFER_SIZE; ++i) {
     padding += "-";
@@ -118,14 +148,17 @@ function padUnichars(str)
 }
 
 
-function flip(str) { return str.replace(/(%..)(%..)/g, "$2$1"); }
+function flip(str) {
+  return str.replace(/(%..)(%..)/g, "$2$1");
+}
 
-function run_test()
-{
+function run_test() {
   for (var i = 0; i < 12; ++i) {
-    for (var bufferLength = MINIMUM_BUFFER_SIZE;
-	 bufferLength < MINIMUM_BUFFER_SIZE + 4;
-	 ++ bufferLength) {
+    for (
+      var bufferLength = MINIMUM_BUFFER_SIZE;
+      bufferLength < MINIMUM_BUFFER_SIZE + 4;
+      ++bufferLength
+    ) {
       var testText = padBytes(test[i][0]);
       var expectedText = padUnichars(test[i][1]);
       testCase(testText, expectedText, bufferLength, "UTF-16BE");
