@@ -418,8 +418,11 @@ void ConvolverNode::SetBuffer(JSContext* aCx, AudioBuffer* aBuffer,
       
       
       
-      RefPtr<SharedBuffer> floatBuffer = SharedBuffer::Create(
-          sizeof(float) * data.mDuration * data.ChannelCount());
+      CheckedInt<size_t> bufferSize(sizeof(float));
+      bufferSize *= data.mDuration;
+      bufferSize *= data.ChannelCount();
+      RefPtr<SharedBuffer> floatBuffer =
+          SharedBuffer::Create(bufferSize, fallible);
       if (!floatBuffer) {
         aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
         return;
