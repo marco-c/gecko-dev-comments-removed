@@ -1410,6 +1410,13 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
     
     
     
+    if (aRoot->IsElement() && FocusMgr()->HasDOMFocus(aRoot)) {
+      SelectionMgr()->SetControlSelectionListener(aRoot->AsElement());
+    }
+
+    
+    
+    
     insert = true;
   } else {
     
