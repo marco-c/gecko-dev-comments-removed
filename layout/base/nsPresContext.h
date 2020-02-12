@@ -11,7 +11,6 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/EnumeratedArray.h"
-#include "mozilla/MediaFeatureChange.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/ScrollStyles.h"
 #include "mozilla/PreferenceSheet.h"
@@ -79,6 +78,7 @@ class CounterStyleManager;
 class PresShell;
 class RestyleManager;
 class StaticPresData;
+struct MediaFeatureChange;
 namespace layers {
 class ContainerLayer;
 class LayerManager;
@@ -266,13 +266,13 @@ class nsPresContext : public nsISupports,
 
 
 
-  void RebuildAllStyleData(nsChangeHint aExtraHint, mozilla::RestyleHint);
+
+  void RebuildAllStyleData(nsChangeHint, const mozilla::RestyleHint&);
   
 
 
 
-  void PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
-                                    mozilla::RestyleHint);
+  void PostRebuildAllStyleDataEvent(nsChangeHint, const mozilla::RestyleHint&);
 
   void ContentLanguageChanged();
 
@@ -1312,7 +1312,7 @@ class nsPresContext : public nsISupports,
   unsigned mInitialized : 1;
 #endif
 
-  mozilla::Maybe<mozilla::MediaFeatureChange> mPendingMediaFeatureValuesChange;
+  mozilla::UniquePtr<mozilla::MediaFeatureChange> mPendingMediaFeatureValuesChange;
 
  protected:
   virtual ~nsPresContext();
