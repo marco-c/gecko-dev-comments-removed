@@ -4,6 +4,8 @@
 
 var EXPORTED_SYMBOLS = ["PluralForm"];
 
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 
 
 
@@ -32,6 +34,7 @@ var EXPORTED_SYMBOLS = ["PluralForm"];
 
 
 const kIntlProperties = "chrome://global/locale/intl.properties";
+
 
 
 
@@ -185,6 +188,7 @@ var gFunctions = [
   ],
 ];
 
+
 var PluralForm = {
   
 
@@ -290,8 +294,7 @@ var PluralForm = {
 
   get ruleNum() {
     return Number(
-      Cc["@mozilla.org/intl/stringbundle;1"]
-        .getService(Ci.nsIStringBundleService)
+      Services.strings
         .createBundle(kIntlProperties)
         .GetStringFromName("pluralRule")
     );
@@ -306,8 +309,6 @@ var PluralForm = {
 
 function log(aMsg) {
   let msg = "PluralForm.jsm: " + (aMsg.join ? aMsg.join("") : aMsg);
-  Cc["@mozilla.org/consoleservice;1"]
-    .getService(Ci.nsIConsoleService)
-    .logStringMessage(msg);
+  Services.console.logStringMessage(msg);
   dump(msg + "\n");
 }
