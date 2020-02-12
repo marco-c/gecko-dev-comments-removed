@@ -7,6 +7,7 @@
 
 #include "RTCStatsReport.h"
 #include "mozilla/dom/Performance.h"
+#include "mozilla/dom/PerformanceService.h"
 #include "nsRFPService.h"
 
 namespace mozilla {
@@ -17,8 +18,14 @@ RTCStatsTimestampMaker::RTCStatsTimestampMaker(const GlobalObject* aGlobal) {
       do_QueryInterface(aGlobal->GetAsSupports());
   if (window) {
     mRandomTimelineSeed = window->GetPerformance()->GetRandomTimelineSeed();
-    mStartWallClock = window->GetPerformance()->TimeOrigin();
     mStartMonotonic = window->GetPerformance()->CreationTimeStamp();
+    
+    
+    
+    
+    
+    mStartWallClockRaw =
+        PerformanceService::GetOrCreate()->TimeOrigin(mStartMonotonic);
   }
 }
 
@@ -28,11 +35,17 @@ DOMHighResTimeStamp RTCStatsTimestampMaker::GetNow() const {
   
   
   
-  TimeStamp nowMonotonic = TimeStamp::NowUnfuzzed();
+  
+  
   DOMHighResTimeStamp msSinceStart =
-      (nowMonotonic - mStartMonotonic).ToMilliseconds();
-  DOMHighResTimeStamp rawTime = mStartWallClock + msSinceStart;
-  return nsRFPService::ReduceTimePrecisionAsMSecs(rawTime, mRandomTimelineSeed);
+      (TimeStamp::NowUnfuzzed() - mStartMonotonic).ToMilliseconds();
+  
+  if (mRandomTimelineSeed) {
+    msSinceStart = nsRFPService::ReduceTimePrecisionAsMSecs(
+        msSinceStart, mRandomTimelineSeed);
+  }
+  return msSinceStart +
+         nsRFPService::ReduceTimePrecisionAsMSecs(mStartWallClockRaw, 0);
 }
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(RTCStatsReport, mParent)
