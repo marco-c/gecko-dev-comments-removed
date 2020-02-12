@@ -102,122 +102,64 @@ static HWND GetMostRecentNavigatorHWND() {
   return reinterpret_cast<HWND>(widget->GetNativeData(NS_NATIVE_WINDOW));
 }
 
+nsresult nsLocalFile::RevealFile(const nsString& aResolvedPath) {
+  MOZ_ASSERT(!NS_IsMainThread(), "Don't run on the main thread");
 
-
-
-
-class AsyncLocalFileWinDone : public Runnable {
- public:
-  AsyncLocalFileWinDone()
-      : Runnable("AsyncLocalFileWinDone"),
-        mWorkerThread(do_GetCurrentThread()) {
-    
-    MOZ_ASSERT(!NS_IsMainThread());
+  DWORD attributes = GetFileAttributesW(aResolvedPath.get());
+  if (INVALID_FILE_ATTRIBUTES == attributes) {
+    return NS_ERROR_FILE_INVALID_PATH;
   }
 
-  NS_IMETHOD Run() override {
+  HRESULT hr;
+  if (attributes & FILE_ATTRIBUTE_DIRECTORY) {
     
-    MOZ_ASSERT(NS_IsMainThread());
-
-    
-    
-    mWorkerThread->Shutdown();
-    return NS_OK;
-  }
-
- private:
-  nsCOMPtr<nsIThread> mWorkerThread;
-};
-
-
-
-
-
-class AsyncRevealOperation : public Runnable {
- public:
-  explicit AsyncRevealOperation(const nsAString& aResolvedPath)
-      : Runnable("AsyncRevealOperation"), mResolvedPath(aResolvedPath) {}
-
-  NS_IMETHOD Run() override {
-    MOZ_ASSERT(!NS_IsMainThread(),
-               "AsyncRevealOperation should not be run on the main thread!");
-
-    bool doCoUninitialize = SUCCEEDED(CoInitializeEx(
-        nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE));
-    Reveal();
-    if (doCoUninitialize) {
-      CoUninitialize();
+    LPITEMIDLIST dir = ILCreateFromPathW(aResolvedPath.get());
+    if (!dir) {
+      return NS_ERROR_FAILURE;
     }
 
-    
-    
-    nsCOMPtr<nsIRunnable> resultrunnable = new AsyncLocalFileWinDone();
-    NS_DispatchToMainThread(resultrunnable);
-    return NS_OK;
-  }
+    LPCITEMIDLIST selection[] = {dir};
+    UINT count = ArrayLength(selection);
 
- private:
-  
-  nsresult Reveal() {
-    DWORD attributes = GetFileAttributesW(mResolvedPath.get());
-    if (INVALID_FILE_ATTRIBUTES == attributes) {
+    
+    hr = SHOpenFolderAndSelectItems(dir, count, selection, 0);
+    CoTaskMemFree(dir);
+  } else {
+    int32_t len = aResolvedPath.Length();
+    
+    
+    if (len > MAX_PATH) {
       return NS_ERROR_FILE_INVALID_PATH;
     }
+    WCHAR parentDirectoryPath[MAX_PATH + 1] = {0};
+    wcsncpy(parentDirectoryPath, aResolvedPath.get(), MAX_PATH);
+    PathRemoveFileSpecW(parentDirectoryPath);
 
-    HRESULT hr;
-    if (attributes & FILE_ATTRIBUTE_DIRECTORY) {
-      
-      LPITEMIDLIST dir = ILCreateFromPathW(mResolvedPath.get());
-      if (!dir) {
-        return NS_ERROR_FAILURE;
-      }
-
-      LPCITEMIDLIST selection[] = {dir};
-      UINT count = ArrayLength(selection);
-
-      
-      hr = SHOpenFolderAndSelectItems(dir, count, selection, 0);
-      CoTaskMemFree(dir);
-    } else {
-      int32_t len = mResolvedPath.Length();
-      
-      
-      if (len > MAX_PATH) {
-        return NS_ERROR_FILE_INVALID_PATH;
-      }
-      WCHAR parentDirectoryPath[MAX_PATH + 1] = {0};
-      wcsncpy(parentDirectoryPath, mResolvedPath.get(), MAX_PATH);
-      PathRemoveFileSpecW(parentDirectoryPath);
-
-      
-      LPITEMIDLIST dir = ILCreateFromPathW(parentDirectoryPath);
-      if (!dir) {
-        return NS_ERROR_FAILURE;
-      }
-
-      
-      LPITEMIDLIST item = ILCreateFromPathW(mResolvedPath.get());
-      if (!item) {
-        CoTaskMemFree(dir);
-        return NS_ERROR_FAILURE;
-      }
-
-      LPCITEMIDLIST selection[] = {item};
-      UINT count = ArrayLength(selection);
-
-      
-      hr = SHOpenFolderAndSelectItems(dir, count, selection, 0);
-
-      CoTaskMemFree(dir);
-      CoTaskMemFree(item);
+    
+    LPITEMIDLIST dir = ILCreateFromPathW(parentDirectoryPath);
+    if (!dir) {
+      return NS_ERROR_FAILURE;
     }
 
-    return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
+    
+    LPITEMIDLIST item = ILCreateFromPathW(aResolvedPath.get());
+    if (!item) {
+      CoTaskMemFree(dir);
+      return NS_ERROR_FAILURE;
+    }
+
+    LPCITEMIDLIST selection[] = {item};
+    UINT count = ArrayLength(selection);
+
+    
+    hr = SHOpenFolderAndSelectItems(dir, count, selection, 0);
+
+    CoTaskMemFree(dir);
+    CoTaskMemFree(item);
   }
 
-  
-  nsString mResolvedPath;
-};
+  return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
+}
 
 class nsDriveEnumerator : public nsSimpleEnumerator,
                           public nsIDirectoryEnumerator {
@@ -3012,20 +2954,20 @@ nsLocalFile::Reveal() {
     return rv;
   }
 
-  
-  nsCOMPtr<nsIThreadManager> tm = do_GetService(NS_THREADMANAGER_CONTRACTID);
-  nsCOMPtr<nsIThread> mythread;
-  rv = tm->NewThread(0, 0, getter_AddRefs(mythread));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  nsCOMPtr<nsIRunnable> task =
+      NS_NewRunnableFunction("nsLocalFile::Reveal", [path = mResolvedPath]() {
+        MOZ_ASSERT(!NS_IsMainThread(), "Don't run on the main thread");
 
-  nsCOMPtr<nsIRunnable> runnable = new AsyncRevealOperation(mResolvedPath);
+        bool doCoUninitialize = SUCCEEDED(CoInitializeEx(
+            nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE));
+        RevealFile(path);
+        if (doCoUninitialize) {
+          CoUninitialize();
+        }
+      });
 
-  
-  
-  mythread->Dispatch(runnable, NS_DISPATCH_NORMAL);
-  return NS_OK;
+  return NS_DispatchBackgroundTask(task,
+                                   nsIEventTarget::DISPATCH_EVENT_MAY_BLOCK);
 }
 
 NS_IMETHODIMP

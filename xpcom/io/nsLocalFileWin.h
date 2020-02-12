@@ -46,6 +46,8 @@ class nsLocalFile final : public nsILocalFileWin {
   
   
   static bool CleanupCmdHandlerPath(nsAString& aCommandHandler);
+  
+  static nsresult RevealFile(const nsString& aResolvedPath);
 
  private:
   
