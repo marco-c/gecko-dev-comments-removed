@@ -161,9 +161,11 @@ already_AddRefed<Promise> Client::Focus(CallerType aCallerType,
                            ClientInfoAndState(ipcClientInfo, aResult.ToIPC()));
             outerPromise->MaybeResolve(newClient);
           },
-          [holder, outerPromise](nsresult aResult) {
+          [holder, outerPromise](const CopyableErrorResult& aResult) {
             holder->Complete();
-            outerPromise->MaybeReject(aResult);
+            
+            CopyableErrorResult result(aResult);
+            outerPromise->MaybeReject(result);
           })
       ->Track(*holder);
 
@@ -198,7 +200,7 @@ already_AddRefed<Promise> Client::Navigate(const nsAString& aURL,
             new Client(self->mGlobal, aResult.get_ClientInfoAndState());
         outerPromise->MaybeResolve(newClient);
       },
-      [self, outerPromise](nsresult aResult) {
+      [self, outerPromise](const CopyableErrorResult& aResult) {
         
         
         outerPromise->MaybeReject(NS_ERROR_DOM_TYPE_ERR);

@@ -103,7 +103,7 @@ already_AddRefed<Promise> Clients::Get(const nsAString& aClientID,
             SystemGroup::Dispatch(TaskCategory::Other, r.forget());
             outerPromise->MaybeResolveWithUndefined();
           },
-          [outerPromise, holder](nsresult aResult) {
+          [outerPromise, holder](const CopyableErrorResult& aResult) {
             holder->Complete();
             outerPromise->MaybeResolveWithUndefined();
           })
@@ -188,7 +188,11 @@ already_AddRefed<Promise> Clients::MatchAll(const ClientQueryOptions& aOptions,
         clientList.Sort(MatchAllComparator());
         outerPromise->MaybeResolve(clientList);
       },
-      [outerPromise](nsresult aResult) { outerPromise->MaybeReject(aResult); });
+      [outerPromise](const CopyableErrorResult& aResult) {
+        
+        CopyableErrorResult result(aResult);
+        outerPromise->MaybeReject(result);
+      });
 
   return outerPromise.forget();
 }
@@ -237,7 +241,7 @@ already_AddRefed<Promise> Clients::OpenWindow(const nsAString& aURL,
             new Client(global, aResult.get_ClientInfoAndState());
         outerPromise->MaybeResolve(client);
       },
-      [outerPromise](nsresult aResult) {
+      [outerPromise](const CopyableErrorResult& aResult) {
         
         
         outerPromise->MaybeReject(NS_ERROR_DOM_TYPE_ERR);
@@ -272,7 +276,11 @@ already_AddRefed<Promise> Clients::Claim(ErrorResult& aRv) {
       [outerPromise](const ClientOpResult& aResult) {
         outerPromise->MaybeResolveWithUndefined();
       },
-      [outerPromise](nsresult aResult) { outerPromise->MaybeReject(aResult); });
+      [outerPromise](const CopyableErrorResult& aResult) {
+        
+        CopyableErrorResult result(aResult);
+        outerPromise->MaybeReject(result);
+      });
 
   return outerPromise.forget();
 }
