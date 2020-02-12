@@ -127,9 +127,6 @@ pub mod url;
 
 pub struct Context<'a> {
     
-    pub is_root_element: bool,
-
-    
     
     
     pub builder: StyleBuilder<'a>,
@@ -187,7 +184,6 @@ impl<'a> Context<'a> {
         let provider = get_metrics_provider_for_product();
 
         let context = Context {
-            is_root_element: false,
             builder: StyleBuilder::for_inheritance(device, None, None),
             font_metrics_provider: &provider,
             cached_system_font: None,
@@ -199,11 +195,6 @@ impl<'a> Context<'a> {
         };
 
         f(&context)
-    }
-
-    
-    pub fn is_root_element(&self) -> bool {
-        self.is_root_element
     }
 
     

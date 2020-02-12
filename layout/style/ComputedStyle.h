@@ -61,32 +61,14 @@ class ComputedStyle;
 
 
 
-
-
-
-
-
-
-
-enum class ComputedStyleBit : uint16_t {
-  HasTextDecorationLines = 1 << 0,
-  SuppressLineBreak = 1 << 1,
-  IsTextCombined = 1 << 2,
-  RelevantLinkVisited = 1 << 3,
-  HasPseudoElementData = 1 << 4,
-  DependsOnFontMetrics = 1 << 9,
-};
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ComputedStyleBit)
-
 class ComputedStyle {
-  using Bit = ComputedStyleBit;
+  using Flag = StyleComputedValueFlags;
+
+  const StyleComputedValueFlags& Flags() const { return mSource.flags; }
 
  public:
   ComputedStyle(PseudoStyleType aPseudoType,
                 ServoComputedDataForgotten aComputedValues);
-
-  Bit Bits() const { return static_cast<Bit>(mSource.flags.mFlags); }
 
   
   
@@ -140,7 +122,7 @@ class ComputedStyle {
   
   
   bool HasTextDecorationLines() const {
-    return bool(Bits() & Bit::HasTextDecorationLines);
+    return bool(Flags() & Flag::HAS_TEXT_DECORATION_LINES);
   }
 
   
@@ -151,17 +133,17 @@ class ComputedStyle {
   
   
   bool ShouldSuppressLineBreak() const {
-    return bool(Bits() & Bit::SuppressLineBreak);
+    return bool(Flags() & Flag::SHOULD_SUPPRESS_LINEBREAK);
   }
 
   
   
-  bool IsTextCombined() const { return bool(Bits() & Bit::IsTextCombined); }
+  bool IsTextCombined() const { return bool(Flags() & Flag::IS_TEXT_COMBINED); }
 
   
   
   bool DependsOnFontMetrics() const {
-    return bool(Bits() & Bit::DependsOnFontMetrics);
+    return bool(Flags() & Flag::DEPENDS_ON_FONT_METRICS);
   }
 
   
@@ -169,14 +151,19 @@ class ComputedStyle {
   
   
   bool HasPseudoElementData() const {
-    return bool(Bits() & Bit::HasPseudoElementData);
+    return bool(Flags() & Flag::IS_IN_PSEUDO_ELEMENT_SUBTREE);
   }
 
   
   
   
   bool RelevantLinkVisited() const {
-    return bool(Bits() & Bit::RelevantLinkVisited);
+    return bool(Flags() & Flag::IS_RELEVANT_LINK_VISITED);
+  }
+
+  
+  bool IsRootElementStyle() const {
+    return bool(Flags() & Flag::IS_ROOT_ELEMENT_STYLE);
   }
 
   ComputedStyle* GetCachedInheritingAnonBoxStyle(

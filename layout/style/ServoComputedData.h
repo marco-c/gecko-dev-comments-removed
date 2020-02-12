@@ -9,6 +9,8 @@
 
 class nsWindowSizes;
 
+#include "mozilla/ServoStyleConsts.h"
+
 
 
 
@@ -56,10 +58,6 @@ struct ServoVisitedStyle {
   ComputedStyle* mPtr;
 };
 
-struct ServoComputedValueFlags {
-  uint16_t mFlags;
-};
-
 #define STYLE_STRUCT(name_) struct Gecko##name_;
 #include "nsStyleStructList.h"
 #undef STYLE_STRUCT
@@ -101,7 +99,7 @@ class ServoComputedData {
  private:
   mozilla::ServoCustomPropertiesMap custom_properties;
   mozilla::ServoWritingMode writing_mode;
-  mozilla::ServoComputedValueFlags flags;
+  mozilla::StyleComputedValueFlags flags;
   
   
   

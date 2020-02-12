@@ -596,7 +596,7 @@ impl ToComputedValue for TextAlign {
                 
                 
                 
-                if _context.is_root_element {
+                if _context.builder.is_root_element {
                     return TextAlignKeyword::Start;
                 }
                 let parent = _context

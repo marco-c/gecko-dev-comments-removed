@@ -733,7 +733,6 @@ impl MaybeNew for ViewportConstraints {
 
         let mut conditions = RuleCacheConditions::default();
         let context = Context {
-            is_root_element: false,
             
             
             builder: StyleBuilder::for_inheritance(device, None, None),
