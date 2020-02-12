@@ -1204,5 +1204,31 @@ bool nsHttpResponseHead::HasContentCharset() {
   return !mContentCharset.IsEmpty();
 }
 
+bool nsHttpResponseHead::GetContentTypeOptionsHeader(nsACString& aOutput) {
+  aOutput.Truncate();
+
+  nsAutoCString contentTypeOptionsHeader;
+  Unused << GetHeader(nsHttp::X_Content_Type_Options, contentTypeOptionsHeader);
+  if (contentTypeOptionsHeader.IsEmpty()) {
+    
+    return false;
+  }
+
+  
+  
+  
+  int32_t idx = contentTypeOptionsHeader.Find(",");
+  if (idx > 0) {
+    contentTypeOptionsHeader = Substring(contentTypeOptionsHeader, 0, idx);
+  }
+  
+  
+  nsHttp::TrimHTTPWhitespace(contentTypeOptionsHeader,
+                             contentTypeOptionsHeader);
+
+  aOutput.Assign(contentTypeOptionsHeader);
+  return true;
+}
+
 }  
 }  

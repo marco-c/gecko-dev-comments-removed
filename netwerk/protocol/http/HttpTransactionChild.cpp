@@ -1,10 +1,10 @@
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* vim:set ts=4 sw=4 sts=4 et cin: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+// HttpLog.h should generally be included first
 #include "HttpLog.h"
 
 #include "HttpTransactionChild.h"
@@ -22,9 +22,9 @@ namespace net {
 NS_IMPL_ISUPPORTS(HttpTransactionChild, nsIRequestObserver, nsIStreamListener,
                   nsITransportEventSink);
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpTransactionChild <public>
+//-----------------------------------------------------------------------------
 
 HttpTransactionChild::HttpTransactionChild()
     : mCanceled(false), mStatus(NS_OK), mChannelId(0) {
@@ -45,7 +45,7 @@ nsProxyInfo* HttpTransactionChild::ProxyInfoCloneArgsToProxyInfo(
                          info.connectionIsolationKey());
     if (last) {
       last->mNext = pi;
-      
+      // |mNext| will be released in |last|'s destructor.
       NS_IF_ADDREF(last->mNext);
     } else {
       first = pi;
@@ -56,7 +56,7 @@ nsProxyInfo* HttpTransactionChild::ProxyInfoCloneArgsToProxyInfo(
   return first;
 }
 
-
+// This function needs to be synced with nsHttpConnectionInfo::Clone.
 already_AddRefed<nsHttpConnectionInfo>
 HttpTransactionChild::DeserializeHttpConnectionInfoCloneArgs(
     const HttpConnectionInfoCloneArgs& aInfoArgs) {
@@ -77,7 +77,7 @@ HttpTransactionChild::DeserializeHttpConnectionInfoCloneArgs(
         aInfoArgs.routedPort(), aInfoArgs.isolated(), aInfoArgs.isHttp3());
   }
 
-  
+  // Make sure the anonymous, insecure-scheme, and private flags are transferred
   cinfo->SetAnonymous(aInfoArgs.anonymous());
   cinfo->SetPrivate(aInfoArgs.aPrivate());
   cinfo->SetInsecureScheme(aInfoArgs.insecureScheme());
@@ -150,7 +150,7 @@ nsresult HttpTransactionChild::InitInternal(
   nsresult rv = mTransaction->Init(
       caps, cinfo, requestHead, requestBody, requestContentLength,
       requestBodyHasHeaders, GetCurrentThreadEventTarget(),
-      nullptr,  
+      nullptr,  // TODO: security callback, fix in bug 1512479.
       this, topLevelOuterContentWindowId,
       static_cast<HttpTrafficCategory>(httpTrafficCategory), rc, classOfService,
       initialRwin, responseTimeoutEnabled, channelId,
@@ -286,9 +286,9 @@ nsHttpTransaction* HttpTransactionChild::GetHttpTransaction() {
   return mTransaction.get();
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpTransactionChild <nsIStreamListener>
+//-----------------------------------------------------------------------------
 
 NS_IMETHODIMP
 HttpTransactionChild::OnDataAvailable(nsIRequest* aRequest,
@@ -298,7 +298,7 @@ HttpTransactionChild::OnDataAvailable(nsIRequest* aRequest,
        " aCount=%" PRIu32 "]\n",
        this, aOffset, aCount));
 
-  
+  // Don't bother sending IPC if already canceled.
   if (mCanceled) {
     return mStatus;
   }
@@ -307,7 +307,7 @@ HttpTransactionChild::OnDataAvailable(nsIRequest* aRequest,
     return NS_ERROR_FAILURE;
   }
 
-  
+  // TODO: send string data in chunks and handle errors. Bug 1600129.
   nsCString data;
   nsresult rv = NS_ReadInputStreamToString(aInputStream, data, aCount);
   if (NS_FAILED(rv)) {
@@ -332,12 +332,22 @@ static TimingStructArgs ToTimingStructArgs(TimingStruct aTiming) {
   return args;
 }
 
+// The maximum number of bytes to consider when attempting to sniff.
+// See https://mimesniff.spec.whatwg.org/#reading-the-resource-header.
+static const uint32_t MAX_BYTES_SNIFFED = 1445;
+
+static void GetDataForSniffer(void* aClosure, const uint8_t* aData,
+                              uint32_t aCount) {
+  nsTArray<uint8_t>* outData = static_cast<nsTArray<uint8_t>*>(aClosure);
+  outData->AppendElements(aData, std::min(aCount, MAX_BYTES_SNIFFED));
+}
+
 NS_IMETHODIMP
 HttpTransactionChild::OnStartRequest(nsIRequest* aRequest) {
   LOG(("HttpTransactionChild::OnStartRequest start [this=%p] mTransaction=%p\n",
        this, mTransaction.get()));
 
-  
+  // Don't bother sending IPC to parent process if already canceled.
   if (mCanceled) {
     return mStatus;
   }
@@ -362,8 +372,17 @@ HttpTransactionChild::OnStartRequest(nsIRequest* aRequest) {
 
   nsAutoPtr<nsHttpResponseHead> head(mTransaction->TakeResponseHead());
   Maybe<nsHttpResponseHead> optionalHead;
+  nsTArray<uint8_t> dataForSniffer;
   if (head) {
     optionalHead = Some(*head);
+    if (mTransaction->Caps() & NS_HTTP_CALL_CONTENT_SNIFFER) {
+      nsAutoCString contentTypeOptionsHeader;
+      if (head->GetContentTypeOptionsHeader(contentTypeOptionsHeader) &&
+          contentTypeOptionsHeader.EqualsIgnoreCase("nosniff")) {
+        RefPtr<nsInputStreamPump> pump = do_QueryObject(mTransactionPump);
+        pump->PeekStream(GetDataForSniffer, &dataForSniffer);
+      }
+    }
   }
 
   int32_t proxyConnectResponseCode =
@@ -372,7 +391,7 @@ HttpTransactionChild::OnStartRequest(nsIRequest* aRequest) {
   Unused << SendOnStartRequest(status, optionalHead, serializedSecurityInfoOut,
                                mTransaction->ProxyConnectFailed(),
                                ToTimingStructArgs(mTransaction->Timings()),
-                               proxyConnectResponseCode);
+                               proxyConnectResponseCode, dataForSniffer);
   LOG(("HttpTransactionChild::OnStartRequest end [this=%p]\n", this));
   return NS_OK;
 }
@@ -381,7 +400,7 @@ NS_IMETHODIMP
 HttpTransactionChild::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   LOG(("HttpTransactionChild::OnStopRequest [this=%p]\n", this));
 
-  
+  // Don't bother sending IPC to parent process if already canceled.
   if (mCanceled) {
     return mStatus;
   }
@@ -408,9 +427,9 @@ HttpTransactionChild::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   return NS_OK;
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpTransactionChild <nsITransportEventSink>
+//-----------------------------------------------------------------------------
 
 NS_IMETHODIMP
 HttpTransactionChild::OnTransportStatus(nsITransport* aTransport,
@@ -447,5 +466,5 @@ HttpTransactionChild::OnTransportStatus(nsITransport* aTransport,
   return NS_OK;
 }
 
-}  
-}  
+}  // namespace net
+}  // namespace mozilla
