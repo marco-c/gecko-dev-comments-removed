@@ -526,12 +526,6 @@ var SidebarUI = {
         
         this._fireShowEvent();
       }
-
-      let selBrowser = gBrowser.selectedBrowser;
-      selBrowser.messageManager.sendAsyncMessage("Sidebar:VisibilityChange", {
-        commandID,
-        isOpen: true,
-      });
     });
   },
 
@@ -548,7 +542,6 @@ var SidebarUI = {
 
     this.hideSwitcherPanel();
 
-    let commandID = this._box.getAttribute("sidebarcommand");
     this.selectMenuItem("");
 
     
@@ -564,10 +557,6 @@ var SidebarUI = {
 
     let selBrowser = gBrowser.selectedBrowser;
     selBrowser.focus();
-    selBrowser.messageManager.sendAsyncMessage("Sidebar:VisibilityChange", {
-      commandID,
-      isOpen: false,
-    });
     if (triggerNode) {
       updateToggleControlLabel(triggerNode);
     }
