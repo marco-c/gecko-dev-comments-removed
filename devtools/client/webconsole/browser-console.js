@@ -7,6 +7,7 @@
 const Services = require("Services");
 const WebConsole = require("devtools/client/webconsole/webconsole");
 const { TargetList } = require("devtools/shared/resources/target-list");
+const { Utils } = require("devtools/client/webconsole/utils");
 
 loader.lazyRequireGetter(this, "Telemetry", "devtools/client/shared/telemetry");
 loader.lazyRequireGetter(
@@ -77,8 +78,13 @@ class BrowserConsole extends WebConsole {
       
       
       
-      await super.init();
+      await super.init(false);
       await this.targetList.startListening();
+
+      
+      
+      const id = Utils.supportsString(this.hudId);
+      Services.obs.notifyObservers(id, "web-console-created");
     })();
     return this._bcInitializer;
   }

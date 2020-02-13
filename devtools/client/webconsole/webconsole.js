@@ -121,8 +121,17 @@ class WebConsole {
 
 
 
-  init() {
-    return this.ui.init();
+
+
+
+  async init(emitCreatedEvent = true) {
+    await this.ui.init();
+
+    
+    if (emitCreatedEvent) {
+      const id = Utils.supportsString(this.hudId);
+      Services.obs.notifyObservers(id, "web-console-created");
+    }
   }
 
   
