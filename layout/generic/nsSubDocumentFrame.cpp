@@ -361,7 +361,10 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     DisplayListClipState::AutoSaveRestore clipState(aBuilder);
-    clipState.ClipContainingBlockDescendantsToContentBox(aBuilder, this);
+
+    nsPoint offset = aBuilder->ToReferenceFrame(this);
+    nsRect bounds = this->EnsureInnerView()->GetBounds() + offset;
+    clipState.ClipContentDescendants(bounds);
 
     aLists.Content()->AppendNewToTop<nsDisplayRemote>(aBuilder, this);
     return;
