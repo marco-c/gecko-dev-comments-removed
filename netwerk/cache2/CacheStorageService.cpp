@@ -1273,15 +1273,9 @@ void CacheStorageService::OnMemoryConsumptionChange(
 
   if (!overLimit) return;
 
-  {
-    mozilla::MutexAutoLock lock(mLock);
-
-    
-    
-    if (mPurgeTimer) {
-      return;
-    }
-  }
+  
+  
+  if (mPurgeTimer) return;
 
   
   
