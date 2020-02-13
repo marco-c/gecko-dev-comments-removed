@@ -358,6 +358,11 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:init_simd\n"
          "race:simd_support\n"
          "race:jsimd_can_ycc_rgb\n"
+         
+         
+         
+         
+         "race:base::Thread::Stop\n"
 
          
       ;  
