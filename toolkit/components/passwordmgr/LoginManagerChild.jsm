@@ -239,11 +239,18 @@ const observer = {
 
       
       case "change": {
-        if (docState.generatedPasswordFields.has(aEvent.target)) {
+        let triggeredByFillingGenerated = docState.generatedPasswordFields.has(
+          aEvent.target
+        );
+        if (
+          aEvent.target.hasBeenTypePassword &&
+          (triggeredByFillingGenerated ||
+            LoginHelper.passwordEditCaptureEnabled)
+        ) {
           LoginManagerChild.forWindow(window)._passwordEditedOrGenerated(
             aEvent.target,
             {
-              triggeredByFillingGenerated: true,
+              triggeredByFillingGenerated,
             }
           );
         }
