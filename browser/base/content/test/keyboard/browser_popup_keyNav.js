@@ -1,0 +1,49 @@
+
+
+
+"use strict";
+
+const TEST_PATH = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "http://example.com"
+);
+
+
+
+
+
+
+add_task(async function test_popup_keynav() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.toolbars.keyboard_navigation", true],
+      ["accessibility.tabfocus", 7],
+    ],
+  });
+
+  const kURL = TEST_PATH + "focusableContent.html";
+  await BrowserTestUtils.withNewTab(kURL, async browser => {
+    let windowPromise = BrowserTestUtils.waitForNewWindow({
+      url: kURL,
+    });
+    SpecialPowers.spawn(browser, [], () => {
+      content.window.open(
+        content.location.href,
+        "_blank",
+        "height=500,width=500,menubar=no,toolbar=no,status=1,resizable=1"
+      );
+    });
+    let win = await windowPromise;
+    let hamburgerButton = win.document.getElementById("PanelUI-menu-button");
+    forceFocus(hamburgerButton);
+    await expectFocusAfterKey("Tab", win.gBrowser.selectedBrowser, false, win);
+    
+    EventUtils.synthesizeKey("KEY_Tab", {}, win);
+    
+    let firstButton = win.document
+      .getElementById("urlbar-container")
+      .querySelector("toolbarbutton,[role=button]");
+    await expectFocusAfterKey("Tab", firstButton, false, win);
+    await BrowserTestUtils.closeWindow(win);
+  });
+});
