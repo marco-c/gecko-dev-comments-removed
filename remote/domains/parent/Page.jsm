@@ -6,6 +6,14 @@
 
 var EXPORTED_SYMBOLS = ["Page"];
 
+var { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  SessionStore: "resource:///modules/sessionstore/SessionStore.jsm",
+});
+
 const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 const { clearInterval, setInterval } = ChromeUtils.import(
   "resource://gre/modules/Timer.jsm"
@@ -283,6 +291,40 @@ class Page extends Domain {
 
 
 
+  async getNavigationHistory() {
+    const { window } = this.session.target;
+
+    return new Promise(resolve => {
+      function updateSessionHistory(sessionHistory) {
+        const entries = sessionHistory.entries.map(entry => {
+          return {
+            id: entry.ID,
+            url: entry.url,
+            userTypedURL: entry.originalURI || entry.url,
+            title: entry.title,
+            
+            transitionType: null,
+          };
+        });
+
+        resolve({
+          currentIndex: sessionHistory.index,
+          entries,
+        });
+      }
+
+      SessionStore.getSessionHistory(
+        window.gBrowser.selectedTab,
+        updateSessionHistory
+      );
+    });
+  }
+
+  
+
+
+
+
 
 
 
@@ -307,10 +349,7 @@ class Page extends Domain {
   async navigateToHistoryEntry(options = {}) {
     const { entryId } = options;
 
-    const index = await this.executeInChild(
-      "_getIndexForHistoryEntryId",
-      entryId
-    );
+    const index = await this._getIndexForHistoryEntryId(entryId);
 
     if (index == null) {
       throw new Error("No entry with passed id");
@@ -529,6 +568,27 @@ class Page extends Domain {
 
 
   setInterceptFileChooserDialog(options = {}) {}
+
+  _getIndexForHistoryEntryId(id) {
+    const { window } = this.session.target;
+
+    return new Promise(resolve => {
+      function updateSessionHistory(sessionHistory) {
+        sessionHistory.entries.forEach((entry, index) => {
+          if (entry.ID == id) {
+            resolve(index);
+          }
+        });
+
+        resolve(null);
+      }
+
+      SessionStore.getSessionHistory(
+        window.gBrowser.selectedTab,
+        updateSessionHistory
+      );
+    });
+  }
 
   
 
