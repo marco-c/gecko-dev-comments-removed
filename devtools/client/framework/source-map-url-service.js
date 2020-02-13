@@ -78,6 +78,10 @@ SourceMapURLService.prototype._getLoadingPromise = function() {
       }
 
       
+      if (!this._toolbox.threadFront) {
+        return Promise.reject("threadFront is null");
+      }
+
       const loadingPromise = this._toolbox.threadFront.getSources().then(
         ({ sources }) => {
           
@@ -271,7 +275,12 @@ SourceMapURLService.prototype.originalPositionFor = async function(
   }
 
   
-  await this._getLoadingPromise();
+  try {
+    await this._getLoadingPromise();
+  } catch (e) {
+    console.warn("Error in _getLoadingPromise", e);
+    return null;
+  }
 
   
   if (!this._urls) {

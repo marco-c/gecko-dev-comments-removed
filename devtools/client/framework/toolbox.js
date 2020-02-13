@@ -3035,8 +3035,13 @@ Toolbox.prototype = {
       
       return promise.resolve();
     }
-    const { frames } = await this.target.listFrames();
-    this._updateFrames({ frames });
+
+    try {
+      const { frames } = await this.target.listFrames();
+      this._updateFrames({ frames });
+    } catch (e) {
+      console.error("Error while listing frames", e);
+    }
   },
 
   
