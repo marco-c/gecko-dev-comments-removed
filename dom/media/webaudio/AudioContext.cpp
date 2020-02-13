@@ -684,7 +684,7 @@ void AudioContext::RemoveFromDecodeQueue(WebAudioDecodeJob* aDecodeJob) {
 }
 
 void AudioContext::RegisterActiveNode(AudioNode* aNode) {
-  if (!mIsShutDown) {
+  if (!mCloseCalled) {
     mActiveNodes.PutEntry(aNode);
   }
 }
@@ -777,12 +777,10 @@ void AudioContext::Shutdown() {
   }
   mIsShutDown = true;
 
+  CloseInternal(nullptr, AudioContextOperationFlags::None);
+
   
   if (!mIsDisconnecting) {
-    if (!mIsOffline) {
-      CloseInternal(nullptr, AudioContextOperationFlags::None);
-    }
-
     for (auto p : mPromiseGripArray) {
       p->MaybeRejectWithInvalidStateError("Navigated away from page");
     }
@@ -794,11 +792,6 @@ void AudioContext::Shutdown() {
     }
     mPendingResumePromises.Clear();
   }
-
-  
-  
-  
-  mActiveNodes.Clear();
 
   
   
@@ -1186,7 +1179,7 @@ void AudioContext::CloseInternal(void* aPromise,
   
   
   AudioNodeTrack* ds = DestinationTrack();
-  if (ds) {
+  if (ds && !mIsOffline) {
     Destination()->DestroyAudioChannelAgent();
 
     nsTArray<mozilla::MediaTrack*> tracks;
@@ -1209,6 +1202,10 @@ void AudioContext::CloseInternal(void* aPromise,
     }
   }
   mCloseCalled = true;
+  
+  
+  
+  mActiveNodes.Clear();
 }
 
 void AudioContext::RegisterNode(AudioNode* aNode) {
