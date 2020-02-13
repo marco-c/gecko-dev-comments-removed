@@ -203,7 +203,10 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
       eager: opts.eager,
     };
 
-    const { resultID } = await super.evaluateJSAsync(options);
+    this._pendingAsyncEvaluation = super.evaluateJSAsync(options);
+    const { resultID } = await this._pendingAsyncEvaluation;
+    this._pendingAsyncEvaluation = null;
+
     return new Promise((resolve, reject) => {
       
       
@@ -247,7 +250,12 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
   
 
 
-  onEvaluationResult(packet) {
+  async onEvaluationResult(packet) {
+    
+    
+    
+    await this._pendingAsyncEvaluation;
+
     
     
     
