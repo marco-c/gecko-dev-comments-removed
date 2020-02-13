@@ -4142,11 +4142,7 @@ pref("alerts.showFavicons", false);
 
 
 #if defined(XP_WIN)
-  #if defined(NIGHTLY_BUILD)
-    pref("alerts.useSystemBackend", true);
-  #else
-    pref("alerts.useSystemBackend", false);
-  #endif
+  pref("alerts.useSystemBackend", false);
 #else
   pref("alerts.useSystemBackend", true);
 #endif
