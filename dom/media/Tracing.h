@@ -35,6 +35,7 @@ extern mozilla::AsyncLogger gAudioCallbackTraceLogger;
 
 
 void StartAudioCallbackTracing();
+void StopAudioCallbackTracing();
 
 #ifdef TRACING
 

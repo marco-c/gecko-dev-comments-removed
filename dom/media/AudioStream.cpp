@@ -428,6 +428,8 @@ void AudioStream::Shutdown() {
     
     
     mCubebStream.reset();
+
+    StopAudioCallbackTracing();
   }
 
   mState = SHUTDOWN;
