@@ -151,8 +151,11 @@ class TestBuild(unittest.TestCase):
         test_path = os.sep.join(('$SRCDIR', 'python', 'mozbuild', 'mozbuild',
                                  'test', 'backend', 'data', 'build')) + os.sep
 
+        
+        
+        
         result = {
-            p: f.open(mode='r').read()
+            p: f.open().read().decode('utf-8')
             for p, f in FileFinder(mozpath.join(config.topobjdir, 'dist'))
         }
         self.assertTrue(len(result))
