@@ -1,0 +1,18 @@
+function setMessageHandler(response) {
+  onmessage = e => {
+    e.source.postMessage(response);
+  };
+}
+
+setMessageHandler("handler-before-throw");
+
+
+importScripts(`empty.js?${Date.now()}`);
+
+
+
+setMessageHandler("handler-after-throw");
+
+
+
+onfetch = e => e.respondWith(new Response("handler-after-throw"));
