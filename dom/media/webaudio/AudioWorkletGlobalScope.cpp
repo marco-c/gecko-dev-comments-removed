@@ -81,7 +81,7 @@ void AudioWorkletGlobalScope::RegisterProcessor(
   if (!constructorUnwrapped) {
     
     
-    aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    aRv.ThrowSecurityError("Constructor cannot be called");
     return;
   }
 
