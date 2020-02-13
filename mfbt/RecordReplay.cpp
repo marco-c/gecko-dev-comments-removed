@@ -138,14 +138,18 @@ void Initialize(int aArgc, char* aArgv[]) {
 
 
 struct AutoSuppressGCAnalysis {
-  AutoSuppressGCAnalysis() {}
+  AutoSuppressGCAnalysis() {
+    
+    
+  }
+#ifdef XGILL_PLUGIN
   ~AutoSuppressGCAnalysis() {
-#ifdef DEBUG
     
     static Atomic<int, SequentiallyConsistent, Behavior::DontPreserve> dummy;
     dummy++;
-#endif
   }
+
+#endif
 } JS_HAZ_GC_SUPPRESSED;
 
 #define DEFINE_WRAPPER(aName, aReturnType, aFormals, aActuals) \

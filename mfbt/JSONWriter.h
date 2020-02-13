@@ -110,7 +110,7 @@ namespace mozilla {
 class JSONWriteFunc {
  public:
   virtual void Write(const char* aStr) = 0;
-  virtual ~JSONWriteFunc() {}
+  virtual ~JSONWriteFunc() = default;
 };
 
 
