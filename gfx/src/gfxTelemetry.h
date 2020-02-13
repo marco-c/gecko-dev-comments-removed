@@ -47,6 +47,9 @@ enum class FeatureStatus {
   BlockedReleaseChannelAndroid,
 
   
+  Denied,
+
+  
   Blacklisted,
 
   
