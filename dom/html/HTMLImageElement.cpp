@@ -1250,6 +1250,10 @@ void HTMLImageElement::SetLazyLoading() {
     return;
   }
 
+  if (!StaticPrefs::dom_image_lazy_loading_enabled()) {
+    return;
+  }
+
   
   
   if (!OwnerDoc()->IsScriptEnabled()) {
