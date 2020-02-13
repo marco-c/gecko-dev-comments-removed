@@ -3282,19 +3282,21 @@ nsresult nsFocusManager::GetNextTabbableContent(
     nsIContent** aResultContent) {
   *aResultContent = nullptr;
 
-  nsCOMPtr<nsIContent> startContent = aStartContent;
-  if (!startContent) return NS_OK;
+  if (!aStartContent) {
+    return NS_OK;
+  }
 
-  nsIContent* currentTopLevelScopeOwner = GetTopLevelScopeOwner(aStartContent);
+  nsIContent* startContent = aStartContent;
+  nsIContent* currentTopLevelScopeOwner = GetTopLevelScopeOwner(startContent);
 
-  LOGCONTENTNAVIGATION("GetNextTabbable: %s", aStartContent);
+  LOGCONTENTNAVIGATION("GetNextTabbable: %s", startContent);
   LOGFOCUSNAVIGATION(("  tabindex: %d", aCurrentTabIndex));
 
   
   
-  if (aForward && IsHostOrSlot(aStartContent)) {
+  if (aForward && IsHostOrSlot(startContent)) {
     nsIContent* contentToFocus = GetNextTabbableContentInScope(
-        aStartContent, aStartContent, aOriginalStartContent, aForward,
+        startContent, startContent, aOriginalStartContent, aForward,
         aForward ? 1 : 0, aIgnoreTabIndex, aForDocumentNavigation,
         true );
     if (contentToFocus) {
@@ -3305,9 +3307,9 @@ nsresult nsFocusManager::GetNextTabbableContent(
 
   
   
-  if (nsIContent* owner = FindScopeOwner(aStartContent)) {
+  if (nsIContent* owner = FindScopeOwner(startContent)) {
     nsIContent* contentToFocus = GetNextTabbableContentInAncestorScopes(
-        owner, &aStartContent, aOriginalStartContent, aForward,
+        owner, &startContent, aOriginalStartContent, aForward,
         &aCurrentTabIndex, aIgnoreTabIndex, aForDocumentNavigation);
     if (contentToFocus) {
       NS_ADDREF(*aResultContent = contentToFocus);
@@ -3319,13 +3321,14 @@ nsresult nsFocusManager::GetNextTabbableContent(
   
   
   
-  MOZ_ASSERT(!FindScopeOwner(aStartContent),
-             "aStartContent should not be owned by Shadow DOM at this point");
+  MOZ_ASSERT(!FindScopeOwner(startContent),
+             "startContent should not be owned by Shadow DOM at this point");
 
   nsPresContext* presContext = aPresShell->GetPresContext();
 
   bool getNextFrame = true;
-  nsCOMPtr<nsIContent> iterStartContent = aStartContent;
+  nsCOMPtr<nsIContent> iterStartContent = startContent;
+  nsIContent* topLevelScopeStartContent = startContent;
   
   while (1) {
     nsIFrame* frame = iterStartContent->GetPrimaryFrame();
@@ -3440,7 +3443,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
           
           bool validPopup = true;
           if (!aForward) {
-            nsIContent* content = aStartContent;
+            nsIContent* content = topLevelScopeStartContent;
             while (content) {
               if (content == currentContent) {
                 validPopup = false;
