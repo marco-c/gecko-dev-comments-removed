@@ -41,7 +41,7 @@ pub use self::agent::{
 pub use self::constants::*;
 pub use self::err::{Error, PRErrorCode, Res};
 pub use self::ext::{ExtensionHandler, ExtensionHandlerResult, ExtensionWriterResult};
-pub use self::p11::SymKey;
+pub use self::p11::{random, SymKey};
 pub use self::replay::AntiReplay;
 pub use self::secrets::SecretDirection;
 pub use auth::AuthenticationStatus;
@@ -104,6 +104,18 @@ pub fn init() {
     }
 }
 
+
+
+
+
+#[cfg(debug_assertions)]
+fn enable_ssl_trace() {
+    let opt = ssl::Opt::Locking.as_int();
+    let mut _v: ::std::os::raw::c_int = 0;
+    secstatus_to_res(unsafe { ssl::SSL_OptionGetDefault(opt, &mut _v) })
+        .expect("SSL_OptionGetDefault failed");
+}
+
 pub fn init_db<P: Into<PathBuf>>(dir: P) {
     time::init();
     unsafe {
@@ -134,6 +146,9 @@ pub fn init_db<P: Into<PathBuf>>(dir: P) {
                 dircstr.as_ptr(),
             ))
             .expect("SSL_ConfigServerSessionIDCache failed");
+
+            #[cfg(debug_assertions)]
+            enable_ssl_trace();
 
             NssLoaded::Db(path.into_boxed_path())
         });

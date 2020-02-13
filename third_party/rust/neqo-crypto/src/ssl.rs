@@ -4,10 +4,8 @@
 
 
 
-#![allow(dead_code)]
-#![allow(non_upper_case_globals)]
-#![allow(non_snake_case)]
-#![allow(clippy::cognitive_complexity)]
+#![allow(dead_code, non_upper_case_globals, non_snake_case)]
+#![allow(clippy::cognitive_complexity, clippy::too_many_lines)]
 
 use crate::constants::*;
 

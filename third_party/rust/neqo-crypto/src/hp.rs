@@ -29,15 +29,19 @@ experimental_api!(SSL_HkdfExpandLabelWithMech(
     secret: *mut *mut PK11SymKey,
 ));
 
+#[derive(Clone)]
 pub struct HpKey(SymKey);
 
 impl Debug for HpKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str("HP Key")
+        write!(f, "HP-{:?}", self.0)
     }
 }
 
 impl HpKey {
+    
+    
+    
     
     pub fn extract(version: Version, cipher: Cipher, prk: &SymKey, label: &str) -> Res<Self> {
         let l = label.as_bytes();
@@ -72,6 +76,10 @@ impl HpKey {
         }
     }
 
+    
+    
+    
+    
     
     #[allow(clippy::cast_sign_loss)]
     pub fn mask(&self, sample: &[u8]) -> Res<Vec<u8>> {

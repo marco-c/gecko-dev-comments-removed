@@ -5,6 +5,7 @@
 
 
 #![cfg_attr(feature = "deny-warnings", deny(warnings))]
+#![warn(clippy::pedantic)]
 
 use neqo_common::{hex, matches, qdebug, qtrace, Datagram, Decoder, Encoder};
 use neqo_crypto::{
@@ -42,7 +43,7 @@ fn default_server() -> Server {
 fn connected_server(server: &mut Server) -> ActiveConnectionRef {
     let server_connections = server.active_connections();
     assert_eq!(server_connections.len(), 1);
-    assert_eq!(*server_connections[0].borrow().state(), State::Connected);
+    assert_eq!(*server_connections[0].borrow().state(), State::Confirmed);
     server_connections[0].clone()
 }
 
@@ -68,6 +69,12 @@ fn connect(client: &mut Connection, server: &mut Server) -> ActiveConnectionRef 
     assert_eq!(*client.state(), State::Connected);
     let dgram = server.process(dgram, now()).dgram();
     assert!(dgram.is_some()); 
+
+    
+    let dgram = client.process(dgram, now()).dgram();
+    assert!(dgram.is_none());
+    assert_eq!(*client.state(), State::Confirmed);
+
     connected_server(server)
 }
 
@@ -225,7 +232,7 @@ fn retry_after_initial() {
 }
 
 #[test]
-fn retry_bad_odcid() {
+fn retry_bad_integrity() {
     let mut server = default_server();
     server.set_retry_required(true);
     let mut client = default_client();
@@ -238,17 +245,9 @@ fn retry_bad_odcid() {
     let retry = &dgram.as_ref().unwrap();
     assertions::assert_retry(retry);
 
-    let mut dec = Decoder::new(retry); 
-    dec.skip(5);
-    dec.skip_vec(1); 
-    dec.skip_vec(1); 
-    let odcid_len = dec.decode_byte().unwrap();
-    assert_ne!(odcid_len, 0);
-    let odcid_offset = retry.len() - dec.remaining();
-    assert!(odcid_offset < retry.len());
-    let mut tweaked_retry = retry[..].to_vec();
-    tweaked_retry[odcid_offset] ^= 0x45; 
-    let tweaked_packet = Datagram::new(retry.source(), retry.destination(), tweaked_retry);
+    let mut tweaked = retry.to_vec();
+    tweaked[retry.len() - 1] ^= 0x45; 
+    let tweaked_packet = Datagram::new(retry.source(), retry.destination(), tweaked);
 
     
     let dgram = client.process(Some(tweaked_packet), now()).dgram();
@@ -319,6 +318,7 @@ fn client_initial_aead_and_hp(dcid: &[u8]) -> (Aead, HpKey) {
 
 
 #[test]
+#[allow(clippy::shadow_unrelated)]
 fn mitm_retry() {
     let mut client = default_client();
     let mut retry_server = default_server();
@@ -493,8 +493,12 @@ fn closed() {
     let mut client = default_client();
     connect(&mut client, &mut server);
 
+    
     let res = server.process(None, now());
-    assert_eq!(res, Output::Callback(Duration::from_secs(60)));
+    assert!(res.callback() > Duration::new(0, 0));
+    
+    let res = client.process(None, now());
+    assert!(res.callback() > Duration::new(0, 0));
 
     qtrace!("60s later");
     let res = server.process(None, now() + Duration::from_secs(60));
