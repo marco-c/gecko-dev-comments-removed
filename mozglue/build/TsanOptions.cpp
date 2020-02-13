@@ -316,6 +316,9 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:CacheFileMetadata::OnDataWritten\n"
 
          
+         "race:StartupCache::WriteToDisk\n"
+
+         
          
          "mutex:GLContextGLX::~GLContextGLX\n"
 
