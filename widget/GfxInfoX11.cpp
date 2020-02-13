@@ -68,6 +68,8 @@ void GfxInfo::AddCrashReportAnnotations() {
 }
 
 void GfxInfo::GetData() {
+  GfxInfoBase::GetData();
+
   
   
 
@@ -420,7 +422,7 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
     
     
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
-        OperatingSystem::Linux,
+        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         (nsAString&)GfxDriverInfo::GetDesktopEnvironment(DesktopAll),
         (nsAString&)GfxDriverInfo::GetWindowProtocol(WindowingAll),
         (nsAString&)GfxDriverInfo::GetDeviceVendor(VendorAll),
@@ -431,7 +433,7 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
 
     
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
-        OperatingSystem::Linux,
+        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         (nsAString&)GfxDriverInfo::GetDesktopEnvironment(DesktopAll),
         (nsAString&)GfxDriverInfo::GetWindowProtocol(WindowingAll),
         (nsAString&)GfxDriverInfo::GetDeviceVendor(VendorNVIDIA),
@@ -461,7 +463,7 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
 
     
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
-        OperatingSystem::Linux,
+        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         (nsAString&)GfxDriverInfo::GetDesktopEnvironment(DesktopAll),
         (nsAString&)GfxDriverInfo::GetWindowProtocol(WindowingAll),
         (nsAString&)GfxDriverInfo::GetDeviceVendor(VendorNVIDIA),
@@ -472,7 +474,7 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
 
     
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
-        OperatingSystem::Linux,
+        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         (nsAString&)GfxDriverInfo::GetDesktopEnvironment(DesktopAll),
         (nsAString&)GfxDriverInfo::GetWindowProtocol(WindowingAll),
         (nsAString&)GfxDriverInfo::GetDeviceVendor(VendorNVIDIA),
@@ -483,7 +485,7 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
 
     
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
-        OperatingSystem::Linux,
+        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         (nsAString&)GfxDriverInfo::GetDesktopEnvironment(DesktopAll),
         (nsAString&)GfxDriverInfo::GetWindowProtocol(WindowingAll),
         (nsAString&)GfxDriverInfo::GetDeviceVendor(VendorATI),
@@ -494,7 +496,7 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
 
     
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
-        OperatingSystem::Linux,
+        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         (nsAString&)GfxDriverInfo::GetDesktopEnvironment(DesktopAll),
         (nsAString&)GfxDriverInfo::GetWindowProtocol(WindowingAll),
         (nsAString&)GfxDriverInfo::GetDeviceVendor(VendorATI),
@@ -588,6 +590,10 @@ GfxInfo::GetDWriteEnabled(bool* aEnabled) { return NS_ERROR_FAILURE; }
 NS_IMETHODIMP
 GfxInfo::GetDWriteVersion(nsAString& aDwriteVersion) {
   return NS_ERROR_FAILURE;
+}
+
+NS_IMETHODIMP GfxInfo::GetHasBattery(bool* aHasBattery) {
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
