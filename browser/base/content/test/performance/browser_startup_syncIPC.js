@@ -82,6 +82,12 @@ const startupPhases = {
       maxCount: 3,
     },
     {
+      name: "PCompositorWidget::Msg_Initialize",
+      condition: WIN,
+      ignoreIfUnused: true, 
+      maxCount: 3,
+    },
+    {
       name: "PGPU::Msg_AddLayerTreeIdMapping",
       condition: WIN,
       ignoreIfUnused: true, 
@@ -138,6 +144,12 @@ const startupPhases = {
     },
     {
       name: "PCompositorBridge::Msg_Initialize",
+      condition: WIN,
+      ignoreIfUnused: true, 
+      maxCount: 1,
+    },
+    {
+      name: "PCompositorWidget::Msg_Initialize",
       condition: WIN,
       ignoreIfUnused: true, 
       maxCount: 1,
@@ -212,6 +224,12 @@ const startupPhases = {
     },
     {
       name: "PCompositorBridge::Msg_Initialize",
+      condition: WIN && WEBRENDER,
+      ignoreIfUnused: true, 
+      maxCount: 1,
+    },
+    {
+      name: "PCompositorWidget::Msg_Initialize",
       condition: WIN && WEBRENDER,
       ignoreIfUnused: true, 
       maxCount: 1,
