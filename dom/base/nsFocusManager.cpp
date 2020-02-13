@@ -3401,15 +3401,16 @@ nsresult nsFocusManager::GetNextTabbableContent(
       }
     }
 
+    nsIContent* oldTopLevelScopeOwner = nullptr;
     
     while (frame) {
       
       
       nsIContent* currentContent = frame->GetContent();
-      nsIContent* oldTopLevelScopeOwner = currentTopLevelScopeOwner;
-      if (!aForward || currentTopLevelScopeOwner != currentContent) {
-        currentTopLevelScopeOwner = GetTopLevelScopeOwner(currentContent);
+      if (currentTopLevelScopeOwner) {
+        oldTopLevelScopeOwner = currentTopLevelScopeOwner;
       }
+      currentTopLevelScopeOwner = GetTopLevelScopeOwner(currentContent);
       if (currentTopLevelScopeOwner &&
           currentTopLevelScopeOwner == oldTopLevelScopeOwner) {
         
