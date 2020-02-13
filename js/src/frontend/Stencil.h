@@ -403,6 +403,7 @@ class ScriptStencil {
   bool hasNonSyntacticScope = false;
   bool needsFunctionEnvironmentObjects = false;
   bool hasModuleGoal = false;
+  bool hasInnerFunctions = false;
 
   
   
