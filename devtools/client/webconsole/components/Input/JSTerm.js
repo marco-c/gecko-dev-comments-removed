@@ -15,6 +15,7 @@ loader.lazyRequireGetter(
   "AutocompletePopup",
   "devtools/client/shared/autocomplete-popup"
 );
+
 loader.lazyRequireGetter(
   this,
   "PropTypes",
@@ -46,7 +47,10 @@ loader.lazyRequireGetter(
 loader.lazyRequireGetter(this, "saveAs", "devtools/shared/DevToolsUtils", true);
 
 
-const { Component } = require("devtools/client/shared/vendor/react");
+const {
+  Component,
+  createFactory,
+} = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const { connect } = require("devtools/client/shared/vendor/react-redux");
 
@@ -59,6 +63,10 @@ const {
   getAutocompleteState,
 } = require("devtools/client/webconsole/selectors/autocomplete");
 const actions = require("devtools/client/webconsole/actions/index");
+
+const EvaluationSelector = createFactory(
+  require("devtools/client/webconsole/components/Input/EvaluationSelector")
+);
 
 
 const {
@@ -107,6 +115,7 @@ class JSTerm extends Component {
       editorWidth: PropTypes.number,
       showEditorOnboarding: PropTypes.bool,
       autocomplete: PropTypes.bool,
+      showEvaluationSelector: PropTypes.bool,
     };
   }
 
@@ -1000,6 +1009,15 @@ class JSTerm extends Component {
     } else if (items.length < minimumAutoCompleteLength && popup.isOpen) {
       popup.hidePopup();
     }
+
+    
+    
+    
+    
+    this.terminalInputChanged(
+      this.getInputValueWithCompletionText().expression
+    );
+
     this.emit("autocomplete-updated");
   }
 
@@ -1029,6 +1047,10 @@ class JSTerm extends Component {
     } else {
       this.setAutoCompletionText("");
     }
+    
+    this.terminalInputChanged(
+      this.getInputValueWithCompletionText().expression
+    );
   }
 
   
@@ -1037,6 +1059,8 @@ class JSTerm extends Component {
 
   clearCompletion() {
     this.autocompleteUpdate.cancel();
+    
+    this.terminalInputChanged(this._getValue());
 
     this.setAutoCompletionText("");
     if (this.autocompletePopup) {
@@ -1056,6 +1080,41 @@ class JSTerm extends Component {
 
 
   acceptProposedCompletion() {
+    const {
+      completionText,
+      numberOfCharsToReplaceCharsBeforeCursor,
+    } = this.getInputValueWithCompletionText();
+
+    this.autocompleteUpdate.cancel();
+    this.props.autocompleteClear();
+
+    if (completionText) {
+      this.insertStringAtCursor(
+        completionText,
+        numberOfCharsToReplaceCharsBeforeCursor
+      );
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getInputValueWithCompletionText() {
+    const inputBeforeCursor = this.getInputValueBeforeCursor();
+    const inputAfterCursor = this._getValue().substring(
+      inputBeforeCursor.length
+    );
     let completionText = this.getAutoCompletionText();
     let numberOfCharsToReplaceCharsBeforeCursor;
 
@@ -1072,7 +1131,6 @@ class JSTerm extends Component {
       
       
       if (isElementAccess) {
-        const inputBeforeCursor = this.getInputValueBeforeCursor();
         const lastOpeningBracketIndex = inputBeforeCursor.lastIndexOf("[");
         if (lastOpeningBracketIndex > -1) {
           numberOfCharsToReplaceCharsBeforeCursor = inputBeforeCursor.substring(
@@ -1080,9 +1138,6 @@ class JSTerm extends Component {
           ).length;
         }
 
-        const inputAfterCursor = this._getValue().substring(
-          inputBeforeCursor.length
-        );
         
         if (!inputAfterCursor.trimLeft().startsWith("]")) {
           completionText = completionText + "]";
@@ -1090,15 +1145,20 @@ class JSTerm extends Component {
       }
     }
 
-    this.autocompleteUpdate.cancel();
-    this.props.autocompleteClear();
+    const expression =
+      inputBeforeCursor.substring(
+        0,
+        inputBeforeCursor.length -
+          (numberOfCharsToReplaceCharsBeforeCursor || 0)
+      ) +
+      completionText +
+      inputAfterCursor;
 
-    if (completionText) {
-      this.insertStringAtCursor(
-        completionText,
-        numberOfCharsToReplaceCharsBeforeCursor
-      );
-    }
+    return {
+      completionText,
+      numberOfCharsToReplaceCharsBeforeCursor,
+      expression,
+    };
   }
 
   getInputValueBeforeCursor() {
@@ -1150,9 +1210,6 @@ class JSTerm extends Component {
     }
 
     this.editor.setAutoCompletionText(suffix);
-
-    
-    this.terminalInputChanged(this.lastInputValue + suffix);
   }
 
   getAutoCompletionText() {
@@ -1241,6 +1298,18 @@ class JSTerm extends Component {
     });
   }
 
+  renderEvaluationSelector() {
+    if (
+      !this.props.webConsoleUI.wrapper.toolbox ||
+      this.props.editorMode ||
+      !this.props.showEvaluationSelector
+    ) {
+      return null;
+    }
+
+    return EvaluationSelector(this.props);
+  }
+
   renderEditorOnboarding() {
     if (!this.props.showEditorOnboarding) {
       return null;
@@ -1299,7 +1368,11 @@ class JSTerm extends Component {
           this.node = node;
         },
       },
-      this.renderOpenEditorButton(),
+      dom.div(
+        { className: "webconsole-input-buttons" },
+        this.renderEvaluationSelector(),
+        this.renderOpenEditorButton()
+      ),
       this.renderEditorOnboarding()
     );
   }
@@ -1313,6 +1386,7 @@ function mapStateToProps(state) {
     getValueFromHistory: direction => getHistoryValue(state, direction),
     autocompleteData: getAutocompleteState(state),
     showEditorOnboarding: state.ui.showEditorOnboarding,
+    showEvaluationSelector: state.ui.showEvaluationSelector,
   };
 }
 

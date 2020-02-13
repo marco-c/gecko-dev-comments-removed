@@ -84,6 +84,8 @@ const prefs = {
       EDITOR_WIDTH: "input.editorWidth",
       
       EDITOR_ONBOARDING: "devtools.webconsole.input.editorOnboarding",
+      
+      CONTEXT_SELECTOR: "devtools.webconsole.input.context",
     },
     FEATURES: {
       
