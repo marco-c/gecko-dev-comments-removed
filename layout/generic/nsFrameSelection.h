@@ -234,6 +234,13 @@ class nsFrameSelection final {
   void Init(mozilla::PresShell* aPresShell, nsIContent* aLimiter,
             bool aAccessibleCaretEnabled);
 
+  enum class FocusMode {
+    kExtendSelection,     
+    kCollapseToNewPoint,  
+    kMultiRangeSelection, 
+
+  };
+
   
 
 
@@ -251,16 +258,11 @@ class nsFrameSelection final {
 
 
 
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  nsresult HandleClick(nsIContent* aNewFocus, uint32_t aContentOffset,
-                       uint32_t aContentEndOffset, bool aContinueSelection,
-                       bool aMultipleSelection, CaretAssociateHint aHint);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult HandleClick(nsIContent* aNewFocus,
+                                                   uint32_t aContentOffset,
+                                                   uint32_t aContentEndOffset,
+                                                   FocusMode aFocusMode,
+                                                   CaretAssociateHint aHint);
 
   
 
@@ -732,7 +734,7 @@ class nsFrameSelection final {
   MOZ_CAN_RUN_SCRIPT
   nsresult TakeFocus(nsIContent* aNewFocus, uint32_t aContentOffset,
                      uint32_t aContentEndOffset, CaretAssociateHint aHint,
-                     bool aContinueSelection, bool aMultipleSelection);
+                     FocusMode aFocusMode);
 
   void BidiLevelFromMove(mozilla::PresShell* aPresShell, nsIContent* aNode,
                          uint32_t aContentOffset, nsSelectionAmount aAmount,
