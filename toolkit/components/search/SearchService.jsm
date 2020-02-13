@@ -1287,12 +1287,32 @@ SearchService.prototype = {
     SearchUtils.log("_loadEngines: done using rebuilt cache");
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
   async _loadEnginesFromConfig(engineConfigs, isReload = false) {
     SearchUtils.log("_loadEnginesFromConfig");
     let engines = [];
     for (let config of engineConfigs) {
-      let engine = await this.makeEngineFromConfig(config, isReload);
-      engines.push(engine);
+      try {
+        let engine = await this.makeEngineFromConfig(config, isReload);
+        engines.push(engine);
+      } catch (ex) {
+        console.error(
+          `Could not load engine ${
+            "webExtension" in config ? config.webExtension.id : "unknown"
+          }: ${ex}`
+        );
+      }
     }
     return engines;
   },
