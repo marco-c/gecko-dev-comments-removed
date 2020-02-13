@@ -50,7 +50,7 @@ add_task(async function() {
 
   
   
-  await BrowserTestUtils.loadURI(gBrowser.selectedBrowser, TEST_URI3);
+  await loadDocument(hud2.toolbox, TEST_URI3);
 
   
   
@@ -72,7 +72,7 @@ add_task(async function() {
   
   
   
-  await BrowserTestUtils.loadURI(gBrowser.selectedBrowser, TEST_URI4);
+  await loadDocument(hud2.toolbox, TEST_URI4);
 
   const error2 = await waitFor(() =>
     findMessage(hud2, "bTimer", ".message.timeEnd.warn")

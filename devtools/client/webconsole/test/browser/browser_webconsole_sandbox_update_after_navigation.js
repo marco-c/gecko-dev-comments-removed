@@ -25,8 +25,7 @@ add_task(async function() {
   );
 
   
-  BrowserTestUtils.loadURI(gBrowser.selectedBrowser, TEST_URI2);
-  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  await loadDocument(hud.toolbox, TEST_URI2);
 
   ok(!findMessage(hud, "Permission denied"), "no permission denied errors");
 
