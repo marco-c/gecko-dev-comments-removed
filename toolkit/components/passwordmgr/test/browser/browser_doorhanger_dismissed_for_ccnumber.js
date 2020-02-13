@@ -15,31 +15,17 @@ add_task(async function test_doorhanger_dismissal_un() {
       
       
 
-      let passwordFilledPromise = LoginHelper.passwordEditCaptureEnabled
-        ? listenForTestNotification("PasswordEditedOrGenerated")
-        : TestUtils.waitForTick();
-      await SpecialPowers.spawn(browser, [], async () => {
-        content.document
-          .getElementById("form-basic-password")
-          .setUserInput("123");
-      });
-      info("Waiting for passwordFilledPromise");
-      await passwordFilledPromise;
-      
-      await cleanupDoorhanger();
-      await cleanupPasswordNotifications();
-
       let processedPromise = listenForTestNotification("FormSubmit");
       await SpecialPowers.spawn(browser, [], async () => {
-        
-        
-        
         content.document
           .getElementById("form-basic-username")
           .setUserInput("4111111111111111");
+        content.document
+          .getElementById("form-basic-password")
+          .setUserInput("123");
+
         content.document.getElementById("form-basic-submit").click();
       });
-      info("Waiting for FormSubmit");
       await processedPromise;
 
       let notif = getCaptureDoorhanger("password-save");
@@ -62,27 +48,18 @@ add_task(async function test_doorhanger_dismissal_pw() {
       
       
 
-      let passwordFilledPromise = LoginHelper.passwordEditCaptureEnabled
-        ? listenForTestNotification("PasswordEditedOrGenerated")
-        : TestUtils.waitForTick();
+      let processedPromise = listenForTestNotification("FormSubmit");
       await SpecialPowers.spawn(browser, [], async () => {
+        content.document
+          .getElementById("form-basic-username")
+          .setUserInput("aaa");
         content.document
           .getElementById("form-basic-password")
           .setUserInput("4111111111111111");
         content.document
           .getElementById("form-basic-password")
           .setAttribute("autocomplete", "cc-number");
-      });
-      await passwordFilledPromise;
-      
-      await cleanupDoorhanger();
-      await cleanupPasswordNotifications();
 
-      let processedPromise = listenForTestNotification("FormSubmit");
-      await SpecialPowers.spawn(browser, [], async () => {
-        content.document
-          .getElementById("form-basic-username")
-          .setUserInput("aaa");
         content.document.getElementById("form-basic-submit").click();
       });
       await processedPromise;
@@ -106,24 +83,14 @@ add_task(async function test_doorhanger_shown_on_un_with_invalid_ccnumber() {
       
       
 
-      let passwordFilledPromise = LoginHelper.passwordEditCaptureEnabled
-        ? listenForTestNotification("PasswordEditedOrGenerated")
-        : TestUtils.waitForTick();
-      await SpecialPowers.spawn(browser, [], async () => {
-        content.document
-          .getElementById("form-basic-password")
-          .setUserInput("411");
-      });
-      await passwordFilledPromise;
-      
-      await cleanupDoorhanger();
-      await cleanupPasswordNotifications();
-
       let processedPromise = listenForTestNotification("FormSubmit");
       await SpecialPowers.spawn(browser, [], async () => {
         content.document
           .getElementById("form-basic-username")
           .setUserInput("1234123412341234");
+        content.document
+          .getElementById("form-basic-password")
+          .setUserInput("411");
         content.document.getElementById("form-basic-submit").click();
       });
       await processedPromise;
@@ -163,29 +130,11 @@ add_task(async function test_doorhanger_dismissal_on_change() {
       );
       Services.logins.addLogin(login);
 
-      let passwordFilledPromise = LoginHelper.passwordEditCaptureEnabled
-        ? listenForTestNotification("PasswordEditedOrGenerated")
-        : TestUtils.waitForTick();
+      let processedPromise = listenForTestNotification("FormSubmit");
       await SpecialPowers.spawn(browser, [], async () => {
         content.document
           .getElementById("form-basic-password")
           .setUserInput("111");
-        
-        content.document
-          .getElementById("form-basic-username")
-          .setUserInput("changeduser");
-      });
-      await passwordFilledPromise;
-      
-      await cleanupDoorhanger();
-      await cleanupPasswordNotifications();
-
-      let processedPromise = listenForTestNotification("FormSubmit");
-      await SpecialPowers.spawn(browser, [], async () => {
-        
-        content.document
-          .getElementById("form-basic-username")
-          .setUserInput("4111111111111111");
         content.document.getElementById("form-basic-submit").click();
       });
       await processedPromise;

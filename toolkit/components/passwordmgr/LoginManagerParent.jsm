@@ -216,14 +216,8 @@ class LoginManagerParent extends JSWindowActorParent {
         break;
       }
 
-      case "PasswordManager:onPasswordEditedOrGenerated": {
-        log("Received PasswordManager:onPasswordEditedOrGenerated");
-        if (gListenerForTests) {
-          log("calling gListenerForTests");
-          gListenerForTests("PasswordEditedOrGenerated", {});
-        }
-        let browser = this.getRootBrowser();
-        this._onPasswordEditedOrGenerated(browser, data);
+      case "PasswordManager:onGeneratedPasswordFilledOrEdited": {
+        this._onGeneratedPasswordFilledOrEdited(data);
         break;
       }
 
@@ -635,8 +629,6 @@ class LoginManagerParent extends JSWindowActorParent {
       }
     }
 
-    let existingLogin = null;
-    let canMatchExistingLogin = true;
     
     
     let logins = await LoginManagerParent.searchAndDedupeLogins(origin, {
@@ -655,11 +647,13 @@ class LoginManagerParent extends JSWindowActorParent {
     
     
     if (!usernameField && oldPasswordField && logins.length) {
+      let prompter = this._getPrompter(browser);
+      let promptBrowser = LoginHelper.getBrowserForPrompt(browser);
       if (logins.length == 1) {
-        existingLogin = logins[0];
+        let oldLogin = logins[0];
 
-        if (existingLogin.password == formLogin.password) {
-          recordLoginUse(existingLogin);
+        if (oldLogin.password == formLogin.password) {
+          recordLoginUse(oldLogin);
           log(
             "(Not prompting to save/change since we have no username and the " +
               "only saved password matches the new password)"
@@ -667,71 +661,76 @@ class LoginManagerParent extends JSWindowActorParent {
           return;
         }
 
-        formLogin.username = existingLogin.username;
-        formLogin.usernameField = existingLogin.usernameField;
+        formLogin.username = oldLogin.username;
+        formLogin.usernameField = oldLogin.usernameField;
+
+        prompter.promptToChangePassword(
+          promptBrowser,
+          oldLogin,
+          formLogin,
+          dismissedPrompt,
+          false, 
+          autoSavedStorageGUID
+        );
+        return;
       } else if (!generatedPW || generatedPW.value != newPasswordField.value) {
         
         
         
-        canMatchExistingLogin = false;
+        prompter.promptToChangePasswordWithUsernames(
+          promptBrowser,
+          logins,
+          formLogin
+        );
+        return;
       }
     }
 
-    if (canMatchExistingLogin && !existingLogin) {
+    let existingLogin = null;
+    
+    for (let login of logins) {
+      let same;
+
       
-      for (let login of logins) {
-        let same;
+      
+      
+      
+      if (!login.username && formLogin.username) {
+        let restoreMe = formLogin.username;
+        formLogin.username = "";
+        same = LoginHelper.doLoginsMatch(formLogin, login, {
+          ignorePassword: false,
+          ignoreSchemes: LoginHelper.schemeUpgrades,
+        });
+        formLogin.username = restoreMe;
+      } else if (!formLogin.username && login.username) {
+        formLogin.username = login.username;
+        same = LoginHelper.doLoginsMatch(formLogin, login, {
+          ignorePassword: false,
+          ignoreSchemes: LoginHelper.schemeUpgrades,
+        });
+        formLogin.username = ""; 
+      } else {
+        same = LoginHelper.doLoginsMatch(formLogin, login, {
+          ignorePassword: true,
+          ignoreSchemes: LoginHelper.schemeUpgrades,
+        });
+      }
 
-        
-        
-        
-        
-        if (!login.username && formLogin.username) {
-          let restoreMe = formLogin.username;
-          formLogin.username = "";
-          same = LoginHelper.doLoginsMatch(formLogin, login, {
-            ignorePassword: false,
-            ignoreSchemes: LoginHelper.schemeUpgrades,
-          });
-          formLogin.username = restoreMe;
-        } else if (!formLogin.username && login.username) {
-          formLogin.username = login.username;
-          same = LoginHelper.doLoginsMatch(formLogin, login, {
-            ignorePassword: false,
-            ignoreSchemes: LoginHelper.schemeUpgrades,
-          });
-          formLogin.username = ""; 
-        } else {
-          same = LoginHelper.doLoginsMatch(formLogin, login, {
-            ignorePassword: true,
-            ignoreSchemes: LoginHelper.schemeUpgrades,
-          });
-        }
-
-        if (same) {
-          existingLogin = login;
-          break;
-        }
+      if (same) {
+        existingLogin = login;
+        break;
       }
     }
 
     let promptBrowser = LoginHelper.getBrowserForPrompt(browser);
-    let prompter = this._getPrompter(browser);
-
-    if (!canMatchExistingLogin) {
-      prompter.promptToChangePasswordWithUsernames(
-        promptBrowser,
-        logins,
-        formLogin
-      );
-      return;
-    }
     if (existingLogin) {
       log("Found an existing login matching this form submission");
 
       
       if (existingLogin.password != formLogin.password) {
         log("...passwords differ, prompting to change.");
+        let prompter = this._getPrompter(browser);
         prompter.promptToChangePassword(
           promptBrowser,
           existingLogin,
@@ -759,41 +758,23 @@ class LoginManagerParent extends JSWindowActorParent {
     }
 
     
+    let prompter = this._getPrompter(browser);
     prompter.promptToSavePassword(promptBrowser, formLogin, dismissedPrompt);
   }
 
-  async _onPasswordEditedOrGenerated(
-    browser,
-    {
-      origin,
-      formActionOrigin,
-      autoFilledLoginGuid,
-      newPasswordField,
-      usernameField = null,
-      oldPasswordField,
-      triggeredByFillingGenerated = false,
-    }
-  ) {
-    log(
-      "_onPasswordEditedOrGenerated, triggeredByFillingGenerated:",
-      triggeredByFillingGenerated
-    );
+  async _onGeneratedPasswordFilledOrEdited({
+    formActionOrigin,
+    password,
+    username = "",
+  }) {
+    log("_onGeneratedPasswordFilledOrEdited");
 
-    
-    if (!LoginHelper.storageEnabled) {
-      return;
+    if (gListenerForTests) {
+      gListenerForTests("PasswordFilledOrEdited", {});
     }
 
-    if (!Services.logins.getLoginSavingEnabled(origin)) {
-      
-      
-      
-      log("_onPasswordEditedOrGenerated: saving is disabled for:", origin);
-      return;
-    }
-
-    if (!newPasswordField.value) {
-      log("_onPasswordEditedOrGenerated: The password field is empty");
+    if (!password) {
+      log("_onGeneratedPasswordFilledOrEdited: The password field is empty");
       return;
     }
 
@@ -802,300 +783,203 @@ class LoginManagerParent extends JSWindowActorParent {
       return;
     }
 
-    let framePrincipalOrigin =
-      browsingContext.currentWindowGlobal.documentPrincipal.origin;
-    log(
-      "_onPasswordEditedOrGenerated: got framePrincipalOrigin: ",
-      framePrincipalOrigin
-    );
-
     let {
       originNoSuffix,
     } = browsingContext.currentWindowGlobal.documentPrincipal;
     let formOrigin = LoginHelper.getLoginOrigin(originNoSuffix);
-    if (formOrigin !== origin) {
+    if (!formOrigin) {
       log(
-        "_onPasswordEditedOrGenerated: Invalid form origin:",
+        "_onGeneratedPasswordFilledOrEdited: Invalid form origin:",
         browsingContext.currentWindowGlobal.documentPrincipal
       );
       return;
     }
 
-    let formLogin = new LoginInfo(
-      origin,
-      formActionOrigin,
-      null,
-      usernameField ? usernameField.value : "",
-      newPasswordField.value,
-      usernameField ? usernameField.name : "",
-      newPasswordField.name
-    );
-    let existingLogin = null;
-    let canMatchExistingLogin = true;
-    let shouldAutoSaveLogin = triggeredByFillingGenerated;
-    let autoSavedLogin = null;
-
-    if (autoFilledLoginGuid) {
-      let [matchedLogin] = await Services.logins.searchLoginsAsync({
-        guid: autoFilledLoginGuid,
-        origin,
-      });
-      if (
-        matchedLogin &&
-        matchedLogin.password == formLogin.password &&
-        (!formLogin.username || 
-          matchedLogin.username == formLogin.username)
-      ) {
-        log("The filled login matches the changed fields. Nothing to change.");
-        return;
-      }
+    if (!Services.logins.getLoginSavingEnabled(formOrigin)) {
+      
+      
+      
+      log(
+        "_onGeneratedPasswordFilledOrEdited: saving is disabled for:",
+        formOrigin
+      );
+      return;
     }
 
+    let framePrincipalOrigin =
+      browsingContext.currentWindowGlobal.documentPrincipal.origin;
     let generatedPW = gGeneratedPasswordsByPrincipalOrigin.get(
       framePrincipalOrigin
     );
 
-    
-    
-    let logins = await LoginManagerParent.searchAndDedupeLogins(origin, {
-      formActionOrigin,
-    });
-    
-    let formLoginWithoutUsername;
+    let shouldAutoSaveLogin = true;
+    let loginToChange = null;
+    let autoSavedLogin = null;
 
-    if (triggeredByFillingGenerated && generatedPW) {
-      log("Got cached generatedPW");
-      formLoginWithoutUsername = new LoginInfo(
-        formOrigin,
-        formActionOrigin,
-        null,
-        "",
-        newPasswordField.value
-      );
-
-      if (newPasswordField.value != generatedPW.value) {
-        
-        log("The field containing the generated password has changed");
-
-        
-        if (!generatedPW.edited) {
-          Services.telemetry.recordEvent(
-            "pwmgr",
-            "filled_field_edited",
-            "generatedpassword"
-          );
-          log("filled_field_edited telemetry event recorded");
-          generatedPW.edited = true;
-        }
-      }
+    if (password != generatedPW.value) {
+      
+      log("The field containing the generated password has changed");
 
       
-      if (!generatedPW.filled) {
-        if (generatedPW.storageGUID) {
-          throw new Error(
-            "Generated password was saved in storage without being filled first"
-          );
-        }
-        
+      if (!generatedPW.edited) {
         Services.telemetry.recordEvent(
           "pwmgr",
-          "autocomplete_field",
+          "filled_field_edited",
           "generatedpassword"
         );
-        log("autocomplete_field telemetry event recorded");
-        generatedPW.filled = true;
+        log("filled_field_edited telemetry event recorded");
+        generatedPW.edited = true;
       }
 
       
       
       if (generatedPW.storageGUID) {
-        [autoSavedLogin] = await Services.logins.searchLoginsAsync({
+        let existingLogins = await Services.logins.searchLoginsAsync({
           guid: generatedPW.storageGUID,
           origin: formOrigin,
         });
 
-        if (autoSavedLogin) {
+        if (existingLogins.length) {
           log(
-            "_onPasswordEditedOrGenerated: login to change is the auto-saved login"
+            "_onGeneratedPasswordFilledOrEdited: login to change is the auto-saved login"
           );
-          existingLogin = autoSavedLogin;
+          loginToChange = existingLogins[0];
+          autoSavedLogin = loginToChange;
         }
         
         
       }
-      generatedPW.value = newPasswordField.value;
 
-      if (!existingLogin) {
-        log(
-          "_onPasswordEditedOrGenerated: Didnt match generated-password login"
-        );
-
-        
-        
-        let matchedLogin = logins.find(login =>
-          formLoginWithoutUsername.matches(login, true)
-        );
-        if (matchedLogin) {
-          shouldAutoSaveLogin = false;
-          if (matchedLogin.password == formLoginWithoutUsername.password) {
-            
-            log("_onPasswordEditedOrGenerated: Matching login already saved");
-            return;
-          }
-          log(
-            "_onPasswordEditedOrGenerated: Login with empty username already saved for this site"
-          );
-        }
-      }
+      generatedPW.value = password;
     }
 
-    
-    
-    
-    
-    if (
-      !triggeredByFillingGenerated &&
-      !existingLogin &&
-      !usernameField &&
-      oldPasswordField &&
-      logins.length
-    ) {
-      if (logins.length == 1) {
-        existingLogin = logins[0];
+    let formLogin = new LoginInfo(
+      formOrigin,
+      formActionOrigin,
+      null,
+      username,
+      generatedPW.value
+    );
 
-        if (existingLogin.password == formLogin.password) {
+    let formLoginWithoutUsername = new LoginInfo(
+      formOrigin,
+      formActionOrigin,
+      null,
+      "",
+      generatedPW.value
+    );
+
+    
+    if (!generatedPW.filled) {
+      if (generatedPW.storageGUID) {
+        throw new Error(
+          "Generated password was saved in storage without being filled first"
+        );
+      }
+      
+      Services.telemetry.recordEvent(
+        "pwmgr",
+        "autocomplete_field",
+        "generatedpassword"
+      );
+      log("autocomplete_field telemetry event recorded");
+      generatedPW.filled = true;
+    }
+
+    if (!loginToChange) {
+      
+      
+      
+      let logins = await LoginManagerParent.searchAndDedupeLogins(formOrigin, {
+        acceptDifferentSubdomains: false,
+        httpRealm: null,
+        ignoreActionAndRealm: false,
+      });
+
+      let matchedLogin = logins.find(login =>
+        formLoginWithoutUsername.matches(login, true)
+      );
+      if (matchedLogin) {
+        shouldAutoSaveLogin = false;
+        if (matchedLogin.password == formLoginWithoutUsername.password) {
+          
           log(
-            "(Not prompting to save/change since we have no username and the " +
-              "only saved password matches the new password)"
+            "_onGeneratedPasswordFilledOrEdited: Matching login already saved"
           );
           return;
         }
-
-        formLogin.username = existingLogin.username;
-        formLogin.usernameField = existingLogin.usernameField;
-      } else if (!generatedPW || generatedPW.value != newPasswordField.value) {
-        
-        
-        
-        canMatchExistingLogin = false;
+        log(
+          "_onGeneratedPasswordFilledOrEdited: Login with empty username already saved for this site"
+        );
       }
-    }
 
-    if (canMatchExistingLogin && !existingLogin) {
-      
-      for (let login of logins) {
-        let same;
-
+      if (
+        (matchedLogin = logins.find(login => formLogin.matches(login, true)))
+      ) {
         
-        
-        
-        
-        if (!login.username && formLogin.username) {
-          let restoreMe = formLogin.username;
-          formLogin.username = "";
-          same = LoginHelper.doLoginsMatch(formLogin, login, {
-            ignorePassword: false,
-            ignoreSchemes: LoginHelper.schemeUpgrades,
-          });
-          formLogin.username = restoreMe;
-        } else if (!formLogin.username && login.username) {
-          formLogin.username = login.username;
-          same = LoginHelper.doLoginsMatch(formLogin, login, {
-            ignorePassword: false,
-            ignoreSchemes: LoginHelper.schemeUpgrades,
-          });
-          formLogin.username = ""; 
-        } else {
-          same = LoginHelper.doLoginsMatch(formLogin, login, {
-            ignorePassword: true,
-            ignoreSchemes: LoginHelper.schemeUpgrades,
-          });
-        }
-
-        if (same) {
-          existingLogin = login;
-          log("_onPasswordEditedOrGenerated: matched saved login");
-          break;
-        }
+        loginToChange = matchedLogin;
       }
     }
 
     if (shouldAutoSaveLogin) {
-      if (existingLogin && existingLogin == autoSavedLogin) {
+      if (loginToChange && loginToChange == autoSavedLogin) {
         log(
-          "_onPasswordEditedOrGenerated: updating auto-saved login with changed password"
+          "_onGeneratedPasswordFilledOrEdited: updating auto-saved login with changed password"
         );
 
         Services.logins.modifyLogin(
-          existingLogin,
+          loginToChange,
           LoginHelper.newPropertyBag({
-            password: formLogin.password,
+            password,
           })
         );
         
         
-        existingLogin.password = formLogin.password;
+        loginToChange.password = password;
       } else {
         log(
-          "_onPasswordEditedOrGenerated: auto-saving new login with empty username"
+          "_onGeneratedPasswordFilledOrEdited: auto-saving new login with empty username"
         );
-        existingLogin = Services.logins.addLogin(formLoginWithoutUsername);
+        loginToChange = Services.logins.addLogin(formLoginWithoutUsername);
         
         
-        generatedPW.storageGUID = existingLogin.guid;
+        generatedPW.storageGUID = loginToChange.guid;
       }
     } else {
-      log("_onPasswordEditedOrGenerated: not auto-saving this login");
+      log(
+        "_onGeneratedPasswordFilledOrEdited: not auto-saving/updating this login"
+      );
     }
-
+    let browser = this.getRootBrowser();
     let prompter = this._getPrompter(browser);
     let promptBrowser = LoginHelper.getBrowserForPrompt(browser);
 
-    if (existingLogin) {
+    if (loginToChange) {
       
       
       let autoSavedStorageGUID = "";
       if (
-        generatedPW &&
-        generatedPW.value == existingLogin.password &&
-        generatedPW.storageGUID == existingLogin.guid
+        generatedPW.value == loginToChange.password &&
+        generatedPW.storageGUID == loginToChange.guid
       ) {
         autoSavedStorageGUID = generatedPW.storageGUID;
       }
 
-      
-      if (
-        (shouldAutoSaveLogin && !formLogin.username) ||
-        existingLogin.password != formLogin.password
-      ) {
-        log(
-          "_onPasswordEditedOrGenerated: promptToChangePassword with autoSavedStorageGUID: " +
-            autoSavedStorageGUID
-        );
-        prompter.promptToChangePassword(
-          promptBrowser,
-          existingLogin,
-          formLogin,
-          true, 
-          shouldAutoSaveLogin, 
-          autoSavedStorageGUID 
-        );
-      } else if (!existingLogin.username && formLogin.username) {
-        log("...empty username update, prompting to change.");
-        prompter.promptToChangePassword(
-          promptBrowser,
-          existingLogin,
-          formLogin,
-          true, 
-          shouldAutoSaveLogin, 
-          autoSavedStorageGUID 
-        );
-      } else {
-        log("_onPasswordEditedOrGenerated: No change to existing login");
-      }
+      log(
+        "_onGeneratedPasswordFilledOrEdited: promptToChangePassword with autoSavedStorageGUID: " +
+          autoSavedStorageGUID
+      );
+      prompter.promptToChangePassword(
+        promptBrowser,
+        loginToChange,
+        formLogin,
+        true, 
+        shouldAutoSaveLogin, 
+        autoSavedStorageGUID 
+      );
       return;
     }
-    log("_onPasswordEditedOrGenerated: no matching login to save/update");
+    log("_onGeneratedPasswordFilledOrEdited: no matching login to save/update");
     prompter.promptToSavePassword(
       promptBrowser,
       formLogin,
