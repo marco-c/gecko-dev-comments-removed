@@ -48,9 +48,9 @@ class FT2FontEntry : public gfxFT2FontEntryBase {
   
   
   
-  
-  static FT2FontEntry* CreateFontEntry(FT_Face, const char* aFilename,
-                                       uint8_t aIndex, const nsACString& aName);
+  static FT2FontEntry* CreateFontEntry(const nsACString& aName,
+                                       const char* aFilename, uint8_t aIndex,
+                                       const hb_face_t* aFace);
 
   gfxFont* CreateFontInstance(const gfxFontStyle* aStyle) override;
 
@@ -157,6 +157,10 @@ class gfxFT2FontList : public gfxPlatformFontList {
   void AppendFaceFromFontListEntry(const FontListEntry& aFLE,
                                    StandardFile aStdFile);
 
+  void AppendFacesFromBlob(const nsCString& aFileName, StandardFile aStdFile,
+                           hb_blob_t* aBlob, FontNameCache* aCache,
+                           uint32_t aTimestamp, uint32_t aFilesize);
+
   void AppendFacesFromFontFile(const nsCString& aFileName,
                                FontNameCache* aCache, StandardFile aStdFile);
 
@@ -191,7 +195,7 @@ class gfxFT2FontList : public gfxPlatformFontList {
                                      StandardFile aStdFile);
 
   void AddFaceToList(const nsCString& aEntryName, uint32_t aIndex,
-                     StandardFile aStdFile, FT_Face aFace,
+                     StandardFile aStdFile, hb_face_t* aFace,
                      nsCString& aFaceList);
 
   void FindFonts();

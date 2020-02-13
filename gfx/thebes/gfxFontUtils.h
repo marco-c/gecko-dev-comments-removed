@@ -644,6 +644,15 @@ struct SFNTHeader {
   AutoSwap_PRUint16 rangeShift;     
 };
 
+struct TTCHeader {
+  AutoSwap_PRUint32 ttcTag;  
+  AutoSwap_PRUint16 majorVersion;
+  AutoSwap_PRUint16 minorVersion;
+  AutoSwap_PRUint32 numFonts;
+  
+  
+};
+
 struct TableDirEntry {
   AutoSwap_PRUint32 tag;       
   AutoSwap_PRUint32 checkSum;  

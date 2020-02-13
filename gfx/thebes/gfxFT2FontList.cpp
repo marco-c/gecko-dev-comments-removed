@@ -33,6 +33,7 @@
 #include "gfxUserFontSet.h"
 #include "gfxFontUtils.h"
 #include "SharedFontList-impl.h"
+#include "harfbuzz/hb-ot.h"  
 
 #include "nsServiceManagerUtils.h"
 #include "nsIObserverService.h"
@@ -226,7 +227,7 @@ FT2FontEntry* FT2FontEntry::CreateFontEntry(
   
   
   FT2FontEntry* fe =
-      FT2FontEntry::CreateFontEntry(face->GetFace(), nullptr, 0, aFontName);
+      FT2FontEntry::CreateFontEntry(aFontName, nullptr, 0, nullptr);
   if (fe) {
     fe->mFTFace = face;
     fe->mStyleRange = aStyle;
@@ -249,37 +250,53 @@ FT2FontEntry* FT2FontEntry::CreateFontEntry(const FontListEntry& aFLE) {
 }
 
 
-static bool FTFaceIsItalic(FT_Face aFace) {
-  return !!(aFace->style_flags & FT_STYLE_FLAG_ITALIC);
-}
+static void SetPropertiesFromFace(gfxFontEntry* aFontEntry,
+                                  const hb_face_t* aFace) {
+  
+  
+  const float kOS2WidthToStretch[] = {
+      100,    
+      50,     
+      62.5,   
+      75,     
+      87.5,   
+      100,    
+      112.5,  
+      125,    
+      150,    
+      200     
+  };
 
-static FontWeight FTFaceGetWeight(FT_Face aFace) {
-  TT_OS2* os2 = static_cast<TT_OS2*>(FT_Get_Sfnt_Table(aFace, ft_sfnt_os2));
-  uint16_t os2weight = 0;
-  if (os2 && os2->version != 0xffff) {
-    
-    
-    
-    
-    if (os2->usWeightClass >= 100 && os2->usWeightClass <= 900) {
-      os2weight = os2->usWeightClass;
-    } else if (os2->usWeightClass >= 1 && os2->usWeightClass <= 9) {
-      os2weight = os2->usWeightClass * 100;
+  
+  hb_blob_t* blob = hb_face_reference_table(aFace, HB_TAG('h', 'e', 'a', 'd'));
+  unsigned int len;
+  const char* data = hb_blob_get_data(blob, &len);
+  uint16_t style = 0;
+  if (len >= sizeof(HeadTable)) {
+    const HeadTable* head = reinterpret_cast<const HeadTable*>(data);
+    style = head->macStyle;
+  }
+  hb_blob_destroy(blob);
+
+  
+  blob = hb_face_reference_table(aFace, HB_TAG('O', 'S', '/', '2'));
+  data = hb_blob_get_data(blob, &len);
+  uint16_t os2weight = 400;
+  float stretch = 100.0;
+  if (len >= offsetof(OS2Table, fsType)) {
+    const OS2Table* os2 = reinterpret_cast<const OS2Table*>(data);
+    os2weight = os2->usWeightClass;
+    uint16_t os2width = os2->usWidthClass;
+    if (os2width < ArrayLength(kOS2WidthToStretch)) {
+      stretch = kOS2WidthToStretch[os2width];
     }
   }
+  hb_blob_destroy(blob);
 
-  uint16_t result;
-  if (os2weight != 0) {
-    result = os2weight;
-  } else if (aFace->style_flags & FT_STYLE_FLAG_BOLD) {
-    result = 700;
-  } else {
-    result = 400;
-  }
-
-  NS_ASSERTION(result >= 100 && result <= 900, "Invalid weight in font!");
-
-  return FontWeight(int(result));
+  aFontEntry->mStyleRange = SlantStyleRange(
+      (style & 2) ? FontSlantStyle::Italic() : FontSlantStyle::Normal());
+  aFontEntry->mWeightRange = WeightRange(FontWeight(int(os2weight)));
+  aFontEntry->mStretchRange = StretchRange(FontStretch(stretch));
 }
 
 
@@ -287,37 +304,25 @@ static FontWeight FTFaceGetWeight(FT_Face aFace) {
 
 
 
-
-
-
-FT2FontEntry* FT2FontEntry::CreateFontEntry(FT_Face aFace,
+FT2FontEntry* FT2FontEntry::CreateFontEntry(const nsACString& aName,
                                             const char* aFilename,
                                             uint8_t aIndex,
-                                            const nsACString& aName) {
+                                            const hb_face_t* aFace) {
   FT2FontEntry* fe = new FT2FontEntry(aName);
-  fe->mStyleRange =
-      SlantStyleRange(FTFaceIsItalic(aFace) ? FontSlantStyle::Italic()
-                                            : FontSlantStyle::Normal());
-  fe->mWeightRange = WeightRange(FTFaceGetWeight(aFace));
   fe->mFilename = aFilename;
   fe->mFTFontIndex = aIndex;
 
+  if (aFace) {
+    SetPropertiesFromFace(fe, aFace);
+  } else {
+    
+    
+    fe->mStyleRange = SlantStyleRange(FontSlantStyle::Normal());
+    fe->mWeightRange = WeightRange(FontWeight::Normal());
+    fe->mStretchRange = StretchRange(FontStretch::Normal());
+  }
+
   return fe;
-}
-
-
-
-static FT2FontEntry* CreateNamedFontEntry(FT_Face aFace, const char* aFilename,
-                                          uint8_t aIndex) {
-  if (!aFace->family_name) {
-    return nullptr;
-  }
-  nsAutoCString fontName(aFace->family_name);
-  if (aFace->style_name && strcmp("Regular", aFace->style_name)) {
-    fontName.Append(' ');
-    fontName.Append(aFace->style_name);
-  }
-  return FT2FontEntry::CreateFontEntry(aFace, aFilename, aIndex, fontName);
 }
 
 FT2FontEntry* gfxFT2Font::GetFontEntry() {
@@ -485,17 +490,16 @@ hb_blob_t* FT2FontEntry::GetFontTable(uint32_t aTableTag) {
 }
 
 bool FT2FontEntry::HasVariations() {
-  if (mHasVariationsInitialized) {
-    return mHasVariations;
+  if (!mHasVariationsInitialized) {
+    mHasVariationsInitialized = true;
+    if (mFTFace) {
+      mHasVariations =
+          mFTFace->GetFace()->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS;
+    } else {
+      mHasVariations = gfxPlatform::GetPlatform()->HasVariationFontSupport() &&
+                       HasFontTable(TRUETYPE_TAG('f', 'v', 'a', 'r'));
+    }
   }
-  mHasVariationsInitialized = true;
-
-  RefPtr<SharedFTFace> face = GetFTFace();
-  if (face) {
-    mHasVariations =
-        face->GetFace()->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS;
-  }
-
   return mHasVariations;
 }
 
@@ -1057,6 +1061,32 @@ void FT2FontEntry::CheckForBrokenFont(const nsACString& aFamilyKey) {
   }
 }
 
+void gfxFT2FontList::AppendFacesFromBlob(
+    const nsCString& aFileName, StandardFile aStdFile, hb_blob_t* aBlob,
+    FontNameCache* aCache, uint32_t aTimestamp, uint32_t aFilesize) {
+  nsCString newFaceList;
+  uint32_t numFaces = 1;
+  unsigned int length;
+  const char* data = hb_blob_get_data(aBlob, &length);
+  
+  if (length >= sizeof(TTCHeader)) {
+    const TTCHeader* ttc = reinterpret_cast<const TTCHeader*>(data);
+    if (ttc->ttcTag == TRUETYPE_TAG('t', 't', 'c', 'f')) {
+      numFaces = ttc->numFonts;
+    }
+  }
+  for (unsigned int index = 0; index < numFaces; index++) {
+    hb_face_t* face = hb_face_create(aBlob, index);
+    if (face != hb_face_get_empty()) {
+      AddFaceToList(aFileName, index, aStdFile, face, newFaceList);
+    }
+    hb_face_destroy(face);
+  }
+  if (aCache && !newFaceList.IsEmpty()) {
+    aCache->CacheFileInfo(aFileName, newFaceList, aTimestamp, aFilesize);
+  }
+}
+
 void gfxFT2FontList::AppendFacesFromFontFile(const nsCString& aFileName,
                                              FontNameCache* aCache,
                                              StandardFile aStdFile) {
@@ -1086,25 +1116,14 @@ void gfxFT2FontList::AppendFacesFromFontFile(const nsCString& aFileName,
     }
   }
 
-  FT_Face dummy = Factory::NewFTFace(nullptr, aFileName.get(), -1);
-  if (dummy) {
-    LOG(("reading font info via FreeType for %s", aFileName.get()));
-    nsCString newFaceList;
-    timestamp = s.st_mtime;
-    filesize = s.st_size;
-    for (FT_Long i = 0; i < dummy->num_faces; i++) {
-      FT_Face face = Factory::NewFTFace(nullptr, aFileName.get(), i);
-      if (!face) {
-        continue;
-      }
-      AddFaceToList(aFileName, i, aStdFile, face, newFaceList);
-      Factory::ReleaseFTFace(face);
-    }
-    Factory::ReleaseFTFace(dummy);
-    if (aCache && 0 == statRetval && !newFaceList.IsEmpty()) {
-      aCache->CacheFileInfo(aFileName, newFaceList, timestamp, filesize);
-    }
+  hb_blob_t* fileBlob = hb_blob_create_from_file(aFileName.get());
+  if (hb_blob_get_length(fileBlob) > 0) {
+    LOG(("reading font info via harfbuzz for %s", aFileName.get()));
+    AppendFacesFromBlob(aFileName, aStdFile, fileBlob,
+                        0 == statRetval ? aCache : nullptr, s.st_mtime,
+                        s.st_size);
   }
+  hb_blob_destroy(fileBlob);
 }
 
 void gfxFT2FontList::FindFontsInOmnijar(FontNameCache* aCache) {
@@ -1143,15 +1162,49 @@ void gfxFT2FontList::FindFontsInOmnijar(FontNameCache* aCache) {
   }
 }
 
+static void GetName(hb_face_t* aFace, hb_ot_name_id_t aNameID,
+                    nsACString& aName) {
+  unsigned int n = 0;
+  n = hb_ot_name_get_utf8(aFace, aNameID, HB_LANGUAGE_INVALID, &n, nullptr);
+  if (n) {
+    aName.SetLength(n++);  
+    n = hb_ot_name_get_utf8(aFace, aNameID, HB_LANGUAGE_INVALID, &n,
+                            aName.BeginWriting());
+  }
+}
+
 
 
 void gfxFT2FontList::AddFaceToList(const nsCString& aEntryName, uint32_t aIndex,
-                                   StandardFile aStdFile, FT_Face aFace,
+                                   StandardFile aStdFile, hb_face_t* aFace,
                                    nsCString& aFaceList) {
-  if (FT_Err_Ok != FT_Select_Charmap(aFace, FT_ENCODING_UNICODE) &&
-      FT_Err_Ok != FT_Select_Charmap(aFace, FT_ENCODING_MS_SYMBOL)) {
-    
+  nsAutoCString familyName;
+  bool preferTypographicNames = true;
+  GetName(aFace, HB_OT_NAME_ID_TYPOGRAPHIC_FAMILY, familyName);
+  if (familyName.IsEmpty()) {
+    preferTypographicNames = false;
+    GetName(aFace, HB_OT_NAME_ID_FONT_FAMILY, familyName);
+  }
+  if (familyName.IsEmpty()) {
     return;
+  }
+
+  nsAutoCString fullname;
+  GetName(aFace, HB_OT_NAME_ID_FULL_NAME, fullname);
+  if (fullname.IsEmpty()) {
+    
+    fullname = familyName;
+    nsAutoCString styleName;
+    if (preferTypographicNames) {
+      GetName(aFace, HB_OT_NAME_ID_TYPOGRAPHIC_SUBFAMILY, styleName);
+    }
+    if (styleName.IsEmpty()) {
+      GetName(aFace, HB_OT_NAME_ID_FONT_SUBFAMILY, styleName);
+    }
+    if (!styleName.IsEmpty() && !styleName.EqualsLiteral("Regular")) {
+      fullname.Append(' ');
+      fullname.Append(styleName);
+    }
   }
 
   
@@ -1159,24 +1212,15 @@ void gfxFT2FontList::AddFaceToList(const nsCString& aEntryName, uint32_t aIndex,
   
   
   RefPtr<FT2FontEntry> fe =
-      CreateNamedFontEntry(aFace, aEntryName.get(), aIndex);
+      FT2FontEntry::CreateFontEntry(fullname, aEntryName.get(), aIndex, aFace);
 
   if (fe) {
     fe->mStandardFace = (aStdFile == kStandard);
-    nsAutoCString familyName(aFace->family_name);
     nsAutoCString familyKey(familyName);
     BuildKeyNameFromFontName(familyKey);
 
-    
-    
-    nsAutoCString psname(FT_Get_Postscript_Name(aFace));
-
-    
-    nsAutoCString fullname(familyName);
-    if (strcmp(aFace->style_name, "Regular")) {
-      fullname.Append(' ');
-      fullname.Append(aFace->style_name);
-    }
+    nsAutoCString psname;
+    GetName(aFace, HB_OT_NAME_ID_POSTSCRIPT_NAME, psname);
 
     if (SharedFontList()) {
       FontListEntry fle(familyName, fe->Name(), fe->mFilename,
@@ -1246,40 +1290,25 @@ void gfxFT2FontList::AppendFacesFromOmnijarEntry(nsZipArchive* aArchive,
   NS_ASSERTION(item, "failed to find zip entry");
 
   uint32_t bufSize = item->RealSize();
+
   
   
-  auto buf = MakeUniqueFallible<uint8_t[]>(bufSize);
-  if (!buf) {
+  char* buffer = static_cast<char*>(malloc(bufSize));
+  if (!buffer) {
     return;
   }
 
-  nsZipCursor cursor(item, aArchive, buf.get(), bufSize);
+  nsZipCursor cursor(item, aArchive, (uint8_t*)buffer, bufSize);
   uint8_t* data = cursor.Copy(&bufSize);
-  NS_ASSERTION(data && bufSize == item->RealSize(),
-               "error reading bundled font");
+  MOZ_ASSERT(data && bufSize == item->RealSize(), "error reading bundled font");
   if (!data) {
     return;
   }
 
-  FT_Face dummy = Factory::NewFTFaceFromData(nullptr, buf.get(), bufSize, -1);
-  if (!dummy) {
-    return;
-  }
-
-  for (FT_Long i = 0; i < dummy->num_faces; i++) {
-    FT_Face face = Factory::NewFTFaceFromData(nullptr, buf.get(), bufSize, i);
-    if (!face) {
-      continue;
-    }
-    AddFaceToList(aEntryName, i, kStandard, face, faceList);
-    Factory::ReleaseFTFace(face);
-  }
-
-  Factory::ReleaseFTFace(dummy);
-
-  if (aCache && !faceList.IsEmpty()) {
-    aCache->CacheFileInfo(aEntryName, faceList, 0, bufSize);
-  }
+  hb_blob_t* blob =
+      hb_blob_create(buffer, bufSize, HB_MEMORY_MODE_READONLY, buffer, free);
+  AppendFacesFromBlob(aEntryName, kStandard, blob, aCache, 0, bufSize);
+  hb_blob_destroy(blob);
 }
 
 
@@ -1628,9 +1657,9 @@ searchDone:
     return nullptr;
   }
 
-  FT2FontEntry* fe =
-      FT2FontEntry::CreateFontEntry(face->GetFace(), fontEntry->mFilename.get(),
-                                    fontEntry->mFTFontIndex, fontEntry->Name());
+  FT2FontEntry* fe = FT2FontEntry::CreateFontEntry(
+      fontEntry->Name(), fontEntry->mFilename.get(), fontEntry->mFTFontIndex,
+      nullptr);
   if (fe) {
     fe->mStyleRange = aStyleForEntry;
     fe->mWeightRange = aWeightForEntry;
