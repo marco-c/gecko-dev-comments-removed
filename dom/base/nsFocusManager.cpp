@@ -3491,19 +3491,19 @@ nsresult nsFocusManager::GetNextTabbableContent(
             NS_ADDREF(*aResultContent = contentToFocus);
             return NS_OK;
           }
+          
+          if (aOriginalStartContent &&
+              currentTopLevelScopeOwner ==
+                  GetTopLevelScopeOwner(aOriginalStartContent)) {
+            
+            
+            NS_ADDREF(*aResultContent = aOriginalStartContent);
+            return NS_OK;
+          }
         }
         
         
         
-        
-        if (aOriginalStartContent &&
-            currentTopLevelScopeOwner ==
-                GetTopLevelScopeOwner(aOriginalStartContent)) {
-          
-          
-          NS_ADDREF(*aResultContent = aOriginalStartContent);
-          return NS_OK;
-        }
         continue;
       }
 
