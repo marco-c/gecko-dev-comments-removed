@@ -419,6 +419,12 @@ static int32_t BlacklistFeatureStatusToGfxFeatureStatus(
     return nsIGfxInfo::FEATURE_DISCOURAGED;
   else if (aStatus.EqualsLiteral("BLOCKED_OS_VERSION"))
     return nsIGfxInfo::FEATURE_BLOCKED_OS_VERSION;
+  else if (aStatus.EqualsLiteral("DENIED"))
+    return nsIGfxInfo::FEATURE_DENIED;
+  else if (aStatus.EqualsLiteral("ALLOW_QUALIFIED"))
+    return nsIGfxInfo::FEATURE_ALLOW_QUALIFIED;
+  else if (aStatus.EqualsLiteral("ALLOW_ALWAYS"))
+    return nsIGfxInfo::FEATURE_ALLOW_ALWAYS;
 
   
   
@@ -704,6 +710,16 @@ void GfxInfoBase::GetAllFeatures(dom::XPCOMInitData& xpcomInit) {
   }
 }
 
+inline bool MatchingAllowStatus(int32_t aStatus) {
+  switch (aStatus) {
+    case nsIGfxInfo::FEATURE_ALLOW_ALWAYS:
+    case nsIGfxInfo::FEATURE_ALLOW_QUALIFIED:
+      return true;
+    default:
+      return false;
+  }
+}
+
 
 
 
@@ -743,7 +759,8 @@ inline bool MatchingOperatingSystems(OperatingSystem aBlockedOS,
 
 int32_t GfxInfoBase::FindBlocklistedDeviceInList(
     const nsTArray<GfxDriverInfo>& info, nsAString& aSuggestedVersion,
-    int32_t aFeature, nsACString& aFailureId, OperatingSystem os) {
+    int32_t aFeature, nsACString& aFailureId, OperatingSystem os,
+    bool aForAllowing) {
   int32_t status = nsIGfxInfo::FEATURE_STATUS_UNKNOWN;
 
   
@@ -793,6 +810,12 @@ int32_t GfxInfoBase::FindBlocklistedDeviceInList(
 
   uint32_t i = 0;
   for (; i < info.Length(); i++) {
+    
+    
+    if (MatchingAllowStatus(info[i].mFeatureStatus) != aForAllowing) {
+      continue;
+    }
+
     
     
     
@@ -1015,6 +1038,8 @@ bool GfxInfoBase::DoesDriverVendorMatch(const nsAString& aBlocklistVendor,
              nsCaseInsensitiveStringComparator());
 }
 
+bool GfxInfoBase::IsFeatureAllowlisted(int32_t aFeature) const { return false; }
+
 nsresult GfxInfoBase::GetFeatureStatusImpl(
     int32_t aFeature, int32_t* aStatus, nsAString& aSuggestedVersion,
     const nsTArray<GfxDriverInfo>& aDriverInfo, nsACString& aFailureId,
@@ -1058,23 +1083,45 @@ nsresult GfxInfoBase::GetFeatureStatusImpl(
   
   int32_t status;
   if (aDriverInfo.Length()) {
-    status = FindBlocklistedDeviceInList(aDriverInfo, aSuggestedVersion,
-                                         aFeature, aFailureId, os);
+    status =
+        FindBlocklistedDeviceInList(aDriverInfo, aSuggestedVersion, aFeature,
+                                    aFailureId, os,  false);
   } else {
     if (!sDriverInfo) {
       sDriverInfo = new nsTArray<GfxDriverInfo>();
     }
     status = FindBlocklistedDeviceInList(GetGfxDriverInfo(), aSuggestedVersion,
-                                         aFeature, aFailureId, os);
+                                         aFeature, aFailureId, os,
+                                          false);
   }
 
-  
   if (status == nsIGfxInfo::FEATURE_STATUS_UNKNOWN) {
-    *aStatus = nsIGfxInfo::FEATURE_STATUS_OK;
-  } else {
-    *aStatus = status;
+    if (IsFeatureAllowlisted(aFeature)) {
+      
+      
+      
+      
+      if (aDriverInfo.Length()) {
+        status = FindBlocklistedDeviceInList(aDriverInfo, aSuggestedVersion,
+                                             aFeature, aFailureId, os,
+                                              true);
+      } else {
+        status = FindBlocklistedDeviceInList(
+            GetGfxDriverInfo(), aSuggestedVersion, aFeature, aFailureId, os,
+             true);
+      }
+
+      if (status == nsIGfxInfo::FEATURE_STATUS_UNKNOWN) {
+        status = nsIGfxInfo::FEATURE_DENIED;
+      }
+    } else {
+      
+      
+      status = nsIGfxInfo::FEATURE_STATUS_OK;
+    }
   }
 
+  *aStatus = status;
   return NS_OK;
 }
 
