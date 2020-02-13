@@ -21,7 +21,7 @@ function testAudioNodeOptions(should, context, nodeName, expectedNodeOptions) {
               channelCount: testChannelCount
             }));
       },
-      'new ' + nodeName + '(c, {channelCount: ' + testChannelCount + '}}')
+      'new ' + nodeName + '(c, {channelCount: ' + testChannelCount + '})')
       .notThrow();
   should(node.channelCount, 'node.channelCount').beEqualTo(testChannelCount);
 
@@ -39,9 +39,22 @@ function testAudioNodeOptions(should, context, nodeName, expectedNodeOptions) {
                   {}, expectedNodeOptions.additionalOptions,
                   {channelCount: testChannelCount}));
         },
-        'new ' + nodeName + '(c, {channelCount: ' + testChannelCount + '}}')
+        'new ' + nodeName + '(c, {channelCount: ' + testChannelCount + '})')
         .throw(DOMException,
                expectedNodeOptions.channelCount.exceptionType);
+    
+    testChannelCount = expectedNodeOptions.channelCount.value;
+    should(
+        () => {
+          node = new window[nodeName](
+              context,
+              Object.assign(
+                  {}, expectedNodeOptions.additionalOptions,
+                  {channelCount: testChannelCount}));
+          node.channelCount = testChannelCount;
+        },
+        '(new ' + nodeName + '(c, {channelCount: ' + testChannelCount + '})).channelCount = ' + testChannelCount)
+        .notThrow();
   } else {
     
     
@@ -90,6 +103,19 @@ function testAudioNodeOptions(should, context, nodeName, expectedNodeOptions) {
             `new ${nodeName}(c, {channelCountMode: "${testValue}"})`)
             .throw(DOMException,
                    expectedNodeOptions.channelCountMode.exceptionType);
+      } else {
+        
+        should(
+            () => {
+              node = new window[nodeName](
+                  context,
+                  Object.assign(
+                      {}, expectedNodeOptions.additionalOptions,
+                      {channelCountMode: testValue}));
+              node.channelCountMode = testValue;
+            },
+            `(new ${nodeName}(c, {channelCountMode: "${testValue}"})).channelCountMode = "${testValue}"`)
+            .notThrow();
       }
     });
   } else {
@@ -143,6 +169,19 @@ function testAudioNodeOptions(should, context, nodeName, expectedNodeOptions) {
             `new ${nodeName}(c, {channelInterpretation: "${testValue}"})`)
             .throw(DOMException,
                    expectedNodeOptions.channelCountMode.exceptionType);
+      } else {
+        
+        should(
+            () => {
+              node = new window[nodeName](
+                  context,
+                  Object.assign(
+                      {}, expectedNodeOptions.additionOptions,
+                      {channelInterpretation: testValue}));
+              node.channelInterpretation = testValue;
+            },
+            `(new ${nodeName}(c, {channelInterpretation: "${testValue}"})).channelInterpretation = "${testValue}"`)
+            .notThrow();
       }
     });
   } else {
