@@ -316,10 +316,10 @@ bool CallerGetterImpl(JSContext* cx, const CallArgs& args) {
     MOZ_ASSERT(!callerFun->isBuiltin(),
                "non-builtin iterator returned a builtin?");
 
-    if (callerFun->strict()) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_CALLER_IS_STRICT);
-      return false;
+    if (callerFun->strict() || callerFun->isAsync() ||
+        callerFun->isGenerator()) {
+      args.rval().setNull();
+      return true;
     }
   }
 
@@ -803,19 +803,13 @@ inline void JSFunction::trace(JSTracer* trc) {
     
     if (isIncomplete()) {
       MOZ_ASSERT(u.scripted.s.script_ == nullptr);
-    } else if (hasScript()) {
-      JSScript* script = static_cast<JSScript*>(u.scripted.s.script_);
+    } else if (hasBaseScript()) {
+      BaseScript* script = u.scripted.s.script_;
       TraceManuallyBarrieredEdge(trc, &script, "script");
       
       
       if (u.scripted.s.script_ != script) {
         u.scripted.s.script_ = script;
-      }
-    } else if (hasLazyScript()) {
-      LazyScript* lazy = static_cast<LazyScript*>(u.scripted.s.script_);
-      TraceManuallyBarrieredEdge(trc, &lazy, "lazy");
-      if (u.scripted.s.script_ != lazy) {
-        u.scripted.s.script_ = lazy;
       }
     }
     

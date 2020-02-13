@@ -2526,6 +2526,8 @@ setterLevel:                                                                  \
   friend class GCMarker;
   friend void js::gc::SweepLazyScripts(GCParallelTask* task);
 
+  static const JS::TraceKind TraceKind = JS::TraceKind::Script;
+
   void traceChildren(JSTracer* trc);
   void finalize(JSFreeOp* fop);
 
@@ -3202,8 +3204,6 @@ class JSScript : public js::BaseScript {
   
   inline bool isDebuggee() const;
 
-  static const JS::TraceKind TraceKind = JS::TraceKind::Script;
-
   
   
   class AutoDelazify;
@@ -3394,8 +3394,6 @@ class LazyScript : public BaseScript {
   bool enclosingScriptHasEverBeenCompiled() const {
     return warmUpData_.isEnclosingScope();
   }
-
-  static const JS::TraceKind TraceKind = JS::TraceKind::LazyScript;
 };
 
 
@@ -3482,24 +3480,12 @@ JSScript* CloneGlobalScript(JSContext* cx, ScopeKind scopeKind,
 
 namespace JS {
 namespace ubi {
+
 template <>
-class Concrete<js::LazyScript> : TracerConcrete<js::LazyScript> {
- protected:
-  explicit Concrete(js::LazyScript* ptr)
-      : TracerConcrete<js::LazyScript>(ptr) {}
+class Concrete<JSScript> : public Concrete<js::BaseScript> {};
+template <>
+class Concrete<js::LazyScript> : public Concrete<js::BaseScript> {};
 
- public:
-  static void construct(void* storage, js::LazyScript* ptr) {
-    new (storage) Concrete(ptr);
-  }
-
-  CoarseType coarseType() const final { return CoarseType::Script; }
-  Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
-  const char* scriptFilename() const final;
-
-  const char16_t* typeName() const override { return concreteTypeName; }
-  static const char16_t concreteTypeName[];
-};
 }  
 }  
 
