@@ -193,7 +193,6 @@ public class GeckoSessionTestRule implements TestRule {
             DISPLAY_MODE,
             ALLOW_JAVASCRIPT,
             SCREEN_ID,
-            USE_MULTIPROCESS,
             USE_PRIVATE_MODE,
             USE_TRACKING_PROTECTION,
             FULL_ACCESSIBILITY_TREE;
@@ -760,7 +759,6 @@ public class GeckoSessionTestRule implements TestRule {
 
     public GeckoSessionTestRule() {
         mDefaultSettings = new GeckoSessionSettings.Builder()
-                .useMultiprocess(env.isMultiprocess())
                 .build();
     }
 
