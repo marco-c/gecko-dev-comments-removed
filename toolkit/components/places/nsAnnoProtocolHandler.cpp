@@ -275,7 +275,7 @@ nsresult nsAnnoProtocolHandler::NewFaviconChannel(nsIURI* aURI,
           rv = chan->AsyncOpen(listener);
           NS_ENSURE_SUCCESS(rv, Err(rv));
 
-          return RequestOrReason(chan.forget());
+          return RequestOrReason(std::move(chan));
         };
 
         

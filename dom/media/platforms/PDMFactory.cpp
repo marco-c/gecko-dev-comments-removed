@@ -294,7 +294,7 @@ already_AddRefed<MediaDataDecoder> PDMFactory::CreateDecoderWithPDM(
       
       
       
-      m = h.forget();
+      m = std::move(h);
     } else if (aParams.mError) {
       *aParams.mError = result;
     }

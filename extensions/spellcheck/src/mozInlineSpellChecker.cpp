@@ -567,7 +567,7 @@ nsresult mozInlineSpellChecker::Cleanup(bool aDestroyingFrames) {
   
   
 
-  RefPtr<TextEditor> textEditor = mTextEditor.forget();
+  RefPtr<TextEditor> textEditor = std::move(mTextEditor);
   if (mPendingSpellCheck) {
     
     mPendingSpellCheck = nullptr;

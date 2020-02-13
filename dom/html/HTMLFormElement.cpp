@@ -1674,7 +1674,7 @@ nsresult HTMLFormElement::GetActionURL(nsIURI** aActionURL,
     nsCOMPtr<nsIURI> upgradedActionURL;
     rv = NS_GetSecureUpgradedURI(actionURL, getter_AddRefs(upgradedActionURL));
     NS_ENSURE_SUCCESS(rv, rv);
-    actionURL = upgradedActionURL.forget();
+    actionURL = std::move(upgradedActionURL);
 
     
     nsAutoCString scheme;

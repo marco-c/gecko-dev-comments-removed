@@ -48,7 +48,7 @@ class SchedulerEventTarget final : public nsISerialEventTarget {
   SchedulerGroup* Dispatcher() const { return mDispatcher; }
 
  private:
-  ~SchedulerEventTarget() {}
+  ~SchedulerEventTarget() = default;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(SchedulerEventTarget,
@@ -278,7 +278,7 @@ SchedulerGroup::Runnable::Run() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   
   
-  nsCOMPtr<nsIRunnable> runnable(mRunnable.forget());
+  nsCOMPtr<nsIRunnable> runnable(std::move(mRunnable));
   return runnable->Run();
 }
 

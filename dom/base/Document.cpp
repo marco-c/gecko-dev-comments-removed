@@ -3210,24 +3210,20 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
     // the checks for type_subdoc or type_object happen within
     // CheckFrameOptions.
     if (!FramingChecker::CheckFrameOptions(aChannel, mCSP)) {
-      // Bug 1601887: Display error page but still fire onload
-      // event in case x-frame-options blocks a load.
-      // After Bug 1601887 the about:blank load here should disappear
-      // and we should cancel the channel by using
-      // aChannel->Cancel(NS_ERROR_XFO_VIOLATION) which then displays
-      // the error page.
-      aChannel->Cancel(NS_BINDING_ABORTED);
-      if (docShell) {
-        nsCOMPtr<nsIWebNavigation> webNav(do_QueryObject(docShell));
-        if (webNav) {
-          RefPtr<NullPrincipal> principal =
-              NullPrincipal::CreateWithInheritedAttributes(
-                  loadInfo->TriggeringPrincipal());
-          LoadURIOptions loadURIOptions;
-          loadURIOptions.mTriggeringPrincipal = principal;
-          webNav->LoadURI(NS_LITERAL_STRING("about:blank"), loadURIOptions);
-        }
-      }
+      // stop!  ERROR page!
+      // But before we have to reset the principal of the document
+      // because the onload() event fires before the error page
+      // is displayed and we do not want the enclosing document
+      // to access the contentDocument.
+      RefPtr<NullPrincipal> nullPrincipal =
+          NullPrincipal::CreateWithInheritedAttributes(NodePrincipal());
+      // Before calling SetPrincipals() we should ensure that mFontFaceSet
+      // and also GetInnerWindow() is still null at this point, before
+      // we can fix Bug 1614735: Evaluate calls to SetPrincipal
+      // within Document.cpp
+      MOZ_ASSERT(!mFontFaceSet && !GetInnerWindow());
+      SetPrincipals(nullPrincipal, nullPrincipal);
+      aChannel->Cancel(NS_ERROR_XFO_VIOLATION);
     }
   }
 
@@ -5989,7 +5985,7 @@ Result<nsCOMPtr<nsIURI>, nsresult> Document::ResolveWithBaseURI(
   nsCOMPtr<nsIURI> resolvedURI;
   MOZ_TRY(
       NS_NewURI(getter_AddRefs(resolvedURI), aURI, nullptr, GetDocBaseURI()));
-  return std::move(resolvedURI);
+  return resolvedURI;
 }
 
 URLExtraData* Document::DefaultStyleAttrURLData() {
@@ -8712,7 +8708,7 @@ mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> Document::Open(
   if (!newBC) {
     return nullptr;
   }
-  return WindowProxyHolder(newBC.forget());
+  return WindowProxyHolder(std::move(newBC));
 }
 
 Document* Document::Open(const Optional<nsAString>& /* unused */,
@@ -8872,7 +8868,7 @@ Document* Document::Open(const Optional<nsAString>& /* unused */,
         aError.Throw(rv);
         return nullptr;
       }
-      newURI = noFragmentURI.forget();
+      newURI = std::move(noFragmentURI);
     }
 
     // UpdateURLAndHistory might do various member-setting, so make sure we're
@@ -11700,7 +11696,7 @@ static already_AddRefed<nsPIDOMWindowOuter> FindTopWindowForElement(
 
   // Trying to find the top window (equivalent to window.top).
   if (nsCOMPtr<nsPIDOMWindowOuter> top = window->GetInProcessTop()) {
-    window = top.forget();
+    window = std::move(top);
   }
   return window.forget();
 }
@@ -11711,11 +11707,11 @@ static already_AddRefed<nsPIDOMWindowOuter> FindTopWindowForElement(
  */
 class nsAutoFocusEvent : public Runnable {
  public:
-  explicit nsAutoFocusEvent(already_AddRefed<Element>&& aElement,
-                            already_AddRefed<nsPIDOMWindowOuter>&& aTopWindow)
+  explicit nsAutoFocusEvent(nsCOMPtr<Element>&& aElement,
+                            nsCOMPtr<nsPIDOMWindowOuter>&& aTopWindow)
       : mozilla::Runnable("nsAutoFocusEvent"),
-        mElement(aElement),
-        mTopWindow(aTopWindow) {}
+        mElement(std::move(aElement)),
+        mTopWindow(std::move(aTopWindow)) {}
 
   NS_IMETHOD Run() override {
     nsCOMPtr<nsPIDOMWindowOuter> currentTopWindow =
@@ -11788,7 +11784,7 @@ void Document::TriggerAutoFocus() {
     }
 
     nsCOMPtr<nsIRunnable> event =
-        new nsAutoFocusEvent(autoFocusElement.forget(), topWindow.forget());
+        new nsAutoFocusEvent(std::move(autoFocusElement), topWindow.forget());
     nsresult rv = NS_DispatchToCurrentThread(event.forget());
     NS_ENSURE_SUCCESS_VOID(rv);
   }
@@ -12880,7 +12876,7 @@ class PendingFullscreenChangeList {
           nsCOMPtr<nsIDocShellTreeItem> root;
           mRootShellForIteration->GetInProcessRootTreeItem(
               getter_AddRefs(root));
-          mRootShellForIteration = root.forget();
+          mRootShellForIteration = std::move(root);
         }
         SkipToNextMatch();
       }
@@ -12915,7 +12911,7 @@ class PendingFullscreenChangeList {
           while (docShell && docShell != mRootShellForIteration) {
             nsCOMPtr<nsIDocShellTreeItem> parent;
             docShell->GetInProcessParent(getter_AddRefs(parent));
-            docShell = parent.forget();
+            docShell = std::move(parent);
           }
           if (docShell) {
             break;
@@ -15678,7 +15674,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
                   ContentPermissionRequestBase::DelayedTaskType::Request);
             });
 
-        return p.forget();
+        return std::move(p);
       };
       AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(
           NodePrincipal(), inner, AntiTrackingCommon::eStorageAccessAPI,
@@ -15974,7 +15970,7 @@ void Document::RecomputeLanguageFromCharset() {
   }
 
   mMayNeedFontPrefsUpdate = true;
-  mLanguageFromCharset = language.forget();
+  mLanguageFromCharset = std::move(language);
 }
 
 nsICookieSettings* Document::CookieSettings() {

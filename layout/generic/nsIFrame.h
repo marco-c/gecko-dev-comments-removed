@@ -773,7 +773,7 @@ class nsIFrame : public nsQueryFrame {
   void SetComputedStyle(ComputedStyle* aStyle) {
     if (aStyle != mComputedStyle) {
       AssertNewStyleIsSane(*aStyle);
-      RefPtr<ComputedStyle> oldComputedStyle = mComputedStyle.forget();
+      RefPtr<ComputedStyle> oldComputedStyle = std::move(mComputedStyle);
       mComputedStyle = aStyle;
       DidSetComputedStyle(oldComputedStyle);
     }
@@ -1206,6 +1206,9 @@ class nsIFrame : public nsQueryFrame {
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(PreEffectsBBoxProperty, nsRect)
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(PreTransformOverflowAreasProperty,
                                       nsOverflowAreas)
+
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(CachedBorderImageDataProperty,
+                                      CachedBorderImageData)
 
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(OverflowAreasProperty, nsOverflowAreas)
 
@@ -2022,13 +2025,13 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  MOZ_MUST_USE bool AssociateImage(const nsStyleImage&);
+  MOZ_MUST_USE bool AssociateImage(const mozilla::StyleImage&);
 
   
 
 
 
-  void DisassociateImage(const nsStyleImage&);
+  void DisassociateImage(const mozilla::StyleImage&);
 
   enum class AllowCustomCursorImage {
     No,

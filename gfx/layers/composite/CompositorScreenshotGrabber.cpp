@@ -185,7 +185,7 @@ void CompositorScreenshotGrabberImpl::GrabScreenshot(Compositor* aCompositor) {
   
   
   mCurrentFrameQueueItem = Some(QueueItem{
-      TimeStamp::Now(), buffer.forget(), scaledSize, windowTarget->GetSize(),
+      TimeStamp::Now(), std::move(buffer), scaledSize, windowTarget->GetSize(),
       reinterpret_cast<uintptr_t>(static_cast<void*>(this))});
 }
 

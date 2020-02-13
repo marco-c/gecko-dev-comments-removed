@@ -292,7 +292,7 @@ RefPtr<GenericPromise> InvokeUntil(Work aWork, Condition aCondition) {
   };
 
   Helper::Iteration(p, aWork, aCondition);
-  return p.forget();
+  return p;
 }
 
 

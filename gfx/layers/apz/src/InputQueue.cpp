@@ -567,7 +567,7 @@ void InputQueue::ScheduleMainThreadTimeout(
     
     
     
-    mImmediateTimeout = timeoutTask.forget();
+    mImmediateTimeout = std::move(timeoutTask);
   } else {
     aTarget->PostDelayedTask(timeoutTask.forget(), timeout);
   }

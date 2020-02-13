@@ -455,9 +455,9 @@ void ServiceWorkerRegistration::UpdateStateInternal(
   
   
   AutoTArray<RefPtr<ServiceWorker>, 3> oldWorkerList({
-      mInstallingWorker.forget(),
-      mWaitingWorker.forget(),
-      mActiveWorker.forget(),
+      std::move(mInstallingWorker),
+      std::move(mWaitingWorker),
+      std::move(mActiveWorker),
   });
 
   

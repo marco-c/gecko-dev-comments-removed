@@ -1241,7 +1241,7 @@ class XPCWrappedNativeProto final {
 
   
   XPCWrappedNativeProto(XPCWrappedNativeScope* Scope, nsIClassInfo* ClassInfo,
-                        already_AddRefed<XPCNativeSet>&& Set);
+                        RefPtr<XPCNativeSet>&& Set);
 
   bool Init(JSContext* cx, nsIXPCScriptable* scriptable);
 
@@ -1498,13 +1498,12 @@ class XPCWrappedNative final : public nsIXPConnectWrappedNative {
   XPCWrappedNative() = delete;
 
   
-  XPCWrappedNative(already_AddRefed<nsISupports>&& aIdentity,
+  XPCWrappedNative(nsCOMPtr<nsISupports>&& aIdentity,
                    XPCWrappedNativeProto* aProto);
 
   
-  XPCWrappedNative(already_AddRefed<nsISupports>&& aIdentity,
-                   XPCWrappedNativeScope* aScope,
-                   already_AddRefed<XPCNativeSet>&& aSet);
+  XPCWrappedNative(nsCOMPtr<nsISupports>&& aIdentity,
+                   XPCWrappedNativeScope* aScope, RefPtr<XPCNativeSet>&& aSet);
 
   virtual ~XPCWrappedNative();
   void Destroy();
@@ -2237,17 +2236,23 @@ struct GlobalProperties {
   bool CSS : 1;
   bool CSSRule : 1;
   bool Directory : 1;
+  bool Document : 1;
   bool DOMParser : 1;
+  bool DOMTokenList : 1;
   bool Element : 1;
   bool Event : 1;
   bool File : 1;
   bool FileReader : 1;
   bool FormData : 1;
+  bool Headers : 1;
   bool InspectorUtils : 1;
   bool MessageChannel : 1;
   bool Node : 1;
   bool NodeFilter : 1;
+  bool Performance : 1;
   bool PromiseDebugging : 1;
+  bool Range : 1;
+  bool Selection : 1;
   bool TextDecoder : 1;
   bool TextEncoder : 1;
   bool URL : 1;

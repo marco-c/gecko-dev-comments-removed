@@ -70,7 +70,7 @@ class OutputStreamDriver : public FrameCaptureListener {
 
 
 
-  void SetImage(const RefPtr<layers::Image>& aImage, const TimeStamp& aTime);
+  void SetImage(RefPtr<layers::Image>&& aImage, const TimeStamp& aTime);
 
   
 

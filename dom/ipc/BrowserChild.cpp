@@ -3402,10 +3402,7 @@ BrowserChild::GetTopLevelViewportVisibleRectInSelfCoords() const {
 
   if (!mChildToParentConversionMatrix) {
     
-    
-    
-    CSSRect visibleRectCSS = CSSPixel::FromAppUnits(mEffectsInfo.mVisibleRect);
-    return Some(visibleRectCSS * mPuppetWidget->GetDefaultScale());
+    return Nothing();
   }
 
   Maybe<LayoutDeviceToLayoutDeviceMatrix4x4> inverse =
@@ -3828,7 +3825,7 @@ NS_IMETHODIMP BrowserChild::OnSecurityChange(nsIWebProgress* aWebProgress,
     }
 
     securityChangeData.emplace();
-    securityChangeData->securityInfo() = securityInfo.forget();
+    securityChangeData->securityInfo() = ToRefPtr(std::move(securityInfo));
     securityChangeData->isSecureContext() = isSecureContext;
   }
 

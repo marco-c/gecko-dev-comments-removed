@@ -94,46 +94,6 @@ static bool IsStyleCachePreservingSubAction(EditSubAction aEditSubAction) {
   }
 }
 
-class TableCellAndListItemFunctor final : public BoolDomIterFunctor {
- public:
-  // Used to build list of all li's, td's & th's iterator covers
-  virtual bool operator()(nsINode* aNode) const override {
-    return HTMLEditUtils::IsTableCell(aNode) ||
-           HTMLEditUtils::IsListItem(aNode);
-  }
-};
-
-class BRNodeFunctor final : public BoolDomIterFunctor {
- public:
-  virtual bool operator()(nsINode* aNode) const override {
-    return aNode->IsHTMLElement(nsGkAtoms::br);
-  }
-};
-
-class EmptyEditableFunctor final : public BoolDomIterFunctor {
- public:
-  explicit EmptyEditableFunctor(HTMLEditor* aHTMLEditor)
-      : mHTMLEditor(aHTMLEditor) {}
-
-  virtual bool operator()(nsINode* aNode) const override {
-    if (mHTMLEditor->IsEditable(aNode) &&
-        (HTMLEditUtils::IsListItem(aNode) ||
-         HTMLEditUtils::IsTableCellOrCaption(*aNode))) {
-      bool bIsEmptyNode;
-      nsresult rv =
-          mHTMLEditor->IsEmptyNode(aNode, &bIsEmptyNode, false, false);
-      NS_ENSURE_SUCCESS(rv, false);
-      if (bIsEmptyNode) {
-        return true;
-      }
-    }
-    return false;
-  }
-
- protected:
-  HTMLEditor* mHTMLEditor;
-};
-
 class MOZ_RAII AutoSetTemporaryAncestorLimiter final {
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER;
 
@@ -3232,14 +3192,13 @@ EditActionResult HTMLEditor::HandleDeleteNonCollapsedSelection(
     AutoRangeArray arrayOfRanges(SelectionRefPtr());
     for (auto& range : arrayOfRanges.mRanges) {
       // Build a list of nodes in the range
-      nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
-      TrivialFunctor functor;
+      AutoTArray<OwningNonNull<nsINode>, 10> arrayOfNodes;
       DOMSubtreeIterator iter;
       nsresult rv = iter.Init(*range);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return result.SetResult(rv);
       }
-      iter.AppendList(functor, arrayOfNodes);
+      iter.AppendAllNodesToArray(arrayOfNodes);
 
       // Now that we have the list, delete non-table elements
       int32_t listCount = arrayOfNodes.Length();
@@ -6123,7 +6082,7 @@ CreateElementResult HTMLEditor::ChangeListElementType(Element& aListElement,
     return CreateElementResult(NS_ERROR_EDITOR_DESTROYED);
   }
   NS_WARNING_ASSERTION(listElement != nullptr, "Failed to create list element");
-  return CreateElementResult(listElement.forget());
+  return CreateElementResult(std::move(listElement));
 }
 
 nsresult HTMLEditor::CreateStyleForInsertText(AbstractRange& aAbstractRange) {
@@ -6634,16 +6593,20 @@ nsresult HTMLEditor::AlignContentsInAllTableCellsAndListItems(
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   // Gather list of table cells or list items
-  AutoTArray<OwningNonNull<nsINode>, 64> nodeArray;
-  TableCellAndListItemFunctor functor;
+  AutoTArray<OwningNonNull<Element>, 64> arrayOfTableCellsAndListItems;
   DOMIterator iter(aElement);
-  iter.AppendList(functor, nodeArray);
+  iter.AppendNodesToArray(
+      +[](nsINode& aNode, void*) -> bool {
+        MOZ_ASSERT(Element::FromNode(&aNode));
+        return HTMLEditUtils::IsTableCell(&aNode) ||
+               HTMLEditUtils::IsListItem(&aNode);
+      },
+      arrayOfTableCellsAndListItems);
 
   // Now that we have the list, align their contents as requested
-  for (auto& node : nodeArray) {
-    MOZ_ASSERT(node->IsElement());
-    nsresult rv = AlignBlockContentsWithDivElement(
-        MOZ_KnownLive(*node->AsElement()), aAlignType);
+  for (auto& tableCellOrListItemElement : arrayOfTableCellsAndListItems) {
+    nsresult rv = AlignBlockContentsWithDivElement(tableCellOrListItemElement,
+                                                   aAlignType);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -7600,20 +7563,6 @@ already_AddRefed<nsRange> HTMLEditor::CreateRangeExtendedToHardLineStartAndEnd(
   return range.forget();
 }
 
-class UniqueFunctor final : public BoolDomIterFunctor {
- public:
-  explicit UniqueFunctor(nsTArray<OwningNonNull<nsINode>>& aArray)
-      : mArray(aArray) {}
-
-  // Used to build list of all nodes iterator covers.
-  virtual bool operator()(nsINode* aNode) const override {
-    return !mArray.Contains(aNode);
-  }
-
- private:
-  nsTArray<OwningNonNull<nsINode>>& mArray;
-};
-
 nsresult HTMLEditor::SplitInlinesAndCollectEditTargetNodes(
     nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
     nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
@@ -7727,14 +7676,17 @@ nsresult HTMLEditor::CollectEditTargetNodes(
       return rv;
     }
     if (aOutArrayOfNodes.IsEmpty()) {
-      iter.AppendList(TrivialFunctor(), aOutArrayOfNodes);
+      iter.AppendAllNodesToArray(aOutArrayOfNodes);
     } else {
-      // We don't want duplicates in aOutArrayOfNodes, so we use an
-      // iterator/functor that only return nodes that are not already in
-      // aOutArrayOfNodes.
-      nsTArray<OwningNonNull<nsINode>> nodes;
-      iter.AppendList(UniqueFunctor(aOutArrayOfNodes), nodes);
-      aOutArrayOfNodes.AppendElements(nodes);
+      AutoTArray<OwningNonNull<nsINode>, 24> arrayOfTopChildren;
+      iter.AppendNodesToArray(
+          +[](nsINode& aNode, void* aArray) -> bool {
+            MOZ_ASSERT(aArray);
+            return !static_cast<nsTArray<OwningNonNull<nsINode>>*>(aArray)
+                        ->Contains(&aNode);
+          },
+          arrayOfTopChildren, &aOutArrayOfNodes);
+      aOutArrayOfNodes.AppendElements(std::move(arrayOfTopChildren));
     }
     if (aCollectNonEditableNodes == CollectNonEditableNodes::No) {
       for (size_t i = aOutArrayOfNodes.Length(); i > 0; --i) {
@@ -7972,21 +7924,20 @@ nsresult HTMLEditor::SplitElementsAtEveryBRElement(
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   // First build up a list of all the break nodes inside the inline container.
-  nsTArray<OwningNonNull<nsINode>> arrayOfBreaks;
-  BRNodeFunctor functor;
+  AutoTArray<OwningNonNull<HTMLBRElement>, 24> arrayOfBRElements;
   DOMIterator iter(aMostAncestorToBeSplit);
-  iter.AppendList(functor, arrayOfBreaks);
+  iter.AppendAllNodesToArray(arrayOfBRElements);
 
   // If there aren't any breaks, just put inNode itself in the array
-  if (arrayOfBreaks.IsEmpty()) {
+  if (arrayOfBRElements.IsEmpty()) {
     aOutArrayOfNodes.AppendElement(aMostAncestorToBeSplit);
     return NS_OK;
   }
 
   // Else we need to bust up aMostAncestorToBeSplit along all the breaks
   nsCOMPtr<nsIContent> nextContent = &aMostAncestorToBeSplit;
-  for (OwningNonNull<nsINode>& brNode : arrayOfBreaks) {
-    EditorDOMPoint atBrNode(brNode);
+  for (OwningNonNull<HTMLBRElement>& brElement : arrayOfBRElements) {
+    EditorDOMPoint atBrNode(brElement);
     if (NS_WARN_IF(!atBrNode.IsSet())) {
       return NS_ERROR_FAILURE;
     }
@@ -8009,15 +7960,14 @@ nsresult HTMLEditor::SplitElementsAtEveryBRElement(
 
     // Move break outside of container and also put in node list
     EditorDOMPoint atNextNode(splitNodeResult.GetNextNode());
-    nsresult rv = MoveNodeWithTransaction(MOZ_KnownLive(*brNode->AsContent()),
-                                          atNextNode);
+    nsresult rv = MoveNodeWithTransaction(brElement, atNextNode);
     if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-    aOutArrayOfNodes.AppendElement(*brNode);
+    aOutArrayOfNodes.AppendElement(brElement);
 
     nextContent = splitNodeResult.GetNextNode();
   }
@@ -9516,21 +9466,37 @@ nsresult HTMLEditor::InsertBRElementToEmptyListItemsAndTableCellsInRange(
     const RawRangeBoundary& aStartRef, const RawRangeBoundary& aEndRef) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  AutoTArray<OwningNonNull<nsINode>, 64> nodeArray;
-  EmptyEditableFunctor functor(this);
+  AutoTArray<OwningNonNull<Element>, 64> arrayOfEmptyElements;
   DOMIterator iter;
   if (NS_WARN_IF(NS_FAILED(iter.Init(aStartRef, aEndRef)))) {
     return NS_ERROR_FAILURE;
   }
-  iter.AppendList(functor, nodeArray);
+  iter.AppendNodesToArray(
+      +[](nsINode& aNode, void* aSelf) {
+        MOZ_ASSERT(Element::FromNode(&aNode));
+        MOZ_ASSERT(aSelf);
+        Element* element = aNode.AsElement();
+        if (!static_cast<HTMLEditor*>(aSelf)->IsEditable(element) ||
+            (!HTMLEditUtils::IsListItem(element) &&
+             !HTMLEditUtils::IsTableCellOrCaption(*element))) {
+          return false;
+        }
+        bool isEmptyNode = false;
+        if (NS_WARN_IF(NS_FAILED(static_cast<HTMLEditor*>(aSelf)->IsEmptyNode(
+                element, &isEmptyNode, false, false)))) {
+          return false;
+        }
+        return isEmptyNode;
+      },
+      arrayOfEmptyElements, this);
 
   // Put padding <br> elements for empty <li> and <td>.
-  for (auto& node : nodeArray) {
+  for (auto& emptyElement : arrayOfEmptyElements) {
     // Need to put br at END of node.  It may have empty containers in it and
     // still pass the "IsEmptyNode" test, and we want the br's to be after
     // them.  Also, we want the br to be after the selection if the selection
     // is in this node.
-    EditorDOMPoint endOfNode(EditorDOMPoint::AtEndOf(node));
+    EditorDOMPoint endOfNode(EditorDOMPoint::AtEndOf(emptyElement));
     CreateElementResult createPaddingBRResult =
         InsertPaddingBRElementForEmptyLastLineWithTransaction(endOfNode);
     if (NS_WARN_IF(createPaddingBRResult.Failed())) {

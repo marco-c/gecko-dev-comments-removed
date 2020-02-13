@@ -3663,7 +3663,7 @@ void Preferences::InitializeUserPrefs() {
   sPreferences->mDirty = false;
 
   
-  sPreferences->mCurrentFile = prefsFile.forget();
+  sPreferences->mCurrentFile = std::move(prefsFile);
 }
 
 
