@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :root {
   --theme-body-font-size: 13px;
@@ -11,6 +11,7 @@ body {
   justify-content: center;
   margin: 0;
   color: var(--theme-text-color);
+  background: var(--theme-body-background);
 }
 
 h2 {
@@ -122,10 +123,10 @@ aside a p em {
 }
 
 .cta .devtools-button,
-
-
-
-
+/* Avoid active style override from
+   `.devtools-button:not(:empty):not(.checked):not(:disabled):focus`
+   at https://searchfox.org/mozilla-central/rev/e7c61f4a68b974d5fecd216dc7407b631a24eb8f/devtools/client/themes/common.css#420-424
+*/
 .cta .devtools-button:not(:empty):not(.checked):not(:disabled):focus {
   border: none;
   color: white;
