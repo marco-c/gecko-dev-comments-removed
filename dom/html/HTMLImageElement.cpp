@@ -21,6 +21,7 @@
 #include "mozilla/MouseEvents.h"
 #include "nsContentPolicyUtils.h"
 #include "nsFocusManager.h"
+#include "mozilla/dom/DOMIntersectionObserver.h"
 #include "mozilla/dom/HTMLFormElement.h"
 #include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/dom/UserActivation.h"
@@ -113,6 +114,7 @@ HTMLImageElement::HTMLImageElement(
     : nsGenericHTMLElement(std::move(aNodeInfo)),
       mForm(nullptr),
       mInDocResponsiveContent(false),
+      mLazyLoading(false),
       mCurrentDensity(1.0) {
   
   AddStatesSilently(NS_EVENT_STATE_BROKEN);
@@ -309,6 +311,20 @@ nsresult HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                                         bool aNotify) {
   nsAttrValueOrString attrVal(aValue);
 
+  if (aName == nsGkAtoms::loading && aNameSpaceID == kNameSpaceID_None) {
+    if (aValue &&
+        static_cast<HTMLImageElement::Loading>(aValue->GetEnumValue()) ==
+            Loading::Lazy &&
+        !ImageState().HasState(NS_EVENT_STATE_LOADING)) {
+      SetLazyLoading();
+    } else if (aOldValue &&
+               static_cast<HTMLImageElement::Loading>(
+                   aOldValue->GetEnumValue()) == Loading::Lazy &&
+               !ImageState().HasState(NS_EVENT_STATE_LOADING)) {
+      StopLazyLoadingAndStartLoadIfNeeded();
+    }
+  }
+
   if (aValue) {
     AfterMaybeChangeAttr(aNameSpaceID, aName, attrVal, aOldValue,
                          aMaybeScriptedPrincipal, true, aNotify);
@@ -409,7 +425,7 @@ void HTMLImageElement::AfterMaybeChangeAttr(
                                               mSrcTriggeringPrincipal);
       }
       QueueImageLoadTask(true);
-    } else if (aNotify && OwnerDoc()->ShouldLoadImages()) {
+    } else if (aNotify && ShouldLoadImage()) {
       
       
       
@@ -467,7 +483,7 @@ void HTMLImageElement::AfterMaybeChangeAttr(
       
       
       QueueImageLoadTask(true);
-    } else if (OwnerDoc()->ShouldLoadImages()) {
+    } else if (ShouldLoadImage()) {
       
       
       
@@ -558,7 +574,7 @@ nsresult HTMLImageElement::BindToTree(BindContext& aContext, nsINode& aParent) {
     
     
     
-    if (LoadingEnabled() && aContext.OwnerDoc().ShouldLoadImages()) {
+    if (LoadingEnabled() && ShouldLoadImage()) {
       nsContentUtils::AddScriptRunner(
           NewRunnableMethod<bool>("dom::HTMLImageElement::MaybeLoadImage", this,
                                   &HTMLImageElement::MaybeLoadImage, false));
@@ -632,21 +648,17 @@ EventStates HTMLImageElement::IntrinsicState() const {
 
 void HTMLImageElement::NodeInfoChanged(Document* aOldDoc) {
   nsGenericHTMLElement::NodeInfoChanged(aOldDoc);
-  
-  
-  
-  if (LoadingEnabled() && OwnerDoc()->ShouldLoadImages()) {
-    
-    
-    nsContentUtils::AddScriptRunner(
-        (InResponsiveMode())
-            ? NewRunnableMethod<bool>(
-                  "dom::HTMLImageElement::QueueImageLoadTask", this,
-                  &HTMLImageElement::QueueImageLoadTask, true)
-            : NewRunnableMethod<bool>("dom::HTMLImageElement::MaybeLoadImage",
-                                      this, &HTMLImageElement::MaybeLoadImage,
-                                      true));
+
+  if (mLazyLoading) {
+    aOldDoc->GetLazyLoadImageObserver()->Unobserve(*this);
+    mLazyLoading = false;
+    SetLazyLoading();
   }
+
+  
+  
+  
+  StartLoadingIfNeeded();
 }
 
 
@@ -734,7 +746,7 @@ nsresult HTMLImageElement::CopyInnerTo(HTMLImageElement* aDest) {
     
     if (!aDest->InResponsiveMode() &&
         aDest->HasAttr(kNameSpaceID_None, nsGkAtoms::src) &&
-        aDest->OwnerDoc()->ShouldLoadImages()) {
+        aDest->ShouldLoadImage()) {
       
       
       mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
@@ -800,7 +812,7 @@ void HTMLImageElement::ClearForm(bool aRemoveFromForm) {
 void HTMLImageElement::QueueImageLoadTask(bool aAlwaysLoad) {
   
   
-  if (!LoadingEnabled() || !OwnerDoc()->ShouldLoadImages()) {
+  if (!LoadingEnabled() || !ShouldLoadImage()) {
     return;
   }
 
@@ -1227,6 +1239,61 @@ void HTMLImageElement::DestroyContent() {
 
 void HTMLImageElement::MediaFeatureValuesChanged() {
   QueueImageLoadTask(false);
+}
+
+bool HTMLImageElement::ShouldLoadImage() const {
+  return OwnerDoc()->ShouldLoadImages() && !mLazyLoading;
+}
+
+void HTMLImageElement::SetLazyLoading() {
+  if (mLazyLoading) {
+    return;
+  }
+
+  
+  
+  if (!OwnerDoc()->IsScriptEnabled()) {
+    return;
+  }
+
+  
+  
+  
+  if (DOMIntersectionObserver* lazyLoadObserver =
+          OwnerDoc()->GetLazyLoadImageObserver()) {
+    lazyLoadObserver->Observe(*this);
+    mLazyLoading = true;
+  }
+}
+
+void HTMLImageElement::StartLoadingIfNeeded() {
+  if (LoadingEnabled() && ShouldLoadImage()) {
+    
+    
+    nsContentUtils::AddScriptRunner(
+        (InResponsiveMode())
+            ? NewRunnableMethod<bool>(
+                  "dom::HTMLImageElement::QueueImageLoadTask", this,
+                  &HTMLImageElement::QueueImageLoadTask, true)
+            : NewRunnableMethod<bool>("dom::HTMLImageElement::MaybeLoadImage",
+                                      this, &HTMLImageElement::MaybeLoadImage,
+                                      true));
+  }
+}
+
+void HTMLImageElement::StopLazyLoadingAndStartLoadIfNeeded() {
+  if (!mLazyLoading) {
+    return;
+  }
+  mLazyLoading = false;
+
+  DOMIntersectionObserver* lazyLoadObserver =
+      OwnerDoc()->GetLazyLoadImageObserver();
+  MOZ_ASSERT(lazyLoadObserver);
+
+  lazyLoadObserver->Unobserve(*this);
+
+  StartLoadingIfNeeded();
 }
 
 }  

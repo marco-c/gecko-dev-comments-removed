@@ -3612,6 +3612,8 @@ class Document : public nsINode,
   void ScheduleIntersectionObserverNotification();
   MOZ_CAN_RUN_SCRIPT void NotifyIntersectionObservers();
 
+  DOMIntersectionObserver* GetLazyLoadImageObserver();
+
   
   nsresult Dispatch(TaskCategory aCategory,
                     already_AddRefed<nsIRunnable>&& aRunnable) final;
@@ -4867,6 +4869,8 @@ class Document : public nsINode,
 
   
   nsTHashtable<nsPtrHashKey<DOMIntersectionObserver>> mIntersectionObservers;
+
+  RefPtr<DOMIntersectionObserver> mLazyLoadImageObserver;
 
   
   
