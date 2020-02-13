@@ -430,13 +430,13 @@ DevTools.prototype = {
   
 
 
-  restoreDevToolsSession: function({ browserConsole, browserToolbox }) {
+  restoreDevToolsSession: async function({ browserConsole, browserToolbox }) {
     if (browserToolbox) {
       BrowserToolboxLauncher.init();
     }
 
     if (browserConsole && !BrowserConsoleManager.getBrowserConsole()) {
-      BrowserConsoleManager.toggleBrowserConsole();
+      await BrowserConsoleManager.toggleBrowserConsole();
     }
   },
 

@@ -74,8 +74,11 @@ class BrowserConsole extends WebConsole {
       
       this._telemetry.toolOpened("browserconsole", -1, this);
 
-      await this.targetList.startListening();
+      
+      
+      
       await super.init();
+      await this.targetList.startListening();
     })();
     return this._bcInitializer;
   }
