@@ -147,26 +147,7 @@ StartupCache::StartupCache()
       mPrefetchThread(nullptr) {}
 
 StartupCache::~StartupCache() {
-  if (mTimer) {
-    mTimer->Cancel();
-  }
-
-  
-  
-  
   WaitOnWriteThread();
-  WaitOnPrefetchThread();
-
-  
-  
-  
-  
-  if (!mCacheData.initialized() || ShouldCompactCache()) {
-    mDirty = true;
-    auto result = WriteToDisk();
-    Unused << NS_WARN_IF(result.isErr());
-  }
-
   UnregisterWeakMemoryReporter(this);
 }
 
@@ -613,6 +594,25 @@ void StartupCache::InvalidateCache(bool memoryOnly) {
   }
 }
 
+void StartupCache::MaybeInitShutdownWrite() {
+  if (mTimer) {
+    mTimer->Cancel();
+  }
+  gShutdownInitiated = true;
+
+  MaybeSpawnWriteThread();
+
+  
+  
+  
+  
+  if (!mCacheData.initialized() || ShouldCompactCache()) {
+    mDirty = true;
+    auto result = WriteToDisk();
+    Unused << NS_WARN_IF(result.isErr());
+  }
+}
+
 void StartupCache::IgnoreDiskCache() {
   gIgnoreDiskCache = true;
   if (gStartupCache) gStartupCache->InvalidateCache();
@@ -690,22 +690,28 @@ void StartupCache::WriteTimeout(nsITimer* aTimer, void* aClosure) {
 
 
   StartupCache* startupCacheObj = static_cast<StartupCache*>(aClosure);
-  if (startupCacheObj->mWrittenOnce) {
+  startupCacheObj->MaybeSpawnWriteThread();
+}
+
+
+
+
+void StartupCache::MaybeSpawnWriteThread() {
+  if (mWrittenOnce || mWriteThread) {
     return;
   }
 
-  if (startupCacheObj->mCacheData.initialized() &&
-      !startupCacheObj->ShouldCompactCache()) {
+  if (mCacheData.initialized() && !ShouldCompactCache()) {
     return;
   }
 
-  startupCacheObj->WaitOnPrefetchThread();
-  startupCacheObj->mStartupWriteInitiated = false;
-  startupCacheObj->mDirty = true;
-  startupCacheObj->mCacheData.reset();
-  startupCacheObj->mWriteThread = PR_CreateThread(
-      PR_USER_THREAD, StartupCache::ThreadedWrite, startupCacheObj,
-      PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 512 * 1024);
+  WaitOnPrefetchThread();
+  mStartupWriteInitiated = false;
+  mDirty = true;
+  mCacheData.reset();
+  mWriteThread = PR_CreateThread(PR_USER_THREAD, StartupCache::ThreadedWrite,
+                                 this, PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
+                                 PR_JOINABLE_THREAD, 512 * 1024);
 }
 
 
@@ -720,6 +726,7 @@ nsresult StartupCacheListener::Observe(nsISupports* subject, const char* topic,
   if (strcmp(topic, NS_XPCOM_SHUTDOWN_OBSERVER_ID) == 0) {
     
     sc->WaitOnWriteThread();
+    sc->WaitOnPrefetchThread();
     StartupCache::gShutdownInitiated = true;
   } else if (strcmp(topic, "startupcache-invalidate") == 0) {
     sc->InvalidateCache(data && nsCRT::strcmp(data, u"memoryOnly") == 0);

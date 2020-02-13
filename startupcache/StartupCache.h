@@ -164,6 +164,10 @@ class StartupCache : public nsIMemoryReporter {
   void InvalidateCache(bool memoryOnly = false);
 
   
+  
+  void MaybeInitShutdownWrite();
+
+  
   static void IgnoreDiskCache();
 
   
@@ -203,6 +207,7 @@ class StartupCache : public nsIMemoryReporter {
   void WaitOnWriteThread();
   void WaitOnPrefetchThread();
   void StartPrefetchMemoryThread();
+  void MaybeSpawnWriteThread();
 
   static nsresult InitSingleton();
   static void WriteTimeout(nsITimer* aTimer, void* aClosure);
