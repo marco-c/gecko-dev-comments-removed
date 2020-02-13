@@ -121,7 +121,7 @@ void BodyStream::Create(JSContext* aCx, BodyStreamHolder* aStreamHolder,
     
     
     
-    stream->mWorkerRef = workerRef.forget();
+    stream->mWorkerRef = std::move(workerRef);
   }
 
   aRv.MightThrowJSException();

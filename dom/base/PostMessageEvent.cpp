@@ -69,7 +69,7 @@ PostMessageEvent::Run() {
   
   
   
-  nsCOMPtr<nsIURI> callerURI = mCallerURI.forget();
+  nsCOMPtr<nsIURI> callerURI = std::move(mCallerURI);
 
   
   

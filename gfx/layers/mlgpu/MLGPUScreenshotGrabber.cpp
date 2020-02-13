@@ -271,7 +271,7 @@ void MLGPUScreenshotGrabberImpl::GrabScreenshot(MLGDevice* aDevice,
   
   
   mCurrentFrameQueueItem =
-      Some(QueueItem{TimeStamp::Now(), readbackTexture.forget(), scaledSize,
+      Some(QueueItem{TimeStamp::Now(), std::move(readbackTexture), scaledSize,
                      aTexture->GetSize(), aDevice,
                      reinterpret_cast<uintptr_t>(static_cast<void*>(this))});
 }

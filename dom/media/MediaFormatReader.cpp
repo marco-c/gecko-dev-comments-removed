@@ -266,7 +266,7 @@ void MediaFormatReader::DecoderFactory::RunStage(Data& aData) {
               mOwner->OwnerThread(), __func__,
               [this, &aData](RefPtr<Token> aToken) {
                 aData.mTokenRequest.Complete();
-                aData.mToken = aToken.forget();
+                aData.mToken = std::move(aToken);
                 aData.mStage = Stage::CreateDecoder;
                 RunStage(aData);
               },
@@ -408,7 +408,7 @@ void MediaFormatReader::DecoderFactory::DoInitDecoder(Data& aData) {
             aData.mInitRequest.Complete();
             aData.mStage = Stage::None;
             MutexAutoLock lock(ownerData.mMutex);
-            ownerData.mDecoder = aData.mDecoder.forget();
+            ownerData.mDecoder = std::move(aData.mDecoder);
             ownerData.mDescription = ownerData.mDecoder->GetDescriptionName();
             DDLOGEX2("MediaFormatReader::DecoderFactory", this,
                      DDLogCategory::Log, "decoder_initialized", DDNoValue{});
@@ -456,7 +456,7 @@ class MediaFormatReader::DemuxerProxy {
   ~DemuxerProxy() { MOZ_COUNT_DTOR(DemuxerProxy); }
 
   RefPtr<ShutdownPromise> Shutdown() {
-    RefPtr<Data> data = mData.forget();
+    RefPtr<Data> data = std::move(mData);
     return InvokeAsync(mTaskQueue, __func__, [data]() {
       
       
@@ -676,7 +676,7 @@ class MediaFormatReader::DemuxerProxy::Wrapper : public MediaTrackDemuxer {
   friend class DemuxerProxy;
 
   ~Wrapper() {
-    RefPtr<MediaTrackDemuxer> trackDemuxer = mTrackDemuxer.forget();
+    RefPtr<MediaTrackDemuxer> trackDemuxer = std::move(mTrackDemuxer);
     nsresult rv = mTaskQueue->Dispatch(NS_NewRunnableFunction(
         "MediaFormatReader::DemuxerProxy::Wrapper::~Wrapper",
         [trackDemuxer]() { trackDemuxer->BreakCycles(); }));

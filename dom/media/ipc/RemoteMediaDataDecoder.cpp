@@ -92,7 +92,7 @@ RefPtr<ShutdownPromise> RemoteMediaDataDecoder::Shutdown() {
         
         
         p->Then(RemoteDecoderManagerChild::GetManagerThread(), __func__,
-                [child = RefPtr<IRemoteDecoderChild>(self->mChild.forget())](
+                [child = std::move(self->mChild)](
                     const ShutdownPromise::ResolveOrRejectValue& aValue) {
                   MOZ_ASSERT(aValue.IsResolve());
                   child->DestroyIPDL();

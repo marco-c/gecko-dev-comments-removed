@@ -309,7 +309,7 @@ void nsBaseWidget::DestroyCompositor() {
 
     
     
-    RefPtr<CompositorSession> session = mCompositorSession.forget();
+    RefPtr<CompositorSession> session = std::move(mCompositorSession);
     session->Shutdown();
   }
 }
@@ -1136,7 +1136,7 @@ nsEventStatus nsBaseWidget::DispatchInputEvent(WidgetInputEvent* aEvent) {
     if (wheelEvent) {
       RefPtr<Runnable> r =
           new DispatchWheelInputOnControllerThread(*wheelEvent, mAPZC, this);
-      APZThreadUtils::RunOnControllerThread(r.forget());
+      APZThreadUtils::RunOnControllerThread(std::move(r));
       return nsEventStatus_eConsumeDoDefault;
     }
     
@@ -1343,7 +1343,7 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight) {
 
   WindowUsesOMTC();
 
-  mLayerManager = lm.forget();
+  mLayerManager = std::move(lm);
 
   
   

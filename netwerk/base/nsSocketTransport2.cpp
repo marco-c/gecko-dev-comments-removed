@@ -277,7 +277,7 @@ void nsSocketInputStream::OnSocketReady(nsresult condition) {
 
     
     if (NS_FAILED(mCondition) || !(mCallbackFlags & WAIT_CLOSURE_ONLY)) {
-      callback = mCallback.forget();
+      callback = std::move(mCallback);
       mCallbackFlags = 0;
     }
   }
@@ -509,7 +509,7 @@ void nsSocketOutputStream::OnSocketReady(nsresult condition) {
 
     
     if (NS_FAILED(mCondition) || !(mCallbackFlags & WAIT_CLOSURE_ONLY)) {
-      callback = mCallback.forget();
+      callback = std::move(mCallback);
       mCallbackFlags = 0;
     }
   }

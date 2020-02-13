@@ -278,7 +278,7 @@ SchedulerGroup::Runnable::Run() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   
   
-  nsCOMPtr<nsIRunnable> runnable(mRunnable.forget());
+  nsCOMPtr<nsIRunnable> runnable(std::move(mRunnable));
   return runnable->Run();
 }
 

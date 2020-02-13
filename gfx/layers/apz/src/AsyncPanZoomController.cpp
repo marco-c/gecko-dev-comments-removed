@@ -4114,7 +4114,7 @@ bool AsyncPanZoomController::AdvanceAnimations(const TimeStamp& aSampleTime) {
   
   
   for (uint32_t i = 0; i < deferredTasks.Length(); ++i) {
-    APZThreadUtils::RunOnControllerThread(deferredTasks[i].forget());
+    APZThreadUtils::RunOnControllerThread(std::move(deferredTasks[i]));
   }
 
   

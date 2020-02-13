@@ -92,7 +92,7 @@ nsresult BrowserBridgeParent::InitWithProcess(
   }
 
   
-  mBrowserParent = browserParent.forget();
+  mBrowserParent = std::move(browserParent);
   mBrowserParent->SetOwnerElement(Manager()->GetOwnerElement());
   mBrowserParent->InitRendering();
 

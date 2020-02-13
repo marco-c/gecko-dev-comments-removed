@@ -2598,7 +2598,7 @@ void Database::Shutdown() {
   
   mClientsShutdown = nullptr;
   nsCOMPtr<mozIStorageCompletionCallback> connectionShutdown =
-      mConnectionShutdown.forget();
+      std::move(mConnectionShutdown);
 
   if (!mMainConn) {
     

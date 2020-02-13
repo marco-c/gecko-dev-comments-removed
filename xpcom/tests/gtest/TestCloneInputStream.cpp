@@ -126,7 +126,7 @@ TEST(CloneInputStream, NonCloneableInput_Fallback)
   ASSERT_TRUE(stream.get() != replacement.get());
   ASSERT_TRUE(clone.get() != replacement.get());
 
-  stream = replacement.forget();
+  stream = std::move(replacement);
 
   
   
