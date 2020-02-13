@@ -9,6 +9,8 @@
 
 #include "gc/Zone.h"
 
+#include "vm/Runtime.h"
+
  inline js::HashNumber JS::Zone::UniqueIdToHash(uint64_t uid) {
   return mozilla::HashGeneric(uid);
 }

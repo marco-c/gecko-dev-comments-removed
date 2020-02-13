@@ -199,8 +199,8 @@ bool Compartment::getNonWrapperObjectForCurrentCompartment(
   
   
   
-  MOZ_ASSERT(!cx->runtime()->isSelfHostingZone(cx->zone()));
-  MOZ_ASSERT(!cx->runtime()->isSelfHostingZone(obj->zone()));
+  MOZ_ASSERT(!cx->zone()->isSelfHostingZone());
+  MOZ_ASSERT(!obj->zone()->isSelfHostingZone());
 
   
   
