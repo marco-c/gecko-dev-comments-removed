@@ -74,6 +74,11 @@
   text-shadow: inherit;
 }
 
+:root {
+  -moz-appearance: none;
+  background-color: #eeeeee;
+}
+
 
 
 #titlebar {
@@ -492,16 +497,9 @@
 #sidebar-box {
   
   font-size: 1.0909rem;
-  --sidebar-background-color: -moz-mac-source-list;
 }
 
-
-
-
-
-
-
-#sidebar-box:not(:-moz-lwtheme) {
+#sidebar-box:not([lwt-sidebar]) {
   -moz-appearance: -moz-mac-source-list;
   -moz-font-smoothing-background-color: -moz-mac-source-list;
 }

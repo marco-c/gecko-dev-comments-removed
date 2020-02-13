@@ -168,6 +168,11 @@ class nsITheme : public nsISupports {
     return false;
   }
 
+  virtual bool NeedToClearBackgroundBehindWidget(nsIFrame* aFrame,
+                                                 StyleAppearance aWidgetType) {
+    return false;
+  }
+
   
 
 
