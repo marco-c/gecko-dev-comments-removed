@@ -61,8 +61,19 @@ const Curl = {
     const utils = CurlUtils;
 
     let command = ["curl"];
-    const ignoredHeaders = new Set();
 
+    
+    const addParam = value => {
+      const safe = /^[a-zA-Z-]+$/.test(value) ? value : escapeString(value);
+      command.push(safe);
+    };
+
+    const addPostData = value => {
+      const safe = /^[a-zA-Z-]+$/.test(value) ? value : escapeString(value);
+      postData.push(safe);
+    };
+
+    const ignoredHeaders = new Set();
     const currentPlatform = platform || Services.appinfo.OS;
 
     
@@ -73,7 +84,7 @@ const Curl = {
         : utils.escapeStringPosix;
 
     
-    command.push(escapeString(data.url));
+    addParam(data.url);
 
     let postDataText = null;
     const multipartRequest = utils.isMultipartRequest(data);
@@ -89,21 +100,21 @@ const Curl = {
       
       
       postDataText = data.postDataText;
-      postData.push("--data-binary");
+      addPostData("--data-binary");
       const boundary = utils.getMultipartBoundary(data);
       const text = utils.removeBinaryDataFromMultipartText(
         postDataText,
         boundary
       );
-      postData.push(escapeString(text));
+      addPostData(text);
       ignoredHeaders.add("content-length");
     } else if (
       utils.isUrlEncodedRequest(data) ||
       ["PUT", "POST", "PATCH"].includes(data.method)
     ) {
       postDataText = data.postDataText;
-      postData.push("--data");
-      postData.push(escapeString(utils.writePostDataTextParams(postDataText)));
+      addPostData("--data");
+      addPostData(utils.writePostDataTextParams(postDataText));
       ignoredHeaders.add("content-length");
     }
     
@@ -113,13 +124,13 @@ const Curl = {
     
     
     if (data.method == "HEAD") {
-      command.push("-I");
+      addParam("-I");
     } else if (!(data.method == "GET" || data.method == "POST")) {
       
       
       
-      command.push("-X");
-      command.push(data.method);
+      addParam("-X");
+      addParam(data.method);
     }
 
     
@@ -131,14 +142,14 @@ const Curl = {
     for (let i = 0; i < headers.length; i++) {
       const header = headers[i];
       if (header.name.toLowerCase() === "accept-encoding") {
-        command.push("--compressed");
+        addParam("--compressed");
         continue;
       }
       if (ignoredHeaders.has(header.name.toLowerCase())) {
         continue;
       }
-      command.push("-H");
-      command.push(escapeString(header.name + ": " + header.value));
+      addParam("-H");
+      addParam(header.name + ": " + header.value);
     }
 
     
