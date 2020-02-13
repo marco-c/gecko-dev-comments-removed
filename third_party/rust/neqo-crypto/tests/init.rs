@@ -1,4 +1,5 @@
 #![cfg_attr(feature = "deny-warnings", deny(warnings))]
+#![warn(clippy::pedantic)]
 
 
 
@@ -11,8 +12,9 @@ use neqo_crypto::*;
 
 
 
+#[allow(dead_code, non_upper_case_globals)]
+#[allow(clippy::redundant_static_lifetimes, clippy::unseparated_literal_suffix)]
 mod nss {
-    #![allow(clippy::redundant_static_lifetimes, dead_code, non_upper_case_globals)]
     include!(concat!(env!("OUT_DIR"), "/nss_init.rs"));
 }
 

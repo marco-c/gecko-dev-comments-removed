@@ -49,6 +49,10 @@ pub struct AntiReplay {
 impl AntiReplay {
     
     
+    
+    
+    
+    
     pub fn new(now: Instant, window: Duration, k: usize, bits: usize) -> Res<Self> {
         let mut ctx: *mut SSLAntiReplayContext = null_mut();
         unsafe {
