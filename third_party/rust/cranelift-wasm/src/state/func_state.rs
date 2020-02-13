@@ -9,7 +9,7 @@
 use crate::environ::{FuncEnvironment, GlobalVariable, WasmResult};
 use crate::translation_utils::{FuncIndex, GlobalIndex, MemoryIndex, SignatureIndex, TableIndex};
 use crate::{HashMap, Occupied, Vacant};
-use cranelift_codegen::ir::{self, Ebb, Inst, Value};
+use cranelift_codegen::ir::{self, Block, Inst, Value};
 use std::vec::Vec;
 
 
@@ -35,7 +35,7 @@ pub enum ElseData {
     
     WithElse {
         
-        else_block: Ebb,
+        else_block: Block,
     },
 }
 
@@ -52,7 +52,7 @@ pub enum ElseData {
 #[derive(Debug)]
 pub enum ControlStackFrame {
     If {
-        destination: Ebb,
+        destination: Block,
         else_data: ElseData,
         num_param_values: usize,
         num_return_values: usize,
@@ -72,15 +72,15 @@ pub enum ControlStackFrame {
         
     },
     Block {
-        destination: Ebb,
+        destination: Block,
         num_param_values: usize,
         num_return_values: usize,
         original_stack_size: usize,
         exit_is_branched_to: bool,
     },
     Loop {
-        destination: Ebb,
-        header: Ebb,
+        destination: Block,
+        header: Block,
         num_param_values: usize,
         num_return_values: usize,
         original_stack_size: usize,
@@ -115,14 +115,14 @@ impl ControlStackFrame {
             } => num_param_values,
         }
     }
-    pub fn following_code(&self) -> Ebb {
+    pub fn following_code(&self) -> Block {
         match *self {
             Self::If { destination, .. }
             | Self::Block { destination, .. }
             | Self::Loop { destination, .. } => destination,
         }
     }
-    pub fn br_destination(&self) -> Ebb {
+    pub fn br_destination(&self) -> Block {
         match *self {
             Self::If { destination, .. } | Self::Block { destination, .. } => destination,
             Self::Loop { header, .. } => header,
@@ -254,7 +254,7 @@ impl FuncTranslationState {
     
     
     
-    pub(crate) fn initialize(&mut self, sig: &ir::Signature, exit_block: Ebb) {
+    pub(crate) fn initialize(&mut self, sig: &ir::Signature, exit_block: Block) {
         self.clear();
         self.push_block(
             exit_block,
@@ -343,7 +343,7 @@ impl FuncTranslationState {
     
     pub(crate) fn push_block(
         &mut self,
-        following_code: Ebb,
+        following_code: Block,
         num_param_types: usize,
         num_result_types: usize,
     ) {
@@ -360,8 +360,8 @@ impl FuncTranslationState {
     
     pub(crate) fn push_loop(
         &mut self,
-        header: Ebb,
-        following_code: Ebb,
+        header: Block,
+        following_code: Block,
         num_param_types: usize,
         num_result_types: usize,
     ) {
@@ -378,7 +378,7 @@ impl FuncTranslationState {
     
     pub(crate) fn push_if(
         &mut self,
-        destination: Ebb,
+        destination: Block,
         else_data: ElseData,
         num_param_types: usize,
         num_result_types: usize,

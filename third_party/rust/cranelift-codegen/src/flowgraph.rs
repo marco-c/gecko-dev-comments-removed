@@ -26,23 +26,23 @@
 use crate::bforest;
 use crate::entity::SecondaryMap;
 use crate::ir::instructions::BranchInfo;
-use crate::ir::{Ebb, Function, Inst};
+use crate::ir::{Block, Function, Inst};
 use crate::timing;
 use core::mem;
 
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct BasicBlock {
+pub struct BlockPredecessor {
     
-    pub ebb: Ebb,
+    pub block: Block,
     
     pub inst: Inst,
 }
 
-impl BasicBlock {
+impl BlockPredecessor {
     
-    pub fn new(ebb: Ebb, inst: Inst) -> Self {
-        Self { ebb, inst }
+    pub fn new(block: Block, inst: Inst) -> Self {
+        Self { block, inst }
     }
 }
 
@@ -61,20 +61,20 @@ struct CFGNode {
     
     
     
-    pub predecessors: bforest::Map<Inst, Ebb>,
+    pub predecessors: bforest::Map<Inst, Block>,
 
     
     
-    pub successors: bforest::Set<Ebb>,
+    pub successors: bforest::Set<Block>,
 }
 
 
 
 
 pub struct ControlFlowGraph {
-    data: SecondaryMap<Ebb, CFGNode>,
-    pred_forest: bforest::MapForest<Inst, Ebb>,
-    succ_forest: bforest::SetForest<Ebb>,
+    data: SecondaryMap<Block, CFGNode>,
+    pred_forest: bforest::MapForest<Inst, Block>,
+    succ_forest: bforest::SetForest<Block>,
     valid: bool,
 }
 
@@ -110,27 +110,27 @@ impl ControlFlowGraph {
     pub fn compute(&mut self, func: &Function) {
         let _tt = timing::flowgraph();
         self.clear();
-        self.data.resize(func.dfg.num_ebbs());
+        self.data.resize(func.dfg.num_blocks());
 
-        for ebb in &func.layout {
-            self.compute_ebb(func, ebb);
+        for block in &func.layout {
+            self.compute_block(func, block);
         }
 
         self.valid = true;
     }
 
-    fn compute_ebb(&mut self, func: &Function, ebb: Ebb) {
-        for inst in func.layout.ebb_insts(ebb) {
+    fn compute_block(&mut self, func: &Function, block: Block) {
+        for inst in func.layout.block_insts(block) {
             match func.dfg.analyze_branch(inst) {
                 BranchInfo::SingleDest(dest, _) => {
-                    self.add_edge(ebb, inst, dest);
+                    self.add_edge(block, inst, dest);
                 }
                 BranchInfo::Table(jt, dest) => {
                     if let Some(dest) = dest {
-                        self.add_edge(ebb, inst, dest);
+                        self.add_edge(block, inst, dest);
                     }
                     for dest in func.jump_tables[jt].iter() {
-                        self.add_edge(ebb, inst, *dest);
+                        self.add_edge(block, inst, *dest);
                     }
                 }
                 BranchInfo::NotABranch => {}
@@ -138,15 +138,15 @@ impl ControlFlowGraph {
         }
     }
 
-    fn invalidate_ebb_successors(&mut self, ebb: Ebb) {
+    fn invalidate_block_successors(&mut self, block: Block) {
         
         
         
-        let mut successors = mem::replace(&mut self.data[ebb].successors, Default::default());
+        let mut successors = mem::replace(&mut self.data[block].successors, Default::default());
         for succ in successors.iter(&self.succ_forest) {
             self.data[succ]
                 .predecessors
-                .retain(&mut self.pred_forest, |_, &mut e| e != ebb);
+                .retain(&mut self.pred_forest, |_, &mut e| e != block);
         }
         successors.clear(&mut self.succ_forest);
     }
@@ -157,13 +157,13 @@ impl ControlFlowGraph {
     
     
     
-    pub fn recompute_ebb(&mut self, func: &Function, ebb: Ebb) {
+    pub fn recompute_block(&mut self, func: &Function, block: Block) {
         debug_assert!(self.is_valid());
-        self.invalidate_ebb_successors(ebb);
-        self.compute_ebb(func, ebb);
+        self.invalidate_block_successors(block);
+        self.compute_block(func, block);
     }
 
-    fn add_edge(&mut self, from: Ebb, from_inst: Inst, to: Ebb) {
+    fn add_edge(&mut self, from: Block, from_inst: Inst, to: Block) {
         self.data[from]
             .successors
             .insert(to, &mut self.succ_forest, &());
@@ -173,14 +173,14 @@ impl ControlFlowGraph {
     }
 
     
-    pub fn pred_iter(&self, ebb: Ebb) -> PredIter {
-        PredIter(self.data[ebb].predecessors.iter(&self.pred_forest))
+    pub fn pred_iter(&self, block: Block) -> PredIter {
+        PredIter(self.data[block].predecessors.iter(&self.pred_forest))
     }
 
     
-    pub fn succ_iter(&self, ebb: Ebb) -> SuccIter {
+    pub fn succ_iter(&self, block: Block) -> SuccIter {
         debug_assert!(self.is_valid());
-        self.data[ebb].successors.iter(&self.succ_forest)
+        self.data[block].successors.iter(&self.succ_forest)
     }
 
     
@@ -196,18 +196,18 @@ impl ControlFlowGraph {
 
 
 
-pub struct PredIter<'a>(bforest::MapIter<'a, Inst, Ebb>);
+pub struct PredIter<'a>(bforest::MapIter<'a, Inst, Block>);
 
 impl<'a> Iterator for PredIter<'a> {
-    type Item = BasicBlock;
+    type Item = BlockPredecessor;
 
-    fn next(&mut self) -> Option<BasicBlock> {
-        self.0.next().map(|(i, e)| BasicBlock::new(e, i))
+    fn next(&mut self) -> Option<BlockPredecessor> {
+        self.0.next().map(|(i, e)| BlockPredecessor::new(e, i))
     }
 }
 
 
-pub type SuccIter<'a> = bforest::SetIter<'a, Ebb>;
+pub type SuccIter<'a> = bforest::SetIter<'a, Block>;
 
 #[cfg(test)]
 mod tests {
@@ -225,126 +225,126 @@ mod tests {
     #[test]
     fn no_predecessors() {
         let mut func = Function::new();
-        let ebb0 = func.dfg.make_ebb();
-        let ebb1 = func.dfg.make_ebb();
-        let ebb2 = func.dfg.make_ebb();
-        func.layout.append_ebb(ebb0);
-        func.layout.append_ebb(ebb1);
-        func.layout.append_ebb(ebb2);
+        let block0 = func.dfg.make_block();
+        let block1 = func.dfg.make_block();
+        let block2 = func.dfg.make_block();
+        func.layout.append_block(block0);
+        func.layout.append_block(block1);
+        func.layout.append_block(block2);
 
         let cfg = ControlFlowGraph::with_function(&func);
 
-        let mut fun_ebbs = func.layout.ebbs();
-        for ebb in func.layout.ebbs() {
-            assert_eq!(ebb, fun_ebbs.next().unwrap());
-            assert_eq!(cfg.pred_iter(ebb).count(), 0);
-            assert_eq!(cfg.succ_iter(ebb).count(), 0);
+        let mut fun_blocks = func.layout.blocks();
+        for block in func.layout.blocks() {
+            assert_eq!(block, fun_blocks.next().unwrap());
+            assert_eq!(cfg.pred_iter(block).count(), 0);
+            assert_eq!(cfg.succ_iter(block).count(), 0);
         }
     }
 
     #[test]
     fn branches_and_jumps() {
         let mut func = Function::new();
-        let ebb0 = func.dfg.make_ebb();
-        let cond = func.dfg.append_ebb_param(ebb0, types::I32);
-        let ebb1 = func.dfg.make_ebb();
-        let ebb2 = func.dfg.make_ebb();
+        let block0 = func.dfg.make_block();
+        let cond = func.dfg.append_block_param(block0, types::I32);
+        let block1 = func.dfg.make_block();
+        let block2 = func.dfg.make_block();
 
-        let br_ebb0_ebb2;
-        let br_ebb1_ebb1;
-        let jmp_ebb0_ebb1;
-        let jmp_ebb1_ebb2;
+        let br_block0_block2;
+        let br_block1_block1;
+        let jmp_block0_block1;
+        let jmp_block1_block2;
 
         {
             let mut cur = FuncCursor::new(&mut func);
 
-            cur.insert_ebb(ebb0);
-            br_ebb0_ebb2 = cur.ins().brnz(cond, ebb2, &[]);
-            jmp_ebb0_ebb1 = cur.ins().jump(ebb1, &[]);
+            cur.insert_block(block0);
+            br_block0_block2 = cur.ins().brnz(cond, block2, &[]);
+            jmp_block0_block1 = cur.ins().jump(block1, &[]);
 
-            cur.insert_ebb(ebb1);
-            br_ebb1_ebb1 = cur.ins().brnz(cond, ebb1, &[]);
-            jmp_ebb1_ebb2 = cur.ins().jump(ebb2, &[]);
+            cur.insert_block(block1);
+            br_block1_block1 = cur.ins().brnz(cond, block1, &[]);
+            jmp_block1_block2 = cur.ins().jump(block2, &[]);
 
-            cur.insert_ebb(ebb2);
+            cur.insert_block(block2);
         }
 
         let mut cfg = ControlFlowGraph::with_function(&func);
 
         {
-            let ebb0_predecessors = cfg.pred_iter(ebb0).collect::<Vec<_>>();
-            let ebb1_predecessors = cfg.pred_iter(ebb1).collect::<Vec<_>>();
-            let ebb2_predecessors = cfg.pred_iter(ebb2).collect::<Vec<_>>();
+            let block0_predecessors = cfg.pred_iter(block0).collect::<Vec<_>>();
+            let block1_predecessors = cfg.pred_iter(block1).collect::<Vec<_>>();
+            let block2_predecessors = cfg.pred_iter(block2).collect::<Vec<_>>();
 
-            let ebb0_successors = cfg.succ_iter(ebb0).collect::<Vec<_>>();
-            let ebb1_successors = cfg.succ_iter(ebb1).collect::<Vec<_>>();
-            let ebb2_successors = cfg.succ_iter(ebb2).collect::<Vec<_>>();
+            let block0_successors = cfg.succ_iter(block0).collect::<Vec<_>>();
+            let block1_successors = cfg.succ_iter(block1).collect::<Vec<_>>();
+            let block2_successors = cfg.succ_iter(block2).collect::<Vec<_>>();
 
-            assert_eq!(ebb0_predecessors.len(), 0);
-            assert_eq!(ebb1_predecessors.len(), 2);
-            assert_eq!(ebb2_predecessors.len(), 2);
+            assert_eq!(block0_predecessors.len(), 0);
+            assert_eq!(block1_predecessors.len(), 2);
+            assert_eq!(block2_predecessors.len(), 2);
 
             assert_eq!(
-                ebb1_predecessors.contains(&BasicBlock::new(ebb0, jmp_ebb0_ebb1)),
+                block1_predecessors.contains(&BlockPredecessor::new(block0, jmp_block0_block1)),
                 true
             );
             assert_eq!(
-                ebb1_predecessors.contains(&BasicBlock::new(ebb1, br_ebb1_ebb1)),
+                block1_predecessors.contains(&BlockPredecessor::new(block1, br_block1_block1)),
                 true
             );
             assert_eq!(
-                ebb2_predecessors.contains(&BasicBlock::new(ebb0, br_ebb0_ebb2)),
+                block2_predecessors.contains(&BlockPredecessor::new(block0, br_block0_block2)),
                 true
             );
             assert_eq!(
-                ebb2_predecessors.contains(&BasicBlock::new(ebb1, jmp_ebb1_ebb2)),
+                block2_predecessors.contains(&BlockPredecessor::new(block1, jmp_block1_block2)),
                 true
             );
 
-            assert_eq!(ebb0_successors, [ebb1, ebb2]);
-            assert_eq!(ebb1_successors, [ebb1, ebb2]);
-            assert_eq!(ebb2_successors, []);
+            assert_eq!(block0_successors, [block1, block2]);
+            assert_eq!(block1_successors, [block1, block2]);
+            assert_eq!(block2_successors, []);
         }
 
         
-        func.dfg.replace(br_ebb0_ebb2).brnz(cond, ebb1, &[]);
-        func.dfg.replace(jmp_ebb0_ebb1).return_(&[]);
-        cfg.recompute_ebb(&mut func, ebb0);
-        let br_ebb0_ebb1 = br_ebb0_ebb2;
+        func.dfg.replace(br_block0_block2).brnz(cond, block1, &[]);
+        func.dfg.replace(jmp_block0_block1).return_(&[]);
+        cfg.recompute_block(&mut func, block0);
+        let br_block0_block1 = br_block0_block2;
 
         {
-            let ebb0_predecessors = cfg.pred_iter(ebb0).collect::<Vec<_>>();
-            let ebb1_predecessors = cfg.pred_iter(ebb1).collect::<Vec<_>>();
-            let ebb2_predecessors = cfg.pred_iter(ebb2).collect::<Vec<_>>();
+            let block0_predecessors = cfg.pred_iter(block0).collect::<Vec<_>>();
+            let block1_predecessors = cfg.pred_iter(block1).collect::<Vec<_>>();
+            let block2_predecessors = cfg.pred_iter(block2).collect::<Vec<_>>();
 
-            let ebb0_successors = cfg.succ_iter(ebb0);
-            let ebb1_successors = cfg.succ_iter(ebb1);
-            let ebb2_successors = cfg.succ_iter(ebb2);
+            let block0_successors = cfg.succ_iter(block0);
+            let block1_successors = cfg.succ_iter(block1);
+            let block2_successors = cfg.succ_iter(block2);
 
-            assert_eq!(ebb0_predecessors.len(), 0);
-            assert_eq!(ebb1_predecessors.len(), 2);
-            assert_eq!(ebb2_predecessors.len(), 1);
+            assert_eq!(block0_predecessors.len(), 0);
+            assert_eq!(block1_predecessors.len(), 2);
+            assert_eq!(block2_predecessors.len(), 1);
 
             assert_eq!(
-                ebb1_predecessors.contains(&BasicBlock::new(ebb0, br_ebb0_ebb1)),
+                block1_predecessors.contains(&BlockPredecessor::new(block0, br_block0_block1)),
                 true
             );
             assert_eq!(
-                ebb1_predecessors.contains(&BasicBlock::new(ebb1, br_ebb1_ebb1)),
+                block1_predecessors.contains(&BlockPredecessor::new(block1, br_block1_block1)),
                 true
             );
             assert_eq!(
-                ebb2_predecessors.contains(&BasicBlock::new(ebb0, br_ebb0_ebb2)),
+                block2_predecessors.contains(&BlockPredecessor::new(block0, br_block0_block2)),
                 false
             );
             assert_eq!(
-                ebb2_predecessors.contains(&BasicBlock::new(ebb1, jmp_ebb1_ebb2)),
+                block2_predecessors.contains(&BlockPredecessor::new(block1, jmp_block1_block2)),
                 true
             );
 
-            assert_eq!(ebb0_successors.collect::<Vec<_>>(), [ebb1]);
-            assert_eq!(ebb1_successors.collect::<Vec<_>>(), [ebb1, ebb2]);
-            assert_eq!(ebb2_successors.collect::<Vec<_>>(), []);
+            assert_eq!(block0_successors.collect::<Vec<_>>(), [block1]);
+            assert_eq!(block1_successors.collect::<Vec<_>>(), [block1, block2]);
+            assert_eq!(block2_successors.collect::<Vec<_>>(), []);
         }
     }
 }

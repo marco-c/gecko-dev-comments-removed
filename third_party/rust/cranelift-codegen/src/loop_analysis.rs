@@ -5,8 +5,8 @@ use crate::dominator_tree::DominatorTree;
 use crate::entity::entity_impl;
 use crate::entity::SecondaryMap;
 use crate::entity::{Keys, PrimaryMap};
-use crate::flowgraph::{BasicBlock, ControlFlowGraph};
-use crate::ir::{Ebb, Function, Layout};
+use crate::flowgraph::{BlockPredecessor, ControlFlowGraph};
+use crate::ir::{Block, Function, Layout};
 use crate::packed_option::PackedOption;
 use crate::timing;
 use alloc::vec::Vec;
@@ -22,18 +22,18 @@ entity_impl!(Loop, "loop");
 
 pub struct LoopAnalysis {
     loops: PrimaryMap<Loop, LoopData>,
-    ebb_loop_map: SecondaryMap<Ebb, PackedOption<Loop>>,
+    block_loop_map: SecondaryMap<Block, PackedOption<Loop>>,
     valid: bool,
 }
 
 struct LoopData {
-    header: Ebb,
+    header: Block,
     parent: PackedOption<Loop>,
 }
 
 impl LoopData {
     
-    pub fn new(header: Ebb, parent: Option<Loop>) -> Self {
+    pub fn new(header: Block, parent: Option<Loop>) -> Self {
         Self {
             header,
             parent: parent.into(),
@@ -49,7 +49,7 @@ impl LoopAnalysis {
         Self {
             valid: false,
             loops: PrimaryMap::new(),
-            ebb_loop_map: SecondaryMap::new(),
+            block_loop_map: SecondaryMap::new(),
         }
     }
 
@@ -62,7 +62,7 @@ impl LoopAnalysis {
     
     
     
-    pub fn loop_header(&self, lp: Loop) -> Ebb {
+    pub fn loop_header(&self, lp: Loop) -> Block {
         self.loops[lp].header
     }
 
@@ -74,11 +74,11 @@ impl LoopAnalysis {
     
     
     
-    pub fn is_in_loop(&self, ebb: Ebb, lp: Loop) -> bool {
-        let ebb_loop = self.ebb_loop_map[ebb];
-        match ebb_loop.expand() {
+    pub fn is_in_loop(&self, block: Block, lp: Loop) -> bool {
+        let block_loop = self.block_loop_map[block];
+        match block_loop.expand() {
             None => false,
-            Some(ebb_loop) => self.is_child_loop(ebb_loop, lp),
+            Some(block_loop) => self.is_child_loop(block_loop, lp),
         }
     }
 
@@ -103,8 +103,8 @@ impl LoopAnalysis {
     pub fn compute(&mut self, func: &Function, cfg: &ControlFlowGraph, domtree: &DominatorTree) {
         let _tt = timing::loop_analysis();
         self.loops.clear();
-        self.ebb_loop_map.clear();
-        self.ebb_loop_map.resize(func.dfg.num_ebbs());
+        self.block_loop_map.clear();
+        self.block_loop_map.resize(func.dfg.num_blocks());
         self.find_loop_headers(cfg, domtree, &func.layout);
         self.discover_loop_blocks(cfg, domtree, &func.layout);
         self.valid = true;
@@ -124,7 +124,7 @@ impl LoopAnalysis {
     
     pub fn clear(&mut self) {
         self.loops.clear();
-        self.ebb_loop_map.clear();
+        self.block_loop_map.clear();
         self.valid = false;
     }
 
@@ -137,16 +137,16 @@ impl LoopAnalysis {
         layout: &Layout,
     ) {
         
-        for &ebb in domtree.cfg_postorder().iter().rev() {
-            for BasicBlock {
+        for &block in domtree.cfg_postorder().iter().rev() {
+            for BlockPredecessor {
                 inst: pred_inst, ..
-            } in cfg.pred_iter(ebb)
+            } in cfg.pred_iter(block)
             {
                 
-                if domtree.dominates(ebb, pred_inst, layout) {
+                if domtree.dominates(block, pred_inst, layout) {
                     
-                    let lp = self.loops.push(LoopData::new(ebb, None));
-                    self.ebb_loop_map[ebb] = lp.into();
+                    let lp = self.loops.push(LoopData::new(block, None));
+                    self.block_loop_map[block] = lp.into();
                     break;
                     
                 }
@@ -163,12 +163,12 @@ impl LoopAnalysis {
         domtree: &DominatorTree,
         layout: &Layout,
     ) {
-        let mut stack: Vec<Ebb> = Vec::new();
+        let mut stack: Vec<Block> = Vec::new();
         
         
         for lp in self.loops().rev() {
-            for BasicBlock {
-                ebb: pred,
+            for BlockPredecessor {
+                block: pred,
                 inst: pred_inst,
             } in cfg.pred_iter(self.loops[lp].header)
             {
@@ -178,11 +178,11 @@ impl LoopAnalysis {
                 }
             }
             while let Some(node) = stack.pop() {
-                let continue_dfs: Option<Ebb>;
-                match self.ebb_loop_map[node].expand() {
+                let continue_dfs: Option<Block>;
+                match self.block_loop_map[node].expand() {
                     None => {
                         
-                        self.ebb_loop_map[node] = PackedOption::from(lp);
+                        self.block_loop_map[node] = PackedOption::from(lp);
                         continue_dfs = Some(node);
                     }
                     Some(node_loop) => {
@@ -221,7 +221,7 @@ impl LoopAnalysis {
                 
                 
                 if let Some(continue_dfs) = continue_dfs {
-                    for BasicBlock { ebb: pred, .. } in cfg.pred_iter(continue_dfs) {
+                    for BlockPredecessor { block: pred, .. } in cfg.pred_iter(continue_dfs) {
                         stack.push(pred)
                     }
                 }
@@ -242,27 +242,27 @@ mod tests {
     #[test]
     fn nested_loops_detection() {
         let mut func = Function::new();
-        let ebb0 = func.dfg.make_ebb();
-        let ebb1 = func.dfg.make_ebb();
-        let ebb2 = func.dfg.make_ebb();
-        let ebb3 = func.dfg.make_ebb();
-        let cond = func.dfg.append_ebb_param(ebb0, types::I32);
+        let block0 = func.dfg.make_block();
+        let block1 = func.dfg.make_block();
+        let block2 = func.dfg.make_block();
+        let block3 = func.dfg.make_block();
+        let cond = func.dfg.append_block_param(block0, types::I32);
 
         {
             let mut cur = FuncCursor::new(&mut func);
 
-            cur.insert_ebb(ebb0);
-            cur.ins().jump(ebb1, &[]);
+            cur.insert_block(block0);
+            cur.ins().jump(block1, &[]);
 
-            cur.insert_ebb(ebb1);
-            cur.ins().jump(ebb2, &[]);
+            cur.insert_block(block1);
+            cur.ins().jump(block2, &[]);
 
-            cur.insert_ebb(ebb2);
-            cur.ins().brnz(cond, ebb1, &[]);
-            cur.ins().jump(ebb3, &[]);
+            cur.insert_block(block2);
+            cur.ins().brnz(cond, block1, &[]);
+            cur.ins().jump(block3, &[]);
 
-            cur.insert_ebb(ebb3);
-            cur.ins().brnz(cond, ebb0, &[]);
+            cur.insert_block(block3);
+            cur.ins().brnz(cond, block0, &[]);
         }
 
         let mut loop_analysis = LoopAnalysis::new();
@@ -274,54 +274,54 @@ mod tests {
 
         let loops = loop_analysis.loops().collect::<Vec<Loop>>();
         assert_eq!(loops.len(), 2);
-        assert_eq!(loop_analysis.loop_header(loops[0]), ebb0);
-        assert_eq!(loop_analysis.loop_header(loops[1]), ebb1);
+        assert_eq!(loop_analysis.loop_header(loops[0]), block0);
+        assert_eq!(loop_analysis.loop_header(loops[1]), block1);
         assert_eq!(loop_analysis.loop_parent(loops[1]), Some(loops[0]));
         assert_eq!(loop_analysis.loop_parent(loops[0]), None);
-        assert_eq!(loop_analysis.is_in_loop(ebb0, loops[0]), true);
-        assert_eq!(loop_analysis.is_in_loop(ebb0, loops[1]), false);
-        assert_eq!(loop_analysis.is_in_loop(ebb1, loops[1]), true);
-        assert_eq!(loop_analysis.is_in_loop(ebb1, loops[0]), true);
-        assert_eq!(loop_analysis.is_in_loop(ebb2, loops[1]), true);
-        assert_eq!(loop_analysis.is_in_loop(ebb2, loops[0]), true);
-        assert_eq!(loop_analysis.is_in_loop(ebb3, loops[0]), true);
-        assert_eq!(loop_analysis.is_in_loop(ebb0, loops[1]), false);
+        assert_eq!(loop_analysis.is_in_loop(block0, loops[0]), true);
+        assert_eq!(loop_analysis.is_in_loop(block0, loops[1]), false);
+        assert_eq!(loop_analysis.is_in_loop(block1, loops[1]), true);
+        assert_eq!(loop_analysis.is_in_loop(block1, loops[0]), true);
+        assert_eq!(loop_analysis.is_in_loop(block2, loops[1]), true);
+        assert_eq!(loop_analysis.is_in_loop(block2, loops[0]), true);
+        assert_eq!(loop_analysis.is_in_loop(block3, loops[0]), true);
+        assert_eq!(loop_analysis.is_in_loop(block0, loops[1]), false);
     }
 
     #[test]
     fn complex_loop_detection() {
         let mut func = Function::new();
-        let ebb0 = func.dfg.make_ebb();
-        let ebb1 = func.dfg.make_ebb();
-        let ebb2 = func.dfg.make_ebb();
-        let ebb3 = func.dfg.make_ebb();
-        let ebb4 = func.dfg.make_ebb();
-        let ebb5 = func.dfg.make_ebb();
-        let cond = func.dfg.append_ebb_param(ebb0, types::I32);
+        let block0 = func.dfg.make_block();
+        let block1 = func.dfg.make_block();
+        let block2 = func.dfg.make_block();
+        let block3 = func.dfg.make_block();
+        let block4 = func.dfg.make_block();
+        let block5 = func.dfg.make_block();
+        let cond = func.dfg.append_block_param(block0, types::I32);
 
         {
             let mut cur = FuncCursor::new(&mut func);
 
-            cur.insert_ebb(ebb0);
-            cur.ins().brnz(cond, ebb1, &[]);
-            cur.ins().jump(ebb3, &[]);
+            cur.insert_block(block0);
+            cur.ins().brnz(cond, block1, &[]);
+            cur.ins().jump(block3, &[]);
 
-            cur.insert_ebb(ebb1);
-            cur.ins().jump(ebb2, &[]);
+            cur.insert_block(block1);
+            cur.ins().jump(block2, &[]);
 
-            cur.insert_ebb(ebb2);
-            cur.ins().brnz(cond, ebb1, &[]);
-            cur.ins().jump(ebb5, &[]);
+            cur.insert_block(block2);
+            cur.ins().brnz(cond, block1, &[]);
+            cur.ins().jump(block5, &[]);
 
-            cur.insert_ebb(ebb3);
-            cur.ins().jump(ebb4, &[]);
+            cur.insert_block(block3);
+            cur.ins().jump(block4, &[]);
 
-            cur.insert_ebb(ebb4);
-            cur.ins().brnz(cond, ebb3, &[]);
-            cur.ins().jump(ebb5, &[]);
+            cur.insert_block(block4);
+            cur.ins().brnz(cond, block3, &[]);
+            cur.ins().jump(block5, &[]);
 
-            cur.insert_ebb(ebb5);
-            cur.ins().brnz(cond, ebb0, &[]);
+            cur.insert_block(block5);
+            cur.ins().brnz(cond, block0, &[]);
         }
 
         let mut loop_analysis = LoopAnalysis::new();
@@ -333,17 +333,17 @@ mod tests {
 
         let loops = loop_analysis.loops().collect::<Vec<Loop>>();
         assert_eq!(loops.len(), 3);
-        assert_eq!(loop_analysis.loop_header(loops[0]), ebb0);
-        assert_eq!(loop_analysis.loop_header(loops[1]), ebb1);
-        assert_eq!(loop_analysis.loop_header(loops[2]), ebb3);
+        assert_eq!(loop_analysis.loop_header(loops[0]), block0);
+        assert_eq!(loop_analysis.loop_header(loops[1]), block1);
+        assert_eq!(loop_analysis.loop_header(loops[2]), block3);
         assert_eq!(loop_analysis.loop_parent(loops[1]), Some(loops[0]));
         assert_eq!(loop_analysis.loop_parent(loops[2]), Some(loops[0]));
         assert_eq!(loop_analysis.loop_parent(loops[0]), None);
-        assert_eq!(loop_analysis.is_in_loop(ebb0, loops[0]), true);
-        assert_eq!(loop_analysis.is_in_loop(ebb1, loops[1]), true);
-        assert_eq!(loop_analysis.is_in_loop(ebb2, loops[1]), true);
-        assert_eq!(loop_analysis.is_in_loop(ebb3, loops[2]), true);
-        assert_eq!(loop_analysis.is_in_loop(ebb4, loops[2]), true);
-        assert_eq!(loop_analysis.is_in_loop(ebb5, loops[0]), true);
+        assert_eq!(loop_analysis.is_in_loop(block0, loops[0]), true);
+        assert_eq!(loop_analysis.is_in_loop(block1, loops[1]), true);
+        assert_eq!(loop_analysis.is_in_loop(block2, loops[1]), true);
+        assert_eq!(loop_analysis.is_in_loop(block3, loops[2]), true);
+        assert_eq!(loop_analysis.is_in_loop(block4, loops[2]), true);
+        assert_eq!(loop_analysis.is_in_loop(block5, loops[0]), true);
     }
 }

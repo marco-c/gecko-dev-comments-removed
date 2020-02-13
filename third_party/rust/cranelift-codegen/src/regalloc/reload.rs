@@ -13,7 +13,7 @@ use crate::cursor::{Cursor, EncCursor};
 use crate::dominator_tree::DominatorTree;
 use crate::entity::{SparseMap, SparseMapValue};
 use crate::ir::{AbiParam, ArgumentLoc, InstBuilder};
-use crate::ir::{Ebb, Function, Inst, InstructionData, Opcode, Value, ValueLoc};
+use crate::ir::{Block, Function, Inst, InstructionData, Opcode, Value, ValueLoc};
 use crate::isa::RegClass;
 use crate::isa::{ConstraintKind, EncInfo, Encoding, RecipeConstraints, TargetIsa};
 use crate::regalloc::affinity::Affinity;
@@ -113,15 +113,15 @@ impl SparseMapValue<Value> for ReloadedValue {
 
 impl<'a> Context<'a> {
     fn run(&mut self, tracker: &mut LiveValueTracker) {
-        self.topo.reset(self.cur.func.layout.ebbs());
-        while let Some(ebb) = self.topo.next(&self.cur.func.layout, self.domtree) {
-            self.visit_ebb(ebb, tracker);
+        self.topo.reset(self.cur.func.layout.blocks());
+        while let Some(block) = self.topo.next(&self.cur.func.layout, self.domtree) {
+            self.visit_block(block, tracker);
         }
     }
 
-    fn visit_ebb(&mut self, ebb: Ebb, tracker: &mut LiveValueTracker) {
-        debug!("Reloading {}:", ebb);
-        self.visit_ebb_header(ebb, tracker);
+    fn visit_block(&mut self, block: Block, tracker: &mut LiveValueTracker) {
+        debug!("Reloading {}:", block);
+        self.visit_block_header(block, tracker);
         tracker.drop_dead_params();
 
         
@@ -130,7 +130,7 @@ impl<'a> Context<'a> {
                 
                 
                 let encoding = self.cur.func.encodings[inst];
-                self.visit_inst(ebb, inst, encoding, tracker);
+                self.visit_inst(block, inst, encoding, tracker);
                 tracker.drop_dead(inst);
             } else {
                 
@@ -141,28 +141,28 @@ impl<'a> Context<'a> {
     }
 
     
-    fn visit_ebb_header(&mut self, ebb: Ebb, tracker: &mut LiveValueTracker) {
-        let (liveins, args) = tracker.ebb_top(
-            ebb,
+    fn visit_block_header(&mut self, block: Block, tracker: &mut LiveValueTracker) {
+        let (liveins, args) = tracker.block_top(
+            block,
             &self.cur.func.dfg,
             self.liveness,
             &self.cur.func.layout,
             self.domtree,
         );
 
-        if self.cur.func.layout.entry_block() == Some(ebb) {
+        if self.cur.func.layout.entry_block() == Some(block) {
             debug_assert_eq!(liveins.len(), 0);
-            self.visit_entry_params(ebb, args);
+            self.visit_entry_params(block, args);
         } else {
-            self.visit_ebb_params(ebb, args);
+            self.visit_block_params(block, args);
         }
     }
 
     
     
-    fn visit_entry_params(&mut self, ebb: Ebb, args: &[LiveValue]) {
+    fn visit_entry_params(&mut self, block: Block, args: &[LiveValue]) {
         debug_assert_eq!(self.cur.func.signature.params.len(), args.len());
-        self.cur.goto_first_inst(ebb);
+        self.cur.goto_first_inst(block);
 
         for (arg_idx, arg) in args.iter().enumerate() {
             let abi = self.cur.func.signature.params[arg_idx];
@@ -175,10 +175,10 @@ impl<'a> Context<'a> {
                             .cur
                             .func
                             .dfg
-                            .replace_ebb_param(arg.value, abi.value_type);
+                            .replace_block_param(arg.value, abi.value_type);
                         let affinity = Affinity::abi(&abi, self.cur.isa);
-                        self.liveness.create_dead(reg, ebb, affinity);
-                        self.insert_spill(ebb, arg.value, reg);
+                        self.liveness.create_dead(reg, block, affinity);
+                        self.insert_spill(block, arg.value, reg);
                     }
                 }
                 ArgumentLoc::Stack(_) => {
@@ -189,15 +189,15 @@ impl<'a> Context<'a> {
         }
     }
 
-    fn visit_ebb_params(&mut self, ebb: Ebb, _args: &[LiveValue]) {
-        self.cur.goto_first_inst(ebb);
+    fn visit_block_params(&mut self, block: Block, _args: &[LiveValue]) {
+        self.cur.goto_first_inst(block);
     }
 
     
     
     fn visit_inst(
         &mut self,
-        ebb: Ebb,
+        block: Block,
         inst: Inst,
         encoding: Encoding,
         tracker: &mut LiveValueTracker,
@@ -265,7 +265,7 @@ impl<'a> Context<'a> {
         {
             self.reload_copy_candidates(inst);
         } else {
-            self.reload_inst_candidates(ebb, inst);
+            self.reload_inst_candidates(block, inst);
         }
 
         
@@ -304,7 +304,7 @@ impl<'a> Context<'a> {
                         let value_type = self.cur.func.dfg.value_type(lv.value);
                         let reg = self.cur.func.dfg.replace_result(lv.value, value_type);
                         self.liveness.create_dead(reg, inst, Affinity::new(op));
-                        self.insert_spill(ebb, lv.value, reg);
+                        self.insert_spill(block, lv.value, reg);
                     }
                 }
             }
@@ -333,14 +333,14 @@ impl<'a> Context<'a> {
                     let reg = self.cur.func.dfg.replace_result(lv.value, abi.value_type);
                     self.liveness
                         .create_dead(reg, inst, Affinity::abi(&abi, self.cur.isa));
-                    self.insert_spill(ebb, lv.value, reg);
+                    self.insert_spill(block, lv.value, reg);
                 }
             }
         }
     }
 
     
-    fn reload_inst_candidates(&mut self, ebb: Ebb, inst: Inst) {
+    fn reload_inst_candidates(&mut self, block: Block, inst: Inst) {
         
         for cand in self.candidates.iter_mut() {
             if let Some(reload) = self.reloads.get(cand.value) {
@@ -361,7 +361,7 @@ impl<'a> Context<'a> {
             let affinity = Affinity::Reg(cand.regclass.into());
             self.liveness.create_dead(reg, fill, affinity);
             self.liveness
-                .extend_locally(reg, ebb, inst, &self.cur.func.layout);
+                .extend_locally(reg, block, inst, &self.cur.func.layout);
         }
 
         
@@ -448,14 +448,14 @@ impl<'a> Context<'a> {
     
     
     
-    fn insert_spill(&mut self, ebb: Ebb, stack: Value, reg: Value) {
+    fn insert_spill(&mut self, block: Block, stack: Value, reg: Value) {
         self.cur.ins().with_result(stack).spill(reg);
         let inst = self.cur.built_inst();
 
         
         self.liveness.move_def_locally(stack, inst);
         self.liveness
-            .extend_locally(reg, ebb, inst, &self.cur.func.layout);
+            .extend_locally(reg, block, inst, &self.cur.func.layout);
     }
 }
 

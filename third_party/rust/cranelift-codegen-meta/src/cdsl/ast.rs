@@ -708,7 +708,7 @@ macro_rules! def {
 }
 
 
-macro_rules! ebb {
+macro_rules! block {
     
     ($block: ident) => {
         ExprBuilder::block($block).assign_to(Vec::new())

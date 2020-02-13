@@ -106,7 +106,7 @@ impl LibCall {
 
 
 
-pub fn get_libcall_funcref(
+pub(crate) fn get_libcall_funcref(
     libcall: LibCall,
     call_conv: CallConv,
     func: &mut Function,

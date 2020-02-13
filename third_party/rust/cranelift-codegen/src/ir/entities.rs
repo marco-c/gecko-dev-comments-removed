@@ -32,12 +32,11 @@ use serde::{Deserialize, Serialize};
 
 
 
-
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct Ebb(u32);
-entity_impl!(Ebb, "ebb");
+pub struct Block(u32);
+entity_impl!(Block, "block");
 
-impl Ebb {
+impl Block {
     
     
     
@@ -372,7 +371,7 @@ pub enum AnyEntity {
     
     Function,
     
-    Ebb(Ebb),
+    Block(Block),
     
     Inst(Inst),
     
@@ -397,7 +396,7 @@ impl fmt::Display for AnyEntity {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Self::Function => write!(f, "function"),
-            Self::Ebb(r) => r.fmt(f),
+            Self::Block(r) => r.fmt(f),
             Self::Inst(r) => r.fmt(f),
             Self::Value(r) => r.fmt(f),
             Self::StackSlot(r) => r.fmt(f),
@@ -417,9 +416,9 @@ impl fmt::Debug for AnyEntity {
     }
 }
 
-impl From<Ebb> for AnyEntity {
-    fn from(r: Ebb) -> Self {
-        Self::Ebb(r)
+impl From<Block> for AnyEntity {
+    fn from(r: Block) -> Self {
+        Self::Block(r)
     }
 }
 

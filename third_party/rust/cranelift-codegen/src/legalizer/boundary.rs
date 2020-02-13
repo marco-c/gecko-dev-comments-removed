@@ -22,7 +22,7 @@ use crate::cursor::{Cursor, FuncCursor};
 use crate::flowgraph::ControlFlowGraph;
 use crate::ir::instructions::CallInfo;
 use crate::ir::{
-    AbiParam, ArgumentLoc, ArgumentPurpose, DataFlowGraph, Ebb, Function, Inst, InstBuilder,
+    AbiParam, ArgumentLoc, ArgumentPurpose, Block, DataFlowGraph, Function, Inst, InstBuilder,
     MemFlags, SigRef, Signature, StackSlotData, StackSlotKind, Type, Value, ValueLoc,
 };
 use crate::isa::TargetIsa;
@@ -89,7 +89,7 @@ fn legalize_signature(
 
 
 
-fn legalize_entry_params(func: &mut Function, entry: Ebb) {
+fn legalize_entry_params(func: &mut Function, entry: Block) {
     let mut has_sret = false;
     let mut has_link = false;
     let mut has_vmctx = false;
@@ -106,9 +106,9 @@ fn legalize_entry_params(func: &mut Function, entry: Ebb) {
 
     
     
-    let ebb_params = pos.func.dfg.detach_ebb_params(entry);
+    let block_params = pos.func.dfg.detach_block_params(entry);
     let mut old_arg = 0;
-    while let Some(arg) = ebb_params.get(old_arg, &pos.func.dfg.value_lists) {
+    while let Some(arg) = block_params.get(old_arg, &pos.func.dfg.value_lists) {
         old_arg += 1;
 
         let abi_type = pos.func.signature.params[abi_arg];
@@ -116,7 +116,7 @@ fn legalize_entry_params(func: &mut Function, entry: Ebb) {
         if arg_type == abi_type.value_type {
             
             
-            pos.func.dfg.attach_ebb_param(entry, arg);
+            pos.func.dfg.attach_block_param(entry, arg);
             match abi_type.purpose {
                 ArgumentPurpose::Normal => {}
                 ArgumentPurpose::FramePointer => {}
@@ -151,7 +151,7 @@ fn legalize_entry_params(func: &mut Function, entry: Ebb) {
                 );
                 if ty == abi_type.value_type {
                     abi_arg += 1;
-                    Ok(func.dfg.append_ebb_param(entry, ty))
+                    Ok(func.dfg.append_block_param(entry, ty))
                 } else {
                     Err(abi_type)
                 }
@@ -201,7 +201,7 @@ fn legalize_entry_params(func: &mut Function, entry: Ebb) {
 
         
         
-        pos.func.dfg.append_ebb_param(entry, arg.value_type);
+        pos.func.dfg.append_block_param(entry, arg.value_type);
     }
 }
 
@@ -851,7 +851,7 @@ pub fn handle_return_abi(inst: Inst, func: &mut Function, cfg: &ControlFlowGraph
             let val = pos
                 .func
                 .dfg
-                .ebb_params(pos.func.layout.entry_block().unwrap())[idx];
+                .block_params(pos.func.layout.entry_block().unwrap())[idx];
             debug_assert_eq!(pos.func.dfg.value_type(val), arg.value_type);
             vlist.push(val, &mut pos.func.dfg.value_lists);
 
@@ -958,8 +958,13 @@ fn round_up_to_multiple_of_pow2(n: u32, to: u32) -> u32 {
 
 
 
-fn spill_entry_params(func: &mut Function, entry: Ebb) {
-    for (abi, &arg) in func.signature.params.iter().zip(func.dfg.ebb_params(entry)) {
+fn spill_entry_params(func: &mut Function, entry: Block) {
+    for (abi, &arg) in func
+        .signature
+        .params
+        .iter()
+        .zip(func.dfg.block_params(entry))
+    {
         if let ArgumentLoc::Stack(offset) = abi.location {
             let ss = func.stack_slots.make_incoming_arg(abi.value_type, offset);
             func.locations[arg] = ValueLoc::Stack(ss);

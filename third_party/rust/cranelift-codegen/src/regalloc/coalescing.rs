@@ -8,10 +8,10 @@
 use crate::cursor::{Cursor, EncCursor};
 use crate::dbg::DisplayList;
 use crate::dominator_tree::{DominatorTree, DominatorTreePreorder};
-use crate::flowgraph::{BasicBlock, ControlFlowGraph};
+use crate::flowgraph::{BlockPredecessor, ControlFlowGraph};
 use crate::fx::FxHashMap;
 use crate::ir::{self, InstBuilder, ProgramOrder};
-use crate::ir::{Ebb, ExpandedProgramPoint, Function, Inst, Value};
+use crate::ir::{Block, ExpandedProgramPoint, Function, Inst, Value};
 use crate::isa::{EncInfo, TargetIsa};
 use crate::regalloc::affinity::Affinity;
 use crate::regalloc::liveness::Liveness;
@@ -135,8 +135,8 @@ impl Coalescing {
         };
 
         
-        for &ebb in domtree.cfg_postorder() {
-            context.union_find_ebb(ebb);
+        for &block in domtree.cfg_postorder() {
+            context.union_find_block(block);
         }
         context.finish_union_find();
 
@@ -153,16 +153,16 @@ impl<'a> Context<'a> {
     
     
     
-    pub fn union_find_ebb(&mut self, ebb: Ebb) {
-        let num_params = self.func.dfg.num_ebb_params(ebb);
+    pub fn union_find_block(&mut self, block: Block) {
+        let num_params = self.func.dfg.num_block_params(block);
         if num_params == 0 {
             return;
         }
 
-        self.isolate_conflicting_params(ebb, num_params);
+        self.isolate_conflicting_params(block, num_params);
 
         for i in 0..num_params {
-            self.union_pred_args(ebb, i);
+            self.union_pred_args(block, i);
         }
     }
 
@@ -170,34 +170,34 @@ impl<'a> Context<'a> {
     
     
     
-    fn isolate_conflicting_params(&mut self, ebb: Ebb, num_params: usize) {
-        debug_assert_eq!(num_params, self.func.dfg.num_ebb_params(ebb));
+    fn isolate_conflicting_params(&mut self, block: Block, num_params: usize) {
+        debug_assert_eq!(num_params, self.func.dfg.num_block_params(block));
         
         
-        for BasicBlock {
-            ebb: pred_ebb,
+        for BlockPredecessor {
+            block: pred_block,
             inst: pred_inst,
-        } in self.cfg.pred_iter(ebb)
+        } in self.cfg.pred_iter(block)
         {
             
             
-            if !self.preorder.dominates(ebb, pred_ebb) {
+            if !self.preorder.dominates(block, pred_block) {
                 continue;
             }
 
             debug!(
                 " - checking {} params at back-edge {}: {}",
                 num_params,
-                pred_ebb,
+                pred_block,
                 self.func.dfg.display_inst(pred_inst, self.isa)
             );
 
             
             
             for i in 0..num_params {
-                let param = self.func.dfg.ebb_params(ebb)[i];
-                if self.liveness[param].reaches_use(pred_inst, pred_ebb, &self.func.layout) {
-                    self.isolate_param(ebb, param);
+                let param = self.func.dfg.block_params(block)[i];
+                if self.liveness[param].reaches_use(pred_inst, pred_block, &self.func.layout) {
+                    self.isolate_param(block, param);
                 }
             }
         }
@@ -208,25 +208,25 @@ impl<'a> Context<'a> {
     
     
     
-    fn union_pred_args(&mut self, ebb: Ebb, argnum: usize) {
-        let param = self.func.dfg.ebb_params(ebb)[argnum];
+    fn union_pred_args(&mut self, block: Block, argnum: usize) {
+        let param = self.func.dfg.block_params(block)[argnum];
 
-        for BasicBlock {
-            ebb: pred_ebb,
+        for BlockPredecessor {
+            block: pred_block,
             inst: pred_inst,
-        } in self.cfg.pred_iter(ebb)
+        } in self.cfg.pred_iter(block)
         {
             let arg = self.func.dfg.inst_variable_args(pred_inst)[argnum];
 
             
             
             
-            if let ir::ValueDef::Param(def_ebb, def_num) = self.func.dfg.value_def(arg) {
-                if Some(def_ebb) == self.func.layout.entry_block()
+            if let ir::ValueDef::Param(def_block, def_num) = self.func.dfg.value_def(arg) {
+                if Some(def_block) == self.func.layout.entry_block()
                     && self.func.signature.params[def_num].location.is_stack()
                 {
                     debug!("-> isolating function stack parameter {}", arg);
-                    let new_arg = self.isolate_arg(pred_ebb, pred_inst, argnum, arg);
+                    let new_arg = self.isolate_arg(pred_block, pred_inst, argnum, arg);
                     self.virtregs.union(param, new_arg);
                     continue;
                 }
@@ -243,18 +243,18 @@ impl<'a> Context<'a> {
                 
                 
                 debug_assert!(
-                    lr.def() != ebb.into(),
+                    lr.def() != block.into(),
                     "{} parameter {} was missed by isolate_conflicting_params()",
-                    ebb,
+                    block,
                     arg
                 );
 
                 
-                lr.is_livein(ebb, &self.func.layout)
+                lr.is_livein(block, &self.func.layout)
             };
 
             if interference {
-                let new_arg = self.isolate_arg(pred_ebb, pred_inst, argnum, arg);
+                let new_arg = self.isolate_arg(pred_block, pred_inst, argnum, arg);
                 self.virtregs.union(param, new_arg);
             } else {
                 self.virtregs.union(param, arg);
@@ -277,16 +277,16 @@ impl<'a> Context<'a> {
     
     
     
-    fn isolate_param(&mut self, ebb: Ebb, param: Value) -> Value {
+    fn isolate_param(&mut self, block: Block, param: Value) -> Value {
         debug_assert_eq!(
             self.func.dfg.value_def(param).pp(),
-            ExpandedProgramPoint::Ebb(ebb)
+            ExpandedProgramPoint::Block(block)
         );
         let ty = self.func.dfg.value_type(param);
-        let new_val = self.func.dfg.replace_ebb_param(param, ty);
+        let new_val = self.func.dfg.replace_block_param(param, ty);
 
         
-        let mut pos = EncCursor::new(self.func, self.isa).at_first_inst(ebb);
+        let mut pos = EncCursor::new(self.func, self.isa).at_first_inst(block);
         if let Some(inst) = pos.current_inst() {
             pos.use_srcloc(inst);
         }
@@ -297,7 +297,7 @@ impl<'a> Context<'a> {
         debug!(
             "-> inserted {}, following {}({}: {})",
             pos.display_inst(inst),
-            ebb,
+            block,
             new_val,
             ty
         );
@@ -311,9 +311,9 @@ impl<'a> Context<'a> {
                 .expect("Bad copy encoding")
                 .outs[0],
         );
-        self.liveness.create_dead(new_val, ebb, affinity);
+        self.liveness.create_dead(new_val, block, affinity);
         self.liveness
-            .extend_locally(new_val, ebb, inst, &pos.func.layout);
+            .extend_locally(new_val, block, inst, &pos.func.layout);
 
         new_val
     }
@@ -339,7 +339,7 @@ impl<'a> Context<'a> {
     
     fn isolate_arg(
         &mut self,
-        pred_ebb: Ebb,
+        pred_block: Block,
         pred_inst: Inst,
         argnum: usize,
         pred_val: Value,
@@ -360,14 +360,14 @@ impl<'a> Context<'a> {
         );
         self.liveness.create_dead(copy, inst, affinity);
         self.liveness
-            .extend_locally(copy, pred_ebb, pred_inst, &pos.func.layout);
+            .extend_locally(copy, pred_block, pred_inst, &pos.func.layout);
 
         pos.func.dfg.inst_variable_args_mut(pred_inst)[argnum] = copy;
 
         debug!(
             "-> inserted {}, before {}: {}",
             pos.display_inst(inst),
-            pred_ebb,
+            pred_block,
             pos.display_inst(pred_inst)
         );
 
@@ -430,7 +430,7 @@ impl<'a> Context<'a> {
 
             
             
-            if self.liveness[parent.value].overlaps_def(node.def, node.ebb, &self.func.layout) {
+            if self.liveness[parent.value].overlaps_def(node.def, node.block, &self.func.layout) {
                 
                 debug!("-> interference: {} overlaps def of {}", parent, value);
                 return false;
@@ -472,7 +472,7 @@ impl<'a> Context<'a> {
 
     
     fn merge_param(&mut self, param: Value) {
-        let (ebb, argnum) = match self.func.dfg.value_def(param) {
+        let (block, argnum) = match self.func.dfg.value_def(param) {
             ir::ValueDef::Param(e, n) => (e, n),
             ir::ValueDef::Result(_, _) => panic!("Expected parameter"),
         };
@@ -493,12 +493,12 @@ impl<'a> Context<'a> {
         
         debug_assert!(self.predecessors.is_empty());
         debug_assert!(self.backedges.is_empty());
-        for BasicBlock {
-            ebb: pred_ebb,
+        for BlockPredecessor {
+            block: pred_block,
             inst: pred_inst,
-        } in self.cfg.pred_iter(ebb)
+        } in self.cfg.pred_iter(block)
         {
-            if self.preorder.dominates(ebb, pred_ebb) {
+            if self.preorder.dominates(block, pred_block) {
                 self.backedges.push(pred_inst);
             } else {
                 self.predecessors.push(pred_inst);
@@ -522,8 +522,8 @@ impl<'a> Context<'a> {
             }
 
             
-            let pred_ebb = self.func.layout.pp_ebb(pred_inst);
-            let new_arg = self.isolate_arg(pred_ebb, pred_inst, argnum, arg);
+            let pred_block = self.func.layout.pp_block(pred_inst);
+            let new_arg = self.isolate_arg(pred_block, pred_inst, argnum, arg);
             self.virtregs
                 .insert_single(param, new_arg, self.func, self.preorder);
         }
@@ -616,12 +616,12 @@ impl<'a> Context<'a> {
                 
                 let inst = node.def.unwrap_inst();
                 if node.set_id != parent.set_id
-                    && self.liveness[parent.value].reaches_use(inst, node.ebb, &self.func.layout)
+                    && self.liveness[parent.value].reaches_use(inst, node.block, &self.func.layout)
                 {
                     debug!(
                         " - interference: {} overlaps vcopy at {}:{}",
                         parent,
-                        node.ebb,
+                        node.block,
                         self.func.dfg.display_inst(inst, self.isa)
                     );
                     return false;
@@ -640,7 +640,7 @@ impl<'a> Context<'a> {
             
             debug_assert!(node.is_value() && parent.is_value());
             if node.set_id != parent.set_id
-                && self.liveness[parent.value].overlaps_def(node.def, node.ebb, &self.func.layout)
+                && self.liveness[parent.value].overlaps_def(node.def, node.block, &self.func.layout)
             {
                 
                 debug!(" - interference: {} overlaps def of {}", parent, node.value);
@@ -684,7 +684,7 @@ struct Node {
     
     def: ExpandedProgramPoint,
     
-    ebb: Ebb,
+    block: Block,
     
     is_vcopy: bool,
     
@@ -698,10 +698,10 @@ impl Node {
     
     pub fn value(value: Value, set_id: u8, func: &Function) -> Self {
         let def = func.dfg.value_def(value).pp();
-        let ebb = func.layout.pp_ebb(def);
+        let block = func.layout.pp_block(def);
         Self {
             def,
-            ebb,
+            block,
             is_vcopy: false,
             set_id,
             value,
@@ -711,10 +711,10 @@ impl Node {
     
     pub fn vcopy(branch: Inst, value: Value, set_id: u8, func: &Function) -> Self {
         let def = branch.into();
-        let ebb = func.layout.pp_ebb(def);
+        let block = func.layout.pp_block(def);
         Self {
             def,
-            ebb,
+            block,
             is_vcopy: true,
             set_id,
             value,
@@ -730,9 +730,9 @@ impl Node {
 impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.is_vcopy {
-            write!(f, "{}:vcopy({})@{}", self.set_id, self.value, self.ebb)
+            write!(f, "{}:vcopy({})@{}", self.set_id, self.value, self.block)
         } else {
-            write!(f, "{}:{}@{}", self.set_id, self.value, self.ebb)
+            write!(f, "{}:{}@{}", self.set_id, self.value, self.block)
         }
     }
 }
@@ -762,7 +762,7 @@ impl DomForest {
         
         
         while let Some(top) = self.stack.pop() {
-            if preorder.dominates(top.ebb, node.ebb) {
+            if preorder.dominates(top.block, node.block) {
                 
                 self.stack.push(top);
                 self.stack.push(node);
@@ -780,13 +780,13 @@ impl DomForest {
                     
                     
                     let def_inst = match n.def {
-                        ExpandedProgramPoint::Ebb(_) => return Some(n),
+                        ExpandedProgramPoint::Block(_) => return Some(n),
                         ExpandedProgramPoint::Inst(i) => i,
                     };
 
                     
-                    last_dom = match domtree.last_dominator(n.ebb, last_dom, &func.layout) {
-                        None => n.ebb.into(),
+                    last_dom = match domtree.last_dominator(n.block, last_dom, &func.layout) {
+                        None => n.block.into(),
                         Some(inst) => {
                             if func.layout.cmp(def_inst, inst) != cmp::Ordering::Greater {
                                 return Some(n);
@@ -870,13 +870,13 @@ struct VirtualCopies {
     
     
     
-    branches: Vec<(Inst, Ebb)>,
+    branches: Vec<(Inst, Block)>,
 
     
     
     
     
-    filter: FxHashMap<Ebb, (u8, usize)>,
+    filter: FxHashMap<Block, (u8, usize)>,
 }
 
 impl VirtualCopies {
@@ -911,15 +911,15 @@ impl VirtualCopies {
     ) {
         self.clear();
 
-        let mut last_ebb = None;
+        let mut last_block = None;
         for &val in values {
-            if let ir::ValueDef::Param(ebb, _) = func.dfg.value_def(val) {
+            if let ir::ValueDef::Param(block, _) = func.dfg.value_def(val) {
                 self.params.push(val);
 
                 
                 
-                if let Some(last) = last_ebb {
-                    match preorder.pre_cmp_ebb(last, ebb) {
+                if let Some(last) = last_block {
+                    match preorder.pre_cmp_block(last, block) {
                         cmp::Ordering::Less => {}
                         cmp::Ordering::Equal => continue,
                         cmp::Ordering::Greater => panic!("values in wrong order"),
@@ -927,13 +927,13 @@ impl VirtualCopies {
                 }
 
                 
-                for BasicBlock {
+                for BlockPredecessor {
                     inst: pred_inst, ..
-                } in cfg.pred_iter(ebb)
+                } in cfg.pred_iter(block)
                 {
-                    self.branches.push((pred_inst, ebb));
+                    self.branches.push((pred_inst, block));
                 }
-                last_ebb = Some(ebb);
+                last_block = Some(block);
             }
         }
 
@@ -961,8 +961,8 @@ impl VirtualCopies {
             None => return,
             Some(x) => *x,
         };
-        let ebb = func.dfg.value_def(param).unwrap_ebb();
-        if func.dfg.value_def(last).unwrap_ebb() == ebb {
+        let block = func.dfg.value_def(param).unwrap_block();
+        if func.dfg.value_def(last).unwrap_block() == block {
             
             return;
         }
@@ -970,7 +970,7 @@ impl VirtualCopies {
         
         
         
-        self.branches.retain(|&(_, dest)| dest != ebb);
+        self.branches.retain(|&(_, dest)| dest != block);
     }
 
     
@@ -991,17 +991,17 @@ impl VirtualCopies {
         
         
         let last_param = *self.params.last().expect("No more parameters");
-        let limit = func.dfg.value_def(last_param).unwrap_ebb();
+        let limit = func.dfg.value_def(last_param).unwrap_block();
 
         for (set_id, repr) in reprs.iter().enumerate() {
             let set_id = set_id as u8;
             for &value in virtregs.congruence_class(repr) {
-                if let ir::ValueDef::Param(ebb, num) = func.dfg.value_def(value) {
-                    if preorder.pre_cmp_ebb(ebb, limit) == cmp::Ordering::Greater {
+                if let ir::ValueDef::Param(block, num) = func.dfg.value_def(value) {
+                    if preorder.pre_cmp_block(block, limit) == cmp::Ordering::Greater {
                         
                         break;
                     }
-                    self.filter.insert(ebb, (set_id, num));
+                    self.filter.insert(block, (set_id, num));
                 }
             }
         }
@@ -1011,8 +1011,8 @@ impl VirtualCopies {
     
     
     
-    fn lookup(&self, ebb: Ebb) -> Option<(u8, usize)> {
-        self.filter.get(&ebb).cloned()
+    fn lookup(&self, block: Block) -> Option<(u8, usize)> {
+        self.filter.get(&block).cloned()
     }
 
     
@@ -1032,7 +1032,7 @@ impl VirtualCopies {
 struct VCopyIter<'a> {
     func: &'a Function,
     vcopies: &'a VirtualCopies,
-    branches: slice::Iter<'a, (Inst, Ebb)>,
+    branches: slice::Iter<'a, (Inst, Block)>,
 }
 
 impl<'a> Iterator for VCopyIter<'a> {
@@ -1090,7 +1090,7 @@ where
             (Some(a), Some(b)) => {
                 let layout = self.layout;
                 self.preorder
-                    .pre_cmp_ebb(a.ebb, b.ebb)
+                    .pre_cmp_block(a.block, b.block)
                     .then_with(|| layout.cmp(a.def, b.def))
             }
             (Some(_), None) => cmp::Ordering::Less,

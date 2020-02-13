@@ -158,9 +158,9 @@ mod tests {
             .finish(shared_flags);
 
         let mut func = Function::new();
-        let ebb = func.dfg.make_ebb();
-        let arg64 = func.dfg.append_ebb_param(ebb, types::I64);
-        let arg32 = func.dfg.append_ebb_param(ebb, types::I32);
+        let block = func.dfg.make_block();
+        let arg64 = func.dfg.append_block_param(block, types::I64);
+        let arg32 = func.dfg.append_block_param(block, types::I32);
 
         
         let inst64 = InstructionData::BinaryImm {
@@ -209,9 +209,9 @@ mod tests {
             .finish(shared_flags);
 
         let mut func = Function::new();
-        let ebb = func.dfg.make_ebb();
-        let arg64 = func.dfg.append_ebb_param(ebb, types::I64);
-        let arg32 = func.dfg.append_ebb_param(ebb, types::I32);
+        let block = func.dfg.make_block();
+        let arg64 = func.dfg.append_block_param(block, types::I64);
+        let arg32 = func.dfg.append_block_param(block, types::I32);
 
         
         let inst64 = InstructionData::BinaryImm {
@@ -268,8 +268,8 @@ mod tests {
         let isa = isa_builder.finish(shared_flags);
 
         let mut func = Function::new();
-        let ebb = func.dfg.make_ebb();
-        let arg32 = func.dfg.append_ebb_param(ebb, types::I32);
+        let block = func.dfg.make_block();
+        let arg32 = func.dfg.append_block_param(block, types::I32);
 
         
         let mul32 = InstructionData::Binary {

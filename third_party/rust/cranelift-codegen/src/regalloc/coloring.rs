@@ -46,7 +46,7 @@ use crate::cursor::{Cursor, EncCursor};
 use crate::dominator_tree::DominatorTree;
 use crate::flowgraph::ControlFlowGraph;
 use crate::ir::{ArgumentLoc, InstBuilder, ValueDef};
-use crate::ir::{Ebb, Function, Inst, InstructionData, Layout, Opcode, SigRef, Value, ValueLoc};
+use crate::ir::{Block, Function, Inst, InstructionData, Layout, Opcode, SigRef, Value, ValueLoc};
 use crate::isa::{regs_overlap, RegClass, RegInfo, RegUnit};
 use crate::isa::{ConstraintKind, EncInfo, OperandConstraint, RecipeConstraints, TargetIsa};
 use crate::packed_option::PackedOption;
@@ -169,19 +169,19 @@ impl<'a> Context<'a> {
 
         
         
-        for &ebb in self.domtree.cfg_postorder().iter().rev() {
-            self.visit_ebb(ebb, tracker);
+        for &block in self.domtree.cfg_postorder().iter().rev() {
+            self.visit_block(block, tracker);
         }
     }
 
     
-    fn visit_ebb(&mut self, ebb: Ebb, tracker: &mut LiveValueTracker) {
-        debug!("Coloring {}:", ebb);
-        let mut regs = self.visit_ebb_header(ebb, tracker);
+    fn visit_block(&mut self, block: Block, tracker: &mut LiveValueTracker) {
+        debug!("Coloring {}:", block);
+        let mut regs = self.visit_block_header(block, tracker);
         tracker.drop_dead_params();
 
         
-        self.cur.goto_top(ebb);
+        self.cur.goto_top(block);
         while let Some(inst) = self.cur.next_inst() {
             self.cur.use_srcloc(inst);
             let opcode = self.cur.func.dfg[inst].opcode();
@@ -206,7 +206,7 @@ impl<'a> Context<'a> {
             
             
             
-            if opcode.is_branch() && cfg!(feature = "basic-blocks") {
+            if opcode.is_branch() {
                 
                 if let Some(branch) = self.cur.next_inst() {
                     debug!(
@@ -221,7 +221,7 @@ impl<'a> Context<'a> {
                             "unexpected instruction {} after a conditional branch",
                             self.cur.display_inst(branch)
                         ),
-                        SingleDest(ebb, _) => ebb,
+                        SingleDest(block, _) => block,
                     };
 
                     
@@ -229,7 +229,7 @@ impl<'a> Context<'a> {
                     if self.cfg.pred_iter(target).count() == 1 {
                         
                         self.divert
-                            .save_for_ebb(&mut self.cur.func.entry_diversions, target);
+                            .save_for_block(&mut self.cur.func.entry_diversions, target);
                         debug!(
                             "Set entry-diversion for {} to\n      {}",
                             target,
@@ -256,10 +256,14 @@ impl<'a> Context<'a> {
     
     
     
-    fn visit_ebb_header(&mut self, ebb: Ebb, tracker: &mut LiveValueTracker) -> AvailableRegs {
+    fn visit_block_header(
+        &mut self,
+        block: Block,
+        tracker: &mut LiveValueTracker,
+    ) -> AvailableRegs {
         
-        tracker.ebb_top(
-            ebb,
+        tracker.block_top(
+            block,
             &self.cur.func.dfg,
             self.liveness,
             &self.cur.func.layout,
@@ -268,14 +272,14 @@ impl<'a> Context<'a> {
 
         
         
-        self.divert.at_ebb(&self.cur.func.entry_diversions, ebb);
+        self.divert.at_block(&self.cur.func.entry_diversions, block);
         debug!(
             "Start {} with entry-diversion set to\n      {}",
-            ebb,
+            block,
             self.divert.display(&self.reginfo)
         );
 
-        if self.cur.func.layout.entry_block() == Some(ebb) {
+        if self.cur.func.layout.entry_block() == Some(block) {
             
             self.color_entry_params(tracker.live())
         } else {
@@ -449,7 +453,7 @@ impl<'a> Context<'a> {
             
             
             if let Some(dest) = self.cur.func.dfg[inst].branch_destination() {
-                if self.program_ebb_arguments(inst, dest) {
+                if self.program_block_arguments(inst, dest) {
                     color_dest_args = Some(dest);
                 }
             } else {
@@ -458,7 +462,7 @@ impl<'a> Context<'a> {
                 debug_assert_eq!(
                     self.cur.func.dfg.inst_variable_args(inst).len(),
                     0,
-                    "Can't handle EBB arguments: {}",
+                    "Can't handle block arguments: {}",
                     self.cur.display_inst(inst)
                 );
                 self.undivert_regs(|lr, _| !lr.is_local());
@@ -576,7 +580,7 @@ impl<'a> Context<'a> {
         
         
         if let Some(dest) = color_dest_args {
-            self.color_ebb_params(inst, dest);
+            self.color_block_params(inst, dest);
         }
 
         
@@ -727,7 +731,7 @@ impl<'a> Context<'a> {
                         
                         
                         let layout = &self.cur.func.layout;
-                        if self.liveness[arg_val].killed_at(inst, layout.pp_ebb(inst), layout) {
+                        if self.liveness[arg_val].killed_at(inst, layout.pp_block(inst), layout) {
                             self.solver
                                 .add_killed_var(arg_val, constraint.regclass, cur_reg);
                         } else {
@@ -752,7 +756,7 @@ impl<'a> Context<'a> {
     
     
     
-    fn program_ebb_arguments(&mut self, inst: Inst, dest: Ebb) -> bool {
+    fn program_block_arguments(&mut self, inst: Inst, dest: Block) -> bool {
         
         
         
@@ -762,7 +766,7 @@ impl<'a> Context<'a> {
 
         
         let br_args = self.cur.func.dfg.inst_variable_args(inst);
-        let dest_args = self.cur.func.dfg.ebb_params(dest);
+        let dest_args = self.cur.func.dfg.block_params(dest);
         debug_assert_eq!(br_args.len(), dest_args.len());
         for (&dest_arg, &br_arg) in dest_args.iter().zip(br_args) {
             
@@ -805,9 +809,9 @@ impl<'a> Context<'a> {
     
     
     
-    fn color_ebb_params(&mut self, inst: Inst, dest: Ebb) {
+    fn color_block_params(&mut self, inst: Inst, dest: Block) {
         let br_args = self.cur.func.dfg.inst_variable_args(inst);
-        let dest_args = self.cur.func.dfg.ebb_params(dest);
+        let dest_args = self.cur.func.dfg.block_params(dest);
         debug_assert_eq!(br_args.len(), dest_args.len());
         for (&dest_arg, &br_arg) in dest_args.iter().zip(br_args) {
             match self.cur.func.locations[dest_arg] {
@@ -1091,17 +1095,17 @@ impl<'a> Context<'a> {
         let layout = &self.cur.func.layout;
         match self.cur.func.dfg.analyze_branch(inst) {
             NotABranch => false,
-            SingleDest(ebb, _) => {
+            SingleDest(block, _) => {
                 let lr = &self.liveness[value];
-                lr.is_livein(ebb, layout)
+                lr.is_livein(block, layout)
             }
-            Table(jt, ebb) => {
+            Table(jt, block) => {
                 let lr = &self.liveness[value];
                 !lr.is_local()
-                    && (ebb.map_or(false, |ebb| lr.is_livein(ebb, layout))
+                    && (block.map_or(false, |block| lr.is_livein(block, layout))
                         || self.cur.func.jump_tables[jt]
                             .iter()
-                            .any(|ebb| lr.is_livein(*ebb, layout)))
+                            .any(|block| lr.is_livein(*block, layout)))
             }
         }
     }
@@ -1232,7 +1236,7 @@ impl<'a> Context<'a> {
             self.liveness.create_dead(local, inst, lv.affinity);
             self.liveness.extend_locally(
                 local,
-                self.cur.func.layout.pp_ebb(inst),
+                self.cur.func.layout.pp_block(inst),
                 copy,
                 &self.cur.func.layout,
             );

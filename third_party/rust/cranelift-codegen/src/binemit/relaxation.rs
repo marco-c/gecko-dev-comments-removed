@@ -31,7 +31,7 @@ use crate::binemit::{CodeInfo, CodeOffset};
 use crate::cursor::{Cursor, FuncCursor};
 use crate::dominator_tree::DominatorTree;
 use crate::flowgraph::ControlFlowGraph;
-use crate::ir::{Function, InstructionData, Opcode};
+use crate::ir::{Block, Function, Inst, InstructionData, Opcode, Value, ValueList};
 use crate::isa::{EncInfo, TargetIsa};
 use crate::iterators::IteratorExtras;
 use crate::regalloc::RegDiversions;
@@ -39,9 +39,6 @@ use crate::timing;
 use crate::CodegenResult;
 use core::convert::TryFrom;
 use log::debug;
-
-#[cfg(feature = "basic-blocks")]
-use crate::ir::{Ebb, Inst, Value, ValueList};
 
 
 
@@ -58,10 +55,9 @@ pub fn relax_branches(
 
     
     func.offsets.clear();
-    func.offsets.resize(func.dfg.num_ebbs());
+    func.offsets.resize(func.dfg.num_blocks());
 
     
-    #[cfg(feature = "basic-blocks")]
     fold_redundant_jumps(func, _cfg, _domtree);
 
     
@@ -73,9 +69,9 @@ pub fn relax_branches(
     
     {
         let mut cur = FuncCursor::new(func);
-        while let Some(ebb) = cur.next_ebb() {
-            divert.at_ebb(&cur.func.entry_diversions, ebb);
-            cur.func.offsets[ebb] = offset;
+        while let Some(block) = cur.next_block() {
+            divert.at_block(&cur.func.entry_diversions, block);
+            cur.func.offsets[block] = offset;
             while let Some(inst) = cur.next_inst() {
                 divert.apply(&cur.func.dfg[inst]);
                 let enc = cur.func.encodings[inst];
@@ -92,12 +88,12 @@ pub fn relax_branches(
 
         
         let mut cur = FuncCursor::new(func);
-        while let Some(ebb) = cur.next_ebb() {
-            divert.at_ebb(&cur.func.entry_diversions, ebb);
+        while let Some(block) = cur.next_block() {
+            divert.at_block(&cur.func.entry_diversions, block);
 
             
-            if cur.func.offsets[ebb] != offset {
-                cur.func.offsets[ebb] = offset;
+            if cur.func.offsets[block] != offset {
+                cur.func.offsets[block] = offset;
                 go_again = true;
             }
 
@@ -154,15 +150,14 @@ pub fn relax_branches(
 
 
 
-#[cfg(feature = "basic-blocks")]
 fn try_fold_redundant_jump(
     func: &mut Function,
     cfg: &mut ControlFlowGraph,
-    ebb: Ebb,
+    block: Block,
     first_inst: Inst,
 ) -> bool {
     let first_dest = match func.dfg[first_inst].branch_destination() {
-        Some(ebb) => ebb, 
+        Some(block) => block, 
         None => {
             return false; 
         }
@@ -172,7 +167,7 @@ fn try_fold_redundant_jump(
     
     
     
-    if func.dfg.num_ebb_params(first_dest) != 0 {
+    if func.dfg.num_block_params(first_dest) != 0 {
         return false;
     }
 
@@ -215,11 +210,11 @@ fn try_fold_redundant_jump(
     
     
     
-    let ebb_params: &[Value] = func.dfg.ebb_params(first_dest);
-    debug_assert!(ebb_params.len() == first_params.len());
+    let block_params: &[Value] = func.dfg.block_params(first_dest);
+    debug_assert!(block_params.len() == first_params.len());
 
     for value in second_params.iter_mut() {
-        if let Some((n, _)) = ebb_params.iter().enumerate().find(|(_, &p)| p == *value) {
+        if let Some((n, _)) = block_params.iter().enumerate().find(|(_, &p)| p == *value) {
             
             
             *value = first_params[n];
@@ -241,7 +236,7 @@ fn try_fold_redundant_jump(
     
     let second_dest = func.dfg[second_inst].branch_destination().expect("Dest");
     func.change_branch_destination(first_inst, second_dest);
-    cfg.recompute_ebb(func, ebb);
+    cfg.recompute_block(func, block);
 
     
     if cfg.pred_iter(first_dest).count() == 0 {
@@ -251,8 +246,8 @@ fn try_fold_redundant_jump(
         }
 
         
-        cfg.recompute_ebb(func, first_dest); 
-        func.layout.remove_ebb(first_dest); 
+        cfg.recompute_block(func, first_dest); 
+        func.layout.remove_block(first_dest); 
     }
 
     true
@@ -260,7 +255,6 @@ fn try_fold_redundant_jump(
 
 
 
-#[cfg(feature = "basic-blocks")]
 fn fold_redundant_jumps(
     func: &mut Function,
     cfg: &mut ControlFlowGraph,
@@ -270,14 +264,17 @@ fn fold_redundant_jumps(
 
     
     
-    for &ebb in domtree.cfg_postorder() {
+    for &block in domtree.cfg_postorder() {
         
-        let first_inst = func.layout.last_inst(ebb).expect("Ebb has no terminator");
-        folded |= try_fold_redundant_jump(func, cfg, ebb, first_inst);
+        let first_inst = func
+            .layout
+            .last_inst(block)
+            .expect("Block has no terminator");
+        folded |= try_fold_redundant_jump(func, cfg, block, first_inst);
 
         
         if let Some(prev_inst) = func.layout.prev_inst(first_inst) {
-            folded |= try_fold_redundant_jump(func, cfg, ebb, prev_inst);
+            folded |= try_fold_redundant_jump(func, cfg, block, prev_inst);
         }
     }
 
@@ -290,8 +287,11 @@ fn fold_redundant_jumps(
 
 
 fn fallthroughs(func: &mut Function) {
-    for (ebb, succ) in func.layout.ebbs().adjacent_pairs() {
-        let term = func.layout.last_inst(ebb).expect("EBB has no terminator.");
+    for (block, succ) in func.layout.blocks().adjacent_pairs() {
+        let term = func
+            .layout
+            .last_inst(block)
+            .expect("block has no terminator.");
         if let InstructionData::Jump {
             ref mut opcode,
             destination,
@@ -302,7 +302,7 @@ fn fallthroughs(func: &mut Function) {
                 Opcode::Fallthrough => {
                     
                     
-                    debug_assert_eq!(destination, succ, "Illegal fall-through in {}", ebb)
+                    debug_assert_eq!(destination, succ, "Illegal fall-through in {}", block)
                 }
                 Opcode::Jump => {
                     

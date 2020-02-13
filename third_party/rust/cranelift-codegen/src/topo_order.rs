@@ -2,7 +2,7 @@
 
 use crate::dominator_tree::DominatorTree;
 use crate::entity::EntitySet;
-use crate::ir::{Ebb, Layout};
+use crate::ir::{Block, Layout};
 use alloc::vec::Vec;
 
 
@@ -13,16 +13,16 @@ use alloc::vec::Vec;
 
 pub struct TopoOrder {
     
-    preferred: Vec<Ebb>,
+    preferred: Vec<Block>,
 
     
     next: usize,
 
     
-    visited: EntitySet<Ebb>,
+    visited: EntitySet<Block>,
 
     
-    stack: Vec<Ebb>,
+    stack: Vec<Block>,
 }
 
 impl TopoOrder {
@@ -46,9 +46,9 @@ impl TopoOrder {
 
     
     
-    pub fn reset<Ebbs>(&mut self, preferred: Ebbs)
+    pub fn reset<Blocks>(&mut self, preferred: Blocks)
     where
-        Ebbs: IntoIterator<Item = Ebb>,
+        Blocks: IntoIterator<Item = Block>,
     {
         self.preferred.clear();
         self.preferred.extend(preferred);
@@ -63,21 +63,23 @@ impl TopoOrder {
     
     
     
-    pub fn next(&mut self, layout: &Layout, domtree: &DominatorTree) -> Option<Ebb> {
-        self.visited.resize(layout.ebb_capacity());
+    pub fn next(&mut self, layout: &Layout, domtree: &DominatorTree) -> Option<Block> {
+        self.visited.resize(layout.block_capacity());
         
         
         while self.stack.is_empty() {
             match self.preferred.get(self.next).cloned() {
                 None => return None,
-                Some(mut ebb) => {
+                Some(mut block) => {
                     
                     self.next += 1;
                     
-                    while self.visited.insert(ebb) {
-                        self.stack.push(ebb);
-                        match domtree.idom(ebb) {
-                            Some(idom) => ebb = layout.inst_ebb(idom).expect("idom not in layout"),
+                    while self.visited.insert(block) {
+                        self.stack.push(block);
+                        match domtree.idom(block) {
+                            Some(idom) => {
+                                block = layout.inst_block(idom).expect("idom not in layout")
+                            }
                             None => break,
                         }
                     }
@@ -105,32 +107,32 @@ mod tests {
         let mut topo = TopoOrder::new();
 
         assert_eq!(topo.next(&func.layout, &domtree), None);
-        topo.reset(func.layout.ebbs());
+        topo.reset(func.layout.blocks());
         assert_eq!(topo.next(&func.layout, &domtree), None);
     }
 
     #[test]
     fn simple() {
         let mut func = Function::new();
-        let ebb0 = func.dfg.make_ebb();
-        let ebb1 = func.dfg.make_ebb();
+        let block0 = func.dfg.make_block();
+        let block1 = func.dfg.make_block();
 
         {
             let mut cur = FuncCursor::new(&mut func);
 
-            cur.insert_ebb(ebb0);
-            cur.ins().jump(ebb1, &[]);
-            cur.insert_ebb(ebb1);
-            cur.ins().jump(ebb1, &[]);
+            cur.insert_block(block0);
+            cur.ins().jump(block1, &[]);
+            cur.insert_block(block1);
+            cur.ins().jump(block1, &[]);
         }
 
         let cfg = ControlFlowGraph::with_function(&func);
         let domtree = DominatorTree::with_function(&func, &cfg);
         let mut topo = TopoOrder::new();
 
-        topo.reset(iter::once(ebb1));
-        assert_eq!(topo.next(&func.layout, &domtree), Some(ebb0));
-        assert_eq!(topo.next(&func.layout, &domtree), Some(ebb1));
+        topo.reset(iter::once(block1));
+        assert_eq!(topo.next(&func.layout, &domtree), Some(block0));
+        assert_eq!(topo.next(&func.layout, &domtree), Some(block1));
         assert_eq!(topo.next(&func.layout, &domtree), None);
     }
 }

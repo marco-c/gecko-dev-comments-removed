@@ -2,14 +2,12 @@
 
 
 
-#![cfg(feature = "basic-blocks")]
-
 use alloc::vec::Vec;
 
 use crate::cursor::{Cursor, EncCursor};
 use crate::dominator_tree::DominatorTree;
 use crate::flowgraph::ControlFlowGraph;
-use crate::ir::{Ebb, Function, Inst, InstBuilder, InstructionData, Opcode, ValueList};
+use crate::ir::{Block, Function, Inst, InstBuilder, InstructionData, Opcode, ValueList};
 use crate::isa::TargetIsa;
 use crate::topo_order::TopoOrder;
 
@@ -46,11 +44,11 @@ struct Context<'a> {
 impl<'a> Context<'a> {
     fn run(&mut self) {
         
-        self.topo.reset(self.cur.func.layout.ebbs());
-        while let Some(ebb) = self.topo.next(&self.cur.func.layout, self.domtree) {
+        self.topo.reset(self.cur.func.layout.blocks());
+        while let Some(block) = self.topo.next(&self.cur.func.layout, self.domtree) {
             
             
-            self.cur.goto_last_inst(ebb);
+            self.cur.goto_last_inst(block);
             let terminator_inst = self.cur.current_inst().expect("terminator");
             if let Some(inst) = self.cur.prev_inst() {
                 let opcode = self.cur.func.dfg[inst].opcode();
@@ -82,12 +80,12 @@ impl<'a> Context<'a> {
         
         if self.should_split_edge(target) {
             
-            let new_ebb = self.cur.func.dfg.make_ebb();
+            let new_block = self.cur.func.dfg.make_block();
 
             
             
             assert_ne!(Some(target), self.cur.layout().entry_block());
-            self.cur.layout_mut().insert_ebb(new_ebb, target);
+            self.cur.layout_mut().insert_block(new_block, target);
             self.has_new_blocks = true;
 
             
@@ -95,25 +93,25 @@ impl<'a> Context<'a> {
             let num_fixed = opcode.constraints().num_fixed_value_arguments();
             let dfg = &mut self.cur.func.dfg;
             let old_args: Vec<_> = {
-                let args = dfg[branch].take_value_list().expect("ebb parameters");
+                let args = dfg[branch].take_value_list().expect("block parameters");
                 args.as_slice(&dfg.value_lists).iter().copied().collect()
             };
-            let (branch_args, ebb_params) = old_args.split_at(num_fixed);
+            let (branch_args, block_params) = old_args.split_at(num_fixed);
 
             
             
             {
                 let branch_args = ValueList::from_slice(branch_args, &mut dfg.value_lists);
                 let data = &mut dfg[branch];
-                *data.branch_destination_mut().expect("branch") = new_ebb;
+                *data.branch_destination_mut().expect("branch") = new_block;
                 data.put_value_list(branch_args);
             }
             let ok = self.cur.func.update_encoding(branch, self.cur.isa).is_ok();
             debug_assert!(ok);
 
             
-            self.cur.goto_first_insertion_point(new_ebb);
-            self.cur.ins().jump(target, ebb_params);
+            self.cur.goto_first_insertion_point(new_block);
+            self.cur.ins().jump(target, block_params);
 
             
             self.cur.goto_inst(branch);
@@ -143,13 +141,13 @@ impl<'a> Context<'a> {
         
         if self.should_split_edge(*target) {
             
-            let new_ebb = self.cur.func.dfg.make_ebb();
+            let new_block = self.cur.func.dfg.make_block();
             self.has_new_blocks = true;
 
             
             
-            let jump = self.cur.ins().jump(new_ebb, &[]);
-            self.cur.insert_ebb(new_ebb);
+            let jump = self.cur.ins().jump(new_block, &[]);
+            self.cur.insert_block(new_block);
 
             
             self.cur.goto_inst(jump);
@@ -157,9 +155,9 @@ impl<'a> Context<'a> {
     }
 
     
-    fn should_split_edge(&self, target: Ebb) -> bool {
+    fn should_split_edge(&self, target: Block) -> bool {
         
-        if !self.cur.func.dfg.ebb_params(target).is_empty() {
+        if !self.cur.func.dfg.block_params(target).is_empty() {
             return true;
         };
 

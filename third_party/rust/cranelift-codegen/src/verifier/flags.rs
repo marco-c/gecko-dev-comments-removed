@@ -1,7 +1,7 @@
 
 
 use crate::entity::{EntitySet, SecondaryMap};
-use crate::flowgraph::{BasicBlock, ControlFlowGraph};
+use crate::flowgraph::{BlockPredecessor, ControlFlowGraph};
 use crate::ir;
 use crate::ir::instructions::BranchInfo;
 use crate::isa;
@@ -43,32 +43,32 @@ struct FlagsVerifier<'a> {
     encinfo: Option<isa::EncInfo>,
 
     
-    livein: SecondaryMap<ir::Ebb, PackedOption<ir::Value>>,
+    livein: SecondaryMap<ir::Block, PackedOption<ir::Value>>,
 }
 
 impl<'a> FlagsVerifier<'a> {
     fn check(&mut self, errors: &mut VerifierErrors) -> VerifierStepResult<()> {
         
         
-        let mut worklist = EntitySet::with_capacity(self.func.layout.ebb_capacity());
-        for ebb in self.func.layout.ebbs() {
-            worklist.insert(ebb);
+        let mut worklist = EntitySet::with_capacity(self.func.layout.block_capacity());
+        for block in self.func.layout.blocks() {
+            worklist.insert(block);
         }
 
-        while let Some(ebb) = worklist.pop() {
-            if let Some(value) = self.visit_ebb(ebb, errors)? {
+        while let Some(block) = worklist.pop() {
+            if let Some(value) = self.visit_block(block, errors)? {
                 
-                match self.livein[ebb].expand() {
+                match self.livein[block].expand() {
                     
                     None => {
-                        self.livein[ebb] = value.into();
-                        for BasicBlock { ebb: pred, .. } in self.cfg.pred_iter(ebb) {
+                        self.livein[block] = value.into();
+                        for BlockPredecessor { block: pred, .. } in self.cfg.pred_iter(block) {
                             worklist.insert(pred);
                         }
                     }
                     Some(old) if old != value => {
                         return errors.fatal((
-                            ebb,
+                            block,
                             format!("conflicting live-in CPU flags: {} and {}", old, value),
                         ));
                     }
@@ -76,7 +76,7 @@ impl<'a> FlagsVerifier<'a> {
                 }
             } else {
                 
-                assert_eq!(self.livein[ebb].expand(), None);
+                assert_eq!(self.livein[block].expand(), None);
             }
         }
 
@@ -84,16 +84,16 @@ impl<'a> FlagsVerifier<'a> {
     }
 
     
-    fn visit_ebb(
+    fn visit_block(
         &self,
-        ebb: ir::Ebb,
+        block: ir::Block,
         errors: &mut VerifierErrors,
     ) -> VerifierStepResult<Option<ir::Value>> {
         
         let mut live_val = None;
 
         
-        for inst in self.func.layout.ebb_insts(ebb).rev() {
+        for inst in self.func.layout.block_insts(block).rev() {
             
             if let Some(live) = live_val {
                 for &res in self.func.dfg.inst_results(inst) {

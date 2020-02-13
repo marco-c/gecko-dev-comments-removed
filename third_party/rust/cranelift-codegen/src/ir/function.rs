@@ -6,21 +6,18 @@
 use crate::binemit::CodeOffset;
 use crate::entity::{PrimaryMap, SecondaryMap};
 use crate::ir;
-use crate::ir::{DataFlowGraph, ExternalName, Layout, Signature};
 use crate::ir::{
-    Ebb, ExtFuncData, FuncRef, GlobalValue, GlobalValueData, Heap, HeapData, Inst, JumpTable,
-    JumpTableData, SigRef, StackSlot, StackSlotData, Table, TableData,
+    Block, ExtFuncData, FuncRef, GlobalValue, GlobalValueData, Heap, HeapData, Inst, JumpTable,
+    JumpTableData, Opcode, SigRef, StackSlot, StackSlotData, Table, TableData,
 };
-use crate::ir::{EbbOffsets, FrameLayout, InstEncodings, SourceLocs, StackSlots, ValueLocations};
+use crate::ir::{BlockOffsets, FrameLayout, InstEncodings, SourceLocs, StackSlots, ValueLocations};
+use crate::ir::{DataFlowGraph, ExternalName, Layout, Signature};
 use crate::ir::{JumpTableOffsets, JumpTables};
 use crate::isa::{CallConv, EncInfo, Encoding, Legalize, TargetIsa};
 use crate::regalloc::{EntryRegDiversions, RegDiversions};
 use crate::value_label::ValueLabelsRanges;
 use crate::write::write_function;
 use core::fmt;
-
-#[cfg(feature = "basic-blocks")]
-use crate::ir::Opcode;
 
 
 
@@ -77,7 +74,7 @@ pub struct Function {
     
     
     
-    pub offsets: EbbOffsets,
+    pub offsets: BlockOffsets,
 
     
     pub jt_offsets: JumpTableOffsets,
@@ -210,7 +207,7 @@ impl Function {
         let entry = self.layout.entry_block().expect("Function is empty");
         self.signature
             .special_param_index(purpose)
-            .map(|i| self.dfg.ebb_params(entry)[i])
+            .map(|i| self.dfg.block_params(entry)[i])
     }
 
     
@@ -222,20 +219,20 @@ impl Function {
     
     
     
-    pub fn inst_offsets<'a>(&'a self, ebb: Ebb, encinfo: &EncInfo) -> InstOffsetIter<'a> {
+    pub fn inst_offsets<'a>(&'a self, block: Block, encinfo: &EncInfo) -> InstOffsetIter<'a> {
         assert!(
             !self.offsets.is_empty(),
             "Code layout must be computed first"
         );
         let mut divert = RegDiversions::new();
-        divert.at_ebb(&self.entry_diversions, ebb);
+        divert.at_block(&self.entry_diversions, block);
         InstOffsetIter {
             encinfo: encinfo.clone(),
             func: self,
             divert,
             encodings: &self.encodings,
-            offset: self.offsets[ebb],
-            iter: self.layout.ebb_insts(ebb),
+            offset: self.offsets[block],
+            iter: self.layout.block_insts(block),
         }
     }
 
@@ -263,7 +260,7 @@ impl Function {
 
     
     
-    pub fn change_branch_destination(&mut self, inst: Inst, new_dest: Ebb) {
+    pub fn change_branch_destination(&mut self, inst: Inst, new_dest: Block) {
         match self.dfg[inst].branch_destination_mut() {
             None => (),
             Some(inst_dest) => *inst_dest = new_dest,
@@ -273,10 +270,9 @@ impl Function {
     
     
     
-    #[cfg(feature = "basic-blocks")]
-    pub fn is_ebb_basic(&self, ebb: Ebb) -> Result<(), (Inst, &'static str)> {
+    pub fn is_block_basic(&self, block: Block) -> Result<(), (Inst, &'static str)> {
         let dfg = &self.dfg;
-        let inst_iter = self.layout.ebb_insts(ebb);
+        let inst_iter = self.layout.block_insts(block);
 
         
         let mut inst_iter = inst_iter.skip_while(|&inst| !dfg[inst].opcode().is_branch());

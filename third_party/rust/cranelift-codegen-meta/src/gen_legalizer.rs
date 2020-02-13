@@ -474,7 +474,7 @@ fn gen_transform<'a>(
         
         
         if !transform.block_pool.is_empty() {
-            fmt.line("let orig_ebb = pos.current_ebb().unwrap();");
+            fmt.line("let orig_block = pos.current_block().unwrap();");
         }
 
         
@@ -486,14 +486,14 @@ fn gen_transform<'a>(
         
         for block in &transform.block_pool {
             let var = transform.var_pool.get(block.name);
-            fmtln!(fmt, "let {} = pos.func.dfg.make_ebb();", var.name);
+            fmtln!(fmt, "let {} = pos.func.dfg.make_block();", var.name);
         }
 
         
         for &def_index in &transform.dst {
             if let Some(block) = transform.block_pool.get(def_index) {
                 let var = transform.var_pool.get(block.name);
-                fmtln!(fmt, "pos.insert_ebb({});", var.name);
+                fmtln!(fmt, "pos.insert_block({});", var.name);
             }
             emit_dst_inst(
                 transform.def_pool.get(def_index),
@@ -507,7 +507,7 @@ fn gen_transform<'a>(
         let def_next_index = transform.def_pool.next_index();
         if let Some(block) = transform.block_pool.get(def_next_index) {
             let var = transform.var_pool.get(block.name);
-            fmtln!(fmt, "pos.insert_ebb({});", var.name);
+            fmtln!(fmt, "pos.insert_block({});", var.name);
         }
 
         
@@ -520,14 +520,14 @@ fn gen_transform<'a>(
             if transform.def_pool.get(transform.src).apply.inst.is_branch {
                 
                 
-                fmt.line("cfg.recompute_ebb(pos.func, pos.current_ebb().unwrap());");
+                fmt.line("cfg.recompute_block(pos.func, pos.current_block().unwrap());");
             }
         } else {
             
-            fmt.line("cfg.recompute_ebb(pos.func, orig_ebb);");
+            fmt.line("cfg.recompute_block(pos.func, orig_block);");
             for block in &transform.block_pool {
                 let var = transform.var_pool.get(block.name);
-                fmtln!(fmt, "cfg.recompute_ebb(pos.func, {});", var.name);
+                fmtln!(fmt, "cfg.recompute_block(pos.func, {});", var.name);
             }
         }
 

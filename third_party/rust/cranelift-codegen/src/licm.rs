@@ -3,10 +3,10 @@
 use crate::cursor::{Cursor, EncCursor, FuncCursor};
 use crate::dominator_tree::DominatorTree;
 use crate::entity::{EntityList, ListPool};
-use crate::flowgraph::{BasicBlock, ControlFlowGraph};
+use crate::flowgraph::{BlockPredecessor, ControlFlowGraph};
 use crate::fx::FxHashSet;
 use crate::ir::{
-    DataFlowGraph, Ebb, Function, Inst, InstBuilder, InstructionData, Layout, Opcode, Type, Value,
+    Block, DataFlowGraph, Function, Inst, InstBuilder, InstructionData, Layout, Opcode, Type, Value,
 };
 use crate::isa::TargetIsa;
 use crate::loop_analysis::{Loop, LoopAnalysis};
@@ -65,23 +65,23 @@ pub fn do_licm(
 
 fn create_pre_header(
     isa: &dyn TargetIsa,
-    header: Ebb,
+    header: Block,
     func: &mut Function,
     cfg: &mut ControlFlowGraph,
     domtree: &DominatorTree,
-) -> Ebb {
+) -> Block {
     let pool = &mut ListPool::<Value>::new();
-    let header_args_values = func.dfg.ebb_params(header).to_vec();
+    let header_args_values = func.dfg.block_params(header).to_vec();
     let header_args_types: Vec<Type> = header_args_values
         .into_iter()
         .map(|val| func.dfg.value_type(val))
         .collect();
-    let pre_header = func.dfg.make_ebb();
+    let pre_header = func.dfg.make_block();
     let mut pre_header_args_value: EntityList<Value> = EntityList::new();
     for typ in header_args_types {
-        pre_header_args_value.push(func.dfg.append_ebb_param(pre_header, typ), pool);
+        pre_header_args_value.push(func.dfg.append_block_param(pre_header, typ), pool);
     }
-    for BasicBlock {
+    for BlockPredecessor {
         inst: last_inst, ..
     } in cfg.pred_iter(header)
     {
@@ -93,7 +93,7 @@ fn create_pre_header(
     {
         let mut pos = EncCursor::new(func, isa).at_top(header);
         
-        pos.insert_ebb(pre_header);
+        pos.insert_block(pre_header);
         pos.next_inst();
         pos.ins().jump(header, pre_header_args_value.as_slice(pool));
     }
@@ -109,11 +109,11 @@ fn has_pre_header(
     layout: &Layout,
     cfg: &ControlFlowGraph,
     domtree: &DominatorTree,
-    header: Ebb,
-) -> Option<(Ebb, Inst)> {
+    header: Block,
+) -> Option<(Block, Inst)> {
     let mut result = None;
-    for BasicBlock {
-        ebb: pred_ebb,
+    for BlockPredecessor {
+        block: pred_block,
         inst: branch_inst,
     } in cfg.pred_iter(header)
     {
@@ -123,13 +123,13 @@ fn has_pre_header(
                 
                 return None;
             }
-            if branch_inst != layout.last_inst(pred_ebb).unwrap()
-                || cfg.succ_iter(pred_ebb).nth(1).is_some()
+            if branch_inst != layout.last_inst(pred_block).unwrap()
+                || cfg.succ_iter(pred_block).nth(1).is_some()
             {
                 
                 return None;
             }
-            result = Some((pred_ebb, branch_inst));
+            result = Some((pred_block, branch_inst));
         }
     }
     result
@@ -189,12 +189,12 @@ fn remove_loop_invariant_instructions(
     let mut invariant_insts: Vec<Inst> = Vec::new();
     let mut pos = FuncCursor::new(func);
     
-    for ebb in postorder_ebbs_loop(loop_analysis, cfg, lp).iter().rev() {
+    for block in postorder_blocks_loop(loop_analysis, cfg, lp).iter().rev() {
         
-        for val in pos.func.dfg.ebb_params(*ebb) {
+        for val in pos.func.dfg.block_params(*block) {
             loop_values.insert(*val);
         }
-        pos.goto_top(*ebb);
+        pos.goto_top(*block);
         #[cfg_attr(feature = "cargo-clippy", allow(clippy::block_in_if_condition_stmt))]
         while let Some(inst) = pos.next_inst() {
             if is_loop_invariant(inst, &pos.func.dfg, &loop_values) {
@@ -216,7 +216,11 @@ fn remove_loop_invariant_instructions(
 }
 
 
-fn postorder_ebbs_loop(loop_analysis: &LoopAnalysis, cfg: &ControlFlowGraph, lp: Loop) -> Vec<Ebb> {
+fn postorder_blocks_loop(
+    loop_analysis: &LoopAnalysis,
+    cfg: &ControlFlowGraph,
+    lp: Loop,
+) -> Vec<Block> {
     let mut grey = FxHashSet();
     let mut black = FxHashSet();
     let mut stack = vec![loop_analysis.loop_header(lp)];

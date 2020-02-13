@@ -8,7 +8,7 @@ fn new(format_field_name: &'static str, rust_type: &'static str, doc: &'static s
 pub(crate) struct EntityRefs {
     
     
-    pub(crate) ebb: OperandKind,
+    pub(crate) block: OperandKind,
 
     
     pub(crate) stack_slot: OperandKind,
@@ -40,10 +40,10 @@ pub(crate) struct EntityRefs {
 impl EntityRefs {
     pub fn new() -> Self {
         Self {
-            ebb: new(
+            block: new(
                 "destination",
-                "ir::Ebb",
-                "An extended basic block in the same function.",
+                "ir::Block",
+                "a basic block in the same function.",
             ),
             stack_slot: new("stack_slot", "ir::StackSlot", "A stack slot"),
 
@@ -64,7 +64,7 @@ impl EntityRefs {
                         A variable size list of `value` operands.
 
                         Use this to represent arguments passed to a function call, arguments
-                        passed to an extended basic block, or a variable number of results
+                        passed to a basic block, or a variable number of results
                         returned from an instruction.
                     "#,
             ),

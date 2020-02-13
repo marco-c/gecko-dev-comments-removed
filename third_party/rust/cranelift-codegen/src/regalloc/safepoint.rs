@@ -42,13 +42,13 @@ pub fn emit_stackmaps(
 ) {
     let mut curr = func.layout.entry_block();
 
-    while let Some(ebb) = curr {
-        tracker.ebb_top(ebb, &func.dfg, liveness, &func.layout, domtree);
+    while let Some(block) = curr {
+        tracker.block_top(block, &func.dfg, liveness, &func.layout, domtree);
         tracker.drop_dead_params();
         let mut pos = FuncCursor::new(func);
 
         
-        pos.goto_top(ebb);
+        pos.goto_top(block);
 
         while let Some(inst) = pos.next_inst() {
             if let InstructionData::Trap {
@@ -67,6 +67,6 @@ pub fn emit_stackmaps(
             tracker.process_inst(inst, &pos.func.dfg, liveness);
             tracker.drop_dead(inst);
         }
-        curr = func.layout.next_ebb(ebb);
+        curr = func.layout.next_block(block);
     }
 }

@@ -115,7 +115,7 @@
 
 
 use crate::entity::SparseMapValue;
-use crate::ir::{Ebb, ExpandedProgramPoint, Inst, Layout, ProgramOrder, ProgramPoint, Value};
+use crate::ir::{Block, ExpandedProgramPoint, Inst, Layout, ProgramOrder, ProgramPoint, Value};
 use crate::regalloc::affinity::Affinity;
 use core::cmp::Ordering;
 use core::marker::PhantomData;
@@ -152,7 +152,7 @@ pub type LiveRange = GenericLiveRange<Layout>;
 
 
 pub struct Interval {
-    begin: Ebb,
+    begin: Block,
     end: Inst,
 }
 
@@ -224,12 +224,12 @@ impl<PO: ProgramOrder> GenericLiveRange<PO> {
 
     
     
-    fn lookup_entry_containing_ebb(&self, ebb: Ebb, order: &PO) -> Result<usize, usize> {
+    fn lookup_entry_containing_block(&self, block: Block, order: &PO) -> Result<usize, usize> {
         self.liveins
-            .binary_search_by(|interval| order.cmp(interval.begin, ebb))
+            .binary_search_by(|interval| order.cmp(interval.begin, block))
             .or_else(|n| {
                 
-                if n > 0 && cmp!(order, ebb <= self.liveins[n - 1].end) {
+                if n > 0 && cmp!(order, block <= self.liveins[n - 1].end) {
                     Ok(n - 1)
                 } else {
                     Err(n)
@@ -248,12 +248,12 @@ impl<PO: ProgramOrder> GenericLiveRange<PO> {
     
     
     
-    pub fn extend_in_ebb(&mut self, ebb: Ebb, inst: Inst, order: &PO) -> bool {
+    pub fn extend_in_block(&mut self, block: Block, inst: Inst, order: &PO) -> bool {
         
         
         
         
-        if cmp!(order, ebb <= self.def_end) && cmp!(order, inst >= self.def_begin) {
+        if cmp!(order, block <= self.def_end) && cmp!(order, inst >= self.def_begin) {
             let inst_pp = inst.into();
             debug_assert_ne!(
                 inst_pp, self.def_begin,
@@ -266,7 +266,7 @@ impl<PO: ProgramOrder> GenericLiveRange<PO> {
         }
 
         
-        match self.lookup_entry_containing_ebb(ebb, order) {
+        match self.lookup_entry_containing_block(block, order) {
             Ok(n) => {
                 
                 if cmp!(order, inst <= self.liveins[n].end) {
@@ -278,7 +278,7 @@ impl<PO: ProgramOrder> GenericLiveRange<PO> {
                 
                 
                 if let Some(next) = &self.liveins.get(n + 1) {
-                    if order.is_ebb_gap(inst, next.begin) {
+                    if order.is_block_gap(inst, next.begin) {
                         
                         
                         let next_end = next.end;
@@ -300,12 +300,12 @@ impl<PO: ProgramOrder> GenericLiveRange<PO> {
                 let coalesce_next = self
                     .liveins
                     .get(n)
-                    .filter(|next| order.is_ebb_gap(inst, next.begin))
+                    .filter(|next| order.is_block_gap(inst, next.begin))
                     .is_some();
                 let coalesce_prev = self
                     .liveins
                     .get(n.wrapping_sub(1))
-                    .filter(|prev| order.is_ebb_gap(prev.end, ebb))
+                    .filter(|prev| order.is_block_gap(prev.end, block))
                     .is_some();
 
                 match (coalesce_prev, coalesce_next) {
@@ -324,8 +324,8 @@ impl<PO: ProgramOrder> GenericLiveRange<PO> {
                         self.liveins[n - 1].end = inst;
                     }
                     (false, true) => {
-                        debug_assert!(cmp!(order, ebb <= self.liveins[n].begin));
-                        self.liveins[n].begin = ebb;
+                        debug_assert!(cmp!(order, block <= self.liveins[n].begin));
+                        self.liveins[n].begin = block;
                     }
 
                     (false, false) => {
@@ -333,7 +333,7 @@ impl<PO: ProgramOrder> GenericLiveRange<PO> {
                         self.liveins.insert(
                             n,
                             Interval {
-                                begin: ebb,
+                                begin: block,
                                 end: inst,
                             },
                         );
@@ -393,11 +393,11 @@ impl<PO: ProgramOrder> GenericLiveRange<PO> {
     
     
     
-    pub fn livein_local_end(&self, ebb: Ebb, order: &PO) -> Option<Inst> {
-        self.lookup_entry_containing_ebb(ebb, order)
+    pub fn livein_local_end(&self, block: Block, order: &PO) -> Option<Inst> {
+        self.lookup_entry_containing_block(block, order)
             .and_then(|i| {
                 let inst = self.liveins[i].end;
-                if cmp!(order, ebb < inst) {
+                if cmp!(order, block < inst) {
                     Ok(inst)
                 } else {
                     
@@ -410,22 +410,22 @@ impl<PO: ProgramOrder> GenericLiveRange<PO> {
     
     
     
-    pub fn is_livein(&self, ebb: Ebb, order: &PO) -> bool {
-        self.livein_local_end(ebb, order).is_some()
+    pub fn is_livein(&self, block: Block, order: &PO) -> bool {
+        self.livein_local_end(block, order).is_some()
     }
 
     
     
     
     
-    pub fn liveins<'a>(&'a self) -> impl Iterator<Item = (Ebb, Inst)> + 'a {
+    pub fn liveins<'a>(&'a self) -> impl Iterator<Item = (Block, Inst)> + 'a {
         self.liveins
             .iter()
             .map(|interval| (interval.begin, interval.end))
     }
 
     
-    pub fn overlaps_def(&self, def: ExpandedProgramPoint, ebb: Ebb, order: &PO) -> bool {
+    pub fn overlaps_def(&self, def: ExpandedProgramPoint, block: Block, order: &PO) -> bool {
         
         if def == self.def_begin.into() {
             return true;
@@ -437,29 +437,29 @@ impl<PO: ProgramOrder> GenericLiveRange<PO> {
         }
 
         
-        match self.livein_local_end(ebb, order) {
+        match self.livein_local_end(block, order) {
             Some(inst) => cmp!(order, def < inst),
             None => false,
         }
     }
 
     
-    pub fn reaches_use(&self, user: Inst, ebb: Ebb, order: &PO) -> bool {
+    pub fn reaches_use(&self, user: Inst, block: Block, order: &PO) -> bool {
         
         if cmp!(order, user > self.def_begin) && cmp!(order, user <= self.def_end) {
             return true;
         }
 
         
-        match self.livein_local_end(ebb, order) {
+        match self.livein_local_end(block, order) {
             Some(inst) => cmp!(order, user <= inst),
             None => false,
         }
     }
 
     
-    pub fn killed_at(&self, user: Inst, ebb: Ebb, order: &PO) -> bool {
-        self.def_local_end() == user.into() || self.livein_local_end(ebb, order) == Some(user)
+    pub fn killed_at(&self, user: Inst, block: Block, order: &PO) -> bool {
+        self.def_local_end() == user.into() || self.livein_local_end(block, order) == Some(user)
     }
 }
 
@@ -474,7 +474,7 @@ impl<PO: ProgramOrder> SparseMapValue<Value> for GenericLiveRange<PO> {
 mod tests {
     use super::{GenericLiveRange, Interval};
     use crate::entity::EntityRef;
-    use crate::ir::{Ebb, Inst, Value};
+    use crate::ir::{Block, Inst, Value};
     use crate::ir::{ExpandedProgramPoint, ProgramOrder};
     use alloc::vec::Vec;
     use core::cmp::Ordering;
@@ -494,7 +494,7 @@ mod tests {
             fn idx(pp: ExpandedProgramPoint) -> usize {
                 match pp {
                     ExpandedProgramPoint::Inst(i) => i.index(),
-                    ExpandedProgramPoint::Ebb(e) => e.index(),
+                    ExpandedProgramPoint::Block(e) => e.index(),
                 }
             }
 
@@ -503,31 +503,31 @@ mod tests {
             ia.cmp(&ib)
         }
 
-        fn is_ebb_gap(&self, inst: Inst, ebb: Ebb) -> bool {
-            inst.index() % 10 == 1 && ebb.index() / 10 == inst.index() / 10 + 1
+        fn is_block_gap(&self, inst: Inst, block: Block) -> bool {
+            inst.index() % 10 == 1 && block.index() / 10 == inst.index() / 10 + 1
         }
     }
 
     impl ProgOrder {
         
-        fn inst_ebb(&self, inst: Inst) -> Ebb {
+        fn inst_block(&self, inst: Inst) -> Block {
             let i = inst.index();
-            Ebb::new(i - i % 10)
+            Block::new(i - i % 10)
         }
 
         
-        fn pp_ebb<PP: Into<ExpandedProgramPoint>>(&self, pp: PP) -> Ebb {
+        fn pp_block<PP: Into<ExpandedProgramPoint>>(&self, pp: PP) -> Block {
             match pp.into() {
-                ExpandedProgramPoint::Inst(i) => self.inst_ebb(i),
-                ExpandedProgramPoint::Ebb(e) => e,
+                ExpandedProgramPoint::Inst(i) => self.inst_block(i),
+                ExpandedProgramPoint::Block(e) => e,
             }
         }
 
         
         fn validate(&self, lr: &GenericLiveRange<Self>) {
             
-            let def_ebb = self.pp_ebb(lr.def_begin);
-            assert_eq!(def_ebb, self.pp_ebb(lr.def_end));
+            let def_block = self.pp_block(lr.def_begin);
+            assert_eq!(def_block, self.pp_block(lr.def_end));
 
             
             match self.cmp(lr.def_begin, lr.def_end) {
@@ -552,7 +552,7 @@ mod tests {
                 assert!(
                     self.cmp(lr.def_end, begin) == Ordering::Less
                         || self.cmp(lr.def_begin, end) == Ordering::Greater,
-                    "Interval can't overlap the def EBB"
+                    "Interval can't overlap the def block"
                 );
 
                 
@@ -567,10 +567,10 @@ mod tests {
     #[test]
     fn dead_def_range() {
         let v0 = Value::new(0);
-        let e0 = Ebb::new(0);
+        let e0 = Block::new(0);
         let i1 = Inst::new(1);
         let i2 = Inst::new(2);
-        let e2 = Ebb::new(2);
+        let e2 = Block::new(2);
         let lr = GenericLiveRange::new(v0, i1.into(), Default::default());
         assert!(lr.is_dead());
         assert!(lr.is_local());
@@ -588,7 +588,7 @@ mod tests {
     #[test]
     fn dead_arg_range() {
         let v0 = Value::new(0);
-        let e2 = Ebb::new(2);
+        let e2 = Block::new(2);
         let lr = GenericLiveRange::new(v0, e2.into(), Default::default());
         assert!(lr.is_dead());
         assert!(lr.is_local());
@@ -602,13 +602,13 @@ mod tests {
     #[test]
     fn local_def() {
         let v0 = Value::new(0);
-        let e10 = Ebb::new(10);
+        let e10 = Block::new(10);
         let i11 = Inst::new(11);
         let i12 = Inst::new(12);
         let i13 = Inst::new(13);
         let mut lr = GenericLiveRange::new(v0, i11.into(), Default::default());
 
-        assert_eq!(lr.extend_in_ebb(e10, i13, PO), false);
+        assert_eq!(lr.extend_in_block(e10, i13, PO), false);
         PO.validate(&lr);
         assert!(!lr.is_dead());
         assert!(lr.is_local());
@@ -616,7 +616,7 @@ mod tests {
         assert_eq!(lr.def_local_end(), i13.into());
 
         
-        assert_eq!(lr.extend_in_ebb(e10, i12, PO), false);
+        assert_eq!(lr.extend_in_block(e10, i12, PO), false);
         PO.validate(&lr);
         assert_eq!(lr.def(), i11.into());
         assert_eq!(lr.def_local_end(), i13.into());
@@ -625,7 +625,7 @@ mod tests {
     #[test]
     fn local_arg() {
         let v0 = Value::new(0);
-        let e10 = Ebb::new(10);
+        let e10 = Block::new(10);
         let i11 = Inst::new(11);
         let i12 = Inst::new(12);
         let i13 = Inst::new(13);
@@ -633,7 +633,7 @@ mod tests {
 
         
         
-        assert_eq!(lr.extend_in_ebb(e10, i12, PO), false);
+        assert_eq!(lr.extend_in_block(e10, i12, PO), false);
         PO.validate(&lr);
         assert!(!lr.is_dead());
         assert!(lr.is_local());
@@ -641,13 +641,13 @@ mod tests {
         assert_eq!(lr.def_local_end(), i12.into());
 
         
-        assert_eq!(lr.extend_in_ebb(e10, i11, PO), false);
+        assert_eq!(lr.extend_in_block(e10, i11, PO), false);
         PO.validate(&lr);
         assert_eq!(lr.def(), e10.into());
         assert_eq!(lr.def_local_end(), i12.into());
 
         
-        assert_eq!(lr.extend_in_ebb(e10, i13, PO), false);
+        assert_eq!(lr.extend_in_block(e10, i13, PO), false);
         PO.validate(&lr);
         assert_eq!(lr.def(), e10.into());
         assert_eq!(lr.def_local_end(), i13.into());
@@ -656,28 +656,28 @@ mod tests {
     #[test]
     fn global_def() {
         let v0 = Value::new(0);
-        let e10 = Ebb::new(10);
+        let e10 = Block::new(10);
         let i11 = Inst::new(11);
         let i12 = Inst::new(12);
-        let e20 = Ebb::new(20);
+        let e20 = Block::new(20);
         let i21 = Inst::new(21);
         let i22 = Inst::new(22);
         let i23 = Inst::new(23);
         let mut lr = GenericLiveRange::new(v0, i11.into(), Default::default());
 
-        assert_eq!(lr.extend_in_ebb(e10, i12, PO), false);
+        assert_eq!(lr.extend_in_block(e10, i12, PO), false);
 
         
-        assert_eq!(lr.extend_in_ebb(e20, i22, PO), true);
+        assert_eq!(lr.extend_in_block(e20, i22, PO), true);
         PO.validate(&lr);
         assert_eq!(lr.livein_local_end(e20, PO), Some(i22));
 
         
-        assert_eq!(lr.extend_in_ebb(e20, i21, PO), false);
+        assert_eq!(lr.extend_in_block(e20, i21, PO), false);
         assert_eq!(lr.livein_local_end(e20, PO), Some(i22));
 
         
-        assert_eq!(lr.extend_in_ebb(e20, i23, PO), false);
+        assert_eq!(lr.extend_in_block(e20, i23, PO), false);
         PO.validate(&lr);
         assert_eq!(lr.livein_local_end(e20, PO), Some(i23));
     }
@@ -686,35 +686,35 @@ mod tests {
     fn coalesce() {
         let v0 = Value::new(0);
         let i11 = Inst::new(11);
-        let e20 = Ebb::new(20);
+        let e20 = Block::new(20);
         let i21 = Inst::new(21);
-        let e30 = Ebb::new(30);
+        let e30 = Block::new(30);
         let i31 = Inst::new(31);
-        let e40 = Ebb::new(40);
+        let e40 = Block::new(40);
         let i41 = Inst::new(41);
         let mut lr = GenericLiveRange::new(v0, i11.into(), Default::default());
 
-        assert_eq!(lr.extend_in_ebb(e30, i31, PO,), true);
+        assert_eq!(lr.extend_in_block(e30, i31, PO,), true);
         assert_eq!(lr.liveins().collect::<Vec<_>>(), [(e30, i31)]);
 
         
-        assert_eq!(lr.extend_in_ebb(e40, i41, PO,), true);
+        assert_eq!(lr.extend_in_block(e40, i41, PO,), true);
         assert_eq!(lr.liveins().collect::<Vec<_>>(), [(e30, i41)]);
 
         
-        assert_eq!(lr.extend_in_ebb(e20, i21, PO,), true);
+        assert_eq!(lr.extend_in_block(e20, i21, PO,), true);
         assert_eq!(lr.liveins().collect::<Vec<_>>(), [(e20, i41)]);
 
         let mut lr = GenericLiveRange::new(v0, i11.into(), Default::default());
 
-        assert_eq!(lr.extend_in_ebb(e40, i41, PO,), true);
+        assert_eq!(lr.extend_in_block(e40, i41, PO,), true);
         assert_eq!(lr.liveins().collect::<Vec<_>>(), [(e40, i41)]);
 
-        assert_eq!(lr.extend_in_ebb(e20, i21, PO,), true);
+        assert_eq!(lr.extend_in_block(e20, i21, PO,), true);
         assert_eq!(lr.liveins().collect::<Vec<_>>(), [(e20, i21), (e40, i41)]);
 
         
-        assert_eq!(lr.extend_in_ebb(e30, i31, PO,), true);
+        assert_eq!(lr.extend_in_block(e30, i31, PO,), true);
         assert_eq!(lr.liveins().collect::<Vec<_>>(), [(e20, i41)]);
     }
 }

@@ -26,7 +26,7 @@ use super::{hash_map, HashMap};
 use crate::environ::{FuncEnvironment, GlobalVariable, ReturnMode, WasmResult};
 use crate::state::{ControlStackFrame, ElseData, FuncTranslationState, ModuleTranslationState};
 use crate::translation_utils::{
-    blocktype_params_results, ebb_with_params, f32_translation, f64_translation,
+    block_with_params, blocktype_params_results, f32_translation, f64_translation,
 };
 use crate::translation_utils::{FuncIndex, GlobalIndex, MemoryIndex, SignatureIndex, TableIndex};
 use crate::wasm_unsupported;
@@ -159,20 +159,22 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
 
         Operator::Block { ty } => {
             let (params, results) = blocktype_params_results(module_translation_state, *ty)?;
-            let next = ebb_with_params(builder, results, environ)?;
+            let next = block_with_params(builder, results, environ)?;
             state.push_block(next, params.len(), results.len());
         }
         Operator::Loop { ty } => {
             let (params, results) = blocktype_params_results(module_translation_state, *ty)?;
-            let loop_body = ebb_with_params(builder, params, environ)?;
-            let next = ebb_with_params(builder, results, environ)?;
+            let loop_body = block_with_params(builder, params, environ)?;
+            let next = block_with_params(builder, results, environ)?;
             builder.ins().jump(loop_body, state.peekn(params.len()));
             state.push_loop(loop_body, next, params.len(), results.len());
 
             
             
             state.popn(params.len());
-            state.stack.extend_from_slice(builder.ebb_params(loop_body));
+            state
+                .stack
+                .extend_from_slice(builder.block_params(loop_body));
 
             builder.switch_to_block(loop_body);
             environ.translate_loop_header(builder.cursor())?;
@@ -188,7 +190,7 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
                 
                 
                 
-                let destination = ebb_with_params(builder, results, environ)?;
+                let destination = block_with_params(builder, results, environ)?;
                 let branch_inst = builder
                     .ins()
                     .brz(val, destination, state.peekn(params.len()));
@@ -196,8 +198,8 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
             } else {
                 
                 
-                let destination = ebb_with_params(builder, results, environ)?;
-                let else_block = ebb_with_params(builder, params, environ)?;
+                let destination = block_with_params(builder, results, environ)?;
+                let else_block = block_with_params(builder, params, environ)?;
                 builder
                     .ins()
                     .brz(val, else_block, state.peekn(params.len()));
@@ -205,13 +207,10 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
                 (destination, ElseData::WithElse { else_block })
             };
 
-            #[cfg(feature = "basic-blocks")]
-            {
-                let next_ebb = builder.create_ebb();
-                builder.ins().jump(next_ebb, &[]);
-                builder.seal_block(next_ebb); 
-                builder.switch_to_block(next_ebb);
-            }
+            let next_block = builder.create_block();
+            builder.ins().jump(next_block, &[]);
+            builder.seal_block(next_block); 
+            builder.switch_to_block(next_block);
 
             
             
@@ -244,18 +243,18 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
 
                         
                         
-                        let else_ebb = match *else_data {
+                        let else_block = match *else_data {
                             ElseData::NoElse { branch_inst } => {
                                 let (params, _results) =
                                     blocktype_params_results(module_translation_state, blocktype)?;
                                 debug_assert_eq!(params.len(), num_return_values);
-                                let else_ebb = ebb_with_params(builder, params, environ)?;
+                                let else_block = block_with_params(builder, params, environ)?;
                                 builder.ins().jump(destination, state.peekn(params.len()));
                                 state.popn(params.len());
 
-                                builder.change_jump_destination(branch_inst, else_ebb);
-                                builder.seal_block(else_ebb);
-                                else_ebb
+                                builder.change_jump_destination(branch_inst, else_block);
+                                builder.seal_block(else_block);
+                                else_block
                             }
                             ElseData::WithElse { else_block } => {
                                 builder
@@ -276,7 +275,7 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
                         
                         
 
-                        builder.switch_to_block(else_ebb);
+                        builder.switch_to_block(else_block);
 
                         
                         
@@ -287,13 +286,13 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
         }
         Operator::End => {
             let frame = state.control_stack.pop().unwrap();
-            let next_ebb = frame.following_code();
+            let next_block = frame.following_code();
 
             if !builder.is_unreachable() || !builder.is_pristine() {
                 let return_count = frame.num_return_values();
                 let return_args = state.peekn_mut(return_count);
-                let next_ebb_types = builder.func.dfg.ebb_param_types(next_ebb);
-                bitcast_arguments(return_args, &next_ebb_types, builder);
+                let next_block_types = builder.func.dfg.block_param_types(next_block);
+                bitcast_arguments(return_args, &next_block_types, builder);
                 builder.ins().jump(frame.following_code(), return_args);
                 
                 
@@ -302,14 +301,16 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
                 
                 
             }
-            builder.switch_to_block(next_ebb);
-            builder.seal_block(next_ebb);
+            builder.switch_to_block(next_block);
+            builder.seal_block(next_block);
             
             if let ControlStackFrame::Loop { header, .. } = frame {
                 builder.seal_block(header)
             }
             state.stack.truncate(frame.original_stack_size());
-            state.stack.extend_from_slice(builder.ebb_params(next_ebb));
+            state
+                .stack
+                .extend_from_slice(builder.block_params(next_block));
         }
         
 
@@ -348,7 +349,7 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
 
             
             let destination_args = state.peekn_mut(return_count);
-            let destination_types = builder.func.dfg.ebb_param_types(br_destination);
+            let destination_types = builder.func.dfg.block_param_types(br_destination);
             bitcast_arguments(
                 destination_args,
                 &destination_types[..return_count],
@@ -382,53 +383,53 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
             if jump_args_count == 0 {
                 
                 for depth in &*depths {
-                    let ebb = {
+                    let block = {
                         let i = state.control_stack.len() - 1 - (*depth as usize);
                         let frame = &mut state.control_stack[i];
                         frame.set_branched_to_exit();
                         frame.br_destination()
                     };
-                    data.push_entry(ebb);
+                    data.push_entry(block);
                 }
                 let jt = builder.create_jump_table(data);
-                let ebb = {
+                let block = {
                     let i = state.control_stack.len() - 1 - (default as usize);
                     let frame = &mut state.control_stack[i];
                     frame.set_branched_to_exit();
                     frame.br_destination()
                 };
-                builder.ins().br_table(val, ebb, jt);
+                builder.ins().br_table(val, block, jt);
             } else {
                 
                 
                 let return_count = jump_args_count;
-                let mut dest_ebb_sequence = vec![];
-                let mut dest_ebb_map = HashMap::new();
+                let mut dest_block_sequence = vec![];
+                let mut dest_block_map = HashMap::new();
                 for depth in &*depths {
-                    let branch_ebb = match dest_ebb_map.entry(*depth as usize) {
+                    let branch_block = match dest_block_map.entry(*depth as usize) {
                         hash_map::Entry::Occupied(entry) => *entry.get(),
                         hash_map::Entry::Vacant(entry) => {
-                            let ebb = builder.create_ebb();
-                            dest_ebb_sequence.push((*depth as usize, ebb));
-                            *entry.insert(ebb)
+                            let block = builder.create_block();
+                            dest_block_sequence.push((*depth as usize, block));
+                            *entry.insert(block)
                         }
                     };
-                    data.push_entry(branch_ebb);
+                    data.push_entry(branch_block);
                 }
-                let default_branch_ebb = match dest_ebb_map.entry(default as usize) {
+                let default_branch_block = match dest_block_map.entry(default as usize) {
                     hash_map::Entry::Occupied(entry) => *entry.get(),
                     hash_map::Entry::Vacant(entry) => {
-                        let ebb = builder.create_ebb();
-                        dest_ebb_sequence.push((default as usize, ebb));
-                        *entry.insert(ebb)
+                        let block = builder.create_block();
+                        dest_block_sequence.push((default as usize, block));
+                        *entry.insert(block)
                     }
                 };
                 let jt = builder.create_jump_table(data);
-                builder.ins().br_table(val, default_branch_ebb, jt);
-                for (depth, dest_ebb) in dest_ebb_sequence {
-                    builder.switch_to_block(dest_ebb);
-                    builder.seal_block(dest_ebb);
-                    let real_dest_ebb = {
+                builder.ins().br_table(val, default_branch_block, jt);
+                for (depth, dest_block) in dest_block_sequence {
+                    builder.switch_to_block(dest_block);
+                    builder.seal_block(dest_block);
+                    let real_dest_block = {
                         let i = state.control_stack.len() - 1 - depth;
                         let frame = &mut state.control_stack[i];
                         frame.set_branched_to_exit();
@@ -437,14 +438,14 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
 
                     
                     let destination_args = state.peekn_mut(return_count);
-                    let destination_types = builder.func.dfg.ebb_param_types(real_dest_ebb);
+                    let destination_types = builder.func.dfg.block_param_types(real_dest_block);
                     bitcast_arguments(
                         destination_args,
                         &destination_types[..return_count],
                         builder,
                     );
 
-                    builder.ins().jump(real_dest_ebb, destination_args);
+                    builder.ins().jump(real_dest_block, destination_args);
                 }
                 state.popn(return_count);
             }
@@ -1501,7 +1502,7 @@ fn translate_unreachable_operator<FE: FuncEnvironment + ?Sized>(
             
             
             state.push_if(
-                ir::Ebb::reserved_value(),
+                ir::Block::reserved_value(),
                 ElseData::NoElse {
                     branch_inst: ir::Inst::reserved_value(),
                 },
@@ -1511,7 +1512,7 @@ fn translate_unreachable_operator<FE: FuncEnvironment + ?Sized>(
             );
         }
         Operator::Loop { ty: _ } | Operator::Block { ty: _ } => {
-            state.push_block(ir::Ebb::reserved_value(), 0, 0);
+            state.push_block(ir::Block::reserved_value(), 0, 0);
         }
         Operator::Else => {
             let i = state.control_stack.len() - 1;
@@ -1530,21 +1531,21 @@ fn translate_unreachable_operator<FE: FuncEnvironment + ?Sized>(
                         
                         state.reachable = true;
 
-                        let else_ebb = match *else_data {
+                        let else_block = match *else_data {
                             ElseData::NoElse { branch_inst } => {
                                 let (params, _results) =
                                     blocktype_params_results(module_translation_state, blocktype)?;
-                                let else_ebb = ebb_with_params(builder, params, environ)?;
+                                let else_block = block_with_params(builder, params, environ)?;
 
                                 
-                                builder.change_jump_destination(branch_inst, else_ebb);
-                                builder.seal_block(else_ebb);
-                                else_ebb
+                                builder.change_jump_destination(branch_inst, else_block);
+                                builder.seal_block(else_block);
+                                else_block
                             }
                             ElseData::WithElse { else_block } => else_block,
                         };
 
-                        builder.switch_to_block(else_ebb);
+                        builder.switch_to_block(else_block);
 
                         
                         
@@ -1599,7 +1600,7 @@ fn translate_unreachable_operator<FE: FuncEnvironment + ?Sized>(
 
                 
                 
-                stack.extend_from_slice(builder.ebb_params(frame.following_code()));
+                stack.extend_from_slice(builder.block_params(frame.following_code()));
                 state.reachable = true;
             }
         }
@@ -1739,24 +1740,21 @@ fn translate_br_if(
     let (br_destination, inputs) = translate_br_if_args(relative_depth, state);
 
     
-    let destination_types = builder.func.dfg.ebb_param_types(br_destination);
+    let destination_types = builder.func.dfg.block_param_types(br_destination);
     bitcast_arguments(inputs, &destination_types[..inputs.len()], builder);
 
     builder.ins().brnz(val, br_destination, inputs);
 
-    #[cfg(feature = "basic-blocks")]
-    {
-        let next_ebb = builder.create_ebb();
-        builder.ins().jump(next_ebb, &[]);
-        builder.seal_block(next_ebb); 
-        builder.switch_to_block(next_ebb);
-    }
+    let next_block = builder.create_block();
+    builder.ins().jump(next_block, &[]);
+    builder.seal_block(next_block); 
+    builder.switch_to_block(next_block);
 }
 
 fn translate_br_if_args(
     relative_depth: u32,
     state: &mut FuncTranslationState,
-) -> (ir::Ebb, &mut [ir::Value]) {
+) -> (ir::Block, &mut [ir::Value]) {
     let i = state.control_stack.len() - 1 - (relative_depth as usize);
     let (return_count, br_destination) = {
         let frame = &mut state.control_stack[i];

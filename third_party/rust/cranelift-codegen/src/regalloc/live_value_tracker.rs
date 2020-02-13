@@ -7,7 +7,7 @@
 use crate::dominator_tree::DominatorTree;
 use crate::entity::{EntityList, ListPool};
 use crate::fx::FxHashMap;
-use crate::ir::{DataFlowGraph, Ebb, ExpandedProgramPoint, Inst, Layout, Value};
+use crate::ir::{Block, DataFlowGraph, ExpandedProgramPoint, Inst, Layout, Value};
 use crate::partition_slice::partition_slice;
 use crate::regalloc::affinity::Affinity;
 use crate::regalloc::liveness::Liveness;
@@ -164,9 +164,9 @@ impl LiveValueTracker {
     
     
     
-    pub fn ebb_top(
+    pub fn block_top(
         &mut self,
-        ebb: Ebb,
+        block: Block,
         dfg: &DataFlowGraph,
         liveness: &Liveness,
         layout: &Layout,
@@ -183,7 +183,7 @@ impl LiveValueTracker {
         
         
         
-        if let Some(idom) = domtree.idom(ebb) {
+        if let Some(idom) = domtree.idom(block) {
             
             
             
@@ -198,7 +198,7 @@ impl LiveValueTracker {
                     .expect("Immediate dominator value has no live range");
 
                 
-                if let Some(endpoint) = lr.livein_local_end(ebb, layout) {
+                if let Some(endpoint) = lr.livein_local_end(block, layout) {
                     self.live.push(value, endpoint, lr);
                 }
             }
@@ -206,24 +206,24 @@ impl LiveValueTracker {
 
         
         let first_arg = self.live.values.len();
-        for &value in dfg.ebb_params(ebb) {
+        for &value in dfg.block_params(block) {
             let lr = &liveness[value];
-            debug_assert_eq!(lr.def(), ebb.into());
+            debug_assert_eq!(lr.def(), block.into());
             match lr.def_local_end().into() {
                 ExpandedProgramPoint::Inst(endpoint) => {
                     self.live.push(value, endpoint, lr);
                 }
-                ExpandedProgramPoint::Ebb(local_ebb) => {
+                ExpandedProgramPoint::Block(local_block) => {
                     
                     
                     debug_assert_eq!(
-                        local_ebb, ebb,
-                        "EBB parameter live range ends at wrong EBB header"
+                        local_block, block,
+                        "block parameter live range ends at wrong block header"
                     );
                     
                     
                     self.live
-                        .push(value, layout.first_inst(ebb).expect("Empty EBB"), lr);
+                        .push(value, layout.first_inst(block).expect("Empty block"), lr);
                 }
             }
         }
@@ -274,8 +274,8 @@ impl LiveValueTracker {
                 ExpandedProgramPoint::Inst(endpoint) => {
                     self.live.push(value, endpoint, lr);
                 }
-                ExpandedProgramPoint::Ebb(ebb) => {
-                    panic!("Instruction result live range can't end at {}", ebb);
+                ExpandedProgramPoint::Block(block) => {
+                    panic!("Instruction result live range can't end at {}", block);
                 }
             }
         }

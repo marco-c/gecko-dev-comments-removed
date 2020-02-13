@@ -20,27 +20,27 @@ pub fn eliminate_unreachable_code(
 ) {
     let _tt = timing::unreachable_code();
     let mut pos = FuncCursor::new(func);
-    while let Some(ebb) = pos.next_ebb() {
-        if domtree.is_reachable(ebb) {
+    while let Some(block) = pos.next_block() {
+        if domtree.is_reachable(block) {
             continue;
         }
 
-        debug!("Eliminating unreachable {}", ebb);
+        debug!("Eliminating unreachable {}", block);
         
         
-        pos.prev_ebb();
+        pos.prev_block();
 
         
-        while let Some(inst) = pos.func.layout.first_inst(ebb) {
+        while let Some(inst) = pos.func.layout.first_inst(block) {
             debug!(" - {}", pos.func.dfg.display_inst(inst, None));
             pos.func.layout.remove_inst(inst);
         }
 
         
         
-        cfg.recompute_ebb(pos.func, ebb);
+        cfg.recompute_block(pos.func, block);
 
         
-        pos.func.layout.remove_ebb(ebb);
+        pos.func.layout.remove_block(block);
     }
 }

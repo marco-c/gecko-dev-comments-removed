@@ -15,10 +15,10 @@ pub enum CursorPosition {
     At(ir::Inst),
     
     
-    Before(ir::Ebb),
+    Before(ir::Block),
     
     
-    After(ir::Ebb),
+    After(ir::Block),
 }
 
 
@@ -107,11 +107,11 @@ pub trait Cursor {
     
     
     
-    fn at_first_insertion_point(mut self, ebb: ir::Ebb) -> Self
+    fn at_first_insertion_point(mut self, block: ir::Block) -> Self
     where
         Self: Sized,
     {
-        self.goto_first_insertion_point(ebb);
+        self.goto_first_insertion_point(block);
         self
     }
 
@@ -128,11 +128,11 @@ pub trait Cursor {
     
     
     
-    fn at_first_inst(mut self, ebb: ir::Ebb) -> Self
+    fn at_first_inst(mut self, block: ir::Block) -> Self
     where
         Self: Sized,
     {
-        self.goto_first_inst(ebb);
+        self.goto_first_inst(block);
         self
     }
 
@@ -149,11 +149,11 @@ pub trait Cursor {
     
     
     
-    fn at_last_inst(mut self, ebb: ir::Ebb) -> Self
+    fn at_last_inst(mut self, block: ir::Block) -> Self
     where
         Self: Sized,
     {
-        self.goto_last_inst(ebb);
+        self.goto_last_inst(block);
         self
     }
 
@@ -191,11 +191,11 @@ pub trait Cursor {
     
     
     
-    fn at_top(mut self, ebb: ir::Ebb) -> Self
+    fn at_top(mut self, block: ir::Block) -> Self
     where
         Self: Sized,
     {
-        self.goto_top(ebb);
+        self.goto_top(block);
         self
     }
 
@@ -212,21 +212,21 @@ pub trait Cursor {
     
     
     
-    fn at_bottom(mut self, ebb: ir::Ebb) -> Self
+    fn at_bottom(mut self, block: ir::Block) -> Self
     where
         Self: Sized,
     {
-        self.goto_bottom(ebb);
+        self.goto_bottom(block);
         self
     }
 
     
-    fn current_ebb(&self) -> Option<ir::Ebb> {
+    fn current_block(&self) -> Option<ir::Block> {
         use self::CursorPosition::*;
         match self.position() {
             Nowhere => None,
-            At(inst) => self.layout().inst_ebb(inst),
-            Before(ebb) | After(ebb) => Some(ebb),
+            At(inst) => self.layout().inst_block(inst),
+            Before(block) | After(block) => Some(block),
         }
     }
 
@@ -242,13 +242,13 @@ pub trait Cursor {
     
     
     fn goto_after_inst(&mut self, inst: ir::Inst) {
-        debug_assert!(self.layout().inst_ebb(inst).is_some());
+        debug_assert!(self.layout().inst_block(inst).is_some());
         let new_pos = if let Some(next) = self.layout().next_inst(inst) {
             CursorPosition::At(next)
         } else {
             CursorPosition::After(
                 self.layout()
-                    .inst_ebb(inst)
+                    .inst_block(inst)
                     .expect("current instruction removed?"),
             )
         };
@@ -258,46 +258,46 @@ pub trait Cursor {
     
     
     fn goto_inst(&mut self, inst: ir::Inst) {
-        debug_assert!(self.layout().inst_ebb(inst).is_some());
+        debug_assert!(self.layout().inst_block(inst).is_some());
         self.set_position(CursorPosition::At(inst));
     }
 
     
     
     
-    fn goto_first_insertion_point(&mut self, ebb: ir::Ebb) {
-        if let Some(inst) = self.layout().first_inst(ebb) {
+    fn goto_first_insertion_point(&mut self, block: ir::Block) {
+        if let Some(inst) = self.layout().first_inst(block) {
             self.goto_inst(inst);
         } else {
-            self.goto_bottom(ebb);
+            self.goto_bottom(block);
         }
     }
 
     
-    fn goto_first_inst(&mut self, ebb: ir::Ebb) {
-        let inst = self.layout().first_inst(ebb).expect("Empty EBB");
+    fn goto_first_inst(&mut self, block: ir::Block) {
+        let inst = self.layout().first_inst(block).expect("Empty block");
         self.goto_inst(inst);
     }
 
     
-    fn goto_last_inst(&mut self, ebb: ir::Ebb) {
-        let inst = self.layout().last_inst(ebb).expect("Empty EBB");
+    fn goto_last_inst(&mut self, block: ir::Block) {
+        let inst = self.layout().last_inst(block).expect("Empty block");
         self.goto_inst(inst);
     }
 
     
     
     
-    fn goto_top(&mut self, ebb: ir::Ebb) {
-        debug_assert!(self.layout().is_ebb_inserted(ebb));
-        self.set_position(CursorPosition::Before(ebb));
+    fn goto_top(&mut self, block: ir::Block) {
+        debug_assert!(self.layout().is_block_inserted(block));
+        self.set_position(CursorPosition::Before(block));
     }
 
     
     
-    fn goto_bottom(&mut self, ebb: ir::Ebb) {
-        debug_assert!(self.layout().is_ebb_inserted(ebb));
-        self.set_position(CursorPosition::After(ebb));
+    fn goto_bottom(&mut self, block: ir::Block) {
+        debug_assert!(self.layout().is_block_inserted(block));
+        self.set_position(CursorPosition::After(block));
     }
 
     
@@ -320,14 +320,14 @@ pub trait Cursor {
     
     
     
-    fn next_ebb(&mut self) -> Option<ir::Ebb> {
-        let next = if let Some(ebb) = self.current_ebb() {
-            self.layout().next_ebb(ebb)
+    fn next_block(&mut self) -> Option<ir::Block> {
+        let next = if let Some(block) = self.current_block() {
+            self.layout().next_block(block)
         } else {
             self.layout().entry_block()
         };
         self.set_position(match next {
-            Some(ebb) => CursorPosition::Before(ebb),
+            Some(block) => CursorPosition::Before(block),
             None => CursorPosition::Nowhere,
         });
         next
@@ -353,14 +353,14 @@ pub trait Cursor {
     
     
     
-    fn prev_ebb(&mut self) -> Option<ir::Ebb> {
-        let prev = if let Some(ebb) = self.current_ebb() {
-            self.layout().prev_ebb(ebb)
+    fn prev_block(&mut self) -> Option<ir::Block> {
+        let prev = if let Some(block) = self.current_block() {
+            self.layout().prev_block(block)
         } else {
-            self.layout().last_ebb()
+            self.layout().last_block()
         };
         self.set_position(match prev {
-            Some(ebb) => CursorPosition::After(ebb),
+            Some(block) => CursorPosition::After(block),
             None => CursorPosition::Nowhere,
         });
         prev
@@ -417,19 +417,19 @@ pub trait Cursor {
                 } else {
                     let pos = After(
                         self.layout()
-                            .inst_ebb(inst)
+                            .inst_block(inst)
                             .expect("current instruction removed?"),
                     );
                     self.set_position(pos);
                     None
                 }
             }
-            Before(ebb) => {
-                if let Some(next) = self.layout().first_inst(ebb) {
+            Before(block) => {
+                if let Some(next) = self.layout().first_inst(block) {
                     self.set_position(At(next));
                     Some(next)
                 } else {
-                    self.set_position(After(ebb));
+                    self.set_position(After(block));
                     None
                 }
             }
@@ -471,19 +471,19 @@ pub trait Cursor {
                 } else {
                     let pos = Before(
                         self.layout()
-                            .inst_ebb(inst)
+                            .inst_block(inst)
                             .expect("current instruction removed?"),
                     );
                     self.set_position(pos);
                     None
                 }
             }
-            After(ebb) => {
-                if let Some(prev) = self.layout().last_inst(ebb) {
+            After(block) => {
+                if let Some(prev) = self.layout().last_inst(block) {
                     self.set_position(At(prev));
                     Some(prev)
                 } else {
-                    self.set_position(Before(ebb));
+                    self.set_position(Before(block));
                     None
                 }
             }
@@ -504,7 +504,7 @@ pub trait Cursor {
         match self.position() {
             Nowhere | Before(..) => panic!("Invalid insert_inst position"),
             At(cur) => self.layout_mut().insert_inst(inst, cur),
-            After(ebb) => self.layout_mut().append_inst(inst, ebb),
+            After(block) => self.layout_mut().append_inst(inst, block),
         }
     }
 
@@ -546,20 +546,20 @@ pub trait Cursor {
     
     
     
-    fn insert_ebb(&mut self, new_ebb: ir::Ebb) {
+    fn insert_block(&mut self, new_block: ir::Block) {
         use self::CursorPosition::*;
         match self.position() {
             At(inst) => {
-                self.layout_mut().split_ebb(new_ebb, inst);
+                self.layout_mut().split_block(new_block, inst);
                 
                 return;
             }
-            Nowhere => self.layout_mut().append_ebb(new_ebb),
-            Before(ebb) => self.layout_mut().insert_ebb(new_ebb, ebb),
-            After(ebb) => self.layout_mut().insert_ebb_after(new_ebb, ebb),
+            Nowhere => self.layout_mut().append_block(new_block),
+            Before(block) => self.layout_mut().insert_block(new_block, block),
+            After(block) => self.layout_mut().insert_block_after(new_block, block),
         }
         
-        self.set_position(After(new_ebb));
+        self.set_position(After(new_block));
     }
 }
 
@@ -636,7 +636,6 @@ impl<'c, 'f> ir::InstInserterBase<'c> for &'c mut FuncCursor<'f> {
 
     fn insert_built_inst(self, inst: ir::Inst, _: ir::Type) -> &'c mut ir::DataFlowGraph {
         
-        #[cfg(feature = "basic-blocks")]
         #[cfg(debug_assertions)]
         {
             if let CursorPosition::At(_) = self.position() {
@@ -766,7 +765,6 @@ impl<'c, 'f> ir::InstInserterBase<'c> for &'c mut EncCursor<'f> {
         ctrl_typevar: ir::Type,
     ) -> &'c mut ir::DataFlowGraph {
         
-        #[cfg(feature = "basic-blocks")]
         #[cfg(debug_assertions)]
         {
             if let CursorPosition::At(_) = self.position() {

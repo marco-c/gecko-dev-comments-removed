@@ -8,7 +8,8 @@ use crate::ir::dfg::DataFlowGraph;
 use crate::ir::instructions::BranchInfo;
 use crate::ir::stackslot::{StackSlotKind, StackSlots};
 use crate::ir::{
-    Ebb, Function, Inst, InstBuilder, InstructionData, Opcode, StackSlotData, Type, Value, ValueLoc,
+    Block, Function, Inst, InstBuilder, InstructionData, Opcode, StackSlotData, Type, Value,
+    ValueLoc,
 };
 use crate::isa::{RegInfo, RegUnit, TargetIsa};
 use crate::regalloc::RegDiversions;
@@ -223,21 +224,21 @@ pub struct RedundantReloadRemover {
     num_regunits: Option<u16>,
 
     
-    num_preds_per_ebb: PrimaryMap<Ebb, ZeroOneOrMany>,
+    num_preds_per_block: PrimaryMap<Block, ZeroOneOrMany>,
 
     
     
-    discovery_stack: Vec<Ebb>,
+    discovery_stack: Vec<Block>,
 
     
-    nodes_in_tree: EntitySet<Ebb>,
+    nodes_in_tree: EntitySet<Block>,
 
     
     
     processing_stack: Vec<ProcessingStackElem>,
 
     
-    nodes_already_visited: EntitySet<Ebb>,
+    nodes_already_visited: EntitySet<Block>,
 }
 
 
@@ -301,7 +302,7 @@ fn slot_of_value<'s>(
 
 impl RedundantReloadRemover {
     
-    fn discovery_stack_push_successors_of(&mut self, cfg: &ControlFlowGraph, node: Ebb) {
+    fn discovery_stack_push_successors_of(&mut self, cfg: &ControlFlowGraph, node: Block) {
         for successor in cfg.succ_iter(node) {
             self.discovery_stack.push(successor);
         }
@@ -311,7 +312,7 @@ impl RedundantReloadRemover {
     
     
     
-    fn add_nodes_to_tree(&mut self, cfg: &ControlFlowGraph, starting_point: Ebb) {
+    fn add_nodes_to_tree(&mut self, cfg: &ControlFlowGraph, starting_point: Block) {
         
         
         
@@ -325,7 +326,7 @@ impl RedundantReloadRemover {
         self.discovery_stack_push_successors_of(cfg, starting_point);
 
         while let Some(node) = self.discovery_stack.pop() {
-            match self.num_preds_per_ebb[node] {
+            match self.num_preds_per_block[node] {
                 
                 ZeroOneOrMany::Many => {}
                 
@@ -674,7 +675,7 @@ impl RedundantReloadRemover {
     
     
     
-    fn processing_stack_maybe_push(&mut self, dst: Ebb) {
+    fn processing_stack_maybe_push(&mut self, dst: Block) {
         if self.nodes_in_tree.contains(dst) && !self.nodes_already_visited.contains(dst) {
             if !self.processing_stack.is_empty() {
                 
@@ -682,7 +683,7 @@ impl RedundantReloadRemover {
                 
                 
                 
-                debug_assert!(self.num_preds_per_ebb[dst] == ZeroOneOrMany::One);
+                debug_assert!(self.num_preds_per_block[dst] == ZeroOneOrMany::One);
             }
             self.processing_stack_push(CursorPosition::Before(dst));
             self.nodes_already_visited.insert(dst);
@@ -697,7 +698,7 @@ impl RedundantReloadRemover {
         func: &mut Function,
         reginfo: &RegInfo,
         isa: &dyn TargetIsa,
-        root: Ebb,
+        root: Block,
     ) {
         debug_assert!(self.nodes_in_tree.contains(root));
         debug_assert!(self.processing_stack.is_empty());
@@ -765,11 +766,11 @@ impl RedundantReloadRemover {
     pub fn new() -> Self {
         Self {
             num_regunits: None,
-            num_preds_per_ebb: PrimaryMap::<Ebb, ZeroOneOrMany>::with_capacity(8),
-            discovery_stack: Vec::<Ebb>::with_capacity(16),
-            nodes_in_tree: EntitySet::<Ebb>::new(),
+            num_preds_per_block: PrimaryMap::<Block, ZeroOneOrMany>::with_capacity(8),
+            discovery_stack: Vec::<Block>::with_capacity(16),
+            nodes_in_tree: EntitySet::<Block>::new(),
             processing_stack: Vec::<ProcessingStackElem>::with_capacity(8),
-            nodes_already_visited: EntitySet::<Ebb>::new(),
+            nodes_already_visited: EntitySet::<Block>::new(),
         }
     }
 
@@ -779,7 +780,7 @@ impl RedundantReloadRemover {
     }
 
     fn clear_for_new_function(&mut self) {
-        self.num_preds_per_ebb.clear();
+        self.num_preds_per_block.clear();
         self.clear_for_new_tree();
     }
 
@@ -799,18 +800,18 @@ impl RedundantReloadRemover {
         cfg: &ControlFlowGraph,
     ) {
         
-        let num_ebbs: u32 = func.dfg.num_ebbs().try_into().unwrap();
+        let num_blocks: u32 = func.dfg.num_blocks().try_into().unwrap();
 
         
         self.clear_for_new_function();
 
         
         
-        self.num_preds_per_ebb.clear();
-        self.num_preds_per_ebb.reserve(num_ebbs as usize);
+        self.num_preds_per_block.clear();
+        self.num_preds_per_block.reserve(num_blocks as usize);
 
-        for i in 0..num_ebbs {
-            let mut pi = cfg.pred_iter(Ebb::from_u32(i));
+        for i in 0..num_blocks {
+            let mut pi = cfg.pred_iter(Block::from_u32(i));
             let mut n_pi = ZeroOneOrMany::Zero;
             if pi.next().is_some() {
                 n_pi = ZeroOneOrMany::One;
@@ -819,24 +820,24 @@ impl RedundantReloadRemover {
                     
                 }
             }
-            self.num_preds_per_ebb.push(n_pi);
+            self.num_preds_per_block.push(n_pi);
         }
-        debug_assert!(self.num_preds_per_ebb.len() == num_ebbs as usize);
+        debug_assert!(self.num_preds_per_block.len() == num_blocks as usize);
 
         
-        let entry_ebb = func
+        let entry_block = func
             .layout
             .entry_block()
-            .expect("do_redundant_fill_removal_on_function: entry ebb unknown");
-        debug_assert!(self.num_preds_per_ebb[entry_ebb] == ZeroOneOrMany::Zero);
-        self.num_preds_per_ebb[entry_ebb] = ZeroOneOrMany::Many;
+            .expect("do_redundant_fill_removal_on_function: entry block unknown");
+        debug_assert!(self.num_preds_per_block[entry_block] == ZeroOneOrMany::Zero);
+        self.num_preds_per_block[entry_block] = ZeroOneOrMany::Many;
 
         
-        for root_ix in 0..self.num_preds_per_ebb.len() {
-            let root = Ebb::from_u32(root_ix as u32);
+        for root_ix in 0..self.num_preds_per_block.len() {
+            let root = Block::from_u32(root_ix as u32);
 
             
-            if self.num_preds_per_ebb[root] != ZeroOneOrMany::Many {
+            if self.num_preds_per_block[root] != ZeroOneOrMany::Many {
                 continue;
             }
 
@@ -846,7 +847,7 @@ impl RedundantReloadRemover {
             
             self.add_nodes_to_tree(cfg, root);
             debug_assert!(self.nodes_in_tree.cardinality() > 0);
-            debug_assert!(self.num_preds_per_ebb[root] == ZeroOneOrMany::Many);
+            debug_assert!(self.num_preds_per_block[root] == ZeroOneOrMany::Many);
 
             
             self.process_tree(func, reginfo, isa, root);

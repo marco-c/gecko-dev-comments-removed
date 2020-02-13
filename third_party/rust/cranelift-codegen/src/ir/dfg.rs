@@ -7,7 +7,7 @@ use crate::ir::extfunc::ExtFuncData;
 use crate::ir::instructions::{BranchInfo, CallInfo, InstructionData};
 use crate::ir::{types, ConstantData, ConstantPool, Immediate};
 use crate::ir::{
-    Ebb, FuncRef, Inst, SigRef, Signature, Type, Value, ValueLabelAssignments, ValueList,
+    Block, FuncRef, Inst, SigRef, Signature, Type, Value, ValueLabelAssignments, ValueList,
     ValueListPool,
 };
 use crate::isa::TargetIsa;
@@ -45,7 +45,7 @@ pub struct DataFlowGraph {
     
     
     
-    ebbs: PrimaryMap<Ebb, EbbData>,
+    blocks: PrimaryMap<Block, BlockData>,
 
     
     
@@ -85,7 +85,7 @@ impl DataFlowGraph {
         Self {
             insts: PrimaryMap::new(),
             results: SecondaryMap::new(),
-            ebbs: PrimaryMap::new(),
+            blocks: PrimaryMap::new(),
             value_lists: ValueListPool::new(),
             values: PrimaryMap::new(),
             signatures: PrimaryMap::new(),
@@ -101,7 +101,7 @@ impl DataFlowGraph {
     pub fn clear(&mut self) {
         self.insts.clear();
         self.results.clear();
-        self.ebbs.clear();
+        self.blocks.clear();
         self.value_lists.clear();
         self.values.clear();
         self.signatures.clear();
@@ -129,13 +129,13 @@ impl DataFlowGraph {
     
     
     
-    pub fn num_ebbs(&self) -> usize {
-        self.ebbs.len()
+    pub fn num_blocks(&self) -> usize {
+        self.blocks.len()
     }
 
     
-    pub fn ebb_is_valid(&self, ebb: Ebb) -> bool {
-        self.ebbs.is_valid(ebb)
+    pub fn block_is_valid(&self, block: Block) -> bool {
+        self.blocks.is_valid(block)
     }
 
     
@@ -248,7 +248,7 @@ impl DataFlowGraph {
     pub fn value_def(&self, v: Value) -> ValueDef {
         match self.values[v] {
             ValueData::Inst { inst, num, .. } => ValueDef::Result(inst, num as usize),
-            ValueData::Param { ebb, num, .. } => ValueDef::Param(ebb, num as usize),
+            ValueData::Param { block, num, .. } => ValueDef::Param(block, num as usize),
             ValueData::Alias { original, .. } => {
                 
                 
@@ -267,7 +267,7 @@ impl DataFlowGraph {
         use self::ValueData::*;
         match self.values[v] {
             Inst { inst, num, .. } => Some(&v) == self.inst_results(inst).get(num as usize),
-            Param { ebb, num, .. } => Some(&v) == self.ebb_params(ebb).get(num as usize),
+            Param { block, num, .. } => Some(&v) == self.block_params(block).get(num as usize),
             Alias { .. } => false,
         }
     }
@@ -377,7 +377,7 @@ pub enum ValueDef {
     
     Result(Inst, usize),
     
-    Param(Ebb, usize),
+    Param(Block, usize),
 }
 
 impl ValueDef {
@@ -390,10 +390,10 @@ impl ValueDef {
     }
 
     
-    pub fn unwrap_ebb(&self) -> Ebb {
+    pub fn unwrap_block(&self) -> Block {
         match *self {
-            Self::Param(ebb, _) => ebb,
-            _ => panic!("Value is not an EBB parameter"),
+            Self::Param(block, _) => block,
+            _ => panic!("Value is not an block parameter"),
         }
     }
 
@@ -420,7 +420,7 @@ enum ValueData {
     Inst { ty: Type, num: u16, inst: Inst },
 
     
-    Param { ty: Type, num: u16, ebb: Ebb },
+    Param { ty: Type, num: u16, block: Block },
 
     
     
@@ -763,37 +763,37 @@ impl IndexMut<Inst> for DataFlowGraph {
 
 impl DataFlowGraph {
     
-    pub fn make_ebb(&mut self) -> Ebb {
-        self.ebbs.push(EbbData::new())
+    pub fn make_block(&mut self) -> Block {
+        self.blocks.push(BlockData::new())
     }
 
     
-    pub fn num_ebb_params(&self, ebb: Ebb) -> usize {
-        self.ebbs[ebb].params.len(&self.value_lists)
+    pub fn num_block_params(&self, block: Block) -> usize {
+        self.blocks[block].params.len(&self.value_lists)
     }
 
     
-    pub fn ebb_params(&self, ebb: Ebb) -> &[Value] {
-        self.ebbs[ebb].params.as_slice(&self.value_lists)
+    pub fn block_params(&self, block: Block) -> &[Value] {
+        self.blocks[block].params.as_slice(&self.value_lists)
     }
 
     
-    pub fn ebb_param_types(&self, ebb: Ebb) -> Vec<Type> {
-        self.ebb_params(ebb)
+    pub fn block_param_types(&self, block: Block) -> Vec<Type> {
+        self.block_params(block)
             .iter()
             .map(|&v| self.value_type(v))
             .collect()
     }
 
     
-    pub fn append_ebb_param(&mut self, ebb: Ebb, ty: Type) -> Value {
+    pub fn append_block_param(&mut self, block: Block, ty: Type) -> Value {
         let param = self.values.next_key();
-        let num = self.ebbs[ebb].params.push(param, &mut self.value_lists);
-        debug_assert!(num <= u16::MAX as usize, "Too many parameters on EBB");
+        let num = self.blocks[block].params.push(param, &mut self.value_lists);
+        debug_assert!(num <= u16::MAX as usize, "Too many parameters on block");
         self.make_value(ValueData::Param {
             ty,
             num: num as u16,
-            ebb,
+            block,
         })
     }
 
@@ -805,16 +805,19 @@ impl DataFlowGraph {
     
     
     
-    pub fn swap_remove_ebb_param(&mut self, val: Value) -> usize {
-        let (ebb, num) = if let ValueData::Param { num, ebb, .. } = self.values[val] {
-            (ebb, num)
+    pub fn swap_remove_block_param(&mut self, val: Value) -> usize {
+        let (block, num) = if let ValueData::Param { num, block, .. } = self.values[val] {
+            (block, num)
         } else {
-            panic!("{} must be an EBB parameter", val);
+            panic!("{} must be an block parameter", val);
         };
-        self.ebbs[ebb]
+        self.blocks[block]
             .params
             .swap_remove(num as usize, &mut self.value_lists);
-        if let Some(last_arg_val) = self.ebbs[ebb].params.get(num as usize, &self.value_lists) {
+        if let Some(last_arg_val) = self.blocks[block]
+            .params
+            .get(num as usize, &self.value_lists)
+        {
             
             if let ValueData::Param {
                 num: ref mut old_num,
@@ -823,7 +826,7 @@ impl DataFlowGraph {
             {
                 *old_num = num;
             } else {
-                panic!("{} should be an Ebb parameter", last_arg_val);
+                panic!("{} should be an Block parameter", last_arg_val);
             }
         }
         num as usize
@@ -831,17 +834,17 @@ impl DataFlowGraph {
 
     
     
-    pub fn remove_ebb_param(&mut self, val: Value) {
-        let (ebb, num) = if let ValueData::Param { num, ebb, .. } = self.values[val] {
-            (ebb, num)
+    pub fn remove_block_param(&mut self, val: Value) {
+        let (block, num) = if let ValueData::Param { num, block, .. } = self.values[val] {
+            (block, num)
         } else {
-            panic!("{} must be an EBB parameter", val);
+            panic!("{} must be an block parameter", val);
         };
-        self.ebbs[ebb]
+        self.blocks[block]
             .params
             .remove(num as usize, &mut self.value_lists);
-        for index in num..(self.num_ebb_params(ebb) as u16) {
-            match self.values[self.ebbs[ebb]
+        for index in num..(self.num_block_params(block) as u16) {
+            match self.values[self.blocks[block]
                 .params
                 .get(index as usize, &self.value_lists)
                 .unwrap()]
@@ -850,8 +853,8 @@ impl DataFlowGraph {
                     *num -= 1;
                 }
                 _ => panic!(
-                    "{} must be an EBB parameter",
-                    self.ebbs[ebb]
+                    "{} must be an block parameter",
+                    self.blocks[block]
                         .params
                         .get(index as usize, &self.value_lists)
                         .unwrap()
@@ -865,15 +868,15 @@ impl DataFlowGraph {
     
     
     
-    pub fn attach_ebb_param(&mut self, ebb: Ebb, param: Value) {
+    pub fn attach_block_param(&mut self, block: Block, param: Value) {
         debug_assert!(!self.value_is_attached(param));
-        let num = self.ebbs[ebb].params.push(param, &mut self.value_lists);
-        debug_assert!(num <= u16::MAX as usize, "Too many parameters on EBB");
+        let num = self.blocks[block].params.push(param, &mut self.value_lists);
+        debug_assert!(num <= u16::MAX as usize, "Too many parameters on block");
         let ty = self.value_type(param);
         self.values[param] = ValueData::Param {
             ty,
             num: num as u16,
-            ebb,
+            block,
         };
     }
 
@@ -886,20 +889,22 @@ impl DataFlowGraph {
     
     
     
-    pub fn replace_ebb_param(&mut self, old_value: Value, new_type: Type) -> Value {
+    pub fn replace_block_param(&mut self, old_value: Value, new_type: Type) -> Value {
         
-        let (ebb, num) = if let ValueData::Param { num, ebb, .. } = self.values[old_value] {
-            (ebb, num)
+        let (block, num) = if let ValueData::Param { num, block, .. } = self.values[old_value] {
+            (block, num)
         } else {
-            panic!("{} must be an EBB parameter", old_value);
+            panic!("{} must be an block parameter", old_value);
         };
         let new_arg = self.make_value(ValueData::Param {
             ty: new_type,
             num,
-            ebb,
+            block,
         });
 
-        self.ebbs[ebb].params.as_mut_slice(&mut self.value_lists)[num as usize] = new_arg;
+        self.blocks[block]
+            .params
+            .as_mut_slice(&mut self.value_lists)[num as usize] = new_arg;
         new_arg
     }
 
@@ -908,8 +913,8 @@ impl DataFlowGraph {
     
     
     
-    pub fn detach_ebb_params(&mut self, ebb: Ebb) -> ValueList {
-        self.ebbs[ebb].params.take()
+    pub fn detach_block_params(&mut self, block: Block) -> ValueList {
+        self.blocks[block].params.take()
     }
 }
 
@@ -919,12 +924,12 @@ impl DataFlowGraph {
 
 
 #[derive(Clone)]
-struct EbbData {
+struct BlockData {
     
     params: ValueList,
 }
 
-impl EbbData {
+impl BlockData {
     fn new() -> Self {
         Self {
             params: ValueList::new(),
@@ -1016,13 +1021,13 @@ impl DataFlowGraph {
     
     
     #[cold]
-    pub fn append_ebb_param_for_parser(&mut self, ebb: Ebb, ty: Type, val: Value) {
-        let num = self.ebbs[ebb].params.push(val, &mut self.value_lists);
-        assert!(num <= u16::MAX as usize, "Too many parameters on EBB");
+    pub fn append_block_param_for_parser(&mut self, block: Block, ty: Type, val: Value) {
+        let num = self.blocks[block].params.push(val, &mut self.value_lists);
+        assert!(num <= u16::MAX as usize, "Too many parameters on block");
         self.values[val] = ValueData::Param {
             ty,
             num: num as u16,
-            ebb,
+            block,
         };
     }
 
@@ -1165,95 +1170,95 @@ mod tests {
     }
 
     #[test]
-    fn ebb() {
+    fn block() {
         let mut dfg = DataFlowGraph::new();
 
-        let ebb = dfg.make_ebb();
-        assert_eq!(ebb.to_string(), "ebb0");
-        assert_eq!(dfg.num_ebb_params(ebb), 0);
-        assert_eq!(dfg.ebb_params(ebb), &[]);
-        assert!(dfg.detach_ebb_params(ebb).is_empty());
-        assert_eq!(dfg.num_ebb_params(ebb), 0);
-        assert_eq!(dfg.ebb_params(ebb), &[]);
+        let block = dfg.make_block();
+        assert_eq!(block.to_string(), "block0");
+        assert_eq!(dfg.num_block_params(block), 0);
+        assert_eq!(dfg.block_params(block), &[]);
+        assert!(dfg.detach_block_params(block).is_empty());
+        assert_eq!(dfg.num_block_params(block), 0);
+        assert_eq!(dfg.block_params(block), &[]);
 
-        let arg1 = dfg.append_ebb_param(ebb, types::F32);
+        let arg1 = dfg.append_block_param(block, types::F32);
         assert_eq!(arg1.to_string(), "v0");
-        assert_eq!(dfg.num_ebb_params(ebb), 1);
-        assert_eq!(dfg.ebb_params(ebb), &[arg1]);
+        assert_eq!(dfg.num_block_params(block), 1);
+        assert_eq!(dfg.block_params(block), &[arg1]);
 
-        let arg2 = dfg.append_ebb_param(ebb, types::I16);
+        let arg2 = dfg.append_block_param(block, types::I16);
         assert_eq!(arg2.to_string(), "v1");
-        assert_eq!(dfg.num_ebb_params(ebb), 2);
-        assert_eq!(dfg.ebb_params(ebb), &[arg1, arg2]);
+        assert_eq!(dfg.num_block_params(block), 2);
+        assert_eq!(dfg.block_params(block), &[arg1, arg2]);
 
-        assert_eq!(dfg.value_def(arg1), ValueDef::Param(ebb, 0));
-        assert_eq!(dfg.value_def(arg2), ValueDef::Param(ebb, 1));
+        assert_eq!(dfg.value_def(arg1), ValueDef::Param(block, 0));
+        assert_eq!(dfg.value_def(arg2), ValueDef::Param(block, 1));
         assert_eq!(dfg.value_type(arg1), types::F32);
         assert_eq!(dfg.value_type(arg2), types::I16);
 
         
-        let vlist = dfg.detach_ebb_params(ebb);
-        assert_eq!(dfg.num_ebb_params(ebb), 0);
-        assert_eq!(dfg.ebb_params(ebb), &[]);
+        let vlist = dfg.detach_block_params(block);
+        assert_eq!(dfg.num_block_params(block), 0);
+        assert_eq!(dfg.block_params(block), &[]);
         assert_eq!(vlist.as_slice(&dfg.value_lists), &[arg1, arg2]);
-        dfg.attach_ebb_param(ebb, arg2);
-        let arg3 = dfg.append_ebb_param(ebb, types::I32);
-        dfg.attach_ebb_param(ebb, arg1);
-        assert_eq!(dfg.ebb_params(ebb), &[arg2, arg3, arg1]);
+        dfg.attach_block_param(block, arg2);
+        let arg3 = dfg.append_block_param(block, types::I32);
+        dfg.attach_block_param(block, arg1);
+        assert_eq!(dfg.block_params(block), &[arg2, arg3, arg1]);
     }
 
     #[test]
-    fn replace_ebb_params() {
+    fn replace_block_params() {
         let mut dfg = DataFlowGraph::new();
 
-        let ebb = dfg.make_ebb();
-        let arg1 = dfg.append_ebb_param(ebb, types::F32);
+        let block = dfg.make_block();
+        let arg1 = dfg.append_block_param(block, types::F32);
 
-        let new1 = dfg.replace_ebb_param(arg1, types::I64);
+        let new1 = dfg.replace_block_param(arg1, types::I64);
         assert_eq!(dfg.value_type(arg1), types::F32);
         assert_eq!(dfg.value_type(new1), types::I64);
-        assert_eq!(dfg.ebb_params(ebb), &[new1]);
+        assert_eq!(dfg.block_params(block), &[new1]);
 
-        dfg.attach_ebb_param(ebb, arg1);
-        assert_eq!(dfg.ebb_params(ebb), &[new1, arg1]);
+        dfg.attach_block_param(block, arg1);
+        assert_eq!(dfg.block_params(block), &[new1, arg1]);
 
-        let new2 = dfg.replace_ebb_param(arg1, types::I8);
+        let new2 = dfg.replace_block_param(arg1, types::I8);
         assert_eq!(dfg.value_type(arg1), types::F32);
         assert_eq!(dfg.value_type(new2), types::I8);
-        assert_eq!(dfg.ebb_params(ebb), &[new1, new2]);
+        assert_eq!(dfg.block_params(block), &[new1, new2]);
 
-        dfg.attach_ebb_param(ebb, arg1);
-        assert_eq!(dfg.ebb_params(ebb), &[new1, new2, arg1]);
+        dfg.attach_block_param(block, arg1);
+        assert_eq!(dfg.block_params(block), &[new1, new2, arg1]);
 
-        let new3 = dfg.replace_ebb_param(new2, types::I16);
+        let new3 = dfg.replace_block_param(new2, types::I16);
         assert_eq!(dfg.value_type(new1), types::I64);
         assert_eq!(dfg.value_type(new2), types::I8);
         assert_eq!(dfg.value_type(new3), types::I16);
-        assert_eq!(dfg.ebb_params(ebb), &[new1, new3, arg1]);
+        assert_eq!(dfg.block_params(block), &[new1, new3, arg1]);
     }
 
     #[test]
-    fn swap_remove_ebb_params() {
+    fn swap_remove_block_params() {
         let mut dfg = DataFlowGraph::new();
 
-        let ebb = dfg.make_ebb();
-        let arg1 = dfg.append_ebb_param(ebb, types::F32);
-        let arg2 = dfg.append_ebb_param(ebb, types::F32);
-        let arg3 = dfg.append_ebb_param(ebb, types::F32);
-        assert_eq!(dfg.ebb_params(ebb), &[arg1, arg2, arg3]);
+        let block = dfg.make_block();
+        let arg1 = dfg.append_block_param(block, types::F32);
+        let arg2 = dfg.append_block_param(block, types::F32);
+        let arg3 = dfg.append_block_param(block, types::F32);
+        assert_eq!(dfg.block_params(block), &[arg1, arg2, arg3]);
 
-        dfg.swap_remove_ebb_param(arg1);
+        dfg.swap_remove_block_param(arg1);
         assert_eq!(dfg.value_is_attached(arg1), false);
         assert_eq!(dfg.value_is_attached(arg2), true);
         assert_eq!(dfg.value_is_attached(arg3), true);
-        assert_eq!(dfg.ebb_params(ebb), &[arg3, arg2]);
-        dfg.swap_remove_ebb_param(arg2);
+        assert_eq!(dfg.block_params(block), &[arg3, arg2]);
+        dfg.swap_remove_block_param(arg2);
         assert_eq!(dfg.value_is_attached(arg2), false);
         assert_eq!(dfg.value_is_attached(arg3), true);
-        assert_eq!(dfg.ebb_params(ebb), &[arg3]);
-        dfg.swap_remove_ebb_param(arg3);
+        assert_eq!(dfg.block_params(block), &[arg3]);
+        dfg.swap_remove_block_param(arg3);
         assert_eq!(dfg.value_is_attached(arg3), false);
-        assert_eq!(dfg.ebb_params(ebb), &[]);
+        assert_eq!(dfg.block_params(block), &[]);
     }
 
     #[test]
@@ -1261,9 +1266,9 @@ mod tests {
         use crate::ir::InstBuilder;
 
         let mut func = Function::new();
-        let ebb0 = func.dfg.make_ebb();
+        let block0 = func.dfg.make_block();
         let mut pos = FuncCursor::new(&mut func);
-        pos.insert_ebb(ebb0);
+        pos.insert_block(block0);
 
         
         let v1 = pos.ins().iconst(types::I32, 42);
@@ -1271,7 +1276,7 @@ mod tests {
         
         assert_eq!(pos.func.dfg.resolve_aliases(v1), v1);
 
-        let arg0 = pos.func.dfg.append_ebb_param(ebb0, types::I32);
+        let arg0 = pos.func.dfg.append_block_param(block0, types::I32);
         let (s, c) = pos.ins().iadd_ifcout(v1, arg0);
         let iadd = match pos.func.dfg.value_def(s) {
             ValueDef::Result(i, 0) => i,

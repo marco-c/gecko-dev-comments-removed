@@ -9,7 +9,7 @@
 
 use crate::fx::FxHashMap;
 use crate::hash_map::{Entry, Iter};
-use crate::ir::{Ebb, StackSlot, Value, ValueLoc, ValueLocations};
+use crate::ir::{Block, StackSlot, Value, ValueLoc, ValueLocations};
 use crate::ir::{InstructionData, Opcode};
 use crate::isa::{RegInfo, RegUnit};
 use core::fmt;
@@ -47,13 +47,13 @@ pub struct RegDiversions {
 
 #[derive(Clone)]
 struct EntryRegDiversionsValue {
-    key: Ebb,
+    key: Block,
     divert: RegDiversions,
 }
 
 
 pub struct EntryRegDiversions {
-    map: SparseMap<Ebb, EntryRegDiversionsValue>,
+    map: SparseMap<Block, EntryRegDiversionsValue>,
 }
 
 impl RegDiversions {
@@ -180,9 +180,9 @@ impl RegDiversions {
     
     
     
-    pub fn at_ebb(&mut self, entry_diversions: &EntryRegDiversions, ebb: Ebb) {
+    pub fn at_block(&mut self, entry_diversions: &EntryRegDiversions, block: Block) {
         self.clear();
-        if let Some(entry_divert) = entry_diversions.map.get(ebb) {
+        if let Some(entry_divert) = entry_diversions.map.get(block) {
             let iter = entry_divert.divert.current.iter();
             self.current.extend(iter);
         }
@@ -193,7 +193,7 @@ impl RegDiversions {
     
     
     
-    pub fn save_for_ebb(&mut self, entry_diversions: &mut EntryRegDiversions, target: Ebb) {
+    pub fn save_for_block(&mut self, entry_diversions: &mut EntryRegDiversions, target: Block) {
         
         if self.is_empty() {
             return;
@@ -210,7 +210,7 @@ impl RegDiversions {
 
     
     
-    pub fn check_ebb_entry(&self, entry_diversions: &EntryRegDiversions, target: Ebb) -> bool {
+    pub fn check_block_entry(&self, entry_diversions: &EntryRegDiversions, target: Block) -> bool {
         let entry_divert = match entry_diversions.map.get(target) {
             Some(entry_divert) => entry_divert,
             None => return self.is_empty(),
@@ -260,8 +260,8 @@ impl Clone for EntryRegDiversions {
 
 
 
-impl SparseMapValue<Ebb> for EntryRegDiversionsValue {
-    fn key(&self) -> Ebb {
+impl SparseMapValue<Block> for EntryRegDiversionsValue {
+    fn key(&self) -> Block {
         self.key
     }
 }

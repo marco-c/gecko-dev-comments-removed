@@ -176,9 +176,9 @@
 
 
 use crate::entity::SparseMap;
-use crate::flowgraph::{BasicBlock, ControlFlowGraph};
+use crate::flowgraph::{BlockPredecessor, ControlFlowGraph};
 use crate::ir::dfg::ValueDef;
-use crate::ir::{Ebb, Function, Inst, Layout, ProgramPoint, Value};
+use crate::ir::{Block, Function, Inst, Layout, ProgramPoint, Value};
 use crate::isa::{EncInfo, OperandConstraint, TargetIsa};
 use crate::regalloc::affinity::Affinity;
 use crate::regalloc::liverange::LiveRange;
@@ -223,9 +223,9 @@ fn get_or_create<'a>(
                     })
                     .unwrap_or_default();
             }
-            ValueDef::Param(ebb, num) => {
-                def = ebb.into();
-                if func.layout.entry_block() == Some(ebb) {
+            ValueDef::Param(block, num) => {
+                def = block.into();
+                if func.layout.entry_block() == Some(block) {
                     
                     
                     affinity = Affinity::abi(&func.signature.params[num], isa);
@@ -244,9 +244,9 @@ fn get_or_create<'a>(
 
 fn extend_to_use(
     lr: &mut LiveRange,
-    ebb: Ebb,
+    block: Block,
     to: Inst,
-    worklist: &mut Vec<Ebb>,
+    worklist: &mut Vec<Block>,
     func: &Function,
     cfg: &ControlFlowGraph,
 ) {
@@ -255,8 +255,8 @@ fn extend_to_use(
 
     
     
-    if lr.extend_in_ebb(ebb, to, &func.layout) {
-        worklist.push(ebb);
+    if lr.extend_in_block(block, to, &func.layout) {
+        worklist.push(block);
     }
 
     
@@ -271,12 +271,12 @@ fn extend_to_use(
     while let Some(livein) = worklist.pop() {
         
         
-        for BasicBlock {
-            ebb: pred,
+        for BlockPredecessor {
+            block: pred,
             inst: branch,
         } in cfg.pred_iter(livein)
         {
-            if lr.extend_in_ebb(pred, branch, &func.layout) {
+            if lr.extend_in_block(pred, branch, &func.layout) {
                 
                 worklist.push(pred);
             }
@@ -294,7 +294,7 @@ pub struct Liveness {
     
     
     
-    worklist: Vec<Ebb>,
+    worklist: Vec<Block>,
 }
 
 impl Liveness {
@@ -359,14 +359,14 @@ impl Liveness {
     pub fn extend_locally(
         &mut self,
         value: Value,
-        ebb: Ebb,
+        block: Block,
         user: Inst,
         layout: &Layout,
     ) -> &mut Affinity {
-        debug_assert_eq!(Some(ebb), layout.inst_ebb(user));
+        debug_assert_eq!(Some(block), layout.inst_block(user));
         let lr = self.ranges.get_mut(value).expect("Value has no live range");
-        let livein = lr.extend_in_ebb(ebb, user, layout);
-        debug_assert!(!livein, "{} should already be live in {}", value, ebb);
+        let livein = lr.extend_in_block(block, user, layout);
+        debug_assert!(!livein, "{} should already be live in {}", value, block);
         &mut lr.affinity
     }
 
@@ -389,15 +389,15 @@ impl Liveness {
         
         
         
-        for ebb in func.layout.ebbs() {
+        for block in func.layout.blocks() {
             
             
             
-            for &arg in func.dfg.ebb_params(ebb) {
+            for &arg in func.dfg.block_params(block) {
                 get_or_create(&mut self.ranges, arg, isa, func, &encinfo);
             }
 
-            for inst in func.layout.ebb_insts(ebb) {
+            for inst in func.layout.block_insts(block) {
                 
                 func.dfg.resolve_aliases_in_arguments(inst);
 
@@ -419,7 +419,7 @@ impl Liveness {
                     let lr = get_or_create(&mut self.ranges, arg, isa, func, &encinfo);
 
                     
-                    extend_to_use(lr, ebb, inst, &mut self.worklist, func, cfg);
+                    extend_to_use(lr, block, inst, &mut self.worklist, func, cfg);
 
                     
                     

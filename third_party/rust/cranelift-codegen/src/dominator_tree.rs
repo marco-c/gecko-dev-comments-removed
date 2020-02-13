@@ -1,9 +1,9 @@
 
 
 use crate::entity::SecondaryMap;
-use crate::flowgraph::{BasicBlock, ControlFlowGraph};
+use crate::flowgraph::{BlockPredecessor, ControlFlowGraph};
 use crate::ir::instructions::BranchInfo;
-use crate::ir::{Ebb, ExpandedProgramPoint, Function, Inst, Layout, ProgramOrder, Value};
+use crate::ir::{Block, ExpandedProgramPoint, Function, Inst, Layout, ProgramOrder, Value};
 use crate::packed_option::PackedOption;
 use crate::timing;
 use alloc::vec::Vec;
@@ -38,13 +38,13 @@ struct DomNode {
 
 
 pub struct DominatorTree {
-    nodes: SecondaryMap<Ebb, DomNode>,
+    nodes: SecondaryMap<Block, DomNode>,
 
     
-    postorder: Vec<Ebb>,
+    postorder: Vec<Block>,
 
     
-    stack: Vec<Ebb>,
+    stack: Vec<Block>,
 
     valid: bool,
 }
@@ -52,15 +52,15 @@ pub struct DominatorTree {
 
 impl DominatorTree {
     
-    pub fn is_reachable(&self, ebb: Ebb) -> bool {
-        self.nodes[ebb].rpo_number != 0
+    pub fn is_reachable(&self, block: Block) -> bool {
+        self.nodes[block].rpo_number != 0
     }
 
     
     
     
     
-    pub fn cfg_postorder(&self) -> &[Ebb] {
+    pub fn cfg_postorder(&self) -> &[Block] {
         debug_assert!(self.is_valid());
         &self.postorder
     }
@@ -79,12 +79,12 @@ impl DominatorTree {
     
     
     
-    pub fn idom(&self, ebb: Ebb) -> Option<Inst> {
-        self.nodes[ebb].idom.into()
+    pub fn idom(&self, block: Block) -> Option<Inst> {
+        self.nodes[block].idom.into()
     }
 
     
-    fn rpo_cmp_ebb(&self, a: Ebb, b: Ebb) -> Ordering {
+    fn rpo_cmp_block(&self, a: Block, b: Block) -> Ordering {
         self.nodes[a].rpo_number.cmp(&self.nodes[b].rpo_number)
     }
 
@@ -101,7 +101,7 @@ impl DominatorTree {
     {
         let a = a.into();
         let b = b.into();
-        self.rpo_cmp_ebb(layout.pp_ebb(a), layout.pp_ebb(b))
+        self.rpo_cmp_block(layout.pp_block(a), layout.pp_block(b))
             .then(layout.cmp(a, b))
     }
 
@@ -122,12 +122,14 @@ impl DominatorTree {
         let a = a.into();
         let b = b.into();
         match a {
-            ExpandedProgramPoint::Ebb(ebb_a) => {
-                a == b || self.last_dominator(ebb_a, b, layout).is_some()
+            ExpandedProgramPoint::Block(block_a) => {
+                a == b || self.last_dominator(block_a, b, layout).is_some()
             }
             ExpandedProgramPoint::Inst(inst_a) => {
-                let ebb_a = layout.inst_ebb(inst_a).expect("Instruction not in layout.");
-                match self.last_dominator(ebb_a, b, layout) {
+                let block_a = layout
+                    .inst_block(inst_a)
+                    .expect("Instruction not in layout.");
+                match self.last_dominator(block_a, b, layout) {
                     Some(last) => layout.cmp(inst_a, last) != Ordering::Greater,
                     None => false,
                 }
@@ -137,14 +139,14 @@ impl DominatorTree {
 
     
     
-    pub fn last_dominator<B>(&self, a: Ebb, b: B, layout: &Layout) -> Option<Inst>
+    pub fn last_dominator<B>(&self, a: Block, b: B, layout: &Layout) -> Option<Inst>
     where
         B: Into<ExpandedProgramPoint>,
     {
-        let (mut ebb_b, mut inst_b) = match b.into() {
-            ExpandedProgramPoint::Ebb(ebb) => (ebb, None),
+        let (mut block_b, mut inst_b) = match b.into() {
+            ExpandedProgramPoint::Block(block) => (block, None),
             ExpandedProgramPoint::Inst(inst) => (
-                layout.inst_ebb(inst).expect("Instruction not in layout."),
+                layout.inst_block(inst).expect("Instruction not in layout."),
                 Some(inst),
             ),
         };
@@ -152,15 +154,15 @@ impl DominatorTree {
 
         
         
-        while rpo_a < self.nodes[ebb_b].rpo_number {
-            let idom = match self.idom(ebb_b) {
+        while rpo_a < self.nodes[block_b].rpo_number {
+            let idom = match self.idom(block_b) {
                 Some(idom) => idom,
                 None => return None, 
             };
-            ebb_b = layout.inst_ebb(idom).expect("Dominator got removed.");
+            block_b = layout.inst_block(idom).expect("Dominator got removed.");
             inst_b = Some(idom);
         }
-        if a == ebb_b {
+        if a == block_b {
             inst_b
         } else {
             None
@@ -172,25 +174,25 @@ impl DominatorTree {
     
     pub fn common_dominator(
         &self,
-        mut a: BasicBlock,
-        mut b: BasicBlock,
+        mut a: BlockPredecessor,
+        mut b: BlockPredecessor,
         layout: &Layout,
-    ) -> BasicBlock {
+    ) -> BlockPredecessor {
         loop {
-            match self.rpo_cmp_ebb(a.ebb, b.ebb) {
+            match self.rpo_cmp_block(a.block, b.block) {
                 Ordering::Less => {
                     
-                    let idom = self.nodes[b.ebb].idom.expect("Unreachable basic block?");
-                    b = BasicBlock::new(
-                        layout.inst_ebb(idom).expect("Dangling idom instruction"),
+                    let idom = self.nodes[b.block].idom.expect("Unreachable basic block?");
+                    b = BlockPredecessor::new(
+                        layout.inst_block(idom).expect("Dangling idom instruction"),
                         idom,
                     );
                 }
                 Ordering::Greater => {
                     
-                    let idom = self.nodes[a.ebb].idom.expect("Unreachable basic block?");
-                    a = BasicBlock::new(
-                        layout.inst_ebb(idom).expect("Dangling idom instruction"),
+                    let idom = self.nodes[a.block].idom.expect("Unreachable basic block?");
+                    a = BlockPredecessor::new(
+                        layout.inst_block(idom).expect("Dangling idom instruction"),
                         idom,
                     );
                 }
@@ -199,7 +201,7 @@ impl DominatorTree {
         }
 
         debug_assert_eq!(
-            a.ebb, b.ebb,
+            a.block, b.block,
             "Unreachable block passed to common_dominator?"
         );
 
@@ -226,10 +228,10 @@ impl DominatorTree {
 
     
     pub fn with_function(func: &Function, cfg: &ControlFlowGraph) -> Self {
-        let ebb_capacity = func.layout.ebb_capacity();
+        let block_capacity = func.layout.block_capacity();
         let mut domtree = Self {
-            nodes: SecondaryMap::with_capacity(ebb_capacity),
-            postorder: Vec::with_capacity(ebb_capacity),
+            nodes: SecondaryMap::with_capacity(block_capacity),
+            postorder: Vec::with_capacity(block_capacity),
             stack: Vec::new(),
             valid: false,
         };
@@ -269,7 +271,7 @@ impl DominatorTree {
     
     fn compute_postorder(&mut self, func: &Function) {
         self.clear();
-        self.nodes.resize(func.dfg.num_ebbs());
+        self.nodes.resize(func.dfg.num_blocks());
 
         
         
@@ -317,26 +319,26 @@ impl DominatorTree {
         
 
         match func.layout.entry_block() {
-            Some(ebb) => {
-                self.stack.push(ebb);
-                self.nodes[ebb].rpo_number = SEEN;
+            Some(block) => {
+                self.stack.push(block);
+                self.nodes[block].rpo_number = SEEN;
             }
             None => return,
         }
 
-        while let Some(ebb) = self.stack.pop() {
-            match self.nodes[ebb].rpo_number {
+        while let Some(block) = self.stack.pop() {
+            match self.nodes[block].rpo_number {
                 SEEN => {
                     
                     
-                    self.nodes[ebb].rpo_number = DONE;
-                    self.stack.push(ebb);
-                    self.push_successors(func, ebb);
+                    self.nodes[block].rpo_number = DONE;
+                    self.stack.push(block);
+                    self.push_successors(func, block);
                 }
                 DONE => {
                     
                     
-                    self.postorder.push(ebb);
+                    self.postorder.push(block);
                 }
                 _ => unreachable!(),
             }
@@ -348,8 +350,8 @@ impl DominatorTree {
     
     
     
-    fn push_successors(&mut self, func: &Function, ebb: Ebb) {
-        for inst in func.layout.ebb_insts(ebb) {
+    fn push_successors(&mut self, func: &Function, block: Block) {
+        for inst in func.layout.block_insts(block) {
             match func.dfg.analyze_branch(inst) {
                 BranchInfo::SingleDest(succ, _) => self.push_if_unseen(succ),
                 BranchInfo::Table(jt, dest) => {
@@ -366,10 +368,10 @@ impl DominatorTree {
     }
 
     
-    fn push_if_unseen(&mut self, ebb: Ebb) {
-        if self.nodes[ebb].rpo_number == 0 {
-            self.nodes[ebb].rpo_number = SEEN;
-            self.stack.push(ebb);
+    fn push_if_unseen(&mut self, block: Block) {
+        if self.nodes[block].rpo_number == 0 {
+            self.nodes[block].rpo_number = SEEN;
+            self.stack.push(block);
         }
     }
 
@@ -392,7 +394,7 @@ impl DominatorTree {
 
         
         self.nodes[entry_block].rpo_number = 2 * STRIDE;
-        for (rpo_idx, &ebb) in postorder.iter().rev().enumerate() {
+        for (rpo_idx, &block) in postorder.iter().rev().enumerate() {
             
             
             
@@ -402,8 +404,8 @@ impl DominatorTree {
             
             
             
-            self.nodes[ebb] = DomNode {
-                idom: self.compute_idom(ebb, cfg, &func.layout).into(),
+            self.nodes[block] = DomNode {
+                idom: self.compute_idom(block, cfg, &func.layout).into(),
                 rpo_number: (rpo_idx as u32 + 3) * STRIDE,
             }
         }
@@ -415,10 +417,10 @@ impl DominatorTree {
         let mut changed = true;
         while changed {
             changed = false;
-            for &ebb in postorder.iter().rev() {
-                let idom = self.compute_idom(ebb, cfg, &func.layout).into();
-                if self.nodes[ebb].idom != idom {
-                    self.nodes[ebb].idom = idom;
+            for &block in postorder.iter().rev() {
+                let idom = self.compute_idom(block, cfg, &func.layout).into();
+                if self.nodes[block].idom != idom {
+                    self.nodes[block].idom = idom;
                     changed = true;
                 }
             }
@@ -427,18 +429,18 @@ impl DominatorTree {
 
     
     
-    fn compute_idom(&self, ebb: Ebb, cfg: &ControlFlowGraph, layout: &Layout) -> Inst {
+    fn compute_idom(&self, block: Block, cfg: &ControlFlowGraph, layout: &Layout) -> Inst {
         
         
         
         let mut reachable_preds = cfg
-            .pred_iter(ebb)
-            .filter(|&BasicBlock { ebb: pred, .. }| self.nodes[pred].rpo_number > 1);
+            .pred_iter(block)
+            .filter(|&BlockPredecessor { block: pred, .. }| self.nodes[pred].rpo_number > 1);
 
         
         let mut idom = reachable_preds
             .next()
-            .expect("EBB node must have one reachable predecessor");
+            .expect("block node must have one reachable predecessor");
 
         for pred in reachable_preds {
             idom = self.common_dominator(idom, pred, layout);
@@ -459,19 +461,19 @@ impl DominatorTree {
 
 
 pub struct DominatorTreePreorder {
-    nodes: SecondaryMap<Ebb, ExtraNode>,
+    nodes: SecondaryMap<Block, ExtraNode>,
 
     
-    stack: Vec<Ebb>,
+    stack: Vec<Block>,
 }
 
 #[derive(Default, Clone)]
 struct ExtraNode {
     
-    child: PackedOption<Ebb>,
+    child: PackedOption<Block>,
 
     
-    sibling: PackedOption<Ebb>,
+    sibling: PackedOption<Block>,
 
     
     
@@ -501,23 +503,23 @@ impl DominatorTreePreorder {
         
         
         
-        for &ebb in domtree.cfg_postorder() {
-            if let Some(idom_inst) = domtree.idom(ebb) {
-                let idom = layout.pp_ebb(idom_inst);
-                let sib = mem::replace(&mut self.nodes[idom].child, ebb.into());
-                self.nodes[ebb].sibling = sib;
+        for &block in domtree.cfg_postorder() {
+            if let Some(idom_inst) = domtree.idom(block) {
+                let idom = layout.pp_block(idom_inst);
+                let sib = mem::replace(&mut self.nodes[idom].child, block.into());
+                self.nodes[block].sibling = sib;
             } else {
                 
-                self.stack.push(ebb);
+                self.stack.push(block);
             }
         }
 
         
         debug_assert!(self.stack.len() <= 1);
         let mut n = 0;
-        while let Some(ebb) = self.stack.pop() {
+        while let Some(block) = self.stack.pop() {
             n += 1;
-            let node = &mut self.nodes[ebb];
+            let node = &mut self.nodes[block];
             node.pre_number = n;
             node.pre_max = n;
             if let Some(n) = node.sibling.expand() {
@@ -531,10 +533,10 @@ impl DominatorTreePreorder {
         
         
         
-        for &ebb in domtree.cfg_postorder() {
-            if let Some(idom_inst) = domtree.idom(ebb) {
-                let idom = layout.pp_ebb(idom_inst);
-                let pre_max = cmp::max(self.nodes[ebb].pre_max, self.nodes[idom].pre_max);
+        for &block in domtree.cfg_postorder() {
+            if let Some(idom_inst) = domtree.idom(block) {
+                let idom = layout.pp_block(idom_inst);
+                let pre_max = cmp::max(self.nodes[block].pre_max, self.nodes[idom].pre_max);
                 self.nodes[idom].pre_max = pre_max;
             }
         }
@@ -544,16 +546,16 @@ impl DominatorTreePreorder {
 
 pub struct ChildIter<'a> {
     dtpo: &'a DominatorTreePreorder,
-    next: PackedOption<Ebb>,
+    next: PackedOption<Block>,
 }
 
 impl<'a> Iterator for ChildIter<'a> {
-    type Item = Ebb;
+    type Item = Block;
 
-    fn next(&mut self) -> Option<Ebb> {
+    fn next(&mut self) -> Option<Block> {
         let n = self.next.expand();
-        if let Some(ebb) = n {
-            self.next = self.dtpo.nodes[ebb].sibling;
+        if let Some(block) = n {
+            self.next = self.dtpo.nodes[block].sibling;
         }
         n
     }
@@ -565,10 +567,10 @@ impl DominatorTreePreorder {
     
     
     
-    pub fn children(&self, ebb: Ebb) -> ChildIter {
+    pub fn children(&self, block: Block) -> ChildIter {
         ChildIter {
             dtpo: self,
-            next: self.nodes[ebb].child,
+            next: self.nodes[block].child,
         }
     }
 
@@ -579,14 +581,14 @@ impl DominatorTreePreorder {
     
     
     
-    pub fn dominates(&self, a: Ebb, b: Ebb) -> bool {
+    pub fn dominates(&self, a: Block, b: Block) -> bool {
         let na = &self.nodes[a];
         let nb = &self.nodes[b];
         na.pre_number <= nb.pre_number && na.pre_max >= nb.pre_max
     }
 
     
-    pub fn pre_cmp_ebb(&self, a: Ebb, b: Ebb) -> Ordering {
+    pub fn pre_cmp_block(&self, a: Block, b: Block) -> Ordering {
         self.nodes[a].pre_number.cmp(&self.nodes[b].pre_number)
     }
 
@@ -601,7 +603,7 @@ impl DominatorTreePreorder {
     {
         let a = a.into();
         let b = b.into();
-        self.pre_cmp_ebb(layout.pp_ebb(a), layout.pp_ebb(b))
+        self.pre_cmp_block(layout.pp_block(a), layout.pp_block(b))
             .then(layout.cmp(a, b))
     }
 
@@ -643,23 +645,23 @@ mod tests {
     #[test]
     fn unreachable_node() {
         let mut func = Function::new();
-        let ebb0 = func.dfg.make_ebb();
-        let v0 = func.dfg.append_ebb_param(ebb0, I32);
-        let ebb1 = func.dfg.make_ebb();
-        let ebb2 = func.dfg.make_ebb();
+        let block0 = func.dfg.make_block();
+        let v0 = func.dfg.append_block_param(block0, I32);
+        let block1 = func.dfg.make_block();
+        let block2 = func.dfg.make_block();
 
         let mut cur = FuncCursor::new(&mut func);
 
-        cur.insert_ebb(ebb0);
-        cur.ins().brnz(v0, ebb2, &[]);
+        cur.insert_block(block0);
+        cur.ins().brnz(v0, block2, &[]);
         cur.ins().trap(TrapCode::User(0));
 
-        cur.insert_ebb(ebb1);
+        cur.insert_block(block1);
         let v1 = cur.ins().iconst(I32, 1);
         let v2 = cur.ins().iadd(v0, v1);
-        cur.ins().jump(ebb0, &[v2]);
+        cur.ins().jump(block0, &[v2]);
 
-        cur.insert_ebb(ebb2);
+        cur.insert_block(block2);
         cur.ins().return_(&[v0]);
 
         let cfg = ControlFlowGraph::with_function(cur.func);
@@ -674,47 +676,47 @@ mod tests {
         
         
         
-        assert_eq!(dt.cfg_postorder(), &[ebb2, ebb0]);
+        assert_eq!(dt.cfg_postorder(), &[block2, block0]);
 
         let v2_def = cur.func.dfg.value_def(v2).unwrap_inst();
-        assert!(!dt.dominates(v2_def, ebb0, &cur.func.layout));
-        assert!(!dt.dominates(ebb0, v2_def, &cur.func.layout));
+        assert!(!dt.dominates(v2_def, block0, &cur.func.layout));
+        assert!(!dt.dominates(block0, v2_def, &cur.func.layout));
 
         let mut dtpo = DominatorTreePreorder::new();
         dtpo.compute(&dt, &cur.func.layout);
-        assert!(dtpo.dominates(ebb0, ebb0));
-        assert!(!dtpo.dominates(ebb0, ebb1));
-        assert!(dtpo.dominates(ebb0, ebb2));
-        assert!(!dtpo.dominates(ebb1, ebb0));
-        assert!(dtpo.dominates(ebb1, ebb1));
-        assert!(!dtpo.dominates(ebb1, ebb2));
-        assert!(!dtpo.dominates(ebb2, ebb0));
-        assert!(!dtpo.dominates(ebb2, ebb1));
-        assert!(dtpo.dominates(ebb2, ebb2));
+        assert!(dtpo.dominates(block0, block0));
+        assert!(!dtpo.dominates(block0, block1));
+        assert!(dtpo.dominates(block0, block2));
+        assert!(!dtpo.dominates(block1, block0));
+        assert!(dtpo.dominates(block1, block1));
+        assert!(!dtpo.dominates(block1, block2));
+        assert!(!dtpo.dominates(block2, block0));
+        assert!(!dtpo.dominates(block2, block1));
+        assert!(dtpo.dominates(block2, block2));
     }
 
     #[test]
     fn non_zero_entry_block() {
         let mut func = Function::new();
-        let ebb0 = func.dfg.make_ebb();
-        let ebb1 = func.dfg.make_ebb();
-        let ebb2 = func.dfg.make_ebb();
-        let ebb3 = func.dfg.make_ebb();
-        let cond = func.dfg.append_ebb_param(ebb3, I32);
+        let block0 = func.dfg.make_block();
+        let block1 = func.dfg.make_block();
+        let block2 = func.dfg.make_block();
+        let block3 = func.dfg.make_block();
+        let cond = func.dfg.append_block_param(block3, I32);
 
         let mut cur = FuncCursor::new(&mut func);
 
-        cur.insert_ebb(ebb3);
-        let jmp_ebb3_ebb1 = cur.ins().jump(ebb1, &[]);
+        cur.insert_block(block3);
+        let jmp_block3_block1 = cur.ins().jump(block1, &[]);
 
-        cur.insert_ebb(ebb1);
-        let br_ebb1_ebb0 = cur.ins().brnz(cond, ebb0, &[]);
-        let jmp_ebb1_ebb2 = cur.ins().jump(ebb2, &[]);
+        cur.insert_block(block1);
+        let br_block1_block0 = cur.ins().brnz(cond, block0, &[]);
+        let jmp_block1_block2 = cur.ins().jump(block2, &[]);
 
-        cur.insert_ebb(ebb2);
-        cur.ins().jump(ebb0, &[]);
+        cur.insert_block(block2);
+        cur.ins().jump(block0, &[]);
 
-        cur.insert_ebb(ebb0);
+        cur.insert_block(block0);
 
         let cfg = ControlFlowGraph::with_function(cur.func);
         let dt = DominatorTree::with_function(cur.func, &cfg);
@@ -737,26 +739,29 @@ mod tests {
         
         
 
-        assert_eq!(dt.cfg_postorder(), &[ebb2, ebb0, ebb1, ebb3]);
+        assert_eq!(dt.cfg_postorder(), &[block2, block0, block1, block3]);
 
-        assert_eq!(cur.func.layout.entry_block().unwrap(), ebb3);
-        assert_eq!(dt.idom(ebb3), None);
-        assert_eq!(dt.idom(ebb1).unwrap(), jmp_ebb3_ebb1);
-        assert_eq!(dt.idom(ebb2).unwrap(), jmp_ebb1_ebb2);
-        assert_eq!(dt.idom(ebb0).unwrap(), br_ebb1_ebb0);
+        assert_eq!(cur.func.layout.entry_block().unwrap(), block3);
+        assert_eq!(dt.idom(block3), None);
+        assert_eq!(dt.idom(block1).unwrap(), jmp_block3_block1);
+        assert_eq!(dt.idom(block2).unwrap(), jmp_block1_block2);
+        assert_eq!(dt.idom(block0).unwrap(), br_block1_block0);
 
-        assert!(dt.dominates(br_ebb1_ebb0, br_ebb1_ebb0, &cur.func.layout));
-        assert!(!dt.dominates(br_ebb1_ebb0, jmp_ebb3_ebb1, &cur.func.layout));
-        assert!(dt.dominates(jmp_ebb3_ebb1, br_ebb1_ebb0, &cur.func.layout));
+        assert!(dt.dominates(br_block1_block0, br_block1_block0, &cur.func.layout));
+        assert!(!dt.dominates(br_block1_block0, jmp_block3_block1, &cur.func.layout));
+        assert!(dt.dominates(jmp_block3_block1, br_block1_block0, &cur.func.layout));
 
-        assert_eq!(dt.rpo_cmp(ebb3, ebb3, &cur.func.layout), Ordering::Equal);
-        assert_eq!(dt.rpo_cmp(ebb3, ebb1, &cur.func.layout), Ordering::Less);
         assert_eq!(
-            dt.rpo_cmp(ebb3, jmp_ebb3_ebb1, &cur.func.layout),
+            dt.rpo_cmp(block3, block3, &cur.func.layout),
+            Ordering::Equal
+        );
+        assert_eq!(dt.rpo_cmp(block3, block1, &cur.func.layout), Ordering::Less);
+        assert_eq!(
+            dt.rpo_cmp(block3, jmp_block3_block1, &cur.func.layout),
             Ordering::Less
         );
         assert_eq!(
-            dt.rpo_cmp(jmp_ebb3_ebb1, jmp_ebb1_ebb2, &cur.func.layout),
+            dt.rpo_cmp(jmp_block3_block1, jmp_block1_block2, &cur.func.layout),
             Ordering::Less
         );
     }
@@ -764,69 +769,69 @@ mod tests {
     #[test]
     fn backwards_layout() {
         let mut func = Function::new();
-        let ebb0 = func.dfg.make_ebb();
-        let ebb1 = func.dfg.make_ebb();
-        let ebb2 = func.dfg.make_ebb();
+        let block0 = func.dfg.make_block();
+        let block1 = func.dfg.make_block();
+        let block2 = func.dfg.make_block();
 
         let mut cur = FuncCursor::new(&mut func);
 
-        cur.insert_ebb(ebb0);
-        let jmp02 = cur.ins().jump(ebb2, &[]);
+        cur.insert_block(block0);
+        let jmp02 = cur.ins().jump(block2, &[]);
 
-        cur.insert_ebb(ebb1);
+        cur.insert_block(block1);
         let trap = cur.ins().trap(TrapCode::User(5));
 
-        cur.insert_ebb(ebb2);
-        let jmp21 = cur.ins().jump(ebb1, &[]);
+        cur.insert_block(block2);
+        let jmp21 = cur.ins().jump(block1, &[]);
 
         let cfg = ControlFlowGraph::with_function(cur.func);
         let dt = DominatorTree::with_function(cur.func, &cfg);
 
-        assert_eq!(cur.func.layout.entry_block(), Some(ebb0));
-        assert_eq!(dt.idom(ebb0), None);
-        assert_eq!(dt.idom(ebb1), Some(jmp21));
-        assert_eq!(dt.idom(ebb2), Some(jmp02));
+        assert_eq!(cur.func.layout.entry_block(), Some(block0));
+        assert_eq!(dt.idom(block0), None);
+        assert_eq!(dt.idom(block1), Some(jmp21));
+        assert_eq!(dt.idom(block2), Some(jmp02));
 
-        assert!(dt.dominates(ebb0, ebb0, &cur.func.layout));
-        assert!(dt.dominates(ebb0, jmp02, &cur.func.layout));
-        assert!(dt.dominates(ebb0, ebb1, &cur.func.layout));
-        assert!(dt.dominates(ebb0, trap, &cur.func.layout));
-        assert!(dt.dominates(ebb0, ebb2, &cur.func.layout));
-        assert!(dt.dominates(ebb0, jmp21, &cur.func.layout));
+        assert!(dt.dominates(block0, block0, &cur.func.layout));
+        assert!(dt.dominates(block0, jmp02, &cur.func.layout));
+        assert!(dt.dominates(block0, block1, &cur.func.layout));
+        assert!(dt.dominates(block0, trap, &cur.func.layout));
+        assert!(dt.dominates(block0, block2, &cur.func.layout));
+        assert!(dt.dominates(block0, jmp21, &cur.func.layout));
 
-        assert!(!dt.dominates(jmp02, ebb0, &cur.func.layout));
+        assert!(!dt.dominates(jmp02, block0, &cur.func.layout));
         assert!(dt.dominates(jmp02, jmp02, &cur.func.layout));
-        assert!(dt.dominates(jmp02, ebb1, &cur.func.layout));
+        assert!(dt.dominates(jmp02, block1, &cur.func.layout));
         assert!(dt.dominates(jmp02, trap, &cur.func.layout));
-        assert!(dt.dominates(jmp02, ebb2, &cur.func.layout));
+        assert!(dt.dominates(jmp02, block2, &cur.func.layout));
         assert!(dt.dominates(jmp02, jmp21, &cur.func.layout));
 
-        assert!(!dt.dominates(ebb1, ebb0, &cur.func.layout));
-        assert!(!dt.dominates(ebb1, jmp02, &cur.func.layout));
-        assert!(dt.dominates(ebb1, ebb1, &cur.func.layout));
-        assert!(dt.dominates(ebb1, trap, &cur.func.layout));
-        assert!(!dt.dominates(ebb1, ebb2, &cur.func.layout));
-        assert!(!dt.dominates(ebb1, jmp21, &cur.func.layout));
+        assert!(!dt.dominates(block1, block0, &cur.func.layout));
+        assert!(!dt.dominates(block1, jmp02, &cur.func.layout));
+        assert!(dt.dominates(block1, block1, &cur.func.layout));
+        assert!(dt.dominates(block1, trap, &cur.func.layout));
+        assert!(!dt.dominates(block1, block2, &cur.func.layout));
+        assert!(!dt.dominates(block1, jmp21, &cur.func.layout));
 
-        assert!(!dt.dominates(trap, ebb0, &cur.func.layout));
+        assert!(!dt.dominates(trap, block0, &cur.func.layout));
         assert!(!dt.dominates(trap, jmp02, &cur.func.layout));
-        assert!(!dt.dominates(trap, ebb1, &cur.func.layout));
+        assert!(!dt.dominates(trap, block1, &cur.func.layout));
         assert!(dt.dominates(trap, trap, &cur.func.layout));
-        assert!(!dt.dominates(trap, ebb2, &cur.func.layout));
+        assert!(!dt.dominates(trap, block2, &cur.func.layout));
         assert!(!dt.dominates(trap, jmp21, &cur.func.layout));
 
-        assert!(!dt.dominates(ebb2, ebb0, &cur.func.layout));
-        assert!(!dt.dominates(ebb2, jmp02, &cur.func.layout));
-        assert!(dt.dominates(ebb2, ebb1, &cur.func.layout));
-        assert!(dt.dominates(ebb2, trap, &cur.func.layout));
-        assert!(dt.dominates(ebb2, ebb2, &cur.func.layout));
-        assert!(dt.dominates(ebb2, jmp21, &cur.func.layout));
+        assert!(!dt.dominates(block2, block0, &cur.func.layout));
+        assert!(!dt.dominates(block2, jmp02, &cur.func.layout));
+        assert!(dt.dominates(block2, block1, &cur.func.layout));
+        assert!(dt.dominates(block2, trap, &cur.func.layout));
+        assert!(dt.dominates(block2, block2, &cur.func.layout));
+        assert!(dt.dominates(block2, jmp21, &cur.func.layout));
 
-        assert!(!dt.dominates(jmp21, ebb0, &cur.func.layout));
+        assert!(!dt.dominates(jmp21, block0, &cur.func.layout));
         assert!(!dt.dominates(jmp21, jmp02, &cur.func.layout));
-        assert!(dt.dominates(jmp21, ebb1, &cur.func.layout));
+        assert!(dt.dominates(jmp21, block1, &cur.func.layout));
         assert!(dt.dominates(jmp21, trap, &cur.func.layout));
-        assert!(!dt.dominates(jmp21, ebb2, &cur.func.layout));
+        assert!(!dt.dominates(jmp21, block2, &cur.func.layout));
         assert!(dt.dominates(jmp21, jmp21, &cur.func.layout));
     }
 }
