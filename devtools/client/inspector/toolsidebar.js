@@ -153,7 +153,7 @@ ToolSidebar.prototype = {
 
 
 
-  async removeTab(tabId, tabPanelId) {
+  removeTab(tabId, tabPanelId) {
     this._tabbar.removeTab(tabId);
 
     this.emit("tab-unregistered", tabId);
