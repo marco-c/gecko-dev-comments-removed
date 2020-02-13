@@ -170,16 +170,6 @@ namespace JS {
 
 
 class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
- public:
-  explicit Zone(JSRuntime* rt);
-  ~Zone();
-  MOZ_MUST_USE bool init(bool isSystem);
-  void destroy(JSFreeOp* fop);
-
-  static JS::Zone* from(ZoneAllocator* zoneAlloc) {
-    return static_cast<Zone*>(zoneAlloc);
-  }
-
  private:
   enum class HelperThreadUse : uint32_t { None, Pending, Active };
   mozilla::Atomic<HelperThreadUse, mozilla::SequentiallyConsistent,
@@ -191,6 +181,182 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::UnprotectedData<JSContext*> helperThreadOwnerContext_;
 
  public:
+  js::gc::ArenaLists arenas;
+
+  js::TypeZone types;
+
+  
+  js::ZoneData<void*> data;
+
+  js::ZoneData<uint32_t> tenuredStrings;
+  js::ZoneData<uint32_t> tenuredBigInts;
+
+  js::ZoneData<bool> allocNurseryStrings;
+  js::ZoneData<bool> allocNurseryBigInts;
+
+  js::ZoneData<bool> isSystem;
+
+  
+  
+  
+  
+  
+  
+  
+  js::ZoneData<bool> suppressAllocationMetadataBuilder;
+
+  
+  
+  
+  
+  js::UniquePtr<js::ScriptCountsMap> scriptCountsMap;
+  js::UniquePtr<js::ScriptLCovMap> scriptLCovMap;
+  js::UniquePtr<js::DebugScriptMap> debugScriptMap;
+#ifdef MOZ_VTUNE
+  js::UniquePtr<js::ScriptVTuneIdMap> scriptVTuneIdMap;
+#endif
+
+#ifdef DEBUG
+  js::MainThreadData<unsigned> gcSweepGroupIndex;
+#endif
+
+ private:
+  
+  js::ZoneOrGCTaskData<js::gc::UniqueIdMap> uniqueIds_;
+
+  
+  mozilla::Atomic<uint32_t, mozilla::Relaxed,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      tenuredAllocsSinceMinorGC_;
+
+  
+  js::ZoneOrGCTaskData<mozilla::LinkedList<js::WeakMapBase>> gcWeakMapList_;
+
+  
+  using CompartmentVector =
+      js::Vector<JS::Compartment*, 1, js::SystemAllocPolicy>;
+  js::MainThreadOrGCTaskData<CompartmentVector> compartments_;
+
+  
+  js::MainThreadOrGCTaskData<js::StringWrapperMap> crossZoneStringWrappers_;
+
+  
+  using GrayRootVector =
+      mozilla::SegmentedVector<js::gc::Cell*, 1024 * sizeof(js::gc::Cell*),
+                               js::SystemAllocPolicy>;
+  js::ZoneOrGCTaskData<GrayRootVector> gcGrayRoots_;
+
+  
+  
+  js::ZoneOrGCTaskData<mozilla::LinkedList<detail::WeakCacheBase>> weakCaches_;
+
+  
+  
+  
+  js::ZoneOrGCTaskData<js::gc::WeakKeyTable> gcWeakKeys_;
+  js::ZoneOrGCTaskData<js::gc::WeakKeyTable> gcNurseryWeakKeys_;
+
+  
+  
+  
+  
+  
+  
+  
+  using TypeDescrObjectSet =
+      js::GCHashSet<JSObject*, js::MovableCellHasher<JSObject*>,
+                    js::SystemAllocPolicy>;
+
+  js::ZoneData<JS::WeakCache<TypeDescrObjectSet>> typeDescrObjects_;
+
+  js::MainThreadData<js::UniquePtr<js::RegExpZone>> regExps_;
+
+  
+  js::ZoneOrGCTaskData<js::SparseBitmap> markedAtoms_;
+
+  
+  
+  js::ZoneOrGCTaskData<js::AtomSet> atomCache_;
+
+  
+  js::ZoneOrGCTaskData<js::ExternalStringCache> externalStringCache_;
+
+  
+  js::ZoneOrGCTaskData<js::FunctionToStringCache> functionToStringCache_;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  js::ZoneOrGCTaskData<unsigned> keepAtomsCount;
+
+  
+  
+  js::ZoneOrGCTaskData<bool> purgeAtomsDeferred;
+
+  
+  js::ZoneData<js::PropertyTree> propertyTree_;
+
+  
+  js::ZoneData<js::BaseShapeSet> baseShapes_;
+
+  
+  
+  
+  
+  js::ZoneData<js::InitialShapeSet> initialShapes_;
+
+  
+  using NurseryShapeVector =
+      js::Vector<js::AccessorShape*, 0, js::SystemAllocPolicy>;
+  js::ZoneData<NurseryShapeVector> nurseryShapes_;
+
+  
+  
+  
+  using FinalizationRecordMap =
+      GCHashMap<js::HeapPtrObject, js::gc::FinalizationRecordVector,
+                js::MovableCellHasher<js::HeapPtrObject>, js::ZoneAllocPolicy>;
+  js::ZoneOrGCTaskData<FinalizationRecordMap> finalizationRecordMap_;
+
+  js::ZoneOrGCTaskData<js::jit::JitZone*> jitZone_;
+
+  js::MainThreadData<bool> gcScheduled_;
+  js::MainThreadData<bool> gcScheduledSaved_;
+  js::MainThreadData<bool> gcPreserveCode_;
+  js::ZoneData<bool> keepShapeCaches_;
+  js::MainThreadData<bool> wasCollected_;
+
+  
+  js::MainThreadOrGCTaskData<Zone*> listNext_;
+  static Zone* const NotOnList;
+  friend class js::gc::ZoneList;
+
+  js::ZoneOrGCTaskData<js::WeakRefMap> weakRefMap_;
+
+  using KeptAliveSet =
+      JS::GCHashSet<js::HeapPtrObject, js::MovableCellHasher<js::HeapPtrObject>,
+                    js::ZoneAllocPolicy>;
+  friend class js::WeakRefObject;
+  js::ZoneOrGCTaskData<KeptAliveSet> keptObjects;
+
+ public:
+  static JS::Zone* from(ZoneAllocator* zoneAlloc) {
+    return static_cast<Zone*>(zoneAlloc);
+  }
+
+  explicit Zone(JSRuntime* rt);
+  ~Zone();
+
+  MOZ_MUST_USE bool init(bool isSystem);
+
+  void destroy(JSFreeOp* fop);
+
   bool ownedByCurrentHelperThread();
   void setHelperThreadOwnerContext(JSContext* cx);
 
@@ -326,52 +492,17 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   void prepareForCompacting();
 
-#ifdef DEBUG
-  
-  
-  unsigned lastSweepGroupIndex() { return gcSweepGroupIndex; }
-#endif
-
   void sweepAfterMinorGC(JSTracer* trc);
   void sweepUniqueIds();
   void sweepWeakMaps();
   void sweepCompartments(JSFreeOp* fop, bool keepAtleastOne, bool lastGC);
 
- private:
-  js::jit::JitZone* createJitZone(JSContext* cx);
-
-  bool isQueuedForBackgroundSweep() { return isOnList(); }
-
-  
-  js::ZoneOrGCTaskData<js::gc::UniqueIdMap> uniqueIds_;
-
   js::gc::UniqueIdMap& uniqueIds() { return uniqueIds_.ref(); }
 
- public:
   void notifyObservingDebuggers();
 
   void clearTables();
 
-  
-
-
-
-
-
-
-
-
-  js::ZoneData<bool> suppressAllocationMetadataBuilder;
-
-  js::gc::ArenaLists arenas;
-
- private:
-  
-  mozilla::Atomic<uint32_t, mozilla::Relaxed,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      tenuredAllocsSinceMinorGC_;
-
- public:
   void addTenuredAllocsSinceMinorGC(uint32_t allocs) {
     tenuredAllocsSinceMinorGC_ += allocs;
   }
@@ -380,28 +511,10 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
     return tenuredAllocsSinceMinorGC_.exchange(0);
   }
 
-  js::TypeZone types;
-
- private:
-  
-  js::ZoneOrGCTaskData<mozilla::LinkedList<js::WeakMapBase>> gcWeakMapList_;
-
- public:
   mozilla::LinkedList<js::WeakMapBase>& gcWeakMapList() {
     return gcWeakMapList_.ref();
   }
 
-  typedef js::Vector<JS::Compartment*, 1, js::SystemAllocPolicy>
-      CompartmentVector;
-
- private:
-  
-  js::MainThreadOrGCTaskData<CompartmentVector> compartments_;
-
-  
-  js::MainThreadOrGCTaskData<js::StringWrapperMap> crossZoneStringWrappers_;
-
- public:
   CompartmentVector& compartments() { return compartments_.ref(); }
 
   js::StringWrapperMap& crossZoneStringWrappers() {
@@ -413,31 +526,11 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   void dropStringWrappersOnGC();
 
-#ifdef JSGC_HASH_TABLE_CHECKS
-  void checkAllCrossCompartmentWrappersAfterMovingGC();
-  void checkStringWrappersAfterMovingGC();
-#endif
-
   void sweepAllCrossCompartmentWrappers();
   static void fixupAllCrossCompartmentWrappersAfterMovingGC(JSTracer* trc);
 
-  
-  using GrayRootVector =
-      mozilla::SegmentedVector<js::gc::Cell*, 1024 * sizeof(js::gc::Cell*),
-                               js::SystemAllocPolicy>;
-
- private:
-  js::ZoneOrGCTaskData<GrayRootVector> gcGrayRoots_;
-
- public:
   GrayRootVector& gcGrayRoots() { return gcGrayRoots_.ref(); }
 
- private:
-  
-  
-  js::ZoneOrGCTaskData<mozilla::LinkedList<detail::WeakCacheBase>> weakCaches_;
-
- public:
   mozilla::LinkedList<detail::WeakCacheBase>& weakCaches() {
     return weakCaches_.ref();
   }
@@ -445,16 +538,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
     weakCaches().insertBack(cachep);
   }
 
- private:
-  
-
-
-
-
-  js::ZoneOrGCTaskData<js::gc::WeakKeyTable> gcWeakKeys_;
-  js::ZoneOrGCTaskData<js::gc::WeakKeyTable> gcNurseryWeakKeys_;
-
- public:
   js::gc::WeakKeyTable& gcWeakKeys() { return gcWeakKeys_.ref(); }
   js::gc::WeakKeyTable& gcNurseryWeakKeys() { return gcNurseryWeakKeys_.ref(); }
 
@@ -463,10 +546,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   void enterWeakMarkingMode(js::GCMarker* marker);
   void checkWeakMarkingMode();
 
- private:
-  void sweepWeakKeysAfterMinorGC();
-
- public:
   
   
   NodeSet& gcSweepGroupEdges() {
@@ -481,23 +560,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   }
   void clearSweepGroupEdges() { gcSweepGroupEdges().clear(); }
 
-  
-  
-  
-  
-  
-  
-  
-  using TypeDescrObjectSet =
-      js::GCHashSet<JSObject*, js::MovableCellHasher<JSObject*>,
-                    js::SystemAllocPolicy>;
-
- private:
-  js::ZoneData<JS::WeakCache<TypeDescrObjectSet>> typeDescrObjects_;
-
-  js::MainThreadData<js::UniquePtr<js::RegExpZone>> regExps_;
-
- public:
   js::RegExpZone& regExps() { return *regExps_.ref(); }
 
   JS::WeakCache<TypeDescrObjectSet>& typeDescrObjects() {
@@ -510,36 +572,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   void releaseAtoms();
   bool hasKeptAtoms() const { return keepAtomsCount; }
 
- private:
-  
-  js::ZoneOrGCTaskData<js::SparseBitmap> markedAtoms_;
-
-  
-  
-  js::ZoneOrGCTaskData<js::AtomSet> atomCache_;
-
-  
-  js::ZoneOrGCTaskData<js::ExternalStringCache> externalStringCache_;
-
-  
-  js::ZoneOrGCTaskData<js::FunctionToStringCache> functionToStringCache_;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  js::ZoneOrGCTaskData<unsigned> keepAtomsCount;
-
-  
-  
-  js::ZoneOrGCTaskData<bool> purgeAtomsDeferred;
-
- public:
   js::SparseBitmap& markedAtoms() { return markedAtoms_.ref(); }
 
   js::AtomSet& atomCache() { return atomCache_.ref(); }
@@ -556,61 +588,17 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
     return functionToStringCache_.ref();
   }
 
-  js::ZoneData<uint32_t> tenuredStrings;
-  js::ZoneData<bool> allocNurseryStrings;
-
-  js::ZoneData<uint32_t> tenuredBigInts;
-  js::ZoneData<bool> allocNurseryBigInts;
-
- private:
-  
-  js::ZoneData<js::PropertyTree> propertyTree_;
-
- public:
   js::PropertyTree& propertyTree() { return propertyTree_.ref(); }
 
- private:
-  
-  js::ZoneData<js::BaseShapeSet> baseShapes_;
-
- public:
   js::BaseShapeSet& baseShapes() { return baseShapes_.ref(); }
 
- private:
-  
-  
-  
-  
-  js::ZoneData<js::InitialShapeSet> initialShapes_;
-
- public:
   js::InitialShapeSet& initialShapes() { return initialShapes_.ref(); }
 
- private:
-  
-  using NurseryShapeVector =
-      js::Vector<js::AccessorShape*, 0, js::SystemAllocPolicy>;
-  js::ZoneData<NurseryShapeVector> nurseryShapes_;
-
- public:
   NurseryShapeVector& nurseryShapes() { return nurseryShapes_.ref(); }
 
-#ifdef JSGC_HASH_TABLE_CHECKS
-  void checkInitialShapesTableAfterMovingGC();
-  void checkBaseShapeTableAfterMovingGC();
-#endif
   void fixupInitialShapeTable();
   void fixupAfterMovingGC();
   void fixupScriptMapsAfterMovingGC(JSTracer* trc);
-
-  
-  js::ZoneData<void*> data;
-
-  js::ZoneData<bool> isSystem;
-
-#ifdef DEBUG
-  js::MainThreadData<unsigned> gcSweepGroupIndex;
-#endif
 
   static js::HashNumber UniqueIdToHash(uint64_t uid);
 
@@ -641,11 +629,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   void adoptUniqueIds(JS::Zone* source);
 
-#ifdef JSGC_HASH_TABLE_CHECKS
-  
-  void checkUniqueIdTableAfterMovingGC();
-#endif
-
   bool keepShapeCaches() const { return keepShapeCaches_; }
   void setKeepShapeCaches(bool b) { keepShapeCaches_ = b; }
 
@@ -655,70 +638,11 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   void clearRootsForShutdownGC();
   void finishRoots();
 
- private:
-  
-  
-  
-  using FinalizationRecordMap =
-      GCHashMap<js::HeapPtrObject, js::gc::FinalizationRecordVector,
-                js::MovableCellHasher<js::HeapPtrObject>, js::ZoneAllocPolicy>;
-  js::ZoneOrGCTaskData<FinalizationRecordMap> finalizationRecordMap_;
-
-  FinalizationRecordMap& finalizationRecordMap() {
-    return finalizationRecordMap_.ref();
-  }
-
-  js::ZoneOrGCTaskData<js::jit::JitZone*> jitZone_;
-
-  js::MainThreadData<bool> gcScheduled_;
-  js::MainThreadData<bool> gcScheduledSaved_;
-  js::MainThreadData<bool> gcPreserveCode_;
-  js::ZoneData<bool> keepShapeCaches_;
-  js::MainThreadData<bool> wasCollected_;
-
-  
-  friend class js::gc::ZoneList;
-  static Zone* const NotOnList;
-  js::MainThreadOrGCTaskData<Zone*> listNext_;
-  bool isOnList() const;
-  Zone* nextZone() const;
-
-  friend bool js::CurrentThreadCanAccessZone(Zone* zone);
-  friend class js::gc::GCRuntime;
-
- public:
-  
-  
-  
-  
-  js::UniquePtr<js::ScriptCountsMap> scriptCountsMap;
-  js::UniquePtr<js::ScriptLCovMap> scriptLCovMap;
-  js::UniquePtr<js::DebugScriptMap> debugScriptMap;
-#ifdef MOZ_VTUNE
-  js::UniquePtr<js::ScriptVTuneIdMap> scriptVTuneIdMap;
-#endif
-
   void traceScriptTableRoots(JSTracer* trc);
 
   void clearScriptCounts(Realm* realm);
   void clearScriptLCov(Realm* realm);
 
-#ifdef JSGC_HASH_TABLE_CHECKS
-  void checkScriptMapsAfterMovingGC();
-#endif
-
- private:
-  js::ZoneOrGCTaskData<js::WeakRefMap> weakRefMap_;
-
-  js::WeakRefMap& weakRefMap() { return weakRefMap_.ref(); }
-
-  using KeptAliveSet =
-      JS::GCHashSet<js::HeapPtrObject, js::MovableCellHasher<js::HeapPtrObject>,
-                    js::ZoneAllocPolicy>;
-  friend class js::WeakRefObject;
-  js::ZoneOrGCTaskData<KeptAliveSet> keptObjects;
-
- public:
   
   
   bool keepDuringJob(HandleObject target);
@@ -728,6 +652,44 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   
   void clearKeptObjects();
+
+#ifdef JSGC_HASH_TABLE_CHECKS
+  void checkAllCrossCompartmentWrappersAfterMovingGC();
+  void checkStringWrappersAfterMovingGC();
+
+  void checkInitialShapesTableAfterMovingGC();
+  void checkBaseShapeTableAfterMovingGC();
+
+  
+  void checkUniqueIdTableAfterMovingGC();
+
+  void checkScriptMapsAfterMovingGC();
+#endif
+
+#ifdef DEBUG
+  
+  
+  unsigned lastSweepGroupIndex() { return gcSweepGroupIndex; }
+#endif
+
+ private:
+  js::jit::JitZone* createJitZone(JSContext* cx);
+
+  bool isQueuedForBackgroundSweep() { return isOnList(); }
+
+  void sweepWeakKeysAfterMinorGC();
+
+  FinalizationRecordMap& finalizationRecordMap() {
+    return finalizationRecordMap_.ref();
+  }
+
+  bool isOnList() const;
+  Zone* nextZone() const;
+
+  js::WeakRefMap& weakRefMap() { return weakRefMap_.ref(); }
+
+  friend bool js::CurrentThreadCanAccessZone(Zone* zone);
+  friend class js::gc::GCRuntime;
 };
 
 }  
