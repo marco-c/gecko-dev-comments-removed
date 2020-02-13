@@ -131,6 +131,10 @@ function JSPropertyProvider({
     
     
     if (lastBody) {
+      if (!lastBody.expression) {
+        return null;
+      }
+
       astExpression = lastBody.expression;
       let matchingObject;
 
