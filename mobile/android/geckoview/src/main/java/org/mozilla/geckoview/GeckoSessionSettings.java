@@ -107,18 +107,6 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
 
-        public @NonNull Builder useMultiprocess(final boolean flag) {
-            mSettings.setUseMultiprocess(flag);
-            return this;
-        }
-
-        
-
-
-
-
-
-
         public @NonNull Builder useTrackingProtection(final boolean flag) {
             mSettings.setUseTrackingProtection(flag);
             return this;
@@ -286,13 +274,6 @@ public final class GeckoSessionSettings implements Parcelable {
     
 
 
-
-    private static final Key<Boolean> USE_MULTIPROCESS =
-        new Key<Boolean>("useMultiprocess",  true,  null);
-
-    
-
-
     private static final Key<Integer> USER_AGENT_MODE =
         new Key<Integer>("userAgentMode",  false,
                          Arrays.asList(USER_AGENT_MODE_MOBILE, USER_AGENT_MODE_DESKTOP, USER_AGENT_MODE_VR));
@@ -381,7 +362,6 @@ public final class GeckoSessionSettings implements Parcelable {
         mBundle.putInt(SCREEN_ID.name, 0);
         mBundle.putBoolean(USE_TRACKING_PROTECTION.name, false);
         mBundle.putBoolean(USE_PRIVATE_MODE.name, false);
-        mBundle.putBoolean(USE_MULTIPROCESS.name, true);
         mBundle.putBoolean(SUSPEND_MEDIA_WHEN_INACTIVE.name, false);
         mBundle.putBoolean(ALLOW_JAVASCRIPT.name, true);
         mBundle.putBoolean(FULL_ACCESSIBILITY_TREE.name, false);
@@ -412,17 +392,6 @@ public final class GeckoSessionSettings implements Parcelable {
 
     private void setUsePrivateMode(final boolean value) {
         setBoolean(USE_PRIVATE_MODE, value);
-    }
-
-
-    
-
-
-
-
-
-    private void setUseMultiprocess(final boolean value) {
-        setBoolean(USE_MULTIPROCESS, value);
     }
 
     
@@ -496,15 +465,6 @@ public final class GeckoSessionSettings implements Parcelable {
     public @Nullable String getContextId() {
         
         return getString(UNSAFE_CONTEXT_ID);
-    }
-
-    
-
-
-
-
-    public boolean getUseMultiprocess() {
-        return getBoolean(USE_MULTIPROCESS);
     }
 
     

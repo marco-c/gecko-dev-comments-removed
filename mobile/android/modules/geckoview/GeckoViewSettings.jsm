@@ -9,9 +9,14 @@ var EXPORTED_SYMBOLS = ["GeckoViewSettings"];
 const { GeckoViewModule } = ChromeUtils.import(
   "resource://gre/modules/GeckoViewModule.jsm"
 );
+
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  Services: "resource://gre/modules/Services.jsm",
+});
 
 XPCOMUtils.defineLazyGetter(this, "MOBILE_USER_AGENT", function() {
   return Cc["@mozilla.org/network/protocol;1?name=http"].getService(
@@ -36,15 +41,16 @@ const USER_AGENT_MODE_DESKTOP = 1;
 const USER_AGENT_MODE_VR = 2;
 
 
-
-
 class GeckoViewSettings extends GeckoViewModule {
+  static get useMultiprocess() {
+    return Services.prefs.getBoolPref("browser.tabs.remote.autostart", true);
+  }
+
   onInit() {
     debug`onInit`;
     this._userAgentMode = USER_AGENT_MODE_MOBILE;
     this._userAgentOverride = null;
     this._sessionContextId = null;
-    
 
     this.registerListener(["GeckoView:GetUserAgent"]);
   }
@@ -67,10 +73,6 @@ class GeckoViewSettings extends GeckoViewModule {
     this.userAgentMode = settings.userAgentMode;
     this.userAgentOverride = settings.userAgentOverride;
     this.sessionContextId = settings.sessionContextId;
-  }
-
-  get useMultiprocess() {
-    return this.browser.isRemoteBrowser;
   }
 
   get userAgent() {

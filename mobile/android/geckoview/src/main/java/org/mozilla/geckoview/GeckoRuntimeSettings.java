@@ -60,6 +60,18 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+        public @NonNull Builder useMultiprocess(final boolean use) {
+            getSettings().mUseMultiprocess.set(use);
+            return this;
+        }
+
+        
+
+
+
+
+
         public @NonNull Builder arguments(final @NonNull String[] args) {
             if (args == null) {
                 throw new IllegalArgumentException("Arguments must not  be null");
@@ -433,7 +445,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     }
 
     private GeckoRuntime mRuntime;
-     boolean mUseContentProcess;
+     boolean mUseContentProcess = true;
      String[] mArgs;
      Bundle mExtras;
      String mConfigFilePath;
@@ -478,6 +490,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             "general.aboutConfig.enable", false);
      final Pref<Boolean> mForceUserScalable = new Pref<>(
             "browser.ui.zoom.force-user-scalable", false);
+     final Pref<Boolean> mUseMultiprocess = new Pref<>(
+            "browser.tabs.remote.autostart", true);
 
      boolean mDebugPause;
      boolean mUseMaxScreenDepth;
@@ -555,6 +569,16 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     public boolean getUseContentProcessHint() {
         return mUseContentProcess;
     }
+
+    
+
+
+
+
+    public boolean getUseMultiprocess() {
+        return mUseMultiprocess.get();
+    }
+
 
     
 
