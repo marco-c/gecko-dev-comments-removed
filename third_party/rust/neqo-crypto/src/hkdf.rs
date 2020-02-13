@@ -34,7 +34,7 @@ experimental_api!(SSL_HkdfExpandLabel(
     secret: *mut *mut PK11SymKey,
 ));
 
-fn key_size(version: Version, cipher: Cipher) -> Res<usize> {
+pub fn key_size(version: Version, cipher: Cipher) -> Res<usize> {
     if version != TLS_VERSION_1_3 {
         return Err(Error::UnsupportedVersion);
     }
@@ -45,16 +45,9 @@ fn key_size(version: Version, cipher: Cipher) -> Res<usize> {
     })
 }
 
-
-
-
-
-pub fn generate_key(version: Version, cipher: Cipher) -> Res<SymKey> {
-    import_key(version, cipher, &random(key_size(version, cipher)?))
+pub fn generate_key(version: Version, cipher: Cipher, size: usize) -> Res<SymKey> {
+    import_key(version, cipher, &random(size)?)
 }
-
-
-
 
 
 pub fn import_key(version: Version, cipher: Cipher, buf: &[u8]) -> Res<SymKey> {
@@ -93,9 +86,6 @@ pub fn import_key(version: Version, cipher: Cipher, buf: &[u8]) -> Res<SymKey> {
 }
 
 
-
-
-
 pub fn extract(
     version: Version,
     cipher: Cipher,
@@ -113,9 +103,6 @@ pub fn extract(
         None => Err(Error::InternalError),
     }
 }
-
-
-
 
 
 pub fn expand_label(

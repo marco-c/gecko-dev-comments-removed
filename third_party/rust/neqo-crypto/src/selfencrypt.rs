@@ -27,10 +27,9 @@ impl SelfEncrypt {
     const VERSION: u8 = 1;
     const SALT_LENGTH: usize = 16;
 
-    
-    
     pub fn new(version: Version, cipher: Cipher) -> Res<Self> {
-        let key = hkdf::generate_key(version, cipher)?;
+        let sz = hkdf::key_size(version, cipher)?;
+        let key = hkdf::generate_key(version, cipher, sz)?;
         Ok(Self {
             version,
             cipher,
@@ -48,11 +47,9 @@ impl SelfEncrypt {
     }
 
     
-    
-    
-    
     pub fn rotate(&mut self) -> Res<()> {
-        let new_key = hkdf::generate_key(self.version, self.cipher)?;
+        let sz = hkdf::key_size(self.version, self.cipher)?;
+        let new_key = hkdf::generate_key(self.version, self.cipher, sz)?;
         self.old_key = Some(mem::replace(&mut self.key, new_key));
         let (kid, _) = self.key_id.overflowing_add(1);
         self.key_id = kid;
@@ -60,9 +57,6 @@ impl SelfEncrypt {
         Ok(())
     }
 
-    
-    
-    
     
     
     
@@ -77,7 +71,7 @@ impl SelfEncrypt {
         
         
         
-        let salt = random(Self::SALT_LENGTH);
+        let salt = random(Self::SALT_LENGTH)?;
         let aead = self.make_aead(&self.key, &salt)?;
         let encoded_len = 2 + salt.len() + plaintext.len() + aead.expansion();
 
@@ -116,10 +110,6 @@ impl SelfEncrypt {
         }
     }
 
-    
-    
-    
-    
     
     #[allow(clippy::similar_names)] 
     pub fn open(&self, aad: &[u8], ciphertext: &[u8]) -> Res<Vec<u8>> {

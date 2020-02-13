@@ -4,8 +4,8 @@
 
 
 
-pub use crate::agentio::{as_c_void, Record, RecordList};
 use crate::agentio::{AgentIo, METHODS};
+pub use crate::agentio::{Record, RecordList};
 use crate::assert_initialized;
 use crate::auth::AuthenticationStatus;
 pub use crate::cert::CertificateInfo;
@@ -19,7 +19,7 @@ use crate::secrets::SecretHolder;
 use crate::ssl::{self, PRBool};
 use crate::time::{PRTime, Time};
 
-use neqo_common::{matches, qdebug, qinfo, qtrace, qwarn};
+use neqo_common::{qdebug, qinfo, qwarn};
 use std::cell::RefCell;
 use std::convert::{TryFrom, TryInto};
 use std::ffi::CString;
@@ -43,13 +43,11 @@ pub enum HandshakeState {
 
 impl HandshakeState {
     #[must_use]
-    pub fn is_connected(&self) -> bool {
-        matches!(self, Self::Complete(_))
-    }
-
-    #[must_use]
-    pub fn is_final(&self) -> bool {
-        matches!(self, Self::Complete(_) | Self::Failed(_))
+    pub fn connected(&self) -> bool {
+        match self {
+            Self::Complete(_) => true,
+            _ => false,
+        }
     }
 }
 
@@ -79,7 +77,7 @@ fn get_alpn(fd: *mut ssl::PRFileDesc, pre: bool) -> Res<Option<String>> {
         }
         _ => None,
     };
-    qtrace!([format!("{:p}", fd)], "got ALPN {:?}", alpn);
+    qinfo!([format!("{:p}", fd)], "got ALPN {:?}", alpn);
     Ok(alpn)
 }
 
@@ -125,7 +123,7 @@ impl SecretAgentPreInfo {
     }
     #[must_use]
     pub fn max_early_data(&self) -> usize {
-        usize::try_from(self.info.maxEarlyDataSize).unwrap()
+        self.info.maxEarlyDataSize as usize
     }
     #[must_use]
     pub fn alpn(&self) -> Option<&String> {
@@ -227,24 +225,24 @@ pub struct SecretAgent {
 
 impl SecretAgent {
     fn new() -> Res<Self> {
-        let mut io = Box::pin(AgentIo::new());
-        let fd = Self::create_fd(&mut io)?;
-        Ok(Self {
-            fd,
+        let mut agent = Self {
+            fd: null_mut(),
             secrets: SecretHolder::default(),
             raw: None,
-            io,
+            io: Pin::new(Box::new(AgentIo::new())),
             state: HandshakeState::New,
 
-            auth_required: Box::pin(false),
-            alert: Box::pin(None),
-            now: Box::pin(0),
+            auth_required: Pin::new(Box::new(false)),
+            alert: Pin::new(Box::new(None)),
+            now: Pin::new(Box::new(0)),
 
             extension_handlers: Vec::new(),
             inf: None,
 
             no_eoed: false,
-        })
+        };
+        agent.create_fd()?;
+        Ok(agent)
     }
 
     
@@ -254,7 +252,7 @@ impl SecretAgent {
     
     
     
-    fn create_fd(io: &mut Pin<Box<AgentIo>>) -> Res<*mut ssl::PRFileDesc> {
+    fn create_fd(&mut self) -> Res<()> {
         assert_initialized();
         let label = CString::new("sslwrapper")?;
         let id = unsafe { prio::PR_GetUniqueIdentity(label.as_ptr()) };
@@ -264,14 +262,15 @@ impl SecretAgent {
             return Err(Error::CreateSslSocket);
         }
         let fd = unsafe {
-            (*base_fd).secret = as_c_void(io) as *mut _;
+            (*base_fd).secret = &mut *self.io as *mut AgentIo as *mut _;
             ssl::SSL_ImportFD(null_mut(), base_fd as *mut ssl::PRFileDesc)
         };
         if fd.is_null() {
             unsafe { prio::PR_Close(base_fd) };
             return Err(Error::CreateSslSocket);
         }
-        Ok(fd)
+        self.fd = fd;
+        Ok(())
     }
 
     unsafe extern "C" fn auth_complete_hook(
@@ -321,7 +320,7 @@ impl SecretAgent {
             ssl::SSL_AuthCertificateHook(
                 self.fd,
                 Some(Self::auth_complete_hook),
-                as_c_void(&mut self.auth_required),
+                &mut *self.auth_required as *mut bool as *mut c_void,
             )
         })?;
 
@@ -329,20 +328,23 @@ impl SecretAgent {
             ssl::SSL_AlertSentCallback(
                 self.fd,
                 Some(Self::alert_sent_cb),
-                as_c_void(&mut self.alert),
+                &mut *self.alert as *mut Option<Alert> as *mut c_void,
             )
         })?;
 
         
-        unsafe { ssl::SSL_SetTimeFunc(self.fd, Some(Self::time_func), as_c_void(&mut self.now)) }?;
+        unsafe {
+            ssl::SSL_SetTimeFunc(
+                self.fd,
+                Some(Self::time_func),
+                &mut *self.now as *mut PRTime as *mut c_void,
+            )
+        }?;
 
         self.configure()?;
         secstatus_to_res(unsafe { ssl::SSL_ResetHandshake(self.fd, is_server as ssl::PRBool) })
     }
 
-    
-    
-    
     
     fn configure(&mut self) -> Res<()> {
         self.set_version_range(TLS_VERSION_1_3, TLS_VERSION_1_3)?;
@@ -352,10 +354,6 @@ impl SecretAgent {
         Ok(())
     }
 
-    
-    
-    
-    
     pub fn set_version_range(&mut self, min: Version, max: Version) -> Res<()> {
         let range = ssl::SSLVersionRange {
             min: min as ssl::PRUint16,
@@ -364,10 +362,6 @@ impl SecretAgent {
         secstatus_to_res(unsafe { ssl::SSL_VersionRangeSet(self.fd, &range) })
     }
 
-    
-    
-    
-    
     pub fn enable_ciphers(&mut self, ciphers: &[Cipher]) -> Res<()> {
         let all_ciphers = unsafe { ssl::SSL_GetImplementedCiphers() };
         let cipher_count = unsafe { ssl::SSL_GetNumImplementedCiphers() } as usize;
@@ -386,10 +380,6 @@ impl SecretAgent {
         Ok(())
     }
 
-    
-    
-    
-    
     pub fn set_groups(&mut self, groups: &[Group]) -> Res<()> {
         
         let group_vec: Vec<_> = groups
@@ -404,18 +394,12 @@ impl SecretAgent {
     }
 
     
-    
-    
-    
     pub fn set_option(&mut self, opt: ssl::Opt, value: bool) -> Res<()> {
         secstatus_to_res(unsafe {
             ssl::SSL_OptionSet(self.fd, opt.as_int(), opt.map_enabled(value))
         })
     }
 
-    
-    
-    
     
     pub fn enable_0rtt(&mut self) -> Res<()> {
         self.set_option(ssl::Opt::EarlyData, true)
@@ -426,9 +410,6 @@ impl SecretAgent {
         self.no_eoed = true;
     }
 
-    
-    
-    
     
     
     
@@ -478,9 +459,6 @@ impl SecretAgent {
     
     
     
-    
-    
-    
     pub fn extension_handler(
         &mut self,
         ext: Extension,
@@ -517,9 +495,6 @@ impl SecretAgent {
         }
     }
 
-    
-    
-    
     
     
     
@@ -573,9 +548,6 @@ impl SecretAgent {
         Ok(())
     }
 
-    
-    
-    
     
     
     
@@ -638,9 +610,6 @@ impl SecretAgent {
     
     
     
-    
-    
-    
     pub fn handshake_raw(&mut self, now: Instant, input: Option<Record>) -> Res<RecordList> {
         *self.now = Time::from(now).try_into()?;
         let mut records = self.setup_raw()?;
@@ -673,44 +642,18 @@ impl SecretAgent {
         Ok(*Pin::into_inner(records))
     }
 
-    pub fn close(&mut self) {
-        
-        if self.fd.is_null() {
-            return;
-        }
-        if let Some(true) = self.raw {
-            
-            let _records = self.setup_raw().expect("Can only close");
-            unsafe { prio::PR_Close(self.fd as *mut prio::PRFileDesc) };
-        } else {
-            
-            let _io = self.io.wrap(&[]);
-            unsafe { prio::PR_Close(self.fd as *mut prio::PRFileDesc) };
-        };
-        let _output = self.io.take_output();
-        self.fd = null_mut();
-    }
-
     
     #[must_use]
     pub fn state(&self) -> &HandshakeState {
         &self.state
     }
-    
     #[must_use]
-    pub fn read_secret(&mut self, epoch: Epoch) -> Option<p11::SymKey> {
-        self.secrets.take_read(epoch)
+    pub fn read_secret(&self, epoch: Epoch) -> Option<&p11::SymKey> {
+        self.secrets.read().get(epoch)
     }
-    
     #[must_use]
-    pub fn write_secret(&mut self, epoch: Epoch) -> Option<p11::SymKey> {
-        self.secrets.take_write(epoch)
-    }
-}
-
-impl Drop for SecretAgent {
-    fn drop(&mut self) {
-        self.close();
+    pub fn write_secret(&self, epoch: Epoch) -> Option<&p11::SymKey> {
+        self.secrets.write().get(epoch)
     }
 }
 
@@ -730,10 +673,6 @@ pub struct Client {
 }
 
 impl Client {
-    
-    
-    
-    
     pub fn new(server_name: &str) -> Res<Self> {
         let mut agent = SecretAgent::new()?;
         let url = CString::new(server_name)?;
@@ -741,7 +680,7 @@ impl Client {
         agent.ready(false)?;
         let mut client = Self {
             agent,
-            resumption: Box::pin(None),
+            resumption: Pin::new(Box::new(None)),
         };
         client.ready()?;
         Ok(client)
@@ -763,12 +702,11 @@ impl Client {
     }
 
     fn ready(&mut self) -> Res<()> {
-        let fd = self.fd;
         unsafe {
             ssl::SSL_SetResumptionTokenCallback(
-                fd,
+                self.fd,
                 Some(Self::resumption_token_cb),
-                as_c_void(&mut self.resumption),
+                &mut *self.resumption as *mut Option<Vec<u8>> as *mut c_void,
             )
         }
     }
@@ -779,10 +717,6 @@ impl Client {
         (*self.resumption).as_ref()
     }
 
-    
-    
-    
-    
     
     pub fn set_resumption_token(&mut self, token: &[u8]) -> Res<()> {
         unsafe {
@@ -850,10 +784,6 @@ pub struct Server {
 }
 
 impl Server {
-    
-    
-    
-    
     pub fn new(certificates: &[impl AsRef<str>]) -> Res<Self> {
         let mut agent = SecretAgent::new()?;
 
@@ -923,22 +853,16 @@ impl Server {
 
     
     
-    
-    
-    
     pub fn enable_0rtt(
         &mut self,
         anti_replay: &AntiReplay,
         max_early_data: u32,
         checker: Box<dyn ZeroRttChecker>,
     ) -> Res<()> {
-        let mut check_state = Box::pin(ZeroRttCheckState::new(self.agent.fd, checker));
+        let mut check_state = Pin::new(Box::new(ZeroRttCheckState::new(self.agent.fd, checker)));
+        let arg = &mut *check_state as *mut ZeroRttCheckState as *mut c_void;
         unsafe {
-            ssl::SSL_HelloRetryRequestCallback(
-                self.agent.fd,
-                Some(Self::hello_retry_cb),
-                as_c_void(&mut check_state),
-            )
+            ssl::SSL_HelloRetryRequestCallback(self.agent.fd, Some(Self::hello_retry_cb), arg)
         }?;
         unsafe { ssl::SSL_SetMaxEarlyDataSize(self.agent.fd, max_early_data) }?;
         self.zero_rtt_check = Some(check_state);
@@ -947,9 +871,6 @@ impl Server {
         Ok(())
     }
 
-    
-    
-    
     
     
     
