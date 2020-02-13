@@ -82,7 +82,9 @@ export const selectLayoutRender = ({
       return {
         ...component,
         data: {
-          spocs: [],
+          spocs: {
+            items: [],
+          },
         },
       };
     }
@@ -114,11 +116,16 @@ export const selectLayoutRender = ({
       const placementName = placement.name || "spocs";
       const spocsData = spocs.data[placementName];
       
-      if (spocs.loaded && spocsData && spocsData.length) {
+      if (
+        spocs.loaded &&
+        spocsData &&
+        spocsData.items &&
+        spocsData.items.length
+      ) {
         result = rollForSpocs(
           result,
           component.spocs,
-          spocsData,
+          spocsData.items,
           placementName
         );
       }
@@ -232,7 +239,12 @@ export const selectLayoutRender = ({
   
   
   let spocsFill = [];
-  if (spocs.loaded && feeds.loaded && spocs.data.spocs) {
+  if (
+    spocs.loaded &&
+    feeds.loaded &&
+    spocs.data.spocs &&
+    spocs.data.spocs.items
+  ) {
     const chosenSpocsFill = [...chosenSpocs].map(spoc => ({
       id: spoc.id,
       reason: "n/a",
@@ -247,7 +259,7 @@ export const selectLayoutRender = ({
         displayed: 0,
         full_recalc: 0,
       }));
-    const outOfPositionSpocsFill = spocs.data.spocs
+    const outOfPositionSpocsFill = spocs.data.spocs.items
       .slice(spocIndexMap.spocs)
       .filter(spoc => !unchosenSpocs.has(spoc))
       .map(spoc => ({

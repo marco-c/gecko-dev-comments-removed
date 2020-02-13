@@ -572,6 +572,19 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     }
   }
 
+  
+  
+  
+  
+  
+  
+  normalizeSpocsItems(spocs) {
+    const items = spocs.items || spocs;
+    const title = spocs.title || "";
+    const context = spocs.context || "";
+    return { items, title, context };
+  }
+
   async loadSpocs(sendUpdate, isStartup) {
     const cachedData = (await this.cache.get()) || {};
     let spocsState;
@@ -638,12 +651,39 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     this.placementsForEach(placement => {
       const freshSpocs = spocsState.spocs[placement.name];
 
-      if (!freshSpocs || !freshSpocs.length) {
+      if (!freshSpocs) {
         return;
       }
 
       
-      const { data: migratedSpocs } = this.migrateFlightId(freshSpocs);
+      
+      
+      
+      const {
+        items: normalizedSpocsItems,
+        title,
+        context,
+      } = this.normalizeSpocsItems(freshSpocs);
+
+      if (!normalizedSpocsItems || !normalizedSpocsItems.length) {
+        
+        
+        
+        spocsState.spocs = {
+          ...spocsState.spocs,
+          [placement.name]: {
+            title,
+            context,
+            items: [],
+          },
+        };
+        return;
+      }
+
+      
+      const { data: migratedSpocs } = this.migrateFlightId(
+        normalizedSpocsItems
+      );
 
       const { data: capResult, filtered: caps } = this.frequencyCapSpocs(
         migratedSpocs
@@ -667,7 +707,11 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
       spocsState.spocs = {
         ...spocsState.spocs,
-        [placement.name]: transformResult,
+        [placement.name]: {
+          title,
+          context,
+          items: transformResult,
+        },
       };
     });
 
@@ -1144,7 +1188,8 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
   async scoreSpocs(spocsState) {
     let belowMinScore = [];
     this.placementsForEach(placement => {
-      const items = spocsState.data[placement.name];
+      const nextSpocs = spocsState.data[placement.name] || {};
+      const { items } = nextSpocs;
 
       if (!items || !items.length) {
         return;
@@ -1158,7 +1203,10 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
       spocsState.data = {
         ...spocsState.data,
-        [placement.name]: scoreResult,
+        [placement.name]: {
+          ...nextSpocs,
+          items: scoreResult,
+        },
       };
     });
 
@@ -1436,7 +1484,17 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       if (!newSpocs) {
         return;
       }
-      flightIds = [...flightIds, ...newSpocs.map(s => `${s.flight_id}`)];
+
+      
+      
+      
+      
+      
+      
+      
+      
+      const items = newSpocs.items || newSpocs;
+      flightIds = [...flightIds, ...items.map(s => `${s.flight_id}`)];
     });
     if (flightIds && flightIds.length) {
       this.cleanUpImpressionPref(
@@ -1599,18 +1657,21 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
           let frequencyCapped = [];
           this.placementsForEach(placement => {
             const freshSpocs = spocsState.data[placement.name];
-            if (!freshSpocs) {
+            if (!freshSpocs || !freshSpocs.items) {
               return;
             }
 
             const { data: newSpocs, filtered } = this.frequencyCapSpocs(
-              freshSpocs
+              freshSpocs.items
             );
             frequencyCapped = [...frequencyCapped, ...filtered];
 
             spocsState.data = {
               ...spocsState.data,
-              [placement.name]: newSpocs,
+              [placement.name]: {
+                ...freshSpocs,
+                items: newSpocs,
+              },
             };
           });
           if (frequencyCapped.length) {
@@ -1636,8 +1697,8 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
           let spocsList = [];
           this.placementsForEach(placement => {
             const spocs = spocsState.data[placement.name];
-            if (spocs && spocs.length) {
-              spocsList = [...spocsList, ...spocs];
+            if (spocs && spocs.items && spocs.items.length) {
+              spocsList = [...spocsList, ...spocs.items];
             }
           });
           const filtered = spocsList.filter(s => s.url === action.data.url);
