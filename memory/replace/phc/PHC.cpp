@@ -288,11 +288,15 @@ static const Delay kAvgFirstAllocDelay = 512 * 1024;
 
 
 
-static const Delay kAvgAllocDelay = 2 * 1024;
+static const Delay kAvgAllocDelay = 16 * 1024;
 
 
 
-static const Delay kAvgPageReuseDelay = 32 * 1024;
+
+
+
+
+static const Delay kAvgPageReuseDelay = 256 * 1024;
 
 
 
@@ -986,6 +990,11 @@ static void* replace_malloc(size_t aReqSize) {
   return PageMalloc(Nothing(), aReqSize);
 }
 
+static Delay ReuseDelay(GMutLock aLock) {
+  return (kAvgPageReuseDelay / 2) +
+         Rnd64ToDelay<kAvgPageReuseDelay / 2>(gMut->Random64(aLock));
+}
+
 
 MOZ_ALWAYS_INLINE static void* PageCalloc(const Maybe<arena_id_t>& aArenaId,
                                           size_t aNum, size_t aReqSize) {
@@ -1089,7 +1098,7 @@ MOZ_ALWAYS_INLINE static void* PageRealloc(const Maybe<arena_id_t>& aArenaId,
 
   MOZ_ASSERT(aNewSize > kPageSize);
 
-  Delay reuseDelay = Rnd64ToDelay<kAvgPageReuseDelay>(gMut->Random64(lock));
+  Delay reuseDelay = ReuseDelay(lock);
 
   
   
@@ -1136,7 +1145,7 @@ MOZ_ALWAYS_INLINE static void PageFree(const Maybe<arena_id_t>& aArenaId,
   gMut->EnsureInUse(lock, aPtr, *i);
 
   
-  Delay reuseDelay = Rnd64ToDelay<kAvgPageReuseDelay>(gMut->Random64(lock));
+  Delay reuseDelay = ReuseDelay(lock);
   FreePage(lock, *i, aArenaId, freeStack, reuseDelay);
 
   LOG("PageFree(%p[%zu]), %zu delay, reuse at ~%zu, fullness %zu/%zu\n", aPtr,
