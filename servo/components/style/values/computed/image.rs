@@ -55,12 +55,6 @@ pub enum LineDirection {
 }
 
 
-pub type GradientItem = generic::GenericGradientItem<Color, LengthPercentage>;
-
-
-pub type ColorStop = generic::ColorStop<Color, LengthPercentage>;
-
-
 #[cfg(feature = "gecko")]
 pub type MozImageRect = generic::GenericMozImageRect<NumberOrPercentage, ComputedImageUrl>;
 
