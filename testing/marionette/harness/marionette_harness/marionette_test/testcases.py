@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from __future__ import absolute_import
 
@@ -94,9 +94,9 @@ class CommonTestCase(unittest.TestCase):
             result.addSuccess(self)
 
     def run(self, result=None):
-        
-        
-        
+        # Bug 967566 suggests refactoring run, which would hopefully
+        # mean getting rid of this inner function, which only sits
+        # here to reduce code duplication:
         def expected_failure(result, exc_info):
             addExpectedFailure = getattr(result, "addExpectedFailure", None)
             if addExpectedFailure is not None:
@@ -119,7 +119,7 @@ class CommonTestCase(unittest.TestCase):
         testMethod = getattr(self, self._testMethodName)
         if (getattr(self.__class__, "__unittest_skip__", False) or
                 getattr(testMethod, "__unittest_skip__", False)):
-            
+            # If the class or method was skipped.
             try:
                 skip_why = (getattr(self.__class__, '__unittest_skip_why__', '') or
                             getattr(testMethod, '__unittest_skip_why__', ''))
@@ -196,7 +196,7 @@ class CommonTestCase(unittest.TestCase):
                     self._enter_pm()
                     result.addError(self, sys.exc_info())
                     success = False
-            
+            # Here we could handle doCleanups() instead of calling cleanTest directly
             self.cleanTest()
 
             if success:
@@ -230,24 +230,24 @@ class CommonTestCase(unittest.TestCase):
     def test_name(self):
         rel_path = None
         if os.path.exists(self.filepath):
-            rel_path = self._fix_test_path(os.path.relpath(self.filepath))
+            rel_path = self._fix_test_path(self.filepath)
 
         return '{0} {1}.{2}'.format(rel_path,
                                     self.__class__.__name__,
                                     self._testMethodName)
 
     def id(self):
-        
-        
-        
-        
+        # TBPL starring requires that the "test name" field of a failure message
+        # not differ over time. The test name to be used is passed to
+        # mozlog via the test id, so this is overriden to maintain
+        # consistency.
         return self.test_name
 
     def setUp(self):
-        
-        
-        
-        
+        # Convert the marionette weakref to an object, just for the
+        # duration of the test; this is deleted in tearDown() to prevent
+        # a persistent circular reference which in turn would prevent
+        # proper garbage collection.
         self.start_time = time.time()
         self.marionette = self._marionette_weakref()
         if self.marionette.session is None:
@@ -266,7 +266,7 @@ class CommonTestCase(unittest.TestCase):
             try:
                 self.marionette.delete_session()
             except IOError:
-                
+                # Gecko has crashed?
                 pass
         self.marionette = None
 
@@ -276,10 +276,13 @@ class CommonTestCase(unittest.TestCase):
             "tests{}".format(os.path.sep),
         ]
 
+        path = os.path.relpath(path)
         for prefix in test_path_prefixes:
             if path.startswith(prefix):
                 path = path[len(prefix):]
                 break
+        path = path.replace('\\', '/')
+
         return path
 
 
@@ -298,17 +301,17 @@ class MarionetteTestCase(CommonTestCase):
     @classmethod
     def add_tests_to_suite(cls, mod_name, filepath, suite, testloader, marionette,
                            fixtures, testvars, **kwargs):
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        # since we use imp.load_source to load test modules, if a module
+        # is loaded with the same name as another one the module would just be
+        # reloaded.
+        #
+        # We may end up by finding too many test in a module then since
+        # reload() only update the module dict (so old keys are still there!)
+        # see https://docs.python.org/2/library/functions.html#reload
+        #
+        # we get rid of that by removing the module from sys.modules,
+        # so we ensure that it will be fully loaded by the
+        # imp.load_source call.
         if mod_name in sys.modules:
             del sys.modules[mod_name]
 
@@ -332,8 +335,8 @@ class MarionetteTestCase(CommonTestCase):
         self.marionette.test_name = self.test_name
 
     def tearDown(self):
-        
-        
+        # In the case no session is active (eg. the application was quit), start
+        # a new session for clean-up steps.
         if not self.marionette.session:
             self.marionette.start_session()
 
