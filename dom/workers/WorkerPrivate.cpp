@@ -382,23 +382,7 @@ class CompileScriptRunnable final : public WorkerDebuggeeRunnable {
     
     JSAutoRealm ar(aCx, globalScope->GetGlobalJSObject());
     if (rv.MaybeSetPendingException(aCx)) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      return true;
+      return false;
     }
 
     aWorkerPrivate->SetWorkerScriptExecutedSuccessfully();

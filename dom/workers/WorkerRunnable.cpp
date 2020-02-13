@@ -367,6 +367,7 @@ WorkerRunnable::Run() {
 
   MOZ_ASSERT(!jsapi->HasException());
   result = WorkerRun(cx, mWorkerPrivate);
+  MOZ_ASSERT_IF(result, !jsapi->HasException());
   jsapi->ReportException();
 
   
