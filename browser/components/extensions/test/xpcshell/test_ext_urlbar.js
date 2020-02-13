@@ -23,6 +23,9 @@ AddonTestUtils.createAppInfo(
   "42"
 );
 
+
+Services.prefs.clearUserPref("services.settings.default_bucket");
+
 function promiseUninstallCompleted(extensionId) {
   return new Promise(resolve => {
     

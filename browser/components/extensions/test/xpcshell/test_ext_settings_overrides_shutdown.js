@@ -23,6 +23,9 @@ AddonTestUtils.createAppInfo(
   "42"
 );
 
+
+Services.prefs.clearUserPref("services.settings.default_bucket");
+
 add_task(async function shutdown_during_search_provider_startup() {
   await AddonTestUtils.promiseStartupManager();
 

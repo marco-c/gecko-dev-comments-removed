@@ -38,7 +38,7 @@ const SUBMISSION_PURPOSES = [
   "newtab",
 ];
 
-const engineSelector = new SearchEngineSelector();
+let engineSelector;
 
 
 
@@ -100,8 +100,6 @@ class SearchConfigTest {
       "42"
     );
 
-    await engineSelector.init();
-
     
     Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
     Services.prefs.setCharPref("browser.search.geoip.url", "");
@@ -117,8 +115,26 @@ class SearchConfigTest {
       true
     );
 
+    
+    
+    
+    
+    Services.prefs.setBoolPref(
+      SearchUtils.BROWSER_SEARCH_PREF + "modernConfig",
+      false
+    );
+
     await AddonTestUtils.promiseStartupManager();
     await Services.search.init();
+
+    
+    
+    
+    engineSelector =
+      Services.search.wrappedJSObject._engineSelector ||
+      new SearchEngineSelector();
+
+    await engineSelector.init();
 
     
     

@@ -21,6 +21,9 @@ AddonTestUtils.createAppInfo(
   "42"
 );
 
+
+Services.prefs.clearUserPref("services.settings.default_bucket");
+
 async function setupRemoteSettings() {
   const settings = await RemoteSettings("hijack-blocklists");
   sinon.stub(settings, "get").returns([

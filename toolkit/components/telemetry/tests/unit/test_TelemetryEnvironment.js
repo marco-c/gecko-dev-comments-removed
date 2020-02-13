@@ -19,6 +19,9 @@ const { CommonUtils } = ChromeUtils.import(
   "resource://services-common/utils.js"
 );
 const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+const { SearchTestUtils } = ChromeUtils.import(
+  "resource://testing-common/SearchTestUtils.jsm"
+);
 
 
 ChromeUtils.defineModuleGetter(
@@ -1076,6 +1079,9 @@ add_task(async function setup() {
   await AddonTestUtils.overrideBuiltIns({ system: [] });
   AddonTestUtils.addonStartup.remove(true);
   await AddonTestUtils.promiseStartupManager();
+  
+  
+  Services.prefs.clearUserPref("services.settings.default_bucket");
 
   
   registerFakePluginHost();
@@ -1098,6 +1104,7 @@ add_task(async function setup() {
 
   await spoofProfileReset();
   await TelemetryEnvironment.delayedInit();
+  await SearchTestUtils.useTestEngines("data", "search-extensions");
 });
 
 add_task(async function test_checkEnvironment() {
@@ -1897,19 +1904,6 @@ add_task(async function test_collectionWithbrokenAddonData() {
 
 async function checkDefaultSearch(privateOn, reInitSearchService) {
   
-  
-  let searchExtensions = do_get_cwd();
-  searchExtensions.append("data");
-  searchExtensions.append("search-extensions");
-  let resProt = Services.io
-    .getProtocolHandler("resource")
-    .QueryInterface(Ci.nsIResProtocolHandler);
-  resProt.setSubstitution(
-    "search-extensions",
-    Services.io.newURI("file://" + searchExtensions.path)
-  );
-
-  
   Preferences.set(
     "browser.search.separatePrivateDefault.ui.enabled",
     privateOn
@@ -1971,38 +1965,41 @@ async function checkDefaultSearch(privateOn, reInitSearchService) {
     );
   }
 
-  
-  for (let engine of await Services.search.getEngines()) {
-    await Services.search.removeEngine(engine);
-  }
-  
-  
-  
-  Services.obs.notifyObservers(
-    null,
-    "browser-search-engine-modified",
-    "engine-default"
-  );
-  if (privateOn) {
+  if (!Services.prefs.getBoolPref("browser.search.modernConfig")) {
+    
+    for (let engine of await Services.search.getEngines()) {
+      await Services.search.removeEngine(engine);
+    }
+    
+    
+    
     Services.obs.notifyObservers(
       null,
       "browser-search-engine-modified",
-      "engine-default-private"
+      "engine-default"
     );
-  }
-  await promiseNextTick();
+    if (privateOn) {
+      Services.obs.notifyObservers(
+        null,
+        "browser-search-engine-modified",
+        "engine-default-private"
+      );
+    }
+    await promiseNextTick();
 
-  
-  data = TelemetryEnvironment.currentEnvironment;
-  checkEnvironmentData(data);
-  Assert.equal(data.settings.defaultSearchEngine, "NONE");
-  Assert.deepEqual(data.settings.defaultSearchEngineData, { name: "NONE" });
-  if (privateOn) {
-    Assert.equal(data.settings.defaultPrivateSearchEngine, "NONE");
-    Assert.deepEqual(data.settings.defaultPrivateSearchEngineData, {
-      name: "NONE",
-    });
+    
+    data = TelemetryEnvironment.currentEnvironment;
+    checkEnvironmentData(data);
+    Assert.equal(data.settings.defaultSearchEngine, "NONE");
+    Assert.deepEqual(data.settings.defaultSearchEngineData, { name: "NONE" });
+    if (privateOn) {
+      Assert.equal(data.settings.defaultPrivateSearchEngine, "NONE");
+      Assert.deepEqual(data.settings.defaultPrivateSearchEngineData, {
+        name: "NONE",
+      });
+    }
   }
+
   
   const SEARCH_ENGINE_ID = "telemetry_default";
   const SEARCH_ENGINE_URL = `http://www.example.org/${
@@ -2139,6 +2136,18 @@ add_task(async function test_defaultSearchEngine() {
   Assert.equal(data.settings.defaultSearchEngineData.origin, "invalid");
   await Services.search.removeEngine(engine);
 
+  const SEARCH_ENGINE_ID = "telemetry_default";
+  const EXPECTED_SEARCH_ENGINE = "other-" + SEARCH_ENGINE_ID;
+  
+  await Services.search.setDefault(
+    Services.search.getEngineByName(SEARCH_ENGINE_ID)
+  );
+
+  
+  data = TelemetryEnvironment.currentEnvironment;
+  checkEnvironmentData(data);
+  Assert.equal(data.settings.defaultSearchEngine, EXPECTED_SEARCH_ENGINE);
+
   
   const PREF_TEST = "toolkit.telemetry.test.pref1";
   const PREFS_TO_WATCH = new Map([
@@ -2161,8 +2170,6 @@ add_task(async function test_defaultSearchEngine() {
   
   data = TelemetryEnvironment.currentEnvironment;
   checkEnvironmentData(data);
-  const SEARCH_ENGINE_ID = "telemetry_default";
-  const EXPECTED_SEARCH_ENGINE = "other-" + SEARCH_ENGINE_ID;
   Assert.equal(data.settings.defaultSearchEngine, EXPECTED_SEARCH_ENGINE);
 
   

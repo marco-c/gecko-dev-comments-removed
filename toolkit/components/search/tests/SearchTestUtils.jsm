@@ -2,6 +2,18 @@
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  NetUtil: "resource://gre/modules/NetUtil.jsm",
+  RemoteSettings: "resource://services-settings/remote-settings.js",
+  SearchUtils: "resource://gre/modules/SearchUtils.jsm",
+  Services: "resource://gre/modules/Services.jsm",
+  sinon: "resource://testing-common/Sinon.jsm",
+});
+
 var EXPORTED_SYMBOLS = ["SearchTestUtils"];
 
 var gTestGlobals;
@@ -56,5 +68,48 @@ var SearchTestUtils = Object.freeze({
         resolve(aSubject);
       }, topic);
     });
+  },
+
+  parseJsonFromStream(aInputStream) {
+    let bytes = NetUtil.readInputStream(aInputStream, aInputStream.available());
+    return JSON.parse(new TextDecoder().decode(bytes));
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  async useTestEngines(folder = "data", subFolder = null, config = null) {
+    let url = `resource://test/${folder}/`;
+    if (subFolder) {
+      url += `${subFolder}/`;
+    }
+    let resProt = Services.io
+      .getProtocolHandler("resource")
+      .QueryInterface(Ci.nsIResProtocolHandler);
+    resProt.setSubstitution("search-extensions", Services.io.newURI(url));
+    if (
+      Services.prefs.getBoolPref(
+        SearchUtils.BROWSER_SEARCH_PREF + "modernConfig"
+      )
+    ) {
+      const settings = await RemoteSettings(SearchUtils.SETTINGS_KEY);
+      if (config) {
+        sinon.stub(settings, "get").returns(config);
+      } else {
+        let chan = NetUtil.newChannel({
+          uri: "resource://search-extensions/engines.json",
+          loadUsingSystemPrincipal: true,
+        });
+        let json = this.parseJsonFromStream(chan.open());
+        sinon.stub(settings, "get").returns(json.data);
+      }
+    }
   },
 });
