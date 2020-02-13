@@ -22,6 +22,7 @@ function DomPanel(iframeWindow, toolbox) {
   this._toolbox = toolbox;
 
   this.onTabNavigated = this.onTabNavigated.bind(this);
+  this.onTargetAvailable = this.onTargetAvailable.bind(this);
   this.onContentMessage = this.onContentMessage.bind(this);
   this.onPanelVisibilityChange = this.onPanelVisibilityChange.bind(this);
 
@@ -44,7 +45,6 @@ DomPanel.prototype = {
     });
 
     this.initialize();
-    this.refresh();
 
     await onGetProperties;
 
@@ -63,8 +63,12 @@ DomPanel.prototype = {
       true
     );
 
-    this.target.on("navigate", this.onTabNavigated);
     this._toolbox.on("select", this.onPanelVisibilityChange);
+
+    this._toolbox.targetList.watchTargets(
+      [this._toolbox.targetList.TYPES.FRAME],
+      this.onTargetAvailable
+    );
 
     
     const provider = {
@@ -81,8 +85,6 @@ DomPanel.prototype = {
     };
 
     exportIntoContentScope(this.panelWin, provider, "DomProvider");
-
-    this.shouldRefresh = true;
   },
 
   destroy() {
@@ -91,7 +93,7 @@ DomPanel.prototype = {
     }
     this._destroyed = true;
 
-    this.target.off("navigate", this.onTabNavigated);
+    this.currentTarget.off("navigate", this.onTabNavigated);
     this._toolbox.off("select", this.onPanelVisibilityChange);
 
     this.emit("destroyed");
@@ -128,6 +130,20 @@ DomPanel.prototype = {
     this.refresh();
   },
 
+  onTargetAvailable: function({ isTopLevel, isTargetSwitching }) {
+    
+    if (!isTopLevel) {
+      return;
+    }
+
+    this.shouldRefresh = true;
+    this.refresh();
+
+    
+    
+    this.currentTarget.on("navigate", this.onTabNavigated);
+  },
+
   
 
 
@@ -151,7 +167,7 @@ DomPanel.prototype = {
     }
 
     
-    if (!this.target) {
+    if (!this.currentTarget) {
       return null;
     }
 
@@ -182,7 +198,7 @@ DomPanel.prototype = {
   getRootGrip: async function() {
     
     
-    const consoleFront = await this.target.getFront("console");
+    const consoleFront = await this.currentTarget.getFront("console");
     const { result } = await consoleFront.evaluateJSAsync("window");
     return result;
   },
@@ -214,7 +230,7 @@ DomPanel.prototype = {
     return this._toolbox;
   },
 
-  get target() {
+  get currentTarget() {
     return this._toolbox.target;
   },
 };
