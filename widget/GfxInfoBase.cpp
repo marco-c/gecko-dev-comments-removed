@@ -20,6 +20,7 @@
 #include "mozilla/Observer.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
+#include "nsIScreenManager.h"
 #include "nsTArray.h"
 #include "nsXULAppAPI.h"
 #include "nsIXULAppInfo.h"
@@ -638,6 +639,12 @@ nsresult GfxInfoBase::Init() {
     os->AddObserver(this, "blocklist-data-gfxItems", true);
   }
 
+  nsCOMPtr<nsIScreenManager> manager =
+      do_GetService("@mozilla.org/gfx/screenmanager;1");
+  MOZ_ASSERT(manager, "failed to get nsIScreenManager");
+
+  manager->GetTotalScreenPixels(&mScreenPixels);
+
   return NS_OK;
 }
 
@@ -731,7 +738,8 @@ inline bool MatchingAllowStatus(int32_t aStatus) {
 
 
 inline bool MatchingOperatingSystems(OperatingSystem aBlockedOS,
-                                     OperatingSystem aSystemOS) {
+                                     OperatingSystem aSystemOS,
+                                     uint32_t aSystemOSBuild) {
   MOZ_ASSERT(aSystemOS != OperatingSystem::Windows &&
              aSystemOS != OperatingSystem::OSX);
 
@@ -745,6 +753,16 @@ inline bool MatchingOperatingSystems(OperatingSystem aBlockedOS,
     
     return true;
   }
+
+  constexpr uint32_t kMinWin10BuildNumber = 18362;
+  if (aSystemOSBuild && aBlockedOS == OperatingSystem::RecentWindows10 &&
+      aSystemOS == OperatingSystem::Windows10) {
+    
+    
+    
+    
+    return aSystemOSBuild >= kMinWin10BuildNumber;
+  }
 #endif
 
 #if defined(XP_MACOSX)
@@ -755,6 +773,45 @@ inline bool MatchingOperatingSystems(OperatingSystem aBlockedOS,
 #endif
 
   return aSystemOS == aBlockedOS;
+}
+
+inline bool MatchingBattery(BatteryStatus aBatteryStatus, bool aHasBattery) {
+  switch (aBatteryStatus) {
+    case BatteryStatus::All:
+      return true;
+    case BatteryStatus::None:
+      return !aHasBattery;
+    case BatteryStatus::Present:
+      return aHasBattery;
+  }
+
+  MOZ_ASSERT_UNREACHABLE("bad battery status");
+  return false;
+}
+
+inline bool MatchingScreenSize(ScreenSizeStatus aScreenStatus,
+                               int64_t aScreenPixels) {
+  constexpr int64_t kMaxSmallPixels = 2304000;   
+  constexpr int64_t kMaxMediumPixels = 4953600;  
+
+  switch (aScreenStatus) {
+    case ScreenSizeStatus::All:
+      return true;
+    case ScreenSizeStatus::Small:
+      return aScreenPixels <= kMaxSmallPixels;
+    case ScreenSizeStatus::SmallAndMedium:
+      return aScreenPixels <= kMaxMediumPixels;
+    case ScreenSizeStatus::Medium:
+      return aScreenPixels > kMaxSmallPixels &&
+             aScreenPixels <= kMaxMediumPixels;
+    case ScreenSizeStatus::MediumAndLarge:
+      return aScreenPixels > kMaxSmallPixels;
+    case ScreenSizeStatus::Large:
+      return aScreenPixels > kMaxMediumPixels;
+  }
+
+  MOZ_ASSERT_UNREACHABLE("bad screen status");
+  return false;
 }
 
 int32_t GfxInfoBase::FindBlocklistedDeviceInList(
@@ -775,6 +832,15 @@ int32_t GfxInfoBase::FindBlocklistedDeviceInList(
   if (NS_FAILED(rv) && rv != NS_ERROR_NOT_IMPLEMENTED) {
     return 0;
   }
+
+  bool hasBattery = false;
+  rv = GetHasBattery(&hasBattery);
+  if (NS_FAILED(rv) && rv != NS_ERROR_NOT_IMPLEMENTED) {
+    return 0;
+  }
+
+  
+  uint32_t osBuild = aForAllowing ? OperatingSystemBuild() : 0;
 
   
   nsAutoString adapterVendorID[2];
@@ -828,12 +894,20 @@ int32_t GfxInfoBase::FindBlocklistedDeviceInList(
 
     
     
-    if (!MatchingOperatingSystems(info[i].mOperatingSystem, os)) {
+    if (!MatchingOperatingSystems(info[i].mOperatingSystem, os, osBuild)) {
       continue;
     }
 
     if (info[i].mOperatingSystemVersion &&
         info[i].mOperatingSystemVersion != OperatingSystemVersion()) {
+      continue;
+    }
+
+    if (!MatchingBattery(info[i].mBattery, hasBattery)) {
+      continue;
+    }
+
+    if (!MatchingScreenSize(info[i].mScreen, mScreenPixels)) {
       continue;
     }
 
