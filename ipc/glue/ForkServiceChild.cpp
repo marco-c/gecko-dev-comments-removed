@@ -8,6 +8,7 @@
 #include "mozilla/ipc/IPDLParamTraits.h"
 #include "mozilla/Logging.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
+#include "mozilla/StaticPrefs_dom.h"
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -124,7 +125,9 @@ already_AddRefed<ForkServerLauncher> ForkServerLauncher::Create() {
 NS_IMETHODIMP
 ForkServerLauncher::Observe(nsISupports* aSubject, const char* aTopic,
                             const char16_t* aData) {
-  if (!mHaveStartedClient && strcmp(aTopic, NS_XPCOM_STARTUP_CATEGORY) == 0) {
+  if (!mHaveStartedClient &&
+      strcmp(aTopic, NS_XPCOM_STARTUP_CATEGORY) == 0 &&
+      StaticPrefs::dom_ipc_forkserver_enable_AtStartup()) {
     mHaveStartedClient = true;
     ForkServiceChild::StartForkServer();
 
