@@ -303,8 +303,6 @@ void js::gc::GCRuntime::traceRuntimeForMinorGC(JSTracer* trc,
   
   gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK_ROOTS);
 
-  jit::JitRuntime::TraceJitcodeGlobalTableForMinorGC(trc);
-
   traceRuntimeCommon(trc, TraceRuntime);
 }
 
@@ -480,6 +478,7 @@ void js::gc::GCRuntime::finishRoots() {
   rt->finishPersistentRoots();
 
   rt->finishSelfHosting();
+  selfHostingZoneFrozen = false;
 
   for (ZonesIter zone(rt, WithAtoms); !zone.done(); zone.next()) {
     zone->finishRoots();
