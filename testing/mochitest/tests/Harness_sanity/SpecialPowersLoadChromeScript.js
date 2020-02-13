@@ -1,10 +1,13 @@
 
 
-addMessageListener("foo", function (message) {
+
+
+
+addMessageListener("foo", function(message) {
   sendAsyncMessage("bar", message);
 });
 
-addMessageListener("valid-assert", function (message) {
+addMessageListener("valid-assert", function(message) {
   assert.ok(true, "valid assertion");
   assert.equal(1, 1, "another valid assertion");
   sendAsyncMessage("valid-assert-done");
