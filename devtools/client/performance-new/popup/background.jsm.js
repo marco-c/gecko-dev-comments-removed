@@ -440,6 +440,7 @@ function handleWebChannelMessage(channel, id, message, target) {
     return;
   }
   const messageFromFrontend =  (message);
+  const { requestId } = messageFromFrontend;
   switch (messageFromFrontend.type) {
     case "STATUS_QUERY": {
       
@@ -449,6 +450,7 @@ function handleWebChannelMessage(channel, id, message, target) {
         {
           type: "STATUS_RESPONSE",
           menuButtonIsEnabled: ProfilerMenuButton.isEnabled(),
+          requestId,
         },
         target
       );
@@ -472,6 +474,7 @@ function handleWebChannelMessage(channel, id, message, target) {
       channel.send(
         {
           type: "ENABLE_MENU_BUTTON_DONE",
+          requestId,
         },
         target
       );
