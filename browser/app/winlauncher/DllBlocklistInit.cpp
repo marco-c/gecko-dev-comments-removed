@@ -33,9 +33,14 @@ LauncherVoidResultWithLineInfo InitializeDllBlocklistOOP(
   return mozilla::Ok();
 }
 
+LauncherVoidResultWithLineInfo InitializeDllBlocklistOOPFromLauncher(
+    const wchar_t* aFullImagePath, HANDLE aChildProcess) {
+  return mozilla::Ok();
+}
+
 #else
 
-LauncherVoidResultWithLineInfo InitializeDllBlocklistOOP(
+static LauncherVoidResultWithLineInfo InitializeDllBlocklistOOPInternal(
     const wchar_t* aFullImagePath, HANDLE aChildProcess) {
   CrossProcessDllInterceptor intcpt(aChildProcess);
   intcpt.Init(L"ntdll.dll");
@@ -125,6 +130,23 @@ LauncherVoidResultWithLineInfo InitializeDllBlocklistOOP(
   }
 
   return Ok();
+}
+
+LauncherVoidResultWithLineInfo InitializeDllBlocklistOOP(
+    const wchar_t* aFullImagePath, HANDLE aChildProcess) {
+  
+  
+  
+  if (!(gBlocklistInitFlags & eDllBlocklistInitFlagWasBootstrapped)) {
+    return Ok();
+  }
+
+  return InitializeDllBlocklistOOPInternal(aFullImagePath, aChildProcess);
+}
+
+LauncherVoidResultWithLineInfo InitializeDllBlocklistOOPFromLauncher(
+    const wchar_t* aFullImagePath, HANDLE aChildProcess) {
+  return InitializeDllBlocklistOOPInternal(aFullImagePath, aChildProcess);
 }
 
 #endif  
