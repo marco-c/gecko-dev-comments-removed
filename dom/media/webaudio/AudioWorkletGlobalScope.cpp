@@ -302,8 +302,12 @@ bool AudioWorkletGlobalScope::ConstructProcessor(
 
 
 
+  JS::CloneDataPolicy cloneDataPolicy;
+  cloneDataPolicy.allowIntraClusterClonableSharedObjects();
+  cloneDataPolicy.allowSharedMemoryObjects();
+
   JS::Rooted<JS::Value> deserializedOptions(cx);
-  aSerializedOptions->Read(this, cx, &deserializedOptions, rv);
+  aSerializedOptions->Read(this, cx, &deserializedOptions, cloneDataPolicy, rv);
   if (rv.MaybeSetPendingException(cx)) {
     return false;
   }

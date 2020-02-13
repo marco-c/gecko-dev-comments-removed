@@ -508,9 +508,17 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
     aRv.NoteJSContextException(cx);
     return nullptr;
   }
+
   
 
 
+
+
+  
+  
+  JS::CloneDataPolicy cloneDataPolicy;
+  cloneDataPolicy.allowIntraClusterClonableSharedObjects();
+  cloneDataPolicy.allowSharedMemoryObjects();
 
   
   
@@ -519,7 +527,8 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
           StructuredCloneHolder::CloningSupported,
           StructuredCloneHolder::TransferringNotSupported,
           JS::StructuredCloneScope::SameProcess);
-  serializedOptions->Write(cx, optionsVal, aRv);
+  serializedOptions->Write(cx, optionsVal, JS::UndefinedHandleValue,
+                           cloneDataPolicy, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
