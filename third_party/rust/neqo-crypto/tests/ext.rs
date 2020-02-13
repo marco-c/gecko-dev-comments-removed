@@ -1,5 +1,4 @@
 #![cfg_attr(feature = "deny-warnings", deny(warnings))]
-#![warn(clippy::pedantic)]
 
 use neqo_crypto::*;
 use std::cell::RefCell;
@@ -60,10 +59,10 @@ impl ExtensionHandler for SimpleExtensionHandler {
                 self.handled = true;
                 if d.len() != 1 {
                     ExtensionHandlerResult::Alert(50) 
-                } else if d[0] == 77 {
-                    ExtensionHandlerResult::Ok
-                } else {
+                } else if d[0] != 77 {
                     ExtensionHandlerResult::Alert(47) 
+                } else {
+                    ExtensionHandlerResult::Ok
                 }
             }
             _ => ExtensionHandlerResult::Alert(110), 

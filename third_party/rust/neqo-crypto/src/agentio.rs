@@ -27,11 +27,6 @@ const PR_SUCCESS: PrStatus = prio::PRStatus::PR_SUCCESS;
 const PR_FAILURE: PrStatus = prio::PRStatus::PR_FAILURE;
 
 
-pub fn as_c_void<T: Unpin>(pin: &mut Pin<Box<T>>) -> *mut c_void {
-    Pin::into_inner(pin.as_mut()) as *mut T as *mut c_void
-}
-
-
 #[derive(Default, Debug)]
 struct RecordLength {
     epoch: Epoch,
@@ -117,10 +112,9 @@ impl RecordList {
 
     
     pub(crate) fn setup(fd: *mut ssl::PRFileDesc) -> Res<Pin<Box<Self>>> {
-        let mut records = Box::pin(Self::default());
-        unsafe {
-            ssl::SSL_RecordLayerWriteCallback(fd, Some(Self::ingest), as_c_void(&mut records))
-        }?;
+        let mut records = Pin::new(Box::new(Self::default()));
+        let records_ptr = &mut *records as *mut Self as *mut c_void;
+        unsafe { ssl::SSL_RecordLayerWriteCallback(fd, Some(Self::ingest), records_ptr) }?;
         Ok(records)
     }
 }

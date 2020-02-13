@@ -4,7 +4,6 @@
 
 
 
-use crate::agentio::as_c_void;
 use crate::constants::*;
 use crate::err::Res;
 use crate::ssl::{
@@ -123,9 +122,6 @@ impl ExtensionTracker {
     
     
     
-    
-    
-    
     pub unsafe fn new(
         fd: *mut PRFileDesc,
         extension: Extension,
@@ -144,15 +140,16 @@ impl ExtensionTracker {
         
         let mut tracker = Self {
             extension,
-            handler: Box::pin(Box::new(handler)),
+            handler: Pin::new(Box::new(Box::new(handler))),
         };
+        let p = &mut *tracker.handler as *mut BoxedExtensionHandler as *mut c_void;
         SSL_InstallExtensionHooks(
             fd,
             extension,
             Some(Self::extension_writer),
-            as_c_void(&mut tracker.handler),
+            p,
             Some(Self::extension_handler),
-            as_c_void(&mut tracker.handler),
+            p,
         )?;
         Ok(tracker)
     }

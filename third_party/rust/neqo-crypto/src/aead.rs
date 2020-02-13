@@ -53,13 +53,7 @@ pub struct Aead {
     ctx: AeadContext,
 }
 
-
-#[allow(clippy::unused_self)]
 impl Aead {
-    
-    
-    
-    
     pub fn new(version: Version, cipher: Cipher, secret: &SymKey, prefix: &str) -> Res<Self> {
         let s: *mut PK11SymKey = **secret;
         unsafe { Self::from_raw(version, cipher, s, prefix) }
@@ -98,9 +92,6 @@ impl Aead {
     
     
     
-    
-    
-    
     pub fn encrypt<'a>(
         &self,
         count: u64,
@@ -125,9 +116,6 @@ impl Aead {
         Ok(&output[0..(l.try_into()?)])
     }
 
-    
-    
-    
     
     
     

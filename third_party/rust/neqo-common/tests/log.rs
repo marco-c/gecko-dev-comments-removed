@@ -5,7 +5,6 @@
 
 
 #![cfg_attr(feature = "deny-warnings", deny(warnings))]
-#![warn(clippy::use_self)]
 
 use neqo_common::{qdebug, qerror, qinfo, qtrace, qwarn};
 
