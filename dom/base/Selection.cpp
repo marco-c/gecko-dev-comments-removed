@@ -1370,7 +1370,7 @@ void Selection::SelectFramesInAllRanges(nsPresContext* aPresContext) {
 
 
 nsresult Selection::SelectFrames(nsPresContext* aPresContext, nsRange* aRange,
-                                 bool aSelect) {
+                                 bool aSelect) const {
   if (!mFrameSelection || !aPresContext || !aPresContext->GetPresShell()) {
     
     return NS_OK;
@@ -1878,10 +1878,12 @@ void Selection::AddRangeAndSelectFramesAndNotifyListeners(nsRange& aRange,
     SetInterlinePosition(true, IgnoreErrors());
   }
 
+  if (!mFrameSelection) {
+    return;  
+  }
+
   RefPtr<nsPresContext> presContext = GetPresContext();
   SelectFrames(presContext, range, true);
-
-  if (!mFrameSelection) return;  
 
   
   

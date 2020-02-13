@@ -166,6 +166,10 @@ class Selection final : public nsSupportsWeakReference,
 
   nsresult AddRangesForSelectableNodes(nsRange* aRange, int32_t* aOutIndex,
                                        bool aNoStartSelect = false);
+
+  
+
+
   nsresult RemoveRangeInternal(nsRange& aRange);
 
  public:
@@ -297,6 +301,9 @@ class Selection final : public nsSupportsWeakReference,
 
   nsRange* GetRangeAt(uint32_t aIndex, mozilla::ErrorResult& aRv);
   void AddRangeJS(nsRange& aRange, mozilla::ErrorResult& aRv);
+
+  
+
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void RemoveRangeAndUnselectFramesAndNotifyListeners(
@@ -700,7 +707,7 @@ class Selection final : public nsSupportsWeakReference,
       bool aSelected) const;
 
   nsresult SelectFrames(nsPresContext* aPresContext, nsRange* aRange,
-                        bool aSelect);
+                        bool aSelect) const;
 
   
 
