@@ -256,16 +256,14 @@ function validatedWebRemoteType(
 
   if (
     allowLinkedWebInFileUriProcess &&
+    
+    !documentChannel &&
     aPreferredRemoteType == FILE_REMOTE_TYPE
   ) {
     
     
     
     if (aCurrentUri) {
-      if (documentChannel && aCurrentUri.scheme == "file") {
-        return aPreferredRemoteType;
-      }
-
       try {
         
         

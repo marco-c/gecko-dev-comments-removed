@@ -5,16 +5,7 @@ const TEST_HTTP_POST =
   "http://example.org/browser/dom/html/test/form_submit_server.sjs";
 
 
-add_task(async function() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.tabs.remote.separateFileUriProcess", true],
-      ["browser.tabs.remote.allowLinkedWebInFileUriProcess", true],
-    ],
-  });
-
+async function runTest() {
   
   let testFile = getChromeDir(getResolvedURI(gTestPath));
   testFile.append("dummy_page.html");
@@ -142,4 +133,36 @@ add_task(async function() {
       );
     });
   });
+}
+
+if (!SpecialPowers.useRemoteSubframes) {
+  add_task(async function runWithAllowLinked() {
+    
+    
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.tabs.remote.separateFileUriProcess", true],
+        ["browser.tabs.remote.allowLinkedWebInFileUriProcess", true],
+        ["browser.tabs.documentchannel", false],
+      ],
+    });
+
+    await runTest();
+
+    await SpecialPowers.popPrefEnv();
+  });
+}
+
+add_task(async function runWithDocumentChannel() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.tabs.remote.allowLinkedWebInFileUriProcess", false],
+      ["browser.tabs.documentchannel", true],
+    ],
+  });
+
+  await runTest();
+
+  await SpecialPowers.popPrefEnv();
 });

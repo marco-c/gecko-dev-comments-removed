@@ -2743,7 +2743,14 @@ pref("browser.tabs.remote.dataUriInDefaultWebProcess", false);
 
 
 
+
+
+
+#ifdef NIGHTLY_BUILD
+pref("browser.tabs.remote.allowLinkedWebInFileUriProcess", false);
+#else
 pref("browser.tabs.remote.allowLinkedWebInFileUriProcess", true);
+#endif
 
 
 
