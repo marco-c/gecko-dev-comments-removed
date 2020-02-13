@@ -35,7 +35,7 @@ class xpcAccessibilityService : public nsIAccessibilityService {
  private:
   
   
-  xpcAccessibilityService(){};
+  xpcAccessibilityService() = default;
 
   nsCOMPtr<nsITimer> mShutdownTimer;
 
