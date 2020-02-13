@@ -59,6 +59,12 @@
 
 
 
+.network-monitor .accordion-content .treeIcon {
+  margin-left: 16px;
+}
+
+
+
 .network-monitor .textbox-input {
   text-overflow: ellipsis;
   border: none;
