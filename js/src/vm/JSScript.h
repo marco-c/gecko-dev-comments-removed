@@ -3047,12 +3047,6 @@ class JSScript : public js::BaseScript {
     return js::BytecodeLocation(this, offsetToPC(offset));
   }
 
-  
-
-
-
-  size_t sizeOfData(mozilla::MallocSizeOf mallocSizeOf) const;
-
   void addSizeOfJitScript(mozilla::MallocSizeOf mallocSizeOf,
                           size_t* sizeOfJitScript,
                           size_t* sizeOfBaselineFallbackStubs) const;
