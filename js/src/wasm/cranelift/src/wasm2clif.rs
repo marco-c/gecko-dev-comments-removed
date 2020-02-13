@@ -667,7 +667,7 @@ impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
             
             
             let mut pos = FuncCursor::new(func);
-            pos.next_ebb().expect("empty function");
+            pos.next_block().expect("empty function");
             pos.next_inst();
             return Ok(GlobalVariable::Const(global.emit_constant(&mut pos)?));
         }
