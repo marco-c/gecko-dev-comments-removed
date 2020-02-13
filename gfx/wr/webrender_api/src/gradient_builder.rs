@@ -100,6 +100,27 @@ impl GradientBuilder {
     }
 
     
+    pub fn conic_gradient(
+        &mut self,
+        center: LayoutPoint,
+        angle: f32,
+        extend_mode: di::ExtendMode,
+    ) -> di::ConicGradient {
+        
+
+        let (start_offset, end_offset) =
+            self.normalize(extend_mode);
+
+        di::ConicGradient {
+            center,
+            angle,
+            start_offset,
+            end_offset,
+            extend_mode,
+        }
+    }
+
+    
     
     
     
