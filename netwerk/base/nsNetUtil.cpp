@@ -2771,14 +2771,9 @@ void NS_SniffContent(const char* aSnifferType, nsIRequest* aRequest,
 
 
 
-
-
-
-
       nsAutoCString currentContentType;
       channel->GetContentType(currentContentType);
-      if (!currentContentType.IsEmpty() &&
-          !StringBeginsWith(currentContentType,
+      if (!StringBeginsWith(currentContentType,
                             NS_LITERAL_CSTRING("application/"))) {
         Telemetry::AccumulateCategorical(
             mozilla::Telemetry::LABELS_XCTO_NOSNIFF_TOPLEVEL_NAV_EXCEPTIONS::
