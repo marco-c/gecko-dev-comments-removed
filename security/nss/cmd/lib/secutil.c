@@ -494,23 +494,30 @@ SECU_ReadDERFromFile(SECItem *der, PRFileDesc *inFile, PRBool ascii,
     if (ascii) {
         
         SECItem filedata;
-        char *asc, *body;
 
         
         rv = SECU_FileToItem(&filedata, inFile);
         if (rv != SECSuccess)
             return rv;
-        asc = (char *)filedata.data;
-        if (!asc) {
+        if (!filedata.data) {
             fprintf(stderr, "unable to read data from input file\n");
             return SECFailure;
         }
+        
+        rv = SECITEM_ReallocItemV2(NULL, &filedata, filedata.len + 1);
+        if (rv != SECSuccess) {
+            PORT_Free(filedata.data);
+            return rv;
+        }
+        char *asc = (char *)filedata.data;
+        asc[filedata.len - 1] = '\0';
 
         if (warnOnPrivateKeyInAsciiFile && strstr(asc, "PRIVATE KEY")) {
             fprintf(stderr, "Warning: ignoring private key. Consider to use "
                             "pk12util.\n");
         }
 
+        char *body;
         
         if ((body = strstr(asc, "-----BEGIN")) != NULL) {
             char *trailer = NULL;
@@ -528,14 +535,7 @@ SECU_ReadDERFromFile(SECItem *der, PRFileDesc *inFile, PRBool ascii,
                 return SECFailure;
             }
         } else {
-            
-            rv = SECITEM_ReallocItemV2(NULL, &filedata, filedata.len + 1);
-            if (rv != SECSuccess) {
-                PORT_Free(filedata.data);
-                return rv;
-            }
-            body = (char *)filedata.data;
-            body[filedata.len - 1] = '\0';
+            body = asc;
         }
 
         
