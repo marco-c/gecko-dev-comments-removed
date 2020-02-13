@@ -319,6 +319,14 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:StartupCache::WriteToDisk\n"
 
          
+         "race:_dl_deallocate_tls\n"
+         "race:__libc_memalign\n"
+
+         
+         "race:CacheEntry::Purge\n"
+         "race:CacheEntry::MetaDataReady\n"
+
+         
          
          "mutex:GLContextGLX::~GLContextGLX\n"
 
@@ -335,6 +343,7 @@ extern "C" const char* __tsan_default_suppressions() {
 
          
          "thread:NS_NewNamedThread\n"
+         "thread:nsThread::Init\n"
          "thread:libglib-2\n"
 
          
