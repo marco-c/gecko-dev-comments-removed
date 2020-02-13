@@ -326,7 +326,7 @@ class AnimationInspector {
 
   onAnimationStateChanged() {
     
-    this.updateState([...this.state.animations]);
+    this.fireUpdateAction([...this.state.animations]);
   }
 
   
@@ -389,13 +389,13 @@ class AnimationInspector {
     
     
     try {
-      animations = await this.updateAnimations(animations);
+      animations = await this.refreshAnimationsState(animations);
     } catch (_) {
       console.error(`Updating Animations failed`);
       return;
     }
 
-    this.updateState(animations.concat(addedAnimations));
+    this.fireUpdateAction(animations.concat(addedAnimations));
   }
 
   onElementPickerStarted() {
@@ -490,7 +490,7 @@ class AnimationInspector {
 
     try {
       await this.doSetCurrentTimes(currentTime);
-      animations = await this.updateAnimations(animations);
+      animations = await this.refreshAnimationsState(animations);
     } catch (e) {
       
       
@@ -501,7 +501,7 @@ class AnimationInspector {
     this.isCurrentTimeSet = false;
 
     if (shouldRefresh) {
-      this.updateState(animations);
+      this.fireUpdateAction(animations);
     }
   }
 
@@ -514,7 +514,7 @@ class AnimationInspector {
 
     try {
       await this.animationsFront.setPlaybackRates(animations, playbackRate);
-      animations = await this.updateAnimations(animations);
+      animations = await this.refreshAnimationsState(animations);
     } catch (e) {
       
       
@@ -524,7 +524,7 @@ class AnimationInspector {
       this.setAnimationStateChangedListenerEnabled(true);
     }
 
-    await this.updateState(animations);
+    await this.fireUpdateAction(animations);
   }
 
   async setAnimationsPlayState(doPlay) {
@@ -563,7 +563,7 @@ class AnimationInspector {
         await this.animationsFront.pauseAll();
       }
 
-      animations = await this.updateAnimations(animations);
+      animations = await this.refreshAnimationsState(animations);
     } catch (e) {
       
       
@@ -571,7 +571,7 @@ class AnimationInspector {
       return;
     }
 
-    await this.updateState(animations);
+    await this.fireUpdateAction(animations);
   }
 
   
@@ -731,13 +731,13 @@ class AnimationInspector {
             selection.nodeFront
           )
         : [];
-    this.updateState(animations);
+    this.fireUpdateAction(animations);
     this.setAnimationStateChangedListenerEnabled(true);
 
     done();
   }
 
-  async updateAnimations(animations) {
+  async refreshAnimationsState(animations) {
     let error = null;
 
     const promises = animations.map(animation => {
@@ -765,7 +765,7 @@ class AnimationInspector {
     return animations.filter(anim => !!anim.state.type);
   }
 
-  updateState(animations) {
+  fireUpdateAction(animations) {
     
     if (!this.inspector) {
       return;
