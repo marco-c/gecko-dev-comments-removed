@@ -282,7 +282,7 @@ void ExtensionStreamGetter::OnStream(already_AddRefed<nsIInputStream> aStream) {
 
   
   
-  nsCOMPtr<nsIStreamListener> listener = std::move(mListener);
+  nsCOMPtr<nsIStreamListener> listener = mListener.forget();
 
   MOZ_ASSERT(mChannel);
 
@@ -319,7 +319,7 @@ void ExtensionStreamGetter::OnFD(const FileDescriptor& aFD) {
 
   
   
-  nsCOMPtr<nsIStreamListener> listener = std::move(mListener);
+  nsCOMPtr<nsIStreamListener> listener = mListener.forget();
 
   RefPtr<FileDescriptorFile> fdFile = new FileDescriptorFile(aFD, mJarFile);
   mJarChannel->SetJarFile(fdFile);

@@ -94,7 +94,7 @@ bool MIDIAccessManager::AddObserver(Observer<MIDIPortList>* aObserver) {
       return false;
     }
     MOZ_ASSERT(constructedMgr == mgr);
-    mChild = std::move(mgr);
+    mChild = mgr.forget();
     
     
     mChild->SetActorAlive();

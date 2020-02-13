@@ -82,7 +82,7 @@ nsresult FetchStreamReader::Create(JSContext* aCx, nsIGlobalObject* aGlobal,
 
     
     
-    streamReader->mWorkerRef = std::move(workerRef);
+    streamReader->mWorkerRef = workerRef.forget();
   }
 
   pipeIn.forget(aInputStream);

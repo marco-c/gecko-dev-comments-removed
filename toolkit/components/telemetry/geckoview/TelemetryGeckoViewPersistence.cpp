@@ -525,7 +525,7 @@ void TelemetryGeckoViewPersistence::InitPersistence() {
     return;
   }
 
-  gPersistenceThread = ToRefPtr(std::move(thread));
+  gPersistenceThread = thread.forget();
 
   
   TelemetryScalar::DeserializationStarted();

@@ -585,7 +585,7 @@ bool PuppetWidget::CreateRemoteLayerManager(
   
   
   DestroyLayerManager();
-  mLayerManager = std::move(lm);
+  mLayerManager = lm.forget();
   return true;
 }
 

@@ -352,7 +352,7 @@ nsresult AsyncExecuteStatements::notifyCompleteOnCallingThread() {
   
   
   
-  nsCOMPtr<mozIStorageStatementCallback> callback = std::move(mCallback);
+  nsCOMPtr<mozIStorageStatementCallback> callback = mCallback.forget();
   if (callback) {
     Unused << callback->HandleCompletion(mState);
   }

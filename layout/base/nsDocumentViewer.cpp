@@ -673,8 +673,7 @@ void nsDocumentViewer::LoadStart(Document* aDocument) {
 }
 
 void nsDocumentViewer::RemoveFocusListener() {
-  if (RefPtr<nsDocViewerFocusListener> oldListener =
-          std::move(mFocusListener)) {
+  if (RefPtr<nsDocViewerFocusListener> oldListener = mFocusListener.forget()) {
     oldListener->Disconnect();
     if (mDocument) {
       mDocument->RemoveEventListener(NS_LITERAL_STRING("focus"), oldListener,
@@ -1728,7 +1727,7 @@ nsDocumentViewer::Destroy() {
     
     
     
-    nsCOMPtr<nsISHEntry> shEntry = std::move(mSHEntry);
+    nsCOMPtr<nsISHEntry> shEntry = mSHEntry.forget();
     shEntry->SetContentViewer(nullptr);
     shEntry->SyncPresentationState();
   }
@@ -1782,8 +1781,7 @@ nsDocumentViewer::Destroy() {
 
     
     
-    nsCOMPtr<nsISHEntry> shEntry =
-        std::move(mSHEntry);  
+    nsCOMPtr<nsISHEntry> shEntry = mSHEntry.forget();  
 
     shEntry->SetContentViewer(this);
 

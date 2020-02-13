@@ -2028,8 +2028,8 @@ NotifyOffThreadScriptLoadCompletedRunnable::Run() {
 
   
   
-  RefPtr<ScriptLoadRequest> request = std::move(mRequest);
-  RefPtr<ScriptLoader> loader = std::move(mLoader);
+  RefPtr<ScriptLoadRequest> request = mRequest.forget();
+  RefPtr<ScriptLoader> loader = mLoader.forget();
 
   request->mOffThreadToken = mToken;
   nsresult rv = loader->ProcessOffThreadRequest(request);

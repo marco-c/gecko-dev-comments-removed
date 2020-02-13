@@ -651,7 +651,7 @@ void StyleSheet::ReplaceSync(const nsACString& aText, ErrorResult& aRv) {
 
   
   DropRuleList();
-  Inner().mContents = std::move(rawContent);
+  Inner().mContents = rawContent.forget();
   FinishParse();
 }
 

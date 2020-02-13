@@ -186,7 +186,7 @@ void UiCompositorControllerChild::Destroy() {
   if (mWidget) {
     
     
-    RefPtr<nsIWidget> widget = std::move(mWidget);
+    RefPtr<nsIWidget> widget = mWidget.forget();
     NS_ReleaseOnMainThreadSystemGroup("UiCompositorControllerChild::mWidget",
                                       widget.forget());
   }

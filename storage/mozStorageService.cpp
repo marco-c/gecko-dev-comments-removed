@@ -269,7 +269,7 @@ void Service::unregisterConnection(Connection* aConnection) {
         
         
         
-        forgettingRef = std::move(mConnections[i]);
+        forgettingRef = mConnections[i].forget();
         mConnections.RemoveElementAt(i);
         break;
       }
@@ -579,7 +579,7 @@ Service::OpenAsyncDatabase(nsIVariant* aDatabaseStore,
     nsCOMPtr<nsIFile> cloned;
     rv = storageFile->Clone(getter_AddRefs(cloned));
     MOZ_ASSERT(NS_SUCCEEDED(rv));
-    storageFile = std::move(cloned);
+    storageFile = cloned.forget();
 
     if (!readOnly) {
       

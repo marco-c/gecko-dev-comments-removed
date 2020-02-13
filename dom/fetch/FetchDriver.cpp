@@ -279,7 +279,7 @@ AlternativeDataStreamListener::OnStopRequest(nsIRequest* aRequest,
 
   
   
-  RefPtr<FetchDriver> fetchDriver = std::move(mFetchDriver);
+  RefPtr<FetchDriver> fetchDriver = mFetchDriver.forget();
 
   if (mStatus == AlternativeDataStreamListener::CANCELED) {
     
@@ -1206,7 +1206,7 @@ FetchDriver::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
 
   
   RefPtr<AlternativeDataStreamListener> altDataListener =
-      std::move(mAltDataListener);
+      mAltDataListener.forget();
 
   
   

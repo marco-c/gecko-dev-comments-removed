@@ -50,7 +50,7 @@ class BufferedStunSocketTest : public MtransportTest {
         nr_socket_buffered_stun_create(dummy->get_nr_socket(), kStunMessageLen,
                                        TURN_TCP_FRAMING, &test_socket_);
     ASSERT_EQ(0, r);
-    dummy_ = std::move(dummy);  
+    dummy_ = dummy.forget();  
 
     r = nr_str_port_to_transport_addr((char*)"192.0.2.133", 3333, IPPROTO_TCP,
                                       &remote_addr_);

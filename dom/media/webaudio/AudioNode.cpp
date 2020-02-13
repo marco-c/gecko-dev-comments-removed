@@ -168,7 +168,7 @@ void AudioNode::DisconnectFromGraph() {
 
   while (!mOutputNodes.IsEmpty()) {
     size_t i = mOutputNodes.Length() - 1;
-    RefPtr<AudioNode> output = std::move(mOutputNodes[i]);
+    RefPtr<AudioNode> output = mOutputNodes[i].forget();
     mOutputNodes.RemoveElementAt(i);
     size_t inputIndex = FindIndexOfNode(output->mInputNodes, this);
     
@@ -180,7 +180,7 @@ void AudioNode::DisconnectFromGraph() {
 
   while (!mOutputParams.IsEmpty()) {
     size_t i = mOutputParams.Length() - 1;
-    RefPtr<AudioParam> output = std::move(mOutputParams[i]);
+    RefPtr<AudioParam> output = mOutputParams[i].forget();
     mOutputParams.RemoveElementAt(i);
     size_t inputIndex = FindIndexOfNode(output->InputNodes(), this);
     
@@ -336,7 +336,7 @@ bool AudioNode::DisconnectFromOutputIfConnected<AudioNode>(
   
   
   
-  RefPtr<AudioNode> output = std::move(mOutputNodes[aOutputNodeIndex]);
+  RefPtr<AudioNode> output = mOutputNodes[aOutputNodeIndex].forget();
   mOutputNodes.RemoveElementAt(aOutputNodeIndex);
   
   

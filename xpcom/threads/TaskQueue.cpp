@@ -104,7 +104,7 @@ nsresult TaskQueue::DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable,
   
   uint32_t retainFlags = mShouldRetainFlags ? aFlags : 0;
 
-  mTasks.push({std::move(aRunnable), retainFlags});
+  mTasks.push({aRunnable.forget(), retainFlags});
 
   if (mIsRunning) {
     return NS_OK;

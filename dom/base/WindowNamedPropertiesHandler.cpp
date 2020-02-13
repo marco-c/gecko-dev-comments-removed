@@ -106,7 +106,7 @@ bool WindowNamedPropertiesHandler::getOwnPropDescriptor(
       
       
       JS::Rooted<JS::Value> v(aCx);
-      if (!ToJSValue(aCx, WindowProxyHolder(std::move(child)), &v)) {
+      if (!ToJSValue(aCx, WindowProxyHolder(child.forget()), &v)) {
         return false;
       }
       FillPropertyDescriptor(aDesc, aProxy, 0, v);

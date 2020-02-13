@@ -45,10 +45,10 @@ class ManualNACPtr final {
   }
 
   
-  ManualNACPtr(ManualNACPtr&& aOther) : mPtr(std::move(aOther.mPtr)) {}
+  ManualNACPtr(ManualNACPtr&& aOther) : mPtr(aOther.mPtr.forget()) {}
   ManualNACPtr(ManualNACPtr& aOther) = delete;
   ManualNACPtr& operator=(ManualNACPtr&& aOther) {
-    mPtr = std::move(aOther.mPtr);
+    mPtr = aOther.mPtr.forget();
     return *this;
   }
   ManualNACPtr& operator=(ManualNACPtr& aOther) = delete;
@@ -60,7 +60,7 @@ class ManualNACPtr final {
       return;
     }
 
-    RefPtr<dom::Element> ptr = std::move(mPtr);
+    RefPtr<dom::Element> ptr = mPtr.forget();
     RemoveContentFromNACArray(ptr);
   }
 
