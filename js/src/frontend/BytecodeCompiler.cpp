@@ -940,7 +940,10 @@ static void CheckFlagsOnDelazification(uint32_t lazy, uint32_t nonLazy) {
   
   
   
+  
+  
   constexpr uint32_t CustomFlagsMask =
+      uint32_t(BaseScript::ImmutableFlags::IsLazyScript) |
       uint32_t(BaseScript::ImmutableFlags::TreatAsRunOnce);
 
   

@@ -757,13 +757,8 @@ struct ImplicitEdgeHolderType<JSObject*> {
 };
 
 template <>
-struct ImplicitEdgeHolderType<JSScript*> {
-  typedef JSScript* Type;
-};
-
-template <>
-struct ImplicitEdgeHolderType<LazyScript*> {
-  typedef LazyScript* Type;
+struct ImplicitEdgeHolderType<BaseScript*> {
+  typedef BaseScript* Type;
 };
 
 void GCMarker::markEphemeronValues(gc::Cell* markedCell,
@@ -809,8 +804,7 @@ void GCMarker::markImplicitEdges(T* thing) {
 }
 
 template void GCMarker::markImplicitEdges(JSObject*);
-template void GCMarker::markImplicitEdges(JSScript*);
-template void GCMarker::markImplicitEdges(LazyScript*);
+template void GCMarker::markImplicitEdges(BaseScript*);
 
 }  
 
@@ -1135,19 +1129,24 @@ void BaseScript::traceChildren(JSTracer* trc) {
       DebugAPI::traceDebugScript(trc, script);
     }
   }
-}
 
-void LazyScript::traceChildren(JSTracer* trc) {
-  BaseScript::traceChildren(trc);
-
-  if (trc->traceWeakEdges()) {
-    TraceNullableEdge(trc, &script_, "script");
+  
+  
+  if (isLazyScript()) {
+    if (trc->traceWeakEdges()) {
+      TraceNullableEdge(trc, &u.script_, "script");
+    }
+  } else {
+    if (u.lazyScript) {
+      TraceManuallyBarrieredEdge(trc, &u.lazyScript, "lazyScript");
+    }
   }
 
   if (trc->isMarkingTracer()) {
     GCMarker::fromTracer(trc)->markImplicitEdges(this);
   }
 }
+
 inline void js::GCMarker::eagerlyMarkChildren(LazyScript* thing) {
   traverseEdge(thing, static_cast<JSObject*>(thing->functionOrGlobal_));
   traverseEdge(thing, static_cast<JSObject*>(thing->sourceObject_));
@@ -3580,10 +3579,11 @@ static inline void CheckIsMarkedThing(T* thingp) {
   
   
   JSContext* cx = TlsContext.get();
-  if (cx->gcSweeping || cx->gcMarking) {
+  MOZ_ASSERT(cx->gcUse != JSContext::GCUse::Finalizing);
+  if (cx->gcUse == JSContext::GCUse::Sweeping) {
     Zone* zone = thing->zoneFromAnyThread();
-    MOZ_ASSERT_IF(cx->gcSweepingZone,
-                  cx->gcSweepingZone == zone || zone->isAtomsZone());
+    MOZ_ASSERT_IF(cx->gcSweepZone,
+                  cx->gcSweepZone == zone || zone->isAtomsZone());
     return;
   }
 
@@ -3622,6 +3622,9 @@ struct MightBeNurseryAllocated {
 
 template <typename T>
 bool js::gc::IsMarkedInternal(JSRuntime* rt, T** thingp) {
+  
+  MOZ_ASSERT(!CurrentThreadIsGCFinalizing());
+
   if (IsOwnedByOtherRuntime(rt, *thingp)) {
     return true;
   }
@@ -3642,11 +3645,18 @@ bool js::gc::IsMarkedInternal(JSRuntime* rt, T** thingp) {
 bool js::gc::IsAboutToBeFinalizedDuringSweep(TenuredCell& tenured) {
   MOZ_ASSERT(!IsInsideNursery(&tenured));
   MOZ_ASSERT(tenured.zoneFromAnyThread()->isGCSweeping());
+
+  
+  MOZ_ASSERT(!CurrentThreadIsGCFinalizing());
+
   return !tenured.isMarkedAny();
 }
 
 template <typename T>
 bool js::gc::IsAboutToBeFinalizedInternal(T** thingp) {
+  
+  MOZ_ASSERT(!CurrentThreadIsGCFinalizing());
+
   CheckIsMarkedThing(thingp);
   T* thing = *thingp;
   JSRuntime* rt = thing->runtimeFromAnyThread();
@@ -3775,10 +3785,6 @@ JS_FOR_EACH_PUBLIC_TAGGED_GC_POINTER_TYPE(INSTANTIATE_INTERNAL_IATBF_FUNCTION)
 #undef INSTANTIATE_INTERNAL_IS_MARKED_FUNCTION
 #undef INSTANTIATE_INTERNAL_IATBF_FUNCTION
 #undef INSTANTIATE_INTERNAL_MARKING_FUNCTIONS_FROM_TRACEKIND
-
-#ifdef DEBUG
-bool CurrentThreadIsGCMarking() { return TlsContext.get()->gcMarking; }
-#endif  
 
 } 
 } 

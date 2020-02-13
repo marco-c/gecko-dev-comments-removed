@@ -2021,6 +2021,25 @@ class BaseScript : public gc::TenuredCell {
 
   ScriptWarmUpData warmUpData_ = {};
 
+  union TwinPointer {
+    
+    js::LazyScript* lazyScript;
+
+    
+    
+    
+    WeakHeapPtrScript script_;
+
+    
+    
+    
+    TwinPointer() : lazyScript(nullptr) {}
+
+    
+    
+    ~TwinPointer() { MOZ_CRASH(); }
+  } u;
+
   BaseScript(uint8_t* stubEntry, JSObject* functionOrGlobal,
              ScriptSourceObject* sourceObject, uint32_t sourceStart,
              uint32_t sourceEnd, uint32_t toStringStart, uint32_t toStringEnd,
@@ -2131,6 +2150,10 @@ class BaseScript : public gc::TenuredCell {
 
     
     HasDirectEval = 1 << 27,
+
+    
+    
+    IsLazyScript = 1 << 28,
   };
 
   
@@ -2376,6 +2399,7 @@ setterLevel:                                                                  \
                                       ShouldDeclareArguments)
   IMMUTABLE_FLAG_GETTER(isFunction, IsFunction)
   IMMUTABLE_FLAG_GETTER_SETTER_PUBLIC(hasDirectEval, HasDirectEval)
+  IMMUTABLE_FLAG_GETTER(isLazyScript, IsLazyScript)
 
   MUTABLE_FLAG_GETTER_SETTER(warnedAboutUndefinedProp, WarnedAboutUndefinedProp)
   MUTABLE_FLAG_GETTER_SETTER(hasRunOnce, HasRunOnce)
@@ -2498,10 +2522,11 @@ setterLevel:                                                                  \
     return false;
   }
 
- protected:
-  void traceChildren(JSTracer* trc);
-
  public:
+  friend class GCMarker;
+  friend void js::gc::SweepLazyScripts(GCParallelTask* task);
+
+  void traceChildren(JSTracer* trc);
   void finalize(JSFreeOp* fop);
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) {
@@ -2565,14 +2590,6 @@ struct DeletePolicy<js::PrivateScriptData>
 } 
 
 class JSScript : public js::BaseScript {
- private:
-  
-  js::LazyScript* lazyScript = nullptr;
-
-  
-  
-  
-
  private:
   template <js::XDRMode mode>
   friend js::XDRResult js::XDRScript(js::XDRState<mode>* xdr,
@@ -2847,13 +2864,13 @@ class JSScript : public js::BaseScript {
     
     
     
-    bool lazyAvailable = selfHosted() || lazyScript;
+    bool lazyAvailable = selfHosted() || u.lazyScript;
     return isRelazifiable() && lazyAvailable && !hasJitScript() &&
            !doNotRelazify();
   }
 
-  void setLazyScript(js::LazyScript* lazy) { lazyScript = lazy; }
-  js::LazyScript* maybeLazyScript() { return lazyScript; }
+  void setLazyScript(js::LazyScript* lazy) { u.lazyScript = lazy; }
+  js::LazyScript* maybeLazyScript() { return u.lazyScript; }
 
   bool isModule() const {
     MOZ_ASSERT(hasFlag(ImmutableFlags::IsModule) ==
@@ -3187,8 +3204,6 @@ class JSScript : public js::BaseScript {
 
   static const JS::TraceKind TraceKind = JS::TraceKind::Script;
 
-  void traceChildren(JSTracer* trc);
-
   
   
   class AutoDelazify;
@@ -3231,12 +3246,6 @@ namespace js {
 
 
 class LazyScript : public BaseScript {
-  
-  
-  
-  WeakHeapPtrScript script_ = nullptr;
-  friend void js::gc::SweepLazyScripts(GCParallelTask* task);
-
   
   
   
@@ -3370,11 +3379,11 @@ class LazyScript : public BaseScript {
 
   void initScript(JSScript* script);
 
-  JSScript* maybeScript() { return script_; }
+  JSScript* maybeScript() { return u.script_; }
   const JSScript* maybeScriptUnbarriered() const {
-    return script_.unbarrieredGet();
+    return u.script_.unbarrieredGet();
   }
-  bool hasScript() const { return bool(script_); }
+  bool hasScript() const { return bool(u.script_); }
 
   
   
@@ -3385,9 +3394,6 @@ class LazyScript : public BaseScript {
   bool enclosingScriptHasEverBeenCompiled() const {
     return warmUpData_.isEnclosingScope();
   }
-
-  friend class GCMarker;
-  void traceChildren(JSTracer* trc);
 
   static const JS::TraceKind TraceKind = JS::TraceKind::LazyScript;
 };
