@@ -20,7 +20,6 @@
 #include "mozilla/Observer.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
-#include "nsIScreenManager.h"
 #include "nsTArray.h"
 #include "nsXULAppAPI.h"
 #include "nsIXULAppInfo.h"
@@ -64,29 +63,29 @@ class ShutdownObserver : public nsIObserver {
     delete GfxInfoBase::sFeatureStatus;
     GfxInfoBase::sFeatureStatus = nullptr;
 
-    for (auto& deviceFamily : GfxDriverInfo::sDeviceFamilies) {
-      delete deviceFamily;
-      deviceFamily = nullptr;
+    for (uint32_t i = 0; i < DeviceFamilyMax; i++) {
+      delete GfxDriverInfo::sDeviceFamilies[i];
+      GfxDriverInfo::sDeviceFamilies[i] = nullptr;
     }
 
-    for (auto& desktop : GfxDriverInfo::sDesktopEnvironment) {
-      delete desktop;
-      desktop = nullptr;
+    for (uint32_t i = 0; i < DesktopMax; i++) {
+      delete GfxDriverInfo::sDesktopEnvironment[i];
+      GfxDriverInfo::sDesktopEnvironment[i] = nullptr;
     }
 
-    for (auto& windowProtocol : GfxDriverInfo::sWindowProtocol) {
-      delete windowProtocol;
-      windowProtocol = nullptr;
+    for (uint32_t i = 0; i < WindowingMax; i++) {
+      delete GfxDriverInfo::sWindowProtocol[i];
+      GfxDriverInfo::sWindowProtocol[i] = nullptr;
     }
 
-    for (auto& deviceVendor : GfxDriverInfo::sDeviceVendors) {
-      delete deviceVendor;
-      deviceVendor = nullptr;
+    for (uint32_t i = 0; i < DeviceVendorMax; i++) {
+      delete GfxDriverInfo::sDeviceVendors[i];
+      GfxDriverInfo::sDeviceVendors[i] = nullptr;
     }
 
-    for (auto& driverVendor : GfxDriverInfo::sDriverVendors) {
-      delete driverVendor;
-      driverVendor = nullptr;
+    for (uint32_t i = 0; i < DriverVendorMax; i++) {
+      delete GfxDriverInfo::sDriverVendors[i];
+      GfxDriverInfo::sDriverVendors[i] = nullptr;
     }
 
     GfxInfoBase::sShutdownOccurred = true;
@@ -339,7 +338,7 @@ static GfxDeviceFamily* BlacklistDevicesToDeviceFamily(
   for (uint32_t i = 0; i < devices.Length(); ++i) {
     
     
-    deviceIds->Append(NS_ConvertUTF8toUTF16(devices[i]));
+    deviceIds->AppendElement(NS_ConvertUTF8toUTF16(devices[i]));
   }
 
   return deviceIds;
@@ -420,12 +419,6 @@ static int32_t BlacklistFeatureStatusToGfxFeatureStatus(
     return nsIGfxInfo::FEATURE_DISCOURAGED;
   else if (aStatus.EqualsLiteral("BLOCKED_OS_VERSION"))
     return nsIGfxInfo::FEATURE_BLOCKED_OS_VERSION;
-  else if (aStatus.EqualsLiteral("DENIED"))
-    return nsIGfxInfo::FEATURE_DENIED;
-  else if (aStatus.EqualsLiteral("ALLOW_QUALIFIED"))
-    return nsIGfxInfo::FEATURE_ALLOW_QUALIFIED;
-  else if (aStatus.EqualsLiteral("ALLOW_ALWAYS"))
-    return nsIGfxInfo::FEATURE_ALLOW_ALWAYS;
 
   
   
@@ -639,12 +632,6 @@ nsresult GfxInfoBase::Init() {
     os->AddObserver(this, "blocklist-data-gfxItems", true);
   }
 
-  nsCOMPtr<nsIScreenManager> manager =
-      do_GetService("@mozilla.org/gfx/screenmanager;1");
-  MOZ_ASSERT(manager, "failed to get nsIScreenManager");
-
-  manager->GetTotalScreenPixels(&mScreenPixels);
-
   return NS_OK;
 }
 
@@ -717,16 +704,6 @@ void GfxInfoBase::GetAllFeatures(dom::XPCOMInitData& xpcomInit) {
   }
 }
 
-inline bool MatchingAllowStatus(int32_t aStatus) {
-  switch (aStatus) {
-    case nsIGfxInfo::FEATURE_ALLOW_ALWAYS:
-    case nsIGfxInfo::FEATURE_ALLOW_QUALIFIED:
-      return true;
-    default:
-      return false;
-  }
-}
-
 
 
 
@@ -738,8 +715,7 @@ inline bool MatchingAllowStatus(int32_t aStatus) {
 
 
 inline bool MatchingOperatingSystems(OperatingSystem aBlockedOS,
-                                     OperatingSystem aSystemOS,
-                                     uint32_t aSystemOSBuild) {
+                                     OperatingSystem aSystemOS) {
   MOZ_ASSERT(aSystemOS != OperatingSystem::Windows &&
              aSystemOS != OperatingSystem::OSX);
 
@@ -753,16 +729,6 @@ inline bool MatchingOperatingSystems(OperatingSystem aBlockedOS,
     
     return true;
   }
-
-  constexpr uint32_t kMinWin10BuildNumber = 18362;
-  if (aSystemOSBuild && aBlockedOS == OperatingSystem::RecentWindows10 &&
-      aSystemOS == OperatingSystem::Windows10) {
-    
-    
-    
-    
-    return aSystemOSBuild >= kMinWin10BuildNumber;
-  }
 #endif
 
 #if defined(XP_MACOSX)
@@ -775,49 +741,9 @@ inline bool MatchingOperatingSystems(OperatingSystem aBlockedOS,
   return aSystemOS == aBlockedOS;
 }
 
-inline bool MatchingBattery(BatteryStatus aBatteryStatus, bool aHasBattery) {
-  switch (aBatteryStatus) {
-    case BatteryStatus::All:
-      return true;
-    case BatteryStatus::None:
-      return !aHasBattery;
-    case BatteryStatus::Present:
-      return aHasBattery;
-  }
-
-  MOZ_ASSERT_UNREACHABLE("bad battery status");
-  return false;
-}
-
-inline bool MatchingScreenSize(ScreenSizeStatus aScreenStatus,
-                               int64_t aScreenPixels) {
-  constexpr int64_t kMaxSmallPixels = 2304000;   
-  constexpr int64_t kMaxMediumPixels = 4953600;  
-
-  switch (aScreenStatus) {
-    case ScreenSizeStatus::All:
-      return true;
-    case ScreenSizeStatus::Small:
-      return aScreenPixels <= kMaxSmallPixels;
-    case ScreenSizeStatus::SmallAndMedium:
-      return aScreenPixels <= kMaxMediumPixels;
-    case ScreenSizeStatus::Medium:
-      return aScreenPixels > kMaxSmallPixels &&
-             aScreenPixels <= kMaxMediumPixels;
-    case ScreenSizeStatus::MediumAndLarge:
-      return aScreenPixels > kMaxSmallPixels;
-    case ScreenSizeStatus::Large:
-      return aScreenPixels > kMaxMediumPixels;
-  }
-
-  MOZ_ASSERT_UNREACHABLE("bad screen status");
-  return false;
-}
-
 int32_t GfxInfoBase::FindBlocklistedDeviceInList(
     const nsTArray<GfxDriverInfo>& info, nsAString& aSuggestedVersion,
-    int32_t aFeature, nsACString& aFailureId, OperatingSystem os,
-    bool aForAllowing) {
+    int32_t aFeature, nsACString& aFailureId, OperatingSystem os) {
   int32_t status = nsIGfxInfo::FEATURE_STATUS_UNKNOWN;
 
   
@@ -832,15 +758,6 @@ int32_t GfxInfoBase::FindBlocklistedDeviceInList(
   if (NS_FAILED(rv) && rv != NS_ERROR_NOT_IMPLEMENTED) {
     return 0;
   }
-
-  bool hasBattery = false;
-  rv = GetHasBattery(&hasBattery);
-  if (NS_FAILED(rv) && rv != NS_ERROR_NOT_IMPLEMENTED) {
-    return 0;
-  }
-
-  
-  uint32_t osBuild = aForAllowing ? OperatingSystemBuild() : 0;
 
   
   nsAutoString adapterVendorID[2];
@@ -878,12 +795,6 @@ int32_t GfxInfoBase::FindBlocklistedDeviceInList(
   for (; i < info.Length(); i++) {
     
     
-    if (MatchingAllowStatus(info[i].mFeatureStatus) != aForAllowing) {
-      continue;
-    }
-
-    
-    
     
     
     
@@ -894,20 +805,12 @@ int32_t GfxInfoBase::FindBlocklistedDeviceInList(
 
     
     
-    if (!MatchingOperatingSystems(info[i].mOperatingSystem, os, osBuild)) {
+    if (!MatchingOperatingSystems(info[i].mOperatingSystem, os)) {
       continue;
     }
 
     if (info[i].mOperatingSystemVersion &&
         info[i].mOperatingSystemVersion != OperatingSystemVersion()) {
-      continue;
-    }
-
-    if (!MatchingBattery(info[i].mBattery, hasBattery)) {
-      continue;
-    }
-
-    if (!MatchingScreenSize(info[i].mScreen, mScreenPixels)) {
       continue;
     }
 
@@ -930,19 +833,19 @@ int32_t GfxInfoBase::FindBlocklistedDeviceInList(
     }
 
     if (info[i].mDevices != GfxDriverInfo::allDevices &&
-        !info[i].mDevices->IsEmpty()) {
-      nsresult rv = info[i].mDevices->Contains(adapterDeviceID[infoIndex]);
-      if (rv == NS_ERROR_NOT_AVAILABLE) {
-        
-        continue;
-      }
-      if (rv != NS_OK) {
-        
-        
-        if (aForAllowing) {
-          continue;
+        info[i].mDevices->Length()) {
+      bool deviceMatches = false;
+      for (uint32_t j = 0; j < info[i].mDevices->Length(); j++) {
+        if ((*info[i].mDevices)[j].Equals(
+                adapterDeviceID[infoIndex],
+                nsCaseInsensitiveStringComparator())) {
+          deviceMatches = true;
+          break;
         }
-        break;
+      }
+
+      if (!deviceMatches) {
+        continue;
       }
     }
 
@@ -1112,8 +1015,6 @@ bool GfxInfoBase::DoesDriverVendorMatch(const nsAString& aBlocklistVendor,
              nsCaseInsensitiveStringComparator());
 }
 
-bool GfxInfoBase::IsFeatureAllowlisted(int32_t aFeature) const { return false; }
-
 nsresult GfxInfoBase::GetFeatureStatusImpl(
     int32_t aFeature, int32_t* aStatus, nsAString& aSuggestedVersion,
     const nsTArray<GfxDriverInfo>& aDriverInfo, nsACString& aFailureId,
@@ -1157,45 +1058,23 @@ nsresult GfxInfoBase::GetFeatureStatusImpl(
   
   int32_t status;
   if (aDriverInfo.Length()) {
-    status =
-        FindBlocklistedDeviceInList(aDriverInfo, aSuggestedVersion, aFeature,
-                                    aFailureId, os,  false);
+    status = FindBlocklistedDeviceInList(aDriverInfo, aSuggestedVersion,
+                                         aFeature, aFailureId, os);
   } else {
     if (!sDriverInfo) {
       sDriverInfo = new nsTArray<GfxDriverInfo>();
     }
     status = FindBlocklistedDeviceInList(GetGfxDriverInfo(), aSuggestedVersion,
-                                         aFeature, aFailureId, os,
-                                          false);
+                                         aFeature, aFailureId, os);
   }
 
+  
   if (status == nsIGfxInfo::FEATURE_STATUS_UNKNOWN) {
-    if (IsFeatureAllowlisted(aFeature)) {
-      
-      
-      
-      
-      if (aDriverInfo.Length()) {
-        status = FindBlocklistedDeviceInList(aDriverInfo, aSuggestedVersion,
-                                             aFeature, aFailureId, os,
-                                              true);
-      } else {
-        status = FindBlocklistedDeviceInList(
-            GetGfxDriverInfo(), aSuggestedVersion, aFeature, aFailureId, os,
-             true);
-      }
-
-      if (status == nsIGfxInfo::FEATURE_STATUS_UNKNOWN) {
-        status = nsIGfxInfo::FEATURE_DENIED;
-      }
-    } else {
-      
-      
-      status = nsIGfxInfo::FEATURE_STATUS_OK;
-    }
+    *aStatus = nsIGfxInfo::FEATURE_STATUS_OK;
+  } else {
+    *aStatus = status;
   }
 
-  *aStatus = status;
   return NS_OK;
 }
 
