@@ -3,12 +3,12 @@
 
 
 #include "MediaKeysEventSourceFactory.h"
+#include "MPRISServiceHandler.h"
 
 namespace mozilla::widget {
 
 mozilla::dom::MediaControlKeysEventSource* CreateMediaControlKeysEventSource() {
-  
-  return nullptr;
+  return new MPRISServiceHandler();
 }
 
 }  
