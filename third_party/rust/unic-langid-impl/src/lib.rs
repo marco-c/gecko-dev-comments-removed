@@ -140,7 +140,7 @@ impl LanguageIdentifier {
                 .iter()
                 .map(|v| subtags::parse_variant_subtag(v.as_ref()))
                 .collect::<Result<Vec<TinyStr8>, parser::errors::ParserError>>()?;
-            vars.sort();
+            vars.sort_unstable();
             vars.dedup();
             Some(vars.into_boxed_slice())
         } else {
@@ -311,7 +311,7 @@ impl LanguageIdentifier {
     
     
     
-    pub fn get_language(&self) -> &str {
+    pub fn language(&self) -> &str {
         self.language.as_ref().map(|s| s.as_ref()).unwrap_or("und")
     }
 
@@ -375,7 +375,7 @@ impl LanguageIdentifier {
     
     
     
-    pub fn get_script(&self) -> Option<&str> {
+    pub fn script(&self) -> Option<&str> {
         self.script.as_ref().map(|s| s.as_ref())
     }
 
@@ -434,7 +434,7 @@ impl LanguageIdentifier {
     
     
     
-    pub fn get_region(&self) -> Option<&str> {
+    pub fn region(&self) -> Option<&str> {
         self.region.as_ref().map(|s| s.as_ref())
     }
 
@@ -493,7 +493,7 @@ impl LanguageIdentifier {
     
     
     
-    pub fn get_variants(&self) -> impl ExactSizeIterator<Item = &str> {
+    pub fn variants(&self) -> impl ExactSizeIterator<Item = &str> {
         let variants: &[_] = match self.variants {
             Some(ref v) => &**v,
             None => &[],
@@ -529,7 +529,7 @@ impl LanguageIdentifier {
         if v.is_empty() {
             self.variants = None;
         } else {
-            v.sort();
+            v.sort_unstable();
             v.dedup();
             self.variants = Some(v.into_boxed_slice());
         }
@@ -591,10 +591,8 @@ impl LanguageIdentifier {
     
     
     #[cfg(feature = "likelysubtags")]
-    pub fn add_likely_subtags(&mut self) -> bool {
-        if let Some(new_li) =
-            likelysubtags::add_likely_subtags(self.language, self.script, self.region)
-        {
+    pub fn maximize(&mut self) -> bool {
+        if let Some(new_li) = likelysubtags::maximize(self.language, self.script, self.region) {
             self.language = new_li.0;
             self.script = new_li.1;
             self.region = new_li.2;
@@ -619,10 +617,8 @@ impl LanguageIdentifier {
     
     
     #[cfg(feature = "likelysubtags")]
-    pub fn remove_likely_subtags(&mut self) -> bool {
-        if let Some(new_li) =
-            likelysubtags::remove_likely_subtags(self.language, self.script, self.region)
-        {
+    pub fn minimize(&mut self) -> bool {
+        if let Some(new_li) = likelysubtags::minimize(self.language, self.script, self.region) {
             self.language = new_li.0;
             self.script = new_li.1;
             self.region = new_li.2;
@@ -647,7 +643,7 @@ impl LanguageIdentifier {
     
     
     
-    pub fn get_character_direction(&self) -> CharacterDirection {
+    pub fn character_direction(&self) -> CharacterDirection {
         match self.language {
             Some(lang) if CHARACTER_DIRECTION_RTL.contains(&(lang.into())) => {
                 CharacterDirection::RTL

@@ -181,12 +181,12 @@ pub fn filter_matches<'a, R: 'a + AsRef<LanguageIdentifier>, A: 'a + AsRef<Langu
 
         
         
-        if req.get_language() == "und" {
+        if req.language() == "und" {
             continue;
         }
 
         
-        if req.add_likely_subtags() {
+        if req.maximize() {
             test_strategy!(true, false);
         }
 
@@ -196,7 +196,7 @@ pub fn filter_matches<'a, R: 'a + AsRef<LanguageIdentifier>, A: 'a + AsRef<Langu
 
         
         req.clear_region();
-        if req.add_likely_subtags() {
+        if req.maximize() {
             test_strategy!(true, false);
         }
 
