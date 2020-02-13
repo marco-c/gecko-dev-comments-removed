@@ -74,11 +74,11 @@ public class WebPushController {
 
 
     @UiThread
-    public void onSubscriptionChanged(final @NonNull WebPushSubscription subscription) {
+    public void onSubscriptionChanged(final @NonNull String scope) {
         ThreadUtils.assertOnUiThread();
 
         final GeckoBundle msg = new GeckoBundle(1);
-        msg.putBundle("subscription", subscription.toBundle());
+        msg.putString("scope", scope);
         EventDispatcher.getInstance().dispatch("GeckoView:PushSubscriptionChanged", msg);
     }
 
