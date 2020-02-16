@@ -338,13 +338,13 @@ browser.Context = class {
 
 
 
-  async openBrowserWindow(focus = false) {
+  async openBrowserWindow(focus = false, isPrivate = false) {
     switch (this.driver.appName) {
       case "firefox":
         
         
         
-        let win = this.window.OpenBrowserWindow();
+        let win = this.window.OpenBrowserWindow({ private: isPrivate });
 
         let activated = waitForEvent(win, "activate");
         let focused = waitForEvent(win, "focus", { capture: true });

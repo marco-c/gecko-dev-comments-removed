@@ -2812,6 +2812,10 @@ GeckoDriver.prototype.deleteCookie = async function(cmd) {
 
 
 
+
+
+
+
 GeckoDriver.prototype.newWindow = async function(cmd) {
   assert.open(this.getCurrentWindow(Context.Content));
   await this._handleUserPrompts();
@@ -2821,6 +2825,14 @@ GeckoDriver.prototype.newWindow = async function(cmd) {
     focus = assert.boolean(
       cmd.parameters.focus,
       pprint`Expected "focus" to be a boolean, got ${cmd.parameters.focus}`
+    );
+  }
+
+  let isPrivate = false;
+  if (typeof cmd.parameters.private != "undefined") {
+    isPrivate = assert.boolean(
+      cmd.parameters.private,
+      pprint`Expected "private" to be a boolean, got ${cmd.parameters.private}`
     );
   }
 
@@ -2841,7 +2853,7 @@ GeckoDriver.prototype.newWindow = async function(cmd) {
 
   switch (type) {
     case "window":
-      let win = await this.curBrowser.openBrowserWindow(focus);
+      let win = await this.curBrowser.openBrowserWindow(focus, isPrivate);
       contentBrowser = browser.getTabBrowser(win).selectedBrowser;
       break;
 
