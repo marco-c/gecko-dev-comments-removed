@@ -1,7 +1,7 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
-# Frame class definitions, used to generate FrameIdList.h and FrameTypeList.h
+
+
+
+
 
 from FrameClass import Frame, AbstractFrame, LEAF, NOT_LEAF, DYNAMIC_LEAF
 
@@ -97,6 +97,7 @@ FRAME_CLASSES = [
     Frame("nsPageSequenceFrame", "Sequence", NOT_LEAF),
     Frame("nsSliderFrame", "Slider", NOT_LEAF),
     Frame("nsSplitterFrame", "Box", NOT_LEAF),
+    Frame("nsStackFrame", "Box", NOT_LEAF),
     Frame("nsSubDocumentFrame", "SubDocument", LEAF),
     Frame("nsSVGAFrame", "SVGA", NOT_LEAF),
     Frame("nsSVGClipPathFrame", "SVGClipPath", NOT_LEAF),
@@ -124,8 +125,8 @@ FRAME_CLASSES = [
     Frame("nsSVGSwitchFrame", "SVGSwitch", NOT_LEAF),
     Frame("nsSVGSymbolFrame", "SVGSymbol", NOT_LEAF),
     Frame("SVGTextFrame", "SVGText", NOT_LEAF),
-    # Not a leaf, though it always has a ShadowRoot, so in practice light DOM
-    # children never render.
+    
+    
     Frame("nsSVGUseFrame", "SVGUse", NOT_LEAF),
     Frame("SVGViewFrame", "SVGView", LEAF),
     Frame("nsTableCellFrame", "TableCell", NOT_LEAF),
@@ -147,7 +148,7 @@ FRAME_CLASSES = [
     Frame("ViewportFrame", "Viewport", NOT_LEAF),
     Frame("WBRFrame", "Wbr", LEAF),
 
-    # Non-concrete classes (for FrameIID use)
+    
     AbstractFrame("nsContainerFrame"),
     AbstractFrame("nsIFrame"),
     AbstractFrame("nsLeafFrame"),
@@ -158,7 +159,7 @@ FRAME_CLASSES = [
     AbstractFrame("nsSVGGradientFrame"),
     AbstractFrame("nsSVGPaintServerFrame"),
 
-    # Interfaces (for FrameIID use)
+    
     AbstractFrame("nsIAnonymousContentCreator"),
     AbstractFrame("nsIComboboxControlFrame"),
     AbstractFrame("nsIFormControlFrame"),
