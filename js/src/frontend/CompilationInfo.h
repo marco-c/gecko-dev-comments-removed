@@ -46,8 +46,10 @@ struct MOZ_RAII CompilationInfo {
   FunctionTreeHolder treeHolder;
   
   
+  
   Vector<RegExpCreationData> regExpData;
   Vector<BigIntCreationData> bigIntData;
+  Vector<FunctionCreationData> funcData;
 
   
   
@@ -75,6 +77,7 @@ struct MOZ_RAII CompilationInfo {
         treeHolder(cx),
         regExpData(cx),
         bigIntData(cx),
+        funcData(cx),
         scopeCreationData(cx),
         sourceObject(cx) {}
 
