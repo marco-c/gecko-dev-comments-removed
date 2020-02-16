@@ -360,9 +360,6 @@ SheetLoadData::SheetLoadData(Loader* aLoader, nsIURI* aURI, StyleSheet* aSheet,
 }
 
 SheetLoadData::~SheetLoadData() {
-  MOZ_DIAGNOSTIC_ASSERT(mSheetCompleteCalled,
-                        "Should always call SheetComplete");
-
   
   RefPtr<SheetLoadData> next = std::move(mNext);
   while (next) {
@@ -1775,10 +1772,14 @@ void Loader::DoSheetComplete(SheetLoadData& aLoadData,
     
     if (aLoadData.mIsLoading) {
       SheetLoadDataHashKey key(aLoadData);
-      Maybe<SheetLoadData*> loadingData =
-          mSheets->mLoadingDatas.GetAndRemove(&key);
-      MOZ_DIAGNOSTIC_ASSERT(loadingData && loadingData.value() == &aLoadData);
-      Unused << loadingData;
+#ifdef DEBUG
+      SheetLoadData* loadingData;
+      NS_ASSERTION(mSheets->mLoadingDatas.Get(&key, &loadingData) &&
+                       loadingData == &aLoadData,
+                   "Bad loading table");
+#endif
+
+      mSheets->mLoadingDatas.Remove(&key);
       aLoadData.mIsLoading = false;
     }
   }
@@ -1786,11 +1787,6 @@ void Loader::DoSheetComplete(SheetLoadData& aLoadData,
   
   SheetLoadData* data = &aLoadData;
   do {
-    MOZ_DIAGNOSTIC_ASSERT(!data->mSheetCompleteCalled);
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-    data->mSheetCompleteCalled = true;
-#endif
-
     if (!data->mSheetAlreadyComplete) {
       
       

@@ -196,11 +196,6 @@ class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
   
   const Encoding* mPreloadEncoding;
 
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  
-  bool mSheetCompleteCalled = false;
-#endif
-
   bool ShouldDefer() const { return mWasAlternate || !mMediaMatched; }
 
  private:
