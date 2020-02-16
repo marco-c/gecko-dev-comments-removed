@@ -137,12 +137,32 @@ async function testReturnByValue({ Runtime }, executionContextId) {
   }
 
   
+  const nonSerializableNumbers = ["-0", "NaN", "Infinity", "-Infinity"];
+  for (const unserializableValue of nonSerializableNumbers) {
+    const { result } = await Runtime.callFunctionOn({
+      executionContextId,
+      functionDeclaration: "a => a",
+      arguments: [{ unserializableValue }],
+      returnByValue: true,
+    });
+    Assert.deepEqual(
+      result,
+      {
+        type: "number",
+        unserializableValue,
+        description: unserializableValue,
+      },
+      "The returned value is the same than the input value"
+    );
+  }
+
+  
   const { result } = await Runtime.callFunctionOn({
     executionContextId,
     functionDeclaration: "() => {}",
     returnByValue: true,
   });
-  is(result.value, undefined, "The returned value is undefined");
+  is(result.type, "undefined", "The returned value is undefined");
 }
 
 async function testAwaitPromise({ Runtime }, executionContextId) {

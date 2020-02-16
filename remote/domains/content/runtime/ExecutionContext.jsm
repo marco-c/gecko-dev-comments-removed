@@ -186,16 +186,12 @@ class ExecutionContext {
     }
 
     if (returnByValue) {
-      return {
-        result: {
-          value: this._serialize(result),
-        },
-      };
+      result = this._toRemoteObjectByValue(result);
+    } else {
+      result = this._toRemoteObject(result);
     }
 
-    return {
-      result: this._toRemoteObject(result),
-    };
+    return { result };
   }
 
   getProperties({ objectId, ownProperties }) {
@@ -249,28 +245,6 @@ class ExecutionContext {
 
 
 
-
-
-
-
-  _serialize(obj) {
-    if (typeof obj == "undefined") {
-      return undefined;
-    }
-    const result = this._debuggee.executeInGlobalWithBindings(
-      "JSON.stringify(e)",
-      { e: obj }
-    );
-    if (result.throw) {
-      throw new Error("Object is not serializable");
-    }
-    return JSON.parse(result.return);
-  }
-
-  
-
-
-
   _fromCallArgument(arg) {
     if (arg.objectId) {
       if (!this._remoteObjects.has(arg.objectId)) {
@@ -280,12 +254,12 @@ class ExecutionContext {
     }
     if (arg.unserializableValue) {
       switch (arg.unserializableValue) {
+        case "-0":
+          return -0;
         case "Infinity":
           return Infinity;
         case "-Infinity":
           return -Infinity;
-        case "-0":
-          return -0;
         case "NaN":
           return NaN;
       }
@@ -403,5 +377,65 @@ class ExecutionContext {
       subtype,
       value: debuggerObj,
     };
+  }
+
+  
+
+
+
+
+
+
+
+
+  _toRemoteObjectByValue(debuggerObj) {
+    const type = typeof debuggerObj;
+
+    if (type == "undefined") {
+      return { type };
+    }
+
+    let unserializableValue = undefined;
+    if (Object.is(debuggerObj, -0)) {
+      unserializableValue = "-0";
+    } else if (Object.is(debuggerObj, NaN)) {
+      unserializableValue = "NaN";
+    } else if (Object.is(debuggerObj, Infinity)) {
+      unserializableValue = "Infinity";
+    } else if (Object.is(debuggerObj, -Infinity)) {
+      unserializableValue = "-Infinity";
+    }
+    if (unserializableValue) {
+      return {
+        type,
+        unserializableValue,
+        description: unserializableValue,
+      };
+    }
+
+    const value = this._serialize(debuggerObj);
+    return {
+      value,
+    };
+  }
+
+  
+
+
+
+
+
+
+
+  _serialize(debuggerObj) {
+    const result = this._debuggee.executeInGlobalWithBindings(
+      "JSON.stringify(e)",
+      { e: debuggerObj }
+    );
+    if (result.throw) {
+      throw new Error("Object is not serializable");
+    }
+
+    return JSON.parse(result.return);
   }
 }
