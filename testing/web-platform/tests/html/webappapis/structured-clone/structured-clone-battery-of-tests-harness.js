@@ -17,12 +17,17 @@ function runStructuredCloneBatteryOfTests(runner) {
     setup() {},
     preTest() {},
     postTest() {},
-    teardown() {}
+    teardown() {},
+    hasDocument: true
   };
   runner = Object.assign({}, defaultRunner, runner);
 
   let setupPromise = runner.setup();
   const allTests = structuredCloneBatteryOfTests.map(test => {
+
+    if (!runner.hasDocument && test.requiresDocument) {
+      return;
+    }
 
     return new Promise(resolve => {
       promise_test(async _ => {
