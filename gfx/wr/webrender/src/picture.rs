@@ -2541,10 +2541,17 @@ impl TileCacheInstance {
                     frame_context.spatial_tree,
                 );
 
-                current_pic_clip_rect = map_local_to_surface
-                    .map(&current_pic_clip_rect)
-                    .expect("bug: unable to map")
-                    .inflate(surface.inflation_factor, surface.inflation_factor);
+                
+                
+                
+                current_pic_clip_rect = match map_local_to_surface.map(&current_pic_clip_rect) {
+                    Some(rect) => {
+                        rect.inflate(surface.inflation_factor, surface.inflation_factor)
+                    }
+                    None => {
+                        return false;
+                    }
+                };
 
                 current_spatial_node_index = surface.surface_spatial_node_index;
             }
