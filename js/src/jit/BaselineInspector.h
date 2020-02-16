@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_BaselineInspector_h
 #define jit_BaselineInspector_h
@@ -95,10 +95,9 @@ class BaselineInspector {
 
   JSObject* getTemplateObject(jsbytecode* pc);
   JSObject* getTemplateObjectForNative(jsbytecode* pc, Native native);
-  JSObject* getTemplateObjectForClassHook(jsbytecode* pc, const JSClass* clasp);
 
-  
-  
+  // Sometimes the group a template object will have is known, even if the
+  // object itself isn't.
   ObjectGroup* getTemplateObjectGroup(jsbytecode* pc);
 
   JSFunction* getSingleCallee(jsbytecode* pc);
@@ -106,10 +105,10 @@ class BaselineInspector {
   LexicalEnvironmentObject* templateNamedLambdaObject();
   CallObject* templateCallObject();
 
-  
-  
-  
-  
+  // If |innerized| is true, we're doing a GETPROP on a WindowProxy and
+  // IonBuilder unwrapped/innerized it to do the lookup on the Window (the
+  // global object) instead. In this case we should only look for Baseline
+  // stubs that performed the same optimization.
   MOZ_MUST_USE bool commonGetPropFunction(
       jsbytecode* pc, jsid id, bool innerized, JSObject** holder,
       Shape** holderShape, JSFunction** commonGetter, Shape** globalShape,
@@ -128,7 +127,7 @@ class BaselineInspector {
                                    uint32_t* slot, JSObject** prototypeObject);
 };
 
-}  
-}  
+}  // namespace jit
+}  // namespace js
 
-#endif 
+#endif /* jit_BaselineInspector_h */
