@@ -30,33 +30,23 @@ async function waitForAllRequestsFinished(expectedRequests) {
   return new Promise(resolve => {
     
     let payloadReady = 0;
-    let timingsUpdated = 0;
 
     function onPayloadReady(_, id) {
       payloadReady++;
       maybeResolve();
     }
 
-    function onTimingsUpdated(_, id) {
-      timingsUpdated++;
-      maybeResolve();
-    }
-
     function maybeResolve() {
       
-      if (
-        payloadReady >= expectedRequests &&
-        timingsUpdated >= expectedRequests
-      ) {
+      if (payloadReady >= expectedRequests) {
         
         window.api.off(EVENTS.PAYLOAD_READY, onPayloadReady);
-        window.api.off(EVENTS.RECEIVED_EVENT_TIMINGS, onTimingsUpdated);
-        resolve();
+        
+        setTimeout(resolve, 1);
       }
     }
 
     window.api.on(EVENTS.PAYLOAD_READY, onPayloadReady);
-    window.api.on(EVENTS.RECEIVED_EVENT_TIMINGS, onTimingsUpdated);
   });
 }
 
