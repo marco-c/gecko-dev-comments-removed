@@ -175,3 +175,13 @@ async function do_post_message_test(
 
   await assert_equals_cloned_handles(response.cloned_handles, handles);
 }
+
+
+
+
+
+async function do_message_port_test(test, root_dir, target, target_origin) {
+  const message_port = create_message_channel(target, target_origin);
+  await do_post_message_test(
+      test, root_dir,  message_port,  message_port);
+}
