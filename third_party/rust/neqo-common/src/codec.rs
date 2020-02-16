@@ -30,6 +30,12 @@ impl<'a> Decoder<'a> {
     }
 
     
+    #[must_use]
+    pub fn offset(&self) -> usize {
+        self.offset
+    }
+
+    
     pub fn skip(&mut self, n: usize) {
         assert!(self.remaining() >= n);
         self.offset += n;
@@ -74,7 +80,7 @@ impl<'a> Decoder<'a> {
     }
 
     
-    pub fn decode(&mut self, n: usize) -> Option<&[u8]> {
+    pub fn decode(&mut self, n: usize) -> Option<&'a [u8]> {
         if self.remaining() < n {
             return None;
         }
@@ -114,13 +120,13 @@ impl<'a> Decoder<'a> {
     }
 
     
-    pub fn decode_remainder(&mut self) -> &[u8] {
+    pub fn decode_remainder(&mut self) -> &'a [u8] {
         let res = &self.buf[self.offset..];
         self.offset = self.buf.len();
         res
     }
 
-    fn decode_checked(&mut self, n: Option<u64>) -> Option<&[u8]> {
+    fn decode_checked(&mut self, n: Option<u64>) -> Option<&'a [u8]> {
         let len = match n {
             Some(l) => l,
             _ => return None,
@@ -136,13 +142,13 @@ impl<'a> Decoder<'a> {
     }
 
     
-    pub fn decode_vec(&mut self, n: usize) -> Option<&[u8]> {
+    pub fn decode_vec(&mut self, n: usize) -> Option<&'a [u8]> {
         let len = self.decode_uint(n);
         self.decode_checked(len)
     }
 
     
-    pub fn decode_vvec(&mut self) -> Option<&[u8]> {
+    pub fn decode_vvec(&mut self) -> Option<&'a [u8]> {
         let len = self.decode_varint();
         self.decode_checked(len)
     }
@@ -332,6 +338,11 @@ impl Encoder {
         
         self.buf[start..].rotate_right(count);
         self
+    }
+
+    
+    pub fn truncate(&mut self, len: usize) {
+        self.buf.truncate(len);
     }
 }
 

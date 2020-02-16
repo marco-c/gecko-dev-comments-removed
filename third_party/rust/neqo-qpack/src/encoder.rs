@@ -4,16 +4,16 @@
 
 
 
-#![allow(unused_variables, dead_code)]
-
 use crate::huffman::encode_huffman;
 use crate::qpack_helper::read_prefixed_encoded_int_with_connection;
 use crate::qpack_send_buf::QPData;
-use crate::table::HeaderTable;
+use crate::table::{HeaderTable, LookupResult};
 use crate::Header;
 use crate::{Error, Res};
 use neqo_common::{qdebug, qtrace};
 use neqo_transport::Connection;
+use std::collections::{HashMap, HashSet, VecDeque};
+use std::convert::TryInto;
 
 pub const QPACK_UNI_STREAM_TYPE_ENCODER: u64 = 0x2;
 
@@ -45,14 +45,18 @@ pub struct QPackEncoder {
     local_stream_id: Option<u64>,
     remote_stream_id: Option<u64>,
     max_blocked_streams: u16,
-    blocked_streams: Vec<u64>, 
     
+    
+    
+    
+    unacked_header_blocks: HashMap<u64, VecDeque<HashSet<u64>>>,
+    blocked_stream_cnt: u16,
     use_huffman: bool,
 }
 
 impl QPackEncoder {
-    pub fn new(use_huffman: bool) -> QPackEncoder {
-        QPackEncoder {
+    pub fn new(use_huffman: bool) -> Self {
+        Self {
             table: HeaderTable::new(true),
             send_buf: QPData::default(),
             max_entries: 0,
@@ -62,7 +66,8 @@ impl QPackEncoder {
             local_stream_id: None,
             remote_stream_id: None,
             max_blocked_streams: 0,
-            blocked_streams: Vec::new(),
+            unacked_header_blocks: HashMap::new(),
+            blocked_stream_cnt: 0,
             use_huffman,
         }
     }
@@ -75,16 +80,13 @@ impl QPackEncoder {
         qdebug!([self], "Set max capacity to {}.", cap);
         self.max_entries = (cap as f64 / 32.0).floor() as u64;
         
-        self.change_capacity(cap);
-        Ok(())
+        self.change_capacity(cap)
     }
 
     pub fn set_max_blocked_streams(&mut self, blocked_streams: u64) -> Res<()> {
-        if blocked_streams > (1 << 16) - 1 {
-            return Err(Error::EncoderStreamError);
-        }
-        qdebug!([self], "Set max blocked streams to {}.", blocked_streams);
-        self.max_blocked_streams = blocked_streams as u16;
+        self.max_blocked_streams = blocked_streams
+            .try_into()
+            .or(Err(Error::EncoderStreamError))?;
         Ok(())
     }
 
@@ -136,7 +138,7 @@ impl QPackEncoder {
                     ) {
                         Ok(done) => {
                             if done {
-                                self.call_instruction();
+                                self.call_instruction()?;
                             } else {
                                 
                                 break Ok(());
@@ -158,7 +160,7 @@ impl QPackEncoder {
                     ) {
                         Ok(done) => {
                             if done {
-                                self.call_instruction();
+                                self.call_instruction()?;
                             } else {
                                 
                                 break Ok(());
@@ -172,35 +174,95 @@ impl QPackEncoder {
         }
     }
 
-    fn call_instruction(&mut self) {
+    fn recalculate_blocked_streams(&mut self) {
+        let acked_inserts_cnt = self.table.get_acked_inserts_cnt();
+        self.blocked_stream_cnt = 0;
+        for (_, hb_list) in self.unacked_header_blocks.iter_mut() {
+            debug_assert!(!hb_list.is_empty());
+            if hb_list
+                .iter()
+                .flat_map(|hb| hb.iter())
+                .any(|e| *e >= acked_inserts_cnt)
+            {
+                self.blocked_stream_cnt += 1;
+            }
+        }
+    }
+
+    fn insert_count_instruction(&mut self, increment: u64) -> Res<()> {
+        self.table.increment_acked(increment)?;
+        self.recalculate_blocked_streams();
+        Ok(())
+    }
+
+    fn header_ack(&mut self, stream_id: u64) -> Res<()> {
+        let mut new_acked = self.table.get_acked_inserts_cnt();
+        if let Some(hb_list) = self.unacked_header_blocks.get_mut(&stream_id) {
+            if let Some(ref_list) = hb_list.pop_back() {
+                for iter in ref_list {
+                    self.table.remove_ref(iter);
+                    if iter >= new_acked {
+                        new_acked = iter + 1;
+                    }
+                }
+            } else {
+                debug_assert!(false, "We should have at least one header block.");
+            }
+            if hb_list.is_empty() {
+                self.unacked_header_blocks.remove(&stream_id);
+            }
+        }
+        if new_acked > self.table.get_acked_inserts_cnt() {
+            self.insert_count_instruction(new_acked - self.table.get_acked_inserts_cnt())
+                .expect("This should neve happen");
+        }
+        Ok(())
+    }
+
+    fn stream_cancellation(&mut self, stream_id: u64) -> Res<()> {
+        let mut was_blocker = false;
+        if let Some(hb_list) = self.unacked_header_blocks.get_mut(&stream_id) {
+            debug_assert!(!hb_list.is_empty());
+            while let Some(ref_list) = hb_list.pop_front() {
+                for iter in ref_list {
+                    self.table.remove_ref(iter);
+                    was_blocker = was_blocker || (iter >= self.table.get_acked_inserts_cnt());
+                }
+            }
+        }
+        if was_blocker {
+            debug_assert!(self.blocked_stream_cnt > 0);
+            self.blocked_stream_cnt -= 1;
+        }
+        Ok(())
+    }
+
+    fn call_instruction(&mut self) -> Res<()> {
         if let Some(inst) = &self.instruction_reader_current_inst {
             qdebug!([self], "call intruction {:?}", inst);
             match inst {
                 DecoderInstructions::InsertCountIncrement => {
-                    self.table.increment_acked(self.instruction_reader_value);
-                    let inserts = self.table.get_acked_inserts_cnt();
-                    self.blocked_streams.retain(|req| *req <= inserts);
+                    self.insert_count_instruction(self.instruction_reader_value)?
                 }
-                DecoderInstructions::HeaderAck => {
-                    self.table.header_ack(self.instruction_reader_value)
-                }
+                DecoderInstructions::HeaderAck => self.header_ack(self.instruction_reader_value)?,
                 DecoderInstructions::StreamCancellation => {
-                    self.table.header_ack(self.instruction_reader_value)
+                    self.stream_cancellation(self.instruction_reader_value)?
                 }
-            }
+            };
             self.instruction_reader_current_inst = None;
             self.instruction_reader_value = 0;
             self.instruction_reader_cnt = 0;
         } else {
             panic!("We must have a instruction decoded beforewe call call_instruction");
         }
+        Ok(())
     }
 
     pub fn insert_with_name_ref(
         &mut self,
         name_static_table: bool,
         name_index: u64,
-        value: Vec<u8>,
+        value: &[u8],
     ) -> Res<()> {
         qdebug!(
             [self],
@@ -217,25 +279,23 @@ impl QPackEncoder {
             .insert_with_name_ref(name_static_table, name_index, value)?;
 
         
-        let entry = self.table.get_last_added_entry().unwrap();
         let instr = 0x80 | (if name_static_table { 0x40 } else { 0x00 });
         self.send_buf
             .encode_prefixed_encoded_int(instr, 2, name_index);
-        encode_literal(self.use_huffman, &mut self.send_buf, 0x0, 0, entry.value());
+        encode_literal(self.use_huffman, &mut self.send_buf, 0x0, 0, value);
         Ok(())
     }
 
-    pub fn insert_with_name_literal(&mut self, name: Vec<u8>, value: Vec<u8>) -> Res<()> {
+    pub fn insert_with_name_literal(&mut self, name: &[u8], value: &[u8]) -> Res<u64> {
         qdebug!([self], "insert name {:x?}, value={:x?}.", name, value);
         
-        self.table.insert(name, value)?;
+        let index = self.table.insert(name, value)?;
 
-        let entry = self.table.get_last_added_entry().unwrap();
         
-        encode_literal(self.use_huffman, &mut self.send_buf, 0x40, 2, entry.name());
-        encode_literal(self.use_huffman, &mut self.send_buf, 0x0, 0, entry.value());
+        encode_literal(self.use_huffman, &mut self.send_buf, 0x40, 2, name);
+        encode_literal(self.use_huffman, &mut self.send_buf, 0x0, 0, value);
 
-        Ok(())
+        Ok(index)
     }
 
     pub fn duplicate(&mut self, index: u64) -> Res<()> {
@@ -245,10 +305,11 @@ impl QPackEncoder {
         Ok(())
     }
 
-    pub fn change_capacity(&mut self, cap: u64) {
+    pub fn change_capacity(&mut self, cap: u64) -> Res<()> {
         qdebug!([self], "change capacity: {}", cap);
-        self.table.set_capacity(cap);
+        self.table.set_capacity(cap)?;
         self.send_buf.encode_prefixed_encoded_int(0x20, 3, cap);
+        Ok(())
     }
 
     pub fn send(&mut self, conn: &mut Connection) -> Res<()> {
@@ -268,67 +329,59 @@ impl QPackEncoder {
         }
     }
 
+    fn is_stream_blocker(&self, stream_id: u64) -> bool {
+        if let Some(hb_list) = self.unacked_header_blocks.get(&stream_id) {
+            debug_assert!(!hb_list.is_empty());
+            match hb_list.iter().flat_map(|hb| hb.iter()).max() {
+                Some(max_ref) => *max_ref >= self.table.get_acked_inserts_cnt(),
+                None => false,
+            }
+        } else {
+            false
+        }
+    }
+
     pub fn encode_header_block(&mut self, h: &[Header], stream_id: u64) -> QPData {
         qdebug!([self], "encoding headers.");
         let mut encoded_h = QPData::default();
         let base = self.table.base();
-        let mut req_insert_cnt = 0;
         self.encode_header_block_prefix(&mut encoded_h, false, 0, base, true);
+
+        let stream_is_blocker = self.is_stream_blocker(stream_id);
+        let can_block = self.blocked_stream_cnt < self.max_blocked_streams || stream_is_blocker;
+
+        let mut ref_entries = HashSet::new();
+
         for iter in h.iter() {
             let name = iter.0.clone().into_bytes();
             let value = iter.1.clone().into_bytes();
             qtrace!("encoding {:x?} {:x?}.", name, value);
 
-            let mut can_use = false;
-            let mut index: u64 = 0;
-            let mut value_as_well = false;
-            let mut is_dynamic = false;
-            let acked_inserts_cnt = self.table.get_acked_inserts_cnt(); 
-            let can_be_blocked = self.blocked_streams.len() < self.max_blocked_streams as usize;
+            if let Some(LookupResult {
+                index,
+                static_table,
+                value_matches,
+            }) = self.table.lookup(&name, &value, can_block)
             {
-                let label = self.to_string();
-                
-                let (e_s, e_d, found_value) = self.table.lookup(&name, &value);
-                if let Some(entry) = e_s {
-                    qtrace!([label], "found a static entry, value-match={}", found_value);
-                    can_use = true;
-                    index = entry.index();
-                    value_as_well = found_value;
-                }
-                if !can_use {
-                    if let Some(entry) = e_d {
-                        index = entry.index();
-                        can_use = index < acked_inserts_cnt || can_be_blocked;
-                        qtrace!(
-                            [label],
-                            "found a dynamic entry - can_use={} value-match={},",
-                            can_use,
-                            found_value
-                        );
-                        if can_use {
-                            value_as_well = found_value;
-                            is_dynamic = true;
-                            entry.add_ref(stream_id, 1);
-                        }
-                    }
-                }
-            }
-            if can_use {
-                if value_as_well {
-                    if !is_dynamic {
+                qtrace!(
+                    [self],
+                    "found a {} entry, value-match={}",
+                    if static_table { "static" } else { "dynamic" },
+                    value_matches
+                );
+                if static_table {
+                    if value_matches {
                         self.encode_indexed(&mut encoded_h, true, index);
-                    } else if index < base {
-                        self.encode_indexed(&mut encoded_h, false, base - index - 1);
                     } else {
-                        self.encode_post_base_index(&mut encoded_h, index - base);
-                    }
-                    if is_dynamic && req_insert_cnt < (index + 1) {
-                        req_insert_cnt = index + 1;
-                    }
-                    continue;
-                } else {
-                    if !is_dynamic {
                         self.encode_literal_with_name_ref(&mut encoded_h, true, index, &value);
+                    }
+                } else {
+                    if value_matches {
+                        if index < base {
+                            self.encode_indexed(&mut encoded_h, false, base - index - 1);
+                        } else {
+                            self.encode_post_base_index(&mut encoded_h, index - base);
+                        }
                     } else if index < base {
                         self.encode_literal_with_name_ref(
                             &mut encoded_h,
@@ -343,35 +396,40 @@ impl QPackEncoder {
                             &value,
                         );
                     }
-
-                    if is_dynamic && req_insert_cnt < (index + 1) {
-                        req_insert_cnt = index + 1;
-                    }
-                    continue;
+                    ref_entries.insert(index);
                 }
-            }
-
-            let name2 = name.clone();
-            let value2 = value.clone();
-            match self.insert_with_name_literal(name2, value2) {
-                Err(_) => {
-                    self.encode_literal_with_name_literal(&mut encoded_h, &name, &value);
-                }
-                Ok(()) => {
-                    let index: u64;
-                    {
-                        let entry = self.table.get_last_added_entry().unwrap();
-                        entry.add_ref(stream_id, 1);
-                        index = entry.index();
+            } else if !can_block {
+                self.encode_literal_with_name_literal(&mut encoded_h, &name, &value);
+            } else {
+                match self.insert_with_name_literal(&name, &value) {
+                    Ok(index) => {
+                        self.encode_post_base_index(&mut encoded_h, index - base);
+                        ref_entries.insert(index);
                     }
-                    self.encode_post_base_index(&mut encoded_h, index - base);
-
-                    req_insert_cnt = index + 1;
+                    Err(_) => {
+                        self.encode_literal_with_name_literal(&mut encoded_h, &name, &value);
+                    }
                 }
             }
         }
-        if req_insert_cnt > 0 {
-            self.fix_header_block_prefix(&mut encoded_h, base, req_insert_cnt);
+        for iter in &ref_entries {
+            self.table.add_ref(*iter);
+        }
+
+        if let Some(max_ref) = ref_entries.iter().max() {
+            self.fix_header_block_prefix(&mut encoded_h, base, *max_ref + 1);
+            
+            if !stream_is_blocker && *max_ref >= self.table.get_acked_inserts_cnt() {
+                debug_assert!(self.blocked_stream_cnt < self.max_blocked_streams);
+                self.blocked_stream_cnt += 1;
+            }
+        }
+
+        if !ref_entries.is_empty() {
+            self.unacked_header_blocks
+                .entry(stream_id)
+                .or_insert_with(VecDeque::new)
+                .push_front(ref_entries);
         }
         encoded_h
     }
@@ -504,6 +562,11 @@ impl QPackEncoder {
             }
         }
     }
+
+    #[cfg(test)]
+    pub fn blocked_stream_cnt(&self) -> u16 {
+        self.blocked_stream_cnt
+    }
 }
 
 fn encode_literal(use_huffman: bool, buf: &mut QPData, prefix: u8, prefix_len: u8, value: &[u8]) {
@@ -530,213 +593,173 @@ impl ::std::fmt::Display for QPackEncoder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use neqo_transport::ConnectionEvent;
     use neqo_transport::StreamType;
     use test_fixture::*;
 
-    fn connect(huffman: bool) -> (QPackEncoder, Connection, Connection, u64, u64) {
-        let (mut conn_c, mut conn_s) = test_fixture::connect();
+    struct TestEncoder {
+        encoder: QPackEncoder,
+        send_stream_id: u64,
+        recv_stream_id: u64,
+        conn: Connection,
+        peer_conn: Connection,
+    }
+
+    fn connect(huffman: bool) -> TestEncoder {
+        let (mut conn, mut peer_conn) = test_fixture::connect();
 
         
-        let recv_stream_id = conn_s.stream_create(StreamType::UniDi).unwrap();
-        let send_stream_id = conn_c.stream_create(StreamType::UniDi).unwrap();
+        let recv_stream_id = peer_conn.stream_create(StreamType::UniDi).unwrap();
+        let send_stream_id = conn.stream_create(StreamType::UniDi).unwrap();
 
         
         let mut encoder = QPackEncoder::new(huffman);
         encoder.add_send_stream(send_stream_id);
 
-        (encoder, conn_c, conn_s, recv_stream_id, send_stream_id)
+        TestEncoder {
+            encoder,
+            send_stream_id,
+            recv_stream_id,
+            conn,
+            peer_conn,
+        }
     }
 
-    fn test_sent_instructions(
-        encoder: &mut QPackEncoder,
-        mut conn_c: &mut Connection,
-        conn_s: &mut Connection,
-        recv_stream_id: u64,
-        send_stream_id: u64,
-        encoder_instruction: &[u8],
-    ) {
-        encoder.send(&mut conn_c).unwrap();
-        let out = conn_c.process(None, now());
-        conn_s.process(out.dgram(), now());
-        let mut found_instruction = false;
-        while let Some(e) = conn_s.next_event() {
-            if let ConnectionEvent::RecvStreamReadable { stream_id } = e {
-                let mut buf = [0u8; 100];
-                let (amount, fin) = conn_s.stream_recv(stream_id, &mut buf).unwrap();
-                assert_eq!(fin, false);
-                assert_eq!(buf[..amount], encoder_instruction[..]);
-                found_instruction = true;
-            }
-        }
-        assert_eq!(found_instruction, !encoder_instruction.is_empty());
+    fn send_instructions(encoder: &mut TestEncoder, encoder_instruction: &[u8]) {
+        encoder.encoder.send(&mut encoder.conn).unwrap();
+        let out = encoder.conn.process(None, now());
+        encoder.peer_conn.process(out.dgram(), now());
+        let mut buf = [0u8; 100];
+        let (amount, fin) = encoder
+            .peer_conn
+            .stream_recv(encoder.send_stream_id, &mut buf)
+            .unwrap();
+        assert_eq!(fin, false);
+        assert_eq!(buf[..amount], encoder_instruction[..]);
     }
+
+    fn recv_instruction(encoder: &mut TestEncoder, decoder_instruction: &[u8]) {
+        encoder
+            .peer_conn
+            .stream_send(encoder.recv_stream_id, decoder_instruction)
+            .unwrap();
+        let out = encoder.peer_conn.process(None, now());
+        encoder.conn.process(out.dgram(), now());
+        assert!(encoder
+            .encoder
+            .read_instructions(&mut encoder.conn, encoder.recv_stream_id)
+            .is_ok());
+    }
+
+    const CAP_INSTRUCTION_200: &[u8] = &[0x02, 0x3f, 0xa9, 0x01];
+    const CAP_INSTRUCTION_60: &[u8] = &[0x02, 0x3f, 0x1d];
+
+    const HEADER_CONTENT_LENGTH: &[u8] = &[
+        0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68,
+    ];
+    const VALUE_1: &[u8] = &[0x31, 0x32, 0x33, 0x34];
+    const VALUE_2: &[u8] = &[0x31, 0x32, 0x33, 0x34, 0x35];
+
+    
+    const HEADER_CONTENT_LENGTH_VALUE_1_NAME_LITERAL: &[u8] = &[
+        0x4e, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68,
+        0x04, 0x31, 0x32, 0x33, 0x34,
+    ];
+
+    
+    const HEADER_CONTENT_LENGTH_VALUE_2_NAME_LITERAL: &[u8] = &[
+        0x4e, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68,
+        0x05, 0x31, 0x32, 0x33, 0x34, 0x35,
+    ];
+
+    
+    const ENCODE_INDEXED_REF_DYNAMIC: &[u8] = &[0x02, 0x00, 0x80];
+
+    const HEADER_ACK_STREAM_ID_1: &[u8] = &[0x81];
+    const HEADER_ACK_STREAM_ID_2: &[u8] = &[0x82];
+    const STREAM_CANCELED_ID_1: &[u8] = &[0x41];
 
     
     #[test]
     fn test_insert_with_name_ref_1() {
-        let (mut encoder, mut conn_c, mut conn_s, recv_stream_id, send_stream_id) = connect(false);
+        let mut encoder = connect(false);
         let e = encoder
-            .insert_with_name_ref(true, 4, vec![0x31, 0x32, 0x33, 0x34])
+            .encoder
+            .insert_with_name_ref(true, 4, VALUE_1)
             .unwrap_err();
         assert_eq!(Error::EncoderStreamError, e);
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[0x02],
-        );
+        send_instructions(&mut encoder, &[0x02]);
     }
 
     
     #[test]
     fn test_insert_with_name_ref_2() {
-        let (mut encoder, mut conn_c, mut conn_s, recv_stream_id, send_stream_id) = connect(false);
-        assert!(encoder.set_max_capacity(200).is_ok());
+        let mut encoder = connect(false);
+        assert!(encoder.encoder.set_max_capacity(200).is_ok());
         
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[0x02, 0x3f, 0xa9, 0x01],
-        );
+        send_instructions(&mut encoder, CAP_INSTRUCTION_200);
 
         assert!(encoder
-            .insert_with_name_ref(true, 4, vec![0x31, 0x32, 0x33, 0x34])
+            .encoder
+            .insert_with_name_ref(true, 4, VALUE_1)
             .is_ok());
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[0xc4, 0x04, 0x31, 0x32, 0x33, 0x34],
-        );
+        send_instructions(&mut encoder, &[0xc4, 0x04, 0x31, 0x32, 0x33, 0x34]);
     }
 
     
     #[test]
     fn test_insert_with_name_literal_1() {
-        let (mut encoder, mut conn_c, mut conn_s, recv_stream_id, send_stream_id) = connect(false);
+        let mut encoder = connect(false);
 
         
-        let res = encoder.insert_with_name_literal(
-            vec![
-                0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68,
-            ],
-            vec![0x31, 0x32, 0x33, 0x34],
-        );
+        let res = encoder
+            .encoder
+            .insert_with_name_literal(HEADER_CONTENT_LENGTH, VALUE_1);
         assert_eq!(Error::EncoderStreamError, res.unwrap_err());
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[0x02],
-        );
+        send_instructions(&mut encoder, &[0x02]);
     }
 
     
     #[test]
     fn test_insert_with_name_literal_2() {
-        let (mut encoder, mut conn_c, mut conn_s, recv_stream_id, send_stream_id) = connect(false);
+        let mut encoder = connect(false);
 
-        assert!(encoder.set_max_capacity(200).is_ok());
+        assert!(encoder.encoder.set_max_capacity(200).is_ok());
         
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[0x02, 0x3f, 0xa9, 0x01],
-        );
+        send_instructions(&mut encoder, CAP_INSTRUCTION_200);
 
         
-        let res = encoder.insert_with_name_literal(
-            vec![
-                0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68,
-            ],
-            vec![0x31, 0x32, 0x33, 0x34],
-        );
+        let res = encoder
+            .encoder
+            .insert_with_name_literal(HEADER_CONTENT_LENGTH, VALUE_1);
         assert!(res.is_ok());
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[
-                0x4e, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67, 0x74,
-                0x68, 0x04, 0x31, 0x32, 0x33, 0x34,
-            ],
-        );
+        send_instructions(&mut encoder, HEADER_CONTENT_LENGTH_VALUE_1_NAME_LITERAL);
     }
 
     #[test]
     fn test_change_capacity() {
-        let (mut encoder, mut conn_c, mut conn_s, recv_stream_id, send_stream_id) = connect(false);
+        let mut encoder = connect(false);
 
-        assert!(encoder.set_max_capacity(200).is_ok());
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[0x02, 0x3f, 0xa9, 0x01],
-        );
+        assert!(encoder.encoder.set_max_capacity(200).is_ok());
+        send_instructions(&mut encoder, CAP_INSTRUCTION_200);
     }
 
     #[test]
     fn test_duplicate() {
-        let (mut encoder, mut conn_c, mut conn_s, recv_stream_id, send_stream_id) = connect(false);
+        let mut encoder = connect(false);
 
-        assert!(encoder.set_max_capacity(200).is_ok());
+        assert!(encoder.encoder.set_max_capacity(200).is_ok());
         
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[0x02, 0x3f, 0xa9, 0x01],
-        );
+        send_instructions(&mut encoder, CAP_INSTRUCTION_200);
 
         
-        let res = encoder.insert_with_name_literal(
-            vec![
-                0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68,
-            ],
-            vec![0x31, 0x32, 0x33, 0x34],
-        );
+        let res = encoder
+            .encoder
+            .insert_with_name_literal(HEADER_CONTENT_LENGTH, VALUE_1);
         assert!(res.is_ok());
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[
-                0x4e, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67, 0x74,
-                0x68, 0x04, 0x31, 0x32, 0x33, 0x34,
-            ],
-        );
+        send_instructions(&mut encoder, HEADER_CONTENT_LENGTH_VALUE_1_NAME_LITERAL);
 
-        assert!(encoder.duplicate(0).is_ok());
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[0x00],
-        );
+        assert!(encoder.encoder.duplicate(0).is_ok());
+        send_instructions(&mut encoder, &[0x00]);
     }
 
     struct TestElement {
@@ -775,7 +798,7 @@ mod tests {
             
             TestElement {
                 headers: vec![(String::from("my-header"), String::from("my-value"))],
-                header_block: &[0x02, 0x00, 0x80],
+                header_block: ENCODE_INDEXED_REF_DYNAMIC,
                 encoder_inst: &[],
             },
             
@@ -803,32 +826,18 @@ mod tests {
             },
         ];
 
-        let (mut encoder, mut conn_c, mut conn_s, recv_stream_id, send_stream_id) = connect(false);
+        let mut encoder = connect(false);
 
-        encoder.set_max_blocked_streams(100).unwrap();
-        encoder.set_max_capacity(200).unwrap();
+        encoder.encoder.set_max_blocked_streams(100).unwrap();
+        encoder.encoder.set_max_capacity(200).unwrap();
 
         
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[0x02, 0x3f, 0xa9, 0x01],
-        );
+        send_instructions(&mut encoder, CAP_INSTRUCTION_200);
 
         for t in &test_cases {
-            let buf = encoder.encode_header_block(&t.headers, 1);
+            let buf = encoder.encoder.encode_header_block(&t.headers, 1);
             assert_eq!(&buf[..], t.header_block);
-            test_sent_instructions(
-                &mut encoder,
-                &mut conn_c,
-                &mut conn_s,
-                recv_stream_id,
-                send_stream_id,
-                t.encoder_inst,
-            );
+            send_instructions(&mut encoder, t.encoder_inst);
         }
     }
 
@@ -861,7 +870,7 @@ mod tests {
             
             TestElement {
                 headers: vec![(String::from("my-header"), String::from("my-value"))],
-                header_block: &[0x02, 0x00, 0x80],
+                header_block: ENCODE_INDEXED_REF_DYNAMIC,
                 encoder_inst: &[],
             },
             
@@ -888,237 +897,600 @@ mod tests {
             },
         ];
 
-        let (mut encoder, mut conn_c, mut conn_s, recv_stream_id, send_stream_id) = connect(true);
+        let mut encoder = connect(true);
 
-        encoder.set_max_blocked_streams(100).unwrap();
-        encoder.set_max_capacity(200).unwrap();
+        encoder.encoder.set_max_blocked_streams(100).unwrap();
+        encoder.encoder.set_max_capacity(200).unwrap();
 
         
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[0x02, 0x3f, 0xa9, 0x01],
-        );
+        send_instructions(&mut encoder, CAP_INSTRUCTION_200);
 
         for t in &test_cases {
-            let buf = encoder.encode_header_block(&t.headers, 1);
+            let buf = encoder.encoder.encode_header_block(&t.headers, 1);
             assert_eq!(&buf[..], t.header_block);
-            test_sent_instructions(
-                &mut encoder,
-                &mut conn_c,
-                &mut conn_s,
-                recv_stream_id,
-                send_stream_id,
-                t.encoder_inst,
-            );
+            send_instructions(&mut encoder, t.encoder_inst);
         }
     }
 
     
     #[test]
     fn test_insertion_blocked_on_insert_count_feedback() {
-        let (mut encoder, mut conn_c, mut conn_s, recv_stream_id, send_stream_id) = connect(false);
+        let mut encoder = connect(false);
 
-        encoder.set_max_capacity(60).unwrap();
-
-        
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[0x02, 0x3f, 0x1d],
-        );
+        encoder.encoder.set_max_capacity(60).unwrap();
 
         
-        let res = encoder.insert_with_name_literal(
-            vec![
-                0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68,
-            ],
-            vec![0x31, 0x32, 0x33, 0x34],
-        );
+        send_instructions(&mut encoder, CAP_INSTRUCTION_60);
+
+        
+        let res = encoder
+            .encoder
+            .insert_with_name_literal(HEADER_CONTENT_LENGTH, VALUE_1);
         assert!(res.is_ok());
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[
-                0x4e, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67, 0x74,
-                0x68, 0x04, 0x31, 0x32, 0x33, 0x34,
-            ],
-        );
+        send_instructions(&mut encoder, HEADER_CONTENT_LENGTH_VALUE_1_NAME_LITERAL);
 
         
-        let res = encoder.insert_with_name_literal(
-            vec![
-                0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68,
-            ],
-            vec![0x31, 0x32, 0x33, 0x34, 0x35],
-        );
+        let res = encoder
+            .encoder
+            .insert_with_name_literal(HEADER_CONTENT_LENGTH, VALUE_2);
         assert!(res.is_err());
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[],
-        );
+        send_instructions(&mut encoder, &[]);
 
         
-        conn_s.stream_send(recv_stream_id, &[0x01]).unwrap();
-        let out = conn_s.process(None, now());
-        conn_c.process(out.dgram(), now());
-        assert!(encoder
-            .read_instructions(&mut conn_c, recv_stream_id)
-            .is_ok());
+        recv_instruction(&mut encoder, &[0x01]);
 
         
-        let res = encoder.insert_with_name_literal(
-            vec![
-                0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68,
-            ],
-            vec![0x31, 0x32, 0x33, 0x34, 0x35],
-        );
+        let res = encoder
+            .encoder
+            .insert_with_name_literal(HEADER_CONTENT_LENGTH, VALUE_2);
         assert!(res.is_ok());
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[
-                0x4e, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67, 0x74,
-                0x68, 0x05, 0x31, 0x32, 0x33, 0x34, 0x35,
-            ],
-        );
+        send_instructions(&mut encoder, HEADER_CONTENT_LENGTH_VALUE_2_NAME_LITERAL);
     }
 
     
     
     
     
-    fn test_insertion_blocked_on_waiting_forheader_ack_or_stream_cancel(wait: u8) {
-        let (mut encoder, mut conn_c, mut conn_s, recv_stream_id, send_stream_id) = connect(false);
+    fn test_insertion_blocked_on_waiting_for_header_ack_or_stream_cancel(wait: u8) {
+        let mut encoder = connect(false);
 
-        assert!(encoder.set_max_capacity(60).is_ok());
+        assert!(encoder.encoder.set_max_capacity(60).is_ok());
         
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[0x02, 0x3f, 0x1d],
-        );
+        send_instructions(&mut encoder, CAP_INSTRUCTION_60);
 
         
-        let res = encoder.insert_with_name_literal(
-            vec![
-                0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68,
-            ],
-            vec![0x31, 0x32, 0x33, 0x34],
-        );
+        let res = encoder
+            .encoder
+            .insert_with_name_literal(HEADER_CONTENT_LENGTH, VALUE_1);
         assert!(res.is_ok());
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[
-                0x4e, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67, 0x74,
-                0x68, 0x04, 0x31, 0x32, 0x33, 0x34,
-            ],
-        );
+        send_instructions(&mut encoder, HEADER_CONTENT_LENGTH_VALUE_1_NAME_LITERAL);
 
         
-        let _ = conn_s.stream_send(recv_stream_id, &[0x01]);
-        let out = conn_s.process(None, now());
-        conn_c.process(out.dgram(), now());
-        assert!(encoder
-            .read_instructions(&mut conn_c, recv_stream_id)
-            .is_ok());
+        recv_instruction(&mut encoder, &[0x01]);
 
         
         let buf = encoder
+            .encoder
             .encode_header_block(&[(String::from("content-length"), String::from("1234"))], 1);
-        assert_eq!(&buf[..], &[0x02, 0x00, 0x80]);
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[],
-        );
+        assert_eq!(&buf[..], ENCODE_INDEXED_REF_DYNAMIC);
+        send_instructions(&mut encoder, &[]);
 
         
-        let res = encoder.insert_with_name_literal(
-            vec![
-                0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68,
-            ],
-            vec![0x31, 0x32, 0x33, 0x34, 0x35],
-        );
+        let res = encoder
+            .encoder
+            .insert_with_name_literal(HEADER_CONTENT_LENGTH, VALUE_2);
         assert!(res.is_err());
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[],
-        );
+        send_instructions(&mut encoder, &[]);
 
         if wait == 0 {
             
-            let _ = conn_s.stream_send(recv_stream_id, &[0x81]);
-            let out = conn_s.process(None, now());
-            conn_c.process(out.dgram(), now());
+            recv_instruction(&mut encoder, HEADER_ACK_STREAM_ID_1);
         } else {
             
-            let _ = conn_s.stream_send(recv_stream_id, &[0x41]);
-            let out = conn_s.process(None, now());
-            conn_c.process(out.dgram(), now());
+            recv_instruction(&mut encoder, STREAM_CANCELED_ID_1);
         }
-        assert!(encoder
-            .read_instructions(&mut conn_c, recv_stream_id)
-            .is_ok());
 
         
-        let res = encoder.insert_with_name_literal(
-            vec![
-                0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68,
-            ],
-            vec![0x31, 0x32, 0x33, 0x34, 0x35],
-        );
+        let res = encoder
+            .encoder
+            .insert_with_name_literal(HEADER_CONTENT_LENGTH, VALUE_2);
         assert!(res.is_ok());
-        test_sent_instructions(
-            &mut encoder,
-            &mut conn_c,
-            &mut conn_s,
-            recv_stream_id,
-            send_stream_id,
-            &[
-                0x4e, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67, 0x74,
-                0x68, 0x05, 0x31, 0x32, 0x33, 0x34, 0x35,
-            ],
-        );
+        send_instructions(&mut encoder, HEADER_CONTENT_LENGTH_VALUE_2_NAME_LITERAL);
     }
 
     #[test]
     fn test_header_ack() {
-        test_insertion_blocked_on_waiting_forheader_ack_or_stream_cancel(0);
+        test_insertion_blocked_on_waiting_for_header_ack_or_stream_cancel(0);
     }
 
     #[test]
     fn test_stream_canceled() {
-        test_insertion_blocked_on_waiting_forheader_ack_or_stream_cancel(1);
+        test_insertion_blocked_on_waiting_for_header_ack_or_stream_cancel(1);
+    }
+
+    fn assert_is_index_to_dynamic(buf: &[u8]) {
+        assert_eq!(buf[2] & 0xc0, 0x80);
+    }
+
+    fn assert_is_index_to_dynamic_post(buf: &[u8]) {
+        assert_eq!(buf[2] & 0xf0, 0x10);
+    }
+
+    fn assert_is_index_to_static_name_only(buf: &[u8]) {
+        assert_eq!(buf[2] & 0xf0, 0x50);
+    }
+
+    fn assert_is_literal_value_literal_name(buf: &[u8]) {
+        assert_eq!(buf[2] & 0xf0, 0x20);
+    }
+
+    #[test]
+    fn max_block_streams1() {
+        let mut encoder = connect(false);
+
+        assert!(encoder.encoder.set_max_capacity(60).is_ok());
+
+        
+        send_instructions(&mut encoder, CAP_INSTRUCTION_60);
+
+        
+        let res = encoder
+            .encoder
+            .insert_with_name_literal(HEADER_CONTENT_LENGTH, VALUE_1);
+
+        assert!(res.is_ok());
+        send_instructions(&mut encoder, HEADER_CONTENT_LENGTH_VALUE_1_NAME_LITERAL);
+
+        encoder.encoder.set_max_blocked_streams(1).unwrap();
+
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("content-length"), String::from("1234"))], 1);
+        assert_is_index_to_dynamic(&buf);
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
+
+        send_instructions(&mut encoder, &[]);
+
+        
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("content-length"), String::from("1234"))], 2);
+        assert_is_index_to_static_name_only(&buf);
+
+        send_instructions(&mut encoder, &[]);
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
+
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("content-length"), String::from("1234"))], 1);
+        assert_is_index_to_dynamic(&buf);
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
+    }
+
+    #[test]
+    fn max_block_streams2() {
+        let mut encoder = connect(false);
+
+        assert!(encoder.encoder.set_max_capacity(200).is_ok());
+
+        
+        send_instructions(&mut encoder, CAP_INSTRUCTION_200);
+
+        
+        let res = encoder
+            .encoder
+            .insert_with_name_literal(HEADER_CONTENT_LENGTH, VALUE_1);
+
+        assert!(res.is_ok());
+        send_instructions(&mut encoder, HEADER_CONTENT_LENGTH_VALUE_1_NAME_LITERAL);
+
+        
+        let res = encoder
+            .encoder
+            .insert_with_name_literal(HEADER_CONTENT_LENGTH, VALUE_2);
+
+        assert!(res.is_ok());
+        send_instructions(&mut encoder, HEADER_CONTENT_LENGTH_VALUE_2_NAME_LITERAL);
+
+        encoder.encoder.set_max_blocked_streams(1).unwrap();
+
+        let stream_id = 1;
+        
+        let buf = encoder.encoder.encode_header_block(
+            &[(String::from("content-length"), String::from("1234"))],
+            stream_id,
+        );
+        assert_is_index_to_dynamic(&buf);
+
+        
+        
+        
+        
+        let buf = encoder.encoder.encode_header_block(
+            &[(String::from("content-length"), String::from("12345"))],
+            stream_id,
+        );
+        assert_is_index_to_dynamic(&buf);
+    }
+
+    #[test]
+    fn max_block_streams3() {
+        let mut encoder = connect(false);
+
+        assert!(encoder.encoder.set_max_capacity(200).is_ok());
+
+        
+        send_instructions(&mut encoder, CAP_INSTRUCTION_200);
+
+        encoder.encoder.set_max_blocked_streams(1).unwrap();
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 0);
+
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("name1"), String::from("value1"))], 1);
+        assert_is_index_to_dynamic_post(&buf);
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
+
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("name2"), String::from("value2"))], 2);
+        assert_is_literal_value_literal_name(&buf);
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
+
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("name2"), String::from("value2"))], 1);
+        assert_is_index_to_dynamic_post(&buf);
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
+    }
+
+    #[test]
+    fn max_block_streams4() {
+        let mut encoder = connect(false);
+
+        assert!(encoder.encoder.set_max_capacity(200).is_ok());
+
+        
+        send_instructions(&mut encoder, CAP_INSTRUCTION_200);
+
+        encoder.encoder.set_max_blocked_streams(1).unwrap();
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 0);
+
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("name1"), String::from("value1"))], 1);
+        assert_is_index_to_dynamic_post(&buf);
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
+
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("name2"), String::from("value2"))], 1);
+        assert_is_index_to_dynamic_post(&buf);
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
+
+        
+        recv_instruction(&mut encoder, HEADER_ACK_STREAM_ID_1);
+
+        
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
+    }
+
+    #[test]
+    fn max_block_streams5() {
+        let mut encoder = connect(false);
+
+        assert!(encoder.encoder.set_max_capacity(200).is_ok());
+
+        
+        send_instructions(&mut encoder, CAP_INSTRUCTION_200);
+
+        encoder.encoder.set_max_blocked_streams(1).unwrap();
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 0);
+
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("name1"), String::from("value1"))], 1);
+        assert_is_index_to_dynamic_post(&buf);
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
+
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("name1"), String::from("value1"))], 1);
+        assert_is_index_to_dynamic(&buf);
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
+
+        
+        recv_instruction(&mut encoder, HEADER_ACK_STREAM_ID_1);
+
+        
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 0);
+    }
+
+    #[test]
+    fn max_block_streams6() {
+        let mut encoder = connect(false);
+
+        assert!(encoder.encoder.set_max_capacity(200).is_ok());
+
+        
+        send_instructions(&mut encoder, CAP_INSTRUCTION_200);
+
+        encoder.encoder.set_max_blocked_streams(2).unwrap();
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 0);
+
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("name1"), String::from("value1"))], 1);
+        assert_is_index_to_dynamic_post(&buf);
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
+
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("name2"), String::from("value2"))], 2);
+        assert_is_index_to_dynamic_post(&buf);
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 2);
+
+        
+        recv_instruction(&mut encoder, HEADER_ACK_STREAM_ID_2);
+
+        
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 0);
+    }
+
+    #[test]
+    fn max_block_streams7() {
+        let mut encoder = connect(false);
+
+        assert!(encoder.encoder.set_max_capacity(200).is_ok());
+
+        
+        send_instructions(&mut encoder, CAP_INSTRUCTION_200);
+
+        encoder.encoder.set_max_blocked_streams(2).unwrap();
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 0);
+
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("name1"), String::from("value1"))], 1);
+        assert_is_index_to_dynamic_post(&buf);
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
+
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("name1"), String::from("value1"))], 2);
+        assert_is_index_to_dynamic(&buf);
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 2);
+
+        
+        
+        
+        recv_instruction(&mut encoder, STREAM_CANCELED_ID_1);
+
+        
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
+    }
+
+    #[test]
+    fn max_block_stream8() {
+        let mut encoder = connect(false);
+
+        assert!(encoder.encoder.set_max_capacity(200).is_ok());
+
+        
+        send_instructions(&mut encoder, CAP_INSTRUCTION_200);
+
+        encoder.encoder.set_max_blocked_streams(2).unwrap();
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 0);
+
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("name1"), String::from("value1"))], 1);
+        assert_is_index_to_dynamic_post(&buf);
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
+
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("name1"), String::from("value1"))], 2);
+        assert_is_index_to_dynamic(&buf);
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 2);
+
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("name2"), String::from("value2"))], 1);
+        assert_is_index_to_dynamic_post(&buf);
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 2);
+
+        
+        
+        
+        recv_instruction(&mut encoder, &[0x01]);
+
+        assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
+    }
+
+    #[test]
+    fn dynamic_table_can_evict1() {
+        let mut encoder = connect(false);
+
+        assert!(encoder.encoder.set_max_capacity(60).is_ok());
+
+        
+        send_instructions(&mut encoder, CAP_INSTRUCTION_60);
+
+        encoder.encoder.set_max_blocked_streams(2).unwrap();
+
+        
+        let res = encoder
+            .encoder
+            .insert_with_name_literal(HEADER_CONTENT_LENGTH, VALUE_1);
+
+        assert!(res.is_ok());
+        send_instructions(&mut encoder, HEADER_CONTENT_LENGTH_VALUE_1_NAME_LITERAL);
+
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("content-length"), String::from("1234"))], 1);
+        assert_is_index_to_dynamic(&buf);
+
+        
+        assert!(encoder.encoder.set_max_capacity(10).is_err());
+
+        
+        recv_instruction(&mut encoder, &[0x01]);
+
+        
+        assert!(encoder.encoder.set_max_capacity(10).is_err());
+
+        
+        recv_instruction(&mut encoder, HEADER_ACK_STREAM_ID_1);
+
+        
+        assert!(encoder.encoder.set_max_capacity(10).is_ok());
+    }
+
+    #[test]
+    fn dynamic_table_can_evict2() {
+        let mut encoder = connect(false);
+
+        assert!(encoder.encoder.set_max_capacity(60).is_ok());
+
+        
+        send_instructions(&mut encoder, CAP_INSTRUCTION_60);
+
+        encoder.encoder.set_max_blocked_streams(2).unwrap();
+
+        
+        let res = encoder
+            .encoder
+            .insert_with_name_literal(HEADER_CONTENT_LENGTH, VALUE_1);
+
+        assert!(res.is_ok());
+        send_instructions(&mut encoder, HEADER_CONTENT_LENGTH_VALUE_1_NAME_LITERAL);
+
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("content-length"), String::from("1234"))], 1);
+        assert_is_index_to_dynamic(&buf);
+
+        
+        assert!(encoder.encoder.set_max_capacity(10).is_err());
+
+        
+        recv_instruction(&mut encoder, &[0x01]);
+
+        
+        assert!(encoder.encoder.set_max_capacity(10).is_err());
+
+        
+        recv_instruction(&mut encoder, STREAM_CANCELED_ID_1);
+
+        
+        assert!(encoder.encoder.set_max_capacity(10).is_ok());
+    }
+
+    #[test]
+    fn dynamic_table_can_evict3() {
+        let mut encoder = connect(false);
+
+        assert!(encoder.encoder.set_max_capacity(60).is_ok());
+
+        
+        send_instructions(&mut encoder, CAP_INSTRUCTION_60);
+
+        encoder.encoder.set_max_blocked_streams(2).unwrap();
+
+        
+        let res = encoder
+            .encoder
+            .insert_with_name_literal(HEADER_CONTENT_LENGTH, VALUE_1);
+
+        assert!(res.is_ok());
+        send_instructions(&mut encoder, HEADER_CONTENT_LENGTH_VALUE_1_NAME_LITERAL);
+
+        
+        assert!(encoder.encoder.set_max_capacity(10).is_err());
+
+        
+        recv_instruction(&mut encoder, &[0x01]);
+
+        
+        assert!(encoder.encoder.set_max_capacity(10).is_ok());
+    }
+
+    #[test]
+    fn dynamic_table_can_evict4() {
+        let mut encoder = connect(false);
+
+        assert!(encoder.encoder.set_max_capacity(60).is_ok());
+
+        
+        send_instructions(&mut encoder, CAP_INSTRUCTION_60);
+
+        encoder.encoder.set_max_blocked_streams(2).unwrap();
+
+        
+        let res = encoder
+            .encoder
+            .insert_with_name_literal(HEADER_CONTENT_LENGTH, VALUE_1);
+
+        assert!(res.is_ok());
+        send_instructions(&mut encoder, HEADER_CONTENT_LENGTH_VALUE_1_NAME_LITERAL);
+
+        
+        let buf = encoder
+            .encoder
+            .encode_header_block(&[(String::from("content-length"), String::from("1234"))], 1);
+        assert_is_index_to_dynamic(&buf);
+
+        
+        
+        assert!(encoder.encoder.set_max_capacity(10).is_err());
+
+        
+        recv_instruction(&mut encoder, HEADER_ACK_STREAM_ID_1);
+
+        
+        assert!(encoder.encoder.set_max_capacity(10).is_ok());
     }
 }

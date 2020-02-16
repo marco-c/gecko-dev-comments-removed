@@ -90,7 +90,7 @@ mod tests {
 
     #[test]
     fn is_err_zero_code() {
-        
+    
         fixture_init();
 
         set_error_code(0);

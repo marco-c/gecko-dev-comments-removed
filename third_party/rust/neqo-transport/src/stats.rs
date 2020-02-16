@@ -10,9 +10,11 @@
 
 pub struct Stats {
     
-    pub packets_rx: u64,
+    pub packets_rx: usize,
     
-    pub packets_tx: u64,
+    pub packets_tx: usize,
     
-    pub dups_rx: u64,
+    pub dups_rx: usize,
+    
+    pub dropped_rx: usize,
 }
