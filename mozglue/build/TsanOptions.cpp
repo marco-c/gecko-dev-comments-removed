@@ -328,6 +328,10 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:CacheEntry::MetaDataReady\n"
 
          
+         "race:^GetVelocity$\n"
+         "race:^EndTouch$\n"
+
+         
          
          "mutex:GLContextGLX::~GLContextGLX\n"
 
