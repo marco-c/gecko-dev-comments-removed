@@ -50,14 +50,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
   virtual ~nsRange();
   explicit nsRange(nsINode* aNode);
 
-  bool MaybeCacheToReuse();
-
  public:
-  
-
-
-  static void Shutdown();
-
   
 
 
@@ -432,6 +425,15 @@ class nsRange final : public mozilla::dom::AbstractRange,
     static bool sIsNested;
   };
 
+  bool MaybeInterruptLastRelease();
+
+#ifdef DEBUG
+  bool IsCleared() const {
+    return !mRoot && !mRegisteredClosestCommonInclusiveAncestor &&
+           !mSelection && !mNextStartRef && !mNextEndRef;
+  }
+#endif  
+
   nsCOMPtr<nsINode> mRoot;
   
   
@@ -448,7 +450,6 @@ class nsRange final : public mozilla::dom::AbstractRange,
   nsIContent* MOZ_NON_OWNING_REF mNextEndRef;
 
   static nsTArray<RefPtr<nsRange>>* sCachedRanges;
-  static bool sHasShutDown;
 
   friend class mozilla::dom::AbstractRange;
 };

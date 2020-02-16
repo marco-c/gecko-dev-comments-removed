@@ -11,6 +11,7 @@
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/dom/AbstractRange.h"
 #include "mozilla/dom/StaticRangeBinding.h"
+#include "nsTArray.h"
 #include "nsWrapperCache.h"
 
 namespace mozilla {
@@ -18,13 +19,18 @@ namespace dom {
 
 class StaticRange final : public AbstractRange {
  public:
-  explicit StaticRange(nsINode* aNode) : AbstractRange(aNode) {}
   StaticRange() = delete;
   explicit StaticRange(const StaticRange& aOther) = delete;
 
   static already_AddRefed<StaticRange> Constructor(const GlobalObject& global,
                                                    const StaticRangeInit& init,
                                                    ErrorResult& aRv);
+
+  
+
+
+
+  static already_AddRefed<StaticRange> Create(nsINode* aNode);
 
   
 
@@ -54,12 +60,11 @@ class StaticRange final : public AbstractRange {
       const RangeBoundaryBase<EPT, ERT>& aEndBoundary, ErrorResult& aRv);
 
  protected:
+  explicit StaticRange(nsINode* aNode) : AbstractRange(aNode) {}
   virtual ~StaticRange() = default;
 
  public:
   NS_DECL_ISUPPORTS_INHERITED
-  
-  
   NS_IMETHODIMP_(void) DeleteCycleCollectable(void) override;
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(StaticRange,
                                                          AbstractRange)
@@ -100,6 +105,8 @@ class StaticRange final : public AbstractRange {
   void DoSetRange(const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
                   const RangeBoundaryBase<EPT, ERT>& aEndBoundary,
                   nsINode* aRootNode);
+
+  static nsTArray<RefPtr<StaticRange>>* sCachedRanges;
 
   friend class AbstractRange;
 };
