@@ -70,7 +70,7 @@ typedef bool (*JSSubsumesOp)(JSPrincipals* first, JSPrincipals* second);
 
 
 
-typedef bool (*JSCSPEvalChecker)(JSContext* cx, JS::HandleValue value);
+typedef bool (*JSCSPEvalChecker)(JSContext* cx, JS::HandleString code);
 
 struct JSSecurityCallbacks {
   JSCSPEvalChecker contentSecurityPolicyAllows;
