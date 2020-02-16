@@ -25,8 +25,6 @@
 #include "nsWindowGfx.h"
 #include "Units.h"
 
-using namespace mozilla;
-
 
 
 #ifndef __MINGW32__
@@ -131,6 +129,8 @@ IDataPackage4 : public IInspectable {
 #  endif
 
 #endif
+
+using namespace mozilla;
 
 WindowsUIUtils::WindowsUIUtils() : mInTabletMode(eTabletModeUnknown) {}
 
