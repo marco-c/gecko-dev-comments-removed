@@ -66,9 +66,9 @@ static Tuple<CSSPoint, CSSPoint> ComputeLinearGradientLine(
   using X = StyleHorizontalPositionKeyword;
   using Y = StyleVerticalPositionKeyword;
 
-  const StyleLineDirection& direction = aGradient.AsLinear().direction;
+  const StyleLineDirection& direction = aGradient.kind.AsLinear();
   const bool isModern =
-      aGradient.AsLinear().compat_mode == StyleGradientCompatMode::Modern;
+      aGradient.compat_mode == StyleGradientCompatMode::Modern;
 
   CSSPoint center(aBoxSize.width / 2, aBoxSize.height / 2);
   switch (direction.tag) {
@@ -154,9 +154,9 @@ static RadialGradientRadii ComputeRadialGradientRadii(const EndingShape& aShape,
 
 static Tuple<CSSPoint, CSSPoint, CSSCoord, CSSCoord> ComputeRadialGradientLine(
     const StyleGradient& aGradient, const CSSSize& aBoxSize) {
-  const auto& radial = aGradient.AsRadial();
-  const EndingShape& endingShape = radial.shape;
-  const Position& position = radial.position;
+  const auto& radial = aGradient.kind.AsRadial();
+  const EndingShape& endingShape = radial._0;
+  const Position& position = radial._1;
   CSSPoint start = ResolvePosition(position, aBoxSize);
 
   
@@ -566,19 +566,17 @@ static Maybe<double> GetSpecifiedGradientPosition(
 static nsTArray<ColorStop> ComputeColorStops(ComputedStyle* aComputedStyle,
                                              const StyleGradient& aGradient,
                                              CSSCoord aLineLength) {
-  auto items = aGradient.IsLinear() ? aGradient.AsLinear().items.AsSpan()
-                                    : aGradient.AsRadial().items.AsSpan();
-
-  MOZ_ASSERT(items.Length() >= 2,
+  MOZ_ASSERT(aGradient.items.Length() >= 2,
              "The parser should reject gradients with less than two stops");
 
-  nsTArray<ColorStop> stops(items.Length());
+  nsTArray<ColorStop> stops(aGradient.items.Length());
 
   
   
   Maybe<size_t> firstUnsetPosition;
-  for (size_t i = 0; i < items.Length(); ++i) {
-    const auto& stop = items[i];
+  auto span = aGradient.items.AsSpan();
+  for (size_t i = 0; i < aGradient.items.Length(); ++i) {
+    const auto& stop = span[i];
     double position;
 
     Maybe<double> specifiedPosition =
@@ -589,7 +587,7 @@ static nsTArray<ColorStop> ComputeColorStops(ComputedStyle* aComputedStyle,
     } else if (i == 0) {
       
       position = 0.0;
-    } else if (i == items.Length() - 1) {
+    } else if (i == aGradient.items.Length() - 1) {
       
       position = 1.0;
     } else {
@@ -643,7 +641,7 @@ nsCSSGradientRenderer nsCSSGradientRenderer::Create(
   
   CSSPoint lineStart, lineEnd;
   CSSCoord radiusX = 0, radiusY = 0;  
-  if (aGradient.IsLinear()) {
+  if (aGradient.kind.IsLinear()) {
     Tie(lineStart, lineEnd) =
         ComputeLinearGradientLine(aPresContext, aGradient, srcSize);
   } else {
@@ -701,10 +699,10 @@ void nsCSSGradientRenderer::Paint(gfxContext& aContext, const nsRect& aDest,
   
   
   bool forceRepeatToCoverTiles =
-      mGradient->IsLinear() &&
+      mGradient->kind.IsLinear() &&
       (mLineStart.x == mLineEnd.x) != (mLineStart.y == mLineEnd.y) &&
       aRepeatSize.width == aDest.width && aRepeatSize.height == aDest.height &&
-      !mGradient->AsLinear().repeating && !aSrc.IsEmpty() && !cellContainsFill;
+      !mGradient->repeating && !aSrc.IsEmpty() && !cellContainsFill;
 
   gfxMatrix matrix;
   if (forceRepeatToCoverTiles) {
@@ -753,8 +751,8 @@ void nsCSSGradientRenderer::Paint(gfxContext& aContext, const nsRect& aDest,
 
   
   double firstStop = mStops[0].mPosition;
-  if (mGradient->IsRadial() && firstStop < 0.0) {
-    if (mGradient->AsRadial().repeating) {
+  if (!mGradient->kind.IsLinear() && firstStop < 0.0) {
+    if (mGradient->repeating) {
       
       
       double lastStop = mStops[mStops.Length() - 1].mPosition;
@@ -807,7 +805,7 @@ void nsCSSGradientRenderer::Paint(gfxContext& aContext, const nsRect& aDest,
     MOZ_ASSERT(firstStop >= 0.0, "Failed to fix stop offsets");
   }
 
-  if (mGradient->IsRadial() && !mGradient->AsRadial().repeating) {
+  if (!mGradient->kind.IsLinear() && !mGradient->repeating) {
     
     
     
@@ -825,13 +823,13 @@ void nsCSSGradientRenderer::Paint(gfxContext& aContext, const nsRect& aDest,
   double stopEnd = lastStop;
   double stopDelta = lastStop - firstStop;
   bool zeroRadius =
-      mGradient->IsRadial() && (mRadiusX < 1e-6 || mRadiusY < 1e-6);
+      !mGradient->kind.IsLinear() && (mRadiusX < 1e-6 || mRadiusY < 1e-6);
   if (stopDelta < 1e-6 || lineLength < 1e-6 || zeroRadius) {
     
     
     
     
-    if (mGradient->Repeating() || zeroRadius) {
+    if (mGradient->repeating || zeroRadius) {
       mRadiusX = mRadiusY = 0.0;
     }
     stopDelta = 0.0;
@@ -841,7 +839,7 @@ void nsCSSGradientRenderer::Paint(gfxContext& aContext, const nsRect& aDest,
   
   
   
-  if (!mGradient->Repeating() || stopDelta == 0.0) {
+  if (!mGradient->repeating || stopDelta == 0.0) {
     stopOrigin = std::min(stopOrigin, 0.0);
     stopEnd = std::max(stopEnd, 1.0);
   }
@@ -851,7 +849,7 @@ void nsCSSGradientRenderer::Paint(gfxContext& aContext, const nsRect& aDest,
   RefPtr<gfxPattern> gradientPattern;
   gfxPoint gradientStart;
   gfxPoint gradientEnd;
-  if (mGradient->IsLinear()) {
+  if (mGradient->kind.IsLinear()) {
     
     
     gradientStart = mLineStart + (mLineEnd - mLineStart) * stopOrigin;
@@ -870,7 +868,6 @@ void nsCSSGradientRenderer::Paint(gfxContext& aContext, const nsRect& aDest,
     gradientPattern = new gfxPattern(gradientStart.x, gradientStart.y,
                                      gradientEnd.x, gradientEnd.y);
   } else {
-    MOZ_ASSERT(mGradient->IsRadial());
     NS_ASSERTION(firstStop >= 0.0,
                  "Negative stops not allowed for radial gradients");
 
@@ -915,7 +912,7 @@ void nsCSSGradientRenderer::Paint(gfxContext& aContext, const nsRect& aDest,
     Color lastColor(mStops.LastElement().mColor);
     mStops.Clear();
 
-    if (!mGradient->Repeating() && !zeroRadius) {
+    if (!mGradient->repeating && !zeroRadius) {
       mStops.AppendElement(ColorStop(firstStop, false, firstColor));
     }
     mStops.AppendElement(ColorStop(firstStop, false, lastColor));
@@ -923,7 +920,7 @@ void nsCSSGradientRenderer::Paint(gfxContext& aContext, const nsRect& aDest,
 
   ResolvePremultipliedAlpha(mStops);
 
-  bool isRepeat = mGradient->Repeating() || forceRepeatToCoverTiles;
+  bool isRepeat = mGradient->repeating || forceRepeatToCoverTiles;
 
   
   
@@ -1017,7 +1014,7 @@ void nsCSSGradientRenderer::Paint(gfxContext& aContext, const nsRect& aDest,
       gfxRect dirtyFillRect = fillRect.Intersect(dirtyAreaToFill);
       gfxRect fillRectRelativeToTile = dirtyFillRect - tileRect.TopLeft();
       Color edgeColor;
-      if (mGradient->IsLinear() && !isRepeat &&
+      if (mGradient->kind.IsLinear() && !isRepeat &&
           RectIsBeyondLinearGradientEdge(fillRectRelativeToTile, matrix, mStops,
                                          gradientStart, gradientEnd,
                                          &edgeColor)) {
@@ -1121,8 +1118,7 @@ void nsCSSGradientRenderer::BuildWebRenderParameters(
     float aOpacity, wr::ExtendMode& aMode, nsTArray<wr::GradientStop>& aStops,
     LayoutDevicePoint& aLineStart, LayoutDevicePoint& aLineEnd,
     LayoutDeviceSize& aGradientRadius) {
-  aMode =
-      mGradient->Repeating() ? wr::ExtendMode::Repeat : wr::ExtendMode::Clamp;
+  aMode = mGradient->repeating ? wr::ExtendMode::Repeat : wr::ExtendMode::Clamp;
 
   aStops.SetLength(mStops.Length());
   for (uint32_t i = 0; i < mStops.Length(); i++) {
@@ -1188,7 +1184,7 @@ void nsCSSGradientRenderer::BuildWebRenderDisplayItems(
   lineStart.x = (lineStart.x - srcTransform.x) * srcTransform.width;
   lineStart.y = (lineStart.y - srcTransform.y) * srcTransform.height;
 
-  if (mGradient->IsLinear()) {
+  if (mGradient->kind.IsLinear()) {
     lineEnd.x = (lineEnd.x - srcTransform.x) * srcTransform.width;
     lineEnd.y = (lineEnd.y - srcTransform.y) * srcTransform.height;
 
@@ -1200,7 +1196,6 @@ void nsCSSGradientRenderer::BuildWebRenderDisplayItems(
         mozilla::wr::ToLayoutSize(firstTileBounds.Size()),
         mozilla::wr::ToLayoutSize(tileSpacing));
   } else {
-    MOZ_ASSERT(mGradient->IsRadial());
     gradientRadius.width *= srcTransform.width;
     gradientRadius.height *= srcTransform.height;
 

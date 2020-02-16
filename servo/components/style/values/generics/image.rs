@@ -51,7 +51,7 @@ pub use self::GenericImage as Image;
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
 #[repr(C)]
-pub enum GenericGradient<
+pub struct GenericGradient<
     LineDirection,
     LengthPercentage,
     NonNegativeLength,
@@ -60,29 +60,18 @@ pub enum GenericGradient<
     Color,
 > {
     
-    Linear {
-        
-        direction: LineDirection,
-        
-        items: crate::OwnedSlice<GenericGradientItem<Color, LengthPercentage>>,
-        
-        repeating: bool,
-        
-        compat_mode: GradientCompatMode,
-    },
+    pub kind: GenericGradientKind<
+        LineDirection,
+        NonNegativeLength,
+        NonNegativeLengthPercentage,
+        Position,
+    >,
     
-    Radial {
-        
-        shape: GenericEndingShape<NonNegativeLength, NonNegativeLengthPercentage>,
-        
-        position: Position,
-        
-        items: crate::OwnedSlice<GenericGradientItem<Color, LengthPercentage>>,
-        
-        repeating: bool,
-        
-        compat_mode: GradientCompatMode,
-    },
+    pub items: crate::OwnedSlice<GenericGradientItem<Color, LengthPercentage>>,
+    
+    pub repeating: bool,
+    
+    pub compat_mode: GradientCompatMode,
 }
 
 pub use self::GenericGradient as Gradient;
@@ -98,6 +87,26 @@ pub enum GradientCompatMode {
     
     Moz,
 }
+
+
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
+#[repr(C, u8)]
+pub enum GenericGradientKind<
+    LineDirection,
+    NonNegativeLength,
+    NonNegativeLengthPercentage,
+    Position,
+> {
+    
+    Linear(LineDirection),
+    
+    Radial(
+        GenericEndingShape<NonNegativeLength, NonNegativeLengthPercentage>,
+        Position,
+    ),
+}
+
+pub use self::GenericGradientKind as GradientKind;
 
 
 #[derive(
@@ -321,39 +330,32 @@ where
     where
         W: Write,
     {
-        let (compat_mode, repeating) = match *self {
-            Gradient::Linear { compat_mode, repeating, .. } => (compat_mode, repeating),
-            Gradient::Radial { compat_mode, repeating, .. } => (compat_mode, repeating),
-        };
-
-        match compat_mode {
+        match self.compat_mode {
             GradientCompatMode::WebKit => dest.write_str("-webkit-")?,
             GradientCompatMode::Moz => dest.write_str("-moz-")?,
             _ => {},
         }
 
-        if repeating {
+        if self.repeating {
             dest.write_str("repeating-")?;
         }
-
-        let (items, mut skip_comma) = match *self {
-            Gradient::Linear { ref direction, compat_mode, ref items, .. } => {
-                dest.write_str("linear-gradient(")?;
-                if !direction.points_downwards(compat_mode) {
-                    direction.to_css(dest, compat_mode)?;
-                    (items, false)
-                } else {
-                    (items, true)
-                }
+        dest.write_str(self.kind.label())?;
+        dest.write_str("-gradient(")?;
+        let mut skip_comma = match self.kind {
+            GradientKind::Linear(ref direction) if direction.points_downwards(self.compat_mode) => {
+                true
             },
-            Gradient::Radial { ref shape, ref position, compat_mode, ref items, .. } => {
-                dest.write_str("radial-gradient(")?;
+            GradientKind::Linear(ref direction) => {
+                direction.to_css(dest, self.compat_mode)?;
+                false
+            },
+            GradientKind::Radial(ref shape, ref position) => {
                 let omit_shape = match *shape {
                     EndingShape::Ellipse(Ellipse::Extent(ShapeExtent::Cover)) |
                     EndingShape::Ellipse(Ellipse::Extent(ShapeExtent::FarthestCorner)) => true,
                     _ => false,
                 };
-                if compat_mode == GradientCompatMode::Modern {
+                if self.compat_mode == GradientCompatMode::Modern {
                     if !omit_shape {
                         shape.to_css(dest)?;
                         dest.write_str(" ")?;
@@ -367,10 +369,10 @@ where
                         shape.to_css(dest)?;
                     }
                 }
-                (items, false)
+                false
             },
         };
-        for item in &**items {
+        for item in &*self.items {
             if !skip_comma {
                 dest.write_str(", ")?;
             }
@@ -378,6 +380,15 @@ where
             item.to_css(dest)?;
         }
         dest.write_str(")")
+    }
+}
+
+impl<D, L, LoP, P> GradientKind<D, L, LoP, P> {
+    fn label(&self) -> &str {
+        match *self {
+            GradientKind::Linear(..) => "linear",
+            GradientKind::Radial(..) => "radial",
+        }
     }
 }
 
