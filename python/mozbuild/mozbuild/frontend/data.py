@@ -683,7 +683,7 @@ class SandboxedWasmLibrary(Library):
         
         
         
-        assert context.config.substs['OS_TARGET'] in ('Linux', 'Darwin')
+        assert context.config.substs['OS_TARGET'] == 'Linux'
 
         self.lib_name = '%s%s%s' % (
             context.config.dll_prefix,
