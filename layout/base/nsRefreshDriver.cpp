@@ -509,9 +509,10 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     explicit RefreshDriverVsyncObserver(
         VsyncRefreshDriverTimer* aVsyncRefreshDriverTimer)
         : mVsyncRefreshDriverTimer(aVsyncRefreshDriverTimer),
-          mRefreshTickLock("RefreshTickLock"),
+          mParentProcessRefreshTickLock("RefreshTickLock"),
+          mPendingParentProcessVsync(false),
           mRecentVsync(TimeStamp::Now()),
-          mLastChildTick(TimeStamp::Now()),
+          mLastTick(TimeStamp::Now()),
           mVsyncRate(TimeDuration::Forever()),
           mProcessedVsync(true) {
       MOZ_ASSERT(NS_IsMainThread());
@@ -520,14 +521,11 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     class ParentProcessVsyncNotifier final : public Runnable,
                                              public nsIRunnablePriority {
      public:
-      ParentProcessVsyncNotifier(RefreshDriverVsyncObserver* aObserver,
-                                 VsyncId aId, TimeStamp aVsyncTimestamp)
+      explicit ParentProcessVsyncNotifier(RefreshDriverVsyncObserver* aObserver)
           : Runnable(
                 "VsyncRefreshDriverTimer::RefreshDriverVsyncObserver::"
                 "ParentProcessVsyncNotifier"),
-            mObserver(aObserver),
-            mId(aId),
-            mVsyncTimestamp(aVsyncTimestamp) {}
+            mObserver(aObserver) {}
 
       NS_DECL_ISUPPORTS_INHERITED
 
@@ -535,7 +533,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         MOZ_ASSERT(NS_IsMainThread());
         sHighPriorityEnabled = mozilla::BrowserTabsRemoteAutostart();
 
-        mObserver->TickRefreshDriver(mId, mVsyncTimestamp);
+        mObserver->NotifyParentProcessVsync();
         return NS_OK;
       }
 
@@ -549,10 +547,21 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
      private:
       ~ParentProcessVsyncNotifier() {}
       RefPtr<RefreshDriverVsyncObserver> mObserver;
-      VsyncId mId;
-      TimeStamp mVsyncTimestamp;
       static mozilla::Atomic<bool> sHighPriorityEnabled;
     };
+
+    void NotifyParentProcessVsync() {
+      MOZ_ASSERT(NS_IsMainThread());
+      MOZ_ASSERT(XRE_IsParentProcess());
+
+      VsyncEvent vsync;
+      {
+        MonitorAutoLock lock(mParentProcessRefreshTickLock);
+        vsync = mRecentParentProcessVsync;
+        mPendingParentProcessVsync = false;
+      }
+      NotifyVsync(vsync);
+    }
 
     bool NotifyVsync(const VsyncEvent& aVsync) override {
       
@@ -564,17 +573,15 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         
         
         {  
-          MonitorAutoLock lock(mRefreshTickLock);
-          mRecentVsync = aVsync.mTime;
-          mRecentVsyncId = aVsync.mId;
-          if (!mProcessedVsync) {
+          MonitorAutoLock lock(mParentProcessRefreshTickLock);
+          mRecentParentProcessVsync = aVsync;
+          if (mPendingParentProcessVsync) {
             return true;
           }
-          mProcessedVsync = false;
+          mPendingParentProcessVsync = true;
         }
-
         nsCOMPtr<nsIRunnable> vsyncEvent =
-            new ParentProcessVsyncNotifier(this, aVsync.mId, aVsync.mTime);
+            new ParentProcessVsyncNotifier(this);
         NS_DispatchToMainThread(vsyncEvent);
       } else {
         mRecentVsync = aVsync.mTime;
@@ -593,7 +600,8 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
           return true;
         }
 
-        if (StaticPrefs::layout_lower_priority_refresh_driver_during_load()) {
+        if (StaticPrefs::layout_lower_priority_refresh_driver_during_load() &&
+            mVsyncRefreshDriverTimer) {
           nsPresContext* pctx =
               mVsyncRefreshDriverTimer->GetPresContextForOnlyRefreshDriver();
           if (pctx && pctx->HadContentfulPaint() && pctx->Document() &&
@@ -644,14 +652,12 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     }
 
     void OnTimerStart() {
-      if (!XRE_IsParentProcess()) {
-        mLastChildTick = TimeStamp::Now();
-      }
+      mLastTick = TimeStamp::Now();
     }
 
     void NormalPriorityNotify() {
-      if (mLastProcessedTickInChildProcess.IsNull() ||
-          mRecentVsync > mLastProcessedTickInChildProcess) {
+      if (mLastProcessedTick.IsNull() ||
+          mRecentVsync > mLastProcessedTick) {
         
         mBlockUntil = TimeStamp();
         TickRefreshDriver(mRecentVsyncId, mRecentVsync);
@@ -676,7 +682,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         RecordJank(sample);
       } else if (mVsyncRate != TimeDuration::Forever()) {
         TimeDuration contentDelay =
-            (TimeStamp::Now() - mLastChildTick) - mVsyncRate;
+            (TimeStamp::Now() - mLastTick) - mVsyncRate;
         if (contentDelay.ToMilliseconds() < 0) {
           
           
@@ -712,14 +718,8 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       MOZ_ASSERT(NS_IsMainThread());
 
       RecordTelemetryProbes(aVsyncTimestamp);
-      if (XRE_IsParentProcess()) {
-        MonitorAutoLock lock(mRefreshTickLock);
-        aVsyncTimestamp = mRecentVsync;
-        mProcessedVsync = true;
-      } else {
-        mLastChildTick = TimeStamp::Now();
-        mLastProcessedTickInChildProcess = aVsyncTimestamp;
-      }
+      mLastTick = TimeStamp::Now();
+      mLastProcessedTick = aVsyncTimestamp;
 
       
       
@@ -741,21 +741,23 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         
       }
 
-      if (!XRE_IsParentProcess()) {
-        TimeDuration tickDuration = TimeStamp::Now() - mLastChildTick;
-        mBlockUntil = aVsyncTimestamp + tickDuration;
-      }
+      TimeDuration tickDuration = TimeStamp::Now() - mLastTick;
+      mBlockUntil = aVsyncTimestamp + tickDuration;
     }
 
     
     
     
     VsyncRefreshDriverTimer* mVsyncRefreshDriverTimer;
-    Monitor mRefreshTickLock;
+
+    Monitor mParentProcessRefreshTickLock;
+    VsyncEvent mRecentParentProcessVsync;
+    bool mPendingParentProcessVsync;
+
     TimeStamp mRecentVsync;
     VsyncId mRecentVsyncId;
-    TimeStamp mLastChildTick;
-    TimeStamp mLastProcessedTickInChildProcess;
+    TimeStamp mLastTick;
+    TimeStamp mLastProcessedTick;
     TimeStamp mBlockUntil;
     TimeDuration mVsyncRate;
     bool mProcessedVsync;
