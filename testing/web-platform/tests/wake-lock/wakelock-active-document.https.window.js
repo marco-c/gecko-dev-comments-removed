@@ -27,7 +27,7 @@ promise_test(async t => {
   );
   
   
-  await promise_rejects(
+  await promise_rejects_dom(
     t,
     "NotAllowedError",
     wakeLock1.request('screen'),
@@ -70,7 +70,7 @@ promise_test(async t => {
   
   
   
-  await promise_rejects(
+  await promise_rejects_dom(
     t,
     "NotAllowedError",
     wakeLock.request('screen'),
