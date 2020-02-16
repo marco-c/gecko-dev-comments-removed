@@ -140,7 +140,7 @@ DefaultJitOptions::DefaultJitOptions() {
 
   
   
-  SET_DEFAULT(ionForTrustedPrincipals, false);
+  SET_DEFAULT(jitForTrustedPrincipals, false);
 
   
   SET_DEFAULT(nativeRegExp, true);

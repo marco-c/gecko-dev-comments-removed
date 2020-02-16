@@ -4537,7 +4537,7 @@ bool jit::AnalyzeNewScriptDefiniteProperties(
     return false;
   }
 
-  if (!jit::IsIonEnabled(cx) || !jit::IsBaselineJitEnabled() ||
+  if (!jit::IsIonEnabled(cx) || !jit::IsBaselineJitEnabled(cx) ||
       !CanBaselineInterpretScript(script)) {
     return true;
   }
@@ -5146,41 +5146,6 @@ void MRootList::trace(JSTracer* trc) {
   TraceVector<type*>(trc, *roots_[JS::RootKind::name], "mir-root-" #name);
   JS_FOR_EACH_TRACEKIND(TRACE_ROOTS)
 #undef TRACE_ROOTS
-}
-
-MOZ_MUST_USE bool jit::CreateMIRRootList(IonCompileTask& task) {
-  MOZ_ASSERT(!task.mirGen().outerInfo().isAnalysis());
-
-  TempAllocator& alloc = task.alloc();
-  MIRGraph& graph = task.mirGen().graph();
-
-  MRootList* roots = new (alloc.fallible()) MRootList(alloc);
-  if (!roots) {
-    return false;
-  }
-
-  JSScript* prevScript = nullptr;
-
-  for (ReversePostorderIterator block(graph.rpoBegin());
-       block != graph.rpoEnd(); block++) {
-    JSScript* script = block->info().script();
-    if (script != prevScript) {
-      if (!roots->append(script)) {
-        return false;
-      }
-      prevScript = script;
-    }
-
-    for (MInstructionIterator iter(block->begin()), end(block->end());
-         iter != end; iter++) {
-      if (!iter->appendRoots(*roots)) {
-        return false;
-      }
-    }
-  }
-
-  task.setRootList(*roots);
-  return true;
 }
 
 #ifdef JS_JITSPEW
