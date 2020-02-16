@@ -53,15 +53,13 @@ function run_test() {
 
   
   add_test(() => {
-    
-    
-    
     let args = [
       "-A",
       "-n",
       "manually-added-missing-intermediate",
       "-i",
-      "test_missing_intermediate/missing-intermediate.der",
+      "test_missing_intermediate/missing-intermediate.pem",
+      "-a",
       "-t",
       ",,",
     ];
