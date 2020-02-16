@@ -106,6 +106,7 @@ nsImageLoadingContent::nsImageLoadingContent()
       mSuppressed(false),
       mNewRequestsWillNeedAnimationReset(false),
       mUseUrgentStartForChannel(false),
+      mLazyLoading(false),
       mStateChangerDepth(0),
       mCurrentRequestRegistered(false),
       mPendingRequestRegistered(false),
@@ -1303,9 +1304,12 @@ void nsImageLoadingContent::UpdateImageState(bool aNotify) {
   } else if (mImageBlockingStatus == nsIContentPolicy::REJECT_TYPE) {
     mUserDisabled = true;
   } else if (!mCurrentRequest) {
-    
-    mBroken = true;
-    RejectDecodePromises(NS_ERROR_DOM_IMAGE_BROKEN);
+    if (!mLazyLoading) {
+      
+      
+      mBroken = true;
+      RejectDecodePromises(NS_ERROR_DOM_IMAGE_BROKEN);
+    }
   } else {
     uint32_t currentLoadStatus;
     nsresult rv = mCurrentRequest->GetImageStatus(&currentLoadStatus);
