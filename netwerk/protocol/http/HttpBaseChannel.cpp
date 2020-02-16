@@ -3544,19 +3544,6 @@ nsresult HttpBaseChannel::SetupReplacementChannel(nsIURI* newURI,
   }
 
   
-  
-  {
-    nsAutoCString oldUserAgent;
-    nsresult hasHeader =
-      mRequestHead.GetHeader(nsHttp::User_Agent, oldUserAgent);
-    if (NS_SUCCEEDED(hasHeader)) {
-      rv = httpChannel->SetRequestHeader(NS_LITERAL_CSTRING("User-Agent"),
-                                         oldUserAgent, false);
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
-    }
-  }
-
-  
   rv = httpChannel->SetRequestContextID(mRequestContextID);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
