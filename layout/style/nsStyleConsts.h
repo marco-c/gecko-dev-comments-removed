@@ -388,11 +388,6 @@ enum class StyleFlexWrap : uint8_t {
   10  // Used by Servo to track the "no keyword" case
 
 
-#define NS_STYLE_GRID_AUTO_FLOW_ROW (1 << 0)
-#define NS_STYLE_GRID_AUTO_FLOW_COLUMN (1 << 1)
-#define NS_STYLE_GRID_AUTO_FLOW_DENSE (1 << 2)
-
-
 #define NS_STYLE_GRID_TEMPLATE_SUBGRID 0
 
 
