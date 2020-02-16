@@ -1957,8 +1957,6 @@ pref("devtools.inspector.showUserAgentStyles", false);
 
 pref("devtools.inspector.showAllAnonymousContent", false);
 
-pref("devtools.inspector.showUserAgentShadowRoots", false);
-
 pref("devtools.inspector.new-rulesview.enabled", false);
 
 pref("devtools.inspector.compatibility.enabled", false);
