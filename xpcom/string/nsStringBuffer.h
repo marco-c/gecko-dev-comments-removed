@@ -122,7 +122,15 @@ class nsStringBuffer {
     
     
     
+
+    
+    
+    
+#if defined(MOZ_TSAN)
+    return mRefCount.load(std::memory_order_acquire) > 1;
+#else
     return mRefCount.load(std::memory_order_relaxed) > 1;
+#endif
   }
 
   
