@@ -741,6 +741,11 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
   #identity-icon-labels {
     max-width: 50px;
   }
+  
+
+  #userContext-label {
+    display: none;
+  }
 }
 
 
