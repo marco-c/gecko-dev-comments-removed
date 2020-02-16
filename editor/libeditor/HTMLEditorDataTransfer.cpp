@@ -241,11 +241,19 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
   
   
 
-  
   AutoTArray<OwningNonNull<nsINode>, 64> nodeList;
-  CreateListOfNodesToPaste(*fragmentAsNode->AsDocumentFragment(), nodeList,
-                           streamStartParent, streamStartOffset,
-                           streamEndParent, streamEndOffset);
+  
+  
+  EditorRawDOMPoint streamStartPoint =
+      streamStartParent
+          ? EditorRawDOMPoint(streamStartParent, streamStartOffset)
+          : EditorRawDOMPoint(fragmentAsNode, 0);
+  EditorRawDOMPoint streamEndPoint =
+      streamStartParent ? EditorRawDOMPoint(streamEndParent, streamEndOffset)
+                        : EditorRawDOMPoint::AtEndOf(*fragmentAsNode);
+  HTMLEditor::CollectTopMostChildNodesCompletelyInRange(
+      EditorRawDOMPoint(streamStartParent, streamStartOffset),
+      EditorRawDOMPoint(streamEndParent, streamEndOffset), nodeList);
 
   if (nodeList.IsEmpty()) {
     
@@ -2714,32 +2722,24 @@ nsresult HTMLEditor::ParseFragment(const nsAString& aFragStr,
   return rv;
 }
 
-void HTMLEditor::CreateListOfNodesToPaste(
-    DocumentFragment& aFragment, nsTArray<OwningNonNull<nsINode>>& outNodeList,
-    nsINode* aStartContainer, int32_t aStartOffset, nsINode* aEndContainer,
-    int32_t aEndOffset) {
-  
-  
-  if (!aStartContainer) {
-    aStartContainer = &aFragment;
-    aStartOffset = 0;
-    aEndContainer = &aFragment;
-    aEndOffset = aFragment.Length();
-  }
 
-  RefPtr<nsRange> docFragRange = nsRange::Create(
-      aStartContainer, aStartOffset, aEndContainer, aEndOffset, IgnoreErrors());
-  if (NS_WARN_IF(!docFragRange)) {
-    MOZ_ASSERT(docFragRange);
+void HTMLEditor::CollectTopMostChildNodesCompletelyInRange(
+    const EditorRawDOMPoint& aStartPoint, const EditorRawDOMPoint& aEndPoint,
+    nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes) {
+  MOZ_ASSERT(aStartPoint.IsSetAndValid());
+  MOZ_ASSERT(aEndPoint.IsSetAndValid());
+
+  RefPtr<nsRange> range =
+      nsRange::Create(aStartPoint.ToRawRangeBoundary(),
+                      aEndPoint.ToRawRangeBoundary(), IgnoreErrors());
+  if (NS_WARN_IF(!range)) {
     return;
   }
-
-  
   DOMSubtreeIterator iter;
-  if (NS_WARN_IF(NS_FAILED(iter.Init(*docFragRange)))) {
+  if (NS_WARN_IF(NS_FAILED(iter.Init(*range)))) {
     return;
   }
-  iter.AppendAllNodesToArray(outNodeList);
+  iter.AppendAllNodesToArray(aOutArrayOfNodes);
 }
 
 

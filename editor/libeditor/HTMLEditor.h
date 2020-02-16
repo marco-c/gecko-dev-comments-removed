@@ -3935,10 +3935,24 @@ class HTMLEditor final : public TextEditor,
   nsresult ParseFragment(const nsAString& aStr, nsAtom* aContextLocalName,
                          Document* aTargetDoc,
                          dom::DocumentFragment** aFragment, bool aTrustedInput);
-  void CreateListOfNodesToPaste(dom::DocumentFragment& aFragment,
-                                nsTArray<OwningNonNull<nsINode>>& outNodeList,
-                                nsINode* aStartContainer, int32_t aStartOffset,
-                                nsINode* aEndContainer, int32_t aEndOffset);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static void CollectTopMostChildNodesCompletelyInRange(
+      const EditorRawDOMPoint& aStartPoint, const EditorRawDOMPoint& aEndPoint,
+      nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes);
 
   
 
