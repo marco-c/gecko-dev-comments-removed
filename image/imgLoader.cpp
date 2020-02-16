@@ -492,7 +492,9 @@ class imgMemoryReporter final : public nsIMemoryReporter {
                 "Decoded image data which isn't stored on the heap.",
                 aCounter.DecodedNonHeap());
 
-    ReportValue(aHandleReport, aData, KIND_OTHER, aPathPrefix,
+    
+    
+    ReportValue(aHandleReport, aData, KIND_NONHEAP, aPathPrefix,
                 "decoded-unknown",
                 "Decoded image data which is unknown to be on the heap or not.",
                 aCounter.DecodedUnknown());
