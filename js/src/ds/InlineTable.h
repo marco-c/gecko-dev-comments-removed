@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef ds_InlineTable_h
 #define ds_InlineTable_h
@@ -18,8 +18,37 @@ namespace js {
 
 namespace detail {
 
+// The InlineTable below needs an abstract way of testing keys for
+// tombstone values, and to set a key in an entry to a tombstone.
+// This is provided by the KeyPolicy generic type argument, which
+// has a default implementation for pointers provided below.
+
+// A default implementation of a KeyPolicy for some types (only pointer
+// types for now).
+//
+// The `KeyPolicy` type parameter informs an InlineTable of how to
+// check for tombstone values and to set tombstone values within
+// the domain of key (entry).
+//
+// A `KeyPolicy` for some key type `K` must provide two static methods:
+//   static bool isTombstone(const K& key);
+//   static void setToTombstone(K& key);
+template <typename K>
+class DefaultKeyPolicy;
+
+template <typename T>
+class DefaultKeyPolicy<T*> {
+  DefaultKeyPolicy() = delete;
+  DefaultKeyPolicy(const T*&) = delete;
+
+ public:
+  static bool isTombstone(T* const& ptr) { return ptr == nullptr; }
+  static void setToTombstone(T*& ptr) { ptr = nullptr; }
+};
+
 template <typename InlineEntry, typename Entry, typename Table,
-          typename HashPolicy, typename AllocPolicy, size_t InlineEntries>
+          typename HashPolicy, typename AllocPolicy, typename KeyPolicy,
+          size_t InlineEntries>
 class InlineTable : private AllocPolicy {
  private:
   using TablePtr = typename Table::Ptr;
@@ -35,7 +64,7 @@ class InlineTable : private AllocPolicy {
 #ifdef DEBUG
   template <typename Key>
   static bool keyNonZero(const Key& key) {
-    
+    // Zero as tombstone means zero keys are invalid.
     return !!key;
   }
 #endif
@@ -115,7 +144,7 @@ class InlineTable : private AllocPolicy {
     void operator==(const Ptr& other);
 
    public:
-    
+    // Leaves Ptr uninitialized.
     Ptr() {
 #ifdef DEBUG
       inlPtr_ = (InlineEntry*)0xbad;
@@ -123,7 +152,7 @@ class InlineTable : private AllocPolicy {
 #endif
     }
 
-    
+    // Default copy constructor works for this structure.
 
     bool found() const {
       return isInlinePtr_ ? bool(inlPtr_) : tablePtr_.found();
@@ -163,7 +192,7 @@ class InlineTable : private AllocPolicy {
     MOZ_INIT_OUTSIDE_CTOR TableAddPtr tableAddPtr_;
     MOZ_INIT_OUTSIDE_CTOR InlineEntry* inlAddPtr_;
     MOZ_INIT_OUTSIDE_CTOR bool isInlinePtr_;
-    
+    // Indicates whether inlAddPtr is a found result or an add pointer.
     MOZ_INIT_OUTSIDE_CTOR bool inlPtrFound_;
 
     AddPtr(InlineEntry* ptr, bool found)
@@ -252,9 +281,9 @@ class InlineTable : private AllocPolicy {
       }
     }
 
-    
-    
-    
+    // The add pointer that's returned here may indicate the limit entry of
+    // the linear space, in which case the |add| operation will initialize
+    // the table if necessary and add the entry there.
     return AddPtr(inlineEnd(), false);
   }
 
@@ -268,7 +297,7 @@ class InlineTable : private AllocPolicy {
       InlineEntry* addPtr = p.inlAddPtr_;
       MOZ_ASSERT(addPtr == inlineEnd());
 
-      
+      // Switching to table mode before we add this pointer.
       if (addPtr == inlineStart() + InlineEntries) {
         if (!switchToTable()) {
           return false;
@@ -298,8 +327,8 @@ class InlineTable : private AllocPolicy {
     MOZ_ASSERT(p);
     if (p.isInlinePtr_) {
       MOZ_ASSERT(inlCount_ > 0);
-      MOZ_ASSERT(p.inlPtr_->key != nullptr);
-      p.inlPtr_->key = nullptr;
+      MOZ_ASSERT(!KeyPolicy::isTombstone(p.inlPtr_->key));
+      KeyPolicy::setToTombstone(p.inlPtr_->key);
       --inlCount_;
       return;
     }
@@ -317,7 +346,7 @@ class InlineTable : private AllocPolicy {
     friend class InlineTable;
 
    protected:
-    mozilla::Maybe<TableRange> tableRange_;  
+    mozilla::Maybe<TableRange> tableRange_;  // `Nothing` if `isInline_==true`
     InlineEntry* cur_;
     InlineEntry* end_;
     bool isInline_;
@@ -341,7 +370,7 @@ class InlineTable : private AllocPolicy {
 
     bool assertInlineRangeInvariants() const {
       MOZ_ASSERT(uintptr_t(cur_) <= uintptr_t(end_));
-      MOZ_ASSERT_IF(cur_ != end_, cur_->key != nullptr);
+      MOZ_ASSERT_IF(cur_ != end_, !KeyPolicy::isTombstone(cur_->key));
       return true;
     }
 
@@ -352,7 +381,7 @@ class InlineTable : private AllocPolicy {
 
     void advancePastNulls(InlineEntry* begin) {
       InlineEntry* newCur = begin;
-      while (newCur < end_ && nullptr == newCur->key) {
+      while (newCur < end_ && KeyPolicy::isTombstone(newCur->key)) {
         ++newCur;
       }
       MOZ_ASSERT(uintptr_t(newCur) <= uintptr_t(end_));
@@ -393,17 +422,18 @@ class InlineTable : private AllocPolicy {
   }
 };
 
-}  
+}  // namespace detail
 
-
-
-
-
-
-
+// A map with InlineEntries number of entries kept inline in an array.
+//
+// The Key type must be zeroable as zeros are used as tombstone keys.
+// The Value type must have a default constructor.
+//
+// The API is very much like HashMap's.
 template <typename Key, typename Value, size_t InlineEntries,
           typename HashPolicy = DefaultHasher<Key>,
-          typename AllocPolicy = TempAllocPolicy>
+          typename AllocPolicy = TempAllocPolicy,
+          typename KeyPolicy = detail::DefaultKeyPolicy<Key>>
 class InlineMap {
   using Map = HashMap<Key, Value, HashPolicy, AllocPolicy>;
 
@@ -455,7 +485,7 @@ class InlineMap {
   };
 
   using Impl = detail::InlineTable<InlineEntry, Entry, Map, HashPolicy,
-                                   AllocPolicy, InlineEntries>;
+                                   AllocPolicy, KeyPolicy, InlineEntries>;
 
   Impl impl_;
 
@@ -511,15 +541,16 @@ class InlineMap {
   void remove(const Lookup& l) { impl_.remove(l); }
 };
 
-
-
-
-
-
-
+// A set with InlineEntries number of entries kept inline in an array.
+//
+// The T type must be zeroable as zeros are used as tombstone keys.
+// The T type must have a default constructor.
+//
+// The API is very much like HashMap's.
 template <typename T, size_t InlineEntries,
           typename HashPolicy = DefaultHasher<T>,
-          typename AllocPolicy = TempAllocPolicy>
+          typename AllocPolicy = TempAllocPolicy,
+          typename KeyPolicy = detail::DefaultKeyPolicy<T>>
 class InlineSet {
   using Set = HashSet<T, HashPolicy, AllocPolicy>;
 
@@ -559,7 +590,7 @@ class InlineSet {
   };
 
   using Impl = detail::InlineTable<InlineEntry, Entry, Set, HashPolicy,
-                                   AllocPolicy, InlineEntries>;
+                                   AllocPolicy, KeyPolicy, InlineEntries>;
 
   Impl impl_;
 
@@ -609,6 +640,6 @@ class InlineSet {
   void remove(const Lookup& l) { impl_.remove(l); }
 };
 
-}  
+}  // namespace js
 
-#endif  
+#endif  // ds_InlineTable_h
