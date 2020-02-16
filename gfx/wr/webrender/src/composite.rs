@@ -5,7 +5,7 @@
 use api::ColorF;
 use api::units::{DeviceRect, DeviceIntSize, DeviceIntRect, DeviceIntPoint, WorldRect, DevicePixelScale, DevicePoint};
 use crate::gpu_types::{ZBufferId, ZBufferIdGenerator};
-use crate::picture::{ResolvedSurfaceTexture, TileId, TileCacheInstance, TileSurface};
+use crate::picture::{ResolvedSurfaceTexture, TileCacheInstance, TileSurface};
 use crate::resource_cache::ResourceCache;
 use std::{ops, u64};
 
@@ -68,7 +68,7 @@ pub struct CompositeTile {
     pub dirty_rect: DeviceRect,
     pub valid_rect: DeviceRect,
     pub z_id: ZBufferId,
-    pub tile_id: TileId,
+    pub tile_id: Option<NativeTileId>,
 }
 
 
@@ -267,7 +267,7 @@ impl CompositeState {
     pub fn is_tile_occluded(
         &self,
         slice: usize,
-        rect: WorldRect,
+        device_rect: DeviceRect,
     ) -> bool {
         
         
@@ -282,7 +282,7 @@ impl CompositeState {
         
 
         
-        let device_rect = (rect * self.global_device_pixel_scale).round().to_i32();
+        let device_rect = device_rect.round().to_i32();
         let ref_area = device_rect.size.width * device_rect.size.height;
 
         
@@ -304,16 +304,7 @@ impl CompositeState {
     ) {
         let mut visible_tile_count = 0;
 
-        
-        
-        
-        
-        
-        
-        let mut combined_valid_rect = DeviceRect::zero();
-
-        for key in &tile_cache.tiles_to_draw {
-            let tile = &tile_cache.tiles[key];
+        for tile in tile_cache.tiles.values() {
             if !tile.is_visible {
                 
                 continue;
@@ -322,16 +313,6 @@ impl CompositeState {
             visible_tile_count += 1;
 
             let device_rect = (tile.world_tile_rect * global_device_pixel_scale).round();
-            let dirty_rect = (tile.world_dirty_rect * global_device_pixel_scale).round();
-            
-            
-            
-            
-            let valid_rect = (tile.world_valid_rect * global_device_pixel_scale)
-                .round_out()
-                .intersection(&device_rect)
-                .unwrap_or_else(DeviceRect::zero);
-            combined_valid_rect = combined_valid_rect.union(&valid_rect);
             let surface = tile.surface.as_ref().expect("no tile surface set!");
 
             let (surface, is_opaque) = match surface {
@@ -350,30 +331,36 @@ impl CompositeState {
                 }
             };
 
+            let tile_id = tile_cache.native_surface_id.map(|surface_id| {
+                NativeTileId {
+                    surface_id,
+                    x: tile.tile_offset.x,
+                    y: tile.tile_offset.y,
+                }
+            });
+
             let tile = CompositeTile {
                 surface,
                 rect: device_rect,
-                valid_rect,
-                dirty_rect,
+                valid_rect: tile.device_valid_rect.translate(-device_rect.origin.to_vector()),
+                dirty_rect: tile.device_dirty_rect.translate(-device_rect.origin.to_vector()),
                 clip_rect: device_clip_rect,
                 z_id,
-                tile_id: tile.id,
+                tile_id,
             };
 
             self.push_tile(tile, is_opaque);
         }
 
         if visible_tile_count > 0 {
-            if let Some(clip_rect) = device_clip_rect.intersection(&combined_valid_rect) {
-                self.descriptor.surfaces.push(
-                    CompositeSurfaceDescriptor {
-                        slice: tile_cache.slice,
-                        surface_id: tile_cache.native_surface_id,
-                        offset: tile_cache.device_position,
-                        clip_rect,
-                    }
-                );
-            }
+            self.descriptor.surfaces.push(
+                CompositeSurfaceDescriptor {
+                    slice: tile_cache.slice,
+                    surface_id: tile_cache.native_surface_id,
+                    offset: tile_cache.device_position,
+                    clip_rect: device_clip_rect,
+                }
+            );
         }
     }
 
@@ -508,6 +495,7 @@ pub trait Compositor {
         &mut self,
         id: NativeTileId,
         dirty_rect: DeviceIntRect,
+        valid_rect: DeviceIntRect,
     ) -> NativeSurfaceInfo;
 
     
