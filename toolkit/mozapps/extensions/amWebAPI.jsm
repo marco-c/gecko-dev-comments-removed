@@ -247,16 +247,18 @@ class WebAPI extends APIObject {
     if (!Services.prefs.getBoolPref("xpinstall.enabled", true)) {
       throw new this.window.Error("Software installation is disabled.");
     }
+
+    const triggeringPrincipal = this.window.document.nodePrincipal;
+
     let installOptions = {
       ...options,
+      triggeringPrincipal,
       
       
       
-      sourceHost:
-        this.window.document.nodePrincipal.URI &&
-        this.window.document.nodePrincipal.URI.host,
+      sourceHost: triggeringPrincipal.URI && triggeringPrincipal.URI.host,
+      sourceURL: triggeringPrincipal.URI && triggeringPrincipal.URI.spec,
     };
-    installOptions.triggeringPrincipal = this.window.document.nodePrincipal;
     return this._apiTask("createInstall", [installOptions], installInfo => {
       if (!installInfo) {
         return null;

@@ -1,5 +1,17 @@
 
 
+
+
+"use strict";
+
+const { AddonTestUtils } = ChromeUtils.import(
+  "resource://testing-common/AddonTestUtils.jsm"
+);
+
+AddonTestUtils.initMochitest(this);
+
+
+
 function test() {
   Harness.installConfirmCallback = confirm_install;
   Harness.installEndedCallback = install_ended;
@@ -18,11 +30,11 @@ function confirm_install(panel) {
 }
 
 function install_ended(install, addon) {
-  Assert.deepEqual(
-    install.installTelemetryInfo,
-    { source: "unknown", method: "link" },
-    "Got the expected install.installTelemetryInfo"
-  );
+  AddonTestUtils.checkInstallInfo(install, {
+    method: "link",
+    source: "unknown",
+    sourceURL: undefined,
+  });
   install.cancel();
 }
 

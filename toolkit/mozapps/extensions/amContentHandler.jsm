@@ -41,7 +41,9 @@ amContentHandler.prototype = {
       loadInfo.frameBrowsingContext || loadInfo.browsingContext;
 
     let sourceHost;
+    let sourceURL;
     try {
+      sourceURL = triggeringPrincipal.URI.spec;
       sourceHost = triggeringPrincipal.URI.host;
     } catch (err) {
       
@@ -58,6 +60,7 @@ amContentHandler.prototype = {
       callbackID: -1,
       method: "link",
       sourceHost,
+      sourceURL,
       browsingContext,
     };
 

@@ -152,9 +152,11 @@ InstallTrigger.prototype = {
     }
 
     let sourceHost;
+    let sourceURL;
 
     try {
       sourceHost = this._principal.URI.host;
+      sourceURL = this._principal.URI.spec;
     } catch (err) {
       
       
@@ -167,6 +169,7 @@ InstallTrigger.prototype = {
       icon: iconUrl ? iconUrl.spec : null,
       method: "installTrigger",
       sourceHost,
+      sourceURL,
     };
 
     return this._mediator.install(

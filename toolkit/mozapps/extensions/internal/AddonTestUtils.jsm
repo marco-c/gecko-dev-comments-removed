@@ -1819,6 +1819,36 @@ var AddonTestUtils = {
 
 
 
+
+  checkInstallInfo(addonOrInstall, expectedInstallInfo) {
+    const installInfo = addonOrInstall.installTelemetryInfo;
+    const { Assert } = this.testScope;
+
+    for (const key of Object.keys(expectedInstallInfo)) {
+      const actual = installInfo[key];
+      let expected = expectedInstallInfo[key];
+
+      
+      if (expected && typeof expected.test == "function") {
+        Assert.ok(
+          expected.test(actual),
+          `${key} value "${actual}" has the value expected: "${expected}"`
+        );
+      } else {
+        Assert.deepEqual(actual, expected, `Got the expected value for ${key}`);
+      }
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
   promiseWebExtensionStartup(id) {
     return new Promise(resolve => {
       Management.on("ready", function listener(event, extension) {

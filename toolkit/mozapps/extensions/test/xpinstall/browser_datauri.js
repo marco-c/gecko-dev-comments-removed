@@ -1,6 +1,18 @@
 
 
 
+
+"use strict";
+
+const { AddonTestUtils } = ChromeUtils.import(
+  "resource://testing-common/AddonTestUtils.jsm"
+);
+
+AddonTestUtils.initMochitest(this);
+
+
+
+
 function setup_redirect(aSettings) {
   var url = TESTROOT + "redirect.sjs?mode=setup";
   for (var name in aSettings) {
@@ -44,11 +56,11 @@ function install_blocked(installInfo) {
     1,
     "Got one AddonInstall instance as expected"
   );
-  Assert.deepEqual(
-    installInfo.installs[0].installTelemetryInfo,
-    { source: "unknown", method: "link" },
-    "Got the expected install.installTelemetryInfo"
-  );
+  AddonTestUtils.checkInstallInfo(installInfo.installs[0], {
+    method: "link",
+    source: "unknown",
+    sourceURL: /moz-nullprincipal:\{.*\}/,
+  });
 }
 
 function finish_test(count) {
