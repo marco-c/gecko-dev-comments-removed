@@ -171,8 +171,6 @@ class nsCookieService final : public nsICookieService,
  private:
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-  static bool sSameSiteEnabled;  
-
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
