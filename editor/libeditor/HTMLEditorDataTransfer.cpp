@@ -396,36 +396,9 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
     }
   }
 
-  
-  
-  AutoTArray<OwningNonNull<Element>, 4>
-      arrayOfListAndTableRelatedElementsAtStart;
-  HTMLEditor::CollectListAndTableRelatedElementsAt(
-      nodeList[0], arrayOfListAndTableRelatedElementsAtStart);
-  if (!arrayOfListAndTableRelatedElementsAtStart.IsEmpty()) {
-    Element* listOrTableElement = HTMLEditor::DiscoverPartialListsAndTables(
-        nodeList, arrayOfListAndTableRelatedElementsAtStart);
-    
-    
-    
-    if (listOrTableElement) {
-      HTMLEditor::ReplaceOrphanedStructure(StartOrEnd::start, nodeList,
-                                           *listOrTableElement);
-    }
-  }
-
-  
-  AutoTArray<OwningNonNull<Element>, 4> arrayOfListAndTableRelatedElementsAtEnd;
-  HTMLEditor::CollectListAndTableRelatedElementsAt(
-      nodeList.LastElement(), arrayOfListAndTableRelatedElementsAtEnd);
-  if (!arrayOfListAndTableRelatedElementsAtEnd.IsEmpty()) {
-    Element* listOrTableElement = HTMLEditor::DiscoverPartialListsAndTables(
-        nodeList, arrayOfListAndTableRelatedElementsAtEnd);
-    
-    if (listOrTableElement) {
-      HTMLEditor::ReplaceOrphanedStructure(StartOrEnd::end, nodeList,
-                                           *listOrTableElement);
-    }
+  {  
+     
+    AutoHTMLFragmentBoundariesFixer fixPiecesOfTablesAndLists(nodeList);
   }
 
   MOZ_ASSERT(pointToInsert.GetContainer()->GetChildAt_Deprecated(
@@ -2741,9 +2714,49 @@ void HTMLEditor::CollectTopMostChildNodesCompletelyInRange(
 }
 
 
-void HTMLEditor::CollectListAndTableRelatedElementsAt(
-    nsINode& aNode,
-    nsTArray<OwningNonNull<Element>>& aOutArrayOfListAndTableElements) {
+
+
+
+HTMLEditor::AutoHTMLFragmentBoundariesFixer::AutoHTMLFragmentBoundariesFixer(
+    nsTArray<OwningNonNull<nsINode>>& aArrayOfTopMostChildNodes) {
+  
+  
+  AutoTArray<OwningNonNull<Element>, 4>
+      arrayOfListAndTableRelatedElementsAtStart;
+  CollectListAndTableRelatedElementsAt(
+      aArrayOfTopMostChildNodes[0], arrayOfListAndTableRelatedElementsAtStart);
+  if (!arrayOfListAndTableRelatedElementsAtStart.IsEmpty()) {
+    Element* listOrTableElement = DiscoverPartialListsAndTables(
+        aArrayOfTopMostChildNodes, arrayOfListAndTableRelatedElementsAtStart);
+    
+    
+    
+    if (listOrTableElement) {
+      ReplaceOrphanedStructure(StartOrEnd::start, aArrayOfTopMostChildNodes,
+                               *listOrTableElement);
+    }
+  }
+
+  
+  AutoTArray<OwningNonNull<Element>, 4> arrayOfListAndTableRelatedElementsAtEnd;
+  CollectListAndTableRelatedElementsAt(aArrayOfTopMostChildNodes.LastElement(),
+                                       arrayOfListAndTableRelatedElementsAtEnd);
+  if (!arrayOfListAndTableRelatedElementsAtEnd.IsEmpty()) {
+    Element* listOrTableElement = DiscoverPartialListsAndTables(
+        aArrayOfTopMostChildNodes, arrayOfListAndTableRelatedElementsAtEnd);
+    
+    if (listOrTableElement) {
+      ReplaceOrphanedStructure(StartOrEnd::end, aArrayOfTopMostChildNodes,
+                               *listOrTableElement);
+    }
+  }
+}
+
+void HTMLEditor::AutoHTMLFragmentBoundariesFixer::
+    CollectListAndTableRelatedElementsAt(
+        nsINode& aNode,
+        nsTArray<OwningNonNull<Element>>& aOutArrayOfListAndTableElements)
+        const {
   for (nsIContent* content = nsIContent::FromNode(&aNode); content;
        content = content->GetParentElement()) {
     if (HTMLEditUtils::IsList(content) || HTMLEditUtils::IsTable(content)) {
@@ -2752,11 +2765,11 @@ void HTMLEditor::CollectListAndTableRelatedElementsAt(
   }
 }
 
-
-Element* HTMLEditor::DiscoverPartialListsAndTables(
+Element*
+HTMLEditor::AutoHTMLFragmentBoundariesFixer::DiscoverPartialListsAndTables(
     const nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes,
-    const nsTArray<OwningNonNull<Element>>&
-        aArrayOfListAndTableRelatedElements) {
+    const nsTArray<OwningNonNull<Element>>& aArrayOfListAndTableRelatedElements)
+    const {
   Element* lastFoundAncestorListOrTableElement = nullptr;
   for (auto& node : aArrayOfNodes) {
     if (HTMLEditUtils::IsTableElement(node) &&
@@ -2831,9 +2844,9 @@ Element* HTMLEditor::DiscoverPartialListsAndTables(
   return lastFoundAncestorListOrTableElement;
 }
 
-
-Element* HTMLEditor::FindReplaceableTableElement(
-    Element& aTableElement, nsINode& aNodeMaybeInTableElement) {
+Element*
+HTMLEditor::AutoHTMLFragmentBoundariesFixer::FindReplaceableTableElement(
+    Element& aTableElement, nsINode& aNodeMaybeInTableElement) const {
   MOZ_ASSERT(aTableElement.IsHTMLElement(nsGkAtoms::table));
   
   
@@ -2873,9 +2886,8 @@ Element* HTMLEditor::FindReplaceableTableElement(
   return nullptr;
 }
 
-
-bool HTMLEditor::IsReplaceableListElement(Element& aListElement,
-                                          nsINode& aNodeMaybeInListElement) {
+bool HTMLEditor::AutoHTMLFragmentBoundariesFixer::IsReplaceableListElement(
+    Element& aListElement, nsINode& aNodeMaybeInListElement) const {
   MOZ_ASSERT(HTMLEditUtils::IsList(&aListElement));
   
   
@@ -2913,10 +2925,9 @@ bool HTMLEditor::IsReplaceableListElement(Element& aListElement,
   return false;
 }
 
-
-void HTMLEditor::ReplaceOrphanedStructure(
+void HTMLEditor::AutoHTMLFragmentBoundariesFixer::ReplaceOrphanedStructure(
     StartOrEnd aStartOrEnd, nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes,
-    Element& aListOrTableElement) {
+    Element& aListOrTableElement) const {
   MOZ_ASSERT(!aArrayOfNodes.IsEmpty());
 
   OwningNonNull<nsINode>& firstOrLastChildNode =
@@ -2926,15 +2937,14 @@ void HTMLEditor::ReplaceOrphanedStructure(
   
   Element* replaceElement;
   if (HTMLEditUtils::IsList(&aListOrTableElement)) {
-    if (!HTMLEditor::IsReplaceableListElement(aListOrTableElement,
-                                              firstOrLastChildNode)) {
+    if (!IsReplaceableListElement(aListOrTableElement, firstOrLastChildNode)) {
       return;
     }
     replaceElement = &aListOrTableElement;
   } else {
     MOZ_ASSERT(aListOrTableElement.IsHTMLElement(nsGkAtoms::table));
-    replaceElement = HTMLEditor::FindReplaceableTableElement(
-        aListOrTableElement, firstOrLastChildNode);
+    replaceElement =
+        FindReplaceableTableElement(aListOrTableElement, firstOrLastChildNode);
     if (!replaceElement) {
       return;
     }

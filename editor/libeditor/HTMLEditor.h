@@ -3958,28 +3958,9 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
-  static void CollectListAndTableRelatedElementsAt(
-      nsINode& aNode,
-      nsTArray<OwningNonNull<Element>>& aOutArrayOfListAndTableElements);
-
-  
-
-
-  static Element* DiscoverPartialListsAndTables(
-      const nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes,
-      const nsTArray<OwningNonNull<Element>>&
-          aArrayOfListAndTableRelatedElements);
-
-  
-
-
-  enum class StartOrEnd { start, end };
-  static void ReplaceOrphanedStructure(
-      StartOrEnd aStartOrEnd, nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes,
-      Element& aListOrTableElement);
-
-  
+  class MOZ_STACK_CLASS AutoHTMLFragmentBoundariesFixer final {
+   public:
+    
 
 
 
@@ -3988,20 +3969,60 @@ class HTMLEditor final : public TextEditor,
 
 
 
+    explicit AutoHTMLFragmentBoundariesFixer(
+        nsTArray<OwningNonNull<nsINode>>& aArrayOfTopMostChildNodes);
 
-  static Element* FindReplaceableTableElement(
-      Element& aTableElement, nsINode& aNodeMaybeInTableElement);
-
-  
-
-
+   private:
+    
 
 
 
 
+    void CollectListAndTableRelatedElementsAt(
+        nsINode& aNode,
+        nsTArray<OwningNonNull<Element>>& aOutArrayOfListAndTableElements)
+        const;
 
-  static bool IsReplaceableListElement(Element& aListElement,
-                                       nsINode& aNodeMaybeInListElement);
+    
+
+
+    Element* DiscoverPartialListsAndTables(
+        const nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes,
+        const nsTArray<OwningNonNull<Element>>&
+            aArrayOfListAndTableRelatedElements) const;
+
+    
+
+
+    enum class StartOrEnd { start, end };
+    void ReplaceOrphanedStructure(
+        StartOrEnd aStartOrEnd, nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes,
+        Element& aListOrTableElement) const;
+
+    
+
+
+
+
+
+
+
+
+
+    Element* FindReplaceableTableElement(
+        Element& aTableElement, nsINode& aNodeMaybeInTableElement) const;
+
+    
+
+
+
+
+
+
+
+    bool IsReplaceableListElement(Element& aListElement,
+                                  nsINode& aNodeMaybeInListElement) const;
+  };
 
   
 
