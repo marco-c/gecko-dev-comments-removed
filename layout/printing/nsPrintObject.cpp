@@ -13,7 +13,6 @@
 #include "nsPresContext.h"
 #include "nsGkAtoms.h"
 #include "nsComponentManagerUtils.h"
-#include "nsIDocShellTreeItem.h"
 #include "nsIBaseWindow.h"
 #include "nsDocShell.h"
 
@@ -80,9 +79,7 @@ nsresult nsPrintObject::InitAsRootObject(nsIDocShell* aDocShell, Document* aDoc,
     RefPtr<BrowsingContext> bc = BrowsingContext::CreateWindowless(
          nullptr,
          nullptr, EmptyString(),
-        aDocShell->ItemType() == nsIDocShellTreeItem::typeContent
-            ? BrowsingContext::Type::Content
-            : BrowsingContext::Type::Chrome);
+        nsDocShell::Cast(aDocShell)->GetBrowsingContext()->GetType());
 
     
     mDocShell = nsDocShell::Create(bc);

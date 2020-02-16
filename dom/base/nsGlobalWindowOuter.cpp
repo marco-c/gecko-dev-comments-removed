@@ -6982,7 +6982,7 @@ void nsGlobalWindowOuter::MaybeAllowStorageForOpenedWindow(nsIURI* aURI) {
 
 
 
-already_AddRefed<nsIDocShellTreeOwner> nsGlobalWindowOuter::GetTreeOwner() {
+already_AddRefed<nsIDocShellTreeOwner> nsPIDOMWindowOuter::GetTreeOwner() {
   
   
 
@@ -6995,7 +6995,7 @@ already_AddRefed<nsIDocShellTreeOwner> nsGlobalWindowOuter::GetTreeOwner() {
   return treeOwner.forget();
 }
 
-already_AddRefed<nsIBaseWindow> nsGlobalWindowOuter::GetTreeOwnerWindow() {
+already_AddRefed<nsIBaseWindow> nsPIDOMWindowOuter::GetTreeOwnerWindow() {
   nsCOMPtr<nsIDocShellTreeOwner> treeOwner;
 
   
@@ -7010,7 +7010,7 @@ already_AddRefed<nsIBaseWindow> nsGlobalWindowOuter::GetTreeOwnerWindow() {
 }
 
 already_AddRefed<nsIWebBrowserChrome>
-nsGlobalWindowOuter::GetWebBrowserChrome() {
+nsPIDOMWindowOuter::GetWebBrowserChrome() {
   nsCOMPtr<nsIDocShellTreeOwner> treeOwner = GetTreeOwner();
 
   nsCOMPtr<nsIWebBrowserChrome> browserChrome = do_GetInterface(treeOwner);
