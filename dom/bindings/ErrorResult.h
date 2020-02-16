@@ -794,6 +794,11 @@ class CopyableErrorResult
 
   
   
+  
+  operator ErrorResult&() = delete;
+
+  
+  
   operator ErrorResult &&() && {
     auto* val = reinterpret_cast<ErrorResult*>(this);
     return std::move(*val);

@@ -95,8 +95,10 @@ struct ParamTraits<mozilla::CopyableErrorResult> {
 
   static bool Read(const Message* aMsg, PickleIterator* aIter,
                    paramType* aResult) {
-    mozilla::ErrorResult& ref = static_cast<mozilla::ErrorResult&>(*aResult);
-    return ParamTraits<mozilla::ErrorResult>::Read(aMsg, aIter, &ref);
+    
+    
+    return ParamTraits<mozilla::ErrorResult>::Read(
+        aMsg, aIter, reinterpret_cast<mozilla::ErrorResult*>(aResult));
   }
 };
 
