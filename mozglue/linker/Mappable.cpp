@@ -17,7 +17,7 @@
 #include "mozilla/UniquePtr.h"
 
 #ifdef ANDROID
-#  include "mozilla/Ashmem.h"
+#  include <linux/ashmem.h>
 #endif
 #include <sys/stat.h>
 #include <errno.h>
@@ -243,9 +243,14 @@ class _MappableBuffer : public MappedPtr {
     AutoCloseFD fd;
 #ifdef ANDROID
     
-    fd = mozilla::android::ashmem_create(name, length);
+    fd = open("/" ASHMEM_NAME_DEF, O_RDWR, 0600);
+    if (fd == -1) return nullptr;
+    char str[ASHMEM_NAME_LEN];
+    strlcpy(str, name, sizeof(str));
+    ioctl(fd, ASHMEM_SET_NAME, str);
+    if (ioctl(fd, ASHMEM_SET_SIZE, length)) return nullptr;
 
-    
+      
 
 
 
@@ -261,7 +266,7 @@ class _MappableBuffer : public MappedPtr {
              0);
       DEBUG_LOG("Decompression buffer of size 0x%" PRIxPTR
                 " in ashmem \"%s\", mapped @%p",
-                length, name, buf);
+                length, str, buf);
       return new _MappableBuffer(fd.forget(), buf, length);
     }
 #  elif defined(__i386__) || defined(__x86_64__) || defined(__aarch64__)
@@ -284,7 +289,7 @@ class _MappableBuffer : public MappedPtr {
 
       DEBUG_LOG("Decompression buffer of size 0x%" PRIxPTR
                 " in ashmem \"%s\", mapped @%p",
-                length, name, actual_buf);
+                length, str, actual_buf);
       return new _MappableBuffer(fd.forget(), actual_buf, length);
     }
 #  else
