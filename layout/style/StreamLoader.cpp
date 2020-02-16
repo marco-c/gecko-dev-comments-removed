@@ -20,19 +20,21 @@ namespace css {
 StreamLoader::StreamLoader(SheetLoadData& aSheetLoadData)
     : mSheetLoadData(&aSheetLoadData), mStatus(NS_OK) {}
 
-StreamLoader::~StreamLoader() {}
+StreamLoader::~StreamLoader() {
+  MOZ_DIAGNOSTIC_ASSERT(mOnStopRequestCalled || mAsyncOpenFailed);
+}
 
 NS_IMPL_ISUPPORTS(StreamLoader, nsIStreamListener)
 
 
 NS_IMETHODIMP
 StreamLoader::OnStartRequest(nsIRequest* aRequest) {
+
   
   
   
   
-  nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
-  if (channel) {
+  if (nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest)) {
     int64_t length;
     nsresult rv = channel->GetContentLength(&length);
     if (NS_SUCCEEDED(rv) && length > 0) {
@@ -49,6 +51,11 @@ StreamLoader::OnStartRequest(nsIRequest* aRequest) {
 
 NS_IMETHODIMP
 StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
+  MOZ_DIAGNOSTIC_ASSERT(!mOnStopRequestCalled);
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  mOnStopRequestCalled = true;
+#endif
+
   
   nsCString utf8String;
   {
