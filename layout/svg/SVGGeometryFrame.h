@@ -10,7 +10,6 @@
 #include "mozilla/Attributes.h"
 #include "gfxMatrix.h"
 #include "gfxRect.h"
-#include "nsDisplayList.h"
 #include "nsFrame.h"
 #include "nsSVGDisplayableFrame.h"
 #include "nsLiteralString.h"
@@ -20,13 +19,13 @@
 namespace mozilla {
 class SVGGeometryFrame;
 class SVGMarkerObserver;
-class nsDisplaySVGGeometry;
 namespace gfx {
 class DrawTarget;
 }  
 }  
 
 class gfxContext;
+class nsDisplaySVGGeometry;
 class nsAtom;
 class nsIFrame;
 class nsSVGMarkerFrame;
@@ -48,7 +47,7 @@ class SVGGeometryFrame : public nsFrame, public nsSVGDisplayableFrame {
   friend nsIFrame* ::NS_NewSVGGeometryFrame(mozilla::PresShell* aPresShell,
                                             ComputedStyle* aStyle);
 
-  friend class nsDisplaySVGGeometry;
+  friend class ::nsDisplaySVGGeometry;
 
  protected:
   SVGGeometryFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
@@ -119,88 +118,12 @@ class SVGGeometryFrame : public nsFrame, public nsSVGDisplayableFrame {
   void Render(gfxContext* aContext, uint32_t aRenderComponents,
               const gfxMatrix& aTransform, imgDrawingParams& aImgParams);
 
-  virtual bool CreateWebRenderCommands(
-      mozilla::wr::DisplayListBuilder& aBuilder,
-      mozilla::wr::IpcResourceUpdateQueue& aResources,
-      const mozilla::layers::StackingContextHelper& aSc,
-      mozilla::layers::RenderRootStateManager* aManager,
-      nsDisplayListBuilder* aDisplayListBuilder, nsDisplaySVGGeometry* aItem,
-      bool aDryRun) {
-    MOZ_RELEASE_ASSERT(aDryRun, "You shouldn't be calling this directly");
-    return false;
-  }
   
 
 
 
   void PaintMarkers(gfxContext& aContext, const gfxMatrix& aTransform,
                     imgDrawingParams& aImgParams);
-};
-
-
-
-
-class nsDisplaySVGGeometry final : public nsPaintedDisplayItem {
-  typedef mozilla::image::imgDrawingParams imgDrawingParams;
-
- public:
-  nsDisplaySVGGeometry(nsDisplayListBuilder* aBuilder, SVGGeometryFrame* aFrame)
-      : nsPaintedDisplayItem(aBuilder, aFrame) {
-    MOZ_COUNT_CTOR(nsDisplaySVGGeometry);
-    MOZ_ASSERT(aFrame, "Must have a frame!");
-  }
-#ifdef NS_BUILD_REFCNT_LOGGING
-  virtual ~nsDisplaySVGGeometry() { MOZ_COUNT_DTOR(nsDisplaySVGGeometry); }
-#endif
-
-  NS_DISPLAY_DECL_NAME("nsDisplaySVGGeometry", TYPE_SVG_GEOMETRY)
-
-  virtual void HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
-                       HitTestState* aState,
-                       nsTArray<nsIFrame*>* aOutFrames) override;
-  virtual void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
-
-  nsDisplayItemGeometry* AllocateGeometry(
-      nsDisplayListBuilder* aBuilder) override {
-    return new nsDisplayItemGenericImageGeometry(this, aBuilder);
-  }
-
-  void ComputeInvalidationRegion(nsDisplayListBuilder* aBuilder,
-                                 const nsDisplayItemGeometry* aGeometry,
-                                 nsRegion* aInvalidRegion) const override;
-
-  
-  
-  bool ShouldBeActive(mozilla::wr::DisplayListBuilder& aBuilder,
-                      mozilla::wr::IpcResourceUpdateQueue& aResources,
-                      const mozilla::layers::StackingContextHelper& aSc,
-                      mozilla::layers::RenderRootStateManager* aManager,
-                      nsDisplayListBuilder* aDisplayListBuilder) {
-    
-    
-    
-    auto* frame = static_cast<SVGGeometryFrame*>(mFrame);
-    return frame->CreateWebRenderCommands(aBuilder, aResources, aSc, aManager,
-                                          aDisplayListBuilder, this,
-                                          true);
-  }
-
-  virtual bool CreateWebRenderCommands(
-      mozilla::wr::DisplayListBuilder& aBuilder,
-      mozilla::wr::IpcResourceUpdateQueue& aResources,
-      const mozilla::layers::StackingContextHelper& aSc,
-      mozilla::layers::RenderRootStateManager* aManager,
-      nsDisplayListBuilder* aDisplayListBuilder) override {
-    
-    
-    
-    auto* frame = static_cast<SVGGeometryFrame*>(mFrame);
-    bool result = frame->CreateWebRenderCommands(aBuilder, aResources, aSc,
-                                                 aManager, aDisplayListBuilder,
-                                                 this, false);
-    MOZ_ASSERT(result, "ShouldBeActive inconsistent with CreateWRCommands?");
-    return result;
-  }
 };
 }  
 
