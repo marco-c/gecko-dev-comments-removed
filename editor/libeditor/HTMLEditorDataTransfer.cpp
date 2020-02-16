@@ -390,29 +390,34 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
 
   
   
-  AutoTArray<OwningNonNull<Element>, 4> startListAndTableArray;
-  GetListAndTableParents(StartOrEnd::start, nodeList, startListAndTableArray);
-  if (!startListAndTableArray.IsEmpty()) {
-    int32_t highWaterMark =
-        DiscoverPartialListsAndTables(nodeList, startListAndTableArray);
+  AutoTArray<OwningNonNull<Element>, 4>
+      arrayOfListAndTableRelatedElementsAtStart;
+  HTMLEditor::CollectListAndTableRelatedElementsAt(
+      nodeList[0], arrayOfListAndTableRelatedElementsAtStart);
+  if (!arrayOfListAndTableRelatedElementsAtStart.IsEmpty()) {
+    int32_t highWaterMark = DiscoverPartialListsAndTables(
+        nodeList, arrayOfListAndTableRelatedElementsAtStart);
     
     
     
     if (highWaterMark >= 0) {
       ReplaceOrphanedStructure(StartOrEnd::start, nodeList,
-                               startListAndTableArray, highWaterMark);
+                               arrayOfListAndTableRelatedElementsAtStart,
+                               highWaterMark);
     }
   }
 
   
-  AutoTArray<OwningNonNull<Element>, 4> endListAndTableArray;
-  GetListAndTableParents(StartOrEnd::end, nodeList, endListAndTableArray);
-  if (!endListAndTableArray.IsEmpty()) {
-    int32_t highWaterMark =
-        DiscoverPartialListsAndTables(nodeList, endListAndTableArray);
+  AutoTArray<OwningNonNull<Element>, 4> arrayOfListAndTableRelatedElementsAtEnd;
+  HTMLEditor::CollectListAndTableRelatedElementsAt(
+      nodeList.LastElement(), arrayOfListAndTableRelatedElementsAtEnd);
+  if (!arrayOfListAndTableRelatedElementsAtEnd.IsEmpty()) {
+    int32_t highWaterMark = DiscoverPartialListsAndTables(
+        nodeList, arrayOfListAndTableRelatedElementsAtEnd);
     
     if (highWaterMark >= 0) {
-      ReplaceOrphanedStructure(StartOrEnd::end, nodeList, endListAndTableArray,
+      ReplaceOrphanedStructure(StartOrEnd::end, nodeList,
+                               arrayOfListAndTableRelatedElementsAtEnd,
                                highWaterMark);
     }
   }
@@ -2737,19 +2742,14 @@ void HTMLEditor::CreateListOfNodesToPaste(
   iter.AppendAllNodesToArray(outNodeList);
 }
 
-void HTMLEditor::GetListAndTableParents(
-    StartOrEnd aStartOrEnd, nsTArray<OwningNonNull<nsINode>>& aNodeList,
-    nsTArray<OwningNonNull<Element>>& outArray) {
-  MOZ_ASSERT(aNodeList.Length());
 
-  
-  
-  int32_t idx = aStartOrEnd == StartOrEnd::end ? aNodeList.Length() - 1 : 0;
-
-  for (nsCOMPtr<nsINode> node = aNodeList[idx]; node;
-       node = node->GetParentNode()) {
-    if (HTMLEditUtils::IsList(node) || HTMLEditUtils::IsTable(node)) {
-      outArray.AppendElement(*node->AsElement());
+void HTMLEditor::CollectListAndTableRelatedElementsAt(
+    nsINode& aNode,
+    nsTArray<OwningNonNull<Element>>& aOutArrayOfListAndTableElements) {
+  for (nsIContent* content = nsIContent::FromNode(&aNode); content;
+       content = content->GetParentElement()) {
+    if (HTMLEditUtils::IsList(content) || HTMLEditUtils::IsTable(content)) {
+      aOutArrayOfListAndTableElements.AppendElement(*content->AsElement());
     }
   }
 }
