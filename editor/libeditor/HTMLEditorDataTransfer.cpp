@@ -409,8 +409,8 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
     
     
     if (listOrTableElement) {
-      ReplaceOrphanedStructure(StartOrEnd::start, nodeList,
-                               *listOrTableElement);
+      HTMLEditor::ReplaceOrphanedStructure(StartOrEnd::start, nodeList,
+                                           *listOrTableElement);
     }
   }
 
@@ -423,7 +423,8 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
         nodeList, arrayOfListAndTableRelatedElementsAtEnd);
     
     if (listOrTableElement) {
-      ReplaceOrphanedStructure(StartOrEnd::end, nodeList, *listOrTableElement);
+      HTMLEditor::ReplaceOrphanedStructure(StartOrEnd::end, nodeList,
+                                           *listOrTableElement);
     }
   }
 
@@ -2912,25 +2913,28 @@ bool HTMLEditor::IsReplaceableListElement(Element& aListElement,
   return false;
 }
 
-void HTMLEditor::ReplaceOrphanedStructure(
-    StartOrEnd aStartOrEnd, nsTArray<OwningNonNull<nsINode>>& aNodeArray,
-    Element& aListOrTableElement) {
-  MOZ_ASSERT(!aNodeArray.IsEmpty());
 
-  OwningNonNull<nsINode>& edgeNode =
-      aStartOrEnd == StartOrEnd::end ? aNodeArray.LastElement() : aNodeArray[0];
+void HTMLEditor::ReplaceOrphanedStructure(
+    StartOrEnd aStartOrEnd, nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes,
+    Element& aListOrTableElement) {
+  MOZ_ASSERT(!aArrayOfNodes.IsEmpty());
+
+  OwningNonNull<nsINode>& firstOrLastChildNode =
+      aStartOrEnd == StartOrEnd::end ? aArrayOfNodes.LastElement()
+                                     : aArrayOfNodes[0];
 
   
   Element* replaceElement;
   if (HTMLEditUtils::IsList(&aListOrTableElement)) {
-    if (!HTMLEditor::IsReplaceableListElement(aListOrTableElement, edgeNode)) {
+    if (!HTMLEditor::IsReplaceableListElement(aListOrTableElement,
+                                              firstOrLastChildNode)) {
       return;
     }
     replaceElement = &aListOrTableElement;
   } else {
     MOZ_ASSERT(aListOrTableElement.IsHTMLElement(nsGkAtoms::table));
-    replaceElement =
-        HTMLEditor::FindReplaceableTableElement(aListOrTableElement, edgeNode);
+    replaceElement = HTMLEditor::FindReplaceableTableElement(
+        aListOrTableElement, firstOrLastChildNode);
     if (!replaceElement) {
       return;
     }
@@ -2939,24 +2943,34 @@ void HTMLEditor::ReplaceOrphanedStructure(
   
   
   
-  uint32_t removedCount = 0;
-  uint32_t originalLength = aNodeArray.Length();
-  for (uint32_t i = 0; i < originalLength; i++) {
-    uint32_t idx = aStartOrEnd == StartOrEnd::start ? (i - removedCount)
-                                                    : (originalLength - i - 1);
-    OwningNonNull<nsINode> endpoint = aNodeArray[idx];
-    if (endpoint == replaceElement ||
-        EditorUtils::IsDescendantOf(*endpoint, *replaceElement)) {
-      aNodeArray.RemoveElementAt(idx);
-      removedCount++;
+  for (size_t i = 0; i < aArrayOfNodes.Length();) {
+    OwningNonNull<nsINode>& node = aArrayOfNodes[i];
+    if (node == replaceElement) {
+      
+      
+      
+      aArrayOfNodes.RemoveElementAt(i);
+      continue;
+    }
+    if (!EditorUtils::IsDescendantOf(node, *replaceElement)) {
+      i++;
+      continue;
+    }
+    
+    
+    nsIContent* parent = node->GetParent();
+    aArrayOfNodes.RemoveElementAt(i);
+    while (i < aArrayOfNodes.Length() &&
+           aArrayOfNodes[i]->GetParent() == parent) {
+      aArrayOfNodes.RemoveElementAt(i);
     }
   }
 
   
   if (aStartOrEnd == StartOrEnd::end) {
-    aNodeArray.AppendElement(*replaceElement);
+    aArrayOfNodes.AppendElement(*replaceElement);
   } else {
-    aNodeArray.InsertElementAt(0, *replaceElement);
+    aArrayOfNodes.InsertElementAt(0, *replaceElement);
   }
 }
 
