@@ -86,7 +86,7 @@ promise_test(async t => {
 
   
   const fetchPromise = w.fetch('?action=use-stored-ranged-response', { mode: 'no-cors' });
-  promise_rejects(t, new TypeError(), fetchPromise);
+  promise_rejects_js(t, TypeError, fetchPromise);
 
   
   const loadScriptPromise = loadScript('?action=use-stored-ranged-response', { doc: w.document });
