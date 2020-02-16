@@ -2,7 +2,7 @@
 
 
 
-use std::{collections::HashMap, convert::TryFrom, fmt, time::SystemTime};
+use std::{collections::HashMap, convert::TryFrom, fmt};
 
 use dogear::{
     debug, AbortSignal, CompletionOps, Content, DeleteLocalItem, Guid, Item, Kind, MergedRoot,
@@ -429,7 +429,13 @@ impl<'s> dogear::Store for Store<'s> {
         }
 
         debug!(self.driver, "Updating local items in Places");
-        update_local_items_in_places(&tx, &self.driver, &self.controller, &ops)?;
+        update_local_items_in_places(
+            &tx,
+            &self.driver,
+            &self.controller,
+            self.local_time_millis,
+            &ops,
+        )?;
 
         debug!(self.driver, "Staging items to upload");
         stage_items_to_upload(
@@ -464,6 +470,7 @@ fn update_local_items_in_places<'t>(
     db: &Conn,
     driver: &Driver,
     controller: &AbortController,
+    local_time_millis: i64,
     ops: &CompletionOps<'t>,
 ) -> Result<()> {
     debug!(
@@ -479,7 +486,10 @@ fn update_local_items_in_places<'t>(
          DELETE FROM itemsMoved;",
     )?;
 
-    let now = rounded_now();
+    
+    
+    
+    let now = local_time_millis * 1000;
 
     
     
@@ -1255,15 +1265,6 @@ impl fmt::Display for UploadItemsFragment {
             self.0
         )
     }
-}
-
-
-
-fn rounded_now() -> u64 {
-    SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .map(|d| (d.as_secs() as u64) * 1_000_000 + u64::from(d.subsec_millis()) * 1000)
-        .unwrap_or(0)
 }
 
 pub enum ApplyStatus {
