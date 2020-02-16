@@ -39,11 +39,6 @@ const {
 
 
 
-loader.lazyGetter(this, "RequestListColumnInitiator", function() {
-  return createFactory(
-    require("devtools/client/netmonitor/src/components/request-list/RequestListColumnInitiator")
-  );
-});
 loader.lazyGetter(this, "RequestListColumnCause", function() {
   return createFactory(
     require("devtools/client/netmonitor/src/components/request-list/RequestListColumnCause")
@@ -195,11 +190,6 @@ const COLUMN_COMPONENTS = [
     column: "cause",
     ColumnComponent: RequestListColumnCause,
     props: ["onCauseBadgeMouseDown"],
-  },
-  {
-    column: "initiator",
-    ColumnComponent: RequestListColumnInitiator,
-    props: ["onInitiatorBadgeMouseDown"],
   },
   { column: "type", ColumnComponent: RequestListColumnType },
   {
