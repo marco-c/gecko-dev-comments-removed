@@ -2799,35 +2799,66 @@ int32_t HTMLEditor::DiscoverPartialListsAndTables(
   return ret;
 }
 
-Element* HTMLEditor::ScanForListAndTableStructure(
-    nsINode& aNodeMaybeInListOrTable, Element& aListOrTable) {
-  
-  bool isList = HTMLEditUtils::IsList(&aListOrTable);
-  for (Element* element = aNodeMaybeInListOrTable.IsElement()
-                              ? aNodeMaybeInListOrTable.AsElement()
-                              : aNodeMaybeInListOrTable.GetParentElement();
+Element* HTMLEditor::ScanForTableStructure(nsINode& aNodeMaybeInTable,
+                                           Element& aTableElement) {
+  for (Element* element = aNodeMaybeInTable.IsElement()
+                              ? aNodeMaybeInTable.AsElement()
+                              : aNodeMaybeInTable.GetParentElement();
        element; element = element->GetParentElement()) {
-    if (!(isList && HTMLEditUtils::IsListItem(element)) &&
-        !(!isList && HTMLEditUtils::IsTableElement(element) &&
-          !element->IsHTMLElement(nsGkAtoms::table))) {
+    if (!HTMLEditUtils::IsTableElement(element) ||
+        element->IsHTMLElement(nsGkAtoms::table)) {
       continue;
     }
     Element* structureElement = element->GetParentElement();
-    if (isList) {
-      while (structureElement && !HTMLEditUtils::IsList(structureElement)) {
-        structureElement = structureElement->GetParentElement();
-      }
-    } else {
-      while (structureElement &&
-             !structureElement->IsHTMLElement(nsGkAtoms::table)) {
-        structureElement = structureElement->GetParentElement();
-      }
+    while (structureElement &&
+           !structureElement->IsHTMLElement(nsGkAtoms::table)) {
+      structureElement = structureElement->GetParentElement();
     }
-    if (structureElement == &aListOrTable) {
-      return isList ? structureElement : element;
+    if (structureElement == &aTableElement) {
+      return element;
     }
   }
   return nullptr;
+}
+
+
+bool HTMLEditor::IsReplaceableListElement(Element& aListElement,
+                                          nsINode& aNodeMaybeInListElement) {
+  MOZ_ASSERT(HTMLEditUtils::IsList(&aListElement));
+  
+  
+  
+  
+  
+  
+  for (Element* element = aNodeMaybeInListElement.IsElement()
+                              ? aNodeMaybeInListElement.AsElement()
+                              : aNodeMaybeInListElement.GetParentElement();
+       element; element = element->GetParentElement()) {
+    if (!HTMLEditUtils::IsListItem(element)) {
+      
+      
+      
+      NS_ASSERTION(element != &aListElement,
+                   "The list element which is looking for is ignored");
+      continue;
+    }
+    Element* listElement = nullptr;
+    for (Element* maybeListElement = element->GetParentElement();
+         maybeListElement;
+         maybeListElement = maybeListElement->GetParentElement()) {
+      if (HTMLEditUtils::IsList(maybeListElement)) {
+        listElement = maybeListElement;
+        break;
+      }
+    }
+    if (listElement == &aListElement) {
+      return true;
+    }
+    
+    
+  }
+  return false;
 }
 
 void HTMLEditor::ReplaceOrphanedStructure(
@@ -2836,16 +2867,22 @@ void HTMLEditor::ReplaceOrphanedStructure(
     int32_t aHighWaterMark) {
   MOZ_ASSERT(!aNodeArray.IsEmpty());
 
+  OwningNonNull<nsINode>& edgeNode =
+      aStartOrEnd == StartOrEnd::end ? aNodeArray.LastElement() : aNodeArray[0];
   OwningNonNull<Element> curNode = aListAndTableArray[aHighWaterMark];
 
   
-  Element* replaceElment = ScanForListAndTableStructure(
-      aStartOrEnd == StartOrEnd::end ? *aNodeArray.LastElement()
-                                     : *aNodeArray[0],
-      curNode);
-
-  if (!replaceElment) {
-    return;
+  Element* replaceElement;
+  if (HTMLEditUtils::IsList(curNode)) {
+    if (!HTMLEditor::IsReplaceableListElement(curNode, edgeNode)) {
+      return;
+    }
+    replaceElement = curNode;
+  } else {
+    replaceElement = ScanForTableStructure(edgeNode, curNode);
+    if (!replaceElement) {
+      return;
+    }
   }
 
   
@@ -2857,8 +2894,8 @@ void HTMLEditor::ReplaceOrphanedStructure(
     uint32_t idx = aStartOrEnd == StartOrEnd::start ? (i - removedCount)
                                                     : (originalLength - i - 1);
     OwningNonNull<nsINode> endpoint = aNodeArray[idx];
-    if (endpoint == replaceElment ||
-        EditorUtils::IsDescendantOf(*endpoint, *replaceElment)) {
+    if (endpoint == replaceElement ||
+        EditorUtils::IsDescendantOf(*endpoint, *replaceElement)) {
       aNodeArray.RemoveElementAt(idx);
       removedCount++;
     }
@@ -2866,9 +2903,9 @@ void HTMLEditor::ReplaceOrphanedStructure(
 
   
   if (aStartOrEnd == StartOrEnd::end) {
-    aNodeArray.AppendElement(*replaceElment);
+    aNodeArray.AppendElement(*replaceElement);
   } else {
-    aNodeArray.InsertElementAt(0, *replaceElment);
+    aNodeArray.InsertElementAt(0, *replaceElement);
   }
 }
 
