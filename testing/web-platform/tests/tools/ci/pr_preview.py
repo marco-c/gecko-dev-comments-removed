@@ -331,9 +331,6 @@ def synchronize(host, github_project, window):
                 project.create_deployment(
                     pull_request, revision_latest
                 )
-                
-                
-                logger.info('Created one deployment, returning for testing purposes')
         else:
             logger.info('Pull Request should not be mirrored')
 
