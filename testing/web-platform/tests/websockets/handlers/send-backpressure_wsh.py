@@ -1,5 +1,6 @@
 
 
+import six
 import time
 
 
@@ -22,4 +23,4 @@ def web_socket_transfer_data(request):
     
     start_time = time.time()
     request.ws_stream.send_message(b' ' * MESSAGE_SIZE, binary=True)
-    request.ws_stream.send_message(str(time.time() - start_time), binary=False)
+    request.ws_stream.send_message(six.text_type(time.time() - start_time), binary=False)
