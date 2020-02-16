@@ -124,7 +124,7 @@ class WeblayerShell(Browser):
         
         
         
-        return self.server.is_alive
+        return self.server.is_alive()
 
     def cleanup(self):
         self.stop()
