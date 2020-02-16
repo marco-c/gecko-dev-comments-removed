@@ -1,7 +1,7 @@
-
-
-
-
+/**
+ * Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
 
 const NS_OK = Cr.NS_OK;
 const NS_ERROR_FAILURE = Cr.NS_ERROR_FAILURE;
@@ -27,6 +27,10 @@ function ok(cond, msg) {
   Assert.ok(!!cond, msg);
 }
 
+function todo(cond, msg) {
+  todo_check_true(cond);
+}
+
 function run_test() {
   runTest();
 }
@@ -39,22 +43,22 @@ if (!this.runTest) {
 
     Cu.importGlobalProperties(["indexedDB", "File", "Blob", "FileReader"]);
 
-    
-    
-    
+    // In order to support converting tests to using async functions from using
+    // generator functions, we detect async functions by checking the name of
+    // function's constructor.
     Assert.ok(
       typeof testSteps === "function",
       "There should be a testSteps function"
     );
     if (testSteps.constructor.name === "AsyncFunction") {
-      
-      
+      // Do run our existing cleanup function that would normally be called by
+      // the generator's call to finishTest().
       registerCleanupFunction(resetTesting);
 
       add_task(testSteps);
 
-      
-      
+      // Since we defined run_test, we must invoke run_next_test() to start the
+      // async test.
       run_next_test();
     } else {
       Assert.ok(
@@ -275,11 +279,11 @@ function getProfileDir() {
   return directoryService.get("ProfD", Ci.nsIFile);
 }
 
-
-
-
-
-
+// Given a "/"-delimited path relative to a base file (or the profile
+// directory if a base file is not provided) return an nsIFile representing the
+// path.  This does not test for the existence of the file or parent
+// directories.  It is safe even on Windows where the directory separator is
+// not "/", but make sure you're not passing in a "\"-delimited path.
 function getRelativeFile(relativePath, baseFile) {
   if (!baseFile) {
     baseFile = getProfileDir();
@@ -298,7 +302,7 @@ function getRelativeFile(relativePath, baseFile) {
 }
 
 function getPersistedFromMetadata(readBuffer) {
-  const persistedPosition = 8; 
+  const persistedPosition = 8; // Persisted state is stored in the 9th byte
   let view =
     readBuffer instanceof Uint8Array ? readBuffer : new Uint8Array(readBuffer);
 
@@ -422,11 +426,11 @@ function installPackages(packageRelativePaths) {
   }
 }
 
-
-
-
-
-
+// Take current storage structure on disk and compare it with the expected
+// structure. The expected structure is defined in JSON and consists of a per
+// test package definition and a shared package definition. The shared package
+// definition should contain unknown stuff which needs to be properly handled
+// in all situations.
 function verifyStorage(packageDefinitionRelativePaths, key) {
   if (packageDefinitionRelativePaths.length != 2) {
     throw new Error("Unsupported number of package definition relative paths");
