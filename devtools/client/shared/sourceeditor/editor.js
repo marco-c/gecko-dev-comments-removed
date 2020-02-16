@@ -15,6 +15,7 @@ const ENABLE_CODE_FOLDING = "devtools.editor.enableCodeFolding";
 const KEYMAP_PREF = "devtools.editor.keymap";
 const AUTO_CLOSE = "devtools.editor.autoclosebrackets";
 const AUTOCOMPLETE = "devtools.editor.autocomplete";
+const CARET_BLINK_TIME = "ui.caretBlinkTime";
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 const VALID_KEYMAPS = new Map([
@@ -239,6 +240,15 @@ function Editor(config) {
   if (this.config.cssProperties) {
     
     this.config.autocompleteOpts.cssProperties = this.config.cssProperties;
+  }
+
+  
+  
+  if (Services.prefs.prefHasUserValue(CARET_BLINK_TIME)) {
+    this.config.cursorBlinkRate = Services.prefs.getIntPref(
+      CARET_BLINK_TIME,
+      530
+    );
   }
 
   EventEmitter.decorate(this);
