@@ -97,13 +97,15 @@ void nsStyleLinkElement::GetTitleAndMediaForElement(const Element& aSelf,
   nsContentUtils::ASCIIToLower(aMedia);
 }
 
-bool nsStyleLinkElement::IsCSSMimeTypeAttribute(const Element& aSelf) {
+bool nsStyleLinkElement::IsCSSMimeTypeAttributeForStyleElement(
+    const Element& aSelf) {
+  
+  
+  
+  
   nsAutoString type;
-  nsAutoString mimeType;
-  nsAutoString notUsed;
   aSelf.GetAttr(kNameSpaceID_None, nsGkAtoms::type, type);
-  nsContentUtils::SplitMimeType(type, mimeType, notUsed);
-  return mimeType.IsEmpty() || mimeType.LowerCaseEqualsLiteral("text/css");
+  return type.IsEmpty() || type.LowerCaseEqualsLiteral("text/css");
 }
 
 void nsStyleLinkElement::Unlink() {
@@ -258,9 +260,9 @@ nsStyleLinkElement::DoUpdateStyleSheet(Document* aOldDocument,
     
     
     if (aOldShadowRoot) {
-      aOldShadowRoot->RemoveSheet(mStyleSheet);
+      aOldShadowRoot->RemoveSheet(*mStyleSheet);
     } else {
-      aOldDocument->RemoveStyleSheet(mStyleSheet);
+      aOldDocument->RemoveStyleSheet(*mStyleSheet);
     }
 
     SetStyleSheet(nullptr);
@@ -295,10 +297,10 @@ nsStyleLinkElement::DoUpdateStyleSheet(Document* aOldDocument,
       ShadowRoot* containingShadow = thisContent->GetContainingShadow();
       
       if (MOZ_LIKELY(containingShadow)) {
-        containingShadow->RemoveSheet(mStyleSheet);
+        containingShadow->RemoveSheet(*mStyleSheet);
       }
     } else {
-      doc->RemoveStyleSheet(mStyleSheet);
+      doc->RemoveStyleSheet(*mStyleSheet);
     }
 
     nsStyleLinkElement::SetStyleSheet(nullptr);

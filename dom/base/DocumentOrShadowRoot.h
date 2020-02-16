@@ -73,17 +73,20 @@ class DocumentOrShadowRoot {
 
   size_t SheetCount() const { return mStyleSheets.Length(); }
 
-  int32_t IndexOfSheet(const StyleSheet& aSheet) const {
-    return mStyleSheets.IndexOf(&aSheet);
-  }
+  size_t AdoptedSheetCount() const { return mAdoptedStyleSheets.Length(); }
+
+  
+
+
+
+
+
+
+  int32_t StyleOrderIndexOfSheet(const StyleSheet& aSheet) const;
 
   StyleSheetList* StyleSheets();
 
   void GetAdoptedStyleSheets(nsTArray<RefPtr<StyleSheet>>&) const;
-
-  void SetAdoptedStyleSheets(
-      const Sequence<OwningNonNull<StyleSheet>>& aAdoptedStyleSheets,
-      ErrorResult& aRv);
 
   Element* GetElementById(const nsAString& aElementId);
 
@@ -222,6 +225,11 @@ class DocumentOrShadowRoot {
   
   already_AddRefed<StyleSheet> RemoveSheet(StyleSheet& aSheet);
   void InsertSheetAt(size_t aIndex, StyleSheet& aSheet);
+  void InsertAdoptedSheetAt(size_t aIndex, StyleSheet& aSheet);
+
+  void EnsureAdoptedSheetsAreValid(
+      const Sequence<OwningNonNull<StyleSheet>>& aAdoptedStyleSheets,
+      ErrorResult& aRv);
 
   void AddSizeOfExcludingThis(nsWindowSizes&) const;
   void AddSizeOfOwnedSheetArrayExcludingThis(
@@ -237,8 +245,6 @@ class DocumentOrShadowRoot {
   nsTArray<RefPtr<StyleSheet>> mStyleSheets;
   RefPtr<StyleSheetList> mDOMStyleSheets;
 
-  
-  
   
   
   nsTArray<RefPtr<StyleSheet>> mAdoptedStyleSheets;

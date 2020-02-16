@@ -1700,7 +1700,7 @@ class Document : public nsINode,
   
 
 
-  void RemoveStyleSheet(StyleSheet*);
+  void RemoveStyleSheet(StyleSheet&);
 
   
 
@@ -1724,6 +1724,8 @@ class Document : public nsINode,
   StyleSheet* GetFirstAdditionalAuthorSheet() {
     return mAdditionalSheets[eAuthorSheet].SafeElementAt(0);
   }
+
+  void AppendAdoptedStyleSheet(StyleSheet& aSheet);
 
   
 
@@ -3879,6 +3881,10 @@ class Document : public nsINode,
 
   already_AddRefed<Promise> AddCertException(bool aIsTemporary);
 
+  void SetAdoptedStyleSheets(
+      const Sequence<OwningNonNull<StyleSheet>>& aAdoptedStyleSheets,
+      ErrorResult& aRv);
+
  protected:
   void DoUpdateSVGUseElementShadowTrees();
 
@@ -4947,6 +4953,8 @@ class Document : public nsINode,
 
   nsCOMPtr<nsIRequest> mOnloadBlocker;
 
+  
+  
   nsTArray<RefPtr<StyleSheet>> mAdditionalSheets[AdditionalSheetTypeCount];
 
   

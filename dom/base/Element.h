@@ -1448,23 +1448,6 @@ class Element : public FragmentOrElement {
 
 
 
-
-
-
-
-
-
-  virtual void NodeInfoChanged(Document* aOldDoc) {
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-    AssertInvariantsOnNodeInfoChange();
-#endif
-  }
-
-  
-
-
-
-
   static void ParseCORSValue(const nsAString& aValue, nsAttrValue& aResult);
 
   

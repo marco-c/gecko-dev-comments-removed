@@ -246,9 +246,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
     
     NotOwnedByDocumentOrShadowRoot
   };
-  dom::DocumentOrShadowRoot* GetAssociatedDocumentOrShadowRoot() const {
-    return mDocumentOrShadowRoot;
-  }
+  dom::DocumentOrShadowRoot* GetAssociatedDocumentOrShadowRoot() const;
 
   
   
@@ -258,6 +256,8 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   dom::Document* GetComposedDoc() const;
 
+  
+  
   
   
   
@@ -377,8 +377,21 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   bool IsConstructed() const { return !!mConstructorDocument; }
 
   
-  bool ConstructorDocumentMatches(dom::Document* document) const {
-    return mConstructorDocument == document;
+  bool ConstructorDocumentMatches(dom::Document* aDocument) const {
+    return mConstructorDocument == aDocument;
+  }
+
+  
+  
+  void AddAdopter(dom::DocumentOrShadowRoot& aAdopter) {
+    MOZ_ASSERT(IsConstructed());
+    mAdopters.AppendElement(&aAdopter);
+  }
+
+  
+  void RemoveAdopter(dom::DocumentOrShadowRoot& aAdopter) {
+    
+    mAdopters.RemoveElement(&aAdopter);
   }
 
   
@@ -542,6 +555,8 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   RefPtr<ServoCSSRuleList> mRuleList;
 
   MozPromiseHolder<StyleSheetParsePromise> mParsePromise;
+
+  nsTArray<dom::DocumentOrShadowRoot*> mAdopters;
 
   
   

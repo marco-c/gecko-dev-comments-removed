@@ -268,6 +268,9 @@ class nsNodeWeakReference final : public nsIWeakReference {
 
 
 class nsINode : public mozilla::dom::EventTarget {
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  void AssertInvariantsOnNodeInfoChange();
+#endif
  public:
   typedef mozilla::dom::BoxQuadOptions BoxQuadOptions;
   typedef mozilla::dom::ConvertCoordinateOptions ConvertCoordinateOptions;
@@ -679,6 +682,23 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
   inline mozilla::dom::NodeInfo* NodeInfo() const { return mNodeInfo; }
+
+  
+
+
+
+
+
+
+
+
+
+
+  virtual void NodeInfoChanged(Document* aOldDoc) {
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    AssertInvariantsOnNodeInfoChange();
+#endif
+  }
 
   inline bool IsInNamespace(int32_t aNamespace) const {
     return mNodeInfo->NamespaceID() == aNamespace;
