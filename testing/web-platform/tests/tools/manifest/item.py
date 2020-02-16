@@ -1,4 +1,3 @@
-import os.path
 from inspect import isabstract
 from six import iteritems, with_metaclass
 from six.moves.urllib.parse import urljoin, urlparse
@@ -61,11 +60,6 @@ class ManifestItem(with_metaclass(ManifestItemMeta)):
         """The item's type"""
         pass
 
-    @property
-    def path_parts(self):
-        
-        return tuple(self.path.split(os.path.sep))
-
     def key(self):
         
         """A unique identifier for the test"""
@@ -116,7 +110,7 @@ class URLManifestItem(ManifestItem):
         super(URLManifestItem, self).__init__(tests_root, path)
         assert url_base[0] == "/"
         self.url_base = url_base
-        assert url is None or url[0] != "/"
+        assert url[0] != "/"
         self._url = url
         self._extras = extras
 
@@ -128,11 +122,10 @@ class URLManifestItem(ManifestItem):
     @property
     def url(self):
         
-        rel_url = self._url or self.path.replace(os.path.sep, u"/")
         
         if self.url_base == "/":
-            return "/" + rel_url
-        return urljoin(self.url_base, rel_url)
+            return "/" + self._url
+        return urljoin(self.url_base, self._url)
 
     @property
     def https(self):
@@ -148,8 +141,7 @@ class URLManifestItem(ManifestItem):
 
     def to_json(self):
         
-        rel_url = None if self._url == self.path.replace(os.path.sep, u"/") else self._url
-        rv = (rel_url, {})  
+        rv = (self._url, {})  
         return rv
 
     @classmethod
@@ -263,8 +255,7 @@ class RefTest(URLManifestItem):
 
     def to_json(self):  
         
-        rel_url = None if self._url == self.path else self._url
-        rv = (rel_url, self.references, {})  
+        rv = (self._url, self.references, {})  
         extras = rv[-1]
         if self.timeout is not None:
             extras["timeout"] = self.timeout

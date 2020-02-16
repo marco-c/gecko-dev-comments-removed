@@ -103,5 +103,4 @@ class cached_property(Generic[T]):
         
         assert self.name not in obj.__dict__
         rv = obj.__dict__[self.name] = self.func(obj)
-        obj.__dict__.setdefault("__cached_properties__", set()).add(self.name)
         return rv
