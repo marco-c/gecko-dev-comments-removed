@@ -90,49 +90,113 @@ class RWLock : public BlockingResourceBase {
 #endif
 };
 
-
-
-class MOZ_RAII AutoReadLock final {
+template <typename T>
+class MOZ_RAII BaseAutoReadLock {
  public:
-  explicit AutoReadLock(RWLock& aLock MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+  explicit BaseAutoReadLock(T& aLock MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
       : mLock(&aLock) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     MOZ_ASSERT(mLock, "null lock");
     mLock->ReadLock();
   }
 
-  ~AutoReadLock() { mLock->ReadUnlock(); }
+  ~BaseAutoReadLock() { mLock->ReadUnlock(); }
 
  private:
-  AutoReadLock() = delete;
-  AutoReadLock(const AutoReadLock&) = delete;
-  AutoReadLock& operator=(const AutoReadLock&) = delete;
+  BaseAutoReadLock() = delete;
+  BaseAutoReadLock(const BaseAutoReadLock&) = delete;
+  BaseAutoReadLock& operator=(const BaseAutoReadLock&) = delete;
 
-  RWLock* mLock;
+  T* mLock;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
-
-
-class MOZ_RAII AutoWriteLock final {
+template <typename T>
+class MOZ_RAII BaseAutoWriteLock final {
  public:
-  explicit AutoWriteLock(RWLock& aLock MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+  explicit BaseAutoWriteLock(T& aLock MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
       : mLock(&aLock) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     MOZ_ASSERT(mLock, "null lock");
     mLock->WriteLock();
   }
 
-  ~AutoWriteLock() { mLock->WriteUnlock(); }
+  ~BaseAutoWriteLock() { mLock->WriteUnlock(); }
 
  private:
-  AutoWriteLock() = delete;
-  AutoWriteLock(const AutoWriteLock&) = delete;
-  AutoWriteLock& operator=(const AutoWriteLock&) = delete;
+  BaseAutoWriteLock() = delete;
+  BaseAutoWriteLock(const BaseAutoWriteLock&) = delete;
+  BaseAutoWriteLock& operator=(const BaseAutoWriteLock&) = delete;
 
-  RWLock* mLock;
+  T* mLock;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
+
+
+
+typedef BaseAutoReadLock<RWLock> AutoReadLock;
+
+
+
+typedef BaseAutoWriteLock<RWLock> AutoWriteLock;
+
+
+
+
+
+
+
+
+namespace detail {
+
+class StaticRWLock {
+ public:
+  
+  
+  
+#ifdef DEBUG
+  StaticRWLock() { MOZ_ASSERT(!mLock); }
+#endif
+
+  void ReadLock() { Lock()->ReadLock(); }
+  void ReadUnlock() { Lock()->ReadUnlock(); }
+  void WriteLock() { Lock()->WriteLock(); }
+  void WriteUnlock() { Lock()->WriteUnlock(); }
+
+ private:
+  RWLock* Lock() {
+    if (mLock) {
+      return mLock;
+    }
+
+    RWLock* lock = new RWLock("StaticRWLock");
+    if (!mLock.compareExchange(nullptr, lock)) {
+      delete lock;
+    }
+
+    return mLock;
+  }
+
+  Atomic<RWLock*> mLock;
+
+  
+  
+  
+  
+#ifdef DEBUG
+  StaticRWLock(const StaticRWLock& aOther);
+#endif
+
+  
+  StaticRWLock& operator=(StaticRWLock* aRhs);
+  static void* operator new(size_t) noexcept(true);
+  static void operator delete(void*);
+};
+
+typedef BaseAutoReadLock<StaticRWLock> StaticAutoReadLock;
+typedef BaseAutoWriteLock<StaticRWLock> StaticAutoWriteLock;
+
+}  
 
 }  
 
