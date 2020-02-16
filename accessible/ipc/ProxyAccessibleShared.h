@@ -25,7 +25,8 @@ uint64_t NativeState() const;
 
 
 
-void Name(nsString& aName) const;
+
+uint32_t Name(nsString& aName) const;
 
 
 
