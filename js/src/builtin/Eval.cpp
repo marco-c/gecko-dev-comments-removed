@@ -217,8 +217,6 @@ enum EvalType { DIRECT_EVAL, INDIRECT_EVAL };
 
 
 
-
-
 static bool EvalKernel(JSContext* cx, HandleValue v, EvalType evalType,
                        AbstractFramePtr caller, HandleObject env,
                        jsbytecode* pc, MutableHandleValue vp) {
@@ -227,19 +225,18 @@ static bool EvalKernel(JSContext* cx, HandleValue v, EvalType evalType,
   MOZ_ASSERT_IF(evalType == INDIRECT_EVAL, IsGlobalLexicalEnvironment(env));
   AssertInnerizedEnvironmentChain(cx, *env);
 
+  if (!GlobalObject::isRuntimeCodeGenEnabled(cx, v, cx->global())) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_CSP_BLOCKED_EVAL);
+    return false;
+  }
+
   
   if (!v.isString()) {
     vp.set(v);
     return true;
   }
-
-  
   RootedString str(cx, v.toString());
-  if (!GlobalObject::isRuntimeCodeGenEnabled(cx, str, cx->global())) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_CSP_BLOCKED_EVAL);
-    return false;
-  }
 
   
 
@@ -357,7 +354,8 @@ bool js::DirectEvalStringFromIon(JSContext* cx, HandleObject env,
                                  jsbytecode* pc, MutableHandleValue vp) {
   AssertInnerizedEnvironmentChain(cx, *env);
 
-  if (!GlobalObject::isRuntimeCodeGenEnabled(cx, str, cx->global())) {
+  RootedValue v(cx, StringValue(str));
+  if (!GlobalObject::isRuntimeCodeGenEnabled(cx, v, cx->global())) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_CSP_BLOCKED_EVAL);
     return false;
