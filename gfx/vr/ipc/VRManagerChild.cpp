@@ -43,6 +43,7 @@ VRManagerChild::VRManagerChild()
   MOZ_ASSERT(NS_IsMainThread());
 
   mStartTimeStamp = TimeStamp::Now();
+  AddRef();
 }
 
 VRManagerChild::~VRManagerChild() { MOZ_ASSERT(NS_IsMainThread()); }
@@ -90,7 +91,6 @@ bool VRManagerChild::IsPresenting() {
 
 bool VRManagerChild::InitForContent(Endpoint<PVRManagerChild>&& aEndpoint) {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(!sVRManagerChildSingleton);
 
   RefPtr<VRManagerChild> child(new VRManagerChild());
   if (!aEndpoint.Bind(child)) {
@@ -98,15 +98,6 @@ bool VRManagerChild::InitForContent(Endpoint<PVRManagerChild>&& aEndpoint) {
   }
   sVRManagerChildSingleton = child;
   return true;
-}
-
-
-bool VRManagerChild::ReinitForContent(Endpoint<PVRManagerChild>&& aEndpoint) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  ShutDown();
-
-  return InitForContent(std::move(aEndpoint));
 }
 
 
@@ -135,21 +126,16 @@ void VRManagerChild::InitWithGPUProcess(Endpoint<PVRManagerChild>&& aEndpoint) {
 
 void VRManagerChild::ShutDown() {
   MOZ_ASSERT(NS_IsMainThread());
-  if (sVRManagerChildSingleton) {
-    sVRManagerChildSingleton->Destroy();
-    SpinEventLoopUntil([&]() { return !sVRManagerChildSingleton; });
+  if (!sVRManagerChildSingleton) {
+    return;
   }
+  sVRManagerChildSingleton->Close();
+  sVRManagerChildSingleton = nullptr;
 }
 
-void VRManagerChild::Destroy() {
-  
-  RefPtr<VRManagerChild> selfRef = this;
-  MessageLoop::current()->PostTask(NewRunnableMethod(
-      "VRManagerChild::AfterDestroy", selfRef, &VRManagerChild::AfterDestroy));
-}
+void VRManagerChild::ActorDealloc() { Release(); }
 
-void VRManagerChild::AfterDestroy() {
-  Close();
+void VRManagerChild::ActorDestroy(ActorDestroyReason aReason) {
   if (sVRManagerChildSingleton == this) {
     sVRManagerChildSingleton = nullptr;
   }
