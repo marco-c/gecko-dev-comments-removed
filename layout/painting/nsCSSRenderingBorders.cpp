@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsCSSRenderingBorders.h"
 
@@ -42,58 +42,58 @@ using mozilla::dom::Document;
 
 #define MAX_COMPOSITE_BORDER_WIDTH LayoutDeviceIntCoord(10000)
 
-/**
- * nsCSSRendering::PaintBorder
- * nsCSSRendering::PaintOutline
- *   -> DrawBorders
- *
- * DrawBorders
- *   -> Ability to use specialized approach?
- *      |- Draw using specialized function
- *   |- separate corners?
- *   |- dashed side mask
- *   |
- *   -> can border be drawn in 1 pass? (e.g., solid border same color all
- * around)
- *      |- DrawBorderSides with all 4 sides
- *   -> more than 1 pass?
- *      |- for each corner
- *         |- clip to DoCornerClipSubPath
- *         |- for each side adjacent to corner
- *            |- clip to GetSideClipSubPath
- *            |- DrawBorderSides with one side
- *      |- for each side
- *         |- GetSideClipWithoutCornersRect
- *         |- DrawDashedOrDottedSide || DrawBorderSides with one side
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static void ComputeBorderCornerDimensions(const Float* aBorderWidths,
                                           const RectCornerRadii& aRadii,
                                           RectCornerRadii* aDimsResult);
 
-// given a side index, get the previous and next side index
+
 #define NEXT_SIDE(_s) mozilla::Side(((_s) + 1) & 3)
 #define PREV_SIDE(_s) mozilla::Side(((_s) + 3) & 3)
 
-// given a corner index, get the previous and next corner index
+
 #define NEXT_CORNER(_s) Corner(((_s) + 1) & 3)
 #define PREV_CORNER(_s) Corner(((_s) + 3) & 3)
 
-// from the given base color and the background color, turn
-// color into a color for the given border pattern style
+
+
 static Color MakeBorderColor(nscolor aColor,
                              BorderColorStyle aBorderColorStyle);
 
-// Given a line index (an index starting from the outside of the
-// border going inwards) and an array of line styles, calculate the
-// color that that stripe of the border should be rendered in.
+
+
+
 static Color ComputeColorForLine(uint32_t aLineIndex,
                                  const BorderColorStyle* aBorderColorStyle,
                                  uint32_t aBorderColorStyleCount,
                                  nscolor aBorderColor);
 
-// little helper function to check if the array of 4 floats given are
-// equal to the given value
+
+
 static bool CheckFourFloatsEqual(const Float* vals, Float k) {
   return (vals[0] == k && vals[1] == k && vals[2] == k && vals[3] == k);
 }
@@ -102,7 +102,7 @@ static bool IsZeroSize(const Size& sz) {
   return sz.width == 0.0 || sz.height == 0.0;
 }
 
-/* static */
+
 bool nsCSSBorderRenderer::AllCornersZeroSize(const RectCornerRadii& corners) {
   return IsZeroSize(corners[eCornerTopLeft]) &&
          IsZeroSize(corners[eCornerTopRight]) &&
@@ -134,17 +134,17 @@ static bool IsHorizontalSide(mozilla::Side aSide) {
 }
 
 typedef enum {
-  // Normal solid square corner.  Will be rectangular, the size of the
-  // adjacent sides.  If the corner has a border radius, the corner
-  // will always be solid, since we don't do dotted/dashed etc.
+  
+  
+  
   CORNER_NORMAL,
 
-  // Paint the corner in whatever style is not dotted/dashed of the
-  // adjacent corners.
+  
+  
   CORNER_SOLID,
 
-  // Paint the corner as a dot, the size of the bigger of the adjacent
-  // sides.
+  
+  
   CORNER_DOT
 } CornerStyle;
 
@@ -182,7 +182,7 @@ nsCSSBorderRenderer::nsCSSBorderRenderer(
   mAvoidStroke = false;
 }
 
-/* static */
+
 void nsCSSBorderRenderer::ComputeInnerRadii(const RectCornerRadii& aRadii,
                                             const Float* aBorderSizes,
                                             RectCornerRadii* aInnerRadiiRet) {
@@ -209,16 +209,16 @@ void nsCSSBorderRenderer::ComputeInnerRadii(const RectCornerRadii& aRadii,
       std::max(0.f, aRadii[C_BL].height - aBorderSizes[eSideBottom]);
 }
 
-/* static */
+
 void nsCSSBorderRenderer::ComputeOuterRadii(const RectCornerRadii& aRadii,
                                             const Float* aBorderSizes,
                                             RectCornerRadii* aOuterRadiiRet) {
   RectCornerRadii& oRadii = *aOuterRadiiRet;
 
-  // default all corners to sharp corners
+  
   oRadii = RectCornerRadii(0.f);
 
-  // round the edges that have radii > 0.0 to start with
+  
   if (aRadii[C_TL].width > 0.f && aRadii[C_TL].height > 0.f) {
     oRadii[C_TL].width =
         std::max(0.f, aRadii[C_TL].width + aBorderSizes[eSideLeft]);
@@ -248,7 +248,7 @@ void nsCSSBorderRenderer::ComputeOuterRadii(const RectCornerRadii& aRadii,
   }
 }
 
-/*static*/ void ComputeBorderCornerDimensions(const Float* aBorderWidths,
+ void ComputeBorderCornerDimensions(const Float* aBorderWidths,
                                               const RectCornerRadii& aRadii,
                                               RectCornerRadii* aDimsRet) {
   Float leftWidth = aBorderWidths[eSideLeft];
@@ -257,15 +257,15 @@ void nsCSSBorderRenderer::ComputeOuterRadii(const RectCornerRadii& aRadii,
   Float bottomWidth = aBorderWidths[eSideBottom];
 
   if (nsCSSBorderRenderer::AllCornersZeroSize(aRadii)) {
-    // These will always be in pixel units from CSS
+    
     (*aDimsRet)[C_TL] = Size(leftWidth, topWidth);
     (*aDimsRet)[C_TR] = Size(rightWidth, topWidth);
     (*aDimsRet)[C_BR] = Size(rightWidth, bottomWidth);
     (*aDimsRet)[C_BL] = Size(leftWidth, bottomWidth);
   } else {
-    // Always round up to whole pixels for the corners; it's safe to
-    // make the corners bigger than necessary, and this way we ensure
-    // that we avoid seams.
+    
+    
+    
     (*aDimsRet)[C_TL] = Size(ceil(std::max(leftWidth, aRadii[C_TL].width)),
                              ceil(std::max(topWidth, aRadii[C_TL].height)));
     (*aDimsRet)[C_TR] = Size(ceil(std::max(rightWidth, aRadii[C_TR].width)),
@@ -283,8 +283,8 @@ bool nsCSSBorderRenderer::AreBorderSideFinalStylesSame(
                    (aSides & ~SideBits::eAll) == SideBits::eNone,
                "AreBorderSidesSame: invalid whichSides!");
 
-  /* First check if the specified styles and colors are the same for all sides
-   */
+  
+
   int firstStyle = 0;
   for (const auto i : mozilla::AllPhysicalSides()) {
     if (firstStyle == i) {
@@ -305,8 +305,8 @@ bool nsCSSBorderRenderer::AreBorderSideFinalStylesSame(
     }
   }
 
-  /* Then if it's one of the two-tone styles and we're not
-   * just comparing the TL or BR sides */
+  
+
   switch (mBorderStyles[firstStyle]) {
     case StyleBorderStyle::Groove:
     case StyleBorderStyle::Ridge:
@@ -345,34 +345,34 @@ bool nsCSSBorderRenderer::IsSolidCornerStyle(StyleBorderStyle aStyle,
 }
 
 bool nsCSSBorderRenderer::IsCornerMergeable(Corner aCorner) {
-  // Corner between dotted borders with same width and small radii is
-  // merged into single dot.
-  //
-  //  widthH / 2.0
-  // |<---------->|
-  // |            |
-  // |radius.width|
-  // |<--->|      |
-  // |     |      |
-  // |    _+------+------------+-----
-  // |  /      ###|###         |
-  // |/    #######|#######     |
-  // +   #########|#########   |
-  // |  ##########|##########  |
-  // | ###########|########### |
-  // | ###########|########### |
-  // |############|############|
-  // +------------+############|
-  // |#########################|
-  // | ####################### |
-  // | ####################### |
-  // |  #####################  |
-  // |   ###################   |
-  // |     ###############     |
-  // |         #######         |
-  // +-------------------------+----
-  // |                         |
-  // |                         |
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   mozilla::Side sideH(GetHorizontalSide(aCorner));
   mozilla::Side sideV(GetVerticalSide(aCorner));
   StyleBorderStyle styleH = mBorderStyles[sideH];
@@ -394,8 +394,8 @@ bool nsCSSBorderRenderer::IsCornerMergeable(Corner aCorner) {
 
 BorderColorStyle nsCSSBorderRenderer::BorderColorStyleForSolidCorner(
     StyleBorderStyle aStyle, Corner aCorner) {
-  // note that this function assumes that the corner is already solid,
-  // as per the earlier function
+  
+  
   switch (aStyle) {
     case StyleBorderStyle::Solid:
     case StyleBorderStyle::Double:
@@ -439,11 +439,11 @@ Rect nsCSSBorderRenderer::GetCornerRect(Corner aCorner) {
 Rect nsCSSBorderRenderer::GetSideClipWithoutCornersRect(mozilla::Side aSide) {
   Point offset(0.f, 0.f);
 
-  // The offset from the outside rect to the start of this side's
-  // box.  For the top and bottom sides, the height of the box
-  // must be the border height; the x start must take into account
-  // the corner size (which may be bigger than the right or left
-  // side's width).  The same applies to the right and left sides.
+  
+  
+  
+  
+  
   if (aSide == eSideTop) {
     offset.x = mBorderCornerDimensions[C_TL].width;
   } else if (aSide == eSideRight) {
@@ -456,10 +456,10 @@ Rect nsCSSBorderRenderer::GetSideClipWithoutCornersRect(mozilla::Side aSide) {
     offset.y = mBorderCornerDimensions[C_TL].height;
   }
 
-  // The sum of the width & height of the corners adjacent to the
-  // side.  This relies on the relationship between side indexing and
-  // corner indexing; that is, 0 == SIDE_TOP and 0 == CORNER_TOP_LEFT,
-  // with both proceeding clockwise.
+  
+  
+  
+  
   Size sideCornerSum = mBorderCornerDimensions[GetCCWCorner(aSide)] +
                        mBorderCornerDimensions[GetCWCorner(aSide)];
   Rect rect(mOuterRect.TopLeft() + offset, mOuterRect.Size() - sideCornerSum);
@@ -472,79 +472,79 @@ Rect nsCSSBorderRenderer::GetSideClipWithoutCornersRect(mozilla::Side aSide) {
   return rect;
 }
 
-// The side border type and the adjacent border types are
-// examined and one of the different types of clipping (listed
-// below) is selected.
+
+
+
 
 typedef enum {
-  // clip to the trapezoid formed by the corners of the
-  // inner and outer rectangles for the given side
-  //
-  // +---------------
-  // |\%%%%%%%%%%%%%%
-  // |  \%%%%%%%%%%%%
-  // |   \%%%%%%%%%%%
-  // |     \%%%%%%%%%
-  // |      +--------
-  // |      |
-  // |      |
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   SIDE_CLIP_TRAPEZOID,
 
-  // clip to the trapezoid formed by the outer rectangle
-  // corners and the center of the region, making sure
-  // that diagonal lines all go directly from the outside
-  // corner to the inside corner, but that they then continue on
-  // to the middle.
-  //
-  // This is needed for correctly clipping rounded borders,
-  // which might extend past the SIDE_CLIP_TRAPEZOID trap.
-  //
-  // +-------__--+---
-  //  \%%%%_-%%%%%%%%
-  //    \+-%%%%%%%%%%
-  //    / \%%%%%%%%%%
-  //   /   \%%%%%%%%%
-  //  |     +%%_-+---
-  // |        +%%%%%%
-  // |       / \%%%%%
-  // +      +    \%%%
-  // |      |      +-
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   SIDE_CLIP_TRAPEZOID_FULL,
 
-  // clip to the rectangle formed by the given side including corner.
-  // This is used by the non-dotted side next to dotted side.
-  //
-  // +---------------
-  // |%%%%%%%%%%%%%%%
-  // |%%%%%%%%%%%%%%%
-  // |%%%%%%%%%%%%%%%
-  // |%%%%%%%%%%%%%%%
-  // +------+--------
-  // |      |
-  // |      |
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   SIDE_CLIP_RECTANGLE_CORNER,
 
-  // clip to the rectangle formed by the given side excluding corner.
-  // This is used by the dotted side next to non-dotted side.
-  //
-  // +------+--------
-  // |      |%%%%%%%%
-  // |      |%%%%%%%%
-  // |      |%%%%%%%%
-  // |      |%%%%%%%%
-  // |      +--------
-  // |      |
-  // |      |
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   SIDE_CLIP_RECTANGLE_NO_CORNER,
 } SideClipType;
 
-// Given three points, p0, p1, and midPoint, move p1 further in to the
-// rectangle (of which aMidPoint is the center) so that it reaches the
-// closer of the horizontal or vertical lines intersecting the midpoint,
-// while maintaing the slope of the line.  If p0 and p1 are the same,
-// just move p1 to midPoint (since there's no slope to maintain).
-// FIXME: Extending only to the midpoint isn't actually sufficient for
-// boxes with asymmetric radii.
+
+
+
+
+
+
+
 static void MaybeMoveToMidPoint(Point& aP0, Point& aP1,
                                 const Point& aMidPoint) {
   Point ps = aP1 - aP0;
@@ -568,15 +568,15 @@ static void MaybeMoveToMidPoint(Point& aP0, Point& aP1,
 
 already_AddRefed<Path> nsCSSBorderRenderer::GetSideClipSubPath(
     mozilla::Side aSide) {
-  // the clip proceeds clockwise from the top left corner;
-  // so "start" in each case is the start of the region from that side.
-  //
-  // the final path will be formed like:
-  // s0 ------- e0
-  // |         /
-  // s1 ----- e1
-  //
-  // that is, the second point will always be on the inside
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   Point start[2];
   Point end[2];
@@ -667,29 +667,29 @@ Point nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::Side aSide,
                                                   Corner aCorner,
                                                   bool* aIsUnfilled,
                                                   Float aDotOffset) {
-  // Calculate the end point of the side for dashed/dotted border, that is also
-  // the end point of the corner curve.  The point is specified by aSide and
-  // aCorner. (e.g. eSideTop and C_TL means the left end of border-top)
-  //
-  //
-  //  aCorner        aSide
-  //         +--------------------
-  //         |
-  //         |
-  //         |         +----------
-  //         |    the end point
-  //         |
-  //         |         +----------
-  //         |         |
-  //         |         |
-  //         |         |
-  //
-  // The position of the point depends on the border-style, border-width, and
-  // border-radius of the side, corner, and the adjacent side beyond the corner,
-  // to make those sides (and corner) interact well.
-  //
-  // If the style of aSide is dotted and the dot at the point should be
-  // unfilled, true is stored to *aIsUnfilled, otherwise false is stored.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   const Float signsList[4][2] = {
       {+1.0f, +1.0f}, {-1.0f, +1.0f}, {-1.0f, -1.0f}, {+1.0f, -1.0f}};
@@ -702,14 +702,14 @@ Point nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::Side aSide,
   Float borderWidth = mBorderWidths[aSide];
   Size dim = mBorderCornerDimensions[aCorner];
   bool isHorizontal = IsHorizontalSide(aSide);
-  //
-  //    aCorner      aSide
-  //           +--------------
-  //           |
-  //           |   +----------
-  //           |   |
-  // otherSide |   |
-  //           |   |
+  
+  
+  
+  
+  
+  
+  
+  
   mozilla::Side otherSide = ((uint8_t)aSide == (uint8_t)aCorner)
                                 ? PREV_SIDE(aSide)
                                 : NEXT_SIDE(aSide);
@@ -721,8 +721,8 @@ Point nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::Side aSide,
     radius.height = 0.0f;
   }
   if (style == StyleBorderStyle::Dotted) {
-    // Offset the dot's location along the side toward the corner by a
-    // multiple of its width.
+    
+    
     if (isHorizontal) {
       P.x -= signs[0] * aDotOffset * borderWidth;
     } else {
@@ -734,88 +734,88 @@ Point nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::Side aSide,
     if (borderWidth == otherBorderWidth) {
       if (radius.width < borderWidth / 2.0f &&
           radius.height < borderWidth / 2.0f) {
-        // Two dots are merged into one and placed at the corner.
-        //
-        //  borderWidth / 2.0
-        // |<---------->|
-        // |            |
-        // |radius.width|
-        // |<--->|      |
-        // |     |      |
-        // |    _+------+------------+-----
-        // |  /      ###|###         |
-        // |/    #######|#######     |
-        // +   #########|#########   |
-        // |  ##########|##########  |
-        // | ###########|########### |
-        // | ###########|########### |
-        // |############|############|
-        // +------------+############|
-        // |########### P ###########|
-        // | ####################### |
-        // | ####################### |
-        // |  #####################  |
-        // |   ###################   |
-        // |     ###############     |
-        // |         #######         |
-        // +-------------------------+----
-        // |                         |
-        // |                         |
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         P.x += signs[0] * borderWidth / 2.0f;
         P.y += signs[1] * borderWidth / 2.0f;
       } else {
-        // Two dots are drawn separately.
-        //
-        //    borderWidth * 1.5
-        //   |<------------>|
-        //   |              |
-        //   |radius.width  |
-        //   |<----->|      |
-        //   |       |      |
-        //   |    _--+-+----+---
-        //   |  _-     |  ##|##
-        //   | /       | ###|###
-        //   |/        |####|####
-        //   |         |####+####
-        //   |         |### P ###
-        //   +         | ###|###
-        //   |         |  ##|##
-        //   +---------+----+---
-        //   |  #####  |
-        //   | ####### |
-        //   |#########|
-        //   +----+----+
-        //   |#########|
-        //   | ####### |
-        //   |  #####  |
-        //   |         |
-        //
-        // There should be enough gap between 2 dots even if radius.width is
-        // small but larger than borderWidth / 2.0.  borderWidth * 1.5 is the
-        // value that there's imaginally unfilled dot at the corner.  The
-        // unfilled dot may overflow from the outer curve, but filled dots
-        // doesn't, so this could be acceptable solution at least for now.
-        // We may have to find better model/value.
-        //
-        //    imaginally unfilled dot at the corner
-        //        |
-        //        v    +----+---
-        //      *****  |  ##|##
-        //     ******* | ###|###
-        //    *********|####|####
-        //    *********|####+####
-        //    *********|### P ###
-        //     ******* | ###|###
-        //      *****  |  ##|##
-        //   +---------+----+---
-        //   |  #####  |
-        //   | ####### |
-        //   |#########|
-        //   +----+----+
-        //   |#########|
-        //   | ####### |
-        //   |  #####  |
-        //   |         |
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         Float minimum = borderWidth * 1.5f;
         if (isHorizontal) {
           P.x += signs[0] * std::max(radius.width, minimum);
@@ -830,45 +830,45 @@ Point nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::Side aSide,
     }
 
     if (borderWidth < otherBorderWidth) {
-      // This side is smaller than other side, other side draws the corner.
-      //
-      //  otherBorderWidth + borderWidth / 2.0
-      // |<---------->|
-      // |            |
-      // +---------+--+--------
-      // |  #####  | *|*  ###
-      // | ####### |**|**#####
-      // |#########|**+**##+##
-      // |####+####|* P *#####
-      // |#########| ***  ###
-      // | ####### +-----------
-      // |  #####  |  ^
-      // |         |  |
-      // |         | first dot is not filled
-      // |         |
-      //
-      //      radius.width
-      // |<----------------->|
-      // |                   |
-      // |             ___---+-------------
-      // |         __--     #|#       ###
-      // |       _-        ##|##     #####
-      // |     /           ##+##     ##+##
-      // |   /             # P #     #####
-      // |  |               #|#       ###
-      // | |             __--+-------------
-      // ||            _-    ^
-      // ||           /      |
-      // |           /      first dot is filled
-      // |          |
-      // |          |
-      // |  #####  |
-      // | ####### |
-      // |#########|
-      // +----+----+
-      // |#########|
-      // | ####### |
-      // |  #####  |
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       Float minimum = otherBorderWidth + borderWidth / 2.0f;
       if (isHorizontal) {
         if (radius.width < minimum) {
@@ -891,31 +891,31 @@ Point nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::Side aSide,
       return P;
     }
 
-    // This side is larger than other side, this side draws the corner.
-    //
-    //  borderWidth / 2.0
-    // |<-->|
-    // |    |
-    // +----+---------------------
-    // |  ##|##           #####
-    // | ###|###         #######
-    // |####|####       #########
-    // |####+####       ####+####
-    // |### P ###       #########
-    // | #######         #######
-    // |  #####           #####
-    // +-----+---------------------
-    // | *** |
-    // |*****|
-    // |**+**| <-- first dot in other side is not filled
-    // |*****|
-    // | *** |
-    // | ### |
-    // |#####|
-    // |##+##|
-    // |#####|
-    // | ### |
-    // |     |
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (isHorizontal) {
       P.x += signs[0] * std::max(radius.width, borderWidth / 2.0f);
       P.y += signs[1] * borderWidth / 2.0f;
@@ -927,45 +927,45 @@ Point nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::Side aSide,
   }
 
   if (style == StyleBorderStyle::Dotted) {
-    // If only this side is dotted, other side draws the corner.
-    //
-    //  otherBorderWidth + borderWidth / 2.0
-    // |<------->|
-    // |         |
-    // +------+--+--------
-    // |##  ##| *|*  ###
-    // |##  ##|**|**#####
-    // |##  ##|**+**##+##
-    // |##  ##|* P *#####
-    // |##  ##| ***  ###
-    // |##  ##+-----------
-    // |##  ##|  ^
-    // |##  ##|  |
-    // |##  ##| first dot is not filled
-    // |##  ##|
-    //
-    //      radius.width
-    // |<----------------->|
-    // |                   |
-    // |             ___---+-------------
-    // |         __--     #|#       ###
-    // |       _-        ##|##     #####
-    // |     /           ##+##     ##+##
-    // |   /             # P #     #####
-    // |  |               #|#       ###
-    // | |             __--+-------------
-    // ||            _-    ^
-    // ||          /       |
-    // |         /        first dot is filled
-    // |        |
-    // |       |
-    // |      |
-    // |      |
-    // |      |
-    // +------+
-    // |##  ##|
-    // |##  ##|
-    // |##  ##|
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     Float minimum = otherBorderWidth + borderWidth / 2.0f;
     if (isHorizontal) {
       if (radius.width < minimum) {
@@ -988,24 +988,24 @@ Point nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::Side aSide,
   }
 
   if (otherStyle == StyleBorderStyle::Dotted && IsZeroSize(radius)) {
-    // If other side is dotted and radius=0, draw side to the end of corner.
-    //
-    //   +-------------------------------
-    //   |##########          ##########
-    // P +##########          ##########
-    //   |##########          ##########
-    //   +-----+-------------------------
-    //   | *** |
-    //   |*****|
-    //   |**+**| <-- first dot in other side is not filled
-    //   |*****|
-    //   | *** |
-    //   | ### |
-    //   |#####|
-    //   |##+##|
-    //   |#####|
-    //   | ### |
-    //   |     |
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (isHorizontal) {
       P.y += signs[1] * borderWidth / 2.0f;
     } else {
@@ -1014,32 +1014,32 @@ Point nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::Side aSide,
     return P;
   }
 
-  // Other cases.
-  //
-  //  dim.width
-  // |<----------------->|
-  // |                   |
-  // |             ___---+------------------
-  // |         __--      |#######        ###
-  // |       _-        P +#######        ###
-  // |     /             |#######        ###
-  // |   /          __---+------------------
-  // |  |       __--
-  // | |       /
-  // ||      /
-  // ||     |
-  // |     |
-  // |    |
-  // |   |
-  // |   |
-  // +-+-+
-  // |###|
-  // |###|
-  // |###|
-  // |###|
-  // |###|
-  // |   |
-  // |   |
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (isHorizontal) {
     P.x += signs[0] * dim.width;
     P.y += signs[1] * borderWidth / 2.0f;
@@ -1054,24 +1054,24 @@ Point nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::Side aSide,
 void nsCSSBorderRenderer::GetOuterAndInnerBezier(Bezier* aOuterBezier,
                                                  Bezier* aInnerBezier,
                                                  Corner aCorner) {
-  // Return bezier control points for outer and inner curve for given corner.
-  //
-  //               ___---+ outer curve
-  //           __--      |
-  //         _-          |
-  //       /             |
-  //     /               |
-  //    |                |
-  //   |             __--+ inner curve
-  //  |            _-
-  //  |           /
-  // |           /
-  // |          |
-  // |          |
-  // |         |
-  // |         |
-  // |         |
-  // +---------+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   mozilla::Side sideH(GetHorizontalSide(aCorner));
   mozilla::Side sideV(GetVerticalSide(aCorner));
@@ -1096,21 +1096,21 @@ void nsCSSBorderRenderer::FillSolidBorder(const Rect& aOuterRect,
                                           const Float* aBorderSizes,
                                           SideBits aSides,
                                           const ColorPattern& aColor) {
-  // Note that this function is allowed to draw more than just the
-  // requested sides.
+  
+  
 
-  // If we have a border radius, do full rounded rectangles
-  // and fill, regardless of what sides we're asked to draw.
+  
+  
   if (!AllCornersZeroSize(aBorderRadii)) {
     RefPtr<PathBuilder> builder = mDrawTarget->CreatePathBuilder();
 
     RectCornerRadii innerRadii;
     ComputeInnerRadii(aBorderRadii, aBorderSizes, &innerRadii);
 
-    // do the outer border
+    
     AppendRoundedRectToPath(builder, aOuterRect, aBorderRadii, true);
 
-    // then do the inner border CCW
+    
     AppendRoundedRectToPath(builder, aInnerRect, innerRadii, false);
 
     RefPtr<Path> path = builder->Finish();
@@ -1119,11 +1119,11 @@ void nsCSSBorderRenderer::FillSolidBorder(const Rect& aOuterRect,
     return;
   }
 
-  // If we're asked to draw all sides of an equal-sized border,
-  // stroking is fastest.  This is a fairly common path, but partial
-  // sides is probably second in the list -- there are a bunch of
-  // common border styles, such as inset and outset, that are
-  // top-left/bottom-right split.
+  
+  
+  
+  
+  
   if (aSides == SideBits::eAll &&
       CheckFourFloatsEqual(aBorderSizes, aBorderSizes[0]) && !mAvoidStroke) {
     Float strokeWidth = aBorderSizes[0];
@@ -1133,13 +1133,13 @@ void nsCSSBorderRenderer::FillSolidBorder(const Rect& aOuterRect,
     return;
   }
 
-  // Otherwise, we have unequal sized borders or we're only
-  // drawing some sides; create rectangles for each side
-  // and fill them.
+  
+  
+  
 
   Rect r[4];
 
-  // compute base rects for each side
+  
   if (aSides & SideBits::eTop) {
     r[eSideTop] = Rect(aOuterRect.X(), aOuterRect.Y(), aOuterRect.Width(),
                        aBorderSizes[eSideTop]);
@@ -1162,38 +1162,38 @@ void nsCSSBorderRenderer::FillSolidBorder(const Rect& aOuterRect,
              aBorderSizes[eSideRight], aOuterRect.Height());
   }
 
-  // If two sides meet at a corner that we're rendering, then
-  // make sure that we adjust one of the sides to avoid overlap.
-  // This is especially important in the case of colors with
-  // an alpha channel.
+  
+  
+  
+  
 
   if ((aSides & (SideBits::eTop | SideBits::eLeft)) ==
       (SideBits::eTop | SideBits::eLeft)) {
-    // adjust the left's top down a bit
+    
     r[eSideLeft].y += aBorderSizes[eSideTop];
     r[eSideLeft].height -= aBorderSizes[eSideTop];
   }
 
   if ((aSides & (SideBits::eTop | SideBits::eRight)) ==
       (SideBits::eTop | SideBits::eRight)) {
-    // adjust the top's left a bit
+    
     r[eSideTop].width -= aBorderSizes[eSideRight];
   }
 
   if ((aSides & (SideBits::eBottom | SideBits::eRight)) ==
       (SideBits::eBottom | SideBits::eRight)) {
-    // adjust the right's bottom a bit
+    
     r[eSideRight].height -= aBorderSizes[eSideBottom];
   }
 
   if ((aSides & (SideBits::eBottom | SideBits::eLeft)) ==
       (SideBits::eBottom | SideBits::eLeft)) {
-    // adjust the bottom's left a bit
+    
     r[eSideBottom].x += aBorderSizes[eSideLeft];
     r[eSideBottom].width -= aBorderSizes[eSideLeft];
   }
 
-  // Filling these one by one is faster than filling them all at once.
+  
   for (uint32_t i = 0; i < 4; i++) {
     if (aSides & static_cast<mozilla::SideBits>(1 << i)) {
       MaybeSnapToDevicePixels(r[i], *mDrawTarget, true);
@@ -1208,7 +1208,7 @@ Color MakeBorderColor(nscolor aColor, BorderColorStyle aBorderColorStyle) {
 
   switch (aBorderColorStyle) {
     case BorderColorStyleNone:
-      return Color(0.f, 0.f, 0.f, 0.f);  // transparent black
+      return Color(0.f, 0.f, 0.f, 0.f);  
 
     case BorderColorStyleLight:
       k = 1;
@@ -1262,7 +1262,7 @@ void nsCSSBorderRenderer::DrawBorderSides(mozilla::SideBits aSides) {
 
   if (borderRenderStyle == StyleBorderStyle::Dashed ||
       borderRenderStyle == StyleBorderStyle::Dotted) {
-    // Draw each corner separately, with the given side's color.
+    
     if (aSides & SideBits::eTop) {
       DrawDashedOrDottedCorner(eSideTop, C_TL);
     } else if (aSides & SideBits::eLeft) {
@@ -1289,11 +1289,11 @@ void nsCSSBorderRenderer::DrawBorderSides(mozilla::SideBits aSides) {
     return;
   }
 
-  // The borderColorStyle array goes from the outer to the inner style.
-  //
-  // If the border width is 1, we need to change the borderRenderStyle
-  // a bit to make sure that we get the right colors -- e.g. 'ridge'
-  // with a 1px border needs to look like solid, not like 'outset'.
+  
+  
+  
+  
+  
   if (mOneUnitBorder && (borderRenderStyle == StyleBorderStyle::Ridge ||
                          borderRenderStyle == StyleBorderStyle::Groove ||
                          borderRenderStyle == StyleBorderStyle::Double)) {
@@ -1360,23 +1360,23 @@ void nsCSSBorderRenderer::DrawBorderSides(mozilla::SideBits aSides) {
       break;
   }
 
-  // The only way to get to here is by having a
-  // borderColorStyleCount < 1 or > 3; this should never happen,
-  // since -moz-border-colors doesn't get handled here.
+  
+  
+  
   NS_ASSERTION(borderColorStyleCount > 0 && borderColorStyleCount < 4,
                "Non-border-colors case with borderColorStyleCount < 1 or > 3; "
                "what happened?");
 
-  // The caller should never give us anything with a mix
-  // of TL/BR if the border style would require a
-  // TL/BR split.
+  
+  
+  
   if (aSides & (SideBits::eBottom | SideBits::eRight)) {
     borderColorStyle = borderColorStyleBottomRight;
   } else {
     borderColorStyle = borderColorStyleTopLeft;
   }
 
-  // Distribute the border across the available space.
+  
   Float borderWidths[3][4];
 
   if (borderColorStyleCount == 1) {
@@ -1384,15 +1384,15 @@ void nsCSSBorderRenderer::DrawBorderSides(mozilla::SideBits aSides) {
       borderWidths[0][i] = mBorderWidths[i];
     }
   } else if (borderColorStyleCount == 2) {
-    // with 2 color styles, any extra pixel goes to the outside
+    
     for (const auto i : mozilla::AllPhysicalSides()) {
       borderWidths[0][i] =
           int32_t(mBorderWidths[i]) / 2 + int32_t(mBorderWidths[i]) % 2;
       borderWidths[1][i] = int32_t(mBorderWidths[i]) / 2;
     }
   } else if (borderColorStyleCount == 3) {
-    // with 3 color styles, any extra pixel (or lack of extra pixel)
-    // goes to the middle
+    
+    
     for (const auto i : mozilla::AllPhysicalSides()) {
       if (mBorderWidths[i] == 1.0) {
         borderWidths[0][i] = 1.f;
@@ -1412,36 +1412,36 @@ void nsCSSBorderRenderer::DrawBorderSides(mozilla::SideBits aSides) {
     }
   }
 
-  // make a copy that we can modify
+  
   RectCornerRadii radii = mBorderRadii;
 
   Rect soRect(mOuterRect);
   Rect siRect(mOuterRect);
 
-  // If adjacent side is dotted and radius=0, draw side to the end of corner.
-  //
-  // +--------------------------------
-  // |################################
-  // |
-  // |################################
-  // +-----+--------------------------
-  // |     |
-  // |     |
-  // |     |
-  // |     |
-  // |     |
-  // | ### |
-  // |#####|
-  // |#####|
-  // |#####|
-  // | ### |
-  // |     |
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool noMarginTop = false;
   bool noMarginRight = false;
   bool noMarginBottom = false;
   bool noMarginLeft = false;
 
-  // If there is at least one dotted side, every side is rendered separately.
+  
   if (IsSingleSide(aSides)) {
     if (aSides == SideBits::eTop) {
       if (mBorderStyles[eSideRight] == StyleBorderStyle::Dotted &&
@@ -1483,26 +1483,26 @@ void nsCSSBorderRenderer::DrawBorderSides(mozilla::SideBits aSides) {
   }
 
   for (unsigned int i = 0; i < borderColorStyleCount; i++) {
-    // walk siRect inwards at the start of the loop to get the
-    // correct inner rect.
-    //
-    // If noMarginTop is false:
-    //   --------------------+
-    //                      /|
-    //                     / |
-    //                    L  |
-    //   ----------------+   |
-    //                   |   |
-    //                   |   |
-    //
-    // If noMarginTop is true:
-    //   ----------------+<--+
-    //                   |   |
-    //                   |   |
-    //                   |   |
-    //                   |   |
-    //                   |   |
-    //                   |   |
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     siRect.Deflate(Margin(noMarginTop ? 0 : borderWidths[i][0],
                           noMarginRight ? 0 : borderWidths[i][1],
                           noMarginBottom ? 0 : borderWidths[i][2],
@@ -1518,7 +1518,7 @@ void nsCSSBorderRenderer::DrawBorderSides(mozilla::SideBits aSides) {
 
     ComputeInnerRadii(radii, borderWidths[i], &radii);
 
-    // And now soRect is the same as siRect, for the next line in.
+    
     soRect = siRect;
   }
 }
@@ -1535,47 +1535,47 @@ void nsCSSBorderRenderer::SetupDashedOptions(StrokeOptions* aStrokeOptions,
   StyleBorderStyle style = mBorderStyles[aSide];
   Float borderWidth = mBorderWidths[aSide];
 
-  // Dashed line starts and ends with half segment in most case.
-  //
-  // __--+---+---+---+---+---+---+---+---+--__
-  //     |###|   |   |###|###|   |   |###|
-  //     |###|   |   |###|###|   |   |###|
-  //     |###|   |   |###|###|   |   |###|
-  // __--+---+---+---+---+---+---+---+---+--__
-  //
-  // If radius=0 and other side is either dotted or 0-width, it starts or ends
-  // with full segment.
-  //
-  // +---+---+---+---+---+---+---+---+---+---+
-  // |###|###|   |   |###|###|   |   |###|###|
-  // |###|###|   |   |###|###|   |   |###|###|
-  // |###|###|   |   |###|###|   |   |###|###|
-  // +---++--+---+---+---+---+---+---+--++---+
-  // |    |                             |    |
-  // |    |                             |    |
-  // |    |                             |    |
-  // |    |                             |    |
-  // | ## |                             | ## |
-  // |####|                             |####|
-  // |####|                             |####|
-  // | ## |                             | ## |
-  // |    |                             |    |
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool fullStart = false, fullEnd = false;
   Float halfDash;
   if (style == StyleBorderStyle::Dashed) {
-    // If either end of the side is not connecting onto a corner then we want a
-    // full dash at that end.
-    //
-    // Note that in the case that a corner is empty, either the adjacent side
-    // has zero width, or else DrawBorders() set the corner to be empty
-    // (it does that if the adjacent side has zero length and the border widths
-    // of this and the adjacent sides are thin enough that the corner will be
-    // insignificantly small).
+    
+    
+    
+    
+    
+    
+    
+    
 
     if (mBorderRadii[GetCCWCorner(aSide)].IsEmpty() &&
         (mBorderCornerDimensions[GetCCWCorner(aSide)].IsEmpty() ||
          mBorderStyles[PREV_SIDE(aSide)] == StyleBorderStyle::Dotted ||
-         // XXX why this <=1 check?
+         
          borderWidth <= 1.0f)) {
       fullStart = true;
     }
@@ -1592,23 +1592,23 @@ void nsCSSBorderRenderer::SetupDashedOptions(StrokeOptions* aStrokeOptions,
   }
 
   if (style == StyleBorderStyle::Dashed && aBorderLength > 0.0f) {
-    // The number of half segments, with maximum dash length.
+    
     int32_t count = floor(aBorderLength / halfDash);
     Float minHalfDash = borderWidth * DOT_LENGTH / 2.0f;
 
     if (fullStart && fullEnd) {
-      // count should be 4n + 2
-      //
-      //   1 +       4       +        4      + 1
-      //
-      // |   |               |               |   |
-      // +---+---+---+---+---+---+---+---+---+---+
-      // |###|###|   |   |###|###|   |   |###|###|
-      // |###|###|   |   |###|###|   |   |###|###|
-      // |###|###|   |   |###|###|   |   |###|###|
-      // +---+---+---+---+---+---+---+---+---+---+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
 
-      // If border is too short, draw solid line.
+      
       if (aBorderLength < 6.0f * minHalfDash) {
         return;
       }
@@ -1621,27 +1621,27 @@ void nsCSSBorderRenderer::SetupDashedOptions(StrokeOptions* aStrokeOptions,
         count += 3;
       }
     } else if (fullStart || fullEnd) {
-      // count should be 4n + 1
-      //
-      //   1 +       4       +        4
-      //
-      // |   |               |               |
-      // +---+---+---+---+---+---+---+---+---+
-      // |###|###|   |   |###|###|   |   |###|
-      // |###|###|   |   |###|###|   |   |###|
-      // |###|###|   |   |###|###|   |   |###|
-      // +---+---+---+---+---+---+---+---+---+
-      //
-      //         4       +        4      + 1
-      //
-      // |               |               |   |
-      // +---+---+---+---+---+---+---+---+---+
-      // |###|   |   |###|###|   |   |###|###|
-      // |###|   |   |###|###|   |   |###|###|
-      // |###|   |   |###|###|   |   |###|###|
-      // +---+---+---+---+---+---+---+---+---+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
 
-      // If border is too short, draw solid line.
+      
       if (aBorderLength < 5.0f * minHalfDash) {
         return;
       }
@@ -1654,18 +1654,18 @@ void nsCSSBorderRenderer::SetupDashedOptions(StrokeOptions* aStrokeOptions,
         count += 2;
       }
     } else {
-      // count should be 4n
-      //
-      //         4       +        4
-      //
-      // |               |               |
-      // +---+---+---+---+---+---+---+---+
-      // |###|   |   |###|###|   |   |###|
-      // |###|   |   |###|###|   |   |###|
-      // |###|   |   |###|###|   |   |###|
-      // +---+---+---+---+---+---+---+---+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
 
-      // If border is too short, draw solid line.
+      
       if (aBorderLength < 4.0f * minHalfDash) {
         return;
       }
@@ -1688,26 +1688,26 @@ void nsCSSBorderRenderer::SetupDashedOptions(StrokeOptions* aStrokeOptions,
 
   if (style == StyleBorderStyle::Dashed && fullDash > 1.0f) {
     if (!fullStart) {
-      // Draw half segments on both ends.
+      
       aStrokeOptions->mDashOffset = halfDash;
     }
   } else if (style != StyleBorderStyle::Dotted && isCorner) {
-    // If side ends with filled full segment, corner should start with unfilled
-    // full segment. Not needed for dotted corners, as they overlap one dot with
-    // the side's end.
-    //
-    //     corner            side
-    //   ------------>|<---------------------------
-    //                |
-    //          __+---+---+---+---+---+---+---+---+
-    //       _+-  |   |###|###|   |   |###|###|   |
-    //     /##|   |   |###|###|   |   |###|###|   |
-    //    +####|   |  |###|###|   |   |###|###|   |
-    //   /#\####| _+--+---+---+---+---+---+---+---+
-    //  |####\##+-
-    //  |#####+-
-    //  +--###/
-    //  |  --+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     aStrokeOptions->mDashOffset = fullDash;
   }
 
@@ -1732,30 +1732,30 @@ static Float GetBorderLength(mozilla::Side aSide, const Point& aStart,
 }
 
 void nsCSSBorderRenderer::DrawDashedOrDottedSide(mozilla::Side aSide) {
-  // Draw dashed/dotted side with following approach.
-  //
-  // dashed side
-  //   Draw dashed line along the side, with appropriate dash length and gap
-  //   to make the side symmetric as far as possible.  Dash length equals to
-  //   the gap, and the ratio of the dash length to border-width is the maximum
-  //   value in in [1, 3] range.
-  //   In most case, line ends with half segment, to joint with corner easily.
-  //   If adjacent side is dotted or 0px and border-radius for the corner
-  //   between them is 0, the line ends with full segment.
-  //   (see comment for GetStraightBorderPoint for more detail)
-  //
-  // dotted side
-  //   If border-width <= 2.0, draw 1:1 dashed line.
-  //   Otherwise, draw circles along the side, with appropriate gap that makes
-  //   the side symmetric as far as possible.  The ratio of the gap to
-  //   border-width is the maximum value in [0.5, 1] range in most case.
-  //   if the side is too short and there's only 2 dots, it can be more smaller.
-  //   If there's no space to place 2 dots at the side, draw single dot at the
-  //   middle of the side.
-  //   In most case, line ends with filled dot, to joint with corner easily,
-  //   If adjacent side is dotted with larger border-width, or other style,
-  //   the line ends with unfilled dot.
-  //   (see comment for GetStraightBorderPoint for more detail)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   NS_ASSERTION(mBorderStyles[aSide] == StyleBorderStyle::Dashed ||
                    mBorderStyles[aSide] == StyleBorderStyle::Dotted,
@@ -1773,13 +1773,13 @@ void nsCSSBorderRenderer::DrawDashedOrDottedSide(mozilla::Side aSide) {
 
   nscolor borderColor = mBorderColors[aSide];
   bool ignored;
-  // Get the start and end points of the side, ensuring that any dot origins get
-  // pushed outward to account for stroking.
+  
+  
   Point start =
       GetStraightBorderPoint(aSide, GetCCWCorner(aSide), &ignored, 0.5f);
   Point end = GetStraightBorderPoint(aSide, GetCWCorner(aSide), &ignored, 0.5f);
   if (borderWidth < 2.0f) {
-    // Round start to draw dot on each pixel.
+    
     if (IsHorizontalSide(aSide)) {
       start.x = round(start.x);
     } else {
@@ -1796,33 +1796,33 @@ void nsCSSBorderRenderer::DrawDashedOrDottedSide(mozilla::Side aSide) {
   Float dash[2];
   SetupDashedOptions(&strokeOptions, dash, aSide, borderLength, false);
 
-  // For dotted sides that can merge with their prior dotted sides, advance the
-  // dash offset to measure the distance around the combined path. This prevents
-  // two dots from bunching together at a corner.
+  
+  
+  
   mozilla::Side mergeSide = aSide;
   while (IsCornerMergeable(GetCCWCorner(mergeSide))) {
     mergeSide = PREV_SIDE(mergeSide);
-    // If we looped all the way around, measure starting at the top side, since
-    // we need to pick a fixed location to start measuring distance from still.
+    
+    
     if (mergeSide == aSide) {
       mergeSide = eSideTop;
       break;
     }
   }
   while (mergeSide != aSide) {
-    // Measure the length of the merged side starting from a possibly
-    // unmergeable corner up to the merged corner. A merged corner effectively
-    // has no border radius, so we can just use the cheaper AtCorner to find the
-    // end point.
+    
+    
+    
+    
     Float mergeLength =
         GetBorderLength(mergeSide,
                         GetStraightBorderPoint(
                             mergeSide, GetCCWCorner(mergeSide), &ignored, 0.5f),
                         mOuterRect.AtCorner(GetCWCorner(mergeSide)));
-    // Add in the merged side length. Also offset the dash progress by an extra
-    // dot's width to avoid drawing a dot that would overdraw where the merged
-    // side would have ended in a gap, i.e. O_O_
-    //                                    O
+    
+    
+    
+    
     strokeOptions.mDashOffset += mergeLength + borderWidth;
     mergeSide = NEXT_SIDE(mergeSide);
   }
@@ -1837,8 +1837,8 @@ void nsCSSBorderRenderer::DrawDashedOrDottedSide(mozilla::Side aSide) {
 }
 
 void nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::Side aSide) {
-  // Draw each circles separately for dotted with borderWidth > 2.0.
-  // Dashed line with CapStyle::ROUND doesn't render perfect circles.
+  
+  
 
   NS_ASSERTION(mBorderStyles[aSide] == StyleBorderStyle::Dotted,
                "Style should be dotted.");
@@ -1854,34 +1854,34 @@ void nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::Side aSide) {
       GetStraightBorderPoint(aSide, GetCCWCorner(aSide), &isStartUnfilled);
   Point end = GetStraightBorderPoint(aSide, GetCWCorner(aSide), &isEndUnfilled);
   enum {
-    // Corner is not mergeable.
+    
     NO_MERGE,
 
-    // Corner between different colors.
-    // Two dots are merged into one, and both side draw half dot.
+    
+    
     MERGE_HALF,
 
-    // Corner between same colors, CCW corner of the side.
-    // Two dots are merged into one, and this side draw entire dot.
-    //
-    // MERGE_ALL               MERGE_NONE
-    //   |                       |
-    //   v                       v
-    // +-----------------------+----+
-    // | ##      ##      ##    | ## |
-    // |####    ####    ####   |####|
-    // |####    ####    ####   |####|
-    // | ##      ##      ##    | ## |
-    // +----+------------------+    |
-    // |    |                  |    |
-    // |    |                  |    |
-    // |    |                  |    |
-    // | ## |                  | ## |
-    // |####|                  |####|
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     MERGE_ALL,
 
-    // Corner between same colors, CW corner of the side.
-    // Two dots are merged into one, and this side doesn't draw dot.
+    
+    
     MERGE_NONE
   } mergeStart = NO_MERGE,
     mergeEnd = NO_MERGE;
@@ -1914,36 +1914,36 @@ void nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::Side aSide) {
   Float dotWidth = borderWidth * DOT_LENGTH;
   Float radius = borderWidth / 2.0f;
   if (borderLength < dotWidth) {
-    // If dots on start and end may overlap, draw a dot at the middle of them.
-    //
-    //     ___---+-------+---___
-    // __--      | ##### |      --__
-    //          #|#######|#
-    //         ##|#######|##
-    //        ###|#######|###
-    //        ###+###+###+###
-    //         start ## end #
-    //         ##|#######|##
-    //          #|#######|#
-    //           | ##### |
-    //       __--+-------+--__
-    //     _-                 -_
-    //
-    // If that circle overflows from outer rect, do not draw it.
-    //
-    //           +-------+
-    //           | ##### |
-    //          #|#######|#
-    //         ##|#######|##
-    //        ###|#######|###
-    //        ###|###+###|###
-    //        ###|#######|###
-    //         ##|#######|##
-    //          #|#######|#
-    //           | ##### |
-    //           +--+-+--+
-    //           |  | |  |
-    //           |  | |  |
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (!mOuterRect.Contains(Rect(start.x - radius, start.y - radius,
                                   borderWidth, borderWidth))) {
       return;
@@ -1963,31 +1963,31 @@ void nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::Side aSide) {
   }
 
   if (mergeStart == MERGE_HALF || mergeEnd == MERGE_HALF) {
-    // MERGE_HALF
-    //               Eo
-    //   -------+----+
-    //        ##### /
-    //       ######/
-    //      ######/
-    //      ####+
-    //      ##/ end
-    //       /
-    //      /
-    //   --+
-    //     Ei
-    //
-    // other (NO_MERGE, MERGE_ALL, MERGE_NONE)
-    //               Eo
-    //   ------------+
-    //        #####  |
-    //       ####### |
-    //      #########|
-    //      ####+####|
-    //      ## end ##|
-    //       ####### |
-    //        #####  |
-    //   ------------+
-    //               Ei
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     Point I(0.0f, 0.0f), J(0.0f, 0.0f);
     if (aSide == eSideTop) {
@@ -2026,40 +2026,40 @@ void nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::Side aSide) {
 
   size_t count = round(borderLength / dotWidth);
   if (isStartUnfilled == isEndUnfilled) {
-    // Split into 2n segments.
+    
     if (count % 2) {
       count++;
     }
   } else {
-    // Split into 2n+1 segments.
+    
     if (count % 2 == 0) {
       count++;
     }
   }
 
-  // A: radius == borderWidth / 2.0
-  // B: borderLength / count == borderWidth * (1 - overlap)
-  //
-  //   A      B         B        B        B     A
-  // |<-->|<------>|<------>|<------>|<------>|<-->|
-  // |    |        |        |        |        |    |
-  // +----+--------+--------+--------+--------+----+
-  // |  ##|##    **|**    ##|##    **|**    ##|##  |
-  // | ###|###  ***|***  ###|###  ***|***  ###|### |
-  // |####|####****|****####|####****|****####|####|
-  // |####+####****+****####+####****+****####+####|
-  // |# start #****|****####|####****|****## end ##|
-  // | ###|###  ***|***  ###|###  ***|***  ###|### |
-  // |  ##|##    **|**    ##|##    **|**    ##|##  |
-  // +----+----+---+--------+--------+---+----+----+
-  // |         |                         |         |
-  // |         |                         |         |
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-  // If isStartUnfilled is true, draw dots on 2j+1 points, if not, draw dots on
-  // 2j points.
+  
+  
   size_t from = isStartUnfilled ? 1 : 0;
 
-  // If mergeEnd == MERGE_NONE, last dot is drawn by next side.
+  
   size_t to = count;
   if (mergeEnd == MERGE_NONE) {
     if (to > 2) {
@@ -2071,36 +2071,36 @@ void nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::Side aSide) {
 
   Point fromP = (start * (count - from) + end * from) / count;
   Point toP = (start * (count - to) + end * to) / count;
-  // Extend dirty rect to avoid clipping pixel for anti-aliasing.
+  
   const Float AA_MARGIN = 2.0f;
 
   if (aSide == eSideTop) {
-    // Tweak |from| and |to| to fit into |mDirtyRect + radius margin|,
-    // to render only paths that may overlap mDirtyRect.
-    //
-    //                mDirtyRect + radius margin
-    //              +--+---------------------+--+
-    //              |                           |
-    //              |         mDirtyRect        |
-    //              +  +---------------------+  +
-    // from   ===>  |from                    to |   <===  to
-    //    +-----+-----+-----+-----+-----+-----+-----+-----+
-    //   ###        |###         ###         ###|        ###
-    //  #####       #####       #####       #####       #####
-    //  #####       #####       #####       #####       #####
-    //  #####       #####       #####       #####       #####
-    //   ###        |###         ###         ###|        ###
-    //              |  |                     |  |
-    //              +  +---------------------+  +
-    //              |                           |
-    //              |                           |
-    //              +--+---------------------+--+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     Float left = mDirtyRect.x - radius - AA_MARGIN;
     if (fromP.x < left) {
       size_t tmp = ceil(count * (left - start.x) / (end.x - start.x));
       if (tmp > from) {
-        // We increment by 2, so odd/even should match between before/after.
+        
         if ((tmp & 1) != (from & 1)) {
           from = tmp - 1;
         } else {
@@ -2215,38 +2215,38 @@ void nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::Side aSide) {
 
 void nsCSSBorderRenderer::DrawDashedOrDottedCorner(mozilla::Side aSide,
                                                    Corner aCorner) {
-  // Draw dashed/dotted corner with following approach.
-  //
-  // dashed corner
-  //   If both side has same border-width and border-width <= 2.0, draw dashed
-  //   line along the corner, with appropriate dash length and gap to make the
-  //   corner symmetric as far as possible.  Dash length equals to the gap, and
-  //   the ratio of the dash length to border-width is the maximum value in in
-  //   [1, 3] range.
-  //   Otherwise, draw dashed segments along the corner, keeping same dash
-  //   length ratio to border-width at that point.
-  //   (see DashedCornerFinder.h for more detail)
-  //   Line ends with half segments, to joint with both side easily.
-  //
-  // dotted corner
-  //   If both side has same border-width and border-width <= 2.0, draw 1:1
-  //   dashed line along the corner.
-  //   Otherwise Draw circles along the corner, with appropriate gap that makes
-  //   the corner symmetric as far as possible.  The size of the circle may
-  //   change along the corner, that is tangent to the outer curver and the
-  //   inner curve.  The ratio of the gap to circle diameter is the maximum
-  //   value in [0.5, 1] range.
-  //   (see DottedCornerFinder.h for more detail)
-  //   Corner ends with filled dots but those dots are drawn by
-  //   DrawDashedOrDottedSide.  So this may draw no circles if there's no space
-  //   between 2 dots at both ends.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   NS_ASSERTION(mBorderStyles[aSide] == StyleBorderStyle::Dashed ||
                    mBorderStyles[aSide] == StyleBorderStyle::Dotted,
                "Style should be dashed or dotted.");
 
   if (IsCornerMergeable(aCorner)) {
-    // DrawDashedOrDottedSide will draw corner.
+    
     return;
   }
 
@@ -2261,7 +2261,7 @@ void nsCSSBorderRenderer::DrawDashedOrDottedCorner(mozilla::Side aSide,
   StyleBorderStyle styleH = mBorderStyles[sideH];
   StyleBorderStyle styleV = mBorderStyles[sideV];
 
-  // Corner between dotted and others with radius=0 is drawn by side.
+  
   if (IsZeroSize(mBorderRadii[aCorner]) &&
       (styleV == StyleBorderStyle::Dotted ||
        styleH == StyleBorderStyle::Dotted)) {
@@ -2288,12 +2288,12 @@ void nsCSSBorderRenderer::DrawDashedOrDottedCorner(mozilla::Side aSide,
   nscolor borderColor = mBorderColors[aSide];
   Point points[4];
   bool ignored;
-  // Get the start and end points of the corner arc, ensuring that any dot
-  // origins get pushed backwards towards the edges of the corner rect to
-  // account for stroking.
+  
+  
+  
   points[0] = GetStraightBorderPoint(sideH, aCorner, &ignored, -0.5f);
   points[3] = GetStraightBorderPoint(sideV, aCorner, &ignored, -0.5f);
-  // Round points to draw dot on each pixel.
+  
   if (borderWidthH < 2.0f) {
     points[0].x = round(points[0].x);
   }
@@ -2378,8 +2378,8 @@ void nsCSSBorderRenderer::DrawDottedCornerSlow(mozilla::Side aSide,
 static inline bool DashedPathOverlapsRect(Rect& pathRect,
                                           const Rect& marginedDirtyRect,
                                           DashedCornerFinder::Result& result) {
-  // Calculate a rect that contains all control points of the |result| path,
-  // and check if it intersects with |marginedDirtyRect|.
+  
+  
   pathRect.SetRect(result.outerSectionBezier.mPoints[0].x,
                    result.outerSectionBezier.mPoints[0].y, 0, 0);
   pathRect.ExpandToEnclose(result.outerSectionBezier.mPoints[1]);
@@ -2449,26 +2449,26 @@ void nsCSSBorderRenderer::DrawDashedCornerSlow(mozilla::Side aSide,
   }
 
   if (outerBezier.mPoints[0].x != innerBezier.mPoints[0].x) {
-    // Fill gap before the first section.
-    //
-    //     outnerPoint[0]
-    //         |
-    //         v
-    //        _+-----------+--
-    //      /   \##########|
-    //    /      \#########|
-    //   +        \########|
-    //   |\         \######|
-    //   |  \        \#####|
-    //   |    \       \####|
-    //   |      \       \##|
-    //   |        \      \#|
-    //   |          \     \|
-    //   |            \  _-+--
-    //   +--------------+  ^
-    //   |              |  |
-    //   |              |  innerPoint[0]
-    //   |              |
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     builder->MoveTo(outerBezier.mPoints[0]);
     builder->LineTo(innerBezier.mPoints[0]);
     builder->LineTo(Point(innerBezier.mPoints[0].x, outerBezier.mPoints[0].y));
@@ -2476,26 +2476,26 @@ void nsCSSBorderRenderer::DrawDashedCornerSlow(mozilla::Side aSide,
   }
 
   if (outerBezier.mPoints[3].y != innerBezier.mPoints[3].y) {
-    // Fill gap after the last section.
-    //
-    // outnerPoint[3]
-    //   |
-    //   |
-    //   |    _+-----------+--
-    //   |  /   \          |
-    //   v/      \         |
-    //   +        \        |
-    //   |\         \      |
-    //   |##\        \     |
-    //   |####\       \    |
-    //   |######\       \  |
-    //   |########\      \ |
-    //   |##########\     \|
-    //   |############\  _-+--
-    //   +--------------+<-- innerPoint[3]
-    //   |              |
-    //   |              |
-    //   |              |
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     builder->MoveTo(outerBezier.mPoints[3]);
     builder->LineTo(innerBezier.mPoints[3]);
     builder->LineTo(Point(outerBezier.mPoints[3].x, innerBezier.mPoints[3].y));
@@ -2508,8 +2508,8 @@ void nsCSSBorderRenderer::DrawDashedCornerSlow(mozilla::Side aSide,
 
 void nsCSSBorderRenderer::DrawFallbackSolidCorner(mozilla::Side aSide,
                                                   Corner aCorner) {
-  // Render too large dashed or dotted corner with solid style, to avoid hangup
-  // inside DashedCornerFinder and DottedCornerFinder.
+  
+  
 
   NS_ASSERTION(mBorderStyles[aSide] == StyleBorderStyle::Dashed ||
                    mBorderStyles[aSide] == StyleBorderStyle::Dotted,
@@ -2593,7 +2593,7 @@ struct twoFloats {
 };
 
 void nsCSSBorderRenderer::DrawSingleWidthSolidBorder() {
-  // Easy enough to deal with.
+  
   Rect rect = mOuterRect;
   rect.Deflate(0.5);
 
@@ -2609,40 +2609,40 @@ void nsCSSBorderRenderer::DrawSingleWidthSolidBorder() {
   }
 }
 
-// Intersect a ray from the inner corner to the outer corner
-// with the border radius, yielding the intersection point.
+
+
 static Point IntersectBorderRadius(const Point& aCenter, const Size& aRadius,
                                    const Point& aInnerCorner,
                                    const Point& aCornerDirection) {
   Point toCorner = aCornerDirection;
-  // transform to-corner ray to unit-circle space
+  
   toCorner.x /= aRadius.width;
   toCorner.y /= aRadius.height;
-  // normalize to-corner ray
+  
   Float cornerDist = toCorner.Length();
   if (cornerDist < 1.0e-6f) {
     return aInnerCorner;
   }
   toCorner = toCorner / cornerDist;
-  // ray from inner corner to border radius center
+  
   Point toCenter = aCenter - aInnerCorner;
-  // transform to-center ray to unit-circle space
+  
   toCenter.x /= aRadius.width;
   toCenter.y /= aRadius.height;
-  // compute offset of intersection with border radius unit circle
+  
   Float offset = toCenter.DotProduct(toCorner);
-  // compute discriminant to check for intersections
+  
   Float discrim = 1.0f - toCenter.DotProduct(toCenter) + offset * offset;
-  // choose farthest intersection
+  
   offset += sqrtf(std::max(discrim, 0.0f));
-  // transform to-corner ray back out of unit-circle space
+  
   toCorner.x *= aRadius.width;
   toCorner.y *= aRadius.height;
   return aInnerCorner + toCorner * offset;
 }
 
-// Calculate the split point and split angle for a border radius with
-// differing sides.
+
+
 static inline void SplitBorderRadius(const Point& aCenter, const Size& aRadius,
                                      const Point& aOuterCorner,
                                      const Point& aInnerCorner,
@@ -2651,8 +2651,8 @@ static inline void SplitBorderRadius(const Point& aCenter, const Size& aRadius,
                                      Float& aSplitAngle) {
   Point cornerDir = aOuterCorner - aInnerCorner;
   if (cornerDir.x == cornerDir.y && aRadius.IsSquare()) {
-    // optimize 45-degree intersection with circle since we can assume
-    // the circle center lies along the intersection edge
+    
+    
     aSplit = aCenter - aCornerMults * (aRadius * Float(1.0f / M_SQRT2));
     aSplitAngle = aStartAngle + 0.5f * M_PI / 2.0f;
   } else {
@@ -2662,13 +2662,13 @@ static inline void SplitBorderRadius(const Point& aCenter, const Size& aRadius,
   }
 }
 
-// Compute the size of the skirt needed, given the color alphas
-// of each corner side and the slope between them.
+
+
 static void ComputeCornerSkirtSize(Float aAlpha1, Float aAlpha2, Float aSlopeY,
                                    Float aSlopeX, Float& aSizeResult,
                                    Float& aSlopeResult) {
-  // If either side is (almost) invisible or there is no diagonal edge,
-  // then don't try to render a skirt.
+  
+  
   if (aAlpha1 < 0.01f || aAlpha2 < 0.01f) {
     return;
   }
@@ -2678,18 +2678,18 @@ static void ComputeCornerSkirtSize(Float aAlpha1, Float aAlpha2, Float aSlopeY,
     return;
   }
 
-  // If first and second color don't match, we need to split the corner in
-  // half. The diagonal edges created may not have full pixel coverage given
-  // anti-aliasing, so we need to compute a small subpixel skirt edge. This
-  // assumes each half has half coverage to start with, and that coverage
-  // increases as the skirt is pushed over, with the end result that we want
-  // to roughly preserve the alpha value along this edge.
-  // Given slope m, alphas a and A, use quadratic formula to solve for S in:
-  //   a*(1 - 0.5*(1-S)*(1-mS))*(1 - 0.5*A) + 0.5*A = A
-  // yielding:
-  //   S = ((1+m) - sqrt((1+m)*(1+m) + 4*m*(1 - A/(a*(1-0.5*A))))) / (2*m)
-  // and substitute k = (1+m)/(2*m):
-  //   S = k - sqrt(k*k + (1 - A/(a*(1-0.5*A)))/m)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   Float slope = aSlopeY / aSlopeX;
   Float slopeScale = (1.0f + slope) / (2.0f * slope);
   Float discrim = slopeScale * slopeScale +
@@ -2700,9 +2700,9 @@ static void ComputeCornerSkirtSize(Float aAlpha1, Float aAlpha2, Float aSlopeY,
   }
 }
 
-// Draws a border radius with possibly different sides.
-// A skirt is drawn underneath the corner intersection to hide possible
-// seams when anti-aliased drawing is used.
+
+
+
 static void DrawBorderRadius(DrawTarget* aDrawTarget, Corner c,
                              const Point& aOuterCorner,
                              const Point& aInnerCorner,
@@ -2712,30 +2712,30 @@ static void DrawBorderRadius(DrawTarget* aDrawTarget, Corner c,
                              const Size& aInnerRadius, const Color& aFirstColor,
                              const Color& aSecondColor, Float aSkirtSize,
                              Float aSkirtSlope) {
-  // Connect edge to outer arc start point
+  
   Point outerCornerStart = aOuterCorner + aCornerMultPrev * aCornerDims;
-  // Connect edge to outer arc end point
+  
   Point outerCornerEnd = aOuterCorner + aCornerMultNext * aCornerDims;
-  // Connect edge to inner arc start point
+  
   Point innerCornerStart =
       outerCornerStart + aCornerMultNext * (aCornerDims - aInnerRadius);
-  // Connect edge to inner arc end point
+  
   Point innerCornerEnd =
       outerCornerEnd + aCornerMultPrev * (aCornerDims - aInnerRadius);
 
-  // Outer arc start point
+  
   Point outerArcStart = aOuterCorner + aCornerMultPrev * aOuterRadius;
-  // Outer arc end point
+  
   Point outerArcEnd = aOuterCorner + aCornerMultNext * aOuterRadius;
-  // Inner arc start point
+  
   Point innerArcStart = aInnerCorner + aCornerMultPrev * aInnerRadius;
-  // Inner arc end point
+  
   Point innerArcEnd = aInnerCorner + aCornerMultNext * aInnerRadius;
 
-  // Outer radius center
+  
   Point outerCenter =
       aOuterCorner + (aCornerMultPrev + aCornerMultNext) * aOuterRadius;
-  // Inner radius center
+  
   Point innerCenter =
       aInnerCorner + (aCornerMultPrev + aCornerMultNext) * aInnerRadius;
 
@@ -2748,16 +2748,16 @@ static void DrawBorderRadius(DrawTarget* aDrawTarget, Corner c,
   }
 
   if (aFirstColor != aSecondColor) {
-    // Start and end angles of corner quadrant
+    
     Float startAngle = (c * M_PI) / 2.0f - M_PI,
           endAngle = startAngle + M_PI / 2.0f, outerSplitAngle, innerSplitAngle;
     Point outerSplit, innerSplit;
 
-    // Outer half-way point
+    
     SplitBorderRadius(outerCenter, aOuterRadius, aOuterCorner, aInnerCorner,
                       aCornerMultPrev + aCornerMultNext, startAngle, outerSplit,
                       outerSplitAngle);
-    // Inner half-way point
+    
     if (aInnerRadius.IsEmpty()) {
       innerSplit = aInnerCorner;
       innerSplitAngle = endAngle;
@@ -2767,11 +2767,11 @@ static void DrawBorderRadius(DrawTarget* aDrawTarget, Corner c,
                         innerSplit, innerSplitAngle);
     }
 
-    // Draw first half with first color
+    
     if (aFirstColor.a > 0) {
       AcuteArcToBezier(builder.get(), outerCenter, aOuterRadius, outerArcStart,
                        outerSplit, startAngle, outerSplitAngle);
-      // Draw skirt as part of first half
+      
       if (aSkirtSize > 0) {
         builder->LineTo(outerSplit + aCornerMultNext * aSkirtSize);
         builder->LineTo(innerSplit -
@@ -2787,7 +2787,7 @@ static void DrawBorderRadius(DrawTarget* aDrawTarget, Corner c,
       aDrawTarget->Fill(path, ColorPattern(aFirstColor));
     }
 
-    // Draw second half with second color
+    
     if (aSecondColor.a > 0) {
       builder = aDrawTarget->CreatePathBuilder();
       builder->MoveTo(outerCornerEnd);
@@ -2803,7 +2803,7 @@ static void DrawBorderRadius(DrawTarget* aDrawTarget, Corner c,
       aDrawTarget->Fill(path, ColorPattern(aSecondColor));
     }
   } else if (aFirstColor.a > 0) {
-    // Draw corner with single color
+    
     AcuteArcToBezier(builder.get(), outerCenter, aOuterRadius, outerArcStart,
                      outerArcEnd);
     builder->LineTo(outerCornerEnd);
@@ -2821,9 +2821,9 @@ static void DrawBorderRadius(DrawTarget* aDrawTarget, Corner c,
   }
 }
 
-// Draw a corner with possibly different sides.
-// A skirt is drawn underneath the corner intersection to hide possible
-// seams when anti-aliased drawing is used.
+
+
+
 static void DrawCorner(DrawTarget* aDrawTarget, const Point& aOuterCorner,
                        const Point& aInnerCorner,
                        const twoFloats& aCornerMultPrev,
@@ -2831,9 +2831,9 @@ static void DrawCorner(DrawTarget* aDrawTarget, const Point& aOuterCorner,
                        const Size& aCornerDims, const Color& aFirstColor,
                        const Color& aSecondColor, Float aSkirtSize,
                        Float aSkirtSlope) {
-  // Corner box start point
+  
   Point cornerStart = aOuterCorner + aCornerMultPrev * aCornerDims;
-  // Corner box end point
+  
   Point cornerEnd = aOuterCorner + aCornerMultNext * aCornerDims;
 
   RefPtr<PathBuilder> builder;
@@ -2845,10 +2845,10 @@ static void DrawCorner(DrawTarget* aDrawTarget, const Point& aOuterCorner,
   }
 
   if (aFirstColor != aSecondColor) {
-    // Draw first half with first color
+    
     if (aFirstColor.a > 0) {
       builder->LineTo(aOuterCorner);
-      // Draw skirt as part of first half
+      
       if (aSkirtSize > 0) {
         builder->LineTo(aOuterCorner + aCornerMultNext * aSkirtSize);
         builder->LineTo(aInnerCorner -
@@ -2860,7 +2860,7 @@ static void DrawCorner(DrawTarget* aDrawTarget, const Point& aOuterCorner,
       aDrawTarget->Fill(path, ColorPattern(aFirstColor));
     }
 
-    // Draw second half with second color
+    
     if (aSecondColor.a > 0) {
       builder = aDrawTarget->CreatePathBuilder();
       builder->MoveTo(cornerEnd);
@@ -2871,7 +2871,7 @@ static void DrawCorner(DrawTarget* aDrawTarget, const Point& aOuterCorner,
       aDrawTarget->Fill(path, ColorPattern(aSecondColor));
     }
   } else if (aFirstColor.a > 0) {
-    // Draw corner with single color
+    
     builder->LineTo(aOuterCorner);
     builder->LineTo(cornerEnd);
     builder->LineTo(aInnerCorner);
@@ -2895,21 +2895,21 @@ void nsCSSBorderRenderer::DrawSolidBorder() {
                             mBorderWidths[2] / 2.0, mBorderWidths[3] / 2.0));
 
   for (const auto i : mozilla::AllPhysicalSides()) {
-    // We now draw the current side and the CW corner following it.
-    // The CCW corner of this side was already drawn in the previous iteration.
-    // The side will be drawn as an explicit stroke, and the CW corner will be
-    // filled separately.
-    // If the next side does not have a matching color, then we split the
-    // corner into two halves, one of each side's color and draw both.
-    // Thus, the CCW corner of the next side will end up drawn here.
+    
+    
+    
+    
+    
+    
+    
 
-    // the corner index -- either 1 2 3 0 (cw) or 0 3 2 1 (ccw)
+    
     Corner c = Corner((i + 1) % 4);
     Corner prevCorner = Corner(i);
 
-    // i+2 and i+3 respectively.  These are used to index into the corner
-    // multiplier table, and were deduced by calculating out the long form
-    // of each corner and finding a pattern in the signs and values.
+    
+    
+    
     int i1 = (i + 1) % 4;
     int i2 = (i + 2) % 4;
     int i3 = (i + 3) % 4;
@@ -2917,30 +2917,30 @@ void nsCSSBorderRenderer::DrawSolidBorder() {
     Float sideWidth = 0.0f;
     Color firstColor, secondColor;
     if (IsVisible(mBorderStyles[i]) && mBorderWidths[i]) {
-      // draw the side since it is visible
+      
       sideWidth = mBorderWidths[i];
       firstColor = ToDeviceColor(mBorderColors[i]);
-      // if the next side is visible, use its color for corner
+      
       secondColor = IsVisible(mBorderStyles[i1]) && mBorderWidths[i1]
                         ? ToDeviceColor(mBorderColors[i1])
                         : firstColor;
     } else if (IsVisible(mBorderStyles[i1]) && mBorderWidths[i1]) {
-      // assign next side's color to both corner sides
+      
       firstColor = ToDeviceColor(mBorderColors[i1]);
       secondColor = firstColor;
     } else {
-      // neither side is visible, so nothing to do
+      
       continue;
     }
 
     Point outerCorner = mOuterRect.AtCorner(c);
     Point innerCorner = mInnerRect.AtCorner(c);
 
-    // start and end points of border side stroke between corners
+    
     Point sideStart = mOuterRect.AtCorner(prevCorner) +
                       cornerMults[i2] * mBorderCornerDimensions[prevCorner];
     Point sideEnd = outerCorner + cornerMults[i] * mBorderCornerDimensions[c];
-    // check if the side is visible and not inverted
+    
     if (sideWidth > 0 && firstColor.a > 0 &&
         -(sideEnd - sideStart).DotProduct(cornerMults[i]) > 0) {
       mDrawTarget->StrokeLine(sideStart + centerAdjusts[i] * sideWidth,
@@ -2950,7 +2950,7 @@ void nsCSSBorderRenderer::DrawSolidBorder() {
     }
 
     Float skirtSize = 0.0f, skirtSlope = 0.0f;
-    // the sides don't match, so compute a skirt
+    
     if (firstColor != secondColor &&
         mPresContext->Type() != nsPresContext::eContext_Print) {
       Point cornerDir = outerCorner - innerCorner;
@@ -2960,13 +2960,13 @@ void nsCSSBorderRenderer::DrawSolidBorder() {
     }
 
     if (!mBorderRadii[c].IsEmpty()) {
-      // the corner has a border radius
+      
       DrawBorderRadius(mDrawTarget, c, outerCorner, innerCorner, cornerMults[i],
                        cornerMults[i3], mBorderCornerDimensions[c],
                        mBorderRadii[c], innerRadii[c], firstColor, secondColor,
                        skirtSize, skirtSlope);
     } else if (!mBorderCornerDimensions[c].IsEmpty()) {
-      // a corner with no border radius
+      
       DrawCorner(mDrawTarget, outerCorner, innerCorner, cornerMults[i],
                  cornerMults[i3], mBorderCornerDimensions[c], firstColor,
                  secondColor, skirtSize, skirtSlope);
@@ -2978,28 +2978,28 @@ void nsCSSBorderRenderer::DrawBorders() {
   if (mAllBordersSameStyle && (mBorderStyles[0] == StyleBorderStyle::None ||
                                mBorderStyles[0] == StyleBorderStyle::Hidden ||
                                mBorderColors[0] == NS_RGBA(0, 0, 0, 0))) {
-    // All borders are the same style, and the style is either none or hidden,
-    // or the color is transparent.
+    
+    
     return;
   }
 
   if (mAllBordersSameWidth && mBorderWidths[0] == 0.0) {
-    // Some of the mAllBordersSameWidth codepaths depend on the border
-    // width being greater than zero.
+    
+    
     return;
   }
 
   AutoRestoreTransform autoRestoreTransform;
   Matrix mat = mDrawTarget->GetTransform();
 
-  // Clamp the CTM to be pixel-aligned; we do this only
-  // for translation-only matrices now, but we could do it
-  // if the matrix has just a scale as well.  We should not
-  // do it if there's a rotation.
+  
+  
+  
+  
   if (mat.HasNonTranslation()) {
     if (!mat.HasNonAxisAlignedTransform()) {
-      // Scale + transform. Avoid stroke fast-paths so that we have a chance
-      // of snapping to pixel boundaries.
+      
+      
       mAvoidStroke = true;
     }
   } else {
@@ -3008,25 +3008,25 @@ void nsCSSBorderRenderer::DrawBorders() {
     autoRestoreTransform.Init(mDrawTarget);
     mDrawTarget->SetTransform(mat);
 
-    // round mOuterRect and mInnerRect; they're already an integer
-    // number of pixels apart and should stay that way after
-    // rounding. We don't do this if there's a scale in the current transform
-    // since this loses information that might be relevant when we're scaling.
+    
+    
+    
+    
     mOuterRect.Round();
     mInnerRect.Round();
   }
 
-  // Initial values only used when the border colors/widths are all the same:
+  
   ColorPattern color(ToDeviceColor(mBorderColors[eSideTop]));
-  StrokeOptions strokeOptions(mBorderWidths[eSideTop]);  // stroke width
+  StrokeOptions strokeOptions(mBorderWidths[eSideTop]);  
 
-  // First there's a couple of 'special cases' that have specifically optimized
-  // drawing paths, when none of these can be used we move on to the generalized
-  // border drawing code.
+  
+  
+  
   if (mAllBordersSameStyle && mAllBordersSameWidth &&
       mBorderStyles[0] == StyleBorderStyle::Solid && mNoBorderRadius &&
       !mAvoidStroke) {
-    // Very simple case.
+    
     Rect rect = mOuterRect;
     rect.Deflate(mBorderWidths[0] / 2.0);
     mDrawTarget->StrokeRect(rect, color, strokeOptions);
@@ -3035,21 +3035,21 @@ void nsCSSBorderRenderer::DrawBorders() {
 
   if (mAllBordersSameStyle && mBorderStyles[0] == StyleBorderStyle::Solid &&
       !mAvoidStroke && !mNoBorderRadius) {
-    // Relatively simple case.
+    
     RoundedRect borderInnerRect(mOuterRect, mBorderRadii);
     borderInnerRect.Deflate(mBorderWidths[eSideTop], mBorderWidths[eSideBottom],
                             mBorderWidths[eSideLeft],
                             mBorderWidths[eSideRight]);
 
-    // Instead of stroking we just use two paths: an inner and an outer.
-    // This allows us to draw borders that we couldn't when stroking. For
-    // example, borders with a border width >= the border radius. (i.e. when
-    // there are square corners on the inside)
-    //
-    // Further, this approach can be more efficient because the backend
-    // doesn't need to compute an offset curve to stroke the path. We know that
-    // the rounded parts are elipses we can offset exactly and can just compute
-    // a new cubic approximation.
+    
+    
+    
+    
+    
+    
+    
+    
+    
     RefPtr<PathBuilder> builder = mDrawTarget->CreatePathBuilder();
     AppendRoundedRectToPath(builder, mOuterRect, mBorderRadii, true);
     AppendRoundedRectToPath(builder, borderInnerRect.rect,
@@ -3061,8 +3061,8 @@ void nsCSSBorderRenderer::DrawBorders() {
 
   const bool allBordersSolid = AllBordersSolid();
 
-  // This leaves the border corners non-interpolated for single width borders.
-  // Doing this is slightly faster and shouldn't be a problem visually.
+  
+  
   if (allBordersSolid && mAllBordersSameWidth && mBorderWidths[0] == 1 &&
       mNoBorderRadius && !mAvoidStroke) {
     DrawSingleWidthSolidBorder();
@@ -3084,8 +3084,8 @@ void nsCSSBorderRenderer::DrawBorders() {
                       mBorderColors[0], mBorderColors[1], mBorderColors[2],
                       mBorderColors[3]);
 
-  // if conditioning the outside rect failed, then bail -- the outside
-  // rect is supposed to enclose the entire border
+  
+  
   {
     gfxRect outerRect = ThebesRect(mOuterRect);
     gfxUtils::ConditionRect(outerRect);
@@ -3106,7 +3106,7 @@ void nsCSSBorderRenderer::DrawBorders() {
     StyleBorderStyle style = mBorderStyles[i];
     if (style == StyleBorderStyle::Dashed ||
         style == StyleBorderStyle::Dotted) {
-      // we need to draw things separately for dashed/dotting
+      
       forceSeparateCorners = true;
       dashedSides |= static_cast<mozilla::SideBits>(1 << i);
     }
@@ -3117,71 +3117,71 @@ void nsCSSBorderRenderer::DrawBorders() {
                       static_cast<unsigned int>(dashedSides));
 
   if (mAllBordersSameStyle && !forceSeparateCorners) {
-    /* Draw everything in one go */
+    
     DrawBorderSides(SideBits::eAll);
     PrintAsStringNewline("---------------- (1)");
   } else {
     AUTO_PROFILER_LABEL("nsCSSBorderRenderer::DrawBorders:multipass", GRAPHICS);
 
-    /* We have more than one pass to go.  Draw the corners separately from the
-     * sides. */
+    
 
-    // The corner is going to have negligible size if its two adjacent border
-    // sides are only 1px wide and there is no border radius.  In that case we
-    // skip the overhead of painting the corner by setting the width or height
-    // of the corner to zero, which effectively extends one of the corner's
-    // adjacent border sides.  We extend the longer adjacent side so that
-    // opposite sides will be the same length, which is necessary for opposite
-    // dashed/dotted sides to be symmetrical.
-    //
-    //   if width > height
-    //     +--+--------------+--+    +--------------------+
-    //     |  |              |  |    |                    |
-    //     +--+--------------+--+    +--+--------------+--+
-    //     |  |              |  |    |  |              |  |
-    //     |  |              |  | => |  |              |  |
-    //     |  |              |  |    |  |              |  |
-    //     +--+--------------+--+    +--+--------------+--+
-    //     |  |              |  |    |                    |
-    //     +--+--------------+--+    +--------------------+
-    //
-    //   if width <= height
-    //     +--+--------+--+    +--+--------+--+
-    //     |  |        |  |    |  |        |  |
-    //     +--+--------+--+    |  +--------+  |
-    //     |  |        |  |    |  |        |  |
-    //     |  |        |  |    |  |        |  |
-    //     |  |        |  |    |  |        |  |
-    //     |  |        |  | => |  |        |  |
-    //     |  |        |  |    |  |        |  |
-    //     |  |        |  |    |  |        |  |
-    //     |  |        |  |    |  |        |  |
-    //     +--+--------+--+    |  +--------+  |
-    //     |  |        |  |    |  |        |  |
-    //     +--+--------+--+    +--+--------+--+
-    //
-    // Note that if we have different border widths we could end up with
-    // opposite sides of different length.  For example, if the left and
-    // bottom borders are 2px wide instead of 1px, we will end up doing
-    // something like:
-    //
-    //     +----+------------+--+    +----+---------------+
-    //     |    |            |  |    |    |               |
-    //     +----+------------+--+    +----+------------+--+
-    //     |    |            |  |    |    |            |  |
-    //     |    |            |  | => |    |            |  |
-    //     |    |            |  |    |    |            |  |
-    //     +----+------------+--+    +----+------------+--+
-    //     |    |            |  |    |    |            |  |
-    //     |    |            |  |    |    |            |  |
-    //     +----+------------+--+    +----+------------+--+
-    //
-    // XXX Should we only do this optimization if |mAllBordersSameWidth| is
-    // true?
-    //
-    // XXX In fact is this optimization even worth the complexity it adds to
-    // the code?  1px wide dashed borders are not overly common, and drawing
-    // corners for them is not that expensive.
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     for (const auto corner : mozilla::AllPhysicalCorners()) {
       const mozilla::Side sides[2] = {mozilla::Side(corner), PREV_SIDE(corner)};
 
@@ -3198,9 +3198,9 @@ void nsCSSBorderRenderer::DrawBorders() {
       }
     }
 
-    // First, the corners
+    
     for (const auto corner : mozilla::AllPhysicalCorners()) {
-      // if there's no corner, don't do all this work for it
+      
       if (IsZeroSize(mBorderCornerDimensions[corner])) {
         continue;
       }
@@ -3211,9 +3211,9 @@ void nsCSSBorderRenderer::DrawBorders() {
 
       bool simpleCornerStyle = AreBorderSideFinalStylesSame(sideBits);
 
-      // If we don't have anything complex going on in this corner,
-      // then we can just fill the corner with a solid color, and avoid
-      // the potentially expensive clip.
+      
+      
+      
       if (simpleCornerStyle && IsZeroSize(mBorderRadii[corner]) &&
           IsSolidCornerStyle(mBorderStyles[sides[0]], corner)) {
         Color color = MakeBorderColor(
@@ -3224,24 +3224,24 @@ void nsCSSBorderRenderer::DrawBorders() {
         continue;
       }
 
-      // clip to the corner
+      
       mDrawTarget->PushClipRect(GetCornerRect(corner));
 
       if (simpleCornerStyle) {
-        // we don't need a group for this corner, the sides are the same,
-        // but we weren't able to render just a solid block for the corner.
+        
+        
         DrawBorderSides(sideBits);
       } else {
-        // Sides are different.  We could draw using OP_ADD to
-        // get correct color blending behaviour at the seam.  We'd need
-        // to do it in an offscreen surface to ensure that we're
-        // always compositing on transparent black.  If the colors
-        // don't have transparency and the current destination surface
-        // has an alpha channel, we could just clear the region and
-        // avoid the temporary, but that situation doesn't happen all
-        // that often in practice (we double buffer to no-alpha
-        // surfaces). We choose just to seam though, as the performance
-        // advantages outway the modest easthetic improvement.
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         for (int cornerSide = 0; cornerSide < 2; cornerSide++) {
           mozilla::Side side = mozilla::Side(sides[cornerSide]);
@@ -3265,13 +3265,13 @@ void nsCSSBorderRenderer::DrawBorders() {
       PrintAsStringNewline();
     }
 
-    // in the case of a single-unit border, we already munged the
-    // corners up above; so we can just draw the top left and bottom
-    // right sides separately, if they're the same.
-    //
-    // We need to check for mNoBorderRadius, because when there is
-    // one, FillSolidBorder always draws the full rounded rectangle
-    // and expects there to be a clip in place.
+    
+    
+    
+    
+    
+    
+    
     SideBits alreadyDrawnSides = SideBits::eNone;
     if (mOneUnitBorder && mNoBorderRadius &&
         (dashedSides & (SideBits::eTop | SideBits::eLeft)) == SideBits::eNone) {
@@ -3293,14 +3293,14 @@ void nsCSSBorderRenderer::DrawBorders() {
       }
     }
 
-    // We're done with the corners, now draw the sides.
+    
     for (const auto side : mozilla::AllPhysicalSides()) {
-      // if we drew it above, skip it
+      
       if (alreadyDrawnSides & static_cast<mozilla::SideBits>(1 << side)) {
         continue;
       }
 
-      // If there's no border on this side, skip it
+      
       if (mBorderWidths[side] == 0.0 ||
           mBorderStyles[side] == StyleBorderStyle::Hidden ||
           mBorderStyles[side] == StyleBorderStyle::None) {
@@ -3308,22 +3308,22 @@ void nsCSSBorderRenderer::DrawBorders() {
       }
 
       if (dashedSides & static_cast<mozilla::SideBits>(1 << side)) {
-        // Dashed sides will always draw just the part ignoring the
-        // corners for the side, so no need to clip.
+        
+        
         DrawDashedOrDottedSide(side);
 
         PrintAsStringNewline("---------------- (d)");
         continue;
       }
 
-      // Undashed sides will currently draw the entire side,
-      // including parts that would normally be covered by a corner,
-      // so we need to clip.
-      //
-      // XXX Optimization -- it would be good to make this work like
-      // DrawDashedOrDottedSide, and have a DrawOneSide function that just
-      // draws one side and not the corners, because then we can
-      // avoid the potentially expensive clip.
+      
+      
+      
+      
+      
+      
+      
+      
       mDrawTarget->PushClipRect(GetSideClipWithoutCornersRect(side));
 
       DrawBorderSides(static_cast<mozilla::SideBits>(1 << side));
@@ -3367,7 +3367,7 @@ void nsCSSBorderRenderer::CreateWebRenderCommands(
                       wrsides, borderRadius);
 }
 
-/* static */
+
 Maybe<nsCSSBorderImageRenderer>
 nsCSSBorderImageRenderer::CreateBorderImageRenderer(
     nsPresContext* aPresContext, nsIFrame* aForFrame, const nsRect& aBorderArea,
@@ -3387,10 +3387,10 @@ nsCSSBorderImageRenderer::CreateBorderImageRenderer(
     return Nothing();
   }
 
-  // We should always get here with the frame's border, but we may construct an
-  // nsStyleBorder from the stack to deal with :visited. We copy the border
-  // image and such from the non-visited one, so there's no need to do anything
-  // with it.
+  
+  
+  
+  
   MOZ_ASSERT(&aStyleBorder == aForFrame->StyleBorder() ||
              aForFrame->Style()->GetStyleIfVisited());
 
@@ -3403,8 +3403,8 @@ nsCSSBorderImageRenderer::CreateBorderImageRenderer(
 ImgDrawResult nsCSSBorderImageRenderer::DrawBorderImage(
     nsPresContext* aPresContext, gfxContext& aRenderingContext,
     nsIFrame* aForFrame, const nsRect& aDirtyRect) {
-  // NOTE: no Save() yet, we do that later by calling autoSR.EnsureSaved()
-  // in case we need it.
+  
+  
   gfxContextAutoSaveRestore autoSR;
 
   if (!mClip.IsEmpty()) {
@@ -3414,10 +3414,10 @@ ImgDrawResult nsCSSBorderImageRenderer::DrawBorderImage(
         *aRenderingContext.GetDrawTarget()));
   }
 
-  // intrinsicSize.CanComputeConcreteSize() return false means we can not
-  // read intrinsic size from aStyleBorder.mBorderImageSource.
-  // In this condition, we pass imageSize(a resolved size comes from
-  // default sizing algorithm) to renderer as the viewport size.
+  
+  
+  
+  
   CSSSizeOrRatio intrinsicSize = mImageRenderer.ComputeIntrinsicSize();
   Maybe<nsSize> svgViewportSize =
       intrinsicSize.CanComputeConcreteSize() ? Nothing() : Some(mImageSize);
@@ -3425,10 +3425,10 @@ ImgDrawResult nsCSSBorderImageRenderer::DrawBorderImage(
   mImageRenderer.PurgeCacheForViewportChange(svgViewportSize,
                                              hasIntrinsicRatio);
 
-  // These helper tables recharacterize the 'slice' and 'width' margins
-  // in a more convenient form: they are the x/y/width/height coords
-  // required for various bands of the border, and they have been transformed
-  // to be relative to the innerRect (for 'slice') or the page (for 'border').
+  
+  
+  
+  
   enum { LEFT, MIDDLE, RIGHT, TOP = LEFT, BOTTOM = RIGHT };
   const nscoord borderX[3] = {
       mArea.x + 0,
@@ -3479,20 +3479,20 @@ ImgDrawResult nsCSSBorderImageRenderer::DrawBorderImage(
       nsSize unitSize;
 
       if (i == MIDDLE && j == MIDDLE) {
-        // Discard the middle portion unless set to fill.
+        
         if (!mFill) {
           continue;
         }
 
-        // css-background:
-        //     The middle image's width is scaled by the same factor as the
-        //     top image unless that factor is zero or infinity, in which
-        //     case the scaling factor of the bottom is substituted, and
-        //     failing that, the width is not scaled. The height of the
-        //     middle image is scaled by the same factor as the left image
-        //     unless that factor is zero or infinity, in which case the
-        //     scaling factor of the right image is substituted, and failing
-        //     that, the height is not scaled.
+        
+        
+        
+        
+        
+        
+        
+        
+        
         gfxFloat hFactor, vFactor;
 
         if (0 < mWidths.left && 0 < mSlice.left) {
@@ -3516,9 +3516,9 @@ ImgDrawResult nsCSSBorderImageRenderer::DrawBorderImage(
         fillStyleH = mRepeatModeHorizontal;
         fillStyleV = mRepeatModeVertical;
 
-      } else if (i == MIDDLE) {  // top, bottom
-        // Sides are always stretched to the thickness of their border,
-        // and stretched proportionately on the other axis.
+      } else if (i == MIDDLE) {  
+        
+        
         gfxFloat factor;
         if (0 < borderHeight[j] && 0 < sliceHeight[j]) {
           factor = gfxFloat(borderHeight[j]) / sliceHeight[j];
@@ -3531,7 +3531,7 @@ ImgDrawResult nsCSSBorderImageRenderer::DrawBorderImage(
         fillStyleH = mRepeatModeHorizontal;
         fillStyleV = StyleBorderImageRepeat::Stretch;
 
-      } else if (j == MIDDLE) {  // left, right
+      } else if (j == MIDDLE) {  
         gfxFloat factor;
         if (0 < borderWidth[i] && 0 < sliceWidth[i]) {
           factor = gfxFloat(borderWidth[i]) / sliceWidth[i];
@@ -3545,7 +3545,7 @@ ImgDrawResult nsCSSBorderImageRenderer::DrawBorderImage(
         fillStyleV = mRepeatModeVertical;
 
       } else {
-        // Corners are always stretched to fit the corner.
+        
         unitSize.width = borderWidth[i];
         unitSize.height = borderHeight[j];
         fillStyleH = StyleBorderImageRepeat::Stretch;
@@ -3589,9 +3589,9 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
     slice[i] = (float)(mSlice.Side(i)) / appUnitsPerDevPixel;
     widths[i] = (float)(mWidths.Side(i)) / appUnitsPerDevPixel;
 
-    // The outset is already taken into account by the adjustments to mArea
-    // in our constructor. We use mArea as our dest rect so we can just supply
-    // zero outsets to WebRender.
+    
+    
+    
     outset[i] = 0.0f;
   }
 
@@ -3609,17 +3609,18 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
 
   ImgDrawResult drawResult = ImgDrawResult::SUCCESS;
   switch (mImageRenderer.GetType()) {
-    case eStyleImageType_Image: {
+    case StyleImage::Tag::Rect:
+    case StyleImage::Tag::Url: {
       RefPtr<imgIContainer> img = mImageRenderer.GetImage();
       if (!img || img->GetType() == imgIContainer::TYPE_VECTOR) {
-        // Vector images will redraw each segment of the border up to 8 times.
-        // We draw using a restricted region derived from the segment's clip and
-        // scale the image accordingly (see ClippedImage::Draw). If we follow
-        // this convention as is for WebRender, we will need to rasterize the
-        // entire vector image scaled up without the restriction region, which
-        // means our main thread CPU and memory footprints will be much higher.
-        // Ideally we would be able to provide a raster image for each segment
-        // of the border. For now we use fallback.
+        
+        
+        
+        
+        
+        
+        
+        
         return ImgDrawResult::NOT_SUPPORTED;
       }
 
@@ -3662,18 +3663,18 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
         bool noVerticalBorders = widths[0] <= epsilon && widths[2] < epsilon;
         bool noHorizontalBorders = widths[1] <= epsilon && widths[3] < epsilon;
 
-        // Border image with no border. It's a little silly but WebRender currently does
-        // not handle this. We could fall back to a blob image but there are reftests that
-        // are sensible to the test going through a blob while the reference doesn't.
+        
+        
+        
         if (noVerticalBorders && noHorizontalBorders) {
           aBuilder.PushImage(dest, clip, !aItem->BackfaceIsHidden(), rendering, key.value());
           break;
         }
 
-        // Fall-back if we want to fill the middle area and opposite edges are
-        // both empty.
-        // TODO(bug 1609893): moving some of the repetition handling code out
-        // of the image shader will make it easier to handle these cases properly.
+        
+        
+        
+        
         if (noHorizontalBorders || noVerticalBorders) {
           return ImgDrawResult::NOT_SUPPORTED;
         }
@@ -3693,7 +3694,7 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
       aBuilder.PushBorderImage(dest, clip, !aItem->BackfaceIsHidden(), params);
       break;
     }
-    case eStyleImageType_Gradient: {
+    case StyleImage::Tag::Gradient: {
       const StyleGradient& gradient = *mImageRenderer.GetGradientData();
       nsCSSGradientRenderer renderer = nsCSSGradientRenderer::Create(
           aForFrame->PresContext(), aForFrame->Style(), gradient, mImageSize);
@@ -3706,7 +3707,7 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
       renderer.BuildWebRenderParameters(1.0, extendMode, stops, lineStart,
                                         lineEnd, gradientRadius);
 
-      if (gradient.kind.IsLinear()) {
+      if (gradient.IsLinear()) {
         LayoutDevicePoint startPoint =
             LayoutDevicePoint(dest.origin.x, dest.origin.y) + lineStart;
         LayoutDevicePoint endPoint =
@@ -3778,10 +3779,10 @@ nsCSSBorderImageRenderer::nsCSSBorderImageRenderer(
     const nsStyleBorder& aStyleBorder, Sides aSkipSides,
     const nsImageRenderer& aImageRenderer)
     : mImageRenderer(aImageRenderer) {
-  // Determine the border image area, which by default corresponds to the
-  // border box but can be modified by 'border-image-outset'.
-  // Note that 'border-radius' do not apply to 'border-image' borders per
-  // <http://dev.w3.org/csswg/css-backgrounds/#corner-clipping>.
+  
+  
+  
+  
   nsMargin borderWidths(aStyleBorder.GetComputedBorder());
   mImageOutset = aStyleBorder.GetImageOutset();
   if (nsCSSRendering::IsBoxDecorationSlice(aStyleBorder) &&
@@ -3789,13 +3790,13 @@ nsCSSBorderImageRenderer::nsCSSBorderImageRenderer(
     mArea = nsCSSRendering::BoxDecorationRectForBorder(
         aForFrame, aBorderArea, aSkipSides, &aStyleBorder);
     if (mArea.IsEqualEdges(aBorderArea)) {
-      // No need for a clip, just skip the sides we don't want.
+      
       borderWidths.ApplySkipSides(aSkipSides);
       mImageOutset.ApplySkipSides(aSkipSides);
       mArea.Inflate(mImageOutset);
     } else {
-      // We're drawing borders around the joined continuation boxes so we need
-      // to clip that to the slice that we want for this frame.
+      
+      
       mArea.Inflate(mImageOutset);
       mImageOutset.ApplySkipSides(aSkipSides);
       mClip = aBorderArea;
@@ -3806,14 +3807,14 @@ nsCSSBorderImageRenderer::nsCSSBorderImageRenderer(
     mArea.Inflate(mImageOutset);
   }
 
-  // Calculate the image size used to compute slice points.
+  
   CSSSizeOrRatio intrinsicSize = mImageRenderer.ComputeIntrinsicSize();
   mImageSize = nsImageRenderer::ComputeConcreteSize(
       CSSSizeOrRatio(), intrinsicSize, mArea.Size());
   mImageRenderer.SetPreferredSize(intrinsicSize, mImageSize);
 
-  // Compute the used values of 'border-image-slice' and 'border-image-width';
-  // we do them together because the latter can depend on the former.
+  
+  
   nsMargin slice;
   nsMargin border;
   for (const auto s : mozilla::AllPhysicalSides()) {
@@ -3853,16 +3854,16 @@ nsCSSBorderImageRenderer::nsCSSBorderImageRenderer(
         value = 0;
         break;
     }
-    // NSToCoordRoundWithClamp rounds towards infinity, but that's OK
-    // because we expect value to be non-negative.
+    
+    
     MOZ_ASSERT(value >= 0);
     mWidths.Side(s) = NSToCoordRoundWithClamp(value);
     MOZ_ASSERT(mWidths.Side(s) >= 0);
   }
 
-  // "If two opposite border-image-width offsets are large enough that they
-  // overlap, their used values are proportionately reduced until they no
-  // longer overlap."
+  
+  
+  
   uint32_t combinedBorderWidth =
       uint32_t(mWidths.left) + uint32_t(mWidths.right);
   double scaleX = combinedBorderWidth > uint32_t(mArea.width)
