@@ -1275,12 +1275,8 @@ class HiddenXULWindow {
     
     
     
-    
-    
-    
-    let chromeShell = windowlessBrowser.docShell.QueryInterface(
-      Ci.nsIWebNavigation
-    );
+    let chromeShell = windowlessBrowser.docShell;
+    chromeShell.QueryInterface(Ci.nsIWebNavigation);
 
     if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
       let attrs = chromeShell.getOriginAttributes();
@@ -1288,16 +1284,10 @@ class HiddenXULWindow {
       chromeShell.setOriginAttributes(attrs);
     }
 
-    let system = Services.scriptSecurityManager.getSystemPrincipal();
-    chromeShell.createAboutBlankContentViewer(system, system);
     chromeShell.useGlobalHistory = false;
-    let loadURIOptions = {
-      triggeringPrincipal: system,
-    };
-    chromeShell.loadURI(
-      "chrome://extensions/content/dummy.xhtml",
-      loadURIOptions
-    );
+    chromeShell.loadURI("chrome://extensions/content/dummy.xhtml", {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    });
 
     await promiseObserved(
       "chrome-document-global-created",
