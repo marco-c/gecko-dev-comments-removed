@@ -6,6 +6,8 @@
 
 #include "mozilla/dom/JSWindowActor.h"
 #include "mozilla/dom/JSWindowActorBinding.h"
+
+#include "mozilla/Telemetry.h"
 #include "mozilla/dom/ClonedErrorHolder.h"
 #include "mozilla/dom/ClonedErrorHolderBinding.h"
 #include "mozilla/dom/DOMException.h"
@@ -15,6 +17,7 @@
 #include "mozilla/dom/Promise.h"
 #include "js/Promise.h"
 #include "xpcprivate.h"
+#include "nsASCIIMask.h"
 
 namespace mozilla {
 namespace dom {
@@ -127,6 +130,18 @@ bool JSWindowActor::AllowMessage(const JSWindowActorMessageMeta& aMetadata,
   if (aDataLength < kMaxMessageSize) {
     return true;
   }
+
+  nsAutoString messageName(aMetadata.actorName());
+  messageName.AppendLiteral("::");
+  messageName.Append(aMetadata.messageName());
+
+  
+  
+  messageName.StripTaggedASCII(ASCIIMask::Mask0to9());
+
+  Telemetry::ScalarAdd(
+      Telemetry::ScalarID::DOM_IPC_REJECTED_WINDOW_ACTOR_MESSAGE, messageName,
+      1);
 
   return false;
 }
@@ -321,7 +336,7 @@ void JSWindowActor::ReceiveMessageOrQuery(
         promise->MaybeRejectWithTimeoutError(
             "Message handler threw uncatchable exception");
       } else {
-        promise->MaybeReject(aRv);
+        promise->MaybeReject(std::move(aRv));
       }
     } else {
       promise->MaybeResolve(retval);

@@ -303,7 +303,7 @@ MOZ_MUST_USE bool ToJSValue(JSContext* aCx, nsresult aArgument,
 
 
 
-MOZ_MUST_USE bool ToJSValue(JSContext* aCx, ErrorResult& aArgument,
+MOZ_MUST_USE bool ToJSValue(JSContext* aCx, ErrorResult&& aArgument,
                             JS::MutableHandle<JS::Value> aValue);
 
 

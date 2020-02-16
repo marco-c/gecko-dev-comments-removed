@@ -190,8 +190,7 @@ already_AddRefed<Promise> Clients::MatchAll(const ClientQueryOptions& aOptions,
       },
       [outerPromise](const CopyableErrorResult& aResult) {
         
-        CopyableErrorResult result(aResult);
-        outerPromise->MaybeReject(result);
+        outerPromise->MaybeReject(CopyableErrorResult(aResult));
       });
 
   return outerPromise.forget();
@@ -214,7 +213,7 @@ already_AddRefed<Promise> Clients::OpenWindow(const nsAString& aURL,
     CopyableErrorResult rv;
     rv.ThrowTypeError(
         u"Passing \"about:blank\" to Clients.openWindow is not allowed");
-    outerPromise->MaybeReject(rv);
+    outerPromise->MaybeReject(std::move(rv));
     return outerPromise.forget();
   }
 
@@ -245,8 +244,7 @@ already_AddRefed<Promise> Clients::OpenWindow(const nsAString& aURL,
       },
       [outerPromise](const CopyableErrorResult& aResult) {
         
-        CopyableErrorResult result(aResult);
-        outerPromise->MaybeReject(result);
+        outerPromise->MaybeReject(CopyableErrorResult(aResult));
       });
 
   return outerPromise.forget();
@@ -280,8 +278,7 @@ already_AddRefed<Promise> Clients::Claim(ErrorResult& aRv) {
       },
       [outerPromise](const CopyableErrorResult& aResult) {
         
-        CopyableErrorResult result(aResult);
-        outerPromise->MaybeReject(result);
+        outerPromise->MaybeReject(CopyableErrorResult(aResult));
       });
 
   return outerPromise.forget();

@@ -94,7 +94,7 @@ void RemoteServiceWorkerRegistrationImpl::Unregister(
        aFailureCB](Tuple<bool, CopyableErrorResult>&& aResult) {
         if (Get<1>(aResult).Failed()) {
           
-          aFailureCB(Get<1>(aResult));
+          aFailureCB(std::move(Get<1>(aResult)));
           return;
         }
         

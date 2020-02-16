@@ -191,15 +191,15 @@ void MIDIAccess::MaybeCreateMIDIPort(const MIDIPortInfo& aInfo,
 
 
 void MIDIAccess::Notify(const MIDIPortList& aEvent) {
-  ErrorResult rv;
   for (auto& port : aEvent.ports()) {
     
+    ErrorResult rv;
     MaybeCreateMIDIPort(port, rv);
     if (rv.Failed()) {
       if (!mAccessPromise) {
         return;
       }
-      mAccessPromise->MaybeReject(rv);
+      mAccessPromise->MaybeReject(std::move(rv));
       mAccessPromise = nullptr;
     }
   }

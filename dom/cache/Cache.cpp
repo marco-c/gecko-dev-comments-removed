@@ -176,7 +176,7 @@ class Cache::FetchHandler final : public PromiseNativeHandler {
       if (!IsValidPutResponseStatus(*response, PutStatusPolicy::RequireOK,
                                     errorResult)) {
         
-        mPromise->MaybeReject(errorResult);
+        mPromise->MaybeReject(std::move(errorResult));
         return;
       }
 
@@ -195,7 +195,7 @@ class Cache::FetchHandler final : public PromiseNativeHandler {
     result.WouldReportJSException();
     if (NS_WARN_IF(result.Failed())) {
       
-      mPromise->MaybeReject(result);
+      mPromise->MaybeReject(std::move(result));
       return;
     }
 
