@@ -216,8 +216,8 @@ class LoginManagerParent extends JSWindowActorParent {
         break;
       }
 
-      case "PasswordManager:onGeneratedPasswordFilledOrEdited": {
-        this._onGeneratedPasswordFilledOrEdited(data);
+      case "PasswordManager:onPasswordEditedOrGenerated": {
+        this._onPasswordEditedOrGenerated(data);
         break;
       }
 
@@ -762,19 +762,20 @@ class LoginManagerParent extends JSWindowActorParent {
     prompter.promptToSavePassword(promptBrowser, formLogin, dismissedPrompt);
   }
 
-  async _onGeneratedPasswordFilledOrEdited({
+  async _onPasswordEditedOrGenerated({
     formActionOrigin,
     password,
     username = "",
+    triggeredByFillingGenerated = false,
   }) {
-    log("_onGeneratedPasswordFilledOrEdited");
+    log("_onPasswordEditedOrGenerated");
 
     if (gListenerForTests) {
-      gListenerForTests("PasswordFilledOrEdited", {});
+      gListenerForTests("PasswordEditedOrGenerated", {});
     }
 
     if (!password) {
-      log("_onGeneratedPasswordFilledOrEdited: The password field is empty");
+      log("_onPasswordEditedOrGenerated: The password field is empty");
       return;
     }
 
@@ -789,7 +790,7 @@ class LoginManagerParent extends JSWindowActorParent {
     let formOrigin = LoginHelper.getLoginOrigin(originNoSuffix);
     if (!formOrigin) {
       log(
-        "_onGeneratedPasswordFilledOrEdited: Invalid form origin:",
+        "_onPasswordEditedOrGenerated: Invalid form origin:",
         browsingContext.currentWindowGlobal.documentPrincipal
       );
       return;
@@ -799,24 +800,25 @@ class LoginManagerParent extends JSWindowActorParent {
       
       
       
-      log(
-        "_onGeneratedPasswordFilledOrEdited: saving is disabled for:",
-        formOrigin
-      );
+      log("_onPasswordEditedOrGenerated: saving is disabled for:", formOrigin);
       return;
     }
 
-    let framePrincipalOrigin =
-      browsingContext.currentWindowGlobal.documentPrincipal.origin;
-    let generatedPW = gGeneratedPasswordsByPrincipalOrigin.get(
-      framePrincipalOrigin
-    );
-
-    let shouldAutoSaveLogin = true;
+    let shouldAutoSaveLogin = false;
     let loginToChange = null;
     let autoSavedLogin = null;
+    let generatedPW;
 
-    if (password != generatedPW.value) {
+    if (triggeredByFillingGenerated) {
+      let framePrincipalOrigin =
+        browsingContext.currentWindowGlobal.documentPrincipal.origin;
+      generatedPW = gGeneratedPasswordsByPrincipalOrigin.get(
+        framePrincipalOrigin
+      );
+      shouldAutoSaveLogin = true;
+    }
+
+    if (generatedPW && password != generatedPW.value) {
       
       log("The field containing the generated password has changed");
 
@@ -841,7 +843,7 @@ class LoginManagerParent extends JSWindowActorParent {
 
         if (existingLogins.length) {
           log(
-            "_onGeneratedPasswordFilledOrEdited: login to change is the auto-saved login"
+            "_onPasswordEditedOrGenerated: login to change is the auto-saved login"
           );
           loginToChange = existingLogins[0];
           autoSavedLogin = loginToChange;
@@ -858,59 +860,66 @@ class LoginManagerParent extends JSWindowActorParent {
       formActionOrigin,
       null,
       username,
-      generatedPW.value
+      password
     );
-
-    let formLoginWithoutUsername = new LoginInfo(
-      formOrigin,
-      formActionOrigin,
-      null,
-      "",
-      generatedPW.value
-    );
-
     
-    if (!generatedPW.filled) {
-      if (generatedPW.storageGUID) {
-        throw new Error(
-          "Generated password was saved in storage without being filled first"
-        );
-      }
-      
-      Services.telemetry.recordEvent(
-        "pwmgr",
-        "autocomplete_field",
-        "generatedpassword"
+    let formLoginWithoutUsername;
+
+    if (generatedPW) {
+      formLoginWithoutUsername = new LoginInfo(
+        formOrigin,
+        formActionOrigin,
+        null,
+        "",
+        password
       );
-      log("autocomplete_field telemetry event recorded");
-      generatedPW.filled = true;
+
+      
+      if (!generatedPW.filled) {
+        if (generatedPW.storageGUID) {
+          throw new Error(
+            "Generated password was saved in storage without being filled first"
+          );
+        }
+        
+        Services.telemetry.recordEvent(
+          "pwmgr",
+          "autocomplete_field",
+          "generatedpassword"
+        );
+        log("autocomplete_field telemetry event recorded");
+        generatedPW.filled = true;
+      }
     }
 
+    
     if (!loginToChange) {
-      
-      
-      
       let logins = await LoginManagerParent.searchAndDedupeLogins(formOrigin, {
         acceptDifferentSubdomains: false,
         httpRealm: null,
         ignoreActionAndRealm: false,
       });
+      let matchedLogin;
 
-      let matchedLogin = logins.find(login =>
-        formLoginWithoutUsername.matches(login, true)
-      );
-      if (matchedLogin) {
-        shouldAutoSaveLogin = false;
-        if (matchedLogin.password == formLoginWithoutUsername.password) {
-          
+      if (generatedPW) {
+        
+        
+        
+        if (
+          (matchedLogin = logins.find(login =>
+            formLoginWithoutUsername.matches(login, true)
+          ))
+        ) {
+          shouldAutoSaveLogin = false;
+          if (matchedLogin.password == formLoginWithoutUsername.password) {
+            
+            log("_onPasswordEditedOrGenerated: Matching login already saved");
+            return;
+          }
           log(
-            "_onGeneratedPasswordFilledOrEdited: Matching login already saved"
+            "_onPasswordEditedOrGenerated: Login with empty username already saved for this site"
           );
-          return;
         }
-        log(
-          "_onGeneratedPasswordFilledOrEdited: Login with empty username already saved for this site"
-        );
       }
 
       if (
@@ -924,7 +933,7 @@ class LoginManagerParent extends JSWindowActorParent {
     if (shouldAutoSaveLogin) {
       if (loginToChange && loginToChange == autoSavedLogin) {
         log(
-          "_onGeneratedPasswordFilledOrEdited: updating auto-saved login with changed password"
+          "_onPasswordEditedOrGenerated: updating auto-saved login with changed password"
         );
 
         Services.logins.modifyLogin(
@@ -938,7 +947,7 @@ class LoginManagerParent extends JSWindowActorParent {
         loginToChange.password = password;
       } else {
         log(
-          "_onGeneratedPasswordFilledOrEdited: auto-saving new login with empty username"
+          "_onPasswordEditedOrGenerated: auto-saving new login with empty username"
         );
         loginToChange = Services.logins.addLogin(formLoginWithoutUsername);
         
@@ -946,9 +955,7 @@ class LoginManagerParent extends JSWindowActorParent {
         generatedPW.storageGUID = loginToChange.guid;
       }
     } else {
-      log(
-        "_onGeneratedPasswordFilledOrEdited: not auto-saving/updating this login"
-      );
+      log("_onPasswordEditedOrGenerated: not auto-saving this login");
     }
     let browser = this.getRootBrowser();
     let prompter = this._getPrompter(browser);
@@ -959,6 +966,7 @@ class LoginManagerParent extends JSWindowActorParent {
       
       let autoSavedStorageGUID = "";
       if (
+        generatedPW &&
         generatedPW.value == loginToChange.password &&
         generatedPW.storageGUID == loginToChange.guid
       ) {
@@ -966,7 +974,7 @@ class LoginManagerParent extends JSWindowActorParent {
       }
 
       log(
-        "_onGeneratedPasswordFilledOrEdited: promptToChangePassword with autoSavedStorageGUID: " +
+        "_onPasswordEditedOrGenerated: promptToChangePassword with autoSavedStorageGUID: " +
           autoSavedStorageGUID
       );
       prompter.promptToChangePassword(
@@ -979,7 +987,7 @@ class LoginManagerParent extends JSWindowActorParent {
       );
       return;
     }
-    log("_onGeneratedPasswordFilledOrEdited: no matching login to save/update");
+    log("_onPasswordEditedOrGenerated: no matching login to save/update");
     prompter.promptToSavePassword(
       promptBrowser,
       formLogin,

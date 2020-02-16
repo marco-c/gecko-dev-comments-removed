@@ -582,7 +582,7 @@ async function fillGeneratedPasswordFromOpenACPopup(
   );
 
   let passwordGeneratedPromise = listenForTestNotification(
-    "PasswordFilledOrEdited"
+    "PasswordEditedOrGenerated"
   );
 
   info("Clicking the generated password AC item");
