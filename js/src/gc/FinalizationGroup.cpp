@@ -42,6 +42,7 @@ bool GCRuntime::registerWithFinalizationGroup(JSContext* cx,
 
 void GCRuntime::markFinalizationGroupData(JSTracer* trc) {
   
+  
   for (GCZonesIter zone(this); !zone.done(); zone.next()) {
     auto& map = zone->finalizationRecordMap();
     for (Zone::FinalizationRecordMap::Enum e(map); !e.empty(); e.popFront()) {

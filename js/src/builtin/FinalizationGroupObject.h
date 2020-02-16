@@ -90,7 +90,7 @@ using RootedFinalizationRecordObject = Rooted<FinalizationRecordObject*>;
 
 
 class FinalizationRecordObject : public NativeObject {
-  enum { GroupSlot = 0, HoldingsSlot, SlotCount };
+  enum { GroupSlot = 0, HeldValueSlot, SlotCount };
 
  public:
   static const JSClass class_;
@@ -98,10 +98,10 @@ class FinalizationRecordObject : public NativeObject {
   
   static FinalizationRecordObject* create(JSContext* cx,
                                           HandleFinalizationGroupObject group,
-                                          HandleValue holdings);
+                                          HandleValue heldValue);
 
   FinalizationGroupObject* group() const;
-  Value holdings() const;
+  Value heldValue() const;
   bool wasCleared() const;
   void clear();
 };
