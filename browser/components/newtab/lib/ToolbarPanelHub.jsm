@@ -405,6 +405,7 @@ class _ToolbarPanelHub {
   }
 
   async _contentArguments() {
+    const { defaultEngine } = Services.search;
     
     const dateTo = new Date();
     const dateFrom = new Date(dateTo.getTime() - 42 * 24 * 60 * 60 * 1000);
@@ -437,6 +438,10 @@ class _ToolbarPanelHub {
         dateFrom
       ),
       ...totalEvents,
+      
+      
+      
+      searchEngineName: defaultEngine ? defaultEngine.name : "undefined",
     };
   }
 
