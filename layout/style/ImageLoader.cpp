@@ -399,7 +399,7 @@ static CORSMode EffectiveCorsMode(nsIURI* aURI,
 
 
 already_AddRefed<imgRequestProxy> ImageLoader::LoadImage(
-    const StyleComputedImageUrl& aImage, Document& aLoadingDoc) {
+    const StyleComputedImageUrl& aImage, Document& aDocument) {
   MOZ_ASSERT(NS_IsMainThread());
   nsIURI* uri = aImage.GetURI();
   if (!uri) {
@@ -412,14 +412,45 @@ already_AddRefed<imgRequestProxy> ImageLoader::LoadImage(
 
   const URLExtraData& data = aImage.ExtraData();
 
+  
+  
+  
+  Document* loadingDoc = aDocument.GetOriginalDocument();
+  const bool isPrint = !!loadingDoc;
+  if (!loadingDoc) {
+    loadingDoc = &aDocument;
+  }
+
   RefPtr<imgRequestProxy> request;
   nsresult rv = nsContentUtils::LoadImage(
-      uri, &aLoadingDoc, &aLoadingDoc, data.Principal(), 0, data.ReferrerInfo(),
+      uri, loadingDoc, loadingDoc, data.Principal(), 0, data.ReferrerInfo(),
       sImageObserver, loadFlags, NS_LITERAL_STRING("css"),
       getter_AddRefs(request));
 
   if (NS_FAILED(rv) || !request) {
     return nullptr;
+  }
+
+  if (isPrint) {
+    RefPtr<imgRequestProxy> ret;
+    request->GetStaticRequest(&aDocument, getter_AddRefs(ret));
+    
+    
+    
+    
+    
+    
+    
+    
+    if (ret != request) {
+      if (!sImages->Contains(request)) {
+        request->CancelAndForgetObserver(NS_BINDING_ABORTED);
+      }
+      if (!ret) {
+        return nullptr;
+      }
+      request = std::move(ret);
+    }
   }
 
   sImages->LookupForAdd(request).OrInsert([] { return new ImageTableEntry(); });
