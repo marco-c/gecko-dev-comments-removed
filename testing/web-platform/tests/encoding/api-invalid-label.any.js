@@ -2,6 +2,11 @@
 
 
 
+
+
+
+
+
 var tests = ["invalid-invalidLabel"];
 setup(function() {
   encodings_table.forEach(function(section) {
@@ -18,7 +23,7 @@ setup(function() {
 });
 
 tests.forEach(function(input) {
-  test(function() {
+  subsetTest(test, function() {
     assert_throws_js(RangeError, function() { new TextDecoder(input); });
   }, 'Invalid label ' + format_value(input) + ' should be rejected by TextDecoder.');
 });
