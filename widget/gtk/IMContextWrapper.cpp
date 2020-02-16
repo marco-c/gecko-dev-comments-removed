@@ -1115,6 +1115,13 @@ void IMContextWrapper::OnFocusChangeInGecko(bool aFocus) {
   
   mSelectedStringRemovedByComposition.Truncate();
   mSelection.Clear();
+
+  
+  
+  
+  if (aFocus && EnsureToCacheSelection()) {
+    SetCursorPosition(GetActiveContext());
+  }
 }
 
 void IMContextWrapper::ResetIME() {
