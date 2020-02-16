@@ -166,10 +166,6 @@ static bool CanInlineCrossRealm(InlinableNative native) {
     case InlinableNative::IntrinsicTypedArrayLength:
     case InlinableNative::IntrinsicTypedArrayByteOffset:
     case InlinableNative::IntrinsicTypedArrayElementShift:
-    case InlinableNative::IntrinsicObjectIsTypedObject:
-    case InlinableNative::IntrinsicObjectIsTypeDescr:
-    case InlinableNative::IntrinsicTypeDescrIsSimpleType:
-    case InlinableNative::IntrinsicTypeDescrIsArrayType:
     case InlinableNative::IntrinsicArrayIteratorPrototypeOptimizable:
       MOZ_CRASH("Unexpected cross-realm intrinsic call");
 
@@ -222,7 +218,6 @@ IonBuilder::InliningResult IonBuilder::inlineNativeCall(CallInfo& callInfo,
   MOZ_ASSERT(target->isNative());
 
   if (!optimizationInfo().inlineNative()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineDisabledIon);
     return InliningStatus_NotInlined;
   }
 
@@ -232,19 +227,14 @@ IonBuilder::InliningResult IonBuilder::inlineNativeCall(CallInfo& callInfo,
        target->jitInfo()->type() != JSJitInfo::InlinableNative)) {
     
     
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeNoSpecialization);
     return InliningStatus_NotInlined;
   }
 
   
   
   if (callInfo.constructing() && callInfo.getNewTarget() != callInfo.fun()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineUnexpectedNewTarget);
     return InliningStatus_NotInlined;
   }
-
-  
-  trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadType);
 
   if (shouldAbortOnPreliminaryGroups(callInfo.thisArg())) {
     return InliningStatus_NotInlined;
@@ -262,7 +252,6 @@ IonBuilder::InliningResult IonBuilder::inlineNativeCall(CallInfo& callInfo,
   InlinableNative inlNative = target->jitInfo()->inlinableNative;
 
   if (target->realm() != script()->realm() && !CanInlineCrossRealm(inlNative)) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineCrossRealm);
     return InliningStatus_NotInlined;
   }
 
@@ -567,19 +556,6 @@ IonBuilder::InliningResult IonBuilder::inlineNativeCall(CallInfo& callInfo,
     case InlinableNative::IntrinsicTypedArrayElementShift:
       return inlineTypedArrayElementShift(callInfo);
 
-    
-    case InlinableNative::IntrinsicObjectIsTypedObject:
-      return inlineHasClass(callInfo, &OutlineTransparentTypedObject::class_,
-                            &OutlineOpaqueTypedObject::class_,
-                            &InlineTransparentTypedObject::class_,
-                            &InlineOpaqueTypedObject::class_);
-    case InlinableNative::IntrinsicObjectIsTypeDescr:
-      return inlineObjectIsTypeDescr(callInfo);
-    case InlinableNative::IntrinsicTypeDescrIsSimpleType:
-      return inlineHasClass(callInfo, &ScalarTypeDescr::class_,
-                            &ReferenceTypeDescr::class_);
-    case InlinableNative::IntrinsicTypeDescrIsArrayType:
-      return inlineHasClass(callInfo, &ArrayTypeDescr::class_);
     case InlinableNative::Limit:
       break;
   }
@@ -656,32 +632,6 @@ IonBuilder::InliningResult IonBuilder::inlineNativeGetter(CallInfo& callInfo,
   return InliningStatus_NotInlined;
 }
 
-IonBuilder::InliningResult IonBuilder::inlineNonFunctionCall(CallInfo& callInfo,
-                                                             JSObject* target) {
-  
-  
-
-  
-  
-  if (callInfo.constructing() && callInfo.getNewTarget() != callInfo.fun()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineUnexpectedNewTarget);
-    return InliningStatus_NotInlined;
-  }
-
-  Realm* targetRealm = JS::GetObjectRealmOrNull(target);
-  if (!targetRealm || targetRealm != script()->realm()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineCrossRealm);
-    return InliningStatus_NotInlined;
-  }
-
-  if (callInfo.constructing() &&
-      target->constructHook() == TypedObject::construct) {
-    return inlineConstructTypedObject(callInfo, &target->as<TypeDescr>());
-  }
-
-  return InliningStatus_NotInlined;
-}
-
 TemporaryTypeSet* IonBuilder::getInlineReturnTypeSet() {
   return bytecodeTypes(pc);
 }
@@ -730,12 +680,10 @@ IonBuilder::InliningResult IonBuilder::inlineArray(CallInfo& callInfo,
   }
 
   if (!templateObject) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeNoTemplateObj);
     return InliningStatus_NotInlined;
   }
 
   if (templateObject->nonCCWRealm() != targetRealm) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineCrossRealm);
     return InliningStatus_NotInlined;
   }
 
@@ -778,9 +726,6 @@ IonBuilder::InliningResult IonBuilder::inlineArray(CallInfo& callInfo,
 
       return InliningStatus_Inlined;
     }
-
-    
-    trackOptimizationOutcome(TrackedOutcome::ArrayRange);
 
     
     initLength = arg->toConstant()->toInt32();
@@ -834,7 +779,6 @@ static bool IsArrayClass(const JSClass* clasp) {
 
 IonBuilder::InliningResult IonBuilder::inlineArrayIsArray(CallInfo& callInfo) {
   if (callInfo.constructing() || callInfo.argc() != 1) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -895,7 +839,6 @@ IonBuilder::InliningResult IonBuilder::inlineArrayIsArray(CallInfo& callInfo) {
 IonBuilder::InliningResult IonBuilder::inlineArrayPopShift(
     CallInfo& callInfo, MArrayPopShift::Mode mode) {
   if (callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -931,7 +874,6 @@ IonBuilder::InliningResult IonBuilder::inlineArrayPopShift(
     return InliningStatus_NotInlined;
   }
   if (thisTypes->hasObjectFlags(constraints(), unhandledFlags)) {
-    trackOptimizationOutcome(TrackedOutcome::ArrayBadFlags);
     return InliningStatus_NotInlined;
   }
 
@@ -940,7 +882,6 @@ IonBuilder::InliningResult IonBuilder::inlineArrayPopShift(
   MOZ_TRY_VAR(hasIndexedProperty,
               ElementAccessHasExtraIndexedProperty(this, obj));
   if (hasIndexedProperty) {
-    trackOptimizationOutcome(TrackedOutcome::ProtoIndexedProps);
     return InliningStatus_NotInlined;
   }
 
@@ -972,7 +913,6 @@ IonBuilder::InliningResult IonBuilder::inlineArrayPopShift(
 
 IonBuilder::InliningResult IonBuilder::inlineArrayJoin(CallInfo& callInfo) {
   if (callInfo.argc() != 1 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -1019,13 +959,11 @@ IonBuilder::InliningResult IonBuilder::inlineArrayPush(CallInfo& callInfo) {
   const uint32_t inlineArgsLimit = 10;
   if (callInfo.argc() < 1 || callInfo.argc() > inlineArgsLimit ||
       callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
   
   if (callInfo.argc() != 1) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -1035,7 +973,6 @@ IonBuilder::InliningResult IonBuilder::inlineArrayPush(CallInfo& callInfo) {
     if (PropertyWriteNeedsTypeBarrier(alloc(), constraints(), current, &obj,
                                       nullptr, &value,
                                        false)) {
-      trackOptimizationOutcome(TrackedOutcome::NeedsTypeBarrier);
       return InliningStatus_NotInlined;
     }
   }
@@ -1060,14 +997,12 @@ IonBuilder::InliningResult IonBuilder::inlineArrayPush(CallInfo& callInfo) {
   MOZ_TRY_VAR(hasIndexedProperty,
               ElementAccessHasExtraIndexedProperty(this, obj));
   if (hasIndexedProperty) {
-    trackOptimizationOutcome(TrackedOutcome::ProtoIndexedProps);
     return InliningStatus_NotInlined;
   }
 
   TemporaryTypeSet::DoubleConversion conversion =
       thisTypes->convertDoubleElements(constraints());
   if (conversion == TemporaryTypeSet::AmbiguousDoubleConversion) {
-    trackOptimizationOutcome(TrackedOutcome::ArrayDoubleConversion);
     return InliningStatus_NotInlined;
   }
 
@@ -1150,7 +1085,6 @@ IonBuilder::InliningResult IonBuilder::inlineArrayPush(CallInfo& callInfo) {
 
 IonBuilder::InliningResult IonBuilder::inlineArraySlice(CallInfo& callInfo) {
   if (callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -1192,7 +1126,6 @@ IonBuilder::InliningResult IonBuilder::inlineArraySlice(CallInfo& callInfo) {
   MOZ_TRY_VAR(hasIndexedProperty,
               ElementAccessHasExtraIndexedProperty(this, obj));
   if (hasIndexedProperty) {
-    trackOptimizationOutcome(TrackedOutcome::ProtoIndexedProps);
     return InliningStatus_NotInlined;
   }
 
@@ -1250,7 +1183,6 @@ IonBuilder::InliningResult IonBuilder::inlineArraySlice(CallInfo& callInfo) {
 
 IonBuilder::InliningResult IonBuilder::inlineBoolean(CallInfo& callInfo) {
   if (callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -1329,7 +1261,6 @@ IonBuilder::InliningResult IonBuilder::inlineArrayIteratorPrototypeOptimizable(
 
 IonBuilder::InliningResult IonBuilder::inlineMathAbs(CallInfo& callInfo) {
   if (callInfo.argc() != 1 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -1362,7 +1293,6 @@ IonBuilder::InliningResult IonBuilder::inlineMathAbs(CallInfo& callInfo) {
 
 IonBuilder::InliningResult IonBuilder::inlineMathFloor(CallInfo& callInfo) {
   if (callInfo.argc() != 1 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -1415,7 +1345,6 @@ IonBuilder::InliningResult IonBuilder::inlineMathFloor(CallInfo& callInfo) {
 
 IonBuilder::InliningResult IonBuilder::inlineMathCeil(CallInfo& callInfo) {
   if (callInfo.argc() != 1 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -1468,7 +1397,6 @@ IonBuilder::InliningResult IonBuilder::inlineMathCeil(CallInfo& callInfo) {
 
 IonBuilder::InliningResult IonBuilder::inlineMathClz32(CallInfo& callInfo) {
   if (callInfo.argc() != 1 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -1491,7 +1419,6 @@ IonBuilder::InliningResult IonBuilder::inlineMathClz32(CallInfo& callInfo) {
 
 IonBuilder::InliningResult IonBuilder::inlineMathRound(CallInfo& callInfo) {
   if (callInfo.argc() != 1 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -1534,7 +1461,6 @@ IonBuilder::InliningResult IonBuilder::inlineMathRound(CallInfo& callInfo) {
 
 IonBuilder::InliningResult IonBuilder::inlineMathSqrt(CallInfo& callInfo) {
   if (callInfo.argc() != 1 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -1556,7 +1482,6 @@ IonBuilder::InliningResult IonBuilder::inlineMathSqrt(CallInfo& callInfo) {
 
 IonBuilder::InliningResult IonBuilder::inlineMathAtan2(CallInfo& callInfo) {
   if (callInfo.argc() != 2 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -1581,13 +1506,11 @@ IonBuilder::InliningResult IonBuilder::inlineMathAtan2(CallInfo& callInfo) {
 
 IonBuilder::InliningResult IonBuilder::inlineMathHypot(CallInfo& callInfo) {
   if (callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
   uint32_t argc = callInfo.argc();
   if (argc < 2 || argc > 4) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -1622,7 +1545,6 @@ IonBuilder::InliningResult IonBuilder::inlineMathHypot(CallInfo& callInfo) {
 
 IonBuilder::InliningResult IonBuilder::inlineMathPow(CallInfo& callInfo) {
   if (callInfo.argc() != 2 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -1640,7 +1562,6 @@ IonBuilder::InliningResult IonBuilder::inlineMathPow(CallInfo& callInfo) {
 
 IonBuilder::InliningResult IonBuilder::inlineMathRandom(CallInfo& callInfo) {
   if (callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -1663,7 +1584,6 @@ IonBuilder::InliningResult IonBuilder::inlineMathRandom(CallInfo& callInfo) {
 
 IonBuilder::InliningResult IonBuilder::inlineMathImul(CallInfo& callInfo) {
   if (callInfo.argc() != 2 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -1695,7 +1615,6 @@ IonBuilder::InliningResult IonBuilder::inlineMathImul(CallInfo& callInfo) {
 
 IonBuilder::InliningResult IonBuilder::inlineMathFRound(CallInfo& callInfo) {
   if (callInfo.argc() != 1 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -1728,7 +1647,6 @@ IonBuilder::InliningResult IonBuilder::inlineMathFRound(CallInfo& callInfo) {
 
 IonBuilder::InliningResult IonBuilder::inlineMathTrunc(CallInfo& callInfo) {
   if (callInfo.argc() != 1 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -1781,7 +1699,6 @@ IonBuilder::InliningResult IonBuilder::inlineMathTrunc(CallInfo& callInfo) {
 
 IonBuilder::InliningResult IonBuilder::inlineMathSign(CallInfo& callInfo) {
   if (callInfo.argc() != 1 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -1809,7 +1726,6 @@ IonBuilder::InliningResult IonBuilder::inlineMathSign(CallInfo& callInfo) {
 IonBuilder::InliningResult IonBuilder::inlineMathMinMax(CallInfo& callInfo,
                                                         bool max) {
   if (callInfo.argc() < 1 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -1889,7 +1805,6 @@ IonBuilder::InliningResult IonBuilder::inlineMathMinMax(CallInfo& callInfo,
 
 IonBuilder::InliningResult IonBuilder::inlineStringObject(CallInfo& callInfo) {
   if (callInfo.argc() != 1 || !callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -2085,7 +2000,6 @@ IonBuilder::InliningResult IonBuilder::inlineIsPackedArray(CallInfo& callInfo) {
                                     OBJECT_FLAG_NON_PACKED;
 
   if (arrayTypes->hasObjectFlags(constraints(), unhandledFlags)) {
-    trackOptimizationOutcome(TrackedOutcome::ArrayBadFlags);
     return InliningStatus_NotInlined;
   }
 
@@ -2101,7 +2015,6 @@ IonBuilder::InliningResult IonBuilder::inlineIsPackedArray(CallInfo& callInfo) {
 IonBuilder::InliningResult IonBuilder::inlineReflectGetPrototypeOf(
     CallInfo& callInfo) {
   if (callInfo.argc() != 1 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -2123,7 +2036,6 @@ IonBuilder::InliningResult IonBuilder::inlineReflectGetPrototypeOf(
 
 IonBuilder::InliningResult IonBuilder::inlineStrCharCodeAt(CallInfo& callInfo) {
   if (callInfo.argc() != 1 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -2167,7 +2079,6 @@ IonBuilder::InliningResult IonBuilder::inlineConstantCharCodeAt(
     CallInfo& callInfo) {
   if (!callInfo.thisArg()->maybeConstantValue() ||
       !callInfo.getArg(0)->maybeConstantValue()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineGeneric);
     return InliningStatus_NotInlined;
   }
 
@@ -2180,13 +2091,11 @@ IonBuilder::InliningResult IonBuilder::inlineConstantCharCodeAt(
 
   JSString* str = strval->toString();
   if (!str->isLinear()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineGeneric);
     return InliningStatus_NotInlined;
   }
 
   int32_t idx = idxval->toInt32();
   if (idx < 0 || (uint32_t(idx) >= str->length())) {
-    trackOptimizationOutcome(TrackedOutcome::OutOfBounds);
     return InliningStatus_NotInlined;
   }
 
@@ -2203,7 +2112,6 @@ IonBuilder::InliningResult IonBuilder::inlineConstantCharCodeAt(
 IonBuilder::InliningResult IonBuilder::inlineStrFromCharCode(
     CallInfo& callInfo) {
   if (callInfo.argc() != 1 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -2236,7 +2144,6 @@ IonBuilder::InliningResult IonBuilder::inlineStrFromCharCode(
 IonBuilder::InliningResult IonBuilder::inlineStrFromCodePoint(
     CallInfo& callInfo) {
   if (callInfo.argc() != 1 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -2261,7 +2168,6 @@ IonBuilder::InliningResult IonBuilder::inlineStrFromCodePoint(
 
 IonBuilder::InliningResult IonBuilder::inlineStrCharAt(CallInfo& callInfo) {
   if (callInfo.argc() != 1 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -2299,7 +2205,6 @@ IonBuilder::InliningResult IonBuilder::inlineStrCharAt(CallInfo& callInfo) {
 IonBuilder::InliningResult IonBuilder::inlineStringConvertCase(
     CallInfo& callInfo, MStringConvertCase::Mode mode) {
   if (callInfo.argc() != 0 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -2822,7 +2727,6 @@ IonBuilder::InliningResult IonBuilder::inlineObjectIs(CallInfo& callInfo) {
 IonBuilder::InliningResult IonBuilder::inlineObjectToString(
     CallInfo& callInfo) {
   if (callInfo.constructing() || callInfo.argc() != 0) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -3056,7 +2960,6 @@ IonBuilder::inlinePossiblyWrappedArrayBufferByteLength(CallInfo& callInfo) {
 IonBuilder::InliningResult IonBuilder::inlineTypedArray(CallInfo& callInfo,
                                                         Native native) {
   if (!callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -3069,7 +2972,6 @@ IonBuilder::InliningResult IonBuilder::inlineTypedArray(CallInfo& callInfo,
 
   JSObject* templateObject = inspector->getTemplateObjectForNative(pc, native);
   if (!templateObject) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeNoTemplateObj);
     return InliningStatus_NotInlined;
   }
   MOZ_ASSERT(templateObject->is<TypedArrayObject>());
@@ -3370,45 +3272,6 @@ IonBuilder::InliningResult IonBuilder::inlineTypedArrayElementShift(
   auto* ins = MTypedArrayElementShift::New(alloc(), callInfo.getArg(0));
   current->add(ins);
   current->push(ins);
-
-  callInfo.setImplicitlyUsedUnchecked();
-  return InliningStatus_Inlined;
-}
-
-IonBuilder::InliningResult IonBuilder::inlineObjectIsTypeDescr(
-    CallInfo& callInfo) {
-  MOZ_ASSERT(!callInfo.constructing());
-  MOZ_ASSERT(callInfo.argc() == 1);
-
-  if (callInfo.getArg(0)->type() != MIRType::Object) {
-    return InliningStatus_NotInlined;
-  }
-  if (getInlineReturnType() != MIRType::Boolean) {
-    return InliningStatus_NotInlined;
-  }
-
-  
-  
-
-  TemporaryTypeSet* types = callInfo.getArg(0)->resultTypeSet();
-  if (!types) {
-    return InliningStatus_NotInlined;
-  }
-
-  bool result = false;
-  switch (types->forAllClasses(constraints(), IsTypeDescrClass)) {
-    case TemporaryTypeSet::ForAllResult::ALL_FALSE:
-    case TemporaryTypeSet::ForAllResult::EMPTY:
-      result = false;
-      break;
-    case TemporaryTypeSet::ForAllResult::ALL_TRUE:
-      result = true;
-      break;
-    case TemporaryTypeSet::ForAllResult::MIXED:
-      return InliningStatus_NotInlined;
-  }
-
-  pushConstant(BooleanValue(result));
 
   callInfo.setImplicitlyUsedUnchecked();
   return InliningStatus_Inlined;
@@ -3798,7 +3661,6 @@ IonBuilder::InliningResult IonBuilder::inlineAssertRecoveredOnBailout(
 IonBuilder::InliningResult IonBuilder::inlineAtomicsCompareExchange(
     CallInfo& callInfo) {
   if (callInfo.argc() != 4 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -3849,7 +3711,6 @@ IonBuilder::InliningResult IonBuilder::inlineAtomicsCompareExchange(
 IonBuilder::InliningResult IonBuilder::inlineAtomicsExchange(
     CallInfo& callInfo) {
   if (callInfo.argc() != 3 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -3888,7 +3749,6 @@ IonBuilder::InliningResult IonBuilder::inlineAtomicsExchange(
 
 IonBuilder::InliningResult IonBuilder::inlineAtomicsLoad(CallInfo& callInfo) {
   if (callInfo.argc() != 2 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -3921,7 +3781,6 @@ IonBuilder::InliningResult IonBuilder::inlineAtomicsLoad(CallInfo& callInfo) {
 
 IonBuilder::InliningResult IonBuilder::inlineAtomicsStore(CallInfo& callInfo) {
   if (callInfo.argc() != 3 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -3936,7 +3795,6 @@ IonBuilder::InliningResult IonBuilder::inlineAtomicsStore(CallInfo& callInfo) {
 
   MDefinition* value = callInfo.getArg(2);
   if (!BytecodeIsPopped(pc) && value->type() != MIRType::Int32) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadType);
     return InliningStatus_NotInlined;
   }
 
@@ -3981,7 +3839,6 @@ IonBuilder::InliningResult IonBuilder::inlineAtomicsStore(CallInfo& callInfo) {
 IonBuilder::InliningResult IonBuilder::inlineAtomicsBinop(
     CallInfo& callInfo, InlinableNative target) {
   if (callInfo.argc() != 3 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -4042,7 +3899,6 @@ IonBuilder::InliningResult IonBuilder::inlineAtomicsBinop(
 IonBuilder::InliningResult IonBuilder::inlineAtomicsIsLockFree(
     CallInfo& callInfo) {
   if (callInfo.argc() != 1 || callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
@@ -4142,52 +3998,16 @@ IonBuilder::InliningResult IonBuilder::inlineIsConstructing(
   return InliningStatus_Inlined;
 }
 
-IonBuilder::InliningResult IonBuilder::inlineConstructTypedObject(
-    CallInfo& callInfo, TypeDescr* descr) {
-  
-  if (callInfo.argc() != 0) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
-    return InliningStatus_NotInlined;
-  }
-
-  if (!InlineTypedObject::canAccommodateType(descr)) {
-    return InliningStatus_NotInlined;
-  }
-
-  JSObject* obj =
-      inspector->getTemplateObjectForClassHook(pc, descr->getClass());
-  if (!obj || !obj->is<InlineTypedObject>()) {
-    return InliningStatus_NotInlined;
-  }
-
-  InlineTypedObject* templateObject = &obj->as<InlineTypedObject>();
-  if (&templateObject->typeDescr() != descr) {
-    return InliningStatus_NotInlined;
-  }
-
-  callInfo.setImplicitlyUsedUnchecked();
-
-  MNewTypedObject* ins =
-      MNewTypedObject::New(alloc(), constraints(), templateObject,
-                           templateObject->group()->initialHeap(constraints()));
-  current->add(ins);
-  current->push(ins);
-
-  return InliningStatus_Inlined;
-}
-
 IonBuilder::InliningResult IonBuilder::inlineWasmCall(CallInfo& callInfo,
                                                       JSFunction* target) {
   MOZ_ASSERT(target->isWasmWithJitEntry());
 
   
   if (callInfo.constructing()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
     return InliningStatus_NotInlined;
   }
 
   if (target->realm() != script()->realm()) {
-    trackOptimizationOutcome(TrackedOutcome::CantInlineCrossRealm);
     return InliningStatus_NotInlined;
   }
 

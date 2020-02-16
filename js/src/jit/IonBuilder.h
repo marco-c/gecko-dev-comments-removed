@@ -1,16 +1,15 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_IonBuilder_h
 #define jit_IonBuilder_h
 
-// This file declares the data structures for building a MIRGraph from a
-// JSScript.
 
-#include "mozilla/LinkedList.h"
+
+
 #include "mozilla/Maybe.h"
 
 #include "ds/InlineTable.h"
@@ -36,85 +35,85 @@ class BaselineFrameInspector;
 
 enum class InlinableNative : uint16_t;
 
-// Records information about a baseline frame for compilation that is stable
-// when later used off thread.
+
+
 BaselineFrameInspector* NewBaselineFrameInspector(TempAllocator* temp,
                                                   BaselineFrame* frame,
                                                   uint32_t frameSize);
 
 using CallTargets = Vector<JSFunction*, 6, JitAllocPolicy>;
 
-// [SMDOC] Control Flow handling in IonBuilder
-//
-// IonBuilder traverses the script's bytecode and compiles each instruction to
-// corresponding MIR instructions. Handling control flow bytecode ops requires
-// some special machinery:
-//
-// Forward branches
-// ----------------
-// Most branches in the bytecode are forward branches to a JSOp::JumpTarget
-// instruction that we have not inspected yet. We compile them in two phases:
-//
-// 1) When compiling the source instruction: the MBasicBlock is terminated
-//    with a control instruction that has a nullptr successor block. We also add
-//    a PendingEdge instance to the PendingEdges list for the target bytecode
-//    location.
-//
-// 2) When finally compiling the JSOp::JumpTarget: IonBuilder::visitJumpTarget
-//    creates the target block and uses the list of PendingEdges to 'link' the
-//    blocks.
-//
-// Loops
-// -----
-// Loops complicate this a bit:
-//
-// * Because of IonBuilder's single pass design, we sometimes have to 'restart'
-//   a loop when we find new types for locals, arguments, or stack slots while
-//   compiling the loop body. When this happens the loop has to be recompiled
-//   from the beginning.
-//
-// * Loops may be nested within other loops, so we track loop states in a stack
-//   per IonBuilder.
-//
-// Unreachable/dead code
-// ---------------------
-// Some bytecode instructions never fall through to the next instruction, for
-// example JSOp::Return, JSOp::Goto, or JSOp::Throw. Code after such
-// instructions is guaranteed to be dead so IonBuilder skips it until it gets to
-// a jump target instruction with pending edges.
-//
-// Note: The frontend may generate unnecessary JSOp::JumpTarget instructions we
-// can ignore when they have no incoming pending edges.
-//
-// Try-catch
-// ---------
-// IonBuilder supports scripts with try-catch by only compiling the try-block
-// and bailing out (to the Baseline Interpreter) from the exception handler
-// whenever we need to execute the catch-block.
-//
-// Because we don't compile the catch-block and the code after the try-catch may
-// only be reachable via the catch-block, MGotoWithFake is used to ensure the
-// code after the try-catch is always compiled and is part of the graph.
-// See IonBuilder::visitTry for more information.
-//
-// Finally-blocks are currently not supported by Ion.
 
-// PendingEdge is used whenever a block is terminated with a forward branch in
-// the bytecode. When IonBuilder reaches the jump target it uses this
-// information to link the block to the jump target's block.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class PendingEdge {
  public:
   enum class Kind : uint8_t {
-    // MTest true-successor.
+    
     TestTrue,
 
-    // MTest false-successor.
+    
     TestFalse,
 
-    // MGoto successor.
+    
     Goto,
 
-    // MGotoWithFake second successor.
+    
     GotoWithFake,
   };
 
@@ -149,16 +148,16 @@ class PendingEdge {
   }
 };
 
-// PendingEdgesMap maps a bytecode instruction to a Vector of PendingEdges
-// targeting it. We use InlineMap<> for this because most of the time there are
-// only a few pending edges but there can be many when switch-statements are
-// involved.
+
+
+
+
 using PendingEdges = Vector<PendingEdge, 2, SystemAllocPolicy>;
 using PendingEdgesMap =
     InlineMap<jsbytecode*, PendingEdges, 8, PointerHasher<jsbytecode*>,
               SystemAllocPolicy>;
 
-// LoopState stores information about a loop that's being compiled to MIR.
+
 class LoopState {
   MBasicBlock* header_ = nullptr;
 
@@ -177,9 +176,9 @@ class MOZ_STACK_CLASS IonBuilder {
              BaselineFrameInspector* baselineFrame, size_t inliningDepth = 0,
              uint32_t loopDepth = 0);
 
-  // Callers of build() and buildInline() should always check whether the
-  // call overrecursed, if false is returned.  Overrecursion is not
-  // signaled as OOM and will not in general be caught by OOM paths.
+  
+  
+  
   AbortReasonOr<Ok> build();
   AbortReasonOr<Ok> buildInline(IonBuilder* callerBuilder,
                                 MResumePoint* callerResumePoint,
@@ -198,7 +197,6 @@ class MOZ_STACK_CLASS IonBuilder {
   uint32_t readIndex(jsbytecode* pc);
   JSAtom* readAtom(jsbytecode* pc);
 
-  void trackActionableAbort(const char* message);
   void spew(const char* message);
 
   JSFunction* getSingleCallTarget(TemporaryTypeSet* calleeTypes);
@@ -246,16 +244,16 @@ class MOZ_STACK_CLASS IonBuilder {
   AbortReasonOr<Ok> visitThrow();
   AbortReasonOr<Ok> visitTableSwitch();
 
-  // We want to make sure that our MTest instructions all check whether the
-  // thing being tested might emulate undefined.  So we funnel their creation
-  // through this method, to make sure that happens.  We don't want to just do
-  // the check in MTest::New, because that can run on background compilation
-  // threads, and we're not sure it's safe to touch that part of the typeset
-  // from a background thread.
+  
+  
+  
+  
+  
+  
   MTest* newTest(MDefinition* ins, MBasicBlock* ifTrue, MBasicBlock* ifFalse);
 
-  // Incorporates a type/typeSet into an OSR value for a loop, after the loop
-  // body has been processed.
+  
+  
   AbortReasonOr<Ok> addOsrValueTypeBarrier(uint32_t slot, MInstruction** def,
                                            MIRType type,
                                            TemporaryTypeSet* typeSet);
@@ -263,12 +261,12 @@ class MOZ_STACK_CLASS IonBuilder {
 
   AbortReasonOr<Ok> emitLoopHeadInstructions(jsbytecode* pc);
 
-  // Restarts processing of a loop if the type information at its header was
-  // incomplete.
+  
+  
   AbortReasonOr<Ok> restartLoop(MBasicBlock* header);
 
-  // Please see the Big Honkin' Comment about how resume points work in
-  // IonBuilder.cpp, near the definition for this function.
+  
+  
   AbortReasonOr<Ok> resume(MInstruction* ins, jsbytecode* pc,
                            MResumePoint::Mode mode);
   AbortReasonOr<Ok> resumeAt(MInstruction* ins, jsbytecode* pc);
@@ -292,7 +290,7 @@ class MOZ_STACK_CLASS IonBuilder {
   MInstruction* initializedLength(MDefinition* elements);
   MInstruction* setInitializedLength(MDefinition* obj, size_t count);
 
-  // Improve the type information at tests
+  
   AbortReasonOr<Ok> improveTypesAtTest(MDefinition* ins, bool trueBranch,
                                        MTest* test);
   AbortReasonOr<Ok> improveTypesAtTestSuccessor(MTest* test,
@@ -308,8 +306,8 @@ class MOZ_STACK_CLASS IonBuilder {
   AbortReasonOr<Ok> replaceTypeSet(MDefinition* subject, TemporaryTypeSet* type,
                                    MTest* test);
 
-  // Add a guard which ensure that the set of type which goes through this
-  // generated code correspond to the observed types for the bytecode.
+  
+  
   MDefinition* addTypeBarrier(MDefinition* def, TemporaryTypeSet* observed,
                               BarrierKind kind,
                               MTypeBarrier** pbarrier = nullptr);
@@ -317,17 +315,17 @@ class MOZ_STACK_CLASS IonBuilder {
                                     TemporaryTypeSet* observed,
                                     BarrierKind kind);
 
-  // As pushTypeBarrier, but will compute the needBarrier boolean itself based
-  // on observed and the JSFunction that we're planning to call. The
-  // JSFunction must be a DOM method or getter.
+  
+  
+  
   AbortReasonOr<Ok> pushDOMTypeBarrier(MInstruction* ins,
                                        TemporaryTypeSet* observed,
                                        JSFunction* func);
 
-  // If definiteType is not known or def already has the right type, just
-  // returns def.  Otherwise, returns an MInstruction that has that definite
-  // type, infallibly unboxing ins as needed.  The new instruction will be
-  // added to |current| in this case.
+  
+  
+  
+  
   MDefinition* ensureDefiniteType(MDefinition* def, MIRType definiteType);
 
   void maybeMarkEmpty(MDefinition* ins);
@@ -346,9 +344,9 @@ class MOZ_STACK_CLASS IonBuilder {
   AbortReasonOr<MInstruction*> createCallObject(MDefinition* callee,
                                                 MDefinition* envObj);
 
-  // Returns true if a property hasn't been overwritten and matches the given
-  // predicate. Adds type constraints to ensure recompilation happens if the
-  // property value ever changes.
+  
+  
+  
   bool propertyIsConstantFunction(NativeObject* nobj, jsid id,
                                   bool (*test)(IonBuilder* builder,
                                                JSFunction* fun));
@@ -391,7 +389,7 @@ class MOZ_STACK_CLASS IonBuilder {
   MDefinition* tryInnerizeWindow(MDefinition* obj);
   MDefinition* maybeUnboxForPropertyAccess(MDefinition* def);
 
-  // jsop_getprop() helpers.
+  
   AbortReasonOr<Ok> checkIsDefinitelyOptimizedArguments(MDefinition* obj,
                                                         bool* isOptimizedArgs);
   AbortReasonOr<Ok> getPropTryInferredConstant(bool* emitted, MDefinition* obj,
@@ -422,17 +420,6 @@ class MOZ_STACK_CLASS IonBuilder {
   AbortReasonOr<Ok> getPropTryInlineProtoAccess(bool* emitted, MDefinition* obj,
                                                 PropertyName* name,
                                                 TemporaryTypeSet* types);
-  AbortReasonOr<Ok> getPropTryTypedObject(bool* emitted, MDefinition* obj,
-                                          PropertyName* name);
-  AbortReasonOr<Ok> getPropTryScalarPropOfTypedObject(
-      bool* emitted, MDefinition* typedObj, int32_t fieldOffset,
-      TypedObjectPrediction fieldTypeReprs);
-  AbortReasonOr<Ok> getPropTryReferencePropOfTypedObject(
-      bool* emitted, MDefinition* typedObj, int32_t fieldOffset,
-      TypedObjectPrediction fieldPrediction, PropertyName* name);
-  AbortReasonOr<Ok> getPropTryComplexPropOfTypedObject(
-      bool* emitted, MDefinition* typedObj, int32_t fieldOffset,
-      TypedObjectPrediction fieldTypeReprs, size_t fieldIndex);
   AbortReasonOr<Ok> getPropTryInnerize(bool* emitted, MDefinition* obj,
                                        PropertyName* name,
                                        TemporaryTypeSet* types);
@@ -440,7 +427,7 @@ class MOZ_STACK_CLASS IonBuilder {
                                     BarrierKind barrier,
                                     TemporaryTypeSet* types);
 
-  // jsop_setprop() helpers.
+  
   AbortReasonOr<Ok> setPropTryCommonSetter(bool* emitted, MDefinition* obj,
                                            PropertyName* name,
                                            MDefinition* value);
@@ -455,26 +442,11 @@ class MOZ_STACK_CLASS IonBuilder {
                                            PropertyName* name,
                                            MDefinition* value, bool barrier,
                                            TemporaryTypeSet* objTypes);
-  AbortReasonOr<Ok> setPropTryTypedObject(bool* emitted, MDefinition* obj,
-                                          PropertyName* name,
-                                          MDefinition* value);
-  AbortReasonOr<Ok> setPropTryReferencePropOfTypedObject(
-      bool* emitted, MDefinition* obj, int32_t fieldOffset, MDefinition* value,
-      TypedObjectPrediction fieldPrediction, PropertyName* name);
-  AbortReasonOr<Ok> setPropTryReferenceTypedObjectValue(
-      bool* emitted, MDefinition* typedObj, const LinearSum& byteOffset,
-      ReferenceType type, MDefinition* value, PropertyName* name);
-  AbortReasonOr<Ok> setPropTryScalarPropOfTypedObject(
-      bool* emitted, MDefinition* obj, int32_t fieldOffset, MDefinition* value,
-      TypedObjectPrediction fieldTypeReprs);
-  AbortReasonOr<Ok> setPropTryScalarTypedObjectValue(
-      bool* emitted, MDefinition* typedObj, const LinearSum& byteOffset,
-      ScalarTypeDescr::Type type, MDefinition* value);
   AbortReasonOr<Ok> setPropTryCache(bool* emitted, MDefinition* obj,
                                     PropertyName* name, MDefinition* value,
                                     bool barrier);
 
-  // jsop_binary_arith helpers.
+  
   MBinaryArithInstruction* binaryArithInstruction(JSOp op, MDefinition* left,
                                                   MDefinition* right);
   MIRType binaryArithNumberSpecialization(MDefinition* left,
@@ -492,28 +464,28 @@ class MOZ_STACK_CLASS IonBuilder {
   AbortReasonOr<Ok> arithTryBinaryStub(bool* emitted, JSOp op,
                                        MDefinition* left, MDefinition* right);
 
-  // jsop_bitop helpers.
+  
   AbortReasonOr<MBinaryBitwiseInstruction*> binaryBitOpEmit(
       JSOp op, MIRType specialization, MDefinition* left, MDefinition* right);
   AbortReasonOr<Ok> binaryBitOpTrySpecialized(bool* emitted, JSOp op,
                                               MDefinition* left,
                                               MDefinition* right);
 
-  // jsop_bitnot helpers.
+  
   AbortReasonOr<Ok> bitnotTrySpecialized(bool* emitted, MDefinition* input);
 
-  // jsop_inc_or_dec helpers.
+  
   MDefinition* unaryArithConvertToBinary(JSOp op, MDefinition::Opcode* defOp);
   AbortReasonOr<Ok> unaryArithTrySpecialized(bool* emitted, JSOp op,
                                              MDefinition* value);
   AbortReasonOr<Ok> unaryArithTrySpecializedOnBaselineInspector(
       bool* emitted, JSOp op, MDefinition* value);
 
-  // jsop_pow helpers.
+  
   AbortReasonOr<Ok> powTrySpecialized(bool* emitted, MDefinition* base,
                                       MDefinition* power, MIRType outputType);
 
-  // jsop_compare helpers.
+  
   AbortReasonOr<Ok> compareTrySpecialized(bool* emitted, JSOp op,
                                           MDefinition* left,
                                           MDefinition* right);
@@ -526,19 +498,19 @@ class MOZ_STACK_CLASS IonBuilder {
   AbortReasonOr<Ok> compareTryCharacter(bool* emitted, JSOp op,
                                         MDefinition* left, MDefinition* right);
 
-  // jsop_newarray helpers.
+  
   AbortReasonOr<Ok> newArrayTryTemplateObject(bool* emitted,
                                               JSObject* templateObject,
                                               uint32_t length);
   AbortReasonOr<Ok> newArrayTryVM(bool* emitted, JSObject* templateObject,
                                   uint32_t length);
 
-  // jsop_newobject helpers.
+  
   AbortReasonOr<Ok> newObjectTryTemplateObject(bool* emitted,
                                                JSObject* templateObject);
   AbortReasonOr<Ok> newObjectTryVM(bool* emitted, JSObject* templateObject);
 
-  // jsop_in/jsop_hasown helpers.
+  
   AbortReasonOr<Ok> inTryDense(bool* emitted, MDefinition* obj,
                                MDefinition* id);
   AbortReasonOr<Ok> hasTryNotDefined(bool* emitted, MDefinition* obj,
@@ -546,46 +518,10 @@ class MOZ_STACK_CLASS IonBuilder {
   AbortReasonOr<Ok> hasTryDefiniteSlotOrUnboxed(bool* emitted, MDefinition* obj,
                                                 MDefinition* id);
 
-  // binary data lookup helpers.
-  TypedObjectPrediction typedObjectPrediction(MDefinition* typedObj);
-  TypedObjectPrediction typedObjectPrediction(TemporaryTypeSet* types);
-  bool typedObjectHasField(MDefinition* typedObj, PropertyName* name,
-                           size_t* fieldOffset,
-                           TypedObjectPrediction* fieldTypeReprs,
-                           size_t* fieldIndex, bool* fieldMutable);
-  MDefinition* loadTypedObjectType(MDefinition* value);
-  AbortReasonOr<Ok> loadTypedObjectData(MDefinition* typedObj,
-                                        MDefinition** owner,
-                                        LinearSum* ownerOffset);
-  AbortReasonOr<Ok> loadTypedObjectElements(MDefinition* typedObj,
-                                            const LinearSum& byteOffset,
-                                            uint32_t scale,
-                                            MDefinition** ownerElements,
-                                            MDefinition** ownerScaledOffset,
-                                            int32_t* ownerByteAdjustment);
-  MDefinition* typeObjectForElementFromArrayStructType(MDefinition* typedObj);
-  MDefinition* typeObjectForFieldFromStructType(MDefinition* type,
-                                                size_t fieldIndex);
-  bool checkTypedObjectIndexInBounds(uint32_t elemSize, MDefinition* index,
-                                     TypedObjectPrediction objTypeDescrs,
-                                     LinearSum* indexAsByteOffset);
-  AbortReasonOr<Ok> pushDerivedTypedObject(
-      bool* emitted, MDefinition* obj, const LinearSum& byteOffset,
-      TypedObjectPrediction derivedTypeDescrs, MDefinition* derivedTypeObj);
-  AbortReasonOr<Ok> pushScalarLoadFromTypedObject(MDefinition* obj,
-                                                  const LinearSum& byteoffset,
-                                                  ScalarTypeDescr::Type type);
-  AbortReasonOr<Ok> pushReferenceLoadFromTypedObject(
-      MDefinition* typedObj, const LinearSum& byteOffset, ReferenceType type,
-      PropertyName* name);
-
-  // jsop_setelem() helpers.
+  
   AbortReasonOr<Ok> setElemTryTypedArray(bool* emitted, MDefinition* object,
                                          MDefinition* index,
                                          MDefinition* value);
-  AbortReasonOr<Ok> setElemTryTypedObject(bool* emitted, MDefinition* obj,
-                                          MDefinition* index,
-                                          MDefinition* value);
   AbortReasonOr<Ok> initOrSetElemTryDense(bool* emitted, MDefinition* object,
                                           MDefinition* index,
                                           MDefinition* value, bool writeHole);
@@ -593,14 +529,6 @@ class MOZ_STACK_CLASS IonBuilder {
   AbortReasonOr<Ok> initOrSetElemTryCache(bool* emitted, MDefinition* object,
                                           MDefinition* index,
                                           MDefinition* value);
-  AbortReasonOr<Ok> setElemTryReferenceElemOfTypedObject(
-      bool* emitted, MDefinition* obj, MDefinition* index,
-      TypedObjectPrediction objPrediction, MDefinition* value,
-      TypedObjectPrediction elemPrediction);
-  AbortReasonOr<Ok> setElemTryScalarElemOfTypedObject(
-      bool* emitted, MDefinition* obj, MDefinition* index,
-      TypedObjectPrediction objTypeReprs, MDefinition* value,
-      TypedObjectPrediction elemTypeReprs, uint32_t elemSize);
 
   AbortReasonOr<Ok> initArrayElemTryFastPath(bool* emitted, MDefinition* obj,
                                              MDefinition* id,
@@ -613,7 +541,7 @@ class MOZ_STACK_CLASS IonBuilder {
   AbortReasonOr<Ok> initArrayElement(MDefinition* obj, MDefinition* id,
                                      MDefinition* value);
 
-  // jsop_getelem() helpers.
+  
   AbortReasonOr<Ok> getElemTryDense(bool* emitted, MDefinition* obj,
                                     MDefinition* index);
   AbortReasonOr<Ok> getElemTryGetProp(bool* emitted, MDefinition* obj,
@@ -622,8 +550,6 @@ class MOZ_STACK_CLASS IonBuilder {
                                          MDefinition* index);
   AbortReasonOr<Ok> getElemTryCallSiteObject(bool* emitted, MDefinition* obj,
                                              MDefinition* index);
-  AbortReasonOr<Ok> getElemTryTypedObject(bool* emitted, MDefinition* obj,
-                                          MDefinition* index);
   AbortReasonOr<Ok> getElemTryString(bool* emitted, MDefinition* obj,
                                      MDefinition* index);
   AbortReasonOr<Ok> getElemTryArguments(bool* emitted, MDefinition* obj,
@@ -635,18 +561,7 @@ class MOZ_STACK_CLASS IonBuilder {
                                                     MDefinition* obj,
                                                     MDefinition* index);
   AbortReasonOr<Ok> getElemAddCache(MDefinition* obj, MDefinition* index);
-  AbortReasonOr<Ok> getElemTryScalarElemOfTypedObject(
-      bool* emitted, MDefinition* obj, MDefinition* index,
-      TypedObjectPrediction objTypeReprs, TypedObjectPrediction elemTypeReprs,
-      uint32_t elemSize);
-  AbortReasonOr<Ok> getElemTryReferenceElemOfTypedObject(
-      bool* emitted, MDefinition* obj, MDefinition* index,
-      TypedObjectPrediction objPrediction,
-      TypedObjectPrediction elemPrediction);
-  AbortReasonOr<Ok> getElemTryComplexElemOfTypedObject(
-      bool* emitted, MDefinition* obj, MDefinition* index,
-      TypedObjectPrediction objTypeReprs, TypedObjectPrediction elemTypeReprs,
-      uint32_t elemSize);
+
   TemporaryTypeSet* computeHeapType(const TemporaryTypeSet* objTypes,
                                     const jsid id);
 
@@ -656,26 +571,26 @@ class MOZ_STACK_CLASS IonBuilder {
 
   TypedArrayObject* tryTypedArrayEmbedConstantElements(MDefinition* obj);
 
-  // Add instructions to compute a typed array's length and data.  Also
-  // optionally convert |*index| into a bounds-checked definition, if
-  // requested.
-  //
-  // If you only need the array's length, use addTypedArrayLength below.
+  
+  
+  
+  
+  
   void addTypedArrayLengthAndData(MDefinition* obj, BoundsChecking checking,
                                   MDefinition** index, MInstruction** length,
                                   MInstruction** elements);
 
-  // Add an instruction to compute a typed array's length to the current
-  // block.  If you also need the typed array's data, use the above method
-  // instead.
+  
+  
+  
   MInstruction* addTypedArrayLength(MDefinition* obj) {
     MInstruction* length;
     addTypedArrayLengthAndData(obj, SkipBoundsCheck, nullptr, &length, nullptr);
     return length;
   }
 
-  // Add an instruction to compute a typed array's byte offset to the current
-  // block.
+  
+  
   MInstruction* addTypedArrayByteOffset(MDefinition* obj);
 
   AbortReasonOr<Ok> improveThisTypesForCall();
@@ -814,7 +729,7 @@ class MOZ_STACK_CLASS IonBuilder {
   AbortReasonOr<Ok> jsop_instrumentation_scriptid();
   AbortReasonOr<Ok> jsop_coalesce();
 
-  /* Inlining. */
+  
 
   enum InliningStatus {
     InliningStatus_NotInlined,
@@ -833,10 +748,10 @@ class MOZ_STACK_CLASS IonBuilder {
   static InliningDecision DontInline(JSScript* targetScript,
                                      const char* reason);
 
-  // Helper function for canInlineTarget
+  
   bool hasCommonInliningPath(const JSScript* scriptToInline);
 
-  // Oracles.
+  
   InliningDecision canInlineTarget(JSFunction* target, CallInfo& callInfo);
   InliningDecision makeInliningDecision(JSObject* target, CallInfo& callInfo);
   AbortReasonOr<Ok> selectInliningTargets(const InliningTargets& targets,
@@ -851,14 +766,14 @@ class MOZ_STACK_CLASS IonBuilder {
     return IonOptimizations.isLastLevel(optimizationLevel());
   }
 
-  // Native inlining helpers.
-  // The typeset for the return value of our function.  These are
-  // the types it's been observed returning in the past.
+  
+  
+  
   TemporaryTypeSet* getInlineReturnTypeSet();
-  // The known MIR type of getInlineReturnTypeSet.
+  
   MIRType getInlineReturnType();
 
-  // Array natives.
+  
   InliningResult inlineArray(CallInfo& callInfo, Realm* targetRealm);
   InliningResult inlineArrayIsArray(CallInfo& callInfo);
   InliningResult inlineArrayPopShift(CallInfo& callInfo,
@@ -867,14 +782,14 @@ class MOZ_STACK_CLASS IonBuilder {
   InliningResult inlineArraySlice(CallInfo& callInfo);
   InliningResult inlineArrayJoin(CallInfo& callInfo);
 
-  // Boolean natives.
+  
   InliningResult inlineBoolean(CallInfo& callInfo);
 
-  // Iterator intrinsics.
+  
   InliningResult inlineNewIterator(CallInfo& callInfo, MNewIterator::Type type);
   InliningResult inlineArrayIteratorPrototypeOptimizable(CallInfo& callInfo);
 
-  // Math natives.
+  
   InliningResult inlineMathAbs(CallInfo& callInfo);
   InliningResult inlineMathFloor(CallInfo& callInfo);
   InliningResult inlineMathCeil(CallInfo& callInfo);
@@ -893,7 +808,7 @@ class MOZ_STACK_CLASS IonBuilder {
   InliningResult inlineMathFunction(CallInfo& callInfo,
                                     MMathFunction::Function function);
 
-  // String natives.
+  
   InliningResult inlineStringObject(CallInfo& callInfo);
   InliningResult inlineStrCharCodeAt(CallInfo& callInfo);
   InliningResult inlineConstantCharCodeAt(CallInfo& callInfo);
@@ -903,15 +818,15 @@ class MOZ_STACK_CLASS IonBuilder {
   InliningResult inlineStringConvertCase(CallInfo& callInfo,
                                          MStringConvertCase::Mode mode);
 
-  // String intrinsics.
+  
   InliningResult inlineStringReplaceString(CallInfo& callInfo);
   InliningResult inlineConstantStringSplitString(CallInfo& callInfo);
   InliningResult inlineStringSplitString(CallInfo& callInfo);
 
-  // Reflect natives.
+  
   InliningResult inlineReflectGetPrototypeOf(CallInfo& callInfo);
 
-  // RegExp intrinsics.
+  
   InliningResult inlineRegExpMatcher(CallInfo& callInfo);
   InliningResult inlineRegExpSearcher(CallInfo& callInfo);
   InliningResult inlineRegExpTester(CallInfo& callInfo);
@@ -921,14 +836,14 @@ class MOZ_STACK_CLASS IonBuilder {
   InliningResult inlineRegExpInstanceOptimizable(CallInfo& callInfo);
   InliningResult inlineGetFirstDollarIndex(CallInfo& callInfo);
 
-  // Object natives and intrinsics.
+  
   InliningResult inlineObject(CallInfo& callInfo);
   InliningResult inlineObjectCreate(CallInfo& callInfo);
   InliningResult inlineObjectIs(CallInfo& callInfo);
   InliningResult inlineObjectToString(CallInfo& callInfo);
   InliningResult inlineDefineDataProperty(CallInfo& callInfo);
 
-  // Atomics natives.
+  
   InliningResult inlineAtomicsCompareExchange(CallInfo& callInfo);
   InliningResult inlineAtomicsExchange(CallInfo& callInfo);
   InliningResult inlineAtomicsLoad(CallInfo& callInfo);
@@ -936,20 +851,20 @@ class MOZ_STACK_CLASS IonBuilder {
   InliningResult inlineAtomicsBinop(CallInfo& callInfo, InlinableNative target);
   InliningResult inlineAtomicsIsLockFree(CallInfo& callInfo);
 
-  // Slot intrinsics.
+  
   InliningResult inlineUnsafeSetReservedSlot(CallInfo& callInfo);
   InliningResult inlineUnsafeGetReservedSlot(CallInfo& callInfo,
                                              MIRType knownValueType);
 
-  // Map and Set intrinsics.
+  
   InliningResult inlineGetNextEntryForIterator(
       CallInfo& callInfo, MGetNextEntryForIterator::Mode mode);
 
-  // ArrayBuffer intrinsics.
+  
   InliningResult inlineArrayBufferByteLength(CallInfo& callInfo);
   InliningResult inlinePossiblyWrappedArrayBufferByteLength(CallInfo& callInfo);
 
-  // TypedArray intrinsics.
+  
   enum WrappingBehavior { AllowWrappedTypedArrays, RejectWrappedTypedArrays };
   InliningResult inlineTypedArray(CallInfo& callInfo, Native native);
   InliningResult inlineIsTypedArrayConstructor(CallInfo& callInfo);
@@ -962,12 +877,7 @@ class MOZ_STACK_CLASS IonBuilder {
   InliningResult inlineTypedArrayByteOffset(CallInfo& callInfo);
   InliningResult inlineTypedArrayElementShift(CallInfo& callInfo);
 
-  // TypedObject intrinsics and natives.
-  InliningResult inlineObjectIsTypeDescr(CallInfo& callInfo);
-  InliningResult inlineConstructTypedObject(CallInfo& callInfo,
-                                            TypeDescr* target);
-
-  // Utility intrinsics.
+  
   InliningResult inlineIsCallable(CallInfo& callInfo);
   InliningResult inlineIsConstructor(CallInfo& callInfo);
   InliningResult inlineIsObject(CallInfo& callInfo);
@@ -988,22 +898,21 @@ class MOZ_STACK_CLASS IonBuilder {
   InliningResult inlineIsPackedArray(CallInfo& callInfo);
   InliningResult inlineWasmCall(CallInfo& callInfo, JSFunction* target);
 
-  // Testing functions.
+  
   InliningResult inlineBailout(CallInfo& callInfo);
   InliningResult inlineAssertFloat32(CallInfo& callInfo);
   InliningResult inlineAssertRecoveredOnBailout(CallInfo& callInfo);
 
-  // Bind function.
+  
   InliningResult inlineBoundFunction(CallInfo& callInfo, JSFunction* target);
 
-  // Main inlining functions
+  
   InliningResult inlineNativeCall(CallInfo& callInfo, JSFunction* target);
   InliningResult inlineNativeGetter(CallInfo& callInfo, JSFunction* target);
-  InliningResult inlineNonFunctionCall(CallInfo& callInfo, JSObject* target);
   InliningResult inlineScriptedCall(CallInfo& callInfo, JSFunction* target);
   InliningResult inlineSingleCall(CallInfo& callInfo, JSObject* target);
 
-  // Call functions
+  
   InliningResult inlineCallsite(const InliningTargets& targets,
                                 CallInfo& callInfo);
   AbortReasonOr<Ok> inlineCalls(CallInfo& callInfo,
@@ -1011,7 +920,7 @@ class MOZ_STACK_CLASS IonBuilder {
                                 BoolVector& choiceSet,
                                 MGetPropertyCache* maybeCache);
 
-  // Inlining helpers.
+  
   AbortReasonOr<Ok> inlineGenericFallback(
       const mozilla::Maybe<CallTargets>& targets, CallInfo& callInfo,
       MBasicBlock* dispatchBlock);
@@ -1050,10 +959,10 @@ class MOZ_STACK_CLASS IonBuilder {
   AbortReasonOr<Ok> freezePropertiesForCommonPrototype(
       TemporaryTypeSet* types, jsid id, JSObject* foundProto,
       bool allowEmptyTypesForGlobal);
-  /*
-   * Callers must pass a non-null globalGuard if they pass a non-null
-   * globalShape.
-   */
+  
+
+
+
   AbortReasonOr<bool> testCommonGetterSetter(
       TemporaryTypeSet* types, jsid id, bool isGetter,
       JSFunction* getterOrSetter, MDefinition** guard,
@@ -1092,9 +1001,9 @@ class MOZ_STACK_CLASS IonBuilder {
 
   TemporaryTypeSet* bytecodeTypes(jsbytecode* pc);
 
-  // Use one of the below methods for updating the current block, rather than
-  // updating |current| directly. setCurrent() should only be used in cases
-  // where the block cannot have phis whose type needs to be computed.
+  
+  
+  
 
   AbortReasonOr<Ok> setCurrentAndSpecializePhis(MBasicBlock* block) {
     MOZ_ASSERT(block);
@@ -1113,13 +1022,13 @@ class MOZ_STACK_CLASS IonBuilder {
   bool hasTerminatedBlock() const { return current == nullptr; }
   void setTerminatedBlock() { current = nullptr; }
 
-  // A builder is inextricably tied to a particular script.
+  
   JSScript* script_;
 
-  // Some aborts are actionable (e.g., using an unsupported bytecode). When
-  // optimization tracking is enabled, the location and message of the abort
-  // are recorded here so they may be propagated to the script's
-  // corresponding JitcodeGlobalEntry::BaselineEntry.
+  
+  
+  
+  
   JSScript* actionableAbortScript_;
   jsbytecode* actionableAbortPc_;
   const char* actionableAbortMessage_;
@@ -1161,7 +1070,7 @@ class MOZ_STACK_CLASS IonBuilder {
   JSContext* analysisContext;
   BaselineFrameInspector* baselineFrame_;
 
-  // Constraints for recording dependencies on type information.
+  
   CompilerConstraintList* constraints_;
 
   MIRGenerator& mirGen_;
@@ -1182,8 +1091,8 @@ class MOZ_STACK_CLASS IonBuilder {
   jsbytecode* pc;
   jsbytecode* nextpc = nullptr;
 
-  // The current MIR block. This can be nullptr after a block has been
-  // terminated, for example right after a 'return' or 'break' statement.
+  
+  
   MBasicBlock* current = nullptr;
 
   uint32_t loopDepth_;
@@ -1197,16 +1106,8 @@ class MOZ_STACK_CLASS IonBuilder {
 
   BytecodeSite* bytecodeSite(jsbytecode* pc) {
     MOZ_ASSERT(info().inlineScriptTree()->script()->containsPC(pc));
-    // See comment in maybeTrackedOptimizationSite.
-    if (mirGen_.isOptimizationTrackingEnabled()) {
-      if (BytecodeSite* site = maybeTrackedOptimizationSite(pc)) {
-        return site;
-      }
-    }
     return new (alloc()) BytecodeSite(info().inlineScriptTree(), pc);
   }
-
-  BytecodeSite* maybeTrackedOptimizationSite(jsbytecode* pc);
 
   MDefinition* lexicalCheck_;
 
@@ -1220,7 +1121,7 @@ class MOZ_STACK_CLASS IonBuilder {
     return lexical;
   }
 
-  /* Information used for inline-call builders. */
+  
   MResumePoint* callerResumePoint_;
   jsbytecode* callerPC() {
     return callerResumePoint_ ? callerResumePoint_->pc() : nullptr;
@@ -1243,61 +1144,61 @@ class MOZ_STACK_CLASS IonBuilder {
 
   size_t inliningDepth_;
 
-  // Total bytecode length of all inlined scripts. Only tracked for the
-  // outermost builder.
+  
+  
   size_t inlinedBytecodeLength_;
 
-  // Cutoff to disable compilation if excessive time is spent reanalyzing
-  // loop bodies to compute a fixpoint of the types for loop variables.
+  
+  
   static const size_t MAX_LOOP_RESTARTS = 40;
   size_t numLoopRestarts_;
 
-  // True if script->failedBoundsCheck is set for the current script or
-  // an outer script.
+  
+  
   bool failedBoundsCheck_;
 
-  // True if script->failedShapeGuard is set for the current script or
-  // an outer script.
+  
+  
   bool failedShapeGuard_;
 
-  // True if script->failedLexicalCheck_ is set for the current script or
-  // an outer script.
+  
+  
   bool failedLexicalCheck_;
 
 #ifdef DEBUG
-  // If this script uses the lazy arguments object.
+  
   bool hasLazyArguments_;
 #endif
 
-  // If this is an inline builder, the call info for the builder.
+  
   const CallInfo* inlineCallInfo_;
 
-  // When compiling a call with multiple targets, we are first creating a
-  // MGetPropertyCache.  This MGetPropertyCache is following the bytecode, and
-  // is used to recover the JSFunction.  In some cases, the Type of the object
-  // which own the property is enough for dispatching to the right function.
-  // In such cases we do not have read the property, except when the type
-  // object is unknown.
-  //
-  // As an optimization, we can dispatch a call based on the object group,
-  // without doing the MGetPropertyCache.  This is what is achieved by
-  // |IonBuilder::inlineCalls|.  As we might not know all the functions, we
-  // are adding a fallback path, where this MGetPropertyCache would be moved
-  // into.
-  //
-  // In order to build the fallback path, we have to capture a resume point
-  // ahead, for the potential fallback path.  This resume point is captured
-  // while building MGetPropertyCache.  It is capturing the state of Baseline
-  // before the execution of the MGetPropertyCache, such as we can safely do
-  // it in the fallback path.
-  //
-  // This field is used to discard the resume point if it is not used for
-  // building a fallback path.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-  // Discard the prior resume point while setting a new MGetPropertyCache.
+  
   void replaceMaybeFallbackFunctionGetter(MGetPropertyCache* cache);
 
-  // Discard the MGetPropertyCache if it is handled by WrapMGetPropertyCache.
+  
   void keepFallbackFunctionGetter(MGetPropertyCache* cache) {
     if (cache == maybeFallbackFunctionGetter_) {
       maybeFallbackFunctionGetter_ = nullptr;
@@ -1308,9 +1209,6 @@ class MOZ_STACK_CLASS IonBuilder {
 
   bool needsPostBarrier(MDefinition* value);
 
-  // Used in tracking outcomes of optimization strategies for devtools.
-  void startTrackingOptimizations();
-
   void addAbortedPreliminaryGroup(ObjectGroup* group);
 
   MIRGraph& graph() { return *graph_; }
@@ -1320,73 +1218,16 @@ class MOZ_STACK_CLASS IonBuilder {
     return *optimizationInfo_;
   }
 
-  // The track* methods below are called often. Do not combine them with the
-  // unchecked variants, despite the unchecked variants having no other
-  // callers.
-  void trackTypeInfo(JS::TrackedTypeSite site, MIRType mirType,
-                     TemporaryTypeSet* typeSet) {
-    if (MOZ_UNLIKELY(current->trackedSite()->hasOptimizations())) {
-      trackTypeInfoUnchecked(site, mirType, typeSet);
-    }
-  }
-  void trackTypeInfo(JS::TrackedTypeSite site, JSObject* obj) {
-    if (MOZ_UNLIKELY(current->trackedSite()->hasOptimizations())) {
-      trackTypeInfoUnchecked(site, obj);
-    }
-  }
-  void trackTypeInfo(CallInfo& callInfo) {
-    if (MOZ_UNLIKELY(current->trackedSite()->hasOptimizations())) {
-      trackTypeInfoUnchecked(callInfo);
-    }
-  }
-  void trackOptimizationAttempt(JS::TrackedStrategy strategy) {
-    if (MOZ_UNLIKELY(current->trackedSite()->hasOptimizations())) {
-      trackOptimizationAttemptUnchecked(strategy);
-    }
-  }
-  void amendOptimizationAttempt(uint32_t index) {
-    if (MOZ_UNLIKELY(current->trackedSite()->hasOptimizations())) {
-      amendOptimizationAttemptUnchecked(index);
-    }
-  }
-  void trackOptimizationOutcome(JS::TrackedOutcome outcome) {
-    if (MOZ_UNLIKELY(current->trackedSite()->hasOptimizations())) {
-      trackOptimizationOutcomeUnchecked(outcome);
-    }
-  }
-  void trackOptimizationSuccess() {
-    if (MOZ_UNLIKELY(current->trackedSite()->hasOptimizations())) {
-      trackOptimizationSuccessUnchecked();
-    }
-  }
-  void trackInlineSuccess(InliningStatus status = InliningStatus_Inlined) {
-    if (MOZ_UNLIKELY(current->trackedSite()->hasOptimizations())) {
-      trackInlineSuccessUnchecked(status);
-    }
-  }
-
   bool forceInlineCaches() {
     return MOZ_UNLIKELY(JitOptions.forceInlineCaches);
   }
-
-  // Out-of-line variants that don't check if optimization tracking is
-  // enabled.
-  void trackTypeInfoUnchecked(JS::TrackedTypeSite site, MIRType mirType,
-                              TemporaryTypeSet* typeSet);
-  void trackTypeInfoUnchecked(JS::TrackedTypeSite site, JSObject* obj);
-  void trackTypeInfoUnchecked(CallInfo& callInfo);
-  void trackOptimizationAttemptUnchecked(JS::TrackedStrategy strategy);
-  void amendOptimizationAttemptUnchecked(uint32_t index);
-  void trackOptimizationOutcomeUnchecked(JS::TrackedOutcome outcome);
-  void trackOptimizationSuccessUnchecked();
-  void trackInlineSuccessUnchecked(InliningStatus status);
 
  public:
   MIRGenerator& mirGen() { return mirGen_; }
   TempAllocator& alloc() { return *alloc_; }
 
-  // When aborting with AbortReason::PreliminaryObjects, all groups with
-  // preliminary objects which haven't been analyzed yet.
+  
+  
   const ObjectGroupVector& abortedPreliminaryGroups() const {
     return abortedPreliminaryGroups_;
   }
@@ -1397,13 +1238,13 @@ class CallInfo {
   MDefinition* thisArg_;
   MDefinition* newTargetArg_;
   MDefinitionVector args_;
-  // If non-empty, this corresponds to the stack prior any implicit inlining
-  // such as before JSOp::FunApply.
+  
+  
   MDefinitionVector priorArgs_;
 
   bool constructing_ : 1;
 
-  // True if the caller does not use the return value.
+  
   bool ignoresReturnValue_ : 1;
 
   bool setter_ : 1;
@@ -1443,7 +1284,7 @@ class CallInfo {
   MOZ_MUST_USE bool init(MBasicBlock* current, uint32_t argc) {
     MOZ_ASSERT(args_.empty());
 
-    // Get the arguments in the right order
+    
     if (!args_.reserve(argc)) {
       return false;
     }
@@ -1457,15 +1298,15 @@ class CallInfo {
     }
     current->popn(argc);
 
-    // Get |this| and |fun|
+    
     setThis(current->pop());
     setFun(current->pop());
 
     return true;
   }
 
-  // Before doing any pop to the stack, capture whatever flows into the
-  // instruction, such that we can restore it later.
+  
+  
   AbortReasonOr<Ok> savePriorCallStack(MIRGenerator* mir, MBasicBlock* current,
                                        size_t peekDepth);
 
@@ -1491,7 +1332,7 @@ class CallInfo {
   void popCallStack(MBasicBlock* current) { current->popn(numFormals()); }
 
   AbortReasonOr<Ok> pushCallStack(MIRGenerator* mir, MBasicBlock* current) {
-    // Ensure sufficient space in the slots: needed for inlining from FunApply.
+    
     if (apply_) {
       uint32_t depth = current->stackDepth() + numFormals();
       if (depth > current->nslots()) {
@@ -1587,51 +1428,7 @@ class CallInfo {
   }
 };
 
-// IonCompileTask represents a single off-thread Ion compilation task.
-class IonCompileTask final : public RunnableTask,
-                             public mozilla::LinkedListElement<IonCompileTask> {
-  MIRGenerator& mirGen_;
+}  
+}  
 
-  // If off thread compilation is successful, the final code generator is
-  // attached here. Code has been generated, but not linked (there is not yet
-  // an IonScript). This is heap allocated, and must be explicitly destroyed,
-  // performed by FinishOffThreadTask().
-  CodeGenerator* backgroundCodegen_ = nullptr;
-
-  CompilerConstraintList* constraints_ = nullptr;
-  MRootList* rootList_ = nullptr;
-
-  // script->hasIonScript() at the start of the compilation. Used to avoid
-  // calling hasIonScript() from background compilation threads.
-  bool scriptHasIonScript_;
-
- public:
-  explicit IonCompileTask(MIRGenerator& mirGen, bool scriptHasIonScript,
-                          CompilerConstraintList* constraints);
-
-  JSScript* script() { return mirGen_.outerInfo().script(); }
-  MIRGenerator& mirGen() { return mirGen_; }
-  TempAllocator& alloc() { return mirGen_.alloc(); }
-  bool scriptHasIonScript() const { return scriptHasIonScript_; }
-  CompilerConstraintList* constraints() { return constraints_; }
-
-  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
-  void trace(JSTracer* trc);
-
-  void setRootList(MRootList& rootList) {
-    MOZ_ASSERT(!rootList_);
-    rootList_ = &rootList;
-  }
-  CodeGenerator* backgroundCodegen() const { return backgroundCodegen_; }
-  void setBackgroundCodegen(CodeGenerator* codegen) {
-    backgroundCodegen_ = codegen;
-  }
-
-  ThreadType threadType() override { return THREAD_TYPE_ION; }
-  void runTask() override;
-};
-
-}  // namespace jit
-}  // namespace js
-
-#endif /* jit_IonBuilder_h */
+#endif 

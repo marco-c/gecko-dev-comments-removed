@@ -1203,8 +1203,7 @@ bool jit::EliminateDeadResumePointOperands(MIRGenerator* mir, MIRGraph& graph) {
       
       
       
-      
-      if (ins->isNewDerivedTypedObject() || ins->isRecoveredOnBailout()) {
+      if (ins->isRecoveredOnBailout()) {
         MOZ_ASSERT(ins->canRecoverOnBailout());
         continue;
       }
@@ -3950,7 +3949,6 @@ bool jit::EliminateRedundantChecks(MIRGraph& graph) {
           break;
         case MDefinition::Opcode::LoadFixedSlot:
         case MDefinition::Opcode::LoadSlot:
-        case MDefinition::Opcode::LoadUnboxedObjectOrNull:
           if (!TryOptimizeLoadObjectOrNull(def, &eliminateList)) {
             return false;
           }
@@ -4045,7 +4043,6 @@ bool jit::AddKeepAliveInstructions(MIRGraph& graph) {
           continue;
         case MDefinition::Opcode::Elements:
         case MDefinition::Opcode::TypedArrayElements:
-        case MDefinition::Opcode::TypedObjectElements:
           MOZ_ASSERT(ins->numOperands() == 1);
           ownerObject = ins->getOperand(0);
           break;
