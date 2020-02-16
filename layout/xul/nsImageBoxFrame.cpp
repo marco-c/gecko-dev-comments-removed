@@ -218,38 +218,7 @@ void nsImageBoxFrame::StopAnimation() {
   }
 }
 
-
-
-
-
-
-namespace {
-class UpdateImageRunnable : public Runnable {
- public:
-  explicit UpdateImageRunnable(nsImageBoxFrame* aFrame)
-      : Runnable("UpdateImageRunnable"), mFrame(aFrame) {}
-
- protected:
-  NS_IMETHOD Run() override {
-    if (mFrame.IsAlive()) {
-      static_cast<nsImageBoxFrame*>(mFrame.GetFrame())->UpdateImage();
-    }
-    return NS_OK;
-  }
-
-  WeakFrame mFrame;
-};
-}  
-
 void nsImageBoxFrame::UpdateImage() {
-  if (!nsContentUtils::IsSafeToRunScript()) {
-    
-    
-    auto runnable = MakeRefPtr<UpdateImageRunnable>(this);
-    nsContentUtils::AddScriptRunner(runnable.forget());
-    return;
-  }
-
   nsPresContext* presContext = PresContext();
   Document* doc = presContext->Document();
 
