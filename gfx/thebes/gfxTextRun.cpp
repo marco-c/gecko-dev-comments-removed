@@ -538,7 +538,7 @@ struct MOZ_STACK_CLASS BufferAlphaColor {
   gfxContext* mContext;
 };
 
-void gfxTextRun::Draw(Range aRange, gfx::Point aPt,
+void gfxTextRun::Draw(const Range aRange, const gfx::Point aPt,
                       const DrawParams& aParams) const {
   NS_ASSERTION(aRange.end <= GetLength(), "Substring out of range");
   NS_ASSERTION(aParams.drawMode == DrawMode::GLYPH_PATH ||
@@ -584,6 +584,15 @@ void gfxTextRun::Draw(Range aRange, gfx::Point aPt,
 
   
   
+  
+  
+  
+  
+  gfxTextRun::Metrics metrics;
+  bool gotMetrics = false;
+
+  
+  
   TextRunDrawParams params;
   params.context = aParams.context;
   params.devPerApp = 1.0 / double(GetAppUnitsPerDevUnit());
@@ -603,6 +612,7 @@ void gfxTextRun::Draw(Range aRange, gfx::Point aPt,
 
   GlyphRunIterator iter(this, aRange);
   gfxFloat advance = 0.0;
+  gfx::Point pt = aPt;
 
   while (iter.NextRun()) {
     gfxFont* font = iter.GetGlyphRun()->mFont;
@@ -611,16 +621,24 @@ void gfxTextRun::Draw(Range aRange, gfx::Point aPt,
     bool needToRestore = false;
     if (mayNeedBuffering && HasSyntheticBoldOrColor(font)) {
       needToRestore = true;
-      
-      
-      gfxTextRun::Metrics metrics =
-          MeasureText(runRange, gfxFont::LOOSE_INK_EXTENTS,
-                      aParams.context->GetDrawTarget(), aParams.provider);
-      if (IsRightToLeft()) {
-        metrics.mBoundingBox.MoveBy(
-            gfxPoint(aPt.x - metrics.mAdvanceWidth, aPt.y));
-      } else {
-        metrics.mBoundingBox.MoveBy(gfxPoint(aPt.x, aPt.y));
+      if (!gotMetrics) {
+        
+        
+        
+        
+        
+        
+        
+        metrics =
+            MeasureText(aRange, gfxFont::LOOSE_INK_EXTENTS,
+                        aParams.context->GetDrawTarget(), aParams.provider);
+        if (IsRightToLeft()) {
+          metrics.mBoundingBox.MoveBy(
+              gfxPoint(aPt.x - metrics.mAdvanceWidth, aPt.y));
+        } else {
+          metrics.mBoundingBox.MoveBy(gfxPoint(aPt.x, aPt.y));
+        }
+        gotMetrics = true;
       }
       syntheticBoldBuffer.PushSolidColor(metrics.mBoundingBox, currentColor,
                                          GetAppUnitsPerDevUnit());
@@ -632,27 +650,27 @@ void gfxTextRun::Draw(Range aRange, gfx::Point aPt,
     bool drawPartial =
         (aParams.drawMode & (DrawMode::GLYPH_FILL | DrawMode::GLYPH_STROKE)) ||
         (aParams.drawMode == DrawMode::GLYPH_PATH && aParams.callbacks);
-    gfx::Point origPt = aPt;
+    gfx::Point origPt = pt;
 
     if (drawPartial) {
-      DrawPartialLigature(font, Range(runRange.start, ligatureRange.start),
-                          &aPt, aParams.provider, params,
+      DrawPartialLigature(font, Range(runRange.start, ligatureRange.start), &pt,
+                          aParams.provider, params,
                           iter.GetGlyphRun()->mOrientation);
     }
 
-    DrawGlyphs(font, ligatureRange, &aPt, aParams.provider, ligatureRange,
+    DrawGlyphs(font, ligatureRange, &pt, aParams.provider, ligatureRange,
                params, iter.GetGlyphRun()->mOrientation);
 
     if (drawPartial) {
-      DrawPartialLigature(font, Range(ligatureRange.end, runRange.end), &aPt,
+      DrawPartialLigature(font, Range(ligatureRange.end, runRange.end), &pt,
                           aParams.provider, params,
                           iter.GetGlyphRun()->mOrientation);
     }
 
     if (params.isVerticalRun) {
-      advance += (aPt.y - origPt.y) * params.direction;
+      advance += (pt.y - origPt.y) * params.direction;
     } else {
-      advance += (aPt.x - origPt.x) * params.direction;
+      advance += (pt.x - origPt.x) * params.direction;
     }
 
     

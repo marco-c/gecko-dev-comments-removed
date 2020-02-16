@@ -274,7 +274,7 @@ class gfxTextRun : public gfxShapedText {
 
 
 
-  void Draw(Range aRange, mozilla::gfx::Point aPt,
+  void Draw(const Range aRange, const mozilla::gfx::Point aPt,
             const DrawParams& aParams) const;
 
   
