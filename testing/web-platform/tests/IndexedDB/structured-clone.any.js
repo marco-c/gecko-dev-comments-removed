@@ -5,6 +5,13 @@
 
 
 
+
+
+
+
+
+
+
 function describe(value) {
   let type, str;
   if (typeof value === 'object' && value) {
@@ -20,7 +27,7 @@ function describe(value) {
 }
 
 function cloneTest(value, verifyFunc) {
-  promise_test(async t => {
+  subsetTest(promise_test, async t => {
     const db = await createDatabase(t, db => {
       const store = db.createObjectStore('store');
       
@@ -53,7 +60,7 @@ function cloneObjectTest(value, verifyFunc) {
 }
 
 function cloneFailureTest(value) {
-  promise_test(async t => {
+  subsetTest(promise_test, async t => {
     const db = await createDatabase(t, db => {
       db.createObjectStore('store');
     });
