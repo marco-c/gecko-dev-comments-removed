@@ -3108,12 +3108,34 @@ bool Selection::IsBlockingSelectionChangeEvents() const {
 }
 
 void Selection::DeleteFromDocument(ErrorResult& aRv) {
-  if (!mFrameSelection) return;  
-  RefPtr<nsFrameSelection> frameSelection = mFrameSelection;
-  nsresult rv = frameSelection->DeleteFromDocument();
-  if (NS_FAILED(rv)) {
-    aRv.Throw(rv);
+  if (mSelectionType != SelectionType::eNormal) {
+    return;  
   }
+
+  
+  if (IsCollapsed()) {
+    return;
+  }
+
+  for (uint32_t rangeIdx = 0; rangeIdx < RangeCount(); ++rangeIdx) {
+    RefPtr<nsRange> range = GetRangeAt(rangeIdx);
+    range->DeleteContents(aRv);
+    if (aRv.Failed()) {
+      return;
+    }
+  }
+
+  
+  
+  
+  if (AnchorOffset() > 0) {
+    Collapse(GetAnchorNode(), AnchorOffset());
+  }
+#ifdef DEBUG
+  else {
+    printf("Don't know how to set selection back past frame boundary\n");
+  }
+#endif
 }
 
 void Selection::Modify(const nsAString& aAlter, const nsAString& aDirection,

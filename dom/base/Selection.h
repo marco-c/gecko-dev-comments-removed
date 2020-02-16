@@ -293,6 +293,8 @@ class Selection final : public nsSupportsWeakReference,
   
 
 
+
+
   void DeleteFromDocument(mozilla::ErrorResult& aRv);
 
   uint32_t RangeCount() const { return mRanges.Length(); }
@@ -410,10 +412,14 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
+  
+  
   void Collapse(nsINode& aContainer, uint32_t aOffset, ErrorResult& aRv) {
     Collapse(RawRangeBoundary(&aContainer, aOffset), aRv);
   }
 
+  
+  
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void Collapse(const RawRangeBoundary& aPoint, ErrorResult& aRv);
 
