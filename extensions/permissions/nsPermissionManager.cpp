@@ -134,6 +134,10 @@ bool IsPreloadPermission(const nsACString& aType) {
 
 
 
+
+
+
+
 static constexpr std::array<nsLiteralCString, 1> kStripOAPermissions = {
     {NS_LITERAL_CSTRING("cookie")}};
 
@@ -3047,8 +3051,9 @@ bool nsPermissionManager::GetPermissionsWithKey(
     PermissionHashKey* entry = iter.Get();
 
     nsAutoCString permissionKey;
-    GetKeyForOrigin(entry->GetKey()->mOrigin,
-                    IsOAForceStripPermission(aPermissionKey), permissionKey);
+    
+    
+    GetKeyForOrigin(entry->GetKey()->mOrigin, false, permissionKey);
 
     
     
@@ -3209,6 +3214,8 @@ nsTArray<nsCString> nsPermissionManager::GetAllKeysForPrincipal(
   while (prin) {
     
     nsCString* key = keys.AppendElement();
+    
+    
     GetKeyForPrincipal(prin, false, *key);
 
     
