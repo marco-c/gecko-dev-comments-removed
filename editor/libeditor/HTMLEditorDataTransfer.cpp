@@ -2799,24 +2799,44 @@ int32_t HTMLEditor::DiscoverPartialListsAndTables(
   return ret;
 }
 
-Element* HTMLEditor::ScanForTableStructure(nsINode& aNodeMaybeInTable,
-                                           Element& aTableElement) {
-  for (Element* element = aNodeMaybeInTable.IsElement()
-                              ? aNodeMaybeInTable.AsElement()
-                              : aNodeMaybeInTable.GetParentElement();
+
+Element* HTMLEditor::FindReplaceableTableElement(
+    Element& aTableElement, nsINode& aNodeMaybeInTableElement) {
+  MOZ_ASSERT(aTableElement.IsHTMLElement(nsGkAtoms::table));
+  
+  
+  
+  
+  
+  
+  
+  for (Element* element = aNodeMaybeInTableElement.IsElement()
+                              ? aNodeMaybeInTableElement.AsElement()
+                              : aNodeMaybeInTableElement.GetParentElement();
        element; element = element->GetParentElement()) {
     if (!HTMLEditUtils::IsTableElement(element) ||
         element->IsHTMLElement(nsGkAtoms::table)) {
+      
+      
+      
+      NS_ASSERTION(element != &aTableElement,
+                   "The table element which is looking for is ignored");
       continue;
     }
-    Element* structureElement = element->GetParentElement();
-    while (structureElement &&
-           !structureElement->IsHTMLElement(nsGkAtoms::table)) {
-      structureElement = structureElement->GetParentElement();
+    Element* tableElement = nullptr;
+    for (Element* maybeTableElement = element->GetParentElement();
+         maybeTableElement;
+         maybeTableElement = maybeTableElement->GetParentElement()) {
+      if (maybeTableElement->IsHTMLElement(nsGkAtoms::table)) {
+        tableElement = maybeTableElement;
+        break;
+      }
     }
-    if (structureElement == &aTableElement) {
+    if (tableElement == &aTableElement) {
       return element;
     }
+    
+    
   }
   return nullptr;
 }
@@ -2878,11 +2898,13 @@ void HTMLEditor::ReplaceOrphanedStructure(
       return;
     }
     replaceElement = curNode;
-  } else {
-    replaceElement = ScanForTableStructure(edgeNode, curNode);
+  } else if (curNode->IsHTMLElement(nsGkAtoms::table)) {
+    replaceElement = HTMLEditor::FindReplaceableTableElement(curNode, edgeNode);
     if (!replaceElement) {
       return;
     }
+  } else {
+    return;
   }
 
   

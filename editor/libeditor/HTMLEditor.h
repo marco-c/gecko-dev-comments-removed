@@ -3946,12 +3946,23 @@ class HTMLEditor final : public TextEditor,
   int32_t DiscoverPartialListsAndTables(
       nsTArray<OwningNonNull<nsINode>>& aPasteNodes,
       nsTArray<OwningNonNull<Element>>& aListsAndTables);
-  Element* ScanForTableStructure(nsINode& aNodeMaybeInTable,
-                                 Element& aTableElement);
   void ReplaceOrphanedStructure(
       StartOrEnd aStartOrEnd, nsTArray<OwningNonNull<nsINode>>& aNodeArray,
       nsTArray<OwningNonNull<Element>>& aListAndTableArray,
       int32_t aHighWaterMark);
+
+  
+
+
+
+
+
+
+
+
+
+  static Element* FindReplaceableTableElement(
+      Element& aTableElement, nsINode& aNodeMaybeInTableElement);
 
   
 
