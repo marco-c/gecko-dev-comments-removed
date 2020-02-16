@@ -132,9 +132,7 @@ class PuppetWidget : public nsBaseWidget,
   virtual mozilla::LayoutDeviceToLayoutDeviceMatrix4x4
   WidgetToTopLevelWidgetTransform() override;
 
-  virtual LayoutDeviceIntPoint WidgetToScreenOffset() override {
-    return GetWindowPosition() + GetChromeOffset();
-  }
+  virtual LayoutDeviceIntPoint WidgetToScreenOffset() override;
 
   virtual LayoutDeviceIntPoint TopLevelWidgetToScreenOffset() override {
     return GetWindowPosition();
@@ -234,6 +232,10 @@ class PuppetWidget : public nsBaseWidget,
 
   nsIntSize GetScreenDimensions();
 
+  
+  
+  
+  
   
   LayoutDeviceIntPoint GetChromeOffset();
 
