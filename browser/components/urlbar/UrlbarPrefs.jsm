@@ -125,6 +125,11 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["searchTips.redirect.shownCount", 0],
 
   
+  
+  
+  ["searchTips.test.ignoreShowLimits", false],
+
+  
   ["speculativeConnect.enabled", true],
 
   

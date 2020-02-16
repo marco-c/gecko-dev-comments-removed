@@ -280,7 +280,8 @@ class ProviderSearchTips extends UrlbarProvider {
     if (
       !UrlbarPrefs.get("update1.searchTips") ||
       !cfrFeaturesUserPref ||
-      this.disableTipsForCurrentSession
+      (this.disableTipsForCurrentSession &&
+        !UrlbarPrefs.get("searchTips.test.ignoreShowLimits"))
     ) {
       return;
     }
@@ -298,14 +299,16 @@ class ProviderSearchTips extends UrlbarProvider {
     let instance = {};
     this._maybeShowTipForUrlInstance = instance;
 
+    let ignoreShowLimits = UrlbarPrefs.get("searchTips.test.ignoreShowLimits");
+
     
-    if (isBrowserShowingNotification()) {
+    if (isBrowserShowingNotification() && !ignoreShowLimits) {
       return;
     }
 
     
     let date = await lastBrowserUpdateDate();
-    if (Date.now() - date <= LAST_UPDATE_THRESHOLD_MS) {
+    if (Date.now() - date <= LAST_UPDATE_THRESHOLD_MS && !ignoreShowLimits) {
       return;
     }
 
@@ -332,7 +335,7 @@ class ProviderSearchTips extends UrlbarProvider {
     
     
     let shownCount = UrlbarPrefs.get(shownCountPrefName);
-    if (shownCount >= MAX_SHOWN_COUNT) {
+    if (shownCount >= MAX_SHOWN_COUNT && !ignoreShowLimits) {
       return;
     }
 
