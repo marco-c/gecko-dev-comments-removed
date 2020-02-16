@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 40; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "nsNativeBasicTheme.h"
 
@@ -57,8 +57,8 @@ static const Color sButtonHoverColor(Color(0.94f, 0.94f, 0.96f));
 static const Color sButtonActiveColor(Color(0.88f, 0.88f, 0.90f));
 static const Color sWhiteColor(Color(1.0f, 1.0f, 1.0f, 0.0f));
 
-}  // namespace widget
-}  // namespace mozilla
+}  
+}  
 
 NS_IMPL_ISUPPORTS_INHERITED(nsNativeBasicTheme, nsNativeTheme, nsITheme)
 
@@ -154,13 +154,13 @@ static void PaintCheckboxControl(DrawTarget* aDrawTarget, const Rect& aRect,
 
 static void PaintCheckMark(DrawTarget* aDrawTarget, const Rect& aRect,
                            const EventStates& aState, uint32_t aDpi) {
-  // Points come from the coordinates on a 7X7 unit box centered at 0,0
+  
   const float checkPolygonX[] = {-2.5, -0.7, 2.5};
   const float checkPolygonY[] = {-0.3, 1.7, -1.5};
   const int32_t checkNumPoints = sizeof(checkPolygonX) / sizeof(float);
   const int32_t checkSize = 8;
 
-  // Scale the checkmark based on the smallest dimension
+  
   nscoord paintScale = std::min(aRect.width, aRect.height) / checkSize;
   RefPtr<PathBuilder> builder = aDrawTarget->CreatePathBuilder();
   Point p = aRect.Center() +
@@ -410,7 +410,7 @@ static void PaintScrollbarbutton(DrawTarget* aDrawTarget,
                                         : isHovered ? sScrollbarButtonHoverColor
                                                     : sScrollbarColor)));
 
-  // Start with Up arrow.
+  
   int32_t arrowPolygonX[] = {3, 0, -3};
   int32_t arrowPolygonY[] = {2, -1, 2};
   const int32_t arrowNumPoints = sizeof(arrowPolygonX) / sizeof(int32_t);
@@ -511,8 +511,8 @@ nsNativeBasicTheme::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
     bool isHTML = IsHTMLContent(aFrame);
     nsIFrame* parentFrame = aFrame->GetParent();
     bool isMenulist = !isHTML && parentFrame->IsMenuFrame();
-    // HTML select and XUL menulist dropdown buttons get state from the
-    // parent.
+    
+    
     if (isHTML || isMenulist) {
       aFrame = parentFrame;
       eventState = GetContentState(parentFrame, aAppearance);
@@ -559,7 +559,7 @@ nsNativeBasicTheme::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
       PaintRangeInputBackground(dt, devPxRect, eventState, dpi);
       break;
     case StyleAppearance::RangeThumb:
-      // TODO: Paint Range Thumb
+      
       break;
     case StyleAppearance::ScrollbarthumbHorizontal:
       PaintScrollbarthumbHorizontal(dt, devPxRect, eventState);
@@ -592,13 +592,13 @@ nsNativeBasicTheme::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
   return NS_OK;
 }
 
-/*bool
-nsNativeBasicTheme::CreateWebRenderCommandsForWidget(mozilla::wr::DisplayListBuilder&
-aBuilder, mozilla::wr::IpcResourceUpdateQueue& aResources, const
-mozilla::layers::StackingContextHelper& aSc,
-                                      mozilla::layers::RenderRootStateManager*
-aManager, nsIFrame* aFrame, StyleAppearance aAppearance, const nsRect& aRect) {
-}*/
+
+
+
+
+
+
+
 
 LayoutDeviceIntMargin nsNativeBasicTheme::GetWidgetBorder(
     nsDeviceContext* aContext, nsIFrame* aFrame, StyleAppearance aAppearance) {
@@ -614,8 +614,8 @@ bool nsNativeBasicTheme::GetWidgetPadding(nsDeviceContext* aContext,
       aAppearance == StyleAppearance::NumberInput ||
       aAppearance == StyleAppearance::Textarea ||
       aAppearance == StyleAppearance::Textfield) {
-    // If we have author-specified padding for these elements, don't do the
-    // fixups below.
+    
+    
     if (aFrame->PresContext()->HasAuthorSpecifiedRules(
             aFrame, NS_AUTHOR_SPECIFIED_PADDING)) {
       return false;
@@ -624,9 +624,9 @@ bool nsNativeBasicTheme::GetWidgetPadding(nsDeviceContext* aContext,
 
   uint32_t dpi = GetDPIRatio(aFrame);
   switch (aAppearance) {
-    // Radios and checkboxes return a fixed size in GetMinimumWidgetSize
-    // and have a meaningful baseline, so they can't have
-    // author-specified padding.
+    
+    
+    
     case StyleAppearance::Radio:
     case StyleAppearance::Checkbox:
     case StyleAppearance::MenulistButton:
@@ -641,10 +641,6 @@ bool nsNativeBasicTheme::GetWidgetPadding(nsDeviceContext* aContext,
       aResult->SizeTo(7 * dpi, 8 * dpi, 7 * dpi, 8 * dpi);
       return true;
     case StyleAppearance::Button:
-      if (IsDateTimeResetButton(aFrame)) {
-        aResult->SizeTo(0, 0, -1 * dpi, 4 * dpi);
-        return true;
-      }
       aResult->SizeTo(7 * dpi, 22 * dpi, 7 * dpi, 22 * dpi);
       return true;
     case StyleAppearance::Textfield:
@@ -677,8 +673,8 @@ bool nsNativeBasicTheme::GetWidgetOverflow(nsDeviceContext* aContext,
     case StyleAppearance::Textarea:
     case StyleAppearance::Searchfield:
     case StyleAppearance::Listbox:
-    // NOTE: if you change Menulist and MenulistButton to behave differently,
-    // be sure to handle StaticPrefs::layout_css_webkit_appearance_enabled.
+    
+    
     case StyleAppearance::Menulist:
     case StyleAppearance::MenulistButton:
     case StyleAppearance::MozMenulistButton:
@@ -691,13 +687,13 @@ bool nsNativeBasicTheme::GetWidgetOverflow(nsDeviceContext* aContext,
       break;
     }
     case StyleAppearance::ProgressBar: {
-      // Progress bars draw a 2 pixel white shadow under their progress
-      // indicators.
+      
+      
       overflow.bottom = 2;
       break;
     }
     case StyleAppearance::Meter: {
-      // Meter bars overflow their boxes by about 2 pixels.
+      
       overflow.SizeTo(2, 2, 2, 2);
       break;
     }
@@ -738,7 +734,7 @@ nsNativeBasicTheme::WidgetStateChanged(nsIFrame* aFrame,
                                        StyleAppearance aAppearance,
                                        nsAtom* aAttribute, bool* aShouldRepaint,
                                        const nsAttrValue* aOldValue) {
-  // Some widget types just never change state.
+  
   switch (aAppearance) {
     case StyleAppearance::MozWindowTitlebar:
     case StyleAppearance::Toolbox:
@@ -768,11 +764,11 @@ nsNativeBasicTheme::WidgetStateChanged(nsIFrame* aFrame,
   }
 
   if (!aAttribute) {
-    // Hover/focus/active changed.  Always repaint.
+    
     *aShouldRepaint = true;
   } else {
-    // Check the attribute to see if it's relevant.
-    // disabled, checked, dlgtype, default, etc.
+    
+    
     *aShouldRepaint = false;
     if ((aAttribute == nsGkAtoms::disabled) ||
         (aAttribute == nsGkAtoms::checked) ||
@@ -826,8 +822,8 @@ bool nsNativeBasicTheme::ThemeSupportsWidget(nsPresContext* aPresContext,
 
   if (IsWidgetScrollbarPart(aAppearance)) {
     const auto* style = nsLayoutUtils::StyleForScrollbar(aFrame);
-    // We don't currently handle custom scrollbars on nsNativeBasicTheme. We
-    // could, potentially.
+    
+    
     if (style->StyleUI()->HasCustomScrollbars() ||
         style->StyleUIReset()->mScrollbarWidth == StyleScrollbarWidth::Thin) {
       return false;
@@ -840,7 +836,7 @@ bool nsNativeBasicTheme::ThemeSupportsWidget(nsPresContext* aPresContext,
     case StyleAppearance::Textarea:
     case StyleAppearance::Textfield:
     case StyleAppearance::Range:
-    /*case StyleAppearance::RangeThumb:*/
+    
     case StyleAppearance::ScrollbarbuttonUp:
     case StyleAppearance::ScrollbarbuttonDown:
     case StyleAppearance::ScrollbarbuttonLeft:
