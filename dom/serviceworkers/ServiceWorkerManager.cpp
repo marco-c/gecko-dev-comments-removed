@@ -6,6 +6,8 @@
 
 #include "ServiceWorkerManager.h"
 
+#include <algorithm>
+
 #include "nsAutoPtr.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsIHttpChannel.h"
@@ -175,7 +177,92 @@ struct ServiceWorkerManager::RegistrationDataPerPrincipal final {
   
   
   
-  nsTArray<nsCString> mOrderedScopes;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  class ScopeContainer final : private nsTArray<nsCString> {
+    using Base = nsTArray<nsCString>;
+
+   public:
+    using Base::Contains;
+    using Base::IsEmpty;
+    using Base::Length;
+
+    
+    decltype(auto) operator[](Base::index_type aIndex) const {
+      return Base::operator[](aIndex);
+    }
+
+    void InsertScope(const nsACString& aScope) {
+      MOZ_DIAGNOSTIC_ASSERT(nsContentUtils::IsAbsoluteURL(aScope));
+
+      if (Contains(aScope)) {
+        return;
+      }
+
+      AppendElement(aScope);
+    }
+
+    void RemoveScope(const nsACString& aScope) {
+      MOZ_DIAGNOSTIC_ALWAYS_TRUE(RemoveElement(aScope));
+    }
+
+    
+    
+    Maybe<nsCString> MatchScope(const nsACString& aClientUrl) const {
+      Maybe<nsCString> match;
+
+      for (const nsCString& scope : *this) {
+        if (StringBeginsWith(aClientUrl, scope)) {
+          if (!match || scope.Length() > match->Length()) {
+            match = Some(scope);
+          }
+        }
+      }
+
+      
+      
+      
+      MOZ_DIAGNOSTIC_ASSERT_IF(match, IsSameOrigin(*match, aClientUrl));
+
+      return match;
+    }
+
+   private:
+    bool IsSameOrigin(const nsACString& aMatchingScope,
+                      const nsACString& aClientUrl) const {
+      RefPtr<BasePrincipal> scopePrincipal =
+          BasePrincipal::CreateContentPrincipal(aMatchingScope);
+
+      if (NS_WARN_IF(!scopePrincipal)) {
+        return false;
+      }
+
+      RefPtr<BasePrincipal> clientPrincipal =
+          BasePrincipal::CreateContentPrincipal(aClientUrl);
+
+      if (NS_WARN_IF(!clientPrincipal)) {
+        return false;
+      }
+
+      return scopePrincipal->FastEquals(clientPrincipal);
+    }
+  };
+
+  ScopeContainer mScopeContainer;
 
   
   
@@ -926,11 +1013,11 @@ class GetRegistrationsRunnable final : public Runnable {
       return NS_OK;
     }
 
-    for (uint32_t i = 0; i < data->mOrderedScopes.Length(); ++i) {
+    for (uint32_t i = 0; i < data->mScopeContainer.Length(); ++i) {
       RefPtr<ServiceWorkerRegistrationInfo> info =
-          data->mInfos.GetWeak(data->mOrderedScopes[i]);
+          data->mInfos.GetWeak(data->mScopeContainer[i]);
 
-      NS_ConvertUTF8toUTF16 scope(data->mOrderedScopes[i]);
+      NS_ConvertUTF8toUTF16 scope(data->mScopeContainer[i]);
 
       nsCOMPtr<nsIURI> scopeURI;
       nsresult rv = NS_NewURI(getter_AddRefs(scopeURI), scope);
@@ -1706,28 +1793,7 @@ void ServiceWorkerManager::AddScopeAndRegistration(
   const auto& data = swm->mRegistrationInfos.LookupForAdd(scopeKey).OrInsert(
       []() { return new RegistrationDataPerPrincipal(); });
 
-  for (uint32_t i = 0; i < data->mOrderedScopes.Length(); ++i) {
-    const nsCString& current = data->mOrderedScopes[i];
-
-    
-    if (aScope.Equals(current)) {
-      data->mInfos.Put(aScope, aInfo);
-      swm->NotifyListenersOnRegister(aInfo);
-      return;
-    }
-
-    
-    
-    
-    if (StringBeginsWith(aScope, current)) {
-      data->mOrderedScopes.InsertElementAt(i, aScope);
-      data->mInfos.Put(aScope, aInfo);
-      swm->NotifyListenersOnRegister(aInfo);
-      return;
-    }
-  }
-
-  data->mOrderedScopes.AppendElement(aScope);
+  data->mScopeContainer.InsertScope(aScope);
   data->mInfos.Put(aScope, aInfo);
   swm->NotifyListenersOnRegister(aInfo);
 }
@@ -1744,15 +1810,15 @@ bool ServiceWorkerManager::FindScopeForPath(
     return false;
   }
 
-  for (uint32_t i = 0; i < (*aData)->mOrderedScopes.Length(); ++i) {
-    const nsCString& current = (*aData)->mOrderedScopes[i];
-    if (StringBeginsWith(aPath, current)) {
-      aMatch = current;
-      return true;
-    }
+  Maybe<nsCString> scope = (*aData)->mScopeContainer.MatchScope(aPath);
+
+  if (scope) {
+    
+    
+    aMatch = std::move(*scope);
   }
 
-  return false;
+  return scope.isSome();
 }
 
 
@@ -1774,7 +1840,7 @@ bool ServiceWorkerManager::HasScope(nsIPrincipal* aPrincipal,
     return false;
   }
 
-  return data->mOrderedScopes.Contains(aScope);
+  return data->mScopeContainer.Contains(aScope);
 }
 
 
@@ -1814,7 +1880,7 @@ void ServiceWorkerManager::RemoveScopeAndRegistration(
   RefPtr<ServiceWorkerRegistrationInfo> info;
   data->mInfos.Remove(aRegistration->Scope(), getter_AddRefs(info));
   aRegistration->SetUnregistered();
-  data->mOrderedScopes.RemoveElement(aRegistration->Scope());
+  data->mScopeContainer.RemoveScope(aRegistration->Scope());
   swm->NotifyListenersOnUnregister(info);
 
   swm->MaybeRemoveRegistrationInfo(scopeKey);
@@ -1823,7 +1889,7 @@ void ServiceWorkerManager::RemoveScopeAndRegistration(
 void ServiceWorkerManager::MaybeRemoveRegistrationInfo(
     const nsACString& aScopeKey) {
   if (auto entry = mRegistrationInfos.Lookup(aScopeKey)) {
-    if (entry.Data()->mOrderedScopes.IsEmpty() &&
+    if (entry.Data()->mScopeContainer.IsEmpty() &&
         entry.Data()->mJobQueues.Count() == 0) {
       entry.Remove();
     }
