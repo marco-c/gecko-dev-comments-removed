@@ -138,7 +138,13 @@ class URLManifestItem(ManifestItem):
     def https(self):
         
         flags = set(urlparse(self.url).path.rsplit("/", 1)[1].split(".")[1:-1])
-        return ("https" in flags or "serviceworker" in flags)
+        return "https" in flags or "serviceworker" in flags
+
+    @property
+    def h2(self):
+        
+        flags = set(urlparse(self.url).path.rsplit("/", 1)[1].split(".")[1:-1])
+        return "h2" in flags
 
     def to_json(self):
         
