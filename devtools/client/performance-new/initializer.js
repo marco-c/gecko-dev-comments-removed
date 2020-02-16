@@ -91,6 +91,9 @@ async function gInit(perfFront, preferenceFront) {
   ]);
 
   
+  recordingPreferences.presetName = "custom";
+
+  
   
   store.dispatch(
     actions.initializeStore({
