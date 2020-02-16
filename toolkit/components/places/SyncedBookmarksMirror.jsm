@@ -2309,10 +2309,7 @@ class BookmarkObserverRecorder {
         index: info.position,
         url: info.urlHref || "",
         title: info.title,
-        
-        
-        
-        dateAdded: info.dateAdded / 1000,
+        dateAdded: info.dateAdded,
         guid: info.guid,
         parentGuid: info.parentGuid,
         source: PlacesUtils.bookmarks.SOURCES.SYNC,
