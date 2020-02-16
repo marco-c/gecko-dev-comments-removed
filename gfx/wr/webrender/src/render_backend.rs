@@ -1485,8 +1485,6 @@ impl RenderBackend {
     ) {
         let requested_frame = render_frame;
 
-        let requires_frame_build = self.requires_frame_build();
-        let doc = self.documents.get_mut(&document_id).unwrap();
         
         
         
@@ -1494,11 +1492,12 @@ impl RenderBackend {
         
         if requested_frame || has_built_scene {
             if let Some(ref sampler) = self.sampler {
-                frame_ops.append(&mut sampler.sample(document_id,
-                                                     &doc.scene.pipeline_epochs));
+                frame_ops.append(&mut sampler.sample(document_id));
             }
         }
 
+        let requires_frame_build = self.requires_frame_build();
+        let doc = self.documents.get_mut(&document_id).unwrap();
         doc.has_built_scene |= has_built_scene;
 
         
