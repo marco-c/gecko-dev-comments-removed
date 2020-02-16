@@ -314,6 +314,7 @@ class nsFrameSelection final {
 
   nsresult SelectCellElement(nsIContent* aCell);
 
+ private:
   
 
 
@@ -327,6 +328,7 @@ class nsFrameSelection final {
                                int32_t aStartColumnIndex, int32_t aEndRowIndex,
                                int32_t aEndColumnIndex);
 
+ public:
   
 
 
@@ -649,21 +651,6 @@ class nsFrameSelection final {
 
 
 
-  void SetMouseDoubleDown(bool aDoubleDown) {
-    mMouseDoubleDownState = aDoubleDown;
-  }
-
-  
-
-
-
-  bool GetMouseDoubleDown() const { return mMouseDoubleDownState; }
-
-  
-
-
-
-
 
 
 
@@ -785,7 +772,6 @@ class nsFrameSelection final {
   void SetDesiredPos(nsPoint aPos);  
 
   uint32_t GetBatching() const { return mBatching; }
-  bool GetNotifyFrames() const { return mNotifyFrames; }
   void SetDirty(bool aDirty = true) {
     if (mBatching) mChangesDuringBatching = aDirty;
   }
@@ -877,10 +863,8 @@ class nsFrameSelection final {
   bool mDelayedMouseEventIsShift = false;
 
   bool mChangesDuringBatching = false;
-  bool mNotifyFrames = true;
   bool mDragSelectingCells = false;
   bool mDragState = false;             
-  bool mMouseDoubleDownState = false;  
   bool mDesiredPosSet = false;
   bool mAccessibleCaretEnabled = false;
 
