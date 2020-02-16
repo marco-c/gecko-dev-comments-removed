@@ -601,6 +601,16 @@ void StartupCache::MaybeInitShutdownWrite() {
   gShutdownInitiated = true;
 
   MaybeSpawnWriteThread();
+
+  
+  
+  
+  
+  if (!mCacheData.initialized() || ShouldCompactCache()) {
+    mDirty = true;
+    auto result = WriteToDisk();
+    Unused << NS_WARN_IF(result.isErr());
+  }
 }
 
 void StartupCache::IgnoreDiskCache() {

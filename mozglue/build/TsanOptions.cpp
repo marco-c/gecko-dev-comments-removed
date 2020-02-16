@@ -317,6 +317,9 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:CacheFileMetadata::OnDataWritten\n"
 
          
+         "race:StartupCache::WriteToDisk\n"
+
+         
          "race:_dl_deallocate_tls\n"
          "race:__libc_memalign\n"
 
@@ -362,7 +365,7 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:base::Thread::Stop\n"
 
-      
+         
       ;  
 }
 #endif  
