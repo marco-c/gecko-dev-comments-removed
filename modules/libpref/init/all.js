@@ -4894,6 +4894,10 @@ pref("marionette.contentListener", false);
 pref("remote.log.level", "Info");
 
 
+
+pref("remote.log.truncate", true);
+
+
 pref("devtools.jsonview.enabled", true);
 
 
