@@ -415,6 +415,15 @@ bool GLContextEGL::ReleaseTexImage() {
 }
 
 void GLContextEGL::SetEGLSurfaceOverride(EGLSurface surf) {
+  if (Screen()) {
+    
+
+
+
+
+    Screen()->AssureBlitted();
+  }
+
   mSurfaceOverride = surf;
   DebugOnly<bool> ok = MakeCurrent(true);
   MOZ_ASSERT(ok);

@@ -726,11 +726,11 @@ class GLContext : public GenericAtomicRefCounted,
 
   
   
-  void AfterGLDrawCall() { mHeavyGLCallsSinceLastFlush = true; }
+  void AfterGLDrawCall();
 
   
   
-  void BeforeGLReadCall() {}
+  void BeforeGLReadCall();
 
   
   
@@ -3567,6 +3567,8 @@ class GLContext : public GenericAtomicRefCounted,
   GLScreenBuffer* Screen() const { return mScreen.get(); }
 
   bool WorkAroundDriverBugs() const { return mWorkAroundDriverBugs; }
+
+  bool IsDrawingToDefaultFramebuffer();
 
   bool IsOffscreenSizeAllowed(const gfx::IntSize& aSize) const;
 
