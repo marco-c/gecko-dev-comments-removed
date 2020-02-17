@@ -126,9 +126,20 @@ AST_MATCHER(QualType, isFloat) { return Node->isRealFloatingType(); }
 
 
 
-AST_POLYMORPHIC_MATCHER(isInSystemHeader,                                      \
+AST_POLYMORPHIC_MATCHER(isInSystemHeader,
                         AST_POLYMORPHIC_SUPPORTED_TYPES(Decl, Stmt)) {
   return ASTIsInSystemHeader(Finder->getASTContext(), Node);
+}
+
+
+
+AST_MATCHER(CallExpr, isInWhitelistForFopenUsage) {
+  static const char Whitelist[] = "gtest-port.h";
+  SourceLocation Loc = Node.getBeginLoc();
+  StringRef FileName =
+      getFilename(Finder->getASTContext().getSourceManager(), Loc);
+
+  return llvm::sys::path::rbegin(FileName)->equals(Whitelist);
 }
 
 
