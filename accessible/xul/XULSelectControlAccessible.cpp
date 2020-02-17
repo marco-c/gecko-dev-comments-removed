@@ -206,6 +206,12 @@ bool XULSelectControlAccessible::SelectAll() {
 
 
 Accessible* XULSelectControlAccessible::CurrentItem() const {
+  
+  Accessible* current = AccessibleWrap::CurrentItem();
+  if (current) {
+    return current;
+  }
+
   if (!mSelectControl) return nullptr;
 
   RefPtr<dom::Element> currentItemElm;
