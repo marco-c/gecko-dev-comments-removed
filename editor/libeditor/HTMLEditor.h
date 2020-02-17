@@ -3952,7 +3952,7 @@ class HTMLEditor final : public TextEditor,
 
   static void CollectTopMostChildNodesCompletelyInRange(
       const EditorRawDOMPoint& aStartPoint, const EditorRawDOMPoint& aEndPoint,
-      nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes);
+      nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents);
 
   
 
@@ -3970,7 +3970,7 @@ class HTMLEditor final : public TextEditor,
 
 
     explicit AutoHTMLFragmentBoundariesFixer(
-        nsTArray<OwningNonNull<nsINode>>& aArrayOfTopMostChildNodes);
+        nsTArray<OwningNonNull<nsIContent>>& aArrayOfTopMostChildContents);
 
    private:
     
@@ -3989,7 +3989,8 @@ class HTMLEditor final : public TextEditor,
     enum class StartOrEnd { start, end };
     void EnsureBeginsOrEndsWithValidContent(
         StartOrEnd aStartOrEnd,
-        nsTArray<OwningNonNull<nsINode>>& aArrayOfTopMostChildNodes) const;
+        nsTArray<OwningNonNull<nsIContent>>& aArrayOfTopMostChildContents)
+        const;
 
     
 
@@ -3997,7 +3998,7 @@ class HTMLEditor final : public TextEditor,
 
 
     void CollectListAndTableRelatedElementsAt(
-        nsINode& aNode,
+        nsIContent& aContent,
         nsTArray<OwningNonNull<Element>>& aOutArrayOfListAndTableElements)
         const;
 
@@ -4007,7 +4008,7 @@ class HTMLEditor final : public TextEditor,
 
 
     Element* GetMostAncestorListOrTableElement(
-        const nsTArray<OwningNonNull<nsINode>>& aArrayOfTopMostChildNodes,
+        const nsTArray<OwningNonNull<nsIContent>>& aArrayOfTopMostChildContents,
         const nsTArray<OwningNonNull<Element>>&
             aArrayOfListAndTableRelatedElements) const;
 
@@ -4022,7 +4023,7 @@ class HTMLEditor final : public TextEditor,
 
 
     Element* FindReplaceableTableElement(
-        Element& aTableElement, nsINode& aNodeMaybeInTableElement) const;
+        Element& aTableElement, nsIContent& aContentMaybeInTableElement) const;
 
     
 
@@ -4033,7 +4034,7 @@ class HTMLEditor final : public TextEditor,
 
 
     bool IsReplaceableListElement(Element& aListElement,
-                                  nsINode& aNodeMaybeInListElement) const;
+                                  nsIContent& aContentMaybeInListElement) const;
   };
 
   
@@ -4048,7 +4049,7 @@ class HTMLEditor final : public TextEditor,
 
 
   EditorRawDOMPoint GetBetterInsertionPointFor(
-      nsINode& aNodeToInsert, const EditorRawDOMPoint& aPointToInsert);
+      nsIContent& aContentToInsert, const EditorRawDOMPoint& aPointToInsert);
 
   
 

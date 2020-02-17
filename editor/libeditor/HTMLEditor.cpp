@@ -1458,7 +1458,7 @@ HTMLEditor::RebuildDocumentFromSource(const nsAString& aSourceString) {
 }
 
 EditorRawDOMPoint HTMLEditor::GetBetterInsertionPointFor(
-    nsINode& aNodeToInsert, const EditorRawDOMPoint& aPointToInsert) {
+    nsIContent& aContentToInsert, const EditorRawDOMPoint& aPointToInsert) {
   if (NS_WARN_IF(!aPointToInsert.IsSet())) {
     return aPointToInsert;
   }
@@ -1471,7 +1471,7 @@ EditorRawDOMPoint HTMLEditor::GetBetterInsertionPointFor(
 
   
   
-  if (!IsBlockNode(&aNodeToInsert)) {
+  if (!IsBlockNode(&aContentToInsert)) {
     return pointToInsert;
   }
 
