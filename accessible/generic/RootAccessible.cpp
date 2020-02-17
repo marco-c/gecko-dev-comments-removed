@@ -144,7 +144,7 @@ const char* const kEventTypes[] = {
     
     "RadioStateChange", "popupshown", "popuphiding", "DOMMenuInactive",
     "DOMMenuItemActive", "DOMMenuItemInactive", "DOMMenuBarActive",
-    "DOMMenuBarInactive"};
+    "DOMMenuBarInactive", "scroll"};
 
 nsresult RootAccessible::AddEventListeners() {
   
@@ -222,13 +222,23 @@ RootAccessible::HandleEvent(Event* aDOMEvent) {
       GetAccService()->GetDocAccessible(origTargetNode->OwnerDoc());
 
   if (document) {
-    
-    
-    
-    
-    
-    document->HandleNotification<RootAccessible, Event, nsINode>(
-        this, &RootAccessible::ProcessDOMEvent, aDOMEvent, origTargetNode);
+    nsAutoString eventType;
+    aDOMEvent->GetType(eventType);
+    if (eventType.EqualsLiteral("scroll")) {
+      
+      
+      
+      
+      document->HandleScroll(origTargetNode);
+    } else {
+      
+      
+      
+      
+      
+      document->HandleNotification<RootAccessible, Event, nsINode>(
+          this, &RootAccessible::ProcessDOMEvent, aDOMEvent, origTargetNode);
+    }
   }
 
   return NS_OK;

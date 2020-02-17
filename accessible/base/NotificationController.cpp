@@ -639,10 +639,6 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
   }
 
   
-  if (!(mDocument->mDocFlags & DocAccessible::eScrollInitialized))
-    mDocument->AddScrollListener();
-
-  
   for (auto iter = mTextHash.Iter(); !iter.Done(); iter.Next()) {
     nsCOMPtrHashKey<nsIContent>* entry = iter.Get();
     nsIContent* textNode = entry->GetKey();

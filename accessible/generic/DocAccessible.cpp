@@ -81,7 +81,6 @@ DocAccessible::DocAccessible(dom::Document* aDocument,
       mAccessibleCache(kDefaultCacheLength),
       mNodeToAccessibleMap(kDefaultCacheLength),
       mDocumentNode(aDocument),
-      mScrollPositionChangedTicks(0),
       mLoadState(eTreeConstructionPending),
       mDocFlags(0),
       mLoadEventType(0),
@@ -510,9 +509,6 @@ nsresult DocAccessible::AddEventListeners() {
 
 nsresult DocAccessible::RemoveEventListeners() {
   
-  
-  RemoveScrollListener();
-
   NS_ASSERTION(mDocumentNode, "No document during removal of listeners.");
 
   if (mDocumentNode) {
@@ -545,7 +541,14 @@ void DocAccessible::ScrollTimerCallback(nsITimer* aTimer, void* aClosure) {
   DocAccessible* docAcc = reinterpret_cast<DocAccessible*>(aClosure);
 
   if (docAcc) {
-    docAcc->DispatchScrollingEvent(nsIAccessibleEvent::EVENT_SCROLLING_END);
+    
+    
+    for (auto iter = docAcc->mLastScrollingDispatch.Iter(); !iter.Done();
+         iter.Next()) {
+      docAcc->DispatchScrollingEvent(iter.Key(),
+                                     nsIAccessibleEvent::EVENT_SCROLLING_END);
+      iter.Remove();
+    }
 
     if (docAcc->mScrollWatchTimer) {
       docAcc->mScrollWatchTimer = nullptr;
@@ -554,17 +557,16 @@ void DocAccessible::ScrollTimerCallback(nsITimer* aTimer, void* aClosure) {
   }
 }
 
-
-
-
-void DocAccessible::ScrollPositionDidChange(nscoord aX, nscoord aY) {
+void DocAccessible::HandleScroll(nsINode* aTarget) {
   const uint32_t kScrollEventInterval = 100;
-  TimeStamp timestamp = TimeStamp::Now();
-  if (mLastScrollingDispatch.IsNull() ||
-      (timestamp - mLastScrollingDispatch).ToMilliseconds() >=
-          kScrollEventInterval) {
-    DispatchScrollingEvent(nsIAccessibleEvent::EVENT_SCROLLING);
-    mLastScrollingDispatch = timestamp;
+  TimeStamp now = TimeStamp::Now();
+  TimeStamp lastDispatch;
+  
+  
+  if (!mLastScrollingDispatch.Get(aTarget, &lastDispatch) ||
+      (now - lastDispatch).ToMilliseconds() >= kScrollEventInterval) {
+    DispatchScrollingEvent(aTarget, nsIAccessibleEvent::EVENT_SCROLLING);
+    mLastScrollingDispatch.Put(aTarget, now);
   }
 
   
@@ -2522,27 +2524,38 @@ void DocAccessible::SetIPCDoc(DocAccessibleChild* aIPCDoc) {
   mIPCDoc = aIPCDoc;
 }
 
-void DocAccessible::DispatchScrollingEvent(uint32_t aEventType) {
-  nsIScrollableFrame* sf = mPresShell->GetRootScrollFrameAsScrollable();
-  if (!sf) {
+void DocAccessible::DispatchScrollingEvent(nsINode* aTarget,
+                                           uint32_t aEventType) {
+  Accessible* acc = GetAccessible(aTarget);
+  if (!acc) {
     return;
   }
 
-  int32_t appUnitsPerDevPixel =
-      mPresShell->GetPresContext()->AppUnitsPerDevPixel();
-  LayoutDevicePoint scrollPoint =
-      LayoutDevicePoint::FromAppUnits(sf->GetScrollPosition(),
-                                      appUnitsPerDevPixel) *
-      mPresShell->GetResolution();
+  LayoutDevicePoint scrollPoint;
+  LayoutDeviceRect scrollRange;
+  nsIScrollableFrame* sf = acc == this
+                               ? mPresShell->GetRootScrollFrameAsScrollable()
+                               : acc->GetFrame()->GetScrollTargetFrame();
 
-  LayoutDeviceRect scrollRange =
-      LayoutDeviceRect::FromAppUnits(sf->GetScrollRange(), appUnitsPerDevPixel);
-  scrollRange.ScaleRoundOut(mPresShell->GetResolution());
+  
+  
+  
+  
+  if (sf) {
+    int32_t appUnitsPerDevPixel =
+        mPresShell->GetPresContext()->AppUnitsPerDevPixel();
+    scrollPoint = LayoutDevicePoint::FromAppUnits(sf->GetScrollPosition(),
+                                                  appUnitsPerDevPixel) *
+                  mPresShell->GetResolution();
+
+    scrollRange = LayoutDeviceRect::FromAppUnits(sf->GetScrollRange(),
+                                                 appUnitsPerDevPixel);
+    scrollRange.ScaleRoundOut(mPresShell->GetResolution());
+  }
 
   RefPtr<AccEvent> event =
-      new AccScrollingEvent(aEventType, this, scrollPoint.x, scrollPoint.y,
+      new AccScrollingEvent(aEventType, acc, scrollPoint.x, scrollPoint.y,
                             scrollRange.width, scrollRange.height);
-
   nsEventShell::FireEvent(event);
 }
 

@@ -17,7 +17,6 @@
 #include "mozilla/dom/Document.h"
 #include "nsIDocumentObserver.h"
 #include "nsIObserver.h"
-#include "nsIScrollPositionListener.h"
 #include "nsITimer.h"
 
 class nsAccessiblePivot;
@@ -45,7 +44,6 @@ class TNotification;
 class DocAccessible : public HyperTextAccessibleWrap,
                       public nsIDocumentObserver,
                       public nsIObserver,
-                      public nsIScrollPositionListener,
                       public nsSupportsWeakReference,
                       public nsIAccessiblePivotObserver {
   NS_DECL_ISUPPORTS_INHERITED
@@ -59,10 +57,6 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
  public:
   DocAccessible(Document* aDocument, PresShell* aPresShell);
-
-  
-  virtual void ScrollPositionWillChange(nscoord aX, nscoord aY) override {}
-  virtual void ScrollPositionDidChange(nscoord aX, nscoord aY) override;
 
   
   NS_DECL_NSIDOCUMENTOBSERVER
@@ -384,6 +378,13 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
   DocAccessibleChild* IPCDoc() const { return mIPCDoc; }
 
+  
+
+
+
+
+  void HandleScroll(nsINode* aTarget);
+
  protected:
   virtual ~DocAccessible();
 
@@ -417,12 +418,6 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
   void ProcessLoad();
-
-  
-
-
-  void AddScrollListener();
-  void RemoveScrollListener();
 
   
 
@@ -577,7 +572,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
   static void ScrollTimerCallback(nsITimer* aTimer, void* aClosure);
 
-  void DispatchScrollingEvent(uint32_t aEventType);
+  void DispatchScrollingEvent(nsINode* aTarget, uint32_t aEventType);
 
   
 
@@ -608,10 +603,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
   enum {
     
-    eScrollInitialized = 1 << 0,
-
-    
-    eTabDocument = 1 << 1
+    eTabDocument = 1 << 0
   };
 
   
@@ -623,8 +615,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
   Document* mDocumentNode;
   nsCOMPtr<nsITimer> mScrollWatchTimer;
-  uint16_t mScrollPositionChangedTicks;  
-  TimeStamp mLastScrollingDispatch;
+  nsDataHashtable<nsPtrHashKey<nsINode>, TimeStamp> mLastScrollingDispatch;
 
   
 
