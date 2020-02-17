@@ -506,7 +506,7 @@ pref("media.videocontrols.picture-in-picture.video-toggle.always-show", false);
   pref("media.peerconnection.mute_on_bye_or_timeout", false);
 
   
-  pref("media.peerconnection.dtls.version.min", 770);
+  pref("media.peerconnection.dtls.version.min", 771);
 #if defined(NIGHTLY_BUILD)
   pref("media.peerconnection.dtls.version.max", 772);
 #else
