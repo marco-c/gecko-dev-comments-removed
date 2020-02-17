@@ -615,6 +615,12 @@ UniquePtr<ImageBitmapCloneData> ImageBitmap::ToCloneData() const {
   result->mPictureRect = mPictureRect;
   result->mAlphaType = mAlphaType;
   RefPtr<SourceSurface> surface = mData->GetAsSourceSurface();
+  if (!surface) {
+    
+    
+    return nullptr;
+  }
+
   result->mSurface = surface->GetDataSurface();
   MOZ_ASSERT(result->mSurface);
   result->mWriteOnly = mWriteOnly;
