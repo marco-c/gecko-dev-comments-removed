@@ -3978,6 +3978,24 @@ class HTMLEditor final : public TextEditor,
 
 
 
+
+
+
+
+
+
+
+
+    enum class StartOrEnd { start, end };
+    void EnsureBeginsOrEndsWithValidContent(
+        StartOrEnd aStartOrEnd,
+        nsTArray<OwningNonNull<nsINode>>& aArrayOfTopMostChildNodes) const;
+
+    
+
+
+
+
     void CollectListAndTableRelatedElementsAt(
         nsINode& aNode,
         nsTArray<OwningNonNull<Element>>& aOutArrayOfListAndTableElements)
@@ -3986,17 +4004,10 @@ class HTMLEditor final : public TextEditor,
     
 
 
-    Element* DiscoverPartialListsAndTables(
-        const nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes,
-        const nsTArray<OwningNonNull<Element>>&
-            aArrayOfListAndTableRelatedElements) const;
-
-    
 
 
-    enum class StartOrEnd { start, end };
-    void ReplaceOrphanedStructure(
-        StartOrEnd aStartOrEnd, nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes,
+    Element* GetMostAncestorListOrTableElement(
+        const nsTArray<OwningNonNull<nsINode>>& aArrayOfTopMostChildNodes,
         const nsTArray<OwningNonNull<Element>>&
             aArrayOfListAndTableRelatedElements) const;
 

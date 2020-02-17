@@ -2719,25 +2719,10 @@ void HTMLEditor::CollectTopMostChildNodesCompletelyInRange(
 
 HTMLEditor::AutoHTMLFragmentBoundariesFixer::AutoHTMLFragmentBoundariesFixer(
     nsTArray<OwningNonNull<nsINode>>& aArrayOfTopMostChildNodes) {
-  
-  
-  AutoTArray<OwningNonNull<Element>, 4>
-      arrayOfListAndTableRelatedElementsAtStart;
-  CollectListAndTableRelatedElementsAt(
-      aArrayOfTopMostChildNodes[0], arrayOfListAndTableRelatedElementsAtStart);
-  if (!arrayOfListAndTableRelatedElementsAtStart.IsEmpty()) {
-    ReplaceOrphanedStructure(StartOrEnd::start, aArrayOfTopMostChildNodes,
-                             arrayOfListAndTableRelatedElementsAtStart);
-  }
-
-  
-  AutoTArray<OwningNonNull<Element>, 4> arrayOfListAndTableRelatedElementsAtEnd;
-  CollectListAndTableRelatedElementsAt(aArrayOfTopMostChildNodes.LastElement(),
-                                       arrayOfListAndTableRelatedElementsAtEnd);
-  if (!arrayOfListAndTableRelatedElementsAtEnd.IsEmpty()) {
-    ReplaceOrphanedStructure(StartOrEnd::end, aArrayOfTopMostChildNodes,
-                             arrayOfListAndTableRelatedElementsAtEnd);
-  }
+  EnsureBeginsOrEndsWithValidContent(StartOrEnd::start,
+                                     aArrayOfTopMostChildNodes);
+  EnsureBeginsOrEndsWithValidContent(StartOrEnd::end,
+                                     aArrayOfTopMostChildNodes);
 }
 
 void HTMLEditor::AutoHTMLFragmentBoundariesFixer::
@@ -2754,12 +2739,12 @@ void HTMLEditor::AutoHTMLFragmentBoundariesFixer::
 }
 
 Element*
-HTMLEditor::AutoHTMLFragmentBoundariesFixer::DiscoverPartialListsAndTables(
-    const nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes,
+HTMLEditor::AutoHTMLFragmentBoundariesFixer::GetMostAncestorListOrTableElement(
+    const nsTArray<OwningNonNull<nsINode>>& aArrayOfTopMostChildNodes,
     const nsTArray<OwningNonNull<Element>>& aArrayOfListAndTableRelatedElements)
     const {
   Element* lastFoundAncestorListOrTableElement = nullptr;
-  for (auto& node : aArrayOfNodes) {
+  for (auto& node : aArrayOfTopMostChildNodes) {
     if (HTMLEditUtils::IsTableElement(node) &&
         !node->IsHTMLElement(nsGkAtoms::table)) {
       Element* tableElement = nullptr;
@@ -2913,14 +2898,37 @@ bool HTMLEditor::AutoHTMLFragmentBoundariesFixer::IsReplaceableListElement(
   return false;
 }
 
-void HTMLEditor::AutoHTMLFragmentBoundariesFixer::ReplaceOrphanedStructure(
-    StartOrEnd aStartOrEnd, nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes,
-    const nsTArray<OwningNonNull<Element>>& aArrayOfListAndTableRelatedElements)
-    const {
-  MOZ_ASSERT(!aArrayOfNodes.IsEmpty());
+void HTMLEditor::AutoHTMLFragmentBoundariesFixer::
+    EnsureBeginsOrEndsWithValidContent(
+        StartOrEnd aStartOrEnd,
+        nsTArray<OwningNonNull<nsINode>>& aArrayOfTopMostChildNodes) const {
+  MOZ_ASSERT(!aArrayOfTopMostChildNodes.IsEmpty());
 
-  Element* listOrTableElement = DiscoverPartialListsAndTables(
-      aArrayOfNodes, aArrayOfListAndTableRelatedElements);
+  
+  
+  AutoTArray<OwningNonNull<Element>, 4>
+      arrayOfListAndTableRelatedElementsAtEdge;
+  CollectListAndTableRelatedElementsAt(
+      aStartOrEnd == StartOrEnd::end ? aArrayOfTopMostChildNodes.LastElement()
+                                     : aArrayOfTopMostChildNodes[0],
+      arrayOfListAndTableRelatedElementsAtEdge);
+  if (arrayOfListAndTableRelatedElementsAtEdge.IsEmpty()) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Element* listOrTableElement = GetMostAncestorListOrTableElement(
+      aArrayOfTopMostChildNodes, arrayOfListAndTableRelatedElementsAtEdge);
   if (!listOrTableElement) {
     return;
   }
@@ -2930,8 +2938,8 @@ void HTMLEditor::AutoHTMLFragmentBoundariesFixer::ReplaceOrphanedStructure(
   
 
   OwningNonNull<nsINode>& firstOrLastChildNode =
-      aStartOrEnd == StartOrEnd::end ? aArrayOfNodes.LastElement()
-                                     : aArrayOfNodes[0];
+      aStartOrEnd == StartOrEnd::end ? aArrayOfTopMostChildNodes.LastElement()
+                                     : aArrayOfTopMostChildNodes[0];
 
   
   Element* replaceElement;
@@ -2952,13 +2960,14 @@ void HTMLEditor::AutoHTMLFragmentBoundariesFixer::ReplaceOrphanedStructure(
   
   
   
-  for (size_t i = 0; i < aArrayOfNodes.Length();) {
-    OwningNonNull<nsINode>& node = aArrayOfNodes[i];
+  
+  for (size_t i = 0; i < aArrayOfTopMostChildNodes.Length();) {
+    OwningNonNull<nsINode>& node = aArrayOfTopMostChildNodes[i];
     if (node == replaceElement) {
       
       
       
-      aArrayOfNodes.RemoveElementAt(i);
+      aArrayOfTopMostChildNodes.RemoveElementAt(i);
       continue;
     }
     if (!EditorUtils::IsDescendantOf(node, *replaceElement)) {
@@ -2968,18 +2977,18 @@ void HTMLEditor::AutoHTMLFragmentBoundariesFixer::ReplaceOrphanedStructure(
     
     
     nsIContent* parent = node->GetParent();
-    aArrayOfNodes.RemoveElementAt(i);
-    while (i < aArrayOfNodes.Length() &&
-           aArrayOfNodes[i]->GetParent() == parent) {
-      aArrayOfNodes.RemoveElementAt(i);
+    aArrayOfTopMostChildNodes.RemoveElementAt(i);
+    while (i < aArrayOfTopMostChildNodes.Length() &&
+           aArrayOfTopMostChildNodes[i]->GetParent() == parent) {
+      aArrayOfTopMostChildNodes.RemoveElementAt(i);
     }
   }
 
   
   if (aStartOrEnd == StartOrEnd::end) {
-    aArrayOfNodes.AppendElement(*replaceElement);
+    aArrayOfTopMostChildNodes.AppendElement(*replaceElement);
   } else {
-    aArrayOfNodes.InsertElementAt(0, *replaceElement);
+    aArrayOfTopMostChildNodes.InsertElementAt(0, *replaceElement);
   }
 }
 
