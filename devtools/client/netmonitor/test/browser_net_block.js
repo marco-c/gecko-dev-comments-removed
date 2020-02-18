@@ -20,7 +20,7 @@ add_task(async function() {
 
   
   let waitForEvents = waitForNetworkEvents(monitor, 1);
-  BrowserTestUtils.loadURI(tab.linkedBrowser, SIMPLE_URL);
+  await navigateTo(SIMPLE_URL);
   await waitForEvents;
 
   

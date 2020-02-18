@@ -191,7 +191,13 @@ add_task(async function() {
 
   
   assertEvent("load-new-document");
-  BrowserTestUtils.loadURI(browser, URL2);
+
+  
+  const onBrowserLoaded = BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser
+  );
+  await BrowserTestUtils.loadURI(gBrowser.selectedBrowser, URL2);
+  await onBrowserLoaded;
 
   
   await onAllEventsReceived;

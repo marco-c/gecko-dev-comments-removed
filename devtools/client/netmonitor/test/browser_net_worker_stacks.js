@@ -85,16 +85,19 @@ const EXPECTED_REQUESTS = [
 add_task(async function() {
   
   
-  const { tab, monitor } = await initNetMonitor(SIMPLE_URL);
+  const { monitor } = await initNetMonitor(SIMPLE_URL);
 
   const { store, windowRequire, connector } = monitor.panelWin;
   const { getSortedRequests } = windowRequire(
     "devtools/client/netmonitor/src/selectors/index"
   );
 
-  BrowserTestUtils.loadURI(tab.linkedBrowser, TOP_URL);
-
-  await waitForNetworkEvents(monitor, EXPECTED_REQUESTS.length);
+  const onNetworkEvents = waitForNetworkEvents(
+    monitor,
+    EXPECTED_REQUESTS.length
+  );
+  await navigateTo(TOP_URL);
+  await onNetworkEvents;
 
   is(
     store.getState().requests.requests.length,

@@ -107,7 +107,7 @@ add_task(async function() {
   
   
   
-  const { tab, monitor } = await initNetMonitor(SIMPLE_URL);
+  const { monitor } = await initNetMonitor(SIMPLE_URL);
 
   const { document, store, windowRequire } = monitor.panelWin;
   const Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
@@ -118,7 +118,7 @@ add_task(async function() {
   store.dispatch(Actions.batchEnable(false));
 
   const wait = waitForNetworkEvents(monitor, EXPECTED_REQUESTS.length);
-  BrowserTestUtils.loadURI(tab.linkedBrowser, CAUSE_URL);
+  await navigateTo(CAUSE_URL);
   await wait;
 
   

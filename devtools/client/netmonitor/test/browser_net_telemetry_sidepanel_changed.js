@@ -9,7 +9,7 @@ const ALL_CHANNELS = Ci.nsITelemetry.DATASET_ALL_CHANNELS;
 
 
 add_task(async function() {
-  const { tab, monitor } = await initNetMonitor(SIMPLE_URL);
+  const { monitor } = await initNetMonitor(SIMPLE_URL);
   info("Starting test... ");
 
   const { document, store, windowRequire } = monitor.panelWin;
@@ -25,7 +25,7 @@ add_task(async function() {
 
   
   const waitForEvents = waitForNetworkEvents(monitor, 1);
-  BrowserTestUtils.loadURI(tab.linkedBrowser, SIMPLE_URL);
+  await navigateTo(SIMPLE_URL);
   await waitForEvents;
 
   
