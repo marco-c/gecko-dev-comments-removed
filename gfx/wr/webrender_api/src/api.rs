@@ -383,8 +383,8 @@ impl Transaction {
     
     
     
-    pub fn append_dynamic_properties(&mut self, properties: DynamicProperties) {
-        self.frame_ops.push(FrameMsg::AppendDynamicProperties(properties));
+    pub fn append_dynamic_transform_properties(&mut self, transforms: Vec<PropertyValue<LayoutTransform>>) {
+        self.frame_ops.push(FrameMsg::AppendDynamicTransformProperties(transforms));
     }
 
     
@@ -862,7 +862,7 @@ pub enum FrameMsg {
     
     UpdateDynamicProperties(DynamicProperties),
     
-    AppendDynamicProperties(DynamicProperties),
+    AppendDynamicTransformProperties(Vec<PropertyValue<LayoutTransform>>),
     
     SetPinchZoom(ZoomFactor),
     
@@ -894,7 +894,7 @@ impl fmt::Debug for FrameMsg {
             FrameMsg::ScrollNodeWithId(..) => "FrameMsg::ScrollNodeWithId",
             FrameMsg::GetScrollNodeState(..) => "FrameMsg::GetScrollNodeState",
             FrameMsg::UpdateDynamicProperties(..) => "FrameMsg::UpdateDynamicProperties",
-            FrameMsg::AppendDynamicProperties(..) => "FrameMsg::AppendDynamicProperties",
+            FrameMsg::AppendDynamicTransformProperties(..) => "FrameMsg::AppendDynamicTransformProperties",
             FrameMsg::SetPinchZoom(..) => "FrameMsg::SetPinchZoom",
             FrameMsg::SetIsTransformAsyncZooming(..) => "FrameMsg::SetIsTransformAsyncZooming",
         })

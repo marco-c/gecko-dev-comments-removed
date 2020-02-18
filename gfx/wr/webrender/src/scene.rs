@@ -3,7 +3,7 @@
 
 
 use api::{BuiltDisplayList, DisplayItemCache, ColorF, DynamicProperties, Epoch, FontRenderMode};
-use api::{PipelineId, PropertyBinding, PropertyBindingId, MixBlendMode, StackingContext};
+use api::{PipelineId, PropertyBinding, PropertyBindingId, PropertyValue, MixBlendMode, StackingContext};
 use api::units::*;
 use crate::composite::CompositorKind;
 use crate::clip::{ClipStore, ClipDataStore};
@@ -42,13 +42,12 @@ impl SceneProperties {
     }
 
     
-    pub fn add_properties(&mut self, properties: DynamicProperties) {
+    pub fn add_transforms(&mut self, transforms: Vec<PropertyValue<LayoutTransform>>) {
         let mut pending_properties = self.pending_properties
             .take()
             .unwrap_or_default();
 
-        pending_properties.transforms.extend(properties.transforms);
-        pending_properties.floats.extend(properties.floats);
+        pending_properties.transforms.extend(transforms);
 
         self.pending_properties = Some(pending_properties);
     }
