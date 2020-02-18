@@ -233,8 +233,9 @@ AST_MATCHER_P(Expr, ignoreTrivials, internal::Matcher<Expr>, InnerMatcher) {
 
 
 
-AST_MATCHER_P2(Expr, ignoreTrivialsConditional, internal::Matcher<Expr>,
-               Condition, internal::Matcher<Expr>, InnerMatcher) {
+AST_MATCHER_P2(Expr, ignoreTrivialsConditional,
+               internal::Matcher<Expr>, Condition,
+               internal::Matcher<Expr>, InnerMatcher) {
   const Expr *node = &Node;
   while (true) {
     if (Condition.matches(*node, Finder, Builder)) {
@@ -317,8 +318,7 @@ AST_MATCHER(QualType, isSmartPtrToRefCounted) {
 }
 
 AST_MATCHER(ClassTemplateSpecializationDecl, isSmartPtrToRefCountedDecl) {
-  auto *D = dyn_cast_or_null<CXXRecordDecl>(
-      Node.getSpecializedTemplate()->getTemplatedDecl());
+  auto *D = dyn_cast_or_null<CXXRecordDecl>(Node.getSpecializedTemplate()->getTemplatedDecl());
   if (!D) {
     return false;
   }
@@ -327,6 +327,7 @@ AST_MATCHER(ClassTemplateSpecializationDecl, isSmartPtrToRefCountedDecl) {
 
   return D && hasCustomAttribute<moz_is_smartptr_to_refcounted>(D);
 }
+
 
 AST_MATCHER(CXXRecordDecl, hasBaseClasses) {
   const CXXRecordDecl *Decl = Node.getCanonicalDecl();
@@ -347,8 +348,7 @@ AST_MATCHER(CXXMethodDecl, isNonVirtual) {
 
 AST_MATCHER(FunctionDecl, isMozMustReturnFromCaller) {
   const FunctionDecl *Decl = Node.getCanonicalDecl();
-  return Decl &&
-         hasCustomAttribute<moz_must_return_from_caller_if_this_is_arg>(Decl);
+  return Decl && hasCustomAttribute<moz_must_return_from_caller_if_this_is_arg>(Decl);
 }
 
 

@@ -42,35 +42,35 @@ void DanglingOnTemporaryChecker::registerMatchers(MatchFinder *AstMatcher) {
   
   
 
-  auto hasParentCall = hasParent(
-      expr(anyOf(cxxOperatorCallExpr(
-                     
-                     
-                     
-                     
-                     unless(has(expr(ignoreTrivials(lambdaExpr())))),
-                     expr().bind("parentOperatorCallExpr")),
-                 callExpr(
-                     
-                     
-                     
-                     
-                     unless(has(expr(ignoreTrivials(lambdaExpr())))),
-                     expr().bind("parentCallExpr")),
-                 objcMessageExpr(
-                     
-                     
-                     
-                     
-                     unless(has(expr(ignoreTrivials(lambdaExpr())))),
-                     expr().bind("parentObjCMessageExpr")),
-                 cxxConstructExpr(
-                     
-                     
-                     
-                     
-                     unless(has(expr(ignoreTrivials(lambdaExpr())))),
-                     expr().bind("parentConstructExpr")))));
+  auto hasParentCall = hasParent(expr(
+      anyOf(cxxOperatorCallExpr(
+                
+                
+                
+                
+                unless(has(expr(ignoreTrivials(lambdaExpr())))),
+                expr().bind("parentOperatorCallExpr")),
+            callExpr(
+                
+                
+                
+                
+                unless(has(expr(ignoreTrivials(lambdaExpr())))),
+                expr().bind("parentCallExpr")),
+            objcMessageExpr(
+                
+                
+                
+                
+                unless(has(expr(ignoreTrivials(lambdaExpr())))),
+                expr().bind("parentObjCMessageExpr")),
+            cxxConstructExpr(
+                
+                
+                
+                
+                unless(has(expr(ignoreTrivials(lambdaExpr())))),
+                expr().bind("parentConstructExpr")))));
 
   AstMatcher->addMatcher(
       

@@ -55,11 +55,13 @@
 void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
   auto Refcounted = qualType(hasDeclaration(cxxRecordDecl(isRefCounted())));
   auto StackSmartPtr =
-      ignoreTrivials(declRefExpr(to(varDecl(hasAutomaticStorageDuration())),
-                                 hasType(isSmartPtrToRefCounted())));
+    ignoreTrivials(
+      declRefExpr(to(varDecl(hasAutomaticStorageDuration())),
+                  hasType(isSmartPtrToRefCounted())));
   auto ConstMemberOfThisSmartPtr =
-      memberExpr(hasType(isSmartPtrToRefCounted()), hasType(isConstQualified()),
-                 hasObjectExpression(cxxThisExpr()));
+    memberExpr(hasType(isSmartPtrToRefCounted()),
+               hasType(isConstQualified()),
+               hasObjectExpression(cxxThisExpr()));
   
   
   
@@ -68,11 +70,12 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
   
   
   auto KnownLiveSmartPtr = anyOf(
-      StackSmartPtr, ConstMemberOfThisSmartPtr,
-      ignoreTrivials(cxxConstructExpr(hasType(isSmartPtrToRefCounted()))));
+    StackSmartPtr,
+    ConstMemberOfThisSmartPtr,
+    ignoreTrivials(cxxConstructExpr(hasType(isSmartPtrToRefCounted()))));
 
   auto MozKnownLiveCall =
-      ignoreTrivials(callExpr(callee(functionDecl(hasName("MOZ_KnownLive")))));
+    ignoreTrivials(callExpr(callee(functionDecl(hasName("MOZ_KnownLive")))));
 
   
   
@@ -105,12 +108,15 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
       
       
       
-      cxxMemberCallExpr(
-          on(allOf(hasType(isSmartPtrToRefCounted()), KnownLiveBase))),
+      cxxMemberCallExpr(on(
+          allOf(hasType(isSmartPtrToRefCounted()),
+                KnownLiveBase))),
       
-      cxxOperatorCallExpr(anyOf(hasOverloadedOperatorName("*"),
-                                hasOverloadedOperatorName("->")),
-                          hasAnyArgument(KnownLiveBase), argumentCountIs(1)),
+      cxxOperatorCallExpr(
+          anyOf(hasOverloadedOperatorName("*"),
+                hasOverloadedOperatorName("->")),
+          hasAnyArgument(KnownLiveBase),
+          argumentCountIs(1)),
       
       
       
@@ -133,36 +139,47 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
       
       
       
-      unaryOperator(hasOperatorName("&"),
-                    hasUnaryOperand(allOf(anyOf(hasType(references(Refcounted)),
-                                                hasType(Refcounted)),
-                                          ignoreTrivials(KnownLiveBase)))));
+      unaryOperator(
+          hasOperatorName("&"),
+          hasUnaryOperand(allOf(
+              anyOf(
+                  hasType(references(Refcounted)),
+                  hasType(Refcounted)),
+              ignoreTrivials(KnownLiveBase))))
+      );
 
   auto KnownLive = anyOf(
       
       KnownLiveSimple,
       
-      conditionalOperator(hasFalseExpression(ignoreTrivials(KnownLiveSimple)),
-                          hasTrueExpression(ignoreTrivials(KnownLiveSimple)))
+      conditionalOperator(
+          hasFalseExpression(ignoreTrivials(KnownLiveSimple)),
+          hasTrueExpression(ignoreTrivials(KnownLiveSimple)))
       
       
       
-  );
+      );
 
-  auto InvalidArg = ignoreTrivialsConditional(
-      
-      
-      anyOf(hasType(Refcounted), hasType(pointsTo(Refcounted)),
-            hasType(references(Refcounted)), hasType(isSmartPtrToRefCounted())),
-      
-      expr(
+  auto InvalidArg =
+      ignoreTrivialsConditional(
+        
+        
+        anyOf(
+          hasType(Refcounted),
+          hasType(pointsTo(Refcounted)),
+          hasType(references(Refcounted)),
+          hasType(isSmartPtrToRefCounted())
+        ),
+        
+        expr(
           
           unless(KnownLive),
           
           
           unless(cxxDefaultArgExpr(isNullDefaultArg())),
           
-          unless(cxxNullPtrLiteralExpr()), expr().bind("invalidArg")));
+          unless(cxxNullPtrLiteralExpr()),
+          expr().bind("invalidArg")));
 
   
   
@@ -186,7 +203,11 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
                   
                   OptionalInvalidExplicitArg,
                   
-                  anyOf(on(InvalidArg), anything()), expr().bind("callExpr")),
+                  anyOf(
+                    on(InvalidArg),
+                    anything()
+                  ),
+                  expr().bind("callExpr")),
               
               callExpr(
                   
@@ -217,9 +238,10 @@ namespace {
 
 class FuncSetCallback : public MatchFinder::MatchCallback {
 public:
-  FuncSetCallback(CanRunScriptChecker &Checker,
+  FuncSetCallback(CanRunScriptChecker& Checker,
                   std::unordered_set<const FunctionDecl *> &FuncSet)
-      : CanRunScriptFuncs(FuncSet), Checker(Checker) {}
+      : CanRunScriptFuncs(FuncSet),
+        Checker(Checker) {}
 
   void run(const MatchFinder::MatchResult &Result) override;
 
@@ -255,13 +277,14 @@ void FuncSetCallback::checkOverriddenMethods(const CXXMethodDecl *Method) {
       const char *ErrorNonCanRunScriptOverridden =
           "functions marked as MOZ_CAN_RUN_SCRIPT cannot override functions "
           "that are not marked MOZ_CAN_RUN_SCRIPT";
-      const char *NoteNonCanRunScriptOverridden =
+      const char* NoteNonCanRunScriptOverridden =
           "overridden function declared here";
 
       Checker.diag(Method->getLocation(), ErrorNonCanRunScriptOverridden,
                    DiagnosticIDs::Error);
       Checker.diag(OverriddenMethod->getLocation(),
-                   NoteNonCanRunScriptOverridden, DiagnosticIDs::Note);
+                   NoteNonCanRunScriptOverridden,
+                   DiagnosticIDs::Note);
     }
   }
 }
@@ -277,7 +300,9 @@ void CanRunScriptChecker::buildFuncSet(ASTContext *Context) {
   Finder.addMatcher(
       functionDecl(hasCanRunScriptAnnotation()).bind("canRunScriptFunction"),
       &Callback);
-  Finder.addMatcher(lambdaExpr().bind("lambda"), &Callback);
+  Finder.addMatcher(
+      lambdaExpr().bind("lambda"),
+      &Callback);
   
   Finder.matchAST(*Context);
 }
@@ -302,7 +327,7 @@ void CanRunScriptChecker::check(const MatchFinder::MatchResult &Result) {
   const char *NoteNonCanRunScriptParent = "caller function declared here";
 
   const Expr *InvalidArg;
-  if (const CXXDefaultArgExpr *defaultArg =
+  if (const CXXDefaultArgExpr* defaultArg =
           Result.Nodes.getNodeAs<CXXDefaultArgExpr>("invalidArg")) {
     InvalidArg = defaultArg->getExpr();
   } else {
@@ -358,9 +383,11 @@ void CanRunScriptChecker::check(const MatchFinder::MatchResult &Result) {
   
   
   if (InvalidArg) {
-    const std::string invalidArgText = Lexer::getSourceText(
-        CharSourceRange::getTokenRange(InvalidArg->getSourceRange()),
-        Result.Context->getSourceManager(), Result.Context->getLangOpts());
+    const std::string invalidArgText =
+        Lexer::getSourceText(
+            CharSourceRange::getTokenRange(InvalidArg->getSourceRange()),
+            Result.Context->getSourceManager(),
+            Result.Context->getLangOpts());
     diag(InvalidArg->getExprLoc(), ErrorInvalidArg, DiagnosticIDs::Error)
         << InvalidArg->getSourceRange() << invalidArgText;
   }
