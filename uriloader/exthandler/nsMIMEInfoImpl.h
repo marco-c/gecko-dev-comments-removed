@@ -138,6 +138,11 @@ class nsMIMEInfoBase : public nsIMIMEInfo {
   static nsresult GetLocalFileFromURI(nsIURI* aURI, nsIFile** aFile);
 
   
+
+
+  void AddUniqueExtension(const nsACString& aExtension);
+
+  
   nsTArray<nsCString>
       mExtensions;  
   nsString mDescription;  

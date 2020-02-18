@@ -50,6 +50,11 @@ class nsMIMEInfoAndroid final : public nsIMIMEInfo {
    private:
     ~SystemChooser() {}
 
+    
+
+
+    void AddUniqueExtension(const nsACString& aExtension);
+
     nsMIMEInfoAndroid* mOuter;
   };
 };
