@@ -726,19 +726,12 @@ static bool ShouldLoadCachedImage(imgRequest* aImgRequest,
 
     if (!aTriggeringPrincipal || !aTriggeringPrincipal->IsSystemPrincipal()) {
       
-      nsCOMPtr<nsIURI> requestingLocation;
-      if (aTriggeringPrincipal) {
-        rv = aTriggeringPrincipal->GetURI(getter_AddRefs(requestingLocation));
-        NS_ENSURE_SUCCESS(rv, false);
-      }
-
-      
       decision = nsIContentPolicy::REJECT_REQUEST;
-      rv = nsMixedContentBlocker::ShouldLoad(
-          insecureRedirect, aPolicyType, contentLocation, requestingLocation,
-          aLoadingContext,
-          EmptyCString(),  
-          aTriggeringPrincipal, &decision);
+      rv = nsMixedContentBlocker::ShouldLoad(insecureRedirect, aPolicyType,
+                                             contentLocation, nullptr,
+                                             aLoadingContext,
+                                             EmptyCString(),  
+                                             aTriggeringPrincipal, &decision);
       if (NS_FAILED(rv) || !NS_CP_ACCEPTED(decision)) {
         return false;
       }
