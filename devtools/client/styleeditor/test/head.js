@@ -46,19 +46,6 @@ var addTab = function(url, win) {
   });
 };
 
-
-
-
-
-
-var navigateTo = function(url) {
-  info(`Navigating to ${url}`);
-  const browser = gBrowser.selectedBrowser;
-
-  BrowserTestUtils.loadURI(browser, url);
-  return BrowserTestUtils.browserLoaded(browser);
-};
-
 var navigateToAndWaitForStyleSheets = async function(url, ui) {
   const onReset = ui.once("stylesheets-reset");
   await navigateTo(url);

@@ -52,26 +52,6 @@ function getWorkerContainers(doc) {
   return doc.querySelectorAll(".js-sw-container");
 }
 
-async function navigate(toolbox, url) {
-  const isTargetSwitchingEnabled = Services.prefs.getBoolPref(
-    "devtools.target-switching.enabled",
-    false
-  );
-
-  
-  if (isTargetSwitchingEnabled) {
-    const onSwitched = once(toolbox, "switched-target");
-    toolbox.target.navigateTo({ url });
-    return onSwitched;
-  }
-
-  
-  
-  const onNavigated = once(toolbox.target, "navigate");
-  toolbox.target.navigateTo({ url });
-  return onNavigated;
-}
-
 async function openNewTabAndApplicationPanel(url) {
   const tab = await addTab(url);
   const target = await TargetFactory.forTab(tab);
