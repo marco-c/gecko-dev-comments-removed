@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #define INPUTSCOPE_INIT_GUID
 #define TEXTATTRS_INIT_GUID
@@ -30,37 +30,37 @@ namespace widget {
 
 static const char* kPrefNameEnableTSF = "intl.tsf.enable";
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * TSF related code should log its behavior even on release build especially
+ * in the interface methods.
+ *
+ * In interface methods, use LogLevel::Info.
+ * In internal methods, use LogLevel::Debug for logging normal behavior.
+ * For logging error, use LogLevel::Error.
+ *
+ * When an instance method is called, start with following text:
+ *   "0x%p TSFFoo::Bar(", the 0x%p should be the "this" of the nsFoo.
+ * after that, start with:
+ *   "0x%p   TSFFoo::Bar("
+ * In an internal method, start with following text:
+ *   "0x%p   TSFFoo::Bar("
+ * When a static method is called, start with following text:
+ *   "TSFFoo::Bar("
+ */
 
 LazyLogModule sTextStoreLog("nsTextStoreWidgets");
 
 enum class TextInputProcessorID {
-  
+  // Internal use only.  This won't be returned by TSFStaticSink::ActiveTIP().
   eNotComputed,
 
-  
+  // Not a TIP.  E.g., simple keyboard layout or IMM-IME.
   eNone,
 
-  
+  // Used for other TIPs, i.e., any TIPs which we don't support specifically.
   eUnknown,
 
-  
+  // TIP for Japanese.
   eMicrosoftIMEForJapanese,
   eMicrosoftOfficeIME2010ForJapanese,
   eGoogleJapaneseInput,
@@ -73,7 +73,7 @@ enum class TextInputProcessorID {
   eATOKUnknown,
   eJapanist10,
 
-  
+  // TIP for Traditional Chinese.
   eMicrosoftBopomofo,
   eMicrosoftChangJie,
   eMicrosoftPhonetic,
@@ -83,12 +83,12 @@ enum class TextInputProcessorID {
   eMicrosoftNewQuick,
   eFreeChangJie,
 
-  
+  // TIP for Simplified Chinese.
   eMicrosoftPinyin,
   eMicrosoftPinyinNewExperienceInputStyle,
   eMicrosoftWubi,
 
-  
+  // TIP for Korean.
   eMicrosoftIMEForKorean,
   eMicrosoftOldHangul,
 };
@@ -916,9 +916,9 @@ class GetInputScopeString : public nsAutoCString {
   }
 };
 
-
-
-
+/******************************************************************/
+/* InputScopeImpl                                                 */
+/******************************************************************/
 
 class InputScopeImpl final : public ITfInputScope {
   ~InputScopeImpl() {}
@@ -981,9 +981,9 @@ class InputScopeImpl final : public ITfInputScope {
   nsTArray<InputScope> mInputScopes;
 };
 
-
-
-
+/******************************************************************/
+/* TSFStaticSink                                                  */
+/******************************************************************/
 
 class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
  public:
@@ -1049,7 +1049,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
   }
 
   static bool IsIMM_IMEActive() {
-    
+    // Use IMM API until TSFStaticSink starts to work.
     if (!sInstance || !sInstance->EnsureInitActiveTIPKeyboard()) {
       return IsIMM_IME(::GetKeyboardLayout(0));
     }
@@ -1077,13 +1077,13 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     return sInstance && sInstance->IsKoreanInternal();
   }
 
-  
-
-
-
-
-
-
+  /**
+   * ActiveTIP() returns an ID for currently active TIP.
+   * Please note that this method is expensive due to needs a lot of GUID
+   * comparations if active language ID is one of CJKT.  If you need to
+   * check TIPs for a specific language, you should check current language
+   * first.
+   */
   static TextInputProcessorID ActiveTIP() {
     EnsureInstance();
     if (!sInstance || !sInstance->EnsureInitActiveTIPKeyboard()) {
@@ -1098,9 +1098,9 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
   }
 
   static bool IsMSChangJieOrMSQuickActive() {
-    
-    
-    
+    // ActiveTIP() is expensive if it hasn't computed active TIP yet.
+    // For avoiding unnecessary computation, we should check if the language
+    // for current TIP is Traditional Chinese.
     if (!IsTraditionalChinese()) {
       return false;
     }
@@ -1114,9 +1114,9 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
   }
 
   static bool IsMSPinyinOrMSWubiActive() {
-    
-    
-    
+    // ActiveTIP() is expensive if it hasn't computed active TIP yet.
+    // For avoiding unnecessary computation, we should check if the language
+    // for current TIP is Simplified Chinese.
     if (!IsSimplifiedChinese()) {
       return false;
     }
@@ -1130,9 +1130,9 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
   }
 
   static bool IsMSJapaneseIMEActive() {
-    
-    
-    
+    // ActiveTIP() is expensive if it hasn't computed active TIP yet.
+    // For avoiding unnecessary computation, we should check if the language
+    // for current TIP is Japanese.
     if (!IsJapanese()) {
       return false;
     }
@@ -1140,9 +1140,9 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
   }
 
   static bool IsGoogleJapaneseInputActive() {
-    
-    
-    
+    // ActiveTIP() is expensive if it hasn't computed active TIP yet.
+    // For avoiding unnecessary computation, we should check if the language
+    // for current TIP is Japanese.
     if (!IsJapanese()) {
       return false;
     }
@@ -1150,18 +1150,18 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
   }
 
   static bool IsATOKActive() {
-    
-    
-    
+    // ActiveTIP() is expensive if it hasn't computed active TIP yet.
+    // For avoiding unnecessary computation, we should check if active TIP is
+    // ATOK first since it's cheaper.
     return IsJapanese() && sInstance->IsATOKActiveInternal();
   }
 
-  
-  
+  // Note that ATOK 2011 - 2016 refers native caret position for deciding its
+  // popup window position.
   static bool IsATOKReferringNativeCaretActive() {
-    
-    
-    
+    // ActiveTIP() is expensive if it hasn't computed active TIP yet.
+    // For avoiding unnecessary computation, we should check if active TIP is
+    // ATOK first since it's cheaper.
     if (!IsJapanese() || !sInstance->IsATOKActiveInternal()) {
       return false;
     }
@@ -1192,8 +1192,8 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
 
   bool IsATOKActiveInternal() {
     EnsureInitActiveTIPKeyboard();
-    
-    
+    // FYI: Name of packaged ATOK includes the release year like "ATOK 2015".
+    //      Name of ATOK Passport (subscription) equals "ATOK".
     return StringBeginsWith(mActiveTIPKeyboardDescription,
                             NS_LITERAL_STRING("ATOK ")) ||
            mActiveTIPKeyboardDescription.EqualsLiteral("ATOK");
@@ -1209,9 +1209,9 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
       return;
     }
 
-    
-    
-    
+    // Comparing GUID is slow. So, we should use language information to
+    // reduce the comparing cost for TIP which is not we do not support
+    // specifically since they are always compared with all supported TIPs.
     switch (mLangID) {
       case 0x0404:
         mActiveTIP = ComputeActiveTIPAsTraditionalChinese();
@@ -1231,7 +1231,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
   }
 
   TextInputProcessorID ComputeActiveTIPAsJapanese() {
-    
+    // {A76C93D9-5523-4E90-AAFA-4DB112F9AC76} (Win7, Win8.1, Win10)
     static const GUID kMicrosoftIMEForJapaneseGUID = {
         0xA76C93D9,
         0x5523,
@@ -1240,7 +1240,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     if (mActiveTIPGUID == kMicrosoftIMEForJapaneseGUID) {
       return TextInputProcessorID::eMicrosoftIMEForJapanese;
     }
-    
+    // {54EDCC94-1524-4BB1-9FB7-7BABE4F4CA64}
     static const GUID kMicrosoftOfficeIME2010ForJapaneseGUID = {
         0x54EDCC94,
         0x1524,
@@ -1249,7 +1249,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     if (mActiveTIPGUID == kMicrosoftOfficeIME2010ForJapaneseGUID) {
       return TextInputProcessorID::eMicrosoftOfficeIME2010ForJapanese;
     }
-    
+    // {773EB24E-CA1D-4B1B-B420-FA985BB0B80D}
     static const GUID kGoogleJapaneseInputGUID = {
         0x773EB24E,
         0xCA1D,
@@ -1258,7 +1258,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     if (mActiveTIPGUID == kGoogleJapaneseInputGUID) {
       return TextInputProcessorID::eGoogleJapaneseInput;
     }
-    
+    // {F9C24A5C-8A53-499D-9572-93B2FF582115}
     static const GUID kATOK2011GUID = {
         0xF9C24A5C,
         0x8A53,
@@ -1267,7 +1267,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     if (mActiveTIPGUID == kATOK2011GUID) {
       return TextInputProcessorID::eATOK2011;
     }
-    
+    // {1DE01562-F445-401B-B6C3-E5B18DB79461}
     static const GUID kATOK2012GUID = {
         0x1DE01562,
         0xF445,
@@ -1276,7 +1276,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     if (mActiveTIPGUID == kATOK2012GUID) {
       return TextInputProcessorID::eATOK2012;
     }
-    
+    // {3C4DB511-189A-4168-B6EA-BFD0B4C85615}
     static const GUID kATOK2013GUID = {
         0x3C4DB511,
         0x189A,
@@ -1285,7 +1285,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     if (mActiveTIPGUID == kATOK2013GUID) {
       return TextInputProcessorID::eATOK2013;
     }
-    
+    // {4EF33B79-6AA9-4271-B4BF-9321C279381B}
     static const GUID kATOK2014GUID = {
         0x4EF33B79,
         0x6AA9,
@@ -1294,7 +1294,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     if (mActiveTIPGUID == kATOK2014GUID) {
       return TextInputProcessorID::eATOK2014;
     }
-    
+    // {EAB4DC00-CE2E-483D-A86A-E6B99DA9599A}
     static const GUID kATOK2015GUID = {
         0xEAB4DC00,
         0xCE2E,
@@ -1303,7 +1303,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     if (mActiveTIPGUID == kATOK2015GUID) {
       return TextInputProcessorID::eATOK2015;
     }
-    
+    // {0B557B4C-5740-4110-A60A-1493FA10BF2B}
     static const GUID kATOK2016GUID = {
         0x0B557B4C,
         0x5740,
@@ -1313,16 +1313,16 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
       return TextInputProcessorID::eATOK2016;
     }
 
-    
-    
-    
-    
+    // * ATOK 2017
+    //   - {6DBFD8F5-701D-11E6-920F-782BCBA6348F}
+    // * ATOK Passport (confirmed with version 31.1.2)
+    //   - {A38F2FD9-7199-45E1-841C-BE0313D8052F}
 
     if (IsATOKActiveInternal()) {
       return TextInputProcessorID::eATOKUnknown;
     }
 
-    
+    // {E6D66705-1EDA-4373-8D01-1D0CB2D054C7}
     static const GUID kJapanist10GUID = {
         0xE6D66705,
         0x1EDA,
@@ -1336,7 +1336,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
   }
 
   TextInputProcessorID ComputeActiveTIPAsTraditionalChinese() {
-    
+    // {B2F9C502-1742-11D4-9790-0080C882687E} (Win8.1, Win10)
     static const GUID kMicrosoftBopomofoGUID = {
         0xB2F9C502,
         0x1742,
@@ -1345,7 +1345,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     if (mActiveTIPGUID == kMicrosoftBopomofoGUID) {
       return TextInputProcessorID::eMicrosoftBopomofo;
     }
-    
+    // {4BDF9F03-C7D3-11D4-B2AB-0080C882687E} (Win7, Win8.1, Win10)
     static const GUID kMicrosoftChangJieGUID = {
         0x4BDF9F03,
         0xC7D3,
@@ -1354,7 +1354,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     if (mActiveTIPGUID == kMicrosoftChangJieGUID) {
       return TextInputProcessorID::eMicrosoftChangJie;
     }
-    
+    // {761309DE-317A-11D4-9B5D-0080C882687E} (Win7)
     static const GUID kMicrosoftPhoneticGUID = {
         0x761309DE,
         0x317A,
@@ -1363,7 +1363,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     if (mActiveTIPGUID == kMicrosoftPhoneticGUID) {
       return TextInputProcessorID::eMicrosoftPhonetic;
     }
-    
+    // {6024B45F-5C54-11D4-B921-0080C882687E} (Win7, Win8.1, Win10)
     static const GUID kMicrosoftQuickGUID = {
         0x6024B45F,
         0x5C54,
@@ -1372,7 +1372,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     if (mActiveTIPGUID == kMicrosoftQuickGUID) {
       return TextInputProcessorID::eMicrosoftQuick;
     }
-    
+    // {F3BA907A-6C7E-11D4-97FA-0080C882687E} (Win7)
     static const GUID kMicrosoftNewChangJieGUID = {
         0xF3BA907A,
         0x6C7E,
@@ -1381,7 +1381,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     if (mActiveTIPGUID == kMicrosoftNewChangJieGUID) {
       return TextInputProcessorID::eMicrosoftNewChangJie;
     }
-    
+    // {B2F9C502-1742-11D4-9790-0080C882687E} (Win7)
     static const GUID kMicrosoftNewPhoneticGUID = {
         0xB2F9C502,
         0x1742,
@@ -1390,7 +1390,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     if (mActiveTIPGUID == kMicrosoftNewPhoneticGUID) {
       return TextInputProcessorID::eMicrosoftNewPhonetic;
     }
-    
+    // {0B883BA0-C1C7-11D4-87F9-0080C882687E} (Win7)
     static const GUID kMicrosoftNewQuickGUID = {
         0x0B883BA0,
         0xC1C7,
@@ -1400,13 +1400,13 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
       return TextInputProcessorID::eMicrosoftNewQuick;
     }
 
-    
-    
-    
-    
-    
+    // NOTE: There are some other Traditional Chinese TIPs installed in Windows:
+    // * Chinese Traditional Array (version 6.0)
+    //   - {D38EFF65-AA46-4FD5-91A7-67845FB02F5B} (Win7, Win8.1)
+    // * Chinese Traditional DaYi (version 6.0)
+    //   - {037B2C25-480C-4D7F-B027-D6CA6B69788A} (Win7, Win8.1)
 
-    
+    // {B58630B5-0ED3-4335-BBC9-E77BBCB43CAD}
     static const GUID kFreeChangJieGUID = {
         0xB58630B5,
         0x0ED3,
@@ -1420,9 +1420,9 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
   }
 
   TextInputProcessorID ComputeActiveTIPAsSimplifiedChinese() {
-    
-    
-    
+    // FYI: This matches with neither "Microsoft Pinyin ABC Input Style" nor
+    //      "Microsoft Pinyin New Experience Input Style" on Win7.
+    // {FA550B04-5AD7-411F-A5AC-CA038EC515D7} (Win8.1, Win10)
     static const GUID kMicrosoftPinyinGUID = {
         0xFA550B04,
         0x5AD7,
@@ -1432,7 +1432,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
       return TextInputProcessorID::eMicrosoftPinyin;
     }
 
-    
+    // {F3BA9077-6C7E-11D4-97FA-0080C882687E} (Win7)
     static const GUID kMicrosoftPinyinNewExperienceInputStyleGUID = {
         0xF3BA9077,
         0x6C7E,
@@ -1441,7 +1441,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     if (mActiveTIPGUID == kMicrosoftPinyinNewExperienceInputStyleGUID) {
       return TextInputProcessorID::eMicrosoftPinyinNewExperienceInputStyle;
     }
-    
+    // {82590C13-F4DD-44F4-BA1D-8667246FDF8E} (Win8.1, Win10)
     static const GUID kMicrosoftWubiGUID = {
         0x82590C13,
         0xF4DD,
@@ -1450,20 +1450,20 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     if (mActiveTIPGUID == kMicrosoftWubiGUID) {
       return TextInputProcessorID::eMicrosoftWubi;
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // NOTE: There are some other Simplified Chinese TIPs installed in Windows:
+    // * Chinese Simplified QuanPin (version 6.0)
+    //   - {54FC610E-6ABD-4685-9DDD-A130BDF1B170} (Win8.1)
+    // * Chinese Simplified ZhengMa (version 6.0)
+    //   - {733B4D81-3BC3-4132-B91A-E9CDD5E2BFC9} (Win8.1)
+    // * Chinese Simplified ShuangPin (version 6.0)
+    //   - {EF63706D-31C4-490E-9DBB-BD150ADC454B} (Win8.1)
+    // * Microsoft Pinyin ABC Input Style
+    //   - {FCA121D2-8C6D-41FB-B2DE-A2AD110D4820} (Win7)
     return TextInputProcessorID::eUnknown;
   }
 
   TextInputProcessorID ComputeActiveTIPAsKorean() {
-    
+    // {B5FE1F02-D5F2-4445-9C03-C568F23C99A1} (Win7, Win8.1, Win10)
     static const GUID kMicrosoftIMEForKoreanGUID = {
         0xB5FE1F02,
         0xD5F2,
@@ -1472,7 +1472,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
     if (mActiveTIPGUID == kMicrosoftIMEForKoreanGUID) {
       return TextInputProcessorID::eMicrosoftIMEForKorean;
     }
-    
+    // {B60AF051-257A-46BC-B9D3-84DAD819BAFB} (Win8.1, Win10)
     static const GUID kMicrosoftOldHangulGUID = {
         0xB60AF051,
         0x257A,
@@ -1482,14 +1482,14 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
       return TextInputProcessorID::eMicrosoftOldHangul;
     }
 
-    
-    
-    
+    // NOTE: There is the other Korean TIP installed in Windows:
+    // * Microsoft IME 2010
+    //   - {48878C45-93F9-4aaf-A6A1-272CD863C4F5} (Win7)
 
     return TextInputProcessorID::eUnknown;
   }
 
- public:  
+ public:  // ITfInputProcessorProfileActivationSink
   STDMETHODIMP OnActivated(DWORD, LANGID, REFCLSID, REFGUID, REFGUID, HKL,
                            DWORD);
 
@@ -1508,24 +1508,24 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
 
   TextInputProcessorID mActiveTIP;
 
-  
+  // Cookie of installing ITfInputProcessorProfileActivationSink
   DWORD mIPProfileCookie;
 
   LANGID mLangID;
 
-  
+  // True if current IME is implemented with IMM.
   bool mIsIMM_IME;
-  
+  // True if OnActivated() is already called
   bool mOnActivatedCalled;
 
   RefPtr<ITfThreadMgr> mThreadMgr;
   RefPtr<ITfInputProcessorProfiles> mInputProcessorProfiles;
 
-  
-  
+  // Active TIP keyboard's description.  If active language profile isn't TIP,
+  // i.e., IMM-IME or just a keyboard layout, this is empty.
   nsString mActiveTIPKeyboardDescription;
 
-  
+  // Active TIP's GUID
   GUID mActiveTIPGUID;
 
   static StaticRefPtr<TSFStaticSink> sInstance;
@@ -1560,8 +1560,8 @@ bool TSFStaticSink::Init(ITfThreadMgr* aThreadMgr,
     return false;
   }
 
-  
-  
+  // NOTE: On Vista or later, Windows let us know activate IME changed only
+  //       with ITfInputProcessorProfileActivationSink.
   hr = source->AdviseSink(
       IID_ITfInputProcessorProfileActivationSink,
       static_cast<ITfInputProcessorProfileActivationSink*>(this),
@@ -1626,12 +1626,12 @@ TSFStaticSink::OnActivated(DWORD dwProfileType, LANGID langid, REFCLSID rclsid,
     GetTIPDescription(rclsid, langid, guidProfile,
                       mActiveTIPKeyboardDescription);
     if (mActiveTIPGUID != GUID_NULL) {
-      
-      
-      
-      
-      
-      
+      // key should be "LocaleID|Description".  Although GUID of the
+      // profile is unique key since description may be localized for system
+      // language, unfortunately, it's too long to record as key with its
+      // description.  Therefore, we should record only the description with
+      // LocaleID because Microsoft IME may not include language information.
+      // 72 is kMaximumKeyStringLength in TelemetryScalar.cpp
       nsAutoString key;
       key.AppendPrintf("0x%04X|", mLangID);
       nsAutoString description(mActiveTIPKeyboardDescription);
@@ -1643,14 +1643,14 @@ TSFStaticSink::OnActivated(DWORD dwProfileType, LANGID langid, REFCLSID rclsid,
         } else {
           description.Truncate(kMaxDescriptionLength - 1);
         }
-        
+        // U+2026 is "..."
         description.Append(char16_t(0x2026));
       }
       key.Append(description);
       Telemetry::ScalarSet(Telemetry::ScalarID::WIDGET_IME_NAME_ON_WINDOWS, key,
                            true);
     }
-    
+    // Notify IMEHandler of changing active keyboard layout.
     IMEHandler::OnKeyboardLayoutChanged();
   }
   MOZ_LOG(sTextStoreLog, LogLevel::Info,
@@ -1696,8 +1696,8 @@ bool TSFStaticSink::EnsureInitActiveTIPKeyboard() {
              "to get active keyboard layout profile due to no active profile, "
              "hr=0x%08X",
              this, hr));
-    
-    
+    // XXX Should we call OnActivated() with arguments like non-TIP in this
+    //     case?
     return false;
   }
   if (FAILED(hr)) {
@@ -1764,7 +1764,7 @@ bool TSFStaticSink::IsTIPCategoryKeyboard(REFCLSID aTextService, LANGID aLangID,
   TF_LANGUAGEPROFILE profile;
   ULONG fetch = 0;
   while (SUCCEEDED(enumLangProfiles->Next(1, &profile, &fetch)) && fetch) {
-    
+    // XXX We're not sure a profile is registered with two or more categories.
     if (profile.clsid == aTextService && profile.guidProfile == aProfile &&
         profile.catid == GUID_TFCAT_TIP_KEYBOARD) {
       return true;
@@ -1773,9 +1773,9 @@ bool TSFStaticSink::IsTIPCategoryKeyboard(REFCLSID aTextService, LANGID aLangID,
   return false;
 }
 
-
-
-
+/******************************************************************/
+/* TSFPreference                                                  */
+/******************************************************************/
 
 class TSFPrefs final {
  public:
@@ -1825,9 +1825,9 @@ class TSFPrefs final {
 #undef DECL_AND_IMPL_BOOL_PREF
 };
 
-
-
-
+/******************************************************************/
+/* TSFTextStore                                                   */
+/******************************************************************/
 
 StaticRefPtr<ITfThreadMgr> TSFTextStore::sThreadMgr;
 StaticRefPtr<ITfMessagePump> TSFTextStore::sMessagePump;
@@ -1867,7 +1867,7 @@ TSFTextStore::TSFTextStore()
     mRequestedAttrs[i] = false;
   }
 
-  
+  // We hope that 5 or more actions don't occur at once.
   mPendingActions.SetCapacity(5);
 
   MOZ_LOG(sTextStoreLog, LogLevel::Info,
@@ -1918,7 +1918,7 @@ bool TSFTextStore::Init(nsWindowBase* aWidget, const InputContext& aContext) {
   SetInputScope(aContext.mHTMLInputType, aContext.mHTMLInputInputmode,
                 aContext.mInPrivateBrowsing);
 
-  
+  // Create document manager
   RefPtr<ITfThreadMgr> threadMgr = sThreadMgr;
   RefPtr<ITfDocumentMgr> documentMgr;
   HRESULT hr = threadMgr->CreateDocumentMgr(getter_AddRefs(documentMgr));
@@ -1938,7 +1938,7 @@ bool TSFTextStore::Init(nsWindowBase* aWidget, const InputContext& aContext) {
          this));
     return false;
   }
-  
+  // Create context and add it to document manager
   RefPtr<ITfContext> context;
   hr = documentMgr->CreateContext(sClientId, 0,
                                   static_cast<ITextStoreACP*>(this),
@@ -1999,9 +1999,9 @@ void TSFTextStore::Destroy() {
 
   mDestroyed = true;
 
-  
-  
-  
+  // Destroy native caret first because it's not directly related to TSF and
+  // there may be another textstore which gets focus.  So, we should avoid
+  // to destroy caret after the new one recreates caret.
   IMEHandler::MaybeDestroyNativeCaret();
 
   if (mLock) {
@@ -2012,8 +2012,8 @@ void TSFTextStore::Destroy() {
   AutoRestore<bool> savedBeingDestroyed(mBeingDestroyed);
   mBeingDestroyed = true;
 
-  
-  
+  // If there is composition, TSF keeps the composition even after the text
+  // store destroyed.  So, we should clear the composition here.
   if (mComposition.IsComposing()) {
     CommitCompositionInternal(false);
   }
@@ -2027,9 +2027,9 @@ void TSFTextStore::Destroy() {
     sink->OnLayoutChange(TS_LC_DESTROY, TEXTSTORE_DEFAULT_VIEW);
   }
 
-  
-  
-  
+  // If this is called during handling a keydown or keyup message, we should
+  // put off to release TSF objects until it completely finishes since
+  // MS-IME for Japanese refers some objects without grabbing them.
   if (!mHandlingKeyMessage) {
     ReleaseTSFObjects();
   }
@@ -2107,11 +2107,11 @@ TSFTextStore::AdviseSink(REFIID riid, IUnknown* punk, DWORD dwMask) {
             ("0x%p   TSFTextStore::AdviseSink() FAILED due to "
              "unsupported interface",
              this));
-    return E_INVALIDARG;  
+    return E_INVALIDARG;  // means unsupported interface.
   }
 
   if (!mSink) {
-    
+    // Install sink
     punk->QueryInterface(IID_ITextStoreACPSink, getter_AddRefs(mSink));
     if (!mSink) {
       MOZ_LOG(sTextStoreLog, LogLevel::Error,
@@ -2121,8 +2121,8 @@ TSFTextStore::AdviseSink(REFIID riid, IUnknown* punk, DWORD dwMask) {
       return E_UNEXPECTED;
     }
   } else {
-    
-    
+    // If sink is already installed we check to see if they are the same
+    // Get IUnknown from both sides for comparison
     RefPtr<IUnknown> comparison1, comparison2;
     punk->QueryInterface(IID_IUnknown, getter_AddRefs(comparison1));
     mSink->QueryInterface(IID_IUnknown, getter_AddRefs(comparison2));
@@ -2134,7 +2134,7 @@ TSFTextStore::AdviseSink(REFIID riid, IUnknown* punk, DWORD dwMask) {
       return CONNECT_E_ADVISELIMIT;
     }
   }
-  
+  // Update mask either for a new sink or an existing sink
   mSinkMask = dwMask;
   return S_OK;
 }
@@ -2158,11 +2158,11 @@ TSFTextStore::UnadviseSink(IUnknown* punk) {
              this));
     return CONNECT_E_NOCONNECTION;
   }
-  
+  // Get IUnknown from both sides for comparison
   RefPtr<IUnknown> comparison1, comparison2;
   punk->QueryInterface(IID_IUnknown, getter_AddRefs(comparison1));
   mSink->QueryInterface(IID_IUnknown, getter_AddRefs(comparison2));
-  
+  // Unadvise only if sinks are the same
   if (comparison1 != comparison2) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
             ("0x%p   TSFTextStore::UnadviseSink() FAILED due to "
@@ -2207,15 +2207,15 @@ TSFTextStore::RequestLock(DWORD dwLockFlags, HRESULT* phrSession) {
   }
 
   if (!mLock) {
-    
+    // put on lock
     mLock = dwLockFlags & (~TS_LF_SYNC);
     MOZ_LOG(
         sTextStoreLog, LogLevel::Info,
         ("0x%p   Locking (%s) >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
          ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",
          this, GetLockFlagNameStr(mLock).get()));
-    
-    
+    // Don't release this instance during this lock because this is called by
+    // TSF but they don't grab us during this call.
     RefPtr<TSFTextStore> kungFuDeathGrip(this);
     RefPtr<ITextStoreACPSink> sink = mSink;
     *phrSession = sink->OnLockGranted(mLock);
@@ -2242,7 +2242,7 @@ TSFTextStore::RequestLock(DWORD dwLockFlags, HRESULT* phrSession) {
       DidLockGranted();
     }
 
-    
+    // The document is now completely unlocked.
     mLock = 0;
 
     MaybeFlushPendingNotifications();
@@ -2253,8 +2253,8 @@ TSFTextStore::RequestLock(DWORD dwLockFlags, HRESULT* phrSession) {
     return S_OK;
   }
 
-  
-  
+  // only time when reentrant lock is allowed is when caller holds a
+  // read-only lock and is requesting an async write lock
   if (IsReadLocked() && !IsReadWriteLocked() && IsReadWriteLock(dwLockFlags) &&
       !(dwLockFlags & TS_LF_SYNC)) {
     *phrSession = TS_S_ASYNC;
@@ -2267,7 +2267,7 @@ TSFTextStore::RequestLock(DWORD dwLockFlags, HRESULT* phrSession) {
     return S_OK;
   }
 
-  
+  // no more locks allowed
   MOZ_LOG(sTextStoreLog, LogLevel::Info,
           ("0x%p   TSFTextStore::RequestLock() didn't allow to lock, "
            "*phrSession=TS_E_SYNCHRONOUS",
@@ -2278,17 +2278,17 @@ TSFTextStore::RequestLock(DWORD dwLockFlags, HRESULT* phrSession) {
 
 void TSFTextStore::DidLockGranted() {
   if (IsReadWriteLocked()) {
-    
-    
-    
-    
-    
+    // FreeCJ (TIP for Traditional Chinese) calls SetSelection() to set caret
+    // to the start of composition string and insert a full width space for
+    // a placeholder with a call of SetText().  After that, it calls
+    // OnUpdateComposition() without new range.  Therefore, let's record the
+    // composition update information here.
     CompleteLastActionIfStillIncomplete();
 
     FlushPendingActions();
   }
 
-  
+  // If the widget has gone, we don't need to notify anything.
   if (mDestroyed || !mWidget || mWidget->Destroyed()) {
     mPendingSelectionChangeData.Clear();
     mHasReturnedNoLayoutError = false;
@@ -2299,8 +2299,8 @@ void TSFTextStore::DispatchEvent(WidgetGUIEvent& aEvent) {
   if (NS_WARN_IF(!mWidget) || NS_WARN_IF(mWidget->Destroyed())) {
     return;
   }
-  
-  
+  // If the event isn't a query content event, the event may be handled
+  // asynchronously.  So, we should put off to answer from GetTextExt() etc.
   if (!aEvent.AsQueryContentEvent()) {
     mDeferNotifyingTSF = true;
   }
@@ -2309,19 +2309,19 @@ void TSFTextStore::DispatchEvent(WidgetGUIEvent& aEvent) {
 
 void TSFTextStore::FlushPendingActions() {
   if (!mWidget || mWidget->Destroyed()) {
-    
-    
-    
+    // Note that don't clear mContentForTSF because TIP may try to commit
+    // composition with a document lock.  In such case, TSFTextStore needs to
+    // behave as expected by TIP.
     mPendingActions.Clear();
     mPendingSelectionChangeData.Clear();
     mHasReturnedNoLayoutError = false;
     return;
   }
 
-  
-  
-  
-  
+  // Some TIP may request lock but does nothing during the lock.  In such case,
+  // this should do nothing.  For example, when MS-IME for Japanese is active
+  // and we're inactivating, this case occurs and causes different behavior
+  // from the other TIPs.
   if (mPendingActions.IsEmpty()) {
     return;
   }
@@ -2370,7 +2370,7 @@ void TSFTextStore::FlushPendingActions() {
         }
 
         if (action.mAdjustSelection) {
-          
+          // Select composition range so the new composition replaces the range
           WidgetSelectionEvent selectionSet(true, eSetSelection, widget);
           widget->InitEvent(selectionSet);
           selectionSet.mOffset = static_cast<uint32_t>(action.mSelectionStart);
@@ -2386,9 +2386,9 @@ void TSFTextStore::FlushPendingActions() {
           }
         }
 
-        
-        
-        
+        // eCompositionStart always causes
+        // NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED.  Therefore, we should
+        // wait to clear mContentForTSF until it's notified.
         mDeferClearingContentForTSF = true;
 
         MOZ_LOG(sTextStoreLog, LogLevel::Debug,
@@ -2404,8 +2404,8 @@ void TSFTextStore::FlushPendingActions() {
                    "FAILED to dispatch compositionstart event, "
                    "IsHandlingComposition()=%s",
                    this, GetBoolName(IsHandlingComposition())));
-          
-          
+          // XXX Is this right? If there is a composition in content,
+          //     shouldn't we wait NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED?
           mDeferClearingContentForTSF = !IsHandlingComposition();
         }
         if (!widget || widget->Destroyed()) {
@@ -2422,10 +2422,10 @@ void TSFTextStore::FlushPendingActions() {
                  action.mRanges.get(),
                  action.mRanges ? action.mRanges->Length() : 0));
 
-        
-        
-        
-        
+        // eCompositionChange causes a DOM text event, the IME will be notified
+        // of NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED.  In this case, we
+        // should not clear mContentForTSF until we notify the IME of the
+        // composition update.
         mDeferClearingContentForTSF = true;
 
         rv = mDispatcher->SetPendingComposition(action.mData, action.mRanges);
@@ -2435,8 +2435,8 @@ void TSFTextStore::FlushPendingActions() {
                    "FAILED to setting pending composition... "
                    "IsHandlingComposition()=%s",
                    this, GetBoolName(IsHandlingComposition())));
-          
-          
+          // XXX Is this right? If there is a composition in content,
+          //     shouldn't we wait NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED?
           mDeferClearingContentForTSF = !IsHandlingComposition();
         } else {
           MOZ_LOG(sTextStoreLog, LogLevel::Debug,
@@ -2452,11 +2452,11 @@ void TSFTextStore::FlushPendingActions() {
                      "FAILED to dispatch compositionchange event, "
                      "IsHandlingComposition()=%s",
                      this, GetBoolName(IsHandlingComposition())));
-            
-            
+            // XXX Is this right? If there is a composition in content,
+            //     shouldn't we wait NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED?
             mDeferClearingContentForTSF = !IsHandlingComposition();
           }
-          
+          // Be aware, the mWidget might already have been destroyed.
         }
         break;
       }
@@ -2466,13 +2466,13 @@ void TSFTextStore::FlushPendingActions() {
                  "flushing Type::eCompositionEnd={ mData=\"%s\" }",
                  this, GetEscapedUTF8String(action.mData).get()));
 
-        
-        
-        
-        
-        
-        
-        
+        // Dispatching eCompositionCommit causes a DOM text event, then,
+        // the IME will be notified of NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED
+        // when focused content actually handles the event.  For example,
+        // when focused content is in a remote process, it's sent when
+        // all dispatched composition events have been handled in the remote
+        // process.  So, until then, we don't have newer content information.
+        // Therefore, we need to put off to clear mContentForTSF.
         mDeferClearingContentForTSF = true;
 
         MOZ_LOG(sTextStoreLog, LogLevel::Debug,
@@ -2488,8 +2488,8 @@ void TSFTextStore::FlushPendingActions() {
                    "FAILED to dispatch compositioncommit event, "
                    "IsHandlingComposition()=%s",
                    this, GetBoolName(IsHandlingComposition())));
-          
-          
+          // XXX Is this right? If there is a composition in content,
+          //     shouldn't we wait NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED?
           mDeferClearingContentForTSF = !IsHandlingComposition();
         }
         break;
@@ -2584,8 +2584,8 @@ void TSFTextStore::MaybeFlushPendingNotifications() {
   }
 
   if (mDestroyed) {
-    
-    
+    // If it's already been destroyed completely, this shouldn't notify TSF of
+    // anything anymore.
     MOZ_LOG(sTextStoreLog, LogLevel::Debug,
             ("0x%p   TSFTextStore::MaybeFlushPendingNotifications(), "
              "does nothing because this has already destroyed completely...",
@@ -2601,8 +2601,8 @@ void TSFTextStore::MaybeFlushPendingNotifications() {
              this));
   }
 
-  
-  
+  // When there is no cached content, we can sync actual contents and TSF/TIP
+  // expecting contents.
   RefPtr<TSFTextStore> kungFuDeathGrip = this;
   Unused << kungFuDeathGrip;
   if (!mContentForTSF.IsInitialized()) {
@@ -2632,7 +2632,7 @@ void TSFTextStore::MaybeFlushPendingNotifications() {
 }
 
 void TSFTextStore::MaybeDispatchKeyboardEventAsProcessedByIME() {
-  
+  // If we've already been destroyed, we cannot do anything.
   if (mDestroyed) {
     MOZ_LOG(
         sTextStoreLog, LogLevel::Debug,
@@ -2642,8 +2642,8 @@ void TSFTextStore::MaybeDispatchKeyboardEventAsProcessedByIME() {
     return;
   }
 
-  
-  
+  // If we're not handling key message or we've already dispatched a keyboard
+  // event for the handling key message, we should do nothing anymore.
   if (!sHandlingKeyMsg || sIsKeyboardEventDispatched) {
     MOZ_LOG(
         sTextStoreLog, LogLevel::Debug,
@@ -2654,8 +2654,8 @@ void TSFTextStore::MaybeDispatchKeyboardEventAsProcessedByIME() {
   }
 
   sIsKeyboardEventDispatched = true;
-  
-  
+  // If the document is locked, just adding the task to dispatching an event
+  // to the queue.
   if (IsReadLocked()) {
     MOZ_LOG(
         sTextStoreLog, LogLevel::Debug,
@@ -2668,7 +2668,7 @@ void TSFTextStore::MaybeDispatchKeyboardEventAsProcessedByIME() {
     return;
   }
 
-  
+  // Otherwise, dispatch a keyboard event.
   MOZ_LOG(sTextStoreLog, LogLevel::Debug,
           ("0x%p   TSFTextStore::MaybeDispatchKeyboardEventAsProcessedByIME(), "
            "trying to dispatch a keyboard event...",
@@ -2720,7 +2720,7 @@ TSFTextStore::GetStatus(TS_STATUS* pdcs) {
     return E_INVALIDARG;
   }
   pdcs->dwDynamicFlags = 0;
-  
+  // we use a "flat" text model for TSF support so no hidden text
   pdcs->dwStaticFlags = TS_SS_NOHIDDENTEXT;
   return S_OK;
 }
@@ -2749,8 +2749,8 @@ TSFTextStore::QueryInsert(LONG acpTestStart, LONG acpTestEnd, ULONG cch,
     return E_INVALIDARG;
   }
 
-  
-  
+  // XXX need to adjust to cluster boundary
+  // Assume we are given good offsets for now
   if (IsWin8OrLater() && !mComposition.IsComposing() &&
       ((TSFPrefs::NeedToHackQueryInsertForMSTraditionalTIP() &&
         TSFStaticSink::IsMSChangJieOrMSQuickActive()) ||
@@ -2760,8 +2760,8 @@ TSFTextStore::QueryInsert(LONG acpTestStart, LONG acpTestEnd, ULONG cch,
             ("0x%p   TSFTextStore::QueryInsert() WARNING using different "
              "result for the TIP",
              this));
-    
-    
+    // Chinese TIPs of Microsoft assume that QueryInsert() returns selected
+    // range which should be removed.
     *pacpResultStart = acpTestStart;
     *pacpResultEnd = acpTestEnd;
   } else {
@@ -2841,20 +2841,20 @@ TSFTextStore::GetSelection(ULONG ulIndex, ULONG ulCount,
   return S_OK;
 }
 
-
+// static
 bool TSFTextStore::DoNotReturnErrorFromGetSelection() {
-  
-  
-  
-  
+  // There is a crash bug of TSF if we return error from GetSelection().
+  // That was introduced in Anniversary Update (build 14393, see bug 1312302)
+  // TODO: We should avoid to run this hack on fixed builds.  When we get
+  //       exact build number, we should get back here.
   static bool sTSFMayCrashIfGetSelectionReturnsError =
       IsWindows10BuildOrLater(14393);
   return sTSFMayCrashIfGetSelectionReturnsError;
 }
 
 TSFTextStore::Content& TSFTextStore::ContentForTSFRef() {
-  
-  
+  // This should be called when the document is locked or the content hasn't
+  // been abandoned yet.
   if (NS_WARN_IF(!IsReadLocked() && !mContentForTSF.IsInitialized())) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
             ("0x%p   TSFTextStore::ContentForTSFRef(), FAILED, due to "
@@ -2888,11 +2888,11 @@ TSFTextStore::Content& TSFTextStore::ContentForTSFRef() {
     }
 
     mContentForTSF.Init(text);
-    
-    
-    
-    
-    
+    // Basically, the cached content which is expected by TSF/TIP should be
+    // cleared after active composition is committed or the document lock is
+    // unlocked.  However, in e10s mode, content will be modified
+    // asynchronously.  In such case, mDeferClearingContentForTSF may be
+    // true until whole dispatched events are handled by the focused editor.
     mDeferClearingContentForTSF = false;
   }
 
@@ -2918,15 +2918,15 @@ bool TSFTextStore::CanAccessActualContentDirectly() const {
     return true;
   }
 
-  
-  
+  // If the cached content has been changed by something except composition,
+  // the content cache may be different from actual content.
   if (mPendingTextChangeData.IsValid() &&
       !mPendingTextChangeData.mCausedOnlyByComposition) {
     return false;
   }
 
-  
-  
+  // If the cached selection isn't changed, cached content and actual content
+  // should be same.
   if (!mPendingSelectionChangeData.IsValid()) {
     return true;
   }
@@ -2968,8 +2968,8 @@ bool TSFTextStore::GetCurrentText(nsAString& aTextContent) {
 TSFTextStore::Selection& TSFTextStore::SelectionForTSFRef() {
   if (mSelectionForTSF.IsDirty()) {
     MOZ_ASSERT(!mDestroyed);
-    
-    
+    // If the window has never been available, we should crash since working
+    // with broken values may make TIP confused.
     if (!mWidget || mWidget->Destroyed()) {
       MOZ_CRASH();
     }
@@ -3130,7 +3130,7 @@ TSFTextStore::RestartCompositionIfNecessary(ITfRange* aRangeNew) {
     }
   }
 
-  
+  // Get starting offset of the composition
   LONG compStart = 0, compLength = 0;
   hr = GetRangeExtent(composingRange, &compStart, &compLength);
   if (FAILED(hr)) {
@@ -3149,9 +3149,9 @@ TSFTextStore::RestartCompositionIfNecessary(ITfRange* aRangeNew) {
 
   if (mComposition.mStart != compStart ||
       mComposition.mString.Length() != (ULONG)compLength) {
-    
-    
-    
+    // If the queried composition length is different from the length
+    // of our composition string, OnUpdateComposition is being called
+    // because a part of the original composition was committed.
     hr = RestartComposition(pComposition, composingRange);
     if (FAILED(hr)) {
       MOZ_LOG(sTextStoreLog, LogLevel::Error,
@@ -3203,36 +3203,36 @@ TSFTextStore::RestartComposition(ITfCompositionView* aCompositionView,
     return hr;
   }
 
-  
-  
-  
+  // If the new range has no overlap with the crrent range, we just commit
+  // the composition and restart new composition with the new range but
+  // current selection range should be preserved.
   if (newStart >= mComposition.EndOffset() || newEnd <= mComposition.mStart) {
     RecordCompositionEndAction();
     RecordCompositionStartAction(aCompositionView, newStart, newLength, true);
     return S_OK;
   }
 
-  
-  
-  
-  
+  // If the new range has an overlap with the current one, we should not commit
+  // the whole current range to avoid creating an odd undo transaction.
+  // I.e., the overlapped range which is being composed should not appear in
+  // undo transaction.
 
-  
+  // Backup current composition data and selection data.
   Composition oldComposition = mComposition;
   Selection oldSelection = selectionForTSF;
 
-  
+  // Commit only the part of composition.
   LONG keepComposingStartOffset = std::max(mComposition.mStart, newStart);
   LONG keepComposingEndOffset = std::min(mComposition.EndOffset(), newEnd);
   MOZ_ASSERT(
       keepComposingStartOffset <= keepComposingEndOffset,
       "Why keepComposingEndOffset is smaller than keepComposingStartOffset?");
   LONG keepComposingLength = keepComposingEndOffset - keepComposingStartOffset;
-  
+  // Remove the overlapped part from the commit string.
   nsAutoString commitString(mComposition.mString);
   commitString.Cut(keepComposingStartOffset - mComposition.mStart,
                    keepComposingLength);
-  
+  // Update the composition string.
   Content& contentForTSF = ContentForTSFRef();
   if (!contentForTSF.IsInitialized()) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
@@ -3243,12 +3243,12 @@ TSFTextStore::RestartComposition(ITfCompositionView* aCompositionView,
   }
   contentForTSF.ReplaceTextWith(mComposition.mStart,
                                 mComposition.mString.Length(), commitString);
-  
+  // Record a compositionupdate action for commit the part of composing string.
   PendingAction* action = LastOrNewPendingCompositionUpdate();
   action->mData = mComposition.mString;
   action->mRanges->Clear();
-  
-  
+  // Note that we shouldn't append ranges when composition string
+  // is empty because it may cause TextComposition confused.
   if (!action->mData.IsEmpty()) {
     TextRange caretRange;
     caretRange.mStartOffset = caretRange.mEndOffset =
@@ -3258,14 +3258,14 @@ TSFTextStore::RestartComposition(ITfCompositionView* aCompositionView,
   }
   action->mIncomplete = false;
 
-  
+  // Record compositionend action.
   RecordCompositionEndAction();
 
-  
-  
+  // Record compositionstart action only with the new start since this method
+  // hasn't restored composing string yet.
   RecordCompositionStartAction(aCompositionView, newStart, 0, false);
 
-  
+  // Restore the latest text content and selection.
   contentForTSF.ReplaceSelectedTextWith(nsDependentSubstring(
       oldComposition.mString, keepComposingStartOffset - oldComposition.mStart,
       keepComposingLength));
@@ -3301,22 +3301,22 @@ static bool GetColor(const TF_DA_COLOR& aTSFColor, nscolor& aResult) {
 }
 
 static bool GetLineStyle(TF_DA_LINESTYLE aTSFLineStyle,
-                         uint8_t& aTextRangeLineStyle) {
+                         TextRangeStyle::LineStyle& aTextRangeLineStyle) {
   switch (aTSFLineStyle) {
     case TF_LS_NONE:
-      aTextRangeLineStyle = TextRangeStyle::LINESTYLE_NONE;
+      aTextRangeLineStyle = TextRangeStyle::LineStyle::None;
       return true;
     case TF_LS_SOLID:
-      aTextRangeLineStyle = TextRangeStyle::LINESTYLE_SOLID;
+      aTextRangeLineStyle = TextRangeStyle::LineStyle::Solid;
       return true;
     case TF_LS_DOT:
-      aTextRangeLineStyle = TextRangeStyle::LINESTYLE_DOTTED;
+      aTextRangeLineStyle = TextRangeStyle::LineStyle::Dotted;
       return true;
     case TF_LS_DASH:
-      aTextRangeLineStyle = TextRangeStyle::LINESTYLE_DASHED;
+      aTextRangeLineStyle = TextRangeStyle::LineStyle::Dashed;
       return true;
     case TF_LS_SQUIGGLE:
-      aTextRangeLineStyle = TextRangeStyle::LINESTYLE_WAVY;
+      aTextRangeLineStyle = TextRangeStyle::LineStyle::Wavy;
       return true;
     default:
       return false;
@@ -3341,13 +3341,13 @@ TSFTextStore::RecordCompositionUpdateAction() {
     return E_FAIL;
   }
 
-  
-  
-  
-  
-  
-  
-  
+  // Getting display attributes is *really* complicated!
+  // We first get the context and the property objects to query for
+  // attributes, but since a big range can have a variety of values for
+  // the attribute, we have to find out all the ranges that have distinct
+  // attribute values. Then we query for what the value represents through
+  // the display attribute manager and translate that to TextRange to be
+  // sent in eCompositionChange
 
   RefPtr<ITfProperty> attrPropetry;
   HRESULT hr =
@@ -3381,7 +3381,7 @@ TSFTextStore::RecordCompositionUpdateAction() {
     return FAILED(hr) ? hr : E_FAIL;
   }
 
-  
+  // First, put the log of content and selection here.
   Selection& selectionForTSF = SelectionForTSFRef();
   if (selectionForTSF.IsDirty()) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
@@ -3393,17 +3393,17 @@ TSFTextStore::RecordCompositionUpdateAction() {
 
   PendingAction* action = LastOrNewPendingCompositionUpdate();
   action->mData = mComposition.mString;
-  
-  
-  
+  // The ranges might already have been initialized, however, if this is
+  // called again, that means we need to overwrite the ranges with current
+  // information.
   action->mRanges->Clear();
 
-  
-  
+  // Note that we shouldn't append ranges when composition string
+  // is empty because it may cause TextComposition confused.
   if (!action->mData.IsEmpty()) {
     TextRange newRange;
-    
-    
+    // No matter if we have display attribute info or not,
+    // we always pass in at least one range to eCompositionChange
     newRange.mStartOffset = 0;
     newRange.mEndOffset = action->mData.Length();
     newRange.mRangeType = TextRangeType::eRawClause;
@@ -3419,8 +3419,8 @@ TSFTextStore::RecordCompositionUpdateAction() {
       if (FAILED(GetRangeExtent(range, &rangeStart, &rangeLength))) {
         continue;
       }
-      
-      
+      // The range may include out of composition string.  We should ignore
+      // outside of the composition string.
       LONG start = std::min(std::max(rangeStart, mComposition.mStart),
                             mComposition.EndOffset());
       LONG end =
@@ -3447,8 +3447,8 @@ TSFTextStore::RecordCompositionUpdateAction() {
 
       TextRange newRange;
       newRange.mStartOffset = uint32_t(start - mComposition.mStart);
-      
-      
+      // The end of the last range in the array is
+      // always kept at the end of composition
       newRange.mEndOffset = mComposition.mString.Length();
 
       TF_DISPLAYATTRIBUTE attr;
@@ -3478,8 +3478,8 @@ TSFTextStore::RecordCompositionUpdateAction() {
 
       TextRange& lastRange = action->mRanges->LastElement();
       if (lastRange.mStartOffset == newRange.mStartOffset) {
-        
-        
+        // Replace range if last range is the same as this one
+        // So that ranges don't overlap and confuse the editor
         lastRange = newRange;
       } else {
         lastRange.mEndOffset = newRange.mStartOffset;
@@ -3487,14 +3487,14 @@ TSFTextStore::RecordCompositionUpdateAction() {
       }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
+    // We need to hack for Korean Input System which is Korean standard TIP.
+    // It sets no change style to IME selection (the selection is always only
+    // one).  So, the composition string looks like normal (or committed)
+    // string.  At this time, current selection range is same as the
+    // composition string range.  Other applications set a wide caret which
+    // covers the composition string,  however, Gecko doesn't support the wide
+    // caret drawing now (Gecko doesn't support XOR drawing), unfortunately.
+    // For now, we should change the range style to undefined.
     if (!selectionForTSF.IsCollapsed() && action->mRanges->Length() == 1) {
       TextRange& range = action->mRanges->ElementAt(0);
       LONG start = selectionForTSF.MinOffset();
@@ -3503,19 +3503,19 @@ TSFTextStore::RecordCompositionUpdateAction() {
           (LONG)range.mEndOffset == end - mComposition.mStart &&
           range.mRangeStyle.IsNoChangeStyle()) {
         range.mRangeStyle.Clear();
-        
+        // The looks of selected type is better than others.
         range.mRangeType = TextRangeType::eSelectedRawClause;
       }
     }
 
-    
+    // The caret position has to be collapsed.
     uint32_t caretPosition = static_cast<uint32_t>(selectionForTSF.MaxOffset() -
                                                    mComposition.mStart);
 
-    
-    
-    
-    
+    // If caret is in the target clause and it doesn't have specific style,
+    // the target clause will be painted as normal selection range.  Since
+    // caret shouldn't be in selection range on Windows, we shouldn't append
+    // caret range in such case.
     const TextRange* targetClause = action->mRanges->GetTargetClause();
     if (!targetClause || targetClause->mRangeStyle.IsDefined() ||
         caretPosition < targetClause->mStartOffset ||
@@ -3570,9 +3570,9 @@ TSFTextStore::SetSelectionInternal(const TS_SELECTION_ACP* pSelection,
     return E_FAIL;
   }
 
-  
-  
-  
+  // If actually the range is not changing, we should do nothing.
+  // Perhaps, we can ignore the difference change because it must not be
+  // important for following edit.
   if (selectionForTSF.EqualsExceptDirection(*pSelection)) {
     MOZ_LOG(sTextStoreLog, LogLevel::Warning,
             ("0x%p   TSFTextStore::SetSelectionInternal() Succeeded but "
@@ -3601,7 +3601,7 @@ TSFTextStore::SetSelectionInternal(const TS_SELECTION_ACP* pSelection,
                this));
       return TS_E_INVALIDPOS;
     }
-    
+    // Emulate selection during compositions
     selectionForTSF.SetSelection(*pSelection);
     if (aDispatchCompositionChangeEvent) {
       HRESULT hr = RecordCompositionUpdateAction();
@@ -3618,31 +3618,31 @@ TSFTextStore::SetSelectionInternal(const TS_SELECTION_ACP* pSelection,
 
   TS_SELECTION_ACP selectionInContent(*pSelection);
 
-  
-  
-  
+  // If mContentForTSF caches old contents which is now different from
+  // actual contents, we need some complicated hack here...
+  // Note that this hack assumes that this is used for reconversion.
   if (mContentForTSF.IsInitialized() && mPendingTextChangeData.IsValid() &&
       !mPendingTextChangeData.mCausedOnlyByComposition) {
     uint32_t startOffset = static_cast<uint32_t>(selectionInContent.acpStart);
     uint32_t endOffset = static_cast<uint32_t>(selectionInContent.acpEnd);
     if (mPendingTextChangeData.mStartOffset >= endOffset) {
-      
+      // Setting selection before any changed ranges is fine.
     } else if (mPendingTextChangeData.mRemovedEndOffset <= startOffset) {
-      
-      
+      // Setting selection after removed range is fine with following
+      // adjustment.
       selectionInContent.acpStart += mPendingTextChangeData.Difference();
       selectionInContent.acpEnd += mPendingTextChangeData.Difference();
     } else if (startOffset == endOffset) {
-      
-      
-      
-      
-      
+      // Moving caret position may be fine in most cases even if the insertion
+      // point has already gone but in this case, composition will be inserted
+      // to unexpected position, though.
+      // It seems that moving caret into middle of the new text is odd.
+      // Perhaps, end of it is expected by users in most cases.
       selectionInContent.acpStart = mPendingTextChangeData.mAddedEndOffset;
       selectionInContent.acpEnd = selectionInContent.acpStart;
     } else {
-      
-      
+      // Otherwise, i.e., setting range has already gone, we cannot set
+      // selection properly.
       MOZ_LOG(sTextStoreLog, LogLevel::Error,
               ("0x%p   TSFTextStore::SetSelectionInternal() FAILED due to "
                "there is unknown content change",
@@ -3659,7 +3659,7 @@ TSFTextStore::SetSelectionInternal(const TS_SELECTION_ACP* pSelection,
       selectionInContent.acpEnd - selectionInContent.acpStart;
   action->mSelectionReversed = (selectionInContent.style.ase == TS_AE_START);
 
-  
+  // Use TSF specified selection for updating mSelectionForTSF.
   selectionForTSF.SetSelection(*pSelection);
 
   return S_OK;
@@ -3752,7 +3752,7 @@ TSFTextStore::GetText(LONG acpStart, LONG acpEnd, WCHAR* pchPlain,
     return TS_E_INVALIDPOS;
   }
 
-  
+  // Making sure to null-terminate string just to be on the safe side
   *pcchPlainOut = 0;
   if (pchPlain && cchPlainReq) *pchPlain = 0;
   if (pulRunInfoOut) *pulRunInfoOut = 0;
@@ -3830,9 +3830,9 @@ TSFTextStore::SetText(DWORD dwFlags, LONG acpStart, LONG acpEnd,
        pchText && cch ? GetEscapedUTF8String(pchText, cch).get() : "", cch,
        pChange, GetBoolName(mComposition.IsComposing())));
 
-  
-  
-  
+  // Per SDK documentation, and since we don't have better
+  // ways to do this, this method acts as a helper to
+  // call SetSelection followed by InsertTextAtSelection
   if (!IsReadWriteLocked()) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
             ("0x%p   TSFTextStore::SetText() FAILED due to "
@@ -3846,7 +3846,7 @@ TSFTextStore::SetText(DWORD dwFlags, LONG acpStart, LONG acpEnd,
   selection.acpEnd = acpEnd;
   selection.style.ase = TS_AE_END;
   selection.style.fInterimChar = 0;
-  
+  // Set selection to desired range
   HRESULT hr = SetSelectionInternal(&selection);
   if (FAILED(hr)) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
@@ -3855,7 +3855,7 @@ TSFTextStore::SetText(DWORD dwFlags, LONG acpStart, LONG acpEnd,
              this));
     return hr;
   }
-  
+  // Replace just selected text
   if (!InsertTextAtSelectionInternal(nsDependentSubstring(pchText, cch),
                                      pChange)) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
@@ -3881,7 +3881,7 @@ TSFTextStore::GetFormattedText(LONG acpStart, LONG acpEnd,
            "but not supported (E_NOTIMPL)",
            this));
 
-  
+  // no support for formatted text
   return E_NOTIMPL;
 }
 
@@ -3893,7 +3893,7 @@ TSFTextStore::GetEmbedded(LONG acpPos, REFGUID rguidService, REFIID riid,
            "but not supported (E_NOTIMPL)",
            this));
 
-  
+  // embedded objects are not supported
   return E_NOTIMPL;
 }
 
@@ -3906,7 +3906,7 @@ TSFTextStore::QueryInsertEmbedded(const GUID* pguidService,
            "but not supported, *pfInsertable=FALSE (S_OK)",
            this));
 
-  
+  // embedded objects are not supported
   *pfInsertable = FALSE;
   return S_OK;
 }
@@ -3919,17 +3919,17 @@ TSFTextStore::InsertEmbedded(DWORD dwFlags, LONG acpStart, LONG acpEnd,
            "but not supported (E_NOTIMPL)",
            this));
 
-  
+  // embedded objects are not supported
   return E_NOTIMPL;
 }
 
-
+// static
 bool TSFTextStore::ShouldSetInputScopeOfURLBarToDefault() {
-  
-  
-  
-  
-  
+  // FYI: Google Japanese Input may be an IMM-IME.  If it's installed on
+  //      Win7, it's always IMM-IME.  Otherwise, basically, it's a TIP.
+  //      However, if it's installed on Win7 and has not been updated yet
+  //      after the OS is upgraded to Win8 or later, it's still an IMM-IME.
+  //      Therefore, we also need to check with IMMHandler here.
   if (!TSFPrefs::ShouldSetInputScopeOfURLBarToDefault()) {
     return false;
   }
@@ -3973,20 +3973,20 @@ void TSFTextStore::SetInputScope(const nsString& aHTMLInputType,
     if (aHTMLInputInputMode.EqualsLiteral("url")) {
       mInputScopes.AppendElement(IS_URL);
     } else if (aHTMLInputInputMode.EqualsLiteral("mozAwesomebar")) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // Even if Awesomebar has focus, user may not input URL directly.
+      // However, on-screen keyboard for URL should be shown because it has
+      // some useful additional keys like ".com" and they are not hindrances
+      // even when inputting non-URL text, e.g., words to search something in
+      // the web.  On the other hand, a lot of Microsoft's IMEs and Google
+      // Japanese Input make their open state "closed" automatically if we
+      // notify them of URL as the input scope.  However, this is very annoying
+      // for the users when they try to input some words to search the web or
+      // bookmark/history items.  Therefore, if they are active, we need to
+      // notify them of the default input scope for avoiding this issue.
       if (TSFTextStore::ShouldSetInputScopeOfURLBarToDefault()) {
         return;
       }
-      
+      // Don't append IS_SEARCH here for showing on-screen keyboard for URL.
       mInputScopes.AppendElement(IS_URL);
     } else if (aHTMLInputInputMode.EqualsLiteral("email")) {
       mInputScopes.AppendElement(IS_EMAIL_SMTPEMAILADDRESS);
@@ -3999,7 +3999,7 @@ void TSFTextStore::SetInputScope(const nsString& aHTMLInputType,
     return;
   }
 
-  
+  // http://www.whatwg.org/specs/web-apps/current-work/multipage/the-input-element.html
   if (aHTMLInputType.EqualsLiteral("url")) {
     mInputScopes.AppendElement(IS_URL);
   } else if (aHTMLInputType.EqualsLiteral("search")) {
@@ -4062,12 +4062,12 @@ TSFTextStore::HandleRequestAttrs(DWORD aFlags, ULONG aFilterCount,
            "aFilterCount=%u)",
            this, GetFindFlagName(aFlags).get(), aFilterCount));
 
-  
-  
-  
-  
-  
-  
+  // This is a little weird! RequestSupportedAttrs gives us advanced notice
+  // of a support query via RetrieveRequestedAttrs for a specific attribute.
+  // RetrieveRequestedAttrs needs to return valid data for all attributes we
+  // support, but the text service will only want the input scope object
+  // returned in RetrieveRequestedAttrs if the dwFlags passed in here contains
+  // TS_ATTR_FIND_WANT_VALUE.
   for (int32_t i = 0; i < NUM_OF_SUPPORTED_ATTRS; i++) {
     mRequestedAttrs[i] = false;
   }
@@ -4121,7 +4121,7 @@ TSFTextStore::RequestAttrsTransitioningAtPosition(LONG acpPos,
            "(S_OK)",
            this, acpPos, cFilterAttrs, GetFindFlagName(dwFlags).get()));
 
-  
+  // no per character attributes defined
   return S_OK;
 }
 
@@ -4144,7 +4144,7 @@ TSFTextStore::FindNextAttrTransition(LONG acpStart, LONG acpHalt,
            "but not supported (S_OK)",
            this));
 
-  
+  // no per character attributes defined
   *pacpNext = *plFoundOffset = acpHalt;
   *pfFound = FALSE;
   return S_OK;
@@ -4361,17 +4361,17 @@ TSFTextStore::GetACPFromPoint(TsViewCookie vcView, const POINT* pt,
   }
 
   LayoutDeviceIntPoint ourPt(pt->x, pt->y);
-  
+  // Convert to widget relative coordinates from screen's.
   ourPt -= mWidget->WidgetToScreenOffset();
 
-  
-  
+  // NOTE: Don't check if the point is in the widget since the point can be
+  //       outside of the widget if focused editor is in a XUL <panel>.
 
   WidgetQueryContentEvent charAtPt(true, eQueryCharacterAtPoint, mWidget);
   mWidget->InitEvent(charAtPt, &ourPt);
 
-  
-  
+  // FYI: WidgetQueryContentEvent may cause flushing pending layout and it
+  //      may cause focus change or something.
   RefPtr<TSFTextStore> kungFuDeathGrip(this);
   DispatchEvent(charAtPt);
   if (!mWidget || mWidget->Destroyed()) {
@@ -4396,8 +4396,8 @@ TSFTextStore::GetACPFromPoint(TsViewCookie vcView, const POINT* pt,
     return E_FAIL;
   }
 
-  
-  
+  // If dwFlags isn't set and the point isn't in any character's bounding box,
+  // we should return TS_E_INVALIDPOINT.
   if (!(dwFlags & GXFPF_NEAREST) &&
       charAtPt.mReply.mOffset == WidgetQueryContentEvent::NOT_FOUND) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
@@ -4407,8 +4407,8 @@ TSFTextStore::GetACPFromPoint(TsViewCookie vcView, const POINT* pt,
     return TS_E_INVALIDPOINT;
   }
 
-  
-  
+  // Although, we're not sure if mTentativeCaretOffset becomes NOT_FOUND,
+  // let's assume that there is no content in such case.
   if (NS_WARN_IF(charAtPt.mReply.mTentativeCaretOffset ==
                  WidgetQueryContentEvent::NOT_FOUND)) {
     charAtPt.mReply.mTentativeCaretOffset = 0;
@@ -4416,27 +4416,27 @@ TSFTextStore::GetACPFromPoint(TsViewCookie vcView, const POINT* pt,
 
   uint32_t offset;
 
-  
-  
+  // If dwFlags includes GXFPF_ROUND_NEAREST, we should return tentative
+  // caret offset (MSDN calls it "range position").
   if (dwFlags & GXFPF_ROUND_NEAREST) {
     offset = charAtPt.mReply.mTentativeCaretOffset;
   } else if (charAtPt.mReply.mOffset != WidgetQueryContentEvent::NOT_FOUND) {
-    
-    
+    // Otherwise, we should return character offset whose bounding box contains
+    // the point.
     offset = charAtPt.mReply.mOffset;
   } else {
-    
-    
-    
-    
-    
-    
+    // If the point isn't in any character's bounding box but we need to return
+    // the nearest character from the point, we should *guess* the character
+    // offset since there is no inexpensive API to check it strictly.
+    // XXX If we retrieve 2 bounding boxes, one is before the offset and
+    //     the other is after the offset, we could resolve the offset.
+    //     However, dispatching 2 eQueryTextRect may be expensive.
 
-    
+    // So, use tentative offset for now.
     offset = charAtPt.mReply.mTentativeCaretOffset;
 
-    
-    
+    // However, if it's after the last character, we need to decrement the
+    // offset.
     Content& contentForTSF = ContentForTSFRef();
     if (!contentForTSF.IsInitialized()) {
       MOZ_LOG(sTextStoreLog, LogLevel::Error,
@@ -4446,8 +4446,8 @@ TSFTextStore::GetACPFromPoint(TsViewCookie vcView, const POINT* pt,
       return E_FAIL;
     }
     if (contentForTSF.Text().Length() <= offset) {
-      
-      
+      // If the tentative caret is after the last character, let's return
+      // the last character's offset.
       offset = contentForTSF.Text().Length() - 1;
     }
   }
@@ -4518,15 +4518,15 @@ TSFTextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd,
     return E_INVALIDARG;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // According to MSDN, ITextStoreACP::GetTextExt() should return
+  // TS_E_INVALIDARG when acpStart and acpEnd are same (i.e., collapsed range).
+  // https://msdn.microsoft.com/en-us/library/windows/desktop/ms538435(v=vs.85).aspx
+  // > TS_E_INVALIDARG: The specified start and end character positions are
+  // >                  equal.
+  // However, some TIPs (including Microsoft's Chinese TIPs!) call this with
+  // collapsed range and if we return TS_E_INVALIDARG, they stops showing their
+  // owning window or shows it but odd position.  So, we should just return
+  // error only when acpStart and/or acpEnd are really odd.
 
   if (acpStart < 0 || acpEnd < acpStart) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
@@ -4549,11 +4549,11 @@ TSFTextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd,
     return E_FAIL;
   }
 
-  
-  
-  
-  
-  
+  // At Windows 10 build 17643 (an insider preview for RS5), Microsoft fixed
+  // the bug of TS_E_NOLAYOUT (even when we returned TS_E_NOLAYOUT, TSF
+  // returned E_FAIL to TIP).  However, until we drop to support older Windows
+  // and all TIPs are aware of TS_E_NOLAYOUT result, we need to keep returning
+  // S_OK and available rectangle only for them.
   if (!MaybeHackNoErrorLayoutBugs(acpStart, acpEnd) &&
       mContentForTSF.IsLayoutChangedAt(acpEnd)) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
@@ -4573,39 +4573,39 @@ TSFTextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd,
     return TS_E_NOLAYOUT;
   }
 
-  
+  // use eQueryTextRect to get rect in system, screen coordinates
   WidgetQueryContentEvent event(true, eQueryTextRect, mWidget);
   mWidget->InitEvent(event);
 
   WidgetQueryContentEvent::Options options;
   int64_t startOffset = acpStart;
   if (mComposition.IsComposing()) {
-    
-    
-    
-    
+    // If there is a composition, TSF must want character rects related to
+    // the composition.  Therefore, we should use insertion point relative
+    // query because the composition might be at different position from
+    // the position where TSFTextStore believes it at.
     options.mRelativeToInsertionPoint = true;
     startOffset -= mComposition.mStart;
   } else if (IsHandlingComposition() && mContentForTSF.HasOrHadComposition()) {
-    
-    
-    
+    // If there was a composition and it hasn't been committed in the content
+    // yet, ContentCacheInParent is still open for relative offset query from
+    // the latest composition.
     options.mRelativeToInsertionPoint = true;
     startOffset -= mContentForTSF.LatestCompositionStartOffset();
   } else if (!CanAccessActualContentDirectly()) {
-    
-    
-    
-    
+    // If TSF/TIP cannot access actual content directly, there may be pending
+    // text and/or selection changes which have not been notified TSF yet.
+    // Therefore, we should use relative to insertion point query since
+    // TSF/TIP computes the offset from the cached selection.
     options.mRelativeToInsertionPoint = true;
     startOffset -= mSelectionForTSF.StartOffset();
   }
-  
-  
-  
-  
-  
-  
+  // ContentEventHandler and ContentCache return actual caret rect when
+  // the queried range is collapsed and selection is collapsed at the
+  // queried range.  Then, its height (in horizontal layout, width in vertical
+  // layout) may be different from actual font height of the line.  In such
+  // case, users see "dancing" of candidate or suggest window of TIP.
+  // For preventing it, we should query text rect with at least 1 length.
   uint32_t length = std::max(static_cast<int32_t>(acpEnd - acpStart), 1);
   event.InitForQueryTextRect(startOffset, length, options);
 
@@ -4615,17 +4615,17 @@ TSFTextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd,
             ("0x%p   TSFTextStore::GetTextExt() FAILED due to "
              "eQueryTextRect failure",
              this));
-    return TS_E_INVALIDPOS;  
+    return TS_E_INVALIDPOS;  // but unexpected failure, maybe.
   }
 
-  
+  // IMEs don't like empty rects, fix here
   if (event.mReply.mRect.Width() <= 0) event.mReply.mRect.SetWidth(1);
   if (event.mReply.mRect.Height() <= 0) event.mReply.mRect.SetHeight(1);
 
-  
+  // convert to unclipped screen rect
   nsWindow* refWindow = static_cast<nsWindow*>(
       event.mReply.mFocusedWidget ? event.mReply.mFocusedWidget : mWidget);
-  
+  // Result rect is in top level widget coordinates
   refWindow = refWindow->GetTopLevelWindow(false);
   if (!refWindow) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
@@ -4637,7 +4637,7 @@ TSFTextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd,
 
   event.mReply.mRect.MoveBy(refWindow->WidgetToScreenOffset());
 
-  
+  // get bounding screen rect to test for clipping
   if (!GetScreenExtInternal(*prc)) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
             ("0x%p   TSFTextStore::GetTextExt() FAILED due to "
@@ -4646,26 +4646,26 @@ TSFTextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd,
     return E_FAIL;
   }
 
-  
+  // clip text rect to bounding rect
   RECT textRect;
   ::SetRect(&textRect, event.mReply.mRect.X(), event.mReply.mRect.Y(),
             event.mReply.mRect.XMost(), event.mReply.mRect.YMost());
   if (!::IntersectRect(prc, prc, &textRect))
-    
+    // Text is not visible
     ::SetRectEmpty(prc);
 
-  
+  // not equal if text rect was clipped
   *pfClipped = !::EqualRect(prc, &textRect);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // ATOK 2011 - 2016 refers native caret position and size on windows whose
+  // class name is one of Mozilla's windows for deciding candidate window
+  // position.  Additionally, ATOK 2015 and earlier behaves really odd when
+  // we don't create native caret.  Therefore, we need to create native caret
+  // only when ATOK 2011 - 2015 is active (i.e., not necessary for ATOK 2016).
+  // However, if a11y module is handling native caret, we shouldn't touch it.
+  // Note that ATOK must require the latest information of the caret.  So,
+  // even if we'll create native caret later, we need to creat it here with
+  // current information.
   if (!IMEHandler::IsA11yHandlingNativeCaret() &&
       TSFPrefs::NeedToCreateNativeCaretForLegacyATOK() &&
       TSFStaticSink::IsATOKReferringNativeCaretActive() &&
@@ -4685,20 +4685,20 @@ TSFTextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd,
 }
 
 bool TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart, LONG& aACPEnd) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // When ITextStoreACP::GetTextExt() returns TS_E_NOLAYOUT, TSF returns E_FAIL
+  // to its caller (typically, active TIP).  Then, most TIPs abort current job
+  // or treat such application as non-GUI apps.  E.g., some of them give up
+  // showing candidate window, some others show candidate window at top-left of
+  // the screen.  For avoiding this issue, when there is composition (until
+  // composition is actually committed in remote content), we should not
+  // return TS_E_NOLAYOUT error for TIPs whose some features are broken by
+  // this issue.
+  // Note that ideally, this issue should be avoided by each TIP since this
+  // won't be fixed at least on non-latest Windows.  Actually, Google Japanese
+  // Input (based on Mozc) does it.  When GetTextExt() returns E_FAIL, TIPs
+  // should try to check result of GetRangeFromPoint() because TSF returns
+  // TS_E_NOLAYOUT correctly in this case. See:
+  // https://github.com/google/mozc/blob/6b878e31fb6ac4347dc9dfd8ccc1080fe718479f/src/win32/tip/tip_range_util.cc#L237-L257
 
   if (!IsHandlingComposition() || !mContentForTSF.HasOrHadComposition() ||
       !mContentForTSF.IsLayoutChangedAt(aACPEnd)) {
@@ -4712,38 +4712,38 @@ bool TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart, LONG& aACPEnd) {
              mComposition.EndOffset() ==
                  mContentForTSF.LatestCompositionEndOffset());
 
-  
+  // If TSF does not have the bug, we need to hack only with a few TIPs.
   static const bool sAlllowToStopHackingIfFine =
       IsWindows10BuildOrLater(17643) &&
       TSFPrefs::AllowToStopHackingOnBuild17643OrLater();
 
-  
-  
-  
+  // We need to compute active TIP now.  This may take a couple of milliseconds,
+  // however, it'll be cached, so, must be faster than check active TIP every
+  // GetTextExt() calls.
   const Selection& selectionForTSF = SelectionForTSFRef();
   switch (TSFStaticSink::ActiveTIP()) {
-    
-    
-    
-    
-    
+    // MS IME for Japanese doesn't support asynchronous handling at deciding
+    // its suggest list window position.  The feature was implemented
+    // starting from Windows 8.  And also we may meet same trouble in e10s
+    // mode on Win7.  So, we should never return TS_E_NOLAYOUT to MS IME for
+    // Japanese.
     case TextInputProcessorID::eMicrosoftIMEForJapanese:
       if (sAlllowToStopHackingIfFine) {
         return false;
       }
-      
-      
-      
-      
-      
+      // Basically, MS-IME tries to retrieve whole composition string rect
+      // at deciding suggest window immediately after unlocking the document.
+      // However, in e10s mode, the content hasn't updated yet in most cases.
+      // Therefore, if the first character at the retrieving range rect is
+      // available, we should use it as the result.
       if (TSFPrefs::DoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar() &&
           aACPStart < aACPEnd) {
         aACPEnd = aACPStart;
       }
-      
-      
-      
-      
+      // Although, the condition is not clear, MS-IME sometimes retrieves the
+      // caret rect immediately after modifying the composition string but
+      // before unlocking the document.  In such case, we should return the
+      // nearest character rect.
       else if (TSFPrefs::DoNotReturnNoLayoutErrorToMSJapaneseIMEAtCaret() &&
                aACPStart == aACPEnd && selectionForTSF.IsCollapsed() &&
                selectionForTSF.EndOffset() == aACPEnd) {
@@ -4754,26 +4754,26 @@ bool TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart, LONG& aACPEnd) {
         return false;
       }
       break;
-    
-    
-    
-    
-    
-    
-    
+    // The bug of Microsoft Office IME 2010 for Japanese is similar to
+    // MS-IME for Win 8.1 and Win 10.  Newer version of MS Office IME is not
+    // released yet.  So, we can hack it without prefs  because there must be
+    // no developers who want to disable this hack for tests.
+    // XXX We have not tested with Microsoft Office IME 2010 since it's
+    //     installable only with Win7 and Win8 (i.e., cannot install Win8.1
+    //     and Win10), and requires upgrade to Win10.
     case TextInputProcessorID::eMicrosoftOfficeIME2010ForJapanese:
-      
-      
-      
-      
-      
+      // Basically, MS-IME tries to retrieve whole composition string rect
+      // at deciding suggest window immediately after unlocking the document.
+      // However, in e10s mode, the content hasn't updated yet in most cases.
+      // Therefore, if the first character at the retrieving range rect is
+      // available, we should use it as the result.
       if (aACPStart < aACPEnd) {
         aACPEnd = aACPStart;
       }
-      
-      
-      
-      
+      // Although, the condition is not clear, MS-IME sometimes retrieves the
+      // caret rect immediately after modifying the composition string but
+      // before unlocking the document.  In such case, we should return the
+      // nearest character rect.
       else if (aACPStart == aACPEnd && selectionForTSF.IsCollapsed() &&
                selectionForTSF.EndOffset() == aACPEnd) {
         int32_t minOffsetOfLayoutChanged =
@@ -4783,35 +4783,35 @@ bool TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart, LONG& aACPEnd) {
         return false;
       }
       break;
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // ATOK fails to handle TS_E_NOLAYOUT only when it decides the position of
+    // suggest window.  In such case, ATOK tries to query rect of whole or a
+    // part of composition string.
+    // FYI: ATOK changes their implementation around candidate window and
+    //      suggest widget at ATOK 2016.  Therefore, there are some differences
+    //      ATOK 2015 (or older) and ATOK 2016 (or newer).
+    // FYI: ATOK 2017 stops referring our window class name.  I.e., ATOK 2016
+    //      and older may behave differently only on Gecko but this must be
+    //      finished from ATOK 2017.
+    // FYI: For testing with legacy ATOK, we should hack it even if current ATOK
+    //      refers native caret rect on windows whose window class is one of
+    //      Mozilla window classes and we stop creating native caret for ATOK
+    //      because creating native caret causes ATOK refers caret position
+    //      when GetTextExt() returns TS_E_NOLAYOUT.
     case TextInputProcessorID::eATOK2011:
     case TextInputProcessorID::eATOK2012:
     case TextInputProcessorID::eATOK2013:
     case TextInputProcessorID::eATOK2014:
     case TextInputProcessorID::eATOK2015:
-      
-      
-      
-      
+      // ATOK 2016 and later may temporarily show candidate window at odd
+      // position when you convert a word quickly (e.g., keep pressing
+      // space bar).  So, on ATOK 2016 or later, we need to keep hacking the
+      // result of GetTextExt().
       if (sAlllowToStopHackingIfFine) {
         return false;
       }
-      
-      
-      
+      // If we'll create native caret where we paint our caret.  Then, ATOK
+      // will refer native caret.  So, we don't need to hack anything in
+      // this case.
       if (TSFPrefs::NeedToCreateNativeCaretForLegacyATOK()) {
         MOZ_ASSERT(TSFStaticSink::IsATOKReferringNativeCaretActive());
         return false;
@@ -4822,8 +4822,8 @@ bool TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart, LONG& aACPEnd) {
       if (!TSFPrefs::DoNotReturnNoLayoutErrorToATOKOfCompositionString()) {
         return false;
       }
-      
-      
+      // If the range is in the composition string, we should return rectangle
+      // in it as far as possible.
       if (aACPStart < mContentForTSF.LatestCompositionStartOffset() ||
           aACPStart > mContentForTSF.LatestCompositionEndOffset() ||
           aACPEnd < mContentForTSF.LatestCompositionStartOffset() ||
@@ -4831,11 +4831,11 @@ bool TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart, LONG& aACPEnd) {
         return false;
       }
       break;
-    
-    
-    
-    
-    
+    // Japanist 10 fails to handle TS_E_NOLAYOUT when it decides the position
+    // of candidate window.  In such case, Japanist shows candidate window at
+    // top-left of the screen.  So, we should return the nearest caret rect
+    // where we know.  This is Japanist's bug.  So, even after build 17643,
+    // we need this hack.
     case TextInputProcessorID::eJapanist10:
       if (!TSFPrefs::
               DoNotReturnNoLayoutErrorToJapanist10OfCompositionString()) {
@@ -4848,9 +4848,9 @@ bool TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart, LONG& aACPEnd) {
         return false;
       }
       break;
-    
-    
-    
+    // Free ChangJie 2010 doesn't handle ITfContextView::GetTextExt() properly.
+    // This must be caused by the bug of TSF since Free ChangJie works fine on
+    // build 17643 and later.
     case TextInputProcessorID::eFreeChangJie:
       if (sAlllowToStopHackingIfFine) {
         return false;
@@ -4861,8 +4861,8 @@ bool TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart, LONG& aACPEnd) {
       aACPEnd = mContentForTSF.LatestCompositionStartOffset();
       aACPStart = std::min(aACPStart, aACPEnd);
       break;
-    
-    
+    // Some Traditional Chinese TIPs of Microsoft don't show candidate window
+    // in e10s mode on Win8 or later.
     case TextInputProcessorID::eMicrosoftChangJie:
     case TextInputProcessorID::eMicrosoftQuick:
       if (sAlllowToStopHackingIfFine) {
@@ -4875,14 +4875,14 @@ bool TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart, LONG& aACPEnd) {
       aACPEnd = mContentForTSF.LatestCompositionStartOffset();
       aACPStart = std::min(aACPStart, aACPEnd);
       break;
-    
-    
-    
-    
-    
-    
-    
-    
+    // Some Simplified Chinese TIPs of Microsoft don't show candidate window
+    // in e10s mode on Win8 or later.
+    // FYI: Only Simplified Chinese TIPs of Microsoft still require this hack
+    //      because they sometimes do not show candidate window when we return
+    //      TS_E_NOLAYOUT for first query.  Note that even when they show
+    //      candidate window properly, we return TS_E_NOLAYOUT and following
+    //      log looks same as when they don't show candidate window.  Perhaps,
+    //      there is stateful cause or race in them.
     case TextInputProcessorID::eMicrosoftPinyin:
     case TextInputProcessorID::eMicrosoftWubi:
       if (!IsWin8OrLater() ||
@@ -4896,26 +4896,26 @@ bool TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart, LONG& aACPEnd) {
       return false;
   }
 
-  
-  
-  
+  // If we hack the queried range for active TIP, that means we should not
+  // return TS_E_NOLAYOUT even if hacked offset is still modified.  So, as
+  // far as possible, we should adjust the offset.
   MOZ_ASSERT(mContentForTSF.IsLayoutChanged());
   bool collapsed = aACPStart == aACPEnd;
-  
-  
-  
-  
+  // Note that even if all characters in the editor or the composition
+  // string was modified, 0 or start offset of the composition string is
+  // useful because it may return caret rect or old character's rect which
+  // the user still see.  That must be useful information for TIP.
   int32_t firstModifiedOffset =
       static_cast<int32_t>(mContentForTSF.MinOffsetOfLayoutChanged());
   LONG lastUnmodifiedOffset = std::max(firstModifiedOffset - 1, 0);
   if (mContentForTSF.IsLayoutChangedAt(aACPStart)) {
     if (aACPStart >= mContentForTSF.LatestCompositionStartOffset()) {
-      
-      
-      
-      
-      
-      
+      // If mContentForTSF has last composition string and current
+      // composition string, we can assume that ContentCacheInParent has
+      // cached rects of composition string at least length of current
+      // composition string.  Otherwise, we can assume that rect for
+      // first character of composition string is stored since it was
+      // selection start or caret position.
       LONG maxCachedOffset = mContentForTSF.LatestCompositionEndOffset();
       if (mContentForTSF.WasLastComposition()) {
         maxCachedOffset = std::min(
@@ -4923,28 +4923,28 @@ bool TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart, LONG& aACPEnd) {
       }
       aACPStart = std::min(aACPStart, maxCachedOffset);
     }
-    
-    
-    
-    
+    // Otherwise, we don't know which character rects are cached.  So, we
+    // need to use first unmodified character's rect in this case.  Even
+    // if there is no character, the query event will return caret rect
+    // instead.
     else {
       aACPStart = lastUnmodifiedOffset;
     }
     MOZ_ASSERT(aACPStart <= aACPEnd);
   }
 
-  
-  
+  // If TIP requests caret rect with collapsed range, we should keep
+  // collapsing the range.
   if (collapsed) {
     aACPEnd = aACPStart;
   }
-  
-  
-  
-  
-  
-  
-  
+  // Let's set aACPEnd to larger offset of last unmodified offset or
+  // aACPStart which may be the first character offset of the composition
+  // string.  However, some TIPs may want to know the right edge of the
+  // range.  Therefore, if aACPEnd is in composition string and active TIP
+  // doesn't retrieve caret rect (i.e., the range isn't collapsed), we
+  // should keep using the original aACPEnd.  Otherwise, we should set
+  // aACPEnd to larger value of aACPStart and lastUnmodifiedOffset.
   else if (mContentForTSF.IsLayoutChangedAt(aACPEnd) &&
            (aACPEnd < mContentForTSF.LatestCompositionStartOffset() ||
             aACPEnd > mContentForTSF.LatestCompositionEndOffset())) {
@@ -5013,7 +5013,7 @@ bool TSFTextStore::GetScreenExtInternal(RECT& aScreenExt) {
 
   MOZ_ASSERT(!mDestroyed);
 
-  
+  // use NS_QUERY_EDITOR_RECT to get rect in system, screen coordinates
   WidgetQueryContentEvent event(true, eQueryEditorRect, mWidget);
   mWidget->InitEvent(event);
   DispatchEvent(event);
@@ -5027,7 +5027,7 @@ bool TSFTextStore::GetScreenExtInternal(RECT& aScreenExt) {
 
   nsWindow* refWindow = static_cast<nsWindow*>(
       event.mReply.mFocusedWidget ? event.mReply.mFocusedWidget : mWidget);
-  
+  // Result rect is in top level widget coordinates
   refWindow = refWindow->GetTopLevelWindow(false);
   if (!refWindow) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
@@ -5040,7 +5040,7 @@ bool TSFTextStore::GetScreenExtInternal(RECT& aScreenExt) {
   LayoutDeviceIntRect boundRect = refWindow->GetClientBounds();
   boundRect.MoveTo(0, 0);
 
-  
+  // Clip frame rect to window rect
   boundRect.IntersectRect(event.mReply.mRect, boundRect);
   if (!boundRect.IsEmpty()) {
     boundRect.MoveBy(refWindow->WidgetToScreenOffset());
@@ -5133,7 +5133,7 @@ TSFTextStore::InsertTextAtSelection(DWORD dwFlags, const WCHAR* pchText,
       return E_INVALIDARG;
     }
 
-    
+    // Get selection first
     Selection& selectionForTSF = SelectionForTSFRef();
     if (selectionForTSF.IsDirty()) {
       MOZ_LOG(sTextStoreLog, LogLevel::Error,
@@ -5143,7 +5143,7 @@ TSFTextStore::InsertTextAtSelection(DWORD dwFlags, const WCHAR* pchText,
       return E_FAIL;
     }
 
-    
+    // Simulate text insertion
     *pacpStart = selectionForTSF.StartOffset();
     *pacpEnd = selectionForTSF.EndOffset();
     if (pChange) {
@@ -5230,7 +5230,7 @@ bool TSFTextStore::InsertTextAtSelectionInternal(const nsAString& aInsertStr,
 
   TS_SELECTION_ACP oldSelection = contentForTSF.Selection().ACP();
   if (!mComposition.IsComposing()) {
-    
+    // Use a temporary composition to contain the text
     PendingAction* compositionStart = mPendingActions.AppendElements(2);
     PendingAction* compositionEnd = compositionStart + 1;
 
@@ -5285,7 +5285,7 @@ TSFTextStore::InsertEmbeddedAtSelection(DWORD dwFlags, IDataObject* pDataObject,
            "but not supported (E_NOTIMPL)",
            this));
 
-  
+  // embedded objects are not supported
   return E_NOTIMPL;
 }
 
@@ -5346,18 +5346,18 @@ TSFTextStore::RecordCompositionStartAction(ITfCompositionView* aComposition,
 
   CompleteLastActionIfStillIncomplete();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // TIP may have inserted text at selection before calling
+  // OnStartComposition().  In this case, we've already created a pending
+  // compositionend.  If new composition replaces all commit string of the
+  // pending compositionend, we should cancel the pending compositionend and
+  // keep the previous composition normally.
+  // On Windows 7, MS-IME for Korean, MS-IME 2010 for Korean and MS Old Hangul
+  // may start composition with calling InsertTextAtSelection() and
+  // OnStartComposition() with this order (bug 1208043).
+  // On Windows 10, MS Pinyin, MS Wubi, MS ChangJie and MS Quick commits
+  // last character and replace it with empty string with new composition
+  // when user removes last character of composition string with Backspace
+  // key (bug 1462257).
   if (!aPreserveSelection &&
       IsLastPendingActionCompositionEndAt(aStart, aLength)) {
     const PendingAction& pendingCompositionEnd = mPendingActions.LastElement();
@@ -5391,14 +5391,14 @@ TSFTextStore::RecordCompositionStartAction(ITfCompositionView* aComposition,
     action->mAdjustSelection = true;
   } else if (selectionForTSF.MinOffset() != aStart ||
              selectionForTSF.MaxOffset() != aStart + aLength) {
-    
-    
+    // If new composition range is different from current selection range,
+    // we need to set selection before dispatching compositionstart event.
     action->mAdjustSelection = true;
   } else {
-    
-    
-    
-    
+    // We shouldn't dispatch selection set event before dispatching
+    // compositionstart event because it may cause put caret different
+    // position in HTML editor since generated flat text content and offset in
+    // it are lossy data of HTML contents.
     action->mAdjustSelection = false;
   }
 
@@ -5436,11 +5436,11 @@ TSFTextStore::RecordCompositionEndAction() {
     return false;
   }
 
-  
-  
-  
-  
-  
+  // If we're handling incomplete composition update or already handled
+  // composition update, we can forget them since composition end will send
+  // the latest composition string and it overwrites the composition string
+  // even if we dispatch eCompositionChange event before that.  So, let's
+  // forget all composition updates now.
   RemoveLastCompositionUpdateActions();
   PendingAction* action = mPendingActions.AppendElement();
   action->mType = PendingAction::Type::eCompositionEnd;
@@ -5457,16 +5457,16 @@ TSFTextStore::RecordCompositionEndAction() {
   }
   contentForTSF.EndComposition(*action);
 
-  
-  
-  
+  // If this composition was restart but the composition doesn't modify
+  // anything, we should remove the pending composition for preventing to
+  // dispatch redundant composition events.
   for (size_t i = mPendingActions.Length(), j = 1; i > 0; --i, ++j) {
     PendingAction& pendingAction = mPendingActions[i - 1];
     if (pendingAction.mType == PendingAction::Type::eCompositionStart) {
       if (pendingAction.mData != action->mData) {
         break;
       }
-      
+      // When only setting selection is necessary, we should append it.
       if (pendingAction.mAdjustSelection) {
         LONG selectionStart = pendingAction.mSelectionStart;
         LONG selectionLength = pendingAction.mSelectionLength;
@@ -5477,7 +5477,7 @@ TSFTextStore::RecordCompositionEndAction() {
         setSelection->mSelectionLength = selectionLength;
         setSelection->mSelectionReversed = false;
       }
-      
+      // Remove the redundant pending composition.
       mPendingActions.RemoveElementsAt(i - 1, j);
       MOZ_LOG(sTextStoreLog, LogLevel::Info,
               ("0x%p   TSFTextStore::RecordCompositionEndAction(), "
@@ -5504,7 +5504,7 @@ TSFTextStore::OnStartComposition(ITfCompositionView* pComposition, BOOL* pfOk) {
 
   *pfOk = FALSE;
 
-  
+  // Only one composition at a time
   if (mComposition.IsComposing()) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
             ("0x%p   TSFTextStore::OnStartComposition() FAILED due to "
@@ -5569,7 +5569,7 @@ TSFTextStore::OnUpdateComposition(ITfCompositionView* pComposition,
     return E_UNEXPECTED;
   }
 
-  
+  // pRangeNew is null when the update is not complete
   if (!pRangeNew) {
     MaybeDispatchKeyboardEventAsProcessedByIME();
     if (mDestroyed) {
@@ -5682,7 +5682,7 @@ TSFTextStore::AdviseMouseSink(ITfRangeACP* range, ITfMouseSink* pSink,
              this));
     return E_INVALIDARG;
   }
-  
+  // Initialize the result with invalid cookie for safety.
   *pdwCookie = MouseTracker::kInvalidCookie;
 
   if (!range) {
@@ -5700,7 +5700,7 @@ TSFTextStore::AdviseMouseSink(ITfRangeACP* range, ITfMouseSink* pSink,
     return E_INVALIDARG;
   }
 
-  
+  // Looking for an unusing tracker.
   MouseTracker* tracker = nullptr;
   for (size_t i = 0; i < mMouseTrackers.Length(); i++) {
     if (mMouseTrackers[i].IsUsing()) {
@@ -5708,8 +5708,8 @@ TSFTextStore::AdviseMouseSink(ITfRangeACP* range, ITfMouseSink* pSink,
     }
     tracker = &mMouseTrackers[i];
   }
-  
-  
+  // If there is no unusing tracker, create new one.
+  // XXX Should we make limitation of the number of installs?
   if (!tracker) {
     tracker = mMouseTrackers.AppendElement();
     HRESULT hr = tracker->Init(this);
@@ -5749,8 +5749,8 @@ TSFTextStore::UnadviseMouseSink(DWORD dwCookie) {
              this));
     return E_INVALIDARG;
   }
-  
-  
+  // The cookie value must be an index of mMouseTrackers.
+  // We can use this shortcut for now.
   if (static_cast<size_t>(dwCookie) >= mMouseTrackers.Length()) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
             ("0x%p   TSFTextStore::UnadviseMouseSink() FAILED due to "
@@ -5772,7 +5772,7 @@ TSFTextStore::UnadviseMouseSink(DWORD dwCookie) {
   return S_OK;
 }
 
-
+// static
 nsresult TSFTextStore::OnFocusChange(bool aGotFocus,
                                      nsWindowBase* aFocusedWidget,
                                      const InputContext& aContext) {
@@ -5792,7 +5792,7 @@ nsresult TSFTextStore::OnFocusChange(bool aGotFocus,
   bool hasFocus = ThinksHavingFocus();
   RefPtr<TSFTextStore> oldTextStore = sEnabledTextStore.forget();
 
-  
+  // If currently oldTextStore still has focus, notifies TSF of losing focus.
   if (hasFocus) {
     RefPtr<ITfThreadMgr> threadMgr = sThreadMgr;
     DebugOnly<HRESULT> hr = threadMgr->AssociateFocus(
@@ -5803,8 +5803,8 @@ nsresult TSFTextStore::OnFocusChange(bool aGotFocus,
                  "different documentMgr has been associated with the window");
   }
 
-  
-  
+  // Even if there was a focused TextStore, we won't use it with new focused
+  // editor.  So, release it now.
   if (oldTextStore) {
     oldTextStore->Destroy();
   }
@@ -5825,8 +5825,8 @@ nsresult TSFTextStore::OnFocusChange(bool aGotFocus,
     return NS_ERROR_FAILURE;
   }
 
-  
-  
+  // If this is a notification of blur, move focus to the dummy document
+  // manager.
   if (!aGotFocus || !aContext.mIMEState.IsEditable()) {
     RefPtr<ITfThreadMgr> threadMgr = sThreadMgr;
     RefPtr<ITfDocumentMgr> disabledDocumentMgr = sDisabledDocumentMgr;
@@ -5840,7 +5840,7 @@ nsresult TSFTextStore::OnFocusChange(bool aGotFocus,
     return NS_OK;
   }
 
-  
+  // If an editor is getting focus, create new TextStore and set focus.
   if (NS_WARN_IF(!CreateAndSetFocus(aFocusedWidget, aContext))) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
             ("  TSFTextStore::OnFocusChange() FAILED due to "
@@ -5850,7 +5850,7 @@ nsresult TSFTextStore::OnFocusChange(bool aGotFocus,
   return NS_OK;
 }
 
-
+// static
 void TSFTextStore::EnsureToDestroyAndReleaseEnabledTextStoreIf(
     RefPtr<TSFTextStore>& aTextStore) {
   aTextStore->Destroy();
@@ -5860,12 +5860,12 @@ void TSFTextStore::EnsureToDestroyAndReleaseEnabledTextStoreIf(
   aTextStore = nullptr;
 }
 
-
+// static
 bool TSFTextStore::CreateAndSetFocus(nsWindowBase* aFocusedWidget,
                                      const InputContext& aContext) {
-  
-  
-  
+  // TSF might do something which causes that we need to access static methods
+  // of TSFTextStore.  At that time, sEnabledTextStore may be necessary.
+  // So, we should set sEnabledTextStore directly.
   RefPtr<TSFTextStore> textStore = new TSFTextStore();
   sEnabledTextStore = textStore;
   if (NS_WARN_IF(!textStore->Init(aFocusedWidget, aContext))) {
@@ -5920,8 +5920,8 @@ bool TSFTextStore::CreateAndSetFocus(nsWindowBase* aFocusedWidget,
     return false;
   }
 
-  
-  
+  // Use AssociateFocus() for ensuring that any native focus event
+  // never steal focus from our documentMgr.
   RefPtr<ITfDocumentMgr> prevFocusedDocumentMgr;
   hr = threadMgr->AssociateFocus(aFocusedWidget->GetWindowHandle(), newDocMgr,
                                  getter_AddRefs(prevFocusedDocumentMgr));
@@ -5968,29 +5968,29 @@ bool TSFTextStore::CreateAndSetFocus(nsWindowBase* aFocusedWidget,
   return true;
 }
 
-
+// static
 IMENotificationRequests TSFTextStore::GetIMENotificationRequests() {
   if (!sEnabledTextStore || NS_WARN_IF(!sEnabledTextStore->mDocumentMgr)) {
-    
-    
+    // If there is no active text store, we don't need any notifications
+    // since there is no sink which needs notifications.
     return IMENotificationRequests();
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Otherwise, requests all notifications since even if some of them may not
+  // be required by the sink of active TIP, active TIP may be changed and
+  // other TIPs may need all notifications.
+  // Note that Windows temporarily steal focus from active window if the main
+  // process which created the window becomes busy.  In this case, we shouldn't
+  // commit composition since user may want to continue to compose the
+  // composition after becoming not busy.  Therefore, we need notifications
+  // even during deactive.
+  // Be aware, we don't need to check actual focused text store.  For example,
+  // MS-IME for Japanese handles focus messages by themselves and sets focused
+  // text store to nullptr when the process is being inactivated.  However,
+  // we still need to reuse sEnabledTextStore if the process is activated and
+  // focused element isn't changed.  Therefore, if sEnabledTextStore isn't
+  // nullptr, we need to keep notifying the sink even when it is not focused
+  // text store for the thread manager.
   return IMENotificationRequests(
       IMENotificationRequests::NOTIFY_TEXT_CHANGE |
       IMENotificationRequests::NOTIFY_POSITION_CHANGE |
@@ -6021,21 +6021,21 @@ nsresult TSFTextStore::OnTextChangeInternal(
            GetBoolName(mComposition.IsComposing())));
 
   if (mDestroyed) {
-    
-    
+    // If this instance is already destroyed, we shouldn't notify TSF of any
+    // changes.
     return NS_OK;
   }
 
   mDeferNotifyingTSF = false;
 
-  
-  
-  
+  // Different from selection change, we don't modify anything with text
+  // change data.  Therefore, if neither TSF not TIP wants text change
+  // notifications, we don't need to store the changes.
   if (!mSink || !(mSinkMask & TS_AS_TEXT_CHANGE)) {
     return NS_OK;
   }
 
-  
+  // Merge any text change data even if it's caused by composition.
   mPendingTextChangeData.MergeWith(textChangeData);
 
   MaybeFlushPendingNotifications();
@@ -6049,18 +6049,18 @@ void TSFTextStore::NotifyTSFOfTextChange() {
   MOZ_ASSERT(!mComposition.IsComposing());
   MOZ_ASSERT(mPendingTextChangeData.IsValid());
 
-  
-  
+  // If the text changes are caused only by composition, we don't need to
+  // notify TSF of the text changes.
   if (mPendingTextChangeData.mCausedOnlyByComposition) {
     mPendingTextChangeData.Clear();
     return;
   }
 
-  
+  // First, forget cached selection.
   mSelectionForTSF.MarkDirty();
 
-  
-  
+  // For making it safer, we should check if there is a valid sink to receive
+  // text change notification.
   if (NS_WARN_IF(!mSink) || NS_WARN_IF(!(mSinkMask & TS_AS_TEXT_CHANGE))) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
             ("0x%p   TSFTextStore::NotifyTSFOfTextChange() FAILED due to "
@@ -6122,27 +6122,27 @@ nsresult TSFTextStore::OnSelectionChangeInternal(
            GetBoolName(mComposition.IsComposing())));
 
   if (mDestroyed) {
-    
-    
+    // If this instance is already destroyed, we shouldn't notify TSF of any
+    // changes.
     return NS_OK;
   }
 
   mDeferNotifyingTSF = false;
 
-  
-  
-  
-  
-  
+  // Assign the new selection change data to the pending selection change data
+  // because only the latest selection data is necessary.
+  // Note that this is necessary to update mSelectionForTSF.  Therefore, even if
+  // neither TSF nor TIP wants selection change notifications, we need to
+  // store the selection information.
   mPendingSelectionChangeData.Assign(selectionChangeData);
 
-  
+  // Flush remaining pending notifications here if it's possible.
   MaybeFlushPendingNotifications();
 
-  
-  
-  
-  
+  // If we're available, we should create native caret instead of IMEHandler
+  // because we may have some cache to do it.
+  // Note that if we have composition, we'll notified composition-updated
+  // later so that we don't need to create native caret in such case.
   if (!IsHandlingComposition() && IMEHandler::NeedsToCreateNativeCaret()) {
     CreateNativeCaret();
   }
@@ -6156,8 +6156,8 @@ void TSFTextStore::NotifyTSFOfSelectionChange() {
   MOZ_ASSERT(!mComposition.IsComposing());
   MOZ_ASSERT(mPendingSelectionChangeData.IsValid());
 
-  
-  
+  // If selection range isn't actually changed, we don't need to notify TSF
+  // of this selection change.
   if (!mSelectionForTSF.SetSelection(
           mPendingSelectionChangeData.mOffset,
           mPendingSelectionChangeData.Length(),
@@ -6187,8 +6187,8 @@ void TSFTextStore::NotifyTSFOfSelectionChange() {
 
 nsresult TSFTextStore::OnLayoutChangeInternal() {
   if (mDestroyed) {
-    
-    
+    // If this instance is already destroyed, we shouldn't notify TSF of any
+    // changes.
     return NS_OK;
   }
 
@@ -6199,9 +6199,9 @@ nsresult TSFTextStore::OnLayoutChangeInternal() {
 
   nsresult rv = NS_OK;
 
-  
-  
-  
+  // We need to notify TSF of layout change even if the document is locked.
+  // So, don't use MaybeFlushPendingNotifications() for flushing pending
+  // layout change.
   MOZ_LOG(sTextStoreLog, LogLevel::Info,
           ("0x%p   TSFTextStore::OnLayoutChangeInternal(), calling "
            "NotifyTSFOfLayoutChange()...",
@@ -6222,34 +6222,34 @@ nsresult TSFTextStore::OnLayoutChangeInternal() {
 bool TSFTextStore::NotifyTSFOfLayoutChange() {
   MOZ_ASSERT(!mDestroyed);
 
-  
-  
+  // If we're waiting a query of layout information from TIP, it means that
+  // we've returned TS_E_NOLAYOUT error.
   bool returnedNoLayoutError = mHasReturnedNoLayoutError || mWaitingQueryLayout;
 
-  
+  // If we returned TS_E_NOLAYOUT, TIP should query the computed layout again.
   mWaitingQueryLayout = returnedNoLayoutError;
 
-  
-  
+  // For avoiding to call this method again at unlocking the document during
+  // calls of OnLayoutChange(), reset mHasReturnedNoLayoutError.
   mHasReturnedNoLayoutError = false;
 
-  
-  
+  // Now, layout has been computed.  We should notify mContentForTSF for
+  // making GetTextExt() and GetACPFromPoint() not return TS_E_NOLAYOUT.
   if (mContentForTSF.IsInitialized()) {
     mContentForTSF.OnLayoutChanged();
   }
 
   if (IMEHandler::NeedsToCreateNativeCaret()) {
-    
-    
+    // If we're available, we should create native caret instead of IMEHandler
+    // because we may have some cache to do it.
     CreateNativeCaret();
   } else {
-    
-    
+    // Now, the caret position is different from ours.  Destroy the native caret
+    // if we've create it only for GetTextExt().
     IMEHandler::MaybeDestroyNativeCaret();
   }
 
-  
+  // This method should return true if either way succeeds.
   bool ret = true;
 
   if (mSink) {
@@ -6266,8 +6266,8 @@ bool TSFTextStore::NotifyTSFOfLayoutChange() {
     ret = SUCCEEDED(hr);
   }
 
-  
-  
+  // The layout change caused by composition string change should cause
+  // calling ITfContextOwnerServices::OnLayoutChange() too.
   if (returnedNoLayoutError && mContext) {
     RefPtr<ITfContextOwnerServices> service;
     mContext->QueryInterface(IID_ITfContextOwnerServices,
@@ -6303,8 +6303,8 @@ bool TSFTextStore::NotifyTSFOfLayoutChange() {
     return ret;
   }
 
-  
-  
+  // If we returned TS_E_NOLAYOUT again, we need another call of
+  // OnLayoutChange() later.  So, let's wait a query from TIP.
   if (mHasReturnedNoLayoutError) {
     mWaitingQueryLayout = true;
   }
@@ -6317,8 +6317,8 @@ bool TSFTextStore::NotifyTSFOfLayoutChange() {
     return ret;
   }
 
-  
-  
+  // If we believe that TIP needs to retry to retrieve our layout information
+  // later, we should call it with ::PostMessage() hack.
   MOZ_LOG(sTextStoreLog, LogLevel::Debug,
           ("0x%p   TSFTextStore::NotifyTSFOfLayoutChange(), "
            "posing  MOZ_WM_NOTIY_TSF_OF_LAYOUT_CHANGE for calling "
@@ -6331,14 +6331,14 @@ bool TSFTextStore::NotifyTSFOfLayoutChange() {
 }
 
 void TSFTextStore::NotifyTSFOfLayoutChangeAgain() {
-  
+  // Don't notify TSF of layout change after destroyed.
   if (mDestroyed) {
     mWaitingQueryLayout = false;
     return;
   }
 
-  
-  
+  // Before preforming this method, TIP has accessed our layout information by
+  // itself.  In such case, we don't need to call OnLayoutChange() anymore.
   if (!mWaitingQueryLayout) {
     return;
   }
@@ -6349,11 +6349,11 @@ void TSFTextStore::NotifyTSFOfLayoutChangeAgain() {
            this));
   NotifyTSFOfLayoutChange();
 
-  
-  
-  
-  
-  
+  // If TIP didn't retrieved our layout information during a call of
+  // NotifyTSFOfLayoutChange(), it means that the TIP already gave up to
+  // retry to retrieve layout information or doesn't necessary it anymore.
+  // But don't forget that the call may have caused returning TS_E_NOLAYOUT
+  // error again.  In such case we still need to call OnLayoutChange() later.
   if (!mHasReturnedNoLayoutError && mWaitingQueryLayout) {
     mWaitingQueryLayout = false;
     MOZ_LOG(sTextStoreLog, LogLevel::Warning,
@@ -6375,25 +6375,25 @@ nsresult TSFTextStore::OnUpdateCompositionInternal() {
            "mDestroyed=%s, mDeferNotifyingTSF=%s",
            this, GetBoolName(mDestroyed), GetBoolName(mDeferNotifyingTSF)));
 
-  
+  // There are nothing to do after destroyed.
   if (mDestroyed) {
     return NS_OK;
   }
 
-  
+  // Update cached data now because all pending events have been handled now.
   mContentForTSF.OnCompositionEventsHandled();
 
-  
-  
-  
+  // If composition is completely finished both in TSF/TIP and the focused
+  // editor which may be in a remote process, we can clear the cache and don't
+  // have it until starting next composition.
   if (!mComposition.IsComposing() && !IsHandlingComposition()) {
     mDeferClearingContentForTSF = false;
   }
   mDeferNotifyingTSF = false;
   MaybeFlushPendingNotifications();
 
-  
-  
+  // If we're available, we should create native caret instead of IMEHandler
+  // because we may have some cache to do it.
   if (IMEHandler::NeedsToCreateNativeCaret()) {
     CreateNativeCaret();
   }
@@ -6404,8 +6404,8 @@ nsresult TSFTextStore::OnUpdateCompositionInternal() {
 nsresult TSFTextStore::OnMouseButtonEventInternal(
     const IMENotification& aIMENotification) {
   if (mDestroyed) {
-    
-    
+    // If this instance is already destroyed, we shouldn't notify TSF of any
+    // events.
     return NS_OK;
   }
 
@@ -6484,7 +6484,7 @@ void TSFTextStore::CreateNativeCaret() {
 
   IMEHandler::MaybeDestroyNativeCaret();
 
-  
+  // Don't create native caret after destroyed.
   if (mDestroyed) {
     return;
   }
@@ -6507,20 +6507,20 @@ void TSFTextStore::CreateNativeCaret() {
   mWidget->InitEvent(queryCaretRect);
 
   WidgetQueryContentEvent::Options options;
-  
-  
+  // XXX If this is called without composition and the selection isn't
+  //     collapsed, is it OK?
   int64_t caretOffset = selectionForTSF.MaxOffset();
   if (mComposition.IsComposing()) {
-    
-    
-    
+    // If there is a composition, use insertion point relative query for
+    // deciding caret position because composition might be at different
+    // position where TSFTextStore believes it at.
     options.mRelativeToInsertionPoint = true;
     caretOffset -= mComposition.mStart;
   } else if (!CanAccessActualContentDirectly()) {
-    
-    
-    
-    
+    // If TSF/TIP cannot access actual content directly, there may be pending
+    // text and/or selection changes which have not been notified TSF yet.
+    // Therefore, we should use relative to insertion point query since
+    // TSF/TIP computes the offset from the cached selection.
     options.mRelativeToInsertionPoint = true;
     caretOffset -= mSelectionForTSF.StartOffset();
   }
@@ -6554,12 +6554,12 @@ void TSFTextStore::CommitCompositionInternal(bool aDiscard) {
            mComposition.mView.get(),
            GetEscapedUTF8String(mComposition.mString).get()));
 
-  
-  
-  
-  
-  
-  
+  // If the document is locked, TSF will fail to commit composition since
+  // TSF needs another document lock.  So, let's put off the request.
+  // Note that TextComposition will commit composition in the focused editor
+  // with the latest composition string for web apps and waits asynchronous
+  // committing messages.  Therefore, we can and need to perform this
+  // asynchronously.
   if (IsReadLocked()) {
     if (mDeferCommittingComposition || mDeferCancellingComposition) {
       MOZ_LOG(sTextStoreLog, LogLevel::Debug,
@@ -6584,7 +6584,7 @@ void TSFTextStore::CommitCompositionInternal(bool aDiscard) {
   if (mComposition.IsComposing() && aDiscard) {
     LONG endOffset = mComposition.EndOffset();
     mComposition.mString.Truncate(0);
-    
+    // Note that don't notify TSF of text change after this is destroyed.
     if (mSink && !mDestroyed) {
       TS_TEXTCHANGE textChange;
       textChange.acpStart = mComposition.mStart;
@@ -6600,8 +6600,8 @@ void TSFTextStore::CommitCompositionInternal(bool aDiscard) {
       sink->OnTextChange(0, &textChange);
     }
   }
-  
-  
+  // Terminate two contexts, the base context (mContext) and the top
+  // if the top context is not the same as the base context
   RefPtr<ITfContext> context = mContext;
   do {
     if (context) {
@@ -6633,7 +6633,7 @@ static bool GetCompartment(IUnknown* pUnk, const GUID& aID,
          (*aCompartment) != nullptr;
 }
 
-
+// static
 void TSFTextStore::SetIMEOpenState(bool aState) {
   MOZ_LOG(sTextStoreLog, LogLevel::Debug,
           ("TSFTextStore::SetIMEOpenState(aState=%s)", GetBoolName(aState)));
@@ -6667,7 +6667,7 @@ void TSFTextStore::SetIMEOpenState(bool aState) {
            variant.lVal));
 }
 
-
+// static
 bool TSFTextStore::GetIMEOpenState() {
   if (!sThreadMgr) {
     return false;
@@ -6688,7 +6688,7 @@ bool TSFTextStore::GetIMEOpenState() {
              hr));
     return false;
   }
-  
+  // Until IME is open in this process, the result may be empty.
   if (variant.vt == VT_EMPTY) {
     return false;
   }
@@ -6703,7 +6703,7 @@ bool TSFTextStore::GetIMEOpenState() {
   return variant.lVal != 0;
 }
 
-
+// static
 void TSFTextStore::SetInputContext(nsWindowBase* aWidget,
                                    const InputContext& aContext,
                                    const InputContextAction& aAction) {
@@ -6716,7 +6716,7 @@ void TSFTextStore::SetInputContext(nsWindowBase* aWidget,
            sEnabledTextStore ? sEnabledTextStore->mWidget.get() : nullptr,
            GetBoolName(ThinksHavingFocus())));
 
-  
+  // When this is called when the widget is created, there is nothing to do.
   if (aAction.mFocusChange == InputContextAction::WIDGET_CREATED) {
     return;
   }
@@ -6733,8 +6733,8 @@ void TSFTextStore::SetInputContext(nsWindowBase* aWidget,
     return;
   }
 
-  
-  
+  // If focus isn't actually changed but the enabled state is changed,
+  // emulate the focus move.
   if (!ThinksHavingFocus() && aContext.mIMEState.IsEditable()) {
     OnFocusChange(true, aWidget, aContext);
   } else if (ThinksHavingFocus() && !aContext.mIMEState.IsEditable()) {
@@ -6742,7 +6742,7 @@ void TSFTextStore::SetInputContext(nsWindowBase* aWidget,
   }
 }
 
-
+// static
 void TSFTextStore::MarkContextAsKeyboardDisabled(ITfContext* aContext) {
   VARIANT variant_int4_value1;
   variant_int4_value1.vt = VT_I4;
@@ -6765,7 +6765,7 @@ void TSFTextStore::MarkContextAsKeyboardDisabled(ITfContext* aContext) {
   comp->SetValue(sClientId, &variant_int4_value1);
 }
 
-
+// static
 void TSFTextStore::MarkContextAsEmpty(ITfContext* aContext) {
   VARIANT variant_int4_value1;
   variant_int4_value1.vt = VT_I4;
@@ -6788,7 +6788,7 @@ void TSFTextStore::MarkContextAsEmpty(ITfContext* aContext) {
   comp->SetValue(sClientId, &variant_int4_value1);
 }
 
-
+// static
 void TSFTextStore::Initialize() {
   MOZ_LOG(sTextStoreLog, LogLevel::Info,
           ("TSFTextStore::Initialize() is called..."));
@@ -6862,13 +6862,13 @@ void TSFTextStore::Initialize() {
            sDisabledContext.get()));
 }
 
-
+// static
 already_AddRefed<ITfThreadMgr> TSFTextStore::GetThreadMgr() {
   RefPtr<ITfThreadMgr> threadMgr = sThreadMgr;
   return threadMgr.forget();
 }
 
-
+// static
 already_AddRefed<ITfMessagePump> TSFTextStore::GetMessagePump() {
   static bool sInitialized = false;
   if (!sThreadMgr) {
@@ -6878,9 +6878,9 @@ already_AddRefed<ITfMessagePump> TSFTextStore::GetMessagePump() {
     RefPtr<ITfMessagePump> messagePump = sMessagePump;
     return messagePump.forget();
   }
-  
-  
-  
+  // If it tried to retrieve ITfMessagePump from sThreadMgr but it failed,
+  // we shouldn't retry it at every message due to performance reason.
+  // Although this shouldn't occur actually.
   if (sInitialized) {
     return nullptr;
   }
@@ -6900,7 +6900,7 @@ already_AddRefed<ITfMessagePump> TSFTextStore::GetMessagePump() {
   return messagePump.forget();
 }
 
-
+// static
 already_AddRefed<ITfDisplayAttributeMgr>
 TSFTextStore::GetDisplayAttributeMgr() {
   RefPtr<ITfDisplayAttributeMgr> displayAttributeMgr;
@@ -6923,7 +6923,7 @@ TSFTextStore::GetDisplayAttributeMgr() {
   return displayAttributeMgr.forget();
 }
 
-
+// static
 already_AddRefed<ITfCategoryMgr> TSFTextStore::GetCategoryMgr() {
   RefPtr<ITfCategoryMgr> categoryMgr;
   if (sCategoryMgr) {
@@ -6944,7 +6944,7 @@ already_AddRefed<ITfCategoryMgr> TSFTextStore::GetCategoryMgr() {
   return categoryMgr.forget();
 }
 
-
+// static
 already_AddRefed<ITfCompartment> TSFTextStore::GetCompartmentForOpenClose() {
   if (sCompartmentForOpenClose) {
     RefPtr<ITfCompartment> compartment = sCompartmentForOpenClose;
@@ -6981,7 +6981,7 @@ already_AddRefed<ITfCompartment> TSFTextStore::GetCompartmentForOpenClose() {
   return compartment.forget();
 }
 
-
+// static
 already_AddRefed<ITfInputProcessorProfiles>
 TSFTextStore::GetInputProcessorProfiles() {
   RefPtr<ITfInputProcessorProfiles> inputProcessorProfiles;
@@ -6989,10 +6989,10 @@ TSFTextStore::GetInputProcessorProfiles() {
     inputProcessorProfiles = sInputProcessorProfiles;
     return inputProcessorProfiles.forget();
   }
-  
-  
-  
-  
+  // XXX MSDN documents that ITfInputProcessorProfiles is available only on
+  //     desktop apps.  However, there is no known way to obtain
+  //     ITfInputProcessorProfileMgr instance without ITfInputProcessorProfiles
+  //     instance.
   HRESULT hr = ::CoCreateInstance(
       CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER,
       IID_ITfInputProcessorProfiles, getter_AddRefs(inputProcessorProfiles));
@@ -7007,7 +7007,7 @@ TSFTextStore::GetInputProcessorProfiles() {
   return inputProcessorProfiles.forget();
 }
 
-
+// static
 void TSFTextStore::Terminate() {
   MOZ_LOG(sTextStoreLog, LogLevel::Info, ("TSFTextStore::Terminate()"));
 
@@ -7029,16 +7029,16 @@ void TSFTextStore::Terminate() {
   }
 }
 
-
+// static
 bool TSFTextStore::ProcessRawKeyMessage(const MSG& aMsg) {
   if (!sThreadMgr) {
-    return false;  
+    return false;  // not in TSF mode
   }
   static bool sInitialized = false;
   if (!sKeystrokeMgr) {
-    
-    
-    
+    // If it tried to retrieve ITfKeystrokeMgr from sThreadMgr but it failed,
+    // we shouldn't retry it at every keydown nor keyup due to performance
+    // reason.  Although this shouldn't occur actually.
     if (sInitialized) {
       return false;
     }
@@ -7061,7 +7061,7 @@ bool TSFTextStore::ProcessRawKeyMessage(const MSG& aMsg) {
     if (textStore) {
       textStore->OnStartToHandleKeyMessage();
       if (NS_WARN_IF(textStore != sEnabledTextStore)) {
-        
+        // Let's handle the key message with new focused TSFTextStore.
         textStore = sEnabledTextStore;
       }
     }
@@ -7087,7 +7087,7 @@ bool TSFTextStore::ProcessRawKeyMessage(const MSG& aMsg) {
     if (textStore) {
       textStore->OnStartToHandleKeyMessage();
       if (NS_WARN_IF(textStore != sEnabledTextStore)) {
-        
+        // Let's handle the key message with new focused TSFTextStore.
         textStore = sEnabledTextStore;
       }
     }
@@ -7111,24 +7111,24 @@ bool TSFTextStore::ProcessRawKeyMessage(const MSG& aMsg) {
   return false;
 }
 
-
+// static
 void TSFTextStore::ProcessMessage(nsWindowBase* aWindow, UINT aMessage,
                                   WPARAM& aWParam, LPARAM& aLParam,
                                   MSGResult& aResult) {
   switch (aMessage) {
     case WM_IME_SETCONTEXT:
-      
-      
-      
-      
-      
+      // If a windowless plugin had focus and IME was handled on it, composition
+      // window was set the position.  After that, even in TSF mode, WinXP keeps
+      // to use composition window at the position if the active IME is not
+      // aware TSF.  For avoiding this issue, we need to hide the composition
+      // window here.
       if (aWParam) {
         aLParam &= ~ISC_SHOWUICOMPOSITIONWINDOW;
       }
       break;
     case WM_ENTERIDLE:
-      
-      
+      // When an modal dialog such as a file picker is open, composition
+      // should be committed because IME might be used on it.
       if (!IsComposingOn(aWindow)) {
         break;
       }
@@ -7145,24 +7145,24 @@ void TSFTextStore::ProcessMessage(nsWindowBase* aWindow, UINT aMessage,
   }
 }
 
-
+// static
 bool TSFTextStore::IsIMM_IMEActive() {
   return TSFStaticSink::IsIMM_IMEActive();
 }
 
-
+// static
 bool TSFTextStore::IsMSJapaneseIMEActive() {
   return TSFStaticSink::IsMSJapaneseIMEActive();
 }
 
-
+// static
 bool TSFTextStore::IsGoogleJapaneseInputActive() {
   return TSFStaticSink::IsGoogleJapaneseInputActive();
 }
 
-
-
-
+/******************************************************************/
+/* TSFTextStore::Composition                                       */
+/******************************************************************/
 
 void TSFTextStore::Composition::Start(ITfCompositionView* aCompositionView,
                                       LONG aCompositionStartOffset,
@@ -7177,9 +7177,9 @@ void TSFTextStore::Composition::End() {
   mString.Truncate();
 }
 
-
-
-
+/******************************************************************************
+ *  TSFTextStore::Content
+ *****************************************************************************/
 
 const nsDependentSubstring TSFTextStore::Content::GetSelectedText() const {
   MOZ_ASSERT(mInitialized);
@@ -7204,7 +7204,7 @@ inline uint32_t FirstDifferentCharOffset(const nsAString& aStr1,
   uint32_t i = 0;
   uint32_t minLength = std::min(aStr1.Length(), aStr2.Length());
   for (; i < minLength && aStr1[i] == aStr2[i]; i++) {
-    
+    /* nothing to do */
   }
   return i;
 }
@@ -7217,24 +7217,24 @@ void TSFTextStore::Content::ReplaceTextWith(LONG aStart, LONG aLength,
   if (aReplaceString != replacedString) {
     uint32_t firstDifferentOffset = mMinTextModifiedOffset;
     if (mComposition.IsComposing()) {
-      
-      
-      
-      
-      
+      // Emulate text insertion during compositions, because during a
+      // composition, editor expects the whole composition string to
+      // be sent in eCompositionChange, not just the inserted part.
+      // The actual eCompositionChange will be sent in SetSelection
+      // or OnUpdateComposition.
       MOZ_ASSERT(aStart >= mComposition.mStart);
       MOZ_ASSERT(aStart + aLength <= mComposition.EndOffset());
       mComposition.mString.Replace(
           static_cast<uint32_t>(aStart - mComposition.mStart),
           static_cast<uint32_t>(aLength), aReplaceString);
-      
-      
-      
+      // TIP may set composition string twice or more times during a document
+      // lock.  Therefore, we should compute the first difference offset with
+      // mLastCompositionString.
       if (mComposition.mString != mLastCompositionString) {
         firstDifferentOffset = mComposition.mStart +
                                FirstDifferentCharOffset(mComposition.mString,
                                                         mLastCompositionString);
-        
+        // The previous change to the composition string is canceled.
         if (mMinTextModifiedOffset >=
                 static_cast<uint32_t>(mComposition.mStart) &&
             mMinTextModifiedOffset < firstDifferentOffset) {
@@ -7244,7 +7244,7 @@ void TSFTextStore::Content::ReplaceTextWith(LONG aStart, LONG aLength,
                      static_cast<uint32_t>(mComposition.mStart) &&
                  mMinTextModifiedOffset <
                      static_cast<uint32_t>(mComposition.EndOffset())) {
-        
+        // The previous change to the composition string is canceled.
         mMinTextModifiedOffset = firstDifferentOffset =
             mComposition.EndOffset();
       }
@@ -7269,7 +7269,7 @@ void TSFTextStore::Content::ReplaceTextWith(LONG aStart, LONG aLength,
     mText.Replace(static_cast<uint32_t>(aStart), static_cast<uint32_t>(aLength),
                   aReplaceString);
   }
-  
+  // Selection should be collapsed at the end of the inserted string.
   mSelection.CollapseAt(static_cast<uint32_t>(aStart) +
                         aReplaceString.Length());
 }
@@ -7289,8 +7289,8 @@ void TSFTextStore::Content::StartComposition(
   mLatestCompositionStartOffset = mComposition.mStart;
   mLatestCompositionEndOffset = mComposition.EndOffset();
   if (!aPreserveSelection) {
-    
-    
+    // XXX Do we need to set a new writing-mode here when setting a new
+    // selection? Currently, we just preserve the existing value.
     WritingMode writingMode =
         mSelection.IsDirty() ? WritingMode() : mSelection.GetWritingMode();
     mSelection.SetSelection(mComposition.mStart, mComposition.mString.Length(),
@@ -7312,7 +7312,7 @@ void TSFTextStore::Content::RestoreCommittedComposition(
           static_cast<uint32_t>(aCanceledCompositionEnd.mData.Length())) ==
       aCanceledCompositionEnd.mData);
 
-  
+  // Restore the committed string as composing string.
   mComposition.Start(aCompositionView, aCanceledCompositionEnd.mSelectionStart,
                      aCanceledCompositionEnd.mData);
   mLatestCompositionStartOffset = mComposition.mStart;
@@ -7328,9 +7328,9 @@ void TSFTextStore::Content::EndComposition(const PendingAction& aCompEnd) {
   mComposition.End();
 }
 
-
-
-
+/******************************************************************************
+ *  TSFTextStore::MouseTracker
+ *****************************************************************************/
 
 TSFTextStore::MouseTracker::MouseTracker()
     : mStart(-1), mLength(-1), mCookie(kInvalidCookie) {}
@@ -7453,7 +7453,7 @@ bool TSFTextStore::MouseTracker::OnMouseButtonEvent(ULONG aEdge,
 }
 
 #ifdef DEBUG
-
+// static
 bool TSFTextStore::CurrentKeyboardLayoutHasIME() {
   RefPtr<ITfInputProcessorProfiles> inputProcessorProfiles =
       TSFTextStore::GetInputProcessorProfiles();
@@ -7467,9 +7467,9 @@ bool TSFTextStore::CurrentKeyboardLayoutHasIME() {
   HRESULT hr = inputProcessorProfiles->QueryInterface(
       IID_ITfInputProcessorProfileMgr, getter_AddRefs(profileMgr));
   if (FAILED(hr) || !profileMgr) {
-    
-    
-    
+    // On Windows Vista or later, ImmIsIME() API always returns true.
+    // If we failed to obtain the profile manager, we cannot know if current
+    // keyboard layout has IME.
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
             ("  TSFTextStore::CurrentKeyboardLayoutHasIME() FAILED to query "
              "ITfInputProcessorProfileMgr"));
@@ -7479,7 +7479,7 @@ bool TSFTextStore::CurrentKeyboardLayoutHasIME() {
   TF_INPUTPROCESSORPROFILE profile;
   hr = profileMgr->GetActiveProfile(GUID_TFCAT_TIP_KEYBOARD, &profile);
   if (hr == S_FALSE) {
-    return false;  
+    return false;  // not found or not active
   }
   if (FAILED(hr)) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
@@ -7489,7 +7489,7 @@ bool TSFTextStore::CurrentKeyboardLayoutHasIME() {
   }
   return (profile.dwProfileType == TF_PROFILETYPE_INPUTPROCESSOR);
 }
-#endif  
+#endif  // #ifdef DEBUG
 
-}  
-}  
+}  // namespace widget
+}  // namespace mozilla
