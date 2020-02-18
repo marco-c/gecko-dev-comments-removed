@@ -189,7 +189,6 @@ class Browsertime(Perftest):
         browsertime_options = [
             "--firefox.profileTemplate", str(self.profile.profile),
             "--skipHar",
-            "--video", self.browsertime_video and "true" or "false",
             "--visualMetrics", "false",
             
             "--timeouts.pageLoad", str(timeout),
@@ -198,6 +197,19 @@ class Browsertime(Perftest):
             "-vvv",
             "--resultDir", self.results_handler.result_dir_for_test(test),
         ]
+
+        if self.browsertime_video:
+            
+            
+            
+            browsertime_options.extend([
+                "--video", "true",
+                "--firefox.windowRecorder", "true",
+            ])
+        else:
+            browsertime_options.extend([
+                "--video", "false",
+            ])
 
         
         if not self.no_condprof:
