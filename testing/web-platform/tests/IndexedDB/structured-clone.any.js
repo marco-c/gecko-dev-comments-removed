@@ -253,7 +253,6 @@ cloneObjectTest({foo: true, bar: false}, (orig, clone) => {
 
 
 
-
 [
   new DOMMatrix(),
   new DOMMatrixReadOnly(),
