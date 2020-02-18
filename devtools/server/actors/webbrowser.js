@@ -6,7 +6,7 @@
 
 var { Ci } = require("chrome");
 var Services = require("Services");
-var { DebuggerServer } = require("devtools/server/debugger-server");
+var { DevToolsServer } = require("devtools/server/devtools-server");
 var { ActorRegistry } = require("devtools/server/actors/utils/actor-registry");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
@@ -74,7 +74,7 @@ function appShellDOMWindowType(window) {
 
 function sendShutdownEvent() {
   for (const win of Services.wm.getEnumerator(
-    DebuggerServer.chromeWindowType
+    DevToolsServer.chromeWindowType
   )) {
     const evt = win.document.createEvent("Event");
     evt.initEvent("Debugger:Shutdown", true, false);
@@ -262,7 +262,7 @@ BrowserTabList.prototype._getSelectedBrowser = function(window) {
 BrowserTabList.prototype._getBrowsers = function*() {
   
   for (const win of Services.wm.getEnumerator(
-    DebuggerServer.chromeWindowType
+    DevToolsServer.chromeWindowType
   )) {
     
     
@@ -290,7 +290,7 @@ BrowserTabList.prototype._getChildren = function(window) {
 
 BrowserTabList.prototype.getList = function(browserActorOptions) {
   const topAppWindow = Services.wm.getMostRecentWindow(
-    DebuggerServer.chromeWindowType
+    DevToolsServer.chromeWindowType
   );
   let selectedBrowser = null;
   if (topAppWindow) {
@@ -417,7 +417,7 @@ BrowserTabList.prototype.getTab = function(
   }
 
   const topAppWindow = Services.wm.getMostRecentWindow(
-    DebuggerServer.chromeWindowType
+    DevToolsServer.chromeWindowType
   );
   if (topAppWindow) {
     const selectedBrowser = this._getSelectedBrowser(topAppWindow);
@@ -573,7 +573,7 @@ BrowserTabList.prototype._listenForEventsIf = function(
   if (!shouldListen !== !this[guard]) {
     const op = shouldListen ? "addEventListener" : "removeEventListener";
     for (const win of Services.wm.getEnumerator(
-      DebuggerServer.chromeWindowType
+      DevToolsServer.chromeWindowType
     )) {
       for (const name of eventNames) {
         win[op](name, listener, false);
@@ -602,7 +602,7 @@ BrowserTabList.prototype._listenForMessagesIf = function(
   if (!shouldListen !== !this[guard]) {
     const op = shouldListen ? "addMessageListener" : "removeMessageListener";
     for (const win of Services.wm.getEnumerator(
-      DebuggerServer.chromeWindowType
+      DevToolsServer.chromeWindowType
     )) {
       for (const name of messageNames) {
         win.messageManager[op](name, this);
@@ -740,7 +740,7 @@ BrowserTabList.prototype.onOpenWindow = DevToolsUtils.makeInfallible(function(
     
     window.removeEventListener("load", handleLoad);
 
-    if (appShellDOMWindowType(window) !== DebuggerServer.chromeWindowType) {
+    if (appShellDOMWindowType(window) !== DevToolsServer.chromeWindowType) {
       return;
     }
 
@@ -785,7 +785,7 @@ BrowserTabList.prototype.onCloseWindow = DevToolsUtils.makeInfallible(function(
     window = window.docShell.domWindow;
   }
 
-  if (appShellDOMWindowType(window) !== DebuggerServer.chromeWindowType) {
+  if (appShellDOMWindowType(window) !== DevToolsServer.chromeWindowType) {
     return;
   }
 

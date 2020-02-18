@@ -5,7 +5,7 @@
 
 
 
-const { DebuggerServer } = require("devtools/server/debugger-server");
+const { DevToolsServer } = require("devtools/server/devtools-server");
 const LONG_STRING_LENGTH = 400;
 const LONG_STRING_INITIAL_LENGTH = 400;
 let ORIGINAL_LONG_STRING_LENGTH, ORIGINAL_LONG_STRING_INITIAL_LENGTH;
@@ -23,12 +23,12 @@ add_task(async function() {
   
   
   
-  ORIGINAL_LONG_STRING_LENGTH = DebuggerServer.LONG_STRING_LENGTH;
+  ORIGINAL_LONG_STRING_LENGTH = DevToolsServer.LONG_STRING_LENGTH;
   ORIGINAL_LONG_STRING_INITIAL_LENGTH =
-    DebuggerServer.LONG_STRING_INITIAL_LENGTH;
+    DevToolsServer.LONG_STRING_INITIAL_LENGTH;
 
-  DebuggerServer.LONG_STRING_LENGTH = LONG_STRING_LENGTH;
-  DebuggerServer.LONG_STRING_INITIAL_LENGTH = LONG_STRING_INITIAL_LENGTH;
+  DevToolsServer.LONG_STRING_LENGTH = LONG_STRING_LENGTH;
+  DevToolsServer.LONG_STRING_INITIAL_LENGTH = LONG_STRING_INITIAL_LENGTH;
 
   info("test network POST request");
 
@@ -78,8 +78,8 @@ add_task(async function() {
 
   await target.destroy();
 
-  DebuggerServer.LONG_STRING_LENGTH = ORIGINAL_LONG_STRING_LENGTH;
-  DebuggerServer.LONG_STRING_INITIAL_LENGTH = ORIGINAL_LONG_STRING_INITIAL_LENGTH;
+  DevToolsServer.LONG_STRING_LENGTH = ORIGINAL_LONG_STRING_LENGTH;
+  DevToolsServer.LONG_STRING_INITIAL_LENGTH = ORIGINAL_LONG_STRING_INITIAL_LENGTH;
 });
 
 function assertNetworkEvent(client, webConsoleFront, packet) {

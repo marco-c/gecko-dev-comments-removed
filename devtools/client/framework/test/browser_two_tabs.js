@@ -5,21 +5,21 @@
 
 
 
-var { DebuggerServer } = require("devtools/server/debugger-server");
+var { DevToolsServer } = require("devtools/server/devtools-server");
 var { DebuggerClient } = require("devtools/shared/client/debugger-client");
 
 const TAB_URL_1 = "data:text/html;charset=utf-8,foo";
 const TAB_URL_2 = "data:text/html;charset=utf-8,bar";
 
 add_task(async () => {
-  DebuggerServer.init();
-  DebuggerServer.registerAllActors();
+  DevToolsServer.init();
+  DevToolsServer.registerAllActors();
 
   const tab1 = await addTab(TAB_URL_1);
   const tab2 = await addTab(TAB_URL_2);
 
   
-  const client = new DebuggerClient(DebuggerServer.connectPipe());
+  const client = new DebuggerClient(DevToolsServer.connectPipe());
   await client.connect();
 
   const tabs = await client.mainRoot.listTabs();

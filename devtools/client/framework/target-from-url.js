@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { DebuggerServer } = require("devtools/server/debugger-server");
+const { DevToolsServer } = require("devtools/server/devtools-server");
 const { DebuggerClient } = require("devtools/shared/client/debugger-client");
 const {
   remoteClientManager,
@@ -118,7 +118,7 @@ async function _targetFromURL(client, id, type, chrome) {
     }
   } else if (type == "process") {
     
-    DebuggerServer.allowChromeProcess = true;
+    DevToolsServer.allowChromeProcess = true;
     try {
       id = parseInt(id, 10);
       if (isNaN(id)) {
@@ -133,7 +133,7 @@ async function _targetFromURL(client, id, type, chrome) {
     }
   } else if (type == "window") {
     
-    DebuggerServer.allowChromeProcess = true;
+    DevToolsServer.allowChromeProcess = true;
     try {
       id = parseInt(id, 10);
       if (isNaN(id)) {
@@ -199,9 +199,9 @@ async function clientFromURL(url) {
     transport = await DebuggerClient.socketConnect({ host, port, webSocket });
   } else {
     
-    DebuggerServer.init();
-    DebuggerServer.registerAllActors();
-    transport = DebuggerServer.connectPipe();
+    DevToolsServer.init();
+    DevToolsServer.registerAllActors();
+    transport = DevToolsServer.connectPipe();
   }
   return new DebuggerClient(transport);
 }

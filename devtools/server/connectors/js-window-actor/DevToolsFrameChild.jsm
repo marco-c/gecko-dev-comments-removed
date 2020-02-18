@@ -51,23 +51,23 @@ class DevToolsFrameChild extends JSWindowActorChild {
   }
 
   _createConnectionAndActor(prefix) {
-    const { DebuggerServer } = this.loader.require(
-      "devtools/server/debugger-server"
+    const { DevToolsServer } = this.loader.require(
+      "devtools/server/devtools-server"
     );
     const { ActorPool } = this.loader.require("devtools/server/actors/common");
     const { FrameTargetActor } = this.loader.require(
       "devtools/server/actors/targets/frame"
     );
 
-    DebuggerServer.init();
+    DevToolsServer.init();
 
     
     
     
-    DebuggerServer.registerActors({ target: true });
-    DebuggerServer.on("connectionchange", this._onConnectionChange);
+    DevToolsServer.registerActors({ target: true });
+    DevToolsServer.on("connectionchange", this._onConnectionChange);
 
-    const connection = DebuggerServer.connectToParentWindowActor(prefix, this);
+    const connection = DevToolsServer.connectToParentWindowActor(prefix, this);
 
     
     const targetActor = new FrameTargetActor(connection, this.docShell);
@@ -85,13 +85,13 @@ class DevToolsFrameChild extends JSWindowActorChild {
 
 
   _onConnectionChange() {
-    const { DebuggerServer } = this.loader.require(
-      "devtools/server/debugger-server"
+    const { DevToolsServer } = this.loader.require(
+      "devtools/server/devtools-server"
     );
 
     
     
-    if (DebuggerServer.hasConnection() || DebuggerServer.keepAlive) {
+    if (DevToolsServer.hasConnection() || DevToolsServer.keepAlive) {
       return;
     }
 
@@ -100,8 +100,8 @@ class DevToolsFrameChild extends JSWindowActorChild {
     }
     this._destroyed = true;
 
-    DebuggerServer.off("connectionchange", this._onConnectionChange);
-    DebuggerServer.destroy();
+    DevToolsServer.off("connectionchange", this._onConnectionChange);
+    DevToolsServer.destroy();
   }
 
   disconnect(msg) {

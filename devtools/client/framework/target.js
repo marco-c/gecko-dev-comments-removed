@@ -6,8 +6,8 @@
 
 loader.lazyRequireGetter(
   this,
-  "DebuggerServer",
-  "devtools/server/debugger-server",
+  "DevToolsServer",
+  "devtools/server/devtools-server",
   true
 );
 loader.lazyRequireGetter(
@@ -71,7 +71,7 @@ exports.TargetFactory = {
     function createLocalServer() {
       
       
-      DebuggerServer.init();
+      DevToolsServer.init();
 
       
       
@@ -79,14 +79,14 @@ exports.TargetFactory = {
       
       
       
-      DebuggerServer.registerAllActors();
+      DevToolsServer.registerAllActors();
       
-      DebuggerServer.allowChromeProcess = true;
+      DevToolsServer.allowChromeProcess = true;
     }
 
     function createLocalClient() {
       createLocalServer();
-      return new DebuggerClient(DebuggerServer.connectPipe());
+      return new DebuggerClient(DevToolsServer.connectPipe());
     }
 
     if (!client) {

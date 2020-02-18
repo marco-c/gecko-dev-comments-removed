@@ -81,16 +81,16 @@ async function testMainProcess() {
   const customLoader = new DevToolsLoader({
     invisibleToDebugger: true,
   });
-  const { DebuggerServer } = customLoader.require(
-    "devtools/server/debugger-server"
+  const { DevToolsServer } = customLoader.require(
+    "devtools/server/devtools-server"
   );
   const { DebuggerClient } = require("devtools/shared/client/debugger-client");
 
-  DebuggerServer.init();
-  DebuggerServer.registerAllActors();
-  DebuggerServer.allowChromeProcess = true;
+  DevToolsServer.init();
+  DevToolsServer.registerAllActors();
+  DevToolsServer.allowChromeProcess = true;
 
-  const client = new DebuggerClient(DebuggerServer.connectPipe());
+  const client = new DebuggerClient(DevToolsServer.connectPipe());
   await client.connect();
 
   const onThreadActorInstantiated = new Promise(resolve => {
@@ -133,6 +133,6 @@ async function testMainProcess() {
   await client.close();
 
   
-  await DebuggerServer.destroy();
+  await DevToolsServer.destroy();
   await customLoader.destroy();
 }

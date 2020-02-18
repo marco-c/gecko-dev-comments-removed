@@ -12,7 +12,7 @@ var { dumpn } = DevToolsUtils;
 
 loader.lazyRequireGetter(
   this,
-  "DebuggerServerConnection",
+  "DevToolsServerConnection",
   "devtools/server/debugger-server-connection",
   true
 );
@@ -77,7 +77,7 @@ loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 
 
-var DebuggerServer = {
+var DevToolsServer = {
   _listeners: [],
   _initialized: false,
   
@@ -166,7 +166,7 @@ var DebuggerServer = {
     this.closeAllSocketListeners();
     this._initialized = false;
 
-    dumpn("Debugger server is shut down.");
+    dumpn("DevTools server is shut down.");
   },
 
   
@@ -174,12 +174,12 @@ var DebuggerServer = {
 
   _checkInit() {
     if (!this._initialized) {
-      throw new Error("DebuggerServer has not been initialized.");
+      throw new Error("DevToolsServer has not been initialized.");
     }
 
     if (!this.rootlessServer && !this.createRootActor) {
       throw new Error(
-        "Use DebuggerServer.setRootActor() to add a root actor " +
+        "Use DevToolsServer.setRootActor() to add a root actor " +
           "implementation."
       );
     }
@@ -442,7 +442,7 @@ var DebuggerServer = {
       connID = "server" + loader.id + ".conn" + this._nextConnID++ + ".";
     }
 
-    const conn = new DebuggerServerConnection(
+    const conn = new DevToolsServerConnection(
       connID,
       transport,
       socketListener
@@ -524,13 +524,13 @@ var DebuggerServer = {
 };
 
 
-DevToolsUtils.defineLazyGetter(DebuggerServer, "Authenticators", () => {
+DevToolsUtils.defineLazyGetter(DevToolsServer, "Authenticators", () => {
   return Authentication.Authenticators;
 });
-DevToolsUtils.defineLazyGetter(DebuggerServer, "AuthenticationResult", () => {
+DevToolsUtils.defineLazyGetter(DevToolsServer, "AuthenticationResult", () => {
   return Authentication.AuthenticationResult;
 });
 
-EventEmitter.decorate(DebuggerServer);
+EventEmitter.decorate(DevToolsServer);
 
-exports.DebuggerServer = DebuggerServer;
+exports.DevToolsServer = DevToolsServer;

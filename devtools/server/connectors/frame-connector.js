@@ -10,8 +10,8 @@ var { dumpn } = DevToolsUtils;
 
 loader.lazyRequireGetter(
   this,
-  "DebuggerServer",
-  "devtools/server/debugger-server",
+  "DevToolsServer",
+  "devtools/server/devtools-server",
   true
 );
 loader.lazyRequireGetter(
@@ -54,7 +54,7 @@ function connectToFrame(connection, frame, onDestroy, { addonId } = {}) {
       if (!actor) {
         mm.addMessageListener("debug:actor", onActorCreated);
       }
-      DebuggerServer._childMessageManagers.add(mm);
+      DevToolsServer._childMessageManagers.add(mm);
     };
 
     const untrackMessageManager = () => {
@@ -67,7 +67,7 @@ function connectToFrame(connection, frame, onDestroy, { addonId } = {}) {
       if (!actor) {
         mm.removeMessageListener("debug:actor", onActorCreated);
       }
-      DebuggerServer._childMessageManagers.delete(mm);
+      DevToolsServer._childMessageManagers.delete(mm);
     };
 
     let actor, childTransport;
@@ -237,7 +237,7 @@ function connectToFrame(connection, frame, onDestroy, { addonId } = {}) {
         }
       });
       
-      DebuggerServer.emit("disconnected-from-child:" + connPrefix, {
+      DevToolsServer.emit("disconnected-from-child:" + connPrefix, {
         mm,
         prefix: connPrefix,
       });

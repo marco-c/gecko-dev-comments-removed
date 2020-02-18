@@ -6,7 +6,7 @@
 
 const { Cu, CC } = require("chrome");
 
-const { DebuggerServer } = require("devtools/server/debugger-server");
+const { DevToolsServer } = require("devtools/server/devtools-server");
 const {
   ActorRegistry,
 } = require("devtools/server/actors/utils/actor-registry");
@@ -23,7 +23,7 @@ exports.registerActor = function(sourceText, fileName, options) {
   
   exports.registerActorInCurrentProcess(sourceText, fileName, options);
   
-  return DebuggerServer.setupInChild({
+  return DevToolsServer.setupInChild({
     module: "devtools/server/actors/utils/actor-registry-utils",
     setupChild: "registerActorInCurrentProcess",
     args: [sourceText, fileName, options],
@@ -76,7 +76,7 @@ exports.unregisterActor = function(options) {
   
   exports.unregisterActorInCurrentProcess(options);
   
-  DebuggerServer.setupInChild({
+  DevToolsServer.setupInChild({
     module: "devtools/server/actors/utils/actor-registry-utils",
     setupChild: "unregisterActorInCurrentProcess",
     args: [options],

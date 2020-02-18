@@ -166,15 +166,15 @@ registerCleanupFunction(async function cleanup() {
   await waitForTick();
 
   
-  const { DebuggerServer } = require("devtools/server/debugger-server");
+  const { DevToolsServer } = require("devtools/server/devtools-server");
   ok(
-    !DebuggerServer.hasConnection(),
-    "The main process DebuggerServer has no pending connection when the test ends"
+    !DevToolsServer.hasConnection(),
+    "The main process DevToolsServer has no pending connection when the test ends"
   );
   
   
-  if (DebuggerServer.hasConnection()) {
-    for (const conn of Object.values(DebuggerServer._connections)) {
+  if (DevToolsServer.hasConnection()) {
+    for (const conn of Object.values(DevToolsServer._connections)) {
       conn.close();
     }
   }

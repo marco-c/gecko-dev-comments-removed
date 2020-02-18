@@ -36,29 +36,29 @@ function setupServer(mm) {
   gLoader = new DevToolsLoader({
     invisibleToDebugger: true,
   });
-  const { DebuggerServer } = gLoader.require("devtools/server/debugger-server");
+  const { DevToolsServer } = gLoader.require("devtools/server/devtools-server");
 
-  DebuggerServer.init();
+  DevToolsServer.init();
   
   
   
-  DebuggerServer.registerActors({ root: true, target: true });
+  DevToolsServer.registerActors({ root: true, target: true });
 
   
   
   function destroyServer() {
     
     
-    if (DebuggerServer.hasConnection()) {
+    if (DevToolsServer.hasConnection()) {
       return;
     }
-    DebuggerServer.off("connectionchange", destroyServer);
+    DevToolsServer.off("connectionchange", destroyServer);
 
-    DebuggerServer.destroy();
+    DevToolsServer.destroy();
     gLoader.destroy();
     gLoader = null;
   }
-  DebuggerServer.on("connectionchange", destroyServer);
+  DevToolsServer.on("connectionchange", destroyServer);
 
   return gLoader;
 }
@@ -72,8 +72,8 @@ function init(msg) {
 
   
   
-  const { DebuggerServer } = loader.require("devtools/server/debugger-server");
-  const conn = DebuggerServer.connectToParent(prefix, mm);
+  const { DevToolsServer } = loader.require("devtools/server/devtools-server");
+  const conn = DevToolsServer.connectToParent(prefix, mm);
   conn.parentMessageManager = mm;
 
   const { ContentProcessTargetActor } = loader.require(

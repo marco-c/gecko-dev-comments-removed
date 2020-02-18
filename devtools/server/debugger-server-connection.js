@@ -11,8 +11,8 @@ var { dumpn } = DevToolsUtils;
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 loader.lazyRequireGetter(
   this,
-  "DebuggerServer",
-  "devtools/server/debugger-server",
+  "DevToolsServer",
+  "devtools/server/devtools-server",
   true
 );
 
@@ -32,7 +32,7 @@ loader.lazyRequireGetter(
 
 
 
-function DebuggerServerConnection(prefix, transport, socketListener) {
+function DevToolsServerConnection(prefix, transport, socketListener) {
   this._prefix = prefix;
   this._transport = transport;
   this._transport.hooks = this;
@@ -61,9 +61,9 @@ function DebuggerServerConnection(prefix, transport, socketListener) {
 
   EventEmitter.decorate(this);
 }
-exports.DebuggerServerConnection = DebuggerServerConnection;
+exports.DevToolsServerConnection = DevToolsServerConnection;
 
-DebuggerServerConnection.prototype = {
+DevToolsServerConnection.prototype = {
   _prefix: null,
   get prefix() {
     return this._prefix;
@@ -481,7 +481,7 @@ DebuggerServerConnection.prototype = {
 
     this.rootActor = null;
     this._transport = null;
-    DebuggerServer._connectionClosed(this);
+    DevToolsServer._connectionClosed(this);
   },
 
   

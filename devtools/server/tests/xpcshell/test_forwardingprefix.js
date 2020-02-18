@@ -12,7 +12,7 @@ var gSubconnection1, gSubconnection2;
 var gClient;
 
 function run_test() {
-  DebuggerServer.init();
+  DevToolsServer.init();
 
   add_test(createMainConnection);
   add_test(TestNoForwardingYet);
@@ -37,12 +37,12 @@ function run_test() {
 
 function newConnection(prefix) {
   let conn;
-  DebuggerServer.createRootActor = function(connection) {
+  DevToolsServer.createRootActor = function(connection) {
     conn = connection;
     return new RootActor(connection, {});
   };
 
-  const transport = DebuggerServer.connectPipe(prefix);
+  const transport = DevToolsServer.connectPipe(prefix);
 
   return { conn: conn, transport: transport };
 }

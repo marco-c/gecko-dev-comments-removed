@@ -2,7 +2,7 @@
 
 const { Cc } = require("chrome");
 const cpmm = Cc["@mozilla.org/childprocessmessagemanager;1"].getService();
-const { DebuggerServer } = require("devtools/server/debugger-server");
+const { DevToolsServer } = require("devtools/server/devtools-server");
 
 exports.setupChild = function(a, b, c) {
   cpmm.sendAsyncMessage("test:setupChild", [a, b, c]);
@@ -10,8 +10,8 @@ exports.setupChild = function(a, b, c) {
 
 exports.callParent = function() {
   
-  for (const id in DebuggerServer._connections) {
-    const conn = DebuggerServer._connections[id];
+  for (const id in DevToolsServer._connections) {
+    const conn = DevToolsServer._connections[id];
     
     conn.setupInParent({
       module:

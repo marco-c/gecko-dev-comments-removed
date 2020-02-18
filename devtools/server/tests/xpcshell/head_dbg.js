@@ -38,9 +38,9 @@ const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const {
   ActorRegistry,
 } = require("devtools/server/actors/utils/actor-registry");
-const { DebuggerServer } = require("devtools/server/debugger-server");
-const { DebuggerServer: WorkerDebuggerServer } = worker.require(
-  "devtools/server/debugger-server"
+const { DevToolsServer } = require("devtools/server/devtools-server");
+const { DevToolsServer: WorkerDevToolsServer } = worker.require(
+  "devtools/server/devtools-server"
 );
 const { DebuggerClient } = require("devtools/shared/client/debugger-client");
 const { ObjectFront } = require("devtools/shared/fronts/object");
@@ -85,18 +85,18 @@ async function startupAddonsManager() {
 }
 
 async function createTargetForFakeTab(title) {
-  const client = await startTestDebuggerServer(title);
+  const client = await startTestDevToolsServer(title);
 
   const tabs = await listTabs(client);
   return findTab(tabs, title);
 }
 
 async function createTargetForMainProcess() {
-  DebuggerServer.init();
-  DebuggerServer.registerAllActors();
-  DebuggerServer.allowChromeProcess = true;
+  DevToolsServer.init();
+  DevToolsServer.registerAllActors();
+  DevToolsServer.allowChromeProcess = true;
 
-  const client = new DebuggerClient(DebuggerServer.connectPipe());
+  const client = new DebuggerClient(DevToolsServer.connectPipe());
   await client.connect();
 
   return client.mainRoot.getMainProcess();
@@ -111,7 +111,7 @@ async function createTabMemoryFront() {
   
   
   
-  DebuggerServer.registerActors({ browser: true });
+  DevToolsServer.registerActors({ browser: true });
 
   const memoryFront = await target.getFront("memory");
   await memoryFront.attach();
@@ -317,11 +317,11 @@ var listener = {
 
       
       while (
-        DebuggerServer &&
-        DebuggerServer.xpcInspector &&
-        DebuggerServer.xpcInspector.eventLoopNestLevel > 0
+        DevToolsServer &&
+        DevToolsServer.xpcInspector &&
+        DevToolsServer.xpcInspector.eventLoopNestLevel > 0
       ) {
-        DebuggerServer.xpcInspector.exitNestedEventLoop();
+        DevToolsServer.xpcInspector.exitNestedEventLoop();
       }
 
       
@@ -351,7 +351,7 @@ function testGlobal(name) {
   return sandbox;
 }
 
-function addTestGlobal(name, server = DebuggerServer) {
+function addTestGlobal(name, server = DevToolsServer) {
   const global = testGlobal(name);
   server.addTestGlobal(global);
   return global;
@@ -410,8 +410,8 @@ async function attachTestTabAndResume(client, title, callback = () => {}) {
 
 
 
-function initTestDebuggerServer(server = DebuggerServer) {
-  if (server === WorkerDebuggerServer) {
+function initTestDevToolsServer(server = DevToolsServer) {
+  if (server === WorkerDevToolsServer) {
     const { createRootActor } = worker.require("xpcshell-test/testactors");
     server.setRootActor(createRootActor);
   } else {
@@ -428,12 +428,12 @@ function initTestDebuggerServer(server = DebuggerServer) {
 
 
 
-async function startTestDebuggerServer(title, server = DebuggerServer) {
-  initTestDebuggerServer(server);
+async function startTestDevToolsServer(title, server = DevToolsServer) {
+  initTestDevToolsServer(server);
   addTestGlobal(title);
-  DebuggerServer.registerActors({ target: true });
+  DevToolsServer.registerActors({ target: true });
 
-  const transport = DebuggerServer.connectPipe();
+  const transport = DevToolsServer.connectPipe();
   const client = new DebuggerClient(transport);
 
   await connect(client);
@@ -442,7 +442,7 @@ async function startTestDebuggerServer(title, server = DebuggerServer) {
 
 async function finishClient(client) {
   await client.close();
-  DebuggerServer.destroy();
+  DevToolsServer.destroy();
   do_test_finished();
 }
 
@@ -777,13 +777,13 @@ async function setupTestFromUrl(url) {
   do_test_pending();
 
   const { createRootActor } = require("xpcshell-test/testactors");
-  DebuggerServer.setRootActor(createRootActor);
-  DebuggerServer.init(() => true);
+  DevToolsServer.setRootActor(createRootActor);
+  DevToolsServer.init(() => true);
 
   const global = createTestGlobal("test");
-  DebuggerServer.addTestGlobal(global);
+  DevToolsServer.addTestGlobal(global);
 
-  const debuggerClient = new DebuggerClient(DebuggerServer.connectPipe());
+  const debuggerClient = new DebuggerClient(DevToolsServer.connectPipe());
   await connect(debuggerClient);
 
   const tabs = await listTabs(debuggerClient);
@@ -840,7 +840,7 @@ function threadFrontTest(test, options = {}) {
 
   async function runThreadFrontTestWithServer(server, test) {
     
-    initTestDebuggerServer(server);
+    initTestDevToolsServer(server);
 
     
     
@@ -884,13 +884,13 @@ function threadFrontTest(test, options = {}) {
   }
 
   return async () => {
-    dump(">>> Run thread front test against a regular DebuggerServer\n");
-    await runThreadFrontTestWithServer(DebuggerServer, test);
+    dump(">>> Run thread front test against a regular DevToolsServer\n");
+    await runThreadFrontTestWithServer(DevToolsServer, test);
 
     
     if (!doNotRunWorker) {
-      dump(">>> Run thread front test against a worker DebuggerServer\n");
-      await runThreadFrontTestWithServer(WorkerDebuggerServer, test);
+      dump(">>> Run thread front test against a worker DevToolsServer\n");
+      await runThreadFrontTestWithServer(WorkerDevToolsServer, test);
     }
   };
 }

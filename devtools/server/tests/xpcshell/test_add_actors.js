@@ -5,7 +5,7 @@
 
 
 function getActorInstance(connID, actorID) {
-  return DebuggerServer._connections[connID].getActor(actorID);
+  return DevToolsServer._connections[connID].getActor(actorID);
 }
 
 
@@ -30,7 +30,7 @@ add_task(async function() {
     }
   );
 
-  const client = await startTestDebuggerServer("example tab");
+  const client = await startTestDevToolsServer("example tab");
 
   ActorRegistry.registerModule("resource://test/post_init_global_actors.js", {
     prefix: "postInitGlobal",
@@ -75,7 +75,7 @@ add_task(async function() {
   Assert.equal(reply.message, "pong");
 
   
-  const connID = Object.keys(DebuggerServer._connections)[0];
+  const connID = Object.keys(DevToolsServer._connections)[0];
   const postInitGlobalActor = getActorInstance(
     connID,
     actors.postInitGlobalActor

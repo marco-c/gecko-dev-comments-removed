@@ -10,7 +10,7 @@ const { webconsoleSpec } = require("devtools/shared/specs/webconsole");
 
 const Services = require("Services");
 const { Cc, Ci, Cu } = require("chrome");
-const { DebuggerServer } = require("devtools/server/debugger-server");
+const { DevToolsServer } = require("devtools/server/devtools-server");
 const { ActorPool } = require("devtools/server/actors/common");
 const { ThreadActor } = require("devtools/server/actors/thread");
 const { ObjectActor } = require("devtools/server/actors/object");
@@ -1732,9 +1732,9 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     let lineText = pageError.sourceLine;
     if (
       lineText &&
-      lineText.length > DebuggerServer.LONG_STRING_INITIAL_LENGTH
+      lineText.length > DevToolsServer.LONG_STRING_INITIAL_LENGTH
     ) {
-      lineText = lineText.substr(0, DebuggerServer.LONG_STRING_INITIAL_LENGTH);
+      lineText = lineText.substr(0, DevToolsServer.LONG_STRING_INITIAL_LENGTH);
     }
 
     let notesArray = null;

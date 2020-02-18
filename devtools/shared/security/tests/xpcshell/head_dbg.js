@@ -11,7 +11,7 @@ const { loader, require } = ChromeUtils.import(
 const defer = require("devtools/shared/defer");
 const Services = require("Services");
 const xpcInspector = require("xpcInspector");
-const { DebuggerServer } = require("devtools/server/debugger-server");
+const { DevToolsServer } = require("devtools/server/devtools-server");
 const { DebuggerClient } = require("devtools/shared/client/debugger-client");
 
 
@@ -97,8 +97,8 @@ Services.console.registerListener(listener);
 
 
 
-function initTestDebuggerServer() {
+function initTestDevToolsServer() {
   const { createRootActor } = require("xpcshell-test/testactors");
-  DebuggerServer.setRootActor(createRootActor);
-  DebuggerServer.init();
+  DevToolsServer.setRootActor(createRootActor);
+  DevToolsServer.init();
 }

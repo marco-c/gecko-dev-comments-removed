@@ -2,7 +2,7 @@
 "use strict";
 
 const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
-const { DebuggerServer } = require("devtools/server/debugger-server");
+const { DevToolsServer } = require("devtools/server/devtools-server");
 const { TargetFactory } = require("devtools/client/framework/target");
 
 const Services = require("Services");
@@ -13,11 +13,11 @@ SimpleTest.registerCleanupFunction(function() {
   Services.prefs.clearUserPref("devtools.debugger.log");
 });
 
-if (!DebuggerServer.initialized) {
-  DebuggerServer.init();
-  DebuggerServer.registerAllActors();
+if (!DevToolsServer.initialized) {
+  DevToolsServer.init();
+  DevToolsServer.registerAllActors();
   SimpleTest.registerCleanupFunction(function() {
-    DebuggerServer.destroy();
+    DevToolsServer.destroy();
   });
 }
 

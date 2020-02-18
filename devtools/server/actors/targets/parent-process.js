@@ -15,7 +15,7 @@
 
 const { Ci } = require("chrome");
 const Services = require("Services");
-const { DebuggerServer } = require("devtools/server/debugger-server");
+const { DevToolsServer } = require("devtools/server/devtools-server");
 const {
   getChildDocShells,
   BrowsingContextTargetActor,
@@ -63,7 +63,7 @@ parentProcessTargetPrototype.initialize = function(connection, window) {
 
   
   if (!window) {
-    window = Services.wm.getMostRecentWindow(DebuggerServer.chromeWindowType);
+    window = Services.wm.getMostRecentWindow(DevToolsServer.chromeWindowType);
   }
 
   

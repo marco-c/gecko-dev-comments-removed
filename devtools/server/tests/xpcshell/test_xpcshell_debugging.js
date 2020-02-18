@@ -19,10 +19,10 @@ add_task(async function() {
   
   
   let testResumed = false;
-  const { DebuggerServer } = _setupDebuggerServer([testFile.path], () => {
+  const { DevToolsServer } = _setupDevToolsServer([testFile.path], () => {
     testResumed = true;
   });
-  const transport = DebuggerServer.connectPipe();
+  const transport = DevToolsServer.connectPipe();
   const client = new DebuggerClient(transport);
   await client.connect();
 

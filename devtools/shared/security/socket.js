@@ -429,8 +429,8 @@ function _storeCertOverride(s, host, port) {
 
 
 
-function SocketListener(debuggerServer, socketOptions) {
-  this._debuggerServer = debuggerServer;
+function SocketListener(devToolsServer, socketOptions) {
+  this._devToolsServer = devToolsServer;
 
   
   this._socketOptions = {
@@ -487,7 +487,7 @@ SocketListener.prototype = {
 
   open: function() {
     this._validateOptions();
-    this._debuggerServer.addSocketListener(this);
+    this._devToolsServer.addSocketListener(this);
 
     let flags = Ci.nsIServerSocket.KeepWhenOffline;
     
@@ -578,7 +578,7 @@ SocketListener.prototype = {
       this._socket.close();
       this._socket = null;
     }
-    this._debuggerServer.removeSocketListener(this);
+    this._devToolsServer.removeSocketListener(this);
   },
 
   get host() {
@@ -826,7 +826,7 @@ ServerSocketConnection.prototype = {
     });
     switch (result) {
       case AuthenticationResult.DISABLE_ALL:
-        this._listener._debuggerServer.closeAllSocketListeners();
+        this._listener._devToolsServer.closeAllSocketListeners();
         Services.prefs.setBoolPref("devtools.debugger.remote-enabled", false);
         return promise.reject(Cr.NS_ERROR_CONNECTION_REFUSED);
       case AuthenticationResult.DENY:

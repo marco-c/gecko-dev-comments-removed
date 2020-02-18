@@ -6,7 +6,7 @@
 
 const { Cc, Ci, Cr } = require("chrome");
 const EventEmitter = require("devtools/shared/event-emitter");
-const { DebuggerServer } = require("devtools/server/debugger-server");
+const { DevToolsServer } = require("devtools/server/devtools-server");
 const { DebuggerClient } = require("devtools/shared/client/debugger-client");
 const Services = require("Services");
 
@@ -302,7 +302,7 @@ Connection.prototype = {
       return this._customTransport;
     }
     if (!this.host) {
-      return DebuggerServer.connectPipe();
+      return DevToolsServer.connectPipe();
     }
     const settings = this.socketSettings;
     const transport = await DebuggerClient.socketConnect(settings);

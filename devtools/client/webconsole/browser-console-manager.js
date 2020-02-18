@@ -121,20 +121,20 @@ class BrowserConsoleManager {
     const loader = new DevToolsLoader({
       freshCompartment: true,
     });
-    const { DebuggerServer } = loader.require(
-      "devtools/server/debugger-server"
+    const { DevToolsServer } = loader.require(
+      "devtools/server/devtools-server"
     );
 
-    DebuggerServer.init();
+    DevToolsServer.init();
 
     
     
     
-    DebuggerServer.registerActors({ root: true, target: true });
+    DevToolsServer.registerActors({ root: true, target: true });
 
-    DebuggerServer.allowChromeProcess = true;
+    DevToolsServer.allowChromeProcess = true;
 
-    this._debuggerClient = new DebuggerClient(DebuggerServer.connectPipe());
+    this._debuggerClient = new DebuggerClient(DevToolsServer.connectPipe());
     await this._debuggerClient.connect();
     return this._debuggerClient.mainRoot.getMainProcess();
   }

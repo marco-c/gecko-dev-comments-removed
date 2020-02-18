@@ -8,48 +8,48 @@ const { SocketListener } = require("devtools/shared/security/socket");
 function run_test() {
   
   
-  const socketListener = new SocketListener(DebuggerServer, {});
+  const socketListener = new SocketListener(DevToolsServer, {});
   Assert.throws(
-    () => DebuggerServer.addSocketListener(socketListener),
-    /DebuggerServer has not been initialized/,
+    () => DevToolsServer.addSocketListener(socketListener),
+    /DevToolsServer has not been initialized/,
     "addSocketListener should throw before it has been initialized"
   );
   Assert.throws(
-    DebuggerServer.closeAllSocketListeners,
+    DevToolsServer.closeAllSocketListeners,
     /this is undefined/,
     "closeAllSocketListeners should throw before it has been initialized"
   );
   Assert.throws(
-    DebuggerServer.connectPipe,
+    DevToolsServer.connectPipe,
     /this is undefined/,
     "connectPipe should throw before it has been initialized"
   );
 
   
-  DebuggerServer.init();
+  DevToolsServer.init();
 
   
   
   Assert.throws(
-    DebuggerServer.closeAllSocketListeners,
+    DevToolsServer.closeAllSocketListeners,
     /this is undefined/,
     "closeAllSocketListeners should throw if createRootActor hasn't been added"
   );
   Assert.throws(
-    DebuggerServer.connectPipe,
+    DevToolsServer.connectPipe,
     /this is undefined/,
     "closeAllSocketListeners should throw if createRootActor hasn't been added"
   );
 
   const { createRootActor } = require("xpcshell-test/testactors");
-  DebuggerServer.setRootActor(createRootActor);
+  DevToolsServer.setRootActor(createRootActor);
 
   
-  DebuggerServer.addSocketListener(socketListener);
-  DebuggerServer.closeAllSocketListeners();
+  DevToolsServer.addSocketListener(socketListener);
+  DevToolsServer.closeAllSocketListeners();
 
   
-  const client1 = DebuggerServer.connectPipe();
+  const client1 = DevToolsServer.connectPipe();
   client1.hooks = {
     onPacket: function(packet1) {
       Assert.equal(packet1.from, "root");
@@ -57,7 +57,7 @@ function run_test() {
 
       
       
-      const client2 = DebuggerServer.connectPipe();
+      const client2 = DevToolsServer.connectPipe();
       client2.hooks = {
         onPacket: function(packet2) {
           Assert.equal(packet2.from, "root");

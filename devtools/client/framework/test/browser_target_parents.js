@@ -6,7 +6,7 @@
 
 
 const { DebuggerClient } = require("devtools/shared/client/debugger-client");
-const { DebuggerServer } = require("devtools/server/debugger-server");
+const { DevToolsServer } = require("devtools/server/devtools-server");
 
 const TEST_URL = `data:text/html;charset=utf-8,<div id="test"></div>`;
 
@@ -29,12 +29,12 @@ add_task(async function() {
 
 add_task(async function() {
   
-  DebuggerServer.init();
-  DebuggerServer.allowChromeProcess = true;
-  if (!DebuggerServer.createRootActor) {
-    DebuggerServer.registerAllActors();
+  DevToolsServer.init();
+  DevToolsServer.allowChromeProcess = true;
+  if (!DevToolsServer.createRootActor) {
+    DevToolsServer.registerAllActors();
   }
-  const transport = DebuggerServer.connectPipe();
+  const transport = DevToolsServer.connectPipe();
   const client = new DebuggerClient(transport);
   await client.connect();
 
@@ -86,12 +86,12 @@ add_task(async function() {
 
 add_task(async function() {
   
-  DebuggerServer.init();
-  DebuggerServer.allowChromeProcess = true;
-  if (!DebuggerServer.createRootActor) {
-    DebuggerServer.registerAllActors();
+  DevToolsServer.init();
+  DevToolsServer.allowChromeProcess = true;
+  if (!DevToolsServer.createRootActor) {
+    DevToolsServer.registerAllActors();
   }
-  const transport = DebuggerServer.connectPipe();
+  const transport = DevToolsServer.connectPipe();
   const client = new DebuggerClient(transport);
   await client.connect();
 
@@ -141,12 +141,12 @@ add_task(async function() {
 
 add_task(async function() {
   
-  DebuggerServer.init();
-  DebuggerServer.allowChromeProcess = true;
-  if (!DebuggerServer.createRootActor) {
-    DebuggerServer.registerAllActors();
+  DevToolsServer.init();
+  DevToolsServer.allowChromeProcess = true;
+  if (!DevToolsServer.createRootActor) {
+    DevToolsServer.registerAllActors();
   }
-  const transport = DebuggerServer.connectPipe();
+  const transport = DevToolsServer.connectPipe();
   const client = new DebuggerClient(transport);
   await client.connect();
 
@@ -174,12 +174,12 @@ add_task(async function() {
 
 add_task(async function() {
   
-  DebuggerServer.init();
-  DebuggerServer.allowChromeProcess = true;
-  if (!DebuggerServer.createRootActor) {
-    DebuggerServer.registerAllActors();
+  DevToolsServer.init();
+  DevToolsServer.allowChromeProcess = true;
+  if (!DevToolsServer.createRootActor) {
+    DevToolsServer.registerAllActors();
   }
-  const transport = DebuggerServer.connectPipe();
+  const transport = DevToolsServer.connectPipe();
   const client = new DebuggerClient(transport);
   await client.connect();
 

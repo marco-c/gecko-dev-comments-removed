@@ -16,7 +16,7 @@ function serverOwnershipTree(walkerArg) {
       const { require } = ChromeUtils.import(
         "resource://devtools/shared/Loader.jsm"
       );
-      const { DebuggerServer } = require("devtools/server/debugger-server");
+      const { DevToolsServer } = require("devtools/server/devtools-server");
       const {
         DocumentWalker,
       } = require("devtools/server/actors/inspector/document-walker");
@@ -24,7 +24,7 @@ function serverOwnershipTree(walkerArg) {
       
       
       actorID = String(actorID);
-      const serverWalker = DebuggerServer.searchAllConnectionsForActor(actorID);
+      const serverWalker = DevToolsServer.searchAllConnectionsForActor(actorID);
 
       function sortOwnershipChildrenContentScript(children) {
         return children.sort((a, b) => a.name.localeCompare(b.name));

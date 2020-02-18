@@ -15,7 +15,7 @@ const {
   LazyPool,
   createExtraActors,
 } = require("devtools/shared/protocol/lazy-pool");
-const { DebuggerServer } = require("devtools/server/debugger-server");
+const { DevToolsServer } = require("devtools/server/devtools-server");
 const protocol = require("devtools/shared/protocol");
 const { rootSpec } = require("devtools/shared/specs/root");
 
@@ -151,7 +151,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       
       
       get allowChromeProcess() {
-        return DebuggerServer.allowChromeProcess;
+        return DevToolsServer.allowChromeProcess;
       },
       
       
@@ -365,7 +365,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
   },
 
   getWindow: function({ outerWindowID }) {
-    if (!DebuggerServer.allowChromeProcess) {
+    if (!DevToolsServer.allowChromeProcess) {
       throw {
         error: "forbidden",
         message: "You are not allowed to debug windows.",
@@ -555,7 +555,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
   },
 
   async getProcess(id) {
-    if (!DebuggerServer.allowChromeProcess) {
+    if (!DevToolsServer.allowChromeProcess) {
       throw {
         error: "forbidden",
         message: "You are not allowed to debug chrome.",
@@ -692,7 +692,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
   _isParentBrowsingContext(id) {
     
     const window = Services.wm.getMostRecentWindow(
-      DebuggerServer.chromeWindowType
+      DevToolsServer.chromeWindowType
     );
     return id == window.docShell.browsingContext.id;
   },

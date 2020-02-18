@@ -233,20 +233,20 @@ function installTestingServer() {
   const testLoader = new DevToolsLoader({
     invisibleToDebugger: true,
   });
-  const { DebuggerServer } = testLoader.require(
-    "devtools/server/debugger-server"
+  const { DevToolsServer } = testLoader.require(
+    "devtools/server/devtools-server"
   );
   const { SocketListener } = testLoader.require(
     "devtools/shared/security/socket"
   );
 
-  DebuggerServer.init();
-  DebuggerServer.registerAllActors();
-  DebuggerServer.allowChromeProcess = true;
+  DevToolsServer.init();
+  DevToolsServer.registerAllActors();
+  DevToolsServer.allowChromeProcess = true;
 
   
   const socketOptions = { portOrPath: 6001 };
-  const listener = new SocketListener(DebuggerServer, socketOptions);
+  const listener = new SocketListener(DevToolsServer, socketOptions);
   listener.open();
 }
 

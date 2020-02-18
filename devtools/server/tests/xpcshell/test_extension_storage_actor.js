@@ -39,9 +39,9 @@ registerCleanupFunction(() => {
 
 
 async function startDebugger() {
-  DebuggerServer.init();
-  DebuggerServer.registerAllActors();
-  const transport = DebuggerServer.connectPipe();
+  DevToolsServer.init();
+  DevToolsServer.registerAllActors();
+  const transport = DevToolsServer.connectPipe();
   const client = new DebuggerClient(transport);
   await client.connect();
   return client;

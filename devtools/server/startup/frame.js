@@ -41,14 +41,14 @@ try {
 
     const DevToolsUtils = require("devtools/shared/DevToolsUtils");
     const { dumpn } = DevToolsUtils;
-    const { DebuggerServer } = require("devtools/server/debugger-server");
+    const { DevToolsServer } = require("devtools/server/devtools-server");
     const { ActorPool } = require("devtools/server/actors/common");
 
-    DebuggerServer.init();
+    DevToolsServer.init();
     
     
     
-    DebuggerServer.registerActors({ target: true });
+    DevToolsServer.registerActors({ target: true });
 
     const connections = new Map();
 
@@ -59,7 +59,7 @@ try {
       const prefix = msg.data.prefix;
       const addonId = msg.data.addonId;
 
-      const conn = DebuggerServer.connectToParent(prefix, mm);
+      const conn = DevToolsServer.connectToParent(prefix, mm);
       conn.parentMessageManager = mm;
       connections.set(prefix, conn);
 
@@ -162,18 +162,18 @@ try {
     function destroyServer() {
       
       
-      if (DebuggerServer.hasConnection() || DebuggerServer.keepAlive) {
+      if (DevToolsServer.hasConnection() || DevToolsServer.keepAlive) {
         return;
       }
-      DebuggerServer.off("connectionchange", destroyServer);
-      DebuggerServer.destroy();
+      DevToolsServer.off("connectionchange", destroyServer);
+      DevToolsServer.destroy();
 
       
       if (customLoader) {
         loader.destroy();
       }
     }
-    DebuggerServer.on("connectionchange", destroyServer);
+    DevToolsServer.on("connectionchange", destroyServer);
   })();
 } catch (e) {
   dump(`Exception in DevTools frame startup: ${e}\n`);

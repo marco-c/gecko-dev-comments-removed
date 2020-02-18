@@ -8,8 +8,8 @@
 
 loader.lazyRequireGetter(
   this,
-  "DebuggerServer",
-  "devtools/server/debugger-server",
+  "DevToolsServer",
+  "devtools/server/devtools-server",
   true
 );
 loader.lazyRequireGetter(
@@ -27,10 +27,10 @@ const { Toolbox } = require("devtools/client/framework/toolbox");
 
 
 
-async function setupLocalDebuggerServerAndClient() {
-  DebuggerServer.init();
-  DebuggerServer.registerAllActors();
-  const client = new DebuggerClient(DebuggerServer.connectPipe());
+async function setupLocalDevToolsServerAndClient() {
+  DevToolsServer.init();
+  DevToolsServer.registerAllActors();
+  const client = new DebuggerClient(DevToolsServer.connectPipe());
   await client.connect();
   return client;
 }
@@ -46,7 +46,7 @@ async function setupLocalDebuggerServerAndClient() {
 async function setupExtensionDebuggingToolbox(id, options = {}) {
   const { openToolbox = false } = options;
 
-  const client = await setupLocalDebuggerServerAndClient();
+  const client = await setupLocalDevToolsServerAndClient();
   const front = await client.mainRoot.getAddon({ id });
   const target = await front.getTarget();
   target.shouldCloseClient = true;

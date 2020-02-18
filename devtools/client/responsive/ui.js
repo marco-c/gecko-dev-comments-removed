@@ -21,8 +21,8 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "DebuggerServer",
-  "devtools/server/debugger-server",
+  "DevToolsServer",
+  "devtools/server/devtools-server",
   true
 );
 loader.lazyRequireGetter(
@@ -433,9 +433,9 @@ class ResponsiveUI {
   async connectToServer() {
     
     
-    DebuggerServer.init();
-    DebuggerServer.registerAllActors();
-    this.client = new DebuggerClient(DebuggerServer.connectPipe());
+    DevToolsServer.init();
+    DevToolsServer.registerAllActors();
+    this.client = new DebuggerClient(DevToolsServer.connectPipe());
     await this.client.connect();
 
     const targetFront = await this.client.mainRoot.getTab();
@@ -541,6 +541,9 @@ class ResponsiveUI {
         break;
       case "update-device-modal":
         this.onUpdateDeviceModal(event);
+        break;
+      case "update-device-selector-menu":
+        this.onUpdateDeviceSelectorMenu(event);
     }
   }
 
@@ -755,6 +758,13 @@ class ResponsiveUI {
   onUpdateDeviceModal(event) {
     this.browserStackEl.classList.toggle(
       "device-modal-opened",
+      event.data.isOpen
+    );
+  }
+
+  onUpdateDeviceSelectorMenu(event) {
+    this.browserStackEl.classList.toggle(
+      "device-selector-menu-opened",
       event.data.isOpen
     );
   }
