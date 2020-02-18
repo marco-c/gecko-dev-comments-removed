@@ -1,0 +1,14 @@
+
+
+
+'use strict';
+
+idl_test(
+  ['storage-access-api.tentative'],
+  ['dom'],
+  idl_array => {
+    idl_array.add_objects({
+      Document: ['document'],
+    });
+  }
+);
