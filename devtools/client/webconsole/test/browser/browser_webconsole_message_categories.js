@@ -128,7 +128,7 @@ async function runTest(test, hud) {
   });
 
   info("Load test file " + file);
-  await loadDocument(hud.toolbox, TESTS_PATH + file);
+  await navigateTo(TESTS_PATH + file);
 
   
   if (onload) {
