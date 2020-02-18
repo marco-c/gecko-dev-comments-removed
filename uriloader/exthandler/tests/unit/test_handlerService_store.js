@@ -54,7 +54,6 @@ function assertAllHandlerInfosMatchTestData() {
   
   
   
-  
 
   HandlerServiceTestUtils.assertHandlerInfoMatches(handlerInfos.shift(), {
     type: "example/type.handleinternally",
@@ -431,6 +430,10 @@ add_task(async function test_store_no_duplicates() {
   handlerInfo.appendExtension("extension_test2");
   handlerInfo.appendExtension("extension_test1");
   handlerInfo.appendExtension("EXTENSION_test1");
+  Assert.deepEqual(Array.from(handlerInfo.getFileExtensions()), [
+    "extension_test1",
+    "extension_test2",
+  ]);
   gHandlerService.store(handlerInfo);
 
   await unloadHandlerStore();
@@ -447,6 +450,21 @@ add_task(async function test_store_no_duplicates() {
     ],
     fileExtensions: ["extension_test1", "extension_test2"],
   });
+});
+
+
+
+
+add_task(async function test_setFileExtensions_no_duplicates() {
+  await deleteHandlerStore();
+
+  let handlerInfo = getKnownHandlerInfo("example/new");
+  handlerInfo.setFileExtensions("a,b,A,b,c,a");
+  let expected = ["a", "b", "c"];
+  Assert.deepEqual(Array.from(handlerInfo.getFileExtensions()), expected);
+  
+  handlerInfo.setFileExtensions(",a,,b,A,c,");
+  Assert.deepEqual(Array.from(handlerInfo.getFileExtensions()), expected);
 });
 
 
