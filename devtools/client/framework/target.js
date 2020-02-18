@@ -12,8 +12,8 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "DebuggerClient",
-  "devtools/shared/client/debugger-client",
+  "DevToolsClient",
+  "devtools/shared/client/devtools-client",
   true
 );
 
@@ -86,7 +86,7 @@ exports.TargetFactory = {
 
     function createLocalClient() {
       createLocalServer();
-      return new DebuggerClient(DevToolsServer.connectPipe());
+      return new DevToolsClient(DevToolsServer.connectPipe());
     }
 
     if (!client) {

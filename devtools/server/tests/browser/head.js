@@ -12,7 +12,7 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-const { DebuggerClient } = require("devtools/shared/client/debugger-client");
+const { DevToolsClient } = require("devtools/shared/client/devtools-client");
 const {
   ActorRegistry,
 } = require("devtools/server/actors/utils/actor-registry");
@@ -105,7 +105,7 @@ function initDevToolsServer() {
 
 async function initPerfFront() {
   initDevToolsServer();
-  const client = new DebuggerClient(DevToolsServer.connectPipe());
+  const client = new DevToolsClient(DevToolsServer.connectPipe());
   await waitUntilClientConnected(client);
   const front = await client.mainRoot.getFront("perf");
   return { front, client };

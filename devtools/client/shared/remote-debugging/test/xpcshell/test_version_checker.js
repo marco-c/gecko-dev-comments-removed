@@ -156,6 +156,6 @@ add_task(async function testVersionCheckWithVeryOldClient() {
   equal(
     report.status,
     COMPATIBILITY_STATUS.TOO_OLD,
-    "Report status too old if debugger client is not implementing expected interface"
+    "Report status too old if devtools client is not implementing expected interface"
   );
 });

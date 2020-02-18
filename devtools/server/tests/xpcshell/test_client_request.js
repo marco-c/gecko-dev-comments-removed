@@ -50,7 +50,7 @@ function run_test() {
 }
 
 function init() {
-  gClient = new DebuggerClient(DevToolsServer.connectPipe());
+  gClient = new DevToolsClient(DevToolsServer.connectPipe());
   gClient
     .connect()
     .then(() => gClient.mainRoot.rootForm)

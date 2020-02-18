@@ -15,8 +15,8 @@ const { TargetList } = require("devtools/shared/resources/target-list");
 
 loader.lazyRequireGetter(
   this,
-  "DebuggerClient",
-  "devtools/shared/client/debugger-client",
+  "DevToolsClient",
+  "devtools/shared/client/devtools-client",
   true
 );
 loader.lazyRequireGetter(
@@ -435,7 +435,7 @@ class ResponsiveUI {
     
     DevToolsServer.init();
     DevToolsServer.registerAllActors();
-    this.client = new DebuggerClient(DevToolsServer.connectPipe());
+    this.client = new DevToolsClient(DevToolsServer.connectPipe());
     await this.client.connect();
 
     const targetFront = await this.client.mainRoot.getTab();

@@ -17,7 +17,7 @@ const trace = {
 
 function HarCollector(options) {
   this.webConsoleFront = options.webConsoleFront;
-  this.debuggerClient = options.debuggerClient;
+  this.devToolsClient = options.devToolsClient;
 
   this.onNetworkEvent = this.onNetworkEvent.bind(this);
   this.onNetworkEventUpdate = this.onNetworkEventUpdate.bind(this);
@@ -37,12 +37,12 @@ HarCollector.prototype = {
 
   start: function() {
     this.webConsoleFront.on("networkEvent", this.onNetworkEvent);
-    this.debuggerClient.on("networkEventUpdate", this.onNetworkEventUpdate);
+    this.devToolsClient.on("networkEventUpdate", this.onNetworkEventUpdate);
   },
 
   stop: function() {
     this.webConsoleFront.off("networkEvent", this.onNetworkEvent);
-    this.debuggerClient.off("networkEventUpdate", this.onNetworkEventUpdate);
+    this.devToolsClient.off("networkEventUpdate", this.onNetworkEventUpdate);
   },
 
   clear: function() {

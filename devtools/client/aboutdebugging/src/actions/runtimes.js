@@ -75,7 +75,7 @@ async function getRuntimeIcon(runtime, channel) {
     : "chrome://devtools/skin/images/aboutdebugging-firefox-nightly.svg";
 }
 
-function onRemoteDebuggerClientClosed() {
+function onRemoteDevToolsClientClosed() {
   window.AboutDebugging.onNetworkLocationsUpdated();
   window.AboutDebugging.onUSBRuntimesUpdated();
 }
@@ -184,7 +184,7 @@ function connectRuntime(id) {
       if (runtime.type !== RUNTIMES.THIS_FIREFOX) {
         
         
-        clientWrapper.once("closed", onRemoteDebuggerClientClosed);
+        clientWrapper.once("closed", onRemoteDevToolsClientClosed);
       }
 
       dispatch({
@@ -241,7 +241,7 @@ function disconnectRuntime(id, shouldRedirect = false) {
       }
 
       if (runtime.type !== RUNTIMES.THIS_FIREFOX) {
-        clientWrapper.off("closed", onRemoteDebuggerClientClosed);
+        clientWrapper.off("closed", onRemoteDevToolsClientClosed);
       }
       await clientWrapper.close();
       if (shouldRedirect) {
@@ -529,7 +529,7 @@ function removeRuntimeListeners() {
     for (const runtime of remoteRuntimes) {
       if (runtime.runtimeDetails) {
         const { clientWrapper } = runtime.runtimeDetails;
-        clientWrapper.off("closed", onRemoteDebuggerClientClosed);
+        clientWrapper.off("closed", onRemoteDevToolsClientClosed);
       }
     }
   };

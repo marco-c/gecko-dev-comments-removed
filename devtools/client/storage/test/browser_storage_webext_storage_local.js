@@ -14,8 +14,8 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "DebuggerClient",
-  "devtools/shared/client/debugger-client",
+  "DevToolsClient",
+  "devtools/shared/client/devtools-client",
   true
 );
 
@@ -30,7 +30,7 @@ const { Toolbox } = require("devtools/client/framework/toolbox");
 async function setupLocalDevToolsServerAndClient() {
   DevToolsServer.init();
   DevToolsServer.registerAllActors();
-  const client = new DebuggerClient(DevToolsServer.connectPipe());
+  const client = new DevToolsClient(DevToolsServer.connectPipe());
   await client.connect();
   return client;
 }

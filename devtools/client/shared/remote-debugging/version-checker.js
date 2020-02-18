@@ -78,14 +78,14 @@ function computeMinMaxVersion(localVersion) {
 
 
 
-async function checkVersionCompatibility(debuggerClient) {
+async function checkVersionCompatibility(devToolsClient) {
   const localDescription = {
     appbuildid: Services.appinfo.appBuildID,
     platformversion: AppConstants.MOZ_APP_VERSION,
   };
 
   try {
-    const deviceFront = await debuggerClient.mainRoot.getFront("device");
+    const deviceFront = await devToolsClient.mainRoot.getFront("device");
     const description = await deviceFront.getDescription();
     return _compareVersionCompatibility(localDescription, description);
   } catch (e) {

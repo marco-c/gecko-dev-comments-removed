@@ -46,7 +46,7 @@ loader.lazyRequireGetter(this, "Front", "devtools/shared/protocol", true);
 
 
 
-function DebuggerClient(transport) {
+function DevToolsClient(transport) {
   this._transport = transport;
   this._transport.hooks = this;
 
@@ -80,18 +80,18 @@ function DebuggerClient(transport) {
 }
 
 
-DebuggerClient.socketConnect = function(options) {
+DevToolsClient.socketConnect = function(options) {
   
   return DebuggerSocket.connect(options);
 };
-DevToolsUtils.defineLazyGetter(DebuggerClient, "Authenticators", () => {
+DevToolsUtils.defineLazyGetter(DevToolsClient, "Authenticators", () => {
   return Authentication.Authenticators;
 });
-DevToolsUtils.defineLazyGetter(DebuggerClient, "AuthenticationResult", () => {
+DevToolsUtils.defineLazyGetter(DevToolsClient, "AuthenticationResult", () => {
   return Authentication.AuthenticationResult;
 });
 
-DebuggerClient.prototype = {
+DevToolsClient.prototype = {
   
 
 
@@ -808,7 +808,7 @@ DebuggerClient.prototype = {
   },
 };
 
-EventEmitter.decorate(DebuggerClient.prototype);
+EventEmitter.decorate(DevToolsClient.prototype);
 
 class Request extends EventEmitter {
   constructor(request) {
@@ -822,5 +822,5 @@ class Request extends EventEmitter {
 }
 
 module.exports = {
-  DebuggerClient,
+  DevToolsClient,
 };

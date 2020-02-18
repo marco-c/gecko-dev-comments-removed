@@ -7,7 +7,7 @@
 const { Cc, Ci, Cr } = require("chrome");
 const EventEmitter = require("devtools/shared/event-emitter");
 const { DevToolsServer } = require("devtools/server/devtools-server");
-const { DebuggerClient } = require("devtools/shared/client/debugger-client");
+const { DevToolsClient } = require("devtools/shared/client/devtools-client");
 const Services = require("Services");
 
 const REMOTE_TIMEOUT = "devtools.debugger.remote-timeout";
@@ -197,7 +197,7 @@ Connection.prototype = {
       this.authenticator = null;
       return;
     }
-    const AuthenticatorType = DebuggerClient.Authenticators.get(value);
+    const AuthenticatorType = DevToolsClient.Authenticators.get(value);
     this.authenticator = new AuthenticatorType.Client();
   },
 
@@ -305,7 +305,7 @@ Connection.prototype = {
       return DevToolsServer.connectPipe();
     }
     const settings = this.socketSettings;
-    const transport = await DebuggerClient.socketConnect(settings);
+    const transport = await DevToolsClient.socketConnect(settings);
     return transport;
   },
 
@@ -315,7 +315,7 @@ Connection.prototype = {
         if (!transport) {
           return;
         }
-        this._client = new DebuggerClient(transport);
+        this._client = new DevToolsClient(transport);
         this._client.once("closed", this._onDisconnected);
         this._client.connect().then(this._onConnected);
       },

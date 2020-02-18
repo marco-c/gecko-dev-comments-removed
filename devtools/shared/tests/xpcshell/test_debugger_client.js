@@ -6,7 +6,7 @@
 
 
 const { DevToolsServer } = require("devtools/server/devtools-server");
-const { DebuggerClient } = require("devtools/shared/client/debugger-client");
+const { DevToolsClient } = require("devtools/shared/client/devtools-client");
 
 add_task(async function() {
   await testCloseLoops();
@@ -16,7 +16,7 @@ add_task(async function() {
 function createClient() {
   DevToolsServer.init();
   DevToolsServer.registerAllActors();
-  const client = new DebuggerClient(DevToolsServer.connectPipe());
+  const client = new DevToolsClient(DevToolsServer.connectPipe());
   return client;
 }
 

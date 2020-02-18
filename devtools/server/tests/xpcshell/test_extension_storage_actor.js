@@ -42,7 +42,7 @@ async function startDebugger() {
   DevToolsServer.init();
   DevToolsServer.registerAllActors();
   const transport = DevToolsServer.connectPipe();
-  const client = new DebuggerClient(transport);
+  const client = new DevToolsClient(transport);
   await client.connect();
   return client;
 }

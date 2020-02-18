@@ -5,7 +5,7 @@
 "use strict";
 
 const { DevToolsServer } = require("devtools/server/devtools-server");
-const { DebuggerClient } = require("devtools/shared/client/debugger-client");
+const { DevToolsClient } = require("devtools/shared/client/devtools-client");
 const {
   remoteClientManager,
 } = require("devtools/client/shared/remote-debugging/remote-client-manager");
@@ -196,14 +196,14 @@ async function clientFromURL(url) {
 
   let transport;
   if (port) {
-    transport = await DebuggerClient.socketConnect({ host, port, webSocket });
+    transport = await DevToolsClient.socketConnect({ host, port, webSocket });
   } else {
     
     DevToolsServer.init();
     DevToolsServer.registerAllActors();
     transport = DevToolsServer.connectPipe();
   }
-  return new DebuggerClient(transport);
+  return new DevToolsClient(transport);
 }
 
 exports.clientFromURL = clientFromURL;

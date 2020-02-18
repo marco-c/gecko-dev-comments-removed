@@ -238,7 +238,7 @@ type ConsoleFront = {
 
 
 
-export type DebuggerClient = {
+export type DevToolsClient = {
   _activeRequests: {
     get: any => any,
     delete: any => void,

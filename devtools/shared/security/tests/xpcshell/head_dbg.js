@@ -12,7 +12,7 @@ const defer = require("devtools/shared/defer");
 const Services = require("Services");
 const xpcInspector = require("xpcInspector");
 const { DevToolsServer } = require("devtools/server/devtools-server");
-const { DebuggerClient } = require("devtools/shared/client/debugger-client");
+const { DevToolsClient } = require("devtools/shared/client/devtools-client");
 
 
 loader.lazyRequireGetter(
