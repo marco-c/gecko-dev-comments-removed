@@ -34,9 +34,6 @@
 
 
 
-
-
-
 setup({explicit_done:true});
 
 
@@ -101,6 +98,12 @@ const loadTypes = [
                "about:blank", 
                eSecureIfCreatorSecure,
                eResultFromExaminationSync),
+  new LoadType("a data: URL",
+               
+               eLoadInUnsandboxedIframe | eLoadInSandboxedIframe,
+               "data:text/html,<script>parent.postMessage(isSecureContext, '*')</script>",
+               eSecureIfCreatorSecure,
+               eResultFromPostMessage),
 ];
 
 const loadTargets = [
