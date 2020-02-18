@@ -2408,9 +2408,9 @@ class BookmarkObserverRecorder {
   async notifyBookmarkObservers() {
     MirrorLog.trace("Notifying bookmark observers");
     let observers = PlacesUtils.bookmarks.getObservers();
-    for (let observer of observers) {
-      this.notifyObserver(observer, "onBeginUpdateBatch");
-    }
+    
+    
+    
     await Async.yieldingForEach(
       this.guidChangedArgs,
       args => {
@@ -2462,9 +2462,7 @@ class BookmarkObserverRecorder {
       },
       yieldState
     );
-    for (let observer of observers) {
-      this.notifyObserver(observer, "onEndUpdateBatch");
-    }
+    MirrorLog.trace("Notified bookmark observers");
   }
 
   notifyObserversWithInfo(observers, name, info) {
