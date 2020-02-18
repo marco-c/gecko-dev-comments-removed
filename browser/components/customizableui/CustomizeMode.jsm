@@ -1882,7 +1882,7 @@ CustomizeMode.prototype = {
 
     let document = aEvent.target.ownerDocument;
     let documentId = document.documentElement.id;
-    if (!aEvent.dataTransfer.mozTypesAt(0)) {
+    if (!aEvent.dataTransfer.mozTypesAt(0).length) {
       return;
     }
 
@@ -2144,6 +2144,16 @@ CustomizeMode.prototype = {
     }
 
     
+    if (
+      CustomizableUI.isSpecialWidget(aDraggedItemId) &&
+      aOriginArea.id == kPaletteId
+    ) {
+      aDraggedItemId = aDraggedItemId.match(
+        /^customizableui-special-(spring|spacer|separator)/
+      )[1];
+    }
+
+    
     
     if (aTargetNode == areaCustomizationTarget) {
       CustomizableUI.addWidgetToArea(aDraggedItemId, aTargetArea.id);
@@ -2189,16 +2199,6 @@ CustomizeMode.prototype = {
       );
     }
     let position = placement ? placement.position : null;
-
-    
-    if (
-      CustomizableUI.isSpecialWidget(aDraggedItemId) &&
-      aOriginArea.id == kPaletteId
-    ) {
-      aDraggedItemId = aDraggedItemId.match(
-        /^customizableui-special-(spring|spacer|separator)/
-      )[1];
-    }
 
     
     
