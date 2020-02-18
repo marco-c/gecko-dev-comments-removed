@@ -35,11 +35,15 @@ function expect(v) {
   return {
     toMatchURL: expected => assert_equals(v, expected),
     toThrow: expected => {
-      if (expected.test && expected.test('not yet implemented')) {
+      if (v.localName === 'iframe') {
+        
+        
+        assert_throws_js(v.contentWindow[expected], () => { throw v.contentWindow.windowError });
+      } else if (expected.test && expected.test('not yet implemented')) {
         
         assert_throws_js(TypeError, v);
       } else {
-        assert_throws(expected(), v);
+        assert_throws_js(expected, v);
       }
     },
     toEqual: expected => {
@@ -115,11 +119,6 @@ function parseFromString(mapString, mapBaseURL) {
     </sc` + `ript>
   `);
   iframe.contentDocument.close();
-
-  
-  if (iframe.contentWindow.windowError) {
-    throw iframe.contentWindow.windowError;
-  }
 
   return iframe;
 }

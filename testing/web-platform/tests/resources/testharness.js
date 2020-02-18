@@ -640,7 +640,7 @@
 
     function promise_rejects(test, expected, promise, description) {
         return promise.then(test.unreached_func("Should have rejected: " + description)).catch(function(e) {
-            assert_throws(expected, function() { throw e }, description);
+            assert_throws_DO_NOT_USE(expected, function() { throw e }, description);
         });
     }
 
@@ -1474,7 +1474,7 @@
 
 
 
-    function assert_throws(code, func, description)
+    function assert_throws_DO_NOT_USE(code, func, description)
     {
         try {
             func.call(this);
@@ -1615,7 +1615,6 @@
             }
         }
     }
-    expose(assert_throws, "assert_throws");
 
     
 
