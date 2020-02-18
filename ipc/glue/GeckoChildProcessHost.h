@@ -98,7 +98,6 @@ class GeckoChildProcessHost : public ChildProcessHost,
   
   
   bool LaunchAndWaitForProcessHandle(StringVector aExtraOpts = StringVector());
-  bool WaitForProcessHandle();
 
   
   

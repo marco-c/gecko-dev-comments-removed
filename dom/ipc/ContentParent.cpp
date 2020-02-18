@@ -924,55 +924,6 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
 }
 
 
-already_AddRefed<ContentParent>
-ContentParent::GetNewOrUsedBrowserProcessInternal(Element* aFrameElement,
-                                                  const nsAString& aRemoteType,
-                                                  ProcessPriority aPriority,
-                                                  ContentParent* aOpener,
-                                                  bool aPreferUsed,
-                                                  bool aIsSync) {
-  nsTArray<ContentParent*>& contentParents = GetOrCreatePool(aRemoteType);
-  uint32_t maxContentParents = GetMaxProcessCount(aRemoteType);
-  if (aRemoteType.EqualsLiteral(
-          LARGE_ALLOCATION_REMOTE_TYPE)  
-                                         
-      && contentParents.Length() >= maxContentParents) {
-    return GetNewOrUsedBrowserProcessInternal(
-        aFrameElement, NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE), aPriority,
-        aOpener, false, aIsSync);
-  }
-
-  
-  RefPtr<ContentParent> contentParent = GetUsedBrowserProcess(
-      aOpener, aRemoteType, contentParents, maxContentParents, aPreferUsed);
-
-  if (contentParent) {
-    
-    
-    return contentParent.forget();
-  }
-
-  
-  
-  contentParent = new ContentParent(aOpener, aRemoteType);
-  if (!contentParent->BeginSubprocessLaunch(aIsSync, aPriority)) {
-    
-    contentParent->LaunchSubprocessReject();
-    return nullptr;
-  }
-  
-  contentParents.AppendElement(contentParent);
-
-  
-  
-  
-  PreallocatedProcessManager::AddBlocker(contentParent);
-
-  MOZ_ASSERT(contentParent->IsLaunching());
-  return contentParent.forget();
-}
-
-
 RefPtr<ContentParent::LaunchPromise>
 ContentParent::GetNewOrUsedBrowserProcessAsync(Element* aFrameElement,
                                                const nsAString& aRemoteType,
@@ -980,49 +931,69 @@ ContentParent::GetNewOrUsedBrowserProcessAsync(Element* aFrameElement,
                                                ContentParent* aOpener,
                                                bool aPreferUsed) {
   
-  RefPtr<ContentParent> contentParent = GetNewOrUsedBrowserProcessInternal(
-      aFrameElement, aRemoteType, aPriority, aOpener, aPreferUsed,
-       false);
-  if (!contentParent) {
+  
+  nsAutoString recordingFile;
+  Maybe<RecordReplayState> maybeRecordReplayState =
+      GetRecordReplayState(aFrameElement, recordingFile);
+  if (maybeRecordReplayState.isNothing()) {
     
-    return LaunchPromise::CreateAndReject(LaunchError(), __func__);
+    return nullptr;
+  }
+  RecordReplayState recordReplayState = maybeRecordReplayState.value();
+
+  nsTArray<ContentParent*>& contentParents = GetOrCreatePool(aRemoteType);
+  uint32_t maxContentParents = GetMaxProcessCount(aRemoteType);
+  if (recordReplayState ==
+          eNotRecordingOrReplaying  
+                                    
+      && aRemoteType.EqualsLiteral(
+             LARGE_ALLOCATION_REMOTE_TYPE)  
+                                            
+      && contentParents.Length() >= maxContentParents) {
+    return GetNewOrUsedBrowserProcessAsync(
+        aFrameElement, NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE), aPriority,
+        aOpener);
+  }
+  {
+    RefPtr<ContentParent> existing = GetUsedBrowserProcess(
+        aOpener, aRemoteType, contentParents, maxContentParents, aPreferUsed);
+    if (existing != nullptr) {
+      return LaunchPromise::CreateAndResolve(existing, __func__);
+    }
   }
 
-  MOZ_ASSERT(!contentParent->IsDead());
-  if (!contentParent->IsLaunching()) {
-    
-    return LaunchPromise::CreateAndResolve(contentParent, __func__);
-  }
+  
+  RefPtr<ContentParent> p =
+      new ContentParent(aOpener, aRemoteType, recordReplayState, recordingFile);
+
+  RefPtr<LaunchPromise> launchPromise = p->LaunchSubprocessAsync(aPriority);
+  MOZ_ASSERT(launchPromise);
 
   
   
   
-  RefPtr<ProcessHandlePromise> ready =
-      contentParent->mSubprocess->WhenProcessHandleReady();
-  return ready->Then(
+  
+  PreallocatedProcessManager::AddBlocker(p);
+
+  return launchPromise->Then(
       GetCurrentThreadSerialEventTarget(), __func__,
       
-      [contentParent, aPriority]() {
-        if (contentParent->IsLaunching()) {
-          if (!contentParent->LaunchSubprocessResolve( false,
-                                                      aPriority)) {
-            contentParent->LaunchSubprocessReject();
-            return LaunchPromise::CreateAndReject(LaunchError(), __func__);
-          }
-          contentParent->mActivateTS = TimeStamp::Now();
-        } else if (contentParent->IsDead()) {
+      [p, recordReplayState,
+       launchPromise](const RefPtr<ContentParent>& subProcess) {
+        if (recordReplayState == eNotRecordingOrReplaying) {
           
           
-          return LaunchPromise::CreateAndReject(LaunchError(), __func__);
+          nsTArray<ContentParent*>& contentParents =
+              GetOrCreatePool(p->GetRemoteType());
+          contentParents.AppendElement(p);
         }
-        return LaunchPromise::CreateAndResolve(contentParent, __func__);
+
+        p->mActivateTS = TimeStamp::Now();
+        return launchPromise;
       },
-      
-      [contentParent]() {
-        if (contentParent->IsLaunching()) {
-          contentParent->LaunchSubprocessReject();
-        }
-        return LaunchPromise::CreateAndReject(LaunchError(), __func__);
+      [p, launchPromise]() {
+        PreallocatedProcessManager::RemoveBlocker(p);
+        return launchPromise;
       });
 }
 
@@ -1030,32 +1001,57 @@ ContentParent::GetNewOrUsedBrowserProcessAsync(Element* aFrameElement,
 already_AddRefed<ContentParent> ContentParent::GetNewOrUsedBrowserProcess(
     Element* aFrameElement, const nsAString& aRemoteType,
     ProcessPriority aPriority, ContentParent* aOpener, bool aPreferUsed) {
-  RefPtr<ContentParent> contentParent = GetNewOrUsedBrowserProcessInternal(
-      aFrameElement, aRemoteType, aPriority, aOpener, aPreferUsed,
-       true);
-  if (!contentParent) {
+  
+  
+  nsAutoString recordingFile;
+  Maybe<RecordReplayState> maybeRecordReplayState =
+      GetRecordReplayState(aFrameElement, recordingFile);
+  if (maybeRecordReplayState.isNothing()) {
     
     return nullptr;
   }
+  RecordReplayState recordReplayState = maybeRecordReplayState.value();
 
-  MOZ_ASSERT(!contentParent->IsDead());
-  if (!contentParent->IsLaunching()) {
-    
-    return contentParent.forget();
+  nsTArray<ContentParent*>& contentParents = GetOrCreatePool(aRemoteType);
+  uint32_t maxContentParents = GetMaxProcessCount(aRemoteType);
+  if (recordReplayState ==
+          eNotRecordingOrReplaying  
+                                    
+      && aRemoteType.EqualsLiteral(
+             LARGE_ALLOCATION_REMOTE_TYPE)  
+                                            
+      && contentParents.Length() >= maxContentParents) {
+    return GetNewOrUsedBrowserProcess(aFrameElement,
+                                      NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE),
+                                      aPriority, aOpener);
+  }
+
+  if (recordReplayState == eNotRecordingOrReplaying) {
+    RefPtr<ContentParent> existing = GetUsedBrowserProcess(
+        aOpener, aRemoteType, contentParents, maxContentParents, aPreferUsed);
+    if (existing != nullptr) {
+      return existing.forget();
+    }
+  }
+
+  
+  RefPtr<ContentParent> p =
+      new ContentParent(aOpener, aRemoteType, recordReplayState, recordingFile);
+
+  if (!p->LaunchSubprocessSync(aPriority)) {
+    return nullptr;
   }
 
   
   
-  
-  const bool launchSuccess = contentParent->mSubprocess->WaitForProcessHandle();
-  if (launchSuccess &&
-      contentParent->LaunchSubprocessResolve( true, aPriority)) {
-    contentParent->mActivateTS = TimeStamp::Now();
-    return contentParent.forget();
+  PreallocatedProcessManager::AddBlocker(p);
+
+  if (recordReplayState == eNotRecordingOrReplaying) {
+    contentParents.AppendElement(p);
   }
-  
-  contentParent->LaunchSubprocessReject();
-  return nullptr;
+
+  p->mActivateTS = TimeStamp::Now();
+  return p.forget();
 }
 
 
@@ -2207,18 +2203,28 @@ void ContentParent::AppendSandboxParams(std::vector<std::string>& aArgs) {
 }
 #endif  
 
-bool ContentParent::BeginSubprocessLaunch(bool aIsSync,
-                                          ProcessPriority aPriority) {
+void ContentParent::LaunchSubprocessInternal(
+    ProcessPriority aInitialPriority,
+    mozilla::Variant<bool*, RefPtr<LaunchPromise>*>&& aRetval) {
   AUTO_PROFILER_LABEL("ContentParent::LaunchSubprocess", OTHER);
+  const bool isSync = aRetval.is<bool*>();
 
-  
-  
   Telemetry::Accumulate(Telemetry::CONTENT_PROCESS_LAUNCH_IS_SYNC,
-                        static_cast<uint32_t>(aIsSync));
+                        static_cast<uint32_t>(isSync));
+
+  auto earlyReject = [aRetval, isSync]() {
+    if (isSync) {
+      *aRetval.as<bool*>() = false;
+    } else {
+      *aRetval.as<RefPtr<LaunchPromise>*>() =
+          LaunchPromise::CreateAndReject(LaunchError(), __func__);
+    }
+  };
 
   if (!ContentProcessManager::GetSingleton()) {
     
-    return false;
+    earlyReject();
+    return;
   }
 
   std::vector<std::string> extraArgs;
@@ -2231,14 +2237,13 @@ bool ContentParent::BeginSubprocessLaunch(bool aIsSync,
   
   
 
-  
-  
-  mPrefSerializer = MakeUnique<mozilla::ipc::SharedPreferenceSerializer>();
-  if (!mPrefSerializer->SerializeToSharedMemory()) {
+  SharedPreferenceSerializer prefSerializer;
+  if (!prefSerializer.SerializeToSharedMemory()) {
     MarkAsDead();
-    return false;
+    earlyReject();
+    return;
   }
-  mPrefSerializer->AddSharedPrefCmdLineArgs(*mSubprocess, extraArgs);
+  prefSerializer.AddSharedPrefCmdLineArgs(*mSubprocess, extraArgs);
 
   
   
@@ -2267,123 +2272,138 @@ bool ContentParent::BeginSubprocessLaunch(bool aIsSync,
   extraArgs.push_back(parentBuildID.get());
 
   
-  mSelfRef = this;
-  mLaunchYieldTS = TimeStamp::Now();
-  return mSubprocess->AsyncLaunch(std::move(extraArgs));
-}
+  if (mRecordReplayState != eNotRecordingOrReplaying) {
+    nsPrintfCString buf(
+        "%d", mRecordReplayState == eRecording
+                  ? (int)recordreplay::ProcessKind::MiddlemanRecording
+                  : (int)recordreplay::ProcessKind::MiddlemanReplaying);
+    extraArgs.push_back(recordreplay::gProcessKindOption);
+    extraArgs.push_back(buf.get());
 
-void ContentParent::LaunchSubprocessReject() {
-  NS_ERROR("failed to launch child in the parent");
-  
-  
-  mPrefSerializer = nullptr;
-  PreallocatedProcessManager::RemoveBlocker(this);
-  MarkAsDead();
-}
-
-bool ContentParent::LaunchSubprocessResolve(bool aIsSync,
-                                            ProcessPriority aPriority) {
-  AUTO_PROFILER_LABEL("ContentParent::LaunchSubprocess::resolve", OTHER);
-  
-  
-  mPrefSerializer = nullptr;
-
-  const auto launchResumeTS = TimeStamp::Now();
-
-  if (!sCreatedFirstContentProcess) {
-    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-    obs->NotifyObservers(nullptr, "ipc:first-content-process-created", nullptr);
-    sCreatedFirstContentProcess = true;
+    extraArgs.push_back(recordreplay::gRecordingFileOption);
+    extraArgs.push_back(NS_ConvertUTF16toUTF8(mRecordingFile).get());
   }
 
-  base::ProcessId procId =
-      base::GetProcId(mSubprocess->GetChildProcessHandle());
-  Open(mSubprocess->TakeChannel(), procId);
+  RefPtr<ContentParent> self(this);
+
+  auto reject = [self, this](LaunchError err) {
+    NS_ERROR("failed to launch child in the parent");
+    MarkAsDead();
+    return LaunchPromise::CreateAndReject(err, __func__);
+  };
+
+  
+  mSelfRef = this;
+
+  
+  
+  
+  
+  
+  
+
+  auto resolve = [self, this, aInitialPriority, isSync,
+                  
+                  
+                  
+                  prefSerializer =
+                      std::move(prefSerializer)](base::ProcessHandle handle) {
+    AUTO_PROFILER_LABEL("ContentParent::LaunchSubprocess::resolve", OTHER);
+    const auto launchResumeTS = TimeStamp::Now();
+
+    if (!sCreatedFirstContentProcess) {
+      nsCOMPtr<nsIObserverService> obs =
+          mozilla::services::GetObserverService();
+      obs->NotifyObservers(nullptr, "ipc:first-content-process-created",
+                           nullptr);
+      sCreatedFirstContentProcess = true;
+    }
+
+    base::ProcessId procId = base::GetProcId(handle);
+    Open(mSubprocess->TakeChannel(), procId);
 #ifdef MOZ_CODE_COVERAGE
-  Unused << SendShareCodeCoverageMutex(
-      CodeCoverageHandler::Get()->GetMutexHandle(procId));
+    Unused << SendShareCodeCoverageMutex(
+        CodeCoverageHandler::Get()->GetMutexHandle(procId));
 #endif
 
-  mLifecycleState = LifecycleState::ALIVE;
-  if (!InitInternal(aPriority)) {
-    NS_WARNING("failed to initialize child in the parent");
+    mLifecycleState = LifecycleState::ALIVE;
+    if (!InitInternal(aInitialPriority)) {
+      NS_WARNING("failed to initialize child in the parent");
+      
+      
+      ShutDownProcess(SEND_SHUTDOWN_MESSAGE);
+      return LaunchPromise::CreateAndReject(LaunchError{}, __func__);
+    }
+
+    ContentProcessManager::GetSingleton()->AddContentProcess(this);
+
+    mHangMonitorActor = ProcessHangMonitor::AddProcess(this);
+
     
-    
-    ShutDownProcess(SEND_SHUTDOWN_MESSAGE);
-    return false;
-  }
+    SetReplyTimeoutMs(StaticPrefs::dom_ipc_cpow_timeout());
 
-  ContentProcessManager::GetSingleton()->AddContentProcess(this);
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    if (obs) {
+      nsAutoString cpId;
+      cpId.AppendInt(static_cast<uint64_t>(this->ChildID()));
+      obs->NotifyObservers(static_cast<nsIObserver*>(this),
+                           "ipc:content-initializing", cpId.get());
+    }
 
-  mHangMonitorActor = ProcessHangMonitor::AddProcess(this);
+    Init();
 
-  
-  SetReplyTimeoutMs(StaticPrefs::dom_ipc_cpow_timeout());
+    if (isSync) {
+      Telemetry::AccumulateTimeDelta(Telemetry::CONTENT_PROCESS_SYNC_LAUNCH_MS,
+                                     mLaunchTS);
+    } else {
+      Telemetry::AccumulateTimeDelta(Telemetry::CONTENT_PROCESS_LAUNCH_TOTAL_MS,
+                                     mLaunchTS);
 
-  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-  if (obs) {
-    nsAutoString cpId;
-    cpId.AppendInt(static_cast<uint64_t>(this->ChildID()));
-    obs->NotifyObservers(static_cast<nsIObserver*>(this),
-                         "ipc:content-initializing", cpId.get());
-  }
+      Telemetry::Accumulate(
+          Telemetry::CONTENT_PROCESS_LAUNCH_MAINTHREAD_MS,
+          static_cast<uint32_t>(((mLaunchYieldTS - mLaunchTS) +
+                                 (TimeStamp::Now() - launchResumeTS))
+                                    .ToMilliseconds()));
+    }
 
-  Init();
+    return LaunchPromise::CreateAndResolve(self, __func__);
+  };
 
-  if (aIsSync) {
-    Telemetry::AccumulateTimeDelta(Telemetry::CONTENT_PROCESS_SYNC_LAUNCH_MS,
-                                   mLaunchTS);
+  if (isSync) {
+    bool ok = mSubprocess->LaunchAndWaitForProcessHandle(std::move(extraArgs));
+    if (ok) {
+      Unused << resolve(mSubprocess->GetChildProcessHandle());
+    } else {
+      Unused << reject(LaunchError{});
+    }
+    *aRetval.as<bool*>() = ok;
   } else {
-    Telemetry::AccumulateTimeDelta(Telemetry::CONTENT_PROCESS_LAUNCH_TOTAL_MS,
-                                   mLaunchTS);
-
-    Telemetry::Accumulate(
-        Telemetry::CONTENT_PROCESS_LAUNCH_MAINTHREAD_MS,
-        static_cast<uint32_t>(
-            ((mLaunchYieldTS - mLaunchTS) + (TimeStamp::Now() - launchResumeTS))
-                .ToMilliseconds()));
+    auto* retptr = aRetval.as<RefPtr<LaunchPromise>*>();
+    if (mSubprocess->AsyncLaunch(std::move(extraArgs))) {
+      RefPtr<ProcessHandlePromise> ready =
+          mSubprocess->WhenProcessHandleReady();
+      mLaunchYieldTS = TimeStamp::Now();
+      *retptr = ready->Then(GetCurrentThreadSerialEventTarget(), __func__,
+                            std::move(resolve), std::move(reject));
+    } else {
+      *retptr = reject(LaunchError{});
+    }
   }
-  return true;
 }
+
 
 bool ContentParent::LaunchSubprocessSync(
     hal::ProcessPriority aInitialPriority) {
-  if (!BeginSubprocessLaunch( true, aInitialPriority)) {
-    return false;
-  }
-  const bool ok = mSubprocess->WaitForProcessHandle();
-  if (ok && LaunchSubprocessResolve( true, aInitialPriority)) {
-    return true;
-  }
-  LaunchSubprocessReject();
-  return false;
+  bool retval;
+  LaunchSubprocessInternal(aInitialPriority, mozilla::AsVariant(&retval));
+  return retval;
 }
 
-RefPtr<ContentParent::LaunchPromise> ContentParent::LaunchSubprocessAsync(
-    hal::ProcessPriority aInitialPriority) {
-  if (!BeginSubprocessLaunch( false, aInitialPriority)) {
-    
-    LaunchSubprocessReject();
-    return LaunchPromise::CreateAndReject(LaunchError(), __func__);
-  }
-
-  
-  RefPtr<ProcessHandlePromise> ready = mSubprocess->WhenProcessHandleReady();
-  RefPtr<ContentParent> self = this;
-  mLaunchYieldTS = TimeStamp::Now();
-
-  return ready->Then(
-      GetCurrentThreadSerialEventTarget(), __func__,
-      [self, aInitialPriority](
-          const ProcessHandlePromise::ResolveOrRejectValue& aValue) {
-        if (aValue.IsResolve() &&
-            self->LaunchSubprocessResolve( false,
-                                          aInitialPriority)) {
-          return LaunchPromise::CreateAndResolve(self, __func__);
-        }
-        self->LaunchSubprocessReject();
-        return LaunchPromise::CreateAndReject(LaunchError(), __func__);
-      });
+ RefPtr<ContentParent::LaunchPromise>
+ContentParent::LaunchSubprocessAsync(hal::ProcessPriority aInitialPriority) {
+  RefPtr<LaunchPromise> retval;
+  LaunchSubprocessInternal(aInitialPriority, mozilla::AsVariant(&retval));
+  return retval;
 }
 
 ContentParent::ContentParent(ContentParent* aOpener,
