@@ -139,9 +139,13 @@ class ServiceWorkerContainer final : public DOMEventTargetHelper {
 
   void DispatchMessage(RefPtr<ReceivedMessage> aMessage);
 
-  static bool FillInMessageEventInit(JSContext* aCx, nsIGlobalObject* aGlobal,
-                                     ReceivedMessage& aMessage,
-                                     MessageEventInit& aInit, ErrorResult& aRv);
+  
+  
+  static Result<Ok, bool> FillInMessageEventInit(JSContext* aCx,
+                                                 nsIGlobalObject* aGlobal,
+                                                 ReceivedMessage& aMessage,
+                                                 MessageEventInit& aInit,
+                                                 ErrorResult& aRv);
 
   RefPtr<Inner> mInner;
 
