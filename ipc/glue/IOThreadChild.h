@@ -22,7 +22,7 @@ class IOThreadChild : public ChildThread {
                                           0))  
   {}
 
-  ~IOThreadChild() {}
+  ~IOThreadChild() = default;
 
   static MessageLoop* message_loop() {
     return IOThreadChild::current()->Thread::message_loop();
