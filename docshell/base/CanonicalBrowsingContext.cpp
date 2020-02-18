@@ -252,26 +252,6 @@ void CanonicalBrowsingContext::LoadURI(const nsAString& aURI,
   LoadURI(nullptr, loadState, true);
 }
 
-namespace {
-
-using NewOrUsedPromise = MozPromise<RefPtr<ContentParent>, nsresult, false>;
-
-
-
-RefPtr<NewOrUsedPromise> GetNewOrUsedBrowserProcessAsync(
-    const nsAString& aRemoteType) {
-  RefPtr<ContentParent> contentParent =
-      ContentParent::GetNewOrUsedBrowserProcess(
-          nullptr, aRemoteType, hal::PROCESS_PRIORITY_FOREGROUND, nullptr,
-          false);
-  if (!contentParent) {
-    return NewOrUsedPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
-  }
-  return NewOrUsedPromise::CreateAndResolve(contentParent, __func__);
-}
-
-}  
-
 void CanonicalBrowsingContext::PendingRemotenessChange::Complete(
     ContentParent* aContentParent) {
   if (!mPromise) {
@@ -483,14 +463,19 @@ CanonicalBrowsingContext::ChangeFrameRemoteness(const nsAString& aRemoteType,
       new PendingRemotenessChange(this, promise, aPendingSwitchId);
   mPendingRemotenessChange = change;
 
-  GetNewOrUsedBrowserProcessAsync(aRemoteType)
+  ContentParent::GetNewOrUsedBrowserProcessAsync(
+       nullptr,
+       aRemoteType,
+       hal::PROCESS_PRIORITY_FOREGROUND,
+       nullptr,
+       false)
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
           [change](ContentParent* aContentParent) {
             change->Complete(aContentParent);
           },
-          [change](nsresult aRv) { change->Cancel(aRv); });
-  return promise;
+          [change](LaunchError aError) { change->Cancel(NS_ERROR_FAILURE); });
+  return promise.forget();
 }
 
 already_AddRefed<Promise> CanonicalBrowsingContext::ChangeFrameRemoteness(
