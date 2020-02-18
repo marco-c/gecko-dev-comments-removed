@@ -158,10 +158,12 @@ bool FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
     }
 
     if (checkSameOrigin) {
-      bool isPrivateWin =
-          principal && principal->OriginAttributesRef().mPrivateBrowsingId > 0;
+      bool isPrivateWin = false;
       bool isSameOrigin = false;
-      principal->IsSameOrigin(uri, isPrivateWin, &isSameOrigin);
+      if (principal) {
+        isPrivateWin = principal->OriginAttributesRef().mPrivateBrowsingId > 0;
+        principal->IsSameOrigin(uri, isPrivateWin, &isSameOrigin);
+      }
       
       if (!isSameOrigin) {
         ReportError("XFOSameOrigin", ctx, uri, aPolicy, innerWindowID);
