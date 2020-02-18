@@ -14,6 +14,19 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/AppConstants.jsm"
 );
 
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "CaptivePortalService",
+  "@mozilla.org/network/captive-portal-service;1",
+  "nsICaptivePortalService"
+);
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "gNetworkLinkService",
+  "@mozilla.org/network/network-link-service;1",
+  "nsINetworkLinkService"
+);
+
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
 
@@ -53,6 +66,27 @@ var Utils = {
 
 
   log,
+
+  
+
+
+
+
+
+
+
+  get isOffline() {
+    try {
+      return (
+        Services.io.offline ||
+        CaptivePortalService.state == CaptivePortalService.LOCKED_PORTAL ||
+        !gNetworkLinkService.isLinkUp
+      );
+    } catch (ex) {
+      log.warn("Could not determine network status.", ex);
+    }
+    return false;
+  },
 
   
 
