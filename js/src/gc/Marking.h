@@ -69,15 +69,6 @@ inline bool IsMarkedUnbarriered(JSRuntime* rt, T* thingp) {
   return IsMarkedInternal(rt, ConvertToBase(thingp));
 }
 
-
-
-
-template <typename T>
-inline bool IsMarked(JSRuntime* rt, BarrieredBase<T>* thingp) {
-  return IsMarkedInternal(rt,
-                          ConvertToBase(thingp->unsafeUnbarrieredForTracing()));
-}
-
 template <typename T>
 inline bool IsAboutToBeFinalizedUnbarriered(T* thingp) {
   return IsAboutToBeFinalizedInternal(ConvertToBase(thingp));
