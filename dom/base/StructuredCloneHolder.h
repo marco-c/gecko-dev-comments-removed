@@ -127,10 +127,19 @@ class StructuredCloneHolderBase {
     return size;
   }
 
+  void SetErrorMessage(const char* aErrorMessage) {
+    mErrorMessage.Assign(aErrorMessage);
+  }
+
  protected:
   UniquePtr<JSAutoStructuredCloneBuffer> mBuffer;
 
   StructuredCloneScope mStructuredCloneScope;
+
+  
+  
+  
+  nsCString mErrorMessage;
 
 #ifdef DEBUG
   bool mClearCalled;
