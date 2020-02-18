@@ -518,16 +518,6 @@ Toolbox.prototype = {
     await this._listFrames();
     await this.initPerformance();
 
-    
-    await Promise.all(
-      [...this._toolPanels.values()].map(panel => {
-        if (panel.switchToTarget) {
-          return panel.switchToTarget(newTarget);
-        }
-        return Promise.resolve();
-      })
-    );
-
     this.emit("switched-target", newTarget);
   },
 
