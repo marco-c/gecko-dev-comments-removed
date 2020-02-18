@@ -30,11 +30,6 @@ class nsMIMEInfoAndroid final : public nsIMIMEInfo {
  private:
   ~nsMIMEInfoAndroid() {}
 
-  
-
-
-  void AddUniqueExtension(const nsACString& aExtension);
-
   virtual MOZ_MUST_USE nsresult LaunchDefaultWithFile(nsIFile* aFile);
   virtual MOZ_MUST_USE nsresult LoadUriInternal(nsIURI* aURI);
   nsCOMPtr<nsIMutableArray> mHandlerApps;
