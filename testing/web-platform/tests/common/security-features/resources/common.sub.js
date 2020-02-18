@@ -1129,19 +1129,35 @@ function invokeRequest(subresource, sourceContextList) {
     },
     "worker-classic": {
       
-      invoker: invokeFromWorker.bind(undefined, false, {}),
+      invoker: invokeFromWorker.bind(undefined, "worker", false, {}),
     },
     "worker-classic-data": {
       
-      invoker: invokeFromWorker.bind(undefined, true, {}),
+      invoker: invokeFromWorker.bind(undefined, "worker", true, {}),
     },
     "worker-module": {
       
-      invoker: invokeFromWorker.bind(undefined, false, {type: 'module'}),
+      invoker: invokeFromWorker.bind(undefined, "worker", false, {type: 'module'}),
     },
     "worker-module-data": {
       
-      invoker: invokeFromWorker.bind(undefined, true, {type: 'module'}),
+      invoker: invokeFromWorker.bind(undefined, "worker", true, {type: 'module'}),
+    },
+    "sharedworker-classic": {
+      
+      invoker: invokeFromWorker.bind(undefined, "sharedworker", false, {}),
+    },
+    "sharedworker-classic-data": {
+      
+      invoker: invokeFromWorker.bind(undefined, "sharedworker", true, {}),
+    },
+    "sharedworker-module": {
+      
+      invoker: invokeFromWorker.bind(undefined, "sharedworker", false, {type: 'module'}),
+    },
+    "sharedworker-module-data": {
+      
+      invoker: invokeFromWorker.bind(undefined, "sharedworker", true, {type: 'module'}),
     },
   };
 
@@ -1170,7 +1186,9 @@ self.invokeRequest = invokeRequest;
 
 
 
-function invokeFromWorker(isDataUrl, workerOptions,
+
+
+function invokeFromWorker(workerType, isDataUrl, workerOptions,
                           subresource, sourceContextList) {
   const currentSourceContext = sourceContextList[0];
   let workerUrl =
@@ -1194,10 +1212,20 @@ function invokeFromWorker(isDataUrl, workerOptions,
 
   return promise
     .then(url => {
-      const worker = new Worker(url, workerOptions);
-      worker.postMessage({subresource: subresource,
-                          sourceContextList: sourceContextList.slice(1)});
-      return bindEvents2(worker, "message", worker, "error", window, "error");
+      if (workerType === "worker") {
+        const worker = new Worker(url, workerOptions);
+        worker.postMessage({subresource: subresource,
+                           sourceContextList: sourceContextList.slice(1)});
+        return bindEvents2(worker, "message", worker, "error", window, "error");
+      } else if (workerType === "sharedworker") {
+        const worker = new SharedWorker(url, workerOptions);
+        worker.port.start();
+        worker.port.postMessage({subresource: subresource,
+                                 sourceContextList: sourceContextList.slice(1)});
+        return bindEvents2(worker.port, "message", worker, "error", window, "error");
+      } else {
+        throw new Error('Invalid worker type: ' + workerType);
+      }
     })
     .then(event => {
         if (event.data.error)
