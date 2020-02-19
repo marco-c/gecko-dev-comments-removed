@@ -118,7 +118,12 @@ CacheStorageService::CacheStorageService()
       mForcedValidEntriesLock("CacheStorageService.mForcedValidEntriesLock"),
       mShutdown(false),
       mDiskPool(MemoryPool::DISK),
-      mMemoryPool(MemoryPool::MEMORY) {
+      mMemoryPool(MemoryPool::MEMORY)
+#ifdef MOZ_TSAN
+      ,
+      mPurgeTimerActive(false)
+#endif
+{
   CacheFileIOManager::Init();
 
   MOZ_ASSERT(XRE_IsParentProcess());
@@ -1273,9 +1278,15 @@ void CacheStorageService::OnMemoryConsumptionChange(
 
   if (!overLimit) return;
 
-  
-  
-  if (mPurgeTimer) return;
+    
+    
+#ifdef MOZ_TSAN
+  if (mPurgeTimerActive) {
+#else
+  if (mPurgeTimer) {
+#endif
+    return;
+  }
 
   
   
@@ -1321,6 +1332,9 @@ void CacheStorageService::SchedulePurgeOverMemoryLimit() {
 
   mPurgeTimer = NS_NewTimer();
   if (mPurgeTimer) {
+#ifdef MOZ_TSAN
+    mPurgeTimerActive = true;
+#endif
     nsresult rv;
     rv = mPurgeTimer->InitWithCallback(this, 1000, nsITimer::TYPE_ONE_SHOT);
     LOG(("  timer init rv=0x%08" PRIx32, static_cast<uint32_t>(rv)));
@@ -1334,6 +1348,9 @@ CacheStorageService::Notify(nsITimer* aTimer) {
   mozilla::MutexAutoLock lock(mLock);
 
   if (aTimer == mPurgeTimer) {
+#ifdef MOZ_TSAN
+    mPurgeTimerActive = false;
+#endif
     mPurgeTimer = nullptr;
 
     nsCOMPtr<nsIRunnable> event =

@@ -357,6 +357,13 @@ class CacheStorageService final : public nsICacheStorageService,
   }
 
   nsCOMPtr<nsITimer> mPurgeTimer;
+#ifdef MOZ_TSAN
+  
+  
+  
+  
+  Atomic<bool, Relaxed> mPurgeTimerActive;
+#endif
 
   class PurgeFromMemoryRunnable : public Runnable {
    public:
