@@ -334,6 +334,25 @@ void nsAccessibilityService::FireAccessibleEvent(uint32_t aEvent,
   nsEventShell::FireEvent(aEvent, aTarget);
 }
 
+void nsAccessibilityService::NotifyOfImageSizeAvailable(
+    mozilla::PresShell* aPresShell, nsIContent* aContent) {
+  
+  
+  
+  DocAccessible* document = GetDocAccessible(aPresShell);
+  if (document) {
+    Accessible* accessible = document->GetAccessible(aContent);
+    
+    
+    
+    if (accessible && accessible->IsImage()) {
+      RefPtr<AccEvent> event =
+          new AccStateChangeEvent(accessible, states::INVISIBLE, false);
+      document->FireDelayedEvent(event);
+    }
+  }
+}
+
 Accessible* nsAccessibilityService::GetRootDocumentAccessible(
     PresShell* aPresShell, bool aCanCreate) {
   PresShell* presShell = aPresShell;

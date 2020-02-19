@@ -725,6 +725,11 @@ void nsImageFrame::UpdateImage(imgIRequest* aRequest, imgIContainer* aImage) {
     
     
     if (!(mState & IMAGE_SIZECONSTRAINED)) {
+#ifdef ACCESSIBILITY
+      if (nsAccessibilityService* accService = GetAccService()) {
+        accService->NotifyOfImageSizeAvailable(PresShell(), mContent);
+      }
+#endif
       PresShell()->FrameNeedsReflow(this, IntrinsicDirty::StyleChange,
                                     NS_FRAME_IS_DIRTY);
     } else if (PresShell()->IsActive()) {
@@ -1355,8 +1360,7 @@ ImgDrawResult nsImageFrame::DisplayAltFeedback(gfxContext& aRenderingContext,
     
     
     
-    MOZ_ASSERT(recessedBorder.mBorderImageSource.GetType() ==
-               eStyleImageType_Null);
+    MOZ_ASSERT(recessedBorder.mBorderImageSource.IsNone());
 
     Unused << nsCSSRendering::PaintBorderWithStyleBorder(
         PresContext(), aRenderingContext, this, inner, inner, recessedBorder,
@@ -1538,8 +1542,7 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
     
     
     
-    MOZ_ASSERT(recessedBorder.mBorderImageSource.GetType() ==
-               eStyleImageType_Null);
+    MOZ_ASSERT(recessedBorder.mBorderImageSource.IsNone());
 
     nsRect rect = nsRect(aPt, GetSize());
     Unused << nsCSSRendering::CreateWebRenderCommandsForBorderWithStyleBorder(

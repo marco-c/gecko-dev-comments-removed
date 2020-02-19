@@ -225,6 +225,15 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
 
   
 
+
+
+
+
+  void NotifyOfImageSizeAvailable(mozilla::PresShell* aPresShell,
+                                  nsIContent* aContent);
+
+  
+
   
 
 

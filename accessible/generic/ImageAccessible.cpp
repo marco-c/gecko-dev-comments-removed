@@ -49,13 +49,30 @@ uint64_t ImageAccessible::NativeState() const {
     content->GetRequest(nsIImageLoadingContent::CURRENT_REQUEST,
                         getter_AddRefs(imageRequest));
 
-  nsCOMPtr<imgIContainer> imgContainer;
-  if (imageRequest) imageRequest->GetImage(getter_AddRefs(imgContainer));
+  if (imageRequest) {
+    nsCOMPtr<imgIContainer> imgContainer;
+    imageRequest->GetImage(getter_AddRefs(imgContainer));
+    if (imgContainer) {
+      bool animated = false;
+      imgContainer->GetAnimated(&animated);
+      if (animated) {
+        state |= states::ANIMATED;
+      }
+    }
 
-  if (imgContainer) {
-    bool animated = false;
-    imgContainer->GetAnimated(&animated);
-    if (animated) state |= states::ANIMATED;
+    nsIFrame* frame = GetFrame();
+    MOZ_ASSERT(!frame || frame->AccessibleType() == eImageType ||
+               frame->AccessibleType() == a11y::eHTMLImageMapType);
+    if (frame && !(frame->GetStateBits() & IMAGE_SIZECONSTRAINED)) {
+      uint32_t status = imgIRequest::STATUS_NONE;
+      imageRequest->GetImageStatus(&status);
+      if (!(status & imgIRequest::STATUS_SIZE_AVAILABLE)) {
+        
+        
+        
+        state |= states::INVISIBLE;
+      }
+    }
   }
 
   return state;
