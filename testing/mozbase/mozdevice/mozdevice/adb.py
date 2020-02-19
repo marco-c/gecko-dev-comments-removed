@@ -2990,6 +2990,14 @@ class ADBDevice(ADBCommand):
         :raises: * ADBTimeoutError
                  * ADBError
         """
+        if self.version < version_codes.Q:
+            return self._get_top_activity_P(timeout=timeout)
+        return self._get_top_activity_Q(timeout=timeout)
+
+    def _get_top_activity_P(self, timeout=None):
+        """Returns the name of the top activity (focused app) reported by dumpsys
+        for Android 9 and earlier.
+        """
         package = None
         data = None
         cmd = "dumpsys window windows"
@@ -3006,6 +3014,30 @@ class ADBDevice(ADBCommand):
             line = m.group(0)
             
             m = re.search('(\S+)/$', line)
+            if m:
+                package = m.group(1)
+        if self._verbose:
+            self._logger.debug('get_top_activity: %s' % str(package))
+        return package
+
+    def _get_top_activity_Q(self, timeout=None):
+        """Returns the name of the top activity (focused app) reported by dumpsys
+        for Android 10 and later.
+        """
+        package = None
+        data = None
+        cmd = "dumpsys window"
+        try:
+            data = self.shell_output(cmd, timeout=timeout)
+        except Exception:
+            
+            return package
+        m = re.search('mFocusedApp=AppWindowToken{\w+ token=Token{'
+                      '\w+ ActivityRecord{\w+ w+ (\w+)/w+ \w+}}}', data)
+        if m:
+            line = m.group(1)
+            
+            m = re.search('(\S+)/', line)
             if m:
                 package = m.group(1)
         if self._verbose:
