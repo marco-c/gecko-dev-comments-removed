@@ -5,6 +5,10 @@
 
 
 
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+
 add_task(async function test() {
   const testPageURL =
     "http://mochi.test:8888/browser/" +
@@ -17,11 +21,14 @@ add_task(async function test() {
 
   
   
-  let page_with_title = test_title + " - " + app_name;
+  const isMacOS = AppConstants.platform == "macosx";
+
+  let page_with_title = isMacOS ? test_title : `${test_title} - ${app_name}`;
   let page_without_title = app_name;
   let about_pb_title = app_name;
-  let pb_page_with_title =
-    test_title + " - " + app_name + " (Private Browsing)";
+  let pb_page_with_title = isMacOS
+    ? `${test_title} - (Private Browsing)`
+    : `${test_title} - ${app_name} (Private Browsing)`;
   let pb_page_without_title = app_name + " (Private Browsing)";
   let pb_about_pb_title = app_name + " (Private Browsing)";
 
