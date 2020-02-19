@@ -803,10 +803,6 @@ class nsFrameSelection final {
   
   
   nsRange* GetFirstCellRange();
-  
-  
-  
-  nsRange* GetNextCellRange();
   static nsIContent* GetFirstCellNodeInRange(const nsRange* aRange);
   
   static nsIContent* IsInSameTable(nsIContent* aContent1,
@@ -822,6 +818,11 @@ class nsFrameSelection final {
                      sizeof(mozilla::SelectionType)];
 
   struct TableSelection {
+    
+    
+    
+    nsRange* GetNextCellRange(const mozilla::dom::Selection& aNormalSelection);
+
     nsCOMPtr<nsINode> mCellParent;  
     nsCOMPtr<nsIContent> mStartSelectedCell;
     nsCOMPtr<nsIContent> mEndSelectedCell;
