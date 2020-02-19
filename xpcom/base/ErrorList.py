@@ -923,8 +923,6 @@ with modules["CONTENT"]:
     
     errors["NS_PROPTABLE_PROP_NOT_THERE"] = FAILURE(10)
     
-    errors["NS_ERROR_XBL_BLOCKED"] = FAILURE(15)
-    
     errors["NS_ERROR_CONTENT_CRASHED"] = FAILURE(16)
     
     errors["NS_ERROR_FRAME_CRASHED"] = FAILURE(14)
