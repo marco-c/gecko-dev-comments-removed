@@ -807,7 +807,7 @@ class nsFrameSelection final {
   
   
   nsRange* GetNextCellRange();
-  static nsIContent* GetFirstCellNodeInRange(nsRange* aRange);
+  static nsIContent* GetFirstCellNodeInRange(const nsRange* aRange);
   
   static nsIContent* IsInSameTable(nsIContent* aContent1,
                                    nsIContent* aContent2);
