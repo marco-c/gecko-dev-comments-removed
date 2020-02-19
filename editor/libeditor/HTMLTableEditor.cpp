@@ -4153,11 +4153,8 @@ bool HTMLEditor::IsEmptyCell(dom::Element* aCell) {
     return true;
   }
 
-  bool isEmpty;
   
-  nsresult rv = IsEmptyNode(cellChild, &isEmpty, false, false);
-  NS_ENSURE_SUCCESS(rv, false);
-  return isEmpty;
+  return IsEmptyNode(*cellChild, false, false);
 }
 
 }  
