@@ -510,8 +510,9 @@ nsresult Selection::MaybeAddTableCellRange(nsRange* aRange, bool* aDidAddRange,
   
   
   
-  if (mFrameSelection->mSelectingTableCellMode == TableSelection::None)
+  if (mFrameSelection->mSelectingTableCellMode == TableSelection::None) {
     mFrameSelection->mSelectingTableCellMode = tableMode;
+  }
 
   *aDidAddRange = true;
   return AddRangesForSelectableNodes(aRange, aOutIndex);

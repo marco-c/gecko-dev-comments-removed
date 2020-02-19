@@ -2051,7 +2051,9 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
     
     if (aTarget != TableSelection::Table) {
       
-      if (mEndSelectedCell == childContent) return NS_OK;
+      if (mEndSelectedCell == childContent) {
+        return NS_OK;
+      }
 
 #ifdef DEBUG_TABLE_SELECTION
       printf(
@@ -2092,7 +2094,8 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
 #endif
         
         return SelectRowOrColumn(childContent, mSelectingTableCellMode);
-      } else if (mSelectingTableCellMode == TableSelection::Cell) {
+      }
+      if (mSelectingTableCellMode == TableSelection::Cell) {
 #ifdef DEBUG_TABLE_SELECTION
         printf("HandleTableSelection: Dragged into a new cell\n");
 #endif
@@ -2180,7 +2183,8 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
         }
 
         return NS_OK;
-      } else if (aTarget == TableSelection::Table) {
+      }
+      if (aTarget == TableSelection::Table) {
         
         
         
@@ -2191,8 +2195,8 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
         
         mDomSelections[index]->RemoveAllRanges(IgnoreErrors());
         return CreateAndAddRange(aParentContent, aContentOffset);
-      } else if (aTarget == TableSelection::Row ||
-                 aTarget == TableSelection::Column) {
+      }
+      if (aTarget == TableSelection::Row || aTarget == TableSelection::Column) {
 #ifdef DEBUG_TABLE_SELECTION
         printf("aTarget == %d\n", aTarget);
 #endif
@@ -2227,7 +2231,9 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
         return SelectBlockOfCells(mAppendStartSelectedCell, childContent);
       }
 
-      if (mDragSelectingCells) mAppendStartSelectedCell = mStartSelectedCell;
+      if (mDragSelectingCells) {
+        mAppendStartSelectedCell = mStartSelectedCell;
+      }
 
       mDragSelectingCells = false;
       mStartSelectedCell = nullptr;
@@ -2311,8 +2317,9 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
 #endif
             
             
-            if (childContent == mAppendStartSelectedCell)
+            if (childContent == mAppendStartSelectedCell) {
               mAppendStartSelectedCell = nullptr;
+            }
 
             
             ErrorResult err;
@@ -2527,8 +2534,12 @@ nsresult nsFrameSelection::SelectRowOrColumn(nsIContent* aCellContent,
 
   
   
-  if (aTarget == TableSelection::Row) colIndex = 0;
-  if (aTarget == TableSelection::Column) rowIndex = 0;
+  if (aTarget == TableSelection::Row) {
+    colIndex = 0;
+  }
+  if (aTarget == TableSelection::Column) {
+    rowIndex = 0;
+  }
 
   nsCOMPtr<nsIContent> firstCell, lastCell;
   while (true) {
@@ -2542,10 +2553,11 @@ nsresult nsFrameSelection::SelectRowOrColumn(nsIContent* aCellContent,
     lastCell = std::move(curCellContent);
 
     
-    if (aTarget == TableSelection::Row)
+    if (aTarget == TableSelection::Row) {
       colIndex += tableFrame->GetEffectiveRowSpanAt(rowIndex, colIndex);
-    else
+    } else {
       rowIndex += tableFrame->GetEffectiveRowSpanAt(rowIndex, colIndex);
+    }
   }
 
   
