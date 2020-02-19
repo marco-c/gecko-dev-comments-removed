@@ -278,6 +278,13 @@ class Documentation(MachCommandBase):
 
         for prefix in key_prefixes:
             s3_upload(files, prefix)
+
+            
+            
+            
+            if version and prefix.endswith(version):
+                continue
+
             if prefix:
                 prefix += '/'
             all_redirects.update({prefix + k: prefix + v for k, v in redirects.items()})
