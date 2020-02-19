@@ -1245,14 +1245,15 @@ class MockXRInputSource {
   getEmptyGamepad() {
     
     
-    const gamepad = new device.mojom.Gamepad();
-    gamepad.connected = true;
-    gamepad.id = "";
-    gamepad.timestamp = 0;
-    gamepad.axes = [];
-    gamepad.buttons = [];
-    gamepad.mapping = "xr-standard";
-    gamepad.display_id = 0;
+    const gamepad = {
+      connected: true,
+      id: "",
+      timestamp: 0,
+      axes: [],
+      buttons: [],
+      mapping: "xr-standard",
+      display_id: 0,
+    };
 
     switch (this.handedness_) {
       case 'left':
