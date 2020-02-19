@@ -34,9 +34,25 @@ class WebGLVertexArray : public WebGLContextBoundObject,
   virtual void BindVertexArray() = 0;
   bool mHasBeenBound = false;
 
+  bool ShouldCache() const {
+    if (!mPreventCacheCooldown) return true;
+    mPreventCacheCooldown -= 1;
+    return false;
+  }
+
+  void InvalidateCaches() const {
+    
+    
+    
+    mPreventCacheCooldown = 10;
+
+    CacheInvalidator::InvalidateCaches();
+  }
+
  protected:
   std::vector<WebGLVertexAttribData> mAttribs;
   RefPtr<WebGLBuffer> mElementArrayBuffer;
+  mutable uint32_t mPreventCacheCooldown = 0;
 
   friend class ScopedDrawHelper;
   friend class WebGLContext;
