@@ -6,7 +6,7 @@
 
 
 document
-  .getElementById("SanitizeDialog")
+  .querySelector("dialog")
   .addEventListener("dialoghelp", window.top.openPrefsHelp);
 
 Preferences.addAll([
