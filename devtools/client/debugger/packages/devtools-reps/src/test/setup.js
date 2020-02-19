@@ -6,3 +6,13 @@
 const Enzyme = require("enzyme");
 const Adapter = require("enzyme-adapter-react-16");
 Enzyme.configure({ adapter: new Adapter() });
+
+
+if (!Array.prototype.flatMap) {
+  
+  Array.prototype.flatMap = function(cb) {
+    return this.reduce((acc, x, i, arr) => {
+      return acc.concat(cb(x, i, arr));
+    }, []);
+  };
+}
