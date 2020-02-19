@@ -149,7 +149,6 @@ class InactivePropertyHelper {
       
       {
         invalidProperties: [
-          "align-content",
           "align-items",
           "justify-content",
           "place-content",
@@ -161,6 +160,19 @@ class InactivePropertyHelper {
           "grid-row-gap",
         ],
         when: () => !this.gridContainer && !this.flexContainer,
+        fixId: "inactive-css-not-grid-or-flex-container-fix",
+        msgId: "inactive-css-not-grid-or-flex-container",
+        numFixProps: 2,
+      },
+      
+      
+      
+      {
+        invalidProperties: ["align-content"],
+        when: () =>
+          !this.style["align-content"].includes("baseline") &&
+          !this.gridContainer &&
+          !this.flexContainer,
         fixId: "inactive-css-not-grid-or-flex-container-fix",
         msgId: "inactive-css-not-grid-or-flex-container",
         numFixProps: 2,
