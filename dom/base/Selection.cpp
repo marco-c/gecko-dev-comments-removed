@@ -503,7 +503,7 @@ nsresult Selection::MaybeAddTableCellRange(nsRange* aRange, bool* aDidAddRange,
 
   
   if (tableMode != TableSelectionMode::Cell) {
-    mFrameSelection->mTableSelection.mSelectingTableCellMode = tableMode;
+    mFrameSelection->mTableSelection.mMode = tableMode;
     
     
     return NS_OK;
@@ -512,9 +512,8 @@ nsresult Selection::MaybeAddTableCellRange(nsRange* aRange, bool* aDidAddRange,
   
   
   
-  if (mFrameSelection->mTableSelection.mSelectingTableCellMode ==
-      TableSelectionMode::None) {
-    mFrameSelection->mTableSelection.mSelectingTableCellMode = tableMode;
+  if (mFrameSelection->mTableSelection.mMode == TableSelectionMode::None) {
+    mFrameSelection->mTableSelection.mMode = tableMode;
   }
 
   *aDidAddRange = true;
