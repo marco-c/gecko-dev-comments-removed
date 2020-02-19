@@ -85,6 +85,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
 
   
   void LaunchGPUProcess();
+  bool IsGPUProcessLaunching();
 
   
   

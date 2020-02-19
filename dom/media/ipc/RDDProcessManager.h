@@ -30,6 +30,7 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
 
   
   bool LaunchRDDProcess();
+  bool IsRDDProcessLaunching();
 
   
   
