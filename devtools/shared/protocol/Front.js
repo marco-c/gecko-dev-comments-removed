@@ -125,6 +125,15 @@ class Front extends Pool {
 
 
   watchFronts(typeName, onAvailable, onDestroy) {
+    if (!this.actorID) {
+      
+      console.error(
+        `Tried to call watchFronts for the '${typeName}' type on an ` +
+          `already destroyed front '${this.typeName}'.`
+      );
+      return;
+    }
+
     if (onAvailable) {
       
       for (const front of this.poolChildren()) {
@@ -147,6 +156,15 @@ class Front extends Pool {
 
 
   unwatchFronts(typeName, onAvailable, onDestroy) {
+    if (!this.actorID) {
+      
+      console.error(
+        `Tried to call unwatchFronts for the '${typeName}' type on an ` +
+          `already destroyed front '${this.typeName}'.`
+      );
+      return;
+    }
+
     if (onAvailable) {
       this._frontCreationListeners.off(typeName, onAvailable);
     }
