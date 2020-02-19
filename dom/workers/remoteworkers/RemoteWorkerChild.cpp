@@ -144,31 +144,9 @@ class MessagePortIdentifierRunnable final : public WorkerRunnable {
         mPortIdentifier(aPortIdentifier) {}
 
  private:
-  virtual bool WorkerRun(JSContext* aCx,
-                         WorkerPrivate* aWorkerPrivate) override {
+  bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override {
     mActor->AddPortIdentifier(aCx, aWorkerPrivate, mPortIdentifier);
     return true;
-  }
-
-  virtual bool PreDispatch(WorkerPrivate* aWorkerPrivate) override {
-    
-    return true;
-  }
-
-  virtual void PostDispatch(WorkerPrivate* aWorkerPrivate,
-                            bool aDispatchResult) override {
-    
-  }
-
-  bool PreRun(WorkerPrivate* aWorkerPrivate) override {
-    
-    return true;
-  }
-
-  void PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-               bool aRunResult) override {
-    
-    return;
   }
 
   SelfHolder mActor;
