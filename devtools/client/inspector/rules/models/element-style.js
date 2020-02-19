@@ -217,7 +217,9 @@ class ElementStyle {
 
 
   getRule(id) {
-    return this.rules.find(rule => rule.domRule.actorID === id);
+    return id
+      ? this.rules.find(rule => rule.domRule.actorID === id)
+      : undefined;
   }
 
   
@@ -564,8 +566,8 @@ class ElementStyle {
 
 
 
-  async modifyDeclarationName(ruleID, declarationId, name) {
-    const rule = this.getRule(ruleID);
+  async modifyDeclarationName(ruleId, declarationId, name) {
+    const rule = this.getRule(ruleId);
     if (!rule) {
       return;
     }

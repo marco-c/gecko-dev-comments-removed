@@ -21,6 +21,12 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
+  "getRuleFromNode",
+  "devtools/client/inspector/rules/utils/utils",
+  true
+);
+loader.lazyRequireGetter(
+  this,
   "clipboardHelper",
   "devtools/shared/platform/clipboard"
 );
@@ -40,13 +46,11 @@ const PREF_ORIG_SOURCES = "devtools.source-map.client-service.enabled";
 
 
 
-function StyleInspectorMenu(view, options) {
+function StyleInspectorMenu(view, { isRuleView = false } = {}) {
   this.view = view;
   this.inspector = this.view.inspector;
-  this.styleDocument = this.view.styleDocument;
-  this.styleWindow = this.view.styleWindow;
-
-  this.isRuleView = options.isRuleView;
+  this.styleWindow = this.view.styleWindow || this.view.doc.defaultView;
+  this.isRuleView = isRuleView;
 
   this._onAddNewRule = this._onAddNewRule.bind(this);
   this._onCopy = this._onCopy.bind(this);
@@ -72,7 +76,7 @@ StyleInspectorMenu.prototype = {
   show: function(event) {
     try {
       this._openMenu({
-        target: event.explicitOriginalTarget,
+        target: event.target,
         screenX: event.screenX,
         screenY: event.screenY,
       });
@@ -82,9 +86,7 @@ StyleInspectorMenu.prototype = {
   },
 
   _openMenu: function({ target, screenX = 0, screenY = 0 } = {}) {
-    
-    
-    this.styleDocument.popupNode = target;
+    this.currentTarget = target;
     this.styleWindow.focus();
 
     const menu = new Menu();
@@ -310,30 +312,18 @@ StyleInspectorMenu.prototype = {
   _isColorPopup: function() {
     this._colorToCopy = "";
 
-    let container = this._getClickedNode();
+    const container = this._getClickedNode();
     if (!container) {
       return false;
     }
 
-    const isColorNode = el => el.dataset && "color" in el.dataset;
-
-    while (!isColorNode(container)) {
-      container = container.parentNode;
-      if (!container) {
-        return false;
-      }
-    }
-
-    this._colorToCopy = container.dataset.color;
-    return true;
-  },
-
-  _isPropertyName: function() {
-    const nodeInfo = this._getClickedNodeInfo();
-    if (!nodeInfo) {
+    const colorNode = container.closest("[data-color");
+    if (!colorNode) {
       return false;
     }
-    return nodeInfo.type == VIEW_NODE_PROPERTY_TYPE;
+
+    this._colorToCopy = colorNode.dataset.color;
+    return true;
   },
 
   
@@ -357,15 +347,13 @@ StyleInspectorMenu.prototype = {
 
 
   _getClickedNode: function() {
-    let container = null;
-    const node = this.styleDocument.popupNode;
+    const node = this.currentTarget;
 
-    if (node) {
-      const isTextNode = node.nodeType == node.TEXT_NODE;
-      container = isTextNode ? node.parentElement : node;
+    if (!node) {
+      return null;
     }
 
-    return container;
+    return node.nodeType === node.TEXT_NODE ? node.parentElement : node;
   },
 
   
@@ -373,14 +361,21 @@ StyleInspectorMenu.prototype = {
 
   _onSelectAll: function() {
     const selection = this.styleWindow.getSelection();
-    selection.selectAllChildren(this.view.element);
+
+    if (this.isRuleView) {
+      selection.selectAllChildren(
+        this.currentTarget.closest("#ruleview-container-focusable")
+      );
+    } else {
+      selection.selectAllChildren(this.view.element);
+    }
   },
 
   
 
 
   _onCopy: function() {
-    this.view.copySelection(this.styleDocument.popupNode);
+    this.view.copySelection(this.currentTarget);
   },
 
   
@@ -428,8 +423,10 @@ StyleInspectorMenu.prototype = {
   
 
 
-  _onAddNewRule: function() {
-    this.view._onAddRule();
+  async _onAddNewRule() {
+    this.view.isNewRulesView
+      ? await this.view.onAddRule()
+      : this.view._onAddRule();
   },
 
   
@@ -481,9 +478,11 @@ StyleInspectorMenu.prototype = {
 
 
   _onCopyRule: function() {
-    const ruleEditor = this.styleDocument.popupNode.parentNode.offsetParent
-      ._ruleEditor;
-    const rule = ruleEditor.rule;
+    const node = this._getClickedNode();
+    const elementStyle = this.view.isNewRulesView
+      ? this.view.elementStyle
+      : this.view._elementStyle;
+    const rule = getRuleFromNode(node, elementStyle);
     clipboardHelper.copyString(rule.stringifyRule());
   },
 
@@ -507,11 +506,9 @@ StyleInspectorMenu.prototype = {
   },
 
   destroy: function() {
-    this.popupNode = null;
-    this.styleDocument.popupNode = null;
+    this.currentTarget = null;
     this.view = null;
     this.inspector = null;
-    this.styleDocument = null;
     this.styleWindow = null;
   },
 };

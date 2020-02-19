@@ -245,7 +245,7 @@ class Rule {
 
 
   getDeclaration(id) {
-    return this.textProps.find(textProp => textProp.id === id);
+    return id ? this.textProps.find(textProp => textProp.id === id) : undefined;
   }
 
   

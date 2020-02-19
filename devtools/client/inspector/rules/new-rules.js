@@ -54,6 +54,17 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
+  "getNodeInfo",
+  "devtools/client/inspector/rules/utils/utils",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "StyleInspectorMenu",
+  "devtools/client/inspector/shared/style-inspector-menu"
+);
+loader.lazyRequireGetter(
+  this,
   "advanceValidate",
   "devtools/client/inspector/shared/utils",
   true
@@ -109,6 +120,7 @@ class RulesView {
     this.onToggleSelectorHighlighter = this.onToggleSelectorHighlighter.bind(
       this
     );
+    this.showContextMenu = this.showContextMenu.bind(this);
     this.showDeclarationNameEditor = this.showDeclarationNameEditor.bind(this);
     this.showDeclarationValueEditor = this.showDeclarationValueEditor.bind(
       this
@@ -145,6 +157,7 @@ class RulesView {
       onTogglePrintSimulation: this.onTogglePrintSimulation,
       onTogglePseudoClass: this.onTogglePseudoClass,
       onToggleSelectorHighlighter: this.onToggleSelectorHighlighter,
+      showContextMenu: this.showContextMenu,
       showDeclarationNameEditor: this.showDeclarationNameEditor,
       showDeclarationValueEditor: this.showDeclarationValueEditor,
       showNewDeclarationEditor: this.showNewDeclarationEditor,
@@ -242,6 +255,11 @@ class RulesView {
       this._classList = null;
     }
 
+    if (this._contextMenu) {
+      this._contextMenu.destroy();
+      this._contextMenu = null;
+    }
+
     if (this._selectHighlighter) {
       this._selectorHighlighter.finalize();
       this._selectorHighlighter = null;
@@ -297,6 +315,14 @@ class RulesView {
     }
 
     return this._classList;
+  }
+
+  get contextMenu() {
+    if (!this._contextMenu) {
+      this._contextMenu = new StyleInspectorMenu(this, { isRuleView: true });
+    }
+
+    return this._contextMenu;
   }
 
   
@@ -364,6 +390,23 @@ class RulesView {
     
     this.inspector.emit("grid-line-names-updated");
     return gridLineNames;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  getNodeInfo(node) {
+    return getNodeInfo(node, this.elementStyle);
   }
 
   
@@ -603,6 +646,13 @@ class RulesView {
     if (prevIsSourceLinkEnabled !== isSourceLinkEnabled) {
       this.store.dispatch(updateSourceLinkEnabled(isSourceLinkEnabled));
     }
+  }
+
+  
+
+
+  showContextMenu(event) {
+    this.contextMenu.show(event);
   }
 
   
