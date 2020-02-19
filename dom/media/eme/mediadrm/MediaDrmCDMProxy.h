@@ -78,15 +78,17 @@ class MediaDrmCDMProxy : public CDMProxy {
   void OnSessionError(const nsAString& aSessionId, nsresult aException,
                       uint32_t aSystemCode, const nsAString& aMsg) override;
 
-  void OnRejectPromise(uint32_t aPromiseId, nsresult aCode,
+  void OnRejectPromise(uint32_t aPromiseId, ErrorResult&& aException,
                        const nsCString& aMsg) override;
 
   RefPtr<DecryptPromise> Decrypt(MediaRawData* aSample) override;
   void OnDecrypted(uint32_t aId, DecryptStatus aResult,
                    const nsTArray<uint8_t>& aDecryptedData) override;
 
-  void RejectPromise(PromiseId aId, nsresult aCode,
+  void RejectPromise(PromiseId aId, ErrorResult&& aException,
                      const nsCString& aReason) override;
+  
+  void RejectPromiseWithStateError(PromiseId aId, const nsCString& aReason);
 
   
   
@@ -137,22 +139,32 @@ class MediaDrmCDMProxy : public CDMProxy {
 
   class RejectPromiseTask : public Runnable {
    public:
-    RejectPromiseTask(MediaDrmCDMProxy* aProxy, PromiseId aId, nsresult aCode,
-                      const nsCString& aReason)
+    RejectPromiseTask(MediaDrmCDMProxy* aProxy, PromiseId aId,
+                      ErrorResult&& aException, const nsCString& aReason)
         : Runnable("RejectPromiseTask"),
           mProxy(aProxy),
           mId(aId),
-          mCode(aCode),
+          mException(std::move(aException)),
           mReason(aReason) {}
     NS_IMETHOD Run() override {
-      mProxy->RejectPromise(mId, mCode, mReason);
+      
+      
+      
+      
+      
+      CopyableErrorResult rv(std::move(mException));
+      mProxy->RejectPromise(mId, std::move(rv), mReason);
       return NS_OK;
     }
 
    private:
     RefPtr<MediaDrmCDMProxy> mProxy;
     PromiseId mId;
-    nsresult mCode;
+    
+    
+    
+    
+    CopyableErrorResult mException;
     nsCString mReason;
   };
 

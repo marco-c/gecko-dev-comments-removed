@@ -52,16 +52,16 @@ void ChromiumCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
           NS_ConvertUTF16toUTF8(aGMPName).get());
 
   if (!mGMPThread) {
-    RejectPromise(
-        aPromiseId, NS_ERROR_DOM_INVALID_STATE_ERR,
+    RejectPromiseWithStateError(
+        aPromiseId,
         NS_LITERAL_CSTRING("Couldn't get GMP thread ChromiumCDMProxy::Init"));
     return;
   }
 
   if (aGMPName.IsEmpty()) {
-    RejectPromise(aPromiseId, NS_ERROR_DOM_INVALID_STATE_ERR,
-                  nsPrintfCString("Unknown GMP for keysystem '%s'",
-                                  NS_ConvertUTF16toUTF8(mKeySystem).get()));
+    RejectPromiseWithStateError(
+        aPromiseId, nsPrintfCString("Unknown GMP for keysystem '%s'",
+                                    NS_ConvertUTF16toUTF8(mKeySystem).get()));
     return;
   }
 
@@ -77,8 +77,8 @@ void ChromiumCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
         RefPtr<gmp::GeckoMediaPluginService> service =
             gmp::GeckoMediaPluginService::GetGeckoMediaPluginService();
         if (!service) {
-          self->RejectPromise(
-              aPromiseId, NS_ERROR_DOM_INVALID_STATE_ERR,
+          self->RejectPromiseWithStateError(
+              aPromiseId,
               NS_LITERAL_CSTRING("Couldn't get GeckoMediaPluginService in "
                                  "ChromiumCDMProxy::Init"));
           return;
@@ -103,11 +103,10 @@ void ChromiumCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
                           self->mCDM = cdm;
                         }
                         if (self->mIsShutdown) {
-                          self->RejectPromise(
-                              aPromiseId, NS_ERROR_DOM_INVALID_STATE_ERR,
-                              NS_LITERAL_CSTRING(
-                                  "ChromiumCDMProxy shutdown during "
-                                  "ChromiumCDMProxy::Init"));
+                          self->RejectPromiseWithStateError(
+                              aPromiseId, NS_LITERAL_CSTRING(
+                                              "ChromiumCDMProxy shutdown "
+                                              "during ChromiumCDMProxy::Init"));
                           
                           
                           
@@ -118,13 +117,24 @@ void ChromiumCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
                       },
                       [self, aPromiseId](MediaResult aResult) {
                         
-                        self->RejectPromise(aPromiseId, aResult.Code(),
+                        ErrorResult rv;
+                        
+                        
+                        
+                        rv.Throw(aResult.Code());
+                        self->RejectPromise(aPromiseId, std::move(rv),
                                             aResult.Message());
                       });
             },
             [self, aPromiseId](MediaResult rv) {
               
-              self->RejectPromise(aPromiseId, rv.Code(), rv.Description());
+              ErrorResult result;
+              
+              
+              
+              result.Throw(rv.Code());
+              self->RejectPromise(aPromiseId, std::move(result),
+                                  rv.Description());
             });
       }));
 
@@ -146,8 +156,10 @@ void ChromiumCDMProxy::OnCDMCreated(uint32_t aPromiseId) {
     mKeys->OnCDMCreated(aPromiseId, cdm->PluginId());
   } else {
     
-    mKeys->RejectPromise(aPromiseId, NS_ERROR_DOM_INVALID_STATE_ERR,
-                         NS_LITERAL_CSTRING("Null CDM in OnCDMCreated()"));
+    NS_NAMED_LITERAL_CSTRING(err, "Null CDM in OnCDMCreated()");
+    ErrorResult rv;
+    rv.ThrowInvalidStateError(err);
+    mKeys->RejectPromise(aPromiseId, std::move(rv), err);
   }
 }
 
@@ -222,8 +234,8 @@ void ChromiumCDMProxy::CreateSession(uint32_t aCreateSessionToken,
 
   RefPtr<gmp::ChromiumCDMParent> cdm = GetCDMParent();
   if (!cdm) {
-    RejectPromise(aPromiseId, NS_ERROR_DOM_INVALID_STATE_ERR,
-                  NS_LITERAL_CSTRING("Null CDM in CreateSession"));
+    RejectPromiseWithStateError(
+        aPromiseId, NS_LITERAL_CSTRING("Null CDM in CreateSession"));
     return;
   }
 
@@ -241,8 +253,8 @@ void ChromiumCDMProxy::LoadSession(PromiseId aPromiseId,
 
   RefPtr<gmp::ChromiumCDMParent> cdm = GetCDMParent();
   if (!cdm) {
-    RejectPromise(aPromiseId, NS_ERROR_DOM_INVALID_STATE_ERR,
-                  NS_LITERAL_CSTRING("Null CDM in LoadSession"));
+    RejectPromiseWithStateError(aPromiseId,
+                                NS_LITERAL_CSTRING("Null CDM in LoadSession"));
     return;
   }
 
@@ -261,8 +273,8 @@ void ChromiumCDMProxy::SetServerCertificate(PromiseId aPromiseId,
 
   RefPtr<gmp::ChromiumCDMParent> cdm = GetCDMParent();
   if (!cdm) {
-    RejectPromise(aPromiseId, NS_ERROR_DOM_INVALID_STATE_ERR,
-                  NS_LITERAL_CSTRING("Null CDM in SetServerCertificate"));
+    RejectPromiseWithStateError(
+        aPromiseId, NS_LITERAL_CSTRING("Null CDM in SetServerCertificate"));
     return;
   }
 
@@ -284,8 +296,8 @@ void ChromiumCDMProxy::UpdateSession(const nsAString& aSessionId,
 
   RefPtr<gmp::ChromiumCDMParent> cdm = GetCDMParent();
   if (!cdm) {
-    RejectPromise(aPromiseId, NS_ERROR_DOM_INVALID_STATE_ERR,
-                  NS_LITERAL_CSTRING("Null CDM in UpdateSession"));
+    RejectPromiseWithStateError(
+        aPromiseId, NS_LITERAL_CSTRING("Null CDM in UpdateSession"));
     return;
   }
   mGMPThread->Dispatch(
@@ -303,8 +315,8 @@ void ChromiumCDMProxy::CloseSession(const nsAString& aSessionId,
 
   RefPtr<gmp::ChromiumCDMParent> cdm = GetCDMParent();
   if (!cdm) {
-    RejectPromise(aPromiseId, NS_ERROR_DOM_INVALID_STATE_ERR,
-                  NS_LITERAL_CSTRING("Null CDM in CloseSession"));
+    RejectPromiseWithStateError(aPromiseId,
+                                NS_LITERAL_CSTRING("Null CDM in CloseSession"));
     return;
   }
   mGMPThread->Dispatch(NewRunnableMethod<nsCString, uint32_t>(
@@ -321,8 +333,8 @@ void ChromiumCDMProxy::RemoveSession(const nsAString& aSessionId,
 
   RefPtr<gmp::ChromiumCDMParent> cdm = GetCDMParent();
   if (!cdm) {
-    RejectPromise(aPromiseId, NS_ERROR_DOM_INVALID_STATE_ERR,
-                  NS_LITERAL_CSTRING("Null CDM in RemoveSession"));
+    RejectPromiseWithStateError(
+        aPromiseId, NS_LITERAL_CSTRING("Null CDM in RemoveSession"));
     return;
   }
   mGMPThread->Dispatch(NewRunnableMethod<nsCString, uint32_t>(
@@ -343,23 +355,45 @@ void ChromiumCDMProxy::Shutdown() {
   ShutdownCDMIfExists();
 }
 
-void ChromiumCDMProxy::RejectPromise(PromiseId aId, nsresult aCode,
+void ChromiumCDMProxy::RejectPromise(PromiseId aId, ErrorResult&& aException,
                                      const nsCString& aReason) {
   if (!NS_IsMainThread()) {
+    
+    
     mMainThread->Dispatch(
-        NewRunnableMethod<PromiseId, nsresult, nsCString>(
+        NewRunnableMethod<PromiseId, StoreCopyPassByRRef<CopyableErrorResult>,
+                          nsCString>(
             "ChromiumCDMProxy::RejectPromise", this,
-            &ChromiumCDMProxy::RejectPromise, aId, aCode, aReason),
+            &ChromiumCDMProxy::RejectPromiseOnMainThread, aId,
+            std::move(aException), aReason),
         NS_DISPATCH_NORMAL);
     return;
   }
   EME_LOG("ChromiumCDMProxy::RejectPromise(this=%p, pid=%" PRIu32
           ", code=0x%x, "
           "reason='%s')",
-          this, aId, static_cast<uint32_t>(aCode), aReason.get());
+          this, aId, aException.ErrorCodeAsInt(), aReason.get());
   if (!mKeys.IsNull()) {
-    mKeys->RejectPromise(aId, aCode, aReason);
+    mKeys->RejectPromise(aId, std::move(aException), aReason);
   }
+}
+
+void ChromiumCDMProxy::RejectPromiseWithStateError(PromiseId aId,
+                                                   const nsCString& aReason) {
+  ErrorResult rv;
+  rv.ThrowInvalidStateError(aReason);
+  RejectPromise(aId, std::move(rv), aReason);
+}
+
+void ChromiumCDMProxy::RejectPromiseOnMainThread(
+    PromiseId aId, CopyableErrorResult&& aException, const nsCString& aReason) {
+  
+  
+  
+  
+  
+  CopyableErrorResult rv(std::move(aException));
+  RejectPromise(aId, std::move(rv), aReason);
 }
 
 void ChromiumCDMProxy::ResolvePromise(PromiseId aId) {
@@ -494,10 +528,10 @@ void ChromiumCDMProxy::OnSessionError(const nsAString& aSessionId,
 }
 
 void ChromiumCDMProxy::OnRejectPromise(uint32_t aPromiseId,
-                                       nsresult aDOMException,
+                                       ErrorResult&& aException,
                                        const nsCString& aMsg) {
   MOZ_ASSERT(NS_IsMainThread());
-  RejectPromise(aPromiseId, aDOMException, aMsg);
+  RejectPromise(aPromiseId, std::move(aException), aMsg);
 }
 
 const nsString& ChromiumCDMProxy::KeySystem() const { return mKeySystem; }
@@ -524,8 +558,8 @@ void ChromiumCDMProxy::GetStatusForPolicy(PromiseId aPromiseId,
 
   RefPtr<gmp::ChromiumCDMParent> cdm = GetCDMParent();
   if (!cdm) {
-    RejectPromise(aPromiseId, NS_ERROR_DOM_INVALID_STATE_ERR,
-                  NS_LITERAL_CSTRING("Null CDM in GetStatusForPolicy"));
+    RejectPromiseWithStateError(
+        aPromiseId, NS_LITERAL_CSTRING("Null CDM in GetStatusForPolicy"));
     return;
   }
 

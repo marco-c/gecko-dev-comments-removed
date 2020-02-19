@@ -124,7 +124,7 @@ class MediaKeys final : public nsIDocumentActivity,
   void ConnectPendingPromiseIdWithToken(PromiseId aId, uint32_t aToken);
 
   
-  void RejectPromise(PromiseId aId, nsresult aExceptionCode,
+  void RejectPromise(PromiseId aId, ErrorResult&& aException,
                      const nsCString& aReason);
   
   void ResolvePromise(PromiseId aId);

@@ -183,8 +183,9 @@ void MediaDrmJavaCallbacksSupport::OnRejectPromise(
   
   
   
-  mDecryptorProxyCallback->RejectPromise(
-      aPromiseId, NS_ERROR_DOM_INVALID_STATE_ERR, reason);
+  ErrorResult rv;
+  rv.ThrowInvalidStateError(reason);
+  mDecryptorProxyCallback->RejectPromise(aPromiseId, std::move(rv), reason);
 }
 
 MediaDrmProxySupport::MediaDrmProxySupport(const nsAString& aKeySystem)
