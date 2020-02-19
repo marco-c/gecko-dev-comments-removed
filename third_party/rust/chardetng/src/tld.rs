@@ -61,7 +61,7 @@ pub fn classify_tld(tld: &[u8]) -> Tld {
     }
 }
 
-static TWO_LETTER_VALUES: [Tld; 88] = [
+static TWO_LETTER_VALUES: [Tld; 87] = [
     Tld::Generic,               
     Tld::Arabic,                
     Tld::Arabic,                
@@ -82,7 +82,6 @@ static TWO_LETTER_VALUES: [Tld; 88] = [
     Tld::CentralWindows,        
     Tld::Generic,               
     Tld::Arabic,                
-    Tld::Baltic,                
     Tld::Arabic,                
     Tld::Eu,                    
     Tld::Generic,               
@@ -152,7 +151,7 @@ static TWO_LETTER_VALUES: [Tld; 88] = [
     Tld::Arabic,                
 ];
 
-static TWO_LETTER_KEYS: [[u8; 2]; 88] = [
+static TWO_LETTER_KEYS: [[u8; 2]; 87] = [
     [b'a', b'c'], 
     [b'a', b'e'], 
     [b'a', b'f'], 
@@ -173,7 +172,6 @@ static TWO_LETTER_KEYS: [[u8; 2]; 88] = [
     [b'c', b'z'], 
     [b'd', b'j'], 
     [b'd', b'z'], 
-    [b'e', b'e'], 
     [b'e', b'g'], 
     [b'e', b'u'], 
     [b'f', b'm'], 
