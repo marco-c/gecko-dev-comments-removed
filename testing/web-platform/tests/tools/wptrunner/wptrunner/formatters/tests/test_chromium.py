@@ -157,7 +157,8 @@ def test_subtest_messages(capfd):
     output_json = json.load(output)
 
     t1_log = output_json["tests"]["t1"]["artifacts"]["log"]
-    assert t1_log == "[FAIL expected PASS] t1_a: t1_a_message\n" \
+    assert t1_log == "subtest_failure\n" \
+                     "[FAIL expected PASS] t1_a: t1_a_message\n" \
                      "[PASS] t1_b: t1_b_message\n"
 
     t2_log = output_json["tests"]["t2"]["artifacts"]["log"]
@@ -203,12 +204,14 @@ def test_subtest_failure(capfd):
 
     test_obj = output_json["tests"]["t1"]
     t1_log = test_obj["artifacts"]["log"]
-    assert t1_log == "[FAIL expected PASS] t1_a: t1_a_message\n" \
+    assert t1_log == "subtest_failure\n" \
+                     "[FAIL expected PASS] t1_a: t1_a_message\n" \
                      "[PASS] t1_b: t1_b_message\n" \
                      "[TIMEOUT expected PASS] t1_c: t1_c_message\n"
     
     
     assert test_obj["actual"] == "FAIL"
+    assert test_obj["expected"] == "PASS"
     
     assert "t1" not in formatter.tests_with_subtest_fails
 
@@ -259,6 +262,7 @@ def test_expected_subtest_failure(capfd):
     
     
     assert test_obj["actual"] == "PASS"
+    assert test_obj["expected"] == "PASS"
 
 
 def test_unexpected_subtest_pass(capfd):
@@ -297,9 +301,11 @@ def test_unexpected_subtest_pass(capfd):
 
     test_obj = output_json["tests"]["t1"]
     t1_log = test_obj["artifacts"]["log"]
-    assert t1_log == "[PASS expected FAIL] t1_a: t1_a_message\n"
+    assert t1_log == "subtest_failure\n" \
+                     "[PASS expected FAIL] t1_a: t1_a_message\n"
     
     assert test_obj["actual"] == "FAIL"
+    assert test_obj["expected"] == "PASS"
     
     assert "t1" not in formatter.tests_with_subtest_fails
 

@@ -55,13 +55,14 @@ class ChromiumFormatter(base.BaseFormatter):
             prefix += "%s: " % subtest
         self.messages[test] += prefix + message + "\n"
 
-    def _store_test_result(self, name, actual, expected, message):
+    def _store_test_result(self, name, actual, expected, message, subtest_failure=False):
         """
         Stores the result of a single test in |self.tests|
         :param str name: name of the test.
         :param str actual: actual status of the test.
         :param str expected: expected statuses of the test.
         :param str message: test output, such as status, subtest, errors etc.
+        :param bool subtest_failure: whether this test failed because of subtests
         """
         
         
@@ -72,8 +73,12 @@ class ChromiumFormatter(base.BaseFormatter):
             cur_dict = cur_dict.setdefault(name_part, {})
         cur_dict["actual"] = actual
         cur_dict["expected"] = expected
-        if message != "":
-            cur_dict["artifacts"] = {"log": message}
+        if subtest_failure or message:
+            cur_dict["artifacts"] = {"log": ""}
+            if subtest_failure:
+                cur_dict["artifacts"]["log"] += "subtest_failure\n"
+            if message != "":
+                cur_dict["artifacts"]["log"] += message
 
         
         
@@ -157,17 +162,19 @@ class ChromiumFormatter(base.BaseFormatter):
     def test_end(self, data):
         test_name = data["test"]
         actual_status = self._map_status_name(data["status"])
+        expected_statuses = self._get_expected_status_from_data(actual_status, data)
+        subtest_failure = False
         if actual_status == "PASS" and test_name in self.tests_with_subtest_fails:
             
             
             actual_status = "FAIL"
+            subtest_failure = True
             
             self.tests_with_subtest_fails.remove(test_name)
 
-        expected_statuses = self._get_expected_status_from_data(actual_status, data)
         if "message" in data:
             self._append_test_message(test_name, None, actual_status, expected_statuses, data["message"])
-        self._store_test_result(test_name, actual_status, expected_statuses, self.messages[test_name])
+        self._store_test_result(test_name, actual_status, expected_statuses, self.messages[test_name], subtest_failure)
 
         
         self.messages.pop(test_name)
