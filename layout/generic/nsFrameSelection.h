@@ -193,7 +193,7 @@ class Selection;
 
 
 
-enum class TableSelection : uint32_t {
+enum class TableSelectionMode : uint32_t {
   None,     
   Cell,     
   Row,      
@@ -304,7 +304,7 @@ class nsFrameSelection final {
 
   
   nsresult HandleTableSelection(nsINode* aParentContent, int32_t aContentOffset,
-                                mozilla::TableSelection aTarget,
+                                mozilla::TableSelectionMode aTarget,
                                 mozilla::WidgetMouseEvent* aMouseEvent);
 
   
@@ -413,10 +413,10 @@ class nsFrameSelection final {
 
 
   bool GetTableCellSelection() const {
-    return mSelectingTableCellMode != mozilla::TableSelection::None;
+    return mSelectingTableCellMode != mozilla::TableSelectionMode::None;
   }
   void ClearTableCellSelection() {
-    mSelectingTableCellMode = mozilla::TableSelection::None;
+    mSelectingTableCellMode = mozilla::TableSelectionMode::None;
   }
 
   
@@ -790,7 +790,7 @@ class nsFrameSelection final {
 
   nsresult SelectBlockOfCells(nsIContent* aStartNode, nsIContent* aEndNode);
   nsresult SelectRowOrColumn(nsIContent* aCellContent,
-                             mozilla::TableSelection aTarget);
+                             mozilla::TableSelectionMode aTarget);
   nsresult UnselectCells(nsIContent* aTable, int32_t aStartRowIndex,
                          int32_t aStartColumnIndex, int32_t aEndRowIndex,
                          int32_t aEndColumnIndex,
@@ -826,8 +826,8 @@ class nsFrameSelection final {
   nsCOMPtr<nsIContent> mEndSelectedCell;
   nsCOMPtr<nsIContent> mAppendStartSelectedCell;
   nsCOMPtr<nsIContent> mUnselectCellOnMouseUp;
-  mozilla::TableSelection mSelectingTableCellMode =
-      mozilla::TableSelection::None;
+  mozilla::TableSelectionMode mSelectingTableCellMode =
+      mozilla::TableSelectionMode::None;
   int32_t mSelectedCellIndex = 0;
 
   

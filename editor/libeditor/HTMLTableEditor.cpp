@@ -4000,7 +4000,7 @@ HTMLEditor::GetSelectedCellsType(Element* aElement, uint32_t* aSelectionType) {
   }
 
   
-  *aSelectionType = static_cast<uint32_t>(TableSelection::Cell);
+  *aSelectionType = static_cast<uint32_t>(TableSelectionMode::Cell);
 
   
   nsTArray<int32_t> indexArray;
@@ -4028,7 +4028,7 @@ HTMLEditor::GetSelectedCellsType(Element* aElement, uint32_t* aSelectionType) {
   }
 
   if (allCellsInRowAreSelected) {
-    *aSelectionType = static_cast<uint32_t>(TableSelection::Row);
+    *aSelectionType = static_cast<uint32_t>(TableSelectionMode::Row);
     return NS_OK;
   }
   
@@ -4058,7 +4058,7 @@ HTMLEditor::GetSelectedCellsType(Element* aElement, uint32_t* aSelectionType) {
                          "Failed to get next selected table cell element");
   }
   if (allCellsInColAreSelected) {
-    *aSelectionType = static_cast<uint32_t>(TableSelection::Column);
+    *aSelectionType = static_cast<uint32_t>(TableSelectionMode::Column);
   }
 
   return NS_OK;

@@ -15,7 +15,7 @@ class nsTableCellFrame;
 
 namespace mozilla {
 
-enum class TableSelection : uint32_t;
+enum class TableSelectionMode : uint32_t;
 
 namespace a11y {
 
@@ -180,7 +180,8 @@ class HTMLTableAccessible : public HyperTextAccessibleWrap,
 
 
 
-  nsresult AddRowOrColumnToSelection(int32_t aIndex, TableSelection aTarget);
+  nsresult AddRowOrColumnToSelection(int32_t aIndex,
+                                     TableSelectionMode aTarget);
 
   
 
@@ -192,7 +193,7 @@ class HTMLTableAccessible : public HyperTextAccessibleWrap,
 
 
   nsresult RemoveRowsOrColumnsFromSelection(int32_t aIndex,
-                                            TableSelection aTarget,
+                                            TableSelectionMode aTarget,
                                             bool aIsOuter);
 
 #ifdef SHOW_LAYOUT_HEURISTIC

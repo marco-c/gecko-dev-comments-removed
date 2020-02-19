@@ -391,12 +391,12 @@ void Selection::SetCaretBidiLevel(const Nullable<int16_t>& aCaretBidiLevel,
 
 
 static nsresult GetTableSelectionType(const nsRange* aRange,
-                                      TableSelection* aTableSelectionType) {
+                                      TableSelectionMode* aTableSelectionType) {
   if (!aRange || !aTableSelectionType) {
     return NS_ERROR_NULL_POINTER;
   }
 
-  *aTableSelectionType = TableSelection::None;
+  *aTableSelectionType = TableSelectionMode::None;
 
   nsINode* startNode = aRange->GetStartContainer();
   if (!startNode) {
@@ -428,14 +428,15 @@ static nsresult GetTableSelectionType(const nsRange* aRange,
   }
 
   if (startContent->IsHTMLElement(nsGkAtoms::tr)) {
-    *aTableSelectionType = TableSelection::Cell;
+    *aTableSelectionType = TableSelectionMode::Cell;
   } else  
           
   {
-    if (child->IsHTMLElement(nsGkAtoms::table))
-      *aTableSelectionType = TableSelection::Table;
-    else if (child->IsHTMLElement(nsGkAtoms::tr))
-      *aTableSelectionType = TableSelection::Row;
+    if (child->IsHTMLElement(nsGkAtoms::table)) {
+      *aTableSelectionType = TableSelectionMode::Table;
+    } else if (child->IsHTMLElement(nsGkAtoms::tr)) {
+      *aTableSelectionType = TableSelectionMode::Row;
+    }
   }
 
   return NS_OK;
@@ -443,12 +444,13 @@ static nsresult GetTableSelectionType(const nsRange* aRange,
 
 
 nsresult Selection::GetTableCellLocationFromRange(
-    const nsRange* aRange, TableSelection* aSelectionType, int32_t* aRow,
+    const nsRange* aRange, TableSelectionMode* aSelectionType, int32_t* aRow,
     int32_t* aCol) {
-  if (!aRange || !aSelectionType || !aRow || !aCol)
+  if (!aRange || !aSelectionType || !aRow || !aCol) {
     return NS_ERROR_NULL_POINTER;
+  }
 
-  *aSelectionType = TableSelection::None;
+  *aSelectionType = TableSelectionMode::None;
   *aRow = 0;
   *aCol = 0;
 
@@ -457,7 +459,7 @@ nsresult Selection::GetTableCellLocationFromRange(
 
   
   
-  if (*aSelectionType != TableSelection::Cell) {
+  if (*aSelectionType != TableSelectionMode::Cell) {
     return NS_OK;
   }
 
@@ -495,12 +497,12 @@ nsresult Selection::MaybeAddTableCellRange(nsRange* aRange, bool* aDidAddRange,
 
   
   int32_t newRow, newCol;
-  TableSelection tableMode;
+  TableSelectionMode tableMode;
   result = GetTableCellLocationFromRange(aRange, &tableMode, &newRow, &newCol);
   if (NS_FAILED(result)) return result;
 
   
-  if (tableMode != TableSelection::Cell) {
+  if (tableMode != TableSelectionMode::Cell) {
     mFrameSelection->mSelectingTableCellMode = tableMode;
     
     
@@ -510,7 +512,7 @@ nsresult Selection::MaybeAddTableCellRange(nsRange* aRange, bool* aDidAddRange,
   
   
   
-  if (mFrameSelection->mSelectingTableCellMode == TableSelection::None) {
+  if (mFrameSelection->mSelectingTableCellMode == TableSelectionMode::None) {
     mFrameSelection->mSelectingTableCellMode = tableMode;
   }
 
