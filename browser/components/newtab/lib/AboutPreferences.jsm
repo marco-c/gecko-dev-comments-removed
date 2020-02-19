@@ -47,27 +47,6 @@ const PREFS_AFTER_SECTIONS = [
   },
 ];
 
-
-const CUSTOM_CSS = `
-#homeContentsGroup checkbox[src] .checkbox-icon {
-  -moz-context-properties: fill;
-  fill: currentColor;
-  margin-inline-end: 8px;
-  margin-inline-start: 4px;
-  width: 16px;
-}
-#homeContentsGroup [data-subcategory] {
-  margin-top: 14px;
-}
-#homeContentsGroup [data-subcategory] .section-checkbox {
-  font-weight: 600;
-}
-#homeContentsGroup [data-subcategory] > vbox menulist {
-  margin-top: 0;
-  margin-bottom: 0;
-}
-`;
-
 this.AboutPreferences = class AboutPreferences {
   init() {
     Services.obs.addObserver(this, PREFERENCES_LOADED_EVENT);
@@ -145,15 +124,6 @@ this.AboutPreferences = class AboutPreferences {
       
       element.disabled = Preferences.get(fullPref).locked;
     };
-
-    
-    document.insertBefore(
-      document.createProcessingInstruction(
-        "xml-stylesheet",
-        `href="data:text/css,${encodeURIComponent(CUSTOM_CSS)}" type="text/css"`
-      ),
-      document.documentElement
-    );
 
     
     const homeGroup = document.getElementById("homepageGroup");
