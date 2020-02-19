@@ -166,6 +166,22 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+        public @NonNull Builder webManifest(final boolean enabled) {
+            getSettings().mWebManifest.set(enabled);
+            return this;
+        }
+
+        
+
+
+
+
+
+
+
+
+
         public @NonNull Builder consoleOutput(final boolean enabled) {
             getSettings().mConsoleOutput.set(enabled);
             return this;
@@ -442,6 +458,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         return mContentBlocking;
     }
 
+     final Pref<Boolean> mWebManifest = new Pref<Boolean>(
+        "dom.manifest.enabled", true);
      final Pref<Boolean> mJavaScript = new Pref<Boolean>(
         "javascript.enabled", true);
      final Pref<Boolean> mRemoteDebugging = new Pref<Boolean>(
@@ -783,6 +801,29 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         }
         
         return out.toString();
+    }
+
+    
+
+
+
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setWebManifestEnabled(final boolean enabled) {
+        mWebManifest.commit(enabled);
+        return this;
+    }
+
+    
+
+
+
+
+
+    public boolean getWebManifestEnabled() {
+        return mWebManifest.get();
     }
 
     
