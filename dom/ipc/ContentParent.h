@@ -97,7 +97,6 @@ class TestShellParent;
 #ifdef FUZZING
 class ProtocolFuzzerHelper;
 #endif
-class SharedPreferenceSerializer;
 }  
 
 namespace jsipc {
@@ -768,20 +767,9 @@ class ContentParent final
       hal::ProcessPriority aInitialPriority);
 
   
-  
-  
-  bool BeginSubprocessLaunch(bool aIsSync, ProcessPriority aPriority);
-  void LaunchSubprocessReject();
-  bool LaunchSubprocessResolve(bool aIsSync, ProcessPriority aPriority);
-  
-  
-  
-  
-  
-  static already_AddRefed<ContentParent> GetNewOrUsedBrowserProcessInternal(
-      Element* aFrameElement, const nsAString& aRemoteType,
-      ProcessPriority aPriority, ContentParent* aOpener, bool aPreferUsed,
-      bool aIsSync);
+  void LaunchSubprocessInternal(
+      hal::ProcessPriority aInitialPriority,
+      mozilla::Variant<bool*, RefPtr<LaunchPromise>*>&& aRetval);
 
   
   bool InitInternal(ProcessPriority aPriority);
@@ -1486,10 +1474,6 @@ class ContentParent final
 
   
   uint64_t mBrowsingContextFieldEpoch = 0;
-
-  
-  
-  UniquePtr<mozilla::ipc::SharedPreferenceSerializer> mPrefSerializer;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(ContentParent, NS_CONTENTPARENT_IID)
