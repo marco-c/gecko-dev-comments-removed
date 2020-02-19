@@ -1525,7 +1525,17 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     }
   }
 
-  mBounds = aRect;
+  
+  
+  
+  
+  LayoutDeviceIntRect rect = aRect;
+  if (aRect.width == 1 && aRect.height == 1) {
+    rect.width = 0;
+    rect.height = 0;
+  }
+
+  mBounds = rect;
 
   BaseCreate(nullptr, aInitData);
 
@@ -1539,12 +1549,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     parent->mChildren.AppendElement(this);
     mParent = parent;
   }
-
-  
-  
-  
-  
-  Resize(0, 0, false);
 
   CreateLayerManager();
 
