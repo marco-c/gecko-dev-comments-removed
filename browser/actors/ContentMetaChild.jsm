@@ -92,6 +92,12 @@ class ContentMetaChild extends JSWindowActorChild {
     this.metaTags = new Map();
   }
 
+  willDestroy() {
+    for (let entry of this.metaTags.values()) {
+      entry.timeout.cancel();
+    }
+  }
+
   handleEvent(event) {
     if (event.type != "DOMMetaAdded") {
       return;
@@ -162,6 +168,12 @@ class ContentMetaChild extends JSWindowActorChild {
       entry.timeout.initWithCallback(
         () => {
           entry.timeout = null;
+          this.metaTags.delete(url);
+          
+          
+          if (!this.manager || this.manager.isClosed) {
+            return;
+          }
 
           
           this.sendAsyncMessage("Meta:SetPageInfo", {
@@ -178,7 +190,6 @@ class ContentMetaChild extends JSWindowActorChild {
           Services.telemetry
             .getHistogramById("PAGE_METADATA_SIZE")
             .add(metadataSize);
-          this.metaTags.delete(url);
         },
         TIMEOUT_DELAY,
         Ci.nsITimer.TYPE_ONE_SHOT
