@@ -449,7 +449,8 @@ class DataChannel {
   void SetListener(DataChannelListener* aListener, nsISupports* aContext);
 
   
-  static void SendErrnoToErrorResult(int error, ErrorResult& aRv);
+  static void SendErrnoToErrorResult(int error, size_t aMessageSize,
+                                     ErrorResult& aRv);
 
   
   void SendMsg(const nsACString& aMsg, ErrorResult& aRv);
