@@ -88,10 +88,14 @@ class MakeBackend(CommonBackend):
             ret.append('GARBAGE += %s' % stub_file)
             ret.append('EXTRA_MDDEPEND_FILES += %s' % dep_file)
 
+            if obj.py2:
+                action = 'py_action'
+            else:
+                action = 'py3_action'
             ret.append((
                     """{stub}: {script}{inputs}{backend}{force}
 \t$(REPORT_BUILD)
-\t$(call py_action,file_generate,{locale}{script} """  
+\t$(call {action},file_generate,{locale}{script} """  
                     """{method} {output} {dep_file} {stub}{inputs}{flags})
 \t@$(TOUCH) $@
 """).format(
@@ -106,6 +110,7 @@ class MakeBackend(CommonBackend):
                 
                 
                 force=force,
+                action=action,
                 locale='--locale=$(AB_CD) ' if obj.localized else '',
                 script=obj.script,
                 method=obj.method
