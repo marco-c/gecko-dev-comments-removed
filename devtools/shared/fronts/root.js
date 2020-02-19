@@ -31,12 +31,6 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "ContentProcessTargetFront",
-  "devtools/shared/fronts/targets/content-process",
-  true
-);
-loader.lazyRequireGetter(
-  this,
   "LocalTabTargetFront",
   "devtools/shared/fronts/targets/local-tab",
   true
@@ -233,19 +227,9 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
 
   async listProcesses() {
     const { processes } = await super.listProcesses();
-    const processDescriptors = processes.map(form => {
-      if (form.actor && form.actor.includes("processDescriptor")) {
-        return this._getProcessDescriptorFront(form);
-      }
-      
-      return {
-        id: form.id,
-        isParent: form.parent,
-        getTarget: () => {
-          return this.getProcess(form.id);
-        },
-      };
-    });
+    const processDescriptors = processes.map(form =>
+      this._getProcessDescriptorFront(form)
+    );
     return { processes: processDescriptors };
   }
 
@@ -261,39 +245,10 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
 
   async getProcess(id) {
     const { form } = await super.getProcess(id);
-    if (form.actor && form.actor.includes("processDescriptor")) {
-      
-      
-      const processDescriptorFront = this._getProcessDescriptorFront(form);
-      return processDescriptorFront.getTarget();
-    }
-
     
     
-    
-    
-    let front = this.actor(form.actor);
-    if (front) {
-      return front;
-    }
-    
-    
-    
-    
-    if (form.actor.includes("contentProcessTarget")) {
-      front = new ContentProcessTargetFront(this._client, null, this);
-    } else {
-      
-      
-      front = new BrowsingContextTargetFront(this._client, null, this);
-    }
-    
-    
-    front.actorID = form.actor;
-    front.form(form);
-    this.manage(front);
-
-    return front;
+    const processDescriptorFront = this._getProcessDescriptorFront(form);
+    return processDescriptorFront.getTarget();
   }
 
   
