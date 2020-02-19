@@ -92,8 +92,6 @@ export type RecordingState =
   
   | "recording"
   
-  | "other-is-recording"
-  
   | "locked-by-private-browsing";
 
 

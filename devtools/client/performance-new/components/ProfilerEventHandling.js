@@ -42,7 +42,6 @@ const { PureComponent } = require("devtools/client/shared/vendor/react");
 const { connect } = require("devtools/client/shared/vendor/react-redux");
 const actions = require("devtools/client/performance-new/store/actions");
 const selectors = require("devtools/client/performance-new/store/selectors");
-const { UnhandledCaseError } = require("devtools/client/performance-new/utils");
 
 
 
@@ -66,7 +65,7 @@ class ProfilerEventHandling extends PureComponent {
   }
 
   componentDidMount() {
-    const { perfFront, reportProfilerReady, pageContext } = this.props;
+    const { perfFront, reportProfilerReady } = this.props;
 
     
     Promise.all([
@@ -87,22 +86,7 @@ class ProfilerEventHandling extends PureComponent {
         if (isLockedForPrivateBrowsing) {
           recordingState = "locked-by-private-browsing";
         } else if (isActive) {
-          switch (pageContext) {
-            case "popup":
-            case "aboutprofiling":
-              
-              
-              recordingState = "recording";
-              break;
-            case "devtools":
-              
-              
-              
-              recordingState = "other-is-recording";
-              break;
-            default:
-              throw new UnhandledCaseError(pageContext, "PageContext");
-          }
+          recordingState = "recording";
         } else {
           recordingState = "available-to-record";
         }
@@ -142,7 +126,6 @@ class ProfilerEventHandling extends PureComponent {
       case "request-to-stop-profiler":
       case "request-to-get-profile-and-stop-profiler":
       case "locked-by-private-browsing":
-      case "other-is-recording":
         
         break;
 
@@ -157,7 +140,7 @@ class ProfilerEventHandling extends PureComponent {
   }
 
   handleProfilerStarting() {
-    const { changeRecordingState, recordingState, pageContext } = this.props;
+    const { changeRecordingState, recordingState } = this.props;
     switch (recordingState) {
       case "not-yet-known":
       
@@ -168,22 +151,7 @@ class ProfilerEventHandling extends PureComponent {
       
       
       case "request-to-get-profile-and-stop-profiler":
-        switch (pageContext) {
-          case "popup":
-          case "aboutprofiling":
-            
-            
-            changeRecordingState("recording");
-            break;
-          case "devtools":
-            
-            
-            
-            changeRecordingState("other-is-recording");
-            break;
-          default:
-            throw new UnhandledCaseError(pageContext, "PageContext");
-        }
+        changeRecordingState("recording");
         break;
 
       case "request-to-start-recording":
@@ -192,7 +160,6 @@ class ProfilerEventHandling extends PureComponent {
         break;
 
       case "locked-by-private-browsing":
-      case "other-is-recording":
       case "recording":
         
         
@@ -211,7 +178,6 @@ class ProfilerEventHandling extends PureComponent {
       case "not-yet-known":
       case "request-to-get-profile-and-stop-profiler":
       case "request-to-stop-profiler":
-      case "other-is-recording":
         changeRecordingState("available-to-record");
         break;
 
@@ -246,7 +212,6 @@ class ProfilerEventHandling extends PureComponent {
       
       case "request-to-stop-profiler":
       case "available-to-record":
-      case "other-is-recording":
       case "not-yet-known":
         changeRecordingState("locked-by-private-browsing");
         break;
