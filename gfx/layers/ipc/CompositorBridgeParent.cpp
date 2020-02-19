@@ -1609,7 +1609,8 @@ PLayerTransactionParent* CompositorBridgeParent::AllocPLayerTransactionParent(
 #ifdef XP_WIN
   
   
-  if (gfxVars::UseDoubleBufferingWithCompositor() && XRE_IsGPUProcess()) {
+  if (gfxVars::UseDoubleBufferingWithCompositor() && XRE_IsGPUProcess() &&
+      aBackendHints.Contains(LayersBackend::LAYERS_D3D11)) {
     mWidget->AsWindows()->EnsureCompositorWindow();
   }
 #endif
