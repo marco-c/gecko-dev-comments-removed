@@ -31,6 +31,9 @@ const Toolbar = createFactory(
 const StatusBar = createFactory(
   require("devtools/client/netmonitor/src/components/search/StatusBar")
 );
+const {
+  limitTooltipLength,
+} = require("devtools/client/netmonitor/src/utils/tooltips");
 
 
 
@@ -111,7 +114,7 @@ class SearchPanel extends Component {
       ...props,
       title:
         member.level == 1
-          ? this.getTooltip(member.object)
+          ? limitTooltipLength(member.object.value)
           : this.provider.getResourceTooltipLabel(member.object),
       renderSuffix,
     });
@@ -173,7 +176,12 @@ class SearchPanel extends Component {
           return highlightedMatch;
         });
 
-        return span({ title: this.getTooltip(object) }, allMatches);
+        return span(
+          {
+            title: limitTooltipLength(object.value),
+          },
+          allMatches
+        );
       }
 
       const indexStart = caseSensitive
@@ -184,7 +192,7 @@ class SearchPanel extends Component {
       
       if (indexStart >= 0) {
         return span(
-          { title: this.getTooltip(object) },
+          { title: limitTooltipLength(object.value) },
           span({}, object.value.substring(0, indexStart)),
           span(
             { className: "query-match" },
@@ -196,21 +204,13 @@ class SearchPanel extends Component {
 
       
       
-      return span({ title: this.getTooltip(object) }, span({}, object.value));
+      return span(
+        { title: limitTooltipLength(object.value) },
+        span({}, object.value)
+      );
     }
 
     return this.provider.getValue(member.object);
-  }
-
-  
-
-
-
-
-  getTooltip(object) {
-    return object.value.length > 1024
-      ? object.value.substring(0, 1024) + "…"
-      : object.value;
   }
 
   render() {

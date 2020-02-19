@@ -1,0 +1,18 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+
+function limitTooltipLength(object) {
+  return object.length > 1024 ? object.substring(0, 1024) + "…" : object;
+}
+
+module.exports = {
+  limitTooltipLength,
+};
