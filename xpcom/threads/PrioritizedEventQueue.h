@@ -117,12 +117,6 @@ class PrioritizedEventQueue final : public AbstractEventQueue {
   TimeDuration mLastEventDelay;
   TimeStamp mLastEventStart;
 
-  
-  
-  
-  
-  bool mProcessHighPriorityQueue = false;
-
   TimeStamp mInputHandlingStartTime;
 
   enum InputEventQueueState {

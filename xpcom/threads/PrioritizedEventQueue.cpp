@@ -102,14 +102,10 @@ EventQueuePriority PrioritizedEventQueue::SelectQueue(
   
   
   
-  
-  
 
   
   EventQueuePriority queue;
-  bool highPending = !mHighQueue->IsEmpty(aProofOfLock);
-
-  if (mProcessHighPriorityQueue) {
+  if (!mHighQueue->IsEmpty(aProofOfLock)) {
     queue = EventQueuePriority::High;
   } else if (inputCount > 0 && (mInputQueueState == STATE_FLUSHING ||
                                 (mInputQueueState == STATE_ENABLED &&
@@ -125,8 +121,6 @@ EventQueuePriority PrioritizedEventQueue::SelectQueue(
     MOZ_ASSERT(mInputQueueState != STATE_FLUSHING,
                "Shouldn't consume normal event when flushing input events");
     queue = EventQueuePriority::Normal;
-  } else if (highPending) {
-    queue = EventQueuePriority::High;
   } else if (inputCount > 0 && mInputQueueState != STATE_SUSPEND) {
     MOZ_ASSERT(
         mInputQueueState != STATE_DISABLED,
@@ -143,10 +137,6 @@ EventQueuePriority PrioritizedEventQueue::SelectQueue(
   MOZ_ASSERT_IF(
       queue == EventQueuePriority::Input,
       mInputQueueState != STATE_DISABLED && mInputQueueState != STATE_SUSPEND);
-
-  if (aUpdateState) {
-    mProcessHighPriorityQueue = highPending;
-  }
 
   return queue;
 }
@@ -193,7 +183,6 @@ already_AddRefed<nsIRunnable> PrioritizedEventQueue::GetEvent(
                                    aHypotheticalInputEventDelay);
       MOZ_ASSERT(event);
       mInputHandlingStartTime = TimeStamp();
-      mProcessHighPriorityQueue = false;
       break;
 
     case EventQueuePriority::Input:
