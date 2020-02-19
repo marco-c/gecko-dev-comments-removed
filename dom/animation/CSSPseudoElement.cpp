@@ -45,31 +45,6 @@ JSObject* CSSPseudoElement::WrapObject(JSContext* aCx,
   return CSSPseudoElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-void CSSPseudoElement::GetAnimations(const GetAnimationsOptions& aOptions,
-                                     nsTArray<RefPtr<Animation>>& aRetVal) {
-  Document* doc = mOriginatingElement->GetComposedDoc();
-  if (doc) {
-    
-    
-    
-    
-    doc->FlushPendingNotifications(
-        ChangesToFlush(FlushType::Style, false ));
-  }
-
-  Element::GetAnimationsUnsorted(mOriginatingElement, mPseudoType, aRetVal);
-  aRetVal.Sort(AnimationPtrComparator<RefPtr<Animation>>());
-}
-
-already_AddRefed<Animation> CSSPseudoElement::Animate(
-    JSContext* aContext, JS::Handle<JSObject*> aKeyframes,
-    const UnrestrictedDoubleOrKeyframeAnimationOptions& aOptions,
-    ErrorResult& aError) {
-  Nullable<ElementOrCSSPseudoElement> target;
-  target.SetValue().SetAsCSSPseudoElement() = this;
-  return Element::Animate(target, aContext, aKeyframes, aOptions, aError);
-}
-
 
 already_AddRefed<CSSPseudoElement> CSSPseudoElement::GetCSSPseudoElement(
     dom::Element* aElement, PseudoStyleType aType) {

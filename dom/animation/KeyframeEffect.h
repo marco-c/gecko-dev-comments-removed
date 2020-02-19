@@ -39,7 +39,6 @@ class nsIFrame;
 namespace mozilla {
 
 class AnimValuesStyleRule;
-enum class PseudoStyleType : uint8_t;
 class ErrorResult;
 struct AnimationRule;
 struct TimingParams;
@@ -48,9 +47,7 @@ class ComputedStyle;
 class PresShell;
 
 namespace dom {
-class ElementOrCSSPseudoElement;
 class GlobalObject;
-class OwningElementOrCSSPseudoElement;
 class UnrestrictedDoubleOrKeyframeAnimationOptions;
 class UnrestrictedDoubleOrKeyframeEffectOptions;
 enum class IterationCompositeOperation : uint8_t;
@@ -127,8 +124,7 @@ class KeyframeEffect : public AnimationEffect {
 
   
   static already_AddRefed<KeyframeEffect> Constructor(
-      const GlobalObject& aGlobal,
-      const Nullable<ElementOrCSSPseudoElement>& aTarget,
+      const GlobalObject& aGlobal, Element* aTarget,
       JS::Handle<JSObject*> aKeyframes,
       const UnrestrictedDoubleOrKeyframeEffectOptions& aOptions,
       ErrorResult& aRv);
@@ -140,26 +136,35 @@ class KeyframeEffect : public AnimationEffect {
   
   
   static already_AddRefed<KeyframeEffect> Constructor(
-      const GlobalObject& aGlobal,
-      const Nullable<ElementOrCSSPseudoElement>& aTarget,
+      const GlobalObject& aGlobal, Element* aTarget,
       JS::Handle<JSObject*> aKeyframes,
       const UnrestrictedDoubleOrKeyframeAnimationOptions& aOptions,
       ErrorResult& aRv);
 
-  void GetTarget(Nullable<OwningElementOrCSSPseudoElement>& aRv) const;
-  Maybe<NonOwningAnimationTarget> GetTarget() const {
-    Maybe<NonOwningAnimationTarget> result;
-    if (mTarget) {
-      result.emplace(mTarget);
-    }
-    return result;
+  already_AddRefed<Element> GetTarget() const {
+    RefPtr<Element> ret = mTarget.mElement;
+    return ret.forget();
   }
+  NonOwningAnimationTarget GetAnimationTarget() const {
+    return NonOwningAnimationTarget(mTarget.mElement, mTarget.mPseudoType);
+  }
+  void GetPseudoElement(nsAString& aRetVal) const {
+    if (mTarget.mPseudoType == PseudoStyleType::NotPseudo) {
+      SetDOMStringToNull(aRetVal);
+      return;
+    }
+    aRetVal = nsCSSPseudoElements::PseudoTypeAsString(mTarget.mPseudoType);
+  }
+
   
   
   
   
   
-  void SetTarget(const Nullable<ElementOrCSSPseudoElement>& aTarget);
+  void SetTarget(Element* aTarget) {
+    UpdateTarget(aTarget, mTarget.mPseudoType);
+  }
+  void SetPseudoElement(const nsAString& aPseudoElement, ErrorResult& aRv);
 
   void GetKeyframes(JSContext*& aCx, nsTArray<JSObject*>& aResult,
                     ErrorResult& aRv) const;
@@ -278,7 +283,7 @@ class KeyframeEffect : public AnimationEffect {
       AnimationPerformanceWarning::Type& aPerformanceWarning ) const;
   bool HasGeometricProperties() const;
   bool AffectsGeometry() const override {
-    return GetTarget() && HasGeometricProperties();
+    return mTarget && HasGeometricProperties();
   }
 
   Document* GetRenderedDocument() const;
@@ -345,13 +350,9 @@ class KeyframeEffect : public AnimationEffect {
  protected:
   ~KeyframeEffect() override = default;
 
-  static OwningAnimationTarget ConvertTarget(
-      const Nullable<ElementOrCSSPseudoElement>& aTarget);
-
   template <class OptionsType>
   static already_AddRefed<KeyframeEffect> ConstructKeyframeEffect(
-      const GlobalObject& aGlobal,
-      const Nullable<ElementOrCSSPseudoElement>& aTarget,
+      const GlobalObject& aGlobal, Element* aTarget,
       JS::Handle<JSObject*> aKeyframes, const OptionsType& aOptions,
       ErrorResult& aRv);
 
@@ -359,6 +360,9 @@ class KeyframeEffect : public AnimationEffect {
   
   
   nsTArray<AnimationProperty> BuildProperties(const ComputedStyle* aStyle);
+
+  
+  void UpdateTarget(Element* aElement, PseudoStyleType aPseudoType);
 
   
   

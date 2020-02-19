@@ -62,13 +62,13 @@ class MOZ_RAII AutoMutationBatchForAnimation {
   explicit AutoMutationBatchForAnimation(
       const Animation& aAnimation MOZ_GUARD_OBJECT_NOTIFIER_PARAM) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    Maybe<NonOwningAnimationTarget> target = aAnimation.GetTargetForAnimation();
+    NonOwningAnimationTarget target = aAnimation.GetTargetForAnimation();
     if (!target) {
       return;
     }
 
     
-    mAutoBatch.emplace(target->mElement->OwnerDoc());
+    mAutoBatch.emplace(target.mElement->OwnerDoc());
   }
 
  private:
@@ -83,12 +83,13 @@ class MOZ_RAII AutoMutationBatchForAnimation {
 
 
 
-Maybe<NonOwningAnimationTarget> Animation::GetTargetForAnimation() const {
+NonOwningAnimationTarget Animation::GetTargetForAnimation() const {
   AnimationEffect* effect = GetEffect();
+  NonOwningAnimationTarget target;
   if (!effect || !effect->AsKeyframeEffect()) {
-    return Nothing();
+    return target;
   }
-  return effect->AsKeyframeEffect()->GetTarget();
+  return effect->AsKeyframeEffect()->GetAnimationTarget();
 }
 
 
@@ -641,18 +642,18 @@ void Animation::CommitStyles(ErrorResult& aRv) {
     return;
   }
 
-  Maybe<NonOwningAnimationTarget> target = keyframeEffect->GetTarget();
+  NonOwningAnimationTarget target = keyframeEffect->GetAnimationTarget();
   if (!target) {
     return;
   }
 
-  if (target->mPseudoType != PseudoStyleType::NotPseudo) {
+  if (target.mPseudoType != PseudoStyleType::NotPseudo) {
     aRv.Throw(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR);
     return;
   }
 
   
-  nsCOMPtr<nsStyledElement> styledElement = do_QueryInterface(target->mElement);
+  nsCOMPtr<nsStyledElement> styledElement = do_QueryInterface(target.mElement);
   if (!styledElement) {
     aRv.Throw(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR);
     return;
@@ -660,16 +661,16 @@ void Animation::CommitStyles(ErrorResult& aRv) {
 
   
   
-  if (Document* doc = target->mElement->GetComposedDoc()) {
+  if (Document* doc = target.mElement->GetComposedDoc()) {
     doc->FlushPendingNotifications(FlushType::Style);
   }
-  if (!target->mElement->IsRendered()) {
+  if (!target.mElement->IsRendered()) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
 
   nsPresContext* presContext =
-      nsContentUtils::GetContextForContent(target->mElement);
+      nsContentUtils::GetContextForContent(target.mElement);
   if (!presContext) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
@@ -688,11 +689,11 @@ void Animation::CommitStyles(ErrorResult& aRv) {
   
   
   
-  mozAutoDocUpdate autoUpdate(target->mElement->OwnerDoc(), true);
+  mozAutoDocUpdate autoUpdate(target.mElement->OwnerDoc(), true);
 
   
   RefPtr<DeclarationBlock> declarationBlock;
-  if (auto* existing = target->mElement->GetInlineStyleDeclaration()) {
+  if (auto* existing = target.mElement->GetInlineStyleDeclaration()) {
     declarationBlock = existing->EnsureMutable();
   } else {
     declarationBlock = new DeclarationBlock();
@@ -702,7 +703,7 @@ void Animation::CommitStyles(ErrorResult& aRv) {
   
   MutationClosureData closureData;
   closureData.mClosure = nsDOMCSSAttributeDeclaration::MutationClosureFunction;
-  closureData.mElement = target->mElement;
+  closureData.mElement = target.mElement;
   DeclarationBlockMutationClosure beforeChangeClosure = {
       nsDOMCSSAttributeDeclaration::MutationClosureFunction,
       &closureData,
@@ -726,7 +727,7 @@ void Animation::CommitStyles(ErrorResult& aRv) {
   }
 
   
-  target->mElement->SetInlineStyleDeclaration(*declarationBlock, closureData);
+  target.mElement->SetInlineStyleDeclaration(*declarationBlock, closureData);
 }
 
 
@@ -1052,7 +1053,7 @@ bool Animation::IsReplaceable() const {
   
   
   
-  if (!GetEffect()->AsKeyframeEffect()->GetTarget()) {
+  if (!GetEffect()->AsKeyframeEffect()->GetAnimationTarget()) {
     return false;
   }
 
@@ -1071,15 +1072,16 @@ void Animation::ScheduleReplacementCheck() {
   
   MOZ_ASSERT(GetEffect());
   MOZ_ASSERT(GetEffect()->AsKeyframeEffect());
-  MOZ_ASSERT(GetEffect()->AsKeyframeEffect()->GetTarget());
 
-  Maybe<NonOwningAnimationTarget> target =
-      GetEffect()->AsKeyframeEffect()->GetTarget();
+  NonOwningAnimationTarget target =
+      GetEffect()->AsKeyframeEffect()->GetAnimationTarget();
+
+  MOZ_ASSERT(target);
 
   nsPresContext* presContext =
-      nsContentUtils::GetContextForContent(target->mElement);
+      nsContentUtils::GetContextForContent(target.mElement);
   if (presContext) {
-    presContext->EffectCompositor()->NoteElementForReducing(*target);
+    presContext->EffectCompositor()->NoteElementForReducing(target);
   }
 }
 

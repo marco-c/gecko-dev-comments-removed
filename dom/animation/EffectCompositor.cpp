@@ -271,6 +271,12 @@ void EffectCompositor::PostRestyleForAnimation(dom::Element* aElement,
     return;
   }
 
+  
+  
+  
+  
+  
+  
   dom::Element* element = GetElementToRestyle(aElement, aPseudoType);
   if (!element) {
     return;
@@ -474,14 +480,14 @@ bool EffectCompositor::ComposeServoAnimationRuleForEffect(
   MOZ_ASSERT(mPresContext && mPresContext->IsDynamic(),
              "Should not be in print preview");
 
-  Maybe<NonOwningAnimationTarget> target = aEffect.GetTarget();
+  NonOwningAnimationTarget target = aEffect.GetAnimationTarget();
   if (!target) {
     return false;
   }
 
   
   
-  if (!nsContentUtils::GetPresShellForContent(target->mElement)) {
+  if (!nsContentUtils::GetPresShellForContent(target.mElement)) {
     return false;
   }
 
@@ -489,10 +495,10 @@ bool EffectCompositor::ComposeServoAnimationRuleForEffect(
   
   
   
-  MaybeUpdateCascadeResults(target->mElement, target->mPseudoType);
+  MaybeUpdateCascadeResults(target.mElement, target.mPseudoType);
 
   EffectSet* effectSet =
-      EffectSet::GetEffectSet(target->mElement, target->mPseudoType);
+      EffectSet::GetEffectSet(target.mElement, target.mPseudoType);
 
   
   
@@ -512,9 +518,9 @@ bool EffectCompositor::ComposeServoAnimationRuleForEffect(
   ComposeSortedEffects(sortedEffectList, effectSet, aCascadeLevel,
                        aAnimationValues);
 
-  MOZ_ASSERT(effectSet ==
-                 EffectSet::GetEffectSet(target->mElement, target->mPseudoType),
-             "EffectSet should not change while composing style");
+  MOZ_ASSERT(
+      effectSet == EffectSet::GetEffectSet(target.mElement, target.mPseudoType),
+      "EffectSet should not change while composing style");
 
   return true;
 }

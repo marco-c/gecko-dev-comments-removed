@@ -63,7 +63,7 @@ class Animation : public DOMEventTargetHelper,
 
 
 
-  Maybe<NonOwningAnimationTarget> GetTargetForAnimation() const;
+  NonOwningAnimationTarget GetTargetForAnimation() const;
 
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;

@@ -3245,29 +3245,7 @@ already_AddRefed<Animation> Element::Animate(
     JSContext* aContext, JS::Handle<JSObject*> aKeyframes,
     const UnrestrictedDoubleOrKeyframeAnimationOptions& aOptions,
     ErrorResult& aError) {
-  Nullable<ElementOrCSSPseudoElement> target;
-  target.SetValue().SetAsElement() = this;
-  return Animate(target, aContext, aKeyframes, aOptions, aError);
-}
-
-
-already_AddRefed<Animation> Element::Animate(
-    const Nullable<ElementOrCSSPseudoElement>& aTarget, JSContext* aContext,
-    JS::Handle<JSObject*> aKeyframes,
-    const UnrestrictedDoubleOrKeyframeAnimationOptions& aOptions,
-    ErrorResult& aError) {
-  MOZ_ASSERT(!aTarget.IsNull() && (aTarget.Value().IsElement() ||
-                                   aTarget.Value().IsCSSPseudoElement()),
-             "aTarget should be initialized");
-
-  RefPtr<Element> referenceElement;
-  if (aTarget.Value().IsElement()) {
-    referenceElement = &aTarget.Value().GetAsElement();
-  } else {
-    referenceElement = aTarget.Value().GetAsCSSPseudoElement().Element();
-  }
-
-  nsCOMPtr<nsIGlobalObject> ownerGlobal = referenceElement->GetOwnerGlobal();
+  nsCOMPtr<nsIGlobalObject> ownerGlobal = GetOwnerGlobal();
   if (!ownerGlobal) {
     aError.Throw(NS_ERROR_FAILURE);
     return nullptr;
@@ -3279,8 +3257,8 @@ already_AddRefed<Animation> Element::Animate(
   
   
   
-  RefPtr<KeyframeEffect> effect = KeyframeEffect::Constructor(
-      global, aTarget, aKeyframes, aOptions, aError);
+  RefPtr<KeyframeEffect> effect =
+      KeyframeEffect::Constructor(global, this, aKeyframes, aOptions, aError);
   if (aError.Failed()) {
     return nullptr;
   }
@@ -3289,7 +3267,7 @@ already_AddRefed<Animation> Element::Animate(
   
   JSAutoRealm ar(aContext, global.Get());
 
-  AnimationTimeline* timeline = referenceElement->OwnerDoc()->Timeline();
+  AnimationTimeline* timeline = OwnerDoc()->Timeline();
   RefPtr<Animation> animation = Animation::Constructor(
       global, effect, Optional<AnimationTimeline*>(timeline), aError);
   if (aError.Failed()) {

@@ -222,16 +222,16 @@ void MutationObservers::NotifyAnimationMutated(
     dom::Animation* aAnimation, AnimationMutationType aMutatedType) {
   MOZ_ASSERT(aAnimation);
 
-  Maybe<NonOwningAnimationTarget> target = aAnimation->GetTargetForAnimation();
+  NonOwningAnimationTarget target = aAnimation->GetTargetForAnimation();
   if (!target) {
     return;
   }
 
   
-  Document* doc = target->mElement->OwnerDoc();
+  Document* doc = target.mElement->OwnerDoc();
   if (doc->MayHaveAnimationObservers()) {
     
-    Element* elem = target->mElement;
+    Element* elem = target.mElement;
     switch (aMutatedType) {
       case AnimationMutationType::Added:
         IMPL_ANIMATION_NOTIFICATION(AnimationAdded, elem, (aAnimation));
