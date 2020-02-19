@@ -1653,6 +1653,12 @@ class ICSetProp_Fallback : public ICFallbackStub {
 
 
 
+
+
+
+
+
+
 class ICCall_Fallback : public ICMonitoredFallbackStub {
   friend class ICStubSpace;
 
