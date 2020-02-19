@@ -38,8 +38,8 @@ class CacheOpChild final : public PCacheOpChild,
   
   virtual void ActorDestroy(ActorDestroyReason aReason) override;
 
-  virtual mozilla::ipc::IPCResult Recv__delete__(
-      ErrorResult&& aRv, const CacheOpResult& aResult) override;
+  mozilla::ipc::IPCResult Recv__delete__(ErrorResult&& aRv,
+                                         const CacheOpResult& aResult);
 
   
   virtual void StartDestroy() override;

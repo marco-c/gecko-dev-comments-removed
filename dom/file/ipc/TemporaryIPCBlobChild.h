@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_TemporaryIPCBlobChild_h
 #define mozilla_dom_TemporaryIPCBlobChild_h
@@ -39,8 +39,7 @@ class TemporaryIPCBlobChild final : public PTemporaryIPCBlobChild {
 
   mozilla::ipc::IPCResult RecvFileDesc(const FileDescriptor& aFD);
 
-  mozilla::ipc::IPCResult Recv__delete__(
-      const IPCBlobOrError& aBlobOrError) override;
+  mozilla::ipc::IPCResult Recv__delete__(const IPCBlobOrError& aBlobOrError);
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
@@ -49,7 +48,7 @@ class TemporaryIPCBlobChild final : public PTemporaryIPCBlobChild {
   bool mActive;
 };
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
-#endif  
+#endif  // mozilla_dom_TemporaryIPCBlobChild_h

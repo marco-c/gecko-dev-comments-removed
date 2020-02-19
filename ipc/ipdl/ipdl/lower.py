@@ -3368,7 +3368,14 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
                     ret=Type('mozilla::ipc::IPCResult'),
                     methodspec=MethodSpec.VIRTUAL)
 
-                if isctor or isdtor:
+                
+                
+                
+                
+                
+                
+                
+                if isctor or (isdtor and not md.inParams):
                     defaultRecv = MethodDefn(recvDecl)
                     defaultRecv.addcode('return IPC_OK();\n')
                     self.cls.addstmt(defaultRecv)
