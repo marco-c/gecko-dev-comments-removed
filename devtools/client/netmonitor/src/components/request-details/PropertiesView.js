@@ -84,9 +84,10 @@ class PropertiesView extends Component {
 
 
 
-  shouldComponentUpdate(nextProps, nextState) {
+  shouldComponentUpdate(nextProps) {
     return (
       this.props.object !== nextProps.object ||
+      this.props.filterText !== nextProps.filterText ||
       (this.props.targetSearchResult !== nextProps.targetSearchResult &&
         nextProps.targetSearchResult !== null)
     );
@@ -153,13 +154,12 @@ class PropertiesView extends Component {
     const { member } = props;
 
     
-    
-    
-    
-    
+
+
     if (
-      (member.level === 0 && member.type === "object") ||
-      (typeof member.value === "object" && member.value && member.value.value)
+      typeof member.value === "object" &&
+      member.value &&
+      member.value.value
     ) {
       return null;
     }
