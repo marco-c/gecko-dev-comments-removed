@@ -149,7 +149,9 @@ LazyLogModule gBrowserFocusLog("BrowserFocus");
   MOZ_LOG(gBrowserFocusLog, mozilla::LogLevel::Debug, args)
 
 
-StaticAutoPtr<nsTArray<BrowserParent*>> BrowserParent::sFocusStack;
+BrowserParent* BrowserParent::sFocus = nullptr;
+
+BrowserParent* BrowserParent::sTopLevelWebFocus = nullptr;
 
 
 
@@ -230,22 +232,10 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
 BrowserParent::~BrowserParent() {}
 
 
-void BrowserParent::InitializeStatics() {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  sFocusStack = new nsTArray<BrowserParent*>();
-  ClearOnShutdown(&sFocusStack);
-}
+void BrowserParent::InitializeStatics() { MOZ_ASSERT(XRE_IsParentProcess()); }
 
 
-BrowserParent* BrowserParent::GetFocused() {
-  if (!sFocusStack) {
-    return nullptr;
-  }
-  if (sFocusStack->IsEmpty()) {
-    return nullptr;
-  }
-  return sFocusStack->LastElement();
-}
+BrowserParent* BrowserParent::GetFocused() { return sFocus; }
 
 
 BrowserParent* BrowserParent::GetFrom(nsFrameLoader* aFrameLoader) {
@@ -628,7 +618,7 @@ void BrowserParent::RemoveWindowListeners() {
 }
 
 void BrowserParent::DestroyInternal() {
-  PopFocus(this);
+  UnsetTopLevelWebFocus(this);
 
   RemoveWindowListeners();
 
@@ -703,7 +693,7 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
 
   
   
-  BrowserParent::PopFocus(this);
+  BrowserParent::UnsetTopLevelWebFocus(this);
 
   
   
@@ -1147,7 +1137,7 @@ void BrowserParent::HandleAccessKey(const WidgetKeyboardEvent& aEvent,
 void BrowserParent::Activate() {
   LOGBROWSERFOCUS(("Activate %p", this));
   if (!mIsDestroyed) {
-    PushFocus(this);  
+    SetTopLevelWebFocus(this);  
     Unused << Manager()->SendActivate(this);
   }
 }
@@ -1155,7 +1145,7 @@ void BrowserParent::Activate() {
 void BrowserParent::Deactivate(bool aWindowLowering) {
   LOGBROWSERFOCUS(("Deactivate %p", this));
   if (!aWindowLowering) {
-    PopFocus(this);  
+    UnsetTopLevelWebFocus(this);  
   }
   if (!mIsDestroyed) {
     Unused << Manager()->SendDeactivate(this);
@@ -2923,88 +2913,95 @@ bool BrowserParent::SendPasteTransferable(const IPCDataTransfer& aDataTransfer,
 }
 
 
-void BrowserParent::PushFocus(BrowserParent* aBrowserParent) {
-  if (!sFocusStack) {
-    MOZ_ASSERT_UNREACHABLE("PushFocus when not initialized");
-    return;
-  }
-  if (!aBrowserParent->GetBrowserBridgeParent()) {
-    
-    
-    
-    
-    
-    
-    PopFocusAll();
-    MOZ_ASSERT(sFocusStack->IsEmpty());
-  } else {
-    
-    
-    
-    
-    if (sFocusStack->IsEmpty()) {
-      LOGBROWSERFOCUS(
-          ("PushFocus for out-of-process iframe ignored with empty stack %p",
-           aBrowserParent));
-      return;
-    }
-    nsCOMPtr<nsIWidget> webRootWidget = sFocusStack->ElementAt(0)->GetWidget();
-    nsCOMPtr<nsIWidget> iframeWigdet = aBrowserParent->GetWidget();
-    if (webRootWidget != iframeWigdet) {
-      LOGBROWSERFOCUS(
-          ("PushFocus for out-of-process iframe ignored with mismatching "
-           "top-level content %p",
-           aBrowserParent));
-      return;
-    }
-  }
-  if (sFocusStack->Contains(aBrowserParent)) {
-    MOZ_ASSERT_UNREACHABLE(
-        "Trying to push a BrowserParent that is already on the stack");
-    return;
-  }
+void BrowserParent::SetTopLevelWebFocus(BrowserParent* aBrowserParent) {
   BrowserParent* old = GetFocused();
-  sFocusStack->AppendElement(aBrowserParent);
-  MOZ_ASSERT(GetFocused() == aBrowserParent);
-  LOGBROWSERFOCUS(("PushFocus changed focus to %p", aBrowserParent));
-  IMEStateManager::OnFocusMovedBetweenBrowsers(old, aBrowserParent);
-}
-
-
-void BrowserParent::PopFocus(BrowserParent* aBrowserParent) {
-  if (!sFocusStack) {
-    MOZ_ASSERT_UNREACHABLE("PopFocus when not initialized");
-    return;
-  }
-  
-  
-  
-  
-  
-  
-  auto pos = sFocusStack->LastIndexOf(aBrowserParent);
-  if (pos == nsTArray<BrowserParent*>::NoIndex) {
-    LOGBROWSERFOCUS(("PopFocus not on stack %p", aBrowserParent));
-    return;
-  }
-  auto len = sFocusStack->Length();
-  auto itemsToPop = len - pos;
-  LOGBROWSERFOCUS(("PopFocus pops %zu items %p", itemsToPop, aBrowserParent));
-  while (pos < sFocusStack->Length()) {
-    BrowserParent* popped = sFocusStack->PopLastElement();
-    BrowserParent* focused = GetFocused();
-    LOGBROWSERFOCUS(("PopFocus changed focus to %p", focused));
-    IMEStateManager::OnFocusMovedBetweenBrowsers(popped, focused);
+  if (aBrowserParent && !aBrowserParent->GetBrowserBridgeParent()) {
+    
+    sTopLevelWebFocus = aBrowserParent;
+    BrowserParent* bp = UpdateFocus();
+    if (old != bp) {
+      LOGBROWSERFOCUS(
+          ("SetTopLevelWebFocus updated focus; old: %p, new: %p", old, bp));
+      IMEStateManager::OnFocusMovedBetweenBrowsers(old, bp);
+    }
   }
 }
 
 
-void BrowserParent::PopFocusAll() {
-  if (!sFocusStack->IsEmpty()) {
-    LOGBROWSERFOCUS(("PopFocusAll pops items"));
-    PopFocus(sFocusStack->ElementAt(0));
-  } else {
-    LOGBROWSERFOCUS(("PopFocusAll does nothing"));
+void BrowserParent::UnsetTopLevelWebFocus(BrowserParent* aBrowserParent) {
+  BrowserParent* old = GetFocused();
+  if (sTopLevelWebFocus == aBrowserParent) {
+    
+    sTopLevelWebFocus = nullptr;
+    sFocus = nullptr;
+    if (old) {
+      LOGBROWSERFOCUS(
+          ("UnsetTopLevelWebFocus moved focus to chrome; old: %p", old));
+      IMEStateManager::OnFocusMovedBetweenBrowsers(old, nullptr);
+    }
+  }
+}
+
+
+void BrowserParent::UpdateFocusFromBrowsingContext() {
+  BrowserParent* old = GetFocused();
+  BrowserParent* bp = UpdateFocus();
+  if (old != bp) {
+    LOGBROWSERFOCUS(
+        ("UpdateFocusFromBrowsingContext updated focus; old: %p, new: %p", old,
+         bp));
+    IMEStateManager::OnFocusMovedBetweenBrowsers(old, bp);
+  }
+}
+
+
+BrowserParent* BrowserParent::UpdateFocus() {
+  if (!sTopLevelWebFocus) {
+    sFocus = nullptr;
+    return nullptr;
+  }
+  nsFocusManager* fm = nsFocusManager::GetFocusManager();
+  if (fm) {
+    BrowsingContext* bc = fm->GetFocusedBrowsingContextInChrome();
+    if (bc) {
+      BrowsingContext* top = bc->Top();
+      MOZ_ASSERT(top, "Should always have a top BrowsingContext.");
+      CanonicalBrowsingContext* canonicalTop = top->Canonical();
+      MOZ_ASSERT(canonicalTop,
+                 "Casting to canonical should always be possible in the parent "
+                 "process (top case).");
+      WindowGlobalParent* globalTop = canonicalTop->GetCurrentWindowGlobal();
+      if (globalTop) {
+        RefPtr<BrowserParent> globalTopParent = globalTop->GetBrowserParent();
+        if (sTopLevelWebFocus == globalTopParent) {
+          CanonicalBrowsingContext* canonical = bc->Canonical();
+          MOZ_ASSERT(
+              canonical,
+              "Casting to canonical should always be possible in the parent "
+              "process.");
+          WindowGlobalParent* global = canonical->GetCurrentWindowGlobal();
+          if (global) {
+            RefPtr<BrowserParent> parent = global->GetBrowserParent();
+            sFocus = parent;
+            return sFocus;
+          }
+          LOGBROWSERFOCUS(
+              ("Focused BrowsingContext did not have WindowGlobalParent."));
+        }
+      } else {
+        LOGBROWSERFOCUS(
+            ("Top-level BrowsingContext did not have WindowGlobalParent."));
+      }
+    }
+  }
+  sFocus = sTopLevelWebFocus;
+  return sFocus;
+}
+
+
+void BrowserParent::UnsetTopLevelWebFocusAll() {
+  if (sTopLevelWebFocus) {
+    UnsetTopLevelWebFocus(sTopLevelWebFocus);
   }
 }
 

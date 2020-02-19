@@ -31,6 +31,8 @@ namespace dom {
 class Element;
 struct FocusOptions;
 class BrowserParent;
+class ContentChild;
+class ContentParent;
 }  
 }  
 
@@ -46,6 +48,8 @@ class nsFocusManager final : public nsIFocusManager,
                              public nsSupportsWeakReference {
   typedef mozilla::widget::InputContextAction InputContextAction;
   typedef mozilla::dom::Document Document;
+  friend class mozilla::dom::ContentChild;
+  friend class mozilla::dom::ContentParent;
 
  public:
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsFocusManager, nsIFocusManager)
@@ -96,7 +100,38 @@ class nsFocusManager final : public nsIFocusManager,
   
 
 
+
+
+  mozilla::dom::BrowsingContext* GetFocusedBrowsingContext() const {
+    if (XRE_IsParentProcess()) {
+      if (mFocusedWindow) {
+        return mFocusedWindow->GetBrowsingContext();
+      }
+      return nullptr;
+    }
+    return mFocusedBrowsingContextInContent;
+  }
+
+  
+
+
   nsPIDOMWindowOuter* GetActiveWindow() const { return mActiveWindow; }
+
+  
+
+
+
+
+
+  mozilla::dom::BrowsingContext* GetActiveBrowsingContext() const {
+    if (XRE_IsParentProcess()) {
+      if (mActiveWindow) {
+        return mActiveWindow->GetBrowsingContext();
+      }
+      return nullptr;
+    }
+    return mActiveBrowsingContextInContent;
+  }
 
   
 
@@ -231,13 +266,19 @@ class nsFocusManager final : public nsIFocusManager,
 
   bool IsSameOrAncestor(nsPIDOMWindowOuter* aPossibleAncestor,
                         nsPIDOMWindowOuter* aWindow);
+  bool IsSameOrAncestor(nsPIDOMWindowOuter* aPossibleAncestor,
+                        mozilla::dom::BrowsingContext* aContext);
+  bool IsSameOrAncestor(mozilla::dom::BrowsingContext* aPossibleAncestor,
+                        nsPIDOMWindowOuter* aWindow);
+  bool IsSameOrAncestor(mozilla::dom::BrowsingContext* aPossibleAncestor,
+                        mozilla::dom::BrowsingContext* aContext);
 
   
 
 
 
-  already_AddRefed<nsPIDOMWindowOuter> GetCommonAncestor(
-      nsPIDOMWindowOuter* aWindow1, nsPIDOMWindowOuter* aWindow2);
+  mozilla::dom::BrowsingContext* GetCommonAncestor(
+      nsPIDOMWindowOuter* aWindow, mozilla::dom::BrowsingContext* aContext);
 
   
 
@@ -301,9 +342,21 @@ class nsFocusManager final : public nsIFocusManager,
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  bool Blur(nsPIDOMWindowOuter* aWindowToClear,
-            nsPIDOMWindowOuter* aAncestorWindowToFocus, bool aIsLeavingDocument,
-            bool aAdjustWidget, nsIContent* aContentToFocus = nullptr);
+  bool Blur(mozilla::dom::BrowsingContext* aBrowsingContextToClear,
+            mozilla::dom::BrowsingContext* aAncestorBrowsingContextToFocus,
+            bool aIsLeavingDocument, bool aAdjustWidget,
+            nsIContent* aContentToFocus = nullptr);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  void BlurFromOtherProcess(
+      mozilla::dom::BrowsingContext* aFocusedBrowsingContext,
+      mozilla::dom::BrowsingContext* aBrowsingContextToClear,
+      mozilla::dom::BrowsingContext* aAncestorBrowsingContextToFocus,
+      bool aIsLeavingDocument, bool aAdjustWidget);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  bool BlurImpl(mozilla::dom::BrowsingContext* aBrowsingContextToClear,
+                mozilla::dom::BrowsingContext* aAncestorBrowsingContextToFocus,
+                bool aIsLeavingDocument, bool aAdjustWidget,
+                nsIContent* aContentToFocus);
 
   
 
@@ -632,13 +685,105 @@ class nsFocusManager final : public nsIFocusManager,
                                    nsIContent** aResultContent);
 
   
+  
+  void SetFocusedBrowsingContext(mozilla::dom::BrowsingContext* aContext);
+
+  
+  
+  
+  void SetFocusedBrowsingContextFromOtherProcess(
+      mozilla::dom::BrowsingContext* aContext);
+
+  
+  
+  
+  void SetFocusedBrowsingContextInChrome(
+      mozilla::dom::BrowsingContext* aContext);
+
+ public:
+  
+  
+  
+  mozilla::dom::BrowsingContext* GetFocusedBrowsingContextInChrome();
+
+  
+  
+  
+  void BrowsingContextDetached(mozilla::dom::BrowsingContext* aContext);
+
+ private:
+  
+  
+  
+  void SetActiveBrowsingContextInContent(
+      mozilla::dom::BrowsingContext* aContext);
+
+  
+  
+  
+  void SetActiveBrowsingContextFromOtherProcess(
+      mozilla::dom::BrowsingContext* aContext);
+
+  
+  
+  
+  
+  void UnsetActiveBrowsingContextFromOtherProcess(
+      mozilla::dom::BrowsingContext* aContext);
+
+  
+  
+  
+  
+  void SetActiveBrowsingContextInChrome(
+      mozilla::dom::BrowsingContext* aContext);
+
+ public:
+  
+  
+  
+  
+  mozilla::dom::BrowsingContext* GetActiveBrowsingContextInChrome();
+
+ private:
+  
+  
+  
   nsCOMPtr<nsPIDOMWindowOuter> mActiveWindow;
 
   
   
   
+  
+  
+  RefPtr<mozilla::dom::BrowsingContext> mActiveBrowsingContextInContent;
+
+  
+  
+  
+  RefPtr<mozilla::dom::BrowsingContext> mActiveBrowsingContextInChrome;
+
+  
+  
+  
+  
   nsCOMPtr<nsPIDOMWindowOuter> mFocusedWindow;
 
+  
+  
+  
+  
+  
+  
+  RefPtr<mozilla::dom::BrowsingContext> mFocusedBrowsingContextInContent;
+
+  
+  
+  
+  RefPtr<mozilla::dom::BrowsingContext> mFocusedBrowsingContextInChrome;
+
+  
+  
   
   
   

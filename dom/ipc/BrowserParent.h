@@ -835,16 +835,35 @@ class BrowserParent final : public PBrowserParent,
   static void RemoveBrowserParentFromTable(layers::LayersId aLayersId);
 
   
-  static StaticAutoPtr<nsTArray<BrowserParent*>> sFocusStack;
+  
+  
+  static BrowserParent* sFocus;
 
-  static void PushFocus(BrowserParent* aBrowserParent);
+  
+  
+  
+  static BrowserParent* sTopLevelWebFocus;
 
-  static void PopFocus(BrowserParent* aBrowserParent);
+  
+  static void SetTopLevelWebFocus(BrowserParent* aBrowserParent);
+
+  
+  
+  
+  static void UnsetTopLevelWebFocus(BrowserParent* aBrowserParent);
+
+  
+  static BrowserParent* UpdateFocus();
 
   void OnSubFrameCrashed();
 
  public:
-  static void PopFocusAll();
+  
+  static void UnsetTopLevelWebFocusAll();
+
+  
+  
+  static void UpdateFocusFromBrowsingContext();
 
  private:
   TabId mTabId;
