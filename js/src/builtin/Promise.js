@@ -3,12 +3,6 @@
 
 
 
-function Promise_catch(onRejected) {
-    
-    return callContentFunction(this.then, this, undefined, onRejected);
-}
-
-
 
 function Promise_finally(onFinally) {
     

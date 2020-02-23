@@ -1665,7 +1665,7 @@ static DenseElementResult ArrayReverseDenseKernel(JSContext* cx,
 
 
 
-bool js::array_reverse(JSContext* cx, unsigned argc, Value* vp) {
+static bool array_reverse(JSContext* cx, unsigned argc, Value* vp) {
   AutoGeckoProfilerEntry pseudoFrame(
       cx, "Array.prototype.reverse", JS::ProfilingCategoryPair::JS,
       uint32_t(ProfilingStackFrame::Flags::RELEVANT_FOR_JS));
@@ -2656,7 +2656,7 @@ bool js::array_shift(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-bool js::array_unshift(JSContext* cx, unsigned argc, Value* vp) {
+static bool array_unshift(JSContext* cx, unsigned argc, Value* vp) {
   AutoGeckoProfilerEntry pseudoFrame(
       cx, "Array.prototype.unshift", JS::ProfilingCategoryPair::JS,
       uint32_t(ProfilingStackFrame::Flags::RELEVANT_FOR_JS));
@@ -3243,7 +3243,7 @@ static bool array_splice_impl(JSContext* cx, unsigned argc, Value* vp,
 }
 
 
-bool js::array_splice(JSContext* cx, unsigned argc, Value* vp) {
+static bool array_splice(JSContext* cx, unsigned argc, Value* vp) {
   return array_splice_impl(cx, argc, vp, true);
 }
 
@@ -3726,7 +3726,7 @@ static bool array_of(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-const JSJitInfo js::array_splice_info = {
+static const JSJitInfo array_splice_info = {
     {(JSJitGetterOp)array_splice_noRetVal},
     {0}, 
     {0}, 

@@ -1737,7 +1737,7 @@ bool js::GetOwnPropertyKeys(JSContext* cx, HandleObject obj, unsigned flags,
 
 
 
-bool js::obj_getOwnPropertyNames(JSContext* cx, unsigned argc, Value* vp) {
+static bool obj_getOwnPropertyNames(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   RootedObject obj(cx, ToObject(cx, args.get(0)));
