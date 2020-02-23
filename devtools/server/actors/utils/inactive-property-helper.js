@@ -281,6 +281,22 @@ class InactivePropertyHelper {
         msgId: "inactive-css-position-property-on-unpositioned-box",
         numFixProps: 1,
       },
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      {
+        invalidProperties: ["text-overflow"],
+        when: () => !this.checkComputedStyle("overflow", ["hidden"]),
+        fixId: "inactive-text-overflow-when-no-overflow-fix",
+        msgId: "inactive-text-overflow-when-no-overflow",
+        numFixProps: 1,
+      },
     ];
   }
 
