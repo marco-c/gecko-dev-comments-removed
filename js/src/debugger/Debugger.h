@@ -262,12 +262,6 @@ class Completion {
 
   
 
-
-
-  AbstractGeneratorObject* maybeGeneratorObject() const;
-
-  
-
   bool buildCompletionValue(JSContext* cx, Debugger* dbg,
                             MutableHandleValue result) const;
 
