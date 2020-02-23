@@ -1,5 +1,9 @@
 
 
+
+
+
+
 var g = newGlobal({newCompartment: true});
 var dbg = new Debugger;
 dbg.addDebuggee(g);
