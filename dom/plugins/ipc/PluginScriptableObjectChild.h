@@ -25,7 +25,7 @@ struct ChildNPObject : NPObject {
     MOZ_COUNT_CTOR(ChildNPObject);
   }
 
-  MOZ_COUNTED_DTOR(ChildNPObject)
+  ~ChildNPObject() { MOZ_COUNT_DTOR(ChildNPObject); }
 
   
   
@@ -143,7 +143,7 @@ class PluginScriptableObjectChild : public PPluginScriptableObjectChild {
       MOZ_COUNT_CTOR(StoredIdentifier);
     }
 
-    MOZ_COUNTED_DTOR(StoredIdentifier)
+    ~StoredIdentifier() { MOZ_COUNT_DTOR(StoredIdentifier); }
   };
 
  public:
@@ -273,4 +273,4 @@ class PluginScriptableObjectChild : public PPluginScriptableObjectChild {
 } 
 } 
 
-#endif
+#endif 

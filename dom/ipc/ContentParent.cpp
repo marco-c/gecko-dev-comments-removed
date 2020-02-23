@@ -356,7 +356,7 @@ namespace dom {
 
 class CycleCollectWithLogsParent final : public PCycleCollectWithLogsParent {
  public:
-  MOZ_COUNTED_DTOR(CycleCollectWithLogsParent)
+  ~CycleCollectWithLogsParent() { MOZ_COUNT_DTOR(CycleCollectWithLogsParent); }
 
   static bool AllocAndSendConstructor(ContentParent* aManager,
                                       bool aDumpAllTraces,

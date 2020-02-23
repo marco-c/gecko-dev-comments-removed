@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef TRANSFRMX_TXINSTRUCTIONS_H
 #define TRANSFRMX_TXINSTRUCTIONS_H
@@ -21,9 +21,9 @@ class txExecutionState;
 
 class txInstruction : public txObject {
  public:
-  MOZ_COUNTED_DEFAULT_CTOR(txInstruction)
+  txInstruction() { MOZ_COUNT_CTOR(txInstruction); }
 
-  MOZ_COUNTED_DTOR_OVERRIDE(txInstruction)
+  virtual ~txInstruction() { MOZ_COUNT_DTOR(txInstruction); }
 
   virtual nsresult execute(txExecutionState& aEs) = 0;
 
@@ -345,4 +345,4 @@ class txValueOf : public txInstruction {
   bool mDOE;
 };
 
-#endif  // TRANSFRMX_TXINSTRUCTIONS_H
+#endif  

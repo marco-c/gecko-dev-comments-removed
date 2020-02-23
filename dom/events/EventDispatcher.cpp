@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsPresContext.h"
 #include "nsContentUtils.h"
@@ -80,7 +80,7 @@ using namespace dom;
 class ELMCreationDetector {
  public:
   ELMCreationDetector()
-      
+      // We can do this optimization only in the main thread.
       : mNonMainThread(!NS_IsMainThread()),
         mInitialCount(mNonMainThread
                           ? 0
@@ -112,7 +112,7 @@ static bool IsEventTargetChrome(EventTarget* aEventTarget,
     doc = window->GetExtantDoc();
   }
 
-  
+  // nsContentUtils::IsChromeDoc is null-safe.
   bool isChrome = false;
   if (doc) {
     isChrome = nsContentUtils::IsChromeDoc(doc);
@@ -127,7 +127,7 @@ static bool IsEventTargetChrome(EventTarget* aEventTarget,
   return isChrome;
 }
 
-
+// EventTargetChainItem represents a single item in the event target chain.
 class EventTargetChainItem {
  public:
   explicit EventTargetChainItem(EventTarget* aTarget)
@@ -135,12 +135,12 @@ class EventTargetChainItem {
     MOZ_COUNT_CTOR(EventTargetChainItem);
   }
 
-  MOZ_COUNTED_DTOR(EventTargetChainItem)
+  ~EventTargetChainItem() { MOZ_COUNT_DTOR(EventTargetChainItem); }
 
   static EventTargetChainItem* Create(nsTArray<EventTargetChainItem>& aChain,
                                       EventTarget* aTarget,
                                       EventTargetChainItem* aChild = nullptr) {
-    
+    // The last item which can handle the event must be aChild.
     MOZ_ASSERT(GetLastCanHandleEventTarget(aChain) == aChild);
     MOZ_ASSERT(!aTarget || aTarget == aTarget->GetTargetForEventTargetChain());
     EventTargetChainItem* etci = aChain.AppendElement(aTarget);
@@ -161,9 +161,9 @@ class EventTargetChainItem {
 
   static uint32_t GetFirstCanHandleEventTargetIdx(
       nsTArray<EventTargetChainItem>& aChain) {
-    
-    
-    
+    // aChain[i].PreHandleEventOnly() = true only when the target element wants
+    // PreHandleEvent and set mCanHandle=false. So we find the first element
+    // which can handle the event.
     for (uint32_t i = 0; i < aChain.Length(); ++i) {
       if (!aChain[i].PreHandleEventOnly()) {
         return i;
@@ -175,7 +175,7 @@ class EventTargetChainItem {
 
   static EventTargetChainItem* GetLastCanHandleEventTarget(
       nsTArray<EventTargetChainItem>& aChain) {
-    
+    // Fine the last item which can handle the event.
     for (int32_t i = aChain.Length() - 1; i >= 0; --i) {
       if (!aChain[i].PreHandleEventOnly()) {
         return &aChain[i];
@@ -224,8 +224,8 @@ class EventTargetChainItem {
     }
 
     if (aDOMEvent) {
-      
-      
+      // The number of touch objects in targetTouches list may change depending
+      // on the retargeting.
       TouchEvent* touchDOMEvent = static_cast<TouchEvent*>(aDOMEvent);
       TouchList* targetTouches = touchDOMEvent->GetExistingTargetTouches();
       if (targetTouches) {
@@ -296,33 +296,33 @@ class EventTargetChainItem {
 
   EventTarget* CurrentTarget() const { return mTarget; }
 
-  
-
-
-
-
-
+  /**
+   * Dispatches event through the event target chain.
+   * Handles capture, target and bubble phases both in default
+   * and system event group and calls also PostHandleEvent for each
+   * item in the chain.
+   */
   MOZ_CAN_RUN_SCRIPT
   static void HandleEventTargetChain(nsTArray<EventTargetChainItem>& aChain,
                                      EventChainPostVisitor& aVisitor,
                                      EventDispatchingCallback* aCallback,
                                      ELMCreationDetector& aCd);
 
-  
-
-
-
+  /**
+   * Resets aVisitor object and calls GetEventTargetParent.
+   * Copies mItemFlags and mItemData to the current EventTargetChainItem.
+   */
   void GetEventTargetParent(EventChainPreVisitor& aVisitor);
 
-  
-
-
+  /**
+   * Calls PreHandleEvent for those items which called SetWantsPreHandleEvent.
+   */
   void PreHandleEvent(EventChainVisitor& aVisitor);
 
-  
-
-
-
+  /**
+   * If the current item in the event target chain has an event listener
+   * manager, this method calls EventListenerManager::HandleEvent().
+   */
   void HandleEvent(EventChainPostVisitor& aVisitor, ELMCreationDetector& aCd) {
     if (WantsWillHandleEvent()) {
       mTarget->WillHandleEvent(aVisitor);
@@ -361,9 +361,9 @@ class EventTargetChainItem {
     }
   }
 
-  
-
-
+  /**
+   * Copies mItemFlags and mItemData to aVisitor and calls PostHandleEvent.
+   */
   MOZ_CAN_RUN_SCRIPT void PostHandleEvent(EventChainPostVisitor& aVisitor);
 
  private:
@@ -375,9 +375,9 @@ class EventTargetChainItem {
   class EventTargetChainFlags {
    public:
     explicit EventTargetChainFlags() { SetRawFlags(0); }
-    
-    
-    
+    // Cached flags for each EventTargetChainItem which are set when calling
+    // GetEventTargetParent to create event target chain. They are used to
+    // manage or speedup event dispatching.
     bool mForceContentDispatch : 1;
     bool mWantsWillHandleEvent : 1;
     bool mMayHaveManager : 1;
@@ -402,9 +402,9 @@ class EventTargetChainItem {
 
   uint16_t mItemFlags;
   nsCOMPtr<nsISupports> mItemData;
-  
+  // Event retargeting must happen whenever mNewTarget is non-null.
   nsCOMPtr<EventTarget> mNewTarget;
-  
+  // Cache mTarget's event listener manager.
   RefPtr<EventListenerManager> mManager;
 
   bool IsCurrentTargetChrome() {
@@ -453,7 +453,7 @@ void EventTargetChainItem::PostHandleEvent(EventChainPostVisitor& aVisitor) {
 void EventTargetChainItem::HandleEventTargetChain(
     nsTArray<EventTargetChainItem>& aChain, EventChainPostVisitor& aVisitor,
     EventDispatchingCallback* aCallback, ELMCreationDetector& aCd) {
-  
+  // Save the target so that it can be restored later.
   nsCOMPtr<EventTarget> firstTarget = aVisitor.mEvent->mTarget;
   nsCOMPtr<EventTarget> firstRelatedTarget = aVisitor.mEvent->mRelatedTarget;
   Maybe<AutoTArray<nsCOMPtr<EventTarget>, 10>> firstTouchTargets;
@@ -474,7 +474,7 @@ void EventTargetChainItem::HandleEventTargetChain(
   uint32_t firstCanHandleEventTargetIdx =
       EventTargetChainItem::GetFirstCanHandleEventTargetIdx(aChain);
 
-  
+  // Capture
   aVisitor.mEvent->mFlags.mInCapturePhase = true;
   aVisitor.mEvent->mFlags.mInBubblingPhase = false;
   for (uint32_t i = chainLength - 1; i > firstCanHandleEventTargetIdx; --i) {
@@ -489,7 +489,7 @@ void EventTargetChainItem::HandleEventTargetChain(
     }
 
     if (item.GetNewTarget()) {
-      
+      // item is at anonymous boundary. Need to retarget for the child items.
       for (uint32_t j = i; j > 0; --j) {
         uint32_t childIndex = j - 1;
         EventTarget* newTarget = aChain[childIndex].GetNewTarget();
@@ -500,12 +500,12 @@ void EventTargetChainItem::HandleEventTargetChain(
       }
     }
 
-    
-    
-    
-    
-    
-    
+    // https://dom.spec.whatwg.org/#dispatching-events
+    // Step 14.2
+    // "Set event's relatedTarget to tuple's relatedTarget."
+    // Note, the initial retargeting was done already when creating
+    // event target chain, so we need to do this only after calling
+    // HandleEvent, not before, like in the specification.
     if (item.GetRetargetedRelatedTarget()) {
       bool found = false;
       for (uint32_t j = i; j > 0; --j) {
@@ -544,11 +544,11 @@ void EventTargetChainItem::HandleEventTargetChain(
     }
   }
 
-  
+  // Target
   aVisitor.mEvent->mFlags.mInBubblingPhase = true;
   EventTargetChainItem& targetItem = aChain[firstCanHandleEventTargetIdx];
-  
-  
+  // Need to explicitly retarget touch targets so that initial targets get set
+  // properly in case nothing else retargeted touches.
   if (targetItem.HasRetargetTouchTargets()) {
     targetItem.RetargetTouchTargets(touchEvent, aVisitor.mDOMEvent);
   }
@@ -561,7 +561,7 @@ void EventTargetChainItem::HandleEventTargetChain(
     targetItem.PostHandleEvent(aVisitor);
   }
 
-  
+  // Bubble
   aVisitor.mEvent->mFlags.mInCapturePhase = false;
   for (uint32_t i = firstCanHandleEventTargetIdx + 1; i < chainLength; ++i) {
     EventTargetChainItem& item = aChain[i];
@@ -570,14 +570,14 @@ void EventTargetChainItem::HandleEventTargetChain(
     }
     EventTarget* newTarget = item.GetNewTarget();
     if (newTarget) {
-      
-      
+      // Item is at anonymous boundary. Need to retarget for the current item
+      // and for parent items.
       aVisitor.mEvent->mTarget = newTarget;
     }
 
-    
-    
-    
+    // https://dom.spec.whatwg.org/#dispatching-events
+    // Step 15.2
+    // "Set event's relatedTarget to tuple's relatedTarget."
     EventTarget* relatedTarget = item.GetRetargetedRelatedTarget();
     if (relatedTarget) {
       aVisitor.mEvent->mRelatedTarget = relatedTarget;
@@ -602,12 +602,12 @@ void EventTargetChainItem::HandleEventTargetChain(
 
   if (!aVisitor.mEvent->mFlags.mInSystemGroup &&
       aVisitor.mEvent->IsAllowedToDispatchInSystemGroup()) {
-    
-    
+    // Dispatch to the system event group.  Make sure to clear the
+    // STOP_DISPATCH flag since this resets for each event group.
     aVisitor.mEvent->mFlags.mPropagationStopped = false;
     aVisitor.mEvent->mFlags.mImmediatePropagationStopped = false;
 
-    
+    // Setting back the original target of the event.
     aVisitor.mEvent->mTarget = aVisitor.mEvent->mOriginalTarget;
     aVisitor.mEvent->mRelatedTarget = aVisitor.mEvent->mOriginalRelatedTarget;
     if (firstTouchTargets) {
@@ -617,14 +617,14 @@ void EventTargetChainItem::HandleEventTargetChain(
       }
     }
 
-    
-    
+    // Special handling if PresShell (or some other caller)
+    // used a callback object.
     if (aCallback) {
       aCallback->HandleEvent(aVisitor);
     }
 
-    
-    
+    // Retarget for system event group (which does the default handling too).
+    // Setting back the target which was used also for default event group.
     aVisitor.mEvent->mTarget = firstTarget;
     aVisitor.mEvent->mRelatedTarget = firstRelatedTarget;
     if (firstTouchTargets) {
@@ -638,8 +638,8 @@ void EventTargetChainItem::HandleEventTargetChain(
     HandleEventTargetChain(aChain, aVisitor, aCallback, aCd);
     aVisitor.mEvent->mFlags.mInSystemGroup = false;
 
-    
-    
+    // After dispatch, clear all the propagation flags so that
+    // system group listeners don't affect to the event.
     aVisitor.mEvent->mFlags.mPropagationStopped = false;
     aVisitor.mEvent->mFlags.mImmediatePropagationStopped = false;
   }
@@ -647,7 +647,7 @@ void EventTargetChainItem::HandleEventTargetChain(
 
 static nsTArray<EventTargetChainItem>* sCachedMainThreadChain = nullptr;
 
-
+/* static */
 void EventDispatcher::Shutdown() {
   delete sCachedMainThreadChain;
   sCachedMainThreadChain = nullptr;
@@ -672,23 +672,23 @@ EventTargetChainItem* EventTargetChainItemForChromeTarget(
   return etci;
 }
 
- EventTargetChainItem* MayRetargetToChromeIfCanNotHandleEvent(
+/* static */ EventTargetChainItem* MayRetargetToChromeIfCanNotHandleEvent(
     nsTArray<EventTargetChainItem>& aChain, EventChainPreVisitor& aPreVisitor,
     EventTargetChainItem* aTargetEtci, EventTargetChainItem* aChildEtci,
     nsINode* aContent) {
   if (!aPreVisitor.mWantsPreHandleEvent) {
-    
+    // Keep EventTargetChainItem if we need to call PreHandleEvent on it.
     EventTargetChainItem::DestroyLast(aChain, aTargetEtci);
   }
   if (aPreVisitor.mAutomaticChromeDispatch && aContent) {
     aPreVisitor.mRelatedTargetRetargetedInCurrentScope = false;
-    
+    // Event target couldn't handle the event. Try to propagate to chrome.
     EventTargetChainItem* chromeTargetEtci =
         EventTargetChainItemForChromeTarget(aChain, aContent, aChildEtci);
     if (chromeTargetEtci) {
-      
-      
-      
+      // If we propagate to chrome, need to ensure we mark
+      // EventTargetChainItem to be chrome handler so that event.composedPath()
+      // can return the right value.
       chromeTargetEtci->SetIsChromeHandler(true);
       chromeTargetEtci->GetEventTargetParent(aPreVisitor);
       return chromeTargetEtci;
@@ -709,12 +709,12 @@ static bool ShouldClearTargets(WidgetEvent* aEvent) {
       finalRelatedTarget->SubtreeRoot()->IsShadowRoot()) {
     return true;
   }
-  
+  // XXXsmaug Check also all the touch objects.
 
   return false;
 }
 
-
+/* static */
 nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
                                    nsPresContext* aPresContext,
                                    WidgetEvent* aEvent, Event* aDOMEvent,
@@ -728,14 +728,14 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
                  NS_ERROR_DOM_INVALID_STATE_ERR);
   NS_ASSERTION(!aTargets || !aEvent->mMessage, "Wrong parameters!");
 
-  
-  
-  
+  // If we're dispatching an already created DOMEvent object, make
+  // sure it is initialized!
+  // If aTargets is non-null, the event isn't going to be dispatched.
   NS_ENSURE_TRUE(aEvent->mMessage || !aDOMEvent || aTargets,
                  NS_ERROR_DOM_INVALID_STATE_ERR);
 
-  
-  
+  // Events shall not be fired while we are in stable state to prevent anything
+  // visible from the scripts.
   MOZ_ASSERT(!nsContentUtils::IsInStableOrMetaStableState());
   NS_ENSURE_TRUE(!nsContentUtils::IsInStableOrMetaStableState(),
                  NS_ERROR_DOM_INVALID_STATE_ERR);
@@ -785,16 +785,16 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
     nsCOMPtr<Document> doc;
     if (!IsEventTargetChrome(target, getter_AddRefs(doc)) && doc) {
       nsPIDOMWindowInner* win = doc->GetInnerWindow();
-      
+      // If we can't dispatch the event to chrome, do nothing.
       EventTarget* piTarget = win ? win->GetParentTarget() : nullptr;
       if (!piTarget) {
         return NS_OK;
       }
 
-      
+      // Set the target to be the original dispatch target,
       aEvent->mTarget = target;
-      
-      
+      // but use chrome event handler or BrowserChildMessageManager for event
+      // target chain.
       target = piTarget;
     } else if (NS_WARN_IF(!doc)) {
       return NS_ERROR_UNEXPECTED;
@@ -812,12 +812,12 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
       }
     };
     if (nsCOMPtr<nsINode> node = do_QueryInterface(target)) {
-      
-      
-      
-      
-      
-      
+      // If this is a node, it's possible that this is some sort of DOM tree
+      // that is never accessed by script (for example an SVG image or XBL
+      // binding document or whatnot).  We really only want to warn/assert here
+      // if there might be actual scripted listeners for this event, so restrict
+      // the warnings/asserts to the case when script can or once could touch
+      // this node's document.
       Document* doc = node->OwnerDoc();
       bool hasHadScriptHandlingObject;
       nsIGlobalObject* global =
@@ -840,8 +840,8 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
   nsresult rv = NS_OK;
   bool externalDOMEvent = !!(aDOMEvent);
 
-  
-  
+  // If we have a PresContext, make sure it doesn't die before
+  // event dispatching is finished.
   RefPtr<nsPresContext> kungFuDeathGrip(aPresContext);
 
   ELMCreationDetector cd;
@@ -854,7 +854,7 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
     chain.SetCapacity(128);
   }
 
-  
+  // Create the event target chain item for the event target.
   EventTargetChainItem* targetEtci = EventTargetChainItem::Create(
       chain, target->GetTargetForEventTargetChain());
   MOZ_ASSERT(&chain[0] == targetEtci);
@@ -863,18 +863,18 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
     return NS_ERROR_FAILURE;
   }
 
-  
-  
+  // Make sure that Event::target and Event::originalTarget
+  // point to the last item in the chain.
   if (!aEvent->mTarget) {
-    
-    
+    // Note, CurrentTarget() points always to the object returned by
+    // GetTargetForEventTargetChain().
     aEvent->mTarget = targetEtci->CurrentTarget();
   } else {
-    
-    
-    
-    
-    
+    // XXX But if the target is already set, use that. This is a hack
+    //     for the 'load', 'beforeunload' and 'unload' events,
+    //     which are dispatched to |window| but have document as their target.
+    //
+    // Make sure that the event target points to the right object.
     aEvent->mTarget = aEvent->mTarget->GetTargetForEventTargetChain();
     NS_ENSURE_STATE(aEvent->mTarget);
   }
@@ -896,8 +896,8 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
 
   aEvent->mFlags.mIsBeingDispatched = true;
 
-  
-  
+  // Create visitor object and start event dispatching.
+  // GetEventTargetParent for the original target.
   nsEventStatus status = aEventStatus ? *aEventStatus : nsEventStatus_eIgnore;
   nsCOMPtr<EventTarget> targetForPreVisitor = aEvent->mTarget;
   EventChainPreVisitor preVisitor(aPresContext, aEvent, aDOMEvent, status,
@@ -909,21 +909,21 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
         chain, preVisitor, targetEtci, nullptr, content);
   }
   if (!preVisitor.mCanHandle) {
-    
-    
+    // The original target and chrome target (mAutomaticChromeDispatch=true)
+    // can not handle the event but we still have to call their PreHandleEvent.
     for (uint32_t i = 0; i < chain.Length(); ++i) {
       chain[i].PreHandleEvent(preVisitor);
     }
 
     clearTargets = ShouldClearTargets(aEvent);
   } else {
-    
-    
+    // At least the original target can handle the event.
+    // Setting the retarget to the |target| simplifies retargeting code.
     nsCOMPtr<EventTarget> t = aEvent->mTarget;
     targetEtci->SetNewTarget(t);
-    
-    
-    
+    // In order to not change the targetTouches array passed to TouchEvents
+    // when dispatching events from JS, we need to store the initial Touch
+    // objects on the list.
     if (aEvent->mClass == eTouchEventClass && aDOMEvent) {
       TouchEvent* touchEvent = static_cast<TouchEvent*>(aDOMEvent);
       TouchList* targetTouches = touchEvent->GetExistingTargetTouches();
@@ -952,10 +952,10 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
       parentEtci->SetIsSlotInClosedTree(preVisitor.mParentIsSlotInClosedTree);
       parentEtci->SetIsChromeHandler(preVisitor.mParentIsChromeHandler);
 
-      
+      // Item needs event retargetting.
       if (preVisitor.mEventTargetAtParent) {
-        
-        
+        // Need to set the target of the event
+        // so that also the next retargeting works.
         preVisitor.mTargetInKnownToBeHandledScope = preVisitor.mEvent->mTarget;
         preVisitor.mEvent->mTarget = preVisitor.mEventTargetAtParent;
         parentEtci->SetNewTarget(preVisitor.mEventTargetAtParent);
@@ -980,8 +980,8 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
           EventTargetChainItem* item =
               EventTargetChainItem::GetFirstCanHandleEventTarget(chain);
           if (!ignoreBecauseOfShadowDOM) {
-            
-            
+            // If we ignored the target because of Shadow DOM retargeting, we
+            // shouldn't treat the target to be in the event path at all.
             item->SetNewTarget(parentTarget);
           }
           topEtci = parentEtci;
@@ -999,27 +999,27 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
           targets[i] = chain[i].CurrentTarget()->GetTargetForDOMEvent();
         }
       } else {
-        
+        // Event target chain is created. PreHandle the chain.
         for (uint32_t i = 0; i < chain.Length(); ++i) {
           chain[i].PreHandleEvent(preVisitor);
         }
 
         clearTargets = ShouldClearTargets(aEvent);
 
-        
+        // Handle the chain.
         EventChainPostVisitor postVisitor(preVisitor);
         MOZ_RELEASE_ASSERT(!aEvent->mPath);
         aEvent->mPath = &chain;
 
 #ifdef MOZ_GECKO_PROFILER
         if (profiler_is_active()) {
-          
-          
-          
-          
+          // Add a profiler label and a profiler marker for the actual
+          // dispatch of the event.
+          // This is a very hot code path, so we need to make sure not to
+          // do this extra work when we're not profiling.
           if (!postVisitor.mDOMEvent) {
-            
-            
+            // This is tiny bit slow, but happens only once per event.
+            // Similar code also in EventListenerManager.
             nsCOMPtr<EventTarget> et = aEvent->mOriginalTarget;
             RefPtr<Event> event = EventDispatcher::CreateEvent(
                 et, aPresContext, aEvent, EmptyString());
@@ -1074,7 +1074,7 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
         }
 
         preVisitor.mEventStatus = postVisitor.mEventStatus;
-        
+        // If the DOM event was created during event flow.
         if (!preVisitor.mDOMEvent && postVisitor.mDOMEvent) {
           preVisitor.mDOMEvent = postVisitor.mDOMEvent;
         }
@@ -1082,28 +1082,28 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
     }
   }
 
-  
-  
+  // Note, EventTargetChainItem objects are deleted when the chain goes out of
+  // the scope.
 
   aEvent->mFlags.mIsBeingDispatched = false;
   aEvent->mFlags.mDispatchedAtLeastOnce = true;
 
-  
-  
-  
-  
-  
+  // https://dom.spec.whatwg.org/#concept-event-dispatch
+  // step 10. If clearTargets, then:
+  //          1. Set event's target to null.
+  //          2. Set event's relatedTarget to null.
+  //          3. Set event's touch target list to the empty list.
   if (clearTargets) {
     aEvent->mTarget = nullptr;
     aEvent->mOriginalTarget = nullptr;
     aEvent->mRelatedTarget = nullptr;
     aEvent->mOriginalRelatedTarget = nullptr;
-    
+    // XXXsmaug Check also all the touch objects.
   }
 
   if (!externalDOMEvent && preVisitor.mDOMEvent) {
-    
-    
+    // An dom::Event was created while dispatching the event.
+    // Duplicate private data if someone holds a pointer to it.
     nsrefcnt rc = 0;
     NS_RELEASE2(preVisitor.mDOMEvent, rc);
     if (preVisitor.mDOMEvent) {
@@ -1123,7 +1123,7 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
   return rv;
 }
 
-
+/* static */
 nsresult EventDispatcher::DispatchDOMEvent(nsISupports* aTarget,
                                            WidgetEvent* aEvent,
                                            Event* aDOMEvent,
@@ -1133,7 +1133,7 @@ nsresult EventDispatcher::DispatchDOMEvent(nsISupports* aTarget,
     WidgetEvent* innerEvent = aDOMEvent->WidgetEventPtr();
     NS_ENSURE_TRUE(innerEvent, NS_ERROR_ILLEGAL_VALUE);
 
-    
+    // Don't modify the event if it's being dispatched right now.
     if (innerEvent->mFlags.mIsBeingDispatched) {
       return NS_ERROR_DOM_INVALID_STATE_ERR;
     }
@@ -1147,7 +1147,7 @@ nsresult EventDispatcher::DispatchDOMEvent(nsISupports* aTarget,
     }
 
     if (!dontResetTrusted) {
-      
+      // Check security state to determine if dispatcher is trusted
       bool trusted = NS_IsMainThread()
                          ? nsContentUtils::LegacyIsCallerChromeOrNativeCode()
                          : IsCurrentThreadRunningChromeWorker();
@@ -1163,7 +1163,7 @@ nsresult EventDispatcher::DispatchDOMEvent(nsISupports* aTarget,
   return NS_ERROR_ILLEGAL_VALUE;
 }
 
- already_AddRefed<dom::Event> EventDispatcher::CreateEvent(
+/* static */ already_AddRefed<dom::Event> EventDispatcher::CreateEvent(
     EventTarget* aOwner, nsPresContext* aPresContext, WidgetEvent* aEvent,
     const nsAString& aEventType, CallerType aCallerType) {
   if (aEvent) {
@@ -1226,12 +1226,12 @@ nsresult EventDispatcher::DispatchDOMEvent(nsISupports* aTarget,
         return NS_NewDOMAnimationEvent(aOwner, aPresContext,
                                        aEvent->AsAnimationEvent());
       default:
-        
+        // For all other types of events, create a vanilla event object.
         return NS_NewDOMEvent(aOwner, aPresContext, aEvent);
     }
   }
 
-  
+  // And if we didn't get an event, check the type argument.
 
   if (aEventType.LowerCaseEqualsLiteral("mouseevent") ||
       aEventType.LowerCaseEqualsLiteral("mouseevents")) {
@@ -1306,7 +1306,7 @@ nsresult EventDispatcher::DispatchDOMEvent(nsISupports* aTarget,
     return event.forget();
   }
 
-  
+  // Only allow these events for chrome
   if (aCallerType == CallerType::System) {
     if (aEventType.LowerCaseEqualsLiteral("simplegestureevent")) {
       return NS_NewDOMSimpleGestureEvent(aOwner, aPresContext, nullptr);
@@ -1317,8 +1317,8 @@ nsresult EventDispatcher::DispatchDOMEvent(nsISupports* aTarget,
     }
   }
 
-  
-  
+  // NEW EVENT TYPES SHOULD NOT BE ADDED HERE; THEY SHOULD USE ONLY EVENT
+  // CONSTRUCTORS
 
   return nullptr;
 }
@@ -1354,7 +1354,7 @@ static CurrentTargetPathInfo TargetPathInfo(
   return {0, 0};
 }
 
-
+// https://dom.spec.whatwg.org/#dom-event-composedpath
 void EventDispatcher::GetComposedPathFor(WidgetEvent* aEvent,
                                          nsTArray<RefPtr<EventTarget>>& aPath) {
   MOZ_ASSERT(aPath.IsEmpty());
@@ -1434,4 +1434,4 @@ void EventDispatcher::GetComposedPathFor(WidgetEvent* aEvent,
   }
 }
 
-}  
+}  // namespace mozilla

@@ -56,7 +56,7 @@ class FontInfoData {
 
  protected:
   
-  MOZ_COUNTED_DTOR_VIRTUAL(FontInfoData)
+  virtual ~FontInfoData() { MOZ_COUNT_DTOR(FontInfoData); }
 
  public:
   virtual void Load();

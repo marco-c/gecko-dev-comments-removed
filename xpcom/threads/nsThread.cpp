@@ -247,7 +247,7 @@ struct nsThreadShutdownContext {
         mIsMainThreadJoining(NS_IsMainThread()) {
     MOZ_COUNT_CTOR(nsThreadShutdownContext);
   }
-  MOZ_COUNTED_DTOR(nsThreadShutdownContext)
+  ~nsThreadShutdownContext() { MOZ_COUNT_DTOR(nsThreadShutdownContext); }
 
   
   NotNull<RefPtr<nsThread>> mTerminatingThread;

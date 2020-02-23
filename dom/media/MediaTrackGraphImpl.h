@@ -55,7 +55,7 @@ class ControlMessage {
     MOZ_COUNT_CTOR(ControlMessage);
   }
   
-  MOZ_COUNTED_DTOR_VIRTUAL(ControlMessage)
+  virtual ~ControlMessage() { MOZ_COUNT_DTOR(ControlMessage); }
   
   
   
