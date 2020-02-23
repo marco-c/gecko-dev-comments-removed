@@ -3666,11 +3666,14 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
         
         
         
+        
         if (noVerticalBorders && noHorizontalBorders) {
-          aBuilder.PushImage(dest, clip, !aItem->BackfaceIsHidden(), rendering, key.value());
+          aBuilder.PushImage(dest, clip, !aItem->BackfaceIsHidden(), rendering,
+                             key.value());
           break;
         }
 
+        
         
         
         
@@ -3704,8 +3707,11 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
       LayoutDevicePoint lineStart;
       LayoutDevicePoint lineEnd;
       LayoutDeviceSize gradientRadius;
+      LayoutDevicePoint gradientCenter;
+      float gradientAngle;
       renderer.BuildWebRenderParameters(1.0, extendMode, stops, lineStart,
-                                        lineEnd, gradientRadius);
+                                        lineEnd, gradientRadius, gradientCenter,
+                                        gradientAngle);
 
       if (gradient.IsLinear()) {
         LayoutDevicePoint startPoint =
@@ -3723,12 +3729,21 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
             extendMode,
             wr::ToLayoutSideOffsets(outset[0], outset[1], outset[2],
                                     outset[3]));
-      } else {
+      } else if (gradient.IsRadial()) {
         aBuilder.PushBorderRadialGradient(
             dest, clip, !aItem->BackfaceIsHidden(),
             wr::ToBorderWidths(widths[0], widths[1], widths[2], widths[3]),
             mFill, wr::ToLayoutPoint(lineStart),
             wr::ToLayoutSize(gradientRadius), stops, extendMode,
+            wr::ToLayoutSideOffsets(outset[0], outset[1], outset[2],
+                                    outset[3]));
+      } else {
+        MOZ_ASSERT(gradient.IsConic());
+        aBuilder.PushBorderConicGradient(
+            dest, clip, !aItem->BackfaceIsHidden(),
+            wr::ToBorderWidths(widths[0], widths[1], widths[2], widths[3]),
+            mFill, wr::ToLayoutPoint(gradientCenter), gradientAngle, stops,
+            extendMode,
             wr::ToLayoutSideOffsets(outset[0], outset[1], outset[2],
                                     outset[3]));
       }
