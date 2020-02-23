@@ -289,8 +289,7 @@ bool nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext,
           aAppearance == StyleAppearance::Textarea ||
           aAppearance == StyleAppearance::Listbox ||
           aAppearance == StyleAppearance::Menulist ||
-          (aAppearance == StyleAppearance::MenulistButton &&
-           StaticPrefs::layout_css_webkit_appearance_enabled())) &&
+          aAppearance == StyleAppearance::MenulistButton) &&
          aFrame->GetContent()->IsHTMLElement() &&
          aPresContext->HasAuthorSpecifiedRules(
              aFrame,
@@ -326,6 +325,7 @@ bool nsNativeTheme::IsFrameRTL(nsIFrame* aFrame) {
   }
   return aFrame->GetWritingMode().IsPhysicalRTL();
 }
+
 
 bool nsNativeTheme::IsHTMLContent(nsIFrame* aFrame) {
   if (!aFrame) {

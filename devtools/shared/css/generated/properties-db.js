@@ -9529,7 +9529,6 @@ exports.CSS_PROPERTIES = {
       "margin-box",
       "none",
       "padding-box",
-      "path",
       "polygon",
       "radial-gradient",
       "repeating-linear-gradient",
@@ -10907,10 +10906,6 @@ exports.PREFERENCES = [
   [
     "-moz-transform-origin",
     "layout.css.prefixes.transforms"
-  ],
-  [
-    "-webkit-appearance",
-    "layout.css.webkit-appearance.enabled"
   ],
   [
     "-moz-column-width",
