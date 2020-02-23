@@ -60,13 +60,13 @@ class WebRenderCompositionRecorder final : public CompositionRecorder {
 
 
   void MaybeRecordFrame(wr::Renderer* aRenderer,
-                        wr::WebRenderPipelineInfo* aFrameEpochs);
+                        const wr::WebRenderPipelineInfo* aFrameEpochs);
 
  private:
   
 
 
-  bool DidPaintContent(wr::WebRenderPipelineInfo* aFrameEpochs);
+  bool DidPaintContent(const wr::WebRenderPipelineInfo* aFrameEpochs);
 
   
   

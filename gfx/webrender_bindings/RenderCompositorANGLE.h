@@ -40,7 +40,7 @@ class RenderCompositorANGLE : public RenderCompositor {
   bool Initialize();
 
   bool BeginFrame() override;
-  RenderedFrameId EndFrame(const FfiVec<DeviceIntRect>& aDirtyRects) final;
+  RenderedFrameId EndFrame(const nsTArray<DeviceIntRect>& aDirtyRects) final;
   bool WaitForGPU() override;
   RenderedFrameId GetLastCompletedFrameId() final;
   RenderedFrameId UpdateFrameId() final;
@@ -73,7 +73,8 @@ class RenderCompositorANGLE : public RenderCompositor {
   void CompositorBeginFrame() override;
   void CompositorEndFrame() override;
   void Bind(wr::NativeTileId aId, wr::DeviceIntPoint* aOffset, uint32_t* aFboId,
-            wr::DeviceIntRect aDirtyRect) override;
+            wr::DeviceIntRect aDirtyRect,
+            wr::DeviceIntRect aValidRect) override;
   void Unbind() override;
   void CreateSurface(wr::NativeSurfaceId aId, wr::DeviceIntSize aTileSize,
                      bool aIsOpaque) override;

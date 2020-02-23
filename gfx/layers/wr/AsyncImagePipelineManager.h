@@ -65,7 +65,7 @@ class AsyncImagePipelineManager final {
   
   
   
-  void NotifyPipelinesUpdated(RefPtr<wr::WebRenderPipelineInfo> aInfo,
+  void NotifyPipelinesUpdated(RefPtr<const wr::WebRenderPipelineInfo> aInfo,
                               wr::RenderedFrameId aLatestFrameId,
                               wr::RenderedFrameId aLastCompletedFrameId);
 
@@ -244,7 +244,8 @@ class AsyncImagePipelineManager final {
 
   nsTArray<ImageCompositeNotificationInfo> mImageCompositeNotifications;
 
-  typedef std::vector<RefPtr<wr::WebRenderPipelineInfo>> PipelineInfoVector;
+  typedef std::vector<RefPtr<const wr::WebRenderPipelineInfo>>
+      PipelineInfoVector;
 
   
   

@@ -42,7 +42,7 @@ class RenderCompositor {
   
   
   virtual RenderedFrameId EndFrame(
-      const FfiVec<DeviceIntRect>& aDirtyRects) = 0;
+      const nsTArray<DeviceIntRect>& aDirtyRects) = 0;
   
   
   virtual bool WaitForGPU() { return true; }
@@ -88,7 +88,8 @@ class RenderCompositor {
   virtual void CompositorBeginFrame() {}
   virtual void CompositorEndFrame() {}
   virtual void Bind(wr::NativeTileId aId, wr::DeviceIntPoint* aOffset,
-                    uint32_t* aFboId, wr::DeviceIntRect aDirtyRect) {}
+                    uint32_t* aFboId, wr::DeviceIntRect aDirtyRect,
+                    wr::DeviceIntRect aValidRect) {}
   virtual void Unbind() {}
   virtual void CreateSurface(wr::NativeSurfaceId aId,
                              wr::DeviceIntSize aTileSize, bool aIsOpaque) {}
