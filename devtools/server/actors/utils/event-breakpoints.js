@@ -1,8 +1,10 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 "use strict";
+
+const Services = require("Services");
 
 function generalEvent(groupID, eventType) {
   return {
@@ -117,12 +119,12 @@ const AVAILABLE_BREAKPOINTS = [
   {
     name: "DOM Mutation",
     items: [
-      // Deprecated DOM events.
+      
       nodeEvent("dom-mutation", "DOMActivate"),
       nodeEvent("dom-mutation", "DOMFocusIn"),
       nodeEvent("dom-mutation", "DOMFocusOut"),
 
-      // Standard DOM mutation events.
+      
       nodeEvent("dom-mutation", "DOMAttrModified"),
       nodeEvent("dom-mutation", "DOMCharacterDataModified"),
       nodeEvent("dom-mutation", "DOMNodeInserted"),
@@ -131,7 +133,7 @@ const AVAILABLE_BREAKPOINTS = [
       nodeEvent("dom-mutation", "DOMNodeRemovedIntoDocument"),
       nodeEvent("dom-mutation", "DOMSubtreeModified"),
 
-      // DOM load events.
+      
       nodeEvent("dom-mutation", "DOMContentLoaded"),
     ],
   },
@@ -157,19 +159,23 @@ const AVAILABLE_BREAKPOINTS = [
   {
     name: "Keyboard",
     items: [
+      Services.prefs &&
+      Services.prefs.getBoolPref("dom.input_events.beforeinput.enabled")
+        ? generalEvent("keyboard", "beforeinput")
+        : null,
+      generalEvent("keyboard", "input"),
       generalEvent("keyboard", "keydown"),
       generalEvent("keyboard", "keyup"),
       generalEvent("keyboard", "keypress"),
-      generalEvent("keyboard", "input"),
-    ],
+    ].filter(Boolean),
   },
   {
     name: "Load",
     items: [
       globalEvent("load", "load"),
-      // TODO: Disabled pending fixes for bug 1569775.
-      // globalEvent("load", "beforeunload"),
-      // globalEvent("load", "unload"),
+      
+      
+      
       globalEvent("load", "abort"),
       globalEvent("load", "error"),
       globalEvent("load", "hashchange"),
@@ -267,7 +273,7 @@ const AVAILABLE_BREAKPOINTS = [
       workerEvent("message"),
       workerEvent("messageerror"),
 
-      // Service Worker events.
+      
       globalEvent("serviceworker", "fetch"),
     ],
   },
@@ -354,11 +360,11 @@ function eventBreakpointForNotification(dbg, notification) {
       return null;
     }
 
-    // The 'event' value is a cross-compartment wrapper for the DOM Event object.
-    // While we could use that directly in the main thread as an Xray wrapper,
-    // when debugging workers we can't, because it is an opaque wrapper.
-    // To make things work, we have to always interact with the Event object via
-    // the Debugger.Object interface.
+    
+    
+    
+    
+    
     const evt = dbg
       .makeGlobalObjectReference(notification.global)
       .makeDebuggeeValue(notification.event);
@@ -379,7 +385,7 @@ function eventBreakpointForNotification(dbg, notification) {
       const nodeType = currentTarget.getProperty("nodeType").return;
       const namespaceURI = currentTarget.getProperty("namespaceURI").return;
       if (
-        nodeType !== 1 /* ELEMENT_NODE */ ||
+        nodeType !== 1  ||
         namespaceURI !== "http://www.w3.org/1999/xhtml"
       ) {
         return null;
