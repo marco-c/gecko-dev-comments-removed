@@ -86,7 +86,7 @@ class GamepadManager final : public nsIObserver {
 
  protected:
   GamepadManager();
-  ~GamepadManager(){};
+  ~GamepadManager() = default;
 
   
   
