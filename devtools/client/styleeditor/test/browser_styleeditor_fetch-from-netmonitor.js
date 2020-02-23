@@ -6,11 +6,18 @@
 
 
 
+const EMPTY_TEST_URL = TEST_BASE_HTTP + "doc_empty.html";
 const TEST_URL = TEST_BASE_HTTP + "doc_fetch_from_netmonitor.html";
 
 add_task(async function() {
   info("Opening netmonitor");
-  const tab = await addTab("about:blank");
+  
+  
+  
+  
+  
+  
+  const tab = await addTab(EMPTY_TEST_URL);
   const target = await TargetFactory.forTab(tab);
   const toolbox = await gDevTools.showToolbox(target, "netmonitor");
   const monitor = toolbox.getPanel("netmonitor");
