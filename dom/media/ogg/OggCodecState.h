@@ -411,7 +411,7 @@ class OpusState : public OggCodecState {
   UniquePtr<MetadataTags> GetTags() override;
 
  private:
-  nsAutoPtr<OpusParser> mParser;
+  UniquePtr<OpusParser> mParser;
   OpusMSDecoder* mDecoder;
 
   

@@ -207,10 +207,10 @@ class AudioInputProcessing : public AudioDataListener {
   const UniquePtr<webrtc::AudioProcessing> mAudioProcessing;
   
   
-  nsAutoPtr<AudioPacketizer<AudioDataValue, float>> mPacketizerInput;
+  UniquePtr<AudioPacketizer<AudioDataValue, float>> mPacketizerInput;
   
   
-  nsAutoPtr<AudioPacketizer<AudioDataValue, float>> mPacketizerOutput;
+  UniquePtr<AudioPacketizer<AudioDataValue, float>> mPacketizerOutput;
   
   
   

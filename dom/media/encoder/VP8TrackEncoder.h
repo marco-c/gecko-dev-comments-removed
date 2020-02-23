@@ -96,9 +96,9 @@ class VP8TrackEncoder : public VideoTrackEncoder {
 
   
   
-  nsAutoPtr<vpx_codec_ctx_t> mVPXContext;
+  UniquePtr<vpx_codec_ctx_t> mVPXContext;
   
-  nsAutoPtr<vpx_image_t> mVPXImageWrapper;
+  UniquePtr<vpx_image_t> mVPXImageWrapper;
 };
 
 }  

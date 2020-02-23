@@ -10,9 +10,8 @@
 
 namespace mozilla {
 
-WebMWriter::WebMWriter() : ContainerWriter() {
-  mEbmlComposer = new EbmlComposer();
-}
+WebMWriter::WebMWriter()
+    : ContainerWriter(), mEbmlComposer(new EbmlComposer()) {}
 
 WebMWriter::~WebMWriter() {
   

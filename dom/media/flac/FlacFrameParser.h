@@ -9,7 +9,6 @@
 
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
-#include "nsAutoPtr.h"
 #include "MediaDecoder.h"  
 #include "MediaInfo.h"
 #include "MediaResource.h"
@@ -65,7 +64,7 @@ class FlacFrameParser {
   uint32_t mPacketCount;
 
   
-  nsAutoPtr<OpusParser> mParser;
+  UniquePtr<OpusParser> mParser;
 };
 
 }  

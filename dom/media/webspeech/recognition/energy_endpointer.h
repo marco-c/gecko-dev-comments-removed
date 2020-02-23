@@ -63,7 +63,7 @@
 
 #include <vector>
 
-#include "nsAutoPtr.h"
+#include "mozilla/UniquePtr.h"
 
 #include "energy_endpointer_params.h"
 
@@ -142,7 +142,7 @@ class EnergyEndpointer {
   float sample_rate_;  
 
   
-  nsAutoPtr<HistoryRing> history_;
+  UniquePtr<HistoryRing> history_;
 
   
   EnergyEndpointerParams params_;

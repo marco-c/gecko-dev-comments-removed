@@ -11,7 +11,6 @@
 #  include "PlatformDecoderModule.h"
 #  include "WMF.h"
 #  include "mozilla/RefPtr.h"
-#  include "nsAutoPtr.h"
 
 namespace mozilla {
 
@@ -137,7 +136,7 @@ class WMFMediaDataDecoder
 
   const RefPtr<TaskQueue> mTaskQueue;
 
-  nsAutoPtr<MFTManager> mMFTManager;
+  UniquePtr<MFTManager> mMFTManager;
 
   
   

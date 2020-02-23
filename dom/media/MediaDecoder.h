@@ -25,7 +25,6 @@
 #  include "mozilla/StateMirroring.h"
 #  include "mozilla/StateWatching.h"
 #  include "mozilla/dom/MediaDebugInfoBinding.h"
-#  include "nsAutoPtr.h"
 #  include "nsCOMPtr.h"
 #  include "nsIObserver.h"
 #  include "nsISupports.h"
@@ -407,7 +406,7 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   
   
-  virtual void FirstFrameLoaded(nsAutoPtr<MediaInfo> aInfo,
+  virtual void FirstFrameLoaded(UniquePtr<MediaInfo> aInfo,
                                 MediaDecoderEventVisibility aEventVisibility);
 
   void SetStateMachineParameters();
@@ -561,7 +560,7 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   
   
-  nsAutoPtr<MediaInfo> mInfo;
+  UniquePtr<MediaInfo> mInfo;
 
   
   bool mIsDocumentVisible;

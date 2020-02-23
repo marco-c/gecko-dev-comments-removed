@@ -30,12 +30,14 @@
 #define Reverb_h
 
 #include "ReverbConvolver.h"
-#include "nsAutoPtr.h"
 #include "nsTArray.h"
 #include "AudioBlock.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/UniquePtr.h"
 
 namespace WebCore {
+
+using mozilla::UniquePtr;
 
 
 
@@ -67,7 +69,7 @@ class Reverb {
 
   size_t m_impulseResponseLength;
 
-  nsTArray<nsAutoPtr<ReverbConvolver> > m_convolvers;
+  nsTArray<UniquePtr<ReverbConvolver> > m_convolvers;
 
   
   mozilla::AudioBlock m_tempBuffer;

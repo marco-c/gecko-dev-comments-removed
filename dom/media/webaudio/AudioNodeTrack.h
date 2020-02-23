@@ -8,7 +8,6 @@
 
 #include "MediaTrackGraph.h"
 #include "mozilla/dom/AudioNodeBinding.h"
-#include "nsAutoPtr.h"
 #include "AlignedTArray.h"
 #include "AudioBlock.h"
 #include "AudioSegment.h"
@@ -152,7 +151,7 @@ class AudioNodeTrack : public ProcessedMediaTrack {
   }
 
   
-  AudioNodeEngine* Engine() { return mEngine; }
+  AudioNodeEngine* Engine() { return mEngine.get(); }
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override;
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
@@ -206,7 +205,7 @@ class AudioNodeTrack : public ProcessedMediaTrack {
   void DecrementActiveInputCount();
 
   
-  const nsAutoPtr<AudioNodeEngine> mEngine;
+  const UniquePtr<AudioNodeEngine> mEngine;
   
   
   OutputChunks mInputChunks;
