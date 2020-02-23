@@ -25,22 +25,6 @@ g.eval('function f() { debugger; return "1"; }');
 
 
 
-
-
-
-
-var sequence = [{ expect: { return: '1' }, resume: { return: '2'} },
-                { expect: { return: '2' }, resume: { throw:  '3'} },
-                { expect: { throw:  '3' }, resume: { return: '4'} },
-                { expect: { return: '4' }, resume: null },
-                { expect: null,            resume: { throw:  '5'} },
-                { expect: { throw:  '5' }, resume: { throw:  '6'} },
-                { expect: { throw:  '6' }, resume: null           },
-                { expect: null,            resume: null           },
-                { expect: null,            resume: { return: '7'} }];
-
-
-
 var frames = [];
 
 
@@ -58,7 +42,7 @@ dbg0.onEnterFrame = function handleOriginalEnter(frame) {
     var log;
 
     
-    for (s in sequence) {
+    for (let i = 0; i < 9; i++) {
         
         
         
@@ -92,30 +76,25 @@ dbg0.onEnterFrame = function handleOriginalEnter(frame) {
                 };
 
                 f.onPop = function handlePop(c) {
-                    log += ')' + completionString(c);
+                    log += ')';
                     assertEq(this.onStack, true);
+                    assertEq(completionsEqual(c, { return: '1' }), true);
                     frames.push(this);
 
                     
                     var i = dbgs.indexOf(dbg);
                     assertEq(i != -1, true);
                     dbgs.splice(i,1);
-
-                    
-                    assertEq(completionsEqual(c, sequence[0].expect), true);
-
-                    
-                    return sequence.shift().resume;
                 };
             };
         };
     }
 
     log = '';
-    assertEq(completionsEqual(frame.eval('f()'), { return: '7' }), true);
-    assertEq(log, "eeeeeeeee(((((((((ddddddddd)r1)r2)t3)r4)x)t5)t6)x)x");
+    assertEq(completionsEqual(frame.eval('f()'), { return: '1' }), true);
+    assertEq(log, "eeeeeeeee(((((((((ddddddddd)))))))))");
 
-    dbg0.log += '.';    
+    dbg0.log += '.';
 };
 
 dbg0.log = '';

@@ -1093,8 +1093,10 @@ bool DebugAPI::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
     return frameOk;
   }
 
-  bool hadResumeOverride = false;
   completion = Completion::fromJSFramePop(cx, frame, pc, frameOk);
+
+  ResumeMode resumeMode = ResumeMode::Continue;
+  RootedValue rval(cx);
 
   {
     
@@ -1127,8 +1129,6 @@ bool DebugAPI::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
         if (frameobj->isOnStack() && frameobj->onPopHandler()) {
           OnPopHandler* handler = frameobj->onPopHandler();
 
-          ResumeMode hookResumeMode = ResumeMode::Continue;
-          RootedValue hookValue(cx);
           bool result = dbg->enterDebuggerHook(cx, [&]() -> bool {
             ResumeMode nextResumeMode = ResumeMode::Continue;
             RootedValue nextValue(cx);
@@ -1151,42 +1151,42 @@ bool DebugAPI::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
 
             return dbg->processParsedHandlerResult(cx, frame, pc, success,
                                                    nextResumeMode, nextValue,
-                                                   hookResumeMode, &hookValue);
+                                                   resumeMode, &rval);
           });
           adjqi.runJobs();
 
           if (!result) {
-            hookResumeMode = ResumeMode::Terminate;
+            resumeMode = ResumeMode::Terminate;
           }
 
           
           
           MOZ_ASSERT(!cx->isExceptionPending());
-
-          if (hookResumeMode != ResumeMode::Continue) {
-            hadResumeOverride = true;
-          }
-          completion.get().updateForNextHandler(hookResumeMode, hookValue);
         }
       }
     }
   }
 
+  completion.get().updateFromHookResult(resumeMode, rval);
+
   
-  ResumeMode resumeMode;
-  RootedValue value(cx);
-  RootedSavedFrame exnStack(cx);
-  completion.get().toResumeMode(resumeMode, &value, &exnStack);
+  ResumeMode completionResumeMode;
+  RootedValue completionValue(cx);
+  RootedSavedFrame completionStack(cx);
+  completion.get().toResumeMode(completionResumeMode, &completionValue,
+                                &completionStack);
 
   
   
   
   
-  if (!hadResumeOverride && resumeMode == ResumeMode::Return) {
-    resumeMode = ResumeMode::Continue;
+  if (resumeMode == ResumeMode::Continue &&
+      completionResumeMode == ResumeMode::Return) {
+    completionResumeMode = ResumeMode::Continue;
   }
 
-  if (!ApplyFrameResumeMode(cx, frame, resumeMode, value, exnStack)) {
+  if (!ApplyFrameResumeMode(cx, frame, completionResumeMode, completionValue,
+                            completionStack)) {
     if (!cx->isPropagatingForcedReturn()) {
       
       return false;
@@ -2042,7 +2042,7 @@ bool Completion::buildCompletionValue(JSContext* cx, Debugger* dbg,
   return variant.match(BuildValueMatcher(cx, dbg, result));
 }
 
-void Completion::updateForNextHandler(ResumeMode resumeMode,
+void Completion::updateFromHookResult(ResumeMode resumeMode,
                                       HandleValue value) {
   switch (resumeMode) {
     case ResumeMode::Continue:

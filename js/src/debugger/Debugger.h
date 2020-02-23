@@ -275,7 +275,7 @@ class Completion {
 
 
 
-  void updateForNextHandler(ResumeMode resumeMode, HandleValue value);
+  void updateFromHookResult(ResumeMode resumeMode, HandleValue value);
 
  private:
   using Variant =
