@@ -17,7 +17,6 @@
 
 
 
-
 var className;
 
 class C {

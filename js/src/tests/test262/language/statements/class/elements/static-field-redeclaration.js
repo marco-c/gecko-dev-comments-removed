@@ -56,7 +56,6 @@
 
 
 
-
 class C {
   static f = 'test';
   static f = this.f + '262';

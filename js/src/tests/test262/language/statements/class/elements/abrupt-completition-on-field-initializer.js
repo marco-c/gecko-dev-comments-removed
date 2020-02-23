@@ -24,7 +24,6 @@
 
 
 
-
 function abruptCompletion() {
   throw new Test262Error();
 }

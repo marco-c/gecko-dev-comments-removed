@@ -28,7 +28,7 @@ function f() {
 
 assert.throws(Test262Error, function() {
   class C {
-    static [f()]
+    static x = f();
   }
 });
 

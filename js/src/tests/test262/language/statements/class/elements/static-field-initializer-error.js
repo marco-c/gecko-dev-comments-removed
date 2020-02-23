@@ -44,7 +44,6 @@
 
 
 
-
 function initThrows() {
   throw new Test262Error();
 }

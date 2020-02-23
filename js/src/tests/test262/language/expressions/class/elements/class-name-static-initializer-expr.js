@@ -17,7 +17,6 @@
 
 
 
-
 var className;
 
 var expr = class C {

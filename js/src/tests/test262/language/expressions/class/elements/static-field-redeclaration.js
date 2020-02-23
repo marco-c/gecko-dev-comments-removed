@@ -56,7 +56,6 @@
 
 
 
-
 var C = class {
   static f = 'test';
   static f = this.f + '262';
