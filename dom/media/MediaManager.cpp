@@ -2186,9 +2186,17 @@ void MediaManager::DeviceListChanged() {
                 continue;
               }
               
+              
+              
+              
+              
+              nsTArray<RefPtr<GetUserMediaWindowListener>> stopListeners;
               for (auto iter = mActiveWindows.Iter(); !iter.Done();
                    iter.Next()) {
-                iter.UserData()->StopRawID(id);
+                stopListeners.AppendElement(iter.UserData());
+              }
+              for (auto& l : stopListeners) {
+                l->StopRawID(id);
               }
             }
             mDeviceIDs = deviceIDs;
