@@ -53,8 +53,10 @@ class TestClient(unittest.TestCase):
         self.assertEqual(len(os.listdir(download_dir)), num_elmts + 2)
 
         
-        response_calls = len(responses.calls)
-        self.assertEqual(response_calls, 2)
+        self.assertEqual(len(responses.calls), 2)
+
+        
+        responses.calls.reset()
 
         
         get_profile(self.target, "win64", "settled", "default")
@@ -63,7 +65,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(len(os.listdir(download_dir)), num_elmts + 2)
 
         
-        self.assertEqual(len(responses.calls), response_calls + 1)
+        self.assertEqual(len(responses.calls), 1)
 
 
 if __name__ == "__main__":
