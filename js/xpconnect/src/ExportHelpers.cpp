@@ -10,11 +10,14 @@
 #include "jsfriendapi.h"
 #include "js/Proxy.h"
 #include "js/Wrapper.h"
+#include "mozilla/ErrorResult.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/BlobBinding.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FileListBinding.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
+#include "nsContentUtils.h"
 #include "nsGlobalWindow.h"
 #include "nsJSUtils.h"
 
@@ -275,6 +278,62 @@ static bool CheckSameOriginArg(JSContext* cx, FunctionForwarderOptions& options,
   return false;
 }
 
+
+
+
+static void MaybeSanitizeException(JSContext* cx,
+                                   JS::Handle<JSObject*> unwrappedFun) {
+  
+  
+  nsIPrincipal* callerPrincipal = nsContentUtils::SubjectPrincipal(cx);
+
+  
+  
+  {  
+    JSAutoRealm ar(cx, unwrappedFun);
+    JS::Rooted<JS::Value> exn(cx);
+    
+    
+    
+    
+    
+    if (!JS_GetPendingException(cx, &exn)) {
+      JS_ClearPendingException(cx);
+      return;
+    }
+
+    
+    
+    if (!exn.isObject() ||
+        callerPrincipal->Subsumes(nsContentUtils::ObjectPrincipal(
+            js::UncheckedUnwrap(&exn.toObject())))) {
+      
+      return;
+    }
+
+    
+    
+    JS::Rooted<JSObject*> exnStack(cx, JS::GetPendingExceptionStack(cx));
+    JS_ClearPendingException(cx);
+    {  
+      AutoJSAPI jsapi;
+      if (jsapi.Init(unwrappedFun)) {
+        JS::SetPendingExceptionAndStack(cx, exn, exnStack);
+      }
+      
+
+      
+      
+    }
+  }
+
+  
+  ErrorResult rv;
+  rv.ThrowInvalidStateError("An exception was thrown");
+  
+  Unused << rv.MaybeSetPendingException(cx);
+}
+
 static bool FunctionForwarder(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -299,6 +358,7 @@ static bool FunctionForwarder(JSContext* cx, unsigned argc, Value* vp) {
     thisVal.setObject(*thisObject);
   }
 
+  bool ok = true;
   {
     
     
@@ -323,15 +383,20 @@ static bool FunctionForwarder(JSContext* cx, unsigned argc, Value* vp) {
     RootedValue fval(cx, ObjectValue(*unwrappedFun));
     if (args.isConstructing()) {
       RootedObject obj(cx);
-      if (!JS::Construct(cx, fval, args, &obj)) {
-        return false;
+      ok = JS::Construct(cx, fval, args, &obj);
+      if (ok) {
+        args.rval().setObject(*obj);
       }
-      args.rval().setObject(*obj);
     } else {
-      if (!JS::Call(cx, thisVal, fval, args, args.rval())) {
-        return false;
-      }
+      ok = JS::Call(cx, thisVal, fval, args, args.rval());
     }
+  }
+
+  
+  
+  if (!ok) {
+    MaybeSanitizeException(cx, unwrappedFun);
+    return false;
   }
 
   
