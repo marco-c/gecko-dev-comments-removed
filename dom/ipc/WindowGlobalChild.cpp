@@ -252,13 +252,19 @@ void WindowGlobalChild::Destroy() {
 }
 
 mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameLocal(
-    dom::BrowsingContext* aFrameContext, uint64_t aPendingSwitchId) {
+    const MaybeDiscarded<dom::BrowsingContext>& aFrameContext,
+    uint64_t aPendingSwitchId) {
   MOZ_DIAGNOSTIC_ASSERT(XRE_IsContentProcess());
 
-  MOZ_LOG(aFrameContext->GetLog(), LogLevel::Debug,
-          ("RecvMakeFrameLocal ID=%" PRIx64, aFrameContext->Id()));
+  MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Debug,
+          ("RecvMakeFrameLocal ID=%" PRIx64, aFrameContext.ContextId()));
 
-  RefPtr<Element> embedderElt = aFrameContext->GetEmbedderElement();
+  if (NS_WARN_IF(aFrameContext.IsNullOrDiscarded())) {
+    return IPC_OK();
+  }
+  dom::BrowsingContext* frameContext = aFrameContext.get();
+
+  RefPtr<Element> embedderElt = frameContext->GetEmbedderElement();
   if (NS_WARN_IF(!embedderElt)) {
     return IPC_OK();
   }
@@ -279,28 +285,42 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameLocal(
 }
 
 mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameRemote(
-    dom::BrowsingContext* aFrameContext,
+    const MaybeDiscarded<dom::BrowsingContext>& aFrameContext,
     ManagedEndpoint<PBrowserBridgeChild>&& aEndpoint, const TabId& aTabId,
     MakeFrameRemoteResolver&& aResolve) {
   MOZ_DIAGNOSTIC_ASSERT(XRE_IsContentProcess());
 
-  MOZ_LOG(aFrameContext->GetLog(), LogLevel::Debug,
-          ("RecvMakeFrameRemote ID=%" PRIx64, aFrameContext->Id()));
+  MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Debug,
+          ("RecvMakeFrameRemote ID=%" PRIx64, aFrameContext.ContextId()));
 
   
   aResolve(true);
 
   
   
+  
+  RefPtr<dom::BrowsingContext> frameContext;
+  if (!aFrameContext.IsDiscarded()) {
+    frameContext = aFrameContext.get();
+  }
+
+  
+  
   RefPtr<BrowserBridgeChild> bridge =
-      new BrowserBridgeChild(aFrameContext, aTabId);
+      new BrowserBridgeChild(frameContext, aTabId);
   RefPtr<BrowserChild> manager = GetBrowserChild();
   if (NS_WARN_IF(
           !manager->BindPBrowserBridgeEndpoint(std::move(aEndpoint), bridge))) {
     return IPC_OK();
   }
 
-  RefPtr<Element> embedderElt = aFrameContext->GetEmbedderElement();
+  
+  if (NS_WARN_IF(aFrameContext.IsNullOrDiscarded())) {
+    BrowserBridgeChild::Send__delete__(bridge);
+    return IPC_OK();
+  }
+
+  RefPtr<Element> embedderElt = frameContext->GetEmbedderElement();
   if (NS_WARN_IF(!embedderElt)) {
     BrowserBridgeChild::Send__delete__(bridge);
     return IPC_OK();
