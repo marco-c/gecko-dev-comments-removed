@@ -25,7 +25,7 @@ class FileReaderSync final {
 
  private:
   
-  ~FileReaderSync() {}
+  ~FileReaderSync() = default;
 
   nsresult ConvertStream(nsIInputStream* aStream, const char* aCharset,
                          nsAString& aResult);

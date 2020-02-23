@@ -334,7 +334,7 @@ class ReadReadyRunnable final : public WorkerSyncRunnable {
   }
 
  private:
-  ~ReadReadyRunnable() {}
+  ~ReadReadyRunnable() = default;
 };
 
 
@@ -355,7 +355,7 @@ class ReadCallback final : public nsIInputStreamCallback {
   }
 
  private:
-  ~ReadCallback() {}
+  ~ReadCallback() = default;
 
   
   WorkerPrivate* mWorkerPrivate;

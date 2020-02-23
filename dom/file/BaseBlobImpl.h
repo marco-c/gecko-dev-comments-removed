@@ -147,7 +147,7 @@ class BaseBlobImpl : public BlobImpl {
   }
 
  protected:
-  virtual ~BaseBlobImpl() {}
+  virtual ~BaseBlobImpl() = default;
 
   
 
