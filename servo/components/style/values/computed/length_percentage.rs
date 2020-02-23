@@ -552,6 +552,7 @@ impl<'de> Deserialize<'de> for LengthPercentage {
 
 #[derive(Clone, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize, ToAnimatedZero, ToCss, ToResolvedValue)]
 #[allow(missing_docs)]
+#[repr(u8)]
 pub enum CalcLengthPercentageLeaf {
     Length(Length),
     Percentage(Percentage),
