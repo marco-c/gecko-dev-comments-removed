@@ -300,6 +300,7 @@ impl FrameBuilder {
                 global_device_pixel_scale,
                 PrimitiveVisibilityMask::all(),
                 None,
+                None,
             )
         );
 
@@ -374,6 +375,12 @@ impl FrameBuilder {
                 &visibility_context,
                 &mut visibility_state,
             );
+
+            
+            
+            if !visibility_state.retained_tiles.caches.is_empty() {
+              visibility_state.composite_state.dirty_rects_are_valid = false;
+            }
 
             
             
@@ -918,10 +925,15 @@ pub fn build_render_pass(
                             
                             
                             
-                            let scissor_rect  = match render_tasks[task_id].kind {
-                                RenderTaskKind::Picture(ref info) => info.scissor_rect,
+                            let (scissor_rect, valid_rect)  = match render_tasks[task_id].kind {
+                                RenderTaskKind::Picture(ref info) => {
+                                    (
+                                        info.scissor_rect.expect("bug: must be set for cache tasks"),
+                                        info.valid_rect.expect("bug: must be set for cache tasks"),
+                                    )
+                                }
                                 _ => unreachable!(),
-                            }.expect("bug: dirty rect must be set for picture cache tasks");
+                            };
                             let mut batch_containers = Vec::new();
                             let mut alpha_batch_container = AlphaBatchContainer::new(Some(scissor_rect));
                             batcher.build(
@@ -937,6 +949,7 @@ pub fn build_render_pass(
                                 clear_color,
                                 alpha_batch_container,
                                 dirty_rect: scissor_rect,
+                                valid_rect,
                             };
 
                             picture_cache.push(target);
