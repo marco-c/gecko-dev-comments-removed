@@ -49,6 +49,11 @@ def _run_worker(config, paths, **lintargs):
     if SHUTDOWN:
         return result
 
+    
+    
+    if os.environ.get('CODE_REVIEW') == '1' and config.get('code_review_warnings'):
+        lintargs['show_warnings'] = True
+
     func = supported_types[config['type']]
     start_time = time.time()
     try:
