@@ -253,7 +253,7 @@ void WeakRefMap::sweep() {
     
     
     if (JS::GCPolicy<HeapPtrObject>::needsSweep(&e.front().mutableKey())) {
-      for (HeapPtrObject& obj : e.front().value()) {
+      for (JSObject* obj : e.front().value()) {
         obj = UncheckedUnwrapWithoutExpose(obj);
         if (!obj->is<WeakRefObject>()) {
           MOZ_ASSERT(JS_IsDeadWrapper(obj));
