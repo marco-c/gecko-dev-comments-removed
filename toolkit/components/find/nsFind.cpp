@@ -243,6 +243,10 @@ struct nsFind::State final {
   
   void Initialize();
 
+  static bool ValidTextNode(const nsINode& aNode) {
+    return aNode.IsText() && !SkipNode(aNode.AsText());
+  }
+
   const bool mFindBackward;
 
   
@@ -265,15 +269,7 @@ void nsFind::State::Advance() {
     nsIContent* current =
         mFindBackward ? mIterator.GetPrev() : mIterator.GetNext();
 
-    if (!current) {
-      return;
-    }
-
-    if (!current->IsContent() || SkipNode(current->AsContent())) {
-      continue;
-    }
-
-    if (current->IsText()) {
+    if (!current || ValidTextNode(*current)) {
       return;
     }
   }
@@ -284,11 +280,23 @@ void nsFind::State::Initialize() {
   mInitialized = true;
   mIterOffset = mFindBackward ? -1 : 0;
 
+  nsINode* container = mFindBackward ? mStartPoint.GetStartContainer()
+                                     : mStartPoint.GetEndContainer();
+
   
-  nsINode* beginning = mFindBackward ? mStartPoint.GetEndContainer()
-                                     : mStartPoint.GetStartContainer();
-  if (beginning && beginning->IsContent()) {
-    mIterator.Seek(*beginning->AsContent());
+  nsIContent* beginning = mFindBackward ? mStartPoint.GetChildAtStartOffset()
+                                        : mStartPoint.GetChildAtEndOffset();
+  if (beginning) {
+    mIterator.Seek(*beginning);
+    
+    
+    
+    if (mFindBackward) {
+      mIterator.GetPrevSkippingChildren();
+    }
+  } else if (container && container->IsContent()) {
+    
+    mIterator.Seek(*container->AsContent());
   }
 
   nsINode* current = mIterator.GetCurrent();
@@ -296,19 +304,22 @@ void nsFind::State::Initialize() {
     return;
   }
 
-  if (!current->IsText() || SkipNode(current->AsText())) {
+  if (!ValidTextNode(*current)) {
     Advance();
-    return;
+    current = mIterator.GetCurrent();
+    if (!current) {
+      return;
+    }
   }
 
   mLastBlockParent = GetBlockParent(*current->AsText());
 
-  if (current != beginning) {
+  if (current != container) {
     return;
   }
 
   mIterOffset =
-      mFindBackward ? mStartPoint.EndOffset() : mStartPoint.StartOffset();
+      mFindBackward ? mStartPoint.StartOffset() : mStartPoint.EndOffset();
 }
 
 const nsTextFragment* nsFind::State::GetNextNonEmptyTextFragmentInSameBlock() {
