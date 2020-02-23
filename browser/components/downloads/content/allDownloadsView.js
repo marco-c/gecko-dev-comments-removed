@@ -206,6 +206,7 @@ function DownloadsPlacesView(aRichListBox, aActive = true) {
   
   this._initiallySelectedElement = null;
   this._downloadsData = DownloadsCommon.getData(window.opener || window, true);
+  this._waitingForInitialData = true;
   this._downloadsData.addView(this);
 
   
@@ -379,14 +380,10 @@ DownloadsPlacesView.prototype = {
       if (firstDownloadElement != this._initiallySelectedElement) {
         
         
-        
-        
         firstDownloadElement._shell.ensureActive();
-        Services.tm.dispatchToMainThread(() => {
-          this._richlistbox.selectedItem = firstDownloadElement;
-          this._richlistbox.currentItem = firstDownloadElement;
-          this._initiallySelectedElement = firstDownloadElement;
-        });
+        this._richlistbox.selectedItem = firstDownloadElement;
+        this._richlistbox.currentItem = firstDownloadElement;
+        this._initiallySelectedElement = firstDownloadElement;
       }
     }
   },
@@ -419,6 +416,12 @@ DownloadsPlacesView.prototype = {
     this._ensureInitialSelection();
     this._ensureVisibleElementsAreActive();
     goUpdateDownloadCommands();
+    if (this._waitingForInitialData) {
+      this._waitingForInitialData = false;
+      this._richlistbox.dispatchEvent(
+        new CustomEvent("InitialDownloadsLoaded")
+      );
+    }
   },
 
   _prependBatchFragment() {
