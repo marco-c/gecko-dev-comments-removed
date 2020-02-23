@@ -759,6 +759,52 @@ bool DebugAPI::hasDebuggerStatementHook(GlobalObject* global) {
   return Debugger::hasLiveHook(global, Debugger::OnDebuggerStatement);
 }
 
+template <typename HookIsEnabledFun >
+bool DebuggerList<HookIsEnabledFun>::init(JSContext* cx) {
+  
+  
+  
+  Handle<GlobalObject*> global = cx->global();
+  for (Realm::DebuggerVectorEntry& entry : global->getDebuggers()) {
+    Debugger* dbg = entry.dbg;
+    if (hookIsEnabled(dbg)) {
+      if (!debuggers.append(ObjectValue(*dbg->toJSObject()))) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+template <typename HookIsEnabledFun >
+template <typename FireHookFun >
+ResumeMode DebuggerList<HookIsEnabledFun>::dispatchHook(JSContext* cx,
+                                                        FireHookFun fireHook) {
+  
+  
+  
+  JS::AutoDebuggerJobQueueInterruption adjqi;
+  if (!adjqi.init(cx)) {
+    return ResumeMode::Terminate;
+  }
+
+  
+  
+  Handle<GlobalObject*> global = cx->global();
+  for (Value* p = debuggers.begin(); p != debuggers.end(); p++) {
+    Debugger* dbg = Debugger::fromJSObject(&p->toObject());
+    EnterDebuggeeNoExecute nx(cx, *dbg, adjqi);
+    if (dbg->debuggees.has(global) && hookIsEnabled(dbg)) {
+      ResumeMode resumeMode = fireHook(dbg);
+      adjqi.runJobs();
+      if (resumeMode != ResumeMode::Continue) {
+        return resumeMode;
+      }
+    }
+  }
+  return ResumeMode::Continue;
+}
+
 JSObject* Debugger::getHook(Hook hook) const {
   MOZ_ASSERT(hook >= 0 && hook < HookCount);
   const Value& v = object->getReservedSlot(JSSLOT_DEBUG_HOOK_START + hook);
@@ -836,14 +882,35 @@ bool DebugAPI::slowPathOnResumeFrame(JSContext* cx, AbstractFramePtr frame) {
 NativeResumeMode DebugAPI::slowPathOnNativeCall(JSContext* cx,
                                                 const CallArgs& args,
                                                 CallReason reason) {
+  DebuggerList debuggerList(cx, [cx](Debugger* dbg) -> bool {
+    return dbg == cx->insideDebuggerEvaluationWithOnNativeCallHook &&
+           dbg->getHook(Debugger::OnNativeCall);
+  });
+
+  if (!debuggerList.init(cx)) {
+    return NativeResumeMode::Abort;
+  }
+
+  if (debuggerList.empty()) {
+    return NativeResumeMode::Continue;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  JSScript* script = cx->currentScript();
+  if (script && script->selfHosted()) {
+    return NativeResumeMode::Continue;
+  }
+
   RootedValue rval(cx);
-  ResumeMode resumeMode = Debugger::dispatchHook(
-      cx,
-      [cx](Debugger* dbg) -> bool {
-        return dbg == cx->insideDebuggerEvaluationWithOnNativeCallHook &&
-               dbg->getHook(Debugger::OnNativeCall);
-      },
-      [&](Debugger* dbg) -> ResumeMode {
+  ResumeMode resumeMode =
+      debuggerList.dispatchHook(cx, [&](Debugger* dbg) -> ResumeMode {
         return dbg->fireNativeCall(cx, args, reason, &rval);
       });
 
@@ -1118,17 +1185,40 @@ bool DebugAPI::slowPathOnExceptionUnwind(JSContext* cx,
     return true;
   }
 
+  DebuggerList debuggerList(cx, [](Debugger* dbg) -> bool {
+    return dbg->getHook(Debugger::OnExceptionUnwind);
+  });
+
+  if (!debuggerList.init(cx)) {
+    return false;
+  }
+
+  if (debuggerList.empty()) {
+    return true;
+  }
+
+  
+  
+  
+  RootedValue exc(cx);
+  RootedSavedFrame stack(cx, cx->getPendingExceptionStack());
+  if (!cx->getPendingException(&exc)) {
+    return false;
+  }
+  cx->clearPendingException();
+
   RootedValue rval(cx);
-  ResumeMode resumeMode = Debugger::dispatchHook(
-      cx,
-      [](Debugger* dbg) -> bool {
-        return dbg->getHook(Debugger::OnExceptionUnwind);
-      },
-      [&](Debugger* dbg) -> ResumeMode {
-        return dbg->fireExceptionUnwind(cx, &rval);
+  ResumeMode resumeMode =
+      debuggerList.dispatchHook(cx, [&](Debugger* dbg) -> ResumeMode {
+        return dbg->fireExceptionUnwind(cx, exc, &rval);
       });
 
-  return ApplyFrameResumeMode(cx, frame, resumeMode, rval);
+  if (!ApplyFrameResumeMode(cx, frame, resumeMode, rval)) {
+    return false;
+  }
+
+  cx->setPendingException(exc, stack);
+  return true;
 }
 
 
@@ -2090,17 +2180,11 @@ ResumeMode Debugger::fireDebuggerStatement(JSContext* cx,
                               vp);
 }
 
-ResumeMode Debugger::fireExceptionUnwind(JSContext* cx, MutableHandleValue vp) {
+ResumeMode Debugger::fireExceptionUnwind(JSContext* cx, HandleValue exc,
+                                         MutableHandleValue vp) {
   RootedObject hook(cx, getHook(OnExceptionUnwind));
   MOZ_ASSERT(hook);
   MOZ_ASSERT(hook->isCallable());
-
-  RootedValue exc(cx);
-  RootedSavedFrame stack(cx, cx->getPendingExceptionStack());
-  if (!cx->getPendingException(&exc)) {
-    return ResumeMode::Terminate;
-  }
-  cx->clearPendingException();
 
   Maybe<AutoRealm> ar;
   ar.emplace(cx, object);
@@ -2118,12 +2202,8 @@ ResumeMode Debugger::fireExceptionUnwind(JSContext* cx, MutableHandleValue vp) {
   RootedValue fval(cx, ObjectValue(*hook));
   RootedValue rv(cx);
   bool ok = js::Call(cx, fval, object, scriptFrame, wrappedExc, &rv);
-  ResumeMode resumeMode =
-      processHandlerResult(ar, ok, rv, iter.abstractFramePtr(), iter.pc(), vp);
-  if (resumeMode == ResumeMode::Continue) {
-    cx->setPendingException(exc, stack);
-  }
-  return resumeMode;
+  return processHandlerResult(ar, ok, rv, iter.abstractFramePtr(), iter.pc(),
+                              vp);
 }
 
 ResumeMode Debugger::fireEnterFrame(JSContext* cx, MutableHandleValue vp) {
@@ -2161,19 +2241,6 @@ ResumeMode Debugger::fireEnterFrame(JSContext* cx, MutableHandleValue vp) {
 
 ResumeMode Debugger::fireNativeCall(JSContext* cx, const CallArgs& args,
                                     CallReason reason, MutableHandleValue vp) {
-  
-  
-  
-  
-  
-  
-  
-  
-  JSScript* script = cx->currentScript();
-  if (script && script->selfHosted()) {
-    return ResumeMode::Continue;
-  }
-
   RootedObject hook(cx, getHook(OnNativeCall));
   MOZ_ASSERT(hook);
   MOZ_ASSERT(hook->isCallable());
@@ -2265,45 +2332,13 @@ template <typename HookIsEnabledFun ,
 
 ResumeMode Debugger::dispatchHook(JSContext* cx, HookIsEnabledFun hookIsEnabled,
                                   FireHookFun fireHook) {
-  
-  
-  
-  
-  
-  
-  RootedValueVector triggered(cx);
-  Handle<GlobalObject*> global = cx->global();
-  for (Realm::DebuggerVectorEntry& entry : global->getDebuggers()) {
-    Debugger* dbg = entry.dbg;
-    if (hookIsEnabled(dbg)) {
-      if (!triggered.append(ObjectValue(*dbg->toJSObject()))) {
-        return ResumeMode::Terminate;
-      }
-    }
-  }
+  DebuggerList<HookIsEnabledFun> debuggerList(cx, hookIsEnabled);
 
-  
-  
-  
-  JS::AutoDebuggerJobQueueInterruption adjqi;
-  if (!adjqi.init(cx)) {
+  if (!debuggerList.init(cx)) {
     return ResumeMode::Terminate;
   }
 
-  
-  
-  for (Value* p = triggered.begin(); p != triggered.end(); p++) {
-    Debugger* dbg = Debugger::fromJSObject(&p->toObject());
-    EnterDebuggeeNoExecute nx(cx, *dbg, adjqi);
-    if (dbg->debuggees.has(global) && hookIsEnabled(dbg)) {
-      ResumeMode resumeMode = fireHook(dbg);
-      adjqi.runJobs();
-      if (resumeMode != ResumeMode::Continue) {
-        return resumeMode;
-      }
-    }
-  }
-  return ResumeMode::Continue;
+  return debuggerList.dispatchHook(cx, fireHook);
 }
 
 
