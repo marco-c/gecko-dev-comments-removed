@@ -20,6 +20,7 @@ const INITIAL_STATE = {
   App: {
     
     initialized: false,
+    locale: "",
   },
   ASRouter: { initialized: false },
   Snippets: { initialized: false },
