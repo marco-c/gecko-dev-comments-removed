@@ -46,35 +46,6 @@ function waitForTransferComplete() {
 
 
 
-function rightClickVideo(browser) {
-  let frame_script = () => {
-    let utils = content.windowUtils;
-
-    let document = content.document;
-    let video = document.getElementById("video1");
-    let rect = video.getBoundingClientRect();
-
-    
-    let left = rect.left + rect.width / 2;
-    let top = rect.top + rect.height / 2;
-
-    utils.sendMouseEvent(
-      "contextmenu",
-      left,
-      top,
-      2 ,
-      1 ,
-      0 
-    );
-  };
-  let mm = browser.messageManager;
-  mm.loadFrameScript("data:,(" + frame_script.toString() + ")();", true);
-}
-
-
-
-
-
 
 add_task(async function() {
   let MockFilePicker = SpecialPowers.MockFilePicker;
@@ -111,7 +82,11 @@ add_task(async function() {
   let popupPromise = promisePopupShown(context);
 
   info("Synthesizing right-click on video element");
-  rightClickVideo(browser);
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    "#video1",
+    { type: "contextmenu", button: 2 },
+    browser
+  );
   info("Waiting for popup to fire popupshown.");
   await popupPromise;
   info("Popup fired popupshown");
