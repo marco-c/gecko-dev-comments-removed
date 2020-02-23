@@ -39,7 +39,7 @@ class InputEvent : public UIEvent {
   bool IsComposing();
 
  protected:
-  ~InputEvent() {}
+  ~InputEvent() = default;
 
   
   

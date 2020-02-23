@@ -51,7 +51,7 @@ class PointerEvent : public MouseEvent {
   void GetCoalescedEvents(nsTArray<RefPtr<PointerEvent>>& aPointerEvents);
 
  protected:
-  ~PointerEvent() {}
+  ~PointerEvent() = default;
 
  private:
   
