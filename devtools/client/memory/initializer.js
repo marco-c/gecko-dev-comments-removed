@@ -23,7 +23,7 @@ let root, store, unsubscribe;
 
 const initialize = async function() {
   
-  const { gFront, gToolbox, gHeapAnalysesClient } = window;
+  const { gToolbox, gHeapAnalysesClient } = window;
 
   root = document.querySelector("#app");
   store = Store();
@@ -36,10 +36,11 @@ const initialize = async function() {
   unsubscribe = store.subscribe(onStateChange);
 
   
-  store.dispatch(updateMemoryFront(gFront));
-
-  
   window.gStore = store;
+};
+
+const updateFront = front => {
+  store.dispatch(updateMemoryFront(front));
 };
 
 const destroy = function() {
@@ -76,4 +77,4 @@ function onStateChange() {
   isHighlighted = isRecording;
 }
 
-module.exports = { initialize, destroy };
+module.exports = { initialize, updateFront, destroy };
