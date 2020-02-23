@@ -230,20 +230,18 @@ class Accessible extends Component {
       return;
     }
 
-    const accessibilityWalkerFront = accessibleFront.parent();
-    if (!accessibilityWalkerFront) {
+    const accessibleWalkerFront = accessibleFront.parent();
+    if (!accessibleWalkerFront) {
       return;
     }
 
-    accessibilityWalkerFront
-      .highlightAccessible(accessibleFront)
-      .catch(error => {
-        
-        
-        if (this.props.toolbox) {
-          console.error(error);
-        }
-      });
+    accessibleWalkerFront.highlightAccessible(accessibleFront).catch(error => {
+      
+      
+      if (this.props.toolbox) {
+        console.error(error);
+      }
+    });
   }
 
   hideAccessibleHighlighter(accessibleFront) {
@@ -252,12 +250,12 @@ class Accessible extends Component {
       return;
     }
 
-    const accessibilityWalkerFront = accessibleFront.parent();
-    if (!accessibilityWalkerFront) {
+    const accessibleWalkerFront = accessibleFront.parent();
+    if (!accessibleWalkerFront) {
       return;
     }
 
-    accessibilityWalkerFront.unhighlight().catch(error => {
+    accessibleWalkerFront.unhighlight().catch(error => {
       
       
       if (this.props.toolbox) {
