@@ -54,7 +54,19 @@ void OSPreferences::Refresh() {
 
 
 bool OSPreferences::CanonicalizeLanguageTag(nsCString& aLoc) {
-  return LocaleService::CanonicalizeLanguageId(aLoc);
+  char langTag[512];
+
+  UErrorCode status = U_ZERO_ERROR;
+
+  int32_t langTagLen = uloc_toLanguageTag(aLoc.get(), langTag,
+                                          sizeof(langTag) - 1, false, &status);
+
+  if (U_FAILURE(status)) {
+    return false;
+  }
+
+  aLoc.Assign(langTag, langTagLen);
+  return true;
 }
 
 
@@ -279,9 +291,7 @@ OSPreferences::GetRegionalPrefsLocales(nsTArray<nsCString>& aRetVal) {
     return NS_OK;
   }
 
-  
-  
-  return GetSystemLocales(aRetVal);
+  return NS_ERROR_FAILURE;
 }
 
 static OSPreferences::DateTimeFormatStyle ToDateTimeFormatStyle(
