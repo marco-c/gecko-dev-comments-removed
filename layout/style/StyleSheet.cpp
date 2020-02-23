@@ -596,7 +596,7 @@ int32_t StyleSheet::AddRule(const nsAString& aSelector, const nsAString& aBlock,
 }
 
 
-already_AddRefed<dom::Promise> StyleSheet::Replace(const nsAString& aText,
+already_AddRefed<dom::Promise> StyleSheet::Replace(const nsACString& aText,
                                                    ErrorResult& aRv) {
   
   
