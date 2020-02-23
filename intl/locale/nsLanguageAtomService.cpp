@@ -175,7 +175,7 @@ nsStaticAtom* nsLanguageAtomService::GetUncachedLanguageGroup(
     if (loc.IsWellFormed()) {
       
       if (loc.GetScript().IsEmpty()) {
-        loc.AddLikelySubtags();
+        loc.Maximize();
       }
       
       

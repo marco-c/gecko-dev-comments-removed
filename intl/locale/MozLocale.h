@@ -112,7 +112,7 @@ class Locale {
 
 
 
-  bool AddLikelySubtags();
+  bool Maximize();
 
   
 
