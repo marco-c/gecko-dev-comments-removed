@@ -1,10 +1,10 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 "use strict";
 
-// React & Redux
+
 const { Component } = require("devtools/client/shared/vendor/react");
 const { createFactory } = require("devtools/client/shared/vendor/react");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
@@ -12,7 +12,7 @@ const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const actions = require("devtools/client/webconsole/actions/index");
 const { l10n } = require("devtools/client/webconsole/utils/messages");
 
-// Additional Components
+
 const MenuButton = createFactory(
   require("devtools/client/shared/components/menu/MenuButton")
 );
@@ -67,7 +67,7 @@ class ConsoleSettings extends Component {
 
     const items = [];
 
-    // Persist Logs
+    
     if (!hidePersistLogsCheckbox) {
       items.push(
         MenuItem({
@@ -86,7 +86,7 @@ class ConsoleSettings extends Component {
       );
     }
 
-    // Show Content Messages
+    
     if (!hideShowContentMessagesCheckbox) {
       items.push(
         MenuItem({
@@ -103,7 +103,7 @@ class ConsoleSettings extends Component {
       );
     }
 
-    // Timestamps
+    
     items.push(
       MenuItem({
         key: "webconsole-console-settings-menu-item-timestamps",
@@ -119,7 +119,7 @@ class ConsoleSettings extends Component {
       })
     );
 
-    // Warning Groups
+    
     items.push(
       MenuItem({
         key: "webconsole-console-settings-menu-item-warning-groups",
@@ -136,7 +136,7 @@ class ConsoleSettings extends Component {
       })
     );
 
-    // autocomplete
+    
     items.push(
       MenuItem({
         key: "webconsole-console-settings-menu-item-autocomplete",
@@ -153,7 +153,7 @@ class ConsoleSettings extends Component {
       })
     );
 
-    // Eager Evaluation
+    
     if (AppConstants.NIGHTLY_BUILD) {
       items.push(
         MenuItem({
@@ -162,10 +162,10 @@ class ConsoleSettings extends Component {
           className:
             "menu-item webconsole-console-settings-menu-item-eager-evaluation",
           label: l10n.getStr(
-            "webconsole.console.settings.menu.item.eagerEvaluation.label"
+            "webconsole.console.settings.menu.item.instantEvaluation.label"
           ),
           tooltip: l10n.getStr(
-            "webconsole.console.settings.menu.item.eagerEvaluation.tooltip"
+            "webconsole.console.settings.menu.item.instantEvaluation.tooltip"
           ),
           onClick: () => dispatch(actions.eagerEvaluationToggle()),
         })
@@ -187,8 +187,8 @@ class ConsoleSettings extends Component {
         className: "devtools-button webconsole-console-settings-menu-button",
         title: l10n.getStr("webconsole.console.settings.menu.button.tooltip"),
       },
-      // We pass the children in a function so we don't require the MenuItem and MenuList
-      // components until we need to display them (i.e. when the button is clicked).
+      
+      
       () => this.renderMenuItems()
     );
   }
