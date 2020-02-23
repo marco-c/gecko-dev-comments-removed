@@ -1528,55 +1528,51 @@ bool js::ParseResumptionValue(JSContext* cx, HandleValue rval,
   return true;
 }
 
-static bool GetThisValueForCheck(JSContext* cx, AbstractFramePtr frame,
-                                 jsbytecode* pc, MutableHandleValue thisv,
-                                 Maybe<HandleValue>& maybeThisv) {
-  if (frame.debuggerNeedsCheckPrimitiveReturn()) {
-    {
-      AutoRealm ar(cx, frame.environmentChain());
-      if (!GetThisValueForDebuggerFrameMaybeOptimizedOut(cx, frame, pc,
-                                                         thisv)) {
-        return false;
-      }
-    }
+static bool CheckResumptionValue(JSContext* cx, AbstractFramePtr frame,
+                                 jsbytecode* pc, ResumeMode resumeMode,
+                                 MutableHandleValue vp) {
+  
+  
+  
+  
+  if (resumeMode != ResumeMode::Return || !frame) {
+    return true;
+  }
 
-    if (!cx->compartment()->wrap(cx, thisv)) {
+  
+  
+  
+  if (frame.debuggerNeedsCheckPrimitiveReturn() && vp.isPrimitive()) {
+    if (!vp.isUndefined()) {
+      ReportValueError(cx, JSMSG_BAD_DERIVED_RETURN, JSDVG_IGNORE_STACK, vp,
+                       nullptr);
       return false;
     }
 
-    MOZ_ASSERT_IF(thisv.isMagic(), thisv.isMagic(JS_UNINITIALIZED_LEXICAL));
-    maybeThisv.emplace(HandleValue(thisv));
-  }
-
-  return true;
-}
-
-static bool CheckResumptionValue(JSContext* cx, AbstractFramePtr frame,
-                                 const Maybe<HandleValue>& maybeThisv,
-                                 ResumeMode resumeMode, MutableHandleValue vp) {
-  if (maybeThisv.isSome()) {
-    const HandleValue& thisv = maybeThisv.ref();
-    if (resumeMode == ResumeMode::Return && vp.isPrimitive()) {
-      
-      if (vp.isUndefined()) {
-        if (thisv.isMagic(JS_UNINITIALIZED_LEXICAL)) {
-          return ThrowUninitializedThis(cx);
-        }
-
-        vp.set(thisv);
-      } else {
-        ReportValueError(cx, JSMSG_BAD_DERIVED_RETURN, JSDVG_IGNORE_STACK, vp,
-                         nullptr);
+    RootedValue thisv(cx);
+    {
+      AutoRealm ar(cx, frame.environmentChain());
+      if (!GetThisValueForDebuggerFrameMaybeOptimizedOut(cx, frame, pc,
+                                                         &thisv)) {
         return false;
       }
     }
+
+    if (thisv.isMagic(JS_UNINITIALIZED_LEXICAL)) {
+      return ThrowUninitializedThis(cx);
+    }
+    MOZ_ASSERT(!thisv.isMagic());
+
+    if (!cx->compartment()->wrap(cx, &thisv)) {
+      return false;
+    }
+    vp.set(thisv);
   }
 
   
   
   
-  if (resumeMode == ResumeMode::Return && frame && frame.isFunctionFrame() &&
-      frame.callee()->isGenerator()) {
+  if (frame.isFunctionFrame() && frame.callee()->isGenerator()) {
     Rooted<AbstractGeneratorObject*> genObj(cx);
     {
       AutoRealm ar(cx, frame.callee());
@@ -1731,9 +1727,10 @@ void Debugger::reportUncaughtException(Maybe<AutoRealm>& ar) {
   ar.reset();
 }
 
-ResumeMode Debugger::handleUncaughtExceptionHelper(
-    Maybe<AutoRealm>& ar, MutableHandleValue* vp,
-    const Maybe<HandleValue>& thisVForCheck, AbstractFramePtr frame) {
+ResumeMode Debugger::handleUncaughtExceptionHelper(Maybe<AutoRealm>& ar,
+                                                   MutableHandleValue* vp,
+                                                   AbstractFramePtr frame,
+                                                   jsbytecode* pc) {
   JSContext* cx = ar->context();
 
   
@@ -1758,8 +1755,8 @@ ResumeMode Debugger::handleUncaughtExceptionHelper(
             reportUncaughtException(ar);
             return ResumeMode::Terminate;
           }
-          return leaveDebugger(ar, frame, thisVForCheck,
-                               CallUncaughtExceptionHook::No, resumeMode, *vp);
+          return leaveDebugger(ar, frame, pc, CallUncaughtExceptionHook::No,
+                               resumeMode, *vp);
         } else {
           
           
@@ -1777,27 +1774,27 @@ ResumeMode Debugger::handleUncaughtExceptionHelper(
   return ResumeMode::Terminate;
 }
 
-ResumeMode Debugger::handleUncaughtException(
-    Maybe<AutoRealm>& ar, MutableHandleValue vp,
-    const Maybe<HandleValue>& thisVForCheck, AbstractFramePtr frame) {
-  return handleUncaughtExceptionHelper(ar, &vp, thisVForCheck, frame);
+ResumeMode Debugger::handleUncaughtException(Maybe<AutoRealm>& ar,
+                                             MutableHandleValue vp,
+                                             AbstractFramePtr frame,
+                                             jsbytecode* pc) {
+  return handleUncaughtExceptionHelper(ar, &vp, frame, pc);
 }
 
 ResumeMode Debugger::handleUncaughtException(Maybe<AutoRealm>& ar) {
-  return handleUncaughtExceptionHelper(ar, nullptr, mozilla::Nothing(),
-                                       NullFramePtr());
+  return handleUncaughtExceptionHelper(ar, nullptr, NullFramePtr(), nullptr);
 }
 
 ResumeMode Debugger::leaveDebugger(Maybe<AutoRealm>& ar, AbstractFramePtr frame,
-                                   const Maybe<HandleValue>& maybeThisv,
+                                   jsbytecode* pc,
                                    CallUncaughtExceptionHook callHook,
                                    ResumeMode resumeMode,
                                    MutableHandleValue vp) {
   JSContext* cx = ar->context();
   if (!unwrapDebuggeeValue(cx, vp) ||
-      !CheckResumptionValue(cx, frame, maybeThisv, resumeMode, vp)) {
+      !CheckResumptionValue(cx, frame, pc, resumeMode, vp)) {
     if (callHook == CallUncaughtExceptionHook::Yes) {
-      return handleUncaughtException(ar, vp, maybeThisv, frame);
+      return handleUncaughtException(ar, vp, frame, pc);
     }
     reportUncaughtException(ar);
     return ResumeMode::Terminate;
@@ -1817,20 +1814,11 @@ ResumeMode Debugger::processParsedHandlerResult(Maybe<AutoRealm>& ar,
                                                 jsbytecode* pc, bool success,
                                                 ResumeMode resumeMode,
                                                 MutableHandleValue vp) {
-  JSContext* cx = ar->context();
-
-  RootedValue thisv(cx);
-  Maybe<HandleValue> maybeThisv;
-  if (!GetThisValueForCheck(cx, frame, pc, &thisv, maybeThisv)) {
-    ar.reset();
-    return ResumeMode::Terminate;
-  }
-
   if (!success) {
-    return handleUncaughtException(ar, vp, maybeThisv, frame);
+    return handleUncaughtException(ar, vp, frame, pc);
   }
 
-  return leaveDebugger(ar, frame, maybeThisv, CallUncaughtExceptionHook::Yes,
+  return leaveDebugger(ar, frame, pc, CallUncaughtExceptionHook::Yes,
                        resumeMode, vp);
 }
 
@@ -1841,23 +1829,16 @@ ResumeMode Debugger::processHandlerResult(Maybe<AutoRealm>& ar, bool success,
                                           MutableHandleValue vp) {
   JSContext* cx = ar->context();
 
-  RootedValue thisv(cx);
-  Maybe<HandleValue> maybeThisv;
-  if (frame && !GetThisValueForCheck(cx, frame, pc, &thisv, maybeThisv)) {
-    ar.reset();
-    return ResumeMode::Terminate;
-  }
-
   if (!success) {
-    return handleUncaughtException(ar, vp, maybeThisv, frame);
+    return handleUncaughtException(ar, vp, frame, pc);
   }
 
   RootedValue rootRv(cx, rv);
   ResumeMode resumeMode = ResumeMode::Continue;
   if (!ParseResumptionValue(cx, rootRv, resumeMode, vp)) {
-    return handleUncaughtException(ar, vp, maybeThisv, frame);
+    return handleUncaughtException(ar, vp, frame, pc);
   }
-  return leaveDebugger(ar, frame, maybeThisv, CallUncaughtExceptionHook::Yes,
+  return leaveDebugger(ar, frame, pc, CallUncaughtExceptionHook::Yes,
                        resumeMode, vp);
 }
 
