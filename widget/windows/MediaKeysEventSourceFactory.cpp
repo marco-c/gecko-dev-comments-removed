@@ -3,13 +3,13 @@
 
 
 #include "MediaKeysEventSourceFactory.h"
-#include "WindowsSMTCProvider.h"
 
 namespace mozilla {
 namespace widget {
 
 mozilla::dom::MediaControlKeysEventSource* CreateMediaControlKeysEventSource() {
-  return new WindowsSMTCProvider();
+  
+  return nullptr;
 }
 
 }  
