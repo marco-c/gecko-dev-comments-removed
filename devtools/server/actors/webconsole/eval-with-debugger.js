@@ -521,6 +521,10 @@ function ensureSideEffectFreeNatives() {
 }
 
 function nativeHasNoSideEffects(fn) {
+  if (fn.isBoundFunction) {
+    fn = fn.boundTargetFunction;
+  }
+
   
   switch (fn.name) {
     case "toString":
