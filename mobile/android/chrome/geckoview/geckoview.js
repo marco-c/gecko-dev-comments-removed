@@ -125,23 +125,33 @@ var ModuleManager = {
     this._modules.forEach(aCallback, this);
   },
 
-  updateRemoteTypeForURI(aURI) {
-    const currentType = this.browser.remoteType || E10SUtils.NOT_REMOTE;
-    const remoteType = E10SUtils.getRemoteTypeForURI(
+  getActor(aActorName) {
+    return this.browser.browsingContext.currentWindowGlobal.getActor(
+      aActorName
+    );
+  },
+
+  remoteTypeFor(aURI, currentType) {
+    return E10SUtils.getRemoteTypeForURI(
       aURI,
       GeckoViewSettings.useMultiprocess,
        false,
       currentType,
       this.browser.currentURI
     );
+  },
 
-    debug`updateRemoteType: uri=${aURI} currentType=${currentType}
+  shouldLoadInThisProcess(aURI) {
+    const currentType = this.browser.remoteType || E10SUtils.NOT_REMOTE;
+    return currentType === this.remoteTypeFor(aURI, currentType);
+  },
+
+  async updateRemoteAndNavigate(aURI, aLoadOptions, aHistoryIndex = -1) {
+    const currentType = this.browser.remoteType || E10SUtils.NOT_REMOTE;
+    const remoteType = this.remoteTypeFor(aURI, currentType);
+
+    debug`updateRemoteAndNavigate: uri=${aURI} currentType=${currentType}
                              remoteType=${remoteType}`;
-
-    if (currentType === remoteType) {
-      
-      return false;
-    }
 
     if (
       remoteType !== E10SUtils.NOT_REMOTE &&
@@ -152,7 +162,28 @@ var ModuleManager = {
     }
 
     
+    
+    
+    
+    const sessionState = await this.getActor("GeckoViewContent").sendQuery(
+      "CollectSessionState"
+    );
+    const { history } = sessionState;
 
+    
+    
+    if (aHistoryIndex >= 0) {
+      
+      history.index = aHistoryIndex + 1;
+      history.index = Math.max(
+        1,
+        Math.min(history.index, history.entries.length)
+      );
+    } else {
+      sessionState.loadOptions = aLoadOptions;
+    }
+
+    
     let disabledModules = [];
     this.forEach(module => {
       if (module.enabled) {
@@ -196,6 +227,11 @@ var ModuleManager = {
     disabledModules.forEach(module => {
       module.enabled = true;
     });
+
+    this.messageManager.sendAsyncMessage(
+      "GeckoView:RestoreState",
+      sessionState
+    );
 
     this.browser.focus();
     return true;
@@ -543,6 +579,10 @@ function startup() {
       },
     },
   ]);
+
+  
+  
+  window.moduleManager = ModuleManager;
 
   Services.tm.dispatchToMainThread(() => {
     
