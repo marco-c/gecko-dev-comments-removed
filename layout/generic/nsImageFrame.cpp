@@ -182,6 +182,15 @@ bool nsImageFrame::ShouldShowBrokenImageIcon() const {
 
   
   
+  if (auto* image = HTMLImageElement::FromNode(mContent)) {
+    const nsAttrValue* alt = image->GetParsedAttr(nsGkAtoms::alt);
+    if (alt && alt->IsEmptyString()) {
+      return false;
+    }
+  }
+
+  
+  
   if (nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest()) {
     uint32_t imageStatus;
     return NS_SUCCEEDED(currentRequest->GetImageStatus(&imageStatus)) &&
