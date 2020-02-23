@@ -118,7 +118,7 @@ class QuotaManagerService::PendingRequestInfo {
  public:
   explicit PendingRequestInfo(RequestBase* aRequest) : mRequest(aRequest) {}
 
-  virtual ~PendingRequestInfo() {}
+  virtual ~PendingRequestInfo() = default;
 
   RequestBase* GetRequest() const { return mRequest; }
 
@@ -781,12 +781,10 @@ QuotaManagerService::Estimate(nsIPrincipal* aPrincipal,
 }
 
 NS_IMETHODIMP
-QuotaManagerService::ListOrigins(nsIQuotaCallback* aCallback,
-                                 nsIQuotaRequest** _retval) {
+QuotaManagerService::ListOrigins(nsIQuotaRequest** _retval) {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aCallback);
 
-  RefPtr<Request> request = new Request(aCallback);
+  RefPtr<Request> request = new Request();
 
   ListOriginsParams params;
 

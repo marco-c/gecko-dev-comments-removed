@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "ActorsChild.h"
 
@@ -15,9 +15,9 @@ namespace mozilla {
 namespace dom {
 namespace quota {
 
-/*******************************************************************************
- * QuotaChild
- ******************************************************************************/
+
+
+
 
 QuotaChild::QuotaChild(QuotaManagerService* aService)
     : mService(aService)
@@ -48,7 +48,7 @@ void QuotaChild::AssertIsOnOwningThread() const {
   MOZ_ASSERT(current);
 }
 
-#endif  // DEBUG
+#endif  
 
 void QuotaChild::ActorDestroy(ActorDestroyReason aWhy) {
   AssertIsOnOwningThread();
@@ -92,9 +92,9 @@ bool QuotaChild::DeallocPQuotaRequestChild(PQuotaRequestChild* aActor) {
   return true;
 }
 
-/*******************************************************************************
- * QuotaUsageRequestChild
- ******************************************************************************/
+
+
+
 
 QuotaUsageRequestChild::QuotaUsageRequestChild(UsageRequest* aRequest)
     : mRequest(aRequest) {
@@ -104,7 +104,7 @@ QuotaUsageRequestChild::QuotaUsageRequestChild(UsageRequest* aRequest)
 }
 
 QuotaUsageRequestChild::~QuotaUsageRequestChild() {
-  // Can't assert owning thread here because the request is cleared.
+  
 
   MOZ_COUNT_DTOR(quota::QuotaUsageRequestChild);
 }
@@ -116,7 +116,7 @@ void QuotaUsageRequestChild::AssertIsOnOwningThread() const {
   mRequest->AssertIsOnOwningThread();
 }
 
-#endif  // DEBUG
+#endif  
 
 void QuotaUsageRequestChild::HandleResponse(nsresult aResponse) {
   AssertIsOnOwningThread();
@@ -136,20 +136,12 @@ void QuotaUsageRequestChild::HandleResponse(
   if (aResponse.IsEmpty()) {
     variant->SetAsEmptyArray();
   } else {
-    nsTArray<RefPtr<UsageResult>> usageResults;
+    nsTArray<RefPtr<UsageResult>> usageResults(aResponse.Length());
 
-    const uint32_t count = aResponse.Length();
-
-    usageResults.SetCapacity(count);
-
-    for (uint32_t index = 0; index < count; index++) {
-      auto& originUsage = aResponse[index];
-
-      RefPtr<UsageResult> usageResult =
-          new UsageResult(originUsage.origin(), originUsage.persisted(),
-                          originUsage.usage(), originUsage.lastAccessed());
-
-      usageResults.AppendElement(usageResult.forget());
+    for (const auto& originUsage : aResponse) {
+      usageResults.AppendElement(MakeRefPtr<UsageResult>(
+          originUsage.origin(), originUsage.persisted(), originUsage.usage(),
+          originUsage.lastAccessed()));
     }
 
     variant->SetAsArray(nsIDataType::VTYPE_INTERFACE_IS,
@@ -210,9 +202,9 @@ mozilla::ipc::IPCResult QuotaUsageRequestChild::Recv__delete__(
   return IPC_OK();
 }
 
-/*******************************************************************************
- * QuotaRequestChild
- ******************************************************************************/
+
+
+
 
 QuotaRequestChild::QuotaRequestChild(Request* aRequest) : mRequest(aRequest) {
   AssertIsOnOwningThread();
@@ -233,7 +225,7 @@ void QuotaRequestChild::AssertIsOnOwningThread() const {
   mRequest->AssertIsOnOwningThread();
 }
 
-#endif  // DEBUG
+#endif  
 
 void QuotaRequestChild::HandleResponse(nsresult aResponse) {
   AssertIsOnOwningThread();
@@ -285,16 +277,14 @@ void QuotaRequestChild::HandleResponse(const nsTArray<nsCString>& aResponse) {
   if (aResponse.IsEmpty()) {
     variant->SetAsEmptyArray();
   } else {
-    nsTArray<RefPtr<OriginsResult>> originsResults(aResponse.Length());
-    for (auto& origin : aResponse) {
-      RefPtr<OriginsResult> originsResult = new OriginsResult(origin);
+    nsTArray<const char*> stringPointers(aResponse.Length());
 
-      originsResults.AppendElement(originsResult.forget());
+    for (const auto& string : aResponse) {
+      stringPointers.AppendElement(string.get());
     }
 
-    variant->SetAsArray(
-        nsIDataType::VTYPE_INTERFACE_IS, &NS_GET_IID(nsIQuotaOriginsResult),
-        originsResults.Length(), static_cast<void*>(originsResults.Elements()));
+    variant->SetAsArray(nsIDataType::VTYPE_CHAR_STR, nullptr,
+                        stringPointers.Length(), stringPointers.Elements());
   }
 
   mRequest->SetResult(variant);
@@ -348,6 +338,6 @@ mozilla::ipc::IPCResult QuotaRequestChild::Recv__delete__(
   return IPC_OK();
 }
 
-}  // namespace quota
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
+}  
