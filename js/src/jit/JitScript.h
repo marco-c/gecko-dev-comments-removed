@@ -112,6 +112,8 @@ static IonScript* const IonCompilingScriptPtr =
 
 
 
+
+
 class alignas(uintptr_t) JitScript final {
   friend class ::JSScript;
 
@@ -221,6 +223,7 @@ class alignas(uintptr_t) JitScript final {
   }
 
   StackTypeSet* typeArrayDontCheckGeneration() {
+    MOZ_ASSERT(IsTypeInferenceEnabled());
     uint8_t* base = reinterpret_cast<uint8_t*>(this);
     return reinterpret_cast<StackTypeSet*>(base + typeSetOffset_);
   }
@@ -302,6 +305,7 @@ class alignas(uintptr_t) JitScript final {
     return (typeSetOffset_ - offsetOfICEntries()) / sizeof(ICEntry);
   }
   uint32_t numTypeSets() const {
+    MOZ_ASSERT(IsTypeInferenceEnabled());
     return (bytecodeTypeMapOffset_ - typeSetOffset_) / sizeof(StackTypeSet);
   }
 
@@ -325,6 +329,7 @@ class alignas(uintptr_t) JitScript final {
   }
 
   uint32_t* bytecodeTypeMap() {
+    MOZ_ASSERT(IsTypeInferenceEnabled());
     uint8_t* base = reinterpret_cast<uint8_t*>(this);
     return reinterpret_cast<uint32_t*>(base + bytecodeTypeMapOffset_);
   }

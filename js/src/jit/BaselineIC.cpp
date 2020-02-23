@@ -214,28 +214,31 @@ bool JitScript::initICEntriesAndBytecodeTypeMap(JSContext* cx,
     return AddICImpl(cx, this, ICEntry::ProloguePCOffset, stub, icEntryIndex);
   };
 
-  
-  
-  
-  if (JSFunction* fun = script->function()) {
-    ICStub* stub =
-        alloc.newStub<ICTypeMonitor_Fallback>(Kind::TypeMonitor, nullptr, 0);
-    if (!addPrologueIC(stub)) {
-      return false;
-    }
-
-    for (size_t i = 0; i < fun->nargs(); i++) {
-      ICStub* stub = alloc.newStub<ICTypeMonitor_Fallback>(Kind::TypeMonitor,
-                                                           nullptr, i + 1);
+  if (IsTypeInferenceEnabled()) {
+    
+    
+    
+    if (JSFunction* fun = script->function()) {
+      ICStub* stub =
+          alloc.newStub<ICTypeMonitor_Fallback>(Kind::TypeMonitor, nullptr, 0);
       if (!addPrologueIC(stub)) {
         return false;
+      }
+
+      for (size_t i = 0; i < fun->nargs(); i++) {
+        ICStub* stub = alloc.newStub<ICTypeMonitor_Fallback>(Kind::TypeMonitor,
+                                                             nullptr, i + 1);
+        if (!addPrologueIC(stub)) {
+          return false;
+        }
       }
     }
   }
 
   
   uint32_t typeMapIndex = 0;
-  uint32_t* const typeMap = bytecodeTypeMap();
+  uint32_t* const typeMap =
+      IsTypeInferenceEnabled() ? bytecodeTypeMap() : nullptr;
 
   
   
@@ -243,7 +246,7 @@ bool JitScript::initICEntriesAndBytecodeTypeMap(JSContext* cx,
     JSOp op = loc.getOp();
     
     
-    if (BytecodeOpHasTypeSet(op) &&
+    if (BytecodeOpHasTypeSet(op) && typeMap &&
         typeMapIndex < JSScript::MaxBytecodeTypeSets) {
       typeMap[typeMapIndex] = loc.bytecodeToOffset(script);
       typeMapIndex++;
@@ -521,7 +524,8 @@ bool JitScript::initICEntriesAndBytecodeTypeMap(JSContext* cx,
 
   
   MOZ_ASSERT(icEntryIndex == numICEntries());
-  MOZ_ASSERT(typeMapIndex == script->numBytecodeTypeSets());
+  MOZ_ASSERT_IF(IsTypeInferenceEnabled(),
+                typeMapIndex == script->numBytecodeTypeSets());
 
   return true;
 }
@@ -762,7 +766,7 @@ void ICFallbackStub::unlinkStub(Zone* zone, ICStub* prev, ICStub* stub) {
     stub->trace(zone->barrierTracer());
   }
 
-  if (stub->makesGCCalls() && stub->isMonitored()) {
+  if (IsTypeInferenceEnabled() && stub->makesGCCalls() && stub->isMonitored()) {
     
     
     
@@ -850,19 +854,24 @@ ICMonitoredStub::ICMonitoredStub(Kind kind, JitCode* stubCode,
                                  ICStub* firstMonitorStub)
     : ICStub(kind, ICStub::Monitored, stubCode),
       firstMonitorStub_(firstMonitorStub) {
-  
-  MOZ_ASSERT(firstMonitorStub_);
-  
-  
-  MOZ_ASSERT_IF(
-      firstMonitorStub_->isTypeMonitor_Fallback(),
-      firstMonitorStub_->toTypeMonitor_Fallback()->firstMonitorStub() ==
-          firstMonitorStub_);
+  if (IsTypeInferenceEnabled()) {
+    
+    MOZ_ASSERT(firstMonitorStub_);
+    
+    
+    MOZ_ASSERT_IF(
+        firstMonitorStub_->isTypeMonitor_Fallback(),
+        firstMonitorStub_->toTypeMonitor_Fallback()->firstMonitorStub() ==
+            firstMonitorStub_);
+  } else {
+    MOZ_ASSERT(!firstMonitorStub_);
+  }
 }
 
 bool ICMonitoredFallbackStub::initMonitoringChain(JSContext* cx,
                                                   JSScript* script) {
   MOZ_ASSERT(fallbackMonitorStub_ == nullptr);
+  MOZ_ASSERT(IsTypeInferenceEnabled());
 
   ICStubSpace* space = script->jitScript()->fallbackStubSpace();
   FallbackStubAllocator alloc(cx, *space);
@@ -879,6 +888,10 @@ bool ICMonitoredFallbackStub::initMonitoringChain(JSContext* cx,
 bool TypeMonitorResult(JSContext* cx, ICMonitoredFallbackStub* stub,
                        BaselineFrame* frame, HandleScript script,
                        jsbytecode* pc, HandleValue val) {
+  if (!IsTypeInferenceEnabled()) {
+    return true;
+  }
+
   ICTypeMonitor_Fallback* typeMonitorFallback =
       stub->getFallbackMonitorStub(cx, script);
   if (!typeMonitorFallback) {
@@ -1237,6 +1250,8 @@ bool ICTypeMonitor_Fallback::addMonitorStubForValue(JSContext* cx,
 bool DoTypeMonitorFallback(JSContext* cx, BaselineFrame* frame,
                            ICTypeMonitor_Fallback* stub, HandleValue value,
                            MutableHandleValue res) {
+  MOZ_ASSERT(IsTypeInferenceEnabled());
+
   JSScript* script = frame->script();
   jsbytecode* pc = stub->icEntry()->pc(script);
   TypeFallbackICSpew(cx, stub, "TypeMonitor");

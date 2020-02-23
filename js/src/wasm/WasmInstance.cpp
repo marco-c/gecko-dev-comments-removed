@@ -208,86 +208,89 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
 
   
   
-  
-  
-  AutoSweepJitScript sweep(script);
-  JitScript* jitScript = script->jitScript();
-
-  StackTypeSet* thisTypes = jitScript->thisTypes(sweep, script);
-  if (!thisTypes->hasType(TypeSet::UndefinedType())) {
-    return true;
-  }
-
-  
-  
   if (fi.funcType().temporarilyUnsupportedReftypeForExit()) {
     return true;
   }
 
-  const ValTypeVector& importArgs = fi.funcType().args();
-
-  size_t numKnownArgs = std::min(importArgs.length(), importFun->nargs());
-  for (uint32_t i = 0; i < numKnownArgs; i++) {
-    StackTypeSet* argTypes = jitScript->argTypes(sweep, script, i);
-    switch (importArgs[i].kind()) {
-      case ValType::I32:
-        if (!argTypes->hasType(TypeSet::Int32Type())) {
-          return true;
-        }
-        break;
-      case ValType::I64:
-#ifdef ENABLE_WASM_BIGINT
-        if (!argTypes->hasType(TypeSet::BigIntType())) {
-          return true;
-        }
-        break;
-#else
-        MOZ_CRASH("NYI");
-#endif
-      case ValType::F32:
-        if (!argTypes->hasType(TypeSet::DoubleType())) {
-          return true;
-        }
-        break;
-      case ValType::F64:
-        if (!argTypes->hasType(TypeSet::DoubleType())) {
-          return true;
-        }
-        break;
-      case ValType::Ref:
-        switch (importArgs[i].refTypeKind()) {
-          case RefType::Any:
-            
-            
-            
-            
-            
-            
-            
-            break;
-          case RefType::Func:
-            
-            
-            
-            break;
-          case RefType::Null:
-            
-            break;
-          case RefType::TypeIndex:
-            
-            MOZ_CRASH("case guarded above");
-        }
-        break;
-    }
-  }
+  JitScript* jitScript = script->jitScript();
 
   
   
   
-  for (uint32_t i = importArgs.length(); i < importFun->nargs(); i++) {
-    StackTypeSet* argTypes = jitScript->argTypes(sweep, script, i);
-    if (!argTypes->hasType(TypeSet::UndefinedType())) {
+  
+  if (IsTypeInferenceEnabled()) {
+    AutoSweepJitScript sweep(script);
+
+    StackTypeSet* thisTypes = jitScript->thisTypes(sweep, script);
+    if (!thisTypes->hasType(TypeSet::UndefinedType())) {
       return true;
+    }
+
+    const ValTypeVector& importArgs = fi.funcType().args();
+
+    size_t numKnownArgs = std::min(importArgs.length(), importFun->nargs());
+    for (uint32_t i = 0; i < numKnownArgs; i++) {
+      StackTypeSet* argTypes = jitScript->argTypes(sweep, script, i);
+      switch (importArgs[i].kind()) {
+        case ValType::I32:
+          if (!argTypes->hasType(TypeSet::Int32Type())) {
+            return true;
+          }
+          break;
+        case ValType::I64:
+#ifdef ENABLE_WASM_BIGINT
+          if (!argTypes->hasType(TypeSet::BigIntType())) {
+            return true;
+          }
+          break;
+#else
+          MOZ_CRASH("NYI");
+#endif
+        case ValType::F32:
+          if (!argTypes->hasType(TypeSet::DoubleType())) {
+            return true;
+          }
+          break;
+        case ValType::F64:
+          if (!argTypes->hasType(TypeSet::DoubleType())) {
+            return true;
+          }
+          break;
+        case ValType::Ref:
+          switch (importArgs[i].refTypeKind()) {
+            case RefType::Any:
+              
+              
+              
+              
+              
+              
+              
+              break;
+            case RefType::Func:
+              
+              
+              
+              break;
+            case RefType::Null:
+              
+              break;
+            case RefType::TypeIndex:
+              
+              MOZ_CRASH("case guarded above");
+          }
+          break;
+      }
+    }
+
+    
+    
+    
+    for (uint32_t i = importArgs.length(); i < importFun->nargs(); i++) {
+      StackTypeSet* argTypes = jitScript->argTypes(sweep, script, i);
+      if (!argTypes->hasType(TypeSet::UndefinedType())) {
+        return true;
+      }
     }
   }
 

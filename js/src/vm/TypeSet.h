@@ -61,6 +61,8 @@ class TypeConstraint;
 class TypeNewScript;
 class TypeZone;
 
+static constexpr bool IsTypeInferenceEnabled() { return true; }
+
 
 
 
@@ -456,8 +458,7 @@ class TypeSet {
 
   
   using TypeList = Vector<Type, 1, SystemAllocPolicy>;
-  template <class TypeListT>
-  bool enumerateTypes(TypeListT* list) const;
+  bool enumerateTypes(TypeList* list) const;
 
   
 
