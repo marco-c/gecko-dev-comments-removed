@@ -54,12 +54,11 @@ static already_AddRefed<dom::Element> ElementFromPoint(
   
   
   nsIContent* content = frame->GetContent();
-  if (content && !content->IsElement()) {
-    content = content->GetParent();
+  if (!content) {
+    return nullptr;
   }
-  if (content && content->IsElement()) {
-    nsCOMPtr<dom::Element> result = content->AsElement();
-    return result.forget();
+  if (dom::Element* element = content->GetAsElementOrParentElement()) {
+    return do_AddRef(element);
   }
   return nullptr;
 }
