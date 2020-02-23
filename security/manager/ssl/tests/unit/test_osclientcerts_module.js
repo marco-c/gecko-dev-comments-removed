@@ -12,14 +12,7 @@ const { TestUtils } = ChromeUtils.import(
   "resource://testing-common/TestUtils.jsm"
 );
 
-add_task(async function run_test() {
-  
-  
-  checkPKCS11ModuleNotPresent("OS Client Cert Module", "osclientcerts");
-
-  
-  
-  Services.prefs.setBoolPref("security.osclientcerts.autoload", true);
+async function check_osclientcerts_module_loaded() {
   
   await TestUtils.topicObserved("psm:load-os-client-certs-module-task-ran");
   let testModule = checkPKCS11ModuleExists(
@@ -39,8 +32,27 @@ add_task(async function run_test() {
     expectedSlotNames,
     "Actual and expected slot names should be equal"
   );
+}
+
+add_task(async function run_test() {
+  
+  
+  checkPKCS11ModuleNotPresent("OS Client Cert Module", "osclientcerts");
 
   
+  
+  Services.prefs.setBoolPref("security.osclientcerts.autoload", true);
+  await check_osclientcerts_module_loaded();
+
+  
+  
+  Services.prefs.setBoolPref("security.osclientcerts.autoload", false);
+  checkPKCS11ModuleNotPresent("OS Client Cert Module", "osclientcerts");
+
+  
+  Services.prefs.setBoolPref("security.osclientcerts.autoload", true);
+  await check_osclientcerts_module_loaded();
+
   
   Services.prefs.setBoolPref("security.osclientcerts.autoload", false);
   checkPKCS11ModuleNotPresent("OS Client Cert Module", "osclientcerts");
