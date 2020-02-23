@@ -27,8 +27,6 @@
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/dom/Location.h"
 
-#include "unicode/uloc.h"
-
 nsChromeRegistry* nsChromeRegistry::gChromeRegistry;
 
 
@@ -390,21 +388,4 @@ already_AddRefed<nsChromeRegistry> nsChromeRegistry::GetSingleton() {
   if (NS_FAILED(cr->Init())) return nullptr;
 
   return cr.forget();
-}
-
-void nsChromeRegistry::SanitizeForBCP47(nsACString& aLocale) {
-  
-  
-  
-  const int32_t LANG_TAG_CAPACITY = 128;
-  char langTag[LANG_TAG_CAPACITY];
-  nsAutoCString locale(aLocale);
-  UErrorCode err = U_ZERO_ERROR;
-  
-  
-  int32_t len =
-      uloc_toLanguageTag(locale.get(), langTag, LANG_TAG_CAPACITY, false, &err);
-  if (U_SUCCESS(err) && len > 0) {
-    aLocale.Assign(langTag, len);
-  }
 }
