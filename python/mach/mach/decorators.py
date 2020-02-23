@@ -8,7 +8,6 @@ import argparse
 import collections
 import inspect
 import sys
-import types
 
 from .base import MachError
 from .registrar import Registrar
@@ -140,16 +139,13 @@ def CommandProvider(cls):
     
     
     
-    for attr in sorted(cls.__dict__.keys()):
-        value = cls.__dict__[attr]
+    command_methods = sorted([
+        (name, value._mach_command)
+        for name, value in cls.__dict__.items()
+        if hasattr(value, '_mach_command')
+    ])
 
-        if not isinstance(value, types.FunctionType):
-            continue
-
-        command = getattr(value, '_mach_command', None)
-        if not command:
-            continue
-
+    for method, command in command_methods:
         
         if command.subcommand:
             continue
@@ -173,7 +169,7 @@ def CommandProvider(cls):
                 raise MachError(msg)
 
         command.cls = cls
-        command.method = attr
+        command.method = method
         command.pass_context = pass_context
 
         Registrar.register_command_handler(command)
@@ -181,16 +177,7 @@ def CommandProvider(cls):
     
     
     
-    for attr in sorted(cls.__dict__.keys()):
-        value = cls.__dict__[attr]
-
-        if not isinstance(value, types.FunctionType):
-            continue
-
-        command = getattr(value, '_mach_command', None)
-        if not command:
-            continue
-
+    for method, command in command_methods:
         
         if not command.subcommand:
             continue
@@ -203,7 +190,7 @@ def CommandProvider(cls):
             continue
 
         command.cls = cls
-        command.method = attr
+        command.method = method
         command.pass_context = pass_context
         parent = Registrar.command_handlers[command.name]
 
