@@ -122,8 +122,8 @@ describe("ActivityStream", () => {
       assert.instanceOf(feed, Fake);
     });
     it("should create a section feed for each section in PREFS_CONFIG", () => {
-      // If new sections are added, their feeds will have to be added to the
-      // list of injected feeds above for this test to pass
+      
+      
       let feedCount = 0;
       for (const pref of PREFS_CONFIG.keys()) {
         if (pref.search(/^feeds\.section\.[^.]+$/) === 0) {
@@ -171,7 +171,7 @@ describe("ActivityStream", () => {
       as._migratePref("oldPrefName", result => assert.equal(10, result));
     });
     it("should not migrate a pref if the user has not set a custom value", () => {
-      // we bailed out early so we don't check the pref type later
+      
       sandbox.stub(global.Services.prefs, "prefHasUserValue").returns(false);
       sandbox.stub(global.Services.prefs, "getPrefType");
       as._migratePref("oldPrefName");
@@ -180,19 +180,19 @@ describe("ActivityStream", () => {
     it("should use the proper pref getter for each type", () => {
       sandbox.stub(global.Services.prefs, "prefHasUserValue").returns(true);
 
-      // Integer
+      
       sandbox.stub(global.Services.prefs, "getIntPref");
       sandbox.stub(global.Services.prefs, "getPrefType").returns("integer");
       as._migratePref("oldPrefName", () => {});
       assert.calledWith(global.Services.prefs.getIntPref, "oldPrefName");
 
-      // Boolean
+      
       sandbox.stub(global.Services.prefs, "getBoolPref");
       global.Services.prefs.getPrefType.returns("boolean");
       as._migratePref("oldPrefName", () => {});
       assert.calledWith(global.Services.prefs.getBoolPref, "oldPrefName");
 
-      // String
+      
       sandbox.stub(global.Services.prefs, "getStringPref");
       global.Services.prefs.getPrefType.returns("string");
       as._migratePref("oldPrefName", () => {});
@@ -244,6 +244,29 @@ describe("ActivityStream", () => {
 
       assert.isTrue(
         JSON.parse(PREFS_CONFIG.get("discoverystream.config").value).enabled
+      );
+    });
+    it("should enable spocs based on region based pref", () => {
+      sandbox.stub(global.Services.prefs, "prefHasUserValue").returns(true);
+      const getStringPrefStub = sandbox.stub(
+        global.Services.prefs,
+        "getStringPref"
+      );
+      getStringPrefStub.withArgs("browser.search.region").returns("CA");
+      getStringPrefStub
+        .withArgs(
+          "browser.newtabpage.activity-stream.discoverystream.region-spocs-config"
+        )
+        .returns("US,CA");
+
+      sandbox
+        .stub(global.Services.locale, "appLocaleAsBCP47")
+        .get(() => "en-CA");
+
+      as._updateDynamicPrefs();
+
+      assert.isTrue(
+        JSON.parse(PREFS_CONFIG.get("discoverystream.config").value).show_spocs
       );
     });
   });
@@ -332,12 +355,12 @@ describe("ActivityStream", () => {
     beforeEach(() => {
       clock = sinon.useFakeTimers();
 
-      // Have addObserver cause prefHasUserValue to now return true then observe
+      
       sandbox
         .stub(global.Services.prefs, "addObserver")
         .callsFake((pref, obs) => {
           sandbox.stub(global.Services.prefs, "prefHasUserValue").returns(true);
-          setTimeout(() => obs.observe(null, "nsPref:changed", pref)); // eslint-disable-line max-nested-callbacks
+          setTimeout(() => obs.observe(null, "nsPref:changed", pref)); 
         });
     });
     afterEach(() => clock.restore());
@@ -439,7 +462,7 @@ describe("ActivityStream", () => {
     });
 
     it("should be 'google' elsewhere", () => {
-      // A selection of other geos
+      
       const geos = ["BR", "CA", "ES", "ID", "IN"];
       for (const geo of geos) {
         stub.returns(geo);
