@@ -27,6 +27,7 @@ import static org.mozilla.geckoview.WebExtension.InstallException.ErrorCodes.ERR
 public class WebExtensionController {
     private final static String LOGTAG = "WebExtension";
 
+    private DebuggerDelegate mDebuggerDelegate;
     private PromptDelegate mPromptDelegate;
     private final WebExtension.Listener mListener;
 
@@ -291,6 +292,23 @@ public class WebExtensionController {
 
     }
 
+    public interface DebuggerDelegate {
+        
+
+
+
+
+
+
+
+
+
+
+
+        @UiThread
+        default void onExtensionListUpdated() {}
+    }
+
     
 
 
@@ -326,6 +344,29 @@ public class WebExtensionController {
         }
 
         mPromptDelegate = delegate;
+    }
+
+    
+
+
+
+
+
+    @UiThread
+    public void setDebuggerDelegate(final @NonNull DebuggerDelegate delegate) {
+        if (delegate == null && mDebuggerDelegate != null) {
+            EventDispatcher.getInstance().unregisterUiThreadListener(
+                    mInternals,
+                    "GeckoView:WebExtension:DebuggerListUpdated"
+            );
+        } else if (delegate != null && mDebuggerDelegate == null) {
+            EventDispatcher.getInstance().registerUiThreadListener(
+                    mInternals,
+                    "GeckoView:WebExtension:DebuggerListUpdated"
+            );
+        }
+
+        mDebuggerDelegate = delegate;
     }
 
     private static class WebExtensionResult extends GeckoResult<WebExtension>
@@ -662,6 +703,11 @@ public class WebExtensionController {
             return;
         } else if ("GeckoView:WebExtension:UpdatePrompt".equals(event)) {
             updatePrompt(bundle, callback);
+            return;
+        } else if ("GeckoView:WebExtension:DebuggerListUpdated".equals(event)) {
+            if (mDebuggerDelegate != null) {
+                mDebuggerDelegate.onExtensionListUpdated();
+            }
             return;
         }
 
