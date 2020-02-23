@@ -19,6 +19,9 @@ const {
   getSelectedRequest,
   getRequestById,
 } = require("devtools/client/netmonitor/src/selectors/index");
+const {
+  fetchNetworkUpdatePacket,
+} = require("devtools/client/netmonitor/src/utils/request-utils");
 
 function addRequest(id, data, batch) {
   return {
@@ -73,7 +76,7 @@ function cloneSelectedRequest() {
 
 
 function sendCustomRequest(connector, requestId = null) {
-  return (dispatch, getState) => {
+  return async (dispatch, getState) => {
     let request;
     if (requestId) {
       request = getRequestById(getState(), requestId);
@@ -86,15 +89,26 @@ function sendCustomRequest(connector, requestId = null) {
     }
 
     
+    await fetchNetworkUpdatePacket(connector.requestData, request, [
+      "requestHeaders",
+      "requestPostData",
+    ]);
+
+    
+    request = getRequestById(getState(), request.id);
+
+    
     const data = {
       cause: request.cause,
       url: request.url,
       method: request.method,
       httpVersion: request.httpVersion,
     };
+
     if (request.requestHeaders) {
       data.headers = request.requestHeaders.headers;
     }
+
     if (request.requestPostData) {
       data.body = request.requestPostData.postData.text;
     }
