@@ -325,17 +325,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
-        public @NonNull Builder autoplayDefault(final @AutoplayDefault int autoplay) {
-            getSettings().mAutoplayDefault.set(autoplay);
-            return this;
-        }
-
-        
-
-
-
-
-
 
         public @NonNull Builder preferredColorScheme(final @ColorScheme int scheme) {
             getSettings().mPreferredColorScheme.set(scheme);
@@ -450,8 +439,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         "browser.display.use_document_fonts", 1);
      final Pref<Boolean> mConsoleOutput = new Pref<Boolean>(
         "geckoview.console.enabled", false);
-     final Pref<Integer> mAutoplayDefault = new Pref<Integer>(
-        "media.autoplay.default", AUTOPLAY_DEFAULT_BLOCKED);
      final Pref<Integer> mFontSizeFactor = new Pref<>(
         "font.size.systemFontScale", 100);
      final Pref<Integer> mFontInflationMinTwips = new Pref<>(
@@ -834,41 +821,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
     public boolean getAutomaticFontSizeAdjustment() {
         return GeckoFontScaleListener.getInstance().getEnabled();
-    }
-
-    
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({ AUTOPLAY_DEFAULT_ALLOWED, AUTOPLAY_DEFAULT_BLOCKED })
-     @interface AutoplayDefault {}
-
-    
-
-
-    public static final int AUTOPLAY_DEFAULT_ALLOWED = 0;
-
-    
-
-
-    public static final int AUTOPLAY_DEFAULT_BLOCKED = 1;
-
-    
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setAutoplayDefault(final @AutoplayDefault int autoplay) {
-        mAutoplayDefault.commit(autoplay);
-        return this;
-    }
-
-    
-
-
-
-
-    public @AutoplayDefault int getAutoplayDefault() {
-        return mAutoplayDefault.get();
     }
 
     private static final int FONT_INFLATION_BASE_VALUE = 120;
