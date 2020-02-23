@@ -1485,13 +1485,8 @@ GeckoFontMetrics Gecko_GetFontMetrics(const nsPresContext* aPresContext,
       presContext, aIsVertical, aFont, aFontSize, aUseUserFontSet);
 
   ret.mXSize = fm->XHeight();
-
-  
-  
-  
-  
   gfxFloat zeroWidth = fm->GetThebesFontGroup()
-                           ->GetFirstValidFont('0')
+                           ->GetFirstValidFont()
                            ->GetMetrics(fm->Orientation())
                            .zeroWidth;
   ret.mChSize = zeroWidth >= 0.0
