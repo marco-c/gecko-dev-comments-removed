@@ -4230,7 +4230,10 @@ mozilla::ipc::IPCResult ContentChild::RecvWindowPostMessage(
 
   
   
-  RefPtr<BrowsingContext> sourceBc = aData.source();
+  RefPtr<BrowsingContext> sourceBc = aData.source().GetMaybeDiscarded();
+
+  
+  
   RefPtr<PostMessageEvent> event =
       new PostMessageEvent(sourceBc, aData.origin(), window, providedPrincipal,
                            aData.innerWindowId(), aData.callerURI(),
