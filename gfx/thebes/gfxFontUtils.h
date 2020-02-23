@@ -1170,8 +1170,9 @@ class gfxFontUtils {
   
   
   
-  static void GetVariationInstances(
-      gfxFontEntry* aFontEntry, nsTArray<gfxFontVariationInstance>& aInstances);
+  static void GetVariationData(gfxFontEntry* aFontEntry,
+                               nsTArray<gfxFontVariationAxis>* aAxes,
+                               nsTArray<gfxFontVariationInstance>* aInstances);
 
   
   
