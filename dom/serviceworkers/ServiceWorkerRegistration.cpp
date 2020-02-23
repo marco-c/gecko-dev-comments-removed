@@ -50,7 +50,6 @@ ServiceWorkerRegistration::ServiceWorkerRegistration(
 
   KeepAliveIfHasListenersFor(NS_LITERAL_STRING("updatefound"));
 
-  UpdateState(mDescriptor);
   mInner->SetServiceWorkerRegistration(this);
 }
 
@@ -81,6 +80,10 @@ ServiceWorkerRegistration::CreateForMainThread(
 
   RefPtr<ServiceWorkerRegistration> registration =
       new ServiceWorkerRegistration(aWindow->AsGlobal(), aDescriptor, inner);
+  
+  
+  
+  registration->UpdateState(aDescriptor);
 
   return registration.forget();
 }
@@ -104,6 +107,10 @@ ServiceWorkerRegistration::CreateForWorker(
 
   RefPtr<ServiceWorkerRegistration> registration =
       new ServiceWorkerRegistration(aGlobal, aDescriptor, inner);
+  
+  
+  
+  registration->UpdateState(aDescriptor);
 
   return registration.forget();
 }
