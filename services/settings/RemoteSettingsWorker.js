@@ -189,6 +189,8 @@ async function importDumpIDB(bucket, collection, records) {
   await executeIDB(db, IDB_TIMESTAMPS_STORE, store =>
     store.put({ cid, value: timestamp })
   );
+  
+  db.close();
 }
 
 
@@ -200,7 +202,9 @@ async function openIDB(dbname, version) {
     request.onupgradeneeded = () => {
       
       reject(
-        new Error(`Error accessing ${dbname} Chrome IDB at version ${version}`)
+        new Error(
+          `IndexedDB: Error accessing ${dbname} Chrome IDB at version ${version}`
+        )
       );
     };
     request.onerror = event => reject(event.target.error);

@@ -56,6 +56,15 @@ class Worker {
     if (!this.worker) {
       this.worker = new ChromeWorker(this.source);
       this.worker.onmessage = this._onWorkerMessage.bind(this);
+      this.worker.onerror = error => {
+        
+        for (const [, reject] of this.callbacks.values()) {
+          reject(error);
+        }
+        this.callbacks.clear();
+        
+        this.stop();
+      };
     }
     
     if (this.idleTimeoutId) {
