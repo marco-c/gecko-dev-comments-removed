@@ -406,13 +406,9 @@ class UrlbarView {
       !this.input.value ||
       this.input.getAttribute("pageproxystate") == "valid"
     ) {
-      
-      
-      let canOpenTopSites =
-        !this.input.isPrivate &&
-        UrlbarPrefs.get("browser.newtabpage.activity-stream.feeds.topsites");
       if (
-        canOpenTopSites &&
+        
+        !this.input.isPrivate &&
         !this.isOpen &&
         ["mousedown", "command"].includes(queryOptions.event.type)
       ) {
