@@ -69,7 +69,7 @@ class MaskLayerImageCache {
       }
     }
 
-    ~PixelRoundedRect() { MOZ_COUNT_DTOR(PixelRoundedRect); }
+    MOZ_COUNTED_DTOR(PixelRoundedRect)
 
     
     
@@ -226,7 +226,7 @@ class MaskLayerImageCache {
         : mKey(aOther.mKey.get()) {
       NS_ERROR("ALLOW_MEMMOVE == true, should never be called");
     }
-    ~MaskLayerImageEntry() { MOZ_COUNT_DTOR(MaskLayerImageEntry); }
+    MOZ_COUNTED_DTOR(MaskLayerImageEntry)
 
     
     bool KeyEquals(KeyTypePointer aKey) const { return *mKey == *aKey; }

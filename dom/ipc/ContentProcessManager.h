@@ -20,7 +20,7 @@ class ContentParent;
 class ContentProcessManager final {
  public:
   static ContentProcessManager* GetSingleton();
-  ~ContentProcessManager() { MOZ_COUNT_DTOR(ContentProcessManager); };
+  MOZ_COUNTED_DTOR(ContentProcessManager);
 
   
 
@@ -83,7 +83,7 @@ class ContentProcessManager final {
   nsDataHashtable<nsUint64HashKey, ContentParent*> mContentParentMap;
   nsDataHashtable<nsUint64HashKey, BrowserParent*> mBrowserParentMap;
 
-  ContentProcessManager() { MOZ_COUNT_CTOR(ContentProcessManager); };
+  MOZ_COUNTED_DEFAULT_CTOR(ContentProcessManager);
 };
 
 }  

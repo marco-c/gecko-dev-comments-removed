@@ -38,8 +38,8 @@ namespace mozilla {
 
 class TaskDispatcher {
  public:
-  TaskDispatcher() {}
-  virtual ~TaskDispatcher() {}
+  TaskDispatcher() = default;
+  virtual ~TaskDispatcher() = default;
 
   
   
@@ -167,7 +167,7 @@ class AutoTaskDispatcher : public TaskDispatcher {
       MOZ_COUNT_CTOR(PerThreadTaskGroup);
     }
 
-    ~PerThreadTaskGroup() { MOZ_COUNT_DTOR(PerThreadTaskGroup); }
+    MOZ_COUNTED_DTOR(PerThreadTaskGroup)
 
     RefPtr<AbstractThread> mThread;
     nsTArray<nsCOMPtr<nsIRunnable>> mStateChangeTasks;
@@ -264,7 +264,7 @@ class AutoTaskDispatcher : public TaskDispatcher {
 template <typename T>
 class PassByRef {
  public:
-  PassByRef() {}
+  PassByRef() = default;
   operator T&() { return mVal; }
 
  private:

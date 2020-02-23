@@ -29,12 +29,7 @@ class nsDisplayColumnRule : public nsPaintedDisplayItem {
       : nsPaintedDisplayItem(aBuilder, aFrame) {
     MOZ_COUNT_CTOR(nsDisplayColumnRule);
   }
-#ifdef NS_BUILD_REFCNT_LOGGING
-  virtual ~nsDisplayColumnRule() {
-    MOZ_COUNT_DTOR(nsDisplayColumnRule);
-    mBorderRenderers.Clear();
-  }
-#endif
+  MOZ_COUNTED_DTOR_OVERRIDE(nsDisplayColumnRule)
 
   
 
@@ -237,7 +232,7 @@ void nsColumnSetFrame::CreateBorderRenderers(
         
         
         
-        MOZ_ASSERT(border.mBorderImageSource.GetType() == eStyleImageType_Null);
+        MOZ_ASSERT(border.mBorderImageSource.IsNone());
 
         gfx::DrawTarget* dt = aCtx ? aCtx->GetDrawTarget() : nullptr;
         bool borderIsEmpty = false;

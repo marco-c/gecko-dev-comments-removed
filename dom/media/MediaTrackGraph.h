@@ -788,7 +788,7 @@ class MediaInputPort final {
   }
 
   
-  ~MediaInputPort() { MOZ_COUNT_DTOR(MediaInputPort); }
+  MOZ_COUNTED_DTOR(MediaInputPort)
 
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaInputPort)
@@ -1134,7 +1134,7 @@ class MediaTrackGraph {
   explicit MediaTrackGraph(TrackRate aSampleRate) : mSampleRate(aSampleRate) {
     MOZ_COUNT_CTOR(MediaTrackGraph);
   }
-  virtual ~MediaTrackGraph() { MOZ_COUNT_DTOR(MediaTrackGraph); }
+  MOZ_COUNTED_DTOR_VIRTUAL(MediaTrackGraph)
 
   
   
