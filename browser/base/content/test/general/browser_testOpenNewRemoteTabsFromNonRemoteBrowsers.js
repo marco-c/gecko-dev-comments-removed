@@ -11,13 +11,15 @@ const { PrivateBrowsingUtils } = ChromeUtils.import(
 
 requestLongerTimeout(2);
 
-function frame_script() {
-  content.document.body.innerHTML = `
-    <a href="http://example.com/" target="_blank" rel="opener" id="testAnchor">Open a window</a>
-  `;
+function insertAndClickAnchor(browser) {
+  return SpecialPowers.spawn(browser, [], () => {
+    content.document.body.innerHTML = `
+      <a href="http://example.com/" target="_blank" rel="opener" id="testAnchor">Open a window</a>
+    `;
 
-  let element = content.document.getElementById("testAnchor");
-  element.click();
+    let element = content.document.getElementById("testAnchor");
+    element.click();
+  });
 }
 
 
@@ -57,15 +59,12 @@ add_task(async function test_new_tab() {
     let testBrowser = testWindow.gBrowser.selectedBrowser;
     info("Preparing non-remote browser");
     await prepareNonRemoteBrowser(testWindow, testBrowser);
-    info("Non-remote browser prepared - sending frame script");
+    info("Non-remote browser prepared");
 
-    
-    let mm = testBrowser.messageManager;
-    mm.loadFrameScript("data:,(" + frame_script.toString() + ")();", true);
+    let tabOpenEventPromise = waitForNewTabEvent(testWindow.gBrowser);
+    await insertAndClickAnchor(testBrowser);
 
-    let tabOpenEvent = await waitForNewTabEvent(testWindow.gBrowser);
-    let newTab = tabOpenEvent.target;
-
+    let newTab = (await tabOpenEventPromise).target;
     await promiseTabLoadEvent(newTab);
 
     
@@ -118,9 +117,7 @@ add_task(async function test_new_window() {
     let testBrowser = testWindow.gBrowser.selectedBrowser;
     await prepareNonRemoteBrowser(testWindow, testBrowser);
 
-    
-    let mm = testBrowser.messageManager;
-    mm.loadFrameScript("data:,(" + frame_script.toString() + ")();", true);
+    await insertAndClickAnchor(testBrowser);
 
     
     let [newWindow] = await TestUtils.topicObserved(
