@@ -43,7 +43,9 @@ class SVGAnimatedEnumeration {
     mIsBaseSet = false;
   }
 
-  nsresult SetBaseValueAtom(const nsAtom* aValue, SVGElement* aSVGElement);
+  
+  
+  bool SetBaseValueAtom(const nsAtom* aValue, SVGElement* aSVGElement);
   nsAtom* GetBaseValueAtom(SVGElement* aSVGElement);
   void SetBaseValue(uint16_t aValue, SVGElement* aSVGElement, ErrorResult& aRv);
   uint16_t GetBaseValue() const { return mBaseVal; }
