@@ -125,7 +125,7 @@ class CompileDBBackend(CommonBackend):
             
             
             
-            c.append("-ferror-limit=0")
+            c.insert(-1, "-ferror-limit=0")
 
             per_source_flags = self._per_source_flags.get(filename)
             if per_source_flags is not None:
