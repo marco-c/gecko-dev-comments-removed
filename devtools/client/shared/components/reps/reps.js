@@ -1,7 +1,7 @@
 
 
 
-
+ 
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("devtools/client/shared/vendor/react-prop-types"), require("devtools/client/shared/vendor/react-dom-factories"), require("devtools/client/shared/vendor/react"), require("Services"), require("devtools/client/shared/vendor/react-redux"));
@@ -8207,6 +8207,13 @@ async function releaseActors(state, client, dispatch) {
     return;
   }
 
+  let promises = [];
+
+  for (const actor of actors) {
+    promises.push(client.releaseActor(actor));
+  }
+
+  await Promise.all(promises);
   dispatch({
     type: "RELEASED_ACTORS",
     data: {
