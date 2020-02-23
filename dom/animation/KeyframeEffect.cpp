@@ -1161,6 +1161,8 @@ void KeyframeEffect::GetKeyframes(JSContext*& aCx, nsTArray<JSObject*>& aResult,
       keyframe.mTimingFunction.ref().AppendToString(keyframeDict.mEasing);
     }  
 
+    
+    
     keyframeDict.mComposite = keyframe.mComposite;
 
     JS::Rooted<JS::Value> keyframeJSValue(aCx);
