@@ -1,20 +1,17 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <title>Only lines containing visible content (visibility: visible) should receive backplates.</title>
-  <style>
-    body {
-      background-image: linear-gradient(blue, blue);
-    }
-    .hidden {
-      visibility: hidden;
-    }
-    .visible {
-      visibility: visible;
-    }
-  </style>
-</head>
-<body>
+<title>Only lines containing visible content (visibility: visible) should receive backplates.</title>
+<style>
+  .outer {
+    background-image: linear-gradient(blue, blue);
+  }
+  .hidden {
+    visibility: hidden;
+  }
+  .visible {
+    visibility: visible;
+  }
+</style>
+<div class="outer">
   <div>
     AAAA
 <div class="hidden">BBBB</div>
@@ -46,5 +43,4 @@ CCCC
     </span>
     4
 </span>
-</body>
-</html>
+</div>
