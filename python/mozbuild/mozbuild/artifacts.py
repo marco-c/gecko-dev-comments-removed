@@ -466,6 +466,7 @@ class MacArtifactJob(ArtifactJob):
         '{product}',
         '{product}-bin',
         'libfreebl3.dylib',
+        'libgraphitewasm.dylib',
         'liblgpllibs.dylib',
         
         'libmozglue.dylib',
@@ -476,6 +477,7 @@ class MacArtifactJob(ArtifactJob):
         
         'libmozavutil.dylib',
         'libmozavcodec.dylib',
+        'libosclientcerts.dylib',
         'libsoftokn3.dylib',
         'minidump-analyzer',
         'pingsender',
