@@ -38,7 +38,7 @@ class InputType {
       mozilla::dom::HTMLInputElement* aInputElement, uint8_t aType,
       void* aMemory);
 
-  virtual ~InputType() {}
+  virtual ~InputType() = default;
 
   
   static const mozilla::Decimal kStepAny;

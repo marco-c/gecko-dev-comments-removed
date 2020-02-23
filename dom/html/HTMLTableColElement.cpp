@@ -19,7 +19,7 @@ namespace dom {
 
 #define MAX_COLSPAN 1000
 
-HTMLTableColElement::~HTMLTableColElement() {}
+HTMLTableColElement::~HTMLTableColElement() = default;
 
 JSObject* HTMLTableColElement::WrapNode(JSContext* aCx,
                                         JS::Handle<JSObject*> aGivenProto) {

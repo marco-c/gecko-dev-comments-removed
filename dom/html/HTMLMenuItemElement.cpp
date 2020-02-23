@@ -41,8 +41,8 @@ static const nsAttrValue::EnumTable* kMenuItemDefaultType =
 
 class Visitor {
  public:
-  Visitor() {}
-  virtual ~Visitor() {}
+  Visitor() = default;
+  virtual ~Visitor() = default;
 
   
 
@@ -108,7 +108,7 @@ class GetCheckedDirtyVisitor : public Visitor {
 
 class SetCheckedDirtyVisitor : public Visitor {
  public:
-  SetCheckedDirtyVisitor() {}
+  SetCheckedDirtyVisitor() = default;
   virtual bool Visit(HTMLMenuItemElement* aMenuItem) override {
     aMenuItem->SetCheckedDirty();
     return true;
@@ -153,7 +153,7 @@ HTMLMenuItemElement::HTMLMenuItemElement(
   mParserCreating = aFromParser;
 }
 
-HTMLMenuItemElement::~HTMLMenuItemElement() {}
+HTMLMenuItemElement::~HTMLMenuItemElement() = default;
 
 
 

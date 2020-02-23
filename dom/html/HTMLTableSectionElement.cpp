@@ -19,7 +19,7 @@ namespace dom {
 
 
 
-HTMLTableSectionElement::~HTMLTableSectionElement() {}
+HTMLTableSectionElement::~HTMLTableSectionElement() = default;
 
 JSObject* HTMLTableSectionElement::WrapNode(JSContext* aCx,
                                             JS::Handle<JSObject*> aGivenProto) {
