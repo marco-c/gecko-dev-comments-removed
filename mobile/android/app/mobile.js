@@ -350,10 +350,6 @@ pref("devtools.remote.wifi.enabled", false);
 
 pref("devtools.performance.recording.features", "[\"js\",\"leaf\",\"stackwalk\",\"java\"]");
 
-
-pref("view_source.wrap_long_lines", true);
-
-
 pref("ui.touch.radius.enabled", false);
 pref("ui.touch.radius.leftmm", 3);
 pref("ui.touch.radius.topmm", 5);
