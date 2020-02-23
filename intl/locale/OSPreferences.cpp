@@ -1,13 +1,13 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/**
- * This is a shared part of the OSPreferences API implementation.
- * It defines helper methods and public methods that are calling
- * platform-specific private methods.
- */
+
+
+
+
+
+
+
+
+
 
 #include "OSPreferences.h"
 
@@ -44,22 +44,34 @@ void OSPreferences::Refresh() {
   }
 }
 
-/**
- * This method should be called by every method of OSPreferences that
- * retrieves a locale id from external source.
- *
- * It attempts to retrieve as much of the locale ID as possible, cutting
- * out bits that are not understood (non-strict behavior of ICU).
- *
- * It returns true if the canonicalization was successful.
- */
+
+
+
+
+
+
+
+
+
 bool OSPreferences::CanonicalizeLanguageTag(nsCString& aLoc) {
-  return LocaleService::CanonicalizeLanguageId(aLoc);
+  char langTag[512];
+
+  UErrorCode status = U_ZERO_ERROR;
+
+  int32_t langTagLen = uloc_toLanguageTag(aLoc.get(), langTag,
+                                          sizeof(langTag) - 1, false, &status);
+
+  if (U_FAILURE(status)) {
+    return false;
+  }
+
+  aLoc.Assign(langTag, langTagLen);
+  return true;
 }
 
-/**
- * This method retrieves from ICU the best pattern for a given date/time style.
- */
+
+
+
 bool OSPreferences::GetDateTimePatternForStyle(DateTimeFormatStyle aDateStyle,
                                                DateTimeFormatStyle aTimeStyle,
                                                const nsACString& aLocale,
@@ -137,14 +149,14 @@ bool OSPreferences::GetDateTimePatternForStyle(DateTimeFormatStyle aDateStyle,
   return true;
 }
 
-/**
- * This method retrieves from ICU the best skeleton for a given date/time style.
- *
- * This is useful for cases where an OS does not provide its own patterns,
- * but provide ability to customize the skeleton, like alter hourCycle setting.
- *
- * The returned value is a skeleton that matches the styles.
- */
+
+
+
+
+
+
+
+
 bool OSPreferences::GetDateTimeSkeletonForStyle(DateTimeFormatStyle aDateStyle,
                                                 DateTimeFormatStyle aTimeStyle,
                                                 const nsACString& aLocale,
@@ -169,15 +181,15 @@ bool OSPreferences::GetDateTimeSkeletonForStyle(DateTimeFormatStyle aDateStyle,
   return true;
 }
 
-/**
- * This function is a counterpart to GetDateTimeSkeletonForStyle.
- *
- * It takes a skeleton and returns the best available pattern for a given locale
- * that represents the provided skeleton.
- *
- * For example:
- * "Hm" skeleton for "en-US" will return "H:m"
- */
+
+
+
+
+
+
+
+
+
 bool OSPreferences::GetPatternForSkeleton(const nsAString& aSkeleton,
                                           const nsACString& aLocale,
                                           nsAString& aRetVal) {
@@ -191,7 +203,7 @@ bool OSPreferences::GetPatternForSkeleton(const nsAString& aSkeleton,
   int32_t len =
       udatpg_getBestPattern(pg, (const UChar*)aSkeleton.BeginReading(),
                             aSkeleton.Length(), nullptr, 0, &status);
-  if (status == U_BUFFER_OVERFLOW_ERROR) {  // expected
+  if (status == U_BUFFER_OVERFLOW_ERROR) {  
     aRetVal.SetLength(len);
     status = U_ZERO_ERROR;
     udatpg_getBestPattern(pg, (const UChar*)aSkeleton.BeginReading(),
@@ -204,15 +216,15 @@ bool OSPreferences::GetPatternForSkeleton(const nsAString& aSkeleton,
   return U_SUCCESS(status);
 }
 
-/**
- * This function returns a pattern that should be used to join date and time
- * patterns into a single date/time pattern string.
- *
- * It's useful for OSes that do not provide an API to retrieve such combined
- * pattern.
- *
- * An example output is "{1}, {0}".
- */
+
+
+
+
+
+
+
+
+
 bool OSPreferences::GetDateTimeConnectorPattern(const nsACString& aLocale,
                                                 nsAString& aRetVal) {
   bool result = false;
@@ -231,9 +243,9 @@ bool OSPreferences::GetDateTimeConnectorPattern(const nsACString& aLocale,
   return result;
 }
 
-/**
- * mozIOSPreferences methods
- */
+
+
+
 NS_IMETHODIMP
 OSPreferences::GetSystemLocales(nsTArray<nsCString>& aRetVal) {
   if (!mSystemLocales.IsEmpty()) {
@@ -246,9 +258,9 @@ OSPreferences::GetSystemLocales(nsTArray<nsCString>& aRetVal) {
     return NS_OK;
   }
 
-  // If we failed to get the system locale, we still need
-  // to return something because there are tests out there that
-  // depend on system locale to be set.
+  
+  
+  
   aRetVal.AppendElement(NS_LITERAL_CSTRING("en-US"));
   return NS_ERROR_FAILURE;
 }
@@ -279,15 +291,13 @@ OSPreferences::GetRegionalPrefsLocales(nsTArray<nsCString>& aRetVal) {
     return NS_OK;
   }
 
-  // If we failed to read regional prefs locales,
-  // use system locales as last fallback.
-  return GetSystemLocales(aRetVal);
+  return NS_ERROR_FAILURE;
 }
 
 static OSPreferences::DateTimeFormatStyle ToDateTimeFormatStyle(
     int32_t aTimeFormat) {
   switch (aTimeFormat) {
-    // See mozIOSPreferences.idl for the integer values here.
+    
     case 0:
       return OSPreferences::DateTimeFormatStyle::None;
     case 1:
@@ -316,14 +326,14 @@ OSPreferences::GetDateTimePattern(int32_t aDateFormatStyle,
     return NS_ERROR_INVALID_ARG;
   }
 
-  // If the user is asking for None on both, date and time style,
-  // let's exit early.
+  
+  
   if (timeStyle == DateTimeFormatStyle::None &&
       dateStyle == DateTimeFormatStyle::None) {
     return NS_OK;
   }
 
-  // Create a cache key from the locale + style options
+  
   nsAutoCString key(aLocale);
   key.Append(':');
   key.AppendInt(aDateFormatStyle);
@@ -343,9 +353,9 @@ OSPreferences::GetDateTimePattern(int32_t aDateFormatStyle,
   }
 
   if (mPatternCache.Count() == kMaxCachedPatterns) {
-    // Don't allow unlimited cache growth; just throw it away in the case of
-    // pathological behavior where a page keeps requesting different formats
-    // and locales.
+    
+    
+    
     NS_WARNING("flushing DateTimePattern cache");
     mPatternCache.Clear();
   }
