@@ -1817,6 +1817,8 @@ inline static bool ObjectDenseElementsMayBeMarkable(NativeObject* nobj) {
     return true;
   }
 
+  MOZ_ASSERT(IsTypeInferenceEnabled());
+
   
   HeapTypeSet* typeSet = group->maybeGetPropertyDontCheckGeneration(JSID_VOID);
   if (!typeSet) {

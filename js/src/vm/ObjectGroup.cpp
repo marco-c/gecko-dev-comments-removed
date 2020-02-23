@@ -138,6 +138,10 @@ void ObjectGroup::setAddendum(AddendumKind kind, void* addendum,
 
 
 bool ObjectGroup::useSingletonForClone(JSFunction* fun) {
+  if (!IsTypeInferenceEnabled()) {
+    return false;
+  }
+
   if (!fun->isInterpreted()) {
     return false;
   }
@@ -203,6 +207,9 @@ bool ObjectGroup::useSingletonForNewObject(JSContext* cx, JSScript* script,
 
 
 
+  if (!IsTypeInferenceEnabled()) {
+    return false;
+  }
   if (script->isGenerator() || script->isAsync()) {
     return false;
   }
@@ -225,6 +232,10 @@ bool ObjectGroup::useSingletonForAllocationSite(JSScript* script,
 
 
 
+
+  if (!IsTypeInferenceEnabled()) {
+    return false;
+  }
 
   if (script->function() && !script->treatAsRunOnce()) {
     return false;
@@ -491,6 +502,11 @@ ObjectGroup* ObjectGroup::defaultNewGroup(JSContext* cx, const JSClass* clasp,
   
   
   MOZ_ASSERT_IF(!clasp, !!associated);
+
+  if (associated && !associated->is<TypeDescr>() && !IsTypeInferenceEnabled()) {
+    clasp = &PlainObject::class_;
+    associated = nullptr;
+  }
 
   if (associated) {
     MOZ_ASSERT_IF(!associated->is<TypeDescr>(), !clasp);
@@ -806,6 +822,10 @@ ArrayObject* ObjectGroup::newArrayObject(JSContext* cx, const Value* vp,
       return nullptr;
     }
     return obj;
+  }
+
+  if (!IsTypeInferenceEnabled()) {
+    return NewDenseCopiedArray(cx, length, vp, nullptr, newKind);
   }
 
   
@@ -1127,8 +1147,8 @@ JSObject* ObjectGroup::newPlainObject(JSContext* cx, IdValuePair* properties,
                                       size_t nproperties,
                                       NewObjectKind newKind) {
   
-  if (newKind == SingletonObject || nproperties == 0 ||
-      nproperties >= PropertyTree::MAX_HEIGHT) {
+  if (!IsTypeInferenceEnabled() || newKind == SingletonObject ||
+      nproperties == 0 || nproperties >= PropertyTree::MAX_HEIGHT) {
     return NewPlainObjectWithProperties(cx, properties, nproperties, newKind);
   }
 
@@ -1409,7 +1429,8 @@ ObjectGroup* ObjectGroup::allocationSiteGroup(
 
   uint32_t offset = scriptArg->pcToOffset(pc);
 
-  if (offset >= ObjectGroupRealm::AllocationSiteKey::OFFSET_LIMIT) {
+  if (!IsTypeInferenceEnabled() ||
+      offset >= ObjectGroupRealm::AllocationSiteKey::OFFSET_LIMIT) {
     if (protoArg) {
       return defaultNewGroup(cx, GetClassForProtoKey(kind),
                              TaggedProto(protoArg));
@@ -1546,9 +1567,11 @@ ArrayObject* ObjectGroup::getOrFixupCopyOnWriteObject(JSContext* cx,
 
   
   MOZ_ASSERT(obj->slotSpan() == 0);
-  for (size_t i = 0; i < obj->getDenseInitializedLength(); i++) {
-    const Value& v = obj->getDenseElement(i);
-    AddTypePropertyId(cx, group, nullptr, JSID_VOID, v);
+  if (IsTypeInferenceEnabled()) {
+    for (size_t i = 0; i < obj->getDenseInitializedLength(); i++) {
+      const Value& v = obj->getDenseElement(i);
+      AddTypePropertyId(cx, group, nullptr, JSID_VOID, v);
+    }
   }
 
   obj->setGroup(group);
@@ -1643,6 +1666,11 @@ ObjectGroup* ObjectGroupRealm::makeGroup(
     Handle<TaggedProto> proto, ObjectGroupFlags initialFlags ) {
   MOZ_ASSERT_IF(proto.isObject(),
                 cx->isInsideCurrentCompartment(proto.toObject()));
+
+  if (!IsTypeInferenceEnabled()) {
+    
+    initialFlags |= OBJECT_FLAG_DYNAMIC_MASK;
+  }
 
   ObjectGroup* group = Allocate<ObjectGroup>(cx);
   if (!group) {

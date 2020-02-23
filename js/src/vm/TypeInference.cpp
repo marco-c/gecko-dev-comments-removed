@@ -1363,6 +1363,9 @@ void TypeSet::ObjectKey::ensureTrackedProperty(JSContext* cx, jsid id) {
 }
 
 void js::EnsureTrackPropertyTypes(JSContext* cx, JSObject* obj, jsid id) {
+  if (!IsTypeInferenceEnabled()) {
+    return;
+  }
   id = IdToTypeId(id);
 
   if (obj->isSingleton()) {
@@ -2947,6 +2950,9 @@ void ObjectGroup::markPropertyNonData(JSContext* cx, JSObject* obj, jsid id) {
 
 void ObjectGroup::markPropertyNonWritable(JSContext* cx, JSObject* obj,
                                           jsid id) {
+  if (!IsTypeInferenceEnabled()) {
+    return;
+  }
   AutoEnterAnalysis enter(cx);
 
   id = IdToTypeId(id);
@@ -3491,6 +3497,9 @@ void JitScript::MonitorBytecodeType(JSContext* cx, JSScript* script,
 
 bool JSFunction::setTypeForScriptedFunction(JSContext* cx, HandleFunction fun,
                                             bool singleton ) {
+  if (!IsTypeInferenceEnabled()) {
+    return true;
+  }
   if (singleton) {
     if (!setSingleton(cx, fun)) {
       return false;
@@ -3516,6 +3525,8 @@ bool JSFunction::setTypeForScriptedFunction(JSContext* cx, HandleFunction fun,
 
 
 void PreliminaryObjectArray::registerNewObject(PlainObject* res) {
+  MOZ_ASSERT(IsTypeInferenceEnabled());
+
   
   
   
@@ -3541,6 +3552,8 @@ bool PreliminaryObjectArray::full() const {
 }
 
 void PreliminaryObjectArray::sweep() {
+  MOZ_ASSERT(IsTypeInferenceEnabled());
+
   
   
   for (size_t i = 0; i < COUNT; i++) {
@@ -3552,6 +3565,7 @@ void PreliminaryObjectArray::sweep() {
 }
 
 void PreliminaryObjectArrayWithTemplate::trace(JSTracer* trc) {
+  MOZ_ASSERT(IsTypeInferenceEnabled());
   TraceNullableEdge(trc, &shape_, "PreliminaryObjectArrayWithTemplate_shape");
 }
 

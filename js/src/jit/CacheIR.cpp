@@ -4816,7 +4816,7 @@ AttachDecision CallIRGenerator::tryAttachArrayPush() {
   
   
   
-  MOZ_ASSERT(typeCheckInfo_.needsTypeBarrier());
+  MOZ_ASSERT_IF(IsTypeInferenceEnabled(), typeCheckInfo_.needsTypeBarrier());
 
   
   if (typeCheckInfo_.needsTypeBarrier()) {

@@ -802,6 +802,10 @@ bool BaselineCacheIRCompiler::callTypeUpdateIC(
   
   allocator.discardStack(masm);
 
+  if (!IsTypeInferenceEnabled()) {
+    return true;
+  }
+
   
   MOZ_ASSERT(val == R0);
   MOZ_ASSERT(scratch == R1.scratchReg());

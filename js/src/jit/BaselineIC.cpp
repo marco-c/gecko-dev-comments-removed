@@ -1409,6 +1409,8 @@ bool ICCacheIR_Updated::addUpdateStubForValue(JSContext* cx,
                                               HandleObject obj,
                                               HandleObjectGroup group,
                                               HandleId id, HandleValue val) {
+  MOZ_ASSERT(IsTypeInferenceEnabled());
+
   EnsureTrackPropertyTypes(cx, obj, id);
 
   
@@ -1554,6 +1556,8 @@ bool DoTypeUpdateFallback(JSContext* cx, BaselineFrame* frame,
   
   
   JS::AutoCheckCannotGC nogc;
+
+  MOZ_ASSERT(IsTypeInferenceEnabled());
 
   FallbackICSpew(cx, stub->getChainFallback(), "TypeUpdate(%s)",
                  ICStub::KindString(stub->kind()));
