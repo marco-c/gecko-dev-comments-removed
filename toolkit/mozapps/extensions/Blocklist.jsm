@@ -523,7 +523,7 @@ const Utils = {
 
 
 
-async function targetAppFilter(entry, environment) {
+async function targetAppFilter(entry, environment = {}) {
   
   
   
@@ -537,7 +537,6 @@ async function targetAppFilter(entry, environment) {
     return entry;
   }
 
-  const { appID, version: appVersion, toolkitVersion } = environment;
   const { versionRange } = entry;
 
   
@@ -547,7 +546,7 @@ async function targetAppFilter(entry, environment) {
   
   if (!Array.isArray(versionRange)) {
     const { maxVersion = "*" } = versionRange;
-    const matchesRange = Services.vc.compare(appVersion, maxVersion) <= 0;
+    const matchesRange = Services.vc.compare(gApp.version, maxVersion) <= 0;
     return matchesRange ? entry : null;
   }
 
@@ -567,12 +566,15 @@ async function targetAppFilter(entry, environment) {
         return entry;
       }
       const { maxVersion = "*" } = ta;
-      if (guid == appID && Services.vc.compare(appVersion, maxVersion) <= 0) {
+      if (
+        guid == gAppID &&
+        Services.vc.compare(gApp.version, maxVersion) <= 0
+      ) {
         return entry;
       }
       if (
         guid == "toolkit@mozilla.org" &&
-        Services.vc.compare(toolkitVersion, maxVersion) <= 0
+        Services.vc.compare(Services.appinfo.platformVersion, maxVersion) <= 0
       ) {
         return entry;
       }
@@ -832,9 +834,7 @@ this.PluginBlocklistRS = {
   },
 
   async _filterItem(entry) {
-    if (
-      !(await targetAppFilter(entry, { appID: gAppID, version: gApp.version }))
-    ) {
+    if (!(await targetAppFilter(entry))) {
       return null;
     }
     if (!Utils.matchesOSABI(entry)) {
@@ -1256,9 +1256,7 @@ this.ExtensionBlocklistRS = {
   },
 
   async _filterItem(entry) {
-    if (
-      !(await targetAppFilter(entry, { appID: gAppID, version: gApp.version }))
-    ) {
+    if (!(await targetAppFilter(entry))) {
       return null;
     }
     if (!Utils.matchesOSABI(entry)) {
