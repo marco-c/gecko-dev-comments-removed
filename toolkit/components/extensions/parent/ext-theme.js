@@ -22,7 +22,7 @@ const onUpdatedEmitter = new EventEmitter();
 
 
 const emptyTheme = {
-  details: { colors: null, images: null, properties: null },
+  details: {},
 };
 
 let defaultTheme = emptyTheme;
