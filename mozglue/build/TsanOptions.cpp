@@ -302,10 +302,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "deadlock:OCSPStaplingServer\n"
 
          
-         "race:CacheStorageService::Notify\n"
-         "race:CacheStorageService::OnMemoryConsumptionChange\n"
-
-         
          "race:nsCookieService::CountCookiesFromHostInternal\n"
          "race:nsCookieService::InitDBStates\n"
 
