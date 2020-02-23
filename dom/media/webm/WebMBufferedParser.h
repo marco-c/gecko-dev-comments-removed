@@ -295,7 +295,7 @@ class WebMBufferedState final {
 
  private:
   
-  ~WebMBufferedState() { MOZ_COUNT_DTOR(WebMBufferedState); }
+  MOZ_COUNTED_DTOR(WebMBufferedState)
 
   
   ReentrantMonitor mReentrantMonitor;
