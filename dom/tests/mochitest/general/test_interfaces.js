@@ -269,7 +269,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "CSSPageRule", insecureContext: true },
   
-  { name: "CSSPseudoElement", insecureContext: true, release: false },
+  { name: "CSSPseudoElement", insecureContext: true, disabled: true },
   
   { name: "CSSRule", insecureContext: true },
   
