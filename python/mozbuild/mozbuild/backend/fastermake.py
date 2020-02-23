@@ -169,7 +169,6 @@ class FasterMakeBackend(MakeBackend, PartialBackend):
         
         for var in (
             'PYTHON',
-            'PYTHON3',
             'ACDEFINES',
             'MOZ_BUILD_APP',
             'MOZ_WIDGET_TOOLKIT',
