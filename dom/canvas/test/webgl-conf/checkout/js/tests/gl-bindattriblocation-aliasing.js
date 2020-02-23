@@ -4,23 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
 
 var runBindAttribLocationAliasingTest = function(wtu, gl, glFragmentShader, vertexShaderTemplate) {

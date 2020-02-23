@@ -45,23 +45,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function WebGLRenderingContextBase() {}
 
 

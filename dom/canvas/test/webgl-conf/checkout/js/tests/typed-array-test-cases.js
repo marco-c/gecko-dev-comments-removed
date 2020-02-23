@@ -6,23 +6,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 var testCases =
   [ {name: "Float32Array",
      unsigned: false,

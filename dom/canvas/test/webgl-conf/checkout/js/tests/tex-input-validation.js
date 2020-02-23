@@ -8,23 +8,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
 description("Validate tex functions input parameters");
 

@@ -3,23 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 var TexImageUtils = (function() {
 
   "use strict";

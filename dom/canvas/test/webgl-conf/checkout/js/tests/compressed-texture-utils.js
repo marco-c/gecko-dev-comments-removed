@@ -4,23 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
 
 var CompressedTextureUtils = (function() {
@@ -173,6 +156,42 @@ var testFormatRestrictionsOnBufferSize = function(gl, validFormats, expectedByte
     }
 };
 
+
+
+
+
+
+
+
+
+
+var testTexSubImageDimensions = function(gl, validFormats, expectedByteLength, getBlockDimensions, width, height, subImageConfigs) {
+    var tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+
+    for (var formatId in validFormats) {
+        if (validFormats.hasOwnProperty(formatId)) {
+            var format = validFormats[formatId];
+            var blockSize = getBlockDimensions(format);
+            var expectedSize = expectedByteLength(width, height, format);
+            var data = new Uint8Array(expectedSize);
+
+            gl.compressedTexImage2D(gl.TEXTURE_2D, 0, format, width, height, 0, data);
+            wtu.glErrorShouldBe(gl, gl.NO_ERROR, "setting up compressed texture");
+
+            for (let i = 0, len = subImageConfigs.length; i < len; ++i) {
+                let c = subImageConfigs[i];
+                var subData = new Uint8Array(expectedByteLength(c.width, c.height, format));
+                gl.compressedTexSubImage2D(gl.TEXTURE_2D, 0, c.xoffset, c.yoffset, c.width, c.height, format, subData);
+                wtu.glErrorShouldBe(gl, c.expectation, c.message);
+            }
+        }
+    }
+
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.deleteTexture(tex);
+};
+
 return {
     formatToString: formatToString,
     insertCaptionedImg: insertCaptionedImg,
@@ -180,7 +199,8 @@ return {
     testCompressedFormatsListed: testCompressedFormatsListed,
     testCompressedFormatsUnavailableWhenExtensionDisabled: testCompressedFormatsUnavailableWhenExtensionDisabled,
     testCorrectEnumValuesInExt: testCorrectEnumValuesInExt,
-    testFormatRestrictionsOnBufferSize: testFormatRestrictionsOnBufferSize
+    testFormatRestrictionsOnBufferSize: testFormatRestrictionsOnBufferSize,
+    testTexSubImageDimensions: testTexSubImageDimensions,
 };
 
 })();

@@ -3,23 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 OpenGLESTestRunner = (function(){
 var wtu = WebGLTestUtils;
 var gl;

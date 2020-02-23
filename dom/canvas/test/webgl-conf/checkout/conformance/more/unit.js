@@ -11,23 +11,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 if (window.testRunner && !window.layoutTestController) {
   window.layoutTestController = window.testRunner;
 }

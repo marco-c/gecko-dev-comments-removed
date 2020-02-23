@@ -4,23 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 (function() {
   var testHarnessInitialized = false;
 

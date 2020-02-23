@@ -5,23 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 var GLSLConstructorTestsGenerator = (function() {
 
 var wtu = WebGLTestUtils;

@@ -18,23 +18,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 'use strict';
 goog.provide('framework.common.tcuSkipList');
 

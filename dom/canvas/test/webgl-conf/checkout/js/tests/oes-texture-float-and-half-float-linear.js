@@ -4,23 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function testTexLinear(gl, extensionName, internalFormatWebgl2, pixelType) {
     var wtu = WebGLTestUtils;
 

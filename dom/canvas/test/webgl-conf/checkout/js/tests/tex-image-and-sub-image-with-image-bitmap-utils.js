@@ -5,23 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function runOneIterationImageBitmapTest(useTexSubImage, bindingTarget, program, bitmap, flipY, premultiplyAlpha, optionsVal,
     internalFormat, pixelFormat, pixelType, gl, tiu, wtu)
 {

@@ -7,23 +7,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 initTestingHarness();
 
 var old = debug;

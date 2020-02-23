@@ -3,23 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 IterableTest = (function() {
 
   var wtu = WebGLTestUtils;

@@ -3,23 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 GLSLConformanceTester = (function(){
 
 var wtu = WebGLTestUtils;
@@ -275,6 +258,22 @@ function runOneTest(gl, info) {
         debug(info.uniforms[i].name + ' set to ' + info.uniforms[i].value);
       } else {
         debug('uniform ' + info.uniforms[i].name + ' had null location and was not set');
+      }
+    }
+  }
+
+  if (info.uniformBlocks !== undefined) {
+    for (var i = 0; i < info.uniformBlocks.length; ++i) {
+      var uniformBlockIndex = gl.getUniformBlockIndex(program, info.uniformBlocks[i].name);
+      if (uniformBlockIndex !== null) {
+        gl.uniformBlockBinding(program, uniformBlockIndex, i);
+        debug(info.uniformBlocks[i].name + ' (index ' + uniformBlockIndex + ') bound to slot ' + i);
+
+        var uboValueBuffer = gl.createBuffer();
+        gl.bindBufferBase(gl.UNIFORM_BUFFER, i, uboValueBuffer);
+        gl.bufferData(gl.UNIFORM_BUFFER, info.uniformBlocks[i].value, info.uniformBlocks[i].usage || gl.STATIC_DRAW);
+      } else {
+        debug('uniform block' + info.uniformBlocks[i].name + ' had null block index and was not set');
       }
     }
   }

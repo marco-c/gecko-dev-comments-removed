@@ -8,23 +8,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
 description();
 var wtu = WebGLTestUtils;

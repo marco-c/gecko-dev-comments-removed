@@ -3,23 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 NoOverOptimizeOnUniformArrayTester = (function(){
 
 var vshader = [

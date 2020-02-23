@@ -4,23 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 """
   Generator for textureformat* tests.
   This file needs to be run in its folder.

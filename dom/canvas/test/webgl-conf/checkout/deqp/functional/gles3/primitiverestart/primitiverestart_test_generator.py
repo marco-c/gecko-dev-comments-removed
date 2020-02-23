@@ -4,23 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 """
   Generator for primitiverestart* tests.
   This file needs to be run in its folder.

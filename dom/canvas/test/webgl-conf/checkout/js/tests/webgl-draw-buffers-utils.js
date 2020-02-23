@@ -6,23 +6,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 'use strict';
 
 var WebGLDrawBuffersUtils = function(gl, ext) {

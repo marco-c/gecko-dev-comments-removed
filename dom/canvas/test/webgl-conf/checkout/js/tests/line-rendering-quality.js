@@ -4,23 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 'use strict';
 description("Verifies that lines, both aliased and antialiased, have acceptable quality.");
 

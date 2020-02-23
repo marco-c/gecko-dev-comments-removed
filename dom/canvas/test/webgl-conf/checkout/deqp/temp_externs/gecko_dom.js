@@ -567,6 +567,14 @@ Document.prototype.onoffline;
 
 
 
+Document.prototype.getBoxObjectFor = function(element) {};
+
+
+
+
+
+
+
 
 Range.prototype.createContextualFragment;
 
@@ -1067,6 +1075,27 @@ Plugin.prototype.length;
 
 
 Plugin.prototype.name;
+
+
+function BoxObject() {}
+
+
+BoxObject.prototype.element;
+
+
+BoxObject.prototype.screenX;
+
+
+BoxObject.prototype.screenY;
+
+
+BoxObject.prototype.x;
+
+
+BoxObject.prototype.y;
+
+
+BoxObject.prototype.width;
 
 
 

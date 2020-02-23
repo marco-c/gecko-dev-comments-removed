@@ -8,23 +8,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
 description("This test ensures various WebGL functions fail when passed invalid OpenGL ES enums.");
 

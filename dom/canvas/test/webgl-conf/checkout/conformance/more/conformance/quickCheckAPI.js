@@ -25,23 +25,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 var GLcanvas = document.createElement('canvas');
 var canvas2D = document.createElement('canvas');
 GLcanvas.width = GLcanvas.height = 256;

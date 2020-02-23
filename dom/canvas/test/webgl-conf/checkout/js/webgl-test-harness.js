@@ -155,23 +155,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 WebGLTestHarnessModule = function() {
 
 

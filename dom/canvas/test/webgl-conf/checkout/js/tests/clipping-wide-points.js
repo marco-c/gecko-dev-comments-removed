@@ -4,23 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 'use strict';
 description("This test ensures clipping works with wide points whose centers are out of the viewport");
 

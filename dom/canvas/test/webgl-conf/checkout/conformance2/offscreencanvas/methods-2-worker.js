@@ -4,23 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 importScripts("../../js/tests/canvas-tests-utils.js");
 self.onmessage = function(e) {
     if (testAPIs('webgl2'))

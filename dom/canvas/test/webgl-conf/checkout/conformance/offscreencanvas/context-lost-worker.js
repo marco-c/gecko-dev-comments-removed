@@ -4,23 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 importScripts("../../js/tests/canvas-tests-utils.js");
 self.onmessage = function(e) {
     canvas = new OffscreenCanvas(10, 10);

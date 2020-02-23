@@ -8,23 +8,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function loadTexture(gl, elem, mipmaps) {
   var tex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, tex);

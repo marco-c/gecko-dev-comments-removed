@@ -5,23 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 var canvas;
 var gl;
 var OES_vertex_array_object;

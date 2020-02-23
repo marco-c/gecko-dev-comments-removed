@@ -3,23 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 var WebGLTestUtils = (function() {
 "use strict";
 
@@ -50,29 +33,39 @@ var loggingOff = function() {
   error = function() {};
 };
 
+const ENUM_NAME_REGEX = RegExp('[A-Z][A-Z0-9_]*');
+const ENUM_NAME_BY_VALUE = {};
+const ENUM_NAME_PROTOTYPES = new Map();
 
 
 
 
 
 
-var glEnumToString = function(gl, value) {
-  
-  if (gl.NO_ERROR === undefined || value === undefined) {
-    return undefined;
-  }
-  
-  if (value === gl.NO_ERROR) {
-    return "NO_ERROR";
-  }
-  for (var p in gl) {
-    if (gl[p] == value) {
-      if (p == 'drawingBufferWidth' || p == 'drawingBufferHeight') {
-        continue;
+
+var glEnumToString = function(glOrExt, value) {
+  if (value === undefined)
+    throw new Error('glEnumToString: `value` must not be undefined');
+
+  const proto = glOrExt.__proto__;
+  if (!ENUM_NAME_PROTOTYPES.has(proto)) {
+    ENUM_NAME_PROTOTYPES.set(proto, true);
+
+    for (const k in proto) {
+      if (!ENUM_NAME_REGEX.test(k)) continue;
+
+      const v = glOrExt[k];
+      if (ENUM_NAME_BY_VALUE[v] === undefined) {
+        ENUM_NAME_BY_VALUE[v] = k;
+      } else {
+        ENUM_NAME_BY_VALUE[v] += '/' + k;
       }
-      return p;
     }
   }
+
+  const key = ENUM_NAME_BY_VALUE[value];
+  if (key !== undefined) return key;
+
   return "0x" + Number(value).toString(16);
 };
 
@@ -123,9 +116,49 @@ var simpleTextureVertexShader = [
 
 
 
+var simpleTextureVertexShaderESSL300 = [
+  '#version 300 es',
+  'layout(location=0) in vec4 vPosition;',
+  'layout(location=1) in vec2 texCoord0;',
+  'out vec2 texCoord;',
+  'void main() {',
+  '    gl_Position = vPosition;',
+  '    texCoord = texCoord0;',
+  '}'].join('\n');
+
+
+
+
+
 var simpleTextureFragmentShader = [
   'precision mediump float;',
   'uniform sampler2D tex;',
+  'varying vec2 texCoord;',
+  'void main() {',
+  '    gl_FragData[0] = texture2D(tex, texCoord);',
+  '}'].join('\n');
+
+
+
+
+
+var simpleTextureFragmentShaderESSL300 = [
+  '#version 300 es',
+  'precision highp float;',
+  'uniform highp sampler2D tex;',
+  'in vec2 texCoord;',
+  'out vec4 out_color;',
+  'void main() {',
+  '    out_color = texture(tex, texCoord);',
+  '}'].join('\n');
+
+
+
+
+
+var simpleHighPrecisionTextureFragmentShader = [
+  'precision highp float;',
+  'uniform highp sampler2D tex;',
   'varying vec2 texCoord;',
   'void main() {',
   '    gl_FragData[0] = texture2D(tex, texCoord);',
@@ -405,12 +438,33 @@ var setupNoTexCoordTextureProgram = function(gl) {
 
 
 
+
 var setupSimpleTextureProgram = function(
-    gl, opt_positionLocation, opt_texcoordLocation) {
+    gl, opt_positionLocation, opt_texcoordLocation, opt_fragmentShaderOverride) {
   opt_positionLocation = opt_positionLocation || 0;
   opt_texcoordLocation = opt_texcoordLocation || 1;
+  opt_fragmentShaderOverride = opt_fragmentShaderOverride || simpleTextureFragmentShader;
   return setupProgram(gl,
-                      [simpleTextureVertexShader, simpleTextureFragmentShader],
+                      [simpleTextureVertexShader, opt_fragmentShaderOverride],
+                      ['vPosition', 'texCoord0'],
+                      [opt_positionLocation, opt_texcoordLocation]);
+};
+
+
+
+
+
+
+
+
+
+var setupSimpleTextureProgramESSL300 = function(
+    gl, opt_positionLocation, opt_texcoordLocation, opt_fragmentShaderOverride) {
+  opt_positionLocation = opt_positionLocation || 0;
+  opt_texcoordLocation = opt_texcoordLocation || 1;
+  opt_fragmentShaderOverride = opt_fragmentShaderOverride || simpleTextureFragmentShaderESSL300;
+  return setupProgram(gl,
+                      [simpleTextureVertexShaderESSL300, opt_fragmentShaderOverride],
                       ['vPosition', 'texCoord0'],
                       [opt_positionLocation, opt_texcoordLocation]);
 };
@@ -575,10 +629,11 @@ var setupQuad = function(gl, options) {
 
 
 
+
 var setupTexturedQuad = function(
     gl, opt_positionLocation, opt_texcoordLocation, options) {
   var program = setupSimpleTextureProgram(
-      gl, opt_positionLocation, opt_texcoordLocation);
+      gl, opt_positionLocation, opt_texcoordLocation, options && options.fragmentShaderOverride);
   setupUnitQuad(gl, opt_positionLocation, opt_texcoordLocation, options);
   return program;
 };
@@ -1188,7 +1243,10 @@ var checkCanvasRects = function(gl, rects) {
 
 
 
-var checkCanvasRectColor = function(gl, x, y, width, height, color, opt_errorRange, sameFn, differentFn, logFn, opt_readBackBuf, opt_readBackType) {
+
+
+
+var checkCanvasRectColor = function(gl, x, y, width, height, color, opt_errorRange, sameFn, differentFn, logFn, opt_readBackBuf, opt_readBackType, opt_readBackFormat) {
   if (isWebGLContext(gl) && !gl.getParameter(gl.FRAMEBUFFER_BINDING)) {
     
     var xr = clipToRange(x, width, 0, gl.canvas.width);
@@ -1211,7 +1269,8 @@ var checkCanvasRectColor = function(gl, x, y, width, height, color, opt_errorRan
   if (isWebGLContext(gl)) {
     buf = opt_readBackBuf ? opt_readBackBuf : new Uint8Array(width * height * 4);
     var readBackType = opt_readBackType ? opt_readBackType : gl.UNSIGNED_BYTE;
-    gl.readPixels(x, y, width, height, gl.RGBA, readBackType, buf);
+    var readBackFormat = opt_readBackFormat ? opt_readBackFormat : gl.RGBA;
+    gl.readPixels(x, y, width, height, readBackFormat, readBackType, buf);
   } else {
     buf = gl.getImageData(x, y, width, height).data;
   }
@@ -1254,7 +1313,10 @@ var checkCanvasRectColor = function(gl, x, y, width, height, color, opt_errorRan
 
 
 
-var checkCanvasRect = function(gl, x, y, width, height, color, opt_msg, opt_errorRange, opt_readBackBuf, opt_readBackType) {
+
+
+
+var checkCanvasRect = function(gl, x, y, width, height, color, opt_msg, opt_errorRange, opt_readBackBuf, opt_readBackType, opt_readBackFormat) {
   checkCanvasRectColor(
       gl, x, y, width, height, color, opt_errorRange,
       function() {
@@ -1271,7 +1333,8 @@ var checkCanvasRect = function(gl, x, y, width, height, color, opt_msg, opt_erro
       },
       debug,
       opt_readBackBuf,
-      opt_readBackType);
+      opt_readBackType,
+      opt_readBackFormat);
 };
 
 
@@ -1673,16 +1736,22 @@ var glErrorShouldBeImpl = function(gl, glErrors, reportSuccesses, opt_msg) {
     glErrors = [glErrors];
   }
   opt_msg = opt_msg || "";
+
+  const fnErrStr = function(errVal) {
+    if (errVal == 0) return "NO_ERROR";
+    return glEnumToString(gl, errVal);
+  };
+
   var err = gl.getError();
   var ndx = glErrors.indexOf(err);
   var errStrs = [];
   for (var ii = 0; ii < glErrors.length; ++ii) {
-    errStrs.push(glEnumToString(gl, glErrors[ii]));
+    errStrs.push(fnErrStr(glErrors[ii]));
   }
   var expected = errStrs.join(" or ");
   if (ndx < 0) {
     var msg = "getError expected" + ((glErrors.length > 1) ? " one of: " : ": ");
-    testFailed(msg + expected +  ". Was " + glEnumToString(gl, err) + " : " + opt_msg);
+    testFailed(msg + expected +  ". Was " + fnErrStr(err) + " : " + opt_msg);
   } else if (reportSuccesses) {
     var msg = "getError was " + ((glErrors.length > 1) ? "one of: " : "expected value: ");
     testPassed(msg + expected + " : " + opt_msg);
@@ -3020,6 +3089,9 @@ var startPlayingAndWaitForVideo = function(video, callback) {
 
   requestAnimFrame.call(window, timeWatcher);
   video.loop = true;
+  video.muted = true;
+  
+  video.preload = 'auto';
   video.play();
 };
 
@@ -3329,6 +3401,7 @@ var API = {
   setupIndexedQuadWithOptions: setupIndexedQuadWithOptions,
   setupSimpleColorProgram: setupSimpleColorProgram,
   setupSimpleTextureProgram: setupSimpleTextureProgram,
+  setupSimpleTextureProgramESSL300: setupSimpleTextureProgramESSL300,
   setupSimpleCubeMapTextureProgram: setupSimpleCubeMapTextureProgram,
   setupSimpleVertexColorProgram: setupSimpleVertexColorProgram,
   setupNoTexCoordTextureProgram: setupNoTexCoordTextureProgram,
@@ -3369,11 +3442,14 @@ var API = {
 Object.defineProperties(API, {
   noTexCoordTextureVertexShader: { value: noTexCoordTextureVertexShader, writable: false },
   simpleTextureVertexShader: { value: simpleTextureVertexShader, writable: false },
+  simpleTextureVertexShaderESSL300: { value: simpleTextureVertexShaderESSL300, writable: false },
   simpleColorFragmentShader: { value: simpleColorFragmentShader, writable: false },
   simpleColorFragmentShaderESSL300: { value: simpleColorFragmentShaderESSL300, writable: false },
   simpleVertexShader: { value: simpleVertexShader, writable: false },
   simpleVertexShaderESSL300: { value: simpleVertexShaderESSL300, writable: false },
   simpleTextureFragmentShader: { value: simpleTextureFragmentShader, writable: false },
+  simpleTextureFragmentShaderESSL300: { value: simpleTextureFragmentShaderESSL300, writable: false },
+  simpleHighPrecisionTextureFragmentShader: { value: simpleHighPrecisionTextureFragmentShader, writable: false },
   simpleCubeMapTextureFragmentShader: { value: simpleCubeMapTextureFragmentShader, writable: false },
   simpleVertexColorFragmentShader: { value: simpleVertexColorFragmentShader, writable: false },
   simpleVertexColorVertexShader: { value: simpleVertexColorVertexShader, writable: false }

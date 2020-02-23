@@ -4,23 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 'use strict';
 
 var runCompressedTextureSizeLimitTest = function(maxArrayBufferSizeBytes, positiveCubeMapMaxSize) {

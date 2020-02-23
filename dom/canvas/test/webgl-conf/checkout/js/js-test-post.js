@@ -4,23 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 shouldBeTrue("successfullyParsed");
 _addSpan('<br /><span class="pass">TEST COMPLETE</span>');
 if (_jsTestPreVerboseLogging) {

@@ -8,23 +8,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
 description("This test ensures WebGL implementations vertexAttrib can be set and read.");
 

@@ -4,23 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function constructTypedArray(type, data) {
   if (type == 'Int8Array') {
     return new Int8Array(data);

@@ -3,23 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 GLSLGenerator = (function() {
 
 var vertexShaderTemplate = [

@@ -7,23 +7,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 initTestingHarness();
 
 var old = debug;
@@ -152,7 +135,7 @@ function generateTest(internalFormat, pixelFormat, pixelType, prologue, resource
         wtu.clearAndDrawUnitQuad(gl, [0, 0, 0, 255]);
         
         
-        var tolerance = 5;
+        const tolerance = 6;
         debug("Checking lower left corner");
         wtu.checkCanvasRect(gl, 4, 4, 2, 2, bottomColor,
                             "shouldBe " + bottomColor, tolerance);
