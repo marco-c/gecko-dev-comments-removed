@@ -22,6 +22,7 @@
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StyleSheetInlines.h"
+#include "mozilla/css/SheetLoadData.h"
 
 #include "mozAutoDocUpdate.h"
 #include "SheetLoadData.h"
@@ -236,6 +237,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(StyleSheet)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMedia)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRuleList)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mConstructorDocument)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReplacePromise)
   tmp->TraverseInner(cb);
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
@@ -244,6 +246,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(StyleSheet)
   tmp->UnlinkInner();
   tmp->DropRuleList();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mConstructorDocument)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mReplacePromise)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -266,16 +269,21 @@ dom::CSSStyleSheetParsingMode StyleSheet::ParsingModeDOM() {
 }
 
 void StyleSheet::SetComplete() {
-  MOZ_ASSERT(!HasForcedUniqueInner(),
+  
+  
+  
+  MOZ_ASSERT(IsConstructed() || !HasForcedUniqueInner(),
              "Can't complete a sheet that's already been forced unique.");
   MOZ_ASSERT(!IsComplete(), "Already complete?");
   mState |= State::Complete;
   if (!Disabled()) {
     ApplicableStateChanged(true);
   }
+  MaybeResolveReplacePromise();
 }
 
 void StyleSheet::ApplicableStateChanged(bool aApplicable) {
+  MOZ_ASSERT(aApplicable == IsApplicable());
   auto Notify = [this](DocumentOrShadowRoot& target) {
     nsINode& node = target.AsNode();
     if (ShadowRoot* shadow = ShadowRoot::FromNode(node)) {
@@ -595,23 +603,32 @@ int32_t StyleSheet::AddRule(const nsAString& aSelector, const nsAString& aBlock,
   return -1;
 }
 
+void StyleSheet::MaybeResolveReplacePromise() {
+  MOZ_ASSERT(!!mReplacePromise == ModificationDisallowed());
+  if (!mReplacePromise) {
+    return;
+  }
+
+  SetModificationDisallowed(false);
+  mReplacePromise->MaybeResolve(this);
+  mReplacePromise = nullptr;
+}
+
+void StyleSheet::MaybeRejectReplacePromise() {
+  MOZ_ASSERT(!!mReplacePromise == ModificationDisallowed());
+  if (!mReplacePromise) {
+    return;
+  }
+
+  SetModificationDisallowed(false);
+  mReplacePromise->MaybeRejectWithNetworkError(
+      "@import style sheet load failed");
+  mReplacePromise = nullptr;
+}
+
 
 already_AddRefed<dom::Promise> StyleSheet::Replace(const nsACString& aText,
                                                    ErrorResult& aRv) {
-  
-  
-
-  
-
-  
-  if (!mConstructorDocument) {
-    aRv.ThrowNotAllowedError("Can only be called on constructed style sheets");
-    return nullptr;
-  }
-
-  
-  
-
   nsIGlobalObject* globalObject = mConstructorDocument->GetScopeObject();
   RefPtr<dom::Promise> promise = dom::Promise::Create(globalObject, aRv);
   if (!promise) {
@@ -619,10 +636,48 @@ already_AddRefed<dom::Promise> StyleSheet::Replace(const nsACString& aText,
   }
 
   
+
+  
+  if (!mConstructorDocument) {
+    promise->MaybeRejectWithNotAllowedError(
+        "This method can only be called on "
+        "constructed style sheets");
+    return promise.forget();
+  }
+
+  
+  if (ModificationDisallowed()) {
+    promise->MaybeRejectWithNotAllowedError(
+        "This method can only be called on "
+        "modifiable style sheets");
+    return promise.forget();
+  }
+
+  
+  SetModificationDisallowed(true);
+
+  auto* loader = mConstructorDocument->CSSLoader();
+  auto loadData = MakeRefPtr<css::SheetLoadData>(
+      loader, GetBaseURI(), this,  false,
+       false,  nullptr,
+       nullptr,  nullptr,
+      GetReferrerInfo(),
+       nullptr);
+
   
   
   
-  promise->MaybeResolve(this);
+  
+  nsCOMPtr<nsISerialEventTarget> target =
+      mConstructorDocument->EventTargetFor(TaskCategory::Other);
+  loadData->mIsBeingParsed = true;
+  MOZ_ASSERT(!mReplacePromise);
+  mReplacePromise = promise;
+  ParseSheet(*loader, aText, *loadData)
+      ->Then(
+          target, __func__,
+          [loadData] { loadData->SheetFinishedParsingAsync(); },
+          [] { MOZ_CRASH("This MozPromise should never be rejected."); });
 
   
   return promise.forget();

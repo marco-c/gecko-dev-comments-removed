@@ -374,6 +374,23 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   }
 
   
+  
+  void SetModificationDisallowed(bool aDisallowed) {
+    MOZ_ASSERT(IsConstructed());
+    MOZ_ASSERT(!IsReadOnly());
+    if (aDisallowed) {
+      mState |= State::ModificationDisallowed;
+      
+      mState &= ~State::Complete;
+      if (!Disabled()) {
+        ApplicableStateChanged(false);
+      }
+    } else {
+      mState &= ~State::ModificationDisallowed;
+    }
+  }
+
+  
   bool IsConstructed() const { return !!mConstructorDocument; }
 
   
@@ -435,6 +452,12 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   void RemoveFromParent();
 
+  
+  void MaybeResolveReplacePromise();
+
+  
+  void MaybeRejectReplacePromise();
+
  private:
   void SetModifiedRules() {
     mState |= State::ModifiedRules | State::ModifiedRulesForDevtools;
@@ -491,6 +514,9 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   void StyleSheetCloned(StyleSheet&);
 
+  
+  
+  
   void ApplicableStateChanged(bool aApplicable);
 
   void UnparentChildren();
@@ -518,6 +544,10 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   StyleSheet* mParent;  
 
   RefPtr<dom::Document> mConstructorDocument;
+
+  
+  
+  RefPtr<dom::Promise> mReplacePromise;
 
   nsString mTitle;
 

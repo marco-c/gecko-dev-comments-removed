@@ -203,6 +203,17 @@ class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
 
   bool ShouldDefer() const { return mWasAlternate || !mMediaMatched; }
 
+  
+  
+  
+  void SheetFinishedParsingAsync() {
+    MOZ_ASSERT(mIsBeingParsed);
+    mIsBeingParsed = false;
+    if (!mPendingChildren) {
+      mLoader->SheetComplete(*this, NS_OK);
+    }
+  }
+
  private:
   void FireLoadEvent(nsIThreadInternal* aThread);
 };

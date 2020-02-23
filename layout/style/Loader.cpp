@@ -1688,14 +1688,8 @@ Loader::Completed Loader::ParseSheet(const nsACString& aBytes,
           target, __func__,
           [loadData = RefPtr<SheetLoadData>(&aLoadData)](bool aDummy) {
             MOZ_ASSERT(NS_IsMainThread());
-            loadData->mIsBeingParsed = false;
             loadData->mLoader->UnblockOnload( false);
-            
-            
-            
-            if (loadData->mPendingChildren == 0) {
-              loadData->mLoader->SheetComplete(*loadData, NS_OK);
-            }
+            loadData->SheetFinishedParsingAsync();
           },
           [] { MOZ_CRASH("rejected parse promise"); });
   return Completed::No;
@@ -1767,7 +1761,7 @@ void Loader::DoSheetComplete(SheetLoadData& aLoadData,
                              LoadDataArray& aDatasToNotify) {
   LOG(("css::Loader::DoSheetComplete"));
   MOZ_ASSERT(aLoadData.mSheet, "Must have a sheet");
-  NS_ASSERTION(mSheets || !aLoadData.mURI,
+  NS_ASSERTION(mSheets || !aLoadData.mURI || aLoadData.mSheet->IsConstructed(),
                "mLoadingDatas should be initialized by now.");
 
   
@@ -1796,7 +1790,12 @@ void Loader::DoSheetComplete(SheetLoadData& aLoadData,
       
       
       
-      MOZ_ASSERT(!data->mSheet->HasForcedUniqueInner(),
+
+      
+      
+      
+      MOZ_ASSERT(data->mSheet->IsConstructed() ||
+                     !data->mSheet->HasForcedUniqueInner(),
                  "should not get a forced unique inner during parsing");
       data->mSheet->SetComplete();
       data->ScheduleLoadEventIfNeeded();
@@ -1830,7 +1829,9 @@ void Loader::DoSheetComplete(SheetLoadData& aLoadData,
   
   
   
-  if (!aLoadData.mLoadFailed && aLoadData.mURI) {
+  
+  if (!aLoadData.mLoadFailed && aLoadData.mURI &&
+      !aLoadData.mSheet->IsConstructed()) {
     
     
     
@@ -1876,6 +1877,7 @@ void Loader::MarkLoadTreeFailed(SheetLoadData& aLoadData) {
   SheetLoadData* data = &aLoadData;
   do {
     data->mLoadFailed = true;
+    data->mSheet->MaybeRejectReplacePromise();
 
     if (data->mParentData) {
       MarkLoadTreeFailed(*data->mParentData);
@@ -2543,6 +2545,7 @@ void Loader::UnblockOnload(bool aFireSync) {
 already_AddRefed<nsISerialEventTarget> Loader::DispatchTarget() {
   nsCOMPtr<nsISerialEventTarget> target;
   if (mDocument) {
+    
     target = mDocument->EventTargetFor(TaskCategory::Other);
   } else if (mDocGroup) {
     target = mDocGroup->EventTargetFor(TaskCategory::Other);
