@@ -13,6 +13,7 @@
 #include "gfxCoreTextShaper.h"
 #include "gfxTextRun.h"
 #include "gfxUserFontSet.h"
+#include "gfxConfig.h"
 
 #include "nsTArray.h"
 #include "mozilla/Preferences.h"
@@ -605,4 +606,11 @@ bool gfxPlatformMac::CheckVariationFontSupport() {
   
   
   return nsCocoaFeatures::OnHighSierraOrLater();
+}
+
+void gfxPlatformMac::InitPlatformGPUProcessPrefs() {
+  FeatureState& gpuProc = gfxConfig::GetFeature(Feature::GPU_PROCESS);
+  gpuProc.ForceDisable(FeatureStatus::Blocked,
+                       "GPU process does not work on Mac",
+                       NS_LITERAL_CSTRING("FEATURE_FAILURE_MAC_GPU_PROC"));
 }
