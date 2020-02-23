@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_VMFunctions_h
 #define jit_VMFunctions_h
@@ -56,87 +56,87 @@ struct PopValues {
 
 enum MaybeTailCall : bool { TailCall, NonTailCall };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// [SMDOC] JIT-to-C++ Function Calls. (callVM)
+//
+// Sometimes it is easier to reuse C++ code by calling VM's functions. Calling a
+// function from the VM can be achieved with the use of callWithABI but this is
+// discouraged when the called functions might trigger exceptions and/or
+// garbage collections which are expecting to walk the stack. VMFunctions and
+// callVM are interfaces provided to handle the exception handling and register
+// the stack end (JITActivation) such that walking the stack is made possible.
+//
+// VMFunctionData is a structure which contains the necessary information needed
+// for generating a trampoline function to make a call (with generateVMWrapper)
+// and to root the arguments of the function (in TraceJitExitFrame).
+// VMFunctionData is created with the VMFunctionDataHelper template, which
+// infers the VMFunctionData fields from the function signature. The rooting and
+// trampoline code is therefore determined by the arguments of a function and
+// their locations in the signature of a function.
+//
+// VM functions all expect a JSContext* as first argument. This argument is
+// implicitly provided by the trampoline code (in generateVMWrapper) and used
+// for creating new objects or reporting errors. If your function does not make
+// use of a JSContext* argument, then you might probably use a callWithABI
+// call.
+//
+// Functions described using the VMFunction system must conform to a simple
+// protocol: the return type must have a special "failure" value (for example,
+// false for bool, or nullptr for Objects). If the function is designed to
+// return a value that does not meet this requirement - such as
+// object-or-nullptr, or an integer, an optional, final outParam can be
+// specified. In this case, the return type must be boolean to indicate
+// failure.
+//
+// JIT Code usage:
+//
+// Different JIT compilers in SpiderMonkey have their own implementations of
+// callVM to call VM functions. However, the general shape of them is that
+// arguments (excluding the JSContext or trailing out-param) are pushed on to
+// the stack from right to left (rightmost argument is pushed first).
+//
+// Regardless of return value protocol being used (final outParam, or return
+// value) the generated trampolines ensure the return value ends up in
+// JSReturnOperand, ReturnReg or ReturnDoubleReg.
+//
+// Example:
+//
+// The details will differ slightly between the different compilers in
+// SpiderMonkey, but the general shape of our usage looks like this:
+//
+// Suppose we have a function Foo:
+//
+//      bool Foo(JSContext* cx, HandleObject x, HandleId y,
+//               MutableHandleValue z);
+//
+// This function returns true on success, and z is the outparam return value.
+//
+// A VM function wrapper for this can be created by adding an entry to
+// VM_FUNCTION_LIST in VMFunctionList-inl.h:
+//
+//    _(Foo, js::Foo)
+//
+// In the compiler code the call would then be issued like this:
+//
+//      masm.Push(id);
+//      masm.Push(obj);
+//
+//      using Fn = bool (*)(JSContext*, HandleObject, HandleId,
+//                          MutableHandleValue);
+//      if (!callVM<Fn, js::Foo>()) {
+//          return false;
+//      }
+//
+// After this, the result value is in the return value register.
+
+// Data for a VM function. All VMFunctionDatas are stored in a constexpr array.
 struct VMFunctionData {
 #if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_TRACE_LOGGING)
-  
-  
+  // Informative name of the wrapped function. The name should not be present
+  // in release builds in order to save memory.
   const char* name_;
 #endif
 
-  
+  // Note: a maximum of seven root types is supported.
   enum RootType : uint8_t {
     RootNone = 0,
     RootObject,
@@ -148,8 +148,8 @@ struct VMFunctionData {
     RootBigInt
   };
 
-  
-  
+  // Contains an combination of enumerated types used by the gc for marking
+  // arguments of the VM wrapper.
   uint64_t argumentRootTypes;
 
   enum ArgProperties {
@@ -157,59 +157,59 @@ struct VMFunctionData {
     DoubleByValue = 1,
     WordByRef = 2,
     DoubleByRef = 3,
-    
+    // BitMask version.
     Word = 0,
     Double = 1,
     ByRef = 2
   };
 
-  
+  // Contains properties about the first 16 arguments.
   uint32_t argumentProperties;
 
-  
-  
+  // Which arguments should be passed in float register on platforms that
+  // have them.
   uint32_t argumentPassedInFloatRegs;
 
-  
-  
+  // Number of arguments expected, excluding JSContext * as an implicit
+  // first argument and an outparam as a possible implicit final argument.
   uint8_t explicitArgs;
 
-  
+  // The root type of the out param if outParam == Type_Handle.
   RootType outParamRootType;
 
-  
-  
-  
+  // The outparam may be any Type_*, and must be the final argument to the
+  // function, if not Void. outParam != Void implies that the return type
+  // has a boolean failure mode.
   DataType outParam;
 
-  
-  
-  
-  
-  
-  
-  
+  // Type returned by the C function and used by the VMFunction wrapper to
+  // check for failures of the C function.  Valid failure/return types are
+  // boolean and object pointers which are asserted inside the VMFunction
+  // constructor. If the C function use an outparam (!= Type_Void), then
+  // the only valid failure/return type is boolean -- object pointers are
+  // pointless because the wrapper will only use it to compare it against
+  // nullptr before discarding its value.
   DataType returnType;
 
-  
-  
-  
+  // Number of Values the VM wrapper should pop from the stack when it returns.
+  // Used by baseline IC stubs so that they can use tail calls to call the VM
+  // wrapper.
   uint8_t extraValuesToPop;
 
-  
-  
-  
+  // On some architectures, called functions need to explicitly push their
+  // return address, for a tail call, there is nothing to push, so tail-callness
+  // needs to be known at compile time.
   MaybeTailCall expectTailCall;
 
   uint32_t argc() const {
-    
+    // JSContext * + args + (OutParam? *)
     return 1 + explicitArgc() + ((outParam == Type_Void) ? 0 : 1);
   }
 
   DataType failType() const { return returnType; }
 
-  
-  
+  // Whether this function returns anything more than a boolean flag for
+  // failures.
   bool returnsData() const {
     return returnType == Type_Object || outParam != Type_Void;
   }
@@ -230,17 +230,17 @@ struct VMFunctionData {
   const char* name() const { return name_; }
 #endif
 
-  
+  // Return the stack size consumed by explicit arguments.
   size_t explicitStackSlots() const {
     size_t stackSlots = explicitArgs;
 
-    
-    uint32_t n = ((1 << (explicitArgs * 2)) - 1)  
-                 & 0x55555555                     
+    // Fetch all double-word flags of explicit arguments.
+    uint32_t n = ((1 << (explicitArgs * 2)) - 1)  // = Explicit argument mask.
+                 & 0x55555555                     // = Mask double-size args.
                  & argumentProperties;
 
-    
-    
+    // Add the number of double-word flags. (expect a few loop
+    // iteration)
     while (n) {
       stackSlots++;
       n &= n - 1;
@@ -248,24 +248,24 @@ struct VMFunctionData {
     return stackSlots;
   }
 
-  
-  
-  
-  
-  
+  // Double-size argument which are passed by value are taking the space
+  // of 2 C arguments.  This function is used to compute the number of
+  // argument expected by the C function.  This is not the same as
+  // explicitStackSlots because reference to stack slots may take one less
+  // register in the total count.
   size_t explicitArgc() const {
     size_t stackSlots = explicitArgs;
 
-    
-    uint32_t n = ((1 << (explicitArgs * 2)) - 1)  
+    // Fetch all explicit arguments.
+    uint32_t n = ((1 << (explicitArgs * 2)) - 1)  // = Explicit argument mask.
                  & argumentProperties;
 
-    
-    
+    // Filter double-size arguments (0x5 = 0b0101) and remove (& ~)
+    // arguments passed by reference (0b1010 >> 1 == 0b0101).
     n = (n & 0x55555555) & ~(n >> 1);
 
-    
-    
+    // Add the number of double-word transfered by value. (expect a few
+    // loop iteration)
     while (n) {
       stackSlots++;
       n &= n - 1;
@@ -276,16 +276,16 @@ struct VMFunctionData {
   size_t doubleByRefArgs() const {
     size_t count = 0;
 
-    
-    uint32_t n = ((1 << (explicitArgs * 2)) - 1)  
+    // Fetch all explicit arguments.
+    uint32_t n = ((1 << (explicitArgs * 2)) - 1)  // = Explicit argument mask.
                  & argumentProperties;
 
-    
-    
+    // Filter double-size arguments (0x5 = 0b0101) and take (&) only
+    // arguments passed by reference (0b1010 >> 1 == 0b0101).
     n = (n & 0x55555555) & (n >> 1);
 
-    
-    
+    // Add the number of double-word transfered by refference. (expect a
+    // few loop iterations)
     while (n) {
       count++;
       n &= n - 1;
@@ -313,7 +313,7 @@ struct VMFunctionData {
         returnType(returnType),
         extraValuesToPop(extraValuesToPop),
         expectTailCall(expectTailCall) {
-    
+    // Check for valid failure/return type.
     MOZ_ASSERT_IF(outParam != Type_Void,
                   returnType == Type_Void || returnType == Type_Bool);
     MOZ_ASSERT(returnType == Type_Void || returnType == Type_Bool ||
@@ -324,7 +324,7 @@ struct VMFunctionData {
 };
 
 template <class>
-struct TypeToDataType { 
+struct TypeToDataType { /* Unexpected return type for a VMFunction. */
 };
 template <>
 struct TypeToDataType<void> {
@@ -472,7 +472,7 @@ struct TypeToDataType<HandleBigInt> {
   static const DataType result = Type_Handle;
 };
 
-
+// Convert argument types to properties of the argument known by the jit.
 template <class T>
 struct TypeToArgProperties {
   static const uint32_t result =
@@ -592,8 +592,8 @@ struct TypeToArgProperties<HandleBigInt> {
       TypeToArgProperties<BigInt*>::result | VMFunctionData::ByRef;
 };
 
-
-
+// Convert argument type to whether or not it should be passed in a float
+// register on platforms that have them, like x64.
 template <class T>
 struct TypeToPassInFloatReg {
   static const uint32_t result = 0;
@@ -603,7 +603,7 @@ struct TypeToPassInFloatReg<double> {
   static const uint32_t result = 1;
 };
 
-
+// Convert argument types to root types used by the gc, see MarkJitExitFrame.
 template <class T>
 struct TypeToRootType {
   static const uint32_t result = VMFunctionData::RootNone;
@@ -694,7 +694,7 @@ struct TypeToRootType<HandleBigInt> {
 };
 template <class T>
 struct TypeToRootType<Handle<T> > {
-  
+  // Fail for Handle types that aren't specialized above.
 };
 
 template <class>
@@ -767,7 +767,7 @@ struct OutParamToRootType<MutableHandleBigInt> {
   static const VMFunctionData::RootType result = VMFunctionData::RootBigInt;
 };
 
-
+// Extract the last element of a list of types.
 template <typename... ArgTypes>
 struct LastArg;
 
@@ -789,11 +789,11 @@ struct LastArg<HeadType, TailTypes...> {
   static constexpr size_t nbArgs = LastArg<TailTypes...>::nbArgs + 1;
 };
 
-
-
-
-
-
+// Construct a bit mask from a list of types.  The mask is constructed as an OR
+// of the mask produced for each argument. The result of each argument is
+// shifted by its index, such that the result of the first argument is on the
+// low bits of the mask, and the result of the last argument in part of the
+// high bits of the mask.
 template <template <typename> class Each, typename ResultType, size_t Shift,
           typename... Args>
 struct BitMask;
@@ -945,8 +945,8 @@ enum class IndexInBounds { Yes, Maybe };
 template <IndexInBounds InBounds>
 void PostWriteElementBarrier(JSRuntime* rt, JSObject* obj, int32_t index);
 
-
-
+// If |str| is an index in the range [0, INT32_MAX], return it. If the string
+// is not an index in this range, return -1.
 int32_t GetIndexFromString(JSString* str);
 
 JSObject* WrapObjectPure(JSContext* cx, JSObject* obj);
@@ -1045,7 +1045,7 @@ void MarkObjectFromJit(JSRuntime* rt, JSObject** objp);
 void MarkShapeFromJit(JSRuntime* rt, Shape** shapep);
 void MarkObjectGroupFromJit(JSRuntime* rt, ObjectGroup** groupp);
 
-
+// Helper for generatePreBarrier.
 inline void* JitMarkFunction(MIRType type) {
   switch (type) {
     case MIRType::Value:
@@ -1069,8 +1069,6 @@ bool ObjectIsConstructor(JSObject* obj);
 MOZ_MUST_USE bool ThrowRuntimeLexicalError(JSContext* cx, unsigned errorNumber);
 
 MOZ_MUST_USE bool ThrowBadDerivedReturn(JSContext* cx, HandleValue v);
-
-MOZ_MUST_USE bool ThrowObjectCoercible(JSContext* cx, HandleValue v);
 
 MOZ_MUST_USE bool BaselineGetFunctionThis(JSContext* cx, BaselineFrame* frame,
                                           MutableHandleValue res);
@@ -1120,10 +1118,10 @@ bool GetPrototypeOf(JSContext* cx, HandleObject target,
 bool DoConcatStringObject(JSContext* cx, HandleValue lhs, HandleValue rhs,
                           MutableHandleValue res);
 
-
-
-
-
+// Wrapper for js::TrySkipAwait.
+// If the await operation can be skipped and the resolution value for `val` can
+// be acquired, stored the resolved value to `resolved`.  Otherwise, stores
+// the JS_CANNOT_SKIP_AWAIT magic value to `resolved`.
 MOZ_MUST_USE bool TrySkipAwait(JSContext* cx, HandleValue val,
                                MutableHandleValue resolved);
 
@@ -1167,7 +1165,7 @@ enum class VMFunctionId;
 extern const VMFunctionData& GetVMFunction(VMFunctionId id);
 extern const VMFunctionData& GetVMFunction(TailCallVMFunctionId id);
 
-}  
-}  
+}  // namespace jit
+}  // namespace js
 
-#endif 
+#endif /* jit_VMFunctions_h */

@@ -412,6 +412,9 @@ bool js::RunScript(JSContext* cx, RunState& state) {
     return false;
   }
 
+  MOZ_ASSERT_IF(cx->runtime()->hasJitRuntime(),
+                !cx->runtime()->jitRuntime()->disallowArbitraryCode());
+
   
   cx->verifyIsSafeToGC();
 
@@ -4242,7 +4245,8 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
 
     CASE(CheckObjCoercible) {
       ReservedRooted<Value> checkVal(&rootValue0, REGS.sp[-1]);
-      if (checkVal.isNullOrUndefined() && !ToObjectFromStack(cx, checkVal)) {
+      if (checkVal.isNullOrUndefined()) {
+        MOZ_ALWAYS_FALSE(ThrowObjectCoercible(cx, checkVal));
         goto error;
       }
     }
@@ -5375,6 +5379,12 @@ bool js::ThrowInitializedThis(JSContext* cx) {
 bool js::ThrowHomeObjectNotObject(JSContext* cx) {
   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_CONVERT_TO,
                             "null", "object");
+  return false;
+}
+
+bool js::ThrowObjectCoercible(JSContext* cx, HandleValue value) {
+  MOZ_ASSERT(value.isNullOrUndefined());
+  ReportIsNullOrUndefinedForPropertyAccess(cx, value, JSDVG_SEARCH_STACK);
   return false;
 }
 
