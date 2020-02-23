@@ -326,6 +326,9 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:^EndTouch$\n"
 
          
+         "race:ScriptPreloader::OffThreadDecodeCallback\n"
+
+         
          
          "mutex:GLContextGLX::~GLContextGLX\n"
 
