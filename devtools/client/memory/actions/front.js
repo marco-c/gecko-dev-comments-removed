@@ -1,0 +1,17 @@
+
+
+
+
+"use strict";
+
+const { actions } = require("devtools/client/memory/constants");
+
+
+
+
+exports.updateMemoryFront = front => {
+  return {
+    type: actions.UPDATE_MEMORY_FRONT,
+    front,
+  };
+};

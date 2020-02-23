@@ -121,6 +121,9 @@ actions.COLLAPSE_DOMINATOR_TREE_NODE = "collapse-dominator-tree-node";
 actions.RESIZE_SHORTEST_PATHS = "resize-shortest-paths";
 
 
+actions.UPDATE_MEMORY_FRONT = "update-memory-front";
+
+
 
 const COUNT = Object.freeze({ by: "count", count: true, bytes: true });
 const INTERNAL_TYPE = Object.freeze({ by: "internalType", then: COUNT });
