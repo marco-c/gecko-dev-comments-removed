@@ -261,7 +261,41 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
     
     
     
-    pub fn simplify_and_sort_children(&mut self) {
+    
+    pub fn visit_depth_first(&mut self, mut f: impl FnMut(&mut Self)) {
+        self.visit_depth_first_internal(&mut f);
+    }
+
+    fn visit_depth_first_internal(&mut self, f: &mut impl FnMut(&mut Self)) {
+        match *self {
+            Self::Clamp {
+                ref mut min,
+                ref mut center,
+                ref mut max,
+            } => {
+                min.visit_depth_first_internal(f);
+                center.visit_depth_first_internal(f);
+                max.visit_depth_first_internal(f);
+            },
+            Self::Sum(ref mut children) | Self::MinMax(ref mut children, _) => {
+                for child in &mut **children {
+                    child.visit_depth_first_internal(f);
+                }
+            },
+            Self::Leaf(..) => {},
+        }
+        f(self);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn simplify_and_sort_direct_children(&mut self) {
         macro_rules! replace_self_with {
             ($slot:expr) => {{
                 let dummy = Self::MinMax(Default::default(), MinMaxOp::Max);
@@ -275,10 +309,6 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                 ref mut center,
                 ref mut max,
             } => {
-                min.simplify_and_sort_children();
-                center.simplify_and_sort_children();
-                max.simplify_and_sort_children();
-
                 
                 let min_cmp_center = match min.partial_cmp(&center) {
                     Some(o) => o,
@@ -323,10 +353,6 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                 return replace_self_with!(&mut **center);
             },
             Self::MinMax(ref mut children, op) => {
-                for child in &mut **children {
-                    child.simplify_and_sort_children();
-                }
-
                 let winning_order = match op {
                     MinMaxOp::Min => cmp::Ordering::Less,
                     MinMaxOp::Max => cmp::Ordering::Greater,
@@ -355,9 +381,8 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
             Self::Sum(ref mut children_slot) => {
                 let mut sums_to_merge = SmallVec::<[_; 3]>::new();
                 let mut extra_kids = 0;
-                for (i, child) in children_slot.iter_mut().enumerate() {
-                    child.simplify_and_sort_children();
-                    if let Self::Sum(ref mut children) = *child {
+                for (i, child) in children_slot.iter().enumerate() {
+                    if let Self::Sum(ref children) = *child {
                         extra_kids += children.len();
                         sums_to_merge.push(i);
                     }
@@ -409,6 +434,11 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                 l.simplify();
             }
         }
+    }
+
+    
+    pub fn simplify_and_sort(&mut self) {
+        self.visit_depth_first(|node| node.simplify_and_sort_direct_children())
     }
 
     fn to_css_impl<W>(&self, dest: &mut CssWriter<W>, is_outermost: bool) -> fmt::Result

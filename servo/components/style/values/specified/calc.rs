@@ -452,7 +452,20 @@ impl CalcNode {
         mut self,
         clamping_mode: AllowedNumericType,
     ) -> Result<CalcLengthPercentage, ()> {
-        self.simplify_and_sort_children();
+        
+        
+        let mut any_invalid = false;
+        self.visit_depth_first(|node| {
+            if let CalcNode::Leaf(ref l) = *node {
+                any_invalid |= !matches!(*l, Leaf::Percentage(..) | Leaf::Length(..));
+            }
+            node.simplify_and_sort_direct_children();
+        });
+
+        if any_invalid {
+            return Err(());
+        }
+
         Ok(CalcLengthPercentage {
             clamping_mode,
             node: self,
