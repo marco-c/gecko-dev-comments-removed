@@ -951,7 +951,8 @@ void nsCSSGradientRenderer::Paint(gfxContext& aContext, const nsRect& aDest,
       matrix.PreTranslate(-mLineStart);
     }
   } else {
-    gradientPattern = new gfxPattern(mCenter.x, mCenter.y, mAngle);
+    
+    return;
   }
   
   matrix.PreTranslate(gfxPoint(mPresContext->CSSPixelsToDevPixels(aSrc.x),
@@ -961,7 +962,7 @@ void nsCSSGradientRenderer::Paint(gfxContext& aContext, const nsRect& aDest,
       gfxFloat(nsPresContext::CSSPixelsToAppUnits(aSrc.height)) / aDest.height);
   gradientPattern->SetMatrix(matrix);
 
-  if (!mGradient->IsConic() && stopDelta == 0.0) {
+  if (stopDelta == 0.0) {
     
     
     
