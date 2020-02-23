@@ -1011,7 +1011,7 @@ class HuffmanDictionary;
 
 
 
-class HuffmanDictionaryForMetadata {
+class alignas(uintptr_t) HuffmanDictionaryForMetadata {
   static const uint16_t UnreachableIndex = uint16_t(-1);
 
   using InternalIndex = uint8_t;
