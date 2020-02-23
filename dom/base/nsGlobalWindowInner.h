@@ -1442,11 +1442,9 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   
   struct ChromeFields {
-    ChromeFields() : mGroupMessageManagers(1) {}
-
     RefPtr<mozilla::dom::ChromeMessageBroadcaster> mMessageManager;
     nsRefPtrHashtable<nsStringHashKey, mozilla::dom::ChromeMessageBroadcaster>
-        mGroupMessageManagers;
+        mGroupMessageManagers{1};
   } mChromeFields;
 
   

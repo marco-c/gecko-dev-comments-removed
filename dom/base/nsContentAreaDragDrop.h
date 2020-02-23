@@ -65,7 +65,7 @@ class nsContentAreaDragDrop {
 
 
 class nsContentAreaDragDropDataProvider : public nsIFlavorDataProvider {
-  virtual ~nsContentAreaDragDropDataProvider() {}
+  virtual ~nsContentAreaDragDropDataProvider() = default;
 
  public:
   NS_DECL_ISUPPORTS

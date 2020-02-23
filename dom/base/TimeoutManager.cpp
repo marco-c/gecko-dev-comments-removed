@@ -1228,7 +1228,7 @@ class ThrottleTimeoutsCallback final : public nsITimerCallback,
   }
 
  private:
-  ~ThrottleTimeoutsCallback() {}
+  ~ThrottleTimeoutsCallback() = default;
 
  private:
   

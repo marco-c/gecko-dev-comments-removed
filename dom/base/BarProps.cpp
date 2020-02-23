@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/BarProps.h"
 #include "mozilla/dom/BarPropBinding.h"
@@ -14,12 +14,12 @@
 namespace mozilla {
 namespace dom {
 
-
-
-
+//
+//  Basic (virtual) BarProp class implementation
+//
 BarProp::BarProp(nsGlobalWindowInner* aWindow) : mDOMWindow(aWindow) {}
 
-BarProp::~BarProp() {}
+BarProp::~BarProp() = default;
 
 nsPIDOMWindowInner* BarProp::GetParentObject() const { return mDOMWindow; }
 
@@ -84,13 +84,13 @@ already_AddRefed<nsIWebBrowserChrome> BarProp::GetBrowserChrome() {
   return mDOMWindow->GetWebBrowserChrome();
 }
 
-
-
-
+//
+// MenubarProp class implementation
+//
 
 MenubarProp::MenubarProp(nsGlobalWindowInner* aWindow) : BarProp(aWindow) {}
 
-MenubarProp::~MenubarProp() {}
+MenubarProp::~MenubarProp() = default;
 
 bool MenubarProp::GetVisible(CallerType aCallerType, ErrorResult& aRv) {
   return BarProp::GetVisibleByFlag(nsIWebBrowserChrome::CHROME_MENUBAR, aRv);
@@ -102,13 +102,13 @@ void MenubarProp::SetVisible(bool aVisible, CallerType aCallerType,
                             aCallerType, aRv);
 }
 
-
-
-
+//
+// ToolbarProp class implementation
+//
 
 ToolbarProp::ToolbarProp(nsGlobalWindowInner* aWindow) : BarProp(aWindow) {}
 
-ToolbarProp::~ToolbarProp() {}
+ToolbarProp::~ToolbarProp() = default;
 
 bool ToolbarProp::GetVisible(CallerType aCallerType, ErrorResult& aRv) {
   return BarProp::GetVisibleByFlag(nsIWebBrowserChrome::CHROME_TOOLBAR, aRv);
@@ -120,14 +120,14 @@ void ToolbarProp::SetVisible(bool aVisible, CallerType aCallerType,
                             aCallerType, aRv);
 }
 
-
-
-
+//
+// LocationbarProp class implementation
+//
 
 LocationbarProp::LocationbarProp(nsGlobalWindowInner* aWindow)
     : BarProp(aWindow) {}
 
-LocationbarProp::~LocationbarProp() {}
+LocationbarProp::~LocationbarProp() = default;
 
 bool LocationbarProp::GetVisible(CallerType aCallerType, ErrorResult& aRv) {
   return BarProp::GetVisibleByFlag(nsIWebBrowserChrome::CHROME_LOCATIONBAR,
@@ -140,14 +140,14 @@ void LocationbarProp::SetVisible(bool aVisible, CallerType aCallerType,
                             aCallerType, aRv);
 }
 
-
-
-
+//
+// PersonalbarProp class implementation
+//
 
 PersonalbarProp::PersonalbarProp(nsGlobalWindowInner* aWindow)
     : BarProp(aWindow) {}
 
-PersonalbarProp::~PersonalbarProp() {}
+PersonalbarProp::~PersonalbarProp() = default;
 
 bool PersonalbarProp::GetVisible(CallerType aCallerType, ErrorResult& aRv) {
   return BarProp::GetVisibleByFlag(nsIWebBrowserChrome::CHROME_PERSONAL_TOOLBAR,
@@ -160,13 +160,13 @@ void PersonalbarProp::SetVisible(bool aVisible, CallerType aCallerType,
       aVisible, nsIWebBrowserChrome::CHROME_PERSONAL_TOOLBAR, aCallerType, aRv);
 }
 
-
-
-
+//
+// StatusbarProp class implementation
+//
 
 StatusbarProp::StatusbarProp(nsGlobalWindowInner* aWindow) : BarProp(aWindow) {}
 
-StatusbarProp::~StatusbarProp() {}
+StatusbarProp::~StatusbarProp() = default;
 
 bool StatusbarProp::GetVisible(CallerType aCallerType, ErrorResult& aRv) {
   return BarProp::GetVisibleByFlag(nsIWebBrowserChrome::CHROME_STATUSBAR, aRv);
@@ -178,14 +178,14 @@ void StatusbarProp::SetVisible(bool aVisible, CallerType aCallerType,
       aVisible, nsIWebBrowserChrome::CHROME_STATUSBAR, aCallerType, aRv);
 }
 
-
-
-
+//
+// ScrollbarsProp class implementation
+//
 
 ScrollbarsProp::ScrollbarsProp(nsGlobalWindowInner* aWindow)
     : BarProp(aWindow) {}
 
-ScrollbarsProp::~ScrollbarsProp() {}
+ScrollbarsProp::~ScrollbarsProp() = default;
 
 bool ScrollbarsProp::GetVisible(CallerType aCallerType, ErrorResult& aRv) {
   if (!mDOMWindow) {
@@ -202,8 +202,8 @@ bool ScrollbarsProp::GetVisible(CallerType aCallerType, ErrorResult& aRv) {
 }
 
 void ScrollbarsProp::SetVisible(bool aVisible, CallerType, ErrorResult&) {
-  
+  /* Do nothing */
 }
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla

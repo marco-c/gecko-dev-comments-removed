@@ -34,7 +34,7 @@ class nsIFrame;
 
 class nsPropertyOwner {
  public:
-  nsPropertyOwner(const nsPropertyOwner& aOther) : mObject(aOther.mObject) {}
+  nsPropertyOwner(const nsPropertyOwner& aOther) = default;
 
   
   
@@ -94,8 +94,7 @@ class nsPropertyTable {
 
 
   void* TakeProperty(const nsPropertyOwner& aObject,
-                      const nsAtom* aPropertyName,
-                      nsresult* aStatus = nullptr) {
+                     const nsAtom* aPropertyName, nsresult* aStatus = nullptr) {
     return GetPropertyInternal(aObject, aPropertyName, true, aStatus);
   }
 

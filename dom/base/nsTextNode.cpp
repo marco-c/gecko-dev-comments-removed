@@ -79,7 +79,7 @@ class nsAttributeTextNode final : public nsTextNode,
   RefPtr<nsAtom> mAttrName;
 };
 
-nsTextNode::~nsTextNode() {}
+nsTextNode::~nsTextNode() = default;
 
 
 

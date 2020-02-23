@@ -41,7 +41,7 @@ class nsAttrChildContentList : public nsINodeList {
   virtual void InvalidateCacheIfAvailable() {}
 
  protected:
-  virtual ~nsAttrChildContentList() {}
+  virtual ~nsAttrChildContentList() = default;
 
  private:
   
@@ -68,7 +68,7 @@ class nsParentNodeChildContentList final : public nsAttrChildContentList {
   }
 
  private:
-  ~nsParentNodeChildContentList() {}
+  ~nsParentNodeChildContentList() = default;
 
   
   bool ValidateCache();

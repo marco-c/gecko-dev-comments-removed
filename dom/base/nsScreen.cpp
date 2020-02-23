@@ -38,7 +38,7 @@ nsScreen::nsScreen(nsPIDOMWindowInner* aWindow)
     : DOMEventTargetHelper(aWindow),
       mScreenOrientation(new ScreenOrientation(aWindow, this)) {}
 
-nsScreen::~nsScreen() {}
+nsScreen::~nsScreen() = default;
 
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsScreen)

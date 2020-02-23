@@ -45,7 +45,7 @@ Location::Location(nsPIDOMWindowInner* aWindow,
   }
 }
 
-Location::~Location() {}
+Location::~Location() = default;
 
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(Location)

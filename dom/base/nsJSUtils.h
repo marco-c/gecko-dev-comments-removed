@@ -344,7 +344,7 @@ class nsTAutoJSString : public nsTAutoString<T> {
 
 
 
-  nsTAutoJSString() {}
+  nsTAutoJSString() = default;
 
   bool init(JSContext* aContext, JSString* str) {
     return AssignJSString(aContext, *this, str);

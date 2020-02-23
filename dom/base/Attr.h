@@ -28,7 +28,7 @@ class Document;
 
 
 class Attr final : public nsINode {
-  virtual ~Attr() {}
+  virtual ~Attr() = default;
 
  public:
   Attr(nsDOMAttributeMap* aAttrMap, already_AddRefed<dom::NodeInfo>&& aNodeInfo,

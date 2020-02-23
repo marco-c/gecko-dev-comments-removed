@@ -104,7 +104,7 @@ ResponsiveImageSelector::ResponsiveImageSelector(nsIContent* aContent)
 ResponsiveImageSelector::ResponsiveImageSelector(dom::Document* aDocument)
     : mOwnerNode(aDocument), mSelectedCandidateIndex(-1) {}
 
-ResponsiveImageSelector::~ResponsiveImageSelector() {}
+ResponsiveImageSelector::~ResponsiveImageSelector() = default;
 
 
 bool ResponsiveImageSelector::SetCandidatesFromSourceSet(
