@@ -569,32 +569,28 @@ class WebConsoleUI {
   }
 
   
-
-
-
-
-
-
-
-
   async getFrameActor() {
     const state = this.hud.getDebuggerFrames();
     if (!state) {
-      return { frameActor: null, webConsoleFront: this.webConsoleFront };
+      return null;
     }
 
-    const grip = state.frames[state.selected];
+    const frame = state.frames[state.selected];
 
-    if (!grip) {
-      return { frameActor: null, webConsoleFront: this.webConsoleFront };
+    if (!frame) {
+      return null;
     }
 
-    const webConsoleFront = await state.target.getFront("console");
+    return frame.actor;
+  }
 
-    return {
-      frameActor: grip.actor,
-      webConsoleFront,
-    };
+  getWebConsoleFront({ frameActorId } = {}) {
+    if (!frameActorId) {
+      return this.webConsoleFront;
+    }
+
+    const frameFront = this.hud.getFrontByID(frameActorId);
+    return frameFront.getWebConsoleFront();
   }
 
   getSelectedNodeActor() {
