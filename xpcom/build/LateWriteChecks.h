@@ -54,6 +54,25 @@ void BeginLateWriteChecks();
 
 void StopLateWriteChecks();
 
+
+
+
+
+
+void PushSuspendLateWriteChecks();
+
+
+
+
+
+void PopSuspendLateWriteChecks();
+
+class MOZ_RAII AutoSuspendLateWriteChecks {
+ public:
+  AutoSuspendLateWriteChecks() { PushSuspendLateWriteChecks(); }
+  ~AutoSuspendLateWriteChecks() { PopSuspendLateWriteChecks(); }
+};
+
 }  
 
 #endif  
