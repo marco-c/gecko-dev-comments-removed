@@ -45,6 +45,7 @@
 #include "vm/Scope.h"
 #include "vm/Shape.h"
 #include "vm/SharedImmutableStringsCache.h"
+#include "vm/SharedStencil.h"
 #include "vm/Time.h"
 
 namespace JS {
@@ -1999,6 +2000,9 @@ struct SourceExtent {
 
 
 class BaseScript : public gc::TenuredCell {
+ public:
+  using ImmutableFlags = frontend::ImmutableScriptFlags;
+
  protected:
   
   
@@ -2029,7 +2033,15 @@ class BaseScript : public gc::TenuredCell {
   
   
   
-  uint32_t immutableFlags_ = 0;
+  
+  
+  
+  
+  ImmutableFlags immutableScriptFlags_;
+
+  
+  
+  
   uint32_t mutableFlags_ = 0;
 
   ScriptWarmUpData warmUpData_ = {};
@@ -2066,102 +2078,6 @@ class BaseScript : public gc::TenuredCell {
   }
 
  public:
-  
-  
-  
-  
-  
-  
-  
-  enum class ImmutableFlags : uint32_t {
-    
-    NoScriptRval = 1 << 0,
-
-    
-    Strict = 1 << 1,
-
-    
-
-    
-    
-    
-    HasNonSyntacticScope = 1 << 3,
-
-    
-    SelfHosted = 1 << 4,
-
-    
-    BindingsAccessedDynamically = 1 << 5,
-    FunHasExtensibleScope = 1 << 6,
-
-    
-    
-    HasCallSiteObj = 1 << 7,
-
-    
-    
-    HasModuleGoal = 1 << 8,
-
-    FunctionHasThisBinding = 1 << 9,
-    FunctionHasExtraBodyVarScope = 1 << 10,
-
-    
-    
-    HasMappedArgsObj = 1 << 11,
-
-    
-    
-    HasInnerFunctions = 1 << 12,
-
-    NeedsHomeObject = 1 << 13,
-
-    IsDerivedClassConstructor = 1 << 14,
-    IsDefaultClassConstructor = 1 << 15,
-
-    
-    
-    
-    TreatAsRunOnce = 1 << 16,
-
-    
-    
-    IsLikelyConstructorWrapper = 1 << 17,
-
-    
-    IsGenerator = 1 << 18,
-
-    
-    IsAsync = 1 << 19,
-
-    
-    HasRest = 1 << 20,
-
-    
-    ArgumentsHasVarBinding = 1 << 21,
-
-    
-    IsForEval = 1 << 22,
-
-    
-    IsModule = 1 << 23,
-
-    
-    NeedsFunctionEnvironmentObjects = 1 << 24,
-
-    
-    ShouldDeclareArguments = 1 << 25,
-
-    
-    IsFunction = 1 << 26,
-
-    
-    HasDirectEval = 1 << 27,
-
-    
-    
-    IsLazyScript = 1 << 28,
-  };
-
   
   
   
@@ -2315,14 +2231,20 @@ class BaseScript : public gc::TenuredCell {
   uint32_t lineno() const { return extent_.lineno; }
   uint32_t column() const { return extent_.column; }
 
+ public:
+  ImmutableFlags immutableFlags() const { return immutableScriptFlags_; }
+
+  void setImmutableFlags(ImmutableFlags flags) {
+    immutableScriptFlags_ = flags;
+  }
+
   
   MOZ_MUST_USE bool hasFlag(ImmutableFlags flag) const {
-    return immutableFlags_ & uint32_t(flag);
+    return immutableScriptFlags_ & flag;
   }
-  uint32_t immutableFlags() const { return immutableFlags_; }
-
- protected:
-  void setFlag(ImmutableFlags flag) { immutableFlags_ |= uint32_t(flag); }
+  void setFlag(ImmutableFlags flag) {
+    immutableScriptFlags_.scriptFlags_ |= flag;
+  }
   void setFlag(ImmutableFlags flag, bool b) {
     if (b) {
       setFlag(flag);
@@ -2330,9 +2252,10 @@ class BaseScript : public gc::TenuredCell {
       clearFlag(flag);
     }
   }
-  void clearFlag(ImmutableFlags flag) { immutableFlags_ &= ~uint32_t(flag); }
+  void clearFlag(ImmutableFlags flag) {
+    immutableScriptFlags_.scriptFlags_ &= ~flag;
+  }
 
- public:
   
   MOZ_MUST_USE bool hasFlag(MutableFlags flag) const {
     return mutableFlags_ & uint32_t(flag);
@@ -2372,9 +2295,10 @@ setterLevel:                                                                  \
   FLAG_GETTER_SETTER(MutableFlags, name, public, lowerName, name)
 
   IMMUTABLE_FLAG_GETTER(noScriptRval, NoScriptRval)
+  IMMUTABLE_FLAG_GETTER(selfHosted, SelfHosted)
+  IMMUTABLE_FLAG_GETTER_SETTER_PUBLIC(treatAsRunOnce, TreatAsRunOnce)
   IMMUTABLE_FLAG_GETTER_SETTER_PUBLIC(strict, Strict)
   IMMUTABLE_FLAG_GETTER(hasNonSyntacticScope, HasNonSyntacticScope)
-  IMMUTABLE_FLAG_GETTER(selfHosted, SelfHosted)
   IMMUTABLE_FLAG_GETTER_SETTER_PUBLIC(bindingsAccessedDynamically,
                                       BindingsAccessedDynamically)
   IMMUTABLE_FLAG_GETTER_SETTER_PUBLIC(funHasExtensibleScope,
@@ -2391,7 +2315,6 @@ setterLevel:                                                                  \
                                       IsDerivedClassConstructor)
   IMMUTABLE_FLAG_GETTER_SETTER_PUBLIC(isDefaultClassConstructor,
                                       IsDefaultClassConstructor)
-  IMMUTABLE_FLAG_GETTER_SETTER_PUBLIC(treatAsRunOnce, TreatAsRunOnce)
   IMMUTABLE_FLAG_GETTER_SETTER_PUBLIC(isLikelyConstructorWrapper,
                                       IsLikelyConstructorWrapper)
   IMMUTABLE_FLAG_GETTER(isGenerator, IsGenerator)
@@ -2555,7 +2478,9 @@ setterLevel:                                                                  \
     return offsetof(BaseScript, sharedData_);
   }
   static size_t offsetOfImmutableFlags() {
-    return offsetof(BaseScript, immutableFlags_);
+    static_assert(offsetof(ImmutableFlags, scriptFlags_) == 0,
+                  "Required for JIT flag access");
+    return offsetof(BaseScript, immutableScriptFlags_);
   }
   static constexpr size_t offsetOfMutableFlags() {
     return offsetof(BaseScript, mutableFlags_);

@@ -1243,7 +1243,7 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
     }
     scriptp.set(script);
 
-    script->immutableFlags_ = immutableFlags;
+    script->setImmutableFlags(immutableFlags);
 
     if (script->argumentsHasVarBinding()) {
       
@@ -5034,7 +5034,7 @@ JSScript* js::detail::CopyScript(JSContext* cx, HandleScript src,
   }
 
   
-  dst->immutableFlags_ = src->immutableFlags();
+  dst->setImmutableFlags(src->immutableFlags());
 
   dst->setFlag(JSScript::ImmutableFlags::HasNonSyntacticScope,
                scopes[0]->hasOnChain(ScopeKind::NonSyntactic));
@@ -5592,7 +5592,7 @@ LazyScript* LazyScript::CreateForXDR(
     return nullptr;
   }
 
-  lazy->immutableFlags_ = immutableFlags;
+  lazy->setImmutableFlags(immutableFlags);
 
   
   
