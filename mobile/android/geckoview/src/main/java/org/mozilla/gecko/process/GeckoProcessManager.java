@@ -107,18 +107,33 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
 
         public ChildConnection(@NonNull final GeckoProcessType type) {
             mType = type;
+            mPid = INVALID_PID;
         }
 
-        public int getPid() {
+        public int getPid() throws RemoteException {
             XPCOMEventTarget.assertOnLauncherThread();
-            if ((mPid == INVALID_PID) && (mChild != null)) {
-                try {
-                    mPid = mChild.getPid();
-                } catch (final RemoteException e) {
-                    Log.e(LOGTAG, "Cannot get pid for " + mType.toString(), e);
-                }
+            if (mChild == null) {
+                throw new IllegalStateException("Calling ChildConnection.getPid() on an unbound connection");
             }
+
+            if (mPid == INVALID_PID) {
+                mPid = mChild.getPid();
+            }
+
+            if (mPid == INVALID_PID) {
+                throw new RuntimeException("Unable to obtain a valid pid for connection");
+            }
+
             return mPid;
+        }
+
+        public int getPidFallible() {
+            try {
+                return getPid();
+            } catch (final Exception e) {
+                Log.w(LOGTAG, "Cannot get pid for " + mType.toString(), e);
+                return INVALID_PID;
+            }
         }
 
         private String buildLogMsg(@NonNull final String msgStart) {
@@ -126,7 +141,7 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
             builder.append(" ");
             builder.append(mType.toString());
 
-            int pid = getPid();
+            int pid = getPidFallible();
             if (pid != INVALID_PID) {
                 builder.append(" with pid ");
                 builder.append(pid);
@@ -193,7 +208,7 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
             }
 
             
-            final int pid = getPid();
+            final int pid = getPidFallible();
 
             if (mPendingBind != null) {
                 
@@ -479,8 +494,17 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
         }
 
         if (started) {
-            result.complete(connection.getPid());
-            return;
+            try {
+                result.complete(connection.getPid());
+                return;
+            } catch (final RemoteException e) {
+                exception = e;
+            } catch (final Exception e) {
+                Log.e(LOGTAG, "ChildConnection.getPid() exception: ", e);
+            }
+
+            
+            
         }
 
         if (isRetry) {
