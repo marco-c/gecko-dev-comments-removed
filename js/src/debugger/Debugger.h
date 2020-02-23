@@ -501,7 +501,20 @@ class MOZ_RAII DebuggerList {
   bool empty() { return debuggers.empty(); }
 
   template <typename FireHookFun >
-  ResumeMode dispatchHook(JSContext* cx, FireHookFun fireHook);
+  bool dispatchHook(JSContext* cx, FireHookFun fireHook);
+
+  template <typename FireHookFun >
+  void dispatchQuietHook(JSContext* cx, FireHookFun fireHook);
+
+  template <typename FireHookFun >
+  MOZ_MUST_USE bool dispatchResumeModeHook(JSContext* cx, FireHookFun fireHook,
+                                           ResumeMode& resumeMode,
+                                           MutableHandleValue rval);
+
+  template <typename FireHookFun >
+  MOZ_MUST_USE bool dispatchResumptionHook(JSContext* cx,
+                                           AbstractFramePtr frame,
+                                           FireHookFun fireHook);
 };
 
 class Debugger : private mozilla::LinkedListElement<Debugger> {
@@ -828,16 +841,15 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
+  MOZ_MUST_USE bool processHandlerResult(JSContext* cx, bool success,
+                                         HandleValue rv, AbstractFramePtr frame,
+                                         jsbytecode* pc, ResumeMode& resultMode,
+                                         MutableHandleValue vp);
 
-  ResumeMode processHandlerResult(JSContext* cx, bool success, HandleValue rv,
-                                  AbstractFramePtr frame, jsbytecode* pc,
-                                  MutableHandleValue vp);
-
-  ResumeMode processParsedHandlerResult(JSContext* cx, AbstractFramePtr frame,
-                                        jsbytecode* pc, bool success,
-                                        ResumeMode resumeMode,
-                                        HandleValue value,
-                                        MutableHandleValue vp);
+  MOZ_MUST_USE bool processParsedHandlerResult(
+      JSContext* cx, AbstractFramePtr frame, jsbytecode* pc, bool success,
+      ResumeMode resumeMode, HandleValue value, ResumeMode& resultMode,
+      MutableHandleValue vp);
 
   
 
@@ -863,7 +875,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
-  void handleUncaughtException(JSContext* cx);
+  MOZ_MUST_USE bool handleUncaughtException(JSContext* cx);
 
   GlobalObject* unwrapDebuggeeArgument(JSContext* cx, const Value& v);
 
@@ -966,19 +978,50 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
   template <typename HookIsEnabledFun ,
             typename FireHookFun >
-  static ResumeMode dispatchHook(JSContext* cx, HookIsEnabledFun hookIsEnabled,
-                                 FireHookFun fireHook);
+  static void dispatchQuietHook(JSContext* cx, HookIsEnabledFun hookIsEnabled,
+                                FireHookFun fireHook);
+  template <
+      typename HookIsEnabledFun , typename FireHookFun >
+  static MOZ_MUST_USE bool dispatchResumeModeHook(
+      JSContext* cx, HookIsEnabledFun hookIsEnabled, FireHookFun fireHook,
+      ResumeMode& resumeMode, MutableHandleValue rval);
+  template <
+      typename HookIsEnabledFun , typename FireHookFun >
+  static MOZ_MUST_USE bool dispatchResumptionHook(
+      JSContext* cx, AbstractFramePtr frame, HookIsEnabledFun hookIsEnabled,
+      FireHookFun fireHook);
 
-  ResumeMode fireDebuggerStatement(JSContext* cx, MutableHandleValue vp);
-  ResumeMode fireExceptionUnwind(JSContext* cx, HandleValue exc,
-                                 MutableHandleValue vp);
-  ResumeMode fireEnterFrame(JSContext* cx, MutableHandleValue vp);
-  ResumeMode fireNativeCall(JSContext* cx, const CallArgs& args,
-                            CallReason reason, MutableHandleValue vp);
-  ResumeMode fireNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global,
-                                 MutableHandleValue vp);
-  ResumeMode firePromiseHook(JSContext* cx, Hook hook, HandleObject promise,
-                             MutableHandleValue vp);
+  template <typename RunImpl >
+  MOZ_MUST_USE bool enterDebuggerHook(JSContext* cx, RunImpl runImpl) {
+    AutoRealm ar(cx, object);
+
+    bool ok = true;
+    if (!runImpl()) {
+      reportUncaughtException(cx);
+      ok = false;
+    }
+    MOZ_ASSERT(!cx->isExceptionPending());
+    return ok;
+  }
+
+  MOZ_MUST_USE bool fireDebuggerStatement(JSContext* cx, ResumeMode& resumeMode,
+                                          MutableHandleValue vp);
+  MOZ_MUST_USE bool fireExceptionUnwind(JSContext* cx, HandleValue exc,
+                                        ResumeMode& resumeMode,
+                                        MutableHandleValue vp);
+  MOZ_MUST_USE bool fireEnterFrame(JSContext* cx, ResumeMode& resumeMode,
+                                   MutableHandleValue vp);
+  MOZ_MUST_USE bool fireNativeCall(JSContext* cx, const CallArgs& args,
+                                   CallReason reason, ResumeMode& resumeMode,
+                                   MutableHandleValue vp);
+  MOZ_MUST_USE bool fireNewGlobalObject(JSContext* cx,
+                                        Handle<GlobalObject*> global,
+                                        ResumeMode& resumeMode,
+                                        MutableHandleValue vp);
+  MOZ_MUST_USE bool firePromiseHook(JSContext* cx, Hook hook,
+                                    HandleObject promise,
+                                    ResumeMode& resumeMode,
+                                    MutableHandleValue vp);
 
   DebuggerScript* newVariantWrapper(JSContext* cx,
                                     Handle<DebuggerScriptReferent> referent) {
@@ -1024,14 +1067,14 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
-  void fireNewScript(JSContext* cx,
-                     Handle<DebuggerScriptReferent> scriptReferent);
+  MOZ_MUST_USE bool fireNewScript(
+      JSContext* cx, Handle<DebuggerScriptReferent> scriptReferent);
 
   
 
 
 
-  void fireOnGarbageCollectionHook(
+  MOZ_MUST_USE bool fireOnGarbageCollectionHook(
       JSContext* cx, const JS::dbg::GarbageCollectionEvent::Ptr& gcData);
 
   inline Breakpoint* firstBreakpoint() const;
