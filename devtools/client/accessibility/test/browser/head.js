@@ -801,3 +801,18 @@ function reload(target, waitForTargetEvent = "navigate") {
   executeSoon(() => target.reload());
   return once(target, waitForTargetEvent);
 }
+
+
+
+
+
+
+
+
+
+async function checkHighlighted(toolbox, expected) {
+  await BrowserTestUtils.waitForCondition(async function() {
+    const isHighlighted = await toolbox.isToolHighlighted("accessibility");
+    return isHighlighted === expected;
+  });
+}
