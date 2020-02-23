@@ -975,6 +975,8 @@ pub enum DebugCommand {
     
     EnableMultithreading(bool),
     
+    SetBatchingLookback(u32),
+    
     InvalidateGpuCache,
     
     

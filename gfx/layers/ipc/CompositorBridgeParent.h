@@ -742,6 +742,11 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   
 
 
+  static void UpdateWebRenderBatchingParameters();
+
+  
+
+
   Maybe<CollectedFramesParams> WrapCollectedFrames(CollectedFrames&& aFrames);
 
  protected:
