@@ -2263,7 +2263,7 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
       aDocument->CookieSettings()->GetRejectThirdPartyTrackers() &&
       nsContentUtils::IsThirdPartyWindowOrChannel(newInnerWindow, nullptr,
                                                   uri) &&
-      nsContentUtils::IsTrackingResourceWindow(newInnerWindow)) {
+      nsContentUtils::IsThirdPartyTrackingResourceWindow(newInnerWindow)) {
     
     
     
