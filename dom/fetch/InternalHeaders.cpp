@@ -308,7 +308,7 @@ void InternalHeaders::SetGuard(HeadersGuardEnum aGuard, ErrorResult& aRv) {
   mGuard = aGuard;
 }
 
-InternalHeaders::~InternalHeaders() {}
+InternalHeaders::~InternalHeaders() = default;
 
 
 bool InternalHeaders::IsNoCorsSafelistedRequestHeaderName(
