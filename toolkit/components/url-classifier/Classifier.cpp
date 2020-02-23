@@ -1564,6 +1564,17 @@ RefPtr<LookupCache> Classifier::GetLookupCache(const nsACString& aTable,
   
   RefPtr<LookupCache> cache;
   nsCString provider = GetProvider(aTable);
+
+  
+  
+  
+  
+  if (nsUrlClassifierUtils::IsInSafeMode()) {
+    if (provider.EqualsASCII("google") || provider.EqualsASCII("google4")) {
+      return nullptr;
+    }
+  }
+
   if (StringEndsWith(aTable, NS_LITERAL_CSTRING("-proto"))) {
     cache = new LookupCacheV4(aTable, provider, rootStoreDirectory);
   } else {

@@ -395,7 +395,7 @@ PROT_ListManager.prototype.forceUpdates = function(tables) {
     }
 
     
-    if (!this.checkForUpdates(url)) {
+    if (!this.checkForUpdates(url, true)) {
       ret = false;
     }
   });
@@ -409,10 +409,21 @@ PROT_ListManager.prototype.forceUpdates = function(tables) {
 
 
 
-PROT_ListManager.prototype.checkForUpdates = function(updateUrl) {
+
+PROT_ListManager.prototype.checkForUpdates = function(
+  updateUrl,
+  manual = false
+) {
   log("checkForUpdates with " + updateUrl);
   
   if (!updateUrl) {
+    return false;
+  }
+
+  
+  
+  if (Services.appinfo.inSafeMode && !manual) {
+    log("update is disabled in Safe Mode");
     return false;
   }
 
