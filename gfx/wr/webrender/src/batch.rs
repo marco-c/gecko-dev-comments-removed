@@ -901,8 +901,12 @@ impl BatchBuilder {
                 
                 
                 
+                
                 let prim_header = PrimitiveHeader {
-                    local_rect: prim_rect.translate(-run.reference_frame_relative_offset),
+                    local_rect: LayoutRect::new(
+                        prim_rect.origin - run.reference_frame_relative_offset,
+                        run.snapped_reference_frame_relative_offset.to_size(),
+                    ),
                     local_clip_rect: prim_info.combined_local_clip_rect,
                     specific_prim_address: prim_cache_address,
                     transform_id,
@@ -914,9 +918,9 @@ impl BatchBuilder {
                     &prim_header,
                     z_id,
                     [
-                        (run.snapped_reference_frame_relative_offset.x * 256.0) as i32,
-                        (run.snapped_reference_frame_relative_offset.y * 256.0) as i32,
                         (raster_scale * 65535.0).round() as i32,
+                        0,
+                        0,
                         0,
                     ],
                 );
