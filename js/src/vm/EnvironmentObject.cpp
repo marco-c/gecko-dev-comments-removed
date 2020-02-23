@@ -693,9 +693,19 @@ WithEnvironmentObject* WithEnvironmentObject::createNonSyntactic(
 }
 
 static inline bool IsUnscopableDotName(JSContext* cx, HandleId id) {
-  return JSID_IS_ATOM(id, cx->names().dotThis) ||
-         JSID_IS_ATOM(id, cx->names().dotGenerator);
+  return JSID_IS_ATOM(id, cx->names().dotThis);
 }
+
+#ifdef DEBUG
+static bool IsInternalDotName(JSContext* cx, HandleId id) {
+  return JSID_IS_ATOM(id, cx->names().dotThis) ||
+         JSID_IS_ATOM(id, cx->names().dotGenerator) ||
+         JSID_IS_ATOM(id, cx->names().dotInitializers) ||
+         JSID_IS_ATOM(id, cx->names().dotFieldKeys) ||
+         JSID_IS_ATOM(id, cx->names().dotStaticInitializers) ||
+         JSID_IS_ATOM(id, cx->names().dotStaticFieldKeys);
+}
+#endif
 
 
 static bool CheckUnscopables(JSContext* cx, HandleObject obj, HandleId id,
@@ -723,12 +733,14 @@ static bool with_LookupProperty(JSContext* cx, HandleObject obj, HandleId id,
                                 MutableHandleObject objp,
                                 MutableHandle<PropertyResult> propp) {
   
-  
   if (IsUnscopableDotName(cx, id)) {
     objp.set(nullptr);
     propp.setNotFound();
     return true;
   }
+
+  
+  MOZ_ASSERT(!IsInternalDotName(cx, id));
 
   RootedObject actual(cx, &obj->as<WithEnvironmentObject>().object());
   if (!LookupProperty(cx, actual, id, objp, propp)) {
@@ -751,14 +763,14 @@ static bool with_LookupProperty(JSContext* cx, HandleObject obj, HandleId id,
 static bool with_DefineProperty(JSContext* cx, HandleObject obj, HandleId id,
                                 Handle<PropertyDescriptor> desc,
                                 ObjectOpResult& result) {
-  MOZ_ASSERT(!IsUnscopableDotName(cx, id));
+  MOZ_ASSERT(!IsInternalDotName(cx, id));
   RootedObject actual(cx, &obj->as<WithEnvironmentObject>().object());
   return DefineProperty(cx, actual, id, desc, result);
 }
 
 static bool with_HasProperty(JSContext* cx, HandleObject obj, HandleId id,
                              bool* foundp) {
-  MOZ_ASSERT(!IsUnscopableDotName(cx, id));
+  MOZ_ASSERT(!IsInternalDotName(cx, id));
   RootedObject actual(cx, &obj->as<WithEnvironmentObject>().object());
 
   
@@ -776,7 +788,7 @@ static bool with_HasProperty(JSContext* cx, HandleObject obj, HandleId id,
 static bool with_GetProperty(JSContext* cx, HandleObject obj,
                              HandleValue receiver, HandleId id,
                              MutableHandleValue vp) {
-  MOZ_ASSERT(!IsUnscopableDotName(cx, id));
+  MOZ_ASSERT(!IsInternalDotName(cx, id));
   RootedObject actual(cx, &obj->as<WithEnvironmentObject>().object());
   RootedValue actualReceiver(cx, receiver);
   if (receiver.isObject() && &receiver.toObject() == obj) {
@@ -788,7 +800,7 @@ static bool with_GetProperty(JSContext* cx, HandleObject obj,
 static bool with_SetProperty(JSContext* cx, HandleObject obj, HandleId id,
                              HandleValue v, HandleValue receiver,
                              ObjectOpResult& result) {
-  MOZ_ASSERT(!IsUnscopableDotName(cx, id));
+  MOZ_ASSERT(!IsInternalDotName(cx, id));
   RootedObject actual(cx, &obj->as<WithEnvironmentObject>().object());
   RootedValue actualReceiver(cx, receiver);
   if (receiver.isObject() && &receiver.toObject() == obj) {
@@ -800,14 +812,14 @@ static bool with_SetProperty(JSContext* cx, HandleObject obj, HandleId id,
 static bool with_GetOwnPropertyDescriptor(
     JSContext* cx, HandleObject obj, HandleId id,
     MutableHandle<PropertyDescriptor> desc) {
-  MOZ_ASSERT(!IsUnscopableDotName(cx, id));
+  MOZ_ASSERT(!IsInternalDotName(cx, id));
   RootedObject actual(cx, &obj->as<WithEnvironmentObject>().object());
   return GetOwnPropertyDescriptor(cx, actual, id, desc);
 }
 
 static bool with_DeleteProperty(JSContext* cx, HandleObject obj, HandleId id,
                                 ObjectOpResult& result) {
-  MOZ_ASSERT(!IsUnscopableDotName(cx, id));
+  MOZ_ASSERT(!IsInternalDotName(cx, id));
   RootedObject actual(cx, &obj->as<WithEnvironmentObject>().object());
   return DeleteProperty(cx, actual, id, result);
 }
