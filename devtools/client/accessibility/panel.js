@@ -29,6 +29,11 @@ const EVENTS = {
     "Accessibility:AccessibilityInspectorUpdated",
 };
 
+const {
+  accessibility: { AUDIT_TYPE },
+} = require("devtools/shared/constants");
+const { FILTERS } = require("devtools/client/accessibility/constants");
+
 
 
 
@@ -58,6 +63,7 @@ function AccessibilityPanel(iframeWindow, toolbox, startup) {
   this.stopListeningForAccessibilityEvents = this.stopListeningForAccessibilityEvents.bind(
     this
   );
+  this.audit = this.audit.bind(this);
 
   EventEmitter.decorate(this);
 }
@@ -175,7 +181,6 @@ AccessibilityPanel.prototype = {
     this.shouldRefresh = false;
     this.postContentMessage("initialize", {
       front: this.front,
-      walker: this.walker,
       supports: this.supports,
       fluentBundles: this.fluentBundles,
       simulator: this.simulator,
@@ -185,6 +190,7 @@ AccessibilityPanel.prototype = {
         .startListeningForAccessibilityEvents,
       stopListeningForAccessibilityEvents: this
         .stopListeningForAccessibilityEvents,
+      audit: this.audit,
     });
   },
 
@@ -298,6 +304,53 @@ AccessibilityPanel.prototype = {
     for (const [type, listener] of Object.entries(eventMap)) {
       this.walker.off(type, listener);
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  audit(filter, onError, onProgress, onCompleted) {
+    return new Promise(resolve => {
+      const types =
+        filter === FILTERS.ALL ? Object.values(AUDIT_TYPE) : [filter];
+      const auditEventHandler = ({ type, ancestries, progress }) => {
+        switch (type) {
+          case "error":
+            this.walker.off("audit-event", auditEventHandler);
+            onError();
+            resolve();
+            break;
+          case "completed":
+            this.walker.off("audit-event", auditEventHandler);
+            onCompleted(ancestries);
+            resolve();
+            break;
+          case "progress":
+            onProgress(progress);
+            break;
+          default:
+            break;
+        }
+      };
+
+      this.walker.on("audit-event", auditEventHandler);
+      this.walker.startAudit({ types });
+    });
   },
 
   get front() {
