@@ -171,7 +171,7 @@ class MOZ_RAII AutoSaveRestore {
 
 
 class Canvas2dPixelsReporter final : public nsIMemoryReporter {
-  ~Canvas2dPixelsReporter() {}
+  ~Canvas2dPixelsReporter() = default;
 
  public:
   NS_DECL_ISUPPORTS
@@ -762,7 +762,7 @@ class CanvasShutdownObserver final : public nsIObserver {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
  private:
-  ~CanvasShutdownObserver() {}
+  ~CanvasShutdownObserver() = default;
 
   CanvasRenderingContext2D* mCanvas;
 };
