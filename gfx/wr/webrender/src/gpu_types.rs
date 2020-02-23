@@ -2,13 +2,14 @@
 
 
 
-use api::{DocumentLayer, PremultipliedColorF};
+use api::{DocumentLayer, PremultipliedColorF, AlphaType};
 use api::units::*;
 use crate::spatial_tree::{SpatialTree, ROOT_SPATIAL_NODE_INDEX, SpatialNodeIndex};
 use crate::gpu_cache::{GpuCacheAddress, GpuDataRequest};
 use crate::internal_types::FastHashMap;
 use crate::prim_store::EdgeAaSegmentMask;
 use crate::render_task::RenderTaskAddress;
+use crate::renderer::ShaderColorMode;
 use std::i32;
 use crate::util::{TransformedRectKind, MatrixHelpers};
 
@@ -453,6 +454,27 @@ impl From<BrushInstance> for PrimitiveInstanceData {
 }
 
 
+#[derive(Copy, Clone, Debug)]
+pub struct ImageBrushData {
+    pub color_mode: ShaderColorMode,
+    pub alpha_type: AlphaType,
+    pub raster_space: RasterizationSpace,
+    pub opacity: f32,
+}
+
+impl ImageBrushData {
+    #[inline]
+    pub fn encode(&self) -> [i32; 4] {
+        [
+            self.color_mode as i32 | ((self.alpha_type as i32) << 16),
+            self.raster_space as i32,
+            get_shader_opacity(self.opacity),
+            0,
+        ]
+    }
+}
+
+
 
 
 
@@ -719,4 +741,8 @@ fn register_transform(
         transforms.push(data);
         index
     }
+}
+
+pub fn get_shader_opacity(opacity: f32) -> i32 {
+    (opacity * 65535.0).round() as i32
 }
