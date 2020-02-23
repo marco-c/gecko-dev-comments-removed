@@ -13,24 +13,27 @@
 #include "mozilla/layers/TextureClient.h"
 
 namespace mozilla {
+class VAAPIFrameHolder;
+}
+
+namespace mozilla {
 namespace layers {
 
-
-typedef void (*AVFrameReleaseCallback)(void** aFrameRef);
+typedef void (*AVFrameReleaseCallback)(VAAPIFrameHolder* aFrameHolder);
 
 class WaylandDMABUFSurfaceImage : public Image {
  public:
   explicit WaylandDMABUFSurfaceImage(WaylandDMABufSurface* aSurface,
                                      AVFrameReleaseCallback aReleaseCallback,
-                                     void* aDecoder, void* aFrameRef)
+                                     VAAPIFrameHolder* aFrameHolder)
       : Image(nullptr, ImageFormat::WAYLAND_DMABUF),
         mSurface(aSurface),
         mReleaseCallback(aReleaseCallback),
-        mFrameRef(aFrameRef) {}
+        mFrameHolder(aFrameHolder) {}
 
   ~WaylandDMABUFSurfaceImage() {
     if (mReleaseCallback) {
-      mReleaseCallback(&mFrameRef);
+      mReleaseCallback(mFrameHolder);
     }
   }
 
@@ -52,12 +55,8 @@ class WaylandDMABUFSurfaceImage : public Image {
 
   
   
-
-  
   AVFrameReleaseCallback mReleaseCallback;
-  
-  
-  void* mFrameRef;
+  VAAPIFrameHolder* mFrameHolder;
 };
 
 }  
