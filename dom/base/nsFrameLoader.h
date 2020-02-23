@@ -152,8 +152,8 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
   already_AddRefed<nsILoadContext> LoadContext();
 
-  already_AddRefed<mozilla::dom::BrowsingContext> GetBrowsingContext();
-  already_AddRefed<mozilla::dom::BrowsingContext> GetExtantBrowsingContext();
+  mozilla::dom::BrowsingContext* GetBrowsingContext();
+  mozilla::dom::BrowsingContext* GetExtantBrowsingContext();
 
   
 
