@@ -67,7 +67,7 @@ decorate_task(
     );
 
     const recipe = recipeFactory();
-    await action.runRecipe(recipe);
+    await action.processRecipe(recipe, BaseAction.suitability.FILTER_MATCH);
     is(
       action._testPreExecutionFlag,
       true,
@@ -117,7 +117,7 @@ decorate_task(withStub(Uptake, "reportRecipe"), async function(
 ) {
   const action = new NoopAction();
   const recipe = recipeFactory();
-  await action.runRecipe(recipe);
+  await action.processRecipe(recipe, BaseAction.suitability.FILTER_MATCH);
   Assert.deepEqual(
     reportRecipeStub.args,
     [[recipe, Uptake.RECIPE_SUCCESS]],
@@ -150,11 +150,11 @@ decorate_task(withStub(Uptake, "reportRecipe"), async function(
   const recipe1 = recipeFactory();
   const recipe2 = recipeFactory();
 
-  await action.runRecipe(recipe1);
+  await action.processRecipe(recipe1, BaseAction.suitability.FILTER_MATCH);
   await action.finalize();
 
   await Assert.rejects(
-    action.runRecipe(recipe2),
+    action.processRecipe(recipe2, BaseAction.suitability.FILTER_MATCH),
     /^Error: Action has already been finalized$/,
     "running recipes after finalization is an error"
   );
@@ -181,7 +181,7 @@ decorate_task(
 
     
     
-    await action.runRecipe(recipe);
+    await action.processRecipe(recipe, BaseAction.suitability.FILTER_MATCH);
     is(
       action.state,
       FailPreExecutionAction.STATE_FAILED,
@@ -234,7 +234,7 @@ decorate_task(
   async function(reportRecipeStub, reportActionStub) {
     const recipe = recipeFactory();
     const action = new FailRunAction();
-    await action.runRecipe(recipe);
+    await action.processRecipe(recipe, BaseAction.suitability.FILTER_MATCH);
     is(
       action.state,
       FailRunAction.STATE_READY,
@@ -270,7 +270,7 @@ decorate_task(
   async function(reportRecipeStub, reportActionStub) {
     const recipe = recipeFactory();
     const action = new FailFinalizeAction();
-    await action.runRecipe(recipe);
+    await action.processRecipe(recipe, BaseAction.suitability.FILTER_MATCH);
     await action.finalize();
 
     Assert.deepEqual(
@@ -303,7 +303,7 @@ decorate_task(
     );
 
     
-    await action.runRecipe(recipe);
+    await action.processRecipe(recipe, BaseAction.suitability.FILTER_MATCH);
 
     
     await action.finalize();
@@ -328,3 +328,15 @@ decorate_task(
     );
   }
 );
+
+
+decorate_task(async function() {
+  const recipe = recipeFactory();
+  const action = new NoopAction();
+  const verifySpy = sinon.spy(action, "validateArguments");
+  await action.processRecipe(
+    recipe,
+    BaseAction.suitability.CAPABILITES_MISMATCH
+  );
+  ok(!verifySpy.called, "validateArguments should not be called");
+});

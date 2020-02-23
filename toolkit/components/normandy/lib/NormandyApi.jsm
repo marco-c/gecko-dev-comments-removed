@@ -88,6 +88,9 @@ var NormandyApi = {
 
 
 
+
+
+
   async verifyObjectSignature(data, signaturePayload, type) {
     const { signature, x5u } = signaturePayload;
     const certChainResponse = await this.get(this.absolutify(x5u));

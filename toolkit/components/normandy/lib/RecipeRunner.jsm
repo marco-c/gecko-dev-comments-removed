@@ -29,6 +29,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   CleanupManager: "resource://normandy/lib/CleanupManager.jsm",
   Uptake: "resource://normandy/lib/Uptake.jsm",
   ActionsManager: "resource://normandy/lib/ActionsManager.jsm",
+  BaseAction: "resource://normandy/actions/BaseAction.jsm",
   Kinto: "resource://services-common/kinto-offline-client.js",
   clearTimeout: "resource://gre/modules/Timer.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
@@ -58,10 +59,7 @@ const TIMER_LAST_UPDATE_PREF = `app.update.lastUpdateTime.${TIMER_NAME}`;
 const PREFS_TO_WATCH = [RUN_INTERVAL_PREF, SHIELD_ENABLED_PREF, API_URL_PREF];
 
 XPCOMUtils.defineLazyGetter(this, "gRemoteSettingsClient", () => {
-  return RemoteSettings(REMOTE_SETTINGS_COLLECTION, {
-    filterFunc: async entry =>
-      (await RecipeRunner.shouldRunRecipe(entry.recipe)) ? entry : null,
-  });
+  return RemoteSettings(REMOTE_SETTINGS_COLLECTION);
 });
 
 
@@ -327,28 +325,23 @@ var RecipeRunner = {
       }
 
       
-      let recipesToRun;
+      let recipesAndSignatures;
       try {
-        recipesToRun = await this.loadRecipes();
+        recipesAndSignatures = await gRemoteSettingsClient.get();
       } catch (e) {
-        let status = Uptake.RUNNER_SERVER_ERROR;
-        if (/NetworkError/.test(e)) {
-          status = Uptake.RUNNER_NETWORK_ERROR;
-        } else if (e instanceof NormandyApi.InvalidSignatureError) {
-          status = Uptake.RUNNER_INVALID_SIGNATURE;
-        }
-        await Uptake.reportRunner(status);
+        await Uptake.reportRunner(Uptake.RUNNER_SERVER_ERROR);
         return;
       }
 
       const actionsManager = new ActionsManager();
 
       
-      if (recipesToRun.length === 0) {
+      if (recipesAndSignatures.length === 0) {
         log.debug("No recipes to execute");
       } else {
-        for (const recipe of recipesToRun) {
-          await actionsManager.runRecipe(recipe);
+        for (const { recipe, signature } of recipesAndSignatures) {
+          let suitability = await this.getRecipeSuitability(recipe, signature);
+          await actionsManager.processRecipe(recipe, suitability);
         }
       }
 
@@ -365,23 +358,6 @@ var RecipeRunner = {
         Services.prefs.setIntPref(TIMER_LAST_UPDATE_PREF, lastUpdateTime);
       }
     }
-  },
-
-  
-
-
-  async loadRecipes() {
-    
-    
-    
-    const entries = await gRemoteSettingsClient.get();
-    return Promise.all(
-      entries.map(async ({ recipe, signature }) => {
-        
-        await NormandyApi.verifyObjectSignature(recipe, signature, "recipe");
-        return recipe;
-      })
-    );
   },
 
   getFilterContext(recipe) {
@@ -469,7 +445,26 @@ var RecipeRunner = {
 
 
 
-  async shouldRunRecipe(recipe) {
+
+
+
+
+
+
+
+
+
+
+
+
+  async getRecipeSuitability(recipe, signature) {
+    try {
+      await NormandyApi.verifyObjectSignature(recipe, signature, "recipe");
+    } catch (e) {
+      await Uptake.reportRecipe(recipe, Uptake.RECIPE_INVALID_SIGNATURE);
+      return BaseAction.suitability.SIGNATURE_ERROR;
+    }
+
     const runnerCapabilities = this.getCapabilities();
     if (Array.isArray(recipe.capabilities)) {
       for (const recipeCapability of recipe.capabilities) {
@@ -485,7 +480,7 @@ var RecipeRunner = {
             recipe,
             Uptake.RECIPE_INCOMPATIBLE_CAPABILITIES
           );
-          return false;
+          return BaseAction.suitability.CAPABILITES_MISMATCH;
         }
       }
     }
@@ -501,7 +496,7 @@ var RecipeRunner = {
         }]. Error: "${err}"`
       );
       await Uptake.reportRecipe(recipe, Uptake.RECIPE_FILTER_BROKEN);
-      return false;
+      return BaseAction.suitability.FILTER_ERROR;
     }
 
     if (!result) {
@@ -509,10 +504,10 @@ var RecipeRunner = {
       
       
       await Uptake.reportRecipe(recipe, Uptake.RECIPE_DIDNT_MATCH_FILTER);
-      return false;
+      return BaseAction.suitability.FILTER_MISMATCH;
     }
 
-    return true;
+    return BaseAction.suitability.FILTER_MATCH;
   },
 
   

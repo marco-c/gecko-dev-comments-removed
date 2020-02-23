@@ -1,10 +1,12 @@
 "use strict";
 
 ChromeUtils.import("resource://testing-common/TestUtils.jsm", this);
+ChromeUtils.import("resource://testing-common/NormandyTestUtils.jsm", this);
 ChromeUtils.import(
   "resource://gre/modules/components-utils/FilterExpressions.jsm",
   this
 );
+ChromeUtils.import("resource://normandy/actions/BaseAction.jsm", this);
 ChromeUtils.import("resource://normandy/lib/RecipeRunner.jsm", this);
 ChromeUtils.import("resource://normandy/lib/ClientEnvironment.jsm", this);
 ChromeUtils.import("resource://normandy/lib/CleanupManager.jsm", this);
@@ -83,36 +85,47 @@ add_task(async function getFilterContext() {
   is(context.env.userId, "some id", "userId was cached");
 });
 
-add_task(async function test_shouldRunRecipe_filterExpressions() {
-  const check = filter =>
-    RecipeRunner.shouldRunRecipe({ filter_expression: filter });
+add_task(
+  withStub(NormandyApi, "verifyObjectSignature"),
+  async function test_getRecipeSuitability_filterExpressions() {
+    const check = filter =>
+      RecipeRunner.getRecipeSuitability({ filter_expression: filter });
 
-  
-  ok(
-    !(await check("invalid ( + 5yntax")),
-    "Invalid filter expressions return false"
-  );
+    
+    is(
+      await check("invalid ( + 5yntax"),
+      BaseAction.suitability.FILTER_ERROR,
+      "Invalid filter expressions return false"
+    );
 
-  
-  ok(await check("[1, 2, 3]"), "Non-boolean filter expressions return true");
+    
+    is(
+      await check("[1, 2, 3]"),
+      BaseAction.suitability.FILTER_MATCH,
+      "Non-boolean filter expressions return true"
+    );
 
-  
-  const recipe = { filter_expression: "normandy.recipe.id == 7", id: 7 };
-  ok(
-    await RecipeRunner.shouldRunRecipe(recipe),
-    "The recipe is available in the filter context"
-  );
-  recipe.id = 4;
-  ok(
-    !(await RecipeRunner.shouldRunRecipe(recipe)),
-    "The recipe is available in the filter context"
-  );
-});
+    
+    const recipe = { filter_expression: "normandy.recipe.id == 7", id: 7 };
+    is(
+      await RecipeRunner.getRecipeSuitability(recipe),
+      BaseAction.suitability.FILTER_MATCH,
+      "The recipe is available in the filter context"
+    );
+    recipe.id = 4;
+    is(
+      await RecipeRunner.getRecipeSuitability(recipe),
+      BaseAction.suitability.FILTER_MISMATCH,
+      "The recipe is available in the filter context"
+    );
+  }
+);
 
 decorate_task(
   withStub(FilterExpressions, "eval"),
   withStub(Uptake, "reportRecipe"),
-  async function test_shouldRunRecipe_canHandleExceptions(
+  withStub(NormandyApi, "verifyObjectSignature"),
+  async function test_getRecipeSuitability_canHandleExceptions(
     evalStub,
     reportRecipeStub
   ) {
@@ -122,9 +135,13 @@ decorate_task(
       action: "action",
       filter_expression: "broken",
     };
-    const result = await RecipeRunner.shouldRunRecipe(someRecipe);
+    const result = await RecipeRunner.getRecipeSuitability(someRecipe);
 
-    Assert.deepEqual(result, false, "broken filters are treated as false");
+    is(
+      result,
+      BaseAction.suitability.FILTER_ERROR,
+      "broken filters are reported"
+    );
     Assert.deepEqual(reportRecipeStub.args, [
       [someRecipe, Uptake.RECIPE_FILTER_BROKEN],
     ]);
@@ -134,40 +151,53 @@ decorate_task(
 decorate_task(
   withSpy(FilterExpressions, "eval"),
   withStub(RecipeRunner, "getCapabilities"),
-  async function test_shouldRunRecipe_checksCapabilities(
+  withStub(NormandyApi, "verifyObjectSignature"),
+  async function test_getRecipeSuitability_checksCapabilities(
     evalSpy,
     getCapabilitiesStub
   ) {
     getCapabilitiesStub.returns(new Set(["test-capability"]));
 
-    let result = await RecipeRunner.shouldRunRecipe({
-      filter_expression: "true",
-    });
-    ok(result, "Recipes with no capabilities should pass");
+    is(
+      await RecipeRunner.getRecipeSuitability({
+        filter_expression: "true",
+      }),
+      BaseAction.suitability.FILTER_MATCH,
+      "Recipes with no capabilities should pass"
+    );
     ok(evalSpy.called, "Filter should be evaluated");
 
     evalSpy.resetHistory();
-    result = await RecipeRunner.shouldRunRecipe({
-      capabilities: [],
-      filter_expression: "true",
-    });
-    ok(result, "Recipes with empty capabilities should pass");
+    is(
+      await RecipeRunner.getRecipeSuitability({
+        capabilities: [],
+        filter_expression: "true",
+      }),
+      BaseAction.suitability.FILTER_MATCH,
+      "Recipes with empty capabilities should pass"
+    );
     ok(evalSpy.called, "Filter should be evaluated");
 
     evalSpy.resetHistory();
-    result = await RecipeRunner.shouldRunRecipe({
-      capabilities: ["test-capability"],
-      filter_expression: "true",
-    });
-    ok(result, "Recipes with a matching capability should pass");
+    is(
+      await RecipeRunner.getRecipeSuitability({
+        capabilities: ["test-capability"],
+        filter_expression: "true",
+      }),
+      BaseAction.suitability.FILTER_MATCH,
+      "Recipes with a matching capability should pass"
+    );
     ok(evalSpy.called, "Filter should be evaluated");
 
     evalSpy.resetHistory();
-    result = await RecipeRunner.shouldRunRecipe({
-      capabilities: ["impossible-capability"],
-      filter_expression: "true",
-    });
-    ok(!result, "Recipes with non-matching capabilities should not pass");
+    is(
+      await RecipeRunner.getRecipeSuitability({
+        capabilities: ["impossible-capability"],
+        filter_expression: "true",
+      }),
+      BaseAction.suitability.CAPABILITES_MISMATCH,
+      "Recipes with non-matching capabilities should not pass"
+    );
     ok(!evalSpy.called, "Filter should not be evaluated");
   }
 );
@@ -203,14 +233,9 @@ decorate_task(
 
 decorate_task(
   withStub(Uptake, "reportRunner"),
-  withStub(RecipeRunner, "loadRecipes"),
   withStub(ActionsManager.prototype, "finalize"),
-  async function testRunEvents(
-    reportRunnerStub,
-    loadRecipesStub,
-    finalizeStub
-  ) {
-    loadRecipesStub.returns(Promise.resolve([]));
+  NormandyTestUtils.withMockRecipeCollection([]),
+  async function testRunEvents(reportRunnerStub, finalizeStub) {
     const startPromise = TestUtils.topicObserved("recipe-runner:start");
     const endPromise = TestUtils.topicObserved("recipe-runner:end");
 
@@ -224,19 +249,10 @@ decorate_task(
 
 decorate_task(
   withStub(RecipeRunner, "getCapabilities"),
+  withStub(NormandyApi, "verifyObjectSignature"),
+  NormandyTestUtils.withMockRecipeCollection([{ id: 1 }]),
   async function test_run_includesCapabilities(getCapabilitiesStub) {
-    const rsCollection = await RecipeRunner._remoteSettingsClientForTesting.openCollection();
-    await rsCollection.clear();
-    const fakeSig = { signature: "abc" };
-    await rsCollection.create(
-      { id: "match", recipe: { id: 1 }, signature: fakeSig },
-      { synced: true }
-    );
-    await rsCollection.db.saveLastModified(42);
-    rsCollection.db.close();
-
-    let capabilities = new Set(["test-capability"]);
-    getCapabilitiesStub.returns(capabilities);
+    getCapabilitiesStub.returns(new Set(["test-capabilitiy"]));
     await RecipeRunner.run();
     ok(getCapabilitiesStub.called, "getCapabilities should be called");
   }
@@ -244,12 +260,12 @@ decorate_task(
 
 decorate_task(
   withStub(NormandyApi, "verifyObjectSignature"),
-  withStub(ActionsManager.prototype, "runRecipe"),
+  withStub(ActionsManager.prototype, "processRecipe"),
   withStub(ActionsManager.prototype, "finalize"),
   withStub(Uptake, "reportRecipe"),
   async function testReadFromRemoteSettings(
     verifyObjectSignatureStub,
-    runRecipeStub,
+    processRecipeStub,
     finalizeStub,
     reportRecipeStub
   ) {
@@ -291,13 +307,21 @@ decorate_task(
 
     Assert.deepEqual(
       verifyObjectSignatureStub.args,
-      [[matchRecipe, fakeSig, "recipe"], [missingRecipe, fakeSig, "recipe"]],
-      "recipes with matching should have their signature verified"
+      [
+        [matchRecipe, fakeSig, "recipe"],
+        [missingRecipe, fakeSig, "recipe"],
+        [noMatchRecipe, fakeSig, "recipe"],
+      ],
+      "all recipes should have their signature verified"
     );
     Assert.deepEqual(
-      runRecipeStub.args,
-      [[matchRecipe], [missingRecipe]],
-      "recipes with matching filters should be executed"
+      processRecipeStub.args,
+      [
+        [matchRecipe, BaseAction.suitability.FILTER_MATCH],
+        [missingRecipe, BaseAction.suitability.FILTER_MATCH],
+        [noMatchRecipe, BaseAction.suitability.FILTER_MISMATCH],
+      ],
+      "Recipes should be reported with the correct suitabilities"
     );
     Assert.deepEqual(
       reportRecipeStub.args,
@@ -309,11 +333,11 @@ decorate_task(
 
 decorate_task(
   withStub(NormandyApi, "verifyObjectSignature"),
-  withStub(ActionsManager.prototype, "runRecipe"),
+  withStub(ActionsManager.prototype, "processRecipe"),
   withStub(RecipeRunner, "getCapabilities"),
   async function testReadFromRemoteSettings(
     verifyObjectSignatureStub,
-    runRecipeStub,
+    processRecipe,
     getCapabilitiesStub
   ) {
     getCapabilitiesStub.returns(new Set(["compatible"]));
@@ -345,51 +369,45 @@ decorate_task(
     await RecipeRunner.run();
 
     Assert.deepEqual(
-      runRecipeStub.args,
-      [[compatibleRecipe]],
-      "only recipes with compatible capabilities should be executed"
+      processRecipe.args,
+      [
+        [compatibleRecipe, BaseAction.suitability.FILTER_MATCH],
+        [incompatibleRecipe, BaseAction.suitability.CAPABILITES_MISMATCH],
+      ],
+      "recipes should be marked if their capabilities aren't compatible"
     );
   }
 );
 
 decorate_task(
-  withStub(ActionsManager.prototype, "runRecipe"),
-  withStub(NormandyApi, "get"),
-  withStub(Uptake, "reportRunner"),
+  withStub(ActionsManager.prototype, "processRecipe"),
+  withStub(NormandyApi, "verifyObjectSignature"),
+  withStub(Uptake, "reportRecipe"),
+  NormandyTestUtils.withMockRecipeCollection(),
   async function testBadSignatureFromRemoteSettings(
-    runRecipeStub,
-    normandyGetStub,
-    reportRunnerStub
+    processRecipeStub,
+    verifyObjectSignatureStub,
+    reportRecipeStub,
+    mockRecipeCollection
   ) {
-    normandyGetStub.resolves({
-      async text() {
-        return "---CERT x5u----";
-      },
-    });
-
-    const matchRecipe = {
+    verifyObjectSignatureStub.throws(new Error("fake signature error"));
+    const badSigRecipe = {
+      id: 1,
       name: "badSig",
       action: "matchAction",
       filter_expression: "true",
     };
-
-    const rsCollection = await RecipeRunner._remoteSettingsClientForTesting.openCollection();
-    await rsCollection.clear();
-    const badSig = { x5u: "http://localhost/x5u", signature: "abc" };
-    await rsCollection.create(
-      { id: "badSig", recipe: matchRecipe, signature: badSig },
-      { synced: true }
-    );
-    await rsCollection.db.saveLastModified(42);
-    rsCollection.db.close();
+    await mockRecipeCollection.addRecipes([badSigRecipe]);
 
     await RecipeRunner.run();
 
-    ok(!runRecipeStub.called, "no recipe is executed");
+    Assert.deepEqual(processRecipeStub.args, [
+      [badSigRecipe, BaseAction.suitability.SIGNATURE_ERROR],
+    ]);
     Assert.deepEqual(
-      reportRunnerStub.args,
-      [[Uptake.RUNNER_INVALID_SIGNATURE]],
-      "RecipeRunner should report uptake telemetry"
+      reportRecipeStub.args,
+      [[badSigRecipe, Uptake.RECIPE_INVALID_SIGNATURE]],
+      "The recipe should have its uptake status recorded"
     );
   }
 );
@@ -655,9 +673,9 @@ decorate_task(
 );
 
 decorate_task(
-  withStub(RecipeRunner, "loadRecipes"),
-  async function testRunCanRunOnlyOnce(loadRecipesStub) {
-    loadRecipesStub.returns(
+  withStub(RecipeRunner._remoteSettingsClientForTesting, "get"),
+  async function testRunCanRunOnlyOnce(getRecipesStub) {
+    getRecipesStub.returns(
       
       new Promise(resolve => setTimeout(() => resolve([]), 10))
     );
@@ -665,7 +683,7 @@ decorate_task(
     
     await Promise.all([RecipeRunner.run(), RecipeRunner.run()]);
 
-    is(loadRecipesStub.callCount, 1, "run() is no-op if already running");
+    is(getRecipesStub.callCount, 1, "run() is no-op if already running");
   }
 );
 
@@ -674,19 +692,15 @@ decorate_task(
     set: [
       
       ["app.update.log", true],
+      ["app.normandy.api_url", "https://example.com"],
+      ["app.normandy.first_run", false],
       ["app.normandy.onsync_skew_sec", 0],
     ],
   }),
-  withStub(RecipeRunner, "loadRecipes"),
+  withSpy(RecipeRunner, "run"),
   withStub(ActionsManager.prototype, "finalize"),
   withStub(Uptake, "reportRunner"),
-  async function testSyncDelaysTimer(
-    loadRecipesStub,
-    finalizeStub,
-    reportRecipeStub
-  ) {
-    loadRecipesStub.returns(Promise.resolve([]));
-
+  async function testSyncDelaysTimer(runSpy, finalizeStub, reportRecipeStub) {
     
     for (const { value } of Services.catMan.enumerateCategory("update-timer")) {
       const timerID = value.split(",")[2];
@@ -704,9 +718,10 @@ decorate_task(
     RecipeRunner.unregisterTimer();
     RecipeRunner.registerTimer();
 
-    is(loadRecipesStub.callCount, 0, "run() shouldn't have run yet");
+    is(runSpy.callCount, 0, "run() shouldn't have run yet");
 
     
+    runSpy.resetHistory();
     const service = Cc["@mozilla.org/updates/timer-manager;1"].getService(
       Ci.nsITimerCallback
     );
@@ -715,28 +730,31 @@ decorate_task(
       t.initWithCallback(() => {}, 10, Ci.nsITimer.TYPE_ONE_SHOT);
       return t;
     };
+
     
     const startTime = Date.now();
     const endPromise = TestUtils.topicObserved("recipe-runner:end");
     service.notify(newTimer());
     await endPromise; 
-    const timerLatency = Date.now() - startTime;
-
-    is(loadRecipesStub.callCount, 1, "run() should be called from timer");
+    const timerLatency = Math.max(Date.now() - startTime, 1);
+    is(runSpy.callCount, 1, "run() should be called from timer");
 
     
+    runSpy.resetHistory();
     const rsClient = RecipeRunner._remoteSettingsClientForTesting;
     await rsClient.emit("sync", {}); 
-
-    is(loadRecipesStub.callCount, 2, "run() should be called from sync");
+    is(runSpy.callCount, 1, "run() should be called from sync");
 
     
+    runSpy.resetHistory();
+    is(runSpy.callCount, 0, "run() does not run again from timer");
     service.notify(newTimer());
     
+    is(runSpy.callCount, 0, "run() does not run again from timer");
     
     await new Promise(resolve => setTimeout(resolve, timerLatency * 10));
-
-    is(loadRecipesStub.callCount, 2, "run() does not run again from timer");
+    is(runSpy.callCount, 0, "run() does not run again from timer");
+    RecipeRunner.disable();
   }
 );
 

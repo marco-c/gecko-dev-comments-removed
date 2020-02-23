@@ -137,7 +137,12 @@ class BaseAction {
 
 
 
-  async runRecipe(recipe) {
+
+  async processRecipe(recipe, suitability) {
+    if (!BaseAction.suitabilitySet.has(suitability)) {
+      throw new Error(`Unknown recipe status ${suitability}`);
+    }
+
     this._ensurePreExecution();
 
     if (this.state === BaseAction.STATE_FINALIZED) {
@@ -154,22 +159,32 @@ class BaseAction {
       return;
     }
 
-    try {
-      recipe.arguments = this.validateArguments(recipe.arguments);
-    } catch (error) {
-      Cu.reportError(error);
-      Uptake.reportRecipe(recipe, Uptake.RECIPE_EXECUTION_ERROR);
-      return;
+    let uptakeResult = BaseAction.suitabilityToUptakeStatus[suitability];
+    if (!uptakeResult) {
+      throw new Error(
+        `Coding error, no uptake status for suitability ${suitability}`
+      );
     }
 
-    let status = Uptake.RECIPE_SUCCESS;
+    
+    
+    if (suitability !== BaseAction.suitability.CAPABILITES_MISMATCH) {
+      try {
+        recipe.arguments = this.validateArguments(recipe.arguments);
+      } catch (error) {
+        Cu.reportError(error);
+        uptakeResult = Uptake.RECIPE_EXECUTION_ERROR;
+        suitability = BaseAction.suitability.ARGUMENTS_INVALID;
+      }
+    }
+
     try {
-      await this._run(recipe);
+      await this._processRecipe(recipe, suitability);
     } catch (err) {
       Cu.reportError(err);
-      status = Uptake.RECIPE_EXECUTION_ERROR;
+      uptakeResult = Uptake.RECIPE_EXECUTION_ERROR;
     }
-    Uptake.reportRecipe(recipe, status);
+    Uptake.reportRecipe(recipe, uptakeResult);
   }
 
   
@@ -177,8 +192,32 @@ class BaseAction {
 
 
 
+
+
   async _run(recipe) {
     throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  async _processRecipe(recipe, suitability) {
+    if (!suitability) {
+      throw new Error("Suitability is undefined:", suitability);
+    }
+    if (suitability == BaseAction.suitability.FILTER_MATCH) {
+      await this._run(recipe);
+    }
   }
 
   
@@ -262,3 +301,54 @@ BaseAction.STATE_READY = "ACTION_READY";
 BaseAction.STATE_DISABLED = "ACTION_DISABLED";
 BaseAction.STATE_FAILED = "ACTION_FAILED";
 BaseAction.STATE_FINALIZED = "ACTION_FINALIZED";
+
+BaseAction.suitability = {
+  
+
+
+
+  SIGNATURE_ERROR: "RECIPE_SUITABILITY_SIGNATURE_ERROR",
+
+  
+
+
+
+
+  CAPABILITES_MISMATCH: "RECIPE_SUITABILITY_CAPABILITIES_MISMATCH",
+
+  
+
+
+  FILTER_MATCH: "RECIPE_SUITABILITY_FILTER_MATCH",
+
+  
+
+
+
+  FILTER_MISMATCH: "RECIPE_SUITABILITY_FILTER_MISMATCH",
+
+  
+
+
+
+
+  FILTER_ERROR: "RECIPE_SUITABILITY_FILTER_ERROR",
+
+  
+
+
+
+  ARGUMENTS_INVALID: "RECIPE_SUITABILITY_ARGUMENTS_INVALID",
+};
+
+BaseAction.suitabilitySet = new Set(Object.values(BaseAction.suitability));
+
+BaseAction.suitabilityToUptakeStatus = {
+  [BaseAction.suitability.SIGNATURE_ERROR]: Uptake.RECIPE_INVALID_SIGNATURE,
+  [BaseAction.suitability.CAPABILITES_MISMATCH]:
+    Uptake.RECIPE_INCOMPATIBLE_CAPABILITIES,
+  [BaseAction.suitability.FILTER_MATCH]: Uptake.RECIPE_SUCCESS,
+  [BaseAction.suitability.FILTER_MISMATCH]: Uptake.RECIPE_DIDNT_MATCH_FILTER,
+  [BaseAction.suitability.FILTER_ERROR]: Uptake.RECIPE_FILTER_BROKEN,
+  [BaseAction.suitability.ARGUMENTS_INVALID]: Uptake.RECIPE_ARGUMENTS_INVALID,
+};
