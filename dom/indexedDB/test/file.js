@@ -250,3 +250,33 @@ function getFileDBRefCount(name, id) {
 function flushPendingFileDeletions() {
   utils.flushPendingFileDeletions();
 }
+
+async function createReadWriteFileWithInitialContent(dbName, content) {
+  
+  
+  
+
+  let request = indexedDB.open(dbName);
+  await expectingUpgrade(request);
+  let event = await expectingSuccess(request);
+
+  let db = event.target.result;
+  
+  db.onerror = evt =>
+    ok(false, "indexedDB error, '" + evt.target.error.name + "'");
+
+  request = db.createMutableFile("test.bin");
+  event = await expectingSuccess(request);
+
+  let mutableFile = event.target.result;
+  mutableFile.onerror = evt =>
+    ok(false, "indexedDB error, '" + evt.target.error.name + "'");
+
+  let fileHandle = mutableFile.open("readwrite");
+  request = fileHandle.write(content);
+  event = await expectingSuccess(request);
+  
+
+  ok(fileHandle instanceof IDBFileHandle, "Instance of IDBFileHandle");
+  return fileHandle;
+}

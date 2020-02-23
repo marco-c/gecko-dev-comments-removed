@@ -295,9 +295,21 @@ RefPtr<IDBFileRequest> IDBFileHandle::Truncate(const Optional<uint64_t>& aSize,
   uint64_t location;
   if (aSize.WasPassed()) {
     
-    MOZ_ASSERT(aSize.Value() != UINT64_MAX, "Passed wrong size!");
+    
+    
+
+    
+    
+    if (aSize.Value() == UINT64_MAX) {
+      aRv.ThrowTypeError(u"UINT64_MAX is not a valid size");
+      return nullptr;
+    }
     location = aSize.Value();
   } else {
+    
+
+    
+    
     if (mLocation == UINT64_MAX) {
       aRv.Throw(NS_ERROR_DOM_FILEHANDLE_NOT_ALLOWED_ERR);
       return nullptr;
