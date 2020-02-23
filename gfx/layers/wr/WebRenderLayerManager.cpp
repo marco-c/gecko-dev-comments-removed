@@ -191,6 +191,14 @@ bool WebRenderLayerManager::BeginTransaction(const nsCString& aURL) {
 
 bool WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags) {
   
+  
+  
+  
+  if (!WrBridge()->GetSentDisplayList()) {
+    return false;
+  }
+
+  
   mAnimationReadyTime = TimeStamp::Now();
 
   mLatestTransactionId =
@@ -324,6 +332,11 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
       mWebRenderCommandBuilder.ShouldDumpDisplayList(aDisplayListBuilder);
   if (dumpEnabled) {
     printf_stderr("-- WebRender display list build --\n");
+  }
+
+  if (XRE_IsContentProcess() &&
+      StaticPrefs::gfx_webrender_dl_dump_content_serialized()) {
+    builder.DumpSerializedDisplayList();
   }
 
   if (aDisplayList) {
