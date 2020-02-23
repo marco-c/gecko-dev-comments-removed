@@ -8,8 +8,8 @@
 
 #include "InputData.h"
 
-#define DRAG_LOG(...)
-
+static mozilla::LazyLogModule sApzDrgLog("apz.drag");
+#define DRAG_LOG(...) MOZ_LOG(sApzDrgLog, LogLevel::Debug, (__VA_ARGS__))
 
 namespace mozilla {
 namespace layers {

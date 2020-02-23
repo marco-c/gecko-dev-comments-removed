@@ -16,8 +16,8 @@
 #include "nsDebug.h"      
 #include "nsMathUtils.h"  
 
-#define GEL_LOG(...)
-
+static mozilla::LazyLogModule sApzGelLog("apz.gesture");
+#define GEL_LOG(...) MOZ_LOG(sApzGelLog, LogLevel::Debug, (__VA_ARGS__))
 
 namespace mozilla {
 namespace layers {

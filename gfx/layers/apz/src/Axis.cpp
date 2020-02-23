@@ -24,8 +24,8 @@
 #include "nsThreadUtils.h"                  
 #include "nscore.h"                         
 
-#define AXIS_LOG(...)
-
+static mozilla::LazyLogModule sApzAxsLog("apz.axis");
+#define AXIS_LOG(...) MOZ_LOG(sApzAxsLog, LogLevel::Debug, (__VA_ARGS__))
 
 namespace mozilla {
 namespace layers {

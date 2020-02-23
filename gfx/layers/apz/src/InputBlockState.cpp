@@ -20,8 +20,8 @@
 #include "OverscrollHandoffState.h"
 #include "QueuedInput.h"
 
-#define TBS_LOG(...)
-
+static mozilla::LazyLogModule sApzIbsLog("apz.inputstate");
+#define TBS_LOG(...) MOZ_LOG(sApzIbsLog, LogLevel::Debug, (__VA_ARGS__))
 
 namespace mozilla {
 namespace layers {
