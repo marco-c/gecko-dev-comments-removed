@@ -140,10 +140,7 @@ async function testWebAudioWithGUM(testParameters) {
     "https://example.com"
   );
   info("- create audio context -");
-  
-  
-  const mm = tab.linkedBrowser.messageManager;
-  mm.loadFrameScript("data:,(" + createAudioContext.toString() + ")();", false);
+  await SpecialPowers.spawn(tab.linkedBrowser, [], createAudioContext);
 
   info("- check whether audio context starts running -");
   try {

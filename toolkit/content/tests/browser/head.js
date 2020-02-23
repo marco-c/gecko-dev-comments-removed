@@ -352,10 +352,3 @@ function checkVideoDidPlay(browser, args) {
     content.document.body.remove(video);
   });
 }
-
-
-
-function loadFrameScript(browser, fn) {
-  const mm = browser.messageManager;
-  mm.loadFrameScript("data:,(" + fn.toString() + ")();", false);
-}
