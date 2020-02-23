@@ -93,7 +93,7 @@ async function updateTopSites(condition, searchShortcuts = false) {
 
 
 
-async function checkIntervention({
+function checkIntervention({
   searchString,
   tip,
   title,
@@ -101,32 +101,36 @@ async function checkIntervention({
   awaitCallback,
 } = {}) {
   
-  let [result, element] = await awaitTip(searchString);
-  Assert.strictEqual(result.payload.type, tip);
-  await element.ownerDocument.l10n.translateFragment(element);
-
-  let actualTitle = element._elements.get("title").textContent;
-  if (typeof title == "string") {
-    Assert.equal(actualTitle, title, "Title string");
-  } else {
+  
+  return BrowserTestUtils.withNewTab("about:blank", async () => {
     
-    Assert.ok(title.test(actualTitle), "Title regexp");
-  }
+    let [result, element] = await awaitTip(searchString);
+    Assert.strictEqual(result.payload.type, tip);
+    await element.ownerDocument.l10n.translateFragment(element);
 
-  let actualButton = element._elements.get("tipButton").textContent;
-  if (typeof button == "string") {
-    Assert.equal(actualButton, button, "Button string");
-  } else {
-    
-    Assert.ok(button.test(actualButton), "Button regexp");
-  }
+    let actualTitle = element._elements.get("title").textContent;
+    if (typeof title == "string") {
+      Assert.equal(actualTitle, title, "Title string");
+    } else {
+      
+      Assert.ok(title.test(actualTitle), "Title regexp");
+    }
 
-  Assert.ok(BrowserTestUtils.is_visible(element._elements.get("helpButton")));
+    let actualButton = element._elements.get("tipButton").textContent;
+    if (typeof button == "string") {
+      Assert.equal(actualButton, button, "Button string");
+    } else {
+      
+      Assert.ok(button.test(actualButton), "Button regexp");
+    }
 
-  let values = await Promise.all([awaitCallback(), pickTip()]);
-  Assert.ok(true, "Refresh dialog opened");
+    Assert.ok(BrowserTestUtils.is_visible(element._elements.get("helpButton")));
 
-  return values[0] || null;
+    let values = await Promise.all([awaitCallback(), pickTip()]);
+    Assert.ok(true, "Refresh dialog opened");
+
+    return values[0] || null;
+  });
 }
 
 
