@@ -45,11 +45,7 @@ SharedSurface_DMABUF::~SharedSurface_DMABUF() {
   mSurface->ReleaseTextures();
 }
 
-void SharedSurface_DMABUF::ProducerReleaseImpl() {
-  mGL->MakeCurrent();
-  
-  mGL->fFinish();
-}
+void SharedSurface_DMABUF::ProducerReleaseImpl() { mSurface->FenceSet(); }
 
 bool SharedSurface_DMABUF::ToSurfaceDescriptor(
     layers::SurfaceDescriptor* const out_descriptor) {
