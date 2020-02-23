@@ -108,7 +108,7 @@ class AppleVTDecoder : public MediaDataDecoder,
   
   Monitor mMonitor;
   ReorderQueue mReorderQueue;
-  MozPromiseHolder<DecodePromise> mPromise;
+  MozMonitoredPromiseHolder<DecodePromise> mPromise;
 
   
   
