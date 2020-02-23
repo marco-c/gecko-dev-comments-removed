@@ -989,13 +989,18 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   MOZ_MUST_USE bool enterDebuggerHook(JSContext* cx, RunImpl runImpl) {
     AutoRealm ar(cx, object);
 
-    bool ok = true;
     if (!runImpl()) {
+      
+      
+      
+      if (!cx->isExceptionPending() || cx->isThrowingOutOfMemory()) {
+        return false;
+      }
+
       reportUncaughtException(cx);
-      ok = false;
     }
     MOZ_ASSERT(!cx->isExceptionPending());
-    return ok;
+    return true;
   }
 
   MOZ_MUST_USE bool fireDebuggerStatement(JSContext* cx, ResumeMode& resumeMode,

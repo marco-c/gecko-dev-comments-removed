@@ -9,7 +9,7 @@ dbg.onExceptionUnwind = function (f, x) {
     throw 'unhandled';
 };
 dbg.onDebuggerStatement = function(f) {
-    assertEq(f.eval('throw 42'), null);
+    assertEq(f.eval('throw 42').throw, 42);
     assertEq(frame.onStack, false);
 };
 g.eval('debugger');
