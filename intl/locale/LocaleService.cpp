@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "LocaleService.h"
 
@@ -39,61 +39,16 @@ NS_IMPL_ISUPPORTS(LocaleService, mozILocaleService, nsIObserver,
 
 mozilla::StaticRefPtr<LocaleService> LocaleService::sInstance;
 
-/**
- * This function transforms a canonical Mozilla Language Tag, into it's
- * BCP47 compilant form.
- *
- * Example: "ja-JP-mac" -> "ja-JP-macos"
- *
- * The BCP47 form should be used for all calls to ICU/Intl APIs.
- * The canonical form is used for all internal operations.
- */
-static bool SanitizeForBCP47(nsACString& aLocale, bool strict) {
-  // Currently, the only locale code we use that's not BCP47-conformant is
-  // "ja-JP-mac" on OS X, and ICU canonicalizes it into a mouthfull
-  // "ja-JP-x-lvariant-mac", so instead we're hardcoding a conversion
-  // of it to "ja-JP-macos".
-  if (aLocale.LowerCaseEqualsASCII("ja-jp-mac")) {
-    aLocale.AssignLiteral("ja-JP-macos");
-    return true;
-  }
 
-  nsAutoCString locale(aLocale);
-  locale.Trim(" ");
 
-  // POSIX may bring us locales such as "en-US.UTF8", which
-  // ICU converts to `en-US-u-va-posix`. Let's cut out
-  // the `.UTF8`, since it doesn't matter for us.
-  int32_t pos = locale.FindChar('.');
-  if (pos != -1) {
-    locale.Cut(pos, locale.Length() - pos);
-  }
 
-  // The rest of this function will use ICU canonicalization for any other
-  // tag that may come this way.
-  const int32_t LANG_TAG_CAPACITY = 128;
-  char langTag[LANG_TAG_CAPACITY];
-  UErrorCode err = U_ZERO_ERROR;
-  // This is a fail-safe method that will set langTag to "und" if it cannot
-  // match any part of the input locale code.
-  int32_t len = uloc_toLanguageTag(locale.get(), langTag, LANG_TAG_CAPACITY,
-                                   strict, &err);
-  if (U_SUCCESS(err) && len > 0) {
-    aLocale.Assign(langTag, len);
-  }
-  return U_SUCCESS(err);
-}
 
-/**
- * This function splits an input string by `,` delimiter, sanitizes the result
- * language tags and returns them to the caller.
- */
 static void SplitLocaleListStringIntoArray(nsACString& str,
                                            nsTArray<nsCString>& aRetVal) {
   if (str.Length() > 0) {
     for (const nsACString& part : str.Split(',')) {
       nsAutoCString locale(part);
-      if (SanitizeForBCP47(locale, true)) {
+      if (LocaleService::CanonicalizeLanguageId(locale)) {
         if (!aRetVal.Contains(locale)) {
           aRetVal.AppendElement(locale);
         }
@@ -106,24 +61,24 @@ static void ReadRequestedLocales(nsTArray<nsCString>& aRetVal) {
   nsAutoCString str;
   nsresult rv = Preferences::GetCString(REQUESTED_LOCALES_PREF, str);
 
-  // We handle three scenarios here:
-  //
-  // 1) The pref is not set - use default locale
-  // 2) The pref is set to "" - use OS locales
-  // 3) The pref is set to a value - parse the locale list and use it
+  
+  
+  
+  
+  
   if (NS_SUCCEEDED(rv)) {
     if (str.Length() == 0) {
-      // If the pref string is empty, we'll take requested locales
-      // from the OS.
+      
+      
       OSPreferences::GetInstance()->GetSystemLocales(aRetVal);
     } else {
       SplitLocaleListStringIntoArray(str, aRetVal);
     }
   }
 
-  // This will happen when either the pref is not set,
-  // or parsing of the pref didn't produce any usable
-  // result.
+  
+  
+  
   if (aRetVal.IsEmpty()) {
     nsAutoCString defaultLocale;
     LocaleService::GetInstance()->GetDefaultLocale(defaultLocale);
@@ -143,12 +98,12 @@ static void ReadWebExposedLocales(nsTArray<nsCString>& aRetVal) {
 
 LocaleService::LocaleService(bool aIsServer) : mIsServer(aIsServer) {}
 
-/**
- * This function performs the actual language negotiation for the API.
- *
- * Currently it collects the locale ID used by nsChromeRegistry and
- * adds hardcoded default locale as a fallback.
- */
+
+
+
+
+
+
 void LocaleService::NegotiateAppLocales(nsTArray<nsCString>& aRetVal) {
   if (mIsServer) {
     nsAutoCString defaultLocale;
@@ -166,15 +121,15 @@ void LocaleService::NegotiateAppLocales(nsTArray<nsCString>& aRetVal) {
   GetLastFallbackLocale(lastFallbackLocale);
 
   if (!aRetVal.Contains(lastFallbackLocale)) {
-    // This part is used in one of the two scenarios:
-    //
-    // a) We're in a client mode, and no locale has been set yet,
-    //    so we need to return last fallback locale temporarily.
-    // b) We're in a server mode, and the last fallback locale was excluded
-    //    when negotiating against the requested locales.
-    //    Since we currently package it as a last fallback at build
-    //    time, we should also add it at the end of the list at
-    //    runtime.
+    
+    
+    
+    
+    
+    
+    
+    
+    
     aRetVal.AppendElement(lastFallbackLocale);
   }
 }
@@ -184,8 +139,8 @@ LocaleService* LocaleService::GetInstance() {
     sInstance = new LocaleService(XRE_IsParentProcess());
 
     if (sInstance->IsServer()) {
-      // We're going to observe for requested languages changes which come
-      // from prefs.
+      
+      
       DebugOnly<nsresult> rv =
           Preferences::AddWeakObservers(sInstance, kObservedPrefs);
       MOZ_ASSERT(NS_SUCCEEDED(rv), "Adding observers failed.");
@@ -264,7 +219,7 @@ void LocaleService::WebExposedLocalesChanged() {
 void LocaleService::LocalesChanged() {
   MOZ_ASSERT(mIsServer, "This should only be called in the server mode.");
 
-  // if mAppLocales has not been initialized yet, just return
+  
   if (mAppLocales.IsEmpty()) {
     return;
   }
@@ -282,8 +237,8 @@ void LocaleService::LocalesChanged() {
 }
 
 bool LocaleService::IsLocaleRTL(const nsACString& aLocale) {
-  // First, let's check if there's a manual override
-  // preference for directionality set.
+  
+  
   int pref = Preferences::GetInt("intl.uidirection", -1);
   if (pref >= 0) {
     return (pref > 0);
@@ -293,7 +248,7 @@ bool LocaleService::IsLocaleRTL(const nsACString& aLocale) {
 }
 
 bool LocaleService::IsAppLocaleRTL() {
-  // First, check if there is a pseudo locale `bidi` set.
+  
   nsAutoCString pseudoLocale;
   if (NS_SUCCEEDED(Preferences::GetCString("intl.l10n.pseudo", pseudoLocale))) {
     if (pseudoLocale.EqualsLiteral("bidi")) {
@@ -319,8 +274,8 @@ LocaleService::Observe(nsISupports* aSubject, const char* aTopic,
     WebExposedLocalesChanged();
   } else {
     NS_ConvertUTF16toUTF8 pref(aData);
-    // At the moment the only thing we're observing are settings indicating
-    // user requested locales.
+    
+    
     if (pref.EqualsLiteral(REQUESTED_LOCALES_PREF)) {
       RequestedLocalesChanged();
     } else if (pref.EqualsLiteral(WEB_EXPOSED_LOCALES_PREF)) {
@@ -341,7 +296,7 @@ bool LocaleService::LanguagesMatch(const nsACString& aRequested,
 bool LocaleService::IsServer() { return mIsServer; }
 
 static bool GetGREFileContents(const char* aFilePath, nsCString* aOutString) {
-  // Look for the requested file in omnijar.
+  
   RefPtr<nsZipArchive> zip = Omnijar::GetReader(Omnijar::GRE);
   if (zip) {
     nsZipItemPtr<char> item(zip, aFilePath);
@@ -352,8 +307,8 @@ static bool GetGREFileContents(const char* aFilePath, nsCString* aOutString) {
     return true;
   }
 
-  // If we didn't have an omnijar (i.e. we're running a non-packaged
-  // build), then look in the GRE directory.
+  
+  
   nsCOMPtr<nsIFile> path;
   if (NS_FAILED(nsDirectoryService::gService->Get(
           NS_GRE_DIR, NS_GET_IID(nsIFile), getter_AddRefs(path)))) {
@@ -367,8 +322,8 @@ static bool GetGREFileContents(const char* aFilePath, nsCString* aOutString) {
     return false;
   }
 
-  // This is a small file, only used once, so it's not worth doing some fancy
-  // off-main-thread file I/O or whatever. Just read it.
+  
+  
   FILE* fp;
   if (NS_FAILED(path->OpenANSIFileDesc("r", &fp)) || !fp) {
     return false;
@@ -391,12 +346,12 @@ void LocaleService::InitPackagedLocales() {
   nsAutoCString localesString;
   if (GetGREFileContents("res/multilocale.txt", &localesString)) {
     localesString.Trim(" \t\n\r");
-    // This should never be empty in a correctly-built product.
+    
     MOZ_ASSERT(!localesString.IsEmpty());
     SplitLocaleListStringIntoArray(localesString, mPackagedLocales);
   }
 
-  // Last resort in case of broken build
+  
   if (mPackagedLocales.IsEmpty()) {
     nsAutoCString defaultLocale;
     GetDefaultLocale(defaultLocale);
@@ -404,29 +359,29 @@ void LocaleService::InitPackagedLocales() {
   }
 }
 
-/**
- * mozILocaleService methods
- */
+
+
+
 
 NS_IMETHODIMP
 LocaleService::GetDefaultLocale(nsACString& aRetVal) {
-  // We don't allow this to change during a session (it's set at build/package
-  // time), so we cache the result the first time we're called.
+  
+  
   if (mDefaultLocale.IsEmpty()) {
     nsAutoCString locale;
-    // Try to get the package locale from update.locale in omnijar. If the
-    // update.locale file is not found, item.len will remain 0 and we'll
-    // just use our hard-coded default below.
+    
+    
+    
     GetGREFileContents("update.locale", &locale);
     locale.Trim(" \t\n\r");
-    // This should never be empty.
+    
     MOZ_ASSERT(!locale.IsEmpty());
-    if (SanitizeForBCP47(locale, true)) {
+    if (CanonicalizeLanguageId(locale)) {
       mDefaultLocale.Assign(locale);
     }
 
-    // Hard-coded fallback to allow us to survive even if update.locale was
-    // missing/broken in some way.
+    
+    
     if (mDefaultLocale.IsEmpty()) {
       GetLastFallbackLocale(mDefaultLocale);
     }
@@ -491,25 +446,25 @@ LocaleService::GetRegionalPrefsLocales(nsTArray<nsCString>& aRetVal) {
   bool useOSLocales =
       Preferences::GetBool("intl.regional_prefs.use_os_locales", false);
 
-  // If the user specified that they want to use OS Regional Preferences
-  // locales, try to retrieve them and use.
+  
+  
   if (useOSLocales) {
     if (NS_SUCCEEDED(
             OSPreferences::GetInstance()->GetRegionalPrefsLocales(aRetVal))) {
       return NS_OK;
     }
 
-    // If we fail to retrieve them, return the app locales.
+    
     GetAppLocalesAsBCP47(aRetVal);
     return NS_OK;
   }
 
-  // Otherwise, fetch OS Regional Preferences locales and compare the first one
-  // to the app locale. If the language subtag matches, we can safely use
-  // the OS Regional Preferences locale.
-  //
-  // This facilitates scenarios such as Firefox in "en-US" and User sets
-  // regional prefs to "en-GB".
+  
+  
+  
+  
+  
+  
   nsAutoCString appLocale;
   AutoTArray<nsCString, 10> regionalPrefsLocales;
   LocaleService::GetInstance()->GetAppLocaleAsBCP47(appLocale);
@@ -525,7 +480,7 @@ LocaleService::GetRegionalPrefsLocales(nsTArray<nsCString>& aRetVal) {
     return NS_OK;
   }
 
-  // Otherwise use the app locales.
+  
   GetAppLocalesAsBCP47(aRetVal);
   return NS_OK;
 }
@@ -617,7 +572,7 @@ LocaleService::SetRequestedLocales(const nsTArray<nsCString>& aRequested) {
 
   for (auto& req : aRequested) {
     nsAutoCString locale(req);
-    if (!SanitizeForBCP47(locale, true)) {
+    if (!CanonicalizeLanguageId(locale)) {
       NS_ERROR("Invalid language tag provided to SetRequestedLocales!");
       return NS_ERROR_INVALID_ARG;
     }
@@ -640,9 +595,9 @@ LocaleService::GetAvailableLocales(nsTArray<nsCString>& aRetVal) {
   }
 
   if (mAvailableLocales.IsEmpty()) {
-    // If there are no available locales set, it means that L10nRegistry
-    // did not register its locale pool yet. The best course of action
-    // is to use packaged locales until that happens.
+    
+    
+    
     GetPackagedLocales(mAvailableLocales);
   }
 
@@ -667,7 +622,7 @@ LocaleService::SetAvailableLocales(const nsTArray<nsCString>& aAvailable) {
 
   for (auto& avail : aAvailable) {
     nsAutoCString locale(avail);
-    if (!SanitizeForBCP47(locale, true)) {
+    if (!CanonicalizeLanguageId(locale)) {
       NS_ERROR("Invalid language tag provided to SetAvailableLocales!");
       return NS_ERROR_INVALID_ARG;
     }
