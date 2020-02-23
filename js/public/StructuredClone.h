@@ -330,6 +330,19 @@ typedef bool (*CanTransferStructuredCloneOp)(JSContext* cx,
                                              bool* sameProcessScopeRequired,
                                              void* closure);
 
+
+
+
+
+
+
+
+
+
+
+typedef bool (*SharedArrayBufferClonedOp)(JSContext* cx, bool receiving,
+                                          void* closure);
+
 struct JSStructuredCloneCallbacks {
   ReadStructuredCloneOp read;
   WriteStructuredCloneOp write;
@@ -338,6 +351,7 @@ struct JSStructuredCloneCallbacks {
   TransferStructuredCloneOp writeTransfer;
   FreeTransferStructuredCloneOp freeTransfer;
   CanTransferStructuredCloneOp canTransfer;
+  SharedArrayBufferClonedOp sabCloned;
 };
 
 enum OwnTransferablePolicy {
