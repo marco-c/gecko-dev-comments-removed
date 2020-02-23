@@ -225,15 +225,20 @@ function initPage() {
       sd.textContent = getDescription();
     }
   }
-  if (showCaptivePortalUI) {
-    initPageCaptivePortal();
-    return;
-  }
+
   if (gIsCertError) {
-    initPageCertError();
-    updateContainerPosition();
+    if (showCaptivePortalUI) {
+      initPageCaptivePortal();
+    } else {
+      initPageCertError();
+      updateContainerPosition();
+    }
+
+    initCertErrorPageActions();
+    setTechnicalDetailsOnCertError();
     return;
   }
+
   addAutofocus("#netErrorButtonContainer > .try-again");
 
   document.body.classList.add("neterror");
@@ -334,11 +339,6 @@ function initPage() {
       span.textContent = document.location.hostname;
     }
   }
-
-  
-  
-  let event = new CustomEvent("AboutNetErrorLoad", { bubbles: true });
-  document.dispatchEvent(event);
 }
 
 function setupErrorUI() {
@@ -486,6 +486,10 @@ function initPageCertError() {
     document.querySelector(".exceptionDialogButtonContainer").hidden = true;
   }
 
+  setCertErrorDetails();
+}
+
+function initCertErrorPageActions() {
   document
     .getElementById("returnButton")
     .addEventListener("click", onReturnButtonClick);
@@ -501,13 +505,6 @@ function initPageCertError() {
   document
     .getElementById("exceptionDialogButton")
     .addEventListener("click", addCertException);
-
-  setCertErrorDetails();
-  setTechnicalDetailsOnCertError();
-
-  
-  let event = new CustomEvent("AboutNetErrorLoad", { bubbles: true });
-  document.dispatchEvent(event);
 }
 
 function addCertException() {
@@ -572,7 +569,7 @@ async function getFailedCertificatesAsPEMString() {
   return details;
 }
 
-async function setCertErrorDetails(event) {
+function setCertErrorDetails(event) {
   
   
   
@@ -589,8 +586,6 @@ async function setCertErrorDetails(event) {
     RPMSendAsyncMessage("Browser:PrimeMitm");
   }
 
-  let div = document.getElementById("certificateErrorText");
-  div.textContent = await getFailedCertificatesAsPEMString();
   let learnMoreLink = document.getElementById("learnMoreLink");
   let baseURL = RPMGetFormatURLPref("app.support.baseURL");
   learnMoreLink.setAttribute("href", baseURL + "connection-not-secure");
@@ -842,7 +837,7 @@ async function setCertErrorDetails(event) {
   }
 }
 
-function setTechnicalDetailsOnCertError() {
+async function setTechnicalDetailsOnCertError() {
   let technicalInfo = document.getElementById("badCertTechnicalInfo");
 
   function setL10NLabel(l10nId, args = {}, attrs = {}, rewrite = true) {
@@ -1045,6 +1040,9 @@ function setTechnicalDetailsOnCertError() {
     
     technicalInfo.addEventListener("click", handleErrorCodeClick);
   }
+
+  let div = document.getElementById("certificateErrorText");
+  div.textContent = await getFailedCertificatesAsPEMString();
 }
 
 function handleErrorCodeClick(event) {
@@ -1083,3 +1081,6 @@ for (let button of document.querySelectorAll(".try-again")) {
 
 
 initPage();
+
+let event = new CustomEvent("AboutNetErrorLoad", { bubbles: true });
+document.dispatchEvent(event);
