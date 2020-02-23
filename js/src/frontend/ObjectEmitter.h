@@ -680,6 +680,11 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
   
   
   
+  
+  
+  
+  
+  
   enum class ClassState {
     
     Start,
@@ -694,19 +699,56 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
     InitConstructor,
 
     
-    
-    FieldInitializers,
+    InstanceFieldInitializers,
 
     
-    FieldInitializerWithHomeObject,
+    InstanceFieldInitializersEnd,
 
     
-    FieldInitializersEnd,
+    StaticFieldInitializers,
+
+    
+    StaticFieldInitializersEnd,
 
     
     End,
   };
   ClassState classState_ = ClassState::Start;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class FieldState {
+    
+    
+    Start,
+
+    
+    Initializer,
+
+    
+    InitializerWithHomeObject,
+  };
+  FieldState fieldState_ = FieldState::Start;
+
   size_t numFields_ = 0;
 #endif
 
@@ -750,8 +792,10 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
   MOZ_MUST_USE bool emitInitDefaultConstructor(uint32_t classStart,
                                                uint32_t classEnd);
 
-  MOZ_MUST_USE bool prepareForFieldInitializers(size_t numFields);
-  MOZ_MUST_USE bool emitFieldInitializerHomeObject();
+  MOZ_MUST_USE bool prepareForFieldInitializers(size_t numFields,
+                                                bool isStatic);
+  MOZ_MUST_USE bool prepareForFieldInitializer();
+  MOZ_MUST_USE bool emitFieldInitializerHomeObject(bool isStatic);
   MOZ_MUST_USE bool emitStoreFieldInitializer();
   MOZ_MUST_USE bool emitFieldInitializersEnd();
 
