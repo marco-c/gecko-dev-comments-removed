@@ -294,29 +294,6 @@ class RadialGradientPattern : public Pattern {
 
 
 
-
-class ConicGradientPattern : public Pattern {
- public:
-  
-  ConicGradientPattern(const Point& aCenter, Float aAngle,
-                       GradientStops* aStops, const Matrix& aMatrix = Matrix())
-      : mCenter(aCenter), mAngle(aAngle), mStops(aStops), mMatrix(aMatrix) {}
-
-  PatternType GetType() const override { return PatternType::CONIC_GRADIENT; }
-
-  Point mCenter;  
-  Float mAngle;   
-  RefPtr<GradientStops>
-      mStops;      
-
-
-  Matrix mMatrix;  
-};
-
-
-
-
-
 class SurfacePattern : public Pattern {
  public:
   
