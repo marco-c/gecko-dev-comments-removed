@@ -23,6 +23,9 @@ promise_test(async t => {
   await reader.read();
 
   
+  await reader.read();
+
+  
   const { value, done } = await reader.read();
 
   

@@ -20,7 +20,14 @@ def web_socket_do_extra_handshake(request):
 
 def web_socket_transfer_data(request):
     
+    request.ws_stream.send_message(b'', binary=True)
+
+    
     
     start_time = time.time()
+
+    
     request.ws_stream.send_message(b' ' * MESSAGE_SIZE, binary=True)
+
+    
     request.ws_stream.send_message(six.text_type(time.time() - start_time), binary=False)
