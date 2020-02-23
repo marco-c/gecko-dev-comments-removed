@@ -826,6 +826,10 @@ nsresult nsTypeAheadFind::GetSearchContainers(
     
     IsRangeVisible(mSearchRange, aIsFirstVisiblePreferred, true,
                    getter_AddRefs(mStartPointRange), nullptr);
+    
+    
+    
+    mStartPointRange->Collapse(!aFindPrev);
   } else {
     uint32_t startOffset;
     nsCOMPtr<nsINode> startNode;
@@ -844,9 +848,8 @@ nsresult nsTypeAheadFind::GetSearchContainers(
     
     mStartPointRange->SelectNode(*startNode, IgnoreErrors());
     mStartPointRange->SetStart(*startNode, startOffset, IgnoreErrors());
+    mStartPointRange->Collapse(true);  
   }
-
-  mStartPointRange->Collapse(true);  
 
   presShell.forget(aPresShell);
   presContext.forget(aPresContext);
