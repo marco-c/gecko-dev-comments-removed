@@ -8,18 +8,7 @@ use nsstring::nsACString;
 use nsstring::nsCString;
 use thin_vec::ThinVec;
 use unic_langid::{LanguageIdentifier, LanguageIdentifierError};
-
-
-
-fn create_langid_from_str(
-    name: &nsACString,
-) -> Result<LanguageIdentifier, LanguageIdentifierError> {
-    if name.eq_ignore_ascii_case(b"ja-jp-mac") {
-        "ja-JP-macos".parse()
-    } else {
-        LanguageIdentifier::from_bytes(name)
-    }
-}
+use unic_langid_ffi::new_langid_for_mozilla;
 
 
 
@@ -33,7 +22,7 @@ struct LangIdString<'l> {
 
 impl<'l> LangIdString<'l> {
     pub fn try_new(s: &'l nsCString) -> Result<Self, LanguageIdentifierError> {
-        create_langid_from_str(s).map(|l| LangIdString {
+        new_langid_for_mozilla(s).map(|l| LangIdString {
             source: s,
             langid: l,
         })
@@ -71,7 +60,7 @@ pub unsafe extern "C" fn fluent_langneg_negotiate_languages(
 ) {
     let requested = requested
         .iter()
-        .filter_map(|s| create_langid_from_str(s).ok())
+        .filter_map(|s| new_langid_for_mozilla(s).ok())
         .collect::<Vec<_>>();
 
     let available = available
