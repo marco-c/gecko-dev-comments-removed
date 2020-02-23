@@ -16,6 +16,14 @@
 
 namespace mozilla {
 
+template <typename T>
+class Tainted;
+
+namespace ipc {
+template <typename>
+struct IPDLParamTraits;
+}
+
 
 
 
@@ -50,10 +58,15 @@ class Tainted {
   T mValue;
 
  public:
+  explicit Tainted() = default;
+
   template <typename U>
   explicit Tainted(U&& aValue) : mValue(std::forward<U>(aValue)) {}
 
   T& Coerce() { return this->mValue; }
+  const T& Coerce() const { return this->mValue; }
+
+  friend struct mozilla::ipc::IPDLParamTraits<Tainted<T>>;
 };
 
 
@@ -115,11 +128,16 @@ class Tainted {
 
 
 
+
+
+
+
+
 #define MOZ_VALIDATE_AND_GET_HELPER3(tainted_value, condition, \
                                      assertionstring)          \
   [&tainted_value]() {                                         \
     auto& tmp = tainted_value.Coerce();                        \
-    auto& tainted_value = tmp;                                 \
+    auto& MOZ_MAYBE_UNUSED tainted_value = tmp;                \
     MOZ_RELEASE_ASSERT((condition), assertionstring);          \
     return tmp;                                                \
   }()
@@ -139,11 +157,11 @@ class Tainted {
 
 
 
-#define MOZ_IS_VALID(tainted_value, condition) \
-  [&tainted_value]() {                         \
-    auto& tmp = tainted_value.Coerce();        \
-    auto& tainted_value = tmp;                 \
-    return (condition);                        \
+#define MOZ_IS_VALID(tainted_value, condition)  \
+  [&tainted_value]() {                          \
+    auto& tmp = tainted_value.Coerce();         \
+    auto& MOZ_MAYBE_UNUSED tainted_value = tmp; \
+    return (condition);                         \
   }()
 
 
