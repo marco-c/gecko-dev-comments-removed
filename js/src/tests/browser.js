@@ -254,6 +254,8 @@
   var SpecialPowers = global.SpecialPowers;
   var SpecialPowersCu = SpecialPowers.Cu;
   var SpecialPowersForceGC = SpecialPowers.forceGC;
+  var TestingFunctions = SpecialPowers.Cu.getJSTestingFunctions();
+  var ClearKeptObjects = TestingFunctions.clearKeptObjects;
 
   
   
@@ -386,6 +388,8 @@
     }
   }
   global.gc = gc;
+
+  global.clearKeptObjects = ClearKeptObjects;
 
   function options(aOptionName) {
     
