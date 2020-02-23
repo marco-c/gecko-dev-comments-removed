@@ -1,0 +1,15 @@
+mod bad_2;
+
+fn main() {
+    
+
+    
+    println!("Hello World!");
+    
+    let mut a=1;
+    let mut b=1;
+
+    a = b;
+    b = a;
+
+}
