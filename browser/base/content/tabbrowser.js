@@ -414,10 +414,6 @@
       
       browser.docShellIsActive = this.shouldActivateDocShell(browser);
 
-      
-      
-      this.initialBrowser = browser;
-
       let autoScrollPopup = browser._createAutoScrollPopup();
       autoScrollPopup.id = "autoscroller";
       document.getElementById("mainPopupSet").appendChild(autoScrollPopup);
