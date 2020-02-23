@@ -3474,11 +3474,18 @@ void ContentChild::DeallocPSHEntryChild(PSHEntryChild* aActor) {
   RefPtr<SHEntryChild> child(dont_AddRef(static_cast<SHEntryChild*>(aActor)));
 }
 
-PSHistoryChild* ContentChild::AllocPSHistoryChild(BrowsingContext* aContext) {
+PSHistoryChild* ContentChild::AllocPSHistoryChild(
+    const MaybeDiscarded<BrowsingContext>& aContext) {
+  
+  
+  if (NS_WARN_IF(aContext.IsNullOrDiscarded())) {
+    return nullptr;
+  }
+
   
   
   
-  return do_AddRef(new SHistoryChild(aContext)).take();
+  return do_AddRef(new SHistoryChild(aContext.get())).take();
 }
 
 void ContentChild::DeallocPSHistoryChild(PSHistoryChild* aActor) {

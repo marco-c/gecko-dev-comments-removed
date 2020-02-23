@@ -5892,8 +5892,13 @@ void ContentParent::DeallocPSHEntryParent(PSHEntryParent* aEntry) {
 }
 
 PSHistoryParent* ContentParent::AllocPSHistoryParent(
-    BrowsingContext* aContext) {
-  return new SHistoryParent(aContext->Canonical());
+    const MaybeDiscarded<BrowsingContext>& aContext) {
+  if (NS_WARN_IF(aContext.IsNullOrDiscarded())) {
+    
+    return nullptr;
+  }
+
+  return new SHistoryParent(aContext.get_canonical());
 }
 
 void ContentParent::DeallocPSHistoryParent(PSHistoryParent* aActor) {
