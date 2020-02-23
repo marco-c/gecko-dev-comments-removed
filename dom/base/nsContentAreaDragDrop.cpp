@@ -181,8 +181,7 @@ nsresult CheckAndGetExtensionForMime(const nsCString& aExtension,
                                             getter_AddRefs(mimeInfo));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = mimeInfo->GetPrimaryExtension(*aPrimaryExtension);
-  NS_ENSURE_SUCCESS(rv, rv);
+  mimeInfo->GetPrimaryExtension(*aPrimaryExtension);
 
   if (aExtension.IsEmpty()) {
     *aIsValidExtension = false;
@@ -279,7 +278,7 @@ nsContentAreaDragDropDataProvider::GetFlavorData(nsITransferable* aTransferable,
                                          &isValidExtension, &primaryExtension);
         NS_ENSURE_SUCCESS(rv, rv);
 
-        if (!isValidExtension) {
+        if (!isValidExtension && !primaryExtension.IsEmpty()) {
           
           
           
@@ -463,12 +462,13 @@ nsresult DragDataProducer::GetImageData(imgIContainer* aImage,
         
         nsAutoCString primaryExtension;
         mimeInfo->GetPrimaryExtension(primaryExtension);
-
-        rv = NS_MutateURI(imgUrl)
-                 .Apply(NS_MutatorMethod(&nsIURLMutator::SetFileExtension,
-                                         primaryExtension, nullptr))
-                 .Finalize(imgUrl);
-        NS_ENSURE_SUCCESS(rv, rv);
+        if (!primaryExtension.IsEmpty()) {
+          rv = NS_MutateURI(imgUrl)
+                   .Apply(NS_MutatorMethod(&nsIURLMutator::SetFileExtension,
+                                           primaryExtension, nullptr))
+                   .Finalize(imgUrl);
+          NS_ENSURE_SUCCESS(rv, rv);
+        }
       }
     }
 #endif 

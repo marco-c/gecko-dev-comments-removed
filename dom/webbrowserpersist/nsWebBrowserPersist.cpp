@@ -2000,8 +2000,14 @@ nsresult nsWebBrowserPersist::CalculateAndAppendFileExt(
         }
 
         
+        
+        
         if (!useOldExt) {
-          mimeInfo->GetPrimaryExtension(fileExt);
+          nsAutoCString primaryExt;
+          mimeInfo->GetPrimaryExtension(primaryExt);
+          if (!primaryExt.IsEmpty()) {
+            fileExt = primaryExt;
+          }
         }
 
         if (!fileExt.IsEmpty()) {
