@@ -207,9 +207,6 @@ function verifyLayersRendering(ctx) {
 }
 
 function testCompositor(test, win, ctx) {
-  takeWindowSnapshot(win, ctx);
-  var testPassed = true;
-
   if (win.windowUtils.layerManagerType == "WebRender") {
     
     
@@ -217,7 +214,14 @@ function testCompositor(test, win, ctx) {
     if (Services.prefs.getBoolPref(AL_ENABLED_PREF, false)) {
       Services.prefs.setBoolPref(AL_TEST_FAILED_PREF, true);
     }
-  } else if (!verifyLayersRendering(ctx)) {
+    reportResult(TEST_PASSED);
+    return true;
+  }
+
+  takeWindowSnapshot(win, ctx);
+  var testPassed = true;
+
+  if (!verifyLayersRendering(ctx)) {
     
     
     if (Services.prefs.getBoolPref(AL_ENABLED_PREF, false)) {
