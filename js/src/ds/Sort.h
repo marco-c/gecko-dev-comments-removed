@@ -76,6 +76,11 @@ MOZ_ALWAYS_INLINE bool MergeArrayRuns(T* dst, const T* src, size_t run1,
 
 
 
+
+
+
+
+
 template <typename T, typename Comparator>
 MOZ_MUST_USE bool MergeSort(T* array, size_t nelems, T* scratch, Comparator c) {
   const size_t INS_SORT_LIMIT = 3;
