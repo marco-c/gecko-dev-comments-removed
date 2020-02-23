@@ -1955,6 +1955,40 @@ using RuntimeScriptDataTable =
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct SourceExtent {
+  uint32_t sourceStart = 0;
+  uint32_t sourceEnd = 0;
+  uint32_t toStringStart = 0;
+  uint32_t toStringEnd = 0;
+
+  
+  uint32_t lineno = 0;
+  uint32_t column = 0;  
+};
+
+
+
+
+
 class BaseScript : public gc::TenuredCell {
  protected:
   
@@ -1981,39 +2015,7 @@ class BaseScript : public gc::TenuredCell {
   
   RefPtr<js::RuntimeScriptData> sharedData_ = {};
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  struct SourceExtent {
-    uint32_t sourceStart = 0;
-    uint32_t sourceEnd = 0;
-    uint32_t toStringStart = 0;
-    uint32_t toStringEnd = 0;
-
-    
-    uint32_t lineno = 0;
-    uint32_t column = 0;  
-  } extent_;
+  SourceExtent extent_;
 
   
   
