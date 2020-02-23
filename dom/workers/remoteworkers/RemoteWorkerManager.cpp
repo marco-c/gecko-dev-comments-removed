@@ -359,33 +359,55 @@ void RemoteWorkerManager::LaunchNewContentProcess(
   AssertIsInMainProcess();
   AssertIsOnBackgroundThread();
 
-  RefPtr<RemoteWorkerManager> self = this;
+  nsCOMPtr<nsISerialEventTarget> bgEventTarget =
+      GetCurrentThreadSerialEventTarget();
+
+  using CallbackParamType = ContentParent::LaunchPromise::ResolveOrRejectValue;
 
   
+  
+  
+  
+  
+  
+  auto processLaunchCallback = [isServiceWorker = IsServiceWorker(aData),
+                                principalInfo = aData.principalInfo(),
+                                bgEventTarget = std::move(bgEventTarget),
+                                self = RefPtr<RemoteWorkerManager>(this)](
+                                   const CallbackParamType& aValue) mutable {
+    if (aValue.IsResolve()) {
+      if (isServiceWorker) {
+        TransmitPermissionsAndBlobURLsForPrincipalInfo(aValue.ResolveValue(),
+                                                       principalInfo);
+      }
+
+      
+      
+      NS_ProxyRelease(__func__, bgEventTarget, self.forget());
+    } else {
+      
+      nsCOMPtr<nsIRunnable> r =
+          NS_NewRunnableFunction(__func__, [self = std::move(self)] {
+            auto pendings = std::move(self->mPendings);
+            for (const auto& pending : pendings) {
+              pending.mController->CreationFailed();
+            }
+          });
+
+      bgEventTarget->Dispatch(r.forget(), NS_DISPATCH_NORMAL);
+    }
+  };
+
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-      __func__, [isServiceWorker = IsServiceWorker(aData),
-                 principalInfo = aData.principalInfo(),
-                 self = std::move(self)]() mutable {
+      __func__, [callback = std::move(processLaunchCallback)]() mutable {
         ContentParent::GetNewOrUsedBrowserProcessAsync(
              nullptr,
              NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE))
-            ->Then(
-                GetCurrentThreadSerialEventTarget(), __func__,
-                [isServiceWorker,
-                 principalInfo](ContentParent* aContentParent) {
-                  if (!isServiceWorker) {
-                    return;
-                  }
-                  TransmitPermissionsAndBlobURLsForPrincipalInfo(aContentParent,
-                                                                 principalInfo);
-                },
-                [self = std::move(self)](
-                    const ContentParent::LaunchPromise::RejectValueType&) {
-                  auto pendings = std::move(self->mPendings);
-                  for (const auto& pending : pendings) {
-                    pending.mController->CreationFailed();
-                  }
-                });
+            ->Then(GetCurrentThreadSerialEventTarget(), __func__,
+                   [callback = std::move(callback)](
+                       const CallbackParamType& aValue) mutable {
+                     callback(aValue);
+                   });
       });
 
   nsCOMPtr<nsIEventTarget> target =
