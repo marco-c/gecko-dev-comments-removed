@@ -588,7 +588,7 @@ class TErrorResult {
     
     
     MOZ_PUSH_DISABLE_NONTRIVIAL_UNION_WARNINGS
-    Extra() {}
+    Extra() {}  
     MOZ_POP_DISABLE_NONTRIVIAL_UNION_WARNINGS
   } mExtra;
 
@@ -669,9 +669,9 @@ class ErrorResult : public binding_danger::TErrorResult<
       BaseErrorResult;
 
  public:
-  ErrorResult() : BaseErrorResult() {}
+  ErrorResult() = default;
 
-  ErrorResult(ErrorResult&& aRHS) : BaseErrorResult(std::move(aRHS)) {}
+  ErrorResult(ErrorResult&& aRHS) = default;
   
   
   
@@ -682,16 +682,12 @@ class ErrorResult : public binding_danger::TErrorResult<
   
   void operator=(nsresult rv) { BaseErrorResult::operator=(rv); }
 
-  ErrorResult& operator=(ErrorResult&& aRHS) {
-    BaseErrorResult::operator=(std::move(aRHS));
-    return *this;
-  }
+  ErrorResult& operator=(ErrorResult&& aRHS) = default;
 
- private:
   
   
   ErrorResult(const ErrorResult&) = delete;
-  void operator=(const ErrorResult&) = delete;
+  ErrorResult& operator=(const ErrorResult&) = delete;
 };
 
 template <typename CleanupPolicy>
@@ -728,15 +724,14 @@ class CopyableErrorResult
       BaseErrorResult;
 
  public:
-  CopyableErrorResult() : BaseErrorResult() {}
+  CopyableErrorResult() = default;
 
   explicit CopyableErrorResult(const ErrorResult& aRight) : BaseErrorResult() {
     auto val = reinterpret_cast<const CopyableErrorResult&>(aRight);
     operator=(val);
   }
 
-  CopyableErrorResult(CopyableErrorResult&& aRHS)
-      : BaseErrorResult(std::move(aRHS)) {}
+  CopyableErrorResult(CopyableErrorResult&& aRHS) = default;
 
   explicit CopyableErrorResult(ErrorResult&& aRHS) : BaseErrorResult() {
     
@@ -764,10 +759,7 @@ class CopyableErrorResult
   
   void operator=(nsresult rv) { BaseErrorResult::operator=(rv); }
 
-  CopyableErrorResult& operator=(CopyableErrorResult&& aRHS) {
-    BaseErrorResult::operator=(std::move(aRHS));
-    return *this;
-  }
+  CopyableErrorResult& operator=(CopyableErrorResult&& aRHS) = default;
 
   CopyableErrorResult(const CopyableErrorResult& aRight) : BaseErrorResult() {
     operator=(aRight);
