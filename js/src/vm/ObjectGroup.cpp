@@ -396,16 +396,17 @@ struct ObjectGroupRealm::NewEntry {
 
     Lookup(const JSClass* clasp, TaggedProto proto, JSObject* associated)
         : clasp(clasp), proto(proto), associated(associated) {
-      MOZ_ASSERT((associated && associated->is<JSFunction>()) == !clasp);
+      MOZ_ASSERT(clasp);
+      MOZ_ASSERT_IF(associated && associated->is<JSFunction>(),
+                    clasp == &PlainObject::class_);
     }
 
     explicit Lookup(const NewEntry& entry)
         : clasp(entry.group.unbarrieredGet()->clasp()),
           proto(entry.group.unbarrieredGet()->proto()),
           associated(entry.associated) {
-      if (associated && associated->is<JSFunction>()) {
-        clasp = nullptr;
-      }
+      MOZ_ASSERT_IF(associated && associated->is<JSFunction>(),
+                    clasp == &PlainObject::class_);
     }
   };
 
@@ -444,7 +445,7 @@ struct MovableCellHasher<ObjectGroupRealm::NewEntry> {
 
   static inline bool match(const ObjectGroupRealm::NewEntry& key,
                            const Lookup& lookup) {
-    if (lookup.clasp && key.group.unbarrieredGet()->clasp() != lookup.clasp) {
+    if (key.group.unbarrieredGet()->clasp() != lookup.clasp) {
       return false;
     }
 
@@ -481,7 +482,7 @@ class ObjectGroupRealm::NewTable
 MOZ_ALWAYS_INLINE ObjectGroup* ObjectGroupRealm::DefaultNewGroupCache::lookup(
     const JSClass* clasp, TaggedProto proto, JSObject* associated) {
   if (group_ && associated_ == associated && group_->proto() == proto &&
-      (!clasp || group_->clasp() == clasp)) {
+      group_->clasp() == clasp) {
     return group_;
   }
   return nullptr;
@@ -491,22 +492,16 @@ MOZ_ALWAYS_INLINE ObjectGroup* ObjectGroupRealm::DefaultNewGroupCache::lookup(
 ObjectGroup* ObjectGroup::defaultNewGroup(JSContext* cx, const JSClass* clasp,
                                           TaggedProto proto,
                                           JSObject* associated) {
+  MOZ_ASSERT(clasp);
   MOZ_ASSERT_IF(associated, proto.isObject());
   MOZ_ASSERT_IF(proto.isObject(),
                 cx->isInsideCurrentCompartment(proto.toObject()));
 
-  
-  
-  
-  MOZ_ASSERT_IF(!clasp, !!associated);
-
   if (associated && !associated->is<TypeDescr>() && !IsTypeInferenceEnabled()) {
-    clasp = &PlainObject::class_;
     associated = nullptr;
   }
 
   if (associated) {
-    MOZ_ASSERT_IF(!associated->is<TypeDescr>(), !clasp);
     if (associated->is<JSFunction>()) {
       
       
@@ -520,7 +515,7 @@ ObjectGroup* ObjectGroup::defaultNewGroup(JSContext* cx, const JSClass* clasp,
         associated = nullptr;
       }
     } else if (associated->is<TypeDescr>()) {
-      if (!clasp) {
+      if (!IsTypedObjectClass(clasp)) {
         
         
         
@@ -528,10 +523,6 @@ ObjectGroup* ObjectGroup::defaultNewGroup(JSContext* cx, const JSClass* clasp,
       }
     } else {
       associated = nullptr;
-    }
-
-    if (!associated) {
-      clasp = &PlainObject::class_;
     }
   }
 
@@ -583,8 +574,7 @@ ObjectGroup* ObjectGroup::defaultNewGroup(JSContext* cx, const JSClass* clasp,
       ObjectGroupRealm::NewEntry::Lookup(clasp, proto, associated));
   if (p) {
     ObjectGroup* group = p->group;
-    MOZ_ASSERT_IF(clasp, group->clasp() == clasp);
-    MOZ_ASSERT_IF(!clasp, group->clasp() == &PlainObject::class_);
+    MOZ_ASSERT(group->clasp() == clasp);
     MOZ_ASSERT(group->proto() == proto);
     groups.defaultNewGroupCache.put(group, associated);
     return group;
@@ -597,9 +587,8 @@ ObjectGroup* ObjectGroup::defaultNewGroup(JSContext* cx, const JSClass* clasp,
   }
 
   Rooted<TaggedProto> protoRoot(cx, proto);
-  ObjectGroup* group = ObjectGroupRealm::makeGroup(
-      cx, cx->realm(), clasp ? clasp : &PlainObject::class_, protoRoot,
-      initialFlags);
+  ObjectGroup* group = ObjectGroupRealm::makeGroup(cx, cx->realm(), clasp,
+                                                   protoRoot, initialFlags);
   if (!group) {
     return nullptr;
   }
