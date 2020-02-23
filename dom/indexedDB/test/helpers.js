@@ -323,6 +323,37 @@ function* assertEventuallyWithGC(conditionFunctor, message) {
   ok(false, message + " (even after " + maxGC + " garbage collections)");
 }
 
+
+
+
+
+
+
+
+
+function assertThrowsInstanceOf(f, ctor, msg) {
+  var fullmsg;
+  try {
+    f();
+  } catch (exc) {
+    if (exc instanceof ctor) {
+      return exc.message;
+    }
+    fullmsg = `Assertion failed: expected exception ${ctor.name}, got ${exc}`;
+  }
+
+  if (fullmsg === undefined) {
+    fullmsg = `Assertion failed: expected exception ${
+      ctor.name
+    }, no exception thrown`;
+  }
+  if (msg !== undefined) {
+    fullmsg += " - " + msg;
+  }
+
+  throw new Error(fullmsg);
+}
+
 function isWasmSupported() {
   let testingFunctions = SpecialPowers.Cu.getJSTestingFunctions();
   return testingFunctions.wasmIsSupported();
