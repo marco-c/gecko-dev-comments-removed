@@ -769,9 +769,11 @@
 
   
   
-  const isDummyDocument =
-    document.documentURI == "chrome://extensions/content/dummy.xhtml";
-  if (!isDummyDocument) {
+  const loadExtraCustomElements = !(
+    document.documentURI == "chrome://extensions/content/dummy.xhtml" ||
+    document.documentURI == "chrome://geckoview/content/geckoview.xhtml"
+  );
+  if (loadExtraCustomElements) {
     for (let script of [
       "chrome://global/content/elements/arrowscrollbox.js",
       "chrome://global/content/elements/dialog.js",
