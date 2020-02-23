@@ -67,7 +67,7 @@ NS_IMPL_ISUPPORTS(SSLTokensCache, nsIMemoryReporter)
 nsresult SSLTokensCache::Init() {
   StaticMutexAutoLock lock(sLock);
 
-  if (gIOService->UseSocketProcess()) {
+  if (nsIOService::UseSocketProcess()) {
     if (!XRE_IsSocketProcess()) {
       return NS_OK;
     }
@@ -363,6 +363,24 @@ SSLTokensCache::CollectReports(nsIHandleReportCallback* aHandleReport,
                      "Memory used for the SSL tokens cache.");
 
   return NS_OK;
+}
+
+
+void SSLTokensCache::Clear() {
+  LOG(("SSLTokensCache::Clear"));
+  if (!sEnabled) {
+    return;
+  }
+
+  StaticMutexAutoLock lock(sLock);
+  if (!gInstance) {
+    LOG(("  service not initialized"));
+    return;
+  }
+
+  gInstance->mExpirationArray.Clear();
+  gInstance->mTokenCacheRecords.Clear();
+  gInstance->mCacheSize = 0;
 }
 
 }  

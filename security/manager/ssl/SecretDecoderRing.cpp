@@ -23,7 +23,6 @@
 #include "nsPK11TokenDB.h"
 #include "pk11func.h"
 #include "pk11sdr.h"  
-#include "ssl.h"      
 
 static mozilla::LazyLogModule gSDRLog("sdrlog");
 
@@ -309,7 +308,7 @@ SecretDecoderRing::ChangePassword() {
 NS_IMETHODIMP
 SecretDecoderRing::Logout() {
   PK11_LogoutAll();
-  SSL_ClearSessionCache();
+  nsNSSComponent::ClearSSLExternalAndInternalSessionCacheNative();
   return NS_OK;
 }
 
@@ -318,7 +317,7 @@ SecretDecoderRing::LogoutAndTeardown() {
   static NS_DEFINE_CID(kNSSComponentCID, NS_NSSCOMPONENT_CID);
 
   PK11_LogoutAll();
-  SSL_ClearSessionCache();
+  nsNSSComponent::ClearSSLExternalAndInternalSessionCacheNative();
 
   nsresult rv;
   nsCOMPtr<nsINSSComponent> nssComponent(do_GetService(kNSSComponentCID, &rv));

@@ -64,7 +64,7 @@
 #include "nsMemoryReporterManager.h"
 #include "nsMessageLoop.h"
 #include "nss.h"
-#include "ssl.h"
+#include "nsNSSComponent.h"
 
 #include <locale.h>
 #include "mozilla/Services.h"
@@ -739,7 +739,7 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
   
   
   if (NSS_IsInitialized()) {
-    SSL_ClearSessionCache();
+    nsNSSComponent::ClearSSLExternalAndInternalSessionCacheNative();
     if (NSS_Shutdown() != SECSuccess) {
       
       
