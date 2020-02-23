@@ -3662,6 +3662,7 @@ void nsCookieService::AddInternal(const nsCookieKey& aKey, nsCookie* aCookie,
 
 
 
+static inline bool isnull(char c) { return c == 0; }
 static inline bool iswhitespace(char c) { return c == ' ' || c == '\t'; }
 static inline bool isterminator(char c) { return c == '\n' || c == '\r'; }
 static inline bool isvalueseparator(char c) {
@@ -3686,7 +3687,8 @@ bool nsCookieService::GetTokenValue(nsACString::const_char_iterator& aIter,
   
   while (aIter != aEndIter && iswhitespace(*aIter)) ++aIter;
   start = aIter;
-  while (aIter != aEndIter && !istokenseparator(*aIter)) ++aIter;
+  while (aIter != aEndIter && !isnull(*aIter) && !istokenseparator(*aIter))
+    ++aIter;
 
   
   lastSpace = aIter;
@@ -3705,7 +3707,8 @@ bool nsCookieService::GetTokenValue(nsACString::const_char_iterator& aIter,
 
     
     
-    while (aIter != aEndIter && !isvalueseparator(*aIter)) ++aIter;
+    while (aIter != aEndIter && !isnull(*aIter) && !isvalueseparator(*aIter))
+      ++aIter;
 
     
     if (aIter != start) {
