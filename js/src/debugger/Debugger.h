@@ -829,16 +829,13 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
+  ResumeMode processHandlerResult(JSContext* cx, bool success, HandleValue rv,
+                                  AbstractFramePtr frame, jsbytecode* pc,
+                                  MutableHandleValue vp);
 
-
-
-
-  ResumeMode processHandlerResult(mozilla::Maybe<AutoRealm>& ar, bool success,
-                                  HandleValue rv, AbstractFramePtr frame,
-                                  jsbytecode* pc, MutableHandleValue vp);
-  ResumeMode processParsedHandlerResult(mozilla::Maybe<AutoRealm>& ar,
-                                        AbstractFramePtr frame, jsbytecode* pc,
-                                        bool success, ResumeMode resumeMode,
+  ResumeMode processParsedHandlerResult(JSContext* cx, AbstractFramePtr frame,
+                                        jsbytecode* pc, bool success,
+                                        ResumeMode resumeMode,
                                         HandleValue value,
                                         MutableHandleValue vp);
 
