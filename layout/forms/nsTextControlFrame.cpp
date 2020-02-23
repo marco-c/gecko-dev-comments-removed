@@ -1069,8 +1069,7 @@ nsresult nsTextControlFrame::OffsetToDOMPoint(uint32_t aOffset,
 nsresult nsTextControlFrame::AttributeChanged(int32_t aNameSpaceID,
                                               nsAtom* aAttribute,
                                               int32_t aModType) {
-  TextControlElement* textControlElement =
-      TextControlElement::FromNode(GetContent());
+  auto* textControlElement = TextControlElement::FromNode(GetContent());
   MOZ_ASSERT(textControlElement);
   nsISelectionController* selCon = textControlElement->GetSelectionController();
   const bool needEditor =
@@ -1083,15 +1082,8 @@ nsresult nsTextControlFrame::AttributeChanged(int32_t aNameSpaceID,
   }
 
   if (nsGkAtoms::maxlength == aAttribute) {
-    int32_t maxLength;
-    bool maxDefined = GetMaxLength(&maxLength);
     if (textEditor) {
-      if (maxDefined) {  
-        textEditor->SetMaxTextLength(maxLength);
-        
-      } else {  
-        textEditor->SetMaxTextLength(-1);
-      }
+      textEditor->SetMaxTextLength(textControlElement->UsedMaxLength());
     }
     return NS_OK;
   }
@@ -1184,24 +1176,6 @@ bool nsTextControlFrame::TextEquals(const nsAString& aText) const {
   }
 
   return aText.IsEmpty();
-}
-
-
-
-
-bool nsTextControlFrame::GetMaxLength(int32_t* aSize) {
-  *aSize = -1;
-
-  nsGenericHTMLElement* content = nsGenericHTMLElement::FromNode(mContent);
-  if (content) {
-    const nsAttrValue* attr = content->GetParsedAttr(nsGkAtoms::maxlength);
-    if (attr && attr->Type() == nsAttrValue::eInteger) {
-      *aSize = attr->GetIntegerValue();
-
-      return true;
-    }
-  }
-  return false;
 }
 
 

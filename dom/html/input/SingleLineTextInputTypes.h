@@ -13,11 +13,12 @@ class SingleLineTextInputTypeBase : public ::InputType {
  public:
   ~SingleLineTextInputTypeBase() override {}
 
-  bool IsTooLong() const override;
-  bool IsTooShort() const override;
-  bool IsValueMissing() const override;
+  bool MinAndMaxLengthApply() const final { return true; }
+  bool IsTooLong() const final;
+  bool IsTooShort() const final;
+  bool IsValueMissing() const final;
   
-  mozilla::Maybe<bool> HasPatternMismatch() const override;
+  mozilla::Maybe<bool> HasPatternMismatch() const final;
 
  protected:
   explicit SingleLineTextInputTypeBase(

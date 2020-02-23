@@ -94,6 +94,11 @@ class TextControlElement : public nsGenericHTMLFormElementWithState {
   
 
 
+  virtual int32_t UsedMaxLength() const = 0;
+
+  
+
+
 
 
 
