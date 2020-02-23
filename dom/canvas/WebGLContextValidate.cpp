@@ -285,7 +285,6 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
 
   
   
-  mColorWriteMask = 0x0f;
   mDriverColorMask = mColorWriteMask;
   mColorClearValue[0] = 0.f;
   mColorClearValue[1] = 0.f;

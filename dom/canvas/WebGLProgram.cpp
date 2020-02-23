@@ -386,6 +386,14 @@ RefPtr<const webgl::LinkedProgramInfo> QueryProgramInfo(WebGLProgram* prog,
         
         
         drawBuffers = webgl->GLMaxDrawBuffers();
+      } else if (translatedSource.find("(gl_FragColor") == std::string::npos &&
+                 translatedSource.find("(webgl_FragColor") ==
+                     std::string::npos &&
+                 translatedSource.find("(gl_FragData") == std::string::npos &&
+                 translatedSource.find("(webgl_FragData") ==
+                     std::string::npos) {
+        
+        drawBuffers = 0;
       }
 
       for (uint32_t i = 0; i < drawBuffers; ++i) {
