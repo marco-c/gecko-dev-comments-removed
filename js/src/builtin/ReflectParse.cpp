@@ -2567,29 +2567,27 @@ bool ASTSerializer::classMethod(ClassMethod* classMethod,
 bool ASTSerializer::classField(ClassField* classField, MutableHandleValue dst) {
   RootedValue key(cx), val(cx);
   
-  if (classField->initializer()) {
-    ParseNode* value = classField->initializer()
-                           ->body()
-                           ->head()
-                           ->as<LexicalScopeNode>()
-                           .scopeBody()
-                           ->as<ListNode>()
-                           .head()
-                           ->as<UnaryNode>()
-                           .kid()
-                           ->as<BinaryNode>()
-                           .right();
-    
-    
-    
-    
-    if (value->getKind() != ParseNodeKind::RawUndefinedExpr) {
-      if (!expression(value, &val)) {
-        return false;
-      }
-    } else {
-      val.setNull();
+  ParseNode* value = classField->initializer()
+                         ->body()
+                         ->head()
+                         ->as<LexicalScopeNode>()
+                         .scopeBody()
+                         ->as<ListNode>()
+                         .head()
+                         ->as<UnaryNode>()
+                         .kid()
+                         ->as<BinaryNode>()
+                         .right();
+  
+  
+  
+  
+  if (value->getKind() != ParseNodeKind::RawUndefinedExpr) {
+    if (!expression(value, &val)) {
+      return false;
     }
+  } else {
+    val.setNull();
   }
   return propertyName(&classField->name(), &key) &&
          builder.classField(key, val, &classField->pn_pos, dst);
