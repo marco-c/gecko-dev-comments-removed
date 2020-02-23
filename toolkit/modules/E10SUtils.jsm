@@ -854,14 +854,7 @@ var E10SUtils = {
     aFlags,
     aCsp
   ) {
-    let actor;
-    try {
-      actor = aDocShell.domWindow.windowGlobalChild.getActor("BrowserTab");
-    } catch (ex) {}
-    if (!actor) {
-      
-      actor = aDocShell.messageManager;
-    }
+    const actor = aDocShell.domWindow.windowGlobalChild.getActor("BrowserTab");
 
     
     let sessionHistory = aDocShell.QueryInterface(Ci.nsIWebNavigation)
