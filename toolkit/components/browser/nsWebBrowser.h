@@ -11,7 +11,6 @@
 #include "nsDocShellTreeOwner.h"
 
 
-#include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 

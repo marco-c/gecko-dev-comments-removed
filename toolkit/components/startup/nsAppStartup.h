@@ -17,7 +17,6 @@
 #if defined(XP_WIN)
 
 #  include "mozilla/perfprobe.h"
-#  include "nsAutoPtr.h"
 #endif  
 
 

@@ -319,7 +319,7 @@ class ReportInjectedCrash : public Runnable {
 
 
 class DelayedNote;
-nsTArray<nsAutoPtr<DelayedNote> >* gDelayedAnnotations;
+nsTArray<UniquePtr<DelayedNote> >* gDelayedAnnotations;
 
 #if defined(XP_WIN)
 
@@ -2376,14 +2376,14 @@ class DelayedNote {
 
 static void EnqueueDelayedNote(DelayedNote* aNote) {
   if (!gDelayedAnnotations) {
-    gDelayedAnnotations = new nsTArray<nsAutoPtr<DelayedNote> >();
+    gDelayedAnnotations = new nsTArray<UniquePtr<DelayedNote> >();
   }
-  gDelayedAnnotations->AppendElement(aNote);
+  gDelayedAnnotations->AppendElement(WrapUnique(aNote));
 }
 
 void NotifyCrashReporterClientCreated() {
   if (gDelayedAnnotations) {
-    for (nsAutoPtr<DelayedNote>& note : *gDelayedAnnotations) {
+    for (const auto& note : *gDelayedAnnotations) {
       note->Run();
     }
     delete gDelayedAnnotations;

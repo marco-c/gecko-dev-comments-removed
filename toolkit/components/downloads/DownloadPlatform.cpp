@@ -3,7 +3,6 @@
 
 
 #include "DownloadPlatform.h"
-#include "nsAutoPtr.h"
 #include "nsNetUtil.h"
 #include "nsString.h"
 #include "nsINestedURI.h"

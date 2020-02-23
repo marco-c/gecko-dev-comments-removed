@@ -6,7 +6,6 @@
 #include "nsXULAppAPI.h"
 #include "nsINIParser.h"
 #include "nsIFile.h"
-#include "nsAutoPtr.h"
 #include "mozilla/XREAppData.h"
 
 
