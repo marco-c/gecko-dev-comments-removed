@@ -22,4 +22,4 @@ for (var i = 0; i < 6; i++)
 
 log = '';
 assertEq(g.eval("debugger;"), 42);
-assertEq(log, "012");
+assertEq(log, "012345");

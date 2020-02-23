@@ -28,4 +28,4 @@ arr[0].onDebuggerStatement = function (stack) {
 
 log = '';
 assertEq(g.eval("debugger; 0;"), 1);
-assertEq(log, 'a');
+assertEq(log, 'abc');

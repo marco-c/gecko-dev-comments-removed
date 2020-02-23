@@ -802,7 +802,8 @@ bool DebuggerList<HookIsEnabledFun>::dispatchHook(JSContext* cx,
     Debugger* dbg = Debugger::fromJSObject(&p->toObject());
     EnterDebuggeeNoExecute nx(cx, *dbg, adjqi);
     if (dbg->debuggees.has(global) && hookIsEnabled(dbg)) {
-      bool result = fireHook(dbg);
+      bool result =
+          dbg->enterDebuggerHook(cx, [&]() -> bool { return fireHook(dbg); });
       adjqi.runJobs();
       if (!result) {
         return false;
@@ -816,9 +817,8 @@ template <typename HookIsEnabledFun >
 template <typename FireHookFun >
 void DebuggerList<HookIsEnabledFun>::dispatchQuietHook(JSContext* cx,
                                                        FireHookFun fireHook) {
-  bool result = dispatchHook(cx, [&](Debugger* dbg) -> bool {
-    return dbg->enterDebuggerHook(cx, [&]() -> bool { return fireHook(dbg); });
-  });
+  bool result =
+      dispatchHook(cx, [&](Debugger* dbg) -> bool { return fireHook(dbg); });
 
   
   
@@ -829,37 +829,14 @@ void DebuggerList<HookIsEnabledFun>::dispatchQuietHook(JSContext* cx,
 
 template <typename HookIsEnabledFun >
 template <typename FireHookFun >
-bool DebuggerList<HookIsEnabledFun>::dispatchResumeModeHook(
-    JSContext* cx, FireHookFun fireHook, ResumeMode& resumeMode,
-    MutableHandleValue rval) {
-  bool result = dispatchHook(cx, [&](Debugger* dbg) -> bool {
-    bool result = dbg->enterDebuggerHook(
-        cx, [&]() -> bool { return fireHook(dbg, resumeMode, rval); });
-    if (!result) {
-      return false;
-    }
-
-    
-    
-    
-    return resumeMode == ResumeMode::Continue;
-  });
-
-  
-  if (!result && resumeMode == ResumeMode::Continue) {
-    return false;
-  }
-
-  return true;
-}
-
-template <typename HookIsEnabledFun >
-template <typename FireHookFun >
 bool DebuggerList<HookIsEnabledFun>::dispatchResumptionHook(
     JSContext* cx, AbstractFramePtr frame, FireHookFun fireHook) {
   ResumeMode resumeMode = ResumeMode::Continue;
   RootedValue rval(cx);
-  return dispatchResumeModeHook(cx, fireHook, resumeMode, &rval) &&
+  return dispatchHook(cx,
+                      [&](Debugger* dbg) -> bool {
+                        return fireHook(dbg, resumeMode, &rval);
+                      }) &&
          ApplyFrameResumeMode(cx, frame, resumeMode, rval);
 }
 
@@ -964,13 +941,9 @@ NativeResumeMode DebugAPI::slowPathOnNativeCall(JSContext* cx,
 
   RootedValue rval(cx);
   ResumeMode resumeMode = ResumeMode::Continue;
-  bool result = debuggerList.dispatchResumeModeHook(
-      cx,
-      [&](Debugger* dbg, ResumeMode& resumeMode,
-          MutableHandleValue vp) -> bool {
-        return dbg->fireNativeCall(cx, args, reason, resumeMode, vp);
-      },
-      resumeMode, &rval);
+  bool result = debuggerList.dispatchHook(cx, [&](Debugger* dbg) -> bool {
+    return dbg->fireNativeCall(cx, args, reason, resumeMode, &rval);
+  });
   if (!result) {
     return NativeResumeMode::Abort;
   }
@@ -1785,8 +1758,16 @@ bool Debugger::processParsedHandlerResult(JSContext* cx, AbstractFramePtr frame,
 
   
   
-  vp.set(rootValue);
-  resultMode = resumeMode;
+  if (resumeMode != ResumeMode::Continue) {
+    if (resultMode != ResumeMode::Continue) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_DEBUG_RESUMPTION_CONFLICT);
+      return false;
+    }
+
+    vp.set(rootValue);
+    resultMode = resumeMode;
+  }
 
   return true;
 }
@@ -2312,22 +2293,6 @@ void Debugger::dispatchQuietHook(JSContext* cx, HookIsEnabledFun hookIsEnabled,
 
 template <typename HookIsEnabledFun , typename FireHookFun >
 
-bool Debugger::dispatchResumeModeHook(JSContext* cx,
-                                      HookIsEnabledFun hookIsEnabled,
-                                      FireHookFun fireHook,
-                                      ResumeMode& resumeMode,
-                                      MutableHandleValue rval) {
-  DebuggerList<HookIsEnabledFun> debuggerList(cx, hookIsEnabled);
-
-  if (!debuggerList.init(cx)) {
-    return false;
-  }
-
-  return debuggerList.dispatchResumeModeHook(cx, fireHook, resumeMode, rval);
-}
-
-template <typename HookIsEnabledFun , typename FireHookFun >
-
 bool Debugger::dispatchResumptionHook(JSContext* cx, AbstractFramePtr frame,
                                       HookIsEnabledFun hookIsEnabled,
                                       FireHookFun fireHook) {
@@ -2517,10 +2482,6 @@ bool DebugAPI::onTrap(JSContext* cx) {
           return false;
         }
 
-        if (resumeMode != ResumeMode::Continue) {
-          break;
-        }
-
         
         if (isJS) {
           site = DebugScript::getBreakpointSite(iter.script(), pc);
@@ -2650,10 +2611,6 @@ bool DebugAPI::onSingleStep(JSContext* cx) {
       if (!result) {
         return false;
       }
-
-      if (resumeMode != ResumeMode::Continue) {
-        break;
-      }
     }
   }
 
@@ -2664,9 +2621,8 @@ bool DebugAPI::onSingleStep(JSContext* cx) {
   return true;
 }
 
-bool Debugger::fireNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global,
-                                   ResumeMode& resumeMode,
-                                   MutableHandleValue vp) {
+bool Debugger::fireNewGlobalObject(JSContext* cx,
+                                   Handle<GlobalObject*> global) {
   RootedObject hook(cx, getHook(OnNewGlobalObject));
   MOZ_ASSERT(hook);
   MOZ_ASSERT(hook->isCallable());
@@ -2690,14 +2646,8 @@ bool Debugger::fireNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global,
                               JSMSG_DEBUG_RESUMPTION_VALUE_DISALLOWED);
     ok = false;
   }
-  
-  
-  
-  
-  
-  
-  return processHandlerResult(cx, ok, rv, NullFramePtr(), nullptr, resumeMode,
-                              vp);
+
+  return ok || handleUncaughtException(cx);
 }
 
 void DebugAPI::slowPathOnNewGlobalObject(JSContext* cx,
@@ -2723,9 +2673,6 @@ void DebugAPI::slowPathOnNewGlobalObject(JSContext* cx,
     }
   }
 
-  ResumeMode resumeMode = ResumeMode::Continue;
-  RootedValue value(cx);
-
   
   
   
@@ -2739,18 +2686,9 @@ void DebugAPI::slowPathOnNewGlobalObject(JSContext* cx,
     Debugger* dbg = Debugger::fromJSObject(watchers[i]);
     EnterDebuggeeNoExecute nx(cx, *dbg, adjqi);
 
-    
-    
-    
-    
-    
-    
-    
-    
     if (dbg->observesNewGlobalObject()) {
-      bool result = dbg->enterDebuggerHook(cx, [&]() -> bool {
-        return dbg->fireNewGlobalObject(cx, global, resumeMode, &value);
-      });
+      bool result = dbg->enterDebuggerHook(
+          cx, [&]() -> bool { return dbg->fireNewGlobalObject(cx, global); });
       adjqi.runJobs();
 
       if (!result) {
@@ -2758,10 +2696,6 @@ void DebugAPI::slowPathOnNewGlobalObject(JSContext* cx,
         
         
         cx->clearPendingException();
-        break;
-      }
-      if (resumeMode != ResumeMode::Continue &&
-          resumeMode != ResumeMode::Return) {
         break;
       }
     }
@@ -2900,8 +2834,7 @@ bool Debugger::appendAllocationSite(JSContext* cx, HandleObject obj,
   return true;
 }
 
-bool Debugger::firePromiseHook(JSContext* cx, Hook hook, HandleObject promise,
-                               ResumeMode& resumeMode, MutableHandleValue vp) {
+bool Debugger::firePromiseHook(JSContext* cx, Hook hook, HandleObject promise) {
   MOZ_ASSERT(hook == OnNewPromise || hook == OnPromiseSettled);
 
   RootedObject hookObj(cx, getHook(hook));
@@ -2924,10 +2857,7 @@ bool Debugger::firePromiseHook(JSContext* cx, Hook hook, HandleObject promise,
     ok = false;
   }
 
-  
-  
-  return processHandlerResult(cx, ok, rv, NullFramePtr(), nullptr, resumeMode,
-                              vp);
+  return ok || handleUncaughtException(cx);
 }
 
 
@@ -2943,12 +2873,10 @@ void Debugger::slowPathPromiseHook(JSContext* cx, Hook hook,
 
   AutoRealm ar(cx, promise);
 
-  ResumeMode resumeMode = ResumeMode::Continue;
-  RootedValue rval(cx);
   Debugger::dispatchQuietHook(
       cx, [hook](Debugger* dbg) -> bool { return dbg->getHook(hook); },
       [&](Debugger* dbg) -> bool {
-        return dbg->firePromiseHook(cx, hook, promise, resumeMode, &rval);
+        return dbg->firePromiseHook(cx, hook, promise);
       });
 }
 
