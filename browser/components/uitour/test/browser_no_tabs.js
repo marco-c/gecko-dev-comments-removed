@@ -70,12 +70,6 @@ add_task(async function test_windowless_UITour() {
       isnot(frameInfo.browser, null, "The browser must exist and not be null.");
 
       
-      frameInfo.browser.messageManager.loadFrameScript(
-        "chrome://browser/content/content-UITour.js",
-        false
-      );
-
-      
       frameInfo.browser.addEventListener(
         "load",
         function loadListener() {
