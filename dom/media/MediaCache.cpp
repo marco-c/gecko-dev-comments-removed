@@ -158,7 +158,10 @@ class MediaCache {
   
   
   
-  static RefPtr<MediaCache> GetMediaCache(int64_t aContentLength);
+  
+  
+  static RefPtr<MediaCache> GetMediaCache(int64_t aContentLength,
+                                          bool aIsPrivateBrowsing);
 
   nsISerialEventTarget* OwnerThread() const { return sThread; }
 
@@ -763,7 +766,8 @@ void MediaCache::CloseStreamsForPrivateBrowsing() {
 }
 
 
-RefPtr<MediaCache> MediaCache::GetMediaCache(int64_t aContentLength) {
+RefPtr<MediaCache> MediaCache::GetMediaCache(int64_t aContentLength,
+                                             bool aIsPrivateBrowsing) {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
 
   if (!sThreadInit) {
@@ -791,11 +795,41 @@ RefPtr<MediaCache> MediaCache::GetMediaCache(int64_t aContentLength) {
     return nullptr;
   }
 
-  if (aContentLength > 0 &&
-      aContentLength <=
-          int64_t(StaticPrefs::media_memory_cache_max_size()) * 1024) {
+  const int64_t mediaMemoryCacheMaxSize =
+      static_cast<int64_t>(StaticPrefs::media_memory_cache_max_size()) * 1024;
+
+  
+  
+  
+  const bool forceMediaMemoryCache =
+      aIsPrivateBrowsing &&
+      StaticPrefs::browser_privatebrowsing_forceMediaMemoryCache();
+
+  
+  
+  
+  const bool contentFitsInMediaMemoryCache =
+      (aContentLength > 0) && (aContentLength <= mediaMemoryCacheMaxSize);
+
+  
+  if (contentFitsInMediaMemoryCache || forceMediaMemoryCache) {
     
-    RefPtr<MediaBlockCacheBase> bc = new MemoryBlockCache(aContentLength);
+    int64_t cacheSize = 0;
+    if (contentFitsInMediaMemoryCache) {
+      cacheSize = aContentLength;
+    } else if (forceMediaMemoryCache) {
+      
+      
+      if (aContentLength < 0) {
+        cacheSize = mediaMemoryCacheMaxSize;
+      } else {
+        
+        
+        cacheSize = std::min(aContentLength, mediaMemoryCacheMaxSize);
+      }
+    }
+
+    RefPtr<MediaBlockCacheBase> bc = new MemoryBlockCache(cacheSize);
     nsresult rv = bc->Init();
     if (NS_SUCCEEDED(rv)) {
       RefPtr<MediaCache> mc = new MediaCache(bc);
@@ -803,8 +837,13 @@ RefPtr<MediaCache> MediaCache::GetMediaCache(int64_t aContentLength) {
           mc.get());
       return mc;
     }
+
     
     
+    
+    if (forceMediaMemoryCache) {
+      return nullptr;
+    }
   }
 
   if (gMediaCache) {
@@ -2658,7 +2697,7 @@ nsresult MediaCacheStream::Init(int64_t aContentLength) {
     mStreamLength = aContentLength;
   }
 
-  mMediaCache = MediaCache::GetMediaCache(aContentLength);
+  mMediaCache = MediaCache::GetMediaCache(aContentLength, mIsPrivateBrowsing);
   if (!mMediaCache) {
     return NS_ERROR_FAILURE;
   }
