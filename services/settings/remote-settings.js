@@ -17,31 +17,15 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "UptakeTelemetry",
-  "resource://services-common/uptake-telemetry.js"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "pushBroadcastService",
-  "resource://gre/modules/PushBroadcastService.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "RemoteSettingsClient",
-  "resource://services-settings/RemoteSettingsClient.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "Utils",
-  "resource://services-settings/Utils.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "FilterExpressions",
-  "resource://gre/modules/components-utils/FilterExpressions.jsm"
-);
+XPCOMUtils.defineLazyModuleGetters(this, {
+  UptakeTelemetry: "resource://services-common/uptake-telemetry.js",
+  pushBroadcastService: "resource://gre/modules/PushBroadcastService.jsm",
+  RemoteSettingsClient: "resource://services-settings/RemoteSettingsClient.jsm",
+  Utils: "resource://services-settings/Utils.jsm",
+  FilterExpressions:
+    "resource://gre/modules/components-utils/FilterExpressions.jsm",
+  RemoteSettingsWorker: "resource://services-settings/RemoteSettingsWorker.jsm",
+});
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
@@ -173,10 +157,19 @@ function remoteSettingsFunction() {
 
 
 
+
   remoteSettings.pollChanges = async ({
     expectedTimestamp,
     trigger = "manual",
+    full = false,
   } = {}) => {
+    
+    if (full) {
+      gPrefs.clearUserPref(PREF_SETTINGS_SERVER_BACKOFF);
+      gPrefs.clearUserPref(PREF_SETTINGS_LAST_UPDATE);
+      gPrefs.clearUserPref(PREF_SETTINGS_LAST_ETAG);
+    }
+
     let pollTelemetryArgs = {
       source: TELEMETRY_SOURCE_POLL,
       trigger,
@@ -390,8 +383,7 @@ function remoteSettingsFunction() {
         if (!client) {
           return null;
         }
-        const kintoCol = await client.openCollection();
-        const localTimestamp = await kintoCol.db.getLastModified();
+        const localTimestamp = await client.getLastModified();
         const lastCheck = Services.prefs.getIntPref(
           client.lastCheckTimePref,
           0
@@ -417,6 +409,25 @@ function remoteSettingsFunction() {
       defaultSigner: DEFAULT_SIGNER,
       collections: collections.filter(c => !!c),
     };
+  };
+
+  
+
+
+  remoteSettings.clearAll = async () => {
+    const { collections } = await remoteSettings.inspect();
+    await Promise.all(
+      collections.map(async ({ collection }) => {
+        const client = RemoteSettings(collection);
+        
+        await client.attachments.deleteAll();
+        
+        const kintoCollection = await client.openCollection();
+        await kintoCollection.clear();
+        
+        Services.prefs.clearUserPref(client.lastCheckTimePref);
+      })
+    );
   };
 
   
