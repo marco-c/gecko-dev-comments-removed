@@ -245,9 +245,22 @@ static void PropagateForcedReturn(JSContext* cx, AbstractFramePtr frame,
   frame.setReturnValue(rval);
 }
 
-static bool ApplyFrameResumeMode(JSContext* cx, AbstractFramePtr frame,
-                                 ResumeMode resumeMode, HandleValue rval,
-                                 HandleSavedFrame exnStack) {
+static MOZ_MUST_USE bool AdjustGeneratorResumptionValue(JSContext* cx,
+                                                        AbstractFramePtr frame,
+                                                        ResumeMode& resumeMode,
+                                                        MutableHandleValue vp);
+
+static MOZ_MUST_USE bool ApplyFrameResumeMode(JSContext* cx,
+                                              AbstractFramePtr frame,
+                                              ResumeMode resumeMode,
+                                              HandleValue rv,
+                                              HandleSavedFrame exnStack) {
+  RootedValue rval(cx, rv);
+
+  if (!AdjustGeneratorResumptionValue(cx, frame, resumeMode, &rval)) {
+    return false;
+  }
+
   switch (resumeMode) {
     case ResumeMode::Continue:
       break;
@@ -945,67 +958,73 @@ bool DebugAPI::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
     return frameOk;
   }
 
+  bool hadResumeOverride = false;
   completion = Completion::fromJSFramePop(cx, frame, pc, frameOk);
   Rooted<AbstractGeneratorObject*> genObj(
       cx, completion.get().maybeGeneratorObject());
 
-  
-  
-  
-  JS::AutoDebuggerJobQueueInterruption adjqi;
-  if (!adjqi.init(cx)) {
-    return false;
-  }
-
-  
-  
-  
-  
-  if (!cx->isThrowingOverRecursed() && !cx->isThrowingOutOfMemory()) {
+  {
     
-    for (size_t i = 0; i < frames.length(); i++) {
-      HandleDebuggerFrame frameobj = frames[i];
-      Debugger* dbg = Debugger::fromChildJSObject(frameobj);
-      EnterDebuggeeNoExecute nx(cx, *dbg, adjqi);
+    
+    
+    JS::AutoDebuggerJobQueueInterruption adjqi;
+    if (!adjqi.init(cx)) {
+      return false;
+    }
 
+    
+    
+    
+    
+    if (!cx->isThrowingOverRecursed() && !cx->isThrowingOutOfMemory()) {
       
-      
-      
-      
-      if (frameobj->isOnStack() && frameobj->onPopHandler()) {
-        OnPopHandler* handler = frameobj->onPopHandler();
-
-        Maybe<AutoRealm> ar;
-        ar.emplace(cx, dbg->object);
+      for (size_t i = 0; i < frames.length(); i++) {
+        HandleDebuggerFrame frameobj = frames[i];
+        Debugger* dbg = Debugger::fromChildJSObject(frameobj);
+        EnterDebuggeeNoExecute nx(cx, *dbg, adjqi);
 
         
-        ResumeMode nextResumeMode;
-        RootedValue nextValue(cx);
-
         
-        bool success;
-        {
+        
+        
+        if (frameobj->isOnStack() && frameobj->onPopHandler()) {
+          OnPopHandler* handler = frameobj->onPopHandler();
+
+          Maybe<AutoRealm> ar;
+          ar.emplace(cx, dbg->object);
+
+          
+          ResumeMode nextResumeMode;
+          RootedValue nextValue(cx);
+
+          
+          bool success;
+          {
+            
+            
+            
+            
+            
+            
+            
+            AutoSetGeneratorRunning asgr(cx, genObj);
+            success = handler->onPop(cx, frameobj, completion, nextResumeMode,
+                                     &nextValue);
+          }
+          nextResumeMode = dbg->processParsedHandlerResult(
+              ar, frame, pc, success, nextResumeMode, &nextValue);
+          adjqi.runJobs();
+
           
           
-          
-          
-          
-          
-          
-          AutoSetGeneratorRunning asgr(cx, genObj);
-          success = handler->onPop(cx, frameobj, completion, nextResumeMode,
-                                   &nextValue);
+          MOZ_ASSERT(cx->compartment() == debuggeeGlobal->compartment());
+          MOZ_ASSERT(!cx->isExceptionPending());
+
+          if (nextResumeMode != ResumeMode::Continue) {
+            hadResumeOverride = true;
+          }
+          completion.get().updateForNextHandler(nextResumeMode, nextValue);
         }
-        nextResumeMode = dbg->processParsedHandlerResult(
-            ar, frame, pc, success, nextResumeMode, &nextValue);
-        adjqi.runJobs();
-
-        
-        
-        MOZ_ASSERT(cx->compartment() == debuggeeGlobal->compartment());
-        MOZ_ASSERT(!cx->isExceptionPending());
-
-        completion.get().updateForNextHandler(nextResumeMode, nextValue);
       }
     }
   }
@@ -1015,6 +1034,14 @@ bool DebugAPI::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
   RootedValue value(cx);
   RootedSavedFrame exnStack(cx);
   completion.get().toResumeMode(resumeMode, &value, &exnStack);
+
+  
+  
+  
+  
+  if (!hadResumeOverride && resumeMode == ResumeMode::Return) {
+    resumeMode = ResumeMode::Continue;
+  }
 
   if (!ApplyFrameResumeMode(cx, frame, resumeMode, value, exnStack)) {
     if (!cx->isPropagatingForcedReturn()) {
@@ -1482,23 +1509,16 @@ static bool CheckResumptionValue(JSContext* cx, AbstractFramePtr frame,
 
 
 
-static void AdjustGeneratorResumptionValue(JSContext* cx,
-                                           AbstractFramePtr frame,
-                                           ResumeMode& resumeMode,
-                                           MutableHandleValue vp) {
+static MOZ_MUST_USE bool AdjustGeneratorResumptionValue(JSContext* cx,
+                                                        AbstractFramePtr frame,
+                                                        ResumeMode& resumeMode,
+                                                        MutableHandleValue vp) {
   if (resumeMode != ResumeMode::Return && resumeMode != ResumeMode::Throw) {
-    return;
+    return true;
   }
   if (!frame || !frame.isFunctionFrame()) {
-    return;
+    return true;
   }
-
-  
-  auto getAndClearExceptionThenThrow = [&]() {
-    MOZ_ALWAYS_TRUE(cx->getPendingException(vp));
-    cx->clearPendingException();
-    resumeMode = ResumeMode::Throw;
-  };
 
   
   
@@ -1510,7 +1530,7 @@ static void AdjustGeneratorResumptionValue(JSContext* cx,
   if (frame.callee()->isGenerator()) {
     
     if (resumeMode == ResumeMode::Throw) {
-      return;
+      return true;
     }
 
     
@@ -1532,8 +1552,7 @@ static void AdjustGeneratorResumptionValue(JSContext* cx,
     if (!genObj->is<AsyncGeneratorObject>()) {
       JSObject* pair = CreateIterResultObject(cx, vp, true);
       if (!pair) {
-        getAndClearExceptionThenThrow();
-        return;
+        return false;
       }
       vp.setObject(*pair);
     }
@@ -1552,7 +1571,7 @@ static void AdjustGeneratorResumptionValue(JSContext* cx,
       
       
       if (resumeMode == ResumeMode::Throw) {
-        return;
+        return true;
       }
 
       Rooted<AsyncFunctionGeneratorObject*> asyncGenObj(
@@ -1563,8 +1582,7 @@ static void AdjustGeneratorResumptionValue(JSContext* cx,
       if (promise->state() == JS::PromiseState::Pending) {
         if (!AsyncFunctionResolve(cx, asyncGenObj, vp,
                                   AsyncFunctionResolveKind::Fulfill)) {
-          getAndClearExceptionThenThrow();
-          return;
+          return false;
         }
       }
       vp.setObject(*promise);
@@ -1580,8 +1598,7 @@ static void AdjustGeneratorResumptionValue(JSContext* cx,
                               ? PromiseObject::unforgeableReject(cx, vp)
                               : PromiseObject::unforgeableResolve(cx, vp);
       if (!promise) {
-        getAndClearExceptionThenThrow();
-        return;
+        return false;
       }
       vp.setObject(*promise);
 
@@ -1589,6 +1606,8 @@ static void AdjustGeneratorResumptionValue(JSContext* cx,
       resumeMode = ResumeMode::Return;
     }
   }
+
+  return true;
 }
 
 void Debugger::reportUncaughtException(Maybe<AutoRealm>& ar) {
@@ -1699,7 +1718,6 @@ ResumeMode Debugger::leaveDebugger(Maybe<AutoRealm>& ar, AbstractFramePtr frame,
     resumeMode = ResumeMode::Terminate;
     vp.setUndefined();
   }
-  AdjustGeneratorResumptionValue(cx, frame, resumeMode, vp);
 
   return resumeMode;
 }
@@ -2426,6 +2444,9 @@ bool DebugAPI::onTrap(JSContext* cx) {
     }
   }
 
+  ResumeMode resumeMode = ResumeMode::Continue;
+  RootedValue rval(cx);
+
   if (triggered.length() > 0) {
     
     
@@ -2473,17 +2494,14 @@ bool DebugAPI::onTrap(JSContext* cx) {
         }
 
         RootedValue rv(cx);
-        RootedValue rval(cx);
         bool ok = CallMethodIfPresent(cx, handler, "hit", 1,
                                       scriptFrame.address(), &rv);
-        ResumeMode resumeMode = dbg->processHandlerResult(
+        resumeMode = dbg->processHandlerResult(
             ar, ok, rv, iter.abstractFramePtr(), iter.pc(), &rval);
         adjqi.runJobs();
 
-        if (!ApplyFrameResumeMode(cx, iter.abstractFramePtr(), resumeMode,
-                                  rval)) {
-          savedExc.drop();
-          return false;
+        if (resumeMode != ResumeMode::Continue) {
+          break;
         }
 
         
@@ -2496,6 +2514,10 @@ bool DebugAPI::onTrap(JSContext* cx) {
     }
   }
 
+  if (!ApplyFrameResumeMode(cx, iter.abstractFramePtr(), resumeMode, rval)) {
+    savedExc.drop();
+    return false;
+  }
   return true;
 }
 
@@ -2574,6 +2596,9 @@ bool DebugAPI::onSingleStep(JSContext* cx) {
   }
 #endif
 
+  RootedValue rval(cx);
+  ResumeMode resumeMode = ResumeMode::Continue;
+
   if (frames.length() > 0) {
     
     
@@ -2597,21 +2622,21 @@ bool DebugAPI::onSingleStep(JSContext* cx) {
       Maybe<AutoRealm> ar;
       ar.emplace(cx, dbg->object);
 
-      RootedValue rval(cx);
-      ResumeMode resumeMode = ResumeMode::Continue;
       bool success = handler->onStep(cx, frame, resumeMode, &rval);
       resumeMode = dbg->processParsedHandlerResult(
           ar, iter.abstractFramePtr(), iter.pc(), success, resumeMode, &rval);
       adjqi.runJobs();
 
-      if (!ApplyFrameResumeMode(cx, iter.abstractFramePtr(), resumeMode,
-                                rval)) {
-        savedExc.drop();
-        return false;
+      if (resumeMode != ResumeMode::Continue) {
+        break;
       }
     }
   }
 
+  if (!ApplyFrameResumeMode(cx, iter.abstractFramePtr(), resumeMode, rval)) {
+    savedExc.drop();
+    return false;
+  }
   return true;
 }
 
