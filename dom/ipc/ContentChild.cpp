@@ -1914,6 +1914,10 @@ mozilla::ipc::IPCResult ContentChild::RecvConstructBrowser(
     }
   }
 
+  if (aWindowInit.browsingContext().IsNullOrDiscarded()) {
+    return IPC_FAIL(this, "Null or discarded initial BrowsingContext");
+  }
+
   
   
   
@@ -1930,7 +1934,7 @@ mozilla::ipc::IPCResult ContentChild::RecvConstructBrowser(
 
   RefPtr<BrowserChild> browserChild = BrowserChild::Create(
       this, aTabId, aSameTabGroupAs, tc.GetTabContext(),
-      aWindowInit.browsingContext(), aChromeFlags, aIsTopLevel);
+      aWindowInit.browsingContext().get(), aChromeFlags, aIsTopLevel);
 
   
   if (NS_WARN_IF(!BindPBrowserEndpoint(std::move(aBrowserEp), browserChild))) {

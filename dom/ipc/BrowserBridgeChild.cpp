@@ -247,6 +247,11 @@ mozilla::ipc::IPCResult BrowserBridgeChild::RecvSubFrameCrashed(
 }
 
 void BrowserBridgeChild::ActorDestroy(ActorDestroyReason aWhy) {
+  if (!mBrowsingContext) {
+    
+    return;
+  }
+
   
   
   UnblockOwnerDocsLoadEvent();

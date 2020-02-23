@@ -1318,6 +1318,10 @@ IPCResult BrowserParent::RecvIndexedDBPermissionRequest(
 IPCResult BrowserParent::RecvNewWindowGlobal(
     ManagedEndpoint<PWindowGlobalParent>&& aEndpoint,
     const WindowGlobalInit& aInit) {
+  if (aInit.browsingContext().IsNullOrDiscarded()) {
+    return IPC_OK();
+  }
+
   
   auto wgp = MakeRefPtr<WindowGlobalParent>(aInit,  false);
 
