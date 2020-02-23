@@ -702,9 +702,9 @@ ImgDrawResult nsCSSRendering::CreateWebRenderCommandsForBorderWithStyleBorder(
     mozilla::layers::RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder,
     const nsStyleBorder& aStyleBorder) {
+  auto& borderImage = aStyleBorder.mBorderImageSource;
   
-  nsStyleImageType type = aStyleBorder.mBorderImageSource.GetType();
-  if (type == eStyleImageType_Null) {
+  if (borderImage.IsNone()) {
     CreateWebRenderCommandsForNullBorder(
         aItem, aForFrame, aBorderArea, aBuilder, aResources, aSc, aStyleBorder);
     return ImgDrawResult::SUCCESS;
@@ -712,7 +712,7 @@ ImgDrawResult nsCSSRendering::CreateWebRenderCommandsForBorderWithStyleBorder(
 
   
   
-  if (type != eStyleImageType_Image) {
+  if (!borderImage.IsImageRequestType()) {
     return ImgDrawResult::NOT_SUPPORTED;
   }
 
@@ -845,7 +845,7 @@ ImgDrawResult nsCSSRendering::PaintBorderWithStyleBorder(
     }
   }
 
-  if (!aStyleBorder.mBorderImageSource.IsEmpty()) {
+  if (!aStyleBorder.mBorderImageSource.IsNone()) {
     ImgDrawResult result = ImgDrawResult::SUCCESS;
 
     uint32_t irFlags = 0;
@@ -873,7 +873,7 @@ ImgDrawResult nsCSSRendering::PaintBorderWithStyleBorder(
   
   
   
-  if (aStyleBorder.mBorderImageSource.GetType() != eStyleImageType_Null) {
+  if (!aStyleBorder.mBorderImageSource.IsNone()) {
     result = ImgDrawResult::NOT_READY;
   }
 
@@ -910,7 +910,7 @@ Maybe<nsCSSBorderRenderer> nsCSSRendering::CreateBorderRendererWithStyleBorder(
     const nsRect& aDirtyRect, const nsRect& aBorderArea,
     const nsStyleBorder& aStyleBorder, ComputedStyle* aStyle,
     bool* aOutBorderIsEmpty, Sides aSkipSides) {
-  if (aStyleBorder.mBorderImageSource.GetType() != eStyleImageType_Null) {
+  if (!aStyleBorder.mBorderImageSource.IsNone()) {
     return Nothing();
   }
   return CreateNullBorderRendererWithStyleBorder(
@@ -1882,14 +1882,14 @@ bool nsCSSRendering::CanBuildWebRenderDisplayItemsForStyleImageLayer(
   }
 
   
-  const nsStyleImage* styleImage =
-      &aBackgroundStyle->mImage.mLayers[aLayer].mImage;
-  if (styleImage->GetType() == eStyleImageType_Image) {
-    if (styleImage->GetCropRect()) {
+  
+  const auto& styleImage = aBackgroundStyle->mImage.mLayers[aLayer].mImage;
+  if (styleImage.IsImageRequestType()) {
+    if (styleImage.IsRect()) {
       return false;
     }
 
-    imgRequestProxy* requestProxy = styleImage->GetImageData();
+    imgRequestProxy* requestProxy = styleImage.GetImageRequest();
     if (!requestProxy) {
       return false;
     }
@@ -1909,7 +1909,7 @@ bool nsCSSRendering::CanBuildWebRenderDisplayItemsForStyleImageLayer(
     return true;
   }
 
-  if (styleImage->GetType() == eStyleImageType_Gradient) {
+  if (styleImage.IsGradient()) {
     return true;
   }
 
@@ -1966,8 +1966,9 @@ static bool IsOpaqueBorderEdge(const nsStyleBorder& aBorder,
   
   
   
-  if (aBorder.mBorderImageSource.GetType() != eStyleImageType_Null)
+  if (!aBorder.mBorderImageSource.IsNone()) {
     return false;
+  }
 
   StyleColor color = aBorder.BorderColorFor(aSide);
   
@@ -4009,7 +4010,7 @@ void nsCSSRendering::PaintDecorationLine(
   mozilla::StyleTextDecorationSkipInk skipInk =
       aFrame->StyleText()->mTextDecorationSkipInk;
   bool skipInkEnabled =
-      skipInk == mozilla::StyleTextDecorationSkipInk::Auto &&
+      skipInk != mozilla::StyleTextDecorationSkipInk::None &&
       aParams.decoration != StyleTextDecorationLine::LINE_THROUGH &&
       StaticPrefs::layout_css_text_decoration_skip_ink_enabled();
 
@@ -4064,7 +4065,9 @@ void nsCSSRendering::PaintDecorationLine(
   while (iter.NextRun()) {
     if (iter.GetGlyphRun()->mOrientation ==
             mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT ||
-        iter.GetGlyphRun()->mIsCJK) {
+        (iter.GetGlyphRun()->mIsCJK &&
+         skipInk == mozilla::StyleTextDecorationSkipInk::Auto)) {
+      
       
       
       

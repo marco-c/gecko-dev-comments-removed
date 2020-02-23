@@ -1027,6 +1027,7 @@ pub enum OverflowWrap {
 pub enum TextDecorationSkipInk {
     Auto,
     None,
+    All,
 }
 
 
