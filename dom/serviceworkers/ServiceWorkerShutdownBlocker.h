@@ -10,6 +10,7 @@
 #include "nsCOMPtr.h"
 #include "nsIAsyncShutdown.h"
 #include "nsISupportsImpl.h"
+#include "nsITimer.h"
 
 #include "ServiceWorkerShutdownState.h"
 #include "mozilla/MozPromise.h"
@@ -21,13 +22,30 @@ namespace dom {
 
 
 
-class ServiceWorkerShutdownBlocker final : public nsIAsyncShutdownBlocker {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ServiceWorkerShutdownBlocker final : public nsIAsyncShutdownBlocker,
+                                           public nsITimerCallback {
  public:
   using Progress = ServiceWorkerShutdownState::Progress;
   static const uint32_t kInvalidShutdownStateId = 0;
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIASYNCSHUTDOWNBLOCKER
+  NS_DECL_NSITIMERCALLBACK
 
   
 
@@ -84,12 +102,26 @@ class ServiceWorkerShutdownBlocker final : public nsIAsyncShutdownBlocker {
   
 
 
+  void UnblockShutdown();
+
+  
+
+
 
   uint32_t PromiseSettled();
 
   bool IsAcceptingPromises() const;
 
   uint32_t GetPendingPromises() const;
+
+  
+
+
+
+
+
+
+  void MaybeInitUnblockShutdownTimer();
 
   struct AcceptingPromises {
     uint32_t mPendingPromises = 0;
@@ -106,6 +138,8 @@ class ServiceWorkerShutdownBlocker final : public nsIAsyncShutdownBlocker {
   nsCOMPtr<nsIAsyncShutdownClient> mShutdownClient;
 
   HashMap<uint32_t, ServiceWorkerShutdownState> mShutdownStates;
+
+  nsCOMPtr<nsITimer> mTimer;
 };
 
 }  
