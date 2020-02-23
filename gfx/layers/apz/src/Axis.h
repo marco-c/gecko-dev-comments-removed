@@ -297,6 +297,8 @@ class Axis {
 
   virtual ScreenPoint MakePoint(ScreenCoord aCoord) const = 0;
 
+  const void* OpaqueApzcPointer() const { return mAsyncPanZoomController; }
+
   virtual const char* Name() const = 0;
 
   
