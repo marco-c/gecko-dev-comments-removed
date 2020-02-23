@@ -10,6 +10,7 @@
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsWeakReference.h"
+#include "MozLocaleBindings.h"
 
 #include "mozILocaleService.h"
 
@@ -104,6 +105,23 @@ class LocaleService final : public mozILocaleService,
     return RefPtr<LocaleService>(GetInstance()).forget();
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static bool CanonicalizeLanguageId(nsACString& aLocale) {
+    return ffi::unic_langid_canonicalize(&aLocale);
+  }
   
 
 
