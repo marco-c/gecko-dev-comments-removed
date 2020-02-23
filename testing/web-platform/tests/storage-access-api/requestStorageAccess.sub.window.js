@@ -1,4 +1,6 @@
 
+
+
 'use strict';
 
 
@@ -52,4 +54,17 @@ if (topLevelDocument) {
   
   
   RunTestsInNestedIFrame("http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/requestStorageAccess.sub.window.html?testCase=nested-cross-origin-frame&rootdocument=false");
+
+  promise_test(async t => {
+    await test_driver.set_permission({ name: 'storage-access' }, 'granted');
+
+    var access_promise;
+    let testMethod = function() {
+      access_promise = document.requestStorageAccess();
+    };
+    await ClickButtonWithGesture(testMethod);
+
+    return access_promise;
+  }, "[" + testPrefix + "] document.requestStorageAccess() should be resolved when called properly with a user gesture");
+
 }
