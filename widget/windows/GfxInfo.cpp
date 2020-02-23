@@ -1805,6 +1805,14 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
 
     
     
+    APPEND_TO_DRIVER_BLOCKLIST2(
+        OperatingSystem::Windows, DeviceFamily::IntelAll,
+        nsIGfxInfo::FEATURE_WEBRENDER,
+        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_EQUAL,
+        V(23, 20, 16, 4973), "Intel driver > 23.20.16.4973");
+
+    
+    
 
     APPEND_TO_DRIVER_BLOCKLIST2_EXT(
         OperatingSystem::RecentWindows10, ScreenSizeStatus::Small,
