@@ -125,39 +125,6 @@ async function withMerchantTab(
   });
 }
 
-
-
-
-
-
-
-
-
-function withNewDialogFrame(requestId, taskFn) {
-  async function dialogTabTask(dialogBrowser) {
-    let paymentRequestFrame = dialogBrowser.contentDocument.getElementById(
-      "paymentRequestFrame"
-    );
-    
-    await spawnPaymentDialogTask(
-      paymentRequestFrame,
-      async function ensureLoaded() {
-        await ContentTaskUtils.waitForCondition(
-          () => content.document.readyState == "complete",
-          "Waiting for the unprivileged frame to load"
-        );
-      }
-    );
-    await taskFn(paymentRequestFrame);
-  }
-
-  let args = {
-    gBrowser,
-    url: `chrome://payments/content/paymentDialogWrapper.xul?requestId=${requestId}`,
-  };
-  return BrowserTestUtils.withNewTab(args, dialogTabTask);
-}
-
 async function withNewTabInPrivateWindow(args = {}, taskFn) {
   let privateWin = await BrowserTestUtils.openNewBrowserWindow({
     private: true,
@@ -167,23 +134,6 @@ async function withNewTabInPrivateWindow(args = {}, taskFn) {
   });
   await withMerchantTab(tabArgs, taskFn);
   await BrowserTestUtils.closeWindow(privateWin);
-}
-
-
-
-
-
-
-
-
-
-function spawnTaskInNewDialog(requestId, contentTaskFn, args = null) {
-  return withNewDialogFrame(
-    requestId,
-    async function spawnTaskInNewDialog_tabTask(reqFrame) {
-      await spawnPaymentDialogTask(reqFrame, contentTaskFn, args);
-    }
-  );
 }
 
 async function addAddressRecord(address) {
