@@ -266,7 +266,6 @@ var refreshTab = async function(tab = gBrowser.selectedTab) {
 async function navigateTo(uri, { isErrorPage = false } = {}) {
   const target = await TargetFactory.forTab(gBrowser.selectedTab);
   const toolbox = gDevTools.getToolbox(target);
-  const currentToolboxTarget = toolbox.target;
 
   
   
@@ -287,6 +286,7 @@ async function navigateTo(uri, { isErrorPage = false } = {}) {
 
   info(`Load document "${uri}"`);
   const browser = gBrowser.selectedBrowser;
+  const currentPID = browser.browsingContext.currentWindowGlobal.osPid;
   const onBrowserLoaded = BrowserTestUtils.browserLoaded(
     browser,
     false,
@@ -299,13 +299,33 @@ async function navigateTo(uri, { isErrorPage = false } = {}) {
   await onBrowserLoaded;
   info(`→ page loaded`);
 
+  
+  
+  const switchedToAnotherProcess =
+    currentPID !== browser.browsingContext.currentWindowGlobal.osPid;
+
+  
+  
+  
+  if (
+    switchedToAnotherProcess &&
+    !Services.prefs.getBoolPref("devtools.target-switching.enabled", false)
+  ) {
+    ok(
+      false,
+      `navigateTo(${uri}) navigated to another process, but the target-switching preference is false`
+    );
+    return;
+  }
+
   if (onPanelReloaded) {
     info(`Waiting for ${toolbox.currentToolId} to be reloaded…`);
     await onPanelReloaded();
     info(`→ panel reloaded`);
   }
 
-  if (toolbox.target !== currentToolboxTarget) {
+  
+  if (switchedToAnotherProcess) {
     info(`Waiting for target switch…`);
     await onTargetSwitched;
     info(`→ switched-target emitted`);
