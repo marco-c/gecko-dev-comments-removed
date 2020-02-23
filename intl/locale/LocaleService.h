@@ -113,6 +113,21 @@ class LocaleService final : public mozILocaleService,
 
 
 
+
+
+
+
+
+  static bool CanonicalizeLanguageId(nsACString& aLocale);
+  
+
+
+
+
+
+
+
+
   void AssignAppLocales(const nsTArray<nsCString>& aAppLocales);
   void AssignRequestedLocales(const nsTArray<nsCString>& aRequestedLocales);
 

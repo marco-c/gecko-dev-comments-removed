@@ -48,40 +48,12 @@ mozilla::StaticRefPtr<LocaleService> LocaleService::sInstance;
 
 
 
-static bool SanitizeForBCP47(nsACString& aLocale, bool strict) {
-  
-  
-  
-  
-  if (aLocale.LowerCaseEqualsASCII("ja-jp-mac")) {
-    aLocale.AssignLiteral("ja-JP-macos");
-    return true;
-  }
 
-  nsAutoCString locale(aLocale);
-  locale.Trim(" ");
-
-  
-  
-  
-  int32_t pos = locale.FindChar('.');
-  if (pos != -1) {
-    locale.Cut(pos, locale.Length() - pos);
-  }
-
-  
-  
-  const int32_t LANG_TAG_CAPACITY = 128;
-  char langTag[LANG_TAG_CAPACITY];
-  UErrorCode err = U_ZERO_ERROR;
-  
-  
-  int32_t len = uloc_toLanguageTag(locale.get(), langTag, LANG_TAG_CAPACITY,
-                                   strict, &err);
-  if (U_SUCCESS(err) && len > 0) {
-    aLocale.Assign(langTag, len);
-  }
-  return U_SUCCESS(err);
+bool LocaleService::CanonicalizeLanguageId(nsACString& aLocale) {
+  bool result;
+  auto loc = unic_langid_new(&aLocale, &result);
+  unic_langid_as_string(loc, &aLocale);
+  return result;
 }
 
 
@@ -93,7 +65,7 @@ static void SplitLocaleListStringIntoArray(nsACString& str,
   if (str.Length() > 0) {
     for (const nsACString& part : str.Split(',')) {
       nsAutoCString locale(part);
-      if (SanitizeForBCP47(locale, true)) {
+      if (LocaleService::CanonicalizeLanguageId(locale)) {
         if (!aRetVal.Contains(locale)) {
           aRetVal.AppendElement(locale);
         }
@@ -421,7 +393,7 @@ LocaleService::GetDefaultLocale(nsACString& aRetVal) {
     locale.Trim(" \t\n\r");
     
     MOZ_ASSERT(!locale.IsEmpty());
-    if (SanitizeForBCP47(locale, true)) {
+    if (CanonicalizeLanguageId(locale)) {
       mDefaultLocale.Assign(locale);
     }
 
@@ -617,7 +589,7 @@ LocaleService::SetRequestedLocales(const nsTArray<nsCString>& aRequested) {
 
   for (auto& req : aRequested) {
     nsAutoCString locale(req);
-    if (!SanitizeForBCP47(locale, true)) {
+    if (!CanonicalizeLanguageId(locale)) {
       NS_ERROR("Invalid language tag provided to SetRequestedLocales!");
       return NS_ERROR_INVALID_ARG;
     }
@@ -667,7 +639,7 @@ LocaleService::SetAvailableLocales(const nsTArray<nsCString>& aAvailable) {
 
   for (auto& avail : aAvailable) {
     nsAutoCString locale(avail);
-    if (!SanitizeForBCP47(locale, true)) {
+    if (!CanonicalizeLanguageId(locale)) {
       NS_ERROR("Invalid language tag provided to SetAvailableLocales!");
       return NS_ERROR_INVALID_ARG;
     }
