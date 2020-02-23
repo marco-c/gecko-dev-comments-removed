@@ -537,7 +537,7 @@ nsWindowMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
     "ghost-windows", KIND_OTHER, UNITS_COUNT, ghostWindows.Count(),
 "The number of ghost windows present (the number of nodes underneath "
 "explicit/window-objects/top(none)/ghost, modulo race conditions).  A ghost "
-"window is not shown in any tab, is not in a tab group with any "
+"window is not shown in any tab, is not in a browsing context group with any "
 "non-detached windows, and has met these criteria for at least "
 "memory.ghost_window_timeout_seconds, or has survived a round of "
 "about:memory's minimize memory usage button.\n\n"
@@ -799,19 +799,23 @@ void nsWindowMemoryReporter::CheckForGhostWindows(
   mLastCheckForGhostWindows = TimeStamp::NowLoRes();
   KillCheckTimer();
 
-  nsTHashtable<nsPtrHashKey<TabGroup>> nonDetachedTabGroups;
+  nsTHashtable<nsPtrHashKey<BrowsingContextGroup>>
+      nonDetachedBrowsingContextGroups;
 
   
   for (auto iter = windowsById->Iter(); !iter.Done(); iter.Next()) {
     
     
     nsGlobalWindowInner* window = iter.UserData();
-    if (!window->GetOuterWindow() || !window->GetInProcessTopInternal()) {
+    if (!window->GetOuterWindow() || !window->GetInProcessTopInternal() ||
+        !window->GetBrowsingContextGroup()) {
+      
       
       continue;
     }
 
-    nonDetachedTabGroups.PutEntry(window->TabGroup());
+    nonDetachedBrowsingContextGroups.PutEntry(
+        window->GetBrowsingContextGroup());
   }
 
   
@@ -846,8 +850,10 @@ void nsWindowMemoryReporter::CheckForGhostWindows(
     }
 
     TimeStamp& timeStamp = iter.Data();
-    TabGroup* tabGroup = window->MaybeTabGroup();
-    if (tabGroup && nonDetachedTabGroups.GetEntry(tabGroup)) {
+    BrowsingContextGroup* browsingContextGroup =
+        window->GetBrowsingContextGroup();
+    if (browsingContextGroup &&
+        nonDetachedBrowsingContextGroups.GetEntry(browsingContextGroup)) {
       
       
       timeStamp = TimeStamp();
