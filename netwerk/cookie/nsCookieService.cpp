@@ -15,6 +15,7 @@
 
 #include "mozilla/net/CookieSettings.h"
 #include "mozilla/net/CookieServiceChild.h"
+#include "mozilla/net/HttpBaseChannel.h"
 #include "mozilla/net/NeckoCommon.h"
 
 #include "nsCookieService.h"
@@ -42,6 +43,7 @@
 #include "nsCOMArray.h"
 #include "nsIMutableArray.h"
 #include "nsReadableUtils.h"
+#include "nsQueryObject.h"
 #include "nsCRT.h"
 #include "prprf.h"
 #include "nsNetUtil.h"
@@ -464,6 +466,39 @@ class CompareCookiesByIndex {
     return a.index < b.index;
   }
 };
+
+
+bool ProcessSameSiteCookieForForeignRequest(nsIChannel* aChannel,
+                                            nsCookie* aCookie,
+                                            bool aIsSafeTopLevelNav) {
+  int32_t sameSiteAttr = 0;
+  aCookie->GetSameSite(&sameSiteAttr);
+
+  
+  
+  if (sameSiteAttr == nsICookie::SAMESITE_STRICT) {
+    return false;
+  }
+
+  int64_t currentTimeInUsec = PR_Now();
+
+  
+  
+  if (StaticPrefs::network_cookie_sameSite_laxPlusPOST_timeout() > 0 &&
+      StaticPrefs::network_cookie_sameSite_laxByDefault() &&
+      sameSiteAttr == nsICookie::SAMESITE_LAX &&
+      aCookie->RawSameSite() == nsICookie::SAMESITE_NONE &&
+      currentTimeInUsec - aCookie->CreationTime() <=
+          (StaticPrefs::network_cookie_sameSite_laxPlusPOST_timeout() *
+           PR_USEC_PER_SEC) &&
+      NS_IsSafeMethodNav(aChannel)) {
+    return true;
+  }
+
+  
+  
+  return sameSiteAttr != nsICookie::SAMESITE_LAX || aIsSafeTopLevelNav;
+}
 
 }  
 
@@ -3043,19 +3078,9 @@ void nsCookieService::GetCookiesForURI(
     
     if (cookie->IsSecure() && !isSecure) continue;
 
-    int32_t sameSiteAttr = 0;
-    cookie->GetSameSite(&sameSiteAttr);
-    if (aIsSameSiteForeign) {
-      
-      
-      if (sameSiteAttr == nsICookie::SAMESITE_STRICT) {
-        continue;
-      }
-      
-      
-      if (sameSiteAttr == nsICookie::SAMESITE_LAX && !aIsSafeTopLevelNav) {
-        continue;
-      }
+    if (aIsSameSiteForeign && !ProcessSameSiteCookieForForeignRequest(
+                                  aChannel, cookie, aIsSafeTopLevelNav)) {
+      continue;
     }
 
     
