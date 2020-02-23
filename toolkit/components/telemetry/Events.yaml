@@ -1560,6 +1560,7 @@ security.ui.protections:
       - 1557050
       - 1572825
       - 1610897
+      - 1612088
     description: >
       User interaction by click events on the protection report.
     objects: [
@@ -1685,6 +1686,8 @@ uptake.remotecontent.result:
         The age of pulled data in seconds (ie. difference between publication time and fetch time).
       duration: >
         The duration of the synchronization process in milliseconds.
+      timestamp: >
+        The current timestamp, received during synchronization.
     bug_numbers:
       - 1517469
     products:
