@@ -129,50 +129,23 @@ add_task(async function test() {
     set: [["javascript.options.mem.notify", true]],
   });
 
-  function runRemote(f) {
-    gBrowser.selectedBrowser.messageManager.loadFrameScript(
-      `data:,(${f})()`,
-      false
-    );
-  }
-
-  
-  
-  function initScript() {
-    const { GCTelemetry } = ChromeUtils.import(
-      "resource://gre/modules/GCTelemetry.jsm"
-    );
-
-    
-
-
-
-    let shutdown = GCTelemetry.init();
-
-    function listener() {
-      removeMessageListener("GCTelemTest:Shutdown", listener);
-      if (shutdown) {
-        GCTelemetry.shutdown();
-      }
-    }
-    addMessageListener("GCTelemTest:Shutdown", listener);
-  }
-
   if (multiprocess) {
-    runRemote(initScript);
+    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+      const { GCTelemetry } = ChromeUtils.import(
+        "resource://gre/modules/GCTelemetry.jsm"
+      );
+
+      
+
+
+
+      content.shutdown = GCTelemetry.init();
+      content.GCTelemetry = GCTelemetry;
+    });
   }
 
   
   let shutdown = GCTelemetry.init();
-  registerCleanupFunction(() => {
-    if (shutdown) {
-      GCTelemetry.shutdown();
-    }
-
-    gBrowser.selectedBrowser.messageManager.sendAsyncMessage(
-      "GCTelemTest:Shutdown"
-    );
-  });
 
   let localPromise = new Promise(resolve => {
     function obs() {
@@ -198,7 +171,9 @@ add_task(async function test() {
   
   Cu.forceGC();
   if (multiprocess) {
-    runRemote(() => Cu.forceGC());
+    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+      Cu.forceGC();
+    });
   }
 
   info("Waiting for GCs");
@@ -223,4 +198,16 @@ add_task(async function test() {
 
   is(remoteEntries.random.length, 0, "no random GCs after reset");
   is(remoteEntries.worst.length, 0, "no worst GCs after reset");
+
+  if (shutdown) {
+    GCTelemetry.shutdown();
+  }
+
+  if (multiprocess) {
+    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+      if (content.shutdown) {
+        content.GCTelemetry.shutdown();
+      }
+    });
+  }
 });
