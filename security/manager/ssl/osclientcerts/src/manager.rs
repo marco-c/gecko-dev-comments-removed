@@ -15,6 +15,7 @@ use backend::*;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 use std::thread::JoinHandle;
+use std::time::{Duration, Instant};
 
 
 type ManagerArgumentsSender = Sender<ManagerArguments>;
@@ -294,11 +295,11 @@ impl ManagerProxy {
             }
         };
         match thread_handle.join() {
-          Ok(()) => {}
-          Err(e) => {
-            error!("manager thread panicked: {:?}", e);
-            return Err(());
-          }
+            Ok(()) => {}
+            Err(e) => {
+                error!("manager thread panicked: {:?}", e);
+                return Err(());
+            }
         };
         Ok(())
     }
@@ -326,6 +327,9 @@ struct Manager {
     next_session: CK_SESSION_HANDLE,
     
     next_handle: CK_OBJECT_HANDLE,
+    
+    
+    last_scan_time: Option<Instant>,
 }
 
 impl Manager {
@@ -339,15 +343,27 @@ impl Manager {
             key_ids: BTreeSet::new(),
             next_session: 1,
             next_handle: 1,
+            last_scan_time: None,
         };
-        manager.find_new_objects();
+        manager.maybe_find_new_objects();
         manager
     }
 
     
     
     
-    fn find_new_objects(&mut self) {
+    
+    fn maybe_find_new_objects(&mut self) {
+        let now = Instant::now();
+        match self.last_scan_time {
+            Some(last_scan_time) => {
+                if now.duration_since(last_scan_time) < Duration::new(3, 0) {
+                    return;
+                }
+            }
+            None => {}
+        }
+        self.last_scan_time = Some(now);
         let objects = list_objects();
         debug!("found {} objects", objects.len());
         for object in objects {
@@ -373,7 +389,7 @@ impl Manager {
     }
 
     pub fn open_session(&mut self) -> Result<CK_SESSION_HANDLE, ()> {
-        self.find_new_objects();
+        self.maybe_find_new_objects();
         let next_session = self.next_session;
         self.next_session += 1;
         self.sessions.insert(next_session);
@@ -410,6 +426,14 @@ impl Manager {
     ) -> Result<(), ()> {
         if self.searches.contains_key(&session) {
             return Err(());
+        }
+        
+        
+        for (attr, _) in attrs {
+            if !SUPPORTED_ATTRIBUTES.contains(attr) {
+                self.searches.insert(session, Vec::new());
+                return Ok(());
+            }
         }
         let mut handles = Vec::new();
         for (handle, object) in &self.objects {
