@@ -531,8 +531,12 @@ class FunctionBox : public ObjectBox, public SharedContext {
   }
 
   bool needsCallObjectRegardlessOfBindings() const {
-    return hasExtensibleScope() || needsHomeObject() ||
-           isDerivedClassConstructor() || isGenerator() || isAsync();
+    
+    
+    
+    
+
+    return hasExtensibleScope() || isGenerator() || isAsync();
   }
 
   bool hasExtraBodyVarScope() const {

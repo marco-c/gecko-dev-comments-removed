@@ -754,7 +754,6 @@ bool FunctionScope::prepareForScopeCreation(
   
   
   
-  
   if (!envShape && needsEnvironment) {
     envShape.set(getEmptyEnvironmentShape(cx));
     if (!envShape) {
