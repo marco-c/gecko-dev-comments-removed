@@ -374,6 +374,9 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr<WebGLContext> {
 
   void SetCompositableHost(RefPtr<layers::CompositableHost>& aCompositableHost);
 
+  RefPtr<mozilla::gfx::SourceSurface> GetSurfaceSnapshot(
+      gfxAlphaType* out_alphaType);
+
   
 
 

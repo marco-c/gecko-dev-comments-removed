@@ -2126,7 +2126,8 @@ class nsLayoutUtils {
     
     SFE_NO_COLORSPACE_CONVERSION = 1 << 2,
     
-    SFE_ALLOW_NON_PREMULT = 1 << 3,
+
+    SFE_PREFER_NO_PREMULTIPLY_ALPHA = 1 << 3,
     
 
     SFE_NO_RASTERIZING_VECTORS = 1 << 4,
