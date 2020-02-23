@@ -37,6 +37,18 @@ bool IsServiceWorker(const RemoteWorkerData& aData) {
          OptionalServiceWorkerData::TServiceWorkerData;
 }
 
+
+
+
+
+
+
+
+
+bool IsServiceWorkerRemoteType(const nsAString& aRemoteType) {
+  return IsWebRemoteType(aRemoteType) && !IsWebCoopCoepRemoteType(aRemoteType);
+}
+
 void TransmitPermissionsAndBlobURLsForPrincipalInfo(
     ContentParent* aContentParent, const PrincipalInfo& aPrincipalInfo) {
   AssertIsOnMainThread();
@@ -93,21 +105,38 @@ void RemoteWorkerManager::RegisterActor(RemoteWorkerServiceParent* aActor) {
   MOZ_ASSERT(!mChildActors.Contains(aActor));
   mChildActors.AppendElement(aActor);
 
+  nsTArray<Pending> unlaunched;
+
+  RefPtr<ContentParent> contentParent =
+      BackgroundParent::GetContentParent(aActor->Manager());
+  auto scopeExit = MakeScopeExit(
+      [&] { NS_ReleaseOnMainThreadSystemGroup(contentParent.forget()); });
+  const auto& remoteType = contentParent->GetRemoteType();
+
   if (!mPendings.IsEmpty()) {
     
-    for (const Pending& p : mPendings) {
+    for (Pending& p : mPendings) {
       if (p.mController->IsTerminated()) {
+        continue;
+      }
+
+      if (IsServiceWorker(p.mData) && !IsServiceWorkerRemoteType(remoteType)) {
+        unlaunched.AppendElement(std::move(p));
         continue;
       }
 
       LaunchInternal(p.mController, aActor, p.mData);
     }
 
-    mPendings.Clear();
+    std::swap(mPendings, unlaunched);
 
     
     
-    Release();
+    
+    
+    if (mPendings.IsEmpty()) {
+      Release();
+    }
   }
 }
 
@@ -258,15 +287,7 @@ RemoteWorkerManager::SelectTargetActorForServiceWorker(
                    RefPtr<ContentParent>&& aContentParent) {
     const auto& remoteType = aContentParent->GetRemoteType();
 
-    
-    
-    
-    
-    
-    
-    
-    
-    if (IsWebRemoteType(remoteType) && !IsWebCoopCoepRemoteType(remoteType)) {
+    if (IsServiceWorkerRemoteType(remoteType)) {
       auto lock = aContentParent->mRemoteWorkerActorData.Lock();
 
       if (lock->mCount || !lock->mShutdownStarted) {
