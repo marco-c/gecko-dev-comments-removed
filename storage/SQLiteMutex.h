@@ -40,8 +40,8 @@ class SQLiteMutex : private BlockingResourceBase {
 
 
   void initWithMutex(sqlite3_mutex* aMutex) {
-    NS_ASSERTION(aMutex, "You must pass in a valid mutex!");
-    NS_ASSERTION(!mMutex, "A mutex has already been set for this!");
+    MOZ_ASSERT(aMutex, "You must pass in a valid mutex!");
+    MOZ_ASSERT(!mMutex, "A mutex has already been set for this!");
     mMutex = aMutex;
   }
 
@@ -51,60 +51,55 @@ class SQLiteMutex : private BlockingResourceBase {
 
   void destroy() { mMutex = NULL; }
 
-#if !defined(DEBUG) || defined(MOZ_SYSTEM_SQLITE)
   
 
 
-  void lock() { ::sqlite3_mutex_enter(mMutex); }
-
-  
-
-
-  void unlock() { ::sqlite3_mutex_leave(mMutex); }
-
-  
-
-
-  void assertCurrentThreadOwns() {}
-
-  
-
-
-  void assertNotCurrentThreadOwns() {}
-
-#else
   void lock() {
     MOZ_ASSERT(mMutex, "No mutex associated with this wrapper!");
-
+#if defined(DEBUG) && !defined(MOZ_SYSTEM_SQLITE)
     
     
-
     CheckAcquire();
+#endif
+
     ::sqlite3_mutex_enter(mMutex);
+
+#if defined(DEBUG) && !defined(MOZ_SYSTEM_SQLITE)
     Acquire();  
+#endif
   }
+
+  
+
 
   void unlock() {
     MOZ_ASSERT(mMutex, "No mutex associated with this wrapper!");
-
+#if defined(DEBUG) && !defined(MOZ_SYSTEM_SQLITE)
     
     
     Release();  
+#endif
+
     ::sqlite3_mutex_leave(mMutex);
   }
 
+  
+
+
   void assertCurrentThreadOwns() {
     MOZ_ASSERT(mMutex, "No mutex associated with this wrapper!");
-    MOZ_ASSERT(sqlite3_mutex_held(mMutex),
+    MOZ_ASSERT(::sqlite3_mutex_held(mMutex),
                "Mutex is not held, but we expect it to be!");
   }
 
+  
+
+
   void assertNotCurrentThreadOwns() {
     MOZ_ASSERT(mMutex, "No mutex associated with this wrapper!");
-    MOZ_ASSERT(sqlite3_mutex_notheld(mMutex),
+    MOZ_ASSERT(::sqlite3_mutex_notheld(mMutex),
                "Mutex is held, but we expect it to not be!");
   }
-#endif  
 
  private:
   sqlite3_mutex* mMutex;
