@@ -47,10 +47,14 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 
+
+
+
+
 const TIPS = {
   NONE: "",
-  ONBOARD: "onboard",
-  REDIRECT: "redirect",
+  ONBOARD: "searchTip_onboard",
+  REDIRECT: "searchTip_redirect",
 };
 
 
@@ -92,16 +96,23 @@ class ProviderSearchTips extends UrlbarProvider {
 
     
     
-    this.disableTipsForCurrentSession = false;
-
-    if (
-      UrlbarPrefs.get("searchTips.onboard.shownCount") >= MAX_SHOWN_COUNT &&
-      UrlbarPrefs.get("searchTips.redirect.shownCount") >= MAX_SHOWN_COUNT
-    ) {
-      this.disableTipsForCurrentSession = true;
+    this.disableTipsForCurrentSession = true;
+    for (let tip of Object.values(TIPS)) {
+      if (tip && UrlbarPrefs.get(`tipShownCount.${tip}`) < MAX_SHOWN_COUNT) {
+        this.disableTipsForCurrentSession = false;
+        break;
+      }
     }
+
     
     this.showedTipTypeInCurrentEngagement = TIPS.NONE;
+  }
+
+  
+
+
+  get TIP_TYPE() {
+    return TIPS;
   }
 
   get PRIORITY() {
@@ -171,6 +182,7 @@ class ProviderSearchTips extends UrlbarProvider {
       UrlbarUtils.RESULT_TYPE.TIP,
       UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
       {
+        type: tip,
         buttonTextData: { id: "urlbar-search-tips-confirm" },
         icon: defaultEngine.iconURI.spec,
       }
@@ -200,6 +212,8 @@ class ProviderSearchTips extends UrlbarProvider {
     if (!this.queries.has(queryContext)) {
       return;
     }
+
+    Services.telemetry.keyedScalarAdd("urlbar.tips", `${tip}-shown`, 1);
 
     addCallback(this, result);
     this.queries.delete(queryContext);
@@ -243,20 +257,10 @@ class ProviderSearchTips extends UrlbarProvider {
       
       
       
-      switch (this.showedTipTypeInCurrentEngagement) {
-        case TIPS.ONBOARD:
-          Services.prefs.setIntPref(
-            "browser.urlbar.searchTips.onboard.shownCount",
-            MAX_SHOWN_COUNT
-          );
-          break;
-        case TIPS.REDIRECT:
-          Services.prefs.setIntPref(
-            "browser.urlbar.searchTips.redirect.shownCount",
-            MAX_SHOWN_COUNT
-          );
-          break;
-      }
+      Services.prefs.setIntPref(
+        `browser.urlbar.tipShownCount.${this.showedTipTypeInCurrentEngagement}`,
+        MAX_SHOWN_COUNT
+      );
     }
     this.showedTipTypeInCurrentEngagement = TIPS.NONE;
   }
@@ -314,15 +318,12 @@ class ProviderSearchTips extends UrlbarProvider {
 
     
     let tip;
-    let shownCountPrefName;
     let isNewtab = ["about:newtab", "about:home"].includes(urlStr);
     let isSearchHomepage = !isNewtab && (await isDefaultEngineHomepage(urlStr));
     if (isNewtab) {
       tip = TIPS.ONBOARD;
-      shownCountPrefName = "searchTips.onboard.shownCount";
     } else if (isSearchHomepage) {
       tip = TIPS.REDIRECT;
-      shownCountPrefName = "searchTips.redirect.shownCount";
     } else {
       
       return;
@@ -334,7 +335,7 @@ class ProviderSearchTips extends UrlbarProvider {
 
     
     
-    let shownCount = UrlbarPrefs.get(shownCountPrefName);
+    let shownCount = UrlbarPrefs.get(`tipShownCount.${tip}`);
     if (shownCount >= MAX_SHOWN_COUNT && !ignoreShowLimits) {
       return;
     }
@@ -346,7 +347,7 @@ class ProviderSearchTips extends UrlbarProvider {
 
     
     Services.prefs.setIntPref(
-      `browser.urlbar.${shownCountPrefName}`,
+      `browser.urlbar.tipShownCount.${tip}`,
       shownCount + 1
     );
 

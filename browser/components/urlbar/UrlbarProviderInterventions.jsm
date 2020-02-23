@@ -32,26 +32,30 @@ XPCOMUtils.defineLazyGetter(this, "logger", () =>
 XPCOMUtils.defineLazyGetter(this, "appUpdater", () => new AppUpdater());
 
 
+
+
+
+
 const TIPS = {
   NONE: "",
-  CLEAR: "clear",
-  REFRESH: "refresh",
+  CLEAR: "intervention_clear",
+  REFRESH: "intervention_refresh",
 
   
   
-  UPDATE_ASK: "update_ask",
+  UPDATE_ASK: "intervention_update_ask",
 
   
   
-  UPDATE_REFRESH: "update_refresh",
+  UPDATE_REFRESH: "intervention_update_refresh",
 
   
   
-  UPDATE_RESTART: "update_restart",
+  UPDATE_RESTART: "intervention_update_restart",
 
   
   
-  UPDATE_WEB: "update_web",
+  UPDATE_WEB: "intervention_update_web",
 };
 
 const EN_LOCALE_MATCH = /^en(-.*)$/;
@@ -434,6 +438,8 @@ class ProviderInterventions extends UrlbarProvider {
     
     this.currentTip = TIPS.NONE;
 
+    this.tipsShownInCurrentEngagement = new Set();
+
     
     XPCOMUtils.defineLazyGetter(this, "queryScorer", () => {
       let queryScorer = new QueryScorer({
@@ -451,6 +457,13 @@ class ProviderInterventions extends UrlbarProvider {
       }
       return queryScorer;
     });
+  }
+
+  
+
+
+  get TIP_TYPE() {
+    return TIPS;
   }
 
   
@@ -585,6 +598,8 @@ class ProviderInterventions extends UrlbarProvider {
       return;
     }
 
+    this.tipsShownInCurrentEngagement.add(this.currentTip);
+
     addCallback(this, result);
     this.queries.delete(queryContext);
   }
@@ -630,6 +645,15 @@ class ProviderInterventions extends UrlbarProvider {
         );
         break;
     }
+  }
+
+  onEngagement(isPrivate, state) {
+    if (["engagement", "abandonment"].includes(state)) {
+      for (let tip of this.tipsShownInCurrentEngagement) {
+        Services.telemetry.keyedScalarAdd("urlbar.tips", `${tip}-shown`, 1);
+      }
+    }
+    this.tipsShownInCurrentEngagement.clear();
   }
 
   

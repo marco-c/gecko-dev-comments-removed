@@ -32,7 +32,7 @@ add_task(async function test() {
   
   let downloadTab = await doUpdateTest({
     searchString: SEARCH_STRINGS.UPDATE,
-    tip: TIPS.UPDATE_WEB,
+    tip: UrlbarProviderInterventions.TIP_TYPE.UPDATE_WEB,
     title: /^Get the latest .+ browser\.$/,
     button: "Download Now",
     awaitCallback() {

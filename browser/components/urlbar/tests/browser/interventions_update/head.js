@@ -29,17 +29,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 
-const TIPS = {
-  NONE: "",
-  CLEAR: "clear",
-  REFRESH: "refresh",
-  UPDATE_RESTART: "update_restart",
-  UPDATE_ASK: "update_ask",
-  UPDATE_REFRESH: "update_refresh",
-  UPDATE_WEB: "update_web",
-};
-
-
 const SEARCH_STRINGS = {
   CLEAR: "firefox history",
   REFRESH: "firefox slow",
@@ -256,6 +245,21 @@ async function doUpdateTest({
 
   
   let values = await Promise.all([awaitCallback(), pickTip()]);
+
+  
+  const scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
+  TelemetryTestUtils.assertKeyedScalar(
+    scalars,
+    "urlbar.tips",
+    `${tip}-shown`,
+    1
+  );
+  TelemetryTestUtils.assertKeyedScalar(
+    scalars,
+    "urlbar.tips",
+    `${tip}-picked`,
+    1
+  );
 
   return values[0] || null;
 }
