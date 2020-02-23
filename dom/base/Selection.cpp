@@ -1801,9 +1801,9 @@ void Selection::RemoveAllRanges(ErrorResult& aRv) {
   RefPtr<nsFrameSelection> frameSelection = mFrameSelection;
   frameSelection->ClearTableCellSelection();
 
+  RefPtr<Selection> kungFuDeathGrip{this};
   
-  
-  result = frameSelection->NotifySelectionListeners(GetType());
+  result = NotifySelectionListeners();
 
   
   
@@ -1848,6 +1848,7 @@ void Selection::AddRangeAndSelectFramesAndNotifyListeners(nsRange& aRange,
   }
 
   
+  
   RefPtr<Selection> kungFuDeathGrip(this);
 
   
@@ -1889,9 +1890,7 @@ void Selection::AddRangeAndSelectFramesAndNotifyListeners(nsRange& aRange,
   SelectFrames(presContext, range, true);
 
   
-  
-  RefPtr<nsFrameSelection> frameSelection = mFrameSelection;
-  result = frameSelection->NotifySelectionListeners(GetType());
+  result = NotifySelectionListeners();
   if (NS_FAILED(result)) {
     aRv.Throw(result);
   }
@@ -1971,10 +1970,9 @@ void Selection::RemoveRangeAndUnselectFramesAndNotifyListeners(
 
   if (!mFrameSelection) return;  
 
+  RefPtr<Selection> kungFuDeathGrip{this};
   
-  
-  RefPtr<nsFrameSelection> frameSelection = mFrameSelection;
-  rv = frameSelection->NotifySelectionListeners(GetType());
+  rv = NotifySelectionListeners();
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
   }
@@ -2095,9 +2093,9 @@ void Selection::Collapse(const RawRangeBoundary& aPoint, ErrorResult& aRv) {
   SetAnchorFocusRange(0);
   SelectFrames(presContext, range, true);
 
+  RefPtr<Selection> kungFuDeathGrip{this};
   
-  
-  result = frameSelection->NotifySelectionListeners(GetType());
+  result = NotifySelectionListeners();
   if (NS_FAILED(result)) {
     aRv.Throw(result);
   }
@@ -2567,10 +2565,9 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
          nsAtomCString(content->NodeInfo()->NameAtom()).get(), aOffset);
 #endif
 
+  RefPtr<Selection> kungFuDeathGrip{this};
   
-  
-  RefPtr<nsFrameSelection> frameSelection = mFrameSelection;
-  res = frameSelection->NotifySelectionListeners(GetType());
+  res = NotifySelectionListeners();
   if (NS_FAILED(res)) {
     aRv.Throw(res);
   }
