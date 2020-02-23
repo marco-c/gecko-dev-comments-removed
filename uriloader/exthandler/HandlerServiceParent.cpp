@@ -170,18 +170,13 @@ NS_IMETHODIMP ProxyMIMEInfo::SetFileExtensions(const nsACString& aExtensions) {
 
 NS_IMETHODIMP ProxyMIMEInfo::ExtensionExists(const nsACString& aExtension,
                                              bool* _retval) {
-  *_retval = mProxyHandlerInfo->Extensions().Contains(
-      aExtension, nsCaseInsensitiveCStringArrayComparator());
+  *_retval = mProxyHandlerInfo->Extensions().Contains(aExtension);
   return NS_OK;
 }
 
 
 NS_IMETHODIMP ProxyMIMEInfo::AppendExtension(const nsACString& aExtension) {
-  if (!aExtension.IsEmpty() &&
-      !mProxyHandlerInfo->Extensions().Contains(
-          aExtension, nsCaseInsensitiveCStringArrayComparator())) {
-    mProxyHandlerInfo->Extensions().AppendElement(aExtension);
-  }
+  mProxyHandlerInfo->Extensions().AppendElement(aExtension);
   return NS_OK;
 }
 
@@ -190,7 +185,6 @@ NS_IMETHODIMP ProxyMIMEInfo::GetPrimaryExtension(
     nsACString& aPrimaryExtension) {
   const auto& extensions = mProxyHandlerInfo->Extensions();
   if (extensions.IsEmpty()) {
-    aPrimaryExtension.Truncate();
     return NS_ERROR_FAILURE;
   }
   aPrimaryExtension = extensions[0];
