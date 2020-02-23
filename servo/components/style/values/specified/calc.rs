@@ -287,6 +287,19 @@ impl PartialOrd for CalcNode {
 }
 
 impl CalcNode {
+    fn is_simple_negative(&self) -> bool {
+        match *self {
+            Self::Length(ref l) => l.is_negative(),
+            Self::Percentage(n) |
+            Self::Number(n) => n < 0.,
+            Self::Angle(ref a) => a.degrees() < 0.,
+            Self::Time(ref t) => t.seconds() < 0.,
+            Self::MinMax(..) |
+            Self::Sum(..) |
+            Self::Clamp { .. } => false,
+        }
+    }
+
     fn negate(&mut self) {
         self.mul_by(-1.);
     }
@@ -909,7 +922,7 @@ impl CalcNode {
         })
     }
 
-    
+    /// Convenience parsing function for integers.
     pub fn parse_integer<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -918,7 +931,7 @@ impl CalcNode {
         Self::parse_number(context, input, function).map(|n| n.round() as CSSInteger)
     }
 
-    
+    /// Convenience parsing function for `<length> | <percentage>`.
     pub fn parse_length_or_percentage<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -930,7 +943,7 @@ impl CalcNode {
             .map_err(|()| input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
     }
 
-    
+    /// Convenience parsing function for percentages.
     pub fn parse_percentage<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -941,7 +954,7 @@ impl CalcNode {
             .map_err(|()| input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
     }
 
-    
+    /// Convenience parsing function for `<length>`.
     pub fn parse_length<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -953,7 +966,7 @@ impl CalcNode {
             .map_err(|()| input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
     }
 
-    
+    /// Convenience parsing function for `<number>`.
     pub fn parse_number<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -964,7 +977,7 @@ impl CalcNode {
             .map_err(|()| input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
     }
 
-    
+    /// Convenience parsing function for `<angle>`.
     pub fn parse_angle<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -975,7 +988,7 @@ impl CalcNode {
             .map_err(|()| input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
     }
 
-    
+    /// Convenience parsing function for `<time>`.
     pub fn parse_time<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -986,7 +999,7 @@ impl CalcNode {
             .map_err(|()| input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
     }
 
-    
+    /// Convenience parsing function for `<number>` or `<percentage>`.
     pub fn parse_number_or_percentage<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -1004,7 +1017,7 @@ impl CalcNode {
         }
     }
 
-    
+    /// Convenience parsing function for `<number>` or `<angle>`.
     pub fn parse_angle_or_number<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -1021,5 +1034,94 @@ impl CalcNode {
             Ok(value) => Ok(AngleOrNumber::Number { value }),
             Err(()) => Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError)),
         }
+    }
+
+    fn to_css_impl<W>(&self, dest: &mut CssWriter<W>, is_outermost: bool) -> fmt::Result
+    where
+        W: Write,
+    {
+        let write_closing_paren = match *self {
+            Self::MinMax(_, op) => {
+                dest.write_str(match op {
+                    MinMaxOp::Max => "max(",
+                    MinMaxOp::Min => "min(",
+                })?;
+                true
+            },
+            Self::Clamp { .. } => {
+                dest.write_str("clamp(")?;
+                true
+            },
+            _ => {
+                if is_outermost {
+                    dest.write_str("calc(")?;
+                }
+                is_outermost
+            },
+        };
+
+        match *self {
+            Self::MinMax(ref children, _) => {
+                let mut first = true;
+                for child in &**children {
+                    if !first {
+                        dest.write_str(", ")?;
+                    }
+                    first = false;
+                    child.to_css_impl(dest, false)?;
+                }
+            },
+            Self::Sum(ref children) => {
+                let mut first = true;
+                for child in &**children {
+                    if !first {
+                        if child.is_simple_negative() {
+                            dest.write_str(" - ")?;
+                            let mut c = child.clone();
+                            c.negate();
+                            c.to_css(dest)?;
+                        } else {
+                            dest.write_str(" + ")?;
+                            child.to_css(dest)?;
+                        }
+                    } else {
+                        first = false;
+                        child.to_css_impl(dest, false)?;
+                    }
+                }
+            },
+            Self::Clamp {
+                ref min,
+                ref center,
+                ref max,
+            } => {
+                min.to_css_impl(dest, false)?;
+                dest.write_str(", ")?;
+                center.to_css_impl(dest, false)?;
+                dest.write_str(", ")?;
+                max.to_css_impl(dest, false)?;
+            },
+            Self::Length(ref l) => l.to_css(dest)?,
+            Self::Number(ref n) => n.to_css(dest)?,
+            Self::Percentage(p) => crate::values::serialize_percentage(p, dest)?,
+            Self::Angle(ref a) => a.to_css(dest)?,
+            Self::Time(ref t) => t.to_css(dest)?,
+
+        }
+
+        if write_closing_paren {
+            dest.write_str(")")?;
+        }
+        Ok(())
+    }
+}
+
+impl ToCss for CalcNode {
+    
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        self.to_css_impl(dest,  true)
     }
 }
