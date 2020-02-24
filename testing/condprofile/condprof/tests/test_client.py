@@ -4,12 +4,17 @@ import tempfile
 import shutil
 import responses
 import re
+import json
 
 from condprof.client import get_profile, ROOT_URL
+from condprof.util import _DEFAULT_SERVER
+
 
 PROFILE = re.compile(ROOT_URL + "/.*/.*tgz")
 with open(os.path.join(os.path.dirname(__file__), "profile.tgz"), "rb") as f:
     PROFILE_DATA = f.read()
+SECRETS = re.compile(_DEFAULT_SERVER + "/.*")
+SECRETS_PROXY = re.compile("http://taskcluster/secrets/.*")
 
 
 class TestClient(unittest.TestCase):
@@ -35,6 +40,17 @@ class TestClient(unittest.TestCase):
             status=200,
         )
 
+        secret = {"secret": {"username": "user", "password": "pass"}}
+        secret = json.dumps(secret)
+        for pattern in (SECRETS, SECRETS_PROXY):
+            responses.add(
+                responses.GET,
+                pattern,
+                body=secret,
+                headers={"content-length": str(len(secret))},
+                status=200,
+            )
+
     def tearDown(self):
         shutil.rmtree(self.target)
         shutil.rmtree(self.download_dir)
@@ -53,7 +69,8 @@ class TestClient(unittest.TestCase):
         self.assertEqual(len(os.listdir(download_dir)), num_elmts + 2)
 
         
-        self.assertEqual(len(responses.calls), 2)
+        
+        self.assertTrue(len(responses.calls) >= 2)
 
         
         responses.calls.reset()
@@ -64,6 +81,7 @@ class TestClient(unittest.TestCase):
         
         self.assertEqual(len(os.listdir(download_dir)), num_elmts + 2)
 
+        
         
         self.assertEqual(len(responses.calls), 1)
 
