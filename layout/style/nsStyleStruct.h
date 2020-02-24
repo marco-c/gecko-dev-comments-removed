@@ -1627,24 +1627,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset {
   mozilla::StyleTransformOrigin mWindowTransformOrigin;
 };
 
-struct nsCursorImage {
-  bool mHaveHotspot;
-  float mHotspotX, mHotspotY;
-  mozilla::StyleComputedImageUrl mImage;
-
-  explicit nsCursorImage(const mozilla::StyleComputedImageUrl&);
-  nsCursorImage(const nsCursorImage&);
-
-  nsCursorImage& operator=(const nsCursorImage& aOther);
-
-  bool operator==(const nsCursorImage& aOther) const;
-  bool operator!=(const nsCursorImage& aOther) const {
-    return !(*this == aOther);
-  }
-
-  imgRequestProxy* GetImage() const { return mImage.GetImage(); }
-};
-
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUI {
   explicit nsStyleUI(const mozilla::dom::Document&);
   nsStyleUI(const nsStyleUI& aOther);
@@ -1660,8 +1642,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUI {
   mozilla::StyleUserFocus mUserFocus;    
   mozilla::StylePointerEvents mPointerEvents;
 
-  mozilla::StyleCursorKind mCursor;
-  nsTArray<nsCursorImage> mCursorImages;  
+  mozilla::StyleCursor mCursor;
 
   mozilla::StyleColorOrAuto mCaretColor;
   mozilla::StyleScrollbarColor mScrollbarColor;

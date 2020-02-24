@@ -13,10 +13,10 @@ pub use crate::values::specified::ui::CursorKind;
 pub use crate::values::specified::ui::{MozForceBrokenImageIcon, UserSelect};
 
 
-pub type Cursor = generics::Cursor<CursorImage>;
+pub type Cursor = generics::GenericCursor<CursorImage>;
 
 
-pub type CursorImage = generics::CursorImage<ComputedImageUrl, Number>;
+pub type CursorImage = generics::GenericCursorImage<ComputedImageUrl, Number>;
 
 
 pub type ScrollbarColor = generics::GenericScrollbarColor<Color>;

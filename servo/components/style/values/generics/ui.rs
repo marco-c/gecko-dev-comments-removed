@@ -21,19 +21,22 @@ use values::specified::ui::CursorKind;
     ToResolvedValue,
     ToShmem,
 )]
-pub struct Cursor<Image> {
+#[repr(C)]
+pub struct GenericCursor<Image> {
     
-    pub images: Box<[Image]>,
+    pub images: crate::OwnedSlice<Image>,
     
     pub keyword: CursorKind,
 }
+
+pub use self::GenericCursor as Cursor;
 
 impl<Image> Cursor<Image> {
     
     #[inline]
     pub fn auto() -> Self {
         Self {
-            images: vec![].into_boxed_slice(),
+            images: Default::default(),
             keyword: CursorKind::Auto,
         }
     }
@@ -63,12 +66,19 @@ impl<Image: ToCss> ToCss for Cursor<Image> {
     ToResolvedValue,
     ToShmem,
 )]
-pub struct CursorImage<ImageUrl, Number> {
+#[repr(C)]
+pub struct GenericCursorImage<ImageUrl, Number> {
     
     pub url: ImageUrl,
     
-    pub hotspot: Option<(Number, Number)>,
+    pub has_hotspot: bool,
+    
+    pub hotspot_x: Number,
+    
+    pub hotspot_y: Number,
 }
+
+pub use self::GenericCursorImage as CursorImage;
 
 impl<ImageUrl: ToCss, Number: ToCss> ToCss for CursorImage<ImageUrl, Number> {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
@@ -76,11 +86,11 @@ impl<ImageUrl: ToCss, Number: ToCss> ToCss for CursorImage<ImageUrl, Number> {
         W: Write,
     {
         self.url.to_css(dest)?;
-        if let Some((ref x, ref y)) = self.hotspot {
+        if self.has_hotspot {
             dest.write_str(" ")?;
-            x.to_css(dest)?;
+            self.hotspot_x.to_css(dest)?;
             dest.write_str(" ")?;
-            y.to_css(dest)?;
+            self.hotspot_y.to_css(dest)?;
         }
         Ok(())
     }

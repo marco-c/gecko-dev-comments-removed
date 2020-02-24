@@ -22,13 +22,10 @@ use crate::gecko_bindings::bindings::Gecko_CopyConstruct_${style_struct.gecko_ff
 use crate::gecko_bindings::bindings::Gecko_Destroy_${style_struct.gecko_ffi_name};
 % endfor
 use crate::gecko_bindings::bindings::Gecko_CopyCounterStyle;
-use crate::gecko_bindings::bindings::Gecko_CopyCursorArrayFrom;
 use crate::gecko_bindings::bindings::Gecko_CopyFontFamilyFrom;
-use crate::gecko_bindings::bindings::Gecko_CopyImageValueFrom;
 use crate::gecko_bindings::bindings::Gecko_EnsureImageLayersLength;
 use crate::gecko_bindings::bindings::Gecko_nsStyleFont_SetLang;
 use crate::gecko_bindings::bindings::Gecko_nsStyleFont_CopyLangFrom;
-use crate::gecko_bindings::bindings::Gecko_SetNullImageValue;
 use crate::gecko_bindings::structs;
 use crate::gecko_bindings::structs::nsCSSPropertyID;
 use crate::gecko_bindings::structs::mozilla::PseudoStyleType;
@@ -43,7 +40,6 @@ use std::mem::{forget, MaybeUninit};
 use std::{cmp, ops, ptr};
 use crate::values::{self, CustomIdent, Either, KeyframesName, None_};
 use crate::values::computed::{Percentage, TransitionProperty};
-use crate::values::computed::url::ComputedImageUrl;
 use crate::values::computed::BorderStyle;
 use crate::values::computed::font::FontSize;
 use crate::values::generics::column::ColumnCount;
@@ -777,8 +773,7 @@ fn static_assert() {
                                      for x in CORNERS]) %>
 
 <%self:impl_trait style_struct_name="Border"
-                  skip_longhands="${skip_border_longhands} border-image-source
-                                  border-image-repeat">
+                  skip_longhands="${skip_border_longhands} border-image-repeat">
     % for side in SIDES:
     pub fn set_border_${side.ident}_style(&mut self, v: BorderStyle) {
         self.gecko.mBorderStyle[${side.index}] = v;
@@ -846,25 +841,6 @@ fn static_assert() {
                                "mBorderRadius",
                                corner) %>
     % endfor
-
-    pub fn set_border_image_source(&mut self, image: longhands::border_image_source::computed_value::T) {
-        self.gecko.mBorderImageSource.set(image);
-    }
-
-    pub fn copy_border_image_source_from(&mut self, other: &Self) {
-        unsafe {
-            Gecko_CopyImageValueFrom(&mut self.gecko.mBorderImageSource,
-                                     &other.gecko.mBorderImageSource);
-        }
-    }
-
-    pub fn reset_border_image_source(&mut self, other: &Self) {
-        self.copy_border_image_source_from(other)
-    }
-
-    pub fn clone_border_image_source(&self) -> longhands::border_image_source::computed_value::T {
-        unsafe { self.gecko.mBorderImageSource.to_image() }
-    }
 
     <%
     border_image_repeat_keywords = ["Stretch", "Repeat", "Round", "Space"]
@@ -1455,7 +1431,7 @@ fn static_assert() {
                           animation-iteration-count animation-timing-function
                           clear transition-duration transition-delay
                           transition-timing-function transition-property
-                          shape-outside -webkit-line-clamp""" %>
+                          -webkit-line-clamp""" %>
 <%self:impl_trait style_struct_name="Box" skip_longhands="${skip_box_longhands}">
     #[inline]
     pub fn set_display(&mut self, v: longhands::display::computed_value::T) {
@@ -1714,8 +1690,6 @@ fn static_assert() {
     ${impl_copy_animation_value('iteration_count', 'IterationCount')}
 
     ${impl_animation_timing_function()}
-
-    <% impl_shape_source("shape_outside", "mShapeOutside") %>
 
     #[allow(non_snake_case)]
     pub fn set__webkit_line_clamp(&mut self, v: longhands::_webkit_line_clamp::computed_value::T) {
@@ -1998,7 +1972,7 @@ fn static_assert() {
             for (layer, other) in self.gecko.${image_layers_field}.mLayers.iter_mut()
                                       .zip(other.gecko.${image_layers_field}.mLayers.iter())
                                       .take(count as usize) {
-                Gecko_CopyImageValueFrom(&mut layer.mImage, &other.mImage);
+                layer.mImage = other.mImage.clone();
             }
             self.gecko.${image_layers_field}.mImageCount = count;
         }
@@ -2018,20 +1992,17 @@ fn static_assert() {
         let images = images.into_iter();
 
         unsafe {
-            // Prevent leaking of the last elements we did set
-            for image in &mut self.gecko.${image_layers_field}.mLayers {
-                Gecko_SetNullImageValue(&mut image.mImage)
-            }
-            // XXXManishearth clear mSourceURI for masks
-            Gecko_EnsureImageLayersLength(&mut self.gecko.${image_layers_field}, images.len(),
-                                          LayerType::${shorthand.title()});
+            Gecko_EnsureImageLayersLength(
+                &mut self.gecko.${image_layers_field},
+                images.len(),
+                LayerType::${shorthand.title()},
+            );
         }
 
         self.gecko.${image_layers_field}.mImageCount = images.len() as u32;
-
         for (image, geckoimage) in images.zip(self.gecko.${image_layers_field}
                                                   .mLayers.iter_mut()) {
-            geckoimage.mImage.set(image)
+            geckoimage.mImage = image;
         }
     }
 
@@ -2039,7 +2010,7 @@ fn static_assert() {
         longhands::${shorthand}_image::computed_value::List(
             self.gecko.${image_layers_field}.mLayers.iter()
                 .take(self.gecko.${image_layers_field}.mImageCount as usize)
-                .map(|layer| unsafe { layer.mImage.to_image() })
+                .map(|layer| layer.mImage.clone())
                 .collect()
         )
     }
@@ -2227,86 +2198,8 @@ fn static_assert() {
     }
 </%self:impl_trait>
 
-// Set SVGPathData to StyleShapeSource.
-fn set_style_svg_path(
-    shape_source: &mut structs::mozilla::StyleShapeSource,
-    servo_path: values::specified::svg_path::SVGPathData,
-    fill: values::generics::basic_shape::FillRule,
-) {
-    // Setup path.
-    unsafe {
-        bindings::Gecko_SetToSVGPath(
-            shape_source,
-            servo_path.0.forget(),
-            fill,
-        );
-    }
-}
-
-<%def name="impl_shape_source(ident, gecko_ffi_name)">
-    pub fn set_${ident}(&mut self, v: longhands::${ident}::computed_value::T) {
-        use crate::values::generics::basic_shape::ShapeSource;
-        use crate::gecko_bindings::structs::StyleShapeSourceType;
-        use crate::gecko_bindings::structs::StyleGeometryBox;
-
-        let ref mut ${ident} = self.gecko.${gecko_ffi_name};
-
-        // clean up existing struct.
-        unsafe { bindings::Gecko_DestroyShapeSource(${ident}) };
-
-        ${ident}.mType = StyleShapeSourceType::None;
-
-        match v {
-            ShapeSource::None => {} // don't change the type
-            ShapeSource::ImageOrUrl(image) => {
-                % if ident == "clip_path":
-                use crate::values::generics::image::Image;
-
-                let image = Image::Url(ComputedImageUrl(image));
-                % endif
-                unsafe {
-                    bindings::Gecko_NewShapeImage(${ident});
-                    let style_image = &mut *${ident}.__bindgen_anon_1.mShapeImage.as_mut().mPtr;
-                    style_image.set(image);
-                }
-            }
-            ShapeSource::Box(reference) => {
-                ${ident}.mReferenceBox = reference.into();
-                ${ident}.mType = StyleShapeSourceType::Box;
-            }
-            ShapeSource::Path(p) => set_style_svg_path(${ident}, p.path, p.fill),
-            ShapeSource::Shape(servo_shape, maybe_box) => {
-                unsafe {
-                    ${ident}.__bindgen_anon_1.mBasicShape.as_mut().mPtr =
-                        Box::into_raw(servo_shape);
-                }
-                ${ident}.mReferenceBox =
-                    maybe_box.map(Into::into).unwrap_or(StyleGeometryBox::NoBox);
-                ${ident}.mType = StyleShapeSourceType::Shape;
-            }
-        }
-
-    }
-
-    pub fn clone_${ident}(&self) -> longhands::${ident}::computed_value::T {
-        (&self.gecko.${gecko_ffi_name}).into()
-    }
-
-    pub fn copy_${ident}_from(&mut self, other: &Self) {
-        use crate::gecko_bindings::bindings::Gecko_CopyShapeSourceFrom;
-        unsafe {
-            Gecko_CopyShapeSourceFrom(&mut self.gecko.${gecko_ffi_name}, &other.gecko.${gecko_ffi_name});
-        }
-    }
-
-    pub fn reset_${ident}(&mut self, other: &Self) {
-        self.copy_${ident}_from(other)
-    }
-</%def>
-
 <% skip_svg_longhands = """
 mask-mode mask-repeat mask-clip mask-origin mask-composite mask-position-x mask-position-y mask-size mask-image
-clip-path
 """
 %>
 <%self:impl_trait style_struct_name="SVG"
@@ -2315,7 +2208,6 @@ clip-path
     <% impl_common_image_layer_properties("mask") %>
     <% impl_simple_image_array_property("mode", "mask", "mMask", "mMaskMode", "SVG") %>
     <% impl_simple_image_array_property("composite", "mask", "mMask", "mComposite", "SVG") %>
-    <% impl_shape_source("clip_path", "mClipPath") %>
 </%self:impl_trait>
 
 <%self:impl_trait style_struct_name="InheritedSVG"
@@ -2370,61 +2262,7 @@ clip-path
     }
 </%self:impl_trait>
 
-<%self:impl_trait style_struct_name="InheritedUI" skip_longhands="cursor">
-    pub fn set_cursor(&mut self, v: longhands::cursor::computed_value::T) {
-        self.gecko.mCursor = v.keyword;
-        unsafe {
-            bindings::Gecko_SetCursorArrayCapacity(&mut *self.gecko, v.images.len());
-        }
-        for i in 0..v.images.len() {
-            unsafe {
-                bindings::Gecko_AppendCursorImage(&mut *self.gecko, &v.images[i].url);
-            }
-
-            match v.images[i].hotspot {
-                Some((x, y)) => {
-                    self.gecko.mCursorImages[i].mHaveHotspot = true;
-                    self.gecko.mCursorImages[i].mHotspotX = x;
-                    self.gecko.mCursorImages[i].mHotspotY = y;
-                },
-                _ => {
-                    self.gecko.mCursorImages[i].mHaveHotspot = false;
-                }
-            }
-        }
-    }
-
-    pub fn copy_cursor_from(&mut self, other: &Self) {
-        self.gecko.mCursor = other.gecko.mCursor;
-        unsafe {
-            Gecko_CopyCursorArrayFrom(&mut *self.gecko, &*other.gecko);
-        }
-    }
-
-    pub fn reset_cursor(&mut self, other: &Self) {
-        self.copy_cursor_from(other)
-    }
-
-    pub fn clone_cursor(&self) -> longhands::cursor::computed_value::T {
-        use crate::values::computed::ui::CursorImage;
-
-        let keyword = self.gecko.mCursor;
-
-        let images = self.gecko.mCursorImages.iter().map(|gecko_cursor_image| {
-            let url = gecko_cursor_image.mImage.clone();
-
-            let hotspot =
-                if gecko_cursor_image.mHaveHotspot {
-                    Some((gecko_cursor_image.mHotspotX, gecko_cursor_image.mHotspotY))
-                } else {
-                    None
-                };
-
-            CursorImage { url, hotspot }
-        }).collect::<Vec<_>>().into_boxed_slice();
-
-        longhands::cursor::computed_value::T { images, keyword }
-    }
+<%self:impl_trait style_struct_name="InheritedUI">
 </%self:impl_trait>
 
 <%self:impl_trait style_struct_name="Column"
