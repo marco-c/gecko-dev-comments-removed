@@ -1432,6 +1432,11 @@ void SVGElement::DidChangeLength(uint8_t aAttrEnum,
 }
 
 void SVGElement::DidAnimateLength(uint8_t aAttrEnum) {
+  
+  
+  
+  ClearAnyCachedPath();
+
   if (SVGGeometryProperty::ElementMapsLengthsToStyle(this)) {
     nsCSSPropertyID propId =
         SVGGeometryProperty::AttrEnumToCSSPropId(this, aAttrEnum);
@@ -1440,8 +1445,6 @@ void SVGElement::DidAnimateLength(uint8_t aAttrEnum) {
                                       GetLengthInfo().mLengths[aAttrEnum]);
     return;
   }
-
-  ClearAnyCachedPath();
 
   nsIFrame* frame = GetPrimaryFrame();
 
