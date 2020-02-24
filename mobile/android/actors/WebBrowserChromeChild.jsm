@@ -13,6 +13,7 @@ const { GeckoViewActorChild } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   E10SUtils: "resource://gre/modules/E10SUtils.jsm",
+  GeckoViewSettings: "resource://gre/modules/GeckoViewSettings.jsm",
 });
 
 var EXPORTED_SYMBOLS = ["WebBrowserChromeChild"];
@@ -40,6 +41,12 @@ class WebBrowserChromeChild extends GeckoViewActorChild {
     aCsp
   ) {
     debug`shouldLoadURI ${aURI.displaySpec}`;
+
+    if (!GeckoViewSettings.useMultiprocess) {
+      
+      
+      return true;
+    }
 
     if (!E10SUtils.shouldLoadURI(aDocShell, aURI, aHasPostData)) {
       E10SUtils.redirectLoad(
