@@ -3732,12 +3732,20 @@ mozilla::ipc::IPCResult ContentChild::RecvCrossProcessRedirect(
     nsHashPropertyBag::CopyFrom(bag, aArgs.properties());
   }
 
+  RefPtr<nsDocShellLoadState> loadState;
+  rv = nsDocShellLoadState::CreateFromPendingChannel(newChannel,
+                                                     getter_AddRefs(loadState));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return IPC_OK();
+  }
+  loadState->SetLoadFlags(aArgs.loadStateLoadFlags());
+
   RefPtr<ChildProcessChannelListener> processListener =
       ChildProcessChannelListener::GetSingleton();
   
-  processListener->OnChannelReady(
-      newChannel, aArgs.redirectIdentifier(), std::move(aArgs.redirects()),
-      aArgs.loadStateLoadFlags(), aArgs.timing().refOr(nullptr));
+  processListener->OnChannelReady(loadState, aArgs.redirectIdentifier(),
+                                  std::move(aArgs.redirects()),
+                                  aArgs.timing().refOr(nullptr));
 
   
   return IPC_OK();
