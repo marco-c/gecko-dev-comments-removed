@@ -61,10 +61,7 @@ const test = new SearchConfigTest({
         },
       },
       {
-        
-        regions: availableRegions.filter(
-          region => !["by", "kz", "ru", "tr"].includes(region)
-        ),
+        regions: ["au", "be", "ca", "ch", "gb", "ie", "nl", "us"],
         locales: {
           matches: ["en-US"],
         },
@@ -279,5 +276,10 @@ add_task(async function test_searchConfig_ebay() {
   
   
   test._config.available.included[0].locales.matches.push("unknown");
+  
+  
+  test._config.available.included[1].regions = availableRegions.filter(
+    region => !["by", "kz", "ru", "tr"].includes(region)
+  );
   await test.run(false);
 });
