@@ -69,7 +69,7 @@ class SHistoryChild final : public PSHistoryChild,
 
   ~SHistoryChild() = default;
 
-  nsresult LoadURI(LoadSHEntryData& aLoadData);
+  nsresult LoadURI(nsTArray<LoadSHEntryData>& aLoadData);
 
   
   mozilla::UniquePtr<HistoryTracker> mHistoryTracker;
