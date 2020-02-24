@@ -152,13 +152,16 @@ impl<C: Parse, U: Parse> Parse for SVGPaint<C, U> {
     ToResolvedValue,
     ToShmem,
 )]
-pub enum SVGLength<L> {
+#[repr(C, u8)]
+pub enum GenericSVGLength<L> {
     
     LengthPercentage(L),
     
     #[animation(error)]
     ContextValue,
 }
+
+pub use self::GenericSVGLength as SVGLength;
 
 
 #[derive(

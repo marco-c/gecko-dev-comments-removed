@@ -417,15 +417,17 @@ void SVGGeometryFrame::NotifySVGChanged(uint32_t aFlags) {
   
 
   if (aFlags & COORD_CONTEXT_CHANGED) {
+    auto* geom = static_cast<SVGGeometryElement*>(GetContent());
     
     
     
     
     
-    if (static_cast<SVGGeometryElement*>(GetContent())
-            ->GeometryDependsOnCoordCtx() ||
-        StyleSVG()->mStrokeWidth.HasPercent()) {
-      static_cast<SVGGeometryElement*>(GetContent())->ClearAnyCachedPath();
+    const auto& strokeWidth = StyleSVG()->mStrokeWidth;
+    if (geom->GeometryDependsOnCoordCtx() ||
+        (strokeWidth.IsLengthPercentage() &&
+         strokeWidth.AsLengthPercentage().HasPercent())) {
+      geom->ClearAnyCachedPath();
       nsSVGUtils::ScheduleReflowSVG(this);
     }
   }

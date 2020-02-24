@@ -21,13 +21,13 @@ use style_traits::{StyleParseErrorKind, ToCss};
 pub type SVGPaint = generic::GenericSVGPaint<Color, SpecifiedUrl>;
 
 
-pub type SVGLength = generic::SVGLength<LengthPercentage>;
+pub type SVGLength = generic::GenericSVGLength<LengthPercentage>;
 
 
-pub type SVGWidth = generic::SVGLength<NonNegativeLengthPercentage>;
+pub type SVGWidth = generic::GenericSVGLength<NonNegativeLengthPercentage>;
 
 
-pub type SVGStrokeDashArray = generic::SVGStrokeDashArray<NonNegativeLengthPercentage>;
+pub type SVGStrokeDashArray = generic::GenericSVGStrokeDashArray<NonNegativeLengthPercentage>;
 
 
 #[cfg(feature = "gecko")]
