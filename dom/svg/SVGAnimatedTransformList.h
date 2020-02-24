@@ -46,7 +46,7 @@ class SVGAnimatedTransformList {
 
  public:
   SVGAnimatedTransformList()
-      : mIsAttrSet(false), mRequiresFrameReconstruction(true) {}
+      : mIsAttrSet(false), mCreatedOrRemovedOnLastChange(true) {}
 
   
 
@@ -104,8 +104,8 @@ class SVGAnimatedTransformList {
 
 
 
-  bool RequiresFrameReconstruction() const {
-    return mRequiresFrameReconstruction;
+  bool CreatedOrRemovedOnLastChange() const {
+    return mCreatedOrRemovedOnLastChange;
   }
 
   mozilla::UniquePtr<SMILAttr> ToSMILAttr(dom::SVGElement* aSVGElement);
@@ -120,7 +120,7 @@ class SVGAnimatedTransformList {
   nsAutoPtr<SVGTransformList> mAnimVal;
   bool mIsAttrSet;
   
-  bool mRequiresFrameReconstruction;
+  bool mCreatedOrRemovedOnLastChange;
 
   struct SMILAnimatedTransformList : public SMILAttr {
    public:

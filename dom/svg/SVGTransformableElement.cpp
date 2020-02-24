@@ -67,16 +67,16 @@ nsChangeHint SVGTransformableElement::GetAttributeChangeHint(
                  "Unknown modification type.");
       if (!mTransforms || !mTransforms->HasTransform()) {
         
+        
         isAdditionOrRemoval = true;
-      } else if (mTransforms->RequiresFrameReconstruction()) {
+      } else if (mTransforms->CreatedOrRemovedOnLastChange()) {
         
         isAdditionOrRemoval = true;
       }
     }
 
     if (isAdditionOrRemoval) {
-      
-      retval |= nsChangeHint_ReconstructFrame;
+      retval |= nsChangeHint_ComprehensiveAddOrRemoveTransform;
     } else {
       
       retval |= nsChangeHint_UpdatePostTransformOverflow |

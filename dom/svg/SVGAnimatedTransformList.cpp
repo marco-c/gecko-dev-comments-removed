@@ -62,14 +62,14 @@ nsresult SVGAnimatedTransformList::SetBaseValue(const SVGTransformList& aValue,
     mIsAttrSet = true;
     
     
-    mRequiresFrameReconstruction =
+    mCreatedOrRemovedOnLastChange =
         aSVGElement->GetPrimaryFrame() && !hadTransform;
   }
   return rv;
 }
 
 void SVGAnimatedTransformList::ClearBaseValue() {
-  mRequiresFrameReconstruction = !HasTransform();
+  mCreatedOrRemovedOnLastChange = !HasTransform();
 
   DOMSVGAnimatedTransformList* domWrapper =
       DOMSVGAnimatedTransformList::GetDOMWrapperIfExists(this);
@@ -122,6 +122,8 @@ nsresult SVGAnimatedTransformList::SetAnimValue(const SVGTransformList& aValue,
   } else {
     modType = MutationEvent_Binding::ADDITION;
   }
+  mCreatedOrRemovedOnLastChange =
+      modType == MutationEvent_Binding::ADDITION;
   aElement->DidAnimateTransformList(modType);
   return NS_OK;
 }
@@ -144,6 +146,8 @@ void SVGAnimatedTransformList::ClearAnimValue(SVGElement* aElement) {
   } else {
     modType = MutationEvent_Binding::REMOVAL;
   }
+  mCreatedOrRemovedOnLastChange =
+      modType == MutationEvent_Binding::REMOVAL;
   aElement->DidAnimateTransformList(modType);
 }
 
