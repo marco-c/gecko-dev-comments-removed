@@ -45,7 +45,7 @@ class StupidAllocator : public RegisterAllocator {
   uint32_t registerCount;
 
   
-  typedef uint32_t RegisterIndex;
+  using RegisterIndex = uint32_t;
 
   
   Vector<LDefinition*, 0, SystemAllocPolicy> virtualRegisters;

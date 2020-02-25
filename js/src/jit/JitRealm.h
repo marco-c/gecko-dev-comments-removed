@@ -120,10 +120,8 @@ class BaselineICFallbackCode {
 
 enum class DebugTrapHandlerKind { Interpreter, Compiler, Count };
 
-typedef void (*EnterJitCode)(void* code, unsigned argc, Value* argv,
-                             InterpreterFrame* fp, CalleeToken calleeToken,
-                             JSObject* envChain, size_t numStackValues,
-                             Value* vp);
+using EnterJitCode = void (*)(void*, unsigned int, Value*, InterpreterFrame*,
+                              CalleeToken, JSObject*, size_t, Value*);
 
 class JitcodeGlobalTable;
 
@@ -242,7 +240,12 @@ class JitRuntime {
   
   MainThreadData<uint64_t> disambiguationId_;
 
- private:
+#ifdef DEBUG
+  
+  
+  MainThreadData<uint32_t> disallowArbitraryCode_{false};
+#endif
+
   bool generateTrampolines(JSContext* cx);
   bool generateBaselineICFallbackCode(JSContext* cx);
 
@@ -298,7 +301,6 @@ class JitRuntime {
   MOZ_MUST_USE bool initialize(JSContext* cx);
 
   static void Trace(JSTracer* trc, const js::AutoAccessAtomsZone& access);
-  static void TraceJitcodeGlobalTableForMinorGC(JSTracer* trc);
   static MOZ_MUST_USE bool MarkJitcodeGlobalTableIteratively(GCMarker* marker);
   static void TraceWeakJitcodeGlobalTable(JSRuntime* rt, JSTracer* trc);
 
@@ -309,6 +311,14 @@ class JitRuntime {
   IonCompilationId nextCompilationId() {
     return IonCompilationId(nextCompilationId_++);
   }
+
+#ifdef DEBUG
+  bool disallowArbitraryCode() const { return disallowArbitraryCode_; }
+  void clearDisallowArbitraryCode() { disallowArbitraryCode_ = false; }
+  const void* addressOfDisallowArbitraryCode() const {
+    return &disallowArbitraryCode_.refNoCheck();
+  }
+#endif
 
   uint8_t* allocateIonOsrTempData(size_t size);
   void freeIonOsrTempData();

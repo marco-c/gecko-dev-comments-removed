@@ -30,10 +30,10 @@ namespace js {
 namespace jit {
 
 struct Register {
-  typedef Registers Codes;
-  typedef Codes::Encoding Encoding;
-  typedef Codes::Code Code;
-  typedef Codes::SetType SetType;
+  using Codes = Registers;
+  using Encoding = Codes::Encoding;
+  using Code = Codes::Code;
+  using SetType = Codes::SetType;
 
   Encoding reg_;
   explicit constexpr Register(Encoding e) : reg_(e) {}
@@ -138,7 +138,7 @@ inline bool operator!=(RegisterOrSP lhs, RegisterOrSP rhs) {
 
 
 
-typedef Register RegisterOrSP;
+using RegisterOrSP = Register;
 
 static inline bool IsHiddenSP(RegisterOrSP r) { return false; }
 
@@ -300,8 +300,8 @@ struct AutoGenericRegisterScope : public RegisterType {
 #endif
 };
 
-typedef AutoGenericRegisterScope<Register> AutoRegisterScope;
-typedef AutoGenericRegisterScope<FloatRegister> AutoFloatRegisterScope;
+using AutoRegisterScope = AutoGenericRegisterScope<Register>;
+using AutoFloatRegisterScope = AutoGenericRegisterScope<FloatRegister>;
 
 }  
 }  

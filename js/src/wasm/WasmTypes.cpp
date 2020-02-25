@@ -239,7 +239,7 @@ size_t FuncType::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
   return args_.sizeOfExcludingThis(mallocSizeOf);
 }
 
-typedef uint32_t ImmediateType;  
+using ImmediateType = uint32_t;  
 static const unsigned sTotalBits = sizeof(ImmediateType) * 8;
 static const unsigned sTagBits = 1;
 static const unsigned sReturnBit = 1;

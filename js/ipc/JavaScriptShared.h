@@ -80,7 +80,7 @@ class JavaScriptShared;
 
 
 struct ObjectIdHasher {
-  typedef ObjectId Lookup;
+  using Lookup = ObjectId;
   static js::HashNumber hash(const Lookup& l) {
     return mozilla::HashGeneric(l.serialize());
   }

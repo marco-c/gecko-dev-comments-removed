@@ -367,7 +367,7 @@ class ObjectPolicy final : public TypePolicy {
 
 
 
-typedef ObjectPolicy<0> SingleObjectPolicy;
+using SingleObjectPolicy = ObjectPolicy<0>;
 
 template <unsigned Op>
 class BoxPolicy final : public TypePolicy {

@@ -27,7 +27,7 @@
 namespace js {
 namespace wasm {
 
-typedef JS::ProfilingFrameIterator::RegisterState RegisterState;
+using RegisterState = JS::ProfilingFrameIterator::RegisterState;
 
 
 

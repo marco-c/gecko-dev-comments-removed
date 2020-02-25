@@ -43,7 +43,7 @@ class Exception;
 }  
 }  
 
-typedef void (*xpcGCCallback)(JSGCStatus status);
+using xpcGCCallback = void (*)(JSGCStatus);
 
 namespace xpc {
 

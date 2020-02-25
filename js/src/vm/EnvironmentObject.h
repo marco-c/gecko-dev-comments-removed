@@ -23,7 +23,7 @@
 namespace js {
 
 class ModuleObject;
-typedef Handle<ModuleObject*> HandleModuleObject;
+using HandleModuleObject = Handle<ModuleObject*>;
 
 
 
@@ -445,10 +445,10 @@ class ModuleEnvironmentObject : public EnvironmentObject {
                            bool enumerableOnly);
 };
 
-typedef Rooted<ModuleEnvironmentObject*> RootedModuleEnvironmentObject;
-typedef Handle<ModuleEnvironmentObject*> HandleModuleEnvironmentObject;
-typedef MutableHandle<ModuleEnvironmentObject*>
-    MutableHandleModuleEnvironmentObject;
+using RootedModuleEnvironmentObject = Rooted<ModuleEnvironmentObject*>;
+using HandleModuleEnvironmentObject = Handle<ModuleEnvironmentObject*>;
+using MutableHandleModuleEnvironmentObject =
+    MutableHandle<ModuleEnvironmentObject*>;
 
 class WasmInstanceEnvironmentObject : public EnvironmentObject {
   
@@ -823,7 +823,7 @@ class MissingEnvironmentKey {
   void updateFrame(AbstractFramePtr frame) { frame_ = frame; }
 
   
-  typedef MissingEnvironmentKey Lookup;
+  using Lookup = MissingEnvironmentKey;
   static HashNumber hash(MissingEnvironmentKey sk);
   static bool match(MissingEnvironmentKey sk1, MissingEnvironmentKey sk2);
   bool operator!=(const MissingEnvironmentKey& other) const {

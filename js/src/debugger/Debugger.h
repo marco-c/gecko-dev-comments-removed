@@ -341,8 +341,8 @@ extern void CheckDebuggeeThing(JSObject* obj, bool invisibleOk);
 template <class Referent, class Wrapper, bool InvisibleKeysOk = false>
 class DebuggerWeakMap : private WeakMap<HeapPtr<Referent*>, HeapPtr<Wrapper*>> {
  private:
-  typedef HeapPtr<Referent*> Key;
-  typedef HeapPtr<Wrapper*> Value;
+  using Key = HeapPtr<Referent*>;
+  using Value = HeapPtr<Wrapper*>;
 
   JS::Compartment* compartment;
 
@@ -438,7 +438,7 @@ class MOZ_RAII EvalOptions {
 
 
 
-typedef JSObject Env;
+using Env = JSObject;
 
 
 

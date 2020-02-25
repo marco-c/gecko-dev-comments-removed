@@ -736,11 +736,11 @@ void js::gc::TraceRangeInternal(JSTracer* trc, size_t len, T* vec,
 
 namespace js {
 
-typedef bool HasNoImplicitEdgesType;
+using HasNoImplicitEdgesType = bool;
 
 template <typename T>
 struct ImplicitEdgeHolderType {
-  typedef HasNoImplicitEdgesType Type;
+  using Type = HasNoImplicitEdgesType;
 };
 
 
@@ -748,12 +748,12 @@ struct ImplicitEdgeHolderType {
 
 template <>
 struct ImplicitEdgeHolderType<JSObject*> {
-  typedef JSObject* Type;
+  using Type = JSObject*;
 };
 
 template <>
 struct ImplicitEdgeHolderType<BaseScript*> {
-  typedef BaseScript* Type;
+  using Type = BaseScript*;
 };
 
 void GCMarker::markEphemeronValues(gc::Cell* markedCell,

@@ -41,7 +41,7 @@ struct SectionRange {
   }
 };
 
-typedef Maybe<SectionRange> MaybeSectionRange;
+using MaybeSectionRange = Maybe<SectionRange>;
 
 
 

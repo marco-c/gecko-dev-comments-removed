@@ -106,7 +106,7 @@ struct CompileTaskState {
   }
 };
 
-typedef ExclusiveWaitableData<CompileTaskState> ExclusiveCompileTaskState;
+using ExclusiveCompileTaskState = ExclusiveWaitableData<CompileTaskState>;
 
 
 

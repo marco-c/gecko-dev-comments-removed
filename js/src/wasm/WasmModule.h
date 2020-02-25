@@ -32,7 +32,7 @@ struct CompileArgs;
 
 
 
-typedef RefPtr<JS::OptimizedEncodingListener> Tier2Listener;
+using Tier2Listener = RefPtr<JS::OptimizedEncodingListener>;
 
 
 
@@ -228,8 +228,8 @@ class Module : public JS::WasmModule {
   bool extractCode(JSContext* cx, Tier tier, MutableHandleValue vp) const;
 };
 
-typedef RefPtr<Module> MutableModule;
-typedef RefPtr<const Module> SharedModule;
+using MutableModule = RefPtr<Module>;
+using SharedModule = RefPtr<const Module>;
 
 
 

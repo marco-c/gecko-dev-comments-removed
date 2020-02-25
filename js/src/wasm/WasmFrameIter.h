@@ -45,7 +45,7 @@ struct CallableOffsets;
 struct FuncOffsets;
 struct Frame;
 
-typedef JS::ProfilingFrameIterator::RegisterState RegisterState;
+using RegisterState = JS::ProfilingFrameIterator::RegisterState;
 
 
 

@@ -152,7 +152,7 @@ struct UsePosition : public TempObject,
   }
 };
 
-typedef InlineForwardListIterator<UsePosition> UsePositionIterator;
+using UsePositionIterator = InlineForwardListIterator<UsePosition>;
 
 
 
@@ -186,8 +186,8 @@ class LiveRange : public TempObject {
   class BundleLink : public InlineForwardListNode<BundleLink> {};
   class RegisterLink : public InlineForwardListNode<RegisterLink> {};
 
-  typedef InlineForwardListIterator<BundleLink> BundleLinkIterator;
-  typedef InlineForwardListIterator<RegisterLink> RegisterLinkIterator;
+  using BundleLinkIterator = InlineForwardListIterator<BundleLink>;
+  using RegisterLinkIterator = InlineForwardListIterator<RegisterLink>;
 
   
   BundleLink bundleLink;
@@ -573,7 +573,7 @@ class BacktrackingAllocator : protected RegisterAllocator {
   };
 
   
-  typedef InlineList<CallRange> CallRangeList;
+  using CallRangeList = InlineList<CallRange>;
   CallRangeList callRangesList;
   SplayTree<CallRange*, CallRange> callRanges;
 
@@ -586,7 +586,7 @@ class BacktrackingAllocator : protected RegisterAllocator {
     SpillSlot(uint32_t slot, LifoAlloc* alloc)
         : alloc(slot), allocated(alloc) {}
   };
-  typedef InlineForwardList<SpillSlot> SpillSlotList;
+  using SpillSlotList = InlineForwardList<SpillSlot>;
 
   
   SpillSlotList normalSlots, doubleSlots, quadSlots;

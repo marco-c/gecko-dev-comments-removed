@@ -43,8 +43,8 @@ struct ScriptedCaller {
 
 
 struct CompileArgs;
-typedef RefPtr<CompileArgs> MutableCompileArgs;
-typedef RefPtr<const CompileArgs> SharedCompileArgs;
+using MutableCompileArgs = RefPtr<CompileArgs>;
+using SharedCompileArgs = RefPtr<const CompileArgs>;
 
 struct CompileArgs : ShareableBase<CompileArgs> {
   ScriptedCaller scriptedCaller;
@@ -124,7 +124,7 @@ void CompileTier2(const CompileArgs& args, const Bytes& bytecode,
 
 
 
-typedef ExclusiveWaitableData<const uint8_t*> ExclusiveBytesPtr;
+using ExclusiveBytesPtr = ExclusiveWaitableData<const uint8_t*>;
 
 struct StreamEndData {
   bool reached;
@@ -133,7 +133,7 @@ struct StreamEndData {
 
   StreamEndData() : reached(false) {}
 };
-typedef ExclusiveWaitableData<StreamEndData> ExclusiveStreamEndData;
+using ExclusiveStreamEndData = ExclusiveWaitableData<StreamEndData>;
 
 SharedModule CompileStreaming(const CompileArgs& args, const Bytes& envBytes,
                               const Bytes& codeBytes,
