@@ -82,7 +82,7 @@ def test_config_json_length():
     
     
     with ConfigBuilder() as c:
-        data = json.dumps(c.as_dict())
+        data = json.dumps(c.as_dict_for_wd_env_variable())
     assert len(data) <= 0x7FFF
 
 def test_alternate_host_unspecified():
