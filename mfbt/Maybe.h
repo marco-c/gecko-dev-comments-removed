@@ -33,6 +33,10 @@ namespace mozilla {
 
 struct Nothing {};
 
+inline constexpr bool operator==(const Nothing&, const Nothing&) {
+  return true;
+}
+
 namespace detail {
 
 
