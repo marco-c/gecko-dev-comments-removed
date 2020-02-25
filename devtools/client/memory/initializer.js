@@ -16,6 +16,8 @@ const App = createFactory(require("devtools/client/memory/app"));
 const Store = require("devtools/client/memory/store");
 const { assert } = require("devtools/shared/DevToolsUtils");
 
+const { updateMemoryFront } = require("devtools/client/memory/actions/front");
+
 
 let root, store, unsubscribe;
 
@@ -27,12 +29,14 @@ const initialize = async function() {
   store = Store();
   const app = createElement(App, {
     toolbox: gToolbox,
-    front: gFront,
     heapWorker: gHeapAnalysesClient,
   });
   const provider = createElement(Provider, { store }, app);
   ReactDOM.render(provider, root);
   unsubscribe = store.subscribe(onStateChange);
+
+  
+  store.dispatch(updateMemoryFront(gFront));
 
   
   window.gStore = store;
