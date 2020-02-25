@@ -243,11 +243,13 @@ void nsTableWrapperFrame::InitChildReflowInput(nsPresContext& aPresContext,
       pCollapsePadding = &collapsePadding;
     }
     
+    
+    
+    
     if (!HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
-      LogicalSize* cb = GetProperty(GridItemCBSizeProperty());
-      if (cb) {
+      if (LogicalSize* cb = GetProperty(GridItemCBSizeProperty())) {
         cbSize.emplace(*cb);
-        *cbSize -= aReflowInput.ComputedLogicalMargin().Size(wm);
+        *cbSize -= aOuterRI.ComputedLogicalMargin().Size(wm);
       }
     }
     if (!cbSize) {
