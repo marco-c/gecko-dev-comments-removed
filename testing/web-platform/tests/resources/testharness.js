@@ -645,10 +645,42 @@
         });
     }
 
-    function promise_rejects_dom(test, type, promise, description) {
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function promise_rejects_dom(test, type, promiseOrConstructor, descriptionOrPromise, maybeDescription) {
+        let constructor, promise, description;
+        if (typeof promiseOrConstructor === "function" &&
+            promiseOrConstructor.name === "DOMException") {
+            constructor = promiseOrConstructor;
+            promise = descriptionOrPromise;
+            description = maybeDescription;
+        } else {
+            constructor = self.DOMException;
+            promise = promiseOrConstructor;
+            description = descriptionOrPromise;
+            assert(maybeDescription === undefined,
+                   "Too many args pased to no-constructor version of promise_rejects_dom");
+        }
         return promise.then(test.unreached_func("Should have rejected: " + description)).catch(function(e) {
-            assert_throws_dom_impl(type, function() { throw e },
-                                   description, "promise_rejects_dom");
+            assert_throws_dom_impl(type, function() { throw e }, description,
+                                   "promise_rejects_dom", constructor);
         });
     }
 
@@ -1544,9 +1576,31 @@
 
 
 
-    function assert_throws_dom(type, func, description)
+
+
+
+
+
+
+
+
+
+
+    function assert_throws_dom(type, funcOrConstructor, descriptionOrFunc, maybeDescription)
     {
-        assert_throws_dom_impl(type, func, description, "assert_throws_dom")
+        let constructor, func, description;
+        if (funcOrConstructor.name === "DOMException") {
+            constructor = funcOrConstructor;
+            func = descriptionOrFunc;
+            description = maybeDescription;
+        } else {
+            constructor = self.DOMException;
+            func = funcOrConstructor;
+            description = descriptionOrFunc;
+            assert(maybeDescription === undefined,
+                   "Too many args pased to no-constructor version of assert_throws_dom");
+        }
+        assert_throws_dom_impl(type, func, description, "assert_throws_dom", constructor)
     }
     expose(assert_throws_dom, "assert_throws_dom");
 
@@ -1554,7 +1608,9 @@
 
 
 
-    function assert_throws_dom_impl(type, func, description, assertion_type)
+
+
+    function assert_throws_dom_impl(type, func, description, assertion_type, constructor)
     {
         try {
             func.call(this);
@@ -1565,6 +1621,7 @@
                 throw e;
             }
 
+            
             assert(typeof e === "object",
                    assertion_type, description,
                    "${func} threw ${e} with type ${type}, not an object",
@@ -1678,19 +1735,21 @@
                 required_props.name = name;
             }
 
-            
-            
-            
-            
-            
-            
-
             for (var prop in required_props) {
                 assert(prop in e && e[prop] == required_props[prop],
                        assertion_type, description,
                        "${func} threw ${e} that is not a DOMException " + type + ": property ${prop} is equal to ${actual}, expected ${expected}",
                        {func:func, e:e, prop:prop, actual:e[prop], expected:required_props[prop]});
             }
+
+            
+            
+            
+            assert(e.constructor === constructor,
+                   assertion_type, description,
+                   "${func} threw an exception from the wrong global",
+                   {func});
+
         }
     }
 

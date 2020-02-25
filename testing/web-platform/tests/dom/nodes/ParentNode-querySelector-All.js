@@ -207,6 +207,10 @@ function runValidSelectorTest(type, root, selectors, testType, docType) {
   }
 }
 
+function windowFor(root) {
+  return root.defaultView || root.ownerDocument.defaultView;
+}
+
 
 
 
@@ -218,15 +222,15 @@ function runInvalidSelectorTest(type, root, selectors) {
     var q = s["selector"];
 
     test(function() {
-      assert_throws_dom("SyntaxError", function() {
+      assert_throws_dom("SyntaxError", windowFor(root).DOMException, function() {
         root.querySelector(q)
-      })
+      });
     }, type + ".querySelector: " + n + ": " + q);
 
     test(function() {
-      assert_throws_dom("SyntaxError", function() {
+      assert_throws_dom("SyntaxError", windowFor(root).DOMException, function() {
         root.querySelectorAll(q)
-      })
+      });
     }, type + ".querySelectorAll: " + n + ": " + q);
   }
 }
