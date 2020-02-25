@@ -233,6 +233,10 @@ void CanvasEventRingBuffer::CheckAndSignalReader() {
       case State::AboutToWait:
         
         
+        
+        if (mWriterServices->ReaderClosed()) {
+          return;
+        }
         continue;
       case State::Waiting:
         if (mRead->count != mOurCount) {
@@ -348,6 +352,10 @@ void CanvasEventRingBuffer::CheckAndSignalWriter() {
       case State::AboutToWait:
         
         
+        
+        if (mReaderServices->WriterClosed()) {
+          return;
+        }
         continue;
       case State::Waiting:
         if (mWrite->count - mOurCount <= mWrite->requiredDifference) {
