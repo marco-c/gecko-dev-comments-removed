@@ -462,9 +462,6 @@ function ignoreContents(entry)
         
         
         / EmptyString\(\)/,
-        /nsCSSProps::LookupPropertyValue/,
-        /nsCSSProps::ValueToKeyword/,
-        /nsCSSKeywords::GetStringValue/,
 
         
         
