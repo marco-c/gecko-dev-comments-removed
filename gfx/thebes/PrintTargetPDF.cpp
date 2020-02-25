@@ -7,11 +7,15 @@
 
 #include "cairo.h"
 #include "cairo-pdf.h"
+#include "mozilla/AppShutdown.h"
 
 namespace mozilla::gfx {
 
 static cairo_status_t write_func(void* closure, const unsigned char* data,
                                  unsigned int length) {
+  if (AppShutdown::IsShuttingDown()) {
+    return CAIRO_STATUS_SUCCESS;
+  }
   nsCOMPtr<nsIOutputStream> out = reinterpret_cast<nsIOutputStream*>(closure);
   do {
     uint32_t wrote = 0;
@@ -61,8 +65,11 @@ nsresult PrintTargetPDF::EndPage() {
 }
 
 void PrintTargetPDF::Finish() {
-  if (mIsFinished) {
-    return;  
+  if (mIsFinished || AppShutdown::IsShuttingDown()) {
+    
+    
+    
+    return;
   }
   PrintTarget::Finish();
   mStream->Close();

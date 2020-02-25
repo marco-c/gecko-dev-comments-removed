@@ -18,6 +18,8 @@ enum class AppShutdownMode {
 
 class AppShutdown {
  public:
+  static bool IsShuttingDown();
+
   
 
 
