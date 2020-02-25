@@ -3827,7 +3827,18 @@ impl PrimitiveInstance {
                 });
             }
 
-            if segments.is_empty() {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if segments.len() <= 1 {
                 *segment_instance_index = SegmentInstanceIndex::UNUSED;
             } else {
                 let segments_range = segments_store.extend(segments);
