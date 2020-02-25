@@ -402,16 +402,16 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
     }
     droppedAt = rangeAtDropPoint->StartRef();
     MOZ_ASSERT(droppedAt.IsSetAndValid());
-  }
 
-  
-  
-  
-  if (NS_WARN_IF(newFocusedElement !=
-                     nsFocusManager::GetFocusManager()->GetFocusedElement() &&
-                 AsHTMLEditor() && !AsHTMLEditor()->IsInDesignMode())) {
-    editActionData.Abort();
-    return NS_OK;
+    
+    
+    
+    if (AsHTMLEditor() && !AsHTMLEditor()->IsInDesignMode() &&
+        NS_WARN_IF(newFocusedElement !=
+                   AsHTMLEditor()->GetActiveEditingHost())) {
+      editActionData.Abort();
+      return NS_OK;
+    }
   }
 
   if (!AsHTMLEditor()) {
