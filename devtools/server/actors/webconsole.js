@@ -37,8 +37,8 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "ConsoleProgressListener",
-  "devtools/server/actors/webconsole/listeners/console-progress",
+  "ConsoleFileActivityListener",
+  "devtools/server/actors/webconsole/listeners/console-file-activity",
   true
 );
 loader.lazyRequireGetter(
@@ -389,7 +389,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
   
 
 
-  consoleProgressListener: null,
+  consoleFileActivityListener: null,
 
   
 
@@ -796,13 +796,13 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
             break;
           }
           if (this.window instanceof Ci.nsIDOMWindow) {
-            if (!this.consoleProgressListener) {
-              this.consoleProgressListener = new ConsoleProgressListener(
+            if (!this.consoleFileActivityListener) {
+              this.consoleFileActivityListener = new ConsoleFileActivityListener(
                 this.window,
                 this
               );
             }
-            this.consoleProgressListener.startMonitor();
+            this.consoleFileActivityListener.startMonitor();
             startedListeners.push(event);
           }
           break;
@@ -908,9 +908,9 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
           stoppedListeners.push(event);
           break;
         case "FileActivity":
-          if (this.consoleProgressListener) {
-            this.consoleProgressListener.stopMonitor();
-            this.consoleProgressListener = null;
+          if (this.consoleFileActivityListener) {
+            this.consoleFileActivityListener.stopMonitor();
+            this.consoleFileActivityListener = null;
           }
           stoppedListeners.push(event);
           break;

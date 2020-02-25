@@ -17,13 +17,13 @@ const ChromeUtils = require("ChromeUtils");
 
 
 
-function ConsoleProgressListener(window, owner) {
+function ConsoleFileActivityListener(window, owner) {
   this.window = window;
   this.owner = owner;
 }
-exports.ConsoleProgressListener = ConsoleProgressListener;
+exports.ConsoleFileActivityListener = ConsoleFileActivityListener;
 
-ConsoleProgressListener.prototype = {
+ConsoleFileActivityListener.prototype = {
   
 
 
