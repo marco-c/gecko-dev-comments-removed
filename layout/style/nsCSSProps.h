@@ -278,7 +278,6 @@ class nsCSSProps {
     if (nsCSSProps::IsEnabled(*it_, (mozilla::CSSEnabledState)es_))
 
   
-  static const KTableEntry kTextAlignKTable[];
   static const KTableEntry kTextDecorationStyleKTable[];
 };
 
