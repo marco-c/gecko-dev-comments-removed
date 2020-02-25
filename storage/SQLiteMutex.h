@@ -56,7 +56,7 @@ class SQLiteMutex : private BlockingResourceBase {
 
   void lock() {
     MOZ_ASSERT(mMutex, "No mutex associated with this wrapper!");
-#if defined(DEBUG) && !defined(MOZ_SYSTEM_SQLITE)
+#if defined(DEBUG)
     
     
     CheckAcquire();
@@ -64,7 +64,7 @@ class SQLiteMutex : private BlockingResourceBase {
 
     ::sqlite3_mutex_enter(mMutex);
 
-#if defined(DEBUG) && !defined(MOZ_SYSTEM_SQLITE)
+#if defined(DEBUG)
     Acquire();  
 #endif
   }
@@ -74,7 +74,7 @@ class SQLiteMutex : private BlockingResourceBase {
 
   void unlock() {
     MOZ_ASSERT(mMutex, "No mutex associated with this wrapper!");
-#if defined(DEBUG) && !defined(MOZ_SYSTEM_SQLITE)
+#if defined(DEBUG)
     
     
     Release();  
