@@ -13,6 +13,7 @@
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/StyleSheetList.h"
+#include "nsTHashtable.h"
 #include "nsFocusManager.h"
 #include "nsIRadioVisitor.h"
 #include "nsIFormControl.h"
@@ -98,6 +99,9 @@ already_AddRefed<StyleSheet> DocumentOrShadowRoot::RemoveSheet(
 void DocumentOrShadowRoot::EnsureAdoptedSheetsAreValid(
     const Sequence<OwningNonNull<StyleSheet>>& aAdoptedStyleSheets,
     ErrorResult& aRv) {
+  nsTHashtable<nsPtrHashKey<const StyleSheet>> set(
+      aAdoptedStyleSheets.Length());
+
   for (const OwningNonNull<StyleSheet>& sheet : aAdoptedStyleSheets) {
     
     if (!sheet->IsConstructed()) {
@@ -111,6 +115,15 @@ void DocumentOrShadowRoot::EnsureAdoptedSheetsAreValid(
       return aRv.ThrowNotAllowedError(
           "Each adopted style sheet's constructor document must match the "
           "document or shadow root's node document");
+    }
+
+    
+    
+    
+    
+    if (!set.EnsureInserted(sheet.get())) {
+      return aRv.ThrowNotAllowedError(
+          "Temporarily disallowing duplicate stylesheets.");
     }
   }
 }
