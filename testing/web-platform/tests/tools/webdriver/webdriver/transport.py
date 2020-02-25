@@ -75,7 +75,7 @@ class HTTPWireProtocol(object):
         # => webdriver.Element
     """
 
-    def __init__(self, host, port, url_prefix="/", timeout=None):
+    def __init__(self, host, port, url_prefix="/"):
         """
         Construct interface for communicating with the remote server.
 
@@ -85,9 +85,8 @@ class HTTPWireProtocol(object):
         self.host = host
         self.port = port
         self.url_prefix = url_prefix
-
         self._conn = None
-        self._timeout = timeout
+        self._last_request_is_blocked = False
 
     def __del__(self):
         self.close()
@@ -102,10 +101,11 @@ class HTTPWireProtocol(object):
         """Gets the current HTTP connection, or lazily creates one."""
         if not self._conn:
             conn_kwargs = {}
-            if self._timeout is not None:
-                conn_kwargs["timeout"] = self._timeout
             if not PY3:
                 conn_kwargs["strict"] = True
+            
+            
+            
             self._conn = HTTPConnection(self.host, self.port, **conn_kwargs)
 
         return self._conn
@@ -172,7 +172,15 @@ class HTTPWireProtocol(object):
                 raise ValueError("Failed to encode request body as JSON:\n"
                     "%s" % json.dumps(body, indent=2))
 
+        
+        
+        
+        
+        
+        
+        self._last_request_is_blocked = True
         response = self._request(method, uri, payload, headers)
+        self._last_request_is_blocked = False
         return Response.from_http(response, decoder=decoder, **codec_kwargs)
 
     def _request(self, method, uri, payload, headers=None):
@@ -185,7 +193,7 @@ class HTTPWireProtocol(object):
 
         url = self.url(uri)
 
-        if self._has_unread_data():
+        if self._last_request_is_blocked or self._has_unread_data():
             self.close()
         self.connection.request(method, url, payload, headers)
         return self.connection.getresponse()
