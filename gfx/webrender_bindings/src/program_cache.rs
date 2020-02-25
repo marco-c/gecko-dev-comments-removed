@@ -115,48 +115,12 @@ impl WrProgramBinaryDiskCache {
     }
 
     
-    fn update(&mut self, entries: Vec<Arc<ProgramBinary>>) {
-        info!("Updating on-disk shader cache");
+    fn save_shaders_to_disk(&mut self, entries: Vec<Arc<ProgramBinary>>) {
+        info!("Saving binaries to on-disk shader cache");
 
         
-        let mut entries: Vec<(String, Arc<ProgramBinary>)> =
-            entries.into_iter().map(|e| (format!("{}", e.source_digest()), e)).collect();
-
-        let whitelist = entries.iter().map(|e| e.0.as_ref()).collect::<Vec<&str>>().join(WHITELIST_SEPARATOR);
-        let mut whitelist_path = self.cache_path.clone();
-        whitelist_path.push(WHITELIST_FILENAME);
-        self.workers.spawn(move || result_to_void(move || {
-            info!("Writing startup shader whitelist");
-            File::create(&whitelist_path)
-                .and_then(|mut file| file.write_all(whitelist.as_bytes()))
-                .map_err(|e| error!("shader-cache: Failed to write startup whitelist: {}", e))?;
-            Ok(())
-        }));
-
-        
-        
-        
-        
-        
-        
-        
-        for existing in read_dir(&self.cache_path)
-            .map_err(|err| error!("shader-cache: Error reading directory whilst saving shaders: {}", err))
-            .into_iter()
-            .flatten()
-            .filter_map(|f| f.ok())
-        {
-            let pos = existing.file_name().to_str()
-                .and_then(|digest| entries.iter().position(|x| x.0 == digest));
-            if let Some(p) = pos {
-                info!("Found existing shader: {}", existing.file_name().to_string_lossy());
-                entries.swap_remove(p);
-            }
-        }
-
-        
-        for entry in entries.into_iter() {
-            let (file_name, program_binary) = entry;
+        for entry in entries {
+            let file_name = entry.source_digest().to_string();
             let file_path = self.cache_path.join(&file_name);
 
             self.workers.spawn(move || result_to_void(move || {
@@ -165,7 +129,7 @@ impl WrProgramBinaryDiskCache {
                 use std::time::{Instant};
                 let start = Instant::now();
 
-                let data: Vec<u8> = bincode::serialize(&*program_binary)
+                let data: Vec<u8> = bincode::serialize(&*entry)
                     .map_err(|e| error!("shader-cache: Failed to serialize: {}", e))?;
 
                 let mut file = File::create(&file_path)
@@ -193,6 +157,25 @@ impl WrProgramBinaryDiskCache {
                 Ok(())
             }));
         }
+    }
+
+    
+    fn set_startup_shaders(&mut self, entries: Vec<Arc<ProgramBinary>>) {
+        let whitelist = entries
+            .iter()
+            .map(|e| e.source_digest().to_string())
+            .collect::<Vec<String>>()
+            .join(WHITELIST_SEPARATOR);
+
+        let mut whitelist_path = self.cache_path.clone();
+        whitelist_path.push(WHITELIST_FILENAME);
+        self.workers.spawn(move || result_to_void(move || {
+            info!("Writing startup shader whitelist");
+            File::create(&whitelist_path)
+                .and_then(|mut file| file.write_all(whitelist.as_bytes()))
+                .map_err(|e| error!("shader-cache: Failed to write startup whitelist: {}", e))?;
+            Ok(())
+        }));
     }
 
     pub fn try_load_shader_from_disk(&mut self, filename: &str, program_cache: &Rc<ProgramCache>) {
@@ -279,12 +262,16 @@ impl WrProgramCacheObserver {
 }
 
 impl ProgramCacheObserver for WrProgramCacheObserver {
-    fn update_disk_cache(&self, entries: Vec<Arc<ProgramBinary>>) {
-        self.disk_cache.borrow_mut().update(entries);
+    fn save_shaders_to_disk(&self, entries: Vec<Arc<ProgramBinary>>) {
+        self.disk_cache.borrow_mut().save_shaders_to_disk(entries);
+    }
+
+    fn set_startup_shaders(&self, entries: Vec<Arc<ProgramBinary>>) {
+        self.disk_cache.borrow_mut().set_startup_shaders(entries);
     }
 
     fn try_load_shader_from_disk(&self, digest: &ProgramSourceDigest, program_cache: &Rc<ProgramCache>) {
-        let filename = format!("{}", digest);
+        let filename = digest.to_string();
         self.disk_cache.borrow_mut().try_load_shader_from_disk(&filename, program_cache);
     }
 
