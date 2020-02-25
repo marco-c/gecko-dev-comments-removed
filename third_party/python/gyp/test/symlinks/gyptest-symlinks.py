@@ -28,8 +28,8 @@ if sys.platform != 'win32':
   
   
   
-  with tempfile.NamedTemporaryFile() as gyp_file:
-    with tempfile.NamedTemporaryFile() as c_file:
+  with tempfile.NamedTemporaryFile(mode='w+') as gyp_file:
+    with tempfile.NamedTemporaryFile(mode='w+') as c_file:
       with open('hello.gyp') as orig_gyp_file:
         gyp_file.write(orig_gyp_file.read())
         gyp_file.flush()

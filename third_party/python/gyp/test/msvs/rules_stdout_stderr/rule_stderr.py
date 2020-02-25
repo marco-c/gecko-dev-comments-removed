@@ -3,5 +3,6 @@
 
 
 
+from __future__ import print_function
 import sys
-print >>sys.stderr, "This will go to stderr"
+print("This will go to stderr", file=sys.stderr)

@@ -39,7 +39,7 @@ class FlockTool(object):
     
     
     
-    fd = os.open(lockfile, os.O_WRONLY|os.O_NOCTTY|os.O_CREAT, 0666)
+    fd = os.open(lockfile, os.O_WRONLY|os.O_NOCTTY|os.O_CREAT, 0o666)
     if sys.platform.startswith('aix'):
       
       

@@ -6,6 +6,7 @@
 
 import os
 import random
+import sys
 
 import gyp.common
 
@@ -20,6 +21,13 @@ except ImportError:
   import md5
   _new_md5 = md5.new
 
+
+try:
+  
+  cmp
+except NameError:
+  def cmp(a, b):
+    return (a > b) - (a < b)
 
 
 random.seed()
@@ -49,8 +57,11 @@ def MakeGuid(name, seed='msvs_new'):
   determine the GUID to refer to explicitly.  It also means that the GUID will
   not change when the project for a target is rebuilt.
   """
+
+  to_hash = str(seed) + str(name)
+  to_hash = to_hash.encode('utf-8')
   
-  d = _new_md5(str(seed) + str(name)).hexdigest().upper()
+  d = _new_md5(to_hash).hexdigest().upper()
   
   guid = ('{' + d[:8] + '-' + d[8:12] + '-' + d[12:16] + '-' + d[16:20]
           + '-' + d[20:32] + '}')
@@ -64,6 +75,8 @@ class MSVSSolutionEntry(object):
     
     return cmp((self.name, self.get_guid()), (other.name, other.get_guid()))
 
+  def __lt__(self, other):
+    return (self.name, self.get_guid()) < (other.name, other.get_guid())
 
 class MSVSFolder(MSVSSolutionEntry):
   """Folder in a Visual Studio project or solution."""

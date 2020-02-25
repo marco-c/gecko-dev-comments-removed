@@ -2,7 +2,8 @@
 
 
 
+from __future__ import print_function
 import sys
-print sys.argv
+print(sys.argv)
 with open('RAN_MY_READELF', 'w') as f:
   f.write('RAN_MY_READELF')

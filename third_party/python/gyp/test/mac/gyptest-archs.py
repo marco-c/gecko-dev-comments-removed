@@ -79,7 +79,8 @@ if sys.platform == 'darwin':
     TestMac.CheckFileType(test, result_file, ['i386', 'x86_64'])
     
     if not all(['D _x' in subprocess.check_output(
-        ['nm', '-arch', arch, result_file]) for arch in ['i386', 'x86_64']]):
+        ['nm', '-arch', arch, result_file]).decode('utf-8')
+        for arch in ['i386', 'x86_64']]):
       
       
       test.fail_test()

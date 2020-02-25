@@ -4,6 +4,8 @@
 
 
 
+from __future__ import print_function
+
 from optparse import OptionParser
 
 parser = OptionParser()
@@ -13,6 +15,6 @@ parser.add_option('-p', dest='path')
 (options, args) = parser.parse_args()
 
 f = open(options.output, 'w')
-print >>f, 'options', options
-print >>f, 'args', args
+print('options', options, file=f)
+print('args', args, file=f)
 f.close()

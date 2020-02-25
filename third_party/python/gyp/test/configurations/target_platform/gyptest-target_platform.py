@@ -15,7 +15,7 @@ import TestCommon
 def RunX64(exe, stdout):
   try:
     test.run_built_executable(exe, stdout=stdout)
-  except WindowsError, e:
+  except WindowsError as e:
     
     
     

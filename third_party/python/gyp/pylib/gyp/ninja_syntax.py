@@ -149,6 +149,14 @@ class Writer(object):
             return []
         if isinstance(input, list):
             return input
+
+        
+        try:
+            if isinstance(input, map):
+                return list(input)
+        except TypeError:
+            pass
+
         return [input]
 
 

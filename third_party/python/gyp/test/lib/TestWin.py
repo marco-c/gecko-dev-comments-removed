@@ -37,7 +37,7 @@ class Registry(object):
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
     
-    text = p.communicate()[0]
+    text = p.communicate()[0].decode('utf-8', 'ignore')
     
     if p.returncode:
       return None
@@ -63,7 +63,7 @@ class Registry(object):
     text = None
     try:
       text = self._QueryBase('Sysnative', key, value)
-    except OSError, e:
+    except OSError as e:
       if e.errno == errno.ENOENT:
         text = self._QueryBase('System32', key, value)
       else:
