@@ -108,12 +108,6 @@ bool RemoteOuterWindowProxy::getOwnPropertyDescriptor(
     return ok;
   }
 
-  
-  
-  
-  
-  
-
   if (JSID_IS_STRING(aId)) {
     nsAutoJSString str;
     if (!str.init(aCx, JSID_TO_STRING(aId))) {

@@ -126,7 +126,6 @@ const char* const XPCJSRuntime::mStrings[] = {
     "classId",           
     "interfaceId",       
     "initializer",       
-    "print",             
 };
 
 
