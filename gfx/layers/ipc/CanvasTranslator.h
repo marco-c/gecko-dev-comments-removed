@@ -130,6 +130,11 @@ class CanvasTranslator final : public gfx::InlineTranslator,
   
 
 
+  void DeviceChangeAcknowledged();
+
+  
+
+
 
 
 
@@ -259,6 +264,7 @@ class CanvasTranslator final : public gfx::InlineTranslator,
   bool HandleExtensionEvent(int32_t aType);
 
   bool CheckForFreshCanvasDevice(int aLineNumber);
+  void NotifyDeviceChanged();
 
   RefPtr<CanvasThreadHolder> mCanvasThreadHolder;
   RefPtr<TaskQueue> mTranslationTaskQueue;
@@ -281,6 +287,7 @@ class CanvasTranslator final : public gfx::InlineTranslator,
       "CanvasTranslator::mSurfaceDescriptorsMonitor"};
   bool mIsValid = true;
   bool mIsInTransaction = false;
+  bool mDeviceResetInProgress = false;
 };
 
 }  
