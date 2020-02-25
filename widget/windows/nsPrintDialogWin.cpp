@@ -161,7 +161,8 @@ HWND nsPrintDialogServiceWin::GetHWNDForDOMWindow(mozIDOMWindowProxy* aWindow) {
   
   nsCOMPtr<nsPIDOMWindowOuter> window = nsPIDOMWindowOuter::From(aWindow);
 
-  nsCOMPtr<nsIWebBrowserChrome> webBrowserChrome = window->GetWebBrowserChrome();
+  nsCOMPtr<nsIWebBrowserChrome> webBrowserChrome =
+      window->GetWebBrowserChrome();
   if (!webBrowserChrome) return nullptr;
 
   nsCOMPtr<nsIBaseWindow> baseWin(do_QueryInterface(webBrowserChrome));

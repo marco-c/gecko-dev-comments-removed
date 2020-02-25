@@ -29,7 +29,6 @@ NS_IMPL_ISUPPORTS(StreamLoader, nsIStreamListener)
 
 NS_IMETHODIMP
 StreamLoader::OnStartRequest(nsIRequest* aRequest) {
-
   
   
   

@@ -16,7 +16,7 @@
 
 #include "jit/Ion.h"
 #include "vm/ArgumentsObject.h"
-#include "vm/BytecodeUtil.h" 
+#include "vm/BytecodeUtil.h"  
 #include "vm/Realm.h"
 
 #include "vm/EnvironmentObject-inl.h"

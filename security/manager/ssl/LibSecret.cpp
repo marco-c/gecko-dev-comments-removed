@@ -124,7 +124,9 @@ nsresult MaybeLoadLibSecret() {
 
 
 #ifdef MOZ_TSAN
-#  define UNLOAD_LIBSECRET(x) do {} while(0)
+#  define UNLOAD_LIBSECRET(x) \
+    do {                      \
+    } while (0)
 #else
 #  define UNLOAD_LIBSECRET(x) PR_UnloadLibrary(x)
 #endif

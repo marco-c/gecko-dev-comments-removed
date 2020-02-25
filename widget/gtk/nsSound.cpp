@@ -164,6 +164,7 @@ nsSound::Init() {
         
         
         
+        
         libcanberra = nullptr;
         return NS_OK;
 #endif

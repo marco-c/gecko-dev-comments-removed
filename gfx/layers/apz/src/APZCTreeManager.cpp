@@ -709,8 +709,8 @@ void APZCTreeManager::SampleForWebRender(wr::TransactionWrapper& aTxn,
       
       MOZ_ASSERT(apzc->IsRootContent());
 
-      LayoutDeviceToParentLayerScale zoom =
-        apzc->GetCurrentPinchZoomScale(AsyncPanZoomController::eForCompositing);
+      LayoutDeviceToParentLayerScale zoom = apzc->GetCurrentPinchZoomScale(
+          AsyncPanZoomController::eForCompositing);
 
       AsyncTransform asyncVisualTransform = apzc->GetCurrentAsyncTransform(
           AsyncPanZoomController::eForCompositing,
@@ -733,7 +733,8 @@ void APZCTreeManager::SampleForWebRender(wr::TransactionWrapper& aTxn,
     
     
     LayoutDeviceToParentLayerScale resolution =
-        apzc->GetCumulativeResolution().ToScaleFactor() * LayerToParentLayerScale(1.0f);
+        apzc->GetCumulativeResolution().ToScaleFactor() *
+        LayerToParentLayerScale(1.0f);
     
     
     

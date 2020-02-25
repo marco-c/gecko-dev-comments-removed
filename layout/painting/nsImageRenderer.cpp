@@ -45,11 +45,11 @@ nsSize CSSSizeOrRatio::ComputeConcreteSize() const {
   return nsSize(mRatio.ApplyTo(mHeight), mHeight);
 }
 
-nsImageRenderer::nsImageRenderer(nsIFrame* aForFrame,
-                                 const nsStyleImage* aImage, uint32_t aFlags)
+nsImageRenderer::nsImageRenderer(nsIFrame* aForFrame, const StyleImage* aImage,
+                                 uint32_t aFlags)
     : mForFrame(aForFrame),
       mImage(aImage),
-      mType(aImage->GetType()),
+      mType(aImage->tag),
       mImageContainer(nullptr),
       mGradientData(nullptr),
       mPaintServerFrame(nullptr),
@@ -59,17 +59,13 @@ nsImageRenderer::nsImageRenderer(nsIFrame* aForFrame,
       mExtendMode(ExtendMode::CLAMP),
       mMaskOp(StyleMaskMode::MatchSource) {}
 
-static bool ShouldTreatAsCompleteDueToSyncDecode(const nsStyleImage* aImage,
+static bool ShouldTreatAsCompleteDueToSyncDecode(const StyleImage* aImage,
                                                  uint32_t aFlags) {
   if (!(aFlags & nsImageRenderer::FLAG_SYNC_DECODE_IMAGES)) {
     return false;
   }
 
-  if (aImage->GetType() != eStyleImageType_Image) {
-    return false;
-  }
-
-  imgRequestProxy* req = aImage->GetImageData();
+  imgRequestProxy* req = aImage->GetImageRequest();
   if (!req) {
     return false;
   }
@@ -97,8 +93,8 @@ static bool ShouldTreatAsCompleteDueToSyncDecode(const nsStyleImage* aImage,
 }
 
 bool nsImageRenderer::PrepareImage() {
-  if (mImage->IsEmpty() ||
-      (mType == eStyleImageType_Image && !mImage->GetImageData())) {
+  if (mImage->IsNone() ||
+      (mImage->IsImageRequestType() && !mImage->GetImageRequest())) {
     
     
     mPrepareResult = ImgDrawResult::BAD_IMAGE;
@@ -111,10 +107,10 @@ bool nsImageRenderer::PrepareImage() {
 
     
     if ((mFlags & nsImageRenderer::FLAG_PAINTING_TO_WINDOW) &&
-        mType == eStyleImageType_Image) {
-      MOZ_ASSERT(mImage->GetImageData(),
+        mImage->IsImageRequestType()) {
+      MOZ_ASSERT(mImage->GetImageRequest(),
                  "must have image data, since we checked above");
-      mImage->GetImageData()->BoostPriority(imgIRequest::CATEGORY_DISPLAY);
+      mImage->GetImageRequest()->BoostPriority(imgIRequest::CATEGORY_DISPLAY);
     }
 
     
@@ -128,75 +124,65 @@ bool nsImageRenderer::PrepareImage() {
     }
   }
 
-  switch (mType) {
-    case eStyleImageType_Image: {
-      MOZ_ASSERT(mImage->GetImageData(),
-                 "must have image data, since we checked above");
-      nsCOMPtr<imgIContainer> srcImage;
-      DebugOnly<nsresult> rv =
-          mImage->GetImageData()->GetImage(getter_AddRefs(srcImage));
-      MOZ_ASSERT(NS_SUCCEEDED(rv) && srcImage,
-                 "If GetImage() is failing, mImage->IsComplete() "
-                 "should have returned false");
+  if (mImage->IsImageRequestType()) {
+    MOZ_ASSERT(mImage->GetImageRequest(),
+               "must have image data, since we checked above");
+    nsCOMPtr<imgIContainer> srcImage;
+    DebugOnly<nsresult> rv =
+        mImage->GetImageRequest()->GetImage(getter_AddRefs(srcImage));
+    MOZ_ASSERT(NS_SUCCEEDED(rv) && srcImage,
+               "If GetImage() is failing, mImage->IsComplete() "
+               "should have returned false");
 
-      if (!mImage->GetCropRect()) {
+    if (!mImage->IsRect()) {
+      mImageContainer.swap(srcImage);
+    } else {
+      auto croprect = mImage->ComputeActualCropRect();
+      if (!croprect || croprect->mRect.IsEmpty()) {
+        
+        mPrepareResult = ImgDrawResult::BAD_IMAGE;
+        return false;
+      }
+      if (croprect->mIsEntireImage) {
+        
         mImageContainer.swap(srcImage);
       } else {
-        nsIntRect actualCropRect;
-        bool isEntireImage;
-        bool success =
-            mImage->ComputeActualCropRect(actualCropRect, &isEntireImage);
-        if (!success || actualCropRect.IsEmpty()) {
-          
-          mPrepareResult = ImgDrawResult::BAD_IMAGE;
-          return false;
-        }
-        if (isEntireImage) {
-          
-          mImageContainer.swap(srcImage);
-        } else {
-          nsCOMPtr<imgIContainer> subImage =
-              ImageOps::Clip(srcImage, actualCropRect, Nothing());
-          mImageContainer.swap(subImage);
-        }
+        nsCOMPtr<imgIContainer> subImage =
+            ImageOps::Clip(srcImage, croprect->mRect, Nothing());
+        mImageContainer.swap(subImage);
       }
-      mPrepareResult = ImgDrawResult::SUCCESS;
-      break;
     }
-    case eStyleImageType_Gradient:
-      mGradientData = &mImage->GetGradient();
-      mPrepareResult = ImgDrawResult::SUCCESS;
-      break;
-    case eStyleImageType_Element: {
-      dom::Element* paintElement =  
-          SVGObserverUtils::GetAndObserveBackgroundImage(
-              mForFrame->FirstContinuation(), mImage->GetElementId());
+    mPrepareResult = ImgDrawResult::SUCCESS;
+  } else if (mImage->IsGradient()) {
+    mGradientData = &*mImage->AsGradient();
+    mPrepareResult = ImgDrawResult::SUCCESS;
+  } else if (mImage->IsElement()) {
+    dom::Element* paintElement =  
+        SVGObserverUtils::GetAndObserveBackgroundImage(
+            mForFrame->FirstContinuation(), mImage->AsElement().AsAtom());
+    
+    
+    mImageElementSurface = nsLayoutUtils::SurfaceFromElement(paintElement);
+
+    if (!mImageElementSurface.GetSourceSurface()) {
+      nsIFrame* paintServerFrame =
+          paintElement ? paintElement->GetPrimaryFrame() : nullptr;
       
       
-      mImageElementSurface = nsLayoutUtils::SurfaceFromElement(paintElement);
-
-      if (!mImageElementSurface.GetSourceSurface()) {
-        nsIFrame* paintServerFrame =
-            paintElement ? paintElement->GetPrimaryFrame() : nullptr;
-        
-        
-        if (!paintServerFrame ||
-            (paintServerFrame->IsFrameOfType(nsIFrame::eSVG) &&
-             !paintServerFrame->IsFrameOfType(nsIFrame::eSVGPaintServer) &&
-             !static_cast<nsSVGDisplayableFrame*>(
-                 do_QueryFrame(paintServerFrame)))) {
-          mPrepareResult = ImgDrawResult::BAD_IMAGE;
-          return false;
-        }
-        mPaintServerFrame = paintServerFrame;
+      if (!paintServerFrame ||
+          (paintServerFrame->IsFrameOfType(nsIFrame::eSVG) &&
+           !paintServerFrame->IsFrameOfType(nsIFrame::eSVGPaintServer) &&
+           !static_cast<nsSVGDisplayableFrame*>(
+               do_QueryFrame(paintServerFrame)))) {
+        mPrepareResult = ImgDrawResult::BAD_IMAGE;
+        return false;
       }
-
-      mPrepareResult = ImgDrawResult::SUCCESS;
-      break;
+      mPaintServerFrame = paintServerFrame;
     }
-    case eStyleImageType_Null:
-    default:
-      break;
+
+    mPrepareResult = ImgDrawResult::SUCCESS;
+  } else {
+    MOZ_ASSERT(mImage->IsNone(), "Unknown image type?");
   }
 
   return IsReady();
@@ -209,7 +195,8 @@ CSSSizeOrRatio nsImageRenderer::ComputeIntrinsicSize() {
 
   CSSSizeOrRatio result;
   switch (mType) {
-    case eStyleImageType_Image: {
+    case StyleImage::Tag::Rect:
+    case StyleImage::Tag::Url: {
       bool haveWidth, haveHeight;
       CSSIntSize imageIntSize;
       nsLayoutUtils::ComputeSizeForDrawing(
@@ -235,7 +222,7 @@ CSSSizeOrRatio nsImageRenderer::ComputeIntrinsicSize() {
 
       break;
     }
-    case eStyleImageType_Element: {
+    case StyleImage::Tag::Element: {
       
       
       
@@ -265,11 +252,10 @@ CSSSizeOrRatio nsImageRenderer::ComputeIntrinsicSize() {
       }
       break;
     }
-    case eStyleImageType_Gradient:
-      
-      
-    case eStyleImageType_Null:
-    default:
+    
+    
+    case StyleImage::Tag::Gradient:
+    case StyleImage::Tag::None:
       break;
   }
 
@@ -487,14 +473,15 @@ ImgDrawResult nsImageRenderer::Draw(nsPresContext* aPresContext,
   }
 
   switch (mType) {
-    case eStyleImageType_Image: {
+    case StyleImage::Tag::Rect:
+    case StyleImage::Tag::Url: {
       result = nsLayoutUtils::DrawBackgroundImage(
           *ctx, mForFrame, aPresContext, mImageContainer, samplingFilter, aDest,
           aFill, aRepeatSize, aAnchor, aDirtyRect,
           ConvertImageRendererToDrawFlags(mFlags), mExtendMode, aOpacity);
       break;
     }
-    case eStyleImageType_Gradient: {
+    case StyleImage::Tag::Gradient: {
       nsCSSGradientRenderer renderer = nsCSSGradientRenderer::Create(
           aPresContext, mForFrame->Style(), *mGradientData, mSize);
 
@@ -502,7 +489,7 @@ ImgDrawResult nsImageRenderer::Draw(nsPresContext* aPresContext,
                      aOpacity);
       break;
     }
-    case eStyleImageType_Element: {
+    case StyleImage::Tag::Element: {
       RefPtr<gfxDrawable> drawable = DrawableForElement(aDest, *ctx);
       if (!drawable) {
         NS_WARNING("Could not create drawable for element");
@@ -516,8 +503,7 @@ ImgDrawResult nsImageRenderer::Draw(nsPresContext* aPresContext,
           aOpacity);
       break;
     }
-    case eStyleImageType_Null:
-    default:
+    case StyleImage::Tag::None:
       break;
   }
 
@@ -573,7 +559,7 @@ ImgDrawResult nsImageRenderer::BuildWebRenderDisplayItems(
 
   ImgDrawResult drawResult = ImgDrawResult::SUCCESS;
   switch (mType) {
-    case eStyleImageType_Gradient: {
+    case StyleImage::Tag::Gradient: {
       nsCSSGradientRenderer renderer = nsCSSGradientRenderer::Create(
           aPresContext, mForFrame->Style(), *mGradientData, mSize);
 
@@ -582,7 +568,8 @@ ImgDrawResult nsImageRenderer::BuildWebRenderDisplayItems(
                                           !aItem->BackfaceIsHidden(), aOpacity);
       break;
     }
-    case eStyleImageType_Image: {
+    case StyleImage::Tag::Rect:
+    case StyleImage::Tag::Url: {
       uint32_t containerFlags = imgIContainer::FLAG_ASYNC_NOTIFY;
       if (mFlags & nsImageRenderer::FLAG_PAINTING_TO_WINDOW) {
         containerFlags |= imgIContainer::FLAG_HIGH_QUALITY_SCALING;
@@ -684,7 +671,7 @@ ImgDrawResult nsImageRenderer::BuildWebRenderDisplayItems(
 
 already_AddRefed<gfxDrawable> nsImageRenderer::DrawableForElement(
     const nsRect& aImageRect, gfxContext& aContext) {
-  NS_ASSERTION(mType == eStyleImageType_Element,
+  NS_ASSERTION(mType == StyleImage::Tag::Element,
                "DrawableForElement only makes sense if backed by an element");
   if (mPaintServerFrame) {
     
@@ -878,7 +865,11 @@ ImgDrawResult nsImageRenderer::DrawBorderImageComponent(
     return ImgDrawResult::SUCCESS;
   }
 
-  if (mType == eStyleImageType_Image || mType == eStyleImageType_Element) {
+  const bool isRequestBacked =
+      mType == StyleImage::Tag::Url || mType == StyleImage::Tag::Rect;
+  MOZ_ASSERT(isRequestBacked == mImage->IsImageRequestType());
+
+  if (isRequestBacked || mType == StyleImage::Tag::Element) {
     nsCOMPtr<imgIContainer> subImage;
 
     
@@ -897,10 +888,17 @@ ImgDrawResult nsImageRenderer::DrawBorderImageComponent(
     }
     
     nsIntRect srcRect(aSrc.x, aSrc.y, aSrc.width, aSrc.height);
-    if (mType == eStyleImageType_Image) {
-      if ((subImage = mImage->GetSubImage(aIndex)) == nullptr) {
+    if (isRequestBacked) {
+      CachedBorderImageData* cachedData =
+          mForFrame->GetProperty(nsIFrame::CachedBorderImageDataProperty());
+      if (!cachedData) {
+        cachedData = new CachedBorderImageData();
+        mForFrame->AddProperty(nsIFrame::CachedBorderImageDataProperty(),
+                               cachedData);
+      }
+      if (!(subImage = cachedData->GetSubImage(aIndex))) {
         subImage = ImageOps::Clip(mImageContainer, srcRect, aSVGViewportSize);
-        mImage->SetSubImage(aIndex, subImage);
+        cachedData->SetSubImage(aIndex, subImage);
       }
     } else {
       
@@ -981,82 +979,61 @@ ImgDrawResult nsImageRenderer::DrawShapeImage(nsPresContext* aPresContext,
     return ImgDrawResult::SUCCESS;
   }
 
-  ImgDrawResult result = ImgDrawResult::SUCCESS;
-
-  switch (mType) {
-    case eStyleImageType_Image: {
-      uint32_t drawFlags =
-          ConvertImageRendererToDrawFlags(mFlags) | imgIContainer::FRAME_FIRST;
-      nsRect dest(nsPoint(0, 0), mSize);
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      result = nsLayoutUtils::DrawSingleImage(
-          aRenderingContext, aPresContext, mImageContainer,
-          SamplingFilter::POINT, dest, dest, Nothing(), drawFlags, nullptr,
-          nullptr);
-      break;
-    }
-
-    case eStyleImageType_Gradient: {
-      nsCSSGradientRenderer renderer = nsCSSGradientRenderer::Create(
-          aPresContext, mForFrame->Style(), *mGradientData, mSize);
-      nsRect dest(nsPoint(0, 0), mSize);
-
-      renderer.Paint(aRenderingContext, dest, dest, mSize,
-                     CSSIntRect::FromAppUnitsRounded(dest), dest, 1.0);
-      break;
-    }
-
-    default:
-      
-      result = ImgDrawResult::BAD_IMAGE;
-      break;
+  if (mImage->IsImageRequestType()) {
+    uint32_t drawFlags =
+        ConvertImageRendererToDrawFlags(mFlags) | imgIContainer::FRAME_FIRST;
+    nsRect dest(nsPoint(0, 0), mSize);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return nsLayoutUtils::DrawSingleImage(
+        aRenderingContext, aPresContext, mImageContainer, SamplingFilter::POINT,
+        dest, dest, Nothing(), drawFlags, nullptr, nullptr);
   }
 
-  return result;
+  if (mImage->IsGradient()) {
+    nsCSSGradientRenderer renderer = nsCSSGradientRenderer::Create(
+        aPresContext, mForFrame->Style(), *mGradientData, mSize);
+    nsRect dest(nsPoint(0, 0), mSize);
+    renderer.Paint(aRenderingContext, dest, dest, mSize,
+                   CSSIntRect::FromAppUnitsRounded(dest), dest, 1.0);
+    return ImgDrawResult::SUCCESS;
+  }
+
+  
+  return ImgDrawResult::BAD_IMAGE;
 }
 
 bool nsImageRenderer::IsRasterImage() {
-  if (mType != eStyleImageType_Image || !mImageContainer) return false;
-  return mImageContainer->GetType() == imgIContainer::TYPE_RASTER;
+  return mImageContainer &&
+         mImageContainer->GetType() == imgIContainer::TYPE_RASTER;
 }
 
 bool nsImageRenderer::IsAnimatedImage() {
-  if (mType != eStyleImageType_Image || !mImageContainer) return false;
   bool animated = false;
-  if (NS_SUCCEEDED(mImageContainer->GetAnimated(&animated)) && animated)
-    return true;
-
-  return false;
+  return mImageContainer &&
+         NS_SUCCEEDED(mImageContainer->GetAnimated(&animated)) && animated;
 }
 
 already_AddRefed<imgIContainer> nsImageRenderer::GetImage() {
-  if (mType != eStyleImageType_Image || !mImageContainer) {
-    return nullptr;
-  }
-
-  nsCOMPtr<imgIContainer> image = mImageContainer;
-  return image.forget();
+  return do_AddRef(mImageContainer);
 }
 
 bool nsImageRenderer::IsImageContainerAvailable(layers::LayerManager* aManager,
                                                 uint32_t aFlags) {
-  if (!mImageContainer) {
-    return false;
-  }
-  return mImageContainer->IsImageContainerAvailable(aManager, aFlags);
+  return mImageContainer &&
+         mImageContainer->IsImageContainerAvailable(aManager, aFlags);
 }
 
 void nsImageRenderer::PurgeCacheForViewportChange(
@@ -1065,6 +1042,10 @@ void nsImageRenderer::PurgeCacheForViewportChange(
   
   if (mImageContainer &&
       mImageContainer->GetType() == imgIContainer::TYPE_VECTOR) {
-    mImage->PurgeCacheForViewportChange(aSVGViewportSize, aHasIntrinsicRatio);
+    if (auto* cachedData =
+            mForFrame->GetProperty(nsIFrame::CachedBorderImageDataProperty())) {
+      cachedData->PurgeCacheForViewportChange(aSVGViewportSize,
+                                              aHasIntrinsicRatio);
+    }
   }
 }

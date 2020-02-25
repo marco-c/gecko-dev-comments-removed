@@ -191,7 +191,8 @@ struct MapTypeToRootKind<jsid> {
 template <>
 struct MapTypeToRootKind<JSFunction*> : public MapTypeToRootKind<JSObject*> {};
 template <>
-struct MapTypeToRootKind<JSScript*> : public MapTypeToRootKind<js::BaseScript*> {};
+struct MapTypeToRootKind<JSScript*>
+    : public MapTypeToRootKind<js::BaseScript*> {};
 
 
 

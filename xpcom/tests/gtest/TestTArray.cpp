@@ -466,13 +466,11 @@ TEST(TArray, MakeBackInserter)
 struct RefCounted;
 
 class Foo {
-  ~Foo(); 
+  ~Foo();  
 
   nsTArray<RefPtr<RefCounted>> mArray;
 
-  const RefCounted* GetFirst() const {
-    return mArray.SafeElementAt(0);
-  }
+  const RefCounted* GetFirst() const { return mArray.SafeElementAt(0); }
 };
 
 }  

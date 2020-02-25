@@ -1260,7 +1260,7 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* aNewFocus,
   
   if (aFocusMode !=
       FocusMode::kExtendSelection) {  
-    uint32_t batching = mBatching;  
+    uint32_t batching = mBatching;    
     bool changes = mChangesDuringBatching;
     mBatching = 1;
 
