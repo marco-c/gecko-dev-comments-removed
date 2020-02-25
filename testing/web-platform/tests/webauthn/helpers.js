@@ -535,62 +535,20 @@ function validateAuthenticatorAssertionResponse(assert) {
     
 }
 
-
-
-
-
-
-var debug = function() {};
-
-
-
-function ensureInterface() {
-    if (typeof navigator.credentials === "object" && typeof navigator.credentials.create !== "function") {
-        
-
-        return loadJavaScript("/webauthn/webauthn-polyfill/webauthn-polyfill.js")
-            .then(() => {
-                return loadJavaScript("/webauthn/webauthn-soft-authn/soft-authn.js");
-            });
-    } else {
-        return Promise.resolve();
-    }
-}
-
-function loadJavaScript(path) {
-    return new Promise((resolve, reject) => {
-        
-        var scriptElem = document.createElement("script");
-        if (typeof scriptElem !== "object") {
-            debug("ensureInterface: Error creating script element while attempting loading polyfill");
-            return reject(new Error("ensureInterface: Error creating script element while loading polyfill"));
+function standardSetup(cb) {
+    
+    window.test_driver.add_virtual_authenticator({
+      protocol: "ctap1/u2f",
+      transport: "usb"
+    }).then(cb).catch(error => {
+        if (error === "error: Action add_virtual_authenticator not implemented") {
+          
+          cb();
+          return;
         }
-        scriptElem.type = "application/javascript";
-        scriptElem.onload = function() {
-            debug("!!! Loaded " + path + " ...");
-            return resolve();
-        };
-        scriptElem.onerror = function() {
-            debug("navigator.credentials.create does not exist");
-            resolve();
-        };
-        scriptElem.src = path;
-        if (document.body) {
-            document.body.appendChild(scriptElem);
-        } else {
-            debug("ensureInterface: DOM has no body");
-            return reject(new Error("ensureInterface: DOM has no body"));
-        }
+        throw error;
     });
 }
-
-function standardSetup(cb) {
-    return ensureInterface()
-        .then(() => {
-            if (cb) return cb();
-        });
-}
-
 
 
 
