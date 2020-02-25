@@ -2757,7 +2757,7 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
                 focusSource);
 
             
-            self->mActiveCallbacks.Put(callID, std::move(task));
+            self->mActiveCallbacks.Put(callID, task.forget());
 
             
             
@@ -3376,7 +3376,7 @@ void MediaManager::AddWindowID(uint64_t aWindowId,
     return;
   }
 
-  GetActiveWindows()->Put(aWindowId, std::move(aListener));
+  GetActiveWindows()->Put(aWindowId, aListener.forget());
 }
 
 void MediaManager::RemoveWindowID(uint64_t aWindowId) {
