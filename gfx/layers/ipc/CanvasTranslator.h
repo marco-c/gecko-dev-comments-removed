@@ -12,7 +12,9 @@
 
 #include "mozilla/gfx/InlineTranslator.h"
 #include "mozilla/layers/CanvasDrawEventRecorder.h"
+#include "mozilla/layers/CanvasThread.h"
 #include "mozilla/layers/LayersSurfaces.h"
+#include "mozilla/layers/PCanvasParent.h"
 #include "mozilla/ipc/CrossProcessSemaphore.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/UniquePtr.h"
@@ -22,8 +24,28 @@ namespace layers {
 
 class TextureData;
 
-class CanvasTranslator final : public gfx::InlineTranslator {
+class CanvasTranslator final : public gfx::InlineTranslator,
+                               public PCanvasParent {
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CanvasTranslator)
+
+  friend class PProtocolParent;
+
+  
+
+
+
+
+
+
+  static already_AddRefed<CanvasTranslator> Create(
+      Endpoint<PCanvasParent>&& aEndpoint);
+
+  
+
+
+  static void Shutdown();
+
   
 
 
@@ -34,9 +56,29 @@ class CanvasTranslator final : public gfx::InlineTranslator {
 
 
 
-  static UniquePtr<CanvasTranslator> Create();
+  ipc::IPCResult RecvInitTranslator(
+      const TextureType& aTextureType,
+      const ipc::SharedMemoryBasic::Handle& aReadHandle,
+      const CrossProcessSemaphoreHandle& aReaderSem,
+      const CrossProcessSemaphoreHandle& aWriterSem);
 
-  ~CanvasTranslator();
+  
+
+
+
+  ipc::IPCResult RecvResumeTranslation();
+
+  void ActorDestroy(ActorDestroyReason why) final;
+
+  
+
+
+
+
+
+
+  UniquePtr<SurfaceDescriptor> LookupSurfaceDescriptorForClientDrawTarget(
+      const uintptr_t aDrawTarget);
 
   
 
@@ -94,7 +136,7 @@ class CanvasTranslator final : public gfx::InlineTranslator {
 
 
   void ReturnWrite(const char* aData, size_t aSize) {
-    mStream.ReturnWrite(aData, aSize);
+    mStream->ReturnWrite(aData, aSize);
   }
 
   
@@ -196,14 +238,27 @@ class CanvasTranslator final : public gfx::InlineTranslator {
       gfx::ReferencePtr aSurface);
 
  private:
-  CanvasTranslator();
+  explicit CanvasTranslator(
+      already_AddRefed<CanvasThreadHolder> aCanvasThreadHolder);
+
+  ~CanvasTranslator();
+
+  void Bind(Endpoint<PCanvasParent>&& aEndpoint);
+
+  void StartTranslation();
+
+  void FinishShutdown();
 
   void AddSurfaceDescriptor(gfx::ReferencePtr aRefPtr,
                             TextureData* atextureData);
 
   bool HandleExtensionEvent(int32_t aType);
 
-  CanvasEventRingBuffer mStream;
+  RefPtr<CanvasThreadHolder> mCanvasThreadHolder;
+  RefPtr<TaskQueue> mTranslationTaskQueue;
+  
+  
+  UniquePtr<CanvasEventRingBuffer> mStream;
   TextureType mTextureType = TextureType::Unknown;
   UniquePtr<TextureData> mReferenceTextureData;
   typedef std::unordered_map<void*, UniquePtr<TextureData>> TextureMap;
