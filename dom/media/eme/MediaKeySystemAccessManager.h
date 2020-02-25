@@ -207,7 +207,7 @@ class MediaKeySystemAccessManager final : public nsIObserver {
   nsTArray<UniquePtr<PendingRequest>> mPendingInstallRequests;
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
-  bool mAddedObservers;
+  bool mAddedObservers = false;
 
   
   
