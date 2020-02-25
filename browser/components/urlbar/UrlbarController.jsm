@@ -314,13 +314,20 @@ class UrlbarController {
         event.preventDefault();
         break;
       case KeyEvent.DOM_VK_TAB:
+        
+        
+        
+        
+        let allowTabbingThroughResults =
+          !UrlbarPrefs.get("update1") ||
+          this.input.focusedViaMousedown ||
+          (this.input.value &&
+            this.input.getAttribute("pageproxystate") != "valid");
         if (
           this.view.isOpen &&
           !event.ctrlKey &&
           !event.altKey &&
-          (!UrlbarPrefs.get("update1") ||
-            !UrlbarPrefs.get("update1.restrictTabAfterKeyboardFocus") ||
-            this.allowTabbingResults)
+          allowTabbingThroughResults
         ) {
           if (executeAction) {
             this.userSelectionBehavior = "tab";

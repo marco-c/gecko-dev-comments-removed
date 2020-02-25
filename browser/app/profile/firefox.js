@@ -325,10 +325,6 @@ pref("browser.urlbar.usepreloadedtopurls.expire_days", 14);
   pref("browser.urlbar.update1.interventions", true);
   
   
-  
-  pref("browser.urlbar.update1.restrictTabAfterKeyboardFocus", true);
-  
-  
   pref("browser.urlbar.update1.searchTips", true);
   
   pref("browser.urlbar.update1.view.stripHttps", true);
@@ -336,7 +332,6 @@ pref("browser.urlbar.usepreloadedtopurls.expire_days", 14);
 #else
   pref("browser.urlbar.update1", false);
   pref("browser.urlbar.update1.interventions", false);
-  pref("browser.urlbar.update1.restrictTabAfterKeyboardFocus", false);
   pref("browser.urlbar.update1.searchTips", false);
   pref("browser.urlbar.update1.view.stripHttps", false);
   pref("browser.urlbar.openViewOnFocus", false);
