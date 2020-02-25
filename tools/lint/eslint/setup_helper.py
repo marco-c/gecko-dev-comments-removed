@@ -131,18 +131,15 @@ def package_setup(package_root, package_name, should_clobber=False, no_optional=
         if platform.system() != "Windows":
             cmd.insert(0, node_path)
 
+        
+        
+        
+        extra_parameters.append("--scripts-prepend-node-path")
+
         cmd.extend(extra_parameters)
 
-        
-        
-        
-        path = os.environ.get('PATH', '').split(os.pathsep)
-        node_dir = os.path.dirname(node_path)
-        if node_dir not in path:
-            path = [node_dir] + path
-
         print("Installing %s for mach using \"%s\"..." % (package_name, " ".join(cmd)))
-        result = call_process(package_name, cmd, append_env={'PATH': os.pathsep.join(path)})
+        result = call_process(package_name, cmd)
 
         if npm_is_older_version:
             shutil.move(package_lock_json_tmp_path, package_lock_json_path)
