@@ -286,7 +286,7 @@ class Scanner(object):
                     or self.index-key.index > 1024:
                 if key.required:
                     raise ScannerError("while scanning a simple key", key.mark,
-                            "could not found expected ':'", self.get_mark())
+                            "could not find expected ':'", self.get_mark())
                 del self.possible_simple_keys[level]
 
     def save_possible_simple_key(self):
@@ -296,10 +296,6 @@ class Scanner(object):
 
         
         required = not self.flow_level and self.indent == self.column
-
-        
-        
-        assert self.allow_simple_key or not required
 
         
         
@@ -317,7 +313,7 @@ class Scanner(object):
             
             if key.required:
                 raise ScannerError("while scanning a simple key", key.mark,
-                        "could not found expected ':'", self.get_mark())
+                        "could not find expected ':'", self.get_mark())
 
             del self.possible_simple_keys[self.flow_level]
 
