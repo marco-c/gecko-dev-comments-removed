@@ -12,6 +12,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/MouseEventBinding.h"
+#include "nsFrameList.h"  
 #include "nsHTMLParts.h"
 #include "nsLayoutUtils.h"
 #include "nsGkAtoms.h"
@@ -30,8 +31,9 @@ using namespace mozilla::dom;
 
 
 
-#define PET_LOG(...)
 
+static mozilla::LazyLogModule sEvtTgtLog("event.retarget");
+#define PET_LOG(...) MOZ_LOG(sEvtTgtLog, LogLevel::Debug, (__VA_ARGS__))
 
 namespace mozilla {
 
@@ -616,10 +618,14 @@ nsIFrame* FindFrameTargetedByInputEvent(
   }
   PET_LOG("Final target is %p\n", target);
 
+#ifdef DEBUG_FRAME_DUMP
   
   
   
-  
+  if (MOZ_LOG_TEST(sEvtTgtLog, LogLevel::Verbose)) {
+    aRootFrame->DumpFrameTree();
+  }
+#endif
 
   if (!target || !prefs->mRepositionEventCoords) {
     

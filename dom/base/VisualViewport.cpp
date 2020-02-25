@@ -15,8 +15,8 @@
 #include "nsRefreshDriver.h"
 #include "DocumentInlines.h"
 
-#define VVP_LOG(...)
-
+static mozilla::LazyLogModule sVvpLog("visualviewport");
+#define VVP_LOG(...) MOZ_LOG(sVvpLog, LogLevel::Debug, (__VA_ARGS__))
 
 using namespace mozilla;
 using namespace mozilla::dom;
