@@ -236,43 +236,51 @@ impl TextRunPrimitive {
         
         
         
-        let mut raster_space = raster_space;
+
         let raster_scale = raster_space.local_scale().unwrap_or(1.0).max(0.001);
+        let dps = surface.device_pixel_scale.0;
+        let glyph_raster_scale = dps * raster_scale;
+        let font_size = specified_font.size.to_f32_px();
+        let device_font_size = font_size * glyph_raster_scale;
 
         
-        let mut device_font_size = specified_font.size.scale_by(surface.device_pixel_scale.0 * raster_scale);
-
         
         
-        
-        let (transform_glyphs, oversized) = if raster_space != RasterSpace::Screen ||
-            transform.has_perspective_component() || !transform.has_2d_inverse() {
-            (false, device_font_size.to_f64_px() > FONT_SIZE_LIMIT)
-        } else if transform.exceeds_2d_scale(FONT_SIZE_LIMIT / device_font_size.to_f64_px()) {
-            (false, true)
+        let (use_subpixel_aa, transform_glyphs, oversized) = if raster_space != RasterSpace::Screen ||
+            transform.has_perspective_component() || !transform.has_2d_inverse()
+        {
+            (false, false, device_font_size > FONT_SIZE_LIMIT)
+        } else if transform.exceeds_2d_scale((FONT_SIZE_LIMIT / device_font_size) as f64) {
+            (false, false, true)
         } else {
-            (true, false)
+            (true, !transform.is_simple_2d_translation(), false)
         };
 
-        if oversized {
-            
-            
-            
-            let max_scale = (FONT_SIZE_LIMIT / device_font_size.to_f64_px()) as f32;
-            raster_space = RasterSpace::Local(max_scale * raster_scale);
-            device_font_size = device_font_size.scale_by(max_scale);
-        }
-
-        
         let font_transform = if transform_glyphs {
-            FontTransform::from(transform)
+            
+            
+            self.raster_space = RasterSpace::Screen;
+            FontTransform::from(transform).pre_scale(dps, dps)
+        } else if oversized {
+            
+            
+            
+            let raster_scale = FONT_SIZE_LIMIT / (font_size * dps);
+            let glyph_raster_scale = raster_scale * dps;
+
+            
+            
+            self.raster_space = RasterSpace::Local(raster_scale);
+            FontTransform::new(glyph_raster_scale, 0.0, 0.0, glyph_raster_scale)
         } else {
-            FontTransform::identity()
+            
+            
+            
+            self.raster_space = RasterSpace::Local(raster_scale);
+            FontTransform::new(glyph_raster_scale, 0.0, 0.0, glyph_raster_scale)
         };
 
         
-        self.raster_space = raster_space;
-
         
         
         
@@ -280,8 +288,7 @@ impl TextRunPrimitive {
         
         
         
-        
-        self.snapped_reference_frame_relative_offset = if !font_transform.is_identity() {
+        self.snapped_reference_frame_relative_offset = if transform_glyphs {
             
             
             self.reference_frame_relative_offset
@@ -301,12 +308,14 @@ impl TextRunPrimitive {
         
         let cache_dirty =
             self.used_font.transform != font_transform ||
-            self.used_font.size != device_font_size;
+            self.used_font.size != specified_font.size ||
+            self.used_font.transform_glyphs != transform_glyphs;
 
         
         self.used_font = FontInstance {
             transform: font_transform,
-            size: device_font_size,
+            transform_glyphs,
+            size: specified_font.size,
             ..specified_font.clone()
         };
 
@@ -315,7 +324,7 @@ impl TextRunPrimitive {
         
         if (subpixel_mode == SubpixelMode::Deny && self.used_font.bg_color.a == 0) ||
             
-            !transform_glyphs
+            !use_subpixel_aa
         {
             self.used_font.disable_subpixel_aa();
 
@@ -361,16 +370,10 @@ impl TextRunPrimitive {
         if self.glyph_keys_range.is_empty() || cache_dirty {
             let subpx_dir = self.used_font.get_subpx_dir();
 
-            let transform = match self.raster_space {
-                RasterSpace::Local(scale) => FontTransform::new(scale, 0.0, 0.0, scale),
-                RasterSpace::Screen => self.used_font.transform,
-            };
-
             self.glyph_keys_range = scratch.glyph_keys.extend(
                 glyphs.iter().map(|src| {
                     let src_point = src.point + prim_offset;
-                    let world_offset = transform.transform(&src_point);
-                    let device_offset = surface.device_pixel_scale.transform_point(world_offset);
+                    let device_offset = self.used_font.transform.transform(&src_point);
                     GlyphKey::new(src.index, device_offset, subpx_dir)
                 }));
         }
