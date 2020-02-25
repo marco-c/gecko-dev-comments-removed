@@ -49,20 +49,24 @@ def define_upstream_artifacts(config, jobs):
             config,
             job,
             keep_locale_template=True,
+            dep_kind=upstream_artifact_task.kind,
         )
 
         upstream_artifacts = []
         for spec in locale_specifications:
+            task_type = 'l10n'
+            if 'notarization' in upstream_artifact_task.kind:
+                task_type = 'scriptworker'
             upstream_artifacts.append({
                 'taskId': {'task-reference': '<{}>'.format(upstream_artifact_task.kind)},
-                'taskType': 'l10n',
+                'taskType': task_type,
                 
                 
                 
                 
                 'paths': sorted(set([
                     path_template.format(locale=locale)
-                    for locale in dep_job.attributes.get('chunk_locales', [])
+                    for locale in upstream_artifact_task.attributes.get('chunk_locales', [])
                     for path_template in spec['artifacts']
                 ])),
                 'formats': spec['formats']
