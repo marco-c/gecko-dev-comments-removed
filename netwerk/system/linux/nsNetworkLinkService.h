@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set et sw=2 ts=4: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 #ifndef NSNETWORKLINKSERVICE_LINUX_H_
 #define NSNETWORKLINKSERVICE_LINUX_H_
 
@@ -11,7 +11,6 @@
 #include "../netlink/NetlinkService.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/TimeStamp.h"
 
 class nsNetworkLinkService : public nsINetworkLinkService,
                              public nsIObserver,
@@ -34,18 +33,15 @@ class nsNetworkLinkService : public nsINetworkLinkService,
  private:
   virtual ~nsNetworkLinkService() = default;
 
-  // Called when xpcom-shutdown-threads is received.
+  
   nsresult Shutdown();
 
-  // Sends the network event.
+  
   void NotifyObservers(const char* aTopic, const char* aData);
 
   mozilla::Atomic<bool, mozilla::Relaxed> mStatusIsKnown;
 
   RefPtr<mozilla::net::NetlinkService> mNetlinkSvc;
-
-  // Time stamp of last NS_NETWORK_LINK_DATA_CHANGED event
-  mozilla::TimeStamp mNetworkChangeTime;
 };
 
-#endif /* NSNETWORKLINKSERVICE_LINUX_H_ */
+#endif 
