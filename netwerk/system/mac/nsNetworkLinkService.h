@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef NSNETWORKLINKSERVICEMAC_H_
 #define NSNETWORKLINKSERVICEMAC_H_
@@ -9,7 +9,6 @@
 #include "nsIObserver.h"
 #include "nsITimer.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/TimeStamp.h"
 #include "mozilla/SHA1.h"
 
 #include <SystemConfiguration/SCNetworkReachability.h>
@@ -70,15 +69,12 @@ class nsNetworkLinkService : public nsINetworkLinkService,
   nsCString mNetworkId;
   nsTArray<nsCString> mDNSSuffixList;
 
-  
-  mozilla::TimeStamp mNetworkChangeTime;
-
-  
-  
+  // The timer used to delay the calculation of network id since it takes some
+  // time to discover the gateway's MAC address.
   nsCOMPtr<nsITimer> mNetworkIdTimer;
 
-  
+  // IP address used to check the route for public traffic.
   struct in_addr mRouteCheckIPv4;
 };
 
-#endif 
+#endif /* NSNETWORKLINKSERVICEMAC_H_ */
