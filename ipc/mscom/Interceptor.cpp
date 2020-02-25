@@ -467,7 +467,7 @@ Interceptor::PublishTarget(detail::LiveSetAutoLock& aLiveSetLock,
   
   
   mTarget = ToInterceptorTargetPtr(aTarget);
-  GetLiveSet().Put(mTarget.get(), weakRef.forget());
+  GetLiveSet().Put(mTarget.get(), std::move(weakRef));
 
   
   mInterceptorMap.AppendElement(
