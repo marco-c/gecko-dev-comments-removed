@@ -7,7 +7,7 @@
 
 
 
-pub use self::decoder::BMPDecoder;
+pub use self::decoder::BmpDecoder;
 pub use self::encoder::BMPEncoder;
 
 mod decoder;

@@ -1,16 +1,17 @@
 use num_traits::Zero;
-use std::io;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut, Index, IndexMut, Range};
 use std::path::Path;
 use std::slice::{Chunks, ChunksMut};
 
-use color::{ColorType, FromColor, Luma, LumaA, Rgb, Rgba, Bgr, Bgra};
-use flat::{FlatSamples, SampleLayout};
-use dynimage::{save_buffer, save_buffer_with_format};
-use image::{GenericImage, GenericImageView, ImageFormat};
-use traits::Primitive;
-use utils::expand_packed;
+use crate::color::{ColorType, FromColor, Luma, LumaA, Rgb, Rgba, Bgr, Bgra};
+use crate::flat::{FlatSamples, SampleLayout};
+use crate::dynimage::{save_buffer, save_buffer_with_format};
+use crate::error::ImageResult;
+use crate::image::{GenericImage, GenericImageView, ImageFormat};
+use crate::math::Rect;
+use crate::traits::{EncodableLayout, Primitive};
+use crate::utils::expand_packed;
 
 
 
@@ -128,10 +129,10 @@ pub trait Pixel: Copy + Clone {
     where
         F: FnMut(Self::Subpixel) -> Self::Subpixel,
         G: FnMut(Self::Subpixel) -> Self::Subpixel;
+
     
-    
-    fn map_without_alpha<F>(&self, f: F) -> Self 
-    where 
+    fn map_without_alpha<F>(&self, f: F) -> Self
+    where
         F: FnMut(Self::Subpixel) -> Self::Subpixel,
     {
         let mut this = *self;
@@ -141,8 +142,8 @@ pub trait Pixel: Copy + Clone {
 
     
     
-    fn apply_without_alpha<F>(&mut self, f: F) 
-    where 
+    fn apply_without_alpha<F>(&mut self, f: F)
+    where
         F: FnMut(Self::Subpixel) -> Self::Subpixel,
     {
         self.apply_with_alpha(f, |x| x);
@@ -649,7 +650,7 @@ where
     
     
     pub fn into_flat_samples(self) -> FlatSamples<Container>
-        where Container: AsRef<[P::Subpixel]> 
+        where Container: AsRef<[P::Subpixel]>
     {
         
         let layout = self.sample_layout();
@@ -664,7 +665,7 @@ where
     
     
     pub fn as_flat_samples(&self) -> FlatSamples<&[P::Subpixel]>
-        where Container: AsRef<[P::Subpixel]> 
+        where Container: AsRef<[P::Subpixel]>
     {
         let layout = self.sample_layout();
         FlatSamples {
@@ -746,21 +747,22 @@ where
 
 impl<P, Container> ImageBuffer<P, Container>
 where
-    P: Pixel<Subpixel = u8> + 'static,
-    Container: Deref<Target = [u8]>,
+    P: Pixel + 'static,
+    [P::Subpixel]: EncodableLayout,
+    Container: Deref<Target = [P::Subpixel]>,
 {
-    
-    
-    
-    
-    pub fn save<Q>(&self, path: Q) -> io::Result<()>
+    /// Saves the buffer to a file at the path specified.
+    ///
+    /// The image format is derived from the file extension.
+    /// Currently only jpeg and png files are supported.
+    pub fn save<Q>(&self, path: Q) -> ImageResult<()>
     where
         Q: AsRef<Path>,
     {
-        
+        // This is valid as the subpixel is u8.
         save_buffer(
             path,
-            self,
+            self.as_bytes(),
             self.width(),
             self.height(),
             <P as Pixel>::COLOR_TYPE,
@@ -770,22 +772,23 @@ where
 
 impl<P, Container> ImageBuffer<P, Container>
 where
-    P: Pixel<Subpixel = u8> + 'static,
-    Container: Deref<Target = [u8]>,
+    P: Pixel + 'static,
+    [P::Subpixel]: EncodableLayout,
+    Container: Deref<Target = [P::Subpixel]>,
 {
-    
-    
-    
-    
-    
-    pub fn save_with_format<Q>(&self, path: Q, format: ImageFormat) -> io::Result<()>
+    /// Saves the buffer to a file at the specified path in
+    /// the specified format.
+    ///
+    /// See [`save_buffer_with_format`](fn.save_buffer_with_format.html) for
+    /// supported types.
+    pub fn save_with_format<Q>(&self, path: Q, format: ImageFormat) -> ImageResult<()>
     where
         Q: AsRef<Path>,
     {
-        
+        // This is valid as the subpixel is u8.
         save_buffer_with_format(
             path,
-            self,
+            self.as_bytes(),
             self.width(),
             self.height(),
             <P as Pixel>::COLOR_TYPE,
@@ -878,7 +881,7 @@ where
         *self.get_pixel(x, y)
     }
 
-    
+    /// Returns the pixel located at (x, y), ignoring bounds checking.
     #[inline(always)]
     unsafe fn unsafe_get_pixel(&self, x: u32, y: u32) -> P {
         let indices = self.pixel_indices_unchecked(x, y);
@@ -906,7 +909,7 @@ where
         *self.get_pixel_mut(x, y) = pixel
     }
 
-    
+    /// Puts a pixel at location (x, y), ignoring bounds checking.
     #[inline(always)]
     unsafe fn unsafe_put_pixel(&mut self, x: u32, y: u32, pixel: P) {
         let indices = self.pixel_indices_unchecked(x, y);
@@ -914,11 +917,43 @@ where
         *p = pixel
     }
 
-    
-    
-    
+    /// Put a pixel at location (x, y), taking into account alpha channels
+    ///
+    /// DEPRECATED: This method will be removed. Blend the pixel directly instead.
     fn blend_pixel(&mut self, x: u32, y: u32, p: P) {
         self.get_pixel_mut(x, y).blend(&p)
+    }
+
+    fn copy_within(&mut self, source: Rect, x: u32, y: u32) -> bool {
+        let Rect { x: sx, y: sy, width, height } = source;
+        let dx = x;
+        let dy = y;
+        assert!(sx < self.width() && dx < self.width()); 
+        assert!(sy < self.height() && dy < self.height());
+        if self.width() - dx.max(sx) < width || self.height() - dy.max(sy) < height  {
+            return false;
+        }
+
+        if sy < dy {
+            for y in (0..height).rev() {
+                let sy = sy + y;
+                let dy = dy + y;
+                let Range { start, .. } = self.pixel_indices_unchecked(sx, sy);
+                let Range { end, .. } = self.pixel_indices_unchecked(sx + width - 1, sy);
+                let dst = self.pixel_indices_unchecked(dx, dy).start;
+                slice_copy_within(self, start..end, dst);
+            }
+        } else {
+            for y in 0..height {
+                let sy = sy + y;
+                let dy = dy + y;
+                let Range { start, .. } = self.pixel_indices_unchecked(sx, sy);
+                let Range { end, .. } = self.pixel_indices_unchecked(sx + width - 1, sy);
+                let dst = self.pixel_indices_unchecked(dx, dy).start;
+                slice_copy_within(self, start..end, dst);
+            }
+        }
+        true
     }
 
     fn inner_mut(&mut self) -> &mut Self::InnerImage {
@@ -926,21 +961,39 @@ where
     }
 }
 
+// FIXME non-generic `core::slice::copy_within` implementation used by `ImageBuffer::copy_within`. The implementation is rewritten 
+//  here due to minimum rust version support(MSRV). Image has a MSRV of 1.34 as of writing this while `core::slice::copy_within` 
+//  has been stabilized in 1.37.
+#[inline(always)]
+fn slice_copy_within<T: Copy>(slice: &mut [T], Range { start: src_start, end: src_end }: Range<usize>, dest: usize) {
+    assert!(src_start <= src_end, "src end is before src start");
+    assert!(src_end <= slice.len(), "src is out of bounds");
+    let count = src_end - src_start;
+    assert!(dest <= slice.len() - count, "dest is out of bounds");
+    unsafe {
+        std::ptr::copy(
+            slice.as_ptr().add(src_start),
+            slice.as_mut_ptr().add(dest),
+            count,
+        );
+    }
+}
 
-
-
-
-
-
+// concrete implementation for `Vec`-backed buffers
+// TODO: I think that rustc does not "see" this impl any more: the impl with
+// Container meets the same requirements. At least, I got compile errors that
+// there is no such function as `into_vec`, whereas `into_raw` did work, and
+// `into_vec` is redundant anyway, because `into_raw` will give you the vector,
+// and it is more generic.
 impl<P: Pixel + 'static> ImageBuffer<P, Vec<P::Subpixel>>
 where
     P::Subpixel: 'static,
 {
-    
-    
-    
-    
-    
+    /// Creates a new image buffer based on a `Vec<P::Subpixel>`.
+    ///
+    /// # Panics
+    ///
+    /// Panics when the resulting image is larger the the maximum size of a vector.
     pub fn new(width: u32, height: u32) -> ImageBuffer<P, Vec<P::Subpixel>> {
         let size = Self::image_buffer_len(width, height)
             .expect("Buffer length in `ImageBuffer::new` overflows usize");
@@ -952,11 +1005,11 @@ where
         }
     }
 
-    
-    
-    
-    
-    
+    /// Constructs a new ImageBuffer by copying a pixel
+    ///
+    /// # Panics
+    ///
+    /// Panics when the resulting image is larger the the maximum size of a vector.
     pub fn from_pixel(width: u32, height: u32, pixel: P) -> ImageBuffer<P, Vec<P::Subpixel>> {
         let mut buf = ImageBuffer::new(width, height);
         for p in buf.pixels_mut() {
@@ -965,13 +1018,13 @@ where
         buf
     }
 
-    
-    
-    
-    
-    
-    
-    
+    /// Constructs a new ImageBuffer by repeated application of the supplied function.
+    ///
+    /// The arguments to the function are the pixel's x and y coordinates.
+    ///
+    /// # Panics
+    ///
+    /// Panics when the resulting image is larger the the maximum size of a vector.
     pub fn from_fn<F>(width: u32, height: u32, mut f: F) -> ImageBuffer<P, Vec<P::Subpixel>>
     where
         F: FnMut(u32, u32) -> P,
@@ -983,8 +1036,8 @@ where
         buf
     }
 
-    
-    
+    /// Creates an image buffer out of an existing buffer.
+    /// Returns None if the buffer is not big enough.
     pub fn from_vec(
         width: u32,
         height: u32,
@@ -993,27 +1046,27 @@ where
         ImageBuffer::from_raw(width, height, buf)
     }
 
-    
-    
+    /// Consumes the image buffer and returns the underlying data
+    /// as an owned buffer
     pub fn into_vec(self) -> Vec<P::Subpixel> {
         self.into_raw()
     }
 }
 
-
+/// Provides color conversions for whole image buffers.
 pub trait ConvertBuffer<T> {
-    
-    
-    
-    
+    /// Converts `self` to a buffer of type T
+    ///
+    /// A generic implementation is provided to convert any image buffer to a image buffer
+    /// based on a `Vec<T>`.
     fn convert(&self) -> T;
 }
 
-
+// concrete implementation Luma -> Rgba
 impl GrayImage {
-    
-    
-    
+    /// Expands a color palette by re-using the existing buffer.
+    /// Assumes 8 bit per pixel. Uses an optionally transparent index to
+    /// adjust it's alpha value accordingly.
     pub fn expand_palette(
         self,
         palette: &[(u8, u8, u8)],
@@ -1044,9 +1097,9 @@ impl GrayImage {
     }
 }
 
-
-
-
+// TODO: Equality constraints are not yet supported in where clauses, when they
+// are, the T parameter should be removed in favor of ToType::Subpixel, which
+// will then be FromType::Subpixel.
 impl<'a, 'b, Container, FromType: Pixel + 'static, ToType: Pixel + 'static>
     ConvertBuffer<ImageBuffer<ToType, Vec<ToType::Subpixel>>> for ImageBuffer<FromType, Container>
 where
@@ -1065,29 +1118,39 @@ where
     }
 }
 
-
+/// Sendable Rgb image buffer
 pub type RgbImage = ImageBuffer<Rgb<u8>, Vec<u8>>;
-
+/// Sendable Rgb + alpha channel image buffer
 pub type RgbaImage = ImageBuffer<Rgba<u8>, Vec<u8>>;
-
+/// Sendable grayscale image buffer
 pub type GrayImage = ImageBuffer<Luma<u8>, Vec<u8>>;
-
+/// Sendable grayscale + alpha channel image buffer
 pub type GrayAlphaImage = ImageBuffer<LumaA<u8>, Vec<u8>>;
-
-pub type BgrImage = ImageBuffer<Bgr<u8>, Vec<u8>>;
-
-pub type BgraImage = ImageBuffer<Bgra<u8>, Vec<u8>>;
+/// Sendable Bgr image buffer
+pub(crate) type BgrImage = ImageBuffer<Bgr<u8>, Vec<u8>>;
+/// Sendable Bgr + alpha channel image buffer
+pub(crate) type BgraImage = ImageBuffer<Bgra<u8>, Vec<u8>>;
+/// Sendable 16-bit Rgb image buffer
+pub(crate) type Rgb16Image = ImageBuffer<Rgb<u16>, Vec<u16>>;
+/// Sendable 16-bit Rgb + alpha channel image buffer
+pub(crate) type Rgba16Image = ImageBuffer<Rgba<u16>, Vec<u16>>;
+/// Sendable 16-bit grayscale image buffer
+pub(crate) type Gray16Image = ImageBuffer<Luma<u16>, Vec<u16>>;
+/// Sendable 16-bit grayscale + alpha channel image buffer
+pub(crate) type GrayAlpha16Image = ImageBuffer<LumaA<u16>, Vec<u16>>;
 
 #[cfg(test)]
 mod test {
 
-    use super::{ImageBuffer, RgbImage};
-    use color;
+    use super::{GrayImage, ImageBuffer, RgbImage};
+    use crate::image::GenericImage;
+    use crate::color;
+    use crate::math::Rect;
     #[cfg(feature = "benchmarks")]
     use test;
 
     #[test]
-    
+    /// Tests if image buffers from slices work
     fn slice_buffer() {
         let data = [0; 9];
         let buf: ImageBuffer<color::Luma<u8>, _> = ImageBuffer::from_raw(3, 3, &data[..]).unwrap();
@@ -1117,9 +1180,9 @@ mod test {
     #[bench]
     #[cfg(feature = "benchmarks")]
     fn bench_conversion(b: &mut test::Bencher) {
-        use buffer::{ConvertBuffer, GrayImage, Pixel};
+        use crate::buffer::{ConvertBuffer, GrayImage, Pixel};
         let mut a: RgbImage = ImageBuffer::new(1000, 1000);
-        for mut p in a.pixels_mut() {
+        for p in a.pixels_mut() {
             let rgb = p.channels_mut();
             rgb[0] = 255;
             rgb[1] = 23;
@@ -1138,10 +1201,10 @@ mod test {
     #[bench]
     #[cfg(feature = "benchmarks")]
     fn bench_image_access_row_by_row(b: &mut test::Bencher) {
-        use buffer::{ImageBuffer, Pixel};
+        use crate::buffer::{ImageBuffer, Pixel};
 
         let mut a: RgbImage = ImageBuffer::new(1000, 1000);
-        for mut p in a.pixels_mut() {
+        for p in a.pixels_mut() {
             let rgb = p.channels_mut();
             rgb[0] = 255;
             rgb[1] = 23;
@@ -1168,10 +1231,10 @@ mod test {
     #[bench]
     #[cfg(feature = "benchmarks")]
     fn bench_image_access_col_by_col(b: &mut test::Bencher) {
-        use buffer::{ImageBuffer, Pixel};
+        use crate::buffer::{ImageBuffer, Pixel};
 
         let mut a: RgbImage = ImageBuffer::new(1000, 1000);
-        for mut p in a.pixels_mut() {
+        for p in a.pixels_mut() {
             let rgb = p.channels_mut();
             rgb[0] = 255;
             rgb[1] = 23;
@@ -1193,5 +1256,93 @@ mod test {
         });
 
         b.bytes = 1000 * 1000 * 3;
+    }
+
+    #[test]
+    fn test_image_buffer_copy_within_oob() {
+        let mut image: GrayImage = ImageBuffer::from_raw(4, 4, vec![0u8; 16]).unwrap();
+        assert!(!image.copy_within(Rect { x: 0, y: 0, width: 5, height: 4 }, 0, 0));
+        assert!(!image.copy_within(Rect { x: 0, y: 0, width: 4, height: 5 }, 0, 0));
+        assert!(!image.copy_within(Rect { x: 1, y: 0, width: 4, height: 4 }, 0, 0));
+        assert!(!image.copy_within(Rect { x: 0, y: 0, width: 4, height: 4 }, 1, 0));
+        assert!(!image.copy_within(Rect { x: 0, y: 1, width: 4, height: 4 }, 0, 0));
+        assert!(!image.copy_within(Rect { x: 0, y: 0, width: 4, height: 4 }, 0, 1));
+        assert!(!image.copy_within(Rect { x: 1, y: 1, width: 4, height: 4 }, 0, 0));
+    }
+
+    #[test]
+    fn test_image_buffer_copy_within_tl() {
+        let data = &[
+            00, 01, 02, 03,
+            04, 05, 06, 07,
+            08, 09, 10, 11,
+            12, 13, 14, 15
+        ];
+        let expected = [
+            00, 01, 02, 03,
+            04, 00, 01, 02,
+            08, 04, 05, 06,
+            12, 08, 09, 10,
+        ];
+        let mut image: GrayImage = ImageBuffer::from_raw(4, 4, Vec::from(&data[..])).unwrap();
+        assert!(image.copy_within(Rect { x: 0, y: 0, width: 3, height: 3 }, 1, 1));
+        assert_eq!(&image.into_raw(), &expected);
+    }
+
+    #[test]
+    fn test_image_buffer_copy_within_tr() {
+        let data = &[
+            00, 01, 02, 03,
+            04, 05, 06, 07,
+            08, 09, 10, 11,
+            12, 13, 14, 15
+        ];
+        let expected = [
+            00, 01, 02, 03,
+            01, 02, 03, 07,
+            05, 06, 07, 11,
+            09, 10, 11, 15
+        ];
+        let mut image: GrayImage = ImageBuffer::from_raw(4, 4, Vec::from(&data[..])).unwrap();
+        assert!(image.copy_within(Rect { x: 1, y: 0, width: 3, height: 3 }, 0, 1));
+        assert_eq!(&image.into_raw(), &expected);
+    }
+
+    #[test]
+    fn test_image_buffer_copy_within_bl() {
+        let data = &[
+            00, 01, 02, 03,
+            04, 05, 06, 07,
+            08, 09, 10, 11,
+            12, 13, 14, 15
+        ];
+        let expected = [
+            00, 04, 05, 06,
+            04, 08, 09, 10,
+            08, 12, 13, 14,
+            12, 13, 14, 15
+        ];
+        let mut image: GrayImage = ImageBuffer::from_raw(4, 4, Vec::from(&data[..])).unwrap();
+        assert!(image.copy_within(Rect { x: 0, y: 1, width: 3, height: 3 }, 1, 0));
+        assert_eq!(&image.into_raw(), &expected);
+    }
+
+    #[test]
+    fn test_image_buffer_copy_within_br() {
+        let data = &[
+            00, 01, 02, 03,
+            04, 05, 06, 07,
+            08, 09, 10, 11,
+            12, 13, 14, 15
+        ];
+        let expected = [
+            05, 06, 07, 03,
+            09, 10, 11, 07,
+            13, 14, 15, 11,
+            12, 13, 14, 15
+        ];
+        let mut image: GrayImage = ImageBuffer::from_raw(4, 4, Vec::from(&data[..])).unwrap();
+        assert!(image.copy_within(Rect { x: 1, y: 1, width: 3, height: 3 }, 0, 0));
+        assert_eq!(&image.into_raw(), &expected);
     }
 }

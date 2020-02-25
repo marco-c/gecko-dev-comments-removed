@@ -7,8 +7,8 @@
 
 
 
-pub use self::decoder::JPEGDecoder;
-pub use self::encoder::JPEGEncoder;
+pub use self::decoder::JpegDecoder;
+pub use self::encoder::{JPEGEncoder, PixelDensity, PixelDensityUnit};
 
 mod decoder;
 mod encoder;

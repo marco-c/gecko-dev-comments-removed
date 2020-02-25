@@ -47,9 +47,10 @@ use std::marker::PhantomData;
 
 use num_traits::Zero;
 
-use buffer::{ImageBuffer, Pixel};
-use color::ColorType;
-use image::{GenericImage, GenericImageView, ImageError};
+use crate::buffer::{ImageBuffer, Pixel};
+use crate::color::ColorType;
+use crate::error::ImageError;
+use crate::image::{GenericImage, GenericImageView};
 
 
 
@@ -265,7 +266,7 @@ impl SampleLayout {
 
         let (min_dim, mid_dim, max_dim) = (grouped[0], grouped[1], grouped[2]);
         assert!(min_dim.stride() <= mid_dim.stride() && mid_dim.stride() <= max_dim.stride());
-        
+
         grouped
     }
 
@@ -345,13 +346,13 @@ impl SampleLayout {
             if self.height_stride != self.channels as usize {
                 return false;
             }
-            
+
             if self.height as usize*self.height_stride != self.width_stride {
                 return false;
             }
         }
 
-        return true;
+        true
     }
 
     
@@ -360,7 +361,7 @@ impl SampleLayout {
     
     
     pub fn in_bounds(&self, channel: u8, x: u32, y: u32) -> bool {
-        return channel < self.channels && x < self.width && y < self.height
+        channel < self.channels && x < self.width && y < self.height
     }
 
     
@@ -477,8 +478,8 @@ impl<Buffer> FlatSamples<Buffer> {
     }
 
     
-    pub fn to_vec<T>(&self) -> FlatSamples<Vec<T>> 
-        where T: Clone, Buffer: AsRef<[T]> 
+    pub fn to_vec<T>(&self) -> FlatSamples<Vec<T>>
+        where T: Clone, Buffer: AsRef<[T]>
     {
         FlatSamples {
             samples: self.samples.as_ref().to_vec(),
@@ -509,7 +510,7 @@ impl<Buffer> FlatSamples<Buffer> {
     
     
     pub fn get_sample<T>(&self, channel: u8, x: u32, y: u32) -> Option<&T>
-        where Buffer: AsRef<[T]>, 
+        where Buffer: AsRef<[T]>,
     {
         self.index(channel, x, y).and_then(|idx| self.samples.as_ref().get(idx))
     }
@@ -545,7 +546,7 @@ impl<Buffer> FlatSamples<Buffer> {
         where Buffer: AsMut<[T]>,
     {
         match self.index(channel, x, y) {
-            None => return None,
+            None => None,
             Some(idx) => self.samples.as_mut().get_mut(idx),
         }
     }
@@ -556,7 +557,7 @@ impl<Buffer> FlatSamples<Buffer> {
     
     
     
-    pub fn as_view<P>(&self) -> Result<View<&[P::Subpixel], P>, Error> 
+    pub fn as_view<P>(&self) -> Result<View<&[P::Subpixel], P>, Error>
         where P: Pixel, Buffer: AsRef<[P::Subpixel]>,
     {
         if self.layout.channels != P::CHANNEL_COUNT {
@@ -707,8 +708,8 @@ impl<Buffer> FlatSamples<Buffer> {
     
     
     
-    pub fn try_into_buffer<P>(self) -> Result<ImageBuffer<P, Buffer>, (Error, Self)> 
-    where 
+    pub fn try_into_buffer<P>(self) -> Result<ImageBuffer<P, Buffer>, (Error, Self)>
+    where
         P: Pixel + 'static,
         P::Subpixel: 'static,
         Buffer: Deref<Target=[P::Subpixel]>,
@@ -869,9 +870,9 @@ impl<Buffer> FlatSamples<Buffer> {
 
 
 #[derive(Clone, Debug)]
-pub struct View<Buffer, P: Pixel> 
-where 
-    Buffer: AsRef<[P::Subpixel]> 
+pub struct View<Buffer, P: Pixel>
+where
+    Buffer: AsRef<[P::Subpixel]>
 {
     inner: FlatSamples<Buffer>,
     phantom: PhantomData<P>,
@@ -892,9 +893,9 @@ where
 
 
 #[derive(Clone, Debug)]
-pub struct ViewMut<Buffer, P: Pixel> 
-where 
-    Buffer: AsMut<[P::Subpixel]> 
+pub struct ViewMut<Buffer, P: Pixel>
+where
+    Buffer: AsMut<[P::Subpixel]>
 {
     inner: FlatSamples<Buffer>,
     phantom: PhantomData<P>,
@@ -969,8 +970,8 @@ pub enum NormalForm {
 }
 
 impl<Buffer, P: Pixel> View<Buffer, P>
-where 
-    Buffer: AsRef<[P::Subpixel]> 
+where
+    Buffer: AsRef<[P::Subpixel]>
 {
     
     
@@ -1019,7 +1020,7 @@ where
     
     
     
-    pub fn get_mut_sample(&mut self, channel: u8, x: u32, y: u32) -> Option<&mut P::Subpixel> 
+    pub fn get_mut_sample(&mut self, channel: u8, x: u32, y: u32) -> Option<&mut P::Subpixel>
         where Buffer: AsMut<[P::Subpixel]>
     {
         if !self.inner.in_bounds(channel, x, y) {
@@ -1051,7 +1052,7 @@ where
     
     
     
-    pub fn image_mut_slice(&mut self) -> &mut [P::Subpixel] 
+    pub fn image_mut_slice(&mut self) -> &mut [P::Subpixel]
         where Buffer: AsMut<[P::Subpixel]>
     {
         let min_length = self.min_length();
@@ -1085,7 +1086,8 @@ where
     
     
     
-    pub fn try_upgrade(self) -> Result<ViewMut<Buffer, P>, (Error, Self)> 
+    
+    pub fn try_upgrade(self) -> Result<ViewMut<Buffer, P>, (Error, Self)>
         where Buffer: AsMut<[P::Subpixel]>
     {
         if !self.inner.is_normal(NormalForm::PixelPacked) {
@@ -1101,7 +1103,7 @@ where
 }
 
 impl<Buffer, P: Pixel> ViewMut<Buffer, P>
-where 
+where
     Buffer: AsMut<[P::Subpixel]>
 {
     
@@ -1251,7 +1253,7 @@ impl<Buffer> IndexMut<(u8, u32, u32)> for FlatSamples<Buffer>
     }
 }
 
-impl<Buffer, P: Pixel> GenericImageView for View<Buffer, P> 
+impl<Buffer, P: Pixel> GenericImageView for View<Buffer, P>
     where Buffer: AsRef<[P::Subpixel]>
 {
     type Pixel = P;
@@ -1288,7 +1290,7 @@ impl<Buffer, P: Pixel> GenericImageView for View<Buffer, P>
             *to = image[index];
         });
 
-        P::from_slice(&buffer[..channels]).clone()
+        *P::from_slice(&buffer[..channels])
     }
 
     fn inner(&self) -> &Self {
@@ -1296,7 +1298,7 @@ impl<Buffer, P: Pixel> GenericImageView for View<Buffer, P>
     }
 }
 
-impl<Buffer, P: Pixel> GenericImageView for ViewMut<Buffer, P> 
+impl<Buffer, P: Pixel> GenericImageView for ViewMut<Buffer, P>
     where Buffer: AsMut<[P::Subpixel]> + AsRef<[P::Subpixel]>,
 {
     type Pixel = P;
@@ -1333,7 +1335,7 @@ impl<Buffer, P: Pixel> GenericImageView for ViewMut<Buffer, P>
             *to = image[index];
         });
 
-        P::from_slice(&buffer[..channels]).clone()
+        *P::from_slice(&buffer[..channels])
     }
 
     fn inner(&self) -> &Self {
@@ -1341,7 +1343,7 @@ impl<Buffer, P: Pixel> GenericImageView for ViewMut<Buffer, P>
     }
 }
 
-impl<Buffer, P: Pixel> GenericImage for ViewMut<Buffer, P> 
+impl<Buffer, P: Pixel> GenericImage for ViewMut<Buffer, P>
     where Buffer: AsMut<[P::Subpixel]> + AsRef<[P::Subpixel]>,
 {
     type InnerImage = Self;
@@ -1374,7 +1376,7 @@ impl From<Error> for ImageError {
     fn from(error: Error) -> ImageError {
         match error {
             Error::TooLarge => ImageError::DimensionError,
-            Error::WrongColor(color) => ImageError::UnsupportedColor(color),
+            Error::WrongColor(color) => ImageError::UnsupportedColor(color.into()),
             Error::NormalFormRequired(form) => ImageError::FormatError(
                 format!("Required sample buffer in normal form {:?}", form)),
         }
@@ -1417,8 +1419,8 @@ impl PartialOrd for NormalForm {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use buffer::GrayAlphaImage;
-    use color::{LumaA, Rgb};
+    use crate::buffer::GrayAlphaImage;
+    use crate::color::{LumaA, Rgb};
 
     #[test]
     fn aliasing_view() {

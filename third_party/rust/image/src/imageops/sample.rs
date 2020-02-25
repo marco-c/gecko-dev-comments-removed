@@ -7,10 +7,75 @@ use std::f32;
 
 use num_traits::{NumCast, ToPrimitive, Zero};
 
-use buffer::{ImageBuffer, Pixel};
-use image::GenericImageView;
-use math::utils::clamp;
-use traits::{Enlargeable, Primitive};
+use crate::buffer::{ImageBuffer, Pixel};
+use crate::image::GenericImageView;
+use crate::math::utils::clamp;
+use crate::traits::{Enlargeable, Primitive};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #[derive(Clone, Copy, Debug)]
@@ -32,12 +97,12 @@ pub enum FilterType {
 }
 
 
-pub struct Filter<'a> {
+pub(crate) struct Filter<'a> {
     
-    pub kernel: Box<dyn Fn(f32) -> f32 + 'a>,
+    pub(crate) kernel: Box<dyn Fn(f32) -> f32 + 'a>,
 
     
-    pub support: f32,
+    pub(crate) support: f32,
 }
 
 
@@ -80,30 +145,30 @@ fn bc_cubic_spline(x: f32, b: f32, c: f32) -> f32 {
 
 
 
-pub fn gaussian(x: f32, r: f32) -> f32 {
+pub(crate) fn gaussian(x: f32, r: f32) -> f32 {
     ((2.0 * f32::consts::PI).sqrt() * r).recip() * (-x.powi(2) / (2.0 * r.powi(2))).exp()
 }
 
 
-pub fn lanczos3_kernel(x: f32) -> f32 {
+pub(crate) fn lanczos3_kernel(x: f32) -> f32 {
     lanczos(x, 3.0)
 }
 
 
 
-pub fn gaussian_kernel(x: f32) -> f32 {
+pub(crate) fn gaussian_kernel(x: f32) -> f32 {
     gaussian(x, 0.5)
 }
 
 
 
-pub fn catmullrom_kernel(x: f32) -> f32 {
+pub(crate) fn catmullrom_kernel(x: f32) -> f32 {
     bc_cubic_spline(x, 0.0, 0.5)
 }
 
 
 
-pub fn triangle_kernel(x: f32) -> f32 {
+pub(crate) fn triangle_kernel(x: f32) -> f32 {
     if x.abs() < 1.0 {
         1.0 - x.abs()
     } else {
@@ -114,7 +179,7 @@ pub fn triangle_kernel(x: f32) -> f32 {
 
 
 
-pub fn box_kernel(_x: f32) -> f32 {
+pub(crate) fn box_kernel(_x: f32) -> f32 {
     1.0
 }
 
@@ -404,7 +469,7 @@ where
 fn thumbnail_sample_block<I, P, S>(
     image: &I,
     left: u32,
-    right: u32, 
+    right: u32,
     bottom: u32,
     top: u32,
 ) -> (S, S, S, S)
@@ -438,7 +503,7 @@ where
 fn thumbnail_sample_fraction_horizontal<I, P, S>(
     image: &I,
     left: u32,
-    fraction_horizontal: f32, 
+    fraction_horizontal: f32,
     bottom: u32,
     top: u32,
 ) -> (S, S, S, S)
@@ -462,8 +527,8 @@ where
     
     let fact_right =       fract /((top - bottom) as f32);
     let fact_left  = (1. - fract)/((top - bottom) as f32);
-    
-    let mix_left_and_right = |leftv: S::Larger, rightv: S::Larger| 
+
+    let mix_left_and_right = |leftv: S::Larger, rightv: S::Larger|
         <S as NumCast>::from(
             fact_left * leftv.to_f32().unwrap() +
             fact_right * rightv.to_f32().unwrap()
@@ -481,7 +546,7 @@ where
 fn thumbnail_sample_fraction_vertical<I, P, S>(
     image: &I,
     left: u32,
-    right: u32, 
+    right: u32,
     bottom: u32,
     fraction_vertical: f32,
 ) -> (S, S, S, S)
@@ -505,8 +570,8 @@ where
     
     let fact_top =       fract /((right - left) as f32);
     let fact_bot = (1. - fract)/((right - left) as f32);
-    
-    let mix_bot_and_top = |botv: S::Larger, topv: S::Larger| 
+
+    let mix_bot_and_top = |botv: S::Larger, topv: S::Larger|
         <S as NumCast>::from(
             fact_bot * botv.to_f32().unwrap() +
             fact_top * topv.to_f32().unwrap()
@@ -537,7 +602,7 @@ where
     let k_tl = image.get_pixel(left,     bottom + 1).channels4();
     let k_br = image.get_pixel(left + 1, bottom    ).channels4();
     let k_tr = image.get_pixel(left + 1, bottom + 1).channels4();
-    
+
     let frac_v = fraction_vertical;
     let frac_h = fraction_horizontal;
 
@@ -553,7 +618,7 @@ where
             fact_bl * bl.to_f32().unwrap() +
             fact_tl * tl.to_f32().unwrap()
         ).expect("Average sample value should fit into sample type");
-    
+
     (
         mix(k_br.0, k_tr.0, k_bl.0, k_tl.0),
         mix(k_br.1, k_tr.1, k_bl.1, k_tl.1),
@@ -752,17 +817,17 @@ where
 #[cfg(test)]
 mod tests {
     use super::{resize, FilterType};
-    use buffer::{ImageBuffer, RgbImage};
+    use crate::buffer::{ImageBuffer, RgbImage};
     #[cfg(feature = "benchmarks")]
     use test;
 
     #[bench]
-    #[cfg(all(feature = "benchmarks", feature = "png_codec"))]
+    #[cfg(all(feature = "benchmarks", feature = "png"))]
     fn bench_resize(b: &mut test::Bencher) {
         use std::path::Path;
-        let img = ::open(&Path::new("./examples/fractal.png")).unwrap();
+        let img = crate::open(&Path::new("./examples/fractal.png")).unwrap();
         b.iter(|| {
-            test::black_box(resize(&img, 200, 200, ::Nearest));
+            test::black_box(resize(&img, 200, 200, FilterType::Nearest));
         });
         b.bytes = 800 * 800 * 3 + 200 * 200 * 3;
     }
@@ -776,8 +841,8 @@ mod tests {
     #[bench]
     #[cfg(all(feature = "benchmarks", feature = "tiff"))]
     fn bench_thumbnail(b: &mut test::Bencher) {
-        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/images/tiff/testsuite/lenna.tiff");
-        let image = ::open(path).unwrap();
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/images/tiff/testsuite/mandrill.tiff");
+        let image = crate::open(path).unwrap();
         b.iter(|| {
             test::black_box(image.thumbnail(256, 256));
         });
@@ -787,8 +852,8 @@ mod tests {
     #[bench]
     #[cfg(all(feature = "benchmarks", feature = "tiff"))]
     fn bench_thumbnail_upsize(b: &mut test::Bencher) {
-        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/images/tiff/testsuite/lenna.tiff");
-        let image = ::open(path).unwrap().thumbnail(256, 256);
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/images/tiff/testsuite/mandrill.tiff");
+        let image = crate::open(path).unwrap().thumbnail(256, 256);
         b.iter(|| {
             test::black_box(image.thumbnail(512, 512));
         });
@@ -798,8 +863,8 @@ mod tests {
     #[bench]
     #[cfg(all(feature = "benchmarks", feature = "tiff"))]
     fn bench_thumbnail_upsize_irregular(b: &mut test::Bencher) {
-        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/images/tiff/testsuite/lenna.tiff");
-        let image = ::open(path).unwrap().thumbnail(193, 193);
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/images/tiff/testsuite/mandrill.tiff");
+        let image = crate::open(path).unwrap().thumbnail(193, 193);
         b.iter(|| {
             test::black_box(image.thumbnail(256, 256));
         });

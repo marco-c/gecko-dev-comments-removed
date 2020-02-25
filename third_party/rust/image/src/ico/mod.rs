@@ -6,7 +6,7 @@
 
 
 
-pub use self::decoder::ICODecoder;
+pub use self::decoder::IcoDecoder;
 pub use self::encoder::ICOEncoder;
 
 mod decoder;

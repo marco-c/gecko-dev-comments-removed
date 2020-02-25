@@ -4,18 +4,13 @@
 
 #![warn(missing_docs)]
 #![warn(unused_qualifications)]
+#![deny(unreachable_pub)]
+#![deny(deprecated)]
 #![deny(missing_copy_implementations)]
 #![cfg_attr(all(test, feature = "benchmarks"), feature(test))]
 
-#![cfg_attr(feature = "cargo-clippy", allow(many_single_char_names))]
+#![allow(clippy::many_single_char_names)]
 
-extern crate byteorder;
-extern crate lzw;
-extern crate num_iter;
-extern crate num_rational;
-extern crate num_traits;
-#[cfg(feature = "hdr")]
-extern crate scoped_threadpool;
 #[cfg(all(test, feature = "benchmarks"))]
 extern crate test;
 
@@ -25,48 +20,51 @@ extern crate quickcheck;
 
 use std::io::Write;
 
-pub use color::ColorType::{self, Gray, GrayA, Palette, RGB, RGBA, BGR, BGRA};
+pub use crate::color::{ColorType, ExtendedColorType};
 
-pub use color::{Luma, LumaA, Rgb, Rgba, Bgr, Bgra};
+pub use crate::color::{Luma, LumaA, Rgb, Rgba, Bgr, Bgra};
 
-pub use image::{AnimationDecoder,
+pub use crate::error::{ImageError, ImageResult};
+
+pub use crate::image::{AnimationDecoder,
                 GenericImage,
                 GenericImageView,
                 ImageDecoder,
                 ImageDecoderExt,
-                ImageError,
-                ImageResult,
+                ImageEncoder,
+                ImageFormat,
+                ImageOutputFormat,
+                Progress,
                 
                 Pixels,
                 SubImage};
 
-pub use imageops::FilterType::{self, CatmullRom, Gaussian, Lanczos3, Nearest, Triangle};
-
-pub use image::ImageFormat::{self, BMP, GIF, ICO, JPEG, PNG, PNM, WEBP};
-
-pub use image::ImageOutputFormat;
-
-pub use buffer::{ConvertBuffer,
+pub use crate::buffer::{ConvertBuffer,
                  GrayAlphaImage,
                  GrayImage,
                  
                  ImageBuffer,
                  Pixel,
                  RgbImage,
-                 RgbaImage};
+                 RgbaImage,
+                 };
 
-pub use flat::{FlatSamples};
-
-
-pub use traits::Primitive;
+pub use crate::flat::FlatSamples;
 
 
-pub use dynimage::{guess_format, load, load_from_memory, load_from_memory_with_format, open,
+pub use crate::traits::Primitive;
+
+
+pub use crate::io::free_functions::{guess_format, load};
+pub use crate::dynimage::{load_from_memory, load_from_memory_with_format, open,
                    save_buffer, save_buffer_with_format, image_dimensions};
 
-pub use dynimage::DynamicImage::{self, ImageLuma8, ImageLumaA8, ImageRgb8, ImageRgba8, ImageBgr8, ImageBgra8};
+pub use crate::dynimage::DynamicImage;
 
-pub use animation::{Frame, Frames};
+pub use crate::animation::{Delay, Frame, Frames};
+
+
+pub mod error;
 
 
 pub mod math;
@@ -75,14 +73,19 @@ pub mod math;
 pub mod imageops;
 
 
+pub mod io;
+
+
 pub mod flat;
 
 
 #[cfg(feature = "bmp")]
 pub mod bmp;
+#[cfg(feature = "dds")]
+pub mod dds;
 #[cfg(feature = "dxt")]
 pub mod dxt;
-#[cfg(feature = "gif_codec")]
+#[cfg(feature = "gif")]
 pub mod gif;
 #[cfg(feature = "hdr")]
 pub mod hdr;
@@ -90,7 +93,7 @@ pub mod hdr;
 pub mod ico;
 #[cfg(feature = "jpeg")]
 pub mod jpeg;
-#[cfg(feature = "png_codec")]
+#[cfg(feature = "png")]
 pub mod png;
 #[cfg(feature = "pnm")]
 pub mod pnm;

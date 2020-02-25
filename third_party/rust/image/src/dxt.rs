@@ -7,10 +7,12 @@
 
 
 
+use std::convert::TryFrom;
 use std::io::{self, Read, Seek, SeekFrom, Write};
 
-use color::ColorType;
-use image::{self, ImageDecoder, ImageDecoderExt, ImageError, ImageReadBuffer, ImageResult, Progress};
+use crate::color::ColorType;
+use crate::error::{ImageError, ImageResult};
+use crate::image::{self, ImageDecoder, ImageDecoderExt, ImageReadBuffer, Progress};
 
 
 
@@ -47,16 +49,16 @@ impl DXTVariant {
     }
 
     
-    pub fn colortype(self) -> ColorType {
+    pub fn color_type(self) -> ColorType {
         match self {
-            DXTVariant::DXT1 => ColorType::RGB(8),
-            DXTVariant::DXT3 | DXTVariant::DXT5 => ColorType::RGBA(8),
+            DXTVariant::DXT1 => ColorType::Rgb8,
+            DXTVariant::DXT3 | DXTVariant::DXT5 => ColorType::Rgba8,
         }
     }
 }
 
 
-pub struct DXTDecoder<R: Read> {
+pub struct DxtDecoder<R: Read> {
     inner: R,
     width_blocks: u32,
     height_blocks: u32,
@@ -64,7 +66,7 @@ pub struct DXTDecoder<R: Read> {
     row: u32,
 }
 
-impl<R: Read> DXTDecoder<R> {
+impl<R: Read> DxtDecoder<R> {
     
     
     
@@ -77,13 +79,13 @@ impl<R: Read> DXTDecoder<R> {
         width: u32,
         height: u32,
         variant: DXTVariant,
-    ) -> Result<DXTDecoder<R>, ImageError> {
+    ) -> Result<DxtDecoder<R>, ImageError> {
         if width % 4 != 0 || height % 4 != 0 {
             return Err(ImageError::DimensionError);
         }
         let width_blocks = width / 4;
         let height_blocks = height / 4;
-        Ok(DXTDecoder {
+        Ok(DxtDecoder {
             inner: r,
             width_blocks,
             height_blocks,
@@ -93,7 +95,7 @@ impl<R: Read> DXTDecoder<R> {
     }
 
     fn read_scanline(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        assert_eq!(buf.len() as u64, self.scanline_bytes());
+        assert_eq!(u64::try_from(buf.len()), Ok(self.scanline_bytes()));
 
         let mut src =
             vec![0u8; self.variant.encoded_bytes_per_block() * self.width_blocks as usize];
@@ -110,57 +112,50 @@ impl<R: Read> DXTDecoder<R> {
 
 
 
-impl<'a, R: 'a + Read> ImageDecoder<'a> for DXTDecoder<R> {
+impl<'a, R: 'a + Read> ImageDecoder<'a> for DxtDecoder<R> {
     type Reader = DXTReader<R>;
 
-    fn dimensions(&self) -> (u64, u64) {
-        (self.width_blocks as u64 * 4, self.height_blocks as u64 * 4)
+    fn dimensions(&self) -> (u32, u32) {
+        (self.width_blocks * 4, self.height_blocks * 4)
     }
 
-    fn colortype(&self) -> ColorType {
-        self.variant.colortype()
+    fn color_type(&self) -> ColorType {
+        self.variant.color_type()
     }
 
     fn scanline_bytes(&self) -> u64 {
-        self.variant.decoded_bytes_per_block() as u64 * self.width_blocks as u64
+        self.variant.decoded_bytes_per_block() as u64 * u64::from(self.width_blocks)
     }
 
     fn into_reader(self) -> ImageResult<Self::Reader> {
-        if self.total_bytes() > usize::max_value() as u64 {
-            return Err(ImageError::InsufficientMemory);
-        }
-
         Ok(DXTReader {
-            buffer: ImageReadBuffer::new(self.scanline_bytes() as usize, self.total_bytes() as usize),
+            buffer: ImageReadBuffer::new(self.scanline_bytes(), self.total_bytes()),
             decoder: self,
         })
     }
 
-    fn read_image(mut self) -> ImageResult<Vec<u8>> {
-        if self.total_bytes() > usize::max_value() as u64 {
-            return Err(ImageError::InsufficientMemory);
-        }
+    fn read_image(mut self, buf: &mut [u8]) -> ImageResult<()> {
+        assert_eq!(u64::try_from(buf.len()), Ok(self.total_bytes()));
 
-        let mut dest = vec![0u8; self.total_bytes() as usize];
-        for chunk in dest.chunks_mut(self.scanline_bytes() as usize) {
+        for chunk in buf.chunks_mut(self.scanline_bytes() as usize) {
             self.read_scanline(chunk)?;
         }
-        Ok(dest)
+        Ok(())
     }
 }
 
-impl<'a, R: 'a + Read + Seek> ImageDecoderExt<'a> for DXTDecoder<R> {
+impl<'a, R: 'a + Read + Seek> ImageDecoderExt<'a> for DxtDecoder<R> {
     fn read_rect_with_progress<F: Fn(Progress)>(
         &mut self,
-        x: u64,
-        y: u64,
-        width: u64,
-        height: u64,
+        x: u32,
+        y: u32,
+        width: u32,
+        height: u32,
         buf: &mut [u8],
         progress_callback: F,
     ) -> ImageResult<()> {
         let encoded_scanline_bytes = self.variant.encoded_bytes_per_block() as u64
-            * self.width_blocks as u64;
+            * u64::from(self.width_blocks);
 
         let start = self.inner.seek(SeekFrom::Current(0))?;
         image::load_rect(x, y, width, height, buf, progress_callback, self,
@@ -177,11 +172,11 @@ impl<'a, R: 'a + Read + Seek> ImageDecoderExt<'a> for DXTDecoder<R> {
 
 pub struct DXTReader<R: Read> {
     buffer: ImageReadBuffer,
-    decoder: DXTDecoder<R>,
+    decoder: DxtDecoder<R>,
 }
 impl<R: Read> Read for DXTReader<R> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        let ref mut decoder = &mut self.decoder;
+        let decoder = &mut self.decoder;
         self.buffer.read(buf, |buf| decoder.read_scanline(buf))
     }
 }

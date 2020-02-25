@@ -4,7 +4,7 @@ use std::io;
 
 
 
-pub struct AutoBreak<W: io::Write> {
+pub(crate) struct AutoBreak<W: io::Write> {
     wrapped: W,
     line_capacity: usize,
     line: Vec<u8>,

@@ -1,194 +1,121 @@
-use std::error::Error;
-use std::fmt;
+#![allow(clippy::too_many_arguments)]
+use std::convert::TryFrom;
 use std::io;
 use std::io::Read;
 use std::ops::{Deref, DerefMut};
+use std::path::Path;
 
-use buffer::{ImageBuffer, Pixel};
-use color;
-use color::ColorType;
+use crate::buffer::{ImageBuffer, Pixel};
+use crate::color::{ColorType, ExtendedColorType};
+use crate::error::{ImageError, ImageResult};
+use crate::math::Rect;
 
-use animation::Frames;
+use crate::animation::Frames;
 
 #[cfg(feature = "pnm")]
-use pnm::PNMSubtype;
-
-
-#[derive(Debug)]
-pub enum ImageError {
-    
-    FormatError(String),
-
-    
-    DimensionError,
-
-    
-    UnsupportedError(String),
-
-    
-    UnsupportedColor(ColorType),
-
-    
-    
-    NotEnoughData,
-
-    
-    IoError(io::Error),
-
-    
-    ImageEnd,
-
-    
-    InsufficientMemory,
-}
-
-impl fmt::Display for ImageError {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        match *self {
-            ImageError::FormatError(ref e) => write!(fmt, "Format error: {}", e),
-            ImageError::DimensionError => write!(
-                fmt,
-                "The Image's dimensions are either too \
-                 small or too large"
-            ),
-            ImageError::UnsupportedError(ref f) => write!(
-                fmt,
-                "The Decoder does not support the \
-                 image format `{}`",
-                f
-            ),
-            ImageError::UnsupportedColor(ref c) => write!(
-                fmt,
-                "The decoder does not support \
-                 the color type `{:?}`",
-                c
-            ),
-            ImageError::NotEnoughData => write!(
-                fmt,
-                "Not enough data was provided to the \
-                 Decoder to decode the image"
-            ),
-            ImageError::IoError(ref e) => e.fmt(fmt),
-            ImageError::ImageEnd => write!(fmt, "The end of the image has been reached"),
-            ImageError::InsufficientMemory => write!(fmt, "Insufficient memory"),
-        }
-    }
-}
-
-impl Error for ImageError {
-    fn description(&self) -> &str {
-        match *self {
-            ImageError::FormatError(..) => "Format error",
-            ImageError::DimensionError => "Dimension error",
-            ImageError::UnsupportedError(..) => "Unsupported error",
-            ImageError::UnsupportedColor(..) => "Unsupported color",
-            ImageError::NotEnoughData => "Not enough data",
-            ImageError::IoError(..) => "IO error",
-            ImageError::ImageEnd => "Image end",
-            ImageError::InsufficientMemory => "Insufficient memory",
-        }
-    }
-
-    fn cause(&self) -> Option<&dyn Error> {
-        match *self {
-            ImageError::IoError(ref e) => Some(e),
-            _ => None,
-        }
-    }
-}
-
-impl From<io::Error> for ImageError {
-    fn from(err: io::Error) -> ImageError {
-        ImageError::IoError(err)
-    }
-}
-
-
-pub type ImageResult<T> = Result<T, ImageError>;
+use crate::pnm::PNMSubtype;
 
 
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 pub enum ImageFormat {
     
-    PNG,
+    Png,
 
     
-    JPEG,
+    Jpeg,
 
     
-    GIF,
+    Gif,
 
     
-    WEBP,
+    WebP,
 
     
-    PNM,
+    Pnm,
 
     
-    TIFF,
+    Tiff,
 
     
-    TGA,
+    Tga,
 
     
-    BMP,
+    Dds,
 
     
-    ICO,
+    Bmp,
 
     
-    HDR,
+    Ico,
+
+    
+    Hdr,
+
+    #[doc(hidden)]
+    __NonExhaustive(crate::utils::NonExhaustiveMarker),
+}
+
+impl ImageFormat {
+    
+    pub fn from_path<P>(path: P) -> ImageResult<Self> where P : AsRef<Path> {
+        
+        crate::io::free_functions::guess_format_from_path_impl(path.as_ref())
+            .map_err(Into::into)
+    }
 }
 
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum ImageOutputFormat {
-    #[cfg(feature = "png_codec")]
+    #[cfg(feature = "png")]
     
-    PNG,
+    Png,
 
     #[cfg(feature = "jpeg")]
     
-    JPEG(u8),
+    Jpeg(u8),
 
     #[cfg(feature = "pnm")]
     
-    PNM(PNMSubtype),
+    Pnm(PNMSubtype),
 
-    #[cfg(feature = "gif_codec")]
+    #[cfg(feature = "gif")]
     
-    GIF,
+    Gif,
 
     #[cfg(feature = "ico")]
     
-    ICO,
+    Ico,
 
     #[cfg(feature = "bmp")]
     
-    BMP,
+    Bmp,
 
     
     
     
     Unsupported(String),
+
+    #[doc(hidden)]
+    __NonExhaustive(crate::utils::NonExhaustiveMarker),
 }
 
 impl From<ImageFormat> for ImageOutputFormat {
     fn from(fmt: ImageFormat) -> Self {
         match fmt {
-            #[cfg(feature = "png_codec")]
-            ImageFormat::PNG => ImageOutputFormat::PNG,
+            #[cfg(feature = "png")]
+            ImageFormat::Png => ImageOutputFormat::Png,
             #[cfg(feature = "jpeg")]
-            ImageFormat::JPEG => ImageOutputFormat::JPEG(75),
+            ImageFormat::Jpeg => ImageOutputFormat::Jpeg(75),
             #[cfg(feature = "pnm")]
-            ImageFormat::PNM => ImageOutputFormat::PNM(PNMSubtype::ArbitraryMap),
-            #[cfg(feature = "gif_codec")]
-            ImageFormat::GIF => ImageOutputFormat::GIF,
+            ImageFormat::Pnm => ImageOutputFormat::Pnm(PNMSubtype::ArbitraryMap),
+            #[cfg(feature = "gif")]
+            ImageFormat::Gif => ImageOutputFormat::Gif,
             #[cfg(feature = "ico")]
-            ImageFormat::ICO => ImageOutputFormat::ICO,
+            ImageFormat::Ico => ImageOutputFormat::Ico,
             #[cfg(feature = "bmp")]
-            ImageFormat::BMP => ImageOutputFormat::BMP,
+            ImageFormat::Bmp => ImageOutputFormat::Bmp,
 
             f => ImageOutputFormat::Unsupported(format!(
                 "Image format {:?} not supported for encoding.",
@@ -205,20 +132,26 @@ pub(crate) struct ImageReadBuffer {
     buffer: Vec<u8>,
     consumed: usize,
 
-    total_bytes: usize,
-    offset: usize,
+    total_bytes: u64,
+    offset: u64,
 }
 impl ImageReadBuffer {
-    pub fn new(scanline_bytes: usize, total_bytes: usize) -> Self {
+    
+    
+    
+    
+    
+    pub(crate) fn new(scanline_bytes: u64, total_bytes: u64) -> Self {
         Self {
-            scanline_bytes,
+            scanline_bytes: usize::try_from(scanline_bytes).unwrap(),
             buffer: Vec::new(),
             consumed: 0,
             total_bytes,
             offset: 0,
         }
     }
-    pub fn read<F>(&mut self, buf: &mut [u8], mut read_scanline: F) -> io::Result<usize>
+
+    pub(crate) fn read<F>(&mut self, buf: &mut [u8], mut read_scanline: F) -> io::Result<usize>
     where
         F: FnMut(&mut [u8]) -> io::Result<usize>,
     {
@@ -229,7 +162,7 @@ impl ImageReadBuffer {
                 
                 
                 let bytes_read = read_scanline(&mut buf[..self.scanline_bytes])?;
-                self.offset += bytes_read;
+                self.offset += u64::try_from(bytes_read).unwrap();
                 return Ok(bytes_read);
             } else {
                 
@@ -241,7 +174,7 @@ impl ImageReadBuffer {
                 self.consumed = 0;
                 let bytes_read = read_scanline(&mut self.buffer[..])?;
                 self.buffer.resize(bytes_read, 0);
-                self.offset += bytes_read;
+                self.offset += u64::try_from(bytes_read).unwrap();
 
                 assert!(bytes_read == self.scanline_bytes || self.offset == self.total_bytes);
             }
@@ -250,11 +183,11 @@ impl ImageReadBuffer {
         
         let bytes_buffered = self.buffer.len() - self.consumed;
         if bytes_buffered > buf.len() {
-            ::copy_memory(&self.buffer[self.consumed..][..buf.len()], &mut buf[..]);
+            crate::copy_memory(&self.buffer[self.consumed..][..buf.len()], &mut buf[..]);
             self.consumed += buf.len();
             Ok(buf.len())
         } else {
-            ::copy_memory(&self.buffer[self.consumed..], &mut buf[..bytes_buffered]);
+            crate::copy_memory(&self.buffer[self.consumed..], &mut buf[..bytes_buffered]);
             self.consumed = self.buffer.len();
             Ok(bytes_buffered)
         }
@@ -263,7 +196,7 @@ impl ImageReadBuffer {
 
 
 
-pub(crate) fn load_rect<'a, D, F, F1, F2>(x: u64, y: u64, width: u64, height: u64, buf: &mut [u8],
+pub(crate) fn load_rect<'a, D, F, F1, F2, E>(x: u32, y: u32, width: u32, height: u32, buf: &mut [u8],
                                           progress_callback: F,
                                           decoder: &mut D,
                                           mut seek_scanline: F1,
@@ -271,15 +204,17 @@ pub(crate) fn load_rect<'a, D, F, F1, F2>(x: u64, y: u64, width: u64, height: u6
     where D: ImageDecoder<'a>,
           F: Fn(Progress),
           F1: FnMut(&mut D, u64) -> io::Result<()>,
-          F2: FnMut(&mut D, &mut [u8]) -> io::Result<usize>
+          F2: FnMut(&mut D, &mut [u8]) -> Result<usize, E>,
+          ImageError: From<E>,
 {
+    let (x, y, width, height) = (u64::from(x), u64::from(y), u64::from(width), u64::from(height));
     let dimensions = decoder.dimensions();
-    let row_bytes = decoder.row_bytes();
+    let bytes_per_pixel = u64::from(decoder.color_type().bytes_per_pixel());
+    let row_bytes = bytes_per_pixel * u64::from(dimensions.0);
     let scanline_bytes = decoder.scanline_bytes();
-    let bits_per_pixel = color::bits_per_pixel(decoder.colortype()) as u64;
-    let total_bits = width * height * bits_per_pixel;
+    let total_bytes = width * height * bytes_per_pixel;
 
-    let mut bits_read = 0u64;
+    let mut bytes_read = 0u64;
     let mut current_scanline = 0;
     let mut tmp = Vec::new();
 
@@ -287,44 +222,40 @@ pub(crate) fn load_rect<'a, D, F, F1, F2>(x: u64, y: u64, width: u64, height: u6
         
         
         let mut read_image_range = |start: u64, end: u64| -> ImageResult<()> {
-            let target_scanline = start / (scanline_bytes * 8);
+            let target_scanline = start / scanline_bytes;
             if target_scanline != current_scanline {
                 seek_scanline(decoder, target_scanline)?;
                 current_scanline = target_scanline;
             }
 
-            let mut position = current_scanline * scanline_bytes * 8;
+            let mut position = current_scanline * scanline_bytes;
             while position < end {
-                if position >= start && end - position >= scanline_bytes * 8 && bits_read % 8 == 0 {
-                    read_scanline(decoder, &mut buf[((bits_read/8) as usize)..]
+                if position >= start && end - position >= scanline_bytes {
+                    read_scanline(decoder, &mut buf[(bytes_read as usize)..]
                                                    [..(scanline_bytes as usize)])?;
-                    bits_read += scanline_bytes * 8;
+                    bytes_read += scanline_bytes;
                 } else {
                     tmp.resize(scanline_bytes as usize, 0u8);
                     read_scanline(decoder, &mut tmp)?;
 
                     let offset = start.saturating_sub(position);
                     let len = (end - start)
-                        .min(scanline_bytes * 8 - offset)
+                        .min(scanline_bytes - offset)
                         .min(end - position);
-                    if bits_read % 8 == 0 && offset % 8 == 0 && len % 8 == 0 {
-                        let o = (offset / 8) as usize;
-                        let l = (len / 8) as usize;
-                        buf[((bits_read/8) as usize)..][..l].copy_from_slice(&tmp[o..][..l]);
-                        bits_read += len;
-                    } else {
-                        unimplemented!("Target rectangle not aligned on byte boundaries")
-                    }
+
+                    buf[(bytes_read as usize)..][..len as usize]
+                        .copy_from_slice(&tmp[offset as usize..][..len as usize]);
+                    bytes_read += len;
                 }
 
                 current_scanline += 1;
-                position += scanline_bytes * 8;
-                progress_callback(Progress {current: bits_read, total: total_bits});
+                position += scanline_bytes;
+                progress_callback(Progress {current: bytes_read, total: total_bytes});
             }
             Ok(())
         };
 
-        if x + width > dimensions.0 || y + height > dimensions.0
+        if x + width > u64::from(dimensions.0) || y + height > u64::from(dimensions.0)
             || width == 0 || height == 0 {
                 return Err(ImageError::DimensionError);
             }
@@ -332,15 +263,15 @@ pub(crate) fn load_rect<'a, D, F, F1, F2>(x: u64, y: u64, width: u64, height: u6
             return Err(ImageError::InsufficientMemory);
         }
 
-        progress_callback(Progress {current: 0, total: total_bits});
-        if x == 0 && width == dimensions.0 {
-            let start = x * bits_per_pixel + y * row_bytes * 8;
-            let end = (x + width) * bits_per_pixel + (y + height - 1) * row_bytes * 8;
+        progress_callback(Progress {current: 0, total: total_bytes});
+        if x == 0 && width == u64::from(dimensions.0) {
+            let start = x * bytes_per_pixel + y * row_bytes;
+            let end = (x + width) * bytes_per_pixel + (y + height - 1) * row_bytes;
             read_image_range(start, end)?;
         } else {
             for row in y..(y+height) {
-                let start = x * bits_per_pixel + row * row_bytes * 8;
-                let end = (x + width) * bits_per_pixel + row * row_bytes * 8;
+                let start = x * bytes_per_pixel + row * row_bytes;
+                let end = (x + width) * bytes_per_pixel + row * row_bytes;
                 read_image_range(start, end)?;
             }
         }
@@ -351,10 +282,46 @@ pub(crate) fn load_rect<'a, D, F, F1, F2>(x: u64, y: u64, width: u64, height: u6
 }
 
 
+
+
+
+pub(crate) fn decoder_to_vec<'a, T>(decoder: impl ImageDecoder<'a>) -> ImageResult<Vec<T>>
+where
+    T: crate::traits::Primitive + bytemuck::Pod,
+{
+    let mut buf = vec![num_traits::Zero::zero(); usize::try_from(decoder.total_bytes()).unwrap() / std::mem::size_of::<T>()];
+    decoder.read_image(bytemuck::cast_slice_mut(buf.as_mut_slice()))?;
+    Ok(buf)
+}
+
+
+
+
+
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Progress {
     current: u64,
     total: u64,
+}
+
+impl Progress {
+    
+    pub fn current(self) -> u64 {
+        self.current
+    }
+
+    
+    
+    
+    pub fn total(self) -> u64 {
+        self.total
+    }
+
+    
+    pub fn remaining(self) -> u64 {
+        self.total.max(self.current) - self.current
+    }
 }
 
 
@@ -363,10 +330,15 @@ pub trait ImageDecoder<'a>: Sized {
     type Reader: Read + 'a;
 
     
-    fn dimensions(&self) -> (u64, u64);
+    fn dimensions(&self) -> (u32, u32);
 
     
-    fn colortype(&self) -> ColorType;
+    fn color_type(&self) -> ColorType;
+
+    
+    fn original_color_type(&self) -> ExtendedColorType {
+        self.color_type().into()
+    }
 
     
     
@@ -375,13 +347,13 @@ pub trait ImageDecoder<'a>: Sized {
 
     
     
-    fn row_bytes(&self) -> u64 {
-        (self.dimensions().0 * color::bits_per_pixel(self.colortype()) as u64 + 7) / 8
-    }
-
+    
+    
+    
     
     fn total_bytes(&self) -> u64 {
-        self.dimensions().1 * self.row_bytes()
+        let dimensions = self.dimensions();
+        u64::from(dimensions.0) * u64::from(dimensions.1) * u64::from(self.color_type().bytes_per_pixel())
     }
 
     
@@ -391,22 +363,39 @@ pub trait ImageDecoder<'a>: Sized {
     }
 
     
-    fn read_image(self) -> ImageResult<Vec<u8>> {
-        self.read_image_with_progress(|_| {})
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn read_image(self, buf: &mut [u8]) -> ImageResult<()> {
+        self.read_image_with_progress(buf, |_| {})
     }
 
     
     
     fn read_image_with_progress<F: Fn(Progress)>(
         self,
+        buf: &mut [u8],
         progress_callback: F,
-    ) -> ImageResult<Vec<u8>> {
-        let total_bytes = self.total_bytes();
-        if total_bytes > usize::max_value() as u64 {
-            return Err(ImageError::InsufficientMemory);
-        }
+    ) -> ImageResult<()> {
+        assert_eq!(u64::try_from(buf.len()), Ok(self.total_bytes()));
 
-        let total_bytes = total_bytes as usize;
+        let total_bytes = self.total_bytes() as usize;
         let scanline_bytes = self.scanline_bytes() as usize;
         let target_read_size = if scanline_bytes < 4096 {
             (4096 / scanline_bytes) * scanline_bytes
@@ -417,10 +406,9 @@ pub trait ImageDecoder<'a>: Sized {
         let mut reader = self.into_reader()?;
 
         let mut bytes_read = 0;
-        let mut contents = vec![0; total_bytes];
         while bytes_read < total_bytes {
             let read_size = target_read_size.min(total_bytes - bytes_read);
-            reader.read_exact(&mut contents[bytes_read..][..read_size])?;
+            reader.read_exact(&mut buf[bytes_read..][..read_size])?;
             bytes_read += read_size;
 
             progress_callback(Progress {
@@ -429,7 +417,7 @@ pub trait ImageDecoder<'a>: Sized {
             });
         }
 
-        Ok(contents)
+        Ok(())
     }
 }
 
@@ -438,10 +426,10 @@ pub trait ImageDecoderExt<'a>: ImageDecoder<'a> + Sized {
     
     fn read_rect(
         &mut self,
-        x: u64,
-        y: u64,
-        width: u64,
-        height: u64,
+        x: u32,
+        y: u32,
+        width: u32,
+        height: u32,
         buf: &mut [u8],
     ) -> ImageResult<()> {
         self.read_rect_with_progress(x, y, width, height, buf, |_|{})
@@ -450,10 +438,10 @@ pub trait ImageDecoderExt<'a>: ImageDecoder<'a> + Sized {
     
     fn read_rect_with_progress<F: Fn(Progress)>(
         &mut self,
-        x: u64,
-        y: u64,
-        width: u64,
-        height: u64,
+        x: u32,
+        y: u32,
+        width: u32,
+        height: u32,
         buf: &mut [u8],
         progress_callback: F,
     ) -> ImageResult<()>;
@@ -463,6 +451,27 @@ pub trait ImageDecoderExt<'a>: ImageDecoder<'a> + Sized {
 pub trait AnimationDecoder<'a> {
     
     fn into_frames(self) -> Frames<'a>;
+}
+
+
+pub trait ImageEncoder {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn write_image(
+        self,
+        buf: &[u8],
+        width: u32,
+        height: u32,
+        color_type: ColorType,
+    ) -> ImageResult<()>;
 }
 
 
@@ -542,7 +551,6 @@ pub trait GenericImageView {
     
     
     
-    #[deprecated = "Generally offers little advantage over get_pixel. If you must, prefer dedicated methods or other realizations on the specific image type instead."]
     unsafe fn unsafe_get_pixel(&self, x: u32, y: u32) -> Self::Pixel {
         self.get_pixel(x, y)
     }
@@ -565,6 +573,7 @@ pub trait GenericImageView {
     
     fn inner(&self) -> &Self::InnerImageView;
 
+    
     
     fn view(&self, x: u32, y: u32, width: u32, height: u32) -> SubImage<&Self::InnerImageView> {
         SubImage::new(self.inner(), x, y, width, height)
@@ -595,7 +604,6 @@ pub trait GenericImage: GenericImageView {
     
     
     
-    #[deprecated = "Generally offers little advantage over put_pixel. If you must, prefer dedicated methods or other realizations on the specific image type instead."]
     unsafe fn unsafe_put_pixel(&mut self, x: u32, y: u32, pixel: Self::Pixel) {
         self.put_pixel(x, y, pixel);
     }
@@ -614,15 +622,14 @@ pub trait GenericImage: GenericImageView {
     
     
     
-    
-    fn copy_from<O>(&mut self, other: &O, x: u32, y: u32) -> bool
+    fn copy_from<O>(&mut self, other: &O, x: u32, y: u32) -> ImageResult<()>
     where
         O: GenericImageView<Pixel = Self::Pixel>,
     {
         
         
         if self.width() < other.width() + x || self.height() < other.height() + y {
-            return false;
+            return Err(ImageError::DimensionError);
         }
 
         for i in 0..other.width() {
@@ -631,12 +638,55 @@ pub trait GenericImage: GenericImageView {
                 self.put_pixel(i + x, k + y, p);
             }
         }
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    fn copy_within(&mut self, source: Rect, x: u32, y: u32) -> bool {
+        let Rect { x: sx, y: sy, width, height } = source;
+        let dx = x;
+        let dy = y;
+        assert!(sx < self.width() && dx < self.width());
+        assert!(sy < self.height() && dy < self.height());
+        if self.width() - dx.max(sx) < width || self.height() - dy.max(sy) < height {
+            return false;
+        }
+        
+        
+        macro_rules! copy_within_impl_ {
+            ($xiter:expr, $yiter:expr) => {
+                for y in $yiter {
+                    let sy = sy + y;
+                    let dy = dy + y;
+                    for x in $xiter {
+                        let sx = sx + x;
+                        let dx = dx + x;
+                        let pixel = self.get_pixel(sx, sy);
+                        self.put_pixel(dx, dy, pixel);
+                    }
+                }
+            };
+        }
+        
+        match (sx < dx, sy < dy) {
+            (true, true) => copy_within_impl_!((0..width).rev(), (0..height).rev()),
+            (true, false) => copy_within_impl_!((0..width).rev(), 0..height),
+            (false, true) => copy_within_impl_!(0..width, (0..height).rev()),
+            (false, false) => copy_within_impl_!(0..width, 0..height),
+        }
         true
     }
 
     
     fn inner_mut(&mut self) -> &mut Self::InnerImage;
 
+    
     
     fn sub_image(
         &mut self,
@@ -648,6 +698,11 @@ pub trait GenericImage: GenericImageView {
         SubImage::new(self.inner_mut(), x, y, width, height)
     }
 }
+
+
+
+
+
 
 
 pub struct SubImage<I> {
@@ -779,10 +834,12 @@ where
 #[cfg(test)]
 mod tests {
     use std::io;
+    use std::path::Path;
 
-    use super::{ColorType, ImageDecoder, ImageResult, GenericImage, GenericImageView, load_rect};
-    use buffer::ImageBuffer;
-    use color::Rgba;
+    use super::{ColorType, ImageDecoder, ImageResult, GenericImage, GenericImageView, load_rect, ImageFormat};
+    use crate::buffer::{GrayImage, ImageBuffer};
+    use crate::color::Rgba;
+    use crate::math::Rect;
 
     #[test]
     
@@ -856,8 +913,8 @@ mod tests {
         struct MockDecoder {scanline_number: u64, scanline_bytes: u64}
         impl<'a> ImageDecoder<'a> for MockDecoder {
             type Reader = Box<dyn io::Read>;
-            fn dimensions(&self) -> (u64, u64) {(5, 5)}
-            fn colortype(&self) -> ColorType {  ColorType::Gray(8) }
+            fn dimensions(&self) -> (u32, u32) {(5, 5)}
+            fn color_type(&self) -> ColorType {  ColorType::L8 }
             fn into_reader(self) -> ImageResult<Self::Reader> {unimplemented!()}
             fn scanline_bytes(&self) -> u64 { self.scanline_bytes }
         }
@@ -874,7 +931,9 @@ mod tests {
         }
         fn read_scanline(m: &mut MockDecoder, buf: &mut [u8]) -> io::Result<usize> {
             let bytes_read = m.scanline_number * m.scanline_bytes;
-            if bytes_read >= 25 { return Ok(0); }
+            if bytes_read >= 25 {
+                return Ok(0);
+            }
 
             let len = m.scanline_bytes.min(25 - bytes_read);
             buf[..(len as usize)].copy_from_slice(&DATA[(bytes_read as usize)..][..(len as usize)]);
@@ -911,5 +970,119 @@ mod tests {
             assert_eq!(output[0..9], [6, 7, 11, 12, 16, 17, 21, 22, 0]);
 
         }
+    }
+
+    #[test]
+    fn test_image_format_from_path() {
+        fn from_path(s: &str) -> ImageResult<ImageFormat> {
+            ImageFormat::from_path(Path::new(s))
+        }
+        assert_eq!(from_path("./a.jpg").unwrap(), ImageFormat::Jpeg);
+        assert_eq!(from_path("./a.jpeg").unwrap(), ImageFormat::Jpeg);
+        assert_eq!(from_path("./a.JPEG").unwrap(), ImageFormat::Jpeg);
+        assert_eq!(from_path("./a.pNg").unwrap(), ImageFormat::Png);
+        assert_eq!(from_path("./a.gif").unwrap(), ImageFormat::Gif);
+        assert_eq!(from_path("./a.webp").unwrap(), ImageFormat::WebP);
+        assert_eq!(from_path("./a.tiFF").unwrap(), ImageFormat::Tiff);
+        assert_eq!(from_path("./a.tif").unwrap(), ImageFormat::Tiff);
+        assert_eq!(from_path("./a.tga").unwrap(), ImageFormat::Tga);
+        assert_eq!(from_path("./a.dds").unwrap(), ImageFormat::Dds);
+        assert_eq!(from_path("./a.bmp").unwrap(), ImageFormat::Bmp);
+        assert_eq!(from_path("./a.Ico").unwrap(), ImageFormat::Ico);
+        assert_eq!(from_path("./a.hdr").unwrap(), ImageFormat::Hdr);
+        assert_eq!(from_path("./a.pbm").unwrap(), ImageFormat::Pnm);
+        assert_eq!(from_path("./a.pAM").unwrap(), ImageFormat::Pnm);
+        assert_eq!(from_path("./a.Ppm").unwrap(), ImageFormat::Pnm);
+        assert_eq!(from_path("./a.pgm").unwrap(), ImageFormat::Pnm);
+        assert!(from_path("./a.txt").is_err());
+        assert!(from_path("./a").is_err());
+    }
+
+    #[test]
+    fn test_generic_image_copy_within_oob() {
+        let mut image: GrayImage = ImageBuffer::from_raw(4, 4, vec![0u8; 16]).unwrap();
+        assert!(!image.sub_image(0, 0, 4, 4).copy_within(Rect { x: 0, y: 0, width: 5, height: 4 }, 0, 0));
+        assert!(!image.sub_image(0, 0, 4, 4).copy_within(Rect { x: 0, y: 0, width: 4, height: 5 }, 0, 0));
+        assert!(!image.sub_image(0, 0, 4, 4).copy_within(Rect { x: 1, y: 0, width: 4, height: 4 }, 0, 0));
+        assert!(!image.sub_image(0, 0, 4, 4).copy_within(Rect { x: 0, y: 0, width: 4, height: 4 }, 1, 0));
+        assert!(!image.sub_image(0, 0, 4, 4).copy_within(Rect { x: 0, y: 1, width: 4, height: 4 }, 0, 0));
+        assert!(!image.sub_image(0, 0, 4, 4).copy_within(Rect { x: 0, y: 0, width: 4, height: 4 }, 0, 1));
+        assert!(!image.sub_image(0, 0, 4, 4).copy_within(Rect { x: 1, y: 1, width: 4, height: 4 }, 0, 0));
+    }
+
+    #[test]
+    fn test_generic_image_copy_within_tl() {
+        let data = &[
+            00, 01, 02, 03,
+            04, 05, 06, 07,
+            08, 09, 10, 11,
+            12, 13, 14, 15
+        ];
+        let expected = [
+            00, 01, 02, 03,
+            04, 00, 01, 02,
+            08, 04, 05, 06,
+            12, 08, 09, 10,
+        ];
+        let mut image: GrayImage = ImageBuffer::from_raw(4, 4, Vec::from(&data[..])).unwrap();
+        assert!(image.sub_image(0, 0, 4, 4).copy_within(Rect { x: 0, y: 0, width: 3, height: 3 }, 1, 1));
+        assert_eq!(&image.into_raw(), &expected);
+    }
+
+    #[test]
+    fn test_generic_image_copy_within_tr() {
+        let data = &[
+            00, 01, 02, 03,
+            04, 05, 06, 07,
+            08, 09, 10, 11,
+            12, 13, 14, 15
+        ];
+        let expected = [
+            00, 01, 02, 03,
+            01, 02, 03, 07,
+            05, 06, 07, 11,
+            09, 10, 11, 15
+        ];
+        let mut image: GrayImage = ImageBuffer::from_raw(4, 4, Vec::from(&data[..])).unwrap();
+        assert!(image.sub_image(0, 0, 4, 4).copy_within(Rect { x: 1, y: 0, width: 3, height: 3 }, 0, 1));
+        assert_eq!(&image.into_raw(), &expected);
+    }
+
+    #[test]
+    fn test_generic_image_copy_within_bl() {
+        let data = &[
+            00, 01, 02, 03,
+            04, 05, 06, 07,
+            08, 09, 10, 11,
+            12, 13, 14, 15
+        ];
+        let expected = [
+            00, 04, 05, 06,
+            04, 08, 09, 10,
+            08, 12, 13, 14,
+            12, 13, 14, 15
+        ];
+        let mut image: GrayImage = ImageBuffer::from_raw(4, 4, Vec::from(&data[..])).unwrap();
+        assert!(image.sub_image(0, 0, 4, 4).copy_within(Rect { x: 0, y: 1, width: 3, height: 3 }, 1, 0));
+        assert_eq!(&image.into_raw(), &expected);
+    }
+
+    #[test]
+    fn test_generic_image_copy_within_br() {
+        let data = &[
+            00, 01, 02, 03,
+            04, 05, 06, 07,
+            08, 09, 10, 11,
+            12, 13, 14, 15
+        ];
+        let expected = [
+            05, 06, 07, 03,
+            09, 10, 11, 07,
+            13, 14, 15, 11,
+            12, 13, 14, 15
+        ];
+        let mut image: GrayImage = ImageBuffer::from_raw(4, 4, Vec::from(&data[..])).unwrap();
+        assert!(image.sub_image(0, 0, 4, 4).copy_within(Rect { x: 1, y: 1, width: 3, height: 3 }, 0, 0));
+        assert_eq!(&image.into_raw(), &expected);
     }
 }

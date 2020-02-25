@@ -6,7 +6,7 @@
 
 
 
-pub use self::decoder::TGADecoder;
+pub use self::decoder::TgaDecoder;
 
 
 

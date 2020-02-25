@@ -6,6 +6,25 @@ use num_traits::{Bounded, Num, NumCast};
 use std::ops::AddAssign;
 
 
+
+pub trait EncodableLayout: seals::EncodableLayout {
+    
+    fn as_bytes(&self) -> &[u8];
+}
+
+impl EncodableLayout for [u8] {
+    fn as_bytes(&self) -> &[u8] {
+        bytemuck::cast_slice(self)
+    }
+}
+
+impl EncodableLayout for [u16] {
+    fn as_bytes(&self) -> &[u8] {
+        bytemuck::cast_slice(self)
+    }
+}
+
+
 pub trait Primitive: Copy + NumCast + Num + PartialOrd<Self> + Clone + Bounded {}
 
 impl Primitive for usize {}
@@ -44,4 +63,13 @@ impl Enlargeable for u16 {
 }
 impl Enlargeable for u32 {
     type Larger = u64;
+}
+
+
+
+mod seals {
+    pub trait EncodableLayout {}
+
+    impl EncodableLayout for [u8] {}
+    impl EncodableLayout for [u16] {}
 }
