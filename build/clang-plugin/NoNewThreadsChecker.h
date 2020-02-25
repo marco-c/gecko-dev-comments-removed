@@ -1,0 +1,18 @@
+
+
+
+
+#ifndef NoNewThreadsChecker_h__
+#define NoNewThreadsChecker_h__
+
+#include "plugin.h"
+
+class NoNewThreadsChecker : public BaseCheck {
+public:
+  NoNewThreadsChecker(StringRef CheckName, ContextType *Context = nullptr)
+      : BaseCheck(CheckName, Context) {}
+  void registerMatchers(MatchFinder *AstMatcher) override;
+  void check(const MatchFinder::MatchResult &Result) override;
+};
+
+#endif 
