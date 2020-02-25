@@ -287,7 +287,11 @@ function initPage() {
       "security.tls.version.enable-deprecated"
     );
 
-    if (isTlsVersionError && !tls10OverrideEnabled) {
+    if (
+      isTlsVersionError &&
+      !tls10OverrideEnabled &&
+      !RPMPrefIsLocked("security.tls.version.min")
+    ) {
       
       
       
