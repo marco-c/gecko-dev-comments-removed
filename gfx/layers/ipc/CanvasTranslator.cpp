@@ -342,6 +342,11 @@ void CanvasTranslator::SetPreparedMap(
 
 UniquePtr<gfx::DataSourceSurface::ScopedMap> CanvasTranslator::GetPreparedMap(
     gfx::ReferencePtr aSurface) {
+  if (!mPreparedMap) {
+    
+    return nullptr;
+  }
+
   MOZ_RELEASE_ASSERT(mMappedSurface == aSurface,
                      "aSurface must match previously stored surface.");
 
