@@ -164,7 +164,9 @@ function getBoundingClientRectRelativeToVisualViewport(aElement) {
 
 function coordinatesRelativeToScreen(aX, aY, aTarget) {
   var targetWindow = windowForTarget(aTarget);
-  var deviceScale = targetWindow.devicePixelRatio;
+  var utils = SpecialPowers.getDOMWindowUtils(window);
+  var deviceScale = utils.screenPixelsPerCSSPixel;
+  var deviceScaleNoOverride = utils.screenPixelsPerCSSPixelNoOverride;
   var resolution = getResolution();
   var rect =
     aTarget instanceof Window
@@ -172,15 +174,21 @@ function coordinatesRelativeToScreen(aX, aY, aTarget) {
       : getBoundingClientRectRelativeToVisualViewport(aTarget);
   
   
+  
+  
+  
   return {
     x:
-      (targetWindow.mozInnerScreenX + (rect.left + aX) * resolution) *
-      deviceScale,
+      targetWindow.mozInnerScreenX * deviceScaleNoOverride +
+      (rect.left + aX) * resolution * deviceScale,
     y:
-      (targetWindow.mozInnerScreenY + (rect.top + aY) * resolution) *
-      deviceScale,
+      targetWindow.mozInnerScreenY * deviceScaleNoOverride +
+      (rect.top + aY) * resolution * deviceScale,
   };
 }
+
+
+
 
 
 
