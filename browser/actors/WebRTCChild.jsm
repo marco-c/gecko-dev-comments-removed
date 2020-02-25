@@ -238,7 +238,7 @@ function prompt(
         
         if (audio && (device.mediaSource == "microphone") != sharingAudio) {
           audioDevices.push({
-            name: device.name,
+            name: device.rawName, 
             deviceIndex: devices.length,
             id: device.rawId,
             mediaSource: device.mediaSource,
@@ -251,7 +251,7 @@ function prompt(
         
         if (video && (device.mediaSource == "camera") != sharingScreen) {
           let deviceObject = {
-            name: device.name,
+            name: device.rawName, 
             deviceIndex: devices.length,
             id: device.rawId,
             mediaSource: device.mediaSource,
