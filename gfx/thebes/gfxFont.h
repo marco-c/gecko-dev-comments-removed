@@ -1682,7 +1682,7 @@ class gfxFont {
   nsExpirationState* GetExpirationState() { return &mExpirationState; }
 
   
-  virtual uint32_t GetSpaceGlyph() = 0;
+  uint16_t GetSpaceGlyph() { return mSpaceGlyph; }
 
   gfxGlyphExtents* GetOrCreateGlyphExtents(int32_t aAppUnitsPerDevUnit);
 
@@ -2115,6 +2115,9 @@ class gfxFont {
   float mFUnitsConvFactor;
 
   nsExpirationState mExpirationState;
+
+  
+  uint16_t mSpaceGlyph = 0;
 
   
   AntialiasOption mAntialiasOption;

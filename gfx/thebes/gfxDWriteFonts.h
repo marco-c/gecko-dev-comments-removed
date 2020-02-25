@@ -35,8 +35,6 @@ class gfxDWriteFont : public gfxFont {
   mozilla::UniquePtr<gfxFont> CopyWithAntialiasOption(
       AntialiasOption anAAOption) override;
 
-  uint32_t GetSpaceGlyph() override;
-
   bool AllowSubpixelAA() override { return mAllowManualShowGlyphs; }
 
   bool IsValid() const;
@@ -89,8 +87,6 @@ class gfxDWriteFont : public gfxFont {
 
   
   mozilla::UniquePtr<nsDataHashtable<nsUint32HashKey, int32_t>> mGlyphWidths;
-
-  uint32_t mSpaceGlyph;
 
   bool mUseSubpixelPositions;
   bool mAllowManualShowGlyphs;
