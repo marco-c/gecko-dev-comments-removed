@@ -1466,7 +1466,7 @@ void ContentParent::Init() {
 
   
   
-  EnsurePermissionsByKey(EmptyCString());
+  EnsurePermissionsByKey(EmptyCString(), EmptyCString());
 
   RefPtr<GeckoMediaPluginServiceParent> gmps(
       GeckoMediaPluginServiceParent::GetSingleton());
@@ -5644,11 +5644,11 @@ nsresult ContentParent::AboutToLoadHttpFtpDocumentForChild(
 nsresult ContentParent::TransmitPermissionsForPrincipal(
     nsIPrincipal* aPrincipal) {
   
-  nsTArray<nsCString> keys =
+  nsTArray<Pair<nsCString, nsCString>> pairs =
       nsPermissionManager::GetAllKeysForPrincipal(aPrincipal);
-  MOZ_ASSERT(keys.Length() >= 1);
-  for (auto& key : keys) {
-    EnsurePermissionsByKey(key);
+  MOZ_ASSERT(pairs.Length() >= 1);
+  for (auto& pair : pairs) {
+    EnsurePermissionsByKey(pair.first(), pair.second());
   }
 
   return NS_OK;
@@ -5688,7 +5688,8 @@ void ContentParent::TransmitBlobURLsForPrincipal(nsIPrincipal* aPrincipal) {
   }
 }
 
-void ContentParent::EnsurePermissionsByKey(const nsCString& aKey) {
+void ContentParent::EnsurePermissionsByKey(const nsCString& aKey,
+                                           const nsCString& aOrigin) {
   
   
   
@@ -5705,7 +5706,7 @@ void ContentParent::EnsurePermissionsByKey(const nsCString& aKey) {
   mActivePermissionKeys.PutEntry(aKey);
 
   nsTArray<IPC::Permission> perms;
-  if (permManager->GetPermissionsWithKey(aKey, perms)) {
+  if (permManager->GetPermissionsFromOriginOrKey(aOrigin, aKey, perms)) {
     Unused << SendSetPermissionsWithKey(aKey, perms);
   }
 }

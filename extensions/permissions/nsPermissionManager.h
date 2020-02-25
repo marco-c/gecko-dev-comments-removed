@@ -24,6 +24,7 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ExpandedPrincipal.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/Pair.h"
 #include "mozilla/Unused.h"
 #include "mozilla/Variant.h"
 #include "mozilla/Vector.h"
@@ -287,7 +288,9 @@ class nsPermissionManager final : public nsIPermissionManager,
 
 
 
-  static nsTArray<nsCString> GetAllKeysForPrincipal(nsIPrincipal* aPrincipal);
+
+  static nsTArray<mozilla::Pair<nsCString, nsCString>> GetAllKeysForPrincipal(
+      nsIPrincipal* aPrincipal);
 
   
   nsresult RemoveAllFromIPC();
@@ -320,8 +323,10 @@ class nsPermissionManager final : public nsIPermissionManager,
 
 
 
-  bool GetPermissionsWithKey(const nsACString& aPermissionKey,
-                             nsTArray<IPC::Permission>& aPerms);
+
+  bool GetPermissionsFromOriginOrKey(const nsACString& aOrigin,
+                                     const nsACString& aKey,
+                                     nsTArray<IPC::Permission>& aPerms);
 
   
 
