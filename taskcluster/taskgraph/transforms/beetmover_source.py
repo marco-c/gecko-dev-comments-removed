@@ -17,13 +17,19 @@ def remove_build_dependency_in_beetmover_source(config, jobs):
         
         
         
-        del job['dependencies']['build']
+        
+        for depname in job['dependencies']:
+            if 'signing' not in depname:
+                del job['dependencies'][depname]
+                break
+        else:
+            raise Exception("Can't find build dep in beetmover source!")
 
         all_upstream_artifacts = job['worker']['upstream-artifacts']
         upstream_artifacts_without_build = [
             upstream_artifact
             for upstream_artifact in all_upstream_artifacts
-            if upstream_artifact['taskId']['task-reference'] != '<build>'
+            if upstream_artifact['taskId']['task-reference'] != '<{}>'.format(depname)
         ]
         job['worker']['upstream-artifacts'] = upstream_artifacts_without_build
 
