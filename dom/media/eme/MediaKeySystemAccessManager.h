@@ -6,6 +6,7 @@
 #define DOM_MEDIA_MEDIAKEYSYSTEMACCESSMANAGER_H_
 
 #include "mozilla/dom/MediaKeySystemAccess.h"
+#include "mozilla/MozPromise.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIObserver.h"
 #include "nsISupportsImpl.h"
@@ -16,6 +17,19 @@ namespace dom {
 
 class DetailedPromise;
 class TestGMPVideoDecoder;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -103,11 +117,17 @@ class MediaKeySystemAccessManager final : public nsIObserver {
     const nsString mKeySystem;
     
     const Sequence<MediaKeySystemConfiguration> mConfigs;
+
     
     
     
     
     RequestType mRequestType = RequestType::Initial;
+
+    
+    
+    
+    Maybe<MediaKeySystemConfiguration> mSupportedConfig;
 
     
     
@@ -124,6 +144,35 @@ class MediaKeySystemAccessManager final : public nsIObserver {
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void CheckDoesAppAllowProtectedMedia(UniquePtr<PendingRequest> aRequest);
+
+  
+  
+  
+  void OnDoesAppAllowProtectedMedia(bool aIsAllowed,
+                                    UniquePtr<PendingRequest> aRequest);
+
+  
+  
   void CheckDoesWindowSupportProtectedMedia(UniquePtr<PendingRequest> aRequest);
 
   
@@ -137,9 +186,11 @@ class MediaKeySystemAccessManager final : public nsIObserver {
   
   
   
-  
-  
   void RequestMediaKeySystemAccess(UniquePtr<PendingRequest> aRequest);
+
+  
+  
+  void ProvideAccess(UniquePtr<PendingRequest> aRequest);
 
   ~MediaKeySystemAccessManager();
 
@@ -150,10 +201,27 @@ class MediaKeySystemAccessManager final : public nsIObserver {
   void RetryRequest(UniquePtr<PendingRequest> aRequest);
 
   
+  nsTArray<UniquePtr<PendingRequest>> mPendingAppApprovalRequests;
+
+  
   nsTArray<UniquePtr<PendingRequest>> mPendingInstallRequests;
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   bool mAddedObservers;
+
+  
+  
+  Maybe<bool> mAppAllowsProtectedMedia;
+
+  
+  
+  
+  
+  
+  
+  
+  MozPromiseRequestHolder<MozPromise<bool, bool, true>>
+      mAppAllowsProtectedMediaPromiseRequest;
 };
 
 }  
