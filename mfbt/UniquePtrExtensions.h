@@ -9,6 +9,7 @@
 #ifndef mozilla_UniquePtrExtensions_h
 #define mozilla_UniquePtrExtensions_h
 
+#include "mozilla/Attributes.h"
 #include "mozilla/fallible.h"
 #include "mozilla/UniquePtr.h"
 
@@ -120,6 +121,31 @@ using UniqueFreePtr = UniquePtr<T, detail::FreePolicy<T>>;
 
 using UniqueFileHandle =
     UniquePtr<detail::FileHandleType, detail::FileHandleDeleter>;
+
+
+
+
+
+
+
+template <typename T, typename D>
+auto getter_Transfers(UniquePtr<T, D>& up) {
+  class MOZ_TEMPORARY_CLASS UniquePtrGetterTransfers {
+   public:
+    using Ptr = UniquePtr<T, D>;
+    explicit UniquePtrGetterTransfers(Ptr& p) : mPtr(p) {}
+    ~UniquePtrGetterTransfers() { mPtr.reset(mRawPtr); }
+
+    operator typename Ptr::ElementType**() { return &mRawPtr; }
+    typename Ptr::ElementType*& operator*() { return mRawPtr; }
+
+   private:
+    Ptr& mPtr;
+    typename Ptr::Pointer mRawPtr = nullptr;
+  };
+
+  return UniquePtrGetterTransfers(up);
+}
 
 }  
 
