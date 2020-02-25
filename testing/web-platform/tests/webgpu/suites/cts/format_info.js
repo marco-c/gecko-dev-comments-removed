@@ -2,9 +2,7 @@
 
 
 
-import { C } from '../../framework/index.js'; 
-
-export const kTextureFormatInfo =
+export const textureFormatInfo =
 
 {
   
@@ -169,60 +167,35 @@ export const kTextureFormatInfo =
     color: false
   }
 };
-export const kTextureFormats = Object.keys(kTextureFormatInfo); 
-
-export const kMaxBindingsPerBindGroup = 16;
-export const kPerStageBindingLimits =
-
-{
-  'uniform-buffer': 12,
-  'storage-buffer': 4,
-  'sampler': 16,
-  'sampled-texture': 16,
-  'storage-texture': 4
-};
-const kStagesAll = C.ShaderStage.Vertex | C.ShaderStage.Fragment | C.ShaderStage.Compute;
-const kStagesNonVertex = C.ShaderStage.Fragment | C.ShaderStage.Compute;
-export const kBindingTypeInfo =
+export const textureFormats = Object.keys(textureFormatInfo);
+export const bindingTypeInfo =
 
 {
   'uniform-buffer': {
     type: 'buffer',
-    validStages: kStagesAll,
-    perStageLimitType: 'uniform-buffer',
     maxDynamicCount: 8
   },
   'storage-buffer': {
     type: 'buffer',
-    validStages: kStagesNonVertex,
-    perStageLimitType: 'storage-buffer',
     maxDynamicCount: 4
   },
   'readonly-storage-buffer': {
     type: 'buffer',
-    validStages: kStagesAll,
-    perStageLimitType: 'storage-buffer',
     maxDynamicCount: 4
   },
   'sampler': {
     type: 'sampler',
-    validStages: kStagesAll,
-    perStageLimitType: 'sampler',
     maxDynamicCount: 0
   },
   'sampled-texture': {
     type: 'texture',
-    validStages: kStagesAll,
-    perStageLimitType: 'sampled-texture',
     maxDynamicCount: 0
   },
   'storage-texture': {
     type: 'texture',
-    validStages: kStagesAll,
-    perStageLimitType: 'storage-texture',
     maxDynamicCount: 0
   }
 };
-export const kBindingTypes = Object.keys(kBindingTypeInfo);
-export const kShaderStages = [C.ShaderStage.Vertex, C.ShaderStage.Fragment, C.ShaderStage.Compute];
-export const kShaderStageCombinations = [0, 1, 2, 3, 4, 5, 6, 7];
+export const bindingTypes = Object.keys(bindingTypeInfo);
+export const shaderStages = [1, 2, 4];
+export const shaderStageCombinations = [0, 1, 2, 3, 4, 5, 6, 7];
