@@ -529,14 +529,47 @@ impl ToCss for TextTransformOther {
     ToShmem,
 )]
 #[allow(missing_docs)]
-pub enum TextAlignKeyword {
+#[repr(u8)]
+pub enum TextAlignLast {
+    Auto,
     Start,
     End,
     Left,
     Right,
     Center,
+    Justify,
+}
+
+
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[allow(missing_docs)]
+#[repr(u8)]
+pub enum TextAlignKeyword {
+    Start,
+    Left,
+    Right,
+    Center,
     #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     Justify,
+    #[css(skip)]
+    #[cfg(feature = "gecko")]
+    Char,
+    End,
     #[cfg(feature = "gecko")]
     MozCenter,
     #[cfg(feature = "gecko")]
@@ -549,9 +582,6 @@ pub enum TextAlignKeyword {
     ServoLeft,
     #[cfg(feature = "servo-layout-2013")]
     ServoRight,
-    #[css(skip)]
-    #[cfg(feature = "gecko")]
-    Char,
 }
 
 
@@ -571,14 +601,6 @@ pub enum TextAlign {
     #[cfg(feature = "gecko")]
     #[css(skip)]
     MozCenterOrInherit,
-}
-
-impl TextAlign {
-    
-    #[cfg(feature = "gecko")]
-    pub fn from_gecko_keyword(kw: u32) -> Self {
-        TextAlign::Keyword(TextAlignKeyword::from_gecko_keyword(kw))
-    }
 }
 
 impl ToComputedValue for TextAlign {

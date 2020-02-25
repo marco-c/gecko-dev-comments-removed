@@ -3077,30 +3077,16 @@ void nsLineLayout::TextAlignLine(nsLineBox* aLine, bool aIsLastLine) {
          availISize, aLine->IStart(), aLine->ISize(), remainingISize);
 #endif
 
-  
-  
-  
-  
-  
-  
   nscoord dx = 0;
-  uint8_t textAlign = mStyleText->mTextAlign;
-  if (aIsLastLine) {
-    if (mStyleText->mTextAlignLast == NS_STYLE_TEXT_ALIGN_AUTO) {
-      if (textAlign == NS_STYLE_TEXT_ALIGN_JUSTIFY) {
-        textAlign = NS_STYLE_TEXT_ALIGN_START;
-      }
-    } else {
-      textAlign = mStyleText->mTextAlignLast;
-    }
-  }
+  StyleTextAlign textAlign =
+      aIsLastLine ? mStyleText->TextAlignForLastLine() : mStyleText->mTextAlign;
 
   bool isSVG = nsSVGUtils::IsInSVGTextSubtree(mBlockReflowInput->mFrame);
   bool doTextAlign = remainingISize > 0;
 
   int32_t additionalGaps = 0;
   if (!isSVG &&
-      (mHasRuby || (doTextAlign && textAlign == NS_STYLE_TEXT_ALIGN_JUSTIFY))) {
+      (mHasRuby || (doTextAlign && textAlign == StyleTextAlign::Justify))) {
     JustificationComputationState computeState;
     ComputeFrameJustification(psd, computeState);
     if (mHasRuby && computeState.mFirstParticipant) {
@@ -3127,7 +3113,7 @@ void nsLineLayout::TextAlignLine(nsLineBox* aLine, bool aIsLastLine) {
 
   if (!isSVG && doTextAlign) {
     switch (textAlign) {
-      case NS_STYLE_TEXT_ALIGN_JUSTIFY: {
+      case StyleTextAlign::Justify: {
         int32_t opportunities =
             psd->mFrame->mJustificationInfo.mInnerOpportunities;
         if (opportunities > 0) {
@@ -3151,30 +3137,32 @@ void nsLineLayout::TextAlignLine(nsLineBox* aLine, bool aIsLastLine) {
         [[fallthrough]];
       }
 
-      case NS_STYLE_TEXT_ALIGN_START:
+      case StyleTextAlign::Start:
+      case StyleTextAlign::Char:
+        
         
         break;
 
-      case NS_STYLE_TEXT_ALIGN_LEFT:
-      case NS_STYLE_TEXT_ALIGN_MOZ_LEFT:
+      case StyleTextAlign::Left:
+      case StyleTextAlign::MozLeft:
         if (lineWM.IsBidiRTL()) {
           dx = remainingISize;
         }
         break;
 
-      case NS_STYLE_TEXT_ALIGN_RIGHT:
-      case NS_STYLE_TEXT_ALIGN_MOZ_RIGHT:
+      case StyleTextAlign::Right:
+      case StyleTextAlign::MozRight:
         if (lineWM.IsBidiLTR()) {
           dx = remainingISize;
         }
         break;
 
-      case NS_STYLE_TEXT_ALIGN_END:
+      case StyleTextAlign::End:
         dx = remainingISize;
         break;
 
-      case NS_STYLE_TEXT_ALIGN_CENTER:
-      case NS_STYLE_TEXT_ALIGN_MOZ_CENTER:
+      case StyleTextAlign::Center:
+      case StyleTextAlign::MozCenter:
         dx = remainingISize / 2;
         break;
     }

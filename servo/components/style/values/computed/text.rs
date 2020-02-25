@@ -18,8 +18,7 @@ use crate::Zero;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
 
-pub use crate::values::specified::TextAlignKeyword as TextAlign;
-pub use crate::values::specified::TextUnderlinePosition;
+pub use crate::values::specified::text::{TextAlignLast, TextUnderlinePosition};
 pub use crate::values::specified::{LineBreak, OverflowWrap, WordBreak};
 pub use crate::values::specified::{TextDecorationLine, TextEmphasisPosition};
 pub use crate::values::specified::{TextDecorationSkipInk, TextTransform};
@@ -29,6 +28,9 @@ pub type InitialLetter = GenericInitialLetter<CSSFloat, CSSInteger>;
 
 
 pub type TextDecorationLength = GenericTextDecorationLength<LengthPercentage>;
+
+
+pub type TextAlign = specified::TextAlignKeyword;
 
 
 #[repr(transparent)]

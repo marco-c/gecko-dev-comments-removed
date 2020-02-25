@@ -867,8 +867,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
 
   mozilla::StyleRGBA mColor;
   mozilla::StyleTextTransform mTextTransform;
-  uint8_t mTextAlign;      
-  uint8_t mTextAlignLast;  
+  mozilla::StyleTextAlign mTextAlign;
+  mozilla::StyleTextAlignLast mTextAlignLast;
   mozilla::StyleTextJustify mTextJustify;
   mozilla::StyleWhiteSpace mWhiteSpace;
   mozilla::StyleLineBreak mLineBreak = mozilla::StyleLineBreak::Auto;
@@ -973,6 +973,36 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
       return false;
     }
     return true;
+  }
+
+  mozilla::StyleTextAlign TextAlignForLastLine() const {
+    switch (mTextAlignLast) {
+      case mozilla::StyleTextAlignLast::Auto:
+        
+        
+        
+        
+        
+        
+        
+        if (mTextAlign == mozilla::StyleTextAlign::Justify) {
+          return mozilla::StyleTextAlign::Start;
+        }
+        return mTextAlign;
+      case mozilla::StyleTextAlignLast::Center:
+        return mozilla::StyleTextAlign::Center;
+      case mozilla::StyleTextAlignLast::Start:
+        return mozilla::StyleTextAlign::Start;
+      case mozilla::StyleTextAlignLast::End:
+        return mozilla::StyleTextAlign::End;
+      case mozilla::StyleTextAlignLast::Left:
+        return mozilla::StyleTextAlign::Left;
+      case mozilla::StyleTextAlignLast::Right:
+        return mozilla::StyleTextAlign::Right;
+      case mozilla::StyleTextAlignLast::Justify:
+        return mozilla::StyleTextAlign::Justify;
+    }
+    return mozilla::StyleTextAlign::Start;
   }
 
   bool HasWebkitTextStroke() const { return mWebkitTextStrokeWidth > 0; }

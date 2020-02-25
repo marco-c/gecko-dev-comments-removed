@@ -148,14 +148,14 @@ void nsTreeColumn::Invalidate(ErrorResult& aRv) {
 
   mTextAlignment = textStyle->mTextAlign;
   
-  if ((mTextAlignment == NS_STYLE_TEXT_ALIGN_START &&
+  if ((mTextAlignment == StyleTextAlign::Start &&
        vis->mDirection == StyleDirection::Rtl) ||
-      (mTextAlignment == NS_STYLE_TEXT_ALIGN_END &&
+      (mTextAlignment == StyleTextAlign::End &&
        vis->mDirection == StyleDirection::Ltr)) {
-    mTextAlignment = NS_STYLE_TEXT_ALIGN_RIGHT;
-  } else if (mTextAlignment == NS_STYLE_TEXT_ALIGN_START ||
-             mTextAlignment == NS_STYLE_TEXT_ALIGN_END) {
-    mTextAlignment = NS_STYLE_TEXT_ALIGN_LEFT;
+    mTextAlignment = StyleTextAlign::Right;
+  } else if (mTextAlignment == StyleTextAlign::Start ||
+             mTextAlignment == StyleTextAlign::End) {
+    mTextAlignment = StyleTextAlign::Left;
   }
 
   
