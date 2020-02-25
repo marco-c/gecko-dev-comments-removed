@@ -1297,11 +1297,11 @@ pref("browser.newtabpage.activity-stream.discoverystream.enabled", true);
 pref("browser.newtabpage.activity-stream.discoverystream.hardcoded-basic-layout", false);
 pref("browser.newtabpage.activity-stream.discoverystream.spocs-endpoint", "");
 
-pref("browser.newtabpage.activity-stream.discoverystream.lang-layout-config", "en");
-
 pref("browser.newtabpage.activity-stream.discoverystream.region-stories-config", "US,DE,CA");
 
 pref("browser.newtabpage.activity-stream.discoverystream.region-spocs-config", "US");
+
+pref("browser.newtabpage.activity-stream.discoverystream.region-layout-config", "US,CA");
 
 pref("browser.newtabpage.activity-stream.discoverystream.personalization.version", 1);
 
