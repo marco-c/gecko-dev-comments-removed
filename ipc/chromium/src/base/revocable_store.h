@@ -9,7 +9,6 @@
 
 #include "base/basictypes.h"
 #include "nsISupportsImpl.h"
-#include "nsAutoPtr.h"
 
 
 class RevocableStore {

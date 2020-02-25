@@ -10,8 +10,8 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/ipc/InputStreamUtils.h"
 #include "mozilla/ipc/PBackgroundChild.h"
+#include "mozilla/UniquePtr.h"
 #include "nsRefPtrHashtable.h"
-#include "nsAutoPtr.h"
 
 namespace mozilla {
 namespace dom {
@@ -292,10 +292,11 @@ class BackgroundChildImpl : public PBackgroundChild,
 };
 
 class BackgroundChildImpl::ThreadLocal final {
-  friend class nsAutoPtr<ThreadLocal>;
+  friend class mozilla::DefaultDelete<ThreadLocal>;
 
  public:
-  nsAutoPtr<mozilla::dom::indexedDB::ThreadLocal> mIndexedDBThreadLocal;
+  mozilla::UniquePtr<mozilla::dom::indexedDB::ThreadLocal>
+      mIndexedDBThreadLocal;
   mozilla::dom::IDBFileHandle* mCurrentFileHandle;
 
  public:
