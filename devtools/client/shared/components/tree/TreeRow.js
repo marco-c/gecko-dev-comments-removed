@@ -219,17 +219,12 @@ define(function(require, exports, module) {
 
       if (member.hasChildren) {
         classNames.push("hasChildren");
-
-        
-        
-        
-        if (member.type !== "string") {
-          props["aria-expanded"] = member.open;
-        }
+        props["aria-expanded"] = false;
       }
 
       if (member.open) {
         classNames.push("opened");
+        props["aria-expanded"] = true;
       }
 
       if (member.loading) {
