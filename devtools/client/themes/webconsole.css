@@ -56,17 +56,6 @@
 
 
 
-a {
-  -moz-user-focus: normal;
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-
-
-*:visited {
-}
-
 * {
   box-sizing: border-box;
 }
