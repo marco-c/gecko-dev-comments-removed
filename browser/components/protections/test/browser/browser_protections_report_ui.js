@@ -727,3 +727,46 @@ add_task(async function test_etp_custom_protections_off() {
   Services.prefs.setStringPref("browser.contentblocking.category", "standard");
   BrowserTestUtils.removeTab(tab);
 });
+
+
+add_task(async function test_etp_mobile_promotion() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.contentblocking.report.show_mobile_app", true]],
+  });
+  let tab = await BrowserTestUtils.openNewForegroundTab({
+    url: "about:protections",
+    gBrowser,
+  });
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
+    let mobilePromotion = content.document.getElementById("mobile-hanger");
+    Assert.ok(
+      ContentTaskUtils.is_visible(mobilePromotion),
+      "Mobile promotions card is displayed"
+    );
+
+    
+    mobilePromotion.querySelector(".exit-icon").click();
+    Assert.ok(
+      ContentTaskUtils.is_hidden(mobilePromotion),
+      "Mobile promotions card is no longer displayed"
+    );
+  });
+  BrowserTestUtils.removeTab(tab);
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.contentblocking.report.show_mobile_app", false]],
+  });
+  tab = await BrowserTestUtils.openNewForegroundTab({
+    url: "about:protections",
+    gBrowser,
+  });
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
+    let mobilePromotion = content.document.getElementById("mobile-hanger");
+    Assert.ok(
+      ContentTaskUtils.is_hidden(mobilePromotion),
+      "Mobile promotions card is hidden"
+    );
+  });
+
+  BrowserTestUtils.removeTab(tab);
+});
