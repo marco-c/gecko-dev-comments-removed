@@ -4062,6 +4062,16 @@ void nsCSSRendering::PaintDecorationLine(
   int32_t spacingOffset = isRTL ? aParams.glyphRange.Length() - 1 : 0;
   gfxTextRun::GlyphRunIterator iter(textRun, aParams.glyphRange, isRTL);
 
+  
+  
+  
+  auto currentGlyphRunAdvance = [&]() {
+    return textRun->GetAdvanceWidth(
+               gfxTextRun::Range(iter.GetStringStart(), iter.GetStringEnd()),
+               aParams.provider) /
+           appUnitsPerDevPixel;
+  };
+
   while (iter.NextRun()) {
     if (iter.GetGlyphRun()->mOrientation ==
             mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT ||
@@ -4075,11 +4085,7 @@ void nsCSSRendering::PaintDecorationLine(
       
       
       
-      textPos.fX +=
-          textRun->GetAdvanceWidth(
-              gfxTextRun::Range(iter.GetStringStart(), iter.GetStringEnd()),
-              aParams.provider) /
-          appUnitsPerDevPixel;
+      textPos.fX += currentGlyphRunAdvance();
       continue;
     }
 
@@ -4088,6 +4094,7 @@ void nsCSSRendering::PaintDecorationLine(
     
     
     if (font->GetFontEntry()->HasFontTable(TRUETYPE_TAG('s', 'b', 'i', 'x'))) {
+      textPos.fX += currentGlyphRunAdvance();
       continue;
     }
 
@@ -4106,6 +4113,7 @@ void nsCSSRendering::PaintDecorationLine(
                        (float)appUnitsPerDevPixel, textPos, spacingOffset);
 
     if (!textBlob) {
+      textPos.fX += currentGlyphRunAdvance();
       continue;
     }
 
