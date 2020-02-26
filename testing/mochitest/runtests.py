@@ -2573,6 +2573,11 @@ toolbar#nav-bar {
             
             
             
+            
+            
+            
+            "serviceworker_e10s": self.extraPrefs.get(
+                'dom.serviceWorkers.parent_intercept', True),
 
             "socketprocess_e10s": self.extraPrefs.get(
                 'network.process.enabled', False),
@@ -2822,6 +2827,8 @@ toolbar#nav-bar {
                 self.log.info("runtests.py | Running with e10s: {}".format(options.e10s))
                 self.log.info("runtests.py | Running with fission: {}".format(
                     mozinfo.info.get('fission', False)))
+                self.log.info("runtests.py | Running with serviceworker_e10s: {}".format(
+                    mozinfo.info.get('serviceworker_e10s', False)))
                 self.log.info("runtests.py | Running with socketprocess_e10s: {}".format(
                     mozinfo.info.get('socketprocess_e10s', False)))
                 self.log.info("runtests.py | Running tests: start.\n")
