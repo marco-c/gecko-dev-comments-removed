@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_UntrustedModulesData_h
 #define mozilla_UntrustedModulesData_h
@@ -30,7 +30,7 @@
 namespace mozilla {
 namespace glue {
 struct EnhancedModuleLoadInfo;
-}  // namespace glue
+}  
 
 enum class ModuleTrustFlags : uint32_t {
   None = 0,
@@ -99,12 +99,12 @@ class ModuleRecord final {
   friend struct ::IPC::ParamTraits<ModulesMap>;
 };
 
-/**
- * This type holds module path data using one of two internal representations.
- * It may be created from either a nsTHashtable or a Vector, and may be
- * serialized from either representation into a common format over the wire.
- * Deserialization always uses the Vector representation.
- */
+
+
+
+
+
+
 struct ModulePaths final {
   using SetType = nsTHashtable<nsStringCaseInsensitiveHashKey>;
   using VecType = Vector<nsString>;
@@ -138,9 +138,9 @@ class ProcessedModuleLoadEvent final {
   DWORD mThreadId;
   nsCString mThreadName;
   nsString mRequestedDllName;
-  // We intentionally store mBaseAddress as part of the event and not the
-  // module, as relocation may cause it to change between loads. If so, we want
-  // to know about it.
+  
+  
+  
   uintptr_t mBaseAddress;
   RefPtr<ModuleRecord> mModule;
 
@@ -156,8 +156,8 @@ class ProcessedModuleLoadEvent final {
       const LARGE_INTEGER& aTimeStamp);
 };
 
-// Declaring ModulesMap this way makes it much easier to forward declare than
-// if we had used |using| or |typedef|.
+
+
 class ModulesMap final
     : public nsRefPtrHashtable<nsStringCaseInsensitiveHashKey, ModuleRecord> {
  public:
@@ -214,7 +214,7 @@ class ModulesMapResult final {
   uint32_t mTrustTestFailures;
 };
 
-}  // namespace mozilla
+}  
 
 namespace IPC {
 
@@ -358,7 +358,7 @@ struct ParamTraits<mozilla::ModulesMap> {
         return false;
       }
 
-      aResult->Put(key, rec.forget());
+      aResult->Put(key, std::move(rec));
     }
 
     return true;
@@ -382,8 +382,8 @@ struct ParamTraits<mozilla::ModulePaths> {
       return false;
     }
 
-    // As noted in the comments for ModulePaths, we only deserialize using the
-    // Vector representation.
+    
+    
     auto& vec = aResult->mModuleNtPaths.as<paramType::VecType>();
     if (!vec.reserve(len)) {
       return false;
@@ -404,7 +404,7 @@ struct ParamTraits<mozilla::ModulePaths> {
   }
 
  private:
-  // NB: This function must write out the set in the same format as WriteVector
+  
   static void WriteSet(Message* aMsg, const paramType::SetType& aSet) {
     aMsg->WriteUInt32(aSet.Count());
     for (auto iter = aSet.ConstIter(); !iter.Done(); iter.Next()) {
@@ -412,7 +412,7 @@ struct ParamTraits<mozilla::ModulePaths> {
     }
   }
 
-  // NB: This function must write out the vector in the same format as WriteSet
+  
   static void WriteVector(Message* aMsg, const paramType::VecType& aVec) {
     aMsg->WriteUInt32(aVec.length());
     for (auto const& item : aVec) {
@@ -463,7 +463,7 @@ struct ParamTraits<mozilla::UntrustedModulesData> {
       return false;
     }
 
-    // We read mEvents manually so that we can use ReadEvent defined below.
+    
     uint32_t eventsLen;
     if (!ReadParam(aMsg, aIter, &eventsLen)) {
       return false;
@@ -500,9 +500,9 @@ struct ParamTraits<mozilla::UntrustedModulesData> {
   }
 
  private:
-  // Because ProcessedModuleLoadEvent depends on a hash table from
-  // UntrustedModulesData, we do its serialization as part of this
-  // specialization.
+  
+  
+  
   static void WriteEvent(Message* aMsg,
                          const mozilla::ProcessedModuleLoadEvent& aParam) {
     aMsg->WriteUInt64(aParam.mProcessUptimeMS);
@@ -512,15 +512,15 @@ struct ParamTraits<mozilla::UntrustedModulesData> {
     WriteParam(aMsg, aParam.mRequestedDllName);
     WriteParam(aMsg, aParam.mBaseAddress);
 
-    // We don't write the ModuleRecord directly; we write its key into the
-    // UntrustedModulesData::mModules hash table.
+    
+    
     MOZ_ASSERT(aParam.mModule && !aParam.mModule->mResolvedNtName.IsEmpty());
     WriteParam(aMsg, aParam.mModule->mResolvedNtName);
   }
 
-  // Because ProcessedModuleLoadEvent depends on a hash table from
-  // UntrustedModulesData, we do its deserialization as part of this
-  // specialization.
+  
+  
+  
   static bool ReadEvent(const Message* aMsg, PickleIterator* aIter,
                         mozilla::ProcessedModuleLoadEvent* aResult,
                         const mozilla::ModulesMap& aModulesMap) {
@@ -553,10 +553,10 @@ struct ParamTraits<mozilla::UntrustedModulesData> {
       return false;
     }
 
-    // NB: While bad data integrity might for some reason result in a null
-    // mModule, we do not fail the deserialization; this is a data error,
-    // rather than an IPC error. The error is detected and dealt with in
-    // telemetry.
+    
+    
+    
+    
     aResult->mModule = aModulesMap.Get(resolvedNtName);
 
     return true;
@@ -586,19 +586,19 @@ struct ParamTraits<mozilla::ModulesMapResult> {
   }
 };
 
-}  // namespace IPC
+}  
 
-#else  // defined(XP_WIN)
+#else  
 
 namespace mozilla {
 
-// For compiling IPDL on non-Windows platforms
+
 using UntrustedModulesData = uint32_t;
 using ModulePaths = uint32_t;
 using ModulesMapResult = uint32_t;
 
-}  // namespace mozilla
+}  
 
-#endif  // defined(XP_WIN)
+#endif  
 
-#endif  // mozilla_UntrustedModulesData_h
+#endif  
