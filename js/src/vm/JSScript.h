@@ -2031,6 +2031,7 @@ class BaseScript : public gc::TenuredCell {
   
   
   using ImmutableFlags = ImmutableScriptFlagsEnum;
+  using MutableFlags = MutableScriptFlagsEnum;
 
  protected:
   
@@ -2040,11 +2041,13 @@ class BaseScript : public gc::TenuredCell {
   
   
   
-  
-  
-  
-  uint32_t mutableFlags_ = 0;
   ImmutableScriptFlags immutableScriptFlags_;
+  
+  
+  
+  
+  
+  MutableScriptFlags mutableFlags_;
 
   ScriptWarmUpData warmUpData_ = {};
 
@@ -2080,84 +2083,6 @@ class BaseScript : public gc::TenuredCell {
   }
 
  public:
-  
-  
-  
-  
-  
-  enum class MutableFlags : uint32_t {
-    
-    
-    WarmupResets_MASK = 0xFF,
-
-    
-    WarnedAboutUndefinedProp = 1 << 8,
-
-    
-    HasRunOnce = 1 << 9,
-
-    
-    HasBeenCloned = 1 << 10,
-
-    
-    
-    TrackRecordReplayProgress = 1 << 11,
-
-    
-    HasScriptCounts = 1 << 12,
-
-    
-    HasDebugScript = 1 << 13,
-
-    
-    
-    
-    
-    
-    
-    DoNotRelazify = 1 << 14,
-
-    
-
-    
-    FailedBoundsCheck = 1 << 15,
-
-    
-    FailedShapeGuard = 1 << 16,
-
-    HadFrequentBailouts = 1 << 17,
-    HadOverflowBailout = 1 << 18,
-
-    
-    
-    
-    
-    BaselineDisabled = 1 << 19,
-    IonDisabled = 1 << 20,
-
-    
-    Uninlineable = 1 << 21,
-
-    
-    InvalidatedIdempotentCache = 1 << 22,
-
-    
-    FailedLexicalCheck = 1 << 23,
-
-    
-    NeedsArgsAnalysis = 1 << 24,
-    NeedsArgsObj = 1 << 25,
-
-    
-    HideScriptFromDebugger = 1 << 26,
-
-    
-    SpewEnabled = 1 << 27,
-
-    
-    WrappedByDebugger = 1 << 28,
-  };
-
   uint8_t* jitCodeRaw() const { return jitCodeRaw_; }
 
   
@@ -2257,10 +2182,10 @@ class BaseScript : public gc::TenuredCell {
 
   
   MOZ_MUST_USE bool hasFlag(MutableFlags flag) const {
-    return mutableFlags_ & uint32_t(flag);
+    return mutableFlags_.hasFlag(flag);
   }
-  void setFlag(MutableFlags flag) { mutableFlags_ |= uint32_t(flag); }
-  void clearFlag(MutableFlags flag) { mutableFlags_ &= ~uint32_t(flag); }
+  void setFlag(MutableFlags flag) { mutableFlags_.setFlag(flag); }
+  void clearFlag(MutableFlags flag) { mutableFlags_.clearFlag(flag); }
 
   
 
