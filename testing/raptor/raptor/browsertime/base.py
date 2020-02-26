@@ -189,6 +189,11 @@ class Browsertime(Perftest):
         browsertime_options = [
             "--firefox.profileTemplate", str(self.profile.profile),
             "--skipHar",
+            "--viewPort", "1366x695",
+            "--pageLoadStrategy", "none",
+            "--firefox.disableBrowsertimeExtension", "true",
+            "--pageCompleteCheckStartWait", "5000",
+            "--pageCompleteCheckPollTimeout", "1000",
             "--visualMetrics", "false",
             
             "--timeouts.pageLoad", str(timeout),
