@@ -39,6 +39,7 @@ TARGET_TASK_FILTERS = (
     '.*android-geckoview-docs.*',
     'linux1804-32.*',   
     r'linux-.*',  
+    r'linux.*web-platform-tests.*-fis-.*',  
 )
 
 
