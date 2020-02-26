@@ -315,6 +315,14 @@ function getAdHocFrontOrPrimitiveGrip(packet, parentFront) {
   }
 
   const { conn, targetFront } = parentFront;
+
+  
+  
+  const existingFront = conn.getFrontByID(packet.actor);
+  if (existingFront) {
+    return existingFront;
+  }
+
   const { type } = packet;
 
   if (type === "longString") {
