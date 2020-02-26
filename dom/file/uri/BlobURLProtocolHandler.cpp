@@ -90,25 +90,14 @@ static DataInfo* GetDataInfo(const nsACString& aUri,
     return nullptr;
   }
 
-  DataInfo* res;
-
   
-  int32_t hasFragmentPos = aUri.FindChar('#');
-  int32_t hasQueryPos = aUri.FindChar('?');
+  int32_t fragmentPos = aUri.FindChar('#');
 
-  int32_t pos = -1;
-  if (hasFragmentPos >= 0 && hasQueryPos >= 0) {
-    pos = std::min(hasFragmentPos, hasQueryPos);
-  } else if (hasFragmentPos >= 0) {
-    pos = hasFragmentPos;
+  DataInfo* res;
+  if (fragmentPos < 0) {
+    res = gDataTable->Get(aUri);
   } else {
-    pos = hasQueryPos;
-  }
-
-  if (pos < 0) {
-    gDataTable->Get(aUri, &res);
-  } else {
-    gDataTable->Get(StringHead(aUri, pos), &res);
+    res = gDataTable->Get(StringHead(aUri, fragmentPos));
   }
 
   if (!aAlsoIfRevoked && res && res->mRevoked) {

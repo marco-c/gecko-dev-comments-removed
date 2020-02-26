@@ -95,6 +95,11 @@ void URL::CreateObjectURL(const GlobalObject& aGlobal, MediaSource& aSource,
 
 void URL::RevokeObjectURL(const GlobalObject& aGlobal, const nsAString& aURL,
                           ErrorResult& aRv) {
+  if (aURL.Contains('#')) {
+    
+    return;
+  }
+
   if (NS_IsMainThread()) {
     URLMainThread::RevokeObjectURL(aGlobal, aURL, aRv);
   } else {
