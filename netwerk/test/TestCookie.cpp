@@ -186,6 +186,11 @@ void InitPrefs(nsIPrefBranch* aPrefBranch) {
   aPrefBranch->SetIntPref(kPrefCookieQuotaPerHost, 49);
   
   aPrefBranch->SetIntPref(kCookiesMaxPerHost, 50);
+
+  
+  
+  
+  Preferences::SetBool("network.cookie.sameSite.laxByDefault", false);
 }
 
 TEST(TestCookie, TestCookieMain)
