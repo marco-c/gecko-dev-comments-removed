@@ -233,14 +233,15 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   
   
-  virtual void Suspend() {}
+  
+  virtual void Suspend();
 
   
   
   
   
   
-  virtual void Resume() {}
+  virtual void Resume();
 
   
   

@@ -1230,6 +1230,18 @@ void MediaDecoder::Invalidate() {
   }
 }
 
+void MediaDecoder::Suspend() {
+  MOZ_ASSERT(NS_IsMainThread());
+  AbstractThread::AutoEnter context(AbstractMainThread());
+  GetStateMachine()->InvokeSuspendMediaSink();
+}
+
+void MediaDecoder::Resume() {
+  MOZ_ASSERT(NS_IsMainThread());
+  AbstractThread::AutoEnter context(AbstractMainThread());
+  GetStateMachine()->InvokeResumeMediaSink();
+}
+
 
 
 media::TimeIntervals MediaDecoder::GetBuffered() {

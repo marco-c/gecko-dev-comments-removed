@@ -277,6 +277,9 @@ class MediaDecoderStateMachine
 
   RefPtr<GenericPromise> InvokeSetSink(RefPtr<AudioDeviceInfo> aSink);
 
+  void InvokeSuspendMediaSink();
+  void InvokeResumeMediaSink();
+
  private:
   class StateObject;
   class DecodeMetadataState;
@@ -358,6 +361,11 @@ class MediaDecoderStateMachine
   
   
   RefPtr<GenericPromise> SetSink(RefPtr<AudioDeviceInfo> aSink);
+
+  
+  void SuspendMediaSink();
+  
+  void ResumeMediaSink();
 
  protected:
   virtual ~MediaDecoderStateMachine();
@@ -745,6 +753,11 @@ class MediaDecoderStateMachine
 
   
   Canonical<bool> mIsAudioDataAudible;
+
+  
+  
+  
+  bool mIsMediaSinkSuspended = false;
 
  public:
   AbstractCanonical<media::TimeIntervals>* CanonicalBuffered() const;
