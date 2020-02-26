@@ -1073,6 +1073,16 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
   virtual already_AddRefed<SourceSurface> Snapshot() = 0;
 
   
+
+
+
+
+
+  virtual already_AddRefed<SourceSurface> GetBackingSurface() {
+    return Snapshot();
+  }
+
+  
   
   virtual already_AddRefed<SourceSurface> IntoLuminanceSource(
       LuminanceType aLuminanceType, float aOpacity);
@@ -1452,6 +1462,15 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
 
   virtual already_AddRefed<DrawTarget> CreateSimilarDrawTarget(
       const IntSize& aSize, SurfaceFormat aFormat) const = 0;
+
+  
+
+
+
+  virtual already_AddRefed<DrawTarget> CreateSimilarDrawTargetWithBacking(
+      const IntSize& aSize, SurfaceFormat aFormat) const {
+    return CreateSimilarDrawTarget(aSize, aFormat);
+  }
 
   
 
