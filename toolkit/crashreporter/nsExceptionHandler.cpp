@@ -203,9 +203,6 @@ static XP_CHAR* libraryPath;
 static XP_CHAR* eventsDirectory;
 
 
-static char* currentSessionId = nullptr;
-
-
 static bool doReport = true;
 
 
@@ -1318,10 +1315,6 @@ static void WriteAnnotationsForMainProcessCrash(PlatformWriter& pw,
     }
   }
 
-  if (currentSessionId) {
-    writer.Write(Annotation::TelemetrySessionId, currentSessionId);
-  }
-
   char crashTimeString[32];
   XP_TTOA(crashTime, crashTimeString);
   writer.Write(Annotation::CrashTime, crashTimeString);
@@ -2326,11 +2319,6 @@ nsresult UnsetExceptionHandler() {
     eventsDirectory = nullptr;
   }
 
-  if (currentSessionId) {
-    free(currentSessionId);
-    currentSessionId = nullptr;
-  }
-
   if (memoryReportPath) {
     free(memoryReportPath);
     memoryReportPath = nullptr;
@@ -2992,16 +2980,6 @@ nsresult GetDefaultMemoryReportFile(nsIFile** aFile) {
   return NS_OK;
 }
 
-void SetTelemetrySessionId(const nsACString& id) {
-  if (!gExceptionHandler) {
-    return;
-  }
-  if (currentSessionId) {
-    free(currentSessionId);
-  }
-  currentSessionId = ToNewCString(id);
-}
-
 static void FindPendingDir() {
   if (pendingDirectory) return;
 
@@ -3227,12 +3205,6 @@ static void PopulateContentProcessAnnotations(AnnotationTable& aAnnotations,
     MutexAutoLock lock(*crashReporterAPILock);
     MergeContentCrashAnnotations(aAnnotations, crashReporterAPIData_Table);
   }
-
-  if (currentSessionId) {
-    aAnnotations[Annotation::TelemetrySessionId] =
-        nsDependentCString(currentSessionId);
-  }
-
   AddCommonAnnotations(aAnnotations);
   ReadExceptionTimeAnnotations(aAnnotations, aPid);
 }
