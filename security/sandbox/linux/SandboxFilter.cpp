@@ -516,6 +516,7 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         return Allow();
 
         
+      case __NR_pread64:
       case __NR_write:
       case __NR_read:
       case __NR_readv:
@@ -1041,7 +1042,6 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
 
       CASES_FOR_getdents:
       case __NR_writev:
-      case __NR_pread64:
 #ifdef DESKTOP
       case __NR_pwrite64:
       case __NR_readahead:
@@ -1160,6 +1160,7 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
 
       case __NR_getpriority:
       case __NR_setpriority:
+      case __NR_sched_getattr:
       case __NR_sched_get_priority_min:
       case __NR_sched_get_priority_max:
       case __NR_sched_getscheduler:
