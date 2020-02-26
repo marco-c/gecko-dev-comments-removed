@@ -759,10 +759,9 @@ GtkWidget* GetWidget(WidgetNodeType aAppearance) {
     widget = CreateWidget(aAppearance);
     
     
-    
     if (!widget) {
       NS_WARNING(nsPrintfCString("Missing GtkWidget %d\n", aAppearance).get());
-      widget = gtk_invisible_new();
+      return nullptr;
     }
     
     
