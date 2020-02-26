@@ -12,8 +12,11 @@ use std::ptr;
 
 
 #[no_mangle]
-pub extern fn rust_demangle(name: *const std::os::raw::c_char) -> *mut std::os::raw::c_char {
-    let demangled = format!("{:#}", demangle(&unsafe { CStr::from_ptr(name) }.to_string_lossy()));
+pub extern "C" fn rust_demangle(name: *const std::os::raw::c_char) -> *mut std::os::raw::c_char {
+    let demangled = format!(
+        "{:#}",
+        demangle(&unsafe { CStr::from_ptr(name) }.to_string_lossy())
+    );
     CString::new(demangled)
         .map(|s| s.into_raw())
         .unwrap_or(ptr::null_mut())
@@ -21,7 +24,7 @@ pub extern fn rust_demangle(name: *const std::os::raw::c_char) -> *mut std::os::
 
 
 #[no_mangle]
-pub extern fn free_rust_demangled_name(demangled: *mut std::os::raw::c_char) {
+pub extern "C" fn free_rust_demangled_name(demangled: *mut std::os::raw::c_char) {
     if demangled != ptr::null_mut() {
         
         unsafe { CString::from_raw(demangled) };
