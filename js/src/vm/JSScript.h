@@ -2000,9 +2000,6 @@ struct SourceExtent {
 
 
 class BaseScript : public gc::TenuredCell {
- public:
-  using ImmutableFlags = frontend::ImmutableScriptFlags;
-
  protected:
   
   
@@ -2030,19 +2027,24 @@ class BaseScript : public gc::TenuredCell {
 
   SourceExtent extent_;
 
+ public:
   
   
-  
-  
-  
-  
-  
-  ImmutableFlags immutableScriptFlags_;
+  using ImmutableFlags = ImmutableScriptFlagsEnum;
 
+ protected:
+  
+  
+  
+  
+  
+  
+  
   
   
   
   uint32_t mutableFlags_ = 0;
+  ImmutableScriptFlags immutableScriptFlags_;
 
   ScriptWarmUpData warmUpData_ = {};
 
@@ -2232,42 +2234,32 @@ class BaseScript : public gc::TenuredCell {
   uint32_t column() const { return extent_.column; }
 
  public:
-  ImmutableFlags immutableFlags() const { return immutableScriptFlags_; }
+  ImmutableScriptFlags immutableFlags() const { return immutableScriptFlags_; }
 
-  void setImmutableFlags(ImmutableFlags flags) {
-    immutableScriptFlags_ = flags;
-  }
+  void setImmutableFlags(uint32_t flags) { immutableScriptFlags_ = flags; }
 
   
-  MOZ_MUST_USE bool hasFlag(ImmutableFlags flag) const {
-    return immutableScriptFlags_ & flag;
-  }
-  void setFlag(ImmutableFlags flag) {
-    immutableScriptFlags_.scriptFlags_ |= flag;
-  }
-  void setFlag(ImmutableFlags flag, bool b) {
+  template <typename T>
+  void setFlag(T flag, bool b) {
     if (b) {
       setFlag(flag);
     } else {
       clearFlag(flag);
     }
   }
-  void clearFlag(ImmutableFlags flag) {
-    immutableScriptFlags_.scriptFlags_ &= ~flag;
+
+  
+  MOZ_MUST_USE bool hasFlag(ImmutableFlags flag) const {
+    return immutableScriptFlags_.hasFlag(flag);
   }
+  void setFlag(ImmutableFlags flag) { immutableScriptFlags_.setFlag(flag); }
+  void clearFlag(ImmutableFlags flag) { immutableScriptFlags_.clearFlag(flag); }
 
   
   MOZ_MUST_USE bool hasFlag(MutableFlags flag) const {
     return mutableFlags_ & uint32_t(flag);
   }
   void setFlag(MutableFlags flag) { mutableFlags_ |= uint32_t(flag); }
-  void setFlag(MutableFlags flag, bool b) {
-    if (b) {
-      setFlag(flag);
-    } else {
-      clearFlag(flag);
-    }
-  }
   void clearFlag(MutableFlags flag) { mutableFlags_ &= ~uint32_t(flag); }
 
   
@@ -2478,7 +2470,7 @@ setterLevel:                                                                  \
     return offsetof(BaseScript, sharedData_);
   }
   static size_t offsetOfImmutableFlags() {
-    static_assert(offsetof(ImmutableFlags, scriptFlags_) == 0,
+    static_assert(offsetof(ImmutableScriptFlags, flags_) == 0,
                   "Required for JIT flag access");
     return offsetof(BaseScript, immutableScriptFlags_);
   }

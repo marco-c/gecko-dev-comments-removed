@@ -17,127 +17,142 @@
 
 
 namespace js {
-namespace frontend {
+class BaseScript;
 
-class ImmutableScriptFlags {
+template <typename EnumType>
+class ScriptFlagBase {
+  
+  friend class js::BaseScript;
+
+ protected:
+  
+  
+  uint32_t flags_ = 0;
+
  public:
-  enum ScriptFlags : uint32_t {
-    
-    
-    
-    
+  MOZ_MUST_USE bool hasFlag(EnumType flag) const {
+    return flags_ & static_cast<uint32_t>(flag);
+  }
+  void setFlag(EnumType flag) { flags_ |= static_cast<uint32_t>(flag); }
+  void clearFlag(EnumType flag) { flags_ &= ~static_cast<uint32_t>(flag); }
 
-    
-    NoScriptRval = 1 << 0,
+  operator uint32_t() const { return flags_; }
+};
 
-    
-    SelfHosted = 1 << 1,
+enum class ImmutableScriptFlagsEnum : uint32_t {
+  
+  
+  
+  
 
-    
-    
-    
-    TreatAsRunOnce = 1 << 2,
-    
+  
+  NoScriptRval = 1 << 0,
 
-    
-    Strict = 1 << 3,
-
-    
-    
-    
-    HasNonSyntacticScope = 1 << 4,
-
-    
-    BindingsAccessedDynamically = 1 << 5,
-    FunHasExtensibleScope = 1 << 6,
-
-    
-    
-    HasCallSiteObj = 1 << 7,
-
-    
-    
-    HasModuleGoal = 1 << 8,
-
-    FunctionHasThisBinding = 1 << 9,
-    FunctionHasExtraBodyVarScope = 1 << 10,
-
-    
-    
-    HasMappedArgsObj = 1 << 11,
-
-    
-    
-    HasInnerFunctions = 1 << 12,
-
-    NeedsHomeObject = 1 << 13,
-
-    IsDerivedClassConstructor = 1 << 14,
-    IsDefaultClassConstructor = 1 << 15,
-
-    
-    
-    IsLikelyConstructorWrapper = 1 << 16,
-
-    
-    IsGenerator = 1 << 17,
-
-    
-    IsAsync = 1 << 18,
-
-    
-    HasRest = 1 << 19,
-
-    
-    ArgumentsHasVarBinding = 1 << 20,
-
-    
-    IsForEval = 1 << 21,
-
-    
-    IsModule = 1 << 22,
-
-    
-    NeedsFunctionEnvironmentObjects = 1 << 23,
-
-    
-    ShouldDeclareArguments = 1 << 24,
-
-    
-    IsFunction = 1 << 25,
-
-    
-    HasDirectEval = 1 << 26,
-
-    
-    
-    IsLazyScript = 1 << 27,
-  };
+  
+  SelfHosted = 1 << 1,
 
   
   
-  uint32_t scriptFlags_ = 0;
+  
+  TreatAsRunOnce = 1 << 2,
+  
 
+  
+  Strict = 1 << 3,
+
+  
+  
+  
+  HasNonSyntacticScope = 1 << 4,
+
+  
+  BindingsAccessedDynamically = 1 << 5,
+  FunHasExtensibleScope = 1 << 6,
+
+  
+  
+  HasCallSiteObj = 1 << 7,
+
+  
+  
+  HasModuleGoal = 1 << 8,
+
+  FunctionHasThisBinding = 1 << 9,
+  FunctionHasExtraBodyVarScope = 1 << 10,
+
+  
+  
+  HasMappedArgsObj = 1 << 11,
+
+  
+  
+  HasInnerFunctions = 1 << 12,
+
+  NeedsHomeObject = 1 << 13,
+
+  IsDerivedClassConstructor = 1 << 14,
+  IsDefaultClassConstructor = 1 << 15,
+
+  
+  
+  IsLikelyConstructorWrapper = 1 << 16,
+
+  
+  IsGenerator = 1 << 17,
+
+  
+  IsAsync = 1 << 18,
+
+  
+  HasRest = 1 << 19,
+
+  
+  ArgumentsHasVarBinding = 1 << 20,
+
+  
+  IsForEval = 1 << 21,
+
+  
+  IsModule = 1 << 22,
+
+  
+  NeedsFunctionEnvironmentObjects = 1 << 23,
+
+  
+  ShouldDeclareArguments = 1 << 24,
+
+  
+  IsFunction = 1 << 25,
+
+  
+  HasDirectEval = 1 << 26,
+
+  
+  
+  IsLazyScript = 1 << 27,
+};
+
+class ImmutableScriptFlags : public ScriptFlagBase<ImmutableScriptFlagsEnum> {
+  
+  
+  
+  
+  
+  
+  
  public:
-  ImmutableScriptFlags() : scriptFlags_() {
-    static_assert(sizeof(ImmutableScriptFlags) == sizeof(scriptFlags_),
+  ImmutableScriptFlags() = default;
+
+  void static_asserts() {
+    static_assert(sizeof(ImmutableScriptFlags) == sizeof(flags_),
                   "No extra members allowed");
-    static_assert(offsetof(ImmutableScriptFlags, scriptFlags_) == 0,
+    static_assert(offsetof(ImmutableScriptFlags, flags_) == 0,
                   "Required for JIT flag access");
   }
 
-  MOZ_IMPLICIT ImmutableScriptFlags(ScriptFlags sf) : scriptFlags_(sf) {}
-  MOZ_IMPLICIT ImmutableScriptFlags(int32_t flags)
-      : scriptFlags_(ScriptFlags(flags)) {}
-
-  operator uint32_t() const { return scriptFlags_; }
-
-  void operator=(uint32_t flag) { scriptFlags_ = flag; }
-
-  uint32_t toRaw() const { return scriptFlags_; }
+  void operator=(uint32_t flag) { flags_ = flag; }
 };
 
-}  
 }  
 
 #endif 
