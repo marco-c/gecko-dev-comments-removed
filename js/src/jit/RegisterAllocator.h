@@ -21,6 +21,7 @@ namespace jit {
 
 class LIRGenerator;
 
+#ifdef DEBUG
 
 
 
@@ -122,6 +123,7 @@ struct AllocationIntegrityState {
 
   void dump();
 };
+#endif  
 
 
 
