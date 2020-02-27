@@ -138,9 +138,6 @@ enum BailoutKind {
   Bailout_Debugger,
 
   
-  Bailout_UninitializedThis,
-
-  
   Bailout_FirstExecution,
 
   
@@ -165,8 +162,6 @@ enum BailoutKind {
 
   
   Bailout_BoundsCheck,
-  
-  Bailout_Detached,
 
   
   
@@ -233,8 +228,6 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "Bailout_NonSharedTypedArrayInput";
     case Bailout_Debugger:
       return "Bailout_Debugger";
-    case Bailout_UninitializedThis:
-      return "Bailout_UninitializedThis";
     case Bailout_FirstExecution:
       return "Bailout_FirstExecution";
 
@@ -249,8 +242,6 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "Bailout_ArgumentCheck";
     case Bailout_BoundsCheck:
       return "Bailout_BoundsCheck";
-    case Bailout_Detached:
-      return "Bailout_Detached";
     case Bailout_ShapeGuard:
       return "Bailout_ShapeGuard";
     case Bailout_UninitializedLexical:
