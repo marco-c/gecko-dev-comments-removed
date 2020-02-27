@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 "use strict";
 
@@ -19,14 +19,14 @@ var obj = {propA: "A", propB: "B"};
 
 const EAGER_EVALUATION_PREF = "devtools.webconsole.input.eagerEvaluation";
 
-// Basic testing of eager evaluation functionality. Expressions which can be
-// eagerly evaluated should show their results, and expressions with side
-// effects should not perform those side effects.
+
+
+
 add_task(async function() {
   await pushPref(EAGER_EVALUATION_PREF, true);
   const hud = await openNewTabAndConsole(TEST_URI);
 
-  // Do an evaluation to populate $_
+  
   await executeAndWaitForMessage(
     hud,
     "'result: ' + (x + y)",
@@ -222,11 +222,11 @@ add_task(async function() {
   setInputValue(hud, "Reflect.setPrototypeOf({}, null)");
   await waitForNoEagerEvaluationResult(hud);
 
-  // go back to inline layout.
+  
   await toggleLayout(hud);
 });
 
-// Test that the currently selected autocomplete result is eagerly evaluated.
+
 add_task(async function() {
   await pushPref(EAGER_EVALUATION_PREF, true);
   const hud = await openNewTabAndConsole(TEST_URI);
@@ -243,13 +243,13 @@ add_task(async function() {
   EventUtils.synthesizeKey("KEY_ArrowDown");
   await waitForEagerEvaluationResult(hud, "function zzyzx2()");
 
-  // works when the input isn't properly cased but matches an autocomplete item
+  
   setInputValue(hud, "o");
   onPopupOpen = popup.once("popup-opened");
   EventUtils.sendString("B");
   await waitForEagerEvaluationResult(hud, `Object { propA: "A", propB: "B" }`);
 
-  // works when doing element access without quotes
+  
   setInputValue(hud, "obj[p");
   onPopupOpen = popup.once("popup-opened");
   EventUtils.sendString("RoP");
@@ -258,22 +258,22 @@ add_task(async function() {
   EventUtils.synthesizeKey("KEY_ArrowDown");
   await waitForEagerEvaluationResult(hud, `"B"`);
 
-  // closing the autocomplete popup updates the eager evaluation result
+  
   const onPopupClose = popup.once("popup-closed");
   EventUtils.synthesizeKey("KEY_Escape");
   await onPopupClose;
   await waitForNoEagerEvaluationResult(hud);
 });
 
-// Test that the setting works as expected.
+
 add_task(async function() {
-  // Settings is only enabled on Nightly at the moment.
+  
   if (!AppConstants.NIGHTLY_BUILD) {
     ok(true);
     return;
   }
 
-  // start with the pref off.
+  
   await pushPref(EAGER_EVALUATION_PREF, false);
   const hud = await openNewTabAndConsole(TEST_URI);
 
@@ -284,16 +284,18 @@ add_task(async function() {
     false
   );
 
+  
+  
+  const onPopupOpen = hud.jsterm.autocompletePopup.once("popup-opened");
+  await setInputValueForAutocompletion(hud, "x + y");
+  await onPopupOpen;
+
   is(
     getEagerEvaluationElement(hud),
     null,
     "There's no eager evaluation element"
   );
-
-  // Wait for the autocomplete popup to be displayed so we know the eager evaluation could
-  // have occured.
-  await setInputValueForAutocompletion(hud, "x + y");
-  ok(true, "Eager evaluation is disabled");
+  hud.jsterm.autocompletePopup.hidePopup();
 
   info("Turn on the eager evaluation");
   toggleConsoleSetting(

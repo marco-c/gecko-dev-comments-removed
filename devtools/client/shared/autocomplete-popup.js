@@ -33,14 +33,16 @@ let itemIdCounter = 0;
 
 
 
+
+
 function AutocompletePopup(toolboxDoc, options = {}) {
   EventEmitter.decorate(this);
 
   this._document = toolboxDoc;
-
   this.autoSelect = options.autoSelect || false;
   this.listId = options.listId || null;
   this.position = options.position || "bottom";
+  this.useXulWrapper = options.useXulWrapper || false;
 
   this.onSelectCallback = options.onSelect;
   this.onClickCallback = options.onClick;
@@ -99,7 +101,10 @@ AutocompletePopup.prototype = {
       return this._tooltip;
     }
 
-    this._tooltip = new HTMLTooltip(this._document);
+    this._tooltip = new HTMLTooltip(this._document, {
+      useXulWrapper: this.useXulWrapper,
+    });
+
     this._tooltip.panel.classList.add(
       "devtools-autocomplete-popup",
       "devtools-monospace"
@@ -107,7 +112,7 @@ AutocompletePopup.prototype = {
     
     this._tooltip.panel.setAttribute("role", "presentation");
     this._tooltip.panel.appendChild(this.list);
-    this._tooltip.setContentSize({ height: Infinity });
+    this._tooltip.setContentSize({ height: "auto" });
 
     return this._tooltip;
   },
@@ -145,7 +150,7 @@ AutocompletePopup.prototype = {
 
 
 
-  openPopup: function(anchor, xOffset = 0, yOffset = 0, index, options) {
+  openPopup: async function(anchor, xOffset = 0, yOffset = 0, index, options) {
     
     this._activeElement = anchor.ownerDocument.activeElement;
 
@@ -153,19 +158,26 @@ AutocompletePopup.prototype = {
     
     
     const leftBorderSize = 1;
-    this.tooltip.show(anchor, {
+
+    
+    
+    if (this._pendingShowPromise) {
+      await this._pendingShowPromise;
+    }
+
+    this._pendingShowPromise = this.tooltip.show(anchor, {
       x: xOffset - this._listPadding - leftBorderSize,
       y: yOffset,
       position: this.position,
     });
+    await this._pendingShowPromise;
+    this._pendingShowPromise = null;
 
-    this.tooltip.once("shown", () => {
-      if (this.autoSelect) {
-        this.selectItemAtIndex(index, options);
-      }
+    if (this.autoSelect) {
+      this.selectItemAtIndex(index, options);
+    }
 
-      this.emit("popup-opened");
-    });
+    this.emit("popup-opened");
   },
 
   
@@ -219,6 +231,7 @@ AutocompletePopup.prototype = {
 
 
   hidePopup: function() {
+    this._pendingShowPromise = null;
     this.tooltip.once("hidden", () => {
       this.emit("popup-closed");
     });
@@ -242,6 +255,7 @@ AutocompletePopup.prototype = {
 
 
   destroy: function() {
+    this._pendingShowPromise = null;
     if (this.isOpen) {
       this.hidePopup();
     }
