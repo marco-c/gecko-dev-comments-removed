@@ -11,6 +11,7 @@
 #include <stdint.h>  
 
 #include "jstypes.h"
+#include "js/CompileOptions.h"
 
 
 
@@ -158,6 +159,26 @@ class ImmutableScriptFlags : public ScriptFlagBase<ImmutableScriptFlagsEnum> {
   }
 
   void operator=(uint32_t flag) { flags_ = flag; }
+
+  static ImmutableScriptFlags fromCompileOptions(
+      const JS::ReadOnlyCompileOptions& options) {
+    ImmutableScriptFlags isf;
+    isf.setFlag(ImmutableScriptFlagsEnum::NoScriptRval, options.noScriptRval);
+    isf.setFlag(ImmutableScriptFlagsEnum::SelfHosted, options.selfHostingMode);
+    isf.setFlag(ImmutableScriptFlagsEnum::TreatAsRunOnce, options.isRunOnce);
+    return isf;
+  };
+
+  static ImmutableScriptFlags fromCompileOptions(
+      const JS::TransitiveCompileOptions& options) {
+    ImmutableScriptFlags isf;
+    isf.setFlag(ImmutableScriptFlagsEnum::NoScriptRval,
+                 false);
+    isf.setFlag(ImmutableScriptFlagsEnum::SelfHosted, options.selfHostingMode);
+    isf.setFlag(ImmutableScriptFlagsEnum::TreatAsRunOnce,
+                 false);
+    return isf;
+  };
 };
 
 enum class MutableScriptFlagsEnum : uint32_t {
