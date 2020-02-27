@@ -573,7 +573,7 @@ void WSRunScanner::PriorVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
 
   if (outVisNode) {
     
-    *outVisNode = mStartReasonNode;
+    *outVisNode = mStartReasonContent;
   }
   if (outVisOffset) {
     
@@ -619,7 +619,7 @@ void WSRunScanner::NextVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
 
   if (outVisNode) {
     
-    *outVisNode = mEndReasonNode;
+    *outVisNode = mEndReasonContent;
   }
   if (outVisOffset) {
     
@@ -713,7 +713,7 @@ nsresult WSRunScanner::GetWSNodes() {
             mStartNode = textNode;
             mStartOffset = i;
             mStartReason = WSType::text;
-            mStartReasonNode = textNode;
+            mStartReasonContent = textNode;
             break;
           }
           
@@ -739,7 +739,7 @@ nsresult WSRunScanner::GetWSNodes() {
         mStartNode = start.GetContainer();
         mStartOffset = start.Offset();
         mStartReason = WSType::otherBlock;
-        mStartReasonNode = priorNode;
+        mStartReasonContent = priorNode;
       } else if (priorNode->IsText() && priorNode->IsEditable()) {
         RefPtr<Text> textNode = priorNode->GetAsText();
         mNodeArray.InsertElementAt(0, textNode);
@@ -766,7 +766,7 @@ nsresult WSRunScanner::GetWSNodes() {
                 mStartNode = textNode;
                 mStartOffset = pos + 1;
                 mStartReason = WSType::text;
-                mStartReasonNode = textNode;
+                mStartReasonContent = textNode;
                 break;
               }
               
@@ -791,7 +791,7 @@ nsresult WSRunScanner::GetWSNodes() {
         } else {
           mStartReason = WSType::special;
         }
-        mStartReasonNode = priorNode;
+        mStartReasonContent = priorNode;
       }
     } else {
       
@@ -801,7 +801,7 @@ nsresult WSRunScanner::GetWSNodes() {
       mStartReason = WSType::thisBlock;
       
       
-      mStartReasonNode = editableBlockParentOrTopmotEditableInlineContent;
+      mStartReasonContent = editableBlockParentOrTopmotEditableInlineContent;
     }
   }
 
@@ -822,7 +822,7 @@ nsresult WSRunScanner::GetWSNodes() {
             mEndNode = textNode;
             mEndOffset = i;
             mEndReason = WSType::text;
-            mEndReasonNode = textNode;
+            mEndReasonContent = textNode;
             break;
           }
           
@@ -849,7 +849,7 @@ nsresult WSRunScanner::GetWSNodes() {
         mEndNode = end.GetContainer();
         mEndOffset = end.Offset();
         mEndReason = WSType::otherBlock;
-        mEndReasonNode = nextNode;
+        mEndReasonContent = nextNode;
       } else if (nextNode->IsText() && nextNode->IsEditable()) {
         RefPtr<Text> textNode = nextNode->GetAsText();
         mNodeArray.AppendElement(textNode);
@@ -876,7 +876,7 @@ nsresult WSRunScanner::GetWSNodes() {
                 mEndNode = textNode;
                 mEndOffset = pos;
                 mEndReason = WSType::text;
-                mEndReasonNode = textNode;
+                mEndReasonContent = textNode;
                 break;
               }
               
@@ -902,7 +902,7 @@ nsresult WSRunScanner::GetWSNodes() {
         } else {
           mEndReason = WSType::special;
         }
-        mEndReasonNode = nextNode;
+        mEndReasonContent = nextNode;
       }
     } else {
       
@@ -912,7 +912,7 @@ nsresult WSRunScanner::GetWSNodes() {
       mEndReason = WSType::thisBlock;
       
       
-      mEndReasonNode = editableBlockParentOrTopmotEditableInlineContent;
+      mEndReasonContent = editableBlockParentOrTopmotEditableInlineContent;
     }
   }
 

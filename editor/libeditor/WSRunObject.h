@@ -200,6 +200,12 @@ class MOZ_STACK_CLASS WSRunScanner {
     PriorVisibleNode(aPoint, nullptr, nullptr, outType);
   }
 
+  
+
+
+  nsIContent* GetStartReasonContent() const { return mStartReasonContent; }
+  nsIContent* GetEndReasonContent() const { return mEndReasonContent; }
+
  protected:
   
   
@@ -343,16 +349,12 @@ class MOZ_STACK_CLASS WSRunScanner {
   int32_t mStartOffset;
   
   WSType mStartReason;
-  
-  nsCOMPtr<nsINode> mStartReasonNode;
 
   
   nsCOMPtr<nsINode> mEndNode;
   int32_t mEndOffset;
   
   WSType mEndReason;
-  
-  nsCOMPtr<nsINode> mEndReasonNode;
 
   
   RefPtr<dom::Text> mFirstNBSPNode;
@@ -367,6 +369,9 @@ class MOZ_STACK_CLASS WSRunScanner {
 
   
   WSFragment* mEndRun;
+
+  nsCOMPtr<nsIContent> mStartReasonContent;
+  nsCOMPtr<nsIContent> mEndReasonContent;
 
   
   const HTMLEditor* mHTMLEditor;
