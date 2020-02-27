@@ -3,6 +3,7 @@
 
 
 use crate::batch::{BatchKey, BatchKind, BrushBatchKind, BatchFeatures};
+use crate::composite::CompositeSurfaceFormat;
 use crate::device::{Device, Program, ShaderError};
 use euclid::default::Transform3D;
 use crate::glyph_rasterizer::GlyphFormat;
@@ -572,7 +573,10 @@ pub struct Shaders {
     
     
     
-    pub composite: LazilyCompiledShader,
+    
+    
+    pub composite_rgba: LazilyCompiledShader,
+    pub composite_yuv: Vec<Option<LazilyCompiledShader>>,
 }
 
 impl Shaders {
@@ -836,18 +840,22 @@ impl Shaders {
         let mut yuv_features = Vec::new();
         let yuv_shader_num = IMAGE_BUFFER_KINDS.len();
         let mut brush_yuv_image = Vec::new();
+        let mut composite_yuv = Vec::new();
         
         for _ in 0 .. yuv_shader_num {
             brush_yuv_image.push(None);
+            composite_yuv.push(None);
         }
         for image_buffer_kind in &IMAGE_BUFFER_KINDS {
             if image_buffer_kind.has_platform_support(&gl_type) {
+                yuv_features.push("YUV");
+
                 let feature_string = image_buffer_kind.get_feature_string();
                 if feature_string != "" {
                     yuv_features.push(feature_string);
                 }
 
-                let shader = BrushShader::new(
+                let brush_shader = BrushShader::new(
                     "brush_yuv_image",
                     device,
                     &yuv_features,
@@ -856,10 +864,21 @@ impl Shaders {
                     false ,
                     use_pixel_local_storage,
                 )?;
+
+                let composite_shader = LazilyCompiledShader::new(
+                    ShaderKind::Composite,
+                    "composite",
+                    &yuv_features,
+                    device,
+                    options.precache_flags,
+                )?;
+
                 let index = Self::get_yuv_shader_index(
                     *image_buffer_kind,
                 );
-                brush_yuv_image[index] = Some(shader);
+                brush_yuv_image[index] = Some(brush_shader);
+                composite_yuv[index] = Some(composite_shader);
+
                 yuv_features.clear();
             }
         }
@@ -896,7 +915,7 @@ impl Shaders {
             options.precache_flags,
         )?;
 
-        let composite = LazilyCompiledShader::new(
+        let composite_rgba = LazilyCompiledShader::new(
             ShaderKind::Composite,
             "composite",
             &[],
@@ -932,12 +951,32 @@ impl Shaders {
             ps_text_run,
             ps_text_run_dual_source,
             ps_split_composite,
-            composite,
+            composite_rgba,
+            composite_yuv,
         })
     }
 
     fn get_yuv_shader_index(buffer_kind: ImageBufferKind) -> usize {
         (buffer_kind as usize)
+    }
+
+    pub fn get_composite_shader(
+        &mut self,
+        format: CompositeSurfaceFormat,
+        buffer_kind: ImageBufferKind,
+    ) -> &mut LazilyCompiledShader {
+        match format {
+            CompositeSurfaceFormat::Rgba => {
+                debug_assert_eq!(buffer_kind, ImageBufferKind::Texture2DArray);
+                &mut self.composite_rgba
+            }
+            CompositeSurfaceFormat::Yuv => {
+                let shader_index = Self::get_yuv_shader_index(buffer_kind);
+                self.composite_yuv[shader_index]
+                    .as_mut()
+                    .expect("bug: unsupported yuv shader requested")
+            }
+        }
     }
 
     pub fn get(&mut self, key: &BatchKey, features: BatchFeatures, debug_flags: DebugFlags) -> &mut LazilyCompiledShader {
@@ -1041,7 +1080,12 @@ impl Shaders {
         self.cs_line_decoration.deinit(device);
         self.cs_border_segment.deinit(device);
         self.ps_split_composite.deinit(device);
-        self.composite.deinit(device);
+        self.composite_rgba.deinit(device);
+        for shader in self.composite_yuv {
+            if let Some(shader) = shader {
+                shader.deinit(device);
+            }
+        }
     }
 }
 

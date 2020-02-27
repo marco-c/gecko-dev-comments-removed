@@ -76,12 +76,18 @@ pub struct FrameGlobalResources {
     
     
     pub default_image_handle: GpuCacheHandle,
+
+    
+    
+    
+    pub default_transparent_rect_handle: GpuCacheHandle,
 }
 
 impl FrameGlobalResources {
     pub fn empty() -> Self {
         FrameGlobalResources {
             default_image_handle: GpuCacheHandle::new(),
+            default_transparent_rect_handle: GpuCacheHandle::new(),
         }
     }
 
@@ -98,6 +104,10 @@ impl FrameGlobalResources {
                 0.0,
                 0.0,
             ]);
+        }
+
+        if let Some(mut request) = gpu_cache.request(&mut self.default_transparent_rect_handle) {
+            request.push(PremultipliedColorF::TRANSPARENT);
         }
     }
 }
@@ -439,7 +449,7 @@ impl FrameBuilder {
                 root_spatial_node_index,
                 root_spatial_node_index,
                 ROOT_SURFACE_INDEX,
-                SubpixelMode::Allow,
+                &SubpixelMode::Allow,
                 &mut frame_state,
                 &frame_context,
                 scratch,

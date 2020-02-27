@@ -3,7 +3,7 @@
 
 
 use api::{ColorF, GlyphInstance, RasterSpace, Shadow};
-use api::units::{LayoutToWorldTransform, LayoutVector2D};
+use api::units::{LayoutToWorldTransform, LayoutVector2D, PictureRect};
 use crate::scene_building::{CreateShadow, IsVisible};
 use crate::frame_builder::FrameBuildingState;
 use crate::glyph_rasterizer::{FontInstance, FontTransform, GlyphKey, FONT_SIZE_LIMIT};
@@ -226,8 +226,9 @@ impl TextRunPrimitive {
         surface: &SurfaceInfo,
         spatial_node_index: SpatialNodeIndex,
         transform: &LayoutToWorldTransform,
-        subpixel_mode: SubpixelMode,
+        subpixel_mode: &SubpixelMode,
         raster_space: RasterSpace,
+        prim_rect: PictureRect,
         spatial_tree: &SpatialTree,
     ) -> bool {
         
@@ -322,10 +323,23 @@ impl TextRunPrimitive {
         
         
         
-        if (subpixel_mode == SubpixelMode::Deny && self.used_font.bg_color.a == 0) ||
-            
-            !use_subpixel_aa
-        {
+        let mut allow_subpixel = match subpixel_mode {
+            SubpixelMode::Allow => true,
+            SubpixelMode::Deny => false,
+            SubpixelMode::Conditional { excluded_rects } => {
+                
+                
+                
+                excluded_rects.iter().all(|rect| !rect.intersects(&prim_rect))
+            }
+        };
+
+        
+        
+        allow_subpixel |= self.used_font.bg_color.a != 0;
+
+        
+        if !allow_subpixel || !use_subpixel_aa {
             self.used_font.disable_subpixel_aa();
 
             
@@ -344,13 +358,14 @@ impl TextRunPrimitive {
     pub fn request_resources(
         &mut self,
         prim_offset: LayoutVector2D,
+        prim_rect: PictureRect,
         specified_font: &FontInstance,
         glyphs: &[GlyphInstance],
         transform: &LayoutToWorldTransform,
         surface: &SurfaceInfo,
         spatial_node_index: SpatialNodeIndex,
         raster_space: RasterSpace,
-        subpixel_mode: SubpixelMode,
+        subpixel_mode: &SubpixelMode,
         resource_cache: &mut ResourceCache,
         gpu_cache: &mut GpuCache,
         render_tasks: &mut RenderTaskGraph,
@@ -364,6 +379,7 @@ impl TextRunPrimitive {
             transform,
             subpixel_mode,
             raster_space,
+            prim_rect,
             spatial_tree,
         );
 
