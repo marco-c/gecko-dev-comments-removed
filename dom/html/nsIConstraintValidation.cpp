@@ -170,14 +170,8 @@ bool nsIConstraintValidation::ReportValidity() {
     }
   }
 
-  if (element->IsHTMLElement(nsGkAtoms::input) &&
-      
-      
-      
-      
-      
-      element->State().HasState(NS_EVENT_STATE_FOCUS)) {
-    HTMLInputElement* inputElement = HTMLInputElement::FromNode(element);
+  auto* inputElement = HTMLInputElement::FromNode(element);
+  if (inputElement && inputElement->State().HasState(NS_EVENT_STATE_FOCUS)) {
     inputElement->UpdateValidityUIBits(true);
   }
 

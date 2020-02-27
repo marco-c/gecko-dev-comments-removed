@@ -172,10 +172,13 @@ impl NonTSPseudoClass {
     
     #[inline]
     fn is_enabled_in_content(&self) -> bool {
+        if matches!(*self, NonTSPseudoClass::FocusVisible) {
+            return static_prefs::pref!("layout.css.focus-visible.enabled")
+        }
         !self.has_any_flag(NonTSPseudoClassFlag::PSEUDO_CLASS_ENABLED_IN_UA_SHEETS_AND_CHROME)
     }
 
-    
+    /// Get the state flag associated with a pseudo-class, if any.
     pub fn state_flag(&self) -> ElementState {
         macro_rules! flag {
             (_) => {
@@ -199,7 +202,7 @@ impl NonTSPseudoClass {
         apply_non_ts_list!(pseudo_class_state)
     }
 
-    
+    /// Get the document state flag associated with a pseudo-class, if any.
     pub fn document_state_flag(&self) -> DocumentState {
         match *self {
             NonTSPseudoClass::MozLocaleDir(..) => DocumentState::NS_DOCUMENT_STATE_RTL_LOCALE,
@@ -208,8 +211,8 @@ impl NonTSPseudoClass {
         }
     }
 
-    
-    
+    /// Returns true if the given pseudoclass should trigger style sharing cache
+    /// revalidation.
     pub fn needs_cache_revalidation(&self) -> bool {
         self.state_flag().is_empty() &&
             !matches!(*self,
@@ -244,8 +247,8 @@ impl NonTSPseudoClass {
             )
     }
 
-    
-    
+    /// Returns true if the evaluation of the pseudo-class depends on the
+    /// element's attributes.
     pub fn is_attr_based(&self) -> bool {
         matches!(
             *self,
@@ -264,7 +267,7 @@ impl ::selectors::parser::NonTSPseudoClass for NonTSPseudoClass {
         matches!(*self, NonTSPseudoClass::Active | NonTSPseudoClass::Hover)
     }
 
-    
+    /// We intentionally skip the link-related ones.
     #[inline]
     fn is_user_action_state(&self) -> bool {
         matches!(
@@ -279,7 +282,7 @@ impl ::selectors::parser::NonTSPseudoClass for NonTSPseudoClass {
     }
 }
 
-
+/// The dummy struct we use to implement our selector parsing.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SelectorImpl;
 
