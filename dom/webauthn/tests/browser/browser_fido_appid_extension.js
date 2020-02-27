@@ -6,33 +6,17 @@
 
 const TEST_URL = "https://example.com/";
 
-function arrivingHereIsBad(aResult) {
-  ok(false, "Bad result! Received a: " + aResult);
-}
-
-function expectError(aType) {
-  let expected = `${aType}Error`;
-  return function(aResult) {
-    is(
-      aResult.slice(0, expected.length),
-      expected,
-      `Expecting a ${aType}Error`
-    );
-  };
-}
-
 let expectNotSupportedError = expectError("NotSupported");
 let expectInvalidStateError = expectError("InvalidState");
 let expectSecurityError = expectError("Security");
 
-
-function promiseU2FRegister(tab, app_id) {
-  let challenge = crypto.getRandomValues(new Uint8Array(16));
-  challenge = bytesToBase64UrlSafe(challenge);
+function promiseU2FRegister(tab, app_id_) {
+  let challenge_ = crypto.getRandomValues(new Uint8Array(16));
+  challenge_ = bytesToBase64UrlSafe(challenge_);
 
   return SpecialPowers.spawn(
     tab.linkedBrowser,
-    [[app_id, challenge]],
+    [[app_id_, challenge_]],
     function([app_id, challenge]) {
       return new Promise(resolve => {
         content.u2f.register(
@@ -50,72 +34,6 @@ function promiseU2FRegister(tab, app_id) {
     return data.slice(67, 67 + data[66]);
   });
 }
-
-function promiseWebAuthnRegister(tab, appid) {
-  return ContentTask.spawn(tab.linkedBrowser, appid, appid => {
-    const cose_alg_ECDSA_w_SHA256 = -7;
-
-    let challenge = content.crypto.getRandomValues(new Uint8Array(16));
-
-    let pubKeyCredParams = [
-      {
-        type: "public-key",
-        alg: cose_alg_ECDSA_w_SHA256,
-      },
-    ];
-
-    let publicKey = {
-      rp: { id: content.document.domain, name: "none", icon: "none" },
-      user: {
-        id: new Uint8Array(),
-        name: "none",
-        icon: "none",
-        displayName: "none",
-      },
-      pubKeyCredParams,
-      extensions: { appid },
-      challenge,
-    };
-
-    return content.navigator.credentials
-      .create({ publicKey })
-      .then(res => res.rawId);
-  });
-}
-
-function promiseWebAuthnSign(tab, key_handle, extensions = {}) {
-  return ContentTask.spawn(
-    tab.linkedBrowser,
-    [key_handle, extensions],
-    ([key_handle, extensions]) => {
-      let challenge = content.crypto.getRandomValues(new Uint8Array(16));
-
-      let credential = {
-        id: key_handle,
-        type: "public-key",
-        transports: ["usb"],
-      };
-
-      let publicKey = {
-        challenge,
-        extensions,
-        rpId: content.document.domain,
-        allowCredentials: [credential],
-      };
-
-      return content.navigator.credentials
-        .get({ publicKey })
-        .then(credential => {
-          return {
-            authenticatorData: credential.response.authenticatorData,
-            clientDataJSON: credential.response.clientDataJSON,
-            extensions: credential.getClientExtensionResults(),
-          };
-        });
-    }
-  );
-}
-
 
 add_task(function test_setup() {
   Services.prefs.setBoolPref("security.webauth.u2f", true);
@@ -143,19 +61,19 @@ add_task(async function test_appid() {
   let keyHandle = await promiseU2FRegister(tab, appid);
 
   
-  await promiseWebAuthnRegister(tab, appid)
+  await promiseWebAuthnMakeCredential(tab, "none", { appid })
     .then(arrivingHereIsBad)
     .catch(expectNotSupportedError);
 
   
   
   
-  await promiseWebAuthnSign(tab, keyHandle)
+  await promiseWebAuthnGetAssertion(tab, keyHandle)
     .then(arrivingHereIsBad)
     .catch(expectInvalidStateError);
 
   
-  await promiseWebAuthnSign(tab, keyHandle, {
+  await promiseWebAuthnGetAssertion(tab, keyHandle, {
     appid: "https://bogus.com/appId",
   })
     .then(arrivingHereIsBad)
@@ -163,7 +81,7 @@ add_task(async function test_appid() {
 
   
   
-  await promiseWebAuthnSign(tab, keyHandle, { appid: appid + "2" })
+  await promiseWebAuthnGetAssertion(tab, keyHandle, { appid: appid + "2" })
     .then(arrivingHereIsBad)
     .catch(expectInvalidStateError);
 
@@ -171,7 +89,7 @@ add_task(async function test_appid() {
   let rpIdHash = await crypto.subtle.digest("SHA-256", rpId);
 
   
-  await promiseWebAuthnSign(tab, keyHandle, { appid }).then(
+  await promiseWebAuthnGetAssertion(tab, keyHandle, { appid }).then(
     ({ authenticatorData, clientDataJSON, extensions }) => {
       is(extensions.appid, true, "appid extension was acted upon");
 
