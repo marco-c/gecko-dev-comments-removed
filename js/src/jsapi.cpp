@@ -4941,7 +4941,9 @@ JS_PUBLIC_API void JS_SetPendingException(JSContext* cx, HandleValue value,
                                           JS::ExceptionStackBehavior behavior) {
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
-  cx->releaseCheck(value);
+  
+  
+  
 
   if (behavior == JS::ExceptionStackBehavior::Capture) {
     cx->setPendingExceptionAndCaptureStack(value);
@@ -4960,8 +4962,11 @@ JS_PUBLIC_API void JS::SetPendingExceptionAndStack(JSContext* cx,
                                                    HandleObject stack) {
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
-  cx->releaseCheck(value);
-  cx->releaseCheck(stack);
+  
+  
+  
+  
+  
 
   RootedSavedFrame nstack(cx);
   if (stack) {
