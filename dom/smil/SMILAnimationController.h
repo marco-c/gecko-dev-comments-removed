@@ -11,7 +11,7 @@
 #include "mozilla/SMILCompositorTable.h"
 #include "mozilla/SMILMilestone.h"
 #include "mozilla/SMILTimeContainer.h"
-#include "nsAutoPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
 #include "nsTHashtable.h"
@@ -201,7 +201,7 @@ class SMILAnimationController final : public SMILTimeContainer,
   
   
   
-  nsAutoPtr<SMILCompositorTable> mLastCompositorTable;
+  UniquePtr<SMILCompositorTable> mLastCompositorTable;
 };
 
 }  

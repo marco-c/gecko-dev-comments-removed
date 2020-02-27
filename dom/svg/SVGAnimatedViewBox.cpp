@@ -87,7 +87,7 @@ void SVGAnimatedViewBox::Init() {
 bool SVGAnimatedViewBox::HasRect() const {
   
   
-  const SVGViewBox* rect = mAnimVal;
+  const SVGViewBox* rect = mAnimVal.get();
   if (!rect) {
     if (!mHasBaseVal) {
       
@@ -103,7 +103,7 @@ void SVGAnimatedViewBox::SetAnimValue(const SVGViewBox& aRect,
                                       SVGElement* aSVGElement) {
   if (!mAnimVal) {
     
-    mAnimVal = new SVGViewBox(aRect);
+    mAnimVal = MakeUnique<SVGViewBox>(aRect);
   } else {
     if (aRect == *mAnimVal) {
       return;

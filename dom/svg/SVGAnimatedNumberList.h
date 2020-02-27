@@ -10,7 +10,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
-#include "nsAutoPtr.h"
 #include "SVGNumberList.h"
 
 namespace mozilla {
@@ -85,7 +84,7 @@ class SVGAnimatedNumberList {
   
 
   SVGNumberList mBaseVal;
-  nsAutoPtr<SVGNumberList> mAnimVal;
+  UniquePtr<SVGNumberList> mAnimVal;
   bool mIsBaseSet;
 
   struct SMILAnimatedNumberList : public SMILAttr {

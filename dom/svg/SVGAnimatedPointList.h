@@ -10,7 +10,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
-#include "nsAutoPtr.h"
 #include "SVGPointList.h"
 
 namespace mozilla {
@@ -89,7 +88,7 @@ class SVGAnimatedPointList {
   
 
   SVGPointList mBaseVal;
-  nsAutoPtr<SVGPointList> mAnimVal;
+  UniquePtr<SVGPointList> mAnimVal;
 
   struct SMILAnimatedPointList : public SMILAttr {
    public:

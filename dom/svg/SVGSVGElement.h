@@ -36,7 +36,7 @@ class SVGView {
   SVGAnimatedEnumeration mZoomAndPan;
   SVGAnimatedViewBox mViewBox;
   SVGAnimatedPreserveAspectRatio mPreserveAspectRatio;
-  nsAutoPtr<SVGAnimatedTransformList> mTransforms;
+  UniquePtr<SVGAnimatedTransformList> mTransforms;
 };
 
 class DOMSVGTranslatePoint final : public nsISVGPoint {
@@ -233,7 +233,7 @@ class SVGSVGElement final : public SVGSVGElementBase {
 
   
   
-  nsAutoPtr<SMILTimeContainer> mTimedDocumentRoot;
+  UniquePtr<SMILTimeContainer> mTimedDocumentRoot;
 
   
   
@@ -253,8 +253,8 @@ class SVGSVGElement final : public SVGSVGElementBase {
 
   
   
-  nsAutoPtr<nsString> mCurrentViewID;
-  nsAutoPtr<SVGView> mSVGView;
+  UniquePtr<nsString> mCurrentViewID;
+  UniquePtr<SVGView> mSVGView;
 };
 
 }  

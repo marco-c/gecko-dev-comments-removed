@@ -10,7 +10,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
-#include "nsAutoPtr.h"
 #include "SVGTransformList.h"
 
 class nsAtom;
@@ -117,7 +116,7 @@ class SVGAnimatedTransformList {
   
 
   SVGTransformList mBaseVal;
-  nsAutoPtr<SVGTransformList> mAnimVal;
+  UniquePtr<SVGTransformList> mAnimVal;
   bool mIsAttrSet;
   
   bool mCreatedOrRemovedOnLastChange;
