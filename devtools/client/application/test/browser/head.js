@@ -45,6 +45,9 @@ async function enableApplicationPanel() {
   await enableServiceWorkerDebugging();
 
   
+  Services.prefs.setBoolPref("dom.manifest.enabled", true);
+
+  
   await pushPref("devtools.application.enabled", true);
 }
 
