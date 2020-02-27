@@ -265,22 +265,22 @@ static nsresult CollectDiskInfo(nsIFile* greDir, nsIFile* winDir,
 }
 
 static nsresult CollectOSInfo(OSInfo& info) {
-  HKEY hKey;
+  HKEY installYearHKey;
   LONG status = RegOpenKeyExW(
       HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0,
-      KEY_READ | KEY_WOW64_64KEY, &hKey);
+      KEY_READ | KEY_WOW64_64KEY, &installYearHKey);
 
   if (status != ERROR_SUCCESS) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  nsAutoRegKey key(hKey);
+  nsAutoRegKey installYearKey(installYearHKey);
 
   DWORD type = 0;
   time_t raw_time = 0;
   DWORD time_size = sizeof(time_t);
 
-  status = RegQueryValueExW(hKey, L"InstallDate", nullptr, &type,
+  status = RegQueryValueExW(installYearHKey, L"InstallDate", nullptr, &type,
                             (LPBYTE)&raw_time, &time_size);
 
   if (status != ERROR_SUCCESS) {
@@ -297,6 +297,84 @@ static nsresult CollectOSInfo(OSInfo& info) {
   }
 
   info.installYear = 1900UL + time.tm_year;
+
+  nsAutoServiceHandle scm(
+      OpenSCManager(nullptr, SERVICES_ACTIVE_DATABASE, SC_MANAGER_CONNECT));
+
+  if (!scm) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  bool superfetchServiceRunning = false;
+
+  
+  
+  
+  nsAutoServiceHandle hService(OpenService(scm, L"SysMain", GENERIC_READ));
+
+  if (hService) {
+    SERVICE_STATUS superfetchStatus;
+    LPSERVICE_STATUS pSuperfetchStatus = &superfetchStatus;
+
+    if (!QueryServiceStatus(hService, pSuperfetchStatus)) {
+      return NS_ERROR_UNEXPECTED;
+    }
+
+    superfetchServiceRunning =
+        superfetchStatus.dwCurrentState == SERVICE_RUNNING;
+  }
+
+  
+  
+  
+  bool superfetchUsingDefaultParams = true;
+  bool prefetchUsingDefaultParams = true;
+
+  static const WCHAR prefetchParamsKeyName[] =
+      L"SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory "
+      L"Management\\PrefetchParameters";
+  static const DWORD SUPERFETCH_DEFAULT_PARAM = 3;
+  static const DWORD PREFETCH_DEFAULT_PARAM = 3;
+
+  HKEY prefetchParamsHKey;
+
+  LONG prefetchParamsStatus =
+      RegOpenKeyExW(HKEY_LOCAL_MACHINE, prefetchParamsKeyName, 0,
+                    KEY_READ | KEY_WOW64_64KEY, &prefetchParamsHKey);
+
+  if (prefetchParamsStatus == ERROR_SUCCESS) {
+    DWORD valueSize = sizeof(DWORD);
+    DWORD superfetchValue = 0;
+    nsAutoRegKey prefetchParamsKey(prefetchParamsHKey);
+    LONG superfetchParamStatus = RegQueryValueExW(
+        prefetchParamsHKey, L"EnableSuperfetch", nullptr, &type,
+        reinterpret_cast<LPBYTE>(&superfetchValue), &valueSize);
+
+    
+    
+    if (superfetchParamStatus == ERROR_SUCCESS &&
+        superfetchValue != SUPERFETCH_DEFAULT_PARAM) {
+      superfetchUsingDefaultParams = false;
+    }
+
+    DWORD prefetchValue = 0;
+
+    LONG prefetchParamStatus = RegQueryValueExW(
+        prefetchParamsHKey, L"EnablePrefetcher", nullptr, &type,
+        reinterpret_cast<LPBYTE>(&prefetchValue), &valueSize);
+
+    
+    
+    
+    if (prefetchParamStatus != ERROR_SUCCESS ||
+        prefetchValue != PREFETCH_DEFAULT_PARAM) {
+      prefetchUsingDefaultParams = false;
+    }
+  }
+
+  info.hasSuperfetch = superfetchServiceRunning && superfetchUsingDefaultParams;
+  info.hasPrefetch = prefetchUsingDefaultParams;
+
   return NS_OK;
 }
 
@@ -448,9 +526,9 @@ static nsresult GetAppleModelId(nsAutoCString& aModelId) {
 
 using namespace mozilla;
 
-nsSystemInfo::nsSystemInfo() {}
+nsSystemInfo::nsSystemInfo() = default;
 
-nsSystemInfo::~nsSystemInfo() {}
+nsSystemInfo::~nsSystemInfo() = default;
 
 
 static const struct PropItems {
@@ -884,7 +962,7 @@ nsresult nsSystemInfo::Init() {
     secondaryLibrary.Append(nsDependentCSubstring(gtkver, gtkver_len));
   }
 
-#ifndef MOZ_TSAN
+#  ifndef MOZ_TSAN
   
   
   
@@ -904,7 +982,7 @@ nsresult nsSystemInfo::Init() {
   if (libpulse) {
     dlclose(libpulse);
   }
-#endif
+#  endif
 
   rv = SetPropertyAsACString(NS_LITERAL_STRING("secondaryLibrary"),
                              secondaryLibrary);
@@ -1104,6 +1182,14 @@ JSObject* GetJSObjForOSInfo(JSContext* aCx, const OSInfo& info) {
 
   JS::Rooted<JS::Value> valInstallYear(aCx, JS::Int32Value(info.installYear));
   JS_SetProperty(aCx, jsInfo, "installYear", valInstallYear);
+
+  JS::Rooted<JS::Value> valHasSuperfetch(aCx,
+                                         JS::BooleanValue(info.hasSuperfetch));
+  JS_SetProperty(aCx, jsInfo, "hasSuperfetch", valHasSuperfetch);
+
+  JS::Rooted<JS::Value> valHasPrefetch(aCx, JS::BooleanValue(info.hasPrefetch));
+  JS_SetProperty(aCx, jsInfo, "hasPrefetch", valHasPrefetch);
+
   return jsInfo;
 }
 
