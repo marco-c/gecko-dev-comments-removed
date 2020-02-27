@@ -36,7 +36,9 @@ nsresult nsOSHelperAppService::OSProtocolHandlerExists(const char* aScheme,
                                                        bool* aExists) {
   
   
-  return NS_ERROR_NOT_IMPLEMENTED;
+  nsAutoCString scheme(aScheme);
+  *aExists = scheme.Equals(NS_LITERAL_CSTRING("intent"));
+  return NS_OK;
 }
 
 NS_IMETHODIMP
