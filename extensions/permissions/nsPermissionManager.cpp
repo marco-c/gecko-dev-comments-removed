@@ -3249,7 +3249,6 @@ nsPermissionManager::GetAllKeysForPrincipal(nsIPrincipal* aPrincipal) {
     
     Pair<nsCString, nsCString>* pair =
         pairs.AppendElement(MakePair(EmptyCString(), EmptyCString()));
-    GetKeyForPrincipal(prin, false, pair->first());
     
     
     GetKeyForPrincipal(prin, false, pair->first());
