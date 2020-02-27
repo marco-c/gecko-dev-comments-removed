@@ -1642,16 +1642,6 @@ pref("browser.tabs.remote.desktopbehavior", true);
 
 
 
-
-
-#ifdef NIGHTLY_BUILD
-  pref("network.process.enabled", true);
-#else
-  pref("network.process.enabled", false);
-#endif
-
-
-
 pref("browser.tabs.remote.warmup.enabled", true);
 
 
