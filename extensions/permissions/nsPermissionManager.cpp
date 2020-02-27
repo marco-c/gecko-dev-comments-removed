@@ -3253,7 +3253,7 @@ nsPermissionManager::GetAllKeysForPrincipal(nsIPrincipal* aPrincipal) {
     
     GetKeyForPrincipal(prin, false, pair->first());
 
-    Unused << prin->GetOrigin(pair->second());
+    Unused << GetOriginFromPrincipal(prin, false, pair->second());
 
     
     prin = GetNextSubDomainPrincipal(prin);
