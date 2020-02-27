@@ -141,6 +141,9 @@ DefaultJitOptions::DefaultJitOptions() {
 #endif
 
   
+  SET_DEFAULT(warpBuilder, false);
+
+  
   
   SET_DEFAULT(jitForTrustedPrincipals, false);
 
