@@ -291,7 +291,8 @@ BrowsingContext::BrowsingContext(BrowsingContext* aParent,
       mIsDiscarded(false),
       mWindowless(false),
       mDanglingRemoteOuterProxies(false),
-      mPendingInitialization(false) {
+      mPendingInitialization(false),
+      mEmbeddedByThisProcess(false) {
   MOZ_RELEASE_ASSERT(!mParent || mParent->Group() == mGroup);
   MOZ_RELEASE_ASSERT(mBrowsingContextId != 0);
   MOZ_RELEASE_ASSERT(mGroup);
@@ -352,12 +353,16 @@ void BrowsingContext::CleanUpDanglingRemoteOuterWindowProxies(
 }
 
 void BrowsingContext::SetEmbedderElement(Element* aEmbedder) {
+  mEmbeddedByThisProcess = true;
   
   
   if (aEmbedder) {
     if (nsCOMPtr<nsPIDOMWindowInner> inner =
             do_QueryInterface(aEmbedder->GetOwnerGlobal())) {
-      SetEmbedderInnerWindowId(inner->WindowID());
+      Transaction txn;
+      txn.SetEmbedderInnerWindowId(inner->WindowID());
+      txn.SetEmbedderElementType(Some(aEmbedder->LocalName()));
+      txn.Commit(this);
     }
   }
 
@@ -1395,6 +1400,17 @@ bool BrowsingContext::CanSet(FieldIndex<IDX_UserAgentOverride>,
   return true;
 }
 
+bool BrowsingContext::CheckOnlyEmbedderCanSet(ContentParent* aSource) {
+  if (aSource) {
+    
+    MOZ_ASSERT(XRE_IsParentProcess());
+    return Canonical()->IsEmbeddedInProcess(aSource->ChildID());
+  }
+
+  
+  return mEmbeddedByThisProcess;
+}
+
 bool BrowsingContext::CanSet(FieldIndex<IDX_EmbedderInnerWindowId>,
                              const uint64_t& aValue, ContentParent* aSource) {
   
@@ -1447,6 +1463,11 @@ bool BrowsingContext::CanSet(FieldIndex<IDX_EmbedderInnerWindowId>,
   }
 
   return true;
+}
+
+bool BrowsingContext::CanSet(FieldIndex<IDX_EmbedderElementType>,
+                             const Maybe<nsString>&, ContentParent* aSource) {
+  return CheckOnlyEmbedderCanSet(aSource);
 }
 
 bool BrowsingContext::CanSet(FieldIndex<IDX_CurrentInnerWindowId>,
