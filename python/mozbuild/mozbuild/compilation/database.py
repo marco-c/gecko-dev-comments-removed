@@ -1,8 +1,8 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this file,
-# You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# This modules provides functionality for dealing with code completion.
+
+
+
+
 
 from __future__ import absolute_import, print_function
 
@@ -33,10 +33,10 @@ class CompileDBBackend(CommonBackend):
     def _init(self):
         CommonBackend._init(self)
 
-        # The database we're going to dump out to.
+        
         self._db = OrderedDict()
 
-        # The cache for per-directory flags
+        
         self._flags = {}
 
         self._envs = {}
@@ -44,7 +44,7 @@ class CompileDBBackend(CommonBackend):
         self._per_source_flags = defaultdict(list)
 
     def consume_object(self, obj):
-        # Those are difficult directories, that will be handled later.
+        
         if obj.relsrcdir in (
                 'build/unix/elfhack',
                 'build/unix/elfhack/inject',
@@ -61,7 +61,7 @@ class CompileDBBackend(CommonBackend):
             self._envs[obj.objdir] = obj.config
 
         elif isinstance(obj, (Sources, GeneratedSources)):
-            # For other sources, include each source file.
+            
             for f in obj.files:
                 self._build_db_line(obj.objdir, obj.relsrcdir, obj.config, f,
                                     obj.canonical_suffix)
@@ -85,13 +85,11 @@ class CompileDBBackend(CommonBackend):
 
         db = []
 
-        for (directory, filename, unified), cmd in self._db.iteritems():
+        for (directory, filename), cmd in self._db.iteritems():
             env = self._envs[directory]
             cmd = list(cmd)
-            if unified is None:
-                cmd.append(filename)
-            else:
-                cmd.append(unified)
+            cmd.append(filename)
+
             variables = {
                 'DIST': mozpath.join(env.topobjdir, 'dist'),
                 'DEPTH': env.topobjdir,
@@ -104,14 +102,14 @@ class CompileDBBackend(CommonBackend):
             for a in cmd:
                 accum = ''
                 for word in expand_variables(a, variables).split():
-                    # We can't just split() the output of expand_variables since
-                    # there can be spaces enclosed by quotes, e.g. '"foo bar"'.
-                    # Handle that case by checking whether there are an even
-                    # number of double-quotes in the word and appending it to
-                    # the accumulator if not. Meanwhile, shlex.split() and
-                    # mozbuild.shellutil.split() aren't able to properly handle
-                    # this and break in various ways, so we can't use something
-                    # off-the-shelf.
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     has_quote = bool(word.count('"') % 2)
                     if accum and has_quote:
                         c.append(accum + ' ' + word)
@@ -122,9 +120,9 @@ class CompileDBBackend(CommonBackend):
                         accum = word
                     else:
                         c.append(word)
-            # Tell clangd to keep parsing to the end of a file, regardless of
-            # how many errors are encountered. (Unified builds mean that we
-            # encounter a lot of errors parsing some files.)
+            
+            
+            
             c.insert(-1, "-ferror-limit=0")
 
             per_source_flags = self._per_source_flags.get(filename)
@@ -137,26 +135,16 @@ class CompileDBBackend(CommonBackend):
             })
 
         import json
-        # Output the database (a JSON file) to objdir/compile_commands.json
+        
         outputfile = os.path.join(self.environment.topobjdir, 'compile_commands.json')
         with self._write_file(outputfile) as jsonout:
             json.dump(db, jsonout, indent=0)
 
     def _process_unified_sources(self, obj):
-        if not obj.have_unified_mapping:
-            for f in list(sorted(obj.files)):
-                self._build_db_line(obj.objdir, obj.relsrcdir, obj.config, f,
-                                    obj.canonical_suffix)
-            return
-
-        # For unified sources, only include the unified source file.
-        # Note that unified sources are never used for host sources.
-        for f in obj.unified_source_mapping:
-            self._build_db_line(obj.objdir, obj.relsrcdir, obj.config, f[0],
+        for f in list(sorted(obj.files)):
+            self._build_db_line(obj.objdir, obj.relsrcdir, obj.config, f,
                                 obj.canonical_suffix)
-            for entry in f[1]:
-                self._build_db_line(obj.objdir, obj.relsrcdir, obj.config,
-                                    entry, obj.canonical_suffix, unified=f[0])
+        return
 
     def _handle_idl_manager(self, idl_manager):
         pass
@@ -189,10 +177,10 @@ class CompileDBBackend(CommonBackend):
     }
 
     def _build_db_line(self, objdir, reldir, cenv, filename,
-                       canonical_suffix, unified=None):
+                       canonical_suffix):
         if canonical_suffix not in self.COMPILERS:
             return
-        db = self._db.setdefault((objdir, filename, unified),
+        db = self._db.setdefault((objdir, filename),
                                  cenv.substs[self.COMPILERS[canonical_suffix]].split() +
                                  ['-o', '/dev/null', '-c'])
         reldir = reldir or mozpath.relpath(objdir, cenv.topobjdir)
