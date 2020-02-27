@@ -299,7 +299,7 @@ def affected_testfiles(files_changed,
 
     def affected_by_interfaces(file_contents):
         
-        if len(interfaces_changed_names) > 0:
+        if len(interfaces_changed) > 0:
             if 'idlharness.js' in file_contents:
                 for interface in interfaces_changed_names:
                     regex = '[\'"]' + interface + '(\\.idl)?[\'"]'
@@ -324,9 +324,9 @@ def affected_testfiles(files_changed,
 
             with open(test_full_path, "rb") as fh:
                 raw_file_contents = fh.read()  
-                if raw_file_contents.startswith("\xfe\xff"):
+                if raw_file_contents.startswith(b"\xfe\xff"):
                     file_contents = raw_file_contents.decode("utf-16be", "replace")  
-                elif raw_file_contents.startswith("\xff\xfe"):
+                elif raw_file_contents.startswith(b"\xff\xfe"):
                     file_contents = raw_file_contents.decode("utf-16le", "replace")
                 else:
                     file_contents = raw_file_contents.decode("utf8", "replace")
