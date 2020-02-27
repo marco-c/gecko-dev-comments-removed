@@ -394,14 +394,15 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   bool IsConstructed() const { return !!mConstructorDocument; }
 
   
-  bool ConstructorDocumentMatches(dom::Document* aDocument) const {
-    return mConstructorDocument == aDocument;
+  bool ConstructorDocumentMatches(dom::Document& aDocument) const {
+    return mConstructorDocument == &aDocument;
   }
 
   
   
   void AddAdopter(dom::DocumentOrShadowRoot& aAdopter) {
     MOZ_ASSERT(IsConstructed());
+    MOZ_ASSERT(!mAdopters.Contains(&aAdopter));
     mAdopters.AppendElement(&aAdopter);
   }
 
