@@ -5,43 +5,43 @@
 
 
 #include "BaseProfiler.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/BlocksRingBuffer.h"
+#include "mozilla/leb128iterator.h"
+#include "mozilla/ModuloBuffer.h"
+#include "mozilla/PowerOfTwo.h"
+#include "mozilla/Vector.h"
 
 #ifdef MOZ_BASE_PROFILER
-
 #  include "BaseProfileJSONWriter.h"
 #  include "BaseProfilerMarkerPayload.h"
-#  include "mozilla/BlocksRingBuffer.h"
-#  include "mozilla/leb128iterator.h"
-#  include "mozilla/ModuloBuffer.h"
-#  include "mozilla/PowerOfTwo.h"
+#endif  
 
-#  include "mozilla/Attributes.h"
-#  include "mozilla/Vector.h"
+#if defined(_MSC_VER) || defined(__MINGW32__)
+#  include <windows.h>
+#  include <mmsystem.h>
+#  include <process.h>
+#else
+#  include <errno.h>
+#  include <string.h>
+#  include <time.h>
+#  include <unistd.h>
+#endif
 
-#  if defined(_MSC_VER)
-#    include <windows.h>
-#    include <mmsystem.h>
-#    include <process.h>
-#  else
-#    include <time.h>
-#    include <unistd.h>
-#  endif
-
-#  include <algorithm>
-#  include <atomic>
-#  include <thread>
-#  include <type_traits>
+#include <algorithm>
+#include <atomic>
+#include <thread>
+#include <type_traits>
 
 using namespace mozilla;
 
 MOZ_MAYBE_UNUSED static void SleepMilli(unsigned aMilliseconds) {
-#  if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__MINGW32__)
   Sleep(aMilliseconds);
-#  else
-  struct timespec ts;
-  ts.tv_sec = aMilliseconds / 1000;
-  ts.tv_nsec = long(aMilliseconds % 1000) * 1000000;
-  struct timespec tr;
+#else
+  struct timespec ts = { aMilliseconds / 1000,
+                         long(aMilliseconds % 1000) * 1000000};
+  struct timespec tr = {0, 0};
   while (nanosleep(&ts, &tr)) {
     if (errno == EINTR) {
       ts = tr;
@@ -50,7 +50,7 @@ MOZ_MAYBE_UNUSED static void SleepMilli(unsigned aMilliseconds) {
       exit(1);
     }
   }
-#  endif
+#endif
 }
 
 void TestPowerOfTwoMask() {
@@ -517,7 +517,7 @@ void TestModuloBuffer() {
 
     
     for (uint32_t i = 0; i < TRISize; ++i) {
-#  ifdef TEST_MODULOBUFFER_FAILURE_DEBUG
+#ifdef TEST_MODULOBUFFER_FAILURE_DEBUG
       
       if (output[i] != outputCheck[i]) {
         printf(
@@ -526,15 +526,15 @@ void TestModuloBuffer() {
             unsigned(aReadFrom), unsigned(aWriteTo), unsigned(aBytes),
             unsigned(i), input, output, outputCheck);
       }
-#  endif
+#endif
       MOZ_RELEASE_ASSERT(output[i] == outputCheck[i]);
     }
 
-#  ifdef TEST_MODULOBUFFER_HELPER
+#ifdef TEST_MODULOBUFFER_HELPER
     
     printf("*** from=%u to=%u bytes=%u output: %s\n", unsigned(aReadFrom),
            unsigned(aWriteTo), unsigned(aBytes), output);
-#  endif
+#endif
 
     return std::string(reinterpret_cast<const char*>(output));
   };
@@ -583,14 +583,14 @@ void TestBlocksRingBufferAPI() {
     BlocksRingBuffer rb(BlocksRingBuffer::ThreadSafety::WithMutex,
                         &buffer[MBSize], MakePowerOfTwo32<MBSize>());
 
-#  define VERIFY_START_END_PUSHED_CLEARED(aStart, aEnd, aPushed, aCleared)  \
-    {                                                                       \
-      BlocksRingBuffer::State state = rb.GetState();                        \
-      MOZ_RELEASE_ASSERT(ExtractBlockIndex(state.mRangeStart) == (aStart)); \
-      MOZ_RELEASE_ASSERT(ExtractBlockIndex(state.mRangeEnd) == (aEnd));     \
-      MOZ_RELEASE_ASSERT(state.mPushedBlockCount == (aPushed));             \
-      MOZ_RELEASE_ASSERT(state.mClearedBlockCount == (aCleared));           \
-    }
+#define VERIFY_START_END_PUSHED_CLEARED(aStart, aEnd, aPushed, aCleared)  \
+  {                                                                       \
+    BlocksRingBuffer::State state = rb.GetState();                        \
+    MOZ_RELEASE_ASSERT(ExtractBlockIndex(state.mRangeStart) == (aStart)); \
+    MOZ_RELEASE_ASSERT(ExtractBlockIndex(state.mRangeEnd) == (aEnd));     \
+    MOZ_RELEASE_ASSERT(state.mPushedBlockCount == (aPushed));             \
+    MOZ_RELEASE_ASSERT(state.mClearedBlockCount == (aCleared));           \
+  }
 
     
     
@@ -1249,7 +1249,7 @@ void TestBlocksRingBufferSerialization() {
                       &buffer[MBSize], MakePowerOfTwo32<MBSize>());
 
   
-#  define THE_ANSWER "The answer is "
+#define THE_ANSWER "The answer is "
   const char* theAnswer = THE_ANSWER;
 
   rb.PutObjects('0', WrapBlocksRingBufferLiteralCStringPointer(THE_ANSWER), 42,
@@ -1459,6 +1459,19 @@ void TestBlocksRingBufferSerialization() {
   printf("TestBlocksRingBufferSerialization done\n");
 }
 
+void TestProfilerDependencies() {
+  TestPowerOfTwoMask();
+  TestPowerOfTwo();
+  TestLEB128();
+  TestModuloBuffer();
+  TestBlocksRingBufferAPI();
+  TestBlocksRingBufferUnderlyingBufferChanges();
+  TestBlocksRingBufferThreading();
+  TestBlocksRingBufferSerialization();
+}
+
+#ifdef MOZ_BASE_PROFILER
+
 class BaseTestMarkerPayload : public baseprofiler::ProfilerMarkerPayload {
  public:
   explicit BaseTestMarkerPayload(int aData) : mData(aData) {}
@@ -1600,15 +1613,6 @@ void TestProfiler() {
          baseprofiler::profiler_current_thread_id());
   
 
-  
-  TestPowerOfTwoMask();
-  TestPowerOfTwo();
-  TestLEB128();
-  TestModuloBuffer();
-  TestBlocksRingBufferAPI();
-  TestBlocksRingBufferUnderlyingBufferChanges();
-  TestBlocksRingBufferThreading();
-  TestBlocksRingBufferSerialization();
   TestProfilerMarkerSerialization();
 
   {
@@ -1811,7 +1815,15 @@ void TestProfiler() {
 
 #endif  
 
-int main() {
+#if defined(XP_WIN)
+int wmain()
+#else
+int main()
+#endif  
+{
+  
+  TestProfilerDependencies();
+
   
   
   TestProfiler();
