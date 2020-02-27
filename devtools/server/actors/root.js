@@ -613,8 +613,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
     
     
     return (
-      parentBrowsingContext
-        .getChildren()
+      parentBrowsingContext.children
         
         
         .filter(browsingContext => {
@@ -647,7 +646,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       }
       pool.manage(frameDescriptor);
       frames.push(frameDescriptor);
-      contextsToWalk.push(...currentContext.getChildren());
+      contextsToWalk.push(...currentContext.children);
     }
     
     
