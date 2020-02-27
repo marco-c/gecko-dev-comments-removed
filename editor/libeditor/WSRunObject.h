@@ -407,15 +407,50 @@ class MOZ_STACK_CLASS WSRunScanner {
   nsIContent* GetStartReasonContent() const { return mStartReasonContent; }
   nsIContent* GetEndReasonContent() const { return mEndReasonContent; }
 
-  
+  bool StartsFromNormalText() const { return mStartReason == WSType::text; }
+  bool StartsFromSpecialContent() const {
+    return mStartReason == WSType::special;
+  }
+  bool StartsFromBRElement() const { return mStartReason == WSType::br; }
+  bool StartsFromCurrentBlockBoundary() const {
+    return mStartReason == WSType::thisBlock;
+  }
+  bool StartsFromOtherBlockElement() const {
+    return mStartReason == WSType::otherBlock;
+  }
+  bool StartsFromBlockBoundary() const {
+    return !!(mStartReason & WSType::block);
+  }
+  bool StartsFromHardLineBreak() const {
+    return !!(mStartReason & (WSType::block | WSType::br));
+  }
+  bool EndsByNormalText() const { return mEndReason == WSType::text; }
+  bool EndsBySpecialContent() const { return mEndReason == WSType::special; }
+  bool EndsByBRElement() const { return mEndReason == WSType::br; }
+  bool EndsByCurrentBlockBoundary() const {
+    return mEndReason == WSType::thisBlock;
+  }
+  bool EndsByOtherBlockElement() const {
+    return mEndReason == WSType::otherBlock;
+  }
+  bool EndsByBlockBoundary() const { return !!(mEndReason & WSType::block); }
 
-
-
-
-
-
-  WSType StartReason() const { return mStartReason; }
-  WSType EndReason() const { return mEndReason; }
+  MOZ_NEVER_INLINE_DEBUG dom::Element* StartReasonOtherBlockElementPtr() const {
+    MOZ_DIAGNOSTIC_ASSERT(mStartReasonContent->IsElement());
+    return mStartReasonContent->AsElement();
+  }
+  MOZ_NEVER_INLINE_DEBUG dom::HTMLBRElement* StartReasonBRElementPtr() const {
+    MOZ_DIAGNOSTIC_ASSERT(mStartReasonContent->IsHTMLElement(nsGkAtoms::br));
+    return static_cast<dom::HTMLBRElement*>(mStartReasonContent.get());
+  }
+  MOZ_NEVER_INLINE_DEBUG dom::Element* EndReasonOtherBlockElementPtr() const {
+    MOZ_DIAGNOSTIC_ASSERT(mEndReasonContent->IsElement());
+    return mEndReasonContent->AsElement();
+  }
+  MOZ_NEVER_INLINE_DEBUG dom::HTMLBRElement* EndReasonBRElementPtr() const {
+    MOZ_DIAGNOSTIC_ASSERT(mEndReasonContent->IsHTMLElement(nsGkAtoms::br));
+    return static_cast<dom::HTMLBRElement*>(mEndReasonContent.get());
+  }
 
   
 
@@ -565,14 +600,10 @@ class MOZ_STACK_CLASS WSRunScanner {
   
   nsCOMPtr<nsINode> mStartNode;
   int32_t mStartOffset;
-  
-  WSType mStartReason;
 
   
   nsCOMPtr<nsINode> mEndNode;
   int32_t mEndOffset;
-  
-  WSType mEndReason;
 
   
   RefPtr<dom::Text> mFirstNBSPNode;
@@ -594,6 +625,13 @@ class MOZ_STACK_CLASS WSRunScanner {
 
   
   const HTMLEditor* mHTMLEditor;
+
+ private:
+  
+  
+  
+  WSType mStartReason;
+  WSType mEndReason;
 };
 
 class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
@@ -823,9 +861,6 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
 
   
   HTMLEditor* mHTMLEditor;
-
-  
-  friend class HTMLEditor;
 };
 
 }  

@@ -75,7 +75,9 @@ WSRunScanner::WSRunScanner(const HTMLEditor* aHTMLEditor,
       mLastNBSPOffset(0),
       mStartRun(nullptr),
       mEndRun(nullptr),
-      mHTMLEditor(aHTMLEditor) {
+      mHTMLEditor(aHTMLEditor),
+      mStartReason(WSType::none),
+      mEndReason(WSType::none) {
   MOZ_ASSERT(
       *nsContentUtils::ComparePoints(aScanStartPoint.ToRawRangeBoundary(),
                                      aScanEndPoint.ToRawRangeBoundary()) <= 0);
@@ -335,7 +337,7 @@ nsresult WSRunObject::InsertText(Document& aDocument,
           theString.SetCharAt(kNBSP, 0);
         }
       }
-    } else if (mStartReason & WSType::block || mStartReason == WSType::br) {
+    } else if (StartsFromHardLineBreak()) {
       theString.SetCharAt(kNBSP, 0);
     }
   }
@@ -354,7 +356,7 @@ nsresult WSRunObject::InsertText(Document& aDocument,
           theString.SetCharAt(kNBSP, lastCharIndex);
         }
       }
-    } else if (afterRunObject.mEndReason & WSType::block) {
+    } else if (afterRunObject.EndsByBlockBoundary()) {
       
       
       
@@ -896,9 +898,8 @@ void WSRunScanner::GetRuns() {
   
   
   if (mPRE ||
-      ((mStartReason == WSType::text || mStartReason == WSType::special) &&
-       (mEndReason == WSType::text || mEndReason == WSType::special ||
-        mEndReason == WSType::br))) {
+      ((StartsFromNormalText() || StartsFromSpecialContent()) &&
+       (EndsByNormalText() || EndsBySpecialContent() || EndsByBRElement()))) {
     MakeSingleWSRun(WSType::normalWS);
     return;
   }
@@ -906,13 +907,12 @@ void WSRunScanner::GetRuns() {
   
   
   if (!mFirstNBSPNode && !mLastNBSPNode &&
-      ((mStartReason & WSType::block) || mStartReason == WSType::br ||
-       (mEndReason & WSType::block))) {
+      (StartsFromHardLineBreak() || EndsByBlockBoundary())) {
     WSType wstype;
-    if ((mStartReason & WSType::block) || mStartReason == WSType::br) {
+    if (StartsFromHardLineBreak()) {
       wstype = WSType::leadingWS;
     }
-    if (mEndReason & WSType::block) {
+    if (EndsByBlockBoundary()) {
       wstype |= WSType::trailingWS;
     }
     MakeSingleWSRun(wstype);
@@ -924,7 +924,7 @@ void WSRunScanner::GetRuns() {
   mStartRun->mStartNode = mStartNode;
   mStartRun->mStartOffset = mStartOffset;
 
-  if (mStartReason & WSType::block || mStartReason == WSType::br) {
+  if (StartsFromHardLineBreak()) {
     
     mStartRun->mType = WSType::leadingWS;
     mStartRun->mEndNode = mFirstNBSPNode;
@@ -940,7 +940,7 @@ void WSRunScanner::GetRuns() {
     normalRun->mStartOffset = mFirstNBSPOffset;
     normalRun->mLeftType = WSType::leadingWS;
     normalRun->mLeft = mStartRun;
-    if (mEndReason != WSType::block) {
+    if (!EndsByBlockBoundary()) {
       
       normalRun->mRightType = mEndReason;
       normalRun->mEndNode = mEndNode;
@@ -977,7 +977,7 @@ void WSRunScanner::GetRuns() {
       }
     }
   } else {
-    
+    MOZ_ASSERT(!StartsFromHardLineBreak());
     mStartRun->mType = WSType::normalWS;
     mStartRun->mEndNode = mLastNBSPNode;
     mStartRun->mEndOffset = mLastNBSPOffset + 1;
@@ -1244,8 +1244,7 @@ nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {
   
   if (afterRun && afterRun->mType == WSType::normalWS && !aEndObject->mPRE) {
     if ((beforeRun && (beforeRun->mType & WSType::leadingWS)) ||
-        (!beforeRun &&
-         ((mStartReason & WSType::block) || mStartReason == WSType::br))) {
+        (!beforeRun && StartsFromHardLineBreak())) {
       
       
       WSPoint point = aEndObject->GetNextCharPoint(aEndObject->mScanStartPoint);
@@ -1267,7 +1266,7 @@ nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {
   } else if (beforeRun && beforeRun->mType == WSType::normalWS && !mPRE) {
     if ((afterRun && (afterRun->mType & WSType::trailingWS)) ||
         (afterRun && afterRun->mType == WSType::normalWS) ||
-        (!afterRun && (aEndObject->mEndReason & WSType::block))) {
+        (!afterRun && aEndObject->EndsByBlockBoundary())) {
       
       
       WSPoint point = GetPreviousCharPoint(mScanStartPoint);
