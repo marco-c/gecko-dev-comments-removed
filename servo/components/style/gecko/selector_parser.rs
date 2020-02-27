@@ -42,7 +42,7 @@ bitflags! {
 pub type Lang = Atom;
 
 macro_rules! pseudo_class_name {
-    ([$(($css:expr, $name:ident, $state:tt, $flags:tt),)*]) => {
+    ([$(($css:expr, $name:ident, $gecko_type:tt, $state:tt, $flags:tt),)*]) => {
         /// Our representation of a non tree-structural pseudo-class.
         #[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
         pub enum NonTSPseudoClass {
@@ -72,7 +72,7 @@ impl ToCss for NonTSPseudoClass {
         W: fmt::Write,
     {
         macro_rules! pseudo_class_serialize {
-            ([$(($css:expr, $name:ident, $state:tt, $flags:tt),)*]) => {
+            ([$(($css:expr, $name:ident, $gecko_type:tt, $state:tt, $flags:tt),)*]) => {
                 match *self {
                     $(NonTSPseudoClass::$name => concat!(":", $css),)*
                     NonTSPseudoClass::Lang(ref s) => {
@@ -134,7 +134,7 @@ impl NonTSPseudoClass {
     
     pub fn parse_non_functional(name: &str) -> Option<Self> {
         macro_rules! pseudo_class_parse {
-            ([$(($css:expr, $name:ident, $state:tt, $flags:tt),)*]) => {
+            ([$(($css:expr, $name:ident, $gecko_type:tt, $state:tt, $flags:tt),)*]) => {
                 match_ignore_ascii_case! { &name,
                     $($css => Some(NonTSPseudoClass::$name),)*
                     "-moz-full-screen" => Some(NonTSPseudoClass::Fullscreen),
@@ -156,7 +156,7 @@ impl NonTSPseudoClass {
             };
         }
         macro_rules! pseudo_class_check_is_enabled_in {
-            ([$(($css:expr, $name:ident, $state:tt, $flags:tt),)*]) => {
+            ([$(($css:expr, $name:ident, $gecko_type:tt, $state:tt, $flags:tt),)*]) => {
                 match *self {
                     $(NonTSPseudoClass::$name => check_flag!($flags),)*
                     NonTSPseudoClass::MozLocaleDir(_) |
@@ -172,13 +172,10 @@ impl NonTSPseudoClass {
     
     #[inline]
     fn is_enabled_in_content(&self) -> bool {
-        if matches!(*self, NonTSPseudoClass::FocusVisible) {
-            return static_prefs::pref!("layout.css.focus-visible.enabled")
-        }
         !self.has_any_flag(NonTSPseudoClassFlag::PSEUDO_CLASS_ENABLED_IN_UA_SHEETS_AND_CHROME)
     }
 
-    /// Get the state flag associated with a pseudo-class, if any.
+    
     pub fn state_flag(&self) -> ElementState {
         macro_rules! flag {
             (_) => {
@@ -189,7 +186,7 @@ impl NonTSPseudoClass {
             };
         }
         macro_rules! pseudo_class_state {
-            ([$(($css:expr, $name:ident, $state:tt, $flags:tt),)*]) => {
+            ([$(($css:expr, $name:ident, $gecko_type:tt, $state:tt, $flags:tt),)*]) => {
                 match *self {
                     $(NonTSPseudoClass::$name => flag!($state),)*
                     NonTSPseudoClass::Dir(..) |
@@ -202,7 +199,7 @@ impl NonTSPseudoClass {
         apply_non_ts_list!(pseudo_class_state)
     }
 
-    /// Get the document state flag associated with a pseudo-class, if any.
+    
     pub fn document_state_flag(&self) -> DocumentState {
         match *self {
             NonTSPseudoClass::MozLocaleDir(..) => DocumentState::NS_DOCUMENT_STATE_RTL_LOCALE,
@@ -211,8 +208,8 @@ impl NonTSPseudoClass {
         }
     }
 
-    /// Returns true if the given pseudoclass should trigger style sharing cache
-    /// revalidation.
+    
+    
     pub fn needs_cache_revalidation(&self) -> bool {
         self.state_flag().is_empty() &&
             !matches!(*self,
@@ -247,8 +244,8 @@ impl NonTSPseudoClass {
             )
     }
 
-    /// Returns true if the evaluation of the pseudo-class depends on the
-    /// element's attributes.
+    
+    
     pub fn is_attr_based(&self) -> bool {
         matches!(
             *self,
@@ -267,7 +264,7 @@ impl ::selectors::parser::NonTSPseudoClass for NonTSPseudoClass {
         matches!(*self, NonTSPseudoClass::Active | NonTSPseudoClass::Hover)
     }
 
-    /// We intentionally skip the link-related ones.
+    
     #[inline]
     fn is_user_action_state(&self) -> bool {
         matches!(
@@ -282,7 +279,7 @@ impl ::selectors::parser::NonTSPseudoClass for NonTSPseudoClass {
     }
 }
 
-/// The dummy struct we use to implement our selector parsing.
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SelectorImpl;
 
