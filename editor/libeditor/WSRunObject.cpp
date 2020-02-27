@@ -44,22 +44,14 @@ template WSRunObject::WSRunObject(HTMLEditor* aHTMLEditor,
 template WSRunObject::WSRunObject(HTMLEditor* aHTMLEditor,
                                   const EditorRawDOMPoint& aScanStartPoint,
                                   const EditorRawDOMPoint& aScanEndPoint);
-template void WSRunScanner::PriorVisibleNode(const EditorDOMPoint& aPoint,
-                                             nsCOMPtr<nsINode>* outVisNode,
-                                             int32_t* outVisOffset,
-                                             WSType* outType) const;
-template void WSRunScanner::PriorVisibleNode(const EditorRawDOMPoint& aPoint,
-                                             nsCOMPtr<nsINode>* outVisNode,
-                                             int32_t* outVisOffset,
-                                             WSType* outType) const;
-template void WSRunScanner::NextVisibleNode(const EditorDOMPoint& aPoint,
-                                            nsCOMPtr<nsINode>* outVisNode,
-                                            int32_t* outVisOffset,
-                                            WSType* outType) const;
-template void WSRunScanner::NextVisibleNode(const EditorRawDOMPoint& aPoint,
-                                            nsCOMPtr<nsINode>* outVisNode,
-                                            int32_t* outVisOffset,
-                                            WSType* outType) const;
+template WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
+    const EditorDOMPoint& aPoint) const;
+template WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
+    const EditorRawDOMPoint& aPoint) const;
+template WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
+    const EditorDOMPoint& aPoint) const;
+template WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
+    const EditorRawDOMPoint& aPoint) const;
 template void WSRunObject::GetASCIIWhitespacesBounds(
     int16_t aDir, const EditorDOMPoint& aPoint, dom::Text** outStartNode,
     int32_t* outStartOffset, dom::Text** outEndNode,
@@ -537,14 +529,12 @@ nsresult WSRunObject::DeleteWSForward() {
 }
 
 template <typename PT, typename CT>
-void WSRunScanner::PriorVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
-                                    nsCOMPtr<nsINode>* outVisNode,
-                                    int32_t* outVisOffset,
-                                    WSType* outType) const {
+WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
+    const EditorDOMPointBase<PT, CT>& aPoint) const {
   
   
   
-  MOZ_ASSERT(aPoint.IsSet() && outType);
+  MOZ_ASSERT(aPoint.IsSet());
 
   WSFragment* run = FindNearestRun(aPoint, false);
 
@@ -554,43 +544,30 @@ void WSRunScanner::PriorVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
       WSPoint point = GetPreviousCharPoint(aPoint);
       
       if (point.mTextNode && point.mTextNode->Length()) {
-        if (outVisNode) {
-          *outVisNode = point.mTextNode;
-        }
-        if (outVisOffset) {
-          *outVisOffset = point.mOffset + 1;
-        }
-        if (nsCRT::IsAsciiSpace(point.mChar) || point.mChar == kNBSP) {
-          *outType = WSType::normalWS;
-        } else {
-          *outType = WSType::text;
-        }
-        return;
+        return WSScanResult(
+            point.mTextNode, point.mOffset + 1,
+            nsCRT::IsAsciiSpace(point.mChar) || point.mChar == kNBSP
+                ? WSType::normalWS
+                : WSType::text);
       }
       
     }
   }
 
-  if (outVisNode) {
+  if (mStartReasonContent != mStartNode) {
     
-    *outVisNode = mStartReasonContent;
+    return WSScanResult(mStartReasonContent, mStartReason);
   }
-  if (outVisOffset) {
-    
-    *outVisOffset = mStartOffset;
-  }
-  *outType = mStartReason;
+  return WSScanResult(mStartReasonContent, mStartOffset, mStartReason);
 }
 
 template <typename PT, typename CT>
-void WSRunScanner::NextVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
-                                   nsCOMPtr<nsINode>* outVisNode,
-                                   int32_t* outVisOffset,
-                                   WSType* outType) const {
+WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
+    const EditorDOMPointBase<PT, CT>& aPoint) const {
   
   
   
-  MOZ_ASSERT(aPoint.IsSet() && outType);
+  MOZ_ASSERT(aPoint.IsSet());
 
   WSFragment* run = FindNearestRun(aPoint, true);
 
@@ -600,32 +577,21 @@ void WSRunScanner::NextVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
       WSPoint point = GetNextCharPoint(aPoint);
       
       if (point.mTextNode && point.mTextNode->Length()) {
-        if (outVisNode) {
-          *outVisNode = point.mTextNode;
-        }
-        if (outVisOffset) {
-          *outVisOffset = point.mOffset;
-        }
-        if (nsCRT::IsAsciiSpace(point.mChar) || point.mChar == kNBSP) {
-          *outType = WSType::normalWS;
-        } else {
-          *outType = WSType::text;
-        }
-        return;
+        return WSScanResult(
+            point.mTextNode, point.mOffset,
+            nsCRT::IsAsciiSpace(point.mChar) || point.mChar == kNBSP
+                ? WSType::normalWS
+                : WSType::text);
       }
       
     }
   }
 
-  if (outVisNode) {
+  if (mEndReasonContent != mEndNode) {
     
-    *outVisNode = mEndReasonContent;
+    return WSScanResult(mEndReasonContent, mEndReason);
   }
-  if (outVisOffset) {
-    
-    *outVisOffset = mEndOffset;
-  }
-  *outType = mEndReason;
+  return WSScanResult(mEndReasonContent, mEndOffset, mEndReason);
 }
 
 nsresult WSRunObject::AdjustWhitespace() {
@@ -2077,10 +2043,6 @@ nsresult WSRunObject::Scrub() {
     run = run->mRight;
   }
   return NS_OK;
-}
-
-bool WSRunScanner::IsBlockNode(nsINode* aNode) {
-  return aNode && aNode->IsElement() && HTMLEditor::NodeIsBlockStatic(*aNode);
 }
 
 }  

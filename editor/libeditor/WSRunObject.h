@@ -6,14 +6,19 @@
 #ifndef WSRunObject_h
 #define WSRunObject_h
 
-#include "mozilla/dom/Text.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/EditAction.h"
 #include "mozilla/EditorBase.h"
 #include "mozilla/EditorDOMPoint.h"  
+#include "mozilla/HTMLEditor.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLBRElement.h"
+#include "mozilla/dom/Text.h"
+#include "nsCOMPtr.h"
+#include "nsIContent.h"
 
 namespace mozilla {
-
-class HTMLEditor;
 
 
 
@@ -131,6 +136,201 @@ inline const WSType operator|(const WSType::Enum& aLeft,
   return WSType(aLeft) | WSType(aRight);
 }
 
+
+
+
+
+
+
+
+class MOZ_STACK_CLASS WSScanResult final {
+ public:
+  WSScanResult() = delete;
+  MOZ_NEVER_INLINE_DEBUG WSScanResult(nsIContent* aContent, WSType aReason)
+      : mContent(aContent), mReason(aReason) {
+    AssertIfInvalidData();
+  }
+  MOZ_NEVER_INLINE_DEBUG WSScanResult(nsIContent* aContent, uint32_t aOffset,
+                                      WSType aReason)
+      : mContent(aContent), mOffset(Some(aOffset)), mReason(aReason) {
+    AssertIfInvalidData();
+  }
+
+  void AssertIfInvalidData() const {
+#ifdef DEBUG
+    MOZ_ASSERT(mReason == WSType::text || mReason == WSType::normalWS ||
+               mReason == WSType::br || mReason == WSType::special ||
+               mReason == WSType::thisBlock || mReason == WSType::otherBlock);
+    MOZ_ASSERT_IF(mReason == WSType::text || mReason == WSType::normalWS,
+                  mContent && mContent->IsText());
+    MOZ_ASSERT_IF(mReason == WSType::br,
+                  mContent && mContent->IsHTMLElement(nsGkAtoms::br));
+    MOZ_ASSERT_IF(
+        mReason == WSType::special,
+        mContent && ((mContent->IsText() && !mContent->IsEditable()) ||
+                     (!mContent->IsHTMLElement(nsGkAtoms::br) &&
+                      !HTMLEditor::NodeIsBlockStatic(*mContent))));
+    MOZ_ASSERT_IF(mReason == WSType::otherBlock,
+                  mContent && HTMLEditor::NodeIsBlockStatic(*mContent));
+    
+    
+    
+    
+    
+    MOZ_ASSERT_IF(
+        mReason == WSType::thisBlock,
+        !mContent || !mContent->GetParentElement() ||
+            HTMLEditor::NodeIsBlockStatic(*mContent) ||
+            HTMLEditor::NodeIsBlockStatic(*mContent->GetParentElement()) ||
+            !mContent->GetParentElement()->IsEditable());
+#endif  
+  }
+
+  
+
+
+
+  nsIContent* GetContent() const { return mContent; }
+
+  
+
+
+  MOZ_NEVER_INLINE_DEBUG dom::Element* ElementPtr() const {
+    MOZ_DIAGNOSTIC_ASSERT(mContent->IsElement());
+    return mContent->AsElement();
+  }
+  MOZ_NEVER_INLINE_DEBUG dom::HTMLBRElement* BRElementPtr() const {
+    MOZ_DIAGNOSTIC_ASSERT(mContent->IsHTMLElement(nsGkAtoms::br));
+    return static_cast<dom::HTMLBRElement*>(mContent.get());
+  }
+  MOZ_NEVER_INLINE_DEBUG dom::Text* TextPtr() const {
+    MOZ_DIAGNOSTIC_ASSERT(mContent->IsText());
+    return mContent->AsText();
+  }
+
+  
+
+
+  bool IsContentEditable() const { return mContent && mContent->IsEditable(); }
+
+  
+
+
+
+
+
+
+
+  MOZ_NEVER_INLINE_DEBUG uint32_t Offset() const {
+    NS_ASSERTION(mOffset.isSome(), "Retrieved non-meaningful offset");
+    return mOffset.valueOr(0);
+  }
+
+  
+
+
+
+
+  MOZ_NEVER_INLINE_DEBUG EditorDOMPoint Point() const {
+    NS_ASSERTION(mOffset.isSome(), "Retrieved non-meaningful point");
+    return EditorDOMPoint(mContent, mOffset.valueOr(0));
+  }
+  MOZ_NEVER_INLINE_DEBUG EditorRawDOMPoint RawPoint() const {
+    NS_ASSERTION(mOffset.isSome(), "Retrieved non-meaningful raw point");
+    return EditorRawDOMPoint(mContent, mOffset.valueOr(0));
+  }
+
+  
+
+
+
+  MOZ_NEVER_INLINE_DEBUG EditorDOMPoint PointAtContent() const {
+    MOZ_ASSERT(mContent);
+    return EditorDOMPoint(mContent);
+  }
+  MOZ_NEVER_INLINE_DEBUG EditorRawDOMPoint RawPointAtContent() const {
+    MOZ_ASSERT(mContent);
+    return EditorRawDOMPoint(mContent);
+  }
+
+  
+
+
+
+  MOZ_NEVER_INLINE_DEBUG EditorDOMPoint PointAfterContent() const {
+    MOZ_ASSERT(mContent);
+    return mContent ? EditorDOMPoint::After(*mContent) : EditorDOMPoint();
+  }
+  MOZ_NEVER_INLINE_DEBUG EditorRawDOMPoint RawPointAfterContent() const {
+    MOZ_ASSERT(mContent);
+    return mContent ? EditorRawDOMPoint::After(*mContent) : EditorRawDOMPoint();
+  }
+
+  
+
+
+
+  bool ReachedSpecialContent() const { return mReason == WSType::special; }
+
+  
+
+
+  bool InNormalWhiteSpacesOrText() const {
+    return mReason == WSType::normalWS || mReason == WSType::text;
+  }
+
+  
+
+
+  bool InNormalWhiteSpaces() const { return mReason == WSType::normalWS; }
+
+  
+
+
+  bool InNormalText() const { return mReason == WSType::text; }
+
+  
+
+
+  bool ReachedBRElement() const { return mReason == WSType::br; }
+
+  
+
+
+  bool ReachedHRElement() const {
+    return mContent && mContent->IsHTMLElement(nsGkAtoms::hr);
+  }
+
+  
+
+
+  bool ReachedBlockBoundary() const { return !!(mReason & WSType::block); }
+
+  
+
+
+  bool ReachedCurrentBlockBoundary() const {
+    return mReason == WSType::thisBlock;
+  }
+
+  
+
+
+  bool ReachedOtherBlockElement() const {
+    return mReason == WSType::otherBlock;
+  }
+
+  
+
+
+  bool ReachedSomething() const { return !InNormalWhiteSpacesOrText(); }
+
+ private:
+  nsCOMPtr<nsIContent> mContent;
+  Maybe<uint32_t> mOffset;
+  WSType mReason;
+};
+
 class MOZ_STACK_CLASS WSRunScanner {
  public:
   
@@ -170,41 +370,57 @@ class MOZ_STACK_CLASS WSRunScanner {
   
   
   
-  
-  
   template <typename PT, typename CT>
-  void NextVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
-                       nsCOMPtr<nsINode>* outVisNode, int32_t* outVisOffset,
-                       WSType* outType) const;
-
+  WSScanResult ScanNextVisibleNodeOrBlockBoundaryFrom(
+      const EditorDOMPointBase<PT, CT>& aPoint) const;
   template <typename PT, typename CT>
-  void NextVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
-                       WSType* outType) const {
-    NextVisibleNode(aPoint, nullptr, nullptr, outType);
+  static WSScanResult ScanNextVisibleNodeOrBlockBoundary(
+      const HTMLEditor& aHTMLEditor, const EditorDOMPointBase<PT, CT>& aPoint) {
+    return WSRunScanner(&aHTMLEditor, aPoint)
+        .ScanNextVisibleNodeOrBlockBoundaryFrom(aPoint);
   }
 
   
   
   
   
-  
-  
   template <typename PT, typename CT>
-  void PriorVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
-                        nsCOMPtr<nsINode>* outVisNode, int32_t* outVisOffset,
-                        WSType* outType) const;
-
+  WSScanResult ScanPreviousVisibleNodeOrBlockBoundaryFrom(
+      const EditorDOMPointBase<PT, CT>& aPoint) const;
   template <typename PT, typename CT>
-  void PriorVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
-                        WSType* outType) const {
-    PriorVisibleNode(aPoint, nullptr, nullptr, outType);
+  static WSScanResult ScanPreviousVisibleNodeOrBlockBoundary(
+      const HTMLEditor& aHTMLEditor, const EditorDOMPointBase<PT, CT>& aPoint) {
+    return WSRunScanner(&aHTMLEditor, aPoint)
+        .ScanPreviousVisibleNodeOrBlockBoundaryFrom(aPoint);
   }
 
   
+
+
+
+
+
+
+
 
 
   nsIContent* GetStartReasonContent() const { return mStartReasonContent; }
   nsIContent* GetEndReasonContent() const { return mEndReasonContent; }
+
+  
+
+
+
+
+
+
+  WSType StartReason() const { return mStartReason; }
+  WSType EndReason() const { return mEndReason; }
+
+  
+
+
+  Element* GetEditingHost() const { return mEditingHost; }
 
  protected:
   
@@ -304,7 +520,9 @@ class MOZ_STACK_CLASS WSRunScanner {
   nsIContent* GetEditableBlockParentOrTopmotEditableInlineContent(
       nsIContent* aContent) const;
 
-  static bool IsBlockNode(nsINode* aNode);
+  static bool IsBlockNode(nsINode* aNode) {
+    return aNode && aNode->IsElement() && HTMLEditor::NodeIsBlockStatic(*aNode);
+  }
 
   nsIContent* GetPreviousWSNodeInner(nsINode* aStartNode,
                                      nsINode* aBlockParent) const;
@@ -370,6 +588,7 @@ class MOZ_STACK_CLASS WSRunScanner {
   
   WSFragment* mEndRun;
 
+  
   nsCOMPtr<nsIContent> mStartReasonContent;
   nsCOMPtr<nsIContent> mEndReasonContent;
 
@@ -525,8 +744,6 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
   
   
   MOZ_CAN_RUN_SCRIPT nsresult AdjustWhitespace();
-
-  Element* GetEditingHost() const { return mEditingHost; }
 
  protected:
   using WSPoint = WSRunScanner::WSPoint;
