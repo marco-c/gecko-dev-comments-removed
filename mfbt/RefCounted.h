@@ -84,7 +84,8 @@ class RefCountLogger {
 
 enum RefCountAtomicity { AtomicRefCount, NonAtomicRefCount };
 
-template <typename T, RefCountAtomicity Atomicity>
+template <typename T, RefCountAtomicity Atomicity,
+          recordreplay::Behavior Recording>
 class RC {
  public:
   explicit RC(T aCount) : mValue(aCount) {}
@@ -100,8 +101,8 @@ class RC {
   T mValue;
 };
 
-template <typename T>
-class RC<T, AtomicRefCount> {
+template <typename T, recordreplay::Behavior Recording>
+class RC<T, AtomicRefCount, Recording> {
  public:
   explicit RC(T aCount) : mValue(aCount) {}
 
@@ -114,6 +115,7 @@ class RC<T, AtomicRefCount> {
     
     
     
+    AutoRecordAtomicAccess<Recording> record(this);
     return mValue.fetch_add(1, std::memory_order_relaxed) + 1;
   }
 
@@ -122,6 +124,7 @@ class RC<T, AtomicRefCount> {
     
     
     
+    AutoRecordAtomicAccess<Recording> record(this);
     T result = mValue.fetch_sub(1, std::memory_order_release) - 1;
     if (result == 0) {
       
@@ -143,12 +146,14 @@ class RC<T, AtomicRefCount> {
   
   
   void operator=(const T& aValue) {
+    AutoRecordAtomicAccess<Recording> record(this);
     mValue.store(aValue, std::memory_order_seq_cst);
   }
 
   operator T() const {
     
     
+    AutoRecordAtomicAccess<Recording> record(this);
     return mValue.load(std::memory_order_acquire);
   }
 
@@ -156,7 +161,8 @@ class RC<T, AtomicRefCount> {
   std::atomic<T> mValue;
 };
 
-template <typename T, RefCountAtomicity Atomicity>
+template <typename T, RefCountAtomicity Atomicity,
+          recordreplay::Behavior Recording = recordreplay::Behavior::Preserve>
 class RefCounted {
  protected:
   RefCounted() : mRefCnt(0) {}
@@ -213,7 +219,7 @@ class RefCounted {
   }
 
  private:
-  mutable RC<MozRefCountType, Atomicity> mRefCnt;
+  mutable RC<MozRefCountType, Atomicity, Recording> mRefCnt;
 };
 
 #ifdef MOZ_REFCOUNTED_LEAK_CHECKING
@@ -253,9 +259,11 @@ namespace external {
 
 
 
-template <typename T>
+template <typename T,
+          recordreplay::Behavior Recording = recordreplay::Behavior::Preserve>
 class AtomicRefCounted
-    : public mozilla::detail::RefCounted<T, mozilla::detail::AtomicRefCount> {
+    : public mozilla::detail::RefCounted<T, mozilla::detail::AtomicRefCount,
+                                         Recording> {
  public:
   ~AtomicRefCounted() {
     static_assert(std::is_base_of<AtomicRefCounted, T>::value,

@@ -543,6 +543,13 @@ bool InterruptCallback(JSContext* aCx) {
   MOZ_ASSERT(worker);
 
   
+  
+  
+  if (recordreplay::IsRecordingOrReplaying()) {
+    return true;
+  }
+
+  
   PROFILER_JS_INTERRUPT_CALLBACK();
 
   return worker->InterruptCallback(aCx);

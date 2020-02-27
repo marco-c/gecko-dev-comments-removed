@@ -70,7 +70,9 @@ class GCParallelTask : public mozilla::LinkedListElement<GCParallelTask>,
 
  protected:
   
-  mozilla::Atomic<bool, mozilla::MemoryOrdering::ReleaseAcquire> cancel_;
+  mozilla::Atomic<bool, mozilla::MemoryOrdering::ReleaseAcquire,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      cancel_;
 
  public:
   explicit GCParallelTask(gc::GCRuntime* gc)

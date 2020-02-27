@@ -546,6 +546,10 @@ inline void XPCWrappedNative::SetFlatJSObject(JSObject* object) {
 
   mFlatJSObject = object;
   mFlatJSObject.setFlags(FLAT_JS_OBJECT_VALID);
+
+  
+  
+  recordreplay::HoldJSObject(object);
 }
 
 inline void XPCWrappedNative::UnsetFlatJSObject() {

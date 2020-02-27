@@ -92,7 +92,6 @@
 #  include "mozilla/TimeStamp.h"
 #  include "mozilla/UniquePtr.h"
 
-#  include <functional>
 #  include <stdint.h>
 #  include <string>
 
@@ -222,7 +221,10 @@ class RacyFeatures {
   
   
   
-  static Atomic<uint32_t, MemoryOrdering::Relaxed> sActiveAndFeatures;
+  
+  static Atomic<uint32_t, MemoryOrdering::Relaxed,
+                recordreplay::Behavior::DontPreserve>
+      sActiveAndFeatures;
 };
 
 MFBT_API bool IsThreadBeingProfiled();

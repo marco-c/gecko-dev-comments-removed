@@ -390,6 +390,12 @@ static MOZ_ALWAYS_INLINE bool ShouldCaptureDebugInfo(JSContext* cx) {
 }
 
 static mozilla::Maybe<mozilla::TimeStamp> MaybeNow() {
+  
+  
+  
+  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+    return mozilla::Some(mozilla::TimeStamp::Now());
+  }
   return mozilla::Nothing();
 }
 
@@ -479,6 +485,7 @@ class PromiseDebugInfo : public NativeObject {
     if (!ShouldCaptureDebugInfo(cx)) {
       return;
     }
+    mozilla::recordreplay::AutoDisallowThreadEvents disallow;
 
     
     
@@ -2227,6 +2234,7 @@ CreatePromiseObjectInternal(JSContext* cx, HandleObject proto ,
   if (MOZ_LIKELY(!ShouldCaptureDebugInfo(cx))) {
     return promise;
   }
+  mozilla::recordreplay::AutoDisallowThreadEvents disallow;
 
   
   
@@ -5760,6 +5768,15 @@ JS::AutoDebuggerJobQueueInterruption::~AutoDebuggerJobQueueInterruption() {
 }
 
 bool JS::AutoDebuggerJobQueueInterruption::init(JSContext* cx) {
+  
+  
+  
+  
+  
+  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+    return true;
+  }
+
   MOZ_ASSERT(cx->jobQueue);
   this->cx = cx;
   saved = cx->jobQueue->saveJobQueue(cx);
@@ -5767,8 +5784,10 @@ bool JS::AutoDebuggerJobQueueInterruption::init(JSContext* cx) {
 }
 
 void JS::AutoDebuggerJobQueueInterruption::runJobs() {
-  JS::AutoSaveExceptionState ases(cx);
-  cx->jobQueue->runJobs(cx);
+  if (!mozilla::recordreplay::IsRecordingOrReplaying()) {
+    JS::AutoSaveExceptionState ases(cx);
+    cx->jobQueue->runJobs(cx);
+  }
 }
 
 const JSJitInfo promise_then_info = {

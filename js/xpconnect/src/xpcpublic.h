@@ -602,8 +602,10 @@ class ErrorReport : public ErrorBase {
   
   
   
+  
   void LogToConsoleWithStack(JS::HandleObject aStack,
-                             JS::HandleObject aStackGlobal);
+                             JS::HandleObject aStackGlobal,
+                             uint64_t aTimeWarpTarget = 0);
 
   
   

@@ -227,7 +227,8 @@ class JitRuntime {
   
   
   
-  typedef mozilla::Atomic<size_t, mozilla::SequentiallyConsistent>
+  typedef mozilla::Atomic<size_t, mozilla::SequentiallyConsistent,
+                          mozilla::recordreplay::Behavior::DontPreserve>
       NumFinishedOffThreadTasksType;
   NumFinishedOffThreadTasksType numFinishedOffThreadTasks_;
 

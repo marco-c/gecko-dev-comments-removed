@@ -180,7 +180,7 @@ PLDHashTable::HashShift(uint32_t aEntrySize, uint32_t aLength) {
 
 PLDHashTable::PLDHashTable(const PLDHashTableOps* aOps, uint32_t aEntrySize,
                            uint32_t aLength)
-    : mOps(aOps),
+    : mOps(recordreplay::GeneratePLDHashTableCallbacks(aOps)),
       mEntryStore(),
       mGeneration(0),
       mHashShift(HashShift(aEntrySize, aLength)),
@@ -204,11 +204,15 @@ PLDHashTable& PLDHashTable::operator=(PLDHashTable&& aOther) {
   
   
   
-  MOZ_RELEASE_ASSERT(mOps == aOther.mOps || !mOps);
+  
+  
+  MOZ_RELEASE_ASSERT(mOps == aOther.mOps || !mOps ||
+                     recordreplay::IsRecordingOrReplaying());
   MOZ_RELEASE_ASSERT(mEntrySize == aOther.mEntrySize || !mEntrySize);
 
   
-  const PLDHashTableOps* ops = aOther.mOps;
+  const PLDHashTableOps* ops =
+      recordreplay::UnwrapPLDHashTableCallbacks(aOther.mOps);
   this->~PLDHashTable();
   new (KnownNotNull, this) PLDHashTable(ops, aOther.mEntrySize, 0);
 
@@ -220,6 +224,8 @@ PLDHashTable& PLDHashTable::operator=(PLDHashTable&& aOther) {
 #ifdef MOZ_HASH_TABLE_CHECKS_ENABLED
   mChecker = std::move(aOther.mChecker);
 #endif
+
+  recordreplay::MovePLDHashTableContents(aOther.mOps, mOps);
 
   
   
@@ -283,6 +289,7 @@ PLDHashTable::~PLDHashTable() {
 #endif
 
   if (!mEntryStore.Get()) {
+    recordreplay::DestroyPLDHashTableCallbacks(mOps);
     return;
   }
 
@@ -293,12 +300,14 @@ PLDHashTable::~PLDHashTable() {
     }
   });
 
+  recordreplay::DestroyPLDHashTableCallbacks(mOps);
+
   
 }
 
 void PLDHashTable::ClearAndPrepareForLength(uint32_t aLength) {
   
-  const PLDHashTableOps* ops = mOps;
+  const PLDHashTableOps* ops = recordreplay::UnwrapPLDHashTableCallbacks(mOps);
   uint32_t entrySize = mEntrySize;
 
   this->~PLDHashTable();

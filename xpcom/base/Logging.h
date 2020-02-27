@@ -156,7 +156,10 @@ class LogModule {
 
   char* mName;
 
-  Atomic<LogLevel, Relaxed> mLevel;
+  
+  
+  
+  Atomic<LogLevel, Relaxed, recordreplay::Behavior::DontPreserve> mLevel;
 };
 
 
@@ -193,7 +196,9 @@ class LazyLogModule final {
  private:
   const char* const mLogName;
 
-  Atomic<LogModule*, ReleaseAcquire> mLog;
+  
+  
+  Atomic<LogModule*, ReleaseAcquire, recordreplay::Behavior::DontPreserve> mLog;
 };
 
 namespace detail {
@@ -310,4 +315,4 @@ void log_print(const LogModule* aModule, LogLevel aLevel, TimeStamp* aStart,
 
 #undef MOZ_LOGGING_ENABLED
 
-#endif  
+#endif

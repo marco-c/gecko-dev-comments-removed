@@ -58,6 +58,10 @@ bool XPCWrappedNativeProto::Init(JSContext* cx, nsIXPCScriptable* scriptable) {
   bool success = !!mJSProtoObject;
   if (success) {
     JS_SetPrivate(mJSProtoObject, this);
+
+    
+    
+    recordreplay::HoldJSObject(mJSProtoObject);
   }
 
   return success;

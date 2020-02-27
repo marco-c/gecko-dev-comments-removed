@@ -1650,6 +1650,15 @@ Loader::Completed Loader::ParseSheet(const nsACString& aBytes,
   AUTO_PROFILER_LABEL("css::Loader::ParseSheet", LAYOUT_CSSParsing);
   aLoadData.mIsBeingParsed = true;
 
+  
+  
+  if (recordreplay::IsRecordingOrReplaying() && aLoadData.mURI) {
+    recordreplay::NoteContentParse(
+        &aLoadData, aLoadData.mURI->GetSpecOrDefault().get(), "text/css",
+        reinterpret_cast<const Utf8Unit*>(aBytes.BeginReading()),
+        aBytes.Length());
+  }
+
   StyleSheet* sheet = aLoadData.mSheet;
   MOZ_ASSERT(sheet);
 

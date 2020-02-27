@@ -254,7 +254,9 @@ static uint32_t StartupExtraDefaultFeatures() {
 
 class PSMutex : private ::mozilla::detail::MutexImpl {
  public:
-  PSMutex() : ::mozilla::detail::MutexImpl() {}
+  PSMutex()
+      : ::mozilla::detail::MutexImpl(
+            ::mozilla::recordreplay::Behavior::DontPreserve) {}
 
   void Lock() {
     const int tid = profiler_current_thread_id();
@@ -313,7 +315,9 @@ class PSMutex : private ::mozilla::detail::MutexImpl {
   
   
   
-  Atomic<int, MemoryOrdering::SequentiallyConsistent> mOwningThreadId{0};
+  Atomic<int, MemoryOrdering::SequentiallyConsistent,
+         recordreplay::Behavior::DontPreserve>
+      mOwningThreadId{0};
 };
 
 
@@ -1238,7 +1242,8 @@ uint32_t ActivePS::sNextGeneration = 0;
 
 static PSMutex gPSMutex;
 
-Atomic<uint32_t, MemoryOrdering::Relaxed> RacyFeatures::sActiveAndFeatures(0);
+Atomic<uint32_t, MemoryOrdering::Relaxed, recordreplay::Behavior::DontPreserve>
+    RacyFeatures::sActiveAndFeatures(0);
 
 
 

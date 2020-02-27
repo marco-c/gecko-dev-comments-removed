@@ -505,7 +505,10 @@ END_GLOBALS
 static const size_t gRecycleLimit = 128_MiB;
 
 
-static Atomic<size_t, ReleaseAcquire> gRecycledSize;
+
+
+static Atomic<size_t, ReleaseAcquire, recordreplay::Behavior::DontPreserve>
+    gRecycledSize;
 
 
 #define DIRTY_MAX_DEFAULT (1U << 8)
@@ -544,7 +547,11 @@ static void* base_alloc(size_t aSize);
 
 static bool malloc_initialized;
 #else
-static Atomic<bool, SequentiallyConsistent> malloc_initialized;
+
+
+static Atomic<bool, SequentiallyConsistent,
+              recordreplay::Behavior::DontPreserve>
+    malloc_initialized;
 #endif
 
 static StaticMutex gInitLock = {STATIC_MUTEX_INIT};
@@ -2832,8 +2839,12 @@ void* arena_t::MallocSmall(size_t aSize, bool aZero) {
       
       
       mRandomizeSmallAllocations = false;
-      mozilla::Maybe<uint64_t> prngState1 = mozilla::RandomUint64();
-      mozilla::Maybe<uint64_t> prngState2 = mozilla::RandomUint64();
+      mozilla::Maybe<uint64_t> prngState1, prngState2;
+      {
+        mozilla::recordreplay::AutoEnsurePassThroughThreadEvents pt;
+        prngState1 = mozilla::RandomUint64();
+        prngState2 = mozilla::RandomUint64();
+      }
       void* backing =
           base_alloc(sizeof(mozilla::non_crypto::XorShift128PlusRNG));
       mPRNG = new (backing) mozilla::non_crypto::XorShift128PlusRNG(
@@ -3614,7 +3625,11 @@ arena_t* ArenaCollection::CreateArena(bool aIsPrivate,
   
 
   while (true) {
-    mozilla::Maybe<uint64_t> maybeRandomId = mozilla::RandomUint64();
+    mozilla::Maybe<uint64_t> maybeRandomId;
+    {
+      mozilla::recordreplay::AutoEnsurePassThroughThreadEvents pt;
+      maybeRandomId = mozilla::RandomUint64();
+    }
     MOZ_RELEASE_ASSERT(maybeRandomId.isSome());
 
     
@@ -4550,7 +4565,8 @@ static malloc_table_t gDynamicMallocTable = {
 
 
 
-static Atomic<malloc_table_t const*, mozilla::MemoryOrdering::Relaxed>
+static Atomic<malloc_table_t const*, mozilla::MemoryOrdering::Relaxed,
+              recordreplay::Behavior::DontPreserve>
     gMallocTablePtr;
 
 #  ifdef MOZ_DYNAMIC_REPLACE_INIT

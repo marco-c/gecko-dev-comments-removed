@@ -52,6 +52,7 @@
 #include "mozilla/dom/ipc/StructuredCloneData.h"
 #include "mozilla/dom/DOMStringList.h"
 #include "mozilla/jsipc/CrossProcessObjectWrappers.h"
+#include "mozilla/recordreplay/ParentIPC.h"
 #include "nsPrintfCString.h"
 #include "nsXULAppAPI.h"
 #include "nsQueryObject.h"
@@ -593,11 +594,35 @@ class MMListenerRemover {
   RefPtr<nsFrameMessageManager> mMM;
 };
 
+
+
+static bool DirectMessageToMiddleman(const nsAString& aMessage) {
+  
+  
+  
+  return (StringBeginsWith(aMessage, NS_LITERAL_STRING("debug:")) &&
+          recordreplay::parent::DebuggerRunsInMiddleman()) ||
+         aMessage.EqualsLiteral("SessionStore:flush");
+}
+
 void nsFrameMessageManager::ReceiveMessage(
     nsISupports* aTarget, nsFrameLoader* aTargetFrameLoader, bool aTargetClosed,
     const nsAString& aMessage, bool aIsSync, StructuredCloneData* aCloneData,
     mozilla::jsipc::CpowHolder* aCpows, nsIPrincipal* aPrincipal,
     nsTArray<StructuredCloneData>* aRetVal, ErrorResult& aError) {
+  
+  
+  
+  if (recordreplay::IsRecordingOrReplaying()) {
+    if (DirectMessageToMiddleman(aMessage)) {
+      return;
+    }
+  } else if (recordreplay::IsMiddleman()) {
+    if (!DirectMessageToMiddleman(aMessage)) {
+      return;
+    }
+  }
+
   MOZ_ASSERT(aTarget);
 
   nsAutoTObserverArray<nsMessageListenerInfo, 1>* listeners =

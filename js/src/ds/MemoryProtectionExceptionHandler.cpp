@@ -35,7 +35,8 @@ namespace js {
 
 
 
-static mozilla::Atomic<bool, mozilla::SequentiallyConsistent>
+static mozilla::Atomic<bool, mozilla::SequentiallyConsistent,
+                       mozilla::recordreplay::Behavior::DontPreserve>
     sProtectedRegionsInit(false);
 
 

@@ -764,7 +764,8 @@ void js::FutexThread::lock() {
   lock->lock();
 }
 
- mozilla::Atomic<js::Mutex*, mozilla::SequentiallyConsistent>
+ mozilla::Atomic<js::Mutex*, mozilla::SequentiallyConsistent,
+                             mozilla::recordreplay::Behavior::DontPreserve>
     FutexThread::lock_;
 
 

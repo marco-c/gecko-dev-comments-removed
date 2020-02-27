@@ -836,6 +836,22 @@ pref("devtools.console.stdout.content", false, sticky);
 pref("toolkit.dump.emit", false);
 
 
+#if defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
+  pref("devtools.recordreplay.enabled", true);
+  pref("devtools.recordreplay.enableRewinding", true);
+#else
+  pref("devtools.recordreplay.enabled", false);
+#endif
+
+pref("devtools.recordreplay.mvp.enabled", false);
+pref("devtools.recordreplay.allowRepaintFailures", true);
+pref("devtools.recordreplay.includeSystemScripts", false);
+pref("devtools.recordreplay.logging", false);
+pref("devtools.recordreplay.loggingFull", false);
+pref("devtools.recordreplay.fastLogpoints", false);
+pref("devtools.recordreplay.cloudServer", "");
+
+
 
 
 

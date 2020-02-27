@@ -123,30 +123,42 @@ class ProfilingStackFrame {
 
   
   
-  mozilla::Atomic<const char*, mozilla::ReleaseAcquire> label_;
+  mozilla::Atomic<const char*, mozilla::ReleaseAcquire,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      label_;
 
   
   
   
-  mozilla::Atomic<const char*, mozilla::ReleaseAcquire> dynamicString_;
+  mozilla::Atomic<const char*, mozilla::ReleaseAcquire,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      dynamicString_;
 
   
-  mozilla::Atomic<void*, mozilla::ReleaseAcquire> spOrScript;
+  mozilla::Atomic<void*, mozilla::ReleaseAcquire,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      spOrScript;
 
   
   
   
   
-  mozilla::Atomic<int32_t, mozilla::ReleaseAcquire> pcOffsetIfJS_;
+  mozilla::Atomic<int32_t, mozilla::ReleaseAcquire,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      pcOffsetIfJS_;
 
   
   
   
   
-  mozilla::Atomic<uint64_t, mozilla::ReleaseAcquire> realmID_;
+  mozilla::Atomic<uint64_t, mozilla::ReleaseAcquire,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      realmID_;
 
   
-  mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> flagsAndCategoryPair_;
+  mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      flagsAndCategoryPair_;
 
   static int32_t pcToOffset(JSScript* aScript, jsbytecode* aPc);
 
@@ -481,7 +493,8 @@ class JS_FRIEND_API ProfilingStack final {
   
   
   
-  mozilla::Atomic<js::ProfilingStackFrame*, mozilla::SequentiallyConsistent>
+  mozilla::Atomic<js::ProfilingStackFrame*, mozilla::SequentiallyConsistent,
+                  mozilla::recordreplay::Behavior::DontPreserve>
       frames{nullptr};
 
   
@@ -495,7 +508,9 @@ class JS_FRIEND_API ProfilingStack final {
   
   
   
-  mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> stackPointer;
+  mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      stackPointer;
 };
 
 namespace js {

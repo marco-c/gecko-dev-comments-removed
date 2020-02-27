@@ -1958,6 +1958,10 @@ toolbar#nav-bar {
             prefs['media.cubeb.output_device'] = "Null Output"
             prefs['media.volume_scale'] = "1.0"
 
+        
+        if options.recordingPath:
+            prefs["devtools.recordreplay.enableRewinding"] = False
+
         self.profile.set_preferences(prefs)
 
         
@@ -2758,6 +2762,9 @@ toolbar#nav-bar {
 
             if options.jsdebugger:
                 options.browserArgs.extend(['-jsdebugger', '-wait-for-jsdebugger'])
+
+            if options.recordingPath:
+                options.browserArgs.extend(['--save-recordings', options.recordingPath])
 
             
             

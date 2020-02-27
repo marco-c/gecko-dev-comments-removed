@@ -196,6 +196,10 @@ enum class MutableScriptFlagsEnum : uint32_t {
   HasBeenCloned = 1 << 10,
 
   
+  
+  TrackRecordReplayProgress = 1 << 11,
+
+  
   HasScriptCounts = 1 << 12,
 
   

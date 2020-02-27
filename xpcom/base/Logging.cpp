@@ -162,7 +162,9 @@ void empty_va(va_list* va, ...) {
 class LogModuleManager {
  public:
   LogModuleManager()
-      : mModulesLock("logmodules"),
+      
+      
+      : mModulesLock("logmodules", recordreplay::Behavior::DontPreserve),
         mModules(kInitialModuleCount),
         mPrintEntryCount(0),
         mOutFile(nullptr),

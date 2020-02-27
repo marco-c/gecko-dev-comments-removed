@@ -145,7 +145,9 @@ class CountingAllocatorBase {
   
   
   
-  typedef Atomic<size_t, SequentiallyConsistent> AmountType;
+  typedef Atomic<size_t, SequentiallyConsistent,
+                 recordreplay::Behavior::DontPreserve>
+      AmountType;
   static AmountType sAmount;
 
   MOZ_DEFINE_MALLOC_SIZE_OF_ON_ALLOC(MallocSizeOfOnAlloc)

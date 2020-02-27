@@ -997,6 +997,11 @@ void wasm::EnsureEagerProcessSignalHandlers() {
   return;
 #endif
 
+  
+  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+    return;
+  }
+
 #if defined(ANDROID) && defined(MOZ_LINKER)
   
   if (IsSignalHandlingBroken()) {

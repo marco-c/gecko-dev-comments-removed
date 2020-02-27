@@ -172,7 +172,15 @@ class Accessible : public nsISupports {
   
 
 
-  void* UniqueID() { return static_cast<void*>(this); }
+  void* UniqueID() {
+    
+    
+    
+    if (recordreplay::IsRecordingOrReplaying()) {
+      return reinterpret_cast<void*>(recordreplay::ThingIndex(this));
+    }
+    return static_cast<void*>(this);
+  }
 
   
 

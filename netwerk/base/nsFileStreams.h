@@ -24,7 +24,10 @@
 
 class nsFileStreamBase : public nsISeekableStream, public nsIFileMetadata {
  public:
-  NS_DECL_THREADSAFE_ISUPPORTS
+  
+  
+  NS_DECL_THREADSAFE_ISUPPORTS_WITH_RECORDING(
+      mozilla::recordreplay::Behavior::Preserve)
   NS_DECL_NSISEEKABLESTREAM
   NS_DECL_NSITELLABLESTREAM
   NS_DECL_NSIFILEMETADATA

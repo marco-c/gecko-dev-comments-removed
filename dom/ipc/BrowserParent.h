@@ -133,6 +133,10 @@ class BrowserParent final : public PBrowserParent,
 
   static TabId GetTabIdFrom(nsIDocShell* docshell);
 
+  static bool AreRecordReplayTabsActive() {
+    return gNumActiveRecordReplayTabs != 0;
+  }
+
   const TabId GetTabId() const { return mTabId; }
 
   ContentParent* Manager() const { return mManager; }
@@ -989,6 +993,15 @@ class BrowserParent final : public PBrowserParent,
   
   
   bool mIsDestroyingForProcessSwitch : 1;
+
+  
+  static size_t gNumActiveRecordReplayTabs;
+
+  
+  bool mIsActiveRecordReplayTab : 1;
+
+  
+  void SetIsActiveRecordReplayTab(bool aIsActive);
 };
 
 struct MOZ_STACK_CLASS BrowserParent::AutoUseNewTab final {

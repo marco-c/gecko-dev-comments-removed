@@ -125,7 +125,10 @@ class RacyRegisteredThread final {
   Atomic<int> mSleep;
 
   
-  Atomic<bool, MemoryOrdering::Relaxed> mIsBeingProfiled;
+  
+  
+  Atomic<bool, MemoryOrdering::Relaxed, recordreplay::Behavior::DontPreserve>
+      mIsBeingProfiled;
 };
 
 

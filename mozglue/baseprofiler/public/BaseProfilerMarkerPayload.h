@@ -105,7 +105,9 @@ class ProfilerMarkerPayload {
   using DeserializerTagAtomic = int;
 
   
-  static Atomic<DeserializerTagAtomic, ReleaseAcquire> sDeserializerCount;
+  static Atomic<DeserializerTagAtomic, ReleaseAcquire,
+                recordreplay::Behavior::DontPreserve>
+      sDeserializerCount;
 
   
   

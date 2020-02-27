@@ -160,7 +160,9 @@ class InfallibleAllocWithoutHooksPolicy {
 
 class Mutex : private ::mozilla::detail::MutexImpl {
  public:
-  Mutex() : ::mozilla::detail::MutexImpl() {}
+  Mutex()
+      : ::mozilla::detail::MutexImpl(
+            ::mozilla::recordreplay::Behavior::DontPreserve) {}
 
   void Lock() { ::mozilla::detail::MutexImpl::lock(); }
   void Unlock() { ::mozilla::detail::MutexImpl::unlock(); }
@@ -263,11 +265,15 @@ class ThreadIntercept {
 
   
   
-  static mozilla::Atomic<bool, mozilla::Relaxed> sAllocationsFeatureEnabled;
+  static mozilla::Atomic<bool, mozilla::Relaxed,
+                         mozilla::recordreplay::Behavior::DontPreserve>
+      sAllocationsFeatureEnabled;
 
   
   
-  static mozilla::Atomic<int, mozilla::Relaxed> sMainThreadId;
+  static mozilla::Atomic<int, mozilla::Relaxed,
+                         mozilla::recordreplay::Behavior::DontPreserve>
+      sMainThreadId;
 
   ThreadIntercept() = default;
 
@@ -327,10 +333,13 @@ class ThreadIntercept {
 
 PROFILER_THREAD_LOCAL(bool) ThreadIntercept::tlsIsBlocked;
 
-mozilla::Atomic<bool, mozilla::Relaxed>
+mozilla::Atomic<bool, mozilla::Relaxed,
+                mozilla::recordreplay::Behavior::DontPreserve>
     ThreadIntercept::sAllocationsFeatureEnabled(false);
 
-mozilla::Atomic<int, mozilla::Relaxed> ThreadIntercept::sMainThreadId(0);
+mozilla::Atomic<int, mozilla::Relaxed,
+                mozilla::recordreplay::Behavior::DontPreserve>
+    ThreadIntercept::sMainThreadId(0);
 
 
 

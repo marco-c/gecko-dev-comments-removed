@@ -265,7 +265,8 @@ class RacyFeatures {
   
   
   
-  static mozilla::Atomic<uint32_t, mozilla::MemoryOrdering::Relaxed>
+  static mozilla::Atomic<uint32_t, mozilla::MemoryOrdering::Relaxed,
+                         recordreplay::Behavior::DontPreserve>
       sActiveAndFeatures;
 };
 
@@ -1104,7 +1105,9 @@ class ProfilingStackOwner {
 
   class ProfilingStack mProfilingStack;
 
-  mutable Atomic<int32_t, MemoryOrdering::ReleaseAcquire> mRefCnt;
+  mutable Atomic<int32_t, MemoryOrdering::ReleaseAcquire,
+                 recordreplay::Behavior::DontPreserve>
+      mRefCnt;
 };
 
 

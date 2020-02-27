@@ -27,9 +27,12 @@ namespace baseprofiler {
 namespace detail {
 
 
+
 class BaseProfilerMutex : private ::mozilla::detail::MutexImpl {
  public:
-  BaseProfilerMutex() : ::mozilla::detail::MutexImpl() {}
+  BaseProfilerMutex()
+      : ::mozilla::detail::MutexImpl(
+            ::mozilla::recordreplay::Behavior::DontPreserve) {}
 
   BaseProfilerMutex(const BaseProfilerMutex&) = delete;
   BaseProfilerMutex& operator=(const BaseProfilerMutex&) = delete;
@@ -74,7 +77,9 @@ class BaseProfilerMutex : private ::mozilla::detail::MutexImpl {
 
 #ifdef MOZ_BASE_PROFILER_DEBUG
  private:
-  Atomic<int, MemoryOrdering::SequentiallyConsistent> mOwningThreadId{0};
+  Atomic<int, MemoryOrdering::SequentiallyConsistent,
+         recordreplay::Behavior::DontPreserve>
+      mOwningThreadId{0};
 #endif  
 };
 
@@ -95,6 +100,7 @@ class MOZ_RAII BaseProfilerAutoLock {
  private:
   BaseProfilerMutex& mMutex;
 };
+
 
 
 

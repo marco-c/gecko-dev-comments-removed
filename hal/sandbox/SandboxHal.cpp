@@ -91,7 +91,12 @@ bool LockScreenOrientation(const hal::ScreenOrientation& aOrientation) {
   return allowed;
 }
 
-void UnlockScreenOrientation() { Hal()->SendUnlockScreenOrientation(); }
+void UnlockScreenOrientation() {
+  
+  if (!recordreplay::IsMiddleman()) {
+    Hal()->SendUnlockScreenOrientation();
+  }
+}
 
 void EnableSensorNotifications(SensorType aSensor) {
   Hal()->SendEnableSensorNotifications(aSensor);

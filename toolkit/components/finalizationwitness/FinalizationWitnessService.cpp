@@ -182,6 +182,12 @@ NS_IMETHODIMP
 FinalizationWitnessService::Make(const char* aTopic, const char16_t* aValue,
                                  JSContext* aCx,
                                  JS::MutableHandle<JS::Value> aRetval) {
+  
+  
+  if (recordreplay::IsRecordingOrReplaying()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   JS::Rooted<JSObject*> objResult(aCx, JS_NewObject(aCx, &sWitnessClass));
   if (!objResult) {
     return NS_ERROR_OUT_OF_MEMORY;

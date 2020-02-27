@@ -53,6 +53,11 @@ already_AddRefed<nsPrintingProxy> nsPrintingProxy::GetInstance() {
 }
 
 nsresult nsPrintingProxy::Init() {
+  
+  
+  if (recordreplay::IsMiddleman()) {
+    return NS_ERROR_FAILURE;
+  }
   mozilla::Unused << ContentChild::GetSingleton()->SendPPrintingConstructor(
       this);
   return NS_OK;

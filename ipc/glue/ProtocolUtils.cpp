@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "base/process_util.h"
 #include "base/task.h"
@@ -17,6 +17,8 @@
 
 #include "mozilla/ipc/MessageChannel.h"
 #include "mozilla/ipc/Transport.h"
+#include "mozilla/recordreplay/ChildIPC.h"
+#include "mozilla/recordreplay/ParentIPC.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/SystemGroup.h"
 #include "mozilla/Unused.h"
@@ -42,7 +44,7 @@ using base::ProcessId;
 namespace mozilla {
 
 #if defined(XP_WIN)
-
+// Generate RAII classes for LPTSTR and PSECURITY_DESCRIPTOR.
 MOZ_TYPE_SPECIFIC_SCOPED_POINTER_TEMPLATE(ScopedLPTStr,
                                           RemovePointer<LPTSTR>::Type,
                                           ::LocalFree)
@@ -55,7 +57,7 @@ namespace ipc {
 
 IPCResult IPCResult::Fail(NotNull<IProtocol*> actor, const char* where,
                           const char* why) {
-  
+  // Calls top-level protocol to handle the error.
   nsPrintfCString errorMsg("%s %s\n", where, why);
   actor->GetIPCChannel()->Listener()->ProcessingError(
       HasResultCodes::MsgProcessingError, errorMsg.get());
@@ -66,7 +68,7 @@ IPCResult IPCResult::Fail(NotNull<IProtocol*> actor, const char* where,
 bool DuplicateHandle(HANDLE aSourceHandle, DWORD aTargetProcessId,
                      HANDLE* aTargetHandle, DWORD aDesiredAccess,
                      DWORD aOptions) {
-  
+  // If our process is the target just duplicate the handle.
   if (aTargetProcessId == base::GetCurrentProcId()) {
     return !!::DuplicateHandle(::GetCurrentProcess(), aSourceHandle,
                                ::GetCurrentProcess(), aTargetHandle,
@@ -74,7 +76,7 @@ bool DuplicateHandle(HANDLE aSourceHandle, DWORD aTargetProcessId,
   }
 
 #  if defined(MOZ_SANDBOX)
-  
+  // Try the broker next (will fail if not sandboxed).
   if (SandboxTarget::Instance()->BrokerDuplicateHandle(
           aSourceHandle, aTargetProcessId, aTargetHandle, aDesiredAccess,
           aOptions)) {
@@ -82,7 +84,7 @@ bool DuplicateHandle(HANDLE aSourceHandle, DWORD aTargetProcessId,
   }
 #  endif
 
-  
+  // Finally, see if we already have access to the process.
   ScopedProcessHandle targetProcess(
       OpenProcess(PROCESS_DUP_HANDLE, FALSE, aTargetProcessId));
   if (!targetProcess) {
@@ -116,7 +118,7 @@ void AnnotateSystemError() {
 void AnnotateCrashReportWithErrno(CrashReporter::Annotation tag, int error) {
   CrashReporter::AnnotateCrashReport(tag, error);
 }
-#endif  
+#endif  // defined(XP_MACOSX)
 
 void LogMessageForProtocol(const char* aTopLevelProtocol,
                            base::ProcessId aOtherPid,
@@ -135,9 +137,9 @@ void LogMessageForProtocol(const char* aTopLevelProtocol,
 }
 
 void ProtocolErrorBreakpoint(const char* aMsg) {
-  
-  
-  
+  // Bugs that generate these error messages can be tough to
+  // reproduce.  Log always in the hope that someone finds the error
+  // message.
   printf_stderr("IPDL protocol error: %s\n", aMsg);
 }
 
@@ -149,9 +151,9 @@ void FatalError(const char* aMsg, bool aIsParent) {
   nsAutoCString formattedMessage("IPDL error: \"");
   formattedMessage.AppendASCII(aMsg);
   if (aIsParent) {
-    
-    
-    
+    // We're going to crash the parent process because at this time
+    // there's no other really nice way of getting a minidump out of
+    // this process if we're off the main thread.
     formattedMessage.AppendLiteral("\". Intentionally crashing.");
     NS_ERROR(formattedMessage.get());
     CrashReporter::AnnotateCrashReport(
@@ -219,29 +221,29 @@ ActorLifecycleProxy::ActorLifecycleProxy(IProtocol* aActor) : mActor(aActor) {
   MOZ_ASSERT(mActor->CanSend(),
              "Cannot create LifecycleProxy for non-connected actor!");
 
-  
-  
+  // Take a reference to our manager's lifecycle proxy to try to hold it &
+  // ensure it doesn't die before us.
   if (mActor->mManager) {
     mManager = mActor->mManager->mLifecycleProxy;
   }
 
-  
+  // Record that we've taken our first reference to our actor.
   mActor->ActorAlloc();
 }
 
 ActorLifecycleProxy::~ActorLifecycleProxy() {
-  
-  
-  
-  
-  
-  
-  
+  // When the LifecycleProxy's lifetime has come to an end, it means that the
+  // actor should have its `Dealloc` method called on it. In a well-behaved
+  // actor, this will release the IPC-held reference to the actor.
+  //
+  // If the actor has already died before the `LifecycleProxy`, the `IProtocol`
+  // destructor below will clear our reference to it, preventing us from
+  // performing a use-after-free here.
   if (!mActor) {
     return;
   }
 
-  
+  // Clear our actor's state back to inactive, and then invoke ActorDealloc.
   MOZ_ASSERT(mActor->mLinkStatus == LinkStatus::Destroyed,
              "Deallocating non-destroyed actor!");
   mActor->mLifecycleProxy = nullptr;
@@ -251,28 +253,28 @@ ActorLifecycleProxy::~ActorLifecycleProxy() {
 }
 
 IProtocol::~IProtocol() {
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // If the actor still has a lifecycle proxy when it is being torn down, it
+  // means that IPC was not given control over the lifecycle of the actor
+  // correctly. Usually this means that the actor was destroyed while IPC is
+  // calling a message handler for it, and the actor incorrectly frees itself
+  // during that operation.
+  //
+  // As this happens unfortunately frequently, due to many odd protocols in
+  // Gecko, simply emit a warning and clear the weak backreference from our
+  // LifecycleProxy back to us.
   if (mLifecycleProxy) {
-    
-    
+    // FIXME: It would be nice to have this print out the name of the
+    // misbehaving actor, to help people notice it's their fault!
     NS_WARNING(
         "Actor destructor called before IPC lifecycle complete!\n"
         "References to this actor may unexpectedly dangle!");
 
     mLifecycleProxy->mActor = nullptr;
 
-    
-    
-    
-    
+    // If we are somehow being destroyed while active, make sure that the
+    // existing IPC reference has been freed. If the status of the actor is
+    // `Destroyed`, the reference has already been freed, and we shouldn't free
+    // it a second time.
     MOZ_ASSERT(mLinkStatus != LinkStatus::Inactive);
     if (mLinkStatus != LinkStatus::Destroyed) {
       NS_IF_RELEASE(mLifecycleProxy);
@@ -281,8 +283,8 @@ IProtocol::~IProtocol() {
   }
 }
 
-
-
+// The following methods either directly forward to the toplevel protocol, or
+// almost directly do.
 int32_t IProtocol::Register(IProtocol* aRouted) {
   return mToplevel->Register(aRouted);
 }
@@ -321,7 +323,7 @@ const MessageChannel* IProtocol::GetIPCChannel() const {
 
 void IProtocol::SetEventTargetForActor(IProtocol* aActor,
                                        nsIEventTarget* aEventTarget) {
-  
+  // Make sure we have a manager for the internal method to access.
   aActor->SetManager(this);
   mToplevel->SetEventTargetForActorInternal(aActor, aEventTarget);
 }
@@ -338,7 +340,7 @@ void IProtocol::SetEventTargetForRoute(int32_t aRoute,
 }
 
 nsIEventTarget* IProtocol::GetActorEventTarget() {
-  
+  // FIXME: It's a touch sketchy that we don't return a strong reference here.
   RefPtr<nsIEventTarget> target = GetActorEventTarget(this);
   return target;
 }
@@ -437,7 +439,7 @@ bool IProtocol::DeallocShmem(Shmem& aMem) {
     }
     return false;
   }
-#endif  
+#endif  // DEBUG
   aMem.forget(Shmem::PrivateIPDLCaller());
   return ok;
 }
@@ -449,16 +451,16 @@ void IProtocol::SetManager(IProtocol* aManager) {
 }
 
 void IProtocol::SetManagerAndRegister(IProtocol* aManager) {
-  
-  
+  // Set the manager prior to registering so registering properly inherits
+  // the manager's event target.
   SetManager(aManager);
 
   aManager->Register(this);
 }
 
 void IProtocol::SetManagerAndRegister(IProtocol* aManager, int32_t aId) {
-  
-  
+  // Set the manager prior to registering so registering properly inherits
+  // the manager's event target.
   SetManager(aManager);
 
   aManager->RegisterID(this, aId);
@@ -467,9 +469,9 @@ void IProtocol::SetManagerAndRegister(IProtocol* aManager, int32_t aId) {
 bool IProtocol::ChannelSend(IPC::Message* aMsg) {
   UniquePtr<IPC::Message> msg(aMsg);
   if (CanSend()) {
-    
-    
-    
+    // NOTE: This send call failing can only occur during toplevel channel
+    // teardown. As this is an async call, this isn't reasonable to predict or
+    // respond to, so just drop the message on the floor silently.
     GetIPCChannel()->Send(msg.release());
     return true;
   }
@@ -507,7 +509,7 @@ void IProtocol::ActorConnected() {
 
   MOZ_ASSERT(!mLifecycleProxy, "double-connecting live actor");
   mLifecycleProxy = new ActorLifecycleProxy(this);
-  NS_ADDREF(mLifecycleProxy);  
+  NS_ADDREF(mLifecycleProxy);  // Reference freed in DestroySubtree();
 }
 
 void IProtocol::DoomSubtree() {
@@ -517,16 +519,16 @@ void IProtocol::DoomSubtree() {
   nsTArray<RefPtr<ActorLifecycleProxy>> managed;
   AllManagedActors(managed);
   for (ActorLifecycleProxy* proxy : managed) {
-    
+    // Guard against actor being disconnected or destroyed during previous Doom
     IProtocol* actor = proxy->Get();
     if (actor && actor->CanSend()) {
       actor->DoomSubtree();
     }
   }
 
-  
-  
-  
+  // ActorDoom is called immediately before changing state, this allows messages
+  // to be sent during ActorDoom immediately before the channel is closed and
+  // sending messages is disabled.
   ActorDoom();
   mLinkStatus = LinkStatus::Doomed;
 }
@@ -535,12 +537,12 @@ void IProtocol::DestroySubtree(ActorDestroyReason aWhy) {
   MOZ_ASSERT(CanRecv(), "destroying non-connected actor");
   MOZ_ASSERT(mLifecycleProxy, "destroying zombie actor");
 
-  
+  // If we're a managed actor, unregister from our manager
   if (Manager()) {
     Unregister(Id());
   }
 
-  
+  // Destroy subtree
   ActorDestroyReason subtreeWhy = aWhy;
   if (aWhy == Deletion || aWhy == FailedConstructor) {
     subtreeWhy = AncestorDeletion;
@@ -549,21 +551,21 @@ void IProtocol::DestroySubtree(ActorDestroyReason aWhy) {
   nsTArray<RefPtr<ActorLifecycleProxy>> managed;
   AllManagedActors(managed);
   for (ActorLifecycleProxy* proxy : managed) {
-    
-    
+    // Guard against actor being disconnected or destroyed during previous
+    // Destroy
     IProtocol* actor = proxy->Get();
     if (actor && actor->CanRecv()) {
       actor->DestroySubtree(subtreeWhy);
     }
   }
 
-  
-  
+  // Ensure that we don't send any messages while we're calling `ActorDestroy`
+  // by setting our state to `Doomed`.
   mLinkStatus = LinkStatus::Doomed;
 
-  
-  
-  
+  // The actor is being destroyed, reject any pending responses, invoke
+  // `ActorDestroy` to destroy it, and then clear our status to
+  // `LinkStatus::Destroyed`.
   GetIPCChannel()->RejectPendingResponsesForActor(this);
   ActorDestroy(aWhy);
   mLinkStatus = LinkStatus::Destroyed;
@@ -575,6 +577,7 @@ IToplevelProtocol::IToplevelProtocol(const char* aName, ProtocolId aProtoId,
       mOtherPid(mozilla::ipc::kInvalidProcessId),
       mLastLocalId(0),
       mEventTargetMutex("ProtocolEventTargetMutex"),
+      mMiddlemanChannelOverride(nullptr),
       mChannel(aName, this) {
   mToplevel = this;
 }
@@ -586,7 +589,15 @@ base::ProcessId IToplevelProtocol::OtherPid() const {
 }
 
 void IToplevelProtocol::SetOtherProcessId(base::ProcessId aOtherPid) {
-  mOtherPid = aOtherPid;
+  // When recording an execution, all communication we do is forwarded from
+  // the middleman to the parent process, so use its pid instead of the
+  // middleman's pid.
+  if (recordreplay::IsRecordingOrReplaying() &&
+      aOtherPid == recordreplay::child::MiddlemanProcessId()) {
+    mOtherPid = recordreplay::child::ParentProcessId();
+  } else {
+    mOtherPid = aOtherPid;
+  }
 }
 
 bool IToplevelProtocol::Open(UniquePtr<Transport> aTransport,
@@ -627,29 +638,33 @@ bool IToplevelProtocol::IsOnCxxStack() const {
 }
 
 int32_t IToplevelProtocol::NextId() {
-  
-  
+  // Genreate the next ID to use for a shared memory or protocol. Parent and
+  // Child sides of the protocol use different pools, and actors created in the
+  // middleman need to use a distinct pool as well.
   int32_t tag = 0;
+  if (recordreplay::IsMiddleman()) {
+    tag |= 1 << 0;
+  }
   if (GetSide() == ParentSide) {
     tag |= 1 << 1;
   }
 
-  
+  // Check any overflow
   MOZ_RELEASE_ASSERT(mLastLocalId < (1 << 29));
 
-  
-  
+  // Compute the ID to use with the low two bits as our tag, and the remaining
+  // bits as a monotonic.
   return (++mLastLocalId << 2) | tag;
 }
 
 int32_t IToplevelProtocol::Register(IProtocol* aRouted) {
   if (aRouted->Id() != kNullActorId && aRouted->Id() != kFreedActorId) {
-    
+    // If there's already an ID, just return that.
     return aRouted->Id();
   }
   int32_t id = RegisterID(aRouted, NextId());
 
-  
+  // Inherit our event target from our manager.
   if (IProtocol* manager = aRouted->Manager()) {
     MutexAutoLock lock(mEventTargetMutex);
     if (nsCOMPtr<nsIEventTarget> target =
@@ -692,9 +707,9 @@ Shmem::SharedMemory* IToplevelProtocol::CreateSharedMemory(
 
   base::ProcessId pid =
 #ifdef ANDROID
-      
-      
-      
+      // We use OtherPidMaybeInvalid() because on Android this method is
+      // actually called on an unconnected protocol, but Android's shared memory
+      // implementation doesn't actually use the PID.
       OtherPidMaybeInvalid();
 #else
       OtherPid();
@@ -794,29 +809,29 @@ already_AddRefed<nsIEventTarget> IToplevelProtocol::GetMessageEventTarget(
       return nullptr;
     }
 
-    
-    
-    
+    // Normally a new actor inherits its event target from its manager. If the
+    // manager has no event target, we give the subclass a chance to make a new
+    // one.
     if (!target) {
       MutexAutoUnlock unlock(mEventTargetMutex);
       target = GetConstructedEventTarget(aMsg);
     }
 
 #ifdef DEBUG
-    
-    
-    
-    
-    
-    
+    // If this function is called more than once for the same message,
+    // the actor handle ID will already be in the map and the AddWithID
+    // call below will trigger a crash in DEBUG builds. Avoid this by
+    // removing the entry first and ASSERTing that if the ID has already
+    // been inserted, it matches the provided |aMsg| ID. If the ASSERT fails,
+    // the map contains a different event target which is unexpected.
     nsCOMPtr<nsIEventTarget> existingTgt = mEventTargetMap.Lookup(handle.mId);
     MOZ_ASSERT(existingTgt == target || existingTgt == nullptr);
     mEventTargetMap.RemoveIfPresent(handle.mId);
-#endif 
+#endif /* DEBUG */
 
     mEventTargetMap.AddWithID(target, handle.mId);
   } else if (!target) {
-    
+    // We don't need the lock after this point.
     lock.reset();
 
     target = GetSpecificMessageEventTarget(aMsg);
@@ -836,31 +851,31 @@ already_AddRefed<nsIEventTarget> IToplevelProtocol::GetActorEventTarget(
 }
 
 nsIEventTarget* IToplevelProtocol::GetActorEventTarget() {
-  
+  // The EventTarget of a ToplevelProtocol shall never be set.
   return nullptr;
 }
 
 void IToplevelProtocol::SetEventTargetForActorInternal(
     IProtocol* aActor, nsIEventTarget* aEventTarget) {
-  
+  // The EventTarget of a ToplevelProtocol shall never be set.
   MOZ_RELEASE_ASSERT(aActor != this);
 
-  
-  
-  
+  // We should only call this function on actors that haven't been used for IPC
+  // code yet. Otherwise we'll be posting stuff to the wrong event target before
+  // we're called.
   MOZ_RELEASE_ASSERT(aActor->Id() == kNullActorId ||
                      aActor->Id() == kFreedActorId);
 
   MOZ_ASSERT(aActor->Manager() && aActor->ToplevelProtocol() == this);
 
-  
-  
+  // Register the actor early. When it's registered again, it will keep the same
+  // ID.
   int32_t id = Register(aActor);
   aActor->SetId(id);
 
   MutexAutoLock lock(mEventTargetMutex);
-  
-  
+  // FIXME bug 1445121 - sometimes the id is already mapped.
+  // (IDMap debug-asserts that the existing state is as expected.)
   bool replace = false;
 #ifdef DEBUG
   replace = mEventTargetMap.Lookup(id) != nullptr;
@@ -874,11 +889,11 @@ void IToplevelProtocol::SetEventTargetForActorInternal(
 
 void IToplevelProtocol::ReplaceEventTargetForActor(
     IProtocol* aActor, nsIEventTarget* aEventTarget) {
-  
+  // The EventTarget of a ToplevelProtocol shall never be set.
   MOZ_RELEASE_ASSERT(aActor != this);
 
   int32_t id = aActor->Id();
-  
+  // The ID of the actor should have existed.
   MOZ_RELEASE_ASSERT(id != kNullActorId && id != kFreedActorId);
 
   MutexAutoLock lock(mEventTargetMutex);
@@ -895,5 +910,5 @@ void IToplevelProtocol::SetEventTargetForRoute(int32_t aRoute,
   mEventTargetMap.AddWithID(aEventTarget, aRoute);
 }
 
-}  
-}  
+}  // namespace ipc
+}  // namespace mozilla

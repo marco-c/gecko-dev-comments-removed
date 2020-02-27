@@ -301,8 +301,15 @@ void xpc::ErrorReport::LogToConsole() {
   LogToConsoleWithStack(nullptr, nullptr);
 }
 
-void xpc::ErrorReport::LogToConsoleWithStack(JS::HandleObject aStack,
-                                             JS::HandleObject aStackGlobal) {
+void xpc::ErrorReport::LogToConsoleWithStack(
+    JS::HandleObject aStack, JS::HandleObject aStackGlobal,
+    uint64_t aTimeWarpTarget ) {
+  
+  
+  if (recordreplay::HasDivergedFromRecording()) {
+    return;
+  }
+
   if (aStack) {
     MOZ_ASSERT(aStackGlobal);
     MOZ_ASSERT(JS_IsGlobalObject(aStackGlobal));
@@ -336,6 +343,7 @@ void xpc::ErrorReport::LogToConsoleWithStack(JS::HandleObject aStack,
     errorObject = new nsScriptError();
   }
   errorObject->SetErrorMessageName(mErrorMsgName);
+  errorObject->SetTimeWarpTarget(aTimeWarpTarget);
 
   nsresult rv = errorObject->InitWithWindowID(
       mErrorMsg, mFileName, mSourceLine, mLineNumber, mColumn, mFlags,

@@ -558,6 +558,12 @@ bool XPCJSContext::RecordScriptActivity(bool aActive) {
     return oldValue;
   }
 
+  
+  
+  if (recordreplay::IsRecordingOrReplaying()) {
+    return oldValue;
+  }
+
   if (!aActive) {
     ProcessHangMonitor::ClearHang();
   }
@@ -576,6 +582,12 @@ AutoScriptActivity::~AutoScriptActivity() {
 
 
 bool XPCJSContext::InterruptCallback(JSContext* cx) {
+  
+  
+  if (recordreplay::IsRecordingOrReplaying()) {
+    return true;
+  }
+
   XPCJSContext* self = XPCJSContext::Get();
 
   

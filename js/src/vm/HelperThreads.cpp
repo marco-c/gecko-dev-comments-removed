@@ -2000,7 +2000,7 @@ void HelperThread::destroy() {
 }
 
 void HelperThread::ensureRegisteredWithProfiler() {
-  if (profilingStack) {
+  if (profilingStack || mozilla::recordreplay::IsRecordingOrReplaying()) {
     return;
   }
 
@@ -2033,6 +2033,10 @@ void HelperThread::unregisterWithProfilerIfNeeded() {
 void HelperThread::ThreadMain(void* arg) {
   ThisThread::SetName("JS Helper");
 
+  
+  
+  
+  mozilla::recordreplay::AutoDisallowThreadEvents d;
   auto helper = static_cast<HelperThread*>(arg);
 
   helper->ensureRegisteredWithProfiler();

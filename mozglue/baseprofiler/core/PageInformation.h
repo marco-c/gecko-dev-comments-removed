@@ -68,7 +68,9 @@ class PageInformation final {
   
   Maybe<uint64_t> mBufferPositionWhenUnregistered;
 
-  mutable Atomic<int32_t, MemoryOrdering::ReleaseAcquire> mRefCnt;
+  mutable Atomic<int32_t, MemoryOrdering::ReleaseAcquire,
+                 recordreplay::Behavior::DontPreserve>
+      mRefCnt;
 };
 
 }  

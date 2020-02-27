@@ -262,7 +262,8 @@ class ArenaLists {
   };
 
   using ConcurrentUseState =
-      mozilla::Atomic<ConcurrentUse, mozilla::SequentiallyConsistent>;
+      mozilla::Atomic<ConcurrentUse, mozilla::SequentiallyConsistent,
+                      mozilla::recordreplay::Behavior::DontPreserve>;
 
   
   UnprotectedData<AllAllocKindArray<ConcurrentUseState>> concurrentUseState_;

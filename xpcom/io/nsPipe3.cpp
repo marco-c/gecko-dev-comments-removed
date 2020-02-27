@@ -134,7 +134,10 @@ class nsPipeInputStream final : public nsIAsyncInputStream,
                                 public nsIBufferedInputStream,
                                 public nsIInputStreamPriority {
  public:
-  NS_DECL_THREADSAFE_ISUPPORTS
+  
+  
+  
+  NS_DECL_THREADSAFE_ISUPPORTS_WITH_RECORDING(recordreplay::Behavior::Preserve)
   NS_DECL_NSIINPUTSTREAM
   NS_DECL_NSIASYNCINPUTSTREAM
   NS_DECL_NSITELLABLESTREAM
@@ -248,7 +251,8 @@ class nsPipeOutputStream : public nsIAsyncOutputStream, public nsIClassInfo {
   nsPipe* mPipe;
 
   
-  ThreadSafeAutoRefCnt mWriterRefCnt;
+  ThreadSafeAutoRefCntWithRecording<recordreplay::Behavior::Preserve>
+      mWriterRefCnt;
   int64_t mLogicalOffset;
   bool mBlocking;
 
@@ -267,7 +271,9 @@ class nsPipe final : public nsIPipe {
   friend class nsPipeOutputStream;
   friend class AutoReadSegment;
 
-  NS_DECL_THREADSAFE_ISUPPORTS
+  
+  
+  NS_DECL_THREADSAFE_ISUPPORTS_WITH_RECORDING(recordreplay::Behavior::Preserve)
   NS_DECL_NSIPIPE
 
   

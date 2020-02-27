@@ -2248,7 +2248,23 @@ bool BaselineCodeGen<Handler>::emit_LoopHead() {
   if (!emitWarmUpCounterIncrement()) {
     return false;
   }
-  return true;
+  return emitIncExecutionProgressCounter(R0.scratchReg());
+}
+
+template <typename Handler>
+bool BaselineCodeGen<Handler>::emitIncExecutionProgressCounter(
+    Register scratch) {
+  if (!mozilla::recordreplay::IsRecordingOrReplaying()) {
+    return true;
+  }
+
+  auto incCounter = [this]() {
+    masm.inc64(
+        AbsoluteAddress(mozilla::recordreplay::ExecutionProgressCounter()));
+    return true;
+  };
+  return emitTestScriptFlag(JSScript::MutableFlags::TrackRecordReplayProgress,
+                            true, incCounter, scratch);
 }
 
 template <typename Handler>
@@ -6717,6 +6733,10 @@ bool BaselineCodeGen<Handler>::emitPrologue() {
   
   
   emitInitFrameFields(R1.scratchReg());
+
+  if (!emitIncExecutionProgressCounter(R2.scratchReg())) {
+    return false;
+  }
 
   
   

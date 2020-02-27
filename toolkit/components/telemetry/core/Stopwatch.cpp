@@ -184,6 +184,12 @@ Timers::Timers() : mTimers(dom::RootingCx()) {
 
   mTimers = JS::NewMapObject(jsapi.cx());
   MOZ_RELEASE_ASSERT(mTimers);
+
+  
+  
+  if (recordreplay::IsRecordingOrReplaying()) {
+    mSuppressErrors = true;
+  }
 }
 
 JSObject* Timers::Get(JSContext* aCx, const nsAString& aHistogram,

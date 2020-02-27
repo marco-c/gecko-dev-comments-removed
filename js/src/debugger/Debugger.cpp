@@ -12,6 +12,7 @@
 #include "mozilla/GuardObjects.h"      
 #include "mozilla/HashTable.h"         
 #include "mozilla/Maybe.h"             
+#include "mozilla/RecordReplay.h"      
 #include "mozilla/ScopeExit.h"         
 #include "mozilla/ThreadLocal.h"       
 #include "mozilla/TimeStamp.h"         
@@ -5891,6 +5892,29 @@ bool Debugger::isCompilableUnit(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+
+bool Debugger::recordReplayProcessKind(JSContext* cx, unsigned argc,
+                                       Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  if (mozilla::recordreplay::IsMiddleman()) {
+    JSString* str = JS_NewStringCopyZ(cx, "Middleman");
+    if (!str) {
+      return false;
+    }
+    args.rval().setString(str);
+  } else if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+    JSString* str = JS_NewStringCopyZ(cx, "RecordingReplaying");
+    if (!str) {
+      return false;
+    }
+    args.rval().setString(str);
+  } else {
+    args.rval().setUndefined();
+  }
+  return true;
+}
+
 bool Debugger::CallData::adoptDebuggeeValue() {
   if (!args.requireAtLeast(cx, "Debugger.adoptDebuggeeValue", 1)) {
     return false;
@@ -6019,7 +6043,9 @@ const JSFunctionSpec Debugger::methods[] = {
     JS_FS_END};
 
 const JSFunctionSpec Debugger::static_methods[]{
-    JS_FN("isCompilableUnit", Debugger::isCompilableUnit, 1, 0), JS_FS_END};
+    JS_FN("isCompilableUnit", Debugger::isCompilableUnit, 1, 0),
+    JS_FN("recordReplayProcessKind", Debugger::recordReplayProcessKind, 0, 0),
+    JS_FS_END};
 
 DebuggerScript* Debugger::newDebuggerScript(
     JSContext* cx, Handle<DebuggerScriptReferent> referent) {

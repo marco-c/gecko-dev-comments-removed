@@ -561,6 +561,18 @@ static void TryRegisterStrongMemoryReporter() {
 
 Atomic<size_t> MessageChannel::gUnresolvedResponses;
 
+
+
+
+
+static const int32_t MiddlemanStartSeqno = -(1 << 30);
+
+
+bool MessageChannel::MessageOriginatesFromMiddleman(const Message& aMessage) {
+  MOZ_ASSERT(recordreplay::IsMiddleman());
+  return aMessage.seqno() < MiddlemanStartSeqno;
+}
+
 MessageChannel::MessageChannel(const char* aName, IToplevelProtocol* aListener)
     : mName(aName),
       mListener(aListener),
@@ -610,6 +622,10 @@ MessageChannel::MessageChannel(const char* aName, IToplevelProtocol* aListener)
 
   TryRegisterStrongMemoryReporter<PendingResponseReporter>();
   TryRegisterStrongMemoryReporter<ChannelCountReporter>();
+
+  if (recordreplay::IsMiddleman()) {
+    mNextSeqno = MiddlemanStartSeqno;
+  }
 }
 
 MessageChannel::~MessageChannel() {
@@ -2039,6 +2055,15 @@ void MessageChannel::MessageTask::Clear() {
 
 NS_IMETHODIMP
 MessageChannel::MessageTask::GetPriority(uint32_t* aPriority) {
+  if (recordreplay::IsRecordingOrReplaying()) {
+    
+    
+    
+    
+    
+    *aPriority = PRIORITY_NORMAL;
+    return NS_OK;
+  }
   switch (mMessage.priority()) {
     case Message::NORMAL_PRIORITY:
       *aPriority = PRIORITY_NORMAL;
@@ -2140,8 +2165,10 @@ void MessageChannel::DispatchSyncMessage(ActorLifecycleProxy* aProxy,
 
   int nestedLevel = aMsg.nested_level();
 
-  MOZ_RELEASE_ASSERT(nestedLevel == IPC::Message::NOT_NESTED ||
-                     NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(
+      nestedLevel == IPC::Message::NOT_NESTED || NS_IsMainThread() ||
+      
+      recordreplay::IsMiddleman());
 #ifdef MOZ_TASK_TRACER
   AutoScopedLabel autolabel("sync message %s", aMsg.name());
 #endif

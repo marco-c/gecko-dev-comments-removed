@@ -24,6 +24,7 @@
 #include "mozilla/ipc/Shmem.h"
 #include "mozilla/ipc/Transport.h"
 #include "mozilla/ipc/MessageLink.h"
+#include "mozilla/recordreplay/ChildIPC.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
@@ -405,8 +406,18 @@ class IToplevelProtocol : public IProtocol {
   bool IsTrackingSharedMemory(Shmem::SharedMemory* aSegment);
   bool DestroySharedMemory(Shmem& aShmem);
 
-  MessageChannel* GetIPCChannel() { return &mChannel; }
-  const MessageChannel* GetIPCChannel() const { return &mChannel; }
+  MessageChannel* GetIPCChannel() {
+    if (mMiddlemanChannelOverride) {
+      return mMiddlemanChannelOverride;
+    }
+    return &mChannel;
+  }
+  const MessageChannel* GetIPCChannel() const {
+    if (mMiddlemanChannelOverride) {
+      return mMiddlemanChannelOverride;
+    }
+    return &mChannel;
+  }
 
   
   void SetEventTargetForActorInternal(IProtocol* aActor,
@@ -509,6 +520,13 @@ class IToplevelProtocol : public IProtocol {
 
   already_AddRefed<nsIEventTarget> GetMessageEventTarget(const Message& aMsg);
 
+  void SetMiddlemanIPCChannel(MessageChannel* aChannel) {
+    
+    
+    MOZ_RELEASE_ASSERT(recordreplay::IsMiddleman());
+    mMiddlemanChannelOverride = aChannel;
+  }
+
  protected:
   
   
@@ -542,6 +560,12 @@ class IToplevelProtocol : public IProtocol {
   
   Mutex mEventTargetMutex;
   IDMap<nsCOMPtr<nsIEventTarget>> mEventTargetMap;
+
+  
+  
+  
+  
+  MessageChannel* mMiddlemanChannelOverride;
 
   MessageChannel mChannel;
 };
@@ -722,7 +746,16 @@ class Endpoint {
   
   bool Bind(PFooSide* aActor) {
     MOZ_RELEASE_ASSERT(mValid);
-    MOZ_RELEASE_ASSERT(mMyPid == base::GetCurrentProcId());
+    if (mMyPid != base::GetCurrentProcId()) {
+      
+      
+      
+      
+      MOZ_RELEASE_ASSERT(recordreplay::IsRecordingOrReplaying());
+      MOZ_RELEASE_ASSERT(recordreplay::IsReplaying() ||
+                         mMyPid == recordreplay::child::MiddlemanProcessId());
+      mMyPid = base::GetCurrentProcId();
+    }
 
     UniquePtr<Transport> transport =
         mozilla::ipc::OpenDescriptor(mTransport, mMode);

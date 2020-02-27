@@ -38,6 +38,11 @@ void nsWrapperCache::SetWrapperJSObject(JSObject* aWrapper) {
   if (aWrapper && !JS::ObjectIsTenured(aWrapper)) {
     CycleCollectedJSRuntime::Get()->NurseryWrapperAdded(this);
   }
+
+  
+  
+  
+  recordreplay::HoldJSObject(aWrapper);
 }
 
 void nsWrapperCache::ReleaseWrapper(void* aScriptObjectHolder) {

@@ -125,30 +125,37 @@ class ProfilingStackFrame {
 
   
   
-  Atomic<const char*, ReleaseAcquire> label_;
+  Atomic<const char*, ReleaseAcquire, recordreplay::Behavior::DontPreserve>
+      label_;
 
   
   
   
-  Atomic<const char*, ReleaseAcquire> dynamicString_;
+  Atomic<const char*, ReleaseAcquire, recordreplay::Behavior::DontPreserve>
+      dynamicString_;
 
   
-  Atomic<void*, ReleaseAcquire> spOrScript;
-
-  
-  
-  
-  
-  Atomic<int32_t, ReleaseAcquire> pcOffsetIfJS_;
+  Atomic<void*, ReleaseAcquire, recordreplay::Behavior::DontPreserve>
+      spOrScript;
 
   
   
   
   
-  mozilla::Atomic<uint64_t, mozilla::ReleaseAcquire> realmID_;
+  Atomic<int32_t, ReleaseAcquire, recordreplay::Behavior::DontPreserve>
+      pcOffsetIfJS_;
 
   
-  Atomic<uint32_t, ReleaseAcquire> flagsAndCategoryPair_;
+  
+  
+  
+  mozilla::Atomic<uint64_t, mozilla::ReleaseAcquire,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      realmID_;
+
+  
+  Atomic<uint32_t, ReleaseAcquire, recordreplay::Behavior::DontPreserve>
+      flagsAndCategoryPair_;
 
  public:
   ProfilingStackFrame() = default;
@@ -452,7 +459,9 @@ class ProfilingStack final {
   
   
   
-  Atomic<ProfilingStackFrame*, SequentiallyConsistent> frames{nullptr};
+  Atomic<ProfilingStackFrame*, SequentiallyConsistent,
+         recordreplay::Behavior::DontPreserve>
+      frames{nullptr};
 
   
   
@@ -465,7 +474,8 @@ class ProfilingStack final {
   
   
   
-  Atomic<uint32_t, ReleaseAcquire> stackPointer;
+  Atomic<uint32_t, ReleaseAcquire, recordreplay::Behavior::DontPreserve>
+      stackPointer;
 };
 
 class AutoGeckoProfilerEntry;

@@ -57,7 +57,10 @@ class AbstractThread : public nsISerialEventTarget {
   static already_AddRefed<AbstractThread> CreateEventTargetWrapper(
       nsIEventTarget* aEventTarget, bool aRequireTailDispatch);
 
-  NS_DECL_THREADSAFE_ISUPPORTS
+  
+  
+  
+  NS_DECL_THREADSAFE_ISUPPORTS_WITH_RECORDING(recordreplay::Behavior::Preserve)
 
   
   

@@ -3896,6 +3896,10 @@ bool js::gc::UnmarkGrayGCThingUnchecked(JSRuntime* rt, JS::GCCellPtr thing) {
   MOZ_ASSERT(thing);
   MOZ_ASSERT(thing.asCell()->isMarkedGray());
 
+  
+  
+  mozilla::recordreplay::AutoDisallowThreadEvents d;
+
   AutoGeckoProfilerEntry profilingStackFrame(
       TlsContext.get(), "UnmarkGrayGCThing", JS::ProfilingCategoryPair::GCCC);
 

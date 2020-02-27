@@ -171,7 +171,10 @@ void IdlePeriodState::RequestIdleToken(TimeStamp aLocalIdlePeriodHint) {
   if (!mIdleSchedulerInitialized) {
     mIdleSchedulerInitialized = true;
     if (StaticPrefs::idle_period_cross_process_scheduling() &&
-        XRE_IsContentProcess()) {
+        XRE_IsContentProcess() &&
+        
+        
+        !recordreplay::IsRecordingOrReplaying()) {
       
       
       mIdleScheduler = ipc::IdleSchedulerChild::GetMainThreadIdleScheduler();

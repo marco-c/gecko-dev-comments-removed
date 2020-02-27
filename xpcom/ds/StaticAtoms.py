@@ -2206,6 +2206,8 @@ STATIC_ATOMS = [
     Atom("DisplayPortBase", "_displayportbase"),
     Atom("forcemessagemanager", "forcemessagemanager"),
     Atom("preloadedState", "preloadedState"),
+    Atom("RecordExecution", "recordExecution"),
+    Atom("ReplayExecution", "replayExecution"),
 
     
     Atom("windows_win7", "windows-win7"),

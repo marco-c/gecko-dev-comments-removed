@@ -187,6 +187,10 @@ static const char kStaticCtorDtorWarning[] =
     "XPCOM objects created/destroyed from static ctor/dtor";
 
 static void AssertActivityIsLegal() {
+  if (recordreplay::IsRecordingOrReplaying()) {
+    
+    return;
+  }
   if (gActivityTLS == BAD_TLS_INDEX || PR_GetThreadPrivate(gActivityTLS)) {
     if (PR_GetEnv("MOZ_FATAL_STATIC_XPCOM_CTORS_DTORS")) {
       MOZ_CRASH_UNSAFE(kStaticCtorDtorWarning);
@@ -558,6 +562,12 @@ static void DoInitTraceLog(const char* aProcType) {
 #else
 #  define ENVVAR(x) x
 #endif
+
+  
+  
+  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+    return;
+  }
 
   bool defined = InitLog(ENVVAR("XPCOM_MEM_BLOAT_LOG"), "bloat/leaks",
                          &gBloatLog, aProcType);
