@@ -749,7 +749,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   
   using ScriptWeakMap = DebuggerWeakMap<BaseScript, DebuggerScript>;
   ScriptWeakMap scripts;
-  ScriptWeakMap lazyScripts;
 
   using BaseScriptVector = JS::GCVector<BaseScript*>;
 
