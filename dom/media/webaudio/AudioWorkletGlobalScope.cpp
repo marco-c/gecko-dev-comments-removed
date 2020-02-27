@@ -157,7 +157,7 @@ void AudioWorkletGlobalScope::RegisterProcessor(
 
 
 
-  if (!mNameToProcessorMap.Put(aName, &aProcessorCtor, fallible)) {
+  if (!mNameToProcessorMap.Put(aName, RefPtr{&aProcessorCtor}, fallible)) {
     aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
     return;
   }

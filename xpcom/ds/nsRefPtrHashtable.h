@@ -51,7 +51,7 @@ class nsRefPtrHashtable
   PtrType* GetWeak(KeyType aKey, bool* aFound = nullptr) const;
 
   
-  using base_type::Put;
+  
 
   template <typename U,
             typename = std::enable_if_t<std::is_base_of_v<PtrType, U>>>

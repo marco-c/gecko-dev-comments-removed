@@ -444,7 +444,7 @@ void JSWindowActorService::LoadJSWindowActorInfos(
     
     RefPtr<JSWindowActorProtocol> proto =
         JSWindowActorProtocol::FromIPC(aInfos[i]);
-    mDescriptors.Put(aInfos[i].name(), proto);
+    mDescriptors.Put(aInfos[i].name(), RefPtr{proto});
 
     
     for (EventTarget* target : mChromeEventTargets) {

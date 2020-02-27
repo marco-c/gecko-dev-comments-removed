@@ -85,7 +85,7 @@ GMPErr GMPStorageChild::CreateRecord(const nsCString& aRecordName,
   }
 
   RefPtr<GMPRecordImpl> record(new GMPRecordImpl(this, aRecordName, aClient));
-  mRecords.Put(aRecordName, record);  
+  mRecords.Put(aRecordName, RefPtr{record});  
 
   
   
