@@ -102,9 +102,6 @@ already_AddRefed<StyleSheet> StyleSheet::Constructor(
   }
 
   
-  
-  
-  
   auto sheet =
       MakeRefPtr<StyleSheet>(css::SheetParsingMode::eAuthorSheetFeatures,
                              CORSMode::CORS_NONE, dom::SRIMetadata());
@@ -114,7 +111,6 @@ already_AddRefed<StyleSheet> StyleSheet::Constructor(
   nsIURI* originalURI = nullptr;
   sheet->SetURIs(sheetURI, originalURI, baseURI);
 
-  sheet->SetTitle(aOptions.mTitle);
   sheet->SetPrincipal(constructorDocument->NodePrincipal());
   sheet->SetReferrerInfo(constructorDocument->GetReferrerInfo());
   sheet->mConstructorDocument = constructorDocument;
