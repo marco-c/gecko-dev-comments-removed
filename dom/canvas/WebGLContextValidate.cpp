@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "WebGLContext.h"
 
@@ -24,37 +24,36 @@
 #include "WebGLTexture.h"
 #include "WebGLValidateStrings.h"
 #include "WebGLVertexArray.h"
-#include "WebGLVertexAttribData.h"
 
 #if defined(MOZ_WIDGET_COCOA)
 #  include "nsCocoaFeatures.h"
 #endif
 
-////////////////////
-// Minimum value constants defined in GLES 2.0.25 $6.2 "State Tables":
-const uint32_t kMinMaxVertexAttribs = 8;            // Page 164
-const uint32_t kMinMaxVertexUniformVectors = 128;   // Page 164
-const uint32_t kMinMaxFragmentUniformVectors = 16;  // Page 164
-const uint32_t kMinMaxVaryingVectors = 8;           // Page 164
 
-const uint32_t kMinMaxVertexTextureImageUnits = 0;    // Page 164
-const uint32_t kMinMaxFragmentTextureImageUnits = 8;  // Page 164
-const uint32_t kMinMaxCombinedTextureImageUnits = 8;  // Page 164
+
+const uint32_t kMinMaxVertexAttribs = 8;            
+const uint32_t kMinMaxVertexUniformVectors = 128;   
+const uint32_t kMinMaxFragmentUniformVectors = 16;  
+const uint32_t kMinMaxVaryingVectors = 8;           
+
+const uint32_t kMinMaxVertexTextureImageUnits = 0;    
+const uint32_t kMinMaxFragmentTextureImageUnits = 8;  
+const uint32_t kMinMaxCombinedTextureImageUnits = 8;  
 
 const uint32_t kMinMaxDrawBuffers = 4;
 
-// These few deviate from the spec: (The minimum values in the spec are
-// ridiculously low)
-const uint32_t kMinMaxTextureSize = 1024;        // ES2 spec says `64` (p162)
-const uint32_t kMinMaxCubeMapTextureSize = 512;  // ES2 spec says `16` (p162)
-const uint32_t kMinMaxRenderbufferSize = 1024;   // ES2 spec says `1` (p164)
 
-// Minimum value constants defined in GLES 3.0.4 $6.2 "State Tables":
+
+const uint32_t kMinMaxTextureSize = 1024;        
+const uint32_t kMinMaxCubeMapTextureSize = 512;  
+const uint32_t kMinMaxRenderbufferSize = 1024;   
+
+
 const uint32_t kMinMax3DTextureSize = 256;
 const uint32_t kMinMaxArrayTextureLayers = 256;
 
-////////////////////
-// "Common" but usable values to avoid WebGL fingerprinting:
+
+
 const uint32_t kCommonMaxTextureSize = 2048;
 const uint32_t kCommonMaxCubeMapTextureSize = 2048;
 const uint32_t kCommonMaxRenderbufferSize = 2048;
@@ -70,7 +69,7 @@ const uint32_t kCommonMaxVaryingVectors = 8;
 
 const uint32_t kCommonMaxViewportDims = 4096;
 
-// The following ranges came from a 2013 Moto E and an old macbook.
+
 const float kCommonAliasedPointSizeRangeMin = 1;
 const float kCommonAliasedPointSizeRangeMax = 63;
 const float kCommonAliasedLineWidthRangeMin = 1;
@@ -79,14 +78,14 @@ const float kCommonAliasedLineWidthRangeMax = 1;
 template <class T>
 static bool RestrictCap(T* const cap, const T restrictedVal) {
   if (*cap < restrictedVal) {
-    return false;  // already too low!
+    return false;  
   }
 
   *cap = restrictedVal;
   return true;
 }
 
-////////////////////
+
 
 namespace mozilla {
 
@@ -180,7 +179,7 @@ bool WebGLContext::ValidateAttribArraySetter(uint32_t setterElemSize,
   return true;
 }
 
-// ---------------------
+
 
 static webgl::Limits MakeLimits(const WebGLContext& webgl) {
   webgl::Limits limits;
@@ -192,12 +191,12 @@ static webgl::Limits MakeLimits(const WebGLContext& webgl) {
 
   gl::GLContext& gl = *webgl.GL();
 
-  // -
-  // WebGL 1
+  
+  
 
-  // Note: GL_MAX_TEXTURE_UNITS is fixed at 4 for most desktop hardware,
-  // even though the hardware supports much more.  The
-  // GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS value is the accurate value.
+  
+  
+  
   gl.GetUIntegerv(LOCAL_GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS,
                   &limits.maxTexUnits);
 
@@ -258,9 +257,9 @@ static webgl::Limits MakeLimits(const WebGLContext& webgl) {
 bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
   MOZ_RELEASE_ASSERT(gl, "GFX: GL not initialized");
 
-  // Unconditionally create a new format usage authority. This is
-  // important when restoring contexts and extensions need to add
-  // formats back into the authority.
+  
+  
+  
   mFormatUsage = CreateFormatUsage(gl);
   if (!mFormatUsage) {
     *out_failReason = {"FEATURE_FAILURE_WEBGL_FORMAT",
@@ -283,8 +282,8 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
   mCanLoseContextInForeground =
       StaticPrefs::webgl_can_lose_context_in_foreground();
 
-  // These are the default values, see 6.2 State tables in the
-  // OpenGL ES 2.0.25 spec.
+  
+  
   mDriverColorMask = mColorWriteMask;
   mColorClearValue[0] = 0.f;
   mColorClearValue[1] = 0.f;
@@ -298,17 +297,17 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
 
   mLineWidth = 1.0;
 
-  /*
-  // Technically, we should be setting mStencil[...] values to
-  // `allOnes`, but either ANGLE breaks or the SGX540s on Try break.
-  GLuint stencilBits = 0;
-  gl->GetUIntegerv(LOCAL_GL_STENCIL_BITS, &stencilBits);
-  GLuint allOnes = ~(UINT32_MAX << stencilBits);
-  mStencilValueMaskFront = allOnes;
-  mStencilValueMaskBack  = allOnes;
-  mStencilWriteMaskFront = allOnes;
-  mStencilWriteMaskBack  = allOnes;
-  */
+  
+
+
+
+
+
+
+
+
+
+
 
   gl->GetUIntegerv(LOCAL_GL_STENCIL_VALUE_MASK, &mStencilValueMaskFront);
   gl->GetUIntegerv(LOCAL_GL_STENCIL_BACK_VALUE_MASK, &mStencilValueMaskBack);
@@ -335,7 +334,7 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
 
   mGenerateMipmapHint = LOCAL_GL_DONT_CARE;
 
-  // Bindings, etc.
+  
   mActiveTexture = 0;
   mDefaultFB_DrawBuffer0 = LOCAL_GL_BACK;
   mDefaultFB_ReadBuffer = LOCAL_GL_BACK;
@@ -354,11 +353,11 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
   mBoundDrawFramebuffer = nullptr;
   mBoundReadFramebuffer = nullptr;
 
-  // -----------------------
+  
 
   auto limits = MakeLimits(*this);
 
-  // -
+  
 
   if (limits.maxVertexAttribs < 8) {
     const nsPrintfCString reason("GL_MAX_VERTEX_ATTRIBS: %d is < 8!",
@@ -380,7 +379,7 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
   mBound2DArrayTextures.SetLength(limits.maxTexUnits);
   mBoundSamplers.SetLength(limits.maxTexUnits);
 
-  ////////////////
+  
 
   gl->GetUIntegerv(LOCAL_GL_MAX_RENDERBUFFER_SIZE, &mGLMaxRenderbufferSize);
   gl->GetUIntegerv(LOCAL_GL_MAX_TEXTURE_IMAGE_UNITS,
@@ -388,7 +387,7 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
   gl->GetUIntegerv(LOCAL_GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS,
                    &mGLMaxVertexTextureImageUnits);
 
-  ////////////////
+  
 
   if (gl->IsGLES()) {
     mGLMaxFragmentUniformVectors =
@@ -417,14 +416,14 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
       mGLMaxFragmentInputVectors =
           gl->GetIntAs<uint32_t>(LOCAL_GL_MAX_FRAGMENT_INPUT_COMPONENTS) / 4;
     } else {
-      // Same enum val as GL2's GL_MAX_VARYING_FLOATS.
+      
       mGLMaxFragmentInputVectors =
           gl->GetIntAs<uint32_t>(LOCAL_GL_MAX_VARYING_COMPONENTS) / 4;
       mGLMaxVertexOutputVectors = mGLMaxFragmentInputVectors;
     }
   }
 
-  ////////////////
+  
 
   if (StaticPrefs::webgl_min_capability_mode()) {
     bool ok = true;
@@ -505,7 +504,7 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
 
   mLimits = Some(limits);
 
-  ////////////////
+  
 
   if (gl->IsCompatibilityProfile()) {
     gl->fEnable(LOCAL_GL_POINT_SPRITE);
@@ -518,8 +517,8 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
 #ifdef XP_MACOSX
   if (gl->WorkAroundDriverBugs() && gl->Vendor() == gl::GLVendor::ATI &&
       !nsCocoaFeatures::IsAtLeastVersion(10, 9)) {
-    // The Mac ATI driver, in all known OSX version up to and including
-    // 10.8, renders points sprites upside-down. (Apple bug 11778921)
+    
+    
     gl->fPointParameterf(LOCAL_GL_POINT_SPRITE_COORD_ORIGIN,
                          LOCAL_GL_LOWER_LEFT);
   }
@@ -529,21 +528,21 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
     gl->fEnable(LOCAL_GL_TEXTURE_CUBE_MAP_SEAMLESS);
   }
 
-  // initialize shader translator
+  
   if (!sh::Initialize()) {
     *out_failReason = {"FEATURE_FAILURE_WEBGL_GLSL",
                        "GLSL translator initialization failed!"};
     return false;
   }
 
-  // Mesa can only be detected with the GL_VERSION string, of the form
-  // "2.1 Mesa 7.11.0"
+  
+  
   const char* versionStr = (const char*)(gl->fGetString(LOCAL_GL_VERSION));
   mIsMesa = strstr(versionStr, "Mesa");
 
-  // Notice that the point of calling fGetError here is not only to check for
-  // errors, but also to reset the error flags so that a subsequent WebGL
-  // getError call will give the correct result.
+  
+  
+  
   error = gl->fGetError();
   if (error != LOCAL_GL_NO_ERROR) {
     const nsPrintfCString reason(
@@ -555,7 +554,7 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
   }
 
   if (IsWebGL2() && !InitWebGL2(out_failReason)) {
-    // Todo: Bug 898404: Only allow WebGL2 on GL>=3.0 on desktop GL.
+    
     return false;
   }
 
@@ -565,24 +564,23 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
     return false;
   }
 
-  // OpenGL core profiles remove the default VAO object from version
-  // 4.0.0. We create a default VAO for all core profiles,
-  // regardless of version.
-  //
-  // GL Spec 4.0.0:
-  // (https://www.opengl.org/registry/doc/glspec40.core.20100311.pdf)
-  // in Section E.2.2 "Removed Features", pg 397: "[...] The default
-  // vertex array object (the name zero) is also deprecated. [...]"
+  
+  
+  
+  
+  
+  
+  
+  
   mDefaultVertexArray = WebGLVertexArray::Create(this);
   mDefaultVertexArray->BindVertexArray();
-  mDefaultVertexArray->mAttribs.resize(limits.maxVertexAttribs);
 
   mPixelStore.mFlipY = false;
   mPixelStore.mPremultiplyAlpha = false;
   mPixelStore.mColorspaceConversion = BROWSER_DEFAULT_WEBGL;
   mPixelStore.mRequireFastPath = false;
 
-  // GLES 3.0.4, p259:
+  
   mPixelStore.mUnpackImageHeight = 0;
   mPixelStore.mUnpackSkipImages = 0;
   mPixelStore.mUnpackRowLength = 0;
@@ -647,4 +645,4 @@ bool WebGLContext::ValidateFramebufferTarget(GLenum target) const {
   return false;
 }
 
-}  // namespace mozilla
+}  
