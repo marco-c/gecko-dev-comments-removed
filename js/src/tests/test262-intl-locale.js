@@ -11,9 +11,4 @@ if (typeof addIntlExtras === "function") {
         value: intlExtras.ListFormat,
         writable: true, enumerable: false, configurable: true
     });
-
-    Object.defineProperty(Intl, "Locale", {
-        value: intlExtras.Locale,
-        writable: true, enumerable: false, configurable: true
-    });
 }

@@ -1,10 +1,12 @@
 
 
-function isConstructor(c) {
-    return typeof c === "function" && c.hasOwnProperty("prototype");
+function IsIntlService(c) {
+    return typeof c === "function" &&
+           c.hasOwnProperty("prototype") &&
+           c.prototype.hasOwnProperty("resolvedOptions");
 }
 
-const IntlServices = Object.getOwnPropertyNames(Intl).map(name => Intl[name]).filter(isConstructor);
+const IntlServices = Object.getOwnPropertyNames(Intl).map(name => Intl[name]).filter(IsIntlService);
 
 
 const unicodeExtensions = [
