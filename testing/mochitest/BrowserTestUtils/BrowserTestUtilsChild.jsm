@@ -220,38 +220,9 @@ class BrowserTestUtilsChild extends JSWindowActorChild {
 
         let dies = function() {
           ChromeUtils.privateNoteIntentionalCrash();
-
-          switch (aMessage.data.crashType) {
-            case "CRASH_OOM": {
-              
-              
-              const OS = ChromeUtils.import(
-                "resource://gre/modules/osfile/osfile_shared_allthreads.jsm"
-              );
-              let libxul = ctypes.open(OS.Constants.Path.libxul);
-              let moz_xmalloc = libxul.declare(
-                "moz_xmalloc",
-                ctypes.default_abi,
-                 ctypes.voidptr_t,
-                 ctypes.size_t
-              );
-              let max_value = ctypes.cast(ctypes.ssize_t(-1), ctypes.size_t);
-              moz_xmalloc(max_value);
-              moz_xmalloc(max_value);
-              moz_xmalloc(max_value);
-              break;
-            }
-            case "CRASH_INVALID_POINTER_DEREF": 
-            default: {
-              
-              let zero = new ctypes.intptr_t(8);
-              let badptr = ctypes.cast(
-                zero,
-                ctypes.PointerType(ctypes.int32_t)
-              );
-              badptr.contents;
-            }
-          }
+          let zero = new ctypes.intptr_t(8);
+          let badptr = ctypes.cast(zero, ctypes.PointerType(ctypes.int32_t));
+          badptr.contents;
         };
 
         dump("\nEt tu, Brute?\n");
