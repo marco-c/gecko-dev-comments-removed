@@ -57,6 +57,11 @@ function FinderParent(browser) {
   this._foundSearchString = null;
   this._lastFoundBrowsingContext = null;
 
+  
+  this._caseSensitive = false;
+  this._entireWord = false;
+  this._matchDiacritics = false;
+
   this.swapBrowser(browser);
 }
 
@@ -164,8 +169,7 @@ FinderParent.prototype = {
   gatherBrowsingContexts(aBrowsingContext) {
     let list = [aBrowsingContext];
 
-    let children = aBrowsingContext.getChildren();
-    for (let child of children) {
+    for (let child of aBrowsingContext.children) {
       list.push(...this.gatherBrowsingContexts(child));
     }
 
@@ -224,18 +228,21 @@ FinderParent.prototype = {
   },
 
   set caseSensitive(aSensitive) {
+    this._caseSensitive = aSensitive;
     this.sendMessageToAllContexts("Finder:CaseSensitive", {
       caseSensitive: aSensitive,
     });
   },
 
   set entireWord(aEntireWord) {
+    this._entireWord = aEntireWord;
     this.sendMessageToAllContexts("Finder:EntireWord", {
       entireWord: aEntireWord,
     });
   },
 
   set matchDiacritics(aMatchDiacritics) {
+    this._matchDiacritics = aMatchDiacritics;
     this.sendMessageToAllContexts("Finder:MatchDiacritics", {
       matchDiacritics: aMatchDiacritics,
     });
@@ -308,6 +315,10 @@ FinderParent.prototype = {
         : Ci.nsITypeAheadFind.FIND_NEXT;
     }
     aArgs.findAgain = aFindNext;
+
+    aArgs.caseSensitive = this._caseSensitive;
+    aArgs.matchDiacritics = this._matchDiacritics;
+    aArgs.entireWord = this._entireWord;
 
     aArgs.useSubFrames = this.needSubFrameSearch(searchList);
     if (aArgs.useSubFrames) {

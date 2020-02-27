@@ -2084,8 +2084,7 @@
         
         
         if (scope) {
-          let contexts = browsingContext.getChildren();
-          for (let context of contexts) {
+          for (let context of browsingContext.children) {
             sendToChildren(context, scope);
           }
         }
