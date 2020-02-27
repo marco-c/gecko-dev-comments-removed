@@ -747,11 +747,9 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   GeneratorWeakMap generatorFrames;
 
   
-  typedef DebuggerWeakMap<JSScript, DebuggerScript> ScriptWeakMap;
+  using ScriptWeakMap = DebuggerWeakMap<BaseScript, DebuggerScript>;
   ScriptWeakMap scripts;
-
-  using LazyScriptWeakMap = DebuggerWeakMap<LazyScript, DebuggerScript>;
-  LazyScriptWeakMap lazyScripts;
+  ScriptWeakMap lazyScripts;
 
   using BaseScriptVector = JS::GCVector<BaseScript*>;
 
@@ -1023,7 +1021,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
-  template <typename Map>
+  template <typename ReferentType, typename Map>
   typename Map::WrapperType* wrapVariantReferent(
       JSContext* cx, Map& map,
       Handle<typename Map::WrapperType::ReferentVariant> referent);
