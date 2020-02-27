@@ -295,8 +295,8 @@ class MOZ_STACK_CLASS WSRunScanner {
 
 
 
-
-  nsINode* GetWSBoundingParent() const;
+  nsIContent* GetEditableBlockParentOrTopmotEditableInlineContent(
+      nsIContent* aContent) const;
 
   static bool IsBlockNode(nsINode* aNode);
 

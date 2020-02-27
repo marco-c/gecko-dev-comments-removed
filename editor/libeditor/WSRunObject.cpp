@@ -654,22 +654,26 @@ nsresult WSRunObject::AdjustWhitespace() {
 
 
 
-nsINode* WSRunScanner::GetWSBoundingParent() const {
-  if (NS_WARN_IF(!mScanStartPoint.IsSet())) {
+nsIContent* WSRunScanner::GetEditableBlockParentOrTopmotEditableInlineContent(
+    nsIContent* aContent) const {
+  if (NS_WARN_IF(!aContent)) {
     return nullptr;
   }
+  NS_ASSERTION(mHTMLEditor->IsEditable(aContent),
+               "Given content is not editable");
   
   
   
-  OwningNonNull<nsINode> wsBoundingParent = *mScanStartPoint.GetContainer();
-  while (!IsBlockNode(wsBoundingParent)) {
-    nsCOMPtr<nsINode> parent = wsBoundingParent->GetParentNode();
-    if (!parent || !mHTMLEditor->IsEditable(parent)) {
+  nsIContent* editableBlockParentOrTopmotEditableInlineContent = nullptr;
+  for (nsIContent* content = aContent;
+       content && mHTMLEditor->IsEditable(content);
+       content = content->GetParent()) {
+    editableBlockParentOrTopmotEditableInlineContent = content;
+    if (IsBlockNode(editableBlockParentOrTopmotEditableInlineContent)) {
       break;
     }
-    wsBoundingParent = parent;
   }
-  return wsBoundingParent;
+  return editableBlockParentOrTopmotEditableInlineContent;
 }
 
 nsresult WSRunScanner::GetWSNodes() {
@@ -677,7 +681,20 @@ nsresult WSRunScanner::GetWSNodes() {
   
   
   EditorDOMPoint start(mScanStartPoint), end(mScanStartPoint);
-  nsCOMPtr<nsINode> wsBoundingParent = GetWSBoundingParent();
+  nsIContent* scanStartContent = mScanStartPoint.GetContainerAsContent();
+  if (NS_WARN_IF(!scanStartContent)) {
+    
+    
+    
+    
+    return NS_ERROR_FAILURE;
+  }
+  nsIContent* editableBlockParentOrTopmotEditableInlineContent =
+      GetEditableBlockParentOrTopmotEditableInlineContent(scanStartContent);
+  if (NS_WARN_IF(!editableBlockParentOrTopmotEditableInlineContent)) {
+    
+    editableBlockParentOrTopmotEditableInlineContent = scanStartContent;
+  }
 
   
   if (Text* textNode = mScanStartPoint.GetContainerAsText()) {
@@ -715,7 +732,8 @@ nsresult WSRunScanner::GetWSNodes() {
 
   while (!mStartNode) {
     
-    nsCOMPtr<nsIContent> priorNode = GetPreviousWSNode(start, wsBoundingParent);
+    nsCOMPtr<nsIContent> priorNode = GetPreviousWSNode(
+        start, editableBlockParentOrTopmotEditableInlineContent);
     if (priorNode) {
       if (IsBlockNode(priorNode)) {
         mStartNode = start.GetContainer();
@@ -777,10 +795,13 @@ nsresult WSRunScanner::GetWSNodes() {
       }
     } else {
       
+      
       mStartNode = start.GetContainer();
       mStartOffset = start.Offset();
       mStartReason = WSType::thisBlock;
-      mStartReasonNode = wsBoundingParent;
+      
+      
+      mStartReasonNode = editableBlockParentOrTopmotEditableInlineContent;
     }
   }
 
@@ -820,7 +841,8 @@ nsresult WSRunScanner::GetWSNodes() {
 
   while (!mEndNode) {
     
-    nsCOMPtr<nsIContent> nextNode = GetNextWSNode(end, wsBoundingParent);
+    nsCOMPtr<nsIContent> nextNode =
+        GetNextWSNode(end, editableBlockParentOrTopmotEditableInlineContent);
     if (nextNode) {
       if (IsBlockNode(nextNode)) {
         
@@ -884,10 +906,13 @@ nsresult WSRunScanner::GetWSNodes() {
       }
     } else {
       
+      
       mEndNode = end.GetContainer();
       mEndOffset = end.Offset();
       mEndReason = WSType::thisBlock;
-      mEndReasonNode = wsBoundingParent;
+      
+      
+      mEndReasonNode = editableBlockParentOrTopmotEditableInlineContent;
     }
   }
 
@@ -1839,7 +1864,9 @@ nsresult WSRunObject::CheckTrailingNBSPOfRun(WSFragment* aRun) {
         rightCheck = true;
       }
       if ((aRun->mRightType & WSType::block) &&
-          IsBlockNode(GetWSBoundingParent())) {
+          (IsBlockNode(GetEditableBlockParentOrTopmotEditableInlineContent(
+               mScanStartPoint.GetContainerAsContent())) ||
+           IsBlockNode(mScanStartPoint.GetContainerAsContent()))) {
         RefPtr<Selection> selection = htmlEditor->GetSelection();
         if (NS_WARN_IF(!selection)) {
           return NS_ERROR_FAILURE;
