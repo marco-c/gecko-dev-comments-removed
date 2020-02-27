@@ -956,9 +956,6 @@ static bool Locale_baseName(JSContext* cx, const CallArgs& args) {
   MOZ_ASSERT(IsLocale(args.thisv()));
 
   
-  
-
-  
   auto* locale = &args.thisv().toObject().as<LocaleObject>();
   args.rval().setString(locale->baseName());
   return true;
@@ -985,6 +982,22 @@ static bool Locale_calendar(JSContext* cx, unsigned argc, Value* vp) {
   
   CallArgs args = CallArgsFromVp(argc, vp);
   return CallNonGenericMethod<IsLocale, Locale_calendar>(cx, args);
+}
+
+
+static bool Locale_caseFirst(JSContext* cx, const CallArgs& args) {
+  MOZ_ASSERT(IsLocale(args.thisv()));
+
+  
+  auto* locale = &args.thisv().toObject().as<LocaleObject>();
+  return GetUnicodeExtension(cx, locale, "kf", args.rval());
+}
+
+
+static bool Locale_caseFirst(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsLocale, Locale_caseFirst>(cx, args);
 }
 
 
@@ -1020,22 +1033,6 @@ static bool Locale_hourCycle(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
-static bool Locale_caseFirst(JSContext* cx, const CallArgs& args) {
-  MOZ_ASSERT(IsLocale(args.thisv()));
-
-  
-  auto* locale = &args.thisv().toObject().as<LocaleObject>();
-  return GetUnicodeExtension(cx, locale, "kf", args.rval());
-}
-
-
-static bool Locale_caseFirst(JSContext* cx, unsigned argc, Value* vp) {
-  
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsLocale, Locale_caseFirst>(cx, args);
-}
-
-
 static bool Locale_numeric(JSContext* cx, const CallArgs& args) {
   MOZ_ASSERT(IsLocale(args.thisv()));
 
@@ -1047,7 +1044,12 @@ static bool Locale_numeric(JSContext* cx, const CallArgs& args) {
   }
 
   
+  
+  
   MOZ_ASSERT(value.isUndefined() || value.isString());
+  MOZ_ASSERT_IF(value.isString(),
+                !StringEqualsLiteral(&value.toString()->asLinear(), "true"));
+
   args.rval().setBoolean(value.isString() && value.toString()->empty());
   return true;
 }
@@ -1094,7 +1096,6 @@ static bool Locale_language(JSContext* cx, const CallArgs& args) {
   size_t length = language.length;
 
   
-  
   JSString* str = NewDependentString(cx, baseName, index, length);
   if (!str) {
     return false;
@@ -1126,7 +1127,6 @@ static bool Locale_script(JSContext* cx, const CallArgs& args) {
 
   auto script = BaseNameParts(baseName).script;
 
-  
   
   if (!script) {
     args.rval().setUndefined();
@@ -1209,9 +1209,9 @@ static const JSFunctionSpec locale_methods[] = {
 static const JSPropertySpec locale_properties[] = {
     JS_PSG("baseName", Locale_baseName, 0),
     JS_PSG("calendar", Locale_calendar, 0),
+    JS_PSG("caseFirst", Locale_caseFirst, 0),
     JS_PSG("collation", Locale_collation, 0),
     JS_PSG("hourCycle", Locale_hourCycle, 0),
-    JS_PSG("caseFirst", Locale_caseFirst, 0),
     JS_PSG("numeric", Locale_numeric, 0),
     JS_PSG("numberingSystem", Locale_numberingSystem, 0),
     JS_PSG("language", Locale_language, 0),
