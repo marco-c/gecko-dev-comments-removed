@@ -4,8 +4,15 @@
 
 
 :root {
+  
+  --console-row-height: 20px;
+  
+
   --console-output-line-height: calc(14 / 11);
   --console-output-vertical-padding: 3px;
+  
+
+  --console-input-extra-padding: 2px;
   
   --console-inline-start-gutter: 32px;
   
@@ -91,6 +98,8 @@
   width: 100%;
   
   margin-top: -1px;
+  
+  min-height: calc(var(--console-row-height) + 2px);
   border-top: 1px solid var(--console-message-border);
   border-bottom: 1px solid var(--console-message-border);
   
@@ -114,9 +123,16 @@
 }
 
 
+.message:first-child {
+  border-top-color: transparent !important;
+}
 
-.webconsole-app:not(.jsterm-editor) .message:last-child {
+
+
+ .webconsole-app:not(.jsterm-editor) .message:last-child {
   border-bottom-width: 0;
+  
+  min-height: calc(var(--console-row-height) + 1px);
 }
 
 
@@ -220,8 +236,7 @@
   margin-inline-end: calc(11px - var(--console-icon-horizontal-offset));
 }
 
-.message > .icon,
-.eager-evaluation-result > .icon {
+.message > .icon {
   flex: none;
   align-self: flex-start;
   
@@ -435,16 +450,16 @@ html #webconsole-notificationbox {
 }
 
 .jsterm-input-container {
+  position: relative;
   max-width: 100%;
   background-color: var(--console-input-background);
-  border-top: 1px solid var(--theme-splitter-color);
-  position: relative;
+  font-family: var(--monospace-font-family);
+  font-size: var(--theme-code-font-size);
+  line-height: var(--console-output-line-height);
 }
 
 
-.webconsole-app .jsterm-input-container > .CodeMirror {
-  font-size: var(--theme-code-font-size);
-  line-height: var(--console-output-line-height);
+.jsterm-input-container > .CodeMirror {
   
   padding-inline-start: calc(var(--console-inline-start-gutter) - 4px);
   
@@ -453,15 +468,19 @@ html #webconsole-notificationbox {
   
   background-image: url(chrome://devtools/skin/images/webconsole/input.svg);
   background-position-x: calc(10px + var(--console-icon-horizontal-offset));
-  background-position-y: 5px;
+  background-position-y: 4px;
   background-repeat: no-repeat;
   background-size: 12px 12px;
   -moz-context-properties: fill;
   fill: var(--theme-icon-dimmed-color);
 }
 
-.webconsole-app .jsterm-input-container > .CodeMirror-focused {
+.jsterm-input-container > .CodeMirror-focused {
   fill: var(--theme-icon-checked-color);
+}
+
+.jsterm-input-container .CodeMirror-lines {
+  padding-block: var(--console-output-vertical-padding);
 }
 
 .webconsole-app .cm-auto-complete-shadow-text::after {
