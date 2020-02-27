@@ -1193,9 +1193,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
-  DebuggerScript* wrapScript(JSContext* cx, HandleScript script);
-
-  DebuggerScript* wrapLazyScript(JSContext* cx, Handle<LazyScript*> script);
+  DebuggerScript* wrapScript(JSContext* cx, Handle<BaseScript*> script);
 
   
 
