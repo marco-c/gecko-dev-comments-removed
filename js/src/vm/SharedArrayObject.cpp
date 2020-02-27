@@ -35,6 +35,14 @@ static uint32_t SharedArrayAccessibleSize(uint32_t length) {
 }
 
 
+
+
+
+static size_t SharedArrayMappedSize(uint32_t length) {
+  return SharedArrayAccessibleSize(length) + gc::SystemPageSize();
+}
+
+
 SharedArrayRawBuffer* SharedArrayRawBuffer::Allocate(
     uint32_t length, const Maybe<uint32_t>& maxSize,
     const Maybe<size_t>& mappedSize) {
@@ -264,7 +272,7 @@ SharedArrayBufferObject* SharedArrayBufferObject::New(
 
 bool SharedArrayBufferObject::acceptRawBuffer(SharedArrayRawBuffer* buffer,
                                               uint32_t length) {
-  if (!zone()->addSharedMemory(buffer, length,
+  if (!zone()->addSharedMemory(buffer, SharedArrayMappedSize(length),
                                MemoryUse::SharedArrayRawBuffer)) {
     return false;
   }
@@ -275,7 +283,8 @@ bool SharedArrayBufferObject::acceptRawBuffer(SharedArrayRawBuffer* buffer,
 }
 
 void SharedArrayBufferObject::dropRawBuffer() {
-  zoneFromAnyThread()->removeSharedMemory(rawBufferObject(), byteLength(),
+  size_t size = SharedArrayMappedSize(byteLength());
+  zoneFromAnyThread()->removeSharedMemory(rawBufferObject(), size,
                                           MemoryUse::SharedArrayRawBuffer);
   setReservedSlot(RAWBUF_SLOT, UndefinedValue());
 }
