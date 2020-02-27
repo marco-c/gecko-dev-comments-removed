@@ -223,8 +223,7 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
       mHasPresented(false),
       mIsReadyToHandleInputEvents(false),
       mIsMouseEnterIntoWidgetEventSuppressed(false),
-      mIsDestroyingForProcessSwitch(false),
-      mIsActiveRecordReplayTab(false) {
+      mIsDestroyingForProcessSwitch(false) {
   MOZ_ASSERT(aManager);
   
   
@@ -646,8 +645,6 @@ void BrowserParent::DestroyInternal() {
         ->ParentDestroy();
   }
 #endif
-
-  SetIsActiveRecordReplayTab(false);
 }
 
 void BrowserParent::Destroy() {
@@ -3343,11 +3340,6 @@ void BrowserParent::SetDocShellIsActive(bool isActive) {
     }
   }
 #endif
-
-  
-  if (Manager()->IsRecordingOrReplaying()) {
-    SetIsActiveRecordReplayTab(isActive);
-  }
 }
 
 bool BrowserParent::GetHasPresented() { return mHasPresented; }
@@ -3927,16 +3919,6 @@ void BrowserParent::SetBrowserHost(BrowserHost* aBrowser) {
   MOZ_ASSERT(!aBrowser ||
              (!mBrowserBridgeParent && !mBrowserHost && !mFrameElement));
   mBrowserHost = aBrowser;
-}
-
-
-size_t BrowserParent::gNumActiveRecordReplayTabs;
-
-void BrowserParent::SetIsActiveRecordReplayTab(bool aIsActive) {
-  if (aIsActive != mIsActiveRecordReplayTab) {
-    gNumActiveRecordReplayTabs += aIsActive ? 1 : -1;
-    mIsActiveRecordReplayTab = aIsActive;
-  }
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvSetSystemFont(

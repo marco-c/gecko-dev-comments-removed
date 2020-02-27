@@ -91,7 +91,6 @@
 #include "mozilla/XorShift128PlusRNG.h"
 
 using namespace mozilla;
-using namespace mozilla::recordreplay;
 
 
 
@@ -331,16 +330,16 @@ class GAtomic {
   
   
   
-  static Atomic<Time, Relaxed, Behavior::DontPreserve> sNow;
+  static Atomic<Time, Relaxed> sNow;
 
   
   
   
-  static Atomic<Delay, ReleaseAcquire, Behavior::DontPreserve> sAllocDelay;
+  static Atomic<Delay, ReleaseAcquire> sAllocDelay;
 };
 
-Atomic<Time, Relaxed, Behavior::DontPreserve> GAtomic::sNow;
-Atomic<Delay, ReleaseAcquire, Behavior::DontPreserve> GAtomic::sAllocDelay;
+Atomic<Time, Relaxed> GAtomic::sNow;
+Atomic<Delay, ReleaseAcquire> GAtomic::sAllocDelay;
 
 
 

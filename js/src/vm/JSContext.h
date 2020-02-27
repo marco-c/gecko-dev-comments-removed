@@ -187,9 +187,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   
   
-  mozilla::Atomic<bool, mozilla::ReleaseAcquire,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      freeUnusedMemory;
+  mozilla::Atomic<bool, mozilla::ReleaseAcquire> freeUnusedMemory;
 
  public:
   
@@ -537,20 +535,33 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   js::ContextData<int32_t> suppressGC;
 
+  
+  enum class GCUse {
+    
+    None,
+
+    
+    
+    Marking,
+
+    
+    
+    
+    Sweeping,
+
+    
+    
+    
+    Finalizing
+  };
+  
+
 #ifdef DEBUG
   
-  
-  
-  
-  js::ContextData<bool> gcSweeping;
+  js::ContextData<GCUse> gcUse;
 
   
-  
-  js::ContextData<JS::Zone*> gcSweepingZone;
-
-  
-  
-  js::ContextData<bool> gcMarking;
+  js::ContextData<JS::Zone*> gcSweepZone;
 
   
   js::ContextData<size_t> isTouchingGrayThings;
@@ -631,8 +642,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   
  private:
-  mozilla::Atomic<bool, mozilla::SequentiallyConsistent,
-                  mozilla::recordreplay::Behavior::DontPreserve>
+  mozilla::Atomic<bool, mozilla::SequentiallyConsistent>
       suppressProfilerSampling;
 
  public:
@@ -837,9 +847,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   js::ContextData<bool> interruptCallbackDisabled;
 
   
-  mozilla::Atomic<uint32_t, mozilla::Relaxed,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      interruptBits_;
+  mozilla::Atomic<uint32_t, mozilla::Relaxed> interruptBits_;
 
   
   
@@ -914,9 +922,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
     ionReturnOverride_ = v;
   }
 
-  mozilla::Atomic<uintptr_t, mozilla::Relaxed,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      jitStackLimit;
+  mozilla::Atomic<uintptr_t, mozilla::Relaxed> jitStackLimit;
 
   
   js::ContextData<uintptr_t> jitStackLimitNoInterrupt;
@@ -1306,30 +1312,51 @@ class MOZ_RAII AutoSetThreadIsPerformingGC {
   }
 };
 
-
-struct MOZ_RAII AutoSetThreadIsSweeping {
+struct MOZ_RAII AutoSetThreadGCUse {
+ protected:
 #ifndef DEBUG
-  explicit AutoSetThreadIsSweeping(Zone* zone = nullptr) {}
+  explicit AutoSetThreadGCUse(JSContext::GCUse use, Zone* sweepZone = nullptr) {
+  }
 #else
-  explicit AutoSetThreadIsSweeping(Zone* zone = nullptr)
-      : cx(TlsContext.get()),
-        prevState(cx->gcSweeping),
-        prevZone(cx->gcSweepingZone) {
-    cx->gcSweeping = true;
-    cx->gcSweepingZone = zone;
+  explicit AutoSetThreadGCUse(JSContext::GCUse use, Zone* sweepZone = nullptr)
+      : cx(TlsContext.get()), prevUse(cx->gcUse), prevZone(cx->gcSweepZone) {
+    MOZ_ASSERT_IF(sweepZone, use == JSContext::GCUse::Sweeping);
+    cx->gcUse = use;
+    cx->gcSweepZone = sweepZone;
   }
 
-  ~AutoSetThreadIsSweeping() {
-    cx->gcSweeping = prevState;
-    cx->gcSweepingZone = prevZone;
-    MOZ_ASSERT_IF(!cx->gcSweeping, !cx->gcSweepingZone);
+  ~AutoSetThreadGCUse() {
+    cx->gcUse = prevUse;
+    cx->gcSweepZone = prevZone;
+    MOZ_ASSERT_IF(cx->gcUse == JSContext::GCUse::None, !cx->gcSweepZone);
   }
 
  private:
   JSContext* cx;
-  bool prevState;
+  JSContext::GCUse prevUse;
   JS::Zone* prevZone;
 #endif
+};
+
+
+
+struct MOZ_RAII AutoSetThreadIsMarking : public AutoSetThreadGCUse {
+  explicit AutoSetThreadIsMarking()
+      : AutoSetThreadGCUse(JSContext::GCUse::Marking) {}
+};
+
+
+
+struct MOZ_RAII AutoSetThreadIsSweeping : public AutoSetThreadGCUse {
+  explicit AutoSetThreadIsSweeping(Zone* zone = nullptr)
+      : AutoSetThreadGCUse(JSContext::GCUse::Sweeping, zone) {}
+};
+
+
+
+struct MOZ_RAII AutoSetThreadIsFinalizing : public AutoSetThreadGCUse {
+  explicit AutoSetThreadIsFinalizing()
+      : AutoSetThreadGCUse(JSContext::GCUse::Finalizing) {}
 };
 
 
@@ -1343,21 +1370,6 @@ class MOZ_RAII AutoSuppressNurseryCellAlloc {
   }
   ~AutoSuppressNurseryCellAlloc() { cx_->nurserySuppressions_--; }
 };
-
-#ifdef DEBUG
-
-struct MOZ_RAII AutoSetThreadIsMarking {
-  AutoSetThreadIsMarking() : cx(TlsContext.get()), prevState(cx->gcMarking) {
-    cx->gcMarking = true;
-  }
-
-  ~AutoSetThreadIsMarking() { cx->gcMarking = prevState; }
-
- private:
-  JSContext* cx;
-  bool prevState;
-};
-#endif  
 
 }  
 

@@ -17,8 +17,6 @@
 
 #include "mozilla/ipc/MessageChannel.h"
 #include "mozilla/ipc/Transport.h"
-#include "mozilla/recordreplay/ChildIPC.h"
-#include "mozilla/recordreplay/ParentIPC.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/SystemGroup.h"
 #include "mozilla/Unused.h"
@@ -577,7 +575,6 @@ IToplevelProtocol::IToplevelProtocol(const char* aName, ProtocolId aProtoId,
       mOtherPid(mozilla::ipc::kInvalidProcessId),
       mLastLocalId(0),
       mEventTargetMutex("ProtocolEventTargetMutex"),
-      mMiddlemanChannelOverride(nullptr),
       mChannel(aName, this) {
   mToplevel = this;
 }
@@ -589,15 +586,7 @@ base::ProcessId IToplevelProtocol::OtherPid() const {
 }
 
 void IToplevelProtocol::SetOtherProcessId(base::ProcessId aOtherPid) {
-  
-  
-  
-  if (recordreplay::IsRecordingOrReplaying() &&
-      aOtherPid == recordreplay::child::MiddlemanProcessId()) {
-    mOtherPid = recordreplay::child::ParentProcessId();
-  } else {
-    mOtherPid = aOtherPid;
-  }
+  mOtherPid = aOtherPid;
 }
 
 bool IToplevelProtocol::Open(UniquePtr<Transport> aTransport,
@@ -640,11 +629,7 @@ bool IToplevelProtocol::IsOnCxxStack() const {
 int32_t IToplevelProtocol::NextId() {
   
   
-  
   int32_t tag = 0;
-  if (recordreplay::IsMiddleman()) {
-    tag |= 1 << 0;
-  }
   if (GetSide() == ParentSide) {
     tag |= 1 << 1;
   }

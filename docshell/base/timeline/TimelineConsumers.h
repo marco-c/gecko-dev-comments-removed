@@ -122,7 +122,7 @@ class TimelineConsumers : public nsIObserver {
   LinkedList<MarkersStorage> mMarkersStores;
 
   
-  static StaticMutexNotRecorded sMutex;
+  static StaticMutex sMutex;
 };
 
 }  

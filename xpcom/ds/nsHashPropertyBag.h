@@ -36,12 +36,7 @@ class nsHashPropertyBagBase : public nsIWritablePropertyBag,
 
 class nsHashPropertyBag : public nsHashPropertyBagBase {
  public:
-  nsHashPropertyBag() {
-    
-    if (mozilla::recordreplay::IsRecordingOrReplaying()) {
-      AddRef();
-    }
-  }
+  nsHashPropertyBag() = default;
   NS_DECL_THREADSAFE_ISUPPORTS
 
  protected:

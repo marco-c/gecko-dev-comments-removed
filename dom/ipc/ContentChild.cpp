@@ -94,7 +94,6 @@
 #include "mozilla/PerformanceUtils.h"
 #include "mozilla/plugins/PluginInstanceParent.h"
 #include "mozilla/plugins/PluginModuleParent.h"
-#include "mozilla/recordreplay/ParentIPC.h"
 #include "mozilla/widget/ScreenManager.h"
 #include "mozilla/widget/WidgetMessageUtils.h"
 #include "nsBaseDragService.h"
@@ -686,17 +685,6 @@ bool ContentChild::Init(MessageLoop* aIOLoop, base::ProcessId aParentPid,
   nsresult rv = nsThreadManager::get().Init();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return false;
-  }
-
-  
-  
-  if (recordreplay::IsMiddleman()) {
-    SetMiddlemanIPCChannel(recordreplay::parent::ChannelToUIProcess());
-
-    
-    
-    
-    ActorConnected();
   }
 
   if (!Open(std::move(aChannel), aParentPid, aIOLoop)) {
@@ -1380,11 +1368,7 @@ void ContentChild::InitXPCOM(
                          aXPCOMInit.haveBidiKeyboards());
 
   
-  
-  
-  if (!recordreplay::IsMiddleman()) {
-    SendPJavaScriptConstructor();
-  }
+  SendPJavaScriptConstructor();
 
   if (aXPCOMInit.domainPolicy().active()) {
     nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
@@ -1702,8 +1686,7 @@ static bool StartMacOSContentSandbox() {
   }
 
   
-  if (Preferences::GetBool("security.sandbox.content.mac.earlyinit") &&
-      !recordreplay::IsRecordingOrReplaying()) {
+  if (Preferences::GetBool("security.sandbox.content.mac.earlyinit")) {
     return true;
   }
 
@@ -1874,11 +1857,7 @@ static void FirstIdle(void) {
   MOZ_ASSERT(gFirstIdleTask);
   gFirstIdleTask = nullptr;
 
-  
-  
-  if (!recordreplay::IsRecordingOrReplaying()) {
-    ContentChild::GetSingleton()->SendFirstIdle();
-  }
+  ContentChild::GetSingleton()->SendFirstIdle();
 }
 
 mozilla::jsipc::PJavaScriptChild* ContentChild::AllocPJavaScriptChild() {
@@ -2098,9 +2077,6 @@ jsipc::CPOWManager* ContentChild::GetCPOWManager() {
   if (PJavaScriptChild* c =
           LoneManagedOrNullAsserts(ManagedPJavaScriptChild())) {
     return CPOWManagerFor(c);
-  }
-  if (recordreplay::IsMiddleman()) {
-    return nullptr;
   }
   return CPOWManagerFor(SendPJavaScriptConstructor());
 }
@@ -3639,12 +3615,6 @@ mozilla::ipc::IPCResult ContentChild::RecvResumeInputEventQueue() {
 mozilla::ipc::IPCResult ContentChild::RecvAddDynamicScalars(
     nsTArray<DynamicScalarDefinition>&& aDefs) {
   TelemetryIPC::AddDynamicScalarDefinitions(aDefs);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult ContentChild::RecvSaveRecording(
-    const FileDescriptor& aFile) {
-  recordreplay::parent::SaveRecording(aFile);
   return IPC_OK();
 }
 

@@ -510,9 +510,7 @@ class ProcessExecutableMemory {
 
   
   
-  mozilla::Atomic<size_t, mozilla::ReleaseAcquire,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      pagesAllocated_;
+  mozilla::Atomic<size_t, mozilla::ReleaseAcquire> pagesAllocated_;
 
   
   size_t cursor_;

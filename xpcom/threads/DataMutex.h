@@ -100,9 +100,9 @@ class DataMutexBase {
 
 
 
-class StaticMutexNameless : public StaticMutexNotRecorded {
+class StaticMutexNameless : public StaticMutex {
  public:
-  explicit StaticMutexNameless(const char* aName) : StaticMutexNotRecorded() {}
+  explicit StaticMutexNameless(const char* aName) : StaticMutex() {}
 
  private:
   

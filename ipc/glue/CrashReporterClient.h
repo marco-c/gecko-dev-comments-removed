@@ -32,11 +32,6 @@ class CrashReporterClient {
   
   template <typename T>
   static void InitSingleton(T* aToplevelProtocol) {
-    
-    if (recordreplay::IsRecordingOrReplaying()) {
-      return;
-    }
-
     Shmem shmem;
     if (!AllocShmem(aToplevelProtocol, &shmem)) {
       MOZ_DIAGNOSTIC_ASSERT(false, "failed to allocate crash reporter shmem");

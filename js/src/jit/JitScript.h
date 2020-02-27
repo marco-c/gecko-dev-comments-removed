@@ -181,9 +181,7 @@ class alignas(uintptr_t) JitScript final {
   
   
   
-  mozilla::Atomic<uint32_t, mozilla::Relaxed,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      warmUpCount_ = {};
+  mozilla::Atomic<uint32_t, mozilla::Relaxed> warmUpCount_ = {};
 
   
   uint32_t typeSetOffset_ = 0;

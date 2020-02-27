@@ -34,9 +34,7 @@ class AtomMarkingRuntime {
  public:
   
   
-  mozilla::Atomic<size_t, mozilla::SequentiallyConsistent,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      allocatedWords;
+  mozilla::Atomic<size_t, mozilla::SequentiallyConsistent> allocatedWords;
 
   AtomMarkingRuntime() : allocatedWords(0) {}
 

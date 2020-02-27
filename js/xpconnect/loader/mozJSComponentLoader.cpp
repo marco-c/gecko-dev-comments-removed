@@ -839,13 +839,6 @@ nsresult mozJSComponentLoader::ObjectForLocation(
     
     
     
-    if (recordreplay::HasDivergedFromRecording()) {
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    
-    
     
     
     

@@ -318,13 +318,7 @@ inline void XPCWrappedNative::SweepTearOffs() {
     
     
     if (!to->GetJSObjectPreserveColor()) {
-      RefPtr<nsISupports> native = to->TakeNative();
-      if (native && mozilla::recordreplay::IsRecordingOrReplaying()) {
-        
-        
-        
-        mozilla::DeferredFinalize(native.forget().take());
-      }
+      to->SetNative(nullptr);
       to->SetInterface(nullptr);
     }
   }

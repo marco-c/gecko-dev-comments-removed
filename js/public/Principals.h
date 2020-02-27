@@ -20,9 +20,7 @@ struct JSStructuredCloneWriter;
 
 struct JSPrincipals {
   
-  mozilla::Atomic<int32_t, mozilla::SequentiallyConsistent,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      refcount;
+  mozilla::Atomic<int32_t, mozilla::SequentiallyConsistent> refcount;
 
 #ifdef JS_DEBUG
   

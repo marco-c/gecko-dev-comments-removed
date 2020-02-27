@@ -86,7 +86,6 @@
 #include "mozilla/layers/ShadowLayers.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/plugins/PPluginWidgetChild.h"
-#include "mozilla/recordreplay/ParentIPC.h"
 #include "nsBrowserStatusFilter.h"
 #include "nsColorPickerProxy.h"
 #include "nsCommandParams.h"
@@ -291,11 +290,7 @@ class BrowserChild::DelayedDeleteRunnable final : public Runnable,
     }
 
     
-    
-    
-    
-    if (mBrowserChild->IPCOpen() &&
-        !recordreplay::parent::IsMiddlemanWithRecordingChild()) {
+    if (mBrowserChild->IPCOpen()) {
       Unused << PBrowserChild::Send__delete__(mBrowserChild);
     }
 
@@ -588,11 +583,6 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
   mAPZEventState = new APZEventState(mPuppetWidget, std::move(callback));
 
   mIPCOpen = true;
-
-  
-  if (recordreplay::IsRecordingOrReplaying()) {
-    mPuppetWidget->CreateCompositor();
-  }
 
 #if !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_THUNDERBIRD) && \
     !defined(MOZ_SUITE)
@@ -1185,13 +1175,6 @@ mozilla::ipc::IPCResult BrowserChild::RecvShow(
     return IPC_FAIL_NO_REASON(this);
   }
 
-  
-  
-  
-  if (recordreplay::IsRecordingOrReplaying()) {
-    recordreplay::child::CreateCheckpoint();
-  }
-
   UpdateVisibility();
 
   return IPC_OK();
@@ -1239,9 +1222,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvCompositorOptionsChanged(
 
 mozilla::ipc::IPCResult BrowserChild::RecvUpdateDimensions(
     const DimensionInfo& aDimensionInfo) {
-  
-  
-  if (mLayersConnected.isNothing() && !recordreplay::IsRecordingOrReplaying()) {
+  if (mLayersConnected.isNothing()) {
     return IPC_OK();
   }
 
@@ -2236,20 +2217,6 @@ mozilla::ipc::IPCResult BrowserChild::RecvActivateFrameEvent(
   return IPC_OK();
 }
 
-
-
-static bool LoadScriptInMiddleman(const nsString& aURL) {
-  return  
-      (StringBeginsWith(aURL, NS_LITERAL_STRING("resource://devtools/")) &&
-       recordreplay::parent::DebuggerRunsInMiddleman())
-      
-      
-      || aURL.EqualsLiteral("chrome://global/content/browser-child.js")
-      
-      
-      || aURL.EqualsLiteral("chrome://browser/content/content-sessionStore.js");
-}
-
 mozilla::ipc::IPCResult BrowserChild::RecvLoadRemoteScript(
     const nsString& aURL, const bool& aRunInGlobalScope) {
   if (!InitBrowserChildMessageManager())
@@ -2261,11 +2228,6 @@ mozilla::ipc::IPCResult BrowserChild::RecvLoadRemoteScript(
                            mBrowserChildMessageManager->GetOrCreateWrapper());
   if (!mm) {
     
-    return IPC_OK();
-  }
-
-  
-  if (recordreplay::IsMiddleman() && !LoadScriptInMiddleman(aURL)) {
     return IPC_OK();
   }
 
@@ -2844,10 +2806,7 @@ void BrowserChild::InitAPZState() {
 
 void BrowserChild::NotifyPainted() {
   if (!mNotified) {
-    
-    if (!recordreplay::IsRecordingOrReplaying()) {
-      SendNotifyCompositorTransaction();
-    }
+    SendNotifyCompositorTransaction();
     mNotified = true;
   }
 }

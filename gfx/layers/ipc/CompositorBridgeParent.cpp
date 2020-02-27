@@ -360,7 +360,7 @@ CompositorBridgeParent::CompositorBridgeParent(
 
 void CompositorBridgeParent::InitSameProcess(widget::CompositorWidget* aWidget,
                                              const LayersId& aLayerTreeId) {
-  MOZ_ASSERT(XRE_IsParentProcess() || recordreplay::IsRecordingOrReplaying());
+  MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(NS_IsMainThread());
 
   mWidget = aWidget;
@@ -1021,11 +1021,7 @@ void CompositorBridgeParent::CompositeToTarget(VsyncId aId, DrawTarget* aTarget,
   bool requestNextFrame =
       mCompositionManager->TransformShadowTree(time, mVsyncRate);
 
-  
-  
-  
-  
-  if (requestNextFrame && !recordreplay::IsRecordingOrReplaying()) {
+  if (requestNextFrame) {
     ScheduleComposition();
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
     

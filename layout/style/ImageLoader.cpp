@@ -99,18 +99,11 @@ void ImageLoader::DropDocumentReference() {
 
 
 
-
-
 template <typename Elem, typename Item,
           typename Comparator = nsDefaultComparator<Elem, Item>>
 static size_t GetMaybeSortedIndex(const nsTArray<Elem>& aArray,
                                   const Item& aItem, bool* aFound,
                                   Comparator aComparator = Comparator()) {
-  if (recordreplay::IsRecordingOrReplaying()) {
-    size_t index = aArray.IndexOf(aItem, 0, aComparator);
-    *aFound = index != nsTArray<Elem>::NoIndex;
-    return *aFound ? index + 1 : aArray.Length();
-  }
   size_t index = aArray.IndexOfFirstElementGt(aItem, aComparator);
   *aFound = index > 0 && aComparator.Equals(aItem, aArray.ElementAt(index - 1));
   return index;
@@ -298,11 +291,7 @@ void ImageLoader::RemoveFrameToRequestMapping(imgIRequest* aRequest,
   if (auto entry = mFrameToRequestMap.Lookup(aFrame)) {
     const auto& requestSet = entry.Data();
     MOZ_ASSERT(requestSet, "This should never be null");
-    if (recordreplay::IsRecordingOrReplaying()) {
-      requestSet->RemoveElement(aRequest);
-    } else {
-      requestSet->RemoveElementSorted(aRequest);
-    }
+    requestSet->RemoveElementSorted(aRequest);
     if (requestSet->IsEmpty()) {
       aFrame->SetHasImageRequest(false);
       entry.Remove();

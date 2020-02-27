@@ -85,9 +85,7 @@ class nsThreadManager : public nsIThreadManager {
   unsigned mCurThreadIndex;  
   RefPtr<nsThread> mMainThread;
   PRThread* mMainPRThread;
-  mozilla::Atomic<bool, mozilla::SequentiallyConsistent,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      mInitialized;
+  mozilla::Atomic<bool, mozilla::SequentiallyConsistent> mInitialized;
 
   
   RefPtr<BackgroundEventTarget> mBackgroundEventTarget;

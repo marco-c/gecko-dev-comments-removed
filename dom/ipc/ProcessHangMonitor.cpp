@@ -140,11 +140,7 @@ class HangMonitorChild : public PProcessHangMonitorChild,
  private:
   void ShutdownOnThread();
 
-  
-  
-  static Atomic<HangMonitorChild*, SequentiallyConsistent,
-                recordreplay::Behavior::DontPreserve>
-      sInstance;
+  static Atomic<HangMonitorChild*, SequentiallyConsistent> sInstance;
 
   const RefPtr<ProcessHangMonitor> mHangMonitor;
   Monitor mMonitor;
@@ -177,9 +173,7 @@ class HangMonitorChild : public PProcessHangMonitorChild,
   Atomic<bool> mPaintWhileInterruptingJSActive;
 };
 
-Atomic<HangMonitorChild*, SequentiallyConsistent,
-       recordreplay::Behavior::DontPreserve>
-    HangMonitorChild::sInstance;
+Atomic<HangMonitorChild*, SequentiallyConsistent> HangMonitorChild::sInstance;
 
 
 
@@ -310,9 +304,7 @@ class HangMonitorParent : public PProcessHangMonitorParent,
 
 HangMonitorChild::HangMonitorChild(ProcessHangMonitor* aMonitor)
     : mHangMonitor(aMonitor),
-      
-      
-      mMonitor("HangMonitorChild lock", recordreplay::Behavior::DontPreserve),
+      mMonitor("HangMonitorChild lock"),
       mSentReport(false),
       mTerminateScript(false),
       mTerminateGlobal(false),
@@ -340,13 +332,6 @@ HangMonitorChild::~HangMonitorChild() {
 
 bool HangMonitorChild::InterruptCallback() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  
-  
-  
-  if (recordreplay::IsRecordingOrReplaying()) {
-    return true;
-  }
 
   
   

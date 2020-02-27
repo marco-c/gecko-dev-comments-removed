@@ -38,20 +38,16 @@ const StructuredSpewer::NameArray StructuredSpewer::names_ = {
 
 bool StructuredSpewer::ensureInitializationAttempted() {
   if (!outputInitializationAttempted_) {
+    char filename[2048] = {0};
     
-    
-    if (!mozilla::recordreplay::IsRecordingOrReplaying()) {
-      char filename[2048] = {0};
-      
-      if (getenv("SPEW_UPLOAD") && getenv("MOZ_UPLOAD_DIR")) {
-        SprintfLiteral(filename, "%s/spew_output", getenv("MOZ_UPLOAD_DIR"));
-      } else if (getenv("SPEW_FILE")) {
-        SprintfLiteral(filename, "%s", getenv("SPEW_FILE"));
-      } else {
-        SprintfLiteral(filename, "%s/spew_output", DEFAULT_SPEW_DIRECTORY);
-      }
-      tryToInitializeOutput(filename);
+    if (getenv("SPEW_UPLOAD") && getenv("MOZ_UPLOAD_DIR")) {
+      SprintfLiteral(filename, "%s/spew_output", getenv("MOZ_UPLOAD_DIR"));
+    } else if (getenv("SPEW_FILE")) {
+      SprintfLiteral(filename, "%s", getenv("SPEW_FILE"));
+    } else {
+      SprintfLiteral(filename, "%s/spew_output", DEFAULT_SPEW_DIRECTORY);
     }
+    tryToInitializeOutput(filename);
     
     
     
@@ -62,9 +58,7 @@ bool StructuredSpewer::ensureInitializationAttempted() {
 }
 
 void StructuredSpewer::tryToInitializeOutput(const char* path) {
-  static mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire,
-                         mozilla::recordreplay::Behavior::DontPreserve>
-      threadCounter;
+  static mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> threadCounter;
 
   char suffix_path[2048] = {0};
   SprintfLiteral(suffix_path, "%s.%d.%d", path, getpid(), threadCounter++);
@@ -106,10 +100,6 @@ bool StructuredSpewer::enabled(JSScript* script) {
     return false;
   }
 
-  
-  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
-    return false;
-  }
   static const char* pattern = getenv("SPEW_FILTER");
   if (!pattern || MatchJSScript(script, pattern)) {
     return true;

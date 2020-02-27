@@ -349,7 +349,7 @@ class TimeLog {
 #else
 class TimeLog {
  public:
-  TimeLog() {}
+  TimeLog() = default;
   void Checkpoint(const char* aEvent) {}
 };
 #endif
@@ -429,7 +429,7 @@ class EdgePool {
    public:
     Iterator() : mPointer(nullptr) {}
     explicit Iterator(PtrInfoOrBlock* aPointer) : mPointer(aPointer) {}
-    Iterator(const Iterator& aOther) : mPointer(aOther.mPointer) {}
+    Iterator(const Iterator& aOther) = default;
 
     Iterator& operator++() {
       if (!mPointer->ptrInfo) {
@@ -788,7 +788,7 @@ struct CCGraph {
   CCGraph()
       : mRootCount(0), mPtrInfoMap(kInitialMapLength), mOutOfMemory(false) {}
 
-  ~CCGraph() {}
+  ~CCGraph() = default;
 
   void Init() { MOZ_ASSERT(IsEmpty(), "Failed to call CCGraph::Clear"); }
 
@@ -913,7 +913,7 @@ struct nsPurpleBuffer {
         "ill-sized nsPurpleBuffer::mEntries");
   }
 
-  ~nsPurpleBuffer() {}
+  ~nsPurpleBuffer() = default;
 
   
   template <class PurpleVisitor>
@@ -1974,7 +1974,7 @@ CCGraphBuilder::CCGraphBuilder(CCGraph& aGraph, CycleCollectorResults& aResults,
              nsCycleCollectionTraversalCallback::WantAllTraces());
 }
 
-CCGraphBuilder::~CCGraphBuilder() {}
+CCGraphBuilder::~CCGraphBuilder() = default;
 
 PtrInfo* CCGraphBuilder::AddNode(void* aPtr,
                                  nsCycleCollectionParticipant* aParticipant) {
@@ -2433,11 +2433,6 @@ class SnowWhiteKiller : public TraceCallbacks {
 
  public:
   bool Visit(nsPurpleBuffer& aBuffer, nsPurpleBufferEntry* aEntry) {
-    
-    if (recordreplay::IsRecordingOrReplaying()) {
-      return true;
-    }
-
     if (mBudget) {
       if (mBudget->isOverBudget()) {
         return false;
@@ -2645,11 +2640,6 @@ void nsCycleCollector::ForgetSkippable(js::SliceBudget& aBudget,
   
   
   MOZ_ASSERT(IsIdle());
-
-  
-  if (recordreplay::IsRecordingOrReplaying()) {
-    return;
-  }
 
   if (mCCJSRuntime) {
     mCCJSRuntime->PrepareForForgetSkippable();
@@ -3375,9 +3365,7 @@ bool nsCycleCollector::Collect(ccType aCCType, SliceBudget& aBudget,
   CheckThreadSafety();
 
   
-  
-  if (mActivelyCollecting || mFreeingSnowWhite ||
-      recordreplay::IsRecordingOrReplaying()) {
+  if (mActivelyCollecting || mFreeingSnowWhite) {
     return false;
   }
   mActivelyCollecting = true;
@@ -3795,9 +3783,7 @@ uint32_t nsCycleCollector_suspectedCount() {
   
   MOZ_ASSERT(data);
 
-  
-  
-  if (!data->mCollector || recordreplay::IsRecordingOrReplaying()) {
+  if (!data->mCollector) {
     return 0;
   }
 

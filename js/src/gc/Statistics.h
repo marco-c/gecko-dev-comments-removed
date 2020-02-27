@@ -349,10 +349,8 @@ struct Statistics {
   PhaseTimeTable parallelTimes;
 
   
-  EnumeratedArray<
-      Count, COUNT_LIMIT,
-      mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire,
-                      mozilla::recordreplay::Behavior::DontPreserve>>
+  EnumeratedArray<Count, COUNT_LIMIT,
+                  mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire>>
       counts;
 
   

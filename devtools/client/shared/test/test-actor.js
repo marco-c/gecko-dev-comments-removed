@@ -20,7 +20,6 @@ const {
   getCSSStyleRules,
 } = require("devtools/shared/inspector/css-logic");
 const InspectorUtils = require("InspectorUtils");
-const Debugger = require("Debugger");
 
 
 
@@ -502,13 +501,6 @@ var TestActor = (exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
   windowForMouseEvent: function(node) {
-    
-    
-    
-    
-    if (Debugger.recordReplayProcessKind() == "Middleman") {
-      return this.targetActor.window;
-    }
     return node.ownerDocument.defaultView;
   },
 

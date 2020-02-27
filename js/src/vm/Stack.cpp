@@ -206,10 +206,6 @@ bool InterpreterFrame::prologue(JSContext* cx) {
   if (isEvalFrame() || isGlobalFrame()) {
     HandleObject env = environmentChain();
     if (!CheckGlobalOrEvalDeclarationConflicts(cx, env, script)) {
-      
-      if (script->trackRecordReplayProgress()) {
-        mozilla::recordreplay::AdvanceExecutionProgressCounter();
-      }
       return false;
     }
     return probes::EnterScript(cx, script, nullptr, this);
@@ -662,14 +658,30 @@ JS::ProfilingFrameIterator::getPhysicalFrameAndEntry(
   void* returnAddr = jsJitIter().resumePCinCurrentFrame();
   jit::JitcodeGlobalTable* table =
       cx_->runtime()->jitRuntime()->getJitcodeGlobalTable();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  const jit::JitcodeGlobalEntry* lookedUpEntry = nullptr;
   if (samplePositionInProfilerBuffer_) {
-    *entry = table->lookupForSamplerInfallible(
-        returnAddr, cx_->runtime(), *samplePositionInProfilerBuffer_);
+    lookedUpEntry = table->lookupForSampler(returnAddr, cx_->runtime(),
+                                            *samplePositionInProfilerBuffer_);
   } else {
-    *entry = table->lookupInfallible(returnAddr);
+    lookedUpEntry = table->lookup(returnAddr);
   }
 
-  MOZ_ASSERT(entry->isIon() || entry->isIonCache() || entry->isBaseline() ||
+  
+  if (!lookedUpEntry) {
+    return mozilla::Nothing();
+  }
+  *entry = *lookedUpEntry;
+
+  MOZ_ASSERT(entry->isIon() || entry->isBaseline() ||
              entry->isBaselineInterpreter() || entry->isDummy());
 
   

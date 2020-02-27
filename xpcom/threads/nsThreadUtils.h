@@ -451,9 +451,7 @@ class Runnable : public nsIRunnable
 #  endif
 {
  public:
-  
-  
-  NS_DECL_THREADSAFE_ISUPPORTS_WITH_RECORDING(recordreplay::Behavior::Preserve)
+  NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIRUNNABLE
 #  ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
   NS_DECL_NSINAMED
