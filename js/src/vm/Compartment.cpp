@@ -244,7 +244,7 @@ bool Compartment::getNonWrapperObjectForCurrentCompartment(
       return !!obj;
     }
 
-    MOZ_ASSERT(IsWindowProxy(obj));
+    MOZ_ASSERT(IsWindowProxy(obj) || IsDOMRemoteProxyObject(obj));
 
     
     
