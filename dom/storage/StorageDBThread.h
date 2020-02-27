@@ -15,7 +15,7 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/storage/StatementCache.h"
 #include "mozilla/TimeStamp.h"
-#include "nsAutoPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "nsString.h"
 #include "nsCOMPtr.h"
 #include "nsClassHashtable.h"
@@ -256,7 +256,7 @@ class StorageDBThread final {
     nsClassHashtable<nsCStringHashKey, DBOperation> mUpdates;
 
     
-    nsTArray<nsAutoPtr<DBOperation> > mExecList;
+    nsTArray<UniquePtr<DBOperation> > mExecList;
 
     
     uint32_t mFlushFailureCount;
@@ -280,7 +280,7 @@ class StorageDBThread final {
     Monitor& GetMonitor() { return mMonitor; }
 
    private:
-    virtual ~ThreadObserver() {}
+    virtual ~ThreadObserver() = default;
     bool mHasPendingEvents;
     
     Monitor mMonitor;
@@ -301,14 +301,14 @@ class StorageDBThread final {
     }
 
    private:
-    ~ShutdownRunnable() {}
+    ~ShutdownRunnable() = default;
 
     NS_DECL_NSIRUNNABLE
   };
 
  public:
   StorageDBThread();
-  virtual ~StorageDBThread() {}
+  virtual ~StorageDBThread() = default;
 
   static StorageDBThread* Get();
 
