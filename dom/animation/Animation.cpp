@@ -370,9 +370,15 @@ void Animation::UpdatePlaybackRate(double aPlaybackRate) {
 
   mPendingPlaybackRate = Some(aPlaybackRate);
 
-  
-  
   if (Pending()) {
+    
+    
+    
+    
+    
+    
+    
+    UpdateEffect(PostRestyleMode::Never);
     return;
   }
 
