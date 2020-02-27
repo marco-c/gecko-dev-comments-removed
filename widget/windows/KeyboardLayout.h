@@ -609,7 +609,11 @@ class MOZ_STACK_CLASS NativeKey final {
 
 
 
-  bool IsTypingUnicodeScalarValue() const {
+
+
+
+
+  bool MaybeTypingUnicodeScalarValue() const {
     return !mIsExtended && IsSysKeyDownOrKeyUpMessage() && IsAlt() &&
            !IsControl() && !IsShift() &&
            ((mScanCode >= 0x004F && mScanCode <= 0x0052) ||  

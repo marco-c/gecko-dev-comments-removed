@@ -3495,12 +3495,18 @@ void NativeKey::ComputeInputtingStringWithKeyboardLayout() {
   
   
   
-  if (IsTypingUnicodeScalarValue()) {
-    MOZ_ASSERT(mMsg.message == WM_SYSKEYDOWN);
-    MOZ_ASSERT(!mCommittedCharsAndModifiers.IsEmpty());
-    char16_t num = mCommittedCharsAndModifiers.CharAt(0);
-    MOZ_ASSERT(num >= '0' && num <= '9');
-    mUnshiftedString.Append(num, MODIFIER_NONE);
+  if (MaybeTypingUnicodeScalarValue()) {
+    if (!mCommittedCharsAndModifiers.IsEmpty()) {
+      MOZ_ASSERT(mMsg.message == WM_SYSKEYDOWN);
+      char16_t num = mCommittedCharsAndModifiers.CharAt(0);
+      MOZ_ASSERT(num >= '0' && num <= '9');
+      mUnshiftedString.Append(num, MODIFIER_NONE);
+      return;
+    }
+    
+    
+    
+    MOZ_ASSERT(!KeyboardLayout::IsPrintableCharKey(mVirtualKeyCode));
     return;
   }
 
@@ -3984,7 +3990,15 @@ void KeyboardLayout::InitNativeKey(NativeKey& aNativeKey) {
   
   
   
-  if (aNativeKey.IsTypingUnicodeScalarValue()) {
+  
+  
+  
+  
+  
+  
+  
+  if (aNativeKey.MaybeTypingUnicodeScalarValue() &&
+      KeyboardLayout::IsPrintableCharKey(aNativeKey.mVirtualKeyCode)) {
     
     
     
