@@ -919,7 +919,6 @@ impl OpacityBinding {
 
     
     
-    
     pub fn update(&mut self, scene_properties: &SceneProperties) {
         let mut new_opacity = 1.0;
 
