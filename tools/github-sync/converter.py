@@ -164,6 +164,7 @@ def get_real_base_hg_rev(hg_data, commit_map):
 
 
 
+
 def prune_boring(rev):
     while rev in hg_commits:
         parent_pruned = False
@@ -174,6 +175,8 @@ def prune_boring(rev):
             if hg_commits[parent_rev].touches_sync_code:
                 continue
             if len(hg_commits[parent_rev].parents) > 1:
+                continue
+            if parent_rev in hg_to_git_commit_map:
                 continue
 
             
