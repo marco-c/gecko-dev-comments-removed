@@ -881,6 +881,8 @@ pref("devtools.performance.recording.threads", "[\"GeckoMain\",\"Compositor\",\"
 
 pref("devtools.performance.recording.objdirs", "[]");
 
+pref("devtools.performance.popup.intro-displayed", false);
+
 
 pref("view_source.editor.path", "");
 
