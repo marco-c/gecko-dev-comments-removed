@@ -3145,6 +3145,14 @@ nsresult HTMLEditor::DeleteParentBlocksWithTransactionIfEmpty(
       wsScannerForPoint.ScanNextVisibleNodeOrBlockBoundaryFrom(aPoint);
   if (forwardScanFromPointResult.ReachedBRElement()) {
     
+    
+    
+    
+    
+    NS_ASSERTION(wsScannerForPoint.GetEndReasonContent() ==
+                     forwardScanFromPointResult.BRElementPtr(),
+                 "End reason is not the reached <br> element");
+    
     if (IsVisibleBRElement(wsScannerForPoint.GetEndReasonContent())) {
       return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
     }
