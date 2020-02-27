@@ -40,11 +40,12 @@ bool GCRuntime::registerWithFinalizationGroup(JSContext* cx,
   return true;
 }
 
-void GCRuntime::markFinalizationGroupData(JSTracer* trc) {
+void GCRuntime::markFinalizationGroupRoots(JSTracer* trc) {
+  
   
   
   for (GCZonesIter zone(this); !zone.done(); zone.next()) {
-    auto& map = zone->finalizationRecordMap();
+    Zone::FinalizationRecordMap& map = zone->finalizationRecordMap();
     for (Zone::FinalizationRecordMap::Enum e(map); !e.empty(); e.popFront()) {
       e.front().value().trace(trc);
     }
@@ -66,29 +67,32 @@ void GCRuntime::sweepFinalizationGroups(Zone* zone) {
   
   
 
-  auto& map = zone->finalizationRecordMap();
+  Zone::FinalizationRecordMap& map = zone->finalizationRecordMap();
   for (Zone::FinalizationRecordMap::Enum e(map); !e.empty(); e.popFront()) {
-    auto& records = e.front().value();
+    FinalizationRecordVector& records = e.front().value();
+
+    
+    records.sweep();
+
+    
+    records.eraseIf([](JSObject* obj) {
+      FinalizationRecordObject* record = UnwrapFinalizationRecord(obj);
+      return !record ||              
+             !record->isActive() ||  
+                                     
+             !record->sweep();       
+                                     
+    });
+
+    
     if (IsAboutToBeFinalized(&e.front().mutableKey())) {
-      
       for (JSObject* obj : records) {
-        if (FinalizationRecordObject* record = UnwrapFinalizationRecord(obj)) {
-          FinalizationGroupObject* group = record->group();
-          if (group) {
-            group->queueRecordToBeCleanedUp(record);
-            queueFinalizationGroupForCleanup(group);
-          }
-        }
+        FinalizationRecordObject* record = UnwrapFinalizationRecord(obj);
+        FinalizationGroupObject* group = record->groupDuringGC(this);
+        group->queueRecordToBeCleanedUp(record);
+        queueFinalizationGroupForCleanup(group);
       }
       e.removeFront();
-    } else {
-      
-      records.sweep();
-      
-      records.eraseIf([](JSObject* obj) {
-        FinalizationRecordObject* record = UnwrapFinalizationRecord(obj);
-        return !record || !record->group();
-      });
     }
   }
 }

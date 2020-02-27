@@ -1,0 +1,12 @@
+
+
+
+target = {};
+group = new FinalizationGroup(iterator => undefined);
+group.register(target, 1);
+grayRoot()[0] = group;
+group = undefined;
+gc(); 
+target = undefined;
+gc(); 
+drainJobQueue();
