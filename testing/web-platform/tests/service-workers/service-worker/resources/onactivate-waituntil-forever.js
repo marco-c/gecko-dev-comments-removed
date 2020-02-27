@@ -1,0 +1,8 @@
+'use strict';
+
+self.addEventListener('activate', event => {
+  event.waitUntil(new Promise(() => {
+        
+        
+      }));
+});
