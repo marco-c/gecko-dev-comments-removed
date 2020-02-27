@@ -221,15 +221,33 @@ class DocumentOrShadowRoot {
 
   nsIContent* Retarget(nsIContent* aContent) const;
 
+  void SetAdoptedStyleSheets(
+      const Sequence<OwningNonNull<StyleSheet>>& aAdoptedStyleSheets,
+      ErrorResult& aRv);
+
+  
+  
+  
+  
+  template <typename Callback>
+  void EnumerateUniqueAdoptedStyleSheetsBackToFront(Callback aCallback) {
+    AdoptedStyleSheetSet set(mAdoptedStyleSheets.Length());
+    for (StyleSheet* sheet : Reversed(mAdoptedStyleSheets)) {
+      if (MOZ_UNLIKELY(!set.EnsureInserted(sheet))) {
+        continue;
+      }
+      aCallback(*sheet);
+    }
+  }
+
  protected:
+  using AdoptedStyleSheetSet = nsTHashtable<nsPtrHashKey<const StyleSheet>>;
+  void RemoveSheetFromStylesIfApplicable(StyleSheet&);
+  void ClearAdoptedStyleSheets();
+
   
   already_AddRefed<StyleSheet> RemoveSheet(StyleSheet& aSheet);
   void InsertSheetAt(size_t aIndex, StyleSheet& aSheet);
-  void InsertAdoptedSheetAt(size_t aIndex, StyleSheet& aSheet);
-
-  void EnsureAdoptedSheetsAreValid(
-      const Sequence<OwningNonNull<StyleSheet>>& aAdoptedStyleSheets,
-      ErrorResult& aRv);
 
   void AddSizeOfExcludingThis(nsWindowSizes&) const;
   void AddSizeOfOwnedSheetArrayExcludingThis(

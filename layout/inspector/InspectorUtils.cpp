@@ -90,6 +90,9 @@ void InspectorUtils::GetAllStyleSheets(GlobalObject& aGlobalObject,
   for (size_t i = 0; i < aDocument.SheetCount(); i++) {
     aResult.AppendElement(aDocument.SheetAt(i));
   }
+
+  
+  
 }
 
 bool InspectorUtils::IsIgnorableWhitespace(CharacterData& aDataNode) {

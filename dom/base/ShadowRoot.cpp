@@ -376,11 +376,17 @@ void ShadowRoot::InsertSheetAt(size_t aIndex, StyleSheet& aSheet) {
   }
 }
 
-void ShadowRoot::InsertAdoptedSheetAt(size_t aIndex, StyleSheet& aSheet) {
-  DocumentOrShadowRoot::InsertAdoptedSheetAt(aIndex, aSheet);
-  if (aSheet.IsApplicable()) {
-    InsertSheetIntoAuthorData(aIndex, aSheet, mAdoptedStyleSheets);
+StyleSheet* FirstApplicableAdoptedStyleSheet(
+    const nsTArray<RefPtr<StyleSheet>>& aList) {
+  size_t i = 0;
+  for (StyleSheet* sheet : aList) {
+    
+    if (sheet->IsApplicable() && MOZ_LIKELY(aList.LastIndexOf(sheet) == i)) {
+      return sheet;
+    }
+    i++;
   }
+  return nullptr;
 }
 
 void ShadowRoot::InsertSheetIntoAuthorData(
@@ -388,6 +394,7 @@ void ShadowRoot::InsertSheetIntoAuthorData(
     const nsTArray<RefPtr<StyleSheet>>& aList) {
   MOZ_ASSERT(aSheet.IsApplicable());
   MOZ_ASSERT(aList[aIndex] == &aSheet);
+  MOZ_ASSERT(aList.LastIndexOf(&aSheet) == aIndex);
   MOZ_ASSERT(&aList == &mAdoptedStyleSheets || &aList == &mStyleSheets);
 
   if (!mServoStyles) {
@@ -398,32 +405,45 @@ void ShadowRoot::InsertSheetIntoAuthorData(
     mStyleRuleMap->SheetAdded(aSheet);
   }
 
+  auto changedOnExit =
+      mozilla::MakeScopeExit([&] { ApplicableRulesChanged(); });
+
   for (size_t i = aIndex + 1; i < aList.Length(); ++i) {
     StyleSheet* beforeSheet = aList.ElementAt(i);
     if (!beforeSheet->IsApplicable()) {
       continue;
     }
 
+    
+    
+    if (&aList == &mAdoptedStyleSheets &&
+        MOZ_UNLIKELY(aList.LastIndexOf(beforeSheet) != i)) {
+      continue;
+    }
+
     Servo_AuthorStyles_InsertStyleSheetBefore(mServoStyles.get(), &aSheet,
                                               beforeSheet);
-    ApplicableRulesChanged();
     return;
   }
 
   if (mAdoptedStyleSheets.IsEmpty() || &aList == &mAdoptedStyleSheets) {
     Servo_AuthorStyles_AppendStyleSheet(mServoStyles.get(), &aSheet);
-  } else {
-    Servo_AuthorStyles_InsertStyleSheetBefore(mServoStyles.get(), &aSheet,
-                                              mAdoptedStyleSheets.ElementAt(0));
+    return;
   }
-  ApplicableRulesChanged();
+
+  if (auto* before = FirstApplicableAdoptedStyleSheet(mAdoptedStyleSheets)) {
+    Servo_AuthorStyles_InsertStyleSheetBefore(mServoStyles.get(), &aSheet,
+                                              before);
+  } else {
+    Servo_AuthorStyles_AppendStyleSheet(mServoStyles.get(), &aSheet);
+  }
 }
 
 
 
 void ShadowRoot::StyleSheetApplicableStateChanged(StyleSheet& aSheet) {
   auto& sheetList = aSheet.IsConstructed() ? mAdoptedStyleSheets : mStyleSheets;
-  int32_t index = sheetList.IndexOf(&aSheet);
+  int32_t index = sheetList.LastIndexOf(&aSheet);
   if (index < 0) {
     
     
@@ -446,29 +466,22 @@ void ShadowRoot::StyleSheetApplicableStateChanged(StyleSheet& aSheet) {
   }
 }
 
-void ShadowRoot::ClearAdoptedStyleSheets() {
-  for (const RefPtr<StyleSheet>& sheet : mAdoptedStyleSheets) {
-    RemoveSheetFromStyles(*sheet);
-    sheet->RemoveAdopter(*this);
-  }
-  mAdoptedStyleSheets.Clear();
-}
-
 void ShadowRoot::RemoveSheetFromStyles(StyleSheet& aSheet) {
-  if (aSheet.IsApplicable()) {
-    MOZ_ASSERT(mServoStyles);
-    if (mStyleRuleMap) {
-      mStyleRuleMap->SheetRemoved(aSheet);
-    }
-    Servo_AuthorStyles_RemoveStyleSheet(mServoStyles.get(), &aSheet);
-    ApplicableRulesChanged();
+  MOZ_ASSERT(aSheet.IsApplicable());
+  MOZ_ASSERT(mServoStyles);
+  if (mStyleRuleMap) {
+    mStyleRuleMap->SheetRemoved(aSheet);
   }
+  Servo_AuthorStyles_RemoveStyleSheet(mServoStyles.get(), &aSheet);
+  ApplicableRulesChanged();
 }
 
 void ShadowRoot::RemoveSheet(StyleSheet& aSheet) {
   RefPtr<StyleSheet> sheet = DocumentOrShadowRoot::RemoveSheet(aSheet);
   MOZ_ASSERT(sheet);
-  RemoveSheetFromStyles(*sheet);
+  if (sheet->IsApplicable()) {
+    RemoveSheetFromStyles(*sheet);
+  }
 }
 
 void ShadowRoot::AddToIdTable(Element* aElement, nsAtom* aId) {
@@ -713,30 +726,4 @@ ServoStyleRuleMap& ShadowRoot::ServoStyleRuleMap() {
 nsresult ShadowRoot::Clone(dom::NodeInfo* aNodeInfo, nsINode** aResult) const {
   *aResult = nullptr;
   return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
-}
-
-
-void ShadowRoot::SetAdoptedStyleSheets(
-    const Sequence<OwningNonNull<StyleSheet>>& aAdoptedStyleSheets,
-    ErrorResult& aRv) {
-  
-
-  
-  
-  
-  EnsureAdoptedSheetsAreValid(aAdoptedStyleSheets, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-
-  
-  
-  
-  
-  ClearAdoptedStyleSheets();
-  mAdoptedStyleSheets.SetCapacity(aAdoptedStyleSheets.Length());
-  for (const OwningNonNull<StyleSheet>& sheet : aAdoptedStyleSheets) {
-    sheet->AddAdopter(*this);
-    AppendAdoptedStyleSheet(*sheet);
-  }
 }
