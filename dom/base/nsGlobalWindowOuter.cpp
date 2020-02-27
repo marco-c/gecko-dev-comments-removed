@@ -4798,15 +4798,15 @@ void nsGlobalWindowOuter::PromptOuter(const nsAString& aMessage,
     DisableDialogs();
   }
 
+  
   if (aError.Failed()) {
     return;
   }
 
   nsString outValue;
   outValue.Adopt(inoutValue);
-
   if (ok && inoutValue) {
-    aReturn.Assign(outValue);
+    aReturn = std::move(outValue);
   }
 }
 
