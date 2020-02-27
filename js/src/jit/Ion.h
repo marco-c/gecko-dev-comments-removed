@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_Ion_h
 #define jit_Ion_h
@@ -51,7 +51,7 @@ MethodStatus Recompile(JSContext* cx, HandleScript script, bool force);
 
 struct EnterJitData;
 
-// Walk the stack and invalidate active Ion frames for the invalid scripts.
+
 void Invalidate(TypeZone& types, JSFreeOp* fop,
                 const RecompileInfoVector& invalid, bool resetUses = true,
                 bool cancelOffThread = true);
@@ -64,24 +64,25 @@ class MIRGenerator;
 class LIRGraph;
 class CodeGenerator;
 class LazyLinkExitFrameLayout;
+class WarpSnapshot;
 
 MOZ_MUST_USE bool OptimizeMIR(MIRGenerator* mir);
 LIRGraph* GenerateLIR(MIRGenerator* mir);
 CodeGenerator* GenerateCode(MIRGenerator* mir, LIRGraph* lir);
-CodeGenerator* CompileBackEnd(MIRGenerator* mir);
+CodeGenerator* CompileBackEnd(MIRGenerator* mir, WarpSnapshot* snapshot);
 
 void LinkIonScript(JSContext* cx, HandleScript calleescript);
 uint8_t* LazyLinkTopActivation(JSContext* cx, LazyLinkExitFrameLayout* frame);
 
 inline bool IsIonInlinableGetterOrSetterOp(JSOp op) {
-  // GETPROP, CALLPROP, LENGTH, GETELEM, and JSOp::CallElem. (Inlined Getters)
-  // SETPROP, SETNAME, SETGNAME (Inlined Setters)
+  
+  
   return IsGetPropOp(op) || IsGetElemOp(op) || IsSetPropOp(op);
 }
 
 inline bool IsIonInlinableOp(JSOp op) {
-  // CALL, FUNCALL, FUNAPPLY, EVAL, NEW (Normal Callsites)
-  // or an inlinable getter or setter.
+  
+  
   return (IsInvokeOp(op) && !IsSpreadOp(op)) ||
          IsIonInlinableGetterOrSetterOp(op);
 }
@@ -95,15 +96,15 @@ inline bool TooManyFormalArguments(unsigned nargs) {
 }
 
 inline size_t NumLocalsAndArgs(JSScript* script) {
-  size_t num = 1 /* this */ + script->nfixed();
+  size_t num = 1  + script->nfixed();
   if (JSFunction* fun = script->function()) {
     num += fun->nargs();
   }
   return num;
 }
 
-// Debugging RAII class which marks the current thread as performing an Ion
-// backend compilation.
+
+
 class MOZ_RAII AutoEnterIonBackend {
  public:
   explicit AutoEnterIonBackend(
@@ -137,7 +138,7 @@ inline bool IsIonEnabled(JSContext* cx) {
     return false;
   }
 
-  // If TI is disabled, Ion can only be used if WarpBuilder is enabled.
+  
   if (MOZ_LIKELY(IsTypeInferenceEnabled())) {
     MOZ_ASSERT(!JitOptions.warpBuilder,
                "Shouldn't enable WarpBuilder without disabling TI!");
@@ -158,7 +159,7 @@ inline bool IsIonEnabled(JSContext* cx) {
   return false;
 }
 
-}  // namespace jit
-}  // namespace js
+}  
+}  
 
-#endif /* jit_Ion_h */
+#endif 
