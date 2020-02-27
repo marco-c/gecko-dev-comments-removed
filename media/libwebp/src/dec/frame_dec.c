@@ -732,7 +732,7 @@ static int AllocateMemory(VP8Decoder* const dec) {
   mem += f_info_size;
   dec->thread_ctx_.id_ = 0;
   dec->thread_ctx_.f_info_ = dec->f_info_;
-  if (dec->mt_method_ > 0) {
+  if (dec->filter_type_ > 0 && dec->mt_method_ > 0) {
     
     
     

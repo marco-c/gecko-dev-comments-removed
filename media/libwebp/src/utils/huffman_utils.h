@@ -78,6 +78,8 @@ void VP8LHtreeGroupsFree(HTreeGroup* const htree_groups);
 
 
 
+
+
 int VP8LBuildHuffmanTable(HuffmanCode* const root_table, int root_bits,
                           const int code_lengths[], int code_lengths_size);
 

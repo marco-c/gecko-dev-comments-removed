@@ -217,8 +217,13 @@ void WebPSafeFree(void* const ptr) {
 }
 
 
+
+void* WebPMalloc(size_t size) {
+  return WebPSafeMalloc(1, size);
+}
+
 void WebPFree(void* ptr) {
-  free(ptr);
+  WebPSafeFree(ptr);
 }
 
 

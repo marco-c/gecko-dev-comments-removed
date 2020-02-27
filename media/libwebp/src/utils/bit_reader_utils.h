@@ -21,6 +21,27 @@
 #endif
 #include "src/webp/types.h"
 
+
+#if !defined(BITTRACE)
+#define BITTRACE 0    // 0 = off, 1 = print bits, 2 = print bytes
+#endif
+
+#if (BITTRACE > 0)
+struct VP8BitReader;
+extern void BitTrace(const struct VP8BitReader* const br, const char label[]);
+#define BT_TRACK(br) BitTrace(br, label)
+#define VP8Get(BR, L) VP8GetValue(BR, 1, L)
+#else
+#define BT_TRACK(br)
+
+#define VP8GetValue(BR, N, L) VP8GetValue(BR, N)
+#define VP8Get(BR, L) VP8GetValue(BR, 1, L)
+#define VP8GetSignedValue(BR, N, L) VP8GetSignedValue(BR, N)
+#define VP8GetBit(BR, P, L) VP8GetBit(BR, P)
+#define VP8GetBitAlt(BR, P, L) VP8GetBitAlt(BR, P)
+#define VP8GetSigned(BR, V, L) VP8GetSigned(BR, V)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -92,13 +113,11 @@ void VP8BitReaderSetBuffer(VP8BitReader* const br,
 void VP8RemapBitReader(VP8BitReader* const br, ptrdiff_t offset);
 
 
-uint32_t VP8GetValue(VP8BitReader* const br, int num_bits);
-static WEBP_INLINE uint32_t VP8Get(VP8BitReader* const br) {
-  return VP8GetValue(br, 1);
-}
+uint32_t VP8GetValue(VP8BitReader* const br, int num_bits, const char label[]);
 
 
-int32_t VP8GetSignedValue(VP8BitReader* const br, int num_bits);
+int32_t VP8GetSignedValue(VP8BitReader* const br, int num_bits,
+                          const char label[]);
 
 
 

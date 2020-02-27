@@ -49,4 +49,20 @@ typedef long long int int64_t;
 
 #define WEBP_ABI_IS_INCOMPATIBLE(a, b) (((a) >> 8) != ((b) >> 8))
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+
+
+WEBP_EXTERN void* WebPMalloc(size_t size);
+
+
+WEBP_EXTERN void WebPFree(void* ptr);
+
+#ifdef __cplusplus
+}    
+#endif
+
 #endif  

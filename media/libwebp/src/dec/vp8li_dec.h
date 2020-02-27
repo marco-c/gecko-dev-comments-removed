@@ -37,7 +37,7 @@ struct VP8LTransform {
   int                    bits_;   
   int                    xsize_;  
   int                    ysize_;  
-  uint32_t              *data_;   
+  uint32_t*              data_;   
 };
 
 typedef struct {
@@ -48,23 +48,23 @@ typedef struct {
   int             huffman_mask_;
   int             huffman_subsample_bits_;
   int             huffman_xsize_;
-  uint32_t       *huffman_image_;
+  uint32_t*       huffman_image_;
   int             num_htree_groups_;
-  HTreeGroup     *htree_groups_;
-  HuffmanCode    *huffman_tables_;
+  HTreeGroup*     htree_groups_;
+  HuffmanCode*    huffman_tables_;
 } VP8LMetadata;
 
 typedef struct VP8LDecoder VP8LDecoder;
 struct VP8LDecoder {
   VP8StatusCode    status_;
   VP8LDecodeState  state_;
-  VP8Io           *io_;
+  VP8Io*           io_;
 
-  const WebPDecBuffer *output_;    
+  const WebPDecBuffer* output_;    
 
-  uint32_t        *pixels_;        
+  uint32_t*        pixels_;        
                                    
-  uint32_t        *argb_cache_;    
+  uint32_t*        argb_cache_;    
 
   VP8LBitReader    br_;
   int              incremental_;   
@@ -86,8 +86,8 @@ struct VP8LDecoder {
   
   uint32_t         transforms_seen_;
 
-  uint8_t         *rescaler_memory;  
-  WebPRescaler    *rescaler;         
+  uint8_t*         rescaler_memory;  
+  WebPRescaler*    rescaler;         
 };
 
 

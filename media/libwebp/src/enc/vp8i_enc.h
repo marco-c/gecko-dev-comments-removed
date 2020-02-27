@@ -31,8 +31,8 @@ extern "C" {
 
 
 #define ENC_MAJ_VERSION 1
-#define ENC_MIN_VERSION 0
-#define ENC_REV_VERSION 2
+#define ENC_MIN_VERSION 1
+#define ENC_REV_VERSION 0
 
 enum { MAX_LF_LEVELS = 64,       
        MAX_VARIABLE_LEVEL = 67,  
@@ -249,7 +249,7 @@ typedef struct {
   int           percent0_;         
 
   DError        left_derr_;        
-  DError       *top_derr_;         
+  DError*       top_derr_;         
 
   uint8_t* y_left_;    
   uint8_t* u_left_;    

@@ -73,7 +73,7 @@ typedef struct {
 #endif
 
 static int pthread_create(pthread_t* const thread, const void* attr,
-                          unsigned int (__stdcall *start)(void*), void* arg) {
+                          unsigned int (__stdcall* start)(void*), void* arg) {
   (void)attr;
 #ifdef USE_CREATE_THREAD
   *thread = CreateThread(NULL,   
@@ -217,8 +217,12 @@ static THREADFN ThreadLoop(void* ptr) {
       done = 1;
     }
     
-    pthread_cond_signal(&impl->condition_);
+    
+    
+    
+    
     pthread_mutex_unlock(&impl->mutex_);
+    pthread_cond_signal(&impl->condition_);
   }
   return THREAD_RETURN(NULL);    
 }
@@ -240,7 +244,13 @@ static void ChangeState(WebPWorker* const worker, WebPWorkerStatus new_status) {
     
     if (new_status != OK) {
       worker->status_ = new_status;
+      
+      
+      
+      
+      pthread_mutex_unlock(&impl->mutex_);
       pthread_cond_signal(&impl->condition_);
+      return;
     }
   }
   pthread_mutex_unlock(&impl->mutex_);

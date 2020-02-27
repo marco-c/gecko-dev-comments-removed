@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#define WEBP_ENCODER_ABI_VERSION 0x020e    // MAJOR(8b) + MINOR(8b)
+#define WEBP_ENCODER_ABI_VERSION 0x020f    // MAJOR(8b) + MINOR(8b)
 
 
 
@@ -62,6 +62,10 @@ WEBP_EXTERN size_t WebPEncodeBGRA(const uint8_t* bgra,
 
 
 
+
+
+
+
 WEBP_EXTERN size_t WebPEncodeLosslessRGB(const uint8_t* rgb,
                                          int width, int height, int stride,
                                          uint8_t** output);
@@ -74,9 +78,6 @@ WEBP_EXTERN size_t WebPEncodeLosslessRGBA(const uint8_t* rgba,
 WEBP_EXTERN size_t WebPEncodeLosslessBGRA(const uint8_t* bgra,
                                           int width, int height, int stride,
                                           uint8_t** output);
-
-
-WEBP_EXTERN void WebPFree(void* ptr);
 
 
 
@@ -302,7 +303,7 @@ struct WebPPicture {
   
   WebPEncCSP colorspace;     
   int width, height;         
-  uint8_t *y, *u, *v;        
+  uint8_t* y, *u, *v;        
   int y_stride, uv_stride;   
   uint8_t* a;                
   int a_stride;              
@@ -346,7 +347,7 @@ struct WebPPicture {
   uint32_t pad3[3];       
 
   
-  uint8_t *pad4, *pad5;
+  uint8_t* pad4, *pad5;
   uint32_t pad6[8];       
 
   
