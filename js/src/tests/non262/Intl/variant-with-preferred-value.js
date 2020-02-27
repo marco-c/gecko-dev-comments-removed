@@ -4,30 +4,50 @@
 
 
 
+
+
 const languageTags = {
     
-    "hy-arevela": "hy-arevela",
-    "hy-Armn-arevela": "hy-Armn-arevela",
-    "hy-AM-arevela": "hy-AM-arevela",
-    "hy-arevela-fonipa": "hy-arevela-fonipa",
-    "hy-fonipa-arevela": "hy-arevela-fonipa",
+    "hy-arevela": "hy",
+    "hy-Armn-arevela": "hy-Armn",
+    "hy-AM-arevela": "hy-AM",
+    "hy-arevela-fonipa": "hy-fonipa",
+    "hy-fonipa-arevela": "hy-fonipa",
 
     
-    "hy-arevmda": "hy-arevmda",
-    "hy-Armn-arevmda": "hy-Armn-arevmda",
-    "hy-AM-arevmda": "hy-AM-arevmda",
-    "hy-arevmda-fonipa": "hy-arevmda-fonipa",
-    "hy-fonipa-arevmda": "hy-arevmda-fonipa",
+    "hy-arevmda": "hyw",
+    "hy-Armn-arevmda": "hyw-Armn",
+    "hy-AM-arevmda": "hyw-AM",
+    "hy-arevmda-fonipa": "hyw-fonipa",
+    "hy-fonipa-arevmda": "hyw-fonipa",
 
     
-    "ja-Latn-hepburn-heploc": "ja-Latn-hepburn-heploc",
-    "ja-Latn-JP-hepburn-heploc": "ja-Latn-JP-hepburn-heploc",
+    
+    "ja-Latn-hepburn-heploc": "ja-Latn-alalc97-hepburn",
+    "ja-Latn-JP-hepburn-heploc": "ja-Latn-JP-alalc97-hepburn",
 
     
-    "ja-Latn-alalc97-hepburn-heploc": "ja-Latn-alalc97-hepburn-heploc",
-    "ja-Latn-hepburn-alalc97-heploc": "ja-Latn-alalc97-hepburn-heploc",
-    "ja-Latn-hepburn-heploc-alalc97": "ja-Latn-alalc97-hepburn-heploc",
-    "ja-Latn-heploc-hepburn": "ja-Latn-hepburn-heploc",
+    "sv-aaland": "sv-AX",
+    "el-polytoni": "el-polyton",
+
+    
+
+    
+    "ja-Latn-alalc97-hepburn-heploc": "ja-Latn-alalc97-hepburn",
+    "ja-Latn-hepburn-alalc97-heploc": "ja-Latn-alalc97-hepburn",
+    "ja-Latn-hepburn-heploc-alalc97": "ja-Latn-alalc97-hepburn",
+
+    
+    
+    "ja-Latn-heploc-hepburn": "ja-Latn-alalc97-hepburn",
+
+    
+    "ja-Latn-heploc": "ja-Latn-alalc97",
+
+    
+    
+    "ja-Latn-aaland-heploc": "ja-Latn-AX-alalc97",
+    "ja-Latn-heploc-polytoni": "ja-Latn-alalc97-polyton",
 };
 
 for (let [tag, canonical] of Object.entries(languageTags)) {

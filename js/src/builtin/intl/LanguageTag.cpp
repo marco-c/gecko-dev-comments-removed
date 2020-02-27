@@ -354,6 +354,10 @@ bool LanguageTag::canonicalizeBaseName(JSContext* cx) {
   }
 
   
+  if (!performVariantMappings(cx)) {
+    return false;
+  }
+
   
   
 
