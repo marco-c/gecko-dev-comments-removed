@@ -222,6 +222,8 @@ pref("browser.defaultbrowser.notificationbar", false);
 
 pref("browser.startup.page",                1);
 pref("browser.startup.homepage",            "about:home");
+pref("browser.startup.homepage.abouthome_cache.enabled", false);
+
 
 pref("browser.startup.firstrunSkipsHomepage", true);
 
