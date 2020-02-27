@@ -4832,7 +4832,6 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
         innermost(false),
         innermostForRealm(cx, cx->zone()),
         scriptVector(cx, BaseScriptVector(cx)),
-        lazyScriptVector(cx, BaseScriptVector(cx)),
         wasmInstanceVector(cx, WasmInstanceObjectVector(cx)) {}
 
   
@@ -5019,7 +5018,6 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
 
     
     MOZ_ASSERT(scriptVector.empty());
-    MOZ_ASSERT(lazyScriptVector.empty());
     oom = false;
     IterateScripts(cx, singletonRealm, this, considerScript);
     if (!delazified) {
@@ -5030,7 +5028,6 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
       return false;
     }
 
-    
     
     
     
@@ -5062,7 +5059,6 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
   }
 
   Handle<BaseScriptVector> foundScripts() const { return scriptVector; }
-  Handle<BaseScriptVector> foundLazyScripts() const { return lazyScriptVector; }
 
   Handle<WasmInstanceObjectVector> foundWasmInstances() const {
     return wasmInstanceVector;
@@ -5112,7 +5108,6 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
 
 
   Rooted<BaseScriptVector> scriptVector;
-  Rooted<BaseScriptVector> lazyScriptVector;
 
   
 
@@ -5287,7 +5282,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
     }
 
     
-    if (!lazyScriptVector.append(lazyScript)) {
+    if (!scriptVector.append(lazyScript)) {
       oom = true;
     }
   }
@@ -5330,11 +5325,9 @@ bool Debugger::CallData::findScripts() {
   }
 
   Handle<BaseScriptVector> scripts(query.foundScripts());
-  Handle<BaseScriptVector> lazyScripts(query.foundLazyScripts());
   Handle<WasmInstanceObjectVector> wasmInstances(query.foundWasmInstances());
 
-  size_t resultLength =
-      scripts.length() + lazyScripts.length() + wasmInstances.length();
+  size_t resultLength = scripts.length() + wasmInstances.length();
   RootedArrayObject result(cx, NewDenseFullyAllocatedArray(cx, resultLength));
   if (!result) {
     return false;
@@ -5350,16 +5343,7 @@ bool Debugger::CallData::findScripts() {
     result->setDenseElement(i, ObjectValue(*scriptObject));
   }
 
-  size_t lazyStart = scripts.length();
-  for (size_t i = 0; i < lazyScripts.length(); i++) {
-    JSObject* scriptObject = dbg->wrapScript(cx, lazyScripts[i]);
-    if (!scriptObject) {
-      return false;
-    }
-    result->setDenseElement(lazyStart + i, ObjectValue(*scriptObject));
-  }
-
-  size_t wasmStart = scripts.length() + lazyScripts.length();
+  size_t wasmStart = scripts.length();
   for (size_t i = 0; i < wasmInstances.length(); i++) {
     JSObject* scriptObject = dbg->wrapWasmScript(cx, wasmInstances[i]);
     if (!scriptObject) {
