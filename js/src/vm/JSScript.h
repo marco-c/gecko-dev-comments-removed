@@ -2159,29 +2159,22 @@ class BaseScript : public gc::TenuredCell {
   void setImmutableFlags(uint32_t flags) { immutableScriptFlags_ = flags; }
 
   
-  template <typename T>
-  void setFlag(T flag, bool b) {
-    if (b) {
-      setFlag(flag);
-    } else {
-      clearFlag(flag);
-    }
-  }
-
-  
   MOZ_MUST_USE bool hasFlag(ImmutableFlags flag) const {
     return immutableScriptFlags_.hasFlag(flag);
   }
-  void setFlag(ImmutableFlags flag) { immutableScriptFlags_.setFlag(flag); }
+  void setFlag(ImmutableFlags flag, bool b = true) {
+    immutableScriptFlags_.setFlag(flag, b);
+  }
   void clearFlag(ImmutableFlags flag) { immutableScriptFlags_.clearFlag(flag); }
 
   
   MOZ_MUST_USE bool hasFlag(MutableFlags flag) const {
     return mutableFlags_.hasFlag(flag);
   }
-  void setFlag(MutableFlags flag) { mutableFlags_.setFlag(flag); }
+  void setFlag(MutableFlags flag, bool b = true) {
+    mutableFlags_.setFlag(flag, b);
+  }
   void clearFlag(MutableFlags flag) { mutableFlags_.clearFlag(flag); }
-
   
 
 #define FLAG_GETTER(enumName, enumEntry, lowerName) \
