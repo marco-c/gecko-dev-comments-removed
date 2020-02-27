@@ -75,11 +75,20 @@ ClassList.prototype = {
     }
     EventEmitter.emit(this, "update");
   },
-  toggle(token) {
-    if (this.contains(token)) {
-      this.remove(token);
-    } else {
+  toggle(token, force) {
+    
+    if (force === undefined) {
+      if (this.contains(token)) {
+        this.remove(token);
+      } else {
+        this.add(token);
+      }
+    } else if (force) {
+      
       this.add(token);
+    } else {
+      
+      this.remove(token);
     }
   },
   get length() {
