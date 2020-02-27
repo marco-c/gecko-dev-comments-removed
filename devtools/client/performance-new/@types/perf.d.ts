@@ -211,6 +211,8 @@ export interface InitializedValues {
   
   setRecordingPreferences: SetRecordingPreferences;
   
+  presets: Presets;
+  
   pageContext: PageContext;
   
   getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
@@ -264,6 +266,7 @@ export type Action =
       perfFront: PerfFront;
       receiveProfile: ReceiveProfile;
       setRecordingPreferences: SetRecordingPreferences;
+      presets: Presets;
       pageContext: PageContext;
       recordingSettingsFromPreferences: RecordingStateFromPreferences;
       getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
@@ -279,6 +282,7 @@ export interface InitializeStoreValues {
   perfFront: PerfFront;
   receiveProfile: ReceiveProfile;
   setRecordingPreferences: SetRecordingPreferences;
+  presets: Presets;
   pageContext: PageContext;
   recordingPreferences: RecordingStateFromPreferences;
   supportedFeatures: string[] | null;
@@ -399,7 +403,7 @@ export interface PresetDefinition {
   duration: number;
 }
 
-export interface PresetDefinitions {
+export interface Presets {
   [presetName: string]: PresetDefinition;
 }
 

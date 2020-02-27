@@ -12,7 +12,7 @@ const {
 const {
   getEnvironmentVariable,
 } = require("devtools/client/performance-new/browser");
-const { presets } = require("devtools/shared/performance-new/recording-utils");
+
 
 
 
@@ -145,7 +145,8 @@ exports.changeThreads = threads =>
 
 
 
-exports.changePreset = presetName =>
+
+exports.changePreset = (presets, presetName) =>
   _dispatchAndUpdatePreferences({
     type: "CHANGE_PRESET",
     presetName,
