@@ -455,7 +455,7 @@ using Env = JSObject;
 
 
 
-typedef mozilla::Variant<JSScript*, LazyScript*, WasmInstanceObject*>
+typedef mozilla::Variant<BaseScript*, WasmInstanceObject*>
     DebuggerScriptReferent;
 
 
