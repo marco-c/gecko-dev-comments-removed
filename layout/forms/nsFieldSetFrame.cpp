@@ -887,7 +887,8 @@ void nsFieldSetFrame::EnsureChildContinuation(nsIFrame* aChild,
   nsIFrame* nif = aChild->GetNextInFlow();
   if (aStatus.IsFullyComplete()) {
     if (nif) {
-      RemoveFrame(kPrincipalList, nif);
+      
+      nsContainerFrame::RemoveFrame(kNoReflowPrincipalList, nif);
       MOZ_ASSERT(!aChild->GetNextInFlow());
     }
   } else {
