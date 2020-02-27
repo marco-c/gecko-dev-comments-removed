@@ -1786,6 +1786,9 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
       if (!dumpID.IsEmpty()) {
         props->SetPropertyAsAString(NS_LITERAL_STRING("dumpID"), dumpID);
       }
+      
+      Unused << props->SetPropertyAsBool(NS_LITERAL_STRING("isLikelyOOM"),
+                                         mCrashReporter->IsLikelyOOM());
     }
     nsAutoString cpId;
     cpId.AppendInt(static_cast<uint64_t>(this->ChildID()));
