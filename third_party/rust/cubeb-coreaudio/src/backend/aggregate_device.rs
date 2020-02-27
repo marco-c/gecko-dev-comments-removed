@@ -242,15 +242,14 @@ impl AggregateDevice {
             CFRelease(device_stacked_key as *const c_void);
 
             
-            let status = audio_object_get_property_data_with_qualifier(
+            audio_object_get_property_data_with_qualifier(
                 plugin_id,
                 &address,
                 mem::size_of_val(&device_dict),
                 &device_dict,
                 &mut size,
                 &mut device_id,
-            );
-            status
+            )
         };
         if status == NO_ERR {
             assert_ne!(device_id, kAudioObjectUnknown);
