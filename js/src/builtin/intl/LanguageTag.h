@@ -378,7 +378,6 @@ class MOZ_STACK_CLASS LanguageTag final {
 
 
 
-
   bool canonicalize(JSContext* cx,
                     UnicodeExtensionCanonicalForm canonicalForm) {
     return canonicalizeBaseName(cx) &&

@@ -317,6 +317,20 @@ bool LanguageTag::canonicalizeBaseName(JSContext* cx) {
 
   
   
+  
+  
+  
+  
+
+  
+  
+
+  
+  
+  
+
+  
+  
 
   
   
@@ -343,7 +357,6 @@ bool LanguageTag::canonicalizeBaseName(JSContext* cx) {
   
   
 
-  
   
   
 
