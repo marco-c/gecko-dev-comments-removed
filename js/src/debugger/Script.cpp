@@ -428,16 +428,10 @@ class DebuggerScript::GetSourceMatcher {
   using ReturnType = DebuggerSource*;
 
   ReturnType match(HandleScript script) {
-    
-    
-    
-    RootedScriptSourceObject source(
-        cx_,
-        &UncheckedUnwrap(script->sourceObject())->as<ScriptSourceObject>());
+    RootedScriptSourceObject source(cx_, script->sourceObject());
     return dbg_->wrapSource(cx_, source);
   }
   ReturnType match(Handle<LazyScript*> lazyScript) {
-    
     RootedScriptSourceObject source(cx_, lazyScript->sourceObject());
     return dbg_->wrapSource(cx_, source);
   }
