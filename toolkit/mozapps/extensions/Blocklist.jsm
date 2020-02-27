@@ -644,7 +644,12 @@ this.GfxBlocklistRS = {
     if (!gBlocklistEnabled) {
       return []; 
     }
-    let entries = await this._client.get();
+    let entries = await this._client.get().catch(ex => Cu.reportError(ex));
+    
+    
+    if (!entries) {
+      return [];
+    }
     
     const trim = s =>
       (s || "").replace(/(^[\s\uFEFF\xA0]+)|([\s\uFEFF\xA0]+$)/g, "");
