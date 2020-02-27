@@ -1154,7 +1154,7 @@ pub enum PrimitiveKeyKind {
     
     Rectangle {
         
-        color: ColorU,
+        color: PropertyBinding<ColorU>,
     },
 }
 
@@ -1821,7 +1821,7 @@ impl PropertyBindingId {
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize, PeekPoke)]
 pub struct PropertyBindingKey<T> {
     
     pub id: PropertyBindingId,
@@ -1853,7 +1853,7 @@ impl<T> PropertyBindingKey<T> {
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, PeekPoke)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize, PeekPoke)]
 pub enum PropertyBinding<T> {
     
     Value(T),
@@ -1870,6 +1870,46 @@ impl<T: Default> Default for PropertyBinding<T> {
 impl<T> From<T> for PropertyBinding<T> {
     fn from(value: T) -> PropertyBinding<T> {
         PropertyBinding::Value(value)
+    }
+}
+
+impl From<PropertyBindingKey<ColorF>> for PropertyBindingKey<ColorU> {
+    fn from(key: PropertyBindingKey<ColorF>) -> PropertyBindingKey<ColorU> {
+        PropertyBindingKey {
+            id: key.id.clone(),
+            _phantom: PhantomData,
+        }
+    }
+}
+
+impl From<PropertyBindingKey<ColorU>> for PropertyBindingKey<ColorF> {
+    fn from(key: PropertyBindingKey<ColorU>) -> PropertyBindingKey<ColorF> {
+        PropertyBindingKey {
+            id: key.id.clone(),
+            _phantom: PhantomData,
+        }
+    }
+}
+
+impl From<PropertyBinding<ColorF>> for PropertyBinding<ColorU> {
+    fn from(value: PropertyBinding<ColorF>) -> PropertyBinding<ColorU> {
+        match value {
+            PropertyBinding::Value(value) => PropertyBinding::Value(value.into()),
+            PropertyBinding::Binding(k, v) => {
+                PropertyBinding::Binding(k.into(), v.into())
+            }
+        }
+    }
+}
+
+impl From<PropertyBinding<ColorU>> for PropertyBinding<ColorF> {
+    fn from(value: PropertyBinding<ColorU>) -> PropertyBinding<ColorF> {
+        match value {
+            PropertyBinding::Value(value) => PropertyBinding::Value(value.into()),
+            PropertyBinding::Binding(k, v) => {
+                PropertyBinding::Binding(k.into(), v.into())
+            }
+        }
     }
 }
 
@@ -1892,6 +1932,8 @@ pub struct DynamicProperties {
     pub transforms: Vec<PropertyValue<LayoutTransform>>,
     
     pub floats: Vec<PropertyValue<f32>>,
+    
+    pub colors: Vec<PropertyValue<ColorF>>,
 }
 
 

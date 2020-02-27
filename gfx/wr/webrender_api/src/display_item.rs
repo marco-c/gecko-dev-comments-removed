@@ -303,7 +303,7 @@ pub struct ScrollFrameDisplayItem {
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct RectangleDisplayItem {
     pub common: CommonItemProperties,
-    pub color: ColorF,
+    pub color: PropertyBinding<ColorF>,
 }
 
 
