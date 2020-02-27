@@ -231,16 +231,19 @@ class ServoStyleSet {
       ComputedStyle* aParentStyle, const AtomArray& aInputWord);
 #endif
 
+  
+  void AppendStyleSheet(Origin, StyleSheet*);
+  void RemoveStyleSheet(Origin, StyleSheet*);
+  void InsertStyleSheetBefore(Origin, StyleSheet*, StyleSheet* aReferenceSheet);
+
   size_t SheetCount(Origin) const;
   StyleSheet* SheetAt(Origin, size_t aIndex) const;
 
   void AppendAllNonDocumentAuthorSheets(nsTArray<StyleSheet*>& aArray) const;
 
-  
-  void AppendStyleSheet(StyleSheet&);
-  void InsertStyleSheetBefore(StyleSheet&, StyleSheet& aReferenceSheet);
-  void RemoveStyleSheet(StyleSheet&);
-  void AddDocStyleSheet(StyleSheet&);
+  void RemoveDocStyleSheet(StyleSheet* aSheet);
+
+  void AddDocStyleSheet(StyleSheet* aSheet);
 
   
 

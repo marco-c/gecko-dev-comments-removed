@@ -296,8 +296,6 @@ where
         
         
         
-        
-        
         if sheet.committed {
             self.set_data_validity_at_least(DataValidity::FullyInvalid);
         } else {
