@@ -26,20 +26,12 @@ struct HelperThread;
 
 
 
-
-
-
-
 class GCParallelTask : public mozilla::LinkedListElement<GCParallelTask>,
                        public RunnableTask {
  public:
-  using TaskFunc = void (*)(GCParallelTask*);
-
   gc::GCRuntime* const gc;
 
  private:
-  TaskFunc func_;
-
   
   enum class State {
     
@@ -76,15 +68,10 @@ class GCParallelTask : public mozilla::LinkedListElement<GCParallelTask>,
       cancel_;
 
  public:
-  explicit GCParallelTask(gc::GCRuntime* gc, TaskFunc func)
-      : gc(gc),
-        func_(func),
-        state_(State::Idle),
-        duration_(nullptr),
-        cancel_(false) {}
+  explicit GCParallelTask(gc::GCRuntime* gc)
+      : gc(gc), state_(State::Idle), duration_(nullptr), cancel_(false) {}
   GCParallelTask(GCParallelTask&& other)
       : gc(other.gc),
-        func_(other.func_),
         state_(other.state_),
         duration_(nullptr),
         cancel_(false) {}
@@ -147,6 +134,9 @@ class GCParallelTask : public mozilla::LinkedListElement<GCParallelTask>,
 
  protected:
   
+  virtual void run() = 0;
+
+  
   
   void setFinishing(const AutoLockHelperThreadState& lock) {
     MOZ_ASSERT(isIdle(lock) || isRunning(lock));
@@ -192,21 +182,6 @@ class GCParallelTask : public mozilla::LinkedListElement<GCParallelTask>,
 
   friend struct HelperThread;
   void runFromHelperThread(AutoLockHelperThreadState& locked);
-};
-
-
-template <typename Derived>
-class GCParallelTaskHelper : public GCParallelTask {
- public:
-  explicit GCParallelTaskHelper(gc::GCRuntime* gc)
-      : GCParallelTask(gc, &runTaskTyped) {}
-  GCParallelTaskHelper(GCParallelTaskHelper&& other)
-      : GCParallelTask(std::move(other)) {}
-
- private:
-  static void runTaskTyped(GCParallelTask* task) {
-    static_cast<Derived*>(task)->run();
-  }
 };
 
 } 
