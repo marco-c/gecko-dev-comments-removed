@@ -111,6 +111,10 @@ TEST(CompatVersionCompare, CompareVersionChange) {
     "67.0.1", "1", "1",
     false, true);
 
+#if !defined(XP_WIN) || !defined(MOZ_ASAN)
+  
+  
+
   
   
   CheckExpectedResult(
@@ -121,6 +125,7 @@ TEST(CompatVersionCompare, CompareVersionChange) {
     "67.0.1", "1build1", "1build1",
     "67.0.1", "20000000000000", "20000000000000",
     false, true);
+#endif
 
   
   CheckExpectedResult(

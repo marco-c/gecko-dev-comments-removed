@@ -406,6 +406,7 @@ TEST(MP4Metadata, test_case_mp4_subsets) {
 }
 #endif
 
+#if !defined(XP_WIN) || !defined(MOZ_ASAN)  
 TEST(MoofParser, test_case_mp4)
 {
   const TestFileData* tests = nullptr;
@@ -495,6 +496,7 @@ TEST(MoofParser, test_case_sample_description_entries)
     }
   }
 }
+#endif  
 
 
 
