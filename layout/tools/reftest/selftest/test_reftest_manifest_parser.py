@@ -38,5 +38,20 @@ def test_parse_test_types(parse):
     assert tests[4]['type'] == 'print'
 
 
+def test_parse_invalid_manifests(parse):
+    
+    
+    
+    
+    with pytest.raises(SystemExit):
+        parse('invalid-defaults.list')
+
+    with pytest.raises(SystemExit):
+        parse('invalid-defaults-include.list')
+
+    with pytest.raises(SystemExit):
+        parse('invalid-include.list')
+
+
 if __name__ == '__main__':
     mozunit.main()
