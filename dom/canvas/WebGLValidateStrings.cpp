@@ -36,53 +36,52 @@ std::string CommentsToSpaces(const std::string& src) {
 
 
 
-#define LINE_COMMENT "//(?:[^]*?[^\\\\])??\n"
+
+#define LINE_COMMENT R"(//(?:\\\n|.)*(?:\n|$))"
 
 
-#define BLOCK_COMMENT "/[*][^]*?[*]/"
+#define BLOCK_COMMENT R"(/\*[^]*?\*/)"
+
+  constexpr auto flags = std::regex::ECMAScript | std::regex::nosubs | std::regex::optimize;
 
   static const std::regex COMMENT_RE(
       "(?:" LINE_COMMENT ")|(?:" BLOCK_COMMENT ")",
-      std::regex::ECMAScript | std::regex::nosubs | std::regex::optimize);
+      flags);
 
 #undef LINE_COMMENT
 #undef BLOCK_COMMENT
 
-  static const std::regex TRAILING_RE("/[*/]", std::regex::ECMAScript |
-                                                   std::regex::nosubs |
-                                                   std::regex::optimize);
-
   std::string ret;
   ret.reserve(src.size());
 
+  
+  
+
   auto itr = src.begin();
-  auto end = src.end();
+  const auto end = src.end();
   std::smatch match;
   while (std::regex_search(itr, end, match, COMMENT_RE)) {
+    MOZ_ASSERT(match.length() >= 2);
     const auto matchBegin = itr + match.position();
     const auto matchEnd = matchBegin + match.length();
+    const auto matchLast = matchEnd - 1;
     ret.append(itr, matchBegin);
-    for (itr = matchBegin; itr != matchEnd; ++itr) {
-      auto cur = *itr;
-      switch (cur) {
-        case '/':
-        case '*':
-        case '\n':
-        case '\\':
-          break;
-        default:
-          cur = ' ';
-          break;
+    ret += "/*";
+    for (itr = matchBegin; itr != matchLast; ++itr) {
+      const auto cur = *itr;
+      if (cur == '\n') {
+        ret += cur;
       }
+    }
+    const auto cur = *itr;
+    ret += "*/";
+    if (cur == '\n') { 
       ret += cur;
     }
+    ++itr;
+    MOZ_ASSERT(itr == matchEnd);
   }
 
-  
-  
-  if (std::regex_search(itr, end, match, TRAILING_RE)) {
-    end = itr + match.position();
-  }
   ret.append(itr, end);
   return ret;
 }
