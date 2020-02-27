@@ -28,3 +28,5 @@ user_pref("idle.lastDailyNotification", -1);
 
 
 user_pref("toolkit.telemetry.eventping.enabled", true);
+
+user_pref("network.cookie.sameSite.laxByDefault", false);
