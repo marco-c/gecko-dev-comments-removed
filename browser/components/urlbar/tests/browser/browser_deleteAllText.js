@@ -18,10 +18,7 @@ add_task(async function test() {
   await promiseAutocompleteResultPopup("x", window, true);
   await checkResults();
 
-  
-  await UrlbarTestUtils.promisePopupClose(window, () =>
-    EventUtils.synthesizeKey("KEY_Backspace")
-  );
+  await deleteInput();
 
   
   
@@ -34,18 +31,16 @@ add_task(async function test() {
 
   
   for (let i = 0; i < 2; i++) {
-    await UrlbarTestUtils.promisePopupClose(window, () =>
-      EventUtils.synthesizeKey("KEY_Backspace")
-    );
+    await deleteInput();
     EventUtils.synthesizeKey("x");
     await UrlbarTestUtils.promiseSearchComplete(window);
     await checkResults();
   }
 
-  
-  await UrlbarTestUtils.promisePopupClose(window, () =>
-    EventUtils.synthesizeKey("KEY_Backspace")
-  );
+  await deleteInput();
+  if (!gURLBar.openViewOnFocus) {
+    gURLBar.view.close();
+  }
 });
 
 async function checkResults() {
@@ -56,4 +51,35 @@ async function checkResults() {
   details = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
   Assert.equal(details.type, UrlbarUtils.RESULT_TYPE.URL);
   Assert.equal(details.url, "http://example.com/");
+}
+
+async function deleteInput() {
+  if (gURLBar.openViewOnFocus) {
+    
+    while (gURLBar.value.length) {
+      EventUtils.synthesizeKey("KEY_Backspace");
+    }
+    Assert.ok(
+      window.gURLBar.view.isOpen,
+      "View should remain open when deleting all input text"
+    );
+    let queryContext = await UrlbarTestUtils.promiseSearchComplete(window);
+    Assert.notEqual(
+      queryContext.results.length,
+      0,
+      "View should show results when deleting all input text"
+    );
+    Assert.equal(
+      queryContext.searchString,
+      "",
+      "Results should be for the empty search string (i.e. top sites) when deleting all input text"
+    );
+  } else {
+    
+    await UrlbarTestUtils.promisePopupClose(window, () => {
+      while (gURLBar.value.length) {
+        EventUtils.synthesizeKey("KEY_Backspace");
+      }
+    });
+  }
 }
