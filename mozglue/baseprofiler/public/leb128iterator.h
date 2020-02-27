@@ -38,9 +38,6 @@
 #ifndef leb128iterator_h
 #define leb128iterator_h
 
-#include "mozilla/Assertions.h"
-#include "mozilla/Likely.h"
-
 #include <climits>
 #include <cstdint>
 #include <limits>
@@ -144,63 +141,6 @@ T ReadULEB128(It& aIterator) {
     MOZ_ASSERT(shift < CHAR_BIT * sizeof(T));
   }
 }
-
-
-
-template <typename T>
-class ULEB128Reader {
-  static_assert(!std::numeric_limits<T>::is_signed,
-                "ULEB128Reader must handle an unsigned type");
-
- public:
-  constexpr ULEB128Reader() = default;
-
-  
-  constexpr ULEB128Reader(const ULEB128Reader&) = delete;
-  constexpr ULEB128Reader& operator=(const ULEB128Reader&) = delete;
-
-  
-  
-  constexpr MOZ_MUST_USE bool FeedByteIsComplete(unsigned aByte) {
-    MOZ_ASSERT(!IsComplete());
-    
-    mValue |= static_cast<T>(aByte & 0x7fu) << mShift;
-    
-    
-    if (MOZ_LIKELY((aByte & 0x80u) == 0)) {
-      mShift = mCompleteShift;
-      return true;
-    }
-    
-    
-    mShift += 7;
-    
-    
-    MOZ_ASSERT(mShift < CHAR_BIT * sizeof(T));
-    return false;
-  }
-
-  constexpr void Reset() {
-    mValue = 0;
-    mShift = 0;
-  }
-
-  constexpr MOZ_MUST_USE bool IsComplete() const {
-    return mShift == mCompleteShift;
-  }
-
-  constexpr MOZ_MUST_USE T Value() const {
-    MOZ_ASSERT(IsComplete());
-    return mValue;
-  }
-
- private:
-  
-  constexpr static unsigned mCompleteShift = 0x10000u;
-
-  T mValue = 0;
-  unsigned mShift = 0;
-};
 
 }  
 
