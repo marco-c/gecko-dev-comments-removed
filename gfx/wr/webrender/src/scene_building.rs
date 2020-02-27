@@ -1214,7 +1214,7 @@ impl<'a> SceneBuilder<'a> {
                 self.add_solid_rectangle(
                     clip_and_scroll,
                     &layout,
-                    ColorF::TRANSPARENT,
+                    PropertyBinding::Value(ColorF::TRANSPARENT),
                 );
             }
             DisplayItem::ClearRectangle(ref info) => {
@@ -2749,13 +2749,19 @@ impl<'a> SceneBuilder<'a> {
         &mut self,
         clip_and_scroll: ScrollNodeAndClipChain,
         info: &LayoutPrimitiveInfo,
-        color: ColorF,
+        color: PropertyBinding<ColorF>,
     ) {
-        if color.a == 0.0 {
-            
-            
-            self.add_primitive_to_hit_testing_list(info, clip_and_scroll);
-            return;
+        match color {
+            PropertyBinding::Value(value) => {
+                if value.a == 0.0 {
+                    
+                    
+                    
+                    self.add_primitive_to_hit_testing_list(info, clip_and_scroll);
+                    return;
+                }
+            },
+            PropertyBinding::Binding(..) => {},
         }
 
         self.add_primitive(
