@@ -141,9 +141,6 @@ enum BailoutKind {
   Bailout_UninitializedThis,
 
   
-  Bailout_BadDerivedConstructorReturn,
-
-  
   Bailout_FirstExecution,
 
   
@@ -238,8 +235,6 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "Bailout_Debugger";
     case Bailout_UninitializedThis:
       return "Bailout_UninitializedThis";
-    case Bailout_BadDerivedConstructorReturn:
-      return "Bailout_BadDerivedConstructorReturn";
     case Bailout_FirstExecution:
       return "Bailout_FirstExecution";
 
