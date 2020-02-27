@@ -2322,6 +2322,14 @@ setterLevel:                                                                  \
   }
   void setEnclosingLazyScript(LazyScript* enclosingLazyScript);
 
+  
+  
+  
+  
+  bool enclosingScriptHasEverBeenCompiled() const {
+    return warmUpData_.isEnclosingScope();
+  }
+
   Scope* enclosingScope() const {
     MOZ_ASSERT(!warmUpData_.isEnclosingScript(),
                "Enclosing scope is not computed yet");
@@ -3233,16 +3241,6 @@ class LazyScript : public BaseScript {
     return u.script_.unbarrieredGet();
   }
   bool hasScript() const { return bool(u.script_); }
-
-  
-  
-  
-  
-  
-  
-  bool enclosingScriptHasEverBeenCompiled() const {
-    return warmUpData_.isEnclosingScope();
-  }
 };
 
 

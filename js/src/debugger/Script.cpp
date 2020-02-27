@@ -121,21 +121,16 @@ DebuggerScript* DebuggerScript::create(JSContext* cx, HandleObject proto,
   return scriptobj;
 }
 
-static JSScript* DelazifyScript(JSContext* cx, Handle<LazyScript*> lazyScript) {
-  if (lazyScript->maybeScript()) {
-    return lazyScript->maybeScript();
-  }
-
+static JSScript* DelazifyScript(JSContext* cx, Handle<BaseScript*> script) {
   
   
-  if (lazyScript->hasEnclosingLazyScript()) {
-    Rooted<LazyScript*> enclosingLazyScript(cx,
-                                            lazyScript->enclosingLazyScript());
+  if (script->hasEnclosingLazyScript()) {
+    Rooted<LazyScript*> enclosingLazyScript(cx, script->enclosingLazyScript());
     if (!DelazifyScript(cx, enclosingLazyScript)) {
       return nullptr;
     }
 
-    if (!lazyScript->enclosingScriptHasEverBeenCompiled()) {
+    if (!script->enclosingScriptHasEverBeenCompiled()) {
       
       
       
@@ -144,9 +139,10 @@ static JSScript* DelazifyScript(JSContext* cx, Handle<LazyScript*> lazyScript) {
       return nullptr;
     }
   }
-  MOZ_ASSERT(lazyScript->enclosingScriptHasEverBeenCompiled());
 
-  RootedFunction fun(cx, lazyScript->function());
+  MOZ_ASSERT(script->enclosingScope());
+
+  RootedFunction fun(cx, script->function());
   AutoRealm ar(cx, fun);
   return JSFunction::getOrCreateScript(cx, fun);
 }
