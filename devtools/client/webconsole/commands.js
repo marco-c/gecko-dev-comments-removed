@@ -12,20 +12,39 @@ class ConsoleCommands {
     this.currentTarget = currentTarget;
   }
 
+  getFrontByID(id) {
+    return this.devToolsClient.getFrontByID(id);
+  }
+
   async evaluateJSAsync(expression, options = {}) {
-    const { selectedNodeFront, webConsoleFront, selectedObjectActor } = options;
+    const {
+      selectedNodeFront,
+      selectedThreadFront,
+      frameActor,
+      selectedObjectActor,
+    } = options;
     let front = this.proxy.webConsoleFront;
 
     
-    if (webConsoleFront) {
-      front = webConsoleFront;
+    if (frameActor) {
+      const frameFront = this.getFrontByID(frameActor);
+      if (frameFront) {
+        front = await frameFront.targetFront.getFront("console");
+      }
     }
 
     
     
     
-    if (selectedObjectActor) {
-      const objectFront = this.devToolsClient.getFrontByID(selectedObjectActor);
+    
+    if (selectedThreadFront) {
+      front = await selectedThreadFront.targetFront.getFront("console");
+
+      
+      
+      
+    } else if (selectedObjectActor) {
+      const objectFront = this.getFrontByID(selectedObjectActor);
       if (objectFront) {
         front = await objectFront.targetFront.getFront("console");
       }
