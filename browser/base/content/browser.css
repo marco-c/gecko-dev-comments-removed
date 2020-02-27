@@ -785,6 +785,7 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 toolbarpaletteitem[place=toolbar][id^=wrapper-customizableui-special-spring],
 toolbarspring {
   -moz-box-flex: 1;
+  min-width: 28px;
   max-width: 112px;
 }
 
@@ -795,9 +796,11 @@ toolbarspring {
   min-width: 10px;
 }
 
-#nav-bar toolbarpaletteitem[id^=wrapper-customizableui-special-spring],
-#nav-bar toolbarspring {
+#nav-bar:not([customizing]) toolbarpaletteitem[id^=wrapper-customizableui-special-spring],
+#nav-bar:not([customizing]) toolbarspring {
+  
   -moz-box-flex: 80;
+  min-width: 1px;
 }
 
 #widget-overflow-list > toolbarspring {
