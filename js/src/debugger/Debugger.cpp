@@ -4833,8 +4833,8 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
         line(0),
         innermost(false),
         innermostForRealm(cx, cx->zone()),
-        scriptVector(cx, ScriptVector(cx)),
-        lazyScriptVector(cx, LazyScriptVector(cx)),
+        scriptVector(cx, BaseScriptVector(cx)),
+        lazyScriptVector(cx, BaseScriptVector(cx)),
         wasmInstanceVector(cx, WasmInstanceObjectVector(cx)) {}
 
   
@@ -5063,8 +5063,8 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
     return true;
   }
 
-  Handle<ScriptVector> foundScripts() const { return scriptVector; }
-  Handle<LazyScriptVector> foundLazyScripts() const { return lazyScriptVector; }
+  Handle<BaseScriptVector> foundScripts() const { return scriptVector; }
+  Handle<BaseScriptVector> foundLazyScripts() const { return lazyScriptVector; }
 
   Handle<WasmInstanceObjectVector> foundWasmInstances() const {
     return wasmInstanceVector;
@@ -5113,8 +5113,8 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
 
 
 
-  Rooted<ScriptVector> scriptVector;
-  Rooted<LazyScriptVector> lazyScriptVector;
+  Rooted<BaseScriptVector> scriptVector;
+  Rooted<BaseScriptVector> lazyScriptVector;
 
   
 
@@ -5331,8 +5331,8 @@ bool Debugger::CallData::findScripts() {
     return false;
   }
 
-  Handle<ScriptVector> scripts(query.foundScripts());
-  Handle<LazyScriptVector> lazyScripts(query.foundLazyScripts());
+  Handle<BaseScriptVector> scripts(query.foundScripts());
+  Handle<BaseScriptVector> lazyScripts(query.foundLazyScripts());
   Handle<WasmInstanceObjectVector> wasmInstances(query.foundWasmInstances());
 
   size_t resultLength =
