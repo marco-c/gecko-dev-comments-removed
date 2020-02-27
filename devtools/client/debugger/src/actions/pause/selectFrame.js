@@ -21,7 +21,8 @@ export function selectFrame(cx: ThreadContext, frame: Frame) {
     assert(cx.thread == frame.thread, "Thread mismatch");
 
     
-    if (frame.asyncCause) {
+    
+    if (frame.state !== "on-stack") {
       return dispatch(selectLocation(cx, frame.location));
     }
 
