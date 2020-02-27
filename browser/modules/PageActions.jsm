@@ -1269,7 +1269,7 @@ if (SiteSpecificBrowserService.isEnabled) {
   gBuiltInActions.push({
     id: "launchSSB",
     
-    title: "Launch Site Specific Browser",
+    title: "Install Website as App",
     onLocationChange(browserWindow) {
       browserPageActions(browserWindow).launchSSB.updateState();
     },
