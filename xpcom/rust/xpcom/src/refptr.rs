@@ -2,12 +2,12 @@
 
 
 
-use std::mem;
-use std::ptr;
-use std::ops::Deref;
+use std::cell::Cell;
 use std::fmt;
 use std::marker::PhantomData;
-use std::cell::Cell;
+use std::mem;
+use std::ops::Deref;
+use std::ptr;
 use std::sync::atomic::{self, AtomicUsize, Ordering};
 
 use nserror::{nsresult, NS_OK};
@@ -43,7 +43,7 @@ pub struct RefPtr<T: RefCounted + 'static> {
     _marker: PhantomData<T>,
 }
 
-impl <T: RefCounted + 'static> RefPtr<T> {
+impl<T: RefCounted + 'static> RefPtr<T> {
     
     #[inline]
     pub fn new(p: &T) -> RefPtr<T> {
@@ -89,7 +89,7 @@ impl <T: RefCounted + 'static> RefPtr<T> {
     }
 }
 
-impl <T: RefCounted + 'static> Deref for RefPtr<T> {
+impl<T: RefCounted + 'static> Deref for RefPtr<T> {
     type Target = T;
     #[inline]
     fn deref(&self) -> &T {
@@ -97,7 +97,7 @@ impl <T: RefCounted + 'static> Deref for RefPtr<T> {
     }
 }
 
-impl <T: RefCounted + 'static> Drop for RefPtr<T> {
+impl<T: RefCounted + 'static> Drop for RefPtr<T> {
     #[inline]
     fn drop(&mut self) {
         unsafe {
@@ -106,14 +106,14 @@ impl <T: RefCounted + 'static> Drop for RefPtr<T> {
     }
 }
 
-impl <T: RefCounted + 'static> Clone for RefPtr<T> {
+impl<T: RefCounted + 'static> Clone for RefPtr<T> {
     #[inline]
     fn clone(&self) -> RefPtr<T> {
         RefPtr::new(self)
     }
 }
 
-impl <T: RefCounted + 'static + fmt::Debug> fmt::Debug for RefPtr<T> {
+impl<T: RefCounted + 'static + fmt::Debug> fmt::Debug for RefPtr<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "RefPtr<{:?}>", self.deref())
     }
@@ -158,7 +158,7 @@ pub struct GetterAddrefs<T: RefCounted + 'static> {
     _marker: PhantomData<T>,
 }
 
-impl <T: RefCounted + 'static> GetterAddrefs<T> {
+impl<T: RefCounted + 'static> GetterAddrefs<T> {
     
     #[inline]
     pub fn new() -> GetterAddrefs<T> {
@@ -192,13 +192,11 @@ impl <T: RefCounted + 'static> GetterAddrefs<T> {
         
         
         mem::forget(self);
-        unsafe {
-            RefPtr::from_raw_dont_addref(p)
-        }
+        unsafe { RefPtr::from_raw_dont_addref(p) }
     }
 }
 
-impl <T: RefCounted + 'static> Drop for GetterAddrefs<T> {
+impl<T: RefCounted + 'static> Drop for GetterAddrefs<T> {
     #[inline]
     fn drop(&mut self) {
         if !self._ptr.is_null() {
@@ -228,7 +226,8 @@ impl <T: RefCounted + 'static> Drop for GetterAddrefs<T> {
 
 #[inline]
 pub fn getter_addrefs<T: RefCounted, F>(f: F) -> Result<RefPtr<T>, nsresult>
-    where F: FnOnce(*mut *const T) -> nsresult
+where
+    F: FnOnce(*mut *const T) -> nsresult,
 {
     let mut ga = GetterAddrefs::<T>::new();
     let rv = f(unsafe { ga.ptr() });

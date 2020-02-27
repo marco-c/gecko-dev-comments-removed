@@ -8,7 +8,6 @@
 
 
 
-
 pub extern crate libc;
 
 pub use nsstring::{nsACString, nsAString, nsCString, nsString};

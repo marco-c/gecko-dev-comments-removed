@@ -2,12 +2,8 @@
 
 
 
-use {
-    RefCounted,
-    RefPtr,
-    GetterAddrefs
-};
 use interfaces::{nsIInterfaceRequestor, nsISupports};
+use {GetterAddrefs, RefCounted, RefPtr};
 
 #[repr(C)]
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -25,7 +21,7 @@ pub type nsCID = nsID;
 
 
 
-pub unsafe trait XpCom : RefCounted {
+pub unsafe trait XpCom: RefCounted {
     const IID: nsIID;
 
     
@@ -34,10 +30,10 @@ pub unsafe trait XpCom : RefCounted {
     fn query_interface<T: XpCom>(&self) -> Option<RefPtr<T>> {
         let mut ga = GetterAddrefs::<T>::new();
         unsafe {
-            if (*(self as *const Self as *const nsISupports)).QueryInterface(
-                &T::IID,
-                ga.void_ptr(),
-            ).succeeded() {
+            if (*(self as *const Self as *const nsISupports))
+                .QueryInterface(&T::IID, ga.void_ptr())
+                .succeeded()
+            {
                 ga.refptr()
             } else {
                 None

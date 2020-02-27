@@ -12,10 +12,10 @@
 #![allow(non_camel_case_types)]
 
 extern crate libc;
-extern crate nsstring;
 extern crate nserror;
-extern crate threadbound;
+extern crate nsstring;
 extern crate thin_vec;
+extern crate threadbound;
 
 
 #[macro_use]
