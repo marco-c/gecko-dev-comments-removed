@@ -307,6 +307,39 @@ class ResponsiveUI {
 
     this.resizeHandleY = resizeHandleY;
     this.resizeHandleY.addEventListener("mousedown", this.onResizeStart);
+
+    
+    
+    this.resizeToolbarObserver = new this.browserWindow.ResizeObserver(
+      entries => {
+        for (const entry of entries) {
+          const { width } = entry.contentRect;
+
+          this.rdmFrame.style.setProperty("width", `${width}px`);
+
+          
+          
+          if (
+            this.browserStackEl.classList.contains(
+              "device-selector-menu-opened"
+            )
+          ) {
+            const style = this.browserWindow.getComputedStyle(
+              this.browserStackEl
+            );
+            this.rdmFrame.style.height = style.height;
+          } else {
+            
+            
+            
+            
+            this.rdmFrame.classList.toggle("accomodate-ua", width < 520);
+          }
+        }
+      }
+    );
+
+    this.resizeToolbarObserver.observe(this.browserStackEl);
   }
 
   
@@ -364,6 +397,10 @@ class ResponsiveUI {
     } else {
       this.browserWindow.removeEventListener("FullZoomChange", this);
       this.rdmFrame.contentWindow.removeEventListener("message", this);
+
+      
+      this.resizeToolbarObserver.unobserve(this.browserStackEl);
+
       this.rdmFrame.remove();
 
       
@@ -410,6 +447,7 @@ class ResponsiveUI {
     this.resizeHandleY = null;
     this.toolWindow = null;
     this.swap = null;
+    this.resizeToolbarObserver = null;
 
     
     
@@ -542,8 +580,8 @@ class ResponsiveUI {
       case "update-device-modal":
         this.onUpdateDeviceModal(event);
         break;
-      case "update-device-selector-menu":
-        this.onUpdateDeviceSelectorMenu(event);
+      case "update-device-toolbar-height":
+        this.onUpdateToolbarHeight(event);
     }
   }
 
@@ -756,17 +794,32 @@ class ResponsiveUI {
   }
 
   onUpdateDeviceModal(event) {
-    this.browserStackEl.classList.toggle(
-      "device-modal-opened",
-      event.data.isOpen
-    );
+    
+    if (!event.data.isOpen) {
+      this.restoreToolbarHeight();
+    }
   }
 
-  onUpdateDeviceSelectorMenu(event) {
-    this.browserStackEl.classList.toggle(
-      "device-selector-menu-opened",
-      event.data.isOpen
-    );
+  
+
+
+
+
+  onUpdateToolbarHeight(event) {
+    if (!event.data.isOpen) {
+      const {
+        isModalOpen,
+      } = this.rdmFrame.contentWindow.store.getState().devices;
+
+      
+      
+      
+      if (isModalOpen) {
+        return;
+      }
+
+      this.restoreToolbarHeight();
+    }
   }
 
   async hasDeviceState() {
@@ -774,6 +827,14 @@ class ResponsiveUI {
       "devtools.responsive.deviceState"
     );
     return !!deviceState;
+  }
+
+  
+
+
+  restoreToolbarHeight() {
+    this.rdmFrame.style.removeProperty("height");
+    this.browserStackEl.classList.remove("device-selector-menu-opened");
   }
 
   
