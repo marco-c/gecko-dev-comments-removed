@@ -98,6 +98,14 @@ class CrashReporterHost {
   
   
   
+  
+  
+  bool IsLikelyOOM();
+
+  
+  
+  
+  
   static void RecordCrash(GeckoProcessType aProcessType, int32_t aCrashType,
                           const nsString& aChildDumpID);
 
