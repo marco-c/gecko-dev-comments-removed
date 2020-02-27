@@ -16,6 +16,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   PlacesSearchAutocompleteProvider:
     "resource://gre/modules/PlacesSearchAutocompleteProvider.jsm",
+  Services: "resource://gre/modules/Services.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
   UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.jsm",
@@ -72,10 +73,15 @@ class ProviderTopSites extends UrlbarProvider {
     
     
     
+    
+    
     return (
       UrlbarPrefs.get("update1") &&
       UrlbarPrefs.get("openViewOnFocus") &&
-      !queryContext.searchString
+      !queryContext.searchString &&
+      Services.prefs.getBoolPref(
+        "browser.newtabpage.activity-stream.feeds.topsites"
+      )
     );
   }
 
