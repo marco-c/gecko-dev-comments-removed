@@ -2730,6 +2730,10 @@ pref("browser.tabs.remote.autostart", false);
 
 
 
+
+
+
+
 #ifdef RELEASE_OR_BETA
   pref("fission.autostart", false, locked);
 #else
