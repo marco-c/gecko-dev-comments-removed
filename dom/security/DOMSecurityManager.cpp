@@ -93,7 +93,9 @@ DOMSecurityManager::Observe(nsISupports* aSubject, const char* aTopic,
   
   
   
-  bool fissionEnabled = StaticPrefs::fission_autostart();
+  nsCOMPtr<nsILoadContext> loadContext;
+  NS_QueryNotificationCallbacks(channel, loadContext);
+  bool fissionEnabled = loadContext && loadContext->UseRemoteSubframes();
   if (fissionEnabled) {
     nsCOMPtr<nsIContentSecurityPolicy> csp;
     nsresult rv =

@@ -9,7 +9,9 @@ SpecialPowers.pushPrefEnv({
   ],
 });
 
-let gShouldObserveSubframes;
+
+
+const gShouldObserveSubframes = SpecialPowers.useRemoteSubframes;
 
 var gTests = [
   {
@@ -580,9 +582,6 @@ add_task(async function test_inprocess() {
 });
 
 add_task(async function test_outofprocess() {
-  
-  
-  gShouldObserveSubframes = Services.prefs.getBoolPref("fission.autostart");
   let observeSubFrameIds = gShouldObserveSubframes ? ["frame1", "frame2"] : [];
   await runTests(gTests, {
     relativeURI: "get_user_media_in_oop_frame.html",

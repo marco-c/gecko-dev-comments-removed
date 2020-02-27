@@ -7402,9 +7402,9 @@ mozilla::dom::TabGroup* nsGlobalWindowOuter::MaybeTabGroupOuter() {
       
       
       
-      MOZ_ASSERT_IF(
-          !StaticPrefs::fission_autostart() && opener && Cast(opener) != this,
-          opener->TabGroup() == mTabGroup);
+      MOZ_ASSERT_IF(!nsDocShell::Cast(GetDocShell())->UseRemoteSubframes() &&
+                        opener && Cast(opener) != this,
+                    opener->TabGroup() == mTabGroup);
     }
     mIsValidatingTabGroup = false;
   }

@@ -2,7 +2,7 @@
 
 
 
-if (Services.prefs.getBoolPref("fission.autostart")) {
+if (SpecialPowers.useRemoteSubframes) {
   requestLongerTimeout(2);
 }
 
