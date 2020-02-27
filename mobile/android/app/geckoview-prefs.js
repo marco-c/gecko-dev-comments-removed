@@ -26,6 +26,8 @@ pref("toolkit.telemetry.isGeckoViewMode", true);
 
 pref("toolkit.telemetry.eventping.enabled", false);
 
+pref("toolkit.lazyHiddenWindow", true);
+
 pref("geckoview.console.enabled", false);
 
 #ifdef RELEASE_OR_BETA
