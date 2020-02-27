@@ -506,12 +506,13 @@ pref("browser.tabs.delayHidingAudioPlayingIconMS", 3000);
   pref("browser.tabs.remote.separatePrivilegedContentProcess", false);
   
   
-  
-  pref("browser.tabs.remote.separatePrivilegedMozillaWebContentProcess", true);
-  
-  
   pref("browser.tabs.remote.enforceRemoteTypeRestrictions", true);
 #endif
+
+
+
+
+pref("browser.tabs.remote.separatePrivilegedMozillaWebContentProcess", true);
 
 
 
