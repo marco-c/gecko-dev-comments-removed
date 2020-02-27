@@ -205,14 +205,8 @@ class MOZ_STACK_CLASS LanguageTag final {
 
   friend class LanguageTagParser;
 
- public:
-  
-  enum class UnicodeExtensionCanonicalForm : bool { No, Yes };
-
- private:
-  bool canonicalizeUnicodeExtension(
-      JSContext* cx, JS::UniqueChars& unicodeExtension,
-      UnicodeExtensionCanonicalForm canonicalForm);
+  bool canonicalizeUnicodeExtension(JSContext* cx,
+                                    JS::UniqueChars& unicodeExtension);
 
   bool canonicalizeTransformExtension(JSContext* cx,
                                       JS::UniqueChars& transformExtension);
@@ -230,6 +224,15 @@ class MOZ_STACK_CLASS LanguageTag final {
   MOZ_MUST_USE bool performVariantMappings(JSContext* cx);
 
   MOZ_MUST_USE bool updateGrandfatheredMappings(JSContext* cx);
+
+ public:
+  
+
+
+
+
+
+
 
   static const char* replaceUnicodeExtensionType(
       mozilla::Span<const char> key, mozilla::Span<const char> type);
@@ -348,8 +351,7 @@ class MOZ_STACK_CLASS LanguageTag final {
   
 
 
-  bool canonicalizeExtensions(JSContext* cx,
-                              UnicodeExtensionCanonicalForm canonicalForm);
+  bool canonicalizeExtensions(JSContext* cx);
 
   
 
@@ -370,19 +372,8 @@ class MOZ_STACK_CLASS LanguageTag final {
 
 
 
-
-
-
-
-
-
-
-
-
-  bool canonicalize(JSContext* cx,
-                    UnicodeExtensionCanonicalForm canonicalForm) {
-    return canonicalizeBaseName(cx) &&
-           canonicalizeExtensions(cx, canonicalForm);
+  bool canonicalize(JSContext* cx) {
+    return canonicalizeBaseName(cx) && canonicalizeExtensions(cx);
   }
 
   

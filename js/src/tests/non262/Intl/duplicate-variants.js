@@ -37,8 +37,10 @@ assertEqArray(Intl.getCanonicalLocales("en-u-kf-false-kn-false"), ["en-u-kf-fals
 
 
 
-assertEqArray(Intl.getCanonicalLocales("en-u-kn-false-kn-false"), ["en-u-kn-false-kn-false"]);
-assertEqArray(Intl.getCanonicalLocales("en-u-attr1-attr2-attr2"), ["en-u-attr1-attr2-attr2"]);
+
+
+assertEqArray(Intl.getCanonicalLocales("en-u-kn-false-kn-false"), ["en-u-kn-false"]);
+assertEqArray(Intl.getCanonicalLocales("en-u-attr1-attr2-attr2"), ["en-u-attr1-attr2"]);
 
 if (typeof reportCompare === "function")
     reportCompare(0, 0);
