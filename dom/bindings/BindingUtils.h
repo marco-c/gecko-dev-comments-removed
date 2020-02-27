@@ -17,6 +17,7 @@
 #include "mozilla/Array.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/DeferredFinalize.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CallbackObject.h"
 #include "mozilla/dom/DOMJSClass.h"
@@ -32,7 +33,6 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MemoryReporting.h"
-#include "nsAutoPtr.h"
 #include "mozilla/dom/Document.h"
 #include "nsIGlobalObject.h"
 #include "nsIVariant.h"
@@ -1189,7 +1189,7 @@ inline bool WrapNewBindingNonWrapperCachedObject(
 
 template <class T>
 inline bool WrapNewBindingNonWrapperCachedObject(
-    JSContext* cx, JS::Handle<JSObject*> scopeArg, nsAutoPtr<T>& value,
+    JSContext* cx, JS::Handle<JSObject*> scopeArg, UniquePtr<T>& value,
     JS::MutableHandle<JS::Value> rval,
     JS::Handle<JSObject*> givenProto = nullptr) {
   static_assert(!IsRefcounted<T>::value, "Only pass owned classes in here.");
@@ -1232,7 +1232,8 @@ inline bool WrapNewBindingNonWrapperCachedObject(
       return false;
     }
 
-    value.forget();
+    
+    Unused << value.release();
   }
 
   
@@ -2696,7 +2697,7 @@ struct DeferredFinalizerImpl {
   typedef typename Conditional<
       IsSame<T, nsISupports>::value, nsCOMPtr<T>,
       typename Conditional<IsRefcounted<T>::value, RefPtr<T>,
-                           nsAutoPtr<T>>::Type>::Type SmartPtr;
+                           UniquePtr<T>>::Type>::Type SmartPtr;
   typedef SegmentedVector<SmartPtr> SmartPtrArray;
 
   static_assert(
@@ -2713,7 +2714,7 @@ struct DeferredFinalizerImpl {
     smartPtrArray.InfallibleAppend(dont_AddRef(ptr));
   }
   template <class U>
-  static inline void AppendAndTake(SegmentedVector<nsAutoPtr<U>>& smartPtrArray,
+  static inline void AppendAndTake(SegmentedVector<UniquePtr<U>>& smartPtrArray,
                                    U* ptr) {
     smartPtrArray.InfallibleAppend(ptr);
   }
@@ -3057,7 +3058,7 @@ inline RefPtr<T> StrongOrRawPtr(RefPtr<S>&& aPtr) {
 }
 
 template <class T, class ReturnType = typename Conditional<
-                       IsRefcounted<T>::value, T*, nsAutoPtr<T>>::Type>
+                       IsRefcounted<T>::value, T*, UniquePtr<T>>::Type>
 inline ReturnType StrongOrRawPtr(T* aPtr) {
   return ReturnType(aPtr);
 }
@@ -3067,7 +3068,7 @@ inline void StrongOrRawPtr(SmartPtr<S>&& aPtr) = delete;
 
 template <class T>
 using StrongPtrForMember =
-    typename Conditional<IsRefcounted<T>::value, RefPtr<T>, nsAutoPtr<T>>::Type;
+    typename Conditional<IsRefcounted<T>::value, RefPtr<T>, UniquePtr<T>>::Type;
 
 namespace binding_detail {
 inline JSObject* GetHackedNamespaceProtoObject(JSContext* aCx) {
