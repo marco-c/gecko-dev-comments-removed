@@ -30,7 +30,7 @@ add_task(async function test_launch_login_item() {
       "discard-changes confirmation-dialog should be hidden before opening the site"
     );
 
-    let originInput = loginItem.shadowRoot.querySelector(".origin-input");
+    let originInput = loginItem.shadowRoot.querySelector("a[name='origin']");
     let EventUtils = ContentTaskUtils.getEventUtils(content);
     
     
