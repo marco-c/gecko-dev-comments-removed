@@ -801,17 +801,9 @@ export default class LoginItem extends HTMLElement {
     
     
     if (checked || this.dataset.editing) {
-      this._revealCheckbox.insertAdjacentElement(
-        "beforebegin",
-        this._passwordInput
-      );
-      this._passwordDisplayInput.remove();
+      this._passwordDisplayInput.replaceWith(this._passwordInput);
     } else {
-      this._revealCheckbox.insertAdjacentElement(
-        "beforebegin",
-        this._passwordDisplayInput
-      );
-      this._passwordInput.remove();
+      this._passwordInput.replaceWith(this._passwordDisplayInput);
     }
   }
 
