@@ -3,15 +3,11 @@
 
 add_task(async function setup() {
   await AddonTestUtils.promiseStartupManager();
-  Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", true);
-  Services.prefs
-    .getDefaultBranch(SearchUtils.BROWSER_SEARCH_PREF)
-    .setCharPref("geoSpecificDefaults.url", "");
 });
 
 add_task(async function test_location() {
   Services.prefs.setCharPref(
-    "geo.provider-country.network.url",
+    "browser.search.geoip.url",
     'data:application/json,{"country_code": "AU"}'
   );
   await Services.search.init(true);
@@ -22,6 +18,12 @@ add_task(async function test_location() {
   );
   
   checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.SUCCESS);
+  
+  let histogram = Services.telemetry.getHistogramById(
+    "SEARCH_SERVICE_COUNTRY_TIMEOUT"
+  );
+  let snapshot = histogram.snapshot();
+  deepEqual(snapshot.values, { 0: 1, 1: 0 }); 
 
   
   
@@ -60,8 +62,8 @@ add_task(async function test_location() {
         countryCode == "AU" ? { 0: 1, 1: 0 } : { 0: 0, 1: 1, 2: 0 };
     }
 
-    let histogram = Services.telemetry.getHistogramById(hid);
-    let snapshot = histogram.snapshot();
+    histogram = Services.telemetry.getHistogramById(hid);
+    snapshot = histogram.snapshot();
     deepEqual(snapshot.values, expectedResult);
   }
 });

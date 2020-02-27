@@ -43,6 +43,17 @@ var XULRuntime = Cc["@mozilla.org/xre/runtime;1"].getService(Ci.nsIXULRuntime);
 
 Services.prefs.setBoolPref("browser.search.log", true);
 
+
+
+Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", true);
+Services.prefs.setIntPref("browser.search.geoip.timeout", 3000);
+
+Services.prefs.setCharPref("browser.search.geoip.url", "");
+
+Services.prefs
+  .getDefaultBranch(SearchUtils.BROWSER_SEARCH_PREF)
+  .setCharPref("geoSpecificDefaults.url", "");
+
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "gModernConfig",
@@ -438,7 +449,7 @@ async function withGeoServer(
   let geoLookupUrl = geoLookupData
     ? `http://localhost:${srv.identity.primaryPort}/lookup_geoip`
     : 'data:application/json,{"country_code": "FR"}';
-  Services.prefs.setCharPref("geo.provider-country.network.url", geoLookupUrl);
+  Services.prefs.setCharPref("browser.search.geoip.url", geoLookupUrl);
 
   try {
     await testFn(gRequests);
@@ -448,7 +459,7 @@ async function withGeoServer(
     Services.prefs.clearUserPref(
       SearchUtils.BROWSER_SEARCH_PREF + PREF_SEARCH_URL
     );
-    Services.prefs.clearUserPref("geo.provider-country.network.url");
+    Services.prefs.clearUserPref("browser.search.geoip.url");
   }
 }
 

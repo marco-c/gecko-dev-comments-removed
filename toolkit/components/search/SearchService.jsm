@@ -18,10 +18,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   DeferredTask: "resource://gre/modules/DeferredTask.jsm",
   ExtensionParent: "resource://gre/modules/ExtensionParent.jsm",
   getVerificationHash: "resource://gre/modules/SearchEngine.jsm",
-  IgnoreLists: "resource://gre/modules/IgnoreLists.jsm",
-  NetworkGeolocationProvider:
-    "resource://gre/modules/NetworkGeolocationProvider.jsm",
   OS: "resource://gre/modules/osfile.jsm",
+  IgnoreLists: "resource://gre/modules/IgnoreLists.jsm",
   SearchEngine: "resource://gre/modules/SearchEngine.jsm",
   SearchEngineSelector: "resource://gre/modules/SearchEngineSelector.jsm",
   SearchStaticData: "resource://gre/modules/SearchStaticData.jsm",
@@ -129,7 +127,7 @@ var ensureKnownRegion = async function(ss, awaitRegionCheck) {
   
   let region = Services.prefs.getCharPref("browser.search.region", "");
   try {
-    if (gGeoSpecificDefaultsEnabled && !region) {
+    if (!region) {
       
       
       
@@ -150,7 +148,7 @@ var ensureKnownRegion = async function(ss, awaitRegionCheck) {
       if (expired || !hasValidHashes) {
         await new Promise(resolve => {
           let timeoutMS = Services.prefs.getIntPref(
-            "geo.provider.network.timeToWaitBeforeSending"
+            "browser.search.geoip.timeout"
           );
           let timerId = setTimeout(() => {
             timerId = null;
@@ -248,87 +246,134 @@ async function storeRegion(region) {
 }
 
 
-async function fetchRegion(ss, awaitRegionCheck) {
+function fetchRegion(ss, awaitRegionCheck) {
   
   const TELEMETRY_RESULT_ENUM = {
-    success: 0,
-    "xhr-empty": 1,
-    "xhr-timeout": 2,
-    "xhr-error": 3,
+    SUCCESS: 0,
+    SUCCESS_WITHOUT_DATA: 1,
+    XHRTIMEOUT: 2,
+    ERROR: 3,
     
     
     
   };
+  let endpoint = Services.urlFormatter.formatURLPref(
+    "browser.search.geoip.url"
+  );
+  SearchUtils.log("_fetchRegion starting with endpoint " + endpoint);
+  
+  if (!endpoint) {
+    return Promise.resolve();
+  }
   let startTime = Date.now();
-
-  let statusCallback = status => {
-    switch (status) {
-      case "xhr-start":
-        
-        Services.obs.notifyObservers(
-          null,
-          SearchUtils.TOPIC_SEARCH_SERVICE,
-          "geoip-lookup-xhr-starting"
-        );
-        break;
-      case "wifi-timeout":
-        SearchUtils.log("_fetchRegion: timeout fetching wifi information");
-        
-        break;
-    }
-  };
-
-  let networkGeo = new NetworkGeolocationProvider();
-  let result, errorResult;
-  try {
-    result = await networkGeo.getCountry(statusCallback);
-  } catch (ex) {
-    errorResult = ex;
-    Cu.reportError(ex);
-  }
-
-  let took = Date.now() - startTime;
-  
-  
-  if (result) {
+  return new Promise(resolve => {
     
     
-    storeRegion(result).catch(Cu.reportError);
-  }
-  SearchUtils.log(
-    "_fetchRegion got success response in " + took + "ms: " + result
-  );
-  Services.telemetry
-    .getHistogramById("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS")
-    .add(took);
+    
+    
+    
+    
+    
+    
+    
+    let timeoutMS = Services.prefs.getIntPref("browser.search.geoip.timeout");
+    let geoipTimeoutPossible = true;
+    let timerId = setTimeout(() => {
+      SearchUtils.log("_fetchRegion: timeout fetching region information");
+      if (geoipTimeoutPossible) {
+        Services.telemetry
+          .getHistogramById("SEARCH_SERVICE_COUNTRY_TIMEOUT")
+          .add(1);
+      }
+      timerId = null;
+      resolve();
+    }, timeoutMS);
 
-  
-  Services.obs.notifyObservers(
-    null,
-    SearchUtils.TOPIC_SEARCH_SERVICE,
-    "geoip-lookup-xhr-complete"
-  );
+    let resolveAndReportSuccess = (result, reason) => {
+      
+      
+      if (result) {
+        storeRegion(result).catch(Cu.reportError);
+      }
+      Services.telemetry
+        .getHistogramById("SEARCH_SERVICE_COUNTRY_FETCH_RESULT")
+        .add(reason);
 
-  
-  
-  try {
-    if (result && gModernConfig) {
-      await ss._maybeReloadEngines(awaitRegionCheck);
-    } else if (result && !gModernConfig) {
-      await fetchRegionDefault(ss, awaitRegionCheck);
-    }
-  } catch (ex) {
-    Cu.reportError(ex);
-  }
+      
+      Services.obs.notifyObservers(
+        null,
+        SearchUtils.TOPIC_SEARCH_SERVICE,
+        "geoip-lookup-xhr-complete"
+      );
 
-  let telemetryResult = TELEMETRY_RESULT_ENUM.success;
-  if (errorResult) {
-    telemetryResult =
-      TELEMETRY_RESULT_ENUM[errorResult] || TELEMETRY_RESULT_ENUM["xhr-error"];
-  }
-  Services.telemetry
-    .getHistogramById("SEARCH_SERVICE_COUNTRY_FETCH_RESULT")
-    .add(telemetryResult);
+      if (timerId) {
+        Services.telemetry
+          .getHistogramById("SEARCH_SERVICE_COUNTRY_TIMEOUT")
+          .add(0);
+        geoipTimeoutPossible = false;
+      }
+
+      let callback = () => {
+        
+        
+        if (timerId == null) {
+          return;
+        }
+        clearTimeout(timerId);
+        resolve();
+      };
+
+      if (result && gGeoSpecificDefaultsEnabled && gModernConfig) {
+        ss._maybeReloadEngines(awaitRegionCheck).then(callback);
+      } else if (result && gGeoSpecificDefaultsEnabled && !gModernConfig) {
+        fetchRegionDefault(ss, awaitRegionCheck)
+          .then(callback)
+          .catch(err => {
+            Cu.reportError(err);
+            callback();
+          });
+      } else {
+        callback();
+      }
+    };
+
+    let request = new XMLHttpRequest();
+    
+    Services.obs.notifyObservers(
+      request,
+      SearchUtils.TOPIC_SEARCH_SERVICE,
+      "geoip-lookup-xhr-starting"
+    );
+    request.timeout = 100000; 
+    request.onload = function(event) {
+      let took = Date.now() - startTime;
+      let region = event.target.response && event.target.response.country_code;
+      SearchUtils.log(
+        "_fetchRegion got success response in " + took + "ms: " + region
+      );
+      Services.telemetry
+        .getHistogramById("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS")
+        .add(took);
+      let reason = region
+        ? TELEMETRY_RESULT_ENUM.SUCCESS
+        : TELEMETRY_RESULT_ENUM.SUCCESS_WITHOUT_DATA;
+      resolveAndReportSuccess(region, reason);
+    };
+    request.ontimeout = function(event) {
+      SearchUtils.log(
+        "_fetchRegion: XHR finally timed-out fetching region information"
+      );
+      resolveAndReportSuccess(null, TELEMETRY_RESULT_ENUM.XHRTIMEOUT);
+    };
+    request.onerror = function(event) {
+      SearchUtils.log("_fetchRegion: failed to retrieve region information");
+      resolveAndReportSuccess(null, TELEMETRY_RESULT_ENUM.ERROR);
+    };
+    request.open("POST", endpoint, true);
+    request.setRequestHeader("Content-Type", "application/json");
+    request.responseType = "json";
+    request.send("{}");
+  });
 }
 
 
@@ -1453,7 +1498,7 @@ SearchService.prototype = {
   },
 
   _reInit(origin, awaitRegionCheck = false) {
-    SearchUtils.log("_reInit: " + awaitRegionCheck);
+    SearchUtils.log("_reInit");
     
     if (gReinitializing) {
       SearchUtils.log("_reInit: already re-initializing, bailing out.");
