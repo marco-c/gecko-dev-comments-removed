@@ -7402,7 +7402,8 @@ mozilla::dom::TabGroup* nsGlobalWindowOuter::MaybeTabGroupOuter() {
       
       
       
-      MOZ_ASSERT_IF(!nsDocShell::Cast(GetDocShell())->UseRemoteSubframes() &&
+      MOZ_ASSERT_IF(mDocShell &&
+                        !nsDocShell::Cast(mDocShell)->UseRemoteSubframes() &&
                         opener && Cast(opener) != this,
                     opener->TabGroup() == mTabGroup);
     }
