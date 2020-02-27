@@ -44,8 +44,6 @@ add_task(async function should_get_geo_defaults_only_once() {
     
     
     
-    Assert.ok(Services.prefs.prefHasUserValue("browser.search.region"));
-    Assert.equal(Services.prefs.getCharPref("browser.search.region"), "FR");
     await Promise.all([
       asyncReInit({ awaitRegionFetch: true }),
       promiseAfterCache(),

@@ -29,6 +29,7 @@ function getProbeSum(probe, sum) {
 
 add_task(async function setup() {
   await AddonTestUtils.promiseStartupManager();
+  Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", true);
 });
 
 add_task(async function test_location_timeout() {
@@ -40,8 +41,8 @@ add_task(async function test_location_timeout() {
   let server = startServer(continuePromise);
   let url =
     "http://localhost:" + server.identity.primaryPort + "/lookup_country";
-  Services.prefs.setCharPref("browser.search.geoip.url", url);
-  Services.prefs.setIntPref("browser.search.geoip.timeout", 50);
+  Services.prefs.setCharPref("geo.provider-country.network.url", url);
+  Services.prefs.setIntPref("geo.provider.network.timeout", 3000);
   await Services.search.init();
   ok(
     !Services.prefs.prefHasUserValue("browser.search.region"),
@@ -50,12 +51,6 @@ add_task(async function test_location_timeout() {
   
   checkCountryResultTelemetry(null);
 
-  
-  let histogram = Services.telemetry.getHistogramById(
-    "SEARCH_SERVICE_COUNTRY_TIMEOUT"
-  );
-  let snapshot = histogram.snapshot();
-  deepEqual(snapshot.values, { 0: 0, 1: 1, 2: 0 });
   
   
   equal(getProbeSum("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS"), 0);
@@ -73,7 +68,7 @@ add_task(async function test_location_timeout() {
   
   ok(getProbeSum("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS") != 0);
   
-  checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.SUCCESS);
+  checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.success);
 
   
   
@@ -81,9 +76,7 @@ add_task(async function test_location_timeout() {
 
   await SearchTestUtils.promiseSearchNotification("engines-reloaded");
 
-  await (() => {
-    return new Promise(resolve => {
-      server.stop(resolve);
-    });
-  })();
+  await new Promise(resolve => {
+    server.stop(resolve);
+  });
 });

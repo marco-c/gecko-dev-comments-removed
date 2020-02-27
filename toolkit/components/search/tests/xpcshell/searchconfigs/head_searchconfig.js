@@ -102,7 +102,6 @@ class SearchConfigTest {
 
     
     Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
-    Services.prefs.setCharPref("browser.search.geoip.url", "");
 
     
     
