@@ -21,7 +21,6 @@
 
 
 
-
 function requireLazy(callback) {
   
   let cache;
@@ -48,13 +47,6 @@ const lazyCustomizableWidgets = requireLazy(() =>
   
   (ChromeUtils.import("resource:///modules/CustomizableWidgets.jsm"))
 );
-const lazyPopupPanel = requireLazy(() =>
-  
-  (ChromeUtils.import(
-    "resource://devtools/client/performance-new/popup/panel.jsm.js"
-  ))
-);
-
 
 const BUTTON_ENABLED_PREF = "devtools.performance.popup.enabled";
 const WIDGET_ID = "profiler-button";
@@ -141,23 +133,14 @@ function initialize() {
   }
 
   
-  let observer = null;
-  const viewId = "PanelUI-profiler";
 
   
-
-
-
-
-  const panelState = {
-    cleanup: [],
-    isInfoCollapsed: true,
-  };
+  let observer = null;
 
   const item = {
     id: WIDGET_ID,
     type: "view",
-    viewId,
+    viewId: "PanelUI-profiler",
     tooltiptext: "profiler-button.tooltiptext",
 
     onViewShowing:
@@ -170,55 +153,85 @@ function initialize() {
 
 
       event => {
-        try {
-          
-          
-          
-          const {
-            selectElementsInPanelview,
-            createViewControllers,
-            addPopupEventHandlers,
-            initializePopup,
-          } = lazyPopupPanel();
-
-          const panelElements = selectElementsInPanelview(event.target);
-          const panelView = createViewControllers(panelState, panelElements);
-          addPopupEventHandlers(panelState, panelElements, panelView);
-          initializePopup(panelState, panelElements, panelView);
-        } catch (error) {
-          
-          console.error(error);
+        const panelview = event.target;
+        const document = panelview.ownerDocument;
+        if (!document) {
+          throw new Error(
+            "Expected to find a document on the panelview element."
+          );
         }
+
+        
+        const iframe = document.createXULElement("iframe");
+        iframe.id = "PanelUI-profilerIframe";
+        iframe.className = "PanelUI-developer-iframe";
+        iframe.src =
+          "chrome://devtools/content/performance-new/popup/popup.xhtml";
+
+        panelview.appendChild(iframe);
+        
+        const contentWindow = iframe.contentWindow;
+
+        
+        contentWindow.gClosePopup = () => {
+          CustomizableUI.hidePanelForNode(iframe);
+        };
+
+        
+        
+        contentWindow.gResizePopup = height => {
+          iframe.style.height = `${Math.min(600, height)}px`;
+        };
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        contentWindow.gIsDarkMode = document.documentElement.hasAttribute(
+          "lwt-popup-brighttext"
+        );
+
+        
+        
+        event.detail.addBlocker(
+          new Promise(resolve => {
+            contentWindow.gReportReady = () => {
+              
+              
+              delete contentWindow.gReportReady;
+              
+              resolve();
+            };
+          })
+        );
       },
 
     
 
 
     onViewHiding(event) {
+      const document = event.target.ownerDocument;
+
       
-      for (const fn of panelState.cleanup) {
-        fn();
+      const iframe = document.getElementById("PanelUI-profilerIframe");
+      if (!iframe) {
+        throw new Error("Unable to select the PanelUI-profilerIframe.");
       }
-      panelState.cleanup = [];
+
+      
+      iframe.remove();
     },
 
     
     onBeforeCreated: document => {
-      
-      const popupIntroDisplayedPref =
-        "devtools.performance.popup.intro-displayed";
-
-      
-      
-      
-      panelState.isInfoCollapsed = Services.prefs.getBoolPref(
-        popupIntroDisplayedPref
-      );
-      if (!panelState.isInfoCollapsed) {
-        
-        Services.prefs.setBoolPref(popupIntroDisplayedPref, true);
-      }
-
       setMenuItemChecked(document, true);
     },
 

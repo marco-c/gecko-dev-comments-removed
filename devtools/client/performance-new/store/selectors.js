@@ -3,7 +3,7 @@
 
 
 "use strict";
-
+const { presets } = require("devtools/shared/performance-new/recording-utils");
 
 
 
@@ -51,9 +51,6 @@ const getThreadsString = state => getThreads(state).join(",");
 const getObjdirs = state => state.objdirs;
 
 
-const getPresets = state => getInitializedValues(state).presets;
-
-
 const getPresetName = state => state.presetName;
 
 
@@ -63,7 +60,6 @@ const getPresetName = state => state.presetName;
 
 
 const getRecordingSettings = state => {
-  const presets = getPresets(state);
   const presetName = getPresetName(state);
   const preset = presets[presetName];
   if (preset) {
@@ -136,7 +132,6 @@ module.exports = {
   getThreads,
   getThreadsString,
   getObjdirs,
-  getPresets,
   getPresetName,
   getRecordingSettings,
   getInitializedValues,

@@ -12,7 +12,7 @@ const {
 const {
   getEnvironmentVariable,
 } = require("devtools/client/performance-new/browser");
-
+const { presets } = require("devtools/shared/performance-new/recording-utils");
 
 
 
@@ -108,7 +108,7 @@ exports.changeEntries = entries =>
 exports.changeFeatures = features => {
   return (dispatch, getState) => {
     let promptEnvRestart = null;
-    if (selectors.getPageContext(getState()) === "aboutprofiling") {
+    if (selectors.getPageContext(getState()) === "popup") {
       
       
       if (
@@ -145,8 +145,7 @@ exports.changeThreads = threads =>
 
 
 
-
-exports.changePreset = (presets, presetName) =>
+exports.changePreset = presetName =>
   _dispatchAndUpdatePreferences({
     type: "CHANGE_PRESET",
     presetName,
