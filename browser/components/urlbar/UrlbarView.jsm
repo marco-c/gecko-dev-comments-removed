@@ -1101,6 +1101,15 @@ class UrlbarView {
     let helpIcon = item._elements.get("helpButton");
     helpIcon.id = item.id + "-tip-help";
     helpIcon.style.display = result.payload.helpUrl ? "" : "none";
+
+    if (result.providerName == "UrlbarProviderSearchTips") {
+      
+      
+      
+      
+      
+      this.window.A11yUtils.announce(result.payload.textData);
+    }
   }
 
   _updateIndices() {
