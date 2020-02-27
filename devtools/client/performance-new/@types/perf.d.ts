@@ -97,7 +97,7 @@ export type RecordingState =
 
 
 
-export type PageContext = "devtools" | "aboutprofiling";
+export type PageContext = "popup" | "devtools" | "aboutprofiling";
 
 export interface State {
   recordingState: RecordingState;
@@ -211,8 +211,6 @@ export interface InitializedValues {
   
   setRecordingPreferences: SetRecordingPreferences;
   
-  presets: Presets;
-  
   pageContext: PageContext;
   
   getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
@@ -266,7 +264,6 @@ export type Action =
       perfFront: PerfFront;
       receiveProfile: ReceiveProfile;
       setRecordingPreferences: SetRecordingPreferences;
-      presets: Presets;
       pageContext: PageContext;
       recordingSettingsFromPreferences: RecordingStateFromPreferences;
       getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
@@ -282,7 +279,6 @@ export interface InitializeStoreValues {
   perfFront: PerfFront;
   receiveProfile: ReceiveProfile;
   setRecordingPreferences: SetRecordingPreferences;
-  presets: Presets;
   pageContext: PageContext;
   recordingPreferences: RecordingStateFromPreferences;
   supportedFeatures: string[] | null;
@@ -368,11 +364,6 @@ export interface PerformancePref {
 
 
   PopupEnabled: "devtools.performance.popup.enabled";
-  
-
-
-
-  PopupIntroDisplayed: "devtools.performance.popup.intro-displayed";
 }
 
 
@@ -408,7 +399,7 @@ export interface PresetDefinition {
   duration: number;
 }
 
-export interface Presets {
+export interface PresetDefinitions {
   [presetName: string]: PresetDefinition;
 }
 

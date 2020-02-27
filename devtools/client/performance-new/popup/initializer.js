@@ -13,6 +13,9 @@
 
 
 
+
+
+
 {
   
   
@@ -22,7 +25,7 @@
     "resource://devtools/client/shared/browser-loader.js"
   );
   const browserLoader = BrowserLoader({
-    baseURI: "resource://devtools/client/performance-new/aboutprofiling",
+    baseURI: "resource://devtools/client/performance-new/popup",
     window,
   });
 
@@ -45,16 +48,18 @@ const {
   getRecordingPreferencesFromBrowser,
   setRecordingPreferencesOnBrowser,
   getSymbolsFromThisBrowser,
-} = ChromeUtils.import(
-  "resource://devtools/client/performance-new/popup/background.jsm.js"
-);
+} =
+  
+  (ChromeUtils.import(
+    "resource://devtools/client/performance-new/popup/background.jsm.js"
+  ));
 
 const { receiveProfile } = require("devtools/client/performance-new/browser");
 
 const ReactDOM = require("devtools/client/shared/vendor/react-dom");
 const React = require("devtools/client/shared/vendor/react");
-const AboutProfiling = React.createFactory(
-  require("devtools/client/performance-new/components/AboutProfiling")
+const DevToolsAndPopup = React.createFactory(
+  require("devtools/client/performance-new/components/DevToolsAndPopup")
 );
 const ProfilerEventHandling = React.createFactory(
   require("devtools/client/performance-new/components/ProfilerEventHandling")
@@ -71,7 +76,23 @@ const {
 
 
 
-document.addEventListener("DOMContentLoaded", async () => {
+
+{
+  const popupWindow =  (window);
+  document.documentElement.setAttribute(
+    "force-theme",
+    popupWindow.gIsDarkMode ? "dark" : "light"
+  );
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  gInit();
+});
+
+
+
+
+async function gInit() {
   const store = createStore(reducers);
   const perfFrontInterface = new ActorReadyGeckoProfilerInterface();
   const supportedFeatures = await perfFrontInterface.getSupportedFeatures();
@@ -90,7 +111,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       
       
       getSymbolTableGetter: () => getSymbolsFromThisBrowser,
-      pageContext: "aboutprofiling",
+      pageContext: "popup",
     })
   );
 
@@ -102,7 +123,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         React.Fragment,
         null,
         ProfilerEventHandling(),
-        AboutProfiling()
+        DevToolsAndPopup()
       )
     ),
     document.querySelector("#root")
@@ -113,4 +134,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     perfFrontInterface.destroy();
   });
-});
+
+  resizeWindow();
+}
+
+function resizeWindow() {
+  window.requestAnimationFrame(() => {
+    
+    
+    const anyWindow = window;
+    
+    const { gResizePopup } = anyWindow;
+    if (gResizePopup) {
+      gResizePopup(document.body.clientHeight);
+    }
+  });
+}
