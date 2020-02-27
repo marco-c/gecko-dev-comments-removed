@@ -97,7 +97,7 @@ export type RecordingState =
 
 
 
-export type PageContext = "popup" | "devtools" | "aboutprofiling";
+export type PageContext = "devtools" | "aboutprofiling";
 
 export interface State {
   recordingState: RecordingState;
