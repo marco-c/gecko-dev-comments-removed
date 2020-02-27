@@ -164,7 +164,8 @@
         
         
         if (scope) {
-          for (let context of browsingContext.children) {
+          let contexts = browsingContext.getChildren();
+          for (let context of contexts) {
             sendToChildren(context, scope);
           }
         }

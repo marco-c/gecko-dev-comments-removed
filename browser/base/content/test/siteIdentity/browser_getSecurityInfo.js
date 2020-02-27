@@ -63,7 +63,9 @@ add_task(async function test() {
     is(securityInfo, null, "Found no security info");
 
     
-    securityInfo = await browser.browsingContext.children[0].currentWindowGlobal.getSecurityInfo();
+    securityInfo = await browser.browsingContext
+      .getChildren()[0]
+      .currentWindowGlobal.getSecurityInfo();
     securityInfo.QueryInterface(Ci.nsITransportSecurityInfo);
     ok(securityInfo, "Found some security info");
     ok(securityInfo.succeededCertChain, "Has a succeeded cert chain");

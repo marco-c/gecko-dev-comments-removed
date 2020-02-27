@@ -1,5 +1,5 @@
-/* Any copyright is dedicated to the Public Domain.
- * https://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 "use strict";
 
@@ -8,14 +8,14 @@ add_task(async function test_sitespecific_iframe_global_zoom() {
     'data:text/html;charset=utf-8,<body>test_sitespecific_iframe_global_zoom<iframe src=""></iframe></body>';
   const TEST_IFRAME_URL = "https://example.com/";
 
-  // Prepare the test tab
+  
   console.log("Creating tab");
   let tab = BrowserTestUtils.addTab(gBrowser, TEST_PAGE_URL);
   let tabBrowser = gBrowser.getBrowserForTab(tab);
   console.log("Loading tab");
   await FullZoomHelper.selectTabAndWaitForLocationChange(tab);
 
-  // 67% global zoom
+  
   console.log("Changing default zoom");
   await FullZoomHelper.changeDefaultZoom(67);
   let defaultZoom = await FullZoomHelper.getGlobalValue();
@@ -42,7 +42,7 @@ add_task(async function test_sitespecific_iframe_global_zoom() {
   is(loadedURL, TEST_IFRAME_URL, "got the load event for the iframe");
 
   let frameZoom = await SpecialPowers.spawn(
-    gBrowser.selectedBrowser.browsingContext.children[0],
+    gBrowser.selectedBrowser.browsingContext.getChildren()[0],
     [],
     async () => {
       await ContentTaskUtils.waitForCondition(() => {
@@ -62,14 +62,14 @@ add_task(async function test_sitespecific_global_zoom_enlarge() {
     'data:text/html;charset=utf-8,<body>test_sitespecific_global_zoom_enlarge<iframe src=""></iframe></body>';
   const TEST_IFRAME_URL = "https://example.org/";
 
-  // Prepare the test tab
+  
   console.log("Adding tab");
   let tab = BrowserTestUtils.addTab(gBrowser, TEST_PAGE_URL);
   let tabBrowser = gBrowser.getBrowserForTab(tab);
   console.log("Awaiting tab load");
   await FullZoomHelper.selectTabAndWaitForLocationChange(tab);
 
-  // 67% global zoom persists from previous test
+  
 
   let frameLoadedPromise = BrowserTestUtils.browserLoaded(
     tabBrowser,
@@ -85,7 +85,7 @@ add_task(async function test_sitespecific_global_zoom_enlarge() {
   is(loadedURL, TEST_IFRAME_URL, "got the load event for the iframe");
   console.log("Enlarging tab");
   await FullZoom.enlarge();
-  // 80% local zoom
+  
   await TestUtils.waitForCondition(() => {
     console.log("Current zoom is: ", ZoomManager.getZoomForBrowser(tabBrowser));
     return ZoomManager.getZoomForBrowser(tabBrowser) == 0.8;
@@ -94,7 +94,7 @@ add_task(async function test_sitespecific_global_zoom_enlarge() {
   is(ZoomManager.getZoomForBrowser(tabBrowser), 0.8, "Local zoom is increased");
 
   let frameZoom = await SpecialPowers.spawn(
-    gBrowser.selectedBrowser.browsingContext.children[0],
+    gBrowser.selectedBrowser.browsingContext.getChildren()[0],
     [],
     async () => {
       await ContentTaskUtils.waitForCondition(() => {

@@ -653,8 +653,6 @@ class BrowsingContext : public nsISupports, public nsWrapperCache {
 
   RefPtr<BrowsingContextGroup> mGroup;
   RefPtr<BrowsingContext> mParent;
-  
-  
   Children mChildren;
   nsCOMPtr<nsIDocShell> mDocShell;
 
