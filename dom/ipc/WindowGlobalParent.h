@@ -87,8 +87,10 @@ class WindowGlobalParent final : public WindowContext,
   nsIPrincipal* DocumentPrincipal() { return mDocumentPrincipal; }
 
   
+  
+  
   CanonicalBrowsingContext* BrowsingContext() override {
-    return mBrowsingContext;
+    return CanonicalBrowsingContext::Cast(WindowContext::GetBrowsingContext());
   }
 
   
@@ -190,7 +192,6 @@ class WindowGlobalParent final : public WindowContext,
   nsCOMPtr<nsIURI> mDocumentURI;
   nsString mDocumentTitle;
 
-  RefPtr<CanonicalBrowsingContext> mBrowsingContext;
   nsRefPtrHashtable<nsStringHashKey, JSWindowActorParent> mWindowActors;
   bool mInProcess;
   bool mIsInitialDocument;
