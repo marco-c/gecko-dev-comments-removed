@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 sw=2 et tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/BasePrincipal.h"
 
@@ -24,6 +24,8 @@
 #include "mozilla/dom/nsMixedContentBlocker.h"
 #include "mozilla/Components.h"
 #include "nsIURIFixup.h"
+
+#include "prnetdb.h"
 
 #include "json/json.h"
 #include "nsSerializationHelper.h"
@@ -95,39 +97,39 @@ BasePrincipal::GetSiteOrigin(nsACString& aSiteOrigin) {
   return GetOrigin(aSiteOrigin);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Returns the inner Json::value of the serialized principal
+// Example input and return values:
+// Null principal:
+// {"0":{"0":"moz-nullprincipal:{56cac540-864d-47e7-8e25-1614eab5155e}"}} ->
+// {"0":"moz-nullprincipal:{56cac540-864d-47e7-8e25-1614eab5155e}"}
+//
+// Content principal:
+// {"1":{"0":"https://mozilla.com"}} -> {"0":"https://mozilla.com"}
+//
+// Expanded principal:
+// {"2":{"0":"<base64principal1>,<base64principal2>"}} ->
+// {"0":"<base64principal1>,<base64principal2>"}
+//
+// System principal:
+// {"3":{}} -> {}
+// The aKey passed in also returns the corresponding PrincipalKind enum
+//
+// Warning: The Json::Value* pointer is into the aRoot object
 static const Json::Value* GetPrincipalObject(const Json::Value& aRoot,
                                              int& aOutPrincipalKind) {
   const Json::Value::Members members = aRoot.getMemberNames();
-  
+  // We only support one top level key in the object
   if (members.size() != 1) {
     return nullptr;
   }
-  
-  
+  // members[0] here is the "0", "1", "2", "3" principalKind
+  // that is the top level of the serialized JSON principal
   const std::string stringPrincipalKind = members[0];
 
-  
-  
+  // Next we take the string value from the JSON
+  // and convert it into the int for the BasePrincipal::PrincipalKind enum
 
-  
+  // Verify that the key is within the valid range
   int principalKind = std::stoi(stringPrincipalKind);
   MOZ_ASSERT(BasePrincipal::eNullPrincipal == 0,
              "We need to rely on 0 being a bounds check for the first "
@@ -145,49 +147,49 @@ static const Json::Value* GetPrincipalObject(const Json::Value& aRoot,
     return nullptr;
   }
 
-  
+  // Return the inner value of the principal object
   return &aRoot[stringPrincipalKind];
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Accepts the JSON inner object without the wrapping principalKind
+// (See GetPrincipalObject for the inner object response examples)
+// Creates an array of KeyVal objects that are all defined on the principal
+// Each principal type (null, content, expanded) has a KeyVal that stores the
+// fields of the JSON
+//
+// This simplifies deserializing elsewhere as we do the checking for presence
+// and string values here for the complete set of serializable keys that the
+// corresponding principal supports.
+//
+// The KeyVal object has the following fields:
+// - valueWasSerialized: is true if the deserialized JSON contained a string
+// value
+// - value: The string that was serialized for this key
+// - key: an SerializableKeys enum value specific to the principal.
+//        For example content principal is an enum of: eURI, eDomain,
+//        eSuffix, eCSP
+//
+//
+//  Given an inner content principal:
+//  {"0": "https://mozilla.com", "2": "^privateBrowsingId=1"}
+//    |                |          |         |
+//    -----------------------------         |
+//         |           |                    |
+//        Key          ----------------------
+//                                |
+//                              Value
+//
+// They Key "0" corresponds to ContentPrincipal::eURI
+// They Key "1" corresponds to ContentPrincipal::eSuffix
 template <typename T>
 static nsTArray<typename T::KeyVal> GetJSONKeys(const Json::Value* aInput) {
   int size = T::eMax + 1;
   nsTArray<typename T::KeyVal> fields;
   for (int i = 0; i != size; i++) {
     typename T::KeyVal* field = fields.AppendElement();
-    
-    
-    
+    // field->valueWasSerialized returns if the field was found in the
+    // deserialized code. This simplifies the consumers from having to check
+    // length.
     field->valueWasSerialized = false;
     field->key = static_cast<typename T::SerializableKeys>(i);
     const std::string key = std::to_string(field->key);
@@ -202,30 +204,30 @@ static nsTArray<typename T::KeyVal> GetJSONKeys(const Json::Value* aInput) {
   return fields;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Takes a JSON string and parses it turning it into a principal of the
+// corresponding type
+//
+// Given a content principal:
+//
+//                               inner JSON object
+//                                      |
+//       ---------------------------------------------------------
+//       |                                                       |
+// {"1": {"0": "https://mozilla.com", "2": "^privateBrowsingId=1"}}
+//   |     |             |             |            |
+//   |     -----------------------------            |
+//   |              |    |                          |
+// PrincipalKind    |    |                          |
+//                  |    ----------------------------
+//           SerializableKeys           |
+//                                    Value
+//
+// The string is first deserialized with jsoncpp to get the Json::Value of the
+// object. The inner JSON object is parsed with GetPrincipalObject which returns
+// a KeyVal array of the inner object's fields. PrincipalKind is returned by
+// GetPrincipalObject which is then used to decide which principal
+// implementation of FromProperties to call. The corresponding FromProperties
+// call takes the KeyVal fields and turns it into a principal.
 already_AddRefed<BasePrincipal> BasePrincipal::FromJSON(
     const nsACString& aJSON) {
   Json::Value root;
@@ -283,9 +285,9 @@ nsresult BasePrincipal::PopulateJSONObject(Json::Value& aObject) {
   return NS_OK;
 }
 
-
-
-
+// Returns a JSON representation of the principal.
+// Calling BasePrincipal::FromJSON will deserialize the JSON into
+// the corresponding principal type.
 nsresult BasePrincipal::ToJSON(nsACString& aResult) {
   MOZ_ASSERT(aResult.IsEmpty(), "ToJSON only supports an empty result input");
   aResult.Truncate();
@@ -314,10 +316,10 @@ bool BasePrincipal::Subsumes(nsIPrincipal* aOther,
   MOZ_ASSERT(aOther);
   MOZ_ASSERT_IF(Kind() == eContentPrincipal, mOriginSuffix);
 
-  
-  
-  
-  
+  // Expanded principals handle origin attributes for each of their
+  // sub-principals individually, null principals do only simple checks for
+  // pointer equality, and system principals are immune to origin attributes
+  // checks, so only do this check for content principals.
   if (Kind() == eContentPrincipal &&
       mOriginSuffix != Cast(aOther)->mOriginSuffix) {
     return false;
@@ -405,16 +407,16 @@ nsresult BasePrincipal::CheckMayLoadHelper(nsIURI* aURI,
       aReport || aInnerWindowID == 0,
       "Why do we have an inner window id if we're not supposed to report?");
 
-  
-  
+  // Check the internal method first, which allows us to quickly approve loads
+  // for the System Principal.
   if (MayLoadInternal(aURI)) {
     return NS_OK;
   }
 
   nsresult rv;
   if (aAllowIfInheritsPrincipal) {
-    
-    
+    // If the caller specified to allow loads of URIs that inherit
+    // our principal, allow the load if this URI inherits its principal.
     bool doesInheritSecurityContext;
     rv = NS_URIChainHasFlags(aURI,
                              nsIProtocolHandler::URI_INHERITS_SECURITY_CONTEXT,
@@ -447,7 +449,7 @@ nsresult BasePrincipal::CheckMayLoadHelper(nsIURI* aURI,
 NS_IMETHODIMP
 BasePrincipal::IsThirdPartyURI(nsIURI* aURI, bool* aRes) {
   *aRes = true;
-  
+  // If we do not have a URI its always 3rd party.
   nsCOMPtr<nsIURI> prinURI;
   nsresult rv = GetURI(getter_AddRefs(prinURI));
   if (NS_FAILED(rv) || !prinURI) {
@@ -621,6 +623,31 @@ NS_IMETHODIMP BasePrincipal::GetIsOnion(bool* aIsOnion) {
   return NS_OK;
 }
 
+NS_IMETHODIMP BasePrincipal::GetIsIpAddress(bool* aIsIpAddress) {
+  *aIsIpAddress = false;
+
+  nsCOMPtr<nsIURI> prinURI;
+  nsresult rv = GetURI(getter_AddRefs(prinURI));
+  if (NS_FAILED(rv) || !prinURI) {
+    return NS_OK;
+  }
+
+  nsAutoCString host;
+  rv = prinURI->GetHost(host);
+  if (NS_FAILED(rv)) {
+    return NS_OK;
+  }
+
+  PRNetAddr prAddr;
+  memset(&prAddr, 0, sizeof(prAddr));
+
+  if (PR_StringToNetAddr(host.get(), &prAddr) == PR_SUCCESS) {
+    *aIsIpAddress = true;
+  }
+
+  return NS_OK;
+}
+
 NS_IMETHODIMP
 BasePrincipal::SchemeIs(const char* aScheme, bool* aResult) {
   *aResult = false;
@@ -750,8 +777,8 @@ already_AddRefed<BasePrincipal> BasePrincipal::CreateContentPrincipal(
   nsresult rv =
       ContentPrincipal::GenerateOriginNoSuffixFromURI(aURI, originNoSuffix);
   if (NS_FAILED(rv)) {
-    
-    
+    // If the generation of the origin fails, we still want to have a valid
+    // principal. Better to return a null principal here.
     return NullPrincipal::Create(aAttrs);
   }
 
@@ -764,8 +791,8 @@ already_AddRefed<BasePrincipal> BasePrincipal::CreateContentPrincipal(
   MOZ_ASSERT(aURI);
   MOZ_ASSERT(!aOriginNoSuffix.IsEmpty());
 
-  
-  
+  // If the URI is supposed to inherit the security context of whoever loads it,
+  // we shouldn't make a content principal for it.
   bool inheritsPrincipal;
   nsresult rv = NS_URIChainHasFlags(
       aURI, nsIProtocolHandler::URI_INHERITS_SECURITY_CONTEXT,
@@ -774,7 +801,7 @@ already_AddRefed<BasePrincipal> BasePrincipal::CreateContentPrincipal(
     return NullPrincipal::Create(aAttrs);
   }
 
-  
+  // Check whether the URI knows what its principal is supposed to be.
 #if defined(MOZ_THUNDERBIRD) || defined(MOZ_SUITE)
   nsCOMPtr<nsIURIWithSpecialOrigin> uriWithSpecialOrigin =
       do_QueryInterface(aURI);
@@ -799,7 +826,7 @@ already_AddRefed<BasePrincipal> BasePrincipal::CreateContentPrincipal(
     return principal.forget();
   }
 
-  
+  // Mint a content principal.
   RefPtr<ContentPrincipal> principal = new ContentPrincipal();
   rv = principal->Init(aURI, aAttrs, aOriginNoSuffix);
   NS_ENSURE_SUCCESS(rv, nullptr);
@@ -863,7 +890,7 @@ extensions::WebExtensionPolicy* BasePrincipal::ContentScriptAddonPolicy() {
 }
 
 bool BasePrincipal::AddonAllowsLoad(nsIURI* aURI,
-                                    bool aExplicit ) {
+                                    bool aExplicit /* = false */) {
   if (Is<ExpandedPrincipal>()) {
     return As<ExpandedPrincipal>()->AddonAllowsLoad(aURI, aExplicit);
   }
@@ -878,7 +905,7 @@ void BasePrincipal::FinishInit(const nsACString& aOriginNoSuffix,
   mInitialized = true;
   mOriginAttributes = aOriginAttributes;
 
-  
+  // First compute the origin suffix since it's infallible.
   nsAutoCString originSuffix;
   mOriginAttributes.CreateSuffix(originSuffix);
   mOriginSuffix = NS_Atomize(originSuffix);
@@ -892,7 +919,7 @@ void BasePrincipal::FinishInit(BasePrincipal* aOther,
   mInitialized = true;
   mOriginAttributes = aOriginAttributes;
 
-  
+  // First compute the origin suffix since it's infallible.
   nsAutoCString originSuffix;
   mOriginAttributes.CreateSuffix(originSuffix);
   mOriginSuffix = NS_Atomize(originSuffix);
@@ -907,4 +934,4 @@ bool SiteIdentifier::Equals(const SiteIdentifier& aOther) const {
   return mPrincipal->FastEquals(aOther.mPrincipal);
 }
 
-}  
+}  // namespace mozilla
