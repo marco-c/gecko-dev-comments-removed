@@ -952,20 +952,6 @@ Maybe<ICRData> WebGLContext::InitializeCanvasRenderer(
 
   gl->Screen()->Morph(std::move(factory));
 
-  bool needsResize = false;
-#if defined(MOZ_WIDGET_ANDROID)
-  
-  
-  
-  
-  
-  needsResize = true;
-#endif
-  if (needsResize) {
-    const auto& size = DrawingBufferSize();
-    gl->Screen()->Resize({size.x, size.y});
-  }
-
   mVRReady = true;
   return Some(ret);
 }
