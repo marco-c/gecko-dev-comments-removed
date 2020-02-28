@@ -19,10 +19,6 @@
 
 
 
-
-  
-
-
   <div class="target" style="height:80px" id="t" onmousedown="x=1"></div>
 
   <div class="target" id="t2" hidden></div>
@@ -103,15 +99,14 @@ function setShowing(id, show) {
 var mm;
 function runTest() {
   let resolution = 1;
-  if (SpecialPowers.Services.appinfo.name == "B2G") {
-    // This test runs on B2G as well, zoomed out. Therefore we need to account
+  if (navigator.appVersion.includes("Android")) {
+    // This test runs on Android, zoomed out. Therefore we need to account
     // for the resolution as well, because the fluff area is relative to screen
     // pixels rather than CSS pixels.
-    let out = {};
-    SpecialPowers.getDOMWindowUtils(window.top).getResolution(out);
-    resolution = 1.0 / out.value;
+    resolution = SpecialPowers.getDOMWindowUtils(window.top).getResolution();
+    ok(resolution <= 1, "Resolution is " + resolution);
   }
-  mm = SpecialPowers.getDOMWindowUtils(window.top).physicalMillimeterInCSSPixels * resolution;
+  mm = SpecialPowers.getDOMWindowUtils(window.top).physicalMillimeterInCSSPixels / resolution;
   ok(4*mm >= 10, "WARNING: mm " + mm + " too small in this configuration. Test results will be bogus");
 
   // Test basic functionality: clicks sufficiently close to the element
