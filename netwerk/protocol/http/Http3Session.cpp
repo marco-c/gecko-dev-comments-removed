@@ -19,7 +19,7 @@
 #include "nsThreadUtils.h"
 #include "QuicSocketControl.h"
 #include "SSLServerCertVerification.h"
-
+#include "HttpConnectionUDP.h"
 #include "sslerr.h"
 
 namespace mozilla {
@@ -72,7 +72,7 @@ Http3Session::Http3Session()
 
 nsresult Http3Session::Init(const nsACString& aOrigin,
                             nsISocketTransport* aSocketTransport,
-                            nsHttpConnection* readerWriter) {
+                            HttpConnectionUDP* readerWriter) {
   LOG3(("Http3Session::Init %p", this));
 
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
