@@ -176,6 +176,7 @@ class nsHttpConnection final : public HttpConnectionBase,
   
   bool NoClientCertAuth() const override;
 
+  bool CanAcceptWebsocket() override;
  private:
   
   enum TCPKeepaliveConfig {
@@ -226,6 +227,10 @@ class nsHttpConnection final : public HttpConnectionBase,
   MOZ_MUST_USE nsresult DisableTCPKeepalives();
 
  private:
+  
+  
+  RefPtr<nsAHttpTransaction> mTransaction;
+
   nsCOMPtr<nsIAsyncInputStream> mSocketIn;
   nsCOMPtr<nsIAsyncOutputStream> mSocketOut;
 

@@ -78,7 +78,7 @@ class HttpConnectionBase : public nsSupportsWeakReference {
   virtual void DontReuse() = 0;
 
   nsISocketTransport* Transport() { return mSocketTransport; }
-  nsAHttpTransaction* Transaction() { return mTransaction; }
+  virtual nsAHttpTransaction* Transaction() = 0;
   nsHttpConnectionInfo* ConnectionInfo() { return mConnInfo; }
 
   virtual void CloseTransaction(nsAHttpTransaction*, nsresult,
@@ -113,7 +113,7 @@ class HttpConnectionBase : public nsSupportsWeakReference {
   virtual bool NoClientCertAuth() const { return true; }
 
   
-  virtual bool CanAcceptWebsocket() = 0;
+  virtual bool CanAcceptWebsocket() { return false; }
 
   void GetConnectionInfo(nsHttpConnectionInfo** ci) {
     NS_IF_ADDREF(*ci = mConnInfo);
@@ -142,10 +142,6 @@ class HttpConnectionBase : public nsSupportsWeakReference {
 
  protected:
   nsCOMPtr<nsISocketTransport> mSocketTransport;
-
-  
-  
-  RefPtr<nsAHttpTransaction> mTransaction;
 
   
   uint32_t mTransactionCaps;
@@ -190,7 +186,6 @@ NS_DEFINE_STATIC_IID_ACCESSOR(HttpConnectionBase, HTTPCONNECTIONBASE_IID)
   void PrintDiagnostics(nsCString&) override;                                  \
   bool TestJoinConnection(const nsACString&, int32_t) override;                \
   bool JoinConnection(const nsACString&, int32_t) override;                    \
-  bool CanAcceptWebsocket() override;                                          \
   void GetSecurityInfo(nsISupports** result) override;                         \
   MOZ_MUST_USE nsresult ResumeSend() override;                                 \
   MOZ_MUST_USE nsresult ResumeRecv() override;                                 \
@@ -203,7 +198,8 @@ NS_DEFINE_STATIC_IID_ACCESSOR(HttpConnectionBase, HTTPCONNECTIONBASE_IID)
   bool IsPersistent() override;                                                \
   bool IsReused() override;                                                    \
   MOZ_MUST_USE nsresult PushBack(const char* data, uint32_t length) override;  \
-  void SetEvent(nsresult aStatus) override;
+  void SetEvent(nsresult aStatus) override;                                    \
+  virtual nsAHttpTransaction* Transaction() override;
 
 }  
 }  

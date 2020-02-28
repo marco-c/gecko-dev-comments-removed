@@ -55,8 +55,7 @@ class HttpConnectionUDP final : public HttpConnectionBase,
                                 public nsIInputStreamCallback,
                                 public nsIOutputStreamCallback,
                                 public nsITransportEventSink,
-                                public nsIInterfaceRequestor,
-                                public NudgeTunnelCallback {
+                                public nsIInterfaceRequestor {
  private:
   virtual ~HttpConnectionUDP();
 
@@ -70,36 +69,8 @@ class HttpConnectionUDP final : public HttpConnectionBase,
   NS_DECL_NSIOUTPUTSTREAMCALLBACK
   NS_DECL_NSITRANSPORTEVENTSINK
   NS_DECL_NSIINTERFACEREQUESTOR
-  NS_DECL_NUDGETUNNELCALLBACK
 
   HttpConnectionUDP();
-
-  void SetFastOpen(bool aFastOpen);
-  
-  
-  
-  nsAHttpTransaction* CloseConnectionFastOpenTakesTooLongOrError(
-      bool aCloseocketTransport);
-
-  
-  
-
-  bool IsKeepAlive() {
-    return (mUsingSpdyVersion != SpdyVersion::NONE) ||
-           (mKeepAliveMask && mKeepAlive);
-  }
-
-  bool NeedSpdyTunnel() {
-    return mConnInfo->UsingHttpsProxy() && !mTLSFilter &&
-           mConnInfo->UsingConnect();
-  }
-
-  
-  
-  
-  void ForcePlainText() { mForcePlainText = true; }
-
-  HttpVersion GetLastHttpResponseVersion() { return mLastHttpResponseVersion; }
 
   friend class HttpConnectionUDPForceIO;
 
@@ -107,80 +78,19 @@ class HttpConnectionUDP final : public HttpConnectionBase,
                                               const char*, uint32_t, uint32_t,
                                               uint32_t*);
 
-  bool UsingSpdy() override { return (mUsingSpdyVersion != SpdyVersion::NONE); }
-  bool UsingHttp3() override { return mHttp3Session; }
-
-  
-  
-  
-  static void UpdateTCPKeepalive(nsITimer* aTimer, void* aClosure);
-
-  int64_t ContentBytesWritten() { return mContentBytesWritten; }
-
-  static MOZ_MUST_USE nsresult MakeConnectString(nsAHttpTransaction* trans,
-                                                 nsHttpRequestHead* request,
-                                                 nsACString& result, bool h2ws);
-  void SetupSecondaryTLS(nsAHttpTransaction* aSpdyConnectTransaction = nullptr);
-  void SetInSpdyTunnel(bool arg);
-
-  void SetFastOpenStatus(uint8_t tfoStatus);
-  uint8_t GetFastOpenStatus() { return mFastOpenStatus; }
-
-  
-  
-  
-  bool NoClientCertAuth() const override;
+  bool UsingHttp3() override { return true; }
 
  private:
-  
-  enum TCPKeepaliveConfig {
-    kTCPKeepaliveDisabled = 0,
-    kTCPKeepaliveShortLivedConfig,
-    kTCPKeepaliveLongLivedConfig
-  };
-
-  
-  MOZ_MUST_USE nsresult InitSSLParams(bool connectingToProxy,
-                                      bool ProxyStartSSL);
-  MOZ_MUST_USE nsresult SetupNPNList(nsISSLSocketControl* ssl, uint32_t caps);
-
   MOZ_MUST_USE nsresult OnTransactionDone(nsresult reason);
   MOZ_MUST_USE nsresult OnSocketWritable();
   MOZ_MUST_USE nsresult OnSocketReadable();
 
-  MOZ_MUST_USE nsresult SetupProxyConnect();
-
-  PRIntervalTime IdleTime();
-  bool IsAlive();
-
   
   
-  MOZ_MUST_USE bool EnsureNPNComplete(nsresult& aOut0RTTWriteHandshakeValue,
-                                      uint32_t& aOut0RTTBytesWritten);
-  
-  
-  MOZ_MUST_USE bool EnsureNPNCompleteHttp3();
-  void SetupSSL();
-
-  
-  void StartSpdy(nsISSLSocketControl* ssl, SpdyVersion versionLevel);
-  
-  
-  void Start0RTTSpdy(SpdyVersion versionLevel);
-
-  
-  nsresult TryTakeSubTransactions(nsTArray<RefPtr<nsAHttpTransaction> >& list);
-  nsresult MoveTransactionsToSpdy(nsresult status,
-                                  nsTArray<RefPtr<nsAHttpTransaction> >& list);
+  MOZ_MUST_USE bool EnsureNPNComplete();
 
   
   MOZ_MUST_USE nsresult AddTransaction(nsAHttpTransaction*, int32_t);
-
-  
-  
-  MOZ_MUST_USE nsresult StartShortLivedTCPKeepalives();
-  MOZ_MUST_USE nsresult StartLongLivedTCPKeepalives();
-  MOZ_MUST_USE nsresult DisableTCPKeepalives();
 
  private:
   nsCOMPtr<nsIAsyncInputStream> mSocketIn;
@@ -192,16 +102,10 @@ class HttpConnectionUDP final : public HttpConnectionBase,
   nsCOMPtr<nsIInputStream> mProxyConnectStream;
   nsCOMPtr<nsIInputStream> mRequestStream;
 
-  RefPtr<TLSFilterTransaction> mTLSFilter;
-  nsWeakPtr mWeakTrans;  
-
   RefPtr<nsHttpHandler> mHttpHandler;  
 
   PRIntervalTime mLastReadTime;
   PRIntervalTime mLastWriteTime;
-  PRIntervalTime
-      mMaxHangTime;  
-  PRIntervalTime mIdleTimeout;  
   int64_t mMaxBytesRead;         
   int64_t mTotalBytesRead;       
   int64_t mContentBytesWritten;  
@@ -209,49 +113,13 @@ class HttpConnectionUDP final : public HttpConnectionBase,
   RefPtr<nsIAsyncInputStream> mInputOverflow;
 
   bool mConnectedTransport;
-  bool mKeepAlive;
-  bool mKeepAliveMask;
   bool mDontReuse;
   bool mIsReused;
-  bool mCompletedProxyConnect;
   bool mLastTransactionExpectedNoContent;
-  bool mProxyConnectInProgress;
-  bool mInSpdyTunnel;
-  bool mForcePlainText;
 
-  
-  
-  uint32_t mHttp1xTransactionCount;
-
-  
-  
-  
-  uint32_t mRemainingConnectionUses;
-
-  
   bool mNPNComplete;
-  bool mSetupSSLCalled;
 
-  
-  SpdyVersion mUsingSpdyVersion;
-
-  RefPtr<ASpdySession> mSpdySession;
   int32_t mPriority;
-  bool mReportedSpdy;
-
-  
-  bool mEverUsedSpdy;
-
-  
-  HttpVersion mLastHttpResponseVersion;
-
-  
-  
-  uint32_t mDefaultTimeoutFactor;
-
-  
-  uint32_t mTCPKeepaliveConfig;
-  nsCOMPtr<nsITimer> mTCPKeepaliveTransitionTimer;
 
  private:
   
@@ -260,26 +128,6 @@ class HttpConnectionUDP final : public HttpConnectionBase,
   bool mForceSendPending;
   nsCOMPtr<nsITimer> mForceSendTimer;
 
-  
-  bool m0RTTChecked;             
-                                 
-  bool mWaitingFor0RTTResponse;  
-                                 
-                                 
-                                 
-                                 
-                                 
-  int64_t mContentBytesWritten0RTT;
-  bool mEarlyDataNegotiated;  
-  nsCString mEarlyNegotiatedALPN;
-  bool mDid0RTTSpdy;
-
-  bool mFastOpen;
-  uint8_t mFastOpenStatus;
-
-  bool mForceSendDuringFastOpenPending;
-  bool mReceivedSocketWouldBlockDuringFastOpen;
-  bool mCheckNetworkStallsWithTFO;
   PRIntervalTime mLastRequestBytesSentTime;
 
  private:
