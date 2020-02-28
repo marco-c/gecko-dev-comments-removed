@@ -515,6 +515,16 @@ const browsingContextTargetPrototype = {
     );
 
     Object.assign(response, actors);
+
+    
+    
+    
+    if (this.threadActor) {
+      Object.assign(response, {
+        threadActor: this.threadActor.actorID,
+      });
+    }
+
     return response;
   },
 
