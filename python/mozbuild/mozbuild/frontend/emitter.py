@@ -7,9 +7,10 @@ from __future__ import absolute_import, print_function, unicode_literals
 import itertools
 import logging
 import os
-import traceback
+import six
 import sys
 import time
+import traceback
 
 from collections import defaultdict, OrderedDict
 from mach.mixin.logging import LoggingMixin
@@ -115,14 +116,7 @@ class TreeMetadataEmitter(LoggingMixin):
 
         mozinfo.find_and_update_from_json(config.topobjdir)
 
-        
-        
-        
-        self.info = {}
-        for k, v in mozinfo.info.items():
-            if isinstance(k, unicode):
-                k = k.encode('ascii')
-            self.info[k] = v
+        self.info = dict(mozinfo.info)
 
         self._libs = OrderedDefaultDict(list)
         self._binaries = OrderedDict()
@@ -316,8 +310,9 @@ class TreeMetadataEmitter(LoggingMixin):
             raise SandboxValidationError(
                 'Cannot link the following Rust libraries into the %s:\n'
                 '%s\nOnly one is allowed.'
-                % (what, '\n'.join('  - %s' % r.basename
-                                   for r in sorted(rust_libs))),
+                % (what, '\n'.join(
+                    '  - %s' % r.basename
+                    for r in sorted(rust_libs, key=lambda r: r.basename))),
                 contexts[obj.objdir])
 
         
@@ -327,7 +322,7 @@ class TreeMetadataEmitter(LoggingMixin):
                 
                 
                 if (isinstance(lib, StaticLibrary) and
-                        lib.link_into == outerlib.basename):
+                    lib.link_into == outerlib.basename):
                     propagate_defines(lib, defines)
 
         for lib in (l for libs in self._libs.values() for l in libs):
@@ -515,9 +510,9 @@ class TreeMetadataEmitter(LoggingMixin):
 
     def _verify_deps(self, context, crate_dir, crate_name, dependencies, description='Dependency'):
         """Verify that a crate's dependencies all specify local paths."""
-        for dep_crate_name, values in dependencies.iteritems():
+        for dep_crate_name, values in six.iteritems(dependencies):
             
-            if isinstance(values, (str, unicode)):
+            if isinstance(values, (six.binary_type, six.text_type)):
                 raise SandboxValidationError(
                     '%s %s of crate %s does not list a path' % (
                         description, dep_crate_name, crate_name),
@@ -576,7 +571,7 @@ class TreeMetadataEmitter(LoggingMixin):
 
         cargo_target_dir = context.config.topobjdir
 
-        dependencies = set(config.get('dependencies', {}).iterkeys())
+        dependencies = set(six.iterkeys(config.get('dependencies', {})))
 
         features = context.get(cls.FEATURES_VAR, [])
         unique_features = set(features)
@@ -935,7 +930,7 @@ class TreeMetadataEmitter(LoggingMixin):
         assert not gen_sources['UNIFIED_SOURCES']
 
         no_pgo = context.get('NO_PGO')
-        no_pgo_sources = [f for f, flags in all_flags.iteritems()
+        no_pgo_sources = [f for f, flags in six.iteritems(all_flags)
                           if flags.no_pgo]
         if no_pgo:
             if no_pgo_sources:
@@ -962,7 +957,7 @@ class TreeMetadataEmitter(LoggingMixin):
 
         
         canonicalized_suffix_map = {}
-        for suffix, alternatives in suffix_map.iteritems():
+        for suffix, alternatives in six.iteritems(suffix_map):
             alternatives.add(suffix)
             for a in alternatives:
                 canonicalized_suffix_map[a] = suffix
@@ -1041,7 +1036,7 @@ class TreeMetadataEmitter(LoggingMixin):
                 for suffix, srcs in ctxt_sources['WASM_SOURCES'].items():
                     wasm_linkable.sources[suffix] += srcs
 
-        for f, flags in sorted(all_flags.iteritems()):
+        for f, flags in sorted(six.iteritems(all_flags)):
             if flags.flags:
                 ext = mozpath.splitext(f)[1]
                 yield PerSourceFlag(context, f, flags.flags)
@@ -1482,7 +1477,7 @@ class TreeMetadataEmitter(LoggingMixin):
             script = mozpath.join(mozpath.dirname(mozpath.dirname(__file__)),
                                   'action', 'process_define_files.py')
             yield GeneratedFile(context, script, 'process_define_file',
-                                unicode(path),
+                                six.text_type(path),
                                 [Path(context, path + '.in')], py2=True)
 
         generated_files = context.get('GENERATED_FILES') or []
