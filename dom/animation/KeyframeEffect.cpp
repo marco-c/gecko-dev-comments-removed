@@ -35,13 +35,14 @@
 #include "nsCSSPseudoElements.h"    
 #include "nsDOMMutationObserver.h"  
 #include "nsIFrame.h"
+#include "nsIFrameInlines.h"
 #include "nsPresContextInlines.h"
 #include "nsRefreshDriver.h"
 
 namespace mozilla {
 
 void AnimationProperty::SetPerformanceWarning(
-    const AnimationPerformanceWarning& aWarning, const Element* aElement) {
+    const AnimationPerformanceWarning& aWarning, const dom::Element* aElement) {
   if (mPerformanceWarning && *mPerformanceWarning == aWarning) {
     return;
   }
@@ -1252,6 +1253,46 @@ KeyframeEffect::OverflowRegionRefreshInterval() {
   return kOverflowRegionRefreshInterval;
 }
 
+static bool IsDefinitivelyInvisibleDueToOpacity(const nsIFrame& aFrame) {
+  if (!aFrame.Style()->IsInOpacityZeroSubtree()) {
+    return false;
+  }
+
+  
+  const nsIFrame* root = &aFrame;
+  while (true) {
+    auto* parent = root->GetInFlowParent();
+    if (!parent || !parent->Style()->IsInOpacityZeroSubtree()) {
+      break;
+    }
+    root = parent;
+  }
+
+  MOZ_ASSERT(root && root->Style()->IsInOpacityZeroSubtree());
+
+  
+  
+  if (root == &aFrame) {
+    return false;
+  }
+
+  
+  
+  
+  return !root->HasAnimationOfOpacity();
+}
+
+static bool CanOptimizeAwayDueToOpacity(const KeyframeEffect& aEffect,
+                                        const nsIFrame& aFrame) {
+  if (!aFrame.Style()->IsInOpacityZeroSubtree()) {
+    return false;
+  }
+  if (IsDefinitivelyInvisibleDueToOpacity(aFrame)) {
+    return true;
+  }
+  return !aEffect.HasOpacityChange();
+}
+
 bool KeyframeEffect::CanThrottleIfNotVisible(nsIFrame& aFrame) const {
   
   
@@ -1267,8 +1308,13 @@ bool KeyframeEffect::CanThrottleIfNotVisible(nsIFrame& aFrame) const {
 
   const bool isVisibilityHidden =
       !aFrame.IsVisibleOrMayHaveVisibleDescendants();
-  if ((!isVisibilityHidden || HasVisibilityChange()) &&
-      !aFrame.IsScrolledOutOfView()) {
+  const bool canOptimizeAwayVisibility =
+      isVisibilityHidden && !HasVisibilityChange();
+
+  const bool invisible = canOptimizeAwayVisibility ||
+                         CanOptimizeAwayDueToOpacity(*this, aFrame) ||
+                         aFrame.IsScrolledOutOfView();
+  if (!invisible) {
     return false;
   }
 
@@ -1890,6 +1936,7 @@ KeyframeEffect::MatchForCompositor KeyframeEffect::IsMatchForCompositor(
   
   
   if (!aFrame->IsVisibleOrMayHaveVisibleDescendants() ||
+      IsDefinitivelyInvisibleDueToOpacity(*aFrame) ||
       aFrame->IsScrolledOutOfView()) {
     return KeyframeEffect::MatchForCompositor::NoAndBlockThisProperty;
   }
@@ -1897,17 +1944,6 @@ KeyframeEffect::MatchForCompositor KeyframeEffect::IsMatchForCompositor(
   if (aPropertySet.HasProperty(eCSSProperty_background_color)) {
     if (!StaticPrefs::gfx_omta_background_color()) {
       return KeyframeEffect::MatchForCompositor::No;
-    }
-
-    if (nsIContent* content = aFrame->GetContent()) {
-      RefPtr<layers::LayerManager> layerManager =
-          nsContentUtils::LayerManagerForContent(content);
-      if (layerManager &&
-          layerManager->GetBackendType() == layers::LayersBackend::LAYERS_WR) {
-        
-        
-        return KeyframeEffect::MatchForCompositor::No;
-      }
     }
   }
 

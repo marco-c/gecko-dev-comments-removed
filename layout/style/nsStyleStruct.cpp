@@ -3303,6 +3303,8 @@ nsChangeHint nsStyleEffects::CalcDifference(
   }
 
   if (mOpacity != aNewData.mOpacity) {
+    hint |= nsChangeHint_UpdateOpacityLayer;
+
     
     
     
@@ -3311,7 +3313,6 @@ nsChangeHint nsStyleEffects::CalcDifference(
          mOpacity == 1.0f)) {
       hint |= nsChangeHint_RepaintFrame;
     } else {
-      hint |= nsChangeHint_UpdateOpacityLayer;
       if ((mOpacity == 1.0f) != (aNewData.mOpacity == 1.0f)) {
         hint |= nsChangeHint_UpdateUsesOpacity;
       }

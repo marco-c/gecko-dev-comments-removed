@@ -1769,8 +1769,14 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-
   bool HasAnimationOfTransform() const;
+
+  
+
+
+
+
+  bool HasAnimationOfOpacity(mozilla::EffectSet* = nullptr) const;
 
   
 
