@@ -16,7 +16,7 @@
 #include "mozilla/TypeTraits.h"
 #include "mozilla/WrappingOperations.h"
 
-#include <math.h>
+#include <cmath>
 #include <stddef.h>  
 #include <stdint.h>  
 
@@ -155,7 +155,7 @@ inline double ToInteger(double d) {
     return d;
   }
 
-  return (d < 0 ? ceil(d) : floor(d)) + (+0.0); 
+  return std::trunc(d) + (+0.0);  
 }
 
 
