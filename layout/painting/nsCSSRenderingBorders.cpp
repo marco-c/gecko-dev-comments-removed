@@ -3391,8 +3391,9 @@ nsCSSBorderImageRenderer::CreateBorderImageRenderer(
   
   
   
-  MOZ_ASSERT(&aStyleBorder == aForFrame->StyleBorder() ||
-             aForFrame->Style()->GetStyleIfVisited());
+  
+  MOZ_ASSERT(aStyleBorder.GetBorderImageRequest() ==
+             aForFrame->StyleBorder()->GetBorderImageRequest());
 
   nsCSSBorderImageRenderer renderer(aForFrame, aBorderArea, aStyleBorder,
                                     aSkipSides, imgRenderer);
