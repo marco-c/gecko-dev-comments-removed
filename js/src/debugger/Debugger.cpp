@@ -3587,12 +3587,12 @@ bool DebugAPI::edgeIsInDebuggerWeakmap(JSRuntime* rt, JSObject* src,
   MOZ_ASSERT(RuntimeHasDebugger(rt, dbg));
 
   if (src->is<DebuggerFrame>()) {
-    if (dst.is<JSScript>()) {
+    if (dst.is<BaseScript>()) {
       
       
       DebuggerFrame* frame = &src->as<DebuggerFrame>();
       AbstractGeneratorObject* genObj = &frame->unwrappedGenerator();
-      return frame->generatorScript() == &dst.as<JSScript>() &&
+      return frame->generatorScript() == &dst.as<BaseScript>() &&
              dbg->generatorFrames.hasEntry(genObj, src);
     }
     return dst.is<AbstractGeneratorObject>() &&
