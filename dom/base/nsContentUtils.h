@@ -2513,6 +2513,12 @@ class nsContentUtils {
   
 
 
+
+  static bool IsPDFJS(nsIPrincipal* aPrincipal);
+
+  
+
+
   static bool IsSWFPlayerEnabled();
 
   enum ContentViewerType {
