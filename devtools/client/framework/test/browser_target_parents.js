@@ -15,29 +15,25 @@ add_task(async function() {
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
 
   const tab = await addTab(TEST_URL);
-  const target = await TargetFactory.forTab(tab);
-  const mainRoot = target.client.mainRoot;
 
-  is(
-    target.descriptorFront,
-    mainRoot,
-    "Got the correct descriptorFront from the target."
-  );
+  const client = await setupDebuggerClient();
+  const mainRoot = client.mainRoot;
+
+  const tabs = await mainRoot.listTabs();
+  const tabDescriptors = tabs.map(tabTarget => tabTarget.descriptorFront);
+
+  await testGetTargetWithConcurrentCalls(tabDescriptors, tabTarget => {
+    
+    return !!tabTarget.getCachedFront("console");
+  });
+
+  await client.close();
   await removeTab(tab);
 });
 
 
 add_task(async function() {
-  
-  DevToolsServer.init();
-  DevToolsServer.allowChromeProcess = true;
-  if (!DevToolsServer.createRootActor) {
-    DevToolsServer.registerAllActors();
-  }
-  const transport = DevToolsServer.connectPipe();
-  const client = new DevToolsClient(transport);
-  await client.connect();
-
+  const client = await setupDebuggerClient();
   const mainRoot = client.mainRoot;
 
   const { processes } = await mainRoot.listProcesses();
@@ -46,109 +42,33 @@ add_task(async function() {
   
   
   
-  await Promise.all(
-    processes.map(async processDescriptor => {
-      const promises = [];
-      const concurrentCalls = 10;
-      for (let i = 0; i < concurrentCalls; i++) {
-        const targetPromise = processDescriptor.getTarget();
-        
-        if (i % 2 == 0) {
-          await wait(0);
-        }
-        promises.push(
-          targetPromise.then(target => {
-            is(
-              target.descriptorFront,
-              processDescriptor,
-              "Got the correct descriptorFront from the process target."
-            );
-            
-            ok(target.getCachedFront("console"), "The target is attached");
-            return target;
-          })
-        );
-      }
-      const targets = await Promise.all(promises);
-      for (let i = 1; i < concurrentCalls; i++) {
-        is(
-          targets[0],
-          targets[i],
-          "All the targets returned by concurrent calls to getTarget are the same"
-        );
-      }
-    })
-  );
+  await testGetTargetWithConcurrentCalls(processes, processTarget => {
+    
+    return !!processTarget.getCachedFront("console");
+  });
 
   await client.close();
 });
 
 
 add_task(async function() {
-  
-  DevToolsServer.init();
-  DevToolsServer.allowChromeProcess = true;
-  if (!DevToolsServer.createRootActor) {
-    DevToolsServer.registerAllActors();
-  }
-  const transport = DevToolsServer.connectPipe();
-  const client = new DevToolsClient(transport);
-  await client.connect();
-
+  const client = await setupDebuggerClient();
   const mainRoot = client.mainRoot;
 
   const mainProcess = await mainRoot.getMainProcess();
   const { frames } = await mainProcess.listRemoteFrames();
 
-  
-  await Promise.all(
-    frames.map(async frameDescriptor => {
-      const promises = [];
-      const concurrentCalls = 10;
-      for (let i = 0; i < concurrentCalls; i++) {
-        const targetPromise = frameDescriptor.getTarget();
-        
-        if (i % 2 == 0) {
-          await wait(0);
-        }
-        promises.push(
-          targetPromise.then(target => {
-            is(
-              target.descriptorFront,
-              frameDescriptor,
-              "Got the correct descriptorFront from the frame target."
-            );
-            
-            ok(target.traits, "The target is attached");
-            return target;
-          })
-        );
-      }
-      const targets = await Promise.all(promises);
-      for (let i = 1; i < concurrentCalls; i++) {
-        is(
-          targets[0],
-          targets[i],
-          "All the targets returned by concurrent calls to getTarget are the same"
-        );
-      }
-    })
-  );
+  await testGetTargetWithConcurrentCalls(frames, frameTarget => {
+    
+    return !!frameTarget.traits;
+  });
 
   await client.close();
 });
 
 
 add_task(async function() {
-  
-  DevToolsServer.init();
-  DevToolsServer.allowChromeProcess = true;
-  if (!DevToolsServer.createRootActor) {
-    DevToolsServer.registerAllActors();
-  }
-  const transport = DevToolsServer.connectPipe();
-  const client = new DevToolsClient(transport);
-  await client.connect();
+  const client = await setupDebuggerClient();
 
   const mainRoot = client.mainRoot;
 
@@ -173,15 +93,7 @@ add_task(async function() {
 
 
 add_task(async function() {
-  
-  DevToolsServer.init();
-  DevToolsServer.allowChromeProcess = true;
-  if (!DevToolsServer.createRootActor) {
-    DevToolsServer.registerAllActors();
-  }
-  const transport = DevToolsServer.connectPipe();
-  const client = new DevToolsClient(transport);
-  await client.connect();
+  const client = await setupDebuggerClient();
 
   const mainRoot = client.mainRoot;
 
@@ -198,3 +110,52 @@ add_task(async function() {
 
   await client.close();
 });
+
+async function setupDebuggerClient() {
+  
+  DevToolsServer.init();
+  DevToolsServer.allowChromeProcess = true;
+  if (!DevToolsServer.createRootActor) {
+    DevToolsServer.registerAllActors();
+  }
+  const transport = DevToolsServer.connectPipe();
+  const client = new DevToolsClient(transport);
+  await client.connect();
+  return client;
+}
+
+async function testGetTargetWithConcurrentCalls(descriptors, isTargetAttached) {
+  
+  await Promise.all(
+    descriptors.map(async descriptor => {
+      const promises = [];
+      const concurrentCalls = 10;
+      for (let i = 0; i < concurrentCalls; i++) {
+        const targetPromise = descriptor.getTarget();
+        
+        if (i % 2 == 0) {
+          await wait(0);
+        }
+        promises.push(
+          targetPromise.then(target => {
+            is(
+              target.descriptorFront,
+              descriptor,
+              "Got the correct descriptorFront from the frame target."
+            );
+            ok(isTargetAttached(target), "The target is attached");
+            return target;
+          })
+        );
+      }
+      const targets = await Promise.all(promises);
+      for (let i = 1; i < concurrentCalls; i++) {
+        is(
+          targets[0],
+          targets[i],
+          "All the targets returned by concurrent calls to getTarget are the same"
+        );
+      }
+    })
+  );
+}
