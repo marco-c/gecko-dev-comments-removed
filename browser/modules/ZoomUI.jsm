@@ -131,9 +131,6 @@ async function updateZoomUI(aBrowser, aAnimate = false) {
   let urlbarZoomButton = win.document.getElementById("urlbar-zoom-button");
   let zoomFactor = Math.round(win.ZoomManager.zoom * 100);
 
-  
-  
-
   let defaultZoom = Math.round((await ZoomUI.getGlobalValue()) * 100);
 
   if (!win.gBrowser || win.gBrowser.selectedBrowser != aBrowser) {
@@ -145,8 +142,15 @@ async function updateZoomUI(aBrowser, aAnimate = false) {
     return;
   }
 
+  
+  
+  
+
   urlbarZoomButton.hidden =
     defaultZoom == zoomFactor ||
+    (aBrowser.currentURI.spec == "about:blank" &&
+      (!aBrowser.contentPrincipal ||
+        aBrowser.contentPrincipal.isNullPrincipal)) ||
     (customizableZoomControls &&
       customizableZoomControls.getAttribute("cui-areatype") == "toolbar");
 
