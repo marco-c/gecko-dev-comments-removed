@@ -57,13 +57,6 @@ add_task(async function test_location_timeout_xhr() {
   checkCountryResultTelemetry(null);
 
   
-  let histogram = Services.telemetry.getHistogramById(
-    "SEARCH_SERVICE_COUNTRY_TIMEOUT"
-  );
-  let snapshot = histogram.snapshot();
-  deepEqual(snapshot.values, { 0: 0, 1: 1, 2: 0 });
-
-  
   
   verifyProbeSum("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS", 0);
 
