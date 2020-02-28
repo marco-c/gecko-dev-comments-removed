@@ -550,6 +550,11 @@ class UrlbarController {
         Cu.reportError(`Unknown Result Type ${result.type}`);
         return;
     }
+    
+    
+    if (result.providerName == "UrlbarProviderTopSites") {
+      telemetryType = "topsite";
+    }
 
     Services.telemetry
       .getHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX")
