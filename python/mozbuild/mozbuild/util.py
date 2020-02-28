@@ -14,6 +14,7 @@ import difflib
 import errno
 import functools
 import hashlib
+import itertools
 import os
 import pprint
 import re
@@ -226,9 +227,7 @@ class FileAvoidWrite(BytesIO):
         self._binary_mode = 'b' in readmode
 
     def write(self, buf):
-        if isinstance(buf, six.text_type):
-            buf = buf.encode('utf-8')
-        BytesIO.write(self, buf)
+        BytesIO.write(self, six.ensure_binary(buf))
 
     def avoid_writing_to_file(self):
         self._write_to_file = False
@@ -1193,6 +1192,20 @@ def pair(iterable):
     '''
     i = iter(iterable)
     return six.moves.zip_longest(i, i)
+
+
+def pairwise(iterable):
+    '''Given an iterable, returns an iterable of overlapped pairs of
+    its items. Based on the Python itertools documentation.
+
+    For example,
+        list(pairwise([1,2,3,4,5,6]))
+    returns
+        [(1,2), (2,3), (3,4), (4,5), (5,6)]
+    '''
+    a, b = itertools.tee(iterable)
+    next(b, None)
+    return zip(a, b)
 
 
 VARIABLES_RE = re.compile('\$\((\w+)\)')
