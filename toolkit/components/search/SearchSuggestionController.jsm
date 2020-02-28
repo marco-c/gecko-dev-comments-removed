@@ -281,6 +281,29 @@ SearchSuggestionController.prototype = {
 
 
 
+  _reportBandwidthForEngine(engineId, privateMode) {
+    if (!this._request || !this._request.channel) {
+      return;
+    }
+
+    let channel = ChannelWrapper.get(this._request.channel);
+    let bytesTransferred = channel.requestSize + channel.responseSize;
+    if (bytesTransferred == 0) {
+      return;
+    }
+
+    dump(
+      `SearchSuggest: ${engineId}-${privateMode} transferred ${bytesTransferred} bytes\n`
+    );
+  },
+
+  
+
+
+
+
+
+
 
 
 
@@ -324,18 +347,22 @@ SearchSuggestionController.prototype = {
 
     this._request.mozBackgroundRequest = true; 
 
+    let engineId = engine.identifier || "other";
+
     this._request.addEventListener(
       "load",
-      this._onRemoteLoaded.bind(this, deferredResponse)
+      this._onRemoteLoaded.bind(this, deferredResponse, engineId, privateMode)
     );
-    this._request.addEventListener("error", evt =>
-      deferredResponse.resolve("HTTP error")
-    );
+    this._request.addEventListener("error", evt => {
+      this._reportBandwidthForEngine(engineId, privateMode);
+      deferredResponse.resolve("HTTP error");
+    });
     
     
-    this._request.addEventListener("abort", evt =>
-      deferredResponse.reject("HTTP request aborted")
-    );
+    this._request.addEventListener("abort", evt => {
+      this._reportBandwidthForEngine(engineId, privateMode);
+      deferredResponse.reject("HTTP request aborted");
+    });
 
     if (submission.postData) {
       this._request.sendInputStream(submission.postData);
@@ -354,13 +381,19 @@ SearchSuggestionController.prototype = {
 
 
 
-  _onRemoteLoaded(deferredResponse) {
+
+
+
+
+  _onRemoteLoaded(deferredResponse, engineId, privateMode) {
     if (!this._request) {
       deferredResponse.resolve(
         "Got HTTP response after the request was cancelled"
       );
       return;
     }
+
+    this._reportBandwidthForEngine(engineId, privateMode);
 
     let status, serverResults;
     try {
