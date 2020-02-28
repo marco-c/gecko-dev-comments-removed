@@ -2786,6 +2786,7 @@ nsEventStatus AsyncPanZoomController::GenerateSingleTap(
       
       
       
+      APZC_LOG("posting runnable for HandleTap from GenerateSingleTap");
       RefPtr<Runnable> runnable =
           NewRunnableMethod<TapType, LayoutDevicePoint, mozilla::Modifiers,
                             ScrollableLayerGuid, uint64_t>(
