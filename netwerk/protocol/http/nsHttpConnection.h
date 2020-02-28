@@ -89,7 +89,7 @@ class nsHttpConnection final : public HttpConnectionBase,
   }
 
   
-  uint32_t TimeToLive() override;
+  uint32_t TimeToLive();
 
   bool NeedSpdyTunnel() {
     return mConnInfo->UsingHttpsProxy() && !mTLSFilter &&
@@ -101,14 +101,14 @@ class nsHttpConnection final : public HttpConnectionBase,
   
   void ForcePlainText() { mForcePlainText = true; }
 
-  bool IsUrgentStartPreferred() const override {
+  bool IsUrgentStartPreferred() const {
     return mUrgentStartPreferredKnown && mUrgentStartPreferred;
   }
-  void SetUrgentStartPreferred(bool urgent) override;
+  void SetUrgentStartPreferred(bool urgent);
 
-  void SetIsReusedAfter(uint32_t afterMilliseconds) override;
+  void SetIsReusedAfter(uint32_t afterMilliseconds);
 
-  int64_t MaxBytesRead() override { return mMaxBytesRead; }
+  int64_t MaxBytesRead() { return mMaxBytesRead; }
   HttpVersion GetLastHttpResponseVersion() { return mLastHttpResponseVersion; }
 
   friend class HttpConnectionForceIO;
@@ -121,17 +121,17 @@ class nsHttpConnection final : public HttpConnectionBase,
   
   
   
-  void BeginIdleMonitoring() override;
-  void EndIdleMonitoring() override;
+  void BeginIdleMonitoring();
+  void EndIdleMonitoring();
 
   bool UsingSpdy() override { return (mUsingSpdyVersion != SpdyVersion::NONE); }
   SpdyVersion GetSpdyVersion() { return mUsingSpdyVersion; }
-  bool EverUsedSpdy() override { return mEverUsedSpdy; }
+  bool EverUsedSpdy() { return mEverUsedSpdy; }
   bool UsingHttp3() override { return false; }
 
   
   
-  bool ReportedNPN() override { return mReportedSpdy; }
+  bool ReportedNPN() { return mReportedSpdy; }
 
   
   

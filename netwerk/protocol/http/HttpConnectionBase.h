@@ -75,14 +75,7 @@ class HttpConnectionBase : public nsSupportsWeakReference {
   virtual bool CanReuse() = 0;  
   virtual bool CanDirectlyActivate() = 0;
 
-  
-  virtual uint32_t TimeToLive();
-
   virtual void DontReuse() = 0;
-
-  virtual bool IsUrgentStartPreferred() const { return false; }
-
-  virtual void SetUrgentStartPreferred(bool urgent) {}
 
   nsISocketTransport* Transport() { return mSocketTransport; }
   nsAHttpTransaction* Transaction() { return mTransaction; }
@@ -100,24 +93,8 @@ class HttpConnectionBase : public nsSupportsWeakReference {
                                               nsIAsyncInputStream**,
                                               nsIAsyncOutputStream**) = 0;
 
-  virtual void SetIsReusedAfter(uint32_t afterMilliseconds) {}
-
-  virtual int64_t MaxBytesRead() { return 0; }
-
-  
-  
-  
-  
-  virtual void BeginIdleMonitoring() {}
-  virtual void EndIdleMonitoring() {}
-
   virtual bool UsingSpdy() { return false; }
-  virtual bool EverUsedSpdy() { return false; }
   virtual bool UsingHttp3() { return false; }
-
-  
-  
-  virtual bool ReportedNPN() { return false; }
 
   virtual void SetTransactionCaps(uint32_t aCaps) { mTransactionCaps = aCaps; }
 

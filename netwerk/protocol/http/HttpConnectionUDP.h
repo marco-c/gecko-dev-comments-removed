@@ -89,9 +89,6 @@ class HttpConnectionUDP final : public HttpConnectionBase,
            (mKeepAliveMask && mKeepAlive);
   }
 
-  
-  uint32_t TimeToLive() override;
-
   bool NeedSpdyTunnel() {
     return mConnInfo->UsingHttpsProxy() && !mTLSFilter &&
            mConnInfo->UsingConnect();
@@ -102,14 +99,6 @@ class HttpConnectionUDP final : public HttpConnectionBase,
   
   void ForcePlainText() { mForcePlainText = true; }
 
-  bool IsUrgentStartPreferred() const override {
-    return mUrgentStartPreferredKnown && mUrgentStartPreferred;
-  }
-  void SetUrgentStartPreferred(bool urgent) override;
-
-  void SetIsReusedAfter(uint32_t afterMilliseconds) override;
-
-  int64_t MaxBytesRead() override { return mMaxBytesRead; }
   HttpVersion GetLastHttpResponseVersion() { return mLastHttpResponseVersion; }
 
   friend class HttpConnectionUDPForceIO;
@@ -118,35 +107,13 @@ class HttpConnectionUDP final : public HttpConnectionBase,
                                               const char*, uint32_t, uint32_t,
                                               uint32_t*);
 
-  
-  
-  
-  
-  void BeginIdleMonitoring() override;
-  void EndIdleMonitoring() override;
-
   bool UsingSpdy() override { return (mUsingSpdyVersion != SpdyVersion::NONE); }
-  SpdyVersion GetSpdyVersion() { return mUsingSpdyVersion; }
-  bool EverUsedSpdy() override { return mEverUsedSpdy; }
   bool UsingHttp3() override { return mHttp3Session; }
-
-  
-  
-  bool ReportedNPN() override { return mReportedSpdy; }
-
-  
-  
-  
-  
-  uint32_t ReadTimeoutTick(PRIntervalTime now);
 
   
   
   
   static void UpdateTCPKeepalive(nsITimer* aTimer, void* aClosure);
-
-  
-  void ReadTimeoutTick();
 
   int64_t ContentBytesWritten() { return mContentBytesWritten; }
 
@@ -155,21 +122,6 @@ class HttpConnectionUDP final : public HttpConnectionBase,
                                                  nsACString& result, bool h2ws);
   void SetupSecondaryTLS(nsAHttpTransaction* aSpdyConnectTransaction = nullptr);
   void SetInSpdyTunnel(bool arg);
-
-  
-  
-  
-  
-  
-  void CheckForTraffic(bool check);
-
-  
-  
-  bool NoTraffic() {
-    return mTrafficStamp &&
-           (mTrafficCount == (mTotalBytesWritten + mTotalBytesRead)) &&
-           !mFastOpen;
-  }
 
   void SetFastOpenStatus(uint8_t tfoStatus);
   uint8_t GetFastOpenStatus() { return mFastOpenStatus; }
@@ -250,20 +202,12 @@ class HttpConnectionUDP final : public HttpConnectionBase,
   PRIntervalTime
       mMaxHangTime;  
   PRIntervalTime mIdleTimeout;  
-  PRIntervalTime mConsiderReusedAfterInterval;
-  PRIntervalTime mConsiderReusedAfterEpoch;
-  int64_t mCurrentBytesRead;     
   int64_t mMaxBytesRead;         
   int64_t mTotalBytesRead;       
   int64_t mContentBytesWritten;  
 
   RefPtr<nsIAsyncInputStream> mInputOverflow;
 
-  
-  
-  bool mUrgentStartPreferred;
-  
-  bool mUrgentStartPreferredKnown;
   bool mConnectedTransport;
   bool mKeepAlive;
   bool mKeepAliveMask;
@@ -271,14 +215,9 @@ class HttpConnectionUDP final : public HttpConnectionBase,
   bool mIsReused;
   bool mCompletedProxyConnect;
   bool mLastTransactionExpectedNoContent;
-  bool mIdleMonitoring;
   bool mProxyConnectInProgress;
   bool mInSpdyTunnel;
   bool mForcePlainText;
-
-  
-  int64_t mTrafficCount;
-  bool mTrafficStamp;  
 
   
   
@@ -309,8 +248,6 @@ class HttpConnectionUDP final : public HttpConnectionBase,
   
   
   uint32_t mDefaultTimeoutFactor;
-
-  bool mResponseTimeoutEnabled;
 
   
   uint32_t mTCPKeepaliveConfig;

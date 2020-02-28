@@ -105,7 +105,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   
   
-  void ReportSpdyConnection(HttpConnectionBase*, bool usingSpdy);
+  void ReportSpdyConnection(nsHttpConnection*, bool usingSpdy);
 
   bool GetConnectionData(nsTArray<HttpRetParams>*);
 
@@ -590,7 +590,8 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   uint16_t mNumIdleConns;
   
-  uint16_t mNumSpdyActiveConns;
+  
+  uint16_t mNumSpdyHttp3ActiveConns;
   
   
   uint32_t mNumHalfOpenConns;

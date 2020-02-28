@@ -60,14 +60,8 @@ HttpConnectionUDP::HttpConnectionUDP()
       mLastReadTime(0),
       mLastWriteTime(0),
       mMaxHangTime(0),
-      mConsiderReusedAfterInterval(0),
-      mConsiderReusedAfterEpoch(0),
-      mCurrentBytesRead(0),
-      mMaxBytesRead(0),
       mTotalBytesRead(0),
       mContentBytesWritten(0),
-      mUrgentStartPreferred(false),
-      mUrgentStartPreferredKnown(false),
       mConnectedTransport(false),
       mKeepAlive(true)  
       ,
@@ -76,12 +70,9 @@ HttpConnectionUDP::HttpConnectionUDP()
       mIsReused(false),
       mCompletedProxyConnect(false),
       mLastTransactionExpectedNoContent(false),
-      mIdleMonitoring(false),
       mProxyConnectInProgress(false),
       mInSpdyTunnel(false),
       mForcePlainText(false),
-      mTrafficCount(0),
-      mTrafficStamp(false),
       mHttp1xTransactionCount(0),
       mRemainingConnectionUses(0xffffffff),
       mNPNComplete(false),
@@ -92,7 +83,6 @@ HttpConnectionUDP::HttpConnectionUDP()
       mEverUsedSpdy(false),
       mLastHttpResponseVersion(HttpVersion::v1_1),
       mDefaultTimeoutFactor(1),
-      mResponseTimeoutEnabled(false),
       mTCPKeepaliveConfig(kTCPKeepaliveDisabled),
       mForceSendPending(false),
       m0RTTChecked(false),
@@ -347,11 +337,6 @@ void HttpConnectionUDP::StartSpdy(nsISSLSocketControl* sslControl,
   if (!mDid0RTTSpdy) {
     mSpdySession =
         ASpdySession::NewSpdySession(spdyVersion, mSocketTransport, false);
-  }
-
-  if (!mReportedSpdy) {
-    mReportedSpdy = true;
-    gHttpHandler->ConnMgr()->ReportSpdyConnection(this, true);
   }
 
   
@@ -785,8 +770,6 @@ nsresult HttpConnectionUDP::Activate(nsAHttpTransaction* trans, uint32_t caps,
       nsHttpTransaction* hTrans = trans->QueryHttpTransaction();
       if (hTrans) {
         hTrans->BootstrapTimings(mBootstrappedTimings);
-        SetUrgentStartPreferred(hTrans->ClassOfService() &
-                                nsIClassOfService::UrgentStart);
       }
     }
     mBootstrappedTimings = TimingStruct();
@@ -853,9 +836,6 @@ nsresult HttpConnectionUDP::Activate(nsAHttpTransaction* trans, uint32_t caps,
   
   mTransaction = trans;
 
-  MOZ_ASSERT(!mIdleMonitoring, "Activating a connection with an Idle Monitor");
-  mIdleMonitoring = false;
-
   
   mKeepAliveMask = mKeepAlive = (caps & NS_HTTP_ALLOW_KEEPALIVE);
 
@@ -870,14 +850,7 @@ nsresult HttpConnectionUDP::Activate(nsAHttpTransaction* trans, uint32_t caps,
   }
 
   
-  mCurrentBytesRead = 0;
-
-  
   mInputOverflow = nullptr;
-
-  mResponseTimeoutEnabled = gHttpHandler->ResponseTimeoutEnabled() &&
-                            mTransaction->ResponseTimeout() > 0 &&
-                            mTransaction->ResponseTimeoutEnabled();
 
   if (!mHttp3Session) {
     
@@ -1071,8 +1044,6 @@ void HttpConnectionUDP::Close(nsresult reason, bool aIsShutdown) {
   }
 
   if (NS_FAILED(reason)) {
-    if (mIdleMonitoring) EndIdleMonitoring();
-
     mTLSFilter = nullptr;
 
     
@@ -1243,26 +1214,6 @@ PRIntervalTime HttpConnectionUDP::IdleTime() {
                                       : (PR_IntervalNow() - mLastReadTime);
 }
 
-
-
-uint32_t HttpConnectionUDP::TimeToLive() {
-  LOG(("HttpConnectionUDP::TTL: %p %s idle %d timeout %d\n", this,
-       mConnInfo->Origin(), IdleTime(), mIdleTimeout));
-
-  if (IdleTime() >= mIdleTimeout) {
-    return 0;
-  }
-
-  uint32_t timeToLive = PR_IntervalToSeconds(mIdleTimeout - IdleTime());
-
-  
-  
-  if (!timeToLive) {
-    timeToLive = 1;
-  }
-  return timeToLive;
-}
-
 bool HttpConnectionUDP::IsAlive() {
   if (!mSocketTransport || !mConnectedTransport) return false;
 
@@ -1290,16 +1241,6 @@ bool HttpConnectionUDP::IsAlive() {
 #endif
 
   return alive;
-}
-
-void HttpConnectionUDP::SetUrgentStartPreferred(bool urgent) {
-  if (mExperienced && !mUrgentStartPreferredKnown) {
-    
-    mUrgentStartPreferredKnown = true;
-    mUrgentStartPreferred = urgent;
-    LOG(("HttpConnectionUDP::SetUrgentStartPreferred [this=%p urgent=%d]", this,
-         urgent));
-  }
 }
 
 
@@ -1507,17 +1448,8 @@ nsresult HttpConnectionUDP::OnHeadersAvailable(nsAHttpTransaction* trans,
 
 bool HttpConnectionUDP::IsReused() {
   if (mIsReused) return true;
-  if (!mConsiderReusedAfterInterval) return false;
 
-  
-  
-  return (PR_IntervalNow() - mConsiderReusedAfterEpoch) >=
-         mConsiderReusedAfterInterval;
-}
-
-void HttpConnectionUDP::SetIsReusedAfter(uint32_t afterMilliseconds) {
-  mConsiderReusedAfterEpoch = PR_IntervalNow();
-  mConsiderReusedAfterInterval = PR_MillisecondsToInterval(afterMilliseconds);
+  return false;
 }
 
 nsresult HttpConnectionUDP::TakeTransport(nsISocketTransport** aTransport,
@@ -1571,86 +1503,6 @@ nsresult HttpConnectionUDP::TakeTransport(nsISocketTransport** aTransport,
   return NS_OK;
 }
 
-uint32_t HttpConnectionUDP::ReadTimeoutTick(PRIntervalTime now) {
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-
-  
-  if (!mTransaction) return UINT32_MAX;
-
-  
-  if (mSpdySession) {
-    return mSpdySession->ReadTimeoutTick(now);
-  }
-
-  if (mHttp3Session && mNPNComplete) {
-    
-    
-    
-    return mHttp3Session->ReadTimeoutTick(now);
-  }
-
-  uint32_t nextTickAfter = UINT32_MAX;
-  
-  if (mResponseTimeoutEnabled) {
-    NS_WARNING_ASSERTION(
-        gHttpHandler->ResponseTimeoutEnabled(),
-        "Timing out a response, but response timeout is disabled!");
-
-    PRIntervalTime initialResponseDelta = now - mLastWriteTime;
-
-    if (initialResponseDelta > mTransaction->ResponseTimeout()) {
-      LOG(("canceling transaction: no response for %ums: timeout is %dms\n",
-           PR_IntervalToMilliseconds(initialResponseDelta),
-           PR_IntervalToMilliseconds(mTransaction->ResponseTimeout())));
-
-      mResponseTimeoutEnabled = false;
-
-      
-      CloseTransaction(mTransaction, NS_ERROR_NET_TIMEOUT);
-      return UINT32_MAX;
-    }
-    nextTickAfter = PR_IntervalToSeconds(mTransaction->ResponseTimeout()) -
-                    PR_IntervalToSeconds(initialResponseDelta);
-    nextTickAfter = std::max(nextTickAfter, 1U);
-  }
-
-  
-  if (mCheckNetworkStallsWithTFO && mLastRequestBytesSentTime) {
-    PRIntervalTime initialResponseDelta = now - mLastRequestBytesSentTime;
-    if (initialResponseDelta >= gHttpHandler->FastOpenStallsTimeout()) {
-      gHttpHandler->IncrementFastOpenStallsCounter();
-      mCheckNetworkStallsWithTFO = false;
-    } else {
-      uint32_t next =
-          PR_IntervalToSeconds(gHttpHandler->FastOpenStallsTimeout()) -
-          PR_IntervalToSeconds(initialResponseDelta);
-      nextTickAfter = std::min(nextTickAfter, next);
-    }
-  }
-
-  if (!mNPNComplete) {
-    
-    
-    
-    
-    PRIntervalTime initialTLSDelta = now - mLastWriteTime;
-    if (initialTLSDelta >
-        PR_MillisecondsToInterval(gHttpHandler->TLSHandshakeTimeout())) {
-      LOG(
-          ("canceling transaction: tls handshake takes too long: tls handshake "
-           "last %ums, timeout is %dms.",
-           PR_IntervalToMilliseconds(initialTLSDelta),
-           gHttpHandler->TLSHandshakeTimeout()));
-
-      
-      CloseTransaction(mTransaction, NS_ERROR_NET_TIMEOUT);
-      return UINT32_MAX;
-    }
-  }
-
-  return nextTickAfter;
-}
-
 void HttpConnectionUDP::UpdateTCPKeepalive(nsITimer* aTimer, void* aClosure) {
   MOZ_ASSERT(aTimer);
   MOZ_ASSERT(aClosure);
@@ -1659,11 +1511,6 @@ void HttpConnectionUDP::UpdateTCPKeepalive(nsITimer* aTimer, void* aClosure) {
 
   if (NS_WARN_IF((self->mUsingSpdyVersion != SpdyVersion::NONE) ||
                  self->mHttp3Session)) {
-    return;
-  }
-
-  
-  if (self->mIdleMonitoring) {
     return;
   }
 
@@ -1860,31 +1707,6 @@ nsresult HttpConnectionUDP::ForceSend() {
   return MaybeForceSendIO();
 }
 
-void HttpConnectionUDP::BeginIdleMonitoring() {
-  LOG(("HttpConnectionUDP::BeginIdleMonitoring [this=%p]\n", this));
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-  MOZ_ASSERT(!mTransaction, "BeginIdleMonitoring() while active");
-  MOZ_ASSERT(mUsingSpdyVersion == SpdyVersion::NONE,
-             "Idle monitoring of spdy not allowed");
-  MOZ_ASSERT(!mHttp3Session, "Idle monitoring of http3 not allowed");
-
-  LOG(("Entering Idle Monitoring Mode [this=%p]", this));
-  mIdleMonitoring = true;
-  if (mSocketIn) mSocketIn->AsyncWait(this, 0, 0, nullptr);
-}
-
-void HttpConnectionUDP::EndIdleMonitoring() {
-  LOG(("HttpConnectionUDP::EndIdleMonitoring [this=%p]\n", this));
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-  MOZ_ASSERT(!mTransaction, "EndIdleMonitoring() while active");
-
-  if (mIdleMonitoring) {
-    LOG(("Leaving Idle Monitoring Mode [this=%p]", this));
-    mIdleMonitoring = false;
-    if (mSocketIn) mSocketIn->AsyncWait(nullptr, 0, 0, nullptr);
-  }
-}
-
 HttpVersion HttpConnectionUDP::Version() {
   if (mUsingSpdyVersion != SpdyVersion::NONE) {
     return HttpVersion::v2_0;
@@ -1909,8 +1731,6 @@ void HttpConnectionUDP::CloseTransaction(nsAHttpTransaction* trans,
              (mTLSFilter && !mTLSFilter->Transaction()) ||
              (mTLSFilter && mTLSFilter->Transaction() == trans));
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-
-  if (mCurrentBytesRead > mMaxBytesRead) mMaxBytesRead = mCurrentBytesRead;
 
   
   if (reason == NS_BASE_STREAM_CLOSED) reason = NS_OK;
@@ -2070,13 +1890,6 @@ nsresult HttpConnectionUDP::OnSocketWritable() {
       rv = NS_ERROR_FAILURE;
       LOG(("  No Transaction In OnSocketWritable\n"));
     } else if (NS_SUCCEEDED(rv)) {
-      
-      if (!mReportedSpdy) {
-        mReportedSpdy = true;
-        MOZ_ASSERT(!mEverUsedSpdy);
-        gHttpHandler->ConnMgr()->ReportSpdyConnection(this, false);
-      }
-
       LOG(("  writing transaction request stream\n"));
       mProxyConnectInProgress = false;
       rv = mTransaction->ReadSegmentsAgain(
@@ -2193,9 +2006,6 @@ nsresult HttpConnectionUDP::OnSocketReadable() {
   PRIntervalTime now = PR_IntervalNow();
   PRIntervalTime delta = now - mLastReadTime;
 
-  
-  mResponseTimeoutEnabled = false;
-
   if ((mTransactionCaps & NS_HTTP_CONNECT_ONLY) && !mCompletedProxyConnect &&
       !mProxyConnectStream) {
     
@@ -2260,7 +2070,6 @@ nsresult HttpConnectionUDP::OnSocketReadable() {
       }
       again = false;
     } else {
-      mCurrentBytesRead += n;
       mTotalBytesRead += n;
       if (NS_FAILED(mSocketInCondition)) {
         
@@ -2577,24 +2386,6 @@ HttpConnectionUDP::OnInputStreamReady(nsIAsyncInputStream* in) {
   MOZ_ASSERT(in == mSocketIn, "unexpected stream");
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-  if (mIdleMonitoring) {
-    MOZ_ASSERT(!mTransaction, "Idle Input Event While Active");
-
-    
-    
-    
-    
-    
-
-    if (!CanReuse()) {
-      LOG(("Server initiated close of idle conn %p\n", this));
-      return NS_OK;
-    }
-
-    LOG(("Input data on idle conn %p, but not closing yet\n", this));
-    return NS_OK;
-  }
-
   
   if (!mTransaction) {
     LOG(("  no transaction; ignoring event\n"));
@@ -2665,34 +2456,9 @@ HttpConnectionUDP::GetInterface(const nsIID& iid, void** result) {
   return NS_ERROR_NO_INTERFACE;
 }
 
-void HttpConnectionUDP::CheckForTraffic(bool check) {
-  if (check) {
-    LOG((" CheckForTraffic conn %p\n", this));
-    if (mSpdySession) {
-      if (PR_IntervalToMilliseconds(IdleTime()) >= 500) {
-        
-        
-        
-        LOG((" SendPing\n"));
-        mSpdySession->SendPing();
-      } else {
-        LOG((" SendPing skipped due to network activity\n"));
-      }
-    } else if (!mHttp3Session) {
-      
-      mTrafficCount = mTotalBytesWritten + mTotalBytesRead;
-      mTrafficStamp = true;
-    }
-  } else {
-    
-    mTrafficStamp = false;
-  }
-}
-
 nsAHttpTransaction*
 HttpConnectionUDP::CloseConnectionFastOpenTakesTooLongOrError(
     bool aCloseSocketTransport) {
-  MOZ_ASSERT(!mCurrentBytesRead);
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
   mFastOpenStatus = TFO_FAILED;
@@ -2745,12 +2511,6 @@ void HttpConnectionUDP::SetFastOpen(bool aFastOpen) {
   mFastOpen = aFastOpen;
   if (!mFastOpen && mTransaction && !mTransaction->IsNullTransaction()) {
     mExperienced = true;
-
-    nsHttpTransaction* hTrans = mTransaction->QueryHttpTransaction();
-    if (hTrans) {
-      SetUrgentStartPreferred(hTrans->ClassOfService() &
-                              nsIClassOfService::UrgentStart);
-    }
   }
 }
 

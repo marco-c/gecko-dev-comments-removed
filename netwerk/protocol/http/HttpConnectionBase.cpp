@@ -46,23 +46,6 @@ HttpConnectionBase::HttpConnectionBase()
   LOG(("Creating HttpConnectionBase @%p\n", this));
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-uint32_t HttpConnectionBase::TimeToLive() {
-  static const PRIntervalTime k5Sec = PR_SecondsToInterval(5);
-  return k5Sec;
-}
-
 void HttpConnectionBase::BootstrapTimings(TimingStruct times) {
   mBootstrappedTimingsSet = true;
   mBootstrappedTimings = times;
