@@ -2152,8 +2152,11 @@ void nsCellMap::RemoveCell(nsTableCellMap& aMap, nsTableCellFrame* aCellFrame,
   
   
   
-  if (!aCellFrame->GetRowSpan() || !aCellFrame->GetColSpan())
-    spansCauseRebuild = true;
+  if (!spansCauseRebuild) {
+    if (!aCellFrame->GetRowSpan() || !aCellFrame->GetColSpan()) {
+      spansCauseRebuild = true;
+    }
+  }
 
   if (spansCauseRebuild) {
     aMap.RebuildConsideringCells(this, nullptr, aRowIndex, startColIndex, false,
