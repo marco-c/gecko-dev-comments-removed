@@ -1119,6 +1119,14 @@ class Document : public nsINode,
   
 
 
+
+  bool GetHasCSPDeliveredThroughHeader() {
+    return mHasCSPDeliveredThroughHeader;
+  }
+
+  
+
+
   typedef MozPromise<uint32_t, bool, true> GetContentBlockingEventsPromise;
   MOZ_MUST_USE RefPtr<GetContentBlockingEventsPromise>
   GetContentBlockingEvents();
@@ -4416,6 +4424,9 @@ class Document : public nsINode,
 
   
   bool mHasUnsafeInlineCSP : 1;
+
+  
+  bool mHasCSPDeliveredThroughHeader : 1;
 
   
   bool mBFCacheDisallowed : 1;
