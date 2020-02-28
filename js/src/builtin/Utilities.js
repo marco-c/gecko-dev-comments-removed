@@ -78,7 +78,7 @@ function RequireObjectCoercible(v) {
 
 function ToLength(v) {
     
-    v = ToIntegerPositiveZero(v);
+    v = ToInteger(v);
 
     
     
