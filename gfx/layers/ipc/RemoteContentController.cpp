@@ -17,6 +17,9 @@
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/Unused.h"
 #include "Units.h"
+#ifdef MOZ_WIDGET_ANDROID
+#include "mozilla/jni/Utils.h"
+#endif
 
 static mozilla::LazyLogModule sApzRemoteLog("apz.cc.remote");
 
@@ -116,14 +119,24 @@ void RemoteContentController::HandleTap(TapType aTapType,
     HandleTapOnMainThread(aTapType, aPoint, aModifiers, aGuid, aInputBlockId);
   } else {
     
+#ifndef MOZ_WIDGET_ANDROID
+    MOZ_ASSERT(false);
+#else
     
     
-    NS_DispatchToMainThread(
+    
+    
+    
+    
+    
+    
+    mozilla::jni::DispatchToGeckoPriorityQueue(
         NewRunnableMethod<TapType, LayoutDevicePoint, Modifiers,
                           ScrollableLayerGuid, uint64_t>(
             "layers::RemoteContentController::HandleTapOnMainThread", this,
             &RemoteContentController::HandleTapOnMainThread, aTapType, aPoint,
             aModifiers, aGuid, aInputBlockId));
+#endif
   }
 }
 
