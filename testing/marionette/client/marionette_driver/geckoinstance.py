@@ -107,9 +107,6 @@ class GeckoInstance(object):
         
         "network.http.prompt-temp-redirect": False,
         
-        
-        "network.http.speculative-parallel-limit": 0,
-        
         "network.manage-offline-status": False,
         
         "network.sntp.pools": "%(server)s",
