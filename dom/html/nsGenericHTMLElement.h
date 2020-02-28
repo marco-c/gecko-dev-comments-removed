@@ -140,18 +140,6 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
     return false;
   }
 
-  void SetNonce(const nsAString& aNonce) {
-    SetProperty(nsGkAtoms::nonce, new nsString(aNonce),
-                nsINode::DeleteProperty<nsString>);
-  }
-  void RemoveNonce() { RemoveProperty(nsGkAtoms::nonce); }
-  void GetNonce(nsAString& aNonce) const {
-    nsString* cspNonce = static_cast<nsString*>(GetProperty(nsGkAtoms::nonce));
-    if (cspNonce) {
-      aNonce = *cspNonce;
-    }
-  }
-
   
 
 

@@ -109,15 +109,7 @@ nsresult nsGenericHTMLElement::CopyInnerTo(Element* aDst) {
 
   auto reparse = aDst->OwnerDoc() == OwnerDoc() ? ReparseAttributes::No
                                                 : ReparseAttributes::Yes;
-  nsresult rv = Element::CopyInnerTo(aDst, reparse);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  nsString* nonce = static_cast<nsString*>(GetProperty(nsGkAtoms::nonce));
-  if (nonce) {
-    static_cast<nsGenericHTMLElement*>(aDst)->SetNonce(*nonce);
-  }
-  return NS_OK;
+  return Element::CopyInnerTo(aDst, reparse);
 }
 
 static const nsAttrValue::EnumTable kDirTable[] = {
@@ -396,21 +388,6 @@ nsresult nsGenericHTMLElement::BindToTree(BindContext& aContext,
 
   
   
-  if (HasFlag(NODE_HAS_NONCE_AND_HEADER_CSP) && IsInComposedDoc() &&
-      OwnerDoc()->GetBrowsingContext()) {
-    nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
-        "nsGenericHTMLElement::ResetNonce::Runnable",
-        [self = RefPtr<nsGenericHTMLElement>(this)]() {
-          nsAutoString nonce;
-          self->GetNonce(nonce);
-          self->SetAttr(kNameSpaceID_None, nsGkAtoms::nonce, EmptyString(),
-                        true);
-          self->SetNonce(nonce);
-        }));
-  }
-
-  
-  
   
   nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
   if (slots && slots->mLabelsList) {
@@ -662,20 +639,6 @@ nsresult nsGenericHTMLElement::AfterSetAttr(
         if (CanHaveName(NodeInfo()->NameAtom())) {
           AddToNameTable(aValue->GetAtomValue());
         }
-      }
-    }
-
-    
-    
-    
-    if (nsGkAtoms::nonce == aName) {
-      if (aValue) {
-        SetNonce(aValue->GetStringValue());
-        if (OwnerDoc()->GetHasCSPDeliveredThroughHeader()) {
-          SetFlags(NODE_HAS_NONCE_AND_HEADER_CSP);
-        }
-      } else {
-        RemoveNonce();
       }
     }
   }
