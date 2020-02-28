@@ -99,8 +99,8 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   
   
-  MOZ_MUST_USE nsresult CloseIdleConnection(HttpConnectionBase*);
-  MOZ_MUST_USE nsresult RemoveIdleConnection(HttpConnectionBase*);
+  MOZ_MUST_USE nsresult CloseIdleConnection(nsHttpConnection*);
+  MOZ_MUST_USE nsresult RemoveIdleConnection(nsHttpConnection*);
 
   
   
@@ -175,7 +175,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
     nsClassHashtable<nsUint64HashKey, nsTArray<RefPtr<PendingTransactionInfo>>>
         mPendingTransactionTable;
     nsTArray<RefPtr<HttpConnectionBase>> mActiveConns;  
-    nsTArray<RefPtr<HttpConnectionBase>>
+    nsTArray<RefPtr<nsHttpConnection>>
         mIdleConns;                          
     nsTArray<nsHalfOpenSocket*> mHalfOpens;  
     nsTArray<RefPtr<nsHalfOpenSocket>>
