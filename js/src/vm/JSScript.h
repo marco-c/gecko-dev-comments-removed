@@ -605,9 +605,7 @@ class ScriptSource {
   
   
 
-  mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      refs = {};
+  mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> refs = {};
 
   
   
@@ -693,9 +691,7 @@ class ScriptSource {
   
 
   
-  static mozilla::Atomic<uint32_t, mozilla::SequentiallyConsistent,
-                         mozilla::recordreplay::Behavior::DontPreserve>
-      idCount_;
+  static mozilla::Atomic<uint32_t, mozilla::SequentiallyConsistent> idCount_;
 
   template <typename Unit>
   const Unit* chunkUnits(JSContext* cx,
@@ -1841,9 +1837,7 @@ class RuntimeScriptData final {
   
   
   
-  mozilla::Atomic<uint32_t, mozilla::SequentiallyConsistent,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      refCount_ = {};
+  mozilla::Atomic<uint32_t, mozilla::SequentiallyConsistent> refCount_ = {};
 
   uint32_t natoms_ = 0;
 
@@ -2241,8 +2235,6 @@ setterLevel:                                                                  \
   MUTABLE_FLAG_GETTER_SETTER(warnedAboutUndefinedProp, WarnedAboutUndefinedProp)
   MUTABLE_FLAG_GETTER_SETTER(hasRunOnce, HasRunOnce)
   MUTABLE_FLAG_GETTER_SETTER(hasBeenCloned, HasBeenCloned)
-  MUTABLE_FLAG_GETTER_SETTER(trackRecordReplayProgress,
-                             TrackRecordReplayProgress)
   
   MUTABLE_FLAG_GETTER(hasScriptCounts, HasScriptCounts)
   

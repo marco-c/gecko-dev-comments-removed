@@ -395,12 +395,6 @@ bool frontend::SourceAwareCompiler<Unit>::createSourceAndParser(
   if (!compilationInfo.assignSource(sourceBuffer_)) {
     return false;
   }
-  
-  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
-    mozilla::recordreplay::NoteContentParse(
-        this, compilationInfo.options.filename(), "application/javascript",
-        sourceBuffer_.units(), sourceBuffer_.length());
-  }
 
   if (CanLazilyParse(compilationInfo)) {
     syntaxParser.emplace(compilationInfo.cx, compilationInfo.options,

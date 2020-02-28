@@ -34,10 +34,6 @@ class SandboxPrivate : public nsIGlobalObject,
     nsIScriptObjectPrincipal* sop =
         static_cast<nsIScriptObjectPrincipal*>(sbp.forget().take());
     JS_SetPrivate(global, sop);
-
-    
-    
-    mozilla::recordreplay::HoldJSObject(global);
   }
 
   static SandboxPrivate* GetPrivate(JSObject* obj) {

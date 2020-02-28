@@ -64,8 +64,7 @@ enum class GCKind {
 
 
 
-Atomic<int32_t, ReleaseAcquire, recordreplay::Behavior::DontPreserve>
-    nsDynamicAtom::gUnusedAtomCount;
+Atomic<int32_t, ReleaseAcquire> nsDynamicAtom::gUnusedAtomCount;
 
 nsDynamicAtom::nsDynamicAtom(const nsAString& aString, uint32_t aHash,
                              bool aIsAsciiLowercase)

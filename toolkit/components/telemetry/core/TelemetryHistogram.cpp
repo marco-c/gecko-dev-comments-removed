@@ -34,8 +34,8 @@ using base::CountHistogram;
 using base::FlagHistogram;
 using base::LinearHistogram;
 using mozilla::MakeTuple;
+using mozilla::StaticMutex;
 using mozilla::StaticMutexAutoLock;
-using mozilla::StaticMutexNotRecorded;
 using mozilla::Telemetry::HistogramAccumulation;
 using mozilla::Telemetry::HistogramCount;
 using mozilla::Telemetry::HistogramID;
@@ -113,7 +113,7 @@ namespace TelemetryIPCAccumulator = mozilla::TelemetryIPCAccumulator;
 
 
 
-static StaticMutexNotRecorded gTelemetryHistogramMutex;
+static StaticMutex gTelemetryHistogramMutex;
 
 
 

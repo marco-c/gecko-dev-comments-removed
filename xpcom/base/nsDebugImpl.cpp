@@ -292,9 +292,6 @@ bool FixedBuffer::append(const char* aBuf, size_t aLen) {
 EXPORT_XPCOM_API(void)
 NS_DebugBreak(uint32_t aSeverity, const char* aStr, const char* aExpr,
               const char* aFile, int32_t aLine) {
-  
-  recordreplay::AutoEnsurePassThroughThreadEvents pt;
-
   FixedBuffer nonPIDBuf;
   FixedBuffer buf;
   const char* sevString = "WARNING";

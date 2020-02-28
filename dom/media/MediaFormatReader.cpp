@@ -337,16 +337,6 @@ MediaResult MediaFormatReader::DecoderFactory::DoCreateDecoder(Data& aData) {
 
   
   
-  if (recordreplay::IsRecordingOrReplaying()) {
-    return MediaResult(
-        NS_ERROR_DOM_MEDIA_FATAL_ERR,
-        nsPrintfCString("error creating %s decoder: "
-                        "media playback is disabled while recording/replaying",
-                        TrackTypeToStr(aData.mTrack)));
-  }
-
-  
-  
   MediaResult result =
       MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                   nsPrintfCString("error creating %s decoder",

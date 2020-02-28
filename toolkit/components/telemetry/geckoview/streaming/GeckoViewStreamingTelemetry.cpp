@@ -19,8 +19,8 @@
 #include "nsThreadUtils.h"
 
 using mozilla::Runnable;
+using mozilla::StaticMutex;
 using mozilla::StaticMutexAutoLock;
-using mozilla::StaticMutexNotRecorded;
 using mozilla::StaticRefPtr;
 using mozilla::SystemGroup;
 using mozilla::TaskCategory;
@@ -37,7 +37,7 @@ void SendBatch(const StaticMutexAutoLock& aLock);
 
 static const char* const kApplicationBackgroundTopic = "application-background";
 
-static StaticMutexNotRecorded gMutex;
+static StaticMutex gMutex;
 
 
 

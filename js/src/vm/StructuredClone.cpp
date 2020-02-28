@@ -565,13 +565,6 @@ struct JSStructuredCloneWriter {
 
   struct TransferableObjectsHasher : public DefaultHasher<JSObject*> {
     static inline HashNumber hash(const Lookup& l) {
-      
-      
-      
-      
-      if (mozilla::recordreplay::IsRecordingOrReplaying()) {
-        return 0;
-      }
       return DefaultHasher<JSObject*>::hash(l);
     }
   };

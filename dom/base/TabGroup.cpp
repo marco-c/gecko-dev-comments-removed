@@ -107,11 +107,6 @@ TabGroup* TabGroup::GetFromWindow(mozIDOMWindowProxy* aWindow) {
 TabGroup* TabGroup::GetFromActor(BrowserChild* aBrowserChild) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  
-  if (recordreplay::IsMiddleman()) {
-    return GetChromeTabGroup();
-  }
-
   nsCOMPtr<nsIEventTarget> target =
       aBrowserChild->Manager()->GetEventTargetFor(aBrowserChild);
   if (!target) {

@@ -23,9 +23,7 @@ static char sPrintfCrashReason[sPrintfCrashReasonSize] = {};
 
 
 
-static mozilla::Atomic<bool, mozilla::SequentiallyConsistent,
-                       mozilla::recordreplay::Behavior::DontPreserve>
-    sCrashing(false);
+static mozilla::Atomic<bool, mozilla::SequentiallyConsistent> sCrashing(false);
 
 MFBT_API MOZ_COLD MOZ_NEVER_INLINE MOZ_FORMAT_PRINTF(1, 2) const
     char* MOZ_CrashPrintf(const char* aFormat, ...) {

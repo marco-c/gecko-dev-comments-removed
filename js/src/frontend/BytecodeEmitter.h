@@ -15,8 +15,9 @@
 #include "mozilla/Span.h"    
 #include "mozilla/Vector.h"  
 
-#include <stddef.h>  
-#include <stdint.h>  
+#include <functional>  
+#include <stddef.h>    
+#include <stdint.h>    
 
 #include "jsapi.h"  
 

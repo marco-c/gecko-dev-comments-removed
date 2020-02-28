@@ -180,8 +180,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::WriteOnceData<bool> isSystemZone_;
 
   enum class HelperThreadUse : uint32_t { None, Pending, Active };
-  mozilla::Atomic<HelperThreadUse, mozilla::SequentiallyConsistent,
-                  mozilla::recordreplay::Behavior::DontPreserve>
+  mozilla::Atomic<HelperThreadUse, mozilla::SequentiallyConsistent>
       helperThreadUse_;
 
   
@@ -231,9 +230,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::ZoneOrGCTaskData<js::gc::UniqueIdMap> uniqueIds_;
 
   
-  mozilla::Atomic<uint32_t, mozilla::Relaxed,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      tenuredAllocsSinceMinorGC_;
+  mozilla::Atomic<uint32_t, mozilla::Relaxed> tenuredAllocsSinceMinorGC_;
 
   
   js::ZoneOrGCTaskData<mozilla::LinkedList<js::WeakMapBase>> gcWeakMapList_;

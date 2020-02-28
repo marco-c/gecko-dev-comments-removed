@@ -2701,14 +2701,6 @@ namespace JS {
 
 extern JS_PUBLIC_API JSObject* ExceptionStackOrNull(JS::HandleObject obj);
 
-
-
-
-
-
-
-extern JS_PUBLIC_API uint64_t ExceptionTimeWarpTarget(JS::HandleValue exn);
-
 } 
 
 

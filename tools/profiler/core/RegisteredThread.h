@@ -138,11 +138,7 @@ class RacyRegisteredThread final {
   mozilla::Atomic<int> mSleep;
 
   
-  
-  
-  mozilla::Atomic<bool, mozilla::MemoryOrdering::Relaxed,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      mIsBeingProfiled;
+  mozilla::Atomic<bool, mozilla::MemoryOrdering::Relaxed> mIsBeingProfiled;
 };
 
 

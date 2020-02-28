@@ -306,8 +306,7 @@ struct JSRuntime {
 
 
 
-  mozilla::Atomic<uint64_t, mozilla::ReleaseAcquire,
-                  mozilla::recordreplay::Behavior::DontPreserve>
+  mozilla::Atomic<uint64_t, mozilla::ReleaseAcquire>
       profilerSampleBufferRangeStart_;
 
   mozilla::Maybe<uint64_t> profilerSampleBufferRangeStart() {
@@ -356,9 +355,7 @@ struct JSRuntime {
   void removeUnhandledRejectedPromise(JSContext* cx, js::HandleObject promise);
 
   
-  mozilla::Atomic<bool, mozilla::SequentiallyConsistent,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      hadOutOfMemory;
+  mozilla::Atomic<bool, mozilla::SequentiallyConsistent> hadOutOfMemory;
 
   
 
@@ -499,8 +496,7 @@ struct JSRuntime {
 #endif
 
   
-  mozilla::Atomic<size_t, mozilla::SequentiallyConsistent,
-                  mozilla::recordreplay::Behavior::DontPreserve>
+  mozilla::Atomic<size_t, mozilla::SequentiallyConsistent>
       numActiveHelperThreadZones;
 
   friend class js::AutoLockScriptData;
@@ -892,11 +888,9 @@ struct JSRuntime {
 
  private:
   
-  mozilla::Atomic<bool, mozilla::SequentiallyConsistent,
-                  mozilla::recordreplay::Behavior::DontPreserve>
+  mozilla::Atomic<bool, mozilla::SequentiallyConsistent>
       offthreadIonCompilationEnabled_;
-  mozilla::Atomic<bool, mozilla::SequentiallyConsistent,
-                  mozilla::recordreplay::Behavior::DontPreserve>
+  mozilla::Atomic<bool, mozilla::SequentiallyConsistent>
       parallelParsingEnabled_;
 
 #ifdef DEBUG

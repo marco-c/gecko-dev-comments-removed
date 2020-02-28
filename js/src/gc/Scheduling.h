@@ -680,9 +680,7 @@ struct TriggerResult {
   size_t thresholdBytes;
 };
 
-using AtomicByteCount =
-    mozilla::Atomic<size_t, mozilla::ReleaseAcquire,
-                    mozilla::recordreplay::Behavior::DontPreserve>;
+using AtomicByteCount = mozilla::Atomic<size_t, mozilla::ReleaseAcquire>;
 
 
 

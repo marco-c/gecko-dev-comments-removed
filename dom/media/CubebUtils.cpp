@@ -433,10 +433,6 @@ cubeb* GetCubebContextUnlocked() {
              PREF_CUBEB_FORCE_NULL_CONTEXT));
     return nullptr;
   }
-  if (recordreplay::IsRecordingOrReplaying()) {
-    
-    return nullptr;
-  }
   if (sCubebState != CubebState::Uninitialized) {
     
     
@@ -609,7 +605,7 @@ void InitLibrary() {
       NS_NewRunnableFunction("CubebUtils::InitLibrary", &InitBrandName));
 #endif
 #ifdef MOZ_CUBEB_REMOTING
-  if (sCubebSandbox && XRE_IsContentProcess() && !recordreplay::IsMiddleman()) {
+  if (sCubebSandbox && XRE_IsContentProcess()) {
     InitAudioIPCConnection();
   }
 #endif

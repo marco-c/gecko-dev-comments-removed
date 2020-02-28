@@ -14,8 +14,7 @@ namespace js {
 
 #ifdef JS_HAS_PROTECTED_DATA_CHECKS
 
- mozilla::Atomic<size_t, mozilla::SequentiallyConsistent,
-                             mozilla::recordreplay::Behavior::DontPreserve>
+ mozilla::Atomic<size_t, mozilla::SequentiallyConsistent>
     AutoNoteSingleThreadedRegion::count(0);
 
 template <AllowedHelperThread Helper>

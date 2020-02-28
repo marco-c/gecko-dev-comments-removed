@@ -112,10 +112,6 @@ class StructuredSpewer {
         spewingEnabled_(false),
         json_(mozilla::Nothing()),
         selectedChannels_() {
-    
-    if (mozilla::recordreplay::IsRecordingOrReplaying()) {
-      return;
-    }
     if (getenv("SPEW")) {
       parseSpewFlags(getenv("SPEW"));
     }

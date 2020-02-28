@@ -2657,11 +2657,6 @@ class MOZ_STACK_CLASS BindingJSObjectCreator {
   void InitializationSucceeded() {
     T* pointer;
     mNative.forget(&pointer);
-
-    
-    
-    recordreplay::HoldJSObject(mReflector);
-
     mReflector = nullptr;
   }
 

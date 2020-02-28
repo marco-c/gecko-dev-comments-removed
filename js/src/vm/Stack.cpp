@@ -206,10 +206,6 @@ bool InterpreterFrame::prologue(JSContext* cx) {
   if (isEvalFrame() || isGlobalFrame()) {
     HandleObject env = environmentChain();
     if (!CheckGlobalOrEvalDeclarationConflicts(cx, env, script)) {
-      
-      if (script->trackRecordReplayProgress()) {
-        mozilla::recordreplay::AdvanceExecutionProgressCounter();
-      }
       return false;
     }
     return probes::EnterScript(cx, script, nullptr, this);

@@ -2433,11 +2433,6 @@ class SnowWhiteKiller : public TraceCallbacks {
 
  public:
   bool Visit(nsPurpleBuffer& aBuffer, nsPurpleBufferEntry* aEntry) {
-    
-    if (recordreplay::IsRecordingOrReplaying()) {
-      return true;
-    }
-
     if (mBudget) {
       if (mBudget->isOverBudget()) {
         return false;
@@ -2645,11 +2640,6 @@ void nsCycleCollector::ForgetSkippable(js::SliceBudget& aBudget,
   
   
   MOZ_ASSERT(IsIdle());
-
-  
-  if (recordreplay::IsRecordingOrReplaying()) {
-    return;
-  }
 
   if (mCCJSRuntime) {
     mCCJSRuntime->PrepareForForgetSkippable();
@@ -3375,9 +3365,7 @@ bool nsCycleCollector::Collect(ccType aCCType, SliceBudget& aBudget,
   CheckThreadSafety();
 
   
-  
-  if (mActivelyCollecting || mFreeingSnowWhite ||
-      recordreplay::IsRecordingOrReplaying()) {
+  if (mActivelyCollecting || mFreeingSnowWhite) {
     return false;
   }
   mActivelyCollecting = true;
@@ -3795,9 +3783,7 @@ uint32_t nsCycleCollector_suspectedCount() {
   
   MOZ_ASSERT(data);
 
-  
-  
-  if (!data->mCollector || recordreplay::IsRecordingOrReplaying()) {
+  if (!data->mCollector) {
     return 0;
   }
 

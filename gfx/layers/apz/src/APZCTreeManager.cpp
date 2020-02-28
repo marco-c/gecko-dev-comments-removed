@@ -1342,13 +1342,6 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
   APZEventResult result;
 
   
-  
-  
-  if (dom::BrowserParent::AreRecordReplayTabsActive()) {
-    return result;
-  }
-
-  
   AutoFocusSequenceNumberSetter focusSetter(mFocusState, aEvent);
 
 #if defined(MOZ_WIDGET_ANDROID)

@@ -29,8 +29,7 @@ static UniquePtr<ProfilerMarkerPayload> DeserializeNothing(
 
 
 
-Atomic<ProfilerMarkerPayload::DeserializerTagAtomic, ReleaseAcquire,
-       recordreplay::Behavior::DontPreserve>
+Atomic<ProfilerMarkerPayload::DeserializerTagAtomic, ReleaseAcquire>
     ProfilerMarkerPayload::sDeserializerCount{1};
 
 

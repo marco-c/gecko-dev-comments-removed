@@ -45,8 +45,6 @@
 #include "replace_malloc_bridge.h"
 #endif
 
-#include "mozilla/RecordReplay.h"
-
 #ifndef __EXCEPTIONS
 
 
@@ -717,12 +715,6 @@ bool ExceptionHandler::InstallHandler() {
   }
 
   
-  
-  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
-    return true;
-  }
-
-  
   previous_->count = EXC_TYPES_COUNT;
   mach_port_t current_task = mach_task_self();
   kern_return_t result = task_get_exception_ports(current_task,
@@ -811,11 +803,8 @@ bool ExceptionHandler::Setup(bool install_handler) {
     if (!InstallHandler())
       return false;
 
-  
-  
-  if (result == KERN_SUCCESS && !mozilla::recordreplay::IsReplaying()) {
+  if (result == KERN_SUCCESS) {
     
-    mozilla::recordreplay::AutoPassThroughThreadEvents pt;
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);

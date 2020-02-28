@@ -11,7 +11,6 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/RecordReplay.h"
 
 #if !defined(XP_WIN)
 #  include <pthread.h>
@@ -27,8 +26,7 @@ class MutexImpl {
  public:
   struct PlatformData;
 
-  explicit MFBT_API MutexImpl(
-      recordreplay::Behavior aRecorded = recordreplay::Behavior::Preserve);
+  explicit MFBT_API MutexImpl();
   MFBT_API ~MutexImpl();
 
  protected:
@@ -59,9 +57,7 @@ class MutexImpl {
   
   
   
-  mozilla::Atomic<int32_t, mozilla::MemoryOrdering::Relaxed,
-                  recordreplay::Behavior::DontPreserve>
-      averageSpins;
+  mozilla::Atomic<int32_t, mozilla::MemoryOrdering::Relaxed> averageSpins;
 #  endif
 #else
   void* platformData_[6];

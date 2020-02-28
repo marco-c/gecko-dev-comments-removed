@@ -103,11 +103,7 @@ class TimerEventAllocator {
 
  public:
   TimerEventAllocator()
-      : mPool(),
-        mFirstFree(nullptr),
-        
-        
-        mMonitor("TimerEventAllocator", recordreplay::Behavior::DontPreserve) {}
+      : mPool(), mFirstFree(nullptr), mMonitor("TimerEventAllocator") {}
 
   ~TimerEventAllocator() = default;
 
@@ -178,17 +174,12 @@ class nsTimerEvent final : public CancelableRunnable {
 
   static TimerEventAllocator* sAllocator;
 
-  
-  
-  static Atomic<int32_t, SequentiallyConsistent,
-                recordreplay::Behavior::DontPreserve>
-      sAllocatorUsers;
+  static Atomic<int32_t, SequentiallyConsistent> sAllocatorUsers;
   static bool sCanDeleteAllocator;
 };
 
 TimerEventAllocator* nsTimerEvent::sAllocator = nullptr;
-Atomic<int32_t, SequentiallyConsistent, recordreplay::Behavior::DontPreserve>
-    nsTimerEvent::sAllocatorUsers;
+Atomic<int32_t, SequentiallyConsistent> nsTimerEvent::sAllocatorUsers;
 bool nsTimerEvent::sCanDeleteAllocator = false;
 
 namespace {

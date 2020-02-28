@@ -795,9 +795,7 @@ class GCRuntime {
 
  private:
   
-  mozilla::Atomic<JS::HeapState, mozilla::SequentiallyConsistent,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      heapState_;
+  mozilla::Atomic<JS::HeapState, mozilla::SequentiallyConsistent> heapState_;
   friend class AutoHeapSession;
   friend class JS::AutoEnterCycleCollection;
 
@@ -843,16 +841,12 @@ class GCRuntime {
   MainThreadData<RootedValueMap> rootsHash;
 
   
-  mozilla::Atomic<uint64_t, mozilla::ReleaseAcquire,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      nextCellUniqueId_;
+  mozilla::Atomic<uint64_t, mozilla::ReleaseAcquire> nextCellUniqueId_;
 
   
 
 
-  mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      numArenasFreeCommitted;
+  mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> numArenasFreeCommitted;
   MainThreadData<VerifyPreTracer*> verifyPreData;
 
  private:
@@ -866,9 +860,7 @@ class GCRuntime {
 
   MainThreadData<JSGCMode> mode;
 
-  mozilla::Atomic<size_t, mozilla::ReleaseAcquire,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      numActiveZoneIters;
+  mozilla::Atomic<size_t, mozilla::ReleaseAcquire> numActiveZoneIters;
 
   
 
@@ -906,9 +898,7 @@ class GCRuntime {
 
   UnprotectedData<bool> grayBitsValid;
 
-  mozilla::Atomic<JS::GCReason, mozilla::Relaxed,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      majorGCTriggerReason;
+  mozilla::Atomic<JS::GCReason, mozilla::Relaxed> majorGCTriggerReason;
 
  private:
   

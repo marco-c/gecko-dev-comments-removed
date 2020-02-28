@@ -690,12 +690,6 @@ nsresult nsPluginHost::InstantiatePluginInstance(
     return NS_ERROR_FAILURE;
   }
 
-  
-  
-  if (recordreplay::IsRecordingOrReplaying()) {
-    return NS_ERROR_FAILURE;
-  }
-
   RefPtr<nsPluginInstanceOwner> instanceOwner = new nsPluginInstanceOwner();
   if (!instanceOwner) {
     return NS_ERROR_OUT_OF_MEMORY;

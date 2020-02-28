@@ -25,9 +25,7 @@ namespace {
 StaticRefPtr<WebSocketEventService> gWebSocketEventService;
 
 bool IsChildProcess() {
-  return XRE_GetProcessType() != GeckoProcessType_Default &&
-         
-         !recordreplay::IsMiddleman();
+  return XRE_GetProcessType() != GeckoProcessType_Default;
 }
 
 }  

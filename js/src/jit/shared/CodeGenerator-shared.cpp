@@ -116,11 +116,6 @@ bool CodeGeneratorShared::generatePrologue() {
     masm.profilerEnterFrame(masm.getStackPointer(), CallTempReg0);
   }
 
-  if (gen->outerInfo().trackRecordReplayProgress()) {
-    masm.inc64(
-        AbsoluteAddress(mozilla::recordreplay::ExecutionProgressCounter()));
-  }
-
   
   masm.assertStackAlignment(JitStackAlignment, 0);
 

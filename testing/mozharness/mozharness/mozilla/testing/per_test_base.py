@@ -146,7 +146,6 @@ class SingleTestMixin(object):
                 
                 
                 ('mochitest-browser-chrome', 'devtools', None): 'mochitest-devtools-chrome',
-                ('mochitest-browser-chrome', 'devtools-webreplay', None): 'mochitest-devtools-chrome-webreplay', 
                 ('mochitest-browser-chrome', 'remote', None): 'mochitest-remote',
                 ('mochitest-browser-chrome', 'screenshots', None): 'mochitest-browser-chrome-screenshots',  
                 ('mochitest-plain', 'media', None): 'mochitest-media',

@@ -42,7 +42,6 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Omnijar.h"
-#include "mozilla/RecordReplay.h"
 #include "mozilla/RDDProcessHost.h"
 #include "mozilla/Scoped.h"
 #include "mozilla/Services.h"
@@ -143,14 +142,9 @@ class BaseProcessLauncher {
     SprintfLiteral(mPidString, "%d", base::GetCurrentProcId());
 
     
-    if (mozilla::recordreplay::IsMiddleman()) {
-      
-      
-      mLaunchThread = IOThread();
-    } else {
-      nsCOMPtr<nsIEventTarget> threadOrPool = GetIPCLauncher();
-      mLaunchThread = new TaskQueue(threadOrPool.forget());
-    }
+    nsCOMPtr<nsIEventTarget> threadOrPool = GetIPCLauncher();
+    mLaunchThread = new TaskQueue(threadOrPool.forget());
+
     if (ShouldHaveDirectoryService()) {
       
       
