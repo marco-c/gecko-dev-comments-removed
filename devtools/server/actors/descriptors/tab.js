@@ -21,6 +21,8 @@ loader.lazyImporter(
   "PlacesUtils",
   "resource://gre/modules/PlacesUtils.jsm"
 );
+const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
+const { tabDescriptorSpec } = require("devtools/shared/specs/descriptors/tab");
 const { AppConstants } = require("resource://gre/modules/AppConstants.jsm");
 
 
@@ -34,43 +36,70 @@ const { AppConstants } = require("resource://gre/modules/AppConstants.jsm");
 
 
 
-function TabDescriptorActor(connection, browser, options = {}) {
-  this._conn = connection;
-  this._browser = browser;
-  this._form = null;
-  this.exited = false;
-  this.options = options;
-}
+const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
+  initialize(connection, browser, options = {}) {
+    Actor.prototype.initialize.call(this, connection);
+    this._conn = connection;
+    this._browser = browser;
+    this._form = null;
+    this.exited = false;
+    this.options = options;
 
-TabDescriptorActor.prototype = {
-  
-  
-  
-  actorPrefix: "tabDescriptor",
+    
+    
+    
+    this._formUpdateReject = null;
+  },
 
-  async connect() {
-    const onDestroy = () => {
-      if (this._deferredUpdate) {
+  async getTarget() {
+    if (!this._conn) {
+      return {
+        error: "tabDestroyed",
+        message: "Tab destroyed while performing a TabDescriptorActor update",
+      };
+    }
+    if (this._form) {
+      return this._form;
+    }
+    
+    return new Promise(async (resolve, reject) => {
+      const onDestroy = () => {
         
-        this._deferredUpdate.reject({
+        reject({
           error: "tabDestroyed",
           message: "Tab destroyed while performing a TabDescriptorActor update",
         });
+      };
+
+      try {
+        await this._unzombifyIfNeeded();
+
+        
+        if (!this._browser.isConnected) {
+          onDestroy();
+          return;
+        }
+
+        const connectForm = await connectToFrame(
+          this._conn,
+          this._browser,
+          onDestroy
+        );
+
+        const form = this._createTargetForm(connectForm);
+        if (this.options.favicons) {
+          form.favicon = await this.getFaviconData();
+        }
+
+        this._form = form;
+        resolve(form);
+      } catch (e) {
+        reject({
+          error: "tabDestroyed",
+          message: "Tab destroyed while connecting to the frame",
+        });
       }
-      this.exit();
-    };
-
-    await this._unzombifyIfNeeded();
-
-    const connect = connectToFrame(this._conn, this._browser, onDestroy);
-    const form = await connect;
-
-    this._form = form;
-    if (this.options.favicons) {
-      this._form.favicon = await this.getFaviconData();
-    }
-
-    return this;
+    });
   },
 
   get _tabbrowser() {
@@ -115,7 +144,7 @@ TabDescriptorActor.prototype = {
     
     
     if (this.exited) {
-      return this.connect();
+      return this.getTarget();
     }
 
     
@@ -123,7 +152,8 @@ TabDescriptorActor.prototype = {
     
     await this._unzombifyIfNeeded();
 
-    const form = await new Promise(resolve => {
+    const form = await new Promise((resolve, reject) => {
+      this._formUpdateReject = reject;
       const onFormUpdate = msg => {
         
         if (this._form.actor != msg.json.actor) {
@@ -131,6 +161,7 @@ TabDescriptorActor.prototype = {
         }
         this._mm.removeMessageListener("debug:form", onFormUpdate);
 
+        this._formUpdateReject = null;
         resolve(msg.json);
       };
 
@@ -225,8 +256,8 @@ TabDescriptorActor.prototype = {
     }
   },
 
-  form() {
-    const form = Object.assign({}, this._form);
+  _createTargetForm(connectedForm) {
+    const form = Object.assign({}, connectedForm);
     
     if (this._isZombieTab()) {
       form.title = this._getZombieTabTitle() || form.title;
@@ -236,11 +267,33 @@ TabDescriptorActor.prototype = {
     return form;
   },
 
-  exit() {
+  form() {
+    return {
+      actor: this.actorID,
+      title: this._getZombieTabTitle(),
+      url: this._getZombieTabUrl(),
+      id:
+        this._browser && this._browser.browsingContext
+          ? this._browser.browsingContext.id
+          : null,
+    };
+  },
+
+  destroy() {
+    if (this._formUpdateReject) {
+      this._formUpdateReject({
+        error: "tabDestroyed",
+        message: "Tab destroyed while performing a TabDescriptorActor update",
+      });
+      this._formUpdateReject = null;
+    }
     this._browser = null;
     this._form = null;
     this.exited = true;
+    this.emit("exited");
+
+    Actor.prototype.destroy.call(this);
   },
-};
+});
 
 exports.TabDescriptorActor = TabDescriptorActor;

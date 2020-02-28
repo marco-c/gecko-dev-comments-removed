@@ -1,0 +1,12 @@
+
+
+
+"use strict";
+
+const { generateActorSpec } = require("devtools/shared/protocol");
+
+const tabDescriptorSpec = generateActorSpec({
+  typeName: "tabDescriptor",
+});
+
+exports.tabDescriptorSpec = tabDescriptorSpec;

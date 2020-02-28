@@ -214,8 +214,8 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       this._parameters.onShutdown();
     }
     
-    if (this._tabTargetActorPool) {
-      this._tabTargetActorPool.destroy();
+    if (this._tabDescriptorActorPool) {
+      this._tabDescriptorActorPool.destroy();
     }
     if (this._processDescriptorActorPool) {
       this._processDescriptorActorPool.destroy();
@@ -241,7 +241,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
     }
     this._extraActors = null;
     this.conn = null;
-    this._tabTargetActorPool = null;
+    this._tabDescriptorActorPool = null;
     this._globalActorPool = null;
     this._chromeWindowActorPool = null;
     this._parameters = null;
@@ -296,21 +296,16 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
     
     
     const newActorPool = new Pool(this.conn);
-    const targetActorList = [];
+    const tabDescriptorList = [];
     let selected;
 
-    const targetActors = await tabList.getList(options);
-    for (const targetActor of targetActors) {
-      if (targetActor.exited) {
-        
-        continue;
+    const tabDescriptorActors = await tabList.getList(options);
+    for (const tabDescriptorActor of tabDescriptorActors) {
+      if (tabDescriptorActor.selected) {
+        selected = tabDescriptorList.length;
       }
-      if (targetActor.selected) {
-        selected = targetActorList.length;
-      }
-      targetActor.parentID = this.actorID;
-      newActorPool.manage(targetActor);
-      targetActorList.push(targetActor);
+      newActorPool.manage(tabDescriptorActor);
+      tabDescriptorList.push(tabDescriptorActor);
     }
 
     
@@ -318,15 +313,17 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
 
     
     
-    if (this._tabTargetActorPool) {
-      this._tabTargetActorPool.destroy();
+    if (this._tabDescriptorActorPool) {
+      this._tabDescriptorActorPool.destroy();
     }
-    this._tabTargetActorPool = newActorPool;
+    this._tabDescriptorActorPool = newActorPool;
 
     
     Object.assign(reply, {
       selected: selected || 0,
-      tabs: targetActorList,
+      tabs: await Promise.all(
+        tabDescriptorList.map(tabDescriptor => tabDescriptor.getTarget())
+      ),
     });
 
     return reply;
@@ -340,13 +337,13 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
         message: "This root actor has no browser tabs.",
       };
     }
-    if (!this._tabTargetActorPool) {
-      this._tabTargetActorPool = new Pool(this.conn);
+    if (!this._tabDescriptorActorPool) {
+      this._tabDescriptorActorPool = new Pool(this.conn);
     }
 
-    let targetActor;
+    let descriptorActor;
     try {
-      targetActor = await tabList.getTab(options, { forceUnzombify: true });
+      descriptorActor = await tabList.getTab(options, { forceUnzombify: true });
     } catch (error) {
       if (error.error) {
         
@@ -358,10 +355,11 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       };
     }
 
-    targetActor.parentID = this.actorID;
-    this._tabTargetActorPool.manage(targetActor);
+    descriptorActor.parentID = this.actorID;
+    this._tabDescriptorActorPool.manage(descriptorActor);
+    const targetActorForm = await descriptorActor.getTarget();
 
-    return targetActor.form();
+    return { tab: targetActorForm };
   },
 
   getWindow: function({ outerWindowID }) {
@@ -737,10 +735,10 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       if (this._globalActorPool.has(actor.actorID)) {
         actor.destroy();
       }
-      if (this._tabTargetActorPool) {
+      if (this._tabDescriptorActorPool) {
         
         
-        for (const tab in this._tabTargetActorPool.poolChildren()) {
+        for (const tab in this._tabDescriptorActorPool.poolChildren()) {
           tab.removeActorByName(name);
         }
       }
