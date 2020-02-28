@@ -1772,7 +1772,11 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
       if (mCrashReporter) {
         
         
-        if (!mCreatedPairedMinidumps) {
+        if (mCreatedPairedMinidumps) {
+          
+          Unused << props->SetPropertyAsBool(NS_LITERAL_STRING("isLikelyOOM"),
+                                             mCrashReporter->IsLikelyOOM());
+        } else {
           mCrashReporter->GenerateCrashReport(OtherPid());
         }
 
