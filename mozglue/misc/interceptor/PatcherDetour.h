@@ -808,11 +808,14 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
         
         origBytes += 1;
       } else if (*origBytes == 0x83) {
-        
-        unsigned char b = origBytes[1];
-        if ((b & 0xc0) == 0xc0) {
+        uint8_t mod = static_cast<uint8_t>(origBytes[1]) >> 6;
+        uint8_t rm = static_cast<uint8_t>(origBytes[1]) & 7;
+        if (mod == 3) {
           
           origBytes += 3;
+        } else if (mod == 1 && rm != 4) {
+          
+          origBytes += 4;
         } else {
           
           MOZ_ASSERT_UNREACHABLE("Unrecognized bit opcode sequence");
