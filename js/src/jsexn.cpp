@@ -51,6 +51,8 @@
 
 #include "vm/ErrorObject-inl.h"
 #include "vm/JSContext-inl.h"
+#include "vm/JSObject-inl.h"
+#include "vm/ObjectOperations-inl.h"  
 #include "vm/SavedStacks-inl.h"
 
 using namespace js;
@@ -354,6 +356,8 @@ void js::ErrorToException(JSContext* cx, JSErrorReport* reportp,
   reportp->flags |= JSREPORT_EXCEPTION;
 }
 
+using SniffingBehavior = js::ErrorReport::SniffingBehavior;
+
 static bool IsDuckTypedErrorObject(JSContext* cx, HandleObject exnObject,
                                    const char** filename_strp) {
   
@@ -388,44 +392,82 @@ static bool IsDuckTypedErrorObject(JSContext* cx, HandleObject exnObject,
   return true;
 }
 
-static JSString* ErrorReportToString(JSContext* cx, JSErrorReport* reportp) {
+static bool GetPropertyNoException(JSContext* cx, HandleObject obj,
+                                   SniffingBehavior behavior,
+                                   HandlePropertyName name,
+                                   MutableHandleValue vp) {
   
+  if (GetPropertyPure(cx, obj, NameToId(name), vp.address())) {
+    return true;
+  }
+
+  if (behavior == SniffingBehavior::WithSideEffects) {
+    AutoClearPendingException acpe(cx);
+    return GetProperty(cx, obj, obj, name, vp);
+  }
+
+  return false;
+}
 
 
 
 
+static JSString* FormatErrorMessage(JSContext* cx, HandleString name,
+                                    HandleString message) {
+  if (name && message) {
+    AutoClearPendingException acpe(cx);
+    JSStringBuilder sb(cx);
 
-  JSExnType type = static_cast<JSExnType>(reportp->exnType);
-  RootedString str(cx);
-  if (type != JSEXN_WARN && type != JSEXN_NOTE) {
-    str = ClassName(GetExceptionProtoKey(type), cx);
+    
+    if (!sb.append(name) || !sb.append(": ") || !sb.append(message)) {
+      return nullptr;
+    }
+
+    return sb.finishString();
+  }
+
+  return name ? name : message;
+}
+
+static JSString* ErrorReportToString(JSContext* cx, HandleObject exn,
+                                     JSErrorReport* reportp,
+                                     SniffingBehavior behavior) {
+  
+  
+  RootedString name(cx);
+  RootedValue nameV(cx);
+  if (GetPropertyNoException(cx, exn, behavior, cx->names().name, &nameV) &&
+      nameV.isString()) {
+    name = nameV.toString();
   }
 
   
-
-
-
-  if (str) {
-    RootedString separator(cx, JS_NewStringCopyN(cx, ": ", 2));
-    if (!separator) {
-      return nullptr;
-    }
-    str = ConcatStrings<CanGC>(cx, str, separator);
-    if (!str) {
-      return nullptr;
+  
+  
+  
+  if (!name) {
+    JSExnType type = static_cast<JSExnType>(reportp->exnType);
+    if (type != JSEXN_WARN && type != JSEXN_NOTE) {
+      name = ClassName(GetExceptionProtoKey(type), cx);
     }
   }
 
-  RootedString message(cx, reportp->newMessageString(cx));
+  RootedString message(cx);
+  RootedValue messageV(cx);
+  if (GetPropertyNoException(cx, exn, behavior, cx->names().message,
+                             &messageV) &&
+      messageV.isString()) {
+    message = messageV.toString();
+  }
+
   if (!message) {
-    return nullptr;
+    message = reportp->newMessageString(cx);
+    if (!message) {
+      return nullptr;
+    }
   }
 
-  if (!str) {
-    return message;
-  }
-
-  return ConcatStrings<CanGC>(cx, str, message);
+  return FormatErrorMessage(cx, name, message);
 }
 
 ErrorReport::ErrorReport(JSContext* cx) : reportp(nullptr), exnObject(cx) {}
@@ -449,7 +491,7 @@ bool ErrorReport::init(JSContext* cx, HandleValue exn,
   
   RootedString str(cx);
   if (reportp) {
-    str = ErrorReportToString(cx, reportp);
+    str = ErrorReportToString(cx, exnObject, reportp, sniffingBehavior);
   } else if (exn.isSymbol()) {
     RootedValue strVal(cx);
     if (js::SymbolDescriptiveString(cx, exn.toSymbol(), &strVal)) {
@@ -498,28 +540,7 @@ bool ErrorReport::init(JSContext* cx, HandleValue exn,
     
     
     
-    
-    
-    
-    
-    if (name && msg) {
-      RootedString colon(cx, JS_NewStringCopyZ(cx, ": "));
-      if (!colon) {
-        return false;
-      }
-      RootedString nameColon(cx, ConcatStrings<CanGC>(cx, name, colon));
-      if (!nameColon) {
-        return false;
-      }
-      str = ConcatStrings<CanGC>(cx, nameColon, msg);
-      if (!str) {
-        return false;
-      }
-    } else if (name) {
-      str = name;
-    } else if (msg) {
-      str = msg;
-    }
+    str = FormatErrorMessage(cx, name, msg);
 
     {
       AutoClearPendingException acpe(cx);
