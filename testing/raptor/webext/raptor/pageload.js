@@ -141,18 +141,18 @@ function setup(settings) {
 }
 
 function measureHero() {
-  var obs = null;
+  let obs;
 
-  var heroElementsFound = window.document.querySelectorAll("[elementtiming]");
+  const heroElementsFound = window.document.querySelectorAll("[elementtiming]");
   raptorLog(`found ${heroElementsFound.length} hero elements in the page`);
 
   if (heroElementsFound) {
     function callbackHero(entries, observer) {
       entries.forEach(entry => {
-        var heroFound = entry.target.getAttribute("elementtiming");
+        const heroFound = entry.target.getAttribute("elementtiming");
         
         perfData.mark(heroFound);
-        var resultType = `hero:${heroFound}`;
+        const resultType = `hero:${heroFound}`;
         raptorLog(`found ${resultType}`);
         
         perfData.measure(
@@ -160,8 +160,8 @@ function measureHero() {
           (startMark = startMeasure),
           (endMark = heroFound)
         );
-        var perfResult = perfData.getEntriesByName(resultType);
-        var _result = Math.round(perfResult[0].duration);
+        const perfResult = perfData.getEntriesByName(resultType);
+        const _result = Math.round(perfResult[0].duration);
         sendResult(resultType, _result);
         perfData.clearMarks();
         perfData.clearMeasures();
@@ -169,7 +169,7 @@ function measureHero() {
       });
     }
     
-    var options = { root: null, rootMargin: "0px", threshold: [1] };
+    const options = { root: null, rootMargin: "0px", threshold: [1] };
     try {
       obs = new window.IntersectionObserver(callbackHero, options);
       heroElementsFound.forEach(function(el) {
@@ -187,7 +187,7 @@ function measureHero() {
 }
 
 function measureFNBPaint() {
-  var x = window.performance.timing.timeToNonBlankPaint;
+  const x = window.performance.timing.timeToNonBlankPaint;
 
   if (typeof x == "undefined") {
     raptorLog(
@@ -199,7 +199,7 @@ function measureFNBPaint() {
   if (x > 0) {
     raptorLog("got fnbpaint");
     gRetryCounter = 0;
-    var startTime = perfData.timing.fetchStart;
+    const startTime = perfData.timing.fetchStart;
     sendResult("fnbpaint", x - startTime);
   } else {
     gRetryCounter += 1;
@@ -217,7 +217,7 @@ function measureFNBPaint() {
 }
 
 function measureDCF() {
-  var x = window.performance.timing.timeToDOMContentFlushed;
+  const x = window.performance.timing.timeToDOMContentFlushed;
 
   if (typeof x == "undefined") {
     raptorLog(
@@ -229,7 +229,7 @@ function measureDCF() {
   if (x > 0) {
     raptorLog(`got domContentFlushed: ${x}`);
     gRetryCounter = 0;
-    var startTime = perfData.timing.fetchStart;
+    const startTime = perfData.timing.fetchStart;
     sendResult("dcf", x - startTime);
   } else {
     gRetryCounter += 1;
@@ -245,7 +245,7 @@ function measureDCF() {
 }
 
 function measureTTFI() {
-  var x = window.performance.timing.timeToFirstInteractive;
+  const x = window.performance.timing.timeToFirstInteractive;
 
   if (typeof x == "undefined") {
     raptorLog(
@@ -257,7 +257,7 @@ function measureTTFI() {
   if (x > 0) {
     raptorLog(`got timeToFirstInteractive: ${x}`);
     gRetryCounter = 0;
-    var startTime = perfData.timing.fetchStart;
+    const startTime = perfData.timing.fetchStart;
     sendResult("ttfi", x - startTime);
   } else {
     gRetryCounter += 1;
@@ -282,16 +282,14 @@ function measureTTFI() {
 
 function measureFCP() {
   
-  var resultType = "fcp";
-  var result;
+  let result = window.performance.timing.timeToContentfulPaint;
 
   
-  result = window.performance.timing.timeToContentfulPaint;
   if (typeof result == "undefined") {
     
     result = 0;
-    let perfEntries = perfData.getEntriesByType("paint");
 
+    const perfEntries = perfData.getEntriesByType("paint");
     if (perfEntries.length >= 2) {
       if (
         perfEntries[1].name == "first-contentful-paint" &&
@@ -307,10 +305,10 @@ function measureFCP() {
     raptorLog("got time to first-contentful-paint");
     if (typeof browser !== "undefined") {
       
-      var startTime = perfData.timing.fetchStart;
+      const startTime = perfData.timing.fetchStart;
       result = result - startTime;
     }
-    sendResult(resultType, result);
+    sendResult("fcp", result);
     perfData.clearMarks();
     perfData.clearMeasures();
   } else {
@@ -329,7 +327,7 @@ function measureFCP() {
 }
 
 function measureLoadTime() {
-  var x = window.performance.timing.loadEventStart;
+  const x = window.performance.timing.loadEventStart;
 
   if (typeof x == "undefined") {
     raptorLog("loadEventStart is undefined", "error");
@@ -338,7 +336,7 @@ function measureLoadTime() {
   if (x > 0) {
     raptorLog(`got loadEventStart: ${x}`);
     gRetryCounter = 0;
-    var startTime = perfData.timing.fetchStart;
+    const startTime = perfData.timing.fetchStart;
     sendResult("loadtime", x - startTime);
   } else {
     gRetryCounter += 1;
