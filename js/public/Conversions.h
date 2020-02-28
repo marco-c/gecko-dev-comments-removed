@@ -140,9 +140,12 @@ MOZ_ALWAYS_INLINE bool ToNumber(JSContext* cx, HandleValue v, double* out) {
 }
 
 
+
+
+
 inline double ToInteger(double d) {
   if (d == 0) {
-    return d;
+    return 0;
   }
 
   if (!mozilla::IsFinite(d)) {
@@ -152,7 +155,7 @@ inline double ToInteger(double d) {
     return d;
   }
 
-  return d < 0 ? ceil(d) : floor(d);
+  return (d < 0 ? ceil(d) : floor(d)) + (+0.0); 
 }
 
 

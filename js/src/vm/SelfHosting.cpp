@@ -162,8 +162,7 @@ static bool intrinsic_ToIntegerPositiveZero(JSContext* cx, unsigned argc,
   if (!ToInteger(cx, args[0], &result)) {
     return false;
   }
-  
-  args.rval().setNumber(result + 0.0);
+  args.rval().setNumber(result);
   return true;
 }
 

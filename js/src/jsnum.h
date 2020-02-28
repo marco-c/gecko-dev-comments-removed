@@ -293,6 +293,7 @@ static MOZ_ALWAYS_INLINE bool IsDefinitelyIndex(const Value& v,
 }
 
 
+
 static MOZ_MUST_USE inline bool ToInteger(JSContext* cx, HandleValue v,
                                           double* dp) {
   if (v.isInt32()) {

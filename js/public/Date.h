@@ -108,7 +108,7 @@ inline ClippedTime TimeClip(double time) {
   }
 
   
-  return ClippedTime(ToInteger(time) + (+0.0));
+  return ClippedTime(ToInteger(time));
 }
 
 
