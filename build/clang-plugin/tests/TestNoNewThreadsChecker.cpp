@@ -1,0 +1,9 @@
+
+void NS_NewNamedThread(const char *aName) {}
+
+void func_threads() {
+  
+  
+  NS_NewNamedThread("A bad name"); 
+  NS_NewNamedThread("Checker Test");
+}
