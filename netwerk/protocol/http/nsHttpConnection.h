@@ -23,7 +23,6 @@
 #include "nsIAsyncOutputStream.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsITimer.h"
-#include "Http3Session.h"
 
 class nsISocketTransport;
 class nsISSLSocketControl;
@@ -128,7 +127,7 @@ class nsHttpConnection final : public HttpConnectionBase,
   bool UsingSpdy() override { return (mUsingSpdyVersion != SpdyVersion::NONE); }
   SpdyVersion GetSpdyVersion() { return mUsingSpdyVersion; }
   bool EverUsedSpdy() override { return mEverUsedSpdy; }
-  bool UsingHttp3() override { return mHttp3Session; }
+  bool UsingHttp3() override { return false; }
 
   
   
@@ -156,8 +155,6 @@ class nsHttpConnection final : public HttpConnectionBase,
   void SetupSecondaryTLS(nsAHttpTransaction* aSpdyConnectTransaction = nullptr);
   void SetInSpdyTunnel(bool arg);
 
-  
-  
   
   
   
@@ -205,9 +202,7 @@ class nsHttpConnection final : public HttpConnectionBase,
   
   MOZ_MUST_USE bool EnsureNPNComplete(nsresult& aOut0RTTWriteHandshakeValue,
                                       uint32_t& aOut0RTTBytesWritten);
-  
-  
-  MOZ_MUST_USE bool EnsureNPNCompleteHttp3();
+
   void SetupSSL();
 
   
@@ -347,9 +342,6 @@ class nsHttpConnection final : public HttpConnectionBase,
 
  private:
   bool mThroughCaptivePortal;
-
-  
-  RefPtr<Http3Session> mHttp3Session;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsHttpConnection, NS_HTTPCONNECTION_IID)
