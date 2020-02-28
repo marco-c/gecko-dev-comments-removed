@@ -18,7 +18,7 @@ class ARefBase;
 class EventTokenBucket;
 class HttpTransactionShell;
 class nsHttpConnectionInfo;
-class nsHttpConnection;
+class HttpConnectionBase;
 class nsHttpConnectionMgr;
 class NullHttpTransaction;
 
@@ -120,7 +120,7 @@ class HttpConnectionMgrShell : public nsISupports {
   
   
   
-  MOZ_MUST_USE virtual nsresult ReclaimConnection(nsHttpConnection* conn) = 0;
+  MOZ_MUST_USE virtual nsresult ReclaimConnection(HttpConnectionBase* conn) = 0;
 
   
   
@@ -201,7 +201,7 @@ NS_DEFINE_STATIC_IID_ACCESSOR(HttpConnectionMgrShell,
       HttpTransactionShell*, uint32_t classOfService) override;              \
   virtual nsresult CancelTransaction(HttpTransactionShell*, nsresult reason) \
       override;                                                              \
-  virtual nsresult ReclaimConnection(nsHttpConnection* conn) override;       \
+  virtual nsresult ReclaimConnection(HttpConnectionBase* conn) override;     \
   virtual nsresult ProcessPendingQ(nsHttpConnectionInfo*) override;          \
   virtual nsresult ProcessPendingQ() override;                               \
   virtual nsresult GetSocketThreadTarget(nsIEventTarget**) override;         \

@@ -56,9 +56,7 @@ namespace net {
 nsHttpConnection::nsHttpConnection()
     : mSocketInCondition(NS_ERROR_NOT_INITIALIZED),
       mSocketOutCondition(NS_ERROR_NOT_INITIALIZED),
-      mTransaction(nullptr),
       mHttpHandler(gHttpHandler),
-      mCallbacksLock("nsHttpConnection::mCallbacksLock"),
       mLastReadTime(0),
       mLastWriteTime(0),
       mMaxHangTime(0),
@@ -67,9 +65,7 @@ nsHttpConnection::nsHttpConnection()
       mCurrentBytesRead(0),
       mMaxBytesRead(0),
       mTotalBytesRead(0),
-      mTotalBytesWritten(0),
       mContentBytesWritten(0),
-      mRtt(0),
       mUrgentStartPreferred(false),
       mUrgentStartPreferredKnown(false),
       mConnectedTransport(false),
@@ -82,7 +78,6 @@ nsHttpConnection::nsHttpConnection()
       mLastTransactionExpectedNoContent(false),
       mIdleMonitoring(false),
       mProxyConnectInProgress(false),
-      mExperienced(false),
       mInSpdyTunnel(false),
       mForcePlainText(false),
       mTrafficCount(0),
@@ -96,7 +91,6 @@ nsHttpConnection::nsHttpConnection()
       mReportedSpdy(false),
       mEverUsedSpdy(false),
       mLastHttpResponseVersion(HttpVersion::v1_1),
-      mTransactionCaps(0),
       mDefaultTimeoutFactor(1),
       mResponseTimeoutEnabled(false),
       mTCPKeepaliveConfig(kTCPKeepaliveDisabled),
@@ -111,8 +105,7 @@ nsHttpConnection::nsHttpConnection()
       mForceSendDuringFastOpenPending(false),
       mReceivedSocketWouldBlockDuringFastOpen(false),
       mCheckNetworkStallsWithTFO(false),
-      mLastRequestBytesSentTime(0),
-      mBootstrappedTimingsSet(false) {
+      mLastRequestBytesSentTime(0) {
   LOG(("Creating nsHttpConnection @%p\n", this));
 
   
@@ -1704,16 +1697,6 @@ void nsHttpConnection::GetSecurityInfo(nsISupports** secinfo) {
   *secinfo = nullptr;
 }
 
-void nsHttpConnection::SetSecurityCallbacks(nsIInterfaceRequestor* aCallbacks) {
-  MutexAutoLock lock(mCallbacksLock);
-  
-  
-  
-  
-  mCallbacks = new nsMainThreadPtrHolder<nsIInterfaceRequestor>(
-      "nsHttpConnection::mCallbacks", aCallbacks, false);
-}
-
 nsresult nsHttpConnection::PushBack(const char* data, uint32_t length) {
   LOG(("nsHttpConnection::PushBack [this=%p, length=%d]\n", this, length));
 
@@ -1902,7 +1885,7 @@ void nsHttpConnection::EndIdleMonitoring() {
 
 HttpVersion nsHttpConnection::Version() {
   if (mUsingSpdyVersion != SpdyVersion::NONE) {
-    return nsHttp::GetHttpVersionFromSpdy(mUsingSpdyVersion);
+    return HttpVersion::v2_0;
   }
   if (mHttp3Session) {
     return HttpVersion::v3_0;
@@ -2578,6 +2561,7 @@ NS_INTERFACE_MAP_BEGIN(nsHttpConnection)
   NS_INTERFACE_MAP_ENTRY(nsIOutputStreamCallback)
   NS_INTERFACE_MAP_ENTRY(nsITransportEventSink)
   NS_INTERFACE_MAP_ENTRY(nsIInterfaceRequestor)
+  NS_INTERFACE_MAP_ENTRY(HttpConnectionBase)
   NS_INTERFACE_MAP_ENTRY_CONCRETE(nsHttpConnection)
 NS_INTERFACE_MAP_END
 
@@ -2792,11 +2776,6 @@ void nsHttpConnection::SetFastOpenStatus(uint8_t tfoStatus) {
   }
 }
 
-void nsHttpConnection::BootstrapTimings(TimingStruct times) {
-  mBootstrappedTimingsSet = true;
-  mBootstrappedTimings = times;
-}
-
 void nsHttpConnection::SetEvent(nsresult aStatus) {
   switch (aStatus) {
     case NS_NET_STATUS_RESOLVING_HOST:
@@ -2856,14 +2835,19 @@ bool nsHttpConnection::CanAcceptWebsocket() {
   return mSpdySession->CanAcceptWebsocket();
 }
 
-void nsHttpConnection::SetTrafficCategory(HttpTrafficCategory aCategory) {
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-  if (aCategory == HttpTrafficCategory::eInvalid ||
-      mTrafficCategory.Contains(aCategory)) {
-    return;
-  }
-  Unused << mTrafficCategory.AppendElement(aCategory);
+bool nsHttpConnection::IsProxyConnectInProgress() {
+  return mProxyConnectInProgress;
 }
+
+bool nsHttpConnection::LastTransactionExpectedNoContent() {
+  return mLastTransactionExpectedNoContent;
+}
+
+void nsHttpConnection::SetLastTransactionExpectedNoContent(bool val) {
+  mLastTransactionExpectedNoContent = val;
+}
+
+bool nsHttpConnection::IsPersistent() { return IsKeepAlive() && !mDontReuse; }
 
 }  
 }  

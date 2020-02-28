@@ -6,6 +6,7 @@
 #define nsAHttpConnection_h__
 
 #include "nsHttp.h"
+#include "HttpConnectionBase.h"
 #include "nsISupports.h"
 #include "nsAHttpTransaction.h"
 #include "HttpTrafficAnalyzer.h"
@@ -131,10 +132,10 @@ class nsAHttpConnection : public nsISupports {
 
   
   
-  virtual already_AddRefed<nsHttpConnection> TakeHttpConnection() = 0;
+  virtual already_AddRefed<HttpConnectionBase> TakeHttpConnection() = 0;
 
   
-  virtual already_AddRefed<nsHttpConnection> HttpConnection() = 0;
+  virtual already_AddRefed<HttpConnectionBase> HttpConnection() = 0;
 
   
   
@@ -173,8 +174,8 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpConnection, NS_AHTTPCONNECTION_IID)
   bool IsReused() override;                                                \
   void DontReuse() override;                                               \
   MOZ_MUST_USE nsresult PushBack(const char*, uint32_t) override;          \
-  already_AddRefed<nsHttpConnection> TakeHttpConnection() override;        \
-  already_AddRefed<nsHttpConnection> HttpConnection() override;            \
+  already_AddRefed<HttpConnectionBase> TakeHttpConnection() override;      \
+  already_AddRefed<HttpConnectionBase> HttpConnection() override;          \
   void TopLevelOuterContentWindowIdChanged(uint64_t windowId) override;    \
   /*                                                                       \
      Thes methods below have automatic definitions that just forward the   \

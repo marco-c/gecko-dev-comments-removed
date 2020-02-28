@@ -37,20 +37,7 @@ enum class HttpVersion {
 
 enum class SpdyVersion {
   NONE = 0,
-  
-  
-  
   HTTP_2 = 5
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
 };
 
 extern const nsCString kHttp3Version;
@@ -256,8 +243,6 @@ void NotifyActiveTabLoadOptimization();
 TimeStamp const GetLastActiveTabLoadOptimizationHit();
 void SetLastActiveTabLoadOptimizationHit(TimeStamp const& when);
 bool IsBeforeLastActiveTabLoadOptimization(TimeStamp const& when);
-
-HttpVersion GetHttpVersionFromSpdy(SpdyVersion sv);
 
 
 
