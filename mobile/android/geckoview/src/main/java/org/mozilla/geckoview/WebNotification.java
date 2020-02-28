@@ -8,6 +8,11 @@ import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.util.ThreadUtils;
 
+
+
+
+
+
 public class WebNotification {
 
     
@@ -84,12 +89,22 @@ public class WebNotification {
         this.requireInteraction = requireInteraction;
     }
 
+    
+
+
+
+
     @UiThread
     public void click() {
         ThreadUtils.assertOnUiThread();
         GeckoAppShell.onNotificationClick(tag, mCookie);
 
     }
+
+    
+
+
+
 
     @UiThread
     public void dismiss() {
