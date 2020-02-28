@@ -300,6 +300,14 @@ let ACTORS = {
     allFrames: true,
   },
 
+  SidebarSearch: {
+    parent: {
+      moduleURI: "resource://gre/actors/SidebarSearchParent.jsm",
+    },
+
+    allFrames: true,
+  },
+
   
   
   
