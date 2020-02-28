@@ -133,7 +133,6 @@ class Mutex : public OffTheBooksMutex {
   Mutex& operator=(const Mutex&);
 };
 
-namespace detail {
 template <typename T>
 class MOZ_RAII BaseAutoUnlock;
 
@@ -188,8 +187,8 @@ class MOZ_RAII BaseAutoLock {
   
   
   
-  void AssertOwns(const T& aMutex) const {
-    MOZ_ASSERT(&aMutex == &aMutex);
+  void AssertOwns(const T& aLock) const {
+    MOZ_ASSERT(&aLock == &mLock);
     mLock.AssertCurrentThreadOwns();
   }
 
@@ -205,14 +204,9 @@ class MOZ_RAII BaseAutoLock {
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
-template <typename MutexType>
-BaseAutoLock(MutexType&)->BaseAutoLock<MutexType&>;
-}  
+typedef BaseAutoLock<Mutex&> MutexAutoLock;
+typedef BaseAutoLock<OffTheBooksMutex&> OffTheBooksMutexAutoLock;
 
-typedef detail::BaseAutoLock<Mutex&> MutexAutoLock;
-typedef detail::BaseAutoLock<OffTheBooksMutex&> OffTheBooksMutexAutoLock;
-
-namespace detail {
 
 
 
@@ -249,12 +243,8 @@ class MOZ_RAII BaseAutoUnlock {
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
-template <typename MutexType>
-BaseAutoUnlock(MutexType&)->BaseAutoUnlock<MutexType&>;
-}  
-
-typedef detail::BaseAutoUnlock<Mutex&> MutexAutoUnlock;
-typedef detail::BaseAutoUnlock<OffTheBooksMutex&> OffTheBooksMutexAutoUnlock;
+typedef BaseAutoUnlock<Mutex&> MutexAutoUnlock;
+typedef BaseAutoUnlock<OffTheBooksMutex&> OffTheBooksMutexAutoUnlock;
 
 }  
 
