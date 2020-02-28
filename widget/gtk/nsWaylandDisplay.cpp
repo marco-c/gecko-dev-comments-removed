@@ -1,11 +1,12 @@
-
-
-
-
-
-
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:expandtab:shiftwidth=4:tabstop=4:
+ */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsWaylandDisplay.h"
+#include "mozilla/StaticPrefs_widget.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -17,43 +18,23 @@ namespace widget {
 #define GBMLIB_NAME "libgbm.so.1"
 #define DRMLIB_NAME "libdrm.so.2"
 
-
-
-#define DMABUF_TEXTURE_PREF "widget.wayland_dmabuf_textures.enabled"
-
-
-
-#define DMABUF_BASIC_PREF "widget.wayland_dmabuf_basic_compositor.enabled"
-
-#define DMABUF_WEBGL_PREF "widget.wayland_dmabuf_webgl.enabled"
-
-#define DMABUF_VAAPI_PREF "widget.wayland_dmabuf_vaapi.enabled"
-
-#define CACHE_MODE_PREF "widget.wayland_cache_mode"
-
 bool nsWaylandDisplay::sIsDMABufEnabled = false;
-int nsWaylandDisplay::sIsDMABufPrefTextState = false;
-int nsWaylandDisplay::sIsDMABufPrefBasicCompositorState = false;
-int nsWaylandDisplay::sIsDMABufPrefWebGLState = false;
-int nsWaylandDisplay::sIsDMABufPrefVAAPIState = false;
 bool nsWaylandDisplay::sIsDMABufConfigured = false;
-int nsWaylandDisplay::sRenderingCacheModePref = -1;
-bool nsWaylandDisplay::sIsPrefLoaded = false;
 
 wl_display* WaylandDisplayGetWLDisplay(GdkDisplay* aGdkDisplay) {
   if (!aGdkDisplay) {
     aGdkDisplay = gdk_display_get_default();
   }
 
-  
+  // Available as of GTK 3.8+
   static auto sGdkWaylandDisplayGetWlDisplay = (wl_display * (*)(GdkDisplay*))
       dlsym(RTLD_DEFAULT, "gdk_wayland_display_get_wl_display");
   return sGdkWaylandDisplayGetWlDisplay(aGdkDisplay);
 }
 
-
-
-#define MAX_DISPLAY_CONNECTIONS 3
+// nsWaylandDisplay needs to be created for each calling thread(main thread,
+// compositor thread and render thread)
+#define MAX_DISPLAY_CONNECTIONS 5
 
 static nsWaylandDisplay* gWaylandDisplays[MAX_DISPLAY_CONNECTIONS];
 static StaticMutex gWaylandDisplaysMutex;
@@ -78,13 +59,13 @@ static void DispatchDisplay(nsWaylandDisplay* aDisplay) {
   aDisplay->DispatchEventQueue();
 }
 
-
-
-
-
-
-
-
+// Each thread which is using wayland connection (wl_display) has to operate
+// its own wl_event_queue. Main Firefox thread wl_event_queue is handled
+// by Gtk main loop, other threads/wl_event_queue has to be handled by us.
+//
+// nsWaylandDisplay is our interface to wayland compositor. It provides wayland
+// global objects as we need (wl_display, wl_shm) and operates wl_event_queue on
+// compositor (not the main) thread.
 void WaylandDispatchDisplays() {
   StaticMutexAutoLock lock(gWaylandDisplaysMutex);
   for (auto& display : gWaylandDisplays) {
@@ -95,12 +76,12 @@ void WaylandDispatchDisplays() {
   }
 }
 
-
+// Get WaylandDisplay for given wl_display and actual calling thread.
 static nsWaylandDisplay* WaylandDisplayGetLocked(GdkDisplay* aGdkDisplay,
                                                  const StaticMutexAutoLock&) {
   wl_display* waylandDisplay = WaylandDisplayGetWLDisplay(aGdkDisplay);
 
-  
+  // Search existing display connections for wl_display:thread combination.
   for (auto& display : gWaylandDisplays) {
     if (display && display->Matches(waylandDisplay)) {
       return display;
@@ -212,7 +193,7 @@ static void dmabuf_modifiers(void* data,
 static void dmabuf_format(void* data,
                           struct zwp_linux_dmabuf_v1* zwp_linux_dmabuf,
                           uint32_t format) {
-  
+  // XXX: deprecated
 }
 
 static const struct zwp_linux_dmabuf_v1_listener dmabuf_listener = {
@@ -257,7 +238,7 @@ static void global_registry_handler(void* data, wl_registry* registry,
                        display->GetEventQueue());
     display->SetIdleInhibitManager(idle_inhibit_manager);
   } else if (strcmp(interface, "wl_compositor") == 0) {
-    
+    // Requested wl_compositor version 4 as we need wl_surface_damage_buffer().
     auto compositor = static_cast<wl_compositor*>(
         wl_registry_bind(registry, id, &wl_compositor_interface, 4));
     wl_proxy_set_queue((struct wl_proxy*)compositor, display->GetEventQueue());
@@ -304,9 +285,9 @@ static const struct wl_callback_listener sync_callback_listener = {
 void nsWaylandDisplay::SyncBegin() {
   WaitForSyncEnd();
 
-  
-  
-  
+  // Use wl_display_sync() to synchronize wayland events.
+  // See dri2_wl_swap_buffers_with_damage() from MESA
+  // or wl_display_roundtrip_queue() from wayland-client.
   struct wl_display* displayWrapper =
       static_cast<wl_display*>(wl_proxy_create_wrapper((void*)mDisplay));
   if (!displayWrapper) {
@@ -328,7 +309,7 @@ void nsWaylandDisplay::SyncBegin() {
 }
 
 void nsWaylandDisplay::WaitForSyncEnd() {
-  
+  // We're done here
   if (!mSyncCallback) {
     return;
   }
@@ -351,7 +332,7 @@ bool nsWaylandDisplay::ConfigureGbm() {
     return false;
   }
 
-  
+  // TODO - Better DRM device detection/configuration.
   const char* drm_render_node = getenv("MOZ_WAYLAND_DRM_DEVICE");
   if (!drm_render_node) {
     drm_render_node = "/dev/dri/renderD128";
@@ -394,6 +375,20 @@ int nsWaylandDisplay::GetGbmDeviceFd() {
   return mGbmFd;
 }
 
+class nsWaylandDisplayLoopObserver : public MessageLoop::DestructionObserver {
+ public:
+  explicit nsWaylandDisplayLoopObserver(nsWaylandDisplay* aWaylandDisplay)
+      : mDisplay(aWaylandDisplay){};
+  virtual void WillDestroyCurrentMessageLoop() override {
+    mDisplay->Shutdown();
+    mDisplay = nullptr;
+    delete this;
+  }
+
+ private:
+  nsWaylandDisplay* mDisplay;
+};
+
 nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
     : mDispatcherThreadLoop(nullptr),
       mThreadId(PR_GetCurrentThread()),
@@ -419,24 +414,17 @@ nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
   wl_registry_add_listener(mRegistry, &registry_listener, this);
 
   if (NS_IsMainThread()) {
-    
-    
-    if (!sIsPrefLoaded) {
-      sIsDMABufPrefTextState = Preferences::GetBool(DMABUF_TEXTURE_PREF, false);
-      sIsDMABufPrefBasicCompositorState =
-          Preferences::GetBool(DMABUF_BASIC_PREF, false);
-      sIsDMABufPrefWebGLState = Preferences::GetBool(DMABUF_WEBGL_PREF, false);
-      sIsDMABufPrefVAAPIState = Preferences::GetBool(DMABUF_VAAPI_PREF, false);
-      sRenderingCacheModePref = Preferences::GetInt(CACHE_MODE_PREF, 0);
-      sIsPrefLoaded = true;
-    }
-
-    
+    // Use default event queue in main thread operated by Gtk+.
     mEventQueue = nullptr;
     wl_display_roundtrip(mDisplay);
     wl_display_roundtrip(mDisplay);
   } else {
     mDispatcherThreadLoop = MessageLoop::current();
+    MOZ_ASSERT(mDispatcherThreadLoop);
+    if (mDispatcherThreadLoop) {
+      auto observer = new nsWaylandDisplayLoopObserver(this);
+      mDispatcherThreadLoop->AddDestructionObserver(observer);
+    }
     mEventQueue = wl_display_create_queue(mDisplay);
     wl_proxy_set_queue((struct wl_proxy*)mRegistry, mEventQueue);
     wl_display_roundtrip_queue(mDisplay, mEventQueue);
@@ -447,7 +435,7 @@ nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
 void nsWaylandDisplay::Shutdown() { mDispatcherThreadLoop = nullptr; }
 
 nsWaylandDisplay::~nsWaylandDisplay() {
-  
+  // Owned by Gtk+, we don't need to release
   mDisplay = nullptr;
 
   wl_registry_destroy(mRegistry);
@@ -464,23 +452,18 @@ bool nsWaylandDisplay::IsDMABufEnabled() {
     return sIsDMABufEnabled;
   }
 
-  
+  // WaylandDisplayGet() loads dmabuf config prefs
   nsWaylandDisplay* display = WaylandDisplayGet();
   if (!display) {
     return false;
   }
 
-  if (!sIsPrefLoaded) {
-    MOZ_ASSERT(false,
-               "We're missing nsWaylandDisplay preference configuration!");
-    return false;
-  }
-
   sIsDMABufConfigured = true;
-  if (!nsWaylandDisplay::sIsDMABufPrefTextState &&
-      !nsWaylandDisplay::sIsDMABufPrefBasicCompositorState &&
-      !nsWaylandDisplay::sIsDMABufPrefWebGLState) {
-    
+  if (!StaticPrefs::widget_wayland_dmabuf_basic_compositor_enabled() &&
+      !StaticPrefs::widget_wayland_dmabuf_textures_enabled() &&
+      !StaticPrefs::widget_wayland_dmabuf_webgl_enabled() &&
+      !StaticPrefs::widget_wayland_dmabuf_vaapi_enabled()) {
+    // Disabled by user, just quit.
     return false;
   }
 
@@ -489,8 +472,8 @@ bool nsWaylandDisplay::IsDMABufEnabled() {
     return false;
   }
 
-  if (!display->GetGbmFormat( false) ||
-      !display->GetGbmFormat( true)) {
+  if (!display->GetGbmFormat(/* aHasAlpha */ false) ||
+      !display->GetGbmFormat(/* aHasAlpha */ true)) {
     NS_WARNING(
         "Failed to create obtain pixel format, DMABUF/DRM won't be available!");
     return false;
@@ -501,16 +484,23 @@ bool nsWaylandDisplay::IsDMABufEnabled() {
 }
 
 bool nsWaylandDisplay::IsDMABufBasicEnabled() {
-  return IsDMABufEnabled() && sIsDMABufPrefBasicCompositorState;
+  return IsDMABufEnabled() &&
+         StaticPrefs::widget_wayland_dmabuf_basic_compositor_enabled();
 }
 bool nsWaylandDisplay::IsDMABufTexturesEnabled() {
-  return IsDMABufEnabled() && sIsDMABufPrefTextState;
+  return IsDMABufEnabled() &&
+         StaticPrefs::widget_wayland_dmabuf_textures_enabled();
 }
 bool nsWaylandDisplay::IsDMABufWebGLEnabled() {
-  return IsDMABufEnabled() && sIsDMABufPrefWebGLState;
+  return IsDMABufEnabled() &&
+         StaticPrefs::widget_wayland_dmabuf_webgl_enabled();
 }
 bool nsWaylandDisplay::IsDMABufVAAPIEnabled() {
-  return IsDMABufEnabled() && sIsDMABufPrefVAAPIState;
+  return IsDMABufEnabled() &&
+         StaticPrefs::widget_wayland_dmabuf_vaapi_enabled();
+}
+int nsWaylandDisplay::GetRenderingCacheModePref() {
+  return StaticPrefs::widget_wayland_cache_mode();
 }
 
 void* nsGbmLib::sGbmLibHandle = nullptr;
@@ -603,5 +593,5 @@ bool nsGbmLib::Load() {
   return sGbmLibHandle;
 }
 
-}  
-}  
+}  // namespace widget
+}  // namespace mozilla
