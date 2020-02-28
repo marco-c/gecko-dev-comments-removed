@@ -79,6 +79,12 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
   
 
 
+
+  virtual bool IsForTextControlWithNoScrollbars() const = 0;
+
+  
+
+
   virtual mozilla::layers::OverscrollBehaviorInfo GetOverscrollBehaviorInfo()
       const = 0;
 
