@@ -56,6 +56,8 @@ add_task(async function setup() {
       ["browser.contentblocking.report.cryptominer.url", ""],
       ["browser.contentblocking.report.lockwise.mobile-android.url", ""],
       ["browser.contentblocking.report.lockwise.mobile-ios.url", ""],
+      ["browser.contentblocking.report.mobile-ios.url", ""],
+      ["browser.contentblocking.report.mobile-android.url", ""],
     ],
   });
 
@@ -462,6 +464,29 @@ add_task(async function checkTelemetryClickEvents() {
       e[4] == "ios"
   );
   is(events.length, 1, `recorded telemetry for lw_sync_link`);
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
+    
+    let hidden_elements = content.document.querySelectorAll(".hidden");
+    for (let el of hidden_elements) {
+      el.style.display = "block ";
+    }
+
+    const mobileAppLink = await ContentTaskUtils.waitForCondition(() => {
+      return content.document.getElementById("android-mobile-inline-link");
+    }, "android-mobile-inline-link exists");
+
+    mobileAppLink.click();
+  });
+
+  events = await waitForTelemetryEventCount(16);
+  events = events.filter(
+    e =>
+      e[1] == "security.ui.protections" &&
+      e[2] == "click" &&
+      e[3] == "mobile_app_link"
+  );
+  is(events.length, 1, `recorded telemetry for mobile_app_link`);
 
   await BrowserTestUtils.removeTab(tab);
   
