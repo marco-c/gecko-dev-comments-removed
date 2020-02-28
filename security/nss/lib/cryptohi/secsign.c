@@ -727,7 +727,7 @@ sec_CreateRSAPSSParameters(PLArenaPool *arena,
         }
 
         
-        if (saltLength > modBytes - hashLength - 2) {
+        if (saltLength > (unsigned long)(modBytes - hashLength - 2)) {
             PORT_SetError(SEC_ERROR_INVALID_ARGS);
             return NULL;
         }

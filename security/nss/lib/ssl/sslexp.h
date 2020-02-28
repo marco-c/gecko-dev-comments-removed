@@ -663,6 +663,10 @@ typedef SECStatus(PR_CALLBACK *SSLRecordWriteCallback)(
 
 
 
+
+
+
+
 typedef struct SSLAeadContextStr SSLAeadContext;
 
 #define SSL_MakeAead(version, cipherSuite, secret,                  \
@@ -674,6 +678,18 @@ typedef struct SSLAeadContextStr SSLAeadContext;
                           unsigned int _labelPrefixLen,             \
                           SSLAeadContext **_ctx),                   \
                          (version, cipherSuite, secret,             \
+                          labelPrefix, labelPrefixLen, ctx))
+
+#define SSL_MakeVariantAead(version, cipherSuite, variant, secret,  \
+                            labelPrefix, labelPrefixLen, ctx)       \
+    SSL_EXPERIMENTAL_API("SSL_MakeVariantAead",                     \
+                         (PRUint16 _version, PRUint16 _cipherSuite, \
+                          SSLProtocolVariant _variant,              \
+                          PK11SymKey * _secret,                     \
+                          const char *_labelPrefix,                 \
+                          unsigned int _labelPrefixLen,             \
+                          SSLAeadContext **_ctx),                   \
+                         (version, cipherSuite, variant, secret,    \
                           labelPrefix, labelPrefixLen, ctx))
 
 #define SSL_AeadEncrypt(ctx, counter, aad, aadLen, in, inLen,            \
@@ -718,6 +734,11 @@ typedef struct SSLAeadContextStr SSLAeadContext;
 
 
 
+
+
+
+
+
 #define SSL_HkdfExpandLabel(version, cipherSuite, prk,                     \
                             hsHash, hsHashLen, label, labelLen, keyp)      \
     SSL_EXPERIMENTAL_API("SSL_HkdfExpandLabel",                            \
@@ -728,6 +749,25 @@ typedef struct SSLAeadContextStr SSLAeadContext;
                           PK11SymKey **_keyp),                             \
                          (version, cipherSuite, prk,                       \
                           hsHash, hsHashLen, label, labelLen, keyp))
+
+#define SSL_HkdfVariantExpandLabel(version, cipherSuite, prk,                   \
+                                   hsHash, hsHashLen, label, labelLen, variant, \
+                                   keyp)                                        \
+    SSL_EXPERIMENTAL_API("SSL_HkdfVariantExpandLabel",                          \
+                         (PRUint16 _version, PRUint16 _cipherSuite,             \
+                          PK11SymKey * _prk,                                    \
+                          const PRUint8 *_hsHash, unsigned int _hsHashLen,      \
+                          const char *_label, unsigned int _labelLen,           \
+                          SSLProtocolVariant _variant,                          \
+                          PK11SymKey **_keyp),                                  \
+                         (version, cipherSuite, prk,                            \
+                          hsHash, hsHashLen, label, labelLen, variant,          \
+                          keyp))
+
+
+
+
+
 
 
 
@@ -745,6 +785,21 @@ typedef struct SSLAeadContextStr SSLAeadContext;
                          (version, cipherSuite, prk,                       \
                           hsHash, hsHashLen, label, labelLen,              \
                           mech, keySize, keyp))
+
+#define SSL_HkdfVariantExpandLabelWithMech(version, cipherSuite, prk,          \
+                                           hsHash, hsHashLen, label, labelLen, \
+                                           mech, keySize, variant, keyp)       \
+    SSL_EXPERIMENTAL_API("SSL_HkdfVariantExpandLabelWithMech",                 \
+                         (PRUint16 _version, PRUint16 _cipherSuite,            \
+                          PK11SymKey * _prk,                                   \
+                          const PRUint8 *_hsHash, unsigned int _hsHashLen,     \
+                          const char *_label, unsigned int _labelLen,          \
+                          CK_MECHANISM_TYPE _mech, unsigned int _keySize,      \
+                          SSLProtocolVariant _variant,                         \
+                          PK11SymKey **_keyp),                                 \
+                         (version, cipherSuite, prk,                           \
+                          hsHash, hsHashLen, label, labelLen,                  \
+                          mech, keySize, variant, keyp))
 
 
 
@@ -863,6 +918,18 @@ typedef struct SSLMaskingContextStr {
                           unsigned int _labelLen,                   \
                           SSLMaskingContext **_ctx),                \
                          (version, cipherSuite, secret, label, labelLen, ctx))
+
+#define SSL_CreateVariantMaskingContext(version, cipherSuite, variant, \
+                                        secret, label, labelLen, ctx)  \
+    SSL_EXPERIMENTAL_API("SSL_CreateVariantMaskingContext",            \
+                         (PRUint16 _version, PRUint16 _cipherSuite,    \
+                          SSLProtocolVariant _variant,                 \
+                          PK11SymKey * _secret,                        \
+                          const char *_label,                          \
+                          unsigned int _labelLen,                      \
+                          SSLMaskingContext **_ctx),                   \
+                         (version, cipherSuite, variant, secret,       \
+                          label, labelLen, ctx))
 
 #define SSL_DestroyMaskingContext(ctx)                \
     SSL_EXPERIMENTAL_API("SSL_DestroyMaskingContext", \

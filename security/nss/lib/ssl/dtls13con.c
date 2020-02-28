@@ -537,19 +537,32 @@ dtls13_MaskSequenceNumber(sslSocket *ss, ssl3CipherSpec *spec,
     }
 
     if (spec->maskContext) {
+#ifdef UNSAFE_FUZZER_MODE
+        
+        PRUint8 mask[2] = { 0 };
+#else
+        
+
+
+        if (cipherTextLen < 16) {
+            PORT_SetError(SSL_ERROR_BAD_MAC_READ);
+            return SECFailure;
+        }
+
         PRUint8 mask[2];
         SECStatus rv = ssl_CreateMaskInner(spec->maskContext, cipherText, cipherTextLen, mask, sizeof(mask));
 
         if (rv != SECSuccess) {
+            PORT_SetError(SSL_ERROR_BAD_MAC_READ);
             return SECFailure;
         }
+#endif
 
         hdr[1] ^= mask[0];
         if (hdr[0] & 0x08) {
             hdr[2] ^= mask[1];
         }
     }
-
     return SECSuccess;
 }
 
