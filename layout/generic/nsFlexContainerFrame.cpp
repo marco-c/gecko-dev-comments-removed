@@ -4827,14 +4827,15 @@ void nsFlexContainerFrame::DoFlexLayout(
       
       
       
+      
       bool itemNeedsReflow = true;  
       if (item->HadMeasuringReflow()) {
-        LogicalSize finalFlexItemCBSize =
+        LogicalSize finalFlexItemSize =
             aAxisTracker.LogicalSizeFromFlexRelativeSizes(item->MainSize(),
                                                           item->CrossSize());
         
         
-        if (finalFlexItemCBSize ==
+        if (finalFlexItemSize ==
             LogicalSize(flexWM,
                         item->Frame()->GetContentRectRelativeToSelf().Size())) {
           
