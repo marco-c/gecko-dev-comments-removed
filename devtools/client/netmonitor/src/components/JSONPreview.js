@@ -60,7 +60,7 @@ class JSONPreview extends Component {
         
         
         member: Object.assign({}, member, { open: false }),
-        mode: MODE.TINY,
+        mode: MODE.LONG,
         cropLimit: this.props.cropLimit,
         noGrip: true,
       })
