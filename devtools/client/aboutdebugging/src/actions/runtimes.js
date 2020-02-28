@@ -328,7 +328,9 @@ function watchRuntime(id) {
       await dispatch({ type: WATCH_RUNTIME_SUCCESS, runtime });
 
       dispatch(Actions.requestExtensions());
-      dispatch(Actions.requestTabs());
+      
+      
+      await dispatch(Actions.requestTabs());
       dispatch(Actions.requestWorkers());
 
       if (

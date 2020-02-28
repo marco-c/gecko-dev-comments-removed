@@ -19,6 +19,12 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
+  "TabDescriptorFront",
+  "devtools/shared/fronts/descriptors/tab",
+  true
+);
+loader.lazyRequireGetter(
+  this,
   "FrameDescriptorFront",
   "devtools/shared/fronts/descriptors/frame",
   true
@@ -304,10 +310,23 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
 
   async listTabs(options) {
     const { selected, tabs } = await super.listTabs(options);
+    const targets = [];
     for (const i in tabs) {
-      tabs[i].setIsSelected(i == selected);
+      if (!this.actorID) {
+        console.error("The root front was destroyed while processing listTabs");
+        return [];
+      }
+
+      try {
+        const form = tabs[i];
+        const target = await this._createTargetFrontForTabForm(form);
+        target.setIsSelected(i == selected);
+        targets.push(target);
+      } catch (e) {
+        console.error("Failed to get the target for tab descriptor", e);
+      }
     }
-    return tabs;
+    return targets;
   }
 
   
@@ -350,27 +369,49 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     }
 
     const form = await super.getTab(packet);
+    return this._createTargetFrontForTabForm(form, filter);
+  }
+
+  async _createTargetFrontForTabForm(form, filter = {}) {
     let front = this.actor(form.actor);
     if (front) {
+      if (!form.actor.includes("tabDescriptor")) {
+        
+        return front;
+      }
+
+      return front.getTarget();
+    }
+
+    if (!form.actor.includes("tabDescriptor")) {
+      
+
+      
+      
+      
+      
+      
+      
+      if (filter && filter.tab && filter.tab.tagName == "tab") {
+        front = new LocalTabTargetFront(this._client, null, this, filter.tab);
+      } else {
+        front = new BrowsingContextTargetFront(this._client, null, this);
+      }
+      
+      
+      front.actorID = form.actor;
       front.form(form);
+      this.manage(front);
       return front;
     }
+
+    const descriptorFront = new TabDescriptorFront(this._client, null, this);
     
     
-    
-    
-    
-    
-    if (filter && filter.tab && filter.tab.tagName == "tab") {
-      front = new LocalTabTargetFront(this._client, null, this, filter.tab);
-    } else {
-      front = new BrowsingContextTargetFront(this._client, null, this);
-    }
-    
-    
-    front.actorID = form.actor;
-    front.form(form);
-    this.manage(front);
+    descriptorFront.actorID = form.actor;
+    descriptorFront.form(form);
+    this.manage(descriptorFront);
+    front = await descriptorFront.getTarget(filter);
     return front;
   }
 

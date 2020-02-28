@@ -24,7 +24,9 @@ types.addDictType("root.listRemoteFrames", {
   frames: "array:frameDescriptor",
 });
 types.addDictType("root.listTabs", {
-  tabs: "array:browsingContextTarget",
+  
+  
+  tabs: "array:json",
   selected: "number",
 });
 
@@ -50,6 +52,8 @@ const rootSpecPrototype = {
         tabId: Option(0, "number"),
       },
       response: {
+        
+        
         tab: RetVal("json"),
       },
     },

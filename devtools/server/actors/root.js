@@ -296,16 +296,17 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
     
     
     const newActorPool = new Pool(this.conn);
-    const tabDescriptorList = [];
     let selected;
 
     const tabDescriptorActors = await tabList.getList(options);
     for (const tabDescriptorActor of tabDescriptorActors) {
       if (tabDescriptorActor.selected) {
-        selected = tabDescriptorList.length;
+        const index = tabDescriptorActors.findIndex(
+          descriptor => descriptor === tabDescriptorActor
+        );
+        selected = index;
       }
       newActorPool.manage(tabDescriptorActor);
-      tabDescriptorList.push(tabDescriptorActor);
     }
 
     
@@ -321,8 +322,8 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
     
     Object.assign(reply, {
       selected: selected || 0,
-      tabs: await Promise.all(
-        tabDescriptorList.map(tabDescriptor => tabDescriptor.getTarget())
+      tabs: [...this._tabDescriptorActorPool.poolChildren()].map(descriptor =>
+        descriptor.form()
       ),
     });
 
@@ -357,9 +358,8 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
 
     descriptorActor.parentID = this.actorID;
     this._tabDescriptorActorPool.manage(descriptorActor);
-    const targetActorForm = await descriptorActor.getTarget();
 
-    return { tab: targetActorForm };
+    return descriptorActor.form();
   },
 
   getWindow: function({ outerWindowID }) {
