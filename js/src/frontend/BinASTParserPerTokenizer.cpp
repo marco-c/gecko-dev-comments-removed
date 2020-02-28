@@ -333,6 +333,9 @@ JS::Result<Ok> BinASTParserPerTokenizer<Tok>::finishEagerFunction(
     funbox->setArgCount(nargs);
   }
 
+  
+  funbox->emitBytecode = true;
+
   const bool canSkipLazyClosedOverBindings = false;
   BINJS_TRY(pc_->declareFunctionArgumentsObject(usedNames_,
                                                 canSkipLazyClosedOverBindings));

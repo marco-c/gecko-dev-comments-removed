@@ -363,8 +363,9 @@ class FunctionBox : public ObjectBox, public SharedContext {
   bool hasParameterExprs : 1;      
   bool hasDuplicateParameters : 1; 
   bool useAsm : 1;                 
-  bool isAnnexB : 1;   
-  bool wasEmitted : 1; 
+  bool isAnnexB : 1;     
+  bool wasEmitted : 1;   
+  bool emitBytecode : 1; 
 
   
   bool declaredArguments : 1; 
@@ -517,7 +518,6 @@ class FunctionBox : public ObjectBox, public SharedContext {
     gcThing = function;
     
     setIsInterpreted(function->isInterpreted());
-    setIsInterpretedLazy(function->isInterpretedLazy());
   }
 
   Scope* compilationEnclosingScope() const override {
@@ -602,14 +602,9 @@ class FunctionBox : public ObjectBox, public SharedContext {
   void setIsInterpreted(bool interpreted) {
     flags_.setFlags(FunctionFlags::INTERPRETED, interpreted);
   }
-  bool isInterpretedLazy() const { return flags_.isInterpretedLazy(); }
-  void setIsInterpretedLazy(bool interpretedLazy) {
-    flags_.setFlags(FunctionFlags::INTERPRETED_LAZY, interpretedLazy);
-  }
 
   void initLazyScript(LazyScript* script) {
     function()->initLazyScript(script);
-    setIsInterpretedLazy(function()->isInterpretedLazy());
   }
 
   FunctionFlags::FunctionKind kind() { return flags_.kind(); }
