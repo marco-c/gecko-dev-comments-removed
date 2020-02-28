@@ -195,16 +195,16 @@ nsMediaSniffer::GetMIMETypeFromContent(nsIRequest* aRequest,
     return NS_OK;
   }
 
+  if (MatchesADTS(aData, clampedLength)) {
+    aSniffedType.AssignLiteral(AUDIO_AAC);
+    return NS_OK;
+  }
+
   
   
   
   if (MatchesFLAC(aData, clampedLength)) {
     aSniffedType.AssignLiteral(AUDIO_FLAC);
-    return NS_OK;
-  }
-
-  if (MatchesADTS(aData, clampedLength)) {
-    aSniffedType.AssignLiteral(AUDIO_AAC);
     return NS_OK;
   }
 
