@@ -15,7 +15,6 @@
 const {
   connectToFrame,
 } = require("devtools/server/connectors/frame-connector");
-const protocol = require("devtools/shared/protocol");
 
 loader.lazyImporter(
   this,
@@ -35,28 +34,19 @@ const { AppConstants } = require("resource://gre/modules/AppConstants.jsm");
 
 
 
+function TabDescriptorActor(connection, browser, options = {}) {
+  this._conn = connection;
+  this._browser = browser;
+  this._form = null;
+  this.exited = false;
+  this.options = options;
+}
 
-
-
-
-
-
-
-const proxySpec = protocol.generateActorSpec({
-  typeName: "frameTargetProxy",
-  methods: {},
-  events: {},
-});
-exports.FrameTargetActorProxy = protocol.ActorClassWithSpec(proxySpec, {
-  initialize: function(conn, browser, options = {}) {
-    protocol.Actor.prototype.initialize.call(this, conn);
-
-    this._conn = conn;
-    this._browser = browser;
-    this._form = null;
-    this.exited = false;
-    this.options = options;
-  },
+TabDescriptorActor.prototype = {
+  
+  
+  
+  actorPrefix: "tabDescriptor",
 
   async connect() {
     const onDestroy = () => {
@@ -64,8 +54,7 @@ exports.FrameTargetActorProxy = protocol.ActorClassWithSpec(proxySpec, {
         
         this._deferredUpdate.reject({
           error: "tabDestroyed",
-          message:
-            "Tab destroyed while performing a FrameTargetActorProxy update",
+          message: "Tab destroyed while performing a TabDescriptorActor update",
         });
       }
       this.exit();
@@ -252,4 +241,6 @@ exports.FrameTargetActorProxy = protocol.ActorClassWithSpec(proxySpec, {
     this._form = null;
     this.exited = true;
   },
-});
+};
+
+exports.TabDescriptorActor = TabDescriptorActor;
