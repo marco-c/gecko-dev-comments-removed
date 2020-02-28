@@ -62,6 +62,14 @@ public final class XPCOMEventTarget extends JNIObject implements IXPCOMEventTarg
         } else {
             throw new RuntimeException("Attempt to assign to unknown thread named " + name);
         }
+
+        
+        
+        if (mMainThread != target) {
+            target.execute(() -> {
+                Thread.currentThread().setName(name);
+            });
+        }
     }
 
     @Override
