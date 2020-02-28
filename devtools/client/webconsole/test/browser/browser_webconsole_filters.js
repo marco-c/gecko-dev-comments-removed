@@ -57,7 +57,7 @@ async function testFilterPersistence() {
   ok(filterBar, "Filter bar ui setting is persisted.");
   
   ok(
-    !filterIsEnabled(filterBar.querySelector(".error")),
+    !filterIsEnabled(filterBar.querySelector("[data-category='error']")),
     "Filter button setting is persisted"
   );
   ok(
