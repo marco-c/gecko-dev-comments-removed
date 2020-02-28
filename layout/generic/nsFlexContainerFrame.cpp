@@ -1043,6 +1043,7 @@ class nsFlexContainerFrame::FlexLine : public LinkedListElement<FlexLine> {
 
   
   
+  
   void ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
                               ComputedFlexLineInfo* aLineInfo);
 
@@ -1464,7 +1465,6 @@ static nscoord PartiallyResolveAutoMinSize(
   nscoord minMainSize = nscoord_MAX;  
                                       
 
-  
   
   
   if (aItemReflowInput.mStylePosition->mFlexBasis.IsAuto() &&
