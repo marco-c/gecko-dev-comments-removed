@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -28,7 +28,7 @@ XPCOMUtils.defineLazyGetter(this, "ReferrerInfo", () =>
   )
 );
 
-
+// Create default ReferrerInfo instance for the given referrer URI string.
 const createReferrerInfo = aReferrer => {
   let referrerUri;
   try {
@@ -38,19 +38,19 @@ const createReferrerInfo = aReferrer => {
   return new ReferrerInfo(Ci.nsIReferrerInfo.EMPTY, true, referrerUri);
 };
 
-
-
-
-
-
-
+// Handles navigation requests between Gecko and a GeckoView.
+// Handles GeckoView:GoBack and :GoForward requests dispatched by
+// GeckoView.goBack and .goForward.
+// Dispatches GeckoView:LocationChange to the GeckoView on location change when
+// active.
+// Implements nsIBrowserDOMWindow.
 class GeckoViewNavigation extends GeckoViewModule {
   onInitBrowser() {
     this.window.browserDOMWindow = this;
 
-    
-    
-    
+    // There may be a GeckoViewNavigation module in another window waiting for
+    // us to create a browser so it can call presetOpenerWindow(), so allow them
+    // to do that now.
     Services.obs.notifyObservers(this.window, "geckoview-window-created");
   }
 
@@ -72,8 +72,8 @@ class GeckoViewNavigation extends GeckoViewModule {
     debug`sessionContextId=${this.settings.sessionContextId}`;
 
     if (this.settings.sessionContextId !== null) {
-      
-      
+      // Gecko may have issues with strings containing special characters,
+      // so we restrict the string format to a specific pattern.
       if (!/^gvctx(-)?([a-f0-9]+)$/.test(this.settings.sessionContextId)) {
         throw new Error("sessionContextId has illegal format");
       }
@@ -86,7 +86,7 @@ class GeckoViewNavigation extends GeckoViewModule {
     }
   }
 
-  
+  // Bundle event handler.
   async onEvent(aEvent, aData, aCallback) {
     debug`onEvent: event=${aEvent}, data=${aData}`;
 
@@ -105,7 +105,7 @@ class GeckoViewNavigation extends GeckoViewModule {
 
         let navFlags = 0;
 
-        
+        // These need to match the values in GeckoSession.LOAD_FLAGS_*
         if (flags & (1 << 0)) {
           navFlags |= Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE;
         }
@@ -115,7 +115,7 @@ class GeckoViewNavigation extends GeckoViewModule {
         }
 
         if (flags & (1 << 2)) {
-          navFlags |= Ci.nsIWebNavigation.LOAD_FLAGS_EXTERNAL;
+          navFlags |= Ci.nsIWebNavigation.LOAD_FLAGS_FROM_EXTERNAL;
         }
 
         if (flags & (1 << 3)) {
@@ -163,7 +163,7 @@ class GeckoViewNavigation extends GeckoViewModule {
               parsedUri.schemeIs("resource") ||
               parsedUri.schemeIs("moz-extension")
             ) {
-              
+              // Only allow privileged loading for certain URIs.
               triggeringPrincipal = Services.scriptSecurityManager.createContentPrincipal(
                 parsedUri,
                 {}
@@ -182,10 +182,10 @@ class GeckoViewNavigation extends GeckoViewModule {
 
         let additionalHeaders = null;
         if (headers) {
-          
-          
-          
-          
+          // Filter out request headers as per discussion in Bug #1567549
+          // CONNECTION: Used by Gecko to manage connections
+          // HOST: Relates to how gecko will ultimately interpret the resulting resource as that
+          //       determines the effective request URI
           const badHeaders = ["connection", "host"];
           additionalHeaders = "";
           headers.forEach(entry => {
@@ -205,22 +205,22 @@ class GeckoViewNavigation extends GeckoViewModule {
           }
         }
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // For any navigation here, we should have an appropriate triggeringPrincipal:
+        //
+        // 1) If we have a referring session, triggeringPrincipal is the contentPrincipal from the
+        //    referring document.
+        // 2) For certain URI schemes listed above, we will have a codebase principal.
+        // 3) In all other cases, we create a NullPrincipal.
+        //
+        // The navigation flags are driven by the app. We purposely do not propagate these from
+        // the referring document, but expect that the app will in most cases.
+        //
+        // The referrerInfo is derived from the referring document, if present, by propagating any
+        // referrer policy. If we only have the referrerUri from the app, we create a referrerInfo
+        // with the specified URI and no policy set. If no referrerUri is present and we have no
+        // referring session, the referrerInfo is null.
+        //
+        // csp is only present if we have a referring document, null otherwise.
         this.loadURI({
           uri: parsedUri ? parsedUri.spec : uri,
           flags: navFlags,
@@ -231,11 +231,11 @@ class GeckoViewNavigation extends GeckoViewModule {
         });
         break;
       case "GeckoView:Reload":
-        
-        
-        
-        
-        
+        // At the moment, GeckoView only supports one reload, which uses
+        // nsIWebNavigation.LOAD_FLAGS_NONE flag, and the telemetry doesn't
+        // do anything to differentiate reloads (i.e normal vs skip caches)
+        // So whenever we add more reload methods, please make sure the
+        // telemetry probe is adjusted
         this.browser.reload();
         break;
       case "GeckoView:Stop":
@@ -303,7 +303,7 @@ class GeckoViewNavigation extends GeckoViewModule {
               aSubject.browser.presetOpenerWindow(opener);
             }
             if (forceNotRemote && aSubject.browser.hasAttribute("remote")) {
-              
+              // We cannot start in remote mode when we have an opener.
               aSubject.browser.setAttribute("remote", "false");
               aSubject.browser.removeAttribute("remoteType");
             }
@@ -313,7 +313,7 @@ class GeckoViewNavigation extends GeckoViewModule {
         },
       };
 
-      
+      // This event is emitted from createBrowser() in geckoview.js
       Services.obs.addObserver(handler, "geckoview-window-created");
     });
   }
@@ -331,12 +331,12 @@ class GeckoViewNavigation extends GeckoViewModule {
       uri: aUri ? aUri.displaySpec : "",
     };
 
-    
-    
-    
-    
-    
-    
+    // If we have an opener, that means that the caller is expecting access
+    // to the nsIDOMWindow of the opened tab right away. For e10s windows,
+    // this means forcing the newly opened browser to be non-remote so that
+    // we can hand back the nsIDOMWindow. The XULBrowserWindow.shouldLoadURI
+    // will do the job of shuttling off the newly opened browser to run in
+    // the right process once it starts loading a URI.
     const forceNotRemote = !!aOpener;
 
     let browser = undefined;
@@ -359,14 +359,14 @@ class GeckoViewNavigation extends GeckoViewModule {
         }
       );
 
-    
+    // Wait indefinitely for app to respond with a browser or null
     Services.tm.spinEventLoopUntil(
       () => this.window.closed || browser !== undefined
     );
     return browser || null;
   }
 
-  
+  // nsIBrowserDOMWindow.
   createContentWindow(
     aUri,
     aOpener,
@@ -388,7 +388,7 @@ class GeckoViewNavigation extends GeckoViewModule {
         aTriggeringPrincipal
       )
     ) {
-      
+      // The app has handled the load, abort open-window handling.
       Components.returnCode = Cr.NS_ERROR_ABORT;
       return null;
     }
@@ -402,7 +402,7 @@ class GeckoViewNavigation extends GeckoViewModule {
     return browser.browsingContext;
   }
 
-  
+  // nsIBrowserDOMWindow.
   createContentWindowInFrame(
     aUri,
     aParams,
@@ -426,7 +426,7 @@ class GeckoViewNavigation extends GeckoViewModule {
         aParams.triggeringPrincipal
       )
     ) {
-      
+      // The app has handled the load, abort open-window handling.
       Components.returnCode = Cr.NS_ERROR_ABORT;
       return null;
     }
@@ -489,11 +489,11 @@ class GeckoViewNavigation extends GeckoViewModule {
     }
 
     if (!browser) {
-      
+      // Should we throw?
       return null;
     }
 
-    
+    // 3) We have a new session and a browser element, load the requested URI.
     browser.loadURI(aUri.spec, {
       triggeringPrincipal: aTriggeringPrincipal,
       csp: aCsp,
@@ -502,7 +502,7 @@ class GeckoViewNavigation extends GeckoViewModule {
     return browser;
   }
 
-  
+  // nsIBrowserDOMWindow.
   openURI(aUri, aOpener, aWhere, aFlags, aTriggeringPrincipal, aCsp) {
     const browser = this.handleOpenUri(
       aUri,
@@ -517,7 +517,7 @@ class GeckoViewNavigation extends GeckoViewModule {
     return browser && browser.browsingContext;
   }
 
-  
+  // nsIBrowserDOMWindow.
   openURIInFrame(aUri, aParams, aWhere, aFlags, aNextRemoteTabId, aName) {
     const browser = this.handleOpenUri(
       aUri,
@@ -532,12 +532,12 @@ class GeckoViewNavigation extends GeckoViewModule {
     return browser;
   }
 
-  
+  // nsIBrowserDOMWindow.
   isTabContentWindow(aWindow) {
     return this.browser.contentWindow === aWindow;
   }
 
-  
+  // nsIBrowserDOMWindow.
   canClose() {
     debug`canClose`;
     return true;
@@ -564,7 +564,7 @@ class GeckoViewNavigation extends GeckoViewModule {
     this.browser.removeProgressListener(this.progressFilter);
   }
 
-  
+  // WebProgress event handler.
   onLocationChange(aWebProgress, aRequest, aLocationURI, aFlags) {
     debug`onLocationChange`;
 
@@ -574,8 +574,8 @@ class GeckoViewNavigation extends GeckoViewModule {
       fixedURI = Services.uriFixup.createExposableURI(aLocationURI);
     } catch (ex) {}
 
-    
-    
+    // We manually fire the initial about:blank messages to make sure that we
+    // consistently send them so there's nothing to do here.
     const ignore = this._initialAboutBlank && fixedURI.spec === "about:blank";
     this._initialAboutBlank = false;
 
@@ -595,4 +595,4 @@ class GeckoViewNavigation extends GeckoViewModule {
   }
 }
 
-const { debug, warn } = GeckoViewNavigation.initLogging("GeckoViewNavigation"); 
+const { debug, warn } = GeckoViewNavigation.initLogging("GeckoViewNavigation"); // eslint-disable-line no-unused-vars
