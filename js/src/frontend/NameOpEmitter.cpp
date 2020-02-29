@@ -181,20 +181,8 @@ bool NameOpEmitter::prepareForRhs() {
       break;
     case NameLocation::Kind::NamedLambdaCallee:
       break;
-    case NameLocation::Kind::ArgumentSlot: {
-      
-      
-      
-      
-      
-      
-      
-      FunctionBox* funbox = bce_->sc->asFunctionBox();
-      if (funbox->argumentsHasLocalBinding() && !funbox->hasMappedArgsObj()) {
-        funbox->setDefinitelyNeedsArgsObj();
-      }
+    case NameLocation::Kind::ArgumentSlot:
       break;
-    }
     case NameLocation::Kind::FrameSlot:
       break;
     case NameLocation::Kind::EnvironmentCoordinate:
