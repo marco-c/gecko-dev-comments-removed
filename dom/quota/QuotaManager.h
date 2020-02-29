@@ -279,36 +279,32 @@ class QuotaManager final : public BackgroundThreadObject {
                                             int64_t* aTimestamp,
                                             bool* aPersisted);
 
-  already_AddRefed<DirectoryLock> CreateDirectoryLock(
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  already_AddRefed<DirectoryLock> OpenDirectory(
       PersistenceType aPersistenceType, const nsACString& aGroup,
       const nsACString& aOrigin, Client::Type aClientType, bool aExclusive,
       OpenDirectoryListener* aOpenListener);
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void OpenDirectory(PersistenceType aPersistenceType, const nsACString& aGroup,
-                     const nsACString& aOrigin, Client::Type aClientType,
-                     bool aExclusive, OpenDirectoryListener* aOpenListener);
-
-  
-  void OpenDirectoryInternal(const Nullable<PersistenceType>& aPersistenceType,
-                             const OriginScope& aOriginScope,
-                             const Nullable<Client::Type>& aClientType,
-                             bool aExclusive,
-                             OpenDirectoryListener* aOpenListener);
+  already_AddRefed<DirectoryLock> OpenDirectoryInternal(
+      const Nullable<PersistenceType>& aPersistenceType,
+      const OriginScope& aOriginScope,
+      const Nullable<Client::Type>& aClientType, bool aExclusive,
+      OpenDirectoryListener* aOpenListener);
 
   
   uint64_t CollectOriginsForEviction(
@@ -483,7 +479,7 @@ class QuotaManager final : public BackgroundThreadObject {
       const Nullable<PersistenceType>& aPersistenceType,
       const nsACString& aGroup, const OriginScope& aOriginScope,
       const Nullable<Client::Type>& aClientType, bool aExclusive,
-      bool aInternal, OpenDirectoryListener* aOpenListener);
+      bool aInternal, OpenDirectoryListener* aOpenListener, bool& aBlockedOut);
 
   already_AddRefed<DirectoryLockImpl> CreateDirectoryLockForEviction(
       PersistenceType aPersistenceType, const nsACString& aGroup,
