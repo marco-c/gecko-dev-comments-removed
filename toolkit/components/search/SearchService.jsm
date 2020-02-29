@@ -2123,7 +2123,10 @@ SearchService.prototype = {
 
   _buildSortedEngineList() {
     SearchUtils.log("_buildSortedEngineList: building list");
-    var addedEngines = {};
+    
+    
+    
+    
     this.__sortedEngines = [];
 
     
@@ -2135,6 +2138,7 @@ SearchService.prototype = {
       )
     ) {
       SearchUtils.log("_buildSortedEngineList: using db for order");
+      let addedEngines = {};
 
       
       let needToSaveEngineList = false;
@@ -2167,107 +2171,114 @@ SearchService.prototype = {
       if (needToSaveEngineList) {
         this._saveSortedEngineList();
       }
-    } else {
+
       
-      var i = 0;
-      var prefName;
+      let alphaEngines = [];
 
-      if (SearchUtils.distroID) {
-        try {
-          var extras = Services.prefs.getChildList(
-            SearchUtils.BROWSER_SEARCH_PREF + "order.extra."
-          );
-
-          
-          
-          extras.sort();
-
-          for (prefName of extras) {
-            let engineName = Services.prefs.getCharPref(prefName);
-
-            let engine = this._engines.get(engineName);
-            if (!engine || engine.name in addedEngines) {
-              continue;
-            }
-
-            this.__sortedEngines.push(engine);
-            addedEngines[engine.name] = engine;
-          }
-        } catch (e) {}
-
-        while (true) {
-          prefName = `${SearchUtils.BROWSER_SEARCH_PREF}order.${++i}`;
-          let engineName = getLocalizedPref(prefName);
-          if (!engineName) {
-            break;
-          }
-
-          let engine = this._engines.get(engineName);
-          if (!engine || engine.name in addedEngines) {
-            continue;
-          }
-
-          this.__sortedEngines.push(engine);
-          addedEngines[engine.name] = engine;
+      for (let engine of this._engines.values()) {
+        if (!(engine.name in addedEngines)) {
+          alphaEngines.push(engine);
         }
       }
 
-      
-      const originalDefault = this.originalDefaultEngine;
-      if (originalDefault && !(originalDefault.name in addedEngines)) {
-        this.__sortedEngines.push(originalDefault);
-        addedEngines[originalDefault.name] = originalDefault;
+      const collator = new Intl.Collator();
+      alphaEngines.sort((a, b) => {
+        return collator.compare(a.name, b.name);
+      });
+      return (this.__sortedEngines = this.__sortedEngines.concat(alphaEngines));
+    }
+
+    return (this.__sortedEngines = this._sortEnginesByDefaults(
+      Array.from(this._engines.values())
+    ));
+  },
+
+  
+
+
+
+
+
+
+
+  _sortEnginesByDefaults(engines) {
+    const sortedEngines = [];
+    const addedEngines = new Set();
+
+    function maybeAddEngineToSort(engine) {
+      if (!engine || addedEngines.has(engine.name)) {
+        return;
       }
 
-      
-      
-      const originalPrivateDefault = this.originalPrivateDefaultEngine;
-      if (
-        originalPrivateDefault &&
-        originalPrivateDefault != originalDefault &&
-        !(originalPrivateDefault.name in addedEngines)
-      ) {
-        this.__sortedEngines.push(originalPrivateDefault);
-        addedEngines[originalPrivateDefault.name] = originalPrivateDefault;
-      }
+      sortedEngines.push(engine);
+      addedEngines.add(engine.name);
+    }
 
-      if (gModernConfig) {
-        for (const details of this._searchOrder) {
-          let engine = this._getEngineByWebExtensionDetails(details);
-          if (!engine || engine.name in addedEngines) {
-            continue;
-          }
+    if (SearchUtils.distroID) {
+      try {
+        var extras = Services.prefs.getChildList(
+          SearchUtils.BROWSER_SEARCH_PREF + "order.extra."
+        );
 
-          this.__sortedEngines.push(engine);
-          addedEngines[engine.name] = engine;
+        
+        
+        extras.sort();
+
+        for (const prefName of extras) {
+          const engineName = Services.prefs.getCharPref(prefName);
+          maybeAddEngineToSort(engines.find(e => e.name == engineName));
         }
-      } else {
-        for (let engineName of this._searchOrder) {
-          let engine = this._engines.get(engineName);
-          if (!engine || engine.name in addedEngines) {
-            continue;
-          }
+      } catch (e) {}
 
-          this.__sortedEngines.push(engine);
-          addedEngines[engine.name] = engine;
+      let i = 0;
+      while (++i) {
+        const prefName = `${SearchUtils.BROWSER_SEARCH_PREF}order.${i}`;
+        const engineName = getLocalizedPref(prefName);
+        if (!engineName) {
+          break;
         }
+
+        maybeAddEngineToSort(engines.find(e => e.name == engineName));
       }
     }
 
     
-    let alphaEngines = [];
+    
+    const originalDefault = this.originalDefaultEngine;
+    maybeAddEngineToSort(originalDefault);
 
-    for (let engine of this._engines.values()) {
-      if (!(engine.name in addedEngines)) {
-        alphaEngines.push(engine);
+    
+    
+    const originalPrivateDefault = this.originalPrivateDefaultEngine;
+    if (originalPrivateDefault && originalPrivateDefault != originalDefault) {
+      maybeAddEngineToSort(originalPrivateDefault);
+    }
+
+    if (gModernConfig) {
+      for (const details of this._searchOrder) {
+        let engine = this._getEngineByWebExtensionDetails(details);
+        maybeAddEngineToSort(engine);
+      }
+    } else {
+      for (let engineName of this._searchOrder) {
+        maybeAddEngineToSort(engines.find(e => e.name == engineName));
+      }
+    }
+
+    
+    let remainingEngines = [];
+
+    for (let engine of engines.values()) {
+      if (!addedEngines.has(engine.name)) {
+        remainingEngines.push(engine);
       }
     }
 
     const collator = new Intl.Collator();
-    alphaEngines.sort((a, b) => {
+    remainingEngines.sort((a, b) => {
       return collator.compare(a.name, b.name);
     });
-    return (this.__sortedEngines = this.__sortedEngines.concat(alphaEngines));
+    return [...sortedEngines, ...remainingEngines];
   },
 
   
@@ -2347,85 +2358,10 @@ SearchService.prototype = {
 
   async getDefaultEngines() {
     await this.init();
-    function isDefault(engine) {
-      return engine._isDefault;
-    }
-    var engines = this._sortedEngines.filter(isDefault);
-    var engineOrder = {};
-    var i = 1;
 
-    
-    
-    
-
-    if (SearchUtils.distroID) {
-      
-      try {
-        var extras = Services.prefs.getChildList(
-          SearchUtils.BROWSER_SEARCH_PREF + "order.extra."
-        );
-
-        for (let prefName of extras) {
-          let engineName = Services.prefs.getCharPref(prefName);
-
-          if (!(engineName in engineOrder)) {
-            engineOrder[engineName] = i++;
-          }
-        }
-      } catch (e) {
-        SearchUtils.log("Getting extra order prefs failed: " + e);
-      }
-
-      
-      for (var j = 1; ; j++) {
-        let prefName = `${SearchUtils.BROWSER_SEARCH_PREF}order.${j}`;
-        let engineName = getLocalizedPref(prefName);
-        if (!engineName) {
-          break;
-        }
-
-        if (!(engineName in engineOrder)) {
-          engineOrder[engineName] = i++;
-        }
-      }
-    }
-
-    
-    if (gModernConfig) {
-      for (const details of this._searchOrder) {
-        const engine = this._getEngineByWebExtensionDetails(details);
-        if (engine) {
-          engineOrder[engine.name] = i++;
-        }
-      }
-    } else {
-      for (let engineName of this._searchOrder) {
-        engineOrder[engineName] = i++;
-      }
-    }
-
-    SearchUtils.log(
-      "getDefaultEngines: engineOrder: " + engineOrder.toSource()
+    return this._sortEnginesByDefaults(
+      this._sortedEngines.filter(e => e._isDefault)
     );
-
-    function compareEngines(a, b) {
-      var aIdx = engineOrder[a.name];
-      var bIdx = engineOrder[b.name];
-
-      if (aIdx && bIdx) {
-        return aIdx - bIdx;
-      }
-      if (aIdx) {
-        return -1;
-      }
-      if (bIdx) {
-        return 1;
-      }
-
-      return a.name.localeCompare(b.name);
-    }
-    engines.sort(compareEngines);
-    return engines;
   },
 
   async getEnginesByExtensionID(extensionID) {

@@ -13,32 +13,7 @@ const modernConfig = Services.prefs.getBoolPref(
   false
 );
 
-
-
-
-const EXPECTED_ORDER_GET_DEFAULT_ENGINES = modernConfig
-  ? [
-      
-      "Test search engine",
-      "engine-pref",
-      
-      "engine-resourceicon",
-      "engine-chromeicon",
-      "engine-rel-searchform-purpose",
-      "Test search engine (Reordered)",
-    ]
-  : [
-      
-      "engine-resourceicon",
-      "engine-chromeicon",
-      
-      "engine-pref",
-      "engine-rel-searchform-purpose",
-      "Test search engine",
-      "Test search engine (Reordered)",
-    ];
-
-const EXPECTED_ORDER_GET_ENGINES = [
+const EXPECTED_ORDER = [
   
   "Test search engine",
   "engine-pref",
@@ -76,8 +51,8 @@ async function checkOrder(type, expectedOrder) {
 }
 
 add_task(async function test_engine_sort_only_builtins() {
-  await checkOrder("getDefaultEngines", EXPECTED_ORDER_GET_DEFAULT_ENGINES);
-  await checkOrder("getEngines", EXPECTED_ORDER_GET_ENGINES);
+  await checkOrder("getDefaultEngines", EXPECTED_ORDER);
+  await checkOrder("getEngines", EXPECTED_ORDER);
 });
 
 add_task(async function test_engine_sort_with_non_builtins_sort() {
@@ -94,16 +69,12 @@ add_task(async function test_engine_sort_with_non_builtins_sort() {
   );
 
   
-  await checkOrder("getDefaultEngines", EXPECTED_ORDER_GET_DEFAULT_ENGINES);
+  await checkOrder("getDefaultEngines", EXPECTED_ORDER);
 
-  const expected = [...EXPECTED_ORDER_GET_ENGINES];
+  const expected = [...EXPECTED_ORDER];
   
   
-  expected.splice(
-    modernConfig ? EXPECTED_ORDER_GET_ENGINES.length : 5,
-    0,
-    "nonbuiltin1"
-  );
+  expected.splice(modernConfig ? EXPECTED_ORDER.length : 5, 0, "nonbuiltin1");
   await checkOrder("getEngines", expected);
 });
 
@@ -135,47 +106,20 @@ add_task(async function test_engine_sort_with_distro() {
     localizedStr
   );
 
-  
-  
-  let expected = modernConfig
-    ? [
-        "Test search engine",
-        "engine-pref",
-        "engine-resourceicon",
-        "engine-chromeicon",
-        "engine-rel-searchform-purpose",
-        "Test search engine (Reordered)",
-      ]
-    : [
-        "engine-pref",
-        "engine-rel-searchform-purpose",
-        "engine-resourceicon",
-        "engine-chromeicon",
-        "Test search engine",
-        "Test search engine (Reordered)",
-      ];
+  const expected = [
+    "engine-pref",
+    "engine-resourceicon",
+    "engine-rel-searchform-purpose",
+    "engine-chromeicon",
+    "Test search engine",
+    "Test search engine (Reordered)",
+  ];
 
   await checkOrder("getDefaultEngines", expected);
 
-  expected = modernConfig
-    ? [
-        "engine-pref",
-        "engine-resourceicon",
-        "engine-rel-searchform-purpose",
-        "engine-chromeicon",
-        "Test search engine",
-        "Test search engine (Reordered)",
-        "nonbuiltin1",
-      ]
-    : [
-        "engine-pref",
-        "engine-resourceicon",
-        "engine-rel-searchform-purpose",
-        "engine-chromeicon",
-        "Test search engine",
-        "nonbuiltin1",
-        "Test search engine (Reordered)",
-      ];
+  
+  
+  expected.splice(modernConfig ? expected.length : 5, 0, "nonbuiltin1");
 
   await checkOrder("getEngines", expected);
 });
