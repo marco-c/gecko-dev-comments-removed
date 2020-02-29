@@ -11,19 +11,11 @@
 
 
 
+#pragma GCC system_header
+#include_next <windows.h>
 
-#if defined(__GNUC__) || defined(__clang__)
-#  pragma GCC system_header
-#  include_next <windows.h>
-
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#else
-#  include <${header_path}>
-
-#  pragma warning(push)
-#  pragma warning(disable: 4996 4995)
-#endif 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
 
 #if defined(MOZ_DISABLE_WINDOWS_WRAPPER)
@@ -31,9 +23,6 @@
 
 #elif !defined(__cplusplus)
 #define MOZ_WINDOWS_WRAPPER_DISABLED_REASON "non-C++ source file"
-
-#elif !defined(__GNUC__) && !defined(__clang__) && !defined(_DLL)
-#define MOZ_WINDOWS_WRAPPER_DISABLED_REASON "non-dynamic RTL"
 
 #else
 
@@ -49,10 +38,6 @@ ${decls}
 
 #endif 
 
-#if defined(__GNUC__) || defined(__clang__)
-#  pragma GCC diagnostic pop
-#else
-#  pragma warning(pop)
-#endif 
+#pragma GCC diagnostic pop
 
 #endif 

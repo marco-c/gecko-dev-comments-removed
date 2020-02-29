@@ -51,20 +51,7 @@
 
 #endif
 
-
-
-
-
-#pragma warning( push )
-#pragma warning( disable : 4275 4530 )
-
-#ifdef __clang__
 #include_next <${HEADER}>
-#else
-#include <${HEADER_PATH}>
-#endif
-
-#pragma warning( pop )
 
 #ifdef MOZ_INCLUDE_MOZALLOC_H_FROM_${HEADER}
 
