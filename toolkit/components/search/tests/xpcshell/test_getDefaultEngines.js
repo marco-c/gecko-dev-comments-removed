@@ -3,6 +3,9 @@
 
 
 
+
+
+
 "use strict";
 
 const modernConfig = Services.prefs.getBoolPref(
@@ -13,7 +16,7 @@ const modernConfig = Services.prefs.getBoolPref(
 
 
 
-const EXPECTED_ORDER = modernConfig
+const EXPECTED_ORDER_GET_DEFAULT_ENGINES = modernConfig
   ? [
       
       "Test search engine",
@@ -35,6 +38,17 @@ const EXPECTED_ORDER = modernConfig
       "Test search engine (Reordered)",
     ];
 
+const EXPECTED_ORDER_GET_ENGINES = [
+  
+  "Test search engine",
+  "engine-pref",
+  
+  "engine-resourceicon",
+  "engine-chromeicon",
+  "engine-rel-searchform-purpose",
+  "Test search engine (Reordered)",
+];
+
 add_task(async function setup() {
   await AddonTestUtils.promiseStartupManager();
 
@@ -49,36 +63,51 @@ add_task(async function setup() {
   Services.prefs.getDefaultBranch("distribution.").setCharPref("id", "test");
 });
 
-async function checkOrder(expectedOrder) {
-  const sortedEngines = await Services.search.getDefaultEngines();
-  Assert.deepEqual(
-    sortedEngines.map(s => s.name),
-    expectedOrder,
-    "Should have the expected engine order"
-  );
-}
-
-add_task(async function test_getDefaultEngines_no_others() {
-  await checkOrder(EXPECTED_ORDER);
-});
-
-add_task(async function test_getDefaultEngines_with_non_builtins() {
+async function checkOrder(type, expectedOrder) {
   
   Services.search.wrappedJSObject.__sortedEngines = null;
 
+  const sortedEngines = await Services.search[type]();
+  Assert.deepEqual(
+    sortedEngines.map(s => s.name),
+    expectedOrder,
+    `Should have the expected engine order from ${type}`
+  );
+}
+
+add_task(async function test_engine_sort_only_builtins() {
+  await checkOrder("getDefaultEngines", EXPECTED_ORDER_GET_DEFAULT_ENGINES);
+  await checkOrder("getEngines", EXPECTED_ORDER_GET_ENGINES);
+});
+
+add_task(async function test_engine_sort_with_non_builtins_sort() {
   await Services.search.addEngineWithDetails("nonbuiltin1", {
     method: "get",
     template: "http://example.com/?search={searchTerms}",
   });
 
   
-  await checkOrder(EXPECTED_ORDER);
+  
+  Services.prefs.setBoolPref(
+    SearchUtils.BROWSER_SEARCH_PREF + "useDBForOrder",
+    false
+  );
+
+  
+  await checkOrder("getDefaultEngines", EXPECTED_ORDER_GET_DEFAULT_ENGINES);
+
+  const expected = [...EXPECTED_ORDER_GET_ENGINES];
+  
+  
+  expected.splice(
+    modernConfig ? EXPECTED_ORDER_GET_ENGINES.length : 5,
+    0,
+    "nonbuiltin1"
+  );
+  await checkOrder("getEngines", expected);
 });
 
-add_task(async function test_getDefaultEngines_with_distro() {
-  
-  Services.search.wrappedJSObject.__sortedEngines = null;
-
+add_task(async function test_engine_sort_with_distro() {
   Services.prefs.setCharPref(
     SearchUtils.BROWSER_SEARCH_PREF + "order.extra.bar",
     "engine-pref"
@@ -108,7 +137,7 @@ add_task(async function test_getDefaultEngines_with_distro() {
 
   
   
-  const expected = modernConfig
+  let expected = modernConfig
     ? [
         "Test search engine",
         "engine-pref",
@@ -126,5 +155,27 @@ add_task(async function test_getDefaultEngines_with_distro() {
         "Test search engine (Reordered)",
       ];
 
-  await checkOrder(expected);
+  await checkOrder("getDefaultEngines", expected);
+
+  expected = modernConfig
+    ? [
+        "Test search engine",
+        "engine-pref",
+        "engine-resourceicon",
+        "engine-rel-searchform-purpose",
+        "engine-chromeicon",
+        "Test search engine (Reordered)",
+        "nonbuiltin1",
+      ]
+    : [
+        "Test search engine",
+        "engine-pref",
+        "engine-resourceicon",
+        "engine-rel-searchform-purpose",
+        "engine-chromeicon",
+        "nonbuiltin1",
+        "Test search engine (Reordered)",
+      ];
+
+  await checkOrder("getEngines", expected);
 });
