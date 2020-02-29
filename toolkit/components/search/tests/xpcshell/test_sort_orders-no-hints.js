@@ -1,0 +1,70 @@
+
+
+
+
+
+
+
+
+"use strict";
+
+add_task(async function setup() {
+  await AddonTestUtils.promiseStartupManager();
+
+  await useTestEngines(
+    "data",
+    null,
+    readJSONFile(do_get_file("data/engines-no-order-hint.json")).data
+  );
+
+  Services.prefs.setBoolPref(
+    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    true
+  );
+});
+
+async function checkOrder(type, expectedOrder) {
+  
+  Services.search.wrappedJSObject.__sortedEngines = null;
+
+  const sortedEngines = await Services.search[type]();
+  Assert.deepEqual(
+    sortedEngines.map(s => s.name),
+    expectedOrder,
+    `Should have the expected engine order from ${type}`
+  );
+}
+
+add_task(async function test_engine_sort_with_non_builtins_sort() {
+  await Services.search.addEngineWithDetails("nonbuiltin1", {
+    method: "get",
+    template: "http://example.com/?search={searchTerms}",
+  });
+
+  
+  
+  Services.prefs.setBoolPref(
+    SearchUtils.BROWSER_SEARCH_PREF + "useDBForOrder",
+    false
+  );
+
+  const EXPECTED_ORDER = [
+    
+    "Test search engine",
+    
+    "engine-chromeicon",
+    "engine-rel-searchform-purpose",
+    
+    "engine-pref",
+    "engine-resourceicon",
+    "Test search engine (Reordered)",
+  ];
+
+  
+  await checkOrder("getDefaultEngines", EXPECTED_ORDER);
+
+  const expected = [...EXPECTED_ORDER];
+  
+  expected.splice(expected.length - 1, 0, "nonbuiltin1");
+  await checkOrder("getEngines", expected);
+});

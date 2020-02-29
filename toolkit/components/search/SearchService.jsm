@@ -601,6 +601,8 @@ SearchService.prototype = {
 
 
 
+
+
   _searchOrder: [],
 
   
@@ -2254,30 +2256,45 @@ SearchService.prototype = {
       maybeAddEngineToSort(originalPrivateDefault);
     }
 
+    let remainingEngines;
+    const collator = new Intl.Collator();
+
     if (gModernConfig) {
-      for (const details of this._searchOrder) {
-        let engine = this._getEngineByWebExtensionDetails(details);
-        maybeAddEngineToSort(engine);
-      }
+      remainingEngines = engines.filter(e => !addedEngines.has(e.name));
+
+      
+      remainingEngines.sort((a, b) => {
+        if (a._orderHint && b._orderHint) {
+          if (a._orderHint == b._orderHint) {
+            return collator.compare(a.name, b.name);
+          }
+          return b._orderHint - a._orderHint;
+        }
+        if (a._orderHint) {
+          return -1;
+        }
+        if (b._orderHint) {
+          return 1;
+        }
+        return collator.compare(a.name, b.name);
+      });
     } else {
       for (let engineName of this._searchOrder) {
         maybeAddEngineToSort(engines.find(e => e.name == engineName));
       }
-    }
 
-    
-    let remainingEngines = [];
+      remainingEngines = [];
 
-    for (let engine of engines.values()) {
-      if (!addedEngines.has(engine.name)) {
-        remainingEngines.push(engine);
+      for (let engine of engines.values()) {
+        if (!addedEngines.has(engine.name)) {
+          remainingEngines.push(engine);
+        }
       }
-    }
 
-    const collator = new Intl.Collator();
-    remainingEngines.sort((a, b) => {
-      return collator.compare(a.name, b.name);
-    });
+      remainingEngines.sort((a, b) => {
+        return collator.compare(a.name, b.name);
+      });
+    }
     return [...sortedEngines, ...remainingEngines];
   },
 
@@ -2534,6 +2551,7 @@ SearchService.prototype = {
     let params = {
       extraParams: config.extraParams,
       telemetryId: config.telemetryId,
+      orderHint: config.orderHint,
     };
 
     
@@ -2551,10 +2569,6 @@ SearchService.prototype = {
           ).toString();
         }
       }
-    }
-
-    if ("telemetryId" in config) {
-      params.telemetryId = config.telemetryId;
     }
 
     let locale =
@@ -2704,6 +2718,7 @@ SearchService.prototype = {
       extensionID: extension.id,
       locale,
       isBuiltin: extension.addonData.builtIn,
+      orderHint: engineParams.orderHint,
       
       suggestURL: searchProvider.suggest_url,
       suggestGetParams: suggestUrlGetParams,
