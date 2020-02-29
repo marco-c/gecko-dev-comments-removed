@@ -1320,6 +1320,11 @@ pref("browser.newtabpage.activity-stream.discoverystream.personalization.modelKe
 pref("trailhead.firstrun.branches", "");
 
 
+pref("browser.aboutwelcome.enabled", false);
+
+pref("browser.aboutwelcome.log", "warn");
+
+
 pref("browser.messaging-system.whatsNewPanel.enabled", true);
 
 pref("browser.messaging-system.personalized-cfr.scores", "{}");
