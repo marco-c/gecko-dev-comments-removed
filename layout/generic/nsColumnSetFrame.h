@@ -120,14 +120,6 @@ class nsColumnSetFrame final : public nsContainerFrame {
     
     
     nscoord mKnownInfeasibleBSize = 0;
-
-    
-    nscoord mComputedBSize = NS_UNCONSTRAINEDSIZE;
-
-    
-    
-    
-    nscoord mConsumedBSize = 0;
   };
 
   
