@@ -128,6 +128,19 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:~AutoCacheWaitFlags\n"
 
          
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         "deadlock:SanctionsTestServer\n"
+         "deadlock:OCSPStaplingServer\n"
+
+         
          "race:third_party/sqlite3/*\n"
          "deadlock:third_party/sqlite3/*\n"
 
@@ -293,10 +306,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:GCHeapThreshold::updateAfterGC\n"
 
          
-         "deadlock:SanctionsTestServer\n"
-         "deadlock:OCSPStaplingServer\n"
-
-         
          "race:nsCookieService::CountCookiesFromHostInternal\n"
          "race:nsCookieService::InitDBStates\n"
 
@@ -315,10 +324,6 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:CacheEntry::Purge\n"
          "race:CacheEntry::MetaDataReady\n"
-
-         
-         "race:^GetVelocity$\n"
-         "race:^EndTouch$\n"
 
          
          "race:ScriptPreloader::OffThreadDecodeCallback\n"
