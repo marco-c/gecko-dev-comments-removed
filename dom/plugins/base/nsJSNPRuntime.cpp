@@ -8,7 +8,7 @@
 
 #include "jsfriendapi.h"
 
-#include "mozilla/UniquePtr.h"
+#include "nsAutoPtr.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsJSNPRuntime.h"
 #include "nsNPAPIPlugin.h"
@@ -280,7 +280,7 @@ static void DelayedReleaseGCCallback(JSGCStatus status) {
   if (JSGC_END == status) {
     
     
-    UniquePtr<nsTArray<NPObject*>> delayedReleases(sDelayedReleases);
+    nsAutoPtr<nsTArray<NPObject*>> delayedReleases(sDelayedReleases);
     sDelayedReleases = nullptr;
 
     if (delayedReleases) {

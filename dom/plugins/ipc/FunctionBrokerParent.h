@@ -56,7 +56,7 @@ class FunctionBrokerParent : public PFunctionBrokerParent {
   static mozilla::SandboxPermissions sSandboxPermissions;
 #endif  
 
-  UniquePtr<FunctionBrokerThread> mThread;
+  nsAutoPtr<FunctionBrokerThread> mThread;
   Monitor mMonitor;
   bool mShutdownDone;
 };
