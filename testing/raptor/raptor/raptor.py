@@ -144,27 +144,27 @@ def main(args=sys.argv[1:]):
 
     if not success:
         
-        LOG.critical(
-            "TEST-UNEXPECTED-FAIL: no raptor test results were found for %s"
-            % ", ".join(raptor_test_names)
-        )
-        os.sys.exit(1)
+        
+        
+        pages_that_timed_out = raptor.get_page_timeout_list()
+        if pages_that_timed_out:
+            for _page in pages_that_timed_out:
+                message = [
+                    ("TEST-UNEXPECTED-FAIL", "test '%s'" % _page["test_name"]),
+                    ("timed out loading test page", _page["url"]),
+                ]
+                if _page.get("pending_metrics") is not None:
+                    message.append(("pending metrics", _page["pending_metrics"]))
 
-    
-    
-    
-    pages_that_timed_out = raptor.get_page_timeout_list()
-    if len(pages_that_timed_out) > 0:
-        for _page in pages_that_timed_out:
-            message = [
-                ("TEST-UNEXPECTED-FAIL", "test '%s'" % _page["test_name"]),
-                ("timed out loading test page", _page["url"]),
-            ]
-            if _page.get("pending_metrics") is not None:
-                message.append(("pending metrics", _page["pending_metrics"]))
-
+                LOG.critical(
+                    " ".join("%s: %s" % (subject, msg) for subject, msg in message)
+                )
+        else:
+            
+            
             LOG.critical(
-                " ".join("%s: %s" % (subject, msg) for subject, msg in message)
+                "TEST-UNEXPECTED-FAIL: no raptor test results were found for %s"
+                % ", ".join(raptor_test_names)
             )
         os.sys.exit(1)
 
