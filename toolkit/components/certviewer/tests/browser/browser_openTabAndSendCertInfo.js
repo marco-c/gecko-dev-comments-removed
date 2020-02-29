@@ -69,12 +69,27 @@ add_task(async function openFromPopUp() {
 
   let [win] = await openCertDownloadDialog(cert);
   let viewCertButton = win.document.getElementById("viewC-button");
-  let newWinOpened = BrowserTestUtils.waitForNewWindow({
-    url: spec => spec.startsWith("about:certificate"),
-  });
+  let newWinOpened = BrowserTestUtils.waitForNewWindow();
   viewCertButton.click();
+
   let topWin = await newWinOpened;
-  let spec = topWin.gBrowser.selectedBrowser.currentURI.spec;
+  let browser = topWin.gBrowser.selectedBrowser;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!browser.currentURI.spec.startsWith("about:certificate")) {
+    await BrowserTestUtils.browserLoaded(browser, false, spec =>
+      spec.startsWith("about:certificate")
+    );
+  }
+
+  let spec = browser.currentURI.spec;
   checkSpec(spec);
 
   await BrowserTestUtils.closeWindow(topWin); 
