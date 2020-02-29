@@ -1542,6 +1542,9 @@ import android.view.inputmethod.EditorInfo;
             return;
         }
 
+        
+        
+        
         outAttrs.inputType = InputType.TYPE_CLASS_TEXT;
         if (state == SessionTextInput.EditableListener.IME_STATE_PASSWORD ||
                 "password".equalsIgnoreCase(typeHint)) {
@@ -1555,35 +1558,32 @@ import android.view.inputmethod.EditorInfo;
             outAttrs.inputType = InputType.TYPE_CLASS_PHONE;
         } else if (typeHint.equalsIgnoreCase("number") ||
                 typeHint.equalsIgnoreCase("range")) {
-            outAttrs.inputType = InputType.TYPE_CLASS_NUMBER
-                    | InputType.TYPE_NUMBER_FLAG_SIGNED
-                    | InputType.TYPE_NUMBER_FLAG_DECIMAL;
-        } else if (modeHint.equalsIgnoreCase("numeric")) {
             outAttrs.inputType = InputType.TYPE_CLASS_NUMBER |
-                    InputType.TYPE_NUMBER_FLAG_SIGNED |
-                    InputType.TYPE_NUMBER_FLAG_DECIMAL;
-        } else if (modeHint.equalsIgnoreCase("digit")) {
-            outAttrs.inputType = InputType.TYPE_CLASS_NUMBER;
+                                 InputType.TYPE_NUMBER_VARIATION_NORMAL;
         } else {
             
-            outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_AUTO_CORRECT |
-                    InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE;
-            if (typeHint.equalsIgnoreCase("textarea") ||
-                    typeHint.length() == 0) {
+            if (modeHint.equalsIgnoreCase("tel")) {
+                outAttrs.inputType = InputType.TYPE_CLASS_PHONE;
+            } else if (modeHint.equalsIgnoreCase("url")) {
+                outAttrs.inputType = InputType.TYPE_TEXT_VARIATION_URI;
+            } else if (modeHint.equalsIgnoreCase("email")) {
+                outAttrs.inputType |= InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
+            } else if (modeHint.equalsIgnoreCase("numeric")) {
+                outAttrs.inputType = InputType.TYPE_CLASS_NUMBER |
+                                     InputType.TYPE_NUMBER_VARIATION_NORMAL;
+            } else if (modeHint.equalsIgnoreCase("decimal")) {
+                outAttrs.inputType = InputType.TYPE_CLASS_NUMBER |
+                                     InputType.TYPE_NUMBER_FLAG_DECIMAL;
+            } else {
                 
-                outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_MULTI_LINE;
+                outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_AUTO_CORRECT |
+                        InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE;
+                if (typeHint.equalsIgnoreCase("textarea") ||
+                        typeHint.length() == 0) {
+                    
+                    outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_MULTI_LINE;
+                }
             }
-            if (modeHint.equalsIgnoreCase("uppercase")) {
-                outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS;
-            } else if (modeHint.equalsIgnoreCase("titlecase")) {
-                outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_WORDS;
-            } else if (typeHint.equalsIgnoreCase("text") &&
-                    !modeHint.equalsIgnoreCase("autocapitalized")) {
-                outAttrs.inputType |= InputType.TYPE_TEXT_VARIATION_NORMAL;
-            } else if (!modeHint.equalsIgnoreCase("lowercase")) {
-                outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
-            }
-            
         }
 
         if (actionHint.equalsIgnoreCase("go")) {
