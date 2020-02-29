@@ -652,6 +652,20 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
         }
     }
 
+    
+    function Contains(rectA, rectB) {
+        return (rectA.left <= rectB.left && rectB.right <= rectA.right && rectA.top <= rectB.top && rectB.bottom <= rectA.bottom);
+    }
+    
+    function ContainedIn(rectList, rect) {
+        for (let i = 0; i < rectList.length; ++i) {
+            if (Contains(rectList[i], rect)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     function AfterPaintListener(event) {
         LogInfo("AfterPaintListener in " + event.target.document.location.href);
         if (event.target.document != currentDoc) {
@@ -660,23 +674,8 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
             return;
         }
 
-        
-        function Contains(rectA, rectB) {
-            return (rectA.left <= rectB.left && rectB.right <= rectA.right && rectA.top <= rectB.top && rectB.bottom <= rectA.bottom);
-        }
-        
-        function ContainedIn(rectList, rect) {
-            for (let i = 0; i < rectList.length; ++i) {
-                if (Contains(rectList[i], rect)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
         updateCanvasPending = true;
-        for (let i = 0; i < event.clientRects.length; ++i) {
-            let r = event.clientRects[i];
+        for (let r of event.clientRects) {
             if (ContainedIn(updateCanvasRects, r)) {
                 continue;
             }
@@ -690,6 +689,29 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
         if (waitingForAnAfterPaint) {
             waitingForAnAfterPaint = false;
             OperationCompleted();
+        }
+
+        if (!operationInProgress) {
+            HandlePendingTasksAfterMakeProgress();
+        }
+        
+        
+        
+    }
+
+    function FromChildAfterPaintListener(event) {
+        LogInfo("FromChildAfterPaintListener from " + event.detail.originalTargetUri);
+
+        updateCanvasPending = true;
+        for (let r of event.detail.rects) {
+            if (ContainedIn(updateCanvasRects, r)) {
+                continue;
+            }
+
+            
+            
+            
+            updateCanvasRects.push({ left: r.left, top: r.top, right: r.right, bottom: r.bottom });
         }
 
         if (!operationInProgress) {
@@ -719,6 +741,7 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
     function RemoveListeners() {
         
         removeEventListener("MozAfterPaint", AfterPaintListener, false);
+        removeEventListener("Reftest:MozAfterPaintFromChild", FromChildAfterPaintListener, false);
         CheckForLivenessOfContentRootElement();
         if (contentRootElement) {
             contentRootElement.removeEventListener("DOMAttrModified", AttrModifiedListener);
@@ -968,6 +991,8 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
 
     LogInfo("WaitForTestEnd: Adding listeners");
     addEventListener("MozAfterPaint", AfterPaintListener, false);
+    addEventListener("Reftest:MozAfterPaintFromChild", FromChildAfterPaintListener, false);
+
     
     
     CheckForLivenessOfContentRootElement();
