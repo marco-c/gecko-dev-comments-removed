@@ -1655,12 +1655,12 @@ class AsyncPanZoomController {
   CSSPoint mTestAsyncScrollOffset;
   
   LayerToParentLayerScale mTestAsyncZoom;
-  int mTestAttributeAppliers : 8;
+  uint8_t mTestAttributeAppliers;
   
   
-  bool mAsyncTransformAppliedToContent : 1;
+  bool mAsyncTransformAppliedToContent;
   
-  bool mTestHasAsyncKeyScrolled : 1;
+  bool mTestHasAsyncKeyScrolled;
 
   
 
