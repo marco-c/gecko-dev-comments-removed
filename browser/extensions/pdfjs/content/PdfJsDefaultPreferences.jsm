@@ -30,6 +30,7 @@ var PdfJsDefaultPreferences = Object.freeze({
  "eventBusDispatchToDOM": false,
  "externalLinkTarget": 0,
  "historyUpdateUrl": false,
+ "ignoreDestinationZoom": false,
  "pdfBugEnabled": false,
  "renderer": "canvas",
  "renderInteractiveForms": false,
