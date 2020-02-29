@@ -21,7 +21,6 @@ const EXPECTED_ORDER = modernConfig
       
       "engine-resourceicon",
       "engine-chromeicon",
-      
       "engine-rel-searchform-purpose",
       "Test search engine (Reordered)",
     ]
@@ -45,6 +44,9 @@ add_task(async function setup() {
     SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
     true
   );
+  
+  
+  Services.prefs.getDefaultBranch("distribution.").setCharPref("id", "test");
 });
 
 async function checkOrder(expectedOrder) {
@@ -58,9 +60,12 @@ async function checkOrder(expectedOrder) {
 
 add_task(async function test_getDefaultEngines_no_others() {
   await checkOrder(EXPECTED_ORDER);
-}).skip();
+});
 
 add_task(async function test_getDefaultEngines_with_non_builtins() {
+  
+  Services.search.wrappedJSObject.__sortedEngines = null;
+
   await Services.search.addEngineWithDetails("nonbuiltin1", {
     method: "get",
     template: "http://example.com/?search={searchTerms}",
@@ -68,10 +73,12 @@ add_task(async function test_getDefaultEngines_with_non_builtins() {
 
   
   await checkOrder(EXPECTED_ORDER);
-}).skip();
+});
 
 add_task(async function test_getDefaultEngines_with_distro() {
-  Services.prefs.getDefaultBranch("distribution.").setCharPref("id", "test");
+  
+  Services.search.wrappedJSObject.__sortedEngines = null;
+
   Services.prefs.setCharPref(
     SearchUtils.BROWSER_SEARCH_PREF + "order.extra.bar",
     "engine-pref"
