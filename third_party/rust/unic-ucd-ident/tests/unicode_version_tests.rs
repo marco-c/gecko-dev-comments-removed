@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+use unic_ucd_ident;
+use unic_ucd_version;
+
+#[test]
+fn test_version_against_ucd_version() {
+    assert_eq!(
+        unic_ucd_ident::UNICODE_VERSION,
+        unic_ucd_version::UNICODE_VERSION
+    );
+}

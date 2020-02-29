@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+use core::iter;
+
+use super::iter::CharIter;
+
+impl iter::FusedIterator for CharIter {}
