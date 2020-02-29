@@ -35,7 +35,7 @@ class FunctionBrokerChild : public PFunctionBrokerChild {
   void ShutdownOnDispatchThread();
   void Bind(Endpoint<PFunctionBrokerChild>&& aEndpoint);
 
-  nsAutoPtr<FunctionBrokerThread> mThread;
+  UniquePtr<FunctionBrokerThread> mThread;
 
   
   bool mShutdownDone;
